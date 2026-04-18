@@ -288,27 +288,27 @@ func (x *SkillUsedS2C) GetTimeStamp() uint64 {
 	return 0
 }
 
-// Get skill list request
-type GetSkillListRequest struct {
+// List skills request
+type ListSkillsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetSkillListRequest) Reset() {
-	*x = GetSkillListRequest{}
+func (x *ListSkillsRequest) Reset() {
+	*x = ListSkillsRequest{}
 	mi := &file_proto_scene_player_skill_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetSkillListRequest) String() string {
+func (x *ListSkillsRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetSkillListRequest) ProtoMessage() {}
+func (*ListSkillsRequest) ProtoMessage() {}
 
-func (x *GetSkillListRequest) ProtoReflect() protoreflect.Message {
+func (x *ListSkillsRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_scene_player_skill_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -320,13 +320,13 @@ func (x *GetSkillListRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetSkillListRequest.ProtoReflect.Descriptor instead.
-func (*GetSkillListRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use ListSkillsRequest.ProtoReflect.Descriptor instead.
+func (*ListSkillsRequest) Descriptor() ([]byte, []int) {
 	return file_proto_scene_player_skill_proto_rawDescGZIP(), []int{4}
 }
 
-// Get skill list response
-type GetSkillListResponse struct {
+// List skills response
+type ListSkillsResponse struct {
 	state         protoimpl.MessageState         `protogen:"open.v1"`
 	ErrorMessage  *base.TipInfoMessage           `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
 	SkillList     *component.PlayerSkillListComp `protobuf:"bytes,2,opt,name=skill_list,json=skillList,proto3" json:"skill_list,omitempty"`
@@ -334,20 +334,20 @@ type GetSkillListResponse struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetSkillListResponse) Reset() {
-	*x = GetSkillListResponse{}
+func (x *ListSkillsResponse) Reset() {
+	*x = ListSkillsResponse{}
 	mi := &file_proto_scene_player_skill_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetSkillListResponse) String() string {
+func (x *ListSkillsResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetSkillListResponse) ProtoMessage() {}
+func (*ListSkillsResponse) ProtoMessage() {}
 
-func (x *GetSkillListResponse) ProtoReflect() protoreflect.Message {
+func (x *ListSkillsResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_scene_player_skill_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -359,19 +359,19 @@ func (x *GetSkillListResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetSkillListResponse.ProtoReflect.Descriptor instead.
-func (*GetSkillListResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use ListSkillsResponse.ProtoReflect.Descriptor instead.
+func (*ListSkillsResponse) Descriptor() ([]byte, []int) {
 	return file_proto_scene_player_skill_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *GetSkillListResponse) GetErrorMessage() *base.TipInfoMessage {
+func (x *ListSkillsResponse) GetErrorMessage() *base.TipInfoMessage {
 	if x != nil {
 		return x.ErrorMessage
 	}
 	return nil
 }
 
-func (x *GetSkillListResponse) GetSkillList() *component.PlayerSkillListComp {
+func (x *ListSkillsResponse) GetSkillList() *component.PlayerSkillListComp {
 	if x != nil {
 		return x.SkillList
 	}
@@ -403,17 +403,18 @@ const file_proto_scene_player_skill_proto_rawDesc = "" +
 	"\x0eskill_table_id\x18\x03 \x01(\rR\fskillTableId\x12$\n" +
 	"\bposition\x18\x04 \x01(\v2\b.Vector3R\bposition\x12\x1d\n" +
 	"\n" +
-	"time_stamp\x18\x05 \x01(\x04R\ttimeStamp\"\x15\n" +
-	"\x13GetSkillListRequest\"\x81\x01\n" +
-	"\x14GetSkillListResponse\x124\n" +
+	"time_stamp\x18\x05 \x01(\x04R\ttimeStamp\"\x13\n" +
+	"\x11ListSkillsRequest\"\x7f\n" +
+	"\x12ListSkillsResponse\x124\n" +
 	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\x123\n" +
 	"\n" +
-	"skill_list\x18\x02 \x01(\v2\x14.PlayerSkillListCompR\tskillList2\x80\x02\n" +
+	"skill_list\x18\x02 \x01(\v2\x14.PlayerSkillListCompR\tskillList2\xfa\x01\n" +
 	"\x16SceneSkillClientPlayer\x12;\n" +
 	"\fReleaseSkill\x12\x14.ReleaseSkillRequest\x1a\x15.ReleaseSkillResponse\x12(\n" +
 	"\x0fNotifySkillUsed\x12\r.SkillUsedS2C\x1a\x06.Empty\x126\n" +
-	"\x16NotifySkillInterrupted\x12\x14.SkillInterruptedS2C\x1a\x06.Empty\x12;\n" +
-	"\fGetSkillList\x12\x14.GetSkillListRequest\x1a\x15.GetSkillListResponse\x1a\n" +
+	"\x16NotifySkillInterrupted\x12\x14.SkillInterruptedS2C\x1a\x06.Empty\x125\n" +
+	"\n" +
+	"ListSkills\x12\x12.ListSkillsRequest\x1a\x13.ListSkillsResponse\x1a\n" +
 	"\x80\xa8\xc3\x01\x01\x88\xa8\xc3\x01\x01B\x14\x98\xd4a\x03Z\vproto/scene\x80\x01\x01b\x06proto3"
 
 var (
@@ -434,8 +435,8 @@ var file_proto_scene_player_skill_proto_goTypes = []any{
 	(*ReleaseSkillResponse)(nil),          // 1: ReleaseSkillResponse
 	(*SkillInterruptedS2C)(nil),           // 2: SkillInterruptedS2C
 	(*SkillUsedS2C)(nil),                  // 3: SkillUsedS2C
-	(*GetSkillListRequest)(nil),           // 4: GetSkillListRequest
-	(*GetSkillListResponse)(nil),          // 5: GetSkillListResponse
+	(*ListSkillsRequest)(nil),             // 4: ListSkillsRequest
+	(*ListSkillsResponse)(nil),            // 5: ListSkillsResponse
 	(*component.Vector3)(nil),             // 6: Vector3
 	(*component.Rotation)(nil),            // 7: Rotation
 	(*base.TipInfoMessage)(nil),           // 8: TipInfoMessage
@@ -447,16 +448,16 @@ var file_proto_scene_player_skill_proto_depIdxs = []int32{
 	7,  // 1: ReleaseSkillRequest.rotation:type_name -> Rotation
 	8,  // 2: ReleaseSkillResponse.error_message:type_name -> TipInfoMessage
 	6,  // 3: SkillUsedS2C.position:type_name -> Vector3
-	8,  // 4: GetSkillListResponse.error_message:type_name -> TipInfoMessage
-	9,  // 5: GetSkillListResponse.skill_list:type_name -> PlayerSkillListComp
+	8,  // 4: ListSkillsResponse.error_message:type_name -> TipInfoMessage
+	9,  // 5: ListSkillsResponse.skill_list:type_name -> PlayerSkillListComp
 	0,  // 6: SceneSkillClientPlayer.ReleaseSkill:input_type -> ReleaseSkillRequest
 	3,  // 7: SceneSkillClientPlayer.NotifySkillUsed:input_type -> SkillUsedS2C
 	2,  // 8: SceneSkillClientPlayer.NotifySkillInterrupted:input_type -> SkillInterruptedS2C
-	4,  // 9: SceneSkillClientPlayer.GetSkillList:input_type -> GetSkillListRequest
+	4,  // 9: SceneSkillClientPlayer.ListSkills:input_type -> ListSkillsRequest
 	1,  // 10: SceneSkillClientPlayer.ReleaseSkill:output_type -> ReleaseSkillResponse
 	10, // 11: SceneSkillClientPlayer.NotifySkillUsed:output_type -> Empty
 	10, // 12: SceneSkillClientPlayer.NotifySkillInterrupted:output_type -> Empty
-	5,  // 13: SceneSkillClientPlayer.GetSkillList:output_type -> GetSkillListResponse
+	5,  // 13: SceneSkillClientPlayer.ListSkills:output_type -> ListSkillsResponse
 	10, // [10:14] is the sub-list for method output_type
 	6,  // [6:10] is the sub-list for method input_type
 	6,  // [6:6] is the sub-list for extension type_name

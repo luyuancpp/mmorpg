@@ -663,10 +663,10 @@ void InitMessageInfo()
         std::make_unique<::SkillInterruptedS2C>(),
         std::make_unique<::Empty>(),
         std::make_unique<SceneSkillClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
-    gRpcMethodRegistry[SceneSkillClientPlayerGetSkillListMessageId] = RpcMethodMeta{
-        "SceneSkillClientPlayer", "GetSkillList",
-        std::make_unique<::GetSkillListRequest>(),
-        std::make_unique<::GetSkillListResponse>(),
+    gRpcMethodRegistry[SceneSkillClientPlayerListSkillsMessageId] = RpcMethodMeta{
+        "SceneSkillClientPlayer", "ListSkills",
+        std::make_unique<::ListSkillsRequest>(),
+        std::make_unique<::ListSkillsResponse>(),
         std::make_unique<SceneSkillClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
 
     // --- ScenePlayerSync ---
@@ -851,7 +851,7 @@ bool IsClientMessageId(uint32_t messageId)
 	case SceneSkillClientPlayerReleaseSkillMessageId:
 	case SceneSkillClientPlayerNotifySkillUsedMessageId:
 	case SceneSkillClientPlayerNotifySkillInterruptedMessageId:
-	case SceneSkillClientPlayerGetSkillListMessageId:
+	case SceneSkillClientPlayerListSkillsMessageId:
 		return true;
 	default:
 		return false;

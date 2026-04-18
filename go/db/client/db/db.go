@@ -7,7 +7,7 @@ package db
 import (
 	"context"
 
-	"proto/db"
+	"db/proto/db/proto/db"
 
 	"github.com/zeromicro/go-zero/zrpc"
 	"google.golang.org/grpc"

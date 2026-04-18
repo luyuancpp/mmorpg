@@ -5,10 +5,10 @@ import (
 
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
-	base "proto/common/base"
 	"robot/generated/pb/game"
 	"robot/logic/gameobject"
 	"robot/pkg"
+	base "proto/common/base"
 )
 
 type handlerFunc func(*gameobject.Player, []byte)
@@ -29,28 +29,28 @@ func unmarshalAndCall[PT proto.Message](fn func(*gameobject.Player, PT)) handler
 }
 
 var messageHandlers = map[uint32]handlerFunc{
-	game.ClientPlayerChatSendChatMessageId:                     unmarshalAndCall(ClientPlayerChatSendChatHandler),
-	game.ClientPlayerChatPullChatHistoryMessageId:              unmarshalAndCall(ClientPlayerChatPullChatHistoryHandler),
-	game.ClientPlayerLoginLoginMessageId:                       unmarshalAndCall(ClientPlayerLoginLoginHandler),
-	game.ClientPlayerLoginCreatePlayerMessageId:                unmarshalAndCall(ClientPlayerLoginCreatePlayerHandler),
-	game.ClientPlayerLoginEnterGameMessageId:                   unmarshalAndCall(ClientPlayerLoginEnterGameHandler),
-	game.ClientPlayerLoginLeaveGameMessageId:                   unmarshalAndCall(ClientPlayerLoginLeaveGameHandler),
-	game.ClientPlayerLoginDisconnectMessageId:                  unmarshalAndCall(ClientPlayerLoginDisconnectHandler),
-	game.SceneClientPlayerCommonSendTipToClientMessageId:       unmarshalAndCall(SceneClientPlayerCommonSendTipToClientHandler),
-	game.SceneClientPlayerCommonKickPlayerMessageId:            unmarshalAndCall(SceneClientPlayerCommonKickPlayerHandler),
-	game.SceneClientPlayerCommonRedirectToGateMessageId:        unmarshalAndCall(SceneClientPlayerCommonRedirectToGateHandler),
-	game.SceneSceneClientPlayerEnterSceneMessageId:             unmarshalAndCall(SceneSceneClientPlayerEnterSceneHandler),
-	game.SceneSceneClientPlayerNotifyEnterSceneMessageId:       unmarshalAndCall(SceneSceneClientPlayerNotifyEnterSceneHandler),
-	game.SceneSceneClientPlayerSceneInfoC2SMessageId:           unmarshalAndCall(SceneSceneClientPlayerSceneInfoC2SHandler),
-	game.SceneSceneClientPlayerNotifySceneInfoMessageId:        unmarshalAndCall(SceneSceneClientPlayerNotifySceneInfoHandler),
-	game.SceneSceneClientPlayerNotifyActorCreateMessageId:      unmarshalAndCall(SceneSceneClientPlayerNotifyActorCreateHandler),
-	game.SceneSceneClientPlayerNotifyActorDestroyMessageId:     unmarshalAndCall(SceneSceneClientPlayerNotifyActorDestroyHandler),
-	game.SceneSceneClientPlayerNotifyActorListCreateMessageId:  unmarshalAndCall(SceneSceneClientPlayerNotifyActorListCreateHandler),
+	game.ClientPlayerChatSendChatMessageId: unmarshalAndCall(ClientPlayerChatSendChatHandler),
+	game.ClientPlayerChatPullChatHistoryMessageId: unmarshalAndCall(ClientPlayerChatPullChatHistoryHandler),
+	game.ClientPlayerLoginLoginMessageId: unmarshalAndCall(ClientPlayerLoginLoginHandler),
+	game.ClientPlayerLoginCreatePlayerMessageId: unmarshalAndCall(ClientPlayerLoginCreatePlayerHandler),
+	game.ClientPlayerLoginEnterGameMessageId: unmarshalAndCall(ClientPlayerLoginEnterGameHandler),
+	game.ClientPlayerLoginLeaveGameMessageId: unmarshalAndCall(ClientPlayerLoginLeaveGameHandler),
+	game.ClientPlayerLoginDisconnectMessageId: unmarshalAndCall(ClientPlayerLoginDisconnectHandler),
+	game.SceneClientPlayerCommonSendTipToClientMessageId: unmarshalAndCall(SceneClientPlayerCommonSendTipToClientHandler),
+	game.SceneClientPlayerCommonKickPlayerMessageId: unmarshalAndCall(SceneClientPlayerCommonKickPlayerHandler),
+	game.SceneClientPlayerCommonRedirectToGateMessageId: unmarshalAndCall(SceneClientPlayerCommonRedirectToGateHandler),
+	game.SceneSceneClientPlayerEnterSceneMessageId: unmarshalAndCall(SceneSceneClientPlayerEnterSceneHandler),
+	game.SceneSceneClientPlayerNotifyEnterSceneMessageId: unmarshalAndCall(SceneSceneClientPlayerNotifyEnterSceneHandler),
+	game.SceneSceneClientPlayerSceneInfoC2SMessageId: unmarshalAndCall(SceneSceneClientPlayerSceneInfoC2SHandler),
+	game.SceneSceneClientPlayerNotifySceneInfoMessageId: unmarshalAndCall(SceneSceneClientPlayerNotifySceneInfoHandler),
+	game.SceneSceneClientPlayerNotifyActorCreateMessageId: unmarshalAndCall(SceneSceneClientPlayerNotifyActorCreateHandler),
+	game.SceneSceneClientPlayerNotifyActorDestroyMessageId: unmarshalAndCall(SceneSceneClientPlayerNotifyActorDestroyHandler),
+	game.SceneSceneClientPlayerNotifyActorListCreateMessageId: unmarshalAndCall(SceneSceneClientPlayerNotifyActorListCreateHandler),
 	game.SceneSceneClientPlayerNotifyActorListDestroyMessageId: unmarshalAndCall(SceneSceneClientPlayerNotifyActorListDestroyHandler),
-	game.SceneSkillClientPlayerReleaseSkillMessageId:           unmarshalAndCall(SceneSkillClientPlayerReleaseSkillHandler),
-	game.SceneSkillClientPlayerNotifySkillUsedMessageId:        unmarshalAndCall(SceneSkillClientPlayerNotifySkillUsedHandler),
+	game.SceneSkillClientPlayerReleaseSkillMessageId: unmarshalAndCall(SceneSkillClientPlayerReleaseSkillHandler),
+	game.SceneSkillClientPlayerNotifySkillUsedMessageId: unmarshalAndCall(SceneSkillClientPlayerNotifySkillUsedHandler),
 	game.SceneSkillClientPlayerNotifySkillInterruptedMessageId: unmarshalAndCall(SceneSkillClientPlayerNotifySkillInterruptedHandler),
-	game.SceneSkillClientPlayerGetSkillListMessageId:           unmarshalAndCall(SceneSkillClientPlayerGetSkillListHandler),
+	game.SceneSkillClientPlayerListSkillsMessageId: unmarshalAndCall(SceneSkillClientPlayerListSkillsHandler),
 }
 
 func MessageBodyHandler(client *pkg.GameClient, response *base.MessageContent) {

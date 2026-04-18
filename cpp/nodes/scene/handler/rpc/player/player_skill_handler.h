@@ -20,9 +20,9 @@ public:
     static void NotifySkillInterrupted(entt::entity player,
         const ::SkillInterruptedS2C* request,
         ::Empty* response);
-    static void GetSkillList(entt::entity player,
-        const ::GetSkillListRequest* request,
-        ::GetSkillListResponse* response);
+    static void ListSkills(entt::entity player,
+        const ::ListSkillsRequest* request,
+        ::ListSkillsResponse* response);
 
     void CallMethod(const ::google::protobuf::MethodDescriptor* method,
         entt::entity player,
@@ -55,10 +55,10 @@ public:
             break;
         case 3:
 			{
-            GetSkillList(player,
-                static_cast<const ::GetSkillListRequest*>(request),
-                static_cast<::GetSkillListResponse*>(response));
-            TRANSFER_ERROR_MESSAGE(static_cast<::GetSkillListResponse*>(response));
+            ListSkills(player,
+                static_cast<const ::ListSkillsRequest*>(request),
+                static_cast<::ListSkillsResponse*>(response));
+            TRANSFER_ERROR_MESSAGE(static_cast<::ListSkillsResponse*>(response));
 			}
             break;
         default:

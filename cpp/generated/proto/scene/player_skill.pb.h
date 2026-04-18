@@ -60,14 +60,14 @@ struct TableStruct_proto_2fscene_2fplayer_5fskill_2eproto {
 extern "C" {
 extern const ::google::protobuf::internal::DescriptorTable descriptor_table_proto_2fscene_2fplayer_5fskill_2eproto;
 }  // extern "C"
-class GetSkillListRequest;
-struct GetSkillListRequestDefaultTypeInternal;
-extern GetSkillListRequestDefaultTypeInternal _GetSkillListRequest_default_instance_;
-extern const ::google::protobuf::internal::ClassDataFull GetSkillListRequest_class_data_;
-class GetSkillListResponse;
-struct GetSkillListResponseDefaultTypeInternal;
-extern GetSkillListResponseDefaultTypeInternal _GetSkillListResponse_default_instance_;
-extern const ::google::protobuf::internal::ClassDataFull GetSkillListResponse_class_data_;
+class ListSkillsRequest;
+struct ListSkillsRequestDefaultTypeInternal;
+extern ListSkillsRequestDefaultTypeInternal _ListSkillsRequest_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull ListSkillsRequest_class_data_;
+class ListSkillsResponse;
+struct ListSkillsResponseDefaultTypeInternal;
+extern ListSkillsResponseDefaultTypeInternal _ListSkillsResponse_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull ListSkillsResponse_class_data_;
 class ReleaseSkillRequest;
 struct ReleaseSkillRequestDefaultTypeInternal;
 extern ReleaseSkillRequestDefaultTypeInternal _ReleaseSkillRequest_default_instance_;
@@ -334,29 +334,29 @@ class SkillInterruptedS2C final : public ::google::protobuf::Message
 extern const ::google::protobuf::internal::ClassDataFull SkillInterruptedS2C_class_data_;
 // -------------------------------------------------------------------
 
-class GetSkillListRequest final : public ::google::protobuf::internal::ZeroFieldsBase
-/* @@protoc_insertion_point(class_definition:GetSkillListRequest) */ {
+class ListSkillsRequest final : public ::google::protobuf::internal::ZeroFieldsBase
+/* @@protoc_insertion_point(class_definition:ListSkillsRequest) */ {
  public:
-  inline GetSkillListRequest() : GetSkillListRequest(nullptr) {}
+  inline ListSkillsRequest() : ListSkillsRequest(nullptr) {}
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(GetSkillListRequest* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+  void operator delete(ListSkillsRequest* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
     SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(GetSkillListRequest));
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(ListSkillsRequest));
   }
 #endif
 
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR GetSkillListRequest(::google::protobuf::internal::ConstantInitialized);
+  explicit PROTOBUF_CONSTEXPR ListSkillsRequest(::google::protobuf::internal::ConstantInitialized);
 
-  inline GetSkillListRequest(const GetSkillListRequest& from) : GetSkillListRequest(nullptr, from) {}
-  inline GetSkillListRequest(GetSkillListRequest&& from) noexcept
-      : GetSkillListRequest(nullptr, ::std::move(from)) {}
-  inline GetSkillListRequest& operator=(const GetSkillListRequest& from) {
+  inline ListSkillsRequest(const ListSkillsRequest& from) : ListSkillsRequest(nullptr, from) {}
+  inline ListSkillsRequest(ListSkillsRequest&& from) noexcept
+      : ListSkillsRequest(nullptr, ::std::move(from)) {}
+  inline ListSkillsRequest& operator=(const ListSkillsRequest& from) {
     CopyFrom(from);
     return *this;
   }
-  inline GetSkillListRequest& operator=(GetSkillListRequest&& from) noexcept {
+  inline ListSkillsRequest& operator=(ListSkillsRequest&& from) noexcept {
     if (this == &from) return *this;
     if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
       InternalSwap(&from);
@@ -384,13 +384,13 @@ class GetSkillListRequest final : public ::google::protobuf::internal::ZeroField
   static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const GetSkillListRequest& default_instance() {
-    return *reinterpret_cast<const GetSkillListRequest*>(
-        &_GetSkillListRequest_default_instance_);
+  static const ListSkillsRequest& default_instance() {
+    return *reinterpret_cast<const ListSkillsRequest*>(
+        &_ListSkillsRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 4;
-  friend void swap(GetSkillListRequest& a, GetSkillListRequest& b) { a.Swap(&b); }
-  inline void Swap(GetSkillListRequest* PROTOBUF_NONNULL other) {
+  friend void swap(ListSkillsRequest& a, ListSkillsRequest& b) { a.Swap(&b); }
+  inline void Swap(ListSkillsRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
     if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
       InternalSwap(other);
@@ -398,7 +398,7 @@ class GetSkillListRequest final : public ::google::protobuf::internal::ZeroField
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(GetSkillListRequest* PROTOBUF_NONNULL other) {
+  void UnsafeArenaSwap(ListSkillsRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -406,15 +406,15 @@ class GetSkillListRequest final : public ::google::protobuf::internal::ZeroField
 
   // implements Message ----------------------------------------------
 
-  GetSkillListRequest* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::internal::ZeroFieldsBase::DefaultConstruct<GetSkillListRequest>(arena);
+  ListSkillsRequest* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::internal::ZeroFieldsBase::DefaultConstruct<ListSkillsRequest>(arena);
   }
   using ::google::protobuf::internal::ZeroFieldsBase::CopyFrom;
-  inline void CopyFrom(const GetSkillListRequest& from) {
+  inline void CopyFrom(const ListSkillsRequest& from) {
     ::google::protobuf::internal::ZeroFieldsBase::CopyImpl(*this, from);
   }
   using ::google::protobuf::internal::ZeroFieldsBase::MergeFrom;
-  void MergeFrom(const GetSkillListRequest& from) {
+  void MergeFrom(const ListSkillsRequest& from) {
     ::google::protobuf::internal::ZeroFieldsBase::MergeImpl(*this, from);
   }
 
@@ -425,14 +425,14 @@ class GetSkillListRequest final : public ::google::protobuf::internal::ZeroField
  private:
   template <typename T>
   friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "GetSkillListRequest"; }
+  static ::absl::string_view FullMessageName() { return "ListSkillsRequest"; }
 
  protected:
-  explicit GetSkillListRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  GetSkillListRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const GetSkillListRequest& from);
-  GetSkillListRequest(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, GetSkillListRequest&& from) noexcept
-      : GetSkillListRequest(arena) {
+  explicit ListSkillsRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  ListSkillsRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const ListSkillsRequest& from);
+  ListSkillsRequest(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, ListSkillsRequest&& from) noexcept
+      : ListSkillsRequest(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
@@ -448,7 +448,7 @@ class GetSkillListRequest final : public ::google::protobuf::internal::ZeroField
   // nested types ----------------------------------------------------
 
   // accessors -------------------------------------------------------
-  // @@protoc_insertion_point(class_scope:GetSkillListRequest)
+  // @@protoc_insertion_point(class_scope:ListSkillsRequest)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -471,13 +471,13 @@ class GetSkillListRequest final : public ::google::protobuf::internal::ZeroField
     inline explicit Impl_(
         ::google::protobuf::internal::InternalVisibility visibility,
         ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-        const GetSkillListRequest& from_msg);
+        const ListSkillsRequest& from_msg);
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   friend struct ::TableStruct_proto_2fscene_2fplayer_5fskill_2eproto;
 };
 
-extern const ::google::protobuf::internal::ClassDataFull GetSkillListRequest_class_data_;
+extern const ::google::protobuf::internal::ClassDataFull ListSkillsRequest_class_data_;
 // -------------------------------------------------------------------
 
 class SkillUsedS2C final : public ::google::protobuf::Message
@@ -1166,30 +1166,30 @@ class ReleaseSkillRequest final : public ::google::protobuf::Message
 extern const ::google::protobuf::internal::ClassDataFull ReleaseSkillRequest_class_data_;
 // -------------------------------------------------------------------
 
-class GetSkillListResponse final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:GetSkillListResponse) */ {
+class ListSkillsResponse final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:ListSkillsResponse) */ {
  public:
-  inline GetSkillListResponse() : GetSkillListResponse(nullptr) {}
-  ~GetSkillListResponse() PROTOBUF_FINAL;
+  inline ListSkillsResponse() : ListSkillsResponse(nullptr) {}
+  ~ListSkillsResponse() PROTOBUF_FINAL;
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(GetSkillListResponse* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+  void operator delete(ListSkillsResponse* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
     SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(GetSkillListResponse));
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(ListSkillsResponse));
   }
 #endif
 
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR GetSkillListResponse(::google::protobuf::internal::ConstantInitialized);
+  explicit PROTOBUF_CONSTEXPR ListSkillsResponse(::google::protobuf::internal::ConstantInitialized);
 
-  inline GetSkillListResponse(const GetSkillListResponse& from) : GetSkillListResponse(nullptr, from) {}
-  inline GetSkillListResponse(GetSkillListResponse&& from) noexcept
-      : GetSkillListResponse(nullptr, ::std::move(from)) {}
-  inline GetSkillListResponse& operator=(const GetSkillListResponse& from) {
+  inline ListSkillsResponse(const ListSkillsResponse& from) : ListSkillsResponse(nullptr, from) {}
+  inline ListSkillsResponse(ListSkillsResponse&& from) noexcept
+      : ListSkillsResponse(nullptr, ::std::move(from)) {}
+  inline ListSkillsResponse& operator=(const ListSkillsResponse& from) {
     CopyFrom(from);
     return *this;
   }
-  inline GetSkillListResponse& operator=(GetSkillListResponse&& from) noexcept {
+  inline ListSkillsResponse& operator=(ListSkillsResponse&& from) noexcept {
     if (this == &from) return *this;
     if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
       InternalSwap(&from);
@@ -1217,13 +1217,13 @@ class GetSkillListResponse final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const GetSkillListResponse& default_instance() {
-    return *reinterpret_cast<const GetSkillListResponse*>(
-        &_GetSkillListResponse_default_instance_);
+  static const ListSkillsResponse& default_instance() {
+    return *reinterpret_cast<const ListSkillsResponse*>(
+        &_ListSkillsResponse_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 5;
-  friend void swap(GetSkillListResponse& a, GetSkillListResponse& b) { a.Swap(&b); }
-  inline void Swap(GetSkillListResponse* PROTOBUF_NONNULL other) {
+  friend void swap(ListSkillsResponse& a, ListSkillsResponse& b) { a.Swap(&b); }
+  inline void Swap(ListSkillsResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
     if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
       InternalSwap(other);
@@ -1231,7 +1231,7 @@ class GetSkillListResponse final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(GetSkillListResponse* PROTOBUF_NONNULL other) {
+  void UnsafeArenaSwap(ListSkillsResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -1239,13 +1239,13 @@ class GetSkillListResponse final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  GetSkillListResponse* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<GetSkillListResponse>(arena);
+  ListSkillsResponse* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<ListSkillsResponse>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const GetSkillListResponse& from);
+  void CopyFrom(const ListSkillsResponse& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const GetSkillListResponse& from) { GetSkillListResponse::MergeImpl(*this, from); }
+  void MergeFrom(const ListSkillsResponse& from) { ListSkillsResponse::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(::google::protobuf::MessageLite& to_msg,
@@ -1281,18 +1281,18 @@ class GetSkillListResponse final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
   static void SharedDtor(MessageLite& self);
-  void InternalSwap(GetSkillListResponse* PROTOBUF_NONNULL other);
+  void InternalSwap(ListSkillsResponse* PROTOBUF_NONNULL other);
  private:
   template <typename T>
   friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "GetSkillListResponse"; }
+  static ::absl::string_view FullMessageName() { return "ListSkillsResponse"; }
 
  protected:
-  explicit GetSkillListResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  GetSkillListResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const GetSkillListResponse& from);
-  GetSkillListResponse(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, GetSkillListResponse&& from) noexcept
-      : GetSkillListResponse(arena) {
+  explicit ListSkillsResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  ListSkillsResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const ListSkillsResponse& from);
+  ListSkillsResponse(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, ListSkillsResponse&& from) noexcept
+      : ListSkillsResponse(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
@@ -1342,7 +1342,7 @@ class GetSkillListResponse final : public ::google::protobuf::Message
   ::PlayerSkillListComp* PROTOBUF_NONNULL _internal_mutable_skill_list();
 
   public:
-  // @@protoc_insertion_point(class_scope:GetSkillListResponse)
+  // @@protoc_insertion_point(class_scope:ListSkillsResponse)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -1365,7 +1365,7 @@ class GetSkillListResponse final : public ::google::protobuf::Message
     inline explicit Impl_(
         ::google::protobuf::internal::InternalVisibility visibility,
         ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-        const GetSkillListResponse& from_msg);
+        const ListSkillsResponse& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::TipInfoMessage* PROTOBUF_NULLABLE error_message_;
@@ -1376,7 +1376,7 @@ class GetSkillListResponse final : public ::google::protobuf::Message
   friend struct ::TableStruct_proto_2fscene_2fplayer_5fskill_2eproto;
 };
 
-extern const ::google::protobuf::internal::ClassDataFull GetSkillListResponse_class_data_;
+extern const ::google::protobuf::internal::ClassDataFull ListSkillsResponse_class_data_;
 
 // ===================================================================
 
@@ -1409,9 +1409,9 @@ class SceneSkillClientPlayer : public ::google::protobuf::Service {
                         const ::SkillInterruptedS2C* PROTOBUF_NONNULL request,
                         ::Empty* PROTOBUF_NONNULL response,
                         ::google::protobuf::Closure* PROTOBUF_NULLABLE done);
-  virtual void GetSkillList(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
-                        const ::GetSkillListRequest* PROTOBUF_NONNULL request,
-                        ::GetSkillListResponse* PROTOBUF_NONNULL response,
+  virtual void ListSkills(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
+                        const ::ListSkillsRequest* PROTOBUF_NONNULL request,
+                        ::ListSkillsResponse* PROTOBUF_NONNULL response,
                         ::google::protobuf::Closure* PROTOBUF_NULLABLE done);
 
   // implements Service ----------------------------------------------
@@ -1457,9 +1457,9 @@ class SceneSkillClientPlayer_Stub final : public SceneSkillClientPlayer {
                         const ::SkillInterruptedS2C* PROTOBUF_NONNULL request,
                         ::Empty* PROTOBUF_NONNULL response,
                         ::google::protobuf::Closure* PROTOBUF_NULLABLE done) override;
-  void GetSkillList(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
-                        const ::GetSkillListRequest* PROTOBUF_NONNULL request,
-                        ::GetSkillListResponse* PROTOBUF_NONNULL response,
+  void ListSkills(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
+                        const ::ListSkillsRequest* PROTOBUF_NONNULL request,
+                        ::ListSkillsResponse* PROTOBUF_NONNULL response,
                         ::google::protobuf::Closure* PROTOBUF_NULLABLE done) override;
 
  private:
@@ -2153,28 +2153,28 @@ inline void SkillUsedS2C::_internal_set_time_stamp(::uint64_t value) {
 
 // -------------------------------------------------------------------
 
-// GetSkillListRequest
+// ListSkillsRequest
 
 // -------------------------------------------------------------------
 
-// GetSkillListResponse
+// ListSkillsResponse
 
 // .TipInfoMessage error_message = 1;
-inline bool GetSkillListResponse::has_error_message() const {
+inline bool ListSkillsResponse::has_error_message() const {
   bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
   PROTOBUF_ASSUME(!value || _impl_.error_message_ != nullptr);
   return value;
 }
-inline const ::TipInfoMessage& GetSkillListResponse::_internal_error_message() const {
+inline const ::TipInfoMessage& ListSkillsResponse::_internal_error_message() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   const ::TipInfoMessage* p = _impl_.error_message_;
   return p != nullptr ? *p : reinterpret_cast<const ::TipInfoMessage&>(::_TipInfoMessage_default_instance_);
 }
-inline const ::TipInfoMessage& GetSkillListResponse::error_message() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:GetSkillListResponse.error_message)
+inline const ::TipInfoMessage& ListSkillsResponse::error_message() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:ListSkillsResponse.error_message)
   return _internal_error_message();
 }
-inline void GetSkillListResponse::unsafe_arena_set_allocated_error_message(
+inline void ListSkillsResponse::unsafe_arena_set_allocated_error_message(
     ::TipInfoMessage* PROTOBUF_NULLABLE value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (GetArena() == nullptr) {
@@ -2186,9 +2186,9 @@ inline void GetSkillListResponse::unsafe_arena_set_allocated_error_message(
   } else {
     _impl_._has_bits_[0] &= ~0x00000001u;
   }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:GetSkillListResponse.error_message)
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:ListSkillsResponse.error_message)
 }
-inline ::TipInfoMessage* PROTOBUF_NULLABLE GetSkillListResponse::release_error_message() {
+inline ::TipInfoMessage* PROTOBUF_NULLABLE ListSkillsResponse::release_error_message() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
 
   _impl_._has_bits_[0] &= ~0x00000001u;
@@ -2207,16 +2207,16 @@ inline ::TipInfoMessage* PROTOBUF_NULLABLE GetSkillListResponse::release_error_m
   }
   return released;
 }
-inline ::TipInfoMessage* PROTOBUF_NULLABLE GetSkillListResponse::unsafe_arena_release_error_message() {
+inline ::TipInfoMessage* PROTOBUF_NULLABLE ListSkillsResponse::unsafe_arena_release_error_message() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:GetSkillListResponse.error_message)
+  // @@protoc_insertion_point(field_release:ListSkillsResponse.error_message)
 
   _impl_._has_bits_[0] &= ~0x00000001u;
   ::TipInfoMessage* temp = _impl_.error_message_;
   _impl_.error_message_ = nullptr;
   return temp;
 }
-inline ::TipInfoMessage* PROTOBUF_NONNULL GetSkillListResponse::_internal_mutable_error_message() {
+inline ::TipInfoMessage* PROTOBUF_NONNULL ListSkillsResponse::_internal_mutable_error_message() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (_impl_.error_message_ == nullptr) {
     auto* p = ::google::protobuf::Message::DefaultConstruct<::TipInfoMessage>(GetArena());
@@ -2224,14 +2224,14 @@ inline ::TipInfoMessage* PROTOBUF_NONNULL GetSkillListResponse::_internal_mutabl
   }
   return _impl_.error_message_;
 }
-inline ::TipInfoMessage* PROTOBUF_NONNULL GetSkillListResponse::mutable_error_message()
+inline ::TipInfoMessage* PROTOBUF_NONNULL ListSkillsResponse::mutable_error_message()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000001u;
   ::TipInfoMessage* _msg = _internal_mutable_error_message();
-  // @@protoc_insertion_point(field_mutable:GetSkillListResponse.error_message)
+  // @@protoc_insertion_point(field_mutable:ListSkillsResponse.error_message)
   return _msg;
 }
-inline void GetSkillListResponse::set_allocated_error_message(::TipInfoMessage* PROTOBUF_NULLABLE value) {
+inline void ListSkillsResponse::set_allocated_error_message(::TipInfoMessage* PROTOBUF_NULLABLE value) {
   ::google::protobuf::Arena* message_arena = GetArena();
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (message_arena == nullptr) {
@@ -2249,25 +2249,25 @@ inline void GetSkillListResponse::set_allocated_error_message(::TipInfoMessage* 
   }
 
   _impl_.error_message_ = reinterpret_cast<::TipInfoMessage*>(value);
-  // @@protoc_insertion_point(field_set_allocated:GetSkillListResponse.error_message)
+  // @@protoc_insertion_point(field_set_allocated:ListSkillsResponse.error_message)
 }
 
 // .PlayerSkillListComp skill_list = 2;
-inline bool GetSkillListResponse::has_skill_list() const {
+inline bool ListSkillsResponse::has_skill_list() const {
   bool value = (_impl_._has_bits_[0] & 0x00000002u) != 0;
   PROTOBUF_ASSUME(!value || _impl_.skill_list_ != nullptr);
   return value;
 }
-inline const ::PlayerSkillListComp& GetSkillListResponse::_internal_skill_list() const {
+inline const ::PlayerSkillListComp& ListSkillsResponse::_internal_skill_list() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   const ::PlayerSkillListComp* p = _impl_.skill_list_;
   return p != nullptr ? *p : reinterpret_cast<const ::PlayerSkillListComp&>(::_PlayerSkillListComp_default_instance_);
 }
-inline const ::PlayerSkillListComp& GetSkillListResponse::skill_list() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:GetSkillListResponse.skill_list)
+inline const ::PlayerSkillListComp& ListSkillsResponse::skill_list() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:ListSkillsResponse.skill_list)
   return _internal_skill_list();
 }
-inline void GetSkillListResponse::unsafe_arena_set_allocated_skill_list(
+inline void ListSkillsResponse::unsafe_arena_set_allocated_skill_list(
     ::PlayerSkillListComp* PROTOBUF_NULLABLE value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (GetArena() == nullptr) {
@@ -2279,9 +2279,9 @@ inline void GetSkillListResponse::unsafe_arena_set_allocated_skill_list(
   } else {
     _impl_._has_bits_[0] &= ~0x00000002u;
   }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:GetSkillListResponse.skill_list)
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:ListSkillsResponse.skill_list)
 }
-inline ::PlayerSkillListComp* PROTOBUF_NULLABLE GetSkillListResponse::release_skill_list() {
+inline ::PlayerSkillListComp* PROTOBUF_NULLABLE ListSkillsResponse::release_skill_list() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
 
   _impl_._has_bits_[0] &= ~0x00000002u;
@@ -2300,16 +2300,16 @@ inline ::PlayerSkillListComp* PROTOBUF_NULLABLE GetSkillListResponse::release_sk
   }
   return released;
 }
-inline ::PlayerSkillListComp* PROTOBUF_NULLABLE GetSkillListResponse::unsafe_arena_release_skill_list() {
+inline ::PlayerSkillListComp* PROTOBUF_NULLABLE ListSkillsResponse::unsafe_arena_release_skill_list() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:GetSkillListResponse.skill_list)
+  // @@protoc_insertion_point(field_release:ListSkillsResponse.skill_list)
 
   _impl_._has_bits_[0] &= ~0x00000002u;
   ::PlayerSkillListComp* temp = _impl_.skill_list_;
   _impl_.skill_list_ = nullptr;
   return temp;
 }
-inline ::PlayerSkillListComp* PROTOBUF_NONNULL GetSkillListResponse::_internal_mutable_skill_list() {
+inline ::PlayerSkillListComp* PROTOBUF_NONNULL ListSkillsResponse::_internal_mutable_skill_list() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (_impl_.skill_list_ == nullptr) {
     auto* p = ::google::protobuf::Message::DefaultConstruct<::PlayerSkillListComp>(GetArena());
@@ -2317,14 +2317,14 @@ inline ::PlayerSkillListComp* PROTOBUF_NONNULL GetSkillListResponse::_internal_m
   }
   return _impl_.skill_list_;
 }
-inline ::PlayerSkillListComp* PROTOBUF_NONNULL GetSkillListResponse::mutable_skill_list()
+inline ::PlayerSkillListComp* PROTOBUF_NONNULL ListSkillsResponse::mutable_skill_list()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000002u;
   ::PlayerSkillListComp* _msg = _internal_mutable_skill_list();
-  // @@protoc_insertion_point(field_mutable:GetSkillListResponse.skill_list)
+  // @@protoc_insertion_point(field_mutable:ListSkillsResponse.skill_list)
   return _msg;
 }
-inline void GetSkillListResponse::set_allocated_skill_list(::PlayerSkillListComp* PROTOBUF_NULLABLE value) {
+inline void ListSkillsResponse::set_allocated_skill_list(::PlayerSkillListComp* PROTOBUF_NULLABLE value) {
   ::google::protobuf::Arena* message_arena = GetArena();
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (message_arena == nullptr) {
@@ -2342,7 +2342,7 @@ inline void GetSkillListResponse::set_allocated_skill_list(::PlayerSkillListComp
   }
 
   _impl_.skill_list_ = reinterpret_cast<::PlayerSkillListComp*>(value);
-  // @@protoc_insertion_point(field_set_allocated:GetSkillListResponse.skill_list)
+  // @@protoc_insertion_point(field_set_allocated:ListSkillsResponse.skill_list)
 }
 
 #ifdef __GNUC__

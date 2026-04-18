@@ -75,7 +75,7 @@
 74=GateRoutePlayerMessage
 75=ScenePlayerSyncSyncAttribute60Frames
 76=FriendServiceGetFriendList
-77=SceneSkillClientPlayerGetSkillList
+77=SceneSkillClientPlayerListSkills
 78=SceneRouteNodeStringMsg
 79=SceneSceneClientPlayerNotifyEnterScene
 80=LeaseLeaseTimeToLive
