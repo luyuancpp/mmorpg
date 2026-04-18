@@ -953,7 +953,7 @@ func prepareBehaviorClient(host string, port int, account, password string, stat
 		handler.MessageBodyHandler(client, msg)
 	})
 
-	_ = gc.SendRequest(game.SceneSkillClientPlayerListSkillsMessageId, &scene.ListSkillsRequest{})
+	_ = gc.SendRequest(game.SceneSkillClientPlayerGetSkillListMessageId, &scene.GetSkillListRequest{})
 	stats.MsgSent()
 	time.Sleep(1500 * time.Millisecond)
 	return gc, player, nil
