@@ -337,11 +337,9 @@ void HandleTcpNodeMessage(const SessionInfo &session, const RpcClientMessagePtr 
 	auto &registry = tlsNodeContextManager.GetRegistry(handlerMeta.targetNodeType);
 	if (!registry.valid(targetNodeEntity))
 	{
-		LOG_ERROR << "[TCP Node Error] Invalid target node entity: " << entt::to_integral(targetNodeEntity)
-				  << ", message_id: " << request->message_id()
-				  << ", session_id: " << sessionId
-				  << ", node_type: " << handlerMeta.targetNodeType
-				  << ", registry: " << NodeUtils::GetRegistryName(registry);
+		LOG_WARN << "[TCP Node] Scene not ready, dropping message_id: " << request->message_id()
+				 << ", session_id: " << sessionId
+				 << ", node_type: " << handlerMeta.targetNodeType;
 
 		RpcClientSessionHandler::SendTipToClient(conn, kServiceUnavailable);
 		return;
