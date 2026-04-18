@@ -75,4 +75,4 @@ func handleNotifySkillUsed(gc *pkg.GameClient, resp *scene.SkillUsedS2C) {}
 
 func handleNotifySkillInterrupted(gc *pkg.GameClient, resp *scene.SkillInterruptedS2C) {}
 
-func handleGetSkillList(gc *pkg.GameClient, resp *scene.GetSkillListResponse) {}
+func handleListSkills(gc *pkg.GameClient, resp *scene.ListSkillsResponse) {}

@@ -7,25 +7,29 @@ package clientplayerlogin
 import (
 	"context"
 
-	"proto/login"
+	"login/proto/login/proto/login"
 
 	"github.com/zeromicro/go-zero/zrpc"
 	"google.golang.org/grpc"
 )
 
 type (
-	AccountSimplePlayerWrapper = login.AccountSimplePlayerWrapper
-	CreatePlayerRequest        = login.CreatePlayerRequest
-	CreatePlayerResponse       = login.CreatePlayerResponse
-	EnterGameRequest           = login.EnterGameRequest
-	EnterGameResponse          = login.EnterGameResponse
-	LeaveGameRequest           = login.LeaveGameRequest
-	LoginEmptyResponse         = login.LoginEmptyResponse
-	LoginNodeDisconnectRequest = login.LoginNodeDisconnectRequest
-	LoginRequest               = login.LoginRequest
-	LoginResponse              = login.LoginResponse
-	LoginSessionInfo           = login.LoginSessionInfo
-	TestResponse               = login.TestResponse
+	AccountSimplePlayerWrapper        = login.AccountSimplePlayerWrapper
+	AssignGateRequest                 = login.AssignGateRequest
+	AssignGateResponse                = login.AssignGateResponse
+	CreatePlayerRequest               = login.CreatePlayerRequest
+	CreatePlayerResponse              = login.CreatePlayerResponse
+	EnterGameRequest                  = login.EnterGameRequest
+	EnterGameResponse                 = login.EnterGameResponse
+	LeaveGameRequest                  = login.LeaveGameRequest
+	LoginEmptyResponse                = login.LoginEmptyResponse
+	LoginNodeDisconnectRequest        = login.LoginNodeDisconnectRequest
+	LoginRequest                      = login.LoginRequest
+	LoginResponse                     = login.LoginResponse
+	LoginSessionInfo                  = login.LoginSessionInfo
+	RemovePlayersFromAccountsRequest  = login.RemovePlayersFromAccountsRequest
+	RemovePlayersFromAccountsResponse = login.RemovePlayersFromAccountsResponse
+	TestResponse                      = login.TestResponse
 
 	ClientPlayerLogin interface {
 		Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error)

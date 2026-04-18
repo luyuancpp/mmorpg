@@ -7,7 +7,7 @@ import (
 	"robot/logic/gameobject"
 )
 
-func SceneSkillClientPlayerGetSkillListHandler(player *gameobject.Player, response *scene.GetSkillListResponse) {
+func SceneSkillClientPlayerListSkillsHandler(player *gameobject.Player, response *scene.ListSkillsResponse) {
 	if response.SkillList == nil {
 		return
 	}

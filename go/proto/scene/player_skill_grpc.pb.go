@@ -23,7 +23,7 @@ const (
 	SceneSkillClientPlayer_ReleaseSkill_FullMethodName           = "/SceneSkillClientPlayer/ReleaseSkill"
 	SceneSkillClientPlayer_NotifySkillUsed_FullMethodName        = "/SceneSkillClientPlayer/NotifySkillUsed"
 	SceneSkillClientPlayer_NotifySkillInterrupted_FullMethodName = "/SceneSkillClientPlayer/NotifySkillInterrupted"
-	SceneSkillClientPlayer_GetSkillList_FullMethodName           = "/SceneSkillClientPlayer/GetSkillList"
+	SceneSkillClientPlayer_ListSkills_FullMethodName             = "/SceneSkillClientPlayer/ListSkills"
 )
 
 // SceneSkillClientPlayerClient is the client API for SceneSkillClientPlayer service.
@@ -33,7 +33,7 @@ type SceneSkillClientPlayerClient interface {
 	ReleaseSkill(ctx context.Context, in *ReleaseSkillRequest, opts ...grpc.CallOption) (*ReleaseSkillResponse, error)
 	NotifySkillUsed(ctx context.Context, in *SkillUsedS2C, opts ...grpc.CallOption) (*base.Empty, error)
 	NotifySkillInterrupted(ctx context.Context, in *SkillInterruptedS2C, opts ...grpc.CallOption) (*base.Empty, error)
-	GetSkillList(ctx context.Context, in *GetSkillListRequest, opts ...grpc.CallOption) (*GetSkillListResponse, error)
+	ListSkills(ctx context.Context, in *ListSkillsRequest, opts ...grpc.CallOption) (*ListSkillsResponse, error)
 }
 
 type sceneSkillClientPlayerClient struct {
@@ -74,10 +74,10 @@ func (c *sceneSkillClientPlayerClient) NotifySkillInterrupted(ctx context.Contex
 	return out, nil
 }
 
-func (c *sceneSkillClientPlayerClient) GetSkillList(ctx context.Context, in *GetSkillListRequest, opts ...grpc.CallOption) (*GetSkillListResponse, error) {
+func (c *sceneSkillClientPlayerClient) ListSkills(ctx context.Context, in *ListSkillsRequest, opts ...grpc.CallOption) (*ListSkillsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetSkillListResponse)
-	err := c.cc.Invoke(ctx, SceneSkillClientPlayer_GetSkillList_FullMethodName, in, out, cOpts...)
+	out := new(ListSkillsResponse)
+	err := c.cc.Invoke(ctx, SceneSkillClientPlayer_ListSkills_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +91,7 @@ type SceneSkillClientPlayerServer interface {
 	ReleaseSkill(context.Context, *ReleaseSkillRequest) (*ReleaseSkillResponse, error)
 	NotifySkillUsed(context.Context, *SkillUsedS2C) (*base.Empty, error)
 	NotifySkillInterrupted(context.Context, *SkillInterruptedS2C) (*base.Empty, error)
-	GetSkillList(context.Context, *GetSkillListRequest) (*GetSkillListResponse, error)
+	ListSkills(context.Context, *ListSkillsRequest) (*ListSkillsResponse, error)
 	mustEmbedUnimplementedSceneSkillClientPlayerServer()
 }
 
@@ -111,8 +111,8 @@ func (UnimplementedSceneSkillClientPlayerServer) NotifySkillUsed(context.Context
 func (UnimplementedSceneSkillClientPlayerServer) NotifySkillInterrupted(context.Context, *SkillInterruptedS2C) (*base.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method NotifySkillInterrupted not implemented")
 }
-func (UnimplementedSceneSkillClientPlayerServer) GetSkillList(context.Context, *GetSkillListRequest) (*GetSkillListResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method GetSkillList not implemented")
+func (UnimplementedSceneSkillClientPlayerServer) ListSkills(context.Context, *ListSkillsRequest) (*ListSkillsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListSkills not implemented")
 }
 func (UnimplementedSceneSkillClientPlayerServer) mustEmbedUnimplementedSceneSkillClientPlayerServer() {
 }
@@ -190,20 +190,20 @@ func _SceneSkillClientPlayer_NotifySkillInterrupted_Handler(srv interface{}, ctx
 	return interceptor(ctx, in, info, handler)
 }
 
-func _SceneSkillClientPlayer_GetSkillList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetSkillListRequest)
+func _SceneSkillClientPlayer_ListSkills_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListSkillsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(SceneSkillClientPlayerServer).GetSkillList(ctx, in)
+		return srv.(SceneSkillClientPlayerServer).ListSkills(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: SceneSkillClientPlayer_GetSkillList_FullMethodName,
+		FullMethod: SceneSkillClientPlayer_ListSkills_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SceneSkillClientPlayerServer).GetSkillList(ctx, req.(*GetSkillListRequest))
+		return srv.(SceneSkillClientPlayerServer).ListSkills(ctx, req.(*ListSkillsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -228,8 +228,8 @@ var SceneSkillClientPlayer_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _SceneSkillClientPlayer_NotifySkillInterrupted_Handler,
 		},
 		{
-			MethodName: "GetSkillList",
-			Handler:    _SceneSkillClientPlayer_GetSkillList_Handler,
+			MethodName: "ListSkills",
+			Handler:    _SceneSkillClientPlayer_ListSkills_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

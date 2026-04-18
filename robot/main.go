@@ -198,7 +198,7 @@ func runRobotOnce(host string, port int, account string, cfg *config.Config, sta
 	}
 
 	// Now safe to send scene-targeted requests.
-	_ = gc.SendRequest(game.SceneSkillClientPlayerGetSkillListMessageId, &scene.GetSkillListRequest{})
+	_ = gc.SendRequest(game.SceneSkillClientPlayerListSkillsMessageId, &scene.ListSkillsRequest{})
 
 	robotAI := ai.NewRobotAI(gc, stats)
 	robotAI.SetPlayer(player)

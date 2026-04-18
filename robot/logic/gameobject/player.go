@@ -13,7 +13,7 @@ type Player struct {
 	mu             sync.RWMutex
 	entityID       uint64   // own entt entity in scene
 	knownEntities  []uint64 // all visible entities (including self)
-	ownedSkillIDs  []uint32 // skills returned by GetSkillList
+	ownedSkillIDs  []uint32 // skills returned by ListSkills
 	sceneID        uint64
 	sceneConfigID  uint32
 	sceneEnterCnt  int

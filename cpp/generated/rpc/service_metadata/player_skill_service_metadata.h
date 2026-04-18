@@ -15,6 +15,6 @@ constexpr uint32_t SceneSkillClientPlayerNotifySkillInterruptedMessageId = 33;
 constexpr uint32_t SceneSkillClientPlayerNotifySkillInterruptedIndex = 2;
 #define SceneSkillClientPlayerNotifySkillInterruptedMethod  ::SceneSkillClientPlayer_Stub::descriptor()->method(2)
 
-constexpr uint32_t SceneSkillClientPlayerGetSkillListMessageId = 77;
-constexpr uint32_t SceneSkillClientPlayerGetSkillListIndex = 3;
-#define SceneSkillClientPlayerGetSkillListMethod  ::SceneSkillClientPlayer_Stub::descriptor()->method(3)
+constexpr uint32_t SceneSkillClientPlayerListSkillsMessageId = 77;
+constexpr uint32_t SceneSkillClientPlayerListSkillsIndex = 3;
+#define SceneSkillClientPlayerListSkillsMethod  ::SceneSkillClientPlayer_Stub::descriptor()->method(3)

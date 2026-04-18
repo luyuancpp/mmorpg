@@ -40,12 +40,12 @@ message SkillUsedS2C
   uint64 time_stamp = 5;
 }
 
-// Get skill list request
-message GetSkillListRequest {
+// List skills request
+message ListSkillsRequest {
 }
 
-// Get skill list response
-message GetSkillListResponse {
+// List skills response
+message ListSkillsResponse {
   TipInfoMessage error_message = 1;  
   PlayerSkillListComp skill_list = 2;
 }
@@ -57,5 +57,5 @@ service SceneSkillClientPlayer {
   rpc ReleaseSkill (ReleaseSkillRequest) returns (ReleaseSkillResponse);
   rpc NotifySkillUsed (SkillUsedS2C) returns (Empty);
   rpc NotifySkillInterrupted (SkillInterruptedS2C) returns (Empty);
-  rpc GetSkillList (GetSkillListRequest) returns (GetSkillListResponse);
+  rpc ListSkills (ListSkillsRequest) returns (ListSkillsResponse);
 }

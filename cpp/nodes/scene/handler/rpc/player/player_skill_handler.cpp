@@ -54,11 +54,9 @@ void SceneSkillClientPlayerHandler::NotifySkillInterrupted(entt::entity player,c
 
 }
 
-void SceneSkillClientPlayerHandler::GetSkillList(entt::entity player,const ::GetSkillListRequest* request,
-	::GetSkillListResponse* response)
+void SceneSkillClientPlayerHandler::ListSkills(entt::entity player,const ::ListSkillsRequest* request,
+	::ListSkillsResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	response->mutable_skill_list()->CopyFrom(tlsEcs.actorRegistry.get_or_emplace<PlayerSkillListComp>(player));
 ///<<< END WRITING YOUR CODE
-
 }
