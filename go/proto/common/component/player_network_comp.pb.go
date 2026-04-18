@@ -30,7 +30,7 @@ type PlayerSessionSnapshotComp struct {
 	// Session version and idempotency fields
 	SessionVersion uint64 `protobuf:"varint,5,opt,name=session_version,json=sessionVersion,proto3" json:"session_version,omitempty"`
 	TokenExpiryMs  uint64 `protobuf:"varint,6,opt,name=token_expiry_ms,json=tokenExpiryMs,proto3" json:"token_expiry_ms,omitempty"`
-	TokenId        string `protobuf:"bytes,7,opt,name=token_id,json=tokenId,proto3" json:"token_id,omitempty"` // Server-side token ID, Centre only stores ID, not secret
+	TokenId        string `protobuf:"bytes,7,opt,name=token_id,json=tokenId,proto3" json:"token_id,omitempty"` // Server-side token ID (only ID, not secret)
 	LastRequestId  string `protobuf:"bytes,8,opt,name=last_request_id,json=lastRequestId,proto3" json:"last_request_id,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache

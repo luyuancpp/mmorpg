@@ -17,7 +17,6 @@ enum SceneType {
 }
 
 // SceneManager Service: Responsible for scene creation/destruction and player-scene routing.
-// No longer requires Centre — Login/player_locator drive the flow directly.
 service SceneManager {
   // Create a scene on a specific node (implemented by the Scene node)
   rpc CreateScene(CreateSceneRequest) returns (CreateSceneResponse) {}

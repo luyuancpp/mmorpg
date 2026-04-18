@@ -219,7 +219,6 @@ class PlayerMigrationEvent final : public ::google::protobuf::Message
     kFromZoneFieldNumber = 5,
     kToZoneFieldNumber = 6,
     kTimestampFieldNumber = 7,
-    kCentreNodeIdFieldNumber = 8,
   };
   // bytes serialized_player_data = 4;
   void clear_serialized_player_data() ;
@@ -311,21 +310,11 @@ class PlayerMigrationEvent final : public ::google::protobuf::Message
   void _internal_set_timestamp(::int64_t value);
 
   public:
-  // uint32 centre_node_id = 8;
-  void clear_centre_node_id() ;
-  ::uint32_t centre_node_id() const;
-  void set_centre_node_id(::uint32_t value);
-
-  private:
-  ::uint32_t _internal_centre_node_id() const;
-  void _internal_set_centre_node_id(::uint32_t value);
-
-  public:
   // @@protoc_insertion_point(class_scope:PlayerMigrationEvent)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<4, 9,
+  static const ::google::protobuf::internal::TcParseTable<4, 8,
                                    1, 0,
                                    2>
       _table_;
@@ -355,7 +344,6 @@ class PlayerMigrationEvent final : public ::google::protobuf::Message
     ::uint32_t from_zone_;
     ::uint32_t to_zone_;
     ::int64_t timestamp_;
-    ::uint32_t centre_node_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -587,30 +575,6 @@ inline ::int64_t PlayerMigrationEvent::_internal_timestamp() const {
 inline void PlayerMigrationEvent::_internal_set_timestamp(::int64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.timestamp_ = value;
-}
-
-// uint32 centre_node_id = 8;
-inline void PlayerMigrationEvent::clear_centre_node_id() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.centre_node_id_ = 0u;
-  _impl_._has_bits_[0] &= ~0x00000100u;
-}
-inline ::uint32_t PlayerMigrationEvent::centre_node_id() const {
-  // @@protoc_insertion_point(field_get:PlayerMigrationEvent.centre_node_id)
-  return _internal_centre_node_id();
-}
-inline void PlayerMigrationEvent::set_centre_node_id(::uint32_t value) {
-  _internal_set_centre_node_id(value);
-  _impl_._has_bits_[0] |= 0x00000100u;
-  // @@protoc_insertion_point(field_set:PlayerMigrationEvent.centre_node_id)
-}
-inline ::uint32_t PlayerMigrationEvent::_internal_centre_node_id() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.centre_node_id_;
-}
-inline void PlayerMigrationEvent::_internal_set_centre_node_id(::uint32_t value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.centre_node_id_ = value;
 }
 
 // .ChangeSceneInfoComp scene_info = 9;

@@ -67,31 +67,6 @@ struct OnConnect2LoginDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 OnConnect2LoginDefaultTypeInternal _OnConnect2Login_default_instance_;
-
-inline constexpr OnConnect2CentreEvent::Impl_::Impl_(
-    ::_pbi::ConstantInitialized) noexcept
-      : _cached_size_{0},
-        entity_{::uint64_t{0u}} {}
-
-template <typename>
-PROTOBUF_CONSTEXPR OnConnect2CentreEvent::OnConnect2CentreEvent(::_pbi::ConstantInitialized)
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(OnConnect2CentreEvent_class_data_.base()),
-#else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::Message(),
-#endif  // PROTOBUF_CUSTOM_VTABLE
-      _impl_(::_pbi::ConstantInitialized()) {
-}
-struct OnConnect2CentreEventDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR OnConnect2CentreEventDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~OnConnect2CentreEventDefaultTypeInternal() {}
-  union {
-    OnConnect2CentreEvent _instance;
-  };
-};
-
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 OnConnect2CentreEventDefaultTypeInternal _OnConnect2CentreEvent_default_instance_;
 static constexpr const ::_pb::EnumDescriptor *PROTOBUF_NONNULL *PROTOBUF_NULLABLE
     file_level_enum_descriptors_proto_2fcommon_2fevent_2fserver_5fevent_2eproto = nullptr;
 static constexpr const ::_pb::ServiceDescriptor *PROTOBUF_NONNULL *PROTOBUF_NULLABLE
@@ -99,11 +74,6 @@ static constexpr const ::_pb::ServiceDescriptor *PROTOBUF_NONNULL *PROTOBUF_NULL
 const ::uint32_t
     TableStruct_proto_2fcommon_2fevent_2fserver_5fevent_2eproto::offsets[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
         protodesc_cold) = {
-        0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::OnConnect2CentreEvent, _impl_._has_bits_),
-        4, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::OnConnect2CentreEvent, _impl_.entity_),
-        0,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::OnConnect2Login, _impl_._has_bits_),
         4, // hasbit index offset
@@ -114,274 +84,36 @@ const ::uint32_t
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
-        {0, sizeof(::OnConnect2CentreEvent)},
-        {5, sizeof(::OnConnect2Login)},
-        {10, sizeof(::OnServerStart)},
+        {0, sizeof(::OnConnect2Login)},
+        {5, sizeof(::OnServerStart)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
-    &::_OnConnect2CentreEvent_default_instance_._instance,
     &::_OnConnect2Login_default_instance_._instance,
     &::_OnServerStart_default_instance_._instance,
 };
 const char descriptor_table_protodef_proto_2fcommon_2fevent_2fserver_5fevent_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n%proto/common/event/server_event.proto\""
-    "\'\n\025OnConnect2CentreEvent\022\016\n\006entity\030\001 \001(\004"
-    "\"!\n\017OnConnect2Login\022\016\n\006entity\030\001 \001(\004\"\017\n\rO"
-    "nServerStartB\016Z\014common/eventb\006proto3"
+    "!\n\017OnConnect2Login\022\016\n\006entity\030\001 \001(\004\"\017\n\rOn"
+    "ServerStartB\016Z\014common/eventb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fevent_2fserver_5fevent_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fevent_2fserver_5fevent_2eproto = {
     false,
     false,
-    156,
+    115,
     descriptor_table_protodef_proto_2fcommon_2fevent_2fserver_5fevent_2eproto,
     "proto/common/event/server_event.proto",
     &descriptor_table_proto_2fcommon_2fevent_2fserver_5fevent_2eproto_once,
     nullptr,
     0,
-    3,
+    2,
     schemas,
     file_default_instances,
     TableStruct_proto_2fcommon_2fevent_2fserver_5fevent_2eproto::offsets,
     file_level_enum_descriptors_proto_2fcommon_2fevent_2fserver_5fevent_2eproto,
     file_level_service_descriptors_proto_2fcommon_2fevent_2fserver_5fevent_2eproto,
 };
-// ===================================================================
-
-class OnConnect2CentreEvent::_Internal {
- public:
-  using HasBits =
-      decltype(::std::declval<OnConnect2CentreEvent>()._impl_._has_bits_);
-  static constexpr ::int32_t kHasBitsOffset =
-      8 * PROTOBUF_FIELD_OFFSET(OnConnect2CentreEvent, _impl_._has_bits_);
-};
-
-OnConnect2CentreEvent::OnConnect2CentreEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, OnConnect2CentreEvent_class_data_.base()) {
-#else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::Message(arena) {
-#endif  // PROTOBUF_CUSTOM_VTABLE
-  SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:OnConnect2CentreEvent)
-}
-OnConnect2CentreEvent::OnConnect2CentreEvent(
-    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const OnConnect2CentreEvent& from)
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, OnConnect2CentreEvent_class_data_.base()),
-#else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::Message(arena),
-#endif  // PROTOBUF_CUSTOM_VTABLE
-      _impl_(from._impl_) {
-  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
-      from._internal_metadata_);
-}
-PROTOBUF_NDEBUG_INLINE OnConnect2CentreEvent::Impl_::Impl_(
-    ::google::protobuf::internal::InternalVisibility visibility,
-    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
-      : _cached_size_{0} {}
-
-inline void OnConnect2CentreEvent::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
-  new (&_impl_) Impl_(internal_visibility(), arena);
-  _impl_.entity_ = {};
-}
-OnConnect2CentreEvent::~OnConnect2CentreEvent() {
-  // @@protoc_insertion_point(destructor:OnConnect2CentreEvent)
-  SharedDtor(*this);
-}
-inline void OnConnect2CentreEvent::SharedDtor(MessageLite& self) {
-  OnConnect2CentreEvent& this_ = static_cast<OnConnect2CentreEvent&>(self);
-  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
-  ABSL_DCHECK(this_.GetArena() == nullptr);
-  this_._impl_.~Impl_();
-}
-
-inline void* PROTOBUF_NONNULL OnConnect2CentreEvent::PlacementNew_(
-    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
-    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
-  return ::new (mem) OnConnect2CentreEvent(arena);
-}
-constexpr auto OnConnect2CentreEvent::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(OnConnect2CentreEvent),
-                                            alignof(OnConnect2CentreEvent));
-}
-constexpr auto OnConnect2CentreEvent::InternalGenerateClassData_() {
-  return ::google::protobuf::internal::ClassDataFull{
-      ::google::protobuf::internal::ClassData{
-          &_OnConnect2CentreEvent_default_instance_._instance,
-          &_table_.header,
-          nullptr,  // OnDemandRegisterArenaDtor
-          nullptr,  // IsInitialized
-          &OnConnect2CentreEvent::MergeImpl,
-          ::google::protobuf::Message::GetNewImpl<OnConnect2CentreEvent>(),
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-          &OnConnect2CentreEvent::SharedDtor,
-          ::google::protobuf::Message::GetClearImpl<OnConnect2CentreEvent>(), &OnConnect2CentreEvent::ByteSizeLong,
-              &OnConnect2CentreEvent::_InternalSerialize,
-#endif  // PROTOBUF_CUSTOM_VTABLE
-          PROTOBUF_FIELD_OFFSET(OnConnect2CentreEvent, _impl_._cached_size_),
-          false,
-      },
-      &OnConnect2CentreEvent::kDescriptorMethods,
-      &descriptor_table_proto_2fcommon_2fevent_2fserver_5fevent_2eproto,
-      nullptr,  // tracker
-  };
-}
-
-PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
-    ::google::protobuf::internal::ClassDataFull OnConnect2CentreEvent_class_data_ =
-        OnConnect2CentreEvent::InternalGenerateClassData_();
-
-PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-OnConnect2CentreEvent::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&OnConnect2CentreEvent_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(OnConnect2CentreEvent_class_data_.tc_table);
-  return OnConnect2CentreEvent_class_data_.base();
-}
-PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<0, 1, 0, 0, 2>
-OnConnect2CentreEvent::_table_ = {
-  {
-    PROTOBUF_FIELD_OFFSET(OnConnect2CentreEvent, _impl_._has_bits_),
-    0, // no _extensions_
-    1, 0,  // max_field_number, fast_idx_mask
-    offsetof(decltype(_table_), field_lookup_table),
-    4294967294,  // skipmap
-    offsetof(decltype(_table_), field_entries),
-    1,  // num_field_entries
-    0,  // num_aux_entries
-    offsetof(decltype(_table_), field_names),  // no aux_entries
-    OnConnect2CentreEvent_class_data_.base(),
-    nullptr,  // post_loop_handler
-    ::_pbi::TcParser::GenericFallback,  // fallback
-    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::OnConnect2CentreEvent>(),  // to_prefetch
-    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
-  }, {{
-    // uint64 entity = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(OnConnect2CentreEvent, _impl_.entity_), 0>(),
-     {8, 0, 0, PROTOBUF_FIELD_OFFSET(OnConnect2CentreEvent, _impl_.entity_)}},
-  }}, {{
-    65535, 65535
-  }}, {{
-    // uint64 entity = 1;
-    {PROTOBUF_FIELD_OFFSET(OnConnect2CentreEvent, _impl_.entity_), _Internal::kHasBitsOffset + 0, 0,
-    (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
-  }},
-  // no aux_entries
-  {{
-  }},
-};
-PROTOBUF_NOINLINE void OnConnect2CentreEvent::Clear() {
-// @@protoc_insertion_point(message_clear_start:OnConnect2CentreEvent)
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  ::uint32_t cached_has_bits = 0;
-  // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
-
-  _impl_.entity_ = ::uint64_t{0u};
-  _impl_._has_bits_.Clear();
-  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
-}
-
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-::uint8_t* PROTOBUF_NONNULL OnConnect2CentreEvent::_InternalSerialize(
-    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
-    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
-  const OnConnect2CentreEvent& this_ = static_cast<const OnConnect2CentreEvent&>(base);
-#else   // PROTOBUF_CUSTOM_VTABLE
-::uint8_t* PROTOBUF_NONNULL OnConnect2CentreEvent::_InternalSerialize(
-    ::uint8_t* PROTOBUF_NONNULL target,
-    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-  const OnConnect2CentreEvent& this_ = *this;
-#endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(serialize_to_array_start:OnConnect2CentreEvent)
-  ::uint32_t cached_has_bits = 0;
-  (void)cached_has_bits;
-
-  // uint64 entity = 1;
-  if ((this_._impl_._has_bits_[0] & 0x00000001u) != 0) {
-    if (this_._internal_entity() != 0) {
-      target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
-          1, this_._internal_entity(), target);
-    }
-  }
-
-  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
-    target =
-        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
-            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
-  }
-  // @@protoc_insertion_point(serialize_to_array_end:OnConnect2CentreEvent)
-  return target;
-}
-
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-::size_t OnConnect2CentreEvent::ByteSizeLong(const MessageLite& base) {
-  const OnConnect2CentreEvent& this_ = static_cast<const OnConnect2CentreEvent&>(base);
-#else   // PROTOBUF_CUSTOM_VTABLE
-::size_t OnConnect2CentreEvent::ByteSizeLong() const {
-  const OnConnect2CentreEvent& this_ = *this;
-#endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(message_byte_size_start:OnConnect2CentreEvent)
-  ::size_t total_size = 0;
-
-  ::uint32_t cached_has_bits = 0;
-  // Prevent compiler warnings about cached_has_bits being unused
-  (void)cached_has_bits;
-
-   {
-    // uint64 entity = 1;
-    cached_has_bits = this_._impl_._has_bits_[0];
-    if ((cached_has_bits & 0x00000001u) != 0) {
-      if (this_._internal_entity() != 0) {
-        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
-            this_._internal_entity());
-      }
-    }
-  }
-  return this_.MaybeComputeUnknownFieldsSize(total_size,
-                                             &this_._impl_._cached_size_);
-}
-
-void OnConnect2CentreEvent::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<OnConnect2CentreEvent*>(&to_msg);
-  auto& from = static_cast<const OnConnect2CentreEvent&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:OnConnect2CentreEvent)
-  ABSL_DCHECK_NE(&from, _this);
-  ::uint32_t cached_has_bits = 0;
-  (void) cached_has_bits;
-
-  cached_has_bits = from._impl_._has_bits_[0];
-  if ((cached_has_bits & 0x00000001u) != 0) {
-    if (from._internal_entity() != 0) {
-      _this->_impl_.entity_ = from._impl_.entity_;
-    }
-  }
-  _this->_impl_._has_bits_[0] |= cached_has_bits;
-  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
-}
-
-void OnConnect2CentreEvent::CopyFrom(const OnConnect2CentreEvent& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:OnConnect2CentreEvent)
-  if (&from == this) return;
-  Clear();
-  MergeFrom(from);
-}
-
-
-void OnConnect2CentreEvent::InternalSwap(OnConnect2CentreEvent* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
-  using ::std::swap;
-  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
-  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
-  swap(_impl_.entity_, other->_impl_.entity_);
-}
-
-::google::protobuf::Metadata OnConnect2CentreEvent::GetMetadata() const {
-  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
-}
 // ===================================================================
 
 class OnConnect2Login::_Internal {

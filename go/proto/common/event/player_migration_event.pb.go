@@ -31,7 +31,6 @@ type PlayerMigrationEvent struct {
 	FromZone             uint32                         `protobuf:"varint,5,opt,name=from_zone,json=fromZone,proto3" json:"from_zone,omitempty"`
 	ToZone               uint32                         `protobuf:"varint,6,opt,name=to_zone,json=toZone,proto3" json:"to_zone,omitempty"`
 	Timestamp            int64                          `protobuf:"varint,7,opt,name=timestamp,proto3" json:"timestamp,omitempty"` // Event generation time
-	CentreNodeId         uint32                         `protobuf:"varint,8,opt,name=centre_node_id,json=centreNodeId,proto3" json:"centre_node_id,omitempty"`
 	SceneInfo            *component.ChangeSceneInfoComp `protobuf:"bytes,9,opt,name=scene_info,json=sceneInfo,proto3" json:"scene_info,omitempty"`
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
@@ -116,13 +115,6 @@ func (x *PlayerMigrationEvent) GetTimestamp() int64 {
 	return 0
 }
 
-func (x *PlayerMigrationEvent) GetCentreNodeId() uint32 {
-	if x != nil {
-		return x.CentreNodeId
-	}
-	return 0
-}
-
 func (x *PlayerMigrationEvent) GetSceneInfo() *component.ChangeSceneInfoComp {
 	if x != nil {
 		return x.SceneInfo
@@ -134,7 +126,7 @@ var File_proto_common_event_player_migration_event_proto protoreflect.FileDescri
 
 const file_proto_common_event_player_migration_event_proto_rawDesc = "" +
 	"\n" +
-	"/proto/common/event/player_migration_event.proto\x1a'proto/common/component/scene_comp.proto\"\xe8\x02\n" +
+	"/proto/common/event/player_migration_event.proto\x1a'proto/common/component/scene_comp.proto\"\xc2\x02\n" +
 	"\x14PlayerMigrationEvent\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12&\n" +
 	"\x0fsource_scene_id\x18\x02 \x01(\x04R\rsourceSceneId\x12&\n" +
@@ -142,8 +134,7 @@ const file_proto_common_event_player_migration_event_proto_rawDesc = "" +
 	"\x16serialized_player_data\x18\x04 \x01(\fR\x14serializedPlayerData\x12\x1b\n" +
 	"\tfrom_zone\x18\x05 \x01(\rR\bfromZone\x12\x17\n" +
 	"\ato_zone\x18\x06 \x01(\rR\x06toZone\x12\x1c\n" +
-	"\ttimestamp\x18\a \x01(\x03R\ttimestamp\x12$\n" +
-	"\x0ecentre_node_id\x18\b \x01(\rR\fcentreNodeId\x123\n" +
+	"\ttimestamp\x18\a \x01(\x03R\ttimestamp\x123\n" +
 	"\n" +
 	"scene_info\x18\t \x01(\v2\x14.ChangeSceneInfoCompR\tsceneInfoB\x14Z\x12proto/common/eventb\x06proto3"
 

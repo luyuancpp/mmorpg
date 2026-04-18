@@ -21,50 +21,6 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type OnConnect2CentreEvent struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Entity        uint64                 `protobuf:"varint,1,opt,name=entity,proto3" json:"entity,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *OnConnect2CentreEvent) Reset() {
-	*x = OnConnect2CentreEvent{}
-	mi := &file_proto_common_event_server_event_proto_msgTypes[0]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *OnConnect2CentreEvent) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*OnConnect2CentreEvent) ProtoMessage() {}
-
-func (x *OnConnect2CentreEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_common_event_server_event_proto_msgTypes[0]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use OnConnect2CentreEvent.ProtoReflect.Descriptor instead.
-func (*OnConnect2CentreEvent) Descriptor() ([]byte, []int) {
-	return file_proto_common_event_server_event_proto_rawDescGZIP(), []int{0}
-}
-
-func (x *OnConnect2CentreEvent) GetEntity() uint64 {
-	if x != nil {
-		return x.Entity
-	}
-	return 0
-}
-
 type OnConnect2Login struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Entity        uint64                 `protobuf:"varint,1,opt,name=entity,proto3" json:"entity,omitempty"`
@@ -74,7 +30,7 @@ type OnConnect2Login struct {
 
 func (x *OnConnect2Login) Reset() {
 	*x = OnConnect2Login{}
-	mi := &file_proto_common_event_server_event_proto_msgTypes[1]
+	mi := &file_proto_common_event_server_event_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -86,7 +42,7 @@ func (x *OnConnect2Login) String() string {
 func (*OnConnect2Login) ProtoMessage() {}
 
 func (x *OnConnect2Login) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_common_event_server_event_proto_msgTypes[1]
+	mi := &file_proto_common_event_server_event_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -99,7 +55,7 @@ func (x *OnConnect2Login) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OnConnect2Login.ProtoReflect.Descriptor instead.
 func (*OnConnect2Login) Descriptor() ([]byte, []int) {
-	return file_proto_common_event_server_event_proto_rawDescGZIP(), []int{1}
+	return file_proto_common_event_server_event_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *OnConnect2Login) GetEntity() uint64 {
@@ -117,7 +73,7 @@ type OnServerStart struct {
 
 func (x *OnServerStart) Reset() {
 	*x = OnServerStart{}
-	mi := &file_proto_common_event_server_event_proto_msgTypes[2]
+	mi := &file_proto_common_event_server_event_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -129,7 +85,7 @@ func (x *OnServerStart) String() string {
 func (*OnServerStart) ProtoMessage() {}
 
 func (x *OnServerStart) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_common_event_server_event_proto_msgTypes[2]
+	mi := &file_proto_common_event_server_event_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -142,16 +98,14 @@ func (x *OnServerStart) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OnServerStart.ProtoReflect.Descriptor instead.
 func (*OnServerStart) Descriptor() ([]byte, []int) {
-	return file_proto_common_event_server_event_proto_rawDescGZIP(), []int{2}
+	return file_proto_common_event_server_event_proto_rawDescGZIP(), []int{1}
 }
 
 var File_proto_common_event_server_event_proto protoreflect.FileDescriptor
 
 const file_proto_common_event_server_event_proto_rawDesc = "" +
 	"\n" +
-	"%proto/common/event/server_event.proto\"/\n" +
-	"\x15OnConnect2CentreEvent\x12\x16\n" +
-	"\x06entity\x18\x01 \x01(\x04R\x06entity\")\n" +
+	"%proto/common/event/server_event.proto\")\n" +
 	"\x0fOnConnect2Login\x12\x16\n" +
 	"\x06entity\x18\x01 \x01(\x04R\x06entity\"\x0f\n" +
 	"\rOnServerStartB\x14Z\x12proto/common/eventb\x06proto3"
@@ -168,11 +122,10 @@ func file_proto_common_event_server_event_proto_rawDescGZIP() []byte {
 	return file_proto_common_event_server_event_proto_rawDescData
 }
 
-var file_proto_common_event_server_event_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_proto_common_event_server_event_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_proto_common_event_server_event_proto_goTypes = []any{
-	(*OnConnect2CentreEvent)(nil), // 0: OnConnect2CentreEvent
-	(*OnConnect2Login)(nil),       // 1: OnConnect2Login
-	(*OnServerStart)(nil),         // 2: OnServerStart
+	(*OnConnect2Login)(nil), // 0: OnConnect2Login
+	(*OnServerStart)(nil),   // 1: OnServerStart
 }
 var file_proto_common_event_server_event_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -193,7 +146,7 @@ func file_proto_common_event_server_event_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_common_event_server_event_proto_rawDesc), len(file_proto_common_event_server_event_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   3,
+			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

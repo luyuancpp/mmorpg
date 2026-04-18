@@ -9,6 +9,6 @@ message PlayerSessionSnapshotComp {
 	// Session version and idempotency fields
 	uint64 session_version = 5;
 	uint64 token_expiry_ms = 6;
-	string token_id = 7; // Server-side token ID, Centre only stores ID, not secret
+	string token_id = 7; // Server-side token ID (only ID, not secret)
 	string last_request_id = 8;
 }

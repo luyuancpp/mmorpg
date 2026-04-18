@@ -56,6 +56,5 @@ clang-tidy <file.cpp> --config-file=cpp\.clang-tidy
 ```
 
 ## NOTES
-- `nodes/centre/` currently shows handlers/replies in this tree; confirm entrypoint before assuming a standalone `main.cpp` there.
 - `libs/services/scene/` is the highest-value subtree for durable domain fixes.
 - Tests are native binaries/projects under `cpp/tests/`; run the relevant target rather than assuming a single root test runner.

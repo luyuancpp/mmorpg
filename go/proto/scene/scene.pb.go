@@ -27,9 +27,8 @@ type PlayerEnterGameNodeRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	PlayerId      uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
 	SessionId     uint64                 `protobuf:"varint,2,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
-	CentreNodeId  uint32                 `protobuf:"varint,3,opt,name=centre_node_id,json=centreNodeId,proto3" json:"centre_node_id,omitempty"` // deprecated
-	EnterGsType   uint32                 `protobuf:"varint,4,opt,name=enter_gs_type,json=enterGsType,proto3" json:"enter_gs_type,omitempty"`    // LOGIN_FIRST / LOGIN_RECONNECT / LOGIN_REPLACE
-	SceneId       uint64                 `protobuf:"varint,5,opt,name=scene_id,json=sceneId,proto3" json:"scene_id,omitempty"`                  // Target scene instance GUID from SceneManager
+	EnterGsType   uint32                 `protobuf:"varint,4,opt,name=enter_gs_type,json=enterGsType,proto3" json:"enter_gs_type,omitempty"` // LOGIN_FIRST / LOGIN_RECONNECT / LOGIN_REPLACE
+	SceneId       uint64                 `protobuf:"varint,5,opt,name=scene_id,json=sceneId,proto3" json:"scene_id,omitempty"`               // Target scene instance GUID from SceneManager
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -74,13 +73,6 @@ func (x *PlayerEnterGameNodeRequest) GetPlayerId() uint64 {
 func (x *PlayerEnterGameNodeRequest) GetSessionId() uint64 {
 	if x != nil {
 		return x.SessionId
-	}
-	return 0
-}
-
-func (x *PlayerEnterGameNodeRequest) GetCentreNodeId() uint32 {
-	if x != nil {
-		return x.CentreNodeId
 	}
 	return 0
 }
@@ -351,58 +343,6 @@ func (x *RegisterPlayerSessionRequest) GetPlayerId() uint64 {
 	return 0
 }
 
-type Centre2GsEnterSceneRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	PlayerId      uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
-	SceneId       uint64                 `protobuf:"varint,2,opt,name=scene_id,json=sceneId,proto3" json:"scene_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *Centre2GsEnterSceneRequest) Reset() {
-	*x = Centre2GsEnterSceneRequest{}
-	mi := &file_proto_scene_scene_proto_msgTypes[6]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *Centre2GsEnterSceneRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Centre2GsEnterSceneRequest) ProtoMessage() {}
-
-func (x *Centre2GsEnterSceneRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_scene_proto_msgTypes[6]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Centre2GsEnterSceneRequest.ProtoReflect.Descriptor instead.
-func (*Centre2GsEnterSceneRequest) Descriptor() ([]byte, []int) {
-	return file_proto_scene_scene_proto_rawDescGZIP(), []int{6}
-}
-
-func (x *Centre2GsEnterSceneRequest) GetPlayerId() uint64 {
-	if x != nil {
-		return x.PlayerId
-	}
-	return 0
-}
-
-func (x *Centre2GsEnterSceneRequest) GetSceneId() uint64 {
-	if x != nil {
-		return x.SceneId
-	}
-	return 0
-}
-
 type CreateSceneRequest struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
 	ConfigId        uint32                 `protobuf:"varint,1,opt,name=config_id,json=configId,proto3" json:"config_id,omitempty"`
@@ -416,7 +356,7 @@ type CreateSceneRequest struct {
 
 func (x *CreateSceneRequest) Reset() {
 	*x = CreateSceneRequest{}
-	mi := &file_proto_scene_scene_proto_msgTypes[7]
+	mi := &file_proto_scene_scene_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -428,7 +368,7 @@ func (x *CreateSceneRequest) String() string {
 func (*CreateSceneRequest) ProtoMessage() {}
 
 func (x *CreateSceneRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_scene_proto_msgTypes[7]
+	mi := &file_proto_scene_scene_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -441,7 +381,7 @@ func (x *CreateSceneRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateSceneRequest.ProtoReflect.Descriptor instead.
 func (*CreateSceneRequest) Descriptor() ([]byte, []int) {
-	return file_proto_scene_scene_proto_rawDescGZIP(), []int{7}
+	return file_proto_scene_scene_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *CreateSceneRequest) GetConfigId() uint32 {
@@ -488,7 +428,7 @@ type CreateSceneResponse struct {
 
 func (x *CreateSceneResponse) Reset() {
 	*x = CreateSceneResponse{}
-	mi := &file_proto_scene_scene_proto_msgTypes[8]
+	mi := &file_proto_scene_scene_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -500,7 +440,7 @@ func (x *CreateSceneResponse) String() string {
 func (*CreateSceneResponse) ProtoMessage() {}
 
 func (x *CreateSceneResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_scene_proto_msgTypes[8]
+	mi := &file_proto_scene_scene_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -513,7 +453,7 @@ func (x *CreateSceneResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateSceneResponse.ProtoReflect.Descriptor instead.
 func (*CreateSceneResponse) Descriptor() ([]byte, []int) {
-	return file_proto_scene_scene_proto_rawDescGZIP(), []int{8}
+	return file_proto_scene_scene_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *CreateSceneResponse) GetSceneInfo() *SceneInfoComp {
@@ -532,7 +472,7 @@ type DestroySceneRequest struct {
 
 func (x *DestroySceneRequest) Reset() {
 	*x = DestroySceneRequest{}
-	mi := &file_proto_scene_scene_proto_msgTypes[9]
+	mi := &file_proto_scene_scene_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -544,7 +484,7 @@ func (x *DestroySceneRequest) String() string {
 func (*DestroySceneRequest) ProtoMessage() {}
 
 func (x *DestroySceneRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_scene_proto_msgTypes[9]
+	mi := &file_proto_scene_scene_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -557,7 +497,7 @@ func (x *DestroySceneRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DestroySceneRequest.ProtoReflect.Descriptor instead.
 func (*DestroySceneRequest) Descriptor() ([]byte, []int) {
-	return file_proto_scene_scene_proto_rawDescGZIP(), []int{9}
+	return file_proto_scene_scene_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *DestroySceneRequest) GetSceneId() uint64 {
@@ -571,12 +511,11 @@ var File_proto_scene_scene_proto protoreflect.FileDescriptor
 
 const file_proto_scene_scene_proto_rawDesc = "" +
 	"\n" +
-	"\x17proto/scene/scene.proto\x1a\x1bproto/db/proto_option.proto\x1a\x1dproto/common/base/empty.proto\x1a\x1eproto/common/base/common.proto\x1a\x1fproto/common/base/message.proto\x1a\x1cproto/scene/scene_info.proto\"\xbd\x01\n" +
+	"\x17proto/scene/scene.proto\x1a\x1bproto/db/proto_option.proto\x1a\x1dproto/common/base/empty.proto\x1a\x1eproto/common/base/common.proto\x1a\x1fproto/common/base/message.proto\x1a\x1cproto/scene/scene_info.proto\"\x97\x01\n" +
 	"\x1aPlayerEnterGameNodeRequest\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x1d\n" +
 	"\n" +
-	"session_id\x18\x02 \x01(\x04R\tsessionId\x12$\n" +
-	"\x0ecentre_node_id\x18\x03 \x01(\rR\fcentreNodeId\x12\"\n" +
+	"session_id\x18\x02 \x01(\x04R\tsessionId\x12\"\n" +
 	"\renter_gs_type\x18\x04 \x01(\rR\venterGsType\x12\x19\n" +
 	"\bscene_id\x18\x05 \x01(\x04R\asceneId\"|\n" +
 	"!ProcessClientPlayerMessageRequest\x128\n" +
@@ -597,10 +536,7 @@ const file_proto_scene_scene_proto_rawDesc = "" +
 	"\x1cRegisterPlayerSessionRequest\x12\x1d\n" +
 	"\n" +
 	"session_id\x18\x01 \x01(\x04R\tsessionId\x12\x1b\n" +
-	"\tplayer_id\x18\x02 \x01(\x04R\bplayerId\"T\n" +
-	"\x1aCentre2GsEnterSceneRequest\x12\x1b\n" +
-	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x19\n" +
-	"\bscene_id\x18\x02 \x01(\x04R\asceneId\"\xc3\x01\n" +
+	"\tplayer_id\x18\x02 \x01(\x04R\bplayerId\"\xc3\x01\n" +
 	"\x12CreateSceneRequest\x12\x1b\n" +
 	"\tconfig_id\x18\x01 \x01(\rR\bconfigId\x12\x19\n" +
 	"\bscene_id\x18\x02 \x01(\x04R\asceneId\x12(\n" +
@@ -612,18 +548,15 @@ const file_proto_scene_scene_proto_rawDesc = "" +
 	"\n" +
 	"scene_info\x18\x01 \x01(\v2\x0e.SceneInfoCompR\tsceneInfo\"0\n" +
 	"\x13DestroySceneRequest\x12\x19\n" +
-	"\bscene_id\x18\x01 \x01(\x04R\asceneId2\xb9\x06\n" +
+	"\bscene_id\x18\x01 \x01(\x04R\asceneId2\xc3\x05\n" +
 	"\x05Scene\x12:\n" +
 	"\x13PlayerEnterGameNode\x12\x1b.PlayerEnterGameNodeRequest\x1a\x06.Empty\x12J\n" +
 	"\x13SendMessageToPlayer\x12\x18.NodeRouteMessageRequest\x1a\x19.NodeRouteMessageResponse\x12e\n" +
-	"\x1aProcessClientPlayerMessage\x12\".ProcessClientPlayerMessageRequest\x1a#.ProcessClientPlayerMessageResponse\x12A\n" +
-	"\x1dCentreSendToPlayerViaGameNode\x12\x18.NodeRouteMessageRequest\x1a\x06.Empty\x12J\n" +
+	"\x1aProcessClientPlayerMessage\x12\".ProcessClientPlayerMessageRequest\x1a#.ProcessClientPlayerMessageResponse\x12J\n" +
 	"\x13InvokePlayerService\x12\x18.NodeRouteMessageRequest\x1a\x19.NodeRouteMessageResponse\x12A\n" +
 	"\x12RouteNodeStringMsg\x12\x14.RouteMessageRequest\x1a\x15.RouteMessageResponse\x12V\n" +
 	"\x14RoutePlayerStringMsg\x12\x1a.RoutePlayerMessageRequest\x1a\x1b.RoutePlayerMessageResponse\"\x05\x80\x99\xc8\x01\x01\x12<\n" +
-	"\x13UpdateSessionDetail\x12\x1d.RegisterPlayerSessionRequest\x1a\x06.Empty\x121\n" +
-	"\n" +
-	"EnterScene\x12\x1b.Centre2GsEnterSceneRequest\x1a\x06.Empty\x128\n" +
+	"\x13UpdateSessionDetail\x12\x1d.RegisterPlayerSessionRequest\x1a\x06.Empty\x128\n" +
 	"\vCreateScene\x12\x13.CreateSceneRequest\x1a\x14.CreateSceneResponse\x12,\n" +
 	"\fDestroyScene\x12\x14.DestroySceneRequest\x1a\x06.Empty\x12>\n" +
 	"\rNodeHandshake\x12\x15.NodeHandshakeRequest\x1a\x16.NodeHandshakeResponseB\x14\x98\xd4a\x03Z\vproto/scene\x80\x01\x01b\x06proto3"
@@ -640,7 +573,7 @@ func file_proto_scene_scene_proto_rawDescGZIP() []byte {
 	return file_proto_scene_scene_proto_rawDescData
 }
 
-var file_proto_scene_scene_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_proto_scene_scene_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_proto_scene_scene_proto_goTypes = []any{
 	(*PlayerEnterGameNodeRequest)(nil),         // 0: PlayerEnterGameNodeRequest
 	(*ProcessClientPlayerMessageRequest)(nil),  // 1: ProcessClientPlayerMessageRequest
@@ -648,54 +581,49 @@ var file_proto_scene_scene_proto_goTypes = []any{
 	(*SessionDisconnectRequest)(nil),           // 3: SessionDisconnectRequest
 	(*GameNodeConnectRequest)(nil),             // 4: GameNodeConnectRequest
 	(*RegisterPlayerSessionRequest)(nil),       // 5: RegisterPlayerSessionRequest
-	(*Centre2GsEnterSceneRequest)(nil),         // 6: Centre2GsEnterSceneRequest
-	(*CreateSceneRequest)(nil),                 // 7: CreateSceneRequest
-	(*CreateSceneResponse)(nil),                // 8: CreateSceneResponse
-	(*DestroySceneRequest)(nil),                // 9: DestroySceneRequest
-	(*base.MessageContent)(nil),                // 10: MessageContent
-	(*base.NetworkAddress)(nil),                // 11: NetworkAddress
-	(*SceneInfoComp)(nil),                      // 12: SceneInfoComp
-	(*base.NodeRouteMessageRequest)(nil),       // 13: NodeRouteMessageRequest
-	(*base.RouteMessageRequest)(nil),           // 14: RouteMessageRequest
-	(*base.RoutePlayerMessageRequest)(nil),     // 15: RoutePlayerMessageRequest
-	(*base.NodeHandshakeRequest)(nil),          // 16: NodeHandshakeRequest
-	(*base.Empty)(nil),                         // 17: Empty
-	(*base.NodeRouteMessageResponse)(nil),      // 18: NodeRouteMessageResponse
-	(*base.RouteMessageResponse)(nil),          // 19: RouteMessageResponse
-	(*base.RoutePlayerMessageResponse)(nil),    // 20: RoutePlayerMessageResponse
-	(*base.NodeHandshakeResponse)(nil),         // 21: NodeHandshakeResponse
+	(*CreateSceneRequest)(nil),                 // 6: CreateSceneRequest
+	(*CreateSceneResponse)(nil),                // 7: CreateSceneResponse
+	(*DestroySceneRequest)(nil),                // 8: DestroySceneRequest
+	(*base.MessageContent)(nil),                // 9: MessageContent
+	(*base.NetworkAddress)(nil),                // 10: NetworkAddress
+	(*SceneInfoComp)(nil),                      // 11: SceneInfoComp
+	(*base.NodeRouteMessageRequest)(nil),       // 12: NodeRouteMessageRequest
+	(*base.RouteMessageRequest)(nil),           // 13: RouteMessageRequest
+	(*base.RoutePlayerMessageRequest)(nil),     // 14: RoutePlayerMessageRequest
+	(*base.NodeHandshakeRequest)(nil),          // 15: NodeHandshakeRequest
+	(*base.Empty)(nil),                         // 16: Empty
+	(*base.NodeRouteMessageResponse)(nil),      // 17: NodeRouteMessageResponse
+	(*base.RouteMessageResponse)(nil),          // 18: RouteMessageResponse
+	(*base.RoutePlayerMessageResponse)(nil),    // 19: RoutePlayerMessageResponse
+	(*base.NodeHandshakeResponse)(nil),         // 20: NodeHandshakeResponse
 }
 var file_proto_scene_scene_proto_depIdxs = []int32{
-	10, // 0: ProcessClientPlayerMessageRequest.message_content:type_name -> MessageContent
-	10, // 1: ProcessClientPlayerMessageResponse.message_content:type_name -> MessageContent
-	11, // 2: GameNodeConnectRequest.rpc_client:type_name -> NetworkAddress
-	12, // 3: CreateSceneResponse.scene_info:type_name -> SceneInfoComp
+	9,  // 0: ProcessClientPlayerMessageRequest.message_content:type_name -> MessageContent
+	9,  // 1: ProcessClientPlayerMessageResponse.message_content:type_name -> MessageContent
+	10, // 2: GameNodeConnectRequest.rpc_client:type_name -> NetworkAddress
+	11, // 3: CreateSceneResponse.scene_info:type_name -> SceneInfoComp
 	0,  // 4: Scene.PlayerEnterGameNode:input_type -> PlayerEnterGameNodeRequest
-	13, // 5: Scene.SendMessageToPlayer:input_type -> NodeRouteMessageRequest
+	12, // 5: Scene.SendMessageToPlayer:input_type -> NodeRouteMessageRequest
 	1,  // 6: Scene.ProcessClientPlayerMessage:input_type -> ProcessClientPlayerMessageRequest
-	13, // 7: Scene.CentreSendToPlayerViaGameNode:input_type -> NodeRouteMessageRequest
-	13, // 8: Scene.InvokePlayerService:input_type -> NodeRouteMessageRequest
-	14, // 9: Scene.RouteNodeStringMsg:input_type -> RouteMessageRequest
-	15, // 10: Scene.RoutePlayerStringMsg:input_type -> RoutePlayerMessageRequest
-	5,  // 11: Scene.UpdateSessionDetail:input_type -> RegisterPlayerSessionRequest
-	6,  // 12: Scene.EnterScene:input_type -> Centre2GsEnterSceneRequest
-	7,  // 13: Scene.CreateScene:input_type -> CreateSceneRequest
-	9,  // 14: Scene.DestroyScene:input_type -> DestroySceneRequest
-	16, // 15: Scene.NodeHandshake:input_type -> NodeHandshakeRequest
-	17, // 16: Scene.PlayerEnterGameNode:output_type -> Empty
-	18, // 17: Scene.SendMessageToPlayer:output_type -> NodeRouteMessageResponse
-	2,  // 18: Scene.ProcessClientPlayerMessage:output_type -> ProcessClientPlayerMessageResponse
-	17, // 19: Scene.CentreSendToPlayerViaGameNode:output_type -> Empty
-	18, // 20: Scene.InvokePlayerService:output_type -> NodeRouteMessageResponse
-	19, // 21: Scene.RouteNodeStringMsg:output_type -> RouteMessageResponse
-	20, // 22: Scene.RoutePlayerStringMsg:output_type -> RoutePlayerMessageResponse
-	17, // 23: Scene.UpdateSessionDetail:output_type -> Empty
-	17, // 24: Scene.EnterScene:output_type -> Empty
-	8,  // 25: Scene.CreateScene:output_type -> CreateSceneResponse
-	17, // 26: Scene.DestroyScene:output_type -> Empty
-	21, // 27: Scene.NodeHandshake:output_type -> NodeHandshakeResponse
-	16, // [16:28] is the sub-list for method output_type
-	4,  // [4:16] is the sub-list for method input_type
+	12, // 7: Scene.InvokePlayerService:input_type -> NodeRouteMessageRequest
+	13, // 8: Scene.RouteNodeStringMsg:input_type -> RouteMessageRequest
+	14, // 9: Scene.RoutePlayerStringMsg:input_type -> RoutePlayerMessageRequest
+	5,  // 10: Scene.UpdateSessionDetail:input_type -> RegisterPlayerSessionRequest
+	6,  // 11: Scene.CreateScene:input_type -> CreateSceneRequest
+	8,  // 12: Scene.DestroyScene:input_type -> DestroySceneRequest
+	15, // 13: Scene.NodeHandshake:input_type -> NodeHandshakeRequest
+	16, // 14: Scene.PlayerEnterGameNode:output_type -> Empty
+	17, // 15: Scene.SendMessageToPlayer:output_type -> NodeRouteMessageResponse
+	2,  // 16: Scene.ProcessClientPlayerMessage:output_type -> ProcessClientPlayerMessageResponse
+	17, // 17: Scene.InvokePlayerService:output_type -> NodeRouteMessageResponse
+	18, // 18: Scene.RouteNodeStringMsg:output_type -> RouteMessageResponse
+	19, // 19: Scene.RoutePlayerStringMsg:output_type -> RoutePlayerMessageResponse
+	16, // 20: Scene.UpdateSessionDetail:output_type -> Empty
+	7,  // 21: Scene.CreateScene:output_type -> CreateSceneResponse
+	16, // 22: Scene.DestroyScene:output_type -> Empty
+	20, // 23: Scene.NodeHandshake:output_type -> NodeHandshakeResponse
+	14, // [14:24] is the sub-list for method output_type
+	4,  // [4:14] is the sub-list for method input_type
 	4,  // [4:4] is the sub-list for extension type_name
 	4,  // [4:4] is the sub-list for extension extendee
 	0,  // [0:4] is the sub-list for field type_name
@@ -713,7 +641,7 @@ func file_proto_scene_scene_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_scene_scene_proto_rawDesc), len(file_proto_scene_scene_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   10,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

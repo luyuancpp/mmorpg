@@ -36,7 +36,7 @@ type PlayerLocatorClient interface {
 	SetLocation(ctx context.Context, in *PlayerLocation, opts ...grpc.CallOption) (*base.Empty, error)
 	GetLocation(ctx context.Context, in *PlayerId, opts ...grpc.CallOption) (*PlayerLocation, error)
 	MarkOffline(ctx context.Context, in *PlayerId, opts ...grpc.CallOption) (*base.Empty, error)
-	// Session management (replaces Centre)
+	// Session management
 	SetSession(ctx context.Context, in *SetSessionRequest, opts ...grpc.CallOption) (*base.Empty, error)
 	GetSession(ctx context.Context, in *GetSessionRequest, opts ...grpc.CallOption) (*GetSessionResponse, error)
 	SetDisconnecting(ctx context.Context, in *SetDisconnectingRequest, opts ...grpc.CallOption) (*base.Empty, error)
@@ -128,7 +128,7 @@ type PlayerLocatorServer interface {
 	SetLocation(context.Context, *PlayerLocation) (*base.Empty, error)
 	GetLocation(context.Context, *PlayerId) (*PlayerLocation, error)
 	MarkOffline(context.Context, *PlayerId) (*base.Empty, error)
-	// Session management (replaces Centre)
+	// Session management
 	SetSession(context.Context, *SetSessionRequest) (*base.Empty, error)
 	GetSession(context.Context, *GetSessionRequest) (*GetSessionResponse, error)
 	SetDisconnecting(context.Context, *SetDisconnectingRequest) (*base.Empty, error)

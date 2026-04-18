@@ -21,7 +21,7 @@ message PlayerId {
   int64 uid = 1;
 }
 
-// ----- Session management (replaces Centre SessionMap) -----
+// ----- Session management -----
 
 enum PlayerSessionState {
   SESSION_STATE_UNKNOWN = 0;
@@ -99,7 +99,7 @@ service PlayerLocator {
   rpc GetLocation(PlayerId) returns (PlayerLocation);
   rpc MarkOffline(PlayerId) returns (Empty);
 
-  // Session management (replaces Centre)
+  // Session management
   rpc SetSession(SetSessionRequest) returns (Empty);
   rpc GetSession(GetSessionRequest) returns (GetSessionResponse);
   rpc SetDisconnecting(SetDisconnectingRequest) returns (Empty);

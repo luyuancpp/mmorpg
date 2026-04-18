@@ -16,7 +16,6 @@
 15=InterruptCurrentStateEvent
 16=ConditionEvent
 17=OnAcceptedMissionEvent
-18=OnConnect2CentreEvent
 19=OnConnect2Login
 20=OnMissionAwardEvent
 21=OnNodeAddEvent

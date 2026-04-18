@@ -272,31 +272,6 @@ struct ClientRequestDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ClientRequestDefaultTypeInternal _ClientRequest_default_instance_;
 
-inline constexpr RegisterSessionCentreNodeResponse::Impl_::Impl_(
-    ::_pbi::ConstantInitialized) noexcept
-      : _cached_size_{0},
-        session_info_{nullptr} {}
-
-template <typename>
-PROTOBUF_CONSTEXPR RegisterSessionCentreNodeResponse::RegisterSessionCentreNodeResponse(::_pbi::ConstantInitialized)
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(RegisterSessionCentreNodeResponse_class_data_.base()),
-#else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::Message(),
-#endif  // PROTOBUF_CUSTOM_VTABLE
-      _impl_(::_pbi::ConstantInitialized()) {
-}
-struct RegisterSessionCentreNodeResponseDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR RegisterSessionCentreNodeResponseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~RegisterSessionCentreNodeResponseDefaultTypeInternal() {}
-  union {
-    RegisterSessionCentreNodeResponse _instance;
-  };
-};
-
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 RegisterSessionCentreNodeResponseDefaultTypeInternal _RegisterSessionCentreNodeResponse_default_instance_;
-
 inline constexpr RegisterGateNodeSessionResponse::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
@@ -427,32 +402,6 @@ struct RegisterGameNodeRequestDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 RegisterGameNodeRequestDefaultTypeInternal _RegisterGameNodeRequest_default_instance_;
-
-inline constexpr RegisterCentreSessionNodeRequest::Impl_::Impl_(
-    ::_pbi::ConstantInitialized) noexcept
-      : _cached_size_{0},
-        session_info_{nullptr},
-        centre_node_id_{0u} {}
-
-template <typename>
-PROTOBUF_CONSTEXPR RegisterCentreSessionNodeRequest::RegisterCentreSessionNodeRequest(::_pbi::ConstantInitialized)
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(RegisterCentreSessionNodeRequest_class_data_.base()),
-#else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::Message(),
-#endif  // PROTOBUF_CUSTOM_VTABLE
-      _impl_(::_pbi::ConstantInitialized()) {
-}
-struct RegisterCentreSessionNodeRequestDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR RegisterCentreSessionNodeRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~RegisterCentreSessionNodeRequestDefaultTypeInternal() {}
-  union {
-    RegisterCentreSessionNodeRequest _instance;
-  };
-};
-
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 RegisterCentreSessionNodeRequestDefaultTypeInternal _RegisterCentreSessionNodeRequest_default_instance_;
 
 inline constexpr ProtoFieldCheckerTestPB::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
@@ -984,18 +933,6 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::RegisterGateNodeSessionResponse, _impl_.session_info_),
         0,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::RegisterCentreSessionNodeRequest, _impl_._has_bits_),
-        5, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::RegisterCentreSessionNodeRequest, _impl_.session_info_),
-        PROTOBUF_FIELD_OFFSET(::RegisterCentreSessionNodeRequest, _impl_.centre_node_id_),
-        0,
-        1,
-        0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::RegisterSessionCentreNodeResponse, _impl_._has_bits_),
-        4, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::RegisterSessionCentreNodeResponse, _impl_.session_info_),
-        0,
-        0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::GateSessionDisconnectRequest, _impl_._has_bits_),
         4, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::GateSessionDisconnectRequest, _impl_.session_info_),
@@ -1164,26 +1101,24 @@ static const ::_pbi::MigrationSchema
         {63, sizeof(::RegisterGameNodeSessionRequest)},
         {70, sizeof(::RegisterGameNodeSessionResponse)},
         {75, sizeof(::RegisterGateNodeSessionResponse)},
-        {80, sizeof(::RegisterCentreSessionNodeRequest)},
-        {87, sizeof(::RegisterSessionCentreNodeResponse)},
-        {92, sizeof(::GateSessionDisconnectRequest)},
-        {97, sizeof(::RouteMessageRequest)},
-        {110, sizeof(::RouteMessageResponse)},
-        {123, sizeof(::RoutePlayerMessageRequest)},
-        {132, sizeof(::RoutePlayerMessageResponse)},
-        {141, sizeof(::RegisterGameNodeRequest)},
-        {154, sizeof(::RegisterGateNodeRequest)},
-        {161, sizeof(::UnregisterGameNodeRequest)},
-        {166, sizeof(::ProtoFieldCheckerTestSubPB)},
-        {168, sizeof(::ProtoFieldCheckerTestPB)},
-        {173, sizeof(::MyProtoMessage)},
-        {186, sizeof(::MyNestedMessage)},
-        {193, sizeof(::ClientRequest)},
-        {206, sizeof(::NodeHandshakeRequest)},
-        {215, sizeof(::NodeHandshakeResponse)},
-        {222, sizeof(::GateTokenPayload)},
-        {231, sizeof(::ClientTokenVerifyRequest)},
-        {238, sizeof(::ClientTokenVerifyResponse)},
+        {80, sizeof(::GateSessionDisconnectRequest)},
+        {85, sizeof(::RouteMessageRequest)},
+        {98, sizeof(::RouteMessageResponse)},
+        {111, sizeof(::RoutePlayerMessageRequest)},
+        {120, sizeof(::RoutePlayerMessageResponse)},
+        {129, sizeof(::RegisterGameNodeRequest)},
+        {142, sizeof(::RegisterGateNodeRequest)},
+        {149, sizeof(::UnregisterGameNodeRequest)},
+        {154, sizeof(::ProtoFieldCheckerTestSubPB)},
+        {156, sizeof(::ProtoFieldCheckerTestPB)},
+        {161, sizeof(::MyProtoMessage)},
+        {174, sizeof(::MyNestedMessage)},
+        {181, sizeof(::ClientRequest)},
+        {194, sizeof(::NodeHandshakeRequest)},
+        {203, sizeof(::NodeHandshakeResponse)},
+        {210, sizeof(::GateTokenPayload)},
+        {219, sizeof(::ClientTokenVerifyRequest)},
+        {226, sizeof(::ClientTokenVerifyResponse)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::_RoutingNodeInfo_default_instance_._instance,
@@ -1198,8 +1133,6 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::_RegisterGameNodeSessionRequest_default_instance_._instance,
     &::_RegisterGameNodeSessionResponse_default_instance_._instance,
     &::_RegisterGateNodeSessionResponse_default_instance_._instance,
-    &::_RegisterCentreSessionNodeRequest_default_instance_._instance,
-    &::_RegisterSessionCentreNodeResponse_default_instance_._instance,
     &::_GateSessionDisconnectRequest_default_instance_._instance,
     &::_RouteMessageRequest_default_instance_._instance,
     &::_RouteMessageResponse_default_instance_._instance,
@@ -1249,55 +1182,51 @@ const char descriptor_table_protodef_proto_2fcommon_2fbase_2fmessage_2eproto[] A
     "ameNodeSessionResponse\022%\n\014session_info\030\001"
     " \001(\0132\017.SessionDetails\"H\n\037RegisterGateNod"
     "eSessionResponse\022%\n\014session_info\030\001 \001(\0132\017"
-    ".SessionDetails\"a\n RegisterCentreSession"
-    "NodeRequest\022%\n\014session_info\030\001 \001(\0132\017.Sess"
-    "ionDetails\022\026\n\016centre_node_id\030\002 \001(\r\"J\n!Re"
-    "gisterSessionCentreNodeResponse\022%\n\014sessi"
-    "on_info\030\001 \001(\0132\017.SessionDetails\"E\n\034GateSe"
-    "ssionDisconnectRequest\022%\n\014session_info\030\001"
-    " \001(\0132\017.SessionDetails\"}\n\023RouteMessageReq"
-    "uest\022\014\n\004body\030\001 \001(\014\022%\n\013route_nodes\030\002 \003(\0132"
-    "\020.RoutingNodeInfo\022\022\n\nsession_id\030\003 \001(\004\022\n\n"
-    "\002id\030\004 \001(\004\022\021\n\tis_client\030\005 \001(\010\"~\n\024RouteMes"
-    "sageResponse\022\014\n\004body\030\001 \001(\014\022%\n\013route_node"
-    "s\030\002 \003(\0132\020.RoutingNodeInfo\022\022\n\nsession_id\030"
-    "\003 \001(\004\022\n\n\002id\030\004 \001(\004\022\021\n\tis_client\030\005 \001(\010\"q\n\031"
-    "RoutePlayerMessageRequest\022\014\n\004body\030\001 \001(\014\022"
-    "\034\n\tnode_list\030\002 \003(\0132\t.NodeInfo\022(\n\013player_"
-    "info\030\003 \001(\0132\023.PlayerInfoExternal\"r\n\032Route"
-    "PlayerMessageResponse\022\014\n\004body\030\001 \001(\014\022\034\n\tn"
-    "ode_list\030\002 \003(\0132\t.NodeInfo\022(\n\013player_info"
-    "\030\003 \001(\0132\023.PlayerInfoExternal\"\250\001\n\027Register"
-    "GameNodeRequest\022#\n\nrpc_client\030\001 \001(\0132\017.Ne"
-    "tworkAddress\022#\n\nrpc_server\030\002 \001(\0132\017.Netwo"
-    "rkAddress\022\025\n\rscene_node_id\030\003 \001(\r\022\023\n\013serv"
-    "er_type\030\004 \001(\r\022\027\n\017scene_node_type\030\005 \001(\r\"T"
-    "\n\027RegisterGateNodeRequest\022#\n\nrpc_client\030"
-    "\001 \001(\0132\017.NetworkAddress\022\024\n\014gate_node_id\030\002"
-    " \001(\r\"2\n\031UnregisterGameNodeRequest\022\025\n\rsce"
-    "ne_node_id\030\001 \001(\r\"+\n\032ProtoFieldCheckerTes"
-    "tSubPB\022\r\n\005items\030\001 \003(\t\"K\n\027ProtoFieldCheck"
-    "erTestPB\0220\n\013sub_message\030\001 \001(\0132\033.ProtoFie"
-    "ldCheckerTestSubPB\"\256\001\n\016MyProtoMessage\022\032\n"
-    "\022single_int32_field\030\001 \001(\005\022\032\n\022single_int6"
-    "4_field\030\002 \001(\003\022\034\n\024repeated_int32_field\030\003 "
-    "\003(\005\022\034\n\024repeated_int64_field\030\004 \003(\003\022(\n\016nes"
-    "ted_message\030\005 \001(\0132\020.MyNestedMessage\"I\n\017M"
-    "yNestedMessage\022\032\n\022nested_int32_field\030\001 \001"
-    "(\005\022\032\n\022nested_int64_field\030\002 \001(\003\"^\n\rClient"
-    "Request\022\n\n\002id\030\001 \001(\004\022\017\n\007service\030\002 \001(\t\022\016\n\006"
-    "method\030\003 \001(\t\022\014\n\004body\030\004 \001(\014\022\022\n\nmessage_id"
-    "\030\005 \001(\r\"T\n\024NodeHandshakeRequest\022\017\n\007versio"
-    "n\030\001 \001(\t\022\r\n\005token\030\002 \001(\t\022\034\n\tself_node\030\003 \001("
-    "\0132\t.NodeInfo\"]\n\025NodeHandshakeResponse\022&\n"
-    "\rerror_message\030\001 \001(\0132\017.TipInfoMessage\022\034\n"
-    "\tpeer_node\030\002 \001(\0132\t.NodeInfo\"S\n\020GateToken"
-    "Payload\022\024\n\014gate_node_id\030\001 \001(\r\022\017\n\007zone_id"
-    "\030\002 \001(\r\022\030\n\020expire_timestamp\030\003 \001(\003\">\n\030Clie"
-    "ntTokenVerifyRequest\022\017\n\007payload\030\001 \001(\014\022\021\n"
-    "\tsignature\030\002 \001(\014\";\n\031ClientTokenVerifyRes"
-    "ponse\022\017\n\007success\030\001 \001(\010\022\r\n\005error\030\002 \001(\tB\rZ"
-    "\013common/baseb\006proto3"
+    ".SessionDetails\"E\n\034GateSessionDisconnect"
+    "Request\022%\n\014session_info\030\001 \001(\0132\017.SessionD"
+    "etails\"}\n\023RouteMessageRequest\022\014\n\004body\030\001 "
+    "\001(\014\022%\n\013route_nodes\030\002 \003(\0132\020.RoutingNodeIn"
+    "fo\022\022\n\nsession_id\030\003 \001(\004\022\n\n\002id\030\004 \001(\004\022\021\n\tis"
+    "_client\030\005 \001(\010\"~\n\024RouteMessageResponse\022\014\n"
+    "\004body\030\001 \001(\014\022%\n\013route_nodes\030\002 \003(\0132\020.Routi"
+    "ngNodeInfo\022\022\n\nsession_id\030\003 \001(\004\022\n\n\002id\030\004 \001"
+    "(\004\022\021\n\tis_client\030\005 \001(\010\"q\n\031RoutePlayerMess"
+    "ageRequest\022\014\n\004body\030\001 \001(\014\022\034\n\tnode_list\030\002 "
+    "\003(\0132\t.NodeInfo\022(\n\013player_info\030\003 \001(\0132\023.Pl"
+    "ayerInfoExternal\"r\n\032RoutePlayerMessageRe"
+    "sponse\022\014\n\004body\030\001 \001(\014\022\034\n\tnode_list\030\002 \003(\0132"
+    "\t.NodeInfo\022(\n\013player_info\030\003 \001(\0132\023.Player"
+    "InfoExternal\"\250\001\n\027RegisterGameNodeRequest"
+    "\022#\n\nrpc_client\030\001 \001(\0132\017.NetworkAddress\022#\n"
+    "\nrpc_server\030\002 \001(\0132\017.NetworkAddress\022\025\n\rsc"
+    "ene_node_id\030\003 \001(\r\022\023\n\013server_type\030\004 \001(\r\022\027"
+    "\n\017scene_node_type\030\005 \001(\r\"T\n\027RegisterGateN"
+    "odeRequest\022#\n\nrpc_client\030\001 \001(\0132\017.Network"
+    "Address\022\024\n\014gate_node_id\030\002 \001(\r\"2\n\031Unregis"
+    "terGameNodeRequest\022\025\n\rscene_node_id\030\001 \001("
+    "\r\"+\n\032ProtoFieldCheckerTestSubPB\022\r\n\005items"
+    "\030\001 \003(\t\"K\n\027ProtoFieldCheckerTestPB\0220\n\013sub"
+    "_message\030\001 \001(\0132\033.ProtoFieldCheckerTestSu"
+    "bPB\"\256\001\n\016MyProtoMessage\022\032\n\022single_int32_f"
+    "ield\030\001 \001(\005\022\032\n\022single_int64_field\030\002 \001(\003\022\034"
+    "\n\024repeated_int32_field\030\003 \003(\005\022\034\n\024repeated"
+    "_int64_field\030\004 \003(\003\022(\n\016nested_message\030\005 \001"
+    "(\0132\020.MyNestedMessage\"I\n\017MyNestedMessage\022"
+    "\032\n\022nested_int32_field\030\001 \001(\005\022\032\n\022nested_in"
+    "t64_field\030\002 \001(\003\"^\n\rClientRequest\022\n\n\002id\030\001"
+    " \001(\004\022\017\n\007service\030\002 \001(\t\022\016\n\006method\030\003 \001(\t\022\014\n"
+    "\004body\030\004 \001(\014\022\022\n\nmessage_id\030\005 \001(\r\"T\n\024NodeH"
+    "andshakeRequest\022\017\n\007version\030\001 \001(\t\022\r\n\005toke"
+    "n\030\002 \001(\t\022\034\n\tself_node\030\003 \001(\0132\t.NodeInfo\"]\n"
+    "\025NodeHandshakeResponse\022&\n\rerror_message\030"
+    "\001 \001(\0132\017.TipInfoMessage\022\034\n\tpeer_node\030\002 \001("
+    "\0132\t.NodeInfo\"S\n\020GateTokenPayload\022\024\n\014gate"
+    "_node_id\030\001 \001(\r\022\017\n\007zone_id\030\002 \001(\r\022\030\n\020expir"
+    "e_timestamp\030\003 \001(\003\">\n\030ClientTokenVerifyRe"
+    "quest\022\017\n\007payload\030\001 \001(\014\022\021\n\tsignature\030\002 \001("
+    "\014\";\n\031ClientTokenVerifyResponse\022\017\n\007succes"
+    "s\030\001 \001(\010\022\r\n\005error\030\002 \001(\tB\rZ\013common/baseb\006p"
+    "roto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fcommon_2fbase_2fmessage_2eproto_deps[3] = {
@@ -1309,13 +1238,13 @@ static ::absl::once_flag descriptor_table_proto_2fcommon_2fbase_2fmessage_2eprot
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fbase_2fmessage_2eproto = {
     false,
     false,
-    3060,
+    2885,
     descriptor_table_protodef_proto_2fcommon_2fbase_2fmessage_2eproto,
     "proto/common/base/message.proto",
     &descriptor_table_proto_2fcommon_2fbase_2fmessage_2eproto_once,
     descriptor_table_proto_2fcommon_2fbase_2fmessage_2eproto_deps,
     3,
-    32,
+    30,
     schemas,
     file_default_instances,
     TableStruct_proto_2fcommon_2fbase_2fmessage_2eproto::offsets,
@@ -4859,576 +4788,6 @@ void RegisterGateNodeSessionResponse::InternalSwap(RegisterGateNodeSessionRespon
 }
 
 ::google::protobuf::Metadata RegisterGateNodeSessionResponse::GetMetadata() const {
-  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
-}
-// ===================================================================
-
-class RegisterCentreSessionNodeRequest::_Internal {
- public:
-  using HasBits =
-      decltype(::std::declval<RegisterCentreSessionNodeRequest>()._impl_._has_bits_);
-  static constexpr ::int32_t kHasBitsOffset =
-      8 * PROTOBUF_FIELD_OFFSET(RegisterCentreSessionNodeRequest, _impl_._has_bits_);
-};
-
-void RegisterCentreSessionNodeRequest::clear_session_info() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  if (_impl_.session_info_ != nullptr) _impl_.session_info_->Clear();
-  _impl_._has_bits_[0] &= ~0x00000001u;
-}
-RegisterCentreSessionNodeRequest::RegisterCentreSessionNodeRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, RegisterCentreSessionNodeRequest_class_data_.base()) {
-#else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::Message(arena) {
-#endif  // PROTOBUF_CUSTOM_VTABLE
-  SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:RegisterCentreSessionNodeRequest)
-}
-PROTOBUF_NDEBUG_INLINE RegisterCentreSessionNodeRequest::Impl_::Impl_(
-    ::google::protobuf::internal::InternalVisibility visibility,
-    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    const ::RegisterCentreSessionNodeRequest& from_msg)
-      : _has_bits_{from._has_bits_},
-        _cached_size_{0} {}
-
-RegisterCentreSessionNodeRequest::RegisterCentreSessionNodeRequest(
-    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
-    const RegisterCentreSessionNodeRequest& from)
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, RegisterCentreSessionNodeRequest_class_data_.base()) {
-#else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::Message(arena) {
-#endif  // PROTOBUF_CUSTOM_VTABLE
-  RegisterCentreSessionNodeRequest* const _this = this;
-  (void)_this;
-  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
-      from._internal_metadata_);
-  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
-  ::uint32_t cached_has_bits = _impl_._has_bits_[0];
-  _impl_.session_info_ = ((cached_has_bits & 0x00000001u) != 0)
-                ? ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.session_info_)
-                : nullptr;
-  _impl_.centre_node_id_ = from._impl_.centre_node_id_;
-
-  // @@protoc_insertion_point(copy_constructor:RegisterCentreSessionNodeRequest)
-}
-PROTOBUF_NDEBUG_INLINE RegisterCentreSessionNodeRequest::Impl_::Impl_(
-    ::google::protobuf::internal::InternalVisibility visibility,
-    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
-      : _cached_size_{0} {}
-
-inline void RegisterCentreSessionNodeRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
-  new (&_impl_) Impl_(internal_visibility(), arena);
-  ::memset(reinterpret_cast<char *>(&_impl_) +
-               offsetof(Impl_, session_info_),
-           0,
-           offsetof(Impl_, centre_node_id_) -
-               offsetof(Impl_, session_info_) +
-               sizeof(Impl_::centre_node_id_));
-}
-RegisterCentreSessionNodeRequest::~RegisterCentreSessionNodeRequest() {
-  // @@protoc_insertion_point(destructor:RegisterCentreSessionNodeRequest)
-  SharedDtor(*this);
-}
-inline void RegisterCentreSessionNodeRequest::SharedDtor(MessageLite& self) {
-  RegisterCentreSessionNodeRequest& this_ = static_cast<RegisterCentreSessionNodeRequest&>(self);
-  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
-  ABSL_DCHECK(this_.GetArena() == nullptr);
-  delete this_._impl_.session_info_;
-  this_._impl_.~Impl_();
-}
-
-inline void* PROTOBUF_NONNULL RegisterCentreSessionNodeRequest::PlacementNew_(
-    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
-    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
-  return ::new (mem) RegisterCentreSessionNodeRequest(arena);
-}
-constexpr auto RegisterCentreSessionNodeRequest::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(RegisterCentreSessionNodeRequest),
-                                            alignof(RegisterCentreSessionNodeRequest));
-}
-constexpr auto RegisterCentreSessionNodeRequest::InternalGenerateClassData_() {
-  return ::google::protobuf::internal::ClassDataFull{
-      ::google::protobuf::internal::ClassData{
-          &_RegisterCentreSessionNodeRequest_default_instance_._instance,
-          &_table_.header,
-          nullptr,  // OnDemandRegisterArenaDtor
-          nullptr,  // IsInitialized
-          &RegisterCentreSessionNodeRequest::MergeImpl,
-          ::google::protobuf::Message::GetNewImpl<RegisterCentreSessionNodeRequest>(),
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-          &RegisterCentreSessionNodeRequest::SharedDtor,
-          ::google::protobuf::Message::GetClearImpl<RegisterCentreSessionNodeRequest>(), &RegisterCentreSessionNodeRequest::ByteSizeLong,
-              &RegisterCentreSessionNodeRequest::_InternalSerialize,
-#endif  // PROTOBUF_CUSTOM_VTABLE
-          PROTOBUF_FIELD_OFFSET(RegisterCentreSessionNodeRequest, _impl_._cached_size_),
-          false,
-      },
-      &RegisterCentreSessionNodeRequest::kDescriptorMethods,
-      &descriptor_table_proto_2fcommon_2fbase_2fmessage_2eproto,
-      nullptr,  // tracker
-  };
-}
-
-PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
-    ::google::protobuf::internal::ClassDataFull RegisterCentreSessionNodeRequest_class_data_ =
-        RegisterCentreSessionNodeRequest::InternalGenerateClassData_();
-
-PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-RegisterCentreSessionNodeRequest::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&RegisterCentreSessionNodeRequest_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(RegisterCentreSessionNodeRequest_class_data_.tc_table);
-  return RegisterCentreSessionNodeRequest_class_data_.base();
-}
-PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<1, 2, 1, 0, 2>
-RegisterCentreSessionNodeRequest::_table_ = {
-  {
-    PROTOBUF_FIELD_OFFSET(RegisterCentreSessionNodeRequest, _impl_._has_bits_),
-    0, // no _extensions_
-    2, 8,  // max_field_number, fast_idx_mask
-    offsetof(decltype(_table_), field_lookup_table),
-    4294967292,  // skipmap
-    offsetof(decltype(_table_), field_entries),
-    2,  // num_field_entries
-    1,  // num_aux_entries
-    offsetof(decltype(_table_), aux_entries),
-    RegisterCentreSessionNodeRequest_class_data_.base(),
-    nullptr,  // post_loop_handler
-    ::_pbi::TcParser::GenericFallback,  // fallback
-    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::RegisterCentreSessionNodeRequest>(),  // to_prefetch
-    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
-  }, {{
-    // uint32 centre_node_id = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RegisterCentreSessionNodeRequest, _impl_.centre_node_id_), 1>(),
-     {16, 1, 0, PROTOBUF_FIELD_OFFSET(RegisterCentreSessionNodeRequest, _impl_.centre_node_id_)}},
-    // .SessionDetails session_info = 1;
-    {::_pbi::TcParser::FastMtS1,
-     {10, 0, 0, PROTOBUF_FIELD_OFFSET(RegisterCentreSessionNodeRequest, _impl_.session_info_)}},
-  }}, {{
-    65535, 65535
-  }}, {{
-    // .SessionDetails session_info = 1;
-    {PROTOBUF_FIELD_OFFSET(RegisterCentreSessionNodeRequest, _impl_.session_info_), _Internal::kHasBitsOffset + 0, 0,
-    (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
-    // uint32 centre_node_id = 2;
-    {PROTOBUF_FIELD_OFFSET(RegisterCentreSessionNodeRequest, _impl_.centre_node_id_), _Internal::kHasBitsOffset + 1, 0,
-    (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
-  }},
-  {{
-      {::_pbi::TcParser::GetTable<::SessionDetails>()},
-  }},
-  {{
-  }},
-};
-PROTOBUF_NOINLINE void RegisterCentreSessionNodeRequest::Clear() {
-// @@protoc_insertion_point(message_clear_start:RegisterCentreSessionNodeRequest)
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  ::uint32_t cached_has_bits = 0;
-  // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
-
-  cached_has_bits = _impl_._has_bits_[0];
-  if ((cached_has_bits & 0x00000001u) != 0) {
-    ABSL_DCHECK(_impl_.session_info_ != nullptr);
-    _impl_.session_info_->Clear();
-  }
-  _impl_.centre_node_id_ = 0u;
-  _impl_._has_bits_.Clear();
-  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
-}
-
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-::uint8_t* PROTOBUF_NONNULL RegisterCentreSessionNodeRequest::_InternalSerialize(
-    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
-    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
-  const RegisterCentreSessionNodeRequest& this_ = static_cast<const RegisterCentreSessionNodeRequest&>(base);
-#else   // PROTOBUF_CUSTOM_VTABLE
-::uint8_t* PROTOBUF_NONNULL RegisterCentreSessionNodeRequest::_InternalSerialize(
-    ::uint8_t* PROTOBUF_NONNULL target,
-    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-  const RegisterCentreSessionNodeRequest& this_ = *this;
-#endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(serialize_to_array_start:RegisterCentreSessionNodeRequest)
-  ::uint32_t cached_has_bits = 0;
-  (void)cached_has_bits;
-
-  cached_has_bits = this_._impl_._has_bits_[0];
-  // .SessionDetails session_info = 1;
-  if ((cached_has_bits & 0x00000001u) != 0) {
-    target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
-        1, *this_._impl_.session_info_, this_._impl_.session_info_->GetCachedSize(), target,
-        stream);
-  }
-
-  // uint32 centre_node_id = 2;
-  if ((cached_has_bits & 0x00000002u) != 0) {
-    if (this_._internal_centre_node_id() != 0) {
-      target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-          2, this_._internal_centre_node_id(), target);
-    }
-  }
-
-  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
-    target =
-        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
-            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
-  }
-  // @@protoc_insertion_point(serialize_to_array_end:RegisterCentreSessionNodeRequest)
-  return target;
-}
-
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-::size_t RegisterCentreSessionNodeRequest::ByteSizeLong(const MessageLite& base) {
-  const RegisterCentreSessionNodeRequest& this_ = static_cast<const RegisterCentreSessionNodeRequest&>(base);
-#else   // PROTOBUF_CUSTOM_VTABLE
-::size_t RegisterCentreSessionNodeRequest::ByteSizeLong() const {
-  const RegisterCentreSessionNodeRequest& this_ = *this;
-#endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(message_byte_size_start:RegisterCentreSessionNodeRequest)
-  ::size_t total_size = 0;
-
-  ::uint32_t cached_has_bits = 0;
-  // Prevent compiler warnings about cached_has_bits being unused
-  (void)cached_has_bits;
-
-  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
-  cached_has_bits = this_._impl_._has_bits_[0];
-  if ((cached_has_bits & 0x00000003u) != 0) {
-    // .SessionDetails session_info = 1;
-    if ((cached_has_bits & 0x00000001u) != 0) {
-      total_size += 1 +
-                    ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.session_info_);
-    }
-    // uint32 centre_node_id = 2;
-    if ((cached_has_bits & 0x00000002u) != 0) {
-      if (this_._internal_centre_node_id() != 0) {
-        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
-            this_._internal_centre_node_id());
-      }
-    }
-  }
-  return this_.MaybeComputeUnknownFieldsSize(total_size,
-                                             &this_._impl_._cached_size_);
-}
-
-void RegisterCentreSessionNodeRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<RegisterCentreSessionNodeRequest*>(&to_msg);
-  auto& from = static_cast<const RegisterCentreSessionNodeRequest&>(from_msg);
-  ::google::protobuf::Arena* arena = _this->GetArena();
-  // @@protoc_insertion_point(class_specific_merge_from_start:RegisterCentreSessionNodeRequest)
-  ABSL_DCHECK_NE(&from, _this);
-  ::uint32_t cached_has_bits = 0;
-  (void) cached_has_bits;
-
-  cached_has_bits = from._impl_._has_bits_[0];
-  if ((cached_has_bits & 0x00000003u) != 0) {
-    if ((cached_has_bits & 0x00000001u) != 0) {
-      ABSL_DCHECK(from._impl_.session_info_ != nullptr);
-      if (_this->_impl_.session_info_ == nullptr) {
-        _this->_impl_.session_info_ = ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.session_info_);
-      } else {
-        _this->_impl_.session_info_->MergeFrom(*from._impl_.session_info_);
-      }
-    }
-    if ((cached_has_bits & 0x00000002u) != 0) {
-      if (from._internal_centre_node_id() != 0) {
-        _this->_impl_.centre_node_id_ = from._impl_.centre_node_id_;
-      }
-    }
-  }
-  _this->_impl_._has_bits_[0] |= cached_has_bits;
-  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
-}
-
-void RegisterCentreSessionNodeRequest::CopyFrom(const RegisterCentreSessionNodeRequest& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:RegisterCentreSessionNodeRequest)
-  if (&from == this) return;
-  Clear();
-  MergeFrom(from);
-}
-
-
-void RegisterCentreSessionNodeRequest::InternalSwap(RegisterCentreSessionNodeRequest* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
-  using ::std::swap;
-  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
-  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
-  ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(RegisterCentreSessionNodeRequest, _impl_.centre_node_id_)
-      + sizeof(RegisterCentreSessionNodeRequest::_impl_.centre_node_id_)
-      - PROTOBUF_FIELD_OFFSET(RegisterCentreSessionNodeRequest, _impl_.session_info_)>(
-          reinterpret_cast<char*>(&_impl_.session_info_),
-          reinterpret_cast<char*>(&other->_impl_.session_info_));
-}
-
-::google::protobuf::Metadata RegisterCentreSessionNodeRequest::GetMetadata() const {
-  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
-}
-// ===================================================================
-
-class RegisterSessionCentreNodeResponse::_Internal {
- public:
-  using HasBits =
-      decltype(::std::declval<RegisterSessionCentreNodeResponse>()._impl_._has_bits_);
-  static constexpr ::int32_t kHasBitsOffset =
-      8 * PROTOBUF_FIELD_OFFSET(RegisterSessionCentreNodeResponse, _impl_._has_bits_);
-};
-
-void RegisterSessionCentreNodeResponse::clear_session_info() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  if (_impl_.session_info_ != nullptr) _impl_.session_info_->Clear();
-  _impl_._has_bits_[0] &= ~0x00000001u;
-}
-RegisterSessionCentreNodeResponse::RegisterSessionCentreNodeResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, RegisterSessionCentreNodeResponse_class_data_.base()) {
-#else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::Message(arena) {
-#endif  // PROTOBUF_CUSTOM_VTABLE
-  SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:RegisterSessionCentreNodeResponse)
-}
-PROTOBUF_NDEBUG_INLINE RegisterSessionCentreNodeResponse::Impl_::Impl_(
-    ::google::protobuf::internal::InternalVisibility visibility,
-    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    const ::RegisterSessionCentreNodeResponse& from_msg)
-      : _has_bits_{from._has_bits_},
-        _cached_size_{0} {}
-
-RegisterSessionCentreNodeResponse::RegisterSessionCentreNodeResponse(
-    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
-    const RegisterSessionCentreNodeResponse& from)
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, RegisterSessionCentreNodeResponse_class_data_.base()) {
-#else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::Message(arena) {
-#endif  // PROTOBUF_CUSTOM_VTABLE
-  RegisterSessionCentreNodeResponse* const _this = this;
-  (void)_this;
-  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
-      from._internal_metadata_);
-  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
-  ::uint32_t cached_has_bits = _impl_._has_bits_[0];
-  _impl_.session_info_ = ((cached_has_bits & 0x00000001u) != 0)
-                ? ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.session_info_)
-                : nullptr;
-
-  // @@protoc_insertion_point(copy_constructor:RegisterSessionCentreNodeResponse)
-}
-PROTOBUF_NDEBUG_INLINE RegisterSessionCentreNodeResponse::Impl_::Impl_(
-    ::google::protobuf::internal::InternalVisibility visibility,
-    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
-      : _cached_size_{0} {}
-
-inline void RegisterSessionCentreNodeResponse::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
-  new (&_impl_) Impl_(internal_visibility(), arena);
-  _impl_.session_info_ = {};
-}
-RegisterSessionCentreNodeResponse::~RegisterSessionCentreNodeResponse() {
-  // @@protoc_insertion_point(destructor:RegisterSessionCentreNodeResponse)
-  SharedDtor(*this);
-}
-inline void RegisterSessionCentreNodeResponse::SharedDtor(MessageLite& self) {
-  RegisterSessionCentreNodeResponse& this_ = static_cast<RegisterSessionCentreNodeResponse&>(self);
-  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
-  ABSL_DCHECK(this_.GetArena() == nullptr);
-  delete this_._impl_.session_info_;
-  this_._impl_.~Impl_();
-}
-
-inline void* PROTOBUF_NONNULL RegisterSessionCentreNodeResponse::PlacementNew_(
-    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
-    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
-  return ::new (mem) RegisterSessionCentreNodeResponse(arena);
-}
-constexpr auto RegisterSessionCentreNodeResponse::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(RegisterSessionCentreNodeResponse),
-                                            alignof(RegisterSessionCentreNodeResponse));
-}
-constexpr auto RegisterSessionCentreNodeResponse::InternalGenerateClassData_() {
-  return ::google::protobuf::internal::ClassDataFull{
-      ::google::protobuf::internal::ClassData{
-          &_RegisterSessionCentreNodeResponse_default_instance_._instance,
-          &_table_.header,
-          nullptr,  // OnDemandRegisterArenaDtor
-          nullptr,  // IsInitialized
-          &RegisterSessionCentreNodeResponse::MergeImpl,
-          ::google::protobuf::Message::GetNewImpl<RegisterSessionCentreNodeResponse>(),
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-          &RegisterSessionCentreNodeResponse::SharedDtor,
-          ::google::protobuf::Message::GetClearImpl<RegisterSessionCentreNodeResponse>(), &RegisterSessionCentreNodeResponse::ByteSizeLong,
-              &RegisterSessionCentreNodeResponse::_InternalSerialize,
-#endif  // PROTOBUF_CUSTOM_VTABLE
-          PROTOBUF_FIELD_OFFSET(RegisterSessionCentreNodeResponse, _impl_._cached_size_),
-          false,
-      },
-      &RegisterSessionCentreNodeResponse::kDescriptorMethods,
-      &descriptor_table_proto_2fcommon_2fbase_2fmessage_2eproto,
-      nullptr,  // tracker
-  };
-}
-
-PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
-    ::google::protobuf::internal::ClassDataFull RegisterSessionCentreNodeResponse_class_data_ =
-        RegisterSessionCentreNodeResponse::InternalGenerateClassData_();
-
-PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-RegisterSessionCentreNodeResponse::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&RegisterSessionCentreNodeResponse_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(RegisterSessionCentreNodeResponse_class_data_.tc_table);
-  return RegisterSessionCentreNodeResponse_class_data_.base();
-}
-PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<0, 1, 1, 0, 2>
-RegisterSessionCentreNodeResponse::_table_ = {
-  {
-    PROTOBUF_FIELD_OFFSET(RegisterSessionCentreNodeResponse, _impl_._has_bits_),
-    0, // no _extensions_
-    1, 0,  // max_field_number, fast_idx_mask
-    offsetof(decltype(_table_), field_lookup_table),
-    4294967294,  // skipmap
-    offsetof(decltype(_table_), field_entries),
-    1,  // num_field_entries
-    1,  // num_aux_entries
-    offsetof(decltype(_table_), aux_entries),
-    RegisterSessionCentreNodeResponse_class_data_.base(),
-    nullptr,  // post_loop_handler
-    ::_pbi::TcParser::GenericFallback,  // fallback
-    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::RegisterSessionCentreNodeResponse>(),  // to_prefetch
-    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
-  }, {{
-    // .SessionDetails session_info = 1;
-    {::_pbi::TcParser::FastMtS1,
-     {10, 0, 0, PROTOBUF_FIELD_OFFSET(RegisterSessionCentreNodeResponse, _impl_.session_info_)}},
-  }}, {{
-    65535, 65535
-  }}, {{
-    // .SessionDetails session_info = 1;
-    {PROTOBUF_FIELD_OFFSET(RegisterSessionCentreNodeResponse, _impl_.session_info_), _Internal::kHasBitsOffset + 0, 0,
-    (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
-  }},
-  {{
-      {::_pbi::TcParser::GetTable<::SessionDetails>()},
-  }},
-  {{
-  }},
-};
-PROTOBUF_NOINLINE void RegisterSessionCentreNodeResponse::Clear() {
-// @@protoc_insertion_point(message_clear_start:RegisterSessionCentreNodeResponse)
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  ::uint32_t cached_has_bits = 0;
-  // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
-
-  cached_has_bits = _impl_._has_bits_[0];
-  if ((cached_has_bits & 0x00000001u) != 0) {
-    ABSL_DCHECK(_impl_.session_info_ != nullptr);
-    _impl_.session_info_->Clear();
-  }
-  _impl_._has_bits_.Clear();
-  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
-}
-
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-::uint8_t* PROTOBUF_NONNULL RegisterSessionCentreNodeResponse::_InternalSerialize(
-    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
-    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
-  const RegisterSessionCentreNodeResponse& this_ = static_cast<const RegisterSessionCentreNodeResponse&>(base);
-#else   // PROTOBUF_CUSTOM_VTABLE
-::uint8_t* PROTOBUF_NONNULL RegisterSessionCentreNodeResponse::_InternalSerialize(
-    ::uint8_t* PROTOBUF_NONNULL target,
-    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-  const RegisterSessionCentreNodeResponse& this_ = *this;
-#endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(serialize_to_array_start:RegisterSessionCentreNodeResponse)
-  ::uint32_t cached_has_bits = 0;
-  (void)cached_has_bits;
-
-  cached_has_bits = this_._impl_._has_bits_[0];
-  // .SessionDetails session_info = 1;
-  if ((cached_has_bits & 0x00000001u) != 0) {
-    target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
-        1, *this_._impl_.session_info_, this_._impl_.session_info_->GetCachedSize(), target,
-        stream);
-  }
-
-  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
-    target =
-        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
-            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
-  }
-  // @@protoc_insertion_point(serialize_to_array_end:RegisterSessionCentreNodeResponse)
-  return target;
-}
-
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-::size_t RegisterSessionCentreNodeResponse::ByteSizeLong(const MessageLite& base) {
-  const RegisterSessionCentreNodeResponse& this_ = static_cast<const RegisterSessionCentreNodeResponse&>(base);
-#else   // PROTOBUF_CUSTOM_VTABLE
-::size_t RegisterSessionCentreNodeResponse::ByteSizeLong() const {
-  const RegisterSessionCentreNodeResponse& this_ = *this;
-#endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(message_byte_size_start:RegisterSessionCentreNodeResponse)
-  ::size_t total_size = 0;
-
-  ::uint32_t cached_has_bits = 0;
-  // Prevent compiler warnings about cached_has_bits being unused
-  (void)cached_has_bits;
-
-   {
-    // .SessionDetails session_info = 1;
-    cached_has_bits = this_._impl_._has_bits_[0];
-    if ((cached_has_bits & 0x00000001u) != 0) {
-      total_size += 1 +
-                    ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.session_info_);
-    }
-  }
-  return this_.MaybeComputeUnknownFieldsSize(total_size,
-                                             &this_._impl_._cached_size_);
-}
-
-void RegisterSessionCentreNodeResponse::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<RegisterSessionCentreNodeResponse*>(&to_msg);
-  auto& from = static_cast<const RegisterSessionCentreNodeResponse&>(from_msg);
-  ::google::protobuf::Arena* arena = _this->GetArena();
-  // @@protoc_insertion_point(class_specific_merge_from_start:RegisterSessionCentreNodeResponse)
-  ABSL_DCHECK_NE(&from, _this);
-  ::uint32_t cached_has_bits = 0;
-  (void) cached_has_bits;
-
-  cached_has_bits = from._impl_._has_bits_[0];
-  if ((cached_has_bits & 0x00000001u) != 0) {
-    ABSL_DCHECK(from._impl_.session_info_ != nullptr);
-    if (_this->_impl_.session_info_ == nullptr) {
-      _this->_impl_.session_info_ = ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.session_info_);
-    } else {
-      _this->_impl_.session_info_->MergeFrom(*from._impl_.session_info_);
-    }
-  }
-  _this->_impl_._has_bits_[0] |= cached_has_bits;
-  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
-}
-
-void RegisterSessionCentreNodeResponse::CopyFrom(const RegisterSessionCentreNodeResponse& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:RegisterSessionCentreNodeResponse)
-  if (&from == this) return;
-  Clear();
-  MergeFrom(from);
-}
-
-
-void RegisterSessionCentreNodeResponse::InternalSwap(RegisterSessionCentreNodeResponse* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
-  using ::std::swap;
-  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
-  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
-  swap(_impl_.session_info_, other->_impl_.session_info_);
-}
-
-::google::protobuf::Metadata RegisterSessionCentreNodeResponse::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // ===================================================================

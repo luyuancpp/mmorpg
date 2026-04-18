@@ -58,10 +58,6 @@ struct TableStruct_proto_2fscene_2fscene_2eproto {
 extern "C" {
 extern const ::google::protobuf::internal::DescriptorTable descriptor_table_proto_2fscene_2fscene_2eproto;
 }  // extern "C"
-class Centre2GsEnterSceneRequest;
-struct Centre2GsEnterSceneRequestDefaultTypeInternal;
-extern Centre2GsEnterSceneRequestDefaultTypeInternal _Centre2GsEnterSceneRequest_default_instance_;
-extern const ::google::protobuf::internal::ClassDataFull Centre2GsEnterSceneRequest_class_data_;
 class CreateSceneRequest;
 struct CreateSceneRequestDefaultTypeInternal;
 extern CreateSceneRequestDefaultTypeInternal _CreateSceneRequest_default_instance_;
@@ -648,9 +644,8 @@ class PlayerEnterGameNodeRequest final : public ::google::protobuf::Message
   enum : int {
     kPlayerIdFieldNumber = 1,
     kSessionIdFieldNumber = 2,
-    kCentreNodeIdFieldNumber = 3,
-    kEnterGsTypeFieldNumber = 4,
     kSceneIdFieldNumber = 5,
+    kEnterGsTypeFieldNumber = 4,
   };
   // uint64 player_id = 1;
   void clear_player_id() ;
@@ -672,14 +667,14 @@ class PlayerEnterGameNodeRequest final : public ::google::protobuf::Message
   void _internal_set_session_id(::uint64_t value);
 
   public:
-  // uint32 centre_node_id = 3;
-  void clear_centre_node_id() ;
-  ::uint32_t centre_node_id() const;
-  void set_centre_node_id(::uint32_t value);
+  // uint64 scene_id = 5;
+  void clear_scene_id() ;
+  ::uint64_t scene_id() const;
+  void set_scene_id(::uint64_t value);
 
   private:
-  ::uint32_t _internal_centre_node_id() const;
-  void _internal_set_centre_node_id(::uint32_t value);
+  ::uint64_t _internal_scene_id() const;
+  void _internal_set_scene_id(::uint64_t value);
 
   public:
   // uint32 enter_gs_type = 4;
@@ -692,21 +687,11 @@ class PlayerEnterGameNodeRequest final : public ::google::protobuf::Message
   void _internal_set_enter_gs_type(::uint32_t value);
 
   public:
-  // uint64 scene_id = 5;
-  void clear_scene_id() ;
-  ::uint64_t scene_id() const;
-  void set_scene_id(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_scene_id() const;
-  void _internal_set_scene_id(::uint64_t value);
-
-  public:
   // @@protoc_insertion_point(class_scope:PlayerEnterGameNodeRequest)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<3, 5,
+  static const ::google::protobuf::internal::TcParseTable<3, 4,
                                    0, 0,
                                    2>
       _table_;
@@ -730,9 +715,8 @@ class PlayerEnterGameNodeRequest final : public ::google::protobuf::Message
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::uint64_t player_id_;
     ::uint64_t session_id_;
-    ::uint32_t centre_node_id_;
-    ::uint32_t enter_gs_type_;
     ::uint64_t scene_id_;
+    ::uint32_t enter_gs_type_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -797,7 +781,7 @@ class DestroySceneRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const DestroySceneRequest*>(
         &_DestroySceneRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 9;
+  static constexpr int kIndexInFileMessages = 8;
   friend void swap(DestroySceneRequest& a, DestroySceneRequest& b) { a.Swap(&b); }
   inline void Swap(DestroySceneRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -988,7 +972,7 @@ class CreateSceneRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const CreateSceneRequest*>(
         &_CreateSceneRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 7;
+  static constexpr int kIndexInFileMessages = 6;
   friend void swap(CreateSceneRequest& a, CreateSceneRequest& b) { a.Swap(&b); }
   inline void Swap(CreateSceneRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -1179,209 +1163,6 @@ class CreateSceneRequest final : public ::google::protobuf::Message
 };
 
 extern const ::google::protobuf::internal::ClassDataFull CreateSceneRequest_class_data_;
-// -------------------------------------------------------------------
-
-class Centre2GsEnterSceneRequest final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:Centre2GsEnterSceneRequest) */ {
- public:
-  inline Centre2GsEnterSceneRequest() : Centre2GsEnterSceneRequest(nullptr) {}
-  ~Centre2GsEnterSceneRequest() PROTOBUF_FINAL;
-
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(Centre2GsEnterSceneRequest* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
-    SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(Centre2GsEnterSceneRequest));
-  }
-#endif
-
-  template <typename = void>
-  explicit PROTOBUF_CONSTEXPR Centre2GsEnterSceneRequest(::google::protobuf::internal::ConstantInitialized);
-
-  inline Centre2GsEnterSceneRequest(const Centre2GsEnterSceneRequest& from) : Centre2GsEnterSceneRequest(nullptr, from) {}
-  inline Centre2GsEnterSceneRequest(Centre2GsEnterSceneRequest&& from) noexcept
-      : Centre2GsEnterSceneRequest(nullptr, ::std::move(from)) {}
-  inline Centre2GsEnterSceneRequest& operator=(const Centre2GsEnterSceneRequest& from) {
-    CopyFrom(from);
-    return *this;
-  }
-  inline Centre2GsEnterSceneRequest& operator=(Centre2GsEnterSceneRequest&& from) noexcept {
-    if (this == &from) return *this;
-    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
-      InternalSwap(&from);
-    } else {
-      CopyFrom(from);
-    }
-    return *this;
-  }
-
-  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
-  }
-  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
-  }
-
-  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
-    return GetDescriptor();
-  }
-  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
-    return default_instance().GetMetadata().descriptor;
-  }
-  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
-    return default_instance().GetMetadata().reflection;
-  }
-  static const Centre2GsEnterSceneRequest& default_instance() {
-    return *reinterpret_cast<const Centre2GsEnterSceneRequest*>(
-        &_Centre2GsEnterSceneRequest_default_instance_);
-  }
-  static constexpr int kIndexInFileMessages = 6;
-  friend void swap(Centre2GsEnterSceneRequest& a, Centre2GsEnterSceneRequest& b) { a.Swap(&b); }
-  inline void Swap(Centre2GsEnterSceneRequest* PROTOBUF_NONNULL other) {
-    if (other == this) return;
-    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
-      InternalSwap(other);
-    } else {
-      ::google::protobuf::internal::GenericSwap(this, other);
-    }
-  }
-  void UnsafeArenaSwap(Centre2GsEnterSceneRequest* PROTOBUF_NONNULL other) {
-    if (other == this) return;
-    ABSL_DCHECK(GetArena() == other->GetArena());
-    InternalSwap(other);
-  }
-
-  // implements Message ----------------------------------------------
-
-  Centre2GsEnterSceneRequest* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<Centre2GsEnterSceneRequest>(arena);
-  }
-  using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const Centre2GsEnterSceneRequest& from);
-  using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const Centre2GsEnterSceneRequest& from) { Centre2GsEnterSceneRequest::MergeImpl(*this, from); }
-
-  private:
-  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
-                        const ::google::protobuf::MessageLite& from_msg);
-
-  public:
-  bool IsInitialized() const {
-    return true;
-  }
-  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
-  #if defined(PROTOBUF_CUSTOM_VTABLE)
-  private:
-  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
-  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
-      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
-      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
-
-  public:
-  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
-  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
-      ::uint8_t* PROTOBUF_NONNULL target,
-      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-    return _InternalSerialize(*this, target, stream);
-  }
-  #else   // PROTOBUF_CUSTOM_VTABLE
-  ::size_t ByteSizeLong() const final;
-  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
-      ::uint8_t* PROTOBUF_NONNULL target,
-      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
-  #endif  // PROTOBUF_CUSTOM_VTABLE
-  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
-
-  private:
-  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  static void SharedDtor(MessageLite& self);
-  void InternalSwap(Centre2GsEnterSceneRequest* PROTOBUF_NONNULL other);
- private:
-  template <typename T>
-  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "Centre2GsEnterSceneRequest"; }
-
- protected:
-  explicit Centre2GsEnterSceneRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  Centre2GsEnterSceneRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Centre2GsEnterSceneRequest& from);
-  Centre2GsEnterSceneRequest(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, Centre2GsEnterSceneRequest&& from) noexcept
-      : Centre2GsEnterSceneRequest(arena) {
-    *this = ::std::move(from);
-  }
-  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
-  static void* PROTOBUF_NONNULL PlacementNew_(
-      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  static constexpr auto InternalNewImpl_();
-
- public:
-  static constexpr auto InternalGenerateClassData_();
-
-  ::google::protobuf::Metadata GetMetadata() const;
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-  enum : int {
-    kPlayerIdFieldNumber = 1,
-    kSceneIdFieldNumber = 2,
-  };
-  // uint64 player_id = 1;
-  void clear_player_id() ;
-  ::uint64_t player_id() const;
-  void set_player_id(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_player_id() const;
-  void _internal_set_player_id(::uint64_t value);
-
-  public:
-  // uint64 scene_id = 2;
-  void clear_scene_id() ;
-  ::uint64_t scene_id() const;
-  void set_scene_id(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_scene_id() const;
-  void _internal_set_scene_id(::uint64_t value);
-
-  public:
-  // @@protoc_insertion_point(class_scope:Centre2GsEnterSceneRequest)
- private:
-  class _Internal;
-  friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<1, 2,
-                                   0, 0,
-                                   2>
-      _table_;
-
-  friend class ::google::protobuf::MessageLite;
-  friend class ::google::protobuf::Arena;
-  template <typename T>
-  friend class ::google::protobuf::Arena::InternalHelper;
-  using InternalArenaConstructable_ = void;
-  using DestructorSkippable_ = void;
-  struct Impl_ {
-    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
-    inline explicit Impl_(
-        ::google::protobuf::internal::InternalVisibility visibility,
-        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-    inline explicit Impl_(
-        ::google::protobuf::internal::InternalVisibility visibility,
-        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-        const Centre2GsEnterSceneRequest& from_msg);
-    ::google::protobuf::internal::HasBits<1> _has_bits_;
-    ::google::protobuf::internal::CachedSize _cached_size_;
-    ::uint64_t player_id_;
-    ::uint64_t scene_id_;
-    PROTOBUF_TSAN_DECLARE_MEMBER
-  };
-  union { Impl_ _impl_; };
-  friend struct ::TableStruct_proto_2fscene_2fscene_2eproto;
-};
-
-extern const ::google::protobuf::internal::ClassDataFull Centre2GsEnterSceneRequest_class_data_;
 // -------------------------------------------------------------------
 
 class GameNodeConnectRequest final : public ::google::protobuf::Message
@@ -2063,7 +1844,7 @@ class CreateSceneResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const CreateSceneResponse*>(
         &_CreateSceneResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 8;
+  static constexpr int kIndexInFileMessages = 7;
   friend void swap(CreateSceneResponse& a, CreateSceneResponse& b) { a.Swap(&b); }
   inline void Swap(CreateSceneResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -2234,10 +2015,6 @@ class Scene : public ::google::protobuf::Service {
                         const ::ProcessClientPlayerMessageRequest* PROTOBUF_NONNULL request,
                         ::ProcessClientPlayerMessageResponse* PROTOBUF_NONNULL response,
                         ::google::protobuf::Closure* PROTOBUF_NULLABLE done);
-  virtual void CentreSendToPlayerViaGameNode(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
-                        const ::NodeRouteMessageRequest* PROTOBUF_NONNULL request,
-                        ::Empty* PROTOBUF_NONNULL response,
-                        ::google::protobuf::Closure* PROTOBUF_NULLABLE done);
   virtual void InvokePlayerService(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
                         const ::NodeRouteMessageRequest* PROTOBUF_NONNULL request,
                         ::NodeRouteMessageResponse* PROTOBUF_NONNULL response,
@@ -2252,10 +2029,6 @@ class Scene : public ::google::protobuf::Service {
                         ::google::protobuf::Closure* PROTOBUF_NULLABLE done);
   virtual void UpdateSessionDetail(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
                         const ::RegisterPlayerSessionRequest* PROTOBUF_NONNULL request,
-                        ::Empty* PROTOBUF_NONNULL response,
-                        ::google::protobuf::Closure* PROTOBUF_NULLABLE done);
-  virtual void EnterScene(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
-                        const ::Centre2GsEnterSceneRequest* PROTOBUF_NONNULL request,
                         ::Empty* PROTOBUF_NONNULL response,
                         ::google::protobuf::Closure* PROTOBUF_NULLABLE done);
   virtual void CreateScene(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
@@ -2314,10 +2087,6 @@ class Scene_Stub final : public Scene {
                         const ::ProcessClientPlayerMessageRequest* PROTOBUF_NONNULL request,
                         ::ProcessClientPlayerMessageResponse* PROTOBUF_NONNULL response,
                         ::google::protobuf::Closure* PROTOBUF_NULLABLE done) override;
-  void CentreSendToPlayerViaGameNode(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
-                        const ::NodeRouteMessageRequest* PROTOBUF_NONNULL request,
-                        ::Empty* PROTOBUF_NONNULL response,
-                        ::google::protobuf::Closure* PROTOBUF_NULLABLE done) override;
   void InvokePlayerService(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
                         const ::NodeRouteMessageRequest* PROTOBUF_NONNULL request,
                         ::NodeRouteMessageResponse* PROTOBUF_NONNULL response,
@@ -2332,10 +2101,6 @@ class Scene_Stub final : public Scene {
                         ::google::protobuf::Closure* PROTOBUF_NULLABLE done) override;
   void UpdateSessionDetail(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
                         const ::RegisterPlayerSessionRequest* PROTOBUF_NONNULL request,
-                        ::Empty* PROTOBUF_NONNULL response,
-                        ::google::protobuf::Closure* PROTOBUF_NULLABLE done) override;
-  void EnterScene(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
-                        const ::Centre2GsEnterSceneRequest* PROTOBUF_NONNULL request,
                         ::Empty* PROTOBUF_NONNULL response,
                         ::google::protobuf::Closure* PROTOBUF_NULLABLE done) override;
   void CreateScene(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
@@ -2418,30 +2183,6 @@ inline void PlayerEnterGameNodeRequest::_internal_set_session_id(::uint64_t valu
   _impl_.session_id_ = value;
 }
 
-// uint32 centre_node_id = 3;
-inline void PlayerEnterGameNodeRequest::clear_centre_node_id() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.centre_node_id_ = 0u;
-  _impl_._has_bits_[0] &= ~0x00000004u;
-}
-inline ::uint32_t PlayerEnterGameNodeRequest::centre_node_id() const {
-  // @@protoc_insertion_point(field_get:PlayerEnterGameNodeRequest.centre_node_id)
-  return _internal_centre_node_id();
-}
-inline void PlayerEnterGameNodeRequest::set_centre_node_id(::uint32_t value) {
-  _internal_set_centre_node_id(value);
-  _impl_._has_bits_[0] |= 0x00000004u;
-  // @@protoc_insertion_point(field_set:PlayerEnterGameNodeRequest.centre_node_id)
-}
-inline ::uint32_t PlayerEnterGameNodeRequest::_internal_centre_node_id() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.centre_node_id_;
-}
-inline void PlayerEnterGameNodeRequest::_internal_set_centre_node_id(::uint32_t value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.centre_node_id_ = value;
-}
-
 // uint32 enter_gs_type = 4;
 inline void PlayerEnterGameNodeRequest::clear_enter_gs_type() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
@@ -2470,7 +2211,7 @@ inline void PlayerEnterGameNodeRequest::_internal_set_enter_gs_type(::uint32_t v
 inline void PlayerEnterGameNodeRequest::clear_scene_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.scene_id_ = ::uint64_t{0u};
-  _impl_._has_bits_[0] &= ~0x00000010u;
+  _impl_._has_bits_[0] &= ~0x00000004u;
 }
 inline ::uint64_t PlayerEnterGameNodeRequest::scene_id() const {
   // @@protoc_insertion_point(field_get:PlayerEnterGameNodeRequest.scene_id)
@@ -2478,7 +2219,7 @@ inline ::uint64_t PlayerEnterGameNodeRequest::scene_id() const {
 }
 inline void PlayerEnterGameNodeRequest::set_scene_id(::uint64_t value) {
   _internal_set_scene_id(value);
-  _impl_._has_bits_[0] |= 0x00000010u;
+  _impl_._has_bits_[0] |= 0x00000004u;
   // @@protoc_insertion_point(field_set:PlayerEnterGameNodeRequest.scene_id)
 }
 inline ::uint64_t PlayerEnterGameNodeRequest::_internal_scene_id() const {
@@ -2931,58 +2672,6 @@ inline ::uint64_t RegisterPlayerSessionRequest::_internal_player_id() const {
 inline void RegisterPlayerSessionRequest::_internal_set_player_id(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.player_id_ = value;
-}
-
-// -------------------------------------------------------------------
-
-// Centre2GsEnterSceneRequest
-
-// uint64 player_id = 1;
-inline void Centre2GsEnterSceneRequest::clear_player_id() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.player_id_ = ::uint64_t{0u};
-  _impl_._has_bits_[0] &= ~0x00000001u;
-}
-inline ::uint64_t Centre2GsEnterSceneRequest::player_id() const {
-  // @@protoc_insertion_point(field_get:Centre2GsEnterSceneRequest.player_id)
-  return _internal_player_id();
-}
-inline void Centre2GsEnterSceneRequest::set_player_id(::uint64_t value) {
-  _internal_set_player_id(value);
-  _impl_._has_bits_[0] |= 0x00000001u;
-  // @@protoc_insertion_point(field_set:Centre2GsEnterSceneRequest.player_id)
-}
-inline ::uint64_t Centre2GsEnterSceneRequest::_internal_player_id() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.player_id_;
-}
-inline void Centre2GsEnterSceneRequest::_internal_set_player_id(::uint64_t value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.player_id_ = value;
-}
-
-// uint64 scene_id = 2;
-inline void Centre2GsEnterSceneRequest::clear_scene_id() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.scene_id_ = ::uint64_t{0u};
-  _impl_._has_bits_[0] &= ~0x00000002u;
-}
-inline ::uint64_t Centre2GsEnterSceneRequest::scene_id() const {
-  // @@protoc_insertion_point(field_get:Centre2GsEnterSceneRequest.scene_id)
-  return _internal_scene_id();
-}
-inline void Centre2GsEnterSceneRequest::set_scene_id(::uint64_t value) {
-  _internal_set_scene_id(value);
-  _impl_._has_bits_[0] |= 0x00000002u;
-  // @@protoc_insertion_point(field_set:Centre2GsEnterSceneRequest.scene_id)
-}
-inline ::uint64_t Centre2GsEnterSceneRequest::_internal_scene_id() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.scene_id_;
-}
-inline void Centre2GsEnterSceneRequest::_internal_set_scene_id(::uint64_t value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.scene_id_ = value;
 }
 
 // -------------------------------------------------------------------

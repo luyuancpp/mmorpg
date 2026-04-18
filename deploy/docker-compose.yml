@@ -144,7 +144,9 @@ services:
     restart: unless-stopped
 
   # SA-Token auth node (Java Spring Boot + SA-Token + gRPC)
+  # Not started by default. Use: docker compose --profile java up -d
   sa-token-node:
+    profiles: [java]
     build:
       context: ../java/sa_token_node
       dockerfile: Dockerfile
