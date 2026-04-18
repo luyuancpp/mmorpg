@@ -17,7 +17,7 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-const tokenTTLSeconds = 60 // token valid for 60 seconds
+const tokenTTLSeconds = 300 // token valid for 5 minutes
 
 // AssignGate picks the least-loaded Gate for the requested zone, signs a
 // one-time HMAC connection token, and returns the gate address + token.

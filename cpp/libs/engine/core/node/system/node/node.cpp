@@ -225,7 +225,14 @@ void Node::InitRpcServer()
 	const auto &redisHost = tlsNodeConfigManager.GetGameConfig().zone_redis().host();
 	const auto redisPort = static_cast<uint16_t>(tlsNodeConfigManager.GetGameConfig().zone_redis().port());
 	muduo::net::InetAddress zoneRedisAddress(redisPort);
-	if (!muduo::net::InetAddress::resolve(redisHost, &zoneRedisAddress))
+
+	// If the host looks like an IP address, use it directly without DNS resolve
+	bool isIpLiteral = !redisHost.empty() && (std::isdigit(static_cast<unsigned char>(redisHost[0])) || redisHost.find(':') != std::string::npos);
+	if (isIpLiteral)
+	{
+		zoneRedisAddress = muduo::net::InetAddress(redisHost, redisPort);
+	}
+	else if (!muduo::net::InetAddress::resolve(redisHost, &zoneRedisAddress))
 	{
 		LOG_WARN << "DNS resolve failed for Redis host '" << redisHost << "', treating as literal IP";
 		zoneRedisAddress = muduo::net::InetAddress(redisHost, redisPort);

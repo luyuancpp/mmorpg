@@ -11,7 +11,9 @@ const std::unordered_map<eNodeType, std::string> nodeTypeNameMap = {
 	{eNodeType::GateNodeService, eNodeType_Name(GateNodeService)},
 	{eNodeType::LoginNodeService, eNodeType_Name(LoginNodeService)},
 	{eNodeType::SceneManagerNodeService, eNodeType_Name(SceneManagerNodeService)},
-	{eNodeType::DataServiceNodeService, eNodeType_Name(DataServiceNodeService)}};
+	{eNodeType::DataServiceNodeService, eNodeType_Name(DataServiceNodeService)},
+	{eNodeType::FriendNodeService, eNodeType_Name(FriendNodeService)},
+	{eNodeType::GuildNodeService, eNodeType_Name(GuildNodeService)}};
 
 eNodeType NodeUtils::GetServiceTypeFromPrefix(const std::string &prefix)
 {
