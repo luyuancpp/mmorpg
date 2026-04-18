@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	redirectTokenTTLSeconds = 60
+	redirectTokenTTLSeconds = 300
 	gateEtcdPrefix         = "GateNodeService.rpc"
 )
 
