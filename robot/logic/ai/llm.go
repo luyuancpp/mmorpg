@@ -38,11 +38,13 @@ func NewLLMAdvisor(endpoint, apiKey, model string) *LLMAdvisor {
 
 // GameState is a snapshot of the robot's world for the LLM to reason about.
 type GameState struct {
-	PlayerId  uint64  `json:"player_id"`
-	PosX      float64 `json:"pos_x"`
-	PosZ      float64 `json:"pos_z"`
-	SkillIDs  []uint32 `json:"skill_ids"`
-	TickCount int      `json:"tick_count"`
+	PlayerId      uint64   `json:"player_id"`
+	PosX          float64  `json:"pos_x"`
+	PosZ          float64  `json:"pos_z"`
+	SceneID       uint64   `json:"scene_id"`
+	SceneConfigID uint32   `json:"scene_config_id"`
+	SkillIDs      []uint32 `json:"skill_ids"`
+	TickCount     int      `json:"tick_count"`
 }
 
 // DecideAction asks the LLM which action to take next.
@@ -52,7 +54,7 @@ func (a *LLMAdvisor) DecideAction(state GameState) (Action, string) {
 
 	prompt := fmt.Sprintf(
 		`You are controlling a game character. Based on the current state, pick ONE action.
-Available actions: idle, move, cast_skill, chat
+Available actions: idle, move, cast_skill, switch_scene, chat
 Current state: %s
 Reply with ONLY the action name (one word).`, stateJSON)
 
@@ -68,7 +70,7 @@ func (a *LLMAdvisor) chatCompletion(userPrompt string) (Action, string, error) {
 	reqBody := map[string]any{
 		"model": a.model,
 		"messages": []map[string]string{
-			{"role": "system", "content": "You control a game robot. Reply with only an action name: idle, move, cast_skill, chat."},
+			{"role": "system", "content": "You control a game robot. Reply with only an action name: idle, move, cast_skill, switch_scene, chat."},
 			{"role": "user", "content": userPrompt},
 		},
 		"max_tokens":  32,

@@ -16,18 +16,20 @@ report_interval: 5 # seconds between stats prints
 #        "login-test"       = run login test suite (10 scenarios) then exit
 mode: "stress"
 
-# Behavior profile: "stress" (pure skill spam), "fighter", "explorer", "chatter"
-# stress = backward-compatible, only casts skills (good for load testing)
-# fighter = 60% skill, 25% move, 10% idle, 5% chat
-# explorer = 50% move, 20% idle, 20% skill, 10% chat
-# chatter = 40% chat, 30% idle, 20% move, 10% skill
+# Behavior profile: "stress", "behavioral", "fighter", "explorer", "chatter"
+# stress = combat-heavy with occasional scene switching (good for pressure tests)
+# behavioral = mixed gameplay actions for realistic robot behavior / LLM training traces
+# fighter = skill-heavy combat profile
+# explorer = scene switching + movement heavy profile
+# chatter = social/light activity profile
 profile: "stress"
 
 # Or define custom weights (overrides profile when set):
 # custom_weights:
 #   cast_skill: 50
-#   move: 30
-#   idle: 15
+#   move: 20
+#   switch_scene: 20
+#   idle: 5
 #   chat: 5
 
 # LLM-driven behavior (optional).

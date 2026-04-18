@@ -57,9 +57,10 @@ func main() {
 
 	stats := metrics.NewStats()
 
-	// Login-test mode: run the test suite and exit.
+	// Login-test mode: run the scenario suite and exit.
 	if cfg.Mode == "login-test" {
 		runLoginTests(host, port, cfg, stats, tokenPayload, tokenSig)
+		_ = stats.ExportBehaviorCSV("behavior_test_results.csv")
 		return
 	}
 
@@ -101,6 +102,7 @@ func main() {
 	close(stopAll)
 	close(stopReport)
 	wg.Wait()
+	_ = stats.ExportBehaviorCSV("behavior_test_results.csv")
 	zap.L().Info("all robots stopped")
 }
 
@@ -173,11 +175,29 @@ func runRobotOnce(host string, port int, account string, cfg *config.Config, sta
 	)
 
 	// Register player in global list so message handlers can find it.
-	player := &gameobject.Player{ID: gc.PlayerId}
+	player := gameobject.NewPlayer(gc.PlayerId)
 	gameobject.PlayerList.Set(gc.PlayerId, player)
 	defer gameobject.PlayerList.Delete(gc.PlayerId)
 
-	// Request skill list from server (response handled by RecvLoop handler).
+	// Start RecvLoop early so we can receive NotifyEnterScene.
+	recvDone := make(chan struct{})
+	go func() {
+		defer close(recvDone)
+		gc.RecvLoop(func(client *pkg.GameClient, msg *base.MessageContent) {
+			stats.MsgRecv()
+			handler.MessageBodyHandler(client, msg)
+		})
+	}()
+
+	// Wait for scene node to be bound (NotifyEnterScene) before sending scene-targeted messages.
+	waitCtx, waitCancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer waitCancel()
+	if err := player.WaitSceneReady(waitCtx); err != nil {
+		zap.L().Error("timed out waiting for scene ready", zap.String("account", gc.Account), zap.Error(err))
+		return false
+	}
+
+	// Now safe to send scene-targeted requests.
 	_ = gc.SendRequest(game.SceneSkillClientPlayerGetSkillListMessageId, &scene.GetSkillListRequest{})
 
 	robotAI := ai.NewRobotAI(gc, stats)
@@ -197,10 +217,11 @@ func runRobotOnce(host string, port int, account string, cfg *config.Config, sta
 	}
 	go robotAI.RunLoop(stop)
 
-	gc.RecvLoop(func(client *pkg.GameClient, msg *base.MessageContent) {
-		stats.MsgRecv()
-		handler.MessageBodyHandler(client, msg)
-	})
+	// Block until connection closes or stop signal.
+	select {
+	case <-recvDone:
+	case <-stop:
+	}
 
 	// Graceful shutdown: send LeaveGame so server cleans up session.
 	_ = gc.SendRequest(game.ClientPlayerLoginLeaveGameMessageId, &login.LeaveGameRequest{})
@@ -443,5 +464,3 @@ func sendAndRecvLocal(gc *pkg.GameClient, stats *metrics.Stats, msgID uint32, re
 		return fmt.Errorf("STUCK: no response for msg_id=%d within %s", msgID, defaultLoginTimeoutLocal)
 	}
 }
-
-

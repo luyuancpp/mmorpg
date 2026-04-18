@@ -6,4 +6,5 @@ import (
 )
 
 func SceneSkillClientPlayerNotifySkillUsedHandler(player *gameobject.Player, response *scene.SkillUsedS2C) {
+	player.NoteSkillUsed()
 }
