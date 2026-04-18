@@ -3,6 +3,7 @@ package clientplayerloginlogic
 import (
 	"context"
 	"errors"
+	"fmt"
 	"login/internal/config"
 	"login/internal/constants"
 	"login/internal/logic/pkg/ctxkeys"
@@ -38,19 +39,34 @@ func NewLoginLogic(ctx context.Context, svcCtx *svc.ServiceContext) *LoginLogic 
 func (l *LoginLogic) Login(in *login_proto.LoginRequest) (*login_proto.LoginResponse, error) {
 	resp := &login_proto.LoginResponse{}
 
+	account := in.Account
+
+	// SA-Token validation: if sa_token is provided and SA-Token is enabled,
+	// validate the token against SA-Token's Redis and use the loginId as account.
+	if in.SaToken != "" {
+		resolvedAccount, err := l.validateSaToken(in.SaToken)
+		if err != nil {
+			logx.Errorf("SA-Token validation failed: token=%s err=%v", in.SaToken, err)
+			resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginAccountNotFound)}
+			return resp, nil
+		}
+		account = resolvedAccount
+		logx.Infof("SA-Token validated: token=%s -> account=%s", in.SaToken, account)
+	}
+
 	// 1. Distributed lock (UUID + Lua safe release)
 	accountLock, err := locker.NewRedisLocker(l.svcCtx.RedisClient).TryLock(
-		l.ctx, "account_lock:login:"+in.Account,
+		l.ctx, "account_lock:login:"+account,
 		time.Duration(config.AppConfig.Locker.AccountLockTTL)*time.Second,
 	)
 	if err != nil || !accountLock.IsLocked() {
-		logx.Errorf("Login lock failed for account=%s: %v", in.Account, err)
+		logx.Errorf("Login lock failed for account=%s: %v", account, err)
 		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginInProgress)}
 		return resp, nil
 	}
 	defer func() {
 		if _, err := accountLock.Release(l.ctx); err != nil {
-			logx.Errorf("Login lock release failed for account=%s: %v", in.Account, err)
+			logx.Errorf("Login lock release failed for account=%s: %v", account, err)
 		}
 	}()
 
@@ -62,17 +78,17 @@ func (l *LoginLogic) Login(in *login_proto.LoginRequest) (*login_proto.LoginResp
 		return resp, nil
 	}
 
-	logx.Infof("Login start: account=%s sessionId=%d", in.Account, sessionDetails.SessionId)
+	logx.Infof("Login start: account=%s sessionId=%d", account, sessionDetails.SessionId)
 
 	// 3. Save login session (stores account for this session in Redis)
-	if err := loginsession.Save(l.ctx, l.svcCtx.RedisClient, sessionDetails.SessionId, in.Account); err != nil {
-		logx.Errorf("Login save failed: sessionId=%d account=%s err=%v", sessionDetails.SessionId, in.Account, err)
+	if err := loginsession.Save(l.ctx, l.svcCtx.RedisClient, sessionDetails.SessionId, account); err != nil {
+		logx.Errorf("Login save failed: sessionId=%d account=%s err=%v", sessionDetails.SessionId, account, err)
 		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginRedisSetFailed)}
 		return resp, nil
 	}
 
 	// 4. Enforce device limit
-	sessionKey := constants.GenerateSessionKey(in.Account)
+	sessionKey := constants.GenerateSessionKey(account)
 	expire := time.Duration(config.AppConfig.Node.SessionExpireMin) * time.Minute
 
 	_, err = l.svcCtx.RedisClient.TxPipelined(l.ctx, func(pipe redis.Pipeliner) error {
@@ -93,13 +109,13 @@ func (l *LoginLogic) Login(in *login_proto.LoginRequest) (*login_proto.LoginResp
 		return resp, nil
 	}
 	if count > config.AppConfig.Account.MaxDevicesPerAccount {
-		logx.Infof("Account %s exceeds device limit: %d > %d", in.Account, count, config.AppConfig.Account.MaxDevicesPerAccount)
+		logx.Infof("Account %s exceeds device limit: %d > %d", account, count, config.AppConfig.Account.MaxDevicesPerAccount)
 		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kTooManyDevices)}
 		return resp, nil
 	}
 
 	// 5. Load account data
-	userAccount, err := GetOrInitUserAccount(l.ctx, l.svcCtx.RedisClient, in.Account, config.AppConfig.Account.CacheExpire)
+	userAccount, err := GetOrInitUserAccount(l.ctx, l.svcCtx.RedisClient, account, config.AppConfig.Account.CacheExpire)
 	if err != nil {
 		return nil, err
 	}
@@ -155,4 +171,33 @@ func GetOrInitUserAccount(ctx context.Context, rdb *redis.Client, account string
 	}
 
 	return userAccount, nil
+}
+
+// validateSaToken looks up the SA-Token value in the SA-Token Redis instance
+// and returns the associated loginId (used as the account name).
+// SA-Token Redis key format: {tokenName}:{loginType}:token:{tokenValue} -> loginId
+func (l *LoginLogic) validateSaToken(tokenValue string) (string, error) {
+	if !config.AppConfig.SaToken.Enabled {
+		return "", fmt.Errorf("SA-Token validation is not enabled")
+	}
+	if l.svcCtx.SaTokenRedisClient == nil {
+		return "", fmt.Errorf("SA-Token Redis client is not initialized")
+	}
+
+	tokenName := config.AppConfig.SaToken.TokenName
+	loginType := config.AppConfig.SaToken.LoginType
+	key := fmt.Sprintf("%s:%s:token:%s", tokenName, loginType, tokenValue)
+
+	loginId, err := l.svcCtx.SaTokenRedisClient.Get(l.ctx, key).Result()
+	if errors.Is(err, redis.Nil) {
+		return "", fmt.Errorf("sa-token not found or expired: %s", tokenValue)
+	}
+	if err != nil {
+		return "", fmt.Errorf("sa-token Redis lookup failed: %w", err)
+	}
+	if loginId == "" {
+		return "", fmt.Errorf("sa-token maps to empty loginId")
+	}
+
+	return loginId, nil
 }

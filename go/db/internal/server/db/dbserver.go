@@ -7,7 +7,7 @@ package server
 import (
 	"context"
 
-	dblogic "db/internal/logic/db"
+	"db/internal/logic/db"
 	"db/internal/svc"
 	"proto/db"
 )

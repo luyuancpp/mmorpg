@@ -87,6 +87,17 @@ SceneManagerRpc:
 # Must match GateTokenSecret in bin/etc/base_deploy_config.yaml.
 GateTokenSecret: "change-me-in-production-use-a-strong-random-key"
 
+# SA-Token integration: validate SA-Token via Redis directly (bypass Java sa_token_node).
+# Key format: {TokenName}:{LoginType}:token:{tokenValue} -> loginId
+SaToken:
+  Enabled: false  # Set to true to enable SA-Token validation
+  TokenName: satoken  # SA-Token key prefix (default: satoken)
+  LoginType: login    # SA-Token account type (default: login)
+  Redis:
+    Host: 127.0.0.1:6379
+    Password: ""
+    DB: 0
+
 # Kafka config
 Kafka:
   Brokers:

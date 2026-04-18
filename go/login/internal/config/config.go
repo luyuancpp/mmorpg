@@ -22,6 +22,15 @@ type Config struct {
 	SceneManagerRpc    zrpc.RpcClientConf `json:"SceneManagerRpc"`    // scene_manager gRPC client
 	GateTokenSecret    string             `json:"GateTokenSecret"`    // HMAC secret for gate connection tokens
 	TableDir           string             `json:",default=../../generated/tables"`
+	SaToken            SaTokenConf        `json:"SaToken,optional"`   // SA-Token Redis validation config
+}
+
+// SaTokenConf holds SA-Token Redis lookup settings.
+type SaTokenConf struct {
+	Enabled    bool     `json:"Enabled,default=false"` // Enable SA-Token validation
+	Redis      RedisConf `json:"Redis"`                // Redis instance where SA-Token stores sessions
+	TokenName  string   `json:"TokenName,default=satoken"` // SA-Token token-name (key prefix)
+	LoginType  string   `json:"LoginType,default=login"`   // SA-Token login-type (account type)
 }
 
 // NodeConfig holds node-level settings including login duration limits.
