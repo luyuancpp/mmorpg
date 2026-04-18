@@ -18,7 +18,6 @@ const InitializePlayerCompsEventEventId = 14
 const InterruptCurrentStateEventEventId = 15
 const ConditionEventEventId = 16
 const OnAcceptedMissionEventEventId = 17
-const OnConnect2CentreEventEventId = 18
 const OnConnect2LoginEventId = 19
 const OnMissionAwardEventEventId = 20
 const OnNodeAddEventEventId = 21

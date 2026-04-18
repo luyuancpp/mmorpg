@@ -127,18 +127,14 @@ void PlayerSceneSystem::OnGetLeaderLocation(entt::entity player, void* replyVoid
 		}
 
 		// Find a SceneManager gRPC node
-		auto& smRegistry = tlsNodeContextManager.GetRegistry(eNodeType::SceneManagerNodeService);
-		entt::entity smEntity = entt::null;
-		for (const auto& [e, info] : smRegistry.view<NodeInfo>().each())
-		{
-			smEntity = e;
-			break;
-		}
+		auto smEntity = GetSceneManagerEntity(playerSessionPB->player_id());
 		if (smEntity == entt::null)
 		{
 			LOG_WARN << "No SceneManager node available, cannot follow leader to scene " << leaderSceneId;
 			return;
 		}
+
+		auto &smRegistry = tlsNodeContextManager.GetRegistry(eNodeType::SceneManagerNodeService);
 
 		::scene_manager::EnterSceneRequest req;
 		req.set_player_id(playerSessionPB->player_id());

@@ -31,7 +31,6 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
 // SceneManager Service: Responsible for scene creation/destruction and player-scene routing.
-// No longer requires Centre — Login/player_locator drive the flow directly.
 type SceneManagerClient interface {
 	// Create a scene on a specific node (implemented by the Scene node)
 	CreateScene(ctx context.Context, in *CreateSceneRequest, opts ...grpc.CallOption) (*CreateSceneResponse, error)
@@ -96,7 +95,6 @@ func (c *sceneManagerClient) LeaveScene(ctx context.Context, in *LeaveSceneReque
 // for forward compatibility.
 //
 // SceneManager Service: Responsible for scene creation/destruction and player-scene routing.
-// No longer requires Centre — Login/player_locator drive the flow directly.
 type SceneManagerServer interface {
 	// Create a scene on a specific node (implemented by the Scene node)
 	CreateScene(context.Context, *CreateSceneRequest) (*CreateSceneResponse, error)

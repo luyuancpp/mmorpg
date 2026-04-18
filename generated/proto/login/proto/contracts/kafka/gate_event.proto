@@ -39,7 +39,6 @@ message PlayerLeaseExpiredEvent {
 }
 
 // Sent by Login/player_locator to bind a session to Gate.
-// Replaces Centre's BindSessionToGateRequest.
 message BindSessionEvent {
   uint64 session_id = 1;
   uint64 player_id = 2;

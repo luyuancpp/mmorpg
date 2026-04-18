@@ -734,11 +734,6 @@ void InitMessageInfo()
         std::make_unique<::ProcessClientPlayerMessageRequest>(),
         std::make_unique<::ProcessClientPlayerMessageResponse>(),
         std::make_unique<SceneImpl>(), 0, common::base::eNodeType::SceneNodeService};
-    gRpcMethodRegistry[SceneCentreSendToPlayerViaGameNodeMessageId] = RpcMethodMeta{
-        "Scene", "CentreSendToPlayerViaGameNode",
-        std::make_unique<::NodeRouteMessageRequest>(),
-        std::make_unique<::Empty>(),
-        std::make_unique<SceneImpl>(), 0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneInvokePlayerServiceMessageId] = RpcMethodMeta{
         "Scene", "InvokePlayerService",
         std::make_unique<::NodeRouteMessageRequest>(),
@@ -757,11 +752,6 @@ void InitMessageInfo()
     gRpcMethodRegistry[SceneUpdateSessionDetailMessageId] = RpcMethodMeta{
         "Scene", "UpdateSessionDetail",
         std::make_unique<::RegisterPlayerSessionRequest>(),
-        std::make_unique<::Empty>(),
-        std::make_unique<SceneImpl>(), 0, common::base::eNodeType::SceneNodeService};
-    gRpcMethodRegistry[SceneEnterSceneMessageId] = RpcMethodMeta{
-        "Scene", "EnterScene",
-        std::make_unique<::Centre2GsEnterSceneRequest>(),
         std::make_unique<::Empty>(),
         std::make_unique<SceneImpl>(), 0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneCreateSceneMessageId] = RpcMethodMeta{
@@ -1060,14 +1050,6 @@ bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
 	}
 	case OnAcceptedMissionEventEventId: {
 		OnAcceptedMissionEvent event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.trigger(event);
-		return true;
-	}
-	case OnConnect2CentreEventEventId: {
-		OnConnect2CentreEvent event;
 		if (!event.ParseFromString(payload)) {
 			return false;
 		}

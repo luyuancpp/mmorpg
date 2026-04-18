@@ -29,7 +29,6 @@
 namespace scene_manager {
 
 // SceneManager Service: Responsible for scene creation/destruction and player-scene routing.
-// No longer requires Centre — Login/player_locator drive the flow directly.
 class SceneManager final {
  public:
   static constexpr char const* service_full_name() {

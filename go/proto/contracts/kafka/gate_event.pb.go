@@ -293,7 +293,6 @@ func (x *PlayerLeaseExpiredEvent) GetGateInstanceId() string {
 }
 
 // Sent by Login/player_locator to bind a session to Gate.
-// Replaces Centre's BindSessionToGateRequest.
 type BindSessionEvent struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	SessionId      uint64                 `protobuf:"varint,1,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`

@@ -19,7 +19,7 @@ void InitSceneReply()
     gRpcResponseDispatcher.registerMessageCallback<::NodeRouteMessageResponse>(SceneSendMessageToPlayerMessageId,
         std::bind(&OnSceneSendMessageToPlayerReply, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
     gRpcResponseDispatcher.registerMessageCallback<::ProcessClientPlayerMessageResponse>(SceneProcessClientPlayerMessageMessageId,
-                                                                                         std::bind(&OnSceneProcessClientPlayerMessageReply, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+        std::bind(&OnSceneProcessClientPlayerMessageReply, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
     gRpcResponseDispatcher.registerMessageCallback<::NodeRouteMessageResponse>(SceneInvokePlayerServiceMessageId,
         std::bind(&OnSceneInvokePlayerServiceReply, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
     gRpcResponseDispatcher.registerMessageCallback<::RouteMessageResponse>(SceneRouteNodeStringMsgMessageId,
@@ -28,8 +28,6 @@ void InitSceneReply()
         std::bind(&OnSceneRoutePlayerStringMsgReply, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
     gRpcResponseDispatcher.registerMessageCallback<::Empty>(SceneUpdateSessionDetailMessageId,
         std::bind(&OnSceneUpdateSessionDetailReply, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    gRpcResponseDispatcher.registerMessageCallback<::Empty>(SceneEnterSceneMessageId,
-        std::bind(&OnSceneEnterSceneReply, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
     gRpcResponseDispatcher.registerMessageCallback<::CreateSceneResponse>(SceneCreateSceneMessageId,
         std::bind(&OnSceneCreateSceneReply, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
     gRpcResponseDispatcher.registerMessageCallback<::Empty>(SceneDestroySceneMessageId,
@@ -76,12 +74,6 @@ void OnSceneRoutePlayerStringMsgReply(const muduo::net::TcpConnectionPtr& conn, 
 }
 
 void OnSceneUpdateSessionDetailReply(const muduo::net::TcpConnectionPtr& conn, const std::shared_ptr<::Empty>& replied, muduo::Timestamp timestamp)
-{
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
-}
-
-void OnSceneEnterSceneReply(const muduo::net::TcpConnectionPtr& conn, const std::shared_ptr<::Empty>& replied, muduo::Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE

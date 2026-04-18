@@ -15,38 +15,30 @@ constexpr uint32_t SceneProcessClientPlayerMessageMessageId = 10;
 constexpr uint32_t SceneProcessClientPlayerMessageIndex = 2;
 #define SceneProcessClientPlayerMessageMethod  ::Scene_Stub::descriptor()->method(2)
 
-constexpr uint32_t SceneCentreSendToPlayerViaGameNodeMessageId = 57;
-constexpr uint32_t SceneCentreSendToPlayerViaGameNodeIndex = 3;
-#define SceneCentreSendToPlayerViaGameNodeMethod  ::Scene_Stub::descriptor()->method(3)
-
 constexpr uint32_t SceneInvokePlayerServiceMessageId = 40;
-constexpr uint32_t SceneInvokePlayerServiceIndex = 4;
-#define SceneInvokePlayerServiceMethod  ::Scene_Stub::descriptor()->method(4)
+constexpr uint32_t SceneInvokePlayerServiceIndex = 3;
+#define SceneInvokePlayerServiceMethod  ::Scene_Stub::descriptor()->method(3)
 
 constexpr uint32_t SceneRouteNodeStringMsgMessageId = 78;
-constexpr uint32_t SceneRouteNodeStringMsgIndex = 5;
-#define SceneRouteNodeStringMsgMethod  ::Scene_Stub::descriptor()->method(5)
+constexpr uint32_t SceneRouteNodeStringMsgIndex = 4;
+#define SceneRouteNodeStringMsgMethod  ::Scene_Stub::descriptor()->method(4)
 
 constexpr uint32_t SceneRoutePlayerStringMsgMessageId = 81;
-constexpr uint32_t SceneRoutePlayerStringMsgIndex = 6;
-#define SceneRoutePlayerStringMsgMethod  ::Scene_Stub::descriptor()->method(6)
+constexpr uint32_t SceneRoutePlayerStringMsgIndex = 5;
+#define SceneRoutePlayerStringMsgMethod  ::Scene_Stub::descriptor()->method(5)
 
 constexpr uint32_t SceneUpdateSessionDetailMessageId = 24;
-constexpr uint32_t SceneUpdateSessionDetailIndex = 7;
-#define SceneUpdateSessionDetailMethod  ::Scene_Stub::descriptor()->method(7)
-
-constexpr uint32_t SceneEnterSceneMessageId = 71;
-constexpr uint32_t SceneEnterSceneIndex = 8;
-#define SceneEnterSceneMethod  ::Scene_Stub::descriptor()->method(8)
+constexpr uint32_t SceneUpdateSessionDetailIndex = 6;
+#define SceneUpdateSessionDetailMethod  ::Scene_Stub::descriptor()->method(6)
 
 constexpr uint32_t SceneCreateSceneMessageId = 36;
-constexpr uint32_t SceneCreateSceneIndex = 9;
-#define SceneCreateSceneMethod  ::Scene_Stub::descriptor()->method(9)
+constexpr uint32_t SceneCreateSceneIndex = 7;
+#define SceneCreateSceneMethod  ::Scene_Stub::descriptor()->method(7)
 
 constexpr uint32_t SceneDestroySceneMessageId = 121;
-constexpr uint32_t SceneDestroySceneIndex = 10;
-#define SceneDestroySceneMethod  ::Scene_Stub::descriptor()->method(10)
+constexpr uint32_t SceneDestroySceneIndex = 8;
+#define SceneDestroySceneMethod  ::Scene_Stub::descriptor()->method(8)
 
 constexpr uint32_t SceneNodeHandshakeMessageId = 62;
-constexpr uint32_t SceneNodeHandshakeIndex = 11;
-#define SceneNodeHandshakeMethod  ::Scene_Stub::descriptor()->method(11)
+constexpr uint32_t SceneNodeHandshakeIndex = 9;
+#define SceneNodeHandshakeMethod  ::Scene_Stub::descriptor()->method(9)
