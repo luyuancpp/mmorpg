@@ -139,31 +139,31 @@ pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-zone-up `
 
 Omit `-GoSvcRegistry` or pass `-SkipGoSvc` to deploy only C++ nodes.
 
-## Java Sa-Token Auth Service Image Flow
+## Java Service Image Flow
 
-The Java auth service uses `deploy/k8s/Dockerfile.java-svc` (multi-stage build). Build context is the `java/sa_token_node/` directory.
+Java services use `deploy/k8s/Dockerfile.java-svc` (multi-stage build). Build context is the `java/<service>/` directory.
 
 | Service | Image Name |
 |---------|------------|
-| auth (sa-token) | `mmorpg-auth` |
+| gateway | `mmorpg-gateway` |
 
-### Build Java auth image
+### Build Java service image
 
 ```powershell
 pwsh -File tools/scripts/dev_tools.ps1 -Command java-svc-build-image `
   -JavaSvcRegistry ghcr.io/luyuancpp -JavaSvcTag v1
 ```
 
-### Push Java auth image
+### Push Java service image
 
 ```powershell
 pwsh -File tools/scripts/dev_tools.ps1 -Command java-svc-push-image `
   -JavaSvcRegistry ghcr.io/luyuancpp -JavaSvcTag v1
 ```
 
-### Deploy Java auth alongside a zone
+### Deploy Java services alongside a zone
 
-Pass `-JavaSvcRegistry` to include the Java auth service in zone deployment:
+Pass `-JavaSvcRegistry` to include Java services in zone deployment:
 
 ```powershell
 pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-zone-up `

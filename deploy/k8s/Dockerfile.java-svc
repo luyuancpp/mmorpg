@@ -1,11 +1,9 @@
 # ────────────────────────────────────────────────────────────────
-# Multi-stage Dockerfile for Java services (auth, gateway, etc.).
+# Multi-stage Dockerfile for Java services (gateway, etc.).
 #
 # Build context MUST be the java/<service>/ directory.
 #
 # Usage:
-#   docker build -f deploy/k8s/Dockerfile.java-svc \
-#     -t mmorpg-auth:latest     java/sa_token_node/
 #   docker build -f deploy/k8s/Dockerfile.java-svc \
 #     -t mmorpg-gateway:latest  java/gateway_node/
 # ────────────────────────────────────────────────────────────────

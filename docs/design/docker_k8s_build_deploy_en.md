@@ -10,7 +10,7 @@ Three types of Docker images, all buildable on Windows via Docker Desktop (Linux
 |------|-----------|---------------|--------|
 | C++ Nodes (gate+scene) | `deploy/k8s/Dockerfile.cpp` | Repository root | `mmorpg-node` |
 | Go Services (5) | `deploy/k8s/Dockerfile.go-svc` | `go/` | `mmorpg-{service}` |
-| Java Auth | `deploy/k8s/Dockerfile.java-svc` | `java/sa_token_node/` | `mmorpg-auth` |
+| Java Gateway | `deploy/k8s/Dockerfile.java-svc` | `java/gateway_node/` | `mmorpg-gateway` |
 
 ## C++ Node Image — Multi-Stage Build
 

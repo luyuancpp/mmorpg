@@ -10,7 +10,7 @@
 |------|-----------|---------------|--------|
 | C++ 节点 (gate+scene) | `deploy/k8s/Dockerfile.cpp` | 仓库根目录 | `mmorpg-node` |
 | Go 服务 (5个) | `deploy/k8s/Dockerfile.go-svc` | `go/` | `mmorpg-{service}` |
-| Java Auth | `deploy/k8s/Dockerfile.java-svc` | `java/sa_token_node/` | `mmorpg-auth` |
+| Java Gateway | `deploy/k8s/Dockerfile.java-svc` | `java/gateway_node/` | `mmorpg-gateway` |
 
 ## C++ 节点镜像 — 多阶段构建
 

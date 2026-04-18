@@ -65,7 +65,6 @@ The following were removed from git tracking:
 | Go login service | `go/login/login.go` | etcd registration + grpc startup |
 | Go scene manager | `go/scene_manager/scene_manager_service.go` | go-zero scene manager + load reporter |
 | Go data service | `go/data_service/data_service.go` | go-zero RPC service pattern |
-| Java auth grpc node | `java/sa_token_node/` | Maven Spring Boot auth/grpc service |
 | Java gateway (zone directory) | `java/gateway_node/` | Server list, gate assignment, zone health probe, admin APIs |
 | Proto contracts | `proto/` | Authoritative source; regenerate consumers after edits |
 | Checked-in generated contracts | `generated/proto/` | Review only; do not hand-edit |
@@ -174,8 +173,8 @@ cd go\login && go run login.go
 cd go\login && go test ./...
 
 # Java
-cd java\sa_token_node && mvn clean install
-cd java\sa_token_node && mvn test
+cd java\gateway_node && mvn clean install
+cd java\gateway_node && mvn test
 
 # Tools / proto generation
 pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-build
