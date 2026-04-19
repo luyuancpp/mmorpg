@@ -14,7 +14,11 @@
 #include "muduo/net/TcpConnection.h"
 #include "muduo/net/protorpc/google-inl.h"
 
+#include <algorithm>
+#include <cctype>
 #include <google/protobuf/message.h>
+#include <iomanip>
+#include <sstream>
 #include <zlib.h>
 
 using namespace muduo;
@@ -22,6 +26,40 @@ using namespace muduo::net;
 
 namespace
 {
+  std::string BuildHexPrefix(const char* data, size_t len)
+  {
+    std::ostringstream oss;
+    oss << std::hex << std::uppercase << std::setfill('0');
+    for (size_t i = 0; i < len; ++i)
+    {
+      if (i > 0)
+      {
+        oss << ' ';
+      }
+      oss << std::setw(2) << static_cast<unsigned int>(static_cast<unsigned char>(data[i]));
+    }
+    return oss.str();
+  }
+
+  std::string BuildAsciiPrefix(const char* data, size_t len)
+  {
+    std::string ascii;
+    ascii.reserve(len);
+    for (size_t i = 0; i < len; ++i)
+    {
+      const unsigned char ch = static_cast<unsigned char>(data[i]);
+      ascii.push_back(std::isprint(ch) ? static_cast<char>(ch) : '.');
+    }
+    return ascii;
+  }
+
+  bool StartsWithHttp2Preface(const char* data, size_t len)
+  {
+    static const char kHttp2Preface[] = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n";
+    const size_t prefixLen = sizeof(kHttp2Preface) - 1;
+    return len >= prefixLen && std::equal(data, data + prefixLen, kHttp2Preface);
+  }
+
   int ProtobufVersionCheck()
   {
     GOOGLE_PROTOBUF_VERIFY_VERSION;
@@ -68,11 +106,18 @@ void ProtobufCodecLite::onMessage(const TcpConnectionPtr& conn,
     const int32_t len = buf->peekInt32();
     if (len > kMaxMessageLen || len < kMinMessageLen)
     {
+      const size_t readable = buf->readableBytes();
+      const size_t previewLen = std::min<size_t>(readable, 24);
+      const char* preview = buf->peek();
+      const bool http2Preface = StartsWithHttp2Preface(preview, previewLen);
       LOG_ERROR << "ProtobufCodecLite::onMessage InvalidLength"
                 << " len=" << len
                 << " (min=" << kMinMessageLen << " max=" << kMaxMessageLen << ")"
-                << " readable=" << buf->readableBytes()
-                << " peer=" << (conn ? conn->peerAddress().toIpPort() : "N/A");
+                << " readable=" << readable
+                << " peer=" << (conn ? conn->peerAddress().toIpPort() : "N/A")
+                << " prefix_hex='" << BuildHexPrefix(preview, previewLen) << "'"
+                << " prefix_ascii='" << BuildAsciiPrefix(preview, previewLen) << "'"
+                << (http2Preface ? " hint='HTTP/2 preface detected; possible gRPC/HTTP2 traffic sent to raw RPC0 protobuf port'" : "");
       errorCallback_(conn, buf, receiveTime, kInvalidLength);
       break;
     }
