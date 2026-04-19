@@ -82,42 +82,41 @@ extern inline int __libc_use_alloca(size_t size)
 
 ssize_t winreadsock(int fd, void *buf, size_t count)
 {
-	WSAOVERLAPPED recvOverlapped = {};
-	WSABUF dataBuf = {};
-	DWORD recvBytes = 0;
-	DWORD flags = 0;
-	dataBuf.len = (ULONG)count;// notice bug
-	dataBuf.buf = (char *)buf;
-
-	int ret =  WSARecv(fd, &dataBuf, 1, &recvBytes, &flags, &recvOverlapped, NULL);
+	int ret = ::recv(fd, static_cast<char *>(buf), static_cast<int>(count), 0);
 	if (ret < 0)
 	{
-		printf("WSARecv failed with error: %d\n", WSAGetLastError());
-		_set_errno(WSAGetLastError());
+		int err = WSAGetLastError();
+		if (err == WSAEWOULDBLOCK)
+		{
+			errno = EWOULDBLOCK;
+		}
+		else
+		{
+			_set_errno(err);
+		}
 		return -1;
 	}
-	return recvBytes;
+	return ret;
 }
 
 ssize_t winwritesock(int fd, const void *buf, size_t count)
 {
-	WSAOVERLAPPED sendOverlapped = {};
-	SecureZeroMemory((PVOID)& sendOverlapped, sizeof(WSAOVERLAPPED));
-
-	
-	DWORD sendBytes = 0;
-
-	WSABUF dataBuf = {};
-	dataBuf.len = (ULONG)count;//notice bug
-	dataBuf.buf = (char *)buf;
-	int ret = WSASend(fd, &dataBuf, 1, &sendBytes, 0, &sendOverlapped, NULL);
+	int ret = ::send(fd, static_cast<const char *>(buf), static_cast<int>(count), 0);
 	if (ret < 0)
 	{
-		printf("WSASend failed with error: %d\n", WSAGetLastError());
-		_set_errno(WSAGetLastError());
+		int err = WSAGetLastError();
+		if (err == WSAEWOULDBLOCK)
+		{
+			errno = EWOULDBLOCK;
+		}
+		else
+		{
+			printf("send() failed with error: %d\n", err);
+			_set_errno(err);
+		}
 		return -1;
 	}
-	return sendBytes;
+	return ret;
 }
 
 ssize_t winclosesock(int fd)

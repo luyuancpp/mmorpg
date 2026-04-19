@@ -26,6 +26,10 @@ using muduo::net::TcpConnectionPtr;
 using ProtobufService = ::google::protobuf::Service;
 using ProtobufMessage = ::google::protobuf::Message;
 
+// Temporary debug: set gDumpOversizedRpc = true to dump full oversized RPC bodies to logs/oversized_rpc.log
+extern bool gDumpOversizedRpc;
+void EnableOversizedRpcDump(bool enable);
+
 class GameChannel
 {
 public:
