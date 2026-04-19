@@ -131,7 +131,7 @@ void InternalBroadcast(uint32_t messageId, const google::protobuf::Message &mess
 
 		for (auto &&sessionId : sessionIdList)
 		{
-			request.mutable_session_list()->Add(sessionId);
+			request.mutable_session_list()->Add(static_cast<uint32_t>(sessionId));
 		}
 
 		gateNodeSession->SendRequest(GateBroadcastToPlayersMessageId, request);

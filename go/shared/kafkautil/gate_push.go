@@ -25,7 +25,8 @@ type GateCommandBuilder interface {
 		messageID uint32, body []byte) ([]byte, error)
 
 	// BuildBroadcastCommand builds a serialized GateCommand wrapping a BroadcastToPlayersEvent.
-	BuildBroadcastCommand(sessionList []uint64, gateInstanceID string,
+	// sessionList contains the low 32 bits of each session ID (gate node prefix is implicit).
+	BuildBroadcastCommand(sessionList []uint32, gateInstanceID string,
 		messageID uint32, body []byte) ([]byte, error)
 }
 
@@ -53,7 +54,7 @@ func BroadcastToPlayers(ctx context.Context, w *kafkago.Writer, builder GateComm
 ) error {
 	type gateGroup struct {
 		instanceID string
-		sessions   []uint64
+		sessions   []uint32
 	}
 	grouped := make(map[string]*gateGroup)
 	for _, p := range players {
@@ -62,7 +63,7 @@ func BroadcastToPlayers(ctx context.Context, w *kafkago.Writer, builder GateComm
 			g = &gateGroup{instanceID: p.GateInstanceID}
 			grouped[p.GateID] = g
 		}
-		g.sessions = append(g.sessions, p.SessionID)
+		g.sessions = append(g.sessions, uint32(p.SessionID))
 	}
 
 	var firstErr error

@@ -69,6 +69,6 @@ message PushToPlayerEvent {
 // Sender groups players by gate_id and sends one Kafka message per Gate.
 // Flow: Go service -> Kafka gate-{gate_id} -> Gate -> N client TCP connections
 message BroadcastToPlayersEvent {
-  repeated uint64 session_list = 1;
+  repeated uint32 session_list = 1;
   MessageContent message_content = 2;
 }

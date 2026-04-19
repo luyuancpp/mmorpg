@@ -159,8 +159,10 @@ void GateHandler::BroadcastToPlayers(::google::protobuf::RpcController* controll
 	::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
-	for (auto&& sessionId : request->session_list())
+	const uint64_t sessionPrefix = tlsSessionManager.session_id_gen().node_id_prefix();
+	for (auto&& sessionLow : request->session_list())
 	{
+		const uint64_t sessionId = sessionPrefix | static_cast<uint64_t>(sessionLow);
 		auto sessionIt = tlsSessionManager.sessions().find(sessionId);
 		if (sessionIt == tlsSessionManager.sessions().end())
 		{

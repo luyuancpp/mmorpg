@@ -44,7 +44,7 @@ func (b *gateCommandBuilder) BuildPushCommand(sessionID uint64, gateInstanceID s
 	return proto.Marshal(cmd)
 }
 
-func (b *gateCommandBuilder) BuildBroadcastCommand(sessionList []uint64, gateInstanceID string,
+func (b *gateCommandBuilder) BuildBroadcastCommand(sessionList []uint32, gateInstanceID string,
 	messageID uint32, body []byte,
 ) ([]byte, error) {
 	mc := &basepb.MessageContent{
