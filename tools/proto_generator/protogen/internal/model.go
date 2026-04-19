@@ -134,7 +134,7 @@ var GlobalRPCServiceList RPCServiceInfoList
 var FileServiceMap sync.Map
 
 var RpcIdMethodMap = map[uint64]*MethodInfo{}
-var ServiceIdMap = map[string]uint64{}
+var MessageIdMap = map[string]uint64{}
 var MaxMessageId = uint64(0)
 var MessageIdFileMaxId = uint64(0)
 var FileMaxMessageId = uint64(0)

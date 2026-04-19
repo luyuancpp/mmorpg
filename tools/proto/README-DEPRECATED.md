@@ -25,7 +25,7 @@ If you're adding new protocol definitions:
 ## Contents
 
 This directory may contain:
-- `service_id.txt` - Legacy service ID mappings
+- `message_id.txt` - Legacy message ID mappings
 - `.gitignore` - Ignored files list
 
 ## Notes

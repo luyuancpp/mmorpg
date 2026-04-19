@@ -22,7 +22,7 @@ func runGenerationPipeline(runner *ExecutionRunner) {
 
 	runner.RunParallelGroup("GRPCGeneration", []NamedTask{
 		{Name: "cppGen.GenerateGameGrpc", Run: cppGen.GenerateGameGrpc},
-		{Name: "cppGen.ReadServiceIdFile", Run: cppGen.ReadServiceIdFile},
+		{Name: "cppGen.ReadMessageIdFile", Run: cppGen.ReadMessageIdFile},
 		{Name: "cppGen.ReadEventIdFile", Run: cppGen.ReadEventIdFile},
 	})
 
@@ -38,9 +38,9 @@ func runGenerationPipeline(runner *ExecutionRunner) {
 		{Name: "cppGen.GenerateGateKafkaCommandRouter", Run: cppGen.GenerateGateKafkaCommandRouter},
 	})
 
-	runner.RunTask("cppGen.InitServiceId", cppGen.InitServiceId)
+	runner.RunTask("cppGen.InitMessageId", cppGen.InitMessageId)
 	runner.RunTask("cppGen.InitEventId", cppGen.InitEventId)
-	runner.RunTask("cppGen.WriteServiceIdFile", cppGen.WriteServiceIdFile)
+	runner.RunTask("cppGen.WriteMessageIdFile", cppGen.WriteMessageIdFile)
 	runner.RunTask("cppGen.WriteEventIdFile", cppGen.WriteEventIdFile)
 
 	runner.RunParallelGroup("MethodFilesGeneration", []NamedTask{

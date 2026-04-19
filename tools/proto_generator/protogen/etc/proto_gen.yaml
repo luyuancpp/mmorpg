@@ -55,7 +55,7 @@ paths:
   tools_dir: "{{output_root}}{{tool_dir}}"
 
   # Specific file paths
-  service_id_file: "{{proto_dir}}service_id.txt"
+  message_id_file: "{{proto_dir}}message_id.txt"
   event_id_file: "{{proto_dir}}event_id.txt"
   robot_message_id_file: "{{robot_go_game_pb_dir}}/message_id.go"
   robot_proto_import_path: "{{output_root}}{{robot_proto}}" # Robot proto import path
