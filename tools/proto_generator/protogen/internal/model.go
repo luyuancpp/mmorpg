@@ -162,12 +162,23 @@ func (info *RPCServiceInfo) BasePathForCpp() string {
 
 // NodeServiceForCpp resolves the eNodeType enum prefix for this service.
 // It first checks if {ServiceName}NodeService exists in the enum; if so, uses the service name.
+// Then tries {PackageName}NodeService (CamelCase) from the proto package declaration.
 // Otherwise, it falls back to the directory-based derivation.
 func (info *RPCServiceInfo) NodeServiceForCpp() string {
+	// 1. Try service name directly: e.g. SceneManager -> SceneManagerNodeService
 	candidate := info.Service() + "NodeService"
 	if NodeEnumValueSet[candidate] {
 		return info.Service()
 	}
+	// 2. Try proto package name: e.g. scene_node -> SceneNode -> SceneNodeNodeService
+	pkgCamel := strcase.ToCamel(info.Package())
+	if pkgCamel != "" {
+		candidate = pkgCamel + "NodeService"
+		if NodeEnumValueSet[candidate] {
+			return pkgCamel
+		}
+	}
+	// 3. Fallback to directory name
 	return strcase.ToCamel(path.Base(info.Path()))
 }
 
