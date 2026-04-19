@@ -24,11 +24,11 @@ const (
 type PlayerSessionSnapshotComp struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	PlayerId      uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
-	GateSessionId uint64                 `protobuf:"varint,2,opt,name=gate_session_id,json=gateSessionId,proto3" json:"gate_session_id,omitempty"`
+	GateSessionId uint32                 `protobuf:"varint,2,opt,name=gate_session_id,json=gateSessionId,proto3" json:"gate_session_id,omitempty"`
 	NodeId        map[uint32]uint32      `protobuf:"bytes,3,rep,name=node_id,json=nodeId,proto3" json:"node_id,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
 	LoginToken    string                 `protobuf:"bytes,4,opt,name=login_token,json=loginToken,proto3" json:"login_token,omitempty"`
 	// Session version and idempotency fields
-	SessionVersion uint64 `protobuf:"varint,5,opt,name=session_version,json=sessionVersion,proto3" json:"session_version,omitempty"`
+	SessionVersion uint32 `protobuf:"varint,5,opt,name=session_version,json=sessionVersion,proto3" json:"session_version,omitempty"`
 	TokenExpiryMs  uint64 `protobuf:"varint,6,opt,name=token_expiry_ms,json=tokenExpiryMs,proto3" json:"token_expiry_ms,omitempty"`
 	TokenId        string `protobuf:"bytes,7,opt,name=token_id,json=tokenId,proto3" json:"token_id,omitempty"` // Server-side token ID (only ID, not secret)
 	LastRequestId  string `protobuf:"bytes,8,opt,name=last_request_id,json=lastRequestId,proto3" json:"last_request_id,omitempty"`
@@ -73,7 +73,7 @@ func (x *PlayerSessionSnapshotComp) GetPlayerId() uint64 {
 	return 0
 }
 
-func (x *PlayerSessionSnapshotComp) GetGateSessionId() uint64 {
+func (x *PlayerSessionSnapshotComp) GetGateSessionId() uint32 {
 	if x != nil {
 		return x.GateSessionId
 	}
@@ -94,7 +94,7 @@ func (x *PlayerSessionSnapshotComp) GetLoginToken() string {
 	return ""
 }
 
-func (x *PlayerSessionSnapshotComp) GetSessionVersion() uint64 {
+func (x *PlayerSessionSnapshotComp) GetSessionVersion() uint32 {
 	if x != nil {
 		return x.SessionVersion
 	}
@@ -129,11 +129,11 @@ const file_proto_common_component_player_network_comp_proto_rawDesc = "" +
 	"0proto/common/component/player_network_comp.proto\"\x91\x03\n" +
 	"\x19PlayerSessionSnapshotComp\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12&\n" +
-	"\x0fgate_session_id\x18\x02 \x01(\x04R\rgateSessionId\x12?\n" +
+	"\x0fgate_session_id\x18\x02 \x01(\rR\rgateSessionId\x12?\n" +
 	"\anode_id\x18\x03 \x03(\v2&.PlayerSessionSnapshotComp.NodeIdEntryR\x06nodeId\x12\x1f\n" +
 	"\vlogin_token\x18\x04 \x01(\tR\n" +
 	"loginToken\x12'\n" +
-	"\x0fsession_version\x18\x05 \x01(\x04R\x0esessionVersion\x12&\n" +
+	"\x0fsession_version\x18\x05 \x01(\rR\x0esessionVersion\x12&\n" +
 	"\x0ftoken_expiry_ms\x18\x06 \x01(\x04R\rtokenExpiryMs\x12\x19\n" +
 	"\btoken_id\x18\a \x01(\tR\atokenId\x12&\n" +
 	"\x0flast_request_id\x18\b \x01(\tR\rlastRequestId\x1a9\n" +

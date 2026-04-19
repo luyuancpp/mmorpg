@@ -28,7 +28,7 @@ type GateCommand struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
 	PlayerId         uint64                 `protobuf:"varint,2,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
 	TargetNodeId     uint32                 `protobuf:"varint,3,opt,name=target_node_id,json=targetNodeId,proto3" json:"target_node_id,omitempty"`            // Target Scene node ID for routing
-	SessionId        uint64                 `protobuf:"varint,4,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`                       // Gate session ID
+	SessionId        uint32                 `protobuf:"varint,4,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`                       // Gate session ID
 	Payload          []byte                 `protobuf:"bytes,5,opt,name=payload,proto3" json:"payload,omitempty"`                                             // Serialized event proto (decoded via event_id)
 	TargetGateId     uint32                 `protobuf:"varint,6,opt,name=target_gate_id,json=targetGateId,proto3" json:"target_gate_id,omitempty"`            // Target Gate ID
 	TargetInstanceId string                 `protobuf:"bytes,7,opt,name=target_instance_id,json=targetInstanceId,proto3" json:"target_instance_id,omitempty"` // Target Gate instance UUID to avoid stale commands
@@ -82,7 +82,7 @@ func (x *GateCommand) GetTargetNodeId() uint32 {
 	return 0
 }
 
-func (x *GateCommand) GetSessionId() uint64 {
+func (x *GateCommand) GetSessionId() uint32 {
 	if x != nil {
 		return x.SessionId
 	}
@@ -133,7 +133,7 @@ const file_proto_contracts_kafka_gate_command_proto_rawDesc = "" +
 	"\tplayer_id\x18\x02 \x01(\x04R\bplayerId\x12$\n" +
 	"\x0etarget_node_id\x18\x03 \x01(\rR\ftargetNodeId\x12\x1d\n" +
 	"\n" +
-	"session_id\x18\x04 \x01(\x04R\tsessionId\x12\x18\n" +
+	"session_id\x18\x04 \x01(\rR\tsessionId\x12\x18\n" +
 	"\apayload\x18\x05 \x01(\fR\apayload\x12$\n" +
 	"\x0etarget_gate_id\x18\x06 \x01(\rR\ftargetGateId\x12,\n" +
 	"\x12target_instance_id\x18\a \x01(\tR\x10targetInstanceId\x12\x19\n" +

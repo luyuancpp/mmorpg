@@ -219,8 +219,8 @@ class GateCommand final : public ::google::protobuf::Message
     kPayloadFieldNumber = 5,
     kTargetInstanceIdFieldNumber = 7,
     kPlayerIdFieldNumber = 2,
-    kSessionIdFieldNumber = 4,
     kTargetNodeIdFieldNumber = 3,
+    kSessionIdFieldNumber = 4,
     kTargetGateIdFieldNumber = 6,
     kEventIdFieldNumber = 8,
     kEnterGsTypeFieldNumber = 9,
@@ -265,16 +265,6 @@ class GateCommand final : public ::google::protobuf::Message
   void _internal_set_player_id(::uint64_t value);
 
   public:
-  // uint64 session_id = 4;
-  void clear_session_id() ;
-  ::uint64_t session_id() const;
-  void set_session_id(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_session_id() const;
-  void _internal_set_session_id(::uint64_t value);
-
-  public:
   // uint32 target_node_id = 3;
   void clear_target_node_id() ;
   ::uint32_t target_node_id() const;
@@ -283,6 +273,16 @@ class GateCommand final : public ::google::protobuf::Message
   private:
   ::uint32_t _internal_target_node_id() const;
   void _internal_set_target_node_id(::uint32_t value);
+
+  public:
+  // uint32 session_id = 4;
+  void clear_session_id() ;
+  ::uint32_t session_id() const;
+  void set_session_id(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_session_id() const;
+  void _internal_set_session_id(::uint32_t value);
 
   public:
   // uint32 target_gate_id = 6;
@@ -344,8 +344,8 @@ class GateCommand final : public ::google::protobuf::Message
     ::google::protobuf::internal::ArenaStringPtr payload_;
     ::google::protobuf::internal::ArenaStringPtr target_instance_id_;
     ::uint64_t player_id_;
-    ::uint64_t session_id_;
     ::uint32_t target_node_id_;
+    ::uint32_t session_id_;
     ::uint32_t target_gate_id_;
     ::uint32_t event_id_;
     ::uint32_t enter_gs_type_;
@@ -401,7 +401,7 @@ inline void GateCommand::_internal_set_player_id(::uint64_t value) {
 inline void GateCommand::clear_target_node_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.target_node_id_ = 0u;
-  _impl_._has_bits_[0] &= ~0x00000010u;
+  _impl_._has_bits_[0] &= ~0x00000008u;
 }
 inline ::uint32_t GateCommand::target_node_id() const {
   // @@protoc_insertion_point(field_get:contracts.kafka.GateCommand.target_node_id)
@@ -409,7 +409,7 @@ inline ::uint32_t GateCommand::target_node_id() const {
 }
 inline void GateCommand::set_target_node_id(::uint32_t value) {
   _internal_set_target_node_id(value);
-  _impl_._has_bits_[0] |= 0x00000010u;
+  _impl_._has_bits_[0] |= 0x00000008u;
   // @@protoc_insertion_point(field_set:contracts.kafka.GateCommand.target_node_id)
 }
 inline ::uint32_t GateCommand::_internal_target_node_id() const {
@@ -421,26 +421,26 @@ inline void GateCommand::_internal_set_target_node_id(::uint32_t value) {
   _impl_.target_node_id_ = value;
 }
 
-// uint64 session_id = 4;
+// uint32 session_id = 4;
 inline void GateCommand::clear_session_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.session_id_ = ::uint64_t{0u};
-  _impl_._has_bits_[0] &= ~0x00000008u;
+  _impl_.session_id_ = 0u;
+  _impl_._has_bits_[0] &= ~0x00000010u;
 }
-inline ::uint64_t GateCommand::session_id() const {
+inline ::uint32_t GateCommand::session_id() const {
   // @@protoc_insertion_point(field_get:contracts.kafka.GateCommand.session_id)
   return _internal_session_id();
 }
-inline void GateCommand::set_session_id(::uint64_t value) {
+inline void GateCommand::set_session_id(::uint32_t value) {
   _internal_set_session_id(value);
-  _impl_._has_bits_[0] |= 0x00000008u;
+  _impl_._has_bits_[0] |= 0x00000010u;
   // @@protoc_insertion_point(field_set:contracts.kafka.GateCommand.session_id)
 }
-inline ::uint64_t GateCommand::_internal_session_id() const {
+inline ::uint32_t GateCommand::_internal_session_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.session_id_;
 }
-inline void GateCommand::_internal_set_session_id(::uint64_t value) {
+inline void GateCommand::_internal_set_session_id(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.session_id_ = value;
 }

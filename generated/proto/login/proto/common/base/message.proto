@@ -27,7 +27,7 @@ message MessageContent
 message NodeMessageHeader
 {
   uint32 node_id = 1;      // Node ID
-  uint64 session_id = 2;   // Session ID
+  uint32 session_id = 2;   // Session ID
 }
 
 // Node route message request
@@ -100,7 +100,7 @@ message RouteMessageRequest
 {
   bytes body = 1;                               // Message body (bytes)
   repeated RoutingNodeInfo route_nodes = 2;     // Routing node list
-  uint64 session_id = 3;                        // Session ID
+  uint32 session_id = 3;                        // Session ID
   uint64 id = 4;                                // Unique message ID
   bool is_client = 5;                           // Whether from client
 }
@@ -110,7 +110,7 @@ message RouteMessageResponse
 {
   bytes body = 1;                               // Message body (bytes)
   repeated RoutingNodeInfo route_nodes = 2;     // Routing node list
-  uint64 session_id = 3;                        // Session ID
+  uint32 session_id = 3;                        // Session ID
   uint64 id = 4;                                // Unique message ID
   bool is_client = 5;                           // Whether from client
 }

@@ -211,8 +211,8 @@ class SessionDetails final : public ::google::protobuf::Message
   // accessors -------------------------------------------------------
   enum : int {
     kGateInstanceIdFieldNumber = 4,
-    kSessionIdFieldNumber = 1,
     kPlayerIdFieldNumber = 2,
+    kSessionIdFieldNumber = 1,
     kGateNodeIdFieldNumber = 3,
   };
   // string gate_instance_id = 4;
@@ -230,16 +230,6 @@ class SessionDetails final : public ::google::protobuf::Message
   ::std::string* PROTOBUF_NONNULL _internal_mutable_gate_instance_id();
 
   public:
-  // uint64 session_id = 1;
-  void clear_session_id() ;
-  ::uint64_t session_id() const;
-  void set_session_id(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_session_id() const;
-  void _internal_set_session_id(::uint64_t value);
-
-  public:
   // uint64 player_id = 2;
   void clear_player_id() ;
   ::uint64_t player_id() const;
@@ -248,6 +238,16 @@ class SessionDetails final : public ::google::protobuf::Message
   private:
   ::uint64_t _internal_player_id() const;
   void _internal_set_player_id(::uint64_t value);
+
+  public:
+  // uint32 session_id = 1;
+  void clear_session_id() ;
+  ::uint32_t session_id() const;
+  void set_session_id(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_session_id() const;
+  void _internal_set_session_id(::uint32_t value);
 
   public:
   // uint32 gate_node_id = 3;
@@ -287,8 +287,8 @@ class SessionDetails final : public ::google::protobuf::Message
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::google::protobuf::internal::ArenaStringPtr gate_instance_id_;
-    ::uint64_t session_id_;
     ::uint64_t player_id_;
+    ::uint32_t session_id_;
     ::uint32_t gate_node_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -314,26 +314,26 @@ extern const ::google::protobuf::internal::ClassDataFull SessionDetails_class_da
 
 // SessionDetails
 
-// uint64 session_id = 1;
+// uint32 session_id = 1;
 inline void SessionDetails::clear_session_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.session_id_ = ::uint64_t{0u};
-  _impl_._has_bits_[0] &= ~0x00000002u;
+  _impl_.session_id_ = 0u;
+  _impl_._has_bits_[0] &= ~0x00000004u;
 }
-inline ::uint64_t SessionDetails::session_id() const {
+inline ::uint32_t SessionDetails::session_id() const {
   // @@protoc_insertion_point(field_get:SessionDetails.session_id)
   return _internal_session_id();
 }
-inline void SessionDetails::set_session_id(::uint64_t value) {
+inline void SessionDetails::set_session_id(::uint32_t value) {
   _internal_set_session_id(value);
-  _impl_._has_bits_[0] |= 0x00000002u;
+  _impl_._has_bits_[0] |= 0x00000004u;
   // @@protoc_insertion_point(field_set:SessionDetails.session_id)
 }
-inline ::uint64_t SessionDetails::_internal_session_id() const {
+inline ::uint32_t SessionDetails::_internal_session_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.session_id_;
 }
-inline void SessionDetails::_internal_set_session_id(::uint64_t value) {
+inline void SessionDetails::_internal_set_session_id(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.session_id_ = value;
 }
@@ -342,7 +342,7 @@ inline void SessionDetails::_internal_set_session_id(::uint64_t value) {
 inline void SessionDetails::clear_player_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.player_id_ = ::uint64_t{0u};
-  _impl_._has_bits_[0] &= ~0x00000004u;
+  _impl_._has_bits_[0] &= ~0x00000002u;
 }
 inline ::uint64_t SessionDetails::player_id() const {
   // @@protoc_insertion_point(field_get:SessionDetails.player_id)
@@ -350,7 +350,7 @@ inline ::uint64_t SessionDetails::player_id() const {
 }
 inline void SessionDetails::set_player_id(::uint64_t value) {
   _internal_set_player_id(value);
-  _impl_._has_bits_[0] |= 0x00000004u;
+  _impl_._has_bits_[0] |= 0x00000002u;
   // @@protoc_insertion_point(field_set:SessionDetails.player_id)
 }
 inline ::uint64_t SessionDetails::_internal_player_id() const {

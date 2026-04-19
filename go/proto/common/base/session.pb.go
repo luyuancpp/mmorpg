@@ -23,7 +23,7 @@ const (
 
 type SessionDetails struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
-	SessionId      uint64                 `protobuf:"varint,1,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	SessionId      uint32                 `protobuf:"varint,1,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
 	PlayerId       uint64                 `protobuf:"varint,2,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
 	GateNodeId     uint32                 `protobuf:"varint,3,opt,name=gate_node_id,json=gateNodeId,proto3" json:"gate_node_id,omitempty"`            // Gate node ID (for Kafka routing)
 	GateInstanceId string                 `protobuf:"bytes,4,opt,name=gate_instance_id,json=gateInstanceId,proto3" json:"gate_instance_id,omitempty"` // Gate startup UUID (zombie-message protection)
@@ -61,7 +61,7 @@ func (*SessionDetails) Descriptor() ([]byte, []int) {
 	return file_proto_common_base_session_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *SessionDetails) GetSessionId() uint64 {
+func (x *SessionDetails) GetSessionId() uint32 {
 	if x != nil {
 		return x.SessionId
 	}
@@ -96,7 +96,7 @@ const file_proto_common_base_session_proto_rawDesc = "" +
 	"\x1fproto/common/base/session.proto\"\x98\x01\n" +
 	"\x0eSessionDetails\x12\x1d\n" +
 	"\n" +
-	"session_id\x18\x01 \x01(\x04R\tsessionId\x12\x1b\n" +
+	"session_id\x18\x01 \x01(\rR\tsessionId\x12\x1b\n" +
 	"\tplayer_id\x18\x02 \x01(\x04R\bplayerId\x12 \n" +
 	"\fgate_node_id\x18\x03 \x01(\rR\n" +
 	"gateNodeId\x12(\n" +

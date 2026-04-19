@@ -32,14 +32,14 @@ enum PlayerSessionState {
 
 message PlayerSession {
   uint64 player_id = 1;
-  uint64 session_id = 2;         // Gate session ID
+  uint32 session_id = 2;         // Gate session ID
   string gate_id = 3;            // Gate node ID
   string gate_instance_id = 4;   // Gate instance UUID (prevent zombie messages)
   string scene_node_id = 5;      // Current Scene node ID
   uint64 scene_id = 6;           // Current scene ID
   string token_id = 7;           // SHA256(login_token)
   uint64 token_expiry_ms = 8;
-  uint64 session_version = 9;    // Incremented on each real change, prevents stale messages
+  uint32 session_version = 9;    // Incremented on each real change, prevents stale messages
   PlayerSessionState state = 10;
   int64 last_active_ts = 11;     // Last active time (unix ms)
   string request_id = 12;        // Latest login request_id (idempotent)
@@ -62,14 +62,14 @@ message GetSessionResponse {
 // Disconnect request: mark DISCONNECTING + start TTL lease
 message SetDisconnectingRequest {
   uint64 player_id = 1;
-  uint64 session_id = 2;
+  uint32 session_id = 2;
   uint32 lease_ttl_seconds = 3;  // Default 30s
 }
 
 // Reconnect request: cancel lease, restore ONLINE
 message ReconnectRequest {
   uint64 player_id = 1;
-  uint64 new_session_id = 2;
+  uint32 new_session_id = 2;
   string gate_id = 3;
   string gate_instance_id = 4;
   string token_id = 5;
@@ -87,7 +87,7 @@ message ReconnectResponse {
 // Lease expired cleanup result
 message LeaseExpiredEvent {
   uint64 player_id = 1;
-  uint64 session_id = 2;
+  uint32 session_id = 2;
   string scene_node_id = 3;
   uint64 scene_id = 4;
   string gate_id = 5;

@@ -32,7 +32,7 @@ type EnterGameLogic struct {
 
 type enterGameSessionState struct {
 	playerID       uint64
-	sessionID      uint64
+	sessionID      uint32
 	gateID         string
 	gateInstanceID string
 	account        string
@@ -225,7 +225,7 @@ func (l *EnterGameLogic) persistEnterGameSession(
 	decision sessionmanager.EnterGameDecision,
 	existing *sessionmanager.PlayerSession,
 	state enterGameSessionState,
-) (uint64, error) {
+) (uint32, error) {
 	switch decision {
 	case sessionmanager.FirstLogin, sessionmanager.ReplaceLogin:
 		if decision == sessionmanager.ReplaceLogin {
@@ -267,7 +267,7 @@ func (l *EnterGameLogic) persistEnterGameSession(
 	}
 }
 
-func (l *EnterGameLogic) kickReplacedSession(existing *sessionmanager.PlayerSession, currentSessionID uint64) error {
+func (l *EnterGameLogic) kickReplacedSession(existing *sessionmanager.PlayerSession, currentSessionID uint32) error {
 	if existing == nil {
 		return nil
 	}

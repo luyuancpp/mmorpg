@@ -45,7 +45,7 @@ struct SessionInfo
 	Guid playerId{kInvalidGuid};
 	muduo::net::TcpConnectionPtr conn;
 	MessageLimiter messageLimiter;
-	uint64_t sessionVersion{kInvalidGuid};
+	uint32_t sessionVersion{UINT32_MAX};
 	uint32_t pendingEnterGsType{0}; // Pending login type to forward to Scene once scene node is assigned
 	uint64_t sceneId{0};            // Scene instance GUID from SceneManager (RoutePlayerEvent)
 	bool verified{false};			// True after client passes Gate connection token verification

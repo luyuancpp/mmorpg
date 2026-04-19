@@ -6,7 +6,7 @@
 #include <thread_context/registry_manager.h>
 #include <thread_context/entity_manager.h>
 
-using SessionList = std::unordered_map<Guid, Guid>;
+using SessionList = std::unordered_map<SessionId, Guid>;
 
 inline SessionList& SessionMap()
 {

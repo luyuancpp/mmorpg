@@ -211,27 +211,17 @@ class PlayerGameNodeEntryInfoComp final : public ::google::protobuf::Message
   // accessors -------------------------------------------------------
   enum : int {
     kSessionIdFieldNumber = 2,
-    kSceneIdFieldNumber = 4,
     kEnterGsTypeFieldNumber = 3,
+    kSceneIdFieldNumber = 4,
   };
-  // uint64 session_id = 2;
+  // uint32 session_id = 2;
   void clear_session_id() ;
-  ::uint64_t session_id() const;
-  void set_session_id(::uint64_t value);
+  ::uint32_t session_id() const;
+  void set_session_id(::uint32_t value);
 
   private:
-  ::uint64_t _internal_session_id() const;
-  void _internal_set_session_id(::uint64_t value);
-
-  public:
-  // uint64 scene_id = 4;
-  void clear_scene_id() ;
-  ::uint64_t scene_id() const;
-  void set_scene_id(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_scene_id() const;
-  void _internal_set_scene_id(::uint64_t value);
+  ::uint32_t _internal_session_id() const;
+  void _internal_set_session_id(::uint32_t value);
 
   public:
   // uint32 enter_gs_type = 3;
@@ -242,6 +232,16 @@ class PlayerGameNodeEntryInfoComp final : public ::google::protobuf::Message
   private:
   ::uint32_t _internal_enter_gs_type() const;
   void _internal_set_enter_gs_type(::uint32_t value);
+
+  public:
+  // uint64 scene_id = 4;
+  void clear_scene_id() ;
+  ::uint64_t scene_id() const;
+  void set_scene_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_scene_id() const;
+  void _internal_set_scene_id(::uint64_t value);
 
   public:
   // @@protoc_insertion_point(class_scope:PlayerGameNodeEntryInfoComp)
@@ -270,9 +270,9 @@ class PlayerGameNodeEntryInfoComp final : public ::google::protobuf::Message
         const PlayerGameNodeEntryInfoComp& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
-    ::uint64_t session_id_;
-    ::uint64_t scene_id_;
+    ::uint32_t session_id_;
     ::uint32_t enter_gs_type_;
+    ::uint64_t scene_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -297,26 +297,26 @@ extern const ::google::protobuf::internal::ClassDataFull PlayerGameNodeEntryInfo
 
 // PlayerGameNodeEntryInfoComp
 
-// uint64 session_id = 2;
+// uint32 session_id = 2;
 inline void PlayerGameNodeEntryInfoComp::clear_session_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.session_id_ = ::uint64_t{0u};
+  _impl_.session_id_ = 0u;
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
-inline ::uint64_t PlayerGameNodeEntryInfoComp::session_id() const {
+inline ::uint32_t PlayerGameNodeEntryInfoComp::session_id() const {
   // @@protoc_insertion_point(field_get:PlayerGameNodeEntryInfoComp.session_id)
   return _internal_session_id();
 }
-inline void PlayerGameNodeEntryInfoComp::set_session_id(::uint64_t value) {
+inline void PlayerGameNodeEntryInfoComp::set_session_id(::uint32_t value) {
   _internal_set_session_id(value);
   _impl_._has_bits_[0] |= 0x00000001u;
   // @@protoc_insertion_point(field_set:PlayerGameNodeEntryInfoComp.session_id)
 }
-inline ::uint64_t PlayerGameNodeEntryInfoComp::_internal_session_id() const {
+inline ::uint32_t PlayerGameNodeEntryInfoComp::_internal_session_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.session_id_;
 }
-inline void PlayerGameNodeEntryInfoComp::_internal_set_session_id(::uint64_t value) {
+inline void PlayerGameNodeEntryInfoComp::_internal_set_session_id(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.session_id_ = value;
 }
@@ -325,7 +325,7 @@ inline void PlayerGameNodeEntryInfoComp::_internal_set_session_id(::uint64_t val
 inline void PlayerGameNodeEntryInfoComp::clear_enter_gs_type() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.enter_gs_type_ = 0u;
-  _impl_._has_bits_[0] &= ~0x00000004u;
+  _impl_._has_bits_[0] &= ~0x00000002u;
 }
 inline ::uint32_t PlayerGameNodeEntryInfoComp::enter_gs_type() const {
   // @@protoc_insertion_point(field_get:PlayerGameNodeEntryInfoComp.enter_gs_type)
@@ -333,7 +333,7 @@ inline ::uint32_t PlayerGameNodeEntryInfoComp::enter_gs_type() const {
 }
 inline void PlayerGameNodeEntryInfoComp::set_enter_gs_type(::uint32_t value) {
   _internal_set_enter_gs_type(value);
-  _impl_._has_bits_[0] |= 0x00000004u;
+  _impl_._has_bits_[0] |= 0x00000002u;
   // @@protoc_insertion_point(field_set:PlayerGameNodeEntryInfoComp.enter_gs_type)
 }
 inline ::uint32_t PlayerGameNodeEntryInfoComp::_internal_enter_gs_type() const {
@@ -349,7 +349,7 @@ inline void PlayerGameNodeEntryInfoComp::_internal_set_enter_gs_type(::uint32_t 
 inline void PlayerGameNodeEntryInfoComp::clear_scene_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.scene_id_ = ::uint64_t{0u};
-  _impl_._has_bits_[0] &= ~0x00000002u;
+  _impl_._has_bits_[0] &= ~0x00000004u;
 }
 inline ::uint64_t PlayerGameNodeEntryInfoComp::scene_id() const {
   // @@protoc_insertion_point(field_get:PlayerGameNodeEntryInfoComp.scene_id)
@@ -357,7 +357,7 @@ inline ::uint64_t PlayerGameNodeEntryInfoComp::scene_id() const {
 }
 inline void PlayerGameNodeEntryInfoComp::set_scene_id(::uint64_t value) {
   _internal_set_scene_id(value);
-  _impl_._has_bits_[0] |= 0x00000002u;
+  _impl_._has_bits_[0] |= 0x00000004u;
   // @@protoc_insertion_point(field_set:PlayerGameNodeEntryInfoComp.scene_id)
 }
 inline ::uint64_t PlayerGameNodeEntryInfoComp::_internal_scene_id() const {

@@ -22,7 +22,7 @@ func getSessionDetailsForAction(ctx context.Context, action string) (*login_prot
 	return sessionDetails, true
 }
 
-func cleanupLoginSessionState(ctx context.Context, svcCtx *svc.ServiceContext, sessionID uint64, logicTag string) {
+func cleanupLoginSessionState(ctx context.Context, svcCtx *svc.ServiceContext, sessionID uint32, logicTag string) {
 	loginsession.Cleanup(ctx, svcCtx.RedisClient, sessionID, logicTag)
 }
 
@@ -36,7 +36,7 @@ func deletePlayerSession(ctx context.Context, svcCtx *svc.ServiceContext, player
 	}
 }
 
-func markPlayerSessionDisconnecting(ctx context.Context, svcCtx *svc.ServiceContext, playerID uint64, sessionID uint64) {
+func markPlayerSessionDisconnecting(ctx context.Context, svcCtx *svc.ServiceContext, playerID uint64, sessionID uint32) {
 	if playerID == 0 {
 		return
 	}

@@ -105,9 +105,9 @@ inline constexpr EnterSceneRequest::Impl_::Impl_(
             ::_pbi::ConstantInitialized()),
         player_id_{::uint64_t{0u}},
         scene_id_{::uint64_t{0u}},
-        session_id_{::uint64_t{0u}},
-        scene_conf_id_{::uint64_t{0u}},
+        session_id_{0u},
         zone_id_{0u},
+        scene_conf_id_{::uint64_t{0u}},
         gate_zone_id_{0u} {}
 
 template <typename>
@@ -305,8 +305,8 @@ const ::uint32_t
         0,
         1,
         2,
-        7,
         6,
+        7,
         8,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::scene_manager::EnterSceneResponse, _impl_._has_bits_),
@@ -377,7 +377,7 @@ const char descriptor_table_protodef_proto_2fscene_5fmanager_2fscene_5fmanager_5
     "\025\n\rerror_message\030\004 \001(\t\"8\n\023DestroySceneRe"
     "quest\022\020\n\010scene_id\030\001 \001(\004\022\017\n\007zone_id\030\002 \001(\r"
     "\"\311\001\n\021EnterSceneRequest\022\021\n\tplayer_id\030\001 \001("
-    "\004\022\020\n\010scene_id\030\002 \001(\004\022\022\n\nsession_id\030\003 \001(\004\022"
+    "\004\022\020\n\010scene_id\030\002 \001(\004\022\022\n\nsession_id\030\003 \001(\r\022"
     "\022\n\nrequest_id\030\004 \001(\t\022\017\n\007gate_id\030\005 \001(\t\022\030\n\020"
     "gate_instance_id\030\006 \001(\t\022\017\n\007zone_id\030\007 \001(\r\022"
     "\025\n\rscene_conf_id\030\010 \001(\004\022\024\n\014gate_zone_id\030\t"
@@ -1666,8 +1666,8 @@ EnterSceneRequest::_table_ = {
     // uint64 scene_id = 2;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(EnterSceneRequest, _impl_.scene_id_), 4>(),
      {16, 4, 0, PROTOBUF_FIELD_OFFSET(EnterSceneRequest, _impl_.scene_id_)}},
-    // uint64 session_id = 3;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(EnterSceneRequest, _impl_.session_id_), 5>(),
+    // uint32 session_id = 3;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(EnterSceneRequest, _impl_.session_id_), 5>(),
      {24, 5, 0, PROTOBUF_FIELD_OFFSET(EnterSceneRequest, _impl_.session_id_)}},
     // string request_id = 4;
     {::_pbi::TcParser::FastUS1,
@@ -1679,11 +1679,11 @@ EnterSceneRequest::_table_ = {
     {::_pbi::TcParser::FastUS1,
      {50, 2, 0, PROTOBUF_FIELD_OFFSET(EnterSceneRequest, _impl_.gate_instance_id_)}},
     // uint32 zone_id = 7;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(EnterSceneRequest, _impl_.zone_id_), 7>(),
-     {56, 7, 0, PROTOBUF_FIELD_OFFSET(EnterSceneRequest, _impl_.zone_id_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(EnterSceneRequest, _impl_.zone_id_), 6>(),
+     {56, 6, 0, PROTOBUF_FIELD_OFFSET(EnterSceneRequest, _impl_.zone_id_)}},
     // uint64 scene_conf_id = 8;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(EnterSceneRequest, _impl_.scene_conf_id_), 6>(),
-     {64, 6, 0, PROTOBUF_FIELD_OFFSET(EnterSceneRequest, _impl_.scene_conf_id_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(EnterSceneRequest, _impl_.scene_conf_id_), 7>(),
+     {64, 7, 0, PROTOBUF_FIELD_OFFSET(EnterSceneRequest, _impl_.scene_conf_id_)}},
     // uint32 gate_zone_id = 9;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(EnterSceneRequest, _impl_.gate_zone_id_), 8>(),
      {72, 8, 0, PROTOBUF_FIELD_OFFSET(EnterSceneRequest, _impl_.gate_zone_id_)}},
@@ -1702,9 +1702,9 @@ EnterSceneRequest::_table_ = {
     // uint64 scene_id = 2;
     {PROTOBUF_FIELD_OFFSET(EnterSceneRequest, _impl_.scene_id_), _Internal::kHasBitsOffset + 4, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
-    // uint64 session_id = 3;
+    // uint32 session_id = 3;
     {PROTOBUF_FIELD_OFFSET(EnterSceneRequest, _impl_.session_id_), _Internal::kHasBitsOffset + 5, 0,
-    (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
     // string request_id = 4;
     {PROTOBUF_FIELD_OFFSET(EnterSceneRequest, _impl_.request_id_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
@@ -1715,10 +1715,10 @@ EnterSceneRequest::_table_ = {
     {PROTOBUF_FIELD_OFFSET(EnterSceneRequest, _impl_.gate_instance_id_), _Internal::kHasBitsOffset + 2, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
     // uint32 zone_id = 7;
-    {PROTOBUF_FIELD_OFFSET(EnterSceneRequest, _impl_.zone_id_), _Internal::kHasBitsOffset + 7, 0,
+    {PROTOBUF_FIELD_OFFSET(EnterSceneRequest, _impl_.zone_id_), _Internal::kHasBitsOffset + 6, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
     // uint64 scene_conf_id = 8;
-    {PROTOBUF_FIELD_OFFSET(EnterSceneRequest, _impl_.scene_conf_id_), _Internal::kHasBitsOffset + 6, 0,
+    {PROTOBUF_FIELD_OFFSET(EnterSceneRequest, _impl_.scene_conf_id_), _Internal::kHasBitsOffset + 7, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
     // uint32 gate_zone_id = 9;
     {PROTOBUF_FIELD_OFFSET(EnterSceneRequest, _impl_.gate_zone_id_), _Internal::kHasBitsOffset + 8, 0,
@@ -1754,8 +1754,8 @@ PROTOBUF_NOINLINE void EnterSceneRequest::Clear() {
   }
   if ((cached_has_bits & 0x000000f8u) != 0) {
     ::memset(&_impl_.player_id_, 0, static_cast<::size_t>(
-        reinterpret_cast<char*>(&_impl_.zone_id_) -
-        reinterpret_cast<char*>(&_impl_.player_id_)) + sizeof(_impl_.zone_id_));
+        reinterpret_cast<char*>(&_impl_.scene_conf_id_) -
+        reinterpret_cast<char*>(&_impl_.player_id_)) + sizeof(_impl_.scene_conf_id_));
   }
   _impl_.gate_zone_id_ = 0u;
   _impl_._has_bits_.Clear();
@@ -1795,11 +1795,11 @@ PROTOBUF_NOINLINE void EnterSceneRequest::Clear() {
     }
   }
 
-  // uint64 session_id = 3;
+  // uint32 session_id = 3;
   if ((this_._impl_._has_bits_[0] & 0x00000020u) != 0) {
     if (this_._internal_session_id() != 0) {
       target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
           3, this_._internal_session_id(), target);
     }
   }
@@ -1835,7 +1835,7 @@ PROTOBUF_NOINLINE void EnterSceneRequest::Clear() {
   }
 
   // uint32 zone_id = 7;
-  if ((this_._impl_._has_bits_[0] & 0x00000080u) != 0) {
+  if ((this_._impl_._has_bits_[0] & 0x00000040u) != 0) {
     if (this_._internal_zone_id() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
@@ -1844,7 +1844,7 @@ PROTOBUF_NOINLINE void EnterSceneRequest::Clear() {
   }
 
   // uint64 scene_conf_id = 8;
-  if ((this_._impl_._has_bits_[0] & 0x00000040u) != 0) {
+  if ((this_._impl_._has_bits_[0] & 0x00000080u) != 0) {
     if (this_._internal_scene_conf_id() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
@@ -1922,25 +1922,25 @@ PROTOBUF_NOINLINE void EnterSceneRequest::Clear() {
             this_._internal_scene_id());
       }
     }
-    // uint64 session_id = 3;
+    // uint32 session_id = 3;
     if ((cached_has_bits & 0x00000020u) != 0) {
       if (this_._internal_session_id() != 0) {
-        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_session_id());
       }
     }
-    // uint64 scene_conf_id = 8;
-    if ((cached_has_bits & 0x00000040u) != 0) {
-      if (this_._internal_scene_conf_id() != 0) {
-        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
-            this_._internal_scene_conf_id());
-      }
-    }
     // uint32 zone_id = 7;
-    if ((cached_has_bits & 0x00000080u) != 0) {
+    if ((cached_has_bits & 0x00000040u) != 0) {
       if (this_._internal_zone_id() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_zone_id());
+      }
+    }
+    // uint64 scene_conf_id = 8;
+    if ((cached_has_bits & 0x00000080u) != 0) {
+      if (this_._internal_scene_conf_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_scene_conf_id());
       }
     }
   }
@@ -2010,13 +2010,13 @@ void EnterSceneRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, const
       }
     }
     if ((cached_has_bits & 0x00000040u) != 0) {
-      if (from._internal_scene_conf_id() != 0) {
-        _this->_impl_.scene_conf_id_ = from._impl_.scene_conf_id_;
+      if (from._internal_zone_id() != 0) {
+        _this->_impl_.zone_id_ = from._impl_.zone_id_;
       }
     }
     if ((cached_has_bits & 0x00000080u) != 0) {
-      if (from._internal_zone_id() != 0) {
-        _this->_impl_.zone_id_ = from._impl_.zone_id_;
+      if (from._internal_scene_conf_id() != 0) {
+        _this->_impl_.scene_conf_id_ = from._impl_.scene_conf_id_;
       }
     }
   }

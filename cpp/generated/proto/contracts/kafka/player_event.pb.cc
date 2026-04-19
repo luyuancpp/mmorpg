@@ -40,8 +40,8 @@ inline constexpr PlayerLifecycleCommand::Impl_::Impl_(
             &::google::protobuf::internal::fixed_address_empty_string,
             ::_pbi::ConstantInitialized()),
         player_id_{::uint64_t{0u}},
-        session_id_{::uint64_t{0u}},
-        command_type_{static_cast< ::contracts::kafka::PlayerLifecycleCommand_CommandType >(0)} {}
+        command_type_{static_cast< ::contracts::kafka::PlayerLifecycleCommand_CommandType >(0)},
+        session_id_{0u} {}
 
 template <typename>
 PROTOBUF_CONSTEXPR PlayerLifecycleCommand::PlayerLifecycleCommand(::_pbi::ConstantInitialized)
@@ -80,9 +80,9 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::contracts::kafka::PlayerLifecycleCommand, _impl_.gate_id_),
         PROTOBUF_FIELD_OFFSET(::contracts::kafka::PlayerLifecycleCommand, _impl_.gate_instance_id_),
         PROTOBUF_FIELD_OFFSET(::contracts::kafka::PlayerLifecycleCommand, _impl_.payload_),
-        5,
-        3,
         4,
+        3,
+        5,
         0,
         1,
         2,
@@ -101,7 +101,7 @@ const char descriptor_table_protodef_proto_2fcontracts_2fkafka_2fplayer_5fevent_
     "to\022\017contracts.kafka\"\371\001\n\026PlayerLifecycleC"
     "ommand\022I\n\014command_type\030\001 \001(\01623.contracts"
     ".kafka.PlayerLifecycleCommand.CommandTyp"
-    "e\022\021\n\tplayer_id\030\002 \001(\004\022\022\n\nsession_id\030\003 \001(\004"
+    "e\022\021\n\tplayer_id\030\002 \001(\004\022\022\n\nsession_id\030\003 \001(\r"
     "\022\017\n\007gate_id\030\004 \001(\t\022\030\n\020gate_instance_id\030\005 "
     "\001(\t\022\017\n\007payload\030\006 \001(\014\"1\n\013CommandType\022\020\n\014D"
     "isconnected\020\000\022\020\n\014LeaseExpired\020\001B\021Z\017contr"
@@ -178,9 +178,9 @@ PlayerLifecycleCommand::PlayerLifecycleCommand(
                offsetof(Impl_, player_id_),
            reinterpret_cast<const char *>(&from._impl_) +
                offsetof(Impl_, player_id_),
-           offsetof(Impl_, command_type_) -
+           offsetof(Impl_, session_id_) -
                offsetof(Impl_, player_id_) +
-               sizeof(Impl_::command_type_));
+               sizeof(Impl_::session_id_));
 
   // @@protoc_insertion_point(copy_constructor:contracts.kafka.PlayerLifecycleCommand)
 }
@@ -197,9 +197,9 @@ inline void PlayerLifecycleCommand::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE a
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, player_id_),
            0,
-           offsetof(Impl_, command_type_) -
+           offsetof(Impl_, session_id_) -
                offsetof(Impl_, player_id_) +
-               sizeof(Impl_::command_type_));
+               sizeof(Impl_::session_id_));
 }
 PlayerLifecycleCommand::~PlayerLifecycleCommand() {
   // @@protoc_insertion_point(destructor:contracts.kafka.PlayerLifecycleCommand)
@@ -279,14 +279,14 @@ PlayerLifecycleCommand::_table_ = {
   }, {{
     {::_pbi::TcParser::MiniParse, {}},
     // .contracts.kafka.PlayerLifecycleCommand.CommandType command_type = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(PlayerLifecycleCommand, _impl_.command_type_), 5>(),
-     {8, 5, 0, PROTOBUF_FIELD_OFFSET(PlayerLifecycleCommand, _impl_.command_type_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(PlayerLifecycleCommand, _impl_.command_type_), 4>(),
+     {8, 4, 0, PROTOBUF_FIELD_OFFSET(PlayerLifecycleCommand, _impl_.command_type_)}},
     // uint64 player_id = 2;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(PlayerLifecycleCommand, _impl_.player_id_), 3>(),
      {16, 3, 0, PROTOBUF_FIELD_OFFSET(PlayerLifecycleCommand, _impl_.player_id_)}},
-    // uint64 session_id = 3;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(PlayerLifecycleCommand, _impl_.session_id_), 4>(),
-     {24, 4, 0, PROTOBUF_FIELD_OFFSET(PlayerLifecycleCommand, _impl_.session_id_)}},
+    // uint32 session_id = 3;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(PlayerLifecycleCommand, _impl_.session_id_), 5>(),
+     {24, 5, 0, PROTOBUF_FIELD_OFFSET(PlayerLifecycleCommand, _impl_.session_id_)}},
     // string gate_id = 4;
     {::_pbi::TcParser::FastUS1,
      {34, 0, 0, PROTOBUF_FIELD_OFFSET(PlayerLifecycleCommand, _impl_.gate_id_)}},
@@ -301,14 +301,14 @@ PlayerLifecycleCommand::_table_ = {
     65535, 65535
   }}, {{
     // .contracts.kafka.PlayerLifecycleCommand.CommandType command_type = 1;
-    {PROTOBUF_FIELD_OFFSET(PlayerLifecycleCommand, _impl_.command_type_), _Internal::kHasBitsOffset + 5, 0,
+    {PROTOBUF_FIELD_OFFSET(PlayerLifecycleCommand, _impl_.command_type_), _Internal::kHasBitsOffset + 4, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
     // uint64 player_id = 2;
     {PROTOBUF_FIELD_OFFSET(PlayerLifecycleCommand, _impl_.player_id_), _Internal::kHasBitsOffset + 3, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
-    // uint64 session_id = 3;
-    {PROTOBUF_FIELD_OFFSET(PlayerLifecycleCommand, _impl_.session_id_), _Internal::kHasBitsOffset + 4, 0,
-    (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    // uint32 session_id = 3;
+    {PROTOBUF_FIELD_OFFSET(PlayerLifecycleCommand, _impl_.session_id_), _Internal::kHasBitsOffset + 5, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
     // string gate_id = 4;
     {PROTOBUF_FIELD_OFFSET(PlayerLifecycleCommand, _impl_.gate_id_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
@@ -348,8 +348,8 @@ PROTOBUF_NOINLINE void PlayerLifecycleCommand::Clear() {
   }
   if ((cached_has_bits & 0x00000038u) != 0) {
     ::memset(&_impl_.player_id_, 0, static_cast<::size_t>(
-        reinterpret_cast<char*>(&_impl_.command_type_) -
-        reinterpret_cast<char*>(&_impl_.player_id_)) + sizeof(_impl_.command_type_));
+        reinterpret_cast<char*>(&_impl_.session_id_) -
+        reinterpret_cast<char*>(&_impl_.player_id_)) + sizeof(_impl_.session_id_));
   }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
@@ -371,7 +371,7 @@ PROTOBUF_NOINLINE void PlayerLifecycleCommand::Clear() {
   (void)cached_has_bits;
 
   // .contracts.kafka.PlayerLifecycleCommand.CommandType command_type = 1;
-  if ((this_._impl_._has_bits_[0] & 0x00000020u) != 0) {
+  if ((this_._impl_._has_bits_[0] & 0x00000010u) != 0) {
     if (this_._internal_command_type() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteEnumToArray(
@@ -388,11 +388,11 @@ PROTOBUF_NOINLINE void PlayerLifecycleCommand::Clear() {
     }
   }
 
-  // uint64 session_id = 3;
-  if ((this_._impl_._has_bits_[0] & 0x00000010u) != 0) {
+  // uint32 session_id = 3;
+  if ((this_._impl_._has_bits_[0] & 0x00000020u) != 0) {
     if (this_._internal_session_id() != 0) {
       target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
           3, this_._internal_session_id(), target);
     }
   }
@@ -479,18 +479,18 @@ PROTOBUF_NOINLINE void PlayerLifecycleCommand::Clear() {
             this_._internal_player_id());
       }
     }
-    // uint64 session_id = 3;
-    if ((cached_has_bits & 0x00000010u) != 0) {
-      if (this_._internal_session_id() != 0) {
-        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
-            this_._internal_session_id());
-      }
-    }
     // .contracts.kafka.PlayerLifecycleCommand.CommandType command_type = 1;
-    if ((cached_has_bits & 0x00000020u) != 0) {
+    if ((cached_has_bits & 0x00000010u) != 0) {
       if (this_._internal_command_type() != 0) {
         total_size += 1 +
                       ::_pbi::WireFormatLite::EnumSize(this_._internal_command_type());
+      }
+    }
+    // uint32 session_id = 3;
+    if ((cached_has_bits & 0x00000020u) != 0) {
+      if (this_._internal_session_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_session_id());
       }
     }
   }
@@ -541,13 +541,13 @@ void PlayerLifecycleCommand::MergeImpl(::google::protobuf::MessageLite& to_msg, 
       }
     }
     if ((cached_has_bits & 0x00000010u) != 0) {
-      if (from._internal_session_id() != 0) {
-        _this->_impl_.session_id_ = from._impl_.session_id_;
+      if (from._internal_command_type() != 0) {
+        _this->_impl_.command_type_ = from._impl_.command_type_;
       }
     }
     if ((cached_has_bits & 0x00000020u) != 0) {
-      if (from._internal_command_type() != 0) {
-        _this->_impl_.command_type_ = from._impl_.command_type_;
+      if (from._internal_session_id() != 0) {
+        _this->_impl_.session_id_ = from._impl_.session_id_;
       }
     }
   }
@@ -573,8 +573,8 @@ void PlayerLifecycleCommand::InternalSwap(PlayerLifecycleCommand* PROTOBUF_RESTR
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.gate_instance_id_, &other->_impl_.gate_instance_id_, arena);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.payload_, &other->_impl_.payload_, arena);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(PlayerLifecycleCommand, _impl_.command_type_)
-      + sizeof(PlayerLifecycleCommand::_impl_.command_type_)
+      PROTOBUF_FIELD_OFFSET(PlayerLifecycleCommand, _impl_.session_id_)
+      + sizeof(PlayerLifecycleCommand::_impl_.session_id_)
       - PROTOBUF_FIELD_OFFSET(PlayerLifecycleCommand, _impl_.player_id_)>(
           reinterpret_cast<char*>(&_impl_.player_id_),
           reinterpret_cast<char*>(&other->_impl_.player_id_));

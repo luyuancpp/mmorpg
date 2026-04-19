@@ -5,7 +5,7 @@
 #include "node/system/node/node_util.h"
 #include "proto/common/base/session.pb.h"
 
-NodeId GetGateNodeId(Guid session_id)
+NodeId GetGateNodeId(SessionId session_id)
 {
 	return static_cast<NodeId>(session_id >> SessionIdGenerator::node_bit());
 }

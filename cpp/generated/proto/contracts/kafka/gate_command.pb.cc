@@ -37,8 +37,8 @@ inline constexpr GateCommand::Impl_::Impl_(
             &::google::protobuf::internal::fixed_address_empty_string,
             ::_pbi::ConstantInitialized()),
         player_id_{::uint64_t{0u}},
-        session_id_{::uint64_t{0u}},
         target_node_id_{0u},
+        session_id_{0u},
         target_gate_id_{0u},
         event_id_{0u},
         enter_gs_type_{0u} {}
@@ -83,8 +83,8 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::contracts::kafka::GateCommand, _impl_.event_id_),
         PROTOBUF_FIELD_OFFSET(::contracts::kafka::GateCommand, _impl_.enter_gs_type_),
         2,
-        4,
         3,
+        4,
         0,
         5,
         1,
@@ -104,7 +104,7 @@ const char descriptor_table_protodef_proto_2fcontracts_2fkafka_2fgate_5fcommand_
     "\n(proto/contracts/kafka/gate_command.pro"
     "to\022\017contracts.kafka\"\300\001\n\013GateCommand\022\021\n\tp"
     "layer_id\030\002 \001(\004\022\026\n\016target_node_id\030\003 \001(\r\022\022"
-    "\n\nsession_id\030\004 \001(\004\022\017\n\007payload\030\005 \001(\014\022\026\n\016t"
+    "\n\nsession_id\030\004 \001(\r\022\017\n\007payload\030\005 \001(\014\022\026\n\016t"
     "arget_gate_id\030\006 \001(\r\022\032\n\022target_instance_i"
     "d\030\007 \001(\t\022\020\n\010event_id\030\010 \001(\r\022\025\n\renter_gs_ty"
     "pe\030\t \001(\rJ\004\010\001\020\002B\021Z\017contracts/kafkab\006proto"
@@ -281,11 +281,11 @@ GateCommand::_table_ = {
     {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(GateCommand, _impl_.player_id_), 2>(),
      {16, 2, 0, PROTOBUF_FIELD_OFFSET(GateCommand, _impl_.player_id_)}},
     // uint32 target_node_id = 3;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GateCommand, _impl_.target_node_id_), 4>(),
-     {24, 4, 0, PROTOBUF_FIELD_OFFSET(GateCommand, _impl_.target_node_id_)}},
-    // uint64 session_id = 4;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(GateCommand, _impl_.session_id_), 3>(),
-     {32, 3, 0, PROTOBUF_FIELD_OFFSET(GateCommand, _impl_.session_id_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GateCommand, _impl_.target_node_id_), 3>(),
+     {24, 3, 0, PROTOBUF_FIELD_OFFSET(GateCommand, _impl_.target_node_id_)}},
+    // uint32 session_id = 4;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GateCommand, _impl_.session_id_), 4>(),
+     {32, 4, 0, PROTOBUF_FIELD_OFFSET(GateCommand, _impl_.session_id_)}},
     // bytes payload = 5;
     {::_pbi::TcParser::FastBS1,
      {42, 0, 0, PROTOBUF_FIELD_OFFSET(GateCommand, _impl_.payload_)}},
@@ -302,11 +302,11 @@ GateCommand::_table_ = {
     {PROTOBUF_FIELD_OFFSET(GateCommand, _impl_.player_id_), _Internal::kHasBitsOffset + 2, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
     // uint32 target_node_id = 3;
-    {PROTOBUF_FIELD_OFFSET(GateCommand, _impl_.target_node_id_), _Internal::kHasBitsOffset + 4, 0,
+    {PROTOBUF_FIELD_OFFSET(GateCommand, _impl_.target_node_id_), _Internal::kHasBitsOffset + 3, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
-    // uint64 session_id = 4;
-    {PROTOBUF_FIELD_OFFSET(GateCommand, _impl_.session_id_), _Internal::kHasBitsOffset + 3, 0,
-    (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    // uint32 session_id = 4;
+    {PROTOBUF_FIELD_OFFSET(GateCommand, _impl_.session_id_), _Internal::kHasBitsOffset + 4, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
     // bytes payload = 5;
     {PROTOBUF_FIELD_OFFSET(GateCommand, _impl_.payload_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kBytes | ::_fl::kRepAString)},
@@ -380,7 +380,7 @@ PROTOBUF_NOINLINE void GateCommand::Clear() {
   }
 
   // uint32 target_node_id = 3;
-  if ((this_._impl_._has_bits_[0] & 0x00000010u) != 0) {
+  if ((this_._impl_._has_bits_[0] & 0x00000008u) != 0) {
     if (this_._internal_target_node_id() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
@@ -388,11 +388,11 @@ PROTOBUF_NOINLINE void GateCommand::Clear() {
     }
   }
 
-  // uint64 session_id = 4;
-  if ((this_._impl_._has_bits_[0] & 0x00000008u) != 0) {
+  // uint32 session_id = 4;
+  if ((this_._impl_._has_bits_[0] & 0x00000010u) != 0) {
     if (this_._internal_session_id() != 0) {
       target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
           4, this_._internal_session_id(), target);
     }
   }
@@ -489,18 +489,18 @@ PROTOBUF_NOINLINE void GateCommand::Clear() {
             this_._internal_player_id());
       }
     }
-    // uint64 session_id = 4;
-    if ((cached_has_bits & 0x00000008u) != 0) {
-      if (this_._internal_session_id() != 0) {
-        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
-            this_._internal_session_id());
-      }
-    }
     // uint32 target_node_id = 3;
-    if ((cached_has_bits & 0x00000010u) != 0) {
+    if ((cached_has_bits & 0x00000008u) != 0) {
       if (this_._internal_target_node_id() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_target_node_id());
+      }
+    }
+    // uint32 session_id = 4;
+    if ((cached_has_bits & 0x00000010u) != 0) {
+      if (this_._internal_session_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_session_id());
       }
     }
     // uint32 target_gate_id = 6;
@@ -563,13 +563,13 @@ void GateCommand::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::goo
       }
     }
     if ((cached_has_bits & 0x00000008u) != 0) {
-      if (from._internal_session_id() != 0) {
-        _this->_impl_.session_id_ = from._impl_.session_id_;
+      if (from._internal_target_node_id() != 0) {
+        _this->_impl_.target_node_id_ = from._impl_.target_node_id_;
       }
     }
     if ((cached_has_bits & 0x00000010u) != 0) {
-      if (from._internal_target_node_id() != 0) {
-        _this->_impl_.target_node_id_ = from._impl_.target_node_id_;
+      if (from._internal_session_id() != 0) {
+        _this->_impl_.session_id_ = from._impl_.session_id_;
       }
     }
     if ((cached_has_bits & 0x00000020u) != 0) {

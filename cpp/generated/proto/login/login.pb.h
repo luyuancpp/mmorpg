@@ -696,9 +696,9 @@ class LoginSessionInfo final : public ::google::protobuf::Message
     kDeviceIdFieldNumber = 5,
     kFsmFieldNumber = 7,
     kRoleIdFieldNumber = 2,
-    kSessionIdFieldNumber = 3,
     kGateIdFieldNumber = 4,
     kLoginTimeFieldNumber = 6,
+    kSessionIdFieldNumber = 3,
   };
   // string account = 1;
   void clear_account() ;
@@ -755,16 +755,6 @@ class LoginSessionInfo final : public ::google::protobuf::Message
   void _internal_set_role_id(::uint64_t value);
 
   public:
-  // uint64 session_id = 3;
-  void clear_session_id() ;
-  ::uint64_t session_id() const;
-  void set_session_id(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_session_id() const;
-  void _internal_set_session_id(::uint64_t value);
-
-  public:
   // uint64 gate_id = 4;
   void clear_gate_id() ;
   ::uint64_t gate_id() const;
@@ -783,6 +773,16 @@ class LoginSessionInfo final : public ::google::protobuf::Message
   private:
   ::int64_t _internal_login_time() const;
   void _internal_set_login_time(::int64_t value);
+
+  public:
+  // uint32 session_id = 3;
+  void clear_session_id() ;
+  ::uint32_t session_id() const;
+  void set_session_id(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_session_id() const;
+  void _internal_set_session_id(::uint32_t value);
 
   public:
   // @@protoc_insertion_point(class_scope:loginpb.LoginSessionInfo)
@@ -815,9 +815,9 @@ class LoginSessionInfo final : public ::google::protobuf::Message
     ::google::protobuf::internal::ArenaStringPtr device_id_;
     ::google::protobuf::internal::ArenaStringPtr fsm_;
     ::uint64_t role_id_;
-    ::uint64_t session_id_;
     ::uint64_t gate_id_;
     ::int64_t login_time_;
+    ::uint32_t session_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -1219,14 +1219,14 @@ class LoginNodeDisconnectRequest final : public ::google::protobuf::Message
   enum : int {
     kSessionIdFieldNumber = 1,
   };
-  // uint64 session_id = 1;
+  // uint32 session_id = 1;
   void clear_session_id() ;
-  ::uint64_t session_id() const;
-  void set_session_id(::uint64_t value);
+  ::uint32_t session_id() const;
+  void set_session_id(::uint32_t value);
 
   private:
-  ::uint64_t _internal_session_id() const;
-  void _internal_set_session_id(::uint64_t value);
+  ::uint32_t _internal_session_id() const;
+  void _internal_set_session_id(::uint32_t value);
 
   public:
   // @@protoc_insertion_point(class_scope:loginpb.LoginNodeDisconnectRequest)
@@ -1255,7 +1255,7 @@ class LoginNodeDisconnectRequest final : public ::google::protobuf::Message
         const LoginNodeDisconnectRequest& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
-    ::uint64_t session_id_;
+    ::uint32_t session_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -3571,26 +3571,26 @@ inline void LoginSessionInfo::_internal_set_role_id(::uint64_t value) {
   _impl_.role_id_ = value;
 }
 
-// uint64 session_id = 3;
+// uint32 session_id = 3;
 inline void LoginSessionInfo::clear_session_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.session_id_ = ::uint64_t{0u};
-  _impl_._has_bits_[0] &= ~0x00000010u;
+  _impl_.session_id_ = 0u;
+  _impl_._has_bits_[0] &= ~0x00000040u;
 }
-inline ::uint64_t LoginSessionInfo::session_id() const {
+inline ::uint32_t LoginSessionInfo::session_id() const {
   // @@protoc_insertion_point(field_get:loginpb.LoginSessionInfo.session_id)
   return _internal_session_id();
 }
-inline void LoginSessionInfo::set_session_id(::uint64_t value) {
+inline void LoginSessionInfo::set_session_id(::uint32_t value) {
   _internal_set_session_id(value);
-  _impl_._has_bits_[0] |= 0x00000010u;
+  _impl_._has_bits_[0] |= 0x00000040u;
   // @@protoc_insertion_point(field_set:loginpb.LoginSessionInfo.session_id)
 }
-inline ::uint64_t LoginSessionInfo::_internal_session_id() const {
+inline ::uint32_t LoginSessionInfo::_internal_session_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.session_id_;
 }
-inline void LoginSessionInfo::_internal_set_session_id(::uint64_t value) {
+inline void LoginSessionInfo::_internal_set_session_id(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.session_id_ = value;
 }
@@ -3599,7 +3599,7 @@ inline void LoginSessionInfo::_internal_set_session_id(::uint64_t value) {
 inline void LoginSessionInfo::clear_gate_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.gate_id_ = ::uint64_t{0u};
-  _impl_._has_bits_[0] &= ~0x00000020u;
+  _impl_._has_bits_[0] &= ~0x00000010u;
 }
 inline ::uint64_t LoginSessionInfo::gate_id() const {
   // @@protoc_insertion_point(field_get:loginpb.LoginSessionInfo.gate_id)
@@ -3607,7 +3607,7 @@ inline ::uint64_t LoginSessionInfo::gate_id() const {
 }
 inline void LoginSessionInfo::set_gate_id(::uint64_t value) {
   _internal_set_gate_id(value);
-  _impl_._has_bits_[0] |= 0x00000020u;
+  _impl_._has_bits_[0] |= 0x00000010u;
   // @@protoc_insertion_point(field_set:loginpb.LoginSessionInfo.gate_id)
 }
 inline ::uint64_t LoginSessionInfo::_internal_gate_id() const {
@@ -3688,7 +3688,7 @@ inline void LoginSessionInfo::set_allocated_device_id(::std::string* PROTOBUF_NU
 inline void LoginSessionInfo::clear_login_time() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.login_time_ = ::int64_t{0};
-  _impl_._has_bits_[0] &= ~0x00000040u;
+  _impl_._has_bits_[0] &= ~0x00000020u;
 }
 inline ::int64_t LoginSessionInfo::login_time() const {
   // @@protoc_insertion_point(field_get:loginpb.LoginSessionInfo.login_time)
@@ -3696,7 +3696,7 @@ inline ::int64_t LoginSessionInfo::login_time() const {
 }
 inline void LoginSessionInfo::set_login_time(::int64_t value) {
   _internal_set_login_time(value);
-  _impl_._has_bits_[0] |= 0x00000040u;
+  _impl_._has_bits_[0] |= 0x00000020u;
   // @@protoc_insertion_point(field_set:loginpb.LoginSessionInfo.login_time)
 }
 inline ::int64_t LoginSessionInfo::_internal_login_time() const {
@@ -4911,26 +4911,26 @@ inline void EnterGameResponse::_internal_set_player_id(::uint64_t value) {
 
 // LoginNodeDisconnectRequest
 
-// uint64 session_id = 1;
+// uint32 session_id = 1;
 inline void LoginNodeDisconnectRequest::clear_session_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.session_id_ = ::uint64_t{0u};
+  _impl_.session_id_ = 0u;
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
-inline ::uint64_t LoginNodeDisconnectRequest::session_id() const {
+inline ::uint32_t LoginNodeDisconnectRequest::session_id() const {
   // @@protoc_insertion_point(field_get:loginpb.LoginNodeDisconnectRequest.session_id)
   return _internal_session_id();
 }
-inline void LoginNodeDisconnectRequest::set_session_id(::uint64_t value) {
+inline void LoginNodeDisconnectRequest::set_session_id(::uint32_t value) {
   _internal_set_session_id(value);
   _impl_._has_bits_[0] |= 0x00000001u;
   // @@protoc_insertion_point(field_set:loginpb.LoginNodeDisconnectRequest.session_id)
 }
-inline ::uint64_t LoginNodeDisconnectRequest::_internal_session_id() const {
+inline ::uint32_t LoginNodeDisconnectRequest::_internal_session_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.session_id_;
 }
-inline void LoginNodeDisconnectRequest::_internal_set_session_id(::uint64_t value) {
+inline void LoginNodeDisconnectRequest::_internal_set_session_id(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.session_id_ = value;
 }

@@ -18,13 +18,13 @@ import (
 // It mirrors player_locator.PlayerSession for local decision logic.
 type PlayerSession struct {
 	PlayerID       uint64 `json:"player_id"`
-	SessionID      uint64 `json:"session_id"`
+	SessionID      uint32 `json:"session_id"`
 	GateID         string `json:"gate_id"`
 	GateInstanceID string `json:"gate_instance_id"`
 	SceneNodeID    string `json:"scene_node_id"`
 	SceneID        uint64 `json:"scene_id"`
 	Account        string `json:"account"`
-	SessionVersion uint64 `json:"session_version"`
+	SessionVersion uint32 `json:"session_version"`
 	State          int32  `json:"state"` // 0=unknown, 1=online, 2=disconnecting, 3=offline
 	LastActiveTs   int64  `json:"last_active_ts"`
 	RequestID      string `json:"request_id"`
@@ -72,7 +72,7 @@ func DecisionToEnterGsType(d EnterGameDecision) uint32 {
 
 type OnlineSessionInput struct {
 	PlayerID       uint64
-	SessionID      uint64
+	SessionID      uint32
 	GateID         string
 	GateInstanceID string
 	Account        string
@@ -108,7 +108,7 @@ func SetSession(ctx context.Context, plClient plpb.PlayerLocatorClient, session 
 }
 
 // SetSessionDisconnecting marks the session as disconnecting with a 30s lease via player_locator.
-func SetSessionDisconnecting(ctx context.Context, plClient plpb.PlayerLocatorClient, playerID uint64, sessionID uint64) error {
+func SetSessionDisconnecting(ctx context.Context, plClient plpb.PlayerLocatorClient, playerID uint64, sessionID uint32) error {
 	_, err := plClient.SetDisconnecting(ctx, &plpb.SetDisconnectingRequest{
 		PlayerId:        playerID,
 		SessionId:       sessionID,
@@ -122,7 +122,7 @@ func SetSessionDisconnecting(ctx context.Context, plClient plpb.PlayerLocatorCli
 
 // Reconnect cancels the disconnect lease and restores the session to online via player_locator.
 func Reconnect(ctx context.Context, plClient plpb.PlayerLocatorClient, playerID uint64,
-	newSessionID uint64, gateID string, gateInstanceID string,
+	newSessionID uint32, gateID string, gateInstanceID string,
 	account string, requestID string,
 ) (*PlayerSession, error) {
 	resp, err := plClient.Reconnect(ctx, &plpb.ReconnectRequest{
@@ -246,7 +246,7 @@ func applyOnlineSession(session *PlayerSession, input OnlineSessionInput) {
 	session.RequestID = input.RequestID
 }
 
-func nextSessionVersion(existing *PlayerSession) uint64 {
+func nextSessionVersion(existing *PlayerSession) uint32 {
 	if existing == nil {
 		return 1
 	}

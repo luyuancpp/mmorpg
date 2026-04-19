@@ -27,7 +27,7 @@ const (
 
 type GsEnterSceneRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	SessionId     uint64                 `protobuf:"varint,1,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	SessionId     uint32                 `protobuf:"varint,1,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
 	SceneId       uint64                 `protobuf:"varint,2,opt,name=scene_id,json=sceneId,proto3" json:"scene_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -63,7 +63,7 @@ func (*GsEnterSceneRequest) Descriptor() ([]byte, []int) {
 	return file_proto_scene_s2s_player_scene_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *GsEnterSceneRequest) GetSessionId() uint64 {
+func (x *GsEnterSceneRequest) GetSessionId() uint32 {
 	if x != nil {
 		return x.SessionId
 	}
@@ -208,7 +208,7 @@ const file_proto_scene_s2s_player_scene_proto_rawDesc = "" +
 	"\"proto/scene/s2s_player_scene.proto\x1a\x1bproto/db/proto_option.proto\x1a\x1bproto/common/base/tip.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a'proto/common/component/scene_comp.proto\"O\n" +
 	"\x13GsEnterSceneRequest\x12\x1d\n" +
 	"\n" +
-	"session_id\x18\x01 \x01(\x04R\tsessionId\x12\x19\n" +
+	"session_id\x18\x01 \x01(\rR\tsessionId\x12\x19\n" +
 	"\bscene_id\x18\x02 \x01(\x04R\asceneId\"W\n" +
 	"\x13GsLeaveSceneRequest\x12@\n" +
 	"\x11change_scene_info\x18\x02 \x01(\v2\x14.ChangeSceneInfoCompR\x0fchangeSceneInfo\"\x16\n" +

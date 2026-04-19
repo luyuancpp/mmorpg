@@ -103,8 +103,8 @@ PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
 inline constexpr NodeMessageHeader::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
-        session_id_{::uint64_t{0u}},
-        node_id_{0u} {}
+        node_id_{0u},
+        session_id_{0u} {}
 
 template <typename>
 PROTOBUF_CONSTEXPR NodeMessageHeader::NodeMessageHeader(::_pbi::ConstantInitialized)
@@ -791,8 +791,8 @@ inline constexpr RouteMessageResponse::Impl_::Impl_(
         body_(
             &::google::protobuf::internal::fixed_address_empty_string,
             ::_pbi::ConstantInitialized()),
-        session_id_{::uint64_t{0u}},
         id_{::uint64_t{0u}},
+        session_id_{0u},
         is_client_{false} {}
 
 template <typename>
@@ -822,8 +822,8 @@ inline constexpr RouteMessageRequest::Impl_::Impl_(
         body_(
             &::google::protobuf::internal::fixed_address_empty_string,
             ::_pbi::ConstantInitialized()),
-        session_id_{::uint64_t{0u}},
         id_{::uint64_t{0u}},
+        session_id_{0u},
         is_client_{false} {}
 
 template <typename>
@@ -875,8 +875,8 @@ const ::uint32_t
         5, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::NodeMessageHeader, _impl_.node_id_),
         PROTOBUF_FIELD_OFFSET(::NodeMessageHeader, _impl_.session_id_),
-        1,
         0,
+        1,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::NodeRouteMessageRequest, _impl_._has_bits_),
         5, // hasbit index offset
@@ -947,8 +947,8 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::RouteMessageRequest, _impl_.is_client_),
         0,
         ~0u,
-        1,
         2,
+        1,
         3,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::RouteMessageResponse, _impl_._has_bits_),
@@ -960,8 +960,8 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::RouteMessageResponse, _impl_.is_client_),
         0,
         ~0u,
-        1,
         2,
+        1,
         3,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::RoutePlayerMessageRequest, _impl_._has_bits_),
@@ -1163,7 +1163,7 @@ const char descriptor_table_protodef_proto_2fcommon_2fbase_2fmessage_2eproto[] A
     "(\014\022\022\n\nmessage_id\030\002 \001(\r\022\n\n\002id\030\003 \001(\004\022&\n\rer"
     "ror_message\030\004 \001(\0132\017.TipInfoMessage\"8\n\021No"
     "deMessageHeader\022\017\n\007node_id\030\001 \001(\r\022\022\n\nsess"
-    "ion_id\030\002 \001(\004\"g\n\027NodeRouteMessageRequest\022"
+    "ion_id\030\002 \001(\r\"g\n\027NodeRouteMessageRequest\022"
     "(\n\017message_content\030\001 \001(\0132\017.MessageConten"
     "t\022\"\n\006header\030\002 \001(\0132\022.NodeMessageHeader\"h\n"
     "\030NodeRouteMessageResponse\022(\n\017message_con"
@@ -1186,10 +1186,10 @@ const char descriptor_table_protodef_proto_2fcommon_2fbase_2fmessage_2eproto[] A
     "Request\022%\n\014session_info\030\001 \001(\0132\017.SessionD"
     "etails\"}\n\023RouteMessageRequest\022\014\n\004body\030\001 "
     "\001(\014\022%\n\013route_nodes\030\002 \003(\0132\020.RoutingNodeIn"
-    "fo\022\022\n\nsession_id\030\003 \001(\004\022\n\n\002id\030\004 \001(\004\022\021\n\tis"
+    "fo\022\022\n\nsession_id\030\003 \001(\r\022\n\n\002id\030\004 \001(\004\022\021\n\tis"
     "_client\030\005 \001(\010\"~\n\024RouteMessageResponse\022\014\n"
     "\004body\030\001 \001(\014\022%\n\013route_nodes\030\002 \003(\0132\020.Routi"
-    "ngNodeInfo\022\022\n\nsession_id\030\003 \001(\004\022\n\n\002id\030\004 \001"
+    "ngNodeInfo\022\022\n\nsession_id\030\003 \001(\r\022\n\n\002id\030\004 \001"
     "(\004\022\021\n\tis_client\030\005 \001(\010\"q\n\031RoutePlayerMess"
     "ageRequest\022\014\n\004body\030\001 \001(\014\022\034\n\tnode_list\030\002 "
     "\003(\0132\t.NodeInfo\022(\n\013player_info\030\003 \001(\0132\023.Pl"
@@ -1979,11 +1979,11 @@ PROTOBUF_NDEBUG_INLINE NodeMessageHeader::Impl_::Impl_(
 inline void NodeMessageHeader::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char *>(&_impl_) +
-               offsetof(Impl_, session_id_),
+               offsetof(Impl_, node_id_),
            0,
-           offsetof(Impl_, node_id_) -
-               offsetof(Impl_, session_id_) +
-               sizeof(Impl_::node_id_));
+           offsetof(Impl_, session_id_) -
+               offsetof(Impl_, node_id_) +
+               sizeof(Impl_::session_id_));
 }
 NodeMessageHeader::~NodeMessageHeader() {
   // @@protoc_insertion_point(destructor:NodeMessageHeader)
@@ -2058,21 +2058,21 @@ NodeMessageHeader::_table_ = {
     ::_pbi::TcParser::GetTable<::NodeMessageHeader>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // uint64 session_id = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(NodeMessageHeader, _impl_.session_id_), 0>(),
-     {16, 0, 0, PROTOBUF_FIELD_OFFSET(NodeMessageHeader, _impl_.session_id_)}},
+    // uint32 session_id = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(NodeMessageHeader, _impl_.session_id_), 1>(),
+     {16, 1, 0, PROTOBUF_FIELD_OFFSET(NodeMessageHeader, _impl_.session_id_)}},
     // uint32 node_id = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(NodeMessageHeader, _impl_.node_id_), 1>(),
-     {8, 1, 0, PROTOBUF_FIELD_OFFSET(NodeMessageHeader, _impl_.node_id_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(NodeMessageHeader, _impl_.node_id_), 0>(),
+     {8, 0, 0, PROTOBUF_FIELD_OFFSET(NodeMessageHeader, _impl_.node_id_)}},
   }}, {{
     65535, 65535
   }}, {{
     // uint32 node_id = 1;
-    {PROTOBUF_FIELD_OFFSET(NodeMessageHeader, _impl_.node_id_), _Internal::kHasBitsOffset + 1, 0,
+    {PROTOBUF_FIELD_OFFSET(NodeMessageHeader, _impl_.node_id_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
-    // uint64 session_id = 2;
-    {PROTOBUF_FIELD_OFFSET(NodeMessageHeader, _impl_.session_id_), _Internal::kHasBitsOffset + 0, 0,
-    (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    // uint32 session_id = 2;
+    {PROTOBUF_FIELD_OFFSET(NodeMessageHeader, _impl_.session_id_), _Internal::kHasBitsOffset + 1, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
   }},
   // no aux_entries
   {{
@@ -2087,9 +2087,9 @@ PROTOBUF_NOINLINE void NodeMessageHeader::Clear() {
 
   cached_has_bits = _impl_._has_bits_[0];
   if ((cached_has_bits & 0x00000003u) != 0) {
-    ::memset(&_impl_.session_id_, 0, static_cast<::size_t>(
-        reinterpret_cast<char*>(&_impl_.node_id_) -
-        reinterpret_cast<char*>(&_impl_.session_id_)) + sizeof(_impl_.node_id_));
+    ::memset(&_impl_.node_id_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.session_id_) -
+        reinterpret_cast<char*>(&_impl_.node_id_)) + sizeof(_impl_.session_id_));
   }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
@@ -2111,7 +2111,7 @@ PROTOBUF_NOINLINE void NodeMessageHeader::Clear() {
   (void)cached_has_bits;
 
   // uint32 node_id = 1;
-  if ((this_._impl_._has_bits_[0] & 0x00000002u) != 0) {
+  if ((this_._impl_._has_bits_[0] & 0x00000001u) != 0) {
     if (this_._internal_node_id() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
@@ -2119,11 +2119,11 @@ PROTOBUF_NOINLINE void NodeMessageHeader::Clear() {
     }
   }
 
-  // uint64 session_id = 2;
-  if ((this_._impl_._has_bits_[0] & 0x00000001u) != 0) {
+  // uint32 session_id = 2;
+  if ((this_._impl_._has_bits_[0] & 0x00000002u) != 0) {
     if (this_._internal_session_id() != 0) {
       target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
           2, this_._internal_session_id(), target);
     }
   }
@@ -2154,18 +2154,18 @@ PROTOBUF_NOINLINE void NodeMessageHeader::Clear() {
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
   if ((cached_has_bits & 0x00000003u) != 0) {
-    // uint64 session_id = 2;
-    if ((cached_has_bits & 0x00000001u) != 0) {
-      if (this_._internal_session_id() != 0) {
-        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
-            this_._internal_session_id());
-      }
-    }
     // uint32 node_id = 1;
-    if ((cached_has_bits & 0x00000002u) != 0) {
+    if ((cached_has_bits & 0x00000001u) != 0) {
       if (this_._internal_node_id() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_node_id());
+      }
+    }
+    // uint32 session_id = 2;
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      if (this_._internal_session_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_session_id());
       }
     }
   }
@@ -2184,13 +2184,13 @@ void NodeMessageHeader::MergeImpl(::google::protobuf::MessageLite& to_msg, const
   cached_has_bits = from._impl_._has_bits_[0];
   if ((cached_has_bits & 0x00000003u) != 0) {
     if ((cached_has_bits & 0x00000001u) != 0) {
-      if (from._internal_session_id() != 0) {
-        _this->_impl_.session_id_ = from._impl_.session_id_;
+      if (from._internal_node_id() != 0) {
+        _this->_impl_.node_id_ = from._impl_.node_id_;
       }
     }
     if ((cached_has_bits & 0x00000002u) != 0) {
-      if (from._internal_node_id() != 0) {
-        _this->_impl_.node_id_ = from._impl_.node_id_;
+      if (from._internal_session_id() != 0) {
+        _this->_impl_.session_id_ = from._impl_.session_id_;
       }
     }
   }
@@ -2211,11 +2211,11 @@ void NodeMessageHeader::InternalSwap(NodeMessageHeader* PROTOBUF_RESTRICT PROTOB
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(NodeMessageHeader, _impl_.node_id_)
-      + sizeof(NodeMessageHeader::_impl_.node_id_)
-      - PROTOBUF_FIELD_OFFSET(NodeMessageHeader, _impl_.session_id_)>(
-          reinterpret_cast<char*>(&_impl_.session_id_),
-          reinterpret_cast<char*>(&other->_impl_.session_id_));
+      PROTOBUF_FIELD_OFFSET(NodeMessageHeader, _impl_.session_id_)
+      + sizeof(NodeMessageHeader::_impl_.session_id_)
+      - PROTOBUF_FIELD_OFFSET(NodeMessageHeader, _impl_.node_id_)>(
+          reinterpret_cast<char*>(&_impl_.node_id_),
+          reinterpret_cast<char*>(&other->_impl_.node_id_));
 }
 
 ::google::protobuf::Metadata NodeMessageHeader::GetMetadata() const {
@@ -5096,11 +5096,11 @@ RouteMessageRequest::RouteMessageRequest(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
   ::memcpy(reinterpret_cast<char *>(&_impl_) +
-               offsetof(Impl_, session_id_),
+               offsetof(Impl_, id_),
            reinterpret_cast<const char *>(&from._impl_) +
-               offsetof(Impl_, session_id_),
+               offsetof(Impl_, id_),
            offsetof(Impl_, is_client_) -
-               offsetof(Impl_, session_id_) +
+               offsetof(Impl_, id_) +
                sizeof(Impl_::is_client_));
 
   // @@protoc_insertion_point(copy_constructor:RouteMessageRequest)
@@ -5115,10 +5115,10 @@ PROTOBUF_NDEBUG_INLINE RouteMessageRequest::Impl_::Impl_(
 inline void RouteMessageRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char *>(&_impl_) +
-               offsetof(Impl_, session_id_),
+               offsetof(Impl_, id_),
            0,
            offsetof(Impl_, is_client_) -
-               offsetof(Impl_, session_id_) +
+               offsetof(Impl_, id_) +
                sizeof(Impl_::is_client_));
 }
 RouteMessageRequest::~RouteMessageRequest() {
@@ -5214,12 +5214,12 @@ RouteMessageRequest::_table_ = {
     // repeated .RoutingNodeInfo route_nodes = 2;
     {::_pbi::TcParser::FastMtR1,
      {18, 63, 0, PROTOBUF_FIELD_OFFSET(RouteMessageRequest, _impl_.route_nodes_)}},
-    // uint64 session_id = 3;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(RouteMessageRequest, _impl_.session_id_), 1>(),
-     {24, 1, 0, PROTOBUF_FIELD_OFFSET(RouteMessageRequest, _impl_.session_id_)}},
+    // uint32 session_id = 3;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RouteMessageRequest, _impl_.session_id_), 2>(),
+     {24, 2, 0, PROTOBUF_FIELD_OFFSET(RouteMessageRequest, _impl_.session_id_)}},
     // uint64 id = 4;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(RouteMessageRequest, _impl_.id_), 2>(),
-     {32, 2, 0, PROTOBUF_FIELD_OFFSET(RouteMessageRequest, _impl_.id_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(RouteMessageRequest, _impl_.id_), 1>(),
+     {32, 1, 0, PROTOBUF_FIELD_OFFSET(RouteMessageRequest, _impl_.id_)}},
     // bool is_client = 5;
     {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(RouteMessageRequest, _impl_.is_client_), 3>(),
      {40, 3, 0, PROTOBUF_FIELD_OFFSET(RouteMessageRequest, _impl_.is_client_)}},
@@ -5234,11 +5234,11 @@ RouteMessageRequest::_table_ = {
     // repeated .RoutingNodeInfo route_nodes = 2;
     {PROTOBUF_FIELD_OFFSET(RouteMessageRequest, _impl_.route_nodes_), -1, 0,
     (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
-    // uint64 session_id = 3;
-    {PROTOBUF_FIELD_OFFSET(RouteMessageRequest, _impl_.session_id_), _Internal::kHasBitsOffset + 1, 0,
-    (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    // uint32 session_id = 3;
+    {PROTOBUF_FIELD_OFFSET(RouteMessageRequest, _impl_.session_id_), _Internal::kHasBitsOffset + 2, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
     // uint64 id = 4;
-    {PROTOBUF_FIELD_OFFSET(RouteMessageRequest, _impl_.id_), _Internal::kHasBitsOffset + 2, 0,
+    {PROTOBUF_FIELD_OFFSET(RouteMessageRequest, _impl_.id_), _Internal::kHasBitsOffset + 1, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
     // bool is_client = 5;
     {PROTOBUF_FIELD_OFFSET(RouteMessageRequest, _impl_.is_client_), _Internal::kHasBitsOffset + 3, 0,
@@ -5263,9 +5263,9 @@ PROTOBUF_NOINLINE void RouteMessageRequest::Clear() {
     _impl_.body_.ClearNonDefaultToEmpty();
   }
   if ((cached_has_bits & 0x0000000eu) != 0) {
-    ::memset(&_impl_.session_id_, 0, static_cast<::size_t>(
+    ::memset(&_impl_.id_, 0, static_cast<::size_t>(
         reinterpret_cast<char*>(&_impl_.is_client_) -
-        reinterpret_cast<char*>(&_impl_.session_id_)) + sizeof(_impl_.is_client_));
+        reinterpret_cast<char*>(&_impl_.id_)) + sizeof(_impl_.is_client_));
   }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
@@ -5305,17 +5305,17 @@ PROTOBUF_NOINLINE void RouteMessageRequest::Clear() {
             target, stream);
   }
 
-  // uint64 session_id = 3;
-  if ((this_._impl_._has_bits_[0] & 0x00000002u) != 0) {
+  // uint32 session_id = 3;
+  if ((this_._impl_._has_bits_[0] & 0x00000004u) != 0) {
     if (this_._internal_session_id() != 0) {
       target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
           3, this_._internal_session_id(), target);
     }
   }
 
   // uint64 id = 4;
-  if ((this_._impl_._has_bits_[0] & 0x00000004u) != 0) {
+  if ((this_._impl_._has_bits_[0] & 0x00000002u) != 0) {
     if (this_._internal_id() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
@@ -5374,18 +5374,18 @@ PROTOBUF_NOINLINE void RouteMessageRequest::Clear() {
                                         this_._internal_body());
       }
     }
-    // uint64 session_id = 3;
-    if ((cached_has_bits & 0x00000002u) != 0) {
-      if (this_._internal_session_id() != 0) {
-        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
-            this_._internal_session_id());
-      }
-    }
     // uint64 id = 4;
-    if ((cached_has_bits & 0x00000004u) != 0) {
+    if ((cached_has_bits & 0x00000002u) != 0) {
       if (this_._internal_id() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
             this_._internal_id());
+      }
+    }
+    // uint32 session_id = 3;
+    if ((cached_has_bits & 0x00000004u) != 0) {
+      if (this_._internal_session_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_session_id());
       }
     }
     // bool is_client = 5;
@@ -5421,13 +5421,13 @@ void RouteMessageRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, con
       }
     }
     if ((cached_has_bits & 0x00000002u) != 0) {
-      if (from._internal_session_id() != 0) {
-        _this->_impl_.session_id_ = from._impl_.session_id_;
+      if (from._internal_id() != 0) {
+        _this->_impl_.id_ = from._impl_.id_;
       }
     }
     if ((cached_has_bits & 0x00000004u) != 0) {
-      if (from._internal_id() != 0) {
-        _this->_impl_.id_ = from._impl_.id_;
+      if (from._internal_session_id() != 0) {
+        _this->_impl_.session_id_ = from._impl_.session_id_;
       }
     }
     if ((cached_has_bits & 0x00000008u) != 0) {
@@ -5459,9 +5459,9 @@ void RouteMessageRequest::InternalSwap(RouteMessageRequest* PROTOBUF_RESTRICT PR
   ::google::protobuf::internal::memswap<
       PROTOBUF_FIELD_OFFSET(RouteMessageRequest, _impl_.is_client_)
       + sizeof(RouteMessageRequest::_impl_.is_client_)
-      - PROTOBUF_FIELD_OFFSET(RouteMessageRequest, _impl_.session_id_)>(
-          reinterpret_cast<char*>(&_impl_.session_id_),
-          reinterpret_cast<char*>(&other->_impl_.session_id_));
+      - PROTOBUF_FIELD_OFFSET(RouteMessageRequest, _impl_.id_)>(
+          reinterpret_cast<char*>(&_impl_.id_),
+          reinterpret_cast<char*>(&other->_impl_.id_));
 }
 
 ::google::protobuf::Metadata RouteMessageRequest::GetMetadata() const {
@@ -5509,11 +5509,11 @@ RouteMessageResponse::RouteMessageResponse(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
   ::memcpy(reinterpret_cast<char *>(&_impl_) +
-               offsetof(Impl_, session_id_),
+               offsetof(Impl_, id_),
            reinterpret_cast<const char *>(&from._impl_) +
-               offsetof(Impl_, session_id_),
+               offsetof(Impl_, id_),
            offsetof(Impl_, is_client_) -
-               offsetof(Impl_, session_id_) +
+               offsetof(Impl_, id_) +
                sizeof(Impl_::is_client_));
 
   // @@protoc_insertion_point(copy_constructor:RouteMessageResponse)
@@ -5528,10 +5528,10 @@ PROTOBUF_NDEBUG_INLINE RouteMessageResponse::Impl_::Impl_(
 inline void RouteMessageResponse::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char *>(&_impl_) +
-               offsetof(Impl_, session_id_),
+               offsetof(Impl_, id_),
            0,
            offsetof(Impl_, is_client_) -
-               offsetof(Impl_, session_id_) +
+               offsetof(Impl_, id_) +
                sizeof(Impl_::is_client_));
 }
 RouteMessageResponse::~RouteMessageResponse() {
@@ -5627,12 +5627,12 @@ RouteMessageResponse::_table_ = {
     // repeated .RoutingNodeInfo route_nodes = 2;
     {::_pbi::TcParser::FastMtR1,
      {18, 63, 0, PROTOBUF_FIELD_OFFSET(RouteMessageResponse, _impl_.route_nodes_)}},
-    // uint64 session_id = 3;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(RouteMessageResponse, _impl_.session_id_), 1>(),
-     {24, 1, 0, PROTOBUF_FIELD_OFFSET(RouteMessageResponse, _impl_.session_id_)}},
+    // uint32 session_id = 3;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RouteMessageResponse, _impl_.session_id_), 2>(),
+     {24, 2, 0, PROTOBUF_FIELD_OFFSET(RouteMessageResponse, _impl_.session_id_)}},
     // uint64 id = 4;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(RouteMessageResponse, _impl_.id_), 2>(),
-     {32, 2, 0, PROTOBUF_FIELD_OFFSET(RouteMessageResponse, _impl_.id_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(RouteMessageResponse, _impl_.id_), 1>(),
+     {32, 1, 0, PROTOBUF_FIELD_OFFSET(RouteMessageResponse, _impl_.id_)}},
     // bool is_client = 5;
     {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(RouteMessageResponse, _impl_.is_client_), 3>(),
      {40, 3, 0, PROTOBUF_FIELD_OFFSET(RouteMessageResponse, _impl_.is_client_)}},
@@ -5647,11 +5647,11 @@ RouteMessageResponse::_table_ = {
     // repeated .RoutingNodeInfo route_nodes = 2;
     {PROTOBUF_FIELD_OFFSET(RouteMessageResponse, _impl_.route_nodes_), -1, 0,
     (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
-    // uint64 session_id = 3;
-    {PROTOBUF_FIELD_OFFSET(RouteMessageResponse, _impl_.session_id_), _Internal::kHasBitsOffset + 1, 0,
-    (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    // uint32 session_id = 3;
+    {PROTOBUF_FIELD_OFFSET(RouteMessageResponse, _impl_.session_id_), _Internal::kHasBitsOffset + 2, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
     // uint64 id = 4;
-    {PROTOBUF_FIELD_OFFSET(RouteMessageResponse, _impl_.id_), _Internal::kHasBitsOffset + 2, 0,
+    {PROTOBUF_FIELD_OFFSET(RouteMessageResponse, _impl_.id_), _Internal::kHasBitsOffset + 1, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
     // bool is_client = 5;
     {PROTOBUF_FIELD_OFFSET(RouteMessageResponse, _impl_.is_client_), _Internal::kHasBitsOffset + 3, 0,
@@ -5676,9 +5676,9 @@ PROTOBUF_NOINLINE void RouteMessageResponse::Clear() {
     _impl_.body_.ClearNonDefaultToEmpty();
   }
   if ((cached_has_bits & 0x0000000eu) != 0) {
-    ::memset(&_impl_.session_id_, 0, static_cast<::size_t>(
+    ::memset(&_impl_.id_, 0, static_cast<::size_t>(
         reinterpret_cast<char*>(&_impl_.is_client_) -
-        reinterpret_cast<char*>(&_impl_.session_id_)) + sizeof(_impl_.is_client_));
+        reinterpret_cast<char*>(&_impl_.id_)) + sizeof(_impl_.is_client_));
   }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
@@ -5718,17 +5718,17 @@ PROTOBUF_NOINLINE void RouteMessageResponse::Clear() {
             target, stream);
   }
 
-  // uint64 session_id = 3;
-  if ((this_._impl_._has_bits_[0] & 0x00000002u) != 0) {
+  // uint32 session_id = 3;
+  if ((this_._impl_._has_bits_[0] & 0x00000004u) != 0) {
     if (this_._internal_session_id() != 0) {
       target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
           3, this_._internal_session_id(), target);
     }
   }
 
   // uint64 id = 4;
-  if ((this_._impl_._has_bits_[0] & 0x00000004u) != 0) {
+  if ((this_._impl_._has_bits_[0] & 0x00000002u) != 0) {
     if (this_._internal_id() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
@@ -5787,18 +5787,18 @@ PROTOBUF_NOINLINE void RouteMessageResponse::Clear() {
                                         this_._internal_body());
       }
     }
-    // uint64 session_id = 3;
-    if ((cached_has_bits & 0x00000002u) != 0) {
-      if (this_._internal_session_id() != 0) {
-        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
-            this_._internal_session_id());
-      }
-    }
     // uint64 id = 4;
-    if ((cached_has_bits & 0x00000004u) != 0) {
+    if ((cached_has_bits & 0x00000002u) != 0) {
       if (this_._internal_id() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
             this_._internal_id());
+      }
+    }
+    // uint32 session_id = 3;
+    if ((cached_has_bits & 0x00000004u) != 0) {
+      if (this_._internal_session_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_session_id());
       }
     }
     // bool is_client = 5;
@@ -5834,13 +5834,13 @@ void RouteMessageResponse::MergeImpl(::google::protobuf::MessageLite& to_msg, co
       }
     }
     if ((cached_has_bits & 0x00000002u) != 0) {
-      if (from._internal_session_id() != 0) {
-        _this->_impl_.session_id_ = from._impl_.session_id_;
+      if (from._internal_id() != 0) {
+        _this->_impl_.id_ = from._impl_.id_;
       }
     }
     if ((cached_has_bits & 0x00000004u) != 0) {
-      if (from._internal_id() != 0) {
-        _this->_impl_.id_ = from._impl_.id_;
+      if (from._internal_session_id() != 0) {
+        _this->_impl_.session_id_ = from._impl_.session_id_;
       }
     }
     if ((cached_has_bits & 0x00000008u) != 0) {
@@ -5872,9 +5872,9 @@ void RouteMessageResponse::InternalSwap(RouteMessageResponse* PROTOBUF_RESTRICT 
   ::google::protobuf::internal::memswap<
       PROTOBUF_FIELD_OFFSET(RouteMessageResponse, _impl_.is_client_)
       + sizeof(RouteMessageResponse::_impl_.is_client_)
-      - PROTOBUF_FIELD_OFFSET(RouteMessageResponse, _impl_.session_id_)>(
-          reinterpret_cast<char*>(&_impl_.session_id_),
-          reinterpret_cast<char*>(&other->_impl_.session_id_));
+      - PROTOBUF_FIELD_OFFSET(RouteMessageResponse, _impl_.id_)>(
+          reinterpret_cast<char*>(&_impl_.id_),
+          reinterpret_cast<char*>(&other->_impl_.id_));
 }
 
 ::google::protobuf::Metadata RouteMessageResponse::GetMetadata() const {

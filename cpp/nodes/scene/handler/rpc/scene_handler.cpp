@@ -231,7 +231,7 @@ void SceneHandler::ProcessClientPlayerMessage(::google::protobuf::RpcController*
 		return;
 
 	const auto &msg = request->message_content();
-	const uint64_t sessionId = request->session_id();
+	const SessionId sessionId = request->session_id();
 
 	if (msg.message_id() >= gRpcMethodRegistry.size())
 	{

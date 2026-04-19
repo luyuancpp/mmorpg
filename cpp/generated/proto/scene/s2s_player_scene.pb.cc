@@ -28,8 +28,8 @@ namespace _fl = ::google::protobuf::internal::field_layout;
 inline constexpr GsEnterSceneRequest::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
-        session_id_{::uint64_t{0u}},
-        scene_id_{::uint64_t{0u}} {}
+        scene_id_{::uint64_t{0u}},
+        session_id_{0u} {}
 
 template <typename>
 PROTOBUF_CONSTEXPR GsEnterSceneRequest::GsEnterSceneRequest(::_pbi::ConstantInitialized)
@@ -130,8 +130,8 @@ const ::uint32_t
         5, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::GsEnterSceneRequest, _impl_.session_id_),
         PROTOBUF_FIELD_OFFSET(::GsEnterSceneRequest, _impl_.scene_id_),
-        0,
         1,
+        0,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::GsLeaveSceneRequest, _impl_._has_bits_),
         4, // hasbit index offset
@@ -165,7 +165,7 @@ const char descriptor_table_protodef_proto_2fscene_2fs2s_5fplayer_5fscene_2eprot
     "base/tip.proto\032\033google/protobuf/empty.pr"
     "oto\032\'proto/common/component/scene_comp.p"
     "roto\";\n\023GsEnterSceneRequest\022\022\n\nsession_i"
-    "d\030\001 \001(\004\022\020\n\010scene_id\030\002 \001(\004\"F\n\023GsLeaveScen"
+    "d\030\001 \001(\r\022\020\n\010scene_id\030\002 \001(\004\"F\n\023GsLeaveScen"
     "eRequest\022/\n\021change_scene_info\030\002 \001(\0132\024.Ch"
     "angeSceneInfoComp\"\026\n\024EnterSceneS2CReques"
     "t\"\?\n\025EnterSceneS2CResponse\022&\n\rerror_mess"
@@ -239,11 +239,11 @@ PROTOBUF_NDEBUG_INLINE GsEnterSceneRequest::Impl_::Impl_(
 inline void GsEnterSceneRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char *>(&_impl_) +
-               offsetof(Impl_, session_id_),
+               offsetof(Impl_, scene_id_),
            0,
-           offsetof(Impl_, scene_id_) -
-               offsetof(Impl_, session_id_) +
-               sizeof(Impl_::scene_id_));
+           offsetof(Impl_, session_id_) -
+               offsetof(Impl_, scene_id_) +
+               sizeof(Impl_::session_id_));
 }
 GsEnterSceneRequest::~GsEnterSceneRequest() {
   // @@protoc_insertion_point(destructor:GsEnterSceneRequest)
@@ -319,19 +319,19 @@ GsEnterSceneRequest::_table_ = {
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // uint64 scene_id = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(GsEnterSceneRequest, _impl_.scene_id_), 1>(),
-     {16, 1, 0, PROTOBUF_FIELD_OFFSET(GsEnterSceneRequest, _impl_.scene_id_)}},
-    // uint64 session_id = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(GsEnterSceneRequest, _impl_.session_id_), 0>(),
-     {8, 0, 0, PROTOBUF_FIELD_OFFSET(GsEnterSceneRequest, _impl_.session_id_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(GsEnterSceneRequest, _impl_.scene_id_), 0>(),
+     {16, 0, 0, PROTOBUF_FIELD_OFFSET(GsEnterSceneRequest, _impl_.scene_id_)}},
+    // uint32 session_id = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GsEnterSceneRequest, _impl_.session_id_), 1>(),
+     {8, 1, 0, PROTOBUF_FIELD_OFFSET(GsEnterSceneRequest, _impl_.session_id_)}},
   }}, {{
     65535, 65535
   }}, {{
-    // uint64 session_id = 1;
-    {PROTOBUF_FIELD_OFFSET(GsEnterSceneRequest, _impl_.session_id_), _Internal::kHasBitsOffset + 0, 0,
-    (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    // uint32 session_id = 1;
+    {PROTOBUF_FIELD_OFFSET(GsEnterSceneRequest, _impl_.session_id_), _Internal::kHasBitsOffset + 1, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
     // uint64 scene_id = 2;
-    {PROTOBUF_FIELD_OFFSET(GsEnterSceneRequest, _impl_.scene_id_), _Internal::kHasBitsOffset + 1, 0,
+    {PROTOBUF_FIELD_OFFSET(GsEnterSceneRequest, _impl_.scene_id_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
   }},
   // no aux_entries
@@ -347,9 +347,9 @@ PROTOBUF_NOINLINE void GsEnterSceneRequest::Clear() {
 
   cached_has_bits = _impl_._has_bits_[0];
   if ((cached_has_bits & 0x00000003u) != 0) {
-    ::memset(&_impl_.session_id_, 0, static_cast<::size_t>(
-        reinterpret_cast<char*>(&_impl_.scene_id_) -
-        reinterpret_cast<char*>(&_impl_.session_id_)) + sizeof(_impl_.scene_id_));
+    ::memset(&_impl_.scene_id_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.session_id_) -
+        reinterpret_cast<char*>(&_impl_.scene_id_)) + sizeof(_impl_.session_id_));
   }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
@@ -370,17 +370,17 @@ PROTOBUF_NOINLINE void GsEnterSceneRequest::Clear() {
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
-  // uint64 session_id = 1;
-  if ((this_._impl_._has_bits_[0] & 0x00000001u) != 0) {
+  // uint32 session_id = 1;
+  if ((this_._impl_._has_bits_[0] & 0x00000002u) != 0) {
     if (this_._internal_session_id() != 0) {
       target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
           1, this_._internal_session_id(), target);
     }
   }
 
   // uint64 scene_id = 2;
-  if ((this_._impl_._has_bits_[0] & 0x00000002u) != 0) {
+  if ((this_._impl_._has_bits_[0] & 0x00000001u) != 0) {
     if (this_._internal_scene_id() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
@@ -414,18 +414,18 @@ PROTOBUF_NOINLINE void GsEnterSceneRequest::Clear() {
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
   if ((cached_has_bits & 0x00000003u) != 0) {
-    // uint64 session_id = 1;
-    if ((cached_has_bits & 0x00000001u) != 0) {
-      if (this_._internal_session_id() != 0) {
-        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
-            this_._internal_session_id());
-      }
-    }
     // uint64 scene_id = 2;
-    if ((cached_has_bits & 0x00000002u) != 0) {
+    if ((cached_has_bits & 0x00000001u) != 0) {
       if (this_._internal_scene_id() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
             this_._internal_scene_id());
+      }
+    }
+    // uint32 session_id = 1;
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      if (this_._internal_session_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_session_id());
       }
     }
   }
@@ -444,13 +444,13 @@ void GsEnterSceneRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, con
   cached_has_bits = from._impl_._has_bits_[0];
   if ((cached_has_bits & 0x00000003u) != 0) {
     if ((cached_has_bits & 0x00000001u) != 0) {
-      if (from._internal_session_id() != 0) {
-        _this->_impl_.session_id_ = from._impl_.session_id_;
+      if (from._internal_scene_id() != 0) {
+        _this->_impl_.scene_id_ = from._impl_.scene_id_;
       }
     }
     if ((cached_has_bits & 0x00000002u) != 0) {
-      if (from._internal_scene_id() != 0) {
-        _this->_impl_.scene_id_ = from._impl_.scene_id_;
+      if (from._internal_session_id() != 0) {
+        _this->_impl_.session_id_ = from._impl_.session_id_;
       }
     }
   }
@@ -471,11 +471,11 @@ void GsEnterSceneRequest::InternalSwap(GsEnterSceneRequest* PROTOBUF_RESTRICT PR
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(GsEnterSceneRequest, _impl_.scene_id_)
-      + sizeof(GsEnterSceneRequest::_impl_.scene_id_)
-      - PROTOBUF_FIELD_OFFSET(GsEnterSceneRequest, _impl_.session_id_)>(
-          reinterpret_cast<char*>(&_impl_.session_id_),
-          reinterpret_cast<char*>(&other->_impl_.session_id_));
+      PROTOBUF_FIELD_OFFSET(GsEnterSceneRequest, _impl_.session_id_)
+      + sizeof(GsEnterSceneRequest::_impl_.session_id_)
+      - PROTOBUF_FIELD_OFFSET(GsEnterSceneRequest, _impl_.scene_id_)>(
+          reinterpret_cast<char*>(&_impl_.scene_id_),
+          reinterpret_cast<char*>(&other->_impl_.scene_id_));
 }
 
 ::google::protobuf::Metadata GsEnterSceneRequest::GetMetadata() const {

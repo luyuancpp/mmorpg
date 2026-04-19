@@ -147,7 +147,7 @@ func (x *MessageContent) GetErrorMessage() *TipInfoMessage {
 type NodeMessageHeader struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	NodeId        uint32                 `protobuf:"varint,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`          // Node ID
-	SessionId     uint64                 `protobuf:"varint,2,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"` // Session ID
+	SessionId     uint32                 `protobuf:"varint,2,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"` // Session ID
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -189,7 +189,7 @@ func (x *NodeMessageHeader) GetNodeId() uint32 {
 	return 0
 }
 
-func (x *NodeMessageHeader) GetSessionId() uint64 {
+func (x *NodeMessageHeader) GetSessionId() uint32 {
 	if x != nil {
 		return x.SessionId
 	}
@@ -691,7 +691,7 @@ type RouteMessageRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Body          []byte                 `protobuf:"bytes,1,opt,name=body,proto3" json:"body,omitempty"`                               // Message body (bytes)
 	RouteNodes    []*RoutingNodeInfo     `protobuf:"bytes,2,rep,name=route_nodes,json=routeNodes,proto3" json:"route_nodes,omitempty"` // Routing node list
-	SessionId     uint64                 `protobuf:"varint,3,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`   // Session ID
+	SessionId     uint32                 `protobuf:"varint,3,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`   // Session ID
 	Id            uint64                 `protobuf:"varint,4,opt,name=id,proto3" json:"id,omitempty"`                                  // Unique message ID
 	IsClient      bool                   `protobuf:"varint,5,opt,name=is_client,json=isClient,proto3" json:"is_client,omitempty"`      // Whether from client
 	unknownFields protoimpl.UnknownFields
@@ -742,7 +742,7 @@ func (x *RouteMessageRequest) GetRouteNodes() []*RoutingNodeInfo {
 	return nil
 }
 
-func (x *RouteMessageRequest) GetSessionId() uint64 {
+func (x *RouteMessageRequest) GetSessionId() uint32 {
 	if x != nil {
 		return x.SessionId
 	}
@@ -768,7 +768,7 @@ type RouteMessageResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Body          []byte                 `protobuf:"bytes,1,opt,name=body,proto3" json:"body,omitempty"`                               // Message body (bytes)
 	RouteNodes    []*RoutingNodeInfo     `protobuf:"bytes,2,rep,name=route_nodes,json=routeNodes,proto3" json:"route_nodes,omitempty"` // Routing node list
-	SessionId     uint64                 `protobuf:"varint,3,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`   // Session ID
+	SessionId     uint32                 `protobuf:"varint,3,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`   // Session ID
 	Id            uint64                 `protobuf:"varint,4,opt,name=id,proto3" json:"id,omitempty"`                                  // Unique message ID
 	IsClient      bool                   `protobuf:"varint,5,opt,name=is_client,json=isClient,proto3" json:"is_client,omitempty"`      // Whether from client
 	unknownFields protoimpl.UnknownFields
@@ -819,7 +819,7 @@ func (x *RouteMessageResponse) GetRouteNodes() []*RoutingNodeInfo {
 	return nil
 }
 
-func (x *RouteMessageResponse) GetSessionId() uint64 {
+func (x *RouteMessageResponse) GetSessionId() uint32 {
 	if x != nil {
 		return x.SessionId
 	}
@@ -1728,7 +1728,7 @@ const file_proto_common_base_message_proto_rawDesc = "" +
 	"\x11NodeMessageHeader\x12\x17\n" +
 	"\anode_id\x18\x01 \x01(\rR\x06nodeId\x12\x1d\n" +
 	"\n" +
-	"session_id\x18\x02 \x01(\x04R\tsessionId\"\x7f\n" +
+	"session_id\x18\x02 \x01(\rR\tsessionId\"\x7f\n" +
 	"\x17NodeRouteMessageRequest\x128\n" +
 	"\x0fmessage_content\x18\x01 \x01(\v2\x0f.MessageContentR\x0emessageContent\x12*\n" +
 	"\x06header\x18\x02 \x01(\v2\x12.NodeMessageHeaderR\x06header\"\x80\x01\n" +
@@ -1759,7 +1759,7 @@ const file_proto_common_base_message_proto_rawDesc = "" +
 	"\vroute_nodes\x18\x02 \x03(\v2\x10.RoutingNodeInfoR\n" +
 	"routeNodes\x12\x1d\n" +
 	"\n" +
-	"session_id\x18\x03 \x01(\x04R\tsessionId\x12\x0e\n" +
+	"session_id\x18\x03 \x01(\rR\tsessionId\x12\x0e\n" +
 	"\x02id\x18\x04 \x01(\x04R\x02id\x12\x1b\n" +
 	"\tis_client\x18\x05 \x01(\bR\bisClient\"\xa9\x01\n" +
 	"\x14RouteMessageResponse\x12\x12\n" +
@@ -1767,7 +1767,7 @@ const file_proto_common_base_message_proto_rawDesc = "" +
 	"\vroute_nodes\x18\x02 \x03(\v2\x10.RoutingNodeInfoR\n" +
 	"routeNodes\x12\x1d\n" +
 	"\n" +
-	"session_id\x18\x03 \x01(\x04R\tsessionId\x12\x0e\n" +
+	"session_id\x18\x03 \x01(\rR\tsessionId\x12\x0e\n" +
 	"\x02id\x18\x04 \x01(\x04R\x02id\x12\x1b\n" +
 	"\tis_client\x18\x05 \x01(\bR\bisClient\"\x8d\x01\n" +
 	"\x19RoutePlayerMessageRequest\x12\x12\n" +

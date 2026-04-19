@@ -28,9 +28,9 @@ namespace _fl = ::google::protobuf::internal::field_layout;
 inline constexpr PlayerGameNodeEntryInfoComp::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
-        session_id_{::uint64_t{0u}},
-        scene_id_{::uint64_t{0u}},
-        enter_gs_type_{0u} {}
+        session_id_{0u},
+        enter_gs_type_{0u},
+        scene_id_{::uint64_t{0u}} {}
 
 template <typename>
 PROTOBUF_CONSTEXPR PlayerGameNodeEntryInfoComp::PlayerGameNodeEntryInfoComp(::_pbi::ConstantInitialized)
@@ -65,8 +65,8 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::PlayerGameNodeEntryInfoComp, _impl_.enter_gs_type_),
         PROTOBUF_FIELD_OFFSET(::PlayerGameNodeEntryInfoComp, _impl_.scene_id_),
         0,
-        2,
         1,
+        2,
 };
 
 static const ::_pbi::MigrationSchema
@@ -80,7 +80,7 @@ const char descriptor_table_protodef_proto_2fcommon_2fcomponent_2fplayer_5fasync
     protodesc_cold) = {
     "\n.proto/common/component/player_async_co"
     "mp.proto\"`\n\033PlayerGameNodeEntryInfoComp\022"
-    "\022\n\nsession_id\030\002 \001(\004\022\025\n\renter_gs_type\030\003 \001"
+    "\022\n\nsession_id\030\002 \001(\r\022\025\n\renter_gs_type\030\003 \001"
     "(\r\022\020\n\010scene_id\030\004 \001(\004J\004\010\001\020\002B\022Z\020common/com"
     "ponentb\006proto3"
 };
@@ -141,9 +141,9 @@ inline void PlayerGameNodeEntryInfoComp::SharedCtor(::_pb::Arena* PROTOBUF_NULLA
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, session_id_),
            0,
-           offsetof(Impl_, enter_gs_type_) -
+           offsetof(Impl_, scene_id_) -
                offsetof(Impl_, session_id_) +
-               sizeof(Impl_::enter_gs_type_));
+               sizeof(Impl_::scene_id_));
 }
 PlayerGameNodeEntryInfoComp::~PlayerGameNodeEntryInfoComp() {
   // @@protoc_insertion_point(destructor:PlayerGameNodeEntryInfoComp)
@@ -219,26 +219,26 @@ PlayerGameNodeEntryInfoComp::_table_ = {
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // uint64 scene_id = 4;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(PlayerGameNodeEntryInfoComp, _impl_.scene_id_), 1>(),
-     {32, 1, 0, PROTOBUF_FIELD_OFFSET(PlayerGameNodeEntryInfoComp, _impl_.scene_id_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(PlayerGameNodeEntryInfoComp, _impl_.scene_id_), 2>(),
+     {32, 2, 0, PROTOBUF_FIELD_OFFSET(PlayerGameNodeEntryInfoComp, _impl_.scene_id_)}},
     {::_pbi::TcParser::MiniParse, {}},
-    // uint64 session_id = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(PlayerGameNodeEntryInfoComp, _impl_.session_id_), 0>(),
+    // uint32 session_id = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(PlayerGameNodeEntryInfoComp, _impl_.session_id_), 0>(),
      {16, 0, 0, PROTOBUF_FIELD_OFFSET(PlayerGameNodeEntryInfoComp, _impl_.session_id_)}},
     // uint32 enter_gs_type = 3;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(PlayerGameNodeEntryInfoComp, _impl_.enter_gs_type_), 2>(),
-     {24, 2, 0, PROTOBUF_FIELD_OFFSET(PlayerGameNodeEntryInfoComp, _impl_.enter_gs_type_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(PlayerGameNodeEntryInfoComp, _impl_.enter_gs_type_), 1>(),
+     {24, 1, 0, PROTOBUF_FIELD_OFFSET(PlayerGameNodeEntryInfoComp, _impl_.enter_gs_type_)}},
   }}, {{
     65535, 65535
   }}, {{
-    // uint64 session_id = 2;
+    // uint32 session_id = 2;
     {PROTOBUF_FIELD_OFFSET(PlayerGameNodeEntryInfoComp, _impl_.session_id_), _Internal::kHasBitsOffset + 0, 0,
-    (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
     // uint32 enter_gs_type = 3;
-    {PROTOBUF_FIELD_OFFSET(PlayerGameNodeEntryInfoComp, _impl_.enter_gs_type_), _Internal::kHasBitsOffset + 2, 0,
+    {PROTOBUF_FIELD_OFFSET(PlayerGameNodeEntryInfoComp, _impl_.enter_gs_type_), _Internal::kHasBitsOffset + 1, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
     // uint64 scene_id = 4;
-    {PROTOBUF_FIELD_OFFSET(PlayerGameNodeEntryInfoComp, _impl_.scene_id_), _Internal::kHasBitsOffset + 1, 0,
+    {PROTOBUF_FIELD_OFFSET(PlayerGameNodeEntryInfoComp, _impl_.scene_id_), _Internal::kHasBitsOffset + 2, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
   }},
   // no aux_entries
@@ -255,8 +255,8 @@ PROTOBUF_NOINLINE void PlayerGameNodeEntryInfoComp::Clear() {
   cached_has_bits = _impl_._has_bits_[0];
   if ((cached_has_bits & 0x00000007u) != 0) {
     ::memset(&_impl_.session_id_, 0, static_cast<::size_t>(
-        reinterpret_cast<char*>(&_impl_.enter_gs_type_) -
-        reinterpret_cast<char*>(&_impl_.session_id_)) + sizeof(_impl_.enter_gs_type_));
+        reinterpret_cast<char*>(&_impl_.scene_id_) -
+        reinterpret_cast<char*>(&_impl_.session_id_)) + sizeof(_impl_.scene_id_));
   }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
@@ -277,17 +277,17 @@ PROTOBUF_NOINLINE void PlayerGameNodeEntryInfoComp::Clear() {
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
-  // uint64 session_id = 2;
+  // uint32 session_id = 2;
   if ((this_._impl_._has_bits_[0] & 0x00000001u) != 0) {
     if (this_._internal_session_id() != 0) {
       target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
           2, this_._internal_session_id(), target);
     }
   }
 
   // uint32 enter_gs_type = 3;
-  if ((this_._impl_._has_bits_[0] & 0x00000004u) != 0) {
+  if ((this_._impl_._has_bits_[0] & 0x00000002u) != 0) {
     if (this_._internal_enter_gs_type() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
@@ -296,7 +296,7 @@ PROTOBUF_NOINLINE void PlayerGameNodeEntryInfoComp::Clear() {
   }
 
   // uint64 scene_id = 4;
-  if ((this_._impl_._has_bits_[0] & 0x00000002u) != 0) {
+  if ((this_._impl_._has_bits_[0] & 0x00000004u) != 0) {
     if (this_._internal_scene_id() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
@@ -330,25 +330,25 @@ PROTOBUF_NOINLINE void PlayerGameNodeEntryInfoComp::Clear() {
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
   if ((cached_has_bits & 0x00000007u) != 0) {
-    // uint64 session_id = 2;
+    // uint32 session_id = 2;
     if ((cached_has_bits & 0x00000001u) != 0) {
       if (this_._internal_session_id() != 0) {
-        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_session_id());
       }
     }
-    // uint64 scene_id = 4;
-    if ((cached_has_bits & 0x00000002u) != 0) {
-      if (this_._internal_scene_id() != 0) {
-        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
-            this_._internal_scene_id());
-      }
-    }
     // uint32 enter_gs_type = 3;
-    if ((cached_has_bits & 0x00000004u) != 0) {
+    if ((cached_has_bits & 0x00000002u) != 0) {
       if (this_._internal_enter_gs_type() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_enter_gs_type());
+      }
+    }
+    // uint64 scene_id = 4;
+    if ((cached_has_bits & 0x00000004u) != 0) {
+      if (this_._internal_scene_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_scene_id());
       }
     }
   }
@@ -372,13 +372,13 @@ void PlayerGameNodeEntryInfoComp::MergeImpl(::google::protobuf::MessageLite& to_
       }
     }
     if ((cached_has_bits & 0x00000002u) != 0) {
-      if (from._internal_scene_id() != 0) {
-        _this->_impl_.scene_id_ = from._impl_.scene_id_;
+      if (from._internal_enter_gs_type() != 0) {
+        _this->_impl_.enter_gs_type_ = from._impl_.enter_gs_type_;
       }
     }
     if ((cached_has_bits & 0x00000004u) != 0) {
-      if (from._internal_enter_gs_type() != 0) {
-        _this->_impl_.enter_gs_type_ = from._impl_.enter_gs_type_;
+      if (from._internal_scene_id() != 0) {
+        _this->_impl_.scene_id_ = from._impl_.scene_id_;
       }
     }
   }
@@ -399,8 +399,8 @@ void PlayerGameNodeEntryInfoComp::InternalSwap(PlayerGameNodeEntryInfoComp* PROT
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(PlayerGameNodeEntryInfoComp, _impl_.enter_gs_type_)
-      + sizeof(PlayerGameNodeEntryInfoComp::_impl_.enter_gs_type_)
+      PROTOBUF_FIELD_OFFSET(PlayerGameNodeEntryInfoComp, _impl_.scene_id_)
+      + sizeof(PlayerGameNodeEntryInfoComp::_impl_.scene_id_)
       - PROTOBUF_FIELD_OFFSET(PlayerGameNodeEntryInfoComp, _impl_.session_id_)>(
           reinterpret_cast<char*>(&_impl_.session_id_),
           reinterpret_cast<char*>(&other->_impl_.session_id_));

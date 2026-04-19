@@ -133,7 +133,7 @@ RpcClientSessionHandler::RpcClientSessionHandler(ProtobufCodec &codec,
 
 // Scene node binding must be set explicitly by scene manager (e.g. EnterScene).
 // Do NOT pick randomly -- a random scene node has no player entity.
-std::optional<entt::entity> ResolveSessionTargetNode(uint64_t sessionId, uint32_t nodeType)
+std::optional<entt::entity> ResolveSessionTargetNode(SessionId sessionId, uint32_t nodeType)
 {
 	const auto sessionIt = tlsSessionManager.sessions().find(sessionId);
 	if (sessionIt == tlsSessionManager.sessions().end())
@@ -189,16 +189,16 @@ void RpcClientSessionHandler::SendMessageToClient(const muduo::net::TcpConnectio
 	protobufCodec.send(conn, message);
 }
 
-Guid RpcClientSessionHandler::GetSessionId(const muduo::net::TcpConnectionPtr &conn)
+SessionId RpcClientSessionHandler::GetSessionId(const muduo::net::TcpConnectionPtr &conn)
 {
 	try
 	{
-		return boost::any_cast<Guid>(conn->getContext());
+		return boost::any_cast<SessionId>(conn->getContext());
 	}
 	catch (const boost::bad_any_cast &e)
 	{
 		LOG_ERROR << "Failed to cast session ID from connection context: " << e.what();
-		return kInvalidGuid;
+		return kInvalidSessionId;
 	}
 }
 
@@ -246,7 +246,7 @@ bool RpcClientSessionHandler::CheckMessageLimit(SessionInfo &session, const RpcC
 }
 
 template <typename Message, typename Request>
-void ParseMessageFromRequestBody(Message &message, const Request &request, const uint64_t sessionId)
+void ParseMessageFromRequestBody(Message &message, const Request &request, const SessionId sessionId)
 {
 	const std::string &requestBody = request->body();
 	if (requestBody.empty())
@@ -265,7 +265,7 @@ void RpcClientSessionHandler::HandleConnectionDisconnection(const muduo::net::Tc
 {
 	// Disconnect notification goes to Login; its session manager owns the disconnect lease.
 
-	const auto sessionId = entt::to_integral(GetSessionId(conn));
+	const auto sessionId = GetSessionId(conn);
 
 	// Login nodes are stateless -- pick any available node, no session affinity needed.
 	const auto loginNode = PickRandomNode(eNodeType::LoginNodeService);
@@ -327,7 +327,7 @@ void RpcClientSessionHandler::HandleConnectionEstablished(const muduo::net::TcpC
 }
 
 // Handle messages related to the game node
-void HandleTcpNodeMessage(const SessionInfo &session, const RpcClientMessagePtr &request, Guid sessionId, const muduo::net::TcpConnectionPtr &conn)
+void HandleTcpNodeMessage(const SessionInfo &session, const RpcClientMessagePtr &request, SessionId sessionId, const muduo::net::TcpConnectionPtr &conn)
 {
 	auto &handlerMeta = gRpcMethodRegistry[request->message_id()];
 
@@ -355,7 +355,7 @@ void HandleTcpNodeMessage(const SessionInfo &session, const RpcClientMessagePtr 
 	LOG_TRACE << "Sent message to game node, session id: " << sessionId << ", message id: " << request->message_id();
 }
 
-void HandleGrpcNodeMessage(Guid sessionId, const RpcClientMessagePtr &request, const muduo::net::TcpConnectionPtr &conn)
+void HandleGrpcNodeMessage(SessionId sessionId, const RpcClientMessagePtr &request, const muduo::net::TcpConnectionPtr &conn)
 {
 	auto &rpcHandlerMeta = gRpcMethodRegistry[request->message_id()];
 	ParseMessageFromRequestBody(*rpcHandlerMeta.requestProto, request, sessionId);

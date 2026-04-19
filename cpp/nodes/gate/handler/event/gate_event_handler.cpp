@@ -18,7 +18,7 @@
 // Forward player entry from Gate to Scene via gRPC PlayerEnterGameNode.
 // Gate is the bridge: it holds the TCP session and routes the RPC to the
 // correct Scene node using the entity ID from RoutePlayerEvent.
-static void ForwardPlayerToScene(uint64_t sessionId, uint32_t enterGsType,
+static void ForwardPlayerToScene(SessionId sessionId, uint32_t enterGsType,
                                  uint64_t sceneNodeId, uint64_t playerId, uint64_t sceneId)
 {
     if (enterGsType == 0)

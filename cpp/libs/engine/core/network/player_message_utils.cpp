@@ -52,7 +52,7 @@ void SendMessageToClientViaGate(uint32_t messageId, const google::protobuf::Mess
 	SendMessageToClientViaGate(messageId, message, *gateSessionPtr, playerSessionSnapshotPB->gate_session_id());
 }
 
-void SendMessageToClientViaGate(uint32_t messageId, const google::protobuf::Message &message, RpcSession &gate, uint64_t sessionId)
+void SendMessageToClientViaGate(uint32_t messageId, const google::protobuf::Message &message, RpcSession &gate, SessionId sessionId)
 {
 	NodeRouteMessageRequest request;
 	const size_t byteSize = message.ByteSizeLong();
@@ -83,7 +83,7 @@ void SendMessageToGateById(uint32_t messageId, const google::protobuf::Message &
 	gateSessionPtr->SendRequest(messageId, message);
 }
 
-using BroadCastSessionIdList = std::unordered_set<uint64_t>;
+using BroadCastSessionIdList = std::unordered_set<SessionId>;
 
 template <typename PlayerContainer>
 void InternalBroadcast(uint32_t messageId, const google::protobuf::Message &message, const PlayerContainer &playerList)
@@ -131,7 +131,7 @@ void InternalBroadcast(uint32_t messageId, const google::protobuf::Message &mess
 
 		for (auto &&sessionId : sessionIdList)
 		{
-			request.mutable_session_list()->Add(static_cast<uint32_t>(sessionId));
+			request.mutable_session_list()->Add(sessionId);
 		}
 
 		gateNodeSession->SendRequest(GateBroadcastToPlayersMessageId, request);

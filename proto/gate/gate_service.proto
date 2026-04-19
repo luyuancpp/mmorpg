@@ -10,15 +10,15 @@ option cc_generic_services = true;
 option (OptionFileDefaultNode) = NODE_GATE;
 
 message BindSessionToGateRequest {
-  uint64 session_id = 1;
+  uint32 session_id = 1;
   uint64 player_id = 2;
-  uint64 session_version = 3; 
+  uint32 session_version = 3; 
 }
 
 message BindSessionToGateResponse {
-  uint64 session_id = 1;
+  uint32 session_id = 1;
   uint64 player_id = 2;
-  uint64 session_version = 3; 
+  uint32 session_version = 3; 
 }
 
 message BroadcastToPlayersRequest

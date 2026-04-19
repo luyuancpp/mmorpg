@@ -27,7 +27,7 @@ type LoginSessionInfo struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Account       string                 `protobuf:"bytes,1,opt,name=account,proto3" json:"account,omitempty"`
 	RoleId        uint64                 `protobuf:"varint,2,opt,name=role_id,json=roleId,proto3" json:"role_id,omitempty"`
-	SessionId     uint64                 `protobuf:"varint,3,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	SessionId     uint32                 `protobuf:"varint,3,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
 	GateId        uint64                 `protobuf:"varint,4,opt,name=gate_id,json=gateId,proto3" json:"gate_id,omitempty"`
 	DeviceId      string                 `protobuf:"bytes,5,opt,name=device_id,json=deviceId,proto3" json:"device_id,omitempty"`
 	LoginTime     int64                  `protobuf:"varint,6,opt,name=login_time,json=loginTime,proto3" json:"login_time,omitempty"`
@@ -80,7 +80,7 @@ func (x *LoginSessionInfo) GetRoleId() uint64 {
 	return 0
 }
 
-func (x *LoginSessionInfo) GetSessionId() uint64 {
+func (x *LoginSessionInfo) GetSessionId() uint32 {
 	if x != nil {
 		return x.SessionId
 	}
@@ -578,7 +578,7 @@ func (*LeaveGameRequest) Descriptor() ([]byte, []int) {
 
 type LoginNodeDisconnectRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	SessionId     uint64                 `protobuf:"varint,1,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	SessionId     uint32                 `protobuf:"varint,1,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -613,7 +613,7 @@ func (*LoginNodeDisconnectRequest) Descriptor() ([]byte, []int) {
 	return file_proto_login_login_proto_rawDescGZIP(), []int{10}
 }
 
-func (x *LoginNodeDisconnectRequest) GetSessionId() uint64 {
+func (x *LoginNodeDisconnectRequest) GetSessionId() uint32 {
 	if x != nil {
 		return x.SessionId
 	}
@@ -897,7 +897,7 @@ const file_proto_login_login_proto_rawDesc = "" +
 	"\aaccount\x18\x01 \x01(\tR\aaccount\x12\x17\n" +
 	"\arole_id\x18\x02 \x01(\x04R\x06roleId\x12\x1d\n" +
 	"\n" +
-	"session_id\x18\x03 \x01(\x04R\tsessionId\x12\x17\n" +
+	"session_id\x18\x03 \x01(\rR\tsessionId\x12\x17\n" +
 	"\agate_id\x18\x04 \x01(\x04R\x06gateId\x12\x1b\n" +
 	"\tdevice_id\x18\x05 \x01(\tR\bdeviceId\x12\x1d\n" +
 	"\n" +
@@ -935,7 +935,7 @@ const file_proto_login_login_proto_rawDesc = "" +
 	"\x10LeaveGameRequest\";\n" +
 	"\x1aLoginNodeDisconnectRequest\x12\x1d\n" +
 	"\n" +
-	"session_id\x18\x01 \x01(\x04R\tsessionId\"\x14\n" +
+	"session_id\x18\x01 \x01(\rR\tsessionId\"\x14\n" +
 	"\x12LoginEmptyResponse\",\n" +
 	"\x11AssignGateRequest\x12\x17\n" +
 	"\azone_id\x18\x01 \x01(\rR\x06zoneId\"\xc3\x01\n" +
