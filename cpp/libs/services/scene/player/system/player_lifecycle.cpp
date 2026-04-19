@@ -96,7 +96,7 @@ void PlayerLifecycleSystem::HandlePlayerAsyncSaved(Guid playerId, PlayerAllData 
 // CONSIDER: handle reentry into a different scene node while load is still in progress
 void PlayerLifecycleSystem::EnterScene(const entt::entity player, const PlayerGameNodeEntryInfoComp &enterInfo)
 {
-	const auto playerId = tlsEcs.actorRegistry.get_or_emplace<Guid>(player);
+	const auto playerId = tlsEcs.actorRegistry.get<Guid>(player);
 	LOG_INFO << "EnterScene: Player " << playerId << " entering scene node"
 	         << " session=" << enterInfo.session_id()
 	         << " scene_id=" << enterInfo.scene_id()
@@ -224,7 +224,8 @@ void PlayerLifecycleSystem::DestroyPlayer(Guid playerId)
 
 void PlayerLifecycleSystem::HandleExitGameNode(entt::entity player)
 {
-	LOG_INFO << "HandleExitGameNode: Player " << tlsEcs.actorRegistry.get_or_emplace<Guid>(player) << " is exiting the scene node";
+	const auto* g = tlsEcs.actorRegistry.try_get<Guid>(player);
+	LOG_INFO << "HandleExitGameNode: Player " << (g ? *g : 0) << " is exiting the scene node";
 
 	if (!tlsEcs.actorRegistry.valid(player))
 	{
@@ -234,7 +235,7 @@ void PlayerLifecycleSystem::HandleExitGameNode(entt::entity player)
 
 	if (tlsEcs.actorRegistry.all_of<UnregisterPlayer>(player))
 	{
-		LOG_INFO << "Player " << tlsEcs.actorRegistry.get_or_emplace<Guid>(player) << " is already marked for unregistration";
+		LOG_INFO << "Player " << (g ? *g : 0) << " is already marked for unregistration";
 		return;
 	}
 
@@ -261,7 +262,7 @@ void PlayerLifecycleSystem::HandleCrossZoneTransfer(entt::entity playerEntity)
 		return;
 	}
 
-	auto playerId = tlsEcs.actorRegistry.get_or_emplace<Guid>(playerEntity);
+	auto playerId = tlsEcs.actorRegistry.get<Guid>(playerEntity);
 
 	PlayerAllData playerAllDataMessage;
 	PlayerAllDataMessageFieldsMarshal(playerEntity, playerAllDataMessage);
@@ -366,7 +367,7 @@ void PlayerLifecycleSystem::SavePlayerToRedis(entt::entity player)
 		return;
 	}
 
-	auto playerId = tlsEcs.actorRegistry.get_or_emplace<Guid>(player);
+	auto playerId = tlsEcs.actorRegistry.get<Guid>(player);
 
 	using SaveMessage = PlayerDataRedis::element_type::MessageValuePtr;
 	SaveMessage message = std::make_shared<SaveMessage::element_type>();

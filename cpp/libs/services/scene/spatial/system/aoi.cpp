@@ -42,7 +42,7 @@ void AoiSystem::Update(double delta) {
     for (auto&& [entity, transform, sceneComp] : tlsEcs.actorRegistry.view<Transform, SceneEntityComp>().each()) {
         // Skip invalid scenes
         if (!tlsEcs.sceneRegistry.valid(sceneComp.sceneEntity)) {
-            LOG_ERROR << "Scene not found for entity " << tlsEcs.actorRegistry.get_or_emplace<Guid>(entity);
+            LOG_ERROR << "Scene not found for entity " << entt::to_integral(entity);
             continue;
         }
 
@@ -77,18 +77,21 @@ void AoiSystem::UpdateGridState(const entt::entity entity, SceneGridListComp& gr
         GridSystem::GetCurrentAndNeighborGridIds(previousHex, gridsToLeave);
         GridSystem::GetCurrentAndNeighborGridIds(currentHex, gridsToEnter);
 
-        // Remove intersection grids
-        GridSet gridIntersection;
-        std::ranges::set_intersection(gridsToLeave, gridsToEnter, std::inserter(gridIntersection, gridIntersection.begin()));
-        for (const auto& gridId : gridIntersection) {
-            gridsToLeave.erase(gridId);
-            gridsToEnter.erase(gridId);
+        // Remove common grids (no need to process enter/leave for unchanged grids)
+        for (auto it = gridsToLeave.begin(); it != gridsToLeave.end(); ) {
+            if (gridsToEnter.erase(*it)) {
+                it = gridsToLeave.erase(it);
+            } else {
+                ++it;
+            }
         }
 
         const auto previousGridId = GridSystem::GetGridId(previousHex);
         gridList[previousGridId].entities.erase(entity);
         gridList[currentGridId].entities.insert(entity);
 
+        // Hex has const members → copy assignment is deleted → emplace_or_replace won't compile.
+        // Use remove + emplace instead.
         tlsEcs.actorRegistry.remove<Hex>(entity);
         tlsEcs.actorRegistry.emplace<Hex>(entity, currentHex);
     }

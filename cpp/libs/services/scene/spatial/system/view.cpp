@@ -41,8 +41,12 @@ double ViewSystem::GetMaxViewRadius(entt::entity observer)
 
 bool ViewSystem::IsWithinViewRadius(entt::entity viewer, entt::entity targetEntity, double visionRadius)
 {
-    const auto &viewerTransform = tlsEcs.actorRegistry.get_or_emplace<Transform>(viewer);
-    const auto &targetTransform = tlsEcs.actorRegistry.get_or_emplace<Transform>(targetEntity);
+    const auto *viewerTransformPtr = tlsEcs.actorRegistry.try_get<Transform>(viewer);
+    const auto *targetTransformPtr = tlsEcs.actorRegistry.try_get<Transform>(targetEntity);
+    if (!viewerTransformPtr || !targetTransformPtr) return false;
+
+    const auto &viewerTransform = *viewerTransformPtr;
+    const auto &targetTransform = *targetTransformPtr;
 
     const dtReal viewerLocation[] = {
         viewerTransform.location().x(),
@@ -66,8 +70,8 @@ bool ViewSystem::IsWithinViewRadius(entt::entity observer, entt::entity entrant)
 
 double ViewSystem::GetDistanceBetweenEntities(entt::entity entity1, entt::entity entity2)
 {
-    auto &transform1 = tlsEcs.actorRegistry.get_or_emplace<Transform>(entity1);
-    auto &transform2 = tlsEcs.actorRegistry.get_or_emplace<Transform>(entity2);
+    const auto &transform1 = tlsEcs.actorRegistry.get<Transform>(entity1);
+    const auto &transform2 = tlsEcs.actorRegistry.get<Transform>(entity2);
 
     const dtReal location1[] = {
         transform1.location().x(),
@@ -85,8 +89,11 @@ void ViewSystem::FillActorCreateMessageInfo(entt::entity observer, entt::entity 
 {
     createMessage.set_entity(entt::to_integral(entrant));
 
-    auto &entrantTransform = tlsEcs.actorRegistry.get_or_emplace<Transform>(entrant);
-    createMessage.mutable_transform()->CopyFrom(entrantTransform);
+    const auto *entrantTransformPtr = tlsEcs.actorRegistry.try_get<Transform>(entrant);
+    if (entrantTransformPtr)
+    {
+        createMessage.mutable_transform()->CopyFrom(*entrantTransformPtr);
+    }
 }
 
 void ViewSystem::BroadcastMessageToVisiblePlayers(entt::entity entity, const uint32_t message_id,
@@ -99,7 +106,9 @@ void ViewSystem::BroadcastMessageToVisiblePlayers(entt::entity entity, const uin
 
 void ViewSystem::LookAtPosition(entt::entity entity, const Vector3 &pos)
 {
-    auto &transform = tlsEcs.actorRegistry.get_or_emplace<Transform>(entity);
+    auto *transformPtr = tlsEcs.actorRegistry.try_get<Transform>(entity);
+    if (!transformPtr) return;
+    auto &transform = *transformPtr;
 
     // Compute direction towards target
     dtReal targetLocation[] = {pos.x(), pos.y(), pos.z()};
@@ -127,19 +136,7 @@ void ViewSystem::LookAtPosition(entt::entity entity, const Vector3 &pos)
 
 bool ViewSystem::IsStealthed(entt::entity entity)
 {
-    const auto *buffList = tlsEcs.actorRegistry.try_get<BuffListComp>(entity);
-    if (buffList == nullptr)
-        return false;
-
-    for (const auto &[_, buffEntry] : *buffList)
-    {
-        const auto [table, result] = BuffTableManager::Instance().FindById(buffEntry.buffPb.buff_table_id());
-        if (table && table->buff_type() == kBuffTypeStealth)
-        {
-            return true;
-        }
-    }
-    return false;
+    return tlsEcs.actorRegistry.any_of<StealthedTagComp>(entity);
 }
 
 bool ViewSystem::CanSee(entt::entity observer, entt::entity target)

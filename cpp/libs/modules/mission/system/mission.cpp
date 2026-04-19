@@ -30,7 +30,7 @@ uint32_t MissionSystem::GetMissionReward(const GetRewardParam &param, MissionsCo
 		return PrintStackAndReturnError(kInvalidParameter);
 	}
 
-	const auto playerId = tlsEcs.actorRegistry.get_or_emplace<Guid>(param.playerEntity);
+	const auto playerId = tlsEcs.actorRegistry.get<Guid>(param.playerEntity);
 
 	if (!missionComp.IsClaimable(param.missionId))
 	{
@@ -68,7 +68,7 @@ uint32_t MissionSystem::AcceptMission(const AcceptMissionEvent &acceptEvent, Mis
 	if (ret != kSuccess)
 	{
 		LOG_ERROR << "CheckMissionAcceptance failed: missionId = " << missionId
-				  << ", playerId = " << tlsEcs.actorRegistry.get_or_emplace<Guid>(playerEntity);
+				  << ", playerId = " << entt::to_integral(playerEntity);
 		return ret;
 	}
 
@@ -96,7 +96,7 @@ uint32_t MissionSystem::AcceptMission(const AcceptMissionEvent &acceptEvent, Mis
 	onAcceptedMissionEvent.set_mission_id(missionId);
 	tlsEcs.dispatcher.trigger(onAcceptedMissionEvent);
 	LOG_INFO << "Mission accepted: missionId = " << missionId
-			 << ", playerId = " << tlsEcs.actorRegistry.get_or_emplace<Guid>(playerEntity);
+			 << ", playerId = " << entt::to_integral(playerEntity);
 
 	return kSuccess;
 }
@@ -107,7 +107,7 @@ uint32_t MissionSystem::AbandonMission(const AbandonParam &param, MissionsComp &
 	{
 		return MAKE_ERROR_MSG(kMissionAlreadyCompleted,
 							  "missionId=" << param.missionId
-										   << " playerId=" << tlsEcs.actorRegistry.get_or_emplace<Guid>(param.playerEntity));
+										   << " playerId=" << entt::to_integral(param.playerEntity));
 	}
 
 	SetBit(MissionBitMap, comp.GetClaimableRewards(), param.missionId, false);
@@ -117,7 +117,7 @@ uint32_t MissionSystem::AbandonMission(const AbandonParam &param, MissionsComp &
 
 	DeleteMissionClassification(comp, param.missionId, config);
 	LOG_INFO << "Mission abandoned: missionId = " << param.missionId
-			 << ", playerId = " << tlsEcs.actorRegistry.get_or_emplace<Guid>(param.playerEntity);
+			 << ", playerId = " << entt::to_integral(param.playerEntity);
 	return kSuccess;
 }
 

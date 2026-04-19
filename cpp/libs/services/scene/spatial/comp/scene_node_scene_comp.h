@@ -53,7 +53,7 @@ struct ScenePressureComp
     [[nodiscard]] std::size_t GetServerCapacity() const
     {
         const auto range = static_cast<float>(kAoiListCapacityMax - kAoiListCapacityMin);
-        const auto cap = static_cast<std::size_t>(kAoiListCapacityMax - pressureFactor * range);
+        const auto cap = static_cast<uint32_t>(kAoiListCapacityMax - pressureFactor * range);
         return std::clamp(cap, kAoiListCapacityMin, kAoiListCapacityMax);
     }
 };

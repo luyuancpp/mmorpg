@@ -1,7 +1,5 @@
 #include "player_message_utils.h"
 
-#include <random>
-
 #include "proto/common/component/player_network_comp.pb.h"
 #include "thread_context/redis_manager.h"
 #include "rpc/service_metadata/gate_service_service_metadata.h"
@@ -13,6 +11,7 @@
 #include <rpc/service_metadata/scene_service_metadata.h>
 #include "thread_context/node_context_manager.h"
 #include <thread_context/registry_manager.h>
+#include "utils/random/random.h"
 
 void SendMessageToClientViaGate(uint32_t messageId, const google::protobuf::Message &message, Guid playerId)
 {
@@ -102,7 +101,8 @@ void InternalBroadcast(uint32_t messageId, const google::protobuf::Message &mess
 		const auto *playerSessionSnapshotPB = tlsEcs.actorRegistry.try_get<PlayerSessionSnapshotComp>(player);
 		if (!playerSessionSnapshotPB)
 		{
-			LOG_ERROR << "Player node info not found for player entity: " << tlsEcs.actorRegistry.get_or_emplace<Guid>(player);
+			const auto* playerGuid = tlsEcs.actorRegistry.try_get<Guid>(player);
+			LOG_ERROR << "Player node info not found for player entity: " << (playerGuid ? *playerGuid : 0);
 			continue;
 		}
 
@@ -116,6 +116,8 @@ void InternalBroadcast(uint32_t messageId, const google::protobuf::Message &mess
 		gateList[gateNodeId].emplace(playerSessionSnapshotPB->gate_session_id());
 	}
 
+	const std::string serializedMessage = message.SerializeAsString();
+
 	for (auto &&[gateNodeId, sessionIdList] : gateList)
 	{
 		const auto gateNodeSession = gateNodeRegistry.try_get<RpcSession>(gateNodeId);
@@ -127,7 +129,7 @@ void InternalBroadcast(uint32_t messageId, const google::protobuf::Message &mess
 
 		BroadcastToPlayersRequest request;
 		request.mutable_message_content()->set_message_id(messageId);
-		request.mutable_message_content()->set_serialized_message(message.SerializeAsString());
+		request.mutable_message_content()->set_serialized_message(serializedMessage);
 
 		for (auto &&sessionId : sessionIdList)
 		{
@@ -172,10 +174,7 @@ inline NodeId PickRandomNodeId(uint32_t nodeType)
 		LOG_ERROR << "No available node for type: " << nodeType;
 		return kInvalidNodeId;
 	}
-	std::random_device rd;
-	std::mt19937 gen(rd());
-	std::uniform_int_distribution<size_t> dis(0, candidates.size() - 1);
-	return candidates[dis(gen)];
+	return candidates[tlsRandom.Rand<size_t>(0, candidates.size() - 1)];
 }
 
 void SendMessageToPlayerOnGrpcNode(uint32_t messageId, const google::protobuf::Message &message, entt::entity playerEntity)
@@ -197,7 +196,7 @@ void SendMessageToPlayerOnGrpcNode(uint32_t messageId, const google::protobuf::M
 
 	SessionDetails sessionDetails;
 	sessionDetails.set_session_id(playerSessionSnapshotPB->gate_session_id());
-	sessionDetails.set_player_id(tlsEcs.actorRegistry.get_or_emplace<Guid>(playerEntity));
+	sessionDetails.set_player_id(tlsEcs.actorRegistry.get<Guid>(playerEntity));
 
 	if (!rpcHandlerMeta.sender)
 	{
@@ -294,7 +293,7 @@ void SendMessageToPlayerOnNode(uint32_t wrappedMessageId,
 
 	NodeRouteMessageRequest request;
 	request.mutable_message_content()->set_message_id(messageId);
-	request.mutable_message_content()->set_serialized_message(message.SerializeAsString());
+	message.SerializeToString(request.mutable_message_content()->mutable_serialized_message());
 	request.mutable_header()->set_session_id(playerSessionSnapshotPB->gate_session_id());
 
 	session->SendRequest(wrappedMessageId, request);
