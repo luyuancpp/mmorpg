@@ -34,10 +34,18 @@ proto/
 - When routing behavior is Kafka-based, make sure contract updates match topic/consumer expectations in C++ and Go consumers.
 - After proto changes, regenerate outputs and rebuild all affected languages.
 
+## FIELD TYPE CONSTRAINTS
+- **double (NOT float)**: `Location`, `Rotation`, `Scale`, `Vector3`, `Velocity`, `Acceleration` x/y/z — must match UE4 client double precision.
+- **uint64 (NOT uint32)**: `BaseAttributesComp.strength/stamina/health/mana/critchance/armor/resistance` — combat formulas cast to double; uint64 keeps headroom.
+- **uint64 (mandatory)**: All SnowFlake GUIDs (`player_id`, `entity`, `scene_id`, `item_id`, `buff_id`, `skill_id` instance, `tx_id`, `snapshot_id`); all Unix-ms timestamps; currency values.
+- **uint32 (safe)**: `session_id`, `session_version`, `attack_power`, `defense_power`, `max_health`, `skill_table_id`, `current_frame`.
+- **float (safe)**: `ViewRadius.radius`.
+
 ## ANTI-PATTERNS
 - Patching generated `.pb.go`, `.pb.h`, `.pb.cc`, or checked-in generated proto trees instead of updating source `.proto` files.
 - Making service/event ID changes without updating the registry files.
 - Treating a contract change as language-local; this repo has multiple consumers.
+- Shrinking coordinate doubles to float, BaseAttributesComp uint64 to uint32, or any SnowFlake GUID / Unix-ms timestamp field — see FIELD TYPE CONSTRAINTS above.
 
 ## COMMANDS
 ```bash

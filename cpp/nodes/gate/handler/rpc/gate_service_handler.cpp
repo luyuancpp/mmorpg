@@ -159,7 +159,7 @@ void GateHandler::BroadcastToPlayers(::google::protobuf::RpcController* controll
 	::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
-	for (auto&& sessionId : request->session_list())
+	auto sendToSession = [&](uint32_t sessionId)
 	{
 		auto sessionIt = tlsSessionManager.sessions().find(sessionId);
 		if (sessionIt == tlsSessionManager.sessions().end())
@@ -168,10 +168,64 @@ void GateHandler::BroadcastToPlayers(::google::protobuf::RpcController* controll
 			{
 				LOG_ERROR << "Connection ID not found for BroadCast2PlayerMessage, session ID: " << sessionId << ", message ID:" << request->message_content().message_id();
 			}
-
-			continue;
+			return;
 		}
 		GetGateCodec().send(sessionIt->second.conn, request->message_content());
+	};
+
+	if (!request->session_bitmap().empty())
+	{
+		const uint32_t base = request->session_bitmap_base();
+		const auto &bitmap = request->session_bitmap();
+		for (size_t i = 0; i < bitmap.size(); ++i)
+		{
+			const uint8_t byte = static_cast<uint8_t>(bitmap[i]);
+			for (int bit = 0; bit < 8; ++bit)
+			{
+				if (byte & (1 << bit))
+				{
+					sendToSession(base + static_cast<uint32_t>(i * 8 + bit));
+				}
+			}
+		}
+	}
+	else
+	{
+		for (auto &&sessionId : request->session_list())
+		{
+			sendToSession(sessionId);
+		}
+	}
+	///<<< END WRITING YOUR CODE
+}
+
+void GateHandler::BroadcastToScene(::google::protobuf::RpcController *controller, const ::BroadcastToSceneRequest *request,
+								   ::Empty *response,
+								   ::google::protobuf::Closure *done)
+{
+	///<<< BEGIN WRITING YOUR CODE
+	const uint64_t sceneId = request->scene_id();
+	for (auto &[sessionId, info] : tlsSessionManager.sessions())
+	{
+		if (info.sceneId == sceneId && info.conn)
+		{
+			GetGateCodec().send(info.conn, request->message_content());
+		}
+	}
+	///<<< END WRITING YOUR CODE
+}
+
+void GateHandler::BroadcastToAll(::google::protobuf::RpcController *controller, const ::BroadcastToAllRequest *request,
+								 ::Empty *response,
+								 ::google::protobuf::Closure *done)
+{
+	///<<< BEGIN WRITING YOUR CODE
+	for (auto &[sessionId, info] : tlsSessionManager.sessions())
+	{
+		if (info.conn)
+		{
+			GetGateCodec().send(info.conn, request->message_content());
+		}
 	}
 	///<<< END WRITING YOUR CODE
 }

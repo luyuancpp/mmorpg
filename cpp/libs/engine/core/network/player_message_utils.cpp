@@ -84,6 +84,50 @@ void SendMessageToGateById(uint32_t messageId, const google::protobuf::Message &
 
 using BroadCastSessionIdList = std::unordered_set<SessionId>;
 
+// Choose bitmap or list encoding based on session count and density.
+// Bitmap: base(uint32) + N/8 bytes.  List: ~3 bytes per varint (session IDs > 16384).
+// Bitmap wins when density > ~4% and count >= threshold.
+static void EncodeBroadcastSessionList(BroadcastToPlayersRequest &request,
+									   const BroadCastSessionIdList &sessionIdList)
+{
+	constexpr size_t kBitmapThreshold = 32;
+
+	if (sessionIdList.size() >= kBitmapThreshold)
+	{
+		uint32_t minId = UINT32_MAX;
+		uint32_t maxId = 0;
+		for (const auto sessionId : sessionIdList)
+		{
+			if (sessionId < minId)
+				minId = sessionId;
+			if (sessionId > maxId)
+				maxId = sessionId;
+		}
+
+		const uint32_t span = maxId - minId + 1;
+		const size_t bitmapBytes = (span + 7) / 8;
+
+		// Use bitmap when it is smaller than varint list
+		if (bitmapBytes + 6 < sessionIdList.size() * 3)
+		{
+			request.set_session_bitmap_base(minId);
+			std::string bitmap(bitmapBytes, '\0');
+			for (const auto sessionId : sessionIdList)
+			{
+				const uint32_t offset = sessionId - minId;
+				bitmap[offset / 8] |= static_cast<char>(1 << (offset % 8));
+			}
+			request.set_session_bitmap(std::move(bitmap));
+			return;
+		}
+	}
+
+	for (const auto sessionId : sessionIdList)
+	{
+		request.mutable_session_list()->Add(sessionId);
+	}
+}
+
 template <typename PlayerContainer>
 void InternalBroadcast(uint32_t messageId, const google::protobuf::Message &message, const PlayerContainer &playerList)
 {
@@ -131,10 +175,7 @@ void InternalBroadcast(uint32_t messageId, const google::protobuf::Message &mess
 		request.mutable_message_content()->set_message_id(messageId);
 		request.mutable_message_content()->set_serialized_message(serializedMessage);
 
-		for (auto &&sessionId : sessionIdList)
-		{
-			request.mutable_session_list()->Add(sessionId);
-		}
+		EncodeBroadcastSessionList(request, sessionIdList);
 
 		gateNodeSession->SendRequest(GateBroadcastToPlayersMessageId, request);
 	}
@@ -148,6 +189,67 @@ void BroadcastMessageToPlayers(uint32_t messageId, const google::protobuf::Messa
 void BroadcastMessageToPlayers(uint32_t messageId, const google::protobuf::Message &message, const EntityVector &playerList)
 {
 	InternalBroadcast(messageId, message, playerList);
+}
+
+template <typename PlayerContainer>
+void InternalBroadcastToScene(uint32_t messageId, const google::protobuf::Message &message,
+							  uint64_t sceneId, const PlayerContainer &scenePlayerList)
+{
+	auto &gateNodeRegistry = tlsNodeContextManager.GetRegistry(eNodeType::GateNodeService);
+	std::unordered_set<entt::entity> gateNodes;
+
+	for (auto &player : scenePlayerList)
+	{
+		if (!tlsEcs.actorRegistry.valid(player))
+			continue;
+		const auto *snapshot = tlsEcs.actorRegistry.try_get<PlayerSessionSnapshotComp>(player);
+		if (!snapshot)
+			continue;
+		entt::entity gateNodeId{GetGateNodeId(snapshot->gate_session_id())};
+		if (gateNodeRegistry.valid(gateNodeId))
+			gateNodes.insert(gateNodeId);
+	}
+
+	BroadcastToSceneRequest request;
+	request.set_scene_id(sceneId);
+	request.mutable_message_content()->set_message_id(messageId);
+	request.mutable_message_content()->set_serialized_message(message.SerializeAsString());
+
+	for (auto gateNodeId : gateNodes)
+	{
+		const auto gateSession = gateNodeRegistry.try_get<RpcSession>(gateNodeId);
+		if (!gateSession)
+			continue;
+		gateSession->SendRequest(GateBroadcastToSceneMessageId, request);
+	}
+}
+
+void BroadcastMessageToScene(uint32_t messageId, const google::protobuf::Message &message,
+							 uint64_t sceneId, const EntityUnorderedSet &scenePlayerList)
+{
+	InternalBroadcastToScene(messageId, message, sceneId, scenePlayerList);
+}
+
+void BroadcastMessageToScene(uint32_t messageId, const google::protobuf::Message &message,
+							 uint64_t sceneId, const EntityVector &scenePlayerList)
+{
+	InternalBroadcastToScene(messageId, message, sceneId, scenePlayerList);
+}
+
+void BroadcastMessageToAll(uint32_t messageId, const google::protobuf::Message &message)
+{
+	auto &gateNodeRegistry = tlsNodeContextManager.GetRegistry(eNodeType::GateNodeService);
+
+	BroadcastToAllRequest request;
+	request.mutable_message_content()->set_message_id(messageId);
+	request.mutable_message_content()->set_serialized_message(message.SerializeAsString());
+
+	auto view = gateNodeRegistry.view<RpcSession>();
+	for (auto entity : view)
+	{
+		auto &gateSession = view.get<RpcSession>(entity);
+		gateSession.SendRequest(GateBroadcastToAllMessageId, request);
+	}
 }
 
 void SendMessageToPlayerOnGrpcNode(uint32_t messageId, const google::protobuf::Message &message, Guid playerId)

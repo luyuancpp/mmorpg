@@ -71,4 +71,19 @@ message PushToPlayerEvent {
 message BroadcastToPlayersEvent {
   repeated uint32 session_list = 1;
   MessageContent message_content = 2;
+  uint32 session_bitmap_base = 3;
+  bytes session_bitmap = 4;
+}
+
+// Scene-wide broadcast: Gate iterates all sessions with matching scene_id.
+// More compact than session_list when broadcasting to most/all players in a scene.
+message BroadcastToSceneEvent {
+  uint64 scene_id = 1;
+  MessageContent message_content = 2;
+}
+
+// Server-wide broadcast: Gate sends to ALL connected sessions.
+// Caller sends one message per Gate node.
+message BroadcastToAllEvent {
+  MessageContent message_content = 1;
 }

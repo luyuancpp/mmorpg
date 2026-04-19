@@ -16,6 +16,7 @@
 15=InterruptCurrentStateEvent
 16=ConditionEvent
 17=OnAcceptedMissionEvent
+18=ContractsKafkaBroadcastToAllEvent
 19=OnConnect2Login
 20=OnMissionAwardEvent
 21=OnNodeAddEvent
@@ -37,3 +38,4 @@
 37=ContractsKafkaRedirectToGateEvent
 38=ContractsKafkaBroadcastToPlayersEvent
 39=ContractsKafkaPushToPlayerEvent
+40=ContractsKafkaBroadcastToSceneEvent

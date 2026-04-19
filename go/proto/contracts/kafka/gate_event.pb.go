@@ -513,11 +513,13 @@ func (x *PushToPlayerEvent) GetMessageContent() *base.MessageContent {
 // Sender groups players by gate_id and sends one Kafka message per Gate.
 // Flow: Go service -> Kafka gate-{gate_id} -> Gate -> N client TCP connections
 type BroadcastToPlayersEvent struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	SessionList    []uint32               `protobuf:"varint,1,rep,packed,name=session_list,json=sessionList,proto3" json:"session_list,omitempty"`
-	MessageContent *base.MessageContent   `protobuf:"bytes,2,opt,name=message_content,json=messageContent,proto3" json:"message_content,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	SessionList       []uint32               `protobuf:"varint,1,rep,packed,name=session_list,json=sessionList,proto3" json:"session_list,omitempty"`
+	MessageContent    *base.MessageContent   `protobuf:"bytes,2,opt,name=message_content,json=messageContent,proto3" json:"message_content,omitempty"`
+	SessionBitmapBase uint32                 `protobuf:"varint,3,opt,name=session_bitmap_base,json=sessionBitmapBase,proto3" json:"session_bitmap_base,omitempty"`
+	SessionBitmap     []byte                 `protobuf:"bytes,4,opt,name=session_bitmap,json=sessionBitmap,proto3" json:"session_bitmap,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *BroadcastToPlayersEvent) Reset() {
@@ -558,6 +560,120 @@ func (x *BroadcastToPlayersEvent) GetSessionList() []uint32 {
 }
 
 func (x *BroadcastToPlayersEvent) GetMessageContent() *base.MessageContent {
+	if x != nil {
+		return x.MessageContent
+	}
+	return nil
+}
+
+func (x *BroadcastToPlayersEvent) GetSessionBitmapBase() uint32 {
+	if x != nil {
+		return x.SessionBitmapBase
+	}
+	return 0
+}
+
+func (x *BroadcastToPlayersEvent) GetSessionBitmap() []byte {
+	if x != nil {
+		return x.SessionBitmap
+	}
+	return nil
+}
+
+// Scene-wide broadcast: Gate iterates all sessions with matching scene_id.
+// More compact than session_list when broadcasting to most/all players in a scene.
+type BroadcastToSceneEvent struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	SceneId        uint64                 `protobuf:"varint,1,opt,name=scene_id,json=sceneId,proto3" json:"scene_id,omitempty"`
+	MessageContent *base.MessageContent   `protobuf:"bytes,2,opt,name=message_content,json=messageContent,proto3" json:"message_content,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *BroadcastToSceneEvent) Reset() {
+	*x = BroadcastToSceneEvent{}
+	mi := &file_proto_contracts_kafka_gate_event_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BroadcastToSceneEvent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BroadcastToSceneEvent) ProtoMessage() {}
+
+func (x *BroadcastToSceneEvent) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_contracts_kafka_gate_event_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BroadcastToSceneEvent.ProtoReflect.Descriptor instead.
+func (*BroadcastToSceneEvent) Descriptor() ([]byte, []int) {
+	return file_proto_contracts_kafka_gate_event_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *BroadcastToSceneEvent) GetSceneId() uint64 {
+	if x != nil {
+		return x.SceneId
+	}
+	return 0
+}
+
+func (x *BroadcastToSceneEvent) GetMessageContent() *base.MessageContent {
+	if x != nil {
+		return x.MessageContent
+	}
+	return nil
+}
+
+// Server-wide broadcast: Gate sends to ALL connected sessions.
+// Caller sends one message per Gate node.
+type BroadcastToAllEvent struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	MessageContent *base.MessageContent   `protobuf:"bytes,1,opt,name=message_content,json=messageContent,proto3" json:"message_content,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *BroadcastToAllEvent) Reset() {
+	*x = BroadcastToAllEvent{}
+	mi := &file_proto_contracts_kafka_gate_event_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BroadcastToAllEvent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BroadcastToAllEvent) ProtoMessage() {}
+
+func (x *BroadcastToAllEvent) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_contracts_kafka_gate_event_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BroadcastToAllEvent.ProtoReflect.Descriptor instead.
+func (*BroadcastToAllEvent) Descriptor() ([]byte, []int) {
+	return file_proto_contracts_kafka_gate_event_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *BroadcastToAllEvent) GetMessageContent() *base.MessageContent {
 	if x != nil {
 		return x.MessageContent
 	}
@@ -610,10 +726,17 @@ const file_proto_contracts_kafka_gate_event_proto_rawDesc = "" +
 	"\x11PushToPlayerEvent\x12\x1d\n" +
 	"\n" +
 	"session_id\x18\x01 \x01(\rR\tsessionId\x128\n" +
-	"\x0fmessage_content\x18\x02 \x01(\v2\x0f.MessageContentR\x0emessageContent\"v\n" +
+	"\x0fmessage_content\x18\x02 \x01(\v2\x0f.MessageContentR\x0emessageContent\"\xcd\x01\n" +
 	"\x17BroadcastToPlayersEvent\x12!\n" +
 	"\fsession_list\x18\x01 \x03(\rR\vsessionList\x128\n" +
-	"\x0fmessage_content\x18\x02 \x01(\v2\x0f.MessageContentR\x0emessageContentB\x17Z\x15proto/contracts/kafkab\x06proto3"
+	"\x0fmessage_content\x18\x02 \x01(\v2\x0f.MessageContentR\x0emessageContent\x12.\n" +
+	"\x13session_bitmap_base\x18\x03 \x01(\rR\x11sessionBitmapBase\x12%\n" +
+	"\x0esession_bitmap\x18\x04 \x01(\fR\rsessionBitmap\"l\n" +
+	"\x15BroadcastToSceneEvent\x12\x19\n" +
+	"\bscene_id\x18\x01 \x01(\x04R\asceneId\x128\n" +
+	"\x0fmessage_content\x18\x02 \x01(\v2\x0f.MessageContentR\x0emessageContent\"O\n" +
+	"\x13BroadcastToAllEvent\x128\n" +
+	"\x0fmessage_content\x18\x01 \x01(\v2\x0f.MessageContentR\x0emessageContentB\x17Z\x15proto/contracts/kafkab\x06proto3"
 
 var (
 	file_proto_contracts_kafka_gate_event_proto_rawDescOnce sync.Once
@@ -627,7 +750,7 @@ func file_proto_contracts_kafka_gate_event_proto_rawDescGZIP() []byte {
 	return file_proto_contracts_kafka_gate_event_proto_rawDescData
 }
 
-var file_proto_contracts_kafka_gate_event_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_proto_contracts_kafka_gate_event_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_proto_contracts_kafka_gate_event_proto_goTypes = []any{
 	(*RoutePlayerEvent)(nil),        // 0: contracts.kafka.RoutePlayerEvent
 	(*KickPlayerEvent)(nil),         // 1: contracts.kafka.KickPlayerEvent
@@ -637,16 +760,20 @@ var file_proto_contracts_kafka_gate_event_proto_goTypes = []any{
 	(*RedirectToGateEvent)(nil),     // 5: contracts.kafka.RedirectToGateEvent
 	(*PushToPlayerEvent)(nil),       // 6: contracts.kafka.PushToPlayerEvent
 	(*BroadcastToPlayersEvent)(nil), // 7: contracts.kafka.BroadcastToPlayersEvent
-	(*base.MessageContent)(nil),     // 8: MessageContent
+	(*BroadcastToSceneEvent)(nil),   // 8: contracts.kafka.BroadcastToSceneEvent
+	(*BroadcastToAllEvent)(nil),     // 9: contracts.kafka.BroadcastToAllEvent
+	(*base.MessageContent)(nil),     // 10: MessageContent
 }
 var file_proto_contracts_kafka_gate_event_proto_depIdxs = []int32{
-	8, // 0: contracts.kafka.PushToPlayerEvent.message_content:type_name -> MessageContent
-	8, // 1: contracts.kafka.BroadcastToPlayersEvent.message_content:type_name -> MessageContent
-	2, // [2:2] is the sub-list for method output_type
-	2, // [2:2] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	10, // 0: contracts.kafka.PushToPlayerEvent.message_content:type_name -> MessageContent
+	10, // 1: contracts.kafka.BroadcastToPlayersEvent.message_content:type_name -> MessageContent
+	10, // 2: contracts.kafka.BroadcastToSceneEvent.message_content:type_name -> MessageContent
+	10, // 3: contracts.kafka.BroadcastToAllEvent.message_content:type_name -> MessageContent
+	4,  // [4:4] is the sub-list for method output_type
+	4,  // [4:4] is the sub-list for method input_type
+	4,  // [4:4] is the sub-list for extension type_name
+	4,  // [4:4] is the sub-list for extension extendee
+	0,  // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_proto_contracts_kafka_gate_event_proto_init() }
@@ -660,7 +787,7 @@ func file_proto_contracts_kafka_gate_event_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_contracts_kafka_gate_event_proto_rawDesc), len(file_proto_contracts_kafka_gate_event_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   8,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

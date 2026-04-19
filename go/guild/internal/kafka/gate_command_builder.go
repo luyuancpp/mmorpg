@@ -52,9 +52,16 @@ func (b *gateCommandBuilder) BuildBroadcastCommand(sessionList []uint32, gateIns
 		SerializedMessage: body,
 	}
 	event := &kafkapb.BroadcastToPlayersEvent{
-		SessionList:    sessionList,
 		MessageContent: mc,
 	}
+
+	if base, bm, ok := kafkautil.EncodeBitmapFields(sessionList); ok {
+		event.SessionBitmapBase = base
+		event.SessionBitmap = bm
+	} else {
+		event.SessionList = sessionList
+	}
+
 	payload, err := proto.Marshal(event)
 	if err != nil {
 		return nil, fmt.Errorf("marshal BroadcastToPlayersEvent: %w", err)
@@ -62,6 +69,53 @@ func (b *gateCommandBuilder) BuildBroadcastCommand(sessionList []uint32, gateIns
 
 	cmd := &kafkapb.GateCommand{
 		EventId:          uint32(game.ContractsKafkaBroadcastToPlayersEventEventId),
+		TargetInstanceId: gateInstanceID,
+		Payload:          payload,
+	}
+	return proto.Marshal(cmd)
+}
+
+func (b *gateCommandBuilder) BuildBroadcastToSceneCommand(sceneID uint64, gateInstanceID string,
+	messageID uint32, body []byte,
+) ([]byte, error) {
+	mc := &basepb.MessageContent{
+		MessageId:         messageID,
+		SerializedMessage: body,
+	}
+	event := &kafkapb.BroadcastToSceneEvent{
+		SceneId:        sceneID,
+		MessageContent: mc,
+	}
+	payload, err := proto.Marshal(event)
+	if err != nil {
+		return nil, fmt.Errorf("marshal BroadcastToSceneEvent: %w", err)
+	}
+
+	cmd := &kafkapb.GateCommand{
+		EventId:          uint32(game.ContractsKafkaBroadcastToSceneEventEventId),
+		TargetInstanceId: gateInstanceID,
+		Payload:          payload,
+	}
+	return proto.Marshal(cmd)
+}
+
+func (b *gateCommandBuilder) BuildBroadcastToAllCommand(gateInstanceID string,
+	messageID uint32, body []byte,
+) ([]byte, error) {
+	mc := &basepb.MessageContent{
+		MessageId:         messageID,
+		SerializedMessage: body,
+	}
+	event := &kafkapb.BroadcastToAllEvent{
+		MessageContent: mc,
+	}
+	payload, err := proto.Marshal(event)
+	if err != nil {
+		return nil, fmt.Errorf("marshal BroadcastToAllEvent: %w", err)
+	}
+
+	cmd := &kafkapb.GateCommand{
+		EventId:          uint32(game.ContractsKafkaBroadcastToAllEventEventId),
 		TargetInstanceId: gateInstanceID,
 		Payload:          payload,
 	}
