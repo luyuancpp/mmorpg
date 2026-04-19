@@ -166,7 +166,7 @@ void GateHandler::BroadcastToPlayers(::google::protobuf::RpcController* controll
 		{
 			if (shouldLogProtocolErrorForDisconnectedPlayer(request->message_content().message_id()))
 			{
-				LOG_ERROR << "Connection ID not found for BroadCast2PlayerMessage, session ID: " << sessionId << ", message ID:" << request->message_content().message_id();
+				LOG_WARN << "Connection ID not found for BroadCast2PlayerMessage, session ID: " << sessionId << ", message ID:" << request->message_content().message_id();
 			}
 			return;
 		}

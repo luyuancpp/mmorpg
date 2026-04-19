@@ -19,6 +19,7 @@
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "rpc/service_metadata/rpc_event_registry.h"
 #include "rpc/service_metadata/scene_service_metadata.h"
+#include "rpc/service_metadata/player_lifecycle_service_metadata.h"
 #include "rpc/service_metadata/login_service_metadata.h"
 #include "rpc/service_metadata/client_player_common_service_metadata.h"
 #include "proto/common/base/node.pb.h"
@@ -263,10 +264,35 @@ void ParseMessageFromRequestBody(Message &message, const Request &request, const
 
 void RpcClientSessionHandler::HandleConnectionDisconnection(const muduo::net::TcpConnectionPtr &conn)
 {
-	// Disconnect notification goes to Login; its session manager owns the disconnect lease.
-
 	const auto sessionId = GetSessionId(conn);
 
+	// Retrieve session info before erasing so we can notify both Login and Scene.
+	auto &sessions = tlsSessionManager.sessions();
+	auto sessionIt = sessions.find(sessionId);
+
+	if (sessionIt != sessions.end())
+	{
+		// Notify Scene to exit the player immediately (saves state and stops broadcasting).
+		if (sessionIt->second.HasNodeId(SceneNodeService))
+		{
+			const auto sceneEntityId = sessionIt->second.GetNodeId(SceneNodeService);
+			auto &sceneRegistry = tlsNodeContextManager.GetRegistry(SceneNodeService);
+			entt::entity sceneEntity{sceneEntityId};
+			if (sceneRegistry.valid(sceneEntity))
+			{
+				const auto *rpcClient = sceneRegistry.try_get<RpcClientPtr>(sceneEntity);
+				if (rpcClient && *rpcClient)
+				{
+					ProcessClientPlayerMessageRequest exitMsg;
+					exitMsg.set_session_id(sessionId);
+					exitMsg.mutable_message_content()->set_message_id(ScenePlayerExitGameMessageId);
+					(*rpcClient)->CallRemoteMethod(SceneProcessClientPlayerMessageMessageId, exitMsg);
+				}
+			}
+		}
+	}
+
+	// Disconnect notification goes to Login; its session manager owns the disconnect lease.
 	// Login nodes are stateless -- pick any available node, no session affinity needed.
 	const auto loginNode = PickRandomNode(eNodeType::LoginNodeService);
 	if (loginNode)
@@ -280,7 +306,7 @@ void RpcClientSessionHandler::HandleConnectionDisconnection(const muduo::net::Tc
 		loginpb::SendClientPlayerLoginDisconnect(tlsNodeContextManager.GetRegistry(eNodeType::LoginNodeService), *loginNode, request, {kSessionBinMetaKey}, SerializeSessionDetails(sessionDetails));
 	}
 
-	tlsSessionManager.sessions().erase(sessionId);
+	sessions.erase(sessionId);
 
 	LOG_TRACE << "Disconnected session id: " << sessionId;
 }
