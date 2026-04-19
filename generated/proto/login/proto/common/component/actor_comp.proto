@@ -51,7 +51,7 @@ message Acceleration
 // View radius
 message ViewRadius
 {
-	double radius = 1;
+	float radius = 1;
 }
 
 // Player base attributes comp, stores only combat-related base attributes

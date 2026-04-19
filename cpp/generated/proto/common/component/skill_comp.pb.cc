@@ -46,7 +46,7 @@ PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
 inline constexpr SkillComp::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
-        skill_table_id_{::uint64_t{0u}} {}
+        skill_table_id_{0u} {}
 
 template <typename>
 PROTOBUF_CONSTEXPR SkillComp::SkillComp(::_pbi::ConstantInitialized)
@@ -156,7 +156,7 @@ const char descriptor_table_protodef_proto_2fcommon_2fcomponent_2fskill_5fcomp_2
     protodesc_cold) = {
     "\n\'proto/common/component/skill_comp.prot"
     "o\032\'proto/common/component/actor_comp.pro"
-    "to\"#\n\tSkillComp\022\026\n\016skill_table_id\030\001 \001(\004\""
+    "to\"#\n\tSkillComp\022\026\n\016skill_table_id\030\001 \001(\r\""
     "\222\002\n\020SkillContextComp\022\016\n\006caster\030\001 \001(\004\022\016\n\006"
     "target\030\002 \001(\004\022\017\n\007SkillId\030\003 \001(\004\022\024\n\014skillTa"
     "bleId\030\004 \001(\r\022 \n\014castPosition\030\005 \001(\0132\n.Tran"
@@ -299,15 +299,15 @@ SkillComp::_table_ = {
     ::_pbi::TcParser::GetTable<::SkillComp>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // uint64 skill_table_id = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(SkillComp, _impl_.skill_table_id_), 0>(),
+    // uint32 skill_table_id = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SkillComp, _impl_.skill_table_id_), 0>(),
      {8, 0, 0, PROTOBUF_FIELD_OFFSET(SkillComp, _impl_.skill_table_id_)}},
   }}, {{
     65535, 65535
   }}, {{
-    // uint64 skill_table_id = 1;
+    // uint32 skill_table_id = 1;
     {PROTOBUF_FIELD_OFFSET(SkillComp, _impl_.skill_table_id_), _Internal::kHasBitsOffset + 0, 0,
-    (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
   }},
   // no aux_entries
   {{
@@ -320,7 +320,7 @@ PROTOBUF_NOINLINE void SkillComp::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  _impl_.skill_table_id_ = ::uint64_t{0u};
+  _impl_.skill_table_id_ = 0u;
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
@@ -340,11 +340,11 @@ PROTOBUF_NOINLINE void SkillComp::Clear() {
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
-  // uint64 skill_table_id = 1;
+  // uint32 skill_table_id = 1;
   if ((this_._impl_._has_bits_[0] & 0x00000001u) != 0) {
     if (this_._internal_skill_table_id() != 0) {
       target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
           1, this_._internal_skill_table_id(), target);
     }
   }
@@ -373,11 +373,11 @@ PROTOBUF_NOINLINE void SkillComp::Clear() {
   (void)cached_has_bits;
 
    {
-    // uint64 skill_table_id = 1;
+    // uint32 skill_table_id = 1;
     cached_has_bits = this_._impl_._has_bits_[0];
     if ((cached_has_bits & 0x00000001u) != 0) {
       if (this_._internal_skill_table_id() != 0) {
-        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_skill_table_id());
       }
     }

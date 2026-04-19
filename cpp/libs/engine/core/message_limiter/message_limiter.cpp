@@ -5,7 +5,7 @@
 #include "table/code/messagelimiter_table.h"
 #include "time/system/time.h"
 
-MessageLimiter::MessageLimiter(uint8_t defaultMaxRequests, uint64_t defaultTimeWindow)
+MessageLimiter::MessageLimiter(uint8_t defaultMaxRequests, uint32_t defaultTimeWindow)
     : defaultMaxRequests(defaultMaxRequests), defaultTimeWindow(defaultTimeWindow) {}
 
 uint32_t MessageLimiter::CanSend(uint32_t messageId)

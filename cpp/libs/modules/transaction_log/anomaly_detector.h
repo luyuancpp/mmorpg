@@ -25,7 +25,7 @@
 struct AnomalyThreshold
 {
     uint32_t maxCountPerWindow{50};      // max discrete gain events
-    uint64_t maxAmountPerWindow{100000}; // max cumulative gain amount
+    uint32_t maxAmountPerWindow{100000}; // max cumulative gain amount
     uint32_t windowSeconds{600};         // sliding window size (10 min default)
 };
 

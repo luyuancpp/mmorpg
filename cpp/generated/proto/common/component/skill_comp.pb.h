@@ -264,14 +264,14 @@ class SkillComp final : public ::google::protobuf::Message
   enum : int {
     kSkillTableIdFieldNumber = 1,
   };
-  // uint64 skill_table_id = 1;
+  // uint32 skill_table_id = 1;
   void clear_skill_table_id() ;
-  ::uint64_t skill_table_id() const;
-  void set_skill_table_id(::uint64_t value);
+  ::uint32_t skill_table_id() const;
+  void set_skill_table_id(::uint32_t value);
 
   private:
-  ::uint64_t _internal_skill_table_id() const;
-  void _internal_set_skill_table_id(::uint64_t value);
+  ::uint32_t _internal_skill_table_id() const;
+  void _internal_set_skill_table_id(::uint32_t value);
 
   public:
   // @@protoc_insertion_point(class_scope:SkillComp)
@@ -300,7 +300,7 @@ class SkillComp final : public ::google::protobuf::Message
         const SkillComp& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
-    ::uint64_t skill_table_id_;
+    ::uint32_t skill_table_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -618,26 +618,26 @@ extern const ::google::protobuf::internal::ClassDataFull SkillContextComp_class_
 
 // SkillComp
 
-// uint64 skill_table_id = 1;
+// uint32 skill_table_id = 1;
 inline void SkillComp::clear_skill_table_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.skill_table_id_ = ::uint64_t{0u};
+  _impl_.skill_table_id_ = 0u;
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
-inline ::uint64_t SkillComp::skill_table_id() const {
+inline ::uint32_t SkillComp::skill_table_id() const {
   // @@protoc_insertion_point(field_get:SkillComp.skill_table_id)
   return _internal_skill_table_id();
 }
-inline void SkillComp::set_skill_table_id(::uint64_t value) {
+inline void SkillComp::set_skill_table_id(::uint32_t value) {
   _internal_set_skill_table_id(value);
   _impl_._has_bits_[0] |= 0x00000001u;
   // @@protoc_insertion_point(field_set:SkillComp.skill_table_id)
 }
-inline ::uint64_t SkillComp::_internal_skill_table_id() const {
+inline ::uint32_t SkillComp::_internal_skill_table_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.skill_table_id_;
 }
-inline void SkillComp::_internal_set_skill_table_id(::uint64_t value) {
+inline void SkillComp::_internal_set_skill_table_id(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.skill_table_id_ = value;
 }

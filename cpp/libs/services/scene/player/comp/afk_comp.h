@@ -8,7 +8,7 @@
 // so AFK players skip expensive per-tick position updates.
 struct AfkComp
 {
-    uint64_t afkStartFrame{0};   // Frame when AFK state began
+    uint32_t afkStartFrame{0};   // Frame when AFK state began
     uint32_t reducedTickCount{0}; // Number of reduced ticks processed
 };
 
@@ -16,5 +16,5 @@ struct AfkComp
 // Checked by AfkSystem each tick to detect inactivity.
 struct LastActiveFrameComp
 {
-    uint64_t frame{0};
+    uint32_t frame{0};
 };

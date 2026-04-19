@@ -385,7 +385,7 @@ func (x *Acceleration) GetZ() float64 {
 // View radius
 type ViewRadius struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Radius        float64                `protobuf:"fixed64,1,opt,name=radius,proto3" json:"radius,omitempty"`
+	Radius        float32                `protobuf:"fixed32,1,opt,name=radius,proto3" json:"radius,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -420,7 +420,7 @@ func (*ViewRadius) Descriptor() ([]byte, []int) {
 	return file_proto_common_component_actor_comp_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *ViewRadius) GetRadius() float64 {
+func (x *ViewRadius) GetRadius() float32 {
 	if x != nil {
 		return x.Radius
 	}
@@ -640,7 +640,7 @@ const file_proto_common_component_actor_comp_proto_rawDesc = "" +
 	"\x01z\x18\x03 \x01(\x01R\x01z\"$\n" +
 	"\n" +
 	"ViewRadius\x12\x16\n" +
-	"\x06radius\x18\x01 \x01(\x01R\x06radius\"\xcc\x01\n" +
+	"\x06radius\x18\x01 \x01(\x02R\x06radius\"\xcc\x01\n" +
 	"\x12BaseAttributesComp\x12\x1a\n" +
 	"\bstrength\x18\x01 \x01(\x04R\bstrength\x12\x18\n" +
 	"\astamina\x18\x02 \x01(\x04R\astamina\x12\x16\n" +

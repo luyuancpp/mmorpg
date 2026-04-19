@@ -75,5 +75,5 @@ inline constexpr AoiPriorityPolicy kPolicyPvpArena {{
 // effectiveCapacity = min(clientReportedCapacity, serverPressureCapacity)
 // ---------------------------------------------------------------------------
 constexpr std::size_t kAoiListCapacityDefault = 100;
-constexpr std::size_t kAoiListCapacityMin     = 20;
-constexpr std::size_t kAoiListCapacityMax     = 200;
+constexpr uint32_t kAoiListCapacityMin     = 20;
+constexpr uint32_t kAoiListCapacityMax     = 200;

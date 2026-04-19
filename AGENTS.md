@@ -152,6 +152,9 @@ The following were removed from git tracking:
 - Using `string` for Kafka Brokers config (use `[]string` consistently across all Go services).
 - Keeping dead SnowFlake implementations or duplicate `Guid` typedefs in headers (consolidate to `type_define.h`).
 - Sending Kafka messages to `{type}-{id}` topics without populating `target_instance_id` — risks delivering stale commands to a restarted node with a recycled node_id.
+- Changing coordinate/transform proto fields (`Location`, `Rotation`, `Scale`, `Vector3`, `Velocity`, `Acceleration`) from `double` to `float` — must match UE4 client-side double precision.
+- Changing `BaseAttributesComp` fields (`strength`, `stamina`, `health`, `mana`, `critchance`, `armor`, `resistance`) from `uint64` to `uint32` — combat formulas use double-precision arithmetic; uint64 preserves headroom.
+- Shrinking any SnowFlake GUID field (`player_id`, `entity`, `scene_id`, etc.) or Unix-ms timestamp field from `uint64` — these exceed uint32 range by design.
 
 ## UNIQUE STYLES
 - Repo keeps generated outputs checked in.

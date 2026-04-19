@@ -9,14 +9,14 @@ message CombatStateFlagsComp {
 
 // Calculated attributes, computed server-side
 message CalculatedAttributesComp {
-    uint64 attack_power = 1;   // Attack power
-    uint64 defense_power = 2;  // Defense power
+    uint32 attack_power = 1;   // Attack power
+    uint32 defense_power = 2;  // Defense power
 	bool isDead = 3; // Dead/alive state
 }
 
 // Derived attributes, computed server-side
 message DerivedAttributesComp {
-    uint64 max_health = 1;     // Max HP
+    uint32 max_health = 1;     // Max HP
 }
 
 

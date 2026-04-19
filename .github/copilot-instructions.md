@@ -28,6 +28,15 @@
 3. **Bitset type**: Prefer `std::bitset` per system (compile-time size from table generation, cache-friendly, zero allocation). Switch to `boost::dynamic_bitset` or `std::vector<bool>` only if runtime hot-reload of tables without recompilation is required.
 4. **`RewardClaimSystem` role**: Becomes a pure "dispatch reward items" utility. It no longer manages claimed state — each business system manages its own.
 
+## Proto Field Type Constraints
+- **Coordinates/Transform (double, NOT float)**: `Location`, `Rotation`, `Scale`, `Vector3`, `Velocity`, `Acceleration` x/y/z fields MUST stay `double` to match UE4 client-side precision. `float` loses accuracy at large world coordinates.
+- **BaseAttributesComp (uint64, NOT uint32)**: `strength`, `stamina`, `health`, `mana`, `critchance`, `armor`, `resistance` MUST stay `uint64`. C++ combat code casts these to `double` for damage formulas; uint64 avoids narrowing and keeps headroom for late-game stat scaling.
+- **SnowFlake GUIDs (uint64)**: All `player_id`, `entity`, `scene_id`, `item_id`, `buff_id`, `skill_id` (runtime instance), `tx_id`, `snapshot_id` etc. MUST stay `uint64` (64-bit SnowFlake layout).
+- **Unix timestamps (uint64/int64)**: `created_at`, `expires_at`, `castTime`, `previous_time`, `last_time`, `start` (TimeMeter/Cooldown) etc. MUST stay 64-bit (Unix ms exceeds uint32).
+- **Currency (uint64)**: `CurrencyComp.values`, `owed`, `paid`, `balance_before/after` — keep uint64 for economy headroom.
+- **Safe to use uint32**: `session_id`, `session_version`, `attack_power`, `defense_power`, `max_health`, `skill_table_id` (table lookup key), `current_frame` (tick counter).
+- **Safe to use float**: `ViewRadius.radius` (AOI range).
+
 ## SnowFlake Node ID Isolation Constraint
 - SnowFlake uses a 17-bit node field (`kNodeBits=17`, max 131071). The node ID comes from etcd-allocated `node_id`.
 - Node IDs are allocated **per (zone, node_type)**: different node types in the same zone can have the same `node_id` value.

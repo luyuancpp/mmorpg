@@ -10,12 +10,12 @@
 
 // A player with no client messages for this many frames is marked AFK.
 // 30 seconds * 20 fps = 600 frames.
-constexpr uint64_t kAfkInactivityFrames = 30 * kTargetFPS;
+constexpr uint32_t kAfkInactivityFrames = 30 * kTargetFPS;
 
 void AfkSystem::Update(double delta)
 {
     auto& registry = tlsEcs.actorRegistry;
-    const uint64_t currentFrame = tlsFrameTimeManager.frameTime.current_frame();
+    const uint32_t currentFrame = tlsFrameTimeManager.frameTime.current_frame();
 
     // 1. Check active players: if idle too long, mark AFK.
     //    Movement, AOI, and attribute sync systems use exclude<AfkComp>,
