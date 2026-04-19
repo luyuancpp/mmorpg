@@ -129,7 +129,7 @@ func resolveNodeEndpoint(ctx context.Context, svcCtx *svc.ServiceContext, nodeId
 			if reg.GrpcEndpoint.Port > 0 {
 				return fmt.Sprintf("%s:%d", reg.GrpcEndpoint.IP, reg.GrpcEndpoint.Port), nil
 			}
-			return fmt.Sprintf("%s:%d", reg.Endpoint.IP, reg.Endpoint.Port), nil
+			return "", fmt.Errorf("scene node %s has no grpc_endpoint (would fall back to raw TCP port, causing protocol mismatch)", nodeId)
 		}
 	}
 
@@ -145,7 +145,10 @@ func resolveFromKnownNodes(nodeId string) (string, bool) {
 			if entry.reg.GrpcEndpoint.Port > 0 {
 				return fmt.Sprintf("%s:%d", entry.reg.GrpcEndpoint.IP, entry.reg.GrpcEndpoint.Port), true
 			}
-			return fmt.Sprintf("%s:%d", entry.reg.Endpoint.IP, entry.reg.Endpoint.Port), true
+			// Do NOT fall back to entry.reg.Endpoint -- that is the raw TCP protobuf
+			// port. Dialing it with gRPC sends an HTTP/2 preface which the protobuf
+			// codec rejects as InvalidLength.
+			return "", false
 		}
 	}
 	return "", false

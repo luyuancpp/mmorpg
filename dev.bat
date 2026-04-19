@@ -4,6 +4,10 @@ cd /d "%~dp0"
 
 set "GO_LOG=bin\logs\go_services"
 set "CPP_LOG=bin\logs\cpp_nodes"
+set "SATOKEN_TITLE=sa-token"
+set "SATOKEN_DIR=java\springboot_satoken_auth_starter"
+set "SATOKEN_LOG=bin\logs\sa_token.log"
+set "SATOKEN_PID=bin\sa_token.pid"
 set "PS=pwsh -NoProfile -ExecutionPolicy Bypass"
 
 if "%~1"=="" goto :menu
@@ -12,6 +16,8 @@ set "CMD=%~1"
 if /I "%CMD%"=="start"     goto :start
 if /I "%CMD%"=="start-cpp" goto :start_cpp
 if /I "%CMD%"=="start-go"  goto :start_go
+if /I "%CMD%"=="start-satoken" goto :start_satoken
+if /I "%CMD%"=="stop-satoken"  goto :stop_satoken
 if /I "%CMD%"=="stop"      goto :stop
 if /I "%CMD%"=="status"    goto :status
 if /I "%CMD%"=="restart"   goto :restart
@@ -59,10 +65,12 @@ echo     14. Export      (Excel data table export)
 echo     15. Gen         (Export tables + regenerate proto)
 echo     16. Clean logs  (delete all log files)
 echo     17. UI          (mprocs TUI dashboard)
+echo     18. Start SA-Token  (local Spring Boot auth app)
+echo     19. Stop SA-Token
 echo.
 echo     0.  Exit
 echo.
-set /p "CHOICE=  Pick [0-17]: "
+set /p "CHOICE=  Pick [0-19]: "
 
 if "%CHOICE%"=="0" exit /b 0
 
@@ -81,8 +89,10 @@ if "%CHOICE%"=="12" call :build      & goto :menu_return
 if "%CHOICE%"=="13" call :proto      & goto :menu_return
 if "%CHOICE%"=="14" call :export     & goto :menu_return
 if "%CHOICE%"=="15" call :gen        & goto :menu_return
-if "%CHOICE%"=="16" call :clean_logs & goto :menu_return
-if "%CHOICE%"=="17" call :ui         & goto :menu_return
+if "%CHOICE%"=="16" call :clean_logs  & goto :menu_return
+if "%CHOICE%"=="17" call :ui          & goto :menu_return
+if "%CHOICE%"=="18" call :start_satoken & goto :menu_return
+if "%CHOICE%"=="19" call :stop_satoken  & goto :menu_return
 
 echo   Invalid choice.
 goto :menu
@@ -137,6 +147,8 @@ exit /b 0
 :: ================================================================
 :status
 %PS% -File tools\scripts\dev_tools.ps1 -Command dev-status
+echo.
+call :satoken_status
 exit /b 0
 
 :: ================================================================
@@ -261,6 +273,68 @@ if exist "%CPP_LOG%" (
     )
 ) else ( echo No C++ logs found. )
 echo.
+exit /b 0
+
+:: ================================================================
+:start_satoken
+if not exist "%SATOKEN_DIR%\pom.xml" (
+    echo SA-Token app not found: %SATOKEN_DIR%
+    pause & exit /b 1
+)
+where java >nul 2>&1
+if errorlevel 1 (
+    echo Java not found. Please install JDK 21+ and reopen the terminal.
+    echo Suggested: winget install EclipseAdoptium.Temurin.21.JDK
+    pause & exit /b 1
+)
+set "MAVEN_CMD="
+if exist "%CD%\tools\apache-maven\bin\mvn.cmd" (
+    set "MAVEN_CMD=%CD%\tools\apache-maven\bin\mvn.cmd"
+) else if exist "%SATOKEN_DIR%\mvnw.cmd" (
+    set "MAVEN_CMD=%CD%\%SATOKEN_DIR%\mvnw.cmd"
+) else (
+    where mvn >nul 2>&1
+    if errorlevel 1 (
+        echo Maven not found, so SA-Token cannot start yet.
+        echo.
+        echo Quick fix:
+        echo   winget install Apache.Maven
+        echo   or place a local Maven at tools\apache-maven\bin\mvn.cmd
+        echo.
+        echo Then reopen the terminal and verify:
+        echo   mvn -v
+        pause & exit /b 1
+    )
+    set "MAVEN_CMD=mvn"
+)
+%PS% -Command "$pidFile='%CD%\%SATOKEN_PID%'; if (Test-Path $pidFile) { $procId=Get-Content $pidFile -ErrorAction SilentlyContinue | Select-Object -First 1; if ($procId -and (Get-Process -Id $procId -ErrorAction SilentlyContinue)) { exit 0 } else { Remove-Item $pidFile -Force -ErrorAction SilentlyContinue; exit 1 } } else { exit 1 }"
+if not errorlevel 1 (
+    echo SA-Token is already running.
+    exit /b 0
+)
+if not exist "bin\logs" mkdir "bin\logs"
+echo Starting SA-Token dev server...
+%PS% -Command "$wd='%CD%\%SATOKEN_DIR%'; $log='%CD%\%SATOKEN_LOG%'; $pidFile='%CD%\%SATOKEN_PID%'; $maven='%MAVEN_CMD%'; $cmd='call "' + $maven + '" spring-boot:run >> "' + $log + '" 2>&1'; $p=Start-Process -FilePath 'cmd.exe' -ArgumentList '/c',$cmd -WorkingDirectory $wd -WindowStyle Hidden -PassThru; Set-Content -Path $pidFile -Value $p.Id"
+if errorlevel 1 ( echo SA-Token start failed. & pause & exit /b 1 )
+echo SA-Token launched in background.
+echo Log: %SATOKEN_LOG%
+echo API base: http://localhost:18080/auth
+exit /b 0
+
+:: ================================================================
+:stop_satoken
+%PS% -Command "$pidFile='%CD%\%SATOKEN_PID%'; if (!(Test-Path $pidFile)) { exit 1 }; $procId=Get-Content $pidFile -ErrorAction SilentlyContinue | Select-Object -First 1; if ($procId -and (Get-Process -Id $procId -ErrorAction SilentlyContinue)) { Stop-Process -Id $procId -Force }; Remove-Item $pidFile -Force -ErrorAction SilentlyContinue"
+if errorlevel 1 (
+    echo SA-Token is not running.
+    exit /b 0
+)
+echo SA-Token stopped.
+exit /b 0
+
+:: ================================================================
+:satoken_status
+echo ===== SA-Token status =====
+%PS% -Command "$pidFile='%CD%\%SATOKEN_PID%'; if (Test-Path $pidFile) { $procId=Get-Content $pidFile -ErrorAction SilentlyContinue | Select-Object -First 1; if ($procId -and (Get-Process -Id $procId -ErrorAction SilentlyContinue)) { Write-Host ('RUNNING  PID=' + $procId + '  LOG=%SATOKEN_LOG%'); exit 0 } else { Remove-Item $pidFile -Force -ErrorAction SilentlyContinue } }; Write-Host 'STOPPED'"
 exit /b 0
 
 :: ================================================================
@@ -421,8 +495,10 @@ echo   Commands:
 echo     start          Build Go exe + start all (2 gate, 4 scene)
 echo     start-cpp      Start C++ nodes only (gate + scene)
 echo     start-go       Build + start Go services only
+echo     start-satoken  Start local SA-Token dev app
+echo     stop-satoken   Stop local SA-Token dev app
 echo     stop           Stop all C++ and Go processes
-echo     status         Show running/gone status
+echo     status         Show running/gone status (includes SA-Token)
 echo     restart        Stop then build + start
 echo     logs           Pick a process, open tail window
 echo     logs ^<name^>    Tail a specific process (e.g. dev logs login)
@@ -443,7 +519,7 @@ echo     ui-go          mprocs TUI (Go services only)
 echo     help           Show this message
 echo.
 echo   Example:
-echo     dev infra ^& dev start
+echo     dev infra ^& dev start-satoken ^& dev start
 echo     dev build
 echo     dev proto
 echo     dev robot

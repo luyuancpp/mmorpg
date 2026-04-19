@@ -26,6 +26,10 @@ type Config struct {
 	// Mode: "stress" (default) — mass concurrent bots; "login-test" — scenario suite with login/skill/scene tests
 	Mode string `yaml:"mode"`
 
+	// Auth type for login: "" or "password" (default), "satoken" (requires satoken_addr).
+	AuthType    string `yaml:"auth_type"`
+	SaTokenAddr string `yaml:"satoken_addr"` // SA-Token dev-login endpoint, e.g. "http://127.0.0.1:18080"
+
 	// AI behavior profile: "stress", "behavioral", "fighter", "explorer", "chatter"
 	// Or set custom_weights to define your own action distribution.
 	Profile       string         `yaml:"profile"`
@@ -100,6 +104,9 @@ func (c *Config) validate() error {
 		// valid
 	default:
 		return fmt.Errorf("unknown mode %q (expected stress or login-test)", c.Mode)
+	}
+	if c.AuthType == "satoken" && c.SaTokenAddr == "" {
+		return fmt.Errorf("satoken_addr must be set when auth_type is satoken")
 	}
 	return nil
 }

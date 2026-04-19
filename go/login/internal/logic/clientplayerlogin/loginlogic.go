@@ -171,6 +171,12 @@ func GetOrInitUserAccount(ctx context.Context, rdb *redis.Client, account string
 // For "password" (or empty), the account comes directly from the request.
 // For third-party providers, the auth_token is validated via the registered provider.
 func (l *LoginLogic) resolveAccount(in *login_proto.LoginRequest) (string, error) {
+	// Dev mode: skip all auth provider validation
+	if config.AppConfig.DevSkipAuth {
+		logx.Infow("DevSkipAuth enabled, using account field directly", logx.Field("account", in.Account))
+		return in.Account, nil
+	}
+
 	authType := in.AuthType
 	if authType == "" || authType == "password" {
 		return in.Account, nil

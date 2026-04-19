@@ -17,3 +17,6 @@ proto_generator/protogen/*.exe
 proto_generator/protogen/*.dll
 proto/protogen/*.exe
 proto/protogen/*.dll
+
+# Downloaded Maven (repo-local, ~10MB)
+apache-maven/

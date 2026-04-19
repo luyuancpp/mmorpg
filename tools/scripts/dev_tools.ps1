@@ -532,7 +532,7 @@ Go micro-service Docker image commands:
     -Command go-svc-build-images [-GoSvcRegistry <registry> -GoSvcTag <tag>]
     -Command go-svc-push-images  [-GoSvcRegistry <registry> -GoSvcTag <tag>]
 
-Java sa-token auth Docker image commands:
+Java service Docker image commands:
     -Command java-svc-build-image [-JavaSvcRegistry <registry> -JavaSvcTag <tag>]
     -Command java-svc-push-image  [-JavaSvcRegistry <registry> -JavaSvcTag <tag>]
 
