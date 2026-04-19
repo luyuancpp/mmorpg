@@ -120,6 +120,7 @@ void PlayerLifecycleSystem::EnterScene(const entt::entity player, const PlayerGa
 
 		SessionMap().emplace(enterInfo.session_id(), playerId);
 		snapshot.set_gate_session_id(enterInfo.session_id());
+		snapshot.set_player_id(playerId);
 	}
 
 	// 2. Find the target scene entity by scene_id (allocated by SceneManager).
