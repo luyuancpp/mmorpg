@@ -57,14 +57,14 @@ void NodeConnector::ConnectToGrpcNode(const NodeInfo &nodeInfo)
 
 	auto createdId = targetRegistry.create();
 
-	// Prefer grpc_endpoint; fall back to endpoint if grpc_endpoint is empty
-	const auto &ep = (!nodeInfo.grpc_endpoint().ip().empty() && nodeInfo.grpc_endpoint().port() > 0)
-		? nodeInfo.grpc_endpoint()
-		: nodeInfo.endpoint();
+	// gRPC connections MUST use grpc_endpoint. Falling back to endpoint (raw TCP)
+	// would send HTTP/2 preface to a protobuf codec, causing InvalidLength errors.
+	const auto &ep = nodeInfo.grpc_endpoint();
 	if (ep.ip().empty() || ep.port() == 0)
 	{
-		LOG_ERROR << "Cannot connect to GRPC node with empty endpoint, ID: " << nodeInfo.node_id()
-				  << ", NodeType: " << nodeInfo.node_type();
+		LOG_ERROR << "Cannot connect to GRPC node: grpc_endpoint is empty, ID: " << nodeInfo.node_id()
+				  << ", NodeType: " << nodeInfo.node_type()
+				  << ". The target node may not have registered a gRPC server.";
 		targetRegistry.destroy(createdId);
 		return;
 	}

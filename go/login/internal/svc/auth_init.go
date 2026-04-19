@@ -14,6 +14,10 @@ import (
 // InitAuthProviders registers auth providers based on the Auth config section.
 // "password" provider is always registered. Others are registered only when configured.
 func InitAuthProviders() {
+	if config.AppConfig.DevSkipAuth {
+		logx.Error("WARNING: DevSkipAuth is ON — all auth provider validation is bypassed. DO NOT use in production!")
+	}
+
 	auth.Register("password", &auth.PasswordProvider{})
 	logx.Info("Auth provider registered: password")
 

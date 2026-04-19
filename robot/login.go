@@ -1,7 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"time"
 
 	"go.uber.org/zap"
@@ -128,4 +131,104 @@ func sendAndRecvTimeout(gc *pkg.GameClient, stats *metrics.Stats, msgId uint32, 
 		stats.LoginStuck()
 		return fmt.Errorf("STUCK: no response for msg_id=%d within %s", msgId, timeout)
 	}
+}
+
+// fetchSaToken calls the SA-Token dev-login endpoint and returns the token value.
+func fetchSaToken(saTokenAddr, account string) (string, error) {
+	url := saTokenAddr + "/auth/dev-login?account=" + account
+	resp, err := http.Get(url)
+	if err != nil {
+		return "", fmt.Errorf("SA-Token dev-login request: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("read SA-Token response: %w", err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("SA-Token dev-login HTTP %d: %s", resp.StatusCode, string(body))
+	}
+
+	var result struct {
+		OK         bool   `json:"ok"`
+		TokenValue string `json:"token_value"`
+		Message    string `json:"message"`
+	}
+	if err := json.Unmarshal(body, &result); err != nil {
+		return "", fmt.Errorf("decode SA-Token response: %w", err)
+	}
+	if !result.OK {
+		return "", fmt.Errorf("SA-Token dev-login failed: %s", result.Message)
+	}
+	if result.TokenValue == "" {
+		return "", fmt.Errorf("SA-Token dev-login returned empty token")
+	}
+	return result.TokenValue, nil
+}
+
+// loginAndEnterSaToken performs: fetch SA-Token → login (auth_type=satoken) → create player → enter game.
+func loginAndEnterSaToken(gc *pkg.GameClient, saTokenAddr string, stats *metrics.Stats) error {
+	token, err := fetchSaToken(saTokenAddr, gc.Account)
+	if err != nil {
+		stats.LoginFail()
+		return fmt.Errorf("fetch satoken: %w", err)
+	}
+
+	var lr login.LoginResponse
+	if err := sendAndRecv(gc, stats,
+		game.ClientPlayerLoginLoginMessageId,
+		&login.LoginRequest{
+			Account:  gc.Account,
+			AuthType: "satoken",
+			AuthToken: token,
+		},
+		&lr,
+	); err != nil {
+		stats.LoginFail()
+		return fmt.Errorf("login(satoken): %w", err)
+	}
+	if lr.ErrorMessage != nil {
+		stats.LoginFail()
+		return fmt.Errorf("login(satoken): server error %v", lr.ErrorMessage)
+	}
+
+	if len(lr.Players) == 0 {
+		var cr login.CreatePlayerResponse
+		if err := sendAndRecv(gc, stats,
+			game.ClientPlayerLoginCreatePlayerMessageId,
+			&login.CreatePlayerRequest{},
+			&cr,
+		); err != nil {
+			stats.LoginFail()
+			return fmt.Errorf("create player: %w", err)
+		}
+		if cr.ErrorMessage != nil {
+			stats.LoginFail()
+			return fmt.Errorf("create player: server error %v", cr.ErrorMessage)
+		}
+		lr.Players = cr.Players
+	}
+	if len(lr.Players) == 0 {
+		stats.LoginFail()
+		return fmt.Errorf("no players after create")
+	}
+
+	playerId := lr.Players[0].GetPlayer().GetPlayerId()
+	var er login.EnterGameResponse
+	if err := sendAndRecv(gc, stats,
+		game.ClientPlayerLoginEnterGameMessageId,
+		&login.EnterGameRequest{PlayerId: playerId},
+		&er,
+	); err != nil {
+		stats.EnterFail()
+		return fmt.Errorf("enter game: %w", err)
+	}
+	if er.ErrorMessage != nil {
+		stats.EnterFail()
+		return fmt.Errorf("enter game: server error %v", er.ErrorMessage)
+	}
+
+	gc.PlayerId = er.PlayerId
+	return nil
 }

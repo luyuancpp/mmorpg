@@ -104,6 +104,7 @@ void SceneSceneClientPlayerHandler::NotifyEnterScene(entt::entity player,const :
 	::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
+SendMessageToClientViaGate(SceneSceneClientPlayerNotifyEnterSceneMessageId, *request, player);
 ///<<< END WRITING YOUR CODE
 
 }
@@ -137,6 +138,7 @@ void SceneSceneClientPlayerHandler::NotifySceneInfo(entt::entity player,const ::
 	::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
+SendMessageToClientViaGate(SceneSceneClientPlayerNotifySceneInfoMessageId, *request, player);
 ///<<< END WRITING YOUR CODE
 
 }

@@ -87,16 +87,20 @@ SceneManagerRpc:
 # Must match GateTokenSecret in bin/etc/base_deploy_config.yaml.
 GateTokenSecret: "change-me-in-production-use-a-strong-random-key"
 
+# Dev mode: skip all auth provider validation (use account field directly).
+# WARNING: Never enable in production!
+# DevSkipAuth: true
+
 # Third-party auth provider config (all optional).
 # "password" provider is always available. Others are enabled by uncommenting.
-# Auth:
-#   SaToken:
-#     TokenName: satoken
-#     LoginType: login
-#     Redis:
-#       Host: 127.0.0.1:6379
-#       Password: ""
-#       DB: 0
+Auth:
+  SaToken:
+    TokenName: satoken
+    LoginType: login
+    Redis:
+      Host: 127.0.0.1:6379
+      Password: ""
+      DB: 0
 #   WeChat:
 #     AppId: "your-wechat-app-id"
 #     AppSecret: "your-wechat-app-secret"

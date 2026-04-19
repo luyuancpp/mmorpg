@@ -16,6 +16,10 @@ report_interval: 5 # seconds between stats prints
 #        "login-test"       = run login test suite (10 scenarios) then exit
 mode: "stress"
 
+# Auth type: "" or "password" (default), "satoken" (requires satoken_addr)
+# auth_type: "satoken"
+# satoken_addr: "http://127.0.0.1:18080"
+
 # Behavior profile: "stress", "behavioral", "fighter", "explorer", "chatter"
 # stress = combat-heavy with occasional scene switching (good for pressure tests)
 # behavioral = mixed gameplay actions for realistic robot behavior / LLM training traces
