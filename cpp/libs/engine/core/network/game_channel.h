@@ -71,7 +71,7 @@ private:
 
     bool SerializeMessage(const ProtobufMessage &message, std::string *output) const;
 
-    void LogMessageStatistics(const GameRpcMessage &message) const;
+    void LogMessageStatistics(const GameRpcMessage &message, uint32_t cachedSize) const;
 
     void StartMessageStatistics();
 

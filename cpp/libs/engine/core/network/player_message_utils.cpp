@@ -55,9 +55,9 @@ void SendMessageToClientViaGate(uint32_t messageId, const google::protobuf::Mess
 void SendMessageToClientViaGate(uint32_t messageId, const google::protobuf::Message &message, RpcSession &gate, uint64_t sessionId)
 {
 	NodeRouteMessageRequest request;
-	const int32_t byteSize = static_cast<int32_t>(message.ByteSizeLong());
+	const size_t byteSize = message.ByteSizeLong();
 	request.mutable_message_content()->mutable_serialized_message()->resize(byteSize);
-	message.SerializePartialToArray(request.mutable_message_content()->mutable_serialized_message()->data(), byteSize);
+	message.SerializePartialToArray(request.mutable_message_content()->mutable_serialized_message()->data(), static_cast<int>(byteSize));
 	request.mutable_header()->set_session_id(sessionId);
 	request.mutable_message_content()->set_message_id(messageId);
 	gate.SendRequest(GateSendMessageToPlayerMessageId, request);
@@ -358,10 +358,10 @@ void CallMethodOnPlayerNode(
 	}
 
 	NodeRouteMessageRequest request;
-	const int32_t byteSize = static_cast<int32_t>(message.ByteSizeLong());
+	const size_t byteSize = message.ByteSizeLong();
 	request.mutable_message_content()->mutable_serialized_message()->resize(byteSize);
 
-	if (!message.SerializePartialToArray(request.mutable_message_content()->mutable_serialized_message()->data(), byteSize))
+	if (!message.SerializePartialToArray(request.mutable_message_content()->mutable_serialized_message()->data(), static_cast<int>(byteSize)))
 	{
 		LOG_ERROR << "Failed to serialize message.";
 		return;
