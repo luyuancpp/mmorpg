@@ -21,7 +21,7 @@ func InitAuthProviders() {
 	auth.Register("password", &auth.PasswordProvider{})
 	logx.Info("Auth provider registered: password")
 
-	cfg := config.AppConfig.Auth
+	cfg := config.AppConfig.AuthProviders
 
 	if cfg.SaToken != nil {
 		rdb := redis.NewClient(&redis.Options{

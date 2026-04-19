@@ -164,14 +164,8 @@ func runRobotOnce(host string, port int, account string, cfg *config.Config, sta
 	}
 
 	loginStart := time.Now()
-	var loginErr error
-	if cfg.AuthType == "satoken" {
-		loginErr = loginAndEnterSaTokenLocal(gc, cfg.SaTokenAddr, stats)
-	} else {
-		loginErr = loginAndEnterLocal(gc, cfg.Password, stats)
-	}
-	if loginErr != nil {
-		zap.L().Error("login flow failed", zap.String("account", account), zap.Error(loginErr))
+	if err := loginAndEnterLocal(gc, cfg.Password, stats); err != nil {
+		zap.L().Error("login flow failed", zap.String("account", account), zap.Error(err))
 		return false
 	}
 	stats.LoginOK(time.Since(loginStart))
@@ -392,72 +386,6 @@ func loginAndEnterLocal(gc *pkg.GameClient, password string, stats *metrics.Stat
 	if lr.ErrorMessage != nil {
 		stats.LoginFail()
 		return fmt.Errorf("login: server error %v", lr.ErrorMessage)
-	}
-
-	if len(lr.Players) == 0 {
-		var cr login.CreatePlayerResponse
-		if err := sendAndRecvLocal(gc, stats,
-			game.ClientPlayerLoginCreatePlayerMessageId,
-			&login.CreatePlayerRequest{},
-			&cr,
-		); err != nil {
-			stats.LoginFail()
-			return fmt.Errorf("create player: %w", err)
-		}
-		if cr.ErrorMessage != nil {
-			stats.LoginFail()
-			return fmt.Errorf("create player: server error %v", cr.ErrorMessage)
-		}
-		lr.Players = cr.Players
-	}
-	if len(lr.Players) == 0 {
-		stats.LoginFail()
-		return fmt.Errorf("no players after create")
-	}
-
-	playerID := lr.Players[0].GetPlayer().GetPlayerId()
-	var er login.EnterGameResponse
-	if err := sendAndRecvLocal(gc, stats,
-		game.ClientPlayerLoginEnterGameMessageId,
-		&login.EnterGameRequest{PlayerId: playerID},
-		&er,
-	); err != nil {
-		stats.EnterFail()
-		return fmt.Errorf("enter game: %w", err)
-	}
-	if er.ErrorMessage != nil {
-		stats.EnterFail()
-		return fmt.Errorf("enter game: server error %v", er.ErrorMessage)
-	}
-
-	gc.PlayerId = er.PlayerId
-	return nil
-}
-
-// loginAndEnterSaTokenLocal performs: fetch SA-Token → login (auth_type=satoken) → create player → enter game.
-func loginAndEnterSaTokenLocal(gc *pkg.GameClient, saTokenAddr string, stats *metrics.Stats) error {
-	token, err := fetchSaToken(saTokenAddr, gc.Account)
-	if err != nil {
-		stats.LoginFail()
-		return fmt.Errorf("fetch satoken: %w", err)
-	}
-
-	var lr login.LoginResponse
-	if err := sendAndRecvLocal(gc, stats,
-		game.ClientPlayerLoginLoginMessageId,
-		&login.LoginRequest{
-			Account:   gc.Account,
-			AuthType:  "satoken",
-			AuthToken: token,
-		},
-		&lr,
-	); err != nil {
-		stats.LoginFail()
-		return fmt.Errorf("login(satoken): %w", err)
-	}
-	if lr.ErrorMessage != nil {
-		stats.LoginFail()
-		return fmt.Errorf("login(satoken): server error %v", lr.ErrorMessage)
 	}
 
 	if len(lr.Players) == 0 {

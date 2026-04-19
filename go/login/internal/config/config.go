@@ -22,7 +22,7 @@ type Config struct {
 	SceneManagerRpc    zrpc.RpcClientConf `json:"SceneManagerRpc"`    // scene_manager gRPC client
 	GateTokenSecret    string             `json:"GateTokenSecret"`    // HMAC secret for gate connection tokens
 	TableDir           string             `json:",default=../../generated/tables"`
-	Auth               AuthConfig         `json:"Auth,optional"`      // Third-party auth provider config
+	AuthProviders      AuthConfig         `json:"AuthProviders,optional"` // Third-party auth provider config
 	DevSkipAuth        bool               `json:"DevSkipAuth,optional"` // Dev mode: skip auth provider validation, use account field directly
 }
 
