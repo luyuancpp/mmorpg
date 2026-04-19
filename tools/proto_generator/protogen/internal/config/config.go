@@ -92,7 +92,7 @@ type Paths struct {
 	TableGeneratorDir       string `yaml:"table_generator_dir"`
 	GameRpcProtoPath        string `yaml:"game_rpc_proto_path"`
 	ToolsDir                string `yaml:"tools_dir"`
-	ServiceIdFile           string `yaml:"service_id_file"`
+	MessageIdFile           string `yaml:"message_id_file"`
 	EventIdFile             string `yaml:"event_id_file"`
 	RobotMessageIdFile      string `yaml:"robot_message_id_file"`
 	RobotProtoImportPath    string `yaml:"robot_proto_import_path"`

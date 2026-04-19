@@ -21,7 +21,7 @@ proto/
 ## WHERE TO LOOK
 | Task | Location | Notes |
 |------|----------|-------|
-| Service IDs | `service_id.txt` | Shared service-id registry |
+| Message IDs | `message_id.txt` | Shared message-id registry |
 | Event IDs | `event_id.txt` | Shared event-id registry |
 | Kafka command contracts | `contracts/kafka/` | Gate/scene command payloads |
 | Scene APIs | `scene/` | Player/scene/game proto files |

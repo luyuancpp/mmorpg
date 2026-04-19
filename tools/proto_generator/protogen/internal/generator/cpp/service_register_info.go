@@ -98,17 +98,17 @@ func ReadAllProtoFileServices(wg *sync.WaitGroup) {
 	}()
 }
 
-// ReadServiceIdFile reads service IDs from a file asynchronously.
-func ReadServiceIdFile(wg *sync.WaitGroup) {
+// ReadMessageIdFile reads message IDs from a file asynchronously.
+func ReadMessageIdFile(wg *sync.WaitGroup) {
 	wg.Add(1)
 
 	go func() {
 		defer wg.Done() // Fix: defer wg.Done() to ensure it runs regardless of error
 
-		f, err := os.Open(_config.Global.Paths.ServiceIdFile)
+		f, err := os.Open(_config.Global.Paths.MessageIdFile)
 		if err != nil {
-			logger.Global.Fatal("Failed to open service ID file",
-				zap.String("file_path", _config.Global.Paths.ServiceIdFile),
+			logger.Global.Fatal("Failed to open message ID file",
+				zap.String("file_path", _config.Global.Paths.MessageIdFile),
 				zap.Error(err),
 			)
 		}
@@ -119,33 +119,33 @@ func ReadServiceIdFile(wg *sync.WaitGroup) {
 			line := scanner.Text()
 			splitList := strings.Split(line, "=")
 			if len(splitList) != 2 {
-				logger.Global.Warn("Invalid line in service ID file, skipping",
+				logger.Global.Warn("Invalid line in message ID file, skipping",
 					zap.String("line", line),
-					zap.String("file_path", _config.Global.Paths.ServiceIdFile),
+					zap.String("file_path", _config.Global.Paths.MessageIdFile),
 				)
 				continue
 			}
 			id, err := strconv.ParseUint(splitList[0], 10, 64)
 			if err != nil {
-				logger.Global.Fatal("Failed to parse service ID",
+				logger.Global.Fatal("Failed to parse message ID",
 					zap.String("line", line),
-					zap.String("file_path", _config.Global.Paths.ServiceIdFile),
+					zap.String("file_path", _config.Global.Paths.MessageIdFile),
 					zap.Error(err),
 				)
 			}
-			internal.ServiceIdMap[splitList[1]] = id
+			internal.MessageIdMap[splitList[1]] = id
 		}
 
 		if err := scanner.Err(); err != nil {
-			logger.Global.Fatal("Failed to scan service ID file",
-				zap.String("file_path", _config.Global.Paths.ServiceIdFile),
+			logger.Global.Fatal("Failed to scan message ID file",
+				zap.String("file_path", _config.Global.Paths.MessageIdFile),
 				zap.Error(err),
 			)
 		}
 	}()
 }
 
-func WriteServiceIdFile() {
+func WriteMessageIdFile() {
 	var data string
 	var idList []uint64
 	for k := range internal.RpcIdMethodMap {
@@ -163,17 +163,17 @@ func WriteServiceIdFile() {
 		}
 		data += strconv.FormatUint(rpcMethodInfo.Id, 10) + "=" + (*rpcMethodInfo).KeyName() + "\n"
 	}
-	utils2.WriteFileIfChanged(_config.Global.Paths.ServiceIdFile, []byte(data))
+	utils2.WriteFileIfChanged(_config.Global.Paths.MessageIdFile, []byte(data))
 }
 
-// InitServiceId initializes service IDs based on the loaded service methods and ID mappings.
-func InitServiceId() {
-	var unUseServiceId = make(map[uint64]internal.EmptyStruct)
-	var useServiceId = make(map[uint64]internal.EmptyStruct)
+// InitMessageId initializes message IDs based on the loaded service methods and ID mappings.
+func InitMessageId() {
+	var unUseMessageId = make(map[uint64]internal.EmptyStruct)
+	var useMessageId = make(map[uint64]internal.EmptyStruct)
 
 	for _, service := range internal.GlobalRPCServiceList {
 		for _, mv := range service.Methods {
-			id, ok := internal.ServiceIdMap[mv.KeyName()]
+			id, ok := internal.MessageIdMap[mv.KeyName()]
 			if !ok {
 				//Id not found in file means a new message or renamed; new messages handled later
 				continue
@@ -181,24 +181,24 @@ func InitServiceId() {
 			if internal.MessageIdFileMaxId < id {
 				internal.MessageIdFileMaxId = id
 			}
-			useServiceId[id] = internal.EmptyStruct{}
+			useMessageId[id] = internal.EmptyStruct{}
 			mv.Id = id
 		}
 	}
 
 	for i := uint64(0); i < internal.MaxMessageId; i++ {
-		if _, ok := useServiceId[i]; !ok {
-			unUseServiceId[i] = internal.EmptyStruct{}
+		if _, ok := useMessageId[i]; !ok {
+			unUseMessageId[i] = internal.EmptyStruct{}
 		}
 	}
 
 	for _, service := range internal.GlobalRPCServiceList {
 		for _, mv := range service.Methods {
-			if len(unUseServiceId) > 0 && mv.Id == math.MaxUint64 {
-				for uk := range unUseServiceId {
+			if len(unUseMessageId) > 0 && mv.Id == math.MaxUint64 {
+				for uk := range unUseMessageId {
 					mv.Id = uk
 					internal.RpcIdMethodMap[mv.Id] = mv
-					delete(unUseServiceId, uk)
+					delete(unUseMessageId, uk)
 					break
 				}
 				continue

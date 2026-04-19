@@ -184,7 +184,7 @@ func WriteGoMessageId(wg *sync.WaitGroup) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		consts, err := generateConstants(_config.Global.Paths.ServiceIdFile, _config.Global.Naming.MessageId)
+		consts, err := generateConstants(_config.Global.Paths.MessageIdFile, _config.Global.Naming.MessageId)
 		if err != nil {
 			logger.Global.Fatal("Failed to generate MessageId constants", zap.Error(err))
 		}

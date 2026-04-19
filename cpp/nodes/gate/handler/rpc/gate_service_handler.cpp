@@ -62,7 +62,7 @@ void GateHandler::SendMessageToPlayer(::google::protobuf::RpcController* control
 	{
 		if (shouldLogProtocolErrorForDisconnectedPlayer(request->message_content().message_id()))
 		{
-			LOG_ERROR << "Connection ID not found for PlayerMessage, session ID: " << request->header().session_id() << ", message ID:" << request->message_content().message_id();
+			LOG_WARN << "Connection ID not found for PlayerMessage, session ID: " << request->header().session_id() << ", message ID:" << request->message_content().message_id();
 		}
 		return;
 	}
