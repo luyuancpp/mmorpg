@@ -23,7 +23,7 @@ message BindSessionToGateResponse {
 
 message BroadcastToPlayersRequest
 {
-  repeated uint64 session_list = 1;
+  repeated uint32 session_list = 1;
   MessageContent message_content = 2;
 }
 

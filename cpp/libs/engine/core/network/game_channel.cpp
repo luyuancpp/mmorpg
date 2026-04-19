@@ -48,6 +48,13 @@ size_t LogIfMessageTooLarge(const GameRpcMessage &rpcMessage)
             }
         }
 
+        constexpr size_t kMaxLogBodyLen = 2048;
+        if (decodedBody.size() > kMaxLogBodyLen)
+        {
+            decodedBody.resize(kMaxLogBodyLen);
+            decodedBody += "...(truncated)";
+        }
+
         LOG_ERROR << "RPC message size exceeds 2KB"
                   << ", method: " << methodName
                   << ", message ID: " << msgId

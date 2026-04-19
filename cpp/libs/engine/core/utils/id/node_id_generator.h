@@ -25,6 +25,8 @@ public:
 		return node_id_ | ++seq_;
 	}
 
+	T node_id_prefix() const { return node_id_; }
+
 	T LastId()
 	{
 		return  node_id_ | seq_;
