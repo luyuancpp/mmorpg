@@ -59,13 +59,20 @@ uint64_t SnapshotSystem::CaptureAndSend(entt::entity player, SnapshotTrigger tri
     entry.set_player_database_blob(std::move(dbBlob));
     entry.set_player_database_1_blob(std::move(db1Blob));
     entry.set_schema_version(kSnapshotSchemaVersion);
-    entry.set_total_bytes(entry.ByteSizeLong());
 
     // ── Serialize and send to Kafka ──────────────────────────────────────
+    // Serialize once to get the actual size, set total_bytes, then re-serialize
+    entry.set_total_bytes(0);
     std::string bytes;
     if (!entry.SerializeToString(&bytes))
     {
         LOG_ERROR << "[SnapshotSystem] Failed to serialize snapshot for player " << playerId;
+        return 0;
+    }
+    entry.set_total_bytes(bytes.size());
+    if (!entry.SerializeToString(&bytes))
+    {
+        LOG_ERROR << "[SnapshotSystem] Failed to re-serialize snapshot for player " << playerId;
         return 0;
     }
 

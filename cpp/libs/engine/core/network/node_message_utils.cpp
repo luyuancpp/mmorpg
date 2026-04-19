@@ -103,7 +103,7 @@ void BroadcastToNodes(uint32_t messageId, const google::protobuf::Message& messa
 {
 	auto& registry = tlsNodeContextManager.GetRegistry(nodeType);
 
-	const auto byte_size = static_cast<size_t>(message.ByteSizeLong());
+	const auto byte_size = message.ByteSizeLong();
 	std::string serialized;
 	serialized.reserve(byte_size);
 	if (!message.SerializeToString(&serialized)) {
@@ -167,7 +167,7 @@ void SendMessageToPlayerViaClientNode(uint32_t wrappedMessageId,
 		return;
 	}
 
-	const auto byte_size = static_cast<size_t>(message.ByteSizeLong());
+	const auto byte_size = message.ByteSizeLong();
 	std::string serialized;
 	serialized.reserve(byte_size);
 	if (!message.SerializeToString(&serialized)) {
@@ -238,9 +238,10 @@ void SendMessageToPlayerViaSessionNode(uint32_t wrappedMessageId,
 	NodeRouteMessageRequest request;
 	request.mutable_message_content()->set_message_id(messageId);
 	auto* serialized = request.mutable_message_content()->mutable_serialized_message();
-	const auto size = static_cast<int32_t>(message.ByteSizeLong());
+	const auto size = message.ByteSizeLong();
 	serialized->resize(size);
-	if (!message.SerializeToArray(&(*serialized)[0], size)) {
+	if (!message.SerializeToArray(&(*serialized)[0], static_cast<int32_t>(size)))
+	{
 		LOG_ERROR << "Failed to serialize message";
 		return;
 	}

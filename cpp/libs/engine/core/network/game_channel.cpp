@@ -21,15 +21,17 @@ void HandleUnknownProtobufMessage(const TcpConnectionPtr &, const MessagePtr &me
     LOG_ERROR << "Unknown Protobuf message received: " << message->GetTypeName().data();
 }
 
-void LogIfMessageTooLarge(const GameRpcMessage &rpcMessage)
+size_t LogIfMessageTooLarge(const GameRpcMessage &rpcMessage)
 {
-    if (const size_t messageSize = rpcMessage.ByteSizeLong(); messageSize > kMaxMessageByteSize)
+    const size_t messageSize = rpcMessage.ByteSizeLong();
+    if (messageSize > kMaxMessageByteSize)
     {
         LOG_ERROR << "RPC message size exceeds 2KB, message ID: "
                   << rpcMessage.message_id()
                   << ", size: " << messageSize
                   << ", message content: " << rpcMessage.DebugString();
     }
+    return messageSize;
 }
 
 // Global response dispatcher
@@ -93,12 +95,12 @@ void GameChannel::SendRpcRequestMessage(GameMessageType type, uint32_t messageId
         return;
     }
 
-    LogIfMessageTooLarge(rpcMessage);
+    const auto rpcSize = static_cast<uint32_t>(LogIfMessageTooLarge(rpcMessage));
 
     codec_.send(connection_, rpcMessage);
 
-    LogMessageStatistics(rpcMessage);
-    TrafficStatsCollector::Instance().RecordSend(messageId, static_cast<uint32_t>(rpcMessage.ByteSizeLong()));
+    LogMessageStatistics(rpcMessage, rpcSize);
+    TrafficStatsCollector::Instance().RecordSend(messageId, rpcSize);
 }
 
 void GameChannel::SendRpcResponseMessage(GameMessageType type, uint32_t messageId, const ProtobufMessage *content)
@@ -116,21 +118,21 @@ void GameChannel::SendRpcResponseMessage(GameMessageType type, uint32_t messageI
         return;
     }
 
-    LogIfMessageTooLarge(rpcMessage);
+    const auto rpcSize = static_cast<uint32_t>(LogIfMessageTooLarge(rpcMessage));
 
     codec_.send(connection_, rpcMessage);
 
-    LogMessageStatistics(rpcMessage);
-    TrafficStatsCollector::Instance().RecordSend(messageId, static_cast<uint32_t>(rpcMessage.ByteSizeLong()));
+    LogMessageStatistics(rpcMessage, rpcSize);
+    TrafficStatsCollector::Instance().RecordSend(messageId, rpcSize);
 }
 
-void GameChannel::LogMessageStatistics(const GameRpcMessage &message) const
+void GameChannel::LogMessageStatistics(const GameRpcMessage &message, uint32_t cachedSize) const
 {
     if (!gFeatureSwitches[kTestMessageStatistics])
         return;
 
     uint32_t messageId = message.message_id();
-    uint64_t messageSize = message.ByteSizeLong();
+    uint64_t messageSize = cachedSize;
 
     auto now = std::chrono::steady_clock::now();
     auto &statistic = gMessageStatistics[messageId];
@@ -237,7 +239,8 @@ void GameChannel::HandleRpcMessage(const TcpConnectionPtr &conn, const RpcMessag
     assert(conn == connection_);
     const auto &rpcMessage = *messagePtr;
 
-    if (const size_t messageSize = rpcMessage.ByteSizeLong(); messageSize > kMaxMessageByteSize)
+    const size_t messageSize = rpcMessage.ByteSizeLong();
+    if (messageSize > kMaxMessageByteSize)
     {
         LOG_ERROR << "RPC message size exceeds 2KB, message ID: " << rpcMessage.message_id() << ", size: " << messageSize
                   << ", message content: " << rpcMessage.DebugString();
@@ -245,7 +248,7 @@ void GameChannel::HandleRpcMessage(const TcpConnectionPtr &conn, const RpcMessag
 
     LOG_TRACE << "RPC message received, type: " << rpcMessage.type() << ", message ID: " << rpcMessage.message_id();
 
-    TrafficStatsCollector::Instance().RecordRecv(rpcMessage.message_id(), static_cast<uint32_t>(rpcMessage.ByteSizeLong()));
+    TrafficStatsCollector::Instance().RecordRecv(rpcMessage.message_id(), static_cast<uint32_t>(messageSize));
 
     tlsRpc.conn = conn;
 
@@ -381,10 +384,10 @@ void GameChannel::SendRouteResponse(uint32_t messageId, uint64_t id, const std::
 
 void GameChannel::SendGameRpcMessage(const GameRpcMessage &message)
 {
-    LogIfMessageTooLarge(message);
+    const auto cachedSize = LogIfMessageTooLarge(message);
 
     codec_.send(connection_, message);
 
-    LogMessageStatistics(message);
-    TrafficStatsCollector::Instance().RecordSend(message.message_id(), static_cast<uint32_t>(message.ByteSizeLong()));
+    LogMessageStatistics(message, static_cast<uint32_t>(cachedSize));
+    TrafficStatsCollector::Instance().RecordSend(message.message_id(), static_cast<uint32_t>(cachedSize));
 }
