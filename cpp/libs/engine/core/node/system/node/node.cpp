@@ -149,7 +149,7 @@ Node::Node(muduo::net::EventLoop *loop,
 		   uint32_t nodeType,
 		   CanConnectNodeTypeList connectTo,
 		   ::google::protobuf::Service *replyService)
-	: Node(loop, "logs/" + NodeUtils::NodeTypeToShortName(nodeType))
+	: Node(loop, "logs/cpp_nodes/" + NodeUtils::NodeTypeToShortName(nodeType))
 {
 	replyService_ = replyService;
 	GetNodeInfo().set_node_type(nodeType);
