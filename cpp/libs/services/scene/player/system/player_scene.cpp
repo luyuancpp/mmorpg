@@ -47,12 +47,13 @@ void PlayerSceneSystem::OnGetTeamInfo(entt::entity player, void* replyVoid)
 
 	if (!teamInfo.ParseFromArray(reply->str, static_cast<int>(reply->len)))
 	{
-		LOG_ERROR << "Failed to parse TeamInfo from Redis for player " << tlsEcs.actorRegistry.get_or_emplace<Guid>(player);
+		const auto* g = tlsEcs.actorRegistry.try_get<Guid>(player);
+		LOG_ERROR << "Failed to parse TeamInfo from Redis for player " << (g ? *g : 0);
 		return;
 	}
 
 	uint64_t leaderId = teamInfo.leader_id();
-	uint64_t myId = tlsEcs.actorRegistry.get_or_emplace<Guid>(player);
+	uint64_t myId = tlsEcs.actorRegistry.get<Guid>(player);
 
 	if (leaderId == 0 || leaderId == myId)
 	{
@@ -88,7 +89,8 @@ void PlayerSceneSystem::OnGetLeaderLocation(entt::entity player, void* replyVoid
 
 	if (!loc.ParseFromArray(reply->str, static_cast<int>(reply->len)))
 	{
-		LOG_ERROR << "Failed to parse PlayerLocation from Redis for player " << tlsEcs.actorRegistry.get_or_emplace<Guid>(player);
+		const auto* g = tlsEcs.actorRegistry.try_get<Guid>(player);
+		LOG_ERROR << "Failed to parse PlayerLocation from Redis for player " << (g ? *g : 0);
 		return;
 	}
 
@@ -111,7 +113,8 @@ void PlayerSceneSystem::OnGetLeaderLocation(entt::entity player, void* replyVoid
 		const auto* playerSessionPB = tlsEcs.actorRegistry.try_get<PlayerSessionSnapshotComp>(player);
 		if (!playerSessionPB)
 		{
-			LOG_ERROR << "PlayerSessionSnapshotComp missing for follower " << tlsEcs.actorRegistry.get_or_emplace<Guid>(player);
+			const auto* g = tlsEcs.actorRegistry.try_get<Guid>(player);
+			LOG_ERROR << "PlayerSessionSnapshotComp missing for follower " << (g ? *g : 0);
 			return;
 		}
 
@@ -158,7 +161,7 @@ void PlayerSceneSystem::HandleEnterScene(entt::entity player, entt::entity scene
 	if (sceneInfo == nullptr)
 	{
 		LOG_ERROR << "HandleEnterScene: scene info not found for player: "
-		          << tlsEcs.actorRegistry.get_or_emplace<Guid>(player);
+		          << entt::to_integral(player);
 		return;
 	}
 
@@ -166,7 +169,8 @@ void PlayerSceneSystem::HandleEnterScene(entt::entity player, entt::entity scene
 	auto *oldSceneComp = tlsEcs.actorRegistry.try_get<SceneEntityComp>(player);
 	if (oldSceneComp != nullptr && oldSceneComp->sceneEntity == scene)
 	{
-		LOG_INFO << "HandleEnterScene: player " << tlsEcs.actorRegistry.get_or_emplace<Guid>(player)
+		const auto* g = tlsEcs.actorRegistry.try_get<Guid>(player);
+		LOG_INFO << "HandleEnterScene: player " << (g ? *g : 0)
 		         << " already in scene_id=" << sceneInfo->scene_id() << ", skipping";
 		return;
 	}
@@ -197,7 +201,8 @@ void PlayerSceneSystem::HandleEnterScene(entt::entity player, entt::entity scene
 	message.mutable_scene_info()->CopyFrom(*sceneInfo);
 	SendMessageToClientViaGate(SceneSceneClientPlayerNotifyEnterSceneMessageId, message, player);
 
-	LOG_INFO << "HandleEnterScene: player " << tlsEcs.actorRegistry.get_or_emplace<Guid>(player)
+	const auto* g = tlsEcs.actorRegistry.try_get<Guid>(player);
+	LOG_INFO << "HandleEnterScene: player " << (g ? *g : 0)
 			 << " entered scene_id=" << sceneInfo->scene_id();
 
 	// 5. Team Follow Logic: if player is in a team, check leader location.

@@ -40,92 +40,61 @@ constexpr SyncFrequencyArray kLevel2SyncFrequencies{
 constexpr SyncFrequencyArray kLevel3SyncFrequencies{
 	eAttributeSyncFrequency::kSyncEvery2Frames };
 
-// Distance-level sync config: sync frequencies + entity list retrieval function
-struct DistanceSyncConfig {
-	const SyncFrequencyArray& syncFrequencies;
-	void (*retrieveEntityList)(const entt::entity, EntityVector&);
-};
+constexpr double kLevel1RadiusFactor = 0.333;
+constexpr double kLevel2RadiusFactor = 0.666;
 
-constexpr DistanceSyncConfig kDistanceSyncConfigs[] = {
-	{kLevel1SyncFrequencies, ActorStateAttributeSyncSystem::GetNearbyLevel1Entities},
-	{kLevel2SyncFrequencies, ActorStateAttributeSyncSystem::GetNearbyLevel2Entities},
-	{kLevel3SyncFrequencies, ActorStateAttributeSyncSystem::GetNearbyLevel3Entities}
-};
-
-// Sync attributes for a given distance level
-void SyncAttributesForDistanceLevel(const entt::entity& entity, EntityVector& nearbyEntityList, const DistanceSyncConfig& distanceSyncConfig) {
-	const auto currentFrame = tlsFrameTimeManager.frameTime.current_frame();
-
-	distanceSyncConfig.retrieveEntityList(entity, nearbyEntityList);
-
-	for (const auto& frequency : distanceSyncConfig.syncFrequencies) {
+// Sync entities at the appropriate frequencies for this frame
+static void SyncEntitiesAtFrequencies(entt::entity entity, const EntityVector& entities,
+									  const SyncFrequencyArray& frequencies, uint32_t currentFrame)
+{
+	if (entities.empty()) return;
+	for (const auto& frequency : frequencies) {
 		if (frequency > 0 && currentFrame % frequency == 0) {
-			ActorStateAttributeSyncSystem::SyncAttributes(entity, nearbyEntityList, frequency);
+			ActorStateAttributeSyncSystem::SyncAttributes(entity, entities, frequency);
 		}
 	}
-
-	nearbyEntityList.clear();
 }
-
 
 void ActorStateAttributeSyncSystem::Update(const double delta)
 {
-	EntityVector nearbyEntityList;
+	const auto currentFrame = tlsFrameTimeManager.frameTime.current_frame();
+	EntityVector allAoiEntities, level1Entities, level2Entities, level3Entities;
 
 	for (auto [entity, transform] : tlsEcs.actorRegistry.view<Transform>().each())
 	{
-		auto& actorRegistry = tlsEcs.actorRegistry;
-		const auto& aoiListComp = actorRegistry.get_or_emplace<AoiListComp>(entity);
+		const auto* aoiListComp = tlsEcs.actorRegistry.try_get<AoiListComp>(entity);
+		if (!aoiListComp || aoiListComp->entries.empty()) continue;
 
-		ActorBaseAttributesS2CSyncAttributes(entity, ScenePlayerSyncSyncBaseAttributeMessageId, aoiListComp.GetEntitySet());
-
-		for (const auto& distanceSyncConfig : kDistanceSyncConfigs) {
-			SyncAttributesForDistanceLevel(entity, nearbyEntityList, distanceSyncConfig);
-		}
-	}
-}
-
-void ActorStateAttributeSyncSystem::GetNearbyLevel1Entities(const entt::entity entity, EntityVector& nearbyEntities) {
-	const auto& aoiEntries = tlsEcs.actorRegistry.get_or_emplace<AoiListComp>(entity).entries;
-
-	for (const auto& [nearbyEntity, _] : aoiEntries) {
-		constexpr double viewRadiusFactor = 0.333;
-		const double viewRadius = ViewSystem::GetMaxViewRadius(nearbyEntity) * viewRadiusFactor;
-
-		if (!ViewSystem::IsWithinViewRadius(nearbyEntity, entity, viewRadius)) {
-			continue;
+		// Build flat entity list for base attribute sync (avoids hash set allocation)
+		allAoiEntities.clear();
+		allAoiEntities.reserve(aoiListComp->entries.size());
+		for (const auto& [e, _] : aoiListComp->entries) {
+			allAoiEntities.emplace_back(e);
 		}
 
-		nearbyEntities.emplace_back(nearbyEntity);
-	}
-}
+		ActorBaseAttributesS2CSyncAttributes(entity, ScenePlayerSyncSyncBaseAttributeMessageId, allAoiEntities);
 
-void ActorStateAttributeSyncSystem::GetNearbyLevel2Entities(const entt::entity entity, EntityVector& nearbyEntities) {
-	const auto& aoiEntries = tlsEcs.actorRegistry.get_or_emplace<AoiListComp>(entity).entries;
+		// Single-pass distance classification: compute distance once per neighbor
+		level1Entities.clear();
+		level2Entities.clear();
+		level3Entities.clear();
 
-	for (const auto& [nearbyEntity, _] : aoiEntries) {
-		constexpr double viewRadiusFactor = 0.666;
-		const double viewRadius = ViewSystem::GetMaxViewRadius(nearbyEntity) * viewRadiusFactor;
+		for (const auto& [nearbyEntity, _] : aoiListComp->entries) {
+			const double maxRadius = ViewSystem::GetMaxViewRadius(nearbyEntity);
+			const double distance = ViewSystem::GetDistanceBetweenEntities(nearbyEntity, entity);
 
-		if (!ViewSystem::IsWithinViewRadius(nearbyEntity, entity, viewRadius)) {
-			continue;
+			if (distance <= maxRadius * kLevel1RadiusFactor) {
+				level1Entities.emplace_back(nearbyEntity);
+			} else if (distance <= maxRadius * kLevel2RadiusFactor) {
+				level2Entities.emplace_back(nearbyEntity);
+			} else if (distance <= maxRadius) {
+				level3Entities.emplace_back(nearbyEntity);
+			}
 		}
 
-		nearbyEntities.emplace_back(nearbyEntity);
-	}
-}
-
-void ActorStateAttributeSyncSystem::GetNearbyLevel3Entities(const entt::entity entity, EntityVector& nearbyEntities) {
-	const auto& aoiEntries = tlsEcs.actorRegistry.get_or_emplace<AoiListComp>(entity).entries;
-
-	for (const auto& [nearbyEntity, _] : aoiEntries) {
-		const double viewRadius = ViewSystem::GetMaxViewRadius(nearbyEntity);
-
-		if (!ViewSystem::IsWithinViewRadius(nearbyEntity, entity, viewRadius)) {
-			continue;
-		}
-
-		nearbyEntities.emplace_back(nearbyEntity);
+		SyncEntitiesAtFrequencies(entity, level1Entities, kLevel1SyncFrequencies, currentFrame);
+		SyncEntitiesAtFrequencies(entity, level2Entities, kLevel2SyncFrequencies, currentFrame);
+		SyncEntitiesAtFrequencies(entity, level3Entities, kLevel3SyncFrequencies, currentFrame);
 	}
 }
 

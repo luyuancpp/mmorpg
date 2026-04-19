@@ -16,7 +16,7 @@ void ScenePlayerHandler::GateLoginNotify(entt::entity player,const ::GateLoginNo
 	// enter_gs_type, scene_id). This handler is kept for backward compatibility but
 	// should not be reached in normal operation.
 	LOG_WARN << "GateLoginNotify: deprecated path reached for player "
-	         << tlsEcs.actorRegistry.get_or_emplace<Guid>(player)
+	         << entt::to_integral(player)
 	         << ", enter_gs_type=" << request->enter_gs_type();
 	///<<< END WRITING YOUR CODE
 
@@ -27,7 +27,7 @@ void ScenePlayerHandler::ExitGame(entt::entity player,const ::GameNodeExitGameRe
 {
 	///<<< BEGIN WRITING YOUR CODE
 	LOG_INFO << "ExitGame: Received player exit request. Player entity = " << entt::to_integral(player)
-			 << ", playerId = " << tlsEcs.actorRegistry.get_or_emplace<Guid>(player);
+			 << ", playerId = " << entt::to_integral(player);
 
 	PlayerLifecycleSystem::HandleExitGameNode(player);
 

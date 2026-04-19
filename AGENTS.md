@@ -119,6 +119,18 @@ The following were removed from git tracking:
 - Toggle Go: env `GRPC_TRAFFIC_STATS_ENABLED=1`, optional `GRPC_TRAFFIC_STATS_AUTO_DISABLE_MINUTES`, `GRPC_TRAFFIC_STATS_INTERVAL_SECONDS`.
 - Safe for temporary production use: atomic-only counters, periodic summary logging (not per-message).
 
+### C++ hot-path performance rules
+- **Serialize once, broadcast many**: move `SerializeAsString()` outside loops that send to multiple gates/nodes.
+- **Use `SerializeToString(mutable_field())` instead of `set_serialized_message(SerializeAsString())`** to avoid temporary string + copy.
+- **Never construct `std::random_device` / `std::mt19937` per call**: use project-wide `tlsRandom` from `utils/random/random.h`.
+- **Never use `get_or_emplace<T>` in per-tick/per-pair hot paths**: use `get<T>` (asserts existence) or `try_get<T>` (null-safe). `get_or_emplace` in LOG statements silently creates default components and corrupts ECS state.
+- **Component updates: `emplace_or_replace<T>`, not `remove<T>` + `emplace<T>`** — avoids unnecessary pool dealloc/alloc.
+- **Single-pass distance classification**: compute distance once per AoI neighbor, classify into level-1/2/3 buckets. Never iterate the full AoI list N times for N distance levels.
+- **Cache derived buff state as tag components** (e.g. `StealthedTagComp`): maintain in `OnBuffStart`/`OnBuffRemove` instead of linear scanning buffs per visibility check.
+- **Prefer `EntityVector` over `EntityUnorderedSet`** when only iteration is needed (no lookup). Building a hash set from a map just to iterate it wastes CPU on hashing.
+- **Use `std::unordered_map` for key-lookup containers** (e.g. `BuffListComp`): `std::map` is O(log n) and only needed when key ordering matters.
+- **Never use `std::ranges::set_intersection` on `unordered_set`**: it requires sorted input. Use inline erase loop instead.
+
 ### gRPC server thread pool (C++ nodes)
 - C++ nodes embed a gRPC sync server for control-plane RPCs (CreateScene, DestroyScene, etc.).
 - All RPC handlers dispatch to the muduo EventLoop via `runInLoop` + `promise/future`; business logic stays single-threaded.

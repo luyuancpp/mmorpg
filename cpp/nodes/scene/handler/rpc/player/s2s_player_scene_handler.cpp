@@ -35,7 +35,8 @@ void SceneScenePlayerHandler::LeaveScene(entt::entity player,const ::GsLeaveScen
 	::google::protobuf::Empty* response)
 {
 	///<<< BEGIN WRITING YOUR CODE
-	LOG_DEBUG << "Handling GsLeaveSceneRequest for player: " << tlsEcs.actorRegistry.get_or_emplace<Guid>(player);
+	const auto* g = tlsEcs.actorRegistry.try_get<Guid>(player);
+	LOG_DEBUG << "Handling GsLeaveSceneRequest for player: " << (g ? *g : 0);
 
 	// Save player data to Redis and handle exit logic.
 	// This replaces the legacy ChangeSceneInfo state machine checks with a direct save-and-exit flow.
@@ -49,17 +50,24 @@ void SceneScenePlayerHandler::EnterSceneS2C(entt::entity player,const ::EnterSce
 	::EnterSceneS2CResponse* response)
 {
 	///<<< BEGIN WRITING YOUR CODE
-	LOG_INFO << "Handling EnterSceneS2CRequest for player: " << tlsEcs.actorRegistry.get_or_emplace<Guid>(player);
+	const auto* g2 = tlsEcs.actorRegistry.try_get<Guid>(player);
+	LOG_INFO << "Handling EnterSceneS2CRequest for player: " << (g2 ? *g2 : 0);
 
 	const auto sceneEntity = tlsEcs.actorRegistry.try_get<SceneEntityComp>(player);
 	if (sceneEntity == nullptr)
 	{
-		LOG_ERROR << "Player " << tlsEcs.actorRegistry.get_or_emplace<Guid>(player) << " has not entered any scene.";
+		LOG_ERROR << "Player " << (g2 ? *g2 : 0) << " has not entered any scene.";
 		return;
 	}
 
 	::EnterSceneS2C message;
-	message.mutable_scene_info()->CopyFrom(tlsEcs.actorRegistry.get_or_emplace<SceneInfoComp>(sceneEntity->sceneEntity));
+	const auto* sceneInfo = tlsEcs.sceneRegistry.try_get<SceneInfoComp>(sceneEntity->sceneEntity);
+	if (!sceneInfo)
+	{
+		LOG_ERROR << "SceneInfoComp not found for scene entity";
+		return;
+	}
+	message.mutable_scene_info()->CopyFrom(*sceneInfo);
 	SendMessageToClientViaGate(SceneSceneClientPlayerNotifyEnterSceneMessageId, message, player);
 	///<<< END WRITING YOUR CODE
 

@@ -251,6 +251,12 @@ uint32_t BuffSystem::OnBuffAwake(const entt::entity parent, const uint32_t buffT
 
 void BuffSystem::OnBuffStart(entt::entity parent, BuffEntry& buff, const BuffTable* buffTable)
 {
+    // Maintain stealth tag cache
+    if (buffTable && buffTable->buff_type() == kBuffTypeStealth)
+    {
+        tlsEcs.actorRegistry.emplace_or_replace<StealthedTagComp>(parent);
+    }
+
     if (BuffImplSystem::OnBuffStart(parent, buff, buffTable)) {
         return;
     } else if (ModifierBuffImplSystem::OnBuffStart(parent, buff, buffTable)) {
@@ -267,6 +273,29 @@ void BuffSystem::OnBuffRefresh(entt::entity parent, uint32_t buffTableId, const 
 
 void BuffSystem::OnBuffRemove(const entt::entity parent, BuffEntry& buffComp, const BuffTable* buffTable)
 {
+    // Maintain stealth tag cache: remove tag only if no other stealth buffs remain
+    if (buffTable && buffTable->buff_type() == kBuffTypeStealth)
+    {
+        bool hasOtherStealth = false;
+        if (const auto* buffList = tlsEcs.actorRegistry.try_get<BuffListComp>(parent))
+        {
+            for (const auto& [id, entry] : *buffList)
+            {
+                if (entry.buffPb.buff_id() == buffComp.buffPb.buff_id()) continue;
+                const auto [tbl, res] = BuffTableManager::Instance().FindById(entry.buffPb.buff_table_id());
+                if (tbl && tbl->buff_type() == kBuffTypeStealth)
+                {
+                    hasOtherStealth = true;
+                    break;
+                }
+            }
+        }
+        if (!hasOtherStealth)
+        {
+            tlsEcs.actorRegistry.remove<StealthedTagComp>(parent);
+        }
+    }
+
     if (ModifierBuffImplSystem::OnBuffRemove(parent, buffComp, buffTable)) {
         return;
     }
