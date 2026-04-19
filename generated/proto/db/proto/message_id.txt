@@ -55,6 +55,7 @@
 54=SceneCurrencyClientPlayerGetCurrencyList
 55=ScenePlayerSyncSyncAttribute5Frames
 56=GateBindSessionToGate
+57=GateBroadcastToScene
 58=ClientPlayerLoginDisconnect
 59=KVRange
 60=GuildServiceGetGuild
@@ -68,6 +69,7 @@
 68=ScenePlayerSyncSyncAttribute30Frames
 69=SceneScenePlayerLeaveScene
 70=SceneSkillClientPlayerNotifySkillUsed
+71=GateBroadcastToAll
 72=GateSendMessageToPlayer
 73=LeaseLeaseRevoke
 74=GateRoutePlayerMessage

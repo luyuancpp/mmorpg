@@ -25,6 +25,21 @@ message BroadcastToPlayersRequest
 {
   repeated uint32 session_list = 1;
   MessageContent message_content = 2;
+  // Bitmap encoding: more compact than session_list when many sessions on one gate.
+  // bit N set in session_bitmap means session (session_bitmap_base + N) is included.
+  uint32 session_bitmap_base = 3;
+  bytes session_bitmap = 4;
+}
+
+message BroadcastToSceneRequest
+{
+  uint64 scene_id = 1;
+  MessageContent message_content = 2;
+}
+
+message BroadcastToAllRequest
+{
+  MessageContent message_content = 1;
 }
 
 service Gate {
@@ -33,6 +48,8 @@ service Gate {
   rpc RouteNodeMessage (RouteMessageRequest) returns (RouteMessageResponse);
   rpc RoutePlayerMessage (RoutePlayerMessageRequest) returns (RoutePlayerMessageResponse);
   rpc BroadcastToPlayers (BroadcastToPlayersRequest) returns (Empty);
+  rpc BroadcastToScene (BroadcastToSceneRequest) returns (Empty);
+  rpc BroadcastToAll (BroadcastToAllRequest) returns (Empty);
   rpc NodeHandshake(NodeHandshakeRequest) returns (NodeHandshakeResponse);
   rpc BindSessionToGate(BindSessionToGateRequest) returns (BindSessionToGateResponse);
   rpc GmGracefulShutdown (GmGracefulShutdownRequest) returns (GmGracefulShutdownResponse);

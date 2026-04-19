@@ -21,6 +21,10 @@ void InitGateReply()
         std::bind(&OnGateRoutePlayerMessageReply, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
     gRpcResponseDispatcher.registerMessageCallback<::Empty>(GateBroadcastToPlayersMessageId,
         std::bind(&OnGateBroadcastToPlayersReply, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+    gRpcResponseDispatcher.registerMessageCallback<::Empty>(GateBroadcastToSceneMessageId,
+        std::bind(&OnGateBroadcastToSceneReply, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+    gRpcResponseDispatcher.registerMessageCallback<::Empty>(GateBroadcastToAllMessageId,
+        std::bind(&OnGateBroadcastToAllReply, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
     gRpcResponseDispatcher.registerMessageCallback<::NodeHandshakeResponse>(GateNodeHandshakeMessageId,
         std::bind(&OnGateNodeHandshakeReply, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
     gRpcResponseDispatcher.registerMessageCallback<::BindSessionToGateResponse>(GateBindSessionToGateMessageId,
@@ -57,6 +61,18 @@ void OnGateBroadcastToPlayersReply(const muduo::net::TcpConnectionPtr& conn, con
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
+}
+
+void OnGateBroadcastToSceneReply(const muduo::net::TcpConnectionPtr& conn, const std::shared_ptr<::Empty>& replied, muduo::Timestamp timestamp)
+{
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE}
+}
+
+void OnGateBroadcastToAllReply(const muduo::net::TcpConnectionPtr& conn, const std::shared_ptr<::Empty>& replied, muduo::Timestamp timestamp)
+{
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE}
 }
 
 void OnGateNodeHandshakeReply(const muduo::net::TcpConnectionPtr& conn, const std::shared_ptr<::NodeHandshakeResponse>& replied, muduo::Timestamp timestamp)

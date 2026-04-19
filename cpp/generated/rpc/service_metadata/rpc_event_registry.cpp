@@ -378,6 +378,16 @@ void InitMessageInfo()
         std::make_unique<::BroadcastToPlayersRequest>(),
         std::make_unique<::Empty>(),
         std::make_unique<GateImpl>(), 0, common::base::eNodeType::GateNodeService};
+    gRpcMethodRegistry[GateBroadcastToSceneMessageId] = RpcMethodMeta{
+        "Gate", "BroadcastToScene",
+        std::make_unique<::BroadcastToSceneRequest>(),
+        std::make_unique<::Empty>(),
+        std::make_unique<GateImpl>(), 0, common::base::eNodeType::GateNodeService};
+    gRpcMethodRegistry[GateBroadcastToAllMessageId] = RpcMethodMeta{
+        "Gate", "BroadcastToAll",
+        std::make_unique<::BroadcastToAllRequest>(),
+        std::make_unique<::Empty>(),
+        std::make_unique<GateImpl>(), 0, common::base::eNodeType::GateNodeService};
     gRpcMethodRegistry[GateNodeHandshakeMessageId] = RpcMethodMeta{
         "Gate", "NodeHandshake",
         std::make_unique<::NodeHandshakeRequest>(),
@@ -952,8 +962,24 @@ bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
 		tlsEcs.dispatcher.trigger(event);
 		return true;
 	}
+	case ContractsKafkaBroadcastToAllEventEventId: {
+		contracts::kafka::BroadcastToAllEvent event;
+		if (!event.ParseFromString(payload)) {
+			return false;
+		}
+		tlsEcs.dispatcher.trigger(event);
+		return true;
+	}
 	case ContractsKafkaBroadcastToPlayersEventEventId: {
 		contracts::kafka::BroadcastToPlayersEvent event;
+		if (!event.ParseFromString(payload)) {
+			return false;
+		}
+		tlsEcs.dispatcher.trigger(event);
+		return true;
+	}
+	case ContractsKafkaBroadcastToSceneEventEventId: {
+		contracts::kafka::BroadcastToSceneEvent event;
 		if (!event.ParseFromString(payload)) {
 			return false;
 		}

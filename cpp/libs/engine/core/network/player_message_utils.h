@@ -17,6 +17,11 @@ void SendMessageToGateById(uint32_t messageId, const google::protobuf::Message& 
 void BroadcastMessageToPlayers(uint32_t messageId, const google::protobuf::Message& message, const EntityUnorderedSet& playerList);
 void BroadcastMessageToPlayers(uint32_t messageId, const google::protobuf::Message& message, const EntityVector& playerList);
 
+void BroadcastMessageToScene(uint32_t messageId, const google::protobuf::Message &message, uint64_t sceneId, const EntityUnorderedSet &scenePlayerList);
+void BroadcastMessageToScene(uint32_t messageId, const google::protobuf::Message &message, uint64_t sceneId, const EntityVector &scenePlayerList);
+
+void BroadcastMessageToAll(uint32_t messageId, const google::protobuf::Message &message);
+
 void SendMessageToPlayerOnGrpcNode(uint32_t messageId, const google::protobuf::Message& message, Guid playerId);
 void SendMessageToPlayerOnGrpcNode(uint32_t messageId, const google::protobuf::Message& message, entt::entity player);
 
