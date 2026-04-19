@@ -79,6 +79,9 @@ The following were removed from git tracking:
 | C++ traffic statistics | `cpp/libs/engine/core/network/traffic_statistics.h/.cpp` | Per-message atomic send/recv counters, periodic reporter |
 | Go gRPC traffic statistics | `go/shared/grpcstats/collector.go` | gRPC interceptor: per-method count, bytes, latency |
 | Traffic stats design doc | `docs/design/traffic-statistics-design.md` | Design rationale + production safety analysis |
+| Broadcast optimization | `cpp/libs/engine/core/network/player_message_utils.h/.cpp` | Three-level broadcast: Players (bitmap), Scene, All |
+| Broadcast design doc | `docs/design/broadcast-message-size-analysis.md` | Size analysis + API overview |
+| Go broadcast utilities | `go/shared/kafkautil/gate_push.go` | Kafka broadcast: BroadcastToPlayers/Scene/All + bitmap encoding |
 
 ## CONVENTIONS
 - Prefer verb-based, thin RPC handlers. Heavy logic belongs in systems/services, not transport wrappers.
@@ -118,6 +121,16 @@ The following were removed from git tracking:
 - Toggle C++: env `NODE_TRAFFIC_STATS_ENABLED=1`, optional `NODE_TRAFFIC_STATS_AUTO_DISABLE_MINUTES`, `NODE_TRAFFIC_STATS_INTERVAL_SECONDS`.
 - Toggle Go: env `GRPC_TRAFFIC_STATS_ENABLED=1`, optional `GRPC_TRAFFIC_STATS_AUTO_DISABLE_MINUTES`, `GRPC_TRAFFIC_STATS_INTERVAL_SECONDS`.
 - Safe for temporary production use: atomic-only counters, periodic summary logging (not per-message).
+
+### Broadcast message optimization (three-level system)
+- **Three levels**: `BroadcastToPlayers` (AOI subset), `BroadcastToScene` (scene-wide), `BroadcastToAll` (server-wide).
+- **Bitmap encoding**: `BroadcastToPlayers` auto-selects bitmap when `count >= 32 && bitmapBytes + 6 < count * 3`. Session IDs encoded as `session_bitmap_base` (uint32) + `session_bitmap` (bytes). 750 players: ~2250 → ~155 bytes (-93%).
+- **Session ID**: `uint32`, upper 15 bits = gate node_id, lower 17 bits = sequence. All sessions on one gate share upper bits → bitmap span bounded.
+- **C++ API** (`player_message_utils.h/cpp`): `BroadcastMessageToPlayers()` (gRPC per gate, auto bitmap), `BroadcastMessageToScene()` (gRPC per gate, by scene_id), `BroadcastMessageToAll()` (gRPC to all gates).
+- **Go API** (`go/shared/kafkautil/gate_push.go`): `BroadcastToPlayers()`, `BroadcastToScene()`, `BroadcastToAll()` — Kafka-based, same three levels. `EncodeBitmapFields()` for auto bitmap in Go.
+- **Gate handlers**: gRPC in `gate_service_handler.cpp`, Kafka in `gate_event_handler.cpp`. Both implement bitmap decode, scene filter, and all-session dispatch.
+- **Proto**: `proto/gate/gate_service.proto` (gRPC), `proto/contracts/kafka/gate_event.proto` (Kafka events).
+- **Design doc**: `docs/design/broadcast-message-size-analysis.md`.
 
 ### C++ hot-path performance rules
 - **Serialize once, broadcast many**: move `SerializeAsString()` outside loops that send to multiple gates/nodes.
