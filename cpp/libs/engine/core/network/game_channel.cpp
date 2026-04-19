@@ -21,34 +21,38 @@ void HandleUnknownProtobufMessage(const TcpConnectionPtr &, const MessagePtr &me
     LOG_ERROR << "Unknown Protobuf message received: " << message->GetTypeName().data();
 }
 
-std::string DecodeRpcBody(const GameRpcMessage &rpcMessage)
-{
-    const auto msgId = rpcMessage.message_id();
-    if (msgId >= gRpcMethodRegistry.size())
-        return "(unknown message ID)";
-
-    const auto &meta = gRpcMethodRegistry[msgId];
-    const auto &body = rpcMessage.request().empty() ? rpcMessage.response() : rpcMessage.request();
-    const auto *proto = rpcMessage.request().empty() ? meta.responseProto.get() : meta.requestProto.get();
-    if (!proto || body.empty())
-        return "(no body)";
-
-    std::unique_ptr<::google::protobuf::Message> decoded(proto->New());
-    if (!decoded->ParsePartialFromArray(body.data(), static_cast<int32_t>(body.size())))
-        return "(parse failed)";
-
-    return decoded->DebugString();
-}
-
 size_t LogIfMessageTooLarge(const GameRpcMessage &rpcMessage)
 {
     const size_t messageSize = rpcMessage.ByteSizeLong();
     if (messageSize > kMaxMessageByteSize)
     {
-        LOG_ERROR << "RPC message size exceeds 2KB, message ID: "
-                  << rpcMessage.message_id()
+        const auto msgId = rpcMessage.message_id();
+        const char *methodName = "(unknown)";
+        std::string decodedBody;
+
+        if (msgId < gRpcMethodRegistry.size())
+        {
+            const auto &meta = gRpcMethodRegistry[msgId];
+            if (meta.methodName)
+                methodName = meta.methodName;
+
+            const bool isRequest = !rpcMessage.request().empty();
+            const auto &body = isRequest ? rpcMessage.request() : rpcMessage.response();
+            const auto *proto = isRequest ? meta.requestProto.get() : meta.responseProto.get();
+
+            if (proto && !body.empty())
+            {
+                std::unique_ptr<::google::protobuf::Message> decoded(proto->New());
+                if (decoded->ParsePartialFromArray(body.data(), static_cast<int32_t>(body.size())))
+                    decodedBody = decoded->ShortDebugString();
+            }
+        }
+
+        LOG_ERROR << "RPC message size exceeds 2KB"
+                  << ", method: " << methodName
+                  << ", message ID: " << msgId
                   << ", size: " << messageSize
-                  << ", decoded body: " << DecodeRpcBody(rpcMessage);
+                  << ", body: " << (decodedBody.empty() ? "(decode failed)" : decodedBody);
     }
     return messageSize;
 }
@@ -258,12 +262,7 @@ void GameChannel::HandleRpcMessage(const TcpConnectionPtr &conn, const RpcMessag
     assert(conn == connection_);
     const auto &rpcMessage = *messagePtr;
 
-    const size_t messageSize = rpcMessage.ByteSizeLong();
-    if (messageSize > kMaxMessageByteSize)
-    {
-        LOG_ERROR << "RPC message size exceeds 2KB, message ID: " << rpcMessage.message_id() << ", size: " << messageSize
-                  << ", decoded body: " << DecodeRpcBody(rpcMessage);
-    }
+    const size_t messageSize = LogIfMessageTooLarge(rpcMessage);
 
     LOG_TRACE << "RPC message received, type: " << rpcMessage.type() << ", message ID: " << rpcMessage.message_id();
 

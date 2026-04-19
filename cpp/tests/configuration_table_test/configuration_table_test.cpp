@@ -20,7 +20,7 @@ TEST(ConfigTableTest, IterateSkillTable)
 {
 	for (auto &row : FindAllSkillTable().data())
 	{
-		LOG_INFO << row.DebugString();
+		LOG_INFO << row.ShortDebugString();
 	}
 }
 
@@ -28,7 +28,7 @@ TEST(ConfigTableTest, IterateBuffTable)
 {
 	for (auto &row : FindAllBuffTable().data())
 	{
-		LOG_INFO << row.DebugString();
+		LOG_INFO << row.ShortDebugString();
 	}
 }
 
@@ -36,7 +36,7 @@ TEST(ConfigTableTest, IterateTestTable)
 {
 	for (auto &row : FindAllTestTable().data())
 	{
-		LOG_INFO << row.DebugString();
+		LOG_INFO << row.ShortDebugString();
 	}
 }
 
@@ -44,7 +44,7 @@ TEST(ConfigTableTest, IterateTestMultiKeyTable)
 {
 	for (auto &row : FindAllTestMultiKeyTable().data())
 	{
-		LOG_INFO << row.DebugString();
+		LOG_INFO << row.ShortDebugString();
 	}
 }
 
@@ -58,7 +58,7 @@ TEST(ConfigTableTest, MultiKeyUint32RangeQuery)
 	auto range = data.equal_range(17);
 	for (auto it = range.first; it != range.second; ++it)
 	{
-		LOG_INFO << it->first << ' ' << it->second->DebugString();
+		LOG_INFO << it->first << ' ' << it->second->ShortDebugString();
 	}
 }
 
@@ -68,7 +68,7 @@ TEST(ConfigTableTest, MultiKeyInt32RangeQuery)
 	auto range = data.equal_range(10);
 	for (auto it = range.first; it != range.second; ++it)
 	{
-		LOG_INFO << it->first << ' ' << it->second->DebugString();
+		LOG_INFO << it->first << ' ' << it->second->ShortDebugString();
 	}
 }
 
@@ -78,7 +78,7 @@ TEST(ConfigTableTest, MultiKeyStringRangeQuery)
 	auto range = data.equal_range("aa");
 	for (auto it = range.first; it != range.second; ++it)
 	{
-		LOG_INFO << it->first << ' ' << it->second->DebugString();
+		LOG_INFO << it->first << ' ' << it->second->ShortDebugString();
 	}
 }
 
