@@ -228,14 +228,14 @@ class DerivedAttributesComp final : public ::google::protobuf::Message
   enum : int {
     kMaxHealthFieldNumber = 1,
   };
-  // uint64 max_health = 1;
+  // uint32 max_health = 1;
   void clear_max_health() ;
-  ::uint64_t max_health() const;
-  void set_max_health(::uint64_t value);
+  ::uint32_t max_health() const;
+  void set_max_health(::uint32_t value);
 
   private:
-  ::uint64_t _internal_max_health() const;
-  void _internal_set_max_health(::uint64_t value);
+  ::uint32_t _internal_max_health() const;
+  void _internal_set_max_health(::uint32_t value);
 
   public:
   // @@protoc_insertion_point(class_scope:DerivedAttributesComp)
@@ -264,7 +264,7 @@ class DerivedAttributesComp final : public ::google::protobuf::Message
         const DerivedAttributesComp& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
-    ::uint64_t max_health_;
+    ::uint32_t max_health_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -460,24 +460,24 @@ class CalculatedAttributesComp final : public ::google::protobuf::Message
     kDefensePowerFieldNumber = 2,
     kIsDeadFieldNumber = 3,
   };
-  // uint64 attack_power = 1;
+  // uint32 attack_power = 1;
   void clear_attack_power() ;
-  ::uint64_t attack_power() const;
-  void set_attack_power(::uint64_t value);
+  ::uint32_t attack_power() const;
+  void set_attack_power(::uint32_t value);
 
   private:
-  ::uint64_t _internal_attack_power() const;
-  void _internal_set_attack_power(::uint64_t value);
+  ::uint32_t _internal_attack_power() const;
+  void _internal_set_attack_power(::uint32_t value);
 
   public:
-  // uint64 defense_power = 2;
+  // uint32 defense_power = 2;
   void clear_defense_power() ;
-  ::uint64_t defense_power() const;
-  void set_defense_power(::uint64_t value);
+  ::uint32_t defense_power() const;
+  void set_defense_power(::uint32_t value);
 
   private:
-  ::uint64_t _internal_defense_power() const;
-  void _internal_set_defense_power(::uint64_t value);
+  ::uint32_t _internal_defense_power() const;
+  void _internal_set_defense_power(::uint32_t value);
 
   public:
   // bool isDead = 3;
@@ -516,8 +516,8 @@ class CalculatedAttributesComp final : public ::google::protobuf::Message
         const CalculatedAttributesComp& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
-    ::uint64_t attack_power_;
-    ::uint64_t defense_power_;
+    ::uint32_t attack_power_;
+    ::uint32_t defense_power_;
     bool isdead_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -776,50 +776,50 @@ inline ::google::protobuf::Map<::uint32_t, bool>* PROTOBUF_NONNULL CombatStateFl
 
 // CalculatedAttributesComp
 
-// uint64 attack_power = 1;
+// uint32 attack_power = 1;
 inline void CalculatedAttributesComp::clear_attack_power() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.attack_power_ = ::uint64_t{0u};
+  _impl_.attack_power_ = 0u;
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
-inline ::uint64_t CalculatedAttributesComp::attack_power() const {
+inline ::uint32_t CalculatedAttributesComp::attack_power() const {
   // @@protoc_insertion_point(field_get:CalculatedAttributesComp.attack_power)
   return _internal_attack_power();
 }
-inline void CalculatedAttributesComp::set_attack_power(::uint64_t value) {
+inline void CalculatedAttributesComp::set_attack_power(::uint32_t value) {
   _internal_set_attack_power(value);
   _impl_._has_bits_[0] |= 0x00000001u;
   // @@protoc_insertion_point(field_set:CalculatedAttributesComp.attack_power)
 }
-inline ::uint64_t CalculatedAttributesComp::_internal_attack_power() const {
+inline ::uint32_t CalculatedAttributesComp::_internal_attack_power() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.attack_power_;
 }
-inline void CalculatedAttributesComp::_internal_set_attack_power(::uint64_t value) {
+inline void CalculatedAttributesComp::_internal_set_attack_power(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.attack_power_ = value;
 }
 
-// uint64 defense_power = 2;
+// uint32 defense_power = 2;
 inline void CalculatedAttributesComp::clear_defense_power() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.defense_power_ = ::uint64_t{0u};
+  _impl_.defense_power_ = 0u;
   _impl_._has_bits_[0] &= ~0x00000002u;
 }
-inline ::uint64_t CalculatedAttributesComp::defense_power() const {
+inline ::uint32_t CalculatedAttributesComp::defense_power() const {
   // @@protoc_insertion_point(field_get:CalculatedAttributesComp.defense_power)
   return _internal_defense_power();
 }
-inline void CalculatedAttributesComp::set_defense_power(::uint64_t value) {
+inline void CalculatedAttributesComp::set_defense_power(::uint32_t value) {
   _internal_set_defense_power(value);
   _impl_._has_bits_[0] |= 0x00000002u;
   // @@protoc_insertion_point(field_set:CalculatedAttributesComp.defense_power)
 }
-inline ::uint64_t CalculatedAttributesComp::_internal_defense_power() const {
+inline ::uint32_t CalculatedAttributesComp::_internal_defense_power() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.defense_power_;
 }
-inline void CalculatedAttributesComp::_internal_set_defense_power(::uint64_t value) {
+inline void CalculatedAttributesComp::_internal_set_defense_power(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.defense_power_ = value;
 }
@@ -852,26 +852,26 @@ inline void CalculatedAttributesComp::_internal_set_isdead(bool value) {
 
 // DerivedAttributesComp
 
-// uint64 max_health = 1;
+// uint32 max_health = 1;
 inline void DerivedAttributesComp::clear_max_health() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.max_health_ = ::uint64_t{0u};
+  _impl_.max_health_ = 0u;
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
-inline ::uint64_t DerivedAttributesComp::max_health() const {
+inline ::uint32_t DerivedAttributesComp::max_health() const {
   // @@protoc_insertion_point(field_get:DerivedAttributesComp.max_health)
   return _internal_max_health();
 }
-inline void DerivedAttributesComp::set_max_health(::uint64_t value) {
+inline void DerivedAttributesComp::set_max_health(::uint32_t value) {
   _internal_set_max_health(value);
   _impl_._has_bits_[0] |= 0x00000001u;
   // @@protoc_insertion_point(field_set:DerivedAttributesComp.max_health)
 }
-inline ::uint64_t DerivedAttributesComp::_internal_max_health() const {
+inline ::uint32_t DerivedAttributesComp::_internal_max_health() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.max_health_;
 }
-inline void DerivedAttributesComp::_internal_set_max_health(::uint64_t value) {
+inline void DerivedAttributesComp::_internal_set_max_health(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.max_health_ = value;
 }

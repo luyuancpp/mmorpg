@@ -28,7 +28,7 @@ namespace _fl = ::google::protobuf::internal::field_layout;
 inline constexpr DerivedAttributesComp::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
-        max_health_{::uint64_t{0u}} {}
+        max_health_{0u} {}
 
 template <typename>
 PROTOBUF_CONSTEXPR DerivedAttributesComp::DerivedAttributesComp(::_pbi::ConstantInitialized)
@@ -71,8 +71,8 @@ PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
 inline constexpr CalculatedAttributesComp::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
-        attack_power_{::uint64_t{0u}},
-        defense_power_{::uint64_t{0u}},
+        attack_power_{0u},
+        defense_power_{0u},
         isdead_{false} {}
 
 template <typename>
@@ -172,9 +172,9 @@ const char descriptor_table_protodef_proto_2fcommon_2fcomponent_2factor_5fattrib
     "gsComp.StateFlagsEntry\0321\n\017StateFlagsEntr"
     "y\022\013\n\003key\030\001 \001(\r\022\r\n\005value\030\002 \001(\010:\0028\001\"W\n\030Cal"
     "culatedAttributesComp\022\024\n\014attack_power\030\001 "
-    "\001(\004\022\025\n\rdefense_power\030\002 \001(\004\022\016\n\006isDead\030\003 \001"
+    "\001(\r\022\025\n\rdefense_power\030\002 \001(\r\022\016\n\006isDead\030\003 \001"
     "(\010\"+\n\025DerivedAttributesComp\022\022\n\nmax_healt"
-    "h\030\001 \001(\004B\022Z\020common/componentb\006proto3"
+    "h\030\001 \001(\rB\022Z\020common/componentb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fcomponent_2factor_5fattribute_5fstate_5fcomp_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fcomponent_2factor_5fattribute_5fstate_5fcomp_2eproto = {
@@ -673,11 +673,11 @@ CalculatedAttributesComp::_table_ = {
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     {::_pbi::TcParser::MiniParse, {}},
-    // uint64 attack_power = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(CalculatedAttributesComp, _impl_.attack_power_), 0>(),
+    // uint32 attack_power = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(CalculatedAttributesComp, _impl_.attack_power_), 0>(),
      {8, 0, 0, PROTOBUF_FIELD_OFFSET(CalculatedAttributesComp, _impl_.attack_power_)}},
-    // uint64 defense_power = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(CalculatedAttributesComp, _impl_.defense_power_), 1>(),
+    // uint32 defense_power = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(CalculatedAttributesComp, _impl_.defense_power_), 1>(),
      {16, 1, 0, PROTOBUF_FIELD_OFFSET(CalculatedAttributesComp, _impl_.defense_power_)}},
     // bool isDead = 3;
     {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(CalculatedAttributesComp, _impl_.isdead_), 2>(),
@@ -685,12 +685,12 @@ CalculatedAttributesComp::_table_ = {
   }}, {{
     65535, 65535
   }}, {{
-    // uint64 attack_power = 1;
+    // uint32 attack_power = 1;
     {PROTOBUF_FIELD_OFFSET(CalculatedAttributesComp, _impl_.attack_power_), _Internal::kHasBitsOffset + 0, 0,
-    (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
-    // uint64 defense_power = 2;
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+    // uint32 defense_power = 2;
     {PROTOBUF_FIELD_OFFSET(CalculatedAttributesComp, _impl_.defense_power_), _Internal::kHasBitsOffset + 1, 0,
-    (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
     // bool isDead = 3;
     {PROTOBUF_FIELD_OFFSET(CalculatedAttributesComp, _impl_.isdead_), _Internal::kHasBitsOffset + 2, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kBool)},
@@ -731,20 +731,20 @@ PROTOBUF_NOINLINE void CalculatedAttributesComp::Clear() {
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
-  // uint64 attack_power = 1;
+  // uint32 attack_power = 1;
   if ((this_._impl_._has_bits_[0] & 0x00000001u) != 0) {
     if (this_._internal_attack_power() != 0) {
       target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
           1, this_._internal_attack_power(), target);
     }
   }
 
-  // uint64 defense_power = 2;
+  // uint32 defense_power = 2;
   if ((this_._impl_._has_bits_[0] & 0x00000002u) != 0) {
     if (this_._internal_defense_power() != 0) {
       target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
           2, this_._internal_defense_power(), target);
     }
   }
@@ -784,17 +784,17 @@ PROTOBUF_NOINLINE void CalculatedAttributesComp::Clear() {
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
   if ((cached_has_bits & 0x00000007u) != 0) {
-    // uint64 attack_power = 1;
+    // uint32 attack_power = 1;
     if ((cached_has_bits & 0x00000001u) != 0) {
       if (this_._internal_attack_power() != 0) {
-        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_attack_power());
       }
     }
-    // uint64 defense_power = 2;
+    // uint32 defense_power = 2;
     if ((cached_has_bits & 0x00000002u) != 0) {
       if (this_._internal_defense_power() != 0) {
-        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_defense_power());
       }
     }
@@ -974,15 +974,15 @@ DerivedAttributesComp::_table_ = {
     ::_pbi::TcParser::GetTable<::DerivedAttributesComp>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // uint64 max_health = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(DerivedAttributesComp, _impl_.max_health_), 0>(),
+    // uint32 max_health = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(DerivedAttributesComp, _impl_.max_health_), 0>(),
      {8, 0, 0, PROTOBUF_FIELD_OFFSET(DerivedAttributesComp, _impl_.max_health_)}},
   }}, {{
     65535, 65535
   }}, {{
-    // uint64 max_health = 1;
+    // uint32 max_health = 1;
     {PROTOBUF_FIELD_OFFSET(DerivedAttributesComp, _impl_.max_health_), _Internal::kHasBitsOffset + 0, 0,
-    (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
   }},
   // no aux_entries
   {{
@@ -995,7 +995,7 @@ PROTOBUF_NOINLINE void DerivedAttributesComp::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  _impl_.max_health_ = ::uint64_t{0u};
+  _impl_.max_health_ = 0u;
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
@@ -1015,11 +1015,11 @@ PROTOBUF_NOINLINE void DerivedAttributesComp::Clear() {
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
-  // uint64 max_health = 1;
+  // uint32 max_health = 1;
   if ((this_._impl_._has_bits_[0] & 0x00000001u) != 0) {
     if (this_._internal_max_health() != 0) {
       target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
           1, this_._internal_max_health(), target);
     }
   }
@@ -1048,11 +1048,11 @@ PROTOBUF_NOINLINE void DerivedAttributesComp::Clear() {
   (void)cached_has_bits;
 
    {
-    // uint64 max_health = 1;
+    // uint32 max_health = 1;
     cached_has_bits = this_._impl_._has_bits_[0];
     if ((cached_has_bits & 0x00000001u) != 0) {
       if (this_._internal_max_health() != 0) {
-        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_max_health());
       }
     }

@@ -68,8 +68,8 @@ func (x *CombatStateFlagsComp) GetStateFlags() map[uint32]bool {
 // Calculated attributes, computed server-side
 type CalculatedAttributesComp struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	AttackPower   uint64                 `protobuf:"varint,1,opt,name=attack_power,json=attackPower,proto3" json:"attack_power,omitempty"`    // Attack power
-	DefensePower  uint64                 `protobuf:"varint,2,opt,name=defense_power,json=defensePower,proto3" json:"defense_power,omitempty"` // Defense power
+	AttackPower   uint32                 `protobuf:"varint,1,opt,name=attack_power,json=attackPower,proto3" json:"attack_power,omitempty"`    // Attack power
+	DefensePower  uint32                 `protobuf:"varint,2,opt,name=defense_power,json=defensePower,proto3" json:"defense_power,omitempty"` // Defense power
 	IsDead        bool                   `protobuf:"varint,3,opt,name=isDead,proto3" json:"isDead,omitempty"`                                 // Dead/alive state
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -105,14 +105,14 @@ func (*CalculatedAttributesComp) Descriptor() ([]byte, []int) {
 	return file_proto_common_component_actor_attribute_state_comp_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *CalculatedAttributesComp) GetAttackPower() uint64 {
+func (x *CalculatedAttributesComp) GetAttackPower() uint32 {
 	if x != nil {
 		return x.AttackPower
 	}
 	return 0
 }
 
-func (x *CalculatedAttributesComp) GetDefensePower() uint64 {
+func (x *CalculatedAttributesComp) GetDefensePower() uint32 {
 	if x != nil {
 		return x.DefensePower
 	}
@@ -129,7 +129,7 @@ func (x *CalculatedAttributesComp) GetIsDead() bool {
 // Derived attributes, computed server-side
 type DerivedAttributesComp struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	MaxHealth     uint64                 `protobuf:"varint,1,opt,name=max_health,json=maxHealth,proto3" json:"max_health,omitempty"` // Max HP
+	MaxHealth     uint32                 `protobuf:"varint,1,opt,name=max_health,json=maxHealth,proto3" json:"max_health,omitempty"` // Max HP
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -164,7 +164,7 @@ func (*DerivedAttributesComp) Descriptor() ([]byte, []int) {
 	return file_proto_common_component_actor_attribute_state_comp_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *DerivedAttributesComp) GetMaxHealth() uint64 {
+func (x *DerivedAttributesComp) GetMaxHealth() uint32 {
 	if x != nil {
 		return x.MaxHealth
 	}
@@ -183,12 +183,12 @@ const file_proto_common_component_actor_attribute_state_comp_proto_rawDesc = "" 
 	"\x03key\x18\x01 \x01(\rR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\bR\x05value:\x028\x01\"z\n" +
 	"\x18CalculatedAttributesComp\x12!\n" +
-	"\fattack_power\x18\x01 \x01(\x04R\vattackPower\x12#\n" +
-	"\rdefense_power\x18\x02 \x01(\x04R\fdefensePower\x12\x16\n" +
+	"\fattack_power\x18\x01 \x01(\rR\vattackPower\x12#\n" +
+	"\rdefense_power\x18\x02 \x01(\rR\fdefensePower\x12\x16\n" +
 	"\x06isDead\x18\x03 \x01(\bR\x06isDead\"6\n" +
 	"\x15DerivedAttributesComp\x12\x1d\n" +
 	"\n" +
-	"max_health\x18\x01 \x01(\x04R\tmaxHealthB\x18Z\x16proto/common/componentb\x06proto3"
+	"max_health\x18\x01 \x01(\rR\tmaxHealthB\x18Z\x16proto/common/componentb\x06proto3"
 
 var (
 	file_proto_common_component_actor_attribute_state_comp_proto_rawDescOnce sync.Once

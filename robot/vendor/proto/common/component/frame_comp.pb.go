@@ -29,7 +29,7 @@ type FrameTime struct {
 	DeltaTime       float64                `protobuf:"fixed64,2,opt,name=delta_time,json=deltaTime,proto3" json:"delta_time,omitempty"`                   // Frame time (Update + Draw + Wait time)
 	TargetFps       uint32                 `protobuf:"varint,3,opt,name=target_fps,json=targetFps,proto3" json:"target_fps,omitempty"`                    // Our initial target fps
 	TimeAccumulator float64                `protobuf:"fixed64,4,opt,name=time_accumulator,json=timeAccumulator,proto3" json:"time_accumulator,omitempty"` // Accumulative time counter (seconds)
-	CurrentFrame    uint64                 `protobuf:"varint,5,opt,name=current_frame,json=currentFrame,proto3" json:"current_frame,omitempty"`
+	CurrentFrame    uint32                 `protobuf:"varint,5,opt,name=current_frame,json=currentFrame,proto3" json:"current_frame,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -92,7 +92,7 @@ func (x *FrameTime) GetTimeAccumulator() float64 {
 	return 0
 }
 
-func (x *FrameTime) GetCurrentFrame() uint64 {
+func (x *FrameTime) GetCurrentFrame() uint32 {
 	if x != nil {
 		return x.CurrentFrame
 	}
@@ -111,7 +111,7 @@ const file_proto_common_component_frame_comp_proto_rawDesc = "" +
 	"\n" +
 	"target_fps\x18\x03 \x01(\rR\ttargetFps\x12)\n" +
 	"\x10time_accumulator\x18\x04 \x01(\x01R\x0ftimeAccumulator\x12#\n" +
-	"\rcurrent_frame\x18\x05 \x01(\x04R\fcurrentFrameB\x18Z\x16proto/common/componentb\x06proto3"
+	"\rcurrent_frame\x18\x05 \x01(\rR\fcurrentFrameB\x18Z\x16proto/common/componentb\x06proto3"
 
 var (
 	file_proto_common_component_frame_comp_proto_rawDescOnce sync.Once

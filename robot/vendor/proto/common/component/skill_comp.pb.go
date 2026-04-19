@@ -23,7 +23,7 @@ const (
 
 type SkillComp struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	SkillTableId  uint64                 `protobuf:"varint,1,opt,name=skill_table_id,json=skillTableId,proto3" json:"skill_table_id,omitempty"`
+	SkillTableId  uint32                 `protobuf:"varint,1,opt,name=skill_table_id,json=skillTableId,proto3" json:"skill_table_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -58,7 +58,7 @@ func (*SkillComp) Descriptor() ([]byte, []int) {
 	return file_proto_common_component_skill_comp_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *SkillComp) GetSkillTableId() uint64 {
+func (x *SkillComp) GetSkillTableId() uint32 {
 	if x != nil {
 		return x.SkillTableId
 	}
@@ -171,7 +171,7 @@ const file_proto_common_component_skill_comp_proto_rawDesc = "" +
 	"\n" +
 	"'proto/common/component/skill_comp.proto\x1a'proto/common/component/actor_comp.proto\"1\n" +
 	"\tSkillComp\x12$\n" +
-	"\x0eskill_table_id\x18\x01 \x01(\x04R\fskillTableId\"\xf4\x02\n" +
+	"\x0eskill_table_id\x18\x01 \x01(\rR\fskillTableId\"\xf4\x02\n" +
 	"\x10SkillContextComp\x12\x16\n" +
 	"\x06caster\x18\x01 \x01(\x04R\x06caster\x12\x16\n" +
 	"\x06target\x18\x02 \x01(\x04R\x06target\x12\x18\n" +

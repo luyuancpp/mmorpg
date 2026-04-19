@@ -213,8 +213,8 @@ class FrameTime final : public ::google::protobuf::Message
     kPreviousTimeFieldNumber = 1,
     kDeltaTimeFieldNumber = 2,
     kTimeAccumulatorFieldNumber = 4,
-    kCurrentFrameFieldNumber = 5,
     kTargetFpsFieldNumber = 3,
+    kCurrentFrameFieldNumber = 5,
   };
   // uint64 previous_time = 1;
   void clear_previous_time() ;
@@ -246,16 +246,6 @@ class FrameTime final : public ::google::protobuf::Message
   void _internal_set_time_accumulator(double value);
 
   public:
-  // uint64 current_frame = 5;
-  void clear_current_frame() ;
-  ::uint64_t current_frame() const;
-  void set_current_frame(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_current_frame() const;
-  void _internal_set_current_frame(::uint64_t value);
-
-  public:
   // uint32 target_fps = 3;
   void clear_target_fps() ;
   ::uint32_t target_fps() const;
@@ -264,6 +254,16 @@ class FrameTime final : public ::google::protobuf::Message
   private:
   ::uint32_t _internal_target_fps() const;
   void _internal_set_target_fps(::uint32_t value);
+
+  public:
+  // uint32 current_frame = 5;
+  void clear_current_frame() ;
+  ::uint32_t current_frame() const;
+  void set_current_frame(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_current_frame() const;
+  void _internal_set_current_frame(::uint32_t value);
 
   public:
   // @@protoc_insertion_point(class_scope:FrameTime)
@@ -295,8 +295,8 @@ class FrameTime final : public ::google::protobuf::Message
     ::uint64_t previous_time_;
     double delta_time_;
     double time_accumulator_;
-    ::uint64_t current_frame_;
     ::uint32_t target_fps_;
+    ::uint32_t current_frame_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -373,7 +373,7 @@ inline void FrameTime::_internal_set_delta_time(double value) {
 inline void FrameTime::clear_target_fps() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.target_fps_ = 0u;
-  _impl_._has_bits_[0] &= ~0x00000010u;
+  _impl_._has_bits_[0] &= ~0x00000008u;
 }
 inline ::uint32_t FrameTime::target_fps() const {
   // @@protoc_insertion_point(field_get:FrameTime.target_fps)
@@ -381,7 +381,7 @@ inline ::uint32_t FrameTime::target_fps() const {
 }
 inline void FrameTime::set_target_fps(::uint32_t value) {
   _internal_set_target_fps(value);
-  _impl_._has_bits_[0] |= 0x00000010u;
+  _impl_._has_bits_[0] |= 0x00000008u;
   // @@protoc_insertion_point(field_set:FrameTime.target_fps)
 }
 inline ::uint32_t FrameTime::_internal_target_fps() const {
@@ -417,26 +417,26 @@ inline void FrameTime::_internal_set_time_accumulator(double value) {
   _impl_.time_accumulator_ = value;
 }
 
-// uint64 current_frame = 5;
+// uint32 current_frame = 5;
 inline void FrameTime::clear_current_frame() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.current_frame_ = ::uint64_t{0u};
-  _impl_._has_bits_[0] &= ~0x00000008u;
+  _impl_.current_frame_ = 0u;
+  _impl_._has_bits_[0] &= ~0x00000010u;
 }
-inline ::uint64_t FrameTime::current_frame() const {
+inline ::uint32_t FrameTime::current_frame() const {
   // @@protoc_insertion_point(field_get:FrameTime.current_frame)
   return _internal_current_frame();
 }
-inline void FrameTime::set_current_frame(::uint64_t value) {
+inline void FrameTime::set_current_frame(::uint32_t value) {
   _internal_set_current_frame(value);
-  _impl_._has_bits_[0] |= 0x00000008u;
+  _impl_._has_bits_[0] |= 0x00000010u;
   // @@protoc_insertion_point(field_set:FrameTime.current_frame)
 }
-inline ::uint64_t FrameTime::_internal_current_frame() const {
+inline ::uint32_t FrameTime::_internal_current_frame() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.current_frame_;
 }
-inline void FrameTime::_internal_set_current_frame(::uint64_t value) {
+inline void FrameTime::_internal_set_current_frame(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.current_frame_ = value;
 }

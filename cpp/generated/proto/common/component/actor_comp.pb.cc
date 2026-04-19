@@ -448,7 +448,7 @@ const char descriptor_table_protodef_proto_2fcommon_2fcomponent_2factor_5fcomp_2
     "ion\022\025\n\005scale\030\003 \001(\0132\006.Scale\"+\n\010Velocity\022\t"
     "\n\001x\030\001 \001(\001\022\t\n\001y\030\002 \001(\001\022\t\n\001z\030\003 \001(\001\"/\n\014Accel"
     "eration\022\t\n\001x\030\001 \001(\001\022\t\n\001y\030\002 \001(\001\022\t\n\001z\030\003 \001(\001"
-    "\"\034\n\nViewRadius\022\016\n\006radius\030\001 \001(\001\"\214\001\n\022BaseA"
+    "\"\034\n\nViewRadius\022\016\n\006radius\030\001 \001(\002\"\214\001\n\022BaseA"
     "ttributesComp\022\020\n\010strength\030\001 \001(\004\022\017\n\007stami"
     "na\030\002 \001(\004\022\016\n\006health\030\003 \001(\004\022\014\n\004mana\030\004 \001(\004\022\022"
     "\n\ncritchance\030\005 \001(\004\022\r\n\005armor\030\006 \001(\004\022\022\n\nres"
@@ -2466,15 +2466,15 @@ ViewRadius::_table_ = {
     ::_pbi::TcParser::GetTable<::ViewRadius>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // double radius = 1;
-    {::_pbi::TcParser::FastF64S1,
-     {9, 0, 0, PROTOBUF_FIELD_OFFSET(ViewRadius, _impl_.radius_)}},
+    // float radius = 1;
+    {::_pbi::TcParser::FastF32S1,
+     {13, 0, 0, PROTOBUF_FIELD_OFFSET(ViewRadius, _impl_.radius_)}},
   }}, {{
     65535, 65535
   }}, {{
-    // double radius = 1;
+    // float radius = 1;
     {PROTOBUF_FIELD_OFFSET(ViewRadius, _impl_.radius_), _Internal::kHasBitsOffset + 0, 0,
-    (0 | ::_fl::kFcOptional | ::_fl::kDouble)},
+    (0 | ::_fl::kFcOptional | ::_fl::kFloat)},
   }},
   // no aux_entries
   {{
@@ -2507,11 +2507,11 @@ PROTOBUF_NOINLINE void ViewRadius::Clear() {
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
-  // double radius = 1;
+  // float radius = 1;
   if ((this_._impl_._has_bits_[0] & 0x00000001u) != 0) {
-    if (::absl::bit_cast<::uint64_t>(this_._internal_radius()) != 0) {
+    if (::absl::bit_cast<::uint32_t>(this_._internal_radius()) != 0) {
       target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteDoubleToArray(
+      target = ::_pbi::WireFormatLite::WriteFloatToArray(
           1, this_._internal_radius(), target);
     }
   }
@@ -2540,11 +2540,11 @@ PROTOBUF_NOINLINE void ViewRadius::Clear() {
   (void)cached_has_bits;
 
    {
-    // double radius = 1;
+    // float radius = 1;
     cached_has_bits = this_._impl_._has_bits_[0];
     if ((cached_has_bits & 0x00000001u) != 0) {
-      if (::absl::bit_cast<::uint64_t>(this_._internal_radius()) != 0) {
-        total_size += 9;
+      if (::absl::bit_cast<::uint32_t>(this_._internal_radius()) != 0) {
+        total_size += 5;
       }
     }
   }
@@ -2562,7 +2562,7 @@ void ViewRadius::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::goog
 
   cached_has_bits = from._impl_._has_bits_[0];
   if ((cached_has_bits & 0x00000001u) != 0) {
-    if (::absl::bit_cast<::uint64_t>(from._internal_radius()) != 0) {
+    if (::absl::bit_cast<::uint32_t>(from._internal_radius()) != 0) {
       _this->_impl_.radius_ = from._impl_.radius_;
     }
   }

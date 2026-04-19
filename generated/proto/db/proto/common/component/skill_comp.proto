@@ -7,7 +7,7 @@ import "proto/common/component/actor_comp.proto";
 
 message SkillComp
 {
-  uint64 skill_table_id = 1;
+  uint32 skill_table_id = 1;
 }
 
 message SkillContextComp {

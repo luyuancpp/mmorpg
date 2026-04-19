@@ -257,14 +257,14 @@ class ViewRadius final : public ::google::protobuf::Message
   enum : int {
     kRadiusFieldNumber = 1,
   };
-  // double radius = 1;
+  // float radius = 1;
   void clear_radius() ;
-  double radius() const;
-  void set_radius(double value);
+  float radius() const;
+  void set_radius(float value);
 
   private:
-  double _internal_radius() const;
-  void _internal_set_radius(double value);
+  float _internal_radius() const;
+  void _internal_set_radius(float value);
 
   public:
   // @@protoc_insertion_point(class_scope:ViewRadius)
@@ -293,7 +293,7 @@ class ViewRadius final : public ::google::protobuf::Message
         const ViewRadius& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
-    double radius_;
+    float radius_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -2987,26 +2987,26 @@ inline void Acceleration::_internal_set_z(double value) {
 
 // ViewRadius
 
-// double radius = 1;
+// float radius = 1;
 inline void ViewRadius::clear_radius() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.radius_ = 0;
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
-inline double ViewRadius::radius() const {
+inline float ViewRadius::radius() const {
   // @@protoc_insertion_point(field_get:ViewRadius.radius)
   return _internal_radius();
 }
-inline void ViewRadius::set_radius(double value) {
+inline void ViewRadius::set_radius(float value) {
   _internal_set_radius(value);
   _impl_._has_bits_[0] |= 0x00000001u;
   // @@protoc_insertion_point(field_set:ViewRadius.radius)
 }
-inline double ViewRadius::_internal_radius() const {
+inline float ViewRadius::_internal_radius() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.radius_;
 }
-inline void ViewRadius::_internal_set_radius(double value) {
+inline void ViewRadius::_internal_set_radius(float value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.radius_ = value;
 }

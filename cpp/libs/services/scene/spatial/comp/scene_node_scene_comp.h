@@ -38,7 +38,7 @@ struct AoiListComp
 // ---------------------------------------------------------------------------
 struct AoiClientCapacityComp
 {
-    std::size_t clientDesiredCount = kAoiListCapacityDefault;
+    uint32_t clientDesiredCount = kAoiListCapacityDefault;
 };
 
 // ---------------------------------------------------------------------------
@@ -48,11 +48,11 @@ struct AoiClientCapacityComp
 // ---------------------------------------------------------------------------
 struct ScenePressureComp
 {
-    double pressureFactor = 0.0;
+    float pressureFactor = 0.0f;
 
     [[nodiscard]] std::size_t GetServerCapacity() const
     {
-        const auto range = static_cast<double>(kAoiListCapacityMax - kAoiListCapacityMin);
+        const auto range = static_cast<float>(kAoiListCapacityMax - kAoiListCapacityMin);
         const auto cap = static_cast<std::size_t>(kAoiListCapacityMax - pressureFactor * range);
         return std::clamp(cap, kAoiListCapacityMin, kAoiListCapacityMax);
     }
