@@ -1,5 +1,7 @@
 #include "game_channel.h"
 #include <boost/get_pointer.hpp>
+#include <cstdio>
+#include <ctime>
 #include <google/protobuf/descriptor.h>
 #include "muduo/base/Logging.h"
 #include "muduo/net/TcpConnection.h"
@@ -21,46 +23,62 @@ void HandleUnknownProtobufMessage(const TcpConnectionPtr &, const MessagePtr &me
     LOG_ERROR << "Unknown Protobuf message received: " << message->GetTypeName().data();
 }
 
+// Temporary debug switch: set to true at runtime to dump all oversized RPC bodies to file.
+// Usage: set gDumpOversizedRpc = true in debugger, or call EnableOversizedRpcDump(true).
+bool gDumpOversizedRpc = false;
+
+void EnableOversizedRpcDump(bool enable) { gDumpOversizedRpc = enable; }
+
 size_t LogIfMessageTooLarge(const GameRpcMessage &rpcMessage)
 {
     const size_t messageSize = rpcMessage.ByteSizeLong();
-    if (messageSize > kMaxMessageByteSize)
+    if (messageSize <= kMaxMessageByteSize)
+        return messageSize;
+
+    const auto msgId = rpcMessage.message_id();
+    const char *methodName = "(unknown)";
+    std::string decodedBody;
+
+    if (msgId < gRpcMethodRegistry.size())
     {
-        const auto msgId = rpcMessage.message_id();
-        const char *methodName = "(unknown)";
-        std::string decodedBody;
+        const auto &meta = gRpcMethodRegistry[msgId];
+        if (meta.methodName)
+            methodName = meta.methodName;
 
-        if (msgId < gRpcMethodRegistry.size())
+        const bool isRequest = !rpcMessage.request().empty();
+        const auto &body = isRequest ? rpcMessage.request() : rpcMessage.response();
+        const auto *proto = isRequest ? meta.requestProto.get() : meta.responseProto.get();
+
+        if (proto && !body.empty())
         {
-            const auto &meta = gRpcMethodRegistry[msgId];
-            if (meta.methodName)
-                methodName = meta.methodName;
-
-            const bool isRequest = !rpcMessage.request().empty();
-            const auto &body = isRequest ? rpcMessage.request() : rpcMessage.response();
-            const auto *proto = isRequest ? meta.requestProto.get() : meta.responseProto.get();
-
-            if (proto && !body.empty())
-            {
-                std::unique_ptr<::google::protobuf::Message> decoded(proto->New());
-                if (decoded->ParsePartialFromArray(body.data(), static_cast<int32_t>(body.size())))
-                    decodedBody = decoded->ShortDebugString();
-            }
+            std::unique_ptr<::google::protobuf::Message> decoded(proto->New());
+            if (decoded->ParsePartialFromArray(body.data(), static_cast<int32_t>(body.size())))
+                decodedBody = decoded->ShortDebugString();
         }
-
-        constexpr size_t kMaxLogBodyLen = 2048;
-        if (decodedBody.size() > kMaxLogBodyLen)
-        {
-            decodedBody.resize(kMaxLogBodyLen);
-            decodedBody += "...(truncated)";
-        }
-
-        LOG_ERROR << "RPC message size exceeds 2KB"
-                  << ", method: " << methodName
-                  << ", message ID: " << msgId
-                  << ", size: " << messageSize
-                  << ", body: " << (decodedBody.empty() ? "(decode failed)" : decodedBody);
     }
+
+    if (gDumpOversizedRpc && !decodedBody.empty())
+    {
+        FILE *f = fopen("logs/oversized_rpc.log", "a");
+        if (f)
+        {
+            std::time_t now = std::time(nullptr);
+            char timeBuf[32];
+            std::strftime(timeBuf, sizeof(timeBuf), "%Y-%m-%d %H:%M:%S", std::localtime(&now));
+            fprintf(f, "[%s] method: %s, msg_id: %u, size: %zu, body(%zu): ",
+                    timeBuf, methodName, msgId, messageSize, decodedBody.size());
+            fwrite(decodedBody.data(), 1, decodedBody.size(), f);
+            fputc('\n', f);
+            fclose(f);
+        }
+    }
+
+    // muduo log: short summary only (safe within 4000-byte buffer)
+    LOG_ERROR << "RPC message size exceeds 2KB"
+              << ", method: " << methodName
+              << ", message ID: " << msgId
+              << ", size: " << messageSize;
+
     return messageSize;
 }
 
