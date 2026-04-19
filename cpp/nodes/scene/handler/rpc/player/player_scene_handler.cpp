@@ -23,7 +23,7 @@ void SceneSceneClientPlayerHandler::EnterScene(entt::entity player,const ::Enter
 {
 ///<<< BEGIN WRITING YOUR CODE
 	LOG_TRACE << "EnterSceneC2S request received for player: " << tlsEcs.actorRegistry.get_or_emplace<Guid>(player)
-		<< ", scene_info: " << request->scene_info().DebugString();
+		<< ", scene_info: " << request->scene_info().ShortDebugString();
 
 	auto game_node_type = gNode->GetNodeInfo().scene_node_type();
 	if (game_node_type == eSceneNodeType::kSceneNode ||
@@ -37,7 +37,7 @@ void SceneSceneClientPlayerHandler::EnterScene(entt::entity player,const ::Enter
 	const auto& scene_info = request->scene_info();
 	if (scene_info.scene_config_id() <= 0 && scene_info.scene_id() <= 0)
 	{
-		LOG_ERROR << "EnterSceneC2S request rejected due to invalid scene_info: " << scene_info.DebugString();
+		LOG_ERROR << "EnterSceneC2S request rejected due to invalid scene_info: " << scene_info.ShortDebugString();
 		response->mutable_error_message()->set_id(kEnterSceneParamError);
 		return;
 	}
