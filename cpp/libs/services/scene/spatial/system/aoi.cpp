@@ -14,7 +14,7 @@
 #include "proto/common/event/scene_event.pb.h"
 #include "rpc/service_metadata/player_scene_service_metadata.h"
 #include "core/utils/stat/stat.h"
-#include "type_alias/actor.h"
+#include "proto/scene/player_scene.pb.h"
 #include "network/player_message_utils.h"
 #include <thread_context/registry_manager.h>
 #include <modules/scene/comp/scene_comp.h>
@@ -157,20 +157,22 @@ void AoiSystem::NotifyEntityVisibilityChanges(entt::entity entity,
                                               const EntityUnorderedSet& leavingEntities) {
     // Notify entities entering view
     if (!enteringEntities.empty()) {
-        GetActorListCreateMessage().Clear();
+        auto &createMsg = tlsEcs.globalRegistry.get_or_emplace<ActorListCreateS2C>(tlsEcs.GlobalEntity());
+        createMsg.Clear();
         for (auto& otherEntity : enteringEntities) {
-            ViewSystem::FillActorCreateMessageInfo(entity, otherEntity, *GetActorListCreateMessage().add_actor_list());
+            ViewSystem::FillActorCreateMessageInfo(entity, otherEntity, *createMsg.add_actor_list());
         }
-        SendMessageToClientViaGate(SceneSceneClientPlayerNotifyActorListCreateMessageId, GetActorListCreateMessage(), entity);
+        SendMessageToClientViaGate(SceneSceneClientPlayerNotifyActorListCreateMessageId, createMsg, entity);
     }
 
     // Notify entities leaving view
     if (!leavingEntities.empty()) {
-        GetActorListDestroyMessage().Clear();
+        auto &destroyMsg = tlsEcs.globalRegistry.get_or_emplace<ActorListDestroyS2C>(tlsEcs.GlobalEntity());
+        destroyMsg.Clear();
         for (auto& otherEntity : leavingEntities) {
-            GetActorListDestroyMessage().add_entity(entt::to_integral(otherEntity));
+            destroyMsg.add_entity(entt::to_integral(otherEntity));
         }
-        SendMessageToClientViaGate(SceneSceneClientPlayerNotifyActorListDestroyMessageId, GetActorListDestroyMessage(), entity);
+        SendMessageToClientViaGate(SceneSceneClientPlayerNotifyActorListDestroyMessageId, destroyMsg, entity);
     }
 }
 
@@ -218,8 +220,9 @@ void AoiSystem::RemoveEntityFromGrid(const Hex& hex, SceneGridListComp& gridList
 void AoiSystem::BroadcastEntityLeave(const SceneGridListComp& gridList, entt::entity entity, const GridSet& gridsToLeave) {
     if (gridsToLeave.empty()) return;
 
-    GetActorDestroyMessage().Clear();
-    GetActorDestroyMessage().set_entity(entt::to_integral(entity));
+    auto &destroyMsg = tlsEcs.globalRegistry.get_or_emplace<ActorDestroyS2C>(tlsEcs.GlobalEntity());
+    destroyMsg.Clear();
+    destroyMsg.set_entity(entt::to_integral(entity));
 
     EntityUnorderedSet observersToNotify;
     for (const auto& gridId : gridsToLeave) {
@@ -232,6 +235,6 @@ void AoiSystem::BroadcastEntityLeave(const SceneGridListComp& gridList, entt::en
         }
     }
 
-    BroadcastMessageToPlayers(SceneSceneClientPlayerNotifyActorDestroyMessageId, GetActorDestroyMessage(), observersToNotify);
+    BroadcastMessageToPlayers(SceneSceneClientPlayerNotifyActorDestroyMessageId, destroyMsg, observersToNotify);
 }
 

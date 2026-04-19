@@ -23,7 +23,7 @@
 #include "proto/common/event/scene_event.pb.h"
 #include "modules/scene/comp/scene_comp.h"
 
-#include "type_alias/actor.h"
+#include "engine/core/type_define/type_define.h"
 #include "engine/core/utils/random/random.h"
 #include "thread_context/redis_manager.h"
 #include <thread_context/registry_manager.h>

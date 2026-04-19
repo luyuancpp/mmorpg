@@ -10,6 +10,12 @@ Redis:
   Type: node
   Key: scenemanagerservice
 
+# Zone ID for C++ convention etcd registration (Scene nodes discover SceneManager by this).
+ZoneId: 1
+
+# Etcd lease TTL (seconds) for node registration keepalive.
+LeaseTTL: 60
+
 Kafka:
   Brokers:
     - 127.0.0.1:9092

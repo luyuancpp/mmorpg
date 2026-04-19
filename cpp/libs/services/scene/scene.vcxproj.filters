@@ -57,8 +57,6 @@
     <ClInclude Include="spatial\system\recast.h" />
     <ClInclude Include="spatial\system\scene_crowd.h" />
     <ClInclude Include="spatial\system\view.h" />
-    <ClInclude Include="type_alias\actor.h" />
-    <ClInclude Include="type_alias\player_redis.h" />
     <ClInclude Include="world\world.h" />
     <ClInclude Include="player\comp\afk_comp.h" />
     <ClInclude Include="player\system\afk.h" />

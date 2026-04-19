@@ -3,178 +3,88 @@
 #include "proto/scene/player_state_attribute_sync.pb.h"
 #include "actorbaseattributess2c_attribute_sync.h"
 
-// Engine core dependency
 #include "thread_context/ecs_context.h"
-// Scene-related dependency
-#include "spatial/comp/scene_node_scene_comp.h"
-// Network dependency
 #include "network/player_message_utils.h"
 
 // ============================================================================
 // Core template function: attribute sync for different player list types
-// Template param: PlayerContainer - player list container type (vector/unordered_set etc.)
-// Purpose: Generic attribute sync logic, adapts to any iterable player container
 // ============================================================================
 template <typename PlayerContainer>
 void ActorBaseAttributesS2CSyncAttributesCore(entt::entity entity, uint32_t message_id, const PlayerContainer& targetPlayers)
 {
-    // 1. Pre-check: return early if entity is null or player list is empty
     if (entity == entt::null || targetPlayers.empty()) {
         return;
     }
 
-    // Get thread-local actor registry (core data container)
     auto& actorRegistry = tlsEcs.actorRegistry;
 
-    // 2. Get dirty mask component
-    auto& dirtyMaskComp = actorRegistry.get_or_emplace<ActorBaseAttributesS2CDirtyMaskComp>(entity);
+    auto* dirtyMaskComp = actorRegistry.try_get<ActorBaseAttributesS2CDirtyMaskComp>(entity);
+    if (dirtyMaskComp == nullptr || dirtyMaskComp->dirtyMask.none()) {
+        return;
+    }
 
-    // 3. Initialize proto message object
     ActorBaseAttributesS2C syncMsg;
-    const auto* msgDescriptor = syncMsg.GetDescriptor();
-    // Defensive check: return if message descriptor is invalid (avoid null pointer)
-    if (msgDescriptor == nullptr) {
-        return;
-    }
+    bool hasDirtyField = false;
 
-    // 4. Iterate all fields, sync only dirty ones
-    for (int fieldIdx = 0; fieldIdx < msgDescriptor->field_count(); ++fieldIdx)
+    if (dirtyMaskComp->dirtyMask.test(ActorBaseAttributesS2C::kEntityIdFieldNumber))
     {
-        // Get current field descriptor, skip invalid fields
-        const auto* fieldDesc = msgDescriptor->field(fieldIdx);
-        if (fieldDesc == nullptr) {
-            continue;
+        auto* fieldValue = actorRegistry.try_get<uint64_t>(entity);
+        if (fieldValue != nullptr) {
+            syncMsg.set_entity_id(*fieldValue);
+            hasDirtyField = true;
         }
-
-        // Get field number (corresponds to dirty mask bit index)
-        const int fieldNumber = fieldDesc->number();
-
-        // Skip fields not marked dirty (no sync needed)
-        if (!dirtyMaskComp.dirtyMask.test(fieldNumber)) {
-            continue;
-        }
-
-        // 5. Match and sync attributes by field number
-        switch (fieldNumber)
-        {
-        case ActorBaseAttributesS2C::kEntityIdFieldNumber:
-        {
-            // Sync entity_id attribute (field number: 1)
-            // Special case: primitive numeric field (uint64_t), assign directly
-            auto& fieldValue = actorRegistry.get_or_emplace<uint64_t>(entity);
-            syncMsg.set_entity_id(fieldValue);
-            dirtyMaskComp.dirtyMask.reset(fieldNumber);
-            break;
-        }
-        case ActorBaseAttributesS2C::kTransformFieldNumber:
-        {
-            // Sync transform attribute (field number: 2)
-            // General case: message-type field, sync via CopyFrom
-            auto& fieldComponent = actorRegistry.get_or_emplace<Transform>(entity);
-            if (syncMsg.mutable_transform() != nullptr) {
-                syncMsg.mutable_transform()->CopyFrom(fieldComponent);
-                // Clear dirty flag after sync
-                dirtyMaskComp.dirtyMask.reset(fieldNumber);
-            }
-            break;
-        }
-        case ActorBaseAttributesS2C::kVelocityFieldNumber:
-        {
-            // Sync velocity attribute (field number: 3)
-            // General case: message-type field, sync via CopyFrom
-            auto& fieldComponent = actorRegistry.get_or_emplace<Velocity>(entity);
-            if (syncMsg.mutable_velocity() != nullptr) {
-                syncMsg.mutable_velocity()->CopyFrom(fieldComponent);
-                // Clear dirty flag after sync
-                dirtyMaskComp.dirtyMask.reset(fieldNumber);
-            }
-            break;
-        }
-        case ActorBaseAttributesS2C::kCombatStateFlagsFieldNumber:
-        {
-            // Sync combat_state_flags attribute (field number: 4)
-            // General case: message-type field, sync via CopyFrom
-            auto& fieldComponent = actorRegistry.get_or_emplace<CombatStateFlagsComp>(entity);
-            if (syncMsg.mutable_combat_state_flags() != nullptr) {
-                syncMsg.mutable_combat_state_flags()->CopyFrom(fieldComponent);
-                // Clear dirty flag after sync
-                dirtyMaskComp.dirtyMask.reset(fieldNumber);
-            }
-            break;
-        }
-        default:
-            // Unknown field number, skip
-            break;
-        }
+        dirtyMaskComp->dirtyMask.reset(ActorBaseAttributesS2C::kEntityIdFieldNumber);
     }
 
-    // Pre-check: no valid content in message, skip broadcast
-    if (syncMsg.ByteSizeLong() == 0) {
+    if (dirtyMaskComp->dirtyMask.test(ActorBaseAttributesS2C::kTransformFieldNumber))
+    {
+        auto* fieldComponent = actorRegistry.try_get<Transform>(entity);
+        if (fieldComponent != nullptr) {
+            syncMsg.mutable_transform()->CopyFrom(*fieldComponent);
+            hasDirtyField = true;
+        }
+        dirtyMaskComp->dirtyMask.reset(ActorBaseAttributesS2C::kTransformFieldNumber);
+    }
+
+    if (dirtyMaskComp->dirtyMask.test(ActorBaseAttributesS2C::kVelocityFieldNumber))
+    {
+        auto* fieldComponent = actorRegistry.try_get<Velocity>(entity);
+        if (fieldComponent != nullptr) {
+            syncMsg.mutable_velocity()->CopyFrom(*fieldComponent);
+            hasDirtyField = true;
+        }
+        dirtyMaskComp->dirtyMask.reset(ActorBaseAttributesS2C::kVelocityFieldNumber);
+    }
+
+    if (dirtyMaskComp->dirtyMask.test(ActorBaseAttributesS2C::kCombatStateFlagsFieldNumber))
+    {
+        auto* fieldComponent = actorRegistry.try_get<CombatStateFlagsComp>(entity);
+        if (fieldComponent != nullptr) {
+            syncMsg.mutable_combat_state_flags()->CopyFrom(*fieldComponent);
+            hasDirtyField = true;
+        }
+        dirtyMaskComp->dirtyMask.reset(ActorBaseAttributesS2C::kCombatStateFlagsFieldNumber);
+    }
+
+    if (!hasDirtyField) {
         return;
     }
 
-    // 6. Broadcast message to specified player list (template adapts to any iterable container)
-    BroadcastMessageToPlayers(
-        message_id,
-        syncMsg,
-        targetPlayers
-    );
-
-    // Explicit message cleanup (RAII handles this automatically; here for clarity)
-    syncMsg.Clear();
+    BroadcastMessageToPlayers(message_id, syncMsg, targetPlayers);
 }
 
-// ============================================================================
-// ActorBaseAttributesS2C Attribute Sync (overload: EntityUnorderedSet)
-// Purpose: Sync entity attributes for ActorBaseAttributesS2C to an unordered player set
-// Params:
-//   entity: entt entity ID identifying the target entity to sync
-//   message_id: broadcast message ID for client-side message type identification
-//   targetPlayers: unordered set of player entities to sync to
-// Returns: void
-// ============================================================================
 void ActorBaseAttributesS2CSyncAttributes(entt::entity entity, uint32_t message_id, const EntityUnorderedSet& targetPlayers)
 {
-    // Delegate to core template function with unordered set
     ActorBaseAttributesS2CSyncAttributesCore(entity, message_id, targetPlayers);
 }
 
-// ============================================================================
-// ActorBaseAttributesS2C Attribute Sync (overload: EntityVector)
-// Purpose: Sync entity attributes for ActorBaseAttributesS2C to an ordered player list
-// Params:
-//   entity: entt entity ID identifying the target entity to sync
-//   message_id: broadcast message ID for client-side message type identification
-//   targetPlayers: ordered list of player entities to sync to
-// Returns: void
-// ============================================================================
 void ActorBaseAttributesS2CSyncAttributes(entt::entity entity, uint32_t message_id, const EntityVector& targetPlayers)
 {
-    // Delegate to core template function with ordered list
     ActorBaseAttributesS2CSyncAttributesCore(entity, message_id, targetPlayers);
 }
 
-// ============================================================================
-// SetActorBaseAttributesS2CAttrDirtyBit
-// Purpose: Set dirty bit for a ActorBaseAttributesS2C attribute (auto-resizes bitset)
-// Params:
-//   entity: entt entity ID identifying the target entity
-//   bitIdx: dirty bit index, corresponds to proto message field number
-// Returns: void
-// ============================================================================
 void SetActorBaseAttributesS2CAttrDirtyBit(entt::entity entity, std::size_t bitIdx)
 {
-    // Get thread-local actor registry
-    auto& actorRegistry = tlsEcs.actorRegistry;
-
-    // Get or create dirty mask component
-    auto& dirtyMaskComp = actorRegistry.get_or_emplace<ActorBaseAttributesS2CDirtyMaskComp>(entity);
-
-    // Auto-resize bitset: ensure dirty bit index is valid
-    if (dirtyMaskComp.dirtyMask.size() <= bitIdx) {
-        dirtyMaskComp.dirtyMask.resize(bitIdx + 1);
-    }
-
-    // Mark this bit as dirty (needs sync)
+    auto& dirtyMaskComp = tlsEcs.actorRegistry.get_or_emplace<ActorBaseAttributesS2CDirtyMaskComp>(entity);
     dirtyMaskComp.dirtyMask.set(bitIdx);
 }

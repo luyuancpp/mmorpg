@@ -48,6 +48,7 @@ func registerCallbacks(log *zap.Logger) {
 				ProtoHeaderFile string           // Header file corresponding to the proto file
 				ProtoFileName   string           // Original proto file name
 				Fields          []AttributeField // All fields in the message
+				BitsetSize      int32            // std::bitset size = max field number + 1
 			}
 
 			msgDesc, ok := desc.(*descriptorpb.DescriptorProto)
@@ -108,6 +109,18 @@ func registerCallbacks(log *zap.Logger) {
 					Number:         field.GetNumber(),
 					FieldType:      fieldType, // Now resolves short names like CombatStateFlagsPbComponent
 				})
+			}
+
+			// Compute std::bitset size = max field number + 1
+			var maxFieldNumber int32
+			for _, f := range asm.Fields {
+				if f.Number > maxFieldNumber {
+					maxFieldNumber = f.Number
+				}
+			}
+			asm.BitsetSize = maxFieldNumber + 1
+			if asm.BitsetSize < 1 {
+				asm.BitsetSize = 1
 			}
 
 			logger.Global.Info("Generating attribute sync code",

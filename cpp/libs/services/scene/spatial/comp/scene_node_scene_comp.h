@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <unordered_map>
 
-#include "type_alias/actor.h"
+#include "engine/core/type_define/type_define.h"
 #include "spatial/constants/aoi_priority.h"
 
 struct AoiEntry

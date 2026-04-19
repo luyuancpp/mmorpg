@@ -4,10 +4,13 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"strings"
 
+	base "proto/common/base"
 	"proto/scene_manager"
 	"scene_manager/internal/config"
 	"scene_manager/internal/logic"
+	"scene_manager/internal/noderegistry"
 	"scene_manager/internal/server"
 	"scene_manager/internal/svc"
 	"shared/generated/table"
@@ -48,6 +51,21 @@ func main() {
 	s.AddUnaryInterceptors(grpcstats.New(grpcstats.Options{}).UnaryServerInterceptor())
 	defer s.Stop()
 
+	// Register with etcd in C++ NodeInfo convention so Scene nodes can discover us.
+	host, port := parseListenOn(c.ListenOn)
+	nr, err := noderegistry.Register(
+		svcCtx.Etcd,
+		uint32(base.ENodeType_SceneManagerNodeService),
+		c.ZoneId,
+		host, port,
+		c.LeaseTTL,
+	)
+	if err != nil {
+		panic("failed to register SceneManager node in etcd: " + err.Error())
+	}
+	nr.KeepAlive()
+	defer nr.Close()
+
 	fmt.Println("\n=============================================================")
 	fmt.Println("  SCENE_MANAGER SERVICE STARTED SUCCESSFULLY")
 	fmt.Println("=============================================================")
@@ -58,7 +76,20 @@ func main() {
 	if len(c.Etcd.Hosts) > 0 {
 		fmt.Printf("  etcd:        %v\n", c.Etcd.Hosts)
 	}
+	fmt.Printf("  node_id:     %d (etcd CAS)\n", nr.Info.NodeId)
+	fmt.Printf("  node_uuid:   %s\n", nr.Info.NodeUuid)
 	fmt.Printf("  kafka:       %v\n", c.Kafka.Brokers)
 	fmt.Println("=============================================================")
 	s.Start()
+}
+
+// parseListenOn splits "host:port" into its components.
+func parseListenOn(listenOn string) (string, uint32) {
+	parts := strings.SplitN(listenOn, ":", 2)
+	host := parts[0]
+	port := uint32(0)
+	if len(parts) == 2 {
+		fmt.Sscanf(parts[1], "%d", &port)
+	}
+	return host, port
 }
