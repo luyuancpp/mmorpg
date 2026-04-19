@@ -15,7 +15,7 @@ proto/
 ├── db/              # DB service contracts
 ├── player_locator/  # Player-location contracts
 ├── gate/            # Gate-side contracts
-└── *.txt            # service_id / event_id registries
+└── *.txt            # message_id / event_id registries
 ```
 
 ## WHERE TO LOOK
