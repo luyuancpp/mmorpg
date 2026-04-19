@@ -10,7 +10,7 @@
 
 void SendMessageToClientViaGate(uint32_t messageId, const google::protobuf::Message& message, Guid playerId);
 void SendMessageToClientViaGate(uint32_t messageId, const google::protobuf::Message& message, entt::entity playerEntity);
-void SendMessageToClientViaGate(uint32_t messageId, const google::protobuf::Message& message, RpcSession& gateSession, uint64_t sessionId);
+void SendMessageToClientViaGate(uint32_t messageId, const google::protobuf::Message& message, RpcSession& gateSession, SessionId sessionId);
 
 void SendMessageToGateById(uint32_t messageId, const google::protobuf::Message& message, NodeId gateNodeId);
 

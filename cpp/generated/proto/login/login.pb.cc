@@ -92,9 +92,9 @@ inline constexpr LoginSessionInfo::Impl_::Impl_(
             &::google::protobuf::internal::fixed_address_empty_string,
             ::_pbi::ConstantInitialized()),
         role_id_{::uint64_t{0u}},
-        session_id_{::uint64_t{0u}},
         gate_id_{::uint64_t{0u}},
-        login_time_{::int64_t{0}} {}
+        login_time_{::int64_t{0}},
+        session_id_{0u} {}
 
 template <typename>
 PROTOBUF_CONSTEXPR LoginSessionInfo::LoginSessionInfo(::_pbi::ConstantInitialized)
@@ -155,7 +155,7 @@ PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
 inline constexpr LoginNodeDisconnectRequest::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
-        session_id_{::uint64_t{0u}} {}
+        session_id_{0u} {}
 
 template <typename>
 PROTOBUF_CONSTEXPR LoginNodeDisconnectRequest::LoginNodeDisconnectRequest(::_pbi::ConstantInitialized)
@@ -473,10 +473,10 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::loginpb::LoginSessionInfo, _impl_.fsm_),
         0,
         3,
-        4,
-        5,
-        1,
         6,
+        4,
+        1,
+        5,
         2,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::loginpb::AccountSimplePlayerWrapper, _impl_._has_bits_),
@@ -618,7 +618,7 @@ const char descriptor_table_protodef_proto_2flogin_2flogin_2eproto[] ABSL_ATTRIB
     "se/tip.proto\032%proto/common/base/user_acc"
     "ounts.proto\032\036proto/common/base/common.pr"
     "oto\"\215\001\n\020LoginSessionInfo\022\017\n\007account\030\001 \001("
-    "\t\022\017\n\007role_id\030\002 \001(\004\022\022\n\nsession_id\030\003 \001(\004\022\017"
+    "\t\022\017\n\007role_id\030\002 \001(\004\022\022\n\nsession_id\030\003 \001(\r\022\017"
     "\n\007gate_id\030\004 \001(\004\022\021\n\tdevice_id\030\005 \001(\t\022\022\n\nlo"
     "gin_time\030\006 \001(\003\022\013\n\003fsm\030\007 \001(\t\"B\n\032AccountSi"
     "mplePlayerWrapper\022$\n\006player\030\001 \001(\0132\024.Acco"
@@ -639,7 +639,7 @@ const char descriptor_table_protodef_proto_2flogin_2flogin_2eproto[] ABSL_ATTRIB
     " \001(\t\"N\n\021EnterGameResponse\022&\n\rerror_messa"
     "ge\030\001 \001(\0132\017.TipInfoMessage\022\021\n\tplayer_id\030\002"
     " \001(\004\"\022\n\020LeaveGameRequest\"0\n\032LoginNodeDis"
-    "connectRequest\022\022\n\nsession_id\030\001 \001(\004\"\024\n\022Lo"
+    "connectRequest\022\022\n\nsession_id\030\001 \001(\r\"\024\n\022Lo"
     "ginEmptyResponse\"$\n\021AssignGateRequest\022\017\n"
     "\007zone_id\030\001 \001(\r\"\205\001\n\022AssignGateResponse\022\n\n"
     "\002ip\030\001 \001(\t\022\014\n\004port\030\002 \001(\r\022\025\n\rtoken_payload"
@@ -737,9 +737,9 @@ LoginSessionInfo::LoginSessionInfo(
                offsetof(Impl_, role_id_),
            reinterpret_cast<const char *>(&from._impl_) +
                offsetof(Impl_, role_id_),
-           offsetof(Impl_, login_time_) -
+           offsetof(Impl_, session_id_) -
                offsetof(Impl_, role_id_) +
-               sizeof(Impl_::login_time_));
+               sizeof(Impl_::session_id_));
 
   // @@protoc_insertion_point(copy_constructor:loginpb.LoginSessionInfo)
 }
@@ -756,9 +756,9 @@ inline void LoginSessionInfo::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) 
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, role_id_),
            0,
-           offsetof(Impl_, login_time_) -
+           offsetof(Impl_, session_id_) -
                offsetof(Impl_, role_id_) +
-               sizeof(Impl_::login_time_));
+               sizeof(Impl_::session_id_));
 }
 LoginSessionInfo::~LoginSessionInfo() {
   // @@protoc_insertion_point(destructor:loginpb.LoginSessionInfo)
@@ -843,18 +843,18 @@ LoginSessionInfo::_table_ = {
     // uint64 role_id = 2;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(LoginSessionInfo, _impl_.role_id_), 3>(),
      {16, 3, 0, PROTOBUF_FIELD_OFFSET(LoginSessionInfo, _impl_.role_id_)}},
-    // uint64 session_id = 3;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(LoginSessionInfo, _impl_.session_id_), 4>(),
-     {24, 4, 0, PROTOBUF_FIELD_OFFSET(LoginSessionInfo, _impl_.session_id_)}},
+    // uint32 session_id = 3;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(LoginSessionInfo, _impl_.session_id_), 6>(),
+     {24, 6, 0, PROTOBUF_FIELD_OFFSET(LoginSessionInfo, _impl_.session_id_)}},
     // uint64 gate_id = 4;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(LoginSessionInfo, _impl_.gate_id_), 5>(),
-     {32, 5, 0, PROTOBUF_FIELD_OFFSET(LoginSessionInfo, _impl_.gate_id_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(LoginSessionInfo, _impl_.gate_id_), 4>(),
+     {32, 4, 0, PROTOBUF_FIELD_OFFSET(LoginSessionInfo, _impl_.gate_id_)}},
     // string device_id = 5;
     {::_pbi::TcParser::FastUS1,
      {42, 1, 0, PROTOBUF_FIELD_OFFSET(LoginSessionInfo, _impl_.device_id_)}},
     // int64 login_time = 6;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(LoginSessionInfo, _impl_.login_time_), 6>(),
-     {48, 6, 0, PROTOBUF_FIELD_OFFSET(LoginSessionInfo, _impl_.login_time_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(LoginSessionInfo, _impl_.login_time_), 5>(),
+     {48, 5, 0, PROTOBUF_FIELD_OFFSET(LoginSessionInfo, _impl_.login_time_)}},
     // string fsm = 7;
     {::_pbi::TcParser::FastUS1,
      {58, 2, 0, PROTOBUF_FIELD_OFFSET(LoginSessionInfo, _impl_.fsm_)}},
@@ -867,17 +867,17 @@ LoginSessionInfo::_table_ = {
     // uint64 role_id = 2;
     {PROTOBUF_FIELD_OFFSET(LoginSessionInfo, _impl_.role_id_), _Internal::kHasBitsOffset + 3, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
-    // uint64 session_id = 3;
-    {PROTOBUF_FIELD_OFFSET(LoginSessionInfo, _impl_.session_id_), _Internal::kHasBitsOffset + 4, 0,
-    (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    // uint32 session_id = 3;
+    {PROTOBUF_FIELD_OFFSET(LoginSessionInfo, _impl_.session_id_), _Internal::kHasBitsOffset + 6, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
     // uint64 gate_id = 4;
-    {PROTOBUF_FIELD_OFFSET(LoginSessionInfo, _impl_.gate_id_), _Internal::kHasBitsOffset + 5, 0,
+    {PROTOBUF_FIELD_OFFSET(LoginSessionInfo, _impl_.gate_id_), _Internal::kHasBitsOffset + 4, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
     // string device_id = 5;
     {PROTOBUF_FIELD_OFFSET(LoginSessionInfo, _impl_.device_id_), _Internal::kHasBitsOffset + 1, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
     // int64 login_time = 6;
-    {PROTOBUF_FIELD_OFFSET(LoginSessionInfo, _impl_.login_time_), _Internal::kHasBitsOffset + 6, 0,
+    {PROTOBUF_FIELD_OFFSET(LoginSessionInfo, _impl_.login_time_), _Internal::kHasBitsOffset + 5, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kInt64)},
     // string fsm = 7;
     {PROTOBUF_FIELD_OFFSET(LoginSessionInfo, _impl_.fsm_), _Internal::kHasBitsOffset + 2, 0,
@@ -913,8 +913,8 @@ PROTOBUF_NOINLINE void LoginSessionInfo::Clear() {
   }
   if ((cached_has_bits & 0x00000078u) != 0) {
     ::memset(&_impl_.role_id_, 0, static_cast<::size_t>(
-        reinterpret_cast<char*>(&_impl_.login_time_) -
-        reinterpret_cast<char*>(&_impl_.role_id_)) + sizeof(_impl_.login_time_));
+        reinterpret_cast<char*>(&_impl_.session_id_) -
+        reinterpret_cast<char*>(&_impl_.role_id_)) + sizeof(_impl_.session_id_));
   }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
@@ -954,17 +954,17 @@ PROTOBUF_NOINLINE void LoginSessionInfo::Clear() {
     }
   }
 
-  // uint64 session_id = 3;
-  if ((this_._impl_._has_bits_[0] & 0x00000010u) != 0) {
+  // uint32 session_id = 3;
+  if ((this_._impl_._has_bits_[0] & 0x00000040u) != 0) {
     if (this_._internal_session_id() != 0) {
       target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
           3, this_._internal_session_id(), target);
     }
   }
 
   // uint64 gate_id = 4;
-  if ((this_._impl_._has_bits_[0] & 0x00000020u) != 0) {
+  if ((this_._impl_._has_bits_[0] & 0x00000010u) != 0) {
     if (this_._internal_gate_id() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
@@ -983,7 +983,7 @@ PROTOBUF_NOINLINE void LoginSessionInfo::Clear() {
   }
 
   // int64 login_time = 6;
-  if ((this_._impl_._has_bits_[0] & 0x00000040u) != 0) {
+  if ((this_._impl_._has_bits_[0] & 0x00000020u) != 0) {
     if (this_._internal_login_time() != 0) {
       target =
           ::google::protobuf::internal::WireFormatLite::WriteInt64ToArrayWithField<6>(
@@ -1055,25 +1055,25 @@ PROTOBUF_NOINLINE void LoginSessionInfo::Clear() {
             this_._internal_role_id());
       }
     }
-    // uint64 session_id = 3;
-    if ((cached_has_bits & 0x00000010u) != 0) {
-      if (this_._internal_session_id() != 0) {
-        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
-            this_._internal_session_id());
-      }
-    }
     // uint64 gate_id = 4;
-    if ((cached_has_bits & 0x00000020u) != 0) {
+    if ((cached_has_bits & 0x00000010u) != 0) {
       if (this_._internal_gate_id() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
             this_._internal_gate_id());
       }
     }
     // int64 login_time = 6;
-    if ((cached_has_bits & 0x00000040u) != 0) {
+    if ((cached_has_bits & 0x00000020u) != 0) {
       if (this_._internal_login_time() != 0) {
         total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(
             this_._internal_login_time());
+      }
+    }
+    // uint32 session_id = 3;
+    if ((cached_has_bits & 0x00000040u) != 0) {
+      if (this_._internal_session_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_session_id());
       }
     }
   }
@@ -1124,18 +1124,18 @@ void LoginSessionInfo::MergeImpl(::google::protobuf::MessageLite& to_msg, const 
       }
     }
     if ((cached_has_bits & 0x00000010u) != 0) {
-      if (from._internal_session_id() != 0) {
-        _this->_impl_.session_id_ = from._impl_.session_id_;
-      }
-    }
-    if ((cached_has_bits & 0x00000020u) != 0) {
       if (from._internal_gate_id() != 0) {
         _this->_impl_.gate_id_ = from._impl_.gate_id_;
       }
     }
-    if ((cached_has_bits & 0x00000040u) != 0) {
+    if ((cached_has_bits & 0x00000020u) != 0) {
       if (from._internal_login_time() != 0) {
         _this->_impl_.login_time_ = from._impl_.login_time_;
+      }
+    }
+    if ((cached_has_bits & 0x00000040u) != 0) {
+      if (from._internal_session_id() != 0) {
+        _this->_impl_.session_id_ = from._impl_.session_id_;
       }
     }
   }
@@ -1161,8 +1161,8 @@ void LoginSessionInfo::InternalSwap(LoginSessionInfo* PROTOBUF_RESTRICT PROTOBUF
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.device_id_, &other->_impl_.device_id_, arena);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.fsm_, &other->_impl_.fsm_, arena);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(LoginSessionInfo, _impl_.login_time_)
-      + sizeof(LoginSessionInfo::_impl_.login_time_)
+      PROTOBUF_FIELD_OFFSET(LoginSessionInfo, _impl_.session_id_)
+      + sizeof(LoginSessionInfo::_impl_.session_id_)
       - PROTOBUF_FIELD_OFFSET(LoginSessionInfo, _impl_.role_id_)>(
           reinterpret_cast<char*>(&_impl_.role_id_),
           reinterpret_cast<char*>(&other->_impl_.role_id_));
@@ -3752,15 +3752,15 @@ LoginNodeDisconnectRequest::_table_ = {
     ::_pbi::TcParser::GetTable<::loginpb::LoginNodeDisconnectRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // uint64 session_id = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(LoginNodeDisconnectRequest, _impl_.session_id_), 0>(),
+    // uint32 session_id = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(LoginNodeDisconnectRequest, _impl_.session_id_), 0>(),
      {8, 0, 0, PROTOBUF_FIELD_OFFSET(LoginNodeDisconnectRequest, _impl_.session_id_)}},
   }}, {{
     65535, 65535
   }}, {{
-    // uint64 session_id = 1;
+    // uint32 session_id = 1;
     {PROTOBUF_FIELD_OFFSET(LoginNodeDisconnectRequest, _impl_.session_id_), _Internal::kHasBitsOffset + 0, 0,
-    (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
   }},
   // no aux_entries
   {{
@@ -3773,7 +3773,7 @@ PROTOBUF_NOINLINE void LoginNodeDisconnectRequest::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  _impl_.session_id_ = ::uint64_t{0u};
+  _impl_.session_id_ = 0u;
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
@@ -3793,11 +3793,11 @@ PROTOBUF_NOINLINE void LoginNodeDisconnectRequest::Clear() {
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
-  // uint64 session_id = 1;
+  // uint32 session_id = 1;
   if ((this_._impl_._has_bits_[0] & 0x00000001u) != 0) {
     if (this_._internal_session_id() != 0) {
       target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
           1, this_._internal_session_id(), target);
     }
   }
@@ -3826,11 +3826,11 @@ PROTOBUF_NOINLINE void LoginNodeDisconnectRequest::Clear() {
   (void)cached_has_bits;
 
    {
-    // uint64 session_id = 1;
+    // uint32 session_id = 1;
     cached_has_bits = this_._impl_._has_bits_[0];
     if ((cached_has_bits & 0x00000001u) != 0) {
       if (this_._internal_session_id() != 0) {
-        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_session_id());
       }
     }

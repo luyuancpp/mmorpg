@@ -133,7 +133,7 @@ func TestSetAndGetSession(t *testing.T) {
 
 	assert.True(t, resp.Found)
 	assert.Equal(t, uint64(3001), resp.Session.PlayerId)
-	assert.Equal(t, uint64(100), resp.Session.SessionId)
+	assert.Equal(t, uint32(100), resp.Session.SessionId)
 	assert.Equal(t, "gate-1", resp.Session.GateId)
 	assert.Equal(t, pb.PlayerSessionState_SESSION_STATE_ONLINE, resp.Session.State)
 }
@@ -257,10 +257,10 @@ func TestReconnect_HappyPath(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.True(t, resp.Success)
-	assert.Equal(t, uint64(200), resp.Session.SessionId)
+	assert.Equal(t, uint32(200), resp.Session.SessionId)
 	assert.Equal(t, "gate-2", resp.Session.GateId)
 	assert.Equal(t, pb.PlayerSessionState_SESSION_STATE_ONLINE, resp.Session.State)
-	assert.Equal(t, uint64(2), resp.Session.SessionVersion) // incremented
+	assert.Equal(t, uint32(2), resp.Session.SessionVersion) // incremented
 
 	// Lease ZSET entry should be removed
 	members, _ := mr.ZMembers(LeaseZSetKey)

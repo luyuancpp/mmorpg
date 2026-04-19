@@ -28,7 +28,7 @@ public:
                                   const RpcClientMessagePtr &message,
                                   muduo::Timestamp);
 
-    static Guid GetSessionId(const muduo::net::TcpConnectionPtr &conn);
+    static SessionId GetSessionId(const muduo::net::TcpConnectionPtr &conn);
 
     static void SendTipToClient(const muduo::net::TcpConnectionPtr &conn, uint32_t tip_id);
 

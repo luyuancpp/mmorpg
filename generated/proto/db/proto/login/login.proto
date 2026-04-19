@@ -12,7 +12,7 @@ package loginpb;
 message LoginSessionInfo {
   string account = 1;
   uint64 role_id = 2;
-  uint64 session_id = 3;
+  uint32 session_id = 3;
   uint64 gate_id = 4;
   string device_id = 5;
   int64 login_time = 6;
@@ -76,7 +76,7 @@ message LeaveGameRequest
 
 message LoginNodeDisconnectRequest
 {
-  uint64 session_id = 1;
+  uint32 session_id = 1;
 }
 
 message LoginEmptyResponse

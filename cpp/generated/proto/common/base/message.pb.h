@@ -913,19 +913,9 @@ class NodeMessageHeader final : public ::google::protobuf::Message
 
   // accessors -------------------------------------------------------
   enum : int {
-    kSessionIdFieldNumber = 2,
     kNodeIdFieldNumber = 1,
+    kSessionIdFieldNumber = 2,
   };
-  // uint64 session_id = 2;
-  void clear_session_id() ;
-  ::uint64_t session_id() const;
-  void set_session_id(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_session_id() const;
-  void _internal_set_session_id(::uint64_t value);
-
-  public:
   // uint32 node_id = 1;
   void clear_node_id() ;
   ::uint32_t node_id() const;
@@ -934,6 +924,16 @@ class NodeMessageHeader final : public ::google::protobuf::Message
   private:
   ::uint32_t _internal_node_id() const;
   void _internal_set_node_id(::uint32_t value);
+
+  public:
+  // uint32 session_id = 2;
+  void clear_session_id() ;
+  ::uint32_t session_id() const;
+  void set_session_id(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_session_id() const;
+  void _internal_set_session_id(::uint32_t value);
 
   public:
   // @@protoc_insertion_point(class_scope:NodeMessageHeader)
@@ -962,8 +962,8 @@ class NodeMessageHeader final : public ::google::protobuf::Message
         const NodeMessageHeader& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
-    ::uint64_t session_id_;
     ::uint32_t node_id_;
+    ::uint32_t session_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -6322,8 +6322,8 @@ class RouteMessageResponse final : public ::google::protobuf::Message
   enum : int {
     kRouteNodesFieldNumber = 2,
     kBodyFieldNumber = 1,
-    kSessionIdFieldNumber = 3,
     kIdFieldNumber = 4,
+    kSessionIdFieldNumber = 3,
     kIsClientFieldNumber = 5,
   };
   // repeated .RoutingNodeInfo route_nodes = 2;
@@ -6358,16 +6358,6 @@ class RouteMessageResponse final : public ::google::protobuf::Message
   ::std::string* PROTOBUF_NONNULL _internal_mutable_body();
 
   public:
-  // uint64 session_id = 3;
-  void clear_session_id() ;
-  ::uint64_t session_id() const;
-  void set_session_id(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_session_id() const;
-  void _internal_set_session_id(::uint64_t value);
-
-  public:
   // uint64 id = 4;
   void clear_id() ;
   ::uint64_t id() const;
@@ -6376,6 +6366,16 @@ class RouteMessageResponse final : public ::google::protobuf::Message
   private:
   ::uint64_t _internal_id() const;
   void _internal_set_id(::uint64_t value);
+
+  public:
+  // uint32 session_id = 3;
+  void clear_session_id() ;
+  ::uint32_t session_id() const;
+  void set_session_id(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_session_id() const;
+  void _internal_set_session_id(::uint32_t value);
 
   public:
   // bool is_client = 5;
@@ -6416,8 +6416,8 @@ class RouteMessageResponse final : public ::google::protobuf::Message
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::google::protobuf::RepeatedPtrField< ::RoutingNodeInfo > route_nodes_;
     ::google::protobuf::internal::ArenaStringPtr body_;
-    ::uint64_t session_id_;
     ::uint64_t id_;
+    ::uint32_t session_id_;
     bool is_client_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -6573,8 +6573,8 @@ class RouteMessageRequest final : public ::google::protobuf::Message
   enum : int {
     kRouteNodesFieldNumber = 2,
     kBodyFieldNumber = 1,
-    kSessionIdFieldNumber = 3,
     kIdFieldNumber = 4,
+    kSessionIdFieldNumber = 3,
     kIsClientFieldNumber = 5,
   };
   // repeated .RoutingNodeInfo route_nodes = 2;
@@ -6609,16 +6609,6 @@ class RouteMessageRequest final : public ::google::protobuf::Message
   ::std::string* PROTOBUF_NONNULL _internal_mutable_body();
 
   public:
-  // uint64 session_id = 3;
-  void clear_session_id() ;
-  ::uint64_t session_id() const;
-  void set_session_id(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_session_id() const;
-  void _internal_set_session_id(::uint64_t value);
-
-  public:
   // uint64 id = 4;
   void clear_id() ;
   ::uint64_t id() const;
@@ -6627,6 +6617,16 @@ class RouteMessageRequest final : public ::google::protobuf::Message
   private:
   ::uint64_t _internal_id() const;
   void _internal_set_id(::uint64_t value);
+
+  public:
+  // uint32 session_id = 3;
+  void clear_session_id() ;
+  ::uint32_t session_id() const;
+  void set_session_id(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_session_id() const;
+  void _internal_set_session_id(::uint32_t value);
 
   public:
   // bool is_client = 5;
@@ -6667,8 +6667,8 @@ class RouteMessageRequest final : public ::google::protobuf::Message
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::google::protobuf::RepeatedPtrField< ::RoutingNodeInfo > route_nodes_;
     ::google::protobuf::internal::ArenaStringPtr body_;
-    ::uint64_t session_id_;
     ::uint64_t id_;
+    ::uint32_t session_id_;
     bool is_client_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -7029,7 +7029,7 @@ inline void MessageContent::set_allocated_error_message(::TipInfoMessage* PROTOB
 inline void NodeMessageHeader::clear_node_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.node_id_ = 0u;
-  _impl_._has_bits_[0] &= ~0x00000002u;
+  _impl_._has_bits_[0] &= ~0x00000001u;
 }
 inline ::uint32_t NodeMessageHeader::node_id() const {
   // @@protoc_insertion_point(field_get:NodeMessageHeader.node_id)
@@ -7037,7 +7037,7 @@ inline ::uint32_t NodeMessageHeader::node_id() const {
 }
 inline void NodeMessageHeader::set_node_id(::uint32_t value) {
   _internal_set_node_id(value);
-  _impl_._has_bits_[0] |= 0x00000002u;
+  _impl_._has_bits_[0] |= 0x00000001u;
   // @@protoc_insertion_point(field_set:NodeMessageHeader.node_id)
 }
 inline ::uint32_t NodeMessageHeader::_internal_node_id() const {
@@ -7049,26 +7049,26 @@ inline void NodeMessageHeader::_internal_set_node_id(::uint32_t value) {
   _impl_.node_id_ = value;
 }
 
-// uint64 session_id = 2;
+// uint32 session_id = 2;
 inline void NodeMessageHeader::clear_session_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.session_id_ = ::uint64_t{0u};
-  _impl_._has_bits_[0] &= ~0x00000001u;
+  _impl_.session_id_ = 0u;
+  _impl_._has_bits_[0] &= ~0x00000002u;
 }
-inline ::uint64_t NodeMessageHeader::session_id() const {
+inline ::uint32_t NodeMessageHeader::session_id() const {
   // @@protoc_insertion_point(field_get:NodeMessageHeader.session_id)
   return _internal_session_id();
 }
-inline void NodeMessageHeader::set_session_id(::uint64_t value) {
+inline void NodeMessageHeader::set_session_id(::uint32_t value) {
   _internal_set_session_id(value);
-  _impl_._has_bits_[0] |= 0x00000001u;
+  _impl_._has_bits_[0] |= 0x00000002u;
   // @@protoc_insertion_point(field_set:NodeMessageHeader.session_id)
 }
-inline ::uint64_t NodeMessageHeader::_internal_session_id() const {
+inline ::uint32_t NodeMessageHeader::_internal_session_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.session_id_;
 }
-inline void NodeMessageHeader::_internal_set_session_id(::uint64_t value) {
+inline void NodeMessageHeader::_internal_set_session_id(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.session_id_ = value;
 }
@@ -8529,26 +8529,26 @@ RouteMessageRequest::_internal_mutable_route_nodes() {
   return &_impl_.route_nodes_;
 }
 
-// uint64 session_id = 3;
+// uint32 session_id = 3;
 inline void RouteMessageRequest::clear_session_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.session_id_ = ::uint64_t{0u};
-  _impl_._has_bits_[0] &= ~0x00000002u;
+  _impl_.session_id_ = 0u;
+  _impl_._has_bits_[0] &= ~0x00000004u;
 }
-inline ::uint64_t RouteMessageRequest::session_id() const {
+inline ::uint32_t RouteMessageRequest::session_id() const {
   // @@protoc_insertion_point(field_get:RouteMessageRequest.session_id)
   return _internal_session_id();
 }
-inline void RouteMessageRequest::set_session_id(::uint64_t value) {
+inline void RouteMessageRequest::set_session_id(::uint32_t value) {
   _internal_set_session_id(value);
-  _impl_._has_bits_[0] |= 0x00000002u;
+  _impl_._has_bits_[0] |= 0x00000004u;
   // @@protoc_insertion_point(field_set:RouteMessageRequest.session_id)
 }
-inline ::uint64_t RouteMessageRequest::_internal_session_id() const {
+inline ::uint32_t RouteMessageRequest::_internal_session_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.session_id_;
 }
-inline void RouteMessageRequest::_internal_set_session_id(::uint64_t value) {
+inline void RouteMessageRequest::_internal_set_session_id(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.session_id_ = value;
 }
@@ -8557,7 +8557,7 @@ inline void RouteMessageRequest::_internal_set_session_id(::uint64_t value) {
 inline void RouteMessageRequest::clear_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.id_ = ::uint64_t{0u};
-  _impl_._has_bits_[0] &= ~0x00000004u;
+  _impl_._has_bits_[0] &= ~0x00000002u;
 }
 inline ::uint64_t RouteMessageRequest::id() const {
   // @@protoc_insertion_point(field_get:RouteMessageRequest.id)
@@ -8565,7 +8565,7 @@ inline ::uint64_t RouteMessageRequest::id() const {
 }
 inline void RouteMessageRequest::set_id(::uint64_t value) {
   _internal_set_id(value);
-  _impl_._has_bits_[0] |= 0x00000004u;
+  _impl_._has_bits_[0] |= 0x00000002u;
   // @@protoc_insertion_point(field_set:RouteMessageRequest.id)
 }
 inline ::uint64_t RouteMessageRequest::_internal_id() const {
@@ -8720,26 +8720,26 @@ RouteMessageResponse::_internal_mutable_route_nodes() {
   return &_impl_.route_nodes_;
 }
 
-// uint64 session_id = 3;
+// uint32 session_id = 3;
 inline void RouteMessageResponse::clear_session_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.session_id_ = ::uint64_t{0u};
-  _impl_._has_bits_[0] &= ~0x00000002u;
+  _impl_.session_id_ = 0u;
+  _impl_._has_bits_[0] &= ~0x00000004u;
 }
-inline ::uint64_t RouteMessageResponse::session_id() const {
+inline ::uint32_t RouteMessageResponse::session_id() const {
   // @@protoc_insertion_point(field_get:RouteMessageResponse.session_id)
   return _internal_session_id();
 }
-inline void RouteMessageResponse::set_session_id(::uint64_t value) {
+inline void RouteMessageResponse::set_session_id(::uint32_t value) {
   _internal_set_session_id(value);
-  _impl_._has_bits_[0] |= 0x00000002u;
+  _impl_._has_bits_[0] |= 0x00000004u;
   // @@protoc_insertion_point(field_set:RouteMessageResponse.session_id)
 }
-inline ::uint64_t RouteMessageResponse::_internal_session_id() const {
+inline ::uint32_t RouteMessageResponse::_internal_session_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.session_id_;
 }
-inline void RouteMessageResponse::_internal_set_session_id(::uint64_t value) {
+inline void RouteMessageResponse::_internal_set_session_id(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.session_id_ = value;
 }
@@ -8748,7 +8748,7 @@ inline void RouteMessageResponse::_internal_set_session_id(::uint64_t value) {
 inline void RouteMessageResponse::clear_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.id_ = ::uint64_t{0u};
-  _impl_._has_bits_[0] &= ~0x00000004u;
+  _impl_._has_bits_[0] &= ~0x00000002u;
 }
 inline ::uint64_t RouteMessageResponse::id() const {
   // @@protoc_insertion_point(field_get:RouteMessageResponse.id)
@@ -8756,7 +8756,7 @@ inline ::uint64_t RouteMessageResponse::id() const {
 }
 inline void RouteMessageResponse::set_id(::uint64_t value) {
   _internal_set_id(value);
-  _impl_._has_bits_[0] |= 0x00000004u;
+  _impl_._has_bits_[0] |= 0x00000002u;
   // @@protoc_insertion_point(field_set:RouteMessageResponse.id)
 }
 inline ::uint64_t RouteMessageResponse::_internal_id() const {

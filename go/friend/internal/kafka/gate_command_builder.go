@@ -20,7 +20,7 @@ func NewGateCommandBuilder() kafkautil.GateCommandBuilder {
 	return &gateCommandBuilder{}
 }
 
-func (b *gateCommandBuilder) BuildPushCommand(sessionID uint64, gateInstanceID string,
+func (b *gateCommandBuilder) BuildPushCommand(sessionID uint32, gateInstanceID string,
 	messageID uint32, body []byte,
 ) ([]byte, error) {
 	mc := &basepb.MessageContent{

@@ -14,7 +14,7 @@
 // --- Semantic ID types ---
 using Guid = uint64_t;
 using NodeId = uint32_t;
-using SessionId = uint64_t;
+using SessionId = uint32_t;
 
 // --- Common container aliases (only for frequently-used combos) ---
 using GuidVector = std::vector<Guid>;
@@ -44,6 +44,6 @@ using UInt128Set = std::unordered_set<absl::uint128, absl::Hash<absl::uint128>>;
 
 // --- Sentinel values ---
 constexpr Guid kInvalidGuid{UINT64_MAX};
-constexpr uint64_t kInvalidSessionId{UINT64_MAX};
+constexpr uint32_t kInvalidSessionId{UINT32_MAX};
 constexpr uint32_t kInvalidU32Id{UINT32_MAX};
 constexpr NodeId kInvalidNodeId{UINT32_MAX};

@@ -228,19 +228,9 @@ class GsEnterSceneRequest final : public ::google::protobuf::Message
 
   // accessors -------------------------------------------------------
   enum : int {
-    kSessionIdFieldNumber = 1,
     kSceneIdFieldNumber = 2,
+    kSessionIdFieldNumber = 1,
   };
-  // uint64 session_id = 1;
-  void clear_session_id() ;
-  ::uint64_t session_id() const;
-  void set_session_id(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_session_id() const;
-  void _internal_set_session_id(::uint64_t value);
-
-  public:
   // uint64 scene_id = 2;
   void clear_scene_id() ;
   ::uint64_t scene_id() const;
@@ -249,6 +239,16 @@ class GsEnterSceneRequest final : public ::google::protobuf::Message
   private:
   ::uint64_t _internal_scene_id() const;
   void _internal_set_scene_id(::uint64_t value);
+
+  public:
+  // uint32 session_id = 1;
+  void clear_session_id() ;
+  ::uint32_t session_id() const;
+  void set_session_id(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_session_id() const;
+  void _internal_set_session_id(::uint32_t value);
 
   public:
   // @@protoc_insertion_point(class_scope:GsEnterSceneRequest)
@@ -277,8 +277,8 @@ class GsEnterSceneRequest final : public ::google::protobuf::Message
         const GsEnterSceneRequest& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
-    ::uint64_t session_id_;
     ::uint64_t scene_id_;
+    ::uint32_t session_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -920,26 +920,26 @@ class SceneScenePlayer_Stub final : public SceneScenePlayer {
 
 // GsEnterSceneRequest
 
-// uint64 session_id = 1;
+// uint32 session_id = 1;
 inline void GsEnterSceneRequest::clear_session_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.session_id_ = ::uint64_t{0u};
-  _impl_._has_bits_[0] &= ~0x00000001u;
+  _impl_.session_id_ = 0u;
+  _impl_._has_bits_[0] &= ~0x00000002u;
 }
-inline ::uint64_t GsEnterSceneRequest::session_id() const {
+inline ::uint32_t GsEnterSceneRequest::session_id() const {
   // @@protoc_insertion_point(field_get:GsEnterSceneRequest.session_id)
   return _internal_session_id();
 }
-inline void GsEnterSceneRequest::set_session_id(::uint64_t value) {
+inline void GsEnterSceneRequest::set_session_id(::uint32_t value) {
   _internal_set_session_id(value);
-  _impl_._has_bits_[0] |= 0x00000001u;
+  _impl_._has_bits_[0] |= 0x00000002u;
   // @@protoc_insertion_point(field_set:GsEnterSceneRequest.session_id)
 }
-inline ::uint64_t GsEnterSceneRequest::_internal_session_id() const {
+inline ::uint32_t GsEnterSceneRequest::_internal_session_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.session_id_;
 }
-inline void GsEnterSceneRequest::_internal_set_session_id(::uint64_t value) {
+inline void GsEnterSceneRequest::_internal_set_session_id(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.session_id_ = value;
 }
@@ -948,7 +948,7 @@ inline void GsEnterSceneRequest::_internal_set_session_id(::uint64_t value) {
 inline void GsEnterSceneRequest::clear_scene_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.scene_id_ = ::uint64_t{0u};
-  _impl_._has_bits_[0] &= ~0x00000002u;
+  _impl_._has_bits_[0] &= ~0x00000001u;
 }
 inline ::uint64_t GsEnterSceneRequest::scene_id() const {
   // @@protoc_insertion_point(field_get:GsEnterSceneRequest.scene_id)
@@ -956,7 +956,7 @@ inline ::uint64_t GsEnterSceneRequest::scene_id() const {
 }
 inline void GsEnterSceneRequest::set_scene_id(::uint64_t value) {
   _internal_set_scene_id(value);
-  _impl_._has_bits_[0] |= 0x00000002u;
+  _impl_._has_bits_[0] |= 0x00000001u;
   // @@protoc_insertion_point(field_set:GsEnterSceneRequest.scene_id)
 }
 inline ::uint64_t GsEnterSceneRequest::_internal_scene_id() const {

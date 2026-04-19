@@ -439,19 +439,9 @@ class RegisterPlayerSessionRequest final : public ::google::protobuf::Message
 
   // accessors -------------------------------------------------------
   enum : int {
-    kSessionIdFieldNumber = 1,
     kPlayerIdFieldNumber = 2,
+    kSessionIdFieldNumber = 1,
   };
-  // uint64 session_id = 1;
-  void clear_session_id() ;
-  ::uint64_t session_id() const;
-  void set_session_id(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_session_id() const;
-  void _internal_set_session_id(::uint64_t value);
-
-  public:
   // uint64 player_id = 2;
   void clear_player_id() ;
   ::uint64_t player_id() const;
@@ -460,6 +450,16 @@ class RegisterPlayerSessionRequest final : public ::google::protobuf::Message
   private:
   ::uint64_t _internal_player_id() const;
   void _internal_set_player_id(::uint64_t value);
+
+  public:
+  // uint32 session_id = 1;
+  void clear_session_id() ;
+  ::uint32_t session_id() const;
+  void set_session_id(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_session_id() const;
+  void _internal_set_session_id(::uint32_t value);
 
   public:
   // @@protoc_insertion_point(class_scope:RegisterPlayerSessionRequest)
@@ -488,8 +488,8 @@ class RegisterPlayerSessionRequest final : public ::google::protobuf::Message
         const RegisterPlayerSessionRequest& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
-    ::uint64_t session_id_;
     ::uint64_t player_id_;
+    ::uint32_t session_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -644,8 +644,8 @@ class PlayerEnterGameNodeRequest final : public ::google::protobuf::Message
   enum : int {
     kPlayerIdFieldNumber = 1,
     kSessionIdFieldNumber = 2,
-    kSceneIdFieldNumber = 5,
     kEnterGsTypeFieldNumber = 4,
+    kSceneIdFieldNumber = 5,
   };
   // uint64 player_id = 1;
   void clear_player_id() ;
@@ -657,24 +657,14 @@ class PlayerEnterGameNodeRequest final : public ::google::protobuf::Message
   void _internal_set_player_id(::uint64_t value);
 
   public:
-  // uint64 session_id = 2;
+  // uint32 session_id = 2;
   void clear_session_id() ;
-  ::uint64_t session_id() const;
-  void set_session_id(::uint64_t value);
+  ::uint32_t session_id() const;
+  void set_session_id(::uint32_t value);
 
   private:
-  ::uint64_t _internal_session_id() const;
-  void _internal_set_session_id(::uint64_t value);
-
-  public:
-  // uint64 scene_id = 5;
-  void clear_scene_id() ;
-  ::uint64_t scene_id() const;
-  void set_scene_id(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_scene_id() const;
-  void _internal_set_scene_id(::uint64_t value);
+  ::uint32_t _internal_session_id() const;
+  void _internal_set_session_id(::uint32_t value);
 
   public:
   // uint32 enter_gs_type = 4;
@@ -685,6 +675,16 @@ class PlayerEnterGameNodeRequest final : public ::google::protobuf::Message
   private:
   ::uint32_t _internal_enter_gs_type() const;
   void _internal_set_enter_gs_type(::uint32_t value);
+
+  public:
+  // uint64 scene_id = 5;
+  void clear_scene_id() ;
+  ::uint64_t scene_id() const;
+  void set_scene_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_scene_id() const;
+  void _internal_set_scene_id(::uint64_t value);
 
   public:
   // @@protoc_insertion_point(class_scope:PlayerEnterGameNodeRequest)
@@ -714,9 +714,9 @@ class PlayerEnterGameNodeRequest final : public ::google::protobuf::Message
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::uint64_t player_id_;
-    ::uint64_t session_id_;
-    ::uint64_t scene_id_;
+    ::uint32_t session_id_;
     ::uint32_t enter_gs_type_;
+    ::uint64_t scene_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -1534,14 +1534,14 @@ class ProcessClientPlayerMessageResponse final : public ::google::protobuf::Mess
   ::MessageContent* PROTOBUF_NONNULL _internal_mutable_message_content();
 
   public:
-  // uint64 session_id = 2;
+  // uint32 session_id = 2;
   void clear_session_id() ;
-  ::uint64_t session_id() const;
-  void set_session_id(::uint64_t value);
+  ::uint32_t session_id() const;
+  void set_session_id(::uint32_t value);
 
   private:
-  ::uint64_t _internal_session_id() const;
-  void _internal_set_session_id(::uint64_t value);
+  ::uint32_t _internal_session_id() const;
+  void _internal_set_session_id(::uint32_t value);
 
   public:
   // @@protoc_insertion_point(class_scope:ProcessClientPlayerMessageResponse)
@@ -1571,7 +1571,7 @@ class ProcessClientPlayerMessageResponse final : public ::google::protobuf::Mess
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::MessageContent* PROTOBUF_NULLABLE message_content_;
-    ::uint64_t session_id_;
+    ::uint32_t session_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -1742,14 +1742,14 @@ class ProcessClientPlayerMessageRequest final : public ::google::protobuf::Messa
   ::MessageContent* PROTOBUF_NONNULL _internal_mutable_message_content();
 
   public:
-  // uint64 session_id = 2;
+  // uint32 session_id = 2;
   void clear_session_id() ;
-  ::uint64_t session_id() const;
-  void set_session_id(::uint64_t value);
+  ::uint32_t session_id() const;
+  void set_session_id(::uint32_t value);
 
   private:
-  ::uint64_t _internal_session_id() const;
-  void _internal_set_session_id(::uint64_t value);
+  ::uint32_t _internal_session_id() const;
+  void _internal_set_session_id(::uint32_t value);
 
   public:
   // @@protoc_insertion_point(class_scope:ProcessClientPlayerMessageRequest)
@@ -1779,7 +1779,7 @@ class ProcessClientPlayerMessageRequest final : public ::google::protobuf::Messa
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::MessageContent* PROTOBUF_NULLABLE message_content_;
-    ::uint64_t session_id_;
+    ::uint32_t session_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -2159,26 +2159,26 @@ inline void PlayerEnterGameNodeRequest::_internal_set_player_id(::uint64_t value
   _impl_.player_id_ = value;
 }
 
-// uint64 session_id = 2;
+// uint32 session_id = 2;
 inline void PlayerEnterGameNodeRequest::clear_session_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.session_id_ = ::uint64_t{0u};
+  _impl_.session_id_ = 0u;
   _impl_._has_bits_[0] &= ~0x00000002u;
 }
-inline ::uint64_t PlayerEnterGameNodeRequest::session_id() const {
+inline ::uint32_t PlayerEnterGameNodeRequest::session_id() const {
   // @@protoc_insertion_point(field_get:PlayerEnterGameNodeRequest.session_id)
   return _internal_session_id();
 }
-inline void PlayerEnterGameNodeRequest::set_session_id(::uint64_t value) {
+inline void PlayerEnterGameNodeRequest::set_session_id(::uint32_t value) {
   _internal_set_session_id(value);
   _impl_._has_bits_[0] |= 0x00000002u;
   // @@protoc_insertion_point(field_set:PlayerEnterGameNodeRequest.session_id)
 }
-inline ::uint64_t PlayerEnterGameNodeRequest::_internal_session_id() const {
+inline ::uint32_t PlayerEnterGameNodeRequest::_internal_session_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.session_id_;
 }
-inline void PlayerEnterGameNodeRequest::_internal_set_session_id(::uint64_t value) {
+inline void PlayerEnterGameNodeRequest::_internal_set_session_id(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.session_id_ = value;
 }
@@ -2187,7 +2187,7 @@ inline void PlayerEnterGameNodeRequest::_internal_set_session_id(::uint64_t valu
 inline void PlayerEnterGameNodeRequest::clear_enter_gs_type() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.enter_gs_type_ = 0u;
-  _impl_._has_bits_[0] &= ~0x00000008u;
+  _impl_._has_bits_[0] &= ~0x00000004u;
 }
 inline ::uint32_t PlayerEnterGameNodeRequest::enter_gs_type() const {
   // @@protoc_insertion_point(field_get:PlayerEnterGameNodeRequest.enter_gs_type)
@@ -2195,7 +2195,7 @@ inline ::uint32_t PlayerEnterGameNodeRequest::enter_gs_type() const {
 }
 inline void PlayerEnterGameNodeRequest::set_enter_gs_type(::uint32_t value) {
   _internal_set_enter_gs_type(value);
-  _impl_._has_bits_[0] |= 0x00000008u;
+  _impl_._has_bits_[0] |= 0x00000004u;
   // @@protoc_insertion_point(field_set:PlayerEnterGameNodeRequest.enter_gs_type)
 }
 inline ::uint32_t PlayerEnterGameNodeRequest::_internal_enter_gs_type() const {
@@ -2211,7 +2211,7 @@ inline void PlayerEnterGameNodeRequest::_internal_set_enter_gs_type(::uint32_t v
 inline void PlayerEnterGameNodeRequest::clear_scene_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.scene_id_ = ::uint64_t{0u};
-  _impl_._has_bits_[0] &= ~0x00000004u;
+  _impl_._has_bits_[0] &= ~0x00000008u;
 }
 inline ::uint64_t PlayerEnterGameNodeRequest::scene_id() const {
   // @@protoc_insertion_point(field_get:PlayerEnterGameNodeRequest.scene_id)
@@ -2219,7 +2219,7 @@ inline ::uint64_t PlayerEnterGameNodeRequest::scene_id() const {
 }
 inline void PlayerEnterGameNodeRequest::set_scene_id(::uint64_t value) {
   _internal_set_scene_id(value);
-  _impl_._has_bits_[0] |= 0x00000004u;
+  _impl_._has_bits_[0] |= 0x00000008u;
   // @@protoc_insertion_point(field_set:PlayerEnterGameNodeRequest.scene_id)
 }
 inline ::uint64_t PlayerEnterGameNodeRequest::_internal_scene_id() const {
@@ -2328,26 +2328,26 @@ inline void ProcessClientPlayerMessageRequest::set_allocated_message_content(::M
   // @@protoc_insertion_point(field_set_allocated:ProcessClientPlayerMessageRequest.message_content)
 }
 
-// uint64 session_id = 2;
+// uint32 session_id = 2;
 inline void ProcessClientPlayerMessageRequest::clear_session_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.session_id_ = ::uint64_t{0u};
+  _impl_.session_id_ = 0u;
   _impl_._has_bits_[0] &= ~0x00000002u;
 }
-inline ::uint64_t ProcessClientPlayerMessageRequest::session_id() const {
+inline ::uint32_t ProcessClientPlayerMessageRequest::session_id() const {
   // @@protoc_insertion_point(field_get:ProcessClientPlayerMessageRequest.session_id)
   return _internal_session_id();
 }
-inline void ProcessClientPlayerMessageRequest::set_session_id(::uint64_t value) {
+inline void ProcessClientPlayerMessageRequest::set_session_id(::uint32_t value) {
   _internal_set_session_id(value);
   _impl_._has_bits_[0] |= 0x00000002u;
   // @@protoc_insertion_point(field_set:ProcessClientPlayerMessageRequest.session_id)
 }
-inline ::uint64_t ProcessClientPlayerMessageRequest::_internal_session_id() const {
+inline ::uint32_t ProcessClientPlayerMessageRequest::_internal_session_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.session_id_;
 }
-inline void ProcessClientPlayerMessageRequest::_internal_set_session_id(::uint64_t value) {
+inline void ProcessClientPlayerMessageRequest::_internal_set_session_id(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.session_id_ = value;
 }
@@ -2449,26 +2449,26 @@ inline void ProcessClientPlayerMessageResponse::set_allocated_message_content(::
   // @@protoc_insertion_point(field_set_allocated:ProcessClientPlayerMessageResponse.message_content)
 }
 
-// uint64 session_id = 2;
+// uint32 session_id = 2;
 inline void ProcessClientPlayerMessageResponse::clear_session_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.session_id_ = ::uint64_t{0u};
+  _impl_.session_id_ = 0u;
   _impl_._has_bits_[0] &= ~0x00000002u;
 }
-inline ::uint64_t ProcessClientPlayerMessageResponse::session_id() const {
+inline ::uint32_t ProcessClientPlayerMessageResponse::session_id() const {
   // @@protoc_insertion_point(field_get:ProcessClientPlayerMessageResponse.session_id)
   return _internal_session_id();
 }
-inline void ProcessClientPlayerMessageResponse::set_session_id(::uint64_t value) {
+inline void ProcessClientPlayerMessageResponse::set_session_id(::uint32_t value) {
   _internal_set_session_id(value);
   _impl_._has_bits_[0] |= 0x00000002u;
   // @@protoc_insertion_point(field_set:ProcessClientPlayerMessageResponse.session_id)
 }
-inline ::uint64_t ProcessClientPlayerMessageResponse::_internal_session_id() const {
+inline ::uint32_t ProcessClientPlayerMessageResponse::_internal_session_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.session_id_;
 }
-inline void ProcessClientPlayerMessageResponse::_internal_set_session_id(::uint64_t value) {
+inline void ProcessClientPlayerMessageResponse::_internal_set_session_id(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.session_id_ = value;
 }
@@ -2626,26 +2626,26 @@ inline void GameNodeConnectRequest::_internal_set_gate_node_id(::uint32_t value)
 
 // RegisterPlayerSessionRequest
 
-// uint64 session_id = 1;
+// uint32 session_id = 1;
 inline void RegisterPlayerSessionRequest::clear_session_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.session_id_ = ::uint64_t{0u};
-  _impl_._has_bits_[0] &= ~0x00000001u;
+  _impl_.session_id_ = 0u;
+  _impl_._has_bits_[0] &= ~0x00000002u;
 }
-inline ::uint64_t RegisterPlayerSessionRequest::session_id() const {
+inline ::uint32_t RegisterPlayerSessionRequest::session_id() const {
   // @@protoc_insertion_point(field_get:RegisterPlayerSessionRequest.session_id)
   return _internal_session_id();
 }
-inline void RegisterPlayerSessionRequest::set_session_id(::uint64_t value) {
+inline void RegisterPlayerSessionRequest::set_session_id(::uint32_t value) {
   _internal_set_session_id(value);
-  _impl_._has_bits_[0] |= 0x00000001u;
+  _impl_._has_bits_[0] |= 0x00000002u;
   // @@protoc_insertion_point(field_set:RegisterPlayerSessionRequest.session_id)
 }
-inline ::uint64_t RegisterPlayerSessionRequest::_internal_session_id() const {
+inline ::uint32_t RegisterPlayerSessionRequest::_internal_session_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.session_id_;
 }
-inline void RegisterPlayerSessionRequest::_internal_set_session_id(::uint64_t value) {
+inline void RegisterPlayerSessionRequest::_internal_set_session_id(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.session_id_ = value;
 }
@@ -2654,7 +2654,7 @@ inline void RegisterPlayerSessionRequest::_internal_set_session_id(::uint64_t va
 inline void RegisterPlayerSessionRequest::clear_player_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.player_id_ = ::uint64_t{0u};
-  _impl_._has_bits_[0] &= ~0x00000002u;
+  _impl_._has_bits_[0] &= ~0x00000001u;
 }
 inline ::uint64_t RegisterPlayerSessionRequest::player_id() const {
   // @@protoc_insertion_point(field_get:RegisterPlayerSessionRequest.player_id)
@@ -2662,7 +2662,7 @@ inline ::uint64_t RegisterPlayerSessionRequest::player_id() const {
 }
 inline void RegisterPlayerSessionRequest::set_player_id(::uint64_t value) {
   _internal_set_player_id(value);
-  _impl_._has_bits_[0] |= 0x00000002u;
+  _impl_._has_bits_[0] |= 0x00000001u;
   // @@protoc_insertion_point(field_set:RegisterPlayerSessionRequest.player_id)
 }
 inline ::uint64_t RegisterPlayerSessionRequest::_internal_player_id() const {

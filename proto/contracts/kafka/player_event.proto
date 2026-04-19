@@ -13,7 +13,7 @@ message PlayerLifecycleCommand {
 
   CommandType command_type = 1;
   uint64 player_id = 2;
-  uint64 session_id = 3;
+  uint32 session_id = 3;
   string gate_id = 4;
   string gate_instance_id = 5;
   bytes payload = 6;

@@ -26,7 +26,7 @@ const (
 // These are intentionally modeled like node event protos so handlers can stay split by file/domain.
 type RoutePlayerEvent struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	SessionId     uint64                 `protobuf:"varint,1,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	SessionId     uint32                 `protobuf:"varint,1,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
 	TargetNodeId  uint32                 `protobuf:"varint,2,opt,name=target_node_id,json=targetNodeId,proto3" json:"target_node_id,omitempty"`
 	SceneId       uint64                 `protobuf:"varint,3,opt,name=scene_id,json=sceneId,proto3" json:"scene_id,omitempty"` // Scene instance GUID allocated by SceneManager
 	PlayerId      uint64                 `protobuf:"varint,4,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
@@ -64,7 +64,7 @@ func (*RoutePlayerEvent) Descriptor() ([]byte, []int) {
 	return file_proto_contracts_kafka_gate_event_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *RoutePlayerEvent) GetSessionId() uint64 {
+func (x *RoutePlayerEvent) GetSessionId() uint32 {
 	if x != nil {
 		return x.SessionId
 	}
@@ -94,7 +94,7 @@ func (x *RoutePlayerEvent) GetPlayerId() uint64 {
 
 type KickPlayerEvent struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	SessionId     uint64                 `protobuf:"varint,1,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	SessionId     uint32                 `protobuf:"varint,1,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -129,7 +129,7 @@ func (*KickPlayerEvent) Descriptor() ([]byte, []int) {
 	return file_proto_contracts_kafka_gate_event_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *KickPlayerEvent) GetSessionId() uint64 {
+func (x *KickPlayerEvent) GetSessionId() uint32 {
 	if x != nil {
 		return x.SessionId
 	}
@@ -140,7 +140,7 @@ func (x *KickPlayerEvent) GetSessionId() uint64 {
 // Consumed by player_locator to start disconnect lease.
 type PlayerDisconnectedEvent struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
-	SessionId      uint64                 `protobuf:"varint,1,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	SessionId      uint32                 `protobuf:"varint,1,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
 	PlayerId       uint64                 `protobuf:"varint,2,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
 	GateId         string                 `protobuf:"bytes,3,opt,name=gate_id,json=gateId,proto3" json:"gate_id,omitempty"`
 	GateInstanceId string                 `protobuf:"bytes,4,opt,name=gate_instance_id,json=gateInstanceId,proto3" json:"gate_instance_id,omitempty"`
@@ -178,7 +178,7 @@ func (*PlayerDisconnectedEvent) Descriptor() ([]byte, []int) {
 	return file_proto_contracts_kafka_gate_event_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *PlayerDisconnectedEvent) GetSessionId() uint64 {
+func (x *PlayerDisconnectedEvent) GetSessionId() uint32 {
 	if x != nil {
 		return x.SessionId
 	}
@@ -211,7 +211,7 @@ func (x *PlayerDisconnectedEvent) GetGateInstanceId() string {
 type PlayerLeaseExpiredEvent struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	PlayerId       uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
-	SessionId      uint64                 `protobuf:"varint,2,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	SessionId      uint32                 `protobuf:"varint,2,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
 	SceneNodeId    string                 `protobuf:"bytes,3,opt,name=scene_node_id,json=sceneNodeId,proto3" json:"scene_node_id,omitempty"`
 	SceneId        uint64                 `protobuf:"varint,4,opt,name=scene_id,json=sceneId,proto3" json:"scene_id,omitempty"`
 	GateId         string                 `protobuf:"bytes,5,opt,name=gate_id,json=gateId,proto3" json:"gate_id,omitempty"`
@@ -257,7 +257,7 @@ func (x *PlayerLeaseExpiredEvent) GetPlayerId() uint64 {
 	return 0
 }
 
-func (x *PlayerLeaseExpiredEvent) GetSessionId() uint64 {
+func (x *PlayerLeaseExpiredEvent) GetSessionId() uint32 {
 	if x != nil {
 		return x.SessionId
 	}
@@ -295,9 +295,9 @@ func (x *PlayerLeaseExpiredEvent) GetGateInstanceId() string {
 // Sent by Login/player_locator to bind a session to Gate.
 type BindSessionEvent struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
-	SessionId      uint64                 `protobuf:"varint,1,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	SessionId      uint32                 `protobuf:"varint,1,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
 	PlayerId       uint64                 `protobuf:"varint,2,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
-	SessionVersion uint64                 `protobuf:"varint,3,opt,name=session_version,json=sessionVersion,proto3" json:"session_version,omitempty"`
+	SessionVersion uint32                 `protobuf:"varint,3,opt,name=session_version,json=sessionVersion,proto3" json:"session_version,omitempty"`
 	EnterGsType    uint32                 `protobuf:"varint,4,opt,name=enter_gs_type,json=enterGsType,proto3" json:"enter_gs_type,omitempty"` // LOGIN_FIRST / LOGIN_RECONNECT / LOGIN_REPLACE
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
@@ -333,7 +333,7 @@ func (*BindSessionEvent) Descriptor() ([]byte, []int) {
 	return file_proto_contracts_kafka_gate_event_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *BindSessionEvent) GetSessionId() uint64 {
+func (x *BindSessionEvent) GetSessionId() uint32 {
 	if x != nil {
 		return x.SessionId
 	}
@@ -347,7 +347,7 @@ func (x *BindSessionEvent) GetPlayerId() uint64 {
 	return 0
 }
 
-func (x *BindSessionEvent) GetSessionVersion() uint64 {
+func (x *BindSessionEvent) GetSessionVersion() uint32 {
 	if x != nil {
 		return x.SessionVersion
 	}
@@ -366,7 +366,7 @@ func (x *BindSessionEvent) GetEnterGsType() uint32 {
 type RedirectToGateEvent struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	PlayerId       uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
-	SessionId      uint64                 `protobuf:"varint,2,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	SessionId      uint32                 `protobuf:"varint,2,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
 	TargetGateIp   string                 `protobuf:"bytes,3,opt,name=target_gate_ip,json=targetGateIp,proto3" json:"target_gate_ip,omitempty"`
 	TargetGatePort uint32                 `protobuf:"varint,4,opt,name=target_gate_port,json=targetGatePort,proto3" json:"target_gate_port,omitempty"`
 	TokenPayload   []byte                 `protobuf:"bytes,5,opt,name=token_payload,json=tokenPayload,proto3" json:"token_payload,omitempty"`       // serialized GateTokenPayload for target gate
@@ -413,7 +413,7 @@ func (x *RedirectToGateEvent) GetPlayerId() uint64 {
 	return 0
 }
 
-func (x *RedirectToGateEvent) GetSessionId() uint64 {
+func (x *RedirectToGateEvent) GetSessionId() uint32 {
 	if x != nil {
 		return x.SessionId
 	}
@@ -459,7 +459,7 @@ func (x *RedirectToGateEvent) GetTokenDeadline() int64 {
 // Flow: Go service -> Kafka gate-{gate_id} -> Gate -> client TCP
 type PushToPlayerEvent struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
-	SessionId      uint64                 `protobuf:"varint,1,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	SessionId      uint32                 `protobuf:"varint,1,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
 	MessageContent *base.MessageContent   `protobuf:"bytes,2,opt,name=message_content,json=messageContent,proto3" json:"message_content,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
@@ -495,7 +495,7 @@ func (*PushToPlayerEvent) Descriptor() ([]byte, []int) {
 	return file_proto_contracts_kafka_gate_event_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *PushToPlayerEvent) GetSessionId() uint64 {
+func (x *PushToPlayerEvent) GetSessionId() uint32 {
 	if x != nil {
 		return x.SessionId
 	}
@@ -514,7 +514,7 @@ func (x *PushToPlayerEvent) GetMessageContent() *base.MessageContent {
 // Flow: Go service -> Kafka gate-{gate_id} -> Gate -> N client TCP connections
 type BroadcastToPlayersEvent struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
-	SessionList    []uint64               `protobuf:"varint,1,rep,packed,name=session_list,json=sessionList,proto3" json:"session_list,omitempty"`
+	SessionList    []uint32               `protobuf:"varint,1,rep,packed,name=session_list,json=sessionList,proto3" json:"session_list,omitempty"`
 	MessageContent *base.MessageContent   `protobuf:"bytes,2,opt,name=message_content,json=messageContent,proto3" json:"message_content,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
@@ -550,7 +550,7 @@ func (*BroadcastToPlayersEvent) Descriptor() ([]byte, []int) {
 	return file_proto_contracts_kafka_gate_event_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *BroadcastToPlayersEvent) GetSessionList() []uint64 {
+func (x *BroadcastToPlayersEvent) GetSessionList() []uint32 {
 	if x != nil {
 		return x.SessionList
 	}
@@ -571,37 +571,37 @@ const file_proto_contracts_kafka_gate_event_proto_rawDesc = "" +
 	"&proto/contracts/kafka/gate_event.proto\x12\x0fcontracts.kafka\x1a\x1fproto/common/base/message.proto\"\x8f\x01\n" +
 	"\x10RoutePlayerEvent\x12\x1d\n" +
 	"\n" +
-	"session_id\x18\x01 \x01(\x04R\tsessionId\x12$\n" +
+	"session_id\x18\x01 \x01(\rR\tsessionId\x12$\n" +
 	"\x0etarget_node_id\x18\x02 \x01(\rR\ftargetNodeId\x12\x19\n" +
 	"\bscene_id\x18\x03 \x01(\x04R\asceneId\x12\x1b\n" +
 	"\tplayer_id\x18\x04 \x01(\x04R\bplayerId\"0\n" +
 	"\x0fKickPlayerEvent\x12\x1d\n" +
 	"\n" +
-	"session_id\x18\x01 \x01(\x04R\tsessionId\"\x98\x01\n" +
+	"session_id\x18\x01 \x01(\rR\tsessionId\"\x98\x01\n" +
 	"\x17PlayerDisconnectedEvent\x12\x1d\n" +
 	"\n" +
-	"session_id\x18\x01 \x01(\x04R\tsessionId\x12\x1b\n" +
+	"session_id\x18\x01 \x01(\rR\tsessionId\x12\x1b\n" +
 	"\tplayer_id\x18\x02 \x01(\x04R\bplayerId\x12\x17\n" +
 	"\agate_id\x18\x03 \x01(\tR\x06gateId\x12(\n" +
 	"\x10gate_instance_id\x18\x04 \x01(\tR\x0egateInstanceId\"\xd7\x01\n" +
 	"\x17PlayerLeaseExpiredEvent\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x1d\n" +
 	"\n" +
-	"session_id\x18\x02 \x01(\x04R\tsessionId\x12\"\n" +
+	"session_id\x18\x02 \x01(\rR\tsessionId\x12\"\n" +
 	"\rscene_node_id\x18\x03 \x01(\tR\vsceneNodeId\x12\x19\n" +
 	"\bscene_id\x18\x04 \x01(\x04R\asceneId\x12\x17\n" +
 	"\agate_id\x18\x05 \x01(\tR\x06gateId\x12(\n" +
 	"\x10gate_instance_id\x18\x06 \x01(\tR\x0egateInstanceId\"\x9b\x01\n" +
 	"\x10BindSessionEvent\x12\x1d\n" +
 	"\n" +
-	"session_id\x18\x01 \x01(\x04R\tsessionId\x12\x1b\n" +
+	"session_id\x18\x01 \x01(\rR\tsessionId\x12\x1b\n" +
 	"\tplayer_id\x18\x02 \x01(\x04R\bplayerId\x12'\n" +
-	"\x0fsession_version\x18\x03 \x01(\x04R\x0esessionVersion\x12\"\n" +
+	"\x0fsession_version\x18\x03 \x01(\rR\x0esessionVersion\x12\"\n" +
 	"\renter_gs_type\x18\x04 \x01(\rR\venterGsType\"\x96\x02\n" +
 	"\x13RedirectToGateEvent\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x1d\n" +
 	"\n" +
-	"session_id\x18\x02 \x01(\x04R\tsessionId\x12$\n" +
+	"session_id\x18\x02 \x01(\rR\tsessionId\x12$\n" +
 	"\x0etarget_gate_ip\x18\x03 \x01(\tR\ftargetGateIp\x12(\n" +
 	"\x10target_gate_port\x18\x04 \x01(\rR\x0etargetGatePort\x12#\n" +
 	"\rtoken_payload\x18\x05 \x01(\fR\ftokenPayload\x12'\n" +
@@ -609,10 +609,10 @@ const file_proto_contracts_kafka_gate_event_proto_rawDesc = "" +
 	"\x0etoken_deadline\x18\a \x01(\x03R\rtokenDeadline\"l\n" +
 	"\x11PushToPlayerEvent\x12\x1d\n" +
 	"\n" +
-	"session_id\x18\x01 \x01(\x04R\tsessionId\x128\n" +
+	"session_id\x18\x01 \x01(\rR\tsessionId\x128\n" +
 	"\x0fmessage_content\x18\x02 \x01(\v2\x0f.MessageContentR\x0emessageContent\"v\n" +
 	"\x17BroadcastToPlayersEvent\x12!\n" +
-	"\fsession_list\x18\x01 \x03(\x04R\vsessionList\x128\n" +
+	"\fsession_list\x18\x01 \x03(\rR\vsessionList\x128\n" +
 	"\x0fmessage_content\x18\x02 \x01(\v2\x0f.MessageContentR\x0emessageContentB\x17Z\x15proto/contracts/kafkab\x06proto3"
 
 var (

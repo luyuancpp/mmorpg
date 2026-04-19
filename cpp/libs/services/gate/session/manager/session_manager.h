@@ -3,7 +3,7 @@
 #include "session/comp/session_info_comp.h"
 #include "network/network_utils.h"
 
-using GateSessionMap = std::unordered_map<Guid, SessionInfo>;
+using GateSessionMap = std::unordered_map<SessionId, SessionInfo>;
 
 class SessionManager
 {

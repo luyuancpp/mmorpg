@@ -214,14 +214,14 @@ func (x *PlayerId) GetUid() int64 {
 type PlayerSession struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	PlayerId       uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
-	SessionId      uint64                 `protobuf:"varint,2,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`                 // Gate session ID
+	SessionId      uint32                 `protobuf:"varint,2,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`                 // Gate session ID
 	GateId         string                 `protobuf:"bytes,3,opt,name=gate_id,json=gateId,proto3" json:"gate_id,omitempty"`                           // Gate node ID
 	GateInstanceId string                 `protobuf:"bytes,4,opt,name=gate_instance_id,json=gateInstanceId,proto3" json:"gate_instance_id,omitempty"` // Gate instance UUID (prevent zombie messages)
 	SceneNodeId    string                 `protobuf:"bytes,5,opt,name=scene_node_id,json=sceneNodeId,proto3" json:"scene_node_id,omitempty"`          // Current Scene node ID
 	SceneId        uint64                 `protobuf:"varint,6,opt,name=scene_id,json=sceneId,proto3" json:"scene_id,omitempty"`                       // Current scene ID
 	TokenId        string                 `protobuf:"bytes,7,opt,name=token_id,json=tokenId,proto3" json:"token_id,omitempty"`                        // SHA256(login_token)
 	TokenExpiryMs  uint64                 `protobuf:"varint,8,opt,name=token_expiry_ms,json=tokenExpiryMs,proto3" json:"token_expiry_ms,omitempty"`
-	SessionVersion uint64                 `protobuf:"varint,9,opt,name=session_version,json=sessionVersion,proto3" json:"session_version,omitempty"` // Incremented on each real change, prevents stale messages
+	SessionVersion uint32                 `protobuf:"varint,9,opt,name=session_version,json=sessionVersion,proto3" json:"session_version,omitempty"` // Incremented on each real change, prevents stale messages
 	State          PlayerSessionState     `protobuf:"varint,10,opt,name=state,proto3,enum=playerlocator.PlayerSessionState" json:"state,omitempty"`
 	LastActiveTs   int64                  `protobuf:"varint,11,opt,name=last_active_ts,json=lastActiveTs,proto3" json:"last_active_ts,omitempty"` // Last active time (unix ms)
 	RequestId      string                 `protobuf:"bytes,12,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`             // Latest login request_id (idempotent)
@@ -267,7 +267,7 @@ func (x *PlayerSession) GetPlayerId() uint64 {
 	return 0
 }
 
-func (x *PlayerSession) GetSessionId() uint64 {
+func (x *PlayerSession) GetSessionId() uint32 {
 	if x != nil {
 		return x.SessionId
 	}
@@ -316,7 +316,7 @@ func (x *PlayerSession) GetTokenExpiryMs() uint64 {
 	return 0
 }
 
-func (x *PlayerSession) GetSessionVersion() uint64 {
+func (x *PlayerSession) GetSessionVersion() uint32 {
 	if x != nil {
 		return x.SessionVersion
 	}
@@ -495,7 +495,7 @@ func (x *GetSessionResponse) GetFound() bool {
 type SetDisconnectingRequest struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
 	PlayerId        uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
-	SessionId       uint64                 `protobuf:"varint,2,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	SessionId       uint32                 `protobuf:"varint,2,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
 	LeaseTtlSeconds uint32                 `protobuf:"varint,3,opt,name=lease_ttl_seconds,json=leaseTtlSeconds,proto3" json:"lease_ttl_seconds,omitempty"` // Default 30s
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
@@ -538,7 +538,7 @@ func (x *SetDisconnectingRequest) GetPlayerId() uint64 {
 	return 0
 }
 
-func (x *SetDisconnectingRequest) GetSessionId() uint64 {
+func (x *SetDisconnectingRequest) GetSessionId() uint32 {
 	if x != nil {
 		return x.SessionId
 	}
@@ -556,7 +556,7 @@ func (x *SetDisconnectingRequest) GetLeaseTtlSeconds() uint32 {
 type ReconnectRequest struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	PlayerId       uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
-	NewSessionId   uint64                 `protobuf:"varint,2,opt,name=new_session_id,json=newSessionId,proto3" json:"new_session_id,omitempty"`
+	NewSessionId   uint32                 `protobuf:"varint,2,opt,name=new_session_id,json=newSessionId,proto3" json:"new_session_id,omitempty"`
 	GateId         string                 `protobuf:"bytes,3,opt,name=gate_id,json=gateId,proto3" json:"gate_id,omitempty"`
 	GateInstanceId string                 `protobuf:"bytes,4,opt,name=gate_instance_id,json=gateInstanceId,proto3" json:"gate_instance_id,omitempty"`
 	TokenId        string                 `protobuf:"bytes,5,opt,name=token_id,json=tokenId,proto3" json:"token_id,omitempty"`
@@ -604,7 +604,7 @@ func (x *ReconnectRequest) GetPlayerId() uint64 {
 	return 0
 }
 
-func (x *ReconnectRequest) GetNewSessionId() uint64 {
+func (x *ReconnectRequest) GetNewSessionId() uint32 {
 	if x != nil {
 		return x.NewSessionId
 	}
@@ -717,7 +717,7 @@ func (x *ReconnectResponse) GetErrorMessage() string {
 type LeaseExpiredEvent struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	PlayerId       uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
-	SessionId      uint64                 `protobuf:"varint,2,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	SessionId      uint32                 `protobuf:"varint,2,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
 	SceneNodeId    string                 `protobuf:"bytes,3,opt,name=scene_node_id,json=sceneNodeId,proto3" json:"scene_node_id,omitempty"`
 	SceneId        uint64                 `protobuf:"varint,4,opt,name=scene_id,json=sceneId,proto3" json:"scene_id,omitempty"`
 	GateId         string                 `protobuf:"bytes,5,opt,name=gate_id,json=gateId,proto3" json:"gate_id,omitempty"`
@@ -763,7 +763,7 @@ func (x *LeaseExpiredEvent) GetPlayerId() uint64 {
 	return 0
 }
 
-func (x *LeaseExpiredEvent) GetSessionId() uint64 {
+func (x *LeaseExpiredEvent) GetSessionId() uint32 {
 	if x != nil {
 		return x.SessionId
 	}
@@ -816,14 +816,14 @@ const file_proto_player_locator_player_locator_proto_rawDesc = "" +
 	"\rPlayerSession\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x1d\n" +
 	"\n" +
-	"session_id\x18\x02 \x01(\x04R\tsessionId\x12\x17\n" +
+	"session_id\x18\x02 \x01(\rR\tsessionId\x12\x17\n" +
 	"\agate_id\x18\x03 \x01(\tR\x06gateId\x12(\n" +
 	"\x10gate_instance_id\x18\x04 \x01(\tR\x0egateInstanceId\x12\"\n" +
 	"\rscene_node_id\x18\x05 \x01(\tR\vsceneNodeId\x12\x19\n" +
 	"\bscene_id\x18\x06 \x01(\x04R\asceneId\x12\x19\n" +
 	"\btoken_id\x18\a \x01(\tR\atokenId\x12&\n" +
 	"\x0ftoken_expiry_ms\x18\b \x01(\x04R\rtokenExpiryMs\x12'\n" +
-	"\x0fsession_version\x18\t \x01(\x04R\x0esessionVersion\x127\n" +
+	"\x0fsession_version\x18\t \x01(\rR\x0esessionVersion\x127\n" +
 	"\x05state\x18\n" +
 	" \x01(\x0e2!.playerlocator.PlayerSessionStateR\x05state\x12$\n" +
 	"\x0elast_active_ts\x18\v \x01(\x03R\flastActiveTs\x12\x1d\n" +
@@ -840,11 +840,11 @@ const file_proto_player_locator_player_locator_proto_rawDesc = "" +
 	"\x17SetDisconnectingRequest\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x1d\n" +
 	"\n" +
-	"session_id\x18\x02 \x01(\x04R\tsessionId\x12*\n" +
+	"session_id\x18\x02 \x01(\rR\tsessionId\x12*\n" +
 	"\x11lease_ttl_seconds\x18\x03 \x01(\rR\x0fleaseTtlSeconds\"\x94\x02\n" +
 	"\x10ReconnectRequest\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12$\n" +
-	"\x0enew_session_id\x18\x02 \x01(\x04R\fnewSessionId\x12\x17\n" +
+	"\x0enew_session_id\x18\x02 \x01(\rR\fnewSessionId\x12\x17\n" +
 	"\agate_id\x18\x03 \x01(\tR\x06gateId\x12(\n" +
 	"\x10gate_instance_id\x18\x04 \x01(\tR\x0egateInstanceId\x12\x19\n" +
 	"\btoken_id\x18\x05 \x01(\tR\atokenId\x12&\n" +
@@ -859,7 +859,7 @@ const file_proto_player_locator_player_locator_proto_rawDesc = "" +
 	"\x11LeaseExpiredEvent\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x1d\n" +
 	"\n" +
-	"session_id\x18\x02 \x01(\x04R\tsessionId\x12\"\n" +
+	"session_id\x18\x02 \x01(\rR\tsessionId\x12\"\n" +
 	"\rscene_node_id\x18\x03 \x01(\tR\vsceneNodeId\x12\x19\n" +
 	"\bscene_id\x18\x04 \x01(\x04R\asceneId\x12\x17\n" +
 	"\agate_id\x18\x05 \x01(\tR\x06gateId\x12(\n" +

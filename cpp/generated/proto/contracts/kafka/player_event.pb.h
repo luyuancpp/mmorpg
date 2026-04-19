@@ -282,8 +282,8 @@ class PlayerLifecycleCommand final : public ::google::protobuf::Message
     kGateInstanceIdFieldNumber = 5,
     kPayloadFieldNumber = 6,
     kPlayerIdFieldNumber = 2,
-    kSessionIdFieldNumber = 3,
     kCommandTypeFieldNumber = 1,
+    kSessionIdFieldNumber = 3,
   };
   // string gate_id = 4;
   void clear_gate_id() ;
@@ -340,16 +340,6 @@ class PlayerLifecycleCommand final : public ::google::protobuf::Message
   void _internal_set_player_id(::uint64_t value);
 
   public:
-  // uint64 session_id = 3;
-  void clear_session_id() ;
-  ::uint64_t session_id() const;
-  void set_session_id(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_session_id() const;
-  void _internal_set_session_id(::uint64_t value);
-
-  public:
   // .contracts.kafka.PlayerLifecycleCommand.CommandType command_type = 1;
   void clear_command_type() ;
   ::contracts::kafka::PlayerLifecycleCommand_CommandType command_type() const;
@@ -358,6 +348,16 @@ class PlayerLifecycleCommand final : public ::google::protobuf::Message
   private:
   ::contracts::kafka::PlayerLifecycleCommand_CommandType _internal_command_type() const;
   void _internal_set_command_type(::contracts::kafka::PlayerLifecycleCommand_CommandType value);
+
+  public:
+  // uint32 session_id = 3;
+  void clear_session_id() ;
+  ::uint32_t session_id() const;
+  void set_session_id(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_session_id() const;
+  void _internal_set_session_id(::uint32_t value);
 
   public:
   // @@protoc_insertion_point(class_scope:contracts.kafka.PlayerLifecycleCommand)
@@ -390,8 +390,8 @@ class PlayerLifecycleCommand final : public ::google::protobuf::Message
     ::google::protobuf::internal::ArenaStringPtr gate_instance_id_;
     ::google::protobuf::internal::ArenaStringPtr payload_;
     ::uint64_t player_id_;
-    ::uint64_t session_id_;
     int command_type_;
+    ::uint32_t session_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -420,7 +420,7 @@ extern const ::google::protobuf::internal::ClassDataFull PlayerLifecycleCommand_
 inline void PlayerLifecycleCommand::clear_command_type() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.command_type_ = 0;
-  _impl_._has_bits_[0] &= ~0x00000020u;
+  _impl_._has_bits_[0] &= ~0x00000010u;
 }
 inline ::contracts::kafka::PlayerLifecycleCommand_CommandType PlayerLifecycleCommand::command_type() const {
   // @@protoc_insertion_point(field_get:contracts.kafka.PlayerLifecycleCommand.command_type)
@@ -428,7 +428,7 @@ inline ::contracts::kafka::PlayerLifecycleCommand_CommandType PlayerLifecycleCom
 }
 inline void PlayerLifecycleCommand::set_command_type(::contracts::kafka::PlayerLifecycleCommand_CommandType value) {
   _internal_set_command_type(value);
-  _impl_._has_bits_[0] |= 0x00000020u;
+  _impl_._has_bits_[0] |= 0x00000010u;
   // @@protoc_insertion_point(field_set:contracts.kafka.PlayerLifecycleCommand.command_type)
 }
 inline ::contracts::kafka::PlayerLifecycleCommand_CommandType PlayerLifecycleCommand::_internal_command_type() const {
@@ -464,26 +464,26 @@ inline void PlayerLifecycleCommand::_internal_set_player_id(::uint64_t value) {
   _impl_.player_id_ = value;
 }
 
-// uint64 session_id = 3;
+// uint32 session_id = 3;
 inline void PlayerLifecycleCommand::clear_session_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.session_id_ = ::uint64_t{0u};
-  _impl_._has_bits_[0] &= ~0x00000010u;
+  _impl_.session_id_ = 0u;
+  _impl_._has_bits_[0] &= ~0x00000020u;
 }
-inline ::uint64_t PlayerLifecycleCommand::session_id() const {
+inline ::uint32_t PlayerLifecycleCommand::session_id() const {
   // @@protoc_insertion_point(field_get:contracts.kafka.PlayerLifecycleCommand.session_id)
   return _internal_session_id();
 }
-inline void PlayerLifecycleCommand::set_session_id(::uint64_t value) {
+inline void PlayerLifecycleCommand::set_session_id(::uint32_t value) {
   _internal_set_session_id(value);
-  _impl_._has_bits_[0] |= 0x00000010u;
+  _impl_._has_bits_[0] |= 0x00000020u;
   // @@protoc_insertion_point(field_set:contracts.kafka.PlayerLifecycleCommand.session_id)
 }
-inline ::uint64_t PlayerLifecycleCommand::_internal_session_id() const {
+inline ::uint32_t PlayerLifecycleCommand::_internal_session_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.session_id_;
 }
-inline void PlayerLifecycleCommand::_internal_set_session_id(::uint64_t value) {
+inline void PlayerLifecycleCommand::_internal_set_session_id(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.session_id_ = value;
 }

@@ -11,7 +11,7 @@ option (OptionFileDefaultNode) = NODE_SCENE;
 
 message GsEnterSceneRequest
 {
-  uint64 session_id = 1;
+  uint32 session_id = 1;
   uint64 scene_id = 2;
 }
 

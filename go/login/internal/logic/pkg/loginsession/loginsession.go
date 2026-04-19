@@ -23,8 +23,8 @@ import (
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
-func sessionKey(sessionID uint64) string {
-	return "login_session:" + strconv.FormatUint(sessionID, 10)
+func sessionKey(sessionID uint32) string {
+	return "login_session:" + strconv.FormatUint(uint64(sessionID), 10)
 }
 
 func sessionTTL() time.Duration {
@@ -33,17 +33,17 @@ func sessionTTL() time.Duration {
 
 // Save stores the account for a session with a TTL.
 // Idempotent: overwrites if already present (same account, protected by account lock).
-func Save(ctx context.Context, rdb *redis.Client, sessionID uint64, account string) error {
+func Save(ctx context.Context, rdb *redis.Client, sessionID uint32, account string) error {
 	return rdb.Set(ctx, sessionKey(sessionID), account, sessionTTL()).Err()
 }
 
 // GetAccount returns the account name for a session.
-func GetAccount(ctx context.Context, rdb *redis.Client, sessionID uint64) (string, error) {
+func GetAccount(ctx context.Context, rdb *redis.Client, sessionID uint32) (string, error) {
 	return rdb.Get(ctx, sessionKey(sessionID)).Result()
 }
 
 // Cleanup removes the session key and the device-set entry.
-func Cleanup(ctx context.Context, rdb *redis.Client, sessionID uint64, logicTag string) {
+func Cleanup(ctx context.Context, rdb *redis.Client, sessionID uint32, logicTag string) {
 	key := sessionKey(sessionID)
 	account, err := rdb.Get(ctx, key).Result()
 	if err != nil {

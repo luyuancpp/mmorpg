@@ -12,7 +12,7 @@ import (
 // PlayerGateInfo holds the minimum session info needed to route a push to the right Gate.
 type PlayerGateInfo struct {
 	PlayerID       uint64
-	SessionID      uint64
+	SessionID      uint32
 	GateID         string
 	GateInstanceID string
 }
@@ -21,11 +21,10 @@ type PlayerGateInfo struct {
 // Each service provides its own implementation using its local proto imports.
 type GateCommandBuilder interface {
 	// BuildPushCommand builds a serialized GateCommand wrapping a PushToPlayerEvent.
-	BuildPushCommand(sessionID uint64, gateInstanceID string,
+	BuildPushCommand(sessionID uint32, gateInstanceID string,
 		messageID uint32, body []byte) ([]byte, error)
 
 	// BuildBroadcastCommand builds a serialized GateCommand wrapping a BroadcastToPlayersEvent.
-	// sessionList contains the low 32 bits of each session ID (gate node prefix is implicit).
 	BuildBroadcastCommand(sessionList []uint32, gateInstanceID string,
 		messageID uint32, body []byte) ([]byte, error)
 }
@@ -63,7 +62,7 @@ func BroadcastToPlayers(ctx context.Context, w *kafkago.Writer, builder GateComm
 			g = &gateGroup{instanceID: p.GateInstanceID}
 			grouped[p.GateID] = g
 		}
-		g.sessions = append(g.sessions, uint32(p.SessionID))
+		g.sessions = append(g.sessions, p.SessionID)
 	}
 
 	var firstErr error

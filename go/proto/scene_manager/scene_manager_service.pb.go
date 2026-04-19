@@ -284,7 +284,7 @@ type EnterSceneRequest struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	PlayerId       uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
 	SceneId        uint64                 `protobuf:"varint,2,opt,name=scene_id,json=sceneId,proto3" json:"scene_id,omitempty"`                       // Target scene (if known). 0 = allocate via scene_conf_id.
-	SessionId      uint64                 `protobuf:"varint,3,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`                 // Gate session ID
+	SessionId      uint32                 `protobuf:"varint,3,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`                 // Gate session ID
 	RequestId      string                 `protobuf:"bytes,4,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`                  // Idempotency ID (optional)
 	GateId         string                 `protobuf:"bytes,5,opt,name=gate_id,json=gateId,proto3" json:"gate_id,omitempty"`                           // Gate Node ID
 	GateInstanceId string                 `protobuf:"bytes,6,opt,name=gate_instance_id,json=gateInstanceId,proto3" json:"gate_instance_id,omitempty"` // Gate Instance ID (for Kafka message validation)
@@ -343,7 +343,7 @@ func (x *EnterSceneRequest) GetSceneId() uint64 {
 	return 0
 }
 
-func (x *EnterSceneRequest) GetSessionId() uint64 {
+func (x *EnterSceneRequest) GetSessionId() uint32 {
 	if x != nil {
 		return x.SessionId
 	}
@@ -626,7 +626,7 @@ const file_proto_scene_manager_scene_manager_service_proto_rawDesc = "" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x19\n" +
 	"\bscene_id\x18\x02 \x01(\x04R\asceneId\x12\x1d\n" +
 	"\n" +
-	"session_id\x18\x03 \x01(\x04R\tsessionId\x12\x1d\n" +
+	"session_id\x18\x03 \x01(\rR\tsessionId\x12\x1d\n" +
 	"\n" +
 	"request_id\x18\x04 \x01(\tR\trequestId\x12\x17\n" +
 	"\agate_id\x18\x05 \x01(\tR\x06gateId\x12(\n" +

@@ -73,7 +73,7 @@ type PlayerLifecycleCommand struct {
 	state          protoimpl.MessageState             `protogen:"open.v1"`
 	CommandType    PlayerLifecycleCommand_CommandType `protobuf:"varint,1,opt,name=command_type,json=commandType,proto3,enum=contracts.kafka.PlayerLifecycleCommand_CommandType" json:"command_type,omitempty"`
 	PlayerId       uint64                             `protobuf:"varint,2,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
-	SessionId      uint64                             `protobuf:"varint,3,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	SessionId      uint32                             `protobuf:"varint,3,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
 	GateId         string                             `protobuf:"bytes,4,opt,name=gate_id,json=gateId,proto3" json:"gate_id,omitempty"`
 	GateInstanceId string                             `protobuf:"bytes,5,opt,name=gate_instance_id,json=gateInstanceId,proto3" json:"gate_instance_id,omitempty"`
 	Payload        []byte                             `protobuf:"bytes,6,opt,name=payload,proto3" json:"payload,omitempty"`
@@ -125,7 +125,7 @@ func (x *PlayerLifecycleCommand) GetPlayerId() uint64 {
 	return 0
 }
 
-func (x *PlayerLifecycleCommand) GetSessionId() uint64 {
+func (x *PlayerLifecycleCommand) GetSessionId() uint32 {
 	if x != nil {
 		return x.SessionId
 	}
@@ -162,7 +162,7 @@ const file_proto_contracts_kafka_player_event_proto_rawDesc = "" +
 	"\fcommand_type\x18\x01 \x01(\x0e23.contracts.kafka.PlayerLifecycleCommand.CommandTypeR\vcommandType\x12\x1b\n" +
 	"\tplayer_id\x18\x02 \x01(\x04R\bplayerId\x12\x1d\n" +
 	"\n" +
-	"session_id\x18\x03 \x01(\x04R\tsessionId\x12\x17\n" +
+	"session_id\x18\x03 \x01(\rR\tsessionId\x12\x17\n" +
 	"\agate_id\x18\x04 \x01(\tR\x06gateId\x12(\n" +
 	"\x10gate_instance_id\x18\x05 \x01(\tR\x0egateInstanceId\x12\x18\n" +
 	"\apayload\x18\x06 \x01(\fR\apayload\"1\n" +

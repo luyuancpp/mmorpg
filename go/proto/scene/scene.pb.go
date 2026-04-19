@@ -26,7 +26,7 @@ const (
 type PlayerEnterGameNodeRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	PlayerId      uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
-	SessionId     uint64                 `protobuf:"varint,2,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	SessionId     uint32                 `protobuf:"varint,2,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
 	EnterGsType   uint32                 `protobuf:"varint,4,opt,name=enter_gs_type,json=enterGsType,proto3" json:"enter_gs_type,omitempty"` // LOGIN_FIRST / LOGIN_RECONNECT / LOGIN_REPLACE
 	SceneId       uint64                 `protobuf:"varint,5,opt,name=scene_id,json=sceneId,proto3" json:"scene_id,omitempty"`               // Target scene instance GUID from SceneManager
 	unknownFields protoimpl.UnknownFields
@@ -70,7 +70,7 @@ func (x *PlayerEnterGameNodeRequest) GetPlayerId() uint64 {
 	return 0
 }
 
-func (x *PlayerEnterGameNodeRequest) GetSessionId() uint64 {
+func (x *PlayerEnterGameNodeRequest) GetSessionId() uint32 {
 	if x != nil {
 		return x.SessionId
 	}
@@ -94,7 +94,7 @@ func (x *PlayerEnterGameNodeRequest) GetSceneId() uint64 {
 type ProcessClientPlayerMessageRequest struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	MessageContent *base.MessageContent   `protobuf:"bytes,1,opt,name=message_content,json=messageContent,proto3" json:"message_content,omitempty"`
-	SessionId      uint64                 `protobuf:"varint,2,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	SessionId      uint32                 `protobuf:"varint,2,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -136,7 +136,7 @@ func (x *ProcessClientPlayerMessageRequest) GetMessageContent() *base.MessageCon
 	return nil
 }
 
-func (x *ProcessClientPlayerMessageRequest) GetSessionId() uint64 {
+func (x *ProcessClientPlayerMessageRequest) GetSessionId() uint32 {
 	if x != nil {
 		return x.SessionId
 	}
@@ -146,7 +146,7 @@ func (x *ProcessClientPlayerMessageRequest) GetSessionId() uint64 {
 type ProcessClientPlayerMessageResponse struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	MessageContent *base.MessageContent   `protobuf:"bytes,1,opt,name=message_content,json=messageContent,proto3" json:"message_content,omitempty"`
-	SessionId      uint64                 `protobuf:"varint,2,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	SessionId      uint32                 `protobuf:"varint,2,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -188,7 +188,7 @@ func (x *ProcessClientPlayerMessageResponse) GetMessageContent() *base.MessageCo
 	return nil
 }
 
-func (x *ProcessClientPlayerMessageResponse) GetSessionId() uint64 {
+func (x *ProcessClientPlayerMessageResponse) GetSessionId() uint32 {
 	if x != nil {
 		return x.SessionId
 	}
@@ -293,7 +293,7 @@ func (x *GameNodeConnectRequest) GetGateNodeId() uint32 {
 
 type RegisterPlayerSessionRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	SessionId     uint64                 `protobuf:"varint,1,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	SessionId     uint32                 `protobuf:"varint,1,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
 	PlayerId      uint64                 `protobuf:"varint,2,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -329,7 +329,7 @@ func (*RegisterPlayerSessionRequest) Descriptor() ([]byte, []int) {
 	return file_proto_scene_scene_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *RegisterPlayerSessionRequest) GetSessionId() uint64 {
+func (x *RegisterPlayerSessionRequest) GetSessionId() uint32 {
 	if x != nil {
 		return x.SessionId
 	}
@@ -515,17 +515,17 @@ const file_proto_scene_scene_proto_rawDesc = "" +
 	"\x1aPlayerEnterGameNodeRequest\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x1d\n" +
 	"\n" +
-	"session_id\x18\x02 \x01(\x04R\tsessionId\x12\"\n" +
+	"session_id\x18\x02 \x01(\rR\tsessionId\x12\"\n" +
 	"\renter_gs_type\x18\x04 \x01(\rR\venterGsType\x12\x19\n" +
 	"\bscene_id\x18\x05 \x01(\x04R\asceneId\"|\n" +
 	"!ProcessClientPlayerMessageRequest\x128\n" +
 	"\x0fmessage_content\x18\x01 \x01(\v2\x0f.MessageContentR\x0emessageContent\x12\x1d\n" +
 	"\n" +
-	"session_id\x18\x02 \x01(\x04R\tsessionId\"}\n" +
+	"session_id\x18\x02 \x01(\rR\tsessionId\"}\n" +
 	"\"ProcessClientPlayerMessageResponse\x128\n" +
 	"\x0fmessage_content\x18\x01 \x01(\v2\x0f.MessageContentR\x0emessageContent\x12\x1d\n" +
 	"\n" +
-	"session_id\x18\x02 \x01(\x04R\tsessionId\"7\n" +
+	"session_id\x18\x02 \x01(\rR\tsessionId\"7\n" +
 	"\x18SessionDisconnectRequest\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\"j\n" +
 	"\x16GameNodeConnectRequest\x12.\n" +
@@ -535,7 +535,7 @@ const file_proto_scene_scene_proto_rawDesc = "" +
 	"gateNodeId\"Z\n" +
 	"\x1cRegisterPlayerSessionRequest\x12\x1d\n" +
 	"\n" +
-	"session_id\x18\x01 \x01(\x04R\tsessionId\x12\x1b\n" +
+	"session_id\x18\x01 \x01(\rR\tsessionId\x12\x1b\n" +
 	"\tplayer_id\x18\x02 \x01(\x04R\bplayerId\"\xc3\x01\n" +
 	"\x12CreateSceneRequest\x12\x1b\n" +
 	"\tconfig_id\x18\x01 \x01(\rR\bconfigId\x12\x19\n" +

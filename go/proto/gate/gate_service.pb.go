@@ -25,9 +25,9 @@ const (
 
 type BindSessionToGateRequest struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
-	SessionId      uint64                 `protobuf:"varint,1,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	SessionId      uint32                 `protobuf:"varint,1,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
 	PlayerId       uint64                 `protobuf:"varint,2,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
-	SessionVersion uint64                 `protobuf:"varint,3,opt,name=session_version,json=sessionVersion,proto3" json:"session_version,omitempty"`
+	SessionVersion uint32                 `protobuf:"varint,3,opt,name=session_version,json=sessionVersion,proto3" json:"session_version,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -62,7 +62,7 @@ func (*BindSessionToGateRequest) Descriptor() ([]byte, []int) {
 	return file_proto_gate_gate_service_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *BindSessionToGateRequest) GetSessionId() uint64 {
+func (x *BindSessionToGateRequest) GetSessionId() uint32 {
 	if x != nil {
 		return x.SessionId
 	}
@@ -76,7 +76,7 @@ func (x *BindSessionToGateRequest) GetPlayerId() uint64 {
 	return 0
 }
 
-func (x *BindSessionToGateRequest) GetSessionVersion() uint64 {
+func (x *BindSessionToGateRequest) GetSessionVersion() uint32 {
 	if x != nil {
 		return x.SessionVersion
 	}
@@ -85,9 +85,9 @@ func (x *BindSessionToGateRequest) GetSessionVersion() uint64 {
 
 type BindSessionToGateResponse struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
-	SessionId      uint64                 `protobuf:"varint,1,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	SessionId      uint32                 `protobuf:"varint,1,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
 	PlayerId       uint64                 `protobuf:"varint,2,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
-	SessionVersion uint64                 `protobuf:"varint,3,opt,name=session_version,json=sessionVersion,proto3" json:"session_version,omitempty"`
+	SessionVersion uint32                 `protobuf:"varint,3,opt,name=session_version,json=sessionVersion,proto3" json:"session_version,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -122,7 +122,7 @@ func (*BindSessionToGateResponse) Descriptor() ([]byte, []int) {
 	return file_proto_gate_gate_service_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *BindSessionToGateResponse) GetSessionId() uint64 {
+func (x *BindSessionToGateResponse) GetSessionId() uint32 {
 	if x != nil {
 		return x.SessionId
 	}
@@ -136,7 +136,7 @@ func (x *BindSessionToGateResponse) GetPlayerId() uint64 {
 	return 0
 }
 
-func (x *BindSessionToGateResponse) GetSessionVersion() uint64 {
+func (x *BindSessionToGateResponse) GetSessionVersion() uint32 {
 	if x != nil {
 		return x.SessionVersion
 	}
@@ -145,7 +145,7 @@ func (x *BindSessionToGateResponse) GetSessionVersion() uint64 {
 
 type BroadcastToPlayersRequest struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
-	SessionList    []uint64               `protobuf:"varint,1,rep,packed,name=session_list,json=sessionList,proto3" json:"session_list,omitempty"`
+	SessionList    []uint32               `protobuf:"varint,1,rep,packed,name=session_list,json=sessionList,proto3" json:"session_list,omitempty"`
 	MessageContent *base.MessageContent   `protobuf:"bytes,2,opt,name=message_content,json=messageContent,proto3" json:"message_content,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
@@ -181,7 +181,7 @@ func (*BroadcastToPlayersRequest) Descriptor() ([]byte, []int) {
 	return file_proto_gate_gate_service_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *BroadcastToPlayersRequest) GetSessionList() []uint64 {
+func (x *BroadcastToPlayersRequest) GetSessionList() []uint32 {
 	if x != nil {
 		return x.SessionList
 	}
@@ -202,16 +202,16 @@ const file_proto_gate_gate_service_proto_rawDesc = "" +
 	"\x1dproto/gate/gate_service.proto\x1a\x1bproto/db/proto_option.proto\x1a\x1dproto/common/base/empty.proto\x1a\x1fproto/common/base/message.proto\x1a proto/common/base/gm_admin.proto\"\x7f\n" +
 	"\x18BindSessionToGateRequest\x12\x1d\n" +
 	"\n" +
-	"session_id\x18\x01 \x01(\x04R\tsessionId\x12\x1b\n" +
+	"session_id\x18\x01 \x01(\rR\tsessionId\x12\x1b\n" +
 	"\tplayer_id\x18\x02 \x01(\x04R\bplayerId\x12'\n" +
-	"\x0fsession_version\x18\x03 \x01(\x04R\x0esessionVersion\"\x80\x01\n" +
+	"\x0fsession_version\x18\x03 \x01(\rR\x0esessionVersion\"\x80\x01\n" +
 	"\x19BindSessionToGateResponse\x12\x1d\n" +
 	"\n" +
-	"session_id\x18\x01 \x01(\x04R\tsessionId\x12\x1b\n" +
+	"session_id\x18\x01 \x01(\rR\tsessionId\x12\x1b\n" +
 	"\tplayer_id\x18\x02 \x01(\x04R\bplayerId\x12'\n" +
-	"\x0fsession_version\x18\x03 \x01(\x04R\x0esessionVersion\"x\n" +
+	"\x0fsession_version\x18\x03 \x01(\rR\x0esessionVersion\"x\n" +
 	"\x19BroadcastToPlayersRequest\x12!\n" +
-	"\fsession_list\x18\x01 \x03(\x04R\vsessionList\x128\n" +
+	"\fsession_list\x18\x01 \x03(\rR\vsessionList\x128\n" +
 	"\x0fmessage_content\x18\x02 \x01(\v2\x0f.MessageContentR\x0emessageContent2\xbe\x04\n" +
 	"\x04Gate\x12X\n" +
 	"\x13PlayerEnterGameNode\x12\x1f.RegisterGameNodeSessionRequest\x1a .RegisterGameNodeSessionResponse\x127\n" +

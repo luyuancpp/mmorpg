@@ -23,8 +23,7 @@ const (
 
 type PlayerGameNodeEntryInfoComp struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	CentreNodeId  uint32                 `protobuf:"varint,1,opt,name=centre_node_id,json=centreNodeId,proto3" json:"centre_node_id,omitempty"` // deprecated
-	SessionId     uint64                 `protobuf:"varint,2,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	SessionId     uint32                 `protobuf:"varint,2,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
 	EnterGsType   uint32                 `protobuf:"varint,3,opt,name=enter_gs_type,json=enterGsType,proto3" json:"enter_gs_type,omitempty"` // LOGIN_FIRST / LOGIN_RECONNECT / LOGIN_REPLACE
 	SceneId       uint64                 `protobuf:"varint,4,opt,name=scene_id,json=sceneId,proto3" json:"scene_id,omitempty"`               // Target scene instance GUID from SceneManager
 	unknownFields protoimpl.UnknownFields
@@ -61,14 +60,7 @@ func (*PlayerGameNodeEntryInfoComp) Descriptor() ([]byte, []int) {
 	return file_proto_common_component_player_async_comp_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *PlayerGameNodeEntryInfoComp) GetCentreNodeId() uint32 {
-	if x != nil {
-		return x.CentreNodeId
-	}
-	return 0
-}
-
-func (x *PlayerGameNodeEntryInfoComp) GetSessionId() uint64 {
+func (x *PlayerGameNodeEntryInfoComp) GetSessionId() uint32 {
 	if x != nil {
 		return x.SessionId
 	}
@@ -93,13 +85,12 @@ var File_proto_common_component_player_async_comp_proto protoreflect.FileDescrip
 
 const file_proto_common_component_player_async_comp_proto_rawDesc = "" +
 	"\n" +
-	".proto/common/component/player_async_comp.proto\"\xa1\x01\n" +
-	"\x1bPlayerGameNodeEntryInfoComp\x12$\n" +
-	"\x0ecentre_node_id\x18\x01 \x01(\rR\fcentreNodeId\x12\x1d\n" +
+	".proto/common/component/player_async_comp.proto\"\x81\x01\n" +
+	"\x1bPlayerGameNodeEntryInfoComp\x12\x1d\n" +
 	"\n" +
-	"session_id\x18\x02 \x01(\x04R\tsessionId\x12\"\n" +
+	"session_id\x18\x02 \x01(\rR\tsessionId\x12\"\n" +
 	"\renter_gs_type\x18\x03 \x01(\rR\venterGsType\x12\x19\n" +
-	"\bscene_id\x18\x04 \x01(\x04R\asceneIdB\x18Z\x16proto/common/componentb\x06proto3"
+	"\bscene_id\x18\x04 \x01(\x04R\asceneIdJ\x04\b\x01\x10\x02B\x18Z\x16proto/common/componentb\x06proto3"
 
 var (
 	file_proto_common_component_player_async_comp_proto_rawDescOnce sync.Once

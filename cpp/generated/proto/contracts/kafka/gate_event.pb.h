@@ -246,18 +246,28 @@ class RoutePlayerEvent final : public ::google::protobuf::Message
   // accessors -------------------------------------------------------
   enum : int {
     kSessionIdFieldNumber = 1,
+    kTargetNodeIdFieldNumber = 2,
     kSceneIdFieldNumber = 3,
     kPlayerIdFieldNumber = 4,
-    kTargetNodeIdFieldNumber = 2,
   };
-  // uint64 session_id = 1;
+  // uint32 session_id = 1;
   void clear_session_id() ;
-  ::uint64_t session_id() const;
-  void set_session_id(::uint64_t value);
+  ::uint32_t session_id() const;
+  void set_session_id(::uint32_t value);
 
   private:
-  ::uint64_t _internal_session_id() const;
-  void _internal_set_session_id(::uint64_t value);
+  ::uint32_t _internal_session_id() const;
+  void _internal_set_session_id(::uint32_t value);
+
+  public:
+  // uint32 target_node_id = 2;
+  void clear_target_node_id() ;
+  ::uint32_t target_node_id() const;
+  void set_target_node_id(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_target_node_id() const;
+  void _internal_set_target_node_id(::uint32_t value);
 
   public:
   // uint64 scene_id = 3;
@@ -278,16 +288,6 @@ class RoutePlayerEvent final : public ::google::protobuf::Message
   private:
   ::uint64_t _internal_player_id() const;
   void _internal_set_player_id(::uint64_t value);
-
-  public:
-  // uint32 target_node_id = 2;
-  void clear_target_node_id() ;
-  ::uint32_t target_node_id() const;
-  void set_target_node_id(::uint32_t value);
-
-  private:
-  ::uint32_t _internal_target_node_id() const;
-  void _internal_set_target_node_id(::uint32_t value);
 
   public:
   // @@protoc_insertion_point(class_scope:contracts.kafka.RoutePlayerEvent)
@@ -316,10 +316,10 @@ class RoutePlayerEvent final : public ::google::protobuf::Message
         const RoutePlayerEvent& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
-    ::uint64_t session_id_;
+    ::uint32_t session_id_;
+    ::uint32_t target_node_id_;
     ::uint64_t scene_id_;
     ::uint64_t player_id_;
-    ::uint32_t target_node_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -477,8 +477,8 @@ class RedirectToGateEvent final : public ::google::protobuf::Message
     kTokenSignatureFieldNumber = 6,
     kPlayerIdFieldNumber = 1,
     kSessionIdFieldNumber = 2,
-    kTokenDeadlineFieldNumber = 7,
     kTargetGatePortFieldNumber = 4,
+    kTokenDeadlineFieldNumber = 7,
   };
   // string target_gate_ip = 3;
   void clear_target_gate_ip() ;
@@ -535,24 +535,14 @@ class RedirectToGateEvent final : public ::google::protobuf::Message
   void _internal_set_player_id(::uint64_t value);
 
   public:
-  // uint64 session_id = 2;
+  // uint32 session_id = 2;
   void clear_session_id() ;
-  ::uint64_t session_id() const;
-  void set_session_id(::uint64_t value);
+  ::uint32_t session_id() const;
+  void set_session_id(::uint32_t value);
 
   private:
-  ::uint64_t _internal_session_id() const;
-  void _internal_set_session_id(::uint64_t value);
-
-  public:
-  // int64 token_deadline = 7;
-  void clear_token_deadline() ;
-  ::int64_t token_deadline() const;
-  void set_token_deadline(::int64_t value);
-
-  private:
-  ::int64_t _internal_token_deadline() const;
-  void _internal_set_token_deadline(::int64_t value);
+  ::uint32_t _internal_session_id() const;
+  void _internal_set_session_id(::uint32_t value);
 
   public:
   // uint32 target_gate_port = 4;
@@ -563,6 +553,16 @@ class RedirectToGateEvent final : public ::google::protobuf::Message
   private:
   ::uint32_t _internal_target_gate_port() const;
   void _internal_set_target_gate_port(::uint32_t value);
+
+  public:
+  // int64 token_deadline = 7;
+  void clear_token_deadline() ;
+  ::int64_t token_deadline() const;
+  void set_token_deadline(::int64_t value);
+
+  private:
+  ::int64_t _internal_token_deadline() const;
+  void _internal_set_token_deadline(::int64_t value);
 
   public:
   // @@protoc_insertion_point(class_scope:contracts.kafka.RedirectToGateEvent)
@@ -595,9 +595,9 @@ class RedirectToGateEvent final : public ::google::protobuf::Message
     ::google::protobuf::internal::ArenaStringPtr token_payload_;
     ::google::protobuf::internal::ArenaStringPtr token_signature_;
     ::uint64_t player_id_;
-    ::uint64_t session_id_;
-    ::int64_t token_deadline_;
+    ::uint32_t session_id_;
     ::uint32_t target_gate_port_;
+    ::int64_t token_deadline_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -754,8 +754,8 @@ class PlayerLeaseExpiredEvent final : public ::google::protobuf::Message
     kGateIdFieldNumber = 5,
     kGateInstanceIdFieldNumber = 6,
     kPlayerIdFieldNumber = 1,
-    kSessionIdFieldNumber = 2,
     kSceneIdFieldNumber = 4,
+    kSessionIdFieldNumber = 2,
   };
   // string scene_node_id = 3;
   void clear_scene_node_id() ;
@@ -812,16 +812,6 @@ class PlayerLeaseExpiredEvent final : public ::google::protobuf::Message
   void _internal_set_player_id(::uint64_t value);
 
   public:
-  // uint64 session_id = 2;
-  void clear_session_id() ;
-  ::uint64_t session_id() const;
-  void set_session_id(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_session_id() const;
-  void _internal_set_session_id(::uint64_t value);
-
-  public:
   // uint64 scene_id = 4;
   void clear_scene_id() ;
   ::uint64_t scene_id() const;
@@ -830,6 +820,16 @@ class PlayerLeaseExpiredEvent final : public ::google::protobuf::Message
   private:
   ::uint64_t _internal_scene_id() const;
   void _internal_set_scene_id(::uint64_t value);
+
+  public:
+  // uint32 session_id = 2;
+  void clear_session_id() ;
+  ::uint32_t session_id() const;
+  void set_session_id(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_session_id() const;
+  void _internal_set_session_id(::uint32_t value);
 
   public:
   // @@protoc_insertion_point(class_scope:contracts.kafka.PlayerLeaseExpiredEvent)
@@ -862,8 +862,8 @@ class PlayerLeaseExpiredEvent final : public ::google::protobuf::Message
     ::google::protobuf::internal::ArenaStringPtr gate_id_;
     ::google::protobuf::internal::ArenaStringPtr gate_instance_id_;
     ::uint64_t player_id_;
-    ::uint64_t session_id_;
     ::uint64_t scene_id_;
+    ::uint32_t session_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -1018,8 +1018,8 @@ class PlayerDisconnectedEvent final : public ::google::protobuf::Message
   enum : int {
     kGateIdFieldNumber = 3,
     kGateInstanceIdFieldNumber = 4,
-    kSessionIdFieldNumber = 1,
     kPlayerIdFieldNumber = 2,
+    kSessionIdFieldNumber = 1,
   };
   // string gate_id = 3;
   void clear_gate_id() ;
@@ -1051,16 +1051,6 @@ class PlayerDisconnectedEvent final : public ::google::protobuf::Message
   ::std::string* PROTOBUF_NONNULL _internal_mutable_gate_instance_id();
 
   public:
-  // uint64 session_id = 1;
-  void clear_session_id() ;
-  ::uint64_t session_id() const;
-  void set_session_id(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_session_id() const;
-  void _internal_set_session_id(::uint64_t value);
-
-  public:
   // uint64 player_id = 2;
   void clear_player_id() ;
   ::uint64_t player_id() const;
@@ -1069,6 +1059,16 @@ class PlayerDisconnectedEvent final : public ::google::protobuf::Message
   private:
   ::uint64_t _internal_player_id() const;
   void _internal_set_player_id(::uint64_t value);
+
+  public:
+  // uint32 session_id = 1;
+  void clear_session_id() ;
+  ::uint32_t session_id() const;
+  void set_session_id(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_session_id() const;
+  void _internal_set_session_id(::uint32_t value);
 
   public:
   // @@protoc_insertion_point(class_scope:contracts.kafka.PlayerDisconnectedEvent)
@@ -1099,8 +1099,8 @@ class PlayerDisconnectedEvent final : public ::google::protobuf::Message
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::google::protobuf::internal::ArenaStringPtr gate_id_;
     ::google::protobuf::internal::ArenaStringPtr gate_instance_id_;
-    ::uint64_t session_id_;
     ::uint64_t player_id_;
+    ::uint32_t session_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -1255,14 +1255,14 @@ class KickPlayerEvent final : public ::google::protobuf::Message
   enum : int {
     kSessionIdFieldNumber = 1,
   };
-  // uint64 session_id = 1;
+  // uint32 session_id = 1;
   void clear_session_id() ;
-  ::uint64_t session_id() const;
-  void set_session_id(::uint64_t value);
+  ::uint32_t session_id() const;
+  void set_session_id(::uint32_t value);
 
   private:
-  ::uint64_t _internal_session_id() const;
-  void _internal_set_session_id(::uint64_t value);
+  ::uint32_t _internal_session_id() const;
+  void _internal_set_session_id(::uint32_t value);
 
   public:
   // @@protoc_insertion_point(class_scope:contracts.kafka.KickPlayerEvent)
@@ -1291,7 +1291,7 @@ class KickPlayerEvent final : public ::google::protobuf::Message
         const KickPlayerEvent& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
-    ::uint64_t session_id_;
+    ::uint32_t session_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -1444,21 +1444,11 @@ class BindSessionEvent final : public ::google::protobuf::Message
 
   // accessors -------------------------------------------------------
   enum : int {
-    kSessionIdFieldNumber = 1,
     kPlayerIdFieldNumber = 2,
+    kSessionIdFieldNumber = 1,
     kSessionVersionFieldNumber = 3,
     kEnterGsTypeFieldNumber = 4,
   };
-  // uint64 session_id = 1;
-  void clear_session_id() ;
-  ::uint64_t session_id() const;
-  void set_session_id(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_session_id() const;
-  void _internal_set_session_id(::uint64_t value);
-
-  public:
   // uint64 player_id = 2;
   void clear_player_id() ;
   ::uint64_t player_id() const;
@@ -1469,14 +1459,24 @@ class BindSessionEvent final : public ::google::protobuf::Message
   void _internal_set_player_id(::uint64_t value);
 
   public:
-  // uint64 session_version = 3;
-  void clear_session_version() ;
-  ::uint64_t session_version() const;
-  void set_session_version(::uint64_t value);
+  // uint32 session_id = 1;
+  void clear_session_id() ;
+  ::uint32_t session_id() const;
+  void set_session_id(::uint32_t value);
 
   private:
-  ::uint64_t _internal_session_version() const;
-  void _internal_set_session_version(::uint64_t value);
+  ::uint32_t _internal_session_id() const;
+  void _internal_set_session_id(::uint32_t value);
+
+  public:
+  // uint32 session_version = 3;
+  void clear_session_version() ;
+  ::uint32_t session_version() const;
+  void set_session_version(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_session_version() const;
+  void _internal_set_session_version(::uint32_t value);
 
   public:
   // uint32 enter_gs_type = 4;
@@ -1515,9 +1515,9 @@ class BindSessionEvent final : public ::google::protobuf::Message
         const BindSessionEvent& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
-    ::uint64_t session_id_;
     ::uint64_t player_id_;
-    ::uint64_t session_version_;
+    ::uint32_t session_id_;
+    ::uint32_t session_version_;
     ::uint32_t enter_gs_type_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -1689,14 +1689,14 @@ class PushToPlayerEvent final : public ::google::protobuf::Message
   ::MessageContent* PROTOBUF_NONNULL _internal_mutable_message_content();
 
   public:
-  // uint64 session_id = 1;
+  // uint32 session_id = 1;
   void clear_session_id() ;
-  ::uint64_t session_id() const;
-  void set_session_id(::uint64_t value);
+  ::uint32_t session_id() const;
+  void set_session_id(::uint32_t value);
 
   private:
-  ::uint64_t _internal_session_id() const;
-  void _internal_set_session_id(::uint64_t value);
+  ::uint32_t _internal_session_id() const;
+  void _internal_set_session_id(::uint32_t value);
 
   public:
   // @@protoc_insertion_point(class_scope:contracts.kafka.PushToPlayerEvent)
@@ -1726,7 +1726,7 @@ class PushToPlayerEvent final : public ::google::protobuf::Message
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::MessageContent* PROTOBUF_NULLABLE message_content_;
-    ::uint64_t session_id_;
+    ::uint32_t session_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -1882,22 +1882,22 @@ class BroadcastToPlayersEvent final : public ::google::protobuf::Message
     kSessionListFieldNumber = 1,
     kMessageContentFieldNumber = 2,
   };
-  // repeated uint64 session_list = 1;
+  // repeated uint32 session_list = 1;
   int session_list_size() const;
   private:
   int _internal_session_list_size() const;
 
   public:
   void clear_session_list() ;
-  ::uint64_t session_list(int index) const;
-  void set_session_list(int index, ::uint64_t value);
-  void add_session_list(::uint64_t value);
-  const ::google::protobuf::RepeatedField<::uint64_t>& session_list() const;
-  ::google::protobuf::RepeatedField<::uint64_t>* PROTOBUF_NONNULL mutable_session_list();
+  ::uint32_t session_list(int index) const;
+  void set_session_list(int index, ::uint32_t value);
+  void add_session_list(::uint32_t value);
+  const ::google::protobuf::RepeatedField<::uint32_t>& session_list() const;
+  ::google::protobuf::RepeatedField<::uint32_t>* PROTOBUF_NONNULL mutable_session_list();
 
   private:
-  const ::google::protobuf::RepeatedField<::uint64_t>& _internal_session_list() const;
-  ::google::protobuf::RepeatedField<::uint64_t>* PROTOBUF_NONNULL _internal_mutable_session_list();
+  const ::google::protobuf::RepeatedField<::uint32_t>& _internal_session_list() const;
+  ::google::protobuf::RepeatedField<::uint32_t>* PROTOBUF_NONNULL _internal_mutable_session_list();
 
   public:
   // .MessageContent message_content = 2;
@@ -1941,7 +1941,7 @@ class BroadcastToPlayersEvent final : public ::google::protobuf::Message
         const BroadcastToPlayersEvent& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
-    ::google::protobuf::RepeatedField<::uint64_t> session_list_;
+    ::google::protobuf::RepeatedField<::uint32_t> session_list_;
     ::google::protobuf::internal::CachedSize _session_list_cached_byte_size_;
     ::MessageContent* PROTOBUF_NULLABLE message_content_;
     PROTOBUF_TSAN_DECLARE_MEMBER
@@ -1968,26 +1968,26 @@ extern const ::google::protobuf::internal::ClassDataFull BroadcastToPlayersEvent
 
 // RoutePlayerEvent
 
-// uint64 session_id = 1;
+// uint32 session_id = 1;
 inline void RoutePlayerEvent::clear_session_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.session_id_ = ::uint64_t{0u};
+  _impl_.session_id_ = 0u;
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
-inline ::uint64_t RoutePlayerEvent::session_id() const {
+inline ::uint32_t RoutePlayerEvent::session_id() const {
   // @@protoc_insertion_point(field_get:contracts.kafka.RoutePlayerEvent.session_id)
   return _internal_session_id();
 }
-inline void RoutePlayerEvent::set_session_id(::uint64_t value) {
+inline void RoutePlayerEvent::set_session_id(::uint32_t value) {
   _internal_set_session_id(value);
   _impl_._has_bits_[0] |= 0x00000001u;
   // @@protoc_insertion_point(field_set:contracts.kafka.RoutePlayerEvent.session_id)
 }
-inline ::uint64_t RoutePlayerEvent::_internal_session_id() const {
+inline ::uint32_t RoutePlayerEvent::_internal_session_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.session_id_;
 }
-inline void RoutePlayerEvent::_internal_set_session_id(::uint64_t value) {
+inline void RoutePlayerEvent::_internal_set_session_id(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.session_id_ = value;
 }
@@ -1996,7 +1996,7 @@ inline void RoutePlayerEvent::_internal_set_session_id(::uint64_t value) {
 inline void RoutePlayerEvent::clear_target_node_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.target_node_id_ = 0u;
-  _impl_._has_bits_[0] &= ~0x00000008u;
+  _impl_._has_bits_[0] &= ~0x00000002u;
 }
 inline ::uint32_t RoutePlayerEvent::target_node_id() const {
   // @@protoc_insertion_point(field_get:contracts.kafka.RoutePlayerEvent.target_node_id)
@@ -2004,7 +2004,7 @@ inline ::uint32_t RoutePlayerEvent::target_node_id() const {
 }
 inline void RoutePlayerEvent::set_target_node_id(::uint32_t value) {
   _internal_set_target_node_id(value);
-  _impl_._has_bits_[0] |= 0x00000008u;
+  _impl_._has_bits_[0] |= 0x00000002u;
   // @@protoc_insertion_point(field_set:contracts.kafka.RoutePlayerEvent.target_node_id)
 }
 inline ::uint32_t RoutePlayerEvent::_internal_target_node_id() const {
@@ -2020,7 +2020,7 @@ inline void RoutePlayerEvent::_internal_set_target_node_id(::uint32_t value) {
 inline void RoutePlayerEvent::clear_scene_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.scene_id_ = ::uint64_t{0u};
-  _impl_._has_bits_[0] &= ~0x00000002u;
+  _impl_._has_bits_[0] &= ~0x00000004u;
 }
 inline ::uint64_t RoutePlayerEvent::scene_id() const {
   // @@protoc_insertion_point(field_get:contracts.kafka.RoutePlayerEvent.scene_id)
@@ -2028,7 +2028,7 @@ inline ::uint64_t RoutePlayerEvent::scene_id() const {
 }
 inline void RoutePlayerEvent::set_scene_id(::uint64_t value) {
   _internal_set_scene_id(value);
-  _impl_._has_bits_[0] |= 0x00000002u;
+  _impl_._has_bits_[0] |= 0x00000004u;
   // @@protoc_insertion_point(field_set:contracts.kafka.RoutePlayerEvent.scene_id)
 }
 inline ::uint64_t RoutePlayerEvent::_internal_scene_id() const {
@@ -2044,7 +2044,7 @@ inline void RoutePlayerEvent::_internal_set_scene_id(::uint64_t value) {
 inline void RoutePlayerEvent::clear_player_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.player_id_ = ::uint64_t{0u};
-  _impl_._has_bits_[0] &= ~0x00000004u;
+  _impl_._has_bits_[0] &= ~0x00000008u;
 }
 inline ::uint64_t RoutePlayerEvent::player_id() const {
   // @@protoc_insertion_point(field_get:contracts.kafka.RoutePlayerEvent.player_id)
@@ -2052,7 +2052,7 @@ inline ::uint64_t RoutePlayerEvent::player_id() const {
 }
 inline void RoutePlayerEvent::set_player_id(::uint64_t value) {
   _internal_set_player_id(value);
-  _impl_._has_bits_[0] |= 0x00000004u;
+  _impl_._has_bits_[0] |= 0x00000008u;
   // @@protoc_insertion_point(field_set:contracts.kafka.RoutePlayerEvent.player_id)
 }
 inline ::uint64_t RoutePlayerEvent::_internal_player_id() const {
@@ -2068,26 +2068,26 @@ inline void RoutePlayerEvent::_internal_set_player_id(::uint64_t value) {
 
 // KickPlayerEvent
 
-// uint64 session_id = 1;
+// uint32 session_id = 1;
 inline void KickPlayerEvent::clear_session_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.session_id_ = ::uint64_t{0u};
+  _impl_.session_id_ = 0u;
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
-inline ::uint64_t KickPlayerEvent::session_id() const {
+inline ::uint32_t KickPlayerEvent::session_id() const {
   // @@protoc_insertion_point(field_get:contracts.kafka.KickPlayerEvent.session_id)
   return _internal_session_id();
 }
-inline void KickPlayerEvent::set_session_id(::uint64_t value) {
+inline void KickPlayerEvent::set_session_id(::uint32_t value) {
   _internal_set_session_id(value);
   _impl_._has_bits_[0] |= 0x00000001u;
   // @@protoc_insertion_point(field_set:contracts.kafka.KickPlayerEvent.session_id)
 }
-inline ::uint64_t KickPlayerEvent::_internal_session_id() const {
+inline ::uint32_t KickPlayerEvent::_internal_session_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.session_id_;
 }
-inline void KickPlayerEvent::_internal_set_session_id(::uint64_t value) {
+inline void KickPlayerEvent::_internal_set_session_id(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.session_id_ = value;
 }
@@ -2096,26 +2096,26 @@ inline void KickPlayerEvent::_internal_set_session_id(::uint64_t value) {
 
 // PlayerDisconnectedEvent
 
-// uint64 session_id = 1;
+// uint32 session_id = 1;
 inline void PlayerDisconnectedEvent::clear_session_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.session_id_ = ::uint64_t{0u};
-  _impl_._has_bits_[0] &= ~0x00000004u;
+  _impl_.session_id_ = 0u;
+  _impl_._has_bits_[0] &= ~0x00000008u;
 }
-inline ::uint64_t PlayerDisconnectedEvent::session_id() const {
+inline ::uint32_t PlayerDisconnectedEvent::session_id() const {
   // @@protoc_insertion_point(field_get:contracts.kafka.PlayerDisconnectedEvent.session_id)
   return _internal_session_id();
 }
-inline void PlayerDisconnectedEvent::set_session_id(::uint64_t value) {
+inline void PlayerDisconnectedEvent::set_session_id(::uint32_t value) {
   _internal_set_session_id(value);
-  _impl_._has_bits_[0] |= 0x00000004u;
+  _impl_._has_bits_[0] |= 0x00000008u;
   // @@protoc_insertion_point(field_set:contracts.kafka.PlayerDisconnectedEvent.session_id)
 }
-inline ::uint64_t PlayerDisconnectedEvent::_internal_session_id() const {
+inline ::uint32_t PlayerDisconnectedEvent::_internal_session_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.session_id_;
 }
-inline void PlayerDisconnectedEvent::_internal_set_session_id(::uint64_t value) {
+inline void PlayerDisconnectedEvent::_internal_set_session_id(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.session_id_ = value;
 }
@@ -2124,7 +2124,7 @@ inline void PlayerDisconnectedEvent::_internal_set_session_id(::uint64_t value) 
 inline void PlayerDisconnectedEvent::clear_player_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.player_id_ = ::uint64_t{0u};
-  _impl_._has_bits_[0] &= ~0x00000008u;
+  _impl_._has_bits_[0] &= ~0x00000004u;
 }
 inline ::uint64_t PlayerDisconnectedEvent::player_id() const {
   // @@protoc_insertion_point(field_get:contracts.kafka.PlayerDisconnectedEvent.player_id)
@@ -2132,7 +2132,7 @@ inline ::uint64_t PlayerDisconnectedEvent::player_id() const {
 }
 inline void PlayerDisconnectedEvent::set_player_id(::uint64_t value) {
   _internal_set_player_id(value);
-  _impl_._has_bits_[0] |= 0x00000008u;
+  _impl_._has_bits_[0] |= 0x00000004u;
   // @@protoc_insertion_point(field_set:contracts.kafka.PlayerDisconnectedEvent.player_id)
 }
 inline ::uint64_t PlayerDisconnectedEvent::_internal_player_id() const {
@@ -2302,26 +2302,26 @@ inline void PlayerLeaseExpiredEvent::_internal_set_player_id(::uint64_t value) {
   _impl_.player_id_ = value;
 }
 
-// uint64 session_id = 2;
+// uint32 session_id = 2;
 inline void PlayerLeaseExpiredEvent::clear_session_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.session_id_ = ::uint64_t{0u};
-  _impl_._has_bits_[0] &= ~0x00000010u;
+  _impl_.session_id_ = 0u;
+  _impl_._has_bits_[0] &= ~0x00000020u;
 }
-inline ::uint64_t PlayerLeaseExpiredEvent::session_id() const {
+inline ::uint32_t PlayerLeaseExpiredEvent::session_id() const {
   // @@protoc_insertion_point(field_get:contracts.kafka.PlayerLeaseExpiredEvent.session_id)
   return _internal_session_id();
 }
-inline void PlayerLeaseExpiredEvent::set_session_id(::uint64_t value) {
+inline void PlayerLeaseExpiredEvent::set_session_id(::uint32_t value) {
   _internal_set_session_id(value);
-  _impl_._has_bits_[0] |= 0x00000010u;
+  _impl_._has_bits_[0] |= 0x00000020u;
   // @@protoc_insertion_point(field_set:contracts.kafka.PlayerLeaseExpiredEvent.session_id)
 }
-inline ::uint64_t PlayerLeaseExpiredEvent::_internal_session_id() const {
+inline ::uint32_t PlayerLeaseExpiredEvent::_internal_session_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.session_id_;
 }
-inline void PlayerLeaseExpiredEvent::_internal_set_session_id(::uint64_t value) {
+inline void PlayerLeaseExpiredEvent::_internal_set_session_id(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.session_id_ = value;
 }
@@ -2395,7 +2395,7 @@ inline void PlayerLeaseExpiredEvent::set_allocated_scene_node_id(::std::string* 
 inline void PlayerLeaseExpiredEvent::clear_scene_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.scene_id_ = ::uint64_t{0u};
-  _impl_._has_bits_[0] &= ~0x00000020u;
+  _impl_._has_bits_[0] &= ~0x00000010u;
 }
 inline ::uint64_t PlayerLeaseExpiredEvent::scene_id() const {
   // @@protoc_insertion_point(field_get:contracts.kafka.PlayerLeaseExpiredEvent.scene_id)
@@ -2403,7 +2403,7 @@ inline ::uint64_t PlayerLeaseExpiredEvent::scene_id() const {
 }
 inline void PlayerLeaseExpiredEvent::set_scene_id(::uint64_t value) {
   _internal_set_scene_id(value);
-  _impl_._has_bits_[0] |= 0x00000020u;
+  _impl_._has_bits_[0] |= 0x00000010u;
   // @@protoc_insertion_point(field_set:contracts.kafka.PlayerLeaseExpiredEvent.scene_id)
 }
 inline ::uint64_t PlayerLeaseExpiredEvent::_internal_scene_id() const {
@@ -2549,26 +2549,26 @@ inline void PlayerLeaseExpiredEvent::set_allocated_gate_instance_id(::std::strin
 
 // BindSessionEvent
 
-// uint64 session_id = 1;
+// uint32 session_id = 1;
 inline void BindSessionEvent::clear_session_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.session_id_ = ::uint64_t{0u};
-  _impl_._has_bits_[0] &= ~0x00000001u;
+  _impl_.session_id_ = 0u;
+  _impl_._has_bits_[0] &= ~0x00000002u;
 }
-inline ::uint64_t BindSessionEvent::session_id() const {
+inline ::uint32_t BindSessionEvent::session_id() const {
   // @@protoc_insertion_point(field_get:contracts.kafka.BindSessionEvent.session_id)
   return _internal_session_id();
 }
-inline void BindSessionEvent::set_session_id(::uint64_t value) {
+inline void BindSessionEvent::set_session_id(::uint32_t value) {
   _internal_set_session_id(value);
-  _impl_._has_bits_[0] |= 0x00000001u;
+  _impl_._has_bits_[0] |= 0x00000002u;
   // @@protoc_insertion_point(field_set:contracts.kafka.BindSessionEvent.session_id)
 }
-inline ::uint64_t BindSessionEvent::_internal_session_id() const {
+inline ::uint32_t BindSessionEvent::_internal_session_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.session_id_;
 }
-inline void BindSessionEvent::_internal_set_session_id(::uint64_t value) {
+inline void BindSessionEvent::_internal_set_session_id(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.session_id_ = value;
 }
@@ -2577,7 +2577,7 @@ inline void BindSessionEvent::_internal_set_session_id(::uint64_t value) {
 inline void BindSessionEvent::clear_player_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.player_id_ = ::uint64_t{0u};
-  _impl_._has_bits_[0] &= ~0x00000002u;
+  _impl_._has_bits_[0] &= ~0x00000001u;
 }
 inline ::uint64_t BindSessionEvent::player_id() const {
   // @@protoc_insertion_point(field_get:contracts.kafka.BindSessionEvent.player_id)
@@ -2585,7 +2585,7 @@ inline ::uint64_t BindSessionEvent::player_id() const {
 }
 inline void BindSessionEvent::set_player_id(::uint64_t value) {
   _internal_set_player_id(value);
-  _impl_._has_bits_[0] |= 0x00000002u;
+  _impl_._has_bits_[0] |= 0x00000001u;
   // @@protoc_insertion_point(field_set:contracts.kafka.BindSessionEvent.player_id)
 }
 inline ::uint64_t BindSessionEvent::_internal_player_id() const {
@@ -2597,26 +2597,26 @@ inline void BindSessionEvent::_internal_set_player_id(::uint64_t value) {
   _impl_.player_id_ = value;
 }
 
-// uint64 session_version = 3;
+// uint32 session_version = 3;
 inline void BindSessionEvent::clear_session_version() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.session_version_ = ::uint64_t{0u};
+  _impl_.session_version_ = 0u;
   _impl_._has_bits_[0] &= ~0x00000004u;
 }
-inline ::uint64_t BindSessionEvent::session_version() const {
+inline ::uint32_t BindSessionEvent::session_version() const {
   // @@protoc_insertion_point(field_get:contracts.kafka.BindSessionEvent.session_version)
   return _internal_session_version();
 }
-inline void BindSessionEvent::set_session_version(::uint64_t value) {
+inline void BindSessionEvent::set_session_version(::uint32_t value) {
   _internal_set_session_version(value);
   _impl_._has_bits_[0] |= 0x00000004u;
   // @@protoc_insertion_point(field_set:contracts.kafka.BindSessionEvent.session_version)
 }
-inline ::uint64_t BindSessionEvent::_internal_session_version() const {
+inline ::uint32_t BindSessionEvent::_internal_session_version() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.session_version_;
 }
-inline void BindSessionEvent::_internal_set_session_version(::uint64_t value) {
+inline void BindSessionEvent::_internal_set_session_version(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.session_version_ = value;
 }
@@ -2673,26 +2673,26 @@ inline void RedirectToGateEvent::_internal_set_player_id(::uint64_t value) {
   _impl_.player_id_ = value;
 }
 
-// uint64 session_id = 2;
+// uint32 session_id = 2;
 inline void RedirectToGateEvent::clear_session_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.session_id_ = ::uint64_t{0u};
+  _impl_.session_id_ = 0u;
   _impl_._has_bits_[0] &= ~0x00000010u;
 }
-inline ::uint64_t RedirectToGateEvent::session_id() const {
+inline ::uint32_t RedirectToGateEvent::session_id() const {
   // @@protoc_insertion_point(field_get:contracts.kafka.RedirectToGateEvent.session_id)
   return _internal_session_id();
 }
-inline void RedirectToGateEvent::set_session_id(::uint64_t value) {
+inline void RedirectToGateEvent::set_session_id(::uint32_t value) {
   _internal_set_session_id(value);
   _impl_._has_bits_[0] |= 0x00000010u;
   // @@protoc_insertion_point(field_set:contracts.kafka.RedirectToGateEvent.session_id)
 }
-inline ::uint64_t RedirectToGateEvent::_internal_session_id() const {
+inline ::uint32_t RedirectToGateEvent::_internal_session_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.session_id_;
 }
-inline void RedirectToGateEvent::_internal_set_session_id(::uint64_t value) {
+inline void RedirectToGateEvent::_internal_set_session_id(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.session_id_ = value;
 }
@@ -2766,7 +2766,7 @@ inline void RedirectToGateEvent::set_allocated_target_gate_ip(::std::string* PRO
 inline void RedirectToGateEvent::clear_target_gate_port() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.target_gate_port_ = 0u;
-  _impl_._has_bits_[0] &= ~0x00000040u;
+  _impl_._has_bits_[0] &= ~0x00000020u;
 }
 inline ::uint32_t RedirectToGateEvent::target_gate_port() const {
   // @@protoc_insertion_point(field_get:contracts.kafka.RedirectToGateEvent.target_gate_port)
@@ -2774,7 +2774,7 @@ inline ::uint32_t RedirectToGateEvent::target_gate_port() const {
 }
 inline void RedirectToGateEvent::set_target_gate_port(::uint32_t value) {
   _internal_set_target_gate_port(value);
-  _impl_._has_bits_[0] |= 0x00000040u;
+  _impl_._has_bits_[0] |= 0x00000020u;
   // @@protoc_insertion_point(field_set:contracts.kafka.RedirectToGateEvent.target_gate_port)
 }
 inline ::uint32_t RedirectToGateEvent::_internal_target_gate_port() const {
@@ -2920,7 +2920,7 @@ inline void RedirectToGateEvent::set_allocated_token_signature(::std::string* PR
 inline void RedirectToGateEvent::clear_token_deadline() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.token_deadline_ = ::int64_t{0};
-  _impl_._has_bits_[0] &= ~0x00000020u;
+  _impl_._has_bits_[0] &= ~0x00000040u;
 }
 inline ::int64_t RedirectToGateEvent::token_deadline() const {
   // @@protoc_insertion_point(field_get:contracts.kafka.RedirectToGateEvent.token_deadline)
@@ -2928,7 +2928,7 @@ inline ::int64_t RedirectToGateEvent::token_deadline() const {
 }
 inline void RedirectToGateEvent::set_token_deadline(::int64_t value) {
   _internal_set_token_deadline(value);
-  _impl_._has_bits_[0] |= 0x00000020u;
+  _impl_._has_bits_[0] |= 0x00000040u;
   // @@protoc_insertion_point(field_set:contracts.kafka.RedirectToGateEvent.token_deadline)
 }
 inline ::int64_t RedirectToGateEvent::_internal_token_deadline() const {
@@ -2944,26 +2944,26 @@ inline void RedirectToGateEvent::_internal_set_token_deadline(::int64_t value) {
 
 // PushToPlayerEvent
 
-// uint64 session_id = 1;
+// uint32 session_id = 1;
 inline void PushToPlayerEvent::clear_session_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.session_id_ = ::uint64_t{0u};
+  _impl_.session_id_ = 0u;
   _impl_._has_bits_[0] &= ~0x00000002u;
 }
-inline ::uint64_t PushToPlayerEvent::session_id() const {
+inline ::uint32_t PushToPlayerEvent::session_id() const {
   // @@protoc_insertion_point(field_get:contracts.kafka.PushToPlayerEvent.session_id)
   return _internal_session_id();
 }
-inline void PushToPlayerEvent::set_session_id(::uint64_t value) {
+inline void PushToPlayerEvent::set_session_id(::uint32_t value) {
   _internal_set_session_id(value);
   _impl_._has_bits_[0] |= 0x00000002u;
   // @@protoc_insertion_point(field_set:contracts.kafka.PushToPlayerEvent.session_id)
 }
-inline ::uint64_t PushToPlayerEvent::_internal_session_id() const {
+inline ::uint32_t PushToPlayerEvent::_internal_session_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.session_id_;
 }
-inline void PushToPlayerEvent::_internal_set_session_id(::uint64_t value) {
+inline void PushToPlayerEvent::_internal_set_session_id(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.session_id_ = value;
 }
@@ -3065,7 +3065,7 @@ inline void PushToPlayerEvent::set_allocated_message_content(::MessageContent* P
 
 // BroadcastToPlayersEvent
 
-// repeated uint64 session_list = 1;
+// repeated uint32 session_list = 1;
 inline int BroadcastToPlayersEvent::_internal_session_list_size() const {
   return _internal_session_list().size();
 }
@@ -3076,36 +3076,36 @@ inline void BroadcastToPlayersEvent::clear_session_list() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.session_list_.Clear();
 }
-inline ::uint64_t BroadcastToPlayersEvent::session_list(int index) const {
+inline ::uint32_t BroadcastToPlayersEvent::session_list(int index) const {
   // @@protoc_insertion_point(field_get:contracts.kafka.BroadcastToPlayersEvent.session_list)
   return _internal_session_list().Get(index);
 }
-inline void BroadcastToPlayersEvent::set_session_list(int index, ::uint64_t value) {
+inline void BroadcastToPlayersEvent::set_session_list(int index, ::uint32_t value) {
   _internal_mutable_session_list()->Set(index, value);
   // @@protoc_insertion_point(field_set:contracts.kafka.BroadcastToPlayersEvent.session_list)
 }
-inline void BroadcastToPlayersEvent::add_session_list(::uint64_t value) {
+inline void BroadcastToPlayersEvent::add_session_list(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _internal_mutable_session_list()->Add(value);
   // @@protoc_insertion_point(field_add:contracts.kafka.BroadcastToPlayersEvent.session_list)
 }
-inline const ::google::protobuf::RepeatedField<::uint64_t>& BroadcastToPlayersEvent::session_list() const
+inline const ::google::protobuf::RepeatedField<::uint32_t>& BroadcastToPlayersEvent::session_list() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_list:contracts.kafka.BroadcastToPlayersEvent.session_list)
   return _internal_session_list();
 }
-inline ::google::protobuf::RepeatedField<::uint64_t>* PROTOBUF_NONNULL BroadcastToPlayersEvent::mutable_session_list()
+inline ::google::protobuf::RepeatedField<::uint32_t>* PROTOBUF_NONNULL BroadcastToPlayersEvent::mutable_session_list()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_mutable_list:contracts.kafka.BroadcastToPlayersEvent.session_list)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   return _internal_mutable_session_list();
 }
-inline const ::google::protobuf::RepeatedField<::uint64_t>&
+inline const ::google::protobuf::RepeatedField<::uint32_t>&
 BroadcastToPlayersEvent::_internal_session_list() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.session_list_;
 }
-inline ::google::protobuf::RepeatedField<::uint64_t>* PROTOBUF_NONNULL
+inline ::google::protobuf::RepeatedField<::uint32_t>* PROTOBUF_NONNULL
 BroadcastToPlayersEvent::_internal_mutable_session_list() {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return &_impl_.session_list_;

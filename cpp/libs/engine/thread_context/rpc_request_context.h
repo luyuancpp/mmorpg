@@ -23,8 +23,8 @@ struct RpcRequestContext
     void SetNextRouteNodeId(uint32_t nodeId) { nextRouteNodeId_ = nodeId; }
     uint32_t GetNextRouteNodeId() const { return nextRouteNodeId_; }
 
-    void SetCurrentSessionId(uint64_t sessionId) { currentSessionId_ = sessionId; }
-    uint64_t GetSessionId() const { return currentSessionId_; }
+    void SetCurrentSessionId(SessionId sessionId) { currentSessionId_ = sessionId; }
+    SessionId GetSessionId() const { return currentSessionId_; }
 
     // --- Current TCP connection (set by RPC dispatch layer) ---
     std::shared_ptr<muduo::net::TcpConnection> conn;
@@ -34,7 +34,7 @@ private:
     std::string routeMsgBody_;
     uint32_t nextRouteNodeType_{ UINT32_MAX };
     uint32_t nextRouteNodeId_{ UINT32_MAX };
-    uint64_t currentSessionId_{ kInvalidSessionId };
+    SessionId currentSessionId_{ kInvalidSessionId };
 };
 
 extern thread_local RpcRequestContext tlsRpc;

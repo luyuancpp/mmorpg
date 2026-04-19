@@ -57,8 +57,8 @@ inline constexpr PlayerSessionSnapshotComp::Impl_::Impl_(
             &::google::protobuf::internal::fixed_address_empty_string,
             ::_pbi::ConstantInitialized()),
         player_id_{::uint64_t{0u}},
-        gate_session_id_{::uint64_t{0u}},
-        session_version_{::uint64_t{0u}},
+        gate_session_id_{0u},
+        session_version_{0u},
         token_expiry_ms_{::uint64_t{0u}} {}
 
 template <typename>
@@ -129,9 +129,9 @@ const char descriptor_table_protodef_proto_2fcommon_2fcomponent_2fplayer_5fnetwo
     "\n0proto/common/component/player_network_"
     "comp.proto\"\241\002\n\031PlayerSessionSnapshotComp"
     "\022\021\n\tplayer_id\030\001 \001(\004\022\027\n\017gate_session_id\030\002"
-    " \001(\004\0227\n\007node_id\030\003 \003(\0132&.PlayerSessionSna"
+    " \001(\r\0227\n\007node_id\030\003 \003(\0132&.PlayerSessionSna"
     "pshotComp.NodeIdEntry\022\023\n\013login_token\030\004 \001"
-    "(\t\022\027\n\017session_version\030\005 \001(\004\022\027\n\017token_exp"
+    "(\t\022\027\n\017session_version\030\005 \001(\r\022\027\n\017token_exp"
     "iry_ms\030\006 \001(\004\022\020\n\010token_id\030\007 \001(\t\022\027\n\017last_r"
     "equest_id\030\010 \001(\t\032-\n\013NodeIdEntry\022\013\n\003key\030\001 "
     "\001(\r\022\r\n\005value\030\002 \001(\r:\0028\001B\022Z\020common/compone"
@@ -417,15 +417,15 @@ PlayerSessionSnapshotComp::_table_ = {
     // uint64 player_id = 1;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(PlayerSessionSnapshotComp, _impl_.player_id_), 3>(),
      {8, 3, 0, PROTOBUF_FIELD_OFFSET(PlayerSessionSnapshotComp, _impl_.player_id_)}},
-    // uint64 gate_session_id = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(PlayerSessionSnapshotComp, _impl_.gate_session_id_), 4>(),
+    // uint32 gate_session_id = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(PlayerSessionSnapshotComp, _impl_.gate_session_id_), 4>(),
      {16, 4, 0, PROTOBUF_FIELD_OFFSET(PlayerSessionSnapshotComp, _impl_.gate_session_id_)}},
     {::_pbi::TcParser::MiniParse, {}},
     // string login_token = 4;
     {::_pbi::TcParser::FastUS1,
      {34, 0, 0, PROTOBUF_FIELD_OFFSET(PlayerSessionSnapshotComp, _impl_.login_token_)}},
-    // uint64 session_version = 5;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(PlayerSessionSnapshotComp, _impl_.session_version_), 5>(),
+    // uint32 session_version = 5;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(PlayerSessionSnapshotComp, _impl_.session_version_), 5>(),
      {40, 5, 0, PROTOBUF_FIELD_OFFSET(PlayerSessionSnapshotComp, _impl_.session_version_)}},
     // uint64 token_expiry_ms = 6;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(PlayerSessionSnapshotComp, _impl_.token_expiry_ms_), 6>(),
@@ -439,18 +439,18 @@ PlayerSessionSnapshotComp::_table_ = {
     // uint64 player_id = 1;
     {PROTOBUF_FIELD_OFFSET(PlayerSessionSnapshotComp, _impl_.player_id_), _Internal::kHasBitsOffset + 3, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
-    // uint64 gate_session_id = 2;
+    // uint32 gate_session_id = 2;
     {PROTOBUF_FIELD_OFFSET(PlayerSessionSnapshotComp, _impl_.gate_session_id_), _Internal::kHasBitsOffset + 4, 0,
-    (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
     // map<uint32, uint32> node_id = 3;
     {PROTOBUF_FIELD_OFFSET(PlayerSessionSnapshotComp, _impl_.node_id_), -1, 0,
     (0 | ::_fl::kFcRepeated | ::_fl::kMap)},
     // string login_token = 4;
     {PROTOBUF_FIELD_OFFSET(PlayerSessionSnapshotComp, _impl_.login_token_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
-    // uint64 session_version = 5;
+    // uint32 session_version = 5;
     {PROTOBUF_FIELD_OFFSET(PlayerSessionSnapshotComp, _impl_.session_version_), _Internal::kHasBitsOffset + 5, 0,
-    (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
     // uint64 token_expiry_ms = 6;
     {PROTOBUF_FIELD_OFFSET(PlayerSessionSnapshotComp, _impl_.token_expiry_ms_), _Internal::kHasBitsOffset + 6, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
@@ -527,11 +527,11 @@ PROTOBUF_NOINLINE void PlayerSessionSnapshotComp::Clear() {
     }
   }
 
-  // uint64 gate_session_id = 2;
+  // uint32 gate_session_id = 2;
   if ((this_._impl_._has_bits_[0] & 0x00000010u) != 0) {
     if (this_._internal_gate_session_id() != 0) {
       target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
           2, this_._internal_gate_session_id(), target);
     }
   }
@@ -567,11 +567,11 @@ PROTOBUF_NOINLINE void PlayerSessionSnapshotComp::Clear() {
     }
   }
 
-  // uint64 session_version = 5;
+  // uint32 session_version = 5;
   if ((this_._impl_._has_bits_[0] & 0x00000020u) != 0) {
     if (this_._internal_session_version() != 0) {
       target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
           5, this_._internal_session_version(), target);
     }
   }
@@ -671,17 +671,17 @@ PROTOBUF_NOINLINE void PlayerSessionSnapshotComp::Clear() {
             this_._internal_player_id());
       }
     }
-    // uint64 gate_session_id = 2;
+    // uint32 gate_session_id = 2;
     if ((cached_has_bits & 0x00000010u) != 0) {
       if (this_._internal_gate_session_id() != 0) {
-        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_gate_session_id());
       }
     }
-    // uint64 session_version = 5;
+    // uint32 session_version = 5;
     if ((cached_has_bits & 0x00000020u) != 0) {
       if (this_._internal_session_version() != 0) {
-        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_session_version());
       }
     }

@@ -775,8 +775,8 @@ class EnterSceneRequest final : public ::google::protobuf::Message
     kPlayerIdFieldNumber = 1,
     kSceneIdFieldNumber = 2,
     kSessionIdFieldNumber = 3,
-    kSceneConfIdFieldNumber = 8,
     kZoneIdFieldNumber = 7,
+    kSceneConfIdFieldNumber = 8,
     kGateZoneIdFieldNumber = 9,
   };
   // string request_id = 4;
@@ -844,24 +844,14 @@ class EnterSceneRequest final : public ::google::protobuf::Message
   void _internal_set_scene_id(::uint64_t value);
 
   public:
-  // uint64 session_id = 3;
+  // uint32 session_id = 3;
   void clear_session_id() ;
-  ::uint64_t session_id() const;
-  void set_session_id(::uint64_t value);
+  ::uint32_t session_id() const;
+  void set_session_id(::uint32_t value);
 
   private:
-  ::uint64_t _internal_session_id() const;
-  void _internal_set_session_id(::uint64_t value);
-
-  public:
-  // uint64 scene_conf_id = 8;
-  void clear_scene_conf_id() ;
-  ::uint64_t scene_conf_id() const;
-  void set_scene_conf_id(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_scene_conf_id() const;
-  void _internal_set_scene_conf_id(::uint64_t value);
+  ::uint32_t _internal_session_id() const;
+  void _internal_set_session_id(::uint32_t value);
 
   public:
   // uint32 zone_id = 7;
@@ -872,6 +862,16 @@ class EnterSceneRequest final : public ::google::protobuf::Message
   private:
   ::uint32_t _internal_zone_id() const;
   void _internal_set_zone_id(::uint32_t value);
+
+  public:
+  // uint64 scene_conf_id = 8;
+  void clear_scene_conf_id() ;
+  ::uint64_t scene_conf_id() const;
+  void set_scene_conf_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_scene_conf_id() const;
+  void _internal_set_scene_conf_id(::uint64_t value);
 
   public:
   // uint32 gate_zone_id = 9;
@@ -915,9 +915,9 @@ class EnterSceneRequest final : public ::google::protobuf::Message
     ::google::protobuf::internal::ArenaStringPtr gate_instance_id_;
     ::uint64_t player_id_;
     ::uint64_t scene_id_;
-    ::uint64_t session_id_;
-    ::uint64_t scene_conf_id_;
+    ::uint32_t session_id_;
     ::uint32_t zone_id_;
+    ::uint64_t scene_conf_id_;
     ::uint32_t gate_zone_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -2330,26 +2330,26 @@ inline void EnterSceneRequest::_internal_set_scene_id(::uint64_t value) {
   _impl_.scene_id_ = value;
 }
 
-// uint64 session_id = 3;
+// uint32 session_id = 3;
 inline void EnterSceneRequest::clear_session_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.session_id_ = ::uint64_t{0u};
+  _impl_.session_id_ = 0u;
   _impl_._has_bits_[0] &= ~0x00000020u;
 }
-inline ::uint64_t EnterSceneRequest::session_id() const {
+inline ::uint32_t EnterSceneRequest::session_id() const {
   // @@protoc_insertion_point(field_get:scene_manager.EnterSceneRequest.session_id)
   return _internal_session_id();
 }
-inline void EnterSceneRequest::set_session_id(::uint64_t value) {
+inline void EnterSceneRequest::set_session_id(::uint32_t value) {
   _internal_set_session_id(value);
   _impl_._has_bits_[0] |= 0x00000020u;
   // @@protoc_insertion_point(field_set:scene_manager.EnterSceneRequest.session_id)
 }
-inline ::uint64_t EnterSceneRequest::_internal_session_id() const {
+inline ::uint32_t EnterSceneRequest::_internal_session_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.session_id_;
 }
-inline void EnterSceneRequest::_internal_set_session_id(::uint64_t value) {
+inline void EnterSceneRequest::_internal_set_session_id(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.session_id_ = value;
 }
@@ -2553,7 +2553,7 @@ inline void EnterSceneRequest::set_allocated_gate_instance_id(::std::string* PRO
 inline void EnterSceneRequest::clear_zone_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.zone_id_ = 0u;
-  _impl_._has_bits_[0] &= ~0x00000080u;
+  _impl_._has_bits_[0] &= ~0x00000040u;
 }
 inline ::uint32_t EnterSceneRequest::zone_id() const {
   // @@protoc_insertion_point(field_get:scene_manager.EnterSceneRequest.zone_id)
@@ -2561,7 +2561,7 @@ inline ::uint32_t EnterSceneRequest::zone_id() const {
 }
 inline void EnterSceneRequest::set_zone_id(::uint32_t value) {
   _internal_set_zone_id(value);
-  _impl_._has_bits_[0] |= 0x00000080u;
+  _impl_._has_bits_[0] |= 0x00000040u;
   // @@protoc_insertion_point(field_set:scene_manager.EnterSceneRequest.zone_id)
 }
 inline ::uint32_t EnterSceneRequest::_internal_zone_id() const {
@@ -2577,7 +2577,7 @@ inline void EnterSceneRequest::_internal_set_zone_id(::uint32_t value) {
 inline void EnterSceneRequest::clear_scene_conf_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.scene_conf_id_ = ::uint64_t{0u};
-  _impl_._has_bits_[0] &= ~0x00000040u;
+  _impl_._has_bits_[0] &= ~0x00000080u;
 }
 inline ::uint64_t EnterSceneRequest::scene_conf_id() const {
   // @@protoc_insertion_point(field_get:scene_manager.EnterSceneRequest.scene_conf_id)
@@ -2585,7 +2585,7 @@ inline ::uint64_t EnterSceneRequest::scene_conf_id() const {
 }
 inline void EnterSceneRequest::set_scene_conf_id(::uint64_t value) {
   _internal_set_scene_conf_id(value);
-  _impl_._has_bits_[0] |= 0x00000040u;
+  _impl_._has_bits_[0] |= 0x00000080u;
   // @@protoc_insertion_point(field_set:scene_manager.EnterSceneRequest.scene_conf_id)
 }
 inline ::uint64_t EnterSceneRequest::_internal_scene_conf_id() const {

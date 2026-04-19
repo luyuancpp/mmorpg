@@ -28,9 +28,9 @@ namespace _fl = ::google::protobuf::internal::field_layout;
 inline constexpr BindSessionToGateResponse::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
-        session_id_{::uint64_t{0u}},
         player_id_{::uint64_t{0u}},
-        session_version_{::uint64_t{0u}} {}
+        session_id_{0u},
+        session_version_{0u} {}
 
 template <typename>
 PROTOBUF_CONSTEXPR BindSessionToGateResponse::BindSessionToGateResponse(::_pbi::ConstantInitialized)
@@ -55,9 +55,9 @@ PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
 inline constexpr BindSessionToGateRequest::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
-        session_id_{::uint64_t{0u}},
         player_id_{::uint64_t{0u}},
-        session_version_{::uint64_t{0u}} {}
+        session_id_{0u},
+        session_version_{0u} {}
 
 template <typename>
 PROTOBUF_CONSTEXPR BindSessionToGateRequest::BindSessionToGateRequest(::_pbi::ConstantInitialized)
@@ -118,8 +118,8 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::BindSessionToGateRequest, _impl_.session_id_),
         PROTOBUF_FIELD_OFFSET(::BindSessionToGateRequest, _impl_.player_id_),
         PROTOBUF_FIELD_OFFSET(::BindSessionToGateRequest, _impl_.session_version_),
-        0,
         1,
+        0,
         2,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::BindSessionToGateResponse, _impl_._has_bits_),
@@ -127,8 +127,8 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::BindSessionToGateResponse, _impl_.session_id_),
         PROTOBUF_FIELD_OFFSET(::BindSessionToGateResponse, _impl_.player_id_),
         PROTOBUF_FIELD_OFFSET(::BindSessionToGateResponse, _impl_.session_version_),
-        0,
         1,
+        0,
         2,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::BroadcastToPlayersRequest, _impl_._has_bits_),
@@ -157,11 +157,11 @@ const char descriptor_table_protodef_proto_2fgate_2fgate_5fservice_2eproto[] ABS
     "empty.proto\032\037proto/common/base/message.p"
     "roto\032 proto/common/base/gm_admin.proto\"Z"
     "\n\030BindSessionToGateRequest\022\022\n\nsession_id"
-    "\030\001 \001(\004\022\021\n\tplayer_id\030\002 \001(\004\022\027\n\017session_ver"
-    "sion\030\003 \001(\004\"[\n\031BindSessionToGateResponse\022"
-    "\022\n\nsession_id\030\001 \001(\004\022\021\n\tplayer_id\030\002 \001(\004\022\027"
-    "\n\017session_version\030\003 \001(\004\"[\n\031BroadcastToPl"
-    "ayersRequest\022\024\n\014session_list\030\001 \003(\004\022(\n\017me"
+    "\030\001 \001(\r\022\021\n\tplayer_id\030\002 \001(\004\022\027\n\017session_ver"
+    "sion\030\003 \001(\r\"[\n\031BindSessionToGateResponse\022"
+    "\022\n\nsession_id\030\001 \001(\r\022\021\n\tplayer_id\030\002 \001(\004\022\027"
+    "\n\017session_version\030\003 \001(\r\"[\n\031BroadcastToPl"
+    "ayersRequest\022\024\n\014session_list\030\001 \003(\r\022(\n\017me"
     "ssage_content\030\002 \001(\0132\017.MessageContent2\276\004\n"
     "\004Gate\022X\n\023PlayerEnterGameNode\022\037.RegisterG"
     "ameNodeSessionRequest\032 .RegisterGameNode"
@@ -241,10 +241,10 @@ PROTOBUF_NDEBUG_INLINE BindSessionToGateRequest::Impl_::Impl_(
 inline void BindSessionToGateRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char *>(&_impl_) +
-               offsetof(Impl_, session_id_),
+               offsetof(Impl_, player_id_),
            0,
            offsetof(Impl_, session_version_) -
-               offsetof(Impl_, session_id_) +
+               offsetof(Impl_, player_id_) +
                sizeof(Impl_::session_version_));
 }
 BindSessionToGateRequest::~BindSessionToGateRequest() {
@@ -321,27 +321,27 @@ BindSessionToGateRequest::_table_ = {
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     {::_pbi::TcParser::MiniParse, {}},
-    // uint64 session_id = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(BindSessionToGateRequest, _impl_.session_id_), 0>(),
-     {8, 0, 0, PROTOBUF_FIELD_OFFSET(BindSessionToGateRequest, _impl_.session_id_)}},
+    // uint32 session_id = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(BindSessionToGateRequest, _impl_.session_id_), 1>(),
+     {8, 1, 0, PROTOBUF_FIELD_OFFSET(BindSessionToGateRequest, _impl_.session_id_)}},
     // uint64 player_id = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(BindSessionToGateRequest, _impl_.player_id_), 1>(),
-     {16, 1, 0, PROTOBUF_FIELD_OFFSET(BindSessionToGateRequest, _impl_.player_id_)}},
-    // uint64 session_version = 3;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(BindSessionToGateRequest, _impl_.session_version_), 2>(),
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(BindSessionToGateRequest, _impl_.player_id_), 0>(),
+     {16, 0, 0, PROTOBUF_FIELD_OFFSET(BindSessionToGateRequest, _impl_.player_id_)}},
+    // uint32 session_version = 3;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(BindSessionToGateRequest, _impl_.session_version_), 2>(),
      {24, 2, 0, PROTOBUF_FIELD_OFFSET(BindSessionToGateRequest, _impl_.session_version_)}},
   }}, {{
     65535, 65535
   }}, {{
-    // uint64 session_id = 1;
-    {PROTOBUF_FIELD_OFFSET(BindSessionToGateRequest, _impl_.session_id_), _Internal::kHasBitsOffset + 0, 0,
-    (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    // uint32 session_id = 1;
+    {PROTOBUF_FIELD_OFFSET(BindSessionToGateRequest, _impl_.session_id_), _Internal::kHasBitsOffset + 1, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
     // uint64 player_id = 2;
-    {PROTOBUF_FIELD_OFFSET(BindSessionToGateRequest, _impl_.player_id_), _Internal::kHasBitsOffset + 1, 0,
+    {PROTOBUF_FIELD_OFFSET(BindSessionToGateRequest, _impl_.player_id_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
-    // uint64 session_version = 3;
+    // uint32 session_version = 3;
     {PROTOBUF_FIELD_OFFSET(BindSessionToGateRequest, _impl_.session_version_), _Internal::kHasBitsOffset + 2, 0,
-    (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
   }},
   // no aux_entries
   {{
@@ -356,9 +356,9 @@ PROTOBUF_NOINLINE void BindSessionToGateRequest::Clear() {
 
   cached_has_bits = _impl_._has_bits_[0];
   if ((cached_has_bits & 0x00000007u) != 0) {
-    ::memset(&_impl_.session_id_, 0, static_cast<::size_t>(
+    ::memset(&_impl_.player_id_, 0, static_cast<::size_t>(
         reinterpret_cast<char*>(&_impl_.session_version_) -
-        reinterpret_cast<char*>(&_impl_.session_id_)) + sizeof(_impl_.session_version_));
+        reinterpret_cast<char*>(&_impl_.player_id_)) + sizeof(_impl_.session_version_));
   }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
@@ -379,17 +379,17 @@ PROTOBUF_NOINLINE void BindSessionToGateRequest::Clear() {
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
-  // uint64 session_id = 1;
-  if ((this_._impl_._has_bits_[0] & 0x00000001u) != 0) {
+  // uint32 session_id = 1;
+  if ((this_._impl_._has_bits_[0] & 0x00000002u) != 0) {
     if (this_._internal_session_id() != 0) {
       target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
           1, this_._internal_session_id(), target);
     }
   }
 
   // uint64 player_id = 2;
-  if ((this_._impl_._has_bits_[0] & 0x00000002u) != 0) {
+  if ((this_._impl_._has_bits_[0] & 0x00000001u) != 0) {
     if (this_._internal_player_id() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
@@ -397,11 +397,11 @@ PROTOBUF_NOINLINE void BindSessionToGateRequest::Clear() {
     }
   }
 
-  // uint64 session_version = 3;
+  // uint32 session_version = 3;
   if ((this_._impl_._has_bits_[0] & 0x00000004u) != 0) {
     if (this_._internal_session_version() != 0) {
       target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
           3, this_._internal_session_version(), target);
     }
   }
@@ -432,24 +432,24 @@ PROTOBUF_NOINLINE void BindSessionToGateRequest::Clear() {
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
   if ((cached_has_bits & 0x00000007u) != 0) {
-    // uint64 session_id = 1;
-    if ((cached_has_bits & 0x00000001u) != 0) {
-      if (this_._internal_session_id() != 0) {
-        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
-            this_._internal_session_id());
-      }
-    }
     // uint64 player_id = 2;
-    if ((cached_has_bits & 0x00000002u) != 0) {
+    if ((cached_has_bits & 0x00000001u) != 0) {
       if (this_._internal_player_id() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
             this_._internal_player_id());
       }
     }
-    // uint64 session_version = 3;
+    // uint32 session_id = 1;
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      if (this_._internal_session_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_session_id());
+      }
+    }
+    // uint32 session_version = 3;
     if ((cached_has_bits & 0x00000004u) != 0) {
       if (this_._internal_session_version() != 0) {
-        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_session_version());
       }
     }
@@ -469,13 +469,13 @@ void BindSessionToGateRequest::MergeImpl(::google::protobuf::MessageLite& to_msg
   cached_has_bits = from._impl_._has_bits_[0];
   if ((cached_has_bits & 0x00000007u) != 0) {
     if ((cached_has_bits & 0x00000001u) != 0) {
-      if (from._internal_session_id() != 0) {
-        _this->_impl_.session_id_ = from._impl_.session_id_;
+      if (from._internal_player_id() != 0) {
+        _this->_impl_.player_id_ = from._impl_.player_id_;
       }
     }
     if ((cached_has_bits & 0x00000002u) != 0) {
-      if (from._internal_player_id() != 0) {
-        _this->_impl_.player_id_ = from._impl_.player_id_;
+      if (from._internal_session_id() != 0) {
+        _this->_impl_.session_id_ = from._impl_.session_id_;
       }
     }
     if ((cached_has_bits & 0x00000004u) != 0) {
@@ -503,9 +503,9 @@ void BindSessionToGateRequest::InternalSwap(BindSessionToGateRequest* PROTOBUF_R
   ::google::protobuf::internal::memswap<
       PROTOBUF_FIELD_OFFSET(BindSessionToGateRequest, _impl_.session_version_)
       + sizeof(BindSessionToGateRequest::_impl_.session_version_)
-      - PROTOBUF_FIELD_OFFSET(BindSessionToGateRequest, _impl_.session_id_)>(
-          reinterpret_cast<char*>(&_impl_.session_id_),
-          reinterpret_cast<char*>(&other->_impl_.session_id_));
+      - PROTOBUF_FIELD_OFFSET(BindSessionToGateRequest, _impl_.player_id_)>(
+          reinterpret_cast<char*>(&_impl_.player_id_),
+          reinterpret_cast<char*>(&other->_impl_.player_id_));
 }
 
 ::google::protobuf::Metadata BindSessionToGateRequest::GetMetadata() const {
@@ -549,10 +549,10 @@ PROTOBUF_NDEBUG_INLINE BindSessionToGateResponse::Impl_::Impl_(
 inline void BindSessionToGateResponse::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char *>(&_impl_) +
-               offsetof(Impl_, session_id_),
+               offsetof(Impl_, player_id_),
            0,
            offsetof(Impl_, session_version_) -
-               offsetof(Impl_, session_id_) +
+               offsetof(Impl_, player_id_) +
                sizeof(Impl_::session_version_));
 }
 BindSessionToGateResponse::~BindSessionToGateResponse() {
@@ -629,27 +629,27 @@ BindSessionToGateResponse::_table_ = {
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     {::_pbi::TcParser::MiniParse, {}},
-    // uint64 session_id = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(BindSessionToGateResponse, _impl_.session_id_), 0>(),
-     {8, 0, 0, PROTOBUF_FIELD_OFFSET(BindSessionToGateResponse, _impl_.session_id_)}},
+    // uint32 session_id = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(BindSessionToGateResponse, _impl_.session_id_), 1>(),
+     {8, 1, 0, PROTOBUF_FIELD_OFFSET(BindSessionToGateResponse, _impl_.session_id_)}},
     // uint64 player_id = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(BindSessionToGateResponse, _impl_.player_id_), 1>(),
-     {16, 1, 0, PROTOBUF_FIELD_OFFSET(BindSessionToGateResponse, _impl_.player_id_)}},
-    // uint64 session_version = 3;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(BindSessionToGateResponse, _impl_.session_version_), 2>(),
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(BindSessionToGateResponse, _impl_.player_id_), 0>(),
+     {16, 0, 0, PROTOBUF_FIELD_OFFSET(BindSessionToGateResponse, _impl_.player_id_)}},
+    // uint32 session_version = 3;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(BindSessionToGateResponse, _impl_.session_version_), 2>(),
      {24, 2, 0, PROTOBUF_FIELD_OFFSET(BindSessionToGateResponse, _impl_.session_version_)}},
   }}, {{
     65535, 65535
   }}, {{
-    // uint64 session_id = 1;
-    {PROTOBUF_FIELD_OFFSET(BindSessionToGateResponse, _impl_.session_id_), _Internal::kHasBitsOffset + 0, 0,
-    (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    // uint32 session_id = 1;
+    {PROTOBUF_FIELD_OFFSET(BindSessionToGateResponse, _impl_.session_id_), _Internal::kHasBitsOffset + 1, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
     // uint64 player_id = 2;
-    {PROTOBUF_FIELD_OFFSET(BindSessionToGateResponse, _impl_.player_id_), _Internal::kHasBitsOffset + 1, 0,
+    {PROTOBUF_FIELD_OFFSET(BindSessionToGateResponse, _impl_.player_id_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
-    // uint64 session_version = 3;
+    // uint32 session_version = 3;
     {PROTOBUF_FIELD_OFFSET(BindSessionToGateResponse, _impl_.session_version_), _Internal::kHasBitsOffset + 2, 0,
-    (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
   }},
   // no aux_entries
   {{
@@ -664,9 +664,9 @@ PROTOBUF_NOINLINE void BindSessionToGateResponse::Clear() {
 
   cached_has_bits = _impl_._has_bits_[0];
   if ((cached_has_bits & 0x00000007u) != 0) {
-    ::memset(&_impl_.session_id_, 0, static_cast<::size_t>(
+    ::memset(&_impl_.player_id_, 0, static_cast<::size_t>(
         reinterpret_cast<char*>(&_impl_.session_version_) -
-        reinterpret_cast<char*>(&_impl_.session_id_)) + sizeof(_impl_.session_version_));
+        reinterpret_cast<char*>(&_impl_.player_id_)) + sizeof(_impl_.session_version_));
   }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
@@ -687,17 +687,17 @@ PROTOBUF_NOINLINE void BindSessionToGateResponse::Clear() {
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
-  // uint64 session_id = 1;
-  if ((this_._impl_._has_bits_[0] & 0x00000001u) != 0) {
+  // uint32 session_id = 1;
+  if ((this_._impl_._has_bits_[0] & 0x00000002u) != 0) {
     if (this_._internal_session_id() != 0) {
       target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
           1, this_._internal_session_id(), target);
     }
   }
 
   // uint64 player_id = 2;
-  if ((this_._impl_._has_bits_[0] & 0x00000002u) != 0) {
+  if ((this_._impl_._has_bits_[0] & 0x00000001u) != 0) {
     if (this_._internal_player_id() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
@@ -705,11 +705,11 @@ PROTOBUF_NOINLINE void BindSessionToGateResponse::Clear() {
     }
   }
 
-  // uint64 session_version = 3;
+  // uint32 session_version = 3;
   if ((this_._impl_._has_bits_[0] & 0x00000004u) != 0) {
     if (this_._internal_session_version() != 0) {
       target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
           3, this_._internal_session_version(), target);
     }
   }
@@ -740,24 +740,24 @@ PROTOBUF_NOINLINE void BindSessionToGateResponse::Clear() {
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
   if ((cached_has_bits & 0x00000007u) != 0) {
-    // uint64 session_id = 1;
-    if ((cached_has_bits & 0x00000001u) != 0) {
-      if (this_._internal_session_id() != 0) {
-        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
-            this_._internal_session_id());
-      }
-    }
     // uint64 player_id = 2;
-    if ((cached_has_bits & 0x00000002u) != 0) {
+    if ((cached_has_bits & 0x00000001u) != 0) {
       if (this_._internal_player_id() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
             this_._internal_player_id());
       }
     }
-    // uint64 session_version = 3;
+    // uint32 session_id = 1;
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      if (this_._internal_session_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_session_id());
+      }
+    }
+    // uint32 session_version = 3;
     if ((cached_has_bits & 0x00000004u) != 0) {
       if (this_._internal_session_version() != 0) {
-        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_session_version());
       }
     }
@@ -777,13 +777,13 @@ void BindSessionToGateResponse::MergeImpl(::google::protobuf::MessageLite& to_ms
   cached_has_bits = from._impl_._has_bits_[0];
   if ((cached_has_bits & 0x00000007u) != 0) {
     if ((cached_has_bits & 0x00000001u) != 0) {
-      if (from._internal_session_id() != 0) {
-        _this->_impl_.session_id_ = from._impl_.session_id_;
+      if (from._internal_player_id() != 0) {
+        _this->_impl_.player_id_ = from._impl_.player_id_;
       }
     }
     if ((cached_has_bits & 0x00000002u) != 0) {
-      if (from._internal_player_id() != 0) {
-        _this->_impl_.player_id_ = from._impl_.player_id_;
+      if (from._internal_session_id() != 0) {
+        _this->_impl_.session_id_ = from._impl_.session_id_;
       }
     }
     if ((cached_has_bits & 0x00000004u) != 0) {
@@ -811,9 +811,9 @@ void BindSessionToGateResponse::InternalSwap(BindSessionToGateResponse* PROTOBUF
   ::google::protobuf::internal::memswap<
       PROTOBUF_FIELD_OFFSET(BindSessionToGateResponse, _impl_.session_version_)
       + sizeof(BindSessionToGateResponse::_impl_.session_version_)
-      - PROTOBUF_FIELD_OFFSET(BindSessionToGateResponse, _impl_.session_id_)>(
-          reinterpret_cast<char*>(&_impl_.session_id_),
-          reinterpret_cast<char*>(&other->_impl_.session_id_));
+      - PROTOBUF_FIELD_OFFSET(BindSessionToGateResponse, _impl_.player_id_)>(
+          reinterpret_cast<char*>(&_impl_.player_id_),
+          reinterpret_cast<char*>(&other->_impl_.player_id_));
 }
 
 ::google::protobuf::Metadata BindSessionToGateResponse::GetMetadata() const {
@@ -972,15 +972,15 @@ BroadcastToPlayersRequest::_table_ = {
     // .MessageContent message_content = 2;
     {::_pbi::TcParser::FastMtS1,
      {18, 0, 0, PROTOBUF_FIELD_OFFSET(BroadcastToPlayersRequest, _impl_.message_content_)}},
-    // repeated uint64 session_list = 1;
-    {::_pbi::TcParser::FastV64P1,
+    // repeated uint32 session_list = 1;
+    {::_pbi::TcParser::FastV32P1,
      {10, 63, 0, PROTOBUF_FIELD_OFFSET(BroadcastToPlayersRequest, _impl_.session_list_)}},
   }}, {{
     65535, 65535
   }}, {{
-    // repeated uint64 session_list = 1;
+    // repeated uint32 session_list = 1;
     {PROTOBUF_FIELD_OFFSET(BroadcastToPlayersRequest, _impl_.session_list_), -1, 0,
-    (0 | ::_fl::kFcRepeated | ::_fl::kPackedUInt64)},
+    (0 | ::_fl::kFcRepeated | ::_fl::kPackedUInt32)},
     // .MessageContent message_content = 2;
     {PROTOBUF_FIELD_OFFSET(BroadcastToPlayersRequest, _impl_.message_content_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
@@ -1023,11 +1023,11 @@ PROTOBUF_NOINLINE void BroadcastToPlayersRequest::Clear() {
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
-  // repeated uint64 session_list = 1;
+  // repeated uint32 session_list = 1;
   {
     int byte_size = this_._impl_._session_list_cached_byte_size_.Get();
     if (byte_size > 0) {
-      target = stream->WriteUInt64Packed(
+      target = stream->WriteUInt32Packed(
           1, this_._internal_session_list(), byte_size, target);
     }
   }
@@ -1065,10 +1065,10 @@ PROTOBUF_NOINLINE void BroadcastToPlayersRequest::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
    {
-    // repeated uint64 session_list = 1;
+    // repeated uint32 session_list = 1;
     {
       total_size +=
-          ::_pbi::WireFormatLite::UInt64SizeWithPackedTagSize(
+          ::_pbi::WireFormatLite::UInt32SizeWithPackedTagSize(
               this_._internal_session_list(), 1,
               this_._impl_._session_list_cached_byte_size_);
     }
