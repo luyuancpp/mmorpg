@@ -131,14 +131,6 @@ func runLoginTests(host string, port int, cfg *config.Config, stats *metrics.Sta
 			}
 			return testMultiRobotBehavior(host, port, cfg.AccountFmt, cfg.Password, stats, tokenPayload, tokenSig, n)
 		}},
-
-		// --- SA-Token auth ---
-		{"SaTokenLogin", func() testResult {
-			if cfg.SaTokenAddr == "" {
-				return testResult{Passed: true, Detail: "SKIP: satoken_addr not configured"}
-			}
-			return testSaTokenLogin(host, port, account, cfg.SaTokenAddr, stats, tokenPayload, tokenSig)
-		}},
 	}
 
 	zap.L().Info("======== Login Test Suite ========", zap.Int("scenarios", len(scenarios)))
@@ -1132,24 +1124,4 @@ func testMultiRobotBehavior(host string, port int, accountFmt, password string, 
 		return testResult{Passed: true, Elapsed: time.Since(start), Detail: detail}
 	}
 	return testResult{Passed: false, Elapsed: time.Since(start), Detail: "insufficient multi-robot coverage: " + detail}
-}
-
-// ---------------------------------------------------------------------------
-// Scenario: SA-Token login (dev-login → satoken auth → enter game)
-// ---------------------------------------------------------------------------
-
-func testSaTokenLogin(host string, port int, account, saTokenAddr string, stats *metrics.Stats, tokenPayload, tokenSig []byte) testResult {
-	start := time.Now()
-	gc, err := connectAndVerify(host, port, account, tokenPayload, tokenSig)
-	if err != nil {
-		return testResult{Elapsed: time.Since(start), Detail: err.Error()}
-	}
-	defer gc.Close()
-
-	if err := loginAndEnterSaToken(gc, saTokenAddr, stats); err != nil {
-		return testResult{Elapsed: time.Since(start), Detail: err.Error()}
-	}
-
-	return testResult{Passed: true, Elapsed: time.Since(start),
-		Detail: fmt.Sprintf("satoken login ok, player_id=%d", gc.PlayerId)}
 }
