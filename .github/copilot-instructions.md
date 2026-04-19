@@ -58,6 +58,16 @@
 - **Toggle Go**: env `GRPC_TRAFFIC_STATS_ENABLED=1`, optional `GRPC_TRAFFIC_STATS_AUTO_DISABLE_MINUTES`, `GRPC_TRAFFIC_STATS_INTERVAL_SECONDS` (default 30s).
 - **Production safe**: atomic-only counters, periodic summary (not per-message), auto-disable timeout.
 
+## Broadcast Message Optimization (Three-Level System)
+- **Three levels**: `BroadcastToPlayers` (AOI subset), `BroadcastToScene` (scene-wide), `BroadcastToAll` (server-wide).
+- **Bitmap encoding**: `BroadcastToPlayers` auto-selects bitmap when `count >= 32 && bitmapBytes + 6 < count * 3`. Session IDs encoded as `session_bitmap_base` (uint32) + `session_bitmap` (bytes). 750 players: ~2250 → ~155 bytes (-93%).
+- **Session ID layout**: `uint32`, upper 15 bits = gate node_id, lower 17 bits = sequence. All sessions on one gate share upper bits → bitmap span bounded.
+- **C++ API** (`player_message_utils.h/cpp`): `BroadcastMessageToPlayers()` (gRPC per gate, auto bitmap), `BroadcastMessageToScene()` (gRPC per gate, by scene_id), `BroadcastMessageToAll()` (gRPC to all gates).
+- **Go API** (`go/shared/kafkautil/gate_push.go`): `BroadcastToPlayers()`, `BroadcastToScene()`, `BroadcastToAll()` — Kafka-based, same three levels. `EncodeBitmapFields()` for auto bitmap in Go.
+- **Gate handlers**: gRPC in `gate_service_handler.cpp`, Kafka in `gate_event_handler.cpp`. Both implement bitmap decode, scene filter, and all-session dispatch.
+- **Proto**: `proto/gate/gate_service.proto` (gRPC), `proto/contracts/kafka/gate_event.proto` (Kafka events).
+- **Design doc**: `docs/design/broadcast-message-size-analysis.md`.
+
 ## gRPC Server Thread Pool (C++ Nodes)
 - C++ nodes embed a gRPC sync server for control-plane RPCs (CreateScene, DestroyScene, etc.).
 - All RPC handlers dispatch to the muduo EventLoop via `runInLoop` + `promise/future`; business logic stays single-threaded.
