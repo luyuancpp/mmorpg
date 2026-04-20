@@ -147,7 +147,7 @@ namespace scene_manager{void SendSceneManagerLeaveScene(entt::registry& , entt::
 namespace scene_node{void SendSceneNodeGrpcCreateScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace scene_node{void SendSceneNodeGrpcDestroyScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 
-std::array<RpcMethodMeta, 127> gRpcMethodRegistry;
+std::array<RpcMethodMeta, 128> gRpcMethodRegistry;
 
 void InitMessageInfo()
 {
@@ -482,12 +482,12 @@ void InitMessageInfo()
         "ClientPlayerLogin", "Disconnect",
         std::make_unique<::loginpb::LoginNodeDisconnectRequest>(),
         std::make_unique<::loginpb::LoginEmptyResponse>(),
-        nullptr, 1, common::base::eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginDisconnect};
-    gRpcMethodRegistry[ClientPlayerLoginRefreshTokenMessageId] = RpcMethodMeta{
-        "ClientPlayerLogin", "RefreshToken",
-        std::make_unique<::loginpb::RefreshTokenRequest>(),
-        std::make_unique<::loginpb::RefreshTokenResponse>(),
-        nullptr, 1, common::base::eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginRefreshToken};
+		nullptr, 1, common::base::eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginDisconnect };
+	gRpcMethodRegistry[ClientPlayerLoginRefreshTokenMessageId] = RpcMethodMeta{
+		"ClientPlayerLogin", "RefreshToken",
+		std::make_unique<::loginpb::RefreshTokenRequest>(),
+		std::make_unique<::loginpb::RefreshTokenResponse>(),
+		nullptr, 1, common::base::eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginRefreshToken };
 
     // --- LoginPreGate ---
     gRpcMethodRegistry[LoginPreGateAssignGateMessageId] = RpcMethodMeta{

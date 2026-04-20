@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"proto/proto/login"
+	"proto/login"
 	"robot/logic/gameobject"
 )
 

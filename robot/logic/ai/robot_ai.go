@@ -130,12 +130,14 @@ func (ai *RobotAI) recordBehavior(action Action, start time.Time, success bool, 
 
 func (ai *RobotAI) castSkill() {
 	start := time.Now()
-	// Prefer server-reported owned skills, fall back to config/table skills.
-	skillIDs := ai.skillIDs
+	// Use server-reported owned skills; fall back to config/table skills only
+	// when no player object exists yet (pre-login phase).
+	var skillIDs []uint32
 	if ai.player != nil {
-		if owned := ai.player.GetOwnedSkillIDs(); len(owned) > 0 {
-			skillIDs = owned
-		}
+		skillIDs = ai.player.GetOwnedSkillIDs()
+	}
+	if len(skillIDs) == 0 && ai.player == nil {
+		skillIDs = ai.skillIDs
 	}
 	if len(skillIDs) == 0 {
 		ai.recordBehavior(ActionCastSkill, start, false, "no owned skills")
