@@ -66,3 +66,47 @@
         }                                                                                       \
     } while (0)
 
+// ─── ECS Component Guard Macros ──────────────────────────────────────
+//
+// try_get a component pointer from tlsEcs.actorRegistry, early-exit if null.
+// Same convention as the generated Lookup* macros:
+//   variable is declared in the enclosing scope, guard runs in do-while(0).
+//
+// Usage:
+//   ECS_GET_OR_VOID(buffList, BuffListComp, entity);     // returns void
+//   ECS_GET_OR_RETURN(state, ActorStateComp, e, kSuccess); // returns custom value
+//   ECS_GET_OR_CONTINUE(comp, Transform, entity);        // continue in loop
+//   ECS_GET_OR_FALSE(attr, BaseAttributesComp, entity);  // returns false
+// ─────────────────────────────────────────────────────────────────────
+
+#define ECS_GET_OR_RETURN(var, Type, entity, retval)        \
+    auto *var = tlsEcs.actorRegistry.try_get<Type>(entity); \
+    do                                                      \
+    {                                                       \
+        if (!(var))                                         \
+            return (retval);                                \
+    } while (0)
+
+#define ECS_GET_OR_VOID(var, Type, entity)                  \
+    auto *var = tlsEcs.actorRegistry.try_get<Type>(entity); \
+    do                                                      \
+    {                                                       \
+        if (!(var))                                         \
+            return;                                         \
+    } while (0)
+
+#define ECS_GET_OR_CONTINUE(var, Type, entity)              \
+    auto *var = tlsEcs.actorRegistry.try_get<Type>(entity); \
+    do                                                      \
+    {                                                       \
+        if (!(var))                                         \
+            continue;                                       \
+    } while (0)
+
+#define ECS_GET_OR_FALSE(var, Type, entity)                 \
+    auto *var = tlsEcs.actorRegistry.try_get<Type>(entity); \
+    do                                                      \
+    {                                                       \
+        if (!(var))                                         \
+            return false;                                   \
+    } while (0)

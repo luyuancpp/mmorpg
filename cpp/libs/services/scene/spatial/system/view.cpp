@@ -68,19 +68,21 @@ bool ViewSystem::IsWithinViewRadius(entt::entity observer, entt::entity entrant)
     return IsWithinViewRadius(observer, entrant, viewRadius);
 }
 
-double ViewSystem::GetDistanceBetweenEntities(entt::entity entity1, entt::entity entity2)
+std::optional<double> ViewSystem::GetDistanceBetweenEntities(entt::entity entity1, entt::entity entity2)
 {
-    const auto &transform1 = tlsEcs.actorRegistry.get<Transform>(entity1);
-    const auto &transform2 = tlsEcs.actorRegistry.get<Transform>(entity2);
+    const auto *transform1 = tlsEcs.actorRegistry.try_get<Transform>(entity1);
+    const auto *transform2 = tlsEcs.actorRegistry.try_get<Transform>(entity2);
+    if (!transform1 || !transform2)
+        return std::nullopt;
 
     const dtReal location1[] = {
-        transform1.location().x(),
-        transform1.location().y(),
-        transform1.location().z()};
+        transform1->location().x(),
+        transform1->location().y(),
+        transform1->location().z()};
     const dtReal location2[] = {
-        transform2.location().x(),
-        transform2.location().y(),
-        transform2.location().z()};
+        transform2->location().x(),
+        transform2->location().y(),
+        transform2->location().z()};
 
     return dtVdist(location1, location2);
 }

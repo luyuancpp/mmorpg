@@ -136,7 +136,13 @@ The following were removed from git tracking:
 - **Serialize once, broadcast many**: move `SerializeAsString()` outside loops that send to multiple gates/nodes.
 - **Use `SerializeToString(mutable_field())` instead of `set_serialized_message(SerializeAsString())`** to avoid temporary string + copy.
 - **Never construct `std::random_device` / `std::mt19937` per call**: use project-wide `tlsRandom` from `utils/random/random.h`.
-- **Never use `get_or_emplace<T>` in per-tick/per-pair hot paths**: use `get<T>` (asserts existence) or `try_get<T>` (null-safe). `get_or_emplace` in LOG statements silently creates default components and corrupts ECS state.
+- **Never use `get_or_emplace<T>` in per-tick/per-pair hot paths**: use `get<T>` (asserts existence) or `try_get<T>` (null-safe). `get_or_emplace` silently creates default components and corrupts ECS state.
+- **ECS component access rules (`get` vs `try_get` vs `get_or_emplace`)**:
+  - `get<T>`: only inside `view<T,...>` iterations or after `any_of<T>`/`all_of<T>` guard. Asserts and crashes if component is absent.
+  - `try_get<T>`: for cross-entity lookups, optional components, or any entity whose archetype is not guaranteed. Returns nullptr when absent.
+  - `get_or_emplace<T>`: **only** during entity initialization/setup (e.g. `InitPlayerFromAllData`, event handlers that create initial state). **Never** in per-tick systems, combat calculations, spatial queries, or attribute sync. It silently creates zero-valued components that mask missing initialization and corrupt ECS state.
+  - Return `std::optional<T>` from functions that depend on optional components (e.g. `GetDistanceBetweenEntities` returns `std::optional<double>`).
+  - ECS sparse-set model: entities without a component use zero memory in that pool and are skipped by `view<T>` iteration — this is a core design advantage for dungeons/instances where actors intentionally omit components (AI, bag, buff, skills) to save memory and CPU.
 - **Component updates: `emplace_or_replace<T>`, not `remove<T>` + `emplace<T>`** — avoids unnecessary pool dealloc/alloc.
 - **Single-pass distance classification**: compute distance once per AoI neighbor, classify into level-1/2/3 buckets. Never iterate the full AoI list N times for N distance levels.
 - **Cache derived buff state as tag components** (e.g. `StealthedTagComp`): maintain in `OnBuffStart`/`OnBuffRemove` instead of linear scanning buffs per visibility check.
@@ -180,6 +186,7 @@ The following were removed from git tracking:
 - Changing coordinate/transform proto fields (`Location`, `Rotation`, `Scale`, `Vector3`, `Velocity`, `Acceleration`) from `double` to `float` — must match UE4 client-side double precision.
 - Changing `BaseAttributesComp` fields (`strength`, `stamina`, `health`, `mana`, `critchance`, `armor`, `resistance`) from `uint64` to `uint32` — combat formulas use double-precision arithmetic; uint64 preserves headroom.
 - Shrinking any SnowFlake GUID field (`player_id`, `entity`, `scene_id`, etc.) or Unix-ms timestamp field from `uint64` — these exceed uint32 range by design.
+- Using `get_or_emplace<T>` in per-tick systems, combat calculations, spatial queries, attribute sync, or any code path that runs per-entity per-frame — silently creates default components, corrupts ECS state, and masks missing initialization. Use `get<T>` (with structural guarantee) or `try_get<T>` (cross-entity/optional) instead.
 
 ## UNIQUE STYLES
 - Repo keeps generated outputs checked in.

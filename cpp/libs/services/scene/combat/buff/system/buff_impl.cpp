@@ -4,6 +4,7 @@
 #include "combat/buff/system/buff.h"
 #include "combat_state/constants/combat_state.h"
 #include "combat/buff/constants/buff.h"
+#include "macros/return_define.h"
 #include "proto/common/event/actor_combat_state_event.pb.h"
 #include "time/system/time.h"
 #include "core/utils/defer/defer.h"
@@ -56,8 +57,9 @@ void BuffImplSystem::UpdateLastDamageOrSkillHitTime(entt::entity casterEntity, e
 
     defer(BuffSystem::RemoveBuff(targetEntity, buffsToRemoveTarget));
 
-    auto& buffList = tlsEcs.actorRegistry.get_or_emplace<BuffListComp>(targetEntity);
-    for (auto& buffComp : buffList | std::views::values) {
+    ECS_GET_OR_VOID(buffList, BuffListComp, targetEntity);
+    for (auto &buffComp : *buffList | std::views::values)
+    {
         LookupBuffOrContinue(buffComp.buffPb.buff_table_id());
 
         if (buffRow->buff_type() == kBuffTypeNoDamageOrSkillHitInLastSeconds) {
@@ -110,8 +112,9 @@ void BuffImplSystem::HandleBuffEffectsOnDamage(entt::entity casterEntity, entt::
 
     defer(BuffSystem::RemoveBuff(casterEntity, buffsToRemoveCaster));
 
-    auto& buffList = tlsEcs.actorRegistry.get_or_emplace<BuffListComp>(casterEntity);
-    for (auto& buffComp : buffList | std::views::values) {
+    ECS_GET_OR_VOID(buffList, BuffListComp, casterEntity);
+    for (auto &buffComp : *buffList | std::views::values)
+    {
         LookupBuffOrContinue(buffComp.buffPb.buff_table_id());
 
         switch (buffRow->buff_type()) {

@@ -53,9 +53,9 @@ static bool OnHealthRegenerationBasedOnLostHealth(entt::entity parent, BuffEntry
     }
 
     // TODO: Compute max_health on demand
-    auto& baseAttributesPbComponent = tlsEcs.actorRegistry.get_or_emplace<BaseAttributesComp>(parent);
-    const auto& derivedAttributesPbComponent = tlsEcs.actorRegistry.get_or_emplace<DerivedAttributesComp>(parent);
-    const auto& levelComponent = tlsEcs.actorRegistry.get_or_emplace<LevelComp>(parent);
+    auto &baseAttributesPbComponent = tlsEcs.actorRegistry.get<BaseAttributesComp>(parent);
+    const auto &derivedAttributesPbComponent = tlsEcs.actorRegistry.get<DerivedAttributesComp>(parent);
+    const auto &levelComponent = tlsEcs.actorRegistry.get<LevelComp>(parent);
 
     const auto lostHealth = derivedAttributesPbComponent.max_health() - baseAttributesPbComponent.health();
 

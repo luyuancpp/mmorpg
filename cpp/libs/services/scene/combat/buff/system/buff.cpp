@@ -164,7 +164,13 @@ void BuffSystem::RemovePendingBuffs(const entt::entity parent, BuffListComp& buf
 // Buff expiry handler
 void BuffSystem::OnBuffExpire(const entt::entity parent, const uint64_t buffId)
 {
-    auto& buffList = tlsEcs.actorRegistry.get_or_emplace<BuffListComp>(parent);
+    auto *buffListPtr = tlsEcs.actorRegistry.try_get<BuffListComp>(parent);
+    if (!buffListPtr)
+    {
+        LOG_ERROR << "Cannot find buff list for entity " << entt::to_integral(parent);
+        return;
+    }
+    auto &buffList = *buffListPtr;
     const auto buffIt = buffList.find(buffId);
 
     if (buffIt == buffList.end()) {
@@ -185,11 +191,15 @@ uint32_t BuffSystem::CanCreateBuff(const entt::entity parentEntity, const uint32
 {
     LookupBuff(buffTableId);
 
-    const auto& buffList = tlsEcs.actorRegistry.get_or_emplace<BuffListComp>(parentEntity);
-    if (const bool isImmune = IsTargetImmune(buffList, buffRow)) {
-        return MAKE_ERROR_MSG(kBuffTargetImmuneToBuff,
-            "entity=" << entt::to_integral(parentEntity)
-            << " buffTableId=" << buffTableId);
+    const auto *buffList = tlsEcs.actorRegistry.try_get<BuffListComp>(parentEntity);
+    if (buffList)
+    {
+        if (const bool isImmune = IsTargetImmune(*buffList, buffRow))
+        {
+            return MAKE_ERROR_MSG(kBuffTargetImmuneToBuff,
+                                  "entity=" << entt::to_integral(parentEntity)
+                                            << " buffTableId=" << buffTableId);
+        }
     }
 
     return kSuccess;
@@ -225,7 +235,7 @@ uint32_t BuffSystem::OnBuffAwake(const entt::entity parent, const uint32_t buffT
     LookupBuffAs(add, buffTableId);
 
     UInt64Vector dispelBuffIdList;
-    auto& buffList = tlsEcs.actorRegistry.get_or_emplace<BuffListComp>(parent);
+    auto &buffList = tlsEcs.actorRegistry.get<BuffListComp>(parent);
     for (auto& [buffId, buffPbComp] : buffList) {
         LookupBuffOrContinue(buffTableId);
         for (const auto& removeTag : addBuffRow->dispel_tag() | std::views::keys) {
@@ -314,7 +324,7 @@ void BuffSystem::OnBuffDestroy(entt::entity parent, const uint64_t buffId, const
 // Buff periodic interval handler
 void BuffSystem::OnIntervalThink(entt::entity parent, uint64_t buffId)
 {
-    auto& buffList = tlsEcs.actorRegistry.get_or_emplace<BuffListComp>(parent);
+    auto &buffList = tlsEcs.actorRegistry.get<BuffListComp>(parent);
     const auto buffIt = buffList.find(buffId);
 
     if (buffIt == buffList.end()) {

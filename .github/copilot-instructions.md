@@ -10,6 +10,14 @@
 - **Always add a UTF-8 BOM** (`EF BB BF`) to `.cpp`/`.h` files containing non-ASCII characters (Chinese comments, special symbols like `→` `—`). Without BOM, multi-byte UTF-8 sequences (e.g., `→` = `E2 86 92`) get misinterpreted as GBK, corrupting the C++ parser and causing cascading errors on later lines.
 - Prefer ASCII-only characters in string literals. Use `--` instead of `—`, `->` instead of `→`, etc.
 
+## ECS Component Access Rules (`get` vs `try_get` vs `get_or_emplace`)
+- `get<T>(entity)`: asserts existence — crashes if absent. Only safe inside `view<T,...>` iterations or after an `any_of<T>`/`all_of<T>` guard.
+- `try_get<T>(entity)`: returns nullptr when absent. Use for cross-entity lookups, optional components, or any entity whose archetype is not guaranteed.
+- `get_or_emplace<T>(entity)`: **only** during entity initialization/setup. **Never** in per-tick systems, combat, spatial, attribute sync, or any per-frame code path. It silently creates zero-valued default components that corrupt ECS state and mask missing initialization.
+- Return `std::optional<T>` from functions that depend on optional components.
+- ECS sparse-set: entities without a component use zero memory in that pool and skip `view<T>` — intentional design for dungeons/instances.
+- **Guard macros** (`macros/return_define.h`): Use `ECS_GET_OR_RETURN(var, Type, entity, retval)`, `ECS_GET_OR_VOID(var, Type, entity)`, `ECS_GET_OR_CONTINUE(var, Type, entity)`, `ECS_GET_OR_FALSE(var, Type, entity)` to reduce `try_get` + null-check boilerplate. Same convention as generated `Lookup*` macros.
+
 ## MSVC Lambda Capture with entt::entity
 - MSVC (`/std:c++latest`) has a known issue (C3495) capturing `entt::entity` (enum class) variables in lambdas via simple capture `[entity]`.
 - **Workaround**: Use init-capture syntax: `[entity = entity]()` instead of `[entity]()`.

@@ -4,6 +4,7 @@
 #include <ranges>
 
 #include "actor/attribute/comp/actor_attribute_comp.h"
+#include "macros/return_define.h"
 
 #include "table/code/buff_table.h"
 #include "actor/attribute/constants/actor_state_attribute_calculator_constants.h"
@@ -17,7 +18,9 @@ void UpdateVelocity(entt::entity entity) {
     auto& velocity = tlsEcs.actorRegistry.get_or_emplace<Velocity>(entity);
     velocity.Clear();
 
-    for (const auto& buffCompPb : tlsEcs.actorRegistry.get_or_emplace<BuffListComp>(entity) | std::views::values) {
+    ECS_GET_OR_VOID(buffListPtr, BuffListComp, entity);
+    for (const auto &buffCompPb : *buffListPtr | std::views::values)
+    {
         LookupBuffOrContinue(buffCompPb.buffPb.buff_table_id());
 
         velocity.set_x(velocity.x() + buffRow->movement_speed_boost());
@@ -42,14 +45,18 @@ void UpdateEnergy(entt::entity actorEntity) {
 }
 
 void ResetCombatStateFlags(entt::entity actorEntity) {
-    const auto& combatStates = tlsEcs.actorRegistry.get_or_emplace<CombatStateCollectionComp>(actorEntity);
+    const auto *combatStates = tlsEcs.actorRegistry.try_get<CombatStateCollectionComp>(actorEntity);
     auto& syncData = tlsEcs.actorRegistry.get_or_emplace<ActorBaseAttributesS2C>(actorEntity);
     auto* stateFlags = syncData.mutable_combat_state_flags()->mutable_state_flags();
 
     stateFlags->clear();
 
-    for (const auto& stateKey : combatStates.states() | std::views::keys) {
-        stateFlags->emplace(stateKey, false);
+    if (combatStates)
+    {
+        for (const auto &stateKey : combatStates->states() | std::views::keys)
+        {
+            stateFlags->emplace(stateKey, false);
+        }
     }
 }
 
