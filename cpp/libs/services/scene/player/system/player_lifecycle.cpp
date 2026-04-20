@@ -39,21 +39,27 @@ void PlayerLifecycleSystem::HandlePlayerAsyncLoaded(Guid playerId, const PlayerA
 {
 	LOG_INFO << "HandlePlayerAsyncLoaded: Loading player " << playerId;
 
-	// Defensive check: after zone rollback, orphan characters have no Redis data.
-	// The protobuf will be empty (player_id=0). Reject early to prevent creating
-	// a broken entity with id=0 in the ECS.
+	// If the loaded data has player_id=0, this is a brand-new player whose DB
+	// rows don't exist yet (CreatePlayer only creates an account entry), or an
+	// orphan after zone rollback.  In either case, set the player_id from the
+	// async-load key and let InitPlayerFromAllData handle first-time registration
+	// via the registration_timestamp check.
+	const PlayerAllData *data = &message;
+	PlayerAllData patchedMessage;
 	if (message.player_database_data().player_id() == 0)
 	{
-		LOG_ERROR << "HandlePlayerAsyncLoaded: empty player data for player " << playerId
-				  << " (likely orphan after zone rollback). Rejecting load.";
-		// TODO: send error response to gate so client shows "character not found"
-		return;
+		LOG_INFO << "HandlePlayerAsyncLoaded: No existing DB data for player " << playerId
+				 << ", will initialize as new player";
+		patchedMessage = message;
+		patchedMessage.mutable_player_database_data()->set_player_id(playerId);
+		patchedMessage.mutable_player_database_1_data()->set_player_id(playerId);
+		data = &patchedMessage;
 	}
 
 	if (extra.type() == typeid(PlayerSceneEnterContext))
 	{
 		const auto &context = std::any_cast<PlayerSceneEnterContext>(extra);
-		auto player = InitPlayerFromAllData(message, context.enterInfo);
+		auto player = InitPlayerFromAllData(*data, context.enterInfo);
 		if (tlsEcs.actorRegistry.valid(player))
 		{
 			PlayerSceneSystem::HandleEnterScene(player, entt::to_entity(context.sceneId));
@@ -62,7 +68,7 @@ void PlayerLifecycleSystem::HandlePlayerAsyncLoaded(Guid playerId, const PlayerA
 	else if (extra.type() == typeid(PlayerGameNodeEntryInfoComp))
 	{
 		const auto &enterInfo = std::any_cast<PlayerGameNodeEntryInfoComp>(extra);
-		InitPlayerFromAllData(message, enterInfo);
+		InitPlayerFromAllData(*data, enterInfo);
 	}
 	else
 	{

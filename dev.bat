@@ -376,16 +376,23 @@ exit /b 0
 echo [1/2] Building C++ (game.sln Debug x64)...
 set "MSBUILD_EXE="
 
-:: Prefer VS2026 BuildTools first.
-if exist "C:\Program Files\Microsoft Visual Studio\18\BuildTools\MSBuild\Current\Bin\amd64\MSBuild.exe" set "MSBUILD_EXE=C:\Program Files\Microsoft Visual Studio\18\BuildTools\MSBuild\Current\Bin\amd64\MSBuild.exe"
-if not defined MSBUILD_EXE if exist "C:\Program Files\Microsoft Visual Studio\18\BuildTools\MSBuild\Current\Bin\MSBuild.exe" set "MSBUILD_EXE=C:\Program Files\Microsoft Visual Studio\18\BuildTools\MSBuild\Current\Bin\MSBuild.exe"
+:: Use vswhere to find MSBuild dynamically (works with any VS edition/install path).
+for /f "usebackq delims=" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -requires Microsoft.Component.MSBuild -find "MSBuild\**\Bin\amd64\MSBuild.exe" 2^>nul`) do set "MSBUILD_EXE=%%i"
+if not defined MSBUILD_EXE for /f "usebackq delims=" %%i in (`"%ProgramFiles%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -requires Microsoft.Component.MSBuild -find "MSBuild\**\Bin\amd64\MSBuild.exe" 2^>nul`) do set "MSBUILD_EXE=%%i"
+
+:: Fallback: check well-known hardcoded paths (BuildTools, Enterprise, Community, Professional).
+if not defined MSBUILD_EXE if exist "C:\Program Files\Microsoft Visual Studio\18\BuildTools\MSBuild\Current\Bin\amd64\MSBuild.exe" set "MSBUILD_EXE=C:\Program Files\Microsoft Visual Studio\18\BuildTools\MSBuild\Current\Bin\amd64\MSBuild.exe"
+if not defined MSBUILD_EXE if exist "C:\Program Files\Microsoft Visual Studio\18\Enterprise\MSBuild\Current\Bin\amd64\MSBuild.exe" set "MSBUILD_EXE=C:\Program Files\Microsoft Visual Studio\18\Enterprise\MSBuild\Current\Bin\amd64\MSBuild.exe"
+if not defined MSBUILD_EXE if exist "C:\Program Files\Microsoft Visual Studio\18\Community\MSBuild\Current\Bin\amd64\MSBuild.exe" set "MSBUILD_EXE=C:\Program Files\Microsoft Visual Studio\18\Community\MSBuild\Current\Bin\amd64\MSBuild.exe"
+if not defined MSBUILD_EXE if exist "C:\Program Files\Microsoft Visual Studio\18\Professional\MSBuild\Current\Bin\amd64\MSBuild.exe" set "MSBUILD_EXE=C:\Program Files\Microsoft Visual Studio\18\Professional\MSBuild\Current\Bin\amd64\MSBuild.exe"
 if not defined MSBUILD_EXE if exist "E:\Program Files\Microsoft Visual Studio\18\BuildTools\MSBuild\Current\Bin\amd64\MSBuild.exe" set "MSBUILD_EXE=E:\Program Files\Microsoft Visual Studio\18\BuildTools\MSBuild\Current\Bin\amd64\MSBuild.exe"
-if not defined MSBUILD_EXE if exist "E:\Program Files\Microsoft Visual Studio\18\BuildTools\MSBuild\Current\Bin\MSBuild.exe" set "MSBUILD_EXE=E:\Program Files\Microsoft Visual Studio\18\BuildTools\MSBuild\Current\Bin\MSBuild.exe"
+if not defined MSBUILD_EXE if exist "E:\Program Files\Microsoft Visual Studio\18\Enterprise\MSBuild\Current\Bin\amd64\MSBuild.exe" set "MSBUILD_EXE=E:\Program Files\Microsoft Visual Studio\18\Enterprise\MSBuild\Current\Bin\amd64\MSBuild.exe"
+if not defined MSBUILD_EXE if exist "E:\Program Files\Microsoft Visual Studio\18\Community\MSBuild\Current\Bin\amd64\MSBuild.exe" set "MSBUILD_EXE=E:\Program Files\Microsoft Visual Studio\18\Community\MSBuild\Current\Bin\amd64\MSBuild.exe"
 
 if not defined MSBUILD_EXE (
     echo.
-    echo VS2026 BuildTools MSBuild not found.
-    echo Please install Visual Studio 2026 BuildTools with C++ workload.
+    echo MSBuild not found. Install Visual Studio 2026 with C++ workload
+    echo or BuildTools, and ensure vswhere.exe is available.
     pause & exit /b 1
 )
 
