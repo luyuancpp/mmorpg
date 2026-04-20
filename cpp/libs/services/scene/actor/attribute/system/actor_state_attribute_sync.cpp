@@ -81,7 +81,10 @@ void ActorStateAttributeSyncSystem::Update(const double delta)
 
 		for (const auto& [nearbyEntity, _] : aoiListComp->entries) {
 			const double maxRadius = ViewSystem::GetMaxViewRadius(nearbyEntity);
-			const double distance = ViewSystem::GetDistanceBetweenEntities(nearbyEntity, entity);
+			const auto distanceOpt = ViewSystem::GetDistanceBetweenEntities(nearbyEntity, entity);
+			if (!distanceOpt)
+				continue;
+			const double distance = *distanceOpt;
 
 			if (distance <= maxRadius * kLevel1RadiusFactor) {
 				level1Entities.emplace_back(nearbyEntity);

@@ -42,11 +42,18 @@ cpp/
 - Ensure thread observability is active by default (or intentionally disabled via `NODE_THREAD_MONITOR_ENABLED=0`).
 - Do not hand-edit generated outputs while wiring new node startup.
 
+### ECS component access rules
+- `get<T>`: only inside `view<T,...>` or after `any_of<T>`/`all_of<T>` guard. Asserts; crashes if absent.
+- `try_get<T>`: cross-entity lookups, optional components. Returns nullptr when absent.
+- `get_or_emplace<T>`: **only** during entity init/setup. **Never** in per-tick, combat, spatial, attribute sync.
+- Return `std::optional<T>` from functions that depend on optional components.
+
 ## ANTI-PATTERNS
 - Embedding large gameplay branches inside node handlers.
 - Rewiring Kafka command flow ad hoc from inside unrelated handlers.
 - Editing generated protobuf/codegen outputs directly.
 - Broad edits in vendored engine trees when a node/service-layer fix is enough.
+- Using `get_or_emplace<T>` in per-tick systems, combat, spatial queries, or attribute sync — silently creates default components and corrupts ECS state.
 
 ## COMMANDS
 ```bash

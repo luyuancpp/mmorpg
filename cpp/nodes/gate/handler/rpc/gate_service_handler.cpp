@@ -199,9 +199,9 @@ void GateHandler::BroadcastToPlayers(::google::protobuf::RpcController* controll
 	///<<< END WRITING YOUR CODE
 }
 
-void GateHandler::BroadcastToScene(::google::protobuf::RpcController *controller, const ::BroadcastToSceneRequest *request,
-								   ::Empty *response,
-								   ::google::protobuf::Closure *done)
+void GateHandler::BroadcastToScene(::google::protobuf::RpcController* controller, const ::BroadcastToSceneRequest* request,
+	::Empty* response,
+	::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
 	const uint64_t sceneId = request->scene_id();
@@ -215,9 +215,9 @@ void GateHandler::BroadcastToScene(::google::protobuf::RpcController *controller
 	///<<< END WRITING YOUR CODE
 }
 
-void GateHandler::BroadcastToAll(::google::protobuf::RpcController *controller, const ::BroadcastToAllRequest *request,
-								 ::Empty *response,
-								 ::google::protobuf::Closure *done)
+void GateHandler::BroadcastToAll(::google::protobuf::RpcController* controller, const ::BroadcastToAllRequest* request,
+	::Empty* response,
+	::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
 	for (auto &[sessionId, info] : tlsSessionManager.sessions())

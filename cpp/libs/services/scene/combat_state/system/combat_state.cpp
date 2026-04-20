@@ -7,6 +7,7 @@
 #include "actor/attribute/constants/actor_state_attribute_calculator_constants.h"
 #include "actor/attribute/system/actor_attribute_calculator.h"
 #include "combat_state/constants/combat_state.h"
+#include "macros/return_define.h"
 #include "proto/common/component/actor_combat_state_comp.pb.h"
 #include "proto/common/event/actor_combat_state_event.pb.h"
 
@@ -59,15 +60,17 @@ void CombatStateSystem::RemoveCombatState(const CombatStateRemovedEvent& removeE
 
 uint32_t CombatStateSystem::ValidateSkillUsage(const entt::entity entityId, const uint32_t combatAction)
 {
-    const auto& combatStateCollection = tlsEcs.actorRegistry.get_or_emplace<CombatStateCollectionComp>(entityId);
+    ECS_GET_OR_RETURN(combatStateCollection, CombatStateCollectionComp, entityId, kSuccess);
 
-    if (combatStateCollection.states().empty()) {
+    if (combatStateCollection->states().empty())
+    {
         return kSuccess;
     }
 
     LookupActorActionCombatState(combatAction);
 
-    for (const auto& stateKey : combatStateCollection.states() | std::views::keys) {
+    for (const auto &stateKey : combatStateCollection->states() | std::views::keys)
+    {
         const auto& combatState = actorActionCombatStateRow->state(stateKey);
 
         if (combatState.state_mode() == kCombatStateMutualExclusion) {

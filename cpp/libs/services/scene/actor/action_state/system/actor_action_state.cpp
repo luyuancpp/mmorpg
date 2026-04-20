@@ -51,12 +51,19 @@ namespace {
 uint32_t ActorActionStateSystem::TryPerformAction(entt::entity actorEntity, uint32_t actorAction, uint32_t successState) {
     LookupActorActionState(actorAction);
 
-    const auto& actorStatePbComponent = tlsEcs.actorRegistry.get_or_emplace<ActorStateComp>(actorEntity);
-    for (const auto& actorState : actorStatePbComponent.state_list() | std::views::keys) {
+    const auto *actorStatePbComponent = tlsEcs.actorRegistry.try_get<ActorStateComp>(actorEntity);
+    if (!actorStatePbComponent)
+    {
+        RETURN_ON_ERROR(AddState(actorEntity, successState));
+        return kSuccess;
+    }
+    for (const auto &actorState : actorStatePbComponent->state_list() | std::views::keys)
+    {
         RETURN_ON_ERROR(CheckForStateConflict(actorActionStateRow, actorState));
     }
 
-    for (const auto& actorState : actorStatePbComponent.state_list() | std::views::keys) {
+    for (const auto &actorState : actorStatePbComponent->state_list() | std::views::keys)
+    {
         if (InterruptAndPerformAction(actorActionStateRow, actorState, actorEntity)) {
             continue;
         }
@@ -70,9 +77,10 @@ uint32_t ActorActionStateSystem::TryPerformAction(entt::entity actorEntity, uint
 
 uint32_t ActorActionStateSystem::CanExecuteActionWithoutStateChange(entt::entity actorEntity, uint32_t actorAction) {
     LookupActorActionState(actorAction);
-    
-    const auto& actorStatePbComponent = tlsEcs.actorRegistry.get_or_emplace<ActorStateComp>(actorEntity);
-    for (const auto& actorState : actorStatePbComponent.state_list() | std::views::keys) {
+
+    ECS_GET_OR_RETURN(actorStatePbComponent, ActorStateComp, actorEntity, kSuccess);
+    for (const auto &actorState : actorStatePbComponent->state_list() | std::views::keys)
+    {
         RETURN_ON_ERROR(CheckForStateConflict(actorActionStateRow, actorState));
     }
 
@@ -80,12 +88,12 @@ uint32_t ActorActionStateSystem::CanExecuteActionWithoutStateChange(entt::entity
 }
 
 bool ActorActionStateSystem::HasState(const entt::entity actorEntity, const uint32_t state) {
-    const auto& actorStatePbComponent = tlsEcs.actorRegistry.get_or_emplace<ActorStateComp>(actorEntity);
+    ECS_GET_OR_FALSE(actorStatePbComponent, ActorStateComp, actorEntity);
     if (state >= kActorStateActorStateMax) {
         return false;
     }
 
-    return actorStatePbComponent.state_list().contains(state);
+    return actorStatePbComponent->state_list().contains(state);
 }
 
 uint32_t ActorActionStateSystem::AddState(const entt::entity actorEntity, uint32_t actorState) {
@@ -105,15 +113,23 @@ uint32_t ActorActionStateSystem::AddState(const entt::entity actorEntity, uint32
 }
 
 uint32_t ActorActionStateSystem::RemoveState(entt::entity actorEntity, uint32_t actorState) {
-    auto& actorStatePbComponent = tlsEcs.actorRegistry.get_or_emplace<ActorStateComp>(actorEntity);
+    auto *actorStatePbComponent = tlsEcs.actorRegistry.try_get<ActorStateComp>(actorEntity);
+    if (!actorStatePbComponent)
+    {
+        return MAKE_ERROR_MSG(kInvalidParameter,
+                              "entity=" << entt::to_integral(actorEntity)
+                                        << " actorState=" << actorState
+                                        << " reason=no_ActorStateComp");
+    }
     if (actorState >= kActorStateActorStateMax ||
-        !actorStatePbComponent.state_list().contains(actorState)) {
+        !actorStatePbComponent->state_list().contains(actorState))
+    {
         return MAKE_ERROR_MSG(kInvalidParameter,
             "entity=" << entt::to_integral(actorEntity)
             << " actorState=" << actorState);
     }
 
-    actorStatePbComponent.mutable_state_list()->erase(actorState);
+    actorStatePbComponent->mutable_state_list()->erase(actorState);
     return kSuccess;
 }
 

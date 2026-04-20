@@ -8,6 +8,7 @@
 #include "spatial/system/grid.h"
 #include "spatial/system/interest.h"
 #include "spatial/system/view.h"
+#include "macros/return_define.h"
 #include "muduo/base/Logging.h"
 #include "proto/common/component/actor_comp.pb.h"
 #include "proto/common/component/team_comp.pb.h"
@@ -186,10 +187,15 @@ void AoiSystem::BeforeLeaveSceneHandler(const BeforeLeaveScene& message) {
         return;
     }
 
-    const auto hex = tlsEcs.actorRegistry.try_get<Hex>(entity);
-    if (!hex) return;
+    ECS_GET_OR_VOID(hex, Hex, entity);
 
-	auto sceneEntity = tlsEcs.actorRegistry.get_or_emplace<SceneEntityComp>(entity).sceneEntity;
+    const auto *sceneEntityComp = tlsEcs.actorRegistry.try_get<SceneEntityComp>(entity);
+    if (!sceneEntityComp)
+    {
+        LOG_ERROR << "Entity has no SceneEntityComp: " << entt::to_integral(entity);
+        return;
+    }
+    auto sceneEntity = sceneEntityComp->sceneEntity;
     if (!tlsEcs.sceneRegistry.valid(sceneEntity))
     {
         LOG_ERROR << "Scene entity not found for entity " << entt::to_integral(entity);

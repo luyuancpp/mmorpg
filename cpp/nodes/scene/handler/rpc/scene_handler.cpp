@@ -271,7 +271,7 @@ void SceneHandler::ProcessClientPlayerMessage(::google::protobuf::RpcController*
 	}
 
 	// Update last-active frame for AFK detection.
-	tlsEcs.actorRegistry.get_or_emplace<LastActiveFrameComp>(player).frame =
+	tlsEcs.actorRegistry.get<LastActiveFrameComp>(player).frame =
 		tlsFrameTimeManager.frameTime.current_frame();
 
 	// Parse request and validate field constraints
@@ -538,7 +538,7 @@ void SceneHandler::UpdateSessionDetail(::google::protobuf::RpcController* contro
 
 	SessionMap().emplace(request->session_id(), request->player_id());
 
-	tlsEcs.actorRegistry.get_or_emplace<PlayerSessionSnapshotComp>(player).set_gate_session_id(request->session_id());
+	tlsEcs.actorRegistry.get<PlayerSessionSnapshotComp>(player).set_gate_session_id(request->session_id());
 
 	PlayerLifecycleSystem::HandleBindPlayerToGateOK(player);
 	///<<< END WRITING YOUR CODE

@@ -290,28 +290,13 @@ else
 }
 ///<<< END WRITING YOUR CODE
 }
-void GateEventHandler::BroadcastToSceneEventHandler(const contracts::kafka::BroadcastToSceneEvent &event)
+void GateEventHandler::BroadcastToSceneEventHandler(const contracts::kafka::BroadcastToSceneEvent& event)
 {
-    ///<<< BEGIN WRITING YOUR CODE
-    const uint64_t sceneId = event.scene_id();
-    for (auto &[sessionId, info] : tlsSessionManager.sessions())
-    {
-        if (info.sceneId == sceneId && info.conn)
-        {
-            GetGateCodec().send(info.conn, event.message_content());
-        }
-    }
-    ///<<< END WRITING YOUR CODE
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
 }
-void GateEventHandler::BroadcastToAllEventHandler(const contracts::kafka::BroadcastToAllEvent &event)
+void GateEventHandler::BroadcastToAllEventHandler(const contracts::kafka::BroadcastToAllEvent& event)
 {
-    ///<<< BEGIN WRITING YOUR CODE
-    for (auto &[sessionId, info] : tlsSessionManager.sessions())
-    {
-        if (info.conn)
-        {
-            GetGateCodec().send(info.conn, event.message_content());
-        }
-    }
-    ///<<< END WRITING YOUR CODE
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
 }

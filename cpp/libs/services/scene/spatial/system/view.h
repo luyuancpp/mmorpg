@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include <optional>
 #include "engine/core/type_define/type_define.h"
 
 namespace google::protobuf
@@ -31,8 +32,8 @@ public:
     // Check whether the target entity has an active stealth buff.
     static bool IsStealthed(entt::entity entity);
 
-    static double GetDistanceBetweenEntities(entt::entity entity1, entt::entity entity2);
-    
+    static std::optional<double> GetDistanceBetweenEntities(entt::entity entity1, entt::entity entity2);
+
     static double GetMaxViewRadius(entt::entity observer);
 
     static void LookAtPosition(entt::entity entity, const Vector3& pos);
