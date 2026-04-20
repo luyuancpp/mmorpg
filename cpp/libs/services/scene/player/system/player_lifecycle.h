@@ -1,16 +1,22 @@
 #pragma once
-#include <any>
+#include <unordered_map>
 #include "engine/core/type_define/type_define.h"
 #include "proto/common/database/player_cache.pb.h"
+#include "proto/common/component/player_async_comp.pb.h"
 
-class PlayerGameNodeEntryInfoComp;
 class ChangeSceneInfoComp;
 class PlayerMigrationEvent;
+
+// Map of player_id → enter-info for players whose Redis load is in flight.
+// Replaces the std::any extra_data on MessageAsyncClient.
+using PendingEnterMap = std::unordered_map<Guid, PlayerGameNodeEntryInfoComp>;
 
 class PlayerLifecycleSystem
 {
 public:
-	static void HandlePlayerAsyncLoaded(Guid player_id, const PlayerAllData& message, const std::any& extra);
+	static PendingEnterMap& GetPendingEnterMap();
+
+	static void HandlePlayerAsyncLoaded(Guid player_id, const PlayerAllData& message);
 	static void HandlePlayerAsyncSaved(Guid player_id, PlayerAllData& message);
 	static void EnterScene(const entt::entity player, const PlayerGameNodeEntryInfoComp& enter_info);
 	static void HandleBindPlayerToGateOK(entt::entity player);

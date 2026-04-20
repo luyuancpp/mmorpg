@@ -30,15 +30,36 @@
 #include "frame/manager/frame_time.h"
 #include "proto/common/event/scene_event.pb.h"
 
-struct PlayerSceneEnterContext
-{
-	PlayerGameNodeEntryInfoComp enterInfo;
-	uint64_t sceneId{0};
-};
+thread_local PendingEnterMap tlsPendingEnterMap;
 
-void PlayerLifecycleSystem::HandlePlayerAsyncLoaded(Guid playerId, const PlayerAllData &message, const std::any &extra)
+PendingEnterMap& PlayerLifecycleSystem::GetPendingEnterMap()
+{
+	return tlsPendingEnterMap;
+}
+
+void PlayerLifecycleSystem::HandlePlayerAsyncLoaded(Guid playerId, const PlayerAllData &message)
 {
 	LOG_INFO << "HandlePlayerAsyncLoaded: Loading player " << playerId;
+
+	// Consume the pending enter info. If absent, the load was orphaned.
+	auto pendingIt = tlsPendingEnterMap.find(playerId);
+	if (pendingIt == tlsPendingEnterMap.end())
+	{
+		LOG_WARN << "HandlePlayerAsyncLoaded: no pending enter info for player " << playerId << ", skipping";
+		return;
+	}
+	PlayerGameNodeEntryInfoComp enterInfo = std::move(pendingIt->second);
+	tlsPendingEnterMap.erase(pendingIt);
+
+	// If the session was erased during async load (e.g. client disconnected
+	// and ExitGame arrived before load completed), skip entity creation.
+	if (enterInfo.session_id() != 0
+		&& SessionMap().find(enterInfo.session_id()) == SessionMap().end())
+	{
+		LOG_INFO << "HandlePlayerAsyncLoaded: session " << enterInfo.session_id()
+		         << " cancelled during async load for player " << playerId << ", skipping";
+		return;
+	}
 
 	// If the loaded data has player_id=0, this is a brand-new player whose DB
 	// rows don't exist yet (CreatePlayer only creates an account entry), or an
@@ -57,44 +78,7 @@ void PlayerLifecycleSystem::HandlePlayerAsyncLoaded(Guid playerId, const PlayerA
 		data = &patchedMessage;
 	}
 
-	if (extra.type() == typeid(PlayerSceneEnterContext))
-	{
-		const auto &context = std::any_cast<PlayerSceneEnterContext>(extra);
-
-		// If the session was erased during async load (e.g. client disconnected
-		// and ExitGame arrived before load completed), skip entity creation.
-		if (context.enterInfo.session_id() != 0
-			&& SessionMap().find(context.enterInfo.session_id()) == SessionMap().end())
-		{
-			LOG_INFO << "HandlePlayerAsyncLoaded: session " << context.enterInfo.session_id()
-			         << " cancelled during async load for player " << playerId << ", skipping";
-			return;
-		}
-
-		auto player = InitPlayerFromAllData(*data, context.enterInfo);
-		if (tlsEcs.actorRegistry.valid(player))
-		{
-			PlayerSceneSystem::HandleEnterScene(player, entt::to_entity(context.sceneId));
-		}
-	}
-	else if (extra.type() == typeid(PlayerGameNodeEntryInfoComp))
-	{
-		const auto &enterInfo = std::any_cast<PlayerGameNodeEntryInfoComp>(extra);
-
-		if (enterInfo.session_id() != 0
-			&& SessionMap().find(enterInfo.session_id()) == SessionMap().end())
-		{
-			LOG_INFO << "HandlePlayerAsyncLoaded: session " << enterInfo.session_id()
-			         << " cancelled during async load for player " << playerId << ", skipping";
-			return;
-		}
-
-		InitPlayerFromAllData(*data, enterInfo);
-	}
-	else
-	{
-		LOG_ERROR << "HandlePlayerAsyncLoaded: Invalid extra data type for player " << playerId;
-	}
+	InitPlayerFromAllData(*data, enterInfo);
 }
 
 void PlayerLifecycleSystem::HandlePlayerAsyncSaved(Guid playerId, PlayerAllData &message)
