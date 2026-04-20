@@ -56,6 +56,10 @@ void RedisManager::DoReconnect()
 		{
 			LOG_INFO << "Redis reconnected successfully to " << redisAddr_.toIpPort();
 			CancelReconnectTimer();
+			if (reconnectCb_)
+			{
+				reconnectCb_();
+			}
 		}
 		else
 		{
