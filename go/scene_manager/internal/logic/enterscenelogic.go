@@ -209,6 +209,23 @@ func (l *EnterSceneLogic) resolveScene(sceneId uint64, sceneConfId uint64, zoneI
 		if err != nil {
 			return 0, "", fmt.Errorf("scene lookup failed: %w", err)
 		}
+		// Validate the mapped node is still alive; reassign if dead.
+		if !IsNodeAlive(l.svcCtx, zoneId, nodeId) {
+			newNodeId, err := GetBestNode(l.ctx, l.svcCtx, zoneId)
+			if err != nil {
+				return 0, "", fmt.Errorf("scene %d mapped to dead node %s and no live nodes: %w", sceneId, nodeId, err)
+			}
+			l.Logger.Infof("resolveScene: scene %d was on dead node %s, reassigning to %s", sceneId, nodeId, newNodeId)
+			l.svcCtx.Redis.Set(key, newNodeId)
+			nodeId = newNodeId
+
+			// Ensure the new node creates the ECS scene entity.
+			if sceneConfId != 0 {
+				if _, err := RequestNodeCreateScene(l.ctx, l.svcCtx, nodeId, uint32(sceneConfId), sceneId); err != nil {
+					l.Logger.Errorf("resolveScene: CreateScene on new node %s for scene %d failed: %v", nodeId, sceneId, err)
+				}
+			}
+		}
 		return sceneId, nodeId, nil
 	}
 

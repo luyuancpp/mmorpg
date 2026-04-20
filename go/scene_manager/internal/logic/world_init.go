@@ -169,10 +169,15 @@ func GetBestWorldChannel(ctx context.Context, svcCtx *svc.ServiceContext, confId
 		count, _ := strconv.ParseInt(countStr, 10, 64)
 
 		if count < bestCount {
+			nodeKey := fmt.Sprintf("scene:%d:node", sceneId)
+			nid, _ := svcCtx.Redis.Get(nodeKey)
+			// Skip channels mapped to dead nodes.
+			if nid == "" || !IsNodeAlive(svcCtx, zoneId, nid) {
+				continue
+			}
 			bestCount = count
 			bestSceneId = sceneId
-			nodeKey := fmt.Sprintf("scene:%d:node", sceneId)
-			bestNodeId, _ = svcCtx.Redis.Get(nodeKey)
+			bestNodeId = nid
 		}
 	}
 

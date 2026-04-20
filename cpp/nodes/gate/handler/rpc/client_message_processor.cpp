@@ -570,7 +570,7 @@ void RpcClientSessionHandler::DispatchTokenVerify(const muduo::net::TcpConnectio
 
 	session.verified = true;
 	sendReply(true, "");
-	LOG_INFO << "[Token] Session verified, session_id: " << sessionId;
+	LOG_DEBUG << "[Token] Session verified, session_id: " << sessionId;
 }
 
 void RpcClientSessionHandler::OnNodeRemoveEventHandler(const OnNodeRemoveEvent &pb)
