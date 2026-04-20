@@ -31,8 +31,8 @@ func (l *DestroySceneLogic) DestroyScene(in *scene_manager.DestroySceneRequest) 
 	// Get the node this scene belongs to before deleting (for load tracking + RPC)
 	nodeId, _ := l.svcCtx.Redis.Get(key)
 
-	// Notify C++ node to destroy the ECS scene entity.
-	if nodeId != "" {
+	// Notify C++ node to destroy the ECS scene entity (skip if node is already dead).
+	if nodeId != "" && IsNodeAlive(l.svcCtx, in.ZoneId, nodeId) {
 		if err := RequestNodeDestroyScene(l.ctx, l.svcCtx, nodeId, in.SceneId); err != nil {
 			l.Logger.Errorf("Failed to call DestroyScene on node %s for scene %d: %v", nodeId, in.SceneId, err)
 		}
