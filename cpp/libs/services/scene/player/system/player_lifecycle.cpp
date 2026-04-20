@@ -37,6 +37,23 @@ PendingEnterMap& PlayerLifecycleSystem::GetPendingEnterMap()
 	return tlsPendingEnterMap;
 }
 
+void PlayerLifecycleSystem::HandlePlayerAsyncLoadFailed(Guid playerId)
+{
+	LOG_ERROR << "HandlePlayerAsyncLoadFailed: Redis load failed for player " << playerId;
+
+	// Clean up pending enter info
+	auto pendingIt = tlsPendingEnterMap.find(playerId);
+	if (pendingIt != tlsPendingEnterMap.end())
+	{
+		// Clean up session mapping that was pre-registered in PlayerEnterGameNode
+		if (pendingIt->second.session_id() != 0)
+		{
+			SessionMap().erase(pendingIt->second.session_id());
+		}
+		tlsPendingEnterMap.erase(pendingIt);
+	}
+}
+
 void PlayerLifecycleSystem::HandlePlayerAsyncLoaded(Guid playerId, const PlayerAllData &message)
 {
 	LOG_INFO << "HandlePlayerAsyncLoaded: Loading player " << playerId;

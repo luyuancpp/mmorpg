@@ -39,11 +39,18 @@ message SceneInfoResponse
   repeated SceneInfoComp scene_info = 1;
 }
 
+enum ActorType
+{
+	ACTOR_TYPE_NONE = 0;
+	ACTOR_TYPE_PLAYER = 1;
+	ACTOR_TYPE_NPC = 2;
+}
+
 message ActorCreateS2C
 {
 	uint64 entity = 1;
 	Transform transform = 2;
-	uint32 entity_type = 3;
+	ActorType actor_type = 3;
 	uint64 guid = 4;
 	uint64 config_id = 5;
 }

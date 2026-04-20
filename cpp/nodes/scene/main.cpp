@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
 
         node::entry::detail::InstallSignalHandlers(loop);
 
-        tlsRedisSystem.Initialize();
+        tlsRedisSystem.Initialize(&loop);
         World::InitializeSystemBeforeConnect();
 
         // SIGTERM / conflict safety net: save all players via the full exit flow.

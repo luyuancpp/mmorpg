@@ -29,6 +29,7 @@
 #include "google/protobuf/message_lite.h"
 #include "google/protobuf/repeated_field.h"  // IWYU pragma: export
 #include "google/protobuf/extension_set.h"  // IWYU pragma: export
+#include "google/protobuf/generated_enum_reflection.h"
 #include "google/protobuf/service.h"
 #include "google/protobuf/unknown_field_set.h"
 #include "proto/db/proto_option.pb.h"
@@ -59,6 +60,8 @@ struct TableStruct_proto_2fscene_2fplayer_5fscene_2eproto {
 extern "C" {
 extern const ::google::protobuf::internal::DescriptorTable descriptor_table_proto_2fscene_2fplayer_5fscene_2eproto;
 }  // extern "C"
+enum ActorType : int;
+extern const uint32_t ActorType_internal_data_[];
 class ActorCreateS2C;
 struct ActorCreateS2CDefaultTypeInternal;
 extern ActorCreateS2CDefaultTypeInternal _ActorCreateS2C_default_instance_;
@@ -101,9 +104,49 @@ extern SceneInfoS2CDefaultTypeInternal _SceneInfoS2C_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull SceneInfoS2C_class_data_;
 namespace google {
 namespace protobuf {
+template <>
+internal::EnumTraitsT<::ActorType_internal_data_>
+    internal::EnumTraitsImpl::value<::ActorType>;
 }  // namespace protobuf
 }  // namespace google
 
+enum ActorType : int {
+  ACTOR_TYPE_NONE = 0,
+  ACTOR_TYPE_PLAYER = 1,
+  ACTOR_TYPE_NPC = 2,
+  ActorType_INT_MIN_SENTINEL_DO_NOT_USE_ =
+      ::std::numeric_limits<::int32_t>::min(),
+  ActorType_INT_MAX_SENTINEL_DO_NOT_USE_ =
+      ::std::numeric_limits<::int32_t>::max(),
+};
+
+extern const uint32_t ActorType_internal_data_[];
+inline constexpr ActorType ActorType_MIN =
+    static_cast<ActorType>(0);
+inline constexpr ActorType ActorType_MAX =
+    static_cast<ActorType>(2);
+inline bool ActorType_IsValid(int value) {
+  return 0 <= value && value <= 2;
+}
+inline constexpr int ActorType_ARRAYSIZE = 2 + 1;
+const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL ActorType_descriptor();
+template <typename T>
+const ::std::string& ActorType_Name(T value) {
+  static_assert(::std::is_same<T, ActorType>::value ||
+                    ::std::is_integral<T>::value,
+                "Incorrect type passed to ActorType_Name().");
+  return ActorType_Name(static_cast<ActorType>(value));
+}
+template <>
+inline const ::std::string& ActorType_Name(ActorType value) {
+  return ::google::protobuf::internal::NameOfDenseEnum<ActorType_descriptor, 0, 2>(
+      static_cast<int>(value));
+}
+inline bool ActorType_Parse(
+    ::absl::string_view name, ActorType* PROTOBUF_NONNULL value) {
+  return ::google::protobuf::internal::ParseNamedEnum<ActorType>(ActorType_descriptor(), name,
+                                           value);
+}
 
 // ===================================================================
 
@@ -1775,7 +1818,7 @@ class ActorCreateS2C final : public ::google::protobuf::Message
     kEntityFieldNumber = 1,
     kGuidFieldNumber = 4,
     kConfigIdFieldNumber = 5,
-    kEntityTypeFieldNumber = 3,
+    kActorTypeFieldNumber = 3,
   };
   // .Transform transform = 2;
   bool has_transform() const;
@@ -1822,14 +1865,14 @@ class ActorCreateS2C final : public ::google::protobuf::Message
   void _internal_set_config_id(::uint64_t value);
 
   public:
-  // uint32 entity_type = 3;
-  void clear_entity_type() ;
-  ::uint32_t entity_type() const;
-  void set_entity_type(::uint32_t value);
+  // .ActorType actor_type = 3;
+  void clear_actor_type() ;
+  ::ActorType actor_type() const;
+  void set_actor_type(::ActorType value);
 
   private:
-  ::uint32_t _internal_entity_type() const;
-  void _internal_set_entity_type(::uint32_t value);
+  ::ActorType _internal_actor_type() const;
+  void _internal_set_actor_type(::ActorType value);
 
   public:
   // @@protoc_insertion_point(class_scope:ActorCreateS2C)
@@ -1862,7 +1905,7 @@ class ActorCreateS2C final : public ::google::protobuf::Message
     ::uint64_t entity_;
     ::uint64_t guid_;
     ::uint64_t config_id_;
-    ::uint32_t entity_type_;
+    int actor_type_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -2715,28 +2758,28 @@ inline void ActorCreateS2C::set_allocated_transform(::Transform* PROTOBUF_NULLAB
   // @@protoc_insertion_point(field_set_allocated:ActorCreateS2C.transform)
 }
 
-// uint32 entity_type = 3;
-inline void ActorCreateS2C::clear_entity_type() {
+// .ActorType actor_type = 3;
+inline void ActorCreateS2C::clear_actor_type() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.entity_type_ = 0u;
+  _impl_.actor_type_ = 0;
   _impl_._has_bits_[0] &= ~0x00000010u;
 }
-inline ::uint32_t ActorCreateS2C::entity_type() const {
-  // @@protoc_insertion_point(field_get:ActorCreateS2C.entity_type)
-  return _internal_entity_type();
+inline ::ActorType ActorCreateS2C::actor_type() const {
+  // @@protoc_insertion_point(field_get:ActorCreateS2C.actor_type)
+  return _internal_actor_type();
 }
-inline void ActorCreateS2C::set_entity_type(::uint32_t value) {
-  _internal_set_entity_type(value);
+inline void ActorCreateS2C::set_actor_type(::ActorType value) {
+  _internal_set_actor_type(value);
   _impl_._has_bits_[0] |= 0x00000010u;
-  // @@protoc_insertion_point(field_set:ActorCreateS2C.entity_type)
+  // @@protoc_insertion_point(field_set:ActorCreateS2C.actor_type)
 }
-inline ::uint32_t ActorCreateS2C::_internal_entity_type() const {
+inline ::ActorType ActorCreateS2C::_internal_actor_type() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.entity_type_;
+  return static_cast<::ActorType>(_impl_.actor_type_);
 }
-inline void ActorCreateS2C::_internal_set_entity_type(::uint32_t value) {
+inline void ActorCreateS2C::_internal_set_actor_type(::ActorType value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.entity_type_ = value;
+  _impl_.actor_type_ = value;
 }
 
 // uint64 guid = 4;
@@ -2925,6 +2968,19 @@ ActorListDestroyS2C::_internal_mutable_entity() {
 
 // @@protoc_insertion_point(namespace_scope)
 
+
+namespace google {
+namespace protobuf {
+
+template <>
+struct is_proto_enum<::ActorType> : std::true_type {};
+template <>
+inline const EnumDescriptor* PROTOBUF_NONNULL GetEnumDescriptor<::ActorType>() {
+  return ::ActorType_descriptor();
+}
+
+}  // namespace protobuf
+}  // namespace google
 
 // @@protoc_insertion_point(global_scope)
 

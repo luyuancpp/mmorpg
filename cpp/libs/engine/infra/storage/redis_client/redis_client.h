@@ -126,6 +126,12 @@ public:
 	{
 		std::string redis_key = full_name() + ":" + std::to_string(key);
 
+		LOG_INFO << "AsyncLoad: key=" << redis_key
+				 << " connected=" << (hiredis_ ? hiredis_->connected() : false)
+				 << " retry=" << retry_count
+				 << " loading_queue=" << loading_queue_.size()
+				 << " pending_retry=" << pending_retry_queue_.size();
+
 		if (!hiredis_ || !hiredis_->connected())
 		{
 			LOG_WARN << "Redis not connected, queueing AsyncLoad for retry: " << redis_key;
@@ -152,8 +158,15 @@ public:
 		loading_queue_.emplace(redis_key, element);
 
 		const std::string format = "GET " + redis_key;
-		hiredis_->command(std::bind(&MessageAsyncClient::OnLoaded, this, std::placeholders::_1, std::placeholders::_2, element),
+		int ret = hiredis_->command(std::bind(&MessageAsyncClient::OnLoaded, this, std::placeholders::_1, std::placeholders::_2, element),
 			format.c_str());
+		if (ret != REDIS_OK)
+		{
+			LOG_ERROR << "Redis command failed (ret=" << ret << ") for key: " << redis_key
+					  << ", connected=" << hiredis_->connected();
+			loading_queue_.erase(redis_key);
+			pending_retry_queue_[redis_key] = element;
+		}
 	}
 
 	// Call after Redis reconnect to retry all pending/stale loads.
@@ -184,7 +197,7 @@ public:
 		pending_retry_queue_.clear();
 		for (auto &[key, element] : pending)
 		{
-			AsyncLoad(element->message_key);
+			AsyncLoad(element->message_key, element->retry_count);
 		}
 	}
 

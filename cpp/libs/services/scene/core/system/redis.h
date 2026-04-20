@@ -7,6 +7,14 @@
 
 using PlayerDataRedis = std::unique_ptr<MessageAsyncClient<Guid, PlayerAllData>>;
 
+namespace muduo
+{
+    namespace net
+    {
+        class EventLoop;
+    }
+}
+
 class RedisSystem
 {
 public:
@@ -19,7 +27,7 @@ public:
 		return playerRedis;
 	}
 
-    void Initialize();
+    void Initialize(muduo::net::EventLoop *loop);
 
 private:
 	PlayerDataRedis playerRedis;
