@@ -9,6 +9,7 @@ import (
 
 	"login/internal/config"
 	"login/internal/logic/pkg/auth"
+	"login/internal/logic/pkg/token"
 )
 
 // InitAuthProviders registers auth providers based on the Auth config section.
@@ -64,4 +65,13 @@ func InitAuthProviders() {
 		})
 		logx.Info("Auth provider registered: netease")
 	}
+}
+
+// RegisterAccessTokenProvider registers the access_token provider.
+// Called after TokenManager is created in NewServiceContext.
+func RegisterAccessTokenProvider(tokenMgr *token.Manager) {
+	auth.Register("access_token", &auth.AccessTokenProvider{
+		TokenManager: tokenMgr,
+	})
+	logx.Info("Auth provider registered: access_token")
 }

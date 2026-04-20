@@ -24,6 +24,7 @@ type Config struct {
 	TableDir           string             `json:",default=../../generated/tables"`
 	AuthProviders      AuthConfig         `json:"AuthProviders,optional"` // Third-party auth provider config
 	DevSkipAuth        bool               `json:"DevSkipAuth,optional"` // Dev mode: skip auth provider validation, use account field directly
+	TokenConfig        TokenConf          `json:"TokenConfig,optional"` // Access/refresh token TTL settings
 }
 
 // AuthConfig holds third-party auth provider settings.
@@ -57,6 +58,12 @@ type QQAuthConf struct {
 type NeteaseAuthConf struct {
 	AppKey    string `json:"AppKey"`
 	AppSecret string `json:"AppSecret"`
+}
+
+// TokenConf holds access/refresh token TTL settings.
+type TokenConf struct {
+	AccessTokenTTL  time.Duration `json:"AccessTokenTTL,default=2h"`  // Access token lifetime (default 2 hours)
+	RefreshTokenTTL time.Duration `json:"RefreshTokenTTL,default=720h"` // Refresh token lifetime (default 30 days)
 }
 
 // NodeConfig holds node-level settings including login duration limits.

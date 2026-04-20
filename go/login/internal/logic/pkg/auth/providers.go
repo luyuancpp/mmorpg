@@ -6,6 +6,8 @@ import (
 
 	"github.com/redis/go-redis/v9"
 	"github.com/zeromicro/go-zero/core/logx"
+
+	"login/internal/logic/pkg/token"
 )
 
 // PasswordProvider authenticates using the account/password fields directly.
@@ -14,6 +16,21 @@ type PasswordProvider struct{}
 
 func (p *PasswordProvider) Validate(_ context.Context, account string) (*AuthResult, error) {
 	return &AuthResult{Account: account}, nil
+}
+
+// AccessTokenProvider validates our own access token via Redis.
+// Used for reconnect: client sends access_token instead of third-party credential.
+type AccessTokenProvider struct {
+	TokenManager *token.Manager
+}
+
+func (p *AccessTokenProvider) Validate(ctx context.Context, accessToken string) (*AuthResult, error) {
+	data, err := p.TokenManager.ValidateAccess(ctx, accessToken)
+	if err != nil {
+		return nil, fmt.Errorf("access token invalid: %w", err)
+	}
+	logx.Infof("Access token validated: account=%s auth_type=%s", data.Account, data.AuthType)
+	return &AuthResult{Account: data.Account}, nil
 }
 
 // SaTokenProvider validates SA-Token via Redis lookup.

@@ -39,6 +39,17 @@ func loginAndEnter(gc *pkg.GameClient, password string, stats *metrics.Stats) er
 		return fmt.Errorf("login: server error %v", lr.ErrorMessage)
 	}
 
+	// Store access/refresh tokens for potential reconnect
+	if lr.AccessToken != "" {
+		gc.AccessToken = lr.AccessToken
+		gc.RefreshToken = lr.RefreshToken
+		zap.L().Debug("received auth tokens",
+			zap.String("account", gc.Account),
+			zap.Int64("access_expire", lr.AccessTokenExpire),
+			zap.Int64("refresh_expire", lr.RefreshTokenExpire),
+		)
+	}
+
 	// 2. Create player if needed
 	if len(lr.Players) == 0 {
 		var cr login.CreatePlayerResponse

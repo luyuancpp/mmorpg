@@ -10,6 +10,7 @@ import (
 	"login/internal/logic/pkg/ctxkeys"
 	"login/internal/logic/pkg/locker"
 	"login/internal/logic/pkg/loginsession"
+	"login/internal/logic/pkg/token"
 	"login/internal/svc"
 	login_proto_common "proto/common/base"
 	login_proto_data_base "proto/common/database"
@@ -114,6 +115,24 @@ func (l *LoginLogic) Login(in *login_proto.LoginRequest) (*login_proto.LoginResp
 		return nil, err
 	}
 
+	// 6. Issue access/refresh tokens (skip for access_token re-auth to avoid token churn)
+	authType := in.AuthType
+	if authType == "" {
+		authType = "password"
+	}
+	if authType != "access_token" {
+		tokenPair, tokenErr := l.issueTokens(account, authType)
+		if tokenErr != nil {
+			logx.Errorf("Failed to issue tokens for account=%s: %v", account, tokenErr)
+			// Non-fatal: login succeeds, client just won't have tokens for reconnect
+		} else {
+			resp.AccessToken = tokenPair.AccessToken
+			resp.RefreshToken = tokenPair.RefreshToken
+			resp.AccessTokenExpire = tokenPair.AccessTokenExpire
+			resp.RefreshTokenExpire = tokenPair.RefreshTokenExpire
+		}
+	}
+
 	// 7. Return player list
 	if userAccount.SimplePlayers != nil {
 		for _, v := range userAccount.SimplePlayers.Players {
@@ -192,4 +211,9 @@ func (l *LoginLogic) resolveAccount(in *login_proto.LoginRequest) (string, error
 		return "", err
 	}
 	return result.Account, nil
+}
+
+// issueTokens generates an access/refresh token pair for the authenticated account.
+func (l *LoginLogic) issueTokens(account, authType string) (*token.TokenPair, error) {
+	return l.svcCtx.TokenManager.Issue(l.ctx, account, authType, "")
 }
