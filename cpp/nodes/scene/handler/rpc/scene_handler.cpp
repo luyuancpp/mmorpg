@@ -140,17 +140,12 @@ void SceneHandler::PlayerEnterGameNode(::google::protobuf::RpcController* contro
 		SessionMap().emplace(request->session_id(), request->player_id());
 	}
 
-	// If an async load is already in flight (e.g. rapid disconnect+reconnect),
-	// update the extra data to carry the new session/scene info.  AsyncLoad
-	// deduplicates by key, so a second call would be silently dropped.
-	if (tlsRedisSystem.GetPlayerDataRedis()->UpdateExtraData(request->player_id(), enterInfo))
-	{
-		LOG_INFO << "PlayerEnterGameNode: updated in-flight async load with new session="
-		         << request->session_id() << " for player " << request->player_id();
-		return;
-	}
+	// Store enter info in PendingEnterMap. If a load is already in flight
+	// (rapid disconnect+reconnect), this overwrites the old entry so the
+	// callback will use the latest session/scene context.
+	PlayerLifecycleSystem::GetPendingEnterMap()[request->player_id()] = enterInfo;
 
-	tlsRedisSystem.GetPlayerDataRedis()->AsyncLoad(request->player_id(), enterInfo);
+	tlsRedisSystem.GetPlayerDataRedis()->AsyncLoad(request->player_id());
 	///<<< END WRITING YOUR CODE
 }
 
