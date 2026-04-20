@@ -148,6 +148,11 @@ func initWorldScenesForZone(ctx context.Context, svcCtx *svc.ServiceContext, zon
 
 // GetBestWorldChannel returns the (sceneId, nodeId) of the least-loaded channel
 // for the given world confId in the zone. Returns (0, "", nil) if no channels exist.
+//
+// Self-healing: if all channels are mapped to dead nodes (e.g. the old scene node
+// crashed and a new one just registered), it lazily reassigns stale channels to
+// live nodes instead of returning "no channel". This covers the race window between
+// a new node's etcd PUT event and initWorldScenesForZone completing reassignment.
 func GetBestWorldChannel(ctx context.Context, svcCtx *svc.ServiceContext, confId uint64, zoneId uint32) (uint64, string, error) {
 	channelSetKey := worldChannelsKey(zoneId, confId)
 	members, err := svcCtx.Redis.Smembers(channelSetKey)
@@ -159,9 +164,18 @@ func GetBestWorldChannel(ctx context.Context, svcCtx *svc.ServiceContext, confId
 	var bestNodeId string
 	bestCount := int64(math.MaxInt64)
 
+	var staleSceneIds []uint64
+
 	for _, m := range members {
 		sceneId, _ := strconv.ParseUint(m, 10, 64)
 		if sceneId == 0 {
+			continue
+		}
+
+		nodeKey := fmt.Sprintf("scene:%d:node", sceneId)
+		nid, _ := svcCtx.Redis.Get(nodeKey)
+		if nid == "" || !IsNodeAlive(svcCtx, zoneId, nid) {
+			staleSceneIds = append(staleSceneIds, sceneId)
 			continue
 		}
 
@@ -169,19 +183,45 @@ func GetBestWorldChannel(ctx context.Context, svcCtx *svc.ServiceContext, confId
 		count, _ := strconv.ParseInt(countStr, 10, 64)
 
 		if count < bestCount {
-			nodeKey := fmt.Sprintf("scene:%d:node", sceneId)
-			nid, _ := svcCtx.Redis.Get(nodeKey)
-			// Skip channels mapped to dead nodes.
-			if nid == "" || !IsNodeAlive(svcCtx, zoneId, nid) {
-				continue
-			}
 			bestCount = count
 			bestSceneId = sceneId
 			bestNodeId = nid
 		}
 	}
 
-	return bestSceneId, bestNodeId, nil
+	if bestSceneId > 0 {
+		return bestSceneId, bestNodeId, nil
+	}
+
+	// All channels mapped to dead nodes — lazy-reassign to live nodes.
+	liveNodes := getNodesForZone(svcCtx, zoneId)
+	if len(liveNodes) == 0 {
+		logx.Errorf("[World] All %d channels for conf %d (zone %d) are stale and no live nodes available",
+			len(staleSceneIds), confId, zoneId)
+		return 0, "", nil
+	}
+
+	logx.Infof("[World] All %d channels for conf %d (zone %d) are stale, lazy-reassigning to %d live nodes",
+		len(staleSceneIds), confId, zoneId, len(liveNodes))
+
+	for i, sceneId := range staleSceneIds {
+		targetNode := assignNodeByHash(confId*1000+uint64(i), liveNodes)
+		nodeKey := fmt.Sprintf("scene:%d:node", sceneId)
+		if err := svcCtx.Redis.Set(nodeKey, targetNode); err != nil {
+			logx.Errorf("[World] Lazy-reassign: failed to update scene %d -> node %s: %v", sceneId, targetNode, err)
+			continue
+		}
+
+		if _, err := RequestNodeCreateScene(ctx, svcCtx, targetNode, uint32(confId), sceneId); err != nil {
+			logx.Errorf("[World] Lazy-reassign: CreateScene failed for scene %d on node %s: %v", sceneId, targetNode, err)
+			continue
+		}
+
+		logx.Infof("[World] Lazy-reassigned stale channel (scene=%d, conf=%d) to live node %s", sceneId, confId, targetNode)
+		return sceneId, targetNode, nil
+	}
+
+	return 0, "", nil
 }
 
 // GetAllWorldChannels returns all channel sceneIds for a confId in a zone.
