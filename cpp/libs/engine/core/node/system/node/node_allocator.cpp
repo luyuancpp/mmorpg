@@ -150,6 +150,14 @@ void NodeAllocator::AcquireNodePort()
 	auto &nodeList = tlsEcs.nodeGlobalRegistry.get_or_emplace<ServiceNodeList>(tlsEcs.GrpcNodeEntity())[gNode->GetNodeType()];
 	auto &existingNodes = *nodeList.mutable_node_list();
 
+	// TCP and gRPC ports live in separate, non-overlapping ranges connected
+	// by a fixed offset.  This eliminates any chance of protocol cross-talk
+	// (e.g. a stale gRPC client reconnecting to a recycled TCP port).
+	//
+	//   Gate   TCP: 10000-19999   gRPC: 40000-49999   (offset 30000)
+	//   Other  TCP: 20000-35535   gRPC: 50000-65535   (offset 30000)
+	constexpr uint32_t kGrpcPortOffset = 30000;
+
 	std::unordered_set<uint32_t> usedPorts;
 	for (const auto &node : existingNodes)
 	{
@@ -175,7 +183,8 @@ void NodeAllocator::AcquireNodePort()
 	else
 	{
 		constexpr uint32_t MIN_PORT = 20000;
-		constexpr uint32_t MAX_PORT = 65535;
+		// Cap at 35535 so that TCP + 30000 never exceeds 65535.
+		constexpr uint32_t MAX_PORT = 65535 - kGrpcPortOffset;
 
 		if (tryPortId < MIN_PORT || tryPortId > MAX_PORT)
 		{
@@ -198,29 +207,21 @@ void NodeAllocator::AcquireNodePort()
 
 	GetNodeInfo().mutable_endpoint()->set_port(assignedPort);
 
-	// Allocate gRPC port if node has gRPC services registered.
+	// gRPC port = TCP port + 30000 (deterministic, separate range).
 	if (!gNode->GetGrpcServices().empty() && assignedPort != 0)
 	{
-		uint32_t grpcPort = assignedPort + 1;
+		const uint32_t grpcPort = assignedPort + kGrpcPortOffset;
 		if (!IsLocalPortAvailable(static_cast<uint16_t>(grpcPort)))
 		{
-			LOG_WARN << "gRPC port " << grpcPort << " (TCP+1) not available, scanning...";
-			constexpr uint32_t MIN_PORT = 20000;
-			constexpr uint32_t MAX_PORT = 65535;
-			std::unordered_set<uint32_t> usedGrpcPorts = usedPorts;
-			usedGrpcPorts.insert(assignedPort);
-			grpcPort = AllocatePortInRange(usedGrpcPorts, MIN_PORT, MAX_PORT, assignedPort + 2);
-		}
-
-		if (grpcPort != 0)
-		{
-			GetNodeInfo().mutable_grpc_endpoint()->set_ip(GetNodeInfo().endpoint().ip());
-			GetNodeInfo().mutable_grpc_endpoint()->set_port(grpcPort);
-			LOG_INFO << "Assigned gRPC port: " << grpcPort;
+			LOG_ERROR << "gRPC port " << grpcPort << " (TCP " << assignedPort
+					  << " + " << kGrpcPortOffset << ") not available.";
 		}
 		else
 		{
-			LOG_ERROR << "No available gRPC port found.";
+			GetNodeInfo().mutable_grpc_endpoint()->set_ip(GetNodeInfo().endpoint().ip());
+			GetNodeInfo().mutable_grpc_endpoint()->set_port(grpcPort);
+			LOG_INFO << "Assigned gRPC port: " << grpcPort
+					 << " (TCP " << assignedPort << " + " << kGrpcPortOffset << ")";
 		}
 	}
 
