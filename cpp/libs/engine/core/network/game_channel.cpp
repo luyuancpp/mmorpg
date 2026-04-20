@@ -25,7 +25,7 @@ void HandleUnknownProtobufMessage(const TcpConnectionPtr &, const MessagePtr &me
 
 // Temporary debug switch: set to true at runtime to dump all oversized RPC bodies to file.
 // Usage: set gDumpOversizedRpc = true in debugger, or call EnableOversizedRpcDump(true).
-bool gDumpOversizedRpc = false;
+bool gDumpOversizedRpc = true;
 
 void EnableOversizedRpcDump(bool enable) { gDumpOversizedRpc = enable; }
 
@@ -42,6 +42,7 @@ size_t LogIfMessageTooLarge(const GameRpcMessage &rpcMessage)
     if (msgId < gRpcMethodRegistry.size())
     {
         const auto &meta = gRpcMethodRegistry[msgId];
+
         if (meta.methodName)
             methodName = meta.methodName;
 

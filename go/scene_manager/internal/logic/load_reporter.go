@@ -62,22 +62,10 @@ type nodeEntry struct {
 	nodeID string
 }
 
-// pendingRemoval tracks a deleted node waiting out its grace period.
-type pendingRemoval struct {
-	since time.Time
-	entry nodeEntry
-}
-
 // knownNodes tracks nodes currently registered in etcd, keyed by etcd key.
 var (
 	knownNodesMu sync.RWMutex
 	knownNodes   = make(map[string]nodeEntry)
-)
-
-// pendingRemovals tracks deleted nodes pending grace-period expiry.
-var (
-	pendingRemovalsMu sync.Mutex
-	pendingRemovals   = make(map[string]pendingRemoval) // nodeID → removal info
 )
 
 // parseNodeEntry parses a raw etcd value into a nodeEntry.
@@ -200,11 +188,6 @@ func fullSync(ctx context.Context, svcCtx *svc.ServiceContext) (int64, error) {
 	activeZones = zones
 	activeZonesMu.Unlock()
 
-	// Clear pending removals — full sync rebuilds truth.
-	pendingRemovalsMu.Lock()
-	pendingRemovals = make(map[string]pendingRemoval)
-	pendingRemovalsMu.Unlock()
-
 	// Clean stale Redis entries not in current etcd snapshot.
 	for _, zoneId := range zones {
 		seen := seenByZone[zoneId]
@@ -263,7 +246,6 @@ func watchAndRefresh(ctx context.Context, svcCtx *svc.ServiceContext, rev int64)
 			}
 		case <-ticker.C:
 			refreshLoadScores(svcCtx)
-			checkGracePeriodExpirations(svcCtx)
 		}
 	}
 }
@@ -283,11 +265,6 @@ func handleWatchEvent(ctx context.Context, svcCtx *svc.ServiceContext, ev *clien
 		_, existed := knownNodes[key]
 		knownNodes[key] = entry
 		knownNodesMu.Unlock()
-
-		// Node (re-)appeared: cancel pending removal.
-		pendingRemovalsMu.Lock()
-		delete(pendingRemovals, entry.nodeID)
-		pendingRemovalsMu.Unlock()
 
 		// Clear stale gRPC connection: endpoint may have changed after restart.
 		RemoveNodeConn(entry.nodeID)
@@ -313,19 +290,7 @@ func handleWatchEvent(ctx context.Context, svcCtx *svc.ServiceContext, ev *clien
 		}
 
 		rebuildActiveZones()
-
-		graceDuration := time.Duration(svcCtx.Config.NodeRemovalGraceSeconds) * time.Second
-		if graceDuration <= 0 {
-			removeNodeFromRedis(svcCtx, entry)
-			return
-		}
-
-		pendingRemovalsMu.Lock()
-		pendingRemovals[entry.nodeID] = pendingRemoval{since: time.Now(), entry: entry}
-		pendingRemovalsMu.Unlock()
-
-		logx.Infof("[LoadReporter] node %s deleted (zone %d), grace period started (%ds)",
-			entry.nodeID, entry.reg.ZoneId, svcCtx.Config.NodeRemovalGraceSeconds)
+		removeNodeFromRedis(svcCtx, entry)
 	}
 }
 
@@ -338,25 +303,6 @@ func refreshLoadScores(svcCtx *svc.ServiceContext) {
 	}
 }
 
-// checkGracePeriodExpirations removes nodes whose grace period has expired.
-func checkGracePeriodExpirations(svcCtx *svc.ServiceContext) {
-	graceDuration := time.Duration(svcCtx.Config.NodeRemovalGraceSeconds) * time.Second
-	if graceDuration <= 0 {
-		return
-	}
-
-	now := time.Now()
-	pendingRemovalsMu.Lock()
-	defer pendingRemovalsMu.Unlock()
-	for nodeID, pr := range pendingRemovals {
-		if now.Sub(pr.since) >= graceDuration {
-			logx.Infof("[LoadReporter] node %s grace period expired (zone %d), removing",
-				nodeID, pr.entry.reg.ZoneId)
-			removeNodeFromRedis(svcCtx, pr.entry)
-			delete(pendingRemovals, nodeID)
-		}
-	}
-}
 
 // GetBestNode selects the node with the lowest load from the given zone's Redis sorted set.
 func GetBestNode(ctx context.Context, svcCtx *svc.ServiceContext, zoneId uint32) (string, error) {
