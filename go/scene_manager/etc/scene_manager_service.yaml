@@ -19,10 +19,6 @@ LeaseTTL: 60
 Kafka:
   Brokers:
     - 127.0.0.1:9092
-# Grace period (seconds) before removing a scene node that disappeared from etcd.
-# During this window, a breakpoint-paused node can re-register without being evicted.
-# Set to 0 for immediate removal in production.
-NodeRemovalGraceSeconds: 300
 
 # Directory containing exported table JSON files (e.g. World.json).
 # World config IDs are loaded from World.json automatically.

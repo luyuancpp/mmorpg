@@ -17,10 +17,6 @@ type Config struct {
 
 	// LeaseTTL: etcd lease TTL in seconds for node registration keepalive.
 	LeaseTTL int64 `json:",default=60"`
-	// NodeRemovalGraceSeconds: seconds to wait before removing a scene node
-	// that disappeared from etcd. Allows breakpoint-paused nodes to re-register.
-	// 0 = immediate removal (production default).
-	NodeRemovalGraceSeconds int64 `json:",default=0"`
 
 	// TableDir: directory containing exported table data files (JSON or binary pb).
 	// Default assumes the service runs from go/scene_manager/ with repo root two levels up.
