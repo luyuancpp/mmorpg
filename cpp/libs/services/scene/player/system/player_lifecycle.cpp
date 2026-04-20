@@ -60,6 +60,17 @@ void PlayerLifecycleSystem::HandlePlayerAsyncLoaded(Guid playerId, const PlayerA
 	if (extra.type() == typeid(PlayerSceneEnterContext))
 	{
 		const auto &context = std::any_cast<PlayerSceneEnterContext>(extra);
+
+		// If the session was erased during async load (e.g. client disconnected
+		// and ExitGame arrived before load completed), skip entity creation.
+		if (context.enterInfo.session_id() != 0
+			&& SessionMap().find(context.enterInfo.session_id()) == SessionMap().end())
+		{
+			LOG_INFO << "HandlePlayerAsyncLoaded: session " << context.enterInfo.session_id()
+			         << " cancelled during async load for player " << playerId << ", skipping";
+			return;
+		}
+
 		auto player = InitPlayerFromAllData(*data, context.enterInfo);
 		if (tlsEcs.actorRegistry.valid(player))
 		{
@@ -69,6 +80,15 @@ void PlayerLifecycleSystem::HandlePlayerAsyncLoaded(Guid playerId, const PlayerA
 	else if (extra.type() == typeid(PlayerGameNodeEntryInfoComp))
 	{
 		const auto &enterInfo = std::any_cast<PlayerGameNodeEntryInfoComp>(extra);
+
+		if (enterInfo.session_id() != 0
+			&& SessionMap().find(enterInfo.session_id()) == SessionMap().end())
+		{
+			LOG_INFO << "HandlePlayerAsyncLoaded: session " << enterInfo.session_id()
+			         << " cancelled during async load for player " << playerId << ", skipping";
+			return;
+		}
+
 		InitPlayerFromAllData(*data, enterInfo);
 	}
 	else

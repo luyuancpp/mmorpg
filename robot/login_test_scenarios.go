@@ -78,6 +78,9 @@ func runLoginTests(host string, port int, cfg *config.Config, stats *metrics.Sta
 		{"DisconnectDuringEnter", func() testResult {
 			return testDisconnectDuringEnter(host, port, account, cfg.Password, stats, tokenPayload, tokenSig)
 		}},
+		{"RapidDisconnectReconnect", func() testResult {
+			return testRapidDisconnectReconnect(host, port, account, cfg.Password, stats, tokenPayload, tokenSig)
+		}},
 
 		// --- Multi-account ---
 		{"DifferentAccountSequential", func() testResult {
@@ -698,6 +701,69 @@ func testDisconnectDuringEnter(host string, port int, account, password string, 
 
 	return testResult{Passed: true, Elapsed: time.Since(start),
 		Detail: "recovered after disconnect between Login and EnterGame"}
+}
+
+// ---------------------------------------------------------------------------
+// Scenario: Rapid disconnect+reconnect (async load race)
+// Tests the case where a client completes login+enter, then disconnects
+// and immediately reconnects while Scene is still async-loading from Redis.
+// The reconnect must succeed; the server must not hang or lose the player.
+// ---------------------------------------------------------------------------
+
+func testRapidDisconnectReconnect(host string, port int, account, password string, stats *metrics.Stats, tokenPayload, tokenSig []byte) testResult {
+	start := time.Now()
+
+	// First: full login to ensure the player exists in DB/Redis.
+	gc0, err := connectAndVerify(host, port, account, tokenPayload, tokenSig)
+	if err != nil {
+		return testResult{Elapsed: time.Since(start), Detail: fmt.Sprintf("setup connect: %s", err)}
+	}
+	if err := loginAndEnter(gc0, password, stats); err != nil {
+		gc0.Close()
+		return testResult{Elapsed: time.Since(start), Detail: fmt.Sprintf("setup login: %s", err)}
+	}
+	_ = leaveGame(gc0, stats)
+	time.Sleep(300 * time.Millisecond)
+	gc0.Close()
+	time.Sleep(500 * time.Millisecond) // ensure server fully cleaned up
+
+	// Now do the rapid disconnect+reconnect cycle.
+	// Login+enter then immediately disconnect (no LeaveGame) with minimal delay.
+	for i := 0; i < 3; i++ {
+		gc1, err := connectAndVerify(host, port, account, tokenPayload, tokenSig)
+		if err != nil {
+			return testResult{Elapsed: time.Since(start),
+				Detail: fmt.Sprintf("cycle %d connect1: %s", i, err)}
+		}
+		if err := loginAndEnter(gc1, password, stats); err != nil {
+			gc1.Close()
+			return testResult{Elapsed: time.Since(start),
+				Detail: fmt.Sprintf("cycle %d login1: %s", i, err)}
+		}
+		gc1.Close() // abrupt disconnect, no LeaveGame
+
+		// Reconnect immediately — zero deliberate delay.
+		// This maximizes the chance of hitting the async-load window on Scene.
+		gc2, err := connectAndVerify(host, port, account, tokenPayload, tokenSig)
+		if err != nil {
+			return testResult{Elapsed: time.Since(start),
+				Detail: fmt.Sprintf("cycle %d reconnect: %s", i, err)}
+		}
+		if err := loginAndEnter(gc2, password, stats); err != nil {
+			gc2.Close()
+			return testResult{Elapsed: time.Since(start),
+				Detail: fmt.Sprintf("cycle %d re-login: %s", i, err)}
+		}
+
+		// Clean exit before next cycle.
+		_ = leaveGame(gc2, stats)
+		time.Sleep(200 * time.Millisecond)
+		gc2.Close()
+		time.Sleep(300 * time.Millisecond)
+	}
+
+	return testResult{Passed: true, Elapsed: time.Since(start),
+		Detail: "3 rapid disconnect+reconnect cycles completed"}
 }
 
 // ---------------------------------------------------------------------------
