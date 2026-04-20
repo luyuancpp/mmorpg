@@ -31,6 +31,7 @@
 #include "player/comp/afk_comp.h"
 #include "frame/manager/frame_time.h"
 #include "rpc/service_metadata/gate_service_service_metadata.h"
+#include "rpc/service_metadata/player_lifecycle_service_metadata.h"
 #include "proto/db/proto_option.pb.h"
 #include "network/node_utils.h"
 #include "modules/scene/comp/scene_comp.h"
@@ -137,6 +138,16 @@ void SceneHandler::PlayerEnterGameNode(::google::protobuf::RpcController* contro
 	if (request->session_id() != 0)
 	{
 		SessionMap().emplace(request->session_id(), request->player_id());
+	}
+
+	// If an async load is already in flight (e.g. rapid disconnect+reconnect),
+	// update the extra data to carry the new session/scene info.  AsyncLoad
+	// deduplicates by key, so a second call would be silently dropped.
+	if (tlsRedisSystem.GetPlayerDataRedis()->UpdateExtraData(request->player_id(), enterInfo))
+	{
+		LOG_INFO << "PlayerEnterGameNode: updated in-flight async load with new session="
+		         << request->session_id() << " for player " << request->player_id();
+		return;
 	}
 
 	tlsRedisSystem.GetPlayerDataRedis()->AsyncLoad(request->player_id(), enterInfo);
@@ -273,8 +284,20 @@ void SceneHandler::ProcessClientPlayerMessage(::google::protobuf::RpcController*
 	const auto player = tlsEcs.GetPlayer(it->second);
 	if (player == entt::null)
 	{
-		LOG_WARN << "ProcessClientPlayerMessage: player not loaded for player_id=" << it->second
-				 << " message_id=" << msg.message_id() << " (likely still loading from Redis)";
+		// Player entity not yet created (async Redis load in progress).
+		// If this is an ExitGame request, erase the pre-registered session
+		// so HandlePlayerAsyncLoaded knows the load was cancelled.
+		if (msg.message_id() == ScenePlayerExitGameMessageId)
+		{
+			LOG_INFO << "ProcessClientPlayerMessage: ExitGame during async load, "
+						"cancelling session for player_id=" << it->second;
+			SessionMap().erase(it);
+		}
+		else
+		{
+			LOG_WARN << "ProcessClientPlayerMessage: player not loaded for player_id=" << it->second
+					 << " message_id=" << msg.message_id() << " (likely still loading from Redis)";
+		}
 		return;
 	}
 
