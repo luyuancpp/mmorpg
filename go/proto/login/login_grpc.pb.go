@@ -24,6 +24,7 @@ const (
 	ClientPlayerLogin_EnterGame_FullMethodName    = "/loginpb.ClientPlayerLogin/EnterGame"
 	ClientPlayerLogin_LeaveGame_FullMethodName    = "/loginpb.ClientPlayerLogin/LeaveGame"
 	ClientPlayerLogin_Disconnect_FullMethodName   = "/loginpb.ClientPlayerLogin/Disconnect"
+	ClientPlayerLogin_RefreshToken_FullMethodName = "/loginpb.ClientPlayerLogin/RefreshToken"
 )
 
 // ClientPlayerLoginClient is the client API for ClientPlayerLogin service.
@@ -35,6 +36,7 @@ type ClientPlayerLoginClient interface {
 	EnterGame(ctx context.Context, in *EnterGameRequest, opts ...grpc.CallOption) (*EnterGameResponse, error)
 	LeaveGame(ctx context.Context, in *LeaveGameRequest, opts ...grpc.CallOption) (*LoginEmptyResponse, error)
 	Disconnect(ctx context.Context, in *LoginNodeDisconnectRequest, opts ...grpc.CallOption) (*LoginEmptyResponse, error)
+	RefreshToken(ctx context.Context, in *RefreshTokenRequest, opts ...grpc.CallOption) (*RefreshTokenResponse, error)
 }
 
 type clientPlayerLoginClient struct {
@@ -95,6 +97,16 @@ func (c *clientPlayerLoginClient) Disconnect(ctx context.Context, in *LoginNodeD
 	return out, nil
 }
 
+func (c *clientPlayerLoginClient) RefreshToken(ctx context.Context, in *RefreshTokenRequest, opts ...grpc.CallOption) (*RefreshTokenResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RefreshTokenResponse)
+	err := c.cc.Invoke(ctx, ClientPlayerLogin_RefreshToken_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ClientPlayerLoginServer is the server API for ClientPlayerLogin service.
 // All implementations must embed UnimplementedClientPlayerLoginServer
 // for forward compatibility.
@@ -104,6 +116,7 @@ type ClientPlayerLoginServer interface {
 	EnterGame(context.Context, *EnterGameRequest) (*EnterGameResponse, error)
 	LeaveGame(context.Context, *LeaveGameRequest) (*LoginEmptyResponse, error)
 	Disconnect(context.Context, *LoginNodeDisconnectRequest) (*LoginEmptyResponse, error)
+	RefreshToken(context.Context, *RefreshTokenRequest) (*RefreshTokenResponse, error)
 	mustEmbedUnimplementedClientPlayerLoginServer()
 }
 
@@ -128,6 +141,9 @@ func (UnimplementedClientPlayerLoginServer) LeaveGame(context.Context, *LeaveGam
 }
 func (UnimplementedClientPlayerLoginServer) Disconnect(context.Context, *LoginNodeDisconnectRequest) (*LoginEmptyResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Disconnect not implemented")
+}
+func (UnimplementedClientPlayerLoginServer) RefreshToken(context.Context, *RefreshTokenRequest) (*RefreshTokenResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RefreshToken not implemented")
 }
 func (UnimplementedClientPlayerLoginServer) mustEmbedUnimplementedClientPlayerLoginServer() {}
 func (UnimplementedClientPlayerLoginServer) testEmbeddedByValue()                           {}
@@ -240,6 +256,24 @@ func _ClientPlayerLogin_Disconnect_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ClientPlayerLogin_RefreshToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RefreshTokenRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ClientPlayerLoginServer).RefreshToken(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ClientPlayerLogin_RefreshToken_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ClientPlayerLoginServer).RefreshToken(ctx, req.(*RefreshTokenRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ClientPlayerLogin_ServiceDesc is the grpc.ServiceDesc for ClientPlayerLogin service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -266,6 +300,10 @@ var ClientPlayerLogin_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Disconnect",
 			Handler:    _ClientPlayerLogin_Disconnect_Handler,
+		},
+		{
+			MethodName: "RefreshToken",
+			Handler:    _ClientPlayerLogin_RefreshToken_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

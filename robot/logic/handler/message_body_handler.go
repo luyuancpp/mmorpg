@@ -36,6 +36,7 @@ var messageHandlers = map[uint32]handlerFunc{
 	game.ClientPlayerLoginEnterGameMessageId: unmarshalAndCall(ClientPlayerLoginEnterGameHandler),
 	game.ClientPlayerLoginLeaveGameMessageId: unmarshalAndCall(ClientPlayerLoginLeaveGameHandler),
 	game.ClientPlayerLoginDisconnectMessageId: unmarshalAndCall(ClientPlayerLoginDisconnectHandler),
+	game.ClientPlayerLoginRefreshTokenMessageId: unmarshalAndCall(ClientPlayerLoginRefreshTokenHandler),
 	game.SceneClientPlayerCommonSendTipToClientMessageId: unmarshalAndCall(SceneClientPlayerCommonSendTipToClientHandler),
 	game.SceneClientPlayerCommonKickPlayerMessageId: unmarshalAndCall(SceneClientPlayerCommonKickPlayerHandler),
 	game.SceneClientPlayerCommonRedirectToGateMessageId: unmarshalAndCall(SceneClientPlayerCommonRedirectToGateHandler),

@@ -71,6 +71,13 @@ class ClientPlayerLogin final {
     std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::loginpb::LoginEmptyResponse>> PrepareAsyncDisconnect(::grpc::ClientContext* context, const ::loginpb::LoginNodeDisconnectRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::loginpb::LoginEmptyResponse>>(PrepareAsyncDisconnectRaw(context, request, cq));
     }
+    virtual ::grpc::Status RefreshToken(::grpc::ClientContext* context, const ::loginpb::RefreshTokenRequest& request, ::loginpb::RefreshTokenResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::loginpb::RefreshTokenResponse>> AsyncRefreshToken(::grpc::ClientContext* context, const ::loginpb::RefreshTokenRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::loginpb::RefreshTokenResponse>>(AsyncRefreshTokenRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::loginpb::RefreshTokenResponse>> PrepareAsyncRefreshToken(::grpc::ClientContext* context, const ::loginpb::RefreshTokenRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::loginpb::RefreshTokenResponse>>(PrepareAsyncRefreshTokenRaw(context, request, cq));
+    }
     class async_interface {
      public:
       virtual ~async_interface() {}
@@ -84,6 +91,8 @@ class ClientPlayerLogin final {
       virtual void LeaveGame(::grpc::ClientContext* context, const ::loginpb::LeaveGameRequest* request, ::loginpb::LoginEmptyResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
       virtual void Disconnect(::grpc::ClientContext* context, const ::loginpb::LoginNodeDisconnectRequest* request, ::loginpb::LoginEmptyResponse* response, std::function<void(::grpc::Status)>) = 0;
       virtual void Disconnect(::grpc::ClientContext* context, const ::loginpb::LoginNodeDisconnectRequest* request, ::loginpb::LoginEmptyResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      virtual void RefreshToken(::grpc::ClientContext* context, const ::loginpb::RefreshTokenRequest* request, ::loginpb::RefreshTokenResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void RefreshToken(::grpc::ClientContext* context, const ::loginpb::RefreshTokenRequest* request, ::loginpb::RefreshTokenResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
     };
     typedef class async_interface experimental_async_interface;
     virtual class async_interface* async() { return nullptr; }
@@ -99,6 +108,8 @@ class ClientPlayerLogin final {
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::loginpb::LoginEmptyResponse>* PrepareAsyncLeaveGameRaw(::grpc::ClientContext* context, const ::loginpb::LeaveGameRequest& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::loginpb::LoginEmptyResponse>* AsyncDisconnectRaw(::grpc::ClientContext* context, const ::loginpb::LoginNodeDisconnectRequest& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::loginpb::LoginEmptyResponse>* PrepareAsyncDisconnectRaw(::grpc::ClientContext* context, const ::loginpb::LoginNodeDisconnectRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::loginpb::RefreshTokenResponse>* AsyncRefreshTokenRaw(::grpc::ClientContext* context, const ::loginpb::RefreshTokenRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::loginpb::RefreshTokenResponse>* PrepareAsyncRefreshTokenRaw(::grpc::ClientContext* context, const ::loginpb::RefreshTokenRequest& request, ::grpc::CompletionQueue* cq) = 0;
   };
   class Stub final : public StubInterface {
    public:
@@ -138,6 +149,13 @@ class ClientPlayerLogin final {
     std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::loginpb::LoginEmptyResponse>> PrepareAsyncDisconnect(::grpc::ClientContext* context, const ::loginpb::LoginNodeDisconnectRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::loginpb::LoginEmptyResponse>>(PrepareAsyncDisconnectRaw(context, request, cq));
     }
+    ::grpc::Status RefreshToken(::grpc::ClientContext* context, const ::loginpb::RefreshTokenRequest& request, ::loginpb::RefreshTokenResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::loginpb::RefreshTokenResponse>> AsyncRefreshToken(::grpc::ClientContext* context, const ::loginpb::RefreshTokenRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::loginpb::RefreshTokenResponse>>(AsyncRefreshTokenRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::loginpb::RefreshTokenResponse>> PrepareAsyncRefreshToken(::grpc::ClientContext* context, const ::loginpb::RefreshTokenRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::loginpb::RefreshTokenResponse>>(PrepareAsyncRefreshTokenRaw(context, request, cq));
+    }
     class async final :
       public StubInterface::async_interface {
      public:
@@ -151,6 +169,8 @@ class ClientPlayerLogin final {
       void LeaveGame(::grpc::ClientContext* context, const ::loginpb::LeaveGameRequest* request, ::loginpb::LoginEmptyResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
       void Disconnect(::grpc::ClientContext* context, const ::loginpb::LoginNodeDisconnectRequest* request, ::loginpb::LoginEmptyResponse* response, std::function<void(::grpc::Status)>) override;
       void Disconnect(::grpc::ClientContext* context, const ::loginpb::LoginNodeDisconnectRequest* request, ::loginpb::LoginEmptyResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void RefreshToken(::grpc::ClientContext* context, const ::loginpb::RefreshTokenRequest* request, ::loginpb::RefreshTokenResponse* response, std::function<void(::grpc::Status)>) override;
+      void RefreshToken(::grpc::ClientContext* context, const ::loginpb::RefreshTokenRequest* request, ::loginpb::RefreshTokenResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
      private:
       friend class Stub;
       explicit async(Stub* stub): stub_(stub) { }
@@ -172,11 +192,14 @@ class ClientPlayerLogin final {
     ::grpc::ClientAsyncResponseReader< ::loginpb::LoginEmptyResponse>* PrepareAsyncLeaveGameRaw(::grpc::ClientContext* context, const ::loginpb::LeaveGameRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::loginpb::LoginEmptyResponse>* AsyncDisconnectRaw(::grpc::ClientContext* context, const ::loginpb::LoginNodeDisconnectRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::loginpb::LoginEmptyResponse>* PrepareAsyncDisconnectRaw(::grpc::ClientContext* context, const ::loginpb::LoginNodeDisconnectRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::loginpb::RefreshTokenResponse>* AsyncRefreshTokenRaw(::grpc::ClientContext* context, const ::loginpb::RefreshTokenRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::loginpb::RefreshTokenResponse>* PrepareAsyncRefreshTokenRaw(::grpc::ClientContext* context, const ::loginpb::RefreshTokenRequest& request, ::grpc::CompletionQueue* cq) override;
     const ::grpc::internal::RpcMethod rpcmethod_Login_;
     const ::grpc::internal::RpcMethod rpcmethod_CreatePlayer_;
     const ::grpc::internal::RpcMethod rpcmethod_EnterGame_;
     const ::grpc::internal::RpcMethod rpcmethod_LeaveGame_;
     const ::grpc::internal::RpcMethod rpcmethod_Disconnect_;
+    const ::grpc::internal::RpcMethod rpcmethod_RefreshToken_;
   };
   static std::unique_ptr<Stub> NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options = ::grpc::StubOptions());
 
@@ -189,6 +212,7 @@ class ClientPlayerLogin final {
     virtual ::grpc::Status EnterGame(::grpc::ServerContext* context, const ::loginpb::EnterGameRequest* request, ::loginpb::EnterGameResponse* response);
     virtual ::grpc::Status LeaveGame(::grpc::ServerContext* context, const ::loginpb::LeaveGameRequest* request, ::loginpb::LoginEmptyResponse* response);
     virtual ::grpc::Status Disconnect(::grpc::ServerContext* context, const ::loginpb::LoginNodeDisconnectRequest* request, ::loginpb::LoginEmptyResponse* response);
+    virtual ::grpc::Status RefreshToken(::grpc::ServerContext* context, const ::loginpb::RefreshTokenRequest* request, ::loginpb::RefreshTokenResponse* response);
   };
   template <class BaseClass>
   class WithAsyncMethod_Login : public BaseClass {
@@ -290,7 +314,27 @@ class ClientPlayerLogin final {
       ::grpc::Service::RequestAsyncUnary(4, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
-  typedef WithAsyncMethod_Login<WithAsyncMethod_CreatePlayer<WithAsyncMethod_EnterGame<WithAsyncMethod_LeaveGame<WithAsyncMethod_Disconnect<Service > > > > > AsyncService;
+  template <class BaseClass>
+  class WithAsyncMethod_RefreshToken : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_RefreshToken() {
+      ::grpc::Service::MarkMethodAsync(5);
+    }
+    ~WithAsyncMethod_RefreshToken() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status RefreshToken(::grpc::ServerContext* /*context*/, const ::loginpb::RefreshTokenRequest* /*request*/, ::loginpb::RefreshTokenResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestRefreshToken(::grpc::ServerContext* context, ::loginpb::RefreshTokenRequest* request, ::grpc::ServerAsyncResponseWriter< ::loginpb::RefreshTokenResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(5, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  typedef WithAsyncMethod_Login<WithAsyncMethod_CreatePlayer<WithAsyncMethod_EnterGame<WithAsyncMethod_LeaveGame<WithAsyncMethod_Disconnect<WithAsyncMethod_RefreshToken<Service > > > > > > AsyncService;
   template <class BaseClass>
   class WithCallbackMethod_Login : public BaseClass {
    private:
@@ -426,7 +470,34 @@ class ClientPlayerLogin final {
     virtual ::grpc::ServerUnaryReactor* Disconnect(
       ::grpc::CallbackServerContext* /*context*/, const ::loginpb::LoginNodeDisconnectRequest* /*request*/, ::loginpb::LoginEmptyResponse* /*response*/)  { return nullptr; }
   };
-  typedef WithCallbackMethod_Login<WithCallbackMethod_CreatePlayer<WithCallbackMethod_EnterGame<WithCallbackMethod_LeaveGame<WithCallbackMethod_Disconnect<Service > > > > > CallbackService;
+  template <class BaseClass>
+  class WithCallbackMethod_RefreshToken : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_RefreshToken() {
+      ::grpc::Service::MarkMethodCallback(5,
+          new ::grpc::internal::CallbackUnaryHandler< ::loginpb::RefreshTokenRequest, ::loginpb::RefreshTokenResponse>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::loginpb::RefreshTokenRequest* request, ::loginpb::RefreshTokenResponse* response) { return this->RefreshToken(context, request, response); }));}
+    void SetMessageAllocatorFor_RefreshToken(
+        ::grpc::MessageAllocator< ::loginpb::RefreshTokenRequest, ::loginpb::RefreshTokenResponse>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(5);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::loginpb::RefreshTokenRequest, ::loginpb::RefreshTokenResponse>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_RefreshToken() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status RefreshToken(::grpc::ServerContext* /*context*/, const ::loginpb::RefreshTokenRequest* /*request*/, ::loginpb::RefreshTokenResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* RefreshToken(
+      ::grpc::CallbackServerContext* /*context*/, const ::loginpb::RefreshTokenRequest* /*request*/, ::loginpb::RefreshTokenResponse* /*response*/)  { return nullptr; }
+  };
+  typedef WithCallbackMethod_Login<WithCallbackMethod_CreatePlayer<WithCallbackMethod_EnterGame<WithCallbackMethod_LeaveGame<WithCallbackMethod_Disconnect<WithCallbackMethod_RefreshToken<Service > > > > > > CallbackService;
   typedef CallbackService ExperimentalCallbackService;
   template <class BaseClass>
   class WithGenericMethod_Login : public BaseClass {
@@ -509,6 +580,23 @@ class ClientPlayerLogin final {
     }
     // disable synchronous version of this method
     ::grpc::Status Disconnect(::grpc::ServerContext* /*context*/, const ::loginpb::LoginNodeDisconnectRequest* /*request*/, ::loginpb::LoginEmptyResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_RefreshToken : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_RefreshToken() {
+      ::grpc::Service::MarkMethodGeneric(5);
+    }
+    ~WithGenericMethod_RefreshToken() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status RefreshToken(::grpc::ServerContext* /*context*/, const ::loginpb::RefreshTokenRequest* /*request*/, ::loginpb::RefreshTokenResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -611,6 +699,26 @@ class ClientPlayerLogin final {
     }
     void RequestDisconnect(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
       ::grpc::Service::RequestAsyncUnary(4, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_RefreshToken : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_RefreshToken() {
+      ::grpc::Service::MarkMethodRaw(5);
+    }
+    ~WithRawMethod_RefreshToken() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status RefreshToken(::grpc::ServerContext* /*context*/, const ::loginpb::RefreshTokenRequest* /*request*/, ::loginpb::RefreshTokenResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestRefreshToken(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(5, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -721,6 +829,28 @@ class ClientPlayerLogin final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     virtual ::grpc::ServerUnaryReactor* Disconnect(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_RefreshToken : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_RefreshToken() {
+      ::grpc::Service::MarkMethodRawCallback(5,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->RefreshToken(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_RefreshToken() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status RefreshToken(::grpc::ServerContext* /*context*/, const ::loginpb::RefreshTokenRequest* /*request*/, ::loginpb::RefreshTokenResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* RefreshToken(
       ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
   };
   template <class BaseClass>
@@ -858,9 +988,36 @@ class ClientPlayerLogin final {
     // replace default version of method with streamed unary
     virtual ::grpc::Status StreamedDisconnect(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::loginpb::LoginNodeDisconnectRequest,::loginpb::LoginEmptyResponse>* server_unary_streamer) = 0;
   };
-  typedef WithStreamedUnaryMethod_Login<WithStreamedUnaryMethod_CreatePlayer<WithStreamedUnaryMethod_EnterGame<WithStreamedUnaryMethod_LeaveGame<WithStreamedUnaryMethod_Disconnect<Service > > > > > StreamedUnaryService;
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_RefreshToken : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_RefreshToken() {
+      ::grpc::Service::MarkMethodStreamed(5,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::loginpb::RefreshTokenRequest, ::loginpb::RefreshTokenResponse>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::loginpb::RefreshTokenRequest, ::loginpb::RefreshTokenResponse>* streamer) {
+                       return this->StreamedRefreshToken(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_RefreshToken() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status RefreshToken(::grpc::ServerContext* /*context*/, const ::loginpb::RefreshTokenRequest* /*request*/, ::loginpb::RefreshTokenResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedRefreshToken(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::loginpb::RefreshTokenRequest,::loginpb::RefreshTokenResponse>* server_unary_streamer) = 0;
+  };
+  typedef WithStreamedUnaryMethod_Login<WithStreamedUnaryMethod_CreatePlayer<WithStreamedUnaryMethod_EnterGame<WithStreamedUnaryMethod_LeaveGame<WithStreamedUnaryMethod_Disconnect<WithStreamedUnaryMethod_RefreshToken<Service > > > > > > StreamedUnaryService;
   typedef Service SplitStreamedService;
-  typedef WithStreamedUnaryMethod_Login<WithStreamedUnaryMethod_CreatePlayer<WithStreamedUnaryMethod_EnterGame<WithStreamedUnaryMethod_LeaveGame<WithStreamedUnaryMethod_Disconnect<Service > > > > > StreamedService;
+  typedef WithStreamedUnaryMethod_Login<WithStreamedUnaryMethod_CreatePlayer<WithStreamedUnaryMethod_EnterGame<WithStreamedUnaryMethod_LeaveGame<WithStreamedUnaryMethod_Disconnect<WithStreamedUnaryMethod_RefreshToken<Service > > > > > > StreamedService;
 };
 
 class LoginPreGate final {

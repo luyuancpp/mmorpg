@@ -36,6 +36,10 @@ message LoginResponse
 {
   TipInfoMessage error_message = 1;
   repeated AccountSimplePlayerWrapper players = 2;
+  string access_token = 3;           // Opaque access token (2h TTL), use as auth_type="access_token" for reconnect
+  string refresh_token = 4;          // Opaque refresh token (30d TTL), use RefreshToken RPC to renew
+  int64 access_token_expire = 5;     // Unix seconds when access_token expires
+  int64 refresh_token_expire = 6;    // Unix seconds when refresh_token expires
 }
 
 message TestResponse
@@ -83,6 +87,20 @@ message LoginEmptyResponse
 {
 }
 
+message RefreshTokenRequest
+{
+  string refresh_token = 1;  // Current refresh token
+}
+
+message RefreshTokenResponse
+{
+  TipInfoMessage error_message = 1;
+  string access_token = 2;           // New access token
+  string refresh_token = 3;          // Rotated refresh token (old one is invalidated)
+  int64 access_token_expire = 4;     // Unix seconds when new access_token expires
+  int64 refresh_token_expire = 5;    // Unix seconds when new refresh_token expires
+}
+
 service ClientPlayerLogin  {
   option (OptionIsClientProtocolService) = true;
 
@@ -91,6 +109,7 @@ service ClientPlayerLogin  {
   rpc EnterGame (EnterGameRequest) returns (EnterGameResponse);
   rpc LeaveGame (LeaveGameRequest) returns (LoginEmptyResponse);
   rpc Disconnect (LoginNodeDisconnectRequest) returns (LoginEmptyResponse);
+  rpc RefreshToken (RefreshTokenRequest) returns (RefreshTokenResponse);
 }
 
 // ── Pre-connection RPCs (called before connecting to Gate) ──────

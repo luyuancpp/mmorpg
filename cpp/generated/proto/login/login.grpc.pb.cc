@@ -28,6 +28,7 @@ static const char* ClientPlayerLogin_method_names[] = {
   "/loginpb.ClientPlayerLogin/EnterGame",
   "/loginpb.ClientPlayerLogin/LeaveGame",
   "/loginpb.ClientPlayerLogin/Disconnect",
+  "/loginpb.ClientPlayerLogin/RefreshToken",
 };
 
 std::unique_ptr< ClientPlayerLogin::Stub> ClientPlayerLogin::NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options) {
@@ -42,6 +43,7 @@ ClientPlayerLogin::Stub::Stub(const std::shared_ptr< ::grpc::ChannelInterface>& 
   , rpcmethod_EnterGame_(ClientPlayerLogin_method_names[2], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   , rpcmethod_LeaveGame_(ClientPlayerLogin_method_names[3], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   , rpcmethod_Disconnect_(ClientPlayerLogin_method_names[4], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_RefreshToken_(ClientPlayerLogin_method_names[5], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   {}
 
 ::grpc::Status ClientPlayerLogin::Stub::Login(::grpc::ClientContext* context, const ::loginpb::LoginRequest& request, ::loginpb::LoginResponse* response) {
@@ -159,6 +161,29 @@ void ClientPlayerLogin::Stub::async::Disconnect(::grpc::ClientContext* context, 
   return result;
 }
 
+::grpc::Status ClientPlayerLogin::Stub::RefreshToken(::grpc::ClientContext* context, const ::loginpb::RefreshTokenRequest& request, ::loginpb::RefreshTokenResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::loginpb::RefreshTokenRequest, ::loginpb::RefreshTokenResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_RefreshToken_, context, request, response);
+}
+
+void ClientPlayerLogin::Stub::async::RefreshToken(::grpc::ClientContext* context, const ::loginpb::RefreshTokenRequest* request, ::loginpb::RefreshTokenResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::loginpb::RefreshTokenRequest, ::loginpb::RefreshTokenResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_RefreshToken_, context, request, response, std::move(f));
+}
+
+void ClientPlayerLogin::Stub::async::RefreshToken(::grpc::ClientContext* context, const ::loginpb::RefreshTokenRequest* request, ::loginpb::RefreshTokenResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_RefreshToken_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::loginpb::RefreshTokenResponse>* ClientPlayerLogin::Stub::PrepareAsyncRefreshTokenRaw(::grpc::ClientContext* context, const ::loginpb::RefreshTokenRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::loginpb::RefreshTokenResponse, ::loginpb::RefreshTokenRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_RefreshToken_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::loginpb::RefreshTokenResponse>* ClientPlayerLogin::Stub::AsyncRefreshTokenRaw(::grpc::ClientContext* context, const ::loginpb::RefreshTokenRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncRefreshTokenRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
 ClientPlayerLogin::Service::Service() {
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       ClientPlayerLogin_method_names[0],
@@ -210,6 +235,16 @@ ClientPlayerLogin::Service::Service() {
              ::loginpb::LoginEmptyResponse* resp) {
                return service->Disconnect(ctx, req, resp);
              }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      ClientPlayerLogin_method_names[5],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< ClientPlayerLogin::Service, ::loginpb::RefreshTokenRequest, ::loginpb::RefreshTokenResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](ClientPlayerLogin::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::loginpb::RefreshTokenRequest* req,
+             ::loginpb::RefreshTokenResponse* resp) {
+               return service->RefreshToken(ctx, req, resp);
+             }, this)));
 }
 
 ClientPlayerLogin::Service::~Service() {
@@ -244,6 +279,13 @@ ClientPlayerLogin::Service::~Service() {
 }
 
 ::grpc::Status ClientPlayerLogin::Service::Disconnect(::grpc::ServerContext* context, const ::loginpb::LoginNodeDisconnectRequest* request, ::loginpb::LoginEmptyResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status ClientPlayerLogin::Service::RefreshToken(::grpc::ServerContext* context, const ::loginpb::RefreshTokenRequest* request, ::loginpb::RefreshTokenResponse* response) {
   (void) context;
   (void) request;
   (void) response;
