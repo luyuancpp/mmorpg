@@ -87,6 +87,13 @@ SceneManagerRpc:
 # Must match GateTokenSecret in bin/etc/base_deploy_config.yaml.
 GateTokenSecret: "change-me-in-production-use-a-strong-random-key"
 
+# Access/refresh token TTL (WeChat/QQ game login style dual-token)
+# Access token: used for reconnect without re-auth from third-party (default 2h)
+# Refresh token: used to silently renew access token (default 30d)
+TokenConfig:
+  AccessTokenTTL: 2h
+  RefreshTokenTTL: 720h  # 30 days
+
 # Dev mode: skip all auth provider validation (use account field directly).
 # WARNING: Never enable in production!
 # DevSkipAuth: true

@@ -15,6 +15,7 @@ import (
 	"login/internal/config"
 	"login/internal/kafka"
 	"login/internal/logic/pkg/node"
+	"login/internal/logic/pkg/token"
 	login_proto "proto/common/base"
 	kafkapb "proto/contracts/kafka"
 	plpb "proto/player_locator"
@@ -32,6 +33,7 @@ type ServiceContext struct {
 	PlayerLocatorClient plpb.PlayerLocatorClient
 	SceneManagerClient  smpb.SceneManagerClient
 	GateWatcher         *node.NodeWatcher
+	TokenManager        *token.Manager
 }
 
 func NewServiceContext() *ServiceContext {
@@ -101,6 +103,15 @@ func NewServiceContext() *ServiceContext {
 	}
 	gateWatcher := node.NewNodeWatcher(etcdClient, gatePrefix)
 
+	// Initialize token manager for access/refresh tokens
+	tokenMgr := token.NewManager(redisClient, token.Config{
+		AccessTokenTTL:  config.AppConfig.TokenConfig.AccessTokenTTL,
+		RefreshTokenTTL: config.AppConfig.TokenConfig.RefreshTokenTTL,
+	})
+
+	// Register access_token auth provider (requires TokenManager)
+	RegisterAccessTokenProvider(tokenMgr)
+
 	return &ServiceContext{
 		RedisClient:         redisClient,
 		KafkaClient:         kafkaClient,
@@ -108,6 +119,7 @@ func NewServiceContext() *ServiceContext {
 		PlayerLocatorClient: plClient,
 		SceneManagerClient:  smClient,
 		GateWatcher:         gateWatcher,
+		TokenManager:        tokenMgr,
 	}
 }
 

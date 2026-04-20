@@ -31,7 +31,7 @@ etcd:
 # Gate assignment
 gate:
   token-secret: "change-me-in-production-use-a-strong-random-key"
-  token-ttl-seconds: 60
+  token-ttl-seconds: 300
   discovery-timeout-ms: 5000
 
 # Zone health probe

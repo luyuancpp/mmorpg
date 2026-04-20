@@ -47,3 +47,8 @@ func (s *ClientPlayerLoginServer) Disconnect(ctx context.Context, in *login.Logi
 	l := clientplayerloginlogic.NewDisconnectLogic(ctx, s.svcCtx)
 	return l.Disconnect(in)
 }
+
+func (s *ClientPlayerLoginServer) RefreshToken(ctx context.Context, in *login.RefreshTokenRequest) (*login.RefreshTokenResponse, error) {
+	l := clientplayerloginlogic.NewRefreshTokenLogic(ctx, s.svcCtx)
+	return l.RefreshToken(in)
+}
