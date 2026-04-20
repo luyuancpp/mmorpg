@@ -94,10 +94,10 @@ void SceneSceneClientPlayerHandler::EnterScene(entt::entity player,const ::Enter
 
 	scene_manager::SendSceneManagerEnterScene(smRegistry, smEntity, req);
 
-	LOG_INFO << "EnterSceneC2S: Sent EnterScene to SceneManager for player " << playerSessionPB->player_id()
-			 << ", scene_config_id=" << scene_info.scene_config_id()
-			 << ", scene_id=" << scene_info.scene_id();
-///<<< END WRITING YOUR CODE
+	LOG_TRACE << "EnterSceneC2S: Sent EnterScene to SceneManager for player " << playerSessionPB->player_id()
+			  << ", scene_config_id=" << scene_info.scene_config_id()
+			  << ", scene_id=" << scene_info.scene_id();
+	///<<< END WRITING YOUR CODE
 
 }
 
