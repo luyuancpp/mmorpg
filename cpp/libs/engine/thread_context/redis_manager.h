@@ -9,6 +9,7 @@ class RedisManager
 {
 public:
 	using HiredisPtr = std::unique_ptr<hiredis::Hiredis>;
+	using ReconnectCallback = std::function<void()>;
 
 	HiredisPtr &GetZoneRedis()
 	{
@@ -18,6 +19,9 @@ public:
 	// Call after creating and connecting the Hiredis instance.
 	// Sets up a disconnect callback that triggers periodic reconnection.
 	void SetupReconnect(muduo::net::EventLoop *loop, const muduo::net::InetAddress &addr);
+
+	// Register a callback to be invoked after a successful reconnect.
+	void SetReconnectCallback(const ReconnectCallback &cb) { reconnectCb_ = cb; }
 
 private:
 	void ScheduleReconnect();
@@ -29,6 +33,7 @@ private:
 	muduo::net::InetAddress redisAddr_;
 	muduo::net::TimerId reconnectTimerId_;
 	bool reconnectTimerActive_ = false;
+	ReconnectCallback reconnectCb_;
 };
 
 extern thread_local RedisManager tlsRedis;

@@ -17,6 +17,7 @@ public:
 	static PendingEnterMap& GetPendingEnterMap();
 
 	static void HandlePlayerAsyncLoaded(Guid player_id, const PlayerAllData& message);
+	static void HandlePlayerAsyncLoadFailed(Guid player_id);
 	static void HandlePlayerAsyncSaved(Guid player_id, PlayerAllData& message);
 	static void EnterScene(const entt::entity player, const PlayerGameNodeEntryInfoComp& enter_info);
 	static void HandleBindPlayerToGateOK(entt::entity player);

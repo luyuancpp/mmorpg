@@ -63,16 +63,20 @@ class MessageAsyncClient
 public:
 	using MessageValuePtr = std::shared_ptr<MessageValue>;
 
+	static constexpr int kMaxLoadRetries = 5;
+
 	struct Element
 	{
 		MessageKey message_key;
 		std::string redis_key;
 		MessageValuePtr message_value;
+		int retry_count = 0;
 	};
 
 	using ElementPtr = std::shared_ptr<Element>;
 	using LoadingQueue = std::unordered_map<std::string, ElementPtr>;
 	using EventCallback = std::function<void(MessageKey, MessageValue&)>;
+	using FailedCallback = std::function<void(MessageKey)>;
 
 	using HiredisPtr = std::unique_ptr<hiredis::Hiredis>;
 
@@ -85,6 +89,7 @@ public:
 
 	void SetSaveCallback(const EventCallback& cb) { save_callback_ = cb; }
 	void SetLoadCallback(const EventCallback& cb) { load_callback_ = cb; }
+	void SetLoadFailedCallback(const FailedCallback& cb) { load_failed_callback_ = cb; }
 
 
 	void Save(const MessageValuePtr& message, const MessageKey& key)
@@ -117,23 +122,32 @@ public:
 		);
 	}
 
-	void AsyncLoad(const MessageKey& key)
+	void AsyncLoad(const MessageKey& key, int retry_count = 0)
 	{
+		std::string redis_key = full_name() + ":" + std::to_string(key);
+
 		if (!hiredis_ || !hiredis_->connected())
 		{
-			LOG_WARN << "Redis not connected, dropping AsyncLoad for key " << key;
+			LOG_WARN << "Redis not connected, queueing AsyncLoad for retry: " << redis_key;
+			auto element = std::make_shared<Element>();
+			element->message_key = key;
+			element->redis_key = redis_key;
+			element->retry_count = retry_count;
+			pending_retry_queue_[redis_key] = element;
 			return;
 		}
 
-		std::string redis_key = full_name() + ":" + std::to_string(key);
+		// Already in-flight or waiting for retry
 		if (loading_queue_.find(redis_key) != loading_queue_.end())
 		{
-			return; // Already loading
+			return;
 		}
+		pending_retry_queue_.erase(redis_key);
 
 		ElementPtr element = std::make_shared<Element>();
 		element->message_key = key;
 		element->redis_key = redis_key;
+		element->retry_count = retry_count;
 
 		loading_queue_.emplace(redis_key, element);
 
@@ -142,6 +156,37 @@ public:
 			format.c_str());
 	}
 
+	// Call after Redis reconnect to retry all pending/stale loads.
+	void RetryPendingLoads()
+	{
+		if (!hiredis_ || !hiredis_->connected())
+		{
+			return;
+		}
+
+		// Move stale loading_queue_ entries to retry queue
+		// (their callbacks will never fire after a disconnect)
+		for (auto &[k, v] : loading_queue_)
+		{
+			pending_retry_queue_[k] = v;
+		}
+		loading_queue_.clear();
+
+		if (pending_retry_queue_.empty())
+		{
+			return;
+		}
+
+		LOG_INFO << "RetryPendingLoads: retrying " << pending_retry_queue_.size() << " loads";
+
+		// Copy and clear before issuing commands (AsyncLoad modifies pending_retry_queue_)
+		auto pending = std::move(pending_retry_queue_);
+		pending_retry_queue_.clear();
+		for (auto &[key, element] : pending)
+		{
+			AsyncLoad(element->message_key);
+		}
+	}
 
 	MessageValuePtr CreateMessage() { return std::make_shared<MessageValue>(); }
 
@@ -157,25 +202,61 @@ private:
 
 	void OnLoaded(hiredis::Hiredis* c, redisReply* reply, ElementPtr element)
 	{
-		if (!reply || reply->type != REDIS_REPLY_STRING)
+		loading_queue_.erase(element->redis_key);
+
+		if (!reply || reply->type == REDIS_REPLY_ERROR)
 		{
-			LOG_ERROR << "Redis GET failed or no data for key: " << element->redis_key;
-			loading_queue_.erase(element->redis_key);
+			LOG_ERROR << "Redis GET error for key: " << element->redis_key
+					  << (reply ? (std::string(" err=") + reply->str) : " (null reply)");
+			if (load_failed_callback_)
+			{
+				load_failed_callback_(element->message_key);
+			}
 			return;
 		}
 
-		element->message_value = CreateMessage();
-		if (reply->len > static_cast<size_t>(std::numeric_limits<int>::max()))
+		if (reply->type == REDIS_REPLY_NIL)
 		{
-			LOG_ERROR << "Redis payload too large for ParseFromArray, key: " << element->redis_key
-				<< ", len=" << reply->len;
-		}
-		else if (!element->message_value->ParseFromArray(reply->str, static_cast<int>(reply->len)))
-		{
-			LOG_ERROR << "ParseFromArray failed for key: " << element->redis_key;
+			if (element->retry_count < kMaxLoadRetries)
+			{
+				LOG_WARN << "Redis GET returned NIL for key: " << element->redis_key
+						 << ", retry " << (element->retry_count + 1) << "/" << kMaxLoadRetries;
+				pending_retry_queue_[element->redis_key] = element;
+				element->retry_count++;
+				return;
+			}
+
+			LOG_ERROR << "Redis GET returned NIL for key: " << element->redis_key
+					  << ", exhausted all " << kMaxLoadRetries << " retries";
+			if (load_failed_callback_)
+			{
+				load_failed_callback_(element->message_key);
+			}
+			return;
 		}
 
-		loading_queue_.erase(element->redis_key);
+		if (reply->type == REDIS_REPLY_STRING)
+		{
+			element->message_value = CreateMessage();
+			if (reply->len > static_cast<size_t>(std::numeric_limits<int>::max()))
+			{
+				LOG_ERROR << "Redis payload too large for ParseFromArray, key: " << element->redis_key
+						  << ", len=" << reply->len;
+			}
+			else if (!element->message_value->ParseFromArray(reply->str, static_cast<int>(reply->len)))
+			{
+				LOG_ERROR << "ParseFromArray failed for key: " << element->redis_key;
+			}
+		}
+		else
+		{
+			LOG_ERROR << "Redis GET unexpected reply type=" << reply->type << " for key: " << element->redis_key;
+			if (load_failed_callback_)
+			{
+				load_failed_callback_(element->message_key);
+			}
+			return;
+		}
 
 		if (load_callback_)
 		{
@@ -183,11 +264,12 @@ private:
 		}
 	}
 
-
 private:
 	HiredisPtr& hiredis_;
 	LoadingQueue loading_queue_;
+	LoadingQueue pending_retry_queue_;
 	EventCallback save_callback_;
 	EventCallback load_callback_;
+	FailedCallback load_failed_callback_;
 };
 
