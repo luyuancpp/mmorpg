@@ -3,6 +3,8 @@
 #include "muduo/base/Logging.h"
 
 #include "core/network/message_system.h"
+#include "proto/common/event/scene_event.pb.h"
+#include "hexagons_grid.h"
 
 #include "thread_context/redis_manager.h"
 
@@ -179,6 +181,14 @@ void PlayerSceneSystem::HandleEnterScene(entt::entity player, entt::entity scene
 	if (oldSceneComp != nullptr && oldSceneComp->sceneEntity != entt::null
 	    && oldSceneComp->sceneEntity != scene)
 	{
+		// Clean up AOI grid before leaving the old scene.
+		BeforeLeaveScene leaveEvent;
+		leaveEvent.set_entity(entt::to_integral(player));
+		tlsEcs.dispatcher.trigger(leaveEvent);
+
+		// Remove old hex so AOI treats the new scene as a fresh entry.
+		tlsEcs.actorRegistry.remove<Hex>(player);
+
 		auto *oldPlayers = tlsEcs.sceneRegistry.try_get<ScenePlayers>(oldSceneComp->sceneEntity);
 		if (oldPlayers)
 		{
