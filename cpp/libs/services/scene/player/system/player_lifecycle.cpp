@@ -28,6 +28,7 @@
 #include <proto/scene/scene_info.pb.h>
 #include "player/comp/afk_comp.h"
 #include "frame/manager/frame_time.h"
+#include "proto/common/event/scene_event.pb.h"
 
 struct PlayerSceneEnterContext
 {
@@ -246,6 +247,16 @@ void PlayerLifecycleSystem::HandleExitGameNode(entt::entity player)
 	}
 
 	tlsEcs.actorRegistry.emplace<UnregisterPlayer>(player);
+
+	// Remove entity from AOI grid immediately so the AOI system stops
+	// sending messages to the (already-disconnected) gate session.
+	if (tlsEcs.actorRegistry.any_of<SceneEntityComp>(player))
+	{
+		BeforeLeaveScene leaveEvent;
+		leaveEvent.set_entity(entt::to_integral(player));
+		tlsEcs.dispatcher.trigger(leaveEvent);
+		tlsEcs.actorRegistry.remove<SceneEntityComp>(player);
+	}
 
 	// Capture a logout snapshot before persisting (safety net for rollback).
 	SnapshotSystem::CaptureAndSend(player, SNAPSHOT_LOGOUT);
