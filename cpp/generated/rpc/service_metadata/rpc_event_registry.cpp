@@ -137,6 +137,7 @@ namespace loginpb{void SendClientPlayerLoginCreatePlayer(entt::registry& , entt:
 namespace loginpb{void SendClientPlayerLoginEnterGame(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace loginpb{void SendClientPlayerLoginLeaveGame(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace loginpb{void SendClientPlayerLoginDisconnect(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace loginpb{void SendClientPlayerLoginRefreshToken(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace loginpb{void SendLoginPreGateAssignGate(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace loginpb{void SendLoginAdminRemovePlayersFromAccounts(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace scene_manager{void SendSceneManagerCreateScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
@@ -482,6 +483,11 @@ void InitMessageInfo()
         std::make_unique<::loginpb::LoginNodeDisconnectRequest>(),
         std::make_unique<::loginpb::LoginEmptyResponse>(),
         nullptr, 1, common::base::eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginDisconnect};
+    gRpcMethodRegistry[ClientPlayerLoginRefreshTokenMessageId] = RpcMethodMeta{
+        "ClientPlayerLogin", "RefreshToken",
+        std::make_unique<::loginpb::RefreshTokenRequest>(),
+        std::make_unique<::loginpb::RefreshTokenResponse>(),
+        nullptr, 1, common::base::eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginRefreshToken};
 
     // --- LoginPreGate ---
     gRpcMethodRegistry[LoginPreGateAssignGateMessageId] = RpcMethodMeta{
@@ -837,6 +843,7 @@ bool IsClientMessageId(uint32_t messageId)
 	case ClientPlayerLoginEnterGameMessageId:
 	case ClientPlayerLoginLeaveGameMessageId:
 	case ClientPlayerLoginDisconnectMessageId:
+	case ClientPlayerLoginRefreshTokenMessageId:
 	case SceneClientPlayerCommonSendTipToClientMessageId:
 	case SceneClientPlayerCommonKickPlayerMessageId:
 	case SceneClientPlayerCommonRedirectToGateMessageId:

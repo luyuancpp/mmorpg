@@ -23,13 +23,17 @@ type Player struct {
 
 	sceneReady     chan struct{} // closed when first NotifyEnterScene arrives
 	sceneReadyOnce sync.Once
+
+	skillsReady     chan struct{} // closed when ListSkills response arrives
+	skillsReadyOnce sync.Once
 }
 
 // NewPlayer creates a Player with an initialized scene-ready channel.
 func NewPlayer(id uint64) *Player {
 	return &Player{
-		ID:         id,
-		sceneReady: make(chan struct{}),
+		ID:          id,
+		sceneReady:  make(chan struct{}),
+		skillsReady: make(chan struct{}),
 	}
 }
 
@@ -183,11 +187,27 @@ func (p *Player) GetSkillStats() (ackCount, usedCount int, lastErr string) {
 	return p.skillAckCnt, p.skillUsedCnt, p.lastSkillError
 }
 
-// SetOwnedSkillIDs sets the player's owned skill IDs.
+// SetOwnedSkillIDs sets the player's owned skill IDs and signals skills ready.
 func (p *Player) SetOwnedSkillIDs(ids []uint32) {
 	p.mu.Lock()
-	defer p.mu.Unlock()
 	p.ownedSkillIDs = ids
+	p.mu.Unlock()
+	p.SignalSkillsReady()
+}
+
+// SignalSkillsReady marks the player's skill list as received.
+func (p *Player) SignalSkillsReady() {
+	p.skillsReadyOnce.Do(func() { close(p.skillsReady) })
+}
+
+// WaitSkillsReady blocks until the skill list is received or the context is cancelled.
+func (p *Player) WaitSkillsReady(ctx context.Context) error {
+	select {
+	case <-p.skillsReady:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
 }
 
 // GetOwnedSkillIDs returns a copy of the player's owned skill IDs.

@@ -125,3 +125,4 @@
 124=SceneClientPlayerCommonRedirectToGate
 125=GateGmGracefulShutdown
 126=SceneSceneGmGracefulShutdown
+127=ClientPlayerLoginRefreshToken

@@ -307,6 +307,65 @@ void SendClientPlayerLoginDisconnect(entt::registry& registry, entt::entity node
     SendClientPlayerLoginDisconnect(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
+#pragma region ClientPlayerLoginRefreshToken
+boost::object_pool<AsyncClientPlayerLoginRefreshTokenGrpcClient> ClientPlayerLoginRefreshTokenPool;
+using AsyncClientPlayerLoginRefreshTokenHandlerFunctionType =
+    std::function<void(const ClientContext&, const ::loginpb::RefreshTokenResponse&)>;
+AsyncClientPlayerLoginRefreshTokenHandlerFunctionType AsyncClientPlayerLoginRefreshTokenHandler;
+
+void AsyncCompleteGrpcClientPlayerLoginRefreshToken(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
+    auto call(
+        static_cast<AsyncClientPlayerLoginRefreshTokenGrpcClient*>(got_tag));
+    if (call->status.ok()) {
+        if (AsyncClientPlayerLoginRefreshTokenHandler) {
+            AsyncClientPlayerLoginRefreshTokenHandler(call->context, call->reply);
+        }
+    } else {
+        LOG_ERROR << call->status.error_message();
+    }
+
+	ClientPlayerLoginRefreshTokenPool.destroy(call);
+}
+
+void SendClientPlayerLoginRefreshToken(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::RefreshTokenRequest& request) {
+
+    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
+    auto call(ClientPlayerLoginRefreshTokenPool.construct());
+    call->response_reader = registry
+        .get<ClientPlayerLoginStubPtr>(nodeEntity)
+        ->PrepareAsyncRefreshToken(&call->context, request,
+                                           &cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(ClientPlayerLoginRefreshTokenMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+
+}
+
+void SendClientPlayerLoginRefreshToken(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::RefreshTokenRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+
+    auto call(ClientPlayerLoginRefreshTokenPool.construct());
+    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
+
+    const size_t count = std::min(metaKeys.size(), metaValues.size());
+    for (size_t i = 0; i < count; ++i) {
+        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
+    }
+
+    call->response_reader = registry
+        .get<ClientPlayerLoginStubPtr>(nodeEntity)
+        ->PrepareAsyncRefreshToken(&call->context, request,
+                                           &cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(ClientPlayerLoginRefreshTokenMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+
+}
+
+void SendClientPlayerLoginRefreshToken(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+    const ::loginpb::RefreshTokenRequest& derived = static_cast<const ::loginpb::RefreshTokenRequest&>(message);
+    SendClientPlayerLoginRefreshToken(registry, nodeEntity, derived, metaKeys, metaValues);
+}
+#pragma endregion
 #pragma region LoginPreGateAssignGate
 boost::object_pool<AsyncLoginPreGateAssignGateGrpcClient> LoginPreGateAssignGatePool;
 using AsyncLoginPreGateAssignGateHandlerFunctionType =
@@ -448,6 +507,10 @@ void HandleLoginCompletedQueueMessage(entt::registry& registry, entt::entity nod
             AsyncCompleteGrpcClientPlayerLoginDisconnect(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
 			tagPool.destroy(grpcTag);
             break;
+        case ClientPlayerLoginRefreshTokenMessageId:
+            AsyncCompleteGrpcClientPlayerLoginRefreshToken(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
+			tagPool.destroy(grpcTag);
+            break;
         case LoginPreGateAssignGateMessageId:
             AsyncCompleteGrpcLoginPreGateAssignGate(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
 			tagPool.destroy(grpcTag);
@@ -468,6 +531,7 @@ void SetLoginHandler(const std::function<void(const ClientContext&, const ::goog
     AsyncClientPlayerLoginEnterGameHandler = handler;
     AsyncClientPlayerLoginLeaveGameHandler = handler;
     AsyncClientPlayerLoginDisconnectHandler = handler;
+    AsyncClientPlayerLoginRefreshTokenHandler = handler;
     AsyncLoginPreGateAssignGateHandler = handler;
     AsyncLoginAdminRemovePlayersFromAccountsHandler = handler;
 }
@@ -488,6 +552,9 @@ void SetLoginIfEmptyHandler(const std::function<void(const ClientContext&, const
     }
     if (!AsyncClientPlayerLoginDisconnectHandler) {
         AsyncClientPlayerLoginDisconnectHandler = handler;
+    }
+    if (!AsyncClientPlayerLoginRefreshTokenHandler) {
+        AsyncClientPlayerLoginRefreshTokenHandler = handler;
     }
     if (!AsyncLoginPreGateAssignGateHandler) {
         AsyncLoginPreGateAssignGateHandler = handler;

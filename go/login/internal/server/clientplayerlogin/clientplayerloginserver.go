@@ -7,7 +7,7 @@ package server
 import (
 	"context"
 
-	"login/internal/logic/clientplayerlogin"
+	clientplayerloginlogic "login/internal/logic/clientplayerlogin"
 	"login/internal/svc"
 	"proto/login"
 )

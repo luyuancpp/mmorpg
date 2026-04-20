@@ -110,6 +110,14 @@ class LoginSessionInfo;
 struct LoginSessionInfoDefaultTypeInternal;
 extern LoginSessionInfoDefaultTypeInternal _LoginSessionInfo_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull LoginSessionInfo_class_data_;
+class RefreshTokenRequest;
+struct RefreshTokenRequestDefaultTypeInternal;
+extern RefreshTokenRequestDefaultTypeInternal _RefreshTokenRequest_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull RefreshTokenRequest_class_data_;
+class RefreshTokenResponse;
+struct RefreshTokenResponseDefaultTypeInternal;
+extern RefreshTokenResponseDefaultTypeInternal _RefreshTokenResponse_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull RefreshTokenResponse_class_data_;
 class RemovePlayersFromAccountsRequest;
 struct RemovePlayersFromAccountsRequestDefaultTypeInternal;
 extern RemovePlayersFromAccountsRequestDefaultTypeInternal _RemovePlayersFromAccountsRequest_default_instance_;
@@ -190,7 +198,7 @@ class RemovePlayersFromAccountsResponse final : public ::google::protobuf::Messa
     return *reinterpret_cast<const RemovePlayersFromAccountsResponse*>(
         &_RemovePlayersFromAccountsResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 15;
+  static constexpr int kIndexInFileMessages = 17;
   friend void swap(RemovePlayersFromAccountsResponse& a, RemovePlayersFromAccountsResponse& b) { a.Swap(&b); }
   inline void Swap(RemovePlayersFromAccountsResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -405,7 +413,7 @@ class RemovePlayersFromAccountsRequest final : public ::google::protobuf::Messag
     return *reinterpret_cast<const RemovePlayersFromAccountsRequest*>(
         &_RemovePlayersFromAccountsRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 14;
+  static constexpr int kIndexInFileMessages = 16;
   friend void swap(RemovePlayersFromAccountsRequest& a, RemovePlayersFromAccountsRequest& b) { a.Swap(&b); }
   inline void Swap(RemovePlayersFromAccountsRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -547,6 +555,202 @@ class RemovePlayersFromAccountsRequest final : public ::google::protobuf::Messag
 };
 
 extern const ::google::protobuf::internal::ClassDataFull RemovePlayersFromAccountsRequest_class_data_;
+// -------------------------------------------------------------------
+
+class RefreshTokenRequest final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:loginpb.RefreshTokenRequest) */ {
+ public:
+  inline RefreshTokenRequest() : RefreshTokenRequest(nullptr) {}
+  ~RefreshTokenRequest() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(RefreshTokenRequest* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(RefreshTokenRequest));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR RefreshTokenRequest(::google::protobuf::internal::ConstantInitialized);
+
+  inline RefreshTokenRequest(const RefreshTokenRequest& from) : RefreshTokenRequest(nullptr, from) {}
+  inline RefreshTokenRequest(RefreshTokenRequest&& from) noexcept
+      : RefreshTokenRequest(nullptr, ::std::move(from)) {}
+  inline RefreshTokenRequest& operator=(const RefreshTokenRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline RefreshTokenRequest& operator=(RefreshTokenRequest&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const RefreshTokenRequest& default_instance() {
+    return *reinterpret_cast<const RefreshTokenRequest*>(
+        &_RefreshTokenRequest_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 12;
+  friend void swap(RefreshTokenRequest& a, RefreshTokenRequest& b) { a.Swap(&b); }
+  inline void Swap(RefreshTokenRequest* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(RefreshTokenRequest* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  RefreshTokenRequest* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<RefreshTokenRequest>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const RefreshTokenRequest& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const RefreshTokenRequest& from) { RefreshTokenRequest::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(RefreshTokenRequest* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "loginpb.RefreshTokenRequest"; }
+
+ protected:
+  explicit RefreshTokenRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  RefreshTokenRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const RefreshTokenRequest& from);
+  RefreshTokenRequest(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, RefreshTokenRequest&& from) noexcept
+      : RefreshTokenRequest(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kRefreshTokenFieldNumber = 1,
+  };
+  // string refresh_token = 1;
+  void clear_refresh_token() ;
+  const ::std::string& refresh_token() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_refresh_token(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_refresh_token();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_refresh_token();
+  void set_allocated_refresh_token(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_refresh_token() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_refresh_token(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_refresh_token();
+
+  public:
+  // @@protoc_insertion_point(class_scope:loginpb.RefreshTokenRequest)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<0, 1,
+                                   0, 49,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const RefreshTokenRequest& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::ArenaStringPtr refresh_token_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2flogin_2flogin_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull RefreshTokenRequest_class_data_;
 // -------------------------------------------------------------------
 
 class LoginSessionInfo final : public ::google::protobuf::Message
@@ -1966,7 +2170,7 @@ class AssignGateResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const AssignGateResponse*>(
         &_AssignGateResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 13;
+  static constexpr int kIndexInFileMessages = 15;
   friend void swap(AssignGateResponse& a, AssignGateResponse& b) { a.Swap(&b); }
   inline void Swap(AssignGateResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -2237,7 +2441,7 @@ class AssignGateRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const AssignGateRequest*>(
         &_AssignGateRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 12;
+  static constexpr int kIndexInFileMessages = 14;
   friend void swap(AssignGateRequest& a, AssignGateRequest& b) { a.Swap(&b); }
   inline void Swap(AssignGateRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -2371,6 +2575,260 @@ class AssignGateRequest final : public ::google::protobuf::Message
 };
 
 extern const ::google::protobuf::internal::ClassDataFull AssignGateRequest_class_data_;
+// -------------------------------------------------------------------
+
+class RefreshTokenResponse final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:loginpb.RefreshTokenResponse) */ {
+ public:
+  inline RefreshTokenResponse() : RefreshTokenResponse(nullptr) {}
+  ~RefreshTokenResponse() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(RefreshTokenResponse* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(RefreshTokenResponse));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR RefreshTokenResponse(::google::protobuf::internal::ConstantInitialized);
+
+  inline RefreshTokenResponse(const RefreshTokenResponse& from) : RefreshTokenResponse(nullptr, from) {}
+  inline RefreshTokenResponse(RefreshTokenResponse&& from) noexcept
+      : RefreshTokenResponse(nullptr, ::std::move(from)) {}
+  inline RefreshTokenResponse& operator=(const RefreshTokenResponse& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline RefreshTokenResponse& operator=(RefreshTokenResponse&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const RefreshTokenResponse& default_instance() {
+    return *reinterpret_cast<const RefreshTokenResponse*>(
+        &_RefreshTokenResponse_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 13;
+  friend void swap(RefreshTokenResponse& a, RefreshTokenResponse& b) { a.Swap(&b); }
+  inline void Swap(RefreshTokenResponse* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(RefreshTokenResponse* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  RefreshTokenResponse* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<RefreshTokenResponse>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const RefreshTokenResponse& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const RefreshTokenResponse& from) { RefreshTokenResponse::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(RefreshTokenResponse* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "loginpb.RefreshTokenResponse"; }
+
+ protected:
+  explicit RefreshTokenResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  RefreshTokenResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const RefreshTokenResponse& from);
+  RefreshTokenResponse(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, RefreshTokenResponse&& from) noexcept
+      : RefreshTokenResponse(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kAccessTokenFieldNumber = 2,
+    kRefreshTokenFieldNumber = 3,
+    kErrorMessageFieldNumber = 1,
+    kAccessTokenExpireFieldNumber = 4,
+    kRefreshTokenExpireFieldNumber = 5,
+  };
+  // string access_token = 2;
+  void clear_access_token() ;
+  const ::std::string& access_token() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_access_token(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_access_token();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_access_token();
+  void set_allocated_access_token(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_access_token() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_access_token(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_access_token();
+
+  public:
+  // string refresh_token = 3;
+  void clear_refresh_token() ;
+  const ::std::string& refresh_token() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_refresh_token(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_refresh_token();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_refresh_token();
+  void set_allocated_refresh_token(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_refresh_token() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_refresh_token(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_refresh_token();
+
+  public:
+  // .TipInfoMessage error_message = 1;
+  bool has_error_message() const;
+  void clear_error_message() ;
+  const ::TipInfoMessage& error_message() const;
+  [[nodiscard]] ::TipInfoMessage* PROTOBUF_NULLABLE release_error_message();
+  ::TipInfoMessage* PROTOBUF_NONNULL mutable_error_message();
+  void set_allocated_error_message(::TipInfoMessage* PROTOBUF_NULLABLE value);
+  void unsafe_arena_set_allocated_error_message(::TipInfoMessage* PROTOBUF_NULLABLE value);
+  ::TipInfoMessage* PROTOBUF_NULLABLE unsafe_arena_release_error_message();
+
+  private:
+  const ::TipInfoMessage& _internal_error_message() const;
+  ::TipInfoMessage* PROTOBUF_NONNULL _internal_mutable_error_message();
+
+  public:
+  // int64 access_token_expire = 4;
+  void clear_access_token_expire() ;
+  ::int64_t access_token_expire() const;
+  void set_access_token_expire(::int64_t value);
+
+  private:
+  ::int64_t _internal_access_token_expire() const;
+  void _internal_set_access_token_expire(::int64_t value);
+
+  public:
+  // int64 refresh_token_expire = 5;
+  void clear_refresh_token_expire() ;
+  ::int64_t refresh_token_expire() const;
+  void set_refresh_token_expire(::int64_t value);
+
+  private:
+  ::int64_t _internal_refresh_token_expire() const;
+  void _internal_set_refresh_token_expire(::int64_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:loginpb.RefreshTokenResponse)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<3, 5,
+                                   1, 62,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const RefreshTokenResponse& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::ArenaStringPtr access_token_;
+    ::google::protobuf::internal::ArenaStringPtr refresh_token_;
+    ::TipInfoMessage* PROTOBUF_NULLABLE error_message_;
+    ::int64_t access_token_expire_;
+    ::int64_t refresh_token_expire_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2flogin_2flogin_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull RefreshTokenResponse_class_data_;
 // -------------------------------------------------------------------
 
 class EnterGameResponse final : public ::google::protobuf::Message
@@ -3181,7 +3639,11 @@ class LoginResponse final : public ::google::protobuf::Message
   // accessors -------------------------------------------------------
   enum : int {
     kPlayersFieldNumber = 2,
+    kAccessTokenFieldNumber = 3,
+    kRefreshTokenFieldNumber = 4,
     kErrorMessageFieldNumber = 1,
+    kAccessTokenExpireFieldNumber = 5,
+    kRefreshTokenExpireFieldNumber = 6,
   };
   // repeated .loginpb.AccountSimplePlayerWrapper players = 2;
   int players_size() const;
@@ -3200,6 +3662,36 @@ class LoginResponse final : public ::google::protobuf::Message
   const ::loginpb::AccountSimplePlayerWrapper& players(int index) const;
   ::loginpb::AccountSimplePlayerWrapper* PROTOBUF_NONNULL add_players();
   const ::google::protobuf::RepeatedPtrField<::loginpb::AccountSimplePlayerWrapper>& players() const;
+  // string access_token = 3;
+  void clear_access_token() ;
+  const ::std::string& access_token() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_access_token(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_access_token();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_access_token();
+  void set_allocated_access_token(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_access_token() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_access_token(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_access_token();
+
+  public:
+  // string refresh_token = 4;
+  void clear_refresh_token() ;
+  const ::std::string& refresh_token() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_refresh_token(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_refresh_token();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_refresh_token();
+  void set_allocated_refresh_token(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_refresh_token() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_refresh_token(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_refresh_token();
+
+  public:
   // .TipInfoMessage error_message = 1;
   bool has_error_message() const;
   void clear_error_message() ;
@@ -3215,12 +3707,32 @@ class LoginResponse final : public ::google::protobuf::Message
   ::TipInfoMessage* PROTOBUF_NONNULL _internal_mutable_error_message();
 
   public:
+  // int64 access_token_expire = 5;
+  void clear_access_token_expire() ;
+  ::int64_t access_token_expire() const;
+  void set_access_token_expire(::int64_t value);
+
+  private:
+  ::int64_t _internal_access_token_expire() const;
+  void _internal_set_access_token_expire(::int64_t value);
+
+  public:
+  // int64 refresh_token_expire = 6;
+  void clear_refresh_token_expire() ;
+  ::int64_t refresh_token_expire() const;
+  void set_refresh_token_expire(::int64_t value);
+
+  private:
+  ::int64_t _internal_refresh_token_expire() const;
+  void _internal_set_refresh_token_expire(::int64_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:loginpb.LoginResponse)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<1, 2,
-                                   2, 0,
+  static const ::google::protobuf::internal::TcParseTable<3, 6,
+                                   2, 55,
                                    2>
       _table_;
 
@@ -3242,7 +3754,11 @@ class LoginResponse final : public ::google::protobuf::Message
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::google::protobuf::RepeatedPtrField< ::loginpb::AccountSimplePlayerWrapper > players_;
+    ::google::protobuf::internal::ArenaStringPtr access_token_;
+    ::google::protobuf::internal::ArenaStringPtr refresh_token_;
     ::TipInfoMessage* PROTOBUF_NULLABLE error_message_;
+    ::int64_t access_token_expire_;
+    ::int64_t refresh_token_expire_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -4140,7 +4656,7 @@ inline void LoginRequest::set_allocated_auth_token(::std::string* PROTOBUF_NULLA
 
 // .TipInfoMessage error_message = 1;
 inline bool LoginResponse::has_error_message() const {
-  bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
+  bool value = (_impl_._has_bits_[0] & 0x00000004u) != 0;
   PROTOBUF_ASSUME(!value || _impl_.error_message_ != nullptr);
   return value;
 }
@@ -4161,16 +4677,16 @@ inline void LoginResponse::unsafe_arena_set_allocated_error_message(
   }
   _impl_.error_message_ = reinterpret_cast<::TipInfoMessage*>(value);
   if (value != nullptr) {
-    _impl_._has_bits_[0] |= 0x00000001u;
+    _impl_._has_bits_[0] |= 0x00000004u;
   } else {
-    _impl_._has_bits_[0] &= ~0x00000001u;
+    _impl_._has_bits_[0] &= ~0x00000004u;
   }
   // @@protoc_insertion_point(field_unsafe_arena_set_allocated:loginpb.LoginResponse.error_message)
 }
 inline ::TipInfoMessage* PROTOBUF_NULLABLE LoginResponse::release_error_message() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
 
-  _impl_._has_bits_[0] &= ~0x00000001u;
+  _impl_._has_bits_[0] &= ~0x00000004u;
   ::TipInfoMessage* released = _impl_.error_message_;
   _impl_.error_message_ = nullptr;
   if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
@@ -4190,7 +4706,7 @@ inline ::TipInfoMessage* PROTOBUF_NULLABLE LoginResponse::unsafe_arena_release_e
   ::google::protobuf::internal::TSanWrite(&_impl_);
   // @@protoc_insertion_point(field_release:loginpb.LoginResponse.error_message)
 
-  _impl_._has_bits_[0] &= ~0x00000001u;
+  _impl_._has_bits_[0] &= ~0x00000004u;
   ::TipInfoMessage* temp = _impl_.error_message_;
   _impl_.error_message_ = nullptr;
   return temp;
@@ -4205,7 +4721,7 @@ inline ::TipInfoMessage* PROTOBUF_NONNULL LoginResponse::_internal_mutable_error
 }
 inline ::TipInfoMessage* PROTOBUF_NONNULL LoginResponse::mutable_error_message()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  _impl_._has_bits_[0] |= 0x00000001u;
+  _impl_._has_bits_[0] |= 0x00000004u;
   ::TipInfoMessage* _msg = _internal_mutable_error_message();
   // @@protoc_insertion_point(field_mutable:loginpb.LoginResponse.error_message)
   return _msg;
@@ -4222,9 +4738,9 @@ inline void LoginResponse::set_allocated_error_message(::TipInfoMessage* PROTOBU
     if (message_arena != submessage_arena) {
       value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
     }
-    _impl_._has_bits_[0] |= 0x00000001u;
+    _impl_._has_bits_[0] |= 0x00000004u;
   } else {
-    _impl_._has_bits_[0] &= ~0x00000001u;
+    _impl_._has_bits_[0] &= ~0x00000004u;
   }
 
   _impl_.error_message_ = reinterpret_cast<::TipInfoMessage*>(value);
@@ -4279,6 +4795,184 @@ inline ::google::protobuf::RepeatedPtrField<::loginpb::AccountSimplePlayerWrappe
 LoginResponse::_internal_mutable_players() {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return &_impl_.players_;
+}
+
+// string access_token = 3;
+inline void LoginResponse::clear_access_token() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.access_token_.ClearToEmpty();
+  _impl_._has_bits_[0] &= ~0x00000001u;
+}
+inline const ::std::string& LoginResponse::access_token() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:loginpb.LoginResponse.access_token)
+  return _internal_access_token();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void LoginResponse::set_access_token(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000001u;
+  _impl_.access_token_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:loginpb.LoginResponse.access_token)
+}
+inline ::std::string* PROTOBUF_NONNULL LoginResponse::mutable_access_token()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::std::string* _s = _internal_mutable_access_token();
+  // @@protoc_insertion_point(field_mutable:loginpb.LoginResponse.access_token)
+  return _s;
+}
+inline const ::std::string& LoginResponse::_internal_access_token() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.access_token_.Get();
+}
+inline void LoginResponse::_internal_set_access_token(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000001u;
+  _impl_.access_token_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL LoginResponse::_internal_mutable_access_token() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000001u;
+  return _impl_.access_token_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE LoginResponse::release_access_token() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:loginpb.LoginResponse.access_token)
+  if ((_impl_._has_bits_[0] & 0x00000001u) == 0) {
+    return nullptr;
+  }
+  _impl_._has_bits_[0] &= ~0x00000001u;
+  auto* released = _impl_.access_token_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.access_token_.Set("", GetArena());
+  }
+  return released;
+}
+inline void LoginResponse::set_allocated_access_token(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    _impl_._has_bits_[0] |= 0x00000001u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000001u;
+  }
+  _impl_.access_token_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.access_token_.IsDefault()) {
+    _impl_.access_token_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:loginpb.LoginResponse.access_token)
+}
+
+// string refresh_token = 4;
+inline void LoginResponse::clear_refresh_token() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.refresh_token_.ClearToEmpty();
+  _impl_._has_bits_[0] &= ~0x00000002u;
+}
+inline const ::std::string& LoginResponse::refresh_token() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:loginpb.LoginResponse.refresh_token)
+  return _internal_refresh_token();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void LoginResponse::set_refresh_token(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000002u;
+  _impl_.refresh_token_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:loginpb.LoginResponse.refresh_token)
+}
+inline ::std::string* PROTOBUF_NONNULL LoginResponse::mutable_refresh_token()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::std::string* _s = _internal_mutable_refresh_token();
+  // @@protoc_insertion_point(field_mutable:loginpb.LoginResponse.refresh_token)
+  return _s;
+}
+inline const ::std::string& LoginResponse::_internal_refresh_token() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.refresh_token_.Get();
+}
+inline void LoginResponse::_internal_set_refresh_token(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000002u;
+  _impl_.refresh_token_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL LoginResponse::_internal_mutable_refresh_token() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000002u;
+  return _impl_.refresh_token_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE LoginResponse::release_refresh_token() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:loginpb.LoginResponse.refresh_token)
+  if ((_impl_._has_bits_[0] & 0x00000002u) == 0) {
+    return nullptr;
+  }
+  _impl_._has_bits_[0] &= ~0x00000002u;
+  auto* released = _impl_.refresh_token_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.refresh_token_.Set("", GetArena());
+  }
+  return released;
+}
+inline void LoginResponse::set_allocated_refresh_token(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    _impl_._has_bits_[0] |= 0x00000002u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000002u;
+  }
+  _impl_.refresh_token_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.refresh_token_.IsDefault()) {
+    _impl_.refresh_token_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:loginpb.LoginResponse.refresh_token)
+}
+
+// int64 access_token_expire = 5;
+inline void LoginResponse::clear_access_token_expire() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.access_token_expire_ = ::int64_t{0};
+  _impl_._has_bits_[0] &= ~0x00000008u;
+}
+inline ::int64_t LoginResponse::access_token_expire() const {
+  // @@protoc_insertion_point(field_get:loginpb.LoginResponse.access_token_expire)
+  return _internal_access_token_expire();
+}
+inline void LoginResponse::set_access_token_expire(::int64_t value) {
+  _internal_set_access_token_expire(value);
+  _impl_._has_bits_[0] |= 0x00000008u;
+  // @@protoc_insertion_point(field_set:loginpb.LoginResponse.access_token_expire)
+}
+inline ::int64_t LoginResponse::_internal_access_token_expire() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.access_token_expire_;
+}
+inline void LoginResponse::_internal_set_access_token_expire(::int64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.access_token_expire_ = value;
+}
+
+// int64 refresh_token_expire = 6;
+inline void LoginResponse::clear_refresh_token_expire() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.refresh_token_expire_ = ::int64_t{0};
+  _impl_._has_bits_[0] &= ~0x00000010u;
+}
+inline ::int64_t LoginResponse::refresh_token_expire() const {
+  // @@protoc_insertion_point(field_get:loginpb.LoginResponse.refresh_token_expire)
+  return _internal_refresh_token_expire();
+}
+inline void LoginResponse::set_refresh_token_expire(::int64_t value) {
+  _internal_set_refresh_token_expire(value);
+  _impl_._has_bits_[0] |= 0x00000010u;
+  // @@protoc_insertion_point(field_set:loginpb.LoginResponse.refresh_token_expire)
+}
+inline ::int64_t LoginResponse::_internal_refresh_token_expire() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.refresh_token_expire_;
+}
+inline void LoginResponse::_internal_set_refresh_token_expire(::int64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.refresh_token_expire_ = value;
 }
 
 // -------------------------------------------------------------------
@@ -4938,6 +5632,350 @@ inline void LoginNodeDisconnectRequest::_internal_set_session_id(::uint32_t valu
 // -------------------------------------------------------------------
 
 // LoginEmptyResponse
+
+// -------------------------------------------------------------------
+
+// RefreshTokenRequest
+
+// string refresh_token = 1;
+inline void RefreshTokenRequest::clear_refresh_token() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.refresh_token_.ClearToEmpty();
+  _impl_._has_bits_[0] &= ~0x00000001u;
+}
+inline const ::std::string& RefreshTokenRequest::refresh_token() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:loginpb.RefreshTokenRequest.refresh_token)
+  return _internal_refresh_token();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void RefreshTokenRequest::set_refresh_token(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000001u;
+  _impl_.refresh_token_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:loginpb.RefreshTokenRequest.refresh_token)
+}
+inline ::std::string* PROTOBUF_NONNULL RefreshTokenRequest::mutable_refresh_token()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::std::string* _s = _internal_mutable_refresh_token();
+  // @@protoc_insertion_point(field_mutable:loginpb.RefreshTokenRequest.refresh_token)
+  return _s;
+}
+inline const ::std::string& RefreshTokenRequest::_internal_refresh_token() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.refresh_token_.Get();
+}
+inline void RefreshTokenRequest::_internal_set_refresh_token(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000001u;
+  _impl_.refresh_token_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL RefreshTokenRequest::_internal_mutable_refresh_token() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000001u;
+  return _impl_.refresh_token_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE RefreshTokenRequest::release_refresh_token() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:loginpb.RefreshTokenRequest.refresh_token)
+  if ((_impl_._has_bits_[0] & 0x00000001u) == 0) {
+    return nullptr;
+  }
+  _impl_._has_bits_[0] &= ~0x00000001u;
+  auto* released = _impl_.refresh_token_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.refresh_token_.Set("", GetArena());
+  }
+  return released;
+}
+inline void RefreshTokenRequest::set_allocated_refresh_token(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    _impl_._has_bits_[0] |= 0x00000001u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000001u;
+  }
+  _impl_.refresh_token_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.refresh_token_.IsDefault()) {
+    _impl_.refresh_token_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:loginpb.RefreshTokenRequest.refresh_token)
+}
+
+// -------------------------------------------------------------------
+
+// RefreshTokenResponse
+
+// .TipInfoMessage error_message = 1;
+inline bool RefreshTokenResponse::has_error_message() const {
+  bool value = (_impl_._has_bits_[0] & 0x00000004u) != 0;
+  PROTOBUF_ASSUME(!value || _impl_.error_message_ != nullptr);
+  return value;
+}
+inline const ::TipInfoMessage& RefreshTokenResponse::_internal_error_message() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  const ::TipInfoMessage* p = _impl_.error_message_;
+  return p != nullptr ? *p : reinterpret_cast<const ::TipInfoMessage&>(::_TipInfoMessage_default_instance_);
+}
+inline const ::TipInfoMessage& RefreshTokenResponse::error_message() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:loginpb.RefreshTokenResponse.error_message)
+  return _internal_error_message();
+}
+inline void RefreshTokenResponse::unsafe_arena_set_allocated_error_message(
+    ::TipInfoMessage* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.error_message_);
+  }
+  _impl_.error_message_ = reinterpret_cast<::TipInfoMessage*>(value);
+  if (value != nullptr) {
+    _impl_._has_bits_[0] |= 0x00000004u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000004u;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:loginpb.RefreshTokenResponse.error_message)
+}
+inline ::TipInfoMessage* PROTOBUF_NULLABLE RefreshTokenResponse::release_error_message() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+
+  _impl_._has_bits_[0] &= ~0x00000004u;
+  ::TipInfoMessage* released = _impl_.error_message_;
+  _impl_.error_message_ = nullptr;
+  if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
+    auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    if (GetArena() == nullptr) {
+      delete old;
+    }
+  } else {
+    if (GetArena() != nullptr) {
+      released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    }
+  }
+  return released;
+}
+inline ::TipInfoMessage* PROTOBUF_NULLABLE RefreshTokenResponse::unsafe_arena_release_error_message() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:loginpb.RefreshTokenResponse.error_message)
+
+  _impl_._has_bits_[0] &= ~0x00000004u;
+  ::TipInfoMessage* temp = _impl_.error_message_;
+  _impl_.error_message_ = nullptr;
+  return temp;
+}
+inline ::TipInfoMessage* PROTOBUF_NONNULL RefreshTokenResponse::_internal_mutable_error_message() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.error_message_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::TipInfoMessage>(GetArena());
+    _impl_.error_message_ = reinterpret_cast<::TipInfoMessage*>(p);
+  }
+  return _impl_.error_message_;
+}
+inline ::TipInfoMessage* PROTOBUF_NONNULL RefreshTokenResponse::mutable_error_message()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  _impl_._has_bits_[0] |= 0x00000004u;
+  ::TipInfoMessage* _msg = _internal_mutable_error_message();
+  // @@protoc_insertion_point(field_mutable:loginpb.RefreshTokenResponse.error_message)
+  return _msg;
+}
+inline void RefreshTokenResponse::set_allocated_error_message(::TipInfoMessage* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (message_arena == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.error_message_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = reinterpret_cast<::google::protobuf::Message*>(value)->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    _impl_._has_bits_[0] |= 0x00000004u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000004u;
+  }
+
+  _impl_.error_message_ = reinterpret_cast<::TipInfoMessage*>(value);
+  // @@protoc_insertion_point(field_set_allocated:loginpb.RefreshTokenResponse.error_message)
+}
+
+// string access_token = 2;
+inline void RefreshTokenResponse::clear_access_token() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.access_token_.ClearToEmpty();
+  _impl_._has_bits_[0] &= ~0x00000001u;
+}
+inline const ::std::string& RefreshTokenResponse::access_token() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:loginpb.RefreshTokenResponse.access_token)
+  return _internal_access_token();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void RefreshTokenResponse::set_access_token(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000001u;
+  _impl_.access_token_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:loginpb.RefreshTokenResponse.access_token)
+}
+inline ::std::string* PROTOBUF_NONNULL RefreshTokenResponse::mutable_access_token()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::std::string* _s = _internal_mutable_access_token();
+  // @@protoc_insertion_point(field_mutable:loginpb.RefreshTokenResponse.access_token)
+  return _s;
+}
+inline const ::std::string& RefreshTokenResponse::_internal_access_token() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.access_token_.Get();
+}
+inline void RefreshTokenResponse::_internal_set_access_token(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000001u;
+  _impl_.access_token_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL RefreshTokenResponse::_internal_mutable_access_token() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000001u;
+  return _impl_.access_token_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE RefreshTokenResponse::release_access_token() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:loginpb.RefreshTokenResponse.access_token)
+  if ((_impl_._has_bits_[0] & 0x00000001u) == 0) {
+    return nullptr;
+  }
+  _impl_._has_bits_[0] &= ~0x00000001u;
+  auto* released = _impl_.access_token_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.access_token_.Set("", GetArena());
+  }
+  return released;
+}
+inline void RefreshTokenResponse::set_allocated_access_token(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    _impl_._has_bits_[0] |= 0x00000001u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000001u;
+  }
+  _impl_.access_token_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.access_token_.IsDefault()) {
+    _impl_.access_token_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:loginpb.RefreshTokenResponse.access_token)
+}
+
+// string refresh_token = 3;
+inline void RefreshTokenResponse::clear_refresh_token() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.refresh_token_.ClearToEmpty();
+  _impl_._has_bits_[0] &= ~0x00000002u;
+}
+inline const ::std::string& RefreshTokenResponse::refresh_token() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:loginpb.RefreshTokenResponse.refresh_token)
+  return _internal_refresh_token();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void RefreshTokenResponse::set_refresh_token(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000002u;
+  _impl_.refresh_token_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:loginpb.RefreshTokenResponse.refresh_token)
+}
+inline ::std::string* PROTOBUF_NONNULL RefreshTokenResponse::mutable_refresh_token()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::std::string* _s = _internal_mutable_refresh_token();
+  // @@protoc_insertion_point(field_mutable:loginpb.RefreshTokenResponse.refresh_token)
+  return _s;
+}
+inline const ::std::string& RefreshTokenResponse::_internal_refresh_token() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.refresh_token_.Get();
+}
+inline void RefreshTokenResponse::_internal_set_refresh_token(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000002u;
+  _impl_.refresh_token_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL RefreshTokenResponse::_internal_mutable_refresh_token() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000002u;
+  return _impl_.refresh_token_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE RefreshTokenResponse::release_refresh_token() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:loginpb.RefreshTokenResponse.refresh_token)
+  if ((_impl_._has_bits_[0] & 0x00000002u) == 0) {
+    return nullptr;
+  }
+  _impl_._has_bits_[0] &= ~0x00000002u;
+  auto* released = _impl_.refresh_token_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.refresh_token_.Set("", GetArena());
+  }
+  return released;
+}
+inline void RefreshTokenResponse::set_allocated_refresh_token(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    _impl_._has_bits_[0] |= 0x00000002u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000002u;
+  }
+  _impl_.refresh_token_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.refresh_token_.IsDefault()) {
+    _impl_.refresh_token_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:loginpb.RefreshTokenResponse.refresh_token)
+}
+
+// int64 access_token_expire = 4;
+inline void RefreshTokenResponse::clear_access_token_expire() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.access_token_expire_ = ::int64_t{0};
+  _impl_._has_bits_[0] &= ~0x00000008u;
+}
+inline ::int64_t RefreshTokenResponse::access_token_expire() const {
+  // @@protoc_insertion_point(field_get:loginpb.RefreshTokenResponse.access_token_expire)
+  return _internal_access_token_expire();
+}
+inline void RefreshTokenResponse::set_access_token_expire(::int64_t value) {
+  _internal_set_access_token_expire(value);
+  _impl_._has_bits_[0] |= 0x00000008u;
+  // @@protoc_insertion_point(field_set:loginpb.RefreshTokenResponse.access_token_expire)
+}
+inline ::int64_t RefreshTokenResponse::_internal_access_token_expire() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.access_token_expire_;
+}
+inline void RefreshTokenResponse::_internal_set_access_token_expire(::int64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.access_token_expire_ = value;
+}
+
+// int64 refresh_token_expire = 5;
+inline void RefreshTokenResponse::clear_refresh_token_expire() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.refresh_token_expire_ = ::int64_t{0};
+  _impl_._has_bits_[0] &= ~0x00000010u;
+}
+inline ::int64_t RefreshTokenResponse::refresh_token_expire() const {
+  // @@protoc_insertion_point(field_get:loginpb.RefreshTokenResponse.refresh_token_expire)
+  return _internal_refresh_token_expire();
+}
+inline void RefreshTokenResponse::set_refresh_token_expire(::int64_t value) {
+  _internal_set_refresh_token_expire(value);
+  _impl_._has_bits_[0] |= 0x00000010u;
+  // @@protoc_insertion_point(field_set:loginpb.RefreshTokenResponse.refresh_token_expire)
+}
+inline ::int64_t RefreshTokenResponse::_internal_refresh_token_expire() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.refresh_token_expire_;
+}
+inline void RefreshTokenResponse::_internal_set_refresh_token_expire(::int64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.refresh_token_expire_ = value;
+}
 
 // -------------------------------------------------------------------
 

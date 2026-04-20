@@ -202,6 +202,13 @@ func runRobotOnce(host string, port int, account string, cfg *config.Config, sta
 	// Now safe to send scene-targeted requests.
 	_ = gc.SendRequest(game.SceneSkillClientPlayerListSkillsMessageId, &scene.ListSkillsRequest{})
 
+	// Wait for the ListSkills response so the AI loop only casts skills the player actually owns.
+	skillsCtx, skillsCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer skillsCancel()
+	if err := player.WaitSkillsReady(skillsCtx); err != nil {
+		zap.L().Warn("timed out waiting for skill list", zap.String("account", gc.Account), zap.Error(err))
+	}
+
 	robotAI := ai.NewRobotAI(gc, stats)
 	robotAI.SetPlayer(player)
 	if len(cfg.SkillIDs) > 0 {

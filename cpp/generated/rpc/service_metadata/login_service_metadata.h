@@ -23,6 +23,10 @@ constexpr uint32_t ClientPlayerLoginDisconnectMessageId = 58;
 constexpr uint32_t ClientPlayerLoginDisconnectIndex = 4;
 #define ClientPlayerLoginDisconnectMethod  ::ClientPlayerLogin_Stub::descriptor()->method(4)
 
+constexpr uint32_t ClientPlayerLoginRefreshTokenMessageId = 127;
+constexpr uint32_t ClientPlayerLoginRefreshTokenIndex = 5;
+#define ClientPlayerLoginRefreshTokenMethod  ::ClientPlayerLogin_Stub::descriptor()->method(5)
+
 constexpr uint32_t LoginPreGateAssignGateMessageId = 118;
 constexpr uint32_t LoginPreGateAssignGateIndex = 0;
 #define LoginPreGateAssignGateMethod  ::LoginPreGate_Stub::descriptor()->method(0)

@@ -108,6 +108,25 @@ void SendClientPlayerLoginDisconnect(entt::registry& registry, entt::entity node
 void SendClientPlayerLoginDisconnect(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::LoginNodeDisconnectRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendClientPlayerLoginDisconnect(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 #pragma endregion
+#pragma region ClientPlayerLoginRefreshToken
+
+struct AsyncClientPlayerLoginRefreshTokenGrpcClient {
+    uint32_t messageId{ ClientPlayerLoginRefreshTokenMessageId };
+    ClientContext context;
+    Status status;
+    ::loginpb::RefreshTokenResponse reply;
+    std::unique_ptr<ClientAsyncResponseReader<::loginpb::RefreshTokenResponse>> response_reader;
+};
+
+class ::loginpb::RefreshTokenRequest;
+using AsyncClientPlayerLoginRefreshTokenHandlerFunctionType =
+    std::function<void(const ClientContext&, const ::loginpb::RefreshTokenResponse&)>;
+extern AsyncClientPlayerLoginRefreshTokenHandlerFunctionType AsyncClientPlayerLoginRefreshTokenHandler;
+
+void SendClientPlayerLoginRefreshToken(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::RefreshTokenRequest& request);
+void SendClientPlayerLoginRefreshToken(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::RefreshTokenRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+void SendClientPlayerLoginRefreshToken(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+#pragma endregion
 using LoginPreGateStubPtr = std::unique_ptr<LoginPreGate::Stub>;
 #pragma region LoginPreGateAssignGate
 
