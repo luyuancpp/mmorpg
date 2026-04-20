@@ -40,12 +40,12 @@ uint64_t GenerateUniqueSkillId(const SkillContextCompMap& casterSkillContexts, c
 }
 
 void SkillSystem::StartCooldown(entt::entity caster, const SkillTable* skillTable) {
-	auto &coolDownComp = tlsEcs.actorRegistry.get<CooldownTimeListComp>(caster);
+	ECS_GET_OR_VOID(coolDownComp, CooldownTimeListComp, caster);
 	CooldownTimeComp comp;
 	comp.set_start(TimeSystem::NowMilliseconds());
 	comp.set_cooldown_table_id(skillTable->cooldown_id());
 
-	const auto coolDownList = coolDownComp.mutable_cooldown_list();
+	const auto coolDownList = coolDownComp->mutable_cooldown_list();
 	(*coolDownList)[skillTable->cooldown_id()] = comp;
 }
 
@@ -68,13 +68,15 @@ std::shared_ptr<SkillContextComp> CreateSkillContext(entt::entity caster, const 
 	context->set_skilltableid(request->skill_table_id());
 	context->set_target(request->target_id());
 	context->set_casttime(TimeSystem::NowMilliseconds());
-	context->set_skillid(GenerateUniqueSkillId(tlsEcs.actorRegistry.get<SkillContextCompMap>(caster), {}));
+	const auto *casterContexts = tlsEcs.actorRegistry.try_get<SkillContextCompMap>(caster);
+	context->set_skillid(GenerateUniqueSkillId(
+		casterContexts ? *casterContexts : SkillContextCompMap{}, {}));
 	return context;
 }
 
 void AddSkillContext(entt::entity caster, const ReleaseSkillRequest* request, std::shared_ptr<SkillContextComp> context) {
-	auto &casterSkillContextMap = tlsEcs.actorRegistry.get<SkillContextCompMap>(caster);
-	casterSkillContextMap.emplace(context->skillid(), context);
+	ECS_GET_OR_VOID(casterSkillContextMap, SkillContextCompMap, caster);
+	casterSkillContextMap->emplace(context->skillid(), context);
 
 	entt::entity target{ request->target_id() };
 	if (tlsEcs.actorRegistry.valid(target)) {
@@ -217,10 +219,11 @@ void SkillSystem::HandleGeneralSkillSpell(const entt::entity casterEntity, const
 
 // Set up a timer for skill recovery after casting
 void SkillSystem::HandleSkillRecovery(const entt::entity casterEntity, uint64_t skillId) {
-	auto &casterSkillContextMap = tlsEcs.actorRegistry.get<SkillContextCompMap>(casterEntity);
-	auto skillContentIt = casterSkillContextMap.find(skillId);
+	ECS_GET_OR_VOID(casterSkillContextMap, SkillContextCompMap, casterEntity);
+	auto skillContentIt = casterSkillContextMap->find(skillId);
 
-	if (skillContentIt == casterSkillContextMap.end()) {
+	if (skillContentIt == casterSkillContextMap->end())
+	{
 		return;
 	}
 
@@ -239,9 +242,10 @@ void SkillSystem::HandleSkillFinish(const entt::entity casterEntity, uint64_t sk
     }
 
 	// TODO: Handle offline player
-	auto &casterSkillContextMap = tlsEcs.actorRegistry.get<SkillContextCompMap>(casterEntity);
-	auto skillContentIt = casterSkillContextMap.find(skillId);
-	if (skillContentIt != casterSkillContextMap.end()) {
+	ECS_GET_OR_VOID(casterSkillContextMap, SkillContextCompMap, casterEntity);
+	auto skillContentIt = casterSkillContextMap->find(skillId);
+	if (skillContentIt != casterSkillContextMap->end())
+	{
 		entt::entity target = entt::to_entity(skillContentIt->second->target());
 		if (tlsEcs.actorRegistry.valid(target)) {
 			auto *targetSkillContextMap = tlsEcs.actorRegistry.try_get<SkillContextCompMap>(target);
@@ -250,7 +254,7 @@ void SkillSystem::HandleSkillFinish(const entt::entity casterEntity, uint64_t sk
 				targetSkillContextMap->erase(skillId);
 			}
 		}
-		casterSkillContextMap.erase(skillContentIt);
+		casterSkillContextMap->erase(skillContentIt);
 	}
 }
 
@@ -362,10 +366,11 @@ uint32_t CheckTimerPhase(const entt::entity casterEntity, const SkillTable* skil
 }
 
 uint32_t SkillSystem::CheckCooldown(const entt::entity casterEntity, const SkillTable* skillTable) {
-	auto &coolDownTimeListComp = tlsEcs.actorRegistry.get<CooldownTimeListComp>(casterEntity);
-	if (const auto it = coolDownTimeListComp.cooldown_list().find(skillTable->cooldown_id());
-		it != coolDownTimeListComp.cooldown_list().end() &&
-		CoolDownTimeMillisecondSystem::IsInCooldown(it->second)) {
+	ECS_GET_OR_RETURN(coolDownTimeListComp, CooldownTimeListComp, casterEntity, kSuccess);
+	if (const auto it = coolDownTimeListComp->cooldown_list().find(skillTable->cooldown_id());
+		it != coolDownTimeListComp->cooldown_list().end() &&
+		CoolDownTimeMillisecondSystem::IsInCooldown(it->second))
+	{
 		return MAKE_ERROR_MSG(kSkillCooldownNotReady,
 			"skill_id=" << skillTable->id()
 			<< " caster=" << entt::to_integral(casterEntity)
@@ -429,10 +434,11 @@ void SkillSystem::SendSkillInterruptedMessage(const entt::entity casterEntity, c
 }
 
 void SkillSystem::TriggerSkillEffect(const entt::entity casterEntity, const uint64_t skillId) {
-	auto &casterSkillContextMap = tlsEcs.actorRegistry.get<SkillContextCompMap>(casterEntity);
-	const auto skillContextIt = casterSkillContextMap.find(skillId);
+	ECS_GET_OR_VOID(casterSkillContextMap, SkillContextCompMap, casterEntity);
+	const auto skillContextIt = casterSkillContextMap->find(skillId);
 
-	if (skillContextIt == casterSkillContextMap.end()) {
+	if (skillContextIt == casterSkillContextMap->end())
+	{
 		return;
 	}
 
@@ -448,21 +454,23 @@ void SkillSystem::TriggerSkillEffect(const entt::entity casterEntity, const uint
 }
 
 bool IsTargetDead(entt::entity targetEntity) {
-	const auto &targetBaseAttributes = tlsEcs.actorRegistry.get<BaseAttributesComp>(targetEntity);
-	return targetBaseAttributes.health() <= 0;
+	ECS_GET_OR_FALSE(targetBaseAttributes, BaseAttributesComp, targetEntity);
+	return targetBaseAttributes->health() <= 0;
 }
 
 
 double CalculateFinalDamage(const entt::entity casterEntity, const entt::entity target, double baseDamage) {
-	const auto &casterAttributes = tlsEcs.actorRegistry.get<BaseAttributesComp>(casterEntity);
-	double critChance = casterAttributes.critchance();
-	double strength = casterAttributes.strength();
+	const auto *casterAttributes = tlsEcs.actorRegistry.try_get<BaseAttributesComp>(casterEntity);
+	const auto *targetAttributes = tlsEcs.actorRegistry.try_get<BaseAttributesComp>(target);
+	if (!casterAttributes || !targetAttributes)
+		return 0.0;
 
-	const auto &targetAttributes = tlsEcs.actorRegistry.get<BaseAttributesComp>(target);
-	double armor = targetAttributes.armor();
-	double resistance = targetAttributes.resistance();
+	double critChance = casterAttributes->critchance();
+	double strength = casterAttributes->strength();
+	double armor = targetAttributes->armor();
+	double resistance = targetAttributes->resistance();
 
-    // Apply crit and penetration modifiers
+	// Apply crit and penetration modifiers
     double finalDamage = baseDamage * (1 + strength * 0.1);
     finalDamage = finalDamage - armor;
     finalDamage *= (1 - resistance * 0.01);
@@ -476,13 +484,14 @@ double CalculateFinalDamage(const entt::entity casterEntity, const entt::entity 
 
 
 void CalculateSkillDamage(const entt::entity casterEntity, DamageEventComp& damageEvent) {
-	auto &casterSkillContextMap = tlsEcs.actorRegistry.get<SkillContextCompMap>(casterEntity);
-	auto skillContentIt = casterSkillContextMap.find(damageEvent.skill_id());
+	ECS_GET_OR_VOID(casterSkillContextMap, SkillContextCompMap, casterEntity);
+	auto skillContentIt = casterSkillContextMap->find(damageEvent.skill_id());
 
-	if (skillContentIt == casterSkillContextMap.end()) {
-        LOG_ERROR << "Skill context not found for skill ID: " << damageEvent.skill_id();
+	if (skillContentIt == casterSkillContextMap->end())
+	{
+		LOG_ERROR << "Skill context not found for skill ID: " << damageEvent.skill_id();
         return;
-    }
+	}
 
 	LookupSkillOrVoid(skillContentIt->second->skilltableid());
 
@@ -498,8 +507,8 @@ void CalculateSkillDamage(const entt::entity casterEntity, DamageEventComp& dama
         return;
     }
 
-	const auto &levelComponent = tlsEcs.actorRegistry.get<LevelComp>(casterEntity);
-	SkillTableManager::Instance().SetDamageParam({static_cast<double>(levelComponent.level())});
+	ECS_GET_OR_VOID(levelComponent, LevelComp, casterEntity);
+	SkillTableManager::Instance().SetDamageParam({static_cast<double>(levelComponent->level())});
 
 	damageEvent.set_attacker_id(entt::to_integral(casterEntity));
 
@@ -551,7 +560,7 @@ void HandleTargetDeath(const entt::entity casterEntity, const entt::entity targe
 }
 
 void DealDamage(DamageEventComp& damageEvent, const entt::entity caster, const entt::entity target) {
-	auto &baseAttributesPBComponent = tlsEcs.actorRegistry.get<BaseAttributesComp>(target);
+	ECS_GET_OR_VOID(baseAttributesPBComponent, BaseAttributesComp, target);
 
 	if (IsTargetDead(target)) {
 		return;
@@ -559,7 +568,7 @@ void DealDamage(DamageEventComp& damageEvent, const entt::entity caster, const e
 
 	damageEvent.set_target(entt::to_integral(target)); 
 	TriggerBeforeDamageEvents(caster, target, damageEvent);
-	ApplyDamage(baseAttributesPBComponent, damageEvent);
+	ApplyDamage(*baseAttributesPBComponent, damageEvent);
 
 	if (IsTargetDead(target)) {
 		HandleTargetDeath(caster, target, damageEvent);
@@ -569,10 +578,11 @@ void DealDamage(DamageEventComp& damageEvent, const entt::entity caster, const e
 }
 
 void SkillSystem::HandleSkillSpell(const entt::entity casterEntity, const uint64_t skillId) {
-	auto &casterSkillContextMap = tlsEcs.actorRegistry.get<SkillContextCompMap>(casterEntity);
-	const auto skillContextIt = casterSkillContextMap.find(skillId);
+	ECS_GET_OR_VOID(casterSkillContextMap, SkillContextCompMap, casterEntity);
+	const auto skillContextIt = casterSkillContextMap->find(skillId);
 
-	if (skillContextIt == casterSkillContextMap.end()) {
+	if (skillContextIt == casterSkillContextMap->end())
+	{
 		return;
 	}
 
