@@ -82,7 +82,7 @@ void NodeAllocator::ReRegisterExistingNode()
 	gNode->GetEtcdManager().RegisterNodePort();
 }
 
-bool IsPortReservedType(uint32_t type)
+bool IsGateNodeType(uint32_t type)
 {
 	return type == eNodeType::GateNodeService;
 }
@@ -150,49 +150,60 @@ void NodeAllocator::AcquireNodePort()
 	auto &nodeList = tlsEcs.nodeGlobalRegistry.get_or_emplace<ServiceNodeList>(tlsEcs.GrpcNodeEntity())[gNode->GetNodeType()];
 	auto &existingNodes = *nodeList.mutable_node_list();
 
-	// TCP and gRPC ports live in separate, non-overlapping ranges connected
-	// by a fixed offset.  This eliminates any chance of protocol cross-talk
-	// (e.g. a stale gRPC client reconnecting to a recycled TCP port).
+	// Port layout (TCP + 30000 = gRPC, non-overlapping):
 	//
-	//   Gate   TCP: 10000-19999   gRPC: 40000-49999   (offset 30000)
-	//   Other  TCP: 20000-35535   gRPC: 50000-65535   (offset 30000)
+	//   Gate   TCP: 10000-19999   gRPC: 40000-49999
+	//   Other  TCP: 20000-35535   gRPC: 50000-65535
+	//
+	// Protocol isolation: TCP and gRPC ranges never intersect.
+	// IP isolation:       only same-IP ports are excluded.
+	// Range convention:   see port → know node role + firewall rules.
 	constexpr uint32_t kGrpcPortOffset = 30000;
 
+	// Only exclude ports from nodes on the SAME IP — nodes on different
+	// machines can safely reuse the same port numbers.
+	const auto &localIp = GetNodeInfo().endpoint().ip();
 	std::unordered_set<uint32_t> usedPorts;
 	for (const auto &node : existingNodes)
 	{
-		usedPorts.insert(node.endpoint().port());
+		if (node.endpoint().ip() == localIp)
+		{
+			usedPorts.insert(node.endpoint().port());
+		}
 	}
 
 	uint32_t assignedPort = 0;
 
-	if (IsPortReservedType(GetNodeInfo().node_type()))
+	// Ops convention: Gate and non-Gate nodes use separate TCP ranges so
+	// that port numbers alone reveal the node role.  Firewall / LB rules
+	// can target each range independently.
+	//
+	//   Gate   TCP: 10000-19999   gRPC: 40000-49999
+	//   Other  TCP: 20000-35535   gRPC: 50000-65535
+	//
+	// Protocol isolation comes from the +30000 offset, not the ranges;
+	// the ranges are purely an operational convenience.
+	if (IsGateNodeType(GetNodeInfo().node_type()))
 	{
-		constexpr uint32_t GATE_BASE_PORT = 10000;
-		constexpr uint32_t GATE_PORT_LIMIT = 19999;
-
-		// Reset to base if out of range
-		if (tryPortId < GATE_BASE_PORT || tryPortId > GATE_PORT_LIMIT)
+		constexpr uint32_t GATE_MIN = 10000;
+		constexpr uint32_t GATE_MAX = 19999;
+		if (tryPortId < GATE_MIN || tryPortId > GATE_MAX)
 		{
-			tryPortId = GATE_BASE_PORT;
+			tryPortId = GATE_MIN;
 		}
-
-		assignedPort = AllocatePortInRange(usedPorts, GATE_BASE_PORT, GATE_PORT_LIMIT, tryPortId);
-		LOG_INFO << "Assigned Gate RPC port: " << assignedPort;
+		assignedPort = AllocatePortInRange(usedPorts, GATE_MIN, GATE_MAX, tryPortId);
+		LOG_INFO << "Assigned Gate TCP port: " << assignedPort;
 	}
 	else
 	{
-		constexpr uint32_t MIN_PORT = 20000;
-		// Cap at 35535 so that TCP + 30000 never exceeds 65535.
-		constexpr uint32_t MAX_PORT = 65535 - kGrpcPortOffset;
-
-		if (tryPortId < MIN_PORT || tryPortId > MAX_PORT)
+		constexpr uint32_t OTHER_MIN = 20000;
+		constexpr uint32_t OTHER_MAX = 65535 - kGrpcPortOffset; // 35535
+		if (tryPortId < OTHER_MIN || tryPortId > OTHER_MAX)
 		{
-			tryPortId = MIN_PORT;
+			tryPortId = OTHER_MIN;
 		}
-
-		assignedPort = AllocatePortInRange(usedPorts, MIN_PORT, MAX_PORT, tryPortId);
-		LOG_INFO << "Assigned dynamic RPC port: " << assignedPort;
+		assignedPort = AllocatePortInRange(usedPorts, OTHER_MIN, OTHER_MAX, tryPortId);
+		LOG_INFO << "Assigned TCP port: " << assignedPort;
 	}
 
 	if (assignedPort != 0)
