@@ -26,8 +26,14 @@ void ScenePlayerHandler::ExitGame(entt::entity player,const ::GameNodeExitGameRe
 	::google::protobuf::Empty* response)
 {
 	///<<< BEGIN WRITING YOUR CODE
-	LOG_INFO << "ExitGame: Received player exit request. Player entity = " << entt::to_integral(player)
-			 << ", playerId = " << entt::to_integral(player);
+	LOG_INFO << "ExitGame: player=" << entt::to_integral(player);
+
+	// TODO: If player has monthly card subscription, switch to AI control instead of exiting.
+	// auto* subscriptionComp = tlsEcs.actorRegistry.try_get<MonthlyCardComp>(player);
+	// if (subscriptionComp && subscriptionComp->IsActive()) {
+	//     SwitchToAIControl(player);
+	//     return;
+	// }
 
 	PlayerLifecycleSystem::HandleExitGameNode(player);
 
