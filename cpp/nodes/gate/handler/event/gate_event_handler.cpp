@@ -110,10 +110,10 @@ void GateEventHandler::RoutePlayerEventHandler(const contracts::kafka::RoutePlay
         it->second.playerId = event.player_id();
     }
 
-    LOG_INFO << "RoutePlayer: assigned scene node, session_id=" << sessionId
-             << " scene_node_id=" << targetNodeId
-             << " scene_entity=" << entt::to_integral(*targetNodeEntity)
-             << " scene_id=" << event.scene_id();
+    LOG_DEBUG << "RoutePlayer: assigned scene node, session_id=" << sessionId
+              << " scene_node_id=" << targetNodeId
+              << " scene_entity=" << entt::to_integral(*targetNodeEntity)
+              << " scene_id=" << event.scene_id();
 
     // Consume pending login type if BindSession arrived before RoutePlayer.
     const auto pendingType = it->second.pendingEnterGsType;

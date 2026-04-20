@@ -1,6 +1,7 @@
 #include "client_message_processor.h"
 
 #include <algorithm>
+#include <cassert>
 #include <functional>
 #include <iomanip>
 #include <memory>
@@ -355,6 +356,7 @@ void RpcClientSessionHandler::HandleConnectionEstablished(const muduo::net::TcpC
 // Handle messages related to the game node
 void HandleTcpNodeMessage(const SessionInfo &session, const RpcClientMessagePtr &request, SessionId sessionId, const muduo::net::TcpConnectionPtr &conn)
 {
+	assert(request->message_id() < gRpcMethodRegistry.size());
 	auto &handlerMeta = gRpcMethodRegistry[request->message_id()];
 
 	// Player sent message without being logged in — invalid node binding
@@ -383,6 +385,7 @@ void HandleTcpNodeMessage(const SessionInfo &session, const RpcClientMessagePtr 
 
 void HandleGrpcNodeMessage(SessionId sessionId, const RpcClientMessagePtr &request, const muduo::net::TcpConnectionPtr &conn)
 {
+	assert(request->message_id() < gRpcMethodRegistry.size());
 	auto &rpcHandlerMeta = gRpcMethodRegistry[request->message_id()];
 	ParseMessageFromRequestBody(*rpcHandlerMeta.requestProto, request, sessionId);
 
