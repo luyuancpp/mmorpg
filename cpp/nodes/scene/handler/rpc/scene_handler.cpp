@@ -143,7 +143,17 @@ void SceneHandler::PlayerEnterGameNode(::google::protobuf::RpcController* contro
 	// Store enter info in PendingEnterMap. If a load is already in flight
 	// (rapid disconnect+reconnect), this overwrites the old entry so the
 	// callback will use the latest session/scene context.
-	PlayerLifecycleSystem::GetPendingEnterMap()[request->player_id()] = enterInfo;
+	// First, clean up the stale session from the previous in-flight load
+	// to prevent late ExitGame(old_session) from killing the new player.
+	auto& pendingMap = PlayerLifecycleSystem::GetPendingEnterMap();
+	auto pendingIt = pendingMap.find(request->player_id());
+	if (pendingIt != pendingMap.end()
+		&& pendingIt->second.session_id() != 0
+		&& pendingIt->second.session_id() != request->session_id())
+	{
+		SessionMap().erase(pendingIt->second.session_id());
+	}
+	pendingMap[request->player_id()] = enterInfo;
 
 	tlsRedisSystem.GetPlayerDataRedis()->AsyncLoad(request->player_id());
 	///<<< END WRITING YOUR CODE
@@ -174,6 +184,17 @@ void SceneHandler::SendMessageToPlayer(::google::protobuf::RpcController* contro
 	}
 
 	const auto &player = playerIt->second;
+
+	// Guard: reject messages from a superseded session (same as ProcessClientPlayerMessage).
+	const auto *snapshot = tlsEcs.actorRegistry.try_get<PlayerSessionSnapshotComp>(player);
+	if (snapshot && snapshot->gate_session_id() != request->header().session_id())
+	{
+		LOG_INFO << "SendMessageToPlayer: stale session " << request->header().session_id()
+				 << " (current=" << snapshot->gate_session_id()
+				 << "), dropping message_id=" << request->message_content().message_id();
+		SessionMap().erase(it);
+		return;
+	}
 
 	if (request->message_content().message_id() >= gRpcMethodRegistry.size())
 	{
@@ -296,6 +317,21 @@ void SceneHandler::ProcessClientPlayerMessage(::google::protobuf::RpcController*
 		return;
 	}
 
+	// Guard: reject messages from a superseded session.
+	// After reconnect, SessionMap may briefly contain both old and new entries
+	// pointing to the same player_id.  If a late message (especially ExitGame)
+	// arrives on the OLD session, it must NOT be dispatched to the player.
+	const auto *snapshot = tlsEcs.actorRegistry.try_get<PlayerSessionSnapshotComp>(player);
+	if (snapshot && snapshot->gate_session_id() != sessionId)
+	{
+		LOG_INFO << "ProcessClientPlayerMessage: stale session " << sessionId
+				 << " (current=" << snapshot->gate_session_id()
+				 << ") for player_id=" << it->second
+				 << ", dropping message_id=" << msg.message_id();
+		SessionMap().erase(it);
+		return;
+	}
+
 	// Update last-active frame for AFK detection.
 	tlsEcs.actorRegistry.get<LastActiveFrameComp>(player).frame =
 		tlsFrameTimeManager.frameTime.current_frame();
@@ -368,6 +404,17 @@ void SceneHandler::InvokePlayerService(::google::protobuf::RpcController* contro
 	{
 		LOG_ERROR << "GatePlayerService player not loading";
 		SendErrorToClient(*request, *response, kPlayerNotFoundInSession);
+		return;
+	}
+
+	// Guard: reject messages from a superseded session.
+	const auto *snapshot = tlsEcs.actorRegistry.try_get<PlayerSessionSnapshotComp>(player);
+	if (snapshot && snapshot->gate_session_id() != request->header().session_id())
+	{
+		LOG_INFO << "InvokePlayerService: stale session " << request->header().session_id()
+				 << " (current=" << snapshot->gate_session_id()
+				 << "), dropping message_id=" << request->message_content().message_id();
+		SessionMap().erase(it);
 		return;
 	}
 

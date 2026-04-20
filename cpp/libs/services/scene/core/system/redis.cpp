@@ -13,6 +13,6 @@ using namespace muduo::net;
 void RedisSystem::Initialize()
 {
     playerRedis = std::make_unique<PlayerDataRedis::element_type>(tlsRedis.GetZoneRedis());
-    playerRedis->SetLoadCallbackWithExtra(PlayerLifecycleSystem::HandlePlayerAsyncLoaded);
+    playerRedis->SetLoadCallback(PlayerLifecycleSystem::HandlePlayerAsyncLoaded);
     playerRedis->SetSaveCallback(PlayerLifecycleSystem::HandlePlayerAsyncSaved);
 }

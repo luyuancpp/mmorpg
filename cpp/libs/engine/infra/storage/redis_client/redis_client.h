@@ -3,7 +3,6 @@
 #include <string>
 #include <memory>
 #include <vector>
-#include <any>
 #include <limits>
 
 #include "muduo/base/Logging.h"
@@ -69,13 +68,11 @@ public:
 		MessageKey message_key;
 		std::string redis_key;
 		MessageValuePtr message_value;
-		std::any extra_data;
 	};
 
 	using ElementPtr = std::shared_ptr<Element>;
 	using LoadingQueue = std::unordered_map<std::string, ElementPtr>;
 	using EventCallback = std::function<void(MessageKey, MessageValue&)>;
-	using EventCallbackWithExtra = std::function<void(MessageKey, MessageValue&, const std::any&)>;
 
 	using HiredisPtr = std::unique_ptr<hiredis::Hiredis>;
 
@@ -88,7 +85,6 @@ public:
 
 	void SetSaveCallback(const EventCallback& cb) { save_callback_ = cb; }
 	void SetLoadCallback(const EventCallback& cb) { load_callback_ = cb; }
-	void SetLoadCallbackWithExtra(const EventCallbackWithExtra& cb) { load_callback_with_extra_ = cb; }
 
 
 	void Save(const MessageValuePtr& message, const MessageKey& key)
@@ -121,7 +117,7 @@ public:
 		);
 	}
 
-	void AsyncLoad(const MessageKey& key, std::any extra_data = {})
+	void AsyncLoad(const MessageKey& key)
 	{
 		if (!hiredis_ || !hiredis_->connected())
 		{
@@ -138,26 +134,12 @@ public:
 		ElementPtr element = std::make_shared<Element>();
 		element->message_key = key;
 		element->redis_key = redis_key;
-		element->extra_data = std::move(extra_data);
 
 		loading_queue_.emplace(redis_key, element);
 
 		const std::string format = "GET " + redis_key;
 		hiredis_->command(std::bind(&MessageAsyncClient::OnLoaded, this, std::placeholders::_1, std::placeholders::_2, element),
 			format.c_str());
-	}
-
-	bool UpdateExtraData(const MessageKey& key, std::any new_extra_data)
-	{
-		std::string redis_key = full_name() + ":" + std::to_string(key);
-		auto it = loading_queue_.find(redis_key);
-		if (it == loading_queue_.end())
-		{
-			return false; // Not in loading queue
-		}
-
-		it->second->extra_data = std::move(new_extra_data);
-		return true;
 	}
 
 
@@ -195,11 +177,7 @@ private:
 
 		loading_queue_.erase(element->redis_key);
 
-		if (load_callback_with_extra_)
-		{
-			load_callback_with_extra_(element->message_key, *element->message_value, element->extra_data);
-		}
-		else if (load_callback_)
+		if (load_callback_)
 		{
 			load_callback_(element->message_key, *element->message_value);
 		}
@@ -211,6 +189,5 @@ private:
 	LoadingQueue loading_queue_;
 	EventCallback save_callback_;
 	EventCallback load_callback_;
-	EventCallbackWithExtra load_callback_with_extra_;
 };
 

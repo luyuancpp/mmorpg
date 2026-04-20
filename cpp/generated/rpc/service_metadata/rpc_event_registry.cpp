@@ -482,12 +482,12 @@ void InitMessageInfo()
         "ClientPlayerLogin", "Disconnect",
         std::make_unique<::loginpb::LoginNodeDisconnectRequest>(),
         std::make_unique<::loginpb::LoginEmptyResponse>(),
-		nullptr, 1, common::base::eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginDisconnect };
-	gRpcMethodRegistry[ClientPlayerLoginRefreshTokenMessageId] = RpcMethodMeta{
-		"ClientPlayerLogin", "RefreshToken",
-		std::make_unique<::loginpb::RefreshTokenRequest>(),
-		std::make_unique<::loginpb::RefreshTokenResponse>(),
-		nullptr, 1, common::base::eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginRefreshToken };
+        nullptr, 1, common::base::eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginDisconnect};
+    gRpcMethodRegistry[ClientPlayerLoginRefreshTokenMessageId] = RpcMethodMeta{
+        "ClientPlayerLogin", "RefreshToken",
+        std::make_unique<::loginpb::RefreshTokenRequest>(),
+        std::make_unique<::loginpb::RefreshTokenResponse>(),
+        nullptr, 1, common::base::eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginRefreshToken};
 
     // --- LoginPreGate ---
     gRpcMethodRegistry[LoginPreGateAssignGateMessageId] = RpcMethodMeta{
