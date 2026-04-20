@@ -371,3 +371,9 @@ func GetBestNode(ctx context.Context, svcCtx *svc.ServiceContext, zoneId uint32)
 
 	return pairs[0].Key, nil
 }
+
+// IsNodeAlive checks whether a node is present in the zone's Redis load sorted set.
+func IsNodeAlive(svcCtx *svc.ServiceContext, zoneId uint32, nodeId string) bool {
+	_, err := svcCtx.Redis.Zscore(nodeLoadKey(zoneId), nodeId)
+	return err == nil
+}

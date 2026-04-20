@@ -131,6 +131,14 @@ void SceneHandler::PlayerEnterGameNode(::google::protobuf::RpcController* contro
 	// 3. Player not online — add to async load queue.
 	//    After load completes, HandlePlayerAsyncLoaded → InitPlayerFromAllData → EnterScene
 	//    will use enterInfo to bind session, find scene, and process the login.
+
+	// Pre-register session so that client messages arriving during async load
+	// hit the "player not loaded" guard instead of "session id not found".
+	if (request->session_id() != 0)
+	{
+		SessionMap().emplace(request->session_id(), request->player_id());
+	}
+
 	tlsRedisSystem.GetPlayerDataRedis()->AsyncLoad(request->player_id(), enterInfo);
 	///<<< END WRITING YOUR CODE
 }
@@ -265,8 +273,8 @@ void SceneHandler::ProcessClientPlayerMessage(::google::protobuf::RpcController*
 	const auto player = tlsEcs.GetPlayer(it->second);
 	if (player == entt::null)
 	{
-		LOG_ERROR << "ProcessClientPlayerMessage: player not loaded for player_id=" << it->second
-				  << " message_id=" << msg.message_id();
+		LOG_WARN << "ProcessClientPlayerMessage: player not loaded for player_id=" << it->second
+				 << " message_id=" << msg.message_id() << " (likely still loading from Redis)";
 		return;
 	}
 

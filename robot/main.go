@@ -49,16 +49,15 @@ func main() {
 	// Load tables (Skill, Class) and auto-resolve skill_ids if not configured.
 	cfg.LoadTables()
 
-	host, portStr, tokenPayload, tokenSig, err := resolveGateAddrLocal(cfg)
-	if err != nil {
-		zap.L().Fatal("resolve gate address", zap.Error(err))
-	}
-	port, _ := strconv.Atoi(portStr)
-
 	stats := metrics.NewStats()
 
 	// Login-test mode: run the scenario suite and exit.
 	if cfg.Mode == "login-test" {
+		host, portStr, tokenPayload, tokenSig, err := resolveGateAddrLocal(cfg)
+		if err != nil {
+			zap.L().Fatal("resolve gate address", zap.Error(err))
+		}
+		port, _ := strconv.Atoi(portStr)
 		runLoginTests(host, port, cfg, stats, tokenPayload, tokenSig)
 		_ = stats.ExportBehaviorCSV("behavior_test_results.csv")
 		_ = stats.ExportBehaviorJSONL("behavior_test_results.jsonl")
@@ -90,7 +89,7 @@ func main() {
 				}
 				wg.Done()
 			}()
-			runRobot(host, port, account, cfg, stats, stopAll, tokenPayload, tokenSig)
+			runRobot(account, cfg, stats, stopAll)
 		}(account)
 		time.Sleep(50 * time.Millisecond) // stagger to avoid thundering herd
 	}
@@ -109,7 +108,7 @@ func main() {
 }
 
 // runRobot is the full lifecycle for one robot (one goroutine).
-func runRobot(host string, port int, account string, cfg *config.Config, stats *metrics.Stats, stop <-chan struct{}, tokenPayload, tokenSig []byte) {
+func runRobot(account string, cfg *config.Config, stats *metrics.Stats, stop <-chan struct{}) {
 	const maxRetries = 5
 	backoff := 3 * time.Second
 
@@ -133,7 +132,7 @@ func runRobot(host string, port int, account string, cfg *config.Config, stats *
 			}
 		}
 
-		if runRobotOnce(host, port, account, cfg, stats, stop, tokenPayload, tokenSig) {
+		if runRobotOnce(account, cfg, stats, stop) {
 			return // played successfully (or stop signal)
 		}
 	}
@@ -141,7 +140,17 @@ func runRobot(host string, port int, account string, cfg *config.Config, stats *
 }
 
 // runRobotOnce attempts a single connect→login→play cycle. Returns true if it should not retry.
-func runRobotOnce(host string, port int, account string, cfg *config.Config, stats *metrics.Stats, stop <-chan struct{}, tokenPayload, tokenSig []byte) bool {
+func runRobotOnce(account string, cfg *config.Config, stats *metrics.Stats, stop <-chan struct{}) bool {
+	// Fetch a fresh gate token for each connection attempt so the 5-min TTL
+	// is never stale — even under high robot counts or retry backoff.
+	host, portStr, tokenPayload, tokenSig, err := resolveGateAddrLocal(cfg)
+	if err != nil {
+		zap.L().Error("resolve gate address failed", zap.String("account", account), zap.Error(err))
+		stats.LoginFail()
+		return false // retry
+	}
+	port, _ := strconv.Atoi(portStr)
+
 	gc, err := pkg.NewGameClient(host, port)
 	if err != nil {
 		zap.L().Error("connect failed", zap.String("account", account), zap.Error(err))
