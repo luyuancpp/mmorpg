@@ -119,8 +119,8 @@ func destroyInstance(ctx context.Context, svcCtx *svc.ServiceContext, zoneId uin
 	// Get node for load tracking and RPC before deletion.
 	nodeId, _ := svcCtx.Redis.Get(sceneNodeKey)
 
-	// Notify C++ node to destroy the ECS scene entity.
-	if nodeId != "" {
+	// Notify C++ node to destroy the ECS scene entity (skip if node is already dead).
+	if nodeId != "" && IsNodeAlive(svcCtx, zoneId, nodeId) {
 		if err := RequestNodeDestroyScene(ctx, svcCtx, nodeId, sceneId); err != nil {
 			logx.Errorf("[InstanceLifecycle] Failed to call DestroyScene on node %s for scene %d: %v", nodeId, sceneId, err)
 		}
