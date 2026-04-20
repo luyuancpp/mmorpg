@@ -10,10 +10,11 @@ thread_local RedisSystem tlsRedisSystem;
 using namespace muduo;
 using namespace muduo::net;
 
-void RedisSystem::Initialize()
+void RedisSystem::Initialize(muduo::net::EventLoop* loop)
 {
     playerRedis = std::make_unique<PlayerDataRedis::element_type>(tlsRedis.GetZoneRedis());
     playerRedis->SetLoadCallback(PlayerLifecycleSystem::HandlePlayerAsyncLoaded);
+    playerRedis->SetLoadFailedCallback(PlayerLifecycleSystem::HandlePlayerAsyncLoadFailed);
     playerRedis->SetSaveCallback(PlayerLifecycleSystem::HandlePlayerAsyncSaved);
 
     tlsRedis.SetReconnectCallback([this]()
@@ -23,4 +24,14 @@ void RedisSystem::Initialize()
         {
             playerRedis->RetryPendingLoads();
         } });
+
+    // Periodically retry loads that got NIL (data not yet written to Redis)
+    static constexpr double kRetryIntervalSec = 2.0;
+    loop->runEvery(kRetryIntervalSec, [this]()
+    {
+        if (playerRedis)
+        {
+            playerRedis->RetryPendingLoads();
+        }
+    });
 }

@@ -24,6 +24,55 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type ActorType int32
+
+const (
+	ActorType_ACTOR_TYPE_NONE   ActorType = 0
+	ActorType_ACTOR_TYPE_PLAYER ActorType = 1
+	ActorType_ACTOR_TYPE_NPC    ActorType = 2
+)
+
+// Enum value maps for ActorType.
+var (
+	ActorType_name = map[int32]string{
+		0: "ACTOR_TYPE_NONE",
+		1: "ACTOR_TYPE_PLAYER",
+		2: "ACTOR_TYPE_NPC",
+	}
+	ActorType_value = map[string]int32{
+		"ACTOR_TYPE_NONE":   0,
+		"ACTOR_TYPE_PLAYER": 1,
+		"ACTOR_TYPE_NPC":    2,
+	}
+)
+
+func (x ActorType) Enum() *ActorType {
+	p := new(ActorType)
+	*p = x
+	return p
+}
+
+func (x ActorType) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ActorType) Descriptor() protoreflect.EnumDescriptor {
+	return file_proto_scene_player_scene_proto_enumTypes[0].Descriptor()
+}
+
+func (ActorType) Type() protoreflect.EnumType {
+	return &file_proto_scene_player_scene_proto_enumTypes[0]
+}
+
+func (x ActorType) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use ActorType.Descriptor instead.
+func (ActorType) EnumDescriptor() ([]byte, []int) {
+	return file_proto_scene_player_scene_proto_rawDescGZIP(), []int{0}
+}
+
 type EnterSceneC2SRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	SceneInfo     *SceneInfoComp         `protobuf:"bytes,1,opt,name=scene_info,json=sceneInfo,proto3" json:"scene_info,omitempty"`
@@ -284,7 +333,7 @@ type ActorCreateS2C struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Entity        uint64                 `protobuf:"varint,1,opt,name=entity,proto3" json:"entity,omitempty"`
 	Transform     *component.Transform   `protobuf:"bytes,2,opt,name=transform,proto3" json:"transform,omitempty"`
-	EntityType    uint32                 `protobuf:"varint,3,opt,name=entity_type,json=entityType,proto3" json:"entity_type,omitempty"`
+	ActorType     ActorType              `protobuf:"varint,3,opt,name=actor_type,json=actorType,proto3,enum=ActorType" json:"actor_type,omitempty"`
 	Guid          uint64                 `protobuf:"varint,4,opt,name=guid,proto3" json:"guid,omitempty"`
 	ConfigId      uint64                 `protobuf:"varint,5,opt,name=config_id,json=configId,proto3" json:"config_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -335,11 +384,11 @@ func (x *ActorCreateS2C) GetTransform() *component.Transform {
 	return nil
 }
 
-func (x *ActorCreateS2C) GetEntityType() uint32 {
+func (x *ActorCreateS2C) GetActorType() ActorType {
 	if x != nil {
-		return x.EntityType
+		return x.ActorType
 	}
-	return 0
+	return ActorType_ACTOR_TYPE_NONE
 }
 
 func (x *ActorCreateS2C) GetGuid() uint64 {
@@ -507,13 +556,14 @@ const file_proto_scene_player_scene_proto_rawDesc = "" +
 	"\x10SceneInfoRequest\"B\n" +
 	"\x11SceneInfoResponse\x12-\n" +
 	"\n" +
-	"scene_info\x18\x01 \x03(\v2\x0e.SceneInfoCompR\tsceneInfo\"\xa4\x01\n" +
+	"scene_info\x18\x01 \x03(\v2\x0e.SceneInfoCompR\tsceneInfo\"\xae\x01\n" +
 	"\x0eActorCreateS2C\x12\x16\n" +
 	"\x06entity\x18\x01 \x01(\x04R\x06entity\x12(\n" +
 	"\ttransform\x18\x02 \x01(\v2\n" +
-	".TransformR\ttransform\x12\x1f\n" +
-	"\ventity_type\x18\x03 \x01(\rR\n" +
-	"entityType\x12\x12\n" +
+	".TransformR\ttransform\x12)\n" +
+	"\n" +
+	"actor_type\x18\x03 \x01(\x0e2\n" +
+	".ActorTypeR\tactorType\x12\x12\n" +
 	"\x04guid\x18\x04 \x01(\x04R\x04guid\x12\x1b\n" +
 	"\tconfig_id\x18\x05 \x01(\x04R\bconfigId\")\n" +
 	"\x0fActorDestroyS2C\x12\x16\n" +
@@ -522,7 +572,11 @@ const file_proto_scene_player_scene_proto_rawDesc = "" +
 	"\n" +
 	"actor_list\x18\x01 \x03(\v2\x0f.ActorCreateS2CR\tactorList\"-\n" +
 	"\x13ActorListDestroyS2C\x12\x16\n" +
-	"\x06entity\x18\x01 \x03(\x04R\x06entity2\xae\x03\n" +
+	"\x06entity\x18\x01 \x03(\x04R\x06entity*K\n" +
+	"\tActorType\x12\x13\n" +
+	"\x0fACTOR_TYPE_NONE\x10\x00\x12\x15\n" +
+	"\x11ACTOR_TYPE_PLAYER\x10\x01\x12\x12\n" +
+	"\x0eACTOR_TYPE_NPC\x10\x022\xae\x03\n" +
 	"\x16SceneSceneClientPlayer\x12;\n" +
 	"\n" +
 	"EnterScene\x12\x15.EnterSceneC2SRequest\x1a\x16.EnterSceneC2SResponse\x12*\n" +
@@ -547,52 +601,55 @@ func file_proto_scene_player_scene_proto_rawDescGZIP() []byte {
 	return file_proto_scene_player_scene_proto_rawDescData
 }
 
+var file_proto_scene_player_scene_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_proto_scene_player_scene_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_proto_scene_player_scene_proto_goTypes = []any{
-	(*EnterSceneC2SRequest)(nil),  // 0: EnterSceneC2SRequest
-	(*EnterSceneC2SResponse)(nil), // 1: EnterSceneC2SResponse
-	(*EnterSceneS2C)(nil),         // 2: EnterSceneS2C
-	(*SceneInfoS2C)(nil),          // 3: SceneInfoS2C
-	(*SceneInfoRequest)(nil),      // 4: SceneInfoRequest
-	(*SceneInfoResponse)(nil),     // 5: SceneInfoResponse
-	(*ActorCreateS2C)(nil),        // 6: ActorCreateS2C
-	(*ActorDestroyS2C)(nil),       // 7: ActorDestroyS2C
-	(*ActorListCreateS2C)(nil),    // 8: ActorListCreateS2C
-	(*ActorListDestroyS2C)(nil),   // 9: ActorListDestroyS2C
-	(*SceneInfoComp)(nil),         // 10: SceneInfoComp
-	(*base.TipInfoMessage)(nil),   // 11: TipInfoMessage
-	(*component.Transform)(nil),   // 12: Transform
-	(*base.Empty)(nil),            // 13: Empty
+	(ActorType)(0),                // 0: ActorType
+	(*EnterSceneC2SRequest)(nil),  // 1: EnterSceneC2SRequest
+	(*EnterSceneC2SResponse)(nil), // 2: EnterSceneC2SResponse
+	(*EnterSceneS2C)(nil),         // 3: EnterSceneS2C
+	(*SceneInfoS2C)(nil),          // 4: SceneInfoS2C
+	(*SceneInfoRequest)(nil),      // 5: SceneInfoRequest
+	(*SceneInfoResponse)(nil),     // 6: SceneInfoResponse
+	(*ActorCreateS2C)(nil),        // 7: ActorCreateS2C
+	(*ActorDestroyS2C)(nil),       // 8: ActorDestroyS2C
+	(*ActorListCreateS2C)(nil),    // 9: ActorListCreateS2C
+	(*ActorListDestroyS2C)(nil),   // 10: ActorListDestroyS2C
+	(*SceneInfoComp)(nil),         // 11: SceneInfoComp
+	(*base.TipInfoMessage)(nil),   // 12: TipInfoMessage
+	(*component.Transform)(nil),   // 13: Transform
+	(*base.Empty)(nil),            // 14: Empty
 }
 var file_proto_scene_player_scene_proto_depIdxs = []int32{
-	10, // 0: EnterSceneC2SRequest.scene_info:type_name -> SceneInfoComp
-	11, // 1: EnterSceneC2SResponse.error_message:type_name -> TipInfoMessage
-	10, // 2: EnterSceneS2C.scene_info:type_name -> SceneInfoComp
-	10, // 3: SceneInfoS2C.scene_info:type_name -> SceneInfoComp
-	10, // 4: SceneInfoResponse.scene_info:type_name -> SceneInfoComp
-	12, // 5: ActorCreateS2C.transform:type_name -> Transform
-	6,  // 6: ActorListCreateS2C.actor_list:type_name -> ActorCreateS2C
-	0,  // 7: SceneSceneClientPlayer.EnterScene:input_type -> EnterSceneC2SRequest
-	2,  // 8: SceneSceneClientPlayer.NotifyEnterScene:input_type -> EnterSceneS2C
-	4,  // 9: SceneSceneClientPlayer.SceneInfoC2S:input_type -> SceneInfoRequest
-	3,  // 10: SceneSceneClientPlayer.NotifySceneInfo:input_type -> SceneInfoS2C
-	6,  // 11: SceneSceneClientPlayer.NotifyActorCreate:input_type -> ActorCreateS2C
-	7,  // 12: SceneSceneClientPlayer.NotifyActorDestroy:input_type -> ActorDestroyS2C
-	8,  // 13: SceneSceneClientPlayer.NotifyActorListCreate:input_type -> ActorListCreateS2C
-	9,  // 14: SceneSceneClientPlayer.NotifyActorListDestroy:input_type -> ActorListDestroyS2C
-	1,  // 15: SceneSceneClientPlayer.EnterScene:output_type -> EnterSceneC2SResponse
-	13, // 16: SceneSceneClientPlayer.NotifyEnterScene:output_type -> Empty
-	13, // 17: SceneSceneClientPlayer.SceneInfoC2S:output_type -> Empty
-	13, // 18: SceneSceneClientPlayer.NotifySceneInfo:output_type -> Empty
-	13, // 19: SceneSceneClientPlayer.NotifyActorCreate:output_type -> Empty
-	13, // 20: SceneSceneClientPlayer.NotifyActorDestroy:output_type -> Empty
-	13, // 21: SceneSceneClientPlayer.NotifyActorListCreate:output_type -> Empty
-	13, // 22: SceneSceneClientPlayer.NotifyActorListDestroy:output_type -> Empty
-	15, // [15:23] is the sub-list for method output_type
-	7,  // [7:15] is the sub-list for method input_type
-	7,  // [7:7] is the sub-list for extension type_name
-	7,  // [7:7] is the sub-list for extension extendee
-	0,  // [0:7] is the sub-list for field type_name
+	11, // 0: EnterSceneC2SRequest.scene_info:type_name -> SceneInfoComp
+	12, // 1: EnterSceneC2SResponse.error_message:type_name -> TipInfoMessage
+	11, // 2: EnterSceneS2C.scene_info:type_name -> SceneInfoComp
+	11, // 3: SceneInfoS2C.scene_info:type_name -> SceneInfoComp
+	11, // 4: SceneInfoResponse.scene_info:type_name -> SceneInfoComp
+	13, // 5: ActorCreateS2C.transform:type_name -> Transform
+	0,  // 6: ActorCreateS2C.actor_type:type_name -> ActorType
+	7,  // 7: ActorListCreateS2C.actor_list:type_name -> ActorCreateS2C
+	1,  // 8: SceneSceneClientPlayer.EnterScene:input_type -> EnterSceneC2SRequest
+	3,  // 9: SceneSceneClientPlayer.NotifyEnterScene:input_type -> EnterSceneS2C
+	5,  // 10: SceneSceneClientPlayer.SceneInfoC2S:input_type -> SceneInfoRequest
+	4,  // 11: SceneSceneClientPlayer.NotifySceneInfo:input_type -> SceneInfoS2C
+	7,  // 12: SceneSceneClientPlayer.NotifyActorCreate:input_type -> ActorCreateS2C
+	8,  // 13: SceneSceneClientPlayer.NotifyActorDestroy:input_type -> ActorDestroyS2C
+	9,  // 14: SceneSceneClientPlayer.NotifyActorListCreate:input_type -> ActorListCreateS2C
+	10, // 15: SceneSceneClientPlayer.NotifyActorListDestroy:input_type -> ActorListDestroyS2C
+	2,  // 16: SceneSceneClientPlayer.EnterScene:output_type -> EnterSceneC2SResponse
+	14, // 17: SceneSceneClientPlayer.NotifyEnterScene:output_type -> Empty
+	14, // 18: SceneSceneClientPlayer.SceneInfoC2S:output_type -> Empty
+	14, // 19: SceneSceneClientPlayer.NotifySceneInfo:output_type -> Empty
+	14, // 20: SceneSceneClientPlayer.NotifyActorCreate:output_type -> Empty
+	14, // 21: SceneSceneClientPlayer.NotifyActorDestroy:output_type -> Empty
+	14, // 22: SceneSceneClientPlayer.NotifyActorListCreate:output_type -> Empty
+	14, // 23: SceneSceneClientPlayer.NotifyActorListDestroy:output_type -> Empty
+	16, // [16:24] is the sub-list for method output_type
+	8,  // [8:16] is the sub-list for method input_type
+	8,  // [8:8] is the sub-list for extension type_name
+	8,  // [8:8] is the sub-list for extension extendee
+	0,  // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_proto_scene_player_scene_proto_init() }
@@ -606,13 +663,14 @@ func file_proto_scene_player_scene_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_scene_player_scene_proto_rawDesc), len(file_proto_scene_player_scene_proto_rawDesc)),
-			NumEnums:      0,
+			NumEnums:      1,
 			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_proto_scene_player_scene_proto_goTypes,
 		DependencyIndexes: file_proto_scene_player_scene_proto_depIdxs,
+		EnumInfos:         file_proto_scene_player_scene_proto_enumTypes,
 		MessageInfos:      file_proto_scene_player_scene_proto_msgTypes,
 	}.Build()
 	File_proto_scene_player_scene_proto = out.File

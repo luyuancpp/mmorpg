@@ -8,6 +8,7 @@
 #include "proto/scene/player_scene.pb.h"
 #include "proto/common/component/actor_comp.pb.h"
 #include "proto/common/component/npc_comp.pb.h"
+#include "proto/common/component/player_comp.pb.h"
 #include "combat/buff/comp/buff_comp.h"
 #include "combat/buff/constants/buff.h"
 #include "spatial/comp/scene_node_scene_comp.h"
@@ -94,7 +95,23 @@ void ViewSystem::FillActorCreateMessageInfo(entt::entity observer, entt::entity 
     const auto *entrantTransformPtr = tlsEcs.actorRegistry.try_get<Transform>(entrant);
     if (entrantTransformPtr)
     {
-        createMessage.mutable_transform()->CopyFrom(*entrantTransformPtr);
+        createMessage.mutable_transform()->mutable_location()->CopyFrom(
+            entrantTransformPtr->location());
+    }
+
+    if (tlsEcs.actorRegistry.any_of<Player>(entrant))
+    {
+        createMessage.set_actor_type(ACTOR_TYPE_PLAYER);
+    }
+    else if (tlsEcs.actorRegistry.any_of<Npc>(entrant))
+    {
+        createMessage.set_actor_type(ACTOR_TYPE_NPC);
+    }
+
+    const auto *guidPtr = tlsEcs.actorRegistry.try_get<Guid>(entrant);
+    if (guidPtr)
+    {
+        createMessage.set_guid(*guidPtr);
     }
 }
 

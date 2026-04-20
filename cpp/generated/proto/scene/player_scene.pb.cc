@@ -226,7 +226,7 @@ inline constexpr ActorCreateS2C::Impl_::Impl_(
         entity_{::uint64_t{0u}},
         guid_{::uint64_t{0u}},
         config_id_{::uint64_t{0u}},
-        entity_type_{0u} {}
+        actor_type_{static_cast< ::ActorType >(0)} {}
 
 template <typename>
 PROTOBUF_CONSTEXPR ActorCreateS2C::ActorCreateS2C(::_pbi::ConstantInitialized)
@@ -272,8 +272,8 @@ struct ActorListCreateS2CDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ActorListCreateS2CDefaultTypeInternal _ActorListCreateS2C_default_instance_;
-static constexpr const ::_pb::EnumDescriptor *PROTOBUF_NONNULL *PROTOBUF_NULLABLE
-    file_level_enum_descriptors_proto_2fscene_2fplayer_5fscene_2eproto = nullptr;
+static const ::_pb::EnumDescriptor* PROTOBUF_NONNULL
+    file_level_enum_descriptors_proto_2fscene_2fplayer_5fscene_2eproto[1];
 static const ::_pb::ServiceDescriptor* PROTOBUF_NONNULL
     file_level_service_descriptors_proto_2fscene_2fplayer_5fscene_2eproto[1];
 const ::uint32_t
@@ -304,7 +304,7 @@ const ::uint32_t
         8, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::ActorCreateS2C, _impl_.entity_),
         PROTOBUF_FIELD_OFFSET(::ActorCreateS2C, _impl_.transform_),
-        PROTOBUF_FIELD_OFFSET(::ActorCreateS2C, _impl_.entity_type_),
+        PROTOBUF_FIELD_OFFSET(::ActorCreateS2C, _impl_.actor_type_),
         PROTOBUF_FIELD_OFFSET(::ActorCreateS2C, _impl_.guid_),
         PROTOBUF_FIELD_OFFSET(::ActorCreateS2C, _impl_.config_id_),
         1,
@@ -362,25 +362,27 @@ const char descriptor_table_protodef_proto_2fscene_2fplayer_5fscene_2eproto[] AB
     "neInfoComp\"2\n\014SceneInfoS2C\022\"\n\nscene_info"
     "\030\001 \003(\0132\016.SceneInfoComp\"\022\n\020SceneInfoReque"
     "st\"7\n\021SceneInfoResponse\022\"\n\nscene_info\030\001 "
-    "\003(\0132\016.SceneInfoComp\"u\n\016ActorCreateS2C\022\016\n"
-    "\006entity\030\001 \001(\004\022\035\n\ttransform\030\002 \001(\0132\n.Trans"
-    "form\022\023\n\013entity_type\030\003 \001(\r\022\014\n\004guid\030\004 \001(\004\022"
-    "\021\n\tconfig_id\030\005 \001(\004\"!\n\017ActorDestroyS2C\022\016\n"
-    "\006entity\030\001 \001(\004\"9\n\022ActorListCreateS2C\022#\n\na"
-    "ctor_list\030\001 \003(\0132\017.ActorCreateS2C\"%\n\023Acto"
-    "rListDestroyS2C\022\016\n\006entity\030\001 \003(\0042\256\003\n\026Scen"
-    "eSceneClientPlayer\022;\n\nEnterScene\022\025.Enter"
-    "SceneC2SRequest\032\026.EnterSceneC2SResponse\022"
-    "*\n\020NotifyEnterScene\022\016.EnterSceneS2C\032\006.Em"
-    "pty\022)\n\014SceneInfoC2S\022\021.SceneInfoRequest\032\006"
-    ".Empty\022(\n\017NotifySceneInfo\022\r.SceneInfoS2C"
-    "\032\006.Empty\022,\n\021NotifyActorCreate\022\017.ActorCre"
-    "ateS2C\032\006.Empty\022.\n\022NotifyActorDestroy\022\020.A"
-    "ctorDestroyS2C\032\006.Empty\0224\n\025NotifyActorLis"
-    "tCreate\022\023.ActorListCreateS2C\032\006.Empty\0226\n\026"
-    "NotifyActorListDestroy\022\024.ActorListDestro"
-    "yS2C\032\006.Empty\032\n\200\250\303\001\001\210\250\303\001\001B\016Z\005scene\200\001\001\230\324a\003"
-    "b\006proto3"
+    "\003(\0132\016.SceneInfoComp\"\200\001\n\016ActorCreateS2C\022\016"
+    "\n\006entity\030\001 \001(\004\022\035\n\ttransform\030\002 \001(\0132\n.Tran"
+    "sform\022\036\n\nactor_type\030\003 \001(\0162\n.ActorType\022\014\n"
+    "\004guid\030\004 \001(\004\022\021\n\tconfig_id\030\005 \001(\004\"!\n\017ActorD"
+    "estroyS2C\022\016\n\006entity\030\001 \001(\004\"9\n\022ActorListCr"
+    "eateS2C\022#\n\nactor_list\030\001 \003(\0132\017.ActorCreat"
+    "eS2C\"%\n\023ActorListDestroyS2C\022\016\n\006entity\030\001 "
+    "\003(\004*K\n\tActorType\022\023\n\017ACTOR_TYPE_NONE\020\000\022\025\n"
+    "\021ACTOR_TYPE_PLAYER\020\001\022\022\n\016ACTOR_TYPE_NPC\020\002"
+    "2\256\003\n\026SceneSceneClientPlayer\022;\n\nEnterScen"
+    "e\022\025.EnterSceneC2SRequest\032\026.EnterSceneC2S"
+    "Response\022*\n\020NotifyEnterScene\022\016.EnterScen"
+    "eS2C\032\006.Empty\022)\n\014SceneInfoC2S\022\021.SceneInfo"
+    "Request\032\006.Empty\022(\n\017NotifySceneInfo\022\r.Sce"
+    "neInfoS2C\032\006.Empty\022,\n\021NotifyActorCreate\022\017"
+    ".ActorCreateS2C\032\006.Empty\022.\n\022NotifyActorDe"
+    "stroy\022\020.ActorDestroyS2C\032\006.Empty\0224\n\025Notif"
+    "yActorListCreate\022\023.ActorListCreateS2C\032\006."
+    "Empty\0226\n\026NotifyActorListDestroy\022\024.ActorL"
+    "istDestroyS2C\032\006.Empty\032\n\200\250\303\001\001\210\250\303\001\001B\016Z\005sce"
+    "ne\200\001\001\230\324a\003b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fscene_2fplayer_5fscene_2eproto_deps[5] = {
@@ -394,7 +396,7 @@ static ::absl::once_flag descriptor_table_proto_2fscene_2fplayer_5fscene_2eproto
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fscene_2fplayer_5fscene_2eproto = {
     false,
     false,
-    1208,
+    1297,
     descriptor_table_protodef_proto_2fscene_2fplayer_5fscene_2eproto,
     "proto/scene/player_scene.proto",
     &descriptor_table_proto_2fscene_2fplayer_5fscene_2eproto_once,
@@ -407,6 +409,12 @@ PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fscene_
     file_level_enum_descriptors_proto_2fscene_2fplayer_5fscene_2eproto,
     file_level_service_descriptors_proto_2fscene_2fplayer_5fscene_2eproto,
 };
+const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL ActorType_descriptor() {
+  ::google::protobuf::internal::AssignDescriptors(&descriptor_table_proto_2fscene_2fplayer_5fscene_2eproto);
+  return file_level_enum_descriptors_proto_2fscene_2fplayer_5fscene_2eproto[0];
+}
+PROTOBUF_CONSTINIT const uint32_t ActorType_internal_data_[] = {
+    196608u, 0u, };
 // ===================================================================
 
 class EnterSceneC2SRequest::_Internal {
@@ -1872,9 +1880,9 @@ ActorCreateS2C::ActorCreateS2C(
                offsetof(Impl_, entity_),
            reinterpret_cast<const char *>(&from._impl_) +
                offsetof(Impl_, entity_),
-           offsetof(Impl_, entity_type_) -
+           offsetof(Impl_, actor_type_) -
                offsetof(Impl_, entity_) +
-               sizeof(Impl_::entity_type_));
+               sizeof(Impl_::actor_type_));
 
   // @@protoc_insertion_point(copy_constructor:ActorCreateS2C)
 }
@@ -1888,9 +1896,9 @@ inline void ActorCreateS2C::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, transform_),
            0,
-           offsetof(Impl_, entity_type_) -
+           offsetof(Impl_, actor_type_) -
                offsetof(Impl_, transform_) +
-               sizeof(Impl_::entity_type_));
+               sizeof(Impl_::actor_type_));
 }
 ActorCreateS2C::~ActorCreateS2C() {
   // @@protoc_insertion_point(destructor:ActorCreateS2C)
@@ -1973,9 +1981,9 @@ ActorCreateS2C::_table_ = {
     // .Transform transform = 2;
     {::_pbi::TcParser::FastMtS1,
      {18, 0, 0, PROTOBUF_FIELD_OFFSET(ActorCreateS2C, _impl_.transform_)}},
-    // uint32 entity_type = 3;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ActorCreateS2C, _impl_.entity_type_), 4>(),
-     {24, 4, 0, PROTOBUF_FIELD_OFFSET(ActorCreateS2C, _impl_.entity_type_)}},
+    // .ActorType actor_type = 3;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ActorCreateS2C, _impl_.actor_type_), 4>(),
+     {24, 4, 0, PROTOBUF_FIELD_OFFSET(ActorCreateS2C, _impl_.actor_type_)}},
     // uint64 guid = 4;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(ActorCreateS2C, _impl_.guid_), 2>(),
      {32, 2, 0, PROTOBUF_FIELD_OFFSET(ActorCreateS2C, _impl_.guid_)}},
@@ -1993,9 +2001,9 @@ ActorCreateS2C::_table_ = {
     // .Transform transform = 2;
     {PROTOBUF_FIELD_OFFSET(ActorCreateS2C, _impl_.transform_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
-    // uint32 entity_type = 3;
-    {PROTOBUF_FIELD_OFFSET(ActorCreateS2C, _impl_.entity_type_), _Internal::kHasBitsOffset + 4, 0,
-    (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+    // .ActorType actor_type = 3;
+    {PROTOBUF_FIELD_OFFSET(ActorCreateS2C, _impl_.actor_type_), _Internal::kHasBitsOffset + 4, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
     // uint64 guid = 4;
     {PROTOBUF_FIELD_OFFSET(ActorCreateS2C, _impl_.guid_), _Internal::kHasBitsOffset + 2, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
@@ -2023,8 +2031,8 @@ PROTOBUF_NOINLINE void ActorCreateS2C::Clear() {
   }
   if ((cached_has_bits & 0x0000001eu) != 0) {
     ::memset(&_impl_.entity_, 0, static_cast<::size_t>(
-        reinterpret_cast<char*>(&_impl_.entity_type_) -
-        reinterpret_cast<char*>(&_impl_.entity_)) + sizeof(_impl_.entity_type_));
+        reinterpret_cast<char*>(&_impl_.actor_type_) -
+        reinterpret_cast<char*>(&_impl_.entity_)) + sizeof(_impl_.actor_type_));
   }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
@@ -2062,12 +2070,12 @@ PROTOBUF_NOINLINE void ActorCreateS2C::Clear() {
         stream);
   }
 
-  // uint32 entity_type = 3;
+  // .ActorType actor_type = 3;
   if ((cached_has_bits & 0x00000010u) != 0) {
-    if (this_._internal_entity_type() != 0) {
+    if (this_._internal_actor_type() != 0) {
       target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-          3, this_._internal_entity_type(), target);
+      target = ::_pbi::WireFormatLite::WriteEnumToArray(
+          3, this_._internal_actor_type(), target);
     }
   }
 
@@ -2141,11 +2149,11 @@ PROTOBUF_NOINLINE void ActorCreateS2C::Clear() {
             this_._internal_config_id());
       }
     }
-    // uint32 entity_type = 3;
+    // .ActorType actor_type = 3;
     if ((cached_has_bits & 0x00000010u) != 0) {
-      if (this_._internal_entity_type() != 0) {
-        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
-            this_._internal_entity_type());
+      if (this_._internal_actor_type() != 0) {
+        total_size += 1 +
+                      ::_pbi::WireFormatLite::EnumSize(this_._internal_actor_type());
       }
     }
   }
@@ -2188,8 +2196,8 @@ void ActorCreateS2C::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::
       }
     }
     if ((cached_has_bits & 0x00000010u) != 0) {
-      if (from._internal_entity_type() != 0) {
-        _this->_impl_.entity_type_ = from._impl_.entity_type_;
+      if (from._internal_actor_type() != 0) {
+        _this->_impl_.actor_type_ = from._impl_.actor_type_;
       }
     }
   }
@@ -2210,8 +2218,8 @@ void ActorCreateS2C::InternalSwap(ActorCreateS2C* PROTOBUF_RESTRICT PROTOBUF_NON
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(ActorCreateS2C, _impl_.entity_type_)
-      + sizeof(ActorCreateS2C::_impl_.entity_type_)
+      PROTOBUF_FIELD_OFFSET(ActorCreateS2C, _impl_.actor_type_)
+      + sizeof(ActorCreateS2C::_impl_.actor_type_)
       - PROTOBUF_FIELD_OFFSET(ActorCreateS2C, _impl_.transform_)>(
           reinterpret_cast<char*>(&_impl_.transform_),
           reinterpret_cast<char*>(&other->_impl_.transform_));
