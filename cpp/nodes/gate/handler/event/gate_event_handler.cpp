@@ -47,9 +47,9 @@ static void ForwardPlayerToScene(SessionId sessionId, uint32_t enterGsType,
 
     (*rpcClient)->CallRemoteMethod(ScenePlayerEnterGameNodeMessageId, req);
 
-    LOG_INFO << "ForwardPlayerToScene: sent PlayerEnterGameNode to scene_node=" << sceneNodeId
-             << " player=" << playerId << " session=" << sessionId
-             << " scene_id=" << sceneId << " enter_gs_type=" << enterGsType;
+    LOG_DEBUG << "ForwardPlayerToScene: sent PlayerEnterGameNode to scene_node=" << sceneNodeId
+              << " player=" << playerId << " session=" << sessionId
+              << " scene_id=" << sceneId << " enter_gs_type=" << enterGsType;
 }
 ///<<< END WRITING YOUR CODE
 void GateEventHandler::Register()
@@ -200,10 +200,10 @@ void GateEventHandler::BindSessionEventHandler(const contracts::kafka::BindSessi
         it->second.pendingEnterGsType = enterGsType;
     }
 
-    LOG_INFO << "BindSession: bound session_id=" << sessionId
-             << " player_id=" << playerId
-             << " enter_gs_type=" << enterGsType;
-///<<< END WRITING YOUR CODE
+    LOG_DEBUG << "BindSession: bound session_id=" << sessionId
+              << " player_id=" << playerId
+              << " enter_gs_type=" << enterGsType;
+    ///<<< END WRITING YOUR CODE
 }
 void GateEventHandler::RedirectToGateEventHandler(const contracts::kafka::RedirectToGateEvent& event)
 {
