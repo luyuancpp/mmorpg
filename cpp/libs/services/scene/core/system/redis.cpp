@@ -36,4 +36,15 @@ void RedisSystem::Initialize(muduo::net::EventLoop* loop)
             playerRedis->RetryDuePending();
         }
     });
+
+    // Periodically log a snapshot of internal queue sizes so operators can spot
+    // a Redis stall (rising pending_loads / pending_saves) without enabling
+    // per-call DEBUG logs. No output when all queues are empty.
+    static constexpr double kQueueSnapshotIntervalSec = 30.0;
+    loop->runEvery(kQueueSnapshotIntervalSec, [this]()
+                   {
+        if (playerRedis)
+        {
+            playerRedis->LogQueueSnapshot("RedisSystem");
+        } });
 }

@@ -11,13 +11,31 @@ public:
 	using HiredisPtr = std::unique_ptr<hiredis::Hiredis>;
 	using ReconnectCallback = std::function<void()>;
 
+	RedisManager() = default;
+	~RedisManager();
+
+	RedisManager(const RedisManager &) = delete;
+	RedisManager &operator=(const RedisManager &) = delete;
+	RedisManager(RedisManager &&) = delete;
+	RedisManager &operator=(RedisManager &&) = delete;
+
 	HiredisPtr &GetZoneRedis()
 	{
 		return zoneRedis_;
 	}
 
-	// Call after creating and connecting the Hiredis instance.
-	// Sets up a disconnect callback that triggers periodic reconnection.
+	// Create the Hiredis instance, register connect/disconnect callbacks, and
+	// kick off the initial connect. Idempotent within a single thread; safe to
+	// re-invoke (will tear down any existing instance first).
+	//
+	// Use this instead of constructing Hiredis manually + calling SetupReconnect:
+	// the manual sequence loses the very first disconnect event because callbacks
+	// were not yet registered.
+	void Connect(muduo::net::EventLoop *loop, const muduo::net::InetAddress &addr);
+
+	// Deprecated. Kept for source compatibility. Equivalent to Connect()
+	// but requires the caller to have already created and ->connect()'d zoneRedis_.
+	// Prefer Connect() in new code.
 	void SetupReconnect(muduo::net::EventLoop *loop, const muduo::net::InetAddress &addr);
 
 	// Register a callback to be invoked after a successful reconnect.
@@ -27,6 +45,7 @@ private:
 	void ScheduleReconnect();
 	void CancelReconnectTimer();
 	void DoReconnect();
+	void InstallCallbacks();
 
 	HiredisPtr zoneRedis_;
 	muduo::net::EventLoop *loop_ = nullptr;

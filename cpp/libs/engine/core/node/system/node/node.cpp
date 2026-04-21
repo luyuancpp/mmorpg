@@ -238,9 +238,7 @@ void Node::InitRpcServer()
 		zoneRedisAddress = muduo::net::InetAddress(redisHost, redisPort);
 	}
 	LOG_INFO << "Zone Redis address: " << zoneRedisAddress.toIpPort();
-	tlsRedis.GetZoneRedis() = std::make_unique<RedisManager::HiredisPtr::element_type>(eventLoop, zoneRedisAddress);
-	tlsRedis.GetZoneRedis()->connect();
-	tlsRedis.SetupReconnect(eventLoop, zoneRedisAddress);
+	tlsRedis.Connect(eventLoop, zoneRedisAddress);
 
 	LOG_DEBUG << "Node info: " << localNodeInfo.DebugString();
 }
