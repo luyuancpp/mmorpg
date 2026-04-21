@@ -74,9 +74,13 @@ public:
 		MessageKey message_key;
 		std::string redis_key;
 		MessageValuePtr message_value;
+		// Pre-serialized payload (Save path only). Populated by Save() so the
+		// retry path doesn't have to re-serialize the protobuf message.
+		std::vector<uint8_t> serialized_payload;
 		int retry_count = 0;
 		// Earliest time this element is allowed to be retried (steady_clock).
-		// Set when the element is enqueued into pending_retry_queue_.
+		// Set when the element is enqueued into pending_retry_queue_ /
+		// pending_save_queue_.
 		std::chrono::steady_clock::time_point next_retry_at{};
 	};
 
@@ -101,43 +105,41 @@ public:
 
 	void Save(const MessageValuePtr& message, const MessageKey& key)
 	{
-		if (!hiredis_ || !hiredis_->connected())
-		{
-			LOG_WARN << "Redis not connected, dropping Save for key " << key;
-			return;
-		}
-
 		ElementPtr element = std::make_shared<Element>();
 		element->message_key = key;
 		element->redis_key = full_name() + ":" + std::to_string(key);
 		element->message_value = message;
 
+		// Serialize once; retry path re-uses this buffer.
 		const size_t size = message->ByteSizeLong();
-		MessageCachedArray message_cached_array(size);
-		if (!message->SerializeToArray(message_cached_array.data(), static_cast<int>(size)))
+		element->serialized_payload.resize(size);
+		if (size > 0 && !message->SerializeToArray(element->serialized_payload.data(), static_cast<int>(size)))
 		{
 			LOG_ERROR << "SerializeToArray failed for key " << key;
 			return;
 		}
 
-		// Atomically SET and SADD via Lua script
-		hiredis_->command(std::bind(&MessageAsyncClient::OnSaved, this, std::placeholders::_1, std::placeholders::_2, element),
-			"EVAL %s 1 %b %b",
-			kSaveAndMarkLuaScript,
-			element->redis_key.c_str(), element->redis_key.length(),
-			message_cached_array.data(), message_cached_array.size()
-		);
+		if (!hiredis_ || !hiredis_->connected())
+		{
+			LOG_WARN << "Redis not connected, queueing Save for retry: " << element->redis_key;
+			// next_retry_at default-constructed (epoch); periodic timer will pick it up
+			// as soon as Redis reconnects.
+			pending_save_queue_[element->redis_key] = element;
+			return;
+		}
+
+		IssueSave(element);
 	}
 
 	void AsyncLoad(const MessageKey& key, int retry_count = 0)
 	{
 		std::string redis_key = full_name() + ":" + std::to_string(key);
 
-		LOG_INFO << "AsyncLoad: key=" << redis_key
-				 << " connected=" << (hiredis_ ? hiredis_->connected() : false)
-				 << " retry=" << retry_count
-				 << " loading_queue=" << loading_queue_.size()
-				 << " pending_retry=" << pending_retry_queue_.size();
+		LOG_DEBUG << "AsyncLoad: key=" << redis_key
+				  << " connected=" << (hiredis_ ? hiredis_->connected() : false)
+				  << " retry=" << retry_count
+				  << " loading_queue=" << loading_queue_.size()
+				  << " pending_retry=" << pending_retry_queue_.size();
 
 		if (!hiredis_ || !hiredis_->connected())
 		{
@@ -146,16 +148,28 @@ public:
 			element->message_key = key;
 			element->redis_key = redis_key;
 			element->retry_count = retry_count;
+			// next_retry_at default-constructed (epoch); periodic timer will pick it up
+			// as soon as Redis reconnects.
 			pending_retry_queue_[redis_key] = element;
 			return;
 		}
 
-		// Already in-flight or waiting for retry
+		// Already in-flight
 		if (loading_queue_.find(redis_key) != loading_queue_.end())
 		{
 			return;
 		}
-		pending_retry_queue_.erase(redis_key);
+
+		// If the same key is already waiting in pending_retry_queue_, preserve its
+		// retry_count so an external re-trigger does not reset NIL backoff.
+		if (auto pendingIt = pending_retry_queue_.find(redis_key); pendingIt != pending_retry_queue_.end())
+		{
+			if (pendingIt->second->retry_count > retry_count)
+			{
+				retry_count = pendingIt->second->retry_count;
+			}
+			pending_retry_queue_.erase(pendingIt);
+		}
 
 		ElementPtr element = std::make_shared<Element>();
 		element->message_key = key;
@@ -177,14 +191,19 @@ public:
 	}
 
 	// Call ONLY from the Redis reconnect callback. Migrates in-flight loads
-	// (whose callbacks will never fire post-disconnect) into the retry queue
-	// and re-issues every pending load immediately.
+	// (whose callbacks will never fire post-disconnect) into the retry queue,
+	// re-issues every pending load immediately, and re-flushes pending saves.
 	void OnReconnected()
 	{
 		if (!hiredis_ || !hiredis_->connected())
 		{
 			return;
 		}
+
+		// Cached EVALSHA hash is bound to the previous server connection;
+		// drop it so we re-SCRIPT LOAD on the new connection.
+		script_sha1_.clear();
+		EnsureScriptLoaded();
 
 		const auto now = std::chrono::steady_clock::now();
 		for (auto &[k, v] : loading_queue_)
@@ -194,31 +213,37 @@ public:
 		}
 		loading_queue_.clear();
 
-		if (pending_retry_queue_.empty())
+		const size_t pendingLoads = pending_retry_queue_.size();
+		const size_t pendingSaves = pending_save_queue_.size();
+		if (pendingLoads + pendingSaves == 0)
 		{
 			return;
 		}
 
-		LOG_INFO << "OnReconnected: re-issuing " << pending_retry_queue_.size() << " pending loads";
+		LOG_INFO << "OnReconnected: re-issuing " << pendingLoads << " loads, "
+				 << pendingSaves << " saves";
 		FlushDuePending(now, /*force=*/true);
 	}
 
 	// Periodic timer entry point. ONLY drains entries in pending_retry_queue_
-	// whose backoff has elapsed. MUST NOT touch loading_queue_, otherwise
-	// in-flight GETs get re-issued and load_callback_ fires twice for the
-	// same key.
-	void RetryDuePendingLoads()
+	// and pending_save_queue_ whose backoff has elapsed. MUST NOT touch
+	// loading_queue_, otherwise in-flight GETs get re-issued and load_callback_
+	// fires twice for the same key.
+	void RetryDuePending()
 	{
 		if (!hiredis_ || !hiredis_->connected())
 		{
 			return;
 		}
-		if (pending_retry_queue_.empty())
+		if (pending_retry_queue_.empty() && pending_save_queue_.empty())
 		{
 			return;
 		}
 		FlushDuePending(std::chrono::steady_clock::now(), /*force=*/false);
 	}
+
+	// Backwards-compatible alias.
+	void RetryDuePendingLoads() { RetryDuePending(); }
 
 	MessageValuePtr CreateMessage() { return std::make_shared<MessageValue>(); }
 
@@ -245,13 +270,14 @@ private:
 
 	void FlushDuePending(std::chrono::steady_clock::time_point now, bool force)
 	{
-		std::vector<ElementPtr> due;
-		due.reserve(pending_retry_queue_.size());
+		// Drain due loads
+		std::vector<ElementPtr> dueLoads;
+		dueLoads.reserve(pending_retry_queue_.size());
 		for (auto it = pending_retry_queue_.begin(); it != pending_retry_queue_.end();)
 		{
 			if (force || it->second->next_retry_at <= now)
 			{
-				due.push_back(it->second);
+				dueLoads.push_back(it->second);
 				it = pending_retry_queue_.erase(it);
 			}
 			else
@@ -259,25 +285,164 @@ private:
 				++it;
 			}
 		}
-		if (due.empty())
+
+		// Drain due saves
+		std::vector<ElementPtr> dueSaves;
+		dueSaves.reserve(pending_save_queue_.size());
+		for (auto it = pending_save_queue_.begin(); it != pending_save_queue_.end();)
+		{
+			if (force || it->second->next_retry_at <= now)
+			{
+				dueSaves.push_back(it->second);
+				it = pending_save_queue_.erase(it);
+			}
+			else
+			{
+				++it;
+			}
+		}
+
+		if (dueLoads.empty() && dueSaves.empty())
 		{
 			return;
 		}
-		LOG_INFO << "RetryDuePendingLoads: re-issuing " << due.size()
-				 << " loads (deferred=" << pending_retry_queue_.size() << ")";
-		for (auto &element : due)
+		LOG_INFO << "RetryDuePending: re-issuing " << dueLoads.size() << " loads, "
+				 << dueSaves.size() << " saves "
+				 << "(deferred loads=" << pending_retry_queue_.size()
+				 << " saves=" << pending_save_queue_.size() << ")";
+		for (auto &element : dueLoads)
 		{
 			AsyncLoad(element->message_key, element->retry_count);
 		}
+		for (auto &element : dueSaves)
+		{
+			IssueSave(element);
+		}
 	}
 
-	void OnSaved(hiredis::Hiredis* c, redisReply* reply, ElementPtr element)
+	// Lazily load the SET+SADD Lua script and cache its SHA1 for EVALSHA.
+	// Called eagerly from OnReconnected and lazily from IssueSave when sha is empty.
+	void EnsureScriptLoaded()
 	{
-		if (!save_callback_)
+		if (!script_sha1_.empty() || script_load_in_flight_)
 		{
 			return;
 		}
-		save_callback_(element->message_key, *element->message_value);
+		if (!hiredis_ || !hiredis_->connected())
+		{
+			return;
+		}
+		script_load_in_flight_ = true;
+		hiredis_->command(std::bind(&MessageAsyncClient::OnSaveScriptLoaded, this, std::placeholders::_1, std::placeholders::_2),
+						  "SCRIPT LOAD %s", kSaveAndMarkLuaScript);
+	}
+
+	void OnSaveScriptLoaded(hiredis::Hiredis * /*c*/, redisReply *reply)
+	{
+		script_load_in_flight_ = false;
+		if (!reply || reply->type != REDIS_REPLY_STRING)
+		{
+			LOG_ERROR << "SCRIPT LOAD failed for " << full_name()
+					  << " (reply " << (reply ? std::to_string(reply->type) : std::string("null")) << "); will retry on next save";
+			return;
+		}
+		script_sha1_.assign(reply->str, reply->len);
+		LOG_INFO << "SCRIPT LOAD ok for " << full_name() << " sha1=" << script_sha1_;
+	}
+
+	void IssueSave(const ElementPtr &element)
+	{
+		if (!hiredis_ || !hiredis_->connected())
+		{
+			pending_save_queue_[element->redis_key] = element;
+			return;
+		}
+
+		EnsureScriptLoaded();
+
+		int ret = REDIS_OK;
+		if (!script_sha1_.empty())
+		{
+			ret = hiredis_->command(std::bind(&MessageAsyncClient::OnSaved, this, std::placeholders::_1, std::placeholders::_2, element),
+									"EVALSHA %b 1 %b %b",
+									script_sha1_.data(), script_sha1_.size(),
+									element->redis_key.c_str(), element->redis_key.length(),
+									element->serialized_payload.data(), element->serialized_payload.size());
+		}
+		else
+		{
+			// Fall back to EVAL while SCRIPT LOAD is in flight or after a failure.
+			ret = hiredis_->command(std::bind(&MessageAsyncClient::OnSaved, this, std::placeholders::_1, std::placeholders::_2, element),
+									"EVAL %s 1 %b %b",
+									kSaveAndMarkLuaScript,
+									element->redis_key.c_str(), element->redis_key.length(),
+									element->serialized_payload.data(), element->serialized_payload.size());
+		}
+
+		if (ret != REDIS_OK)
+		{
+			LOG_ERROR << "Redis Save command failed (ret=" << ret << ") for key: " << element->redis_key;
+			QueueSaveForRetry(element);
+		}
+	}
+
+	static constexpr int kMaxSaveRetries = 6;
+
+	void QueueSaveForRetry(const ElementPtr &element)
+	{
+		if (element->retry_count >= kMaxSaveRetries)
+		{
+			LOG_ERROR << "Save exhausted " << kMaxSaveRetries << " retries for key: " << element->redis_key
+					  << " -- giving up; cache will be stale until dbservice rewrites";
+			return;
+		}
+		const int nextRetry = element->retry_count + 1;
+		const auto backoff = BackoffForRetry(nextRetry);
+		element->retry_count = nextRetry;
+		element->next_retry_at = std::chrono::steady_clock::now() + backoff;
+		// Latest pending value per key wins (Save with same key replaces older retry).
+		pending_save_queue_[element->redis_key] = element;
+		LOG_WARN << "Queued Save retry " << nextRetry << "/" << kMaxSaveRetries
+				 << " for key: " << element->redis_key << " in " << backoff.count() << "s";
+	}
+
+	void OnSaved(hiredis::Hiredis * /*c*/, redisReply *reply, ElementPtr element)
+	{
+		if (!reply)
+		{
+			LOG_ERROR << "Redis Save: null reply for key: " << element->redis_key;
+			QueueSaveForRetry(element);
+			return;
+		}
+		if (reply->type == REDIS_REPLY_ERROR)
+		{
+			const std::string err = reply->str ? reply->str : "";
+			// NOSCRIPT: server flushed scripts (FLUSHALL/SCRIPT FLUSH/restart) -> reload and retry as EVAL once.
+			if (err.compare(0, 8, "NOSCRIPT") == 0)
+			{
+				LOG_WARN << "EVALSHA NOSCRIPT for key: " << element->redis_key << " -- reloading script and retrying";
+				script_sha1_.clear();
+				EnsureScriptLoaded();
+				// Immediate retry as EVAL (do not increment retry_count for this case).
+				const int ret = hiredis_->command(std::bind(&MessageAsyncClient::OnSaved, this, std::placeholders::_1, std::placeholders::_2, element),
+												  "EVAL %s 1 %b %b",
+												  kSaveAndMarkLuaScript,
+												  element->redis_key.c_str(), element->redis_key.length(),
+												  element->serialized_payload.data(), element->serialized_payload.size());
+				if (ret != REDIS_OK)
+				{
+					QueueSaveForRetry(element);
+				}
+				return;
+			}
+			LOG_ERROR << "Redis Save error for key: " << element->redis_key << " err=" << err;
+			QueueSaveForRetry(element);
+			return;
+		}
+		if (save_callback_)
+		{
+			save_callback_(element->message_key, *element->message_value);
+		}
 	}
 
 	void OnLoaded(hiredis::Hiredis* c, redisReply* reply, ElementPtr element)
@@ -352,6 +517,9 @@ private:
 	HiredisPtr& hiredis_;
 	LoadingQueue loading_queue_;
 	LoadingQueue pending_retry_queue_;
+	LoadingQueue pending_save_queue_;
+	std::string script_sha1_;
+	bool script_load_in_flight_ = false;
 	EventCallback save_callback_;
 	EventCallback load_callback_;
 	FailedCallback load_failed_callback_;
