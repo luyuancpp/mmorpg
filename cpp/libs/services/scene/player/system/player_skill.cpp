@@ -6,8 +6,6 @@
 #include "table/code/skill_table.h"
 #include "proto/common/component/player_skill_comp.pb.h"
 
-#include <thread_context/registry_manager.h>
-
 namespace
 {
 	void AddSkillIfMissing(PlayerSkillListComp &skillList,

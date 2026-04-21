@@ -11,7 +11,6 @@
 #include "combat/buff/comp/buff_comp.h"
 #include "proto/scene/player_state_attribute_sync.pb.h"
 #include "proto/common/component/actor_combat_state_comp.pb.h"
-#include <thread_context/registry_manager.h>
 #include <generated/attribute/actorbaseattributess2c_attribute_sync.h>
 
 void UpdateVelocity(entt::entity entity) {

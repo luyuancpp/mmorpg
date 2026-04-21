@@ -1,6 +1,5 @@
 ﻿#pragma once
 
-#include <cstddef>
 #include <entt/src/entt/entity/entity.hpp>
 #include "spatial/constants/aoi_priority.h"
 

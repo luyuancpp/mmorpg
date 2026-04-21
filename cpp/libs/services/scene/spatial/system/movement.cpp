@@ -1,10 +1,8 @@
 #include "movement.h"
 
-#include "muduo/base/Logging.h"
-
 #include "player/comp/afk_comp.h"
 #include "proto/common/component/actor_comp.pb.h"
-#include <thread_context/registry_manager.h>
+#include "thread_context/ecs_context.h"
 
 void MovementSystem::Update(const double delta)
 {

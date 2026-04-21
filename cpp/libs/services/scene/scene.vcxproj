@@ -40,7 +40,6 @@
     <ClInclude Include="combat_state\system\combat_state.h" />
     <ClInclude Include="core\config\config.h" />
     <ClInclude Include="core\constants\fps.h" />
-    <ClInclude Include="core\network\message_system.h" />
     <ClInclude Include="core\system\id_generator.h" />
     <ClInclude Include="core\system\redis.h" />
     <ClInclude Include="frame\manager\frame_time.h" />
@@ -51,7 +50,6 @@
     <ClInclude Include="generated\attribute\attributedelta5framess2c_attribute_sync.h" />
     <ClInclude Include="generated\attribute\attributedelta60framess2c_attribute_sync.h" />
     <ClInclude Include="kafka\system\kafka.h" />
-    <ClInclude Include="mount\system\mount.h" />
     <ClInclude Include="player\comp\afk_comp.h" />
     <ClInclude Include="player\constants\player.h" />
     <ClInclude Include="player\system\afk.h" />

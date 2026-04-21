@@ -6,7 +6,7 @@
 #include "frame/manager/frame_time.h"
 #include "player/comp/afk_comp.h"
 #include "proto/common/component/player_comp.pb.h"
-#include <thread_context/registry_manager.h>
+#include "thread_context/ecs_context.h"
 
 // A player with no client messages for this many frames is marked AFK.
 // 30 seconds * 20 fps = 600 frames.

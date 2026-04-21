@@ -30,9 +30,6 @@
     <ClCompile Include="messaging\kafka\kafka_producer.cpp" />
     <ClCompile Include="storage\redis_client\redis_client.cpp" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="src\network\protoc.exe" />
-  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>

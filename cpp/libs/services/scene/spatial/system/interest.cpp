@@ -7,7 +7,6 @@
 #include "spatial/constants/aoi_priority.h"
 
 #include <modules/scene/comp/scene_comp.h>
-#include <thread_context/registry_manager.h>
 
 // ---------------------------------------------------------------------------
 // Internal helpers

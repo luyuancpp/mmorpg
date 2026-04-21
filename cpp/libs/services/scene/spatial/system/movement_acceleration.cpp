@@ -1,10 +1,8 @@
 #include "movement_acceleration.h"
 
 #include "player/comp/afk_comp.h"
-#include "proto/common/component/base_comp.pb.h"
 #include "proto/common/component/actor_comp.pb.h"
-
-#include <thread_context/registry_manager.h>
+#include "thread_context/ecs_context.h"
 
 void MovementAccelerationSystem::Update(const double delta)
 {

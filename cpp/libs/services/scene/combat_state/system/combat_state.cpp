@@ -11,8 +11,6 @@
 #include "proto/common/component/actor_combat_state_comp.pb.h"
 #include "proto/common/event/actor_combat_state_event.pb.h"
 
-#include <thread_context/registry_manager.h>
-
 void CombatStateSystem::AddCombatState(const CombatStateAddedEvent& addEvent) {
     const auto entityId = entt::to_entity(addEvent.actor_entity());
     auto& combatStateCollection = tlsEcs.actorRegistry.get_or_emplace<CombatStateCollectionComp>(entityId);

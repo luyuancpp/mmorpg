@@ -8,8 +8,6 @@
 #include "proto/common/event/actor_combat_state_event.pb.h"
 #include "time/system/time.h"
 #include "core/utils/defer/defer.h"
-#include <thread_context/registry_manager.h>
-#include "thread_context/dispatcher_manager.h"
 
 bool BuffImplSystem::OnIntervalThink(entt::entity parent, BuffEntry& buffComp, const BuffTable* buffTable) {
     if (!buffTable) return false;

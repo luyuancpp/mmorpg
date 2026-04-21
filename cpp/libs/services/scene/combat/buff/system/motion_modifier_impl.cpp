@@ -1,6 +1,5 @@
 #include "motion_modifier_impl.h"
 
-
 bool MotionModifierBuffImplSystem::OnBuffStart(entt::entity parent, BuffEntry& buff, const BuffTable* buffTable)
 {
     return false;

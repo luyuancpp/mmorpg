@@ -2,7 +2,6 @@
 
 #include "proto/scene/player_state_attribute_sync.pb.h"
 #include "proto/common/component/actor_comp.pb.h"
-#include "proto/common/component/actor_attribute_state_comp.pb.h"
 #include "actor/attribute/constants/actor_state_attribute_constants.h"
 #include "core/network/message_system.h"
 #include "spatial/comp/scene_node_scene_comp.h"
@@ -11,8 +10,6 @@
 
 #include "frame/manager/frame_time.h"
 #include "network/player_message_utils.h"
-#include <thread_context/registry_manager.h>
-#include <actor/attribute/comp/actor_attribute_comp.h>
 #include <generated/attribute/actorbaseattributess2c_attribute_sync.h>
 #include <generated/attribute/attributedelta60framess2c_attribute_sync.h>
 #include <generated/attribute/attributedelta30framess2c_attribute_sync.h>

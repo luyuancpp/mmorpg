@@ -1,7 +1,6 @@
 #include "aoi.h"
 
 #include "hexagons_grid.h"
-#include "core/network/message_system.h"
 #include "spatial/comp/grid_comp.h"
 #include "spatial/comp/scene_node_scene_comp.h"
 #include "spatial/constants/aoi_priority.h"
@@ -17,7 +16,6 @@
 #include "core/utils/stat/stat.h"
 #include "proto/scene/player_scene.pb.h"
 #include "network/player_message_utils.h"
-#include <thread_context/registry_manager.h>
 #include <modules/scene/comp/scene_comp.h>
 
 // Determine the interest priority tag that |observer| should assign to |target|.

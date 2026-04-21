@@ -1,7 +1,5 @@
 #include "navigation.h"
 
-#include "ue5navmesh/Public/Detour/DetourNavMesh.h"
-#include "muduo/base/Logging.h"
 #include "config/config.h"
 #include "table/code/basescene_table.h"
 #include "spatial/system/recast.h"
