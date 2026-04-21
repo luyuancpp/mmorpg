@@ -22,16 +22,18 @@ void RedisSystem::Initialize(muduo::net::EventLoop* loop)
         LOG_INFO << "Redis reconnected, retrying pending player loads";
         if (playerRedis)
         {
-            playerRedis->RetryPendingLoads();
+            playerRedis->OnReconnected();
         } });
 
-    // Periodically retry loads that got NIL (data not yet written to Redis)
-    static constexpr double kRetryIntervalSec = 2.0;
+    // Periodically drain NIL-pending load retries and pending save retries
+    // whose backoff has elapsed. MUST NOT touch in-flight loading_queue_ —
+    // only pending queues — otherwise load_callback_ can fire twice per key.
+    static constexpr double kRetryIntervalSec = 1.0;
     loop->runEvery(kRetryIntervalSec, [this]()
     {
         if (playerRedis)
         {
-            playerRedis->RetryPendingLoads();
+            playerRedis->RetryDuePending();
         }
     });
 }
