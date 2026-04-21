@@ -2,13 +2,13 @@
 
 #include "spatial/comp/dt_crowd_comp.h"
 
-#include "modules/scene/comp/scene_comp.h"
 #include "spatial/constants/dt_crowd.h"
 
 #include "proto/common/event/scene_event.pb.h"
 #include <proto/common/component/actor_comp.pb.h>
-#include <thread_context/registry_manager.h>
 #include <muduo/base/Logging.h>
+
+#include "thread_context/ecs_context.h"
 
 void SceneCrowdSystem::AfterEnterSceneHandler(const AfterEnterScene& message)
 {

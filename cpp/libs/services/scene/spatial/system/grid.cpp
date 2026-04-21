@@ -6,7 +6,6 @@
 #include "view.h"
 #include "proto/common/component/actor_comp.pb.h"
 
-#include <thread_context/registry_manager.h>
 #include <modules/scene/comp/scene_comp.h>
 
 const Point kDefaultSize(20.0, 20.0);

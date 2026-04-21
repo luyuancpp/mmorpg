@@ -2,7 +2,6 @@
 
 #include "muduo/base/Logging.h"
 
-#include "core/network/message_system.h"
 #include "proto/common/event/scene_event.pb.h"
 #include "hexagons_grid.h"
 
@@ -13,7 +12,6 @@
 #include "network/player_message_utils.h"
 #include "network/node_message_utils.h"
 #include "network/network_utils.h"
-#include <thread_context/registry_manager.h>
 #include "engine/thread_context/node_context_manager.h"
 #include "proto/common/component/team_comp.pb.h"
 #include "proto/scene_manager/storage.pb.h"

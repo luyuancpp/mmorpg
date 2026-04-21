@@ -3,20 +3,17 @@
 #include "grid.h"
 #include "proto/common/component/base_comp.pb.h"
 #include "Detour/DetourCommon.h"
-#include "core/network/message_system.h"
 #include "spatial/constants/view.h"
 #include "proto/scene/player_scene.pb.h"
 #include "proto/common/component/actor_comp.pb.h"
 #include "proto/common/component/npc_comp.pb.h"
 #include "proto/common/component/player_comp.pb.h"
 #include "combat/buff/comp/buff_comp.h"
-#include "combat/buff/constants/buff.h"
 #include "spatial/comp/scene_node_scene_comp.h"
-#include "table/code/buff_table.h"
 
 #include "engine/core/type_define/type_define.h"
 #include "network/player_message_utils.h"
-#include <thread_context/registry_manager.h>
+#include "thread_context/ecs_context.h"
 
 bool ViewSystem::ShouldSendNpcEnterMessage(entt::entity observer, entt::entity entrant)
 {

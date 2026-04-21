@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cstdint>
 #include <memory>
 #include <unordered_map>
 #include "combat/skill/comp/skill_comp.h"

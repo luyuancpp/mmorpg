@@ -19,7 +19,6 @@
 #include "modules/scene/comp/scene_comp.h"
 #include "modules/scene/comp/scene_node_comp.h"
 #include <engine/infra/messaging/kafka/kafka_producer.h>
-#include "thread_context/player_manager.h"
 #include "core/system/redis.h"
 #include "player_scene.h"
 #include "player/constants/player.h"
