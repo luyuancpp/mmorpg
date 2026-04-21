@@ -66,7 +66,13 @@ void PlayerSceneSystem::OnGetTeamInfo(entt::entity player, void* replyVoid)
 	auto cb = [player](hiredis::Hiredis* c, redisReply* r) {
 		OnGetLeaderLocation(player, r);
 	};
-	tlsRedis.GetZoneRedis()->command(cb, "GET player:%llu:location", leaderId);
+	auto &zoneRedis = tlsRedis.GetZoneRedis();
+	if (!zoneRedis || !zoneRedis->connected())
+	{
+		LOG_WARN << "Skip leader-location lookup: Redis not connected (leaderId=" << leaderId << ")";
+		return;
+	}
+	zoneRedis->command(cb, "GET player:%llu:location", leaderId);
 }
 
 void PlayerSceneSystem::OnGetLeaderLocation(entt::entity player, void* replyVoid)
@@ -212,7 +218,7 @@ void PlayerSceneSystem::HandleEnterScene(entt::entity player, entt::entity scene
 	SendMessageToClientViaGate(SceneSceneClientPlayerNotifyEnterSceneMessageId, message, player);
 
 	const auto* g = tlsEcs.actorRegistry.try_get<Guid>(player);
-	LOG_INFO << "HandleEnterScene: player " << (g ? *g : 0)
+	LOG_TACE << "HandleEnterScene: player " << (g ? *g : 0)
 			 << " entered scene_id=" << sceneInfo->scene_id();
 
 	// 5. Team Follow Logic: if player is in a team, check leader location.
@@ -222,7 +228,13 @@ void PlayerSceneSystem::HandleEnterScene(entt::entity player, entt::entity scene
 		auto cb = [player](hiredis::Hiredis* c, redisReply* r) {
 			OnGetTeamInfo(player, r);
 		};
-		tlsRedis.GetZoneRedis()->command(cb, "GET team:%llu", teamIdComp->team_id());
+		auto &zoneRedis = tlsRedis.GetZoneRedis();
+		if (!zoneRedis || !zoneRedis->connected())
+		{
+			LOG_WARN << "Skip team-info lookup: Redis not connected (team_id=" << teamIdComp->team_id() << ")";
+			return;
+		}
+		zoneRedis->command(cb, "GET team:%llu", teamIdComp->team_id());
 	}
 }
 

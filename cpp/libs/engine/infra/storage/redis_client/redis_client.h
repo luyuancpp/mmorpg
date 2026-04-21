@@ -247,6 +247,28 @@ public:
 
 	MessageValuePtr CreateMessage() { return std::make_shared<MessageValue>(); }
 
+	// --- Observability ---
+	// Number of GETs whose reply has not yet been received.
+	size_t in_flight_load_count() const { return loading_queue_.size(); }
+	// Number of loads waiting in the NIL/disconnect retry queue.
+	size_t pending_load_count() const { return pending_retry_queue_.size(); }
+	// Number of saves waiting in the failure/disconnect retry queue.
+	size_t pending_save_count() const { return pending_save_queue_.size(); }
+
+	// Convenience: log a one-shot snapshot of all three queue lengths. Useful
+	// when bolting MessageAsyncClient onto a periodic reporter.
+	void LogQueueSnapshot(const char *tag) const
+	{
+		if (in_flight_load_count() == 0 && pending_load_count() == 0 && pending_save_count() == 0)
+		{
+			return;
+		}
+		LOG_INFO << "[" << tag << "] " << full_name()
+				 << " in_flight_loads=" << in_flight_load_count()
+				 << " pending_loads=" << pending_load_count()
+				 << " pending_saves=" << pending_save_count();
+	}
+
 private:
 	static std::chrono::seconds BackoffForRetry(int next_retry_count)
 	{
