@@ -5,7 +5,6 @@
 #include "proto/common/component/player_network_comp.pb.h"
 #include "proto/common/base/message.pb.h"
 #include "thread_context/node_context_manager.h"
-#include "thread_context/player_manager.h"
 
 template <typename SessionType>
 void SendMessageToNodeInternal(SessionType* session, uint32_t messageId, const google::protobuf::Message& message) {

@@ -5,7 +5,6 @@
 
 #include "muduo/base/Logging.h"
 #include "player/system/player_lifecycle.h"
-#include <thread_context/registry_manager.h>
 ///<<< END WRITING YOUR CODE
 
 void ScenePlayerHandler::GateLoginNotify(entt::entity player,const ::GateLoginNotifyRequest* request,

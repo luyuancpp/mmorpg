@@ -4,9 +4,6 @@
 
 #include <string>
 #include <functional>
-#include <memory>
-#include "messaging/kafka/kafka_producer.h"
-#include "messaging/kafka/kafka_consumer.h"
 
 using KafkaMessageCallback = std::function<void(const std::string& topic, const std::string& payload)>;
 

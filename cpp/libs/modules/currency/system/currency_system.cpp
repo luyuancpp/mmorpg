@@ -13,7 +13,7 @@
 #include "modules/transaction_log/anomaly_detector.h"
 #include "modules/transaction_log/transaction_log_system.h"
 #include "proto/common/component/currency_comp.pb.h"
-#include <registry_manager.h>
+#include <ecs_context.h>
 
 // ---------------------------------------------------------------------------
 // Internal helper

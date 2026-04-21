@@ -6,7 +6,6 @@
 #include <network/node_utils.h>
 #include <thread_context/redis_manager.h>
 #include <core/utils/id/snow_flake.h>
-#include <thread_context/entity_manager.h>
 
 #ifdef _WIN32
 #include <WinSock2.h>

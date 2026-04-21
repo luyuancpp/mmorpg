@@ -1,17 +1,13 @@
 #include "mission_comp.h"
 
-#include <ranges>
-
 #include "table/code/condition_table.h"
-#include "mission/constants/mission.h"
-
 #include "core/macros/return_define.h"
 #include "core/macros/error_return.h"
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "table/proto/tip/mission_error_tip.pb.h"
-
 #include "proto/common/component/mission_comp.pb.h"
 #include "proto/common/event/mission_event.pb.h"
+#include <condition/condition_type.h>
 
 MissionsComp::MissionsComp()
 {

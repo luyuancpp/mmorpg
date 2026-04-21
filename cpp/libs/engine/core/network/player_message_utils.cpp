@@ -10,8 +10,8 @@
 #include "network/node_utils.h"
 #include <rpc/service_metadata/scene_service_metadata.h>
 #include "thread_context/node_context_manager.h"
-#include <thread_context/registry_manager.h>
 #include "utils/random/random.h"
+#include <thread_context/ecs_context.h>
 
 void SendMessageToClientViaGate(uint32_t messageId, const google::protobuf::Message &message, Guid playerId)
 {

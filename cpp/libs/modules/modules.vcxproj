@@ -41,13 +41,10 @@
     <ClInclude Include="gain_block\gain_block_service.h" />
     <ClInclude Include="mission\comp\missions_config_comp.h" />
     <ClInclude Include="mission\comp\mission_comp.h" />
-    <ClInclude Include="mission\constants\mission.h" />
     <ClInclude Include="mission\system\mission.h" />
     <ClInclude Include="reward\comp\reward_comp.h" />
     <ClInclude Include="reward\system\reward.h" />
-    <ClInclude Include="reward\util\bit_index_util.h" />
     <ClInclude Include="scene\comp\scene_node_comp.h" />
-    <ClInclude Include="scene\comp\player_scene_comp.h" />
     <ClInclude Include="scene\comp\scene_comp.h" />
     <ClInclude Include="scene\system\scene_param.h" />
     <ClInclude Include="snapshot\snapshot_system.h" />

@@ -3,6 +3,8 @@
 #include <muduo/base/Logging.h>
 #include <boost/algorithm/string/join.hpp>
 #include "thread_context/redis_manager.h"
+#include "messaging/kafka/kafka_consumer.h"
+#include "messaging/kafka/kafka_producer.h"
 
 #include <node_config_manager.h>
 

@@ -2,7 +2,6 @@
 
 #include <unordered_map>
 
-#include "modules/currency/constants/currency.h"
 #include "proto/common/component/currency_comp.pb.h"
 
 // Per-player deferred-clawback debt record (runtime mirror of proto CurrencyDebtEntry).

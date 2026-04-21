@@ -1,7 +1,5 @@
 #pragma once
 
-#include <cstdint>
-#include <string>
 #include "entt/src/entt/entity/entity.hpp"
 #include "modules/currency/constants/currency.h"
 #include "proto/common/rollback/transaction_log.pb.h"
