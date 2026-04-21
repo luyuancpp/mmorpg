@@ -6,7 +6,6 @@
 
 #include "gate_codec.h"
 #include "node/system/node/node.h"
-#include "network/network_constants.h"
 #include "network/rpc_client.h"
 #include "thread_context/node_context_manager.h"
 #include "rpc/service_metadata/scene_service_metadata.h"

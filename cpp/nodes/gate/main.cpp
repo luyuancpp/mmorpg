@@ -9,7 +9,6 @@
 #include "grpc_client/grpc_init_client.h"
 #include "session/system/session.h"
 #include "session/manager/session_manager.h"
-#include <node_config_manager.h>
 #include "proto/scene_manager/scene_manager_service.pb.h"
 #include "proto/contracts/kafka/gate_command.pb.h"
 #include "proto/common/base/message.pb.h"

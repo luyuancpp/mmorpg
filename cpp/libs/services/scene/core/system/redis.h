@@ -1,6 +1,8 @@
 ﻿#pragma once
 
+#include <functional>
 #include <memory>
+#include <optional>
 
 #include "engine/infra/storage/redis_client/redis_client.h"
 #include "proto/common/database/player_cache.pb.h"
@@ -40,7 +42,10 @@ public:
 
 private:
 	PlayerDataRedis playerRedis;
-    muduo::net::EventLoop *loop_ = nullptr;
+    // Reference-wrapper instead of raw EventLoop* to satisfy the project's
+    // no-raw-pointer-member lint (cpp/plugin). Set by Initialize(), unset means
+    // Initialize() never ran, so Shutdown() is a no-op.
+    std::optional<std::reference_wrapper<muduo::net::EventLoop>> loop_;
     muduo::net::TimerId retryTimerId_;
     muduo::net::TimerId snapshotTimerId_;
     bool retryTimerActive_ = false;

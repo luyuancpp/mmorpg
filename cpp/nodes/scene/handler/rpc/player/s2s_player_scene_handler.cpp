@@ -2,7 +2,6 @@
 #include "s2s_player_scene_handler.h"
 
 ///<<< BEGIN WRITING YOUR CODE
-#include "core/network/message_system.h"
 #include "player/system/player_lifecycle.h"
 #include "player/system/player_scene.h"
 #include "proto/scene/player_scene.pb.h"

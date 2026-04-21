@@ -1,7 +1,6 @@
 #include "scene_node_service.h"
 #include <future>
 ///<<< BEGIN WRITING YOUR CODE
-#include "modules/scene/comp/scene_comp.h"
 #include "modules/scene/comp/scene_node_comp.h"
 #include "proto/common/event/scene_event.pb.h"
 #include "thread_context/ecs_context.h"

@@ -2,8 +2,6 @@
 
 #include "gate_kafka_command_router.h"
 
-#include <messaging/kafka/kafka_proto_decoder.h>
-
 #include "proto/contracts/kafka/gate_command.pb.h"
 #include "proto/contracts/kafka/gate_event.pb.h"
 #include "rpc/service_metadata/contracts_kafka_gate_event_event_id.h"

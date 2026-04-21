@@ -3,7 +3,6 @@
 
 ///<<< BEGIN WRITING YOUR CODE
 #include "player/system/player_skill.h"
-#include <thread_context/registry_manager.h>
 #include <muduo/base/Logging.h>
 #include "proto/common/component/player_login_comp.pb.h"
 ///<<< END WRITING YOUR CODE

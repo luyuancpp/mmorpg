@@ -4,7 +4,6 @@
 ///<<< BEGIN WRITING YOUR CODE
 
 #include "node/system/node/node.h"
-#include "core/network/message_system.h"
 #include "table/proto/tip/scene_error_tip.pb.h"
 #include "modules/scene/comp/scene_comp.h"
 #include "proto/common/base/node.pb.h"

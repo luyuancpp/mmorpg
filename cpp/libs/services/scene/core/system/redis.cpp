@@ -12,7 +12,7 @@ using namespace muduo::net;
 
 void RedisSystem::Initialize(muduo::net::EventLoop* loop)
 {
-    loop_ = loop;
+    loop_ = std::ref(*loop);
     playerRedis = std::make_unique<PlayerDataRedis::element_type>(tlsRedis.GetZoneRedis());
     playerRedis->SetLoadCallback(PlayerLifecycleSystem::HandlePlayerAsyncLoaded);
     playerRedis->SetLoadFailedCallback(PlayerLifecycleSystem::HandlePlayerAsyncLoadFailed);
@@ -55,16 +55,17 @@ void RedisSystem::Shutdown()
 {
     // Cancel timers BEFORE dropping playerRedis so a pending fire cannot deref
     // a half-destroyed unique_ptr. Guard on loop_ in case Initialize() never ran.
-    if (loop_ != nullptr)
+    if (loop_.has_value())
     {
+        muduo::net::EventLoop &loop = loop_->get();
         if (retryTimerActive_)
         {
-            loop_->cancel(retryTimerId_);
+            loop.cancel(retryTimerId_);
             retryTimerActive_ = false;
         }
         if (snapshotTimerActive_)
         {
-            loop_->cancel(snapshotTimerId_);
+            loop.cancel(snapshotTimerId_);
             snapshotTimerActive_ = false;
         }
     }
