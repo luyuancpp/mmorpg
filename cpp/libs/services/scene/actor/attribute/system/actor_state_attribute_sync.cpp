@@ -3,7 +3,6 @@
 #include "proto/scene/player_state_attribute_sync.pb.h"
 #include "proto/common/component/actor_comp.pb.h"
 #include "actor/attribute/constants/actor_state_attribute_constants.h"
-#include "core/network/message_system.h"
 #include "spatial/comp/scene_node_scene_comp.h"
 #include "spatial/system/view.h"
 #include "rpc/service_metadata/player_state_attribute_sync_service_metadata.h"
@@ -16,6 +15,7 @@
 #include <generated/attribute/attributedelta10framess2c_attribute_sync.h>
 #include <generated/attribute/attributedelta5framess2c_attribute_sync.h>
 #include <generated/attribute/attributedelta2framess2c_attribute_sync.h>
+#include <thread_context/ecs_context.h>
 
 constexpr uint32_t kSyncFrequencyArraySize = 5;
 

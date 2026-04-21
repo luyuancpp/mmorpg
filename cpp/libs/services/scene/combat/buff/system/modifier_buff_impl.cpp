@@ -7,6 +7,7 @@
 #include "actor/attribute/system/actor_attribute_calculator.h"
 #include "combat/buff/comp/buff_comp.h"
 #include "combat/buff/constants/buff.h"
+#include <thread_context/ecs_context.h>
 
 bool ModifierBuffImplSystem::OnBuffStart(entt::entity parent, BuffEntry& buff, const BuffTable* buffTable) {
     if (buffTable == nullptr) {

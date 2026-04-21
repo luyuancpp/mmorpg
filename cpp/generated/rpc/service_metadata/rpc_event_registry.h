@@ -4,9 +4,9 @@
 #include <array>
 #include <functional>
 #include <vector>
+#include <entt/src/entt/entity/registry.hpp>
 #include <google/protobuf/message.h>
 #include <google/protobuf/service.h>
-#include "entt/src/entt/entity/registry.hpp"
 
 struct RpcMethodMeta {
 	const char* serviceName{nullptr};

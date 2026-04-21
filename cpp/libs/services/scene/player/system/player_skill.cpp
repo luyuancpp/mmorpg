@@ -5,6 +5,7 @@
 #include "table/code/class_table.h"
 #include "table/code/skill_table.h"
 #include "proto/common/component/player_skill_comp.pb.h"
+#include <thread_context/ecs_context.h>
 
 namespace
 {

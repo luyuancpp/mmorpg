@@ -1,5 +1,5 @@
 #include "npc_event_handler.h"
-#include "thread_context/dispatcher_manager.h"
+#include "thread_context/ecs_context.h"
 
 ///<<< BEGIN WRITING YOUR CODE
 #include <thread_context/registry_manager.h>
