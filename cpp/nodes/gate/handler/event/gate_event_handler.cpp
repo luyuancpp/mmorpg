@@ -89,7 +89,14 @@ void GateEventHandler::RoutePlayerEventHandler(const contracts::kafka::RoutePlay
     auto it = sessions.find(sessionId);
     if (it == sessions.end())
     {
-        LOG_ERROR << "RoutePlayer: session not found, session_id=" << sessionId;
+        // Normal race: player disconnected (sessions.erase) between SceneManager
+        // accepting EnterScene and the RoutePlayer event landing on this gate.
+        // No cleanup needed -- if the scene was never told about this player
+        // (RoutePlayer never landed) there is nothing to clean up server-side.
+        LOG_DEBUG << "RoutePlayer: session already gone (disconnect race), session_id=" << sessionId
+                 << " player_id=" << event.player_id()
+                 << " scene_node_id=" << targetNodeId
+                 << " scene_id=" << event.scene_id();
         return;
     }
 
@@ -179,8 +186,9 @@ void GateEventHandler::BindSessionEventHandler(const contracts::kafka::BindSessi
     auto it = sessions.find(sessionId);
     if (it == sessions.end())
     {
-        LOG_ERROR << "BindSession: session not found, session_id=" << sessionId
-                  << " player_id=" << playerId;
+        // Normal race: player disconnected before BindSession landed.
+        LOG_WARN << "BindSession: session already gone (disconnect race), session_id=" << sessionId
+                 << " player_id=" << playerId;
         return;
     }
 
@@ -213,7 +221,9 @@ void GateEventHandler::RedirectToGateEventHandler(const contracts::kafka::Redire
     auto it = sessions.find(sessionId);
     if (it == sessions.end())
     {
-        LOG_ERROR << "RedirectToGate: session not found, session_id=" << sessionId;
+        // Normal race: player disconnected before RedirectToGate landed.
+        LOG_WARN << "RedirectToGate: session already gone (disconnect race), session_id=" << sessionId
+                 << " player_id=" << event.player_id();
         return;
     }
 
@@ -248,7 +258,8 @@ void GateEventHandler::PushToPlayerEventHandler(const contracts::kafka::PushToPl
 auto sessionIt = tlsSessionManager.sessions().find(event.session_id());
 if (sessionIt == tlsSessionManager.sessions().end())
 {
-    LOG_ERROR << "PushToPlayer: session not found, session_id=" << event.session_id();
+    // Normal race: player disconnected before this push landed.
+    LOG_WARN << "PushToPlayer: session already gone (disconnect race), session_id=" << event.session_id();
     return;
 }
 GetGateCodec().send(sessionIt->second.conn, event.message_content());
