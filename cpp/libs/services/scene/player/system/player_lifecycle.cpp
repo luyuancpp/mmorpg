@@ -108,6 +108,24 @@ void PlayerLifecycleSystem::HandlePlayerAsyncSaved(Guid playerId, PlayerAllData 
 
 	if (tlsEcs.actorRegistry.any_of<UnregisterPlayer>(playerEntity))
 	{
+		// Defense in depth: if a reconnect rebound this entity to a live session
+		// after the save was enqueued, the UnregisterPlayer tag should have been
+		// cleared by EnterScene. If a tag still slipped through but the player
+		// has an active session, do NOT destroy — drop the stale unregister intent.
+		const auto *snapshot = tlsEcs.actorRegistry.try_get<PlayerSessionSnapshotComp>(playerEntity);
+		if (snapshot != nullptr && snapshot->gate_session_id() != kInvalidSessionId)
+		{
+			const auto sessionIt = SessionMap().find(snapshot->gate_session_id());
+			if (sessionIt != SessionMap().end() && sessionIt->second == playerId)
+			{
+				LOG_WARN << "HandlePlayerAsyncSaved: ignoring stale UnregisterPlayer for player "
+						 << playerId << " — live session " << snapshot->gate_session_id()
+						 << " indicates reconnect superseded the logout intent";
+				tlsEcs.actorRegistry.remove<UnregisterPlayer>(playerEntity);
+				return;
+			}
+		}
+
 		LOG_INFO << "Player marked for unregistration: " << playerId;
 
 		// Must complete save before deleting session; consider better ordering
@@ -128,6 +146,17 @@ void PlayerLifecycleSystem::EnterScene(const entt::entity player, const PlayerGa
 	         << " session=" << enterInfo.session_id()
 	         << " scene_id=" << enterInfo.scene_id()
 	         << " enter_gs_type=" << enterInfo.enter_gs_type();
+
+	// 0. Cancel any pending unregistration. If this player previously called
+	//    HandleExitGameNode (disconnect) but the async save hasn't completed yet,
+	//    the entity still carries the UnregisterPlayer tag and the save callback
+	//    will destroy it. Reconnect supersedes the logout intent — clear the tag
+	//    so HandlePlayerAsyncSaved leaves the live entity alone.
+	if (tlsEcs.actorRegistry.any_of<UnregisterPlayer>(player))
+	{
+		tlsEcs.actorRegistry.remove<UnregisterPlayer>(player);
+		LOG_INFO << "EnterScene: cancelled pending unregistration for reconnected player " << playerId;
+	}
 
 	// 1. Bind session: map session_id -> player_id on this Scene node
 	//    so SendMessageToPlayer can route by session, and
