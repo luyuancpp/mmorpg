@@ -1,7 +1,5 @@
 #include "game_channel.h"
 #include <boost/get_pointer.hpp>
-#include <cstdio>
-#include <ctime>
 #include <google/protobuf/descriptor.h>
 #include "muduo/base/Logging.h"
 #include "muduo/net/TcpConnection.h"
@@ -11,12 +9,16 @@
 #include "rpc/service_metadata/rpc_event_registry.h"
 #include "core/utils/stat/stat.h"
 #include "network/codec/message_response_dispatcher.h"
-#include "thread_context/rpc_manager.h"
+#include <thread_context/rpc_request_context.h>
 
 using namespace std::placeholders;
 
 // ====================== Global Variables ======================
-constexpr size_t kMaxMessageByteSize = 2048;
+// Threshold for the "large RPC" dump. Set above the legitimate enter-scene
+// AOI batch (SceneSceneClientPlayerNotifyActorListCreate, which can be ~2-3KB
+// for a populated grid) so it does not trigger on normal traffic. A real
+// concern is messages in the tens of KB.
+constexpr size_t kMaxMessageByteSize = 4096;
 
 void HandleUnknownProtobufMessage(const TcpConnectionPtr &, const MessagePtr &message, muduo::Timestamp)
 {
@@ -25,7 +27,9 @@ void HandleUnknownProtobufMessage(const TcpConnectionPtr &, const MessagePtr &me
 
 // Temporary debug switch: set to true at runtime to dump all oversized RPC bodies to file.
 // Usage: set gDumpOversizedRpc = true in debugger, or call EnableOversizedRpcDump(true).
-bool gDumpOversizedRpc = true;
+// Default OFF -- enter-scene AOI batches and similar legitimately-large traffic
+// would otherwise fill the dump file under load.
+bool gDumpOversizedRpc = false;
 
 void EnableOversizedRpcDump(bool enable) { gDumpOversizedRpc = enable; }
 
@@ -74,11 +78,13 @@ size_t LogIfMessageTooLarge(const GameRpcMessage &rpcMessage)
         }
     }
 
-    // muduo log: short summary only (safe within 4000-byte buffer)
-    LOG_ERROR << "RPC message size exceeds 2KB"
-              << ", method: " << methodName
-              << ", message ID: " << msgId
-              << ", size: " << messageSize;
+    // muduo log: short summary only (safe within 4000-byte buffer).
+    // WARN, not ERROR -- a few KB is informational, not a fault. Real anomalies
+    // are in the tens of KB and stand out either way.
+    LOG_WARN << "RPC message size exceeds threshold (" << kMaxMessageByteSize << " bytes)"
+             << ", method: " << methodName
+             << ", message ID: " << msgId
+             << ", size: " << messageSize;
 
     return messageSize;
 }

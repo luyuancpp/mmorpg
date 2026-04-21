@@ -1,7 +1,6 @@
 ﻿#pragma once
 
 #include <bitset>
-#include <cstdint>
 
 #include "table/code/bit_index/reward_table_id_bit_index.h"
 

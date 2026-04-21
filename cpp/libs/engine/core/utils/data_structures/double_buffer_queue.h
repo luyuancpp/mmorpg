@@ -1,9 +1,7 @@
 #pragma once
 
 #include "muduo/base/Mutex.h"
-#include "muduo/base/noncopyable.h"
 
-#include <cstddef>
 #include <new>
 #include <utility>
 #include <vector>

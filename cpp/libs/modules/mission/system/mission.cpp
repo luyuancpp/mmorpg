@@ -4,8 +4,6 @@
 #include <unordered_set>
 
 #include "muduo/base/Logging.h"
-#include <thread_context/dispatcher_manager.h>
-
 #include "engine/core/error_handling/error_handling.h"
 #include "engine/core/macros/return_define.h"
 #include "engine/core/macros/error_return.h"
@@ -13,7 +11,6 @@
 
 #include "condition/condition_util.h"
 #include "mission/comp/mission_comp.h"
-#include "mission/constants/mission.h"
 
 #include "table/code/condition_table.h"
 #include "table/proto/tip/common_error_tip.pb.h"
@@ -21,6 +18,7 @@
 
 #include "proto/common/component/mission_comp.pb.h"
 #include "proto/common/event/mission_event.pb.h"
+#include <condition/condition_type.h>
 
 uint32_t MissionSystem::GetMissionReward(const GetRewardParam &param, MissionsComp &missionComp)
 {

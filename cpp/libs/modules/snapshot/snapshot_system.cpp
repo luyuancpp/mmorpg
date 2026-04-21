@@ -2,10 +2,10 @@
 
 #include <muduo/base/Logging.h>
 
+#include "ecs_context.h"
 #include "engine/core/type_define/type_define.h"
 #include "engine/core/time/system/time.h"
 #include "engine/infra/messaging/kafka/kafka_producer.h"
-#include "thread_context/registry_manager.h"
 #include "thread_context/snow_flake_manager.h"
 #include "services/scene/player/system/player_data_loader.h"
 #include "proto/common/database/mysql_database_table.pb.h"

@@ -14,7 +14,6 @@
 #include "proto/common/event/skill_event.pb.h"
 #include "core/utils/utility/utility.h"
 #include "core/system/id_generator.h"
-#include <thread_context/registry_manager.h>
 
 
 // TODO: Combat logic must run on frames, not timers. This ensures buff triggers and expirations

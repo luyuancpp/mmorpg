@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <atomic>
 #include <chrono>
-#include <ctime>
 #include <cstdint>
 #include <thread>
 #include <vector>

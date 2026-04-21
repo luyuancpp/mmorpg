@@ -12,7 +12,6 @@
 #include <boost/uuid/uuid_generators.hpp>
 #include <atomic>
 #include <functional>
-#include <thread_context/registry_manager.h>
 #include <network/node_utils.h>
 #include "infra/messaging/kafka/kafka_manager.h"
 #include "node/system/etcd/etcd_service.h"

@@ -9,7 +9,6 @@
 #include "node.h"
 #include "network/network_utils.h"
 #include "thread_context/node_context_manager.h"
-#include <thread_context/entity_manager.h>
 #include "node/system/grpc_channel_cache.h"
 
 void NodeConnector::ConnectToNode(const NodeInfo &nodeInfo)

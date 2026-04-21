@@ -1,7 +1,6 @@
 #include <array>
 #include "rpc_event_registry.h"
 #include "proto/common/base/node.pb.h"
-#include "thread_context/dispatcher_manager.h"
 
 #include "proto/chat/chat.pb.h"
 #include "proto/data_service/data_service.pb.h"
@@ -71,6 +70,7 @@
 #include "common_event_server_event_event_id.h"
 #include "common_event_player_migration_event_event_id.h"
 #include "common_event_skill_event_event_id.h"
+#include <thread_context/ecs_context.h>
 
 class GateImpl final : public Gate {};
 class SceneClientPlayerCommonImpl final : public SceneClientPlayerCommon {};

@@ -1,6 +1,5 @@
 #include "node.h"
 #include <regex>
-#include <grpcpp/create_channel.h>
 #include <boost/uuid/uuid_io.hpp>
 #include "table/code/all_table.h"
 #include "node/system/etcd/etcd_helper.h"
@@ -33,7 +32,6 @@
 #include "node/system/node/node_connector.h"
 #include "thread_context/node_context_manager.h"
 #include <node_config_manager.h>
-#include "thread_context/thread_local_entity_container.h"
 #include <atomic>
 #include <future>
 #include <chrono>

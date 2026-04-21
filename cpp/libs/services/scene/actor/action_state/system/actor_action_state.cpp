@@ -9,7 +9,6 @@
 #include "engine/core/macros/error_return.h"
 #include "proto/common/component/actor_comp.pb.h"
 #include "proto/common/event/actor_event.pb.h"
-#include "engine/thread_context/dispatcher_manager.h"
 
 namespace {
     // Check if an action conflicts with the current state; return error code on conflict

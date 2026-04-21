@@ -5,8 +5,8 @@
 #include <muduo/base/Logging.h>
 
 #include "engine/infra/messaging/kafka/kafka_producer.h"
-#include "thread_context/registry_manager.h"
 #include "transaction_log_system.h"
+#include <ecs_context.h>
 
 // ---------------------------------------------------------------------------
 // Static storage (thread-local — each Scene/Gate thread has its own copy)

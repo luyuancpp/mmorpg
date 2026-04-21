@@ -81,7 +81,6 @@
     <ClInclude Include="type_define\type_define.h" />
     <ClInclude Include="type_define\warn_on_save_ptr.h" />
     <ClInclude Include="utils\defer\defer.h" />
-    <ClInclude Include="utils\data_structures\fast_queue.h" />
     <ClInclude Include="utils\file\file2string.h" />
     <ClInclude Include="utils\id\node_id_generator.h" />
     <ClInclude Include="utils\id\snow_flake.h" />
@@ -99,6 +98,8 @@
     <ClInclude Include="node\system\node\node_entry.h" />
     <ClInclude Include="node\system\node\thread_observability.h" />
     <ClInclude Include="network\traffic_statistics.h" />
+    <ClInclude Include="utils\bit_index\bit_index_util.h" />
+    <ClInclude Include="utils\data_structures\double_buffer_queue.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="network\autogen.bat" />
