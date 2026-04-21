@@ -87,9 +87,19 @@ func mustAllocNodeID(cli *clientv3.Client) uint64 {
 	leaseID := leaseResp.ID
 
 	// KeepAlive runs until the etcd client is closed or the process exits.
-	if _, err := cli.KeepAlive(context.Background(), leaseID); err != nil {
+	// We MUST drain the response channel: if nobody reads from it, the etcd
+	// client's 16-slot buffer fills up and emits
+	//   "lease keepalive response queue is full; dropping response send"
+	// every ttl/3 seconds. Spin a tiny goroutine that just discards responses
+	// (the lease itself stays alive regardless).
+	kaCh, err := cli.KeepAlive(context.Background(), leaseID)
+	if err != nil {
 		panic(fmt.Sprintf("snowflake: etcd keep-alive failed: %v", err))
 	}
+	go func() {
+		for range kaCh {
+		}
+	}()
 
 	hostKey := snowflakeNodePrefix + host
 
