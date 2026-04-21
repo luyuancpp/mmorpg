@@ -23,6 +23,7 @@
 #include <proto/common/component/player_network_comp.pb.h>
 #include "node/system/node/node_util.h"
 #include <limits>
+#include <thread_context/ecs_context.h>
 
 // Callback wrapper for Hiredis
 void PlayerSceneSystem::OnGetTeamInfo(entt::entity player, void* replyVoid)

@@ -8,7 +8,7 @@
 #include "proto/contracts/kafka/gate_event.pb.h"
 #include "rpc/service_metadata/contracts_kafka_gate_event_event_id.h"
 #include "rpc/service_metadata/rpc_event_registry.h"
-#include "thread_context/dispatcher_manager.h"
+#include <thread_context/ecs_context.h>
 #include "muduo/base/Logging.h"
 
 void DispatchGateKafkaCommand(const std::string& topic, const contracts::kafka::GateCommand& command)
