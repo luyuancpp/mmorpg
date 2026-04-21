@@ -1,7 +1,6 @@
 #include "node_utils.h"
-
-#include <thread_context/entity_manager.h>
-#include <engine/thread_context/node_context_manager.h>
+#include <thread_context/ecs_context.h>
+#include <thread_context/node_context_manager.h>
 
 NodeInfo &GetNodeInfo()
 {

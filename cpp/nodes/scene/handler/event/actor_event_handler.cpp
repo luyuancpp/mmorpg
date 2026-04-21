@@ -2,15 +2,7 @@
 #include "thread_context/ecs_context.h"
 
 ///<<< BEGIN WRITING YOUR CODE
-#include "actor/action_state/constants/actor_state.h"
-#include "actor/action_state/system/actor_action_state.h"
-#include "actor/attribute/system/actor_attribute_calculator.h"
-#include "actor/attribute/system/actor_state_attribute_sync.h"
-#include "combat_state/system/combat_state.h"
-#include "combat/buff/system/buff.h"
-#include "combat/skill/system/skill.h"
-#include "core/utils/registry/game_registry.h"
-#include "spatial/system/interest.h"
+
 ///<<< END WRITING YOUR CODE
 void ActorEventHandler::Register()
 {

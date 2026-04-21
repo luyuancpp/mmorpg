@@ -2,7 +2,6 @@
 #include "thread_context/ecs_context.h"
 
 ///<<< BEGIN WRITING YOUR CODE
-#include <thread_context/registry_manager.h>
 #include <muduo/base/Logging.h>
 ///<<< END WRITING YOUR CODE
 void NpcEventHandler::Register()
