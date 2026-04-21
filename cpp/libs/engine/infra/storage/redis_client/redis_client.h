@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include <chrono>
 #include <string>
 #include <memory>
 #include <vector>
@@ -63,7 +64,10 @@ class MessageAsyncClient
 public:
 	using MessageValuePtr = std::shared_ptr<MessageValue>;
 
-	static constexpr int kMaxLoadRetries = 5;
+	// Max NIL retries. Combined with exponential backoff (2,4,8,16,32,60s) this
+	// gives ~2 minutes for the DB write-back path (Kafka -> db service -> Redis)
+	// to land the row before we permanently fail the load.
+	static constexpr int kMaxLoadRetries = 6;
 
 	struct Element
 	{
@@ -71,6 +75,9 @@ public:
 		std::string redis_key;
 		MessageValuePtr message_value;
 		int retry_count = 0;
+		// Earliest time this element is allowed to be retried (steady_clock).
+		// Set when the element is enqueued into pending_retry_queue_.
+		std::chrono::steady_clock::time_point next_retry_at{};
 	};
 
 	using ElementPtr = std::shared_ptr<Element>;
@@ -169,18 +176,20 @@ public:
 		}
 	}
 
-	// Call after Redis reconnect to retry all pending/stale loads.
-	void RetryPendingLoads()
+	// Call ONLY from the Redis reconnect callback. Migrates in-flight loads
+	// (whose callbacks will never fire post-disconnect) into the retry queue
+	// and re-issues every pending load immediately.
+	void OnReconnected()
 	{
 		if (!hiredis_ || !hiredis_->connected())
 		{
 			return;
 		}
 
-		// Move stale loading_queue_ entries to retry queue
-		// (their callbacks will never fire after a disconnect)
+		const auto now = std::chrono::steady_clock::now();
 		for (auto &[k, v] : loading_queue_)
 		{
+			v->next_retry_at = now;
 			pending_retry_queue_[k] = v;
 		}
 		loading_queue_.clear();
@@ -190,20 +199,78 @@ public:
 			return;
 		}
 
-		LOG_INFO << "RetryPendingLoads: retrying " << pending_retry_queue_.size() << " loads";
+		LOG_INFO << "OnReconnected: re-issuing " << pending_retry_queue_.size() << " pending loads";
+		FlushDuePending(now, /*force=*/true);
+	}
 
-		// Copy and clear before issuing commands (AsyncLoad modifies pending_retry_queue_)
-		auto pending = std::move(pending_retry_queue_);
-		pending_retry_queue_.clear();
-		for (auto &[key, element] : pending)
+	// Periodic timer entry point. ONLY drains entries in pending_retry_queue_
+	// whose backoff has elapsed. MUST NOT touch loading_queue_, otherwise
+	// in-flight GETs get re-issued and load_callback_ fires twice for the
+	// same key.
+	void RetryDuePendingLoads()
+	{
+		if (!hiredis_ || !hiredis_->connected())
 		{
-			AsyncLoad(element->message_key, element->retry_count);
+			return;
 		}
+		if (pending_retry_queue_.empty())
+		{
+			return;
+		}
+		FlushDuePending(std::chrono::steady_clock::now(), /*force=*/false);
 	}
 
 	MessageValuePtr CreateMessage() { return std::make_shared<MessageValue>(); }
 
 private:
+	static std::chrono::seconds BackoffForRetry(int next_retry_count)
+	{
+		// 1->2s, 2->4s, 3->8s, 4->16s, 5->32s, 6+->60s
+		switch (next_retry_count)
+		{
+		case 1:
+			return std::chrono::seconds(2);
+		case 2:
+			return std::chrono::seconds(4);
+		case 3:
+			return std::chrono::seconds(8);
+		case 4:
+			return std::chrono::seconds(16);
+		case 5:
+			return std::chrono::seconds(32);
+		default:
+			return std::chrono::seconds(60);
+		}
+	}
+
+	void FlushDuePending(std::chrono::steady_clock::time_point now, bool force)
+	{
+		std::vector<ElementPtr> due;
+		due.reserve(pending_retry_queue_.size());
+		for (auto it = pending_retry_queue_.begin(); it != pending_retry_queue_.end();)
+		{
+			if (force || it->second->next_retry_at <= now)
+			{
+				due.push_back(it->second);
+				it = pending_retry_queue_.erase(it);
+			}
+			else
+			{
+				++it;
+			}
+		}
+		if (due.empty())
+		{
+			return;
+		}
+		LOG_INFO << "RetryDuePendingLoads: re-issuing " << due.size()
+				 << " loads (deferred=" << pending_retry_queue_.size() << ")";
+		for (auto &element : due)
+		{
+			AsyncLoad(element->message_key, element->retry_count);
+		}
+	}
+
 	void OnSaved(hiredis::Hiredis* c, redisReply* reply, ElementPtr element)
 	{
 		if (!save_callback_)
@@ -232,10 +299,14 @@ private:
 		{
 			if (element->retry_count < kMaxLoadRetries)
 			{
+				const int nextRetry = element->retry_count + 1;
+				const auto backoff = BackoffForRetry(nextRetry);
 				LOG_WARN << "Redis GET returned NIL for key: " << element->redis_key
-						 << ", retry " << (element->retry_count + 1) << "/" << kMaxLoadRetries;
+						 << ", retry " << nextRetry << "/" << kMaxLoadRetries
+						 << " in " << backoff.count() << "s";
+				element->retry_count = nextRetry;
+				element->next_retry_at = std::chrono::steady_clock::now() + backoff;
 				pending_retry_queue_[element->redis_key] = element;
-				element->retry_count++;
 				return;
 			}
 
