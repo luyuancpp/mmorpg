@@ -7,9 +7,9 @@
 #include "thread_context/redis_manager.h"
 #include "core/utils/defer/defer.h"
 #include "session/manager/session_manager.h"
-#include "thread_context/message_context.h"
 #include "rpc/service_metadata/gate_service_service_metadata.h"
 #include "proto/common/base/message.pb.h"
+#include <thread_context/rpc_request_context.h>
 
 using namespace muduo;
 using namespace muduo::net;

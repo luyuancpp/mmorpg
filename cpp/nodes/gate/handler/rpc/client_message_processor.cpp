@@ -29,7 +29,6 @@
 #include "proto/common/event/node_event.pb.h"
 #include "thread_context/node_context_manager.h"
 #include <session/manager/session_manager.h>
-#include "thread_context/dispatcher_manager.h"
 #include <network/node_utils.h>
 #include <node_config_manager.h>
 
