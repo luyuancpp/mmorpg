@@ -125,7 +125,7 @@ void PlayerLifecycleSystem::HandlePlayerAsyncSaved(Guid playerId, PlayerAllData 
 void PlayerLifecycleSystem::EnterScene(const entt::entity player, const PlayerGameNodeEntryInfoComp &enterInfo)
 {
 	const auto playerId = tlsEcs.actorRegistry.get<Guid>(player);
-	LOG_INFO << "EnterScene: Player " << playerId << " entering scene node"
+	LOG_DEBUG << "EnterScene: Player " << playerId << " entering scene node"
 	         << " session=" << enterInfo.session_id()
 	         << " scene_id=" << enterInfo.scene_id()
 	         << " enter_gs_type=" << enterInfo.enter_gs_type();
@@ -412,11 +412,14 @@ void PlayerLifecycleSystem::SavePlayerToRedis(entt::entity player)
 
 	PlayerAllDataMessageFieldsMarshal(player, *message);
 
-	tlsRedisSystem.GetPlayerDataRedis()->Save(message, playerId);
-
-	// Set player_id on each sub-table (not set by generated marshal code)
+	// Set player_id on each sub-table (not set by generated marshal code).
+	// MUST be done BEFORE Save(): MessageAsyncClient::Save() now serializes the
+	// payload eagerly into Element::serialized_payload, so any post-Save mutation
+	// would not make it into the Redis blob.
 	message->mutable_player_database_data()->set_player_id(playerId);
 	message->mutable_player_database_1_data()->set_player_id(playerId);
+
+	tlsRedisSystem.GetPlayerDataRedis()->Save(message, playerId);
 
 	// Send each sub-table as a separate DBTask (matching how login reads per-table)
 	const std::string playerIdStr = std::to_string(playerId);
