@@ -21,8 +21,9 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	SceneNodeGrpc_CreateScene_FullMethodName  = "/scene_node.SceneNodeGrpc/CreateScene"
-	SceneNodeGrpc_DestroyScene_FullMethodName = "/scene_node.SceneNodeGrpc/DestroyScene"
+	SceneNodeGrpc_CreateScene_FullMethodName   = "/scene_node.SceneNodeGrpc/CreateScene"
+	SceneNodeGrpc_DestroyScene_FullMethodName  = "/scene_node.SceneNodeGrpc/DestroyScene"
+	SceneNodeGrpc_ReleasePlayer_FullMethodName = "/scene_node.SceneNodeGrpc/ReleasePlayer"
 )
 
 // SceneNodeGrpcClient is the client API for SceneNodeGrpc service.
@@ -35,6 +36,11 @@ const (
 type SceneNodeGrpcClient interface {
 	CreateScene(ctx context.Context, in *scene.CreateSceneRequest, opts ...grpc.CallOption) (*scene.CreateSceneResponse, error)
 	DestroyScene(ctx context.Context, in *scene.DestroySceneRequest, opts ...grpc.CallOption) (*base.Empty, error)
+	// ReleasePlayer is called by SceneManager on the player's previous scene node
+	// when the player is being routed to a different scene node (cross-node scene
+	// change). The old node persists the player to Redis, drops the entity, and
+	// frees the session mapping so the new node can load fresh from Redis.
+	ReleasePlayer(ctx context.Context, in *ReleasePlayerRequest, opts ...grpc.CallOption) (*base.Empty, error)
 }
 
 type sceneNodeGrpcClient struct {
@@ -65,6 +71,16 @@ func (c *sceneNodeGrpcClient) DestroyScene(ctx context.Context, in *scene.Destro
 	return out, nil
 }
 
+func (c *sceneNodeGrpcClient) ReleasePlayer(ctx context.Context, in *ReleasePlayerRequest, opts ...grpc.CallOption) (*base.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(base.Empty)
+	err := c.cc.Invoke(ctx, SceneNodeGrpc_ReleasePlayer_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // SceneNodeGrpcServer is the server API for SceneNodeGrpc service.
 // All implementations must embed UnimplementedSceneNodeGrpcServer
 // for forward compatibility.
@@ -75,6 +91,11 @@ func (c *sceneNodeGrpcClient) DestroyScene(ctx context.Context, in *scene.Destro
 type SceneNodeGrpcServer interface {
 	CreateScene(context.Context, *scene.CreateSceneRequest) (*scene.CreateSceneResponse, error)
 	DestroyScene(context.Context, *scene.DestroySceneRequest) (*base.Empty, error)
+	// ReleasePlayer is called by SceneManager on the player's previous scene node
+	// when the player is being routed to a different scene node (cross-node scene
+	// change). The old node persists the player to Redis, drops the entity, and
+	// frees the session mapping so the new node can load fresh from Redis.
+	ReleasePlayer(context.Context, *ReleasePlayerRequest) (*base.Empty, error)
 	mustEmbedUnimplementedSceneNodeGrpcServer()
 }
 
@@ -90,6 +111,9 @@ func (UnimplementedSceneNodeGrpcServer) CreateScene(context.Context, *scene.Crea
 }
 func (UnimplementedSceneNodeGrpcServer) DestroyScene(context.Context, *scene.DestroySceneRequest) (*base.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method DestroyScene not implemented")
+}
+func (UnimplementedSceneNodeGrpcServer) ReleasePlayer(context.Context, *ReleasePlayerRequest) (*base.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method ReleasePlayer not implemented")
 }
 func (UnimplementedSceneNodeGrpcServer) mustEmbedUnimplementedSceneNodeGrpcServer() {}
 func (UnimplementedSceneNodeGrpcServer) testEmbeddedByValue()                       {}
@@ -148,6 +172,24 @@ func _SceneNodeGrpc_DestroyScene_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _SceneNodeGrpc_ReleasePlayer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReleasePlayerRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SceneNodeGrpcServer).ReleasePlayer(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SceneNodeGrpc_ReleasePlayer_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SceneNodeGrpcServer).ReleasePlayer(ctx, req.(*ReleasePlayerRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // SceneNodeGrpc_ServiceDesc is the grpc.ServiceDesc for SceneNodeGrpc service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -162,6 +204,10 @@ var SceneNodeGrpc_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DestroyScene",
 			Handler:    _SceneNodeGrpc_DestroyScene_Handler,
+		},
+		{
+			MethodName: "ReleasePlayer",
+			Handler:    _SceneNodeGrpc_ReleasePlayer_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

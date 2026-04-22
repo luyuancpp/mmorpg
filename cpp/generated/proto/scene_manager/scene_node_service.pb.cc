@@ -25,24 +25,74 @@ namespace _pb = ::google::protobuf;
 namespace _pbi = ::google::protobuf::internal;
 namespace _fl = ::google::protobuf::internal::field_layout;
 namespace scene_node {
+
+inline constexpr ReleasePlayerRequest::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        target_node_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        player_id_{::uint64_t{0u}},
+        target_scene_id_{::uint64_t{0u}} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR ReleasePlayerRequest::ReleasePlayerRequest(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(ReleasePlayerRequest_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct ReleasePlayerRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR ReleasePlayerRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~ReleasePlayerRequestDefaultTypeInternal() {}
+  union {
+    ReleasePlayerRequest _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ReleasePlayerRequestDefaultTypeInternal _ReleasePlayerRequest_default_instance_;
 }  // namespace scene_node
 static constexpr const ::_pb::EnumDescriptor *PROTOBUF_NONNULL *PROTOBUF_NULLABLE
     file_level_enum_descriptors_proto_2fscene_5fmanager_2fscene_5fnode_5fservice_2eproto = nullptr;
 static constexpr const ::_pb::ServiceDescriptor *PROTOBUF_NONNULL *PROTOBUF_NULLABLE
     file_level_service_descriptors_proto_2fscene_5fmanager_2fscene_5fnode_5fservice_2eproto = nullptr;
-const ::uint32_t TableStruct_proto_2fscene_5fmanager_2fscene_5fnode_5fservice_2eproto::offsets[1] = {};
-static constexpr ::_pbi::MigrationSchema* PROTOBUF_NULLABLE schemas = nullptr;
-static constexpr ::_pb::Message* PROTOBUF_NONNULL const* PROTOBUF_NULLABLE
-    file_default_instances = nullptr;
+const ::uint32_t
+    TableStruct_proto_2fscene_5fmanager_2fscene_5fnode_5fservice_2eproto::offsets[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
+        protodesc_cold) = {
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::scene_node::ReleasePlayerRequest, _impl_._has_bits_),
+        6, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::scene_node::ReleasePlayerRequest, _impl_.player_id_),
+        PROTOBUF_FIELD_OFFSET(::scene_node::ReleasePlayerRequest, _impl_.target_scene_id_),
+        PROTOBUF_FIELD_OFFSET(::scene_node::ReleasePlayerRequest, _impl_.target_node_id_),
+        1,
+        2,
+        0,
+};
+
+static const ::_pbi::MigrationSchema
+    schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
+        {0, sizeof(::scene_node::ReleasePlayerRequest)},
+};
+static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
+    &::scene_node::_ReleasePlayerRequest_default_instance_._instance,
+};
 const char descriptor_table_protodef_proto_2fscene_5fmanager_2fscene_5fnode_5fservice_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n,proto/scene_manager/scene_node_service"
     ".proto\022\nscene_node\032\035proto/common/base/em"
-    "pty.proto\032\027proto/scene/scene.proto2{\n\rSc"
-    "eneNodeGrpc\022:\n\013CreateScene\022\023.CreateScene"
-    "Request\032\024.CreateSceneResponse\"\000\022.\n\014Destr"
-    "oyScene\022\024.DestroySceneRequest\032\006.Empty\"\000B"
-    "\035Z\033scene_manager/scene_managerb\006proto3"
+    "pty.proto\032\027proto/scene/scene.proto\"Z\n\024Re"
+    "leasePlayerRequest\022\021\n\tplayer_id\030\001 \001(\004\022\027\n"
+    "\017target_scene_id\030\002 \001(\004\022\026\n\016target_node_id"
+    "\030\003 \001(\t2\270\001\n\rSceneNodeGrpc\022:\n\013CreateScene\022"
+    "\023.CreateSceneRequest\032\024.CreateSceneRespon"
+    "se\"\000\022.\n\014DestroyScene\022\024.DestroySceneReque"
+    "st\032\006.Empty\"\000\022;\n\rReleasePlayer\022 .scene_no"
+    "de.ReleasePlayerRequest\032\006.Empty\"\000B\035Z\033sce"
+    "ne_manager/scene_managerb\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fscene_5fmanager_2fscene_5fnode_5fservice_2eproto_deps[2] = {
@@ -53,13 +103,13 @@ static ::absl::once_flag descriptor_table_proto_2fscene_5fmanager_2fscene_5fnode
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fscene_5fmanager_2fscene_5fnode_5fservice_2eproto = {
     false,
     false,
-    278,
+    432,
     descriptor_table_protodef_proto_2fscene_5fmanager_2fscene_5fnode_5fservice_2eproto,
     "proto/scene_manager/scene_node_service.proto",
     &descriptor_table_proto_2fscene_5fmanager_2fscene_5fnode_5fservice_2eproto_once,
     descriptor_table_proto_2fscene_5fmanager_2fscene_5fnode_5fservice_2eproto_deps,
     2,
-    0,
+    1,
     schemas,
     file_default_instances,
     TableStruct_proto_2fscene_5fmanager_2fscene_5fnode_5fservice_2eproto::offsets,
@@ -67,6 +117,350 @@ PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fscene_
     file_level_service_descriptors_proto_2fscene_5fmanager_2fscene_5fnode_5fservice_2eproto,
 };
 namespace scene_node {
+// ===================================================================
+
+class ReleasePlayerRequest::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<ReleasePlayerRequest>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(ReleasePlayerRequest, _impl_._has_bits_);
+};
+
+ReleasePlayerRequest::ReleasePlayerRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, ReleasePlayerRequest_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:scene_node.ReleasePlayerRequest)
+}
+PROTOBUF_NDEBUG_INLINE ReleasePlayerRequest::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    const ::scene_node::ReleasePlayerRequest& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        target_node_id_(arena, from.target_node_id_) {}
+
+ReleasePlayerRequest::ReleasePlayerRequest(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const ReleasePlayerRequest& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, ReleasePlayerRequest_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  ReleasePlayerRequest* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::memcpy(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, player_id_),
+           reinterpret_cast<const char *>(&from._impl_) +
+               offsetof(Impl_, player_id_),
+           offsetof(Impl_, target_scene_id_) -
+               offsetof(Impl_, player_id_) +
+               sizeof(Impl_::target_scene_id_));
+
+  // @@protoc_insertion_point(copy_constructor:scene_node.ReleasePlayerRequest)
+}
+PROTOBUF_NDEBUG_INLINE ReleasePlayerRequest::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        target_node_id_(arena) {}
+
+inline void ReleasePlayerRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, player_id_),
+           0,
+           offsetof(Impl_, target_scene_id_) -
+               offsetof(Impl_, player_id_) +
+               sizeof(Impl_::target_scene_id_));
+}
+ReleasePlayerRequest::~ReleasePlayerRequest() {
+  // @@protoc_insertion_point(destructor:scene_node.ReleasePlayerRequest)
+  SharedDtor(*this);
+}
+inline void ReleasePlayerRequest::SharedDtor(MessageLite& self) {
+  ReleasePlayerRequest& this_ = static_cast<ReleasePlayerRequest&>(self);
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.target_node_id_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL ReleasePlayerRequest::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) ReleasePlayerRequest(arena);
+}
+constexpr auto ReleasePlayerRequest::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(ReleasePlayerRequest),
+                                            alignof(ReleasePlayerRequest));
+}
+constexpr auto ReleasePlayerRequest::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_ReleasePlayerRequest_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &ReleasePlayerRequest::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<ReleasePlayerRequest>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &ReleasePlayerRequest::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<ReleasePlayerRequest>(), &ReleasePlayerRequest::ByteSizeLong,
+              &ReleasePlayerRequest::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(ReleasePlayerRequest, _impl_._cached_size_),
+          false,
+      },
+      &ReleasePlayerRequest::kDescriptorMethods,
+      &descriptor_table_proto_2fscene_5fmanager_2fscene_5fnode_5fservice_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull ReleasePlayerRequest_class_data_ =
+        ReleasePlayerRequest::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+ReleasePlayerRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&ReleasePlayerRequest_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(ReleasePlayerRequest_class_data_.tc_table);
+  return ReleasePlayerRequest_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<2, 3, 0, 54, 2>
+ReleasePlayerRequest::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(ReleasePlayerRequest, _impl_._has_bits_),
+    0, // no _extensions_
+    3, 24,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967288,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    3,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    ReleasePlayerRequest_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::scene_node::ReleasePlayerRequest>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    {::_pbi::TcParser::MiniParse, {}},
+    // uint64 player_id = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(ReleasePlayerRequest, _impl_.player_id_), 1>(),
+     {8, 1, 0, PROTOBUF_FIELD_OFFSET(ReleasePlayerRequest, _impl_.player_id_)}},
+    // uint64 target_scene_id = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(ReleasePlayerRequest, _impl_.target_scene_id_), 2>(),
+     {16, 2, 0, PROTOBUF_FIELD_OFFSET(ReleasePlayerRequest, _impl_.target_scene_id_)}},
+    // string target_node_id = 3;
+    {::_pbi::TcParser::FastUS1,
+     {26, 0, 0, PROTOBUF_FIELD_OFFSET(ReleasePlayerRequest, _impl_.target_node_id_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // uint64 player_id = 1;
+    {PROTOBUF_FIELD_OFFSET(ReleasePlayerRequest, _impl_.player_id_), _Internal::kHasBitsOffset + 1, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    // uint64 target_scene_id = 2;
+    {PROTOBUF_FIELD_OFFSET(ReleasePlayerRequest, _impl_.target_scene_id_), _Internal::kHasBitsOffset + 2, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    // string target_node_id = 3;
+    {PROTOBUF_FIELD_OFFSET(ReleasePlayerRequest, _impl_.target_node_id_), _Internal::kHasBitsOffset + 0, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+  }},
+  // no aux_entries
+  {{
+    "\37\0\0\16\0\0\0\0"
+    "scene_node.ReleasePlayerRequest"
+    "target_node_id"
+  }},
+};
+PROTOBUF_NOINLINE void ReleasePlayerRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:scene_node.ReleasePlayerRequest)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000001u) != 0) {
+    _impl_.target_node_id_.ClearNonDefaultToEmpty();
+  }
+  if ((cached_has_bits & 0x00000006u) != 0) {
+    ::memset(&_impl_.player_id_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.target_scene_id_) -
+        reinterpret_cast<char*>(&_impl_.player_id_)) + sizeof(_impl_.target_scene_id_));
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL ReleasePlayerRequest::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const ReleasePlayerRequest& this_ = static_cast<const ReleasePlayerRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL ReleasePlayerRequest::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const ReleasePlayerRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(serialize_to_array_start:scene_node.ReleasePlayerRequest)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  // uint64 player_id = 1;
+  if ((this_._impl_._has_bits_[0] & 0x00000002u) != 0) {
+    if (this_._internal_player_id() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          1, this_._internal_player_id(), target);
+    }
+  }
+
+  // uint64 target_scene_id = 2;
+  if ((this_._impl_._has_bits_[0] & 0x00000004u) != 0) {
+    if (this_._internal_target_scene_id() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          2, this_._internal_target_scene_id(), target);
+    }
+  }
+
+  // string target_node_id = 3;
+  if ((this_._impl_._has_bits_[0] & 0x00000001u) != 0) {
+    if (!this_._internal_target_node_id().empty()) {
+      const ::std::string& _s = this_._internal_target_node_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "scene_node.ReleasePlayerRequest.target_node_id");
+      target = stream->WriteStringMaybeAliased(3, _s, target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:scene_node.ReleasePlayerRequest)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t ReleasePlayerRequest::ByteSizeLong(const MessageLite& base) {
+  const ReleasePlayerRequest& this_ = static_cast<const ReleasePlayerRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t ReleasePlayerRequest::ByteSizeLong() const {
+  const ReleasePlayerRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:scene_node.ReleasePlayerRequest)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000007u) != 0) {
+    // string target_node_id = 3;
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      if (!this_._internal_target_node_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_target_node_id());
+      }
+    }
+    // uint64 player_id = 1;
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      if (this_._internal_player_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_player_id());
+      }
+    }
+    // uint64 target_scene_id = 2;
+    if ((cached_has_bits & 0x00000004u) != 0) {
+      if (this_._internal_target_scene_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_target_scene_id());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void ReleasePlayerRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<ReleasePlayerRequest*>(&to_msg);
+  auto& from = static_cast<const ReleasePlayerRequest&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:scene_node.ReleasePlayerRequest)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000007u) != 0) {
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      if (!from._internal_target_node_id().empty()) {
+        _this->_internal_set_target_node_id(from._internal_target_node_id());
+      } else {
+        if (_this->_impl_.target_node_id_.IsDefault()) {
+          _this->_internal_set_target_node_id("");
+        }
+      }
+    }
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      if (from._internal_player_id() != 0) {
+        _this->_impl_.player_id_ = from._impl_.player_id_;
+      }
+    }
+    if ((cached_has_bits & 0x00000004u) != 0) {
+      if (from._internal_target_scene_id() != 0) {
+        _this->_impl_.target_scene_id_ = from._impl_.target_scene_id_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void ReleasePlayerRequest::CopyFrom(const ReleasePlayerRequest& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:scene_node.ReleasePlayerRequest)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void ReleasePlayerRequest::InternalSwap(ReleasePlayerRequest* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.target_node_id_, &other->_impl_.target_node_id_, arena);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(ReleasePlayerRequest, _impl_.target_scene_id_)
+      + sizeof(ReleasePlayerRequest::_impl_.target_scene_id_)
+      - PROTOBUF_FIELD_OFFSET(ReleasePlayerRequest, _impl_.player_id_)>(
+          reinterpret_cast<char*>(&_impl_.player_id_),
+          reinterpret_cast<char*>(&other->_impl_.player_id_));
+}
+
+::google::protobuf::Metadata ReleasePlayerRequest::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
 // @@protoc_insertion_point(namespace_scope)
 }  // namespace scene_node
 namespace google {

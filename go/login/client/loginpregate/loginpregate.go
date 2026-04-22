@@ -27,6 +27,8 @@ type (
 	LoginRequest                      = login.LoginRequest
 	LoginResponse                     = login.LoginResponse
 	LoginSessionInfo                  = login.LoginSessionInfo
+	RefreshTokenRequest               = login.RefreshTokenRequest
+	RefreshTokenResponse              = login.RefreshTokenResponse
 	RemovePlayersFromAccountsRequest  = login.RemovePlayersFromAccountsRequest
 	RemovePlayersFromAccountsResponse = login.RemovePlayersFromAccountsResponse
 	TestResponse                      = login.TestResponse

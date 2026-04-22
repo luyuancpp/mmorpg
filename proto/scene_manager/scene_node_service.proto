@@ -12,4 +12,17 @@ option go_package = "scene_manager/scene_manager";
 service SceneNodeGrpc {
   rpc CreateScene(CreateSceneRequest) returns (CreateSceneResponse) {}
   rpc DestroyScene(DestroySceneRequest) returns (Empty) {}
+  // ReleasePlayer is called by SceneManager on the player's previous scene node
+  // when the player is being routed to a different scene node (cross-node scene
+  // change). The old node persists the player to Redis, drops the entity, and
+  // frees the session mapping so the new node can load fresh from Redis.
+  rpc ReleasePlayer(ReleasePlayerRequest) returns (Empty) {}
+}
+
+message ReleasePlayerRequest {
+  uint64 player_id = 1;
+  // Optional: target scene id the player is moving to (for logging only).
+  uint64 target_scene_id = 2;
+  // Optional: target node id the player is moving to (for logging only).
+  string target_node_id = 3;
 }

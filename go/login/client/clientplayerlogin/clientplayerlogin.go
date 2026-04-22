@@ -27,6 +27,8 @@ type (
 	LoginRequest                      = login.LoginRequest
 	LoginResponse                     = login.LoginResponse
 	LoginSessionInfo                  = login.LoginSessionInfo
+	RefreshTokenRequest               = login.RefreshTokenRequest
+	RefreshTokenResponse              = login.RefreshTokenResponse
 	RemovePlayersFromAccountsRequest  = login.RemovePlayersFromAccountsRequest
 	RemovePlayersFromAccountsResponse = login.RemovePlayersFromAccountsResponse
 	TestResponse                      = login.TestResponse
@@ -37,6 +39,7 @@ type (
 		EnterGame(ctx context.Context, in *EnterGameRequest, opts ...grpc.CallOption) (*EnterGameResponse, error)
 		LeaveGame(ctx context.Context, in *LeaveGameRequest, opts ...grpc.CallOption) (*LoginEmptyResponse, error)
 		Disconnect(ctx context.Context, in *LoginNodeDisconnectRequest, opts ...grpc.CallOption) (*LoginEmptyResponse, error)
+		RefreshToken(ctx context.Context, in *RefreshTokenRequest, opts ...grpc.CallOption) (*RefreshTokenResponse, error)
 	}
 
 	defaultClientPlayerLogin struct {
@@ -73,4 +76,9 @@ func (m *defaultClientPlayerLogin) LeaveGame(ctx context.Context, in *LeaveGameR
 func (m *defaultClientPlayerLogin) Disconnect(ctx context.Context, in *LoginNodeDisconnectRequest, opts ...grpc.CallOption) (*LoginEmptyResponse, error) {
 	client := login.NewClientPlayerLoginClient(m.cli.Conn())
 	return client.Disconnect(ctx, in, opts...)
+}
+
+func (m *defaultClientPlayerLogin) RefreshToken(ctx context.Context, in *RefreshTokenRequest, opts ...grpc.CallOption) (*RefreshTokenResponse, error) {
+	client := login.NewClientPlayerLoginClient(m.cli.Conn())
+	return client.RefreshToken(ctx, in, opts...)
 }

@@ -100,6 +100,15 @@ func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (*scen
 		DecrInstancePlayerCount(l.svcCtx, currentLoc.SceneId)
 	}
 
+	// 5b. Cross-node switch: notify the old scene node to release the player so
+	// it persists state and tears down the entity. Same-node switches skip this
+	// because the C++ node reuses the in-memory entity directly.
+	if currentLoc != nil && currentLoc.NodeId != "" && currentLoc.NodeId != nodeId {
+		if err := RequestNodeReleasePlayer(l.ctx, l.svcCtx, currentLoc.NodeId, in.PlayerId, sceneId, nodeId); err != nil {
+			l.Logger.Errorf("Failed to release player %d from old node %s (non-fatal): %v", in.PlayerId, currentLoc.NodeId, err)
+		}
+	}
+
 	// 6. Update Player Location (Source of Truth)
 	if err := UpdatePlayerLocation(l.ctx, l.svcCtx, in.PlayerId, sceneId, nodeId, targetZoneId); err != nil {
 		l.Logger.Errorf("Failed to update player location: %v", err)

@@ -10,3 +10,7 @@ constexpr uint32_t SceneNodeGrpcCreateSceneIndex = 0;
 constexpr uint32_t SceneNodeGrpcDestroySceneMessageId = 123;
 constexpr uint32_t SceneNodeGrpcDestroySceneIndex = 1;
 #define SceneNodeGrpcDestroySceneMethod  ::SceneNodeGrpc_Stub::descriptor()->method(1)
+
+constexpr uint32_t SceneNodeGrpcReleasePlayerMessageId = 128;
+constexpr uint32_t SceneNodeGrpcReleasePlayerIndex = 2;
+#define SceneNodeGrpcReleasePlayerMethod  ::SceneNodeGrpc_Stub::descriptor()->method(2)

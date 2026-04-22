@@ -51,6 +51,25 @@ void SendSceneNodeGrpcDestroyScene(entt::registry& registry, entt::entity nodeEn
 void SendSceneNodeGrpcDestroyScene(entt::registry& registry, entt::entity nodeEntity, const ::DestroySceneRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendSceneNodeGrpcDestroyScene(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 #pragma endregion
+#pragma region SceneNodeGrpcReleasePlayer
+
+struct AsyncSceneNodeGrpcReleasePlayerGrpcClient {
+    uint32_t messageId{ SceneNodeGrpcReleasePlayerMessageId };
+    ClientContext context;
+    Status status;
+    ::Empty reply;
+    std::unique_ptr<ClientAsyncResponseReader<::Empty>> response_reader;
+};
+
+class ::scene_node::ReleasePlayerRequest;
+using AsyncSceneNodeGrpcReleasePlayerHandlerFunctionType =
+    std::function<void(const ClientContext&, const ::Empty&)>;
+extern AsyncSceneNodeGrpcReleasePlayerHandlerFunctionType AsyncSceneNodeGrpcReleasePlayerHandler;
+
+void SendSceneNodeGrpcReleasePlayer(entt::registry& registry, entt::entity nodeEntity, const ::scene_node::ReleasePlayerRequest& request);
+void SendSceneNodeGrpcReleasePlayer(entt::registry& registry, entt::entity nodeEntity, const ::scene_node::ReleasePlayerRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+void SendSceneNodeGrpcReleasePlayer(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+#pragma endregion
 void SetSceneNodeServiceHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
 void SetSceneNodeServiceIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
 void HandleSceneNodeServiceCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, GrpcTag* grpcTag);

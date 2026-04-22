@@ -12,6 +12,7 @@ import (
 	base "proto/common/base"
 	scene "proto/scene"
 	reflect "reflect"
+	sync "sync"
 	unsafe "unsafe"
 )
 
@@ -22,29 +23,112 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type ReleasePlayerRequest struct {
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	PlayerId uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	// Optional: target scene id the player is moving to (for logging only).
+	TargetSceneId uint64 `protobuf:"varint,2,opt,name=target_scene_id,json=targetSceneId,proto3" json:"target_scene_id,omitempty"`
+	// Optional: target node id the player is moving to (for logging only).
+	TargetNodeId  string `protobuf:"bytes,3,opt,name=target_node_id,json=targetNodeId,proto3" json:"target_node_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ReleasePlayerRequest) Reset() {
+	*x = ReleasePlayerRequest{}
+	mi := &file_proto_scene_manager_scene_node_service_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReleasePlayerRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReleasePlayerRequest) ProtoMessage() {}
+
+func (x *ReleasePlayerRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_scene_manager_scene_node_service_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReleasePlayerRequest.ProtoReflect.Descriptor instead.
+func (*ReleasePlayerRequest) Descriptor() ([]byte, []int) {
+	return file_proto_scene_manager_scene_node_service_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *ReleasePlayerRequest) GetPlayerId() uint64 {
+	if x != nil {
+		return x.PlayerId
+	}
+	return 0
+}
+
+func (x *ReleasePlayerRequest) GetTargetSceneId() uint64 {
+	if x != nil {
+		return x.TargetSceneId
+	}
+	return 0
+}
+
+func (x *ReleasePlayerRequest) GetTargetNodeId() string {
+	if x != nil {
+		return x.TargetNodeId
+	}
+	return ""
+}
+
 var File_proto_scene_manager_scene_node_service_proto protoreflect.FileDescriptor
 
 const file_proto_scene_manager_scene_node_service_proto_rawDesc = "" +
 	"\n" +
 	",proto/scene_manager/scene_node_service.proto\x12\n" +
-	"scene_node\x1a\x1dproto/common/base/empty.proto\x1a\x17proto/scene/scene.proto2{\n" +
+	"scene_node\x1a\x1dproto/common/base/empty.proto\x1a\x17proto/scene/scene.proto\"\x81\x01\n" +
+	"\x14ReleasePlayerRequest\x12\x1b\n" +
+	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12&\n" +
+	"\x0ftarget_scene_id\x18\x02 \x01(\x04R\rtargetSceneId\x12$\n" +
+	"\x0etarget_node_id\x18\x03 \x01(\tR\ftargetNodeId2\xb8\x01\n" +
 	"\rSceneNodeGrpc\x12:\n" +
 	"\vCreateScene\x12\x13.CreateSceneRequest\x1a\x14.CreateSceneResponse\"\x00\x12.\n" +
-	"\fDestroyScene\x12\x14.DestroySceneRequest\x1a\x06.Empty\"\x00B\x15Z\x13proto/scene_managerb\x06proto3"
+	"\fDestroyScene\x12\x14.DestroySceneRequest\x1a\x06.Empty\"\x00\x12;\n" +
+	"\rReleasePlayer\x12 .scene_node.ReleasePlayerRequest\x1a\x06.Empty\"\x00B\x15Z\x13proto/scene_managerb\x06proto3"
 
+var (
+	file_proto_scene_manager_scene_node_service_proto_rawDescOnce sync.Once
+	file_proto_scene_manager_scene_node_service_proto_rawDescData []byte
+)
+
+func file_proto_scene_manager_scene_node_service_proto_rawDescGZIP() []byte {
+	file_proto_scene_manager_scene_node_service_proto_rawDescOnce.Do(func() {
+		file_proto_scene_manager_scene_node_service_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_scene_manager_scene_node_service_proto_rawDesc), len(file_proto_scene_manager_scene_node_service_proto_rawDesc)))
+	})
+	return file_proto_scene_manager_scene_node_service_proto_rawDescData
+}
+
+var file_proto_scene_manager_scene_node_service_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_proto_scene_manager_scene_node_service_proto_goTypes = []any{
-	(*scene.CreateSceneRequest)(nil),  // 0: CreateSceneRequest
-	(*scene.DestroySceneRequest)(nil), // 1: DestroySceneRequest
-	(*scene.CreateSceneResponse)(nil), // 2: CreateSceneResponse
-	(*base.Empty)(nil),                // 3: Empty
+	(*ReleasePlayerRequest)(nil),      // 0: scene_node.ReleasePlayerRequest
+	(*scene.CreateSceneRequest)(nil),  // 1: CreateSceneRequest
+	(*scene.DestroySceneRequest)(nil), // 2: DestroySceneRequest
+	(*scene.CreateSceneResponse)(nil), // 3: CreateSceneResponse
+	(*base.Empty)(nil),                // 4: Empty
 }
 var file_proto_scene_manager_scene_node_service_proto_depIdxs = []int32{
-	0, // 0: scene_node.SceneNodeGrpc.CreateScene:input_type -> CreateSceneRequest
-	1, // 1: scene_node.SceneNodeGrpc.DestroyScene:input_type -> DestroySceneRequest
-	2, // 2: scene_node.SceneNodeGrpc.CreateScene:output_type -> CreateSceneResponse
-	3, // 3: scene_node.SceneNodeGrpc.DestroyScene:output_type -> Empty
-	2, // [2:4] is the sub-list for method output_type
-	0, // [0:2] is the sub-list for method input_type
+	1, // 0: scene_node.SceneNodeGrpc.CreateScene:input_type -> CreateSceneRequest
+	2, // 1: scene_node.SceneNodeGrpc.DestroyScene:input_type -> DestroySceneRequest
+	0, // 2: scene_node.SceneNodeGrpc.ReleasePlayer:input_type -> scene_node.ReleasePlayerRequest
+	3, // 3: scene_node.SceneNodeGrpc.CreateScene:output_type -> CreateSceneResponse
+	4, // 4: scene_node.SceneNodeGrpc.DestroyScene:output_type -> Empty
+	4, // 5: scene_node.SceneNodeGrpc.ReleasePlayer:output_type -> Empty
+	3, // [3:6] is the sub-list for method output_type
+	0, // [0:3] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name
@@ -61,12 +145,13 @@ func file_proto_scene_manager_scene_node_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_scene_manager_scene_node_service_proto_rawDesc), len(file_proto_scene_manager_scene_node_service_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   0,
+			NumMessages:   1,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_proto_scene_manager_scene_node_service_proto_goTypes,
 		DependencyIndexes: file_proto_scene_manager_scene_node_service_proto_depIdxs,
+		MessageInfos:      file_proto_scene_manager_scene_node_service_proto_msgTypes,
 	}.Build()
 	File_proto_scene_manager_scene_node_service_proto = out.File
 	file_proto_scene_manager_scene_node_service_proto_goTypes = nil

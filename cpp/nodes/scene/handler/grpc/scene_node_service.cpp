@@ -2,6 +2,7 @@
 #include <future>
 ///<<< BEGIN WRITING YOUR CODE
 #include "modules/scene/comp/scene_node_comp.h"
+#include "player/system/player_lifecycle.h"
 #include "proto/common/event/scene_event.pb.h"
 #include "thread_context/ecs_context.h"
 #include "muduo/base/Logging.h"
@@ -94,9 +95,29 @@ void SceneNodeGrpcImpl::HandleDestroyScene(const ::DestroySceneRequest* request)
     ///<<< END WRITING YOUR CODE
 }
 
-grpc::Status SceneNodeGrpcImpl::CreateScene(grpc::ServerContext* /*context*/,
-    const ::CreateSceneRequest* request,
-    ::CreateSceneResponse* response)
+void SceneNodeGrpcImpl::HandleReleasePlayer(const ::scene_node::ReleasePlayerRequest *request)
+{
+    ///<<< BEGIN WRITING YOUR CODE
+    const auto playerId = request->player_id();
+    auto playerIt = tlsEcs.playerList.find(playerId);
+    if (playerIt == tlsEcs.playerList.end())
+    {
+        LOG_DEBUG << "[gRPC] ReleasePlayer: player " << playerId
+                  << " not on this node, idempotent OK";
+        return;
+    }
+
+    LOG_INFO << "[gRPC] ReleasePlayer: releasing player " << playerId
+             << " moving to scene " << request->target_scene_id()
+             << " on node " << request->target_node_id();
+
+    PlayerLifecycleSystem::HandleExitGameNode(playerIt->second);
+    ///<<< END WRITING YOUR CODE
+}
+
+grpc::Status SceneNodeGrpcImpl::CreateScene(grpc::ServerContext * /*context*/,
+                                            const ::CreateSceneRequest *request,
+                                            ::CreateSceneResponse *response)
 {
     std::promise<void> promise;
     auto future = promise.get_future();
@@ -110,9 +131,9 @@ grpc::Status SceneNodeGrpcImpl::CreateScene(grpc::ServerContext* /*context*/,
     return grpc::Status::OK;
 }
 
-grpc::Status SceneNodeGrpcImpl::DestroyScene(grpc::ServerContext* /*context*/,
-    const ::DestroySceneRequest* request,
-    ::Empty* response)
+grpc::Status SceneNodeGrpcImpl::DestroyScene(grpc::ServerContext * /*context*/,
+                                             const ::DestroySceneRequest *request,
+                                             ::Empty *response)
 {
     std::promise<void> promise;
     auto future = promise.get_future();
@@ -120,6 +141,22 @@ grpc::Status SceneNodeGrpcImpl::DestroyScene(grpc::ServerContext* /*context*/,
     loop_.runInLoop([request, &promise]
                     {
         HandleDestroyScene(request);
+        promise.set_value(); });
+
+    future.get();
+    return grpc::Status::OK;
+}
+
+grpc::Status SceneNodeGrpcImpl::ReleasePlayer(grpc::ServerContext * /*context*/,
+                                              const ::scene_node::ReleasePlayerRequest *request,
+                                              ::Empty *response)
+{
+    std::promise<void> promise;
+    auto future = promise.get_future();
+
+    loop_.runInLoop([request, &promise]
+                    {
+        HandleReleasePlayer(request);
         promise.set_value(); });
 
     future.get();

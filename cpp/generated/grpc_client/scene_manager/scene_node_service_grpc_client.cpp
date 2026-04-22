@@ -130,6 +130,65 @@ void SendSceneNodeGrpcDestroyScene(entt::registry& registry, entt::entity nodeEn
     SendSceneNodeGrpcDestroyScene(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
+#pragma region SceneNodeGrpcReleasePlayer
+boost::object_pool<AsyncSceneNodeGrpcReleasePlayerGrpcClient> SceneNodeGrpcReleasePlayerPool;
+using AsyncSceneNodeGrpcReleasePlayerHandlerFunctionType =
+    std::function<void(const ClientContext&, const ::Empty&)>;
+AsyncSceneNodeGrpcReleasePlayerHandlerFunctionType AsyncSceneNodeGrpcReleasePlayerHandler;
+
+void AsyncCompleteGrpcSceneNodeGrpcReleasePlayer(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
+    auto call(
+        static_cast<AsyncSceneNodeGrpcReleasePlayerGrpcClient*>(got_tag));
+    if (call->status.ok()) {
+        if (AsyncSceneNodeGrpcReleasePlayerHandler) {
+            AsyncSceneNodeGrpcReleasePlayerHandler(call->context, call->reply);
+        }
+    } else {
+        LOG_ERROR << call->status.error_message();
+    }
+
+	SceneNodeGrpcReleasePlayerPool.destroy(call);
+}
+
+void SendSceneNodeGrpcReleasePlayer(entt::registry& registry, entt::entity nodeEntity, const ::scene_node::ReleasePlayerRequest& request) {
+
+    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
+    auto call(SceneNodeGrpcReleasePlayerPool.construct());
+    call->response_reader = registry
+        .get<SceneNodeGrpcStubPtr>(nodeEntity)
+        ->PrepareAsyncReleasePlayer(&call->context, request,
+                                           &cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(SceneNodeGrpcReleasePlayerMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+
+}
+
+void SendSceneNodeGrpcReleasePlayer(entt::registry& registry, entt::entity nodeEntity, const ::scene_node::ReleasePlayerRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+
+    auto call(SceneNodeGrpcReleasePlayerPool.construct());
+    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
+
+    const size_t count = std::min(metaKeys.size(), metaValues.size());
+    for (size_t i = 0; i < count; ++i) {
+        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
+    }
+
+    call->response_reader = registry
+        .get<SceneNodeGrpcStubPtr>(nodeEntity)
+        ->PrepareAsyncReleasePlayer(&call->context, request,
+                                           &cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(SceneNodeGrpcReleasePlayerMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+
+}
+
+void SendSceneNodeGrpcReleasePlayer(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+    const ::scene_node::ReleasePlayerRequest& derived = static_cast<const ::scene_node::ReleasePlayerRequest&>(message);
+    SendSceneNodeGrpcReleasePlayer(registry, nodeEntity, derived, metaKeys, metaValues);
+}
+#pragma endregion
 
 void HandleSceneNodeServiceCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, GrpcTag* grpcTag) {
         switch (grpcTag->messageId) {
@@ -141,6 +200,10 @@ void HandleSceneNodeServiceCompletedQueueMessage(entt::registry& registry, entt:
             AsyncCompleteGrpcSceneNodeGrpcDestroyScene(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
 			tagPool.destroy(grpcTag);
             break;
+        case SceneNodeGrpcReleasePlayerMessageId:
+            AsyncCompleteGrpcSceneNodeGrpcReleasePlayer(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
+			tagPool.destroy(grpcTag);
+            break;
         default:
             break;
         }
@@ -150,6 +213,7 @@ void SetSceneNodeServiceHandler(const std::function<void(const ClientContext&, c
 
     AsyncSceneNodeGrpcCreateSceneHandler = handler;
     AsyncSceneNodeGrpcDestroySceneHandler = handler;
+    AsyncSceneNodeGrpcReleasePlayerHandler = handler;
 }
 
 void SetSceneNodeServiceIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler) {
@@ -159,6 +223,9 @@ void SetSceneNodeServiceIfEmptyHandler(const std::function<void(const ClientCont
     }
     if (!AsyncSceneNodeGrpcDestroySceneHandler) {
         AsyncSceneNodeGrpcDestroySceneHandler = handler;
+    }
+    if (!AsyncSceneNodeGrpcReleasePlayerHandler) {
+        AsyncSceneNodeGrpcReleasePlayerHandler = handler;
     }
 }
 
