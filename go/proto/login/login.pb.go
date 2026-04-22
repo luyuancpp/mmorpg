@@ -31,7 +31,6 @@ type LoginSessionInfo struct {
 	GateId        uint64                 `protobuf:"varint,4,opt,name=gate_id,json=gateId,proto3" json:"gate_id,omitempty"`
 	DeviceId      string                 `protobuf:"bytes,5,opt,name=device_id,json=deviceId,proto3" json:"device_id,omitempty"`
 	LoginTime     int64                  `protobuf:"varint,6,opt,name=login_time,json=loginTime,proto3" json:"login_time,omitempty"`
-	Fsm           string                 `protobuf:"bytes,7,opt,name=fsm,proto3" json:"fsm,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -106,13 +105,6 @@ func (x *LoginSessionInfo) GetLoginTime() int64 {
 		return x.LoginTime
 	}
 	return 0
-}
-
-func (x *LoginSessionInfo) GetFsm() string {
-	if x != nil {
-		return x.Fsm
-	}
-	return ""
 }
 
 type AccountSimplePlayerWrapper struct {
@@ -1044,7 +1036,7 @@ var File_proto_login_login_proto protoreflect.FileDescriptor
 
 const file_proto_login_login_proto_rawDesc = "" +
 	"\n" +
-	"\x17proto/login/login.proto\x12\aloginpb\x1a\x1bproto/db/proto_option.proto\x1a\x1bproto/common/base/tip.proto\x1a%proto/common/base/user_accounts.proto\x1a\x1eproto/common/base/common.proto\"\xcb\x01\n" +
+	"\x17proto/login/login.proto\x12\aloginpb\x1a\x1bproto/db/proto_option.proto\x1a\x1bproto/common/base/tip.proto\x1a%proto/common/base/user_accounts.proto\x1a\x1eproto/common/base/common.proto\"\xb9\x01\n" +
 	"\x10LoginSessionInfo\x12\x18\n" +
 	"\aaccount\x18\x01 \x01(\tR\aaccount\x12\x17\n" +
 	"\arole_id\x18\x02 \x01(\x04R\x06roleId\x12\x1d\n" +
@@ -1053,8 +1045,7 @@ const file_proto_login_login_proto_rawDesc = "" +
 	"\agate_id\x18\x04 \x01(\x04R\x06gateId\x12\x1b\n" +
 	"\tdevice_id\x18\x05 \x01(\tR\bdeviceId\x12\x1d\n" +
 	"\n" +
-	"login_time\x18\x06 \x01(\x03R\tloginTime\x12\x10\n" +
-	"\x03fsm\x18\a \x01(\tR\x03fsm\"J\n" +
+	"login_time\x18\x06 \x01(\x03R\tloginTime\"J\n" +
 	"\x1aAccountSimplePlayerWrapper\x12,\n" +
 	"\x06player\x18\x01 \x01(\v2\x14.AccountSimplePlayerR\x06player\"\x80\x01\n" +
 	"\fLoginRequest\x12\x18\n" +
