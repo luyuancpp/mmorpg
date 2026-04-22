@@ -898,7 +898,6 @@ class LoginSessionInfo final : public ::google::protobuf::Message
   enum : int {
     kAccountFieldNumber = 1,
     kDeviceIdFieldNumber = 5,
-    kFsmFieldNumber = 7,
     kRoleIdFieldNumber = 2,
     kGateIdFieldNumber = 4,
     kLoginTimeFieldNumber = 6,
@@ -932,21 +931,6 @@ class LoginSessionInfo final : public ::google::protobuf::Message
   const ::std::string& _internal_device_id() const;
   PROTOBUF_ALWAYS_INLINE void _internal_set_device_id(const ::std::string& value);
   ::std::string* PROTOBUF_NONNULL _internal_mutable_device_id();
-
-  public:
-  // string fsm = 7;
-  void clear_fsm() ;
-  const ::std::string& fsm() const;
-  template <typename Arg_ = const ::std::string&, typename... Args_>
-  void set_fsm(Arg_&& arg, Args_... args);
-  ::std::string* PROTOBUF_NONNULL mutable_fsm();
-  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_fsm();
-  void set_allocated_fsm(::std::string* PROTOBUF_NULLABLE value);
-
-  private:
-  const ::std::string& _internal_fsm() const;
-  PROTOBUF_ALWAYS_INLINE void _internal_set_fsm(const ::std::string& value);
-  ::std::string* PROTOBUF_NONNULL _internal_mutable_fsm();
 
   public:
   // uint64 role_id = 2;
@@ -993,8 +977,8 @@ class LoginSessionInfo final : public ::google::protobuf::Message
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<3, 7,
-                                   0, 52,
+  static const ::google::protobuf::internal::TcParseTable<3, 6,
+                                   0, 49,
                                    2>
       _table_;
 
@@ -1017,7 +1001,6 @@ class LoginSessionInfo final : public ::google::protobuf::Message
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::google::protobuf::internal::ArenaStringPtr account_;
     ::google::protobuf::internal::ArenaStringPtr device_id_;
-    ::google::protobuf::internal::ArenaStringPtr fsm_;
     ::uint64_t role_id_;
     ::uint64_t gate_id_;
     ::int64_t login_time_;
@@ -4067,7 +4050,7 @@ inline void LoginSessionInfo::set_allocated_account(::std::string* PROTOBUF_NULL
 inline void LoginSessionInfo::clear_role_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.role_id_ = ::uint64_t{0u};
-  _impl_._has_bits_[0] &= ~0x00000008u;
+  _impl_._has_bits_[0] &= ~0x00000004u;
 }
 inline ::uint64_t LoginSessionInfo::role_id() const {
   // @@protoc_insertion_point(field_get:loginpb.LoginSessionInfo.role_id)
@@ -4075,7 +4058,7 @@ inline ::uint64_t LoginSessionInfo::role_id() const {
 }
 inline void LoginSessionInfo::set_role_id(::uint64_t value) {
   _internal_set_role_id(value);
-  _impl_._has_bits_[0] |= 0x00000008u;
+  _impl_._has_bits_[0] |= 0x00000004u;
   // @@protoc_insertion_point(field_set:loginpb.LoginSessionInfo.role_id)
 }
 inline ::uint64_t LoginSessionInfo::_internal_role_id() const {
@@ -4091,7 +4074,7 @@ inline void LoginSessionInfo::_internal_set_role_id(::uint64_t value) {
 inline void LoginSessionInfo::clear_session_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.session_id_ = 0u;
-  _impl_._has_bits_[0] &= ~0x00000040u;
+  _impl_._has_bits_[0] &= ~0x00000020u;
 }
 inline ::uint32_t LoginSessionInfo::session_id() const {
   // @@protoc_insertion_point(field_get:loginpb.LoginSessionInfo.session_id)
@@ -4099,7 +4082,7 @@ inline ::uint32_t LoginSessionInfo::session_id() const {
 }
 inline void LoginSessionInfo::set_session_id(::uint32_t value) {
   _internal_set_session_id(value);
-  _impl_._has_bits_[0] |= 0x00000040u;
+  _impl_._has_bits_[0] |= 0x00000020u;
   // @@protoc_insertion_point(field_set:loginpb.LoginSessionInfo.session_id)
 }
 inline ::uint32_t LoginSessionInfo::_internal_session_id() const {
@@ -4115,7 +4098,7 @@ inline void LoginSessionInfo::_internal_set_session_id(::uint32_t value) {
 inline void LoginSessionInfo::clear_gate_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.gate_id_ = ::uint64_t{0u};
-  _impl_._has_bits_[0] &= ~0x00000010u;
+  _impl_._has_bits_[0] &= ~0x00000008u;
 }
 inline ::uint64_t LoginSessionInfo::gate_id() const {
   // @@protoc_insertion_point(field_get:loginpb.LoginSessionInfo.gate_id)
@@ -4123,7 +4106,7 @@ inline ::uint64_t LoginSessionInfo::gate_id() const {
 }
 inline void LoginSessionInfo::set_gate_id(::uint64_t value) {
   _internal_set_gate_id(value);
-  _impl_._has_bits_[0] |= 0x00000010u;
+  _impl_._has_bits_[0] |= 0x00000008u;
   // @@protoc_insertion_point(field_set:loginpb.LoginSessionInfo.gate_id)
 }
 inline ::uint64_t LoginSessionInfo::_internal_gate_id() const {
@@ -4204,7 +4187,7 @@ inline void LoginSessionInfo::set_allocated_device_id(::std::string* PROTOBUF_NU
 inline void LoginSessionInfo::clear_login_time() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.login_time_ = ::int64_t{0};
-  _impl_._has_bits_[0] &= ~0x00000020u;
+  _impl_._has_bits_[0] &= ~0x00000010u;
 }
 inline ::int64_t LoginSessionInfo::login_time() const {
   // @@protoc_insertion_point(field_get:loginpb.LoginSessionInfo.login_time)
@@ -4212,7 +4195,7 @@ inline ::int64_t LoginSessionInfo::login_time() const {
 }
 inline void LoginSessionInfo::set_login_time(::int64_t value) {
   _internal_set_login_time(value);
-  _impl_._has_bits_[0] |= 0x00000020u;
+  _impl_._has_bits_[0] |= 0x00000010u;
   // @@protoc_insertion_point(field_set:loginpb.LoginSessionInfo.login_time)
 }
 inline ::int64_t LoginSessionInfo::_internal_login_time() const {
@@ -4222,71 +4205,6 @@ inline ::int64_t LoginSessionInfo::_internal_login_time() const {
 inline void LoginSessionInfo::_internal_set_login_time(::int64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.login_time_ = value;
-}
-
-// string fsm = 7;
-inline void LoginSessionInfo::clear_fsm() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.fsm_.ClearToEmpty();
-  _impl_._has_bits_[0] &= ~0x00000004u;
-}
-inline const ::std::string& LoginSessionInfo::fsm() const
-    ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:loginpb.LoginSessionInfo.fsm)
-  return _internal_fsm();
-}
-template <typename Arg_, typename... Args_>
-PROTOBUF_ALWAYS_INLINE void LoginSessionInfo::set_fsm(Arg_&& arg, Args_... args) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_._has_bits_[0] |= 0x00000004u;
-  _impl_.fsm_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
-  // @@protoc_insertion_point(field_set:loginpb.LoginSessionInfo.fsm)
-}
-inline ::std::string* PROTOBUF_NONNULL LoginSessionInfo::mutable_fsm()
-    ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  ::std::string* _s = _internal_mutable_fsm();
-  // @@protoc_insertion_point(field_mutable:loginpb.LoginSessionInfo.fsm)
-  return _s;
-}
-inline const ::std::string& LoginSessionInfo::_internal_fsm() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.fsm_.Get();
-}
-inline void LoginSessionInfo::_internal_set_fsm(const ::std::string& value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_._has_bits_[0] |= 0x00000004u;
-  _impl_.fsm_.Set(value, GetArena());
-}
-inline ::std::string* PROTOBUF_NONNULL LoginSessionInfo::_internal_mutable_fsm() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_._has_bits_[0] |= 0x00000004u;
-  return _impl_.fsm_.Mutable( GetArena());
-}
-inline ::std::string* PROTOBUF_NULLABLE LoginSessionInfo::release_fsm() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:loginpb.LoginSessionInfo.fsm)
-  if ((_impl_._has_bits_[0] & 0x00000004u) == 0) {
-    return nullptr;
-  }
-  _impl_._has_bits_[0] &= ~0x00000004u;
-  auto* released = _impl_.fsm_.Release();
-  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
-    _impl_.fsm_.Set("", GetArena());
-  }
-  return released;
-}
-inline void LoginSessionInfo::set_allocated_fsm(::std::string* PROTOBUF_NULLABLE value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  if (value != nullptr) {
-    _impl_._has_bits_[0] |= 0x00000004u;
-  } else {
-    _impl_._has_bits_[0] &= ~0x00000004u;
-  }
-  _impl_.fsm_.SetAllocated(value, GetArena());
-  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.fsm_.IsDefault()) {
-    _impl_.fsm_.Set("", GetArena());
-  }
-  // @@protoc_insertion_point(field_set_allocated:loginpb.LoginSessionInfo.fsm)
 }
 
 // -------------------------------------------------------------------
