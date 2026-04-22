@@ -103,10 +103,15 @@ func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (*scen
 	// 5b. Cross-node switch: notify the old scene node to release the player so
 	// it persists state and tears down the entity. Same-node switches skip this
 	// because the C++ node reuses the in-memory entity directly.
+	// Sync RPC with a short timeout: usually completes in 1-5ms (LAN); if the
+	// old node is stuck/dead we drop the wait after 500ms and continue. AFK
+	// cleanup on the old node remains the fallback.
 	if currentLoc != nil && currentLoc.NodeId != "" && currentLoc.NodeId != nodeId {
-		if err := RequestNodeReleasePlayer(l.ctx, l.svcCtx, currentLoc.NodeId, in.PlayerId, sceneId, nodeId); err != nil {
+		relCtx, cancel := context.WithTimeout(l.ctx, 500*time.Millisecond)
+		if err := RequestNodeReleasePlayer(relCtx, l.svcCtx, currentLoc.NodeId, in.PlayerId, sceneId, nodeId); err != nil {
 			l.Logger.Errorf("Failed to release player %d from old node %s (non-fatal): %v", in.PlayerId, currentLoc.NodeId, err)
 		}
+		cancel()
 	}
 
 	// 6. Update Player Location (Source of Truth)
