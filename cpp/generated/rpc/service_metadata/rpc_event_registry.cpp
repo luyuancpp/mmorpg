@@ -148,7 +148,7 @@ namespace scene_node{void SendSceneNodeGrpcCreateScene(entt::registry& , entt::e
 namespace scene_node{void SendSceneNodeGrpcDestroyScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace scene_node{void SendSceneNodeGrpcReleasePlayer(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 
-std::array<RpcMethodMeta, 128> gRpcMethodRegistry;
+std::array<RpcMethodMeta, 129> gRpcMethodRegistry;
 
 void InitMessageInfo()
 {
