@@ -15,11 +15,6 @@
 #include "proto/common/component/player_network_comp.pb.h"
 #include <session/manager/session_manager.h>
 
-bool shouldLogProtocolErrorForDisconnectedPlayer(int message_id)
-{
-	return true;
-}
-
 ///<<< END WRITING YOUR CODE
 
 void GateHandler::PlayerEnterGameNode(::google::protobuf::RpcController* controller, const ::RegisterGameNodeSessionRequest* request,
@@ -59,10 +54,9 @@ void GateHandler::SendMessageToPlayer(::google::protobuf::RpcController* control
 	auto sessionIt = tlsSessionManager.sessions().find(request->header().session_id());
 	if (sessionIt == tlsSessionManager.sessions().end())
 	{
-		if (shouldLogProtocolErrorForDisconnectedPlayer(request->message_content().message_id()))
-		{
-			LOG_WARN << "Connection ID not found for PlayerMessage, session ID: " << request->header().session_id() << ", message ID:" << request->message_content().message_id();
-		}
+		// Expected during disconnect race: scene pushed a message (e.g. NotifyEnterScene)
+		// after the player's TCP session was already closed on the gate. No state corruption.
+		LOG_DEBUG << "Connection ID not found for PlayerMessage, session ID: " << request->header().session_id() << ", message ID:" << request->message_content().message_id();
 		return;
 	}
 	GetGateCodec().send(sessionIt->second.conn, request->message_content());
@@ -163,10 +157,7 @@ void GateHandler::BroadcastToPlayers(::google::protobuf::RpcController* controll
 		auto sessionIt = tlsSessionManager.sessions().find(sessionId);
 		if (sessionIt == tlsSessionManager.sessions().end())
 		{
-			if (shouldLogProtocolErrorForDisconnectedPlayer(request->message_content().message_id()))
-			{
-				LOG_DEBUG << "Connection ID not found for BroadCast2PlayerMessage, session ID: " << sessionId << ", message ID:" << request->message_content().message_id();
-			}
+			LOG_DEBUG << "Connection ID not found for BroadCast2PlayerMessage, session ID: " << sessionId << ", message ID:" << request->message_content().message_id();
 			return;
 		}
 		GetGateCodec().send(sessionIt->second.conn, request->message_content());
