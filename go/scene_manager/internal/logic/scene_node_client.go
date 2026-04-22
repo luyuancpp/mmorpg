@@ -67,6 +67,32 @@ func RequestNodeDestroyScene(ctx context.Context, svcCtx *svc.ServiceContext, no
 	return nil
 }
 
+// RequestNodeReleasePlayer dials the C++ scene node identified by nodeId
+// (the player's previous scene node) and asks it to release the player so
+// the new node can load fresh state from Redis. Used during cross-node
+// scene switches; same-node switches do not need this.
+func RequestNodeReleasePlayer(ctx context.Context, svcCtx *svc.ServiceContext, nodeId string, playerId uint64, targetSceneId uint64, targetNodeId string) error {
+	if svcCtx.Etcd == nil {
+		return fmt.Errorf("etcd client not available, skipping ReleasePlayer RPC to node %s", nodeId)
+	}
+
+	conn, err := getOrDialNode(ctx, svcCtx, nodeId)
+	if err != nil {
+		return fmt.Errorf("dial scene node %s: %w", nodeId, err)
+	}
+
+	client := scenenodepb.NewSceneNodeGrpcClient(conn)
+	if _, err := client.ReleasePlayer(ctx, &scenenodepb.ReleasePlayerRequest{
+		PlayerId:      playerId,
+		TargetSceneId: targetSceneId,
+		TargetNodeId:  targetNodeId,
+	}); err != nil {
+		return fmt.Errorf("ReleasePlayer RPC to node %s: %w", nodeId, err)
+	}
+
+	return nil
+}
+
 // getOrDialNode returns a cached connection or discovers the node endpoint
 // from etcd and dials it.
 func getOrDialNode(ctx context.Context, svcCtx *svc.ServiceContext, nodeId string) (*grpc.ClientConn, error) {

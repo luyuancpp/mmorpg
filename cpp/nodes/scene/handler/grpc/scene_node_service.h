@@ -24,11 +24,16 @@ public:
         const ::DestroySceneRequest* request,
         ::Empty* response) override;
 
+    grpc::Status ReleasePlayer(grpc::ServerContext* context,
+        const ::scene_node::ReleasePlayerRequest* request,
+        ::Empty* response) override;
+
 private:
     // Handler functions -- run on the muduo event loop thread.
     // WARNING: Must complete quickly. The gRPC thread is blocked waiting via promise/future.
     static void HandleCreateScene(const ::CreateSceneRequest* request, ::CreateSceneResponse* response);
     static void HandleDestroyScene(const ::DestroySceneRequest* request);
+    static void HandleReleasePlayer(const ::scene_node::ReleasePlayerRequest* request);
 
     muduo::net::EventLoop& loop_;
 };

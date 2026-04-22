@@ -25,6 +25,7 @@ namespace scene_node {
 static const char* SceneNodeGrpc_method_names[] = {
   "/scene_node.SceneNodeGrpc/CreateScene",
   "/scene_node.SceneNodeGrpc/DestroyScene",
+  "/scene_node.SceneNodeGrpc/ReleasePlayer",
 };
 
 std::unique_ptr< SceneNodeGrpc::Stub> SceneNodeGrpc::NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options) {
@@ -36,6 +37,7 @@ std::unique_ptr< SceneNodeGrpc::Stub> SceneNodeGrpc::NewStub(const std::shared_p
 SceneNodeGrpc::Stub::Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options)
   : channel_(channel), rpcmethod_CreateScene_(SceneNodeGrpc_method_names[0], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   , rpcmethod_DestroyScene_(SceneNodeGrpc_method_names[1], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_ReleasePlayer_(SceneNodeGrpc_method_names[2], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   {}
 
 ::grpc::Status SceneNodeGrpc::Stub::CreateScene(::grpc::ClientContext* context, const ::CreateSceneRequest& request, ::CreateSceneResponse* response) {
@@ -84,6 +86,29 @@ void SceneNodeGrpc::Stub::async::DestroyScene(::grpc::ClientContext* context, co
   return result;
 }
 
+::grpc::Status SceneNodeGrpc::Stub::ReleasePlayer(::grpc::ClientContext* context, const ::scene_node::ReleasePlayerRequest& request, ::Empty* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::scene_node::ReleasePlayerRequest, ::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_ReleasePlayer_, context, request, response);
+}
+
+void SceneNodeGrpc::Stub::async::ReleasePlayer(::grpc::ClientContext* context, const ::scene_node::ReleasePlayerRequest* request, ::Empty* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::scene_node::ReleasePlayerRequest, ::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_ReleasePlayer_, context, request, response, std::move(f));
+}
+
+void SceneNodeGrpc::Stub::async::ReleasePlayer(::grpc::ClientContext* context, const ::scene_node::ReleasePlayerRequest* request, ::Empty* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_ReleasePlayer_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::Empty>* SceneNodeGrpc::Stub::PrepareAsyncReleasePlayerRaw(::grpc::ClientContext* context, const ::scene_node::ReleasePlayerRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::Empty, ::scene_node::ReleasePlayerRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_ReleasePlayer_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::Empty>* SceneNodeGrpc::Stub::AsyncReleasePlayerRaw(::grpc::ClientContext* context, const ::scene_node::ReleasePlayerRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncReleasePlayerRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
 SceneNodeGrpc::Service::Service() {
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       SceneNodeGrpc_method_names[0],
@@ -105,6 +130,16 @@ SceneNodeGrpc::Service::Service() {
              ::Empty* resp) {
                return service->DestroyScene(ctx, req, resp);
              }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      SceneNodeGrpc_method_names[2],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< SceneNodeGrpc::Service, ::scene_node::ReleasePlayerRequest, ::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](SceneNodeGrpc::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::scene_node::ReleasePlayerRequest* req,
+             ::Empty* resp) {
+               return service->ReleasePlayer(ctx, req, resp);
+             }, this)));
 }
 
 SceneNodeGrpc::Service::~Service() {
@@ -118,6 +153,13 @@ SceneNodeGrpc::Service::~Service() {
 }
 
 ::grpc::Status SceneNodeGrpc::Service::DestroyScene(::grpc::ServerContext* context, const ::DestroySceneRequest* request, ::Empty* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status SceneNodeGrpc::Service::ReleasePlayer(::grpc::ServerContext* context, const ::scene_node::ReleasePlayerRequest* request, ::Empty* response) {
   (void) context;
   (void) request;
   (void) response;

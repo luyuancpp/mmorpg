@@ -146,6 +146,7 @@ namespace scene_manager{void SendSceneManagerEnterScene(entt::registry& , entt::
 namespace scene_manager{void SendSceneManagerLeaveScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace scene_node{void SendSceneNodeGrpcCreateScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace scene_node{void SendSceneNodeGrpcDestroyScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace scene_node{void SendSceneNodeGrpcReleasePlayer(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 
 std::array<RpcMethodMeta, 128> gRpcMethodRegistry;
 
@@ -831,6 +832,11 @@ void InitMessageInfo()
         std::make_unique<::DestroySceneRequest>(),
         std::make_unique<::Empty>(),
         nullptr, 1, common::base::eNodeType::SceneManagerNodeService, scene_node::SendSceneNodeGrpcDestroyScene};
+    gRpcMethodRegistry[SceneNodeGrpcReleasePlayerMessageId] = RpcMethodMeta{
+        "SceneNodeGrpc", "ReleasePlayer",
+        std::make_unique<::scene_node::ReleasePlayerRequest>(),
+        std::make_unique<::Empty>(),
+        nullptr, 1, common::base::eNodeType::SceneManagerNodeService, scene_node::SendSceneNodeGrpcReleasePlayer};
 }
 
 bool IsClientMessageId(uint32_t messageId)

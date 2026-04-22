@@ -53,6 +53,17 @@ class SceneNodeGrpc final {
     std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::Empty>> PrepareAsyncDestroyScene(::grpc::ClientContext* context, const ::DestroySceneRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::Empty>>(PrepareAsyncDestroySceneRaw(context, request, cq));
     }
+    // ReleasePlayer is called by SceneManager on the player's previous scene node
+    // when the player is being routed to a different scene node (cross-node scene
+    // change). The old node persists the player to Redis, drops the entity, and
+    // frees the session mapping so the new node can load fresh from Redis.
+    virtual ::grpc::Status ReleasePlayer(::grpc::ClientContext* context, const ::scene_node::ReleasePlayerRequest& request, ::Empty* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::Empty>> AsyncReleasePlayer(::grpc::ClientContext* context, const ::scene_node::ReleasePlayerRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::Empty>>(AsyncReleasePlayerRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::Empty>> PrepareAsyncReleasePlayer(::grpc::ClientContext* context, const ::scene_node::ReleasePlayerRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::Empty>>(PrepareAsyncReleasePlayerRaw(context, request, cq));
+    }
     class async_interface {
      public:
       virtual ~async_interface() {}
@@ -60,6 +71,12 @@ class SceneNodeGrpc final {
       virtual void CreateScene(::grpc::ClientContext* context, const ::CreateSceneRequest* request, ::CreateSceneResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
       virtual void DestroyScene(::grpc::ClientContext* context, const ::DestroySceneRequest* request, ::Empty* response, std::function<void(::grpc::Status)>) = 0;
       virtual void DestroyScene(::grpc::ClientContext* context, const ::DestroySceneRequest* request, ::Empty* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      // ReleasePlayer is called by SceneManager on the player's previous scene node
+      // when the player is being routed to a different scene node (cross-node scene
+      // change). The old node persists the player to Redis, drops the entity, and
+      // frees the session mapping so the new node can load fresh from Redis.
+      virtual void ReleasePlayer(::grpc::ClientContext* context, const ::scene_node::ReleasePlayerRequest* request, ::Empty* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void ReleasePlayer(::grpc::ClientContext* context, const ::scene_node::ReleasePlayerRequest* request, ::Empty* response, ::grpc::ClientUnaryReactor* reactor) = 0;
     };
     typedef class async_interface experimental_async_interface;
     virtual class async_interface* async() { return nullptr; }
@@ -69,6 +86,8 @@ class SceneNodeGrpc final {
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::CreateSceneResponse>* PrepareAsyncCreateSceneRaw(::grpc::ClientContext* context, const ::CreateSceneRequest& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::Empty>* AsyncDestroySceneRaw(::grpc::ClientContext* context, const ::DestroySceneRequest& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::Empty>* PrepareAsyncDestroySceneRaw(::grpc::ClientContext* context, const ::DestroySceneRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::Empty>* AsyncReleasePlayerRaw(::grpc::ClientContext* context, const ::scene_node::ReleasePlayerRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::Empty>* PrepareAsyncReleasePlayerRaw(::grpc::ClientContext* context, const ::scene_node::ReleasePlayerRequest& request, ::grpc::CompletionQueue* cq) = 0;
   };
   class Stub final : public StubInterface {
    public:
@@ -87,6 +106,13 @@ class SceneNodeGrpc final {
     std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::Empty>> PrepareAsyncDestroyScene(::grpc::ClientContext* context, const ::DestroySceneRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::Empty>>(PrepareAsyncDestroySceneRaw(context, request, cq));
     }
+    ::grpc::Status ReleasePlayer(::grpc::ClientContext* context, const ::scene_node::ReleasePlayerRequest& request, ::Empty* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::Empty>> AsyncReleasePlayer(::grpc::ClientContext* context, const ::scene_node::ReleasePlayerRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::Empty>>(AsyncReleasePlayerRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::Empty>> PrepareAsyncReleasePlayer(::grpc::ClientContext* context, const ::scene_node::ReleasePlayerRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::Empty>>(PrepareAsyncReleasePlayerRaw(context, request, cq));
+    }
     class async final :
       public StubInterface::async_interface {
      public:
@@ -94,6 +120,8 @@ class SceneNodeGrpc final {
       void CreateScene(::grpc::ClientContext* context, const ::CreateSceneRequest* request, ::CreateSceneResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
       void DestroyScene(::grpc::ClientContext* context, const ::DestroySceneRequest* request, ::Empty* response, std::function<void(::grpc::Status)>) override;
       void DestroyScene(::grpc::ClientContext* context, const ::DestroySceneRequest* request, ::Empty* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void ReleasePlayer(::grpc::ClientContext* context, const ::scene_node::ReleasePlayerRequest* request, ::Empty* response, std::function<void(::grpc::Status)>) override;
+      void ReleasePlayer(::grpc::ClientContext* context, const ::scene_node::ReleasePlayerRequest* request, ::Empty* response, ::grpc::ClientUnaryReactor* reactor) override;
      private:
       friend class Stub;
       explicit async(Stub* stub): stub_(stub) { }
@@ -109,8 +137,11 @@ class SceneNodeGrpc final {
     ::grpc::ClientAsyncResponseReader< ::CreateSceneResponse>* PrepareAsyncCreateSceneRaw(::grpc::ClientContext* context, const ::CreateSceneRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::Empty>* AsyncDestroySceneRaw(::grpc::ClientContext* context, const ::DestroySceneRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::Empty>* PrepareAsyncDestroySceneRaw(::grpc::ClientContext* context, const ::DestroySceneRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::Empty>* AsyncReleasePlayerRaw(::grpc::ClientContext* context, const ::scene_node::ReleasePlayerRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::Empty>* PrepareAsyncReleasePlayerRaw(::grpc::ClientContext* context, const ::scene_node::ReleasePlayerRequest& request, ::grpc::CompletionQueue* cq) override;
     const ::grpc::internal::RpcMethod rpcmethod_CreateScene_;
     const ::grpc::internal::RpcMethod rpcmethod_DestroyScene_;
+    const ::grpc::internal::RpcMethod rpcmethod_ReleasePlayer_;
   };
   static std::unique_ptr<Stub> NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options = ::grpc::StubOptions());
 
@@ -120,6 +151,11 @@ class SceneNodeGrpc final {
     virtual ~Service();
     virtual ::grpc::Status CreateScene(::grpc::ServerContext* context, const ::CreateSceneRequest* request, ::CreateSceneResponse* response);
     virtual ::grpc::Status DestroyScene(::grpc::ServerContext* context, const ::DestroySceneRequest* request, ::Empty* response);
+    // ReleasePlayer is called by SceneManager on the player's previous scene node
+    // when the player is being routed to a different scene node (cross-node scene
+    // change). The old node persists the player to Redis, drops the entity, and
+    // frees the session mapping so the new node can load fresh from Redis.
+    virtual ::grpc::Status ReleasePlayer(::grpc::ServerContext* context, const ::scene_node::ReleasePlayerRequest* request, ::Empty* response);
   };
   template <class BaseClass>
   class WithAsyncMethod_CreateScene : public BaseClass {
@@ -161,7 +197,27 @@ class SceneNodeGrpc final {
       ::grpc::Service::RequestAsyncUnary(1, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
-  typedef WithAsyncMethod_CreateScene<WithAsyncMethod_DestroyScene<Service > > AsyncService;
+  template <class BaseClass>
+  class WithAsyncMethod_ReleasePlayer : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_ReleasePlayer() {
+      ::grpc::Service::MarkMethodAsync(2);
+    }
+    ~WithAsyncMethod_ReleasePlayer() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status ReleasePlayer(::grpc::ServerContext* /*context*/, const ::scene_node::ReleasePlayerRequest* /*request*/, ::Empty* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestReleasePlayer(::grpc::ServerContext* context, ::scene_node::ReleasePlayerRequest* request, ::grpc::ServerAsyncResponseWriter< ::Empty>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(2, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  typedef WithAsyncMethod_CreateScene<WithAsyncMethod_DestroyScene<WithAsyncMethod_ReleasePlayer<Service > > > AsyncService;
   template <class BaseClass>
   class WithCallbackMethod_CreateScene : public BaseClass {
    private:
@@ -216,7 +272,34 @@ class SceneNodeGrpc final {
     virtual ::grpc::ServerUnaryReactor* DestroyScene(
       ::grpc::CallbackServerContext* /*context*/, const ::DestroySceneRequest* /*request*/, ::Empty* /*response*/)  { return nullptr; }
   };
-  typedef WithCallbackMethod_CreateScene<WithCallbackMethod_DestroyScene<Service > > CallbackService;
+  template <class BaseClass>
+  class WithCallbackMethod_ReleasePlayer : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_ReleasePlayer() {
+      ::grpc::Service::MarkMethodCallback(2,
+          new ::grpc::internal::CallbackUnaryHandler< ::scene_node::ReleasePlayerRequest, ::Empty>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::scene_node::ReleasePlayerRequest* request, ::Empty* response) { return this->ReleasePlayer(context, request, response); }));}
+    void SetMessageAllocatorFor_ReleasePlayer(
+        ::grpc::MessageAllocator< ::scene_node::ReleasePlayerRequest, ::Empty>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(2);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::scene_node::ReleasePlayerRequest, ::Empty>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_ReleasePlayer() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status ReleasePlayer(::grpc::ServerContext* /*context*/, const ::scene_node::ReleasePlayerRequest* /*request*/, ::Empty* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* ReleasePlayer(
+      ::grpc::CallbackServerContext* /*context*/, const ::scene_node::ReleasePlayerRequest* /*request*/, ::Empty* /*response*/)  { return nullptr; }
+  };
+  typedef WithCallbackMethod_CreateScene<WithCallbackMethod_DestroyScene<WithCallbackMethod_ReleasePlayer<Service > > > CallbackService;
   typedef CallbackService ExperimentalCallbackService;
   template <class BaseClass>
   class WithGenericMethod_CreateScene : public BaseClass {
@@ -248,6 +331,23 @@ class SceneNodeGrpc final {
     }
     // disable synchronous version of this method
     ::grpc::Status DestroyScene(::grpc::ServerContext* /*context*/, const ::DestroySceneRequest* /*request*/, ::Empty* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_ReleasePlayer : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_ReleasePlayer() {
+      ::grpc::Service::MarkMethodGeneric(2);
+    }
+    ~WithGenericMethod_ReleasePlayer() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status ReleasePlayer(::grpc::ServerContext* /*context*/, const ::scene_node::ReleasePlayerRequest* /*request*/, ::Empty* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -293,6 +393,26 @@ class SceneNodeGrpc final {
     }
   };
   template <class BaseClass>
+  class WithRawMethod_ReleasePlayer : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_ReleasePlayer() {
+      ::grpc::Service::MarkMethodRaw(2);
+    }
+    ~WithRawMethod_ReleasePlayer() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status ReleasePlayer(::grpc::ServerContext* /*context*/, const ::scene_node::ReleasePlayerRequest* /*request*/, ::Empty* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestReleasePlayer(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(2, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
   class WithRawCallbackMethod_CreateScene : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
@@ -334,6 +454,28 @@ class SceneNodeGrpc final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     virtual ::grpc::ServerUnaryReactor* DestroyScene(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_ReleasePlayer : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_ReleasePlayer() {
+      ::grpc::Service::MarkMethodRawCallback(2,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->ReleasePlayer(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_ReleasePlayer() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status ReleasePlayer(::grpc::ServerContext* /*context*/, const ::scene_node::ReleasePlayerRequest* /*request*/, ::Empty* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* ReleasePlayer(
       ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
   };
   template <class BaseClass>
@@ -390,9 +532,36 @@ class SceneNodeGrpc final {
     // replace default version of method with streamed unary
     virtual ::grpc::Status StreamedDestroyScene(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::DestroySceneRequest,::Empty>* server_unary_streamer) = 0;
   };
-  typedef WithStreamedUnaryMethod_CreateScene<WithStreamedUnaryMethod_DestroyScene<Service > > StreamedUnaryService;
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_ReleasePlayer : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_ReleasePlayer() {
+      ::grpc::Service::MarkMethodStreamed(2,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::scene_node::ReleasePlayerRequest, ::Empty>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::scene_node::ReleasePlayerRequest, ::Empty>* streamer) {
+                       return this->StreamedReleasePlayer(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_ReleasePlayer() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status ReleasePlayer(::grpc::ServerContext* /*context*/, const ::scene_node::ReleasePlayerRequest* /*request*/, ::Empty* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedReleasePlayer(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::scene_node::ReleasePlayerRequest,::Empty>* server_unary_streamer) = 0;
+  };
+  typedef WithStreamedUnaryMethod_CreateScene<WithStreamedUnaryMethod_DestroyScene<WithStreamedUnaryMethod_ReleasePlayer<Service > > > StreamedUnaryService;
   typedef Service SplitStreamedService;
-  typedef WithStreamedUnaryMethod_CreateScene<WithStreamedUnaryMethod_DestroyScene<Service > > StreamedService;
+  typedef WithStreamedUnaryMethod_CreateScene<WithStreamedUnaryMethod_DestroyScene<WithStreamedUnaryMethod_ReleasePlayer<Service > > > StreamedService;
 };
 
 }  // namespace scene_node
