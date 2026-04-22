@@ -126,3 +126,4 @@
 125=GateGmGracefulShutdown
 126=SceneSceneGmGracefulShutdown
 127=ClientPlayerLoginRefreshToken
+128=SceneNodeGrpcReleasePlayer

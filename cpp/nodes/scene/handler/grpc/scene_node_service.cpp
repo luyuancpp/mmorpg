@@ -95,7 +95,7 @@ void SceneNodeGrpcImpl::HandleDestroyScene(const ::DestroySceneRequest* request)
     ///<<< END WRITING YOUR CODE
 }
 
-void SceneNodeGrpcImpl::HandleReleasePlayer(const ::scene_node::ReleasePlayerRequest *request)
+void SceneNodeGrpcImpl::HandleReleasePlayer(const ::scene_node::ReleasePlayerRequest* request)
 {
     ///<<< BEGIN WRITING YOUR CODE
     const auto playerId = request->player_id();
@@ -115,9 +115,9 @@ void SceneNodeGrpcImpl::HandleReleasePlayer(const ::scene_node::ReleasePlayerReq
     ///<<< END WRITING YOUR CODE
 }
 
-grpc::Status SceneNodeGrpcImpl::CreateScene(grpc::ServerContext * /*context*/,
-                                            const ::CreateSceneRequest *request,
-                                            ::CreateSceneResponse *response)
+grpc::Status SceneNodeGrpcImpl::CreateScene(grpc::ServerContext* /*context*/,
+    const ::CreateSceneRequest* request,
+    ::CreateSceneResponse* response)
 {
     std::promise<void> promise;
     auto future = promise.get_future();
@@ -131,9 +131,9 @@ grpc::Status SceneNodeGrpcImpl::CreateScene(grpc::ServerContext * /*context*/,
     return grpc::Status::OK;
 }
 
-grpc::Status SceneNodeGrpcImpl::DestroyScene(grpc::ServerContext * /*context*/,
-                                             const ::DestroySceneRequest *request,
-                                             ::Empty *response)
+grpc::Status SceneNodeGrpcImpl::DestroyScene(grpc::ServerContext* /*context*/,
+    const ::DestroySceneRequest* request,
+    ::Empty* response)
 {
     std::promise<void> promise;
     auto future = promise.get_future();
@@ -147,9 +147,9 @@ grpc::Status SceneNodeGrpcImpl::DestroyScene(grpc::ServerContext * /*context*/,
     return grpc::Status::OK;
 }
 
-grpc::Status SceneNodeGrpcImpl::ReleasePlayer(grpc::ServerContext * /*context*/,
-                                              const ::scene_node::ReleasePlayerRequest *request,
-                                              ::Empty *response)
+grpc::Status SceneNodeGrpcImpl::ReleasePlayer(grpc::ServerContext* /*context*/,
+    const ::scene_node::ReleasePlayerRequest* request,
+    ::Empty* response)
 {
     std::promise<void> promise;
     auto future = promise.get_future();
