@@ -225,11 +225,18 @@ func (l *EnterSceneLogic) resolveScene(sceneId uint64, sceneConfId uint64, zoneI
 		}
 		// Validate the mapped node is still alive; reassign if dead.
 		if !IsNodeAlive(l.svcCtx, zoneId, nodeId) {
-			newNodeId, err := GetBestNode(l.ctx, l.svcCtx, zoneId)
-			if err != nil {
-				return 0, "", fmt.Errorf("scene %d mapped to dead node %s and no live nodes: %w", sceneId, nodeId, err)
+			// Pick a replacement of the correct purpose so a world scene
+			// never gets moved onto an instance-only node (C++ EnterScene
+			// would then reject the request on type mismatch).
+			purpose := constants.NodePurposeInstance
+			if sceneConfId != 0 && IsWorldConf(sceneConfId) {
+				purpose = constants.NodePurposeWorld
 			}
-			l.Logger.Infof("resolveScene: scene %d was on dead node %s, reassigning to %s", sceneId, nodeId, newNodeId)
+			newNodeId, err := GetBestNodeForPurpose(l.ctx, l.svcCtx, zoneId, purpose)
+			if err != nil {
+				return 0, "", fmt.Errorf("scene %d mapped to dead node %s and no live nodes for purpose %d: %w", sceneId, nodeId, purpose, err)
+			}
+			l.Logger.Infof("resolveScene: scene %d was on dead node %s, reassigning to %s (purpose=%d)", sceneId, nodeId, newNodeId, purpose)
 			l.svcCtx.Redis.Set(key, newNodeId)
 			nodeId = newNodeId
 

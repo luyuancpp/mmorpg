@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 
+	"scene_manager/internal/constants"
 	"scene_manager/internal/svc"
 
 	"shared/generated/table"
@@ -33,20 +34,26 @@ func worldChannelsKey(zoneID uint32, confId uint64) string {
 //   - C++ layer: CreateScene is idempotent by scene_id (returns existing entity).
 //
 // Always sends CreateScene RPC for all channels to handle C++ node restarts.
+//
+// Node selection uses the world-hosting pool (scene_node_type ∈
+// {kMainSceneNode, kMainSceneCrossNode}) so instance-only nodes are never
+// handed a persistent world channel. When StrictNodeTypeSeparation=false and
+// the pool is empty, selection falls back to any available node in the zone
+// (dev / single-process convenience).
 func initWorldScenesForZone(ctx context.Context, svcCtx *svc.ServiceContext, zoneId uint32, confIds []uint64) {
-	nodes := getNodesForZone(svcCtx, zoneId)
+	nodes := getNodesForPurpose(svcCtx, zoneId, constants.NodePurposeWorld)
 	if len(nodes) == 0 {
-		logx.Errorf("[World] No nodes available for zone %d, skipping", zoneId)
+		logx.Errorf("[World] Zone %d: no world-hosting nodes available (strict=%v), skipping",
+			zoneId, svcCtx.Config.StrictNodeTypeSeparation)
 		return
 	}
+	// assignNodeByHash needs a stable ordering independent of live load
+	// scores, otherwise the same (confId, channel) could land on different
+	// nodes across two scheduling runs whenever a node's score changed.
+	sort.Strings(nodes)
 
-	channelCount := svcCtx.Config.WorldChannelCount
-	if channelCount < 1 {
-		channelCount = 1
-	}
-
-	logx.Infof("[World] Zone %d: ensuring %d world scenes x %d channels across %d nodes",
-		zoneId, len(confIds), channelCount, len(nodes))
+	logx.Infof("[World] Zone %d: ensuring %d world scenes across %d world-hosting nodes",
+		zoneId, len(confIds), len(nodes))
 
 	// Track nodes proven dead during this batch to avoid repeated failures.
 	deadNodes := make(map[string]struct{})
@@ -57,6 +64,7 @@ func initWorldScenesForZone(ctx context.Context, svcCtx *svc.ServiceContext, zon
 
 	for _, confId := range confIds {
 		channelSetKey := worldChannelsKey(zoneId, confId)
+		channelCount := svcCtx.Config.ChannelCountFor(confId)
 
 		// Get existing channels for this confId.
 		existingMembers, _ := svcCtx.Redis.Smembers(channelSetKey)
@@ -193,8 +201,12 @@ func GetBestWorldChannel(ctx context.Context, svcCtx *svc.ServiceContext, confId
 		return bestSceneId, bestNodeId, nil
 	}
 
-	// All channels mapped to dead nodes — lazy-reassign to live nodes.
-	liveNodes := getNodesForZone(svcCtx, zoneId)
+	// All channels mapped to dead nodes — lazy-reassign to live world-hosting
+	// nodes. Mixing purposes here would put a persistent world onto an
+	// instance-only node and future EnterScene requests would be rejected by
+	// the C++ handler (see player_scene_handler.cpp).
+	liveNodes := getNodesForPurpose(svcCtx, zoneId, constants.NodePurposeWorld)
+	sort.Strings(liveNodes)
 	if len(liveNodes) == 0 {
 		logx.Errorf("[World] All %d channels for conf %d (zone %d) are stale and no live nodes available",
 			len(staleSceneIds), confId, zoneId)
@@ -259,21 +271,6 @@ func IsWorldConf(confId uint64) bool {
 		}
 	}
 	return false
-}
-
-// getNodesForZone returns sorted node IDs for a given zone from the Redis load set.
-func getNodesForZone(svcCtx *svc.ServiceContext, zoneId uint32) []string {
-	loadKey := nodeLoadKey(zoneId)
-	pairs, err := svcCtx.Redis.ZrangeWithScores(loadKey, 0, -1)
-	if err != nil || len(pairs) == 0 {
-		return nil
-	}
-	nodes := make([]string, 0, len(pairs))
-	for _, p := range pairs {
-		nodes = append(nodes, p.Key)
-	}
-	sort.Strings(nodes)
-	return nodes
 }
 
 // assignNodeByHash uses FNV-1a to consistently map a key to a node.

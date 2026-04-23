@@ -2,6 +2,24 @@
 #include <yaml-cpp/yaml.h>
 #include <muduo/base/Logging.h>
 #include <node_config_manager.h>
+#include <cstdlib>
+#include <cstring>
+
+namespace
+{
+// Returns a non-empty environment value, or nullptr when the variable is
+// unset or empty. Used to let K8s / container env override selected fields
+// from the baseline YAML files without shipping per-pod config files.
+const char *GetNonEmptyEnv(const char *name)
+{
+    const char *value = std::getenv(name);
+    if (value == nullptr || value[0] == '\0')
+    {
+        return nullptr;
+    }
+    return value;
+}
+} // namespace
 
 bool readBaseDeployConfig(const std::string &filename, BaseDeployConfig &baseConfig)
 {
@@ -131,6 +149,39 @@ bool readGameConfig(const std::string &filename, GameConfig &gameConfig)
 	if (root["ZoneId"])
 	{
 		gameConfig.set_zone_id(root["ZoneId"].as<uint32_t>());
+	}
+
+	// Environment overrides (last-wins). These let a single image be reused
+	// across two Deployments with different roles, without templating YAML
+	// per pod. See docs/ops/scene-node-role-split.md for the rollout flow.
+	//   SCENE_NODE_TYPE: 0=main world, 1=instance, 2=main world cross, 3=instance cross.
+	//   ZONE_ID:          per-zone override when the same image is shared.
+	if (const char *envRole = GetNonEmptyEnv("SCENE_NODE_TYPE"))
+	{
+		try
+		{
+			const uint32_t role = static_cast<uint32_t>(std::stoul(envRole));
+			gameConfig.set_scene_node_type(role);
+			LOG_INFO << "SCENE_NODE_TYPE env override applied: " << role;
+		}
+		catch (const std::exception &ex)
+		{
+			LOG_WARN << "Ignore invalid SCENE_NODE_TYPE env value '" << envRole << "': " << ex.what();
+		}
+	}
+
+	if (const char *envZone = GetNonEmptyEnv("ZONE_ID"))
+	{
+		try
+		{
+			const uint32_t zone = static_cast<uint32_t>(std::stoul(envZone));
+			gameConfig.set_zone_id(zone);
+			LOG_INFO << "ZONE_ID env override applied: " << zone;
+		}
+		catch (const std::exception &ex)
+		{
+			LOG_WARN << "Ignore invalid ZONE_ID env value '" << envZone << "': " << ex.what();
+		}
 	}
 
 	// Parse zone Redis config

@@ -4,19 +4,30 @@ zones:
     replicas:
       centre: 1
       gate: 2
-      scene: 4
+      # Role-split scene pools (matches scene_manager StrictNodeTypeSeparation=true).
+      scene_world: 2    # SceneNodeType=0, persistent main world channels
+      scene_instance: 2 # SceneNodeType=1, on-demand dungeons / battlegrounds
 
   - name: today
     zoneId: 102
     replicas:
       centre: 1
       gate: 2
-      scene: 4
+      scene_world: 2
+      scene_instance: 2
 
 # Ops recommendation:
 # 1. Keep centre=1 unless you have already validated multi-centre semantics.
-# 2. Start with gate=2 and scene=4 per zone for basic redundancy and rollout safety.
-# 3. Use YAML as the operational source of truth; keep JSON only for tool interop.
-# 4. Managed cloud K8s: prefer -GateServiceType LoadBalancer.
-# 5. Self-hosted/bare metal K8s: prefer -GateServiceType NodePort behind an external L4 LB.
-# 6. Do not default every cluster to LoadBalancer; if the cluster lacks a mature LB implementation, NodePort + external L4 LB is usually the more stable production choice.
+# 2. Start with gate=2 and scene_world=2 / scene_instance=2 per zone for basic
+#    redundancy and rollout safety. Legacy `scene: 4` still works if the
+#    orchestration script you use does not yet understand the split form;
+#    in that case set scene_manager StrictNodeTypeSeparation=false during
+#    the transition window.
+# 3. Scale scene_instance first - dungeons and battlegrounds are bursty and
+#    stateful-per-instance, while main-world channels are relatively steady.
+# 4. Use YAML as the operational source of truth; keep JSON only for tool interop.
+# 5. Managed cloud K8s: prefer -GateServiceType LoadBalancer.
+# 6. Self-hosted/bare metal K8s: prefer -GateServiceType NodePort behind an external L4 LB.
+# 7. Do not default every cluster to LoadBalancer; if the cluster lacks a mature
+#    LB implementation, NodePort + external L4 LB is usually the more stable
+#    production choice.

@@ -23,6 +23,7 @@ cpp/
 | Node-local event handlers | `nodes/*/handler/event/` | Event-driven edge logic |
 | Async/reply handling | `nodes/*/rpc_replies/` | `On<Domain><Method>Reply` style |
 | Scene gameplay/domain | `libs/services/scene/` | actor/player/world/frame/team/etc. |
+| Scene node role config | `libs/engine/config/config.cpp` `readGameConfig` | Honours `SCENE_NODE_TYPE` / `ZONE_ID` / `GAME_CONFIG_PATH` env overrides |
 | Static analysis rule | `.clang-tidy` | Custom `myplugin-no-member-pointer` check only |
 
 ## CONVENTIONS

@@ -13,9 +13,19 @@ import (
 
 	"proto/scene_manager"
 	"scene_manager/internal/config"
+	"scene_manager/internal/constants"
 	"scene_manager/internal/svc"
 	"shared/snowflake"
 )
+
+// registerTypedNode seeds a scene node with both a load-set entry and a
+// mirrored scene_node_type so purpose-based selection works in tests.
+// Tests that don't care about type should keep using mr.ZAdd directly;
+// unclassified nodes are allowed for any purpose by design.
+func registerTypedNode(mr *miniredis.Miniredis, zoneId uint32, nodeId string, sceneNodeType uint32, loadScore float64) {
+	mr.ZAdd(nodeLoadKey(zoneId), loadScore, nodeId)
+	mr.Set(fmt.Sprintf(NodeSceneNodeTypeKey, nodeId), fmt.Sprintf("%d", sceneNodeType))
+}
 
 // nowUnix returns the current Unix timestamp for test helpers that need to
 // backdate sorted-set scores to drive the idle-instance cleanup pass.
@@ -883,4 +893,270 @@ func TestResolveMirrorTimeout_FallsBackToInstance(t *testing.T) {
 
 	sc.Config.MirrorIdleTimeoutSeconds = 15
 	assert.Equal(t, int64(15), resolveMirrorTimeout(sc), "positive value wins")
+}
+
+// ---------------------------------------------------------------------------
+// Node-type routing (WoW-style world server vs instance server separation)
+// ---------------------------------------------------------------------------
+//
+// The main-world and instance paths must land on nodes whose
+// scene_node_type matches the purpose. Mirror co-location is the only
+// intentional exception — it prefers the source scene's node so the
+// already-resident map/AI/spawn data can be reused.
+
+func TestGetNodesForPurpose_FiltersByType(t *testing.T) {
+	sc, mr := newTestSvcCtxWithWorldScenes(t)
+
+	registerTypedNode(mr, testZoneId, "10", constants.SceneNodeTypeMainWorld, 0)
+	registerTypedNode(mr, testZoneId, "20", constants.SceneNodeTypeInstance, 0)
+	registerTypedNode(mr, testZoneId, "30", constants.SceneNodeTypeInstance, 0)
+
+	worldPool := getNodesForPurpose(sc, testZoneId, constants.NodePurposeWorld)
+	assert.ElementsMatch(t, []string{"10"}, worldPool)
+
+	instancePool := getNodesForPurpose(sc, testZoneId, constants.NodePurposeInstance)
+	assert.ElementsMatch(t, []string{"20", "30"}, instancePool)
+}
+
+func TestGetNodesForPurpose_StrictMode_NoFallback(t *testing.T) {
+	sc, mr := newTestSvcCtxWithWorldScenes(t)
+	sc.Config.StrictNodeTypeSeparation = true
+
+	// Only instance-type nodes registered; world request must return nil.
+	registerTypedNode(mr, testZoneId, "20", constants.SceneNodeTypeInstance, 0)
+	registerTypedNode(mr, testZoneId, "30", constants.SceneNodeTypeInstance, 0)
+
+	worldPool := getNodesForPurpose(sc, testZoneId, constants.NodePurposeWorld)
+	assert.Empty(t, worldPool, "strict mode must not leak instance nodes into the world pool")
+}
+
+func TestGetNodesForPurpose_NonStrict_FallsBackToAll(t *testing.T) {
+	sc, mr := newTestSvcCtxWithWorldScenes(t)
+	sc.Config.StrictNodeTypeSeparation = false
+
+	// Only instance-type nodes; world request should fall back in non-strict.
+	registerTypedNode(mr, testZoneId, "20", constants.SceneNodeTypeInstance, 0)
+	registerTypedNode(mr, testZoneId, "30", constants.SceneNodeTypeInstance, 5)
+
+	worldPool := getNodesForPurpose(sc, testZoneId, constants.NodePurposeWorld)
+	assert.ElementsMatch(t, []string{"20", "30"}, worldPool,
+		"non-strict: world request falls back to full pool when no world nodes exist")
+}
+
+func TestGetNodesForPurpose_UnclassifiedAllowedForAnyPurpose(t *testing.T) {
+	sc, mr := newTestSvcCtxWithWorldScenes(t)
+	sc.Config.StrictNodeTypeSeparation = true
+
+	// No scene_node_type mirrored — simulates a node in the middle of
+	// registration, or a legacy node that never set GameConfig.scene_node_type.
+	mr.ZAdd(testLoadKey(), 0, "99")
+
+	assert.ElementsMatch(t, []string{"99"},
+		getNodesForPurpose(sc, testZoneId, constants.NodePurposeWorld),
+		"unclassified node must be available to world purpose")
+	assert.ElementsMatch(t, []string{"99"},
+		getNodesForPurpose(sc, testZoneId, constants.NodePurposeInstance),
+		"unclassified node must be available to instance purpose")
+}
+
+func TestGetBestNodeForPurpose_RespectsLoadOrderWithinPool(t *testing.T) {
+	sc, mr := newTestSvcCtxWithWorldScenes(t)
+	ctx := context.Background()
+
+	// world-type nodes with different scores; instance-type "hot" has the
+	// lowest score but must not win a world pick.
+	registerTypedNode(mr, testZoneId, "world-cool", constants.SceneNodeTypeMainWorld, 5)
+	registerTypedNode(mr, testZoneId, "world-warm", constants.SceneNodeTypeMainWorld, 10)
+	registerTypedNode(mr, testZoneId, "instance-hot", constants.SceneNodeTypeInstance, 0)
+
+	best, err := GetBestNodeForPurpose(ctx, sc, testZoneId, constants.NodePurposeWorld)
+	require.NoError(t, err)
+	assert.Equal(t, "world-cool", best, "must pick lowest-load node in the world pool, not the hot instance node")
+}
+
+func TestCreateScene_Instance_StrictMode_RejectsWhenNoInstanceNode(t *testing.T) {
+	sc, mr := newTestSvcCtxWithWorldScenes(t)
+	sc.Config.StrictNodeTypeSeparation = true
+	ctx := context.Background()
+
+	// Only main-world nodes in the zone.
+	registerTypedNode(mr, testZoneId, "10", constants.SceneNodeTypeMainWorld, 0)
+
+	logic := NewCreateSceneLogic(ctx, sc)
+	resp, err := logic.CreateScene(&scene_manager.CreateSceneRequest{
+		SceneConfId: 2001,
+		ZoneId:      testZoneId,
+		SceneType:   scene_manager.SceneType_SCENE_TYPE_INSTANCE,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, constants.ErrNoNodeForPurpose, resp.ErrorCode,
+		"strict mode: instance request with only world nodes must fail with ErrNoNodeForPurpose")
+}
+
+func TestCreateScene_Mirror_BypassesPurposeFilter(t *testing.T) {
+	sc, mr := newTestSvcCtxWithWorldScenes(t)
+	sc.Config.StrictNodeTypeSeparation = true
+	ctx := context.Background()
+
+	// World-type node hosts the source scene; instance-type node is the
+	// "natural" target for a fresh instance request under strict mode.
+	// Mirror path must still pick the world node to preserve map reuse.
+	registerTypedNode(mr, testZoneId, "world", constants.SceneNodeTypeMainWorld, 0)
+	registerTypedNode(mr, testZoneId, "instance", constants.SceneNodeTypeInstance, 0)
+	sc.Redis.Set(fmt.Sprintf(SceneNodeKeyFmt, uint64(55555)), "world")
+
+	logic := NewCreateSceneLogic(ctx, sc)
+	resp, err := logic.CreateScene(&scene_manager.CreateSceneRequest{
+		SceneConfId:    2001,
+		ZoneId:         testZoneId,
+		SceneType:      scene_manager.SceneType_SCENE_TYPE_INSTANCE,
+		SourceSceneId:  55555,
+		MirrorConfigId: 9999,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "world", resp.NodeId,
+		"mirror must co-locate on source node even when it's a world-type node and strict mode is on")
+}
+
+func TestInitWorldScenes_StrictMode_SkipsInstanceOnlyZone(t *testing.T) {
+	sc, mr := newTestSvcCtxWithWorldScenes(t)
+	sc.Config.StrictNodeTypeSeparation = true
+	ctx := context.Background()
+
+	// Only instance-type nodes; strict mode must refuse to place world channels.
+	registerTypedNode(mr, testZoneId, "inst1", constants.SceneNodeTypeInstance, 0)
+
+	initWorldScenesForZone(ctx, sc, testZoneId, []uint64{1001})
+
+	channels, _ := GetAllWorldChannels(ctx, sc, 1001, testZoneId)
+	assert.Empty(t, channels, "strict mode must not create world channels on instance-only nodes")
+}
+
+// ---------------------------------------------------------------------------
+// Per-confId channel-count override
+// ---------------------------------------------------------------------------
+
+func TestChannelCountFor_PerConfIdOverride(t *testing.T) {
+	c := &config.Config{
+		WorldChannelCount: 2,
+		WorldChannelCountByConfId: map[uint64]int{
+			1001: 5,
+			1002: 1,
+		},
+	}
+
+	assert.Equal(t, 5, c.ChannelCountFor(1001), "explicit override wins")
+	assert.Equal(t, 1, c.ChannelCountFor(1002), "override can shrink too")
+	assert.Equal(t, 2, c.ChannelCountFor(9999), "non-overridden confId uses default")
+}
+
+func TestChannelCountFor_ClampsToOne(t *testing.T) {
+	c := &config.Config{WorldChannelCount: 0}
+	assert.Equal(t, 1, c.ChannelCountFor(1001),
+		"WorldChannelCount=0 must clamp to 1 (every world scene needs at least one channel)")
+}
+
+func TestInitWorldScenes_PerConfIdOverride(t *testing.T) {
+	sc, mr := newTestSvcCtxWithWorldScenes(t)
+	sc.Config.WorldChannelCount = 2
+	sc.Config.WorldChannelCountByConfId = map[uint64]int{
+		1001: 4, // hot city
+		1002: 1, // tutorial
+	}
+	ctx := context.Background()
+
+	registerTypedNode(mr, testZoneId, "10", constants.SceneNodeTypeMainWorld, 0)
+
+	initWorldScenesForZone(ctx, sc, testZoneId, []uint64{1001, 1002, 1003})
+
+	ch1001, _ := GetAllWorldChannels(ctx, sc, 1001, testZoneId)
+	ch1002, _ := GetAllWorldChannels(ctx, sc, 1002, testZoneId)
+	ch1003, _ := GetAllWorldChannels(ctx, sc, 1003, testZoneId)
+
+	assert.Len(t, ch1001, 4, "1001 uses its override (4)")
+	assert.Len(t, ch1002, 1, "1002 uses its override (1)")
+	assert.Len(t, ch1003, 2, "1003 falls back to the default (2)")
+}
+
+// ---------------------------------------------------------------------------
+// Per-node player count aggregate (feeds composite load score)
+// ---------------------------------------------------------------------------
+
+func TestIncrDecrPlayerCount_UpdatesPerNodeAggregate(t *testing.T) {
+	sc, _ := newTestSvcCtx(t, "node-1")
+
+	sceneId := uint64(777)
+	sc.Redis.Set(fmt.Sprintf(SceneNodeKeyFmt, sceneId), "node-A")
+
+	IncrInstancePlayerCount(sc, sceneId)
+	IncrInstancePlayerCount(sc, sceneId)
+
+	nodeVal, _ := sc.Redis.Get(fmt.Sprintf(NodePlayerCountKey, "node-A"))
+	assert.Equal(t, "2", nodeVal, "per-node counter must track enters")
+
+	DecrInstancePlayerCount(sc, sceneId)
+	nodeVal, _ = sc.Redis.Get(fmt.Sprintf(NodePlayerCountKey, "node-A"))
+	assert.Equal(t, "1", nodeVal, "per-node counter must track leaves")
+}
+
+func TestDecrPlayerCount_NodeAggregate_ClampsToZero(t *testing.T) {
+	sc, _ := newTestSvcCtx(t, "node-1")
+
+	sceneId := uint64(777)
+	sc.Redis.Set(fmt.Sprintf(SceneNodeKeyFmt, sceneId), "node-A")
+
+	// Decrement without any prior increment.
+	DecrInstancePlayerCount(sc, sceneId)
+
+	nodeVal, _ := sc.Redis.Get(fmt.Sprintf(NodePlayerCountKey, "node-A"))
+	assert.Equal(t, "0", nodeVal, "per-node counter must clamp to 0 like the per-scene counter")
+}
+
+func TestDestroyInstance_DrainsResidualFromNodeAggregate(t *testing.T) {
+	sc, mr := newTestSvcCtxWithWorldScenes(t)
+	ctx := context.Background()
+	registerTypedNode(mr, testZoneId, "10", constants.SceneNodeTypeInstance, 0)
+
+	logic := NewCreateSceneLogic(ctx, sc)
+	resp, err := logic.CreateScene(&scene_manager.CreateSceneRequest{
+		SceneConfId: 2001,
+		ZoneId:      testZoneId,
+		SceneType:   scene_manager.SceneType_SCENE_TYPE_INSTANCE,
+	})
+	require.NoError(t, err)
+
+	// Pump three players into the instance.
+	enter := NewEnterSceneLogic(ctx, sc)
+	for i := uint64(1); i <= 3; i++ {
+		_, err := enter.EnterScene(&scene_manager.EnterSceneRequest{PlayerId: i, SceneId: resp.SceneId})
+		require.NoError(t, err)
+	}
+	nodeVal, _ := sc.Redis.Get(fmt.Sprintf(NodePlayerCountKey, "10"))
+	assert.Equal(t, "3", nodeVal)
+
+	// Admin-style destroy while players are still in it — must drain the
+	// aggregate, not leak three ghost players forever.
+	destroyInstance(ctx, sc, testZoneId, resp.SceneId)
+	nodeVal, _ = sc.Redis.Get(fmt.Sprintf(NodePlayerCountKey, "10"))
+	assert.Equal(t, "0", nodeVal, "node aggregate must be drained by the residual on force-destroy")
+}
+
+// ---------------------------------------------------------------------------
+// Composite load score
+// ---------------------------------------------------------------------------
+
+func TestComputeNodeLoadScore_WeightedSum(t *testing.T) {
+	sc, _ := newTestSvcCtxWithWorldScenes(t)
+	sc.Config.NodeLoadWeightSceneCount = 1.0
+	sc.Config.NodeLoadWeightPlayerCount = 0.01
+
+	// 2 scenes + 50 players = 2 + 0.5 = 2.5
+	score := computeNodeLoadScore(sc, 2, 50)
+	assert.InDelta(t, 2.5, score, 0.0001)
+
+	// Defaults clamp negative weights to sane values.
+	sc.Config.NodeLoadWeightSceneCount = -1
+	sc.Config.NodeLoadWeightPlayerCount = -1
+	// With clamped defaults (1.0 and 0) the score reduces to scene_count only.
+	assert.InDelta(t, 2.0, computeNodeLoadScore(sc, 2, 50), 0.0001)
 }

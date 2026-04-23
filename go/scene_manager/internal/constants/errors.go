@@ -13,4 +13,9 @@ const (
 	ErrDuplicateScene    uint32 = 9
 	ErrInvalidSceneType  uint32 = 10
 	ErrNoSceneConfId     uint32 = 11
+	// ErrNoNodeForPurpose: no scene node with a matching scene_node_type is
+	// registered in the target zone. Returned when StrictNodeTypeSeparation is
+	// enabled and the caller requests a world/instance scene but the zone's
+	// node pool has no node able to host that purpose.
+	ErrNoNodeForPurpose uint32 = 12
 )

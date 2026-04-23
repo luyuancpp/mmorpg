@@ -117,8 +117,15 @@ func (l *CreateSceneLogic) createMainWorldScene(in *scene_manager.CreateSceneReq
 func (l *CreateSceneLogic) createInstance(in *scene_manager.CreateSceneRequest) (*scene_manager.CreateSceneResponse, error) {
 	targetNode, err := l.pickInstanceNode(in)
 	if err != nil {
-		l.Logger.Errorf("[Instance] No available node: %v", err)
-		return &scene_manager.CreateSceneResponse{ErrorCode: constants.ErrNoAvailableNode, ErrorMessage: err.Error()}, nil
+		l.Logger.Errorf("[Instance] No instance-hosting node for zone %d (strict=%v): %v",
+			in.ZoneId, l.svcCtx.Config.StrictNodeTypeSeparation, err)
+		// Use ErrNoNodeForPurpose when strict mode rejected the request — it
+		// tells operators the pool was empty by policy, not by outage.
+		code := constants.ErrNoAvailableNode
+		if l.svcCtx.Config.StrictNodeTypeSeparation {
+			code = constants.ErrNoNodeForPurpose
+		}
+		return &scene_manager.CreateSceneResponse{ErrorCode: code, ErrorMessage: err.Error()}, nil
 	}
 
 	sceneId, err := l.allocateScene(in.SceneConfId, targetNode, in.ZoneId)
@@ -166,10 +173,16 @@ func (l *CreateSceneLogic) createInstance(in *scene_manager.CreateSceneRequest) 
 // pickInstanceNode decides which scene node should host a new instance.
 //
 // Priority:
-//   1. Explicit TargetNodeId from the caller (respects existing behaviour).
-//   2. Mirror co-location: if SourceSceneId > 0, reuse the source scene's node
-//      when it is alive and under the soft load cap.
-//   3. Default: GetBestNode load-balancing.
+//  1. Explicit TargetNodeId from the caller (respects existing behaviour —
+//     operators can always pin a target node, e.g. diagnostic sessions).
+//  2. Mirror co-location: if SourceSceneId > 0, reuse the source scene's node
+//     when it is alive and under the soft load cap. Intentionally bypasses
+//     the instance-purpose filter so mirrors of main-world scenes can share
+//     the world node's already-resident map/AI/spawn data. Without this
+//     escape hatch StrictNodeTypeSeparation=true would force every mirror
+//     to a fresh instance node, defeating the whole optimization.
+//  3. Default: GetBestNodeForPurpose(Instance) — picks the lowest-load
+//     instance-hosting node.
 //
 // The mirror path logs its decision at INFO on success and WARN on fallback
 // so operators can observe how often co-location is taking effect.
@@ -180,14 +193,14 @@ func (l *CreateSceneLogic) pickInstanceNode(in *scene_manager.CreateSceneRequest
 
 	if in.SourceSceneId > 0 {
 		if node, ok := l.resolveMirrorSourceNode(in.SourceSceneId, in.ZoneId); ok {
-			l.Logger.Infof("[Mirror] Co-locating mirror (conf=%d mirror_conf=%d) with source scene %d on node %s",
+			l.Logger.Infof("[Mirror] Co-locating mirror (conf=%d mirror_conf=%d) with source scene %d on node %s (cross-type allowed)",
 				in.SceneConfId, in.MirrorConfigId, in.SourceSceneId, node)
 			return node, nil
 		}
 		// Reason already logged inside resolveMirrorSourceNode.
 	}
 
-	return GetBestNode(l.ctx, l.svcCtx, in.ZoneId)
+	return GetBestNodeForPurpose(l.ctx, l.svcCtx, in.ZoneId, constants.NodePurposeInstance)
 }
 
 // resolveMirrorSourceNode returns the node hosting sourceSceneId when that

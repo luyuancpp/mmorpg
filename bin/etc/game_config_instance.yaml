@@ -1,0 +1,21 @@
+# 副本/战场 scene node 示例配置
+#
+# 使用方式（任选其一）：
+#   1. 启动前设置 GAME_CONFIG_PATH=etc/game_config_instance.yaml
+#   2. 或在 K8s Deployment 层单独挂载 ConfigMap 到此路径
+#   3. 或保留默认 game_config.yaml 并通过 SCENE_NODE_TYPE=1 覆盖角色字段
+#
+# 与 game_config.yaml 的唯一区别是 SceneNodeType: 1 (kSceneNode)，
+# 其他字段保持与主世界节点完全一致。
+
+SceneNodeType: 1
+ZoneId: 1
+
+zoneredis:
+  host: "127.0.0.1"
+  port: 6379
+  password: "yourpassword"
+  db: 0
+  timeout: 3000
+  max_connections: 100
+  retry_interval: 1000
