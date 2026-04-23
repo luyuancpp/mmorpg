@@ -120,6 +120,35 @@ each scene enter/leave also touches the per-node counter, and
 `destroyInstance` drains the residual so force-destroys don't leak
 ghost players.
 
+### Rebalance on node-set change
+
+When a world-hosting node joins, leaves, or role-flips, SceneManager runs
+`RebalanceWorldChannelsForZone` to move channels toward the new ideal
+hash distribution (`assignNodeByHash(sceneId, sortedWorldNodes)`).
+
+Two safety rules keep this cheap:
+
+1. **Urgent migration** (`reasonNodeGone`) — channels whose current node
+   is dead or no longer world-hosting are moved immediately. The C++
+   `CreateScene` handler is idempotent by `sceneId`, so the move is a
+   create-on-new → swap Redis mapping → best-effort destroy-on-old
+   sequence that never drops the channel.
+2. **Opportunistic migration** (`reasonBetterHome`) — channels on a live
+   node but mapped to a non-ideal hash target are moved only when empty
+   (`player_count == 0`). Hot channels stay put until they naturally
+   drain; live player migration across nodes is out of scope and would
+   need cross-node state transfer the codebase does not have.
+
+`MaxRebalanceMigrationsPerTick` (default 10, 0 disables) caps moves per
+event so a four-pod scale-up does not trigger N·channels of simultaneous
+CreateScene/DestroyScene RPCs. Startup also calls Rebalance from
+`fullSync` so drift accumulated during SceneManager downtime converges.
+
+The planner (`PlanWorldChannelRebalance`) is split from the executor so
+dashboards / admin RPCs can expose "pending migrations" without
+triggering them, and so unit tests cover selection logic without a real
+gRPC scene-node fleet.
+
 ### Mirror co-location
 
 A *mirror* is a runtime copy of an existing world scene used for phasing, parallel
@@ -420,6 +449,14 @@ StrictNodeTypeSeparation: true      # production default; set false in dev / sin
 # Composite load score: score = α·scene_count + β·player_count
 NodeLoadWeightSceneCount: 1.0
 NodeLoadWeightPlayerCount: 0.01
+
+# World-channel rebalance: how many empty channels to migrate per join/leave
+# event. 0 disables proactive rebalance (lazy reassign still fixes dead-node
+# mappings on demand). 10 is safe for zones with up to a few hundred channels.
+MaxRebalanceMigrationsPerTick: 10
+
+# Prometheus /metrics endpoint (host:port). Empty = disabled.
+MetricsListenAddr: ":9150"
 ```
 
 ## File Index
