@@ -1,6 +1,6 @@
 # Scene Creation Architecture
 
-**Updated:** 2026-04-14
+**Updated:** 2026-04-23
 
 ## Overview
 
@@ -23,7 +23,7 @@ SceneManager is **stateless and horizontally scalable**. It does not bind to any
 | Type | Constant | Behavior |
 |------|----------|----------|
 | Main World | `SceneTypeMainWorld=1` | Persistent. Created at startup via `InitWorldScenes`. Idempotent (returns existing if already created). Never auto-destroyed. |
-| Instance | `SceneTypeInstance=2` | On-demand. Unique per request. Tracked in Redis sorted set. Auto-destroyed after `InstanceIdleTimeoutSeconds` with 0 players. |
+| Instance | `SceneTypeInstance=2` | On-demand. Unique per request. Tracked in Redis sorted set. Auto-destroyed after `InstanceIdleTimeoutSeconds` (default 300s) with 0 players. Mirror instances (`MirrorConfigId > 0` or `SourceSceneId > 0`) use the shorter `MirrorIdleTimeoutSeconds` (default 30s) — see [Mirror vs. instance idle timeouts](#mirror-vs-instance-idle-timeouts). |
 
 Auto-detection: if `scene_type` is unset in the request, the system checks `WorldConfIds` config. If the `scene_conf_id` is in that list → main world; otherwise → instance.
 
@@ -41,10 +41,78 @@ Client/System → Go SceneManager.CreateScene(scene_conf_id)
 │  └─ RequestNodeCreateScene → gRPC → C++ Scene.CreateScene(config_id)
 │
 └─ Instance path:
+   ├─ pickInstanceNode (TargetNodeId > mirror co-location > GetBestNode)
    ├─ allocateScene → INCR scene:id_counter, SET scene:{id}:node
    ├─ ZADD instances:zone:{zoneId}:active (score = timestamp)
    ├─ SET instance:{id}:player_count = 0
-   └─ RequestNodeCreateScene → gRPC → C++ Scene.CreateScene(config_id)
+   └─ RequestNodeCreateSceneWithOptions → gRPC → C++ Scene.CreateScene(config_id, mirror_config_id, creator_ids)
+```
+
+### Mirror co-location
+
+A *mirror* is a runtime copy of an existing world scene used for phasing, parallel
+instances, or personal instances. Because a mirror is structurally identical to
+its source (same map, same AI/spawn tables, same static data), the instance path
+prefers to host the mirror on the **same scene node** as the source.
+
+```
+pickInstanceNode(in):
+  if in.TargetNodeId != "":           return TargetNodeId   # explicit override
+  if in.SourceSceneId != 0:
+      node = Redis.Get("scene:{SourceSceneId}:node")
+      if node alive in zone AND (cap == 0 OR node.scene_count < cap):
+          return node                 # co-locate
+      # else: log + fall through
+  return GetBestNode(zone)            # default load balancing
+```
+
+**Why**:
+- *Memory/storage reuse*: map statics, AOI grid, AI behaviour trees and spawn
+  rules are already resident on the source node; co-locating avoids loading a
+  second copy on another node.
+- *Client scene-switch efficiency*: the player keeps the same `gate → scene
+  node` path. No cross-node handoff, no `ReleasePlayer` RPC, no fresh Redis
+  reload — the C++ node reuses the in-memory entity directly (see the same-node
+  branch in `enterscenelogic.go`).
+- *Cross-scene query locality*: mirror ↔ source interactions (ranking, shared
+  broadcast, exit teleport) become local ECS lookups instead of Kafka/gRPC hops.
+
+**Guardrails**:
+- Soft cap: `MirrorSourceNodeLoadCap` in scene_manager config. When the source
+  node's `node:{id}:scene_count` is at or above the cap, the mirror falls back
+  to `GetBestNode` so a popular world can't hotspot one node. Default 0 disables
+  the cap (always co-locate).
+- Source-node death: if `scene:{sourceSceneId}:node` maps to a node absent from
+  `scene_nodes:zone:{zoneId}:load`, `IsNodeAlive` returns false and the mirror
+  falls back.
+- Explicit override: `TargetNodeId` still wins, so ops can pin mirrors when
+  required (e.g. diagnostic sessions, canary deploys).
+- Load accounting: mirrors increment `node:{nodeId}:scene_count` like any other
+  instance, so subsequent `GetBestNode` decisions correctly reflect the mirror
+  weight on the source node.
+
+**C++ side**: `CreateSceneRequest` already carries `mirror_config_id`. The scene
+node sets it on `SceneInfoComp` during creation — downstream systems filter
+mirror vs. source entities via `scene_info.mirror_config_id() > 0`.
+
+**Regression coverage**: `go/scene_manager/internal/logic/logic_test.go`
+`TestCreateScene_Mirror_*` suite pins every branch of `pickInstanceNode`:
+happy co-location, dead source node, overloaded source (`>= cap`), under-cap
+(still co-locate), missing `scene:{id}:node` mapping, single-node deployment,
+and explicit `TargetNodeId` override. Plus `TestCreateScene_Instance_NonMirror_UsesGetBestNode`
+guards against the mirror path leaking into plain instance creation.
+
+**Proto surface** (`proto/scene_manager/scene_manager_service.proto`):
+```proto
+message CreateSceneRequest {
+  uint64 scene_conf_id   = 1;
+  string target_node_id  = 2;
+  SceneType scene_type   = 3;
+  repeated uint64 creator_ids = 4;
+  uint32 zone_id         = 5;
+  uint64 source_scene_id = 6;   // triggers mirror co-location
+  uint32 mirror_config_id = 7;  // forwarded to C++ SceneInfoComp
+}
 ```
 
 ### C++ Side (Scene.CreateScene handler)
@@ -83,8 +151,22 @@ Go SceneManager.DestroyScene(scene_id) or InstanceLifecycleManager
 
 - Runs as a goroutine started alongside the SceneManager.
 - Polls every `InstanceCheckIntervalSeconds` (default 30s).
-- For each active instance: if `player_count > 0`, resets idle clock (updates sorted set score to now). If `player_count == 0` and idle duration exceeds timeout, calls `destroyInstance`.
+- For each active instance: if `player_count > 0`, resets idle clock (updates sorted set score to now). If `player_count == 0` and idle duration exceeds the **per-type** timeout, calls `destroyInstance`.
 - `destroyInstance` notifies C++ node via `RequestNodeDestroyScene` before cleaning Redis state.
+
+### Mirror vs. instance idle timeouts
+
+Mirrors and regular instances use **separate** idle timeouts because their state semantics differ: a mirror re-initializes NPCs / spawn state on every entry, so keeping an empty mirror resident is pure waste; a regular instance (e.g. a dungeon run) may want to survive a disconnect + retry window.
+
+| Config key | Default | Applies to |
+|------------|---------|------------|
+| `InstanceIdleTimeoutSeconds` | 300 | scenes WITHOUT `scene:{id}:mirror` flag |
+| `MirrorIdleTimeoutSeconds`   | 30  | scenes WITH `scene:{id}:mirror` flag (set at allocate time when `MirrorConfigId > 0` or `SourceSceneId > 0`) |
+
+- `0` on either key disables auto-destroy **for that kind only**, not both.
+- `MirrorIdleTimeoutSeconds == 0` falls back to `InstanceIdleTimeoutSeconds` (treat mirrors like normal instances). This is the opt-out path.
+- The mirror flag is a tiny Redis string key (`"1"`) set by `createscenelogic.go::createInstance` when the request carries mirror/source metadata. Both the lifecycle manager (`destroyInstance`) and the explicit `DestroyScene` RPC delete the flag — **every** scene-destroy path must stay in sync.
+- Regression coverage: `TestCleanupIdleInstances_MirrorDestroyedFaster`, `TestCleanupIdleInstances_MirrorWithPlayers_NotDestroyed`, `TestCreateScene_Mirror_SetsMirrorFlag`, `TestCreateScene_NonMirror_NoMirrorFlag`, `TestDestroyScene_ClearsMirrorFlag`, `TestResolveMirrorTimeout_FallsBackToInstance`.
 
 ## gRPC Connection Cache (Go → C++ SceneNode)
 
@@ -249,8 +331,10 @@ In `etc/scene_manager_service.yaml`:
 WorldConfIds:         # List of scene_conf_ids that are main world scenes
   - 1001
   - 1002
-InstanceIdleTimeoutSeconds: 300   # Auto-destroy idle instances after this (0 = disabled)
+InstanceIdleTimeoutSeconds: 300   # Auto-destroy idle instances after this (0 = disabled for this kind)
+MirrorIdleTimeoutSeconds: 30      # Mirrors: shorter window because every entry resets NPC state (0 = fall back to InstanceIdleTimeoutSeconds)
 InstanceCheckIntervalSeconds: 30  # How often to check for idle instances
+MirrorSourceNodeLoadCap: 0        # Soft cap on co-located mirrors per source node (0 = always co-locate)
 ```
 
 ## File Index
@@ -259,12 +343,13 @@ InstanceCheckIntervalSeconds: 30  # How often to check for idle instances
 |------|---------|
 | `go/scene_manager/internal/logic/createscenelogic.go` | CreateScene routing: main world vs instance |
 | `go/scene_manager/internal/logic/world_init.go` | Startup init of persistent world scenes |
-| `go/scene_manager/internal/logic/instance_lifecycle.go` | Auto-destroy idle instances + player count helpers |
+| `go/scene_manager/internal/logic/instance_lifecycle.go` | Auto-destroy idle instances + player count helpers. Per-type timeout (mirror vs. regular) via `resolveMirrorTimeout` + `scene:{id}:mirror` flag |
 | `go/scene_manager/internal/logic/scene_node_client.go` | gRPC client cache + RequestNodeCreateScene/DestroyScene |
 | `go/scene_manager/internal/logic/enterscenelogic.go` | EnterScene: location update, gate routing, player count |
 | `go/scene_manager/internal/logic/leavescenelogic.go` | LeaveScene: location cleanup, player count decrement |
 | `go/scene_manager/internal/logic/destroyscenelogic.go` | Admin DestroyScene RPC handler |
 | `go/scene_manager/internal/logic/load_reporter.go` | etcd → Redis node discovery, load sync, grace period |
+| `go/scene_manager/internal/logic/logic_test.go` | Unit tests incl. `TestCreateScene_Mirror_*` co-location suite |
 | `proto/scene/scene.proto` | C++ Scene service (CreateScene, DestroyScene) |
 | `proto/scene_manager/scene_manager_service.proto` | Go SceneManager service definition |
-| `cpp/nodes/scene/handler/rpc/scene_handler.cpp` | C++ CreateScene/DestroyScene ECS handlers |
+| `cpp/nodes/scene/handler/grpc/scene_node_service.cpp` | C++ CreateScene/DestroyScene ECS handlers (writes `mirror_config_id` onto `SceneInfoComp`) |

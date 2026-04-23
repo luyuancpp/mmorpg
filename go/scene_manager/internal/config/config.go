@@ -34,6 +34,15 @@ type Config struct {
 	// before being auto-destroyed. 0 = never auto-destroy (default).
 	InstanceIdleTimeoutSeconds int64 `json:",default=300"`
 
+	// MirrorIdleTimeoutSeconds: seconds an empty *mirror* instance is kept
+	// alive before auto-destroy. Mirrors are ephemeral copies of a world
+	// scene — NPCs/state are re-initialized on every re-entry — so keeping
+	// them around empty is pure waste. 0 = fall back to
+	// InstanceIdleTimeoutSeconds (treat mirrors like normal instances).
+	// Default 30s: absorbs brief disconnects / loading screens, but doesn't
+	// linger. Set to a small positive number to opt into aggressive cleanup.
+	MirrorIdleTimeoutSeconds int64 `json:",default=30"`
+
 	// InstanceCheckIntervalSeconds: how often the lifecycle manager scans
 	// for idle instances. Default 30s.
 	InstanceCheckIntervalSeconds int64 `json:",default=30"`
@@ -42,6 +51,13 @@ type Config struct {
 	// These writes use a detached context (not tied to the gRPC request).
 	// Default 5 seconds.
 	KafkaWriteTimeoutSeconds int64 `json:",default=5"`
+
+	// MirrorSourceNodeLoadCap: soft cap on the source node's scene_count
+	// above which mirror requests fall back to GetBestNode instead of
+	// co-locating with the source scene. 0 disables the cap (always
+	// co-locate). Default 0 = no cap; operators raise it when one world
+	// tends to spawn many mirrors.
+	MirrorSourceNodeLoadCap int64 `json:",default=0"`
 
 	// GateTokenSecret: HMAC-SHA256 secret shared with Gate nodes for signing
 	// connection tokens during cross-zone redirect.

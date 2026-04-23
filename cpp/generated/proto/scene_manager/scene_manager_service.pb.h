@@ -1516,6 +1516,8 @@ class CreateSceneRequest final : public ::google::protobuf::Message
     kSceneConfIdFieldNumber = 1,
     kSceneTypeFieldNumber = 3,
     kZoneIdFieldNumber = 5,
+    kSourceSceneIdFieldNumber = 6,
+    kMirrorConfigIdFieldNumber = 7,
   };
   // repeated uint64 creator_ids = 4;
   int creator_ids_size() const;
@@ -1580,11 +1582,31 @@ class CreateSceneRequest final : public ::google::protobuf::Message
   void _internal_set_zone_id(::uint32_t value);
 
   public:
+  // uint64 source_scene_id = 6;
+  void clear_source_scene_id() ;
+  ::uint64_t source_scene_id() const;
+  void set_source_scene_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_source_scene_id() const;
+  void _internal_set_source_scene_id(::uint64_t value);
+
+  public:
+  // uint32 mirror_config_id = 7;
+  void clear_mirror_config_id() ;
+  ::uint32_t mirror_config_id() const;
+  void set_mirror_config_id(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_mirror_config_id() const;
+  void _internal_set_mirror_config_id(::uint32_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:scene_manager.CreateSceneRequest)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<3, 5,
+  static const ::google::protobuf::internal::TcParseTable<3, 7,
                                    0, 55,
                                    2>
       _table_;
@@ -1612,6 +1634,8 @@ class CreateSceneRequest final : public ::google::protobuf::Message
     ::uint64_t scene_conf_id_;
     int scene_type_;
     ::uint32_t zone_id_;
+    ::uint64_t source_scene_id_;
+    ::uint32_t mirror_config_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -2042,6 +2066,54 @@ inline ::uint32_t CreateSceneRequest::_internal_zone_id() const {
 inline void CreateSceneRequest::_internal_set_zone_id(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.zone_id_ = value;
+}
+
+// uint64 source_scene_id = 6;
+inline void CreateSceneRequest::clear_source_scene_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.source_scene_id_ = ::uint64_t{0u};
+  _impl_._has_bits_[0] &= ~0x00000010u;
+}
+inline ::uint64_t CreateSceneRequest::source_scene_id() const {
+  // @@protoc_insertion_point(field_get:scene_manager.CreateSceneRequest.source_scene_id)
+  return _internal_source_scene_id();
+}
+inline void CreateSceneRequest::set_source_scene_id(::uint64_t value) {
+  _internal_set_source_scene_id(value);
+  _impl_._has_bits_[0] |= 0x00000010u;
+  // @@protoc_insertion_point(field_set:scene_manager.CreateSceneRequest.source_scene_id)
+}
+inline ::uint64_t CreateSceneRequest::_internal_source_scene_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.source_scene_id_;
+}
+inline void CreateSceneRequest::_internal_set_source_scene_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.source_scene_id_ = value;
+}
+
+// uint32 mirror_config_id = 7;
+inline void CreateSceneRequest::clear_mirror_config_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.mirror_config_id_ = 0u;
+  _impl_._has_bits_[0] &= ~0x00000020u;
+}
+inline ::uint32_t CreateSceneRequest::mirror_config_id() const {
+  // @@protoc_insertion_point(field_get:scene_manager.CreateSceneRequest.mirror_config_id)
+  return _internal_mirror_config_id();
+}
+inline void CreateSceneRequest::set_mirror_config_id(::uint32_t value) {
+  _internal_set_mirror_config_id(value);
+  _impl_._has_bits_[0] |= 0x00000020u;
+  // @@protoc_insertion_point(field_set:scene_manager.CreateSceneRequest.mirror_config_id)
+}
+inline ::uint32_t CreateSceneRequest::_internal_mirror_config_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.mirror_config_id_;
+}
+inline void CreateSceneRequest::_internal_set_mirror_config_id(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.mirror_config_id_ = value;
 }
 
 // -------------------------------------------------------------------

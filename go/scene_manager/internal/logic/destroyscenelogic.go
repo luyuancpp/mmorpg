@@ -57,6 +57,7 @@ func (l *DestroySceneLogic) DestroyScene(in *scene_manager.DestroySceneRequest) 
 	instKey := activeInstancesKey(in.ZoneId)
 	l.svcCtx.Redis.Zrem(instKey, sceneIdStr)
 	l.svcCtx.Redis.Del(fmt.Sprintf(InstancePlayerCountKey, in.SceneId))
+	l.svcCtx.Redis.Del(sceneMirrorFlagKey(in.SceneId))
 
 	return &base.Empty{}, nil
 }

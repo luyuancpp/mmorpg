@@ -29,6 +29,12 @@ Kafka:
 # than this is automatically destroyed. Set to 0 to disable auto-destroy.
 InstanceIdleTimeoutSeconds: 300
 
+# Mirror idle timeout (seconds). Mirrors are ephemeral world copies: every
+# entry resets NPCs/state, so keeping an empty mirror around is pure waste.
+# Default 30s absorbs a brief disconnect / loading screen but drops the
+# instance quickly. Set to 0 to fall back to InstanceIdleTimeoutSeconds.
+MirrorIdleTimeoutSeconds: 30
+
 # How often (seconds) the lifecycle manager scans for idle instances.
 InstanceCheckIntervalSeconds: 30
 
