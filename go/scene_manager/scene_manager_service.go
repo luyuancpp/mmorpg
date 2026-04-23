@@ -10,6 +10,7 @@ import (
 	"proto/scene_manager"
 	"scene_manager/internal/config"
 	"scene_manager/internal/logic"
+	"scene_manager/internal/metrics"
 	"scene_manager/internal/noderegistry"
 	"scene_manager/internal/server"
 	"scene_manager/internal/svc"
@@ -34,6 +35,9 @@ func main() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	// Start Prometheus metrics endpoint (no-op when MetricsListenAddr is empty).
+	metrics.Start(c.MetricsListenAddr)
 
 	// Start load reporter (discovers scene nodes from etcd, inits main scenes for new zones).
 	go logic.StartLoadReporter(ctx, svcCtx)

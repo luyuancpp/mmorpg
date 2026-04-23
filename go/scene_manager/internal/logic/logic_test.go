@@ -1160,3 +1160,125 @@ func TestComputeNodeLoadScore_WeightedSum(t *testing.T) {
 	// With clamped defaults (1.0 and 0) the score reduces to scene_count only.
 	assert.InDelta(t, 2.0, computeNodeLoadScore(sc, 2, 50), 0.0001)
 }
+
+// ---------------------------------------------------------------------------
+// World channel rebalance — planner tests
+//
+// Integration of the full CreateScene+DestroyScene dance needs a real gRPC
+// scene-node fleet which isn't available in unit tests; the planner
+// (PlanWorldChannelRebalance) is pure wrt Redis state and sufficiently
+// covers the decision logic we actually care about.
+// ---------------------------------------------------------------------------
+
+// seedWorldChannel primes Redis with the scene-channel membership and its
+// current node mapping, mimicking what initWorldScenesForZone would leave
+// behind. Returns nothing — tests assert state via mr.
+func seedWorldChannel(sc *svc.ServiceContext, zoneId uint32, confId, sceneId uint64, nodeId string) {
+	sc.Redis.Sadd(worldChannelsKey(zoneId, confId), fmt.Sprintf("%d", sceneId))
+	sc.Redis.Set(fmt.Sprintf("scene:%d:node", sceneId), nodeId)
+	sc.Redis.Set(fmt.Sprintf(InstancePlayerCountKey, sceneId), "0")
+}
+
+func TestPlanRebalance_UrgentWhenCurrentNodeNotInLivePool(t *testing.T) {
+	sc, mr := newTestSvcCtxWithWorldScenes(t)
+	sc.Config.MaxRebalanceMigrationsPerTick = 10
+	confIds := []uint64{1001}
+
+	// "100" is dead; "10" and "20" are live world-hosting nodes.
+	registerTypedNode(mr, testZoneId, "10", constants.SceneNodeTypeMainWorld, 0)
+	registerTypedNode(mr, testZoneId, "20", constants.SceneNodeTypeMainWorld, 0)
+	seedWorldChannel(sc, testZoneId, 1001, 555, "100") // "100" is not in live set
+
+	urgent, opp, budget := PlanWorldChannelRebalance(sc, testZoneId, confIds)
+	assert.Equal(t, 10, budget)
+	assert.Empty(t, opp)
+	require.Len(t, urgent, 1)
+	assert.Equal(t, uint64(555), urgent[0].SceneId)
+	assert.Equal(t, "100", urgent[0].OldNode)
+	assert.Contains(t, []string{"10", "20"}, urgent[0].NewNode)
+	assert.Equal(t, reasonNodeGone, urgent[0].Reason)
+}
+
+func TestPlanRebalance_OpportunisticOnlyWhenEmpty(t *testing.T) {
+	sc, mr := newTestSvcCtxWithWorldScenes(t)
+	sc.Config.MaxRebalanceMigrationsPerTick = 10
+	confIds := []uint64{1001}
+
+	// Three live world-hosting nodes. The hash of sceneId 555 lands on ONE
+	// of them; we arrange for the current mapping to point at a *different*
+	// live node so the channel is a candidate.
+	registerTypedNode(mr, testZoneId, "10", constants.SceneNodeTypeMainWorld, 0)
+	registerTypedNode(mr, testZoneId, "20", constants.SceneNodeTypeMainWorld, 0)
+	registerTypedNode(mr, testZoneId, "30", constants.SceneNodeTypeMainWorld, 0)
+
+	nodes := []string{"10", "20", "30"}
+	// Find a sceneId whose hash target is a node different from the one we
+	// pretend to currently host on. We'll fix "10" as the current, and pick
+	// a sceneId whose hash lands on "20" or "30".
+	var sceneId uint64 = 1
+	for ; sceneId < 100; sceneId++ {
+		if assignNodeByHash(sceneId, nodes) != "10" {
+			break
+		}
+	}
+	seedWorldChannel(sc, testZoneId, 1001, sceneId, "10")
+
+	// Empty channel → opportunistic candidate.
+	_, opp, _ := PlanWorldChannelRebalance(sc, testZoneId, confIds)
+	require.Len(t, opp, 1)
+	assert.Equal(t, reasonBetterHome, opp[0].Reason)
+
+	// Populate the channel → no longer a candidate.
+	sc.Redis.Set(fmt.Sprintf(InstancePlayerCountKey, sceneId), "7")
+	_, opp2, _ := PlanWorldChannelRebalance(sc, testZoneId, confIds)
+	assert.Empty(t, opp2, "hot channels must be skipped even when misaligned")
+}
+
+func TestPlanRebalance_NoMovesWhenAlreadyAligned(t *testing.T) {
+	sc, mr := newTestSvcCtxWithWorldScenes(t)
+	sc.Config.MaxRebalanceMigrationsPerTick = 10
+	confIds := []uint64{1001}
+
+	registerTypedNode(mr, testZoneId, "10", constants.SceneNodeTypeMainWorld, 0)
+	registerTypedNode(mr, testZoneId, "20", constants.SceneNodeTypeMainWorld, 0)
+
+	nodes := []string{"10", "20"}
+	var sceneId uint64 = 777
+	seedWorldChannel(sc, testZoneId, 1001, sceneId, assignNodeByHash(sceneId, nodes))
+
+	urgent, opp, _ := PlanWorldChannelRebalance(sc, testZoneId, confIds)
+	assert.Empty(t, urgent)
+	assert.Empty(t, opp, "aligned channels must not appear in the plan")
+}
+
+func TestPlanRebalance_BudgetZeroDisables(t *testing.T) {
+	sc, mr := newTestSvcCtxWithWorldScenes(t)
+	sc.Config.MaxRebalanceMigrationsPerTick = 0
+	confIds := []uint64{1001}
+
+	registerTypedNode(mr, testZoneId, "10", constants.SceneNodeTypeMainWorld, 0)
+	seedWorldChannel(sc, testZoneId, 1001, 555, "deadnode")
+
+	urgent, opp, budget := PlanWorldChannelRebalance(sc, testZoneId, confIds)
+	assert.Equal(t, 0, budget)
+	assert.Empty(t, urgent)
+	assert.Empty(t, opp)
+}
+
+func TestPlanRebalance_NonWorldHostingNotConsidered(t *testing.T) {
+	sc, mr := newTestSvcCtxWithWorldScenes(t)
+	sc.Config.MaxRebalanceMigrationsPerTick = 10
+	sc.Config.StrictNodeTypeSeparation = true
+	confIds := []uint64{1001}
+
+	// Only instance nodes registered — world pool is empty.
+	registerTypedNode(mr, testZoneId, "10", constants.SceneNodeTypeInstance, 0)
+	registerTypedNode(mr, testZoneId, "20", constants.SceneNodeTypeInstance, 0)
+	seedWorldChannel(sc, testZoneId, 1001, 555, "dead")
+
+	// No world-hosting nodes → planner returns empty even with misaligned
+	// channels. We can't migrate to nowhere; the caller will log and move on.
+	urgent, opp, _ := PlanWorldChannelRebalance(sc, testZoneId, confIds)
+	assert.Empty(t, urgent)
+	assert.Empty(t, opp)
+}

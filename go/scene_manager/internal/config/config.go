@@ -92,6 +92,20 @@ type Config struct {
 	// GateTokenSecret: HMAC-SHA256 secret shared with Gate nodes for signing
 	// connection tokens during cross-zone redirect.
 	GateTokenSecret string `json:",optional"`
+
+	// MetricsListenAddr: host:port to serve Prometheus /metrics. Empty
+	// disables the scrape endpoint (default). Typical prod value is
+	// ":9150" — keep it off the gRPC port and scrape it via ServiceMonitor.
+	MetricsListenAddr string `json:",optional"`
+
+	// MaxRebalanceMigrationsPerTick bounds the number of world-channel
+	// migrations executed per world-node-set change event. Rebalancing
+	// moves empty channels (player_count == 0) toward a more uniform hash
+	// distribution; large values can thrash the cluster on scale events,
+	// small values slow convergence. Default 10 balances responsiveness
+	// with safety. Set to 0 to disable proactive rebalancing (channels on
+	// dead nodes are still re-homed by GetBestWorldChannel on demand).
+	MaxRebalanceMigrationsPerTick int `json:",default=10"`
 }
 
 // ChannelCountFor returns the effective world-channel count for a confId,

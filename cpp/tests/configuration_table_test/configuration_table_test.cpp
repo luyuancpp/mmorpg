@@ -9,8 +9,32 @@
 #include "table/code/buff_table.h"
 #include "table/code/buff_table_comp.h"
 #include "../test_config_helper.h"
+#include "engine/config/config.h"
+
+#include <cstdlib>
+#include <cstring>
 
 void LoadTables();
+
+// ---------------------------------------------------------------------------
+// Portable env helpers for the GameConfigEnvOverride tests below.
+// ---------------------------------------------------------------------------
+namespace
+{
+    void SetEnvVar(const char *name, const char *value)
+    {
+#ifdef _WIN32
+        _putenv_s(name, value);
+#else
+        if (value && value[0] != '\0')
+            setenv(name, value, 1);
+        else
+            unsetenv(name);
+#endif
+    }
+
+    void ClearEnvVar(const char *name) { SetEnvVar(name, ""); }
+} // namespace
 
 // ---------------------------------------------------------------------------
 // 验证各配置表能正常加载并遍历
@@ -428,6 +452,63 @@ TEST(ConfigTableTest, ReverseFKAfterReload)
 	auto after = FindTestMultiKeyRowsByTestRef(2);
 	EXPECT_EQ(after.size(), 1u);
 	EXPECT_NE(before[0], after[0]) << "reload should produce new snapshot";
+}
+
+// ---------------------------------------------------------------------------
+// GameConfig env overrides (SCENE_NODE_TYPE / ZONE_ID / GAME_CONFIG_PATH)
+// These run after FindAndLoadTestConfig has chdir'd to the runtime dir, so
+// etc/game_config.yaml is guaranteed to resolve.
+// ---------------------------------------------------------------------------
+
+TEST(GameConfigEnvOverride, SceneNodeTypeFromEnvOverridesYaml)
+{
+    GameConfig cfg;
+    SetEnvVar("SCENE_NODE_TYPE", "1");
+    ASSERT_TRUE(readGameConfig("etc/game_config.yaml", cfg));
+    EXPECT_EQ(cfg.scene_node_type(), 1u)
+        << "SCENE_NODE_TYPE=1 must win over the yaml default (0)";
+    ClearEnvVar("SCENE_NODE_TYPE");
+}
+
+TEST(GameConfigEnvOverride, SceneNodeTypeEmptyEnvKeepsYaml)
+{
+    GameConfig cfg;
+    ClearEnvVar("SCENE_NODE_TYPE");
+    ASSERT_TRUE(readGameConfig("etc/game_config.yaml", cfg));
+    // The shipped yaml declares SceneNodeType: 0; empty env must not disturb it.
+    EXPECT_EQ(cfg.scene_node_type(), 0u);
+}
+
+TEST(GameConfigEnvOverride, SceneNodeTypeInvalidEnvIsIgnored)
+{
+    GameConfig cfg;
+    SetEnvVar("SCENE_NODE_TYPE", "not-a-number");
+    ASSERT_TRUE(readGameConfig("etc/game_config.yaml", cfg));
+    // Invalid value must log-warn and fall back to the yaml value, not crash.
+    EXPECT_EQ(cfg.scene_node_type(), 0u);
+    ClearEnvVar("SCENE_NODE_TYPE");
+}
+
+TEST(GameConfigEnvOverride, ZoneIdFromEnvOverridesYaml)
+{
+    GameConfig cfg;
+    SetEnvVar("ZONE_ID", "42");
+    ASSERT_TRUE(readGameConfig("etc/game_config.yaml", cfg));
+    EXPECT_EQ(cfg.zone_id(), 42u);
+    ClearEnvVar("ZONE_ID");
+}
+
+TEST(GameConfigEnvOverride, AcceptsAllFourSceneNodeTypeValues)
+{
+    for (uint32_t t : {0u, 1u, 2u, 3u})
+    {
+        GameConfig cfg;
+        SetEnvVar("SCENE_NODE_TYPE", std::to_string(t).c_str());
+        ASSERT_TRUE(readGameConfig("etc/game_config.yaml", cfg))
+            << "failed at t=" << t;
+        EXPECT_EQ(cfg.scene_node_type(), t);
+    }
+    ClearEnvVar("SCENE_NODE_TYPE");
 }
 
 int main(int argc, char **argv)
