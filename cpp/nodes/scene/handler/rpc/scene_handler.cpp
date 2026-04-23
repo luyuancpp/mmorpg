@@ -636,28 +636,35 @@ void SceneHandler::CreateScene(::google::protobuf::RpcController* controller, co
 		}
 	}
 
-	// 1. Create scene entity in the scene ECS registry.
 	auto sceneEntity = tlsEcs.sceneRegistry.create();
 
-	// 2. Populate SceneInfoComp (proto component).
+	// Keep this block in sync with SceneNodeGrpcImpl::HandleCreateScene. Both
+	// entrypoints write the same fields so the mirror-co-location pipeline
+	// works no matter which transport the caller uses.
 	auto &sceneInfo = tlsEcs.sceneRegistry.emplace<SceneInfoComp>(sceneEntity);
 	sceneInfo.set_scene_config_id(request->config_id());
 	sceneInfo.set_scene_id(request->scene_id());
+	sceneInfo.set_mirror_config_id(request->mirror_config_id());
+	sceneInfo.set_dungeon_config_id(request->dungeon_config_id());
 
-	// 3. Add player tracking set (initially empty).
+	for (const auto creator_id : request->creator_ids())
+	{
+		sceneInfo.mutable_creators()->insert({creator_id, true});
+	}
+
 	tlsEcs.sceneRegistry.emplace<ScenePlayers>(sceneEntity);
 
-	// 4. Fire scene-created event for downstream handlers (AOI init, etc.).
 	OnSceneCreated event;
 	event.set_entity(entt::to_integral(sceneEntity));
 	tlsEcs.dispatcher.trigger(event);
 
-	// 5. Populate response.
 	response->mutable_scene_info()->CopyFrom(sceneInfo);
 
 	LOG_INFO << "CreateScene: created scene entity=" << entt::to_integral(sceneEntity)
 			 << " config_id=" << request->config_id()
-			 << " scene_id=" << sceneInfo.scene_id();
+			 << " scene_id=" << sceneInfo.scene_id()
+			 << " mirror_config_id=" << sceneInfo.mirror_config_id()
+			 << " dungeon_config_id=" << sceneInfo.dungeon_config_id();
 	///<<< END WRITING YOUR CODE
 }
 

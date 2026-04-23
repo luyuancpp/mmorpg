@@ -150,6 +150,47 @@ The following were removed from git tracking:
 - **Use `std::unordered_map` for key-lookup containers** (e.g. `BuffListComp`): `std::map` is O(log n) and only needed when key ordering matters.
 - **Never use `std::ranges::set_intersection` on `unordered_set`**: it requires sorted input. Use inline erase loop instead.
 
+### Mirror scene co-location (IMPLEMENTED 2026-04-23)
+- **Rule**: Mirrors MUST be co-located on the same scene node as their source world scene. Do NOT load-balance mirrors across arbitrary nodes. Any future change to mirror allocation must preserve this rule.
+- **Context**: `mirror_config_id` in `proto/scene/scene.proto::CreateSceneRequest` and `proto/common/component/scene_comp.proto::SceneInfoComp` marks a scene as a *mirror* — a runtime copy of an existing world scene used for phasing / parallel instances. A mirror is structurally identical to its source world (same config, same map data, same AI/spawn rules).
+- **How it works**: `proto/scene_manager/scene_manager_service.proto::CreateSceneRequest` carries `source_scene_id` (uint64). When `source_scene_id > 0`, `createscenelogic.go::pickInstanceNode` resolves the source scene's node from Redis key `scene:{sourceSceneId}:node` and uses it directly, skipping `GetBestNode`. Helper: `resolveMirrorSourceNode`.
+- **Decision priority** inside `pickInstanceNode`:
+  1. Explicit `TargetNodeId` (operator override) — always wins.
+  2. Mirror co-location when `SourceSceneId > 0` and source node is alive and under `MirrorSourceNodeLoadCap`.
+  3. `GetBestNode` (default load balancing) — used for non-mirror instances and for every mirror fallback.
+- **Why**:
+  - *Storage / memory savings*: map statics, AOI grid, spawn rules, AI config, behavior-tree data are already resident on the source node — a co-located mirror reuses them instead of forcing another node to load the template fresh. Mirrors become close to "free" memory-wise versus cross-node copies.
+  - *Client scene-switch efficiency*: player keeps the same `gate → scene node` path when entering / leaving a mirror of the current world. No cross-node handoff, no extra gRPC stream setup, no re-sync of nearby cached state. Client-side it is effectively a `scene_id` swap on the same node.
+  - *Cross-scene query locality*: mirror ↔ source interactions (ranking, shared broadcast, exit teleport) become in-process ECS lookups instead of Kafka / gRPC hops.
+- **Guardrails (all live in the implementation)**:
+  - Soft fallback on missing source mapping, dead source node (`!IsNodeAlive`), or source load ≥ `MirrorSourceNodeLoadCap`. Each fallback reason is logged at INFO so operators can measure co-location hit rate.
+  - `allocateScene` still increments `node:{nodeId}:scene_count` for mirrors, so non-mirror load balancing stays accurate.
+  - Destroy path resolves node via `scene:{sceneId}:node` — unchanged, works for mirrors automatically.
+  - Single scene node: trivially co-located. Temporary / scaled-out scene nodes: co-location still wins until the soft cap trips; new nodes only absorb mirrors once the source node hits the cap.
+- **Config**: `Config.MirrorSourceNodeLoadCap` (`go/scene_manager/internal/config/config.go`). `0` disables the cap (always co-locate). Default `0`.
+- **Key touchpoints**:
+  - `go/scene_manager/internal/logic/createscenelogic.go` — `pickInstanceNode`, `resolveMirrorSourceNode`, `getNodeSceneCount`.
+  - `go/scene_manager/internal/logic/scene_node_client.go` — `RequestNodeCreateSceneWithOptions` forwards `mirror_config_id` + `creator_ids` to C++.
+  - `cpp/nodes/scene/handler/grpc/scene_node_service.cpp::HandleCreateScene` — sets `mirror_config_id`, `dungeon_config_id`, `creators` on `SceneInfoComp` (canonical, used by Go scene_manager).
+  - `cpp/nodes/scene/handler/rpc/scene_handler.cpp::CreateScene` — legacy muduo protobuf-rpc entrypoint; MUST stay in sync with the gRPC version above. Both write the same `SceneInfoComp` fields so the mirror pipeline works regardless of transport.
+  - `go/scene_manager/internal/logic/logic_test.go` — `TestCreateScene_Mirror_*` suite (co-locate, dead-node fallback, overload fallback, no-mapping fallback, under-cap, single-node, explicit `TargetNodeId` override, non-mirror guard).
+- **Handler parity rule**: any new `SceneInfoComp` / `CreateSceneRequest` field added to one `CreateScene` handler (`grpc/scene_node_service.cpp` or `rpc/scene_handler.cpp`) MUST be added to the other in the same commit. Drift silently breaks downstream systems that branch on `mirror_config_id > 0` when a caller happens to reach the lagging handler.
+
+### Mirror scene idle destruction (IMPLEMENTED 2026-04-23)
+- **Rule**: Empty mirror scenes MUST be destroyed aggressively — faster than normal instances. Mirrors re-initialize NPCs / state on every entry, so keeping an empty one resident is pure waste (memory, ECS tick cost, Redis bookkeeping).
+- **Config**: `Config.MirrorIdleTimeoutSeconds` (`go/scene_manager/internal/config/config.go`). Default `30` (absorbs brief disconnects / loading screens). `0` = fall back to `InstanceIdleTimeoutSeconds` (treat mirrors like normal instances). YAML: `go/scene_manager/etc/scene_manager_service.yaml::MirrorIdleTimeoutSeconds`.
+- **How it works**:
+  1. On `CreateScene`, if the request carries `MirrorConfigId > 0` or `SourceSceneId > 0`, `createscenelogic.go` sets Redis flag `scene:{sceneId}:mirror = "1"` alongside the usual instance bookkeeping. Non-mirror instances never set this flag.
+  2. `instance_lifecycle.go::cleanupZoneIdleInstances` reads the flag per idle scene and applies `MirrorIdleTimeoutSeconds` (mirror) vs `InstanceIdleTimeoutSeconds` (regular instance). Independent "disabled" semantics: either timeout ≤ 0 disables auto-destroy for that kind only.
+  3. `destroyInstance` (lifecycle path) and `DestroyScene` RPC (explicit path) both delete the flag — the two destroy routes MUST stay in sync.
+- **Why not destroy immediately on `player_count == 0`**: a short grace period (default 30s) absorbs client disconnect + reconnect cycles and short loading-screen blinks without re-creating the mirror each time. Tune via config if a specific gameplay wants "true ephemeral" (set 1-5s) or "keep for retry" (set 300s, matching instance default).
+- **Key touchpoints**:
+  - `go/scene_manager/internal/logic/createscenelogic.go::createInstance` — sets `scene:{id}:mirror` at allocate time. Constant: `SceneMirrorFlagKeyFmt`, helper: `sceneMirrorFlagKey`.
+  - `go/scene_manager/internal/logic/instance_lifecycle.go` — `StartInstanceLifecycleManager`, `cleanupZoneIdleInstances`, `resolveMirrorTimeout`. Per-scene timeout selection.
+  - `go/scene_manager/internal/logic/destroyscenelogic.go::DestroyScene` — clears `scene:{id}:mirror` on explicit destroy.
+  - `go/scene_manager/internal/logic/logic_test.go` — `TestCreateScene_Mirror_SetsMirrorFlag`, `TestCreateScene_NonMirror_NoMirrorFlag`, `TestCleanupIdleInstances_MirrorDestroyedFaster`, `TestCleanupIdleInstances_MirrorWithPlayers_NotDestroyed`, `TestDestroyScene_ClearsMirrorFlag`, `TestResolveMirrorTimeout_FallsBackToInstance`.
+- **Invariant**: mirror flag lifecycle must exactly track the `scene:{id}:node` key — set in the same function that allocates the scene, cleared in every function that removes the scene. Any new scene-destroy path MUST also delete `scene:{id}:mirror` to avoid stale flags lingering after the scene is gone.
+
 ### gRPC server thread pool (C++ nodes)
 - C++ nodes embed a gRPC sync server for control-plane RPCs (CreateScene, DestroyScene, etc.).
 - All RPC handlers dispatch to the muduo EventLoop via `runInLoop` + `promise/future`; business logic stays single-threaded.

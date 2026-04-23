@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/alicebob/miniredis/v2"
 	"github.com/stretchr/testify/assert"
@@ -15,6 +16,10 @@ import (
 	"scene_manager/internal/svc"
 	"shared/snowflake"
 )
+
+// nowUnix returns the current Unix timestamp for test helpers that need to
+// backdate sorted-set scores to drive the idle-instance cleanup pass.
+func nowUnix() int64 { return time.Now().Unix() }
 
 // testZoneId is the zone ID used across all tests.
 const testZoneId uint32 = 1
@@ -611,4 +616,271 @@ func TestCreateScene_MainWorld_ChannelCountDefault1_BackwardCompat(t *testing.T)
 
 	lines, _ := GetAllWorldChannels(ctx, sc, 1001, testZoneId)
 	assert.Len(t, lines, 1, "should have exactly 1 channel")
+}
+
+// ---------------------------------------------------------------------------
+// Mirror co-location — additional edge cases
+// ---------------------------------------------------------------------------
+//
+// The happy path, dead-source fallback, overload fallback, and explicit
+// TargetNodeId override are covered above. These extra cases pin:
+//   - single-node deployments (trivial co-location candidate),
+//   - missing scene->node mapping (different from "node dead"),
+//   - under-cap still co-locates (guards against the inequality flipping),
+//   - non-mirror requests do NOT accidentally consume source data.
+
+func TestCreateScene_Mirror_SingleNode_Trivial(t *testing.T) {
+	sc, mr := newTestSvcCtxWithWorldScenes(t)
+	ctx := context.Background()
+
+	// Only one node in the zone. Co-location is trivially satisfied; this
+	// test makes sure the single-node path doesn't regress when we evolve
+	// the decision logic later.
+	mr.ZAdd(testLoadKey(), 0, "7")
+	sc.Redis.Set(fmt.Sprintf(SceneNodeKeyFmt, uint64(55555)), "7")
+
+	logic := NewCreateSceneLogic(ctx, sc)
+	resp, err := logic.CreateScene(&scene_manager.CreateSceneRequest{
+		SceneConfId:    2001,
+		ZoneId:         testZoneId,
+		SceneType:      2,
+		SourceSceneId:  55555,
+		MirrorConfigId: 9002,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "7", resp.NodeId)
+}
+
+func TestCreateScene_Mirror_NoSourceMapping_FallsBackToBestNode(t *testing.T) {
+	sc, mr := newTestSvcCtxWithWorldScenes(t)
+	ctx := context.Background()
+
+	// Two live nodes; SourceSceneId has NO scene:<id>:node key at all
+	// (different from "node is dead"). Expect clean fallback to GetBestNode.
+	mr.ZAdd(testLoadKey(), 5, "1")
+	mr.ZAdd(testLoadKey(), 50, "2")
+
+	logic := NewCreateSceneLogic(ctx, sc)
+	resp, err := logic.CreateScene(&scene_manager.CreateSceneRequest{
+		SceneConfId:    2001,
+		ZoneId:         testZoneId,
+		SceneType:      2,
+		SourceSceneId:  999999,
+		MirrorConfigId: 9003,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "1", resp.NodeId, "no source mapping -> fall back to GetBestNode")
+}
+
+func TestCreateScene_Mirror_SourceUnderLoadCap_StillColocates(t *testing.T) {
+	sc, mr := newTestSvcCtxWithWorldScenes(t)
+	sc.Config.MirrorSourceNodeLoadCap = 100
+	ctx := context.Background()
+
+	// Source node "hot" is within the cap (scene_count=3 < cap=100), so
+	// co-location still wins even though "cool" has a lower best-node score.
+	mr.ZAdd(testLoadKey(), 100, "hot")
+	mr.ZAdd(testLoadKey(), 0, "cool")
+	sc.Redis.Set(fmt.Sprintf(SceneNodeKeyFmt, uint64(33334)), "hot")
+	sc.Redis.Set(fmt.Sprintf(NodeSceneCountKey, "hot"), "3")
+
+	logic := NewCreateSceneLogic(ctx, sc)
+	resp, err := logic.CreateScene(&scene_manager.CreateSceneRequest{
+		SceneConfId:    2001,
+		ZoneId:         testZoneId,
+		SceneType:      2,
+		SourceSceneId:  33334,
+		MirrorConfigId: 9006,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "hot", resp.NodeId, "source under cap -> still co-locate")
+}
+
+func TestCreateScene_Instance_NonMirror_UsesGetBestNode(t *testing.T) {
+	sc, mr := newTestSvcCtxWithWorldScenes(t)
+	ctx := context.Background()
+
+	// Seed a scene->node mapping just to verify non-mirror requests do NOT
+	// accidentally read it. SourceSceneId omitted, so GetBestNode wins.
+	sc.Redis.Set(fmt.Sprintf(SceneNodeKeyFmt, uint64(11111)), "A")
+	mr.ZAdd(testLoadKey(), 100, "A")
+	mr.ZAdd(testLoadKey(), 0, "B")
+
+	logic := NewCreateSceneLogic(ctx, sc)
+	resp, err := logic.CreateScene(&scene_manager.CreateSceneRequest{
+		SceneConfId: 2001,
+		ZoneId:      testZoneId,
+		SceneType:   2,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "B", resp.NodeId, "non-mirror path must use GetBestNode")
+}
+
+// ---------------------------------------------------------------------------
+// Mirror lifecycle — idle mirrors get destroyed faster than regular instances
+// ---------------------------------------------------------------------------
+//
+// Mirrors re-initialize NPCs on every entry, so keeping an empty mirror
+// around wastes memory. These tests pin the per-type idle timeouts and the
+// mirror-flag bookkeeping that drives that behavior.
+
+func TestCreateScene_Mirror_SetsMirrorFlag(t *testing.T) {
+	sc, mr := newTestSvcCtxWithWorldScenes(t)
+	ctx := context.Background()
+
+	mr.ZAdd(testLoadKey(), 0, "10")
+	sc.Redis.Set(fmt.Sprintf(SceneNodeKeyFmt, uint64(77777)), "10")
+
+	logic := NewCreateSceneLogic(ctx, sc)
+	resp, err := logic.CreateScene(&scene_manager.CreateSceneRequest{
+		SceneConfId:    2001,
+		ZoneId:         testZoneId,
+		SceneType:      2,
+		SourceSceneId:  77777,
+		MirrorConfigId: 9010,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, uint32(0), resp.ErrorCode)
+
+	flag, _ := sc.Redis.Get(sceneMirrorFlagKey(resp.SceneId))
+	assert.Equal(t, "1", flag, "mirror scene must carry the mirror flag")
+}
+
+func TestCreateScene_NonMirror_NoMirrorFlag(t *testing.T) {
+	sc, mr := newTestSvcCtxWithWorldScenes(t)
+	ctx := context.Background()
+
+	mr.ZAdd(testLoadKey(), 0, "10")
+
+	logic := NewCreateSceneLogic(ctx, sc)
+	resp, err := logic.CreateScene(&scene_manager.CreateSceneRequest{
+		SceneConfId: 2001,
+		ZoneId:      testZoneId,
+		SceneType:   2,
+	})
+	require.NoError(t, err)
+
+	flag, err := sc.Redis.Get(sceneMirrorFlagKey(resp.SceneId))
+	// miniredis returns "" with no error for missing keys.
+	assert.Empty(t, flag, "non-mirror must not set mirror flag (got %q, err=%v)", flag, err)
+}
+
+func TestCleanupIdleInstances_MirrorDestroyedFaster(t *testing.T) {
+	sc, mr := newTestSvcCtxWithWorldScenes(t)
+	ctx := context.Background()
+
+	mr.ZAdd(testLoadKey(), 0, "10")
+	logic := NewCreateSceneLogic(ctx, sc)
+
+	// Seed the source scene so mirror co-location picks node "10".
+	sc.Redis.Set(fmt.Sprintf(SceneNodeKeyFmt, uint64(88888)), "10")
+
+	mirrorResp, err := logic.CreateScene(&scene_manager.CreateSceneRequest{
+		SceneConfId:    2001,
+		ZoneId:         testZoneId,
+		SceneType:      2,
+		SourceSceneId:  88888,
+		MirrorConfigId: 9011,
+	})
+	require.NoError(t, err)
+	instanceResp, err := logic.CreateScene(&scene_manager.CreateSceneRequest{
+		SceneConfId: 2002,
+		ZoneId:      testZoneId,
+		SceneType:   2,
+	})
+	require.NoError(t, err)
+
+	// Backdate both to 100s ago so they're idle.
+	instKey := activeInstancesKey(testZoneId)
+	oldScore := nowUnix() - 100
+	sc.Redis.Zadd(instKey, oldScore, fmt.Sprintf("%d", mirrorResp.SceneId))
+	sc.Redis.Zadd(instKey, oldScore, fmt.Sprintf("%d", instanceResp.SceneId))
+
+	// Mirror timeout 30s < 100s idle -> destroy.
+	// Instance timeout 300s > 100s idle -> keep.
+	cleanupZoneIdleInstances(ctx, sc, testZoneId, 300, 30)
+
+	members, _ := sc.Redis.ZrangeWithScores(instKey, 0, -1)
+	keys := make([]string, 0, len(members))
+	for _, p := range members {
+		keys = append(keys, p.Key)
+	}
+	assert.NotContains(t, keys, fmt.Sprintf("%d", mirrorResp.SceneId), "idle mirror must be destroyed")
+	assert.Contains(t, keys, fmt.Sprintf("%d", instanceResp.SceneId), "idle instance under its own cap must survive")
+
+	// Mirror flag also cleaned up.
+	flag, _ := sc.Redis.Get(sceneMirrorFlagKey(mirrorResp.SceneId))
+	assert.Empty(t, flag, "mirror flag must be cleared on destroy")
+}
+
+func TestCleanupIdleInstances_MirrorWithPlayers_NotDestroyed(t *testing.T) {
+	sc, mr := newTestSvcCtxWithWorldScenes(t)
+	ctx := context.Background()
+
+	mr.ZAdd(testLoadKey(), 0, "10")
+	sc.Redis.Set(fmt.Sprintf(SceneNodeKeyFmt, uint64(88889)), "10")
+
+	logic := NewCreateSceneLogic(ctx, sc)
+	resp, err := logic.CreateScene(&scene_manager.CreateSceneRequest{
+		SceneConfId:    2001,
+		ZoneId:         testZoneId,
+		SceneType:      2,
+		SourceSceneId:  88889,
+		MirrorConfigId: 9012,
+	})
+	require.NoError(t, err)
+
+	sc.Redis.Set(fmt.Sprintf(InstancePlayerCountKey, resp.SceneId), "1")
+
+	instKey := activeInstancesKey(testZoneId)
+	sc.Redis.Zadd(instKey, nowUnix()-100, fmt.Sprintf("%d", resp.SceneId))
+
+	cleanupZoneIdleInstances(ctx, sc, testZoneId, 300, 30)
+
+	members, _ := sc.Redis.ZrangeWithScores(instKey, 0, -1)
+	require.Len(t, members, 1)
+	assert.Equal(t, fmt.Sprintf("%d", resp.SceneId), members[0].Key,
+		"mirror with active player must NOT be destroyed, even past timeout")
+}
+
+func TestDestroyScene_ClearsMirrorFlag(t *testing.T) {
+	sc, mr := newTestSvcCtxWithWorldScenes(t)
+	ctx := context.Background()
+
+	mr.ZAdd(testLoadKey(), 0, "10")
+	sc.Redis.Set(fmt.Sprintf(SceneNodeKeyFmt, uint64(99990)), "10")
+
+	createLogic := NewCreateSceneLogic(ctx, sc)
+	resp, err := createLogic.CreateScene(&scene_manager.CreateSceneRequest{
+		SceneConfId:    2001,
+		ZoneId:         testZoneId,
+		SceneType:      2,
+		SourceSceneId:  99990,
+		MirrorConfigId: 9013,
+	})
+	require.NoError(t, err)
+
+	flag, _ := sc.Redis.Get(sceneMirrorFlagKey(resp.SceneId))
+	require.Equal(t, "1", flag)
+
+	destroyLogic := NewDestroySceneLogic(ctx, sc)
+	_, err = destroyLogic.DestroyScene(&scene_manager.DestroySceneRequest{
+		SceneId: resp.SceneId,
+		ZoneId:  testZoneId,
+	})
+	require.NoError(t, err)
+
+	flag, _ = sc.Redis.Get(sceneMirrorFlagKey(resp.SceneId))
+	assert.Empty(t, flag, "explicit DestroyScene must also clear the mirror flag")
+}
+
+func TestResolveMirrorTimeout_FallsBackToInstance(t *testing.T) {
+	sc, _ := newTestSvcCtxWithWorldScenes(t)
+
+	sc.Config.MirrorIdleTimeoutSeconds = 0
+	sc.Config.InstanceIdleTimeoutSeconds = 300
+	assert.Equal(t, int64(300), resolveMirrorTimeout(sc), "0 must fall back to instance timeout")
+
+	sc.Config.MirrorIdleTimeoutSeconds = 15
+	assert.Equal(t, int64(15), resolveMirrorTimeout(sc), "positive value wins")
 }

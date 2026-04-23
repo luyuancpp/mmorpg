@@ -86,9 +86,19 @@ type CreateSceneRequest struct {
 	// Creator player IDs (for instance access control)
 	CreatorIds []uint64 `protobuf:"varint,4,rep,packed,name=creator_ids,json=creatorIds,proto3" json:"creator_ids,omitempty"`
 	// Zone ID: which zone this scene belongs to.
-	ZoneId        uint32 `protobuf:"varint,5,opt,name=zone_id,json=zoneId,proto3" json:"zone_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	ZoneId uint32 `protobuf:"varint,5,opt,name=zone_id,json=zoneId,proto3" json:"zone_id,omitempty"`
+	// Mirror co-location: when > 0, create the new scene on the SAME node that
+	// already hosts this source scene. Rationale: mirrors are structural copies
+	// of a world scene, so co-locating them reuses already-loaded map/AI/spawn
+	// data and avoids cross-node handoff on client scene switches.
+	// Falls back to GetBestNode if the source node is dead or overloaded.
+	SourceSceneId uint64 `protobuf:"varint,6,opt,name=source_scene_id,json=sourceSceneId,proto3" json:"source_scene_id,omitempty"`
+	// Mirror config ID forwarded to the C++ SceneNode (set on SceneInfoComp).
+	// 0 = not a mirror. Independent of source_scene_id so the caller can tag
+	// the mirror even when the source node is inferred via other means.
+	MirrorConfigId uint32 `protobuf:"varint,7,opt,name=mirror_config_id,json=mirrorConfigId,proto3" json:"mirror_config_id,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *CreateSceneRequest) Reset() {
@@ -152,6 +162,20 @@ func (x *CreateSceneRequest) GetCreatorIds() []uint64 {
 func (x *CreateSceneRequest) GetZoneId() uint32 {
 	if x != nil {
 		return x.ZoneId
+	}
+	return 0
+}
+
+func (x *CreateSceneRequest) GetSourceSceneId() uint64 {
+	if x != nil {
+		return x.SourceSceneId
+	}
+	return 0
+}
+
+func (x *CreateSceneRequest) GetMirrorConfigId() uint32 {
+	if x != nil {
+		return x.MirrorConfigId
 	}
 	return 0
 }
@@ -604,7 +628,7 @@ var File_proto_scene_manager_scene_manager_service_proto protoreflect.FileDescri
 
 const file_proto_scene_manager_scene_manager_service_proto_rawDesc = "" +
 	"\n" +
-	"/proto/scene_manager/scene_manager_service.proto\x12\rscene_manager\x1a\x1cproto/common/base/node.proto\x1a\x1dproto/common/base/empty.proto\x1a(proto/contracts/kafka/gate_command.proto\"\xd1\x01\n" +
+	"/proto/scene_manager/scene_manager_service.proto\x12\rscene_manager\x1a\x1cproto/common/base/node.proto\x1a\x1dproto/common/base/empty.proto\x1a(proto/contracts/kafka/gate_command.proto\"\xa3\x02\n" +
 	"\x12CreateSceneRequest\x12\"\n" +
 	"\rscene_conf_id\x18\x01 \x01(\x04R\vsceneConfId\x12$\n" +
 	"\x0etarget_node_id\x18\x02 \x01(\tR\ftargetNodeId\x127\n" +
@@ -612,7 +636,9 @@ const file_proto_scene_manager_scene_manager_service_proto_rawDesc = "" +
 	"scene_type\x18\x03 \x01(\x0e2\x18.scene_manager.SceneTypeR\tsceneType\x12\x1f\n" +
 	"\vcreator_ids\x18\x04 \x03(\x04R\n" +
 	"creatorIds\x12\x17\n" +
-	"\azone_id\x18\x05 \x01(\rR\x06zoneId\"\x8d\x01\n" +
+	"\azone_id\x18\x05 \x01(\rR\x06zoneId\x12&\n" +
+	"\x0fsource_scene_id\x18\x06 \x01(\x04R\rsourceSceneId\x12(\n" +
+	"\x10mirror_config_id\x18\a \x01(\rR\x0emirrorConfigId\"\x8d\x01\n" +
 	"\x13CreateSceneResponse\x12\x19\n" +
 	"\bscene_id\x18\x01 \x01(\x04R\asceneId\x12\x17\n" +
 	"\anode_id\x18\x02 \x01(\tR\x06nodeId\x12\x1d\n" +

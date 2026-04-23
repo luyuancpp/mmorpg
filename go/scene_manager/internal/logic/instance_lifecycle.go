@@ -13,10 +13,14 @@ import (
 
 // StartInstanceLifecycleManager periodically scans active instances and
 // destroys those that have been idle (0 players) longer than the configured timeout.
+// Mirrors use MirrorIdleTimeoutSeconds (shorter) instead of the regular instance
+// timeout, because every entry re-initializes NPCs — empty mirrors are pure waste.
 func StartInstanceLifecycleManager(ctx context.Context, svcCtx *svc.ServiceContext) {
-	timeoutSec := svcCtx.Config.InstanceIdleTimeoutSeconds
-	if timeoutSec <= 0 {
-		logx.Info("[InstanceLifecycle] InstanceIdleTimeoutSeconds=0, auto-destroy disabled")
+	instanceTimeout := svcCtx.Config.InstanceIdleTimeoutSeconds
+	mirrorTimeout := resolveMirrorTimeout(svcCtx)
+
+	if instanceTimeout <= 0 && mirrorTimeout <= 0 {
+		logx.Info("[InstanceLifecycle] Both InstanceIdleTimeoutSeconds and MirrorIdleTimeoutSeconds=0, auto-destroy disabled")
 		return
 	}
 
@@ -26,7 +30,8 @@ func StartInstanceLifecycleManager(ctx context.Context, svcCtx *svc.ServiceConte
 	}
 	interval := time.Duration(intervalSec) * time.Second
 
-	logx.Infof("[InstanceLifecycle] Started: check every %ds, idle timeout %ds", intervalSec, timeoutSec)
+	logx.Infof("[InstanceLifecycle] Started: check every %ds, instance idle %ds, mirror idle %ds",
+		intervalSec, instanceTimeout, mirrorTimeout)
 
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
@@ -36,23 +41,35 @@ func StartInstanceLifecycleManager(ctx context.Context, svcCtx *svc.ServiceConte
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			cleanupIdleInstances(ctx, svcCtx, timeoutSec)
+			cleanupIdleInstances(ctx, svcCtx, instanceTimeout, mirrorTimeout)
 		}
 	}
 }
 
+// resolveMirrorTimeout returns the effective idle timeout for mirror scenes.
+// A 0 value falls back to InstanceIdleTimeoutSeconds so operators can opt out
+// of the shorter schedule by leaving the new field unset.
+func resolveMirrorTimeout(svcCtx *svc.ServiceContext) int64 {
+	if t := svcCtx.Config.MirrorIdleTimeoutSeconds; t > 0 {
+		return t
+	}
+	return svcCtx.Config.InstanceIdleTimeoutSeconds
+}
+
 // cleanupIdleInstances iterates over all known zones and destroys
 // instances that have had 0 players for longer than the timeout.
-func cleanupIdleInstances(ctx context.Context, svcCtx *svc.ServiceContext, timeoutSec int64) {
+func cleanupIdleInstances(ctx context.Context, svcCtx *svc.ServiceContext, instanceTimeout, mirrorTimeout int64) {
 	zones := GetActiveZones()
 	for _, zoneId := range zones {
-		cleanupZoneIdleInstances(ctx, svcCtx, zoneId, timeoutSec)
+		cleanupZoneIdleInstances(ctx, svcCtx, zoneId, instanceTimeout, mirrorTimeout)
 	}
 }
 
 // cleanupZoneIdleInstances scans the active-instance sorted set for a single zone
-// and destroys instances that have been idle longer than the timeout.
-func cleanupZoneIdleInstances(ctx context.Context, svcCtx *svc.ServiceContext, zoneId uint32, timeoutSec int64) {
+// and destroys instances that have been idle longer than their per-type timeout.
+// Mirror scenes (scene:{id}:mirror == "1") use mirrorTimeout; the rest use instanceTimeout.
+// A non-positive timeout for a given kind means "never auto-destroy this kind".
+func cleanupZoneIdleInstances(ctx context.Context, svcCtx *svc.ServiceContext, zoneId uint32, instanceTimeout, mirrorTimeout int64) {
 	instKey := activeInstancesKey(zoneId)
 
 	// Get all active instances with their creation timestamps.
@@ -89,6 +106,23 @@ func cleanupZoneIdleInstances(ctx context.Context, svcCtx *svc.ServiceContext, z
 			continue
 		}
 
+		// Pick the right idle budget for this scene kind.
+		isMirror := false
+		if flag, _ := svcCtx.Redis.Get(sceneMirrorFlagKey(sceneId)); flag == "1" {
+			isMirror = true
+		}
+		timeoutSec := instanceTimeout
+		kind := "instance"
+		if isMirror {
+			timeoutSec = mirrorTimeout
+			kind = "mirror"
+		}
+
+		if timeoutSec <= 0 {
+			// Auto-destroy disabled for this kind.
+			continue
+		}
+
 		// Player count is 0. Check how long it has been idle.
 		lastActiveTime := int64(p.Score)
 		idleDuration := now - lastActiveTime
@@ -98,8 +132,8 @@ func cleanupZoneIdleInstances(ctx context.Context, svcCtx *svc.ServiceContext, z
 		}
 
 		// Idle timeout exceeded — destroy this instance.
-		logx.Infof("[InstanceLifecycle] Destroying idle instance %d (idle %ds > timeout %ds)",
-			sceneId, idleDuration, timeoutSec)
+		logx.Infof("[InstanceLifecycle] Destroying idle %s %d (idle %ds > timeout %ds)",
+			kind, sceneId, idleDuration, timeoutSec)
 
 		destroyInstance(ctx, svcCtx, zoneId, sceneId)
 		destroyed++
@@ -135,6 +169,9 @@ func destroyInstance(ctx context.Context, svcCtx *svc.ServiceContext, zoneId uin
 
 	// Remove player count tracker.
 	svcCtx.Redis.Del(fmt.Sprintf(InstancePlayerCountKey, sceneId))
+
+	// Remove mirror flag (no-op if this wasn't a mirror).
+	svcCtx.Redis.Del(sceneMirrorFlagKey(sceneId))
 
 	// Decrement node scene count.
 	if nodeId != "" {

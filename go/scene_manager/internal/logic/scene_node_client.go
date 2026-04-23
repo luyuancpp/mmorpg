@@ -29,6 +29,22 @@ var (
 // sceneId is the Go-allocated unique ID; C++ uses it for per-scene idempotency.
 // If the node is unreachable, the error is returned but Redis state is already committed.
 func RequestNodeCreateScene(ctx context.Context, svcCtx *svc.ServiceContext, nodeId string, configId uint32, sceneId uint64) (*scenepb.CreateSceneResponse, error) {
+	return RequestNodeCreateSceneWithOptions(ctx, svcCtx, nodeId, configId, sceneId, 0, nil)
+}
+
+// RequestNodeCreateSceneWithOptions is the full-featured variant that also
+// forwards mirror_config_id and creator_ids to the C++ SceneNode. The basic
+// RequestNodeCreateScene remains for world-scene paths that never carry mirror
+// or creator metadata.
+func RequestNodeCreateSceneWithOptions(
+	ctx context.Context,
+	svcCtx *svc.ServiceContext,
+	nodeId string,
+	configId uint32,
+	sceneId uint64,
+	mirrorConfigId uint32,
+	creatorIds []uint64,
+) (*scenepb.CreateSceneResponse, error) {
 	if svcCtx.Etcd == nil {
 		return nil, fmt.Errorf("etcd client not available, skipping CreateScene RPC to node %s", nodeId)
 	}
@@ -39,7 +55,12 @@ func RequestNodeCreateScene(ctx context.Context, svcCtx *svc.ServiceContext, nod
 	}
 
 	client := scenenodepb.NewSceneNodeGrpcClient(conn)
-	resp, err := client.CreateScene(ctx, &scenepb.CreateSceneRequest{ConfigId: configId, SceneId: sceneId})
+	resp, err := client.CreateScene(ctx, &scenepb.CreateSceneRequest{
+		ConfigId:       configId,
+		SceneId:        sceneId,
+		MirrorConfigId: mirrorConfigId,
+		CreatorIds:     creatorIds,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("CreateScene RPC to node %s: %w", nodeId, err)
 	}
