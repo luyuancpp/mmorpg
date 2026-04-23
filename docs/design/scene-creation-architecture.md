@@ -8,6 +8,37 @@ The scene system supports two scene types managed by Go SceneManager and hosted 
 - **Main World** scenes: persistent, one per config ID per zone, created at startup.
 - **Instance** scenes: on-demand, lifecycle-managed, auto-destroyed when idle.
 
+### Node Role Separation (WoW-style)
+
+Each C++ scene node declares a **role** at startup via
+`GameConfig.scene_node_type` (proto `eSceneNodeType`, mirrored by the Go
+constants `SceneNodeType*`):
+
+| Value | Constant | Role |
+|------|----------|------|
+| 0 | `kMainSceneNode` | hosts persistent main-world channels |
+| 1 | `kSceneNode` | hosts on-demand instances / dungeons / mirrors |
+| 2 | `kMainSceneCrossNode` | cross-server main-world |
+| 3 | `kSceneSceneCrossNode` | cross-server instance |
+
+The role is published into etcd as part of `NodeInfo`, mirrored by
+`LoadReporter` into `node:{id}:scene_node_type`, and consumed by
+`getNodesForPurpose` (Go) to route world vs. instance creation to the
+correct pool. This matches the classic industry split — WoW has dedicated
+"world server" vs. "instance server" processes, FFXIV / TW3 do the same.
+
+**StrictNodeTypeSeparation** (config flag):
+- `true` (production default) — purposes must match. No instance-hosting
+  node in a zone? Instance creation returns `ErrNoNodeForPurpose`.
+- `false` (dev / single-node) — the selector falls back to the whole
+  zone pool when the preferred pool is empty.
+
+**Mirror co-location intentionally bypasses the filter.** The whole
+point of mirrors is reusing the source scene's resident map/AI/spawn
+data; forcing a mirror of a main-world scene onto a fresh instance node
+defeats the optimization. Operators still have an escape hatch via
+`TargetNodeId`.
+
 ### Zone-Agnostic Design
 
 SceneManager is **stateless and horizontally scalable**. It does not bind to any specific zone:
@@ -36,17 +67,58 @@ Client/System → Go SceneManager.CreateScene(scene_conf_id)
 │
 ├─ Main World path:
 │  ├─ Check Redis hash → return existing (idempotent)
+│  ├─ getNodesForPurpose(World)  # filters by scene_node_type
 │  ├─ allocateScene → INCR scene:id_counter, SET scene:{id}:node
 │  ├─ HSET world_channels:zone:{zoneId} confId → sceneId
 │  └─ RequestNodeCreateScene → gRPC → C++ Scene.CreateScene(config_id)
 │
 └─ Instance path:
-   ├─ pickInstanceNode (TargetNodeId > mirror co-location > GetBestNode)
+   ├─ pickInstanceNode:
+   │    1. TargetNodeId (explicit override)
+   │    2. Mirror co-location (bypasses purpose filter)
+   │    3. GetBestNodeForPurpose(Instance)  # filters by scene_node_type
    ├─ allocateScene → INCR scene:id_counter, SET scene:{id}:node
    ├─ ZADD instances:zone:{zoneId}:active (score = timestamp)
    ├─ SET instance:{id}:player_count = 0
    └─ RequestNodeCreateSceneWithOptions → gRPC → C++ Scene.CreateScene(config_id, mirror_config_id, creator_ids)
 ```
+
+### Channel count overrides
+
+The default channel count for a main-world confId comes from
+`WorldChannelCount`. Hot maps can be bumped via `WorldChannelCountByConfId`:
+
+```yaml
+WorldChannelCount: 1
+WorldChannelCountByConfId:
+  1001: 4     # capital city — 4 parallel copies
+  1010: 1     # tutorial — only one
+```
+
+The lookup is exposed as `Config.ChannelCountFor(confId)` and consulted
+per confId in `initWorldScenesForZone`.
+
+### Composite load score
+
+The per-node load score in `scene_nodes:zone:{zone}:load` is now a
+weighted sum of two counters:
+
+```
+score = α · scene_count + β · player_count
+α = NodeLoadWeightSceneCount  (default 1.0)
+β = NodeLoadWeightPlayerCount (default 0.01)
+```
+
+Defaults treat one scene ≈ 100 players — an empty scene still burns CPU
+on tick/AOI scaffolding, so it dominates. Shift β up if your scenes are
+cheap but players are expensive (heavy physics, per-player AI).
+
+Counters are maintained in Redis as `node:{id}:scene_count` and
+`node:{id}:player_count`. The player aggregate is piggy-backed on the
+existing `IncrInstancePlayerCount` / `DecrInstancePlayerCount` hooks:
+each scene enter/leave also touches the per-node counter, and
+`destroyInstance` drains the residual so force-destroys don't leak
+ghost players.
 
 ### Mirror co-location
 
@@ -320,21 +392,34 @@ etcd Watch (事件驱动，不轮询)
 | `world_channels:zone:{zoneId}` | Hash | confId → sceneId for main worlds |
 | `instances:zone:{zoneId}:active` | ZSet | Active instances (score = create/last-active timestamp) |
 | `instance:{id}:player_count` | String (int) | Player count per instance |
-| `scene_nodes:zone:{zoneId}:load` | ZSet | Node load balancing (score = scene count) |
+| `scene_nodes:zone:{zoneId}:load` | ZSet | Node load balancing (score = α·scene_count + β·player_count) |
 | `node:{nodeId}:scene_count` | String (int) | Node's hosted scene count |
+| `node:{nodeId}:player_count` | String (int) | Node's aggregate player count (sum across hosted scenes) |
+| `node:{nodeId}:scene_node_type` | String (int) | Mirrored `eSceneNodeType` value for purpose filtering |
 
 ## Configuration
 
 In `etc/scene_manager_service.yaml`:
 
 ```yaml
-WorldConfIds:         # List of scene_conf_ids that are main world scenes
-  - 1001
-  - 1002
-InstanceIdleTimeoutSeconds: 300   # Auto-destroy idle instances after this (0 = disabled for this kind)
-MirrorIdleTimeoutSeconds: 30      # Mirrors: shorter window because every entry resets NPC state (0 = fall back to InstanceIdleTimeoutSeconds)
-InstanceCheckIntervalSeconds: 30  # How often to check for idle instances
-MirrorSourceNodeLoadCap: 0        # Soft cap on co-located mirrors per source node (0 = always co-locate)
+# Main world scenes are discovered from the World table; channel count:
+WorldChannelCount: 1                # default channels per world scene
+WorldChannelCountByConfId:          # per-confId override
+  1001: 4                           # capital city — 4 parallel copies
+  1010: 1                           # tutorial — one is plenty
+
+# Instance lifecycle
+InstanceIdleTimeoutSeconds: 300     # Auto-destroy idle instances after this (0 = disabled)
+MirrorIdleTimeoutSeconds: 30        # Mirrors die faster — every entry re-inits NPC state (0 = fall back)
+InstanceCheckIntervalSeconds: 30
+MirrorSourceNodeLoadCap: 0          # Soft cap on co-located mirrors per source node (0 = always co-locate)
+
+# Node role routing
+StrictNodeTypeSeparation: true      # production default; set false in dev / single-node
+
+# Composite load score: score = α·scene_count + β·player_count
+NodeLoadWeightSceneCount: 1.0
+NodeLoadWeightPlayerCount: 0.01
 ```
 
 ## File Index

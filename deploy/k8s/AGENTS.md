@@ -63,3 +63,11 @@ pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-push-image -ImageRepository 
 - `-SkipInfra`, `-DryRun`, and `-WaitReady` are the high-signal operational flags.
 - `k8s-all-up` deploys infra first, then all zones. Use `-SkipInfra` to skip infra.
 - Current manifests assume `/app/bin` runtime layout and fixed role ports (`gate` 18000, `scene` 19000).
+
+## SCENE NODE ROLE SPLIT
+- Production scene pods are expected to run in two Deployments per zone:
+  - `scene-world`    — `env SCENE_NODE_TYPE=0`, hosts persistent main-world channels.
+  - `scene-instance` — `env SCENE_NODE_TYPE=1`, hosts on-demand dungeons and battlegrounds.
+- The zones YAML expresses this with `scene_world: N` / `scene_instance: N` under `replicas`. Legacy single-pool `scene: N` remains accepted for dev.
+- C++ reads `SCENE_NODE_TYPE` and `GAME_CONFIG_PATH` from the pod env; the file baseline stays at `etc/game_config.yaml`.
+- Go-side routing is driven by `StrictNodeTypeSeparation` in `scene_manager_service.yaml`. Keep `true` in production; flip to `false` only during the rollout window described in `docs/ops/scene-node-role-split.md`.

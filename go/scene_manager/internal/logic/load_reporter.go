@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"scene_manager/internal/constants"
 	"scene_manager/internal/svc"
 
 	"github.com/zeromicro/go-zero/core/logx"
@@ -17,8 +18,14 @@ import (
 const (
 	NodeLoadKeyFmt     = "scene_nodes:zone:%d:load"
 	NodeSceneCountKey  = "node:%s:scene_count"
-	LoadReportInterval = 5 * time.Second
-	sceneNodePrefix    = "SceneNodeService.rpc/"
+	NodePlayerCountKey = "node:%s:player_count"
+	// NodeSceneNodeTypeKey mirrors the scene_node_type declared by the C++
+	// node (0=MainWorld, 1=Instance, 2=MainWorldCross, 3=InstanceCross). The
+	// load reporter writes this when a node registers so selection logic can
+	// filter by purpose without hitting etcd.
+	NodeSceneNodeTypeKey = "node:%s:scene_node_type"
+	LoadReportInterval   = 5 * time.Second
+	sceneNodePrefix      = "SceneNodeService.rpc/"
 )
 
 // activeZones holds the zone IDs derived from currently known nodes.
@@ -42,10 +49,15 @@ func nodeLoadKey(zoneID uint32) string {
 }
 
 // sceneNodeRegistration mirrors the JSON that C++ scene nodes write to etcd.
+// The field names match protobuf's MessageToJsonString camelCase encoding of
+// proto/common/base/common.proto NodeInfo. `sceneNodeType` is the node's
+// declared role (see constants.SceneNodeType*); `nodeType` is the coarse
+// service class (SceneNodeService = 0x14).
 type sceneNodeRegistration struct {
-	NodeId       uint32 `json:"nodeId"`
-	NodeType     uint32 `json:"nodeType"`
-	Endpoint     struct {
+	NodeId        uint32 `json:"nodeId"`
+	NodeType      uint32 `json:"nodeType"`
+	SceneNodeType uint32 `json:"sceneNodeType"`
+	Endpoint      struct {
 		IP   string `json:"ip"`
 		Port uint32 `json:"port"`
 	} `json:"endpoint"`
@@ -81,23 +93,64 @@ func parseNodeEntry(value []byte) (nodeEntry, bool) {
 	}, true
 }
 
-// updateNodeLoad reads the node's scene count from Redis and updates the load set.
+// updateNodeLoad reads the node's scene_count and player_count from Redis,
+// writes the composite load score into the zone sorted set, and mirrors the
+// scene_node_type so downstream purpose-based selection doesn't need to hit
+// etcd. Score = α·scene_count + β·player_count; see Config weights.
 func updateNodeLoad(svcCtx *svc.ServiceContext, entry nodeEntry) {
-	sceneCountKey := fmt.Sprintf(NodeSceneCountKey, entry.nodeID)
-	var load int64
-	if s, e := svcCtx.Redis.Get(sceneCountKey); e == nil && s != "" {
-		fmt.Sscanf(s, "%d", &load)
-	}
+	sceneCount := readInt64(svcCtx, fmt.Sprintf(NodeSceneCountKey, entry.nodeID))
+	playerCount := readInt64(svcCtx, fmt.Sprintf(NodePlayerCountKey, entry.nodeID))
+	score := computeNodeLoadScore(svcCtx, sceneCount, playerCount)
+
 	loadKey := nodeLoadKey(entry.reg.ZoneId)
-	if _, err := svcCtx.Redis.Zadd(loadKey, load, entry.nodeID); err != nil {
+	if _, err := svcCtx.Redis.Zadd(loadKey, int64(score), entry.nodeID); err != nil {
 		logx.Errorf("[LoadReporter] failed to update load for node %s (zone %d): %v", entry.nodeID, entry.reg.ZoneId, err)
+	}
+
+	// Mirror scene_node_type into Redis so getNodesForPurpose can filter
+	// without touching etcd on every CreateScene request.
+	if err := svcCtx.Redis.Set(fmt.Sprintf(NodeSceneNodeTypeKey, entry.nodeID),
+		strconv.FormatUint(uint64(entry.reg.SceneNodeType), 10)); err != nil {
+		logx.Errorf("[LoadReporter] failed to mirror scene_node_type for node %s: %v", entry.nodeID, err)
 	}
 }
 
-// removeNodeFromRedis cleans up a node's load-set entry and cached connection.
+// computeNodeLoadScore combines scene_count and player_count using the
+// configured weights. Weights default to 1.0 / 0.01 so scene_count dominates
+// but many concurrent players still push a node down the preference list.
+// Returns a float64 kept as int64 in the Redis sorted set for go-zero's
+// typed API; the truncation rounds toward zero which is fine for load
+// ordering (ties broken lexically by Redis).
+func computeNodeLoadScore(svcCtx *svc.ServiceContext, sceneCount, playerCount int64) float64 {
+	wScene := svcCtx.Config.NodeLoadWeightSceneCount
+	wPlayer := svcCtx.Config.NodeLoadWeightPlayerCount
+	if wScene <= 0 {
+		wScene = 1.0
+	}
+	if wPlayer < 0 {
+		wPlayer = 0
+	}
+	return wScene*float64(sceneCount) + wPlayer*float64(playerCount)
+}
+
+// readInt64 reads a string-encoded int from Redis, returning 0 on any error.
+func readInt64(svcCtx *svc.ServiceContext, key string) int64 {
+	s, err := svcCtx.Redis.Get(key)
+	if err != nil || s == "" {
+		return 0
+	}
+	v, _ := strconv.ParseInt(s, 10, 64)
+	return v
+}
+
+// removeNodeFromRedis cleans up a node's load-set entry, cached connection,
+// and mirrored scene_node_type. scene_count / player_count counters are
+// intentionally left alone: they may still be referenced by in-flight
+// instance destroys; the next node that reuses the id will overwrite them.
 func removeNodeFromRedis(svcCtx *svc.ServiceContext, entry nodeEntry) {
 	loadKey := nodeLoadKey(entry.reg.ZoneId)
 	svcCtx.Redis.Zrem(loadKey, entry.nodeID)
+	svcCtx.Redis.Del(fmt.Sprintf(NodeSceneNodeTypeKey, entry.nodeID))
 	RemoveNodeConn(entry.nodeID)
 	logx.Infof("[LoadReporter] removed node %s from Redis load set (zone %d)", entry.nodeID, entry.reg.ZoneId)
 }
@@ -199,6 +252,7 @@ func fullSync(ctx context.Context, svcCtx *svc.ServiceContext) (int64, error) {
 		for _, p := range pairs {
 			if _, ok := seen[p.Key]; !ok {
 				svcCtx.Redis.Zrem(loadKey, p.Key)
+				svcCtx.Redis.Del(fmt.Sprintf(NodeSceneNodeTypeKey, p.Key))
 				RemoveNodeConn(p.Key)
 			}
 		}
@@ -304,18 +358,13 @@ func refreshLoadScores(svcCtx *svc.ServiceContext) {
 }
 
 
-// GetBestNode selects the node with the lowest load from the given zone's Redis sorted set.
+// GetBestNode selects the instance-hosting node with the lowest load from
+// the given zone. Kept as the default selector for historical callers that
+// request instance-style nodes (mirror fallbacks, ad-hoc instances).
+//
+// See GetBestNodeForPurpose for the purpose-aware entry point.
 func GetBestNode(ctx context.Context, svcCtx *svc.ServiceContext, zoneId uint32) (string, error) {
-	pairs, err := svcCtx.Redis.ZrangeWithScores(nodeLoadKey(zoneId), 0, 0)
-	if err != nil {
-		return "", fmt.Errorf("redis zrange failed: %w", err)
-	}
-
-	if len(pairs) == 0 {
-		return "", fmt.Errorf("no scene nodes available for zone %d", zoneId)
-	}
-
-	return pairs[0].Key, nil
+	return GetBestNodeForPurpose(ctx, svcCtx, zoneId, constants.NodePurposeInstance)
 }
 
 // IsNodeAlive checks whether a node is present in the zone's Redis load sorted set.

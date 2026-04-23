@@ -167,32 +167,72 @@ func destroyInstance(ctx context.Context, svcCtx *svc.ServiceContext, zoneId uin
 	instKey := activeInstancesKey(zoneId)
 	svcCtx.Redis.Zrem(instKey, sceneIdStr)
 
-	// Remove player count tracker.
-	svcCtx.Redis.Del(fmt.Sprintf(InstancePlayerCountKey, sceneId))
+	// Read final player count BEFORE deleting so we can drain that many
+	// from the per-node aggregate. This covers the rare case where an
+	// instance is force-destroyed with players still in it (e.g. admin
+	// shutdown, server crash recovery) — the per-node counter would
+	// otherwise leak the residual forever.
+	residualKey := fmt.Sprintf(InstancePlayerCountKey, sceneId)
+	residualStr, _ := svcCtx.Redis.Get(residualKey)
+	residual, _ := strconv.ParseInt(residualStr, 10, 64)
+	svcCtx.Redis.Del(residualKey)
 
 	// Remove mirror flag (no-op if this wasn't a mirror).
 	svcCtx.Redis.Del(sceneMirrorFlagKey(sceneId))
 
-	// Decrement node scene count.
+	// Decrement node counters.
 	if nodeId != "" {
 		sceneCountKey := fmt.Sprintf(NodeSceneCountKey, nodeId)
 		svcCtx.Redis.Incrby(sceneCountKey, -1)
+
+		if residual > 0 {
+			playerCountKey := fmt.Sprintf(NodePlayerCountKey, nodeId)
+			newVal, err := svcCtx.Redis.Incrby(playerCountKey, -residual)
+			if err == nil && newVal < 0 {
+				svcCtx.Redis.Set(playerCountKey, "0")
+			}
+		}
 	}
 }
 
-// IncrInstancePlayerCount increments the player count for an instance scene.
-// Called when a player enters the scene.
+// IncrInstancePlayerCount increments both the per-scene and per-node player
+// counters. The per-node counter feeds into GetBestNode's composite load
+// score so nodes with many concurrent players become less attractive even
+// when they host few scenes.
+//
+// Call order matters: scene counter first, then per-node aggregate. The
+// two writes are not atomic — a crash between them skews the per-node
+// counter by at most one, which the zset score refresher smooths out.
 func IncrInstancePlayerCount(svcCtx *svc.ServiceContext, sceneId uint64) {
 	svcCtx.Redis.Incr(fmt.Sprintf(InstancePlayerCountKey, sceneId))
+	if nodeId := lookupSceneNode(svcCtx, sceneId); nodeId != "" {
+		svcCtx.Redis.Incr(fmt.Sprintf(NodePlayerCountKey, nodeId))
+	}
 }
 
-// DecrInstancePlayerCount decrements the player count for an instance scene.
-// Called when a player leaves the scene. Guards against going below zero.
+// DecrInstancePlayerCount mirrors IncrInstancePlayerCount. Both counters
+// are clamped to 0 so a missed EnterScene or a stale LeaveScene can't drive
+// them negative.
 func DecrInstancePlayerCount(svcCtx *svc.ServiceContext, sceneId uint64) {
 	key := fmt.Sprintf(InstancePlayerCountKey, sceneId)
 	val, err := svcCtx.Redis.Incrby(key, -1)
 	if err == nil && val < 0 {
-		// Clamp to 0 — can happen if LeaveScene is called without a matching EnterScene.
 		svcCtx.Redis.Set(key, "0")
 	}
+
+	if nodeId := lookupSceneNode(svcCtx, sceneId); nodeId != "" {
+		nodeKey := fmt.Sprintf(NodePlayerCountKey, nodeId)
+		nodeVal, err := svcCtx.Redis.Incrby(nodeKey, -1)
+		if err == nil && nodeVal < 0 {
+			svcCtx.Redis.Set(nodeKey, "0")
+		}
+	}
+}
+
+// lookupSceneNode resolves the node currently hosting a scene, returning ""
+// when the mapping is missing. Used by the player-count helpers; a missing
+// mapping is a soft error (per-node aggregate skew of at most one event).
+func lookupSceneNode(svcCtx *svc.ServiceContext, sceneId uint64) string {
+	nodeId, _ := svcCtx.Redis.Get(fmt.Sprintf(SceneNodeKeyFmt, sceneId))
+	return nodeId
 }

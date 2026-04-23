@@ -584,7 +584,18 @@ void Node::LoadConfigs()
 {
 	tlsNodeConfigManager = NodeConfigManager();
 	readBaseDeployConfig("etc/base_deploy_config.yaml", tlsNodeConfigManager.GetBaseDeployConfig());
-	readGameConfig("etc/game_config.yaml", tlsNodeConfigManager.GetGameConfig());
+
+	// GAME_CONFIG_PATH lets a shared container image load a role-specific
+	// game_config (for example game_config_instance.yaml) without mounting
+	// a different ConfigMap. Falls back to etc/game_config.yaml.
+	std::string gameConfigPath = "etc/game_config.yaml";
+	if (const char *envPath = std::getenv("GAME_CONFIG_PATH");
+	    envPath != nullptr && envPath[0] != '\0')
+	{
+		gameConfigPath = envPath;
+		LOG_INFO << "GAME_CONFIG_PATH env override applied: " << gameConfigPath;
+	}
+	readGameConfig(gameConfigPath, tlsNodeConfigManager.GetGameConfig());
 	gNodeConfigManager = tlsNodeConfigManager;
 }
 

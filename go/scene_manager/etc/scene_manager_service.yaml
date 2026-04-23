@@ -41,3 +41,44 @@ InstanceCheckIntervalSeconds: 30
 # HMAC-SHA256 secret for signing gate connection tokens during cross-zone redirect.
 # Must match the secret configured in Login service and Gate nodes.
 GateTokenSecret: "change-me-in-production-use-a-strong-random-key"
+
+# --- World channels -----------------------------------------------------------
+#
+# Default channel count per world scene. 1 = one channel per map; bump it for
+# maps that need multiple parallel copies to split crowds (WoW-style "layers").
+WorldChannelCount: 1
+
+# Per-confId channel count override. Keyed by scene_conf_id (matches
+# generated/tables/World.json.data[].scene_id). Use it to give hot main
+# cities more channels while keeping niche maps at one. Leave commented
+# until the live shard is profiled — splitting a map that does not need
+# splitting wastes memory and fragments social density.
+#
+# WorldChannelCountByConfId:
+#   1: 4   # capital city (hot)
+#   2: 2   # major hub
+#   # 16: 1  # any id not listed uses WorldChannelCount (implicit)
+
+# --- Node role routing --------------------------------------------------------
+#
+# StrictNodeTypeSeparation:
+#   true  (production) — main-world creation only lands on nodes whose
+#         GameConfig.scene_node_type is kMainSceneNode/kMainSceneCrossNode,
+#         and instance creation only on kSceneNode/kSceneSceneCrossNode.
+#         Failing a purpose returns ErrNoNodeForPurpose so operators see
+#         the misconfiguration immediately.
+#   false (dev / single-process) — if no node of the target type is present,
+#         the selector falls back to the full zone pool.
+# Mirror co-location bypasses this filter regardless — a mirror always
+# prefers its source scene's node to reuse resident map/AI/spawn data.
+StrictNodeTypeSeparation: true
+
+# --- Composite load score -----------------------------------------------------
+#
+# Per-node load score = α·scene_count + β·player_count. Lower score = more
+# attractive. Defaults favour scene_count (one scene ≈ 100 players) on the
+# assumption that an empty scene still burns CPU on tick/AOI scaffolding.
+# Tune β up if your scenes are cheap but players are expensive (heavy
+# physics, per-player AI, etc.).
+NodeLoadWeightSceneCount: 1.0
+NodeLoadWeightPlayerCount: 0.01

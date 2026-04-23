@@ -1,10 +1,15 @@
-# gameConfig_server1.yaml
+# 游戏场景配置 (main world / 主世界 host)
+# 场景节点角色 (eSceneNodeType):
+#   0 = kMainSceneNode       主世界宿主 (persistent, pre-created by SceneManager)
+#   1 = kSceneNode           副本/战场宿主 (on-demand, lifecycle-managed)
+#   2 = kMainSceneNodeCross  主世界跨服宿主
+#   3 = kSceneNodeCross      副本跨服宿主
+# 环境变量 SCENE_NODE_TYPE 可在 K8s Deployment 层覆盖此值，
+# 以便同一镜像在主世界与副本两个 Deployment 中复用。
+SceneNodeType: 0
+ZoneId: 1
 
-# 游戏场景配置
-SceneNodeType: 0  
-ZoneId : 1
-
-# Zoneredis 配置
+# Zone redis 配置
 zoneredis:
   host: "127.0.0.1"        # Redis 服务器地址
   port: 6379               # Redis 服务器端口
