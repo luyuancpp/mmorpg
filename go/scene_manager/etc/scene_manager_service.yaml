@@ -82,3 +82,21 @@ StrictNodeTypeSeparation: true
 # physics, per-player AI, etc.).
 NodeLoadWeightSceneCount: 1.0
 NodeLoadWeightPlayerCount: 0.01
+
+# Bound on world-channel migrations per rebalance tick. Rebalance runs when
+# a world-hosting node joins or leaves the zone. Only empty channels are
+# moved (player_count == 0); hot channels stay put. Set 0 to disable
+# proactive rebalancing — on-demand lazy-reassign in GetBestWorldChannel
+# will still repair mappings to dead nodes.
+MaxRebalanceMigrationsPerTick: 10
+
+# --- Observability ------------------------------------------------------------
+#
+# Prometheus /metrics endpoint. Leave empty to disable (dev default). In
+# production, set to an internal port and scrape it via a ServiceMonitor.
+# Exposed gauges (all labelled {node_id, zone_id, role}):
+#   scene_manager_node_player_count   - online players on the node
+#   scene_manager_node_scene_count    - scene entities on the node
+#   scene_manager_node_load_score     - composite score used for scheduling
+#   scene_manager_nodes_by_role{zone_id,role} - live node count per role
+# MetricsListenAddr: ":9150"

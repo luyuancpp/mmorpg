@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"scene_manager/internal/constants"
+	"scene_manager/internal/metrics"
 	"scene_manager/internal/svc"
 
 	"github.com/zeromicro/go-zero/core/logx"
@@ -80,17 +81,36 @@ var (
 	knownNodes   = make(map[string]nodeEntry)
 )
 
-// parseNodeEntry parses a raw etcd value into a nodeEntry.
+// parseNodeEntry parses a raw etcd value into a nodeEntry. Also validates
+// scene_node_type: anything outside constants.SceneNodeType* is a
+// misconfiguration (usually a stale image or env typo) — we keep the node
+// but log loudly so it shows up on dashboards.
 func parseNodeEntry(value []byte) (nodeEntry, bool) {
 	var reg sceneNodeRegistration
 	if err := json.Unmarshal(value, &reg); err != nil {
 		logx.Errorf("[LoadReporter] failed to parse node registration: %v", err)
 		return nodeEntry{}, false
 	}
+	if !isKnownSceneNodeType(reg.SceneNodeType) {
+		logx.Errorf("[LoadReporter] unknown scene_node_type=%d on node %d (zone %d); "+
+			"expected 0=MainWorld, 1=Instance, 2=MainWorldCross, 3=InstanceCross. "+
+			"Check SCENE_NODE_TYPE env / game_config.yaml",
+			reg.SceneNodeType, reg.NodeId, reg.ZoneId)
+	}
 	return nodeEntry{
 		reg:    reg,
 		nodeID: strconv.FormatUint(uint64(reg.NodeId), 10),
 	}, true
+}
+
+// isKnownSceneNodeType reports whether t is one of the four declared
+// eSceneNodeType values. Unknown values still participate in routing, but
+// MatchesPurpose will reject them from both world and instance pools.
+func isKnownSceneNodeType(t uint32) bool {
+	return t == constants.SceneNodeTypeMainWorld ||
+		t == constants.SceneNodeTypeInstance ||
+		t == constants.SceneNodeTypeMainWorldCross ||
+		t == constants.SceneNodeTypeInstanceCross
 }
 
 // updateNodeLoad reads the node's scene_count and player_count from Redis,
@@ -113,6 +133,9 @@ func updateNodeLoad(svcCtx *svc.ServiceContext, entry nodeEntry) {
 		strconv.FormatUint(uint64(entry.reg.SceneNodeType), 10)); err != nil {
 		logx.Errorf("[LoadReporter] failed to mirror scene_node_type for node %s: %v", entry.nodeID, err)
 	}
+
+	metrics.ObserveNode(entry.nodeID, entry.reg.ZoneId, entry.reg.SceneNodeType,
+		sceneCount, playerCount, score)
 }
 
 // computeNodeLoadScore combines scene_count and player_count using the
@@ -152,6 +175,7 @@ func removeNodeFromRedis(svcCtx *svc.ServiceContext, entry nodeEntry) {
 	svcCtx.Redis.Zrem(loadKey, entry.nodeID)
 	svcCtx.Redis.Del(fmt.Sprintf(NodeSceneNodeTypeKey, entry.nodeID))
 	RemoveNodeConn(entry.nodeID)
+	metrics.ForgetNode(entry.nodeID, entry.reg.ZoneId, entry.reg.SceneNodeType)
 	logx.Infof("[LoadReporter] removed node %s from Redis load set (zone %d)", entry.nodeID, entry.reg.ZoneId)
 }
 
@@ -258,10 +282,15 @@ func fullSync(ctx context.Context, svcCtx *svc.ServiceContext) (int64, error) {
 		}
 	}
 
-	// Ensure world scenes for all zones (handles SceneManager restart).
+	// Ensure world scenes for all zones (handles SceneManager restart). We
+	// run init followed by a rebalance pass: init handles under-provisioning
+	// (new confIds, fresh zone) while rebalance handles drift that
+	// accumulated while SceneManager was offline (nodes joined/left without
+	// us observing the PUT/DELETE event).
 	if wids := worldConfIds(); len(wids) > 0 {
 		for _, z := range zones {
 			initWorldScenesForZone(ctx, svcCtx, z, wids)
+			RebalanceWorldChannelsForZone(ctx, svcCtx, z, wids)
 		}
 	}
 
@@ -316,9 +345,26 @@ func handleWatchEvent(ctx context.Context, svcCtx *svc.ServiceContext, ev *clien
 		}
 
 		knownNodesMu.Lock()
-		_, existed := knownNodes[key]
+		prev, existed := knownNodes[key]
 		knownNodes[key] = entry
 		knownNodesMu.Unlock()
+
+		// Detect role / zone flip on the same etcd key. A legitimate restart
+		// keeps the (zone_id, scene_node_type) tuple stable; a flip almost
+		// always means operator error (wrong env on redeploy, wrong pod
+		// picking up an old key before etcd TTL expired). Warn loudly.
+		if existed {
+			if prev.reg.SceneNodeType != entry.reg.SceneNodeType {
+				logx.Errorf("[LoadReporter] node %s scene_node_type changed %d -> %d on etcd PUT "+
+					"(same key %s). Likely a deploy mix-up; routing will follow the new value.",
+					entry.nodeID, prev.reg.SceneNodeType, entry.reg.SceneNodeType, key)
+			}
+			if prev.reg.ZoneId != entry.reg.ZoneId {
+				logx.Errorf("[LoadReporter] node %s zone_id changed %d -> %d on etcd PUT "+
+					"(same key %s). Likely a deploy mix-up; old zone load set may leak.",
+					entry.nodeID, prev.reg.ZoneId, entry.reg.ZoneId, key)
+			}
+		}
 
 		// Clear stale gRPC connection: endpoint may have changed after restart.
 		RemoveNodeConn(entry.nodeID)
@@ -326,9 +372,20 @@ func handleWatchEvent(ctx context.Context, svcCtx *svc.ServiceContext, ev *clien
 		updateNodeLoad(svcCtx, entry)
 		rebuildActiveZones()
 
-		if wids := worldConfIds(); !existed && len(wids) > 0 {
-			logx.Infof("[LoadReporter] Zone %d: node %s appeared (watch PUT)", entry.reg.ZoneId, entry.nodeID)
-			initWorldScenesForZone(ctx, svcCtx, entry.reg.ZoneId, wids)
+		if wids := worldConfIds(); len(wids) > 0 {
+			if !existed {
+				logx.Infof("[LoadReporter] Zone %d: node %s appeared (watch PUT, role=%d)",
+					entry.reg.ZoneId, entry.nodeID, entry.reg.SceneNodeType)
+				initWorldScenesForZone(ctx, svcCtx, entry.reg.ZoneId, wids)
+			}
+			// A world-hosting node joined (or re-registered after a restart /
+			// role flip): the hash ring changed. Try to rebalance empty
+			// channels toward the new shape. Skipping on non-world-hosting
+			// nodes avoids a pointless scan of the world channel set.
+			roleChanged := existed && prev.reg.SceneNodeType != entry.reg.SceneNodeType
+			if constants.IsWorldHostingType(entry.reg.SceneNodeType) && (!existed || roleChanged) {
+				RebalanceWorldChannelsForZone(ctx, svcCtx, entry.reg.ZoneId, wids)
+			}
 		}
 
 	case clientv3.EventTypeDelete:
@@ -345,16 +402,38 @@ func handleWatchEvent(ctx context.Context, svcCtx *svc.ServiceContext, ev *clien
 
 		rebuildActiveZones()
 		removeNodeFromRedis(svcCtx, entry)
+
+		// A world-hosting node departed: channels mapped to it are now
+		// unreachable for new players. Rebalance immediately so those
+		// channels find a new home on the next EnterScene, not on the
+		// next LoadReportInterval tick.
+		if constants.IsWorldHostingType(entry.reg.SceneNodeType) {
+			if wids := worldConfIds(); len(wids) > 0 {
+				RebalanceWorldChannelsForZone(ctx, svcCtx, entry.reg.ZoneId, wids)
+			}
+		}
 	}
 }
 
-// refreshLoadScores updates Redis load scores for all currently known nodes.
+// refreshLoadScores updates Redis load scores for all currently known nodes
+// and refreshes the nodes_by_role metric so dashboards reflect the current
+// cluster topology even when individual node scores don't move.
 func refreshLoadScores(svcCtx *svc.ServiceContext) {
 	knownNodesMu.RLock()
 	defer knownNodesMu.RUnlock()
+
+	counts := make(map[struct {
+		ZoneID uint32
+		Role   uint32
+	}]int)
 	for _, entry := range knownNodes {
 		updateNodeLoad(svcCtx, entry)
+		counts[struct {
+			ZoneID uint32
+			Role   uint32
+		}{entry.reg.ZoneId, entry.reg.SceneNodeType}]++
 	}
+	metrics.SetNodesByRole(counts)
 }
 
 

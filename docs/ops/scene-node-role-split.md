@@ -98,6 +98,8 @@ routing again. This way the switch does not race with pod readiness.
 
 ## 4. Observability
 
+### 4.1 Redis surface
+
 Keys worth a Grafana / redis-cli dashboard:
 
 | Key | Meaning |
@@ -108,15 +110,60 @@ Keys worth a Grafana / redis-cli dashboard:
 | `node:{id}:scene_node_type` | 0=world, 1=instance, 2=world-cross, 3=instance-cross |
 | `scene:{id}:player_count` | Per-scene online players (subset of the above) |
 
+### 4.2 Prometheus metrics
+
+Set `MetricsListenAddr: ":9150"` in `scene_manager_service.yaml` to expose
+`/metrics`. Gauges (all labelled `{node_id, zone_id, role}` unless noted):
+
+| Metric | Meaning |
+|--------|---------|
+| `scene_manager_node_player_count` | Mirrors `node:{id}:player_count` |
+| `scene_manager_node_scene_count` | Mirrors `node:{id}:scene_count` |
+| `scene_manager_node_load_score` | Composite score actually used for scheduling |
+| `scene_manager_nodes_by_role{zone_id,role}` | Live-node count per role — use for alerting when a role pool empties |
+
 Recommended alerts:
-- Instance pool empty while strict mode is on — paging alert.
+- `sum by (zone_id) (scene_manager_nodes_by_role{role="instance"}) == 0`
+  while strict mode is on — paging alert.
 - `node:{id}:player_count` stays ≥ 90% of expected cap for > 5 min on
   any world pod → consider bumping `WorldChannelCountByConfId`.
 - ZSET score dispersion on `scene_nodes:zone:{zoneId}:load` < 10% →
   consider raising `NodeLoadWeightPlayerCount` so live players carry
   more weight than scene count.
+- `scene_node_type` value outside `{0,1,2,3}` (logged as `[LoadReporter]
+  unknown scene_node_type`) — almost always a stale image or env typo;
+  page ops.
 
-## 5. Tuning checklist
+## 5. Rebalance on node join / leave
+
+When a world-hosting node joins or leaves the zone, SceneManager runs
+`RebalanceWorldChannelsForZone` which moves channels toward the new hash
+distribution, subject to two safety rules:
+
+1. **Urgent**: channels whose current node is dead or no longer
+   world-hosting are always re-homed (possibly to the same target node
+   where the C++ `CreateScene` handler idempotently re-creates the ECS
+   scene).
+2. **Opportunistic**: channels on a live node but mapped to a non-ideal
+   hash target are only moved when their `player_count == 0`. Hot
+   channels stay put — live player migration is out of scope and would
+   need cross-node state transfer that this codebase does not have.
+
+`MaxRebalanceMigrationsPerTick` (default 10, set to 0 to disable) caps
+how many moves fire per event. Rebalance also runs on SceneManager
+startup (`fullSync`) so drift accumulated while SceneManager was down
+converges on reboot.
+
+Watch for this log line to confirm rebalance fired:
+
+```
+[Rebalance] zone=1 urgent=2 opportunistic=0 migrated=2 skipped=0 pending=0 budget=10
+```
+
+If `skipped` is consistently non-zero, the target nodes are refusing
+`CreateScene` — check the C++ side logs on those pods.
+
+## 6. Tuning checklist
 
 | Symptom | Action |
 |---------|--------|
