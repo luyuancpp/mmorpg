@@ -56,7 +56,7 @@ void GateHandler::SendMessageToPlayer(::google::protobuf::RpcController* control
 	{
 		// Expected during disconnect race: scene pushed a message (e.g. NotifyEnterScene)
 		// after the player's TCP session was already closed on the gate. No state corruption.
-		LOG_DEBUG << "Connection ID not found for PlayerMessage, session ID: " << request->header().session_id() << ", message ID:" << request->message_content().message_id();
+		LOG_WARN << "Connection ID not found for PlayerMessage, session ID: " << request->header().session_id() << ", message ID:" << request->message_content().message_id();
 		return;
 	}
 	GetGateCodec().send(sessionIt->second.conn, request->message_content());
@@ -157,7 +157,7 @@ void GateHandler::BroadcastToPlayers(::google::protobuf::RpcController* controll
 		auto sessionIt = tlsSessionManager.sessions().find(sessionId);
 		if (sessionIt == tlsSessionManager.sessions().end())
 		{
-			LOG_DEBUG << "Connection ID not found for BroadCast2PlayerMessage, session ID: " << sessionId << ", message ID:" << request->message_content().message_id();
+			LOG_WARN << "Connection ID not found for BroadCast2PlayerMessage, session ID: " << sessionId << ", message ID:" << request->message_content().message_id();
 			return;
 		}
 		GetGateCodec().send(sessionIt->second.conn, request->message_content());
