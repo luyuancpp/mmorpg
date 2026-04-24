@@ -36,6 +36,11 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	// Register debug HTTP handlers before starting the metrics server so
+	// they are available from the moment the port opens. Currently only
+	// the rebalance planner is exposed; add more via metrics.RegisterDebugHandler.
+	logic.RegisterRebalanceDebugHandler(svcCtx)
+
 	// Start Prometheus metrics endpoint (no-op when MetricsListenAddr is empty).
 	metrics.Start(c.MetricsListenAddr)
 

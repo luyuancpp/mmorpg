@@ -90,6 +90,16 @@ NodeLoadWeightPlayerCount: 0.01
 # will still repair mappings to dead nodes.
 MaxRebalanceMigrationsPerTick: 10
 
+# Periodic rebalance tick (seconds). Event-driven rebalance fires on node
+# join/leave; the ticker catches drift that events miss (hot channel
+# drained with no corresponding etcd event). 0 disables periodic passes.
+RebalanceCheckIntervalSeconds: 300
+
+# Drop world_channels:* sets for confIds no longer in World.json on every
+# fullSync. Refuses to run when the table looks empty (defensive). Disable
+# only if you share a Redis cluster across incompatible World.json versions.
+CleanupOrphanChannelsOnStartup: true
+
 # --- Observability ------------------------------------------------------------
 #
 # Prometheus /metrics endpoint. Leave empty to disable (dev default). In

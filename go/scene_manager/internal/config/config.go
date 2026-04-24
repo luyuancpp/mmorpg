@@ -89,6 +89,16 @@ type Config struct {
 	// tends to spawn many mirrors.
 	MirrorSourceNodeLoadCap int64 `json:",default=0"`
 
+	// MirrorDedupBySource: when true, CreateScene with source_scene_id > 0
+	// returns an EXISTING mirror of that source instead of allocating a new
+	// one (if any). Off by default because the typical mirror use case is
+	// per-player phasing where independent copies are intentional. Turn it
+	// on for "shared instance" semantics (e.g. raid lockouts, world bosses
+	// where the whole zone shares one mirror copy). Selection is arbitrary
+	// when multiple mirrors exist; do not enable this if your gameplay
+	// requires deterministic mirror identity per request.
+	MirrorDedupBySource bool `json:",default=false"`
+
 	// GateTokenSecret: HMAC-SHA256 secret shared with Gate nodes for signing
 	// connection tokens during cross-zone redirect.
 	GateTokenSecret string `json:",optional"`
@@ -106,6 +116,24 @@ type Config struct {
 	// with safety. Set to 0 to disable proactive rebalancing (channels on
 	// dead nodes are still re-homed by GetBestWorldChannel on demand).
 	MaxRebalanceMigrationsPerTick int `json:",default=10"`
+
+	// RebalanceCheckIntervalSeconds: how often the LoadReporter runs a
+	// periodic rebalance pass in addition to event-triggered passes.
+	// Event-driven rebalance catches join/leave of world-hosting nodes,
+	// but a channel can become opportunistic-migratable after its players
+	// drain with no corresponding etcd event. The ticker closes that gap.
+	// Default 300s (5 min). Set to 0 to disable — event-driven only.
+	RebalanceCheckIntervalSeconds int64 `json:",default=300"`
+
+	// CleanupOrphanChannelsOnStartup: when true (default), SceneManager
+	// scans Redis on fullSync for world_channels:* sets whose confId is
+	// not in World.json and deletes them. This removes drift left by
+	// designers dropping a map from the table without a clean tear-down.
+	// Set to false in environments where you migrate maps manually or
+	// share a Redis cluster across incompatible World.json versions.
+	// NB: cleanup is refused when worldConfIds() returns empty (a
+	// defensive check against a table-load failure nuking prod data).
+	CleanupOrphanChannelsOnStartup bool `json:",default=true"`
 }
 
 // ChannelCountFor returns the effective world-channel count for a confId,

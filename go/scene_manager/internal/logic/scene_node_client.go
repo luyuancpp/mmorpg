@@ -24,6 +24,39 @@ var (
 	nodeConnCache = make(map[string]*grpc.ClientConn)
 )
 
+// nodeDialer builds a gRPC ClientConn for the given endpoint. Swappable so
+// integration tests can point the whole RPC pipeline at a bufconn-backed
+// fake SceneNode server without standing up TCP listeners. Production
+// callers never touch this; the default is grpc.NewClient over insecure
+// transport (scene manager ↔ scene node is on an internal overlay).
+var nodeDialer = defaultNodeDialer
+
+func defaultNodeDialer(_ context.Context, endpoint string) (*grpc.ClientConn, error) {
+	return grpc.NewClient(endpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+}
+
+// SetNodeDialerForTest installs a custom dialer and returns a restore func.
+// MUST be called from *_test.go via t.Cleanup so a failing test doesn't
+// leak a bufconn dialer into sibling packages.
+func SetNodeDialerForTest(d func(context.Context, string) (*grpc.ClientConn, error)) (restore func()) {
+	prev := nodeDialer
+	nodeDialer = d
+	return func() { nodeDialer = prev }
+}
+
+// ResetNodeConnCacheForTest evicts every cached gRPC ClientConn. Integration
+// tests reuse nodeIDs across sub-tests (node-A in test 1 is an unrelated
+// bufconn in test 2); without eviction the second test would dial the
+// first test's already-closed listener and hang on RPC.
+func ResetNodeConnCacheForTest() {
+	nodeConnMu.Lock()
+	defer nodeConnMu.Unlock()
+	for id, c := range nodeConnCache {
+		_ = c.Close()
+		delete(nodeConnCache, id)
+	}
+}
+
 // RequestNodeCreateScene dials the C++ scene node identified by nodeId and calls
 // CreateScene to instantiate the ECS scene entity.
 // sceneId is the Go-allocated unique ID; C++ uses it for per-scene idempotency.
@@ -45,10 +78,6 @@ func RequestNodeCreateSceneWithOptions(
 	mirrorConfigId uint32,
 	creatorIds []uint64,
 ) (*scenepb.CreateSceneResponse, error) {
-	if svcCtx.Etcd == nil {
-		return nil, fmt.Errorf("etcd client not available, skipping CreateScene RPC to node %s", nodeId)
-	}
-
 	conn, err := getOrDialNode(ctx, svcCtx, nodeId)
 	if err != nil {
 		return nil, fmt.Errorf("dial scene node %s: %w", nodeId, err)
@@ -71,10 +100,6 @@ func RequestNodeCreateSceneWithOptions(
 // RequestNodeDestroyScene dials the C++ scene node and calls DestroyScene
 // to remove the ECS scene entity.
 func RequestNodeDestroyScene(ctx context.Context, svcCtx *svc.ServiceContext, nodeId string, sceneId uint64) error {
-	if svcCtx.Etcd == nil {
-		return fmt.Errorf("etcd client not available, skipping DestroyScene RPC to node %s", nodeId)
-	}
-
 	conn, err := getOrDialNode(ctx, svcCtx, nodeId)
 	if err != nil {
 		return fmt.Errorf("dial scene node %s: %w", nodeId, err)
@@ -93,10 +118,6 @@ func RequestNodeDestroyScene(ctx context.Context, svcCtx *svc.ServiceContext, no
 // the new node can load fresh state from Redis. Used during cross-node
 // scene switches; same-node switches do not need this.
 func RequestNodeReleasePlayer(ctx context.Context, svcCtx *svc.ServiceContext, nodeId string, playerId uint64, targetSceneId uint64, targetNodeId string) error {
-	if svcCtx.Etcd == nil {
-		return fmt.Errorf("etcd client not available, skipping ReleasePlayer RPC to node %s", nodeId)
-	}
-
 	conn, err := getOrDialNode(ctx, svcCtx, nodeId)
 	if err != nil {
 		return fmt.Errorf("dial scene node %s: %w", nodeId, err)
@@ -130,9 +151,7 @@ func getOrDialNode(ctx context.Context, svcCtx *svc.ServiceContext, nodeId strin
 		return nil, err
 	}
 
-	conn, err = grpc.NewClient(endpoint,
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-	)
+	conn, err = nodeDialer(ctx, endpoint)
 	if err != nil {
 		return nil, fmt.Errorf("grpc dial %s: %w", endpoint, err)
 	}
@@ -161,6 +180,9 @@ func resolveNodeEndpoint(ctx context.Context, svcCtx *svc.ServiceContext, nodeId
 	}
 
 	// Slow path: query etcd directly (covers race at startup before first fullSync).
+	if svcCtx.Etcd == nil {
+		return "", fmt.Errorf("scene node %s not in registry and etcd client unavailable", nodeId)
+	}
 	prefix := "SceneNodeService.rpc/"
 	resp, err := svcCtx.Etcd.Get(ctx, prefix, clientv3.WithPrefix())
 	if err != nil {

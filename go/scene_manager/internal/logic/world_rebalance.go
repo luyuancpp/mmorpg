@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"scene_manager/internal/constants"
+	"scene_manager/internal/metrics"
 	"scene_manager/internal/svc"
 
 	"github.com/zeromicro/go-zero/core/logx"
@@ -51,6 +52,12 @@ type channelMigration struct {
 // channels on still-live nodes are only moved if the budget allows.
 func RebalanceWorldChannelsForZone(ctx context.Context, svcCtx *svc.ServiceContext, zoneId uint32, confIds []uint64) {
 	urgent, opportunistic, budget := PlanWorldChannelRebalance(svcCtx, zoneId, confIds)
+
+	// Publish queue depth every invocation so dashboards see "queue is
+	// stable at 0" when nothing changed, not just when migrations fire.
+	metrics.SetRebalancePending(zoneId, string(reasonNodeGone), len(urgent))
+	metrics.SetRebalancePending(zoneId, string(reasonBetterHome), len(opportunistic))
+
 	if budget == 0 {
 		return // explicitly disabled
 	}
@@ -66,8 +73,10 @@ func RebalanceWorldChannelsForZone(ctx context.Context, svcCtx *svc.ServiceConte
 			}
 			if migrateWorldChannel(ctx, svcCtx, zoneId, c.ConfId, c.SceneId, c.OldNode, c.NewNode, c.Reason) {
 				migrated++
+				metrics.ObserveRebalanceMigration(zoneId, string(c.Reason), "migrated")
 			} else {
 				skipped++
+				metrics.ObserveRebalanceMigration(zoneId, string(c.Reason), "failed")
 			}
 		}
 	}
@@ -79,6 +88,20 @@ func RebalanceWorldChannelsForZone(ctx context.Context, svcCtx *svc.ServiceConte
 		logx.Infof("[Rebalance] zone=%d urgent=%d opportunistic=%d migrated=%d skipped=%d pending=%d budget=%d",
 			zoneId, len(urgent), len(opportunistic), migrated, skipped, pending, budget)
 	}
+
+	// After a successful run the pending gauge still reflects the plan we
+	// just executed against; refresh it with the post-migration residue
+	// so queries see reality, not the pre-run snapshot.
+	metrics.SetRebalancePending(zoneId, string(reasonNodeGone), max0(len(urgent)-migrated))
+	metrics.SetRebalancePending(zoneId, string(reasonBetterHome),
+		max0(len(urgent)+len(opportunistic)-migrated-max0(len(urgent)-migrated)))
+}
+
+func max0(v int) int {
+	if v < 0 {
+		return 0
+	}
+	return v
 }
 
 // PlanWorldChannelRebalance returns the urgent and opportunistic migration
@@ -175,10 +198,14 @@ func migrateWorldChannel(ctx context.Context, svcCtx *svc.ServiceContext, zoneId
 		return false
 	}
 
-	nodeKey := fmt.Sprintf("scene:%d:node", sceneId)
-	if err := svcCtx.Redis.Set(nodeKey, newNode); err != nil {
-		logx.Errorf("[Rebalance] zone=%d conf=%d scene=%d: failed to update scene->node mapping: %v",
-			zoneId, confId, sceneId, err)
+	// Use reassignSceneNode so node:{id}:scenes reverse index stays in sync
+	// (otherwise node-death reconciliation would miss migrated channels).
+	// reassignSceneNode logs its own Set error but doesn't surface it; verify
+	// the mapping landed before declaring success.
+	reassignSceneNode(svcCtx, sceneId, oldNode, newNode)
+	if cur, _ := svcCtx.Redis.Get(fmt.Sprintf("scene:%d:node", sceneId)); cur != newNode {
+		logx.Errorf("[Rebalance] zone=%d conf=%d scene=%d: scene->node mapping did not stick (got %q, want %q)",
+			zoneId, confId, sceneId, cur, newNode)
 		// The ECS entity on newNode is effectively orphaned until the
 		// next rebalance tick retries. Since CreateScene is idempotent
 		// this is safe; we just wasted an RPC.

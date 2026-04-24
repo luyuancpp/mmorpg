@@ -170,6 +170,12 @@ func readInt64(svcCtx *svc.ServiceContext, key string) int64 {
 // and mirrored scene_node_type. scene_count / player_count counters are
 // intentionally left alone: they may still be referenced by in-flight
 // instance destroys; the next node that reuses the id will overwrite them.
+//
+// It also kicks off orphan scene reconciliation — instance scenes that
+// were hosted on this dead node are force-destroyed, since the C++
+// process holding their ECS entities is gone and they'd otherwise linger
+// in Redis forever. World channels are left alone; the rebalance system
+// migrates them in a separate path.
 func removeNodeFromRedis(svcCtx *svc.ServiceContext, entry nodeEntry) {
 	loadKey := nodeLoadKey(entry.reg.ZoneId)
 	svcCtx.Redis.Zrem(loadKey, entry.nodeID)
@@ -177,6 +183,74 @@ func removeNodeFromRedis(svcCtx *svc.ServiceContext, entry nodeEntry) {
 	RemoveNodeConn(entry.nodeID)
 	metrics.ForgetNode(entry.nodeID, entry.reg.ZoneId, entry.reg.SceneNodeType)
 	logx.Infof("[LoadReporter] removed node %s from Redis load set (zone %d)", entry.nodeID, entry.reg.ZoneId)
+
+	reconcileDeadNodeScenes(svcCtx, entry)
+}
+
+// reconcileDeadNodeScenes is invoked when a node disappears from etcd.
+// Walks node:{id}:scenes and force-destroys any orphaned instance scenes
+// whose scene:{id}:node mapping still points at this dead node. Main
+// world channels are left for the rebalance path; stale set entries for
+// scenes that already got moved elsewhere are quietly dropped.
+//
+// Why not destroy world channels here:
+//   Rebalance already has the logic to pick a replacement node AND tell
+//   it to recreate the channel's ECS entity. Destroying a world channel
+//   here would force players to re-enter a different scene and lose
+//   their in-world context. Instances are per-run disposable, so
+//   destroying an orphan is the right default.
+func reconcileDeadNodeScenes(svcCtx *svc.ServiceContext, entry nodeEntry) {
+	setKey := nodeScenesKey(entry.nodeID)
+	members, err := svcCtx.Redis.Smembers(setKey)
+	if err != nil {
+		logx.Errorf("[Reconcile] Smembers %s failed: %v", setKey, err)
+		return
+	}
+	if len(members) == 0 {
+		svcCtx.Redis.Del(setKey)
+		return
+	}
+
+	zoneId := entry.reg.ZoneId
+	activeKey := activeInstancesKey(zoneId)
+	destroyed, skippedWorld, stale := 0, 0, 0
+
+	for _, s := range members {
+		sceneId, err := strconv.ParseUint(s, 10, 64)
+		if err != nil {
+			continue
+		}
+
+		// Did this scene already get reassigned to a live node?
+		currentNode, _ := svcCtx.Redis.Get(sceneNodeKey(sceneId))
+		if currentNode != "" && currentNode != entry.nodeID {
+			stale++
+			continue
+		}
+
+		// Is this an instance? Only instances are tracked in the active set.
+		// World channels live in world:channels:zone:{z}:conf:{c} and are
+		// handled by the rebalance pipeline.
+		_, zerr := svcCtx.Redis.Zscore(activeKey, s)
+		if zerr != nil {
+			skippedWorld++
+			continue
+		}
+
+		logx.Infof("[Reconcile] Force-destroying orphan instance %d (was on dead node %s, zone %d)",
+			sceneId, entry.nodeID, zoneId)
+		destroyInstanceForce(context.Background(), svcCtx, zoneId, sceneId, "node_death")
+		destroyed++
+	}
+
+	svcCtx.Redis.Del(setKey)
+
+	metrics.ObserveSceneOrphansReconciled(zoneId, destroyed)
+
+	if destroyed > 0 || stale > 0 || skippedWorld > 0 {
+		logx.Infof("[Reconcile] Node %s (zone %d): total=%d destroyed=%d world_skipped=%d stale=%d",
+			entry.nodeID, zoneId, len(members), destroyed, skippedWorld, stale)
+	}
 }
 
 // rebuildActiveZones derives activeZones from knownNodes.
@@ -294,13 +368,24 @@ func fullSync(ctx context.Context, svcCtx *svc.ServiceContext) (int64, error) {
 		}
 	}
 
+	// Opt-out orphan cleanup: drop world_channels:* sets for confIds that
+	// no longer exist in World.json. Runs once per fullSync iteration so a
+	// long-lived SceneManager picks up table edits after a live reload.
+	if svcCtx.Config.CleanupOrphanChannelsOnStartup {
+		CleanupOrphanWorldChannels(ctx, svcCtx)
+	}
+
 	logx.Infof("[LoadReporter] full sync: %d nodes, %d zones, rev=%d",
 		len(resp.Kvs), len(zones), resp.Header.Revision)
 	return resp.Header.Revision, nil
 }
 
-// watchAndRefresh starts an etcd Watch from the given revision and a periodic
-// ticker for load-score refresh and grace-period expiry checks.
+// watchAndRefresh starts an etcd Watch from the given revision, a periodic
+// ticker for load-score refresh and grace-period expiry checks, and a
+// longer-period ticker for best-effort rebalance convergence. The rebalance
+// tick catches drift that events alone can miss (hot channels that drained
+// after the last join/leave event) and acts as a self-healing safety net
+// when etcd watch misses an update during a network blip.
 func watchAndRefresh(ctx context.Context, svcCtx *svc.ServiceContext, rev int64) {
 	watchCh := svcCtx.Etcd.Watch(ctx, sceneNodePrefix,
 		clientv3.WithPrefix(),
@@ -308,8 +393,11 @@ func watchAndRefresh(ctx context.Context, svcCtx *svc.ServiceContext, rev int64)
 		clientv3.WithPrevKV(),
 	)
 
-	ticker := time.NewTicker(LoadReportInterval)
-	defer ticker.Stop()
+	loadTicker := time.NewTicker(LoadReportInterval)
+	defer loadTicker.Stop()
+
+	rebalanceTicker, stopRebalanceTicker := newRebalanceTicker(svcCtx)
+	defer stopRebalanceTicker()
 
 	for {
 		select {
@@ -327,9 +415,38 @@ func watchAndRefresh(ctx context.Context, svcCtx *svc.ServiceContext, rev int64)
 			for _, ev := range watchResp.Events {
 				handleWatchEvent(ctx, svcCtx, ev)
 			}
-		case <-ticker.C:
+		case <-loadTicker.C:
 			refreshLoadScores(svcCtx)
+		case <-rebalanceTicker:
+			runPeriodicRebalance(ctx, svcCtx)
 		}
+	}
+}
+
+// newRebalanceTicker returns a receive-only channel that fires every
+// RebalanceCheckIntervalSeconds, and a stop function to release its
+// underlying resources. When the interval is 0 the returned channel is
+// nil (a nil channel blocks forever in select, so the ticker branch is
+// effectively disabled without a special-case in the caller).
+func newRebalanceTicker(svcCtx *svc.ServiceContext) (<-chan time.Time, func()) {
+	secs := svcCtx.Config.RebalanceCheckIntervalSeconds
+	if secs <= 0 {
+		return nil, func() {}
+	}
+	t := time.NewTicker(time.Duration(secs) * time.Second)
+	return t.C, t.Stop
+}
+
+// runPeriodicRebalance fires RebalanceWorldChannelsForZone for every active
+// zone. This is the fallback path for drift that etcd events don't surface
+// (e.g. a hot channel drained and became opportunistic-migratable).
+func runPeriodicRebalance(ctx context.Context, svcCtx *svc.ServiceContext) {
+	wids := worldConfIds()
+	if len(wids) == 0 {
+		return
+	}
+	for _, z := range GetActiveZones() {
+		RebalanceWorldChannelsForZone(ctx, svcCtx, z, wids)
 	}
 }
 

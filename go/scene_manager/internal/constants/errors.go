@@ -18,4 +18,11 @@ const (
 	// enabled and the caller requests a world/instance scene but the zone's
 	// node pool has no node able to host that purpose.
 	ErrNoNodeForPurpose uint32 = 12
+	// ErrSourceSceneGone: a CreateScene request specified source_scene_id > 0
+	// but that source scene no longer exists (already destroyed by the
+	// lifecycle manager / DestroyScene RPC). Refusing here prevents creating
+	// an "orphan mirror" whose source-derived map / NPC / spawn data will
+	// never resolve. Caller should pick a fresh source or fall back to a
+	// non-mirror create.
+	ErrSourceSceneGone uint32 = 13
 )

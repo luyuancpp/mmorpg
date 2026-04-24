@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 
+	"scene_manager/internal/metrics"
 	"scene_manager/internal/svc"
 
 	"github.com/zeromicro/go-zero/core/logx"
@@ -145,40 +146,134 @@ func cleanupZoneIdleInstances(ctx context.Context, svcCtx *svc.ServiceContext, z
 }
 
 // destroyInstance removes all Redis state for an instance and notifies
-// the C++ scene node to destroy the ECS entity.
+// the C++ scene node to destroy the ECS entity. Idempotent and
+// concurrency-safe:
+//   - Uses AtomicDestroyIfIdle (Lua CAS) to prevent the destroy-while-
+//     entering race: if a player entered between the caller's "idle"
+//     check and this call, the script leaves the scene untouched and we
+//     return early without issuing the C++ DestroyScene RPC.
+//   - Cascades into any mirrors whose source is this scene (reads
+//     scene:{id}:mirrors BEFORE destroying so the set is still live).
+//   - Un-links this scene from node:{nodeId}:scenes and (if it is itself
+//     a mirror) from scene:{sourceId}:mirrors.
+//
+// force=true skips the atomic idle check and forcibly destroys even
+// while players are in the scene. Used by node-death reconciliation:
+// when a node dies its scenes are gone regardless of player_count, so
+// leaving them "alive" forever would be worse than force-destroying.
+//
+// reason is one of "idle" | "explicit" | "cascade" | "node_death" and
+// is used as a Prometheus label on scene_manager_instance_destroyed_total.
 func destroyInstance(ctx context.Context, svcCtx *svc.ServiceContext, zoneId uint32, sceneId uint64) {
+	destroyInstanceInternal(ctx, svcCtx, zoneId, sceneId, false, "idle")
+}
+
+// destroyInstanceForce is used by the node-death reconciliation path to
+// sweep orphan scenes even if their player_count is still non-zero
+// (the C++ node holding those players is gone; clamping the residual
+// on the per-node counter is the best we can do).
+func destroyInstanceForce(ctx context.Context, svcCtx *svc.ServiceContext, zoneId uint32, sceneId uint64, reason string) {
+	if reason == "" {
+		reason = "explicit"
+	}
+	destroyInstanceInternal(ctx, svcCtx, zoneId, sceneId, true, reason)
+}
+
+func destroyInstanceInternal(ctx context.Context, svcCtx *svc.ServiceContext, zoneId uint32, sceneId uint64, force bool, reason string) {
 	sceneIdStr := fmt.Sprintf("%d", sceneId)
+
+	// Snapshot everything we need BEFORE the atomic wipe:
+	//   - nodeId so we can notify C++ + fix counters
+	//   - residual player count so we can drain the per-node aggregate
+	//   - mirror source (if any) so we can SREM from scene:{src}:mirrors
+	//   - list of mirrors whose source is this scene, so we cascade them
+	//   - whether we were a mirror (for the Prometheus kind label)
 	sceneNodeKey := fmt.Sprintf("scene:%d:node", sceneId)
-
-	// Get node for load tracking and RPC before deletion.
 	nodeId, _ := svcCtx.Redis.Get(sceneNodeKey)
+	residualStr, _ := svcCtx.Redis.Get(fmt.Sprintf(InstancePlayerCountKey, sceneId))
+	residual, _ := strconv.ParseInt(residualStr, 10, 64)
+	sourceStr, _ := svcCtx.Redis.Get(sceneSourceKey(sceneId))
+	sourceId, _ := strconv.ParseUint(sourceStr, 10, 64)
+	mirrorFlag, _ := svcCtx.Redis.Get(sceneMirrorFlagKey(sceneId))
+	kind := "instance"
+	if mirrorFlag == "1" {
+		kind = "mirror"
+	}
 
-	// Notify C++ node to destroy the ECS scene entity (skip if node is already dead).
+	// Cascade destroy: any mirror whose source is this scene has to die
+	// with its source. We read the set BEFORE the atomic destroy (the
+	// atomic script wipes it) and then destroy each mirror in turn.
+	mirrorChildren, _ := svcCtx.Redis.Smembers(sceneMirrorsKey(sceneId))
+	for _, mid := range mirrorChildren {
+		childId, err := strconv.ParseUint(mid, 10, 64)
+		if err != nil || childId == sceneId {
+			continue
+		}
+		// Mirrors usually live in the same zone as their source but read
+		// scene:{child}:zone to be safe — cross-zone mirroring is uncommon
+		// but we don't want cascade to silently skip ZREM from the wrong
+		// active set.
+		childZoneStr, _ := svcCtx.Redis.Get(sceneZoneKey(childId))
+		childZone, _ := strconv.ParseUint(childZoneStr, 10, 32)
+		if childZone == 0 {
+			childZone = uint64(zoneId)
+		}
+		logx.Infof("[InstanceLifecycle] Cascade-destroying mirror %d (source %d)", childId, sceneId)
+		// Force-destroy: the source is going away, "still has players"
+		// doesn't rescue the mirror.
+		destroyInstanceInternal(ctx, svcCtx, uint32(childZone), childId, true, "cascade")
+	}
+	// Drop the mirrors index for this scene now that its children are gone.
+	svcCtx.Redis.Del(sceneMirrorsKey(sceneId))
+
+	// Core atomic destroy — unless force=true, aborts if the scene picked
+	// up a player in the meantime.
+	destroyed := true
+	if !force {
+		atomicNode, err := AtomicDestroyIfIdle(svcCtx, zoneId, sceneId)
+		if err != nil {
+			logx.Errorf("[InstanceLifecycle] AtomicDestroy failed for scene %d: %v", sceneId, err)
+			return
+		}
+		if atomicNode == "" {
+			// Scene picked up a player between our check and the script;
+			// reseed its idle clock so next tick re-evaluates fairly.
+			svcCtx.Redis.Zadd(activeInstancesKey(zoneId), time.Now().Unix(), sceneIdStr)
+			destroyed = false
+		} else {
+			nodeId = atomicNode
+		}
+	} else {
+		// Force path: wipe unconditionally.
+		svcCtx.Redis.Del(sceneNodeKey)
+		svcCtx.Redis.Del(fmt.Sprintf(InstancePlayerCountKey, sceneId))
+		svcCtx.Redis.Zrem(activeInstancesKey(zoneId), sceneIdStr)
+		svcCtx.Redis.Del(sceneMirrorFlagKey(sceneId))
+		svcCtx.Redis.Del(sceneSourceKey(sceneId))
+		svcCtx.Redis.Del(sceneZoneKey(sceneId))
+	}
+
+	if !destroyed {
+		return
+	}
+
+	// Notify C++ node to destroy the ECS scene entity (skip if node is
+	// already dead — the entity died with the process).
 	if nodeId != "" && IsNodeAlive(svcCtx, zoneId, nodeId) {
 		if err := RequestNodeDestroyScene(ctx, svcCtx, nodeId, sceneId); err != nil {
 			logx.Errorf("[InstanceLifecycle] Failed to call DestroyScene on node %s for scene %d: %v", nodeId, sceneId, err)
 		}
 	}
 
-	// Remove from scene -> node mapping.
-	svcCtx.Redis.Del(sceneNodeKey)
-
-	// Remove from active instances sorted set.
-	instKey := activeInstancesKey(zoneId)
-	svcCtx.Redis.Zrem(instKey, sceneIdStr)
-
-	// Read final player count BEFORE deleting so we can drain that many
-	// from the per-node aggregate. This covers the rare case where an
-	// instance is force-destroyed with players still in it (e.g. admin
-	// shutdown, server crash recovery) — the per-node counter would
-	// otherwise leak the residual forever.
-	residualKey := fmt.Sprintf(InstancePlayerCountKey, sceneId)
-	residualStr, _ := svcCtx.Redis.Get(residualKey)
-	residual, _ := strconv.ParseInt(residualStr, 10, 64)
-	svcCtx.Redis.Del(residualKey)
-
-	// Remove mirror flag (no-op if this wasn't a mirror).
-	svcCtx.Redis.Del(sceneMirrorFlagKey(sceneId))
+	// Unlink reverse indexes. Both SREMs are best-effort: the node-death
+	// reconciliation loop double-checks scene:{id}:node before destroying
+	// again, so a stale entry in node:{id}:scenes is harmless.
+	if nodeId != "" {
+		svcCtx.Redis.Srem(nodeScenesKey(nodeId), sceneIdStr)
+	}
+	if sourceId > 0 {
+		svcCtx.Redis.Srem(sceneMirrorsKey(sourceId), sceneIdStr)
+	}
 
 	// Decrement node counters.
 	if nodeId != "" {
@@ -193,6 +288,8 @@ func destroyInstance(ctx context.Context, svcCtx *svc.ServiceContext, zoneId uin
 			}
 		}
 	}
+
+	metrics.ObserveInstanceDestroyed(zoneId, kind, reason)
 }
 
 // IncrInstancePlayerCount increments both the per-scene and per-node player
