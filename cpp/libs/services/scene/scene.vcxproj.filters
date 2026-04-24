@@ -40,6 +40,7 @@
     <ClInclude Include="player\system\player_scene.h" />
     <ClInclude Include="player\system\player_skill.h" />
     <ClInclude Include="player\system\player_tip.h" />
+    <ClInclude Include="player\system\stress_test_probe.h" />
     <ClInclude Include="spatial\comp\dt_crowd_comp.h" />
     <ClInclude Include="spatial\comp\grid_comp.h" />
     <ClInclude Include="spatial\comp\nav_comp.h" />
@@ -99,6 +100,7 @@
     <ClCompile Include="player\system\player_lifecycle.cpp" />
     <ClCompile Include="player\system\player_database_loader.cpp" />
     <ClCompile Include="player\system\player_database_1_loader.cpp" />
+    <ClCompile Include="player\system\stress_test_probe.cpp" />
     <ClCompile Include="player\system\afk.cpp" />
   </ItemGroup>
 </Project>

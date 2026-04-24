@@ -29,6 +29,9 @@ func InitAuthProviders() {
 			Addr:             cfg.SaToken.Redis.Host,
 			Password:         cfg.SaToken.Redis.Password,
 			DB:               int(cfg.SaToken.Redis.DB),
+			DialTimeout:      cfg.SaToken.Redis.DialTimeout,
+			ReadTimeout:      cfg.SaToken.Redis.ReadTimeout,
+			WriteTimeout:     cfg.SaToken.Redis.WriteTimeout,
 			DisableIndentity: true,
 		})
 		if err := rdb.Ping(context.Background()).Err(); err != nil {

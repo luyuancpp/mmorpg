@@ -92,6 +92,34 @@ struct PlayerUint32CompDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PlayerUint32CompDefaultTypeInternal _PlayerUint32Comp_default_instance_;
+
+inline constexpr PlayerStressTestProbe::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        test_sig_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        test_seq_{::uint64_t{0u}} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR PlayerStressTestProbe::PlayerStressTestProbe(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(PlayerStressTestProbe_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct PlayerStressTestProbeDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR PlayerStressTestProbeDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~PlayerStressTestProbeDefaultTypeInternal() {}
+  union {
+    PlayerStressTestProbe _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PlayerStressTestProbeDefaultTypeInternal _PlayerStressTestProbe_default_instance_;
 template <typename>
 PROTOBUF_CONSTEXPR Player::Player(::_pbi::ConstantInitialized)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
@@ -199,6 +227,13 @@ const ::uint32_t
         4, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::PlayerUint32Comp, _impl_.class__),
         0,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::PlayerStressTestProbe, _impl_._has_bits_),
+        5, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::PlayerStressTestProbe, _impl_.test_seq_),
+        PROTOBUF_FIELD_OFFSET(::PlayerStressTestProbe, _impl_.test_sig_),
+        1,
+        0,
 };
 
 static const ::_pbi::MigrationSchema
@@ -210,6 +245,7 @@ static const ::_pbi::MigrationSchema
         {8, sizeof(::UnregisterPlayer)},
         {9, sizeof(::PlayerUint64Comp)},
         {14, sizeof(::PlayerUint32Comp)},
+        {19, sizeof(::PlayerStressTestProbe)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::_NormalLogin_default_instance_._instance,
@@ -219,6 +255,7 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::_UnregisterPlayer_default_instance_._instance,
     &::_PlayerUint64Comp_default_instance_._instance,
     &::_PlayerUint32Comp_default_instance_._instance,
+    &::_PlayerStressTestProbe_default_instance_._instance,
 };
 const char descriptor_table_protodef_proto_2fcommon_2fcomponent_2fplayer_5fcomp_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
@@ -227,20 +264,21 @@ const char descriptor_table_protodef_proto_2fcommon_2fcomponent_2fplayer_5fcomp_
     "r\"\032\n\007Account\022\017\n\007account\030\001 \001(\t\"\022\n\020Unregis"
     "terPlayer\"2\n\020PlayerUint64Comp\022\036\n\026registr"
     "ation_timestamp\030\001 \001(\004\"!\n\020PlayerUint32Com"
-    "p\022\r\n\005class\030\001 \001(\rB\022Z\020common/componentb\006pr"
-    "oto3"
+    "p\022\r\n\005class\030\001 \001(\r\";\n\025PlayerStressTestProb"
+    "e\022\020\n\010test_seq\030\001 \001(\004\022\020\n\010test_sig\030\002 \001(\014B\022Z"
+    "\020common/componentb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fcomponent_2fplayer_5fcomp_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fcomponent_2fplayer_5fcomp_2eproto = {
     false,
     false,
-    244,
+    305,
     descriptor_table_protodef_proto_2fcommon_2fcomponent_2fplayer_5fcomp_2eproto,
     "proto/common/component/player_comp.proto",
     &descriptor_table_proto_2fcommon_2fcomponent_2fplayer_5fcomp_2eproto_once,
     nullptr,
     0,
-    7,
+    8,
     schemas,
     file_default_instances,
     TableStruct_proto_2fcommon_2fcomponent_2fplayer_5fcomp_2eproto::offsets,
@@ -1413,6 +1451,297 @@ void PlayerUint32Comp::InternalSwap(PlayerUint32Comp* PROTOBUF_RESTRICT PROTOBUF
 }
 
 ::google::protobuf::Metadata PlayerUint32Comp::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class PlayerStressTestProbe::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<PlayerStressTestProbe>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(PlayerStressTestProbe, _impl_._has_bits_);
+};
+
+PlayerStressTestProbe::PlayerStressTestProbe(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, PlayerStressTestProbe_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:PlayerStressTestProbe)
+}
+PROTOBUF_NDEBUG_INLINE PlayerStressTestProbe::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    const ::PlayerStressTestProbe& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        test_sig_(arena, from.test_sig_) {}
+
+PlayerStressTestProbe::PlayerStressTestProbe(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const PlayerStressTestProbe& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, PlayerStressTestProbe_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  PlayerStressTestProbe* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  _impl_.test_seq_ = from._impl_.test_seq_;
+
+  // @@protoc_insertion_point(copy_constructor:PlayerStressTestProbe)
+}
+PROTOBUF_NDEBUG_INLINE PlayerStressTestProbe::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        test_sig_(arena) {}
+
+inline void PlayerStressTestProbe::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  _impl_.test_seq_ = {};
+}
+PlayerStressTestProbe::~PlayerStressTestProbe() {
+  // @@protoc_insertion_point(destructor:PlayerStressTestProbe)
+  SharedDtor(*this);
+}
+inline void PlayerStressTestProbe::SharedDtor(MessageLite& self) {
+  PlayerStressTestProbe& this_ = static_cast<PlayerStressTestProbe&>(self);
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.test_sig_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL PlayerStressTestProbe::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) PlayerStressTestProbe(arena);
+}
+constexpr auto PlayerStressTestProbe::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(PlayerStressTestProbe),
+                                            alignof(PlayerStressTestProbe));
+}
+constexpr auto PlayerStressTestProbe::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_PlayerStressTestProbe_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &PlayerStressTestProbe::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<PlayerStressTestProbe>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &PlayerStressTestProbe::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<PlayerStressTestProbe>(), &PlayerStressTestProbe::ByteSizeLong,
+              &PlayerStressTestProbe::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(PlayerStressTestProbe, _impl_._cached_size_),
+          false,
+      },
+      &PlayerStressTestProbe::kDescriptorMethods,
+      &descriptor_table_proto_2fcommon_2fcomponent_2fplayer_5fcomp_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull PlayerStressTestProbe_class_data_ =
+        PlayerStressTestProbe::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+PlayerStressTestProbe::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&PlayerStressTestProbe_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(PlayerStressTestProbe_class_data_.tc_table);
+  return PlayerStressTestProbe_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<1, 2, 0, 0, 2>
+PlayerStressTestProbe::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(PlayerStressTestProbe, _impl_._has_bits_),
+    0, // no _extensions_
+    2, 8,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967292,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    2,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    PlayerStressTestProbe_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::PlayerStressTestProbe>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // bytes test_sig = 2;
+    {::_pbi::TcParser::FastBS1,
+     {18, 0, 0, PROTOBUF_FIELD_OFFSET(PlayerStressTestProbe, _impl_.test_sig_)}},
+    // uint64 test_seq = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(PlayerStressTestProbe, _impl_.test_seq_), 1>(),
+     {8, 1, 0, PROTOBUF_FIELD_OFFSET(PlayerStressTestProbe, _impl_.test_seq_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // uint64 test_seq = 1;
+    {PROTOBUF_FIELD_OFFSET(PlayerStressTestProbe, _impl_.test_seq_), _Internal::kHasBitsOffset + 1, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    // bytes test_sig = 2;
+    {PROTOBUF_FIELD_OFFSET(PlayerStressTestProbe, _impl_.test_sig_), _Internal::kHasBitsOffset + 0, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kBytes | ::_fl::kRepAString)},
+  }},
+  // no aux_entries
+  {{
+  }},
+};
+PROTOBUF_NOINLINE void PlayerStressTestProbe::Clear() {
+// @@protoc_insertion_point(message_clear_start:PlayerStressTestProbe)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000001u) != 0) {
+    _impl_.test_sig_.ClearNonDefaultToEmpty();
+  }
+  _impl_.test_seq_ = ::uint64_t{0u};
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL PlayerStressTestProbe::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const PlayerStressTestProbe& this_ = static_cast<const PlayerStressTestProbe&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL PlayerStressTestProbe::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const PlayerStressTestProbe& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(serialize_to_array_start:PlayerStressTestProbe)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  // uint64 test_seq = 1;
+  if ((this_._impl_._has_bits_[0] & 0x00000002u) != 0) {
+    if (this_._internal_test_seq() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          1, this_._internal_test_seq(), target);
+    }
+  }
+
+  // bytes test_sig = 2;
+  if ((this_._impl_._has_bits_[0] & 0x00000001u) != 0) {
+    if (!this_._internal_test_sig().empty()) {
+      const ::std::string& _s = this_._internal_test_sig();
+      target = stream->WriteBytesMaybeAliased(2, _s, target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:PlayerStressTestProbe)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t PlayerStressTestProbe::ByteSizeLong(const MessageLite& base) {
+  const PlayerStressTestProbe& this_ = static_cast<const PlayerStressTestProbe&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t PlayerStressTestProbe::ByteSizeLong() const {
+  const PlayerStressTestProbe& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:PlayerStressTestProbe)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000003u) != 0) {
+    // bytes test_sig = 2;
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      if (!this_._internal_test_sig().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::BytesSize(
+                                        this_._internal_test_sig());
+      }
+    }
+    // uint64 test_seq = 1;
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      if (this_._internal_test_seq() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_test_seq());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void PlayerStressTestProbe::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<PlayerStressTestProbe*>(&to_msg);
+  auto& from = static_cast<const PlayerStressTestProbe&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:PlayerStressTestProbe)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000003u) != 0) {
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      if (!from._internal_test_sig().empty()) {
+        _this->_internal_set_test_sig(from._internal_test_sig());
+      } else {
+        if (_this->_impl_.test_sig_.IsDefault()) {
+          _this->_internal_set_test_sig("");
+        }
+      }
+    }
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      if (from._internal_test_seq() != 0) {
+        _this->_impl_.test_seq_ = from._impl_.test_seq_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void PlayerStressTestProbe::CopyFrom(const PlayerStressTestProbe& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:PlayerStressTestProbe)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void PlayerStressTestProbe::InternalSwap(PlayerStressTestProbe* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.test_sig_, &other->_impl_.test_sig_, arena);
+  swap(_impl_.test_seq_, other->_impl_.test_seq_);
+}
+
+::google::protobuf::Metadata PlayerStressTestProbe::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // @@protoc_insertion_point(namespace_scope)

@@ -461,8 +461,11 @@ type PlayerDatabase struct {
 	DerivedAttributesComponent *component.BaseAttributesComp  `protobuf:"bytes,6,opt,name=derived_attributes_component,json=derivedAttributesComponent,proto3" json:"derived_attributes_component,omitempty"`
 	LevelComponent             *component.LevelComp           `protobuf:"bytes,7,opt,name=level_component,json=levelComponent,proto3" json:"level_component,omitempty"`
 	Currency                   *component.CurrencyComp        `protobuf:"bytes,8,opt,name=currency,proto3" json:"currency,omitempty"`
-	unknownFields              protoimpl.UnknownFields
-	sizeCache                  protoimpl.SizeCache
+	// Stress-test instrumentation. Empty during normal play. See
+	// PlayerStressTestProbe for the verification contract.
+	StressTestProbe *component.PlayerStressTestProbe `protobuf:"bytes,9,opt,name=stress_test_probe,json=stressTestProbe,proto3" json:"stress_test_probe,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *PlayerDatabase) Reset() {
@@ -551,11 +554,21 @@ func (x *PlayerDatabase) GetCurrency() *component.CurrencyComp {
 	return nil
 }
 
+func (x *PlayerDatabase) GetStressTestProbe() *component.PlayerStressTestProbe {
+	if x != nil {
+		return x.StressTestProbe
+	}
+	return nil
+}
+
 type PlayerDatabase_1 struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	PlayerId      uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	PlayerId uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	// Same instrumentation surface as player_database; the data_stress driver
+	// and robot data-stress mode write to whichever table the test addresses.
+	StressTestProbe *component.PlayerStressTestProbe `protobuf:"bytes,2,opt,name=stress_test_probe,json=stressTestProbe,proto3" json:"stress_test_probe,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *PlayerDatabase_1) Reset() {
@@ -593,6 +606,13 @@ func (x *PlayerDatabase_1) GetPlayerId() uint64 {
 		return x.PlayerId
 	}
 	return 0
+}
+
+func (x *PlayerDatabase_1) GetStressTestProbe() *component.PlayerStressTestProbe {
+	if x != nil {
+		return x.StressTestProbe
+	}
+	return nil
 }
 
 // ─── Player snapshot table (for rollback) ────────────────────
@@ -873,7 +893,7 @@ const file_proto_common_database_mysql_database_table_proto_rawDesc = "" +
 	"\x16player_centre_database\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x126\n" +
 	"\n" +
-	"scene_info\x18\x02 \x01(\v2\x17.PlayerSceneContextCompR\tsceneInfo:7\x8a\x92\xf4\x01\x16player_centre_database\x92\x92\xf4\x01\tplayer_id\xb2\x92\xf4\x01\tplayer_id\"\x81\x04\n" +
+	"scene_info\x18\x02 \x01(\v2\x17.PlayerSceneContextCompR\tsceneInfo:7\x8a\x92\xf4\x01\x16player_centre_database\x92\x92\xf4\x01\tplayer_id\xb2\x92\xf4\x01\tplayer_id\"\xc5\x04\n" +
 	"\x0fplayer_database\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12(\n" +
 	"\ttransform\x18\x02 \x01(\v2\n" +
@@ -885,9 +905,11 @@ const file_proto_common_database_mysql_database_table_proto_rawDesc = "" +
 	"\x1cderived_attributes_component\x18\x06 \x01(\v2\x13.BaseAttributesCompR\x1aderivedAttributesComponent\x123\n" +
 	"\x0flevel_component\x18\a \x01(\v2\n" +
 	".LevelCompR\x0elevelComponent\x12)\n" +
-	"\bcurrency\x18\b \x01(\v2\r.CurrencyCompR\bcurrency:5\x8a\x92\xf4\x01\x0fplayer_database\x92\x92\xf4\x01\tplayer_id\xb2\x92\xf4\x01\tplayer_id\xe8\x92\xf4\x01\x01\"i\n" +
+	"\bcurrency\x18\b \x01(\v2\r.CurrencyCompR\bcurrency\x12B\n" +
+	"\x11stress_test_probe\x18\t \x01(\v2\x16.PlayerStressTestProbeR\x0fstressTestProbe:5\x8a\x92\xf4\x01\x0fplayer_database\x92\x92\xf4\x01\tplayer_id\xb2\x92\xf4\x01\tplayer_id\xe8\x92\xf4\x01\x01\"\xad\x01\n" +
 	"\x11player_database_1\x12\x1b\n" +
-	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId:7\x8a\x92\xf4\x01\x11player_database_1\x92\x92\xf4\x01\tplayer_id\xb2\x92\xf4\x01\tplayer_id\xe8\x92\xf4\x01\x01\"\x95\x02\n" +
+	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12B\n" +
+	"\x11stress_test_probe\x18\x02 \x01(\v2\x16.PlayerStressTestProbeR\x0fstressTestProbe:7\x8a\x92\xf4\x01\x11player_database_1\x92\x92\xf4\x01\tplayer_id\xb2\x92\xf4\x01\tplayer_id\xe8\x92\xf4\x01\x01\"\x95\x02\n" +
 	"\x0fplayer_snapshot\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x1b\n" +
 	"\tplayer_id\x18\x02 \x01(\x04R\bplayerId\x12\x17\n" +
@@ -949,6 +971,7 @@ var file_proto_common_database_mysql_database_table_proto_goTypes = []any{
 	(*component.BaseAttributesComp)(nil),     // 17: BaseAttributesComp
 	(*component.LevelComp)(nil),              // 18: LevelComp
 	(*component.CurrencyComp)(nil),           // 19: CurrencyComp
+	(*component.PlayerStressTestProbe)(nil),  // 20: PlayerStressTestProbe
 }
 var file_proto_common_database_mysql_database_table_proto_depIdxs = []int32{
 	11, // 0: user_accounts.simple_players:type_name -> AccountSimplePlayerList
@@ -960,11 +983,13 @@ var file_proto_common_database_mysql_database_table_proto_depIdxs = []int32{
 	17, // 6: player_database.derived_attributes_component:type_name -> BaseAttributesComp
 	18, // 7: player_database.level_component:type_name -> LevelComp
 	19, // 8: player_database.currency:type_name -> CurrencyComp
-	9,  // [9:9] is the sub-list for method output_type
-	9,  // [9:9] is the sub-list for method input_type
-	9,  // [9:9] is the sub-list for extension type_name
-	9,  // [9:9] is the sub-list for extension extendee
-	0,  // [0:9] is the sub-list for field type_name
+	20, // 9: player_database.stress_test_probe:type_name -> PlayerStressTestProbe
+	20, // 10: player_database_1.stress_test_probe:type_name -> PlayerStressTestProbe
+	11, // [11:11] is the sub-list for method output_type
+	11, // [11:11] is the sub-list for method input_type
+	11, // [11:11] is the sub-list for extension type_name
+	11, // [11:11] is the sub-list for extension extendee
+	0,  // [0:11] is the sub-list for field type_name
 }
 
 func init() { file_proto_common_database_mysql_database_table_proto_init() }

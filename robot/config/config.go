@@ -23,8 +23,14 @@ type Config struct {
 	ReportInterval int      `yaml:"report_interval"` // seconds between stats reports
 	TableDir       string   `yaml:"table_dir"`       // path to generated/tables dir for reading Skill/Class tables
 
-	// Mode: "stress" (default) — mass concurrent bots; "login-test" — scenario suite with login/skill/scene tests
+	// Mode: "stress" (default) — mass concurrent bots; "login-test" — scenario
+	// suite with login/skill/scene tests; "data-stress" — repeated
+	// login → play → logout cycles with Redis-published expectations for the
+	// db-side verifier (see DataStress block).
 	Mode string `yaml:"mode"`
+
+	// DataStress configures the data-consistency stress mode.
+	DataStress DataStressConfig `yaml:"data_stress"`
 
 	// Auth type for login: "" or "password" (default), "satoken" (requires satoken_addr).
 	AuthType    string `yaml:"auth_type"`
@@ -38,6 +44,24 @@ type Config struct {
 	// LLM settings (optional). When enabled, LLM decides actions instead of profile weights.
 	// Best for 1-10 robots to model realistic player behavior. Not for mass load testing.
 	LLM LLMConfig `yaml:"llm"`
+}
+
+// DataStressConfig configures the "data-stress" mode that drives repeated
+// login/logout cycles and publishes per-player expectations to Redis for the
+// db-side verifier (`go/db/cmd/verifier`).
+type DataStressConfig struct {
+	// Rounds is the number of login → play → logout cycles each robot runs.
+	Rounds int `yaml:"rounds"`
+
+	// PlaySeconds is how long each robot stays in-game per round.
+	PlaySeconds int `yaml:"play_seconds"`
+
+	// VerifyRedisAddr is the Redis the verifier reads from. Usually the same
+	// one the db service uses; the verifier needs both `verify:enrolled:*`
+	// and `verify:expected:*` keys here.
+	VerifyRedisAddr     string `yaml:"verify_redis_addr"`
+	VerifyRedisPassword string `yaml:"verify_redis_password"`
+	VerifyRedisDB       int    `yaml:"verify_redis_db"`
 }
 
 // LLMConfig configures the OpenAI-compatible endpoint for AI-driven behavior.
@@ -100,10 +124,10 @@ func (c *Config) validate() error {
 		return fmt.Errorf("account_fmt must be set")
 	}
 	switch c.Mode {
-	case "", "stress", "login-test":
+	case "", "stress", "login-test", "data-stress":
 		// valid
 	default:
-		return fmt.Errorf("unknown mode %q (expected stress or login-test)", c.Mode)
+		return fmt.Errorf("unknown mode %q (expected stress, login-test, or data-stress)", c.Mode)
 	}
 	if c.AuthType == "satoken" && c.SaTokenAddr == "" {
 		return fmt.Errorf("satoken_addr must be set when auth_type is satoken")

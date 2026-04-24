@@ -4,6 +4,7 @@ import (
 	"context"
 	db_config "db/internal/config"
 	"db/internal/logic/pkg/proto_sql"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	db_proto "proto/db"
@@ -75,10 +76,19 @@ type worker struct {
 }
 
 // workerTask wraps either a Kafka message or a pre-parsed retry task.
+//
+// seq is a per-(key, msgType) monotonic version used by the applied-seq guard
+// to drop stale retries. For Kafka-origin tasks, seq = kafkaMsg.Offset + 1
+// (Kafka offsets are monotonic per partition, and per-key routing puts the
+// same logical key in the same partition). For retry-origin tasks, seq is
+// carried in the retry queue payload prefix so retries inherit their
+// original Kafka ordering. seq == 0 means "no version info" → the guard is
+// a no-op (legacy/back-compat).
 type workerTask struct {
 	kafkaMsg *sarama.ConsumerMessage
 	session  sarama.ConsumerGroupSession
 	dbTask   *db_proto.DBTask // non-nil for retry tasks
+	seq      uint64
 }
 
 // dbOpHandler is the handler signature for DB operations.
@@ -136,6 +146,74 @@ func handleDBReadOp(
 	}
 
 	return ""
+}
+
+// appliedSeqKey is the Redis key holding the highest seq successfully
+// applied for a given (topic, player key, msg type). Used by the per-key
+// monotonic guard to reject stale retries.
+func appliedSeqKey(topic string, key uint64, msgType string) string {
+	return fmt.Sprintf("consumer:applied:%s:%d:%s", topic, key, msgType)
+}
+
+// shouldApplyBySeq returns true if the task's seq is strictly newer than
+// the seq we have already applied for the same (key, msgType). On Redis
+// errors it FAILS OPEN (returns true) so a flickering Redis cannot block
+// data-bearing writes; the worst case is one extra apply, which is
+// idempotent because writes are last-write-wins.
+//
+// seq == 0 disables the guard for that task (legacy/back-compat).
+// Reads ("read" op) are never gated — they must always observe latest state.
+func shouldApplyBySeq(ctx context.Context, rc redis.Cmdable, topic string, task *db_proto.DBTask, seq uint64) bool {
+	if seq == 0 || task.Op != "write" {
+		return true
+	}
+	cur, err := rc.Get(ctx, appliedSeqKey(topic, task.Key, task.MsgType)).Uint64()
+	if err != nil {
+		// redis.Nil → no prior value, apply. Other errors → fail-open.
+		return true
+	}
+	return seq > cur
+}
+
+// markAppliedSeq records the seq as the latest successfully applied for the
+// (key, msgType). Called only after a successful write completes. Within a
+// single worker (which owns one Kafka partition, which owns one logical key)
+// processing is serial, so a plain SET cannot race with itself for the same
+// key.
+func markAppliedSeq(ctx context.Context, rc redis.Cmdable, topic string, task *db_proto.DBTask, seq uint64) {
+	if seq == 0 || task.Op != "write" {
+		return
+	}
+	if err := rc.Set(ctx, appliedSeqKey(topic, task.Key, task.MsgType), seq, cacheTTL()).Err(); err != nil {
+		logx.Errorf("markAppliedSeq failed: key=%d msgType=%s seq=%d err=%v",
+			task.Key, task.MsgType, seq, err)
+	}
+}
+
+// retryPayloadMagic identifies the new retry-queue payload format that
+// carries an explicit seq prefix. The byte 0x01 is unambiguous because raw
+// proto3-marshaled DBTask bytes always start with a field tag (≥ 0x08).
+const retryPayloadMagic byte = 0x01
+
+// wrapRetryPayload encodes a (seq, dbTask bytes) tuple as the on-wire retry
+// payload. Format: [magic 1B][seq 8B big-endian][dbTask bytes].
+func wrapRetryPayload(seq uint64, taskBytes []byte) []byte {
+	buf := make([]byte, 1+8+len(taskBytes))
+	buf[0] = retryPayloadMagic
+	binary.BigEndian.PutUint64(buf[1:9], seq)
+	copy(buf[9:], taskBytes)
+	return buf
+}
+
+// unwrapRetryPayload reads the (seq, dbTask bytes) tuple. Legacy payloads
+// without the magic header return seq=0 and the original bytes, so existing
+// queued retries from prior versions still drain correctly (just without
+// the new ordering guard).
+func unwrapRetryPayload(payload []byte) (uint64, []byte) {
+	if len(payload) >= 9 && payload[0] == retryPayloadMagic {
+		return binary.BigEndian.Uint64(payload[1:9]), payload[9:]
+	}
+	return 0, payload
 }
 
 func handleDBWriteOp(
@@ -273,9 +351,10 @@ func (c *KeyOrderedKafkaConsumer) consumeRetryQueue() {
 		return
 	}
 
+	seq, taskBytes := unwrapRetryPayload(msgBytes)
 	var task db_proto.DBTask
-	if err := proto.Unmarshal(msgBytes, &task); err != nil {
-		logx.Errorf("unmarshal retry task failed: err=%v, taskBytes=%v", err, msgBytes)
+	if err := proto.Unmarshal(taskBytes, &task); err != nil {
+		logx.Errorf("unmarshal retry task failed: err=%v, taskBytes=%v", err, taskBytes)
 		return
 	}
 
@@ -299,7 +378,7 @@ func (c *KeyOrderedKafkaConsumer) consumeRetryQueue() {
 		return
 	}
 
-	retryTask := &workerTask{dbTask: &task}
+	retryTask := &workerTask{dbTask: &task, seq: seq}
 	select {
 	case w.taskCh <- retryTask:
 		logx.Debugf("retry task routed to worker: taskID=%s, partition=%d, retryCount=%d", task.TaskId, partition, task.RetryCount)
@@ -354,22 +433,27 @@ type writeCoalesceKey struct {
 }
 
 // processTaskBatch coalesces consecutive writes for the same (key, msg_type),
-// keeping only the latest body. Read tasks are never coalesced.
-// All Kafka messages (including skipped ones) are MarkMessage'd for offset tracking.
+// keeping only the latest body of each "write segment". A read task acts as
+// a barrier: writes that precede a read for the same (key, msg_type) are NOT
+// coalesced into writes that follow it, because the read must observe the
+// post-write state in MySQL (read-after-write consistency within the same
+// per-key Kafka partition).
+//
+// All Kafka messages (including superseded ones) are MarkMessage'd for offset
+// tracking.
 func (w *worker) processTaskBatch(batch []*workerTask, isOfflineExpand bool) {
 	if len(batch) == 1 {
 		w.handleTask(batch[0], isOfflineExpand)
 		return
 	}
 
-	// Parse all tasks and find the last write per (key, msgType)
 	type parsedTask struct {
 		wt     *workerTask
 		dbTask *db_proto.DBTask
 	}
 	parsed := make([]parsedTask, 0, len(batch))
-	lastWriteIdx := make(map[writeCoalesceKey]int) // coalesce key -> index in parsed
 
+	// Pass 1 (forward): unmarshal kafka payloads once per task.
 	for _, wt := range batch {
 		var task *db_proto.DBTask
 		if wt.dbTask != nil {
@@ -379,7 +463,6 @@ func (w *worker) processTaskBatch(batch []*workerTask, isOfflineExpand bool) {
 			if err := proto.Unmarshal(wt.kafkaMsg.Value, &t); err != nil {
 				logx.Errorf("coalesce: unmarshal failed, partition=%d, offset=%d, err=%v",
 					w.partition, wt.kafkaMsg.Offset, err)
-				// Still mark offset to avoid blocking
 				if wt.session != nil {
 					wt.session.MarkMessage(wt.kafkaMsg, "")
 				}
@@ -387,31 +470,49 @@ func (w *worker) processTaskBatch(batch []*workerTask, isOfflineExpand bool) {
 			}
 			task = &t
 		}
-		idx := len(parsed)
 		parsed = append(parsed, parsedTask{wt: wt, dbTask: task})
+	}
 
-		if task != nil && task.Op == "write" {
-			ck := writeCoalesceKey{key: task.Key, msgType: task.MsgType}
-			lastWriteIdx[ck] = idx
+	// Pass 2 (reverse): mark writes that are SUPERSEDED by a later write in
+	// the SAME segment (no intervening read for the same key+msgType).
+	//
+	// Walking backwards: when we see a write for (ck), it becomes the "live
+	// last" — earlier writes for ck are superseded UNLESS a read for ck
+	// appears between them, which clears the "live last" tracker.
+	superseded := make([]bool, len(parsed))
+	liveLastWrite := make(map[writeCoalesceKey]struct{})
+	for i := len(parsed) - 1; i >= 0; i-- {
+		pt := parsed[i]
+		if pt.dbTask == nil {
+			continue
+		}
+		ck := writeCoalesceKey{key: pt.dbTask.Key, msgType: pt.dbTask.MsgType}
+		switch pt.dbTask.Op {
+		case "write":
+			if _, exists := liveLastWrite[ck]; exists {
+				superseded[i] = true
+			} else {
+				liveLastWrite[ck] = struct{}{}
+			}
+		case "read":
+			// Read acts as a barrier: any earlier write for ck is in a
+			// different segment and must execute so the read sees post-write
+			// state.
+			delete(liveLastWrite, ck)
 		}
 	}
 
-	// Process tasks: skip writes that have a newer write in the same batch
+	// Pass 3 (forward): execute or skip.
 	skipped := 0
 	for i, pt := range parsed {
-		if pt.dbTask != nil && pt.dbTask.Op == "write" {
-			ck := writeCoalesceKey{key: pt.dbTask.Key, msgType: pt.dbTask.MsgType}
-			if lastIdx, ok := lastWriteIdx[ck]; ok && lastIdx > i {
-				// A newer write exists later in the batch — skip this one
-				skipped++
-				logx.Debugf("coalesce: skipping superseded write: partition=%d, key=%d, msgType=%s, taskID=%s",
-					w.partition, pt.dbTask.Key, pt.dbTask.MsgType, pt.dbTask.TaskId)
-				// Still mark Kafka offset
-				if pt.wt.session != nil && pt.wt.kafkaMsg != nil {
-					pt.wt.session.MarkMessage(pt.wt.kafkaMsg, "")
-				}
-				continue
+		if superseded[i] {
+			skipped++
+			logx.Debugf("coalesce: skipping superseded write: partition=%d, key=%d, msgType=%s, taskID=%s",
+				w.partition, pt.dbTask.Key, pt.dbTask.MsgType, pt.dbTask.TaskId)
+			if pt.wt.session != nil && pt.wt.kafkaMsg != nil {
+				pt.wt.session.MarkMessage(pt.wt.kafkaMsg, "")
 			}
+			continue
 		}
 		w.handleTask(pt.wt, isOfflineExpand)
 	}
@@ -430,27 +531,59 @@ func (w *worker) handleTask(task *workerTask, isOfflineExpand bool) {
 		}
 	}()
 
-	startTime := time.Now()
-	var err error
-
+	// Resolve dbTask up front (handles both Kafka-origin and retry-origin
+	// tasks). We need dbTask available for both the seq guard AND the retry
+	// queue save path on failure — historically Kafka-origin failures were
+	// silently dropped here (data loss).
+	var dbTask *db_proto.DBTask
 	if task.dbTask != nil {
-		err = processDBTask(w.ctx, w, task.dbTask, w.partition, isOfflineExpand)
+		dbTask = task.dbTask
 	} else if task.kafkaMsg != nil {
-		err = processDBTaskMessage(w.ctx, w, task.kafkaMsg, isOfflineExpand)
+		var t db_proto.DBTask
+		if err := proto.Unmarshal(task.kafkaMsg.Value, &t); err != nil {
+			logx.Errorf("worker unmarshal kafka task failed: partition=%d, offset=%d, err=%v",
+				w.partition, task.kafkaMsg.Offset, err)
+			if task.session != nil {
+				task.session.MarkMessage(task.kafkaMsg, "")
+			}
+			return
+		}
+		dbTask = &t
+	} else {
+		return
 	}
+
+	// Per-key monotonic seq guard: drop stale retries that would otherwise
+	// overwrite newer state already persisted by a more-recent task. Done
+	// BEFORE dispatch so we save the wasted MySQL/Redis round-trip.
+	if !shouldApplyBySeq(w.ctx, w.redisClient, w.topic, dbTask, task.seq) {
+		logx.Infof("seq guard: dropping stale write: partition=%d key=%d msgType=%s seq=%d taskID=%s",
+			w.partition, dbTask.Key, dbTask.MsgType, task.seq, dbTask.TaskId)
+		if task.session != nil && task.kafkaMsg != nil {
+			task.session.MarkMessage(task.kafkaMsg, "")
+		}
+		return
+	}
+
+	startTime := time.Now()
+	err := processDBTask(w.ctx, w, dbTask, w.partition, task.seq, isOfflineExpand)
 
 	if err != nil {
 		logx.Errorf("worker process task failed: partition=%d, cost=%v, err=%v",
 			w.partition, time.Since(startTime), err)
-		// Re-queue failed retry tasks for another attempt
-		if task.dbTask != nil {
-			if saveErr := saveToRetryQueue(w.ctx, w.redisClient, w.retryQueueKey, task.dbTask); saveErr != nil {
-				logx.Errorf("failed to re-queue retry task: taskID=%s, err=%v", task.dbTask.TaskId, saveErr)
-			}
+		// Re-queue ALL failed tasks (kafka-origin and retry-origin alike) for
+		// another attempt. Carry the original seq so the per-key guard still
+		// applies to the retry. Without this, kafka-origin failures used to
+		// be silently dropped while their offset was committed → data loss.
+		if saveErr := saveToRetryQueue(w.ctx, w.redisClient, w.retryQueueKey, dbTask, task.seq); saveErr != nil {
+			logx.Errorf("failed to re-queue retry task: taskID=%s, err=%v", dbTask.TaskId, saveErr)
 		}
 	} else {
 		logx.Debugf("worker process task success: partition=%d, cost=%v",
 			w.partition, time.Since(startTime))
+		// Update applied seq ONLY after a successful write so that a failed
+		// write does not falsely block its own retry.
+		markAppliedSeq(w.ctx, w.redisClient, w.topic, dbTask, task.seq)
 	}
 
 	// Mark Kafka offset AFTER processing completes (not at dispatch time)
@@ -508,9 +641,12 @@ func (h *consumerGroupHandler) ConsumeClaim(session sarama.ConsumerGroupSession,
 			continue
 		}
 
+		// seq = offset + 1 so that seq=0 sentinel ("no version info") is
+		// reserved and never collides with a real Kafka offset.
 		task := &workerTask{
 			kafkaMsg: msg,
 			session:  session,
+			seq:      uint64(msg.Offset) + 1,
 		}
 
 		// Block until worker accepts the task or context is canceled.
@@ -527,18 +663,10 @@ func (h *consumerGroupHandler) ConsumeClaim(session sarama.ConsumerGroupSession,
 	return nil
 }
 
-func processDBTaskMessage(ctx context.Context, w *worker, msg *sarama.ConsumerMessage, isOfflineExpand bool) error {
-	var task db_proto.DBTask
-	if err := proto.Unmarshal(msg.Value, &task); err != nil {
-		return fmt.Errorf("unmarshal task failed: offset=%d, err=%w", msg.Offset, err)
-	}
-	return processDBTask(ctx, w, &task, msg.Partition, isOfflineExpand)
-}
-
-func processDBTask(ctx context.Context, w *worker, task *db_proto.DBTask, partition int32, isOfflineExpand bool) error {
+func processDBTask(ctx context.Context, w *worker, task *db_proto.DBTask, partition int32, seq uint64, isOfflineExpand bool) error {
 	key := strconv.FormatUint(task.Key, 10)
-	logx.Debugf("received db task: taskID=%s, key=%s, partition=%d, isOfflineExpand=%v",
-		task.TaskId, key, partition, isOfflineExpand)
+	logx.Debugf("received db task: taskID=%s, key=%s, partition=%d, seq=%d, isOfflineExpand=%v",
+		task.TaskId, key, partition, seq, isOfflineExpand)
 
 	if isOfflineExpand {
 		logx.Debugf("offline expand mode: skip lock/status check, taskID=%s", task.TaskId)
@@ -548,7 +676,7 @@ func processDBTask(ctx context.Context, w *worker, task *db_proto.DBTask, partit
 	expandStatus, err := kafkautil.GetExpandStatus(ctx, w.redisClient, w.topic)
 	if err != nil {
 		logx.Errorf("get expand status failed: key=%s, taskID=%s, err=%v", key, task.TaskId, err)
-		return tryLockAndProcess(ctx, w, key, task)
+		return tryLockAndProcess(ctx, w, key, task, seq)
 	}
 
 	currentTime := time.Now().UnixMilli()
@@ -562,13 +690,13 @@ func processDBTask(ctx context.Context, w *worker, task *db_proto.DBTask, partit
 
 	if expandStatus.Status == kafkautil.ExpandStatusExpanding {
 		logx.Debugf("expanding mode: try lock for task: taskID=%s, key=%s", task.TaskId, key)
-		return tryLockAndProcess(ctx, w, key, task)
+		return tryLockAndProcess(ctx, w, key, task, seq)
 	}
 
 	return processTaskWithoutLock(ctx, w.redisClient, task)
 }
 
-func tryLockAndProcess(ctx context.Context, worker *worker, key string, task *db_proto.DBTask) error {
+func tryLockAndProcess(ctx context.Context, worker *worker, key string, task *db_proto.DBTask, seq uint64) error {
 	lockKey := fmt.Sprintf("kafka:consumer:lock:%s", key)
 	lockTTL := 5 * time.Second
 
@@ -577,10 +705,10 @@ func tryLockAndProcess(ctx context.Context, worker *worker, key string, task *db
 		return fmt.Errorf("try lock failed: key=%s, taskID=%s, err=%w", key, task.TaskId, err)
 	}
 	if !tryLock.IsLocked() {
-		if err := saveToRetryQueue(ctx, worker.redisClient, worker.retryQueueKey, task); err != nil {
+		if err := saveToRetryQueue(ctx, worker.redisClient, worker.retryQueueKey, task, seq); err != nil {
 			return fmt.Errorf("save to retry queue failed: key=%s, taskID=%s, err=%w", key, task.TaskId, err)
 		}
-		logx.Debugf("lock occupied: task saved to retry queue: taskID=%s, key=%s", task.TaskId, key)
+		logx.Debugf("lock occupied: task saved to retry queue: taskID=%s, key=%s, seq=%d", task.TaskId, key, seq)
 		return nil
 	}
 
@@ -621,12 +749,12 @@ func processTaskWithoutLock(ctx context.Context, redisClient redis.Cmdable, task
 	return nil
 }
 
-func saveToRetryQueue(ctx context.Context, redisClient redis.Cmdable, retryQueueKey string, task *db_proto.DBTask) error {
+func saveToRetryQueue(ctx context.Context, redisClient redis.Cmdable, retryQueueKey string, task *db_proto.DBTask, seq uint64) error {
 	taskBytes, err := proto.Marshal(task)
 	if err != nil {
 		return fmt.Errorf("marshal task for retry failed: taskID=%s, err=%w", task.TaskId, err)
 	}
-	return redisClient.LPush(ctx, retryQueueKey, taskBytes).Err()
+	return redisClient.LPush(ctx, retryQueueKey, wrapRetryPayload(seq, taskBytes)).Err()
 }
 
 func (c *KeyOrderedKafkaConsumer) Stop() {

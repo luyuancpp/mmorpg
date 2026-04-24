@@ -64,6 +64,24 @@ func main() {
 		return
 	}
 
+	// Data-stress mode: drive repeated login → play → logout cycles per robot
+	// and publish per-player expectations to Redis for the db-side verifier
+	// (see go/db/cmd/verifier).
+	if cfg.Mode == "data-stress" {
+		stop := make(chan struct{})
+		sig := make(chan os.Signal, 1)
+		signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
+		go func() {
+			<-sig
+			zap.L().Info("data-stress shutdown signal received")
+			close(stop)
+		}()
+		runDataStressMode(cfg, stats, stop)
+		_ = stats.ExportBehaviorCSV("behavior_test_results.csv")
+		_ = stats.ExportBehaviorJSONL("behavior_test_results.jsonl")
+		return
+	}
+
 	stopReport := make(chan struct{})
 	reportInterval := time.Duration(cfg.ReportInterval) * time.Second
 	if reportInterval <= 0 {
@@ -112,6 +130,12 @@ func runRobot(account string, cfg *config.Config, stats *metrics.Stats, stop <-c
 	const maxRetries = 5
 	backoff := 3 * time.Second
 
+	// access_token reconnect cache: carried across retry attempts so a failed
+	// session (e.g. scene-ready timeout) doesn't pay the full primary-auth
+	// cost again. Cleared implicitly when the server rotates the token.
+	var cachedAccessToken string
+	var cachedAccessExpire int64
+
 	for attempt := 1; attempt <= maxRetries; attempt++ {
 		select {
 		case <-stop:
@@ -132,15 +156,26 @@ func runRobot(account string, cfg *config.Config, stats *metrics.Stats, stop <-c
 			}
 		}
 
-		if runRobotOnce(account, cfg, stats, stop) {
+		ok, tok, exp := runRobotOnce(account, cfg, stats, stop, cachedAccessToken, cachedAccessExpire)
+		cachedAccessToken, cachedAccessExpire = tok, exp
+		if ok {
 			return // played successfully (or stop signal)
 		}
 	}
 	zap.L().Error("robot gave up after retries", zap.String("account", account), zap.Int("maxRetries", maxRetries))
 }
 
-// runRobotOnce attempts a single connect→login→play cycle. Returns true if it should not retry.
-func runRobotOnce(account string, cfg *config.Config, stats *metrics.Stats, stop <-chan struct{}) bool {
+// runRobotOnce attempts a single connect→login→play cycle.
+// Returns (ok, newAccessToken, newAccessExpire):
+//   - ok=true: session ended gracefully, caller should stop retrying.
+//   - ok=false: caller should back off and retry.
+//
+// On login failure the previous cached token is preserved (maybe the issue was
+// transient). On successful login we hand back whatever the server rotated to,
+// falling back to the incoming token if access_token reconnect took the path
+// where the server doesn't rotate.
+func runRobotOnce(account string, cfg *config.Config, stats *metrics.Stats, stop <-chan struct{}, prevAccessToken string, prevAccessExpire int64) (ok bool, newAccessToken string, newAccessExpire int64) {
+	newAccessToken, newAccessExpire = prevAccessToken, prevAccessExpire
 	// Fetch a fresh gate token for each connection attempt so the 5-min TTL
 	// is never stale — even under high robot counts or retry backoff.
 	host, portStr, tokenPayload, tokenSig, err := resolveGateAddrLocal(cfg)
@@ -173,7 +208,7 @@ func runRobotOnce(account string, cfg *config.Config, stats *metrics.Stats, stop
 	}
 
 	loginStart := time.Now()
-	if err := loginAndEnterLocal(gc, cfg.Password, stats); err != nil {
+	if err := loginAndEnterWithAuth(gc, cfg, stats); err != nil {
 		zap.L().Error("login flow failed", zap.String("account", account), zap.Error(err))
 		return false
 	}
@@ -243,6 +278,9 @@ func runRobotOnce(account string, cfg *config.Config, stats *metrics.Stats, stop
 
 	// Graceful shutdown: send LeaveGame so server cleans up session.
 	_ = gc.SendRequest(game.ClientPlayerLoginLeaveGameMessageId, &login.LeaveGameRequest{})
+	if gc.SaToken != "" {
+		revokeSaToken(cfg.SaTokenAddr, gc.SaToken)
+	}
 	return true
 }
 
@@ -404,6 +442,13 @@ func loginAndEnterLocal(gc *pkg.GameClient, password string, stats *metrics.Stat
 		return fmt.Errorf("login: server error %v", lr.ErrorMessage)
 	}
 
+	if lr.AccessToken != "" {
+		gc.AccessToken = lr.AccessToken
+		gc.RefreshToken = lr.RefreshToken
+		gc.AccessTokenExpire = lr.AccessTokenExpire
+		gc.RefreshTokenExpire = lr.RefreshTokenExpire
+	}
+
 	if len(lr.Players) == 0 {
 		var cr login.CreatePlayerResponse
 		if err := sendAndRecvLocal(gc, stats,
@@ -442,6 +487,26 @@ func loginAndEnterLocal(gc *pkg.GameClient, password string, stats *metrics.Stat
 
 	gc.PlayerId = er.PlayerId
 	return nil
+}
+
+// loginAndEnterWithAuth routes to the correct login implementation based on cfg.AuthType.
+// If prevAccessToken is non-empty and not near expiry, it is tried first; on
+// failure we transparently fall back to the configured primary auth provider.
+func loginAndEnterWithAuth(gc *pkg.GameClient, cfg *config.Config, stats *metrics.Stats, prevAccessToken string, prevAccessExpire int64) error {
+	// Use access_token reconnect when available and with at least 60s of TTL left.
+	if prevAccessToken != "" && (prevAccessExpire == 0 || time.Now().Unix() < prevAccessExpire-60) {
+		if err := loginAndEnterAccessToken(gc, prevAccessToken, stats); err == nil {
+			zap.L().Debug("access_token reconnect ok", zap.String("account", gc.Account))
+			return nil
+		} else {
+			zap.L().Info("access_token reconnect failed, falling back",
+				zap.String("account", gc.Account), zap.Error(err))
+		}
+	}
+	if cfg.AuthType == "satoken" {
+		return loginAndEnterSaToken(gc, cfg.SaTokenAddr, stats)
+	}
+	return loginAndEnterLocal(gc, cfg.Password, stats)
 }
 
 func sendAndRecvLocal(gc *pkg.GameClient, stats *metrics.Stats, msgID uint32, req, resp proto.Message) error {
