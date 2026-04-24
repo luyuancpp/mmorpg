@@ -150,9 +150,14 @@ distribution, subject to two safety rules:
    need cross-node state transfer that this codebase does not have.
 
 `MaxRebalanceMigrationsPerTick` (default 10, set to 0 to disable) caps
-how many moves fire per event. Rebalance also runs on SceneManager
-startup (`fullSync`) so drift accumulated while SceneManager was down
-converges on reboot.
+how many moves fire per event. Rebalance runs in three contexts:
+
+1. **Event-driven** — on every etcd PUT/DELETE of a world-hosting node.
+2. **Periodic** — every `RebalanceCheckIntervalSeconds` (default 5 min)
+   catches drift that has no corresponding etcd event (e.g. a hot
+   channel drained naturally).
+3. **Startup** — `fullSync` calls rebalance for every zone so drift that
+   built up while SceneManager was down converges on reboot.
 
 Watch for this log line to confirm rebalance fired:
 
@@ -163,7 +168,95 @@ Watch for this log line to confirm rebalance fired:
 If `skipped` is consistently non-zero, the target nodes are refusing
 `CreateScene` — check the C++ side logs on those pods.
 
-## 6. Tuning checklist
+### 5.1 Inspecting the queue without triggering migrations
+
+`GET /debug/rebalance-plan` on `MetricsListenAddr` returns the current
+planner output as JSON (urgent + opportunistic lists per zone), without
+actually migrating anything. Add `?zone=<id>` to narrow scope.
+
+```
+$ curl -s localhost:9150/debug/rebalance-plan | jq '.zones[].urgent | length'
+0
+```
+
+Pair with the Prometheus gauges `scene_manager_rebalance_pending{reason}`
+and counter `scene_manager_rebalance_migrations_total{reason,outcome}`
+for dashboards and alerting (see `deploy/k8s/scene-manager-alerts.yaml`).
+
+## 6. Orphan cleanup
+
+When `CleanupOrphanChannelsOnStartup: true` (default), every fullSync
+iteration scans Redis for `world_channels:*` sets whose confId is no
+longer in `World.json` and removes them (plus their per-scene
+`scene:{sid}:node` / `zone` / `player_count` keys, and best-effort
+`DestroyScene` on the hosting node).
+
+Safety guards:
+
+- Refuses to run when `worldConfIds()` returns empty (treats it as a
+  table-load failure, not an intentional wipe).
+- Only matches on `confId not in World.json`; unknown zones with valid
+  confIds are skipped so a zone restart does not trigger deletion.
+- Scans via `SCAN` cursor in batches of 256 keys to avoid blocking Redis.
+
+Disable with `CleanupOrphanChannelsOnStartup: false` when sharing a
+Redis cluster across incompatible World.json versions (e.g. a canary
+deploy alongside stable), otherwise leave it on.
+
+## 7. Pre-packaged alerts
+
+`deploy/k8s/scene-manager-alerts.yaml` ships a PrometheusRule covering:
+
+| Alert | Severity | Trigger |
+|-------|----------|---------|
+| `SceneManagerInstancePoolEmpty` | critical | no instance-hosting pods in zone for 2 min |
+| `SceneManagerWorldPoolEmpty` | critical | no world-hosting pods in zone for 2 min |
+| `SceneManagerWorldNodeSaturated` | warning | max player_count > 1800 for 10 min |
+| `SceneManagerLoadScoreDispersionLow` | info | stddev/mean of load_score < 0.1 for 15 min |
+| `SceneManagerRebalanceStalled` | warning | urgent migration queue non-zero for 5 min |
+| `SceneManagerRebalanceFailureRate` | warning | >50% migration failure rate for 10 min |
+| `SceneManagerUnknownSceneNodeType` | warning | any pod publishes scene_node_type outside {0,1,2,3} |
+
+Apply with:
+
+```
+kubectl apply -n observability -f deploy/k8s/scene-manager-alerts.yaml
+```
+
+Thresholds are starting points — tune `SceneManagerWorldNodeSaturated`
+against your actual per-pod player cap and the `RebalanceFailureRate`
+ratio against your observed steady-state failure rate.
+
+## 8. Verifying the pipeline in CI
+
+`go/scene_manager/internal/logic/integration_test.go` wires the rebalance
+pipeline end-to-end against in-process fakes and is the cheapest way to
+catch regressions before a cluster rollout:
+
+| Test | What it locks in |
+|------|-------------------|
+| `TestIntegration_Rebalance_NodeGone_EndToEnd` | Dead node → new node actually receives CreateScene; Redis `scene:{sid}:node` flips; scene_count counters move; dead node is NOT called for DestroyScene. |
+| `TestIntegration_Rebalance_BetterHome_EndToEnd` | Hash-ring opportunistic move between two live nodes; old (live) node gets best-effort DestroyScene. |
+| `TestIntegration_Rebalance_CreateSceneFailure_KeepsOldMapping` | If the new node rejects CreateScene, Redis mapping STAYS on the old node — no player is ever routed to a scene that doesn't exist. |
+| `TestIntegration_Rebalance_ActivePlayersBlockMigration` | A channel with online players is never migrated, even when the hash ring wants to move it. |
+
+The harness uses `google.golang.org/grpc/test/bufconn` for the scene-node
+gRPC server and miniredis for Redis, so it runs without Docker, without
+etcd, and in under a second. When adding a new rebalance safety rule,
+add a matching integration test here before landing the production
+change; the `fakeSceneNode` counters double as a contract for what C++
+RPCs the SceneManager is allowed to issue on any given code path.
+
+Swappable seams exposed for test authors:
+
+- `logic.SetNodeDialerForTest(dialer)` — routes `CreateScene` / `DestroyScene`
+  / `ReleasePlayer` traffic through a caller-supplied dialer (bufconn in
+  the stock harness). Always pair with `t.Cleanup(restore)`.
+- `logic.ResetNodeConnCacheForTest()` — evicts cached gRPC ClientConns so
+  a second sub-test doesn't re-use a previous test's already-closed
+  listener. Call in the test setup, not just teardown.
+
+## 9. Tuning checklist
 
 | Symptom | Action |
 |---------|--------|

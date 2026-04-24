@@ -1,6 +1,6 @@
 # Scene Creation Architecture
 
-**Updated:** 2026-04-23
+**Updated:** 2026-04-23 (rev 3 — defensive checks + dedup + observability)
 
 ## Overview
 
@@ -149,6 +149,13 @@ dashboards / admin RPCs can expose "pending migrations" without
 triggering them, and so unit tests cover selection logic without a real
 gRPC scene-node fleet.
 
+End-to-end coverage of the executor (dial → `CreateScene` / `DestroyScene`
+→ Redis mapping updates) lives in
+`go/scene_manager/internal/logic/integration_test.go` (`TestIntegration_*`),
+using in-process bufconn fake scene nodes and miniredis. Operational
+context, alerts, and the CI checklist are in `docs/ops/scene-node-role-split.md`
+(§8 "Verifying the pipeline in CI").
+
 ### Mirror co-location
 
 A *mirror* is a runtime copy of an existing world scene used for phasing, parallel
@@ -228,19 +235,159 @@ message CreateSceneRequest {
 ```
 Go SceneManager.DestroyScene(scene_id) or InstanceLifecycleManager
 │
+├─ [cascade] SMEMBERS scene:{id}:mirrors → destroyInstanceForce(each)
 ├─ GET scene:{id}:node → resolve nodeId
 ├─ RequestNodeDestroyScene → gRPC → C++ Scene.DestroyScene(scene_id)
-├─ DEL scene:{id}:node
-├─ ZREM instances:zone:{zoneId}:active
-├─ DEL instance:{id}:player_count
-└─ INCRBY node:{nodeId}:scene_count -1
+├─ [atomic] EVAL destroy-if-idle (see "Destroy-while-entering race")
+│    └─ DEL scene:{id}:{node, player_count, mirror, source, zone}
+│       + ZREM instances:zone:{zoneId}:active
+├─ SREM node:{nodeId}:scenes
+├─ [if mirror] SREM scene:{sourceId}:mirrors
+└─ INCRBY node:{nodeId}:scene_count -1 + drain residual from player_count
 ```
+
+### Destroy-while-entering race (fixed 2026-04-23)
+
+Without synchronisation, there is a window between the lifecycle tick's
+`player_count==0` check and its `DEL scene:{id}:node` call where an
+`EnterScene` RPC can land. That would route a player into a scene that
+is about to be wiped, and also create an orphan `instance:{id}:player_count`
+key that lives forever (nothing cleans it up after the owning scene is
+gone).
+
+The fix moves both sides into single-keyspace Lua scripts so Redis
+serialises them:
+
+- **`luaAtomicIncrPlayerCount`** (EnterScene path): checks
+  `EXISTS scene:{id}:node`; if missing returns `-1` without creating
+  `instance:{id}:player_count`. If present INCRs and returns the new count.
+  EnterScene treats `-1` as "scene disappeared, reject the request" and
+  rolls back the `PlayerLocation` write.
+- **`luaAtomicDestroyInstance`** (lifecycle + DestroyScene path): if
+  `player_count > 0`, returns `""` without touching anything; otherwise
+  wipes every scene-scoped key, `ZREM`s from the active set, and returns
+  the hosted nodeId so the caller can fire `DestroyScene` RPC and drain
+  counters. A force path (`destroyInstanceForce`) bypasses the idle check
+  for admin teardowns and node-death reconciliation.
+
+Failure mode coverage:
+
+| Scenario | Behaviour |
+|----------|-----------|
+| Destroy wins the race | Enter's INCR returns `-1` → EnterScene 400s, client retries |
+| Enter wins the race   | Destroy's script returns `""` → lifecycle reseeds the idle clock via `ZADD` and re-evaluates next tick |
+| Both sides racing under retries | Bounded: every retry goes through the same Lua, Redis serialises |
+
+Regression: `TestAtomicIncrPlayerCount_{SceneExists,SceneGone}`,
+`TestAtomicDestroyIfIdle_{AbortsOnPlayers,DestroysWhenIdle}`,
+`TestDestroyInstance_CAS_AbortsWhenPlayersPresent`,
+`TestEnterScene_AtomicIncr_NoOrphanPlayerCount`.
+
+### Reverse indexes (added 2026-04-23)
+
+Two Redis SETs make the destroy paths O(1) lookups instead of keyspace scans:
+
+| Key | Populated at | Used by |
+|-----|--------------|---------|
+| `node:{nodeId}:scenes` | every `allocateScene` / reassign | node-death reconciliation (`reconcileDeadNodeScenes`) |
+| `scene:{sourceId}:mirrors` | mirror create with `source_scene_id > 0` | cascade destroy in lifecycle + `DestroyScene` RPC |
+
+Companion scalar `scene:{mirrorId}:source` lets a dying mirror `SREM`
+itself out of its source's mirror set without a full scan. The atomic
+destroy script wipes it alongside the rest of the scene-scoped keys.
+
+### Cascade destroy
+
+When a scene with mirrors is destroyed (explicit RPC or lifecycle), we
+`SMEMBERS scene:{id}:mirrors` BEFORE the atomic wipe and force-destroy
+every child. This prevents mirrors from living on a dead source (their
+NPCs reference the source's spawn data; leaving them behind means
+nothing can enter them and their state ticks uselessly until idle
+timeout).
+
+Covered by `TestDestroyScene_CascadesToMirrors`,
+`TestDestroyMirror_UnlinksFromSourceSet`.
+
+### Node-death reconciliation
+
+`load_reporter.go::removeNodeFromRedis` now finishes with
+`reconcileDeadNodeScenes`:
+
+1. `SMEMBERS node:{deadNodeId}:scenes`.
+2. For each sceneId: if `scene:{id}:node` still points at the dead node
+   AND the scene is in `instances:zone:{z}:active` (i.e. it's an
+   instance, not a world channel) → `destroyInstanceForce(reason="node_death")`.
+3. Reassigned scenes (mapping already points at a live node) and world
+   channels are skipped — the rebalance pipeline handles them.
+4. `DEL node:{id}:scenes`.
+
+World channels are intentionally excluded here; destroying them would
+drop every player in that shard. The existing rebalance path already
+moves them to a new node and re-issues CreateScene on the C++ side.
+
+Regression: `TestReconcileDeadNode_{DestroysOrphanInstances,PreservesWorldChannels,SkipsReassignedScenes}`.
+
+### Observability (Prometheus)
+
+Added counters alongside the existing gauges in
+`scene_manager/internal/metrics/metrics.go`:
+
+| Metric | Labels | Emitted by |
+|--------|--------|-----------|
+| `scene_manager_mirror_colocate_total` | `zone_id`, `outcome` (hit\|fallback), `reason` (ok\|no_mapping\|node_dead\|overloaded) | `pickInstanceNode` |
+| `scene_manager_instance_destroyed_total` | `zone_id`, `kind` (instance\|mirror), `reason` (idle\|explicit\|cascade\|node_death) | `destroyInstance*`, `DestroyScene` |
+| `scene_manager_enter_scene_rejected_total` | `zone_id`, `reason` (scene_gone) | `EnterScene` on CAS reject |
+| `scene_manager_scene_orphans_reconciled_total` | `zone_id` | `reconcileDeadNodeScenes` |
+| `scene_manager_mirror_source_missing_total` | `zone_id` | `createInstance` source-clone refusal |
+| `scene_manager_mirror_dedup_total` | `zone_id`, `outcome` (hit\|miss\|stale) | `createInstance` when `MirrorDedupBySource=true` |
+
+Dashboards should chart
+`rate(mirror_colocate_total{outcome="hit"}[5m]) / rate(mirror_colocate_total[5m])`
+as the co-location hit rate, and alert on sustained
+`enter_scene_rejected_total{reason="scene_gone"}` > 0 (sign of an
+aggressive idle timeout or a misbehaving reconciliation pass).
 
 ### C++ Side (Scene.DestroyScene handler)
 
 1. Linear scan `sceneRegistry` for entity matching `scene_id`.
-2. Fires `OnSceneDestroyed` event.
-3. `sceneRegistry.destroy(entity)` — removes all components.
+2. If not found, log `"DestroyScene: scene_id=N not found, idempotent OK"` and return success.
+3. Otherwise: fire `OnSceneDestroyed` event, then `sceneRegistry.destroy(entity)` — removes all components.
+
+**Idempotency guarantee.** The `not found → success` branch is what makes the
+Go-side cascade and reconciliation paths safe to run repeatedly. Cascade
+destroy can issue `DestroyScene` against the same sceneId twice (parent
++ orphan-cleanup race); node-death reconciliation runs after the node is
+already gone but a future restart may legitimately have nothing to clean.
+Both cases collapse to a no-op on C++ instead of an error log spam.
+
+### Mirror defensive checks (CreateScene)
+
+Two checks run before allocation in `createInstance`:
+
+1. **Source-clone refusal.** When `MirrorConfigId == 0 && SourceSceneId > 0`
+   (the "clone everything from source" mode), `EXISTS scene:{sourceId}:node`
+   is required. If the source is gone, refuse with `ErrSourceSceneGone`
+   instead of silently producing an unplayable mirror with no template.
+   Mirrors with their own `MirrorConfigId` are NOT subject to this check —
+   the source there is just a co-location hint, and missing-source falls
+   back through `pickInstanceNode` like any other no_mapping case.
+   Counter: `scene_manager_mirror_source_missing_total{zone_id}`.
+
+2. **Optional dedup (`MirrorDedupBySource` config, default false).** When
+   on, a mirror request whose source already has at least one mirror in
+   `scene:{sourceId}:mirrors` returns the existing mirror id instead of
+   allocating a new one. Selection is arbitrary (first set member). The
+   path also self-heals dangling mirror ids: if the chosen mirror's
+   `scene:{id}:node` mapping is gone, the id is `SREM`'d from the set
+   and the request falls through to a fresh allocate. Counter:
+   `scene_manager_mirror_dedup_total{zone_id, outcome=hit|miss|stale}`.
+
+Operators choose one mirror semantics regime per deployment:
+
+- `MirrorDedupBySource: false` — independent copies (per-player phasing,
+  unique loot rolls). Default; matches behaviour before this feature.
+- `MirrorDedupBySource: true` — shared instance (raid lockouts, world
+  bosses where the whole party should land in the same mirror).
 
 ## Player Count Tracking
 
@@ -418,6 +565,10 @@ etcd Watch (事件驱动，不轮询)
 |-----|------|---------|
 | `scene:id_counter` | String (int) | Auto-increment scene ID |
 | `scene:{id}:node` | String | Scene → node mapping |
+| `scene:{id}:zone` | String (int) | Scene → zone mapping for cross-zone lookups |
+| `scene:{id}:mirror` | String | `"1"` marker for mirror scenes (shorter idle timeout) |
+| `scene:{id}:source` | String (int) | A mirror's source scene id, for reverse SREM on destroy |
+| `scene:{sourceId}:mirrors` | Set | Mirror scene ids whose source is this scene (cascade destroy) |
 | `world_channels:zone:{zoneId}` | Hash | confId → sceneId for main worlds |
 | `instances:zone:{zoneId}:active` | ZSet | Active instances (score = create/last-active timestamp) |
 | `instance:{id}:player_count` | String (int) | Player count per instance |
@@ -425,6 +576,7 @@ etcd Watch (事件驱动，不轮询)
 | `node:{nodeId}:scene_count` | String (int) | Node's hosted scene count |
 | `node:{nodeId}:player_count` | String (int) | Node's aggregate player count (sum across hosted scenes) |
 | `node:{nodeId}:scene_node_type` | String (int) | Mirrored `eSceneNodeType` value for purpose filtering |
+| `node:{nodeId}:scenes` | Set | Scene ids currently hosted by this node (node-death reconciliation) |
 
 ## Configuration
 
@@ -442,6 +594,7 @@ InstanceIdleTimeoutSeconds: 300     # Auto-destroy idle instances after this (0 
 MirrorIdleTimeoutSeconds: 30        # Mirrors die faster — every entry re-inits NPC state (0 = fall back)
 InstanceCheckIntervalSeconds: 30
 MirrorSourceNodeLoadCap: 0          # Soft cap on co-located mirrors per source node (0 = always co-locate)
+MirrorDedupBySource: false          # When true, CreateScene with source_scene_id reuses an existing mirror instead of allocating a fresh one. OFF by default — typical mirrors are per-player phasing where independent copies are intentional. Turn ON for "shared instance" semantics (raid lockouts, world bosses).
 
 # Node role routing
 StrictNodeTypeSeparation: true      # production default; set false in dev / single-node
@@ -465,13 +618,19 @@ MetricsListenAddr: ":9150"
 |------|---------|
 | `go/scene_manager/internal/logic/createscenelogic.go` | CreateScene routing: main world vs instance |
 | `go/scene_manager/internal/logic/world_init.go` | Startup init of persistent world scenes |
-| `go/scene_manager/internal/logic/instance_lifecycle.go` | Auto-destroy idle instances + player count helpers. Per-type timeout (mirror vs. regular) via `resolveMirrorTimeout` + `scene:{id}:mirror` flag |
+| `go/scene_manager/internal/logic/instance_lifecycle.go` | Auto-destroy idle instances + player count helpers. Per-type timeout (mirror vs. regular) via `resolveMirrorTimeout` + `scene:{id}:mirror` flag. Also: atomic CAS destroy, cascade to mirrors, node-death force path |
+| `go/scene_manager/internal/logic/scene_atomic.go` | Redis Lua scripts for the race-safe enter / destroy CAS paths |
 | `go/scene_manager/internal/logic/scene_node_client.go` | gRPC client cache + RequestNodeCreateScene/DestroyScene |
 | `go/scene_manager/internal/logic/enterscenelogic.go` | EnterScene: location update, gate routing, player count |
 | `go/scene_manager/internal/logic/leavescenelogic.go` | LeaveScene: location cleanup, player count decrement |
 | `go/scene_manager/internal/logic/destroyscenelogic.go` | Admin DestroyScene RPC handler |
 | `go/scene_manager/internal/logic/load_reporter.go` | etcd → Redis node discovery, load sync, grace period |
 | `go/scene_manager/internal/logic/logic_test.go` | Unit tests incl. `TestCreateScene_Mirror_*` co-location suite |
+| `go/scene_manager/internal/logic/world_rebalance.go` | World channel migration. `migrateWorldChannel` uses `reassignSceneNode` to keep `node:{id}:scenes` in sync with `scene:{id}:node` |
+| `go/scene_manager/internal/logic/orphan_cleanup.go` | Drops world-channel sets whose confId is no longer in the World table; cleans all scene-scoped keys + reverse indexes |
+| `go/scene_manager/internal/metrics/metrics.go` | Prometheus gauges + counters for nodes, mirrors, lifecycle, dedup, source-missing, orphans |
 | `proto/scene/scene.proto` | C++ Scene service (CreateScene, DestroyScene) |
 | `proto/scene_manager/scene_manager_service.proto` | Go SceneManager service definition |
-| `cpp/nodes/scene/handler/grpc/scene_node_service.cpp` | C++ CreateScene/DestroyScene ECS handlers (writes `mirror_config_id` onto `SceneInfoComp`) |
+| `cpp/nodes/scene/handler/grpc/scene_node_service.cpp` | C++ CreateScene/DestroyScene ECS handlers (writes `mirror_config_id` onto `SceneInfoComp`); DestroyScene is idempotent (missing scene → success) |
+| `deploy/k8s/scene-manager-alerts.yaml` | PrometheusRule for pool / load / rebalance / mirror lifecycle alerts |
+| `deploy/k8s/scene-manager-dashboard.json` | Grafana dashboard mirroring the alert metric set |

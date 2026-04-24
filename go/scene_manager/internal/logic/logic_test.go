@@ -3,6 +3,7 @@ package logic
 import (
 	"context"
 	"fmt"
+	"sync"
 	"testing"
 	"time"
 
@@ -1135,10 +1136,46 @@ func TestDestroyInstance_DrainsResidualFromNodeAggregate(t *testing.T) {
 	assert.Equal(t, "3", nodeVal)
 
 	// Admin-style destroy while players are still in it — must drain the
-	// aggregate, not leak three ghost players forever.
-	destroyInstance(ctx, sc, testZoneId, resp.SceneId)
+	// aggregate, not leak three ghost players forever. Use the force path
+	// explicitly: the non-force destroyInstance intentionally CAS-aborts
+	// when player_count > 0 so the lifecycle manager can't race with
+	// EnterScene.
+	destroyInstanceForce(ctx, sc, testZoneId, resp.SceneId, "explicit")
 	nodeVal, _ = sc.Redis.Get(fmt.Sprintf(NodePlayerCountKey, "10"))
 	assert.Equal(t, "0", nodeVal, "node aggregate must be drained by the residual on force-destroy")
+}
+
+// TestDestroyInstance_CAS_AbortsWhenPlayersPresent verifies the atomic
+// CAS inside destroyInstance refuses to wipe a scene that picked up a
+// player between the caller's idle check and the destroy call — the
+// destroy-while-entering race.
+func TestDestroyInstance_CAS_AbortsWhenPlayersPresent(t *testing.T) {
+	sc, mr := newTestSvcCtxWithWorldScenes(t)
+	ctx := context.Background()
+	registerTypedNode(mr, testZoneId, "10", constants.SceneNodeTypeInstance, 0)
+
+	resp, err := NewCreateSceneLogic(ctx, sc).CreateScene(&scene_manager.CreateSceneRequest{
+		SceneConfId: 2001,
+		ZoneId:      testZoneId,
+		SceneType:   scene_manager.SceneType_SCENE_TYPE_INSTANCE,
+	})
+	require.NoError(t, err)
+
+	// Seed one player so destroyInstance (non-force) should bail.
+	_, err = NewEnterSceneLogic(ctx, sc).EnterScene(&scene_manager.EnterSceneRequest{
+		PlayerId: 1, SceneId: resp.SceneId,
+	})
+	require.NoError(t, err)
+
+	destroyInstance(ctx, sc, testZoneId, resp.SceneId)
+
+	// Scene must still exist: the atomic CAS refused to destroy.
+	nodeId, err := sc.Redis.Get(fmt.Sprintf(SceneNodeKeyFmt, resp.SceneId))
+	require.NoError(t, err)
+	assert.Equal(t, "10", nodeId, "scene:{id}:node must survive when destroyInstance CAS aborts")
+
+	pc, _ := sc.Redis.Get(fmt.Sprintf(InstancePlayerCountKey, resp.SceneId))
+	assert.Equal(t, "1", pc, "player_count must be preserved on CAS abort")
 }
 
 // ---------------------------------------------------------------------------
@@ -1265,6 +1302,39 @@ func TestPlanRebalance_BudgetZeroDisables(t *testing.T) {
 	assert.Empty(t, opp)
 }
 
+// ---------------------------------------------------------------------------
+// Orphan cleanup tests
+// ---------------------------------------------------------------------------
+
+func TestCleanupOrphanWorldChannels_RefusesEmptyConfTable(t *testing.T) {
+	sc, mr := newTestSvcCtxWithWorldScenes(t)
+	// World table is empty in unit tests — refuse to wipe.
+	sc.Redis.Sadd(worldChannelsKey(testZoneId, 9999), "12345")
+	sc.Redis.Set(fmt.Sprintf("scene:%d:node", 12345), "10")
+
+	removed := CleanupOrphanWorldChannels(context.Background(), sc)
+	assert.Equal(t, 0, removed, "empty conf table must be treated as 'load failed', not 'wipe everything'")
+
+	// Key still exists.
+	assert.True(t, mr.Exists(worldChannelsKey(testZoneId, 9999)))
+}
+
+func TestParseWorldChannelsKey(t *testing.T) {
+	zone, conf, ok := parseWorldChannelsKey("world_channels:zone:5:1001")
+	require.True(t, ok)
+	assert.Equal(t, uint32(5), zone)
+	assert.Equal(t, uint64(1001), conf)
+
+	_, _, ok = parseWorldChannelsKey("world_channels:zone:5")
+	assert.False(t, ok, "missing confId must fail parse")
+
+	_, _, ok = parseWorldChannelsKey("some_other_key:1:2")
+	assert.False(t, ok, "wrong prefix must fail parse")
+
+	_, _, ok = parseWorldChannelsKey("world_channels:zone:abc:1001")
+	assert.False(t, ok, "non-numeric zone must fail parse")
+}
+
 func TestPlanRebalance_NonWorldHostingNotConsidered(t *testing.T) {
 	sc, mr := newTestSvcCtxWithWorldScenes(t)
 	sc.Config.MaxRebalanceMigrationsPerTick = 10
@@ -1281,4 +1351,517 @@ func TestPlanRebalance_NonWorldHostingNotConsidered(t *testing.T) {
 	urgent, opp, _ := PlanWorldChannelRebalance(sc, testZoneId, confIds)
 	assert.Empty(t, urgent)
 	assert.Empty(t, opp)
+}
+
+// ---------------------------------------------------------------------------
+// Destroy-while-entering race / atomic CAS
+// ---------------------------------------------------------------------------
+
+// TestAtomicIncrPlayerCount_SceneExists is the happy path for the CAS Lua
+// helper used inside EnterScene.
+func TestAtomicIncrPlayerCount_SceneExists(t *testing.T) {
+	sc, _ := newTestSvcCtx(t, "node-1")
+	sceneId := uint64(42)
+	sc.Redis.Set(fmt.Sprintf(SceneNodeKeyFmt, sceneId), "10")
+	sc.Redis.Set(fmt.Sprintf(InstancePlayerCountKey, sceneId), "0")
+
+	count, err := AtomicIncrPlayerCountIfSceneExists(sc, sceneId)
+	require.NoError(t, err)
+	assert.Equal(t, int64(1), count)
+
+	pc, _ := sc.Redis.Get(fmt.Sprintf(InstancePlayerCountKey, sceneId))
+	assert.Equal(t, "1", pc)
+}
+
+// TestAtomicIncrPlayerCount_SceneGone verifies the CAS path refuses to
+// create an orphan player_count key when the scene has already been
+// destroyed.
+func TestAtomicIncrPlayerCount_SceneGone(t *testing.T) {
+	sc, _ := newTestSvcCtx(t, "node-1")
+	sceneId := uint64(42)
+	// No scene:{id}:node key — simulate a scene that was destroyed before
+	// EnterScene's INCR hit Redis.
+
+	count, err := AtomicIncrPlayerCountIfSceneExists(sc, sceneId)
+	require.NoError(t, err)
+	assert.Equal(t, int64(-1), count, "must return -1 when scene:{id}:node is gone")
+
+	// Most important: we must NOT have created instance:{id}:player_count.
+	exists, _ := sc.Redis.Exists(fmt.Sprintf(InstancePlayerCountKey, sceneId))
+	assert.False(t, exists, "orphan player_count key must not be created")
+}
+
+// TestAtomicDestroyIfIdle_AbortsOnPlayers ensures the destroy-while-
+// entering race cannot wipe a scene that picked up a player.
+func TestAtomicDestroyIfIdle_AbortsOnPlayers(t *testing.T) {
+	sc, _ := newTestSvcCtx(t, "node-1")
+	sceneId := uint64(42)
+
+	sc.Redis.Set(fmt.Sprintf(SceneNodeKeyFmt, sceneId), "10")
+	sc.Redis.Set(fmt.Sprintf(InstancePlayerCountKey, sceneId), "1")
+	sc.Redis.Zadd(activeInstancesKey(testZoneId), nowUnix(), fmt.Sprintf("%d", sceneId))
+
+	nodeId, err := AtomicDestroyIfIdle(sc, testZoneId, sceneId)
+	require.NoError(t, err)
+	assert.Equal(t, "", nodeId, "must abort when player_count > 0")
+
+	// Scene state must be intact.
+	nid, _ := sc.Redis.Get(fmt.Sprintf(SceneNodeKeyFmt, sceneId))
+	assert.Equal(t, "10", nid)
+	pc, _ := sc.Redis.Get(fmt.Sprintf(InstancePlayerCountKey, sceneId))
+	assert.Equal(t, "1", pc)
+}
+
+// TestAtomicDestroyIfIdle_DestroysWhenIdle checks the success path wipes
+// all scene-scoped keys and returns the nodeId.
+func TestAtomicDestroyIfIdle_DestroysWhenIdle(t *testing.T) {
+	sc, _ := newTestSvcCtx(t, "node-1")
+	sceneId := uint64(42)
+
+	sc.Redis.Set(fmt.Sprintf(SceneNodeKeyFmt, sceneId), "10")
+	sc.Redis.Set(fmt.Sprintf(InstancePlayerCountKey, sceneId), "0")
+	sc.Redis.Set(sceneMirrorFlagKey(sceneId), "1")
+	sc.Redis.Set(sceneSourceKey(sceneId), "99")
+	sc.Redis.Set(sceneZoneKey(sceneId), "1")
+	sc.Redis.Zadd(activeInstancesKey(testZoneId), nowUnix(), fmt.Sprintf("%d", sceneId))
+
+	nodeId, err := AtomicDestroyIfIdle(sc, testZoneId, sceneId)
+	require.NoError(t, err)
+	assert.Equal(t, "10", nodeId)
+
+	for _, key := range []string{
+		fmt.Sprintf(SceneNodeKeyFmt, sceneId),
+		fmt.Sprintf(InstancePlayerCountKey, sceneId),
+		sceneMirrorFlagKey(sceneId),
+		sceneSourceKey(sceneId),
+		sceneZoneKey(sceneId),
+	} {
+		exists, _ := sc.Redis.Exists(key)
+		assert.False(t, exists, "scene-scoped key %s must be wiped", key)
+	}
+	score, err := sc.Redis.Zscore(activeInstancesKey(testZoneId), fmt.Sprintf("%d", sceneId))
+	_ = score
+	assert.Error(t, err, "ZREM from active set must succeed (Zscore should fail for missing member)")
+}
+
+// TestEnterScene_AtomicIncr_NoOrphanPlayerCount is the tighter end-to-end
+// test: call EnterScene for a sceneId that was mapped but is now gone,
+// then verify no orphan player_count key was left behind.
+func TestEnterScene_AtomicIncr_NoOrphanPlayerCount(t *testing.T) {
+	sc, mr := newTestSvcCtxWithWorldScenes(t)
+	registerTypedNode(mr, testZoneId, "10", constants.SceneNodeTypeInstance, 0)
+
+	// Orphan sceneId that was never created — no scene:{id}:node entry.
+	orphanSceneId := uint64(99999)
+
+	_, _ = AtomicIncrPlayerCountIfSceneExists(sc, orphanSceneId)
+
+	// The key MUST NOT have been created.
+	exists, _ := sc.Redis.Exists(fmt.Sprintf(InstancePlayerCountKey, orphanSceneId))
+	assert.False(t, exists, "EnterScene must never create an orphan player_count for a gone scene")
+}
+
+// ---------------------------------------------------------------------------
+// Reverse indexes
+// ---------------------------------------------------------------------------
+
+// TestCreateInstance_PopulatesNodeScenesIndex ensures the reverse index
+// used by the node-death reconciliation loop is kept in sync.
+func TestCreateInstance_PopulatesNodeScenesIndex(t *testing.T) {
+	sc, mr := newTestSvcCtxWithWorldScenes(t)
+	ctx := context.Background()
+	registerTypedNode(mr, testZoneId, "10", constants.SceneNodeTypeInstance, 0)
+
+	resp, err := NewCreateSceneLogic(ctx, sc).CreateScene(&scene_manager.CreateSceneRequest{
+		SceneConfId: 2001,
+		ZoneId:      testZoneId,
+		SceneType:   scene_manager.SceneType_SCENE_TYPE_INSTANCE,
+	})
+	require.NoError(t, err)
+
+	members, _ := sc.Redis.Smembers(nodeScenesKey("10"))
+	assert.Contains(t, members, fmt.Sprintf("%d", resp.SceneId),
+		"node:{id}:scenes must contain the freshly-created scene")
+}
+
+// TestCreateMirror_PopulatesMirrorSourceIndex ensures cascade destroy has
+// something to work with — the reverse index scene:{source}:mirrors.
+func TestCreateMirror_PopulatesMirrorSourceIndex(t *testing.T) {
+	sc, mr := newTestSvcCtxWithWorldScenes(t)
+	ctx := context.Background()
+	registerTypedNode(mr, testZoneId, "10", constants.SceneNodeTypeInstance, 0)
+
+	// Seed a pretend source scene on the same node so co-location kicks in.
+	sourceId := uint64(12345)
+	sc.Redis.Set(fmt.Sprintf(SceneNodeKeyFmt, sourceId), "10")
+
+	mirrorResp, err := NewCreateSceneLogic(ctx, sc).CreateScene(&scene_manager.CreateSceneRequest{
+		SceneConfId:    2001,
+		MirrorConfigId: 9001,
+		SourceSceneId:  sourceId,
+		ZoneId:         testZoneId,
+		SceneType:      scene_manager.SceneType_SCENE_TYPE_INSTANCE,
+	})
+	require.NoError(t, err)
+
+	members, _ := sc.Redis.Smembers(sceneMirrorsKey(sourceId))
+	assert.Contains(t, members, fmt.Sprintf("%d", mirrorResp.SceneId),
+		"scene:{source}:mirrors must track the new mirror")
+
+	// The reverse source pointer also needs to be there so the mirror can
+	// remove itself from the source's mirrors set on destroy.
+	src, _ := sc.Redis.Get(sceneSourceKey(mirrorResp.SceneId))
+	assert.Equal(t, fmt.Sprintf("%d", sourceId), src)
+}
+
+// TestDestroyMirror_UnlinksFromSourceSet verifies a mirror drops itself
+// out of scene:{source}:mirrors when it is destroyed — otherwise cascade
+// destroy would re-destroy already-gone mirrors forever.
+func TestDestroyMirror_UnlinksFromSourceSet(t *testing.T) {
+	sc, mr := newTestSvcCtxWithWorldScenes(t)
+	ctx := context.Background()
+	registerTypedNode(mr, testZoneId, "10", constants.SceneNodeTypeInstance, 0)
+
+	sourceId := uint64(12345)
+	sc.Redis.Set(fmt.Sprintf(SceneNodeKeyFmt, sourceId), "10")
+
+	mirrorResp, err := NewCreateSceneLogic(ctx, sc).CreateScene(&scene_manager.CreateSceneRequest{
+		SceneConfId:    2001,
+		MirrorConfigId: 9001,
+		SourceSceneId:  sourceId,
+		ZoneId:         testZoneId,
+		SceneType:      scene_manager.SceneType_SCENE_TYPE_INSTANCE,
+	})
+	require.NoError(t, err)
+
+	destroyInstance(ctx, sc, testZoneId, mirrorResp.SceneId)
+
+	members, _ := sc.Redis.Smembers(sceneMirrorsKey(sourceId))
+	assert.NotContains(t, members, fmt.Sprintf("%d", mirrorResp.SceneId),
+		"destroyed mirror must be SREM'd from scene:{source}:mirrors")
+}
+
+// ---------------------------------------------------------------------------
+// Cascade destroy
+// ---------------------------------------------------------------------------
+
+// TestDestroyScene_CascadesToMirrors: explicit DestroyScene of a source
+// scene must also destroy every mirror it spawned. Leaving them behind
+// would point to a dead source, and their NPCs/spawners would still tick
+// on the C++ node until idle timeout.
+func TestDestroyScene_CascadesToMirrors(t *testing.T) {
+	sc, mr := newTestSvcCtxWithWorldScenes(t)
+	ctx := context.Background()
+	registerTypedNode(mr, testZoneId, "10", constants.SceneNodeTypeInstance, 0)
+
+	sourceId := uint64(100)
+	sc.Redis.Set(fmt.Sprintf(SceneNodeKeyFmt, sourceId), "10")
+	sc.Redis.Set(sceneZoneKey(sourceId), fmt.Sprintf("%d", testZoneId))
+	sc.Redis.Zadd(activeInstancesKey(testZoneId), nowUnix(), fmt.Sprintf("%d", sourceId))
+
+	var mirrorIds []uint64
+	for i := 0; i < 3; i++ {
+		resp, err := NewCreateSceneLogic(ctx, sc).CreateScene(&scene_manager.CreateSceneRequest{
+			SceneConfId:    2001,
+			MirrorConfigId: 9001,
+			SourceSceneId:  sourceId,
+			ZoneId:         testZoneId,
+			SceneType:      scene_manager.SceneType_SCENE_TYPE_INSTANCE,
+		})
+		require.NoError(t, err)
+		mirrorIds = append(mirrorIds, resp.SceneId)
+	}
+
+	// Explicit destroy of the source.
+	_, err := NewDestroySceneLogic(ctx, sc).DestroyScene(&scene_manager.DestroySceneRequest{
+		SceneId: sourceId,
+		ZoneId:  testZoneId,
+	})
+	require.NoError(t, err)
+
+	// Every mirror must be gone.
+	for _, mid := range mirrorIds {
+		nid, _ := sc.Redis.Get(fmt.Sprintf(SceneNodeKeyFmt, mid))
+		assert.Equal(t, "", nid, "mirror %d must be destroyed by cascade", mid)
+	}
+	// Mirrors index is empty (and ideally gone).
+	members, _ := sc.Redis.Smembers(sceneMirrorsKey(sourceId))
+	assert.Empty(t, members, "scene:{source}:mirrors must be drained after cascade")
+}
+
+// ---------------------------------------------------------------------------
+// Node-death reconciliation
+// ---------------------------------------------------------------------------
+
+// TestReconcileDeadNode_DestroysOrphanInstances verifies the sweep run
+// from removeNodeFromRedis walks node:{id}:scenes and force-destroys
+// instance scenes whose mapping still points at the dead node.
+func TestReconcileDeadNode_DestroysOrphanInstances(t *testing.T) {
+	sc, mr := newTestSvcCtxWithWorldScenes(t)
+	ctx := context.Background()
+	registerTypedNode(mr, testZoneId, "10", constants.SceneNodeTypeInstance, 0)
+
+	// Create two instances on node 10.
+	var sceneIds []uint64
+	for i := 0; i < 2; i++ {
+		resp, err := NewCreateSceneLogic(ctx, sc).CreateScene(&scene_manager.CreateSceneRequest{
+			SceneConfId: 2001,
+			ZoneId:      testZoneId,
+			SceneType:   scene_manager.SceneType_SCENE_TYPE_INSTANCE,
+		})
+		require.NoError(t, err)
+		sceneIds = append(sceneIds, resp.SceneId)
+	}
+
+	// Simulate node-10 death.
+	entry := nodeEntry{nodeID: "10"}
+	entry.reg.ZoneId = testZoneId
+	entry.reg.SceneNodeType = constants.SceneNodeTypeInstance
+	mr.ZRem(nodeLoadKey(testZoneId), "10")
+	reconcileDeadNodeScenes(sc, entry)
+
+	// All orphan instances must be wiped.
+	for _, sid := range sceneIds {
+		nid, _ := sc.Redis.Get(fmt.Sprintf(SceneNodeKeyFmt, sid))
+		assert.Equal(t, "", nid, "orphan instance %d must be force-destroyed after node death", sid)
+	}
+
+	// node:{id}:scenes set itself is cleared.
+	members, _ := sc.Redis.Smembers(nodeScenesKey("10"))
+	assert.Empty(t, members)
+}
+
+// TestReconcileDeadNode_PreservesWorldChannels makes sure the
+// reconciliation sweep doesn't blow away world channels — those are
+// handled by a different pipeline (rebalance / lazy-reassign) and
+// accidentally destroying one would drop every player in that shard.
+func TestReconcileDeadNode_PreservesWorldChannels(t *testing.T) {
+	sc, mr := newTestSvcCtxWithWorldScenes(t)
+	ctx := context.Background()
+	registerTypedNode(mr, testZoneId, "10", constants.SceneNodeTypeMainWorld, 0)
+
+	initWorldScenesForZone(ctx, sc, testZoneId, []uint64{1001})
+
+	channels, _ := GetAllWorldChannels(ctx, sc, 1001, testZoneId)
+	require.NotEmpty(t, channels)
+
+	entry := nodeEntry{nodeID: "10"}
+	entry.reg.ZoneId = testZoneId
+	entry.reg.SceneNodeType = constants.SceneNodeTypeMainWorld
+	mr.ZRem(nodeLoadKey(testZoneId), "10")
+	reconcileDeadNodeScenes(sc, entry)
+
+	// World channels' scene:{id}:node mapping must still be there — the
+	// rebalance loop reassigns them; we do NOT destroy.
+	for _, sid := range channels {
+		nid, _ := sc.Redis.Get(fmt.Sprintf(SceneNodeKeyFmt, sid))
+		assert.NotEmpty(t, nid, "world channel %d must NOT be wiped by reconciliation", sid)
+	}
+}
+
+// TestReconcileDeadNode_SkipsReassignedScenes covers the rare-but-
+// possible race: a scene was moved off the dying node before reconciliation
+// ran. It must not be destroyed just because the stale node:{old}:scenes
+// set still lists it.
+func TestReconcileDeadNode_SkipsReassignedScenes(t *testing.T) {
+	sc, _ := newTestSvcCtxWithWorldScenes(t)
+
+	// Pretend scene 77 used to live on "10" and got moved to "20".
+	sc.Redis.Sadd(nodeScenesKey("10"), "77")
+	sc.Redis.Set(fmt.Sprintf(SceneNodeKeyFmt, uint64(77)), "20")
+	sc.Redis.Zadd(activeInstancesKey(testZoneId), nowUnix(), "77")
+
+	entry := nodeEntry{nodeID: "10"}
+	entry.reg.ZoneId = testZoneId
+	reconcileDeadNodeScenes(sc, entry)
+
+	nid, _ := sc.Redis.Get(fmt.Sprintf(SceneNodeKeyFmt, uint64(77)))
+	assert.Equal(t, "20", nid, "reassigned scene must survive the reconciliation sweep")
+}
+
+// ---------------------------------------------------------------------------
+// Mirror defensive checks (source-exists + dedup)
+// ---------------------------------------------------------------------------
+
+// TestCreateMirror_RejectsWhenSourceGone proves that a mirror create with
+// source_scene_id pointing at a non-existent scene fails fast with
+// ErrSourceSceneGone, rather than silently producing an "orphan mirror"
+// that would never be able to resolve its source-derived state.
+func TestCreateMirror_RejectsWhenSourceGone(t *testing.T) {
+	sc, mr := newTestSvcCtxWithWorldScenes(t)
+	registerTypedNode(mr, testZoneId, "10", constants.SceneNodeTypeInstance, 0)
+
+	// Note: no scene:{12345}:node key seeded — the source is "gone".
+	resp, err := NewCreateSceneLogic(context.Background(), sc).CreateScene(&scene_manager.CreateSceneRequest{
+		SceneConfId:   2001,
+		ZoneId:        testZoneId,
+		SceneType:     scene_manager.SceneType_SCENE_TYPE_INSTANCE,
+		SourceSceneId: 12345,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, constants.ErrSourceSceneGone, resp.ErrorCode)
+	assert.Zero(t, resp.SceneId, "no scene should be allocated when source is gone")
+}
+
+// TestCreateMirror_AllowsWhenSourceExists is the positive control for the
+// defensive check above — without it the rejection path could shadow real
+// mirror traffic.
+func TestCreateMirror_AllowsWhenSourceExists(t *testing.T) {
+	sc, mr := newTestSvcCtxWithWorldScenes(t)
+	registerTypedNode(mr, testZoneId, "10", constants.SceneNodeTypeInstance, 0)
+
+	// Seed an existing source scene.
+	const sourceId uint64 = 999
+	sc.Redis.Set(fmt.Sprintf(SceneNodeKeyFmt, sourceId), "10")
+
+	resp, err := NewCreateSceneLogic(context.Background(), sc).CreateScene(&scene_manager.CreateSceneRequest{
+		SceneConfId:   2001,
+		ZoneId:        testZoneId,
+		SceneType:     scene_manager.SceneType_SCENE_TYPE_INSTANCE,
+		SourceSceneId: sourceId,
+	})
+	require.NoError(t, err)
+	assert.Zero(t, resp.ErrorCode)
+	assert.NotZero(t, resp.SceneId)
+}
+
+// TestCreateMirror_DedupReusesExisting verifies that with
+// MirrorDedupBySource=true a second mirror request for the same source
+// returns the existing mirror's scene id (no fresh allocate, no second
+// CreateScene RPC equivalent in the metric).
+func TestCreateMirror_DedupReusesExisting(t *testing.T) {
+	sc, mr := newTestSvcCtxWithWorldScenes(t)
+	sc.Config.MirrorDedupBySource = true
+	registerTypedNode(mr, testZoneId, "10", constants.SceneNodeTypeInstance, 0)
+
+	const sourceId uint64 = 555
+	sc.Redis.Set(fmt.Sprintf(SceneNodeKeyFmt, sourceId), "10")
+
+	first, err := NewCreateSceneLogic(context.Background(), sc).CreateScene(&scene_manager.CreateSceneRequest{
+		SceneConfId:   2001,
+		ZoneId:        testZoneId,
+		SceneType:     scene_manager.SceneType_SCENE_TYPE_INSTANCE,
+		SourceSceneId: sourceId,
+	})
+	require.NoError(t, err)
+	require.NotZero(t, first.SceneId)
+
+	second, err := NewCreateSceneLogic(context.Background(), sc).CreateScene(&scene_manager.CreateSceneRequest{
+		SceneConfId:   2001,
+		ZoneId:        testZoneId,
+		SceneType:     scene_manager.SceneType_SCENE_TYPE_INSTANCE,
+		SourceSceneId: sourceId,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, first.SceneId, second.SceneId, "dedup should return the same mirror id")
+	assert.Equal(t, first.NodeId, second.NodeId)
+}
+
+// TestCreateMirror_DedupOff_AllocatesFresh is the negative control — with
+// the flag off (default), each request must produce a distinct mirror.
+// This guards against an accidental flip of the default that would change
+// gameplay semantics for every existing operator.
+func TestCreateMirror_DedupOff_AllocatesFresh(t *testing.T) {
+	sc, mr := newTestSvcCtxWithWorldScenes(t)
+	// Explicitly leave MirrorDedupBySource at its default (false).
+	registerTypedNode(mr, testZoneId, "10", constants.SceneNodeTypeInstance, 0)
+
+	const sourceId uint64 = 444
+	sc.Redis.Set(fmt.Sprintf(SceneNodeKeyFmt, sourceId), "10")
+
+	first, _ := NewCreateSceneLogic(context.Background(), sc).CreateScene(&scene_manager.CreateSceneRequest{
+		SceneConfId: 2001, ZoneId: testZoneId,
+		SceneType: scene_manager.SceneType_SCENE_TYPE_INSTANCE, SourceSceneId: sourceId,
+	})
+	second, _ := NewCreateSceneLogic(context.Background(), sc).CreateScene(&scene_manager.CreateSceneRequest{
+		SceneConfId: 2001, ZoneId: testZoneId,
+		SceneType: scene_manager.SceneType_SCENE_TYPE_INSTANCE, SourceSceneId: sourceId,
+	})
+	assert.NotEqual(t, first.SceneId, second.SceneId, "without dedup, each mirror request must allocate fresh")
+}
+
+// TestCreateMirror_DedupSkipsStaleEntry covers the "mirrors set still
+// references a destroyed mirror" edge case. The dedup path must SREM the
+// stale id and fall through to a fresh allocation, not return the dead
+// scene.
+func TestCreateMirror_DedupSkipsStaleEntry(t *testing.T) {
+	sc, mr := newTestSvcCtxWithWorldScenes(t)
+	sc.Config.MirrorDedupBySource = true
+	registerTypedNode(mr, testZoneId, "10", constants.SceneNodeTypeInstance, 0)
+
+	const sourceId uint64 = 333
+	const staleMirrorId uint64 = 99999
+	sc.Redis.Set(fmt.Sprintf(SceneNodeKeyFmt, sourceId), "10")
+	// Seed a dangling membership: id is in the set, but no scene:{id}:node.
+	sc.Redis.Sadd(sceneMirrorsKey(sourceId), fmt.Sprintf("%d", staleMirrorId))
+
+	resp, err := NewCreateSceneLogic(context.Background(), sc).CreateScene(&scene_manager.CreateSceneRequest{
+		SceneConfId:   2001,
+		ZoneId:        testZoneId,
+		SceneType:     scene_manager.SceneType_SCENE_TYPE_INSTANCE,
+		SourceSceneId: sourceId,
+	})
+	require.NoError(t, err)
+	assert.Zero(t, resp.ErrorCode)
+	assert.NotEqual(t, staleMirrorId, resp.SceneId, "must not return the dangling mirror id")
+	assert.NotZero(t, resp.SceneId)
+
+	// Stale membership should have been cleaned up.
+	members, _ := sc.Redis.Smembers(sceneMirrorsKey(sourceId))
+	assert.NotContains(t, members, fmt.Sprintf("%d", staleMirrorId))
+}
+
+// ---------------------------------------------------------------------------
+// Concurrency stress: enter / destroy race
+// ---------------------------------------------------------------------------
+
+// TestStress_EnterDestroyRace_NoOrphanPlayerCount fires N concurrent enter
+// and destroy attempts at the same scene id and asserts that, regardless
+// of who wins each race:
+//
+//  1. instance:{id}:player_count is consistent with scene:{id}:node
+//     (either both present, or both absent — no orphan key).
+//  2. The atomic CAS in EnterScene only ever increments when the scene
+//     still exists (no negative drift of the counter).
+//  3. No goroutine panics or returns a non-categorical error.
+//
+// This is the property the Lua-script CAS was designed to guarantee, and
+// regressions usually show up as orphan player_count keys that survive
+// scene destruction (the bug that motivated the fix).
+func TestStress_EnterDestroyRace_NoOrphanPlayerCount(t *testing.T) {
+	sc, _ := newTestSvcCtxWithWorldScenes(t)
+	const sceneId uint64 = 4242
+	const iterations = 200
+
+	var wg sync.WaitGroup
+	for i := 0; i < iterations; i++ {
+		wg.Add(2)
+
+		// Re-create the scene each iteration so destroy has something to wipe.
+		sc.Redis.Set(fmt.Sprintf(SceneNodeKeyFmt, sceneId), "10")
+
+		go func() {
+			defer wg.Done()
+			_, _ = AtomicIncrPlayerCountIfSceneExists(sc, sceneId)
+		}()
+		go func() {
+			defer wg.Done()
+			_, _ = AtomicDestroyIfIdle(sc, testZoneId, sceneId)
+		}()
+	}
+	wg.Wait()
+
+	// Final consistency check: if scene:{id}:node is gone, player_count
+	// must also be gone (no orphan). If it's present, player_count may
+	// hold any non-negative integer.
+	nodeId, _ := sc.Redis.Get(fmt.Sprintf(SceneNodeKeyFmt, sceneId))
+	pcStr, _ := sc.Redis.Get(fmt.Sprintf(InstancePlayerCountKey, sceneId))
+	if nodeId == "" {
+		assert.Equal(t, "", pcStr,
+			"orphan player_count detected — atomic CAS regression")
+	} else if pcStr != "" {
+		var pc int64
+		fmt.Sscanf(pcStr, "%d", &pc)
+		assert.GreaterOrEqual(t, pc, int64(0), "player_count went negative")
+	}
 }

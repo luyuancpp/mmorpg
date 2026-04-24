@@ -28,7 +28,8 @@ go/
 | Task | Location | Notes |
 |------|----------|-------|
 | Login bootstrap | `login/login.go` | etcd registration + unary interceptor |
-| Scene manager bootstrap | `scene_manager/scene_manager_service.go` | load reporter + zrpc server |
+| Scene manager bootstrap | `scene_manager/scene_manager_service.go` | load reporter + zrpc server; optional `MetricsListenAddr` |
+| Scene node roles + world rebalance | `scene_manager/internal/logic/load_reporter.go`, `world_rebalance.go`, `orphan_cleanup.go` | Ops: `docs/ops/scene-node-role-split.md`; design: `docs/design/scene-creation-architecture.md` (rebalance section); CI harness: `scene_manager/internal/logic/integration_test.go` (`TestIntegration_*`, bufconn + miniredis) |
 | Data service bootstrap | `data_service/data_service.go` | standard go-zero RPC server wiring |
 | Config/runtime flags | `*/etc/` + entry file flags | Reflection only in dev/test |
 | Generated RPC stubs | `*/proto/` and `generated/` | Review only; regenerate instead of patching |
@@ -58,4 +59,5 @@ cd go\data_service && go test ./...
 ## NOTES
 - `build.bat` mixes `goctl rpc protoc` and raw `protoc`; it is the canonical regeneration path found in-repo.
 - `data_service` and `scene_manager` follow the same high-level go-zero server shape as login, but only login handles node registration directly.
+- **Scene manager**: C++ scene nodes register in etcd; LoadReporter mirrors type/load into Redis. World channel moves use `RebalanceWorldChannelsForZone` (planner `PlanWorldChannelRebalance`). Before changing that path, run `cd go\scene_manager && go test ./internal/logic/ -run TestIntegration_ -count=1` and extend `integration_test.go` if you add new invariants.
 - When `.proto` changes, regenerate first, then rebuild affected Go services.

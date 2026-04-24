@@ -1,0 +1,319 @@
+{
+  "__comment": "Grafana dashboard for SceneManager. Import via the UI or the kube-prometheus sidecar (label this ConfigMap with `grafana_dashboard: \"1\"`). Datasource is templated; set $DS_PROMETHEUS to your Prometheus uid. Two main story arcs: (1) per-node load surface — what the scheduler sees; (2) mirror lifecycle — what the new co-location / cascade / atomic CAS code emits.",
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "refresh": "30s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["scene-manager", "mmorpg", "scene-nodes"],
+  "templating": {
+    "list": [
+      {
+        "current": { "selected": false, "text": "Prometheus", "value": "Prometheus" },
+        "hide": 0,
+        "includeAll": false,
+        "label": "Datasource",
+        "multi": false,
+        "name": "DS_PROMETHEUS",
+        "options": [],
+        "query": "prometheus",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "datasource"
+      },
+      {
+        "current": { "selected": true, "text": "All", "value": "$__all" },
+        "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+        "definition": "label_values(scene_manager_nodes_by_role, zone_id)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Zone",
+        "multi": true,
+        "name": "zone_id",
+        "options": [],
+        "query": "label_values(scene_manager_nodes_by_role, zone_id)",
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {},
+  "timezone": "",
+  "title": "SceneManager — Nodes & Mirror Lifecycle",
+  "uid": "scene-manager-overview",
+  "version": 1,
+  "weekStart": "",
+  "panels": [
+    {
+      "type": "row",
+      "title": "Pool health",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "collapsed": false,
+      "id": 100
+    },
+    {
+      "type": "stat",
+      "title": "Live scene nodes by role (per zone)",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 1 },
+      "id": 101,
+      "options": {
+        "reduceOptions": { "values": false, "calcs": ["lastNotNull"], "fields": "" },
+        "orientation": "auto",
+        "textMode": "value_and_name",
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto"
+      },
+      "targets": [
+        {
+          "expr": "sum by (zone_id, role) (scene_manager_nodes_by_role{zone_id=~\"$zone_id\"})",
+          "legendFormat": "z{{zone_id}} / {{role}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Players per node (top 10)",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 1 },
+      "id": 102,
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+      "targets": [
+        {
+          "expr": "topk(10, scene_manager_node_player_count{zone_id=~\"$zone_id\"})",
+          "legendFormat": "{{node_id}} ({{role}})",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Scenes per node (top 10)",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 1 },
+      "id": 103,
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+      "targets": [
+        {
+          "expr": "topk(10, scene_manager_node_scene_count{zone_id=~\"$zone_id\"})",
+          "legendFormat": "{{node_id}} ({{role}})",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "Mirror lifecycle",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 9 },
+      "collapsed": false,
+      "id": 200
+    },
+    {
+      "type": "stat",
+      "title": "Mirror co-location hit rate (10m)",
+      "description": "hit / (hit + fallback). High values mean mirrors successfully reuse the source node's resident map / NPC / spawn data, cutting client cross-node handoff cost.",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 10 },
+      "id": 201,
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 0.5 },
+              { "color": "green", "value": 0.8 }
+            ]
+          }
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background",
+        "graphMode": "area"
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(scene_manager_mirror_colocate_total{outcome=\"hit\", zone_id=~\"$zone_id\"}[10m])) / sum(rate(scene_manager_mirror_colocate_total{zone_id=~\"$zone_id\"}[10m]))",
+          "legendFormat": "hit rate",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Mirror placement outcomes (per reason)",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 8, "w": 9, "x": 6, "y": 10 },
+      "id": 202,
+      "fieldConfig": { "defaults": { "unit": "ops" } },
+      "targets": [
+        {
+          "expr": "sum by (outcome, reason) (rate(scene_manager_mirror_colocate_total{zone_id=~\"$zone_id\"}[5m]))",
+          "legendFormat": "{{outcome}} / {{reason}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Instance destroys by reason",
+      "description": "idle (lifecycle timeout) | explicit (DestroyScene RPC) | cascade (parent destroyed) | node_death (reconcile loop)",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 8, "w": 9, "x": 15, "y": 10 },
+      "id": 203,
+      "fieldConfig": { "defaults": { "unit": "ops" } },
+      "targets": [
+        {
+          "expr": "sum by (kind, reason) (rate(scene_manager_instance_destroyed_total{zone_id=~\"$zone_id\"}[5m]))",
+          "legendFormat": "{{kind}} / {{reason}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "Concurrency hardening",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 18 },
+      "collapsed": false,
+      "id": 300
+    },
+    {
+      "type": "timeseries",
+      "title": "EnterScene rejected (scene_gone)",
+      "description": "Atomic CAS in EnterScene returns -1 when the scene was wiped by lifecycle between resolveScene and INCR. Sustained nonzero = idle timeout too tight, or reconcile loop too aggressive.",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 19 },
+      "id": 301,
+      "fieldConfig": { "defaults": { "unit": "ops" } },
+      "targets": [
+        {
+          "expr": "sum by (zone_id, reason) (rate(scene_manager_enter_scene_rejected_total{zone_id=~\"$zone_id\"}[5m]))",
+          "legendFormat": "z{{zone_id}} / {{reason}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Orphan scenes reconciled (post node death)",
+      "description": "Each spike correlates with a scene-node leaving the cluster. Should match approximately the number of instance scenes that pod was hosting.",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 19 },
+      "id": 302,
+      "fieldConfig": { "defaults": { "unit": "ops" } },
+      "targets": [
+        {
+          "expr": "sum by (zone_id) (rate(scene_manager_scene_orphans_reconciled_total{zone_id=~\"$zone_id\"}[5m]))",
+          "legendFormat": "z{{zone_id}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "Mirror integrity",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 27 },
+      "collapsed": false,
+      "id": 400
+    },
+    {
+      "type": "timeseries",
+      "title": "Mirror create rejected: source gone",
+      "description": "ErrSourceSceneGone — gameplay code raced the source scene's destroy. Hold a soft keep-alive on the source while a mirror is in flight.",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 28 },
+      "id": 401,
+      "fieldConfig": { "defaults": { "unit": "ops" } },
+      "targets": [
+        {
+          "expr": "sum by (zone_id) (rate(scene_manager_mirror_source_missing_total{zone_id=~\"$zone_id\"}[5m]))",
+          "legendFormat": "z{{zone_id}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Mirror dedup outcomes (only when MirrorDedupBySource=true)",
+      "description": "hit = returned an existing mirror; miss = no mirror existed, allocated fresh; stale = mirrors set had a dangling id (cleaned + fell through). All-zero series mean dedup is off in this zone.",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 28 },
+      "id": 402,
+      "fieldConfig": { "defaults": { "unit": "ops" } },
+      "targets": [
+        {
+          "expr": "sum by (zone_id, outcome) (rate(scene_manager_mirror_dedup_total{zone_id=~\"$zone_id\"}[5m]))",
+          "legendFormat": "z{{zone_id}} / {{outcome}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "Rebalance",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 36 },
+      "collapsed": false,
+      "id": 500
+    },
+    {
+      "type": "timeseries",
+      "title": "Migrations by reason / outcome",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 37 },
+      "id": 501,
+      "fieldConfig": { "defaults": { "unit": "ops" } },
+      "targets": [
+        {
+          "expr": "sum by (zone_id, reason, outcome) (rate(scene_manager_rebalance_migrations_total{zone_id=~\"$zone_id\"}[5m]))",
+          "legendFormat": "z{{zone_id}} / {{reason}} / {{outcome}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Pending migration queue depth",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 37 },
+      "id": 502,
+      "fieldConfig": { "defaults": { "unit": "short" } },
+      "targets": [
+        {
+          "expr": "sum by (zone_id, reason) (scene_manager_rebalance_pending{zone_id=~\"$zone_id\"})",
+          "legendFormat": "z{{zone_id}} / {{reason}}",
+          "refId": "A"
+        }
+      ]
+    }
+  ]
+}

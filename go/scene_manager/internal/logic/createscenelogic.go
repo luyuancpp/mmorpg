@@ -8,6 +8,7 @@ import (
 
 	"proto/scene_manager"
 	"scene_manager/internal/constants"
+	"scene_manager/internal/metrics"
 	"scene_manager/internal/svc"
 
 	"github.com/zeromicro/go-zero/core/logx"
@@ -18,15 +19,45 @@ const (
 	ActiveInstancesKeyFmt  = "instances:zone:%d:active"
 	InstancePlayerCountKey = "instance:%d:player_count"
 	SceneNodeKeyFmt        = "scene:%d:node"
+	SceneZoneKeyFmt        = "scene:%d:zone"
 	// SceneMirrorFlagKeyFmt marks a scene as a mirror so the lifecycle
 	// manager can apply MirrorIdleTimeoutSeconds instead of the standard
 	// InstanceIdleTimeoutSeconds. Value is "1" when present, key absent
 	// for non-mirror scenes.
 	SceneMirrorFlagKeyFmt = "scene:%d:mirror"
+	// SceneSourceKeyFmt stores the source scene id of a mirror so we can
+	// reverse-look up which source's `mirrors` set this scene is a member of
+	// when destroying the mirror. Only present when the mirror was created
+	// with source_scene_id > 0.
+	SceneSourceKeyFmt = "scene:%d:source"
+	// SceneMirrorsKeyFmt is the Redis SET of mirror scene ids whose source
+	// is the given scene id. Populated at mirror creation, consumed by the
+	// cascade-destroy path when a scene with mirrors is removed.
+	SceneMirrorsKeyFmt = "scene:%d:mirrors"
+	// NodeScenesKeyFmt is the Redis SET of scene ids currently hosted by a
+	// scene node. Populated by allocateScene, drained by every destroy path.
+	// Used by the node-death reconciliation loop to find orphan instances.
+	NodeScenesKeyFmt = "node:%s:scenes"
 )
 
 func sceneMirrorFlagKey(sceneID uint64) string {
 	return fmt.Sprintf(SceneMirrorFlagKeyFmt, sceneID)
+}
+
+func sceneSourceKey(sceneID uint64) string {
+	return fmt.Sprintf(SceneSourceKeyFmt, sceneID)
+}
+
+func sceneMirrorsKey(sourceSceneID uint64) string {
+	return fmt.Sprintf(SceneMirrorsKeyFmt, sourceSceneID)
+}
+
+func nodeScenesKey(nodeID string) string {
+	return fmt.Sprintf(NodeScenesKeyFmt, nodeID)
+}
+
+func sceneZoneKey(sceneID uint64) string {
+	return fmt.Sprintf(SceneZoneKeyFmt, sceneID)
 }
 
 func activeInstancesKey(zoneID uint32) string {
@@ -67,6 +98,24 @@ func (l *CreateSceneLogic) CreateScene(in *scene_manager.CreateSceneRequest) (*s
 			ErrorMessage: "unknown scene type",
 		}, nil
 	}
+}
+
+// findExistingMirror picks one mirror id from scene:{sourceId}:mirrors. Used
+// by the MirrorDedupBySource code path. Returns (0, false) when the set is
+// empty or the read fails. The selection is arbitrary (Redis SET ordering is
+// undefined), which matches the contract of "any existing mirror is fine".
+func (l *CreateSceneLogic) findExistingMirror(sourceId uint64) (uint64, bool) {
+	members, err := l.svcCtx.Redis.Smembers(sceneMirrorsKey(sourceId))
+	if err != nil || len(members) == 0 {
+		return 0, false
+	}
+	for _, m := range members {
+		id, err := strconv.ParseUint(m, 10, 64)
+		if err == nil && id > 0 {
+			return id, true
+		}
+	}
+	return 0, false
 }
 
 // resolveSceneType determines the scene type from the request or config.
@@ -114,7 +163,59 @@ func (l *CreateSceneLogic) createMainWorldScene(in *scene_manager.CreateSceneReq
 // node as its source scene. This reuses already-resident map/AI/spawn data
 // and lets clients switch between source ↔ mirror without a cross-node
 // handoff. Falls back to GetBestNode otherwise.
+//
+// Defensive checks performed before allocation:
+//
+//  1. "Source-clone" mirror — MirrorConfigId == 0 && SourceSceneId > 0 —
+//     means the mirror inherits ALL state (map, NPC table, spawn data)
+//     from the source. If the source is gone there is nothing to clone,
+//     so we reject with ErrSourceSceneGone instead of silently producing
+//     an unplayable scene. Mirrors with their own MirrorConfigId carry
+//     their own definition and are fine even when the source disappears
+//     (only co-location placement falls back).
+//  2. MirrorDedupBySource enabled -> if any mirror already exists for the
+//     given source, return that mirror's id instead of allocating a new
+//     one. Off by default because the typical mirror use case is per-player
+//     phasing where independent copies are intentional.
 func (l *CreateSceneLogic) createInstance(in *scene_manager.CreateSceneRequest) (*scene_manager.CreateSceneResponse, error) {
+	if in.SourceSceneId > 0 {
+		// Only enforce source-existence when the source IS the template
+		// (no MirrorConfigId provided). Otherwise the source is just a
+		// co-location hint and pickInstanceNode handles the fallback.
+		if in.MirrorConfigId == 0 {
+			exists, err := l.svcCtx.Redis.Exists(sceneNodeKey(in.SourceSceneId))
+			if err != nil {
+				l.Logger.Errorf("[Instance] EXISTS scene:%d:node failed for source-clone mirror: %v", in.SourceSceneId, err)
+			} else if !exists {
+				l.Logger.Infof("[Instance] Refusing source-clone mirror: source scene %d is gone (caller=%v conf=%d)",
+					in.SourceSceneId, in.CreatorIds, in.SceneConfId)
+				metrics.ObserveMirrorSourceMissing(in.ZoneId)
+				return &scene_manager.CreateSceneResponse{
+					ErrorCode:    constants.ErrSourceSceneGone,
+					ErrorMessage: fmt.Sprintf("source scene %d no longer exists", in.SourceSceneId),
+				}, nil
+			}
+		}
+
+		if l.svcCtx.Config.MirrorDedupBySource {
+			if existingId, ok := l.findExistingMirror(in.SourceSceneId); ok {
+				if nodeId, err := l.svcCtx.Redis.Get(sceneNodeKey(existingId)); err == nil && nodeId != "" {
+					l.Logger.Infof("[Instance] Dedup: reusing mirror %d (source %d) on node %s",
+						existingId, in.SourceSceneId, nodeId)
+					metrics.ObserveMirrorDedup(in.ZoneId, "hit")
+					return &scene_manager.CreateSceneResponse{SceneId: existingId, NodeId: nodeId}, nil
+				}
+				// Stale entry in the mirrors set — the mirror was destroyed
+				// but its membership wasn't cleaned. Drop it and fall through
+				// to a fresh allocation.
+				l.svcCtx.Redis.Srem(sceneMirrorsKey(in.SourceSceneId), strconv.FormatUint(existingId, 10))
+				metrics.ObserveMirrorDedup(in.ZoneId, "stale")
+			} else {
+				metrics.ObserveMirrorDedup(in.ZoneId, "miss")
+			}
+		}
+	}
+
 	targetNode, err := l.pickInstanceNode(in)
 	if err != nil {
 		l.Logger.Errorf("[Instance] No instance-hosting node for zone %d (strict=%v): %v",
@@ -150,6 +251,20 @@ func (l *CreateSceneLogic) createInstance(in *scene_manager.CreateSceneRequest) 
 		if err := l.svcCtx.Redis.Set(sceneMirrorFlagKey(sceneId), "1"); err != nil {
 			l.Logger.Errorf("[Instance] Failed to set mirror flag for scene %d: %v", sceneId, err)
 		}
+	}
+
+	// Reverse indexes for cascade destroy and node-death reconciliation.
+	// These use SET operations which are naturally idempotent — safe to
+	// re-run on retry.
+	if in.SourceSceneId > 0 {
+		// scene:{sourceId}:mirrors gives us O(1) enumeration of "mirrors of
+		// this scene" when the source is destroyed or the source node dies.
+		if _, err := l.svcCtx.Redis.Sadd(sceneMirrorsKey(in.SourceSceneId), fmt.Sprintf("%d", sceneId)); err != nil {
+			l.Logger.Errorf("[Instance] Failed to add mirror %d to source %d's mirror set: %v", sceneId, in.SourceSceneId, err)
+		}
+		// scene:{mirrorId}:source remembers the source so the mirror can
+		// SREM itself from that set on destroy without a full table scan.
+		l.svcCtx.Redis.Set(sceneSourceKey(sceneId), fmt.Sprintf("%d", in.SourceSceneId))
 	}
 
 	// Notify the C++ scene node to instantiate the ECS scene entity.
@@ -192,34 +307,39 @@ func (l *CreateSceneLogic) pickInstanceNode(in *scene_manager.CreateSceneRequest
 	}
 
 	if in.SourceSceneId > 0 {
-		if node, ok := l.resolveMirrorSourceNode(in.SourceSceneId, in.ZoneId); ok {
+		if node, reason := l.resolveMirrorSourceNode(in.SourceSceneId, in.ZoneId); node != "" {
+			metrics.ObserveMirrorColocate(in.ZoneId, "hit", "ok")
 			l.Logger.Infof("[Mirror] Co-locating mirror (conf=%d mirror_conf=%d) with source scene %d on node %s (cross-type allowed)",
 				in.SceneConfId, in.MirrorConfigId, in.SourceSceneId, node)
 			return node, nil
+		} else {
+			metrics.ObserveMirrorColocate(in.ZoneId, "fallback", reason)
+			// Reason already logged inside resolveMirrorSourceNode.
 		}
-		// Reason already logged inside resolveMirrorSourceNode.
 	}
 
 	return GetBestNodeForPurpose(l.ctx, l.svcCtx, in.ZoneId, constants.NodePurposeInstance)
 }
 
 // resolveMirrorSourceNode returns the node hosting sourceSceneId when that
-// node is a viable co-location target. Returns (node, true) on success;
-// (_, false) with a WARN-level log on any of the fallback conditions:
-//   - source scene has no Redis mapping,
-//   - source node is no longer registered in the zone's load set,
-//   - source node is at/over MirrorSourceNodeLoadCap.
-func (l *CreateSceneLogic) resolveMirrorSourceNode(sourceSceneId uint64, zoneId uint32) (string, bool) {
+// node is a viable co-location target. On success returns (node, "ok").
+// On fallback returns ("", <reason>) where reason is one of:
+//   - "no_mapping": source scene has no scene:{id}:node entry
+//   - "node_dead":  source node is not in the zone's load set
+//   - "overloaded": source node is at/over MirrorSourceNodeLoadCap
+// The reason string is used as a Prometheus label and also logged so
+// operators can diagnose why a mirror fell through to GetBestNode.
+func (l *CreateSceneLogic) resolveMirrorSourceNode(sourceSceneId uint64, zoneId uint32) (string, string) {
 	nodeId, err := l.svcCtx.Redis.Get(sceneNodeKey(sourceSceneId))
 	if err != nil || nodeId == "" {
 		l.Logger.Infof("[Mirror] source scene %d has no node mapping (err=%v), falling back to GetBestNode", sourceSceneId, err)
-		return "", false
+		return "", "no_mapping"
 	}
 
 	if !IsNodeAlive(l.svcCtx, zoneId, nodeId) {
 		l.Logger.Infof("[Mirror] source node %s (scene %d) is not alive in zone %d, falling back to GetBestNode",
 			nodeId, sourceSceneId, zoneId)
-		return "", false
+		return "", "node_dead"
 	}
 
 	loadCap := l.svcCtx.Config.MirrorSourceNodeLoadCap
@@ -227,11 +347,11 @@ func (l *CreateSceneLogic) resolveMirrorSourceNode(sourceSceneId uint64, zoneId 
 		if load, ok := l.getNodeSceneCount(nodeId); ok && load >= loadCap {
 			l.Logger.Infof("[Mirror] source node %s load=%d >= cap=%d, falling back to GetBestNode",
 				nodeId, load, loadCap)
-			return "", false
+			return "", "overloaded"
 		}
 	}
 
-	return nodeId, true
+	return nodeId, "ok"
 }
 
 // getNodeSceneCount reads the per-node scene_count counter used for soft load
@@ -259,12 +379,18 @@ func (l *CreateSceneLogic) allocateScene(confId uint64, targetNode string, zoneI
 		return 0, fmt.Errorf("redis set scene node failed: %w", err)
 	}
 	// scene -> zone mapping for cross-zone lookups.
-	l.svcCtx.Redis.Set(fmt.Sprintf("scene:%d:zone", sceneId), fmt.Sprintf("%d", zoneId))
+	l.svcCtx.Redis.Set(sceneZoneKey(sceneId), fmt.Sprintf("%d", zoneId))
 
 	// Increment node scene count for load tracking.
 	sceneCountKey := fmt.Sprintf(NodeSceneCountKey, targetNode)
 	if _, err := l.svcCtx.Redis.Incr(sceneCountKey); err != nil {
 		l.Logger.Errorf("Failed to increment scene count for node %s: %v", targetNode, err)
+	}
+
+	// Reverse index: node -> scenes. The node-death reconciliation loop
+	// uses this to find orphan scenes without scanning the entire keyspace.
+	if _, err := l.svcCtx.Redis.Sadd(nodeScenesKey(targetNode), fmt.Sprintf("%d", sceneId)); err != nil {
+		l.Logger.Errorf("Failed to add scene %d to node %s scenes set: %v", sceneId, targetNode, err)
 	}
 
 	return sceneId, nil

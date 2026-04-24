@@ -1,0 +1,247 @@
+# Prometheus alert rules for SceneManager's scene-node role split.
+#
+# Install as a PrometheusRule CR (kube-prometheus stack):
+#   kubectl apply -n observability -f deploy/k8s/scene-manager-alerts.yaml
+#
+# Or merge the `groups:` list into an existing PrometheusRule if you already
+# have one for the game platform.
+#
+# Scrape prerequisites:
+#   - SceneManager's `MetricsListenAddr` set (e.g. ":9150").
+#   - A ServiceMonitor or PodMonitor pointed at that port.
+#
+# Severity conventions used here:
+#   critical = pager, someone wakes up
+#   warning  = next-business-hours channel
+#   info     = dashboard annotation / trend signal
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: scene-manager-alerts
+  labels:
+    app: scene-manager
+    prometheus: kube-prometheus
+    role: alert-rules
+spec:
+  groups:
+    - name: scene-manager.node-role-split
+      interval: 30s
+      rules:
+        # --- Pool health ---------------------------------------------------
+        - alert: SceneManagerInstancePoolEmpty
+          expr: |
+            sum by (zone_id) (scene_manager_nodes_by_role{role="instance"}) == 0
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Zone {{ $labels.zone_id }} has zero instance-hosting scene nodes"
+            description: |
+              No eSceneNodeType=1 (kSceneNode) pods are Ready in zone {{ $labels.zone_id }}.
+              With StrictNodeTypeSeparation=true, CreateScene for dungeons/battlegrounds
+              will return ErrNoNodeForPurpose until at least one instance pod appears.
+              Scale up scene-instance-z{{ $labels.zone_id }} or check pod Ready state.
+            runbook_url: docs/ops/scene-node-role-split.md
+
+        - alert: SceneManagerWorldPoolEmpty
+          expr: |
+            sum by (zone_id) (scene_manager_nodes_by_role{role="main_world"}) == 0
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Zone {{ $labels.zone_id }} has zero world-hosting scene nodes"
+            description: |
+              No eSceneNodeType=0 pods in zone {{ $labels.zone_id }}. Persistent world
+              channels cannot be served; EnterScene will reject new players. Scale up
+              scene-world-z{{ $labels.zone_id }} immediately.
+            runbook_url: docs/ops/scene-node-role-split.md
+
+        # --- Load imbalance ------------------------------------------------
+        - alert: SceneManagerWorldNodeSaturated
+          expr: |
+            max by (zone_id) (scene_manager_node_player_count{role=~"main_world.*"}) > 1800
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "A world pod in zone {{ $labels.zone_id }} is near capacity"
+            description: |
+              scene_manager_node_player_count crossed 1800 for >10 min on a world pod.
+              Consider raising WorldChannelCountByConfId for the busiest confIds, or
+              adding another scene-world replica so the next rebalance tick spreads load.
+
+        - alert: SceneManagerLoadScoreDispersionLow
+          # stddev / mean < 0.1 across a zone's world pods means the scheduler has
+          # little signal to differentiate nodes — new scenes keep piling on the
+          # same pod.
+          expr: |
+            (
+              stddev by (zone_id) (scene_manager_node_load_score{role=~"main_world.*"})
+              /
+              avg by (zone_id) (scene_manager_node_load_score{role=~"main_world.*"})
+            ) < 0.1
+          for: 15m
+          labels:
+            severity: info
+          annotations:
+            summary: "Load score dispersion in zone {{ $labels.zone_id }} too low for effective scheduling"
+            description: |
+              Scores on the world pool are nearly identical. Consider raising
+              NodeLoadWeightPlayerCount so live players push more weight than
+              scene count, letting the scheduler pick a clear winner.
+
+        # --- Rebalance health ----------------------------------------------
+        - alert: SceneManagerRebalanceStalled
+          # Urgent migrations (node_gone) that persist > 5 min indicate the
+          # migration execution path is broken (CreateScene keeps failing on
+          # the target, or the rebalancer itself is wedged).
+          expr: |
+            max by (zone_id) (scene_manager_rebalance_pending{reason="node_gone"}) > 0
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Rebalance urgent queue not draining in zone {{ $labels.zone_id }}"
+            description: |
+              At least one world channel is mapped to a dead / non-world-hosting node
+              and hasn't been migrated in 5+ minutes. curl /debug/rebalance-plan on
+              the SceneManager pod to inspect the queue; check scene-world pod logs
+              for CreateScene RPC failures.
+            runbook_url: docs/ops/scene-node-role-split.md
+
+        - alert: SceneManagerRebalanceFailureRate
+          # Sustained failure rate on migrations — the target pool is refusing
+          # CreateScene or the gRPC dial keeps timing out.
+          expr: |
+            (
+              sum by (zone_id) (rate(scene_manager_rebalance_migrations_total{outcome="failed"}[5m]))
+              /
+              (sum by (zone_id) (rate(scene_manager_rebalance_migrations_total[5m])) > 0)
+            ) > 0.5
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Over 50% of rebalance migrations failing in zone {{ $labels.zone_id }}"
+            description: |
+              Target nodes are rejecting CreateScene or the gRPC dial is hanging.
+              Inspect scene-world pod logs on the target nodes; check etcd NodeInfo
+              for stale endpoints.
+
+        # --- Mirror lifecycle ----------------------------------------------
+        - alert: SceneManagerMirrorColocationDegraded
+          # hit_rate = hit / (hit + fallback). Sustained <50% means
+          # mirror co-location is mostly missing — either the source
+          # nodes are dying, the soft load cap is set too low, or the
+          # mirror feature is being used cross-zone in ways co-location
+          # cannot serve.
+          expr: |
+            (
+              sum by (zone_id) (rate(scene_manager_mirror_colocate_total{outcome="hit"}[10m]))
+              /
+              (sum by (zone_id) (rate(scene_manager_mirror_colocate_total[10m])) > 0)
+            ) < 0.5
+          for: 30m
+          labels:
+            severity: info
+          annotations:
+            summary: "Mirror co-location hit-rate below 50% in zone {{ $labels.zone_id }}"
+            description: |
+              Mirrors are mostly NOT being co-located with their source scene's
+              node. Inspect rate(scene_manager_mirror_colocate_total{outcome="fallback"}[10m])
+              by `reason` label to see why (no_mapping | node_dead | overloaded | no_source).
+              Tune MirrorSourceNodeLoadCap upward if the dominant reason is "overloaded".
+
+        - alert: SceneManagerEnterSceneRejectedSpike
+          # destroy-while-entering: the scene the player tried to enter
+          # was wiped by the lifecycle pass between resolveScene and the
+          # atomic INCR. A nonzero rate is normal noise; a sustained
+          # nonzero rate hints at idle timeouts being too aggressive or
+          # a reconciliation pass running away.
+          expr: |
+            sum by (zone_id) (rate(scene_manager_enter_scene_rejected_total{reason="scene_gone"}[5m])) > 0.05
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "EnterScene rejecting >0.05 req/s in zone {{ $labels.zone_id }} (scene_gone)"
+            description: |
+              The scene was destroyed mid-entry. This is the destroy-while-entering
+              race; the atomic CAS returns -1 to the client. Confirm
+              InstanceIdleTimeoutSeconds / MirrorIdleTimeoutSeconds aren't shorter
+              than the average client retry budget. Check if reconcileDeadNodeScenes
+              fired recently (correlate with scene_orphans_reconciled_total).
+
+        - alert: SceneManagerSceneOrphanReconcileSpike
+          # A burst of orphan reconciles past 50/min in one zone is most
+          # likely a scene-node pod crash. One spike is informational;
+          # repeated spikes mean a node is flapping.
+          expr: |
+            sum by (zone_id) (rate(scene_manager_scene_orphans_reconciled_total[5m])) * 60 > 50
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Zone {{ $labels.zone_id }} reconciled >50 orphan scenes/min"
+            description: |
+              A scene-node likely died. kubectl get pods -l app=scene-instance-z{{ $labels.zone_id }}
+              and check for CrashLoopBackOff / OOMKilled. Players in those
+              instances were force-disconnected; expect concurrent reconnect storm.
+
+        - alert: SceneManagerMirrorSourceMissing
+          # Mirror create rejected because source_scene_id no longer
+          # exists. Should be vanishingly rare in steady state — if it
+          # spikes, gameplay code is racing the source destroy path.
+          expr: |
+            sum by (zone_id) (rate(scene_manager_mirror_source_missing_total[5m])) > 0.01
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Mirror create rejected (source gone) in zone {{ $labels.zone_id }}"
+            description: |
+              CreateScene with source_scene_id is hitting ErrSourceSceneGone. The
+              source instance was destroyed before the mirror request landed.
+              Hold a soft "keep-alive" on the source while a mirror is in flight,
+              or keep the mirror creator's gameplay state idempotent against this
+              error.
+
+        - alert: SceneManagerInstanceDestroyCascadeAnomaly
+          # cascade destroys should track explicit/idle destroys roughly 1:N
+          # where N is your average mirror-per-source ratio. A ratio
+          # exceeding ~10:1 in 5 min suggests cascade is running away (a
+          # bug in the mirrors-of-mirrors path, or nodescene_count drift).
+          expr: |
+            (
+              sum by (zone_id) (rate(scene_manager_instance_destroyed_total{reason="cascade"}[5m]))
+              /
+              (sum by (zone_id) (rate(scene_manager_instance_destroyed_total{reason!="cascade"}[5m])) > 0)
+            ) > 10
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Cascade destroys >10x non-cascade in zone {{ $labels.zone_id }}"
+            description: |
+              Cascade is dominant. Either a heavily-mirrored source was destroyed
+              (one-shot, OK to silence), or there's a nested-mirror loop. Inspect
+              instance_destroyed_total by kind/reason to confirm.
+
+        # --- Deploy / config mistakes --------------------------------------
+        - alert: SceneManagerUnknownSceneNodeType
+          # Any node label with role="unknown" means a C++ pod published a
+          # scene_node_type outside {0,1,2,3} to etcd.
+          expr: |
+            sum by (zone_id) (scene_manager_nodes_by_role{role="unknown"}) > 0
+          for: 1m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Zone {{ $labels.zone_id }} has nodes with unknown scene_node_type"
+            description: |
+              A scene node registered with scene_node_type outside {0,1,2,3}.
+              Usually a stale image or a typo in SCENE_NODE_TYPE env. Check pod
+              env / game_config.yaml.
+            runbook_url: docs/ops/scene-node-role-split.md
