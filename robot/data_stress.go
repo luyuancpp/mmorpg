@@ -119,13 +119,20 @@ func runDataStressOneRobot(
 	playSeconds int,
 	totalRounds, failedRounds *atomic.Int64,
 ) {
+	// access_token reconnect cache: first round does full primary auth
+	// (password / satoken), every subsequent round short-circuits via
+	// auth_type=access_token to keep the /auth/dev-login load constant.
+	var cachedAccessToken string
+	var cachedAccessExpire int64
+
 	for round := 1; round <= rounds; round++ {
 		select {
 		case <-stop:
 			return
 		default:
 		}
-		ok, playerID := dataStressOneRound(account, cfg, stats, stop, playSeconds)
+		ok, playerID, tok, exp := dataStressOneRound(account, cfg, stats, stop, playSeconds, cachedAccessToken, cachedAccessExpire)
+		cachedAccessToken, cachedAccessExpire = tok, exp
 		totalRounds.Add(1)
 		if !ok {
 			failedRounds.Add(1)
@@ -147,20 +154,26 @@ func runDataStressOneRobot(
 	}
 }
 
-// dataStressOneRound runs ONE login→enter→play→logout cycle. Returns
-// (true, playerID) on success.
+// dataStressOneRound runs ONE login→enter→play→logout cycle.
+// Returns (ok, playerID, newAccessToken, newAccessExpire) — the latter two
+// are threaded back so subsequent rounds reuse the access_token reconnect
+// path instead of re-issuing against the primary auth provider.
 func dataStressOneRound(
 	account string,
 	cfg *config.Config,
 	stats *metrics.Stats,
 	stop <-chan struct{},
 	playSeconds int,
-) (bool, uint64) {
+	prevAccessToken string,
+	prevAccessExpire int64,
+) (ok bool, playerID uint64, newAccessToken string, newAccessExpire int64) {
+	newAccessToken, newAccessExpire = prevAccessToken, prevAccessExpire
+
 	host, portStr, tokenPayload, tokenSig, err := resolveGateAddrLocal(cfg)
 	if err != nil {
 		zap.L().Warn("resolve gate", zap.String("account", account), zap.Error(err))
 		stats.LoginFail()
-		return false, 0
+		return
 	}
 	port := 0
 	fmt.Sscanf(portStr, "%d", &port)
@@ -168,7 +181,7 @@ func dataStressOneRound(
 	gc, err := pkg.NewGameClient(host, port)
 	if err != nil {
 		stats.LoginFail()
-		return false, 0
+		return
 	}
 	defer gc.Close()
 	stats.Connected()
@@ -180,22 +193,29 @@ func dataStressOneRound(
 	if len(tokenPayload) > 0 {
 		if err := gc.VerifyGateToken(tokenPayload, tokenSig); err != nil {
 			stats.LoginFail()
-			return false, 0
+			return
 		}
 	}
 
 	loginStart := time.Now()
-	if err := loginAndEnterWithAuth(gc, cfg, stats); err != nil {
+	if err := loginAndEnterWithAuth(gc, cfg, stats, prevAccessToken, prevAccessExpire); err != nil {
 		zap.L().Warn("login", zap.String("account", account), zap.Error(err))
-		return false, 0
+		return
+	}
+	if access, _, accessExp, _ := gc.SnapshotTokens(); access != "" {
+		newAccessToken = access
+		newAccessExpire = accessExp
 	}
 	stats.LoginOK(time.Since(loginStart))
 	stats.EnterOK()
 
-	playerID := gc.PlayerId
+	playerID = gc.PlayerId
 	player := gameobject.NewPlayer(playerID)
 	gameobject.PlayerList.Set(playerID, player)
 	defer gameobject.PlayerList.Delete(playerID)
+
+	pkg.Clients.Register(playerID, gc)
+	defer pkg.Clients.Unregister(playerID, gc)
 
 	recvDone := make(chan struct{})
 	go func() {
@@ -206,6 +226,8 @@ func dataStressOneRound(
 		})
 	}()
 
+	go runTokenRefresher(gc, stats, stop, recvDone)
+
 	// Wait for scene-ready so any save-triggering action (e.g. movement,
 	// scene switch) is actually delivered to a real scene node.
 	waitCtx, waitCancel := context.WithTimeout(context.Background(), 15*time.Second)
@@ -214,7 +236,7 @@ func dataStressOneRound(
 		zap.L().Warn("scene ready timeout", zap.String("account", account), zap.Error(err))
 		_ = gc.SendRequest(game.ClientPlayerLoginLeaveGameMessageId, &login.LeaveGameRequest{})
 		<-recvDone
-		return false, 0
+		return
 	}
 	waitCancel()
 
@@ -230,7 +252,7 @@ func dataStressOneRound(
 	}
 	if profile := cfg.ResolveProfile(); profile != nil {
 		robotAI.SetProfile(profile)
-	} else if p, ok := ai.BuiltinProfiles["stress"]; ok {
+	} else if p, found := ai.BuiltinProfiles["stress"]; found {
 		robotAI.SetProfile(&p)
 	}
 
@@ -264,5 +286,13 @@ func dataStressOneRound(
 		revokeSaToken(cfg.SaTokenAddr, gc.SaToken)
 	}
 
-	return true, playerID
+	// Pick up any in-session token rotation so the next round skips
+	// dev-login entirely.
+	if access, _, accessExp, _ := gc.SnapshotTokens(); access != "" {
+		newAccessToken = access
+		newAccessExpire = accessExp
+	}
+
+	ok = true
+	return
 }

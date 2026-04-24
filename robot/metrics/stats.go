@@ -28,6 +28,12 @@ type Stats struct {
 	connected       atomic.Int64
 	disconnected    atomic.Int64
 
+	// access_token reconnect observability
+	accessReconnectOK       atomic.Int64 // successful access_token short-circuit
+	accessReconnectFallback atomic.Int64 // access_token failed → fell back to primary auth
+	tokenRefreshOK          atomic.Int64 // successful in-session RefreshToken RPC
+	tokenRefreshFail        atomic.Int64 // RefreshToken RPC returned error
+
 	mu             sync.Mutex
 	loginCount     int64 // guarded by mu
 	loginTotalNs   int64 // guarded by mu — sum in nanoseconds
@@ -66,6 +72,11 @@ func (s *Stats) SkillSent()       { s.skillSent.Add(1) }
 func (s *Stats) SceneSwitchSent() { s.sceneSwitchSent.Add(1) }
 func (s *Stats) Connected()       { s.connected.Add(1) }
 func (s *Stats) Disconnected()    { s.disconnected.Add(1) }
+
+func (s *Stats) AccessReconnectOK()       { s.accessReconnectOK.Add(1) }
+func (s *Stats) AccessReconnectFallback() { s.accessReconnectFallback.Add(1) }
+func (s *Stats) TokenRefreshOK()          { s.tokenRefreshOK.Add(1) }
+func (s *Stats) TokenRefreshFail()        { s.tokenRefreshFail.Add(1) }
 
 // StartReporter prints a summary every interval until stop is closed.
 func (s *Stats) StartReporter(interval time.Duration, stop <-chan struct{}) {
@@ -119,7 +130,8 @@ func (s *Stats) report() {
 	}
 
 	zap.L().Info(fmt.Sprintf("[stats %s] conn=%d login_ok=%d login_fail=%d login_stuck=%d enter_ok=%d enter_fail=%d "+
-		"msg_sent=%d(%.0f/s) msg_recv=%d(%.0f/s) skill=%d scene_switch=%d avg_login=%s max_login=%s",
+		"msg_sent=%d(%.0f/s) msg_recv=%d(%.0f/s) skill=%d scene_switch=%d avg_login=%s max_login=%s "+
+		"recon_ok=%d recon_fb=%d refresh_ok=%d refresh_fail=%d",
 		elapsed,
 		s.connected.Load(),
 		s.loginOK.Load(), s.loginFail.Load(), s.loginStuck.Load(),
@@ -129,6 +141,8 @@ func (s *Stats) report() {
 		s.sceneSwitchSent.Load(),
 		avg.Truncate(time.Millisecond),
 		max.Truncate(time.Millisecond),
+		s.accessReconnectOK.Load(), s.accessReconnectFallback.Load(),
+		s.tokenRefreshOK.Load(), s.tokenRefreshFail.Load(),
 	))
 }
 

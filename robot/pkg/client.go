@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"fmt"
+	"sync"
 	"sync/atomic"
 
 	"github.com/luyuancpp/muduoclient/muduo"
@@ -13,16 +14,47 @@ import (
 
 // GameClient wraps a muduo TCP connection to a gate node.
 // Each GameClient runs in its own goroutine (one-client-one-goroutine).
+//
+// Token fields are guarded by tokenMu because the in-session RefreshToken
+// handler runs on the RecvLoop goroutine while the robot's main goroutine
+// may read them at any time (e.g. when deciding whether a refresh is due,
+// or when capturing the final value into runRobotOnce's named return).
 type GameClient struct {
-	client             *muduo.Client
-	PlayerId           uint64
-	Account            string
+	client   *muduo.Client
+	PlayerId uint64
+	Account  string
+
+	tokenMu            sync.RWMutex
 	AccessToken        string
 	RefreshToken       string
 	AccessTokenExpire  int64  // unix seconds
 	RefreshTokenExpire int64  // unix seconds
 	SaToken            string // SA-Token value from /auth/dev-login (kept for /auth/logout cleanup)
-	seq                atomic.Uint64
+
+	seq atomic.Uint64
+}
+
+// SetTokens atomically replaces access/refresh token state (called after a
+// successful RefreshToken RPC). Pass zero-values for fields that should not
+// be touched by the caller.
+func (gc *GameClient) SetTokens(access, refresh string, accessExpire, refreshExpire int64) {
+	gc.tokenMu.Lock()
+	defer gc.tokenMu.Unlock()
+	if access != "" {
+		gc.AccessToken = access
+		gc.AccessTokenExpire = accessExpire
+	}
+	if refresh != "" {
+		gc.RefreshToken = refresh
+		gc.RefreshTokenExpire = refreshExpire
+	}
+}
+
+// SnapshotTokens returns a consistent snapshot of the current token state.
+func (gc *GameClient) SnapshotTokens() (access, refresh string, accessExpire, refreshExpire int64) {
+	gc.tokenMu.RLock()
+	defer gc.tokenMu.RUnlock()
+	return gc.AccessToken, gc.RefreshToken, gc.AccessTokenExpire, gc.RefreshTokenExpire
 }
 
 // NewGameClient connects to the gate at ip:port.
