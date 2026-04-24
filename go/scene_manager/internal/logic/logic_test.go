@@ -1871,6 +1871,77 @@ func TestCreateScene_Mirror_SameZoneSourceColocates(t *testing.T) {
 	assert.Equal(t, "10", resp.NodeId, "same-zone source must still co-locate on its node")
 }
 
+// TestCreateScene_EchoesCreatorIds pins the contract that
+// CreateSceneResponse.CreatorIds mirrors CreateSceneRequest.CreatorIds. The
+// C++ scene node uses this echo as the entire correlation key for the
+// follow-up EnterScene after a mirror is created — losing the echo silently
+// breaks the mirror enter-flow without any test in CI screaming.
+//
+// Covered paths:
+//  1. Fresh instance create (non-mirror).
+//  2. Fresh mirror create (source_scene_id set).
+//  3. Mirror dedup-reuse hit (MirrorDedupBySource=true, existing mirror
+//     present) — the reuse response must still echo the *new* request's
+//     creators, not the original creator that produced the existing mirror.
+//     Otherwise the second caller would never be auto-entered.
+func TestCreateScene_EchoesCreatorIds(t *testing.T) {
+	sc, mr := newTestSvcCtxWithWorldScenes(t)
+	ctx := context.Background()
+	registerTypedNode(mr, testZoneId, "10", constants.SceneNodeTypeInstance, 0)
+
+	// 1. Plain instance — creators are echoed verbatim.
+	alice := []uint64{1001}
+	instResp, err := NewCreateSceneLogic(ctx, sc).CreateScene(&scene_manager.CreateSceneRequest{
+		SceneConfId: 2001,
+		ZoneId:      testZoneId,
+		SceneType:   scene_manager.SceneType_SCENE_TYPE_INSTANCE,
+		CreatorIds:  alice,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, alice, instResp.CreatorIds,
+		"instance create must echo CreatorIds")
+
+	// 2. Mirror create — same contract, different code path
+	//    (resolveMirrorSourceNode drives node selection but the response
+	//    still flows through the same return site).
+	bob := []uint64{2002, 2003}
+	mirrorResp, err := NewCreateSceneLogic(ctx, sc).CreateScene(&scene_manager.CreateSceneRequest{
+		SceneConfId:    2001,
+		ZoneId:         testZoneId,
+		SceneType:      scene_manager.SceneType_SCENE_TYPE_INSTANCE,
+		SourceSceneId:  instResp.SceneId,
+		MirrorConfigId: 9090,
+		CreatorIds:     bob,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, bob, mirrorResp.CreatorIds,
+		"mirror create must echo CreatorIds")
+	require.NotZero(t, mirrorResp.SceneId)
+
+	// 3. Dedup reuse — flip dedup on. The mirror create above already
+	//    populated scene:{source}:mirrors + scene:{mirrorId}:node, which
+	//    is exactly what findExistingMirror + the dedup branch need.
+	//    Second caller is a fresh player; the reuse response must echo
+	//    *their* id so the C++ caller drives EnterScene for them, not
+	//    for Bob (who already triggered the original create).
+	sc.Config.MirrorDedupBySource = true
+
+	carol := []uint64{3030}
+	dedupResp, err := NewCreateSceneLogic(ctx, sc).CreateScene(&scene_manager.CreateSceneRequest{
+		SceneConfId:    2001,
+		ZoneId:         testZoneId,
+		SceneType:      scene_manager.SceneType_SCENE_TYPE_INSTANCE,
+		SourceSceneId:  instResp.SceneId,
+		MirrorConfigId: 9090,
+		CreatorIds:     carol,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, mirrorResp.SceneId, dedupResp.SceneId,
+		"dedup must reuse the existing mirror")
+	assert.Equal(t, carol, dedupResp.CreatorIds,
+		"dedup reuse must echo the *new* caller's CreatorIds, not the original")
+}
+
 // ---------------------------------------------------------------------------
 // Mirror cascade — source on a dying node
 // ---------------------------------------------------------------------------

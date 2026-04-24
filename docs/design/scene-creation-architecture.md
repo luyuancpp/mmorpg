@@ -250,7 +250,23 @@ message CreateSceneResponse {
 
 ### C++ caller (mirror flow end-to-end)
 
-The scene-domain helper `PlayerSceneSystem::RequestEnterMirrorScene(player, mirrorConfigId)`
+**Client-facing entry point.** `EnterSceneC2S` (see
+`cpp/nodes/scene/handler/rpc/player/player_scene_handler.cpp`) already
+carries `SceneInfoComp`, which has a `mirror_config_id` field. The
+handler dispatches on three cases:
+
+| `scene_id` | `mirror_config_id` | Behaviour |
+|------------|--------------------|-----------|
+| `> 0`      | any                | Plain EnterScene — join an existing scene (mirror or not) by id. |
+| `0`        | `> 0`              | **Mirror-entry** — allocate a new mirror of the player's current scene, then enter it. Calls `PlayerSceneSystem::RequestEnterMirrorScene`. |
+| `0`        | `0` (and `scene_config_id == 0`) | Rejected (`kEnterSceneParamError`). |
+
+The mirror-entry branch returns success to the client once the
+`CreateScene` RPC is queued — the async reply drives the follow-up
+`EnterScene`, and the client eventually receives a normal `EnterSceneS2C`
+when the pipeline completes. Clients don't need a second round-trip.
+
+**The helper.** `PlayerSceneSystem::RequestEnterMirrorScene(player, mirrorConfigId)`
 in `cpp/libs/services/scene/player/system/player_scene.cpp` drives the full
 mirror lifecycle from the gameplay side:
 
@@ -405,11 +421,26 @@ Added counters alongside the existing gauges in
 | `scene_manager_mirror_source_missing_total` | `zone_id` | `createInstance` source-clone refusal |
 | `scene_manager_mirror_dedup_total` | `zone_id`, `outcome` (hit\|miss\|stale) | `createInstance` when `MirrorDedupBySource=true` |
 
-Dashboards should chart
-`rate(mirror_colocate_total{outcome="hit"}[5m]) / rate(mirror_colocate_total[5m])`
-as the co-location hit rate, and alert on sustained
-`enter_scene_rejected_total{reason="scene_gone"}` > 0 (sign of an
-aggressive idle timeout or a misbehaving reconciliation pass).
+Dashboards should chart:
+
+- `rate(mirror_colocate_total{outcome="hit"}[5m]) / rate(mirror_colocate_total[5m])`
+  — co-location hit rate. A sustained drop flags either source-node
+  death, load-cap pressure (`MirrorSourceNodeLoadCap`), or a cross-zone
+  caller (`reason="zone_mismatch"`) — use the `reason` label to split.
+- `rate(mirror_dedup_total{outcome="hit"}[5m]) / rate(mirror_dedup_total[5m])`
+  — dedup hit rate, only meaningful when `MirrorDedupBySource=true`.
+  A nonzero `outcome="stale"` means `scene:{source}:mirrors` drifted
+  from the real scene state; a burst indicates a destroy path missed
+  cleaning the source's mirrors set (cascade regression).
+- `rate(instance_destroyed_total{kind="mirror",reason="source_migrated"}[5m])`
+  — spikes align with rebalancer activity and confirm the cascade path
+  is draining the old node.
+
+Alert on sustained `enter_scene_rejected_total{reason="scene_gone"}` > 0
+(sign of an aggressive idle timeout or a misbehaving reconciliation
+pass) and on nonzero `mirror_source_missing_total` (a C++ caller
+requested a source-clone mirror — currently refused server-side; each
+event indicates a client-side contract bug).
 
 ### C++ Side (Scene.DestroyScene handler)
 

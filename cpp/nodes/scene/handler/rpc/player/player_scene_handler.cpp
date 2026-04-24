@@ -15,6 +15,7 @@
 #include "network/node_utils.h"
 #include "network/player_message_utils.h"
 #include "rpc/service_metadata/player_scene_service_metadata.h"
+#include "player/system/player_scene.h"
 ///<<< END WRITING YOUR CODE
 
 void SceneSceneClientPlayerHandler::EnterScene(entt::entity player,const ::EnterSceneC2SRequest* request,
@@ -35,9 +36,34 @@ void SceneSceneClientPlayerHandler::EnterScene(entt::entity player,const ::Enter
 	}
 
 	const auto& scene_info = request->scene_info();
-	if (scene_info.scene_config_id() <= 0 && scene_info.scene_id() <= 0)
+	if (scene_info.scene_config_id() <= 0 && scene_info.scene_id() <= 0
+	    && scene_info.mirror_config_id() <= 0)
 	{
 		LOG_ERROR << "EnterSceneC2S request rejected due to invalid scene_info: " << scene_info.ShortDebugString();
+		response->mutable_error_message()->set_id(kEnterSceneParamError);
+		return;
+	}
+
+	// Mirror-entry branch: mirror_config_id > 0 AND scene_id == 0 means
+	// "allocate a fresh mirror of my current scene, then put me in it".
+	// scene_id > 0 with mirror_config_id > 0 is still a plain EnterScene
+	// (joining an existing mirror by id) and falls through to the normal
+	// path below. We dispatch via PlayerSceneSystem::RequestEnterMirrorScene,
+	// which fires CreateScene at SceneManager; the async CreateScene reply
+	// handler echoes creator_ids and drives the follow-up EnterScene.
+	// Success here is "request queued", not "player entered" — mirror
+	// creation is async and the client sees the normal EnterSceneS2C
+	// when the pipeline completes.
+	if (scene_info.mirror_config_id() > 0 && scene_info.scene_id() == 0)
+	{
+		if (PlayerSceneSystem::RequestEnterMirrorScene(player, scene_info.mirror_config_id()))
+		{
+			LOG_INFO << "EnterSceneC2S: mirror request dispatched player=" << (g ? *g : 0)
+			         << " mirror_config=" << scene_info.mirror_config_id();
+			return;
+		}
+		LOG_ERROR << "EnterSceneC2S: mirror dispatch failed player=" << (g ? *g : 0)
+		          << " mirror_config=" << scene_info.mirror_config_id();
 		response->mutable_error_message()->set_id(kEnterSceneParamError);
 		return;
 	}
