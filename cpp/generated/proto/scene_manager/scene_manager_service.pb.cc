@@ -159,6 +159,8 @@ PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
 inline constexpr CreateSceneResponse::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
+        creator_ids_{},
+        _creator_ids_cached_byte_size_{0},
         node_id_(
             &::google::protobuf::internal::fixed_address_empty_string,
             ::_pbi::ConstantInitialized()),
@@ -277,15 +279,17 @@ const ::uint32_t
         5,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::scene_manager::CreateSceneResponse, _impl_._has_bits_),
-        7, // hasbit index offset
+        8, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::scene_manager::CreateSceneResponse, _impl_.scene_id_),
         PROTOBUF_FIELD_OFFSET(::scene_manager::CreateSceneResponse, _impl_.node_id_),
         PROTOBUF_FIELD_OFFSET(::scene_manager::CreateSceneResponse, _impl_.error_code_),
         PROTOBUF_FIELD_OFFSET(::scene_manager::CreateSceneResponse, _impl_.error_message_),
+        PROTOBUF_FIELD_OFFSET(::scene_manager::CreateSceneResponse, _impl_.creator_ids_),
         2,
         0,
         3,
         1,
+        ~0u,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::scene_manager::DestroySceneRequest, _impl_._has_bits_),
         5, // hasbit index offset
@@ -353,11 +357,11 @@ static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, sizeof(::scene_manager::CreateSceneRequest)},
         {17, sizeof(::scene_manager::CreateSceneResponse)},
-        {28, sizeof(::scene_manager::DestroySceneRequest)},
-        {35, sizeof(::scene_manager::EnterSceneRequest)},
-        {56, sizeof(::scene_manager::EnterSceneResponse)},
-        {65, sizeof(::scene_manager::RedirectToGateInfo)},
-        {78, sizeof(::scene_manager::LeaveSceneRequest)},
+        {30, sizeof(::scene_manager::DestroySceneRequest)},
+        {37, sizeof(::scene_manager::EnterSceneRequest)},
+        {58, sizeof(::scene_manager::EnterSceneResponse)},
+        {67, sizeof(::scene_manager::RedirectToGateInfo)},
+        {80, sizeof(::scene_manager::LeaveSceneRequest)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::scene_manager::_CreateSceneRequest_default_instance_._instance,
@@ -379,36 +383,36 @@ const char descriptor_table_protodef_proto_2fscene_5fmanager_2fscene_5fmanager_5
     "\nscene_type\030\003 \001(\0162\030.scene_manager.SceneT"
     "ype\022\023\n\013creator_ids\030\004 \003(\004\022\017\n\007zone_id\030\005 \001("
     "\r\022\027\n\017source_scene_id\030\006 \001(\004\022\030\n\020mirror_con"
-    "fig_id\030\007 \001(\r\"c\n\023CreateSceneResponse\022\020\n\010s"
+    "fig_id\030\007 \001(\r\"x\n\023CreateSceneResponse\022\020\n\010s"
     "cene_id\030\001 \001(\004\022\017\n\007node_id\030\002 \001(\t\022\022\n\nerror_"
-    "code\030\003 \001(\r\022\025\n\rerror_message\030\004 \001(\t\"8\n\023Des"
-    "troySceneRequest\022\020\n\010scene_id\030\001 \001(\004\022\017\n\007zo"
-    "ne_id\030\002 \001(\r\"\311\001\n\021EnterSceneRequest\022\021\n\tpla"
-    "yer_id\030\001 \001(\004\022\020\n\010scene_id\030\002 \001(\004\022\022\n\nsessio"
-    "n_id\030\003 \001(\r\022\022\n\nrequest_id\030\004 \001(\t\022\017\n\007gate_i"
-    "d\030\005 \001(\t\022\030\n\020gate_instance_id\030\006 \001(\t\022\017\n\007zon"
-    "e_id\030\007 \001(\r\022\025\n\rscene_conf_id\030\010 \001(\004\022\024\n\014gat"
-    "e_zone_id\030\t \001(\r\"t\n\022EnterSceneResponse\022\022\n"
-    "\nerror_code\030\001 \001(\r\022\025\n\rerror_message\030\002 \001(\t"
-    "\0223\n\010redirect\030\003 \001(\0132!.scene_manager.Redir"
-    "ectToGateInfo\"\216\001\n\022RedirectToGateInfo\022\026\n\016"
-    "target_gate_ip\030\001 \001(\t\022\030\n\020target_gate_port"
-    "\030\002 \001(\r\022\025\n\rtoken_payload\030\003 \001(\014\022\027\n\017token_s"
-    "ignature\030\004 \001(\014\022\026\n\016token_deadline\030\005 \001(\003\"]"
-    "\n\021LeaveSceneRequest\022\021\n\tplayer_id\030\001 \001(\004\022\020"
-    "\n\010scene_id\030\002 \001(\004\022\022\n\nrequest_id\030\003 \001(\t\022\017\n\007"
-    "zone_id\030\004 \001(\r*[\n\tSceneType\022\032\n\026SCENE_TYPE"
-    "_UNSPECIFIED\020\000\022\031\n\025SCENE_TYPE_MAIN_WORLD\020"
-    "\001\022\027\n\023SCENE_TYPE_INSTANCE\020\0022\263\002\n\014SceneMana"
-    "ger\022V\n\013CreateScene\022!.scene_manager.Creat"
-    "eSceneRequest\032\".scene_manager.CreateScen"
-    "eResponse\"\000\022<\n\014DestroyScene\022\".scene_mana"
-    "ger.DestroySceneRequest\032\006.Empty\"\000\022S\n\nEnt"
-    "erScene\022 .scene_manager.EnterSceneReques"
-    "t\032!.scene_manager.EnterSceneResponse\"\000\0228"
-    "\n\nLeaveScene\022 .scene_manager.LeaveSceneR"
-    "equest\032\006.Empty\"\000B\035Z\033scene_manager/scene_"
-    "managerb\006proto3"
+    "code\030\003 \001(\r\022\025\n\rerror_message\030\004 \001(\t\022\023\n\013cre"
+    "ator_ids\030\005 \003(\004\"8\n\023DestroySceneRequest\022\020\n"
+    "\010scene_id\030\001 \001(\004\022\017\n\007zone_id\030\002 \001(\r\"\311\001\n\021Ent"
+    "erSceneRequest\022\021\n\tplayer_id\030\001 \001(\004\022\020\n\010sce"
+    "ne_id\030\002 \001(\004\022\022\n\nsession_id\030\003 \001(\r\022\022\n\nreque"
+    "st_id\030\004 \001(\t\022\017\n\007gate_id\030\005 \001(\t\022\030\n\020gate_ins"
+    "tance_id\030\006 \001(\t\022\017\n\007zone_id\030\007 \001(\r\022\025\n\rscene"
+    "_conf_id\030\010 \001(\004\022\024\n\014gate_zone_id\030\t \001(\r\"t\n\022"
+    "EnterSceneResponse\022\022\n\nerror_code\030\001 \001(\r\022\025"
+    "\n\rerror_message\030\002 \001(\t\0223\n\010redirect\030\003 \001(\0132"
+    "!.scene_manager.RedirectToGateInfo\"\216\001\n\022R"
+    "edirectToGateInfo\022\026\n\016target_gate_ip\030\001 \001("
+    "\t\022\030\n\020target_gate_port\030\002 \001(\r\022\025\n\rtoken_pay"
+    "load\030\003 \001(\014\022\027\n\017token_signature\030\004 \001(\014\022\026\n\016t"
+    "oken_deadline\030\005 \001(\003\"]\n\021LeaveSceneRequest"
+    "\022\021\n\tplayer_id\030\001 \001(\004\022\020\n\010scene_id\030\002 \001(\004\022\022\n"
+    "\nrequest_id\030\003 \001(\t\022\017\n\007zone_id\030\004 \001(\r*[\n\tSc"
+    "eneType\022\032\n\026SCENE_TYPE_UNSPECIFIED\020\000\022\031\n\025S"
+    "CENE_TYPE_MAIN_WORLD\020\001\022\027\n\023SCENE_TYPE_INS"
+    "TANCE\020\0022\263\002\n\014SceneManager\022V\n\013CreateScene\022"
+    "!.scene_manager.CreateSceneRequest\032\".sce"
+    "ne_manager.CreateSceneResponse\"\000\022<\n\014Dest"
+    "royScene\022\".scene_manager.DestroySceneReq"
+    "uest\032\006.Empty\"\000\022S\n\nEnterScene\022 .scene_man"
+    "ager.EnterSceneRequest\032!.scene_manager.E"
+    "nterSceneResponse\"\000\0228\n\nLeaveScene\022 .scen"
+    "e_manager.LeaveSceneRequest\032\006.Empty\"\000B\035Z"
+    "\033scene_manager/scene_managerb\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fscene_5fmanager_2fscene_5fmanager_5fservice_2eproto_deps[3] = {
@@ -420,7 +424,7 @@ static ::absl::once_flag descriptor_table_proto_2fscene_5fmanager_2fscene_5fmana
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fscene_5fmanager_2fscene_5fmanager_5fservice_2eproto = {
     false,
     false,
-    1535,
+    1556,
     descriptor_table_protodef_proto_2fscene_5fmanager_2fscene_5fmanager_5fservice_2eproto,
     "proto/scene_manager/scene_manager_service.proto",
     &descriptor_table_proto_2fscene_5fmanager_2fscene_5fmanager_5fservice_2eproto_once,
@@ -933,6 +937,8 @@ PROTOBUF_NDEBUG_INLINE CreateSceneResponse::Impl_::Impl_(
     const ::scene_manager::CreateSceneResponse& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0},
+        creator_ids_{visibility, arena, from.creator_ids_},
+        _creator_ids_cached_byte_size_{0},
         node_id_(arena, from.node_id_),
         error_message_(arena, from.error_message_) {}
 
@@ -963,6 +969,8 @@ PROTOBUF_NDEBUG_INLINE CreateSceneResponse::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
       : _cached_size_{0},
+        creator_ids_{visibility, arena},
+        _creator_ids_cached_byte_size_{0},
         node_id_(arena),
         error_message_(arena) {}
 
@@ -994,8 +1002,20 @@ inline void* PROTOBUF_NONNULL CreateSceneResponse::PlacementNew_(
   return ::new (mem) CreateSceneResponse(arena);
 }
 constexpr auto CreateSceneResponse::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(CreateSceneResponse),
-                                            alignof(CreateSceneResponse));
+  constexpr auto arena_bits = ::google::protobuf::internal::EncodePlacementArenaOffsets({
+      PROTOBUF_FIELD_OFFSET(CreateSceneResponse, _impl_.creator_ids_) +
+          decltype(CreateSceneResponse::_impl_.creator_ids_)::
+              InternalGetArenaOffset(
+                  ::google::protobuf::Message::internal_visibility()),
+  });
+  if (arena_bits.has_value()) {
+    return ::google::protobuf::internal::MessageCreator::CopyInit(
+        sizeof(CreateSceneResponse), alignof(CreateSceneResponse), *arena_bits);
+  } else {
+    return ::google::protobuf::internal::MessageCreator(&CreateSceneResponse::PlacementNew_,
+                                 sizeof(CreateSceneResponse),
+                                 alignof(CreateSceneResponse));
+  }
 }
 constexpr auto CreateSceneResponse::InternalGenerateClassData_() {
   return ::google::protobuf::internal::ClassDataFull{
@@ -1031,16 +1051,16 @@ CreateSceneResponse::GetClassData() const {
   return CreateSceneResponse_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<2, 4, 0, 62, 2>
+const ::_pbi::TcParseTable<3, 5, 0, 62, 2>
 CreateSceneResponse::_table_ = {
   {
     PROTOBUF_FIELD_OFFSET(CreateSceneResponse, _impl_._has_bits_),
     0, // no _extensions_
-    4, 24,  // max_field_number, fast_idx_mask
+    5, 56,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967280,  // skipmap
+    4294967264,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    4,  // num_field_entries
+    5,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
     CreateSceneResponse_class_data_.base(),
@@ -1050,9 +1070,7 @@ CreateSceneResponse::_table_ = {
     ::_pbi::TcParser::GetTable<::scene_manager::CreateSceneResponse>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // string error_message = 4;
-    {::_pbi::TcParser::FastUS1,
-     {34, 1, 0, PROTOBUF_FIELD_OFFSET(CreateSceneResponse, _impl_.error_message_)}},
+    {::_pbi::TcParser::MiniParse, {}},
     // uint64 scene_id = 1;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(CreateSceneResponse, _impl_.scene_id_), 2>(),
      {8, 2, 0, PROTOBUF_FIELD_OFFSET(CreateSceneResponse, _impl_.scene_id_)}},
@@ -1062,6 +1080,14 @@ CreateSceneResponse::_table_ = {
     // uint32 error_code = 3;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(CreateSceneResponse, _impl_.error_code_), 3>(),
      {24, 3, 0, PROTOBUF_FIELD_OFFSET(CreateSceneResponse, _impl_.error_code_)}},
+    // string error_message = 4;
+    {::_pbi::TcParser::FastUS1,
+     {34, 1, 0, PROTOBUF_FIELD_OFFSET(CreateSceneResponse, _impl_.error_message_)}},
+    // repeated uint64 creator_ids = 5;
+    {::_pbi::TcParser::FastV64P1,
+     {42, 63, 0, PROTOBUF_FIELD_OFFSET(CreateSceneResponse, _impl_.creator_ids_)}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
   }}, {{
     65535, 65535
   }}, {{
@@ -1077,6 +1103,9 @@ CreateSceneResponse::_table_ = {
     // string error_message = 4;
     {PROTOBUF_FIELD_OFFSET(CreateSceneResponse, _impl_.error_message_), _Internal::kHasBitsOffset + 1, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // repeated uint64 creator_ids = 5;
+    {PROTOBUF_FIELD_OFFSET(CreateSceneResponse, _impl_.creator_ids_), -1, 0,
+    (0 | ::_fl::kFcRepeated | ::_fl::kPackedUInt64)},
   }},
   // no aux_entries
   {{
@@ -1093,6 +1122,7 @@ PROTOBUF_NOINLINE void CreateSceneResponse::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
+  _impl_.creator_ids_.Clear();
   cached_has_bits = _impl_._has_bits_[0];
   if ((cached_has_bits & 0x00000003u) != 0) {
     if ((cached_has_bits & 0x00000001u) != 0) {
@@ -1164,6 +1194,15 @@ PROTOBUF_NOINLINE void CreateSceneResponse::Clear() {
     }
   }
 
+  // repeated uint64 creator_ids = 5;
+  {
+    int byte_size = this_._impl_._creator_ids_cached_byte_size_.Get();
+    if (byte_size > 0) {
+      target = stream->WriteUInt64Packed(
+          5, this_._internal_creator_ids(), byte_size, target);
+    }
+  }
+
   if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
     target =
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
@@ -1188,6 +1227,15 @@ PROTOBUF_NOINLINE void CreateSceneResponse::Clear() {
   (void)cached_has_bits;
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+   {
+    // repeated uint64 creator_ids = 5;
+    {
+      total_size +=
+          ::_pbi::WireFormatLite::UInt64SizeWithPackedTagSize(
+              this_._internal_creator_ids(), 1,
+              this_._impl_._creator_ids_cached_byte_size_);
+    }
+  }
   cached_has_bits = this_._impl_._has_bits_[0];
   if ((cached_has_bits & 0x0000000fu) != 0) {
     // string node_id = 2;
@@ -1231,6 +1279,7 @@ void CreateSceneResponse::MergeImpl(::google::protobuf::MessageLite& to_msg, con
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
 
+  _this->_internal_mutable_creator_ids()->MergeFrom(from._internal_creator_ids());
   cached_has_bits = from._impl_._has_bits_[0];
   if ((cached_has_bits & 0x0000000fu) != 0) {
     if ((cached_has_bits & 0x00000001u) != 0) {
@@ -1280,6 +1329,7 @@ void CreateSceneResponse::InternalSwap(CreateSceneResponse* PROTOBUF_RESTRICT PR
   ABSL_DCHECK_EQ(arena, other->GetArena());
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  _impl_.creator_ids_.InternalSwap(&other->_impl_.creator_ids_);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.node_id_, &other->_impl_.node_id_, arena);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.error_message_, &other->_impl_.error_message_, arena);
   ::google::protobuf::internal::memswap<

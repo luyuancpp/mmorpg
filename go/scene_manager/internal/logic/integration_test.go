@@ -484,3 +484,103 @@ func TestIntegration_Rebalance_ActivePlayersBlockMigration(t *testing.T) {
 // rather than asserting through the handler in this first integration
 // pass; adding a WorldConfIds injector is a follow-up if/when the gating
 // logic itself needs coverage.
+
+// TestIntegration_Rebalance_CascadesDependentMirrors covers the
+// mirror-co-location guardrail: when the rebalancer migrates a world
+// channel that has co-located mirrors on the OLD node, those mirrors
+// must be force-destroyed. Otherwise the optimization silently rots —
+// mirrors stay on the old node, can't reach the source's resident
+// world data anymore, and pin the old node's memory until idle timeout.
+//
+// End-to-end assertions:
+//
+//   1. CreateScene fires on the new node for the migrated channel.
+//   2. DestroyScene fires on the old node for BOTH the migrated channel
+//      AND every co-located mirror (best-effort cleanup).
+//   3. scene:{mirrorId}:node mappings are wiped from Redis.
+//   4. scene:{source}:mirrors set is drained.
+func TestIntegration_Rebalance_CascadesDependentMirrors(t *testing.T) {
+	clearKnownNodesForTest()
+	ResetNodeConnCacheForTest()
+
+	const zoneId uint32 = 1
+	const confId uint64 = 500
+
+	sc, mr := newIntegrationSvcCtx(t)
+
+	hA := startFakeSceneNode(t, "5001")
+	hB := startFakeSceneNode(t, "5002")
+	installBufconnDialer(t, hA, hB)
+
+	registerWorldNodeFromHarness(t, sc, zoneId, hA)
+	registerWorldNodeFromHarness(t, sc, zoneId, hB)
+
+	// Pick a sceneId that the planner will want to migrate from A to B
+	// (the hash ring is sorted lexicographically: "5001" < "5002").
+	ring := []string{hA.nodeID, hB.nodeID}
+	sourceSceneId := findSceneIdHashingTo(t, ring, hB.nodeID, 200)
+
+	// Seed: source channel currently parked on A.
+	mr.SAdd(worldChannelsKey(zoneId, confId), strconv.FormatUint(sourceSceneId, 10))
+	require.NoError(t, sc.Redis.Set(fmt.Sprintf("scene:%d:node", sourceSceneId), hA.nodeID))
+	require.NoError(t, sc.Redis.Set(fmt.Sprintf("scene:%d:zone", sourceSceneId), strconv.FormatUint(uint64(zoneId), 10)))
+	_, _ = sc.Redis.Incr(fmt.Sprintf(NodeSceneCountKey, hA.nodeID))
+	_, _ = sc.Redis.Sadd(nodeScenesKey(hA.nodeID), strconv.FormatUint(sourceSceneId, 10))
+
+	// Spawn three mirrors co-located on hA. Routing through the real
+	// CreateSceneLogic exercises pickInstanceNode -> resolveMirrorSourceNode
+	// so the test catches regressions in the wiring, not just in
+	// migrateWorldChannel itself.
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	var mirrorIds []uint64
+	for i := 0; i < 3; i++ {
+		resp, err := NewCreateSceneLogic(ctx, sc).CreateScene(&scenenodepb.CreateSceneRequest{
+			SceneConfId:    2001,
+			ZoneId:         zoneId,
+			SceneType:      scenenodepb.SceneType_SCENE_TYPE_INSTANCE,
+			SourceSceneId:  sourceSceneId,
+			MirrorConfigId: 9050,
+		})
+		require.NoError(t, err)
+		require.Zero(t, resp.ErrorCode, "mirror %d setup must succeed", i)
+		require.Equal(t, hA.nodeID, resp.NodeId, "mirror %d must co-locate on hA", i)
+		mirrorIds = append(mirrorIds, resp.SceneId)
+	}
+	require.Equal(t, int64(3), hA.fake.createCalls.Load(), "hA receives 3 mirror creates during setup")
+
+	preCascade, _ := sc.Redis.Smembers(sceneMirrorsKey(sourceSceneId))
+	require.Len(t, preCascade, 3, "setup: source's mirrors set must be populated")
+
+	// Reset the per-fake counters so post-rebalance assertions only see
+	// rebalance traffic, not setup traffic.
+	hA.fake.createCalls.Store(0)
+	hA.fake.destroyCalls.Store(0)
+
+	// Trigger the migration.
+	RebalanceWorldChannelsForZone(ctx, sc, zoneId, []uint64{confId})
+
+	// (1) Source recreated on hB.
+	require.Equal(t, int64(1), hB.fake.createCalls.Load(), "source channel recreated on hB")
+	require.Equal(t, sourceSceneId, hB.fake.lastCreateScene.Load())
+
+	// (2) hA receives DestroyScene for the source AND each mirror (4 total).
+	require.Equal(t, int64(4), hA.fake.destroyCalls.Load(),
+		"hA must receive DestroyScene for the migrated source plus all 3 cascaded mirrors")
+
+	// (3) Every mirror is wiped from Redis.
+	for _, mid := range mirrorIds {
+		nid, _ := sc.Redis.Get(fmt.Sprintf("scene:%d:node", mid))
+		require.Equal(t, "", nid, "mirror %d must be force-destroyed after source migrated", mid)
+	}
+
+	// (4) Mirrors index is drained so the next mirror request for this
+	// source starts clean (and would now correctly land on hB).
+	postCascade, _ := sc.Redis.Smembers(sceneMirrorsKey(sourceSceneId))
+	require.Empty(t, postCascade, "scene:{source}:mirrors must be drained after cascade")
+
+	// Source's scene mapping flipped to hB.
+	got, err := sc.Redis.Get(fmt.Sprintf("scene:%d:node", sourceSceneId))
+	require.NoError(t, err)
+	require.Equal(t, hB.nodeID, got)
+}

@@ -1812,6 +1812,120 @@ func TestCreateMirror_DedupSkipsStaleEntry(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
+// Mirror co-location — zone-isolation guard
+// ---------------------------------------------------------------------------
+
+// TestCreateScene_Mirror_CrossZoneSourceFallsBack ensures a mirror request
+// whose source_scene_id resolves to a DIFFERENT zone does NOT co-locate
+// onto the source's zone node — that would punch through zone isolation
+// and orphan the mirror because the requesting zone's reconciliation loop
+// can't see it. Expectation: clean fallback to GetBestNode within the
+// requesting zone.
+func TestCreateScene_Mirror_CrossZoneSourceFallsBack(t *testing.T) {
+	sc, mr := newTestSvcCtxWithWorldScenes(t)
+	ctx := context.Background()
+
+	// Source scene 4242 lives on node "X" in zone 2.
+	const otherZone uint32 = 2
+	const sourceId uint64 = 4242
+	sc.Redis.Set(fmt.Sprintf(SceneNodeKeyFmt, sourceId), "X")
+	sc.Redis.Set(sceneZoneKey(sourceId), fmt.Sprintf("%d", otherZone))
+	registerTypedNode(mr, otherZone, "X", constants.SceneNodeTypeInstance, 0)
+
+	// Mirror is requested from zone 1 with only "Y" available.
+	registerTypedNode(mr, testZoneId, "Y", constants.SceneNodeTypeInstance, 0)
+
+	resp, err := NewCreateSceneLogic(ctx, sc).CreateScene(&scene_manager.CreateSceneRequest{
+		SceneConfId:    2001,
+		ZoneId:         testZoneId,
+		SceneType:      scene_manager.SceneType_SCENE_TYPE_INSTANCE,
+		SourceSceneId:  sourceId,
+		MirrorConfigId: 9020,
+	})
+	require.NoError(t, err)
+	assert.Zero(t, resp.ErrorCode)
+	assert.Equal(t, "Y", resp.NodeId,
+		"cross-zone source must fall back to a node in the requesting zone, not co-locate on X")
+}
+
+// TestCreateScene_Mirror_SameZoneSourceColocates is the positive control —
+// without it, an over-zealous zone check could break the happy path.
+func TestCreateScene_Mirror_SameZoneSourceColocates(t *testing.T) {
+	sc, mr := newTestSvcCtxWithWorldScenes(t)
+	ctx := context.Background()
+
+	const sourceId uint64 = 5252
+	sc.Redis.Set(fmt.Sprintf(SceneNodeKeyFmt, sourceId), "10")
+	sc.Redis.Set(sceneZoneKey(sourceId), fmt.Sprintf("%d", testZoneId))
+	registerTypedNode(mr, testZoneId, "10", constants.SceneNodeTypeInstance, 0)
+	registerTypedNode(mr, testZoneId, "20", constants.SceneNodeTypeInstance, 0)
+
+	resp, err := NewCreateSceneLogic(ctx, sc).CreateScene(&scene_manager.CreateSceneRequest{
+		SceneConfId:    2001,
+		ZoneId:         testZoneId,
+		SceneType:      scene_manager.SceneType_SCENE_TYPE_INSTANCE,
+		SourceSceneId:  sourceId,
+		MirrorConfigId: 9021,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "10", resp.NodeId, "same-zone source must still co-locate on its node")
+}
+
+// ---------------------------------------------------------------------------
+// Mirror cascade — source on a dying node
+// ---------------------------------------------------------------------------
+
+// TestReconcileDeadNode_DestroysCoLocatedMirrors makes sure mirrors that
+// share a dead node with their source are reaped by the reconciliation
+// loop. Both source (instance) and mirrors live in node:{id}:scenes, so
+// reconcile must walk them all instead of stopping at the first source-
+// triggered cascade.
+//
+// The source is itself an instance here (cascade path through
+// destroyInstanceInternal handles its mirrors). The test pins that the
+// cascade fires regardless of iteration order over node:{id}:scenes.
+func TestReconcileDeadNode_DestroysCoLocatedMirrors(t *testing.T) {
+	sc, mr := newTestSvcCtxWithWorldScenes(t)
+	ctx := context.Background()
+	registerTypedNode(mr, testZoneId, "10", constants.SceneNodeTypeInstance, 0)
+
+	// Create a parent instance, then mirrors co-located on the same node.
+	parent, err := NewCreateSceneLogic(ctx, sc).CreateScene(&scene_manager.CreateSceneRequest{
+		SceneConfId: 2001,
+		ZoneId:      testZoneId,
+		SceneType:   scene_manager.SceneType_SCENE_TYPE_INSTANCE,
+	})
+	require.NoError(t, err)
+	require.Equal(t, "10", parent.NodeId)
+
+	var mirrorIds []uint64
+	for i := 0; i < 2; i++ {
+		m, err := NewCreateSceneLogic(ctx, sc).CreateScene(&scene_manager.CreateSceneRequest{
+			SceneConfId:    2001,
+			ZoneId:         testZoneId,
+			SceneType:      scene_manager.SceneType_SCENE_TYPE_INSTANCE,
+			SourceSceneId:  parent.SceneId,
+			MirrorConfigId: 9040,
+		})
+		require.NoError(t, err)
+		require.Equal(t, "10", m.NodeId, "mirror %d should co-locate", i)
+		mirrorIds = append(mirrorIds, m.SceneId)
+	}
+
+	// Kill node 10.
+	entry := nodeEntry{nodeID: "10"}
+	entry.reg.ZoneId = testZoneId
+	entry.reg.SceneNodeType = constants.SceneNodeTypeInstance
+	mr.ZRem(nodeLoadKey(testZoneId), "10")
+	reconcileDeadNodeScenes(sc, entry)
+
+	for _, sid := range append([]uint64{parent.SceneId}, mirrorIds...) {
+		nid, _ := sc.Redis.Get(fmt.Sprintf(SceneNodeKeyFmt, sid))
+		assert.Equal(t, "", nid, "scene %d must be wiped after node death", sid)
+	}
+}
+
+// ---------------------------------------------------------------------------
 // Concurrency stress: enter / destroy race
 // ---------------------------------------------------------------------------
 

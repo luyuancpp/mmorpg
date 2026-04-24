@@ -82,7 +82,7 @@ var (
 	instanceDestroyedTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Subsystem: subsystem,
 		Name:      "instance_destroyed_total",
-		Help:      "Instance/mirror destroys by kind (instance|mirror) and reason (idle|explicit|cascade|node_death).",
+		Help:      "Instance/mirror destroys by kind (instance|mirror) and reason (idle|explicit|cascade|node_death|source_migrated).",
 	}, []string{"zone_id", "kind", "reason"})
 
 	// enterSceneRejectedTotal is incremented when EnterScene bails out
@@ -157,7 +157,9 @@ func ObserveMirrorColocate(zoneID uint32, outcome, reason string) {
 
 // ObserveInstanceDestroyed records one scene destroy. kind is
 // "instance" or "mirror"; reason is "idle" | "explicit" | "cascade" |
-// "node_death".
+// "node_death" | "source_migrated". The last one fires when a world
+// channel is migrated by the rebalancer and its co-located mirrors are
+// proactively cleaned up so the old node can drain.
 func ObserveInstanceDestroyed(zoneID uint32, kind, reason string) {
 	register()
 	instanceDestroyedTotal.WithLabelValues(

@@ -62,6 +62,11 @@ message CreateSceneResponse {
   // Creation result: 0 for success, non-zero for error code
   uint32 error_code = 3;
   string error_message = 4;
+  // Echo of CreateSceneRequest.creator_ids. Lets async callers (notably the
+  // C++ SceneNode that initiated a mirror create on behalf of a player) drive
+  // a follow-up EnterScene without keeping per-call request state. Empty when
+  // the request had no creators (system-initiated creates, etc.).
+  repeated uint64 creator_ids = 5;
 }
 
 message DestroySceneRequest {
