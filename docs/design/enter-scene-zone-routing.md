@@ -47,5 +47,6 @@ Player belongs to zone A, was in zone C, goes offline long time:
 
 ## Merge-Server (合服)
 `zone_id` is a **runtime routing identifier**, not a permanent identity:
-- Merge script: remap scene/player data to new zone_id
-- Players' `PlayerLocation.zone_id` updates naturally on next login
+- **Home zone (authoritative for data routing)**: run `tools/merge_zone` (or `DataService/RemapHomeZoneForMerge`) to rewrite `player:zone:*` in mapping Redis; see `docs/design/guild_ranking_architecture_zh.md` §合服工具.
+- **Guild / 本服榜**: same tool updates MySQL `guild.zone_id` and merges `guild_rank:zone:{id}`.
+- **SceneManager hot state** (`scene:{id}:zone`, `player:{id}:location`, world channel sets): normally cleared or left to refresh on next login after a maintenance window; coordinate with ops (stale keys can cause wrong routing until overwritten).

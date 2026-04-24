@@ -103,6 +103,41 @@ func TestClientForZone_DevMode(t *testing.T) {
 	assert.NotNil(t, client) // dev mode returns devClient for any zone
 }
 
+func TestRemapHomeZoneForMerge_DryRun(t *testing.T) {
+	r, _ := newTestRouter(t)
+	ctx := context.Background()
+
+	_ = r.RegisterPlayerZone(ctx, 101, 10)
+	_ = r.RegisterPlayerZone(ctx, 102, 10)
+	_ = r.RegisterPlayerZone(ctx, 103, 20)
+
+	matched, updated, err := r.RemapHomeZoneForMerge(ctx, 10, 99, true)
+	assert.NoError(t, err)
+	assert.Equal(t, 2, matched)
+	assert.Equal(t, 0, updated)
+
+	z101, _ := r.GetPlayerHomeZone(ctx, 101)
+	assert.Equal(t, uint32(10), z101)
+}
+
+func TestRemapHomeZoneForMerge_Apply(t *testing.T) {
+	r, _ := newTestRouter(t)
+	ctx := context.Background()
+
+	_ = r.RegisterPlayerZone(ctx, 201, 7)
+	_ = r.RegisterPlayerZone(ctx, 202, 8)
+
+	matched, updated, err := r.RemapHomeZoneForMerge(ctx, 7, 11, false)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, matched)
+	assert.Equal(t, 1, updated)
+
+	z201, _ := r.GetPlayerHomeZone(ctx, 201)
+	assert.Equal(t, uint32(11), z201)
+	z202, _ := r.GetPlayerHomeZone(ctx, 202)
+	assert.Equal(t, uint32(8), z202)
+}
+
 func TestAcquireAndReleasePlayerLock(t *testing.T) {
 	r, _ := newTestRouter(t)
 	ctx := context.Background()

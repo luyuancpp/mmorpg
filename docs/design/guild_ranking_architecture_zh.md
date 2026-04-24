@@ -42,25 +42,38 @@
 ## 合服工具
 
 ### 位置
-- Go CLI：`tools/merge_zone/main.go`（独立 Go 模块）
-- PowerShell 封装：`tools/scripts/merge_zone.ps1`
-- 在 `dev_tools.ps1` 中注册为 `-Command merge-zone`
+- Go CLI：`tools/merge_zone`（`go mod` 独立小模块，见同目录 `go.mod`）
+- PowerShell 封装：`tools/scripts/merge_zone.ps1`（会 `go build` 出 `merge_zone[.exe]`）
+- 玩家归属重映射的 **RPC 路径**：`DataService/RemapHomeZoneForMerge`（与 Data Service 联机时可用 `grpcurl` 调用，逻辑与下款 CLI 的 mapping 步骤一致）
 
 ### 功能
 1. **名称冲突检测**：SQL JOIN 查找源区和目标区中同名的公会
 2. **MySQL 迁移**：`UPDATE guild SET zone_id = <target> WHERE zone_id = <source>`（跳过冲突项）
-3. **Redis ZSET 合并**：`ZRANGEWITHSCORES` 源区 → `ZADD` 目标区 → `DEL` 源区 key
+3. **Redis 本服 ZSET 合并**：`ZRANGE` 源区 `guild_rank:zone:*` → `ZADD` 目标区 → `DEL` 源区 key
+4. **（多集群必做）玩家存档串键复制**：按 `data_service` 的 `player:{playerId}:*` 字符串键，从**源区数据 Redis** 拷到**目标区数据 Redis**，**必须在改 `player:zone` 之前**完成；若源/目标 endpoint+DB 完全相同则工具自动跳过（等同单 Redis 开发环境）
+5. **玩家 `home_zone` 映射**：`player:zone:{playerId}` 在 **mapping Redis**（`-mapping-redis-*`）
 
 ### 用法
 ```powershell
-# 预览（安全）
-pwsh -File tools/scripts/dev_tools.ps1 -Command merge-zone -MergeSourceZone 102 -MergeTargetZone 101 -DryRun
+# 只预览（不写库、不写 Redis）
+go run -C tools/merge_zone . -source-zone=102 -target-zone=101 -dry-run
 
-# 执行（需要输入 'merge' 确认）
-pwsh -File tools/scripts/dev_tools.ps1 -Command merge-zone -MergeSourceZone 102 -MergeTargetZone 101
+# 真正执行前务必 dry-run 通过；再显式 -apply
+go run -C tools/merge_zone . -source-zone=102 -target-zone=101 -apply
+
+# 分区数据在不同 Redis 集群时：先拷存档串键，再改归属（与工具内顺序一致）
+go run -C tools/merge_zone . -source-zone=102 -target-zone=101 -dry-run -migrate-player-blobs `
+  -source-data-redis=127.0.0.1:7001 -target-data-redis=127.0.0.1:7004 -data-redis-password=xxx
+
+# 或 PowerShell
+pwsh -File tools/scripts/merge_zone.ps1 -SourceZone 102 -TargetZone 101 -DryRun
+pwsh -File tools/scripts/merge_zone.ps1 -SourceZone 102 -TargetZone 101 -Apply
 ```
 
+可跳过任一步：`-skip-guild-mysql`、`-skip-guild-rank`、`-skip-player-mapping`、`-skip-player-blob-migration`（便于分阶段执行或只补跑某步）。
+
 ### 特性
-- **幂等**：可安全重复执行（MySQL UPDATE 对已迁移行无操作，Redis ZADD 会覆盖）
+- **幂等**：可安全重复执行（MySQL UPDATE 对已迁移行无操作，Redis ZADD 会覆盖，mapping 为覆盖写）
 - **冲突安全**：同名冲突公会会被记录并跳过（需手动处理）
 - **全服 ZSET 不受影响**：只合并本服 ZSET；`guild_rank`（全服）已包含所有公会
+- **非 dry-run 必须带 `-apply`**，避免误跑生产

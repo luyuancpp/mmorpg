@@ -42,23 +42,27 @@ Need to support both **global (cross-server) rankings** and **per-zone rankings*
 ## Merge-Zone Tool
 
 ### Location
-- Go CLI: `tools/merge_zone/main.go` (standalone Go module)
-- PowerShell wrapper: `tools/scripts/merge_zone.ps1`
-- Registered in `dev_tools.ps1` as `-Command merge-zone`
+- Go module: `tools/merge_zone/` (see `go.mod`)
+- PowerShell wrapper: `tools/scripts/merge_zone.ps1` (runs `go build` and executes the binary)
+- **RPC equivalent**: `DataService/RemapHomeZoneForMerge` (same mapping semantics as the player-mapping step in the CLI)
 
 ### What It Does
 1. **Name conflict detection**: SQL JOIN to find guilds with same name in source and target zones
 2. **MySQL migration**: `UPDATE guild SET zone_id = <target> WHERE zone_id = <source>` (skips conflicts)
-3. **Redis ZSET merge**: `ZRANGEWITHSCORES` source → `ZADD` target → `DEL` source key
+3. **Redis per-zone ZSET merge**: `ZRANGE` source `guild_rank:zone:*` → `ZADD` target → `DEL` source key
+4. **(Multi-cluster required) Player string-key copy**: copies all `player:{playerId}:*` string keys from the **source zone data Redis** to the **target zone data Redis**, **before** rewriting `player:zone` — otherwise `ClientForPlayer` would read the wrong (empty) cluster. If source/target endpoints and DB are identical, the tool skips this step (single-Redis dev).
+5. **Player home-zone mapping**: rewrites `player:zone:{playerId}` on **mapping Redis** (`-mapping-redis-*`)
 
 ### Usage
 ```powershell
-# Preview (safe)
-pwsh -File tools/scripts/dev_tools.ps1 -Command merge-zone -MergeSourceZone 102 -MergeTargetZone 101 -DryRun
+go run -C tools/merge_zone . -source-zone=102 -target-zone=101 -dry-run
+go run -C tools/merge_zone . -source-zone=102 -target-zone=101 -apply
 
-# Execute (requires typing 'merge' to confirm)
-pwsh -File tools/scripts/dev_tools.ps1 -Command merge-zone -MergeSourceZone 102 -MergeTargetZone 101
+pwsh -File tools/scripts/merge_zone.ps1 -SourceZone 102 -TargetZone 101 -DryRun
+pwsh -File tools/scripts/merge_zone.ps1 -SourceZone 102 -TargetZone 101 -Apply
 ```
+
+Optional skip flags: `-skip-guild-mysql`, `-skip-guild-rank`, `-skip-player-mapping`. Non-dry runs require `-apply` to avoid accidents.
 
 ### Properties
 - **Idempotent**: safe to re-run (MySQL UPDATE is no-op for already-migrated rows, Redis ZADD overwrites)

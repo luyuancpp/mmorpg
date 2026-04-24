@@ -21,6 +21,7 @@ service DataService {
   rpc RegisterPlayerZone(RegisterPlayerZoneRequest) returns (google.protobuf.Empty) {}
   rpc GetPlayerHomeZone(GetPlayerHomeZoneRequest) returns (GetPlayerHomeZoneResponse) {}
   rpc BatchGetPlayerHomeZone(BatchGetPlayerHomeZoneRequest) returns (BatchGetPlayerHomeZoneResponse) {}
+  rpc RemapHomeZoneForMerge(RemapHomeZoneForMergeRequest) returns (RemapHomeZoneForMergeResponse) {}
 
   // ── Cleanup / merge ──────────────────────────────────────────
   rpc DeletePlayerData(DeletePlayerDataRequest) returns (DeletePlayerDataResponse) {}
@@ -108,6 +109,18 @@ message BatchGetPlayerHomeZoneRequest {
 
 message BatchGetPlayerHomeZoneResponse {
   map<uint64, uint32> player_zone_map = 2; // player_id → home_zone_id
+}
+
+message RemapHomeZoneForMergeRequest {
+  uint32 source_zone_id = 1;
+  uint32 target_zone_id = 2;
+  bool   dry_run = 3;
+}
+
+message RemapHomeZoneForMergeResponse {
+  uint32 error_code = 1;
+  uint32 players_matched = 2;
+  uint32 players_updated = 3;
 }
 
 // ── Delete / Cleanup ───────────────────────────────────────────
