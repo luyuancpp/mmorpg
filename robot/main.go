@@ -182,7 +182,7 @@ func runRobotOnce(account string, cfg *config.Config, stats *metrics.Stats, stop
 	if err != nil {
 		zap.L().Error("resolve gate address failed", zap.String("account", account), zap.Error(err))
 		stats.LoginFail()
-		return false // retry
+		return
 	}
 	port, _ := strconv.Atoi(portStr)
 
@@ -190,7 +190,7 @@ func runRobotOnce(account string, cfg *config.Config, stats *metrics.Stats, stop
 	if err != nil {
 		zap.L().Error("connect failed", zap.String("account", account), zap.Error(err))
 		stats.LoginFail()
-		return false // retry
+		return
 	}
 	defer gc.Close()
 	stats.Connected()
@@ -203,14 +203,21 @@ func runRobotOnce(account string, cfg *config.Config, stats *metrics.Stats, stop
 		if err := gc.VerifyGateToken(tokenPayload, tokenSig); err != nil {
 			zap.L().Error("gate token failed", zap.String("account", account), zap.Error(err))
 			stats.LoginFail()
-			return false
+			return
 		}
 	}
 
 	loginStart := time.Now()
-	if err := loginAndEnterWithAuth(gc, cfg, stats); err != nil {
+	if err := loginAndEnterWithAuth(gc, cfg, stats, prevAccessToken, prevAccessExpire); err != nil {
 		zap.L().Error("login flow failed", zap.String("account", account), zap.Error(err))
-		return false
+		return
+	}
+	// Capture whatever the server rotated to (password/satoken paths) or keep
+	// the prev token (access_token reconnect path doesn't rotate). Read
+	// through SnapshotTokens so we don't race the RefreshToken handler.
+	if access, _, accessExp, _ := gc.SnapshotTokens(); access != "" {
+		newAccessToken = access
+		newAccessExpire = accessExp
 	}
 	stats.LoginOK(time.Since(loginStart))
 	stats.EnterOK()
@@ -225,6 +232,11 @@ func runRobotOnce(account string, cfg *config.Config, stats *metrics.Stats, stop
 	gameobject.PlayerList.Set(gc.PlayerId, player)
 	defer gameobject.PlayerList.Delete(gc.PlayerId)
 
+	// Register this connection so the RefreshToken handler (which only has
+	// the Player, not the GameClient) can patch our token state in place.
+	pkg.Clients.Register(gc.PlayerId, gc)
+	defer pkg.Clients.Unregister(gc.PlayerId, gc)
+
 	// Start RecvLoop early so we can receive NotifyEnterScene.
 	recvDone := make(chan struct{})
 	go func() {
@@ -235,12 +247,17 @@ func runRobotOnce(account string, cfg *config.Config, stats *metrics.Stats, stop
 		})
 	}()
 
+	// Proactively refresh access_token when it's close to expiry so a very
+	// long-running session doesn't force the next reconnect into the
+	// primary-auth fallback. Exits when the recv loop or stop closes.
+	go runTokenRefresher(gc, stats, stop, recvDone)
+
 	// Wait for scene node to be bound (NotifyEnterScene) before sending scene-targeted messages.
 	waitCtx, waitCancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer waitCancel()
 	if err := player.WaitSceneReady(waitCtx); err != nil {
 		zap.L().Error("timed out waiting for scene ready", zap.String("account", gc.Account), zap.Error(err))
-		return false
+		return
 	}
 
 	// Now safe to send scene-targeted requests.
@@ -281,7 +298,14 @@ func runRobotOnce(account string, cfg *config.Config, stats *metrics.Stats, stop
 	if gc.SaToken != "" {
 		revokeSaToken(cfg.SaTokenAddr, gc.SaToken)
 	}
-	return true
+	// Re-snapshot: an in-session refresh may have rotated the token after
+	// the post-login capture above; don't hand a stale value back to runRobot.
+	if access, _, accessExp, _ := gc.SnapshotTokens(); access != "" {
+		newAccessToken = access
+		newAccessExpire = accessExp
+	}
+	ok = true
+	return
 }
 
 func initLogger() {
@@ -443,10 +467,7 @@ func loginAndEnterLocal(gc *pkg.GameClient, password string, stats *metrics.Stat
 	}
 
 	if lr.AccessToken != "" {
-		gc.AccessToken = lr.AccessToken
-		gc.RefreshToken = lr.RefreshToken
-		gc.AccessTokenExpire = lr.AccessTokenExpire
-		gc.RefreshTokenExpire = lr.RefreshTokenExpire
+		gc.SetTokens(lr.AccessToken, lr.RefreshToken, lr.AccessTokenExpire, lr.RefreshTokenExpire)
 	}
 
 	if len(lr.Players) == 0 {
@@ -496,9 +517,11 @@ func loginAndEnterWithAuth(gc *pkg.GameClient, cfg *config.Config, stats *metric
 	// Use access_token reconnect when available and with at least 60s of TTL left.
 	if prevAccessToken != "" && (prevAccessExpire == 0 || time.Now().Unix() < prevAccessExpire-60) {
 		if err := loginAndEnterAccessToken(gc, prevAccessToken, stats); err == nil {
+			stats.AccessReconnectOK()
 			zap.L().Debug("access_token reconnect ok", zap.String("account", gc.Account))
 			return nil
 		} else {
+			stats.AccessReconnectFallback()
 			zap.L().Info("access_token reconnect failed, falling back",
 				zap.String("account", gc.Account), zap.Error(err))
 		}

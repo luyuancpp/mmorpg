@@ -39,12 +39,12 @@ func loginAndEnter(gc *pkg.GameClient, password string, stats *metrics.Stats) er
 		return fmt.Errorf("login: server error %v", lr.ErrorMessage)
 	}
 
-	// Store access/refresh tokens for potential reconnect
+	// Store access/refresh tokens for potential reconnect. Use SetTokens so
+	// all token-field writes go through the same mutex as the RefreshToken
+	// handler — keeps the API uniform and survives a future refactor that
+	// re-runs login on a gc whose RecvLoop already started.
 	if lr.AccessToken != "" {
-		gc.AccessToken = lr.AccessToken
-		gc.RefreshToken = lr.RefreshToken
-		gc.AccessTokenExpire = lr.AccessTokenExpire
-		gc.RefreshTokenExpire = lr.RefreshTokenExpire
+		gc.SetTokens(lr.AccessToken, lr.RefreshToken, lr.AccessTokenExpire, lr.RefreshTokenExpire)
 		zap.L().Debug("received auth tokens",
 			zap.String("account", gc.Account),
 			zap.Int64("access_expire", lr.AccessTokenExpire),
@@ -146,6 +146,69 @@ func sendAndRecvTimeout(gc *pkg.GameClient, stats *metrics.Stats, msgId uint32, 
 	}
 }
 
+// runTokenRefresher proactively refreshes the access_token when it's within
+// refreshLead of expiry, and exits cleanly when either `stop` closes (global
+// shutdown) or `done` closes (this session's RecvLoop ended).
+//
+// Semantics of the counters it touches:
+//   - TokenRefreshOK   : refresh RPC successfully handed to the transport.
+//   - TokenRefreshFail : transport send returned an error.
+//
+// Server-side rejection of the refresh (expired refresh_token, rotated
+// elsewhere, etc.) arrives asynchronously in ClientPlayerLoginRefreshTokenHandler
+// and is surfaced via its zap.L().Info log. Quantitatively that shows up as
+// the next reconnect falling through to the primary auth provider, which is
+// already counted by AccessReconnectFallback.
+func runTokenRefresher(gc *pkg.GameClient, stats *metrics.Stats, stop, done <-chan struct{}) {
+	const (
+		checkInterval = 30 * time.Second
+		refreshLead   = 10 * time.Minute // refresh when <10min of TTL remains
+		sendCooldown  = 60 * time.Second // min gap between successive refreshes
+	)
+	ticker := time.NewTicker(checkInterval)
+	defer ticker.Stop()
+	var lastSent time.Time
+	for {
+		select {
+		case <-stop:
+			return
+		case <-done:
+			return
+		case <-ticker.C:
+			_, refresh, accessExp, _ := gc.SnapshotTokens()
+			if refresh == "" || accessExp == 0 {
+				continue
+			}
+			remaining := time.Until(time.Unix(accessExp, 0))
+			if remaining > refreshLead {
+				continue
+			}
+			// Dedup: if we already asked for a refresh recently, give the
+			// server (and its handler → gc.SetTokens write) a window to
+			// land before asking again. Without this, a slow-to-respond
+			// server would eat N redundant refresh RPCs for every tick
+			// that still sees the old accessExp.
+			if !lastSent.IsZero() && time.Since(lastSent) < sendCooldown {
+				continue
+			}
+			zap.L().Info("refreshing access_token",
+				zap.String("account", gc.Account),
+				zap.Duration("remaining", remaining),
+			)
+			if err := gc.SendRequest(
+				game.ClientPlayerLoginRefreshTokenMessageId,
+				&login.RefreshTokenRequest{RefreshToken: refresh},
+			); err != nil {
+				stats.TokenRefreshFail()
+				zap.L().Warn("refresh send failed", zap.Error(err))
+				continue
+			}
+			stats.TokenRefreshOK()
+			lastSent = time.Now()
+		}
+	}
+}
+
 // fetchSaToken calls the SA-Token dev-login endpoint and returns the token value.
 func fetchSaToken(saTokenAddr, account string) (string, error) {
 	url := saTokenAddr + "/auth/dev-login?account=" + account
@@ -224,10 +287,7 @@ func loginAndEnterSaToken(gc *pkg.GameClient, saTokenAddr string, stats *metrics
 	}
 
 	if lr.AccessToken != "" {
-		gc.AccessToken = lr.AccessToken
-		gc.RefreshToken = lr.RefreshToken
-		gc.AccessTokenExpire = lr.AccessTokenExpire
-		gc.RefreshTokenExpire = lr.RefreshTokenExpire
+		gc.SetTokens(lr.AccessToken, lr.RefreshToken, lr.AccessTokenExpire, lr.RefreshTokenExpire)
 	}
 
 	if len(lr.Players) == 0 {

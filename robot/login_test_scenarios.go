@@ -119,6 +119,9 @@ func runLoginTests(host string, port int, cfg *config.Config, stats *metrics.Sta
 		{"RapidDisconnectReconnect", func() testResult {
 			return testRapidDisconnectReconnect(host, port, account, cfg.Password, stats, tokenPayload, tokenSig)
 		}},
+		{"AccessTokenReconnect", func() testResult {
+			return testAccessTokenReconnect(host, port, account, cfg.Password, stats, tokenPayload, tokenSig)
+		}},
 
 		// --- Multi-account ---
 		{"DifferentAccountSequential", func() testResult {
@@ -1245,4 +1248,98 @@ func testMultiRobotBehavior(host string, port int, accountFmt, password string, 
 		return testResult{Passed: true, Elapsed: time.Since(start), Detail: detail}
 	}
 	return testResult{Passed: false, Elapsed: time.Since(start), Detail: "insufficient multi-robot coverage: " + detail}
+}
+
+// ---------------------------------------------------------------------------
+// Scenario: AccessTokenReconnect
+//
+// Verifies the reconnect-via-access_token short-circuit end to end:
+//
+//  1. First login through the configured primary auth (password / satoken) —
+//     asserts the server MUST hand back an access_token.
+//  2. Drop the connection.
+//  3. Reconnect and log in with auth_type="access_token" + auth_token=<prev>.
+//  4. Assert: login succeeds, player list returns, and — critically —
+//     LoginResponse.access_token is EMPTY. access_token re-auth must NOT
+//     rotate the pair (see loginlogic.go "skip for access_token re-auth").
+//
+// If anyone ever removes the `if authType != "access_token"` guard in
+// issueTokens, this scenario blows up in CI instead of quietly doubling
+// /login Redis write pressure in production.
+// ---------------------------------------------------------------------------
+
+func testAccessTokenReconnect(host string, port int, account, password string, stats *metrics.Stats, tokenPayload, tokenSig []byte) testResult {
+	start := time.Now()
+
+	// Phase 1: primary-auth login to mint the access token.
+	gc1, err := connectAndVerify(host, port, account, tokenPayload, tokenSig)
+	if err != nil {
+		return testResult{Elapsed: time.Since(start), Detail: "phase1 connect: " + err.Error()}
+	}
+	if err := loginAndEnterScenario(gc1, password, stats); err != nil {
+		gc1.Close()
+		return testResult{Elapsed: time.Since(start), Detail: "phase1 login: " + err.Error()}
+	}
+	firstToken := gc1.AccessToken
+	firstExpire := gc1.AccessTokenExpire
+	gc1.Close()
+	if firstToken == "" {
+		return testResult{Elapsed: time.Since(start),
+			Detail: "phase1 server did not issue access_token — token machinery broken"}
+	}
+
+	// Brief settle so the server-side session cleanup won't collide with the
+	// fresh reconnect (scene redirect + kafka producer flush).
+	time.Sleep(500 * time.Millisecond)
+
+	// Phase 2: reconnect using access_token.
+	gc2, err := connectAndVerify(host, port, account, tokenPayload, tokenSig)
+	if err != nil {
+		return testResult{Elapsed: time.Since(start), Detail: "phase2 connect: " + err.Error()}
+	}
+	defer gc2.Close()
+
+	var lr login.LoginResponse
+	if err := sendAndRecv(gc2, stats,
+		game.ClientPlayerLoginLoginMessageId,
+		&login.LoginRequest{Account: account, AuthType: "access_token", AuthToken: firstToken},
+		&lr,
+	); err != nil {
+		return testResult{Elapsed: time.Since(start), Detail: "phase2 login send: " + err.Error()}
+	}
+	if lr.ErrorMessage != nil {
+		return testResult{Elapsed: time.Since(start),
+			Detail: fmt.Sprintf("phase2 server rejected access_token: %v", lr.ErrorMessage)}
+	}
+	if len(lr.Players) == 0 {
+		return testResult{Elapsed: time.Since(start),
+			Detail: "phase2 server returned no players — account metadata lost?"}
+	}
+
+	// Critical invariant: access_token re-auth MUST NOT rotate tokens.
+	if lr.AccessToken != "" || lr.RefreshToken != "" ||
+		lr.AccessTokenExpire != 0 || lr.RefreshTokenExpire != 0 {
+		return testResult{Elapsed: time.Since(start),
+			Detail: fmt.Sprintf("phase2 server rotated token pair on access_token re-auth (access=%q expire=%d) — issueTokens guard broken",
+				lr.AccessToken, lr.AccessTokenExpire)}
+	}
+
+	// Finish the full enter-game flow so the session is in a valid end-state.
+	playerID := lr.Players[0].GetPlayer().GetPlayerId()
+	var er login.EnterGameResponse
+	if err := sendAndRecv(gc2, stats,
+		game.ClientPlayerLoginEnterGameMessageId,
+		&login.EnterGameRequest{PlayerId: playerID},
+		&er,
+	); err != nil {
+		return testResult{Elapsed: time.Since(start), Detail: "phase2 enter: " + err.Error()}
+	}
+	if er.ErrorMessage != nil {
+		return testResult{Elapsed: time.Since(start),
+			Detail: fmt.Sprintf("phase2 enter rejected: %v", er.ErrorMessage)}
+	}
+
+	return testResult{Passed: true, Elapsed: time.Since(start),
+		Detail: fmt.Sprintf("reconnected via access_token (len=%d, expire=%d), no rotation",
+			len(firstToken), firstExpire)}
 }

@@ -86,6 +86,11 @@ func (l *LoginLogic) Login(in *login_proto.LoginRequest) (*login_proto.LoginResp
 	sessionKey := constants.GenerateSessionKey(account)
 	expire := time.Duration(config.AppConfig.Node.SessionExpireMin) * time.Minute
 
+	// Self-heal: drop any device-set entries whose login_session:{id} key has
+	// already been cleaned up. This absorbs the Gate→login.Disconnect race
+	// that would otherwise trip MaxDevicesPerAccount under rapid reconnect.
+	loginsession.PruneStaleFromDeviceSet(l.ctx, l.svcCtx.RedisClient, sessionKey)
+
 	_, err = l.svcCtx.RedisClient.TxPipelined(l.ctx, func(pipe redis.Pipeliner) error {
 		pipe.SAdd(l.ctx, sessionKey, sessionDetails.SessionId)
 		pipe.Expire(l.ctx, sessionKey, expire)
