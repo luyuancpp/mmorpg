@@ -21,6 +21,7 @@
 #include <engine/infra/messaging/kafka/kafka_producer.h>
 #include "core/system/redis.h"
 #include "player_scene.h"
+#include "stress_test_probe.h"
 #include "player/constants/player.h"
 #include "proto/db/db_task.pb.h"
 #include "modules/snapshot/snapshot_system.h"
@@ -446,6 +447,12 @@ void PlayerLifecycleSystem::SavePlayerToRedis(entt::entity player)
 	// would not make it into the Redis blob.
 	message->mutable_player_database_data()->set_player_id(playerId);
 	message->mutable_player_database_1_data()->set_player_id(playerId);
+
+	// Stamp the data-consistency stress probe (no-op when STRESS_TEST_PROBE
+	// is unset). MUST be before Save() for the same reason as set_player_id
+	// above — payload is serialized eagerly inside Save().
+	stresstest_probe::StampPlayerDatabase(*message->mutable_player_database_data());
+	stresstest_probe::StampPlayerDatabase1(*message->mutable_player_database_1_data());
 
 	tlsRedisSystem.GetPlayerDataRedis()->Save(message, playerId);
 

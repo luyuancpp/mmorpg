@@ -14,12 +14,15 @@ import (
 // GameClient wraps a muduo TCP connection to a gate node.
 // Each GameClient runs in its own goroutine (one-client-one-goroutine).
 type GameClient struct {
-	client       *muduo.Client
-	PlayerId     uint64
-	Account      string
-	AccessToken  string
-	RefreshToken string
-	seq          atomic.Uint64
+	client             *muduo.Client
+	PlayerId           uint64
+	Account            string
+	AccessToken        string
+	RefreshToken       string
+	AccessTokenExpire  int64  // unix seconds
+	RefreshTokenExpire int64  // unix seconds
+	SaToken            string // SA-Token value from /auth/dev-login (kept for /auth/logout cleanup)
+	seq                atomic.Uint64
 }
 
 // NewGameClient connects to the gate at ip:port.

@@ -101,6 +101,9 @@ message player_database
   BaseAttributesComp derived_attributes_component = 6;
   LevelComp level_component = 7;
   CurrencyComp currency = 8;
+  // Stress-test instrumentation. Empty during normal play. See
+  // PlayerStressTestProbe for the verification contract.
+  PlayerStressTestProbe stress_test_probe = 9;
 }
 
 message player_database_1
@@ -110,6 +113,9 @@ message player_database_1
   option(OptionAutoIncrementKey) = "player_id";
   option (OptionIsPlayerDatabase) = true;
   uint64 player_id = 1;
+  // Same instrumentation surface as player_database; the data_stress driver
+  // and robot data-stress mode write to whichever table the test addresses.
+  PlayerStressTestProbe stress_test_probe = 2;
 }
 
 // ─── Player snapshot table (for rollback) ────────────────────

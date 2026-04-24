@@ -32,8 +32,46 @@ type testResult struct {
 	Detail  string
 }
 
+// loginTestCfg is set at the start of runLoginTests so scenario helpers can
+// route login through the configured auth provider (password vs satoken).
+var loginTestCfg *config.Config
+
+// loginAndEnterScenario routes the login flow used by scenario tests through
+// the configured auth provider. Falls back to password when no cfg is set.
+func loginAndEnterScenario(gc *pkg.GameClient, password string, stats *metrics.Stats) error {
+	if loginTestCfg != nil && loginTestCfg.AuthType == "satoken" {
+		return loginAndEnterSaToken(gc, loginTestCfg.SaTokenAddr, stats)
+	}
+	return loginAndEnter(gc, password, stats)
+}
+
+// buildScenarioLoginRequest constructs a LoginRequest matching the configured
+// auth provider. For satoken it fetches a fresh token; for password it just
+// fills the password field.
+func buildScenarioLoginRequest(account, password string) (*login.LoginRequest, error) {
+	if loginTestCfg != nil && loginTestCfg.AuthType == "satoken" {
+		token, err := fetchSaToken(loginTestCfg.SaTokenAddr, account)
+		if err != nil {
+			return nil, err
+		}
+		return &login.LoginRequest{Account: account, AuthType: "satoken", AuthToken: token}, nil
+	}
+	return &login.LoginRequest{Account: account, Password: password}, nil
+}
+
+// invalidScenarioLoginRequest builds a deliberately-bad LoginRequest. Used by
+// the WrongPassword scenario; under satoken mode it sends a non-existent token.
+func invalidScenarioLoginRequest(account string) *login.LoginRequest {
+	bad := "INVALID_" + strconv.FormatInt(time.Now().UnixNano(), 36)
+	if loginTestCfg != nil && loginTestCfg.AuthType == "satoken" {
+		return &login.LoginRequest{Account: account, AuthType: "satoken", AuthToken: bad}
+	}
+	return &login.LoginRequest{Account: account, Password: "WRONG_PASSWORD_" + bad}
+}
+
 // runLoginTests executes all login test scenarios sequentially and prints a summary.
 func runLoginTests(host string, port int, cfg *config.Config, stats *metrics.Stats, tokenPayload, tokenSig []byte) {
+	loginTestCfg = cfg
 	account := fmt.Sprintf(cfg.AccountFmt, 1)
 	account2 := fmt.Sprintf(cfg.AccountFmt, 2)
 
@@ -240,7 +278,7 @@ func testNormalLogin(host string, port int, account, password string, stats *met
 	}
 	defer gc.Close()
 
-	if err := loginAndEnter(gc, password, stats); err != nil {
+	if err := loginAndEnterScenario(gc, password, stats); err != nil {
 		return testResult{Elapsed: time.Since(start), Detail: err.Error()}
 	}
 
@@ -261,7 +299,7 @@ func testLoginLogoutCycle(host string, port int, account, password string, stats
 			return testResult{Elapsed: time.Since(start), Detail: fmt.Sprintf("cycle %d connect: %s", i, err)}
 		}
 
-		if err := loginAndEnter(gc, password, stats); err != nil {
+		if err := loginAndEnterScenario(gc, password, stats); err != nil {
 			gc.Close()
 			return testResult{Elapsed: time.Since(start), Detail: fmt.Sprintf("cycle %d login: %s", i, err)}
 		}
@@ -294,7 +332,7 @@ func testWrongPassword(host string, port int, account string, stats *metrics.Sta
 	var lr login.LoginResponse
 	if err := sendAndRecv(gc, stats,
 		game.ClientPlayerLoginLoginMessageId,
-		&login.LoginRequest{Account: account, Password: "WRONG_PASSWORD_" + strconv.FormatInt(time.Now().UnixNano(), 36)},
+		invalidScenarioLoginRequest(account),
 		&lr,
 	); err != nil {
 		// Network error during wrong password is also acceptable in some server implementations.
@@ -325,7 +363,7 @@ func testDuplicateEnterGame(host string, port int, account, password string, sta
 	}
 	defer gc.Close()
 
-	if err := loginAndEnter(gc, password, stats); err != nil {
+	if err := loginAndEnterScenario(gc, password, stats); err != nil {
 		return testResult{Elapsed: time.Since(start), Detail: fmt.Sprintf("first enter: %s", err)}
 	}
 	playerId := gc.PlayerId
@@ -365,7 +403,7 @@ func testAccountDisplacement(host string, port int, account, password string, st
 	}
 	defer gcA.Close()
 
-	if err := loginAndEnter(gcA, password, stats); err != nil {
+	if err := loginAndEnterScenario(gcA, password, stats); err != nil {
 		return testResult{Elapsed: time.Since(start), Detail: fmt.Sprintf("A login: %s", err)}
 	}
 
@@ -393,7 +431,7 @@ func testAccountDisplacement(host string, port int, account, password string, st
 	}
 	defer gcB.Close()
 
-	if err := loginAndEnter(gcB, password, stats); err != nil {
+	if err := loginAndEnterScenario(gcB, password, stats); err != nil {
 		return testResult{Elapsed: time.Since(start), Detail: fmt.Sprintf("B login: %s", err)}
 	}
 
@@ -420,7 +458,7 @@ func testRapidReconnect(host string, port int, account, password string, stats *
 	if err != nil {
 		return testResult{Elapsed: time.Since(start), Detail: fmt.Sprintf("first connect: %s", err)}
 	}
-	if err := loginAndEnter(gc1, password, stats); err != nil {
+	if err := loginAndEnterScenario(gc1, password, stats); err != nil {
 		gc1.Close()
 		return testResult{Elapsed: time.Since(start), Detail: fmt.Sprintf("first login: %s", err)}
 	}
@@ -434,7 +472,7 @@ func testRapidReconnect(host string, port int, account, password string, stats *
 	}
 	defer gc2.Close()
 
-	if err := loginAndEnter(gc2, password, stats); err != nil {
+	if err := loginAndEnterScenario(gc2, password, stats); err != nil {
 		return testResult{Elapsed: time.Since(start), Detail: fmt.Sprintf("reconnect login: %s", err)}
 	}
 
@@ -464,7 +502,7 @@ func testConcurrentSameAccount(host string, port int, account, password string, 
 				return
 			}
 			clients[idx] = gc
-			results[idx] = loginAndEnter(gc, password, stats)
+			results[idx] = loginAndEnterScenario(gc, password, stats)
 		}(i)
 	}
 	wg.Wait()
@@ -508,7 +546,7 @@ func testDifferentAccountSequential(host string, port int, account1, account2, p
 	if err != nil {
 		return testResult{Elapsed: time.Since(start), Detail: fmt.Sprintf("account1 connect: %s", err)}
 	}
-	if err := loginAndEnter(gc1, password, stats); err != nil {
+	if err := loginAndEnterScenario(gc1, password, stats); err != nil {
 		gc1.Close()
 		return testResult{Elapsed: time.Since(start), Detail: fmt.Sprintf("account1 login: %s", err)}
 	}
@@ -522,7 +560,7 @@ func testDifferentAccountSequential(host string, port int, account1, account2, p
 		return testResult{Elapsed: time.Since(start), Detail: fmt.Sprintf("account2 connect: %s", err)}
 	}
 	defer gc2.Close()
-	if err := loginAndEnter(gc2, password, stats); err != nil {
+	if err := loginAndEnterScenario(gc2, password, stats); err != nil {
 		return testResult{Elapsed: time.Since(start), Detail: fmt.Sprintf("account2 login: %s", err)}
 	}
 
@@ -542,7 +580,7 @@ func testLeaveAndReEnter(host string, port int, account, password string, stats 
 	}
 	defer gc.Close()
 
-	if err := loginAndEnter(gc, password, stats); err != nil {
+	if err := loginAndEnterScenario(gc, password, stats); err != nil {
 		return testResult{Elapsed: time.Since(start), Detail: fmt.Sprintf("first enter: %s", err)}
 	}
 	playerId := gc.PlayerId
@@ -584,8 +622,9 @@ func testDisconnectDuringLogin(host string, port int, account, password string, 
 	}
 
 	// Send Login request, but close before reading reply.
-	_ = gc.SendRequest(game.ClientPlayerLoginLoginMessageId,
-		&login.LoginRequest{Account: account, Password: password})
+	if req, berr := buildScenarioLoginRequest(account, password); berr == nil {
+		_ = gc.SendRequest(game.ClientPlayerLoginLoginMessageId, req)
+	}
 	gc.Close()
 
 	// Brief pause, then reconnect and do a full login.
@@ -596,7 +635,7 @@ func testDisconnectDuringLogin(host string, port int, account, password string, 
 	}
 	defer gc2.Close()
 
-	if err := loginAndEnter(gc2, password, stats); err != nil {
+	if err := loginAndEnterScenario(gc2, password, stats); err != nil {
 		return testResult{Elapsed: time.Since(start), Detail: fmt.Sprintf("login after abort: %s", err)}
 	}
 
@@ -630,10 +669,20 @@ func testDuplicateLoginRequest(host string, port int, account, password string, 
 	defer gc.Close()
 
 	// Fire two Login requests back-to-back.
-	_ = gc.SendRequest(game.ClientPlayerLoginLoginMessageId,
-		&login.LoginRequest{Account: account, Password: password})
-	_ = gc.SendRequest(game.ClientPlayerLoginLoginMessageId,
-		&login.LoginRequest{Account: account, Password: password})
+	req1, berr := buildScenarioLoginRequest(account, password)
+	if berr != nil {
+		return testResult{Elapsed: time.Since(start), Detail: fmt.Sprintf("build login request: %s", berr)}
+	}
+	// SA-Token mode: each request needs its own freshly-fetched token because
+	// each /auth/dev-login call rotates the token value in Redis.
+	req2 := req1
+	if loginTestCfg != nil && loginTestCfg.AuthType == "satoken" {
+		if r, berr2 := buildScenarioLoginRequest(account, password); berr2 == nil {
+			req2 = r
+		}
+	}
+	_ = gc.SendRequest(game.ClientPlayerLoginLoginMessageId, req1)
+	_ = gc.SendRequest(game.ClientPlayerLoginLoginMessageId, req2)
 
 	// Read responses (server may send 1 or 2).
 	responses := 0
@@ -676,10 +725,15 @@ func testDisconnectDuringEnter(host string, port int, account, password string, 
 	}
 
 	// Login succeeds but close before EnterGame.
+	loginReq, berr := buildScenarioLoginRequest(account, password)
+	if berr != nil {
+		gc1.Close()
+		return testResult{Elapsed: time.Since(start), Detail: fmt.Sprintf("build login request: %s", berr)}
+	}
 	var lr login.LoginResponse
 	if err := sendAndRecv(gc1, stats,
 		game.ClientPlayerLoginLoginMessageId,
-		&login.LoginRequest{Account: account, Password: password},
+		loginReq,
 		&lr,
 	); err != nil {
 		gc1.Close()
@@ -695,7 +749,7 @@ func testDisconnectDuringEnter(host string, port int, account, password string, 
 	}
 	defer gc2.Close()
 
-	if err := loginAndEnter(gc2, password, stats); err != nil {
+	if err := loginAndEnterScenario(gc2, password, stats); err != nil {
 		return testResult{Elapsed: time.Since(start), Detail: fmt.Sprintf("re-login: %s", err)}
 	}
 
@@ -718,7 +772,7 @@ func testRapidDisconnectReconnect(host string, port int, account, password strin
 	if err != nil {
 		return testResult{Elapsed: time.Since(start), Detail: fmt.Sprintf("setup connect: %s", err)}
 	}
-	if err := loginAndEnter(gc0, password, stats); err != nil {
+	if err := loginAndEnterScenario(gc0, password, stats); err != nil {
 		gc0.Close()
 		return testResult{Elapsed: time.Since(start), Detail: fmt.Sprintf("setup login: %s", err)}
 	}
@@ -735,7 +789,7 @@ func testRapidDisconnectReconnect(host string, port int, account, password strin
 			return testResult{Elapsed: time.Since(start),
 				Detail: fmt.Sprintf("cycle %d connect1: %s", i, err)}
 		}
-		if err := loginAndEnter(gc1, password, stats); err != nil {
+		if err := loginAndEnterScenario(gc1, password, stats); err != nil {
 			gc1.Close()
 			return testResult{Elapsed: time.Since(start),
 				Detail: fmt.Sprintf("cycle %d login1: %s", i, err)}
@@ -749,7 +803,7 @@ func testRapidDisconnectReconnect(host string, port int, account, password strin
 			return testResult{Elapsed: time.Since(start),
 				Detail: fmt.Sprintf("cycle %d reconnect: %s", i, err)}
 		}
-		if err := loginAndEnter(gc2, password, stats); err != nil {
+		if err := loginAndEnterScenario(gc2, password, stats); err != nil {
 			gc2.Close()
 			return testResult{Elapsed: time.Since(start),
 				Detail: fmt.Sprintf("cycle %d re-login: %s", i, err)}
@@ -777,7 +831,7 @@ func testLeaveAndReLogin(host string, port int, account, password string, stats 
 	if err != nil {
 		return testResult{Elapsed: time.Since(start), Detail: err.Error()}
 	}
-	if err := loginAndEnter(gc1, password, stats); err != nil {
+	if err := loginAndEnterScenario(gc1, password, stats); err != nil {
 		gc1.Close()
 		return testResult{Elapsed: time.Since(start), Detail: fmt.Sprintf("first login: %s", err)}
 	}
@@ -793,7 +847,7 @@ func testLeaveAndReLogin(host string, port int, account, password string, stats 
 	}
 	defer gc2.Close()
 
-	if err := loginAndEnter(gc2, password, stats); err != nil {
+	if err := loginAndEnterScenario(gc2, password, stats); err != nil {
 		return testResult{Elapsed: time.Since(start), Detail: fmt.Sprintf("re-login: %s", err)}
 	}
 
@@ -816,8 +870,9 @@ func testRapidLoginSpam(host string, port int, account, password string, stats *
 				Detail: fmt.Sprintf("spam iter %d connect: %s", i, err)}
 		}
 		// Just send login, don't wait for response — immediately close.
-		_ = gc.SendRequest(game.ClientPlayerLoginLoginMessageId,
-			&login.LoginRequest{Account: account, Password: password})
+		if req, berr := buildScenarioLoginRequest(account, password); berr == nil {
+			_ = gc.SendRequest(game.ClientPlayerLoginLoginMessageId, req)
+		}
 		gc.Close()
 	}
 
@@ -830,7 +885,7 @@ func testRapidLoginSpam(host string, port int, account, password string, stats *
 	}
 	defer gc.Close()
 
-	if err := loginAndEnter(gc, password, stats); err != nil {
+	if err := loginAndEnterScenario(gc, password, stats); err != nil {
 		return testResult{Passed: false, Elapsed: time.Since(start),
 			Detail: fmt.Sprintf("STUCK after %d spam attempts: %s", count, err)}
 	}
@@ -866,7 +921,7 @@ func testMessageBeforeLogin(host string, port int, account, password string, sta
 	}
 	defer gc2.Close()
 
-	if err := loginAndEnter(gc2, password, stats); err != nil {
+	if err := loginAndEnterScenario(gc2, password, stats); err != nil {
 		return testResult{Passed: true, Elapsed: time.Since(start),
 			Detail: fmt.Sprintf("login after invalid msg: %s (server may have rate-limited)", err)}
 	}
@@ -888,7 +943,7 @@ func testLoginStuckDetection(host string, port int, account, password string, st
 	}
 	defer gc.Close()
 
-	if err := loginAndEnter(gc, password, stats); err != nil {
+	if err := loginAndEnterScenario(gc, password, stats); err != nil {
 		stuck := strings.Contains(err.Error(), "STUCK")
 		return testResult{Passed: false, Elapsed: time.Since(start),
 			Detail: fmt.Sprintf("stuck=%v err=%s", stuck, err)}
@@ -933,7 +988,7 @@ func testBatchConcurrentLogin(host string, port int, accountFmt, password string
 				return
 			}
 			defer gc.Close()
-			err = loginAndEnter(gc, password, stats)
+			err = loginAndEnterScenario(gc, password, stats)
 			results[idx] = accountResult{account: acc, err: err, elapsed: time.Since(t)}
 
 			// Record each attempt for ML.
@@ -1010,7 +1065,7 @@ func prepareBehaviorClient(host string, port int, account, password string, stat
 	if err != nil {
 		return nil, nil, err
 	}
-	if err := loginAndEnter(gc, password, stats); err != nil {
+	if err := loginAndEnterScenario(gc, password, stats); err != nil {
 		gc.Close()
 		return nil, nil, err
 	}

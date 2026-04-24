@@ -25,9 +25,11 @@ tools/
 | Task | Location | Notes |
 |------|----------|-------|
 | Main script entrypoint | `scripts/dev_tools.ps1` | proto-gen (pbgen), k8s, tree, naming audit/apply |
+| Data consistency chaos test | `scripts/chaos_test.ps1` | L4: builds db+data_stress+verifier, kill-restarts consumer N times, verifies convergence. Design: `docs/design/data-consistency-stress-testing.md` |
 | proto-gen source | `proto_generator/protogen/` | Canonical generator project |
 | Compatibility proto-gen bundle | `proto/` | Retained for existing local toolchains |
 | Robot proto/handlers | `robot/` | Proto defs + message handlers for load testing |
+| Robot data-stress mode | see `robot/data_stress.go` | L3 e2e: login→enter→play→logout cycles, publishes expected seq to Redis for verifier |
 | Archived generator logs | `docs/protogen/` | Historical runs only |
 
 ## CONVENTIONS
@@ -52,9 +54,16 @@ pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-run -ConfigPath tools/
 pwsh -File tools/scripts/dev_tools.ps1 -Command tree
 pwsh -File tools/scripts/dev_tools.ps1 -Command naming-audit
 pwsh -File tools/scripts/dev_tools.ps1 -Command naming-apply -MaxChanges 100
+
+# Data consistency stress / chaos
+pwsh -File tools/scripts/chaos_test.ps1                                      # default: 200 players × 50 writes, 3 kill cycles
+pwsh -File tools/scripts/chaos_test.ps1 -Players 500 -Writes 100 -KillCount 5  # heavier run
+pwsh -File tools/scripts/chaos_test.ps1 -KillCount 0                         # L2 happy-path only (no chaos)
+pwsh -File tools/scripts/chaos_test.ps1 -SkipBuild                           # skip go build (faster iteration)
 ```
 
 ## NOTES
 - `tools/scripts/README.md` is the practical command catalog; keep new tool workflows wired through it.
 - High-risk rename exclusions already include generated files, IDE files, `*.vcxproj*`, `*.sln*`, and `*.pb.{h,cc,go}`.
 - `tools/robot/` contains proto definitions and message handlers for the robot load-testing framework.
+- **`chaos_test.ps1`**: orchestrates L4 data-consistency testing. It builds three binaries (`db.exe`, `data_stress.exe`, `verifier.exe`) into `bin/chaos_test/`, runs them with kill-restart cycles on the db consumer, and exits non-zero on any divergence. Logs go to `bin/chaos_test/logs/`. Key flags: `-Players`, `-Writes`, `-KillCount`, `-KillIntervalMs`, `-Wait`, `-MetricsAddr` (Prometheus endpoint on verifier), `-SkipBuild`. Design: `docs/design/data-consistency-stress-testing.md`.

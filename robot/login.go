@@ -43,6 +43,8 @@ func loginAndEnter(gc *pkg.GameClient, password string, stats *metrics.Stats) er
 	if lr.AccessToken != "" {
 		gc.AccessToken = lr.AccessToken
 		gc.RefreshToken = lr.RefreshToken
+		gc.AccessTokenExpire = lr.AccessTokenExpire
+		gc.RefreshTokenExpire = lr.RefreshTokenExpire
 		zap.L().Debug("received auth tokens",
 			zap.String("account", gc.Account),
 			zap.Int64("access_expire", lr.AccessTokenExpire),
@@ -178,6 +180,22 @@ func fetchSaToken(saTokenAddr, account string) (string, error) {
 	return result.TokenValue, nil
 }
 
+// revokeSaToken calls the SA-Token logout endpoint to remove the manually-
+// written Redis key so long-running stress tests don't accumulate stale
+// satoken:login:token:* entries. Best-effort; errors are logged but not fatal.
+func revokeSaToken(saTokenAddr, token string) {
+	if saTokenAddr == "" || token == "" {
+		return
+	}
+	url := saTokenAddr + "/auth/logout?token=" + token
+	resp, err := http.Get(url)
+	if err != nil {
+		zap.L().Debug("SA-Token logout failed", zap.Error(err))
+		return
+	}
+	_ = resp.Body.Close()
+}
+
 // loginAndEnterSaToken performs: fetch SA-Token → login (auth_type=satoken) → create player → enter game.
 func loginAndEnterSaToken(gc *pkg.GameClient, saTokenAddr string, stats *metrics.Stats) error {
 	token, err := fetchSaToken(saTokenAddr, gc.Account)
@@ -185,6 +203,7 @@ func loginAndEnterSaToken(gc *pkg.GameClient, saTokenAddr string, stats *metrics
 		stats.LoginFail()
 		return fmt.Errorf("fetch satoken: %w", err)
 	}
+	gc.SaToken = token
 
 	var lr login.LoginResponse
 	if err := sendAndRecv(gc, stats,
@@ -202,6 +221,13 @@ func loginAndEnterSaToken(gc *pkg.GameClient, saTokenAddr string, stats *metrics
 	if lr.ErrorMessage != nil {
 		stats.LoginFail()
 		return fmt.Errorf("login(satoken): server error %v", lr.ErrorMessage)
+	}
+
+	if lr.AccessToken != "" {
+		gc.AccessToken = lr.AccessToken
+		gc.RefreshToken = lr.RefreshToken
+		gc.AccessTokenExpire = lr.AccessTokenExpire
+		gc.RefreshTokenExpire = lr.RefreshTokenExpire
 	}
 
 	if len(lr.Players) == 0 {
@@ -230,6 +256,69 @@ func loginAndEnterSaToken(gc *pkg.GameClient, saTokenAddr string, stats *metrics
 	if err := sendAndRecv(gc, stats,
 		game.ClientPlayerLoginEnterGameMessageId,
 		&login.EnterGameRequest{PlayerId: playerId},
+		&er,
+	); err != nil {
+		stats.EnterFail()
+		return fmt.Errorf("enter game: %w", err)
+	}
+	if er.ErrorMessage != nil {
+		stats.EnterFail()
+		return fmt.Errorf("enter game: server error %v", er.ErrorMessage)
+	}
+
+	gc.PlayerId = er.PlayerId
+	return nil
+}
+
+// loginAndEnterAccessToken performs: login (auth_type=access_token) → create
+// player (if needed) → enter game. Used on reconnect to skip the SA-Token /
+// password round-trip. The server does NOT rotate tokens for access_token auth,
+// so gc.AccessToken stays the same across successful reconnects.
+func loginAndEnterAccessToken(gc *pkg.GameClient, accessToken string, stats *metrics.Stats) error {
+	var lr login.LoginResponse
+	if err := sendAndRecv(gc, stats,
+		game.ClientPlayerLoginLoginMessageId,
+		&login.LoginRequest{
+			Account:   gc.Account,
+			AuthType:  "access_token",
+			AuthToken: accessToken,
+		},
+		&lr,
+	); err != nil {
+		stats.LoginFail()
+		return fmt.Errorf("login(access_token): %w", err)
+	}
+	if lr.ErrorMessage != nil {
+		stats.LoginFail()
+		return fmt.Errorf("login(access_token): server error %v", lr.ErrorMessage)
+	}
+
+	if len(lr.Players) == 0 {
+		var cr login.CreatePlayerResponse
+		if err := sendAndRecv(gc, stats,
+			game.ClientPlayerLoginCreatePlayerMessageId,
+			&login.CreatePlayerRequest{},
+			&cr,
+		); err != nil {
+			stats.LoginFail()
+			return fmt.Errorf("create player: %w", err)
+		}
+		if cr.ErrorMessage != nil {
+			stats.LoginFail()
+			return fmt.Errorf("create player: server error %v", cr.ErrorMessage)
+		}
+		lr.Players = cr.Players
+	}
+	if len(lr.Players) == 0 {
+		stats.LoginFail()
+		return fmt.Errorf("no players after create")
+	}
+
+	playerID := lr.Players[0].GetPlayer().GetPlayerId()
+	var er login.EnterGameResponse
+	if err := sendAndRecv(gc, stats,
+		game.ClientPlayerLoginEnterGameMessageId,
+		&login.EnterGameRequest{PlayerId: playerID},
 		&er,
 	); err != nil {
 		stats.EnterFail()

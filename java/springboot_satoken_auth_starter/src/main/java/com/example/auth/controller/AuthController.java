@@ -78,6 +78,41 @@ public class AuthController {
         return buildTokenResponse(normalized);
     }
 
+    // Logout endpoint: removes the manually-written Redis key so a long-running
+    // stress test doesn't accumulate stale satoken:login:token:* entries.
+    // Accepts either a token value or an account; passing token is preferred
+    // because it removes exactly that one key rather than scanning.
+    @GetMapping("/logout")
+    public Object logout(@RequestParam(required = false) String token,
+                         @RequestParam(required = false) String account) {
+        String tokenName = StpUtil.getTokenName();
+
+        if (token != null && !token.isBlank()) {
+            String redisKey = tokenName + ":login:token:" + token.trim();
+            Boolean removed = redisTemplate.delete(redisKey);
+            return Map.of(
+                    "ok", true,
+                    "removed", Boolean.TRUE.equals(removed),
+                    "redis_key", redisKey
+            );
+        }
+
+        if (account != null && !account.isBlank()) {
+            // SA-Token can map account -> tokens it knows about, but our manually
+            // written keys may include tokens SA-Token already evicted. Delegate
+            // to SA-Token's logoutByLoginId for whatever it tracks; the manual
+            // key is left to expire via TTL if its token value is unknown.
+            try {
+                StpUtil.logout(account.trim());
+            } catch (Exception e) {
+                return Map.of("ok", false, "message", "logout failed: " + e.getMessage());
+            }
+            return Map.of("ok", true, "account", account.trim());
+        }
+
+        return Map.of("ok", false, "message", "token or account required");
+    }
+
     private Map<String, Object> buildTokenResponse(String loginId) {
         String tokenName = StpUtil.getTokenName();
         String tokenValue = StpUtil.getTokenValue();

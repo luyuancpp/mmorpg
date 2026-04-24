@@ -23,6 +23,8 @@ cpp/
 | Node-local event handlers | `nodes/*/handler/event/` | Event-driven edge logic |
 | Async/reply handling | `nodes/*/rpc_replies/` | `On<Domain><Method>Reply` style |
 | Scene gameplay/domain | `libs/services/scene/` | actor/player/world/frame/team/etc. |
+| Player save pipeline | `libs/services/scene/player/system/player_lifecycle.cpp` | `SavePlayerToRedis`: marshals → stamps probe → Redis cache → Kafka |
+| Data-consistency stress probe | `libs/services/scene/player/system/stress_test_probe.{h,cpp}` | Gated by `STRESS_TEST_PROBE=1` env var. Go mirror: `go/db/internal/stresstest/probe.go` |
 | Scene node role config | `libs/engine/config/config.cpp` `readGameConfig` | Honours `SCENE_NODE_TYPE` / `ZONE_ID` / `GAME_CONFIG_PATH` env overrides |
 | Static analysis rule | `.clang-tidy` | Custom `myplugin-no-member-pointer` check only |
 
@@ -66,3 +68,10 @@ clang-tidy <file.cpp> --config-file=cpp\.clang-tidy
 ## NOTES
 - `libs/services/scene/` is the highest-value subtree for durable domain fixes.
 - Tests are native binaries/projects under `cpp/tests/`; run the relevant target rather than assuming a single root test runner.
+- **Stress test probe** (`libs/services/scene/player/system/stress_test_probe.{h,cpp}`):
+  - Off by default; enabled by `STRESS_TEST_PROBE=1` environment variable (cached at process start via `IsEnabled()`).
+  - `StampPlayerDatabase` / `StampPlayerDatabase1` are called from `SavePlayerToRedis` in `player_lifecycle.cpp`, immediately before `Save()` serializes the proto eagerly. Moving the stamp after Save() would silently break it.
+  - `NextSeq` uses `max(prior+1, now_us)` to guarantee strict monotonicity across Scene restarts without persistence. The `now_us` floor is epoch microseconds.
+  - `ComputeSig` implements dual-seeded FNV-1a-64 (128-bit total). It MUST produce byte-identical output to `go/db/internal/stresstest/probe.go:ComputeSig`. Golden vectors in `go/db/internal/stresstest/probe_test.go` lock the algorithm; if you change either side, update both AND both tests.
+  - Added to `scene.vcxproj`, `scene.vcxproj.filters`, and `CMakeLists.txt`. Linux builds auto-pick it up via `vcxproj2cmake.py`.
+  - Design doc: `docs/design/data-consistency-stress-testing.md`.

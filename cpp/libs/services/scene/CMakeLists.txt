@@ -73,6 +73,7 @@ set(SOURCE_FILES
     player/system/player_scene.cpp
     player/system/player_skill.cpp
     player/system/player_tip.cpp
+    player/system/stress_test_probe.cpp
     spatial/system/aoi.cpp
     spatial/system/grid.cpp
     spatial/system/interest.cpp

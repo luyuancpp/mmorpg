@@ -36,3 +36,23 @@ message PlayerUint32Comp
 	uint32 class  = 1;
 }
 
+// Stress-test instrumentation for player-data persistence.
+//
+// Stamped by the producer (Scene's SavePlayerToRedis when an env-var probe
+// is enabled, or by the data_stress driver / robot data-stress mode) and
+// verified by tools/cmd/verifier so we can prove "last write wins" through
+// the Kafka -> DB -> MySQL+Redis pipeline without doing per-field deep
+// diffs. Fields default-empty in normal play, so they cost nothing on disk
+// or wire when unused.
+message PlayerStressTestProbe
+{
+	// Monotonic per-(player_id, msg_type) sequence. Verifier asserts
+	// MySQL.test_seq == Redis.test_seq == max(test_seq) ever published.
+	uint64 test_seq = 1;
+	// HMAC-style signature over (player_id || msg_type || test_seq || nonce).
+	// Used to detect torn / mis-routed / replayed payloads — if test_sig
+	// matches the recomputed value we know the row was not silently
+	// reassembled or fed from a different stream.
+	bytes  test_sig = 2;
+}
+

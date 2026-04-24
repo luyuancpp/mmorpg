@@ -57,6 +57,7 @@
     <ClInclude Include="player\system\player_lifecycle.h" />
     <ClInclude Include="player\system\player_scene.h" />
     <ClInclude Include="player\system\player_skill.h" />
+    <ClInclude Include="player\system\stress_test_probe.h" />
     <ClInclude Include="player\system\player_tip.h" />
     <ClInclude Include="spatial\comp\dt_crowd_comp.h" />
     <ClInclude Include="spatial\comp\grid_comp.h" />
@@ -106,6 +107,7 @@
     <ClCompile Include="player\system\player_scene.cpp" />
     <ClCompile Include="player\system\player_skill.cpp" />
     <ClCompile Include="player\system\player_tip.cpp" />
+    <ClCompile Include="player\system\stress_test_probe.cpp" />
     <ClCompile Include="spatial\system\aoi.cpp" />
     <ClCompile Include="spatial\system\grid.cpp" />
     <ClCompile Include="spatial\system\interest.cpp" />
