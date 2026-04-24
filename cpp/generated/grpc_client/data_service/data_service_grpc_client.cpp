@@ -425,6 +425,65 @@ void SendDataServiceBatchGetPlayerHomeZone(entt::registry& registry, entt::entit
     SendDataServiceBatchGetPlayerHomeZone(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
+#pragma region DataServiceRemapHomeZoneForMerge
+boost::object_pool<AsyncDataServiceRemapHomeZoneForMergeGrpcClient> DataServiceRemapHomeZoneForMergePool;
+using AsyncDataServiceRemapHomeZoneForMergeHandlerFunctionType =
+    std::function<void(const ClientContext&, const ::data_service::RemapHomeZoneForMergeResponse&)>;
+AsyncDataServiceRemapHomeZoneForMergeHandlerFunctionType AsyncDataServiceRemapHomeZoneForMergeHandler;
+
+void AsyncCompleteGrpcDataServiceRemapHomeZoneForMerge(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
+    auto call(
+        static_cast<AsyncDataServiceRemapHomeZoneForMergeGrpcClient*>(got_tag));
+    if (call->status.ok()) {
+        if (AsyncDataServiceRemapHomeZoneForMergeHandler) {
+            AsyncDataServiceRemapHomeZoneForMergeHandler(call->context, call->reply);
+        }
+    } else {
+        LOG_ERROR << call->status.error_message();
+    }
+
+	DataServiceRemapHomeZoneForMergePool.destroy(call);
+}
+
+void SendDataServiceRemapHomeZoneForMerge(entt::registry& registry, entt::entity nodeEntity, const ::data_service::RemapHomeZoneForMergeRequest& request) {
+
+    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
+    auto call(DataServiceRemapHomeZoneForMergePool.construct());
+    call->response_reader = registry
+        .get<DataServiceStubPtr>(nodeEntity)
+        ->PrepareAsyncRemapHomeZoneForMerge(&call->context, request,
+                                           &cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(DataServiceRemapHomeZoneForMergeMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+
+}
+
+void SendDataServiceRemapHomeZoneForMerge(entt::registry& registry, entt::entity nodeEntity, const ::data_service::RemapHomeZoneForMergeRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+
+    auto call(DataServiceRemapHomeZoneForMergePool.construct());
+    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
+
+    const size_t count = std::min(metaKeys.size(), metaValues.size());
+    for (size_t i = 0; i < count; ++i) {
+        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
+    }
+
+    call->response_reader = registry
+        .get<DataServiceStubPtr>(nodeEntity)
+        ->PrepareAsyncRemapHomeZoneForMerge(&call->context, request,
+                                           &cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(DataServiceRemapHomeZoneForMergeMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+
+}
+
+void SendDataServiceRemapHomeZoneForMerge(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+    const ::data_service::RemapHomeZoneForMergeRequest& derived = static_cast<const ::data_service::RemapHomeZoneForMergeRequest&>(message);
+    SendDataServiceRemapHomeZoneForMerge(registry, nodeEntity, derived, metaKeys, metaValues);
+}
+#pragma endregion
 #pragma region DataServiceDeletePlayerData
 boost::object_pool<AsyncDataServiceDeletePlayerDataGrpcClient> DataServiceDeletePlayerDataPool;
 using AsyncDataServiceDeletePlayerDataHandlerFunctionType =
@@ -1046,6 +1105,10 @@ void HandleDataServiceCompletedQueueMessage(entt::registry& registry, entt::enti
             AsyncCompleteGrpcDataServiceBatchGetPlayerHomeZone(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
 			tagPool.destroy(grpcTag);
             break;
+        case DataServiceRemapHomeZoneForMergeMessageId:
+            AsyncCompleteGrpcDataServiceRemapHomeZoneForMerge(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
+			tagPool.destroy(grpcTag);
+            break;
         case DataServiceDeletePlayerDataMessageId:
             AsyncCompleteGrpcDataServiceDeletePlayerData(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
 			tagPool.destroy(grpcTag);
@@ -1100,6 +1163,7 @@ void SetDataServiceHandler(const std::function<void(const ClientContext&, const 
     AsyncDataServiceRegisterPlayerZoneHandler = handler;
     AsyncDataServiceGetPlayerHomeZoneHandler = handler;
     AsyncDataServiceBatchGetPlayerHomeZoneHandler = handler;
+    AsyncDataServiceRemapHomeZoneForMergeHandler = handler;
     AsyncDataServiceDeletePlayerDataHandler = handler;
     AsyncDataServiceCreatePlayerSnapshotHandler = handler;
     AsyncDataServiceListPlayerSnapshotsHandler = handler;
@@ -1134,6 +1198,9 @@ void SetDataServiceIfEmptyHandler(const std::function<void(const ClientContext&,
     }
     if (!AsyncDataServiceBatchGetPlayerHomeZoneHandler) {
         AsyncDataServiceBatchGetPlayerHomeZoneHandler = handler;
+    }
+    if (!AsyncDataServiceRemapHomeZoneForMergeHandler) {
+        AsyncDataServiceRemapHomeZoneForMergeHandler = handler;
     }
     if (!AsyncDataServiceDeletePlayerDataHandler) {
         AsyncDataServiceDeletePlayerDataHandler = handler;

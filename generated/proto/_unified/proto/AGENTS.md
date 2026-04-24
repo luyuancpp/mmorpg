@@ -57,3 +57,4 @@ cd go && build.bat
 ## NOTES
 - `generated/proto/` is checked in, so proto edits usually create visible downstream diffs.
 - `proto/scene/` and `proto/login/` are high-churn service areas; inspect them first for gameplay/auth contract work.
+- **`PlayerStressTestProbe`** (`common/component/player_comp.proto`): a test-only sub-message (`test_seq` uint64, `test_sig` bytes) embedded in `player_database` (field 9) and `player_database_1` (field 2) in `common/database/mysql_database_table.proto`. Used by the data-consistency stress test harness. If you renumber/remove it, update both the Go verifier (`go/db/internal/stresstest/`) and the cpp stamper (`cpp/libs/services/scene/player/system/stress_test_probe.{h,cpp}`). Design: `docs/design/data-consistency-stress-testing.md`.

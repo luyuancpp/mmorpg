@@ -93,6 +93,7 @@ namespace data_service{void SendDataServiceSetPlayerField(entt::registry& , entt
 namespace data_service{void SendDataServiceRegisterPlayerZone(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace data_service{void SendDataServiceGetPlayerHomeZone(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace data_service{void SendDataServiceBatchGetPlayerHomeZone(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace data_service{void SendDataServiceRemapHomeZoneForMerge(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace data_service{void SendDataServiceDeletePlayerData(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace data_service{void SendDataServiceCreatePlayerSnapshot(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace data_service{void SendDataServiceListPlayerSnapshots(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
@@ -148,7 +149,7 @@ namespace scene_node{void SendSceneNodeGrpcCreateScene(entt::registry& , entt::e
 namespace scene_node{void SendSceneNodeGrpcDestroyScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace scene_node{void SendSceneNodeGrpcReleasePlayer(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 
-std::array<RpcMethodMeta, 129> gRpcMethodRegistry;
+std::array<RpcMethodMeta, 130> gRpcMethodRegistry;
 
 void InitMessageInfo()
 {
@@ -200,6 +201,11 @@ void InitMessageInfo()
         std::make_unique<::data_service::BatchGetPlayerHomeZoneRequest>(),
         std::make_unique<::data_service::BatchGetPlayerHomeZoneResponse>(),
         nullptr, 1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceBatchGetPlayerHomeZone};
+    gRpcMethodRegistry[DataServiceRemapHomeZoneForMergeMessageId] = RpcMethodMeta{
+        "DataService", "RemapHomeZoneForMerge",
+        std::make_unique<::data_service::RemapHomeZoneForMergeRequest>(),
+        std::make_unique<::data_service::RemapHomeZoneForMergeResponse>(),
+        nullptr, 1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceRemapHomeZoneForMerge};
     gRpcMethodRegistry[DataServiceDeletePlayerDataMessageId] = RpcMethodMeta{
         "DataService", "DeletePlayerData",
         std::make_unique<::data_service::DeletePlayerDataRequest>(),

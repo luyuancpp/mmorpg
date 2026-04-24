@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.10
 // 	protoc        v6.31.1
-// source: data_service/data_service.proto
+// source: proto/data_service/data_service.proto
 
 package data_service
 
@@ -61,11 +61,11 @@ func (x SnapshotType) String() string {
 }
 
 func (SnapshotType) Descriptor() protoreflect.EnumDescriptor {
-	return file_data_service_data_service_proto_enumTypes[0].Descriptor()
+	return file_proto_data_service_data_service_proto_enumTypes[0].Descriptor()
 }
 
 func (SnapshotType) Type() protoreflect.EnumType {
-	return &file_data_service_data_service_proto_enumTypes[0]
+	return &file_proto_data_service_data_service_proto_enumTypes[0]
 }
 
 func (x SnapshotType) Number() protoreflect.EnumNumber {
@@ -74,7 +74,7 @@ func (x SnapshotType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use SnapshotType.Descriptor instead.
 func (SnapshotType) EnumDescriptor() ([]byte, []int) {
-	return file_data_service_data_service_proto_rawDescGZIP(), []int{0}
+	return file_proto_data_service_data_service_proto_rawDescGZIP(), []int{0}
 }
 
 type RollbackScope int32
@@ -107,11 +107,11 @@ func (x RollbackScope) String() string {
 }
 
 func (RollbackScope) Descriptor() protoreflect.EnumDescriptor {
-	return file_data_service_data_service_proto_enumTypes[1].Descriptor()
+	return file_proto_data_service_data_service_proto_enumTypes[1].Descriptor()
 }
 
 func (RollbackScope) Type() protoreflect.EnumType {
-	return &file_data_service_data_service_proto_enumTypes[1]
+	return &file_proto_data_service_data_service_proto_enumTypes[1]
 }
 
 func (x RollbackScope) Number() protoreflect.EnumNumber {
@@ -120,7 +120,7 @@ func (x RollbackScope) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use RollbackScope.Descriptor instead.
 func (RollbackScope) EnumDescriptor() ([]byte, []int) {
-	return file_data_service_data_service_proto_rawDescGZIP(), []int{1}
+	return file_proto_data_service_data_service_proto_rawDescGZIP(), []int{1}
 }
 
 type SnapshotEventType int32
@@ -162,11 +162,11 @@ func (x SnapshotEventType) String() string {
 }
 
 func (SnapshotEventType) Descriptor() protoreflect.EnumDescriptor {
-	return file_data_service_data_service_proto_enumTypes[2].Descriptor()
+	return file_proto_data_service_data_service_proto_enumTypes[2].Descriptor()
 }
 
 func (SnapshotEventType) Type() protoreflect.EnumType {
-	return &file_data_service_data_service_proto_enumTypes[2]
+	return &file_proto_data_service_data_service_proto_enumTypes[2]
 }
 
 func (x SnapshotEventType) Number() protoreflect.EnumNumber {
@@ -175,7 +175,7 @@ func (x SnapshotEventType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use SnapshotEventType.Descriptor instead.
 func (SnapshotEventType) EnumDescriptor() ([]byte, []int) {
-	return file_data_service_data_service_proto_rawDescGZIP(), []int{2}
+	return file_proto_data_service_data_service_proto_rawDescGZIP(), []int{2}
 }
 
 type LoadPlayerDataRequest struct {
@@ -188,7 +188,7 @@ type LoadPlayerDataRequest struct {
 
 func (x *LoadPlayerDataRequest) Reset() {
 	*x = LoadPlayerDataRequest{}
-	mi := &file_data_service_data_service_proto_msgTypes[0]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -200,7 +200,7 @@ func (x *LoadPlayerDataRequest) String() string {
 func (*LoadPlayerDataRequest) ProtoMessage() {}
 
 func (x *LoadPlayerDataRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_service_data_service_proto_msgTypes[0]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -213,7 +213,7 @@ func (x *LoadPlayerDataRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LoadPlayerDataRequest.ProtoReflect.Descriptor instead.
 func (*LoadPlayerDataRequest) Descriptor() ([]byte, []int) {
-	return file_data_service_data_service_proto_rawDescGZIP(), []int{0}
+	return file_proto_data_service_data_service_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *LoadPlayerDataRequest) GetPlayerId() uint64 {
@@ -241,7 +241,7 @@ type LoadPlayerDataResponse struct {
 
 func (x *LoadPlayerDataResponse) Reset() {
 	*x = LoadPlayerDataResponse{}
-	mi := &file_data_service_data_service_proto_msgTypes[1]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -253,7 +253,7 @@ func (x *LoadPlayerDataResponse) String() string {
 func (*LoadPlayerDataResponse) ProtoMessage() {}
 
 func (x *LoadPlayerDataResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_service_data_service_proto_msgTypes[1]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -266,7 +266,7 @@ func (x *LoadPlayerDataResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LoadPlayerDataResponse.ProtoReflect.Descriptor instead.
 func (*LoadPlayerDataResponse) Descriptor() ([]byte, []int) {
-	return file_data_service_data_service_proto_rawDescGZIP(), []int{1}
+	return file_proto_data_service_data_service_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *LoadPlayerDataResponse) GetErrorCode() uint32 {
@@ -301,7 +301,7 @@ type SavePlayerDataRequest struct {
 
 func (x *SavePlayerDataRequest) Reset() {
 	*x = SavePlayerDataRequest{}
-	mi := &file_data_service_data_service_proto_msgTypes[2]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -313,7 +313,7 @@ func (x *SavePlayerDataRequest) String() string {
 func (*SavePlayerDataRequest) ProtoMessage() {}
 
 func (x *SavePlayerDataRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_service_data_service_proto_msgTypes[2]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -326,7 +326,7 @@ func (x *SavePlayerDataRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SavePlayerDataRequest.ProtoReflect.Descriptor instead.
 func (*SavePlayerDataRequest) Descriptor() ([]byte, []int) {
-	return file_data_service_data_service_proto_rawDescGZIP(), []int{2}
+	return file_proto_data_service_data_service_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *SavePlayerDataRequest) GetPlayerId() uint64 {
@@ -360,7 +360,7 @@ type SavePlayerDataResponse struct {
 
 func (x *SavePlayerDataResponse) Reset() {
 	*x = SavePlayerDataResponse{}
-	mi := &file_data_service_data_service_proto_msgTypes[3]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -372,7 +372,7 @@ func (x *SavePlayerDataResponse) String() string {
 func (*SavePlayerDataResponse) ProtoMessage() {}
 
 func (x *SavePlayerDataResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_service_data_service_proto_msgTypes[3]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -385,7 +385,7 @@ func (x *SavePlayerDataResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SavePlayerDataResponse.ProtoReflect.Descriptor instead.
 func (*SavePlayerDataResponse) Descriptor() ([]byte, []int) {
-	return file_data_service_data_service_proto_rawDescGZIP(), []int{3}
+	return file_proto_data_service_data_service_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *SavePlayerDataResponse) GetErrorCode() uint32 {
@@ -412,7 +412,7 @@ type GetPlayerFieldRequest struct {
 
 func (x *GetPlayerFieldRequest) Reset() {
 	*x = GetPlayerFieldRequest{}
-	mi := &file_data_service_data_service_proto_msgTypes[4]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -424,7 +424,7 @@ func (x *GetPlayerFieldRequest) String() string {
 func (*GetPlayerFieldRequest) ProtoMessage() {}
 
 func (x *GetPlayerFieldRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_service_data_service_proto_msgTypes[4]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -437,7 +437,7 @@ func (x *GetPlayerFieldRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPlayerFieldRequest.ProtoReflect.Descriptor instead.
 func (*GetPlayerFieldRequest) Descriptor() ([]byte, []int) {
-	return file_data_service_data_service_proto_rawDescGZIP(), []int{4}
+	return file_proto_data_service_data_service_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *GetPlayerFieldRequest) GetPlayerId() uint64 {
@@ -464,7 +464,7 @@ type GetPlayerFieldResponse struct {
 
 func (x *GetPlayerFieldResponse) Reset() {
 	*x = GetPlayerFieldResponse{}
-	mi := &file_data_service_data_service_proto_msgTypes[5]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -476,7 +476,7 @@ func (x *GetPlayerFieldResponse) String() string {
 func (*GetPlayerFieldResponse) ProtoMessage() {}
 
 func (x *GetPlayerFieldResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_service_data_service_proto_msgTypes[5]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -489,7 +489,7 @@ func (x *GetPlayerFieldResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPlayerFieldResponse.ProtoReflect.Descriptor instead.
 func (*GetPlayerFieldResponse) Descriptor() ([]byte, []int) {
-	return file_data_service_data_service_proto_rawDescGZIP(), []int{5}
+	return file_proto_data_service_data_service_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *GetPlayerFieldResponse) GetErrorCode() uint32 {
@@ -518,7 +518,7 @@ type SetPlayerFieldRequest struct {
 
 func (x *SetPlayerFieldRequest) Reset() {
 	*x = SetPlayerFieldRequest{}
-	mi := &file_data_service_data_service_proto_msgTypes[6]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -530,7 +530,7 @@ func (x *SetPlayerFieldRequest) String() string {
 func (*SetPlayerFieldRequest) ProtoMessage() {}
 
 func (x *SetPlayerFieldRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_service_data_service_proto_msgTypes[6]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -543,7 +543,7 @@ func (x *SetPlayerFieldRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetPlayerFieldRequest.ProtoReflect.Descriptor instead.
 func (*SetPlayerFieldRequest) Descriptor() ([]byte, []int) {
-	return file_data_service_data_service_proto_rawDescGZIP(), []int{6}
+	return file_proto_data_service_data_service_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *SetPlayerFieldRequest) GetPlayerId() uint64 {
@@ -584,7 +584,7 @@ type SetPlayerFieldResponse struct {
 
 func (x *SetPlayerFieldResponse) Reset() {
 	*x = SetPlayerFieldResponse{}
-	mi := &file_data_service_data_service_proto_msgTypes[7]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -596,7 +596,7 @@ func (x *SetPlayerFieldResponse) String() string {
 func (*SetPlayerFieldResponse) ProtoMessage() {}
 
 func (x *SetPlayerFieldResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_service_data_service_proto_msgTypes[7]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -609,7 +609,7 @@ func (x *SetPlayerFieldResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetPlayerFieldResponse.ProtoReflect.Descriptor instead.
 func (*SetPlayerFieldResponse) Descriptor() ([]byte, []int) {
-	return file_data_service_data_service_proto_rawDescGZIP(), []int{7}
+	return file_proto_data_service_data_service_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *SetPlayerFieldResponse) GetErrorCode() uint32 {
@@ -636,7 +636,7 @@ type RegisterPlayerZoneRequest struct {
 
 func (x *RegisterPlayerZoneRequest) Reset() {
 	*x = RegisterPlayerZoneRequest{}
-	mi := &file_data_service_data_service_proto_msgTypes[8]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -648,7 +648,7 @@ func (x *RegisterPlayerZoneRequest) String() string {
 func (*RegisterPlayerZoneRequest) ProtoMessage() {}
 
 func (x *RegisterPlayerZoneRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_service_data_service_proto_msgTypes[8]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -661,7 +661,7 @@ func (x *RegisterPlayerZoneRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RegisterPlayerZoneRequest.ProtoReflect.Descriptor instead.
 func (*RegisterPlayerZoneRequest) Descriptor() ([]byte, []int) {
-	return file_data_service_data_service_proto_rawDescGZIP(), []int{8}
+	return file_proto_data_service_data_service_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *RegisterPlayerZoneRequest) GetPlayerId() uint64 {
@@ -687,7 +687,7 @@ type GetPlayerHomeZoneRequest struct {
 
 func (x *GetPlayerHomeZoneRequest) Reset() {
 	*x = GetPlayerHomeZoneRequest{}
-	mi := &file_data_service_data_service_proto_msgTypes[9]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -699,7 +699,7 @@ func (x *GetPlayerHomeZoneRequest) String() string {
 func (*GetPlayerHomeZoneRequest) ProtoMessage() {}
 
 func (x *GetPlayerHomeZoneRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_service_data_service_proto_msgTypes[9]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -712,7 +712,7 @@ func (x *GetPlayerHomeZoneRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPlayerHomeZoneRequest.ProtoReflect.Descriptor instead.
 func (*GetPlayerHomeZoneRequest) Descriptor() ([]byte, []int) {
-	return file_data_service_data_service_proto_rawDescGZIP(), []int{9}
+	return file_proto_data_service_data_service_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *GetPlayerHomeZoneRequest) GetPlayerId() uint64 {
@@ -731,7 +731,7 @@ type GetPlayerHomeZoneResponse struct {
 
 func (x *GetPlayerHomeZoneResponse) Reset() {
 	*x = GetPlayerHomeZoneResponse{}
-	mi := &file_data_service_data_service_proto_msgTypes[10]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -743,7 +743,7 @@ func (x *GetPlayerHomeZoneResponse) String() string {
 func (*GetPlayerHomeZoneResponse) ProtoMessage() {}
 
 func (x *GetPlayerHomeZoneResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_service_data_service_proto_msgTypes[10]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -756,7 +756,7 @@ func (x *GetPlayerHomeZoneResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPlayerHomeZoneResponse.ProtoReflect.Descriptor instead.
 func (*GetPlayerHomeZoneResponse) Descriptor() ([]byte, []int) {
-	return file_data_service_data_service_proto_rawDescGZIP(), []int{10}
+	return file_proto_data_service_data_service_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *GetPlayerHomeZoneResponse) GetHomeZoneId() uint32 {
@@ -775,7 +775,7 @@ type BatchGetPlayerHomeZoneRequest struct {
 
 func (x *BatchGetPlayerHomeZoneRequest) Reset() {
 	*x = BatchGetPlayerHomeZoneRequest{}
-	mi := &file_data_service_data_service_proto_msgTypes[11]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -787,7 +787,7 @@ func (x *BatchGetPlayerHomeZoneRequest) String() string {
 func (*BatchGetPlayerHomeZoneRequest) ProtoMessage() {}
 
 func (x *BatchGetPlayerHomeZoneRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_service_data_service_proto_msgTypes[11]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -800,7 +800,7 @@ func (x *BatchGetPlayerHomeZoneRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BatchGetPlayerHomeZoneRequest.ProtoReflect.Descriptor instead.
 func (*BatchGetPlayerHomeZoneRequest) Descriptor() ([]byte, []int) {
-	return file_data_service_data_service_proto_rawDescGZIP(), []int{11}
+	return file_proto_data_service_data_service_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *BatchGetPlayerHomeZoneRequest) GetPlayerIds() []uint64 {
@@ -819,7 +819,7 @@ type BatchGetPlayerHomeZoneResponse struct {
 
 func (x *BatchGetPlayerHomeZoneResponse) Reset() {
 	*x = BatchGetPlayerHomeZoneResponse{}
-	mi := &file_data_service_data_service_proto_msgTypes[12]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -831,7 +831,7 @@ func (x *BatchGetPlayerHomeZoneResponse) String() string {
 func (*BatchGetPlayerHomeZoneResponse) ProtoMessage() {}
 
 func (x *BatchGetPlayerHomeZoneResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_service_data_service_proto_msgTypes[12]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -844,7 +844,7 @@ func (x *BatchGetPlayerHomeZoneResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BatchGetPlayerHomeZoneResponse.ProtoReflect.Descriptor instead.
 func (*BatchGetPlayerHomeZoneResponse) Descriptor() ([]byte, []int) {
-	return file_data_service_data_service_proto_rawDescGZIP(), []int{12}
+	return file_proto_data_service_data_service_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *BatchGetPlayerHomeZoneResponse) GetPlayerZoneMap() map[uint64]uint32 {
@@ -865,7 +865,7 @@ type RemapHomeZoneForMergeRequest struct {
 
 func (x *RemapHomeZoneForMergeRequest) Reset() {
 	*x = RemapHomeZoneForMergeRequest{}
-	mi := &file_data_service_data_service_proto_msgTypes[13]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -877,7 +877,7 @@ func (x *RemapHomeZoneForMergeRequest) String() string {
 func (*RemapHomeZoneForMergeRequest) ProtoMessage() {}
 
 func (x *RemapHomeZoneForMergeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_service_data_service_proto_msgTypes[13]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -890,7 +890,7 @@ func (x *RemapHomeZoneForMergeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemapHomeZoneForMergeRequest.ProtoReflect.Descriptor instead.
 func (*RemapHomeZoneForMergeRequest) Descriptor() ([]byte, []int) {
-	return file_data_service_data_service_proto_rawDescGZIP(), []int{13}
+	return file_proto_data_service_data_service_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *RemapHomeZoneForMergeRequest) GetSourceZoneId() uint32 {
@@ -925,7 +925,7 @@ type RemapHomeZoneForMergeResponse struct {
 
 func (x *RemapHomeZoneForMergeResponse) Reset() {
 	*x = RemapHomeZoneForMergeResponse{}
-	mi := &file_data_service_data_service_proto_msgTypes[14]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -937,7 +937,7 @@ func (x *RemapHomeZoneForMergeResponse) String() string {
 func (*RemapHomeZoneForMergeResponse) ProtoMessage() {}
 
 func (x *RemapHomeZoneForMergeResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_service_data_service_proto_msgTypes[14]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -950,7 +950,7 @@ func (x *RemapHomeZoneForMergeResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemapHomeZoneForMergeResponse.ProtoReflect.Descriptor instead.
 func (*RemapHomeZoneForMergeResponse) Descriptor() ([]byte, []int) {
-	return file_data_service_data_service_proto_rawDescGZIP(), []int{14}
+	return file_proto_data_service_data_service_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *RemapHomeZoneForMergeResponse) GetErrorCode() uint32 {
@@ -984,7 +984,7 @@ type DeletePlayerDataRequest struct {
 
 func (x *DeletePlayerDataRequest) Reset() {
 	*x = DeletePlayerDataRequest{}
-	mi := &file_data_service_data_service_proto_msgTypes[15]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -996,7 +996,7 @@ func (x *DeletePlayerDataRequest) String() string {
 func (*DeletePlayerDataRequest) ProtoMessage() {}
 
 func (x *DeletePlayerDataRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_service_data_service_proto_msgTypes[15]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1009,7 +1009,7 @@ func (x *DeletePlayerDataRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeletePlayerDataRequest.ProtoReflect.Descriptor instead.
 func (*DeletePlayerDataRequest) Descriptor() ([]byte, []int) {
-	return file_data_service_data_service_proto_rawDescGZIP(), []int{15}
+	return file_proto_data_service_data_service_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *DeletePlayerDataRequest) GetPlayerId() uint64 {
@@ -1036,7 +1036,7 @@ type DeletePlayerDataResponse struct {
 
 func (x *DeletePlayerDataResponse) Reset() {
 	*x = DeletePlayerDataResponse{}
-	mi := &file_data_service_data_service_proto_msgTypes[16]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1048,7 +1048,7 @@ func (x *DeletePlayerDataResponse) String() string {
 func (*DeletePlayerDataResponse) ProtoMessage() {}
 
 func (x *DeletePlayerDataResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_service_data_service_proto_msgTypes[16]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1061,7 +1061,7 @@ func (x *DeletePlayerDataResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeletePlayerDataResponse.ProtoReflect.Descriptor instead.
 func (*DeletePlayerDataResponse) Descriptor() ([]byte, []int) {
-	return file_data_service_data_service_proto_rawDescGZIP(), []int{16}
+	return file_proto_data_service_data_service_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *DeletePlayerDataResponse) GetErrorCode() uint32 {
@@ -1090,7 +1090,7 @@ type CreatePlayerSnapshotRequest struct {
 
 func (x *CreatePlayerSnapshotRequest) Reset() {
 	*x = CreatePlayerSnapshotRequest{}
-	mi := &file_data_service_data_service_proto_msgTypes[17]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1102,7 +1102,7 @@ func (x *CreatePlayerSnapshotRequest) String() string {
 func (*CreatePlayerSnapshotRequest) ProtoMessage() {}
 
 func (x *CreatePlayerSnapshotRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_service_data_service_proto_msgTypes[17]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1115,7 +1115,7 @@ func (x *CreatePlayerSnapshotRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreatePlayerSnapshotRequest.ProtoReflect.Descriptor instead.
 func (*CreatePlayerSnapshotRequest) Descriptor() ([]byte, []int) {
-	return file_data_service_data_service_proto_rawDescGZIP(), []int{17}
+	return file_proto_data_service_data_service_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *CreatePlayerSnapshotRequest) GetPlayerId() uint64 {
@@ -1157,7 +1157,7 @@ type CreatePlayerSnapshotResponse struct {
 
 func (x *CreatePlayerSnapshotResponse) Reset() {
 	*x = CreatePlayerSnapshotResponse{}
-	mi := &file_data_service_data_service_proto_msgTypes[18]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1169,7 +1169,7 @@ func (x *CreatePlayerSnapshotResponse) String() string {
 func (*CreatePlayerSnapshotResponse) ProtoMessage() {}
 
 func (x *CreatePlayerSnapshotResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_service_data_service_proto_msgTypes[18]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1182,7 +1182,7 @@ func (x *CreatePlayerSnapshotResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreatePlayerSnapshotResponse.ProtoReflect.Descriptor instead.
 func (*CreatePlayerSnapshotResponse) Descriptor() ([]byte, []int) {
-	return file_data_service_data_service_proto_rawDescGZIP(), []int{18}
+	return file_proto_data_service_data_service_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *CreatePlayerSnapshotResponse) GetErrorCode() uint32 {
@@ -1217,7 +1217,7 @@ type ListPlayerSnapshotsRequest struct {
 
 func (x *ListPlayerSnapshotsRequest) Reset() {
 	*x = ListPlayerSnapshotsRequest{}
-	mi := &file_data_service_data_service_proto_msgTypes[19]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1229,7 +1229,7 @@ func (x *ListPlayerSnapshotsRequest) String() string {
 func (*ListPlayerSnapshotsRequest) ProtoMessage() {}
 
 func (x *ListPlayerSnapshotsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_service_data_service_proto_msgTypes[19]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1242,7 +1242,7 @@ func (x *ListPlayerSnapshotsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListPlayerSnapshotsRequest.ProtoReflect.Descriptor instead.
 func (*ListPlayerSnapshotsRequest) Descriptor() ([]byte, []int) {
-	return file_data_service_data_service_proto_rawDescGZIP(), []int{19}
+	return file_proto_data_service_data_service_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *ListPlayerSnapshotsRequest) GetPlayerId() uint64 {
@@ -1283,7 +1283,7 @@ type SnapshotInfo struct {
 
 func (x *SnapshotInfo) Reset() {
 	*x = SnapshotInfo{}
-	mi := &file_data_service_data_service_proto_msgTypes[20]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1295,7 +1295,7 @@ func (x *SnapshotInfo) String() string {
 func (*SnapshotInfo) ProtoMessage() {}
 
 func (x *SnapshotInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_data_service_data_service_proto_msgTypes[20]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1308,7 +1308,7 @@ func (x *SnapshotInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SnapshotInfo.ProtoReflect.Descriptor instead.
 func (*SnapshotInfo) Descriptor() ([]byte, []int) {
-	return file_data_service_data_service_proto_rawDescGZIP(), []int{20}
+	return file_proto_data_service_data_service_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *SnapshotInfo) GetSnapshotId() uint64 {
@@ -1384,7 +1384,7 @@ type ListPlayerSnapshotsResponse struct {
 
 func (x *ListPlayerSnapshotsResponse) Reset() {
 	*x = ListPlayerSnapshotsResponse{}
-	mi := &file_data_service_data_service_proto_msgTypes[21]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1396,7 +1396,7 @@ func (x *ListPlayerSnapshotsResponse) String() string {
 func (*ListPlayerSnapshotsResponse) ProtoMessage() {}
 
 func (x *ListPlayerSnapshotsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_service_data_service_proto_msgTypes[21]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1409,7 +1409,7 @@ func (x *ListPlayerSnapshotsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListPlayerSnapshotsResponse.ProtoReflect.Descriptor instead.
 func (*ListPlayerSnapshotsResponse) Descriptor() ([]byte, []int) {
-	return file_data_service_data_service_proto_rawDescGZIP(), []int{21}
+	return file_proto_data_service_data_service_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *ListPlayerSnapshotsResponse) GetErrorCode() uint32 {
@@ -1437,7 +1437,7 @@ type GetPlayerSnapshotDiffRequest struct {
 
 func (x *GetPlayerSnapshotDiffRequest) Reset() {
 	*x = GetPlayerSnapshotDiffRequest{}
-	mi := &file_data_service_data_service_proto_msgTypes[22]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1449,7 +1449,7 @@ func (x *GetPlayerSnapshotDiffRequest) String() string {
 func (*GetPlayerSnapshotDiffRequest) ProtoMessage() {}
 
 func (x *GetPlayerSnapshotDiffRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_service_data_service_proto_msgTypes[22]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1462,7 +1462,7 @@ func (x *GetPlayerSnapshotDiffRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPlayerSnapshotDiffRequest.ProtoReflect.Descriptor instead.
 func (*GetPlayerSnapshotDiffRequest) Descriptor() ([]byte, []int) {
-	return file_data_service_data_service_proto_rawDescGZIP(), []int{22}
+	return file_proto_data_service_data_service_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *GetPlayerSnapshotDiffRequest) GetPlayerId() uint64 {
@@ -1499,7 +1499,7 @@ type FieldDiff struct {
 
 func (x *FieldDiff) Reset() {
 	*x = FieldDiff{}
-	mi := &file_data_service_data_service_proto_msgTypes[23]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1511,7 +1511,7 @@ func (x *FieldDiff) String() string {
 func (*FieldDiff) ProtoMessage() {}
 
 func (x *FieldDiff) ProtoReflect() protoreflect.Message {
-	mi := &file_data_service_data_service_proto_msgTypes[23]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1524,7 +1524,7 @@ func (x *FieldDiff) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FieldDiff.ProtoReflect.Descriptor instead.
 func (*FieldDiff) Descriptor() ([]byte, []int) {
-	return file_data_service_data_service_proto_rawDescGZIP(), []int{23}
+	return file_proto_data_service_data_service_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *FieldDiff) GetField() string {
@@ -1574,7 +1574,7 @@ type GetPlayerSnapshotDiffResponse struct {
 
 func (x *GetPlayerSnapshotDiffResponse) Reset() {
 	*x = GetPlayerSnapshotDiffResponse{}
-	mi := &file_data_service_data_service_proto_msgTypes[24]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1586,7 +1586,7 @@ func (x *GetPlayerSnapshotDiffResponse) String() string {
 func (*GetPlayerSnapshotDiffResponse) ProtoMessage() {}
 
 func (x *GetPlayerSnapshotDiffResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_service_data_service_proto_msgTypes[24]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1599,7 +1599,7 @@ func (x *GetPlayerSnapshotDiffResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPlayerSnapshotDiffResponse.ProtoReflect.Descriptor instead.
 func (*GetPlayerSnapshotDiffResponse) Descriptor() ([]byte, []int) {
-	return file_data_service_data_service_proto_rawDescGZIP(), []int{24}
+	return file_proto_data_service_data_service_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *GetPlayerSnapshotDiffResponse) GetErrorCode() uint32 {
@@ -1645,7 +1645,7 @@ type RollbackPlayerRequest struct {
 
 func (x *RollbackPlayerRequest) Reset() {
 	*x = RollbackPlayerRequest{}
-	mi := &file_data_service_data_service_proto_msgTypes[25]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1657,7 +1657,7 @@ func (x *RollbackPlayerRequest) String() string {
 func (*RollbackPlayerRequest) ProtoMessage() {}
 
 func (x *RollbackPlayerRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_service_data_service_proto_msgTypes[25]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1670,7 +1670,7 @@ func (x *RollbackPlayerRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RollbackPlayerRequest.ProtoReflect.Descriptor instead.
 func (*RollbackPlayerRequest) Descriptor() ([]byte, []int) {
-	return file_data_service_data_service_proto_rawDescGZIP(), []int{25}
+	return file_proto_data_service_data_service_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *RollbackPlayerRequest) GetPlayerId() uint64 {
@@ -1734,7 +1734,7 @@ type RollbackPlayerResponse struct {
 
 func (x *RollbackPlayerResponse) Reset() {
 	*x = RollbackPlayerResponse{}
-	mi := &file_data_service_data_service_proto_msgTypes[26]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1746,7 +1746,7 @@ func (x *RollbackPlayerResponse) String() string {
 func (*RollbackPlayerResponse) ProtoMessage() {}
 
 func (x *RollbackPlayerResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_service_data_service_proto_msgTypes[26]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1759,7 +1759,7 @@ func (x *RollbackPlayerResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RollbackPlayerResponse.ProtoReflect.Descriptor instead.
 func (*RollbackPlayerResponse) Descriptor() ([]byte, []int) {
-	return file_data_service_data_service_proto_rawDescGZIP(), []int{26}
+	return file_proto_data_service_data_service_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *RollbackPlayerResponse) GetErrorCode() uint32 {
@@ -1802,7 +1802,7 @@ type RollbackZoneRequest struct {
 
 func (x *RollbackZoneRequest) Reset() {
 	*x = RollbackZoneRequest{}
-	mi := &file_data_service_data_service_proto_msgTypes[27]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1814,7 +1814,7 @@ func (x *RollbackZoneRequest) String() string {
 func (*RollbackZoneRequest) ProtoMessage() {}
 
 func (x *RollbackZoneRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_service_data_service_proto_msgTypes[27]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1827,7 +1827,7 @@ func (x *RollbackZoneRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RollbackZoneRequest.ProtoReflect.Descriptor instead.
 func (*RollbackZoneRequest) Descriptor() ([]byte, []int) {
-	return file_data_service_data_service_proto_rawDescGZIP(), []int{27}
+	return file_proto_data_service_data_service_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *RollbackZoneRequest) GetZoneId() uint32 {
@@ -1872,7 +1872,7 @@ type RollbackZoneResponse struct {
 
 func (x *RollbackZoneResponse) Reset() {
 	*x = RollbackZoneResponse{}
-	mi := &file_data_service_data_service_proto_msgTypes[28]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1884,7 +1884,7 @@ func (x *RollbackZoneResponse) String() string {
 func (*RollbackZoneResponse) ProtoMessage() {}
 
 func (x *RollbackZoneResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_service_data_service_proto_msgTypes[28]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1897,7 +1897,7 @@ func (x *RollbackZoneResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RollbackZoneResponse.ProtoReflect.Descriptor instead.
 func (*RollbackZoneResponse) Descriptor() ([]byte, []int) {
-	return file_data_service_data_service_proto_rawDescGZIP(), []int{28}
+	return file_proto_data_service_data_service_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *RollbackZoneResponse) GetErrorCode() uint32 {
@@ -1953,7 +1953,7 @@ type RollbackAllRequest struct {
 
 func (x *RollbackAllRequest) Reset() {
 	*x = RollbackAllRequest{}
-	mi := &file_data_service_data_service_proto_msgTypes[29]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1965,7 +1965,7 @@ func (x *RollbackAllRequest) String() string {
 func (*RollbackAllRequest) ProtoMessage() {}
 
 func (x *RollbackAllRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_service_data_service_proto_msgTypes[29]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1978,7 +1978,7 @@ func (x *RollbackAllRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RollbackAllRequest.ProtoReflect.Descriptor instead.
 func (*RollbackAllRequest) Descriptor() ([]byte, []int) {
-	return file_data_service_data_service_proto_rawDescGZIP(), []int{29}
+	return file_proto_data_service_data_service_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *RollbackAllRequest) GetTargetTime() uint64 {
@@ -2014,7 +2014,7 @@ type RollbackAllResponse struct {
 
 func (x *RollbackAllResponse) Reset() {
 	*x = RollbackAllResponse{}
-	mi := &file_data_service_data_service_proto_msgTypes[30]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2026,7 +2026,7 @@ func (x *RollbackAllResponse) String() string {
 func (*RollbackAllResponse) ProtoMessage() {}
 
 func (x *RollbackAllResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_service_data_service_proto_msgTypes[30]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2039,7 +2039,7 @@ func (x *RollbackAllResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RollbackAllResponse.ProtoReflect.Descriptor instead.
 func (*RollbackAllResponse) Descriptor() ([]byte, []int) {
-	return file_data_service_data_service_proto_rawDescGZIP(), []int{30}
+	return file_proto_data_service_data_service_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *RollbackAllResponse) GetErrorCode() uint32 {
@@ -2087,7 +2087,7 @@ type BatchRecallItemsRequest struct {
 
 func (x *BatchRecallItemsRequest) Reset() {
 	*x = BatchRecallItemsRequest{}
-	mi := &file_data_service_data_service_proto_msgTypes[31]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2099,7 +2099,7 @@ func (x *BatchRecallItemsRequest) String() string {
 func (*BatchRecallItemsRequest) ProtoMessage() {}
 
 func (x *BatchRecallItemsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_service_data_service_proto_msgTypes[31]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2112,7 +2112,7 @@ func (x *BatchRecallItemsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BatchRecallItemsRequest.ProtoReflect.Descriptor instead.
 func (*BatchRecallItemsRequest) Descriptor() ([]byte, []int) {
-	return file_data_service_data_service_proto_rawDescGZIP(), []int{31}
+	return file_proto_data_service_data_service_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *BatchRecallItemsRequest) GetPlayerIds() []uint64 {
@@ -2192,7 +2192,7 @@ type RecallResult struct {
 
 func (x *RecallResult) Reset() {
 	*x = RecallResult{}
-	mi := &file_data_service_data_service_proto_msgTypes[32]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2204,7 +2204,7 @@ func (x *RecallResult) String() string {
 func (*RecallResult) ProtoMessage() {}
 
 func (x *RecallResult) ProtoReflect() protoreflect.Message {
-	mi := &file_data_service_data_service_proto_msgTypes[32]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2217,7 +2217,7 @@ func (x *RecallResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RecallResult.ProtoReflect.Descriptor instead.
 func (*RecallResult) Descriptor() ([]byte, []int) {
-	return file_data_service_data_service_proto_rawDescGZIP(), []int{32}
+	return file_proto_data_service_data_service_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *RecallResult) GetPlayerId() uint64 {
@@ -2275,7 +2275,7 @@ type BatchRecallItemsResponse struct {
 
 func (x *BatchRecallItemsResponse) Reset() {
 	*x = BatchRecallItemsResponse{}
-	mi := &file_data_service_data_service_proto_msgTypes[33]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2287,7 +2287,7 @@ func (x *BatchRecallItemsResponse) String() string {
 func (*BatchRecallItemsResponse) ProtoMessage() {}
 
 func (x *BatchRecallItemsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_service_data_service_proto_msgTypes[33]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2300,7 +2300,7 @@ func (x *BatchRecallItemsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BatchRecallItemsResponse.ProtoReflect.Descriptor instead.
 func (*BatchRecallItemsResponse) Descriptor() ([]byte, []int) {
-	return file_data_service_data_service_proto_rawDescGZIP(), []int{33}
+	return file_proto_data_service_data_service_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *BatchRecallItemsResponse) GetErrorCode() uint32 {
@@ -2354,7 +2354,7 @@ type QueryTransactionLogRequest struct {
 
 func (x *QueryTransactionLogRequest) Reset() {
 	*x = QueryTransactionLogRequest{}
-	mi := &file_data_service_data_service_proto_msgTypes[34]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2366,7 +2366,7 @@ func (x *QueryTransactionLogRequest) String() string {
 func (*QueryTransactionLogRequest) ProtoMessage() {}
 
 func (x *QueryTransactionLogRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_service_data_service_proto_msgTypes[34]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2379,7 +2379,7 @@ func (x *QueryTransactionLogRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueryTransactionLogRequest.ProtoReflect.Descriptor instead.
 func (*QueryTransactionLogRequest) Descriptor() ([]byte, []int) {
-	return file_data_service_data_service_proto_rawDescGZIP(), []int{34}
+	return file_proto_data_service_data_service_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *QueryTransactionLogRequest) GetPlayerId() uint64 {
@@ -2460,7 +2460,7 @@ type TransactionLogRow struct {
 
 func (x *TransactionLogRow) Reset() {
 	*x = TransactionLogRow{}
-	mi := &file_data_service_data_service_proto_msgTypes[35]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2472,7 +2472,7 @@ func (x *TransactionLogRow) String() string {
 func (*TransactionLogRow) ProtoMessage() {}
 
 func (x *TransactionLogRow) ProtoReflect() protoreflect.Message {
-	mi := &file_data_service_data_service_proto_msgTypes[35]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2485,7 +2485,7 @@ func (x *TransactionLogRow) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TransactionLogRow.ProtoReflect.Descriptor instead.
 func (*TransactionLogRow) Descriptor() ([]byte, []int) {
-	return file_data_service_data_service_proto_rawDescGZIP(), []int{35}
+	return file_proto_data_service_data_service_proto_rawDescGZIP(), []int{35}
 }
 
 func (x *TransactionLogRow) GetTxId() uint64 {
@@ -2597,7 +2597,7 @@ type QueryTransactionLogResponse struct {
 
 func (x *QueryTransactionLogResponse) Reset() {
 	*x = QueryTransactionLogResponse{}
-	mi := &file_data_service_data_service_proto_msgTypes[36]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2609,7 +2609,7 @@ func (x *QueryTransactionLogResponse) String() string {
 func (*QueryTransactionLogResponse) ProtoMessage() {}
 
 func (x *QueryTransactionLogResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_service_data_service_proto_msgTypes[36]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2622,7 +2622,7 @@ func (x *QueryTransactionLogResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueryTransactionLogResponse.ProtoReflect.Descriptor instead.
 func (*QueryTransactionLogResponse) Descriptor() ([]byte, []int) {
-	return file_data_service_data_service_proto_rawDescGZIP(), []int{36}
+	return file_proto_data_service_data_service_proto_rawDescGZIP(), []int{36}
 }
 
 func (x *QueryTransactionLogResponse) GetErrorCode() uint32 {
@@ -2658,7 +2658,7 @@ type CreateEventSnapshotRequest struct {
 
 func (x *CreateEventSnapshotRequest) Reset() {
 	*x = CreateEventSnapshotRequest{}
-	mi := &file_data_service_data_service_proto_msgTypes[37]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[37]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2670,7 +2670,7 @@ func (x *CreateEventSnapshotRequest) String() string {
 func (*CreateEventSnapshotRequest) ProtoMessage() {}
 
 func (x *CreateEventSnapshotRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_service_data_service_proto_msgTypes[37]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[37]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2683,7 +2683,7 @@ func (x *CreateEventSnapshotRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateEventSnapshotRequest.ProtoReflect.Descriptor instead.
 func (*CreateEventSnapshotRequest) Descriptor() ([]byte, []int) {
-	return file_data_service_data_service_proto_rawDescGZIP(), []int{37}
+	return file_proto_data_service_data_service_proto_rawDescGZIP(), []int{37}
 }
 
 func (x *CreateEventSnapshotRequest) GetPlayerId() uint64 {
@@ -2725,7 +2725,7 @@ type CreateEventSnapshotResponse struct {
 
 func (x *CreateEventSnapshotResponse) Reset() {
 	*x = CreateEventSnapshotResponse{}
-	mi := &file_data_service_data_service_proto_msgTypes[38]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[38]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2737,7 +2737,7 @@ func (x *CreateEventSnapshotResponse) String() string {
 func (*CreateEventSnapshotResponse) ProtoMessage() {}
 
 func (x *CreateEventSnapshotResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_service_data_service_proto_msgTypes[38]
+	mi := &file_proto_data_service_data_service_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2750,7 +2750,7 @@ func (x *CreateEventSnapshotResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateEventSnapshotResponse.ProtoReflect.Descriptor instead.
 func (*CreateEventSnapshotResponse) Descriptor() ([]byte, []int) {
-	return file_data_service_data_service_proto_rawDescGZIP(), []int{38}
+	return file_proto_data_service_data_service_proto_rawDescGZIP(), []int{38}
 }
 
 func (x *CreateEventSnapshotResponse) GetErrorCode() uint32 {
@@ -2774,11 +2774,11 @@ func (x *CreateEventSnapshotResponse) GetCreatedAt() uint64 {
 	return 0
 }
 
-var File_data_service_data_service_proto protoreflect.FileDescriptor
+var File_proto_data_service_data_service_proto protoreflect.FileDescriptor
 
-const file_data_service_data_service_proto_rawDesc = "" +
+const file_proto_data_service_data_service_proto_rawDesc = "" +
 	"\n" +
-	"\x1fdata_service/data_service.proto\x12\fdata_service\x1a\x1bgoogle/protobuf/empty.proto\"L\n" +
+	"%proto/data_service/data_service.proto\x12\fdata_service\x1a\x1bgoogle/protobuf/empty.proto\"L\n" +
 	"\x15LoadPlayerDataRequest\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x16\n" +
 	"\x06fields\x18\x02 \x03(\tR\x06fields\"\xce\x01\n" +
@@ -3049,23 +3049,23 @@ const file_data_service_data_service_proto_rawDesc = "" +
 	"\vRollbackAll\x12 .data_service.RollbackAllRequest\x1a!.data_service.RollbackAllResponse\"\x00\x12c\n" +
 	"\x10BatchRecallItems\x12%.data_service.BatchRecallItemsRequest\x1a&.data_service.BatchRecallItemsResponse\"\x00\x12l\n" +
 	"\x13QueryTransactionLog\x12(.data_service.QueryTransactionLogRequest\x1a).data_service.QueryTransactionLogResponse\"\x00\x12l\n" +
-	"\x13CreateEventSnapshot\x12(.data_service.CreateEventSnapshotRequest\x1a).data_service.CreateEventSnapshotResponse\"\x00B\x1bZ\x19data_service/data_serviceb\x06proto3"
+	"\x13CreateEventSnapshot\x12(.data_service.CreateEventSnapshotRequest\x1a).data_service.CreateEventSnapshotResponse\"\x00B\x14Z\x12proto/data_serviceb\x06proto3"
 
 var (
-	file_data_service_data_service_proto_rawDescOnce sync.Once
-	file_data_service_data_service_proto_rawDescData []byte
+	file_proto_data_service_data_service_proto_rawDescOnce sync.Once
+	file_proto_data_service_data_service_proto_rawDescData []byte
 )
 
-func file_data_service_data_service_proto_rawDescGZIP() []byte {
-	file_data_service_data_service_proto_rawDescOnce.Do(func() {
-		file_data_service_data_service_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_data_service_data_service_proto_rawDesc), len(file_data_service_data_service_proto_rawDesc)))
+func file_proto_data_service_data_service_proto_rawDescGZIP() []byte {
+	file_proto_data_service_data_service_proto_rawDescOnce.Do(func() {
+		file_proto_data_service_data_service_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_data_service_data_service_proto_rawDesc), len(file_proto_data_service_data_service_proto_rawDesc)))
 	})
-	return file_data_service_data_service_proto_rawDescData
+	return file_proto_data_service_data_service_proto_rawDescData
 }
 
-var file_data_service_data_service_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_data_service_data_service_proto_msgTypes = make([]protoimpl.MessageInfo, 42)
-var file_data_service_data_service_proto_goTypes = []any{
+var file_proto_data_service_data_service_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
+var file_proto_data_service_data_service_proto_msgTypes = make([]protoimpl.MessageInfo, 42)
+var file_proto_data_service_data_service_proto_goTypes = []any{
 	(SnapshotType)(0),                      // 0: data_service.SnapshotType
 	(RollbackScope)(0),                     // 1: data_service.RollbackScope
 	(SnapshotEventType)(0),                 // 2: data_service.SnapshotEventType
@@ -3113,7 +3113,7 @@ var file_data_service_data_service_proto_goTypes = []any{
 	nil,                                    // 44: data_service.BatchGetPlayerHomeZoneResponse.PlayerZoneMapEntry
 	(*emptypb.Empty)(nil),                  // 45: google.protobuf.Empty
 }
-var file_data_service_data_service_proto_depIdxs = []int32{
+var file_proto_data_service_data_service_proto_depIdxs = []int32{
 	42, // 0: data_service.LoadPlayerDataResponse.data:type_name -> data_service.LoadPlayerDataResponse.DataEntry
 	43, // 1: data_service.SavePlayerDataRequest.data:type_name -> data_service.SavePlayerDataRequest.DataEntry
 	44, // 2: data_service.BatchGetPlayerHomeZoneResponse.player_zone_map:type_name -> data_service.BatchGetPlayerHomeZoneResponse.PlayerZoneMapEntry
@@ -3168,27 +3168,27 @@ var file_data_service_data_service_proto_depIdxs = []int32{
 	0,  // [0:11] is the sub-list for field type_name
 }
 
-func init() { file_data_service_data_service_proto_init() }
-func file_data_service_data_service_proto_init() {
-	if File_data_service_data_service_proto != nil {
+func init() { file_proto_data_service_data_service_proto_init() }
+func file_proto_data_service_data_service_proto_init() {
+	if File_proto_data_service_data_service_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_data_service_data_service_proto_rawDesc), len(file_data_service_data_service_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_data_service_data_service_proto_rawDesc), len(file_proto_data_service_data_service_proto_rawDesc)),
 			NumEnums:      3,
 			NumMessages:   42,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_data_service_data_service_proto_goTypes,
-		DependencyIndexes: file_data_service_data_service_proto_depIdxs,
-		EnumInfos:         file_data_service_data_service_proto_enumTypes,
-		MessageInfos:      file_data_service_data_service_proto_msgTypes,
+		GoTypes:           file_proto_data_service_data_service_proto_goTypes,
+		DependencyIndexes: file_proto_data_service_data_service_proto_depIdxs,
+		EnumInfos:         file_proto_data_service_data_service_proto_enumTypes,
+		MessageInfos:      file_proto_data_service_data_service_proto_msgTypes,
 	}.Build()
-	File_data_service_data_service_proto = out.File
-	file_data_service_data_service_proto_goTypes = nil
-	file_data_service_data_service_proto_depIdxs = nil
+	File_proto_data_service_data_service_proto = out.File
+	file_proto_data_service_data_service_proto_goTypes = nil
+	file_proto_data_service_data_service_proto_depIdxs = nil
 }
