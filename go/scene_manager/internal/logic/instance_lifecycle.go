@@ -162,8 +162,9 @@ func cleanupZoneIdleInstances(ctx context.Context, svcCtx *svc.ServiceContext, z
 // when a node dies its scenes are gone regardless of player_count, so
 // leaving them "alive" forever would be worse than force-destroying.
 //
-// reason is one of "idle" | "explicit" | "cascade" | "node_death" and
-// is used as a Prometheus label on scene_manager_instance_destroyed_total.
+// reason is one of "idle" | "explicit" | "cascade" | "node_death" |
+// "source_migrated" and is used as a Prometheus label on
+// scene_manager_instance_destroyed_total.
 func destroyInstance(ctx context.Context, svcCtx *svc.ServiceContext, zoneId uint32, sceneId uint64) {
 	destroyInstanceInternal(ctx, svcCtx, zoneId, sceneId, false, "idle")
 }

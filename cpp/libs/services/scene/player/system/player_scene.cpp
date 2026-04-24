@@ -237,3 +237,78 @@ void PlayerSceneSystem::HandleEnterScene(entt::entity player, entt::entity scene
 	}
 }
 
+bool PlayerSceneSystem::RequestEnterMirrorScene(entt::entity player, uint32_t mirrorConfigId)
+{
+	if (mirrorConfigId == 0)
+	{
+		LOG_WARN << "RequestEnterMirrorScene: refusing source-clone mirror (mirrorConfigId == 0); "
+		            "this helper only supports template-driven mirrors";
+		return false;
+	}
+
+	if (!tlsEcs.actorRegistry.valid(player))
+	{
+		LOG_WARN << "RequestEnterMirrorScene: invalid player entity " << entt::to_integral(player);
+		return false;
+	}
+
+	const auto* sceneEntityComp = tlsEcs.actorRegistry.try_get<SceneEntityComp>(player);
+	if (sceneEntityComp == nullptr || sceneEntityComp->sceneEntity == entt::null)
+	{
+		LOG_WARN << "RequestEnterMirrorScene: player " << entt::to_integral(player)
+		         << " has no current scene; mirror requires a source";
+		return false;
+	}
+
+	const auto* sourceInfo = tlsEcs.sceneRegistry.try_get<SceneInfoComp>(sceneEntityComp->sceneEntity);
+	if (sourceInfo == nullptr || sourceInfo->scene_id() == 0)
+	{
+		LOG_WARN << "RequestEnterMirrorScene: source scene missing SceneInfoComp or scene_id=0";
+		return false;
+	}
+
+	// Refuse to mirror a mirror — the source must be a real (non-mirror)
+	// scene. This keeps the source's resident map/AI/spawn data as the
+	// authoritative template.
+	if (sourceInfo->mirror_config_id() != 0)
+	{
+		LOG_WARN << "RequestEnterMirrorScene: refusing to mirror an existing mirror (source scene "
+		         << sourceInfo->scene_id() << ", mirror_config_id="
+		         << sourceInfo->mirror_config_id() << ")";
+		return false;
+	}
+
+	const auto* playerSessionPB = tlsEcs.actorRegistry.try_get<PlayerSessionSnapshotComp>(player);
+	if (playerSessionPB == nullptr)
+	{
+		LOG_WARN << "RequestEnterMirrorScene: missing PlayerSessionSnapshotComp on player "
+		         << entt::to_integral(player);
+		return false;
+	}
+
+	auto smEntity = GetSceneManagerEntity(playerSessionPB->player_id());
+	if (smEntity == entt::null)
+	{
+		LOG_WARN << "RequestEnterMirrorScene: no SceneManager node available";
+		return false;
+	}
+
+	auto& smRegistry = tlsNodeContextManager.GetRegistry(eNodeType::SceneManagerNodeService);
+
+	::scene_manager::CreateSceneRequest req;
+	req.set_scene_conf_id(sourceInfo->scene_config_id());
+	req.set_scene_type(::scene_manager::SCENE_TYPE_INSTANCE);
+	req.set_zone_id(GetZoneId());
+	req.set_source_scene_id(sourceInfo->scene_id());
+	req.set_mirror_config_id(mirrorConfigId);
+	req.add_creator_ids(playerSessionPB->player_id());
+
+	scene_manager::SendSceneManagerCreateScene(smRegistry, smEntity, req);
+
+	LOG_INFO << "RequestEnterMirrorScene: dispatched create_mirror player=" << playerSessionPB->player_id()
+	         << " source_scene=" << sourceInfo->scene_id()
+	         << " mirror_config=" << mirrorConfigId
+	         << " scene_conf=" << sourceInfo->scene_config_id();
+	return true;
+}
+

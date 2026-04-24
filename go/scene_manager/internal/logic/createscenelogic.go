@@ -203,7 +203,11 @@ func (l *CreateSceneLogic) createInstance(in *scene_manager.CreateSceneRequest) 
 					l.Logger.Infof("[Instance] Dedup: reusing mirror %d (source %d) on node %s",
 						existingId, in.SourceSceneId, nodeId)
 					metrics.ObserveMirrorDedup(in.ZoneId, "hit")
-					return &scene_manager.CreateSceneResponse{SceneId: existingId, NodeId: nodeId}, nil
+					return &scene_manager.CreateSceneResponse{
+						SceneId:    existingId,
+						NodeId:     nodeId,
+						CreatorIds: in.CreatorIds,
+					}, nil
 				}
 				// Stale entry in the mirrors set — the mirror was destroyed
 				// but its membership wasn't cleaned. Drop it and fall through
@@ -282,7 +286,14 @@ func (l *CreateSceneLogic) createInstance(in *scene_manager.CreateSceneRequest) 
 	} else {
 		l.Logger.Infof("[Instance] Created instance %d (conf=%d) on node %s", sceneId, in.SceneConfId, targetNode)
 	}
-	return &scene_manager.CreateSceneResponse{SceneId: sceneId, NodeId: targetNode}, nil
+	// Echo creator_ids so async callers (notably the C++ SceneNode driving a
+	// mirror create on behalf of a player) can dispatch a follow-up EnterScene
+	// without keeping per-call request state. Empty for system creates.
+	return &scene_manager.CreateSceneResponse{
+		SceneId:    sceneId,
+		NodeId:     targetNode,
+		CreatorIds: in.CreatorIds,
+	}, nil
 }
 
 // pickInstanceNode decides which scene node should host a new instance.
@@ -324,16 +335,38 @@ func (l *CreateSceneLogic) pickInstanceNode(in *scene_manager.CreateSceneRequest
 // resolveMirrorSourceNode returns the node hosting sourceSceneId when that
 // node is a viable co-location target. On success returns (node, "ok").
 // On fallback returns ("", <reason>) where reason is one of:
-//   - "no_mapping": source scene has no scene:{id}:node entry
-//   - "node_dead":  source node is not in the zone's load set
-//   - "overloaded": source node is at/over MirrorSourceNodeLoadCap
+//   - "no_mapping":   source scene has no scene:{id}:node entry
+//   - "zone_mismatch": source scene lives in a different zone (would punch
+//                     a hole in zone isolation, e.g. mirror request from
+//                     zone 2 pointing at a zone 1 source — co-location
+//                     would route the mirror onto zone 1's node)
+//   - "node_dead":    source node is not in the requested zone's load set
+//   - "overloaded":   source node is at/over MirrorSourceNodeLoadCap
+//
 // The reason string is used as a Prometheus label and also logged so
 // operators can diagnose why a mirror fell through to GetBestNode.
+//
+// zone_mismatch is treated as a soft fallback (not an error) so callers
+// that pass a stale source_scene_id from a different zone still get a
+// usable mirror — just without the co-location optimization.
 func (l *CreateSceneLogic) resolveMirrorSourceNode(sourceSceneId uint64, zoneId uint32) (string, string) {
 	nodeId, err := l.svcCtx.Redis.Get(sceneNodeKey(sourceSceneId))
 	if err != nil || nodeId == "" {
 		l.Logger.Infof("[Mirror] source scene %d has no node mapping (err=%v), falling back to GetBestNode", sourceSceneId, err)
 		return "", "no_mapping"
+	}
+
+	// Zone isolation guard. Allowing a cross-zone source to drive
+	// co-location would land the new mirror on the source's zone node,
+	// which then can't be reconciled by the requesting zone's node-death
+	// loop (different active set), creating an orphan on every restart.
+	// We only enforce when the source has a recorded zone — sources
+	// created before scene:{id}:zone existed return 0 from GetSceneZone
+	// and skip the check (back-compat).
+	if srcZone := GetSceneZone(l.svcCtx, sourceSceneId); srcZone != 0 && srcZone != zoneId {
+		l.Logger.Infof("[Mirror] source scene %d lives in zone %d but request is for zone %d, falling back to GetBestNode",
+			sourceSceneId, srcZone, zoneId)
+		return "", "zone_mismatch"
 	}
 
 	if !IsNodeAlive(l.svcCtx, zoneId, nodeId) {

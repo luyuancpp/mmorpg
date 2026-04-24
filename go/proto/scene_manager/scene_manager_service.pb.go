@@ -187,8 +187,13 @@ type CreateSceneResponse struct {
 	// ID of the node where it resides
 	NodeId string `protobuf:"bytes,2,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
 	// Creation result: 0 for success, non-zero for error code
-	ErrorCode     uint32 `protobuf:"varint,3,opt,name=error_code,json=errorCode,proto3" json:"error_code,omitempty"`
-	ErrorMessage  string `protobuf:"bytes,4,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	ErrorCode    uint32 `protobuf:"varint,3,opt,name=error_code,json=errorCode,proto3" json:"error_code,omitempty"`
+	ErrorMessage string `protobuf:"bytes,4,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	// Echo of CreateSceneRequest.creator_ids. Lets async callers (notably the
+	// C++ SceneNode that initiated a mirror create on behalf of a player) drive
+	// a follow-up EnterScene without keeping per-call request state. Empty when
+	// the request had no creators (system-initiated creates, etc.).
+	CreatorIds    []uint64 `protobuf:"varint,5,rep,packed,name=creator_ids,json=creatorIds,proto3" json:"creator_ids,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -249,6 +254,13 @@ func (x *CreateSceneResponse) GetErrorMessage() string {
 		return x.ErrorMessage
 	}
 	return ""
+}
+
+func (x *CreateSceneResponse) GetCreatorIds() []uint64 {
+	if x != nil {
+		return x.CreatorIds
+	}
+	return nil
 }
 
 type DestroySceneRequest struct {
@@ -638,13 +650,15 @@ const file_proto_scene_manager_scene_manager_service_proto_rawDesc = "" +
 	"creatorIds\x12\x17\n" +
 	"\azone_id\x18\x05 \x01(\rR\x06zoneId\x12&\n" +
 	"\x0fsource_scene_id\x18\x06 \x01(\x04R\rsourceSceneId\x12(\n" +
-	"\x10mirror_config_id\x18\a \x01(\rR\x0emirrorConfigId\"\x8d\x01\n" +
+	"\x10mirror_config_id\x18\a \x01(\rR\x0emirrorConfigId\"\xae\x01\n" +
 	"\x13CreateSceneResponse\x12\x19\n" +
 	"\bscene_id\x18\x01 \x01(\x04R\asceneId\x12\x17\n" +
 	"\anode_id\x18\x02 \x01(\tR\x06nodeId\x12\x1d\n" +
 	"\n" +
 	"error_code\x18\x03 \x01(\rR\terrorCode\x12#\n" +
-	"\rerror_message\x18\x04 \x01(\tR\ferrorMessage\"I\n" +
+	"\rerror_message\x18\x04 \x01(\tR\ferrorMessage\x12\x1f\n" +
+	"\vcreator_ids\x18\x05 \x03(\x04R\n" +
+	"creatorIds\"I\n" +
 	"\x13DestroySceneRequest\x12\x19\n" +
 	"\bscene_id\x18\x01 \x01(\x04R\asceneId\x12\x17\n" +
 	"\azone_id\x18\x02 \x01(\rR\x06zoneId\"\xab\x02\n" +

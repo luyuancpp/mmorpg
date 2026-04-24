@@ -35,6 +35,23 @@ InstanceIdleTimeoutSeconds: 300
 # instance quickly. Set to 0 to fall back to InstanceIdleTimeoutSeconds.
 MirrorIdleTimeoutSeconds: 30
 
+# Soft load cap on a mirror's source node BEFORE co-location wins. When >0
+# the scene_manager only co-locates a mirror with its source if the source
+# node currently hosts < cap scenes; otherwise it falls back to GetBestNode.
+# This keeps the optimization from amplifying load skew during a campaign
+# that drives heavy mirror traffic at one source. 0 (default) disables the
+# cap — co-location always wins as long as the source node is alive.
+MirrorSourceNodeLoadCap: 0
+
+# Reuse an existing mirror for the same source instead of allocating a new
+# one. When true, a CreateScene with source_scene_id reuses the first live
+# mirror found in scene:{source}:mirrors (and SREM's any stale entry it
+# encounters). Use this when "the mirror" should behave as a singleton per
+# source — e.g. a single shared rehearsal copy of the city. Leave false
+# (default) when each request must get its own fresh mirror — e.g. an
+# instanced dungeon attempt or a per-player tutorial copy.
+MirrorDedupBySource: false
+
 # How often (seconds) the lifecycle manager scans for idle instances.
 InstanceCheckIntervalSeconds: 30
 

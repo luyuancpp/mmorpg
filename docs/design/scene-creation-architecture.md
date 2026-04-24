@@ -190,9 +190,19 @@ pickInstanceNode(in):
   node's `node:{id}:scene_count` is at or above the cap, the mirror falls back
   to `GetBestNode` so a popular world can't hotspot one node. Default 0 disables
   the cap (always co-locate).
+- Zone isolation: if `scene:{sourceSceneId}:zone` differs from the request's
+  `zone_id`, co-location is refused (reason=`zone_mismatch`). Allowing it would
+  land the mirror on the source's zone node, which the requesting zone's
+  reconciliation loop can't see — orphan on every restart.
 - Source-node death: if `scene:{sourceSceneId}:node` maps to a node absent from
   `scene_nodes:zone:{zoneId}:load`, `IsNodeAlive` returns false and the mirror
   falls back.
+- Source migrated by rebalancer: when `migrateWorldChannel` moves a source
+  channel from oldNode → newNode, every mirror in `scene:{srcId}:mirrors` is
+  force-destroyed (reason=`source_migrated`) so the old node can drain and
+  the next mirror request lands co-located on newNode. Without this, mirrors
+  would silently lose the locality benefit and pin oldNode's memory until
+  idle timeout. See `TestIntegration_Rebalance_CascadesDependentMirrors`.
 - Explicit override: `TargetNodeId` still wins, so ops can pin mirrors when
   required (e.g. diagnostic sessions, canary deploys).
 - Load accounting: mirrors increment `node:{nodeId}:scene_count` like any other
@@ -206,9 +216,14 @@ mirror vs. source entities via `scene_info.mirror_config_id() > 0`.
 **Regression coverage**: `go/scene_manager/internal/logic/logic_test.go`
 `TestCreateScene_Mirror_*` suite pins every branch of `pickInstanceNode`:
 happy co-location, dead source node, overloaded source (`>= cap`), under-cap
-(still co-locate), missing `scene:{id}:node` mapping, single-node deployment,
-and explicit `TargetNodeId` override. Plus `TestCreateScene_Instance_NonMirror_UsesGetBestNode`
-guards against the mirror path leaking into plain instance creation.
+(still co-locate), missing `scene:{id}:node` mapping, cross-zone source
+falls back (`TestCreateScene_Mirror_CrossZoneSourceFallsBack`) with the
+positive control `TestCreateScene_Mirror_SameZoneSourceColocates`,
+single-node deployment, and explicit `TargetNodeId` override. Plus
+`TestCreateScene_Instance_NonMirror_UsesGetBestNode` guards against the
+mirror path leaking into plain instance creation. Cascade behaviour on
+source-node death is covered by `TestReconcileDeadNode_DestroysCoLocatedMirrors`,
+and on source migration by `TestIntegration_Rebalance_CascadesDependentMirrors`.
 
 **Proto surface** (`proto/scene_manager/scene_manager_service.proto`):
 ```proto
@@ -221,7 +236,45 @@ message CreateSceneRequest {
   uint64 source_scene_id = 6;   // triggers mirror co-location
   uint32 mirror_config_id = 7;  // forwarded to C++ SceneInfoComp
 }
+
+message CreateSceneResponse {
+  uint64 scene_id      = 1;
+  string node_id       = 2;
+  uint32 error_code    = 3;
+  string error_message = 4;
+  repeated uint64 creator_ids = 5; // echo of request — used by C++ caller to
+                                   // dispatch the follow-up EnterScene without
+                                   // keeping per-call state.
+}
 ```
+
+### C++ caller (mirror flow end-to-end)
+
+The scene-domain helper `PlayerSceneSystem::RequestEnterMirrorScene(player, mirrorConfigId)`
+in `cpp/libs/services/scene/player/system/player_scene.cpp` drives the full
+mirror lifecycle from the gameplay side:
+
+1. **Validate prerequisites** — refuse `mirrorConfigId == 0`, validate the
+   player entity, require the player to currently be in a non-mirror source
+   scene (refuse to mirror a mirror), require `PlayerSessionSnapshotComp`
+   for gate routing, and require an available SceneManager node entity.
+2. **Build CreateSceneRequest** with `scene_conf_id = source.scene_config_id`,
+   `scene_type = SCENE_TYPE_INSTANCE`, `zone_id = GetZoneId()`,
+   `source_scene_id = source.scene_id` (drives co-location),
+   `mirror_config_id = mirrorConfigId`, and `creator_ids = [player_id]`.
+3. **Fire-and-forget** via `scene_manager::SendSceneManagerCreateScene` — no
+   per-call state retained on the SceneNode.
+4. **Async response** lands in `AsyncSceneManagerCreateSceneHandler` in
+   `cpp/nodes/scene/rpc_replies/scene_manager_response_handler.cpp`. On
+   success, the handler iterates `resp.creator_ids()` and dispatches a
+   `SceneManagerEnterScene` for each creator that is still resident on this
+   node. Players that disconnected between fire and reply are skipped — when
+   they reconnect, normal `EnterScene` flows handle re-entry.
+
+This pattern keeps the SceneNode stateless across the round trip; the echoed
+`creator_ids` is the entire correlation key. It also means a SceneManager
+that legitimately reuses an existing mirror via `MirrorDedupBySource` still
+auto-routes the requesting player(s) into that mirror.
 
 ### C++ Side (Scene.CreateScene handler)
 
@@ -306,7 +359,18 @@ nothing can enter them and their state ticks uselessly until idle
 timeout).
 
 Covered by `TestDestroyScene_CascadesToMirrors`,
-`TestDestroyMirror_UnlinksFromSourceSet`.
+`TestDestroyMirror_UnlinksFromSourceSet`. The
+`TestReconcileDeadNode_DestroysCoLocatedMirrors` test pins that mirrors
+co-located on a dying instance node are reaped by the node-death
+reconciliation loop (each mirror's `node:{id}:scenes` membership is
+walked alongside the source's). The
+`TestIntegration_Rebalance_CascadesDependentMirrors` integration test
+pins the source-migration path: when the rebalancer moves a source
+world channel from oldNode → newNode, every mirror in
+`scene:{srcId}:mirrors` is force-destroyed (counter
+`instance_destroyed_total{kind="mirror",reason="source_migrated"}`),
+draining the old node and letting the next mirror request co-locate
+correctly on newNode.
 
 ### Node-death reconciliation
 
@@ -334,8 +398,8 @@ Added counters alongside the existing gauges in
 
 | Metric | Labels | Emitted by |
 |--------|--------|-----------|
-| `scene_manager_mirror_colocate_total` | `zone_id`, `outcome` (hit\|fallback), `reason` (ok\|no_mapping\|node_dead\|overloaded) | `pickInstanceNode` |
-| `scene_manager_instance_destroyed_total` | `zone_id`, `kind` (instance\|mirror), `reason` (idle\|explicit\|cascade\|node_death) | `destroyInstance*`, `DestroyScene` |
+| `scene_manager_mirror_colocate_total` | `zone_id`, `outcome` (hit\|fallback), `reason` (ok\|no_mapping\|zone_mismatch\|node_dead\|overloaded) | `pickInstanceNode` |
+| `scene_manager_instance_destroyed_total` | `zone_id`, `kind` (instance\|mirror), `reason` (idle\|explicit\|cascade\|node_death\|source_migrated) | `destroyInstance*`, `DestroyScene`, `migrateWorldChannel` |
 | `scene_manager_enter_scene_rejected_total` | `zone_id`, `reason` (scene_gone) | `EnterScene` on CAS reject |
 | `scene_manager_scene_orphans_reconciled_total` | `zone_id` | `reconcileDeadNodeScenes` |
 | `scene_manager_mirror_source_missing_total` | `zone_id` | `createInstance` source-clone refusal |

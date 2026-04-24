@@ -182,9 +182,16 @@ func PlanWorldChannelRebalance(svcCtx *svc.ServiceContext, zoneId uint32, confId
 //  4. Best-effort DestroyScene on the old node. A failure here is logged
 //     but not fatal: the old scene will be cleaned up on the next node
 //     restart or by the lifecycle manager's stale-scene sweep.
+//  5. Cascade-destroy any mirrors that were co-located with this channel
+//     on the OLD node. The whole point of mirror co-location is reusing
+//     the source's resident world data; once the source moves, mirrors
+//     stranded on the old node have lost their reason to exist (and are
+//     just chewing up the old node's memory until idle timeout). We
+//     destroy them eagerly so the old node can drain. Players that need
+//     a mirror again will get a fresh one co-located on newNode.
 //
 // Returns true if steps 1-3 succeeded (i.e. the channel is now reachable
-// via newNode). Step 4 failure does not flip the return.
+// via newNode). Step 4 / 5 failures do not flip the return.
 func migrateWorldChannel(ctx context.Context, svcCtx *svc.ServiceContext, zoneId uint32,
 	confId, sceneId uint64, oldNode, newNode string, reason rebalanceReason) bool {
 
@@ -197,6 +204,12 @@ func migrateWorldChannel(ctx context.Context, svcCtx *svc.ServiceContext, zoneId
 			zoneId, confId, sceneId, newNode, reason, err)
 		return false
 	}
+
+	// Snapshot dependent mirrors BEFORE swapping the mapping. After
+	// reassignSceneNode runs the source points at newNode, and any new
+	// mirror for this source would correctly land on newNode — but the
+	// already-existing mirrors on oldNode are now stranded.
+	dependentMirrors, _ := svcCtx.Redis.Smembers(sceneMirrorsKey(sceneId))
 
 	// Use reassignSceneNode so node:{id}:scenes reverse index stays in sync
 	// (otherwise node-death reconciliation would miss migrated channels).
@@ -231,7 +244,42 @@ func migrateWorldChannel(ctx context.Context, svcCtx *svc.ServiceContext, zoneId
 		}
 	}
 
-	logx.Infof("[Rebalance] zone=%d conf=%d scene=%d migrated %s -> %s (%s)",
-		zoneId, confId, sceneId, oldNode, newNode, reason)
+	cascadeMirrorsOnSourceMigration(ctx, svcCtx, zoneId, sceneId, dependentMirrors, oldNode, newNode)
+
+	logx.Infof("[Rebalance] zone=%d conf=%d scene=%d migrated %s -> %s (%s) cascaded_mirrors=%d",
+		zoneId, confId, sceneId, oldNode, newNode, reason, len(dependentMirrors))
 	return true
+}
+
+// cascadeMirrorsOnSourceMigration force-destroys mirrors that were co-located
+// with a source scene that just moved nodes. Each mirror is destroyed via
+// the standard force path so player_count residuals, reverse indexes, and
+// node-scene counters all stay in sync. reason="source_migrated" so
+// dashboards can distinguish this from idle / explicit / cascade-on-destroy.
+//
+// Mirrors whose recorded zone differs from the source's zone are still
+// destroyed in their own zone (a cross-zone mirror is a misuse of the
+// optimization, but we don't want cascade to silently no-op on it).
+func cascadeMirrorsOnSourceMigration(ctx context.Context, svcCtx *svc.ServiceContext,
+	zoneId uint32, sourceSceneId uint64, mirrorIds []string, oldNode, newNode string) {
+
+	if len(mirrorIds) == 0 {
+		return
+	}
+	for _, m := range mirrorIds {
+		mid, err := strconv.ParseUint(m, 10, 64)
+		if err != nil || mid == sourceSceneId {
+			continue
+		}
+		mirrorZone := zoneId
+		if z := GetSceneZone(svcCtx, mid); z != 0 {
+			mirrorZone = z
+		}
+		logx.Infof("[Rebalance] cascading mirror %d (source %d migrated %s -> %s) in zone %d",
+			mid, sourceSceneId, oldNode, newNode, mirrorZone)
+		destroyInstanceForce(ctx, svcCtx, mirrorZone, mid, "source_migrated")
+	}
+	// Drop the now-empty mirrors index so the next mirror created against
+	// this source starts with a clean set.
+	svcCtx.Redis.Del(sceneMirrorsKey(sourceSceneId))
 }

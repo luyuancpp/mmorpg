@@ -1274,11 +1274,30 @@ class CreateSceneResponse final : public ::google::protobuf::Message
 
   // accessors -------------------------------------------------------
   enum : int {
+    kCreatorIdsFieldNumber = 5,
     kNodeIdFieldNumber = 2,
     kErrorMessageFieldNumber = 4,
     kSceneIdFieldNumber = 1,
     kErrorCodeFieldNumber = 3,
   };
+  // repeated uint64 creator_ids = 5;
+  int creator_ids_size() const;
+  private:
+  int _internal_creator_ids_size() const;
+
+  public:
+  void clear_creator_ids() ;
+  ::uint64_t creator_ids(int index) const;
+  void set_creator_ids(int index, ::uint64_t value);
+  void add_creator_ids(::uint64_t value);
+  const ::google::protobuf::RepeatedField<::uint64_t>& creator_ids() const;
+  ::google::protobuf::RepeatedField<::uint64_t>* PROTOBUF_NONNULL mutable_creator_ids();
+
+  private:
+  const ::google::protobuf::RepeatedField<::uint64_t>& _internal_creator_ids() const;
+  ::google::protobuf::RepeatedField<::uint64_t>* PROTOBUF_NONNULL _internal_mutable_creator_ids();
+
+  public:
   // string node_id = 2;
   void clear_node_id() ;
   const ::std::string& node_id() const;
@@ -1333,7 +1352,7 @@ class CreateSceneResponse final : public ::google::protobuf::Message
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<2, 4,
+  static const ::google::protobuf::internal::TcParseTable<3, 5,
                                    0, 62,
                                    2>
       _table_;
@@ -1355,6 +1374,8 @@ class CreateSceneResponse final : public ::google::protobuf::Message
         const CreateSceneResponse& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::RepeatedField<::uint64_t> creator_ids_;
+    ::google::protobuf::internal::CachedSize _creator_ids_cached_byte_size_;
     ::google::protobuf::internal::ArenaStringPtr node_id_;
     ::google::protobuf::internal::ArenaStringPtr error_message_;
     ::uint64_t scene_id_;
@@ -2296,6 +2317,52 @@ inline void CreateSceneResponse::set_allocated_error_message(::std::string* PROT
     _impl_.error_message_.Set("", GetArena());
   }
   // @@protoc_insertion_point(field_set_allocated:scene_manager.CreateSceneResponse.error_message)
+}
+
+// repeated uint64 creator_ids = 5;
+inline int CreateSceneResponse::_internal_creator_ids_size() const {
+  return _internal_creator_ids().size();
+}
+inline int CreateSceneResponse::creator_ids_size() const {
+  return _internal_creator_ids_size();
+}
+inline void CreateSceneResponse::clear_creator_ids() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.creator_ids_.Clear();
+}
+inline ::uint64_t CreateSceneResponse::creator_ids(int index) const {
+  // @@protoc_insertion_point(field_get:scene_manager.CreateSceneResponse.creator_ids)
+  return _internal_creator_ids().Get(index);
+}
+inline void CreateSceneResponse::set_creator_ids(int index, ::uint64_t value) {
+  _internal_mutable_creator_ids()->Set(index, value);
+  // @@protoc_insertion_point(field_set:scene_manager.CreateSceneResponse.creator_ids)
+}
+inline void CreateSceneResponse::add_creator_ids(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _internal_mutable_creator_ids()->Add(value);
+  // @@protoc_insertion_point(field_add:scene_manager.CreateSceneResponse.creator_ids)
+}
+inline const ::google::protobuf::RepeatedField<::uint64_t>& CreateSceneResponse::creator_ids() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_list:scene_manager.CreateSceneResponse.creator_ids)
+  return _internal_creator_ids();
+}
+inline ::google::protobuf::RepeatedField<::uint64_t>* PROTOBUF_NONNULL CreateSceneResponse::mutable_creator_ids()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable_list:scene_manager.CreateSceneResponse.creator_ids)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _internal_mutable_creator_ids();
+}
+inline const ::google::protobuf::RepeatedField<::uint64_t>&
+CreateSceneResponse::_internal_creator_ids() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.creator_ids_;
+}
+inline ::google::protobuf::RepeatedField<::uint64_t>* PROTOBUF_NONNULL
+CreateSceneResponse::_internal_mutable_creator_ids() {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return &_impl_.creator_ids_;
 }
 
 // -------------------------------------------------------------------
