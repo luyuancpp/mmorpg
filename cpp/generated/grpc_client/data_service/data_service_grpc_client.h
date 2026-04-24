@@ -146,6 +146,25 @@ void SendDataServiceBatchGetPlayerHomeZone(entt::registry& registry, entt::entit
 void SendDataServiceBatchGetPlayerHomeZone(entt::registry& registry, entt::entity nodeEntity, const ::data_service::BatchGetPlayerHomeZoneRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendDataServiceBatchGetPlayerHomeZone(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 #pragma endregion
+#pragma region DataServiceRemapHomeZoneForMerge
+
+struct AsyncDataServiceRemapHomeZoneForMergeGrpcClient {
+    uint32_t messageId{ DataServiceRemapHomeZoneForMergeMessageId };
+    ClientContext context;
+    Status status;
+    ::data_service::RemapHomeZoneForMergeResponse reply;
+    std::unique_ptr<ClientAsyncResponseReader<::data_service::RemapHomeZoneForMergeResponse>> response_reader;
+};
+
+class ::data_service::RemapHomeZoneForMergeRequest;
+using AsyncDataServiceRemapHomeZoneForMergeHandlerFunctionType =
+    std::function<void(const ClientContext&, const ::data_service::RemapHomeZoneForMergeResponse&)>;
+extern AsyncDataServiceRemapHomeZoneForMergeHandlerFunctionType AsyncDataServiceRemapHomeZoneForMergeHandler;
+
+void SendDataServiceRemapHomeZoneForMerge(entt::registry& registry, entt::entity nodeEntity, const ::data_service::RemapHomeZoneForMergeRequest& request);
+void SendDataServiceRemapHomeZoneForMerge(entt::registry& registry, entt::entity nodeEntity, const ::data_service::RemapHomeZoneForMergeRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+void SendDataServiceRemapHomeZoneForMerge(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+#pragma endregion
 #pragma region DataServiceDeletePlayerData
 
 struct AsyncDataServiceDeletePlayerDataGrpcClient {

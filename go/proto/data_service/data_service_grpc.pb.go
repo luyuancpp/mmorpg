@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.6.0
 // - protoc             v6.31.1
-// source: data_service/data_service.proto
+// source: proto/data_service/data_service.proto
 
 package data_service
 
@@ -786,5 +786,5 @@ var DataService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "data_service/data_service.proto",
+	Metadata: "proto/data_service/data_service.proto",
 }

@@ -30,6 +30,7 @@ static const char* DataService_method_names[] = {
   "/data_service.DataService/RegisterPlayerZone",
   "/data_service.DataService/GetPlayerHomeZone",
   "/data_service.DataService/BatchGetPlayerHomeZone",
+  "/data_service.DataService/RemapHomeZoneForMerge",
   "/data_service.DataService/DeletePlayerData",
   "/data_service.DataService/CreatePlayerSnapshot",
   "/data_service.DataService/ListPlayerSnapshots",
@@ -56,16 +57,17 @@ DataService::Stub::Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channe
   , rpcmethod_RegisterPlayerZone_(DataService_method_names[4], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   , rpcmethod_GetPlayerHomeZone_(DataService_method_names[5], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   , rpcmethod_BatchGetPlayerHomeZone_(DataService_method_names[6], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_DeletePlayerData_(DataService_method_names[7], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_CreatePlayerSnapshot_(DataService_method_names[8], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_ListPlayerSnapshots_(DataService_method_names[9], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_GetPlayerSnapshotDiff_(DataService_method_names[10], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_RollbackPlayer_(DataService_method_names[11], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_RollbackZone_(DataService_method_names[12], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_RollbackAll_(DataService_method_names[13], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_BatchRecallItems_(DataService_method_names[14], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_QueryTransactionLog_(DataService_method_names[15], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_CreateEventSnapshot_(DataService_method_names[16], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_RemapHomeZoneForMerge_(DataService_method_names[7], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_DeletePlayerData_(DataService_method_names[8], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_CreatePlayerSnapshot_(DataService_method_names[9], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_ListPlayerSnapshots_(DataService_method_names[10], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_GetPlayerSnapshotDiff_(DataService_method_names[11], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_RollbackPlayer_(DataService_method_names[12], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_RollbackZone_(DataService_method_names[13], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_RollbackAll_(DataService_method_names[14], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_BatchRecallItems_(DataService_method_names[15], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_QueryTransactionLog_(DataService_method_names[16], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_CreateEventSnapshot_(DataService_method_names[17], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   {}
 
 ::grpc::Status DataService::Stub::LoadPlayerData(::grpc::ClientContext* context, const ::data_service::LoadPlayerDataRequest& request, ::data_service::LoadPlayerDataResponse* response) {
@@ -225,6 +227,29 @@ void DataService::Stub::async::BatchGetPlayerHomeZone(::grpc::ClientContext* con
 ::grpc::ClientAsyncResponseReader< ::data_service::BatchGetPlayerHomeZoneResponse>* DataService::Stub::AsyncBatchGetPlayerHomeZoneRaw(::grpc::ClientContext* context, const ::data_service::BatchGetPlayerHomeZoneRequest& request, ::grpc::CompletionQueue* cq) {
   auto* result =
     this->PrepareAsyncBatchGetPlayerHomeZoneRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
+::grpc::Status DataService::Stub::RemapHomeZoneForMerge(::grpc::ClientContext* context, const ::data_service::RemapHomeZoneForMergeRequest& request, ::data_service::RemapHomeZoneForMergeResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::data_service::RemapHomeZoneForMergeRequest, ::data_service::RemapHomeZoneForMergeResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_RemapHomeZoneForMerge_, context, request, response);
+}
+
+void DataService::Stub::async::RemapHomeZoneForMerge(::grpc::ClientContext* context, const ::data_service::RemapHomeZoneForMergeRequest* request, ::data_service::RemapHomeZoneForMergeResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::data_service::RemapHomeZoneForMergeRequest, ::data_service::RemapHomeZoneForMergeResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_RemapHomeZoneForMerge_, context, request, response, std::move(f));
+}
+
+void DataService::Stub::async::RemapHomeZoneForMerge(::grpc::ClientContext* context, const ::data_service::RemapHomeZoneForMergeRequest* request, ::data_service::RemapHomeZoneForMergeResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_RemapHomeZoneForMerge_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::data_service::RemapHomeZoneForMergeResponse>* DataService::Stub::PrepareAsyncRemapHomeZoneForMergeRaw(::grpc::ClientContext* context, const ::data_service::RemapHomeZoneForMergeRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::data_service::RemapHomeZoneForMergeResponse, ::data_service::RemapHomeZoneForMergeRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_RemapHomeZoneForMerge_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::data_service::RemapHomeZoneForMergeResponse>* DataService::Stub::AsyncRemapHomeZoneForMergeRaw(::grpc::ClientContext* context, const ::data_service::RemapHomeZoneForMergeRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncRemapHomeZoneForMergeRaw(context, request, cq);
   result->StartCall();
   return result;
 }
@@ -533,6 +558,16 @@ DataService::Service::Service() {
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       DataService_method_names[7],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< DataService::Service, ::data_service::RemapHomeZoneForMergeRequest, ::data_service::RemapHomeZoneForMergeResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](DataService::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::data_service::RemapHomeZoneForMergeRequest* req,
+             ::data_service::RemapHomeZoneForMergeResponse* resp) {
+               return service->RemapHomeZoneForMerge(ctx, req, resp);
+             }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      DataService_method_names[8],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
       new ::grpc::internal::RpcMethodHandler< DataService::Service, ::data_service::DeletePlayerDataRequest, ::data_service::DeletePlayerDataResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](DataService::Service* service,
              ::grpc::ServerContext* ctx,
@@ -541,7 +576,7 @@ DataService::Service::Service() {
                return service->DeletePlayerData(ctx, req, resp);
              }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
-      DataService_method_names[8],
+      DataService_method_names[9],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
       new ::grpc::internal::RpcMethodHandler< DataService::Service, ::data_service::CreatePlayerSnapshotRequest, ::data_service::CreatePlayerSnapshotResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](DataService::Service* service,
@@ -551,7 +586,7 @@ DataService::Service::Service() {
                return service->CreatePlayerSnapshot(ctx, req, resp);
              }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
-      DataService_method_names[9],
+      DataService_method_names[10],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
       new ::grpc::internal::RpcMethodHandler< DataService::Service, ::data_service::ListPlayerSnapshotsRequest, ::data_service::ListPlayerSnapshotsResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](DataService::Service* service,
@@ -561,7 +596,7 @@ DataService::Service::Service() {
                return service->ListPlayerSnapshots(ctx, req, resp);
              }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
-      DataService_method_names[10],
+      DataService_method_names[11],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
       new ::grpc::internal::RpcMethodHandler< DataService::Service, ::data_service::GetPlayerSnapshotDiffRequest, ::data_service::GetPlayerSnapshotDiffResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](DataService::Service* service,
@@ -571,7 +606,7 @@ DataService::Service::Service() {
                return service->GetPlayerSnapshotDiff(ctx, req, resp);
              }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
-      DataService_method_names[11],
+      DataService_method_names[12],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
       new ::grpc::internal::RpcMethodHandler< DataService::Service, ::data_service::RollbackPlayerRequest, ::data_service::RollbackPlayerResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](DataService::Service* service,
@@ -581,7 +616,7 @@ DataService::Service::Service() {
                return service->RollbackPlayer(ctx, req, resp);
              }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
-      DataService_method_names[12],
+      DataService_method_names[13],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
       new ::grpc::internal::RpcMethodHandler< DataService::Service, ::data_service::RollbackZoneRequest, ::data_service::RollbackZoneResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](DataService::Service* service,
@@ -591,7 +626,7 @@ DataService::Service::Service() {
                return service->RollbackZone(ctx, req, resp);
              }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
-      DataService_method_names[13],
+      DataService_method_names[14],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
       new ::grpc::internal::RpcMethodHandler< DataService::Service, ::data_service::RollbackAllRequest, ::data_service::RollbackAllResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](DataService::Service* service,
@@ -601,7 +636,7 @@ DataService::Service::Service() {
                return service->RollbackAll(ctx, req, resp);
              }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
-      DataService_method_names[14],
+      DataService_method_names[15],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
       new ::grpc::internal::RpcMethodHandler< DataService::Service, ::data_service::BatchRecallItemsRequest, ::data_service::BatchRecallItemsResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](DataService::Service* service,
@@ -611,7 +646,7 @@ DataService::Service::Service() {
                return service->BatchRecallItems(ctx, req, resp);
              }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
-      DataService_method_names[15],
+      DataService_method_names[16],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
       new ::grpc::internal::RpcMethodHandler< DataService::Service, ::data_service::QueryTransactionLogRequest, ::data_service::QueryTransactionLogResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](DataService::Service* service,
@@ -621,7 +656,7 @@ DataService::Service::Service() {
                return service->QueryTransactionLog(ctx, req, resp);
              }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
-      DataService_method_names[16],
+      DataService_method_names[17],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
       new ::grpc::internal::RpcMethodHandler< DataService::Service, ::data_service::CreateEventSnapshotRequest, ::data_service::CreateEventSnapshotResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](DataService::Service* service,
@@ -678,6 +713,13 @@ DataService::Service::~Service() {
 }
 
 ::grpc::Status DataService::Service::BatchGetPlayerHomeZone(::grpc::ServerContext* context, const ::data_service::BatchGetPlayerHomeZoneRequest* request, ::data_service::BatchGetPlayerHomeZoneResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status DataService::Service::RemapHomeZoneForMerge(::grpc::ServerContext* context, const ::data_service::RemapHomeZoneForMergeRequest* request, ::data_service::RemapHomeZoneForMergeResponse* response) {
   (void) context;
   (void) request;
   (void) response;

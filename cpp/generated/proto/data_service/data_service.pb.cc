@@ -391,6 +391,60 @@ struct RollbackAllRequestDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 RollbackAllRequestDefaultTypeInternal _RollbackAllRequest_default_instance_;
 
+inline constexpr RemapHomeZoneForMergeResponse::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        error_code_{0u},
+        players_matched_{0u},
+        players_updated_{0u} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR RemapHomeZoneForMergeResponse::RemapHomeZoneForMergeResponse(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(RemapHomeZoneForMergeResponse_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct RemapHomeZoneForMergeResponseDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR RemapHomeZoneForMergeResponseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~RemapHomeZoneForMergeResponseDefaultTypeInternal() {}
+  union {
+    RemapHomeZoneForMergeResponse _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 RemapHomeZoneForMergeResponseDefaultTypeInternal _RemapHomeZoneForMergeResponse_default_instance_;
+
+inline constexpr RemapHomeZoneForMergeRequest::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        source_zone_id_{0u},
+        target_zone_id_{0u},
+        dry_run_{false} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR RemapHomeZoneForMergeRequest::RemapHomeZoneForMergeRequest(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(RemapHomeZoneForMergeRequest_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct RemapHomeZoneForMergeRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR RemapHomeZoneForMergeRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~RemapHomeZoneForMergeRequestDefaultTypeInternal() {}
+  union {
+    RemapHomeZoneForMergeRequest _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 RemapHomeZoneForMergeRequestDefaultTypeInternal _RemapHomeZoneForMergeRequest_default_instance_;
+
 inline constexpr RegisterPlayerZoneRequest::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
@@ -1277,6 +1331,24 @@ const ::uint32_t
         0x000, // bitmap
         PROTOBUF_FIELD_OFFSET(::data_service::BatchGetPlayerHomeZoneResponse, _impl_.player_zone_map_),
         0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::data_service::RemapHomeZoneForMergeRequest, _impl_._has_bits_),
+        6, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::data_service::RemapHomeZoneForMergeRequest, _impl_.source_zone_id_),
+        PROTOBUF_FIELD_OFFSET(::data_service::RemapHomeZoneForMergeRequest, _impl_.target_zone_id_),
+        PROTOBUF_FIELD_OFFSET(::data_service::RemapHomeZoneForMergeRequest, _impl_.dry_run_),
+        0,
+        1,
+        2,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::data_service::RemapHomeZoneForMergeResponse, _impl_._has_bits_),
+        6, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::data_service::RemapHomeZoneForMergeResponse, _impl_.error_code_),
+        PROTOBUF_FIELD_OFFSET(::data_service::RemapHomeZoneForMergeResponse, _impl_.players_matched_),
+        PROTOBUF_FIELD_OFFSET(::data_service::RemapHomeZoneForMergeResponse, _impl_.players_updated_),
+        0,
+        1,
+        2,
+        0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::data_service::DeletePlayerDataRequest, _impl_._has_bits_),
         5, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::data_service::DeletePlayerDataRequest, _impl_.player_id_),
@@ -1602,30 +1674,32 @@ static const ::_pbi::MigrationSchema
         {95, sizeof(::data_service::BatchGetPlayerHomeZoneRequest)},
         {97, sizeof(::data_service::BatchGetPlayerHomeZoneResponse_PlayerZoneMapEntry_DoNotUse)},
         {104, sizeof(::data_service::BatchGetPlayerHomeZoneResponse)},
-        {106, sizeof(::data_service::DeletePlayerDataRequest)},
-        {113, sizeof(::data_service::DeletePlayerDataResponse)},
-        {120, sizeof(::data_service::CreatePlayerSnapshotRequest)},
-        {131, sizeof(::data_service::CreatePlayerSnapshotResponse)},
-        {140, sizeof(::data_service::ListPlayerSnapshotsRequest)},
-        {149, sizeof(::data_service::SnapshotInfo)},
-        {170, sizeof(::data_service::ListPlayerSnapshotsResponse)},
-        {177, sizeof(::data_service::GetPlayerSnapshotDiffRequest)},
-        {186, sizeof(::data_service::FieldDiff)},
-        {199, sizeof(::data_service::GetPlayerSnapshotDiffResponse)},
-        {210, sizeof(::data_service::RollbackPlayerRequest)},
-        {227, sizeof(::data_service::RollbackPlayerResponse)},
-        {238, sizeof(::data_service::RollbackZoneRequest)},
-        {249, sizeof(::data_service::RollbackZoneResponse)},
-        {264, sizeof(::data_service::RollbackAllRequest)},
-        {273, sizeof(::data_service::RollbackAllResponse)},
-        {284, sizeof(::data_service::BatchRecallItemsRequest)},
-        {305, sizeof(::data_service::RecallResult)},
-        {320, sizeof(::data_service::BatchRecallItemsResponse)},
-        {333, sizeof(::data_service::QueryTransactionLogRequest)},
-        {352, sizeof(::data_service::TransactionLogRow)},
-        {383, sizeof(::data_service::QueryTransactionLogResponse)},
-        {392, sizeof(::data_service::CreateEventSnapshotRequest)},
-        {403, sizeof(::data_service::CreateEventSnapshotResponse)},
+        {106, sizeof(::data_service::RemapHomeZoneForMergeRequest)},
+        {115, sizeof(::data_service::RemapHomeZoneForMergeResponse)},
+        {124, sizeof(::data_service::DeletePlayerDataRequest)},
+        {131, sizeof(::data_service::DeletePlayerDataResponse)},
+        {138, sizeof(::data_service::CreatePlayerSnapshotRequest)},
+        {149, sizeof(::data_service::CreatePlayerSnapshotResponse)},
+        {158, sizeof(::data_service::ListPlayerSnapshotsRequest)},
+        {167, sizeof(::data_service::SnapshotInfo)},
+        {188, sizeof(::data_service::ListPlayerSnapshotsResponse)},
+        {195, sizeof(::data_service::GetPlayerSnapshotDiffRequest)},
+        {204, sizeof(::data_service::FieldDiff)},
+        {217, sizeof(::data_service::GetPlayerSnapshotDiffResponse)},
+        {228, sizeof(::data_service::RollbackPlayerRequest)},
+        {245, sizeof(::data_service::RollbackPlayerResponse)},
+        {256, sizeof(::data_service::RollbackZoneRequest)},
+        {267, sizeof(::data_service::RollbackZoneResponse)},
+        {282, sizeof(::data_service::RollbackAllRequest)},
+        {291, sizeof(::data_service::RollbackAllResponse)},
+        {302, sizeof(::data_service::BatchRecallItemsRequest)},
+        {323, sizeof(::data_service::RecallResult)},
+        {338, sizeof(::data_service::BatchRecallItemsResponse)},
+        {351, sizeof(::data_service::QueryTransactionLogRequest)},
+        {370, sizeof(::data_service::TransactionLogRow)},
+        {401, sizeof(::data_service::QueryTransactionLogResponse)},
+        {410, sizeof(::data_service::CreateEventSnapshotRequest)},
+        {421, sizeof(::data_service::CreateEventSnapshotResponse)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::data_service::_LoadPlayerDataRequest_default_instance_._instance,
@@ -1644,6 +1718,8 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::data_service::_BatchGetPlayerHomeZoneRequest_default_instance_._instance,
     &::data_service::_BatchGetPlayerHomeZoneResponse_PlayerZoneMapEntry_DoNotUse_default_instance_._instance,
     &::data_service::_BatchGetPlayerHomeZoneResponse_default_instance_._instance,
+    &::data_service::_RemapHomeZoneForMergeRequest_default_instance_._instance,
+    &::data_service::_RemapHomeZoneForMergeResponse_default_instance_._instance,
     &::data_service::_DeletePlayerDataRequest_default_instance_._instance,
     &::data_service::_DeletePlayerDataResponse_default_instance_._instance,
     &::data_service::_CreatePlayerSnapshotRequest_default_instance_._instance,
@@ -1702,7 +1778,12 @@ const char descriptor_table_protodef_proto_2fdata_5fservice_2fdata_5fservice_2ep
     "\002 \003(\0132\?.data_service.BatchGetPlayerHomeZ"
     "oneResponse.PlayerZoneMapEntry\0324\n\022Player"
     "ZoneMapEntry\022\013\n\003key\030\001 \001(\004\022\r\n\005value\030\002 \001(\r"
-    ":\0028\001\"I\n\027DeletePlayerDataRequest\022\021\n\tplaye"
+    ":\0028\001\"_\n\034RemapHomeZoneForMergeRequest\022\026\n\016"
+    "source_zone_id\030\001 \001(\r\022\026\n\016target_zone_id\030\002"
+    " \001(\r\022\017\n\007dry_run\030\003 \001(\010\"e\n\035RemapHomeZoneFo"
+    "rMergeResponse\022\022\n\nerror_code\030\001 \001(\r\022\027\n\017pl"
+    "ayers_matched\030\002 \001(\r\022\027\n\017players_updated\030\003"
+    " \001(\r\"I\n\027DeletePlayerDataRequest\022\021\n\tplaye"
     "r_id\030\001 \001(\004\022\033\n\023delete_zone_mapping\030\002 \001(\010\""
     "D\n\030DeletePlayerDataResponse\022\022\n\nerror_cod"
     "e\030\001 \001(\r\022\024\n\014keys_deleted\030\002 \001(\r\"|\n\033CreateP"
@@ -1791,7 +1872,7 @@ const char descriptor_table_protodef_proto_2fdata_5fservice_2fdata_5fservice_2ep
     "TIAL\020\001*\212\001\n\021SnapshotEventType\022\033\n\027EVENT_LA"
     "RGE_TRANSACTION\020\000\022\022\n\016EVENT_RECHARGE\020\001\022\031\n"
     "\025EVENT_PRE_MAINTENANCE\020\002\022\022\n\016EVENT_LEVEL_"
-    "UP\020\003\022\025\n\021EVENT_FIRST_LOGIN\020\0042\310\r\n\013DataServ"
+    "UP\020\003\022\025\n\021EVENT_FIRST_LOGIN\020\0042\274\016\n\013DataServ"
     "ice\022]\n\016LoadPlayerData\022#.data_service.Loa"
     "dPlayerDataRequest\032$.data_service.LoadPl"
     "ayerDataResponse\"\000\022]\n\016SavePlayerData\022#.d"
@@ -1809,34 +1890,36 @@ const char descriptor_table_protodef_proto_2fdata_5fservice_2fdata_5fservice_2ep
     "meZoneResponse\"\000\022u\n\026BatchGetPlayerHomeZo"
     "ne\022+.data_service.BatchGetPlayerHomeZone"
     "Request\032,.data_service.BatchGetPlayerHom"
-    "eZoneResponse\"\000\022c\n\020DeletePlayerData\022%.da"
-    "ta_service.DeletePlayerDataRequest\032&.dat"
-    "a_service.DeletePlayerDataResponse\"\000\022o\n\024"
-    "CreatePlayerSnapshot\022).data_service.Crea"
-    "tePlayerSnapshotRequest\032*.data_service.C"
-    "reatePlayerSnapshotResponse\"\000\022l\n\023ListPla"
-    "yerSnapshots\022(.data_service.ListPlayerSn"
-    "apshotsRequest\032).data_service.ListPlayer"
-    "SnapshotsResponse\"\000\022r\n\025GetPlayerSnapshot"
-    "Diff\022*.data_service.GetPlayerSnapshotDif"
-    "fRequest\032+.data_service.GetPlayerSnapsho"
-    "tDiffResponse\"\000\022]\n\016RollbackPlayer\022#.data"
-    "_service.RollbackPlayerRequest\032$.data_se"
-    "rvice.RollbackPlayerResponse\"\000\022W\n\014Rollba"
-    "ckZone\022!.data_service.RollbackZoneReques"
-    "t\032\".data_service.RollbackZoneResponse\"\000\022"
-    "T\n\013RollbackAll\022 .data_service.RollbackAl"
-    "lRequest\032!.data_service.RollbackAllRespo"
-    "nse\"\000\022c\n\020BatchRecallItems\022%.data_service"
-    ".BatchRecallItemsRequest\032&.data_service."
-    "BatchRecallItemsResponse\"\000\022l\n\023QueryTrans"
-    "actionLog\022(.data_service.QueryTransactio"
-    "nLogRequest\032).data_service.QueryTransact"
-    "ionLogResponse\"\000\022l\n\023CreateEventSnapshot\022"
-    "(.data_service.CreateEventSnapshotReques"
-    "t\032).data_service.CreateEventSnapshotResp"
-    "onse\"\000B\033Z\031data_service/data_serviceb\006pro"
-    "to3"
+    "eZoneResponse\"\000\022r\n\025RemapHomeZoneForMerge"
+    "\022*.data_service.RemapHomeZoneForMergeReq"
+    "uest\032+.data_service.RemapHomeZoneForMerg"
+    "eResponse\"\000\022c\n\020DeletePlayerData\022%.data_s"
+    "ervice.DeletePlayerDataRequest\032&.data_se"
+    "rvice.DeletePlayerDataResponse\"\000\022o\n\024Crea"
+    "tePlayerSnapshot\022).data_service.CreatePl"
+    "ayerSnapshotRequest\032*.data_service.Creat"
+    "ePlayerSnapshotResponse\"\000\022l\n\023ListPlayerS"
+    "napshots\022(.data_service.ListPlayerSnapsh"
+    "otsRequest\032).data_service.ListPlayerSnap"
+    "shotsResponse\"\000\022r\n\025GetPlayerSnapshotDiff"
+    "\022*.data_service.GetPlayerSnapshotDiffReq"
+    "uest\032+.data_service.GetPlayerSnapshotDif"
+    "fResponse\"\000\022]\n\016RollbackPlayer\022#.data_ser"
+    "vice.RollbackPlayerRequest\032$.data_servic"
+    "e.RollbackPlayerResponse\"\000\022W\n\014RollbackZo"
+    "ne\022!.data_service.RollbackZoneRequest\032\"."
+    "data_service.RollbackZoneResponse\"\000\022T\n\013R"
+    "ollbackAll\022 .data_service.RollbackAllReq"
+    "uest\032!.data_service.RollbackAllResponse\""
+    "\000\022c\n\020BatchRecallItems\022%.data_service.Bat"
+    "chRecallItemsRequest\032&.data_service.Batc"
+    "hRecallItemsResponse\"\000\022l\n\023QueryTransacti"
+    "onLog\022(.data_service.QueryTransactionLog"
+    "Request\032).data_service.QueryTransactionL"
+    "ogResponse\"\000\022l\n\023CreateEventSnapshot\022(.da"
+    "ta_service.CreateEventSnapshotRequest\032)."
+    "data_service.CreateEventSnapshotResponse"
+    "\"\000B\033Z\031data_service/data_serviceb\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fdata_5fservice_2fdata_5fservice_2eproto_deps[1] = {
@@ -1846,13 +1929,13 @@ static ::absl::once_flag descriptor_table_proto_2fdata_5fservice_2fdata_5fservic
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fdata_5fservice_2fdata_5fservice_2eproto = {
     false,
     false,
-    6603,
+    6919,
     descriptor_table_protodef_proto_2fdata_5fservice_2fdata_5fservice_2eproto,
     "proto/data_service/data_service.proto",
     &descriptor_table_proto_2fdata_5fservice_2fdata_5fservice_2eproto_once,
     descriptor_table_proto_2fdata_5fservice_2fdata_5fservice_2eproto_deps,
     1,
-    40,
+    42,
     schemas,
     file_default_instances,
     TableStruct_proto_2fdata_5fservice_2fdata_5fservice_2eproto::offsets,
@@ -5996,6 +6079,621 @@ void BatchGetPlayerHomeZoneResponse::InternalSwap(BatchGetPlayerHomeZoneResponse
 }
 
 ::google::protobuf::Metadata BatchGetPlayerHomeZoneResponse::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class RemapHomeZoneForMergeRequest::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<RemapHomeZoneForMergeRequest>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(RemapHomeZoneForMergeRequest, _impl_._has_bits_);
+};
+
+RemapHomeZoneForMergeRequest::RemapHomeZoneForMergeRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, RemapHomeZoneForMergeRequest_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:data_service.RemapHomeZoneForMergeRequest)
+}
+RemapHomeZoneForMergeRequest::RemapHomeZoneForMergeRequest(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const RemapHomeZoneForMergeRequest& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, RemapHomeZoneForMergeRequest_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(from._impl_) {
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+PROTOBUF_NDEBUG_INLINE RemapHomeZoneForMergeRequest::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0} {}
+
+inline void RemapHomeZoneForMergeRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, source_zone_id_),
+           0,
+           offsetof(Impl_, dry_run_) -
+               offsetof(Impl_, source_zone_id_) +
+               sizeof(Impl_::dry_run_));
+}
+RemapHomeZoneForMergeRequest::~RemapHomeZoneForMergeRequest() {
+  // @@protoc_insertion_point(destructor:data_service.RemapHomeZoneForMergeRequest)
+  SharedDtor(*this);
+}
+inline void RemapHomeZoneForMergeRequest::SharedDtor(MessageLite& self) {
+  RemapHomeZoneForMergeRequest& this_ = static_cast<RemapHomeZoneForMergeRequest&>(self);
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL RemapHomeZoneForMergeRequest::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) RemapHomeZoneForMergeRequest(arena);
+}
+constexpr auto RemapHomeZoneForMergeRequest::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(RemapHomeZoneForMergeRequest),
+                                            alignof(RemapHomeZoneForMergeRequest));
+}
+constexpr auto RemapHomeZoneForMergeRequest::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_RemapHomeZoneForMergeRequest_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &RemapHomeZoneForMergeRequest::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<RemapHomeZoneForMergeRequest>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &RemapHomeZoneForMergeRequest::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<RemapHomeZoneForMergeRequest>(), &RemapHomeZoneForMergeRequest::ByteSizeLong,
+              &RemapHomeZoneForMergeRequest::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(RemapHomeZoneForMergeRequest, _impl_._cached_size_),
+          false,
+      },
+      &RemapHomeZoneForMergeRequest::kDescriptorMethods,
+      &descriptor_table_proto_2fdata_5fservice_2fdata_5fservice_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull RemapHomeZoneForMergeRequest_class_data_ =
+        RemapHomeZoneForMergeRequest::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+RemapHomeZoneForMergeRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&RemapHomeZoneForMergeRequest_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(RemapHomeZoneForMergeRequest_class_data_.tc_table);
+  return RemapHomeZoneForMergeRequest_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<2, 3, 0, 0, 2>
+RemapHomeZoneForMergeRequest::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(RemapHomeZoneForMergeRequest, _impl_._has_bits_),
+    0, // no _extensions_
+    3, 24,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967288,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    3,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    RemapHomeZoneForMergeRequest_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::data_service::RemapHomeZoneForMergeRequest>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    {::_pbi::TcParser::MiniParse, {}},
+    // uint32 source_zone_id = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RemapHomeZoneForMergeRequest, _impl_.source_zone_id_), 0>(),
+     {8, 0, 0, PROTOBUF_FIELD_OFFSET(RemapHomeZoneForMergeRequest, _impl_.source_zone_id_)}},
+    // uint32 target_zone_id = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RemapHomeZoneForMergeRequest, _impl_.target_zone_id_), 1>(),
+     {16, 1, 0, PROTOBUF_FIELD_OFFSET(RemapHomeZoneForMergeRequest, _impl_.target_zone_id_)}},
+    // bool dry_run = 3;
+    {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(RemapHomeZoneForMergeRequest, _impl_.dry_run_), 2>(),
+     {24, 2, 0, PROTOBUF_FIELD_OFFSET(RemapHomeZoneForMergeRequest, _impl_.dry_run_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // uint32 source_zone_id = 1;
+    {PROTOBUF_FIELD_OFFSET(RemapHomeZoneForMergeRequest, _impl_.source_zone_id_), _Internal::kHasBitsOffset + 0, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+    // uint32 target_zone_id = 2;
+    {PROTOBUF_FIELD_OFFSET(RemapHomeZoneForMergeRequest, _impl_.target_zone_id_), _Internal::kHasBitsOffset + 1, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+    // bool dry_run = 3;
+    {PROTOBUF_FIELD_OFFSET(RemapHomeZoneForMergeRequest, _impl_.dry_run_), _Internal::kHasBitsOffset + 2, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kBool)},
+  }},
+  // no aux_entries
+  {{
+  }},
+};
+PROTOBUF_NOINLINE void RemapHomeZoneForMergeRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:data_service.RemapHomeZoneForMergeRequest)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000007u) != 0) {
+    ::memset(&_impl_.source_zone_id_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.dry_run_) -
+        reinterpret_cast<char*>(&_impl_.source_zone_id_)) + sizeof(_impl_.dry_run_));
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL RemapHomeZoneForMergeRequest::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const RemapHomeZoneForMergeRequest& this_ = static_cast<const RemapHomeZoneForMergeRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL RemapHomeZoneForMergeRequest::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const RemapHomeZoneForMergeRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(serialize_to_array_start:data_service.RemapHomeZoneForMergeRequest)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  // uint32 source_zone_id = 1;
+  if ((this_._impl_._has_bits_[0] & 0x00000001u) != 0) {
+    if (this_._internal_source_zone_id() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          1, this_._internal_source_zone_id(), target);
+    }
+  }
+
+  // uint32 target_zone_id = 2;
+  if ((this_._impl_._has_bits_[0] & 0x00000002u) != 0) {
+    if (this_._internal_target_zone_id() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          2, this_._internal_target_zone_id(), target);
+    }
+  }
+
+  // bool dry_run = 3;
+  if ((this_._impl_._has_bits_[0] & 0x00000004u) != 0) {
+    if (this_._internal_dry_run() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteBoolToArray(
+          3, this_._internal_dry_run(), target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:data_service.RemapHomeZoneForMergeRequest)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t RemapHomeZoneForMergeRequest::ByteSizeLong(const MessageLite& base) {
+  const RemapHomeZoneForMergeRequest& this_ = static_cast<const RemapHomeZoneForMergeRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t RemapHomeZoneForMergeRequest::ByteSizeLong() const {
+  const RemapHomeZoneForMergeRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:data_service.RemapHomeZoneForMergeRequest)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000007u) != 0) {
+    // uint32 source_zone_id = 1;
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      if (this_._internal_source_zone_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_source_zone_id());
+      }
+    }
+    // uint32 target_zone_id = 2;
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      if (this_._internal_target_zone_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_target_zone_id());
+      }
+    }
+    // bool dry_run = 3;
+    if ((cached_has_bits & 0x00000004u) != 0) {
+      if (this_._internal_dry_run() != 0) {
+        total_size += 2;
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void RemapHomeZoneForMergeRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<RemapHomeZoneForMergeRequest*>(&to_msg);
+  auto& from = static_cast<const RemapHomeZoneForMergeRequest&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:data_service.RemapHomeZoneForMergeRequest)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000007u) != 0) {
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      if (from._internal_source_zone_id() != 0) {
+        _this->_impl_.source_zone_id_ = from._impl_.source_zone_id_;
+      }
+    }
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      if (from._internal_target_zone_id() != 0) {
+        _this->_impl_.target_zone_id_ = from._impl_.target_zone_id_;
+      }
+    }
+    if ((cached_has_bits & 0x00000004u) != 0) {
+      if (from._internal_dry_run() != 0) {
+        _this->_impl_.dry_run_ = from._impl_.dry_run_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void RemapHomeZoneForMergeRequest::CopyFrom(const RemapHomeZoneForMergeRequest& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:data_service.RemapHomeZoneForMergeRequest)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void RemapHomeZoneForMergeRequest::InternalSwap(RemapHomeZoneForMergeRequest* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(RemapHomeZoneForMergeRequest, _impl_.dry_run_)
+      + sizeof(RemapHomeZoneForMergeRequest::_impl_.dry_run_)
+      - PROTOBUF_FIELD_OFFSET(RemapHomeZoneForMergeRequest, _impl_.source_zone_id_)>(
+          reinterpret_cast<char*>(&_impl_.source_zone_id_),
+          reinterpret_cast<char*>(&other->_impl_.source_zone_id_));
+}
+
+::google::protobuf::Metadata RemapHomeZoneForMergeRequest::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class RemapHomeZoneForMergeResponse::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<RemapHomeZoneForMergeResponse>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(RemapHomeZoneForMergeResponse, _impl_._has_bits_);
+};
+
+RemapHomeZoneForMergeResponse::RemapHomeZoneForMergeResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, RemapHomeZoneForMergeResponse_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:data_service.RemapHomeZoneForMergeResponse)
+}
+RemapHomeZoneForMergeResponse::RemapHomeZoneForMergeResponse(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const RemapHomeZoneForMergeResponse& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, RemapHomeZoneForMergeResponse_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(from._impl_) {
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+PROTOBUF_NDEBUG_INLINE RemapHomeZoneForMergeResponse::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0} {}
+
+inline void RemapHomeZoneForMergeResponse::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, error_code_),
+           0,
+           offsetof(Impl_, players_updated_) -
+               offsetof(Impl_, error_code_) +
+               sizeof(Impl_::players_updated_));
+}
+RemapHomeZoneForMergeResponse::~RemapHomeZoneForMergeResponse() {
+  // @@protoc_insertion_point(destructor:data_service.RemapHomeZoneForMergeResponse)
+  SharedDtor(*this);
+}
+inline void RemapHomeZoneForMergeResponse::SharedDtor(MessageLite& self) {
+  RemapHomeZoneForMergeResponse& this_ = static_cast<RemapHomeZoneForMergeResponse&>(self);
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL RemapHomeZoneForMergeResponse::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) RemapHomeZoneForMergeResponse(arena);
+}
+constexpr auto RemapHomeZoneForMergeResponse::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(RemapHomeZoneForMergeResponse),
+                                            alignof(RemapHomeZoneForMergeResponse));
+}
+constexpr auto RemapHomeZoneForMergeResponse::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_RemapHomeZoneForMergeResponse_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &RemapHomeZoneForMergeResponse::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<RemapHomeZoneForMergeResponse>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &RemapHomeZoneForMergeResponse::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<RemapHomeZoneForMergeResponse>(), &RemapHomeZoneForMergeResponse::ByteSizeLong,
+              &RemapHomeZoneForMergeResponse::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(RemapHomeZoneForMergeResponse, _impl_._cached_size_),
+          false,
+      },
+      &RemapHomeZoneForMergeResponse::kDescriptorMethods,
+      &descriptor_table_proto_2fdata_5fservice_2fdata_5fservice_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull RemapHomeZoneForMergeResponse_class_data_ =
+        RemapHomeZoneForMergeResponse::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+RemapHomeZoneForMergeResponse::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&RemapHomeZoneForMergeResponse_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(RemapHomeZoneForMergeResponse_class_data_.tc_table);
+  return RemapHomeZoneForMergeResponse_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<2, 3, 0, 0, 2>
+RemapHomeZoneForMergeResponse::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(RemapHomeZoneForMergeResponse, _impl_._has_bits_),
+    0, // no _extensions_
+    3, 24,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967288,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    3,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    RemapHomeZoneForMergeResponse_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::data_service::RemapHomeZoneForMergeResponse>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    {::_pbi::TcParser::MiniParse, {}},
+    // uint32 error_code = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RemapHomeZoneForMergeResponse, _impl_.error_code_), 0>(),
+     {8, 0, 0, PROTOBUF_FIELD_OFFSET(RemapHomeZoneForMergeResponse, _impl_.error_code_)}},
+    // uint32 players_matched = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RemapHomeZoneForMergeResponse, _impl_.players_matched_), 1>(),
+     {16, 1, 0, PROTOBUF_FIELD_OFFSET(RemapHomeZoneForMergeResponse, _impl_.players_matched_)}},
+    // uint32 players_updated = 3;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RemapHomeZoneForMergeResponse, _impl_.players_updated_), 2>(),
+     {24, 2, 0, PROTOBUF_FIELD_OFFSET(RemapHomeZoneForMergeResponse, _impl_.players_updated_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // uint32 error_code = 1;
+    {PROTOBUF_FIELD_OFFSET(RemapHomeZoneForMergeResponse, _impl_.error_code_), _Internal::kHasBitsOffset + 0, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+    // uint32 players_matched = 2;
+    {PROTOBUF_FIELD_OFFSET(RemapHomeZoneForMergeResponse, _impl_.players_matched_), _Internal::kHasBitsOffset + 1, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+    // uint32 players_updated = 3;
+    {PROTOBUF_FIELD_OFFSET(RemapHomeZoneForMergeResponse, _impl_.players_updated_), _Internal::kHasBitsOffset + 2, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+  }},
+  // no aux_entries
+  {{
+  }},
+};
+PROTOBUF_NOINLINE void RemapHomeZoneForMergeResponse::Clear() {
+// @@protoc_insertion_point(message_clear_start:data_service.RemapHomeZoneForMergeResponse)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000007u) != 0) {
+    ::memset(&_impl_.error_code_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.players_updated_) -
+        reinterpret_cast<char*>(&_impl_.error_code_)) + sizeof(_impl_.players_updated_));
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL RemapHomeZoneForMergeResponse::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const RemapHomeZoneForMergeResponse& this_ = static_cast<const RemapHomeZoneForMergeResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL RemapHomeZoneForMergeResponse::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const RemapHomeZoneForMergeResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(serialize_to_array_start:data_service.RemapHomeZoneForMergeResponse)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  // uint32 error_code = 1;
+  if ((this_._impl_._has_bits_[0] & 0x00000001u) != 0) {
+    if (this_._internal_error_code() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          1, this_._internal_error_code(), target);
+    }
+  }
+
+  // uint32 players_matched = 2;
+  if ((this_._impl_._has_bits_[0] & 0x00000002u) != 0) {
+    if (this_._internal_players_matched() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          2, this_._internal_players_matched(), target);
+    }
+  }
+
+  // uint32 players_updated = 3;
+  if ((this_._impl_._has_bits_[0] & 0x00000004u) != 0) {
+    if (this_._internal_players_updated() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          3, this_._internal_players_updated(), target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:data_service.RemapHomeZoneForMergeResponse)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t RemapHomeZoneForMergeResponse::ByteSizeLong(const MessageLite& base) {
+  const RemapHomeZoneForMergeResponse& this_ = static_cast<const RemapHomeZoneForMergeResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t RemapHomeZoneForMergeResponse::ByteSizeLong() const {
+  const RemapHomeZoneForMergeResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:data_service.RemapHomeZoneForMergeResponse)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000007u) != 0) {
+    // uint32 error_code = 1;
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      if (this_._internal_error_code() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_error_code());
+      }
+    }
+    // uint32 players_matched = 2;
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      if (this_._internal_players_matched() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_players_matched());
+      }
+    }
+    // uint32 players_updated = 3;
+    if ((cached_has_bits & 0x00000004u) != 0) {
+      if (this_._internal_players_updated() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_players_updated());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void RemapHomeZoneForMergeResponse::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<RemapHomeZoneForMergeResponse*>(&to_msg);
+  auto& from = static_cast<const RemapHomeZoneForMergeResponse&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:data_service.RemapHomeZoneForMergeResponse)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000007u) != 0) {
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      if (from._internal_error_code() != 0) {
+        _this->_impl_.error_code_ = from._impl_.error_code_;
+      }
+    }
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      if (from._internal_players_matched() != 0) {
+        _this->_impl_.players_matched_ = from._impl_.players_matched_;
+      }
+    }
+    if ((cached_has_bits & 0x00000004u) != 0) {
+      if (from._internal_players_updated() != 0) {
+        _this->_impl_.players_updated_ = from._impl_.players_updated_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void RemapHomeZoneForMergeResponse::CopyFrom(const RemapHomeZoneForMergeResponse& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:data_service.RemapHomeZoneForMergeResponse)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void RemapHomeZoneForMergeResponse::InternalSwap(RemapHomeZoneForMergeResponse* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(RemapHomeZoneForMergeResponse, _impl_.players_updated_)
+      + sizeof(RemapHomeZoneForMergeResponse::_impl_.players_updated_)
+      - PROTOBUF_FIELD_OFFSET(RemapHomeZoneForMergeResponse, _impl_.error_code_)>(
+          reinterpret_cast<char*>(&_impl_.error_code_),
+          reinterpret_cast<char*>(&other->_impl_.error_code_));
+}
+
+::google::protobuf::Metadata RemapHomeZoneForMergeResponse::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // ===================================================================

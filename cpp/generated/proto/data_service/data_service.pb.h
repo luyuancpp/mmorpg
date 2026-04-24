@@ -173,6 +173,14 @@ class RegisterPlayerZoneRequest;
 struct RegisterPlayerZoneRequestDefaultTypeInternal;
 extern RegisterPlayerZoneRequestDefaultTypeInternal _RegisterPlayerZoneRequest_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull RegisterPlayerZoneRequest_class_data_;
+class RemapHomeZoneForMergeRequest;
+struct RemapHomeZoneForMergeRequestDefaultTypeInternal;
+extern RemapHomeZoneForMergeRequestDefaultTypeInternal _RemapHomeZoneForMergeRequest_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull RemapHomeZoneForMergeRequest_class_data_;
+class RemapHomeZoneForMergeResponse;
+struct RemapHomeZoneForMergeResponseDefaultTypeInternal;
+extern RemapHomeZoneForMergeResponseDefaultTypeInternal _RemapHomeZoneForMergeResponse_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull RemapHomeZoneForMergeResponse_class_data_;
 class RollbackAllRequest;
 struct RollbackAllRequestDefaultTypeInternal;
 extern RollbackAllRequestDefaultTypeInternal _RollbackAllRequest_default_instance_;
@@ -416,7 +424,7 @@ class TransactionLogRow final : public ::google::protobuf::Message
     return *reinterpret_cast<const TransactionLogRow*>(
         &_TransactionLogRow_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 36;
+  static constexpr int kIndexInFileMessages = 38;
   friend void swap(TransactionLogRow& a, TransactionLogRow& b) { a.Swap(&b); }
   inline void Swap(TransactionLogRow* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -768,7 +776,7 @@ class SnapshotInfo final : public ::google::protobuf::Message
     return *reinterpret_cast<const SnapshotInfo*>(
         &_SnapshotInfo_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 21;
+  static constexpr int kIndexInFileMessages = 23;
   friend void swap(SnapshotInfo& a, SnapshotInfo& b) { a.Swap(&b); }
   inline void Swap(SnapshotInfo* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -1759,7 +1767,7 @@ class RollbackZoneResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const RollbackZoneResponse*>(
         &_RollbackZoneResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 29;
+  static constexpr int kIndexInFileMessages = 31;
   friend void swap(RollbackZoneResponse& a, RollbackZoneResponse& b) { a.Swap(&b); }
   inline void Swap(RollbackZoneResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -2028,7 +2036,7 @@ class RollbackZoneRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const RollbackZoneRequest*>(
         &_RollbackZoneRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 28;
+  static constexpr int kIndexInFileMessages = 30;
   friend void swap(RollbackZoneRequest& a, RollbackZoneRequest& b) { a.Swap(&b); }
   inline void Swap(RollbackZoneRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -2265,7 +2273,7 @@ class RollbackPlayerResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const RollbackPlayerResponse*>(
         &_RollbackPlayerResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 27;
+  static constexpr int kIndexInFileMessages = 29;
   friend void swap(RollbackPlayerResponse& a, RollbackPlayerResponse& b) { a.Swap(&b); }
   inline void Swap(RollbackPlayerResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -2504,7 +2512,7 @@ class RollbackPlayerRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const RollbackPlayerRequest*>(
         &_RollbackPlayerRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 26;
+  static constexpr int kIndexInFileMessages = 28;
   friend void swap(RollbackPlayerRequest& a, RollbackPlayerRequest& b) { a.Swap(&b); }
   inline void Swap(RollbackPlayerRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -2789,7 +2797,7 @@ class RollbackAllResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const RollbackAllResponse*>(
         &_RollbackAllResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 31;
+  static constexpr int kIndexInFileMessages = 33;
   friend void swap(RollbackAllResponse& a, RollbackAllResponse& b) { a.Swap(&b); }
   inline void Swap(RollbackAllResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -3016,7 +3024,7 @@ class RollbackAllRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const RollbackAllRequest*>(
         &_RollbackAllRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 30;
+  static constexpr int kIndexInFileMessages = 32;
   friend void swap(RollbackAllRequest& a, RollbackAllRequest& b) { a.Swap(&b); }
   inline void Swap(RollbackAllRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -3184,6 +3192,436 @@ class RollbackAllRequest final : public ::google::protobuf::Message
 };
 
 extern const ::google::protobuf::internal::ClassDataFull RollbackAllRequest_class_data_;
+// -------------------------------------------------------------------
+
+class RemapHomeZoneForMergeResponse final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:data_service.RemapHomeZoneForMergeResponse) */ {
+ public:
+  inline RemapHomeZoneForMergeResponse() : RemapHomeZoneForMergeResponse(nullptr) {}
+  ~RemapHomeZoneForMergeResponse() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(RemapHomeZoneForMergeResponse* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(RemapHomeZoneForMergeResponse));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR RemapHomeZoneForMergeResponse(::google::protobuf::internal::ConstantInitialized);
+
+  inline RemapHomeZoneForMergeResponse(const RemapHomeZoneForMergeResponse& from) : RemapHomeZoneForMergeResponse(nullptr, from) {}
+  inline RemapHomeZoneForMergeResponse(RemapHomeZoneForMergeResponse&& from) noexcept
+      : RemapHomeZoneForMergeResponse(nullptr, ::std::move(from)) {}
+  inline RemapHomeZoneForMergeResponse& operator=(const RemapHomeZoneForMergeResponse& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline RemapHomeZoneForMergeResponse& operator=(RemapHomeZoneForMergeResponse&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const RemapHomeZoneForMergeResponse& default_instance() {
+    return *reinterpret_cast<const RemapHomeZoneForMergeResponse*>(
+        &_RemapHomeZoneForMergeResponse_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 17;
+  friend void swap(RemapHomeZoneForMergeResponse& a, RemapHomeZoneForMergeResponse& b) { a.Swap(&b); }
+  inline void Swap(RemapHomeZoneForMergeResponse* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(RemapHomeZoneForMergeResponse* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  RemapHomeZoneForMergeResponse* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<RemapHomeZoneForMergeResponse>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const RemapHomeZoneForMergeResponse& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const RemapHomeZoneForMergeResponse& from) { RemapHomeZoneForMergeResponse::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(RemapHomeZoneForMergeResponse* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "data_service.RemapHomeZoneForMergeResponse"; }
+
+ protected:
+  explicit RemapHomeZoneForMergeResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  RemapHomeZoneForMergeResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const RemapHomeZoneForMergeResponse& from);
+  RemapHomeZoneForMergeResponse(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, RemapHomeZoneForMergeResponse&& from) noexcept
+      : RemapHomeZoneForMergeResponse(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kErrorCodeFieldNumber = 1,
+    kPlayersMatchedFieldNumber = 2,
+    kPlayersUpdatedFieldNumber = 3,
+  };
+  // uint32 error_code = 1;
+  void clear_error_code() ;
+  ::uint32_t error_code() const;
+  void set_error_code(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_error_code() const;
+  void _internal_set_error_code(::uint32_t value);
+
+  public:
+  // uint32 players_matched = 2;
+  void clear_players_matched() ;
+  ::uint32_t players_matched() const;
+  void set_players_matched(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_players_matched() const;
+  void _internal_set_players_matched(::uint32_t value);
+
+  public:
+  // uint32 players_updated = 3;
+  void clear_players_updated() ;
+  ::uint32_t players_updated() const;
+  void set_players_updated(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_players_updated() const;
+  void _internal_set_players_updated(::uint32_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:data_service.RemapHomeZoneForMergeResponse)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<2, 3,
+                                   0, 0,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const RemapHomeZoneForMergeResponse& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::uint32_t error_code_;
+    ::uint32_t players_matched_;
+    ::uint32_t players_updated_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fdata_5fservice_2fdata_5fservice_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull RemapHomeZoneForMergeResponse_class_data_;
+// -------------------------------------------------------------------
+
+class RemapHomeZoneForMergeRequest final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:data_service.RemapHomeZoneForMergeRequest) */ {
+ public:
+  inline RemapHomeZoneForMergeRequest() : RemapHomeZoneForMergeRequest(nullptr) {}
+  ~RemapHomeZoneForMergeRequest() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(RemapHomeZoneForMergeRequest* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(RemapHomeZoneForMergeRequest));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR RemapHomeZoneForMergeRequest(::google::protobuf::internal::ConstantInitialized);
+
+  inline RemapHomeZoneForMergeRequest(const RemapHomeZoneForMergeRequest& from) : RemapHomeZoneForMergeRequest(nullptr, from) {}
+  inline RemapHomeZoneForMergeRequest(RemapHomeZoneForMergeRequest&& from) noexcept
+      : RemapHomeZoneForMergeRequest(nullptr, ::std::move(from)) {}
+  inline RemapHomeZoneForMergeRequest& operator=(const RemapHomeZoneForMergeRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline RemapHomeZoneForMergeRequest& operator=(RemapHomeZoneForMergeRequest&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const RemapHomeZoneForMergeRequest& default_instance() {
+    return *reinterpret_cast<const RemapHomeZoneForMergeRequest*>(
+        &_RemapHomeZoneForMergeRequest_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 16;
+  friend void swap(RemapHomeZoneForMergeRequest& a, RemapHomeZoneForMergeRequest& b) { a.Swap(&b); }
+  inline void Swap(RemapHomeZoneForMergeRequest* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(RemapHomeZoneForMergeRequest* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  RemapHomeZoneForMergeRequest* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<RemapHomeZoneForMergeRequest>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const RemapHomeZoneForMergeRequest& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const RemapHomeZoneForMergeRequest& from) { RemapHomeZoneForMergeRequest::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(RemapHomeZoneForMergeRequest* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "data_service.RemapHomeZoneForMergeRequest"; }
+
+ protected:
+  explicit RemapHomeZoneForMergeRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  RemapHomeZoneForMergeRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const RemapHomeZoneForMergeRequest& from);
+  RemapHomeZoneForMergeRequest(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, RemapHomeZoneForMergeRequest&& from) noexcept
+      : RemapHomeZoneForMergeRequest(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kSourceZoneIdFieldNumber = 1,
+    kTargetZoneIdFieldNumber = 2,
+    kDryRunFieldNumber = 3,
+  };
+  // uint32 source_zone_id = 1;
+  void clear_source_zone_id() ;
+  ::uint32_t source_zone_id() const;
+  void set_source_zone_id(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_source_zone_id() const;
+  void _internal_set_source_zone_id(::uint32_t value);
+
+  public:
+  // uint32 target_zone_id = 2;
+  void clear_target_zone_id() ;
+  ::uint32_t target_zone_id() const;
+  void set_target_zone_id(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_target_zone_id() const;
+  void _internal_set_target_zone_id(::uint32_t value);
+
+  public:
+  // bool dry_run = 3;
+  void clear_dry_run() ;
+  bool dry_run() const;
+  void set_dry_run(bool value);
+
+  private:
+  bool _internal_dry_run() const;
+  void _internal_set_dry_run(bool value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:data_service.RemapHomeZoneForMergeRequest)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<2, 3,
+                                   0, 0,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const RemapHomeZoneForMergeRequest& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::uint32_t source_zone_id_;
+    ::uint32_t target_zone_id_;
+    bool dry_run_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fdata_5fservice_2fdata_5fservice_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull RemapHomeZoneForMergeRequest_class_data_;
 // -------------------------------------------------------------------
 
 class RegisterPlayerZoneRequest final : public ::google::protobuf::Message
@@ -3444,7 +3882,7 @@ class RecallResult final : public ::google::protobuf::Message
     return *reinterpret_cast<const RecallResult*>(
         &_RecallResult_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 33;
+  static constexpr int kIndexInFileMessages = 35;
   friend void swap(RecallResult& a, RecallResult& b) { a.Swap(&b); }
   inline void Swap(RecallResult* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -3700,7 +4138,7 @@ class QueryTransactionLogRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const QueryTransactionLogRequest*>(
         &_QueryTransactionLogRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 35;
+  static constexpr int kIndexInFileMessages = 37;
   friend void swap(QueryTransactionLogRequest& a, QueryTransactionLogRequest& b) { a.Swap(&b); }
   inline void Swap(QueryTransactionLogRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -4238,7 +4676,7 @@ class ListPlayerSnapshotsRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const ListPlayerSnapshotsRequest*>(
         &_ListPlayerSnapshotsRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 20;
+  static constexpr int kIndexInFileMessages = 22;
   friend void swap(ListPlayerSnapshotsRequest& a, ListPlayerSnapshotsRequest& b) { a.Swap(&b); }
   inline void Swap(ListPlayerSnapshotsRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -4453,7 +4891,7 @@ class GetPlayerSnapshotDiffRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const GetPlayerSnapshotDiffRequest*>(
         &_GetPlayerSnapshotDiffRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 23;
+  static constexpr int kIndexInFileMessages = 25;
   friend void swap(GetPlayerSnapshotDiffRequest& a, GetPlayerSnapshotDiffRequest& b) { a.Swap(&b); }
   inline void Swap(GetPlayerSnapshotDiffRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -5466,7 +5904,7 @@ class FieldDiff final : public ::google::protobuf::Message
     return *reinterpret_cast<const FieldDiff*>(
         &_FieldDiff_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 24;
+  static constexpr int kIndexInFileMessages = 26;
   friend void swap(FieldDiff& a, FieldDiff& b) { a.Swap(&b); }
   inline void Swap(FieldDiff* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -5720,7 +6158,7 @@ class DeletePlayerDataResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const DeletePlayerDataResponse*>(
         &_DeletePlayerDataResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 17;
+  static constexpr int kIndexInFileMessages = 19;
   friend void swap(DeletePlayerDataResponse& a, DeletePlayerDataResponse& b) { a.Swap(&b); }
   inline void Swap(DeletePlayerDataResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -5923,7 +6361,7 @@ class DeletePlayerDataRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const DeletePlayerDataRequest*>(
         &_DeletePlayerDataRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 16;
+  static constexpr int kIndexInFileMessages = 18;
   friend void swap(DeletePlayerDataRequest& a, DeletePlayerDataRequest& b) { a.Swap(&b); }
   inline void Swap(DeletePlayerDataRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -6126,7 +6564,7 @@ class CreatePlayerSnapshotResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const CreatePlayerSnapshotResponse*>(
         &_CreatePlayerSnapshotResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 19;
+  static constexpr int kIndexInFileMessages = 21;
   friend void swap(CreatePlayerSnapshotResponse& a, CreatePlayerSnapshotResponse& b) { a.Swap(&b); }
   inline void Swap(CreatePlayerSnapshotResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -6341,7 +6779,7 @@ class CreatePlayerSnapshotRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const CreatePlayerSnapshotRequest*>(
         &_CreatePlayerSnapshotRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 18;
+  static constexpr int kIndexInFileMessages = 20;
   friend void swap(CreatePlayerSnapshotRequest& a, CreatePlayerSnapshotRequest& b) { a.Swap(&b); }
   inline void Swap(CreatePlayerSnapshotRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -6578,7 +7016,7 @@ class CreateEventSnapshotResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const CreateEventSnapshotResponse*>(
         &_CreateEventSnapshotResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 39;
+  static constexpr int kIndexInFileMessages = 41;
   friend void swap(CreateEventSnapshotResponse& a, CreateEventSnapshotResponse& b) { a.Swap(&b); }
   inline void Swap(CreateEventSnapshotResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -6793,7 +7231,7 @@ class CreateEventSnapshotRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const CreateEventSnapshotRequest*>(
         &_CreateEventSnapshotRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 38;
+  static constexpr int kIndexInFileMessages = 40;
   friend void swap(CreateEventSnapshotRequest& a, CreateEventSnapshotRequest& b) { a.Swap(&b); }
   inline void Swap(CreateEventSnapshotRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -7030,7 +7468,7 @@ class BatchRecallItemsRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const BatchRecallItemsRequest*>(
         &_BatchRecallItemsRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 32;
+  static constexpr int kIndexInFileMessages = 34;
   friend void swap(BatchRecallItemsRequest& a, BatchRecallItemsRequest& b) { a.Swap(&b); }
   inline void Swap(BatchRecallItemsRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -7806,7 +8244,7 @@ class QueryTransactionLogResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const QueryTransactionLogResponse*>(
         &_QueryTransactionLogResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 37;
+  static constexpr int kIndexInFileMessages = 39;
   friend void swap(QueryTransactionLogResponse& a, QueryTransactionLogResponse& b) { a.Swap(&b); }
   inline void Swap(QueryTransactionLogResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -8251,7 +8689,7 @@ class ListPlayerSnapshotsResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const ListPlayerSnapshotsResponse*>(
         &_ListPlayerSnapshotsResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 22;
+  static constexpr int kIndexInFileMessages = 24;
   friend void swap(ListPlayerSnapshotsResponse& a, ListPlayerSnapshotsResponse& b) { a.Swap(&b); }
   inline void Swap(ListPlayerSnapshotsResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -8461,7 +8899,7 @@ class GetPlayerSnapshotDiffResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const GetPlayerSnapshotDiffResponse*>(
         &_GetPlayerSnapshotDiffResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 25;
+  static constexpr int kIndexInFileMessages = 27;
   friend void swap(GetPlayerSnapshotDiffResponse& a, GetPlayerSnapshotDiffResponse& b) { a.Swap(&b); }
   inline void Swap(GetPlayerSnapshotDiffResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -8695,7 +9133,7 @@ class BatchRecallItemsResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const BatchRecallItemsResponse*>(
         &_BatchRecallItemsResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 34;
+  static constexpr int kIndexInFileMessages = 36;
   friend void swap(BatchRecallItemsResponse& a, BatchRecallItemsResponse& b) { a.Swap(&b); }
   inline void Swap(BatchRecallItemsResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -10016,6 +10454,158 @@ inline ::google::protobuf::Map<::uint64_t, ::uint32_t>* PROTOBUF_NONNULL BatchGe
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_mutable_map:data_service.BatchGetPlayerHomeZoneResponse.player_zone_map)
   return _internal_mutable_player_zone_map();
+}
+
+// -------------------------------------------------------------------
+
+// RemapHomeZoneForMergeRequest
+
+// uint32 source_zone_id = 1;
+inline void RemapHomeZoneForMergeRequest::clear_source_zone_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.source_zone_id_ = 0u;
+  _impl_._has_bits_[0] &= ~0x00000001u;
+}
+inline ::uint32_t RemapHomeZoneForMergeRequest::source_zone_id() const {
+  // @@protoc_insertion_point(field_get:data_service.RemapHomeZoneForMergeRequest.source_zone_id)
+  return _internal_source_zone_id();
+}
+inline void RemapHomeZoneForMergeRequest::set_source_zone_id(::uint32_t value) {
+  _internal_set_source_zone_id(value);
+  _impl_._has_bits_[0] |= 0x00000001u;
+  // @@protoc_insertion_point(field_set:data_service.RemapHomeZoneForMergeRequest.source_zone_id)
+}
+inline ::uint32_t RemapHomeZoneForMergeRequest::_internal_source_zone_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.source_zone_id_;
+}
+inline void RemapHomeZoneForMergeRequest::_internal_set_source_zone_id(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.source_zone_id_ = value;
+}
+
+// uint32 target_zone_id = 2;
+inline void RemapHomeZoneForMergeRequest::clear_target_zone_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.target_zone_id_ = 0u;
+  _impl_._has_bits_[0] &= ~0x00000002u;
+}
+inline ::uint32_t RemapHomeZoneForMergeRequest::target_zone_id() const {
+  // @@protoc_insertion_point(field_get:data_service.RemapHomeZoneForMergeRequest.target_zone_id)
+  return _internal_target_zone_id();
+}
+inline void RemapHomeZoneForMergeRequest::set_target_zone_id(::uint32_t value) {
+  _internal_set_target_zone_id(value);
+  _impl_._has_bits_[0] |= 0x00000002u;
+  // @@protoc_insertion_point(field_set:data_service.RemapHomeZoneForMergeRequest.target_zone_id)
+}
+inline ::uint32_t RemapHomeZoneForMergeRequest::_internal_target_zone_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.target_zone_id_;
+}
+inline void RemapHomeZoneForMergeRequest::_internal_set_target_zone_id(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.target_zone_id_ = value;
+}
+
+// bool dry_run = 3;
+inline void RemapHomeZoneForMergeRequest::clear_dry_run() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.dry_run_ = false;
+  _impl_._has_bits_[0] &= ~0x00000004u;
+}
+inline bool RemapHomeZoneForMergeRequest::dry_run() const {
+  // @@protoc_insertion_point(field_get:data_service.RemapHomeZoneForMergeRequest.dry_run)
+  return _internal_dry_run();
+}
+inline void RemapHomeZoneForMergeRequest::set_dry_run(bool value) {
+  _internal_set_dry_run(value);
+  _impl_._has_bits_[0] |= 0x00000004u;
+  // @@protoc_insertion_point(field_set:data_service.RemapHomeZoneForMergeRequest.dry_run)
+}
+inline bool RemapHomeZoneForMergeRequest::_internal_dry_run() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.dry_run_;
+}
+inline void RemapHomeZoneForMergeRequest::_internal_set_dry_run(bool value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.dry_run_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// RemapHomeZoneForMergeResponse
+
+// uint32 error_code = 1;
+inline void RemapHomeZoneForMergeResponse::clear_error_code() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.error_code_ = 0u;
+  _impl_._has_bits_[0] &= ~0x00000001u;
+}
+inline ::uint32_t RemapHomeZoneForMergeResponse::error_code() const {
+  // @@protoc_insertion_point(field_get:data_service.RemapHomeZoneForMergeResponse.error_code)
+  return _internal_error_code();
+}
+inline void RemapHomeZoneForMergeResponse::set_error_code(::uint32_t value) {
+  _internal_set_error_code(value);
+  _impl_._has_bits_[0] |= 0x00000001u;
+  // @@protoc_insertion_point(field_set:data_service.RemapHomeZoneForMergeResponse.error_code)
+}
+inline ::uint32_t RemapHomeZoneForMergeResponse::_internal_error_code() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.error_code_;
+}
+inline void RemapHomeZoneForMergeResponse::_internal_set_error_code(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.error_code_ = value;
+}
+
+// uint32 players_matched = 2;
+inline void RemapHomeZoneForMergeResponse::clear_players_matched() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.players_matched_ = 0u;
+  _impl_._has_bits_[0] &= ~0x00000002u;
+}
+inline ::uint32_t RemapHomeZoneForMergeResponse::players_matched() const {
+  // @@protoc_insertion_point(field_get:data_service.RemapHomeZoneForMergeResponse.players_matched)
+  return _internal_players_matched();
+}
+inline void RemapHomeZoneForMergeResponse::set_players_matched(::uint32_t value) {
+  _internal_set_players_matched(value);
+  _impl_._has_bits_[0] |= 0x00000002u;
+  // @@protoc_insertion_point(field_set:data_service.RemapHomeZoneForMergeResponse.players_matched)
+}
+inline ::uint32_t RemapHomeZoneForMergeResponse::_internal_players_matched() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.players_matched_;
+}
+inline void RemapHomeZoneForMergeResponse::_internal_set_players_matched(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.players_matched_ = value;
+}
+
+// uint32 players_updated = 3;
+inline void RemapHomeZoneForMergeResponse::clear_players_updated() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.players_updated_ = 0u;
+  _impl_._has_bits_[0] &= ~0x00000004u;
+}
+inline ::uint32_t RemapHomeZoneForMergeResponse::players_updated() const {
+  // @@protoc_insertion_point(field_get:data_service.RemapHomeZoneForMergeResponse.players_updated)
+  return _internal_players_updated();
+}
+inline void RemapHomeZoneForMergeResponse::set_players_updated(::uint32_t value) {
+  _internal_set_players_updated(value);
+  _impl_._has_bits_[0] |= 0x00000004u;
+  // @@protoc_insertion_point(field_set:data_service.RemapHomeZoneForMergeResponse.players_updated)
+}
+inline ::uint32_t RemapHomeZoneForMergeResponse::_internal_players_updated() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.players_updated_;
+}
+inline void RemapHomeZoneForMergeResponse::_internal_set_players_updated(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.players_updated_ = value;
 }
 
 // -------------------------------------------------------------------
