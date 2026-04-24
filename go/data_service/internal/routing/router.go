@@ -200,6 +200,50 @@ func (r *Router) GetAllPlayerIDsInZone(ctx context.Context, zoneID uint32) ([]ui
 	return playerIDs, nil
 }
 
+// RemapHomeZoneForMerge rewrites all player:zone:* keys whose value equals sourceZone
+// to targetZone. O(N) over all player mapping keys; use only during a maintenance window.
+// When dryRun is true, only counts matches (no SET); PlayersUpdated in response is 0 in that case.
+func (r *Router) RemapHomeZoneForMerge(ctx context.Context, sourceZone, targetZone uint32, dryRun bool) (matched int, updated int, err error) {
+	if sourceZone == 0 || targetZone == 0 {
+		return 0, 0, fmt.Errorf("source and target zone must be non-zero")
+	}
+	if sourceZone == targetZone {
+		return 0, 0, fmt.Errorf("source and target must differ")
+	}
+	sourceVal := strconv.FormatUint(uint64(sourceZone), 10)
+	targetVal := strconv.FormatUint(uint64(targetZone), 10)
+
+	var cursor uint64
+	for {
+		keys, nextCursor, e := r.mappingRedis.ScanCtx(ctx, cursor, mappingKeyPrefix+"*", 500)
+		if e != nil {
+			return matched, updated, fmt.Errorf("scan mapping keys: %w", e)
+		}
+		for _, key := range keys {
+			val, e := r.mappingRedis.GetCtx(ctx, key)
+			if e != nil {
+				return matched, updated, fmt.Errorf("mapping get %q: %w", key, e)
+			}
+			if val == "" || val != sourceVal {
+				continue
+			}
+			matched++
+			if dryRun {
+				continue
+			}
+			if e := r.mappingRedis.SetCtx(ctx, key, targetVal); e != nil {
+				return matched, updated, fmt.Errorf("set %s: %w", key, e)
+			}
+			updated++
+		}
+		cursor = nextCursor
+		if cursor == 0 {
+			break
+		}
+	}
+	return matched, updated, nil
+}
+
 // ── Player lock (distributed) ──────────────────────────────────
 
 func playerLockKey(playerID uint64) string {

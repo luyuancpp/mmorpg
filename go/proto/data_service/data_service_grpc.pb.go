@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.6.0
 // - protoc             v6.31.1
-// source: proto/data_service/data_service.proto
+// source: data_service/data_service.proto
 
 package data_service
 
@@ -27,6 +27,7 @@ const (
 	DataService_RegisterPlayerZone_FullMethodName     = "/data_service.DataService/RegisterPlayerZone"
 	DataService_GetPlayerHomeZone_FullMethodName      = "/data_service.DataService/GetPlayerHomeZone"
 	DataService_BatchGetPlayerHomeZone_FullMethodName = "/data_service.DataService/BatchGetPlayerHomeZone"
+	DataService_RemapHomeZoneForMerge_FullMethodName  = "/data_service.DataService/RemapHomeZoneForMerge"
 	DataService_DeletePlayerData_FullMethodName       = "/data_service.DataService/DeletePlayerData"
 	DataService_CreatePlayerSnapshot_FullMethodName   = "/data_service.DataService/CreatePlayerSnapshot"
 	DataService_ListPlayerSnapshots_FullMethodName    = "/data_service.DataService/ListPlayerSnapshots"
@@ -57,6 +58,8 @@ type DataServiceClient interface {
 	RegisterPlayerZone(ctx context.Context, in *RegisterPlayerZoneRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetPlayerHomeZone(ctx context.Context, in *GetPlayerHomeZoneRequest, opts ...grpc.CallOption) (*GetPlayerHomeZoneResponse, error)
 	BatchGetPlayerHomeZone(ctx context.Context, in *BatchGetPlayerHomeZoneRequest, opts ...grpc.CallOption) (*BatchGetPlayerHomeZoneResponse, error)
+	// Remap every player:zone:* mapping that points at source_zone_id to target_zone_id (server merge).
+	RemapHomeZoneForMerge(ctx context.Context, in *RemapHomeZoneForMergeRequest, opts ...grpc.CallOption) (*RemapHomeZoneForMergeResponse, error)
 	// ── Cleanup / merge ──────────────────────────────────────────
 	DeletePlayerData(ctx context.Context, in *DeletePlayerDataRequest, opts ...grpc.CallOption) (*DeletePlayerDataResponse, error)
 	// ── Snapshot / Rollback ──────────────────────────────────────
@@ -144,6 +147,16 @@ func (c *dataServiceClient) BatchGetPlayerHomeZone(ctx context.Context, in *Batc
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(BatchGetPlayerHomeZoneResponse)
 	err := c.cc.Invoke(ctx, DataService_BatchGetPlayerHomeZone_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *dataServiceClient) RemapHomeZoneForMerge(ctx context.Context, in *RemapHomeZoneForMergeRequest, opts ...grpc.CallOption) (*RemapHomeZoneForMergeResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RemapHomeZoneForMergeResponse)
+	err := c.cc.Invoke(ctx, DataService_RemapHomeZoneForMerge_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -268,6 +281,8 @@ type DataServiceServer interface {
 	RegisterPlayerZone(context.Context, *RegisterPlayerZoneRequest) (*emptypb.Empty, error)
 	GetPlayerHomeZone(context.Context, *GetPlayerHomeZoneRequest) (*GetPlayerHomeZoneResponse, error)
 	BatchGetPlayerHomeZone(context.Context, *BatchGetPlayerHomeZoneRequest) (*BatchGetPlayerHomeZoneResponse, error)
+	// Remap every player:zone:* mapping that points at source_zone_id to target_zone_id (server merge).
+	RemapHomeZoneForMerge(context.Context, *RemapHomeZoneForMergeRequest) (*RemapHomeZoneForMergeResponse, error)
 	// ── Cleanup / merge ──────────────────────────────────────────
 	DeletePlayerData(context.Context, *DeletePlayerDataRequest) (*DeletePlayerDataResponse, error)
 	// ── Snapshot / Rollback ──────────────────────────────────────
@@ -311,6 +326,9 @@ func (UnimplementedDataServiceServer) GetPlayerHomeZone(context.Context, *GetPla
 }
 func (UnimplementedDataServiceServer) BatchGetPlayerHomeZone(context.Context, *BatchGetPlayerHomeZoneRequest) (*BatchGetPlayerHomeZoneResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method BatchGetPlayerHomeZone not implemented")
+}
+func (UnimplementedDataServiceServer) RemapHomeZoneForMerge(context.Context, *RemapHomeZoneForMergeRequest) (*RemapHomeZoneForMergeResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RemapHomeZoneForMerge not implemented")
 }
 func (UnimplementedDataServiceServer) DeletePlayerData(context.Context, *DeletePlayerDataRequest) (*DeletePlayerDataResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeletePlayerData not implemented")
@@ -485,6 +503,24 @@ func _DataService_BatchGetPlayerHomeZone_Handler(srv interface{}, ctx context.Co
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(DataServiceServer).BatchGetPlayerHomeZone(ctx, req.(*BatchGetPlayerHomeZoneRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DataService_RemapHomeZoneForMerge_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RemapHomeZoneForMergeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DataServiceServer).RemapHomeZoneForMerge(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DataService_RemapHomeZoneForMerge_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DataServiceServer).RemapHomeZoneForMerge(ctx, req.(*RemapHomeZoneForMergeRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -705,6 +741,10 @@ var DataService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _DataService_BatchGetPlayerHomeZone_Handler,
 		},
 		{
+			MethodName: "RemapHomeZoneForMerge",
+			Handler:    _DataService_RemapHomeZoneForMerge_Handler,
+		},
+		{
 			MethodName: "DeletePlayerData",
 			Handler:    _DataService_DeletePlayerData_Handler,
 		},
@@ -746,5 +786,5 @@ var DataService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "proto/data_service/data_service.proto",
+	Metadata: "data_service/data_service.proto",
 }

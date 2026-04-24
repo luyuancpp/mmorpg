@@ -8,6 +8,8 @@ import (
 	"data_service/internal/svc"
 	"proto/data_service"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -91,6 +93,21 @@ func (s *DataServiceServer) BatchGetPlayerHomeZone(ctx context.Context, req *dat
 		return nil, err
 	}
 	return &data_service.BatchGetPlayerHomeZoneResponse{PlayerZoneMap: mapping}, nil
+}
+
+func (s *DataServiceServer) RemapHomeZoneForMerge(ctx context.Context, req *data_service.RemapHomeZoneForMergeRequest) (*data_service.RemapHomeZoneForMergeResponse, error) {
+	if req.SourceZoneId == 0 || req.TargetZoneId == 0 || req.SourceZoneId == req.TargetZoneId {
+		return nil, status.Error(codes.InvalidArgument, "source_zone_id and target_zone_id must be non-zero and different")
+	}
+	matched, updated, err := s.svcCtx.Router.RemapHomeZoneForMerge(ctx, req.SourceZoneId, req.TargetZoneId, req.DryRun)
+	if err != nil {
+		return nil, err
+	}
+	return &data_service.RemapHomeZoneForMergeResponse{
+		ErrorCode:       constants.ErrCodeOK,
+		PlayersMatched:  uint32(matched),
+		PlayersUpdated:  uint32(updated),
+	}, nil
 }
 
 func (s *DataServiceServer) DeletePlayerData(ctx context.Context, req *data_service.DeletePlayerDataRequest) (*data_service.DeletePlayerDataResponse, error) {
