@@ -19,6 +19,7 @@ import (
 type ServiceContext struct {
 	Config              config.Config
 	RedisClient         *redis.Client
+	PlayerLocatorRedisClient *redis.Client
 	DB                  *sql.DB
 	KafkaWriter         *kafkago.Writer
 	GateCommandBuilder  kafkautil.GateCommandBuilder
@@ -35,6 +36,20 @@ func NewServiceContext(c config.Config) *ServiceContext {
 
 	if err := rdb.Ping(context.Background()).Err(); err != nil {
 		panic(fmt.Errorf("failed to connect global Redis: %w", err))
+	}
+
+	plRedisConf := c.PlayerLocatorRedis
+	if plRedisConf.Host == "" {
+		plRedisConf = c.RedisClient
+		plRedisConf.DB = 0
+	}
+	plRdb := redis.NewClient(&redis.Options{
+		Addr:     plRedisConf.Host,
+		Password: plRedisConf.Password,
+		DB:       plRedisConf.DB,
+	})
+	if err := plRdb.Ping(context.Background()).Err(); err != nil {
+		panic(fmt.Errorf("failed to connect player locator Redis: %w", err))
 	}
 
 	db, err := sql.Open("mysql", c.MySQL.DataSource)
@@ -54,11 +69,12 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	}
 
 	return &ServiceContext{
-		Config:             c,
-		RedisClient:        rdb,
-		DB:                 db,
-		KafkaWriter:        w,
-		GateCommandBuilder: guildkafka.NewGateCommandBuilder(),
+		Config:                  c,
+		RedisClient:             rdb,
+		PlayerLocatorRedisClient: plRdb,
+		DB:                      db,
+		KafkaWriter:             w,
+		GateCommandBuilder:      guildkafka.NewGateCommandBuilder(),
 	}
 }
 
@@ -71,6 +87,11 @@ func (s *ServiceContext) Stop() {
 	if s.RedisClient != nil {
 		if err := s.RedisClient.Close(); err != nil {
 			logx.Errorf("Failed to close Redis client: %v", err)
+		}
+	}
+	if s.PlayerLocatorRedisClient != nil {
+		if err := s.PlayerLocatorRedisClient.Close(); err != nil {
+			logx.Errorf("Failed to close player locator Redis client: %v", err)
 		}
 	}
 	if s.DB != nil {

@@ -13,6 +13,7 @@ message GuildMember {
   int64  join_time_ms  = 3;
   int64  last_active_ms = 4;
   uint64 contribution  = 5;
+  bool   online        = 6;  // 是否在线（仅内存，不入库）
 }
 
 message GuildInfo {

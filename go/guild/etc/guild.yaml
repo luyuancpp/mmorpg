@@ -14,6 +14,12 @@ RedisClient:
   Password: ""
   DB: 2
 
+# Online status source (player_locator session store)
+PlayerLocatorRedis:
+  Host: 127.0.0.1:6379
+  Password: ""
+  DB: 0
+
 MySQL:
   DataSource: "root:Mmorpg#2026db@tcp(127.0.0.1:3306)/mmorpg?charset=utf8mb4&parseTime=true&loc=Local"
 

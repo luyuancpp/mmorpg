@@ -15,12 +15,13 @@ import (
 )
 
 type GuildLogic struct {
-	repo      *data.GuildRepo
-	snowflake *snowflake.Node
+	repo           *data.GuildRepo
+	snowflake      *snowflake.Node
+	onlineResolver *OnlineStatusResolver
 }
 
-func NewGuildLogic(repo *data.GuildRepo, sf *snowflake.Node) *GuildLogic {
-	return &GuildLogic{repo: repo, snowflake: sf}
+func NewGuildLogic(repo *data.GuildRepo, sf *snowflake.Node, onlineResolver *OnlineStatusResolver) *GuildLogic {
+	return &GuildLogic{repo: repo, snowflake: sf, onlineResolver: onlineResolver}
 }
 
 func tipErr(id uint32, msg string) *base.TipInfoMessage {
@@ -69,7 +70,7 @@ func (l *GuildLogic) CreateGuild(ctx context.Context, req *pb.CreateGuildRequest
 		logx.Errorf("init guild rank score: %v", err)
 	}
 
-	return &pb.CreateGuildResponse{Guild: toProtoGuild(guild)}, nil
+	return &pb.CreateGuildResponse{Guild: l.toProtoGuild(ctx, guild)}, nil
 }
 
 func (l *GuildLogic) GetGuild(ctx context.Context, req *pb.GetGuildRequest) (*pb.GetGuildResponse, error) {
@@ -80,7 +81,7 @@ func (l *GuildLogic) GetGuild(ctx context.Context, req *pb.GetGuildRequest) (*pb
 	if guild == nil {
 		return &pb.GetGuildResponse{ErrorMessage: tipErr(constants.ErrGuildNotFound, "guild not found")}, nil
 	}
-	return &pb.GetGuildResponse{Guild: toProtoGuild(guild)}, nil
+	return &pb.GetGuildResponse{Guild: l.toProtoGuild(ctx, guild)}, nil
 }
 
 func (l *GuildLogic) GetPlayerGuild(ctx context.Context, req *pb.GetPlayerGuildRequest) (*pb.GetPlayerGuildResponse, error) {
@@ -96,7 +97,7 @@ func (l *GuildLogic) GetPlayerGuild(ctx context.Context, req *pb.GetPlayerGuildR
 	if err != nil {
 		return nil, err
 	}
-	return &pb.GetPlayerGuildResponse{Guild: toProtoGuild(guild)}, nil
+	return &pb.GetPlayerGuildResponse{Guild: l.toProtoGuild(ctx, guild)}, nil
 }
 
 func (l *GuildLogic) JoinGuild(ctx context.Context, req *pb.JoinGuildRequest) (*pb.JoinGuildResponse, error) {
@@ -339,10 +340,16 @@ func (l *GuildLogic) enrichRankEntries(ctx context.Context, entries []data.RankE
 
 // ── Proto conversion ───────────────────────────────────────────
 
-func toProtoGuild(g *data.GuildData) *pb.GuildInfo {
+func (l *GuildLogic) toProtoGuild(ctx context.Context, g *data.GuildData) *pb.GuildInfo {
 	if g == nil {
 		return nil
 	}
+	memberIDs := make([]uint64, 0, len(g.Members))
+	for _, m := range g.Members {
+		memberIDs = append(memberIDs, m.PlayerID)
+	}
+	onlineMap := l.onlineResolver.BatchResolve(ctx, memberIDs)
+
 	info := &pb.GuildInfo{
 		GuildId:      g.GuildID,
 		Name:         g.Name,
@@ -360,6 +367,7 @@ func toProtoGuild(g *data.GuildData) *pb.GuildInfo {
 			JoinTimeMs:   m.JoinTimeMs,
 			LastActiveMs: m.LastActiveMs,
 			Contribution: m.Contribution,
+			Online:       onlineMap[m.PlayerID],
 		})
 	}
 	return info

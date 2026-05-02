@@ -29,6 +29,7 @@ type GuildMember struct {
 	JoinTimeMs    int64                  `protobuf:"varint,3,opt,name=join_time_ms,json=joinTimeMs,proto3" json:"join_time_ms,omitempty"`
 	LastActiveMs  int64                  `protobuf:"varint,4,opt,name=last_active_ms,json=lastActiveMs,proto3" json:"last_active_ms,omitempty"`
 	Contribution  uint64                 `protobuf:"varint,5,opt,name=contribution,proto3" json:"contribution,omitempty"`
+	Online        bool                   `protobuf:"varint,6,opt,name=online,proto3" json:"online,omitempty"` // 是否在线（仅内存，不入库）
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -96,6 +97,13 @@ func (x *GuildMember) GetContribution() uint64 {
 		return x.Contribution
 	}
 	return 0
+}
+
+func (x *GuildMember) GetOnline() bool {
+	if x != nil {
+		return x.Online
+	}
+	return false
 }
 
 type GuildInfo struct {
@@ -1327,14 +1335,15 @@ var File_proto_guild_guild_proto protoreflect.FileDescriptor
 
 const file_proto_guild_guild_proto_rawDesc = "" +
 	"\n" +
-	"\x17proto/guild/guild.proto\x12\aguildpb\x1a\x1bproto/common/base/tip.proto\"\xaa\x01\n" +
+	"\x17proto/guild/guild.proto\x12\aguildpb\x1a\x1bproto/common/base/tip.proto\"\xc2\x01\n" +
 	"\vGuildMember\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x12\n" +
 	"\x04role\x18\x02 \x01(\rR\x04role\x12 \n" +
 	"\fjoin_time_ms\x18\x03 \x01(\x03R\n" +
 	"joinTimeMs\x12$\n" +
 	"\x0elast_active_ms\x18\x04 \x01(\x03R\flastActiveMs\x12\"\n" +
-	"\fcontribution\x18\x05 \x01(\x04R\fcontribution\"\xa1\x02\n" +
+	"\fcontribution\x18\x05 \x01(\x04R\fcontribution\x12\x16\n" +
+	"\x06online\x18\x06 \x01(\bR\x06online\"\xa1\x02\n" +
 	"\tGuildInfo\x12\x19\n" +
 	"\bguild_id\x18\x01 \x01(\x04R\aguildId\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1b\n" +

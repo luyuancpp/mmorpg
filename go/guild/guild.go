@@ -61,7 +61,8 @@ func main() {
 
 	// Initialize data repo with singleflight + cache-aside
 	repo := data.NewGuildRepo(svcCtx.RedisClient, svcCtx.DB, config.AppConfig.Cache.DefaultTTL)
-	guildLogic := logic.NewGuildLogic(repo, sf)
+	onlineResolver := logic.NewOnlineStatusResolver(svcCtx.PlayerLocatorRedisClient)
+	guildLogic := logic.NewGuildLogic(repo, sf, onlineResolver)
 
 	// Start gRPC server
 	s := zrpc.MustNewServer(config.AppConfig.RpcServerConf, func(grpcServer *grpc.Server) {
