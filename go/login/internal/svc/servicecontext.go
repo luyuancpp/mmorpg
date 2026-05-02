@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/bwmarrin/snowflake"
+	"github.com/panjf2000/ants/v2"
 	"github.com/redis/go-redis/v9"
 	"github.com/zeromicro/go-zero/core/logx"
 	"github.com/zeromicro/go-zero/zrpc"
@@ -34,6 +35,12 @@ type ServiceContext struct {
 	SceneManagerClient  smpb.SceneManagerClient
 	GateWatcher         *node.NodeWatcher
 	TokenManager        *token.Manager
+
+	// PreloadPool runs background tasks (e.g. Kafka DB-preload) without spawning
+	// an unbounded number of goroutines per login. Configured non-blocking so
+	// Submit returns ErrPoolOverload immediately when full instead of stalling
+	// the caller (which would defeat the whole point of going async).
+	PreloadPool *ants.Pool
 }
 
 func NewServiceContext() *ServiceContext {
@@ -112,6 +119,22 @@ func NewServiceContext() *ServiceContext {
 	// Register access_token auth provider (requires TokenManager)
 	RegisterAccessTokenProvider(tokenMgr)
 
+	// Bounded background-task pool. Size 256 is generous: Kafka SyncProducer is
+	// internally serialized by a mutex, so >32 concurrent workers buys nothing,
+	// but a larger ceiling absorbs short bursts. Non-blocking + pre-alloc keep
+	// Submit cost O(1) and fail fast under overload.
+	preloadPool, err := ants.NewPool(
+		256,
+		ants.WithNonblocking(true),
+		ants.WithPreAlloc(true),
+		ants.WithPanicHandler(func(p any) {
+			logx.Errorf("preload pool task panic: %v", p)
+		}),
+	)
+	if err != nil {
+		panic(fmt.Errorf("failed to create preload goroutine pool: %w", err))
+	}
+
 	return &ServiceContext{
 		RedisClient:         redisClient,
 		KafkaClient:         kafkaClient,
@@ -120,6 +143,7 @@ func NewServiceContext() *ServiceContext {
 		SceneManagerClient:  smClient,
 		GateWatcher:         gateWatcher,
 		TokenManager:        tokenMgr,
+		PreloadPool:         preloadPool,
 	}
 }
 
@@ -210,4 +234,7 @@ func (s *ServiceContext) KickSessionOnGate(gateID string, gateInstanceID string,
 
 func (s *ServiceContext) Stop() {
 	s.ExpandMonitor.Stop()
+	if s.PreloadPool != nil {
+		s.PreloadPool.Release()
+	}
 }
