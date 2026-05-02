@@ -278,9 +278,11 @@ func (l *EnterGameLogic) kickReplacedSession(existing *sessionmanager.PlayerSess
 	return l.svcCtx.KickSessionOnGate(existing.GateID, existing.GateInstanceID, existing.SessionID, existing.PlayerID)
 }
 
-// ensurePlayerDataInRedis loads player data from cache or DB synchronously.
+// ensurePlayerDataInRedis fires async DB-read requests for player data not yet in Redis.
+// Returns immediately after sending Kafka requests (fire-and-forget for cache misses).
+// The scene node loads the data via its own async path when PlayerEnterGameNode arrives.
 func (l *EnterGameLogic) ensurePlayerDataInRedis(ctx context.Context, playerId uint64) error {
-	return dataloader.LoadPlayerDataSync(
+	return dataloader.TriggerPlayerDataPreload(
 		ctx,
 		l.svcCtx.RedisClient,
 		l.svcCtx.KafkaClient,
