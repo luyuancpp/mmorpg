@@ -37,7 +37,11 @@ Snowflake:
 # Distributed lock config
 Locker:
   AccountLockTTL: 10 # 10 seconds
-  PlayerLockTTL: 5 # 5 seconds
+  # PlayerLockTTL is the base TTL of the player lock. The EnterGame chain runs
+  # a heartbeat goroutine that renews the lock at TTL/3 intervals, so this
+  # only needs to survive a short Redis blip plus one heartbeat miss. If the
+  # login process crashes mid-chain, the lock auto-expires after ~TTL.
+  PlayerLockTTL: 30 # 30 seconds (heartbeat renews every ~10s)
 
 # Account config
 Account:

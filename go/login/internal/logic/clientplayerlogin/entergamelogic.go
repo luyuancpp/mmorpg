@@ -67,13 +67,21 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 		return resp, nil
 	}
 
-	// 3. Lock to prevent concurrent login for the same player
+	// 3. Lock to prevent concurrent login for the same player.
+	//    Single attempt — NO retry/sleep loop. The RPC handler must never
+	//    block. On contention we return kLoginInProgress immediately and the
+	//    client retries; the heartbeat below keeps the lock alive across the
+	//    full async chain so retries see the contended state.
 	playerLocker := locker.NewRedisLocker(l.svcCtx.RedisClient)
 	key := "player_locker:" + strconv.FormatUint(in.PlayerId, 10)
 	lockTTL := time.Duration(config.AppConfig.Locker.PlayerLockTTL) * time.Second
-	tryLocker, err := playerLocker.TryLockWithRetry(ctx, key, lockTTL, 12, 500*time.Millisecond)
+	tryLocker, err := playerLocker.TryLock(ctx, key, lockTTL)
 	if err != nil {
-		logx.Errorf("EnterGame lock failed for playerId=%d: %v", in.PlayerId, err)
+		logx.Errorf("EnterGame lock error for playerId=%d: %v", in.PlayerId, err)
+		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginRedisError)}
+		return resp, nil
+	}
+	if !tryLocker.IsLocked() {
 		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginInProgress)}
 		return resp, nil
 	}
@@ -148,7 +156,8 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 	sessionID := sessionDetails.SessionId
 
 	// Background context for the whole chain — independent of gRPC ctx (which
-	// is cancelled the instant we return below).
+	// is cancelled the instant we return below). chainCancel both stops the
+	// timeout and cancels manually from the lost-lock heartbeat path.
 	const chainBudget = 5 * time.Minute
 	chainCtx, chainCancel := context.WithTimeout(context.Background(), chainBudget)
 
@@ -163,7 +172,23 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 		}
 	}
 
+	// Heartbeat: renew lock every TTL/3 so a slow EnterGame chain (DB cold,
+	// dispatcher TTL retry, etc.) never lets the lock expire mid-flight. If
+	// we lose ownership (Redis flap, manual kill, etc.) we cancel chainCtx
+	// to abort applyLoadedPlayerSession before it can issue a stale
+	// EnterScene against an already-replaced session.
+	stopHeartbeat := tryLocker.StartHeartbeat(
+		lockTTL/3,
+		lockTTL,
+		func(err error) {
+			logx.Errorf("EnterGame lost lock mid-chain [PlayerId=%d]: %v", playerID, err)
+			chainCancel()
+		},
+	)
+
 	onPreloadComplete := func(err error) {
+		// Stop the heartbeat first so it cannot race with Release.
+		stopHeartbeat()
 		defer chainCancel()
 		defer releaseLock()
 
