@@ -147,7 +147,6 @@ func NewKeyOrderedKafkaProducer(cfg config.KafkaConfig) (*KeyOrderedKafkaProduce
 	go kp.syncPartitions(cfg.SyncInterval)
 	go kp.monitorStats(cfg.StatsInterval)
 	go kp.checkUnavailablePartitions()
-	go kp.sendTestMessage()
 
 	return kp, nil
 }
@@ -474,20 +473,6 @@ func (p *KeyOrderedKafkaProducer) monitorStats(interval time.Duration) {
 			logx.Debug("context done: exiting stats monitor")
 			return
 		}
-	}
-}
-
-// sendTestMessage sends a test message to verify the pipeline.
-func (p *KeyOrderedKafkaProducer) sendTestMessage() {
-	time.Sleep(3 * time.Second)
-	testTask := &db_proto.DBTask{
-		TaskId: fmt.Sprintf("test-%d", time.Now().Unix()),
-	}
-
-	if err := p.SendTask(context.Background(), testTask, "test-key"); err != nil {
-		logx.Errorf("failed to send test message: %v", err)
-	} else {
-		logx.Infof("test message sent: taskID=%s", testTask.TaskId)
 	}
 }
 
