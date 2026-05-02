@@ -31,6 +31,11 @@ import (
 const (
 	expandStatusExpireDuration = 30 * time.Minute
 	taskResultExpireDuration   = 5 * time.Minute
+	// taskResultNotifyChannel is the Redis Pub/Sub channel that downstream
+	// services (e.g. login) subscribe to for event-driven task-result delivery.
+	// Payload: the task_id string. Subscriber LPOPs the per-task list to fetch
+	// the actual TaskResult bytes.
+	taskResultNotifyChannel = "task:result:notify"
 )
 
 // buildCacheKey builds the same Redis key as login's cache.BuildRedisKey:
@@ -142,6 +147,13 @@ func handleDBReadOp(
 		}
 		if err := redisClient.Expire(ctx, resultKey, taskResultExpireDuration).Err(); err != nil {
 			return fmt.Sprintf("set expire for result key failed: %v", err)
+		}
+		// Notify event-driven subscribers (e.g. login dispatcher) so they don't
+		// have to BLPOP-wait. Existing LPush + BLPOP consumers still work; this
+		// is purely additive. Failure to publish only degrades latency for
+		// notification-based consumers (their stale-cleanup will catch it).
+		if err := redisClient.Publish(ctx, taskResultNotifyChannel, task.TaskId).Err(); err != nil {
+			logx.Errorf("publish task result notify failed: taskID=%s, err=%v", task.TaskId, err)
 		}
 	}
 

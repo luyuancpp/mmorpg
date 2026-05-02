@@ -15,6 +15,7 @@ import (
 
 	game "login/generated/pb/game"
 	"login/internal/config"
+	"login/internal/dispatcher"
 	"login/internal/kafka"
 	"login/internal/logic/pkg/node"
 	"login/internal/logic/pkg/token"
@@ -42,6 +43,11 @@ type ServiceContext struct {
 	// Submit returns ErrPoolOverload immediately when full instead of stalling
 	// the caller (which would defeat the whole point of going async).
 	PreloadPool *ants.Pool
+
+	// TaskResultDispatcher converts DB task-result delivery from BLPOP polling
+	// into a callback registry driven by a single Redis Pub/Sub subscriber.
+	// Hot paths register a callback for a taskID and return immediately.
+	TaskResultDispatcher *dispatcher.TaskResultDispatcher
 
 	// preloadSubmitted / preloadDropped track pool throughput for periodic
 	// stats logging. Atomic-only (no mutex) so the hot path stays cheap.
@@ -157,12 +163,16 @@ func NewServiceContext() *ServiceContext {
 		GateWatcher:         gateWatcher,
 		TokenManager:        tokenMgr,
 		PreloadPool:         preloadPool,
+		TaskResultDispatcher: dispatcher.NewTaskResultDispatcher(redisClient, 30*time.Second),
 	}
 }
 
 func (s *ServiceContext) Start() {
 	s.ExpandMonitor.Start()
 	s.startPreloadStatsLogger()
+	if s.TaskResultDispatcher != nil {
+		s.TaskResultDispatcher.Start()
+	}
 }
 
 func (c *ServiceContext) SetNodeId(nodeId int64) {
@@ -251,6 +261,9 @@ func (s *ServiceContext) Stop() {
 	if s.preloadStatsStop != nil {
 		close(s.preloadStatsStop)
 		s.preloadStatsStop = nil
+	}
+	if s.TaskResultDispatcher != nil {
+		s.TaskResultDispatcher.Stop()
 	}
 	if s.PreloadPool != nil {
 		s.PreloadPool.Release()

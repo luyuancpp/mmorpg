@@ -80,8 +80,15 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 
 	flowState := buildEnterGameSessionState(in, sessionDetails, account)
 
+	// Lock release is deferred until either the early-return paths below run
+	// (validation failure / pool reject) or the background goroutine finishes
+	// the async EnterGame chain. We track ownership via `lockHandedOff` so the
+	// fallback defer here only fires when the goroutine never started.
+	lockHandedOff := false
 	defer func() {
-		// Use background context for lock release to avoid failure when gRPC ctx is cancelled
+		if lockHandedOff {
+			return
+		}
 		releaseCtx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 		defer cancel()
 		released, releaseErr := tryLocker.Release(releaseCtx)
@@ -120,25 +127,87 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 		return resp, nil
 	}
 
-	// 5. Trigger player data preload (truly fire-and-forget on a background goroutine).
-	//    The Kafka SyncProducer is serialized by an internal mutex + WaitForAll +
-	//    transactional commit/begin, so calling it inline would serialize all logins
-	//    behind a single producer lock and easily blow the gRPC deadline under load.
-	//    Scene retries Redis on NIL, so a slightly delayed preload is harmless.
-	l.firePlayerDataPreload(in.PlayerId)
+	// 5. Kick off the EnterGame chain entirely event-driven. The RPC returns
+	//    immediately; the client gets the actual "in scene" notification when
+	//    Gate consumes the BindSession event and Scene pushes enter-scene.
+	//
+	//    Flow:
+	//      a. EnsurePlayerAllDataInRedisAsync sends Kafka DB-read tasks and
+	//         registers callbacks with the TaskResultDispatcher (Pub/Sub
+	//         driven). NO goroutine waits on BLPOP.
+	//      b. When all sub-results arrive, the dispatcher invokes our
+	//         completion callback which runs applyLoadedPlayerSession +
+	//         cleanup, then releases the player lock.
+	//
+	//    The Kafka send itself is the only sync I/O on this path; we wrap it
+	//    in SubmitPreload so the gRPC handler thread never touches the
+	//    SyncProducer mutex. The pool task exits as soon as Kafka send
+	//    returns — no waiting on results.
+	enterCtx := flowState // value-copied state for the closure
+	playerID := in.PlayerId
+	sessionID := sessionDetails.SessionId
 
-	// 7. Apply session (bind gate + route to scene)
-	decision, applyErr := l.applyLoadedPlayerSession(ctx, flowState)
-	if applyErr != nil {
-		logx.Errorf("Failed to apply player session [PlayerId=%d, error=%v]", in.PlayerId, applyErr)
-		resp.ErrorMessage.Id = uint32(table.LoginError_kLoginUnknownError)
+	// Background context for the whole chain — independent of gRPC ctx (which
+	// is cancelled the instant we return below).
+	const chainBudget = 5 * time.Minute
+	chainCtx, chainCancel := context.WithTimeout(context.Background(), chainBudget)
+
+	releaseLock := func() {
+		releaseCtx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		defer cancel()
+		released, releaseErr := tryLocker.Release(releaseCtx)
+		if releaseErr != nil {
+			logx.Errorf("Failed to release lock for playerId=%d: %v", playerID, releaseErr)
+		} else if !released {
+			logx.Infof("Lock was not held by us (possibly expired) for playerId=%d", playerID)
+		}
+	}
+
+	onPreloadComplete := func(err error) {
+		defer chainCancel()
+		defer releaseLock()
+
+		if err != nil {
+			logx.Errorf("EnterGame preload failed [PlayerId=%d]: %v", playerID, err)
+			return
+		}
+
+		decision, applyErr := l.applyLoadedPlayerSession(chainCtx, enterCtx)
+		if applyErr != nil {
+			logx.Errorf("EnterGame apply session failed [PlayerId=%d]: %v", playerID, applyErr)
+			return
+		}
+		logx.Infof("EnterGame complete (decision=%d) playerId=%d", decision, playerID)
+
+		cleanupLoginSessionState(chainCtx, l.svcCtx, sessionID, "enterGame")
+	}
+
+	const dispatcherTaskTTL = 30 * time.Second
+	ok := l.svcCtx.SubmitPreload(func() {
+		dataloader.EnsurePlayerAllDataInRedisAsync(
+			chainCtx,
+			l.svcCtx.RedisClient,
+			l.svcCtx.TaskResultDispatcher,
+			l.svcCtx.KafkaClient,
+			playerID,
+			dispatcherTaskTTL,
+			onPreloadComplete,
+		)
+	})
+
+	if !ok {
+		// Pool saturated — outer defer will release the lock since the
+		// goroutine never ran. Surface back-pressure to the client.
+		chainCancel()
+		resp.ErrorMessage.Id = uint32(table.LoginError_kLoginInProgress)
 		return resp, nil
 	}
-	logx.Infof("Player data loaded and session applied (decision=%d). playerId=%d", decision, in.PlayerId)
 
-	// 8. Clean up session state
-	cleanupLoginSessionState(ctx, l.svcCtx, sessionDetails.SessionId, "enterGame")
+	// Ownership of the lock has now transferred to the async chain;
+	// suppress the outer defer.
+	lockHandedOff = true
 
+	// RPC returns success; client waits for Gate/Scene push to know they're in.
 	resp.ErrorMessage = nil
 	resp.PlayerId = in.PlayerId
 	return resp, nil
@@ -276,38 +345,4 @@ func (l *EnterGameLogic) kickReplacedSession(existing *sessionmanager.PlayerSess
 	}
 
 	return l.svcCtx.KickSessionOnGate(existing.GateID, existing.GateInstanceID, existing.SessionID, existing.PlayerID)
-}
-
-// firePlayerDataPreload submits a Redis player-data preload task to the shared
-// background goroutine pool. It returns immediately so the EnterGame RPC is
-// not blocked by Kafka's SyncProducer (mutex + WaitForAll + txn commit).
-//
-// If the pool is full (overload protection), the task is dropped with a log;
-// the Scene node's AsyncLoad retries Redis on NIL, so a missed preload only
-// degrades latency, it does not break correctness.
-func (l *EnterGameLogic) firePlayerDataPreload(playerId uint64) {
-	svcCtx := l.svcCtx
-	ok := svcCtx.SubmitPreload(func() {
-		bgCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-		defer cancel()
-		if err := dataloader.TriggerPlayerDataPreload(
-			bgCtx,
-			svcCtx.RedisClient,
-			svcCtx.KafkaClient,
-			playerId,
-			[]proto.Message{
-				&login_proto_database.PlayerAllData{
-					PlayerDatabaseData:   &login_proto_database.PlayerDatabase{PlayerId: playerId},
-					PlayerDatabase_1Data: &login_proto_database.PlayerDatabase_1{PlayerId: playerId},
-				},
-				&login_proto_database.PlayerCentreDatabase{PlayerId: playerId},
-			},
-		); err != nil {
-			logx.Errorf("firePlayerDataPreload failed [PlayerId=%d]: %v", playerId, err)
-		}
-	})
-	if !ok {
-		// Pool overload — Scene-side Redis retry will compensate (extra latency only).
-		logx.Errorf("firePlayerDataPreload submit dropped (pool saturated) [PlayerId=%d]", playerId)
-	}
 }

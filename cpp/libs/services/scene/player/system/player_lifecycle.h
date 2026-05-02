@@ -1,6 +1,7 @@
 #pragma once
 #include <unordered_map>
 #include "engine/core/type_define/type_define.h"
+#include "engine/infra/storage/redis_client/redis_client.h"
 #include "proto/common/database/player_cache.pb.h"
 #include "proto/common/component/player_async_comp.pb.h"
 
@@ -17,7 +18,8 @@ public:
 	static PendingEnterMap& GetPendingEnterMap();
 
 	static void HandlePlayerAsyncLoaded(Guid player_id, const PlayerAllData& message);
-	static void HandlePlayerAsyncLoadFailed(Guid player_id);
+	static void HandlePlayerAsyncLoadFailed(Guid player_id,
+											MessageAsyncClient<Guid, PlayerAllData>::LoadFailureReason reason);
 	static void HandlePlayerAsyncSaved(Guid player_id, PlayerAllData& message);
 	static void EnterScene(const entt::entity player, const PlayerGameNodeEntryInfoComp& enter_info);
 	static void HandleBindPlayerToGateOK(entt::entity player);
