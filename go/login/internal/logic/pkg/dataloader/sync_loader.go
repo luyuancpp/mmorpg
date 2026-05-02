@@ -117,3 +117,10 @@ func saveToRedis(ctx context.Context, rc redis.Cmdable, key string, msg proto.Me
 	}
 	return rc.Set(ctx, key, data, ttl).Err()
 }
+
+// playerAllDataParentTTL bounds how long the assembled parent-key blob may
+// stay in Redis if Scene never takes ownership (e.g. login -> immediate
+// disconnect before EnterScene). Once Scene executes SavePlayerToRedis, it
+// overwrites this entry persistently via its own Lua script.
+const playerAllDataParentTTL = 24 * time.Hour
+

@@ -87,7 +87,17 @@ public:
 	using ElementPtr = std::shared_ptr<Element>;
 	using LoadingQueue = std::unordered_map<std::string, ElementPtr>;
 	using EventCallback = std::function<void(MessageKey, MessageValue&)>;
-	using FailedCallback = std::function<void(MessageKey)>;
+
+	// Why a load callback failed. Lets the application distinguish a brand-new
+	// player (DataNotFound: NIL after exhausting retries -- nothing in Redis nor
+	// MySQL within the backoff window) from a real Redis fault (RedisError:
+	// connection lost, parse failure, or unexpected reply type).
+	enum class LoadFailureReason
+	{
+		DataNotFound,
+		RedisError,
+	};
+	using FailedCallback = std::function<void(MessageKey, LoadFailureReason)>;
 
 	using HiredisPtr = std::unique_ptr<hiredis::Hiredis>;
 
@@ -480,7 +490,7 @@ private:
 					  << (reply ? (std::string(" err=") + reply->str) : " (null reply)");
 			if (load_failed_callback_)
 			{
-				load_failed_callback_(element->message_key);
+				load_failed_callback_(element->message_key, LoadFailureReason::RedisError);
 			}
 			return;
 		}
@@ -504,7 +514,7 @@ private:
 					  << ", exhausted all " << kMaxLoadRetries << " retries";
 			if (load_failed_callback_)
 			{
-				load_failed_callback_(element->message_key);
+				load_failed_callback_(element->message_key, LoadFailureReason::DataNotFound);
 			}
 			return;
 		}
@@ -527,7 +537,7 @@ private:
 			LOG_ERROR << "Redis GET unexpected reply type=" << reply->type << " for key: " << element->redis_key;
 			if (load_failed_callback_)
 			{
-				load_failed_callback_(element->message_key);
+				load_failed_callback_(element->message_key, LoadFailureReason::RedisError);
 			}
 			return;
 		}

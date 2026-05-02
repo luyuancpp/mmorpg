@@ -29,6 +29,13 @@
 #include "player/comp/afk_comp.h"
 #include "frame/manager/frame_time.h"
 #include "proto/common/event/scene_event.pb.h"
+#include "network/network_utils.h"
+#include "network/player_message_utils.h"
+#include "network/rpc_session.h"
+#include "thread_context/node_context_manager.h"
+#include "rpc/service_metadata/client_player_common_service_metadata.h"
+#include "table/proto/tip/scene_error_tip.pb.h"
+#include "proto/common/component/tip_info_message.pb.h"
 
 thread_local PendingEnterMap tlsPendingEnterMap;
 
@@ -37,18 +44,72 @@ PendingEnterMap& PlayerLifecycleSystem::GetPendingEnterMap()
 	return tlsPendingEnterMap;
 }
 
-void PlayerLifecycleSystem::HandlePlayerAsyncLoadFailed(Guid playerId)
+namespace
 {
+	// Sends a SendTipToClient message directly to the gate by session_id.
+	// Used during the async-load window when the player entity does not yet
+	// exist, so the entity-based PlayerTipSystem path is not available.
+	void SendTipToPendingSession(SessionId sessionId, uint32_t tipId)
+	{
+		if (sessionId == 0)
+		{
+			return;
+		}
+		entt::entity gateEntity{GetGateNodeId(sessionId)};
+		auto &gateNodeRegistry = tlsNodeContextManager.GetRegistry(eNodeType::GateNodeService);
+		if (!gateNodeRegistry.valid(gateEntity))
+		{
+			LOG_WARN << "SendTipToPendingSession: gate not found for session " << sessionId;
+			return;
+		}
+		auto *gateSessionPtr = gateNodeRegistry.try_get<RpcSession>(gateEntity);
+		if (gateSessionPtr == nullptr)
+		{
+			LOG_WARN << "SendTipToPendingSession: RpcSession missing for session " << sessionId;
+			return;
+		}
+		TipInfoMessage tip;
+		tip.set_id(tipId);
+		SendMessageToClientViaGate(SceneClientPlayerCommonSendTipToClientMessageId,
+								   tip, *gateSessionPtr, sessionId);
+	}
+} // namespace
+
+void PlayerLifecycleSystem::HandlePlayerAsyncLoadFailed(Guid playerId,
+														MessageAsyncClient<Guid, PlayerAllData>::LoadFailureReason reason)
+{
+	using LoadFailureReason = MessageAsyncClient<Guid, PlayerAllData>::LoadFailureReason;
+
+	// DataNotFound: NIL after exhausting retries. Treat as a brand-new player
+	// whose DB rows do not exist yet (CreatePlayer only writes account meta;
+	// PlayerAllData parent key is first written by Scene's own SavePlayerToRedis,
+	// so a first-time login will always observe NIL here). Hand off to the
+	// existing new-player branch in HandlePlayerAsyncLoaded by feeding it an
+	// empty PlayerAllData -- it detects player_database_data().player_id()==0
+	// and stamps the playerId from the async-load key.
+	if (reason == LoadFailureReason::DataNotFound)
+	{
+		LOG_INFO << "HandlePlayerAsyncLoadFailed: no Redis data for player " << playerId
+				 << " after retries, treating as brand-new player";
+		PlayerAllData empty;
+		HandlePlayerAsyncLoaded(playerId, empty);
+		return;
+	}
+
+	// RedisError: connection lost, parse failure, or unexpected reply type.
+	// We cannot proceed -- notify the client (if a session is still bound) so
+	// it leaves the loading screen instead of hanging, then drop pending state.
 	LOG_ERROR << "HandlePlayerAsyncLoadFailed: Redis load failed for player " << playerId;
 
-	// Clean up pending enter info
 	auto pendingIt = tlsPendingEnterMap.find(playerId);
 	if (pendingIt != tlsPendingEnterMap.end())
 	{
-		// Clean up session mapping that was pre-registered in PlayerEnterGameNode
-		if (pendingIt->second.session_id() != 0)
+		const SessionId sessionId = pendingIt->second.session_id();
+		if (sessionId != 0)
 		{
-			SessionMap().erase(pendingIt->second.session_id());
+			// Best-effort tip; safe even if the gate session is already gone.
+			SendTipToPendingSession(sessionId, kEnterSceneFailed);
+			SessionMap().erase(sessionId);
 		}
 		tlsPendingEnterMap.erase(pendingIt);
 	}
