@@ -6,7 +6,6 @@ import (
 	kafkacontracts "proto/contracts/kafka"
 	game "scene_manager/generated/pb/game"
 	"scene_manager/internal/constants"
-	"scene_manager/internal/metrics"
 	"strconv"
 	"time"
 
@@ -130,30 +129,8 @@ func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (*scen
 		l.Logger.Infof("No GateID in EnterScene request for player %d", in.PlayerId)
 	}
 
-	// 8. Track instance player count — atomically, so the scene can't be
-	//    destroyed between resolveScene and this INCR. If it was, the Lua
-	//    returns -1 and we refuse the enter (client must retry).
-	count, err := AtomicIncrPlayerCountIfSceneExists(l.svcCtx, sceneId)
-	if err != nil {
-		l.Logger.Errorf("AtomicIncrPlayerCount for scene %d failed (non-fatal, falling back): %v", sceneId, err)
-		IncrInstancePlayerCount(l.svcCtx, sceneId)
-	} else if count < 0 {
-		// Scene was destroyed between resolveScene and this INCR. Roll back
-		// the player location update so the client doesn't get stuck
-		// pointing at a dead scene on the next reconnect.
-		l.Logger.Infof("EnterScene: scene %d disappeared mid-enter, rejecting player %d", sceneId, in.PlayerId)
-		metrics.ObserveEnterSceneRejected(targetZoneId, "scene_gone")
-		if delErr := DeletePlayerLocation(l.ctx, l.svcCtx, in.PlayerId); delErr != nil {
-			l.Logger.Errorf("Failed to roll back player location for %d: %v", in.PlayerId, delErr)
-		}
-		return errResp(constants.ErrNoAvailableNode, "scene was destroyed, retry"), nil
-	} else {
-		// Per-node aggregate feeds GetBestNode's composite score. The
-		// scene-level INCR is the race-critical one (CAS guards it);
-		// the per-node counter is just an approximation that the score
-		// refresher eventually resyncs, so a plain INCR here is fine.
-		l.svcCtx.Redis.Incr(fmt.Sprintf(NodePlayerCountKey, nodeId))
-	}
+	// 8. Track instance player count.
+	IncrInstancePlayerCount(l.svcCtx, sceneId)
 
 	l.Logger.Infof("Player %d entered scene %d on node %s (zone %d)", in.PlayerId, sceneId, nodeId, targetZoneId)
 	return &scene_manager.EnterSceneResponse{ErrorCode: 0}, nil
@@ -260,7 +237,7 @@ func (l *EnterSceneLogic) resolveScene(sceneId uint64, sceneConfId uint64, zoneI
 				return 0, "", fmt.Errorf("scene %d mapped to dead node %s and no live nodes for purpose %d: %w", sceneId, nodeId, purpose, err)
 			}
 			l.Logger.Infof("resolveScene: scene %d was on dead node %s, reassigning to %s (purpose=%d)", sceneId, nodeId, newNodeId, purpose)
-			reassignSceneNode(l.svcCtx, sceneId, nodeId, newNodeId)
+			l.svcCtx.Redis.Set(key, newNodeId)
 			nodeId = newNodeId
 
 			// Ensure the new node creates the ECS scene entity.

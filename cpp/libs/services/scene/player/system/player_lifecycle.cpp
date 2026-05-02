@@ -175,7 +175,7 @@ void PlayerLifecycleSystem::EnterScene(const entt::entity player, const PlayerGa
 			         << " for player " << playerId;
 		}
 
-		SessionMap().emplace(enterInfo.session_id(), playerId);
+		SessionMap().insert_or_assign(enterInfo.session_id(), playerId);
 		snapshot.set_gate_session_id(enterInfo.session_id());
 		snapshot.set_player_id(playerId);
 	}
