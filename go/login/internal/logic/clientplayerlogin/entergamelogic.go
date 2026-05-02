@@ -278,16 +278,16 @@ func (l *EnterGameLogic) kickReplacedSession(existing *sessionmanager.PlayerSess
 	return l.svcCtx.KickSessionOnGate(existing.GateID, existing.GateInstanceID, existing.SessionID, existing.PlayerID)
 }
 
-// firePlayerDataPreload spawns a goroutine that warms the Redis player-data cache
-// via Kafka -> DB service. It returns immediately so the EnterGame RPC is not
-// blocked by Kafka's SyncProducer (mutex + WaitForAll + txn commit).
+// firePlayerDataPreload submits a Redis player-data preload task to the shared
+// background goroutine pool. It returns immediately so the EnterGame RPC is
+// not blocked by Kafka's SyncProducer (mutex + WaitForAll + txn commit).
 //
-// Errors are logged only — if the preload fails, the Scene node will still try
-// to load from Redis with retries, and ultimately fail the player's login if
-// the data never arrives.
+// If the pool is full (overload protection), the task is dropped with a log;
+// the Scene node's AsyncLoad retries Redis on NIL, so a missed preload only
+// degrades latency, it does not break correctness.
 func (l *EnterGameLogic) firePlayerDataPreload(playerId uint64) {
 	svcCtx := l.svcCtx
-	go func() {
+	err := svcCtx.PreloadPool.Submit(func() {
 		bgCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 		if err := dataloader.TriggerPlayerDataPreload(
@@ -305,5 +305,9 @@ func (l *EnterGameLogic) firePlayerDataPreload(playerId uint64) {
 		); err != nil {
 			logx.Errorf("firePlayerDataPreload failed [PlayerId=%d]: %v", playerId, err)
 		}
-	}()
+	})
+	if err != nil {
+		// Pool overload — Scene-side Redis retry will compensate (extra latency only).
+		logx.Errorf("firePlayerDataPreload submit dropped [PlayerId=%d]: %v", playerId, err)
+	}
 }
