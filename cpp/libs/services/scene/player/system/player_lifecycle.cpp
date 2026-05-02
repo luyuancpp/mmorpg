@@ -35,7 +35,6 @@
 #include "thread_context/node_context_manager.h"
 #include "rpc/service_metadata/client_player_common_service_metadata.h"
 #include "table/proto/tip/scene_error_tip.pb.h"
-#include "proto/common/component/tip_info_message.pb.h"
 
 thread_local PendingEnterMap tlsPendingEnterMap;
 
