@@ -120,15 +120,19 @@ void SceneHandler::PlayerEnterGameNode(::google::protobuf::RpcController* contro
 		return;
 	}
 
-	// 3. Player not online — add to async load queue.
-	//    After load completes, HandlePlayerAsyncLoaded → InitPlayerFromAllData → EnterScene
+	// 3. Player not online — kick off Redis-only async load.
+	//    Player data is expected to already be in Redis, preloaded by Login via
+	//    Kafka -> DB Service -> Redis. On Redis NIL, AsyncLoad retries with
+	//    exponential backoff (~2s, 4s, 8s, ...) up to kMaxLoadRetries.
+	//    After load completes, HandlePlayerAsyncLoaded -> InitPlayerFromAllData -> EnterScene
 	//    will use enterInfo to bind session, find scene, and process the login.
 
 	// Pre-register session so that client messages arriving during async load
 	// hit the "player not loaded" guard instead of "session id not found".
+	// insert_or_assign defends against unlikely session_id reuse (snowflake collision).
 	if (request->session_id() != 0)
 	{
-		SessionMap().emplace(request->session_id(), request->player_id());
+		SessionMap().insert_or_assign(request->session_id(), request->player_id());
 	}
 
 	// Store enter info in PendingEnterMap. If a load is already in flight

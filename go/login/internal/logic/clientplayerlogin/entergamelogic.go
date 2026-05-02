@@ -120,12 +120,12 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 		return resp, nil
 	}
 
-	// 5. Load Player data (synchronous)
-	if err := l.ensurePlayerDataInRedis(ctx, in.PlayerId); err != nil {
-		logx.Errorf("failed to load player data [PlayerId=%d, error=%v]", in.PlayerId, err)
-		resp.ErrorMessage.Id = uint32(table.LoginError_kLoginUnknownError)
-		return resp, nil
-	}
+	// 5. Trigger player data preload (truly fire-and-forget on a background goroutine).
+	//    The Kafka SyncProducer is serialized by an internal mutex + WaitForAll +
+	//    transactional commit/begin, so calling it inline would serialize all logins
+	//    behind a single producer lock and easily blow the gRPC deadline under load.
+	//    Scene retries Redis on NIL, so a slightly delayed preload is harmless.
+	l.firePlayerDataPreload(in.PlayerId)
 
 	// 7. Apply session (bind gate + route to scene)
 	decision, applyErr := l.applyLoadedPlayerSession(ctx, flowState)
@@ -278,21 +278,32 @@ func (l *EnterGameLogic) kickReplacedSession(existing *sessionmanager.PlayerSess
 	return l.svcCtx.KickSessionOnGate(existing.GateID, existing.GateInstanceID, existing.SessionID, existing.PlayerID)
 }
 
-// ensurePlayerDataInRedis fires async DB-read requests for player data not yet in Redis.
-// Returns immediately after sending Kafka requests (fire-and-forget for cache misses).
-// The scene node loads the data via its own async path when PlayerEnterGameNode arrives.
-func (l *EnterGameLogic) ensurePlayerDataInRedis(ctx context.Context, playerId uint64) error {
-	return dataloader.TriggerPlayerDataPreload(
-		ctx,
-		l.svcCtx.RedisClient,
-		l.svcCtx.KafkaClient,
-		playerId,
-		[]proto.Message{
-			&login_proto_database.PlayerAllData{
-				PlayerDatabaseData:   &login_proto_database.PlayerDatabase{PlayerId: playerId},
-				PlayerDatabase_1Data: &login_proto_database.PlayerDatabase_1{PlayerId: playerId},
+// firePlayerDataPreload spawns a goroutine that warms the Redis player-data cache
+// via Kafka -> DB service. It returns immediately so the EnterGame RPC is not
+// blocked by Kafka's SyncProducer (mutex + WaitForAll + txn commit).
+//
+// Errors are logged only — if the preload fails, the Scene node will still try
+// to load from Redis with retries, and ultimately fail the player's login if
+// the data never arrives.
+func (l *EnterGameLogic) firePlayerDataPreload(playerId uint64) {
+	svcCtx := l.svcCtx
+	go func() {
+		bgCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+		if err := dataloader.TriggerPlayerDataPreload(
+			bgCtx,
+			svcCtx.RedisClient,
+			svcCtx.KafkaClient,
+			playerId,
+			[]proto.Message{
+				&login_proto_database.PlayerAllData{
+					PlayerDatabaseData:   &login_proto_database.PlayerDatabase{PlayerId: playerId},
+					PlayerDatabase_1Data: &login_proto_database.PlayerDatabase_1{PlayerId: playerId},
+				},
+				&login_proto_database.PlayerCentreDatabase{PlayerId: playerId},
 			},
-			&login_proto_database.PlayerCentreDatabase{PlayerId: playerId},
-		},
-	)
+		); err != nil {
+			logx.Errorf("firePlayerDataPreload failed [PlayerId=%d]: %v", playerId, err)
+		}
+	}()
 }
