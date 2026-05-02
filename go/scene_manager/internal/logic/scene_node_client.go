@@ -3,12 +3,15 @@ package logic
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sync"
+	"time"
 
 	scenepb "proto/scene"
 	scenenodepb "proto/scene_manager"
 
+	"scene_manager/internal/metrics"
 	"scene_manager/internal/svc"
 
 	"github.com/zeromicro/go-zero/core/logx"
@@ -233,4 +236,60 @@ func RemoveNodeConn(nodeId string) {
 		delete(nodeConnCache, nodeId)
 		logx.Infof("[SceneNodeClient] Removed connection to scene node %s", nodeId)
 	}
+}
+
+// dispatchReleasePlayer sends a ReleasePlayer notification to the player's
+// previous scene node with bounded latency and a background retry chain.
+//
+// Behaviour:
+//  1. Synchronous attempt with a 500ms deadline so EnterScene latency stays
+//     bounded even when the old node is slow.
+//  2. On failure / timeout, fires off a background goroutine that retries up
+//     to 2 more times with exponential backoff (1s, 3s) using a fresh
+//     context.Background() so request cancellation does not abort recovery.
+//  3. Every terminal outcome is reported to Prometheus so dashboards can
+//     alert when residual entities accumulate (timeout/error spikes).
+//
+// Failures are non-fatal — the caller (EnterScene) continues regardless.
+// AFK cleanup on the old node is the final fallback when every retry fails.
+func dispatchReleasePlayer(svcCtx *svc.ServiceContext, log logx.Logger, zoneID uint32,
+	oldNodeId string, playerId uint64, targetSceneId uint64, targetNodeId string) {
+
+	syncCtx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
+	err := RequestNodeReleasePlayer(syncCtx, svcCtx, oldNodeId, playerId, targetSceneId, targetNodeId)
+	cancel()
+
+	if err == nil {
+		metrics.ObserveReleasePlayer(zoneID, "ok")
+		return
+	}
+
+	log.Errorf("ReleasePlayer first attempt failed for player %d on old node %s (will retry in background): %v",
+		playerId, oldNodeId, err)
+
+	// Background retry chain. Capture only what we need so EnterScene's logger
+	// (which holds the request ctx) is not used after the request returns.
+	go func() {
+		backoffs := []time.Duration{1 * time.Second, 3 * time.Second}
+		var lastErr = err
+		for i, backoff := range backoffs {
+			time.Sleep(backoff)
+			retryCtx, retryCancel := context.WithTimeout(context.Background(), 1*time.Second)
+			lastErr = RequestNodeReleasePlayer(retryCtx, svcCtx, oldNodeId, playerId, targetSceneId, targetNodeId)
+			retryCancel()
+			if lastErr == nil {
+				logx.Infof("[ReleasePlayer] Retry %d succeeded for player %d on old node %s", i+1, playerId, oldNodeId)
+				metrics.ObserveReleasePlayer(zoneID, "retry_ok")
+				return
+			}
+			logx.Errorf("[ReleasePlayer] Retry %d failed for player %d on old node %s: %v", i+1, playerId, oldNodeId, lastErr)
+		}
+		outcome := "error"
+		if errors.Is(lastErr, context.DeadlineExceeded) {
+			outcome = "timeout"
+		}
+		metrics.ObserveReleasePlayer(zoneID, outcome)
+		logx.Errorf("[ReleasePlayer] All retries exhausted for player %d on old node %s; relying on AFK cleanup. last_err=%v",
+			playerId, oldNodeId, lastErr)
+	}()
 }

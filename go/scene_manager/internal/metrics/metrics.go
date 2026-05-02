@@ -129,6 +129,22 @@ var (
 		Help:      "Mirror dedup attempts by outcome (hit|miss|stale). Only emitted when MirrorDedupBySource=true.",
 	}, []string{"zone_id", "outcome"})
 
+	// releasePlayerTotal counts cross-node ReleasePlayer notifications
+	// dispatched to the previous scene node when a player switches
+	// between scene nodes. outcome:
+	//   ok        -> RPC succeeded on the first try
+	//   retry_ok  -> RPC succeeded after one or more retries
+	//   timeout   -> all attempts exceeded the per-call deadline
+	//   error     -> dial / RPC failure on every attempt (non-timeout)
+	// Operators dashboard error+timeout rates to spot scene nodes that
+	// are dropping ReleasePlayer notifications and accumulating residual
+	// player entities.
+	releasePlayerTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Subsystem: subsystem,
+		Name:      "release_player_total",
+		Help:      "Cross-node ReleasePlayer outcomes (ok|retry_ok|timeout|error).",
+	}, []string{"zone_id", "outcome"})
+
 	registerOnce sync.Once
 )
 
@@ -140,6 +156,7 @@ func register() {
 			mirrorColocateTotal, instanceDestroyedTotal,
 			enterSceneRejectedTotal, sceneOrphansReconciledTotal,
 			mirrorSourceMissingTotal, mirrorDedupTotal,
+			releasePlayerTotal,
 		)
 	})
 }
@@ -205,6 +222,18 @@ func ObserveMirrorSourceMissing(zoneID uint32) {
 func ObserveMirrorDedup(zoneID uint32, outcome string) {
 	register()
 	mirrorDedupTotal.WithLabelValues(
+		strconv.FormatUint(uint64(zoneID), 10), outcome,
+	).Inc()
+}
+
+// ObserveReleasePlayer records one outcome of a cross-node ReleasePlayer
+// RPC dispatched by EnterScene. outcome must be one of
+// "ok" | "retry_ok" | "timeout" | "error". A persistently nonzero
+// timeout/error rate means the previous scene node is unreachable and
+// some player entities will linger until AFK cleanup.
+func ObserveReleasePlayer(zoneID uint32, outcome string) {
+	register()
+	releasePlayerTotal.WithLabelValues(
 		strconv.FormatUint(uint64(zoneID), 10), outcome,
 	).Inc()
 }

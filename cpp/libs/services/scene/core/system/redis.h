@@ -48,8 +48,10 @@ private:
     std::optional<std::reference_wrapper<muduo::net::EventLoop>> loop_;
     muduo::net::TimerId retryTimerId_;
     muduo::net::TimerId snapshotTimerId_;
+    muduo::net::TimerId periodicSaveTimerId_;
     bool retryTimerActive_ = false;
     bool snapshotTimerActive_ = false;
+    bool periodicSaveTimerActive_ = false;
 };
 
 

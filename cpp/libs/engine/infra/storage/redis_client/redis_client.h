@@ -270,23 +270,26 @@ public:
 	}
 
 private:
-	static std::chrono::seconds BackoffForRetry(int next_retry_count)
+	static std::chrono::milliseconds BackoffForRetry(int next_retry_count)
 	{
-		// 1->2s, 2->4s, 3->8s, 4->16s, 5->32s, 6+->60s
+		// 1->500ms, 2->1s, 3->2s, 4->4s, 5->8s, 6+->16s  (cumulative ~31.5s)
+		// Tuned for the typical Login -> Kafka -> DB -> Redis warm path P99 (~1-3s).
+		// First retry hits fast so a healthy preload barely impacts player-perceived
+		// login latency; later retries widen to shed load if the backend is stuck.
 		switch (next_retry_count)
 		{
 		case 1:
-			return std::chrono::seconds(2);
+			return std::chrono::milliseconds(500);
 		case 2:
-			return std::chrono::seconds(4);
+			return std::chrono::milliseconds(1000);
 		case 3:
-			return std::chrono::seconds(8);
+			return std::chrono::milliseconds(2000);
 		case 4:
-			return std::chrono::seconds(16);
+			return std::chrono::milliseconds(4000);
 		case 5:
-			return std::chrono::seconds(32);
+			return std::chrono::milliseconds(8000);
 		default:
-			return std::chrono::seconds(60);
+			return std::chrono::milliseconds(16000);
 		}
 	}
 
@@ -425,7 +428,7 @@ private:
 		// Latest pending value per key wins (Save with same key replaces older retry).
 		pending_save_queue_[element->redis_key] = element;
 		LOG_WARN << "Queued Save retry " << nextRetry << "/" << kMaxSaveRetries
-				 << " for key: " << element->redis_key << " in " << backoff.count() << "s";
+				 << " for key: " << element->redis_key << " in " << backoff.count() << "ms";
 	}
 
 	void OnSaved(hiredis::Hiredis * /*c*/, redisReply *reply, ElementPtr element)
@@ -490,7 +493,7 @@ private:
 				const auto backoff = BackoffForRetry(nextRetry);
 				LOG_WARN << "Redis GET returned NIL for key: " << element->redis_key
 						 << ", retry " << nextRetry << "/" << kMaxLoadRetries
-						 << " in " << backoff.count() << "s";
+						 << " in " << backoff.count() << "ms";
 				element->retry_count = nextRetry;
 				element->next_retry_at = std::chrono::steady_clock::now() + backoff;
 				pending_retry_queue_[element->redis_key] = element;

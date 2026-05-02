@@ -287,7 +287,7 @@ func (l *EnterGameLogic) kickReplacedSession(existing *sessionmanager.PlayerSess
 // degrades latency, it does not break correctness.
 func (l *EnterGameLogic) firePlayerDataPreload(playerId uint64) {
 	svcCtx := l.svcCtx
-	err := svcCtx.PreloadPool.Submit(func() {
+	ok := svcCtx.SubmitPreload(func() {
 		bgCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 		if err := dataloader.TriggerPlayerDataPreload(
@@ -306,8 +306,8 @@ func (l *EnterGameLogic) firePlayerDataPreload(playerId uint64) {
 			logx.Errorf("firePlayerDataPreload failed [PlayerId=%d]: %v", playerId, err)
 		}
 	})
-	if err != nil {
+	if !ok {
 		// Pool overload — Scene-side Redis retry will compensate (extra latency only).
-		logx.Errorf("firePlayerDataPreload submit dropped [PlayerId=%d]: %v", playerId, err)
+		logx.Errorf("firePlayerDataPreload submit dropped (pool saturated) [PlayerId=%d]", playerId)
 	}
 }
