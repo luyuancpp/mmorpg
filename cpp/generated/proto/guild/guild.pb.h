@@ -1402,8 +1402,9 @@ class GuildMember final : public ::google::protobuf::Message
     kPlayerIdFieldNumber = 1,
     kJoinTimeMsFieldNumber = 3,
     kLastActiveMsFieldNumber = 4,
-    kContributionFieldNumber = 5,
     kRoleFieldNumber = 2,
+    kOnlineFieldNumber = 6,
+    kContributionFieldNumber = 5,
   };
   // uint64 player_id = 1;
   void clear_player_id() ;
@@ -1435,16 +1436,6 @@ class GuildMember final : public ::google::protobuf::Message
   void _internal_set_last_active_ms(::int64_t value);
 
   public:
-  // uint64 contribution = 5;
-  void clear_contribution() ;
-  ::uint64_t contribution() const;
-  void set_contribution(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_contribution() const;
-  void _internal_set_contribution(::uint64_t value);
-
-  public:
   // uint32 role = 2;
   void clear_role() ;
   ::uint32_t role() const;
@@ -1455,11 +1446,31 @@ class GuildMember final : public ::google::protobuf::Message
   void _internal_set_role(::uint32_t value);
 
   public:
+  // bool online = 6;
+  void clear_online() ;
+  bool online() const;
+  void set_online(bool value);
+
+  private:
+  bool _internal_online() const;
+  void _internal_set_online(bool value);
+
+  public:
+  // uint64 contribution = 5;
+  void clear_contribution() ;
+  ::uint64_t contribution() const;
+  void set_contribution(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_contribution() const;
+  void _internal_set_contribution(::uint64_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:guildpb.GuildMember)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<3, 5,
+  static const ::google::protobuf::internal::TcParseTable<3, 6,
                                    0, 0,
                                    2>
       _table_;
@@ -1484,8 +1495,9 @@ class GuildMember final : public ::google::protobuf::Message
     ::uint64_t player_id_;
     ::int64_t join_time_ms_;
     ::int64_t last_active_ms_;
-    ::uint64_t contribution_;
     ::uint32_t role_;
+    bool online_;
+    ::uint64_t contribution_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -5136,7 +5148,7 @@ inline void GuildMember::_internal_set_player_id(::uint64_t value) {
 inline void GuildMember::clear_role() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.role_ = 0u;
-  _impl_._has_bits_[0] &= ~0x00000010u;
+  _impl_._has_bits_[0] &= ~0x00000008u;
 }
 inline ::uint32_t GuildMember::role() const {
   // @@protoc_insertion_point(field_get:guildpb.GuildMember.role)
@@ -5144,7 +5156,7 @@ inline ::uint32_t GuildMember::role() const {
 }
 inline void GuildMember::set_role(::uint32_t value) {
   _internal_set_role(value);
-  _impl_._has_bits_[0] |= 0x00000010u;
+  _impl_._has_bits_[0] |= 0x00000008u;
   // @@protoc_insertion_point(field_set:guildpb.GuildMember.role)
 }
 inline ::uint32_t GuildMember::_internal_role() const {
@@ -5208,7 +5220,7 @@ inline void GuildMember::_internal_set_last_active_ms(::int64_t value) {
 inline void GuildMember::clear_contribution() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.contribution_ = ::uint64_t{0u};
-  _impl_._has_bits_[0] &= ~0x00000008u;
+  _impl_._has_bits_[0] &= ~0x00000020u;
 }
 inline ::uint64_t GuildMember::contribution() const {
   // @@protoc_insertion_point(field_get:guildpb.GuildMember.contribution)
@@ -5216,7 +5228,7 @@ inline ::uint64_t GuildMember::contribution() const {
 }
 inline void GuildMember::set_contribution(::uint64_t value) {
   _internal_set_contribution(value);
-  _impl_._has_bits_[0] |= 0x00000008u;
+  _impl_._has_bits_[0] |= 0x00000020u;
   // @@protoc_insertion_point(field_set:guildpb.GuildMember.contribution)
 }
 inline ::uint64_t GuildMember::_internal_contribution() const {
@@ -5226,6 +5238,30 @@ inline ::uint64_t GuildMember::_internal_contribution() const {
 inline void GuildMember::_internal_set_contribution(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.contribution_ = value;
+}
+
+// bool online = 6;
+inline void GuildMember::clear_online() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.online_ = false;
+  _impl_._has_bits_[0] &= ~0x00000010u;
+}
+inline bool GuildMember::online() const {
+  // @@protoc_insertion_point(field_get:guildpb.GuildMember.online)
+  return _internal_online();
+}
+inline void GuildMember::set_online(bool value) {
+  _internal_set_online(value);
+  _impl_._has_bits_[0] |= 0x00000010u;
+  // @@protoc_insertion_point(field_set:guildpb.GuildMember.online)
+}
+inline bool GuildMember::_internal_online() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.online_;
+}
+inline void GuildMember::_internal_set_online(bool value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.online_ = value;
 }
 
 // -------------------------------------------------------------------

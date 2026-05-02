@@ -172,8 +172,9 @@ inline constexpr GuildMember::Impl_::Impl_(
         player_id_{::uint64_t{0u}},
         join_time_ms_{::int64_t{0}},
         last_active_ms_{::int64_t{0}},
-        contribution_{::uint64_t{0u}},
-        role_{0u} {}
+        role_{0u},
+        online_{false},
+        contribution_{::uint64_t{0u}} {}
 
 template <typename>
 PROTOBUF_CONSTEXPR GuildMember::GuildMember(::_pbi::ConstantInitialized)
@@ -656,17 +657,19 @@ const ::uint32_t
         protodesc_cold) = {
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::guildpb::GuildMember, _impl_._has_bits_),
-        8, // hasbit index offset
+        9, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::guildpb::GuildMember, _impl_.player_id_),
         PROTOBUF_FIELD_OFFSET(::guildpb::GuildMember, _impl_.role_),
         PROTOBUF_FIELD_OFFSET(::guildpb::GuildMember, _impl_.join_time_ms_),
         PROTOBUF_FIELD_OFFSET(::guildpb::GuildMember, _impl_.last_active_ms_),
         PROTOBUF_FIELD_OFFSET(::guildpb::GuildMember, _impl_.contribution_),
+        PROTOBUF_FIELD_OFFSET(::guildpb::GuildMember, _impl_.online_),
         0,
-        4,
+        3,
         1,
         2,
-        3,
+        5,
+        4,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::guildpb::GuildInfo, _impl_._has_bits_),
         12, // hasbit index offset
@@ -846,28 +849,28 @@ const ::uint32_t
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, sizeof(::guildpb::GuildMember)},
-        {13, sizeof(::guildpb::GuildInfo)},
-        {34, sizeof(::guildpb::CreateGuildRequest)},
-        {43, sizeof(::guildpb::CreateGuildResponse)},
-        {50, sizeof(::guildpb::GetGuildRequest)},
-        {55, sizeof(::guildpb::GetGuildResponse)},
-        {62, sizeof(::guildpb::GetPlayerGuildRequest)},
-        {67, sizeof(::guildpb::GetPlayerGuildResponse)},
-        {74, sizeof(::guildpb::JoinGuildRequest)},
-        {81, sizeof(::guildpb::JoinGuildResponse)},
-        {86, sizeof(::guildpb::LeaveGuildRequest)},
-        {91, sizeof(::guildpb::LeaveGuildResponse)},
-        {96, sizeof(::guildpb::DisbandGuildRequest)},
-        {101, sizeof(::guildpb::DisbandGuildResponse)},
-        {106, sizeof(::guildpb::SetAnnouncementRequest)},
-        {115, sizeof(::guildpb::SetAnnouncementResponse)},
-        {120, sizeof(::guildpb::GuildRankEntry)},
-        {137, sizeof(::guildpb::UpdateGuildScoreRequest)},
-        {146, sizeof(::guildpb::UpdateGuildScoreResponse)},
-        {151, sizeof(::guildpb::GetGuildRankRequest)},
-        {160, sizeof(::guildpb::GetGuildRankResponse)},
-        {173, sizeof(::guildpb::GetGuildRankByGuildRequest)},
-        {180, sizeof(::guildpb::GetGuildRankByGuildResponse)},
+        {15, sizeof(::guildpb::GuildInfo)},
+        {36, sizeof(::guildpb::CreateGuildRequest)},
+        {45, sizeof(::guildpb::CreateGuildResponse)},
+        {52, sizeof(::guildpb::GetGuildRequest)},
+        {57, sizeof(::guildpb::GetGuildResponse)},
+        {64, sizeof(::guildpb::GetPlayerGuildRequest)},
+        {69, sizeof(::guildpb::GetPlayerGuildResponse)},
+        {76, sizeof(::guildpb::JoinGuildRequest)},
+        {83, sizeof(::guildpb::JoinGuildResponse)},
+        {88, sizeof(::guildpb::LeaveGuildRequest)},
+        {93, sizeof(::guildpb::LeaveGuildResponse)},
+        {98, sizeof(::guildpb::DisbandGuildRequest)},
+        {103, sizeof(::guildpb::DisbandGuildResponse)},
+        {108, sizeof(::guildpb::SetAnnouncementRequest)},
+        {117, sizeof(::guildpb::SetAnnouncementResponse)},
+        {122, sizeof(::guildpb::GuildRankEntry)},
+        {139, sizeof(::guildpb::UpdateGuildScoreRequest)},
+        {148, sizeof(::guildpb::UpdateGuildScoreResponse)},
+        {153, sizeof(::guildpb::GetGuildRankRequest)},
+        {162, sizeof(::guildpb::GetGuildRankResponse)},
+        {175, sizeof(::guildpb::GetGuildRankByGuildRequest)},
+        {182, sizeof(::guildpb::GetGuildRankByGuildResponse)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::guildpb::_GuildMember_default_instance_._instance,
@@ -897,76 +900,77 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
 const char descriptor_table_protodef_proto_2fguild_2fguild_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n\027proto/guild/guild.proto\022\007guildpb\032\033prot"
-    "o/common/base/tip.proto\"r\n\013GuildMember\022\021"
-    "\n\tplayer_id\030\001 \001(\004\022\014\n\004role\030\002 \001(\r\022\024\n\014join_"
-    "time_ms\030\003 \001(\003\022\026\n\016last_active_ms\030\004 \001(\003\022\024\n"
-    "\014contribution\030\005 \001(\004\"\310\001\n\tGuildInfo\022\020\n\010gui"
-    "ld_id\030\001 \001(\004\022\014\n\004name\030\002 \001(\t\022\021\n\tleader_id\030\003"
-    " \001(\004\022\r\n\005level\030\004 \001(\r\022\024\n\014announcement\030\005 \001("
-    "\t\022\026\n\016create_time_ms\030\006 \001(\003\022\023\n\013max_members"
-    "\030\007 \001(\r\022%\n\007members\030\010 \003(\0132\024.guildpb.GuildM"
-    "ember\022\017\n\007zone_id\030\t \001(\r\"F\n\022CreateGuildReq"
-    "uest\022\021\n\tplayer_id\030\001 \001(\004\022\014\n\004name\030\002 \001(\t\022\017\n"
-    "\007zone_id\030\003 \001(\r\"`\n\023CreateGuildResponse\022&\n"
-    "\rerror_message\030\001 \001(\0132\017.TipInfoMessage\022!\n"
-    "\005guild\030\002 \001(\0132\022.guildpb.GuildInfo\"#\n\017GetG"
-    "uildRequest\022\020\n\010guild_id\030\001 \001(\004\"]\n\020GetGuil"
-    "dResponse\022&\n\rerror_message\030\001 \001(\0132\017.TipIn"
-    "foMessage\022!\n\005guild\030\002 \001(\0132\022.guildpb.Guild"
-    "Info\"*\n\025GetPlayerGuildRequest\022\021\n\tplayer_"
-    "id\030\001 \001(\004\"c\n\026GetPlayerGuildResponse\022&\n\rer"
-    "ror_message\030\001 \001(\0132\017.TipInfoMessage\022!\n\005gu"
-    "ild\030\002 \001(\0132\022.guildpb.GuildInfo\"7\n\020JoinGui"
-    "ldRequest\022\021\n\tplayer_id\030\001 \001(\004\022\020\n\010guild_id"
-    "\030\002 \001(\004\";\n\021JoinGuildResponse\022&\n\rerror_mes"
-    "sage\030\001 \001(\0132\017.TipInfoMessage\"&\n\021LeaveGuil"
-    "dRequest\022\021\n\tplayer_id\030\001 \001(\004\"<\n\022LeaveGuil"
-    "dResponse\022&\n\rerror_message\030\001 \001(\0132\017.TipIn"
-    "foMessage\"(\n\023DisbandGuildRequest\022\021\n\tplay"
-    "er_id\030\001 \001(\004\">\n\024DisbandGuildResponse\022&\n\re"
-    "rror_message\030\001 \001(\0132\017.TipInfoMessage\"S\n\026S"
-    "etAnnouncementRequest\022\020\n\010guild_id\030\001 \001(\004\022"
-    "\021\n\tplayer_id\030\002 \001(\004\022\024\n\014announcement\030\003 \001(\t"
-    "\"A\n\027SetAnnouncementResponse\022&\n\rerror_mes"
-    "sage\030\001 \001(\0132\017.TipInfoMessage\"\205\001\n\016GuildRan"
-    "kEntry\022\020\n\010guild_id\030\001 \001(\004\022\014\n\004name\030\002 \001(\t\022\021"
-    "\n\tleader_id\030\003 \001(\004\022\r\n\005level\030\004 \001(\r\022\024\n\014memb"
-    "er_count\030\005 \001(\r\022\r\n\005score\030\006 \001(\003\022\014\n\004rank\030\007 "
-    "\001(\r\"K\n\027UpdateGuildScoreRequest\022\020\n\010guild_"
-    "id\030\001 \001(\004\022\r\n\005score\030\002 \001(\003\022\017\n\007zone_id\030\003 \001(\r"
-    "\"B\n\030UpdateGuildScoreResponse\022&\n\rerror_me"
-    "ssage\030\001 \001(\0132\017.TipInfoMessage\"G\n\023GetGuild"
-    "RankRequest\022\014\n\004page\030\001 \001(\r\022\021\n\tpage_size\030\002"
-    " \001(\r\022\017\n\007zone_id\030\003 \001(\r\"\236\001\n\024GetGuildRankRe"
-    "sponse\022&\n\rerror_message\030\001 \001(\0132\017.TipInfoM"
-    "essage\022(\n\007entries\030\002 \003(\0132\027.guildpb.GuildR"
-    "ankEntry\022\023\n\013total_count\030\003 \001(\r\022\014\n\004page\030\004 "
-    "\001(\r\022\021\n\tpage_size\030\005 \001(\r\"\?\n\032GetGuildRankBy"
-    "GuildRequest\022\020\n\010guild_id\030\001 \001(\004\022\017\n\007zone_i"
-    "d\030\002 \001(\r\"m\n\033GetGuildRankByGuildResponse\022&"
-    "\n\rerror_message\030\001 \001(\0132\017.TipInfoMessage\022&"
-    "\n\005entry\030\002 \001(\0132\027.guildpb.GuildRankEntry2\242"
-    "\006\n\014GuildService\022H\n\013CreateGuild\022\033.guildpb"
-    ".CreateGuildRequest\032\034.guildpb.CreateGuil"
-    "dResponse\022\?\n\010GetGuild\022\030.guildpb.GetGuild"
-    "Request\032\031.guildpb.GetGuildResponse\022Q\n\016Ge"
-    "tPlayerGuild\022\036.guildpb.GetPlayerGuildReq"
-    "uest\032\037.guildpb.GetPlayerGuildResponse\022B\n"
-    "\tJoinGuild\022\031.guildpb.JoinGuildRequest\032\032."
-    "guildpb.JoinGuildResponse\022E\n\nLeaveGuild\022"
-    "\032.guildpb.LeaveGuildRequest\032\033.guildpb.Le"
-    "aveGuildResponse\022K\n\014DisbandGuild\022\034.guild"
-    "pb.DisbandGuildRequest\032\035.guildpb.Disband"
-    "GuildResponse\022T\n\017SetAnnouncement\022\037.guild"
-    "pb.SetAnnouncementRequest\032 .guildpb.SetA"
-    "nnouncementResponse\022W\n\020UpdateGuildScore\022"
-    " .guildpb.UpdateGuildScoreRequest\032!.guil"
-    "dpb.UpdateGuildScoreResponse\022K\n\014GetGuild"
-    "Rank\022\034.guildpb.GetGuildRankRequest\032\035.gui"
-    "ldpb.GetGuildRankResponse\022`\n\023GetGuildRan"
-    "kByGuild\022#.guildpb.GetGuildRankByGuildRe"
-    "quest\032$.guildpb.GetGuildRankByGuildRespo"
-    "nseB\023Z\021guild/proto/guildb\006proto3"
+    "o/common/base/tip.proto\"\202\001\n\013GuildMember\022"
+    "\021\n\tplayer_id\030\001 \001(\004\022\014\n\004role\030\002 \001(\r\022\024\n\014join"
+    "_time_ms\030\003 \001(\003\022\026\n\016last_active_ms\030\004 \001(\003\022\024"
+    "\n\014contribution\030\005 \001(\004\022\016\n\006online\030\006 \001(\010\"\310\001\n"
+    "\tGuildInfo\022\020\n\010guild_id\030\001 \001(\004\022\014\n\004name\030\002 \001"
+    "(\t\022\021\n\tleader_id\030\003 \001(\004\022\r\n\005level\030\004 \001(\r\022\024\n\014"
+    "announcement\030\005 \001(\t\022\026\n\016create_time_ms\030\006 \001"
+    "(\003\022\023\n\013max_members\030\007 \001(\r\022%\n\007members\030\010 \003(\013"
+    "2\024.guildpb.GuildMember\022\017\n\007zone_id\030\t \001(\r\""
+    "F\n\022CreateGuildRequest\022\021\n\tplayer_id\030\001 \001(\004"
+    "\022\014\n\004name\030\002 \001(\t\022\017\n\007zone_id\030\003 \001(\r\"`\n\023Creat"
+    "eGuildResponse\022&\n\rerror_message\030\001 \001(\0132\017."
+    "TipInfoMessage\022!\n\005guild\030\002 \001(\0132\022.guildpb."
+    "GuildInfo\"#\n\017GetGuildRequest\022\020\n\010guild_id"
+    "\030\001 \001(\004\"]\n\020GetGuildResponse\022&\n\rerror_mess"
+    "age\030\001 \001(\0132\017.TipInfoMessage\022!\n\005guild\030\002 \001("
+    "\0132\022.guildpb.GuildInfo\"*\n\025GetPlayerGuildR"
+    "equest\022\021\n\tplayer_id\030\001 \001(\004\"c\n\026GetPlayerGu"
+    "ildResponse\022&\n\rerror_message\030\001 \001(\0132\017.Tip"
+    "InfoMessage\022!\n\005guild\030\002 \001(\0132\022.guildpb.Gui"
+    "ldInfo\"7\n\020JoinGuildRequest\022\021\n\tplayer_id\030"
+    "\001 \001(\004\022\020\n\010guild_id\030\002 \001(\004\";\n\021JoinGuildResp"
+    "onse\022&\n\rerror_message\030\001 \001(\0132\017.TipInfoMes"
+    "sage\"&\n\021LeaveGuildRequest\022\021\n\tplayer_id\030\001"
+    " \001(\004\"<\n\022LeaveGuildResponse\022&\n\rerror_mess"
+    "age\030\001 \001(\0132\017.TipInfoMessage\"(\n\023DisbandGui"
+    "ldRequest\022\021\n\tplayer_id\030\001 \001(\004\">\n\024DisbandG"
+    "uildResponse\022&\n\rerror_message\030\001 \001(\0132\017.Ti"
+    "pInfoMessage\"S\n\026SetAnnouncementRequest\022\020"
+    "\n\010guild_id\030\001 \001(\004\022\021\n\tplayer_id\030\002 \001(\004\022\024\n\014a"
+    "nnouncement\030\003 \001(\t\"A\n\027SetAnnouncementResp"
+    "onse\022&\n\rerror_message\030\001 \001(\0132\017.TipInfoMes"
+    "sage\"\205\001\n\016GuildRankEntry\022\020\n\010guild_id\030\001 \001("
+    "\004\022\014\n\004name\030\002 \001(\t\022\021\n\tleader_id\030\003 \001(\004\022\r\n\005le"
+    "vel\030\004 \001(\r\022\024\n\014member_count\030\005 \001(\r\022\r\n\005score"
+    "\030\006 \001(\003\022\014\n\004rank\030\007 \001(\r\"K\n\027UpdateGuildScore"
+    "Request\022\020\n\010guild_id\030\001 \001(\004\022\r\n\005score\030\002 \001(\003"
+    "\022\017\n\007zone_id\030\003 \001(\r\"B\n\030UpdateGuildScoreRes"
+    "ponse\022&\n\rerror_message\030\001 \001(\0132\017.TipInfoMe"
+    "ssage\"G\n\023GetGuildRankRequest\022\014\n\004page\030\001 \001"
+    "(\r\022\021\n\tpage_size\030\002 \001(\r\022\017\n\007zone_id\030\003 \001(\r\"\236"
+    "\001\n\024GetGuildRankResponse\022&\n\rerror_message"
+    "\030\001 \001(\0132\017.TipInfoMessage\022(\n\007entries\030\002 \003(\013"
+    "2\027.guildpb.GuildRankEntry\022\023\n\013total_count"
+    "\030\003 \001(\r\022\014\n\004page\030\004 \001(\r\022\021\n\tpage_size\030\005 \001(\r\""
+    "\?\n\032GetGuildRankByGuildRequest\022\020\n\010guild_i"
+    "d\030\001 \001(\004\022\017\n\007zone_id\030\002 \001(\r\"m\n\033GetGuildRank"
+    "ByGuildResponse\022&\n\rerror_message\030\001 \001(\0132\017"
+    ".TipInfoMessage\022&\n\005entry\030\002 \001(\0132\027.guildpb"
+    ".GuildRankEntry2\242\006\n\014GuildService\022H\n\013Crea"
+    "teGuild\022\033.guildpb.CreateGuildRequest\032\034.g"
+    "uildpb.CreateGuildResponse\022\?\n\010GetGuild\022\030"
+    ".guildpb.GetGuildRequest\032\031.guildpb.GetGu"
+    "ildResponse\022Q\n\016GetPlayerGuild\022\036.guildpb."
+    "GetPlayerGuildRequest\032\037.guildpb.GetPlaye"
+    "rGuildResponse\022B\n\tJoinGuild\022\031.guildpb.Jo"
+    "inGuildRequest\032\032.guildpb.JoinGuildRespon"
+    "se\022E\n\nLeaveGuild\022\032.guildpb.LeaveGuildReq"
+    "uest\032\033.guildpb.LeaveGuildResponse\022K\n\014Dis"
+    "bandGuild\022\034.guildpb.DisbandGuildRequest\032"
+    "\035.guildpb.DisbandGuildResponse\022T\n\017SetAnn"
+    "ouncement\022\037.guildpb.SetAnnouncementReque"
+    "st\032 .guildpb.SetAnnouncementResponse\022W\n\020"
+    "UpdateGuildScore\022 .guildpb.UpdateGuildSc"
+    "oreRequest\032!.guildpb.UpdateGuildScoreRes"
+    "ponse\022K\n\014GetGuildRank\022\034.guildpb.GetGuild"
+    "RankRequest\032\035.guildpb.GetGuildRankRespon"
+    "se\022`\n\023GetGuildRankByGuild\022#.guildpb.GetG"
+    "uildRankByGuildRequest\032$.guildpb.GetGuil"
+    "dRankByGuildResponseB\023Z\021guild/proto/guil"
+    "db\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fguild_2fguild_2eproto_deps[1] = {
@@ -976,7 +980,7 @@ static ::absl::once_flag descriptor_table_proto_2fguild_2fguild_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fguild_2fguild_2eproto = {
     false,
     false,
-    2832,
+    2849,
     descriptor_table_protodef_proto_2fguild_2fguild_2eproto,
     "proto/guild/guild.proto",
     &descriptor_table_proto_2fguild_2fguild_2eproto_once,
@@ -1030,9 +1034,9 @@ inline void GuildMember::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, player_id_),
            0,
-           offsetof(Impl_, role_) -
+           offsetof(Impl_, contribution_) -
                offsetof(Impl_, player_id_) +
-               sizeof(Impl_::role_));
+               sizeof(Impl_::contribution_));
 }
 GuildMember::~GuildMember() {
   // @@protoc_insertion_point(destructor:guildpb.GuildMember)
@@ -1088,16 +1092,16 @@ GuildMember::GetClassData() const {
   return GuildMember_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<3, 5, 0, 0, 2>
+const ::_pbi::TcParseTable<3, 6, 0, 0, 2>
 GuildMember::_table_ = {
   {
     PROTOBUF_FIELD_OFFSET(GuildMember, _impl_._has_bits_),
     0, // no _extensions_
-    5, 56,  // max_field_number, fast_idx_mask
+    6, 56,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967264,  // skipmap
+    4294967232,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    5,  // num_field_entries
+    6,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
     GuildMember_class_data_.base(),
@@ -1112,8 +1116,8 @@ GuildMember::_table_ = {
     {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(GuildMember, _impl_.player_id_), 0>(),
      {8, 0, 0, PROTOBUF_FIELD_OFFSET(GuildMember, _impl_.player_id_)}},
     // uint32 role = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GuildMember, _impl_.role_), 4>(),
-     {16, 4, 0, PROTOBUF_FIELD_OFFSET(GuildMember, _impl_.role_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GuildMember, _impl_.role_), 3>(),
+     {16, 3, 0, PROTOBUF_FIELD_OFFSET(GuildMember, _impl_.role_)}},
     // int64 join_time_ms = 3;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(GuildMember, _impl_.join_time_ms_), 1>(),
      {24, 1, 0, PROTOBUF_FIELD_OFFSET(GuildMember, _impl_.join_time_ms_)}},
@@ -1121,9 +1125,11 @@ GuildMember::_table_ = {
     {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(GuildMember, _impl_.last_active_ms_), 2>(),
      {32, 2, 0, PROTOBUF_FIELD_OFFSET(GuildMember, _impl_.last_active_ms_)}},
     // uint64 contribution = 5;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(GuildMember, _impl_.contribution_), 3>(),
-     {40, 3, 0, PROTOBUF_FIELD_OFFSET(GuildMember, _impl_.contribution_)}},
-    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(GuildMember, _impl_.contribution_), 5>(),
+     {40, 5, 0, PROTOBUF_FIELD_OFFSET(GuildMember, _impl_.contribution_)}},
+    // bool online = 6;
+    {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(GuildMember, _impl_.online_), 4>(),
+     {48, 4, 0, PROTOBUF_FIELD_OFFSET(GuildMember, _impl_.online_)}},
     {::_pbi::TcParser::MiniParse, {}},
   }}, {{
     65535, 65535
@@ -1132,7 +1138,7 @@ GuildMember::_table_ = {
     {PROTOBUF_FIELD_OFFSET(GuildMember, _impl_.player_id_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
     // uint32 role = 2;
-    {PROTOBUF_FIELD_OFFSET(GuildMember, _impl_.role_), _Internal::kHasBitsOffset + 4, 0,
+    {PROTOBUF_FIELD_OFFSET(GuildMember, _impl_.role_), _Internal::kHasBitsOffset + 3, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
     // int64 join_time_ms = 3;
     {PROTOBUF_FIELD_OFFSET(GuildMember, _impl_.join_time_ms_), _Internal::kHasBitsOffset + 1, 0,
@@ -1141,8 +1147,11 @@ GuildMember::_table_ = {
     {PROTOBUF_FIELD_OFFSET(GuildMember, _impl_.last_active_ms_), _Internal::kHasBitsOffset + 2, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kInt64)},
     // uint64 contribution = 5;
-    {PROTOBUF_FIELD_OFFSET(GuildMember, _impl_.contribution_), _Internal::kHasBitsOffset + 3, 0,
+    {PROTOBUF_FIELD_OFFSET(GuildMember, _impl_.contribution_), _Internal::kHasBitsOffset + 5, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    // bool online = 6;
+    {PROTOBUF_FIELD_OFFSET(GuildMember, _impl_.online_), _Internal::kHasBitsOffset + 4, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kBool)},
   }},
   // no aux_entries
   {{
@@ -1156,10 +1165,10 @@ PROTOBUF_NOINLINE void GuildMember::Clear() {
   (void) cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  if ((cached_has_bits & 0x0000001fu) != 0) {
+  if ((cached_has_bits & 0x0000003fu) != 0) {
     ::memset(&_impl_.player_id_, 0, static_cast<::size_t>(
-        reinterpret_cast<char*>(&_impl_.role_) -
-        reinterpret_cast<char*>(&_impl_.player_id_)) + sizeof(_impl_.role_));
+        reinterpret_cast<char*>(&_impl_.contribution_) -
+        reinterpret_cast<char*>(&_impl_.player_id_)) + sizeof(_impl_.contribution_));
   }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
@@ -1190,7 +1199,7 @@ PROTOBUF_NOINLINE void GuildMember::Clear() {
   }
 
   // uint32 role = 2;
-  if ((this_._impl_._has_bits_[0] & 0x00000010u) != 0) {
+  if ((this_._impl_._has_bits_[0] & 0x00000008u) != 0) {
     if (this_._internal_role() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
@@ -1217,11 +1226,20 @@ PROTOBUF_NOINLINE void GuildMember::Clear() {
   }
 
   // uint64 contribution = 5;
-  if ((this_._impl_._has_bits_[0] & 0x00000008u) != 0) {
+  if ((this_._impl_._has_bits_[0] & 0x00000020u) != 0) {
     if (this_._internal_contribution() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
           5, this_._internal_contribution(), target);
+    }
+  }
+
+  // bool online = 6;
+  if ((this_._impl_._has_bits_[0] & 0x00000010u) != 0) {
+    if (this_._internal_online() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteBoolToArray(
+          6, this_._internal_online(), target);
     }
   }
 
@@ -1250,7 +1268,7 @@ PROTOBUF_NOINLINE void GuildMember::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if ((cached_has_bits & 0x0000001fu) != 0) {
+  if ((cached_has_bits & 0x0000003fu) != 0) {
     // uint64 player_id = 1;
     if ((cached_has_bits & 0x00000001u) != 0) {
       if (this_._internal_player_id() != 0) {
@@ -1272,18 +1290,24 @@ PROTOBUF_NOINLINE void GuildMember::Clear() {
             this_._internal_last_active_ms());
       }
     }
-    // uint64 contribution = 5;
-    if ((cached_has_bits & 0x00000008u) != 0) {
-      if (this_._internal_contribution() != 0) {
-        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
-            this_._internal_contribution());
-      }
-    }
     // uint32 role = 2;
-    if ((cached_has_bits & 0x00000010u) != 0) {
+    if ((cached_has_bits & 0x00000008u) != 0) {
       if (this_._internal_role() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_role());
+      }
+    }
+    // bool online = 6;
+    if ((cached_has_bits & 0x00000010u) != 0) {
+      if (this_._internal_online() != 0) {
+        total_size += 2;
+      }
+    }
+    // uint64 contribution = 5;
+    if ((cached_has_bits & 0x00000020u) != 0) {
+      if (this_._internal_contribution() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_contribution());
       }
     }
   }
@@ -1300,7 +1324,7 @@ void GuildMember::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::goo
   (void) cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if ((cached_has_bits & 0x0000001fu) != 0) {
+  if ((cached_has_bits & 0x0000003fu) != 0) {
     if ((cached_has_bits & 0x00000001u) != 0) {
       if (from._internal_player_id() != 0) {
         _this->_impl_.player_id_ = from._impl_.player_id_;
@@ -1317,13 +1341,18 @@ void GuildMember::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::goo
       }
     }
     if ((cached_has_bits & 0x00000008u) != 0) {
-      if (from._internal_contribution() != 0) {
-        _this->_impl_.contribution_ = from._impl_.contribution_;
+      if (from._internal_role() != 0) {
+        _this->_impl_.role_ = from._impl_.role_;
       }
     }
     if ((cached_has_bits & 0x00000010u) != 0) {
-      if (from._internal_role() != 0) {
-        _this->_impl_.role_ = from._impl_.role_;
+      if (from._internal_online() != 0) {
+        _this->_impl_.online_ = from._impl_.online_;
+      }
+    }
+    if ((cached_has_bits & 0x00000020u) != 0) {
+      if (from._internal_contribution() != 0) {
+        _this->_impl_.contribution_ = from._impl_.contribution_;
       }
     }
   }
@@ -1344,8 +1373,8 @@ void GuildMember::InternalSwap(GuildMember* PROTOBUF_RESTRICT PROTOBUF_NONNULL o
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(GuildMember, _impl_.role_)
-      + sizeof(GuildMember::_impl_.role_)
+      PROTOBUF_FIELD_OFFSET(GuildMember, _impl_.contribution_)
+      + sizeof(GuildMember::_impl_.contribution_)
       - PROTOBUF_FIELD_OFFSET(GuildMember, _impl_.player_id_)>(
           reinterpret_cast<char*>(&_impl_.player_id_),
           reinterpret_cast<char*>(&other->_impl_.player_id_));

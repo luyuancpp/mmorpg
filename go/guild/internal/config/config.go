@@ -8,13 +8,14 @@ import (
 
 type Config struct {
 	zrpc.RpcServerConf
-	RedisClient RedisConf    `json:"RedisClient"`
-	MySQL       MySQLConf    `json:"MySQL"`
-	Node        NodeConf     `json:"Node"`
-	Registry    RegistryConf `json:"Registry"`
-	Cache       CacheConf    `json:"Cache"`
-	Kafka       KafkaConf    `json:"Kafka"`
-	TableDir    string       `json:",default=../../generated/tables"`
+	RedisClient       RedisConf    `json:"RedisClient"`
+	PlayerLocatorRedis RedisConf   `json:"PlayerLocatorRedis"`
+	MySQL             MySQLConf    `json:"MySQL"`
+	Node              NodeConf     `json:"Node"`
+	Registry          RegistryConf `json:"Registry"`
+	Cache             CacheConf    `json:"Cache"`
+	Kafka             KafkaConf    `json:"Kafka"`
+	TableDir          string       `json:",default=../../generated/tables"`
 }
 
 type RedisConf struct {

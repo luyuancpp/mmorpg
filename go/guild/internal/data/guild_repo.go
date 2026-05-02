@@ -33,6 +33,7 @@ type MemberData struct {
 	JoinTimeMs   int64  `json:"join_time_ms"`
 	LastActiveMs int64  `json:"last_active_ms"`
 	Contribution uint64 `json:"contribution"`
+        Online       bool   `json:"-"` // 仅内存，不入库
 }
 
 // GuildRepo provides cache-aside access to guild data.
