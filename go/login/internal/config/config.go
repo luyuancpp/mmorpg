@@ -25,6 +25,17 @@ type Config struct {
 	AuthProviders      AuthConfig         `json:"AuthProviders,optional"` // Third-party auth provider config
 	DevSkipAuth        bool               `json:"DevSkipAuth,optional"` // Dev mode: skip auth provider validation, use account field directly
 	TokenConfig        TokenConf          `json:"TokenConfig,optional"` // Access/refresh token TTL settings
+	PreloadPool        PreloadPoolConf    `json:"PreloadPool,optional"` // Background goroutine pool for player data preload
+}
+
+// PreloadPoolConf controls the bounded goroutine pool used to fan out
+// fire-and-forget player data preload tasks (Kafka -> DB -> Redis warm).
+// Defaults are tuned for ~256 concurrent in-flight preloads, which is far
+// more than the Kafka SyncProducer can drain (it is mutex-serialized), so
+// the pool acts as a bounded queue + backpressure / overload shield.
+type PreloadPoolConf struct {
+	Size           int           `json:"Size,default=256"`           // Worker count
+	StatsInterval  time.Duration `json:"StatsInterval,default=30s"` // Periodic snapshot log interval (0 = disabled)
 }
 
 // AuthConfig holds third-party auth provider settings.

@@ -107,11 +107,8 @@ func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (*scen
 	// old node is stuck/dead we drop the wait after 500ms and continue. AFK
 	// cleanup on the old node remains the fallback.
 	if currentLoc != nil && currentLoc.NodeId != "" && currentLoc.NodeId != nodeId {
-		relCtx, cancel := context.WithTimeout(l.ctx, 500*time.Millisecond)
-		if err := RequestNodeReleasePlayer(relCtx, l.svcCtx, currentLoc.NodeId, in.PlayerId, sceneId, nodeId); err != nil {
-			l.Logger.Errorf("Failed to release player %d from old node %s (non-fatal): %v", in.PlayerId, currentLoc.NodeId, err)
-		}
-		cancel()
+		dispatchReleasePlayer(l.svcCtx, l.Logger, targetZoneId,
+			currentLoc.NodeId, in.PlayerId, sceneId, nodeId)
 	}
 
 	// 6. Update Player Location (Source of Truth)

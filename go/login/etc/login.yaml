@@ -94,6 +94,16 @@ TokenConfig:
   AccessTokenTTL: 2h
   RefreshTokenTTL: 720h  # 30 days
 
+# Background goroutine pool for player data preload (Kafka fan-out).
+# Size: max concurrent in-flight preload tasks. Submit is non-blocking; if the
+#       pool is saturated, the task is dropped with a log and the Scene-side
+#       Redis NIL retry compensates (extra latency only, no data loss).
+# StatsInterval: periodic pool snapshot log (running/free/cap, drop counter).
+#       Set to 0 to disable.
+PreloadPool:
+  Size: 256
+  StatsInterval: 30s
+
 # Dev mode: skip all auth provider validation (use account field directly).
 # WARNING: Never enable in production!
 # DevSkipAuth: true

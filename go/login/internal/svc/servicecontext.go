@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"sync/atomic"
 
 	"github.com/bwmarrin/snowflake"
 	"github.com/panjf2000/ants/v2"
@@ -41,6 +42,14 @@ type ServiceContext struct {
 	// Submit returns ErrPoolOverload immediately when full instead of stalling
 	// the caller (which would defeat the whole point of going async).
 	PreloadPool *ants.Pool
+
+	// preloadSubmitted / preloadDropped track pool throughput for periodic
+	// stats logging. Atomic-only (no mutex) so the hot path stays cheap.
+	preloadSubmitted atomic.Uint64
+	preloadDropped   atomic.Uint64
+
+	// preloadStatsStop signals the stats logger goroutine to exit on shutdown.
+	preloadStatsStop chan struct{}
 }
 
 func NewServiceContext() *ServiceContext {
@@ -119,12 +128,16 @@ func NewServiceContext() *ServiceContext {
 	// Register access_token auth provider (requires TokenManager)
 	RegisterAccessTokenProvider(tokenMgr)
 
-	// Bounded background-task pool. Size 256 is generous: Kafka SyncProducer is
-	// internally serialized by a mutex, so >32 concurrent workers buys nothing,
-	// but a larger ceiling absorbs short bursts. Non-blocking + pre-alloc keep
-	// Submit cost O(1) and fail fast under overload.
+	// Bounded background-task pool. Size is configurable; non-blocking + pre-alloc
+	// keep Submit cost O(1) and fail fast under overload. Kafka SyncProducer is
+	// internally serialized by a mutex, so a very large worker count buys nothing,
+	// but a generous ceiling absorbs short bursts.
+	poolSize := config.AppConfig.PreloadPool.Size
+	if poolSize <= 0 {
+		poolSize = 256
+	}
 	preloadPool, err := ants.NewPool(
-		256,
+		poolSize,
 		ants.WithNonblocking(true),
 		ants.WithPreAlloc(true),
 		ants.WithPanicHandler(func(p any) {
@@ -149,6 +162,7 @@ func NewServiceContext() *ServiceContext {
 
 func (s *ServiceContext) Start() {
 	s.ExpandMonitor.Start()
+	s.startPreloadStatsLogger()
 }
 
 func (c *ServiceContext) SetNodeId(nodeId int64) {
@@ -234,7 +248,54 @@ func (s *ServiceContext) KickSessionOnGate(gateID string, gateInstanceID string,
 
 func (s *ServiceContext) Stop() {
 	s.ExpandMonitor.Stop()
+	if s.preloadStatsStop != nil {
+		close(s.preloadStatsStop)
+		s.preloadStatsStop = nil
+	}
 	if s.PreloadPool != nil {
 		s.PreloadPool.Release()
 	}
+}
+
+// SubmitPreload submits a background task to the preload pool and updates
+// throughput counters. Returns false if the pool is saturated (task dropped);
+// callers should treat that as a soft failure (Scene-side retry compensates).
+func (s *ServiceContext) SubmitPreload(task func()) bool {
+	if err := s.PreloadPool.Submit(task); err != nil {
+		s.preloadDropped.Add(1)
+		return false
+	}
+	s.preloadSubmitted.Add(1)
+	return true
+}
+
+// startPreloadStatsLogger emits a periodic snapshot of pool utilization and
+// the cumulative submit/drop counters. Disabled when StatsInterval <= 0.
+func (s *ServiceContext) startPreloadStatsLogger() {
+	interval := config.AppConfig.PreloadPool.StatsInterval
+	if interval <= 0 || s.PreloadPool == nil {
+		return
+	}
+	s.preloadStatsStop = make(chan struct{})
+	stop := s.preloadStatsStop
+	go func() {
+		ticker := time.NewTicker(interval)
+		defer ticker.Stop()
+		var lastSubmitted, lastDropped uint64
+		for {
+			select {
+			case <-stop:
+				return
+			case <-ticker.C:
+				submitted := s.preloadSubmitted.Load()
+				dropped := s.preloadDropped.Load()
+				dSubmitted := submitted - lastSubmitted
+				dDropped := dropped - lastDropped
+				lastSubmitted, lastDropped = submitted, dropped
+				logx.Infof("[preload-pool] running=%d free=%d cap=%d submitted_total=%d dropped_total=%d submitted_delta=%d dropped_delta=%d",
+					s.PreloadPool.Running(), s.PreloadPool.Free(), s.PreloadPool.Cap(),
+					submitted, dropped, dSubmitted, dDropped)
+			}
+		}
+	}()
 }

@@ -123,7 +123,9 @@ void SceneHandler::PlayerEnterGameNode(::google::protobuf::RpcController* contro
 	// 3. Player not online — kick off Redis-only async load.
 	//    Player data is expected to already be in Redis, preloaded by Login via
 	//    Kafka -> DB Service -> Redis. On Redis NIL, AsyncLoad retries with
-	//    exponential backoff (~2s, 4s, 8s, ...) up to kMaxLoadRetries.
+	//    millisecond-grade exponential backoff (500ms/1s/2s/4s/8s/16s) up to
+	//    kMaxLoadRetries; the first retry is fast so a healthy preload barely
+	//    impacts player-perceived login latency.
 	//    After load completes, HandlePlayerAsyncLoaded -> InitPlayerFromAllData -> EnterScene
 	//    will use enterInfo to bind session, find scene, and process the login.
 
