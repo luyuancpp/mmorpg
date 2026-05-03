@@ -48,7 +48,15 @@ param(
 
     # Base port offset between instances. The N-th instance (1-based) listens on
     # base + (i-1) * PortStride. Default 1 keeps ports densely packed.
-    [int]$PortStride = 1
+    [int]$PortStride = 1,
+
+    # Disable tier-staged startup (parallel launch like before). Pass when you
+    # know dependencies are already satisfied or you want maximum parallelism.
+    [switch]$NoTier,
+
+    # Per-tier readiness budget (seconds) when staged startup is enabled. Soft
+    # gate: probe TCP LISTEN on each instance port; warn-and-continue on timeout.
+    [int]$TierReadySeconds = 10
 )
 
 $ErrorActionPreference = "Stop"
@@ -77,12 +85,21 @@ $GoBinDir   = Join-Path $RepoRoot "bin\go_services"
 #   ConfigFlag  command-line flag the entry uses to override the config path (e.g. -f, -loginService)
 #   ConfigFile  default config file path relative to the service Dir
 #   AllowMultiInstance  $false to forbid -Counts > 1 (e.g. db: single Kafka consumer)
+#   Tier        startup ordering bucket. Lower tiers are launched and (softly)
+#               wait for TCP LISTEN before the next tier. ONLY used by the local
+#               dev launcher to avoid first-boot dial races. Runtime services do
+#               not see this; they still discover endpoints via etcd (so rolling
+#               upgrades / hot updates / canary releases are unaffected).
+#               Tier 0 = infra-adjacent (db, data_service)
+#               Tier 1 = scene_manager (depended by player_locator)
+#               Tier 2 = player_locator (depended by login)
+#               Tier 3 = login (top of the dial chain)
 $ServiceCatalogue = [ordered]@{
-    db              = @{ Dir = "db";              Entry = "db.go";                    Port = 6000;  Desc = "DB (Kafka consumer + MySQL)";       ConfigFlag = "-f";            ConfigFile = "etc/db.yaml";                    AllowMultiInstance = $false }
-    data_service    = @{ Dir = "data_service";    Entry = "data_service.go";          Port = 9000;  Desc = "Data Service (multi-zone Redis)"; ConfigFlag = "-f";            ConfigFile = "etc/data_service.yaml";          AllowMultiInstance = $true  }
-    player_locator  = @{ Dir = "player_locator";  Entry = "player_locator.go";        Port = 50200; Desc = "Player Locator (Redis cache)";    ConfigFlag = "-f";            ConfigFile = "etc/player_locator.yaml";        AllowMultiInstance = $true  }
-    login           = @{ Dir = "login";           Entry = "login.go";                 Port = 50000; Desc = "Login (gRPC + etcd)";            ConfigFlag = "-loginService"; ConfigFile = "etc/login.yaml";                 AllowMultiInstance = $true  }
-    scene_manager   = @{ Dir = "scene_manager";   Entry = "scene_manager_service.go"; Port = 60300; Desc = "Scene Manager (Kafka + Redis)";    ConfigFlag = "-f";            ConfigFile = "etc/scene_manager_service.yaml"; AllowMultiInstance = $true  }
+    db              = @{ Dir = "db";              Entry = "db.go";                    Port = 6000;  Desc = "DB (Kafka consumer + MySQL)";       ConfigFlag = "-f";            ConfigFile = "etc/db.yaml";                    AllowMultiInstance = $false; Tier = 0 }
+    data_service    = @{ Dir = "data_service";    Entry = "data_service.go";          Port = 9000;  Desc = "Data Service (multi-zone Redis)"; ConfigFlag = "-f";            ConfigFile = "etc/data_service.yaml";          AllowMultiInstance = $true;  Tier = 0 }
+    player_locator  = @{ Dir = "player_locator";  Entry = "player_locator.go";        Port = 50200; Desc = "Player Locator (Redis cache)";    ConfigFlag = "-f";            ConfigFile = "etc/player_locator.yaml";        AllowMultiInstance = $true;  Tier = 2 }
+    login           = @{ Dir = "login";           Entry = "login.go";                 Port = 50000; Desc = "Login (gRPC + etcd)";            ConfigFlag = "-loginService"; ConfigFile = "etc/login.yaml";                 AllowMultiInstance = $true;  Tier = 3 }
+    scene_manager   = @{ Dir = "scene_manager";   Entry = "scene_manager_service.go"; Port = 60300; Desc = "Scene Manager (Kafka + Redis)";    ConfigFlag = "-f";            ConfigFile = "etc/scene_manager_service.yaml"; AllowMultiInstance = $true;  Tier = 1 }
 }
 
 # Derived per-instance config files live here so the source tree stays clean.
@@ -125,12 +142,18 @@ function Resolve-ServiceList {
     if ($Requested.Count -eq 0) {
         return @($ServiceCatalogue.Keys)
     }
+    # Allow `-Services "a,b,c"` (single comma-joined string) in addition to
+    # `-Services a,b,c` so pwsh -File invocations from .bat work the same way.
+    $expanded = @()
     foreach ($s in $Requested) {
+        $expanded += ($s -split '[,;]') | Where-Object { $_ -ne '' }
+    }
+    foreach ($s in $expanded) {
         if (-not $ServiceCatalogue.Contains($s)) {
             throw "Unknown service '$s'. Run with -Command list to see available services."
         }
     }
-    return $Requested
+    return $expanded
 }
 
 # Returns the requested instance count for a service. Defaults to 1.
@@ -224,6 +247,37 @@ function Read-InstanceEntry {
     return @{ Pid = $procId; Port = $port; Service = $svc }
 }
 
+# Soft TCP LISTEN probe used between tiers. Returns $true once any process is
+# accepting on 127.0.0.1:$Port, or $false on timeout. We deliberately do NOT
+# fail the launch on timeout: this is just a "give earlier tiers a head start"
+# heuristic to avoid first-boot dial races. Runtime services keep using etcd
+# discovery + gRPC reconnect, so rolling upgrades / canary releases are unaffected.
+function Wait-TcpListenReady {
+    param(
+        [int]$Port,
+        [int]$TimeoutSeconds = 10
+    )
+    if ($Port -le 0) { return $true }
+    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    while ((Get-Date) -lt $deadline) {
+        $client = $null
+        try {
+            $client = [System.Net.Sockets.TcpClient]::new()
+            $iar = $client.BeginConnect('127.0.0.1', $Port, $null, $null)
+            if ($iar.AsyncWaitHandle.WaitOne(250) -and $client.Connected) {
+                $client.EndConnect($iar) | Out-Null
+                return $true
+            }
+        } catch {
+            # connection refused / not listening yet
+        } finally {
+            if ($client) { $client.Close() }
+        }
+        Start-Sleep -Milliseconds 200
+    }
+    return $false
+}
+
 function Read-PidFile {
     if (Test-Path $PidFile) {
         $raw = Get-Content $PidFile -Raw | ConvertFrom-Json
@@ -308,6 +362,90 @@ function Resolve-GoExecutablePath {
     return $null
 }
 
+function Start-ServiceInstance {
+    param(
+        [string]$Name,
+        [hashtable]$Info,
+        [int]$Index,
+        [int]$Total,
+        [pscustomobject]$Pids,
+        [switch]$UseExe
+    )
+
+    $svcDir = Join-Path $GoRoot $Info.Dir
+    $instanceKey = Get-InstanceKey -Name $Name -Index $Index -Total $Total
+    $cfg = Resolve-InstanceConfig -Name $Name -Info $Info -Index $Index -Total $Total
+
+    # Skip if already running
+    if ($Pids.PSObject.Properties.Name -contains $instanceKey) {
+        $existing = Read-InstanceEntry -RawValue $Pids.$instanceKey -FallbackService $Name -FallbackPort $cfg.Port
+        if ($existing -and $existing.Pid -gt 0) {
+            try {
+                $proc = Get-Process -Id $existing.Pid -ErrorAction Stop
+                if (-not $proc.HasExited) {
+                    Write-Host "[skip]  $instanceKey (PID $($existing.Pid) already running on :$($existing.Port))" -ForegroundColor Yellow
+                    return $null
+                }
+            } catch {
+                # process gone; will restart
+            }
+        }
+    }
+
+    $logOut  = Join-Path $LogDir "$instanceKey.stdout.log"
+    $logErr  = Join-Path $LogDir "$instanceKey.stderr.log"
+
+    $configFlag = $Info.ConfigFlag
+    $configArg  = $cfg.Path
+
+    if ($UseExe) {
+        $exePath = Resolve-GoExecutablePath -ServiceName $Name -ServiceDir $svcDir
+        if (-not $exePath) {
+            Write-Warning "Skipping '$instanceKey': executable not found. Run -Command build first or place $Name.exe in bin\go_services\ or $svcDir."
+            return $null
+        }
+
+        Write-Host "[start-exe] $instanceKey  :$($cfg.Port)  ($($Info.Desc))" -ForegroundColor Cyan
+
+        $proc = Start-Process -FilePath $exePath `
+            -ArgumentList @($configFlag, $configArg) `
+            -WorkingDirectory $svcDir `
+            -RedirectStandardOutput $logOut `
+            -RedirectStandardError  $logErr `
+            -PassThru `
+            -WindowStyle Hidden
+    }
+    else {
+        Write-Host "[start] $instanceKey  :$($cfg.Port)  ($($Info.Desc))" -ForegroundColor Cyan
+
+        $proc = Start-Process -FilePath "go" `
+            -ArgumentList @("run", $Info.Entry, $configFlag, $configArg) `
+            -WorkingDirectory $svcDir `
+            -RedirectStandardOutput $logOut `
+            -RedirectStandardError  $logErr `
+            -PassThru `
+            -WindowStyle Hidden
+    }
+
+    $entry = [pscustomobject]@{
+        Pid     = $proc.Id
+        Port    = $cfg.Port
+        Service = $Name
+    }
+    $Pids | Add-Member -NotePropertyName $instanceKey -NotePropertyValue $entry -Force
+    if ($cfg.Derived) {
+        Write-Host "        PID $($proc.Id)  cfg -> $($cfg.FullPath)" -ForegroundColor DarkGray
+    }
+    Write-Host "        logs -> run\logs\go_services\$instanceKey.*.log" -ForegroundColor DarkGray
+
+    return [pscustomobject]@{
+        InstanceKey = $instanceKey
+        LogFile     = $logOut
+        Port        = $cfg.Port
+        Tier        = if ($Info.ContainsKey('Tier')) { [int]$Info.Tier } else { 99 }
+    }
+}
+
 function Invoke-Start {
     param(
         [switch]$UseExe
@@ -319,92 +457,89 @@ function Invoke-Start {
 
     if (-not (Test-Path $LogDir)) { New-Item -ItemType Directory -Path $LogDir -Force | Out-Null }
 
+    # Build a flat plan of (name, index, total, info, tier) entries. Validation
+    # (multi-instance allow, missing dirs) happens here so we can still group
+    # by tier afterwards without re-scanning.
+    $plan = @()
     foreach ($name in $names) {
         $info = $ServiceCatalogue[$name]
         $svcDir = Join-Path $GoRoot $info.Dir
-
         if (-not (Test-Path $svcDir)) {
             Write-Warning "Skipping '$name': directory $svcDir does not exist."
             continue
         }
-
         $count = Get-ServiceInstanceCount -Name $name
-
+        $tier  = if ($info.ContainsKey('Tier')) { [int]$info.Tier } else { 99 }
         for ($i = 1; $i -le $count; $i++) {
-            $instanceKey = Get-InstanceKey -Name $name -Index $i -Total $count
-            $cfg = Resolve-InstanceConfig -Name $name -Info $info -Index $i -Total $count
-
-            # Skip if already running
-            if ($pids.PSObject.Properties.Name -contains $instanceKey) {
-                $existing = Read-InstanceEntry -RawValue $pids.$instanceKey -FallbackService $name -FallbackPort $cfg.Port
-                if ($existing -and $existing.Pid -gt 0) {
-                    try {
-                        $proc = Get-Process -Id $existing.Pid -ErrorAction Stop
-                        if (-not $proc.HasExited) {
-                            Write-Host "[skip]  $instanceKey (PID $($existing.Pid) already running on :$($existing.Port))" -ForegroundColor Yellow
-                            continue
-                        }
-                    } catch {
-                        # process gone; will restart
-                    }
-                }
+            $plan += [pscustomobject]@{
+                Name = $name; Info = $info; Index = $i; Total = $count; Tier = $tier
             }
-
-            $logOut  = Join-Path $LogDir "$instanceKey.stdout.log"
-            $logErr  = Join-Path $LogDir "$instanceKey.stderr.log"
-
-            $configFlag = $info.ConfigFlag
-            $configArg  = $cfg.Path
-
-            if ($UseExe) {
-                $exePath = Resolve-GoExecutablePath -ServiceName $name -ServiceDir $svcDir
-                if (-not $exePath) {
-                    Write-Warning "Skipping '$instanceKey': executable not found. Run -Command build first or place $name.exe in bin\go_services\ or $svcDir."
-                    continue
-                }
-
-                Write-Host "[start-exe] $instanceKey  :$($cfg.Port)  ($($info.Desc))" -ForegroundColor Cyan
-
-                $proc = Start-Process -FilePath $exePath `
-                    -ArgumentList @($configFlag, $configArg) `
-                    -WorkingDirectory $svcDir `
-                    -RedirectStandardOutput $logOut `
-                    -RedirectStandardError  $logErr `
-                    -PassThru `
-                    -WindowStyle Hidden
-            }
-            else {
-                Write-Host "[start] $instanceKey  :$($cfg.Port)  ($($info.Desc))" -ForegroundColor Cyan
-
-                $proc = Start-Process -FilePath "go" `
-                    -ArgumentList @("run", $info.Entry, $configFlag, $configArg) `
-                    -WorkingDirectory $svcDir `
-                    -RedirectStandardOutput $logOut `
-                    -RedirectStandardError  $logErr `
-                    -PassThru `
-                    -WindowStyle Hidden
-            }
-
-            $entry = [pscustomobject]@{
-                Pid     = $proc.Id
-                Port    = $cfg.Port
-                Service = $name
-            }
-            $pids | Add-Member -NotePropertyName $instanceKey -NotePropertyValue $entry -Force
-            if ($cfg.Derived) {
-                Write-Host "        PID $($proc.Id)  cfg -> $($cfg.FullPath)" -ForegroundColor DarkGray
-            }
-            Write-Host "        logs -> run\logs\go_services\$instanceKey.*.log" -ForegroundColor DarkGray
-            $launchedServices += @{ Name = $instanceKey; LogFile = $logOut }
         }
     }
 
-    Write-PidFile $pids
+    if ($plan.Count -eq 0) {
+        Write-Host "No services to launch." -ForegroundColor Yellow
+        return
+    }
+
+    if ($NoTier) {
+        # Legacy parallel path: launch every instance back-to-back, then wait
+        # for startup banners at the end. Useful when caller knows there is no
+        # cross-service dial dependency to honor.
+        foreach ($p in $plan) {
+            $launched = Start-ServiceInstance -Name $p.Name -Info $p.Info -Index $p.Index -Total $p.Total -Pids $pids -UseExe:$UseExe
+            if ($launched) { $launchedServices += $launched }
+        }
+        Write-PidFile $pids
+        if ($launchedServices.Count -gt 0) {
+            Write-Host "`nWaiting for startup confirmation..." -ForegroundColor DarkGray
+            foreach ($svc in $launchedServices) {
+                Wait-ForStartupBanner -LogFile $svc.LogFile -ServiceName $svc.InstanceKey
+            }
+        }
+        Write-Host "`nAll requested services launched. Use -Command status to check health." -ForegroundColor Green
+        return
+    }
+
+    # Tier-staged path. Group plan entries by tier ascending. Within a tier we
+    # launch all instances in parallel, then issue a TCP LISTEN probe for each
+    # before moving on. The probe is a soft gate: timeout warns and continues
+    # so a stuck service never blocks the whole batch.
+    $tiers = $plan | Group-Object -Property Tier | Sort-Object { [int]$_.Name }
+    foreach ($tierGroup in $tiers) {
+        $tierName = $tierGroup.Name
+        $entries  = $tierGroup.Group
+        Write-Host "`n--- Tier $tierName ($($entries.Count) instance(s)) ---" -ForegroundColor Cyan
+
+        $launchedThisTier = @()
+        foreach ($p in $entries) {
+            $launched = Start-ServiceInstance -Name $p.Name -Info $p.Info -Index $p.Index -Total $p.Total -Pids $pids -UseExe:$UseExe
+            if ($launched) {
+                $launchedServices += $launched
+                $launchedThisTier += $launched
+            }
+        }
+
+        # Persist PIDs after each tier so a Ctrl+C between tiers does not lose state.
+        Write-PidFile $pids
+
+        if ($launchedThisTier.Count -gt 0) {
+            Write-Host "  waiting up to ${TierReadySeconds}s for tier $tierName to LISTEN..." -ForegroundColor DarkGray
+            foreach ($svc in $launchedThisTier) {
+                $ok = Wait-TcpListenReady -Port $svc.Port -TimeoutSeconds $TierReadySeconds
+                if ($ok) {
+                    Write-Host "  [ready]   $($svc.InstanceKey) :$($svc.Port)" -ForegroundColor Green
+                } else {
+                    Write-Host "  [warn]    $($svc.InstanceKey) :$($svc.Port) not LISTEN within ${TierReadySeconds}s; continuing anyway" -ForegroundColor Yellow
+                }
+            }
+        }
+    }
 
     if ($launchedServices.Count -gt 0) {
-        Write-Host "`nWaiting for startup confirmation..." -ForegroundColor DarkGray
+        Write-Host "`nWaiting for startup banners..." -ForegroundColor DarkGray
         foreach ($svc in $launchedServices) {
-            Wait-ForStartupBanner -LogFile $svc.LogFile -ServiceName $svc.Name
+            Wait-ForStartupBanner -LogFile $svc.LogFile -ServiceName $svc.InstanceKey
         }
     }
 
