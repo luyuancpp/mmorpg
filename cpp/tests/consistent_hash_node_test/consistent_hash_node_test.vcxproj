@@ -72,8 +72,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>../../../bin/</OutDir>
-    <IntDir>../../../bin/vsout//$(ProjectName)/</IntDir>
+    <OutDir>../../../build/cpp/tests/</OutDir>
+    <IntDir>../../../build/cpp/intermediate/tests/$(ProjectName)/</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

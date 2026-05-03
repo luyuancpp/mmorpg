@@ -80,8 +80,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>../../../bin/</OutDir>
-    <IntDir>../../../bin/vsout//$(ProjectName)/</IntDir>
+    <OutDir>../../../build/cpp/tests/</OutDir>
+    <IntDir>../../../build/cpp/intermediate/tests/$(ProjectName)/</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>

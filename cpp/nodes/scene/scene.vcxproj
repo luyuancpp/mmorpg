@@ -69,8 +69,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>../../../bin/vsout/</OutDir>
-    <IntDir>../../../bin/vsout/$(ProjectName)/</IntDir>
+    <OutDir>../../../build/cpp/nodes/</OutDir>
+    <IntDir>../../../build/cpp/intermediate/nodes/$(ProjectName)/</IntDir>
     <GenerateManifest>false</GenerateManifest>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">

@@ -138,7 +138,7 @@ To add a new C++ node, use the templates under `cpp/nodes/_template/`:
 
 ```powershell
 # C++ tests (example)
-cpp\tests\bag_test\x64\Debug\bag_test.exe --gtest_filter=BagTest.AddNewGridItem
+build\cpp\tests\bag_test.exe --gtest_filter=BagTest.AddNewGridItem
 
 # Go tests
 cd go\login && go test ./...

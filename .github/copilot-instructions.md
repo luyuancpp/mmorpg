@@ -113,7 +113,7 @@
 - **Build (Windows solution)**: `msbuild game.sln /m /p:Configuration=Debug /p:Platform=x64`
 - **Build a node with CMake (example: scene)**: `cd cpp\nodes\scene && cmake -S . -B build && cmake --build build --config Debug`
 - **Run C++ tests**: test projects are under `cpp\tests\` (run in Visual Studio Test Explorer or execute the built test binary directly).
-- **Run a single C++ test**: `cpp\tests\bag_test\x64\Debug\bag_test.exe --gtest_filter=BagTest.AddNewGridItem`
+- **Run a single C++ test**: `build\cpp\tests\bag_test.exe --gtest_filter=BagTest.AddNewGridItem`
 - **Lint C++**: use `clang-tidy` with `cpp\.clang-tidy` (example: `clang-tidy <file.cpp> --config-file=cpp\.clang-tidy`)
 
 ### Go (Microservices)
