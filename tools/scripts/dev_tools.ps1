@@ -67,6 +67,10 @@ param(
     # Cap = 32 per service. 'db' is single-instance only.
     [object]$GoCounts = @{},
     [int]$GoPortStride = 1,
+    # Disable tier-staged Go service startup (parallel launch like before).
+    [switch]$NoTier,
+    # Per-tier readiness budget (seconds). Soft TCP LISTEN probe per instance.
+    [int]$TierReadySeconds = 10,
     # cpp-node-* / dev-* commands
     [string[]]$CppNodes = @(),
     [int]$GateCount = 1,
@@ -609,8 +613,8 @@ switch ($Command) {
     "k8s-push-image" { Invoke-K8sImage -ImageCommand "push-image" }
     "k8s-release-zone" { Invoke-K8sImage -ImageCommand "release-zone" }
     "k8s-release-all" { Invoke-K8sImage -ImageCommand "release-all" }
-    "go-svc-start"  { & (Join-Path $ScriptDir "go_services.ps1") -Command start  -Services $GoServices -Counts $GoCounts -PortStride $GoPortStride }
-    "go-svc-start-exe"  { & (Join-Path $ScriptDir "go_services.ps1") -Command start-exe  -Services $GoServices -Counts $GoCounts -PortStride $GoPortStride }
+    "go-svc-start"  { & (Join-Path $ScriptDir "go_services.ps1") -Command start  -Services $GoServices -Counts $GoCounts -PortStride $GoPortStride -NoTier:$NoTier -TierReadySeconds $TierReadySeconds }
+    "go-svc-start-exe"  { & (Join-Path $ScriptDir "go_services.ps1") -Command start-exe  -Services $GoServices -Counts $GoCounts -PortStride $GoPortStride -NoTier:$NoTier -TierReadySeconds $TierReadySeconds }
     "go-svc-stop"   { & (Join-Path $ScriptDir "go_services.ps1") -Command stop   -Services $GoServices }
     "go-svc-status" { & (Join-Path $ScriptDir "go_services.ps1") -Command status }
     "go-svc-list"   { & (Join-Path $ScriptDir "go_services.ps1") -Command list   }
@@ -624,16 +628,16 @@ switch ($Command) {
     "cpp-node-status" { & (Join-Path $ScriptDir "cpp_nodes.ps1") -Command status }
     "cpp-node-list"   { & (Join-Path $ScriptDir "cpp_nodes.ps1") -Command list   }
     "dev-start" {
-        Write-Host "=== Starting C++ nodes ==="  -ForegroundColor Cyan
+        Write-Host "=== Starting Go services ===" -ForegroundColor Cyan
+        & (Join-Path $ScriptDir "go_services.ps1") -Command start -Services $GoServices -Counts $GoCounts -PortStride $GoPortStride -NoTier:$NoTier -TierReadySeconds $TierReadySeconds
+        Write-Host "`n=== Starting C++ nodes ==="  -ForegroundColor Cyan
         & (Join-Path $ScriptDir "cpp_nodes.ps1") -Command start -Nodes $CppNodes -GateCount $GateCount -SceneCount $SceneCount
-        Write-Host "`n=== Starting Go services ===" -ForegroundColor Cyan
-        & (Join-Path $ScriptDir "go_services.ps1") -Command start -Services $GoServices -Counts $GoCounts -PortStride $GoPortStride
     }
     "dev-start-exe" {
-        Write-Host "=== Starting C++ nodes ==="  -ForegroundColor Cyan
+        Write-Host "=== Starting Go services (exe) ===" -ForegroundColor Cyan
+        & (Join-Path $ScriptDir "go_services.ps1") -Command start-exe -Services $GoServices -Counts $GoCounts -PortStride $GoPortStride -NoTier:$NoTier -TierReadySeconds $TierReadySeconds
+        Write-Host "`n=== Starting C++ nodes ==="  -ForegroundColor Cyan
         & (Join-Path $ScriptDir "cpp_nodes.ps1") -Command start -Nodes $CppNodes -GateCount $GateCount -SceneCount $SceneCount
-        Write-Host "`n=== Starting Go services (exe) ===" -ForegroundColor Cyan
-        & (Join-Path $ScriptDir "go_services.ps1") -Command start-exe -Services $GoServices -Counts $GoCounts -PortStride $GoPortStride
     }
     "dev-stop" {
         Write-Host "=== Stopping Go services ===" -ForegroundColor Cyan

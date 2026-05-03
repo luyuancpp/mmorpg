@@ -16,6 +16,7 @@ if "%~1"=="" goto :menu
 
 set "CMD=%~1"
 if /I "%CMD%"=="start"     goto :start
+if /I "%CMD%"=="start-multi" goto :start_multi
 if /I "%CMD%"=="start-cpp" goto :start_cpp
 if /I "%CMD%"=="start-go"  goto :start_go
 if /I "%CMD%"=="start-satoken" goto :start_satoken
@@ -69,10 +70,11 @@ echo     16. Clean logs  (delete all log files)
 echo     17. UI          (mprocs TUI dashboard)
 echo     18. Start SA-Token  (local Spring Boot auth app)
 echo     19. Stop SA-Token
+echo     20. Start multi (2 gate + 4 scene + login*2 + scene_mgr*2 + locator*2 + data*2)
 echo.
 echo     0.  Exit
 echo.
-set /p "CHOICE=  Pick [0-19]: "
+set /p "CHOICE=  Pick [0-20]: "
 
 if "%CHOICE%"=="0" exit /b 0
 
@@ -95,6 +97,7 @@ if "%CHOICE%"=="16" call :clean_logs  & goto :menu_return
 if "%CHOICE%"=="17" call :ui          & goto :menu_return
 if "%CHOICE%"=="18" call :start_satoken & goto :menu_return
 if "%CHOICE%"=="19" call :stop_satoken  & goto :menu_return
+if "%CHOICE%"=="20" call :start_multi   & goto :menu_return
 
 echo   Invalid choice.
 goto :menu
@@ -113,6 +116,29 @@ if errorlevel 1 ( echo Build failed. & pause & exit /b 1 )
 echo.
 echo [2/2] Starting C++ nodes + Go services...
 %PS% -File tools\scripts\dev_tools.ps1 -Command dev-start-exe -GateCount 2 -SceneCount 4
+if errorlevel 1 ( echo Start failed. & pause & exit /b 1 )
+echo.
+echo Done. Run "dev status" to check.
+exit /b 0
+
+:: ================================================================
+::  Multi-instance launch: every Go app-tier service runs 2 copies. The
+::  tier-staged launcher in go_services.ps1 ensures lower tiers (db,
+::  data_service, player_locator) are LISTEN before login/scene_manager
+::  start, avoiding first-boot dial races. This is a dev-only convenience;
+::  it does NOT change runtime discovery (etcd) or break rolling/canary
+::  deploys -- those still work because clients re-resolve via etcd.
+::  Override counts: dev start-multi "login=3,scene_manager=2"
+:: ================================================================
+:start_multi
+set "GO_COUNTS=%~2"
+if "%GO_COUNTS%"=="" set "GO_COUNTS=login=2,scene_manager=2,player_locator=2,data_service=2"
+echo [1/2] Building Go executables...
+%PS% -File tools\scripts\dev_tools.ps1 -Command go-svc-build
+if errorlevel 1 ( echo Build failed. & pause & exit /b 1 )
+echo.
+echo [2/2] Starting (multi-instance, tier-staged): GoCounts=%GO_COUNTS%
+%PS% -File tools\scripts\dev_tools.ps1 -Command dev-start-exe -GateCount 2 -SceneCount 4 -GoCounts "%GO_COUNTS%"
 if errorlevel 1 ( echo Start failed. & pause & exit /b 1 )
 echo.
 echo Done. Run "dev status" to check.
@@ -503,6 +529,9 @@ echo   Command line:   dev ^<command^>
 echo.
 echo   Commands:
 echo     start          Build Go exe + start all (2 gate, 4 scene)
+echo     start-multi    Build + start with multiple Go instances per service
+echo                    (default: login=2,scene_manager=2,player_locator=2,data_service=2)
+echo                    Override:  dev start-multi "login=3,scene_manager=2"
 echo     start-cpp      Start C++ nodes only (gate + scene)
 echo     start-go       Build + start Go services only
 echo     start-satoken  Start local SA-Token dev app
