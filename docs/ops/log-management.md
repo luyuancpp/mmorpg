@@ -1,19 +1,28 @@
 # Log Management
 
-## Local Development
+## Directory Layout (Local Development)
+
+Runtime artifacts live under `run/`, separate from build outputs in `bin/`:
+
+| Path | Purpose |
+|------|---------|
+| `run/logs/go_services/` | Go service stdout/stderr logs |
+| `run/logs/cpp_nodes/`   | C++ node stdout/stderr logs |
+| `run/logs/sa_token.log` | SA-Token (Java) dev server log |
+| `run/logs/robot/`       | Robot load-test client logs |
+| `run/pids/*.pid.json`   | PID files for tracked processes |
+| `run/scratch/`          | Transient debug dumps and test outputs |
+
+`bin/` remains the C++ runtime working directory (hosts `gate.exe`, `scene.exe`, `bin/etc/`, `bin/nodes/`, `bin/script/`, plus the built Go binaries in `bin/go_services/`).
 
 Use `dev.bat` to manage logs:
 
 ```bash
-dev clean-logs    # Delete all log files under bin\logs
+dev clean-logs    # Delete all log files under run\logs
 dev logs          # Interactive menu to pick a process to tail
 dev logs <name>   # Tail a specific process (e.g. dev logs login)
 dev logs all      # Dump last 60 lines of every process
 ```
-
-Log directories:
-- Go services: `bin\logs\go_services\`
-- C++ nodes: `bin\logs\cpp_nodes\`
 
 ## Production (K8s)
 
