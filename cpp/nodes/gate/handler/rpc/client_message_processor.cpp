@@ -262,17 +262,23 @@ void ParseMessageFromRequestBody(Message &message, const Request &request, const
 void RpcClientSessionHandler::HandleConnectionDisconnection(const muduo::net::TcpConnectionPtr &conn)
 {
 	const auto sessionId = GetSessionId(conn);
+	const std::string peer = conn ? conn->peerAddress().toIpPort() : std::string{"<null>"};
 
 	// Retrieve session info before erasing so we can notify both Login and Scene.
 	auto &sessions = tlsSessionManager.sessions();
 	auto sessionIt = sessions.find(sessionId);
 
-	if (sessionIt != sessions.end())
+	const bool sessionFound = (sessionIt != sessions.end());
+	bool sceneNotified = false;
+	uint32_t sceneNodeId = 0;
+
+	if (sessionFound)
 	{
 		// Notify Scene to exit the player immediately (saves state and stops broadcasting).
 		if (sessionIt->second.HasNodeId(SceneNodeService))
 		{
 			const auto sceneEntityId = sessionIt->second.GetNodeId(SceneNodeService);
+			sceneNodeId = sceneEntityId;
 			auto &sceneRegistry = tlsNodeContextManager.GetRegistry(SceneNodeService);
 			entt::entity sceneEntity{sceneEntityId};
 			if (sceneRegistry.valid(sceneEntity))
@@ -284,6 +290,7 @@ void RpcClientSessionHandler::HandleConnectionDisconnection(const muduo::net::Tc
 					exitMsg.set_session_id(sessionId);
 					exitMsg.mutable_message_content()->set_message_id(ScenePlayerExitGameMessageId);
 					(*rpcClient)->CallRemoteMethod(SceneProcessClientPlayerMessageMessageId, exitMsg);
+					sceneNotified = true;
 				}
 			}
 		}
@@ -305,7 +312,12 @@ void RpcClientSessionHandler::HandleConnectionDisconnection(const muduo::net::Tc
 
 	sessions.erase(sessionId);
 
-	LOG_TRACE << "Disconnected session id: " << sessionId;
+	LOG_INFO << "Client disconnected, session_id=" << sessionId
+			 << ", peer=" << peer
+			 << ", session_found=" << sessionFound
+			 << ", scene_node_id=" << sceneNodeId
+			 << ", scene_notified=" << sceneNotified
+			 << ", remaining_sessions=" << sessions.size();
 }
 
 // High-water-mark: output buffer exceeded threshold — client not consuming (disconnect/cheat/slow), force close.
@@ -346,7 +358,10 @@ void RpcClientSessionHandler::HandleConnectionEstablished(const muduo::net::TcpC
 
 	tlsSessionManager.sessions().emplace(sessionId, std::move(session));
 
-	LOG_TRACE << "New connection, assigned session id: " << sessionId;
+	const std::string peer = conn ? conn->peerAddress().toIpPort() : std::string{"<null>"};
+	LOG_INFO << "Client connected, session_id=" << sessionId
+			 << ", peer=" << peer
+			 << ", total_sessions=" << tlsSessionManager.sessions().size();
 }
 
 // Handle messages related to the game node

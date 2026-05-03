@@ -2,12 +2,14 @@
 setlocal enabledelayedexpansion
 cd /d "%~dp0"
 
-set "GO_LOG=bin\logs\go_services"
-set "CPP_LOG=bin\logs\cpp_nodes"
+rem Runtime artifacts (logs, pid files) live under run/, separate from build
+rem outputs in bin/. See docs/ops/log-management.md.
+set "GO_LOG=run\logs\go_services"
+set "CPP_LOG=run\logs\cpp_nodes"
 set "SATOKEN_TITLE=sa-token"
 set "SATOKEN_DIR=java\springboot_satoken_auth_starter"
-set "SATOKEN_LOG=bin\logs\sa_token.log"
-set "SATOKEN_PID=bin\sa_token.pid"
+set "SATOKEN_LOG=run\logs\sa_token.log"
+set "SATOKEN_PID=run\pids\sa_token.pid"
 set "PS=pwsh -NoProfile -ExecutionPolicy Bypass"
 
 if "%~1"=="" goto :menu
@@ -312,7 +314,8 @@ if not errorlevel 1 (
     echo SA-Token is already running.
     exit /b 0
 )
-if not exist "bin\logs" mkdir "bin\logs"
+if not exist "run\logs" mkdir "run\logs"
+if not exist "run\pids" mkdir "run\pids"
 echo Starting SA-Token dev server...
 %PS% -Command "$wd='%CD%\%SATOKEN_DIR%'; $log='%CD%\%SATOKEN_LOG%'; $pidFile='%CD%\%SATOKEN_PID%'; $maven='%MAVEN_CMD%'; $cmd='call "' + $maven + '" spring-boot:run >> "' + $log + '" 2>&1'; $p=Start-Process -FilePath 'cmd.exe' -ArgumentList '/c',$cmd -WorkingDirectory $wd -WindowStyle Hidden -PassThru; Set-Content -Path $pidFile -Value $p.Id"
 if errorlevel 1 ( echo SA-Token start failed. & pause & exit /b 1 )
@@ -519,7 +522,7 @@ echo     proto          Regenerate proto code
 echo     export         Run Excel data table exporter (Python)
 echo     export ^<cfg^>   Use custom config (default: exporter_config.yaml)
 echo     gen            Export tables + regenerate proto (both)
-echo     clean-logs     Delete all log files under bin\logs
+echo     clean-logs     Delete all log files under run\logs
 echo     ui             mprocs TUI dashboard (all processes)
 echo     ui-cpp         mprocs TUI (C++ nodes only)
 echo     ui-go          mprocs TUI (Go services only)
