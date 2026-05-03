@@ -54,8 +54,14 @@ $ErrorActionPreference = "Stop"
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $RepoRoot  = Resolve-Path (Join-Path $ScriptDir "..\..")
 $BinDir    = Join-Path $RepoRoot "bin"
-$PidFile   = Join-Path $RepoRoot "bin\cpp_nodes.pid.json"
-$LogDir    = Join-Path $RepoRoot "bin\logs\cpp_nodes"
+# Runtime artifacts (logs, pid files) live under run/, kept separate from
+# build outputs and the C++ runtime working dir in bin/.
+# See docs/ops/log-management.md.
+$RunDir    = Join-Path $RepoRoot "run"
+$PidFile   = Join-Path $RunDir   "pids\cpp_nodes.pid.json"
+$LogDir    = Join-Path $RunDir   "logs\cpp_nodes"
+# Legacy fallback for pid file written under bin/ before the run/ split.
+$LegacyPidFile = Join-Path $RepoRoot "bin\cpp_nodes.pid.json"
 
 # ── Node catalogue ───────────────────────────────────────────────
 $NodeCatalogue = [ordered]@{
@@ -129,6 +135,9 @@ function Read-PidFile {
     if (Test-Path $PidFile) {
         return Get-Content $PidFile -Raw | ConvertFrom-Json
     }
+    if (Test-Path $LegacyPidFile) {
+        return Get-Content $LegacyPidFile -Raw | ConvertFrom-Json
+    }
     return [pscustomobject]@{}
 }
 
@@ -188,7 +197,7 @@ function Invoke-Start {
                 -WindowStyle Hidden
 
             $pids | Add-Member -NotePropertyName $instanceKey -NotePropertyValue $proc.Id -Force
-            Write-Host "        PID $($proc.Id)  logs -> bin\logs\cpp_nodes\$instanceKey.*.log" -ForegroundColor DarkGray
+            Write-Host "        PID $($proc.Id)  logs -> run\logs\cpp_nodes\$instanceKey.*.log" -ForegroundColor DarkGray
             $launchedInstances += @{ Key = $instanceKey; LogFile = $logOut }
 
             # Small delay between launches (same pattern as original start_server.bat)

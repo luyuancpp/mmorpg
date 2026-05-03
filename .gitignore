@@ -65,10 +65,13 @@ cmake-build-debug*/
 vsout/
 bin/vsout/
 
-# Binary output logs (transient)
+# Runtime artifacts (logs, pid files, scratch dumps) — separate from build outputs in bin/
+run/
+
+# Binary output logs (transient, legacy location)
 bin/*.txt
 
-# Runtime node logs
+# Runtime node logs (legacy location, kept for safety while migrating to run/logs)
 bin/logs/
 
 # Python
@@ -100,6 +103,8 @@ bin/XMLGoogleTestResults.xml
 bin/*.testdurations
 bin/*.bak
 bin/cpp_nodes.pid.json
+bin/sa_token.pid
+bin/robot_logs/
 bin/start_server.*
 bin/stop_server.*
 

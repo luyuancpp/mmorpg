@@ -393,7 +393,7 @@
 			"args": [
 				"-NoProfile",
 				"-Command",
-				"$f = Get-ChildItem '${workspaceFolder}/bin/logs/go_services/${input:processName}.stderr.log','${workspaceFolder}/bin/logs/cpp_nodes/${input:processName}.stderr.log' -ErrorAction SilentlyContinue | Select-Object -First 1; if ($f) { Get-Content $f.FullName -Tail 100 -Wait } else { Write-Host 'Log not found for: ${input:processName}'; pause }"
+				"$f = Get-ChildItem '${workspaceFolder}/run/logs/go_services/${input:processName}.stderr.log','${workspaceFolder}/run/logs/cpp_nodes/${input:processName}.stderr.log','${workspaceFolder}/bin/logs/go_services/${input:processName}.stderr.log','${workspaceFolder}/bin/logs/cpp_nodes/${input:processName}.stderr.log' -ErrorAction SilentlyContinue | Select-Object -First 1; if ($f) { Get-Content $f.FullName -Tail 100 -Wait } else { Write-Host 'Log not found for: ${input:processName}'; pause }"
 			],
 			"problemMatcher": [],
 			"presentation": {

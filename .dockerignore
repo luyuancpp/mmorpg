@@ -43,3 +43,4 @@ test/
 # Logs
 *.log
 bin/logs/
+run/

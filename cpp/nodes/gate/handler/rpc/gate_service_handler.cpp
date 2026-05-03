@@ -157,7 +157,7 @@ void GateHandler::BroadcastToPlayers(::google::protobuf::RpcController* controll
 		auto sessionIt = tlsSessionManager.sessions().find(sessionId);
 		if (sessionIt == tlsSessionManager.sessions().end())
 		{
-			LOG_WARN << "Connection ID not found for BroadCast2PlayerMessage, session ID: " << sessionId << ", message ID:" << request->message_content().message_id();
+			LOG_INFO << "Connection ID not found for BroadCast2PlayerMessage, session ID: " << sessionId << ", message ID:" << request->message_content().message_id();
 			return;
 		}
 		GetGateCodec().send(sessionIt->second.conn, request->message_content());

@@ -28,6 +28,7 @@ param(
         "x64",
         "bin",
         "bin/logs",
+        "run",
         "generated",
         "cpp/generated",
         "go/generated",

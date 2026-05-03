@@ -43,8 +43,15 @@ $ErrorActionPreference = "Stop"
 $ScriptDir  = Split-Path -Parent $MyInvocation.MyCommand.Path
 $RepoRoot   = Resolve-Path (Join-Path $ScriptDir "..\..")
 $GoRoot     = Join-Path $RepoRoot "go"
-$PidFile    = Join-Path $RepoRoot "bin\go_services.pid.json"
-$LogDir     = Join-Path $RepoRoot "bin\logs\go_services"
+# Runtime artifacts (logs, pid files) live under run/, kept separate from
+# build outputs in bin/. See docs/ops/log-management.md.
+$RunDir     = Join-Path $RepoRoot "run"
+$PidFile    = Join-Path $RunDir   "pids\go_services.pid.json"
+$LogDir     = Join-Path $RunDir   "logs\go_services"
+# Legacy fallback (older pid files written under bin/ before the run/ split).
+$LegacyPidFile = Join-Path $RepoRoot "bin\go_services.pid.json"
+# Built Go binaries still ship under bin/go_services\ alongside the C++ exes
+# because that directory is the runtime working dir for local launches.
 $GoBinDir   = Join-Path $RepoRoot "bin\go_services"
 
 # ── Service catalogue ────────────────────────────────────────────────
@@ -74,6 +81,13 @@ function Resolve-ServiceList {
 function Read-PidFile {
     if (Test-Path $PidFile) {
         $raw = Get-Content $PidFile -Raw | ConvertFrom-Json
+        if ($null -eq $raw) { return [pscustomobject]@{} }
+        return $raw
+    }
+    # One-time migration: pick up legacy pid file if present, then rewrite
+    # under the new run/ location on next Write-PidFile.
+    if (Test-Path $LegacyPidFile) {
+        $raw = Get-Content $LegacyPidFile -Raw | ConvertFrom-Json
         if ($null -eq $raw) { return [pscustomobject]@{} }
         return $raw
     }
@@ -214,7 +228,7 @@ function Invoke-Start {
         }
 
         $pids | Add-Member -NotePropertyName $name -NotePropertyValue $proc.Id -Force
-        Write-Host "        PID $($proc.Id)  logs -> bin\logs\go_services\$name.*.log" -ForegroundColor DarkGray
+        Write-Host "        PID $($proc.Id)  logs -> run\logs\go_services\$name.*.log" -ForegroundColor DarkGray
         $launchedServices += @{ Name = $name; LogFile = $logOut }
     }
 
