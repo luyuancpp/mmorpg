@@ -61,6 +61,12 @@ param(
     [string]$KubeConfig = "",
     # go-svc-* commands
     [string[]]$GoServices = @(),
+    # Per-service instance counts for local multi-open of Go services. Accepts:
+    #   * hashtable (in-session use): -GoCounts @{ login = 2; scene_manager = 2 }
+    #   * string list (pwsh -File):   -GoCounts login=2,scene_manager=2
+    # Cap = 32 per service. 'db' is single-instance only.
+    [object]$GoCounts = @{},
+    [int]$GoPortStride = 1,
     # cpp-node-* / dev-* commands
     [string[]]$CppNodes = @(),
     [int]$GateCount = 1,
@@ -518,8 +524,8 @@ Useful proto-gen flags:
     -UseGoRun      Force running go run ./cmd
 
 Go micro-service commands (local dev):
-    -Command go-svc-start [-GoServices login,db,...]
-    -Command go-svc-start-exe [-GoServices login,db,...]
+    -Command go-svc-start [-GoServices login,db,...] [-GoCounts @{login=2;scene_manager=2}] [-GoPortStride N]
+    -Command go-svc-start-exe [-GoServices login,db,...] [-GoCounts @{login=2}] [-GoPortStride N]
     -Command go-svc-stop  [-GoServices login,...]
     -Command go-svc-status
     -Command go-svc-list
@@ -543,8 +549,8 @@ C++ node commands (local dev):
     -Command cpp-node-list
 
 Unified dev commands (C++ nodes + Go services):
-    -Command dev-start  [-GateCount N] [-SceneCount N]
-    -Command dev-start-exe  [-GateCount N] [-SceneCount N]
+    -Command dev-start  [-GateCount N] [-SceneCount N] [-GoCounts @{login=2}]
+    -Command dev-start-exe  [-GateCount N] [-SceneCount N] [-GoCounts @{login=2}]
     -Command dev-stop
     -Command dev-status
 
@@ -603,8 +609,8 @@ switch ($Command) {
     "k8s-push-image" { Invoke-K8sImage -ImageCommand "push-image" }
     "k8s-release-zone" { Invoke-K8sImage -ImageCommand "release-zone" }
     "k8s-release-all" { Invoke-K8sImage -ImageCommand "release-all" }
-    "go-svc-start"  { & (Join-Path $ScriptDir "go_services.ps1") -Command start  -Services $GoServices }
-    "go-svc-start-exe"  { & (Join-Path $ScriptDir "go_services.ps1") -Command start-exe  -Services $GoServices }
+    "go-svc-start"  { & (Join-Path $ScriptDir "go_services.ps1") -Command start  -Services $GoServices -Counts $GoCounts -PortStride $GoPortStride }
+    "go-svc-start-exe"  { & (Join-Path $ScriptDir "go_services.ps1") -Command start-exe  -Services $GoServices -Counts $GoCounts -PortStride $GoPortStride }
     "go-svc-stop"   { & (Join-Path $ScriptDir "go_services.ps1") -Command stop   -Services $GoServices }
     "go-svc-status" { & (Join-Path $ScriptDir "go_services.ps1") -Command status }
     "go-svc-list"   { & (Join-Path $ScriptDir "go_services.ps1") -Command list   }
@@ -621,13 +627,13 @@ switch ($Command) {
         Write-Host "=== Starting C++ nodes ==="  -ForegroundColor Cyan
         & (Join-Path $ScriptDir "cpp_nodes.ps1") -Command start -Nodes $CppNodes -GateCount $GateCount -SceneCount $SceneCount
         Write-Host "`n=== Starting Go services ===" -ForegroundColor Cyan
-        & (Join-Path $ScriptDir "go_services.ps1") -Command start -Services $GoServices
+        & (Join-Path $ScriptDir "go_services.ps1") -Command start -Services $GoServices -Counts $GoCounts -PortStride $GoPortStride
     }
     "dev-start-exe" {
         Write-Host "=== Starting C++ nodes ==="  -ForegroundColor Cyan
         & (Join-Path $ScriptDir "cpp_nodes.ps1") -Command start -Nodes $CppNodes -GateCount $GateCount -SceneCount $SceneCount
         Write-Host "`n=== Starting Go services (exe) ===" -ForegroundColor Cyan
-        & (Join-Path $ScriptDir "go_services.ps1") -Command start-exe -Services $GoServices
+        & (Join-Path $ScriptDir "go_services.ps1") -Command start-exe -Services $GoServices -Counts $GoCounts -PortStride $GoPortStride
     }
     "dev-stop" {
         Write-Host "=== Stopping Go services ===" -ForegroundColor Cyan
