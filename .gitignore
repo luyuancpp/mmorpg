@@ -63,7 +63,6 @@ build/
 Cmake/
 cmake-build-debug*/
 vsout/
-bin/vsout/
 
 # Runtime artifacts (logs, pid files, scratch dumps) — separate from build outputs in bin/
 run/*
@@ -72,7 +71,7 @@ run/*
 # Binary output logs (transient, legacy location)
 bin/*.txt
 
-# Runtime node logs (legacy location, kept for safety while migrating to run/logs)
+# Legacy sa_token log (held open by Java; new writes go to run/logs/sa_token.log)
 bin/logs/
 
 # Python

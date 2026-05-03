@@ -101,8 +101,8 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>../../../bin/vsout/</OutDir>
-    <IntDir>../../../bin/vsout/$(ProjectName)/</IntDir>
+    <OutDir>../../../build/cpp/nodes/</OutDir>
+    <IntDir>../../../build/cpp/intermediate/nodes/$(ProjectName)/</IntDir>
     <GenerateManifest>false</GenerateManifest>
     <LocalDebuggerCommand>$(ProjectDir)..\..\..\bin\gate.exe</LocalDebuggerCommand>
     <LocalDebuggerWorkingDirectory>$(ProjectDir)..\..\..\bin</LocalDebuggerWorkingDirectory>

@@ -75,12 +75,12 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>../../../../lib/</OutDir>
-    <IntDir>../../../../bin/vsout/lib/$(ProjectName)/</IntDir>
+    <IntDir>../../../../build/cpp/intermediate/lib/$(ProjectName)/</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>../../../../lib/</OutDir>
-    <IntDir>../../../../bin/vsout/lib/$(ProjectName)/</IntDir>
+    <IntDir>../../../../build/cpp/intermediate/lib/$(ProjectName)/</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -196,10 +196,10 @@
       <Optimization>Disabled</Optimization>
       <SupportJustMyCode>true</SupportJustMyCode>
       <AssemblerOutput>NoListing</AssemblerOutput>
-      <AssemblerListingLocation>../../../../bin/vsout/lib/core/</AssemblerListingLocation>
+      <AssemblerListingLocation>../../../../build/cpp/intermediate/lib/core/</AssemblerListingLocation>
       <UndefineAllPreprocessorDefinitions>false</UndefineAllPreprocessorDefinitions>
       <BrowseInformation>false</BrowseInformation>
-      <BrowseInformationFile>../../../../bin/vsout/lib/core/</BrowseInformationFile>
+      <BrowseInformationFile>../../../../build/cpp/intermediate/lib/core/</BrowseInformationFile>
       <CompileAs>Default</CompileAs>
       <ConformanceMode>true</ConformanceMode>
       <DiagnosticsFormat>Column</DiagnosticsFormat>
@@ -223,37 +223,37 @@
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <LanguageStandard_C>stdclatest</LanguageStandard_C>
       <MinimalRebuild>false</MinimalRebuild>
-      <ModuleDependenciesFile>../../../../bin/vsout/lib/core/</ModuleDependenciesFile>
-      <ModuleOutputFile>../../../../bin/vsout/lib/core/</ModuleOutputFile>
+      <ModuleDependenciesFile>../../../../build/cpp/intermediate/lib/core/</ModuleDependenciesFile>
+      <ModuleOutputFile>../../../../build/cpp/intermediate/lib/core/</ModuleOutputFile>
       <OmitDefaultLibName>false</OmitDefaultLibName>
       <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <ObjectFileName>../../../../bin/vsout/lib/core/%(RelativeDir)</ObjectFileName>
+      <ObjectFileName>../../../../build/cpp/intermediate/lib/core/%(RelativeDir)</ObjectFileName>
       <CallingConvention>Cdecl</CallingConvention>
       <ProgramDataBaseFileName>../../../../lib/core.pdb</ProgramDataBaseFileName>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
-      <PrecompiledHeaderOutputFile>../../../../bin/vsout/lib/core/common.pch</PrecompiledHeaderOutputFile>
+      <PrecompiledHeaderOutputFile>../../../../build/cpp/intermediate/lib/core/common.pch</PrecompiledHeaderOutputFile>
       <PreprocessToFile>false</PreprocessToFile>
       <PreprocessKeepComments>false</PreprocessKeepComments>
       <PreprocessSuppressLineNumbers>false</PreprocessSuppressLineNumbers>
       <RemoveUnreferencedCodeData>true</RemoveUnreferencedCodeData>
       <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
       <ShowIncludes>false</ShowIncludes>
-      <SourceDependenciesFile>../../../../bin/vsout/lib/core/</SourceDependenciesFile>
+      <SourceDependenciesFile>../../../../build/cpp/intermediate/lib/core/</SourceDependenciesFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <BufferSecurityCheck>true</BufferSecurityCheck>
       <SmallerTypeCheck>false</SmallerTypeCheck>
       <SpectreMitigation>false</SpectreMitigation>
       <StructMemberAlignment>Default</StructMemberAlignment>
-      <TrackerLogDirectory>../../../../bin/vsout/lib/core/common.tlog\</TrackerLogDirectory>
+      <TrackerLogDirectory>../../../../build/cpp/intermediate/lib/core/common.tlog\</TrackerLogDirectory>
       <TranslateIncludes>false</TranslateIncludes>
       <MinimalRebuildFromTracking>true</MinimalRebuildFromTracking>
       <TreatWarningAsError>true</TreatWarningAsError>
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <UseFullPaths>true</UseFullPaths>
       <WarningLevel>Level3</WarningLevel>
-      <XMLDocumentationFileName>../../../../bin/vsout/lib/core/</XMLDocumentationFileName>
+      <XMLDocumentationFileName>../../../../build/cpp/intermediate/lib/core/</XMLDocumentationFileName>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <IntelJCCErratum>false</IntelJCCErratum>
       <BuildStlModules>false</BuildStlModules>
@@ -276,10 +276,10 @@
       <Optimization>Disabled</Optimization>
       <SupportJustMyCode>true</SupportJustMyCode>
       <AssemblerOutput>NoListing</AssemblerOutput>
-      <AssemblerListingLocation>../../../../bin/vsout/lib/core/</AssemblerListingLocation>
+      <AssemblerListingLocation>../../../../build/cpp/intermediate/lib/core/</AssemblerListingLocation>
       <UndefineAllPreprocessorDefinitions>false</UndefineAllPreprocessorDefinitions>
       <BrowseInformation>false</BrowseInformation>
-      <BrowseInformationFile>../../../../bin/vsout/lib/core/</BrowseInformationFile>
+      <BrowseInformationFile>../../../../build/cpp/intermediate/lib/core/</BrowseInformationFile>
       <CompileAs>Default</CompileAs>
       <ConformanceMode>true</ConformanceMode>
       <DiagnosticsFormat>Column</DiagnosticsFormat>
@@ -303,37 +303,37 @@
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <LanguageStandard_C>stdclatest</LanguageStandard_C>
       <MinimalRebuild>false</MinimalRebuild>
-      <ModuleDependenciesFile>../../../../bin/vsout/lib/core/</ModuleDependenciesFile>
-      <ModuleOutputFile>../../../../bin/vsout/lib/core/</ModuleOutputFile>
+      <ModuleDependenciesFile>../../../../build/cpp/intermediate/lib/core/</ModuleDependenciesFile>
+      <ModuleOutputFile>../../../../build/cpp/intermediate/lib/core/</ModuleOutputFile>
       <OmitDefaultLibName>false</OmitDefaultLibName>
       <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <ObjectFileName>../../../../bin/vsout/lib/core/%(RelativeDir)</ObjectFileName>
+      <ObjectFileName>../../../../build/cpp/intermediate/lib/core/%(RelativeDir)</ObjectFileName>
       <CallingConvention>Cdecl</CallingConvention>
       <ProgramDataBaseFileName>../../../../lib/core.pdb</ProgramDataBaseFileName>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
-      <PrecompiledHeaderOutputFile>../../../../bin/vsout/lib/core/common.pch</PrecompiledHeaderOutputFile>
+      <PrecompiledHeaderOutputFile>../../../../build/cpp/intermediate/lib/core/common.pch</PrecompiledHeaderOutputFile>
       <PreprocessToFile>false</PreprocessToFile>
       <PreprocessKeepComments>false</PreprocessKeepComments>
       <PreprocessSuppressLineNumbers>false</PreprocessSuppressLineNumbers>
       <RemoveUnreferencedCodeData>true</RemoveUnreferencedCodeData>
       <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
       <ShowIncludes>false</ShowIncludes>
-      <SourceDependenciesFile>../../../../bin/vsout/lib/core/</SourceDependenciesFile>
+      <SourceDependenciesFile>../../../../build/cpp/intermediate/lib/core/</SourceDependenciesFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <BufferSecurityCheck>true</BufferSecurityCheck>
       <SmallerTypeCheck>false</SmallerTypeCheck>
       <SpectreMitigation>false</SpectreMitigation>
       <StructMemberAlignment>Default</StructMemberAlignment>
-      <TrackerLogDirectory>../../../../bin/vsout/lib/core/common.tlog\</TrackerLogDirectory>
+      <TrackerLogDirectory>../../../../build/cpp/intermediate/lib/core/common.tlog\</TrackerLogDirectory>
       <TranslateIncludes>false</TranslateIncludes>
       <MinimalRebuildFromTracking>true</MinimalRebuildFromTracking>
       <TreatWarningAsError>true</TreatWarningAsError>
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <UseFullPaths>true</UseFullPaths>
       <WarningLevel>Level3</WarningLevel>
-      <XMLDocumentationFileName>../../../../bin/vsout/lib/core/</XMLDocumentationFileName>
+      <XMLDocumentationFileName>../../../../build/cpp/intermediate/lib/core/</XMLDocumentationFileName>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <IntelJCCErratum>false</IntelJCCErratum>
       <BuildStlModules>false</BuildStlModules>
