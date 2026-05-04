@@ -1,18 +1,22 @@
 package com.example.auth.controller;
 
 import cn.dev33.satoken.stp.StpUtil;
+import com.example.auth.config.JustAuthProperties;
+import com.example.auth.config.JustAuthProperties.ProviderConfig;
 import com.example.auth.dto.LoginDTO;
+import com.example.auth.service.OauthService;
 import me.zhyd.oauth.config.AuthConfig;
 import me.zhyd.oauth.enums.AuthResponseStatus;
 import me.zhyd.oauth.model.AuthCallback;
 import me.zhyd.oauth.model.AuthResponse;
 import me.zhyd.oauth.model.AuthUser;
+import me.zhyd.oauth.request.AuthGithubRequest;
+import me.zhyd.oauth.request.AuthQqRequest;
 import me.zhyd.oauth.request.AuthRequest;
+import me.zhyd.oauth.request.AuthWeChatOpenRequest;
 import me.zhyd.oauth.utils.AuthStateUtils;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.*;
-
-import me.zhyd.oauth.request.AuthGithubRequest;
 
 import java.time.Duration;
 import java.util.LinkedHashMap;
@@ -22,9 +26,15 @@ import java.util.Map;
 @RequestMapping("/auth")
 public class AuthController {
     private final RedisTemplate<String, Object> redisTemplate;
+    private final JustAuthProperties authProps;
+    private final OauthService oauthService;
 
-    public AuthController(RedisTemplate<String, Object> redisTemplate) {
+    public AuthController(RedisTemplate<String, Object> redisTemplate,
+                          JustAuthProperties authProps,
+                          OauthService oauthService) {
         this.redisTemplate = redisTemplate;
+        this.authProps = authProps;
+        this.oauthService = oauthService;
     }
 
     // Redirect to OAuth authorization page
@@ -39,20 +49,27 @@ public class AuthController {
         AuthRequest authRequest = getAuthRequest(provider);
         AuthResponse response = authRequest.login(callback);
 
-        if (response.getCode() == AuthResponseStatus.SUCCESS.getCode()) {
-
-            // Cast response data to AuthUser
-            AuthUser authUser = (AuthUser) response.getData();
-
-            // Third-party unique ID per JustAuth convention
-            String uuid = authUser.getUuid();
-
-            // Login via Sa-Token (using uuid temporarily; replace with userId later)
-            StpUtil.login(uuid);
-
-            return buildTokenResponse(uuid);
+        if (response.getCode() != AuthResponseStatus.SUCCESS.getCode()) {
+            return response;
         }
-        return response;
+
+        AuthUser authUser = (AuthUser) response.getData();
+        // Use unionid (when WeChat/QQ provide it) so a player keeps the same
+        // identity across sub-apps under the same Open Platform subject.
+        // JustAuth fills AuthUser.uuid with unionid when unionId(true) is set
+        // and the upstream returns one; otherwise it's openid.
+        String thirdPartyId = authUser.getUuid();
+
+        // Persist provider+openid -> userId mapping (creates user on first login).
+        Long userId = oauthService.findOrCreateAndBind(
+                provider,
+                thirdPartyId,
+                authUser.getNickname(),
+                authUser.getAvatar());
+
+        // Login via Sa-Token using the stable internal userId, not the third-party id.
+        StpUtil.login(userId);
+        return buildTokenResponse(String.valueOf(userId));
     }
 
     // Local dev helper: issue a SA-Token directly from an account name.
@@ -134,14 +151,40 @@ public class AuthController {
     // Create AuthRequest for the given provider (JustAuth)
     private AuthRequest getAuthRequest(String provider) {
         switch (provider) {
-            case "github":
-                return new AuthGithubRequest(AuthConfig.builder()
-                        .clientId("YOUR_CLIENT_ID")
-                        .clientSecret("YOUR_CLIENT_SECRET")
-                        .redirectUri("http://localhost:18080/auth/callback/github")
-                        .build());
+            case "github": {
+                ProviderConfig c = requireConfigured(provider, authProps.getGithub());
+                return new AuthGithubRequest(buildAuthConfig(c));
+            }
+            case "wechat":
+            case "wechat_open": {
+                // WeChat Open Platform (mobile/PC SDK + scan-code login).
+                // For 公众号 use AuthWeChatMpRequest instead (different endpoint).
+                ProviderConfig c = requireConfigured(provider, authProps.getWechat());
+                return new AuthWeChatOpenRequest(buildAuthConfig(c));
+            }
+            case "qq": {
+                ProviderConfig c = requireConfigured(provider, authProps.getQq());
+                return new AuthQqRequest(buildAuthConfig(c));
+            }
             default:
                 throw new RuntimeException("Unsupported provider: " + provider);
         }
+    }
+
+    private static ProviderConfig requireConfigured(String name, ProviderConfig c) {
+        if (c == null || !c.isConfigured()) {
+            throw new RuntimeException("Auth provider not configured: " + name
+                    + " (set justauth." + name + ".client-id / client-secret)");
+        }
+        return c;
+    }
+
+    private static AuthConfig buildAuthConfig(ProviderConfig c) {
+        return AuthConfig.builder()
+                .clientId(c.getClientId())
+                .clientSecret(c.getClientSecret())
+                .redirectUri(c.getRedirectUri())
+                .unionId(c.isUnionId())
+                .build();
     }
 }
