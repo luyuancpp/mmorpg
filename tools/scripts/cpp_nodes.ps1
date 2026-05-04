@@ -46,7 +46,15 @@ param(
     [string[]]$Nodes = @(),
 
     [int]$GateCount  = 1,
-    [int]$SceneCount = 1
+    [int]$SceneCount = 1,
+
+    # Local multi-zone launch. When > 0:
+    #   * Instance keys are prefixed with 'z<Zone>_' so a second zone can
+    #     coexist in the same PID file (e.g. z1_gate_1, z2_gate_1).
+    #   * Each child process inherits ZONE_ID=<Zone>, which the C++ engine
+    #     honours via libs/engine/config/config.cpp readGameConfig() override.
+    # Zone=0 (default) keeps legacy single-zone behaviour.
+    [int]$Zone = 0
 )
 
 $ErrorActionPreference = "Stop"
@@ -174,9 +182,11 @@ function Invoke-Start {
         }
 
         $count = Get-InstanceCount -NodeName $name
+        $zonePrefix = if ($Zone -gt 0) { "z${Zone}_" } else { "" }
 
         for ($i = 1; $i -le $count; $i++) {
-            $instanceKey = if ($count -eq 1) { $name } else { "${name}_${i}" }
+            $bareKey = if ($count -eq 1) { $name } else { "${name}_${i}" }
+            $instanceKey = "${zonePrefix}${bareKey}"
 
             # Skip if already running
             if ($pids.PSObject.Properties.Name -contains $instanceKey) {
@@ -197,12 +207,23 @@ function Invoke-Start {
 
             Write-Host "[start] $instanceKey  ($($info.Desc))" -ForegroundColor Cyan
 
-            $proc = Start-Process -FilePath $exePath `
-                -WorkingDirectory $BinDir `
-                -RedirectStandardOutput $logOut `
-                -RedirectStandardError  $logErr `
-                -PassThru `
-                -WindowStyle Hidden
+            # ZONE_ID env var is read by libs/engine/config/config.cpp at startup
+            # and overrides the YAML ZoneId. Temporarily mutate the parent shell
+            # env so the child process inherits it; Start-Process has no native
+            # per-process env override on Windows PowerShell.
+            $prevZoneEnv = $env:ZONE_ID
+            if ($Zone -gt 0) { $env:ZONE_ID = "$Zone" }
+            try {
+                $proc = Start-Process -FilePath $exePath `
+                    -WorkingDirectory $BinDir `
+                    -RedirectStandardOutput $logOut `
+                    -RedirectStandardError  $logErr `
+                    -PassThru `
+                    -WindowStyle Hidden
+            } finally {
+                if ($null -eq $prevZoneEnv) { Remove-Item Env:ZONE_ID -ErrorAction SilentlyContinue }
+                else { $env:ZONE_ID = $prevZoneEnv }
+            }
 
             $pids | Add-Member -NotePropertyName $instanceKey -NotePropertyValue $proc.Id -Force
             Write-Host "        PID $($proc.Id)  logs -> run\logs\cpp_nodes\$instanceKey.*.log" -ForegroundColor DarkGray
@@ -245,7 +266,11 @@ function Invoke-Stop {
 
         # Filter by node name if specified
         if ($null -ne $requestedNames) {
-            $baseName = ($instanceKey -split '_')[0]
+            # Strip optional zone prefix (z<N>_) and instance suffix (_<i>) to
+            # recover the catalogue base name (e.g. z2_gate_3 -> gate).
+            $baseName = $instanceKey
+            if ($baseName -match '^z\d+_(?<rest>.+)$') { $baseName = $Matches.rest }
+            $baseName = ($baseName -split '_')[0]
             if ($baseName -notin $requestedNames) { continue }
         }
 

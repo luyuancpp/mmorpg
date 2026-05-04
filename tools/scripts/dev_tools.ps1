@@ -1,6 +1,6 @@
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet("help", "pbgen-build", "pbgen-run", "proto-gen-build", "proto-gen-run", "tree", "naming-audit", "naming-apply", "third-party-grpc-build", "iwyu-run", "k8s-infra-up", "k8s-infra-down", "k8s-infra-status", "k8s-zone-up", "k8s-zone-down", "k8s-zone-status", "k8s-all-up", "k8s-all-down", "k8s-all-status", "k8s-build-all", "k8s-exposure-preflight", "k8s-stage-runtime", "k8s-image-preflight", "k8s-build-image", "k8s-push-image", "k8s-release-zone", "k8s-release-all", "go-svc-start", "go-svc-start-exe", "go-svc-stop", "go-svc-status", "go-svc-list", "go-svc-build", "go-svc-build-images", "go-svc-push-images", "java-svc-build-image", "java-svc-push-image", "cpp-node-start", "cpp-node-stop", "cpp-node-status", "cpp-node-list", "dev-start", "dev-start-exe", "dev-stop", "dev-status", "merge-zone")]
+    [ValidateSet("help", "pbgen-build", "pbgen-run", "proto-gen-build", "proto-gen-run", "tree", "naming-audit", "naming-apply", "third-party-grpc-build", "iwyu-run", "k8s-infra-up", "k8s-infra-down", "k8s-infra-status", "k8s-zone-up", "k8s-zone-down", "k8s-zone-status", "k8s-all-up", "k8s-all-down", "k8s-all-status", "k8s-build-all", "k8s-exposure-preflight", "k8s-stage-runtime", "k8s-image-preflight", "k8s-build-image", "k8s-push-image", "k8s-release-zone", "k8s-release-all", "go-svc-start", "go-svc-start-exe", "go-svc-stop", "go-svc-status", "go-svc-list", "go-svc-build", "go-svc-build-images", "go-svc-push-images", "java-svc-build-image", "java-svc-push-image", "cpp-node-start", "cpp-node-stop", "cpp-node-status", "cpp-node-list", "dev-start", "dev-start-exe", "dev-start-zones", "dev-stop", "dev-status", "merge-zone")]
     [string]$Command,
 
     [string]$ConfigPath = "",
@@ -76,6 +76,17 @@ param(
     [int]$GateCount = 1,
     [int]$SceneCount = 1,
     [switch]$UseVSGenerator,
+
+    # Local multi-zone stress launch (dev-start-zones).
+    # Accepts comma-separated ints, e.g. -Zones "1,2" or -Zones 1,2.
+    # For dev-start-zones, defaults to 1,2 when empty. Forwarded to
+    # go_services.ps1 / cpp_nodes.ps1 as -Zone <N> for each zone.
+    [int[]]$Zones = @(),
+    # Single-zone override forwarded to underlying scripts when callers want
+    # to launch one specific zone (e.g. dev_tools.ps1 ... -Command go-svc-start -Zone 2).
+    [int]$Zone = 0,
+    # Port offset between zones (forwarded to go_services.ps1).
+    [int]$ZonePortShift = 1000,
     # merge-zone command
     [int]$MergeSourceZone = 0,
     [int]$MergeTargetZone = 0,
@@ -613,8 +624,8 @@ switch ($Command) {
     "k8s-push-image" { Invoke-K8sImage -ImageCommand "push-image" }
     "k8s-release-zone" { Invoke-K8sImage -ImageCommand "release-zone" }
     "k8s-release-all" { Invoke-K8sImage -ImageCommand "release-all" }
-    "go-svc-start"  { & (Join-Path $ScriptDir "go_services.ps1") -Command start  -Services $GoServices -Counts $GoCounts -PortStride $GoPortStride -NoTier:$NoTier -TierReadySeconds $TierReadySeconds }
-    "go-svc-start-exe"  { & (Join-Path $ScriptDir "go_services.ps1") -Command start-exe  -Services $GoServices -Counts $GoCounts -PortStride $GoPortStride -NoTier:$NoTier -TierReadySeconds $TierReadySeconds }
+    "go-svc-start"  { & (Join-Path $ScriptDir "go_services.ps1") -Command start  -Services $GoServices -Counts $GoCounts -PortStride $GoPortStride -NoTier:$NoTier -TierReadySeconds $TierReadySeconds -Zone $Zone -ZonePortShift $ZonePortShift }
+    "go-svc-start-exe"  { & (Join-Path $ScriptDir "go_services.ps1") -Command start-exe  -Services $GoServices -Counts $GoCounts -PortStride $GoPortStride -NoTier:$NoTier -TierReadySeconds $TierReadySeconds -Zone $Zone -ZonePortShift $ZonePortShift }
     "go-svc-stop"   { & (Join-Path $ScriptDir "go_services.ps1") -Command stop   -Services $GoServices }
     "go-svc-status" { & (Join-Path $ScriptDir "go_services.ps1") -Command status }
     "go-svc-list"   { & (Join-Path $ScriptDir "go_services.ps1") -Command list   }
@@ -623,7 +634,7 @@ switch ($Command) {
     "go-svc-push-images"  { & (Join-Path $ScriptDir "go_svc_image.ps1") -Command push-all  -Registry $GoSvcRegistry -Tag $GoSvcTag -DryRun:$DryRun }
     "java-svc-build-image" { & (Join-Path $ScriptDir "java_svc_image.ps1") -Command build -Registry $JavaSvcRegistry -Tag $JavaSvcTag -DryRun:$DryRun }
     "java-svc-push-image"  { & (Join-Path $ScriptDir "java_svc_image.ps1") -Command push  -Registry $JavaSvcRegistry -Tag $JavaSvcTag -DryRun:$DryRun }
-    "cpp-node-start"  { & (Join-Path $ScriptDir "cpp_nodes.ps1") -Command start  -Nodes $CppNodes -GateCount $GateCount -SceneCount $SceneCount }
+    "cpp-node-start"  { & (Join-Path $ScriptDir "cpp_nodes.ps1") -Command start  -Nodes $CppNodes -GateCount $GateCount -SceneCount $SceneCount -Zone $Zone }
     "cpp-node-stop"   { & (Join-Path $ScriptDir "cpp_nodes.ps1") -Command stop   -Nodes $CppNodes }
     "cpp-node-status" { & (Join-Path $ScriptDir "cpp_nodes.ps1") -Command status }
     "cpp-node-list"   { & (Join-Path $ScriptDir "cpp_nodes.ps1") -Command list   }
@@ -638,6 +649,22 @@ switch ($Command) {
         & (Join-Path $ScriptDir "go_services.ps1") -Command start-exe -Services $GoServices -Counts $GoCounts -PortStride $GoPortStride -NoTier:$NoTier -TierReadySeconds $TierReadySeconds
         Write-Host "`n=== Starting C++ nodes ==="  -ForegroundColor Cyan
         & (Join-Path $ScriptDir "cpp_nodes.ps1") -Command start -Nodes $CppNodes -GateCount $GateCount -SceneCount $SceneCount
+    }
+    "dev-start-zones" {
+        # Multi-zone local stress launch. Each zone gets its own go services
+        # (zone-prefixed instance keys + derived yaml with ZoneId/port rewritten)
+        # and its own gate/scene processes (ZONE_ID env var override).
+        # Shared infra (etcd/Redis/Kafka/MySQL) is reused; per-zone DB schemas
+        # (zone_<N>_db) must be pre-created via deploy/mysql-init/00_init_zone_dbs.sql.
+        $zoneList = if ($Zones.Count -gt 0) { $Zones } else { @(1, 2) }
+        Write-Host "=== Multi-zone launch: zones [$($zoneList -join ',')] ===" -ForegroundColor Cyan
+        foreach ($z in $zoneList) {
+            Write-Host "`n>>> Zone $z: starting Go services (exe) ..." -ForegroundColor Cyan
+            & (Join-Path $ScriptDir "go_services.ps1") -Command start-exe -Services $GoServices -Counts $GoCounts -PortStride $GoPortStride -NoTier:$NoTier -TierReadySeconds $TierReadySeconds -Zone $z -ZonePortShift $ZonePortShift
+            Write-Host "`n>>> Zone $z: starting C++ nodes ..." -ForegroundColor Cyan
+            & (Join-Path $ScriptDir "cpp_nodes.ps1") -Command start -Nodes $CppNodes -GateCount $GateCount -SceneCount $SceneCount -Zone $z
+        }
+        Write-Host "`nAll zones launched. Use 'dev status' to inspect." -ForegroundColor Green
     }
     "dev-stop" {
         Write-Host "=== Stopping Go services ===" -ForegroundColor Cyan
