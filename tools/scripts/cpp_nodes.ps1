@@ -156,6 +156,14 @@ function Invoke-Start {
 
     if (-not (Test-Path $LogDir)) { New-Item -ItemType Directory -Path $LogDir -Force | Out-Null }
 
+    # muduo AsyncLogging fopen("a") does NOT create intermediate directories on
+    # Windows; a missing folder triggers assert(fp_) in FileUtil::AppendFile and
+    # aborts gate.exe / scene.exe before any log line reaches disk. Node uses
+    # cwd-relative "logs/cpp_nodes/<short>" as the rolled-log basename, so make
+    # sure that folder exists under the working directory (bin\) before launch.
+    $MuduoLogDir = Join-Path $BinDir "logs\cpp_nodes"
+    if (-not (Test-Path $MuduoLogDir)) { New-Item -ItemType Directory -Path $MuduoLogDir -Force | Out-Null }
+
     foreach ($name in $names) {
         $info = $NodeCatalogue[$name]
         $exePath = Join-Path $BinDir $info.Exe

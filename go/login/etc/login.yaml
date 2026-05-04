@@ -126,12 +126,17 @@ AuthProviders:
       DialTimeout: 3s
       ReadTimeout: 3s
       WriteTimeout: 3s
+#   # WeChat Open Platform (mobile/PC SDK).
+#   # Get AppId/AppSecret from https://open.weixin.qq.com/. Prefer env-var injection
+#   # for AppSecret in production (go-zero supports ${ENV} placeholders in YAML).
 #   WeChat:
-#     AppId: "your-wechat-app-id"
-#     AppSecret: "your-wechat-app-secret"
+#     AppId: "${WECHAT_APP_ID}"
+#     AppSecret: "${WECHAT_APP_SECRET}"
+#   # QQ Connect (https://connect.qq.com/). Client SDK passes access_token (not code)
+#   # as auth_token. AppKey is reserved for future server-side WebOAuth flows.
 #   QQ:
-#     AppId: "your-qq-app-id"
-#     AppKey: "your-qq-app-key"
+#     AppId: "${QQ_APP_ID}"
+#     AppKey: "${QQ_APP_KEY}"
 #   NetEase:
 #     AppKey: "your-netease-app-key"
 #     AppSecret: "your-netease-app-secret"
