@@ -1,6 +1,6 @@
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet("help", "pbgen-build", "pbgen-run", "proto-gen-build", "proto-gen-run", "tree", "naming-audit", "naming-apply", "third-party-grpc-build", "iwyu-run", "k8s-infra-up", "k8s-infra-down", "k8s-infra-status", "k8s-zone-up", "k8s-zone-down", "k8s-zone-status", "k8s-all-up", "k8s-all-down", "k8s-all-status", "k8s-build-all", "k8s-exposure-preflight", "k8s-stage-runtime", "k8s-image-preflight", "k8s-build-image", "k8s-push-image", "k8s-release-zone", "k8s-release-all", "go-svc-start", "go-svc-start-exe", "go-svc-stop", "go-svc-status", "go-svc-list", "go-svc-build", "go-svc-build-images", "go-svc-push-images", "java-svc-build-image", "java-svc-push-image", "cpp-node-start", "cpp-node-stop", "cpp-node-status", "cpp-node-list", "dev-start", "dev-start-exe", "dev-start-zones", "dev-stop", "dev-status", "merge-zone")]
+    [ValidateSet("help", "pbgen-build", "pbgen-run", "proto-gen-build", "proto-gen-run", "tree", "naming-audit", "naming-apply", "third-party-grpc-build", "iwyu-run", "k8s-infra-up", "k8s-infra-down", "k8s-infra-status", "k8s-zone-up", "k8s-zone-down", "k8s-zone-status", "k8s-all-up", "k8s-all-down", "k8s-all-status", "k8s-build-all", "k8s-exposure-preflight", "k8s-stage-runtime", "k8s-image-preflight", "k8s-build-image", "k8s-push-image", "k8s-release-zone", "k8s-release-all", "go-svc-start", "go-svc-start-exe", "go-svc-stop", "go-svc-status", "go-svc-list", "go-svc-build", "go-svc-build-images", "go-svc-push-images", "java-svc-build-image", "java-svc-push-image", "cpp-node-start", "cpp-node-stop", "cpp-node-status", "cpp-node-list", "dev-start", "dev-start-exe", "dev-start-zones", "dev-stop", "dev-status", "dev-robot-zones", "merge-zone")]
     [string]$Command,
 
     [string]$ConfigPath = "",
@@ -683,6 +683,64 @@ switch ($Command) {
         if ($MergeRedisPassword -ne "") { $mergeArgs += @("-RedisPassword", $MergeRedisPassword) }
         if ($DryRun) { $mergeArgs += "-DryRun" }
         & (Join-Path $ScriptDir "merge_zone.ps1") @mergeArgs
+    }
+    "dev-robot-zones" {
+        # Per-zone parallel robot launch. Builds robot once, then for each
+        # requested zone derives a yaml at run/etc/robot/robot.z<N>.yaml with
+        # zone_id rewritten and account_fmt prefixed by 'z<N>_' to avoid
+        # account-name collisions across zones. Each robot is launched in its
+        # own console window so stress output stays separable.
+        $zoneList = if ($Zones.Count -gt 0) { $Zones } else { @(1, 2) }
+        $robotDir = Join-Path $RepoRoot "robot"
+        $robotExe = Join-Path $robotDir "robot.exe"
+        $baseYaml = Join-Path $robotDir "etc\robot.yaml"
+        if (-not (Test-Path $baseYaml)) { throw "Base robot yaml not found: $baseYaml" }
+
+        Write-Host "=== Building robot ===" -ForegroundColor Cyan
+        Push-Location $robotDir
+        try {
+            go build -o robot.exe .
+            if ($LASTEXITCODE -ne 0) { throw "robot build failed" }
+        } finally { Pop-Location }
+
+        $derivedDir = Join-Path $RepoRoot "run\etc\robot"
+        if (-not (Test-Path $derivedDir)) { New-Item -ItemType Directory -Path $derivedDir -Force | Out-Null }
+
+        $baseContent = Get-Content $baseYaml -Raw
+        $zoneRegex    = [regex]::new('(?m)^(?<lead>zone_id:\s*)\d+\s*(?<tail>(#.*)?)$')
+        $accountRegex = [regex]::new('(?m)^(?<lead>account_fmt:\s*")(?<fmt>[^"\r\n]+)(?<tail>".*)$')
+
+        foreach ($z in $zoneList) {
+            $content = $baseContent
+            if ($zoneRegex.IsMatch($content)) {
+                $content = $zoneRegex.Replace(
+                    $content,
+                    { param($m) "$($m.Groups['lead'].Value)$z $($m.Groups['tail'].Value)".TrimEnd() },
+                    1
+                )
+            } else {
+                Write-Warning "No 'zone_id:' line found in $baseYaml; zone $z derived yaml may not target the right zone."
+            }
+            if ($accountRegex.IsMatch($content)) {
+                $content = $accountRegex.Replace(
+                    $content,
+                    { param($m) "$($m.Groups['lead'].Value)z${z}_$($m.Groups['fmt'].Value)$($m.Groups['tail'].Value)" },
+                    1
+                )
+            }
+            $derivedYaml = Join-Path $derivedDir "robot.z${z}.yaml"
+            Set-Content -Path $derivedYaml -Value $content -Encoding UTF8 -NoNewline
+            Write-Host "[zone $z] cfg -> $derivedYaml" -ForegroundColor DarkGray
+
+            # Launch in a new console window so each zone's stress output is
+            # visible side-by-side. -WindowStyle Normal so it actually pops up.
+            $title = "robot-z$z"
+            Start-Process -FilePath "cmd.exe" `
+                -ArgumentList @("/k", "title $title && `"$robotExe`" -c `"$derivedYaml`"") `
+                -WorkingDirectory $robotDir `
+                -WindowStyle Normal | Out-Null
+            Write-Host "[zone $z] robot launched (window title: $title)" -ForegroundColor Green
+        }
     }
     default { throw "Unsupported command: $Command" }
 }
