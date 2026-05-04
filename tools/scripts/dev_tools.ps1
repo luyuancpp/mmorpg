@@ -659,9 +659,9 @@ switch ($Command) {
         $zoneList = if ($Zones.Count -gt 0) { $Zones } else { @(1, 2) }
         Write-Host "=== Multi-zone launch: zones [$($zoneList -join ',')] ===" -ForegroundColor Cyan
         foreach ($z in $zoneList) {
-            Write-Host "`n>>> Zone $z: starting Go services (exe) ..." -ForegroundColor Cyan
+            Write-Host "`n>>> Zone ${z}: starting Go services (exe) ..." -ForegroundColor Cyan
             & (Join-Path $ScriptDir "go_services.ps1") -Command start-exe -Services $GoServices -Counts $GoCounts -PortStride $GoPortStride -NoTier:$NoTier -TierReadySeconds $TierReadySeconds -Zone $z -ZonePortShift $ZonePortShift
-            Write-Host "`n>>> Zone $z: starting C++ nodes ..." -ForegroundColor Cyan
+            Write-Host "`n>>> Zone ${z}: starting C++ nodes ..." -ForegroundColor Cyan
             & (Join-Path $ScriptDir "cpp_nodes.ps1") -Command start -Nodes $CppNodes -GateCount $GateCount -SceneCount $SceneCount -Zone $z
         }
         Write-Host "`nAll zones launched. Use 'dev status' to inspect." -ForegroundColor Green
