@@ -54,11 +54,16 @@ public class AuthController {
         }
 
         AuthUser authUser = (AuthUser) response.getData();
-        // Use unionid (when WeChat/QQ provide it) so a player keeps the same
-        // identity across sub-apps under the same Open Platform subject.
-        // JustAuth fills AuthUser.uuid with unionid when unionId(true) is set
-        // and the upstream returns one; otherwise it's openid.
-        String thirdPartyId = authUser.getUuid();
+        // Prefer unionid (so the same player keeps the same identity across sub-apps
+        // under the same WeChat Open Platform / QQ Connect subject). JustAuth puts
+        // unionid on AuthToken, while AuthUser.uuid defaults to openid.
+        String thirdPartyId = null;
+        if (authUser.getToken() != null) {
+            thirdPartyId = authUser.getToken().getUnionId();
+        }
+        if (thirdPartyId == null || thirdPartyId.isBlank()) {
+            thirdPartyId = authUser.getUuid();
+        }
 
         // Persist provider+openid -> userId mapping (creates user on first login).
         Long userId = oauthService.findOrCreateAndBind(

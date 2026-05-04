@@ -56,7 +56,23 @@ param(
 
     # Per-tier readiness budget (seconds) when staged startup is enabled. Soft
     # gate: probe TCP LISTEN on each instance port; warn-and-continue on timeout.
-    [int]$TierReadySeconds = 10
+    [int]$TierReadySeconds = 10,
+
+    # Local multi-zone launch. When > 0:
+    #   * Instance keys are prefixed with 'z<Zone>_' so a second zone can coexist
+    #     in the same PID file (e.g. z1_login_1, z2_login_1).
+    #   * A derived yaml is materialized at run/etc/go_services/z<Zone>_<svc>[_<i>].yaml
+    #     with `ZoneId: N` rewritten and `ListenOn` port shifted by (Zone-1)*ZonePortShift
+    #     to avoid TCP port collisions.
+    #   * `db` (AllowMultiInstance=false) IS still launched once per zone since each
+    #     zone owns its own Kafka topic + MySQL DB; the per-zone single-instance rule
+    #     is preserved.
+    # Zone=0 (default) keeps legacy single-zone behaviour.
+    [int]$Zone = 0,
+
+    # Port offset between zones (Zone N port = base + (Zone-1) * ZonePortShift).
+    # Default 1000 keeps zones cleanly separated even with PortStride=1.
+    [int]$ZonePortShift = 1000
 )
 
 $ErrorActionPreference = "Stop"
@@ -170,17 +186,30 @@ function Get-ServiceInstanceCount {
     return $n
 }
 
-# Builds the InstanceKey used everywhere (PID file, log file, derived yaml).
-# Single instance preserves the legacy bare service name for backward compatibility.
-function Get-InstanceKey {
-    param([string]$Name, [int]$Index, [int]$Total)
-    if ($Total -le 1) { return $Name }
-    return "${Name}_${Index}"
+# Zone prefix used in instance keys / derived config filenames. Empty when
+# Zone <= 0 to preserve legacy single-zone behaviour.
+function Get-ZonePrefix {
+    if ($Zone -le 0) { return "" }
+    return "z${Zone}_"
 }
 
-# For instance #1 of a single-instance launch, return the original etc path so
-# behavior is unchanged. Otherwise materialize a derived yaml in run/etc/go_services
-# with ListenOn rewritten to base + (i-1)*PortStride.
+# Builds the InstanceKey used everywhere (PID file, log file, derived yaml).
+# Single instance preserves the legacy bare service name for backward compatibility,
+# unless multi-zone is active (then keys are always zone-prefixed so multiple
+# zones can coexist in the shared PID file).
+function Get-InstanceKey {
+    param([string]$Name, [int]$Index, [int]$Total)
+    $zp = Get-ZonePrefix
+    if ($Total -le 1) {
+        if ($zp -eq "") { return $Name }
+        return "${zp}${Name}"
+    }
+    return "${zp}${Name}_${Index}"
+}
+
+# For instance #1 of a single-instance launch with Zone=0, return the original
+# etc path so behavior is unchanged. Otherwise materialize a derived yaml in
+# run/etc/go_services with ListenOn (and ZoneId, when -Zone is set) rewritten.
 function Resolve-InstanceConfig {
     param(
         [string]$Name,
@@ -188,11 +217,13 @@ function Resolve-InstanceConfig {
         [int]$Index,
         [int]$Total
     )
-    $svcDir   = Join-Path $GoRoot $Info.Dir
-    $baseYaml = Join-Path $svcDir $Info.ConfigFile
-    $port     = [int]$Info.Port + ($Index - 1) * $PortStride
+    $svcDir    = Join-Path $GoRoot $Info.Dir
+    $baseYaml  = Join-Path $svcDir $Info.ConfigFile
+    $zoneShift = if ($Zone -gt 0) { ($Zone - 1) * $ZonePortShift } else { 0 }
+    $port      = [int]$Info.Port + $zoneShift + ($Index - 1) * $PortStride
 
-    if ($Total -le 1) {
+    # Legacy fast path: single-zone, single-instance -> original yaml as-is.
+    if ($Total -le 1 -and $Zone -le 0) {
         return [pscustomobject]@{
             Path     = $Info.ConfigFile  # relative path; resolved by working dir
             FullPath = $baseYaml
@@ -208,7 +239,8 @@ function Resolve-InstanceConfig {
         New-Item -ItemType Directory -Path $DerivedEtcDir -Force | Out-Null
     }
 
-    $derivedName = "${Name}_${Index}.yaml"
+    $zp = Get-ZonePrefix
+    $derivedName = if ($Total -le 1) { "${zp}${Name}.yaml" } else { "${zp}${Name}_${Index}.yaml" }
     $derivedPath = Join-Path $DerivedEtcDir $derivedName
 
     # Rewrite top-level ListenOn line. Keep the original host (e.g. 0.0.0.0 vs 127.0.0.1).
@@ -218,12 +250,28 @@ function Resolve-InstanceConfig {
     if (-not $regex.IsMatch($content)) {
         Write-Warning "Did not find a top-level 'ListenOn:' line in $baseYaml; instance #$Index may collide on port $($Info.Port)."
     }
-    $newContent = $regex.Replace(
+    $content = $regex.Replace(
         $content,
         { param($m) "$($m.Groups[1].Value)$($m.Groups[2].Value):$port" },
         1
     )
-    Set-Content -Path $derivedPath -Value $newContent -Encoding UTF8 -NoNewline
+
+    # Rewrite first ZoneId entry (handles both top-level 'ZoneId: N' and the
+    # nested 'Node:\n  ZoneId: N' shape used by login/guild/friend/player_locator).
+    if ($Zone -gt 0) {
+        $zoneRegex = [regex]::new('(?m)^(?<lead>\s*)ZoneId:\s*\d+\s*$')
+        if ($zoneRegex.IsMatch($content)) {
+            $content = $zoneRegex.Replace(
+                $content,
+                { param($m) "$($m.Groups['lead'].Value)ZoneId: $Zone" },
+                1
+            )
+        } else {
+            Write-Warning "No 'ZoneId:' found in $baseYaml; '$Name' will not honour -Zone $Zone."
+        }
+    }
+
+    Set-Content -Path $derivedPath -Value $content -Encoding UTF8 -NoNewline
 
     return [pscustomobject]@{
         Path     = $derivedPath
@@ -601,8 +649,15 @@ function Invoke-Status {
     Write-Host ("{0,-22} {1,-8} {2,-8} {3}" -f "--------", "---", "----", "------")
     foreach ($prop in $pids.PSObject.Properties) {
         $key = $prop.Name
-        # Derive base service name for catalogue lookup (login_2 -> login).
-        $baseName = if ($ServiceCatalogue.Contains($key)) { $key } elseif ($key -match '^(?<svc>.+)_\d+$' -and $ServiceCatalogue.Contains($Matches.svc)) { $Matches.svc } else { $key }
+        # Derive base service name for catalogue lookup. Strips optional zone
+        # prefix (z<N>_) and optional instance suffix (_<i>):
+        #   login        -> login
+        #   login_2      -> login
+        #   z1_login     -> login
+        #   z2_login_3   -> login
+        $baseName = if ($ServiceCatalogue.Contains($key)) { $key }
+                    elseif ($key -match '^(?:z\d+_)?(?<svc>.+?)(?:_\d+)?$' -and $ServiceCatalogue.Contains($Matches.svc)) { $Matches.svc }
+                    else { $key }
         $basePort = if ($ServiceCatalogue.Contains($baseName)) { $ServiceCatalogue[$baseName].Port } else { 0 }
         $entry    = Read-InstanceEntry -RawValue $prop.Value -FallbackService $baseName -FallbackPort $basePort
         $procId   = $entry.Pid

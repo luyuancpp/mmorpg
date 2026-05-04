@@ -17,6 +17,7 @@ if "%~1"=="" goto :menu
 set "CMD=%~1"
 if /I "%CMD%"=="start"     goto :start
 if /I "%CMD%"=="start-multi" goto :start_multi
+if /I "%CMD%"=="start-zones" goto :start_zones
 if /I "%CMD%"=="start-cpp" goto :start_cpp
 if /I "%CMD%"=="start-go"  goto :start_go
 if /I "%CMD%"=="start-satoken" goto :start_satoken
@@ -71,10 +72,11 @@ echo     17. UI          (mprocs TUI dashboard)
 echo     18. Start SA-Token  (local Spring Boot auth app)
 echo     19. Stop SA-Token
 echo     20. Start multi (2 gate + 4 scene + login*2 + scene_mgr*2 + locator*2 + data*2)
+echo     21. Start zones (2 zones x 2 gate + 4 scene + per-zone Go services)
 echo.
 echo     0.  Exit
 echo.
-set /p "CHOICE=  Pick [0-20]: "
+set /p "CHOICE=  Pick [0-21]: "
 
 if "%CHOICE%"=="0" exit /b 0
 
@@ -98,6 +100,7 @@ if "%CHOICE%"=="17" call :ui          & goto :menu_return
 if "%CHOICE%"=="18" call :start_satoken & goto :menu_return
 if "%CHOICE%"=="19" call :stop_satoken  & goto :menu_return
 if "%CHOICE%"=="20" call :start_multi   & goto :menu_return
+if "%CHOICE%"=="21" call :start_zones   & goto :menu_return
 
 echo   Invalid choice.
 goto :menu
@@ -139,6 +142,38 @@ if errorlevel 1 ( echo Build failed. & pause & exit /b 1 )
 echo.
 echo [2/2] Starting (multi-instance, tier-staged): GoCounts=%GO_COUNTS%
 %PS% -File tools\scripts\dev_tools.ps1 -Command dev-start-exe -GateCount 2 -SceneCount 4 -GoCounts "%GO_COUNTS%"
+if errorlevel 1 ( echo Start failed. & pause & exit /b 1 )
+echo.
+echo Done. Run "dev status" to check.
+exit /b 0
+
+:: ================================================================
+::  Multi-zone local stress launch:
+::    dev start-zones                    -> zones 1,2 (default), 2 gate + 4 scene each
+::    dev start-zones "1,2,3"            -> custom zone list
+::    dev start-zones "1,2" "login=2"     -> custom zones + per-service counts inside each zone
+::
+::  Per zone:
+::    * Go services get a derived yaml with ZoneId rewritten and ListenOn port
+::      shifted by (zone-1)*1000 (instance keys: z<zone>_<svc>[_<i>]).
+::    * C++ gate/scene inherit ZONE_ID=<zone> env var (instance keys: z<zone>_<node>[_<i>]).
+::    * Shared infra (etcd/Redis/Kafka/MySQL) is reused. Per-zone MySQL DB
+::      schemas must already exist (see deploy/mysql-init/00_init_zone_dbs.sql).
+:: ================================================================
+:start_zones
+set "ZONE_LIST=%~2"
+if "%ZONE_LIST%"=="" set "ZONE_LIST=1,2"
+set "GO_COUNTS=%~3"
+echo [1/2] Building Go executables...
+%PS% -File tools\scripts\dev_tools.ps1 -Command go-svc-build
+if errorlevel 1 ( echo Build failed. & pause & exit /b 1 )
+echo.
+echo [2/2] Starting zones [%ZONE_LIST%] (2 gate + 4 scene per zone) ...
+if "%GO_COUNTS%"=="" (
+    %PS% -File tools\scripts\dev_tools.ps1 -Command dev-start-zones -Zones %ZONE_LIST% -GateCount 2 -SceneCount 4
+) else (
+    %PS% -File tools\scripts\dev_tools.ps1 -Command dev-start-zones -Zones %ZONE_LIST% -GateCount 2 -SceneCount 4 -GoCounts "%GO_COUNTS%"
+)
 if errorlevel 1 ( echo Start failed. & pause & exit /b 1 )
 echo.
 echo Done. Run "dev status" to check.

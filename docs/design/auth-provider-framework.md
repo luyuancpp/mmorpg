@@ -46,8 +46,8 @@ auth.Get(name string) Provider          // Lookup by name (returns nil if not fo
 |-------------|--------------------|-----------------------------|---------------|
 | `password`  | `PasswordProvider` | `account` field directly    | Implemented   |
 | `satoken`   | `SaTokenProvider`  | SA-Token Redis key lookup   | Implemented   |
-| `wechat`    | `WeChatProvider`   | WeChat OAuth code           | Stub (TODO)   |
-| `qq`        | `QQProvider`       | QQ OAuth code               | Stub (TODO)   |
+| `wechat`    | `WeChatProvider`   | WeChat OAuth `code`         | Implemented (`/sns/oauth2/access_token`, account = `wx_<unionid|openid>`) |
+| `qq`        | `QQProvider`       | QQ Connect `access_token`   | Implemented (`graph.qq.com/oauth2.0/me`, account = `qq_<unionid|openid>`) |
 | `netease`   | `NeteaseProvider`  | NetEase auth token          | Stub (TODO)   |
 
 ## Login Flow
