@@ -27,6 +27,7 @@ if /I "%CMD%"=="status"    goto :status
 if /I "%CMD%"=="restart"   goto :restart
 if /I "%CMD%"=="logs"      goto :logs
 if /I "%CMD%"=="robot"      goto :robot
+if /I "%CMD%"=="robot-zones" goto :robot_zones
 if /I "%CMD%"=="infra"      goto :infra
 if /I "%CMD%"=="infra-down"  goto :infra_down
 if /I "%CMD%"=="build"      goto :build
@@ -73,10 +74,11 @@ echo     18. Start SA-Token  (local Spring Boot auth app)
 echo     19. Stop SA-Token
 echo     20. Start multi (2 gate + 4 scene + login*2 + scene_mgr*2 + locator*2 + data*2)
 echo     21. Start zones (2 zones x 2 gate + 4 scene + per-zone Go services)
+echo     22. Robot zones (parallel robot.exe per zone for two-zone stress)
 echo.
 echo     0.  Exit
 echo.
-set /p "CHOICE=  Pick [0-21]: "
+set /p "CHOICE=  Pick [0-22]: "
 
 if "%CHOICE%"=="0" exit /b 0
 
@@ -101,6 +103,7 @@ if "%CHOICE%"=="18" call :start_satoken & goto :menu_return
 if "%CHOICE%"=="19" call :stop_satoken  & goto :menu_return
 if "%CHOICE%"=="20" call :start_multi   & goto :menu_return
 if "%CHOICE%"=="21" call :start_zones   & goto :menu_return
+if "%CHOICE%"=="22" call :robot_zones   & goto :menu_return
 
 echo   Invalid choice.
 goto :menu
@@ -416,6 +419,21 @@ echo.
 echo Starting robot  [config: %ROBOT_CFG%]
 start "robot" cmd /k "title robot ^& \"%CD%\%ROBOT_EXE%\" -c \"%CD%\%ROBOT_CFG%\""
 echo Robot launched in new window.
+exit /b 0
+
+:: ================================================================
+::  robot-zones  -> launch one robot.exe per zone, each in its own console
+::    dev robot-zones              -> zones 1,2
+::    dev robot-zones "1,2,3"      -> custom zone list
+::  Each zone's robot reads run/etc/robot/robot.z<N>.yaml (generated from
+::  robot/etc/robot.yaml with zone_id rewritten and account_fmt prefixed).
+:: ================================================================
+:robot_zones
+set "ZONE_LIST=%~2"
+if "%ZONE_LIST%"=="" set "ZONE_LIST=1,2"
+echo Launching robot per zone [%ZONE_LIST%] ...
+%PS% -File tools\scripts\dev_tools.ps1 -Command dev-robot-zones -Zones %ZONE_LIST%
+if errorlevel 1 ( echo robot-zones failed. & pause & exit /b 1 )
 exit /b 0
 
 :: ================================================================

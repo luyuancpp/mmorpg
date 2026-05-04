@@ -269,6 +269,27 @@ function Resolve-InstanceConfig {
         } else {
             Write-Warning "No 'ZoneId:' found in $baseYaml; '$Name' will not honour -Zone $Zone."
         }
+
+        # Suffix every etcd RPC discovery key with .z<Zone> so each zone's
+        # zrpc clients/servers form their own isolated load-balancer set.
+        # Matches both the server's own Etcd.Key (e.g. 'Key: scenemanagerservice.rpc')
+        # and every RpcClient.Etcd.Key (e.g. 'SceneManagerRpc.Etcd.Key', 'LoginAdminRpc.Etcd.Key').
+        # Deliberately scoped to identifiers ending in '.rpc' to avoid touching
+        # Redis cache prefixes (e.g. scene_manager.yaml has 'Redis.Key: scenemanagerservice').
+        $keyRegex = [regex]::new('(?m)^(?<lead>\s*Key:\s*)(?<id>[\w.-]+\.rpc)\s*$')
+        $content = $keyRegex.Replace(
+            $content,
+            { param($m) "$($m.Groups['lead'].Value)$($m.Groups['id'].Value).z$Zone" }
+        )
+
+        # Suffix Kafka consumer group IDs so two zones do not race for the
+        # same partitions when they happen to subscribe to overlapping topics
+        # (defence in depth -- per-zone topics are already used in practice).
+        $groupRegex = [regex]::new('(?m)^(?<lead>\s*GroupID:\s*")(?<id>[^"\r\n]+)(?<tail>"\s*(#.*)?)$')
+        $content = $groupRegex.Replace(
+            $content,
+            { param($m) "$($m.Groups['lead'].Value)$($m.Groups['id'].Value)_z$Zone$($m.Groups['tail'].Value)" }
+        )
     }
 
     Set-Content -Path $derivedPath -Value $content -Encoding UTF8 -NoNewline
