@@ -21,9 +21,12 @@
       <!-- Always compile in parallel and avoid EditAndContinue overhead. -->
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <!-- SDL checks add compile-time overhead; disable in local Debug for speed. -->
+      <SDLCheck>false</SDLCheck>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <LinkIncremental>true</LinkIncremental>
       <!-- FASTLINK significantly reduces incremental debug link time. -->
       <AdditionalOptions>/DEBUG:FASTLINK %(AdditionalOptions)</AdditionalOptions>
     </Link>
