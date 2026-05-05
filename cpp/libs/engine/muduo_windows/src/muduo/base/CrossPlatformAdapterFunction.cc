@@ -316,35 +316,58 @@ int accept4(int sockfd, struct sockaddr *addr,
 
 int32_t win_connect(int sockfd, const struct sockaddr* addr)
 {
+    // Non-blocking connect, matching Linux semantics expected by muduo's
+    // Connector. The previous implementation called select() inline (blocking
+    // the EventLoop for up to 5s) and unconditionally returned 0, which made
+    // failed/half-open connects look successful and caused spurious
+    // "Disconnected from server" warnings ~1s later when the OS reaped them.
+    //
+    // New behavior: return -1 with errno mapped from the WSA error code so
+    // that Connector::connect() takes the EINPROGRESS branch, registers the
+    // socket with the Poller for write, and Connector::handleWrite() then
+    // verifies completion via SO_ERROR -- the standard non-blocking flow.
     auto result = ::connect(sockfd, addr, static_cast<socklen_t>(sizeof(struct sockaddr_in6)));
-    if (result == SOCKET_ERROR) {
-        int error_code = WSAGetLastError();
-        if (error_code == WSAEWOULDBLOCK) {
-            LOG_INFO << "Connect is in progress (WSAEWOULDBLOCK). Waiting for completion..." ;
-
-            // Use select to wait for the socket to become writable
-            fd_set writefds;
-            FD_ZERO(&writefds);
-            FD_SET(sockfd, &writefds);
-
-            timeval timeout;
-            timeout.tv_sec = 5;  // Wait 5 seconds
-            timeout.tv_usec = 0;
-
-            result = select(0, nullptr, &writefds, nullptr, &timeout);
-            if (result > 0 && FD_ISSET(sockfd, &writefds)) {
-                LOG_INFO << "Connection established!" ;
-            }
-            else if (result == 0) {
-                LOG_INFO << "Connection timed out.";
-            }
-            else {
-                LOG_ERROR << "Select failed with error: " << WSAGetLastError() ;
-            }
-            return 0;
+    if (result == SOCKET_ERROR)
+    {
+        const int err = WSAGetLastError();
+        if (err == WSAEWOULDBLOCK || err == WSAEINPROGRESS)
+        {
+            errno = EINPROGRESS;
         }
+        else if (err == WSAEISCONN)
+        {
+            errno = EISCONN;
+        }
+        else if (err == WSAEINTR)
+        {
+            errno = EINTR;
+        }
+        else if (err == WSAEALREADY)
+        {
+            errno = EALREADY;
+        }
+        else if (err == WSAECONNREFUSED)
+        {
+            errno = ECONNREFUSED;
+        }
+        else if (err == WSAENETUNREACH)
+        {
+            errno = ENETUNREACH;
+        }
+        else if (err == WSAEADDRINUSE)
+        {
+            errno = EADDRINUSE;
+        }
+        else if (err == WSAEADDRNOTAVAIL)
+        {
+            errno = EADDRNOTAVAIL;
+        }
+        else
+        {
+            _set_errno(err);
+        }
+        return -1;
     }
-
     return result;
 }
 
