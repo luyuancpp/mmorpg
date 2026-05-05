@@ -2,6 +2,7 @@
 #include <memory>
 
 #include "muduo/base/Logging.h"
+#include "muduo/base/Timestamp.h"
 #include "muduo/net/InetAddress.h"
 #include "muduo/net/TcpClient.h"
 #include "muduo/net/TcpConnection.h"
@@ -109,6 +110,11 @@ if (client_.connection() == nullptr)
 	}
 
 private:
+    // Disconnects within this window after the initial successful connect are
+    // treated as benign startup-race (e.g. peer's node-id-conflict close + immediate
+    // reconnect) and logged at INFO instead of WARN.
+    static constexpr int kStartupGraceSeconds = 5;
+
     void onConnection(const muduo::net::TcpConnectionPtr& conn)
     {
         if (conn->connected())
@@ -116,18 +122,35 @@ private:
             conn->setTcpNoDelay(true);
             channel_->SetConnection(conn);
             connected_ = true;
+            if (connectedAt_ == muduo::Timestamp::invalid())
+            {
+                connectedAt_ = muduo::Timestamp::now();
+            }
             LOG_INFO << "Connected to server at " << conn->peerAddress().toIpPort() << ".";
         }
         else
         {
             connected_ = false;
-            LOG_WARN << "Disconnected from server at " << conn->peerAddress().toIpPort() << ".";
+            const double sinceConnect = (connectedAt_ == muduo::Timestamp::invalid())
+                                            ? -1.0
+                                            : muduo::timeDifference(muduo::Timestamp::now(), connectedAt_);
+            if (sinceConnect >= 0.0 && sinceConnect < kStartupGraceSeconds)
+            {
+                LOG_INFO << "Disconnected from server at " << conn->peerAddress().toIpPort()
+                         << " within startup grace (" << sinceConnect << "s); will auto-reconnect.";
+            }
+            else
+            {
+                LOG_WARN << "Disconnected from server at " << conn->peerAddress().toIpPort() << ".";
+            }
+            connectedAt_ = muduo::Timestamp::invalid();
         }
 
         tlsEcs.dispatcher.trigger<OnConnected2TcpServerEvent>(conn);
     }
 
     bool connected_{ false };
+    muduo::Timestamp connectedAt_{};
     muduo::net::TcpClient client_;
     GameChannelPtr channel_;
     std::map<std::string, ::google::protobuf::Service*> services_;
