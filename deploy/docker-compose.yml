@@ -43,6 +43,48 @@ services:
       - kafka-data:/tmp/kraft-combined-logs
     user: "root:root"  # Windows permission workaround
 
+  # Pre-create per-node Kafka topics (gate-{1..N}, scene-{1..N}, centre-{1..N})
+  # so C++ consumers don't log "Unknown topic or partition" warnings on cold
+  # start before SceneManager / producers create them lazily. Counts are
+  # configurable via KAFKA_INIT_GATE_COUNT / KAFKA_INIT_SCENE_COUNT /
+  # KAFKA_INIT_CENTRE_COUNT (defaults 8 / 16 / 4 — generous for local dev).
+  kafka-topic-init:
+    image: apache/kafka:latest
+    container_name: kafka-topic-init
+    depends_on:
+      - kafka
+    environment:
+      - KAFKA_INIT_GATE_COUNT=${KAFKA_INIT_GATE_COUNT:-8}
+      - KAFKA_INIT_SCENE_COUNT=${KAFKA_INIT_SCENE_COUNT:-16}
+      - KAFKA_INIT_CENTRE_COUNT=${KAFKA_INIT_CENTRE_COUNT:-4}
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        set -e
+        # Wait for broker to accept connections
+        for i in $$(seq 1 30); do
+          if /opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server kafka:29092 >/dev/null 2>&1; then
+            echo "kafka broker is ready"
+            break
+          fi
+          echo "waiting for kafka broker ($$i/30)..."
+          sleep 2
+        done
+        create_topic() {
+          /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:29092 \
+            --create --if-not-exists --topic "$$1" --partitions 1 --replication-factor 1 \
+            >/dev/null 2>&1 && echo "  created: $$1" || echo "  exists : $$1"
+        }
+        echo "Pre-creating per-node topics..."
+        for n in $$(seq 1 $${KAFKA_INIT_GATE_COUNT}); do create_topic "gate-$$n"; done
+        for n in $$(seq 1 $${KAFKA_INIT_SCENE_COUNT}); do create_topic "scene-$$n"; done
+        for n in $$(seq 1 $${KAFKA_INIT_CENTRE_COUNT}); do create_topic "centre-$$n"; done
+        # Shared event topic referenced by base_deploy_config.yaml
+        create_topic "game-events"
+        echo "Kafka topic init done."
+    restart: "no"
+
   # Kafka UI
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
