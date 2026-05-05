@@ -52,7 +52,14 @@ int main(int argc, char *argv[])
 {
     return node::entry::RunSimpleNodeMainWithOwnedContext<GateHandler, GateRuntimeContext, GateNodeHooks>(
         GateNodeService,
-        Node::CanConnectNodeTypeList{},  // empty = connect to all discovered node types
+        // Gate only opens outbound muduo TCP RPC to Scene nodes. Other gates are
+        // reached via Kafka (`gate-{id}` topic) per the broadcast/relay architecture,
+        // and Go services (Login/Friend/Guild/SceneManager) use the gRPC channel cache.
+        // An empty whitelist would make Gate-1 connect to Gate-2's client-facing TCP
+        // listener; their codecs (ProtobufCodec vs RpcCodec) are incompatible and the
+        // receiver logs `ProtobufCodec::defaultErrorCallback - InvalidNameLen` on every
+        // reconnect (~2 Hz). Restricting to SceneNodeService eliminates that loop.
+        Node::CanConnectNodeTypeList{SceneNodeService},
         [](Node &node, GateRuntimeContext &context)
         {
             // Override the default Kafka dispatch with GateCommand-specific routing

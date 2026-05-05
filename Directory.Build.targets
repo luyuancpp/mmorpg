@@ -9,13 +9,23 @@
 
     <!-- Prefer latest C++ language mode across all C++ projects. -->
     <LanguageStandard>stdcpplatest</LanguageStandard>
+
+    <!-- Speed-focused defaults for local C++ builds. -->
+    <EnableModules>false</EnableModules>
+    <BuildStlModules>false</BuildStlModules>
   </PropertyGroup>
 
   <ItemDefinitionGroup
       Condition="'$(MSBuildProjectExtension)' == '.vcxproj' and '$(Configuration)' == 'Debug'">
+    <ClCompile>
+      <!-- Always compile in parallel and avoid EditAndContinue overhead. -->
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalOptions>/DEBUG:FULL %(AdditionalOptions)</AdditionalOptions>
+      <!-- FASTLINK significantly reduces incremental debug link time. -->
+      <AdditionalOptions>/DEBUG:FASTLINK %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
 
