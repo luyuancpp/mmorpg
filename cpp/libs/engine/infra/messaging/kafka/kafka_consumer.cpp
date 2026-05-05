@@ -1,9 +1,16 @@
 ﻿#include "kafka_consumer.h"
 #include "muduo/base/Logging.h"
 
+#include <chrono>
+#include <unordered_map>
+
 namespace
 {
 	constexpr int kMaxMessagesPerPoll = 128;
+	// Suppress repeated "unknown topic" warnings during startup race between
+	// consumer subscribe() and broker topic auto-creation. Log WARN at most once
+	// per topic per kUnknownTopicWarnIntervalSec; otherwise log at DEBUG.
+	constexpr int kUnknownTopicWarnIntervalSec = 30;
 }
 
 bool KafkaConsumer::init(const std::string &brokers, const std::string &groupId,
@@ -151,8 +158,24 @@ void KafkaConsumer::poll()
 
 		case RdKafka::ERR__UNKNOWN_TOPIC:
 		case RdKafka::ERR_UNKNOWN_TOPIC_OR_PART:
-			LOG_WARN << "[KafkaConsumer] Subscribed topic not available yet: " << msg->errstr();
+		{
+			static thread_local std::unordered_map<std::string, std::chrono::steady_clock::time_point> sLastWarnByTopic;
+			const std::string topic = msg->topic_name();
+			const auto now = std::chrono::steady_clock::now();
+			auto it = sLastWarnByTopic.find(topic);
+			const bool shouldWarn = (it == sLastWarnByTopic.end()) ||
+									(std::chrono::duration_cast<std::chrono::seconds>(now - it->second).count() >= kUnknownTopicWarnIntervalSec);
+			if (shouldWarn)
+			{
+				sLastWarnByTopic[topic] = now;
+				LOG_WARN << "[KafkaConsumer] Subscribed topic not available yet: " << msg->errstr();
+			}
+			else
+			{
+				LOG_DEBUG << "[KafkaConsumer] Subscribed topic not available yet: " << msg->errstr();
+			}
 			return;
+		}
 
 		default:
 			LOG_ERROR << "[KafkaConsumer] Error: " << msg->errstr();
