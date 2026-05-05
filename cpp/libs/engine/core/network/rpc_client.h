@@ -111,8 +111,11 @@ if (client_.connection() == nullptr)
 
 private:
     // Disconnects within this window after the initial successful connect are
-    // treated as benign startup-race (e.g. peer's node-id-conflict close + immediate
-    // reconnect) and logged at INFO instead of WARN.
+    // treated as benign startup-race noise and logged at INFO instead of WARN.
+    // Typical cause on Windows: win_connect() reports the socket writable via
+    // select() before the peer's TCP listen backlog is fully ready, producing
+    // a "false-positive" connect that the OS reaps within ~1s. muduo's
+    // enableRetry() then reconnects successfully on the very next attempt.
     static constexpr int kStartupGraceSeconds = 5;
 
     void onConnection(const muduo::net::TcpConnectionPtr& conn)
