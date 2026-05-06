@@ -48,6 +48,38 @@ std::optional<entt::entity> NodeUtils::FindNodeEntityByNodeId(uint32_t nodeType,
 	return std::nullopt;
 }
 
+std::optional<entt::entity> NodeUtils::FindNodeEntityByZoneAndNodeId(uint32_t nodeType, uint32_t zoneId, uint32_t nodeId)
+{
+	auto &registry = tlsNodeContextManager.GetRegistry(nodeType);
+	for (const auto &[entity, nodeInfo] : registry.view<NodeInfo>().each())
+	{
+		if (nodeInfo.zone_id() == zoneId && nodeInfo.node_id() == nodeId)
+		{
+			return entity;
+		}
+	}
+
+	return std::nullopt;
+}
+
+std::optional<entt::entity> NodeUtils::FindNodeEntityByUuid(uint32_t nodeType, const std::string &nodeUuid)
+{
+	if (nodeUuid.empty())
+	{
+		return std::nullopt;
+	}
+	auto &registry = tlsNodeContextManager.GetRegistry(nodeType);
+	for (const auto &[entity, nodeInfo] : registry.view<NodeInfo>().each())
+	{
+		if (IsSameNode(nodeInfo.node_uuid(), nodeUuid))
+		{
+			return entity;
+		}
+	}
+
+	return std::nullopt;
+}
+
 std::string NodeUtils::GetRegistryName(const entt::registry &registry)
 {
 	const auto type = GetRegistryType(registry);

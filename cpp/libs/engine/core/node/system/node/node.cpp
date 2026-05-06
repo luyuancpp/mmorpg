@@ -682,6 +682,20 @@ void Node::HandleServiceNodeStop(const std::string &key, const std::string &node
 		return;
 	}
 
+	// Mirror the AddServiceNode zone filter: TCP nodes from foreign zones
+	// were never inserted into this node's registry, so a stop event for
+	// them must not trigger ExecuteNodeRemoval — that path keys removal by
+	// (node_type, node_id) and would otherwise destroy the local entity at
+	// the same node_id slot, even though it belongs to a different zone.
+	if (stoppedNode.protocol_type() == PROTOCOL_TCP &&
+		stoppedNode.zone_id() != GetNodeInfo().zone_id())
+	{
+		LOG_TRACE << "Skip TCP stop event for foreign zone. key=" << key
+				  << ", node_zone=" << stoppedNode.zone_id()
+				  << ", self_zone=" << GetNodeInfo().zone_id();
+		return;
+	}
+
 	const auto graceSeconds = tlsNodeConfigManager.GetBaseDeployConfig().node_removal_grace_seconds();
 
 	// --- Grace period path: defer removal so breakpoint-paused nodes can re-register ---
