@@ -76,7 +76,15 @@ namespace NodeUtils
 
 	eNodeType GetServiceTypeFromPrefix(const std::string &prefix);
 	entt::registry &GetRegistryForNodeType(uint32_t nodeType);
+	// Linear scan through the registry's NodeInfo view; matches the FIRST node
+	// with the given node_id, regardless of zone. Use only when zone is known
+	// to be unique (e.g. self-zone GateNode). Prefer FindNodeEntityByZoneAndNodeId.
 	std::optional<entt::entity> FindNodeEntityByNodeId(uint32_t nodeType, uint32_t nodeId);
+	// Multi-zone safe lookup: matches both zone_id and node_id. Use this for
+	// any cross-zone capable code path (login routing, gate↔scene reverse
+	// lookup, etc.) so that node_id collisions across zones do not alias.
+	std::optional<entt::entity> FindNodeEntityByZoneAndNodeId(uint32_t nodeType, uint32_t zoneId, uint32_t nodeId);
+	std::optional<entt::entity> FindNodeEntityByUuid(uint32_t nodeType, const std::string &nodeUuid);
 	std::string GetRegistryName(const entt::registry &registry);
 	eNodeType GetRegistryType(const entt::registry &registry);
 	bool IsSameNode(const std::string &uuid1, const std::string &uuid2);
