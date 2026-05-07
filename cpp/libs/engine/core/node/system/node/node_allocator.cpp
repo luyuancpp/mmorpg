@@ -19,6 +19,17 @@
 
 uint32_t tryPortId{0};
 
+std::unordered_set<uint32_t>& NodeAllocator::lostIds()
+{
+	static std::unordered_set<uint32_t> ids;
+	return ids;
+}
+
+void NodeAllocator::RecordLostId(uint32_t id)
+{
+	lostIds().insert(id);
+}
+
 void NodeAllocator::AcquireNode()
 {
 	const uint32_t nodeType = gNode->GetNodeType();
@@ -41,31 +52,43 @@ void NodeAllocator::AcquireNode()
 		}
 	}
 
+	// Merge in ids we already lost CAS on this boot. The local ECS snapshot
+	// can lag the etcd watch stream by hundreds of ms during cold start, so
+	// without this we'd retry the same id forever (the snapshot stays empty
+	// because watch events haven't fanned out yet).
+	for (uint32_t id : lostIds())
+	{
+		usedIds.insert(id);
+		if (id > maxUsedId)
+		{
+			maxUsedId = id;
+		}
+	}
+
 	static constexpr uint32_t kMaxNodeId = static_cast<uint32_t>(kNodeMask);
 	uint32_t nextNodeId;
 
-	if (maxUsedId < kMaxNodeId)
+	// Always scan upward through gaps so a previously-lost id slot becomes
+	// reusable as soon as its lease drops (existingNodes-derived usedIds
+	// gets cleaned up by the discovery layer; lostIds is process-local and
+	// only matters for the same boot).
+	bool found = false;
+	for (uint32_t id = 0; id <= kMaxNodeId; ++id)
 	{
-		nextNodeId = maxUsedId + 1;
-	}
-	else
-	{
-		bool found = false;
-		for (uint32_t id = 0; id <= kMaxNodeId; ++id)
+		if (usedIds.find(id) == usedIds.end())
 		{
-			if (usedIds.find(id) == usedIds.end())
-			{
-				nextNodeId = id;
-				found = true;
-				break;
-			}
-		}
-		if (!found)
-		{
-			LOG_FATAL << "No available node ID (max " << kMaxNodeId << ")";
-			throw std::runtime_error("Node ID space exhausted");
+			nextNodeId = id;
+			found = true;
+			break;
 		}
 	}
+	if (!found)
+	{
+		LOG_FATAL << "No available node ID (max " << kMaxNodeId << ")";
+		throw std::runtime_error("Node ID space exhausted");
+	}
+
+	(void)maxUsedId; // retained for log/debug parity; iteration starts at 0
 
 	GetNodeInfo().set_node_id(nextNodeId);
 

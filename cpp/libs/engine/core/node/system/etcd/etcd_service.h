@@ -42,6 +42,11 @@ private:
     const char* RegistrationModeName(RegistrationMode mode) const;
     bool IsNodePortKey(const std::string& key) const;
     bool IsNodeIdKey(const std::string& key) const;
+    // True if `key` is the global allocation key for this node's
+    // (node_type, node_id). Distinguishing it from the per-zone NodeIdKey
+    // lets OnTxnSucceeded skip Snowflake activation on the alloc-only step
+    // (we activate Snowflake only after the per-zone publish succeeds).
+    bool IsNodeAllocationKey(const std::string& key) const;
 
     void InitKVHandlers();
     void InitWatchHandlers();
