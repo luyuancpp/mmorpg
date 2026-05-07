@@ -91,11 +91,10 @@ static inline uint64_t GetEffectiveNodeId(
 	const SessionInfo &session,
 	uint32_t nodeType)
 {
-	// Despite the name, `storedNodeId` is the integral form of an entt::entity,
-	// not a business node_id. The handshake layer (registration_manager /
-	// gate_event_handler) always stores `entt::to_integral(entity)` here. We
-	// keep the legacy field name to avoid a proto-wide rename.
-	const auto storedEntityInt = session.GetNodeId(nodeType);
+	// Despite the name, this is the integral form of an entt::entity, not a
+	// business node_id. The handshake layer (registration_manager /
+	// gate_event_handler) always stores `entt::to_integral(entity)` here.
+	const auto storedEntityInt = session.GetEntityId(nodeType);
 	if (storedEntityInt == SessionInfo::kInvalidEntityId)
 	{
 		return storedEntityInt;
@@ -143,27 +142,27 @@ std::optional<entt::entity> ResolveSessionTargetNode(SessionId sessionId, uint32
 
 	auto &session = sessionIt->second;
 
-	if (!session.HasNodeId(nodeType))
+	if (!session.HasEntityId(nodeType))
 	{
 		LOG_ERROR << "No node bound for nodeType: " << nodeType << ", session id: " << sessionId;
 		return std::nullopt;
 	}
 
 	const auto &registry = tlsNodeContextManager.GetRegistry(nodeType);
-	const auto effectiveNodeId = GetEffectiveNodeId(session, nodeType);
-	entt::entity nodeEntity = entt::entity{effectiveNodeId};
+	const auto effectiveEntityInt = GetEffectiveNodeId(session, nodeType);
+	entt::entity nodeEntity = entt::entity{effectiveEntityInt};
 	if (!registry.valid(nodeEntity))
 	{
 		LOG_ERROR << "Bound node is invalid. nodeType: " << nodeType
 				  << ", session id: " << sessionId
-				  << ", stored_node_id=" << session.GetNodeId(nodeType);
-		session.SetNodeId(nodeType, SessionInfo::kInvalidEntityId);
+				  << ", stored_entity_int=" << session.GetEntityId(nodeType);
+		session.SetEntityId(nodeType, SessionInfo::kInvalidEntityId);
 		return std::nullopt;
 	}
 
-	if (effectiveNodeId != session.GetNodeId(nodeType))
+	if (effectiveEntityInt != session.GetEntityId(nodeType))
 	{
-		session.SetNodeId(nodeType, effectiveNodeId);
+		session.SetEntityId(nodeType, effectiveEntityInt);
 	}
 
 	return nodeEntity;
@@ -276,9 +275,9 @@ void RpcClientSessionHandler::HandleConnectionDisconnection(const muduo::net::Tc
 	if (sessionFound)
 	{
 		// Notify Scene to exit the player immediately (saves state and stops broadcasting).
-		if (sessionIt->second.HasNodeId(SceneNodeService))
+		if (sessionIt->second.HasEntityId(SceneNodeService))
 		{
-			const auto sceneEntityId = sessionIt->second.GetNodeId(SceneNodeService);
+			const auto sceneEntityId = sessionIt->second.GetEntityId(SceneNodeService);
 			sceneNodeId = sceneEntityId;
 			auto &sceneRegistry = tlsNodeContextManager.GetRegistry(SceneNodeService);
 			entt::entity sceneEntity{sceneEntityId};
@@ -590,8 +589,8 @@ void RpcClientSessionHandler::OnNodeRemoveEventHandler(const OnNodeRemoveEvent &
 	auto &registry = tlsNodeContextManager.GetRegistry(pb.node_type());
 	for (auto &session : tlsSessionManager.sessions())
 	{
-		if (session.second.GetNodeId(pb.node_type()) != pb.entity())
+		if (session.second.GetEntityId(pb.node_type()) != pb.entity())
 			continue;
-		session.second.SetNodeId(pb.node_type(), SessionInfo::kInvalidEntityId);
+		session.second.SetEntityId(pb.node_type(), SessionInfo::kInvalidEntityId);
 	}
 }

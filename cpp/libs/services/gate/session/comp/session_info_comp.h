@@ -11,30 +11,38 @@ struct SessionInfo
 	// Entity IDs are uint64_t (ENTT_ID_TYPE=uint64_t with version bits).
 	// Using uint64_t avoids truncation that loses entity version/generation,
 	// which causes registry.valid() to reject recycled entities.
+	//
+	// Naming note: these methods are named Entity*-Id (not Node*-Id) because
+	// what we track per nodeType is the local entt::entity integer for the
+	// remote node — NOT the business `node_id` on that node. Post uuid-primary-
+	// key refactor of node_connector, entity and node_id are no longer equal,
+	// so using "EntityId" terminology prevents a common footgun where callers
+	// would assume the returned value can be fed into `entt::entity{...}` and
+	// land on a valid slot without going through a FindNodeEntity* helper.
 	static constexpr uint64_t kInvalidEntityId{UINT64_MAX};
 	using NodeEntityMap = std::unordered_map<uint32_t, uint64_t>;
 
 	SessionInfo() = default;
 
-	void SetNodeId(uint32_t nodeType, uint64_t entityId)
+	void SetEntityId(uint32_t nodeType, uint64_t entityId)
 	{
-		nodeIds[nodeType] = entityId;
+		entityIds[nodeType] = entityId;
 	}
 
-	uint64_t GetNodeId(uint32_t nodeType) const
+	uint64_t GetEntityId(uint32_t nodeType) const
 	{
-		auto it = nodeIds.find(nodeType);
-		if (it != nodeIds.end())
+		auto it = entityIds.find(nodeType);
+		if (it != entityIds.end())
 		{
 			return it->second;
 		}
 		return kInvalidEntityId;
 	}
 
-	bool HasNodeId(uint32_t nodeType) const
+	bool HasEntityId(uint32_t nodeType) const
 	{
-		auto it = nodeIds.find(nodeType);
-		if (it == nodeIds.end())
+		auto it = entityIds.find(nodeType);
+		if (it == entityIds.end())
 		{
 			return false;
 		}
@@ -49,5 +57,5 @@ struct SessionInfo
 	uint64_t sceneId{0};            // Scene instance GUID from SceneManager (RoutePlayerEvent)
 	bool verified{false};			// True after client passes Gate connection token verification
 private:
-	NodeEntityMap nodeIds; // Sparse map, only stores assigned node entities
+	NodeEntityMap entityIds; // Sparse map, only stores assigned node entities
 };

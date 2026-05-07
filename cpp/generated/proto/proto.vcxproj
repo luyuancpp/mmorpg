@@ -104,6 +104,7 @@
     <ClCompile Include="player\player.pb.cc" />
     <ClCompile Include="scene\client_player_common.pb.cc" />
     <ClCompile Include="scene\player_lifecycle.pb.cc" />
+    <ClCompile Include="scene\player_movement.pb.cc" />
     <ClCompile Include="scene\s2s_player_scene.pb.cc" />
     <ClCompile Include="scene\scene_admin.pb.cc" />
     <ClCompile Include="scene\player_currency.pb.cc" />
@@ -206,6 +207,7 @@
     <ClInclude Include="player\player.pb.h" />
     <ClInclude Include="scene\client_player_common.pb.h" />
     <ClInclude Include="scene\player_lifecycle.pb.h" />
+    <ClInclude Include="scene\player_movement.pb.h" />
     <ClInclude Include="scene\s2s_player_scene.pb.h" />
     <ClInclude Include="scene\scene_admin.pb.h" />
     <ClInclude Include="scene\player_currency.pb.h" />
