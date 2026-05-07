@@ -106,6 +106,11 @@ type Paths struct {
 	PlayerStorageSystemDir  string `yaml:"player_storage_system_dir"`
 	PlayerDataLoaderFile    string `yaml:"player_data_loader_file"`
 
+	// Unity client output paths.
+	UnityClientDir            string `yaml:"unity_client_dir"`
+	UnityHandlerDir           string `yaml:"unity_handler_dir"`
+	UnityHandlerRegistryFile  string `yaml:"unity_handler_registry_file"`
+
 	// paths from original config
 	EventHandlerSourceDirectory    string `yaml:"event_handler_source_directory"`
 	SceneNodeEventHandlerDirectory string `yaml:"scene_node_event_handler_directory"`
@@ -242,6 +247,7 @@ type Generators struct {
 	EnableRobotProto    bool `yaml:"enable_robot_proto"`
 	EnableRobotGoZero   bool `yaml:"enable_robot_go_zero"`
 	EnableAttributeSync bool `yaml:"enable_attribute_sync"`
+	EnableUnityClient   bool `yaml:"enable_unity_client"`
 }
 
 // Mapping holds template mapping configuration.
