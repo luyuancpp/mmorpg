@@ -25,6 +25,11 @@ paths:
   robot_generated_proto: "{{robot_generated}}/proto/" # Robot generated proto directory
   generated_dir: "cpp/generated/"
 
+  # Unity client (mounted as a git submodule at client/unity/).
+  unity_client_dir: "{{output_root}}client/unity/"
+  unity_handler_dir: "{{unity_client_dir}}Assets/Scripts/Net/Generated/Handlers/"
+  unity_handler_registry_file: "{{unity_client_dir}}Assets/Scripts/Net/Generated/HandlerRegistry.cs"
+
   # Tools and temporary directories
   tool_dir: "tools/"
   temp_file_gen_dir: "{{output_root}}{{tool_dir}}generated/temp/files/"
@@ -233,6 +238,7 @@ generators:
   enable_robot_proto: true # Enable robot proto generation
   enable_robot_go_zero: true # Enable robot go-zero proto generation
   enable_attribute_sync: true
+  enable_unity_client: true # Generate Unity client handler stubs + registry
 
 # Template mapping configuration
 mappings:

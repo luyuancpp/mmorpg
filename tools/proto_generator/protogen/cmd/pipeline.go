@@ -8,6 +8,7 @@ import (
 	cppGenOption "protogen/internal/generator/cpp/options"
 	goGen "protogen/internal/generator/go"
 	goGenOption "protogen/internal/generator/go/options"
+	unityGen "protogen/internal/generator/unity"
 	"protogen/internal/prototools"
 	protoToolsOption "protogen/internal/prototools/option"
 )
@@ -62,6 +63,7 @@ func runGenerationPipeline(runner *ExecutionRunner) {
 		{Name: "goGen.GenerateDBResource", Run: goGen.GenerateDBResource},
 		{Name: "goGen.GoRobotHandlerGenerator", Run: goGen.GoRobotHandlerGenerator},
 		{Name: "goGen.GoRobotTotalHandlerGenerator", Run: goGen.GoRobotTotalHandlerGenerator},
+		{Name: "unityGen.UnityClientHandlerGenerator", Run: unityGen.UnityClientHandlerGenerator},
 		{Name: "cppGen.CppPlayerDataLoadGenerator", Run: cppGen.CppPlayerDataLoadGenerator},
 		{Name: "cppGen.CppGrpcCallClient", Run: cppGen.CppGrpcCallClient},
 		{Name: "protoToolsOption.ProcessAllOptions", Run: func(wg *sync.WaitGroup) {

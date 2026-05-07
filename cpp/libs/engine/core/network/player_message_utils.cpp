@@ -151,12 +151,13 @@ void InternalBroadcast(uint32_t messageId, const google::protobuf::Message &mess
 			continue;
 		}
 
-		entt::entity gateNodeId{GetGateNodeId(playerSessionSnapshotPB->gate_session_id())};
-		if (!gateNodeRegistry.valid(gateNodeId))
+		auto gateEntityOpt = ResolveLocalZoneGateEntity(playerSessionSnapshotPB->gate_session_id());
+		if (!gateEntityOpt)
 		{
 			LOG_ERROR << "Gate node not found for player session ID: " << playerSessionSnapshotPB->gate_session_id();
 			continue;
 		}
+		entt::entity gateNodeId = *gateEntityOpt;
 
 		gateList[gateNodeId].emplace(playerSessionSnapshotPB->gate_session_id());
 	}
@@ -206,9 +207,8 @@ void InternalBroadcastToScene(uint32_t messageId, const google::protobuf::Messag
 		const auto *snapshot = tlsEcs.actorRegistry.try_get<PlayerSessionSnapshotComp>(player);
 		if (!snapshot)
 			continue;
-		entt::entity gateNodeId{GetGateNodeId(snapshot->gate_session_id())};
-		if (gateNodeRegistry.valid(gateNodeId))
-			gateNodes.insert(gateNodeId);
+		if (auto gateEntityOpt = ResolveLocalZoneGateEntity(snapshot->gate_session_id()); gateEntityOpt)
+			gateNodes.insert(*gateEntityOpt);
 	}
 
 	BroadcastToSceneRequest request;
@@ -258,24 +258,24 @@ void SendMessageToPlayerOnGrpcNode(uint32_t messageId, const google::protobuf::M
 	SendMessageToPlayerOnGrpcNode(messageId, message, tlsEcs.GetPlayer(playerId));
 }
 
-inline NodeId PickRandomNodeId(uint32_t nodeType)
+inline entt::entity PickRandomNodeEntity(uint32_t nodeType)
 {
 	auto &registry = tlsNodeContextManager.GetRegistry(nodeType);
 	auto view = registry.view<NodeInfo>();
-	std::vector<NodeId> candidates;
+	std::vector<entt::entity> candidates;
 	const auto zoneId = GetNodeInfo().zone_id();
 	for (auto entity : view)
 	{
 		const auto &node = view.get<NodeInfo>(entity);
 		if (node.zone_id() == zoneId)
 		{
-			candidates.push_back(node.node_id());
+			candidates.push_back(entity);
 		}
 	}
 	if (candidates.empty())
 	{
 		LOG_ERROR << "No available node for type: " << nodeType;
-		return kInvalidNodeId;
+		return entt::null;
 	}
 	return candidates[tlsRandom.Rand<size_t>(0, candidates.size() - 1)];
 }
@@ -307,9 +307,8 @@ void SendMessageToPlayerOnGrpcNode(uint32_t messageId, const google::protobuf::M
 		return;
 	}
 
-	auto nodeId = PickRandomNodeId(rpcHandlerMeta.targetNodeType);
-	entt::entity node{entt::to_entity(nodeId)};
-	if (!tlsNodeContextManager.GetRegistry(rpcHandlerMeta.targetNodeType).valid(node))
+	auto node = PickRandomNodeEntity(rpcHandlerMeta.targetNodeType);
+	if (node == entt::null || !tlsNodeContextManager.GetRegistry(rpcHandlerMeta.targetNodeType).valid(node))
 	{
 		LOG_ERROR << "Node not found for type: " << rpcHandlerMeta.targetNodeType;
 		return;
