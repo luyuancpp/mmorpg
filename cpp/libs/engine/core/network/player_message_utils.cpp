@@ -33,13 +33,14 @@ void SendMessageToClientViaGate(uint32_t messageId, const google::protobuf::Mess
 		return;
 	}
 
-	entt::entity gateSessionId{GetGateNodeId(playerSessionSnapshotPB->gate_session_id())};
+	auto gateEntityOpt = ResolveLocalZoneGateEntity(playerSessionSnapshotPB->gate_session_id());
 	auto &gateNodeRegistry = tlsNodeContextManager.GetRegistry(eNodeType::GateNodeService);
-	if (!gateNodeRegistry.valid(gateSessionId))
+	if (!gateEntityOpt)
 	{
 		LOG_ERROR << "Gate session not found for player with session ID " << playerSessionSnapshotPB->gate_session_id();
 		return;
 	}
+	entt::entity gateSessionId = *gateEntityOpt;
 
 	const auto gateSessionPtr = gateNodeRegistry.try_get<RpcSession>(gateSessionId);
 	if (!gateSessionPtr)

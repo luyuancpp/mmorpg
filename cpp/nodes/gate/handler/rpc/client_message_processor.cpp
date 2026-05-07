@@ -91,28 +91,29 @@ static inline uint64_t GetEffectiveNodeId(
 	const SessionInfo &session,
 	uint32_t nodeType)
 {
-	const auto storedNodeId = session.GetNodeId(nodeType);
-	if (storedNodeId == SessionInfo::kInvalidEntityId)
+	// Despite the name, `storedNodeId` is the integral form of an entt::entity,
+	// not a business node_id. The handshake layer (registration_manager /
+	// gate_event_handler) always stores `entt::to_integral(entity)` here. We
+	// keep the legacy field name to avoid a proto-wide rename.
+	const auto storedEntityInt = session.GetNodeId(nodeType);
+	if (storedEntityInt == SessionInfo::kInvalidEntityId)
 	{
-		return storedNodeId;
+		return storedEntityInt;
 	}
 
 	auto &registry = tlsNodeContextManager.GetRegistry(nodeType);
-	const entt::entity storedEntity{storedNodeId};
+	const entt::entity storedEntity{storedEntityInt};
 	if (registry.valid(storedEntity))
 	{
-		return storedNodeId;
+		return storedEntityInt;
 	}
 
-	if (storedNodeId <= 0xFFFFFFFFULL)
-	{
-		if (const auto resolvedEntity = NodeUtils::FindNodeEntityByNodeId(nodeType, static_cast<uint32_t>(storedNodeId)); resolvedEntity)
-		{
-			return entt::to_integral(*resolvedEntity);
-		}
-	}
-
-	return storedNodeId;
+	// Post uuid-refactor there is no node_id -> entity fallback: when the
+	// stored entity has been destroyed it means the remote node is gone, and
+	// any re-registration will be surfaced through event handlers that refresh
+	// the session binding via entity integers. Returning kInvalidEntityId lets
+	// the caller short-circuit rather than forward to a phantom node.
+	return SessionInfo::kInvalidEntityId;
 }
 
 RpcClientSessionHandler::RpcClientSessionHandler(ProtobufCodec &codec,

@@ -49,25 +49,28 @@ void ServiceDiscoveryManager::AddServiceNode(const std::string &nodeJson, uint32
 	}
 
 	// Multi-zone safety guard:
-	//   For TCP-protocol service nodes (Gate / Scene / Login) the local
-	//   entt::entity slot is keyed off `node_id`. node_id is only unique
-	//   within a zone, so allowing remote-zone TCP nodes into the local
-	//   registry would alias different zones onto the same entity slot
-	//   and trigger "Node not found" errors when PickRandomNode filters by
-	//   zone_id. Cross-zone communication is intentionally routed via the
-	//   gRPC SceneManager (with Redirect responses) rather than direct TCP,
-	//   so this filter is safe to apply globally for TCP nodes.
+	//   Zone-scoped services (Gate / Scene / Login / PlayerLocator) register
+	//   under etcd keys that include a zone segment and callers only talk to
+	//   the same zone. Their local entt::entity slot is keyed by node_id,
+	//   which is unique ONLY within a zone — so accepting a foreign-zone
+	//   node into this registry would alias two different zones onto the
+	//   same entity slot and break PickRandomNode's zone filter
+	//   ("Node not found for session id ..., message id: 48").
 	//
-	//   gRPC nodes (DataService, SceneManager, etc.) keep accepting cross-
-	//   zone entries because their entities are auto-assigned by the
-	//   registry and looked up by uuid in ExecuteNodeRemoval.
-	if (discoveredNode.protocol_type() == PROTOCOL_TCP &&
+	//   Cross-zone services (SceneManager, DataService, ...) are kept as a
+	//   global pool intentionally: SceneManager is how we issue cross-zone
+	//   Redirect responses, and DataService serves global account data.
+	//   Their entity ids are auto-assigned in ConnectToGrpcNode and looked
+	//   up by uuid in ExecuteNodeRemoval, so cross-zone is safe for them.
+	//
+	//   The authoritative classification lives in NodeUtils::IsZoneScopedNodeType.
+	if (NodeUtils::IsZoneScopedNodeType(nodeType) &&
 		discoveredNode.zone_id() != gNode->GetNodeInfo().zone_id())
 	{
-		LOG_TRACE << "Skip TCP node from foreign zone. type=" << nodeType
-				  << ", node_zone=" << discoveredNode.zone_id()
-				  << ", self_zone=" << gNode->GetNodeInfo().zone_id()
-				  << ", uuid=" << discoveredNode.node_uuid();
+		LOG_INFO << "Skip zone-scoped node from foreign zone. type=" << nodeType
+				 << ", node_zone=" << discoveredNode.zone_id()
+				 << ", self_zone=" << gNode->GetNodeInfo().zone_id()
+				 << ", uuid=" << discoveredNode.node_uuid();
 		return;
 	}
 

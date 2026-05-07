@@ -89,4 +89,19 @@ namespace NodeUtils
 	eNodeType GetRegistryType(const entt::registry &registry);
 	bool IsSameNode(const std::string &uuid1, const std::string &uuid2);
 	bool IsNodeConnected(uint32_t nodeType, const NodeInfo &info);
+
+	// True for services whose node_id is only unique within a zone and whose
+	// runtime contract is "caller only talks to the same zone". The local
+	// service registry on each node must refuse to insert such nodes from
+	// foreign zones; otherwise node_id collisions (e.g. LoginNode node_id=1
+	// present in zones 2, 3 and 4) alias different zones onto the same
+	// entt::entity slot and break PickRandomNode's zone filter.
+	//
+	//   zone-scoped (local-only)  : GateNode, SceneNode, LoginNode, PlayerLocator
+	//   cross-zone (global pool)  : DataService, SceneManager, Chat/Guild/...
+	//
+	// SceneManager is multi-zone by design — it's how Gate/Scene request a
+	// cross-zone redirect. DataService runs one logical pool for global data
+	// (e.g. account lookup) that every zone shares.
+	bool IsZoneScopedNodeType(uint32_t nodeType);
 };

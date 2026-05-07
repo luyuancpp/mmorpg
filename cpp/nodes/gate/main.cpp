@@ -52,14 +52,23 @@ int main(int argc, char *argv[])
 {
     return node::entry::RunSimpleNodeMainWithOwnedContext<GateHandler, GateRuntimeContext, GateNodeHooks>(
         GateNodeService,
-        // Gate only opens outbound muduo TCP RPC to Scene nodes. Other gates are
-        // reached via Kafka (`gate-{id}` topic) per the broadcast/relay architecture,
-        // and Go services (Login/Friend/Guild/SceneManager) use the gRPC channel cache.
-        // An empty whitelist would make Gate-1 connect to Gate-2's client-facing TCP
-        // listener; their codecs (ProtobufCodec vs RpcCodec) are incompatible and the
-        // receiver logs `ProtobufCodec::defaultErrorCallback - InvalidNameLen` on every
-        // reconnect (~2 Hz). Restricting to SceneNodeService eliminates that loop.
-        Node::CanConnectNodeTypeList{SceneNodeService},
+        // Gate's outbound connections, by transport:
+        //   * SceneNodeService — muduo TCP RPC (in-zone Gate↔Scene messaging).
+        //   * LoginNodeService / SceneManagerNodeService — gRPC, dispatched via
+        //     PickRandomNode in client_message_processor (msg_id=48 login,
+        //     scene-manager redirects, etc.). They MUST appear in the whitelist
+        //     so ConnectAllNodes / AddServiceNode wire them into the local
+        //     entt::registry; otherwise PickRandomNode finds an empty registry
+        //     and rejects every request with "Node not found, message id: 48".
+        // Cross-zone is handled by ServiceDiscoveryManager's zone filter
+        // (see NodeUtils::IsZoneScopedNodeType): only same-zone Login/Scene
+        // are inserted, while SceneManager (cross-zone by design) is global.
+        // Other gates are reached via Kafka (`gate-{id}` topic). An empty
+        // whitelist would make Gate-1 connect to Gate-2's client-facing TCP
+        // listener; their codecs (ProtobufCodec vs RpcCodec) are incompatible
+        // and the receiver logs `ProtobufCodec::defaultErrorCallback -
+        // InvalidNameLen` on every reconnect (~2 Hz).
+        Node::CanConnectNodeTypeList{SceneNodeService, LoginNodeService, SceneManagerNodeService},
         [](Node &node, GateRuntimeContext &context)
         {
             // Override the default Kafka dispatch with GateCommand-specific routing

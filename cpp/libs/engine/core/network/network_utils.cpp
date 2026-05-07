@@ -2,12 +2,21 @@
 
 #include <boost/asio.hpp>
 #include <iostream>
+#include "network/node_utils.h"
 #include "node/system/node/node_util.h"
 #include "proto/common/base/session.pb.h"
 
 NodeId GetGateNodeId(SessionId session_id)
 {
 	return static_cast<NodeId>(session_id >> SessionIdGenerator::node_bit());
+}
+
+std::optional<entt::entity> ResolveLocalZoneGateEntity(SessionId sessionId)
+{
+	return NodeUtils::FindNodeEntityByZoneAndNodeId(
+		eNodeType::GateNodeService,
+		GetZoneId(),
+		GetGateNodeId(sessionId));
 }
 
 void ParseIpPort(const std::string &input, std::string &ip, uint16_t &port)
