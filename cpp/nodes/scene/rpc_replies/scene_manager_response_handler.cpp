@@ -95,11 +95,13 @@ void InitSceneManagerReply()
 
             NodeId gateNodeId = GetGateNodeId(playerSessionPB->gate_session_id());
             std::string gateInstanceId;
-            auto& gateRegistry = tlsNodeContextManager.GetRegistry(eNodeType::GateNodeService);
-            if (const auto* gateNodeInfo =
-                gateRegistry.try_get<NodeInfo>(entt::entity{ gateNodeId }))
+            if (auto gateEntityOpt = ResolveLocalZoneGateEntity(playerSessionPB->gate_session_id()); gateEntityOpt)
             {
-                gateInstanceId = gateNodeInfo->node_uuid();
+                auto& gateRegistry = tlsNodeContextManager.GetRegistry(eNodeType::GateNodeService);
+                if (const auto* gateNodeInfo = gateRegistry.try_get<NodeInfo>(*gateEntityOpt))
+                {
+                    gateInstanceId = gateNodeInfo->node_uuid();
+                }
             }
 
             ::scene_manager::EnterSceneRequest req;

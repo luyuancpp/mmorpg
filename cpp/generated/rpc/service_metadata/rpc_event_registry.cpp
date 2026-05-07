@@ -13,6 +13,7 @@
 #include "proto/scene/client_player_common.pb.h"
 #include "proto/scene/player_currency.pb.h"
 #include "proto/scene/player_lifecycle.pb.h"
+#include "proto/scene/player_movement.pb.h"
 #include "proto/scene/player_rollback.pb.h"
 #include "proto/scene/player_scene.pb.h"
 #include "proto/scene/player_skill.pb.h"
@@ -33,6 +34,7 @@
 #include "rpc/service_metadata/client_player_common_service_metadata.h"
 #include "rpc/service_metadata/player_currency_service_metadata.h"
 #include "rpc/service_metadata/player_lifecycle_service_metadata.h"
+#include "rpc/service_metadata/player_movement_service_metadata.h"
 #include "rpc/service_metadata/player_rollback_service_metadata.h"
 #include "rpc/service_metadata/player_scene_service_metadata.h"
 #include "rpc/service_metadata/player_skill_service_metadata.h"
@@ -76,6 +78,7 @@ class GateImpl final : public Gate {};
 class SceneClientPlayerCommonImpl final : public SceneClientPlayerCommon {};
 class SceneCurrencyClientPlayerImpl final : public SceneCurrencyClientPlayer {};
 class ScenePlayerImpl final : public ScenePlayer {};
+class SceneMovementClientPlayerImpl final : public SceneMovementClientPlayer {};
 class SceneRollbackClientPlayerImpl final : public SceneRollbackClientPlayer {};
 class SceneSceneClientPlayerImpl final : public SceneSceneClientPlayer {};
 class SceneSkillClientPlayerImpl final : public SceneSkillClientPlayer {};
@@ -149,7 +152,7 @@ namespace scene_node{void SendSceneNodeGrpcCreateScene(entt::registry& , entt::e
 namespace scene_node{void SendSceneNodeGrpcDestroyScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace scene_node{void SendSceneNodeGrpcReleasePlayer(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 
-std::array<RpcMethodMeta, 130> gRpcMethodRegistry;
+std::array<RpcMethodMeta, 138> gRpcMethodRegistry;
 
 void InitMessageInfo()
 {
@@ -566,6 +569,48 @@ void InitMessageInfo()
         std::make_unique<::google::protobuf::Empty>(),
         std::make_unique<ScenePlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
 
+    // --- SceneMovementClientPlayer ---
+    gRpcMethodRegistry[SceneMovementClientPlayerMoveStartMessageId] = RpcMethodMeta{
+        "SceneMovementClientPlayer", "MoveStart",
+        std::make_unique<::MoveStartC2S>(),
+        std::make_unique<::Empty>(),
+        std::make_unique<SceneMovementClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+    gRpcMethodRegistry[SceneMovementClientPlayerMoveStopMessageId] = RpcMethodMeta{
+        "SceneMovementClientPlayer", "MoveStop",
+        std::make_unique<::MoveStopC2S>(),
+        std::make_unique<::Empty>(),
+        std::make_unique<SceneMovementClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+    gRpcMethodRegistry[SceneMovementClientPlayerMoveSyncMessageId] = RpcMethodMeta{
+        "SceneMovementClientPlayer", "MoveSync",
+        std::make_unique<::MoveSyncC2S>(),
+        std::make_unique<::Empty>(),
+        std::make_unique<SceneMovementClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+    gRpcMethodRegistry[SceneMovementClientPlayerTeleportRequestMessageId] = RpcMethodMeta{
+        "SceneMovementClientPlayer", "TeleportRequest",
+        std::make_unique<::TeleportRequestC2S>(),
+        std::make_unique<::TeleportRequestC2SResponse>(),
+        std::make_unique<SceneMovementClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+    gRpcMethodRegistry[SceneMovementClientPlayerNotifyMoveAckMessageId] = RpcMethodMeta{
+        "SceneMovementClientPlayer", "NotifyMoveAck",
+        std::make_unique<::MoveAckS2C>(),
+        std::make_unique<::Empty>(),
+        std::make_unique<SceneMovementClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+    gRpcMethodRegistry[SceneMovementClientPlayerNotifyActorMoveMessageId] = RpcMethodMeta{
+        "SceneMovementClientPlayer", "NotifyActorMove",
+        std::make_unique<::ActorMoveS2C>(),
+        std::make_unique<::Empty>(),
+        std::make_unique<SceneMovementClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+    gRpcMethodRegistry[SceneMovementClientPlayerNotifyActorMoveListMessageId] = RpcMethodMeta{
+        "SceneMovementClientPlayer", "NotifyActorMoveList",
+        std::make_unique<::ActorMoveListS2C>(),
+        std::make_unique<::Empty>(),
+        std::make_unique<SceneMovementClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+    gRpcMethodRegistry[SceneMovementClientPlayerNotifyTeleportMessageId] = RpcMethodMeta{
+        "SceneMovementClientPlayer", "NotifyTeleport",
+        std::make_unique<::TeleportS2C>(),
+        std::make_unique<::Empty>(),
+        std::make_unique<SceneMovementClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+
     // --- SceneRollbackClientPlayer ---
     gRpcMethodRegistry[SceneRollbackClientPlayerGmAttachDebtMessageId] = RpcMethodMeta{
         "SceneRollbackClientPlayer", "GmAttachDebt",
@@ -859,6 +904,14 @@ bool IsClientMessageId(uint32_t messageId)
 	case SceneClientPlayerCommonSendTipToClientMessageId:
 	case SceneClientPlayerCommonKickPlayerMessageId:
 	case SceneClientPlayerCommonRedirectToGateMessageId:
+	case SceneMovementClientPlayerMoveStartMessageId:
+	case SceneMovementClientPlayerMoveStopMessageId:
+	case SceneMovementClientPlayerMoveSyncMessageId:
+	case SceneMovementClientPlayerTeleportRequestMessageId:
+	case SceneMovementClientPlayerNotifyMoveAckMessageId:
+	case SceneMovementClientPlayerNotifyActorMoveMessageId:
+	case SceneMovementClientPlayerNotifyActorMoveListMessageId:
+	case SceneMovementClientPlayerNotifyTeleportMessageId:
 	case SceneSceneClientPlayerEnterSceneMessageId:
 	case SceneSceneClientPlayerNotifyEnterSceneMessageId:
 	case SceneSceneClientPlayerSceneInfoC2SMessageId:

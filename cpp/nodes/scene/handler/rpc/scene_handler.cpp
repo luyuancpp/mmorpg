@@ -591,9 +591,7 @@ void SceneHandler::UpdateSessionDetail(::google::protobuf::RpcController* contro
 	///<<< BEGIN WRITING YOUR CODE
 	PlayerLifecycleSystem::RemovePlayerSession(request->player_id());
 
-	auto &registry = tlsNodeContextManager.GetRegistry(eNodeType::GateNodeService);
-	if (const entt::entity gateNodeId{GetGateNodeId(request->session_id())};
-		!registry.valid(gateNodeId))
+	if (!ResolveLocalZoneGateEntity(request->session_id()))
 	{
 		LOG_ERROR << "Gate not found " << GetGateNodeId(request->session_id());
 		return;
