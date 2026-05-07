@@ -27,8 +27,8 @@
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <LinkIncremental>true</LinkIncremental>
-      <!-- FASTLINK significantly reduces incremental debug link time. -->
-      <AdditionalOptions>/DEBUG:FASTLINK %(AdditionalOptions)</AdditionalOptions>
+      <!-- VS 2026+ dropped /DEBUG:FASTLINK support; use /DEBUG:FULL instead. -->
+      <AdditionalOptions>/DEBUG:FULL %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
 

@@ -108,7 +108,7 @@ void GateEventHandler::RoutePlayerEventHandler(const contracts::kafka::RoutePlay
         return;
     }
 
-    it->second.SetNodeId(SceneNodeService, entt::to_integral(*targetNodeEntity));
+    it->second.SetEntityId(SceneNodeService, entt::to_integral(*targetNodeEntity));
     it->second.sceneId = event.scene_id();
 
     // Use player_id from the event if session doesn't have it yet (BindSession may not have arrived).
@@ -196,9 +196,9 @@ void GateEventHandler::BindSessionEventHandler(const contracts::kafka::BindSessi
     it->second.sessionVersion = event.session_version();
 
     // If scene node already assigned (same-Gate reconnect), forward immediately.
-    if (it->second.HasNodeId(SceneNodeService))
+    if (it->second.HasEntityId(SceneNodeService))
     {
-        const auto sceneNodeId = it->second.GetNodeId(SceneNodeService);
+        const auto sceneNodeId = it->second.GetEntityId(SceneNodeService);
         ForwardPlayerToScene(sessionId, enterGsType, sceneNodeId,
                              playerId, it->second.sceneId);
     }

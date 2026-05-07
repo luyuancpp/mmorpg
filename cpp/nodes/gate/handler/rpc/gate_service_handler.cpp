@@ -31,7 +31,7 @@ void GateHandler::PlayerEnterGameNode(::google::protobuf::RpcController* control
 	// Resolve protocol node_id -> local registry entity before binding the session.
 	if (const auto sceneNodeEntity = NodeUtils::FindNodeEntityByNodeId(SceneNodeService, request->scene_node_id()); sceneNodeEntity)
 	{
-		sessionIt->second.SetNodeId(SceneNodeService, entt::to_integral(*sceneNodeEntity));
+		sessionIt->second.SetEntityId(SceneNodeService, entt::to_integral(*sceneNodeEntity));
 	}
 	else
 	{

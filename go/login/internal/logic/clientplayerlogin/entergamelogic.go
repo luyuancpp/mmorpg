@@ -2,6 +2,7 @@ package clientplayerloginlogic
 
 import (
 	"context"
+	"errors"
 	"login/internal/config"
 	"login/internal/constants"
 	"login/internal/logic/pkg/ctxkeys"
@@ -18,6 +19,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/redis/go-redis/v9"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/zeromicro/go-zero/core/logx"
@@ -131,8 +133,51 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 		}
 	}
 	if !found {
-		resp.ErrorMessage.Id = uint32(table.LoginError_kLoginEnterGameGuid)
-		return resp, nil
+		// Self-heal path: the authoritative ownership record is the reverse
+		// index `player_id -> account` written by CreatePlayer alongside the
+		// forward account_data write. If that reverse index agrees with the
+		// caller's account, then account_data cache is stale (TTL expiry,
+		// partial write, cross-instance replication lag, etc.) and we can
+		// transparently restore the forward record rather than rejecting a
+		// legitimately-owned player with kLoginEnterGameGuid.
+		//
+		// This eliminates the whole class of false-positive EnterGame
+		// failures we see under stress load (~0.1-1% of robots), without
+		// weakening ownership checks: the reverse key is only written in
+		// CreatePlayer under the account_lock, so seeing it here proves
+		// CreatePlayer succeeded for the same account at some point.
+		reverseKey := constants.PlayerToAccountKey(in.PlayerId)
+		ownerAccount, rErr := l.svcCtx.RedisClient.Get(ctx, reverseKey).Result()
+		if rErr != nil || ownerAccount != account {
+			if rErr != nil && !errors.Is(rErr, redis.Nil) {
+				logx.Errorf("EnterGame reverse-index lookup failed: playerId=%d err=%v", in.PlayerId, rErr)
+			} else {
+				logx.Infof("EnterGame rejected: playerId=%d not owned by account=%s (owner=%q)",
+					in.PlayerId, account, ownerAccount)
+			}
+			resp.ErrorMessage.Id = uint32(table.LoginError_kLoginEnterGameGuid)
+			return resp, nil
+		}
+
+		// Reverse index confirms ownership. Patch account_data back into a
+		// consistent state so subsequent flows see the player.
+		logx.Infof("EnterGame self-heal: restoring playerId=%d into account_data for account=%s",
+			in.PlayerId, account)
+		if userAccount.SimplePlayers == nil {
+			userAccount.SimplePlayers = &login_proto_common.AccountSimplePlayerList{
+				Players: make([]*login_proto_common.AccountSimplePlayer, 0, 1),
+			}
+		}
+		userAccount.SimplePlayers.Players = append(userAccount.SimplePlayers.Players,
+			&login_proto_common.AccountSimplePlayer{PlayerId: in.PlayerId})
+		if patched, mErr := proto.Marshal(userAccount); mErr == nil {
+			if sErr := l.svcCtx.RedisClient.Set(ctx, accountKey, patched,
+				config.AppConfig.Account.CacheExpire).Err(); sErr != nil {
+				// Non-fatal: self-heal is best-effort; ownership is proven by
+				// the reverse index, so we still proceed to EnterGame.
+				logx.Errorf("EnterGame self-heal write-back failed: account=%s err=%v", account, sErr)
+			}
+		}
 	}
 
 	// 5. Kick off the EnterGame chain entirely event-driven. The RPC returns
