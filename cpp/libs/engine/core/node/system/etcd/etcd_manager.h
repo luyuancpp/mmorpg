@@ -30,6 +30,11 @@ public:
 
 	void RegisterNodeService();
 
+	// Second phase of node registration. Must only be called after the
+	// allocation key CAS (phase 1 of RegisterNodeService) succeeds —
+	// EtcdService::OnTxnSucceeded is responsible for that sequencing.
+	void PublishNodeInfoAfterAllocation();
+
 	void UpdateNodeInfo();
 
 	void RegisterNodePort();

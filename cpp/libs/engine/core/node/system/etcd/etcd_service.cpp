@@ -174,10 +174,13 @@ void EtcdService::OnTxnSucceeded(const std::string& key) {
 		return;
 	}
 
-	// Allocation key success is purely a uniqueness gate; the per-zone info
-	// key (NodeIdKey) succeeding right after is what activates Snowflake.
+	// Allocation key success is the gate that authorizes publishing the
+	// per-zone NodeInfo. Doing the info write only now (instead of eagerly
+	// inside RegisterNodeService) guarantees no stale per-zone record is
+	// left behind when two zones race for the same node_id.
 	if (IsNodeAllocationKey(key)) {
 		LOG_INFO << "Global node-id allocation acquired: " << key;
+		gNode->GetEtcdManager().PublishNodeInfoAfterAllocation();
 		return;
 	}
 
@@ -209,10 +212,15 @@ void EtcdService::OnTxnFailed(const std::string& key) {
 	}
 
 	// Lost the race for this (node_type, node_id) globally — another zone
-	// claimed it microseconds before us. Pick the next free id and retry.
+	// claimed it microseconds before us. Record the loss so the next
+	// AcquireNode pass deterministically skips this id (the local
+	// ServiceNodeList snapshot lags the etcd watch stream during cold
+	// start, so without this hint we'd loop on the same id forever).
 	if (IsNodeAllocationKey(key)) {
+		const auto lostId = gNode->GetNodeInfo().node_id();
+		NodeAllocator::RecordLostId(lostId);
 		LOG_INFO << "Global node-id allocation lost: " << key
-				 << "; reallocating after backoff";
+				 << " (id=" << lostId << "); reallocating after backoff";
 		acquireNodeTimer.RunAfter(1, [] { NodeAllocator::AcquireNode(); });
 		return;
 	}

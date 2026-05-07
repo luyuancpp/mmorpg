@@ -57,21 +57,34 @@ std::string EtcdManager::MakeNodePortEtcdKey(const NodeInfo &nodeInfo)
 
 void EtcdManager::RegisterNodeService()
 {
-	// Two CAS steps under the same lease:
-	//   1. Claim the global allocation key `.../allocated/node_type/T/node_id/N`.
-	//      This is zone-independent so two zones racing on the same node_id lose
-	//      exactly one to version!=0 and must try again.
-	//   2. Publish the per-zone NodeInfo under the discovery key for watchers.
-	// Both writes share the same lease so they live and die together. On
-	// shutdown (Close / lease revoke) both keys disappear, freeing the slot.
+	// Two-phase CAS under the same lease:
+	//   Phase 1 (this call): claim the global allocation key
+	//     `.../allocated/node_type/T/node_id/N`. Zone-independent, so two
+	//     zones racing on the same node_id lose exactly one to version!=0
+	//     and must try again with a different node_id.
+	//   Phase 2 (EtcdService::OnTxnSucceeded when the allocation key lands):
+	//     publish the per-zone NodeInfo under the discovery key for watchers.
+	//
+	// Keeping the two phases strictly sequential (driven by OnTxnSucceeded
+	// rather than issuing both writes eagerly here) prevents a stale per-zone
+	// info record from lingering in etcd after a lost allocation race —
+	// otherwise Java Gateway's GateWatcher would see several phantom entries
+	// for the same gate uuid and load-balance against phantom replicas.
 	const auto &info = gNode->GetNodeInfo();
 	const auto allocKey = MakeNodeAllocationKey(info);
-	const auto serviceKey = MakeNodeEtcdKey(info);
-
 	LOG_INFO << "Claiming global node-id allocation: " << allocKey;
 	EtcdHelper::PutIfAbsent(allocKey, info.node_uuid(), 0, gNode->GetLeaseId());
 	pendingKeys.push_back(allocKey);
+}
 
+void EtcdManager::PublishNodeInfoAfterAllocation()
+{
+	// Second phase: allocation key CAS already succeeded, so (node_type,
+	// node_id) is globally reserved. Now publish NodeInfo for service
+	// discovery. Both keys share the same lease, so on shutdown / lease
+	// revoke they disappear atomically.
+	const auto &info = gNode->GetNodeInfo();
+	const auto serviceKey = MakeNodeEtcdKey(info);
 	LOG_INFO << "Registering node service to etcd with key: " << serviceKey;
 	EtcdHelper::PutIfAbsent(serviceKey, info, gNode->GetLeaseId());
 	pendingKeys.push_back(serviceKey);
