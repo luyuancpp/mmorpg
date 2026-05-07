@@ -85,21 +85,30 @@ func NewNode(nodeType uint32, ip string, port uint32, ttl int64) *Node {
 	}
 }
 
-// Close stops the KeepAlive goroutine, deletes the node key, and revokes the lease.
+// Close stops the KeepAlive goroutine, deletes the node key + global
+// allocation key, and revokes the lease so the slot is reusable immediately.
 func (n *Node) Close() error {
 	if n.cancelFunc != nil {
 		n.cancelFunc()
 	}
 
-	key := BuildRpcPath(GetRpcPrefix(n.Info.NodeType), n.Info.ZoneId, n.Info.NodeType, n.Info.NodeId)
-	_, err := n.Client.Delete(context.Background(), key)
-	if err != nil {
-		logx.Errorf("Failed to delete node key from etcd: %v", err)
-		return fmt.Errorf("failed to delete node key: %v", err)
+	prefix := GetRpcPrefix(n.Info.NodeType)
+	infoKey := BuildRpcPath(prefix, n.Info.ZoneId, n.Info.NodeType, n.Info.NodeId)
+	allocKey := buildAllocationKey(prefix, n.Info.NodeType, n.Info.NodeId)
+
+	// Delete both atomically: the per-zone info key (consumed by service
+	// discovery watchers) and the global allocation key (guards uniqueness
+	// across zones). Falling back to lease revocation handles either-or.
+	if _, err := n.Client.Txn(context.Background()).
+		Then(clientv3.OpDelete(infoKey), clientv3.OpDelete(allocKey)).
+		Commit(); err != nil {
+		logx.Errorf("Failed to delete node keys from etcd: %v", err)
+		return fmt.Errorf("failed to delete node keys: %v", err)
 	}
 
-	// Revoke the lease
-	err = n.reg.RevokeLease()
+	// Revoke the lease — defense in depth: even if the deletes above are
+	// partially observed, lease revoke removes any leftovers.
+	err := n.reg.RevokeLease()
 	if err != nil {
 		logx.Errorf("Failed to revoke lease: %v", err)
 		return fmt.Errorf("failed to revoke lease: %v", err)
