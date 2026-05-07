@@ -113,8 +113,16 @@ $GoBinDir   = Join-Path $RepoRoot "bin\go_services"
 $ServiceCatalogue = [ordered]@{
     db              = @{ Dir = "db";              Entry = "db.go";                    Port = 6000;  Desc = "DB (Kafka consumer + MySQL)";       ConfigFlag = "-f";            ConfigFile = "etc/db.yaml";                    AllowMultiInstance = $false; Tier = 0 }
     data_service    = @{ Dir = "data_service";    Entry = "data_service.go";          Port = 9000;  Desc = "Data Service (multi-zone Redis)"; ConfigFlag = "-f";            ConfigFile = "etc/data_service.yaml";          AllowMultiInstance = $true;  Tier = 0 }
-    player_locator  = @{ Dir = "player_locator";  Entry = "player_locator.go";        Port = 50200; Desc = "Player Locator (Redis cache)";    ConfigFlag = "-f";            ConfigFile = "etc/player_locator.yaml";        AllowMultiInstance = $true;  Tier = 2 }
-    login           = @{ Dir = "login";           Entry = "login.go";                 Port = 50000; Desc = "Login (gRPC + etcd)";            ConfigFlag = "-loginService"; ConfigFile = "etc/login.yaml";                 AllowMultiInstance = $true;  Tier = 3 }
+    # Base ports for the zRPC services were originally 50000/50200 but Windows
+    # reserves dynamic-port ranges that frequently land on 50000-50171 and a
+    # few apps (Manager.exe in dev environments) reuse 50200. Zone 1 (= base
+    # + 0 shift) would otherwise fail with "An attempt was made to access a
+    # socket in a way forbidden by its access permissions" or silent bind
+    # failures. 53000/53200 sit safely above all observed Windows excluded
+    # ranges (49728-49927, 50000-50171, 51573-51872) and below 60300 used by
+    # scene_manager, so zones 1-4 each get a clean 1000-port slot.
+    player_locator  = @{ Dir = "player_locator";  Entry = "player_locator.go";        Port = 53200; Desc = "Player Locator (Redis cache)";    ConfigFlag = "-f";            ConfigFile = "etc/player_locator.yaml";        AllowMultiInstance = $true;  Tier = 2 }
+    login           = @{ Dir = "login";           Entry = "login.go";                 Port = 53000; Desc = "Login (gRPC + etcd)";            ConfigFlag = "-loginService"; ConfigFile = "etc/login.yaml";                 AllowMultiInstance = $true;  Tier = 3 }
     scene_manager   = @{ Dir = "scene_manager";   Entry = "scene_manager_service.go"; Port = 60300; Desc = "Scene Manager (Kafka + Redis)";    ConfigFlag = "-f";            ConfigFile = "etc/scene_manager_service.yaml"; AllowMultiInstance = $true;  Tier = 1 }
 }
 

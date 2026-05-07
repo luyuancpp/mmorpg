@@ -80,6 +80,25 @@ std::optional<entt::entity> NodeUtils::FindNodeEntityByUuid(uint32_t nodeType, c
 	return std::nullopt;
 }
 
+bool NodeUtils::IsZoneScopedNodeType(uint32_t nodeType)
+{
+	// See header comment for rationale. The list is the set of services that
+	// register under etcd keys of the form `<Service>.rpc/zone/<N>/...` AND
+	// whose callers only talk to the same zone. If a new service is added
+	// that fits that pattern, extend this switch — otherwise cross-zone
+	// entries will silently collide on node_id inside the local registry.
+	switch (static_cast<eNodeType>(nodeType))
+	{
+	case eNodeType::GateNodeService:
+	case eNodeType::SceneNodeService:
+	case eNodeType::LoginNodeService:
+	case eNodeType::PlayerLocatorNodeService:
+		return true;
+	default:
+		return false;
+	}
+}
+
 std::string NodeUtils::GetRegistryName(const entt::registry &registry)
 {
 	const auto type = GetRegistryType(registry);

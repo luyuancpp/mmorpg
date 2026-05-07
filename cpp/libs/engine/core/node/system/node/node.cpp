@@ -682,17 +682,18 @@ void Node::HandleServiceNodeStop(const std::string &key, const std::string &node
 		return;
 	}
 
-	// Mirror the AddServiceNode zone filter: TCP nodes from foreign zones
-	// were never inserted into this node's registry, so a stop event for
-	// them must not trigger ExecuteNodeRemoval — that path keys removal by
-	// (node_type, node_id) and would otherwise destroy the local entity at
-	// the same node_id slot, even though it belongs to a different zone.
-	if (stoppedNode.protocol_type() == PROTOCOL_TCP &&
+	// Mirror the AddServiceNode zone filter: zone-scoped services never make
+	// it into this node's registry when they come from a foreign zone, so a
+	// stop event for them must not trigger ExecuteNodeRemoval — that path
+	// keys removal by (node_type, node_id) for TCP nodes and would otherwise
+	// destroy the local entity at the same node_id slot even though it
+	// belongs to a different zone.
+	if (NodeUtils::IsZoneScopedNodeType(stoppedNode.node_type()) &&
 		stoppedNode.zone_id() != GetNodeInfo().zone_id())
 	{
-		LOG_TRACE << "Skip TCP stop event for foreign zone. key=" << key
-				  << ", node_zone=" << stoppedNode.zone_id()
-				  << ", self_zone=" << GetNodeInfo().zone_id();
+		LOG_INFO << "Skip zone-scoped stop event for foreign zone. key=" << key
+				 << ", node_zone=" << stoppedNode.zone_id()
+				 << ", self_zone=" << GetNodeInfo().zone_id();
 		return;
 	}
 
@@ -794,43 +795,30 @@ void Node::ExecuteNodeRemoval(const NodeInfo &stoppedNode)
 						   {
 		entt::registry& nodeRegistry = tlsNodeContextManager.GetRegistry(stoppedNodeType);
 
-		// GRPC nodes use auto-generated entity IDs (not node_id), so look up by uuid.
-		if (stoppedProtocolType == PROTOCOL_GRPC) {
-			for (const auto& [entity, nodeInfo] : nodeRegistry.view<NodeInfo>().each()) {
-				if (!NodeUtils::IsSameNode(nodeInfo.node_uuid(), stoppedNodeUuid)) {
-					continue;
-				}
-
-				OnNodeRemoveEvent nodeRemovedEvent;
-				nodeRemovedEvent.set_entity(entt::to_integral(entity));
-				nodeRemovedEvent.set_node_type(stoppedNodeType);
-				tlsEcs.dispatcher.trigger(nodeRemovedEvent);
-
-				DestroyEntity(nodeRegistry, entity);
-				return;
+		// Both TCP and gRPC nodes are now keyed by uuid: TCP entities used to
+		// be allocated as `entt::entity{node_id}` (see ConnectToTcpNode pre-
+		// uuid-refactor) but that scheme aliased nodes from different zones
+		// onto the same slot and required a parallel removal path. With both
+		// node_connector paths using auto-assigned entity ids and uuid for
+		// dedup, removal is uniformly a uuid scan.
+		(void)stoppedProtocolType;
+		(void)stoppedNodeId;
+		for (const auto& [entity, nodeInfo] : nodeRegistry.view<NodeInfo>().each()) {
+			if (!NodeUtils::IsSameNode(nodeInfo.node_uuid(), stoppedNodeUuid)) {
+				continue;
 			}
-			LOG_WARN << "GRPC node entity not found for uuid=" << stoppedNodeUuid
-				<< ", node_type=" << stoppedNodeType;
+
+			OnNodeRemoveEvent nodeRemovedEvent;
+			nodeRemovedEvent.set_entity(entt::to_integral(entity));
+			nodeRemovedEvent.set_node_type(stoppedNodeType);
+			tlsEcs.dispatcher.trigger(nodeRemovedEvent);
+
+			DestroyEntity(nodeRegistry, entity);
 			return;
 		}
-
-		auto stoppedNodeEntity = entt::entity{ stoppedNodeId };
-		if (nodeRegistry.valid(stoppedNodeEntity)) {
-			auto* currentNodeInfo = nodeRegistry.try_get<NodeInfo>(stoppedNodeEntity);
-			if (currentNodeInfo && !NodeUtils::IsSameNode(currentNodeInfo->node_uuid(), stoppedNodeUuid)) {
-				LOG_WARN << "Skip node destroy due to node id reuse. node_id=" << stoppedNodeId
-					<< ", stale_uuid=" << stoppedNodeUuid
-					<< ", current_uuid=" << currentNodeInfo->node_uuid();
-				return;
-			}
-		}
-
-		OnNodeRemoveEvent nodeRemovedEvent;
-		nodeRemovedEvent.set_entity(entt::to_integral(stoppedNodeEntity));
-		nodeRemovedEvent.set_node_type(stoppedNodeType);
-		tlsEcs.dispatcher.trigger(nodeRemovedEvent);
-
-		DestroyEntity(nodeRegistry, stoppedNodeEntity); });
+		LOG_WARN << "Service node stop: entity not found for uuid=" << stoppedNodeUuid
+			<< ", node_type=" << stoppedNodeType
+			<< ", node_id=" << stoppedNodeId; });
 	LOG_INFO << "Service node stopped : " << stoppedNode.DebugString();
 }
 

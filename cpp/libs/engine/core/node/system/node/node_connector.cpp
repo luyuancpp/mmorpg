@@ -84,34 +84,38 @@ void NodeConnector::ConnectToGrpcNode(const NodeInfo &nodeInfo)
 void NodeConnector::ConnectToTcpNode(const NodeInfo &nodeInfo)
 {
 	auto &targetRegistry = tlsNodeContextManager.GetRegistry(nodeInfo.node_type());
-	entt::entity nodeEntity{nodeInfo.node_id()};
 
-	if (targetRegistry.valid(nodeEntity))
+	// TCP nodes used to key entt::entity by node_id, which only works as long
+	// as a registry holds at most one zone's worth of nodes (node_id is unique
+	// within a zone, not across zones). To make multi-zone deployments safe by
+	// construction we now treat uuid as the primary key and let entt assign
+	// entity ids automatically — the same scheme ConnectToGrpcNode has always
+	// used. Callers that previously did `entt::entity{node_id}` should resolve
+	// the entity via NodeUtils::FindNodeEntityByZoneAndNodeId or by uuid.
+	for (const auto &[existingEntity, existingNodeInfo] : targetRegistry.view<NodeInfo>().each())
 	{
-		if (auto *existingNodeInfo = targetRegistry.try_get<NodeInfo>(nodeEntity);
-			existingNodeInfo)
+		if (!NodeUtils::IsSameNode(existingNodeInfo.node_uuid(), nodeInfo.node_uuid()))
 		{
-
-			if (NodeUtils::IsSameNode(nodeInfo.node_uuid(), existingNodeInfo->node_uuid()))
-			{
-				LOG_INFO << "Node already registered, IP: " << nodeInfo.endpoint().ip()
-						 << ", Port: " << nodeInfo.endpoint().port();
-				return;
-			}
-
-			if (auto *existingClient = targetRegistry.try_get<RpcClientPtr>(nodeEntity))
-			{
-				gNode->GetDisconnectedClientList().push_back(*existingClient);
-			}
+			continue;
 		}
+
+		LOG_INFO << "TCP node already registered, IP: " << nodeInfo.endpoint().ip()
+				 << ", Port: " << nodeInfo.endpoint().port()
+				 << ", uuid: " << nodeInfo.node_uuid();
+
+		// Same uuid resurfacing while the previous client is still tracked is
+		// effectively a re-registration after a transient drop; surrender the
+		// old client to the disconnect list so its lifecycle is wound down,
+		// then fall through to create a fresh entity.
+		if (auto *existingClient = targetRegistry.try_get<RpcClientPtr>(existingEntity))
+		{
+			gNode->GetDisconnectedClientList().push_back(*existingClient);
+		}
+		targetRegistry.destroy(existingEntity);
+		break;
 	}
 
-	const auto createdId = RecreateEntity(targetRegistry, nodeEntity);
-	if (createdId == entt::null)
-	{
-		LOG_ERROR << "Failed to create node entity: " << entt::to_integral(nodeEntity);
-		return;
-	}
+	const auto createdId = targetRegistry.create();
 
 	muduo::net::InetAddress remoteEndpoint(nodeInfo.endpoint().ip(), nodeInfo.endpoint().port());
 	auto &client = targetRegistry.emplace<RpcClientPtr>(
@@ -133,7 +137,8 @@ void NodeConnector::ConnectToTcpNode(const NodeInfo &nodeInfo)
 
 	LOG_INFO << "Connecting to TCP node, Uuid: " << nodeInfo.node_uuid()
 			 << ", IP: " << nodeInfo.endpoint().ip()
-			 << ", Port: " << nodeInfo.endpoint().port();
+			 << ", Port: " << nodeInfo.endpoint().port()
+			 << ", Entity: " << entt::to_integral(createdId);
 }
 
 void NodeConnector::ConnectToHttpNode(const NodeInfo &)

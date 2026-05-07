@@ -60,14 +60,27 @@ void NodeHandshakeManager::OnNodeHandshake(
 		const auto& nodeList = tlsEcs.nodeGlobalRegistry.get_or_emplace<ServiceNodeList>(tlsEcs.GrpcNodeEntity());
 		for (auto& serverNode : nodeList[nodeType].node_list()) {
 			if (!NodeUtils::IsSameNode(serverNode.node_uuid(), peerNode.node_uuid())) continue;
-			entt::entity nodeEntity = entt::entity{ serverNode.node_id() };
-			entt::entity created = RecreateEntity(registry, nodeEntity);
-			if (created == entt::null) {
-				LOG_ERROR << "Create node entity failed in " << NodeUtils::GetRegistryName(registry);
-				return false;
+
+			// uuid is the only globally-unique handle for a remote node, so we
+			// look up (or freshly allocate) the entity by uuid. Previously the
+			// entity slot was keyed by node_id, which silently aliased nodes
+			// from different zones onto the same slot.
+			entt::entity nodeEntity = entt::null;
+			if (const auto found = NodeUtils::FindNodeEntityByUuid(nodeType, peerNode.node_uuid()); found) {
+				nodeEntity = *found;
+				// Reset session-bound components on re-registration so any
+				// stale RpcSession from a previous connection is cleared.
+				registry.remove<RpcSession>(nodeEntity);
+			} else {
+				nodeEntity = registry.create();
+				LOG_TRACE << "Allocated new entity " << entt::to_integral(nodeEntity)
+					<< " for handshaking peer uuid=" << peerNode.node_uuid();
 			}
-			registry.emplace<RpcSession>(created, RpcSession{ conn , request.self_node().node_uuid()});
+
+			registry.emplace<RpcSession>(nodeEntity, RpcSession{ conn , request.self_node().node_uuid()});
 			LOG_INFO << "Node registered, id: " << peerNode.node_id()
+				<< " uuid: " << peerNode.node_uuid()
+				<< " entity: " << entt::to_integral(nodeEntity)
 				<< " in " << NodeUtils::GetRegistryName(registry);
 			return true;
 		}
@@ -108,8 +121,16 @@ void NodeHandshakeManager::OnHandshakeReplied(const NodeHandshakeResponse& respo
 		return;
 	}
 
-	entt::entity peerEntity{ response.peer_node().node_id() };
-	registry.remove<TimerTaskComp>(peerEntity);
+	// uuid is the canonical handle for the remote peer; node_id alone is
+	// not unique across zones and would mis-resolve the entity slot.
+	const auto peerEntityOpt = NodeUtils::FindNodeEntityByUuid(nodeType, response.peer_node().node_uuid());
+	if (!peerEntityOpt) {
+		LOG_WARN << "OnHandshakeReplied: peer entity not found for uuid="
+			<< response.peer_node().node_uuid()
+			<< " in " << NodeUtils::GetRegistryName(registry);
+		return;
+	}
+	registry.remove<TimerTaskComp>(*peerEntityOpt);
 	TriggerNodeConnectionEvent(registry, response);
 	LOG_INFO << "Node registration success.";
 }
