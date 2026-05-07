@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(powershell *)",
+      "Bash(docker exec mysql *)",
+      "Bash(\\\\\"z\\\\${z}_robot_%04d)",
+      "Bash(Select-Object -Last 80)",
+      "Bash(./robot.exe -c F:/work/mmorpg/run/etc/robot/robot.z2.yaml)",
+      "Bash(docker exec *)",
+      "Bash(\"E:/Program Files/Microsoft Visual Studio/18/Enterprise/MSBuild/Current/Bin/amd64/MSBuild.exe\" cpp/nodes/gate/gate.vcxproj //m //p:Configuration=Debug //p:Platform=x64 //v:minimal)",
+      "Bash(\"E:/Program Files/Microsoft Visual Studio/18/Enterprise/MSBuild/Current/Bin/amd64/MSBuild.exe\" game.sln //m //p:Configuration=Debug //p:Platform=x64 //v:minimal)",
+      "Bash(grep -vE \"stats |^$\")",
+      "Bash(go build *)",
+      "Bash(cmd /c \"F:\\\\work\\\\mmorpg\\\\dev.bat start-satoken\")",
+      "Bash(cmd /c \"dev.bat start-satoken\")"
+    ]
+  }
+}

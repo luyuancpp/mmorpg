@@ -154,6 +154,14 @@ bool EtcdService::IsNodeIdKey(const std::string& key) const {
 	return boost::algorithm::starts_with(key, gNode->GetEtcdManager().MakeNodeEtcdPrefix(gNode->GetNodeInfo()));
 }
 
+bool EtcdService::IsNodeAllocationKey(const std::string& key) const {
+	const auto &info = gNode->GetNodeInfo();
+	const auto allocPrefix = gNode->GetEtcdManager().GetServiceName(info.node_type()) +
+							 "/allocated/node_type/" + std::to_string(info.node_type()) +
+							 "/node_id/";
+	return boost::algorithm::starts_with(key, allocPrefix);
+}
+
 void EtcdService::OnTxnSucceeded(const std::string& key) {
 	if (IsNodePortKey(key)) {
 		if (registrationMode_ == RegistrationMode::kReRegisterExisting) {
@@ -163,6 +171,13 @@ void EtcdService::OnTxnSucceeded(const std::string& key) {
 		}
 
 		NodeAllocator::AcquireNode();
+		return;
+	}
+
+	// Allocation key success is purely a uniqueness gate; the per-zone info
+	// key (NodeIdKey) succeeding right after is what activates Snowflake.
+	if (IsNodeAllocationKey(key)) {
+		LOG_INFO << "Global node-id allocation acquired: " << key;
 		return;
 	}
 
@@ -190,6 +205,15 @@ void EtcdService::OnTxnFailed(const std::string& key) {
 			   "Active players on this node will be disconnected and must reconnect "
 			   "through the normal login flow to be routed to a healthy node. "
 			   "This process must terminate now.";
+		return;
+	}
+
+	// Lost the race for this (node_type, node_id) globally — another zone
+	// claimed it microseconds before us. Pick the next free id and retry.
+	if (IsNodeAllocationKey(key)) {
+		LOG_INFO << "Global node-id allocation lost: " << key
+				 << "; reallocating after backoff";
+		acquireNodeTimer.RunAfter(1, [] { NodeAllocator::AcquireNode(); });
 		return;
 	}
 
