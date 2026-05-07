@@ -87,13 +87,18 @@ void SceneSceneClientPlayerHandler::EnterScene(entt::entity player,const ::Enter
 		return;
 	}
 
-	// Resolve gate info
+	// Resolve gate info. Same-zone callers only — scene never reaches a
+	// cross-zone gate directly; cross-zone traffic is redirected at the
+	// SceneManager layer. (zone, node_id) is sufficient here.
 	NodeId gateNodeId = GetGateNodeId(playerSessionPB->gate_session_id());
 	std::string gateInstanceId;
-	auto& gateRegistry = tlsNodeContextManager.GetRegistry(eNodeType::GateNodeService);
-	if (const auto* gateNodeInfo = gateRegistry.try_get<NodeInfo>(entt::entity{gateNodeId}))
+	if (auto gateEntityOpt = ResolveLocalZoneGateEntity(playerSessionPB->gate_session_id()); gateEntityOpt)
 	{
-		gateInstanceId = gateNodeInfo->node_uuid();
+		auto& gateRegistry = tlsNodeContextManager.GetRegistry(eNodeType::GateNodeService);
+		if (const auto* gateNodeInfo = gateRegistry.try_get<NodeInfo>(*gateEntityOpt))
+		{
+			gateInstanceId = gateNodeInfo->node_uuid();
+		}
 	}
 
 	// Find a SceneManager gRPC node

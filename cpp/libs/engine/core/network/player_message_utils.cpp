@@ -65,15 +65,17 @@ void SendMessageToClientViaGate(uint32_t messageId, const google::protobuf::Mess
 
 void SendMessageToGateById(uint32_t messageId, const google::protobuf::Message &message, NodeId gateNodeId)
 {
-	entt::entity gateEntity{gateNodeId};
-	auto &gateNodeRegistry = tlsNodeContextManager.GetRegistry(eNodeType::GateNodeService);
-	if (!gateNodeRegistry.valid(gateEntity))
+	// Post uuid-refactor entt::entity != node_id, so resolve the entity via
+	// (self_zone, node_id). This path is only used by same-zone callers.
+	auto gateEntityOpt = NodeUtils::FindNodeEntityByZoneAndNodeId(
+		eNodeType::GateNodeService, GetZoneId(), gateNodeId);
+	if (!gateEntityOpt)
 	{
 		LOG_ERROR << "Gate not found for NodeId -> " << gateNodeId;
 		return;
 	}
-
-	const auto gateSessionPtr = gateNodeRegistry.try_get<RpcSession>(gateEntity);
+	auto &gateNodeRegistry = tlsNodeContextManager.GetRegistry(eNodeType::GateNodeService);
+	const auto gateSessionPtr = gateNodeRegistry.try_get<RpcSession>(*gateEntityOpt);
 	if (!gateSessionPtr)
 	{
 		LOG_ERROR << "RpcSession not found for Gate NodeId -> " << gateNodeId;
