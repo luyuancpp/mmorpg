@@ -1,0 +1,116 @@
+syntax = "proto3";
+option go_package = "login/proto/scene";
+
+import "proto/db/proto_option.proto";
+import "proto/common/base/empty.proto";
+import "proto/common/base/tip.proto";
+import "proto/common/component/actor_comp.proto";
+
+option cc_generic_services = true;
+option (OptionFileDefaultNode) = NODE_SCENE;
+
+// ---- C2S: client-authoritative input ----------------------------------------
+//
+// MoveStartC2S: client begins moving in a direction (or toward a destination).
+//   - The server validates against terrain / AOI / speed buff state and
+//     broadcasts an ActorMoveS2C to nearby clients.
+//   - `client_time_ms` is the client's monotonic timestamp; the server uses it
+//     for lag-compensation but does NOT trust it for cheat-sensitive logic.
+//
+// MoveStopC2S: client stopped; sent with the final position the client
+//   considers authoritative. Server clamps to the server-side simulation.
+//
+// MoveSyncC2S: periodic heartbeat (every ~250ms while moving) carrying the
+//   client's current position so the server can detect drift / speed hacks.
+
+message MoveStartC2S {
+  Location start_location = 1;       // client position when input started
+  Rotation rotation = 2;             // facing direction
+  Velocity velocity = 3;             // requested velocity vector
+  Location target_location = 4;      // optional click-to-move destination; zero if free move
+  uint64 client_time_ms = 5;         // client timestamp (monotonic ms)
+  uint32 input_seq = 6;              // monotonically increasing input sequence id (for ack)
+}
+
+message MoveStopC2S {
+  Location end_location = 1;
+  Rotation rotation = 2;
+  uint64 client_time_ms = 3;
+  uint32 input_seq = 4;
+}
+
+message MoveSyncC2S {
+  Location location = 1;
+  Rotation rotation = 2;
+  Velocity velocity = 3;
+  uint64 client_time_ms = 4;
+  uint32 input_seq = 5;
+}
+
+// Client requests a teleport (e.g. via NPC dialog, item use). The server
+// validates against teleport rules and replies with TeleportS2C if accepted,
+// or a TipInfoMessage error otherwise.
+message TeleportRequestC2S {
+  uint32 teleport_table_id = 1;      // configured teleport / portal id
+  Location target_location = 2;      // requested destination (optional; some teleports are fixed)
+}
+
+message TeleportRequestC2SResponse {
+  TipInfoMessage error_message = 1;
+}
+
+// ---- S2C: server-authoritative broadcasts -----------------------------------
+
+// Server acks a single client input. Carries the corrected position so the
+// client can reconcile (rollback + replay) when prediction diverges.
+message MoveAckS2C {
+  uint32 input_seq = 1;              // echoes the client's input_seq
+  Location server_location = 2;      // server-authoritative position at the time of the input
+  Velocity server_velocity = 3;
+  uint64 server_time_ms = 4;
+}
+
+// Broadcast to all observers in AOI when an actor's movement state changes.
+// Sent on start / stop / direction change, NOT every tick.
+message ActorMoveS2C {
+  uint64 entity = 1;                 // actor entity id
+  Transform transform = 2;           // current transform (location + rotation + scale)
+  Velocity velocity = 3;             // current velocity (zero == stopped)
+  uint64 server_time_ms = 4;         // server timestamp; clients use it for interpolation
+  uint32 move_state = 5;             // 0=stopped, 1=walking, 2=running, 3=sprinting (extensible)
+}
+
+// Batched form of ActorMoveS2C; used when a player first enters an AOI cell
+// and many actors must be synced at once.
+message ActorMoveListS2C {
+  repeated ActorMoveS2C moves = 1;
+}
+
+// Server forces the client to a position (teleport, anti-cheat correction,
+// scene transition arrival, knockback). Client MUST snap and discard any
+// pending predicted input <= input_seq.
+message TeleportS2C {
+  uint64 entity = 1;                 // actor being teleported (usually self for the receiver)
+  Transform transform = 2;
+  uint32 input_seq = 3;              // discard predictions up to and including this seq
+  uint32 reason = 4;                 // 0=server_correction, 1=portal, 2=skill, 3=admin, 4=respawn
+}
+
+// ---- Service ----------------------------------------------------------------
+
+service SceneMovementClientPlayer {
+  option (OptionIsPlayerService) = true;
+  option (OptionIsClientProtocolService) = true;
+
+  // C2S input
+  rpc MoveStart       (MoveStartC2S)        returns (Empty);
+  rpc MoveStop        (MoveStopC2S)         returns (Empty);
+  rpc MoveSync        (MoveSyncC2S)         returns (Empty);
+  rpc TeleportRequest (TeleportRequestC2S)  returns (TeleportRequestC2SResponse);
+
+  // S2C notifications
+  rpc NotifyMoveAck       (MoveAckS2C)       returns (Empty);
+  rpc NotifyActorMove     (ActorMoveS2C)     returns (Empty);
+  rpc NotifyActorMoveList (ActorMoveListS2C) returns (Empty);
+  rpc NotifyTeleport      (TeleportS2C)      returns (Empty);
+}

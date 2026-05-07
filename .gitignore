@@ -162,6 +162,7 @@ bin/zlib*
 
 # Copilot / AI session artifacts
 _copilot_session_transfer/
+.cache/
 
 # Debug symbols (too large for GitHub)
 debug-symbols-out/
