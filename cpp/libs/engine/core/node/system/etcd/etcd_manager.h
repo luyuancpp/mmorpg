@@ -18,6 +18,12 @@ public:
 
 	std::string MakeNodeEtcdKey(const NodeInfo &info);
 
+	// Global-uniqueness allocation key for (node_type, node_id). Intentionally
+	// zone-independent: two zones must not both claim the same (node_type,
+	// node_id) or their Snowflake PlayerId/GuidId streams collide. See
+	// RegisterNodeService for the CAS protocol that honours this key.
+	std::string MakeNodeAllocationKey(const NodeInfo &info);
+
 	std::string MakeNodePortEtcdPrefix(const NodeInfo &nodeInfo);
 
 	std::string MakeNodePortEtcdKey(const NodeInfo &nodeInfo);

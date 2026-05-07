@@ -33,6 +33,18 @@ std::string EtcdManager::MakeNodeEtcdKey(const NodeInfo &info)
 	return MakeNodeEtcdPrefix(info) + std::to_string(info.node_id());
 }
 
+std::string EtcdManager::MakeNodeAllocationKey(const NodeInfo &info)
+{
+	// Zone-independent: the key contains node_type and node_id only. Two
+	// zones issuing concurrent PutIfAbsent on the same (node_type, node_id)
+	// will see exactly one CAS succeed; the loser has to pick a different
+	// node_id. This matches the Go-side allocator layout so mixed-language
+	// deployments share a single source of truth for node_id uniqueness.
+	return GetServiceName(info.node_type()) +
+		   "/allocated/node_type/" + std::to_string(info.node_type()) +
+		   "/node_id/" + std::to_string(info.node_id());
+}
+
 std::string EtcdManager::MakeNodePortEtcdPrefix(const NodeInfo &nodeInfo)
 {
 	return "/service/" + nodeInfo.endpoint().ip() + "/port/";
@@ -45,11 +57,25 @@ std::string EtcdManager::MakeNodePortEtcdKey(const NodeInfo &nodeInfo)
 
 void EtcdManager::RegisterNodeService()
 {
-	const auto serviceKey = MakeNodeEtcdKey(gNode->GetNodeInfo());
+	// Two CAS steps under the same lease:
+	//   1. Claim the global allocation key `.../allocated/node_type/T/node_id/N`.
+	//      This is zone-independent so two zones racing on the same node_id lose
+	//      exactly one to version!=0 and must try again.
+	//   2. Publish the per-zone NodeInfo under the discovery key for watchers.
+	// Both writes share the same lease so they live and die together. On
+	// shutdown (Close / lease revoke) both keys disappear, freeing the slot.
+	const auto &info = gNode->GetNodeInfo();
+	const auto allocKey = MakeNodeAllocationKey(info);
+	const auto serviceKey = MakeNodeEtcdKey(info);
+
+	LOG_INFO << "Claiming global node-id allocation: " << allocKey;
+	EtcdHelper::PutIfAbsent(allocKey, info.node_uuid(), 0, gNode->GetLeaseId());
+	pendingKeys.push_back(allocKey);
+
 	LOG_INFO << "Registering node service to etcd with key: " << serviceKey;
-	EtcdHelper::PutIfAbsent(serviceKey, gNode->GetNodeInfo(), gNode->GetLeaseId());
+	EtcdHelper::PutIfAbsent(serviceKey, info, gNode->GetLeaseId());
 	pendingKeys.push_back(serviceKey);
-	LOG_INFO << "Registered node to etcd: " << gNode->GetNodeInfo().DebugString();
+	LOG_INFO << "Registered node to etcd: " << info.DebugString();
 }
 
 void EtcdManager::UpdateNodeInfo()
