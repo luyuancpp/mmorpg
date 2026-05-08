@@ -1,0 +1,33 @@
+package com.game.gateway.config;
+
+import org.springframework.boot.context.properties.ConfigurationProperties;
+
+/**
+ * Connection settings for the gRPC client to {@code go/login} (login.rpc).
+ *
+ * <p>{@code endpoint} is expected as {@code host:port}. We deliberately do not
+ * use go-zero's etcd resolver here: jetcd is already on the classpath, but
+ * piping go-zero's URI scheme into grpc-java requires extra glue. Instead we
+ * resolve via the existing {@link com.game.gateway.etcd.GateWatcher}-style
+ * pattern when needed; for now a direct host:port (or comma-separated list)
+ * is the simplest reliable path. Multiple endpoints fall back round-robin.
+ */
+@ConfigurationProperties(prefix = "login.grpc")
+public class LoginGrpcProperties {
+
+    /** {@code host:port[,host:port...]}. Required when /api/login is used. */
+    private String endpoints = "127.0.0.1:50000";
+
+    /** Per-call timeout. */
+    private long timeoutMs = 3000;
+
+    /** Optional client-side retry on UNAVAILABLE/DEADLINE_EXCEEDED. 0 disables. */
+    private int retry = 1;
+
+    public String getEndpoints() { return endpoints; }
+    public void setEndpoints(String endpoints) { this.endpoints = endpoints; }
+    public long getTimeoutMs() { return timeoutMs; }
+    public void setTimeoutMs(long timeoutMs) { this.timeoutMs = timeoutMs; }
+    public int getRetry() { return retry; }
+    public void setRetry(int retry) { this.retry = retry; }
+}

@@ -118,6 +118,13 @@ PreloadPool:
 
 # Third-party auth provider config (all optional).
 # "password" provider is always available. Others are enabled by uncommenting.
+#
+# Roll-out order for a new provider (e.g. WeChat):
+#   1. Provision AppId/AppSecret on the 3rd-party platform.
+#   2. Inject secrets via K8s Secret -> env var; reference with ${VAR} below.
+#   3. Uncomment the section and redeploy login.rpc only; gateway/gate need no changes.
+#   4. Smoke-test via the Java Gateway POST /api/login with auth_type:"wechat".
+#   5. Enable the public /api/login flow for the zone.
 AuthProviders:
   SaToken:
     TokenName: satoken
@@ -130,20 +137,23 @@ AuthProviders:
       DialTimeout: 3s
       ReadTimeout: 3s
       WriteTimeout: 3s
-#   # WeChat Open Platform (mobile/PC SDK).
-#   # Get AppId/AppSecret from https://open.weixin.qq.com/. Prefer env-var injection
-#   # for AppSecret in production (go-zero supports ${ENV} placeholders in YAML).
+#   # WeChat Open Platform (mobile/PC SDK). The client SDK returns an OAuth `code`
+#   # (valid ~5 min, one-time-use). LoginRequest{auth_type:"wechat", auth_token:<code>}.
+#   # Account identity = "wx_<unionid>" when unionid is available (preferred, stable
+#   # across apps under the same Open Platform subject), else "wx_<openid>".
 #   WeChat:
 #     AppId: "${WECHAT_APP_ID}"
 #     AppSecret: "${WECHAT_APP_SECRET}"
-#   # QQ Connect (https://connect.qq.com/). Client SDK passes access_token (not code)
-#   # as auth_token. AppKey is reserved for future server-side WebOAuth flows.
+#   # QQ Connect (https://connect.qq.com/). The SDK passes `access_token`
+#   # (NOT a code) as auth_token. Account identity = "qq_<unionid|openid>".
+#   # AppKey is reserved for future server-side WebOAuth flows.
 #   QQ:
 #     AppId: "${QQ_APP_ID}"
 #     AppKey: "${QQ_APP_KEY}"
+#   # NetEase URS — provider is currently a stub (see auth-provider-framework.md).
 #   NetEase:
-#     AppKey: "your-netease-app-key"
-#     AppSecret: "your-netease-app-secret"
+#     AppKey: "${NETEASE_APP_KEY}"
+#     AppSecret: "${NETEASE_APP_SECRET}"
 
 # Kafka config
 Kafka:

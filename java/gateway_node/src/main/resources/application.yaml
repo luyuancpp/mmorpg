@@ -33,6 +33,35 @@ gate:
   token-secret: "change-me-in-production-use-a-strong-random-key"
   token-ttl-seconds: 300
   discovery-timeout-ms: 5000
+  rate-limit:
+    # Master switch — leave OFF until ops verifies the Bucket4j wiring against staging Redis.
+    enabled: false
+    zone-default-rps: 500
+    zone-default-burst: 1000
+    ip-rps: 5
+    ip-burst: 20
+    account-cooldown-ms: 5000
+    queue-timeout-ms: 300000
+    # Per-zone overrides example (commented):
+    # zone-overrides:
+    #   1: { rps: 2000, burst: 5000 }
+    wave:
+      enabled: false
+      # Wave clock baseline; 0 = use gateway boot time.
+      start-epoch-sec: 0
+      schedule: []
+      # Example for an open-server day:
+      # schedule:
+      #   - { offset-sec: 0,   allow-zones: [1, 2] }
+      #   - { offset-sec: 30,  allow-zones: [3, 4] }
+      #   - { offset-sec: 120, allow-zones: [-1] }   # -1 = all zones
+
+# go-zero login.rpc client
+login:
+  grpc:
+    endpoints: "127.0.0.1:50000"
+    timeout-ms: 3000
+    retry: 1
 
 # Zone health probe
 zone-probe:
