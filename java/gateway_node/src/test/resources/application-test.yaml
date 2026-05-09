@@ -1,0 +1,46 @@
+# Test profile: use H2 in-memory, skip etcd
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    database-platform: org.hibernate.dialect.H2Dialect
+  data:
+    redis:
+      host: localhost
+      port: 6379
+  sql:
+    init:
+      mode: never
+
+etcd:
+  endpoints:
+    - http://127.0.0.1:2379
+
+gate:
+  token-secret: test-secret
+  token-ttl-seconds: 60
+  # Limiter off in tests by default — individual tests that need it on can
+  # override via @TestPropertySource. Default-off matches production rollout.
+  rate-limit:
+    enabled: false
+
+# Point at a non-routable port: the LoginRpcClient bean is constructed but
+# integration tests use a Mockito mock instead of the real channel, so the
+# endpoint never resolves DNS / connects.
+login:
+  grpc:
+    endpoints: "127.0.0.1:1"
+    timeout-ms: 1000
+    retry: 0
+
+zone-probe:
+  interval-ms: 60000
+
+cdn:
+  base-url: "https://cdn.example.com"
+
