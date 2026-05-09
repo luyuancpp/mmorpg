@@ -53,8 +53,14 @@ public class LoginRpcClient {
 
     private static final Logger log = LoggerFactory.getLogger(LoginRpcClient.class);
 
-    /** Fully-qualified names from proto/login/login.proto. */
-    private static final String SERVICE = "ClientPlayerLogin";
+    /** Fully-qualified names from proto/login/login.proto.
+     *
+     * The proto file declares {@code package loginpb;} (carried by the
+     * Go output's {@code FullMethodName} constants), so the on-wire service
+     * name must be {@code loginpb.ClientPlayerLogin}. Without the package
+     * prefix, go-zero's grpc server returns UNIMPLEMENTED.
+     */
+    private static final String SERVICE = "loginpb.ClientPlayerLogin";
     private static final String METHOD_LOGIN         = SERVICE + "/Login";
     private static final String METHOD_REFRESH_TOKEN = SERVICE + "/RefreshToken";
 

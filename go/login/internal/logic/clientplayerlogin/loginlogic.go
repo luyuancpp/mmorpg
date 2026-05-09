@@ -78,7 +78,44 @@ func (l *LoginLogic) Login(in *login_proto.LoginRequest) (*login_proto.LoginResp
 	// progress without flooding the log. Functionality is unchanged — there is
 	// no plan to break this path in the current release; a future version may
 	// gate it behind a config flag.
-	warnLegacyLoginCaller(sessionFound && sessionDetails != nil && sessionDetails.SessionId > 0, in.AuthType)
+	isLegacyPath := sessionFound && sessionDetails != nil && sessionDetails.SessionId > 0
+	warnLegacyLoginCaller(isLegacyPath, in.AuthType)
+
+	// New path (Java Gateway HTTP): no session exists yet because the player
+	// hasn't touched the gate TCP channel. Degenerate login: validate creds,
+	// mint access/refresh tokens, return the player list. Device-limit + the
+	// login_session:* write happen the first time the client hits the gate
+	// (via the legacy path's EnterGame → bindSession flow).
+	if !isLegacyPath {
+		userAccount, err := GetOrInitUserAccount(l.ctx, l.svcCtx.RedisClient, account, config.AppConfig.Account.CacheExpire)
+		if err != nil {
+			return nil, err
+		}
+
+		authType := in.AuthType
+		if authType == "" {
+			authType = "password"
+		}
+		if authType != "access_token" {
+			tokenPair, tokenErr := l.issueTokens(account, authType)
+			if tokenErr != nil {
+				logx.Errorf("Failed to issue tokens for account=%s: %v", account, tokenErr)
+				// Non-fatal: client just won't get tokens for silent re-login
+			} else {
+				resp.AccessToken = tokenPair.AccessToken
+				resp.RefreshToken = tokenPair.RefreshToken
+				resp.AccessTokenExpire = tokenPair.AccessTokenExpire
+				resp.RefreshTokenExpire = tokenPair.RefreshTokenExpire
+			}
+		}
+
+		if userAccount.SimplePlayers != nil {
+			for _, v := range userAccount.SimplePlayers.Players {
+				resp.Players = append(resp.Players, &login_proto.AccountSimplePlayerWrapper{Player: v})
+			}
+		}
+		return resp, nil
+	}
 
 	if !sessionFound || sessionDetails.SessionId <= 0 {
 		logx.Error("SessionId not found in context during login")

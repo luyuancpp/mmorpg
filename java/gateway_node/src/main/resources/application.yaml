@@ -59,7 +59,7 @@ gate:
 # go-zero login.rpc client
 login:
   grpc:
-    endpoints: "127.0.0.1:50000"
+    endpoints: "127.0.0.1:51000"
     timeout-ms: 3000
     retry: 1
 

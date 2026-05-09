@@ -1,6 +1,6 @@
 # Base RPC service config
 Name: login.rpc
-ListenOn: 127.0.0.1:50000
+ListenOn: 127.0.0.1:51000
 Timeout: 100000 # Max server-side timeout per request (10s)
 
 # Canonical go-zero RPC registration/discovery settings.
