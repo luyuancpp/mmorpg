@@ -415,18 +415,49 @@ net.ipv4.tcp_max_syn_backlog     = 65535
 | 6 | login 服务从 FSM 简化为 `loginstep` + `RedisLocker` | 2026-04 | [login-simplification-2026-04.md](./login-simplification-2026-04.md) |
 | 7 | Kafka `gate-{gateId}` topic 解耦控制流 | 2026-04 | [player_login_flow.md](./player_login_flow.md) |
 | 8 | muduo 框架代码不动,优化只在业务层 + 内核 | 持续 | 本文 §2 |
+| 9 | **首次 Login 上移到 Java Gateway `/api/login`**,OAuth 校验、限流、排队都在 HTTP 层;cpp gate 的 `ClientPlayerLogin.Login` 保留兼容(带 deprecation 日志) | **2026-05-08** | [open-server-rate-limit-design.md](./open-server-rate-limit-design.md), [third-party-login-end-to-end-design.md](./third-party-login-end-to-end-design.md) |
+| 10 | **`/api/refresh-token` 独立 HTTP 通道**,token 续签不再占用 gate TCP | **2026-05-08** | [dual-token-authentication.md](./dual-token-authentication.md) |
+| 11 | **cpp gate→login gRPC 加 HTTP/2 keepalive**(30s/10s/permit-without-calls=1),防 NAT/LB 空闲踢连接 | **2026-05-08** | [gate-grpc-long-connection-audit-2026-05.md](./gate-grpc-long-connection-audit-2026-05.md) |
+| 12 | **gate 的 `HandleGrpcNodeMessage` 保留为"协议路由器"**,登录只是它转发的 RPC 之一(EnterGame/LeaveGame/CreatePlayer/Disconnect 必须经它)| **2026-05-08** | [gate-login-rpc-boundary.md](./gate-login-rpc-boundary.md) |
+| 13 | **Gateway 限流**:Bucket4j + Redis,三层叠加(zone/ip/account cooldown)+ 开服波次 | **2026-05-08** | [open-server-rate-limit-design.md](./open-server-rate-limit-design.md) |
+
+---
+
+## 12. 老 Login 路径下线计划
+
+**当前状态**(2026-05-09):
+- 新路径(`POST /api/login` → Gateway → gRPC login)已上线并通过 34 个单元+集成测试
+- 老路径(客户端 → gate TCP → `ClientPlayerLogin.Login` RPC)继续工作,每次命中记录计数 + 每 60s 打一条 throttled warn
+- robot 新增 `use_http_login` 开关(默认 false,灰度打开)
+
+**下线步骤**:
+
+| 阶段 | 目标日期 | 动作 | 退出条件 |
+|---|---|---|---|
+| **T+0 灰度** | 2026-05 | robot / 内测客户端 `use_http_login: true`,Gateway 限流默认关,观察日志 | 新路径登录成功率 ≥ 老路径;`[DEPRECATION]` 每小时计数稳定 |
+| **T+1 全量切换** | 2026-06(下个版本) | 线上客户端默认走 `/api/login`;老路径保留但 Gateway 在 zone 层面可灰度关闭 | `[DEPRECATION]` 计数降到 <1%(只有老客户端零星兜底) |
+| **T+2 下线** | 2026-07(下下个版本) | 老 gate Login RPC 加 feature flag `legacy-gate-login-enabled`,默认关闭;所有计数归 0 后考虑删除 | 两个星期无老路径调用 |
+| **T+3 代码移除** | 2026-08 | `HandleGrpcNodeMessage` 里删除对 `ClientPlayerLoginLoginMessageId` 的路由;`deprecation.go` 删除;`message_id.txt` 保留但不再注册 handler | — |
+
+**不会删的**(必须保留的 gate→login 转发):
+- `CreatePlayer` / `EnterGame` / `LeaveGame` / `Disconnect` / `RefreshToken`(参见 [gate-login-rpc-boundary.md](./gate-login-rpc-boundary.md))
+
+**监控**:
+- go-zero login 的 `legacyLoginCount` / `newLoginCount` 原子计数器
+- Gateway `/api/login` 的 Prometheus metric `gate_assign_total{result}`
+- robot 压测里 `LoginFail` / `AccessReconnectFallback` 比率
 
 ---
 
 ## 当前已知缺口(待补)
 
 按任务清单跟踪:
-- **#10**: Java Gateway 加 Bucket4j 限流 + 排队(防开服风暴)
-- **#11**: QQ/微信 provider 端到端联调 + 账号映射
-- **#13**: 核查 gate→login gRPC 是否长连接复用(压测 Bound 残留)
-- **#9**: 内核调优 runbook + 压测 SOP 落地
-- **#2**: 压测报告 45k→120k 阶梯加压拐点分析
-- **#8**: CLAUDE.md 项目记忆刷新
+- **#10**: Java Gateway 加 Bucket4j 限流 + 排队(防开服风暴)— ✅ 2026-05-08 已落地
+- **#11**: QQ/微信 provider 端到端联调 + 账号映射 — 🚧 文档完成,待真跑
+- **#13**: 核查 gate→login gRPC 是否长连接复用(压测 Bound 残留)— ✅ 2026-05-08 已核查
+- **#9**: 内核调优 runbook + 压测 SOP 落地 — ✅ 文档完成,待 sysctl 固化到线上
+- **#2**: 压测报告 45k→120k 阶梯加压拐点分析 — 🚧 待真跑
+- **#8**: CLAUDE.md 项目记忆刷新 — ✅ 已更新
 
 ---
 
@@ -434,3 +465,4 @@ net.ipv4.tcp_max_syn_backlog     = 65535
 - 任何架构变更请先更新本文 §11 表,然后在对应专题文档展开
 - 新增文档请挂到 §10 索引
 - 决策有反复时,旧决策**保留**并标 `Superseded by #N`
+- 新人 / AI 第一天先读 [onboarding.md](./onboarding.md)(跑起来)→ 本文(看架构)→ [player_login_flow.md](./player_login_flow.md)(看登录细节)
