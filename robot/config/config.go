@@ -36,6 +36,20 @@ type Config struct {
 	AuthType    string `yaml:"auth_type"`
 	SaTokenAddr string `yaml:"satoken_addr"` // SA-Token dev-login endpoint, e.g. "http://127.0.0.1:18080"
 
+	// UseHttpLogin (default false) routes the *initial* login RPC through
+	// the Java Gateway's POST /api/login instead of the legacy in-game
+	// ClientPlayerLogin.Login over the gate TCP channel. The flow becomes:
+	//
+	//   POST /api/login          → access/refresh token, player list
+	//   POST /api/assign-gate    → gate ip + HMAC token
+	//   TCP connect gate         → ClientTokenVerify (HMAC, local)
+	//   Login(auth_type=access_token) on gate TCP   ← lightweight, only to bind session
+	//   EnterGame                → world
+	//
+	// Set true to validate the new path against the gateway. Off by default
+	// so existing stress runs / regression suites are not affected.
+	UseHttpLogin bool `yaml:"use_http_login"`
+
 	// AI behavior profile: "stress", "behavioral", "fighter", "explorer", "chatter"
 	// Or set custom_weights to define your own action distribution.
 	Profile       string         `yaml:"profile"`
