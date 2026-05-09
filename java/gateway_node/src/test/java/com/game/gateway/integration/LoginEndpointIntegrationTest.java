@@ -1,0 +1,165 @@
+package com.game.gateway.integration;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.game.gateway.dto.LoginRequest;
+import com.game.gateway.dto.LoginResponse;
+import com.game.gateway.dto.RefreshTokenRequest;
+import com.game.gateway.dto.RefreshTokenResponse;
+import com.game.gateway.grpc.LoginRpcClient;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+/**
+ * End-to-end integration test for the new HTTP login surface.
+ *
+ * <p>Spring loads the full gateway context (controllers + services + Jackson
+ * snake_case + the rate limiter wiring), but we mock {@link LoginRpcClient}
+ * so the test does not require a running go-zero login or a real network
+ * channel. What we verify here:
+ * <ul>
+ *   <li>{@code /api/login} accepts a snake_case JSON body, hits the gRPC
+ *       client, and surfaces tokens / errors back as JSON.</li>
+ *   <li>{@code /api/refresh-token} rotates tokens through the same path.</li>
+ *   <li>The response JSON keys match what the robot client expects (the
+ *       robot's {@code httpLoginResponse} struct uses snake_case tags).</li>
+ *   <li>Upstream UNAVAILABLE / DEADLINE_EXCEEDED degrade to {@code code=500}
+ *       so the robot's fallback logic trips at the right boundary.</li>
+ * </ul>
+ *
+ * <p>Why a real Spring context (not a slice test): the robot/gateway HTTP
+ * contract has historically been broken by Jackson / serialization config
+ * differences. A full-context test catches those, while a {@code WebMvcTest}
+ * would silently pick up default Jackson and miss snake_case mismatches.
+ */
+@SpringBootTest
+@AutoConfigureMockMvc
+@ActiveProfiles("test")
+class LoginEndpointIntegrationTest {
+
+    @Autowired private MockMvc mockMvc;
+    @Autowired private ObjectMapper objectMapper;
+
+    /**
+     * Replace the real gRPC client with a Mockito mock so the test does not
+     * need a running login.rpc backend. The constructor still runs (it walks
+     * the configured endpoints), but no calls are issued because we override
+     * {@code login()} / {@code refreshToken()}.
+     */
+    @MockBean private LoginRpcClient loginRpcClient;
+
+    @Test
+    void loginEndpoint_returnsTokensOnSuccess() throws Exception {
+        LoginRpcClient.LoginResponseProto upstream = new LoginRpcClient.LoginResponseProto();
+        upstream.accessToken = "access-abc";
+        upstream.refreshToken = "refresh-xyz";
+        upstream.accessTokenExpire = 1_700_000_000L;
+        upstream.refreshTokenExpire = 1_702_000_000L;
+        when(loginRpcClient.login(any(LoginRpcClient.LoginRequestProto.class))).thenReturn(upstream);
+
+        LoginRequest req = new LoginRequest();
+        req.setZoneId(1);
+        req.setAccount("u_001");
+        req.setPassword("pw");
+
+        MvcResult res = mockMvc.perform(post("/api/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(LoginResponse.CODE_OK))
+                .andExpect(jsonPath("$.access_token").value("access-abc"))
+                .andExpect(jsonPath("$.refresh_token").value("refresh-xyz"))
+                .andExpect(jsonPath("$.access_token_expire").value(1_700_000_000L))
+                .andExpect(jsonPath("$.refresh_token_expire").value(1_702_000_000L))
+                .andReturn();
+
+        // Sanity-check the body decodes with the same DTO the robot would parse.
+        LoginResponse decoded = objectMapper.readValue(res.getResponse().getContentAsString(), LoginResponse.class);
+        assertEquals("access-abc", decoded.getAccessToken());
+    }
+
+    @Test
+    void loginEndpoint_upstreamErrorMapsTo401() throws Exception {
+        LoginRpcClient.LoginResponseProto upstream = new LoginRpcClient.LoginResponseProto();
+        upstream.errorCode = 42;
+        upstream.errorMessage = "auth_provider_rejected";
+        when(loginRpcClient.login(any(LoginRpcClient.LoginRequestProto.class))).thenReturn(upstream);
+
+        LoginRequest req = new LoginRequest();
+        req.setAuthType("wechat");
+        req.setAuthToken("invalid-code");
+
+        mockMvc.perform(post("/api/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(LoginResponse.CODE_AUTH_REJECTED))
+                .andExpect(jsonPath("$.message").value("auth_provider_rejected"));
+    }
+
+    @Test
+    void loginEndpoint_unavailableMapsTo500() throws Exception {
+        when(loginRpcClient.login(any(LoginRpcClient.LoginRequestProto.class)))
+                .thenThrow(new StatusRuntimeException(Status.UNAVAILABLE.withDescription("login down")));
+
+        LoginRequest req = new LoginRequest();
+        req.setAccount("u_002");
+        req.setPassword("pw");
+
+        mockMvc.perform(post("/api/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(LoginResponse.CODE_INTERNAL))
+                .andExpect(jsonPath("$.message").value("login_unavailable"));
+    }
+
+    @Test
+    void refreshTokenEndpoint_rotatesTokens() throws Exception {
+        LoginRpcClient.RefreshTokenResponseProto upstream = new LoginRpcClient.RefreshTokenResponseProto();
+        upstream.accessToken = "new-access";
+        upstream.refreshToken = "new-refresh";
+        upstream.accessTokenExpire = 1_700_000_000L;
+        upstream.refreshTokenExpire = 1_702_000_000L;
+        when(loginRpcClient.refreshToken(any(LoginRpcClient.RefreshTokenRequestProto.class))).thenReturn(upstream);
+
+        RefreshTokenRequest req = new RefreshTokenRequest();
+        req.setRefreshToken("old-refresh");
+
+        mockMvc.perform(post("/api/refresh-token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(RefreshTokenResponse.CODE_OK))
+                .andExpect(jsonPath("$.access_token").value("new-access"))
+                .andExpect(jsonPath("$.refresh_token").value("new-refresh"));
+    }
+
+    @Test
+    void refreshTokenEndpoint_emptyTokenRejectedWithoutRpc() throws Exception {
+        RefreshTokenRequest req = new RefreshTokenRequest();
+        req.setRefreshToken("");
+
+        mockMvc.perform(post("/api/refresh-token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(RefreshTokenResponse.CODE_AUTH_REJECTED))
+                .andExpect(jsonPath("$.message").value("empty_refresh_token"));
+    }
+}

@@ -96,6 +96,13 @@ cpp/libs/base/core/
 cpp/libs/base/infra/
 cpp/libs/base/modules/
 
+# Re-include the gateway test sources — the bare `test/` rule above was a
+# carry-over from a deleted top-level scratch dir and was never intended to
+# block real Maven test trees. The negation pattern makes the intent
+# explicit (and survives anyone re-adding similar rules later).
+!java/gateway_node/src/test/
+!java/gateway_node/src/test/**
+
 # Runtime artifacts (not for version control)
 bin/zoneinfo/
 bin/go_services.pid.json
