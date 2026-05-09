@@ -1,0 +1,28 @@
+# End-to-end smoke config for the new HTTP-login path.
+#
+# Minimal:
+#   - 10 bots → cheap / easy to reason about
+#   - use_http_login: true → exercise the /api/login path
+#   - password auth → no SA-Token dependency, isolates the HTTP path
+#   - login-test mode → deterministic scenarios then exit (vs. stress which
+#     loops forever)
+
+gateway_addr: "http://127.0.0.1:8081"
+zone_id: 1
+robot_count: 10
+account_fmt: "e2erobot_%04d"
+password: "123456"
+skill_ids: []
+table_dir: "../generated/tables"
+action_interval: 3
+report_interval: 5
+
+mode: "stress"
+
+auth_type: "password"
+use_http_login: true
+
+profile: "stress"
+
+llm:
+  enabled: false
