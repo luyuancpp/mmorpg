@@ -53,23 +53,31 @@ public class LoginRpcClient {
 
     private static final Logger log = LoggerFactory.getLogger(LoginRpcClient.class);
 
-    /** Fully-qualified name from proto/login/login.proto. */
+    /** Fully-qualified names from proto/login/login.proto. */
     private static final String SERVICE = "ClientPlayerLogin";
-    private static final String METHOD  = SERVICE + "/Login";
+    private static final String METHOD_LOGIN         = SERVICE + "/Login";
+    private static final String METHOD_REFRESH_TOKEN = SERVICE + "/RefreshToken";
 
     private final LoginGrpcProperties props;
     private final List<ManagedChannel> channels = new ArrayList<>();
     private final AtomicInteger rr = new AtomicInteger();
 
-    private final MethodDescriptor<LoginRequestProto, LoginResponseProto> methodDescriptor;
+    private final MethodDescriptor<LoginRequestProto, LoginResponseProto> loginMethod;
+    private final MethodDescriptor<RefreshTokenRequestProto, RefreshTokenResponseProto> refreshTokenMethod;
 
     public LoginRpcClient(LoginGrpcProperties props) {
         this.props = props;
-        this.methodDescriptor = MethodDescriptor.<LoginRequestProto, LoginResponseProto>newBuilder()
+        this.loginMethod = MethodDescriptor.<LoginRequestProto, LoginResponseProto>newBuilder()
                 .setType(MethodDescriptor.MethodType.UNARY)
-                .setFullMethodName(METHOD)
-                .setRequestMarshaller(new RequestMarshaller())
-                .setResponseMarshaller(new ResponseMarshaller())
+                .setFullMethodName(METHOD_LOGIN)
+                .setRequestMarshaller(new LoginRequestMarshaller())
+                .setResponseMarshaller(new LoginResponseMarshaller())
+                .build();
+        this.refreshTokenMethod = MethodDescriptor.<RefreshTokenRequestProto, RefreshTokenResponseProto>newBuilder()
+                .setType(MethodDescriptor.MethodType.UNARY)
+                .setFullMethodName(METHOD_REFRESH_TOKEN)
+                .setRequestMarshaller(new RefreshTokenRequestMarshaller())
+                .setResponseMarshaller(new RefreshTokenResponseMarshaller())
                 .build();
     }
 
@@ -112,6 +120,15 @@ public class LoginRpcClient {
 
     /** Calls {@code ClientPlayerLogin.Login}. Throws on terminal failure. */
     public LoginResponseProto login(LoginRequestProto req) {
+        return unaryCall(loginMethod, req);
+    }
+
+    /** Calls {@code ClientPlayerLogin.RefreshToken}. Throws on terminal failure. */
+    public RefreshTokenResponseProto refreshToken(RefreshTokenRequestProto req) {
+        return unaryCall(refreshTokenMethod, req);
+    }
+
+    private <Q, R> R unaryCall(MethodDescriptor<Q, R> method, Q req) {
         if (channels.isEmpty()) {
             throw new IllegalStateException("login.rpc no endpoint");
         }
@@ -122,14 +139,15 @@ public class LoginRpcClient {
         StatusRuntimeException last = null;
         for (int i = 0; i < attempts; i++) {
             try {
-                return ClientCalls.blockingUnaryCall(ch, methodDescriptor, opts, req);
+                return ClientCalls.blockingUnaryCall(ch, method, opts, req);
             } catch (StatusRuntimeException e) {
                 last = e;
                 Status.Code c = e.getStatus().getCode();
                 if (c != Status.Code.UNAVAILABLE && c != Status.Code.DEADLINE_EXCEEDED) {
                     throw e;        // non-retriable: don't waste budget
                 }
-                log.warn("login.rpc retriable error attempt {}/{}: {}", i + 1, attempts, c);
+                log.warn("login.rpc retriable error on {} attempt {}/{}: {}",
+                        method.getFullMethodName(), i + 1, attempts, c);
             }
         }
         throw last;
@@ -199,7 +217,7 @@ public class LoginRpcClient {
 
     private static String nullToEmpty(String s) { return s == null ? "" : s; }
 
-    private static final class RequestMarshaller implements MethodDescriptor.Marshaller<LoginRequestProto> {
+    private static final class LoginRequestMarshaller implements MethodDescriptor.Marshaller<LoginRequestProto> {
         @Override
         public InputStream stream(LoginRequestProto value) {
             try {
@@ -216,7 +234,7 @@ public class LoginRpcClient {
         }
     }
 
-    private static final class ResponseMarshaller implements MethodDescriptor.Marshaller<LoginResponseProto> {
+    private static final class LoginResponseMarshaller implements MethodDescriptor.Marshaller<LoginResponseProto> {
         @Override
         public InputStream stream(LoginResponseProto value) {
             throw new UnsupportedOperationException();
@@ -226,7 +244,84 @@ public class LoginRpcClient {
         public LoginResponseProto parse(InputStream stream) {
             try {
                 byte[] bytes = stream.readAllBytes();
-                return parseResponse(bytes);
+                return parseLoginResponse(bytes);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    // ── RefreshToken wire codec ──────────────────────────────────────
+
+    /**
+     * proto/login/login.proto RefreshTokenRequest:
+     *   string refresh_token = 1;
+     */
+    public static final class RefreshTokenRequestProto {
+        final String refreshToken;
+
+        public RefreshTokenRequestProto(String refreshToken) {
+            this.refreshToken = nullToEmpty(refreshToken);
+        }
+
+        byte[] toBytes() throws IOException {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream(64);
+            CodedOutputStream out = CodedOutputStream.newInstance(baos);
+            if (!refreshToken.isEmpty()) out.writeString(1, refreshToken);
+            out.flush();
+            return baos.toByteArray();
+        }
+    }
+
+    /**
+     * proto/login/login.proto RefreshTokenResponse:
+     *   TipInfoMessage error_message      = 1;
+     *   string          access_token      = 2;
+     *   string          refresh_token     = 3;
+     *   int64           access_token_expire  = 4;
+     *   int64           refresh_token_expire = 5;
+     */
+    public static final class RefreshTokenResponseProto {
+        public Integer errorCode;
+        public String  errorMessage;
+        public String  accessToken;
+        public String  refreshToken;
+        public long    accessTokenExpire;
+        public long    refreshTokenExpire;
+
+        public boolean hasError() {
+            return (errorCode != null && errorCode != 0)
+                    || (errorMessage != null && !errorMessage.isEmpty() && (errorCode == null || errorCode != 0));
+        }
+    }
+
+    private static final class RefreshTokenRequestMarshaller implements MethodDescriptor.Marshaller<RefreshTokenRequestProto> {
+        @Override
+        public InputStream stream(RefreshTokenRequestProto value) {
+            try {
+                return new java.io.ByteArrayInputStream(value.toBytes());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        @Override
+        public RefreshTokenRequestProto parse(InputStream stream) {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    private static final class RefreshTokenResponseMarshaller implements MethodDescriptor.Marshaller<RefreshTokenResponseProto> {
+        @Override
+        public InputStream stream(RefreshTokenResponseProto value) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public RefreshTokenResponseProto parse(InputStream stream) {
+            try {
+                byte[] bytes = stream.readAllBytes();
+                return parseRefreshResponse(bytes);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -238,7 +333,7 @@ public class LoginRpcClient {
      * are skipped using {@link CodedInputStream#skipField}, so additive proto
      * upgrades remain wire-compatible.
      */
-    private static LoginResponseProto parseResponse(byte[] bytes) throws IOException {
+    private static LoginResponseProto parseLoginResponse(byte[] bytes) throws IOException {
         LoginResponseProto resp = new LoginResponseProto();
         CodedInputStream in = CodedInputStream.newInstance(bytes);
         while (!in.isAtEnd()) {
@@ -246,8 +341,6 @@ public class LoginRpcClient {
             int field = tag >>> 3;
             switch (field) {
                 case 1 -> {
-                    // error_message: nested message — read length-prefixed and try to extract
-                    // a numeric "id" field (TipInfoMessage commonly carries an int id).
                     int len = in.readRawVarint32();
                     int oldLimit = in.pushLimit(len);
                     while (!in.isAtEnd()) {
@@ -264,14 +357,45 @@ public class LoginRpcClient {
                     }
                     in.popLimit(oldLimit);
                 }
-                case 2 -> {
-                    // players: skip detailed parse for now — controller doesn't surface them yet.
-                    in.skipField(tag);
-                }
+                case 2 -> in.skipField(tag);
                 case 3 -> resp.accessToken = in.readString();
                 case 4 -> resp.refreshToken = in.readString();
                 case 5 -> resp.accessTokenExpire = in.readInt64();
                 case 6 -> resp.refreshTokenExpire = in.readInt64();
+                default -> in.skipField(tag);
+            }
+        }
+        return resp;
+    }
+
+    private static RefreshTokenResponseProto parseRefreshResponse(byte[] bytes) throws IOException {
+        RefreshTokenResponseProto resp = new RefreshTokenResponseProto();
+        CodedInputStream in = CodedInputStream.newInstance(bytes);
+        while (!in.isAtEnd()) {
+            int tag = in.readTag();
+            int field = tag >>> 3;
+            switch (field) {
+                case 1 -> {
+                    int len = in.readRawVarint32();
+                    int oldLimit = in.pushLimit(len);
+                    while (!in.isAtEnd()) {
+                        int subTag = in.readTag();
+                        int subField = subTag >>> 3;
+                        int wire = subTag & 0x7;
+                        if (subField == 1 && wire == 0) {
+                            resp.errorCode = (int) in.readInt64();
+                        } else if (subField == 2 && wire == 2) {
+                            resp.errorMessage = in.readString();
+                        } else {
+                            in.skipField(subTag);
+                        }
+                    }
+                    in.popLimit(oldLimit);
+                }
+                case 2 -> resp.accessToken = in.readString();
+                case 3 -> resp.refreshToken = in.readString();
+                case 4 -> resp.accessTokenExpire = in.readInt64();
+                case 5 -> resp.refreshTokenExpire = in.readInt64();
                 default -> in.skipField(tag);
             }
         }
