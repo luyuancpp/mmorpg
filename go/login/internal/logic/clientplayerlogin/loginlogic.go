@@ -67,6 +67,19 @@ func (l *LoginLogic) Login(in *login_proto.LoginRequest) (*login_proto.LoginResp
 
 	// 2. Validate session
 	sessionDetails, sessionFound := ctxkeys.GetSessionDetails(l.ctx)
+
+	// Deprecation hint: when SessionDetails are attached, the call arrived
+	// through cpp gate.HandleGrpcNodeMessage — i.e. the legacy path where the
+	// client runs the Login RPC on its TCP channel after hitting assign-gate.
+	// The new path (Java Gateway POST /api/login) calls this RPC directly
+	// without a session_id, so an empty SessionDetails means "new path".
+	//
+	// We log the legacy path at warn, throttled, so ops can see the migration
+	// progress without flooding the log. Functionality is unchanged — there is
+	// no plan to break this path in the current release; a future version may
+	// gate it behind a config flag.
+	warnLegacyLoginCaller(sessionFound && sessionDetails != nil && sessionDetails.SessionId > 0, in.AuthType)
+
 	if !sessionFound || sessionDetails.SessionId <= 0 {
 		logx.Error("SessionId not found in context during login")
 		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginSessionIdNotFound)}
