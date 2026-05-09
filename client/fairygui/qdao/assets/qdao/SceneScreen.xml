@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component size="2560,1080">
+  <displayList>
+    <image id="n0" name="imgSceneBackdrop" src="a000000k" fileName="qdao_scene_backdrop.png" xy="0,0" size="2560,1080"/>
+    <image id="n1" name="imgRole" src="a000000i" fileName="qdao_role_wanderer.png" xy="1810,18" size="335,332"/>
+    <image id="n2" name="imgPanelHeader" src="a0000007" fileName="qdao_server_scroll.png" xy="610,112" size="1420,173"/>
+    <text id="n3" name="txtPanelTitle" xy="900,168" size="840,60" fontSize="42" color="#3d2914" align="center" autoSize="none" singleLine="true" text="洞天名册"/>
+    <image id="n4" name="imgSearch" src="a000000b" fileName="qdao_search_box.png" xy="646,306" size="238,55"/>
+    <text id="n5" name="inputSearch" xy="666,316" size="200,36" fontSize="22" color="#5a4025" autoSize="none" singleLine="true" text="" input="true" prompt="search"/>
+    <component id="n6" name="tabRecent" src="a0000004" fileName="common/QdaoHitButton.xml" xy="524,400" size="200,78">
+      <Button title="近"/>
+    </component>
+    <component id="n7" name="tabRecommend" src="a0000004" fileName="common/QdaoHitButton.xml" xy="522,491" size="199,78">
+      <Button title="荐"/>
+    </component>
+    <component id="n8" name="tabAll" src="a0000004" fileName="common/QdaoHitButton.xml" xy="524,584" size="200,78">
+      <Button title="全"/>
+    </component>
+    <list id="n9" name="listRows" xy="966,300" size="1180,502" overflow="scroll" lineGap="12" defaultItem="ui://qdao2026/QdaoListRow">
+      <item title="云海宗" icon="ui://qdao2026/qdao_icon_gate"/>
+      <item title="清风谷" icon="ui://qdao2026/qdao_icon_talisman"/>
+      <item title="碧落渊" icon="ui://qdao2026/qdao_icon_gate"/>
+      <item title="紫霄峰" icon="ui://qdao2026/qdao_icon_talisman"/>
+      <item title="沧浪洲" icon="ui://qdao2026/qdao_icon_gate"/>
+      <item title="昆仑墟" icon="ui://qdao2026/qdao_icon_talisman"/>
+      <item title="蓬莱岛" icon="ui://qdao2026/qdao_icon_gate"/>
+      <item title="瀛洲海" icon="ui://qdao2026/qdao_icon_talisman"/>
+    </list>
+    <component id="n17" name="btnScrollUp" src="a0000004" fileName="common/QdaoHitButton.xml" xy="1955,310" size="60,60">
+      <Button title="^"/>
+    </component>
+    <component id="n20" name="btnScrollDown" src="a0000004" fileName="common/QdaoHitButton.xml" xy="1955,748" size="60,60">
+      <Button title="v"/>
+    </component>
+    <image id="n10" name="imgBottomBar" src="a000000d" fileName="qdao_bottom_bar.png" xy="985,848" size="930,126"/>
+    <image id="n11" name="imgCloudLeft" src="a000000e" fileName="qdao_cloud_corner.png" xy="312,850" size="293,160" scale="-1,1"/>
+    <image id="n12" name="imgCloudRight" src="a000000e" fileName="qdao_cloud_corner.png" xy="1955,850" size="293,160"/>
+    <text id="n13" name="txtStatus" xy="760,818" size="840,40" fontSize="22" color="#fff0bd" align="center" autoSize="none" singleLine="true" text=""/>
+    <component id="n14" name="btnBack" src="a0000004" fileName="common/QdaoHitButton.xml" xy="565,846" size="210,76">
+      <Button title="返"/>
+    </component>
+    <component id="n15" name="btnRefresh" src="a0000004" fileName="common/QdaoHitButton.xml" xy="1430,846" size="210,76">
+      <Button title="刷"/>
+    </component>
+    <component id="n16" name="btnConfirm" src="a0000003" fileName="common/QdaoButton.xml" xy="1668,832" size="300,92">
+      <Button title="进"/>
+    </component>
+  </displayList>
+</component>
