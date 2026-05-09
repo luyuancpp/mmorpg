@@ -526,10 +526,83 @@ func loginAndEnterWithAuth(gc *pkg.GameClient, cfg *config.Config, stats *metric
 				zap.String("account", gc.Account), zap.Error(err))
 		}
 	}
+	// New path: do the heavy auth via Java Gateway HTTP, then use the
+	// returned access_token to do a lightweight Login on the gate TCP
+	// channel just to bind the session. Falls back to legacy on any
+	// non-2xx so a half-rolled gateway doesn't break stress runs.
+	if cfg.UseHttpLogin {
+		if err := loginAndEnterViaHttpGateway(gc, cfg, stats); err == nil {
+			return nil
+		} else {
+			zap.L().Warn("http-login path failed, falling back to legacy gate Login RPC",
+				zap.String("account", gc.Account), zap.Error(err))
+		}
+	}
 	if cfg.AuthType == "satoken" {
 		return loginAndEnterSaToken(gc, cfg.SaTokenAddr, stats)
 	}
 	return loginAndEnterLocal(gc, cfg.Password, stats)
+}
+
+// loginAndEnterViaHttpGateway exercises the new Java Gateway /api/login path.
+//
+// Why the gate TCP still runs ClientPlayerLogin.Login afterwards:
+//
+//   The gate-side Login RPC's job is twofold — it (a) verifies credentials
+//   and (b) binds the {session_id, account} pair via loginsession.Save +
+//   the device-set so that EnterGame can find the account. (a) was already
+//   done over HTTP, so we use auth_type="access_token" here to skip the
+//   provider round-trip; (b) still has to happen on the actual TCP socket.
+//
+// This is exactly the static-shape we want for production clients: one
+// HTTP round trip moves the OAuth/3rd-party heavy lifting off the gate, and
+// the gate Login RPC degenerates into a Redis lookup + a Kafka BindSession.
+func loginAndEnterViaHttpGateway(gc *pkg.GameClient, cfg *config.Config, stats *metrics.Stats) error {
+	loginReq := &httpLoginRequest{
+		ZoneID:   cfg.ZoneID,
+		Account:  gc.Account,
+		Password: cfg.Password,
+		AuthType: cfg.AuthType,
+	}
+	// SA-Token path: behave exactly like the legacy SA-Token flow, only
+	// the credential exchange happens over HTTP instead of via the gate.
+	if cfg.AuthType == "satoken" {
+		tok, err := fetchSaToken(cfg.SaTokenAddr, gc.Account)
+		if err != nil {
+			stats.LoginFail()
+			return fmt.Errorf("fetch satoken: %w", err)
+		}
+		gc.SaToken = tok
+		loginReq.AuthToken = tok
+	}
+
+	rsp, err := httpLogin(cfg.GatewayAddr, loginReq, 10*time.Second)
+	if err != nil {
+		stats.LoginFail()
+		return fmt.Errorf("/api/login: %w", err)
+	}
+	switch rsp.Code {
+	case 0:
+		// fall through
+	case 100, 101, 429:
+		// queue / rate-limit — surface as "fail" so the outer retry loop
+		// honours the backoff. retry_after_ms hint is logged but the
+		// outer loop owns the actual sleep.
+		stats.LoginFail()
+		return fmt.Errorf("/api/login queue (code=%d retry_after_ms=%d)", rsp.Code, rsp.RetryAfterMs)
+	default:
+		stats.LoginFail()
+		return fmt.Errorf("/api/login error code=%d msg=%s", rsp.Code, rsp.Message)
+	}
+	if rsp.AccessToken == "" {
+		stats.LoginFail()
+		return fmt.Errorf("/api/login returned empty access_token")
+	}
+	gc.SetTokens(rsp.AccessToken, rsp.RefreshToken, rsp.AccessTokenExpire, rsp.RefreshTokenExpire)
+
+	// Now run the cheap path on the gate TCP channel: server sees
+	// auth_type="access_token" and skips provider validation entirely.
+	return loginAndEnterAccessToken(gc, rsp.AccessToken, stats)
 }
 
 func sendAndRecvLocal(gc *pkg.GameClient, stats *metrics.Stats, msgID uint32, req, resp proto.Message) error {

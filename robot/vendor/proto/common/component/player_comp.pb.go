@@ -299,6 +299,72 @@ func (x *PlayerUint32Comp) GetClass() uint32 {
 	return 0
 }
 
+// Stress-test instrumentation for player-data persistence.
+//
+// Stamped by the producer (Scene's SavePlayerToRedis when an env-var probe
+// is enabled, or by the data_stress driver / robot data-stress mode) and
+// verified by tools/cmd/verifier so we can prove "last write wins" through
+// the Kafka -> DB -> MySQL+Redis pipeline without doing per-field deep
+// diffs. Fields default-empty in normal play, so they cost nothing on disk
+// or wire when unused.
+type PlayerStressTestProbe struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Monotonic per-(player_id, msg_type) sequence. Verifier asserts
+	// MySQL.test_seq == Redis.test_seq == max(test_seq) ever published.
+	TestSeq uint64 `protobuf:"varint,1,opt,name=test_seq,json=testSeq,proto3" json:"test_seq,omitempty"`
+	// HMAC-style signature over (player_id || msg_type || test_seq || nonce).
+	// Used to detect torn / mis-routed / replayed payloads — if test_sig
+	// matches the recomputed value we know the row was not silently
+	// reassembled or fed from a different stream.
+	TestSig       []byte `protobuf:"bytes,2,opt,name=test_sig,json=testSig,proto3" json:"test_sig,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PlayerStressTestProbe) Reset() {
+	*x = PlayerStressTestProbe{}
+	mi := &file_proto_common_component_player_comp_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PlayerStressTestProbe) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PlayerStressTestProbe) ProtoMessage() {}
+
+func (x *PlayerStressTestProbe) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_common_component_player_comp_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PlayerStressTestProbe.ProtoReflect.Descriptor instead.
+func (*PlayerStressTestProbe) Descriptor() ([]byte, []int) {
+	return file_proto_common_component_player_comp_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *PlayerStressTestProbe) GetTestSeq() uint64 {
+	if x != nil {
+		return x.TestSeq
+	}
+	return 0
+}
+
+func (x *PlayerStressTestProbe) GetTestSig() []byte {
+	if x != nil {
+		return x.TestSig
+	}
+	return nil
+}
+
 var File_proto_common_component_player_comp_proto protoreflect.FileDescriptor
 
 const file_proto_common_component_player_comp_proto_rawDesc = "" +
@@ -314,7 +380,10 @@ const file_proto_common_component_player_comp_proto_rawDesc = "" +
 	"\x10PlayerUint64Comp\x125\n" +
 	"\x16registration_timestamp\x18\x01 \x01(\x04R\x15registrationTimestamp\"(\n" +
 	"\x10PlayerUint32Comp\x12\x14\n" +
-	"\x05class\x18\x01 \x01(\rR\x05classB\x18Z\x16proto/common/componentb\x06proto3"
+	"\x05class\x18\x01 \x01(\rR\x05class\"M\n" +
+	"\x15PlayerStressTestProbe\x12\x19\n" +
+	"\btest_seq\x18\x01 \x01(\x04R\atestSeq\x12\x19\n" +
+	"\btest_sig\x18\x02 \x01(\fR\atestSigB\x18Z\x16proto/common/componentb\x06proto3"
 
 var (
 	file_proto_common_component_player_comp_proto_rawDescOnce sync.Once
@@ -328,15 +397,16 @@ func file_proto_common_component_player_comp_proto_rawDescGZIP() []byte {
 	return file_proto_common_component_player_comp_proto_rawDescData
 }
 
-var file_proto_common_component_player_comp_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_proto_common_component_player_comp_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_proto_common_component_player_comp_proto_goTypes = []any{
-	(*NormalLogin)(nil),      // 0: NormalLogin
-	(*CoverLogin)(nil),       // 1: CoverLogin
-	(*Player)(nil),           // 2: Player
-	(*Account)(nil),          // 3: Account
-	(*UnregisterPlayer)(nil), // 4: UnregisterPlayer
-	(*PlayerUint64Comp)(nil), // 5: PlayerUint64Comp
-	(*PlayerUint32Comp)(nil), // 6: PlayerUint32Comp
+	(*NormalLogin)(nil),           // 0: NormalLogin
+	(*CoverLogin)(nil),            // 1: CoverLogin
+	(*Player)(nil),                // 2: Player
+	(*Account)(nil),               // 3: Account
+	(*UnregisterPlayer)(nil),      // 4: UnregisterPlayer
+	(*PlayerUint64Comp)(nil),      // 5: PlayerUint64Comp
+	(*PlayerUint32Comp)(nil),      // 6: PlayerUint32Comp
+	(*PlayerStressTestProbe)(nil), // 7: PlayerStressTestProbe
 }
 var file_proto_common_component_player_comp_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -357,7 +427,7 @@ func file_proto_common_component_player_comp_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_common_component_player_comp_proto_rawDesc), len(file_proto_common_component_player_comp_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   7,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
