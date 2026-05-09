@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component size="2560,1080" opaque="true">
+  <displayList>
+    <image id="n0" name="imgSceneBackdrop" src="a000000k" fileName="qdao_scene_backdrop.png" xy="0,0" size="2560,1080"/>
+    <image id="n1" name="imgBanner" src="a0000006" fileName="qdao_login_banner.png" xy="1055,20" size="655,240"/>
+    <image id="n2" name="imgRole" src="a000000i" fileName="qdao_role_wanderer.png" xy="1810,18" size="335,332"/>
+    <image id="n3" name="imgBottomBar" src="a000000d" fileName="qdao_bottom_bar.png" xy="985,848" size="930,126"/>
+    <text id="n5" name="inputGateway" xy="1665,292" size="490,48" fontSize="24" color="#5a4025" autoSize="none" singleLine="true" text="" input="true" prompt="http://127.0.0.1:8888"/>
+    <text id="n6" name="inputAccount" xy="1665,390" size="490,48" fontSize="24" color="#5a4025" autoSize="none" singleLine="true" text="" input="true" prompt="account"/>
+    <text id="n7" name="inputPassword" xy="1665,488" size="490,48" fontSize="24" color="#5a4025" autoSize="none" singleLine="true" text="" input="true" password="true" prompt="password"/>
+    <component id="n8" name="listAnnouncement" xy="0,0" size="2560,1080"/>
+    <text id="n9" name="txtStatus" xy="1480,838" size="720,40" fontSize="22" color="#fff0bd" align="center" autoSize="none" singleLine="true" text=""/>
+    <component id="n10" name="btnRefresh" src="a0000004" fileName="common/QdaoHitButton.xml" xy="1640,885" size="210,76">
+      <Button title=""/>
+    </component>
+    <component id="n11" name="btnEnter" src="a0000003" fileName="common/QdaoButton.xml" xy="1885,872" size="300,92">
+      <Button title=""/>
+    </component>
+  </displayList>
+</component>

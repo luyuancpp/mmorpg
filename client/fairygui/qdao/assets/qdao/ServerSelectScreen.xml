@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component size="2560,1080" opaque="true">
+  <displayList>
+    <image id="n99" name="imgSceneBackdrop" src="a000000k" fileName="qdao_scene_backdrop.png" xy="0,0" size="2560,1080"/>
+    <image id="n0" name="imgPanelTop" src="a0000007" fileName="qdao_server_scroll.png" xy="610,112" size="1420,173"/>
+    <image id="n1" name="imgSearch" src="a000000b" fileName="qdao_search_box.png" xy="646,306" size="238,55"/>
+    <image id="n10" name="imgBottomBar" src="a000000d" fileName="qdao_bottom_bar.png" xy="985,848" size="930,126"/>
+    <image id="n11" name="imgRole" src="a000000i" fileName="qdao_role_wanderer.png" xy="1810,18" size="335,332"/>
+    <image id="n12" name="imgCloud" src="a000000e" fileName="qdao_cloud_corner.png" xy="1955,850" size="293,160"/>
+    <component id="n2" name="tabRecent" src="a0000004" fileName="common/QdaoHitButton.xml" xy="524,280" size="200,78">
+      <Button title=""/>
+    </component>
+    <component id="n3" name="tabRecommend" src="a0000004" fileName="common/QdaoHitButton.xml" xy="524,372" size="200,78">
+      <Button title=""/>
+    </component>
+    <component id="n4" name="tabAll" src="a0000004" fileName="common/QdaoHitButton.xml" xy="524,464" size="200,78">
+      <Button title=""/>
+    </component>
+    <component id="n5" name="listServer" xy="0,0" size="2560,1080"/>
+    <text id="n6" name="txtStatus" xy="760,818" size="840,40" fontSize="22" color="#fff0bd" align="center" autoSize="none" singleLine="true" text=""/>
+    <component id="n7" name="btnBack" src="a0000004" fileName="common/QdaoHitButton.xml" xy="565,846" size="210,76">
+      <Button title=""/>
+    </component>
+    <component id="n8" name="btnRefresh" src="a0000004" fileName="common/QdaoHitButton.xml" xy="1430,846" size="210,76">
+      <Button title=""/>
+    </component>
+    <component id="n9" name="btnConfirm" src="a0000003" fileName="common/QdaoButton.xml" xy="1668,832" size="300,92">
+      <Button title=""/>
+    </component>
+  </displayList>
+</component>

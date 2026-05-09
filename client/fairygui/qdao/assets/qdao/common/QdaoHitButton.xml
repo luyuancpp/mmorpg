@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component size="220,76" extention="Button" opaque="false">
+  <displayList>
+    <graph id="n0" name="hit" xy="0,0" size="220,76" type="rect" lineSize="0" lineColor="#00000000" fillColor="#00000000">
+      <relation target="" sidePair="width-width,height-height"/>
+    </graph>
+  </displayList>
+  <Button mode="Common"/>
+</component>
