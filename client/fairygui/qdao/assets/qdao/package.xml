@@ -1,24 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <packageDescription id="qdao2026">
   <resources>
+    <component id="a0000005" name="SceneScreen.xml" path="/" exported="true"/>
     <component id="a0000001" name="LoginScreen.xml" path="/" exported="true"/>
     <component id="a0000002" name="ServerSelectScreen.xml" path="/" exported="true"/>
     <component id="a0000003" name="QdaoButton.xml" path="/common/" exported="true"/>
     <component id="a0000004" name="QdaoHitButton.xml" path="/common/" exported="true"/>
-    <component id="a0000005" name="SceneScreen.xml" path="/" exported="true"/>
-    <component id="a000000l" name="QdaoListRow.xml" path="/common/" exported="true"/>
-    <image id="a000000k" name="qdao_scene_backdrop.png" path="/" exported="true" qualityOption="source" duplicatePadding="true" disableTrim="true"/>
-    <image id="a0000006" name="qdao_login_banner.png" path="/" exported="true" qualityOption="source"/>
-    <image id="a0000007" name="qdao_server_scroll.png" path="/" exported="true" qualityOption="source"/>
-    <image id="a0000008" name="qdao_server_row.png" path="/" exported="true" qualityOption="source"/>
-    <image id="a0000009" name="qdao_server_row_alt.png" path="/" exported="true" qualityOption="source"/>
-    <image id="a000000b" name="qdao_search_box.png" path="/" exported="true" scale="9grid" scale9grid="28,18,154,38" qualityOption="source"/>
-    <image id="a000000c" name="qdao_primary_button.png" path="/" exported="true" scale="9grid" scale9grid="32,20,156,48" qualityOption="source"/>
-    <image id="a000000d" name="qdao_bottom_bar.png" path="/" exported="true" qualityOption="source"/>
-    <image id="a000000e" name="qdao_cloud_corner.png" path="/" exported="true" qualityOption="source"/>
-    <image id="a000000f" name="qdao_icon_talisman.png" path="/" exported="true" qualityOption="source"/>
-    <image id="a000000g" name="qdao_icon_gate.png" path="/" exported="true" qualityOption="source"/>
-    <image id="a000000i" name="qdao_role_wanderer.png" path="/" exported="true" qualityOption="source"/>
+    <component id="a000000l" name="QdaoServerRow.xml" path="/common/" exported="true"/>
+    <component id="a000000m" name="QdaoTabItem.xml" path="/common/" exported="true"/>
+    <component id="a000000n" name="QdaoAnnounceItem.xml" path="/common/" exported="true"/>
+    <image id="a000000k" name="qdao_scene_backdrop.png" path="/" exported="true" size="2560,1080" qualityOption="source" duplicatePadding="true" disableTrim="true"/>
+    <image id="a0000006" name="qdao_login_banner.png" path="/" exported="true" size="655,240" qualityOption="source"/>
+    <image id="a0000007" name="qdao_server_scroll.png" path="/" exported="true" size="1420,173" scale="9grid" scale9grid="200,40,1020,93" qualityOption="source"/>
+    <image id="a0000008" name="qdao_server_row.png" path="/" exported="true" size="467,97" scale="9grid" scale9grid="40,30,380,40" qualityOption="source"/>
+    <image id="a0000009" name="qdao_server_row_alt.png" path="/" exported="true" size="471,97" scale="9grid" scale9grid="40,30,380,40" qualityOption="source"/>
+    <image id="a000000b" name="qdao_search_box.png" path="/" exported="true" size="238,55" scale="9grid" scale9grid="28,18,154,38" qualityOption="source"/>
+    <image id="a000000c" name="qdao_primary_button.png" path="/" exported="true" size="154,65" scale="9grid" scale9grid="32,20,80,25" qualityOption="source"/>
+    <image id="a000000d" name="qdao_bottom_bar.png" path="/" exported="true" size="930,126" scale="9grid" scale9grid="60,30,800,60" qualityOption="source"/>
+    <image id="a000000e" name="qdao_cloud_corner.png" path="/" exported="true" size="293,160" qualityOption="source"/>
+    <image id="a000000f" name="qdao_icon_talisman.png" path="/" exported="true" size="137,190" qualityOption="source"/>
+    <image id="a000000g" name="qdao_icon_gate.png" path="/" exported="true" size="136,138" qualityOption="source"/>
+    <image id="a000000i" name="qdao_role_wanderer.png" path="/" exported="true" size="335,332" qualityOption="source"/>
   </resources>
   <publish name="qdao"/>
 </packageDescription>
