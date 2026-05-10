@@ -427,8 +427,11 @@ net.ipv4.tcp_max_syn_backlog     = 65535
 
 **当前状态**(2026-05-09):
 - 新路径(`POST /api/login` → Gateway → gRPC login)已上线并通过 34 个单元+集成测试
+- `POST /api/refresh-token` 独立 HTTP 通道同样上线,robot `runTokenRefresher` 默认走 HTTP(`cfg.GatewayAddr` 非空时)
 - 老路径(客户端 → gate TCP → `ClientPlayerLogin.Login` RPC)继续工作,每次命中记录计数 + 每 60s 打一条 throttled warn
 - robot 新增 `use_http_login` 开关(默认 false,灰度打开)
+- 全栈端到端压测通过(50/100/200/500 bots × 30s,0 fail / 0 stuck,avg 69-101 ms)—— 详见 [stress-test-2026-05-http-login.md](./stress-test-2026-05-http-login.md)
+- GateWatcher 过滤 `allocated/*` etcd key,消除每 5s 一次的 NodeInfo JSON 解析告警
 
 **下线步骤**:
 
