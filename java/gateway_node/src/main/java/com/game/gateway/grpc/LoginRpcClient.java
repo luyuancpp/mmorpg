@@ -173,10 +173,13 @@ public class LoginRpcClient {
      * upgrade later can pick them up without changing this file's wire output.)
      */
     public static final class LoginRequestProto {
-        final String account;
-        final String password;
-        final String authType;
-        final String authToken;
+        // Public so cross-package integration tests can capture and assert
+        // these via Mockito's ArgumentCaptor — production code never reads
+        // them after toBytes() runs. final keeps the value immutable.
+        public final String account;
+        public final String password;
+        public final String authType;
+        public final String authToken;
 
         public LoginRequestProto(String account, String password, String authType, String authToken) {
             this.account   = nullToEmpty(account);
@@ -264,7 +267,8 @@ public class LoginRpcClient {
      *   string refresh_token = 1;
      */
     public static final class RefreshTokenRequestProto {
-        final String refreshToken;
+        // Public for cross-package test capture, mirroring LoginRequestProto.
+        public final String refreshToken;
 
         public RefreshTokenRequestProto(String refreshToken) {
             this.refreshToken = nullToEmpty(refreshToken);

@@ -18,8 +18,11 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
+import org.mockito.ArgumentCaptor;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -148,6 +151,83 @@ class LoginEndpointIntegrationTest {
                 .andExpect(jsonPath("$.code").value(RefreshTokenResponse.CODE_OK))
                 .andExpect(jsonPath("$.access_token").value("new-access"))
                 .andExpect(jsonPath("$.refresh_token").value("new-refresh"));
+    }
+
+    /**
+     * Regression guard for the third-party-login wire path.
+     *
+     * <p>Robot/SDK clients post {@code auth_type:"wechat"} with the OAuth
+     * code in {@code auth_token}; we want both fields to survive the
+     * snake_case ↔ camelCase ↔ protobuf-wire shuffle. If this ever
+     * breaks (Jackson naming change, DTO rename, marshaller drop), the
+     * provider on the go-zero side gets an empty token and silently
+     * returns "wechat: empty code" — visible to the user only as a 401
+     * with no clue why.
+     *
+     * <p>We capture the {@link LoginRpcClient.LoginRequestProto} that
+     * actually got handed to the gRPC marshaller and assert each field
+     * matches what the HTTP body carried. Same invariant applies to QQ /
+     * SaToken / future providers, so the second case parameterizes on
+     * type to keep the matrix honest.
+     */
+    @Test
+    void loginEndpoint_propagatesAuthTypeAndAuthToken_wechat() throws Exception {
+        LoginRpcClient.LoginResponseProto upstream = new LoginRpcClient.LoginResponseProto();
+        upstream.accessToken = "wx-access";
+        upstream.refreshToken = "wx-refresh";
+        when(loginRpcClient.login(any(LoginRpcClient.LoginRequestProto.class))).thenReturn(upstream);
+
+        LoginRequest req = new LoginRequest();
+        req.setZoneId(1);
+        req.setAuthType("wechat");
+        req.setAuthToken("oauth-code-from-mp-sdk");
+        req.setDeviceId("dev-1");
+
+        mockMvc.perform(post("/api/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(LoginResponse.CODE_OK))
+                .andExpect(jsonPath("$.access_token").value("wx-access"));
+
+        ArgumentCaptor<LoginRpcClient.LoginRequestProto> captor =
+                ArgumentCaptor.forClass(LoginRpcClient.LoginRequestProto.class);
+        verify(loginRpcClient).login(captor.capture());
+        LoginRpcClient.LoginRequestProto sent = captor.getValue();
+        assertEquals("wechat", sent.authType, "auth_type lost on the way to gRPC");
+        assertEquals("oauth-code-from-mp-sdk", sent.authToken, "auth_token lost on the way to gRPC");
+        // For third-party auth the proto's `account` field is intentionally
+        // empty — the provider resolves the account from the token itself.
+        assertEquals("", sent.account, "account must be empty for third-party auth");
+        assertEquals("", sent.password, "password must be empty for third-party auth");
+    }
+
+    @Test
+    void loginEndpoint_propagatesAuthTypeAndAuthToken_qq() throws Exception {
+        LoginRpcClient.LoginResponseProto upstream = new LoginRpcClient.LoginResponseProto();
+        upstream.accessToken = "qq-access";
+        upstream.refreshToken = "qq-refresh";
+        when(loginRpcClient.login(any(LoginRpcClient.LoginRequestProto.class))).thenReturn(upstream);
+
+        LoginRequest req = new LoginRequest();
+        req.setAuthType("qq");
+        // QQ Connect hands the SDK an access_token (not an OAuth code) and
+        // we forward exactly that string. Pin the value so a future
+        // refactor that hashes/escapes/normalizes the token before send
+        // surfaces the change loudly.
+        req.setAuthToken("qq-platform-access-token-rawvalue");
+
+        mockMvc.perform(post("/api/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(LoginResponse.CODE_OK));
+
+        ArgumentCaptor<LoginRpcClient.LoginRequestProto> captor =
+                ArgumentCaptor.forClass(LoginRpcClient.LoginRequestProto.class);
+        verify(loginRpcClient).login(captor.capture());
+        assertEquals("qq", captor.getValue().authType);
+        assertEquals("qq-platform-access-token-rawvalue", captor.getValue().authToken);
     }
 
     @Test
