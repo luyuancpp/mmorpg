@@ -98,20 +98,14 @@ jobs:
           go-version-file: robot/go.mod
           cache-dependency-path: robot/go.sum
 
-      # robot is the gateway client side and uses go mod vendor/. We
-      # explicitly verify vendor matches go.sum so a forgotten
-      # `go mod vendor` won't ship a stale snapshot (the kind of drift
-      # that cost us 8 movement-handler files during the e2e debug).
-      - name: verify vendor consistency
-        working-directory: robot
-        run: |
-          cp -a vendor /tmp/vendor.before
-          go mod vendor
-          if ! diff -rq /tmp/vendor.before vendor >/dev/null 2>&1; then
-            echo "::error::vendor/ is out of sync with go.mod / go.sum"
-            diff -rq /tmp/vendor.before vendor || true
-            exit 1
-          fi
+      # NOTE: a vendor-consistency check (cp+go-mod-vendor+diff) used to
+      # live here, intended to catch a forgotten `go mod vendor` shipping
+      # a stale snapshot. It works locally but breaks CI: `go mod vendor`
+      # has to resolve every transitive module, including the private
+      # `github.com/luyuancpp/muduoclient`, and the runner has no creds —
+      # it bails with "terminal prompts disabled". Until we wire a
+      # private-module token (or move muduoclient public), the check
+      # belongs in a pre-commit hook, not on the CI gate.
 
       - name: go test ./...
         working-directory: robot
