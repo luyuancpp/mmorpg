@@ -223,8 +223,13 @@ kubectl rollout undo deploy/login -n mmorpg
 
 ### F.B-3: 1k+ 阶梯压测在 Windows dev 跑不动
 
-- **状态:** Windows Hyper-V 端口保留 + 单 docker broker + cpp gate 无 sysctl tuning
-- **应对:** **1k/2k/5k 必须在 Linux staging 跑**,把结果追加到 [stress-test-2026-05-http-login.md](../design/stress-test-2026-05-http-login.md)
+- **状态:** 仅 dev,生产 Linux + 多 broker kafka 不会触发
+- **应对:** **1k/2k/5k 必须在 Linux staging 跑**,直接用 `tools/scripts/stress-linux-tier.sh` 跑出 csv,把结果追加到 [stress-test-2026-05-http-login.md](../design/stress-test-2026-05-http-login.md)
+  ```bash
+  # staging 上(redis-cli 在 PATH,gateway/login/gate 已起):
+  ./tools/scripts/stress-linux-tier.sh                  # 默认 1000/2000/5000
+  ./tools/scripts/stress-linux-tier.sh 100 500 1000     # 自定义阶梯
+  ```
 - **当前基线:** Windows dev 单实例 50/100/200/500 全 0 失败,延迟 69-101ms
 
 ---
