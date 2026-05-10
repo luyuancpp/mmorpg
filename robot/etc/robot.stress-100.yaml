@@ -1,0 +1,21 @@
+# Robot stress profile generator — write a config that varies robot_count
+# but keeps the path under test (HTTP /api/login + access_token gate handshake).
+gateway_addr: "http://127.0.0.1:8081"
+zone_id: 1
+robot_count: 100
+account_fmt: "stressbot_%05d"
+password: "123456"
+skill_ids: []
+table_dir: "../generated/tables"
+action_interval: 5
+report_interval: 5
+
+mode: "stress"
+
+auth_type: "password"
+use_http_login: true
+
+profile: "stress"
+
+llm:
+  enabled: false
