@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component size="640,128" extention="Button" opaque="false">
+  <controller name="button" pages="up,,down,,over,,disabled," selected="0"/>
+  <controller name="checked" pages="0,,1," selected="0"/>
+  <controller name="status" pages="0,,1,,2," selected="0"/>
+  <displayList>
+    <image id="n0" name="bg" src="00010005" fileName="server_card_640x128_bg.png" xy="0,0" size="640,128">
+      <relation target="" sidePair="width-width,height-height"/>
+    </image>
+    <image id="n1" name="fg" src="0001000d" fileName="server_card_640x128_fg.png" xy="0,0" size="640,128">
+      <relation target="" sidePair="width-width,height-height"/>
+      <gearColor controller="checked" values="#ffffff,#fff0bd"/>
+    </image>
+
+    <!-- Big circular badge on the left (server emblem) -->
+    <loader id="n2" name="badge" xy="20,8" size="112,112" url="ui://qdao202600010031" fill="scale" align="center" vAlign="middle"/>
+
+    <!-- Status traffic-light dot (green / red / gray) above the title -->
+    <loader id="n3" name="statusIcon" xy="148,16" size="40,40" url="ui://qdao202600010024" fill="scale" align="center" vAlign="middle">
+      <gearDisplay controller="status" pages="0,1"/>
+    </loader>
+
+    <!-- Server name (vertically centered to the right of the badge) -->
+    <text id="n4" name="title" xy="148,52" size="380,40" fontSize="32" color="#3d2914" autoSize="none" singleLine="true" text="server name">
+      <relation target="" sidePair="width-width,middle-middle"/>
+      <gearColor controller="checked" values="#3d2914,#9c2b1a"/>
+    </text>
+
+    <!-- Sub-line: status / load level -->
+    <text id="n5" name="subtitle" xy="148,92" size="380,28" fontSize="22" color="#5a4025" autoSize="none" singleLine="true" text="畅通  人气旺">
+      <relation target="" sidePair="width-width,bottom-bottom"/>
+    </text>
+
+    <!-- Right-side accent label (推荐 / 新 / 维护) -->
+    <text id="n6" name="rightLabel" xy="540,12" size="86,32" fontSize="24" color="#9c2b1a" align="right" autoSize="none" singleLine="true" text="">
+      <relation target="" sidePair="right-right,top-top"/>
+    </text>
+
+    <graph id="n7" name="hit" xy="0,0" size="640,128" type="rect" lineSize="0" lineColor="#00000000" fillColor="#00000000">
+      <relation target="" sidePair="width-width,height-height"/>
+    </graph>
+  </displayList>
+  <Button mode="Check" downEffect="scale" downEffectValue="0.98"/>
+</component>

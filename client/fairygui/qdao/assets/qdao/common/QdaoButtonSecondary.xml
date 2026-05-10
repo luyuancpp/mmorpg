@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component size="420,112" extention="Button" opaque="false">
+  <controller name="button" pages="up,,down,,over,,disabled," selected="0"/>
+  <displayList>
+    <image id="n0" name="bg" src="00010002" fileName="button_secondary_420x112_bg.png" xy="0,0" size="420,112">
+      <relation target="" sidePair="width-width,height-height"/>
+    </image>
+    <image id="n1" name="fg" src="0001000a" fileName="button_secondary_420x112_fg.png" xy="0,0" size="420,112">
+      <relation target="" sidePair="width-width,height-height"/>
+      <gearXY controller="button" values="0,0|2,3|0,0|0,0" tween="true" duration="0.08"/>
+      <gearColor controller="button" values="#ffffff,#fff8d8,#ffffff,#888888"/>
+    </image>
+    <text id="n2" name="title" xy="0,0" size="420,112" fontSize="34" color="#3d2914" align="center" vAlign="middle" autoSize="none" singleLine="true" text="">
+      <relation target="" sidePair="width-width,height-height"/>
+    </text>
+    <graph id="n3" name="hit" xy="0,0" size="420,112" type="rect" lineSize="0" lineColor="#00000000" fillColor="#00000000">
+      <relation target="" sidePair="width-width,height-height"/>
+    </graph>
+  </displayList>
+  <Button mode="Common" downEffect="scale" downEffectValue="0.96"/>
+</component>

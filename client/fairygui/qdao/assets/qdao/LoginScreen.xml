@@ -1,6 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
-<component size="2560,1080">
+<component size="2560,1080" opaque="true">
   <displayList>
-    <text id="n0" name="placeholder" xy="800,500" size="960,80" fontSize="48" color="#888888" align="center" vAlign="middle" autoSize="none" singleLine="true" text="LoginScreen — awaiting new art"/>
+    <image id="n0" name="imgSceneBackdrop" src="0001003a" fileName="qdao_scene_bg.png" xy="0,0" size="2560,1080"/>
+
+    <!-- Compact central panel (login form is small, no full panel needed) -->
+    <component id="n1" name="mainPanel" src="c0000008" fileName="common/QdaoMainPanel.xml" xy="780,160" size="1000,640"/>
+
+    <text id="n2" name="txtPanelTitle" xy="900,200" size="760,80" fontSize="56" color="#3d2914" align="center" vAlign="middle" autoSize="none" singleLine="true" text="云海洞天"/>
+    <text id="n3" name="txtSubtitle"   xy="900,278" size="760,34" fontSize="22" color="#5a4025" align="center" vAlign="middle" autoSize="none" singleLine="true" text="入山门"/>
+
+    <!-- Login fields: gateway / account / password (using QdaoSearchBox as a styled input host) -->
+    <component id="n4" name="inputGatewayBox" src="c0000003" fileName="common/QdaoSearchBox.xml" xy="900,340" size="760,76">
+      <prop target="input" propValue="prompt" propText="网关地址 http://127.0.0.1:8080"/>
+    </component>
+    <component id="n5" name="inputAccountBox" src="c0000003" fileName="common/QdaoSearchBox.xml" xy="900,440" size="760,76">
+      <prop target="input" propValue="prompt" propText="账号"/>
+    </component>
+    <component id="n6" name="inputPasswordBox" src="c0000003" fileName="common/QdaoSearchBox.xml" xy="900,540" size="760,76">
+      <prop target="input" propValue="prompt" propText="密码"/>
+    </component>
+
+    <!-- Announcement list rendered inside the panel (uses QdaoServerCard as a row template — the card has title+subtitle slots) -->
+    <list id="n7" name="listAnnouncement" xy="900,640" size="760,140" overflow="scroll" lineGap="8" align="center" defaultItem="ui://qdao2026/QdaoServerCard" selectionMode="None">
+      <item title="开服福利领取" icon="ui://qdao2026/icon_server_badge_lotus.png"/>
+      <item title="新手引导上线" icon="ui://qdao2026/icon_server_badge_pavilion.png"/>
+    </list>
+
+    <!-- Bottom bar centered under panel -->
+    <component id="n8" name="bottomBar" src="c0000007" fileName="common/QdaoBottomBar.xml" xy="720,860" size="1120,148"/>
+
+    <component id="n9" name="btnRefresh" src="c0000002" fileName="common/QdaoButtonSecondary.xml" xy="900,890" size="320,88">
+      <Button title="刷新公告"/>
+    </component>
+    <component id="n10" name="btnEnter" src="c0000001" fileName="common/QdaoButtonPrimary.xml" xy="1280,880" size="380,108">
+      <Button title="登录"/>
+    </component>
+
+    <text id="n11" name="txtStatus" xy="700,1010" size="1160,30" fontSize="20" color="#fff0bd" align="center" vAlign="middle" autoSize="none" singleLine="true" text=""/>
   </displayList>
 </component>

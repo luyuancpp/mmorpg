@@ -1,6 +1,56 @@
 <?xml version="1.0" encoding="utf-8"?>
-<component size="2560,1080">
+<component size="2560,1080" opaque="true">
   <displayList>
-    <text id="n0" name="placeholder" xy="800,500" size="960,80" fontSize="48" color="#888888" align="center" vAlign="middle" autoSize="none" singleLine="true" text="ServerSelectScreen — awaiting new art"/>
+    <image id="n0" name="imgSceneBackdrop" src="0001003a" fileName="qdao_scene_bg.png" xy="0,0" size="2560,1080"/>
+
+    <component id="n1" name="mainPanel" src="c0000008" fileName="common/QdaoMainPanel.xml" xy="640,90" size="1280,760"/>
+
+    <image id="n2" name="cornerOrnament" src="00010015" fileName="icon_alt_corner_top_right.png" xy="1820,110" size="96,96"/>
+
+    <text id="n3" name="txtPanelTitle" xy="900,130" size="760,80" fontSize="56" color="#3d2914" align="center" vAlign="middle" autoSize="none" singleLine="true" text="选择区服"/>
+
+    <component id="n4" name="searchBox" src="c0000003" fileName="common/QdaoSearchBox.xml" xy="1430,170" size="420,76"/>
+
+    <list id="n5" name="listTabs" xy="700,250" size="360,560" overflow="visible" lineGap="8" align="center" defaultItem="ui://qdao2026/QdaoTabIdle" selectionMode="Single">
+      <item title="近期" icon="ui://qdao2026/icon_alt_left_tab_icon_1.png"/>
+      <item title="推荐" icon="ui://qdao2026/icon_alt_left_tab_icon_2.png"/>
+      <item title="全部" icon="ui://qdao2026/icon_alt_left_tab_icon_3.png"/>
+      <item title="新服" icon="ui://qdao2026/icon_alt_left_tab_icon_4.png"/>
+      <item title="官方" icon="ui://qdao2026/icon_category_yinyang.png"/>
+      <item title="海外" icon="ui://qdao2026/icon_category_swirl.png"/>
+    </list>
+
+    <list id="n6" name="listServer" xy="1090,250" size="780,560" overflow="scroll" layout="pagination" lineGap="14" columnGap="14" align="center" defaultItem="ui://qdao2026/QdaoServerCard" selectionMode="Single">
+      <item title="云海宗" icon="ui://qdao2026/icon_server_badge_pavilion.png"/>
+      <item title="清风谷" icon="ui://qdao2026/icon_server_badge_pagoda.png"/>
+      <item title="碧落渊" icon="ui://qdao2026/icon_server_badge_sword.png"/>
+      <item title="紫霄峰" icon="ui://qdao2026/icon_server_badge_whirlpool.png"/>
+      <item title="沧浪洲" icon="ui://qdao2026/icon_server_badge_yinyang.png"/>
+      <item title="昆仑墟" icon="ui://qdao2026/icon_server_badge_mountain.png"/>
+      <item title="蓬莱岛" icon="ui://qdao2026/icon_server_badge_lotus.png"/>
+      <item title="瀛洲海" icon="ui://qdao2026/icon_server_badge_talisman.png"/>
+      <item title="九霄殿" icon="ui://qdao2026/icon_server_badge_pavilion.png"/>
+      <item title="太虚观" icon="ui://qdao2026/icon_server_badge_pagoda.png"/>
+      <item title="玄都阁" icon="ui://qdao2026/icon_server_badge_sword.png"/>
+      <item title="赤霞岭" icon="ui://qdao2026/icon_server_badge_whirlpool.png"/>
+    </list>
+
+    <component id="n7" name="bottomBar" src="c0000007" fileName="common/QdaoBottomBar.xml" xy="720,910" size="1120,148"/>
+
+    <component id="n8" name="btnBack" src="c0000002" fileName="common/QdaoButtonSecondary.xml" xy="780,940" size="320,88">
+      <Button title="返回"/>
+    </component>
+    <component id="n9" name="btnRefresh" src="c0000002" fileName="common/QdaoButtonSecondary.xml" xy="1140,940" size="320,88">
+      <Button title="刷新"/>
+    </component>
+    <component id="n10" name="btnConfirm" src="c0000001" fileName="common/QdaoButtonPrimary.xml" xy="1490,930" size="380,108">
+      <Button title="进入"/>
+    </component>
+
+    <text id="n11" name="txtStatus" xy="700,1040" size="1160,30" fontSize="20" color="#fff0bd" align="center" vAlign="middle" autoSize="none" singleLine="true" text=""/>
+
+    <component id="n14" name="tabRecent"    src="c0000004" fileName="common/QdaoTabIdle.xml" xy="700,250" size="360,88" visible="false"/>
+    <component id="n15" name="tabRecommend" src="c0000004" fileName="common/QdaoTabIdle.xml" xy="700,346" size="360,88" visible="false"/>
+    <component id="n16" name="tabAll"       src="c0000004" fileName="common/QdaoTabIdle.xml" xy="700,442" size="360,88" visible="false"/>
   </displayList>
 </component>
