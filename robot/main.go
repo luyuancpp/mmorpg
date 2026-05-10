@@ -192,7 +192,15 @@ func runRobotOnce(account string, cfg *config.Config, stats *metrics.Stats, stop
 		stats.LoginFail()
 		return
 	}
+	// Order matters: Disconnect must go out BEFORE we close the TCP, otherwise
+	// gate sees an EOF on a verified session, drops it, and login never finds
+	// out. Once login receives Disconnect it marks the player_locator session
+	// as Disconnecting (with a 30s reconnect lease) — without this, repeated
+	// dev runs leave residual ONLINE sessions that flip the next EnterGame
+	// into ReplaceLogin against a now-dead gate. See docs/design/
+	// stress-test-2026-05-http-login.md §四 #B-1 for the diagnosis.
 	defer gc.Close()
+	defer sendDisconnectBestEffort(gc)
 	stats.Connected()
 	defer stats.Disconnected()
 

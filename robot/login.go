@@ -237,6 +237,30 @@ func runTokenRefresher(gc *pkg.GameClient, gatewayAddr string, stats *metrics.St
 	}
 }
 
+// sendDisconnectBestEffort tells login that this client is going away
+// gracefully so the player_locator session moves from Online to
+// Disconnecting (with a 30s reconnect lease) instead of staying stuck at
+// Online. This is the lightweight "treat me as TCP-FIN" signal — we do
+// not wait for a response and never block the deferred Close path.
+//
+// The legacy gate still owns the cleanup decision; login.Disconnect is a
+// hint, not a kick. If the send itself fails (gate already gone, queue
+// full) we silently swallow — the lease will eventually time out anyway.
+//
+// Architecture-level fix is in cpp gate's TCP-close handler (see ARCH §12
+// follow-up); this function exists so robot smoke runs can iterate without
+// having to FLUSHDB between rounds.
+func sendDisconnectBestEffort(gc *pkg.GameClient) {
+	if gc == nil || gc.PlayerId == 0 {
+		return
+	}
+	defer func() { _ = recover() }()
+	_ = gc.SendRequest(
+		game.ClientPlayerLoginDisconnectMessageId,
+		&login.LoginNodeDisconnectRequest{},
+	)
+}
+
 // fetchSaToken calls the SA-Token dev-login endpoint and returns the token value.
 func fetchSaToken(saTokenAddr, account string) (string, error) {
 	url := saTokenAddr + "/auth/dev-login?account=" + account
