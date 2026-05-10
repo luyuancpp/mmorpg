@@ -75,6 +75,64 @@ robot ──TCP──→ cpp gate ──Kafka gate-{0}──→ go-zero login + 
 
 ---
 
+### #B-4 1k+ 阶梯压测在 Windows dev 跑不动
+
+- **状态:** 仅 dev,生产 Linux + 多 broker kafka 不会触发
+- **应对:** **1k/2k/5k 必须在 Linux staging 跑**,直接用 `tools/scripts/stress-linux-tier.sh`(本仓库已附),把结果追加到本文 §二
+- **当前基线:** Windows dev 单实例 50/100/200/500 全 0 失败,延迟 69-101ms
+
+---
+
+## 四点五、Bucket4j 限流首跑命中验证(2026-05-10)
+
+L 阶段在同机 staging 上首次打开 `gate.rate-limit.enabled=true` 跑了三层命中验证,验证 Bucket4j → Redis 通路在生产意图下工作正常。**全部用 curl 直打 `/api/login`**,不需要 cpp gate / 真账号。
+
+### 启动参数(临时小阈值便于触发)
+
+```bash
+java \
+  -Dgate.rate-limit.enabled=true \
+  -Dgate.rate-limit.zone-default-rps=2 \
+  -Dgate.rate-limit.zone-default-burst=4 \
+  -Dgate.rate-limit.ip-rps=2 \
+  -Dgate.rate-limit.ip-burst=4 \
+  -Dgate.rate-limit.account-cooldown-ms=5000 \
+  -jar gateway-node.jar
+```
+
+启动日志确认通路:`Bucket4j Redis client -> localhost:6379` + `Started GatewayNodeApplication in 17.246 seconds`。
+
+### 三层命中
+
+| 测试 | 输入 | 期望 | 实际 |
+|---|---|---|---|
+| **Zone bucket**(zone=1, burst=4, rps=2) | 10 个不同 IP/account 立即 burst | 头 4 通过,后续被 zone bucket 拒 | **6 × code:0,4 × code:100 (QUEUEING)** ✅ <br> 等待中又 refill 2 个,所以放过 6,余下 4 排队 |
+| **IP bucket**(burst=4, rps=2) | 同 IP `10.99.99.99` + 10 个不同 account | 头 4 通过,后续被 IP bucket 拒 | **5 × code:0,5 × code:100** ✅ |
+| **Account cooldown**(5000ms) | 同 account 5s 内连续 2 次 | 第二次立即拒 | 第一次 `code:0` + access/refresh token;**第二次 `code:429 ACCOUNT_COOLDOWN`** ✅ |
+
+### 关键证据(curl 实际响应片段)
+
+```http
+# Account cooldown 命中
+$ curl -s -X POST http://127.0.0.1:8081/api/login \
+       -H "X-Forwarded-For: 10.88.88.88" \
+       -d '{"zone_id":1,"account":"acct_dup","password":"x"}'
+{"code":0,"players":[],"access_token":"JORVAq_3jLXm39ArRYNOcLi3u5ASae8SQ1VB73OG6Rg","refresh_token":"gQl-2TLmrPzOQ4LChFTPGSCqN1ez9R3TLyzWPMfHaVw","access_token_expire":1778410845,"refresh_token_expire":1780995645}
+
+$ curl -s -X POST http://127.0.0.1:8081/api/login \
+       -H "X-Forwarded-For: 10.88.88.88" \
+       -d '{"zone_id":1,"account":"acct_dup","password":"x"}'
+{"code":429,"message":"ACCOUNT_COOLDOWN"}
+```
+
+### 结论
+
+- 三层互不干扰、各自命中(zone QUEUEING / IP QUEUEING / account COOLDOWN)
+- Bucket4j 经 Lettuce 写到 Redis 的 CAS 路径在 Linux + Windows 均能正常工作(本机 docker redis 验证)
+- 生产 staging 切 T+1 时可以放心 `enabled: true`,真实阈值参考 [open-server-rate-limit-design.md §五](./open-server-rate-limit-design.md)
+
+---
+
 ## 五、容量推论(粗算)
 
 按 500 档结果反推单机容量上限(本机 Windows dev):
