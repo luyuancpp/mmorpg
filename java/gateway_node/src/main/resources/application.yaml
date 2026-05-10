@@ -83,3 +83,6 @@ management:
     web:
       exposure:
         include: health,info
+# CI smoke: this trailing comment exists only to dirty the file enough
+# to fire .github/workflows/login-path-tests.yml on a verification PR.
+# It can be reverted before merge — content is documentation-only.
