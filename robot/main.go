@@ -250,7 +250,7 @@ func runRobotOnce(account string, cfg *config.Config, stats *metrics.Stats, stop
 	// Proactively refresh access_token when it's close to expiry so a very
 	// long-running session doesn't force the next reconnect into the
 	// primary-auth fallback. Exits when the recv loop or stop closes.
-	go runTokenRefresher(gc, stats, stop, recvDone)
+	go runTokenRefresher(gc, cfg.GatewayAddr, stats, stop, recvDone)
 
 	// Wait for scene node to be bound (NotifyEnterScene) before sending scene-targeted messages.
 	waitCtx, waitCancel := context.WithTimeout(context.Background(), 15*time.Second)

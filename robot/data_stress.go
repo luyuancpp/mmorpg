@@ -226,7 +226,7 @@ func dataStressOneRound(
 		})
 	}()
 
-	go runTokenRefresher(gc, stats, stop, recvDone)
+	go runTokenRefresher(gc, cfg.GatewayAddr, stats, stop, recvDone)
 
 	// Wait for scene-ready so any save-triggering action (e.g. movement,
 	// scene switch) is actually delivered to a real scene node.
