@@ -111,6 +111,15 @@ cpp/libs/base/modules/
 !tools/scripts/
 !tools/scripts/**
 
+# Re-include Go module files. The wildcard `*.mod` rule near the top of
+# this file was meant for some legacy artefact, but it has the side effect
+# of swallowing every `go.mod` in the monorepo. Without these negations,
+# `actions/setup-go@v5` fails on CI with "go-version-file does not exist"
+# because go.mod was never tracked. go.sum is already tracked (the rule
+# only matched .mod), so we don't need to re-include it.
+!go.mod
+!**/go.mod
+
 # Runtime artifacts (not for version control)
 bin/zoneinfo/
 bin/go_services.pid.json
