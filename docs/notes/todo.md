@@ -221,11 +221,19 @@ ship in the 24-commit series ending at `bd0365a7a`. They do not block T+0
 gray rollout; pick them up before the T+1 / T+2 milestones in
 [ARCH.md §12](../design/ARCH.md).
 
-220. **R: Open the migration PR + verify CI workflow runs green.**
+~~220. **R: Open the migration PR + verify CI workflow runs green.**
      Use template A in [docs/ops/pr-templates.md](../ops/pr-templates.md);
      touches `java/gateway_node/**` so `.github/workflows/login-path-tests.yml`
      should fire all three jobs. Confirm Java mvn (36 tests), go-zero login
-     `go test ./...`, and robot `go test ./...` all green on PR.
+     `go test ./...`, and robot `go test ./...` all green on PR.~~ ✅ Done
+     2026-05-10: PR #11 merged after fixing four CI blockers along the way
+     — `mvnw` exec bit (`993c4bd98`), `*.mod` over-broad ignore swallowing
+     every `go.mod` (`993c4bd98`), robot vendor-consistency check needing
+     credentials for the private `muduoclient` dep (`9c2761149`), and a
+     path-filter + workflow-edit dedup that required adding
+     `workflow_dispatch:` to manually retrigger (`cded7a793`). Final
+     [run 25629991531](https://github.com/luyuancpp/mmorpg/actions/runs/25629991531)
+     all three jobs SUCCESS.
 
 221. **S: Run 1k/2k/5k stress tier on real Linux staging.**
      Windows dev maxes out at 500 (#B-4 in
