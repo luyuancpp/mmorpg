@@ -25,6 +25,12 @@ on:
       - "robot/**"
       - "proto/login/**"
       - ".github/workflows/login-path-tests.yml"
+  # Manual trigger so on-call can re-run the suite without pushing a
+  # dummy commit. This was needed during initial CI bring-up because
+  # GitHub deduped follow-up pushes that touched the workflow itself
+  # (path-filter + workflow-edit interaction); workflow_dispatch always
+  # works regardless of paths.
+  workflow_dispatch:
 
 permissions:
   contents: read
