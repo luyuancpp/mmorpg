@@ -1,0 +1,658 @@
+{
+  "button_primary_480x128_bg": {
+    "file": "backgrounds/button_primary_480x128_bg.png",
+    "size": [
+      480,
+      128
+    ],
+    "role": "background"
+  },
+  "button_primary_480x128_fg": {
+    "file": "foregrounds/button_primary_480x128_fg.png",
+    "size": [
+      480,
+      128
+    ],
+    "role": "foreground"
+  },
+  "button_primary_480x128_composite": {
+    "file": "composites/button_primary_480x128_composite.png",
+    "size": [
+      480,
+      128
+    ],
+    "role": "preview composite"
+  },
+  "button_secondary_420x112_bg": {
+    "file": "backgrounds/button_secondary_420x112_bg.png",
+    "size": [
+      420,
+      112
+    ],
+    "role": "background"
+  },
+  "button_secondary_420x112_fg": {
+    "file": "foregrounds/button_secondary_420x112_fg.png",
+    "size": [
+      420,
+      112
+    ],
+    "role": "foreground"
+  },
+  "button_secondary_420x112_composite": {
+    "file": "composites/button_secondary_420x112_composite.png",
+    "size": [
+      420,
+      112
+    ],
+    "role": "preview composite"
+  },
+  "tab_active_360x88_bg": {
+    "file": "backgrounds/tab_active_360x88_bg.png",
+    "size": [
+      360,
+      88
+    ],
+    "role": "background"
+  },
+  "tab_active_360x88_fg": {
+    "file": "foregrounds/tab_active_360x88_fg.png",
+    "size": [
+      360,
+      88
+    ],
+    "role": "foreground"
+  },
+  "tab_active_360x88_composite": {
+    "file": "composites/tab_active_360x88_composite.png",
+    "size": [
+      360,
+      88
+    ],
+    "role": "preview composite"
+  },
+  "tab_idle_360x88_bg": {
+    "file": "backgrounds/tab_idle_360x88_bg.png",
+    "size": [
+      360,
+      88
+    ],
+    "role": "background"
+  },
+  "tab_idle_360x88_fg": {
+    "file": "foregrounds/tab_idle_360x88_fg.png",
+    "size": [
+      360,
+      88
+    ],
+    "role": "foreground"
+  },
+  "tab_idle_360x88_composite": {
+    "file": "composites/tab_idle_360x88_composite.png",
+    "size": [
+      360,
+      88
+    ],
+    "role": "preview composite"
+  },
+  "server_card_640x128_bg": {
+    "file": "backgrounds/server_card_640x128_bg.png",
+    "size": [
+      640,
+      128
+    ],
+    "role": "background"
+  },
+  "server_card_640x128_fg": {
+    "file": "foregrounds/server_card_640x128_fg.png",
+    "size": [
+      640,
+      128
+    ],
+    "role": "foreground"
+  },
+  "server_card_640x128_composite": {
+    "file": "composites/server_card_640x128_composite.png",
+    "size": [
+      640,
+      128
+    ],
+    "role": "preview composite"
+  },
+  "search_box_420x76_bg": {
+    "file": "backgrounds/search_box_420x76_bg.png",
+    "size": [
+      420,
+      76
+    ],
+    "role": "background"
+  },
+  "search_box_420x76_fg": {
+    "file": "foregrounds/search_box_420x76_fg.png",
+    "size": [
+      420,
+      76
+    ],
+    "role": "foreground"
+  },
+  "search_box_420x76_composite": {
+    "file": "composites/search_box_420x76_composite.png",
+    "size": [
+      420,
+      76
+    ],
+    "role": "preview composite"
+  },
+  "panel_main_1280x760_bg": {
+    "file": "backgrounds/panel_main_1280x760_bg.png",
+    "size": [
+      1280,
+      760
+    ],
+    "role": "background"
+  },
+  "panel_main_1280x760_fg": {
+    "file": "foregrounds/panel_main_1280x760_fg.png",
+    "size": [
+      1280,
+      760
+    ],
+    "role": "foreground"
+  },
+  "panel_main_1280x760_composite": {
+    "file": "composites/panel_main_1280x760_composite.png",
+    "size": [
+      1280,
+      760
+    ],
+    "role": "preview composite"
+  },
+  "bottom_bar_1120x148_bg": {
+    "file": "backgrounds/bottom_bar_1120x148_bg.png",
+    "size": [
+      1120,
+      148
+    ],
+    "role": "background"
+  },
+  "bottom_bar_1120x148_fg": {
+    "file": "foregrounds/bottom_bar_1120x148_fg.png",
+    "size": [
+      1120,
+      148
+    ],
+    "role": "foreground"
+  },
+  "bottom_bar_1120x148_composite": {
+    "file": "composites/bottom_bar_1120x148_composite.png",
+    "size": [
+      1120,
+      148
+    ],
+    "role": "preview composite"
+  },
+  "badge_gate": {
+    "file": "icons/badge_gate.png",
+    "size": [
+      112,
+      112
+    ],
+    "role": "foreground icon"
+  },
+  "badge_yinyang": {
+    "file": "icons/badge_yinyang.png",
+    "size": [
+      112,
+      112
+    ],
+    "role": "foreground icon"
+  },
+  "ornament_jade_chip": {
+    "file": "icons/ornament_jade_chip.png",
+    "size": [
+      112,
+      112
+    ],
+    "role": "foreground icon"
+  },
+  "icon_search_magnifier": {
+    "file": "icons/icon_search_magnifier.png",
+    "size": [
+      112,
+      112
+    ],
+    "role": "foreground icon"
+  },
+  "icon_server_status_red": {
+    "file": "icons/icon_server_status_red.png",
+    "size": [
+      64,
+      64
+    ],
+    "role": "foreground icon",
+    "source": "q_daoist_login_clear_2560x1080.png"
+  },
+  "icon_server_status_empty": {
+    "file": "icons/icon_server_status_empty.png",
+    "size": [
+      64,
+      64
+    ],
+    "role": "foreground icon",
+    "source": "redrawn from q_daoist_login_clear_2560x1080.png style"
+  },
+  "icon_server_badge_pavilion": {
+    "file": "icons/icon_server_badge_pavilion.png",
+    "size": [
+      112,
+      112
+    ],
+    "role": "foreground icon",
+    "source": "q_daoist_login_clear_2560x1080.png"
+  },
+  "icon_server_badge_pagoda": {
+    "file": "icons/icon_server_badge_pagoda.png",
+    "size": [
+      112,
+      112
+    ],
+    "role": "foreground icon",
+    "source": "q_daoist_login_clear_2560x1080.png"
+  },
+  "icon_server_badge_sword": {
+    "file": "icons/icon_server_badge_sword.png",
+    "size": [
+      112,
+      112
+    ],
+    "role": "foreground icon",
+    "source": "q_daoist_login_clear_2560x1080.png"
+  },
+  "icon_server_badge_whirlpool": {
+    "file": "icons/icon_server_badge_whirlpool.png",
+    "size": [
+      112,
+      112
+    ],
+    "role": "foreground icon",
+    "source": "q_daoist_login_clear_2560x1080.png"
+  },
+  "icon_server_badge_yinyang": {
+    "file": "icons/icon_server_badge_yinyang.png",
+    "size": [
+      112,
+      112
+    ],
+    "role": "foreground icon",
+    "source": "q_daoist_login_clear_2560x1080.png"
+  },
+  "icon_server_badge_mountain": {
+    "file": "icons/icon_server_badge_mountain.png",
+    "size": [
+      112,
+      112
+    ],
+    "role": "foreground icon",
+    "source": "q_daoist_login_clear_2560x1080.png"
+  },
+  "icon_server_badge_lotus": {
+    "file": "icons/icon_server_badge_lotus.png",
+    "size": [
+      112,
+      112
+    ],
+    "role": "foreground icon",
+    "source": "q_daoist_login_clear_2560x1080.png"
+  },
+  "icon_server_badge_talisman": {
+    "file": "icons/icon_server_badge_talisman.png",
+    "size": [
+      112,
+      112
+    ],
+    "role": "foreground icon",
+    "source": "q_daoist_login_clear_2560x1080.png"
+  },
+  "icon_category_cloud": {
+    "file": "icons/icon_category_cloud.png",
+    "size": [
+      72,
+      72
+    ],
+    "role": "foreground icon",
+    "source": "q_daoist_login_clear_2560x1080.png"
+  },
+  "icon_category_leaf": {
+    "file": "icons/icon_category_leaf.png",
+    "size": [
+      72,
+      72
+    ],
+    "role": "foreground icon",
+    "source": "q_daoist_login_clear_2560x1080.png"
+  },
+  "icon_category_yinyang": {
+    "file": "icons/icon_category_yinyang.png",
+    "size": [
+      72,
+      72
+    ],
+    "role": "foreground icon",
+    "source": "q_daoist_login_clear_2560x1080.png"
+  },
+  "icon_category_mountain": {
+    "file": "icons/icon_category_mountain.png",
+    "size": [
+      72,
+      72
+    ],
+    "role": "foreground icon",
+    "source": "q_daoist_login_clear_2560x1080.png"
+  },
+  "icon_category_flame": {
+    "file": "icons/icon_category_flame.png",
+    "size": [
+      72,
+      72
+    ],
+    "role": "foreground icon",
+    "source": "q_daoist_login_clear_2560x1080.png"
+  },
+  "icon_category_swirl": {
+    "file": "icons/icon_category_swirl.png",
+    "size": [
+      72,
+      72
+    ],
+    "role": "foreground icon",
+    "source": "q_daoist_login_clear_2560x1080.png"
+  },
+  "icon_bottom_profile_mountain": {
+    "file": "icons/icon_bottom_profile_mountain.png",
+    "size": [
+      112,
+      112
+    ],
+    "role": "foreground icon",
+    "source": "q_daoist_login_clear_2560x1080.png"
+  },
+  "icon_bottom_status_red": {
+    "file": "icons/icon_bottom_status_red.png",
+    "size": [
+      64,
+      64
+    ],
+    "role": "foreground icon",
+    "source": "q_daoist_login_clear_2560x1080.png"
+  },
+  "icon_bottom_select_empty": {
+    "file": "icons/icon_bottom_select_empty.png",
+    "size": [
+      64,
+      64
+    ],
+    "role": "foreground icon",
+    "source": "redrawn from q_daoist_login_clear_2560x1080.png style"
+  },
+  "qdao_login_icon_alts_atlas": {
+    "file": "atlas/qdao_login_icon_alts_atlas.png",
+    "meta": "atlas/qdao_login_icon_alts_atlas.json",
+    "role": "icon atlas preview"
+  },
+  "ornament_top_tab_diamond_left": {
+    "file": "icons/ornament_top_tab_diamond_left.png",
+    "size": [
+      72,
+      72
+    ],
+    "role": "foreground ornament",
+    "source": "q_daoist_login_clear_2560x1080.png"
+  },
+  "ornament_top_tab_diamond_mid": {
+    "file": "icons/ornament_top_tab_diamond_mid.png",
+    "size": [
+      72,
+      72
+    ],
+    "role": "foreground ornament",
+    "source": "q_daoist_login_clear_2560x1080.png"
+  },
+  "ornament_top_tab_hook_right": {
+    "file": "icons/ornament_top_tab_hook_right.png",
+    "size": [
+      84,
+      84
+    ],
+    "role": "foreground ornament",
+    "source": "q_daoist_login_clear_2560x1080.png"
+  },
+  "icon_alt_corner_top_right": {
+    "file": "icons/icon_alt_corner_top_right.png",
+    "size": [
+      96,
+      96
+    ],
+    "role": "foreground icon (alt, diff-derived)",
+    "source": "diff(q_daoist_login_clear_2560x1080.png, q_daoist_login_ui_overlay_no_controls_generated_last.png)",
+    "crop_at": [
+      2283,
+      87
+    ],
+    "crop_size": 90
+  },
+  "icon_alt_server_card_dot_a1": {
+    "file": "icons/icon_alt_server_card_dot_a1.png",
+    "size": [
+      64,
+      64
+    ],
+    "role": "foreground icon (alt, diff-derived)",
+    "source": "diff(q_daoist_login_clear_2560x1080.png, q_daoist_login_ui_overlay_no_controls_generated_last.png)",
+    "crop_at": [
+      997,
+      357
+    ],
+    "crop_size": 60
+  },
+  "icon_alt_server_card_dot_b1": {
+    "file": "icons/icon_alt_server_card_dot_b1.png",
+    "size": [
+      64,
+      64
+    ],
+    "role": "foreground icon (alt, diff-derived)",
+    "source": "diff(q_daoist_login_clear_2560x1080.png, q_daoist_login_ui_overlay_no_controls_generated_last.png)",
+    "crop_at": [
+      1494,
+      358
+    ],
+    "crop_size": 60
+  },
+  "icon_alt_server_card_dot_a2": {
+    "file": "icons/icon_alt_server_card_dot_a2.png",
+    "size": [
+      64,
+      64
+    ],
+    "role": "foreground icon (alt, diff-derived)",
+    "source": "diff(q_daoist_login_clear_2560x1080.png, q_daoist_login_ui_overlay_no_controls_generated_last.png)",
+    "crop_at": [
+      996,
+      476
+    ],
+    "crop_size": 60
+  },
+  "icon_alt_server_card_dot_b2": {
+    "file": "icons/icon_alt_server_card_dot_b2.png",
+    "size": [
+      64,
+      64
+    ],
+    "role": "foreground icon (alt, diff-derived)",
+    "source": "diff(q_daoist_login_clear_2560x1080.png, q_daoist_login_ui_overlay_no_controls_generated_last.png)",
+    "crop_at": [
+      1494,
+      476
+    ],
+    "crop_size": 60
+  },
+  "icon_alt_server_card_dot_a3": {
+    "file": "icons/icon_alt_server_card_dot_a3.png",
+    "size": [
+      64,
+      64
+    ],
+    "role": "foreground icon (alt, diff-derived)",
+    "source": "diff(q_daoist_login_clear_2560x1080.png, q_daoist_login_ui_overlay_no_controls_generated_last.png)",
+    "crop_at": [
+      997,
+      594
+    ],
+    "crop_size": 60
+  },
+  "icon_alt_server_card_dot_b3": {
+    "file": "icons/icon_alt_server_card_dot_b3.png",
+    "size": [
+      64,
+      64
+    ],
+    "role": "foreground icon (alt, diff-derived)",
+    "source": "diff(q_daoist_login_clear_2560x1080.png, q_daoist_login_ui_overlay_no_controls_generated_last.png)",
+    "crop_at": [
+      1494,
+      594
+    ],
+    "crop_size": 60
+  },
+  "icon_alt_server_card_dot_a4": {
+    "file": "icons/icon_alt_server_card_dot_a4.png",
+    "size": [
+      64,
+      64
+    ],
+    "role": "foreground icon (alt, diff-derived)",
+    "source": "diff(q_daoist_login_clear_2560x1080.png, q_daoist_login_ui_overlay_no_controls_generated_last.png)",
+    "crop_at": [
+      997,
+      713
+    ],
+    "crop_size": 60
+  },
+  "icon_alt_server_card_dot_b4": {
+    "file": "icons/icon_alt_server_card_dot_b4.png",
+    "size": [
+      64,
+      64
+    ],
+    "role": "foreground icon (alt, diff-derived)",
+    "source": "diff(q_daoist_login_clear_2560x1080.png, q_daoist_login_ui_overlay_no_controls_generated_last.png)",
+    "crop_at": [
+      1494,
+      713
+    ],
+    "crop_size": 60
+  },
+  "icon_alt_left_tab_icon_1": {
+    "file": "icons/icon_alt_left_tab_icon_1.png",
+    "size": [
+      72,
+      72
+    ],
+    "role": "foreground icon (alt, diff-derived)",
+    "source": "diff(q_daoist_login_clear_2560x1080.png, q_daoist_login_ui_overlay_no_controls_generated_last.png)",
+    "crop_at": [
+      689,
+      545
+    ],
+    "crop_size": 56
+  },
+  "icon_alt_left_tab_icon_2": {
+    "file": "icons/icon_alt_left_tab_icon_2.png",
+    "size": [
+      72,
+      72
+    ],
+    "role": "foreground icon (alt, diff-derived)",
+    "source": "diff(q_daoist_login_clear_2560x1080.png, q_daoist_login_ui_overlay_no_controls_generated_last.png)",
+    "crop_at": [
+      689,
+      617
+    ],
+    "crop_size": 56
+  },
+  "icon_alt_left_tab_icon_3": {
+    "file": "icons/icon_alt_left_tab_icon_3.png",
+    "size": [
+      72,
+      72
+    ],
+    "role": "foreground icon (alt, diff-derived)",
+    "source": "diff(q_daoist_login_clear_2560x1080.png, q_daoist_login_ui_overlay_no_controls_generated_last.png)",
+    "crop_at": [
+      688,
+      693
+    ],
+    "crop_size": 56
+  },
+  "icon_alt_left_tab_icon_4": {
+    "file": "icons/icon_alt_left_tab_icon_4.png",
+    "size": [
+      72,
+      72
+    ],
+    "role": "foreground icon (alt, diff-derived)",
+    "source": "diff(q_daoist_login_clear_2560x1080.png, q_daoist_login_ui_overlay_no_controls_generated_last.png)",
+    "crop_at": [
+      689,
+      767
+    ],
+    "crop_size": 56
+  },
+  "icon_alt_bottom_row_a": {
+    "file": "icons/icon_alt_bottom_row_a.png",
+    "size": [
+      64,
+      64
+    ],
+    "role": "foreground icon (alt, diff-derived)",
+    "source": "diff(q_daoist_login_clear_2560x1080.png, q_daoist_login_ui_overlay_no_controls_generated_last.png)",
+    "crop_at": [
+      1176,
+      898
+    ],
+    "crop_size": 60
+  },
+  "icon_alt_bottom_row_b": {
+    "file": "icons/icon_alt_bottom_row_b.png",
+    "size": [
+      64,
+      64
+    ],
+    "role": "foreground icon (alt, diff-derived)",
+    "source": "diff(q_daoist_login_clear_2560x1080.png, q_daoist_login_ui_overlay_no_controls_generated_last.png)",
+    "crop_at": [
+      1329,
+      898
+    ],
+    "crop_size": 60
+  },
+  "icon_alt_bottom_row_c": {
+    "file": "icons/icon_alt_bottom_row_c.png",
+    "size": [
+      64,
+      64
+    ],
+    "role": "foreground icon (alt, diff-derived)",
+    "source": "diff(q_daoist_login_clear_2560x1080.png, q_daoist_login_ui_overlay_no_controls_generated_last.png)",
+    "crop_at": [
+      1500,
+      898
+    ],
+    "crop_size": 60
+  },
+  "qdao_login_icon_alts_diff_atlas": {
+    "file": "atlas/qdao_login_icon_alts_diff_atlas.png",
+    "meta": "atlas/qdao_login_icon_alts_diff_atlas.json",
+    "role": "icon alts atlas (diff-derived)"
+  }
+}
