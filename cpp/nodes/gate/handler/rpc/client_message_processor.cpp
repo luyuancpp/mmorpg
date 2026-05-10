@@ -298,6 +298,13 @@ void RpcClientSessionHandler::HandleConnectionDisconnection(const muduo::net::Tc
 
 	// Disconnect notification goes to Login; its session manager owns the disconnect lease.
 	// Login nodes are stateless -- pick any available node, no session affinity needed.
+	//
+	// IMPORTANT: carry SessionInfo.playerId through SessionDetails. Login's
+	// markPlayerSessionDisconnecting() early-returns when playerId == 0,
+	// which meant a TCP close without explicit Logout would leave the
+	// player_locator session in ONLINE forever — later tripping EnterGame
+	// into ReplaceLogin against a dead gate. See
+	// docs/design/stress-test-2026-05-http-login.md §四 #B-1.
 	const auto loginNode = PickRandomNode(eNodeType::LoginNodeService);
 	if (loginNode)
 	{
@@ -307,6 +314,10 @@ void RpcClientSessionHandler::HandleConnectionDisconnection(const muduo::net::Tc
 		sessionDetails.set_session_id(sessionId);
 		sessionDetails.set_gate_node_id(gNode->GetNodeId());
 		sessionDetails.set_gate_instance_id(gNode->GetNodeInfo().node_uuid());
+		if (sessionFound)
+		{
+			sessionDetails.set_player_id(sessionIt->second.playerId);
+		}
 		loginpb::SendClientPlayerLoginDisconnect(tlsNodeContextManager.GetRegistry(eNodeType::LoginNodeService), *loginNode, request, {kSessionBinMetaKey}, SerializeSessionDetails(sessionDetails));
 	}
 
