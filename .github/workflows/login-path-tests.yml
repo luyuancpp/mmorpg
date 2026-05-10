@@ -1,0 +1,118 @@
+name: Login Path Tests
+
+# Why this exists: the new HTTP /api/login chain spans Java Gateway,
+# go-zero login, and the robot client; a regression in any of them
+# breaks the contract that the doc index promises (see
+# docs/design/onboarding.md and docs/design/gate-login-rpc-boundary.md).
+# Run all three test suites on every PR / push to main so the
+# legacy-vs-new-path counter stays meaningful and the deprecation
+# schedule in ARCH §12 doesn't slip due to silent regressions.
+#
+# What this is NOT: a full e2e against docker infra. The 36 java tests
+# already mock LoginRpcClient via @MockBean, and the go/robot tests
+# don't need redis/etcd/kafka. A real-cluster integration run lives
+# in tools/scripts/stress-linux-tier.sh and is operator-driven.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+    paths:
+      - "java/gateway_node/**"
+      - "go/login/**"
+      - "go/proto/**"
+      - "robot/**"
+      - "proto/login/**"
+      - ".github/workflows/login-path-tests.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  # Cancel in-flight runs for the same branch when a new commit lands.
+  group: login-path-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  java-gateway:
+    name: Java Gateway tests (mvn)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 23
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "23"
+          # Cache ~/.m2 between runs so Bucket4j / grpc / Spring Boot
+          # don't re-download on every PR; this is the biggest single
+          # cost of the gateway test job.
+          cache: maven
+          cache-dependency-path: java/gateway_node/pom.xml
+
+      - name: mvn test
+        working-directory: java/gateway_node
+        # Surefire's default temp dir on Windows runners can collide
+        # with @TempDir in LoginEndpointIntegrationTest; pin a stable
+        # one. -B = batch mode (no progress bar). --no-transfer-progress
+        # cuts ~half the log noise.
+        run: ./mvnw -B --no-transfer-progress test
+
+  go-login:
+    name: go-zero login tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          # Pinned to the version go.mod uses; bumping go.mod requires
+          # bumping this in lockstep so the test job catches go-version
+          # incompatibilities at PR time.
+          go-version-file: go/login/go.mod
+          # Each Go module under the monorepo has its own go.sum; only
+          # cache the login one here so peer modules don't pollute.
+          cache-dependency-path: go/login/go.sum
+
+      - name: go test ./...
+        working-directory: go/login
+        # -count=1 disables the test cache so we always exercise fresh
+        # code (caching gave us a false-pass once during the #B-1 hunt).
+        # -race is omitted because go-zero's own packages contain a few
+        # known-but-tolerated races and we don't want to fail the gate
+        # on third-party noise.
+        run: go test -count=1 ./...
+
+  robot:
+    name: robot client tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: robot/go.mod
+          cache-dependency-path: robot/go.sum
+
+      # robot is the gateway client side and uses go mod vendor/. We
+      # explicitly verify vendor matches go.sum so a forgotten
+      # `go mod vendor` won't ship a stale snapshot (the kind of drift
+      # that cost us 8 movement-handler files during the e2e debug).
+      - name: verify vendor consistency
+        working-directory: robot
+        run: |
+          cp -a vendor /tmp/vendor.before
+          go mod vendor
+          if ! diff -rq /tmp/vendor.before vendor >/dev/null 2>&1; then
+            echo "::error::vendor/ is out of sync with go.mod / go.sum"
+            diff -rq /tmp/vendor.before vendor || true
+            exit 1
+          fi
+
+      - name: go test ./...
+        working-directory: robot
+        run: go test -count=1 ./...
