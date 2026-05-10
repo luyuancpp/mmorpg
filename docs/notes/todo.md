@@ -211,3 +211,50 @@
 217. Player career: historical operation records and events
 218. DB layer should have no business logic — it should only care about storage. (Previous mistake: DB service was creating characters)
 ~~219. Stateless microservice readiness gate: register with service discovery only after initialization completes, with readiness probes and watch mechanism to prevent traffic to unready instances~~ ✅ Done: DependencyGate abstraction in node.h, Scene/Gate main.cpp integrated
+
+---
+
+## HTTP /api/login Migration Backlog (2026-05, ARCH §12 deprecation)
+
+These follow-ups landed during the gateway/login HTTP migration but did not
+ship in the 24-commit series ending at `bd0365a7a`. They do not block T+0
+gray rollout; pick them up before the T+1 / T+2 milestones in
+[ARCH.md §12](../design/ARCH.md).
+
+220. **R: Open the migration PR + verify CI workflow runs green.**
+     Use template A in [docs/ops/pr-templates.md](../ops/pr-templates.md);
+     touches `java/gateway_node/**` so `.github/workflows/login-path-tests.yml`
+     should fire all three jobs. Confirm Java mvn (36 tests), go-zero login
+     `go test ./...`, and robot `go test ./...` all green on PR.
+
+221. **S: Run 1k/2k/5k stress tier on real Linux staging.**
+     Windows dev maxes out at 500 (#B-4 in
+     [stress-test-2026-05-http-login.md](../design/stress-test-2026-05-http-login.md));
+     follow [docs/ops/linux-staging-stress-runbook.md](../ops/linux-staging-stress-runbook.md)
+     and run `tools/scripts/stress-linux-tier.sh`. Backfill the empty rows
+     in §E of that runbook plus a new column (`env`) in the §二 table of
+     the stress doc.
+
+222. **T: Expose `legacyLoginCount` / `newLoginCount` to Prometheus + Grafana.**
+     The two `atomic.Uint64` counters in
+     `go/login/internal/logic/clientplayerlogin/deprecation.go` are in-process
+     today; ARCH §12 T+1 exit criteria depend on a graph operations can watch.
+     Wire via go-zero's metrics middleware and add a Grafana panel that
+     overlays both lines so the legacy curve trending to zero is visible.
+
+223. **U: WeChat / QQ provider real-OAuth sandbox e2e.**
+     Mock-server unit tests + wire-shape integration tests already pin the
+     contract (see `LoginEndpointIntegrationTest` and `providers_test.go`).
+     What's missing is one end-to-end pass with real WeChat Open Platform /
+     QQ Connect sandbox AppId/AppSecret: client SDK code → POST /api/login
+     → real `api.weixin.qq.com` / `graph.qq.com` → `wx_<unionid>` /
+     `qq_<unionid>` resolved → in-game. Validates wire format, network
+     egress whitelist, and the account-mapping policy.
+
+224. **V: Implement `legacy-gate-login-enabled` feature flag.**
+     ARCH §12 T+2 step. Add a config flag in `go/login/etc/login.yaml`
+     (default `true`); when `false`, the legacy branch in `loginlogic.go`
+     (`isLegacyPath == true`) returns a new `kLoginPathDisabled` error
+     instead of running the device-set + session-bind work — forces
+     remaining old clients to fall through to /api/login. Belongs in T+2
+     once T+1 telemetry shows the legacy count below the agreed threshold.
