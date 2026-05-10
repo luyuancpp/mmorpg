@@ -103,6 +103,14 @@ cpp/libs/base/modules/
 !java/gateway_node/src/test/
 !java/gateway_node/src/test/**
 
+# Same story for tools/scripts/ — the bare `scripts/` rule was meant for a
+# deleted scratch directory, but tools/scripts/ has 10+ tracked .ps1/.sh
+# files already (added one by one with `git add -f`). The negation makes
+# `git add tools/scripts/foo.sh` work without -f and prevents future
+# scripts from silently going un-tracked.
+!tools/scripts/
+!tools/scripts/**
+
 # Runtime artifacts (not for version control)
 bin/zoneinfo/
 bin/go_services.pid.json
