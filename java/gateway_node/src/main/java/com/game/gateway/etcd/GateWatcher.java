@@ -55,13 +55,22 @@ public class GateWatcher {
 
             List<NodeInfoRecord> nodes = new ArrayList<>();
             for (KeyValue kv : resp.getKvs()) {
+                String key = kv.getKey().toString(StandardCharsets.UTF_8);
+                // The {Gate,Scene}NodeService.rpc/ prefix houses two key families:
+                //   - "<svc>/zone/<z>/node_type/<t>/node_id/<n>"  -> NodeInfo JSON
+                //   - "<svc>/allocated/node_type/<t>/node_id/<n>" -> snowflake
+                //     allocator sentinel (opaque bytes, NOT JSON).
+                // We only care about the first. Ignore the allocator keys
+                // instead of flooding the log with "Unexpected character" warns.
+                if (key.startsWith(prefix + "allocated/")) {
+                    continue;
+                }
                 try {
                     String json = kv.getValue().toString(StandardCharsets.UTF_8);
                     NodeInfoRecord info = MAPPER.readValue(json, NodeInfoRecord.class);
                     nodes.add(info);
                 } catch (Exception e) {
-                    log.warn("Failed to parse NodeInfo from key={}: {}",
-                            kv.getKey().toString(StandardCharsets.UTF_8), e.getMessage());
+                    log.warn("Failed to parse NodeInfo from key={}: {}", key, e.getMessage());
                 }
             }
             return nodes;

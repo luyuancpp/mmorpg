@@ -150,16 +150,28 @@ func sendAndRecvTimeout(gc *pkg.GameClient, stats *metrics.Stats, msgId uint32, 
 // refreshLead of expiry, and exits cleanly when either `stop` closes (global
 // shutdown) or `done` closes (this session's RecvLoop ended).
 //
-// Semantics of the counters it touches:
-//   - TokenRefreshOK   : refresh RPC successfully handed to the transport.
-//   - TokenRefreshFail : transport send returned an error.
+// Two refresh transports are supported:
 //
-// Server-side rejection of the refresh (expired refresh_token, rotated
-// elsewhere, etc.) arrives asynchronously in ClientPlayerLoginRefreshTokenHandler
-// and is surfaced via its zap.L().Info log. Quantitatively that shows up as
-// the next reconnect falling through to the primary auth provider, which is
-// already counted by AccessReconnectFallback.
-func runTokenRefresher(gc *pkg.GameClient, stats *metrics.Stats, stop, done <-chan struct{}) {
+//   - HTTP via Java Gateway POST /api/refresh-token (preferred when
+//     gatewayAddr is non-empty). This is the path the boundary doc commits
+//     to: refresh has no session affinity, so it does not need to ride the
+//     gate TCP channel. Once the server hands back a new pair we write it
+//     into gc via SetTokens (same place ClientPlayerLoginRefreshTokenHandler
+//     would patch under the legacy path).
+//
+//   - Legacy gate TCP RPC ClientPlayerLoginRefreshTokenMessageId, kept as
+//     fallback for the duration of the deprecation window (see ARCH §12).
+//
+// Semantics of the counters it touches:
+//   - TokenRefreshOK   : refresh round-tripped successfully (new tokens stored).
+//   - TokenRefreshFail : transport error or server returned non-zero code.
+//
+// HTTP mode is synchronous and atomic — we know on return whether the
+// rotation happened. The legacy mode is fire-and-forget at this layer; the
+// asynchronous rejection path was previously surfaced via
+// AccessReconnectFallback on the next reconnect, and that still works
+// because we keep the existing branch unchanged when gatewayAddr is empty.
+func runTokenRefresher(gc *pkg.GameClient, gatewayAddr string, stats *metrics.Stats, stop, done <-chan struct{}) {
 	const (
 		checkInterval = 30 * time.Second
 		refreshLead   = 10 * time.Minute // refresh when <10min of TTL remains
@@ -183,18 +195,35 @@ func runTokenRefresher(gc *pkg.GameClient, stats *metrics.Stats, stop, done <-ch
 			if remaining > refreshLead {
 				continue
 			}
-			// Dedup: if we already asked for a refresh recently, give the
-			// server (and its handler → gc.SetTokens write) a window to
-			// land before asking again. Without this, a slow-to-respond
-			// server would eat N redundant refresh RPCs for every tick
-			// that still sees the old accessExp.
 			if !lastSent.IsZero() && time.Since(lastSent) < sendCooldown {
 				continue
 			}
 			zap.L().Info("refreshing access_token",
 				zap.String("account", gc.Account),
 				zap.Duration("remaining", remaining),
+				zap.Bool("via_http", gatewayAddr != ""),
 			)
+			lastSent = time.Now()
+			if gatewayAddr != "" {
+				rsp, err := httpRefreshToken(gatewayAddr, refresh, 5*time.Second)
+				if err != nil {
+					stats.TokenRefreshFail()
+					zap.L().Warn("http refresh failed", zap.Error(err))
+					continue
+				}
+				if rsp.Code != 0 {
+					stats.TokenRefreshFail()
+					zap.L().Warn("http refresh rejected",
+						zap.Int("code", rsp.Code),
+						zap.String("msg", rsp.Message))
+					continue
+				}
+				gc.SetTokens(rsp.AccessToken, rsp.RefreshToken,
+					rsp.AccessTokenExpire, rsp.RefreshTokenExpire)
+				stats.TokenRefreshOK()
+				continue
+			}
+			// Legacy gate-TCP path (deprecated, see ARCH §12).
 			if err := gc.SendRequest(
 				game.ClientPlayerLoginRefreshTokenMessageId,
 				&login.RefreshTokenRequest{RefreshToken: refresh},
@@ -204,7 +233,6 @@ func runTokenRefresher(gc *pkg.GameClient, stats *metrics.Stats, stop, done <-ch
 				continue
 			}
 			stats.TokenRefreshOK()
-			lastSent = time.Now()
 		}
 	}
 }
