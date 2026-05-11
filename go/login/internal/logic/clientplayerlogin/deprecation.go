@@ -5,38 +5,74 @@ import (
 	"time"
 
 	"github.com/zeromicro/go-zero/core/logx"
+	"github.com/zeromicro/go-zero/core/metric"
 )
 
 // legacyLoginCallerTracker throttles the deprecation notice for the old
-// cpp gate → login.Login RPC path. Every observed call increments the
-// counter; a single summary log line fires at most once per minute, so a
-// busy fleet doesn't flood the log but ops can still see migration progress
-// by scraping the counter (or promoting it to a Prometheus gauge later).
+// cpp gate → login.Login RPC path AND exposes the same signal as a
+// Prometheus counter for ARCH §12 T+1 exit-criteria dashboards.
 //
-// legacyLoginCount — monotonic total of calls arriving via the legacy path
-// newLoginCount    — monotonic total of calls arriving via Java Gateway
-//                    (i.e. with no SessionDetails attached)
+// Two parallel sinks, deliberately:
 //
-// Rationale for keeping this in-process (not a distributed metric yet): the
-// first signal we want is "is there a single tenant still on the old path",
-// which any one replica can answer on its own. When we're ready to retire
-// the legacy path we'll replace this with a Prometheus counter wired up
-// via go-zero's metrics middleware.
+//   atomic.Uint64 (legacyLoginCount / newLoginCount):
+//     Used by the throttled log line below. The log includes the
+//     in-process running totals so a single grep on a single replica
+//     answers "is anyone still hitting me on the old path right now"
+//     without a Prometheus query. This is what on-call cares about
+//     during the rollout window.
+//
+//   metric.CounterVec (loginPathTotal):
+//     Exported via go-zero's built-in /metrics endpoint
+//     (RpcServerConf.Prometheus). Operations scrapes this into Grafana
+//     to graph the legacy/new ratio over hours/days, which is what
+//     T+1 exit criteria depend on. Labels:
+//       path = "legacy" | "new"
+//       auth_type = "password" | "satoken" | "wechat" | "qq" | ...
+//     authType is included so the dashboard can show e.g. "wechat
+//     traffic still on legacy" separately from "password traffic".
+//
+// Both increment in lockstep on every call to warnLegacyLoginCaller.
+// The atomic counters are NEVER reset (process-lifetime totals); the
+// Prometheus counters are also monotonic per-process — Grafana
+// rate()/increase() handle the scrape window.
 var (
 	legacyLoginCount atomic.Uint64
 	newLoginCount    atomic.Uint64
 	lastLegacyWarnNs atomic.Int64
+
+	loginPathTotal = metric.NewCounterVec(&metric.CounterVecOpts{
+		Namespace: "login",
+		Subsystem: "auth",
+		Name:      "path_total",
+		Help: "ClientPlayerLogin.Login calls bucketed by transport path " +
+			"(legacy=cpp gate forwarded, new=Java Gateway HTTP) and auth_type. " +
+			"Grafana dashboard: increase(login_auth_path_total{path=\"legacy\"}[5m]) " +
+			"trending to zero is the ARCH §12 T+1 exit criterion.",
+		Labels: []string{"path", "auth_type"},
+	})
 )
 
 const legacyWarnThrottle = 60 * time.Second
 
-// warnLegacyLoginCaller records the caller source and, for the legacy
-// code path, emits a throttled warn-level notice pointing operators at the
-// replacement HTTP endpoint.
+// warnLegacyLoginCaller records the caller source on both the in-process
+// counters and the Prometheus counter, plus emits a throttled warn-level
+// notice for the legacy path so on-call sees migration progress without
+// log floods.
 //
-// authType is passed purely for the log; it lets a single-line grep tell
-// password/satoken/wechat callers apart without re-parsing the RPC args.
+// authType is normalized to "password" when empty so the Prometheus label
+// cardinality stays bounded and matches how loginlogic.go labels the rest
+// of the request.
 func warnLegacyLoginCaller(isLegacy bool, authType string) {
+	pathLabel := "new"
+	if isLegacy {
+		pathLabel = "legacy"
+	}
+	authLabel := authType
+	if authLabel == "" {
+		authLabel = "password"
+	}
+	loginPathTotal.Inc(pathLabel, authLabel)
+
 	if !isLegacy {
 		newLoginCount.Add(1)
 		return

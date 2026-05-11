@@ -1,0 +1,115 @@
+{
+  "_comment": [
+    "Grafana dashboard panels for the HTTP /api/login migration deprecation telemetry.",
+    "Drop these into an existing dashboard via the 'Import JSON' panel option, or",
+    "merge into a fresh dashboard JSON under .panels[]. Counters are emitted by",
+    "go/login/internal/logic/clientplayerlogin/deprecation.go and exposed at",
+    "the host configured under login.yaml `Prometheus:` (default 127.0.0.1:9101/metrics).",
+    "",
+    "Two panels:",
+    "  1. Stacked-area: legacy vs new request rate over time.",
+    "     ARCH §12 T+1 exit criterion = legacy line trends to (and stays near) zero.",
+    "  2. Single-stat: legacy / total ratio for the last 5 minutes.",
+    "     Alert at >5% (rollback signal) or <1% (T+2 ready).",
+    "",
+    "Per-auth_type breakdowns are available by adding `auth_type` to the legend",
+    "(e.g. legend: '{{path}} / {{auth_type}}'); useful when WeChat/QQ stay on",
+    "legacy longer than password as third-party SDKs roll out."
+  ],
+  "panels": [
+    {
+      "title": "Login Path Request Rate (legacy vs new)",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "description": "rate of ClientPlayerLogin.Login calls, split by transport. ARCH §12 T+1 exit criterion: legacy must trend to zero before flipping LegacyGateLoginEnabled=false.",
+      "targets": [
+        {
+          "expr": "sum by (path) (rate(login_auth_path_total[5m]))",
+          "legendFormat": "{{path}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 25,
+            "stacking": { "mode": "normal" }
+          }
+        }
+      },
+      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 }
+    },
+    {
+      "title": "Legacy Path Share (last 5m)",
+      "type": "stat",
+      "datasource": "Prometheus",
+      "description": "Fraction of recent logins still on the legacy gate-TCP path. >5% = block T+2; <1% = T+2 ready.",
+      "targets": [
+        {
+          "expr": "sum(rate(login_auth_path_total{path=\"legacy\"}[5m])) / clamp_min(sum(rate(login_auth_path_total[5m])), 1e-9)",
+          "instant": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green",  "value": null },
+              { "color": "yellow", "value": 0.01 },
+              { "color": "red",    "value": 0.05 }
+            ]
+          },
+          "decimals": 3
+        }
+      },
+      "options": {
+        "colorMode": "background",
+        "reduceOptions": { "calcs": ["lastNotNull"] }
+      },
+      "gridPos": { "x": 12, "y": 0, "w": 6, "h": 8 }
+    },
+    {
+      "title": "Login Path by Auth Type",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "description": "Per-auth_type breakdown to spot 'wechat traffic stuck on legacy' vs 'password fully migrated' patterns.",
+      "targets": [
+        {
+          "expr": "sum by (path, auth_type) (rate(login_auth_path_total[5m]))",
+          "legendFormat": "{{path}} / {{auth_type}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10
+          }
+        }
+      },
+      "gridPos": { "x": 0, "y": 8, "w": 18, "h": 8 }
+    }
+  ],
+  "alerts": [
+    {
+      "_comment": [
+        "Alertmanager rule (paste under groups.rules in alert-rules.yaml).",
+        "Fires when legacy traffic stays >5% for 10 minutes — that's the",
+        "rollback signal, not the T+2 trigger. Pair with a separate one-shot",
+        "alert when legacy drops to zero for 24h to ping ops about T+2 readiness."
+      ],
+      "alert": "LegacyLoginPathTooHigh",
+      "expr": "sum(rate(login_auth_path_total{path=\"legacy\"}[5m])) / clamp_min(sum(rate(login_auth_path_total[5m])), 1e-9) > 0.05",
+      "for": "10m",
+      "labels": { "severity": "warning" },
+      "annotations": {
+        "summary": "Legacy gate-Login path receiving >5% of login traffic",
+        "description": "ARCH §12 expected this to drop after T+1 cutover. Investigate before flipping LegacyGateLoginEnabled=false."
+      }
+    }
+  ]
+}
