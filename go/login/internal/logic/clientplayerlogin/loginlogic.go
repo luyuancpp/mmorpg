@@ -81,6 +81,32 @@ func (l *LoginLogic) Login(in *login_proto.LoginRequest) (*login_proto.LoginResp
 	isLegacyPath := sessionFound && sessionDetails != nil && sessionDetails.SessionId > 0
 	warnLegacyLoginCaller(isLegacyPath, in.AuthType)
 
+	// ARCH §12 T+2 step: when ops has confirmed the legacy_login_count
+	// counter is below the agreed threshold, they flip
+	// `LegacyGateLoginEnabled: false` in login.yaml to harden the kill
+	// switch. From that moment the legacy branch short-circuits BEFORE
+	// any lock / Redis / device-set work, returning a generic login
+	// error to the small tail of remaining old clients (which will
+	// fall back to /api/login via their normal retry path). The flag
+	// is off only when ops explicitly turns it off — default-true
+	// preserves the current rollout state.
+	//
+	// We deliberately reuse kLoginUnknownError rather than minting a
+	// new enum value: adding to the `login_error` proto requires a
+	// codegen round and a cpp/go/java rebuild, which is overkill for
+	// a kill-switch path the client SDK already handles with its
+	// generic "login failed, please retry" UI. A dedicated error code
+	// can land alongside the next proto codegen if the deprecation
+	// telemetry ever shows the tail isn't shrinking.
+	if shouldRejectLegacyRequest(isLegacyPath, config.AppConfig.LegacyGateLoginEnabled) {
+		logx.Errorf("[DEPRECATION] legacy gate Login RPC disabled by config; "+
+			"rejecting account=%s auth_type=%s session_id=%d. "+
+			"Client should migrate to POST /api/login on Java Gateway.",
+			account, in.AuthType, sessionDetails.SessionId)
+		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginUnknownError)}
+		return resp, nil
+	}
+
 	// New path (Java Gateway HTTP): no session exists yet because the player
 	// hasn't touched the gate TCP channel. Degenerate login: validate creds,
 	// mint access/refresh tokens, return the player list. Device-limit + the

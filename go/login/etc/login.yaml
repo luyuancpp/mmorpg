@@ -102,6 +102,25 @@ TokenConfig:
   AccessTokenTTL: 2h
   RefreshTokenTTL: 720h  # 30 days
 
+# Kill switch for the deprecated path "Client → cpp gate (TCP) →
+# ClientPlayerLogin.Login" (see ARCH §12). Default true preserves the
+# current rollout; flip to false in T+2 once legacy_login_count drops
+# below the agreed threshold. When false, the legacy branch returns
+# kLoginUnknownError immediately and the new HTTP path
+# (POST /api/login on Java Gateway) is unaffected.
+LegacyGateLoginEnabled: true
+
+# Prometheus scrape endpoint, exposed by go-zero core/service. Bind to
+# 0.0.0.0 in staging/prod so Grafana / Prometheus can reach it; on dev
+# we keep it on 127.0.0.1 to avoid leaking metrics outside localhost.
+# The login_auth_path_total counter (see deprecation.go) is the
+# T+1 exit-criterion signal — Grafana JSON template lives in
+# docs/ops/grafana-login-path-deprecation.json.
+Prometheus:
+  Host: 127.0.0.1
+  Port: 9101
+  Path: /metrics
+
 # Background goroutine pool for player data preload (Kafka fan-out).
 # Size: max concurrent in-flight preload tasks. Submit is non-blocking; if the
 #       pool is saturated, the task is dropped with a log and the Scene-side
