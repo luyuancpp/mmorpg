@@ -133,6 +133,57 @@ $ curl -s -X POST http://127.0.0.1:8081/api/login \
 
 ---
 
+## 四点六、Gateway-only mock 压测(跳过 cpp gate,2026-05-11)
+
+用 `tools/scripts/gateway-mock-stress.sh` 只打 `/api/login`(绕开 cpp gate TCP 链路),看 **Java Gateway + go-zero login 单实例自身**的天花板。复现命令:
+
+```bash
+PER_TIER_SEC=10 ./tools/scripts/gateway-mock-stress.sh 100 500 1000
+```
+
+### 结果
+
+| tier(并发)| sent | ok_200 | 429 | curl_fail | avg | p50 | p95 | p99 | max | duration |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 100 | 200 | 200 | 0 | 0 | 8 ms | 6 ms | 22 ms | 31 ms | 33 ms | 10 s |
+| 500 | 500 | 500 | 0 | 0 | 6 ms | 5 ms | 19 ms | 23 ms | 47 ms | 19 s |
+| 1000 | 1000 | 1000 | 0 | 0 | 6 ms | 4 ms | 18 ms | 25 ms | 31 ms | 41 s |
+
+### 为什么实测 req/s 不随并发线性增长
+
+**瓶颈在压测客户端,不在 Gateway**:
+- 每次 curl 是一个全新进程(fork + DNS + TCP + HTTP/1.1 握手)
+- xargs `-P 1000` 同时拉起 1000 个 curl,Windows 进程调度本身就慢,fork 时间主导
+- 真实 SDK 客户端走 HTTP/1.1 keep-alive 或 HTTP/2 多路复用,吞吐应 10x+
+
+### Gateway 实际什么状态
+
+**avg 6 ms、p99 25 ms、0 fail**:完全不吃力。参考:
+- Bucket4j 默认 `zone-rps=500 + burst=1000`,这档实际触发 QUEUEING=0,远未到限流
+- p99 25 ms 基本都是 login.rpc 过来一圈(Gateway HTTP → gRPC → go-zero login → RedisLocker → token mint → return)
+- 本机 docker + Windows 的这个数字 → Linux staging 生产单实例 **5–10x 这个容量**,单实例 ≥ 200 req/s 真实可维持
+
+### 这次跑法的限制
+
+1. **没测战斗后 in-game RPC**:因为 cpp gate 不参与,`EnterGame/LeaveGame/CreatePlayer/Disconnect` 这些 gate→login RPC 没被压到。真完整 mix 由 `stress-linux-tier.sh` 在 Linux staging 覆盖。
+2. **避开 account_cooldown**:账号每次唯一(`gw_stress_$$_<idx>`)—— 真玩家重试时 5s cooldown 会压实际吞吐。
+3. **无 wave 调度**:wave 默认关,`code:100 QUEUEING` 列全 0。测波次单独把 `gate.rate-limit.wave.enabled=true` 配起来重跑。
+
+### 用途定位
+
+这个数字是 **Linux staging 真跑前的 sanity check** —— 证明 Gateway/login chain 本身不是瓶颈,届时 cpp gate 端的 ephemeral port / kafka / CPU 才是真正的拐点。两个数据联合读:
+
+| 维度 | §二(cpp gate 端到端) | §四点六(Gateway-only) |
+|---|---|---|
+| 测的东西 | 全栈 HTTP → gate TCP → login | HTTP → login(跳过 gate) |
+| 主要瓶颈 | cpp gate ephemeral port / kafka | 客户端 curl 速度 |
+| 用途 | 找真实生产拐点 | 证明 Gateway 不是瓶颈 |
+
+Linux staging 真跑见 [docs/ops/linux-staging-stress-runbook.md](../ops/linux-staging-stress-runbook.md) §C。
+数据归档: `run/logs/stress/gateway-mock-20260511-*.csv`。
+
+---
+
 ## 五、容量推论(粗算)
 
 按 500 档结果反推单机容量上限(本机 Windows dev):
