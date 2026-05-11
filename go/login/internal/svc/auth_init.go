@@ -49,16 +49,26 @@ func InitAuthProviders() {
 		auth.Register("wechat", &auth.WeChatProvider{
 			AppId:     cfg.WeChat.AppId,
 			AppSecret: cfg.WeChat.AppSecret,
+			Endpoint:  cfg.WeChat.Endpoint,
 		})
-		logx.Info("Auth provider registered: wechat")
+		if cfg.WeChat.Endpoint != "" {
+			logx.Infof("Auth provider registered: wechat (endpoint override: %s)", cfg.WeChat.Endpoint)
+		} else {
+			logx.Info("Auth provider registered: wechat")
+		}
 	}
 
 	if cfg.QQ != nil {
 		auth.Register("qq", &auth.QQProvider{
-			AppId:  cfg.QQ.AppId,
-			AppKey: cfg.QQ.AppKey,
+			AppId:    cfg.QQ.AppId,
+			AppKey:   cfg.QQ.AppKey,
+			Endpoint: cfg.QQ.Endpoint,
 		})
-		logx.Info("Auth provider registered: qq")
+		if cfg.QQ.Endpoint != "" {
+			logx.Infof("Auth provider registered: qq (endpoint override: %s)", cfg.QQ.Endpoint)
+		} else {
+			logx.Info("Auth provider registered: qq")
+		}
 	}
 
 	if cfg.NetEase != nil {

@@ -82,12 +82,20 @@ type SaTokenAuthConf struct {
 type WeChatAuthConf struct {
 	AppId     string `json:"AppId"`
 	AppSecret string `json:"AppSecret"`
+	// Endpoint optionally overrides the api.weixin.qq.com base URL.
+	// Set to a local sandbox mock (e.g. http://127.0.0.1:18090) when
+	// real Open Platform credentials / network egress aren't available.
+	// Production leaves this empty so the provider hits the real host.
+	Endpoint string `json:"Endpoint,optional"`
 }
 
 // QQAuthConf holds QQ OAuth settings.
 type QQAuthConf struct {
 	AppId  string `json:"AppId"`
 	AppKey string `json:"AppKey"`
+	// Endpoint optionally overrides the graph.qq.com base URL.
+	// Same semantics as WeChatAuthConf.Endpoint.
+	Endpoint string `json:"Endpoint,optional"`
 }
 
 // NeteaseAuthConf holds NetEase auth settings.
