@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  QdaoServerCard: 2-column grid card, 640x128
+  Layout: [badge 112x112] [title + subtitle stacked] [进入 + 详情 inline buttons]
+  Used by ServerSelectScreen listServer in pagination layout (2 columns × 4 rows).
+-->
 <component size="640,128" extention="Button" opaque="false">
   <controller name="button" pages="up,,down,,over,,disabled," selected="0"/>
   <controller name="checked" pages="0,,1," selected="0"/>
@@ -12,33 +17,37 @@
       <gearColor controller="checked" values="#ffffff,#fff0bd"/>
     </image>
 
-    <!-- Big circular badge on the left (server emblem) -->
-    <loader id="n2" name="badge" xy="20,8" size="112,112" url="ui://qdao202600010031" fill="scale" align="center" vAlign="middle"/>
+    <!-- Badge: server emblem on the left -->
+    <loader id="n2" name="badge" xy="12,8" size="112,112" url="ui://qdao202600010031" fill="scale" align="center" vAlign="middle"/>
 
-    <!-- Status traffic-light dot (green / red / gray) above the title -->
-    <loader id="n3" name="statusIcon" xy="148,16" size="40,40" url="ui://qdao202600010024" fill="scale" align="center" vAlign="middle">
+    <!-- Status traffic-light dot -->
+    <loader id="n3" name="statusIcon" xy="132,12" size="28,28" url="ui://qdao202600010024" fill="scale" align="center" vAlign="middle">
       <gearDisplay controller="status" pages="0,1"/>
     </loader>
 
-    <!-- Server name (vertically centered to the right of the badge) -->
-    <text id="n4" name="title" xy="148,52" size="380,40" fontSize="32" color="#3d2914" autoSize="none" singleLine="true" text="server name">
-      <relation target="" sidePair="width-width,middle-middle"/>
+    <!-- Server name (title) -->
+    <text id="n4" name="title" xy="170,14" size="280,36" fontSize="28" color="#3d2914" autoSize="none" singleLine="true" text="server name">
       <gearColor controller="checked" values="#3d2914,#9c2b1a"/>
     </text>
 
-    <!-- Sub-line: status / load level -->
-    <text id="n5" name="subtitle" xy="148,92" size="380,28" fontSize="22" color="#5a4025" autoSize="none" singleLine="true" text="畅通  人气旺">
-      <relation target="" sidePair="width-width,bottom-bottom"/>
-    </text>
+    <!-- Status sub-line -->
+    <text id="n5" name="subtitle" xy="170,52" size="280,26" fontSize="20" color="#5a4025" autoSize="none" singleLine="true" text="畅通  人气旺"/>
 
-    <!-- Right-side accent label (推荐 / 新 / 维护) -->
-    <text id="n6" name="rightLabel" xy="540,12" size="86,32" fontSize="24" color="#9c2b1a" align="right" autoSize="none" singleLine="true" text="">
+    <!-- Inline primary button: "进入" (red CTA, right half of card) -->
+    <component id="n6" name="btnEnter" src="c0000001" fileName="common/QdaoButtonPrimary.xml" xy="460,10" size="170,56">
       <relation target="" sidePair="right-right,top-top"/>
-    </text>
+      <Button title="进入"/>
+    </component>
 
-    <graph id="n7" name="hit" xy="0,0" size="640,128" type="rect" lineSize="0" lineColor="#00000000" fillColor="#00000000">
-      <relation target="" sidePair="width-width,height-height"/>
-    </graph>
+    <!-- Inline secondary button: "详情" (jade outline, under enter) -->
+    <component id="n7" name="btnDetail" src="c0000002" fileName="common/QdaoButtonSecondary.xml" xy="460,72" size="170,48">
+      <relation target="" sidePair="right-right,bottom-bottom"/>
+      <Button title="详情"/>
+    </component>
+
+    <!-- Hit area: only the left portion (badge+title+subtitle) toggles
+         selection; the two inline buttons keep their own click handlers. -->
+    <graph id="n8" name="hit" xy="0,0" size="450,128" type="rect" lineSize="0" lineColor="#00000000" fillColor="#00000000"/>
   </displayList>
   <Button mode="Check" downEffect="scale" downEffectValue="0.98"/>
 </component>

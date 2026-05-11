@@ -1,17 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <component size="2560,1080" opaque="true">
   <displayList>
+    <!-- Layer 1: full-screen mountain-water scene background -->
     <image id="n0" name="imgSceneBackdrop" src="0001003a" fileName="qdao_scene_bg.png" xy="0,0" size="2560,1080"/>
 
-    <component id="n1" name="mainPanel" src="c0000008" fileName="common/QdaoMainPanel.xml" xy="640,90" size="1280,760"/>
+    <!-- Layer 2: UI plate overlay (transparent outside, panels / frames /
+         ornaments baked in the middle). Expanded to 2560x1080 canvas with
+         a transparent border so controls can sit freely on top. -->
+    <image id="nOV" name="imgUiOverlay" src="0001003b" fileName="qdao_ui_overlay_bg.png" xy="0,0" size="2560,1080"/>
 
-    <image id="n2" name="cornerOrnament" src="00010015" fileName="icon_alt_corner_top_right.png" xy="1820,110" size="96,96"/>
+    <!-- Title on the overlay's top scroll -->
+    <text id="n1" name="txtPanelTitle" xy="900,150" size="760,90" fontSize="64" color="#3d2914" align="center" vAlign="middle" autoSize="none" singleLine="true" text="选择区服"/>
 
-    <text id="n3" name="txtPanelTitle" xy="900,130" size="760,80" fontSize="56" color="#3d2914" align="center" vAlign="middle" autoSize="none" singleLine="true" text="选择区服"/>
+    <!-- Search box on the overlay's title bar, left of the character.
+         Character occupies x≈1706..2053 in the overlay, so the search box's
+         right edge stays ≤ 1520 to leave ~186px breathing room. -->
+    <component id="n2" name="searchBox" src="c0000003" fileName="common/QdaoSearchBox.xml" xy="1100,220" size="420,76"/>
 
-    <component id="n4" name="searchBox" src="c0000003" fileName="common/QdaoSearchBox.xml" xy="1430,170" size="420,76"/>
-
-    <list id="n5" name="listTabs" xy="700,250" size="360,560" overflow="visible" lineGap="8" align="center" defaultItem="ui://qdao2026/QdaoTabIdle" selectionMode="Single">
+    <!-- Left filter tabs: 6 vertical tabs along the overlay's left column -->
+    <list id="n3" name="listTabs" xy="480,330" size="350,440" overflow="visible" lineGap="8" align="center" defaultItem="ui://qdao2026/QdaoTabIdle" selectionMode="Single">
       <item title="近期" icon="ui://qdao2026/icon_alt_left_tab_icon_1.png"/>
       <item title="推荐" icon="ui://qdao2026/icon_alt_left_tab_icon_2.png"/>
       <item title="全部" icon="ui://qdao2026/icon_alt_left_tab_icon_3.png"/>
@@ -20,7 +27,9 @@
       <item title="海外" icon="ui://qdao2026/icon_category_swirl.png"/>
     </list>
 
-    <list id="n6" name="listServer" xy="1090,250" size="780,560" overflow="scroll" layout="pagination" lineGap="14" columnGap="14" align="center" defaultItem="ui://qdao2026/QdaoServerCard" selectionMode="Single">
+    <!-- Center server list: 2 columns × 4 rows of QdaoServerCard (640x128).
+         Each card has inline [进入 + 详情] buttons on its right half. -->
+    <list id="n4" name="listServer" xy="870,330" size="1310,555" overflow="scroll" layout="pagination" lineGap="12" columnGap="10" align="center" defaultItem="ui://qdao2026/QdaoServerCard" selectionMode="Single">
       <item title="云海宗" icon="ui://qdao2026/icon_server_badge_pavilion.png"/>
       <item title="清风谷" icon="ui://qdao2026/icon_server_badge_pagoda.png"/>
       <item title="碧落渊" icon="ui://qdao2026/icon_server_badge_sword.png"/>
@@ -35,22 +44,30 @@
       <item title="赤霞岭" icon="ui://qdao2026/icon_server_badge_whirlpool.png"/>
     </list>
 
-    <component id="n7" name="bottomBar" src="c0000007" fileName="common/QdaoBottomBar.xml" xy="720,910" size="1120,148"/>
+    <!-- Scroll arrows on the right edge of the server list -->
+    <component id="n5" name="btnScrollUp"   src="c0000002" fileName="common/QdaoButtonSecondary.xml" xy="2190,330" size="80,80">
+      <Button title="↑"/>
+    </component>
+    <component id="n6" name="btnScrollDown" src="c0000002" fileName="common/QdaoButtonSecondary.xml" xy="2190,805" size="80,80">
+      <Button title="↓"/>
+    </component>
 
-    <component id="n8" name="btnBack" src="c0000002" fileName="common/QdaoButtonSecondary.xml" xy="780,940" size="320,88">
+    <!-- Bottom action bar on the overlay's bottom strip (y~800..880 in overlay) -->
+    <component id="n7"  name="btnBack"    src="c0000002" fileName="common/QdaoButtonSecondary.xml" xy="600,810" size="300,84">
       <Button title="返回"/>
     </component>
-    <component id="n9" name="btnRefresh" src="c0000002" fileName="common/QdaoButtonSecondary.xml" xy="1140,940" size="320,88">
+    <component id="n8"  name="btnRefresh" src="c0000002" fileName="common/QdaoButtonSecondary.xml" xy="1000,810" size="300,84">
       <Button title="刷新"/>
     </component>
-    <component id="n10" name="btnConfirm" src="c0000001" fileName="common/QdaoButtonPrimary.xml" xy="1490,930" size="380,108">
+    <component id="n9"  name="btnConfirm" src="c0000001" fileName="common/QdaoButtonPrimary.xml" xy="1600,800" size="340,100">
       <Button title="进入"/>
     </component>
 
-    <text id="n11" name="txtStatus" xy="700,1040" size="1160,30" fontSize="20" color="#fff0bd" align="center" vAlign="middle" autoSize="none" singleLine="true" text=""/>
+    <text id="n10" name="txtStatus" xy="400,930" size="1760,28" fontSize="20" color="#fff0bd" align="center" vAlign="middle" autoSize="none" singleLine="true" text=""/>
 
-    <component id="n14" name="tabRecent"    src="c0000004" fileName="common/QdaoTabIdle.xml" xy="700,250" size="360,88" visible="false"/>
-    <component id="n15" name="tabRecommend" src="c0000004" fileName="common/QdaoTabIdle.xml" xy="700,346" size="360,88" visible="false"/>
-    <component id="n16" name="tabAll"       src="c0000004" fileName="common/QdaoTabIdle.xml" xy="700,442" size="360,88" visible="false"/>
+    <!-- Legacy placeholders (hidden) for Theme.UiId.SceneTab* compat -->
+    <component id="n11" name="tabRecent"    src="c0000004" fileName="common/QdaoTabIdle.xml" xy="480,330" size="350,88" visible="false"/>
+    <component id="n12" name="tabRecommend" src="c0000004" fileName="common/QdaoTabIdle.xml" xy="480,426" size="350,88" visible="false"/>
+    <component id="n13" name="tabAll"       src="c0000004" fileName="common/QdaoTabIdle.xml" xy="480,522" size="350,88" visible="false"/>
   </displayList>
 </component>

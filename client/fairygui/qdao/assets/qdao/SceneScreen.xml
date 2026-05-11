@@ -4,20 +4,25 @@
     <!-- Full-screen scene backdrop (UI removed plate) -->
     <image id="n0" name="imgSceneBackdrop" src="0001003a" fileName="qdao_scene_bg.png" xy="0,0" size="2560,1080"/>
 
-    <!-- Main central panel: 1280x760 wood/jade frame, centered horizontally -->
-    <component id="n1" name="mainPanel" src="c0000008" fileName="common/QdaoMainPanel.xml" xy="640,90" size="1280,760"/>
+    <!-- Top banner (independent of the central panel). Uses bottom_bar art
+         which is the same wood-and-gold strip — re-used at 1420x170 so it
+         reads as a horizontal title scroll. -->
+    <component id="n1" name="bannerTop" src="c0000007" fileName="common/QdaoBottomBar.xml" xy="570,80" size="1420,170"/>
 
-    <!-- Top-right corner ornament -->
-    <image id="n2" name="cornerOrnament" src="00010015" fileName="icon_alt_corner_top_right.png" xy="1820,110" size="96,96"/>
+    <!-- Title text on the banner. Center horizontally over the banner. -->
+    <text id="n2" name="txtPanelTitle" xy="900,108" size="760,90" fontSize="64" color="#3d2914" align="center" vAlign="middle" autoSize="none" singleLine="true" text="云海洞天 · 选服"/>
 
-    <!-- Title text on the panel header -->
-    <text id="n3" name="txtPanelTitle" xy="900,130" size="760,80" fontSize="56" color="#3d2914" align="center" vAlign="middle" autoSize="none" singleLine="true" text="云海洞天 · 选服"/>
+    <!-- Ornament icon top-right of the banner -->
+    <image id="n3" name="cornerOrnament" src="00010015" fileName="icon_alt_corner_top_right.png" xy="1840,90" size="96,96"/>
 
-    <!-- Search box (right side of header) -->
-    <component id="n4" name="searchBox" src="c0000003" fileName="common/QdaoSearchBox.xml" xy="1430,170" size="420,76"/>
+    <!-- Central main panel — moved down so banner sits above it -->
+    <component id="n4" name="mainPanel" src="c0000008" fileName="common/QdaoMainPanel.xml" xy="640,270" size="1280,580"/>
 
-    <!-- Left filter list: 6 vertical tabs inside the panel left column -->
-    <list id="n5" name="listTabs" xy="700,250" size="360,560" overflow="visible" lineGap="8" align="center" defaultItem="ui://qdao2026/QdaoTabIdle" selectionMode="Single">
+    <!-- Search box: top-right inside the main panel -->
+    <component id="n5" name="searchBox" src="c0000003" fileName="common/QdaoSearchBox.xml" xy="1430,300" size="420,76"/>
+
+    <!-- Left filter tab list: 6 vertical tabs along the left of the central panel -->
+    <list id="n6" name="listTabs" xy="680,400" size="360,440" overflow="visible" lineGap="8" align="center" defaultItem="ui://qdao2026/QdaoTabIdle" selectionMode="Single">
       <item title="近期" icon="ui://qdao2026/icon_alt_left_tab_icon_1.png"/>
       <item title="推荐" icon="ui://qdao2026/icon_alt_left_tab_icon_2.png"/>
       <item title="全部" icon="ui://qdao2026/icon_alt_left_tab_icon_3.png"/>
@@ -26,8 +31,8 @@
       <item title="海外" icon="ui://qdao2026/icon_category_swirl.png"/>
     </list>
 
-    <!-- Center server-card list: 2 columns × 4 rows of QdaoServerCard (640x128 each) -->
-    <list id="n6" name="listRows" xy="1090,250" size="780,560" overflow="scroll" layout="pagination" lineGap="14" columnGap="14" align="center" defaultItem="ui://qdao2026/QdaoServerCard" selectionMode="Single">
+    <!-- Center server-card list: paginated 2x4 grid of QdaoServerCard 640x128 -->
+    <list id="n7" name="listRows" xy="1070,400" size="800,440" overflow="scroll" layout="pagination" lineGap="14" columnGap="14" align="center" defaultItem="ui://qdao2026/QdaoServerCard" selectionMode="Single">
       <item title="云海宗" icon="ui://qdao2026/icon_server_badge_pavilion.png"/>
       <item title="清风谷" icon="ui://qdao2026/icon_server_badge_pagoda.png"/>
       <item title="碧落渊" icon="ui://qdao2026/icon_server_badge_sword.png"/>
@@ -42,36 +47,38 @@
       <item title="赤霞岭" icon="ui://qdao2026/icon_server_badge_whirlpool.png"/>
     </list>
 
-    <!-- Bottom bar (between panel and bottom edge) -->
-    <component id="n7" name="bottomBar" src="c0000007" fileName="common/QdaoBottomBar.xml" xy="720,910" size="1120,148"/>
+    <!-- Bottom bar — wide strip below the main panel -->
+    <component id="n8" name="bottomBar" src="c0000007" fileName="common/QdaoBottomBar.xml" xy="720,880" size="1120,148"/>
 
-    <!-- Bottom action buttons: back (secondary) + refresh (secondary) + confirm (primary) -->
-    <component id="n8" name="btnBack" src="c0000002" fileName="common/QdaoButtonSecondary.xml" xy="780,940" size="320,88">
+    <!-- Bottom action buttons distributed evenly over the bottom bar.
+         bar runs x=720..1840. Layout:
+         back   x= 760 +  0 = 760
+         refresh x= 760 + 380 = 1140
+         confirm x= 760 + 760 - 60 = 1460  (primary is wider so nudge right slightly) -->
+    <component id="n9" name="btnBack" src="c0000002" fileName="common/QdaoButtonSecondary.xml" xy="780,910" size="320,88">
       <Button title="返回"/>
     </component>
-    <component id="n9" name="btnRefresh" src="c0000002" fileName="common/QdaoButtonSecondary.xml" xy="1140,940" size="320,88">
+    <component id="n10" name="btnRefresh" src="c0000002" fileName="common/QdaoButtonSecondary.xml" xy="1150,910" size="320,88">
       <Button title="刷新"/>
     </component>
-    <component id="n10" name="btnConfirm" src="c0000001" fileName="common/QdaoButtonPrimary.xml" xy="1490,930" size="380,108">
+    <component id="n11" name="btnConfirm" src="c0000001" fileName="common/QdaoButtonPrimary.xml" xy="1500,898" size="320,112">
       <Button title="进入"/>
     </component>
 
-    <!-- Status label below the buttons -->
-    <text id="n11" name="txtStatus" xy="700,1040" size="1160,30" fontSize="20" color="#fff0bd" align="center" vAlign="middle" autoSize="none" singleLine="true" text=""/>
+    <!-- Status label below the bottom bar -->
+    <text id="n12" name="txtStatus" xy="700,1038" size="1160,30" fontSize="20" color="#fff0bd" align="center" vAlign="middle" autoSize="none" singleLine="true" text=""/>
 
-    <!-- Scroll arrows on the right edge of the server-card list -->
-    <component id="n12" name="btnScrollUp" src="c0000002" fileName="common/QdaoButtonSecondary.xml" xy="1900,250" size="60,60">
+    <!-- Scroll arrows alongside the server-card list -->
+    <component id="n13" name="btnScrollUp" src="c0000002" fileName="common/QdaoButtonSecondary.xml" xy="1900,400" size="80,80">
       <Button title="↑"/>
     </component>
-    <component id="n13" name="btnScrollDown" src="c0000002" fileName="common/QdaoButtonSecondary.xml" xy="1900,750" size="60,60">
+    <component id="n14" name="btnScrollDown" src="c0000002" fileName="common/QdaoButtonSecondary.xml" xy="1900,760" size="80,80">
       <Button title="↓"/>
     </component>
 
-    <!-- Legacy named tab placeholders so Theme.UiId.SceneTabRecent/Recommend/All
-         look-ups (if they ever come back) still resolve. Hidden — listTabs is the
-         live UI. -->
-    <component id="n14" name="tabRecent"    src="c0000004" fileName="common/QdaoTabIdle.xml" xy="700,250" size="360,88" visible="false"/>
-    <component id="n15" name="tabRecommend" src="c0000004" fileName="common/QdaoTabIdle.xml" xy="700,346" size="360,88" visible="false"/>
-    <component id="n16" name="tabAll"       src="c0000004" fileName="common/QdaoTabIdle.xml" xy="700,442" size="360,88" visible="false"/>
+    <!-- Legacy named placeholders (hidden) so Theme.UiId.SceneTab* still resolve -->
+    <component id="n15" name="tabRecent"    src="c0000004" fileName="common/QdaoTabIdle.xml" xy="680,400" size="360,88" visible="false"/>
+    <component id="n16" name="tabRecommend" src="c0000004" fileName="common/QdaoTabIdle.xml" xy="680,496" size="360,88" visible="false"/>
+    <component id="n17" name="tabAll"       src="c0000004" fileName="common/QdaoTabIdle.xml" xy="680,592" size="360,88" visible="false"/>
   </displayList>
 </component>

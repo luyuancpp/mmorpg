@@ -71,6 +71,7 @@
     <image id="00010038" name="ornament_top_tab_diamond_mid.png" path="/" exported="true" size="72,72" qualityOption="source"/>
     <image id="00010039" name="ornament_top_tab_hook_right.png" path="/" exported="true" size="84,84" qualityOption="source"/>
     <image id="0001003a" name="qdao_scene_bg.png" path="/" exported="true" size="2560,1080" duplicatePadding="true" disableTrim="true" qualityOption="source"/>
+    <image id="0001003b" name="qdao_ui_overlay_bg.png" path="/" exported="true" size="2560,1080" duplicatePadding="true" disableTrim="true" qualityOption="source"/>
   </resources>
   <publish name="qdao"/>
 </packageDescription>
