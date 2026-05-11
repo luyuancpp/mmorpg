@@ -26,6 +26,31 @@ type Config struct {
 	DevSkipAuth        bool               `json:"DevSkipAuth,optional"` // Dev mode: skip auth provider validation, use account field directly
 	TokenConfig        TokenConf          `json:"TokenConfig,optional"` // Access/refresh token TTL settings
 	PreloadPool        PreloadPoolConf    `json:"PreloadPool,optional"` // Background goroutine pool for player data preload
+
+	// LegacyGateLoginEnabled controls whether the deprecated path
+	// "Client → cpp gate (TCP) → ClientPlayerLogin.Login" is still served.
+	//
+	// Background: ARCH §12 T+2 step. The new path (Java Gateway POST
+	// /api/login → gRPC login) has been the recommended route since
+	// 2026-05; the legacy path is kept as backwards compatibility with
+	// throttled deprecation telemetry (legacy_login_count counter).
+	// Once that counter trends below the agreed threshold per T+1 exit
+	// criteria, ops flips this flag to false and the legacy branch
+	// returns kLoginUnknownError, forcing the few remaining old
+	// clients to fall through to /api/login (or their own retry path,
+	// which typically re-resolves via /api/assign-gate).
+	//
+	// Detection is the same SessionDetails-based heuristic
+	// loginlogic.go uses for telemetry: a non-zero SessionId in the
+	// gRPC context means the call arrived through cpp gate's
+	// HandleGrpcNodeMessage forwarder (legacy). When false here, that
+	// branch short-circuits BEFORE acquiring locks or writing
+	// player_locator state, so flipping the flag back is purely a
+	// config change with no cleanup required.
+	//
+	// Default true preserves current behavior. Operators flip via
+	// login.yaml; no restart-blocking dependency on other services.
+	LegacyGateLoginEnabled bool `json:"LegacyGateLoginEnabled,default=true"`
 }
 
 // PreloadPoolConf controls the bounded goroutine pool used to fan out
