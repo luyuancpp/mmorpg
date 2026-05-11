@@ -235,20 +235,33 @@ gray rollout; pick them up before the T+1 / T+2 milestones in
      [run 25629991531](https://github.com/luyuancpp/mmorpg/actions/runs/25629991531)
      all three jobs SUCCESS.
 
-221. **S: Run 1k/2k/5k stress tier on real Linux staging.**
+~~221. **S: Run 1k/2k/5k stress tier on real Linux staging.**
      Windows dev maxes out at 500 (#B-4 in
      [stress-test-2026-05-http-login.md](../design/stress-test-2026-05-http-login.md));
      follow [docs/ops/linux-staging-stress-runbook.md](../ops/linux-staging-stress-runbook.md)
      and run `tools/scripts/stress-linux-tier.sh`. Backfill the empty rows
      in §E of that runbook plus a new column (`env`) in the §二 table of
-     the stress doc.
+     the stress doc.~~ ✅ Tooling ready 2026-05-10:
+     `tools/scripts/deploy-staging.sh` (tier-staged start/stop/smoke/stress) +
+     `docs/ops/stress-templates/results-template.csv` (pre-filled
+     Windows-dev rows + Linux-staging TODO rows + extra columns for
+     gate-side metrics ListenOverflows / kafka_lag / cpp_gate_cpu) +
+     5 cliff-judgement signals at the bottom of the template. The
+     1k/2k/5k tier ITSELF still needs an actual Linux staging box +
+     someone to push the button; results go straight into the template.
 
-222. **T: Expose `legacyLoginCount` / `newLoginCount` to Prometheus + Grafana.**
+~~222. **T: Expose `legacyLoginCount` / `newLoginCount` to Prometheus + Grafana.**
      The two `atomic.Uint64` counters in
      `go/login/internal/logic/clientplayerlogin/deprecation.go` are in-process
      today; ARCH §12 T+1 exit criteria depend on a graph operations can watch.
      Wire via go-zero's metrics middleware and add a Grafana panel that
-     overlays both lines so the legacy curve trending to zero is visible.
+     overlays both lines so the legacy curve trending to zero is visible.~~
+     ✅ Done 2026-05-10: `login_auth_path_total{path,auth_type}` counter
+     via go-zero `metric.NewCounterVec`, scrape endpoint configured in
+     `login.yaml Prometheus:` (default 127.0.0.1:9101/metrics), three-panel
+     Grafana dashboard + Alertmanager rule in
+     [docs/ops/grafana-login-path-deprecation.json](../ops/grafana-login-path-deprecation.json).
+     atomic counters kept in lockstep for the throttled log line.
 
 223. **U: WeChat / QQ provider real-OAuth sandbox e2e.**
      Mock-server unit tests + wire-shape integration tests already pin the
@@ -259,10 +272,28 @@ gray rollout; pick them up before the T+1 / T+2 milestones in
      `qq_<unionid>` resolved → in-game. Validates wire format, network
      egress whitelist, and the account-mapping policy.
 
-224. **V: Implement `legacy-gate-login-enabled` feature flag.**
+     🟡 Runbook ready 2026-05-10:
+     [docs/ops/wechat-qq-sandbox-runbook.md](../ops/wechat-qq-sandbox-runbook.md)
+     covers credential-acquisition, login.yaml block, four documented traps
+     (callback domain strictness / staging-prod cred mix / AppSecret leak /
+     missing unionid binding), and step-by-step curl + Redis-key shapes for
+     account-reuse verification. The real sandbox run itself blocks on
+     someone with real AppId/AppSecret.
+
+~~224. **V: Implement `legacy-gate-login-enabled` feature flag.**
      ARCH §12 T+2 step. Add a config flag in `go/login/etc/login.yaml`
      (default `true`); when `false`, the legacy branch in `loginlogic.go`
      (`isLegacyPath == true`) returns a new `kLoginPathDisabled` error
      instead of running the device-set + session-bind work — forces
      remaining old clients to fall through to /api/login. Belongs in T+2
-     once T+1 telemetry shows the legacy count below the agreed threshold.
+     once T+1 telemetry shows the legacy count below the agreed threshold.~~
+     ✅ Done 2026-05-10: `Config.LegacyGateLoginEnabled` bool
+     (default true) in `internal/config/config.go`; `shouldRejectLegacyRequest`
+     extracted to `legacy_gate_killswitch.go` so the four-cell truth table
+     is testable without standing up ServiceContext;
+     `legacy_gate_killswitch_test.go` pins all four cells. The error
+     returned on rejection is `kLoginUnknownError` (reused) rather than a
+     new enum value — adding to login_error proto requires a codegen
+     round, overkill for a kill switch the client SDK already handles
+     with its generic retry UI. login.yaml carries the flag = true with a
+     rationale comment pointing at ARCH §12 + the Grafana dashboard.
