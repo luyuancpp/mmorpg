@@ -222,7 +222,118 @@ git diff --cached | grep -E '(AppSecret|AppKey)\s*[:=]\s*["\x27][^"$\x27]' && {
 - ✅ §B 配置示例已注释在 `go/login/etc/login.yaml` 里
 - ✅ §C.1 mock-server / wire-format 单元测试在 main(LoginEndpointIntegrationTest 7/7 含 wechat / qq)
 - ✅ §D 坑位踩过的对照(`providers_test.go` 验证过 errcode 解析)
-- ⚠️ §C.2 / §C.3 真沙箱跑数 — 留位,需要拿到凭证的人执行后填回本文 §C.2 末尾的 fixtures
+- ✅ **`Endpoint` 配置字段** — `WeChatProvider` / `QQProvider` 都支持指向自建 sandbox(详见 §G)
+- ✅ **本地 sandbox mock server**(`go/login/cmd/sandbox_mock`)— 在没真凭证时也能跑 wechat/qq 端到端
+- ⚠️ §C.2 / §C.3 真沙箱跑数 — 留位,需要拿到真凭证的人执行后填回本文 §C.2 末尾的 fixtures
+
+---
+
+## G. 没真凭证的端到端验证(用 sandbox_mock)
+
+如果暂时拿不到 WeChat Open Platform / QQ Connect 的真 AppId/AppSecret(申请审批 / 网络出口 / 公司流程都可能延迟),不要原地等——本仓库自带一个**字节级模拟**这两个 API 的 mock 服务,可以验证整条 `Client → Gateway → gRPC login → Provider → HTTP API → 账号映射 → token` 链路的正确性,只缺"流量真到了腾讯/微信服务器"这最后一公里。
+
+### G.1 起 mock server
+
+```bash
+cd /f/work/mmorpg
+go build -o bin/sandbox-mock ./go/login/cmd/sandbox_mock
+./bin/sandbox-mock -addr :18090 &
+# 默认 :18090,可改 -addr :19091 之类的避端口冲突
+```
+
+mock 暴露的 endpoint(响应字节级对齐真 API):
+
+| 路径 | 模拟 | 特殊 code |
+|---|---|---|
+| `GET /sns/oauth2/access_token` | `api.weixin.qq.com` | `code` 以 `U` 开头→返回 unionid;`code=EXPIRED`→errcode 40029 |
+| `GET /oauth2.0/me` | `graph.qq.com` | `access_token=INVALID`→error 100007 |
+| `GET /healthz` | — | 返回 `ok`,用于 liveness |
+
+**deterministic 哈希**:同一 `code`(WeChat)/ `access_token`(QQ)每次返回**完全相同**的 openid / unionid。这是 §C.4 账号复用验证的前提——不会因为 mock 重启就把"老账号"洗成新账号。
+
+### G.2 让 login 走 mock 而非真 API
+
+`go/login/etc/login.yaml`:
+
+```yaml
+AuthProviders:
+  WeChat:
+    AppId: "wx_sandbox_test"
+    AppSecret: "any_string_ok_here"      # mock 不校验
+    Endpoint: "http://127.0.0.1:18090"   # ← 关键:加这一行就走 mock
+  QQ:
+    AppId: "100000001"
+    AppKey: "ignored"
+    Endpoint: "http://127.0.0.1:18090"   # 同一个 mock 服务两条 path 都收
+```
+
+重启 `login`,期望日志:
+```
+Auth provider registered: wechat (endpoint override: http://127.0.0.1:18090)
+Auth provider registered: qq (endpoint override: http://127.0.0.1:18090)
+```
+
+### G.3 端到端 curl
+
+**WeChat 首次登录 — 期望拿 unionid + 进游戏**:
+
+```bash
+curl -s -X POST http://127.0.0.1:8081/api/login \
+  -H 'Content-Type: application/json' \
+  -d '{"zone_id":1,"auth_type":"wechat","auth_token":"Utest1","device_id":"sandbox-1"}'
+```
+
+期望返回 `code:0` + access/refresh token。检查 Redis:
+```bash
+docker exec redis redis-cli KEYS 'account_data:wx_unionid_*'
+# 应看到 account_data:wx_unionid_124806e0b96c
+```
+
+**第二次同 code(账号复用)** — 期望同一 player_id:
+```bash
+curl -s -X POST http://127.0.0.1:8081/api/login -H 'Content-Type: application/json' \
+  -d '{"zone_id":1,"auth_type":"wechat","auth_token":"Utest1","device_id":"sandbox-1"}'
+# 返回里的 player_id 应该和上一次一致
+```
+
+**WeChat code 不以 U 开头(无 unionid)— 期望账号回落 openid**:
+```bash
+curl -s -X POST http://127.0.0.1:8081/api/login -H 'Content-Type: application/json' \
+  -d '{"zone_id":1,"auth_type":"wechat","auth_token":"plain_code","device_id":"sandbox-1"}'
+docker exec redis redis-cli KEYS 'account_data:wx_openid_*'
+```
+
+**WeChat code 过期**:
+```bash
+curl -s -X POST http://127.0.0.1:8081/api/login -H 'Content-Type: application/json' \
+  -d '{"zone_id":1,"auth_type":"wechat","auth_token":"EXPIRED","device_id":"sandbox-1"}'
+# 期望: {"code":401,"message":"wechat: errcode=40029 msg=invalid code"}
+```
+
+**QQ 端到端**:
+```bash
+curl -s -X POST http://127.0.0.1:8081/api/login -H 'Content-Type: application/json' \
+  -d '{"zone_id":1,"auth_type":"qq","auth_token":"qq_token_1","device_id":"sandbox-1"}'
+# 期望: code:0,Redis 里有 account_data:qq_unionid_*
+
+curl -s -X POST http://127.0.0.1:8081/api/login -H 'Content-Type: application/json' \
+  -d '{"zone_id":1,"auth_type":"qq","auth_token":"INVALID","device_id":"sandbox-1"}'
+# 期望: code:401 message:"qq: error=100007 ..."
+```
+
+### G.4 从 mock 切回真 API
+
+只需:
+1. 拿到真 `AppId` / `AppSecret`,放进 K8s Secret(或 env var)
+2. **删掉 `Endpoint:` 这行**(或留空字符串)— 代码会自动回 `https://api.weixin.qq.com` / `https://graph.qq.com`
+3. 重启 login
+
+整个 chain 的 wire format 完全没变,所以 mock 验过的同一组 curl 命令直接对着真 API 也能跑通。
+
+> **何时该用 mock vs 真 API?**
+> - **CI / 集成测试 / 不可联网的环境** → mock(deterministic + 离线)
+> - **真凭证已就绪 + 网络出口已开 + 准备最终验收** → 真 API(只验 mock 没法覆盖的:网络白名单 / 限流 / 真 unionid 政策)
+> 二者都跑过一遍,才算 §C.4 真正打勾。
 
 ---
 

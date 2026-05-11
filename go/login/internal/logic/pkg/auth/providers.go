@@ -90,6 +90,14 @@ type WeChatProvider struct {
 	AppId     string
 	AppSecret string
 	HTTP      *http.Client // optional, injected for tests; nil -> default 5s client
+
+	// Endpoint overrides the api.weixin.qq.com base URL. Empty means
+	// production. Set this to a local sandbox-mock server (see
+	// go/login/cmd/sandbox_mock) when the network egress whitelist or
+	// real AppId/AppSecret aren't available — the wire format is
+	// preserved end-to-end so the only thing that changes is which host
+	// the GET lands on.
+	Endpoint string
 }
 
 type wechatTokenResp struct {
@@ -111,7 +119,7 @@ func (p *WeChatProvider) Validate(ctx context.Context, code string) (*AuthResult
 		return nil, fmt.Errorf("wechat: provider not configured (missing AppId/AppSecret)")
 	}
 
-	endpoint := "https://api.weixin.qq.com/sns/oauth2/access_token?" + url.Values{
+	endpoint := wechatBaseURL(p.Endpoint) + "/sns/oauth2/access_token?" + url.Values{
 		"appid":      {p.AppId},
 		"secret":     {p.AppSecret},
 		"code":       {code},
@@ -168,6 +176,11 @@ type QQProvider struct {
 	AppId  string
 	AppKey string        // Reserved for future server-side WebOAuth code->token exchange; unused here.
 	HTTP   *http.Client  // optional, injected for tests
+
+	// Endpoint overrides the graph.qq.com base URL. Same purpose as
+	// WeChatProvider.Endpoint — point at a sandbox-mock server for
+	// network-egress-restricted environments.
+	Endpoint string
 }
 
 type qqMeResp struct {
@@ -190,7 +203,7 @@ func (p *QQProvider) Validate(ctx context.Context, accessToken string) (*AuthRes
 		return nil, fmt.Errorf("qq: provider not configured (missing AppId)")
 	}
 
-	endpoint := "https://graph.qq.com/oauth2.0/me?" + url.Values{
+	endpoint := qqBaseURL(p.Endpoint) + "/oauth2.0/me?" + url.Values{
 		"access_token": {accessToken},
 		"unionid":      {"1"},
 		"fmt":          {"json"},
@@ -248,4 +261,28 @@ type NeteaseProvider struct {
 func (p *NeteaseProvider) Validate(_ context.Context, token string) (*AuthResult, error) {
 	// TODO: call NetEase auth API to verify token
 	return nil, fmt.Errorf("netease auth not implemented")
+}
+
+// wechatBaseURL returns the production WeChat OAuth base URL when
+// override is empty, otherwise the override (which the caller is
+// responsible for trimming and validating). Sandbox-mock pointing
+// goes through this exact lever — see go/login/cmd/sandbox_mock/main.go.
+//
+// We deliberately do NOT validate the URL: the override is sourced from
+// trusted ops yaml, not user input, and even a malformed value will
+// fail loudly at the first http.NewRequestWithContext rather than
+// silently corrupting wire shape.
+func wechatBaseURL(override string) string {
+	if override == "" {
+		return "https://api.weixin.qq.com"
+	}
+	return strings.TrimRight(override, "/")
+}
+
+// qqBaseURL is the QQ counterpart to wechatBaseURL.
+func qqBaseURL(override string) string {
+	if override == "" {
+		return "https://graph.qq.com"
+	}
+	return strings.TrimRight(override, "/")
 }
