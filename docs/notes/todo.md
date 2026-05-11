@@ -250,6 +250,13 @@ gray rollout; pick them up before the T+1 / T+2 milestones in
      1k/2k/5k tier ITSELF still needs an actual Linux staging box +
      someone to push the button; results go straight into the template.
 
+     🟢 Gateway-only floor measured 2026-05-11:
+     `tools/scripts/gateway-mock-stress.sh 100 500 1000` (bypasses cpp gate)
+     sustained avg 6-8 ms, p99 23-31 ms, 0 fail across 100/500/1000
+     concurrent. Number documented in stress doc §四点六. Use as the
+     sanity floor before Linux staging full-stack runs — Gateway/login
+     chain itself is comfortably not the bottleneck.
+
 ~~222. **T: Expose `legacyLoginCount` / `newLoginCount` to Prometheus + Grafana.**
      The two `atomic.Uint64` counters in
      `go/login/internal/logic/clientplayerlogin/deprecation.go` are in-process
@@ -280,6 +287,17 @@ gray rollout; pick them up before the T+1 / T+2 milestones in
      account-reuse verification. The real sandbox run itself blocks on
      someone with real AppId/AppSecret.
 
+     🟢 Offline e2e ready 2026-05-11: `go/login/cmd/sandbox_mock` is a
+     byte-for-byte local stand-in for `api.weixin.qq.com` / `graph.qq.com`
+     (same paths, same JSON shape, deterministic openid/unionid hashing,
+     same errcode 40029 / error 100007 paths). `WeChatProvider` /
+     `QQProvider` gained an `Endpoint` config field so flipping between
+     the mock and prod is a one-line yaml change — see runbook §G for
+     curls that exercise the U-prefix unionid branch, the EXPIRED errcode
+     branch, and the "same code twice → same account" reuse branch.
+     Still open: actually hitting real api.weixin.qq.com on a staging
+     host with real creds (network egress + AppSecret stewardship).
+
 ~~224. **V: Implement `legacy-gate-login-enabled` feature flag.**
      ARCH §12 T+2 step. Add a config flag in `go/login/etc/login.yaml`
      (default `true`); when `false`, the legacy branch in `loginlogic.go`
@@ -297,3 +315,27 @@ gray rollout; pick them up before the T+1 / T+2 milestones in
      round, overkill for a kill switch the client SDK already handles
      with its generic retry UI. login.yaml carries the flag = true with a
      rationale comment pointing at ARCH §12 + the Grafana dashboard.
+
+286. **基于消息 ID 的断线重连续传机制。**
+     客户端与服务端为每条业务消息分配单调递增的序列号(message ID)。
+     连接断开重连后,客户端上报本地最后已确认收到的消息 ID,服务端
+     从该 ID 之后的消息开始补发,从而实现"断点续传"式恢复,避免
+     重复推送也避免消息丢失。
+
+     设计要点:
+     - **服务端发送缓冲区**:每个会话维护一个有界环形缓冲(按消息 ID
+       索引),保留最近 N 条已发出但未必被客户端处理完的消息;超出
+       窗口的消息按业务策略丢弃或降级为"全量拉取"。
+     - **客户端 ACK**:客户端定期或按阈值上报已处理的最大消息 ID,
+       服务端据此推进缓冲区低水位、释放内存。
+     - **重连握手**:重连请求中携带 `last_seen_msg_id`;服务端比对
+       缓冲区:命中则补发增量,未命中(缓冲区已滚出)则触发全量
+       状态同步并清空客户端缓存。
+     - **幂等性**:即便补发与新推送在网络层短暂重叠,客户端也能凭
+       消息 ID 去重。
+     - **与现有重连窗口的关系**:enter_gs_type=3 (RECONNECT,30s
+       窗口)沿用不变;本机制是在重连成功后用于"消息流"层面恢复,
+       而不是会话层面恢复。
+
+     待补充:消息 ID 命名空间(全局 vs 按会话)、缓冲区大小与内存
+     上限的压测数据、与 Kafka `gate-{gateId}` 顺序保证的衔接。
