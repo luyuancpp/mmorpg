@@ -1,0 +1,36 @@
+# ────────────────────────────────────────────────────────────────
+# sandbox_mock — local WeChat / QQ OAuth API mock for offline e2e.
+#
+# Build context MUST be the go/ directory so the replace directives
+# in go/login/go.mod resolve (../proto, ../shared).
+#
+# Usage:
+#   docker build -f deploy/k8s/Dockerfile.sandbox-mock \
+#     -t mmorpg-sandbox-mock:latest  go/
+# ────────────────────────────────────────────────────────────────
+
+FROM golang:1.24-alpine AS builder
+RUN apk add --no-cache git
+WORKDIR /src
+
+# Pull in the shared local modules referenced via replace directives.
+COPY proto/  /src/proto/
+COPY shared/ /src/shared/
+COPY login/  /src/login/
+
+WORKDIR /src/login
+RUN go mod download \
+    && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+        go build -ldflags="-s -w" -o /app/sandbox_mock ./cmd/sandbox_mock
+
+# ── Runtime ──────────────────────────────────────────────────────
+FROM alpine:3.20
+RUN apk add --no-cache ca-certificates
+WORKDIR /app
+COPY --from=builder /app/sandbox_mock /app/sandbox_mock
+
+EXPOSE 18090
+
+# Listen on all interfaces inside the container; the compose file
+# publishes :18090 to the host so curl smoke tests don't change.
+ENTRYPOINT ["/app/sandbox_mock", "-addr", ":18090"]

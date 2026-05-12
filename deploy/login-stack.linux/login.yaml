@@ -1,0 +1,146 @@
+# ────────────────────────────────────────────────────────────────
+# Container-side override of go/login/etc/login.yaml for the
+# docker-compose.login-stack.yml setup.
+#
+# Why an override (not env vars only): go-zero reads its config via
+# conf.MustLoad, which has limited env-substitution support compared
+# to Spring Boot. Keeping a full yaml here is simpler than chasing
+# every nested key through env-var indirection.
+#
+# How this differs from the in-tree go/login/etc/login.yaml:
+#   - Etcd / Kafka / Redis hosts point at host.docker.internal (so the
+#     docker-compose.yml infra stack on the host is reachable).
+#   - ListenOn changed back to :51000 (Hyper-V port reservation is
+#     a Windows-host problem; Linux containers don't hit it).
+#   - AuthProviders.WeChat / QQ have Endpoint pointed at the sibling
+#     sandbox-mock container so the OAuth chain runs offline.
+#   - Prometheus block enabled on 0.0.0.0:9101 (container-internal)
+#     so the host-published :9101 scrape works.
+#
+# To switch from sandbox-mock to real WeChat/QQ:
+#   - delete AuthProviders.WeChat.Endpoint
+#   - delete AuthProviders.QQ.Endpoint
+#   - drop real AppId / AppSecret into the same block
+#   - restart only the `login` container
+# ────────────────────────────────────────────────────────────────
+
+Name: login.rpc
+ListenOn: 0.0.0.0:51000
+Timeout: 100000
+
+Etcd:
+  Hosts:
+    - host.docker.internal:2379
+  Key: login.rpc
+
+Node:
+  ZoneId: 1
+  SessionExpireMin: 30
+  MaxLoginDevices: 3
+  LeaseTTL: 500
+  QueueShardCount: 50
+  MaxLoginDuration: 5m
+  LogoutGraceTime: 5s
+  RedisClient:
+    Host: host.docker.internal:6379
+    Password: ""
+    DB: 0
+    DefaultTTL: 24h
+    DialTimeout: 3s
+    ReadTimeout: 3s
+    WriteTimeout: 3s
+
+Snowflake:
+  Epoch: 1721473263000
+  NodeBits: 13
+  StepBits: 9
+
+Locker:
+  AccountLockTTL: 30
+  PlayerLockTTL: 30
+
+Account:
+  MaxDevicesPerAccount: 3
+  MaxPlayersPerAccount: 5
+  CacheExpire: 10m
+
+Registry:
+  Etcd:
+    Hosts:
+      - host.docker.internal:2379
+    Key: login.rpc
+    DialTimeout: 5s
+
+Timeouts:
+  EtcdDialTimeout: 5s
+  ServiceDiscoveryTimeout: 10s
+  TaskWaitTimeout: 30s
+  LoginTotalTimeout: 30s
+  RoleCacheExpire: 10m
+
+PlayerLocatorRpc:
+  Etcd:
+    Hosts:
+      - host.docker.internal:2379
+    Key: playerlocator.rpc
+
+SceneManagerRpc:
+  Etcd:
+    Hosts:
+      - host.docker.internal:2379
+    Key: scenemanagerservice.rpc
+
+GateTokenSecret: "change-me-in-production-use-a-strong-random-key"
+TableDir: "/app/data"
+
+# Default to true preserves backward compatibility; flip to false
+# once T+1 telemetry shows the legacy_login_count is below threshold.
+# See ARCH §12 + docs/notes/todo.md #224.
+LegacyGateLoginEnabled: true
+
+TokenConfig:
+  AccessTokenTTL: 2h
+  RefreshTokenTTL: 720h
+
+# Prometheus scrape — exposed to the host via port 9101 in compose.
+Prometheus:
+  Host: 0.0.0.0
+  Port: 9101
+  Path: /metrics
+
+AuthProviders:
+  # WeChat — points at sandbox-mock for offline e2e. Replace with
+  # real AppId/AppSecret + delete the Endpoint line for production.
+  WeChat:
+    AppId: "wx_sandbox_appid"
+    AppSecret: "sandbox_secret_keep_it_local"
+    Endpoint: "http://sandbox-mock:18090"
+
+  # QQ — same pattern as WeChat.
+  QQ:
+    AppId: "qq_sandbox_appid"
+    AppKey: "sandbox_qq_key"
+    Endpoint: "http://sandbox-mock:18090"
+
+Kafka:
+  Brokers:
+    - host.docker.internal:9092
+  GroupID: "db_rpc_consumer_group"
+  PartitionCnt: 5
+  InitialPartition: 5
+  DialTimeout: 10s
+  ReadTimeout: 30s
+  WriteTimeout: 30s
+  RetryMax: 3
+  RetryBackoff: 250ms
+  ChannelBuffer: 256
+  SyncInterval: 500ms
+  StatsInterval: 30s
+  CompressionType: 0
+  Idempotent: true
+  MaxOpenRequests: 1
+  RetentionMs: 300000
+
+PreloadPool:
+  Size: 256
+  StatsInterval: 30s
