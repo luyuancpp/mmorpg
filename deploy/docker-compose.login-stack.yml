@@ -1,0 +1,135 @@
+# ────────────────────────────────────────────────────────────────
+# Linux-native login stack (S-2 / backlog #221).
+#
+# What this is: a docker compose that brings up the **login chain**
+# (sandbox_mock + go-zero login + Java Gateway) on Linux containers,
+# wired into the existing infra stack from ./docker-compose.yml
+# (redis / etcd / kafka / mysql).
+#
+# Why this exists: backlog #221 (S) needs a 1k/2k/5k stress tier on
+# real Linux. The blocker has always been "no spare Linux box". This
+# compose lets anyone with Docker Desktop reproduce the Linux side
+# of the chain on their own machine — Hyper-V port reservations,
+# Windows fork() overhead, single-broker kafka and other dev-box
+# limitations stop applying. Once a real staging cluster materializes,
+# the same Dockerfiles ship there unchanged.
+#
+# What this is NOT: cpp gate / scene. Those are out of scope here
+# because (a) they need their own muduo/openssl-heavy image and
+# (b) the new HTTP login path doesn't touch them on the smoke flow
+# we care about for #221. cpp side will come in a follow-up.
+#
+# Usage:
+#   # 1) bring up infra (if not already):
+#   docker compose -f deploy/docker-compose.yml up -d redis etcd mysql kafka
+#
+#   # 2) bring up login chain:
+#   docker compose -f deploy/docker-compose.login-stack.yml up -d --build
+#
+#   # 3) smoke:
+#   curl -s -X POST http://localhost:8081/api/login \
+#     -H 'Content-Type: application/json' \
+#     -d '{"zone_id":1,"account":"linux_smoke","password":"x"}'
+#
+#   # 4) stress (from host, hits the containerized gateway):
+#   PER_TIER_SEC=10 tools/scripts/gateway-mock-stress.sh 500 1000 2000
+#
+#   # 5) teardown:
+#   docker compose -f deploy/docker-compose.login-stack.yml down
+#
+# Networking: containers share the same default bridge as the existing
+# infra compose's network. We reference services by host name
+# (redis / etcd / kafka / mysql) when inside containers, and by
+# localhost:<published-port> from the host.
+# ────────────────────────────────────────────────────────────────
+
+services:
+  # ─── sandbox_mock ──────────────────────────────────────────────
+  # Byte-for-byte mock of api.weixin.qq.com + graph.qq.com. login
+  # service points WeChatProvider.Endpoint / QQProvider.Endpoint at
+  # this container so the OAuth chain runs without real credentials.
+  # See go/login/cmd/sandbox_mock/main.go for the response shape.
+  sandbox-mock:
+    build:
+      context: ../go
+      dockerfile: ../deploy/k8s/Dockerfile.sandbox-mock
+    image: mmorpg-sandbox-mock:dev
+    container_name: mmorpg-sandbox-mock
+    ports:
+      - "18090:18090"
+    restart: unless-stopped
+    # No depends_on — sandbox_mock has zero external dependencies and
+    # is safe to bring up before / after anything else.
+
+  # ─── login (go-zero) ───────────────────────────────────────────
+  # Built from go/login/Dockerfile (via the generic Dockerfile.go-svc).
+  # Listens on :51000 internally; exposed to the host on :51000 for
+  # the gateway-mock-stress script and any manual gRPC probes.
+  #
+  # IMPORTANT: this image bakes in go/login/etc/login.yaml at build
+  # time. The compose-time override below replaces:
+  #   - Etcd / Redis / Kafka hosts: localhost → container DNS names
+  #   - AuthProviders.WeChat.Endpoint + QQ.Endpoint: point at
+  #     sandbox-mock so an offline e2e run validates the whole chain.
+  # The override file lives in ./login-stack.linux/ so a contributor
+  # can tweak it without rebuilding the image.
+  login:
+    build:
+      context: ../go
+      dockerfile: ../deploy/k8s/Dockerfile.go-svc
+      args:
+        SERVICE: login
+        ENTRY: login.go
+    image: mmorpg-login:dev
+    container_name: mmorpg-login
+    ports:
+      - "51000:51000"
+      - "9101:9101"          # Prometheus scrape (T)
+    volumes:
+      - ./login-stack.linux/login.yaml:/app/etc/login.yaml:ro
+    depends_on:
+      - sandbox-mock
+    restart: unless-stopped
+    # login points at the external infra network — those services
+    # must be reachable from this container. With the default bridge
+    # network and Docker Desktop on Windows, the deploy/docker-compose.yml
+    # services publish to host.docker.internal; on Linux the host
+    # gateway is at 172.17.0.1. The override yaml uses
+    # ${INFRA_HOST:-host.docker.internal} so both work.
+    environment:
+      - INFRA_HOST=${INFRA_HOST:-host.docker.internal}
+    extra_hosts:
+      # On Linux this is what makes host.docker.internal resolvable.
+      - "host.docker.internal:host-gateway"
+
+  # ─── Java Gateway ──────────────────────────────────────────────
+  # Built from java/gateway_node/. Connects to login over container
+  # DNS (login:51000). Exposes :8081 to host so the existing
+  # gateway-mock-stress.sh + curl runbooks work unchanged.
+  gateway:
+    build:
+      context: ../java/gateway_node
+      dockerfile: ../../deploy/k8s/Dockerfile.java-svc
+    image: mmorpg-gateway:dev
+    container_name: mmorpg-gateway
+    ports:
+      - "8081:8081"
+    environment:
+      # Match the dev-box conventions. The Java image uses Spring's
+      # standard SPRING_DATA_REDIS_* / SPRING_DATASOURCE_URL keys.
+      - SPRING_DATA_REDIS_HOST=${INFRA_HOST:-host.docker.internal}
+      - SPRING_DATASOURCE_URL=jdbc:mysql://${INFRA_HOST:-host.docker.internal}:3306/gateway?useSSL=false&allowPublicKeyRetrieval=true
+      - LOGIN_GRPC_ENDPOINTS=login:51000
+      - ETCD_ENDPOINTS=http://${INFRA_HOST:-host.docker.internal}:2379
+      # Pin the JPA dialect so a slow MySQL handshake at startup
+      # doesn't bomb metadata probing (we hit this twice during dev).
+      - SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.MySQLDialect
+      - SPRING_JPA_PROPERTIES_HIBERNATE_BOOT_ALLOW_JDBC_METADATA_ACCESS=false
+      # Limiter OFF by default — flip the four to non-empty values to
+      # test Bucket4j wire-up against containerized Redis.
+      - GATE_RATE_LIMIT_ENABLED=false
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - login
+    restart: unless-stopped
