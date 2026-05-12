@@ -36,11 +36,61 @@
 #include <future>
 #include <chrono>
 #include <cerrno>
+#include <csignal>
 #include <optional>
 
 namespace
 {
 	std::atomic<Node *> gNodeAtomic{nullptr};
+
+	// Diagnostic stack-dump signal handler (todo.md #216).
+	//
+	// Operators send the diagnostic signal to a running node:
+	//   Linux:    kill -USR1 <pid>
+	//   Windows:  Ctrl+Break in the console (delivered as SIGBREAK)
+	//
+	// The handler is async-signal-unsafe in the strict sense (boost::stacktrace
+	// allocates), so this is a best-effort diagnostic intended for live triage —
+	// not for use as a hot-path tool. It does NOT terminate the process; the node
+	// keeps running after the dump.
+	//
+	// Registration is idempotent and best-effort: failures only log a warning.
+	std::atomic<bool> gDiagnosticSignalInstalled{false};
+
+	void HandleDiagnosticSignal(int signum)
+	{
+		// Re-install the handler; std::signal on POSIX may reset to SIG_DFL after
+		// each delivery depending on platform. Re-installing keeps subsequent
+		// triggers working without using sigaction directly.
+		std::signal(signum, &HandleDiagnosticSignal);
+		DumpProcessStackTraceOnSignal(signum);
+	}
+
+	void InstallDiagnosticSignalHandlerOnce()
+	{
+		bool expected = false;
+		if (!gDiagnosticSignalInstalled.compare_exchange_strong(expected, true))
+		{
+			return;
+		}
+
+#ifdef _WIN32
+		const int diagSignum = SIGBREAK;
+		const char *signalName = "SIGBREAK";
+#else
+		const int diagSignum = SIGUSR1;
+		const char *signalName = "SIGUSR1";
+#endif
+		if (std::signal(diagSignum, &HandleDiagnosticSignal) == SIG_ERR)
+		{
+			LOG_WARN << "Failed to install diagnostic stack-dump signal handler ("
+					 << signalName << "); errno=" << errno;
+			gDiagnosticSignalInstalled.store(false);
+			return;
+		}
+		LOG_INFO << "Diagnostic stack-dump handler installed: send " << signalName
+				 << " to PID to trigger (todo #216)";
+	}
 
 	const char *GetNonEmptyEnv(const char *name)
 	{
@@ -181,6 +231,7 @@ void Node::Initialize()
 {
 	eventLoop->assertInLoopThread();
 	LOG_DEBUG << "Node initializing...";
+	InstallDiagnosticSignalHandlerOnce();
 	RegisterHandlers();
 	RegisterEventHandlers();
 	LoadConfigs();

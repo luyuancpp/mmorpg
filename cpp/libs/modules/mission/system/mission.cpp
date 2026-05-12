@@ -119,6 +119,21 @@ uint32_t MissionSystem::AbandonMission(const AbandonParam &param, MissionsComp &
 	return kSuccess;
 }
 
+// CompleteAllMissions — Bulk-completion helper (GM / debug / admin tools).
+//
+// Marks every currently-accepted mission as completed in the player's
+// completed-bitmap, then clears the active mission list. It does NOT:
+//   - grant rewards or set claimable bits
+//   - enqueue the next mission in a chain
+//   - fire the kConditionCompleteMission event
+//
+// Intended for GM "clear all my quests" / test-harness scenarios where you
+// want the bitmap state without side effects.
+//
+// For the normal in-game "this mission's conditions are now met" path,
+// use OnMissionCompletion instead (called from HandleConditionEvent).
+// The distinction is intentional — do NOT collapse the two functions.
+// See todo.md #225 for the historical lesson.
 void MissionSystem::CompleteAllMissions(entt::entity playerEntity, uint32_t operation, MissionsComp &comp)
 {
 	for (const auto &missionId : comp.GetMissionList().missions() | std::views::keys)
@@ -264,6 +279,24 @@ void MissionSystem::UpdateMissionStatus(MissionComp &mission, const google::prot
 	}
 }
 
+// OnMissionCompletion — Per-mission completion handler for the normal
+// gameplay path. Called from HandleConditionEvent after each progress
+// update, with the set of missions that just transitioned to COMPLETE
+// in this round.
+//
+// For each completed mission this runs the full side-effect chain:
+//   1. Remove the mission from condition→missions classification index
+//      and set the completed bit in the player's bitmap.
+//   2. Reward handling per IMissionConfig::GetRewardAction:
+//        kAutoGrant  → enqueue OnMissionAwardEvent (delivered immediately)
+//        kClaimable  → set the claimable-reward bit (player pulls later)
+//   3. Chain follow-up: enqueue AcceptMissionEvent for every mission
+//      listed in GetNextMissionTableIds, so quest chains progress.
+//   4. Fire ConditionEvent(kConditionCompleteMission) so other systems
+//      whose conditions depend on "completed mission X" can advance.
+//
+// Contrast with CompleteAllMissions above: that one is GM-only and skips
+// the entire side-effect chain. Do not merge the two. See todo.md #225.
 void MissionSystem::OnMissionCompletion(entt::entity playerEntity, const std::unordered_set<uint32_t> &completedMissions, MissionsComp &missionComp, const IMissionConfig &config)
 {
 	if (completedMissions.empty())
