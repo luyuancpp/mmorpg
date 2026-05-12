@@ -44,6 +44,11 @@ public:
 	static void HandleConditionEvent(const ConditionEvent& conditionEvent, MissionsComp& comp, const IMissionConfig& config);
 
 private:
+	// NOTE: CompleteAllMissions (above, public) and OnMissionCompletion (below, private)
+	// look similar but are NOT interchangeable. CompleteAllMissions is GM/debug bulk-clear
+	// without side effects; OnMissionCompletion runs the full reward + chain + condition
+	// fan-out on the normal completion path. See mission.cpp for full contract.
+	// Reference: todo.md #225.
 	static uint32_t CheckMissionAcceptance(const AcceptMissionEvent& acceptEvent, MissionsComp& missionComp, const IMissionConfig& config);
 	static bool UpdateMissionProgress(const ConditionEvent& conditionEvent, MissionComp& mission, const IMissionConfig& config);
 	static bool UpdateProgressIfConditionMatches(const ConditionEvent& conditionEvent, MissionComp& mission, int index, const ConditionTable* conditionRow, uint32_t targetCount);

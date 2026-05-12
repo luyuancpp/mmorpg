@@ -1,5 +1,26 @@
 # Engineering TODO / Design Notes
 
+> **⚠️ 读之前先看这里 / Read this first** — 这个文件是**思考流水**(中英混排),按想到的顺序堆叠。
+> This file is a **thought-stream** (mixed zh/en), appended in the order ideas arrive.
+>
+> 要看**结构化状态** / For the **structured status view** (每条 ✅/🟡/❌ + 证据 + 工作量 + 依赖):
+>
+> | 中文 / Chinese | English |
+> |---|---|
+> | 📊 [`todo_status_2026_05_11_zh.md`](./todo_status_2026_05_11_zh.md) | 📊 [`todo_status_2026_05_11_en.md`](./todo_status_2026_05_11_en.md) |
+> | 📋 [`todo_audit_2026_05_11_zh.md`](./todo_audit_2026_05_11_zh.md) | 📋 [`todo_audit_2026_05_11_en.md`](./todo_audit_2026_05_11_en.md) |
+> | 📚 [`coding_principles_zh.md`](./coding_principles_zh.md) | 📚 [`coding_principles_en.md`](./coding_principles_en.md) |
+>
+> 最近一次 audit / Last audit:2026-05-11。下次建议 / Next suggested:2026-08。
+>
+> 添加新 todo 在本文件末尾追加即可 — 下次 audit 更新结构化视图。
+> Add new todos to the end of this file — structured views update on next audit.
+>
+> `todo_zh.md` / `todo_en.md` 已废弃,详见这两个文件顶部说明。
+> `todo_zh.md` / `todo_en.md` are deprecated, see headers in those files.
+
+---
+
 1. Behavior tracking v3
 2. Rate-limit frequent message sending
 3. Player behavior audit log — traceable operation chain per player
@@ -339,3 +360,22 @@ gray rollout; pick them up before the T+1 / T+2 milestones in
 
      待补充:消息 ID 命名空间(全局 vs 按会话)、缓冲区大小与内存
      上限的压测数据、与 Kafka `gate-{gateId}` 顺序保证的衔接。
+
+287. **#216 跟进:真正"所有线程"的堆栈 dump。**
+     2026-05-12 完成的 #216 第一版只 dump 信号处理线程的栈,加上
+     进程线程总数。要做到名副其实的"打印所有线程堆栈",还需要:
+
+     - **Linux:** 通过 `pthread_kill(tid, SIGRTMIN+x)` 给每个线程广播
+       一个专用实时信号,各线程在自己的 handler 里抓 `boost::stacktrace`
+       写到共享缓冲区,主线程收齐后串成一份报告。`/proc/self/task` 已
+       能拿到 tid 列表(`thread_observability.h::GetCurrentProcessThreadCount`
+       的姐妹函数)。
+     - **Windows:** `OpenThread + SuspendThread + GetThreadContext +
+       StackWalk64`,需要 dbghelp.lib 和符号路径。muduo 在 Windows 上
+       是兼容编译,主要用于开发机,可以接受相对简陋的实现。
+     - **风险:** 在生产挂起所有线程时间过长会让 watchdog/etcd lease
+       觉得节点死了。控制总耗时 < 200ms,或者在已知卡死时再触发。
+
+     落地点:`cpp/libs/engine/core/utils/debug/stacktrace_system.h` 已经
+     有第一版的 `DumpProcessStackTraceOnSignal`,扩展那个函数即可。
+     触发 signal 仍走 SIGUSR1(Linux)/ SIGBREAK(Windows)。
