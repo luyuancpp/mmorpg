@@ -22,29 +22,29 @@
     <component id="n5" name="searchBox" src="c0000003" fileName="common/QdaoSearchBox.xml" xy="1430,300" size="420,76"/>
 
     <!-- Left filter tab list: 6 vertical tabs along the left of the central panel -->
-    <list id="n6" name="listTabs" xy="680,400" size="360,440" overflow="visible" lineGap="8" align="center" defaultItem="ui://qdao2026/QdaoTabIdle" selectionMode="Single">
-      <item title="近期" icon="ui://qdao2026/icon_alt_left_tab_icon_1.png"/>
-      <item title="推荐" icon="ui://qdao2026/icon_alt_left_tab_icon_2.png"/>
-      <item title="全部" icon="ui://qdao2026/icon_alt_left_tab_icon_3.png"/>
-      <item title="新服" icon="ui://qdao2026/icon_alt_left_tab_icon_4.png"/>
-      <item title="官方" icon="ui://qdao2026/icon_category_yinyang.png"/>
-      <item title="海外" icon="ui://qdao2026/icon_category_swirl.png"/>
+    <list id="n6" name="listTabs" xy="680,400" size="360,440" overflow="visible" lineGap="8" align="center" defaultItem="ui://qdao/QdaoTabIdle" selectionMode="Single">
+      <item title="近期" icon="ui://qdao/icon_alt_left_tab_icon_1.png"/>
+      <item title="推荐" icon="ui://qdao/icon_alt_left_tab_icon_2.png"/>
+      <item title="全部" icon="ui://qdao/icon_alt_left_tab_icon_3.png"/>
+      <item title="新服" icon="ui://qdao/icon_alt_left_tab_icon_4.png"/>
+      <item title="官方" icon="ui://qdao/icon_category_yinyang.png"/>
+      <item title="海外" icon="ui://qdao/icon_category_swirl.png"/>
     </list>
 
     <!-- Center server-card list: paginated 2x4 grid of QdaoServerCard 640x128 -->
-    <list id="n7" name="listRows" xy="1070,400" size="800,440" overflow="scroll" layout="pagination" lineGap="14" columnGap="14" align="center" defaultItem="ui://qdao2026/QdaoServerCard" selectionMode="Single">
-      <item title="云海宗" icon="ui://qdao2026/icon_server_badge_pavilion.png"/>
-      <item title="清风谷" icon="ui://qdao2026/icon_server_badge_pagoda.png"/>
-      <item title="碧落渊" icon="ui://qdao2026/icon_server_badge_sword.png"/>
-      <item title="紫霄峰" icon="ui://qdao2026/icon_server_badge_whirlpool.png"/>
-      <item title="沧浪洲" icon="ui://qdao2026/icon_server_badge_yinyang.png"/>
-      <item title="昆仑墟" icon="ui://qdao2026/icon_server_badge_mountain.png"/>
-      <item title="蓬莱岛" icon="ui://qdao2026/icon_server_badge_lotus.png"/>
-      <item title="瀛洲海" icon="ui://qdao2026/icon_server_badge_talisman.png"/>
-      <item title="九霄殿" icon="ui://qdao2026/icon_server_badge_pavilion.png"/>
-      <item title="太虚观" icon="ui://qdao2026/icon_server_badge_pagoda.png"/>
-      <item title="玄都阁" icon="ui://qdao2026/icon_server_badge_sword.png"/>
-      <item title="赤霞岭" icon="ui://qdao2026/icon_server_badge_whirlpool.png"/>
+    <list id="n7" name="listRows" xy="1070,400" size="800,440" overflow="scroll" layout="pagination" lineGap="14" columnGap="14" align="center" defaultItem="ui://qdao/QdaoServerCard" selectionMode="Single">
+      <item title="云海宗" icon="ui://qdao/icon_server_badge_pavilion.png"/>
+      <item title="清风谷" icon="ui://qdao/icon_server_badge_pagoda.png"/>
+      <item title="碧落渊" icon="ui://qdao/icon_server_badge_sword.png"/>
+      <item title="紫霄峰" icon="ui://qdao/icon_server_badge_whirlpool.png"/>
+      <item title="沧浪洲" icon="ui://qdao/icon_server_badge_yinyang.png"/>
+      <item title="昆仑墟" icon="ui://qdao/icon_server_badge_mountain.png"/>
+      <item title="蓬莱岛" icon="ui://qdao/icon_server_badge_lotus.png"/>
+      <item title="瀛洲海" icon="ui://qdao/icon_server_badge_talisman.png"/>
+      <item title="九霄殿" icon="ui://qdao/icon_server_badge_pavilion.png"/>
+      <item title="太虚观" icon="ui://qdao/icon_server_badge_pagoda.png"/>
+      <item title="玄都阁" icon="ui://qdao/icon_server_badge_sword.png"/>
+      <item title="赤霞岭" icon="ui://qdao/icon_server_badge_whirlpool.png"/>
     </list>
 
     <!-- Bottom bar — wide strip below the main panel -->

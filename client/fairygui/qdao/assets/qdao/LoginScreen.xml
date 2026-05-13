@@ -23,9 +23,9 @@
     </component>
 
     <!-- Announcement list -->
-    <list id="n8" name="listAnnouncement" xy="900,640" size="760,140" overflow="scroll" lineGap="8" align="center" defaultItem="ui://qdao2026/QdaoServerCard" selectionMode="None">
-      <item title="开服福利领取" icon="ui://qdao2026/icon_server_badge_lotus.png"/>
-      <item title="新手引导上线" icon="ui://qdao2026/icon_server_badge_pavilion.png"/>
+    <list id="n8" name="listAnnouncement" xy="900,640" size="760,140" overflow="scroll" lineGap="8" align="center" defaultItem="ui://qdao/QdaoServerCard" selectionMode="None">
+      <item title="开服福利领取" icon="ui://qdao/icon_server_badge_lotus.png"/>
+      <item title="新手引导上线" icon="ui://qdao/icon_server_badge_pavilion.png"/>
     </list>
 
     <!-- Bottom bar -->
