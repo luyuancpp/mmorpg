@@ -33,5 +33,15 @@ public:
 	static entt::entity InitPlayerFromAllData(const PlayerAllData& playerAllData, const PlayerGameNodeEntryInfoComp& enterInfo);
 	static void SavePlayerToRedis(entt::entity player);
 
+	// True iff this player has an in-flight HandleExitGameNode → SavePlayerToRedis
+	// cycle that has not yet seen its HandlePlayerAsyncSaved completion. Detected
+	// by the presence of the UnregisterPlayer ECS marker on the player's entity.
+	//
+	// See todo.md #280 / NOTES Part 2 P0. Same-node reconnect is already handled
+	// by EnterScene clearing the marker; cross-node reconnect is gated by the
+	// player_locator 30s lease. This method exposes the saving state for callers
+	// that want to log / reject / wait when the save outruns those mechanisms.
+	static bool IsSaveInFlight(Guid playerId);
+
 };
 
