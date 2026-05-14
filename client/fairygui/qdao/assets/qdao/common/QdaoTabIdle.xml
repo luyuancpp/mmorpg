@@ -1,29 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
-<component size="360,88" extention="Button" opaque="false">
+<component size="360,72" extention="Button" opaque="false">
   <controller name="button" pages="up,,down,,over,,disabled," selected="0"/>
   <controller name="checked" pages="0,,1," selected="0"/>
   <displayList>
-    <image id="n0" name="bgIdle" src="00010007" fileName="tab_idle_360x88_bg.png" xy="0,0" size="360,88">
+    <image id="n0" name="bgIdle" src="00010007" fileName="tab_idle_360x88_bg.png" xy="0,0" size="360,72">
       <relation target="" sidePair="width-width,height-height"/>
       <gearDisplay controller="checked" pages="0"/>
     </image>
-    <image id="n1" name="fgIdle" src="0001000f" fileName="tab_idle_360x88_fg.png" xy="0,0" size="360,88">
+    <image id="n1" name="fgIdle" src="0001000f" fileName="tab_idle_360x88_fg.png" xy="0,0" size="360,72">
       <relation target="" sidePair="width-width,height-height"/>
       <gearDisplay controller="checked" pages="0"/>
     </image>
-    <image id="n2" name="bgActive" src="00010006" fileName="tab_active_360x88_bg.png" xy="0,0" size="360,88">
+    <image id="n2" name="bgActive" src="00010006" fileName="tab_active_360x88_bg.png" xy="0,0" size="360,72">
       <relation target="" sidePair="width-width,height-height"/>
       <gearDisplay controller="checked" pages="1"/>
     </image>
-    <image id="n3" name="fgActive" src="0001000e" fileName="tab_active_360x88_fg.png" xy="0,0" size="360,88">
+    <image id="n3" name="fgActive" src="0001000e" fileName="tab_active_360x88_fg.png" xy="0,0" size="360,72">
       <relation target="" sidePair="width-width,height-height"/>
       <gearDisplay controller="checked" pages="1"/>
     </image>
-    <loader id="n4" name="icon" xy="22,12" size="64,64" url="ui://qdao202600010025" fill="scale" align="center" vAlign="middle"/>
-    <text id="n5" name="title" xy="100,0" size="240,88" fontSize="32" color="#3d2914" align="center" vAlign="middle" autoSize="none" singleLine="true" text="">
+    <loader id="n4" name="icon" xy="18,8" size="56,56" url="ui://qdao202600010025" fill="scale" align="center" vAlign="middle"/>
+    <text id="n5" name="title" xy="88,0" size="252,72" fontSize="28" color="#3d2914" align="center" vAlign="middle" autoSize="none" singleLine="true" text="">
       <gearColor controller="checked" values="#3d2914,#fff0bd"/>
     </text>
-    <graph id="n6" name="hit" xy="0,0" size="360,88" type="rect" lineSize="0" lineColor="#00000000" fillColor="#00000000">
+    <graph id="n6" name="hit" xy="0,0" size="360,72" type="rect" lineSize="0" lineColor="#00000000" fillColor="#00000000">
       <relation target="" sidePair="width-width,height-height"/>
     </graph>
   </displayList>
