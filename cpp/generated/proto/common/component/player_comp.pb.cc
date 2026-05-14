@@ -24,14 +24,21 @@ PROTOBUF_PRAGMA_INIT_SEG
 namespace _pb = ::google::protobuf;
 namespace _pbi = ::google::protobuf::internal;
 namespace _fl = ::google::protobuf::internal::field_layout;
+
+inline constexpr UnregisterPlayer::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        logout_initiated_ms_{::int64_t{0}} {}
+
 template <typename>
 PROTOBUF_CONSTEXPR UnregisterPlayer::UnregisterPlayer(::_pbi::ConstantInitialized)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::internal::ZeroFieldsBase(UnregisterPlayer_class_data_.base()){}
+    : ::google::protobuf::Message(UnregisterPlayer_class_data_.base()),
 #else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::internal::ZeroFieldsBase() {
-}
+    : ::google::protobuf::Message(),
 #endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
 struct UnregisterPlayerDefaultTypeInternal {
   PROTOBUF_CONSTEXPR UnregisterPlayerDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
   ~UnregisterPlayerDefaultTypeInternal() {}
@@ -216,7 +223,11 @@ const ::uint32_t
         4, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::Account, _impl_.account_),
         0,
-        0x000, // bitmap
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::UnregisterPlayer, _impl_._has_bits_),
+        4, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::UnregisterPlayer, _impl_.logout_initiated_ms_),
+        0,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::PlayerUint64Comp, _impl_._has_bits_),
         4, // hasbit index offset
@@ -243,9 +254,9 @@ static const ::_pbi::MigrationSchema
         {2, sizeof(::Player)},
         {3, sizeof(::Account)},
         {8, sizeof(::UnregisterPlayer)},
-        {9, sizeof(::PlayerUint64Comp)},
-        {14, sizeof(::PlayerUint32Comp)},
-        {19, sizeof(::PlayerStressTestProbe)},
+        {13, sizeof(::PlayerUint64Comp)},
+        {18, sizeof(::PlayerUint32Comp)},
+        {23, sizeof(::PlayerStressTestProbe)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::_NormalLogin_default_instance_._instance,
@@ -261,18 +272,19 @@ const char descriptor_table_protodef_proto_2fcommon_2fcomponent_2fplayer_5fcomp_
     protodesc_cold) = {
     "\n(proto/common/component/player_comp.pro"
     "to\"\r\n\013NormalLogin\"\014\n\nCoverLogin\"\010\n\006Playe"
-    "r\"\032\n\007Account\022\017\n\007account\030\001 \001(\t\"\022\n\020Unregis"
-    "terPlayer\"2\n\020PlayerUint64Comp\022\036\n\026registr"
-    "ation_timestamp\030\001 \001(\004\"!\n\020PlayerUint32Com"
-    "p\022\r\n\005class\030\001 \001(\r\";\n\025PlayerStressTestProb"
-    "e\022\020\n\010test_seq\030\001 \001(\004\022\020\n\010test_sig\030\002 \001(\014B\022Z"
-    "\020common/componentb\006proto3"
+    "r\"\032\n\007Account\022\017\n\007account\030\001 \001(\t\"/\n\020Unregis"
+    "terPlayer\022\033\n\023logout_initiated_ms\030\001 \001(\003\"2"
+    "\n\020PlayerUint64Comp\022\036\n\026registration_times"
+    "tamp\030\001 \001(\004\"!\n\020PlayerUint32Comp\022\r\n\005class\030"
+    "\001 \001(\r\";\n\025PlayerStressTestProbe\022\020\n\010test_s"
+    "eq\030\001 \001(\004\022\020\n\010test_sig\030\002 \001(\014B\022Z\020common/com"
+    "ponentb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fcomponent_2fplayer_5fcomp_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fcomponent_2fplayer_5fcomp_2eproto = {
     false,
     false,
-    305,
+    334,
     descriptor_table_protodef_proto_2fcommon_2fcomponent_2fplayer_5fcomp_2eproto,
     "proto/common/component/player_comp.proto",
     &descriptor_table_proto_2fcommon_2fcomponent_2fplayer_5fcomp_2eproto_once,
@@ -878,30 +890,50 @@ void Account::InternalSwap(Account* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
 
 class UnregisterPlayer::_Internal {
  public:
+  using HasBits =
+      decltype(::std::declval<UnregisterPlayer>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(UnregisterPlayer, _impl_._has_bits_);
 };
 
 UnregisterPlayer::UnregisterPlayer(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::internal::ZeroFieldsBase(arena, UnregisterPlayer_class_data_.base()) {
+    : ::google::protobuf::Message(arena, UnregisterPlayer_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::internal::ZeroFieldsBase(arena) {
+    : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
   // @@protoc_insertion_point(arena_constructor:UnregisterPlayer)
 }
 UnregisterPlayer::UnregisterPlayer(
-    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
-    const UnregisterPlayer& from)
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const UnregisterPlayer& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::internal::ZeroFieldsBase(arena, UnregisterPlayer_class_data_.base()) {
+    : ::google::protobuf::Message(arena, UnregisterPlayer_class_data_.base()),
 #else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::internal::ZeroFieldsBase(arena) {
+    : ::google::protobuf::Message(arena),
 #endif  // PROTOBUF_CUSTOM_VTABLE
-  UnregisterPlayer* const _this = this;
-  (void)_this;
+      _impl_(from._impl_) {
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
+}
+PROTOBUF_NDEBUG_INLINE UnregisterPlayer::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0} {}
 
-  // @@protoc_insertion_point(copy_constructor:UnregisterPlayer)
+inline void UnregisterPlayer::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  _impl_.logout_initiated_ms_ = {};
+}
+UnregisterPlayer::~UnregisterPlayer() {
+  // @@protoc_insertion_point(destructor:UnregisterPlayer)
+  SharedDtor(*this);
+}
+inline void UnregisterPlayer::SharedDtor(MessageLite& self) {
+  UnregisterPlayer& this_ = static_cast<UnregisterPlayer&>(self);
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.~Impl_();
 }
 
 inline void* PROTOBUF_NONNULL UnregisterPlayer::PlacementNew_(
@@ -921,10 +953,10 @@ constexpr auto UnregisterPlayer::InternalGenerateClassData_() {
           nullptr,  // OnDemandRegisterArenaDtor
           nullptr,  // IsInitialized
           &UnregisterPlayer::MergeImpl,
-          ::google::protobuf::internal::ZeroFieldsBase::GetNewImpl<UnregisterPlayer>(),
+          ::google::protobuf::Message::GetNewImpl<UnregisterPlayer>(),
 #if defined(PROTOBUF_CUSTOM_VTABLE)
           &UnregisterPlayer::SharedDtor,
-          ::google::protobuf::internal::ZeroFieldsBase::GetClearImpl<UnregisterPlayer>(), &UnregisterPlayer::ByteSizeLong,
+          ::google::protobuf::Message::GetClearImpl<UnregisterPlayer>(), &UnregisterPlayer::ByteSizeLong,
               &UnregisterPlayer::_InternalSerialize,
 #endif  // PROTOBUF_CUSTOM_VTABLE
           PROTOBUF_FIELD_OFFSET(UnregisterPlayer, _impl_._cached_size_),
@@ -947,16 +979,16 @@ UnregisterPlayer::GetClassData() const {
   return UnregisterPlayer_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<0, 0, 0, 0, 2>
+const ::_pbi::TcParseTable<0, 1, 0, 0, 2>
 UnregisterPlayer::_table_ = {
   {
-    0,  // no _has_bits_
+    PROTOBUF_FIELD_OFFSET(UnregisterPlayer, _impl_._has_bits_),
     0, // no _extensions_
-    0, 0,  // max_field_number, fast_idx_mask
+    1, 0,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967295,  // skipmap
-    offsetof(decltype(_table_), field_names),  // no field_entries
-    0,  // num_field_entries
+    4294967294,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    1,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
     UnregisterPlayer_class_data_.base(),
@@ -966,22 +998,128 @@ UnregisterPlayer::_table_ = {
     ::_pbi::TcParser::GetTable<::UnregisterPlayer>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    {::_pbi::TcParser::MiniParse, {}},
+    // int64 logout_initiated_ms = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(UnregisterPlayer, _impl_.logout_initiated_ms_), 0>(),
+     {8, 0, 0, PROTOBUF_FIELD_OFFSET(UnregisterPlayer, _impl_.logout_initiated_ms_)}},
   }}, {{
     65535, 65535
-  }}, // no field_entries, or aux_entries
+  }}, {{
+    // int64 logout_initiated_ms = 1;
+    {PROTOBUF_FIELD_OFFSET(UnregisterPlayer, _impl_.logout_initiated_ms_), _Internal::kHasBitsOffset + 0, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kInt64)},
+  }},
+  // no aux_entries
   {{
   }},
 };
+PROTOBUF_NOINLINE void UnregisterPlayer::Clear() {
+// @@protoc_insertion_point(message_clear_start:UnregisterPlayer)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  _impl_.logout_initiated_ms_ = ::int64_t{0};
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL UnregisterPlayer::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const UnregisterPlayer& this_ = static_cast<const UnregisterPlayer&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL UnregisterPlayer::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const UnregisterPlayer& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(serialize_to_array_start:UnregisterPlayer)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  // int64 logout_initiated_ms = 1;
+  if ((this_._impl_._has_bits_[0] & 0x00000001u) != 0) {
+    if (this_._internal_logout_initiated_ms() != 0) {
+      target =
+          ::google::protobuf::internal::WireFormatLite::WriteInt64ToArrayWithField<1>(
+              stream, this_._internal_logout_initiated_ms(), target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:UnregisterPlayer)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t UnregisterPlayer::ByteSizeLong(const MessageLite& base) {
+  const UnregisterPlayer& this_ = static_cast<const UnregisterPlayer&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t UnregisterPlayer::ByteSizeLong() const {
+  const UnregisterPlayer& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:UnregisterPlayer)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+   {
+    // int64 logout_initiated_ms = 1;
+    cached_has_bits = this_._impl_._has_bits_[0];
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      if (this_._internal_logout_initiated_ms() != 0) {
+        total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(
+            this_._internal_logout_initiated_ms());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void UnregisterPlayer::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<UnregisterPlayer*>(&to_msg);
+  auto& from = static_cast<const UnregisterPlayer&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:UnregisterPlayer)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000001u) != 0) {
+    if (from._internal_logout_initiated_ms() != 0) {
+      _this->_impl_.logout_initiated_ms_ = from._impl_.logout_initiated_ms_;
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void UnregisterPlayer::CopyFrom(const UnregisterPlayer& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:UnregisterPlayer)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
 
 
-
-
-
-
+void UnregisterPlayer::InternalSwap(UnregisterPlayer* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  swap(_impl_.logout_initiated_ms_, other->_impl_.logout_initiated_ms_);
+}
 
 ::google::protobuf::Metadata UnregisterPlayer::GetMetadata() const {
-  return ::google::protobuf::internal::ZeroFieldsBase::GetMetadataImpl(GetClassData()->full());
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // ===================================================================
 

@@ -96,10 +96,11 @@ namespace protobuf {
 
 // -------------------------------------------------------------------
 
-class UnregisterPlayer final : public ::google::protobuf::internal::ZeroFieldsBase
+class UnregisterPlayer final : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:UnregisterPlayer) */ {
  public:
   inline UnregisterPlayer() : UnregisterPlayer(nullptr) {}
+  ~UnregisterPlayer() PROTOBUF_FINAL;
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
   void operator delete(UnregisterPlayer* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
@@ -169,21 +170,48 @@ class UnregisterPlayer final : public ::google::protobuf::internal::ZeroFieldsBa
   // implements Message ----------------------------------------------
 
   UnregisterPlayer* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::internal::ZeroFieldsBase::DefaultConstruct<UnregisterPlayer>(arena);
+    return ::google::protobuf::Message::DefaultConstruct<UnregisterPlayer>(arena);
   }
-  using ::google::protobuf::internal::ZeroFieldsBase::CopyFrom;
-  inline void CopyFrom(const UnregisterPlayer& from) {
-    ::google::protobuf::internal::ZeroFieldsBase::CopyImpl(*this, from);
-  }
-  using ::google::protobuf::internal::ZeroFieldsBase::MergeFrom;
-  void MergeFrom(const UnregisterPlayer& from) {
-    ::google::protobuf::internal::ZeroFieldsBase::MergeImpl(*this, from);
-  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const UnregisterPlayer& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const UnregisterPlayer& from) { UnregisterPlayer::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
 
   public:
   bool IsInitialized() const {
     return true;
   }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(UnregisterPlayer* PROTOBUF_NONNULL other);
  private:
   template <typename T>
   friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
@@ -210,11 +238,24 @@ class UnregisterPlayer final : public ::google::protobuf::internal::ZeroFieldsBa
   // nested types ----------------------------------------------------
 
   // accessors -------------------------------------------------------
+  enum : int {
+    kLogoutInitiatedMsFieldNumber = 1,
+  };
+  // int64 logout_initiated_ms = 1;
+  void clear_logout_initiated_ms() ;
+  ::int64_t logout_initiated_ms() const;
+  void set_logout_initiated_ms(::int64_t value);
+
+  private:
+  ::int64_t _internal_logout_initiated_ms() const;
+  void _internal_set_logout_initiated_ms(::int64_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:UnregisterPlayer)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<0, 0,
+  static const ::google::protobuf::internal::TcParseTable<0, 1,
                                    0, 0,
                                    2>
       _table_;
@@ -234,8 +275,12 @@ class UnregisterPlayer final : public ::google::protobuf::internal::ZeroFieldsBa
         ::google::protobuf::internal::InternalVisibility visibility,
         ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
         const UnregisterPlayer& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::int64_t logout_initiated_ms_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
+  union { Impl_ _impl_; };
   friend struct ::TableStruct_proto_2fcommon_2fcomponent_2fplayer_5fcomp_2eproto;
 };
 
@@ -1561,6 +1606,30 @@ inline void Account::set_allocated_account(::std::string* PROTOBUF_NULLABLE valu
 // -------------------------------------------------------------------
 
 // UnregisterPlayer
+
+// int64 logout_initiated_ms = 1;
+inline void UnregisterPlayer::clear_logout_initiated_ms() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.logout_initiated_ms_ = ::int64_t{0};
+  _impl_._has_bits_[0] &= ~0x00000001u;
+}
+inline ::int64_t UnregisterPlayer::logout_initiated_ms() const {
+  // @@protoc_insertion_point(field_get:UnregisterPlayer.logout_initiated_ms)
+  return _internal_logout_initiated_ms();
+}
+inline void UnregisterPlayer::set_logout_initiated_ms(::int64_t value) {
+  _internal_set_logout_initiated_ms(value);
+  _impl_._has_bits_[0] |= 0x00000001u;
+  // @@protoc_insertion_point(field_set:UnregisterPlayer.logout_initiated_ms)
+}
+inline ::int64_t UnregisterPlayer::_internal_logout_initiated_ms() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.logout_initiated_ms_;
+}
+inline void UnregisterPlayer::_internal_set_logout_initiated_ms(::int64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.logout_initiated_ms_ = value;
+}
 
 // -------------------------------------------------------------------
 

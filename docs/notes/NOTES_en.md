@@ -222,6 +222,7 @@ Several inconsistencies found during the audit that need a decision:
 // TODO: Only allow re-login after save completes
 ```
 This is a confirmed incomplete mechanism; #242/#243 both point to the same location.
+**✅ 2026-05-14 shipped** — using a "layered defense" strategy instead of a new state machine: same-node reconnect dropped by `EnterScene` clearing the `UnregisterPlayer` marker (pre-existing); cross-node reconnect gated by `player_locator` 30s lease (pre-existing); extreme window (save > 30s) now emits `LOG_WARN` from `HandlePlayerAsyncSaved` for ops visibility. Added proto field `UnregisterPlayer.logout_initiated_ms` and API `PlayerLifecycleSystem::IsSaveInFlight(playerId)`.
 
 ---
 
@@ -696,6 +697,12 @@ Pulled from ❌ Not done — infrastructure gaps that hurt when production break
 - **Text:** `// TODO: Only allow re-login after save completes`
 - **Reference:** todo #280/#242/#243 all point to the same issue
 - **Suggestion:** This is a **state-machine problem** — add a "saving" state, re-login requests in that state should wait or be rejected
+- **✅ 2026-05-14 shipped:** Layered defense instead of a new state machine:
+  1. Same-node reconnect already cleared by `EnterScene` dropping the `UnregisterPlayer` marker (pre-existing)
+  2. Cross-node reconnect already gated by `player_locator` 30s lease (pre-existing)
+  3. Extreme window (save > 30s): `HandlePlayerAsyncSaved` now emits LOG_WARN — ops can observe
+  - New proto field: `UnregisterPlayer.logout_initiated_ms` records save-initiation time
+  - New API: `PlayerLifecycleSystem::IsSaveInFlight(playerId)` for callers that want to query
 
 ---
 

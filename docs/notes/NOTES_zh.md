@@ -222,6 +222,7 @@
 // TODO: Only allow re-login after save completes
 ```
 这是确认的未完成机制,#242/#243 都指向同一点。
+**✅ 2026-05-14 已落地** — 采取"分层防御"策略而非新增状态机:同节点 reconnect 由 `EnterScene` 撤销 `UnregisterPlayer` 标记(原有);跨节点 reconnect 由 `player_locator` 30s lease 阻挡(原有);极端窗口(save > 30s)由 `HandlePlayerAsyncSaved` 输出 `LOG_WARN` 让运维可观测。新增 proto 字段 `UnregisterPlayer.logout_initiated_ms` 记录 save 发起时间,新增 API `PlayerLifecycleSystem::IsSaveInFlight(playerId)`。
 
 ---
 
@@ -699,6 +700,12 @@
 - **原文:** `// TODO: Only allow re-login after save completes`
 - **对应:** todo #280/#242/#243 都指向同一点
 - **建议:** 这是个**状态机问题**,补一个"save 中"状态,re-login 请求在该状态下等待或拒绝
+- **✅ 2026-05-14 已落地:** 采取"分层防御"策略而非新增状态机:
+  1. 同节点 reconnect 已被 `EnterScene` 撤销 `UnregisterPlayer` 标记(原有机制)
+  2. 跨节点 reconnect 已被 `player_locator` 30s lease 阻挡(原有机制)
+  3. 极端窗口(save 耗时 > 30s):`HandlePlayerAsyncSaved` 新增 LOG_WARN,运维可观测
+  - 新增 proto 字段:`UnregisterPlayer.logout_initiated_ms` 记录 save 发起时间
+  - 新增 API:`PlayerLifecycleSystem::IsSaveInFlight(playerId)` 供上层查询
 
 ---
 

@@ -169,6 +169,25 @@ void PlayerLifecycleSystem::HandlePlayerAsyncSaved(Guid playerId, PlayerAllData 
 
 	if (tlsEcs.actorRegistry.any_of<UnregisterPlayer>(playerEntity))
 	{
+		// Detect saves that outran the player_locator reconnect lease (30s).
+		// See todo.md #280, layer 3. logout_initiated_ms is stamped in
+		// HandleExitGameNode; default value 0 from older proto runs is treated
+		// as "unknown" and silently skipped.
+		const auto& unregisterTag = tlsEcs.actorRegistry.get<UnregisterPlayer>(playerEntity);
+		const int64_t logoutMs = unregisterTag.logout_initiated_ms();
+		if (logoutMs > 0)
+		{
+			constexpr int64_t kReconnectLeaseMs = 30 * 1000;
+			const int64_t elapsedMs = TimeSystem::NowMillisecondsUTC() - logoutMs;
+			if (elapsedMs > kReconnectLeaseMs)
+			{
+				LOG_WARN << "HandlePlayerAsyncSaved: save outran reconnect lease for player "
+						 << playerId << " — elapsed_ms=" << elapsedMs
+						 << " lease_ms=" << kReconnectLeaseMs
+						 << " (cross-node re-login during this window may have read stale data)";
+			}
+		}
+
 		// Defense in depth: if a reconnect rebound this entity to a live session
 		// after the save was enqueued, the UnregisterPlayer tag should have been
 		// cleared by EnterScene. If a tag still slipped through but the player
@@ -356,7 +375,8 @@ void PlayerLifecycleSystem::HandleExitGameNode(entt::entity player)
 		return;
 	}
 
-	tlsEcs.actorRegistry.emplace<UnregisterPlayer>(player);
+	auto& unregisterTag = tlsEcs.actorRegistry.emplace<UnregisterPlayer>(player);
+	unregisterTag.set_logout_initiated_ms(TimeSystem::NowMillisecondsUTC());
 
 	// Remove entity from AOI grid immediately so the AOI system stops
 	// sending messages to the (already-disconnected) gate session.
@@ -373,7 +393,28 @@ void PlayerLifecycleSystem::HandleExitGameNode(entt::entity player)
 
 	PlayerLifecycleSystem::SavePlayerToRedis(player);
 
-	// TODO: Only allow re-login after save completes
+	// Re-login race protection (todo.md #280). The save is now in flight.
+	// THREE layers cover the read-stale-data window between SavePlayerToRedis
+	// being enqueued here and HandlePlayerAsyncSaved firing:
+	//
+	//   1. Same-node reconnect — EnterScene() clears the UnregisterPlayer tag
+	//      so HandlePlayerAsyncSaved drops the stale unregister intent and
+	//      leaves the live entity alone (see EnterScene step 0).
+	//
+	//   2. Cross-node reconnect — player_locator holds a 30s Redis lease
+	//      (DefaultTTLSeconds in player_locator.yaml). Any re-login within
+	//      that window is steered back to the original node, which falls
+	//      back to layer 1.
+	//
+	//   3. Save-exceeds-lease anomaly — if Redis/Kafka backoff pushes the
+	//      save past 30s the player CAN appear on a fresh node before
+	//      HandlePlayerAsyncSaved fires. HandlePlayerAsyncSaved logs a
+	//      "save outran reconnect lease" warning by comparing
+	//      logout_initiated_ms; ops watch the warning and follow up if
+	//      it's not just a one-off spike.
+	//
+	// IsSaveInFlight() exposes layers 1–2 for callers that want to query
+	// rather than rely on the implicit ECS-marker convention.
 }
 
 void PlayerLifecycleSystem::HandleCrossZoneTransfer(entt::entity playerEntity)
@@ -558,4 +599,21 @@ void PlayerLifecycleSystem::SavePlayerToRedis(entt::entity player)
 	sendSubTableTask(message->player_database_1_data());
 
 	LOG_INFO << "[SavePlayerToRedis] Player " << playerId << " saved to Redis, DB write tasks enqueued";
+}
+
+bool PlayerLifecycleSystem::IsSaveInFlight(Guid playerId)
+{
+	// "In flight" == HandleExitGameNode has stamped the UnregisterPlayer marker
+	// AND HandlePlayerAsyncSaved has not yet fired (which would either drop the
+	// marker on a reconnect-superseded entity, or destroy the entity outright).
+	//
+	// Once the entity is destroyed, tlsEcs.GetPlayer(playerId) returns
+	// entt::null and any_of<UnregisterPlayer> on null returns false — so the
+	// "save complete" terminal state is naturally represented by "no entity".
+	const auto playerEntity = tlsEcs.GetPlayer(playerId);
+	if (!tlsEcs.actorRegistry.valid(playerEntity))
+	{
+		return false;
+	}
+	return tlsEcs.actorRegistry.any_of<UnregisterPlayer>(playerEntity);
 }
