@@ -17,8 +17,10 @@
          right edge stays ≤ 1520 to leave ~186px breathing room. -->
     <component id="n2" name="searchBox" src="c0000003" fileName="common/QdaoSearchBox.xml" xy="1100,220" size="420,76"/>
 
-    <!-- Left filter tabs: 6 vertical tabs along the overlay's left column -->
-    <list id="n3" name="listTabs" xy="480,330" size="350,440" overflow="visible" lineGap="8" align="center" defaultItem="ui://qdao/QdaoTabIdle" selectionMode="Single">
+    <!-- Left filter tabs: 6 vertical tabs along the overlay's left column.
+         6 * 88 + 5 * 8 = 568 px tall, container must match or items
+         overflow with overflow="visible". Width 360 matches QdaoTabIdle. -->
+    <list id="n3" name="listTabs" xy="480,330" size="360,576" overflow="visible" lineGap="8" align="center" defaultItem="ui://qdao/QdaoTabIdle" selectionMode="Single">
       <item title="近期" icon="ui://qdao/icon_alt_left_tab_icon_1.png"/>
       <item title="推荐" icon="ui://qdao/icon_alt_left_tab_icon_2.png"/>
       <item title="全部" icon="ui://qdao/icon_alt_left_tab_icon_3.png"/>
