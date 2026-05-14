@@ -13,7 +13,7 @@
       <item title="官方" icon="ui://qdao/icon_category_yinyang.png"/>
       <item title="海外" icon="ui://qdao/icon_category_swirl.png"/>
     </list>
-    <list id="n4" name="listServer" xy="1004,348" size="1310,420" layout="pagination" selectionMode="Single" overflow="scroll" lineGap="12" defaultItem="ui://qdao/QdaoServerCard" align="center">
+    <list id="n4" name="listServer" xy="1003,347" size="1110,420" layout="flow_vt" selectionMode="Single" overflow="scroll" lineGap="12" defaultItem="ui://qdao/QdaoServerCard" align="center">
       <item title="云海宗" icon="ui://qdao/icon_server_badge_pavilion.png"/>
       <item title="清风谷" icon="ui://qdao/icon_server_badge_pagoda.png"/>
       <item title="碧落渊" icon="ui://qdao/icon_server_badge_sword.png"/>
