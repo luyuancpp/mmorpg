@@ -3,6 +3,7 @@ package svc
 import (
 	"context"
 	"fmt"
+	"os"
 	"strconv"
 	"sync/atomic"
 
@@ -17,6 +18,7 @@ import (
 	"login/internal/config"
 	"login/internal/dispatcher"
 	"login/internal/kafka"
+	"login/internal/logic/pkg/loginqueue"
 	"login/internal/logic/pkg/node"
 	"login/internal/logic/pkg/token"
 	login_proto "proto/common/base"
@@ -37,6 +39,14 @@ type ServiceContext struct {
 	SceneManagerClient  smpb.SceneManagerClient
 	GateWatcher         *node.NodeWatcher
 	TokenManager        *token.Manager
+
+	// LoginQueue is the Redis ZSET-backed AssignGate queue. Nil when
+	// Queue.Enabled=false in config — handlers MUST tolerate nil and fall
+	// back to the legacy fast path. The dispatcher goroutine is owned by
+	// this struct and started in Start() when LoginQueue != nil.
+	LoginQueue        *loginqueue.Queue
+	QueueDispatcher   *loginqueue.Dispatcher
+	queueCapProvider  loginqueue.CapacityProvider
 
 	// PreloadPool runs background tasks (e.g. Kafka DB-preload) without spawning
 	// an unbounded number of goroutines per login. Configured non-blocking so
@@ -154,7 +164,7 @@ func NewServiceContext() *ServiceContext {
 		panic(fmt.Errorf("failed to create preload goroutine pool: %w", err))
 	}
 
-	return &ServiceContext{
+	sc := &ServiceContext{
 		RedisClient:         redisClient,
 		KafkaClient:         kafkaClient,
 		ExpandMonitor:       monitor,
@@ -165,6 +175,121 @@ func NewServiceContext() *ServiceContext {
 		PreloadPool:         preloadPool,
 		TaskResultDispatcher: dispatcher.NewTaskResultDispatcher(redisClient, 30*time.Second),
 	}
+	sc.initLoginQueue()
+	return sc
+}
+
+// QueueHmacSecret returns the secret used to sign opaque queue tokens.
+// We deliberately reuse GateTokenSecret: the queue token has a different
+// wire shape (base64(JSON|.|hmac)) than the gate token (proto-marshalled
+// GateTokenPayload), so cross-format confusion attacks aren't possible,
+// and rotating one secret rotates both — simpler operational model.
+func (s *ServiceContext) QueueHmacSecret() []byte {
+	return []byte(config.AppConfig.GateTokenSecret)
+}
+
+// QueueCapacityProvider returns the CapacityProvider the AssignGate handler
+// and the dispatcher both consume. It's lazily initialized in initLoginQueue
+// so tests can override it (or skip queue setup entirely) without touching
+// the GateWatcher.
+func (s *ServiceContext) QueueCapacityProvider() loginqueue.CapacityProvider {
+	return s.queueCapProvider
+}
+
+// gateWatcherCapacityProvider adapts NodeWatcher to the loginqueue.CapacityProvider
+// interface. Filtering by zone happens here; sorting (least-loaded first) is the
+// caller's job in PickAndSignGateToken so the dispatcher and the fast path agree.
+type gateWatcherCapacityProvider struct {
+	watcher *node.NodeWatcher
+	caps    map[string]uint32 // zone_id (decimal string) → capacity ceiling
+}
+
+func (g *gateWatcherCapacityProvider) CandidatesForZone(_ context.Context, zoneID uint32) ([]loginqueue.GateCandidate, error) {
+	nodes, err := g.watcher.FetchAllNodes()
+	if err != nil {
+		return nil, err
+	}
+	out := make([]loginqueue.GateCandidate, 0, len(nodes))
+	for _, n := range nodes {
+		if n.Endpoint == nil {
+			continue
+		}
+		if zoneID != 0 && n.ZoneId != zoneID {
+			continue
+		}
+		out = append(out, loginqueue.GateCandidate{
+			NodeID:      n.NodeId,
+			IP:          n.Endpoint.Ip,
+			Port:        n.Endpoint.Port,
+			PlayerCount: n.PlayerCount,
+			ZoneID:      n.ZoneId,
+		})
+	}
+	return out, nil
+}
+
+func (g *gateWatcherCapacityProvider) ZoneCapacity(zoneID uint32) uint32 {
+	return loginqueue.ZoneCapacityFromMap(g.caps, zoneID)
+}
+
+// initLoginQueue is called from NewServiceContext when Queue.Enabled=true.
+// Splitting it out keeps the no-queue path completely free of loginqueue
+// imports and Redis writes (helpful for env-by-env rollout).
+func (s *ServiceContext) initLoginQueue() {
+	cfg := config.AppConfig.Queue
+	if !cfg.Enabled {
+		return
+	}
+	s.queueCapProvider = &gateWatcherCapacityProvider{
+		watcher: s.GateWatcher,
+		caps:    cfg.ZoneCapacityOverride,
+	}
+	s.LoginQueue = loginqueue.New(
+		s.RedisClient,
+		cfg.QueueEntryTTL,
+		cfg.AdmitTTL,
+		s.QueueHmacSecret(),
+	)
+
+	// activeZonesProvider: union of (zones we have gates for) ∪ (zones with
+	// non-empty queues). The latter handles the rare case of a zone whose
+	// gates all crashed mid-drain — we still need to walk it so admitted
+	// entries can clear via TTL even without dispatcher action.
+	activeZones := func(ctx context.Context) []uint32 {
+		seen := make(map[uint32]struct{})
+		nodes, _ := s.GateWatcher.FetchAllNodes()
+		for _, n := range nodes {
+			if n.ZoneId != 0 {
+				seen[n.ZoneId] = struct{}{}
+			}
+		}
+		out := make([]uint32, 0, len(seen))
+		for z := range seen {
+			out = append(out, z)
+		}
+		return out
+	}
+
+	s.QueueDispatcher = loginqueue.NewDispatcher(
+		s.LoginQueue,
+		s.queueCapProvider,
+		s.RedisClient,
+		s.QueueHmacSecret(),
+		5*time.Minute, // gateTokenTTL — must match assigngatelogic.gateTokenTTL
+		cfg.DispatchInterval,
+		cfg.SoftCapMultiplier,
+		cfg.DispatcherLockTTL,
+		cfg.DispatcherLockKey,
+		activeZones,
+	)
+	// Identify this pod in the dispatcher_is_leader gauge so Grafana can
+	// answer "which replica is leading right now". Hostname is the simplest
+	// stable identifier across both bare-metal and K8s deployments; falling
+	// back to the etcd-allocated NodeUuid would also work but isn't set
+	// until SetNodeId() runs later in startup.
+	if hostname, err := os.Hostname(); err == nil && hostname != "" {
+		s.QueueDispatcher.SetPodID(hostname)
+	}
 }
 
 func (s *ServiceContext) Start() {
@@ -172,6 +297,9 @@ func (s *ServiceContext) Start() {
 	s.startPreloadStatsLogger()
 	if s.TaskResultDispatcher != nil {
 		s.TaskResultDispatcher.Start()
+	}
+	if s.QueueDispatcher != nil {
+		s.QueueDispatcher.Start()
 	}
 }
 
@@ -264,6 +392,9 @@ func (s *ServiceContext) Stop() {
 	}
 	if s.TaskResultDispatcher != nil {
 		s.TaskResultDispatcher.Stop()
+	}
+	if s.QueueDispatcher != nil {
+		s.QueueDispatcher.Stop()
 	}
 	if s.PreloadPool != nil {
 		s.PreloadPool.Release()

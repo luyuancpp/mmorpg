@@ -147,6 +147,25 @@ void SendLoginPreGateAssignGate(entt::registry& registry, entt::entity nodeEntit
 void SendLoginPreGateAssignGate(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::AssignGateRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendLoginPreGateAssignGate(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 #pragma endregion
+#pragma region LoginPreGateQueryQueueStatus
+
+struct AsyncLoginPreGateQueryQueueStatusGrpcClient {
+    uint32_t messageId{ LoginPreGateQueryQueueStatusMessageId };
+    ClientContext context;
+    Status status;
+    ::loginpb::QueryQueueStatusResponse reply;
+    std::unique_ptr<ClientAsyncResponseReader<::loginpb::QueryQueueStatusResponse>> response_reader;
+};
+
+class ::loginpb::QueryQueueStatusRequest;
+using AsyncLoginPreGateQueryQueueStatusHandlerFunctionType =
+    std::function<void(const ClientContext&, const ::loginpb::QueryQueueStatusResponse&)>;
+extern AsyncLoginPreGateQueryQueueStatusHandlerFunctionType AsyncLoginPreGateQueryQueueStatusHandler;
+
+void SendLoginPreGateQueryQueueStatus(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::QueryQueueStatusRequest& request);
+void SendLoginPreGateQueryQueueStatus(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::QueryQueueStatusRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+void SendLoginPreGateQueryQueueStatus(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+#pragma endregion
 using LoginAdminStubPtr = std::unique_ptr<LoginAdmin::Stub>;
 #pragma region LoginAdminRemovePlayersFromAccounts
 

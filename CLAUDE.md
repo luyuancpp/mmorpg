@@ -101,6 +101,9 @@ tcp_max_syn_backlog = 65535
 - **#13** 核查 cpp gate→go-zero login gRPC 是否长连复用(压测 Bound=2704 残留)
 - **#9 / #2** sysctl 固化 + 阶梯压测找拐点
 
+**已完成**:
+- ~~**#10** Java Gateway 加 Bucket4j 限流 + 排队(防开服风暴)~~ — ✅ Bucket4j 2026-05-08 + AssignGate 真排队 2026-05-14,见 [login-queue-2026-05.md](docs/design/login-queue-2026-05.md)
+
 ---
 
 ## 8. 文档索引(最常翻的几篇)
@@ -115,7 +118,9 @@ tcp_max_syn_backlog = 65535
 | Java Gateway 选型 | [docs/design/java-gateway-portal-decision.md](docs/design/java-gateway-portal-decision.md) |
 | login 简化历史 | [docs/design/login-simplification-2026-04.md](docs/design/login-simplification-2026-04.md) |
 | 现状盘点 vs 缺口 | [docs/design/architecture-current-state-vs-gaps-2026-05.md](docs/design/architecture-current-state-vs-gaps-2026-05.md) |
+| 登录排队设计 | [docs/design/login-queue-2026-05.md](docs/design/login-queue-2026-05.md) |
 | 内核调优 SOP | [docs/ops/gate-kernel-tuning-runbook.md](docs/ops/gate-kernel-tuning-runbook.md) |
+| 排队压测判读 | [docs/ops/login-queue-stress-runbook.md](docs/ops/login-queue-stress-runbook.md) |
 | 压测复盘 | [docs/design/stress-test-2026-05-ephemeral-port.md](docs/design/stress-test-2026-05-ephemeral-port.md) |
 
 更全索引在 ARCH.md §10。

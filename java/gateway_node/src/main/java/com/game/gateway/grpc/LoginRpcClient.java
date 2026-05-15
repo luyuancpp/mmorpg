@@ -64,12 +64,19 @@ public class LoginRpcClient {
     private static final String METHOD_LOGIN         = SERVICE + "/Login";
     private static final String METHOD_REFRESH_TOKEN = SERVICE + "/RefreshToken";
 
+    /** Pre-gate service: gate selection + login queue (added 2026-05). */
+    private static final String PREGATE_SERVICE      = "loginpb.LoginPreGate";
+    private static final String METHOD_ASSIGN_GATE   = PREGATE_SERVICE + "/AssignGate";
+    private static final String METHOD_QUEUE_STATUS  = PREGATE_SERVICE + "/QueryQueueStatus";
+
     private final LoginGrpcProperties props;
     private final List<ManagedChannel> channels = new ArrayList<>();
     private final AtomicInteger rr = new AtomicInteger();
 
     private final MethodDescriptor<LoginRequestProto, LoginResponseProto> loginMethod;
     private final MethodDescriptor<RefreshTokenRequestProto, RefreshTokenResponseProto> refreshTokenMethod;
+    private final MethodDescriptor<AssignGateRequestProto, AssignGateResponseProto> assignGateMethod;
+    private final MethodDescriptor<QueryQueueStatusRequestProto, QueryQueueStatusResponseProto> queueStatusMethod;
 
     public LoginRpcClient(LoginGrpcProperties props) {
         this.props = props;
@@ -84,6 +91,18 @@ public class LoginRpcClient {
                 .setFullMethodName(METHOD_REFRESH_TOKEN)
                 .setRequestMarshaller(new RefreshTokenRequestMarshaller())
                 .setResponseMarshaller(new RefreshTokenResponseMarshaller())
+                .build();
+        this.assignGateMethod = MethodDescriptor.<AssignGateRequestProto, AssignGateResponseProto>newBuilder()
+                .setType(MethodDescriptor.MethodType.UNARY)
+                .setFullMethodName(METHOD_ASSIGN_GATE)
+                .setRequestMarshaller(new AssignGateRequestMarshaller())
+                .setResponseMarshaller(new AssignGateResponseMarshaller())
+                .build();
+        this.queueStatusMethod = MethodDescriptor.<QueryQueueStatusRequestProto, QueryQueueStatusResponseProto>newBuilder()
+                .setType(MethodDescriptor.MethodType.UNARY)
+                .setFullMethodName(METHOD_QUEUE_STATUS)
+                .setRequestMarshaller(new QueryQueueStatusRequestMarshaller())
+                .setResponseMarshaller(new QueryQueueStatusResponseMarshaller())
                 .build();
     }
 
@@ -132,6 +151,16 @@ public class LoginRpcClient {
     /** Calls {@code ClientPlayerLogin.RefreshToken}. Throws on terminal failure. */
     public RefreshTokenResponseProto refreshToken(RefreshTokenRequestProto req) {
         return unaryCall(refreshTokenMethod, req);
+    }
+
+    /** Calls {@code LoginPreGate.AssignGate}. Throws on terminal failure. */
+    public AssignGateResponseProto assignGate(AssignGateRequestProto req) {
+        return unaryCall(assignGateMethod, req);
+    }
+
+    /** Calls {@code LoginPreGate.QueryQueueStatus}. Throws on terminal failure. */
+    public QueryQueueStatusResponseProto queryQueueStatus(QueryQueueStatusRequestProto req) {
+        return unaryCall(queueStatusMethod, req);
     }
 
     private <Q, R> R unaryCall(MethodDescriptor<Q, R> method, Q req) {
@@ -406,6 +435,200 @@ public class LoginRpcClient {
                 case 3 -> resp.refreshToken = in.readString();
                 case 4 -> resp.accessTokenExpire = in.readInt64();
                 case 5 -> resp.refreshTokenExpire = in.readInt64();
+                default -> in.skipField(tag);
+            }
+        }
+        return resp;
+    }
+
+    // ── AssignGate / QueryQueueStatus wire codecs ────────────────────
+    //
+    // proto/login/login.proto AssignGateRequest:
+    //   uint32 zone_id     = 1
+    //   string queue_token = 2
+    //   string account     = 3
+    //   string device_id   = 4
+    //
+    // AssignGateResponse: see proto for full layout. Tags here MUST match
+    // the proto exactly — that's the entire wire-format contract this
+    // hand-coded client relies on. Additive proto changes (new field tags)
+    // are forward-compatible because parseAssignGateResponse falls through
+    // to skipField for unknown tags.
+
+    public static final class AssignGateRequestProto {
+        public final int zoneId;
+        public final String queueToken;
+        public final String account;
+        public final String deviceId;
+
+        public AssignGateRequestProto(int zoneId, String queueToken, String account, String deviceId) {
+            this.zoneId = zoneId;
+            this.queueToken = nullToEmpty(queueToken);
+            this.account = nullToEmpty(account);
+            this.deviceId = nullToEmpty(deviceId);
+        }
+
+        byte[] toBytes() throws IOException {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream(64);
+            CodedOutputStream out = CodedOutputStream.newInstance(baos);
+            if (zoneId != 0)             out.writeUInt32(1, zoneId);
+            if (!queueToken.isEmpty())   out.writeString(2, queueToken);
+            if (!account.isEmpty())      out.writeString(3, account);
+            if (!deviceId.isEmpty())     out.writeString(4, deviceId);
+            out.flush();
+            return baos.toByteArray();
+        }
+    }
+
+    public static final class AssignGateResponseProto {
+        public String ip;
+        public int    port;
+        public byte[] tokenPayload;
+        public byte[] tokenSignature;
+        public long   tokenDeadline;
+        public String error;
+
+        public int    status;          // 0=ADMITTED, 1=QUEUEING, 2=ERROR, 3=EXPIRED
+        public String queueToken;
+        public int    queueRank;
+        public int    queueTotal;
+        public int    retryAfterMs;
+    }
+
+    private static final class AssignGateRequestMarshaller implements MethodDescriptor.Marshaller<AssignGateRequestProto> {
+        @Override
+        public InputStream stream(AssignGateRequestProto value) {
+            try {
+                return new java.io.ByteArrayInputStream(value.toBytes());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        @Override
+        public AssignGateRequestProto parse(InputStream stream) {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    private static final class AssignGateResponseMarshaller implements MethodDescriptor.Marshaller<AssignGateResponseProto> {
+        @Override
+        public InputStream stream(AssignGateResponseProto value) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public AssignGateResponseProto parse(InputStream stream) {
+            try {
+                return parseAssignGateResponse(stream.readAllBytes());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    private static AssignGateResponseProto parseAssignGateResponse(byte[] bytes) throws IOException {
+        AssignGateResponseProto resp = new AssignGateResponseProto();
+        CodedInputStream in = CodedInputStream.newInstance(bytes);
+        while (!in.isAtEnd()) {
+            int tag = in.readTag();
+            int field = tag >>> 3;
+            switch (field) {
+                case 1 -> resp.ip             = in.readString();
+                case 2 -> resp.port           = in.readUInt32();
+                case 3 -> resp.tokenPayload   = in.readByteArray();
+                case 4 -> resp.tokenSignature = in.readByteArray();
+                case 5 -> resp.tokenDeadline  = in.readInt64();
+                case 6 -> resp.error          = in.readString();
+                case 7 -> resp.status         = in.readUInt32();
+                case 8 -> resp.queueToken     = in.readString();
+                case 9 -> resp.queueRank      = in.readUInt32();
+                case 10 -> resp.queueTotal    = in.readUInt32();
+                case 11 -> resp.retryAfterMs  = in.readUInt32();
+                default -> in.skipField(tag);
+            }
+        }
+        return resp;
+    }
+
+    public static final class QueryQueueStatusRequestProto {
+        public final String queueToken;
+
+        public QueryQueueStatusRequestProto(String queueToken) {
+            this.queueToken = nullToEmpty(queueToken);
+        }
+
+        byte[] toBytes() throws IOException {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream(64);
+            CodedOutputStream out = CodedOutputStream.newInstance(baos);
+            if (!queueToken.isEmpty()) out.writeString(1, queueToken);
+            out.flush();
+            return baos.toByteArray();
+        }
+    }
+
+    public static final class QueryQueueStatusResponseProto {
+        public int    status;
+        public String ip;
+        public int    port;
+        public byte[] tokenPayload;
+        public byte[] tokenSignature;
+        public long   tokenDeadline;
+        public int    queueRank;
+        public int    queueTotal;
+        public int    retryAfterMs;
+        public String error;
+    }
+
+    private static final class QueryQueueStatusRequestMarshaller implements MethodDescriptor.Marshaller<QueryQueueStatusRequestProto> {
+        @Override
+        public InputStream stream(QueryQueueStatusRequestProto value) {
+            try {
+                return new java.io.ByteArrayInputStream(value.toBytes());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        @Override
+        public QueryQueueStatusRequestProto parse(InputStream stream) {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    private static final class QueryQueueStatusResponseMarshaller implements MethodDescriptor.Marshaller<QueryQueueStatusResponseProto> {
+        @Override
+        public InputStream stream(QueryQueueStatusResponseProto value) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public QueryQueueStatusResponseProto parse(InputStream stream) {
+            try {
+                return parseQueueStatusResponse(stream.readAllBytes());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    private static QueryQueueStatusResponseProto parseQueueStatusResponse(byte[] bytes) throws IOException {
+        QueryQueueStatusResponseProto resp = new QueryQueueStatusResponseProto();
+        CodedInputStream in = CodedInputStream.newInstance(bytes);
+        while (!in.isAtEnd()) {
+            int tag = in.readTag();
+            int field = tag >>> 3;
+            switch (field) {
+                case 1 -> resp.status         = in.readUInt32();
+                case 2 -> resp.ip             = in.readString();
+                case 3 -> resp.port           = in.readUInt32();
+                case 4 -> resp.tokenPayload   = in.readByteArray();
+                case 5 -> resp.tokenSignature = in.readByteArray();
+                case 6 -> resp.tokenDeadline  = in.readInt64();
+                case 7 -> resp.queueRank      = in.readUInt32();
+                case 8 -> resp.queueTotal     = in.readUInt32();
+                case 9 -> resp.retryAfterMs   = in.readUInt32();
+                case 10 -> resp.error         = in.readString();
                 default -> in.skipField(tag);
             }
         }

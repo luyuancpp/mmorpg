@@ -138,3 +138,4 @@ const SceneMovementClientPlayerMoveStartMessageId = 134
 const SceneMovementClientPlayerNotifyActorMoveListMessageId = 135
 const SceneMovementClientPlayerTeleportRequestMessageId = 136
 const SceneMovementClientPlayerNotifyMoveAckMessageId = 137
+const LoginPreGateQueryQueueStatusMessageId = 138

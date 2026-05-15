@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"flag"
@@ -35,6 +34,20 @@ import (
 	_ "proto/chat"
 )
 
+// robotStatsRef is a process-wide handle to the metrics aggregator. It's
+// populated in main() and read by lower-level helpers that don't (yet) take
+// a Stats pointer in their signature — notably the queue-aware AssignGate
+// loop in assignGateHTTPLocal, which is reached from resolveGateAddrLocal
+// at multiple call sites across login modes (login-test, data-stress, stress).
+//
+// Plumbing Stats through every caller would touch ~10 functions for marginal
+// benefit. The trade-off is "one global, set once at startup" vs "always-
+// explicit-arg, never-nil". We pick the global because (a) Stats is a
+// singleton by construction, (b) the queue helper has graceful nil-handling
+// for unit tests, and (c) the alternative was littering signatures with a
+// parameter that almost no caller cares about.
+var robotStatsRef *metrics.Stats
+
 func main() {
 	cfgPath := flag.String("c", "etc/robot.yaml", "config file path")
 	flag.Parse()
@@ -50,6 +63,7 @@ func main() {
 	cfg.LoadTables()
 
 	stats := metrics.NewStats()
+	robotStatsRef = stats
 
 	// Login-test mode: run the scenario suite and exit.
 	if cfg.Mode == "login-test" {
@@ -150,10 +164,7 @@ func runRobot(account string, cfg *config.Config, stats *metrics.Stats, stop <-c
 				return
 			case <-time.After(backoff):
 			}
-			backoff = backoff * 2
-			if backoff > 30*time.Second {
-				backoff = 30 * time.Second
-			}
+			backoff = min(backoff*2, 30*time.Second)
 		}
 
 		ok, tok, exp := runRobotOnce(account, cfg, stats, stop, cachedAccessToken, cachedAccessExpire)
@@ -339,6 +350,12 @@ func resolveGateAddrLocal(cfg *config.Config) (host, port string, payload, signa
 }
 
 // resolveGateViaHTTPLocal calls POST /api/assign-gate (HTTP mode) with retry.
+//
+// Queue-aware behavior (added 2026-05): when /api/assign-gate returns
+// code=100 (queueing) we delegate to AssignGateWithQueue so the robot
+// transparently polls /api/queue-status until admitted, expired, or the
+// outer retry budget runs out. This makes a stress run with N > zoneCapacity
+// robots actually exercise the queue path instead of treating it as an error.
 func resolveGateViaHTTPLocal(cfg *config.Config) (host, port string, payload, signature []byte, err error) {
 	zoneID := cfg.ZoneID
 	if zoneID == 0 {
@@ -351,7 +368,7 @@ func resolveGateViaHTTPLocal(cfg *config.Config) (host, port string, payload, si
 	const maxRetries = 30
 	backoff := 2 * time.Second
 	for attempt := 1; attempt <= maxRetries; attempt++ {
-		result, assignErr := assignGateHTTPLocal(cfg.GatewayAddr, zoneID)
+		result, assignErr := assignGateHTTPLocal(cfg, zoneID)
 		if assignErr == nil {
 			h, p, splitErr := net.SplitHostPort(result.addr)
 			return h, p, result.payload, result.signature, splitErr
@@ -405,55 +422,123 @@ func resolveZoneIDLocal(gatewayAddr string) (uint32, error) {
 	return result.Zones[0].ZoneID, nil
 }
 
-func assignGateHTTPLocal(gatewayAddr string, zoneId uint32) (*gateAssignmentLocal, error) {
-	reqBody, _ := json.Marshal(map[string]uint32{"zone_id": zoneId})
-
-	url := gatewayAddr + "/api/assign-gate"
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+// assignGateHTTPLocal drives one queue-aware AssignGate flow.
+//
+// On code=100 it sleeps RetryAfterMs and polls /api/queue-status
+// (or re-calls /api/assign-gate when the queue source is Bucket4j ratelimit,
+// which has no queue token). The caller's outer retry loop handles network
+// errors and 4xx; this function only returns when the server says
+// "admitted, here's a gate token" or after the queue-aware budget elapses.
+//
+// Per-robot queue stats (entered / admitted-after-wait / expired / wait
+// duration / max rank) are pushed into Stats so the periodic report can
+// surface them — that's how we tell "queue worked but is slow" apart from
+// "dispatcher hung".
+func assignGateHTTPLocal(cfg *config.Config, zoneId uint32) (*gateAssignmentLocal, error) {
+	// Total budget for queue-aware polling. Generous on purpose: a real
+	// queue under load can take minutes to drain. The outer
+	// resolveGateViaHTTPLocal retry loop adds another layer on top.
+	const queueBudget = 5 * time.Minute
+	ctx, cancel := context.WithTimeout(context.Background(), queueBudget)
 	defer cancel()
 
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(reqBody))
+	req := &httpAssignGateRequest{
+		ZoneID:  zoneId,
+		Account: "", // robot doesn't have a stable account at this stage
+	}
+
+	stats := robotStatsRef // pkg-level handle set in main()
+	var firstQueueAt time.Time
+	var maxRankSeen int64 = -1
+	enteredQueue := false
+
+	rsp, err := httpAssignGate(cfg.GatewayAddr, req, 5*time.Second)
 	if err != nil {
-		return nil, fmt.Errorf("build request: %w", err)
+		return nil, err
 	}
-	httpReq.Header.Set("Content-Type", "application/json")
+	for {
+		switch rsp.Code {
+		case 0:
+			// Admitted. If we ever queued, record wait time.
+			if enteredQueue && stats != nil {
+				stats.QueueAdmittedAfterWait()
+				stats.QueueWait(time.Since(firstQueueAt))
+				if maxRankSeen >= 0 {
+					stats.QueueRankSeen(maxRankSeen)
+				}
+			}
+			if rsp.GateIP == "" || rsp.GatePort == 0 {
+				return nil, fmt.Errorf("AssignGate admitted but returned empty address")
+			}
+			return &gateAssignmentLocal{
+				addr:      fmt.Sprintf("%s:%d", rsp.GateIP, rsp.GatePort),
+				payload:   rsp.TokenPayload,
+				signature: rsp.TokenSignature,
+			}, nil
 
-	httpResp, err := http.DefaultClient.Do(httpReq)
-	if err != nil {
-		return nil, fmt.Errorf("HTTP POST %s: %w", url, err)
-	}
-	defer func() { _ = httpResp.Body.Close() }()
+		case 100:
+			if !enteredQueue {
+				enteredQueue = true
+				firstQueueAt = time.Now()
+				if stats != nil {
+					stats.QueueEntered()
+				}
+			}
+			if rsp.QueueRank > maxRankSeen {
+				maxRankSeen = rsp.QueueRank
+			}
+			// Stash the token on req so a subsequent /assign-gate retry (e.g.
+			// after a transient network blip in the polling loop) goes down
+			// the server's reentry path instead of creating a duplicate
+			// queue entry. AssignGate handler verifies queue_token and
+			// reuses the existing queueId.
+			if rsp.QueueSource == "login" && rsp.QueueToken != "" {
+				req.QueueToken = rsp.QueueToken
+			}
 
-	body, err := io.ReadAll(httpResp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("read response: %w", err)
-	}
-	if httpResp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("HTTP %d: %s", httpResp.StatusCode, string(body))
-	}
+			wait := time.Duration(rsp.RetryAfterMs) * time.Millisecond
+			if wait <= 0 {
+				wait = 2 * time.Second
+			}
+			select {
+			case <-ctx.Done():
+				return nil, fmt.Errorf("queue budget exceeded (rank=%d, source=%s)", rsp.QueueRank, rsp.QueueSource)
+			case <-time.After(wait):
+			}
 
-	var resp struct {
-		GateIP         string `json:"gate_ip"`
-		GatePort       uint32 `json:"gate_port"`
-		TokenPayload   []byte `json:"token_payload"`
-		TokenSignature []byte `json:"token_signature"`
-		Error          string `json:"error,omitempty"`
-	}
-	if err := json.Unmarshal(body, &resp); err != nil {
-		return nil, fmt.Errorf("decode response: %w", err)
-	}
-	if resp.Error != "" {
-		return nil, fmt.Errorf("AssignGate: %s", resp.Error)
-	}
-	if resp.GateIP == "" || resp.GatePort == 0 {
-		return nil, fmt.Errorf("AssignGate returned empty address")
-	}
+			// Real-queue path: keep the queue_token and poll /queue-status.
+			// Bucket4j-ratelimit path: no token, re-call /assign-gate so a
+			// fresh limiter check decides whether we're allowed through now.
+			if rsp.QueueSource == "login" && rsp.QueueToken != "" {
+				rsp, err = httpQueueStatus(cfg.GatewayAddr, rsp.QueueToken, 5*time.Second)
+			} else {
+				rsp, err = httpAssignGate(cfg.GatewayAddr, req, 5*time.Second)
+			}
+			if err != nil {
+				return nil, err
+			}
 
-	return &gateAssignmentLocal{
-		addr:      fmt.Sprintf("%s:%d", resp.GateIP, resp.GatePort),
-		payload:   resp.TokenPayload,
-		signature: resp.TokenSignature,
-	}, nil
+		case 410:
+			// Queue token expired (we polled too slowly, or the dispatcher
+			// admitted us but our admit:{queueId} TTL'd before we polled).
+			// Restart from /assign-gate without the token — backend will
+			// either fast-path us through or re-enqueue with a new token.
+			if stats != nil {
+				stats.QueueExpiredToken()
+			}
+			req.QueueToken = ""
+			rsp, err = httpAssignGate(cfg.GatewayAddr, req, 5*time.Second)
+			if err != nil {
+				return nil, err
+			}
+
+		case 429:
+			return nil, fmt.Errorf("rate-limited: %s", rsp.Error)
+
+		default:
+			return nil, fmt.Errorf("AssignGate code=%d err=%q", rsp.Code, rsp.Error)
+		}
+	}
 }
 
 const defaultLoginTimeoutLocal = 15 * time.Second
