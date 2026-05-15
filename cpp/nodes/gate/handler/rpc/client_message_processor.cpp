@@ -13,6 +13,7 @@
 #include <openssl/hmac.h>
 
 #include "gate_codec.h"
+#include "message_limiter/illegal_packet_counter.h"
 #include "node/system/node/node.h"
 #include "grpc_client/login/login_grpc_client.h"
 #include "table/proto/tip/common_error_tip.pb.h"
@@ -238,6 +239,19 @@ bool RpcClientSessionHandler::CheckMessageLimit(SessionInfo &session, const RpcC
 		errResponse.set_message_id(request->message_id());
 		errResponse.mutable_error_message()->set_id(err);
 		conn->send(errResponse.SerializeAsString());
+
+		// todo.md #236: count this rejection toward the per-session illegal-
+		// packet kill switch. A misbehaving / hostile client that keeps
+		// hammering past the rate limit gets dropped at the threshold
+		// (GATE_ILLEGAL_PACKET_THRESHOLD env, default 50) so we stop
+		// burning CPU sending error replies it ignores.
+		if (IllegalPacketCounter::RegisterAndShouldKill(session.illegalPacketCount))
+		{
+			LOG_WARN << "Session illegal-packet threshold exceeded — forceClose."
+					 << " count=" << session.illegalPacketCount
+					 << " message_id=" << request->message_id();
+			conn->forceClose();
+		}
 		return false;
 	}
 	return true;

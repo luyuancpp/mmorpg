@@ -24,6 +24,7 @@
 #include "thread_context/redis_manager.h"
 #include "time/system/time.h"
 #include "core/utils/debug/stacktrace_system.h"
+#include "build_info/build_info.h"
 #include "network/node_utils.h"
 #include "node/system/node/thread_observability.h"
 #include "network/traffic_statistics.h"
@@ -90,6 +91,84 @@ namespace
 		}
 		LOG_INFO << "Diagnostic stack-dump handler installed: send " << signalName
 				 << " to PID to trigger (todo #216)";
+	}
+
+	// Fatal-signal crash dump (todo.md #105).
+	//
+	// When the process is terminated abnormally (SIGSEGV / SIGABRT / SIGFPE /
+	// SIGILL) all in-game players lose their session without going through
+	// HandleExitGameNode, so there is no "logout time" recorded anywhere for
+	// incident forensics. This handler stamps a wall-clock millisecond
+	// timestamp + the surviving stack trace + the process thread count to
+	// the log stream right before the process dies, giving on-call a "the
+	// node was alive at T=…" anchor without depending on Redis writes
+	// completing during a crash (they won't).
+	//
+	// What we DON'T do here:
+	//   - Try to dump live player_id list. The actor registry is in an
+	//     unknown state (we got here by SIGSEGV); walking it could deadlock
+	//     or re-fault. Per-player time is recovered from the regular save
+	//     trail; this handler covers "the node itself".
+	//   - Re-raise / chain to a previous handler. We let the OS finish the
+	//     job after logging. The default disposition for SIGSEGV is core
+	//     dump + terminate, which is what we want for post-mortem.
+	//
+	// Cost: same async-signal-unsafe caveat as #216 — boost::stacktrace
+	// allocates. This is the last-gasp triage path; we accept the risk.
+	std::atomic<bool> gFatalSignalInstalled{false};
+	std::atomic<bool> gFatalSignalFiring{false};
+
+	void HandleFatalSignal(int signum)
+	{
+		// Guard against re-entry — if the handler itself faults the OS will
+		// re-deliver the signal and we'd otherwise spin. compare_exchange to
+		// "already firing" turns the second hit into a fast bail-out.
+		bool expected = false;
+		if (!gFatalSignalFiring.compare_exchange_strong(expected, true))
+		{
+			std::signal(signum, SIG_DFL);
+			std::raise(signum);
+			return;
+		}
+
+		const auto nowMs = std::chrono::duration_cast<std::chrono::milliseconds>(
+			std::chrono::system_clock::now().time_since_epoch()).count();
+		const int threadCount = GetProcessThreadCountForDiagnostic();
+
+		LOG_ERROR << "=== FATAL SIGNAL (todo #105) === signal=" << signum
+				  << " process_terminating_at_ms=" << nowMs
+				  << " process_thread_count=" << threadCount;
+		LOG_ERROR << GetCurrentStackTraceAsString(kMaxEntries);
+		LOG_ERROR << "=== End fatal signal dump; restoring SIG_DFL and re-raising ===";
+
+		// Restore default disposition and re-raise so the OS produces the
+		// usual core dump / terminate behavior. Don't try to clean up — that
+		// is exactly what post-mortem analysis of the core file is for.
+		std::signal(signum, SIG_DFL);
+		std::raise(signum);
+	}
+
+	void InstallFatalSignalHandlerOnce()
+	{
+		bool expected = false;
+		if (!gFatalSignalInstalled.compare_exchange_strong(expected, true))
+		{
+			return;
+		}
+
+		// SIGSEGV / SIGABRT / SIGFPE / SIGILL are POSIX-portable and also
+		// honored by Windows MSVCRT runtime, so the same install loop works
+		// on both target platforms.
+		const int fatalSignals[] = { SIGSEGV, SIGABRT, SIGFPE, SIGILL };
+		for (int sig : fatalSignals)
+		{
+			if (std::signal(sig, &HandleFatalSignal) == SIG_ERR)
+			{
+				LOG_WARN << "Failed to install fatal-signal crash-dump handler for signal=" << sig
+						 << "; errno=" << errno;
+			}
+		}
+		LOG_INFO << "Fatal-signal crash-dump handler installed for SIGSEGV/SIGABRT/SIGFPE/SIGILL (todo #105)";
 	}
 
 	const char *GetNonEmptyEnv(const char *name)
@@ -231,7 +310,9 @@ void Node::Initialize()
 {
 	eventLoop->assertInLoopThread();
 	LOG_DEBUG << "Node initializing...";
+	build_info::LogStartupBanner();
 	InstallDiagnosticSignalHandlerOnce();
+	InstallFatalSignalHandlerOnce();
 	RegisterHandlers();
 	RegisterEventHandlers();
 	LoadConfigs();

@@ -56,6 +56,16 @@ struct SessionInfo
 	uint32_t pendingEnterGsType{0}; // Pending login type to forward to Scene once scene node is assigned
 	uint64_t sceneId{0};            // Scene instance GUID from SceneManager (RoutePlayerEvent)
 	bool verified{false};			// True after client passes Gate connection token verification
+
+	// Illegal-packet counter (todo.md #236). Increment whenever a packet is
+	// rejected by the gate's incoming validation chain (rate-limit exceeded,
+	// unknown messageId, malformed body, unauthenticated send, HMAC mismatch
+	// once #76 lands). Hits the threshold → forceClose. Resets to 0 on a
+	// fresh ClientTokenVerify so a transient burst doesn't poison the next
+	// reconnect; otherwise monotonically increasing for the connection's
+	// lifetime. Thresholds tuned per deployment via env / config (see
+	// IllegalPacketCounter::ThresholdFromEnv).
+	uint32_t illegalPacketCount{0};
 private:
 	NodeEntityMap entityIds; // Sparse map, only stores assigned node entities
 };
