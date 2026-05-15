@@ -5,7 +5,7 @@
 
     <!-- Top banner -->
     <component id="n1" name="bannerTop" src="c0000007" fileName="common/QdaoBottomBar.xml" xy="570,80" size="1420,170"/>
-    <text id="n2" name="txtPanelTitle" xy="900,108" size="760,90" fontSize="64" color="#3d2914" align="center" vAlign="middle" autoSize="none" singleLine="true" text="云海洞天 · 登录"/>
+    <text id="n2" name="txtPanelTitle" xy="900,108" size="760,90" fontSize="64" color="#3d2914" align="center" vAlign="middle" autoSize="none" singleLine="true" text=""/>
     <image id="n3" name="cornerOrnament" src="00010015" fileName="icon_alt_corner_top_right.png" xy="1840,90" size="96,96"/>
 
     <!-- Compact central panel for the login form (narrower than scene/server screens) -->
@@ -33,10 +33,10 @@
 
     <!-- Bottom buttons: refresh on left side, enter as primary on right -->
     <component id="n10" name="btnRefresh" src="c0000002" fileName="common/QdaoButtonSecondary.xml" xy="900,910" size="320,88">
-      <Button title="刷新公告"/>
+      <Button title="刷新公告" titleFontSize="28"/>
     </component>
     <component id="n11" name="btnEnter" src="c0000001" fileName="common/QdaoButtonPrimary.xml" xy="1340,898" size="320,112">
-      <Button title="登录"/>
+      <Button title="登录" titleFontSize="36"/>
     </component>
 
     <text id="n12" name="txtStatus" xy="700,1038" size="1160,30" fontSize="20" color="#fff0bd" align="center" vAlign="middle" autoSize="none" singleLine="true" text=""/>

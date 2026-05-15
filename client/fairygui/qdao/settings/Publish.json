@@ -27,7 +27,7 @@
     "allowRotation": true,
     "trimImage": true
   },
-  "include2x": false,
+  "include2x": true,
   "include3x": false,
   "include4x": false,
   "fileName": "Publish"
