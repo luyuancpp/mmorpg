@@ -1,18 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  QdaoServerCard: 2-column grid card, 550x96 (squeezed-width variant)
-  Layout: [badge 80x80] [title + subtitle stacked] [进入 + 详情 inline buttons]
+  QdaoServerCard: 2-column grid card, 450x96 (squeezed-width variant)
+  Layout: [badge 80x80] [title + subtitle stacked]
   Used by ServerSelectScreen listServer in pagination layout (2 columns × 4 rows).
+  Note: inline 进入/详情 buttons were removed — server entry is now driven by
+  selecting a card and clicking the bottom-bar btnConfirm in SceneScreen.
 -->
-<component size="550,96" extention="Button" opaque="false">
+<component size="450,96" extention="Button" opaque="false">
   <controller name="button" pages="up,,down,,over,,disabled," selected="0"/>
   <controller name="checked" pages="0,,1," selected="0"/>
   <controller name="status" pages="0,,1,,2," selected="0"/>
   <displayList>
-    <image id="n0" name="bg" src="00010005" fileName="server_card_640x128_bg.png" xy="0,0" size="550,96">
+    <image id="n0" name="bg" src="00010005" fileName="server_card_640x128_bg.png" xy="0,0" size="450,96">
       <relation target="" sidePair="width-width,height-height"/>
     </image>
-    <image id="n1" name="fg" src="0001000d" fileName="server_card_640x128_fg.png" xy="0,0" size="550,96">
+    <image id="n1" name="fg" src="0001000d" fileName="server_card_640x128_fg.png" xy="0,0" size="450,96">
       <relation target="" sidePair="width-width,height-height"/>
       <gearColor controller="checked" values="#ffffff,#fff0bd"/>
     </image>
@@ -25,29 +27,17 @@
       <gearDisplay controller="status" pages="0,1"/>
     </loader>
 
-    <!-- Server name (title) — narrower text region to fit the 550-wide card -->
-    <text id="n4" name="title" xy="130,8" size="200,32" fontSize="24" color="#3d2914" autoSize="none" singleLine="true" text="server name">
+    <!-- Server name (title) — narrower text region to fit the 450-wide card -->
+    <text id="n4" name="title" xy="130,8" size="120,32" fontSize="24" color="#3d2914" autoSize="none" singleLine="true" text="server name">
       <gearColor controller="checked" values="#3d2914,#9c2b1a"/>
     </text>
 
     <!-- Status sub-line -->
-    <text id="n5" name="subtitle" xy="130,42" size="200,24" fontSize="18" color="#5a4025" autoSize="none" singleLine="true" text="畅通  人气旺"/>
+    <text id="n5" name="subtitle" xy="130,42" size="120,24" fontSize="18" color="#5a4025" autoSize="none" singleLine="true" text="畅通  人气旺"/>
 
-    <!-- Inline primary button: "进入" (red CTA, top right of card) -->
-    <component id="n6" name="btnEnter" src="c0000001" fileName="common/QdaoButtonPrimary.xml" xy="360,6" size="180,42">
-      <relation target="" sidePair="right-right,top-top"/>
-      <Button title="进入"/>
-    </component>
-
-    <!-- Inline secondary button: "详情" (jade outline, bottom right of card) -->
-    <component id="n7" name="btnDetail" src="c0000002" fileName="common/QdaoButtonSecondary.xml" xy="360,50" size="180,40">
-      <relation target="" sidePair="right-right,bottom-bottom"/>
-      <Button title="详情"/>
-    </component>
-
-    <!-- Hit area: only the left portion (badge+title+subtitle) toggles
-         selection; the two inline buttons keep their own click handlers. -->
-    <graph id="n8" name="hit" xy="0,0" size="340,96" type="rect" lineSize="0" lineColor="#00000000" fillColor="#00000000"/>
+    <!-- Hit area: covers the full card width — the inline 进入/详情 buttons
+         were removed, so the entire card is now the selection target. -->
+    <graph id="n8" name="hit" xy="0,0" size="450,96" type="rect" lineSize="0" lineColor="#00000000" fillColor="#00000000"/>
   </displayList>
   <Button mode="Check" downEffect="scale" downEffectValue="0.98"/>
 </component>

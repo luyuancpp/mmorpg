@@ -2,10 +2,9 @@
 <component size="2560,1080">
   <displayList>
     <image id="n0" name="imgSceneBackdrop" src="0001003a" fileName="qdao_scene_bg.png" xy="0,0" size="2560,1080"/>
-    <image id="nOV" name="imgUiOverlay" src="0001003b" fileName="qdao_ui_overlay_bg.png" xy="-3,-3" size="2560,1080"/>
-    <text id="n1" name="txtPanelTitle" xy="900,150" size="760,90" fontSize="64" color="#3d2914" align="center" vAlign="middle" autoSize="none" singleLine="true" text="选择区服"/>
-    <component id="n2" name="searchBox" src="c0000003" fileName="common/QdaoSearchBox.xml" xy="1100,220" size="420,76"/>
-    <list id="n3" name="listTabs" xy="480,330" size="360,472" selectionMode="Single" lineGap="8" defaultItem="ui://qdao/QdaoTabIdle" align="center">
+    <image id="nOV" name="imgUiOverlay" src="0001003b" fileName="qdao_ui_overlay_bg.png" xy="-10,-10" size="2560,1080"/>
+    <component id="n2" name="searchBox" src="c0000003" fileName="common/QdaoSearchBox.xml" xy="1598,247" size="280,76"/>
+    <list id="n3" name="listTabs" xy="756,346" size="180,472" selectionMode="Single" lineGap="8" defaultItem="ui://qdao/QdaoTabIdle" align="center">
       <item title="近期" icon="ui://qdao/icon_alt_left_tab_icon_1.png"/>
       <item title="推荐" icon="ui://qdao/icon_alt_left_tab_icon_2.png"/>
       <item title="全部" icon="ui://qdao/icon_alt_left_tab_icon_3.png"/>
@@ -13,7 +12,7 @@
       <item title="官方" icon="ui://qdao/icon_category_yinyang.png"/>
       <item title="海外" icon="ui://qdao/icon_category_swirl.png"/>
     </list>
-    <list id="n4" name="listServer" xy="1003,347" size="1110,420" layout="flow_vt" selectionMode="Single" overflow="scroll" lineGap="12" defaultItem="ui://qdao/QdaoServerCard" align="center">
+    <list id="n4" name="listServer" xy="995,346" size="940,432" layout="pagination" selectionMode="Single" overflow="scroll" lineGap="12" defaultItem="ui://qdao/QdaoServerCard" align="center">
       <item title="云海宗" icon="ui://qdao/icon_server_badge_pavilion.png"/>
       <item title="清风谷" icon="ui://qdao/icon_server_badge_pagoda.png"/>
       <item title="碧落渊" icon="ui://qdao/icon_server_badge_sword.png"/>
@@ -27,24 +26,11 @@
       <item title="玄都阁" icon="ui://qdao/icon_server_badge_sword.png"/>
       <item title="赤霞岭" icon="ui://qdao/icon_server_badge_whirlpool.png"/>
     </list>
-    <component id="n5" name="btnScrollUp" src="c0000002" fileName="common/QdaoButtonSecondary.xml" xy="2190,330" size="80,80">
-      <Button title="↑"/>
+    <component id="n7" name="btnBack" src="c0000002" fileName="common/QdaoButtonSecondary.xml" xy="11091100,779" size="300,84">
+      <Button title="返回" titleFontSize="26"/>
     </component>
-    <component id="n6" name="btnScrollDown" src="c0000002" fileName="common/QdaoButtonSecondary.xml" xy="2190,805" size="80,80">
-      <Button title="↓"/>
+    <component id="n8" name="btnRefresh" src="c0000002" fileName="common/QdaoButtonSecondary.xml" xy="1520,780" size="300,84">
+      <Button title="刷新" titleFontSize="26"/>
     </component>
-    <component id="n7" name="btnBack" src="c0000002" fileName="common/QdaoButtonSecondary.xml" xy="600,810" size="300,84">
-      <Button title="返回"/>
-    </component>
-    <component id="n8" name="btnRefresh" src="c0000002" fileName="common/QdaoButtonSecondary.xml" xy="1000,810" size="300,84">
-      <Button title="刷新"/>
-    </component>
-    <component id="n9" name="btnConfirm" src="c0000001" fileName="common/QdaoButtonPrimary.xml" xy="1600,800" size="340,100">
-      <Button title="进入"/>
-    </component>
-    <text id="n10" name="txtStatus" xy="400,930" size="1760,28" fontSize="20" color="#fff0bd" align="center" vAlign="middle" autoSize="none" singleLine="true" text=""/>
-    <component id="n11" name="tabRecent" src="c0000004" fileName="common/QdaoTabIdle.xml" xy="480,330" size="350,88" visible="false"/>
-    <component id="n12" name="tabRecommend" src="c0000004" fileName="common/QdaoTabIdle.xml" xy="480,426" size="350,88" visible="false"/>
-    <component id="n13" name="tabAll" src="c0000004" fileName="common/QdaoTabIdle.xml" xy="480,522" size="350,88" visible="false"/>
   </displayList>
 </component>
