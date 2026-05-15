@@ -25,6 +25,7 @@
 #include "time/system/time.h"
 #include "core/utils/debug/stacktrace_system.h"
 #include "build_info/build_info.h"
+#include "error_reporter/error_reporter.h"
 #include "network/node_utils.h"
 #include "node/system/node/thread_observability.h"
 #include "network/traffic_statistics.h"
@@ -65,7 +66,55 @@ namespace
 		// triggers working without using sigaction directly.
 		std::signal(signum, &HandleDiagnosticSignal);
 		DumpProcessStackTraceOnSignal(signum);
+
+		// todo.md #250 slice D — also write the error_reporter snapshot to a
+		// timestamped file under logs/. Same trigger as the stack dump so a
+		// single signal gives the on-call both pieces. The dump path is logged
+		// at INFO so ops can find the file path in the same console session
+		// without scanning the filesystem.
+		const auto path = error_reporter::DumpSnapshotToDefaultPath();
+		if (!path.empty()) {
+			LOG_INFO << "Diagnostic dump: error_reporter snapshot -> " << path;
+		}
 	}
+
+	// SIGUSR2 dump-only handler (Linux). Same as the SIGUSR1 + SIGBREAK
+	// path in HandleDiagnosticSignal, but skips the stack trace — useful
+	// when ops only wants the error_reporter snapshot without the
+	// stacktrace allocation cost from boost::stacktrace. On Windows there
+	// is no SIGUSR2; ops uses SIGBREAK (which already dumps both).
+#ifndef _WIN32
+	std::atomic<bool> gErrorReporterSignalInstalled{false};
+
+	void HandleErrorReporterDumpSignal(int signum)
+	{
+		std::signal(signum, &HandleErrorReporterDumpSignal);
+		const auto path = error_reporter::DumpSnapshotToDefaultPath();
+		if (!path.empty()) {
+			LOG_INFO << "[SIGUSR2] error_reporter snapshot -> " << path;
+		} else {
+			LOG_WARN << "[SIGUSR2] error_reporter dump failed (path resolution / IO error)";
+		}
+	}
+
+	void InstallErrorReporterDumpHandlerOnce()
+	{
+		bool expected = false;
+		if (!gErrorReporterSignalInstalled.compare_exchange_strong(expected, true))
+		{
+			return;
+		}
+		if (std::signal(SIGUSR2, &HandleErrorReporterDumpSignal) == SIG_ERR)
+		{
+			LOG_WARN << "Failed to install SIGUSR2 error_reporter dump handler; errno=" << errno;
+			gErrorReporterSignalInstalled.store(false);
+			return;
+		}
+		LOG_INFO << "Error-reporter dump handler installed: send SIGUSR2 to PID (todo #250 slice D)";
+	}
+#else
+	inline void InstallErrorReporterDumpHandlerOnce() {}
+#endif
 
 	void InstallDiagnosticSignalHandlerOnce()
 	{
@@ -312,6 +361,7 @@ void Node::Initialize()
 	LOG_DEBUG << "Node initializing...";
 	build_info::LogStartupBanner();
 	InstallDiagnosticSignalHandlerOnce();
+	InstallErrorReporterDumpHandlerOnce();
 	InstallFatalSignalHandlerOnce();
 	RegisterHandlers();
 	RegisterEventHandlers();

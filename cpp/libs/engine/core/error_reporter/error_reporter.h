@@ -3,8 +3,12 @@
 #include <atomic>
 #include <chrono>
 #include <cstdint>
+#include <cstdio>
+#include <ctime>
 #include <deque>
+#include <fstream>
 #include <mutex>
+#include <sstream>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -128,6 +132,119 @@ inline Buffer& Instance()
 inline void Record(uint32_t error_code, std::string_view tag, std::string_view message)
 {
     Instance().Record(error_code, tag, message);
+}
+
+// JSONL serialization of an event. One event per line so a downstream
+// log shipper (or `cat | jq`) can stream-process the dump file.
+//
+// Format: { "wall_ms": <int>, "error_code": <int>, "tag": "...",
+//           "message": "..." }
+//
+// Strings are escaped for the limited set of JSON-required characters
+// only (no UTF-8 reformatting — the bytes pass through unchanged so a
+// CJK message stays readable). The escape covers: ", \, control chars
+// (\b \f \n \r \t plus \u00xx for the rest below 0x20). Acceptable for
+// JSONL parsers; full RFC 8259 compliance is overkill for an internal
+// dump file.
+inline std::string EscapeJsonString(std::string_view in)
+{
+    std::string out;
+    out.reserve(in.size() + 8);
+    for (char c : in) {
+        const unsigned char u = static_cast<unsigned char>(c);
+        switch (c) {
+            case '"':  out += "\\\""; break;
+            case '\\': out += "\\\\"; break;
+            case '\b': out += "\\b"; break;
+            case '\f': out += "\\f"; break;
+            case '\n': out += "\\n"; break;
+            case '\r': out += "\\r"; break;
+            case '\t': out += "\\t"; break;
+            default:
+                if (u < 0x20) {
+                    char buf[8];
+                    std::snprintf(buf, sizeof(buf), "\\u%04x", u);
+                    out += buf;
+                } else {
+                    out += c;
+                }
+        }
+    }
+    return out;
+}
+
+inline std::string EventToJsonl(const Event& e)
+{
+    std::ostringstream oss;
+    oss << "{\"wall_ms\":" << e.wall_ms
+        << ",\"error_code\":" << e.error_code
+        << ",\"tag\":\"" << EscapeJsonString(e.tag) << "\""
+        << ",\"message\":\"" << EscapeJsonString(e.message) << "\"}";
+    return oss.str();
+}
+
+// Dump the current Snapshot() to a file in JSONL format. Intended as
+// the SIGUSR2 / on-demand triage hook (todo.md #250 slice D). The file
+// is opened with truncation so each dump replaces the previous one;
+// callers who want a history should rotate the path themselves.
+//
+// Header line (also JSONL-shaped) carries the buffer counters so the
+// file is self-describing — `head -1 dump.jsonl | jq` shows what's
+// in the rest:
+//   { "_kind":"header", "total":N, "dropped":N, "current":N, "wall_ms":N }
+//
+// Returns true on successful write of all events. Best-effort — on
+// IO failure we log a warning to stderr (no muduo include from this
+// header to keep it dependency-light) and return false.
+inline bool DumpSnapshotToFile(const std::string& path)
+{
+    auto& buf = Instance();
+    auto events = buf.Snapshot();
+    const auto total = buf.TotalCount();
+    const auto dropped = buf.DroppedCount();
+    const auto current = buf.CurrentSize();
+
+    std::ofstream out(path, std::ios::trunc);
+    if (!out) {
+        std::fprintf(stderr, "[error_reporter] DumpSnapshotToFile failed to open %s\n",
+                     path.c_str());
+        return false;
+    }
+
+    const auto nowMs = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::system_clock::now().time_since_epoch()).count();
+    out << "{\"_kind\":\"header\""
+        << ",\"total\":" << total
+        << ",\"dropped\":" << dropped
+        << ",\"current\":" << current
+        << ",\"wall_ms\":" << nowMs
+        << "}\n";
+
+    for (const auto& e : events) {
+        out << EventToJsonl(e) << "\n";
+    }
+    out.flush();
+    return out.good();
+}
+
+// Convenience: build a default dump path under `logs/` with PID +
+// wall-time stamp. Lets ops trigger a dump without having to provide
+// a path each time. Returns the path that was written to (or an empty
+// string on failure).
+inline std::string DumpSnapshotToDefaultPath()
+{
+    const auto t = std::time(nullptr);
+    char tsBuf[24];
+    std::strftime(tsBuf, sizeof(tsBuf), "%Y%m%d_%H%M%S", std::localtime(&t));
+
+    std::ostringstream pathStream;
+    pathStream << "logs/error_reporter_dump_" << tsBuf << ".jsonl";
+    const std::string path = pathStream.str();
+
+    if (!DumpSnapshotToFile(path)) {
+        return std::string();
+    }
+    return path;
 }
 
 } // namespace error_reporter
