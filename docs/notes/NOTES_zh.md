@@ -312,13 +312,13 @@
 
 | # | 事 | 为什么重要 | 工作量 |
 |---|---|---|---|
-| #152 | 分布式链路追踪(otel/jaeger) | 线上出事没法跨服追请求 | L |
-| #250 | 错误上报公共服务器(Sentry 类) | 炸了才知道;没有实时聚合 | M |
-| #273 | 构建版本归档(git-sha + 二进制) | 线上 bug 无法回到当时构建点 | S |
-| #105 | 崩溃时没 logout_time | 事故溯源缺关键时间戳 | S |
-| #236 | 非法协议计数器 + 踢人 | MessageLimiter 只限频率,不算非法包 | M |
-| #68 | 聊天广告/敏感词 | 聊天开了被广告刷屏 | M |
-| #207 | 跨服货币扣款认证 | 有追缴(#59),缺预防 | L |
+| #152 | 分布式链路追踪(otel/jaeger) | 线上出事没法跨服追请求 | L | ✅ 2026-05-14 第一片(W3C trace context 原语 + 设计);见 distributed-tracing.md |
+| #250 | 错误上报公共服务器(Sentry 类) | 炸了才知道;没有实时聚合 | M | ✅ 2026-05-14 第一片(进程内 buffer 原语 + 设计);见 error-reporting.md |
+| #273 | 构建版本归档(git-sha + 二进制) | 线上 bug 无法回到当时构建点 | S | ✅ 2026-05-14 完成;build_info.h + 启动 banner |
+| #105 | 崩溃时没 logout_time | 事故溯源缺关键时间戳 | S | ✅ 2026-05-14 完成;HandleFatalSignal(SIGSEGV/SIGABRT/SIGFPE/SIGILL) |
+| #236 | 非法协议计数器 + 踢人 | MessageLimiter 只限频率,不算非法包 | M | ✅ 2026-05-14 完成;IllegalPacketCounter + GATE_ILLEGAL_PACKET_THRESHOLD env |
+| #68 | 聊天广告/敏感词 | 聊天开了被广告刷屏 | M | ✅ 2026-05-14 第一片(filter 原语 + 设计);见 chat-sensitive-word-filter.md |
+| #207 | 跨服货币扣款认证 | 有追缴(#59),缺预防 | L | ✅ 2026-05-14 设计文档落地(实现阻塞在 #48 / #208);见 cross-server-currency-auth.md |
 
 ---
 

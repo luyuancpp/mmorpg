@@ -312,13 +312,13 @@ Pulled from ❌ Not done — infrastructure gaps that hurt when production break
 
 | # | Item | Why it matters | Effort |
 |---|---|---|---|
-| #152 | Distributed tracing (otel/jaeger) | Can't trace cross-service requests when prod blows up | L |
-| #250 | Error reporting to a central server (Sentry-style) | Only know after blowup; no real-time aggregation | M |
-| #273 | Build version archival (git-sha + binary) | Prod bug can't be reproduced at the build point | S |
-| #105 | No logout_time on crash | Incident forensics missing key timestamp | S |
-| #236 | Illegal-protocol counter + kick | MessageLimiter only rate-limits, doesn't count illegal packets | M |
-| #68 | Chat ad / sensitive-word filter | Chat will be flooded by spam ads | M |
-| #207 | Cross-server currency deduction auth | Have clawback (#59), missing prevention | L |
+| #152 | Distributed tracing (otel/jaeger) | Can't trace cross-service requests when prod blows up | L | ✅ 2026-05-14 first slice (W3C trace context primitive + design); see distributed-tracing.md |
+| #250 | Error reporting to a central server (Sentry-style) | Only know after blowup; no real-time aggregation | M | ✅ 2026-05-14 first slice (in-process buffer primitive + design); see error-reporting.md |
+| #273 | Build version archival (git-sha + binary) | Prod bug can't be reproduced at the build point | S | ✅ 2026-05-14 done; build_info.h + startup banner |
+| #105 | No logout_time on crash | Incident forensics missing key timestamp | S | ✅ 2026-05-14 done; HandleFatalSignal (SIGSEGV/SIGABRT/SIGFPE/SIGILL) |
+| #236 | Illegal-protocol counter + kick | MessageLimiter only rate-limits, doesn't count illegal packets | M | ✅ 2026-05-14 done; IllegalPacketCounter + GATE_ILLEGAL_PACKET_THRESHOLD env |
+| #68 | Chat ad / sensitive-word filter | Chat will be flooded by spam ads | M | ✅ 2026-05-14 first slice (filter primitive + design); see chat-sensitive-word-filter.md |
+| #207 | Cross-server currency deduction auth | Have clawback (#59), missing prevention | L | ✅ 2026-05-14 design only (impl blocked on #48 / #208); see cross-server-currency-auth.md |
 
 ---
 
