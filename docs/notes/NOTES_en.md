@@ -297,12 +297,12 @@ Top-ROI subset pulled from 🟡 Partial — scaffolding is in place, can be clos
 |---|---|---|---|
 | #102 | Open-server rate limit (Bucket4j+Redis+wave-release) | Design + Java skeleton ready, steps 2–10 unwritten | M |
 | #280/#242/#243 | Re-login-while-save-not-done race | `player_lifecycle.cpp:376` has TODO, add state machine | M |
-| #70/#125 | Print request protocol + stack on error | Building blocks ready, missing unified hook | S |
+| #70/#125 | Print request protocol + stack on error | Building blocks ready, missing unified hook | S | ✅ 2026-05-14 done |
 | #216 | SIGUSR1 dumps all-thread stacks | `PrintDefaultStackTrace()` exists, missing signal handler | S | ✅ 2026-05-12: current-thread version done |
 | #225 | MissionSystem two-path divergence comment | Pure docs, prevents future footgun | S | ✅ 2026-05-12 done |
-| #76 | Message tampering HMAC signature | Has adler32 checksum, upgrade to HMAC | S |
-| #97 | Unified RPC error reason | `error_tip` table exists, call sites not fully covered | M |
-| #204/#226 | proto-compare driven dirty-save | Currently manual, switch to `MessageDifferencer` | M |
+| #76 | Message tampering HMAC signature | Has adler32 checksum, upgrade to HMAC | S | ✅ 2026-05-14 first slice (key delivery channel); full chain in hmac-message-signing.md |
+| #97 | Unified RPC error reason | `error_tip` table exists, call sites not fully covered | M | ✅ 2026-05-14: 5 macros in return_define.h gain LOG_WARN context |
+| #204/#226 | proto-compare driven dirty-save | Currently manual, switch to `MessageDifferencer` | M | ✅ 2026-05-14 first slice (compare primitive); full chain in proto-compare-dirty-save.md |
 
 ---
 
