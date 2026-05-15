@@ -12,6 +12,7 @@
 #include "network/codec/message_response_dispatcher.h"
 #include "core/utils/debug/stacktrace_system.h"
 #include "error_reporter/error_reporter.h"
+#include "thread_context/trace_context_tls.h"
 #include <thread_context/rpc_request_context.h>
 
 using namespace std::placeholders;
@@ -388,6 +389,15 @@ void GameChannel::HandleNodeRouteMessage(const TcpConnectionPtr &conn, const Gam
 
 void GameChannel::ProcessMessage(const TcpConnectionPtr &conn, const GameRpcMessage &rpcMessage, muduo::Timestamp receiveTime)
 {
+    // todo.md #152 slice C-mini: install a fresh trace context at the
+    // start of each RPC dispatch. Once gRPC interceptors / Kafka header
+    // propagation (slice C/D) land, the incoming traceparent will be
+    // parsed here instead and only the root case falls through to
+    // NewRoot. For now, every RPC entry starts its own trace — gives
+    // each handler chain its own grep-able id in TLOG_* output, no
+    // cross-process correlation yet.
+    tracing::tlsTrace = tracing::NewRoot();
+
     if (!IsValidMessageId(rpcMessage.message_id()))
     {
         SendErrorResponse(rpcMessage, GameErrorCode::INVALID_REQUEST);
