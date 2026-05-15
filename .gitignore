@@ -194,3 +194,19 @@ debug-symbols-out/
 # Clang plugin build
 .no_raw_ptr_check_ok
 cpp/plugin/build/
+
+# FairyGUI atlas/asset rework backups (kept locally as safety net,
+# never committed). Restoring is just a file copy from these dirs.
+client/fairygui/qdao/assets/_backup_*/
+
+# Scratch screenshots / debug captures under image/.
+# The "effect" art (q_daoist_*.png design plates, ui_controls_v2/, the
+# *_notes.md design notes) is tracked and stays in version control —
+# these rules only catch the throwaway stuff: preview renders from
+# preview_qdao_screens.py, "_shot_latest" / "_error_latest" snapshots,
+# before/after diff PNGs, and any pasted-from-clipboard JPEGs (the
+# project's real plates are all PNG, so blocking *.jpg is safe).
+image/_*.png
+image/error*.png
+image/*.jpg
+image/*.jpeg
