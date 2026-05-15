@@ -9,6 +9,7 @@
 #include "rpc/service_metadata/rpc_event_registry.h"
 #include "core/utils/stat/stat.h"
 #include "network/codec/message_response_dispatcher.h"
+#include "core/utils/debug/stacktrace_system.h"
 #include <thread_context/rpc_request_context.h>
 
 using namespace std::placeholders;
@@ -315,8 +316,22 @@ void GameChannel::HandleRpcMessage(const TcpConnectionPtr &conn, const RpcMessag
         HandleNodeRouteMessage(conn, rpcMessage, receiveTime);
         break;
     case GameMessageType::RPC_ERROR:
-        LOG_WARN << "RPC error received, message ID: " << rpcMessage.message_id();
+    {
+        // todo.md #70 + #125: on error path, log the full triage context.
+        // The peer rejected our request; surface which RPC fired and which
+        // error code came back so the on-call can grep by error_code or
+        // by message_id without round-tripping the peer.
+        const auto methodName = IsValidMessageId(rpcMessage.message_id())
+            ? gRpcMethodRegistry[rpcMessage.message_id()].methodName
+            : std::string("<unknown_method>");
+        LOG_ERROR << "[GameChannel] RPC_ERROR received: message_id="
+                  << rpcMessage.message_id()
+                  << " method=" << methodName
+                  << " error_code=" << rpcMessage.error()
+                  << " body_size=" << rpcMessage.body().size();
+        LOG_ERROR << GetCurrentStackTraceAsString(kMaxEntries);
         break;
+    }
     default:
         LOG_ERROR << "Unknown RPC message type, message ID: " << rpcMessage.message_id();
         break;
@@ -409,6 +424,18 @@ void GameChannel::ProcessMessage(const TcpConnectionPtr &conn, const GameRpcMess
 
 void GameChannel::SendErrorResponse(const GameRpcMessage &message, GameErrorCode errorCode)
 {
+    // todo.md #70 + #125: log the rejected request before responding so the
+    // server side has a trail even if the peer never reports the failure
+    // upstream. Stack trace pinpoints which handler decided to reject.
+    const auto methodName = IsValidMessageId(message.message_id())
+        ? gRpcMethodRegistry[message.message_id()].methodName
+        : std::string("<unknown_method>");
+    LOG_ERROR << "[GameChannel] sending RPC_ERROR: message_id=" << message.message_id()
+              << " method=" << methodName
+              << " error_code=" << errorCode
+              << " request_body_size=" << message.body().size();
+    LOG_ERROR << GetCurrentStackTraceAsString(kMaxEntries);
+
     GameRpcMessage errorResponse;
     errorResponse.set_type(GameMessageType::RPC_ERROR);
     errorResponse.set_error(errorCode);

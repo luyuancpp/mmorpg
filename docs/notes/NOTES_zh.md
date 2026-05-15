@@ -297,12 +297,12 @@
 |---|---|---|---|
 | #102 | 开服限流(Bucket4j+Redis+波次放人) | 设计+Java骨架齐,步骤 2–10 未写 | M |
 | #280/#242/#243 | 存档未完成时 re-login 的竞态 | `player_lifecycle.cpp:376` 有 TODO,补状态机 | M |
-| #70/#125 | 出错时打印请求协议+堆栈 | 基础组件齐,缺统一 hook | S |
+| #70/#125 | 出错时打印请求协议+堆栈 | 基础组件齐,缺统一 hook | S | ✅ 2026-05-14 完成 |
 | #216 | SIGUSR1 打印所有线程堆栈 | `PrintDefaultStackTrace()` 已有,缺 signal handler | S | ✅ 2026-05-12: 当前线程版完成 |
 | #225 | MissionSystem 两条路径差异注释 | 纯文档,防后人踩坑 | S | ✅ 2026-05-12 完成 |
-| #76 | 消息篡改 HMAC 签名 | 已有 adler32 checksum,升级成 HMAC | S |
-| #97 | RPC 错误统一 reason | `error_tip` 表已有,call site 未全覆盖 | M |
-| #204/#226 | proto-compare 驱动 dirty-save | 现在靠手工,改成 `MessageDifferencer` | M |
+| #76 | 消息篡改 HMAC 签名 | 已有 adler32 checksum,升级成 HMAC | S | ✅ 2026-05-14 第一片(密钥下发通道);完整链路见 hmac-message-signing.md |
+| #97 | RPC 错误统一 reason | `error_tip` 表已有,call site 未全覆盖 | M | ✅ 2026-05-14:return_define.h 5 个 macros 加诊断日志 |
+| #204/#226 | proto-compare 驱动 dirty-save | 现在靠手工,改成 `MessageDifferencer` | M | ✅ 2026-05-14 第一片(对比原语);完整链路见 proto-compare-dirty-save.md |
 
 ---
 
