@@ -14,6 +14,7 @@
 
 #include "gate_codec.h"
 #include "message_limiter/illegal_packet_counter.h"
+#include "error_reporter/error_reporter.h"
 #include "node/system/node/node.h"
 #include "grpc_client/login/login_grpc_client.h"
 #include "table/proto/tip/common_error_tip.pb.h"
@@ -245,7 +246,20 @@ bool RpcClientSessionHandler::CheckMessageLimit(SessionInfo &session, const RpcC
 		// hammering past the rate limit gets dropped at the threshold
 		// (GATE_ILLEGAL_PACKET_THRESHOLD env, default 50) so we stop
 		// burning CPU sending error replies it ignores.
-		if (IllegalPacketCounter::RegisterAndShouldKill(session.illegalPacketCount))
+		const bool shouldKill = IllegalPacketCounter::RegisterAndShouldKill(session.illegalPacketCount);
+
+		// todo.md #250 slice A — record into process-wide buffer. Carries
+		// the running illegal-packet count so an attack pattern shows up
+		// as a step function in the buffer dump, not just per-event noise.
+		{
+			std::ostringstream m;
+			m << "message_id=" << request->message_id()
+			  << " illegal_count=" << session.illegalPacketCount
+			  << " player_id=" << session.playerId;
+			error_reporter::Record(err, "illegal_packet", m.str());
+		}
+
+		if (shouldKill)
 		{
 			LOG_WARN << "Session illegal-packet threshold exceeded — forceClose."
 					 << " count=" << session.illegalPacketCount
