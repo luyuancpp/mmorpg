@@ -66,6 +66,20 @@ struct SessionInfo
 	// lifetime. Thresholds tuned per deployment via env / config (see
 	// IllegalPacketCounter::ThresholdFromEnv).
 	uint32_t illegalPacketCount{0};
+
+	// Per-session HMAC key for message signing (todo.md #76 slice A).
+	//
+	// Populated by client_message_processor.cpp::HandleClientTokenVerify
+	// AFTER the gate token signature is verified, by unmarshalling the
+	// inner GateTokenPayload and copying its `hmac_session_key` field
+	// here. Empty bytes mean "client/server pair hasn't rolled out the
+	// signed-message path yet" — the gate falls back to adler32-only
+	// validation in codec.cpp, which is the backward-compatible default.
+	//
+	// Wire-up of the unmarshal site is deferred until after the
+	// in-flight #102 codegen lands — see hmac-message-signing.md slice A
+	// for the exact lines that activate this field.
+	std::string hmacSessionKey;
 private:
 	NodeEntityMap entityIds; // Sparse map, only stores assigned node entities
 };

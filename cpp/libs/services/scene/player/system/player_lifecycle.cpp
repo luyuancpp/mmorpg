@@ -10,7 +10,9 @@
 #include "time/system/time.h"
 #include "type_alias/player_session_type_alias.h"
 #include "core/utils/defer/defer.h"
+#include "core/utils/proto/proto_dirty_compare.h"
 #include "network/node_utils.h"
+#include "player/comp/last_persisted_snapshot_comp.h"
 #include "player/system/player_data_loader.h"
 #include "engine/core/type_define/type_define.h"
 #include "proto/common/event/player_migration_event.pb.h"
@@ -213,6 +215,18 @@ void PlayerLifecycleSystem::HandlePlayerAsyncSaved(Guid playerId, PlayerAllData 
 		LOG_INFO << "Player session removed";
 		// TODO: Verify no race condition on destroy-after-save ordering
 		DestroyPlayer(playerId);
+	}
+
+	// Update last-persisted snapshot (todo.md #204 / #226 slice B).
+	// Successful save means the bytes in `message` are now what's in
+	// Redis; record them so the next SavePlayerToRedis can do a
+	// dirty-equality fast-path check. Skip if the entity was already
+	// destroyed above (UnregisterPlayer + DestroyPlayer path) — there's
+	// nothing to attach the component to.
+	if (tlsEcs.actorRegistry.valid(playerEntity))
+	{
+		auto& snap = tlsEcs.actorRegistry.get_or_emplace<PlayerLastPersistedSnapshotComp>(playerEntity);
+		snap.Replace(message);
 	}
 
 	// player_locator lease handles reconnect gating via Redis TTL.
@@ -554,6 +568,36 @@ void PlayerLifecycleSystem::SavePlayerToRedis(entt::entity player)
 	// above — payload is serialized eagerly inside Save().
 	stresstest_probe::StampPlayerDatabase(*message->mutable_player_database_data());
 	stresstest_probe::StampPlayerDatabase1(*message->mutable_player_database_1_data());
+
+	// Dirty-save fast path (todo.md #204 / #226 slice B). If we have a
+	// snapshot from the previous successful save and the current payload
+	// equals it byte-for-byte (proto MessageDifferencer::Equals semantics
+	// — same field values, map order ignored, default vs unset treated
+	// equally), skip both the Redis write and the Kafka DBTask emission.
+	//
+	// Skipping is safe because:
+	//   - The previous save already committed identical bytes; reading
+	//     them back yields the same state.
+	//   - HandlePlayerAsyncSaved updates the snapshot ONLY after a
+	//     successful save, so a snapshot-equality match means the
+	//     last persisted state matches what we'd write now.
+	//   - First save (no snapshot present) always falls through and
+	//     writes — `ShouldPersist(current, nullptr)` returns true.
+	//
+	// Limitation: snapshot lives only on the live entity. A reconnect
+	// that destroys + re-creates the entity loses the snapshot, so the
+	// first save after EnterScene always writes. That's intentional —
+	// we'd rather pay one redundant write than risk skipping a save
+	// when the in-memory state diverged from Redis during a load path
+	// we don't fully trust.
+	if (auto* snap = tlsEcs.actorRegistry.try_get<PlayerLastPersistedSnapshotComp>(player);
+		snap != nullptr && snap->HasSnapshot() &&
+		dirty_save::IsEqual(*message, *snap->snapshot))
+	{
+		LOG_DEBUG << "[SavePlayerToRedis] no-op for player " << playerId
+				  << " — proto-compare clean, last_save_ms=" << snap->saved_at_ms;
+		return;
+	}
 
 	tlsRedisSystem.GetPlayerDataRedis()->Save(message, playerId);
 

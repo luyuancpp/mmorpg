@@ -1,6 +1,7 @@
 #include "game_channel.h"
 #include <boost/get_pointer.hpp>
 #include <google/protobuf/descriptor.h>
+#include <sstream>
 #include "muduo/base/Logging.h"
 #include "muduo/net/TcpConnection.h"
 #include "network/message_statistics.h"
@@ -10,6 +11,7 @@
 #include "core/utils/stat/stat.h"
 #include "network/codec/message_response_dispatcher.h"
 #include "core/utils/debug/stacktrace_system.h"
+#include "error_reporter/error_reporter.h"
 #include <thread_context/rpc_request_context.h>
 
 using namespace std::placeholders;
@@ -330,6 +332,12 @@ void GameChannel::HandleRpcMessage(const TcpConnectionPtr &conn, const RpcMessag
                   << " error_code=" << rpcMessage.error()
                   << " body_size=" << rpcMessage.body().size();
         LOG_ERROR << GetCurrentStackTraceAsString(kMaxEntries);
+
+        // todo.md #250 slice A — record into process-wide buffer.
+        std::ostringstream msg;
+        msg << "method=" << methodName << " message_id=" << rpcMessage.message_id()
+            << " body_size=" << rpcMessage.body().size();
+        error_reporter::Record(rpcMessage.error(), "rpc_error_in", msg.str());
         break;
     }
     default:
@@ -435,6 +443,12 @@ void GameChannel::SendErrorResponse(const GameRpcMessage &message, GameErrorCode
               << " error_code=" << errorCode
               << " request_body_size=" << message.body().size();
     LOG_ERROR << GetCurrentStackTraceAsString(kMaxEntries);
+
+    // todo.md #250 slice A — record outgoing rejection into process-wide buffer.
+    std::ostringstream msg;
+    msg << "method=" << methodName << " message_id=" << message.message_id()
+        << " request_body_size=" << message.body().size();
+    error_reporter::Record(static_cast<uint32_t>(errorCode), "rpc_error_out", msg.str());
 
     GameRpcMessage errorResponse;
     errorResponse.set_type(GameMessageType::RPC_ERROR);
