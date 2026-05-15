@@ -143,6 +143,7 @@ namespace loginpb{void SendClientPlayerLoginLeaveGame(entt::registry& , entt::en
 namespace loginpb{void SendClientPlayerLoginDisconnect(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace loginpb{void SendClientPlayerLoginRefreshToken(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace loginpb{void SendLoginPreGateAssignGate(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace loginpb{void SendLoginPreGateQueryQueueStatus(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace loginpb{void SendLoginAdminRemovePlayersFromAccounts(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace scene_manager{void SendSceneManagerCreateScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace scene_manager{void SendSceneManagerDestroyScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
@@ -152,7 +153,7 @@ namespace scene_node{void SendSceneNodeGrpcCreateScene(entt::registry& , entt::e
 namespace scene_node{void SendSceneNodeGrpcDestroyScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace scene_node{void SendSceneNodeGrpcReleasePlayer(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 
-std::array<RpcMethodMeta, 138> gRpcMethodRegistry;
+std::array<RpcMethodMeta, 139> gRpcMethodRegistry;
 
 void InitMessageInfo()
 {
@@ -505,6 +506,11 @@ void InitMessageInfo()
         std::make_unique<::loginpb::AssignGateRequest>(),
         std::make_unique<::loginpb::AssignGateResponse>(),
         nullptr, 1, common::base::eNodeType::LoginNodeService, loginpb::SendLoginPreGateAssignGate};
+    gRpcMethodRegistry[LoginPreGateQueryQueueStatusMessageId] = RpcMethodMeta{
+        "LoginPreGate", "QueryQueueStatus",
+        std::make_unique<::loginpb::QueryQueueStatusRequest>(),
+        std::make_unique<::loginpb::QueryQueueStatusResponse>(),
+        nullptr, 1, common::base::eNodeType::LoginNodeService, loginpb::SendLoginPreGateQueryQueueStatus};
 
     // --- LoginAdmin ---
     gRpcMethodRegistry[LoginAdminRemovePlayersFromAccountsMessageId] = RpcMethodMeta{

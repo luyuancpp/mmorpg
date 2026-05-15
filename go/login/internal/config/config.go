@@ -51,6 +51,39 @@ type Config struct {
 	// Default true preserves current behavior. Operators flip via
 	// login.yaml; no restart-blocking dependency on other services.
 	LegacyGateLoginEnabled bool `json:"LegacyGateLoginEnabled,default=true"`
+
+	// Queue holds configuration for the AssignGate login queue. Disabled by
+	// default so existing deployments keep the legacy "always assign" behavior;
+	// flip Enabled=true once the queue path has been validated end-to-end. See
+	// docs/design/login-queue-2026-05.md (added with this feature).
+	Queue QueueConf `json:"Queue,optional"`
+}
+
+// QueueConf controls the login queue (Redis ZSET-backed) that throttles
+// AssignGate when a zone's gates are at capacity.
+//
+// Knobs are deliberately conservative:
+//   - DispatchInterval too low burns Redis QPS for no benefit (gate
+//     PlayerCount only refreshes every few seconds via etcd anyway).
+//   - AdmitTTL must outlive the worst-case "client received admit token →
+//     reconnects to /assign-gate → connects to gate" round-trip; 60s covers
+//     mobile-network jitter and short backoffs comfortably.
+//   - SoftCapMultiplier (e.g. 1.5) is the headroom factor applied to the
+//     largest observed PlayerCount when no explicit ZoneCapacityOverride is
+//     set, so freshly-deployed zones aren't capped at "current load".
+type QueueConf struct {
+	Enabled              bool          `json:"Enabled,default=false"`
+	DispatchInterval     time.Duration `json:"DispatchInterval,default=1s"`
+	AdmitTTL             time.Duration `json:"AdmitTTL,default=60s"`
+	QueueEntryTTL        time.Duration `json:"QueueEntryTTL,default=1h"`
+	SoftCapMultiplier    float64       `json:"SoftCapMultiplier,default=1.5"`
+	DefaultRetryAfterMs  uint32        `json:"DefaultRetryAfterMs,default=2000"`
+	DispatcherLockTTL    time.Duration `json:"DispatcherLockTTL,default=30s"`
+	DispatcherLockKey    string        `json:"DispatcherLockKey,default=dispatcher:lock:login_queue"`
+	// ZoneCapacityOverride lets ops pin the per-zone admission ceiling
+	// without trusting gate-side soft caps. Key is zone_id (string for YAML),
+	// value is the absolute number of concurrent online players permitted.
+	ZoneCapacityOverride map[string]uint32 `json:"ZoneCapacityOverride,optional"`
 }
 
 // PreloadPoolConf controls the bounded goroutine pool used to fan out

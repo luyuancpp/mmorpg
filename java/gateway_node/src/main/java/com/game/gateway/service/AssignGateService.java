@@ -1,117 +1,201 @@
 package com.game.gateway.service;
 
-import com.game.gateway.config.GateProperties;
 import com.game.gateway.dto.AssignGateRequest;
 import com.game.gateway.dto.AssignGateResponse;
-import com.game.gateway.etcd.GateWatcher;
-import com.game.gateway.etcd.NodeInfoRecord;
+import com.game.gateway.grpc.LoginRpcClient;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.charset.StandardCharsets;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.time.Instant;
-import java.util.Comparator;
-import java.util.HexFormat;
-import java.util.List;
-
+/**
+ * Translates {@code POST /api/assign-gate} payloads into the go-zero
+ * {@code LoginPreGate.AssignGate} gRPC and back to HTTP DTO.
+ *
+ * <p><b>Why the local sign-token implementation went away.</b> Before the
+ * 2026-05 login-queue work, this service contained a faithful copy of the
+ * Go-side "select least-loaded gate, build GateTokenPayload, HMAC-sign"
+ * code. Two implementations of the same algorithm in two languages is a
+ * drift hazard — and the queue feature requires a single authoritative
+ * source for capacity / re-entry / reconnect-bypass decisions, all of
+ * which live in go-zero login. The Java side is now a transport shim:
+ *
+ * <ul>
+ *   <li>Bucket4j / wave / IP rate-limiting still runs on the controller
+ *       (first-line filter against retry storms — keeps the gRPC fanout
+ *       cheap).</li>
+ *   <li>Anything past the rate limiter goes straight to go-zero and the
+ *       response is mapped 1:1 onto {@link AssignGateResponse}.</li>
+ * </ul>
+ *
+ * <p>Status mapping (go-zero status → HTTP code):
+ * <ul>
+ *   <li>0 ADMITTED → code=0, gateIp/port/token* populated</li>
+ *   <li>1 QUEUEING → code=100 (queueSource=login), queueToken/queueRank/queueTotal populated</li>
+ *   <li>2 ERROR    → code=500-ish via {@code error} string</li>
+ *   <li>3 EXPIRED  → code=410 (intentionally "Gone") so client UI knows to
+ *                    restart from /assign-gate rather than retry /queue-status</li>
+ * </ul>
+ */
 @Service
 public class AssignGateService {
 
     private static final Logger log = LoggerFactory.getLogger(AssignGateService.class);
 
-    private final GateWatcher gateWatcher;
-    private final GateProperties gateProps;
+    /** Mirrors loginqueue.Status enum in go/login/.../loginqueue/queue.go. */
+    private static final int STATUS_ADMITTED = 0;
+    private static final int STATUS_QUEUEING = 1;
+    private static final int STATUS_ERROR    = 2;
+    private static final int STATUS_EXPIRED  = 3;
 
-    public AssignGateService(GateWatcher gateWatcher, GateProperties gateProps) {
-        this.gateWatcher = gateWatcher;
-        this.gateProps = gateProps;
+    /** HTTP-shape codes used by the existing {@link AssignGateResponse}. */
+    private static final int HTTP_OK             = 0;
+    private static final int HTTP_QUEUE          = 100;
+    private static final int HTTP_QUEUE_EXPIRED  = 410;
+    private static final int HTTP_INTERNAL       = 500;
+
+    private final LoginRpcClient rpc;
+
+    public AssignGateService(LoginRpcClient rpc) {
+        this.rpc = rpc;
     }
 
     public AssignGateResponse assignGate(AssignGateRequest req) {
-        List<NodeInfoRecord> allNodes = gateWatcher.fetchAllGateNodes();
-
-        // Filter by zone, require valid endpoint
-        List<NodeInfoRecord> candidates = allNodes.stream()
-                .filter(n -> n.getEndpoint() != null)
-                .filter(n -> req.getZoneId() == 0 || n.getZoneId() == req.getZoneId())
-                .sorted(Comparator.comparingLong(NodeInfoRecord::getPlayerCount))
-                .toList();
-
-        if (candidates.isEmpty()) {
-            AssignGateResponse resp = new AssignGateResponse();
-            resp.setError("no gate available for requested zone");
-            return resp;
-        }
-
-        NodeInfoRecord best = candidates.getFirst();
-        long expireTs = Instant.now().getEpochSecond() + gateProps.getTokenTtlSeconds();
-
-        // Build payload: simple binary format matching Go's proto.Marshal of GateTokenPayload
-        // Field 1 (gate_node_id): varint, Field 2 (zone_id): varint, Field 3 (expire_timestamp): varint
-        byte[] payload = buildGateTokenPayload(best.getNodeId(), best.getZoneId(), expireTs);
-        byte[] signature = signHmac(gateProps.getTokenSecret(), payload);
-
-        AssignGateResponse resp = new AssignGateResponse();
-        resp.setGateIp(best.getEndpoint().getIp());
-        resp.setGatePort(best.getEndpoint().getPort());
-        resp.setTokenPayload(payload);
-        resp.setTokenSignature(signature);
-        resp.setTokenDeadline(expireTs);
-        return resp;
-    }
-
-    /**
-     * Encodes GateTokenPayload as protobuf wire format:
-     *   field 1 (uint32 gate_node_id) = varint
-     *   field 2 (uint32 zone_id) = varint
-     *   field 3 (int64 expire_timestamp) = varint
-     */
-    private byte[] buildGateTokenPayload(long gateNodeId, long zoneId, long expireTimestamp) {
-        ByteBuffer buf = ByteBuffer.allocate(30).order(ByteOrder.LITTLE_ENDIAN);
-        // field 1, wire type 0 (varint): tag = (1 << 3) | 0 = 0x08
-        writeTagAndVarint(buf, 1, gateNodeId);
-        // field 2, wire type 0: tag = (2 << 3) | 0 = 0x10
-        writeTagAndVarint(buf, 2, zoneId);
-        // field 3, wire type 0: tag = (3 << 3) | 0 = 0x18
-        writeTagAndVarint(buf, 3, expireTimestamp);
-
-        byte[] result = new byte[buf.position()];
-        buf.flip();
-        buf.get(result);
-        return result;
-    }
-
-    private void writeTagAndVarint(ByteBuffer buf, int fieldNumber, long value) {
-        writeVarint(buf, (fieldNumber << 3)); // wire type 0
-        writeVarint(buf, value);
-    }
-
-    private void writeVarint(ByteBuffer buf, long value) {
-        while ((value & ~0x7FL) != 0) {
-            buf.put((byte) ((value & 0x7F) | 0x80));
-            value >>>= 7;
-        }
-        buf.put((byte) (value & 0x7F));
-    }
-
-    /**
-     * HMAC-SHA256, returns hex-encoded string as bytes (matches Go implementation).
-     */
-    private byte[] signHmac(String secret, byte[] data) {
+        var rpcReq = new LoginRpcClient.AssignGateRequestProto(
+                req.getZoneId(),
+                req.getQueueToken(),
+                req.getAccount(),
+                req.getDeviceId()
+        );
         try {
-            Mac mac = Mac.getInstance("HmacSHA256");
-            mac.init(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
-            byte[] raw = mac.doFinal(data);
-            return HexFormat.of().formatHex(raw).getBytes(StandardCharsets.UTF_8);
-        } catch (NoSuchAlgorithmException | InvalidKeyException e) {
-            throw new RuntimeException("HMAC signing failed", e);
+            var rsp = rpc.assignGate(rpcReq);
+            return mapAssignGate(rsp);
+        } catch (StatusRuntimeException e) {
+            Status.Code c = e.getStatus().getCode();
+            log.warn("assigngate.rpc failed: {} — {}", c, e.getStatus().getDescription());
+            AssignGateResponse out = new AssignGateResponse();
+            out.setCode(HTTP_INTERNAL);
+            out.setError(c == Status.Code.UNAVAILABLE
+                    || c == Status.Code.DEADLINE_EXCEEDED ? "login_unavailable" : c.name());
+            return out;
+        } catch (Exception e) {
+            log.error("assigngate.rpc unexpected error", e);
+            AssignGateResponse out = new AssignGateResponse();
+            out.setCode(HTTP_INTERNAL);
+            out.setError("internal_error");
+            return out;
         }
+    }
+
+    /**
+     * Polls the queue for status. Used by {@code POST /api/queue-status}.
+     */
+    public AssignGateResponse queryQueueStatus(String queueToken) {
+        if (queueToken == null || queueToken.isBlank()) {
+            AssignGateResponse out = new AssignGateResponse();
+            out.setCode(HTTP_QUEUE_EXPIRED);
+            out.setError("missing_queue_token");
+            return out;
+        }
+        var rpcReq = new LoginRpcClient.QueryQueueStatusRequestProto(queueToken);
+        try {
+            var rsp = rpc.queryQueueStatus(rpcReq);
+            return mapQueueStatus(rsp, queueToken);
+        } catch (StatusRuntimeException e) {
+            Status.Code c = e.getStatus().getCode();
+            log.warn("queryqueuestatus.rpc failed: {} — {}", c, e.getStatus().getDescription());
+            AssignGateResponse out = new AssignGateResponse();
+            out.setCode(HTTP_INTERNAL);
+            out.setError(c == Status.Code.UNAVAILABLE
+                    || c == Status.Code.DEADLINE_EXCEEDED ? "login_unavailable" : c.name());
+            return out;
+        } catch (Exception e) {
+            log.error("queryqueuestatus.rpc unexpected error", e);
+            AssignGateResponse out = new AssignGateResponse();
+            out.setCode(HTTP_INTERNAL);
+            out.setError("internal_error");
+            return out;
+        }
+    }
+
+    // ── Mapping helpers ───────────────────────────────────────────
+
+    private static AssignGateResponse mapAssignGate(LoginRpcClient.AssignGateResponseProto rsp) {
+        switch (rsp.status) {
+            case STATUS_QUEUEING:
+                return AssignGateResponse.loginQueueing(
+                        rsp.queueToken,
+                        rsp.queueRank,
+                        rsp.queueTotal,
+                        rsp.retryAfterMs > 0 ? rsp.retryAfterMs : 2000
+                );
+            case STATUS_ERROR: {
+                AssignGateResponse out = new AssignGateResponse();
+                out.setCode(HTTP_INTERNAL);
+                out.setError(rsp.error != null ? rsp.error : "unknown_error");
+                return out;
+            }
+            case STATUS_EXPIRED: {
+                AssignGateResponse out = new AssignGateResponse();
+                out.setCode(HTTP_QUEUE_EXPIRED);
+                out.setError(rsp.error != null ? rsp.error : "queue_token_expired");
+                return out;
+            }
+            case STATUS_ADMITTED:
+            default:
+                return admittedResponse(rsp.ip, rsp.port, rsp.tokenPayload, rsp.tokenSignature, rsp.tokenDeadline, rsp.error);
+        }
+    }
+
+    private static AssignGateResponse mapQueueStatus(LoginRpcClient.QueryQueueStatusResponseProto rsp, String queueToken) {
+        switch (rsp.status) {
+            case STATUS_QUEUEING: {
+                // Echo the same queueToken back so the client can keep polling
+                // without parsing the response — a small UX nicety that also
+                // matches what AssignGate did on the initial enqueue.
+                AssignGateResponse out = AssignGateResponse.loginQueueing(
+                        queueToken,
+                        rsp.queueRank,
+                        rsp.queueTotal,
+                        rsp.retryAfterMs > 0 ? rsp.retryAfterMs : 2000
+                );
+                return out;
+            }
+            case STATUS_EXPIRED: {
+                AssignGateResponse out = new AssignGateResponse();
+                out.setCode(HTTP_QUEUE_EXPIRED);
+                out.setError(rsp.error != null ? rsp.error : "queue_token_expired");
+                return out;
+            }
+            case STATUS_ERROR: {
+                AssignGateResponse out = new AssignGateResponse();
+                out.setCode(HTTP_INTERNAL);
+                out.setError(rsp.error != null ? rsp.error : "unknown_error");
+                return out;
+            }
+            case STATUS_ADMITTED:
+            default:
+                return admittedResponse(rsp.ip, rsp.port, rsp.tokenPayload, rsp.tokenSignature, rsp.tokenDeadline, rsp.error);
+        }
+    }
+
+    private static AssignGateResponse admittedResponse(String ip, int port, byte[] payload, byte[] sig, long deadline, String err) {
+        AssignGateResponse out = new AssignGateResponse();
+        if (ip == null || ip.isBlank()) {
+            // Defensive: ADMITTED without an endpoint shouldn't happen, but if
+            // a future protocol bug leaves these blank we surface it as error
+            // rather than handing the client an empty connect target.
+            out.setCode(HTTP_INTERNAL);
+            out.setError(err != null && !err.isBlank() ? err : "admitted_without_endpoint");
+            return out;
+        }
+        out.setCode(HTTP_OK);
+        out.setGateIp(ip);
+        out.setGatePort(port);
+        out.setTokenPayload(payload);
+        out.setTokenSignature(sig);
+        out.setTokenDeadline(deadline);
+        return out;
     }
 }

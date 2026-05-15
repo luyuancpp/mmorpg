@@ -295,6 +295,7 @@ ClientPlayerLogin::Service::~Service() {
 
 static const char* LoginPreGate_method_names[] = {
   "/loginpb.LoginPreGate/AssignGate",
+  "/loginpb.LoginPreGate/QueryQueueStatus",
 };
 
 std::unique_ptr< LoginPreGate::Stub> LoginPreGate::NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options) {
@@ -305,6 +306,7 @@ std::unique_ptr< LoginPreGate::Stub> LoginPreGate::NewStub(const std::shared_ptr
 
 LoginPreGate::Stub::Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options)
   : channel_(channel), rpcmethod_AssignGate_(LoginPreGate_method_names[0], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_QueryQueueStatus_(LoginPreGate_method_names[1], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   {}
 
 ::grpc::Status LoginPreGate::Stub::AssignGate(::grpc::ClientContext* context, const ::loginpb::AssignGateRequest& request, ::loginpb::AssignGateResponse* response) {
@@ -330,6 +332,29 @@ void LoginPreGate::Stub::async::AssignGate(::grpc::ClientContext* context, const
   return result;
 }
 
+::grpc::Status LoginPreGate::Stub::QueryQueueStatus(::grpc::ClientContext* context, const ::loginpb::QueryQueueStatusRequest& request, ::loginpb::QueryQueueStatusResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::loginpb::QueryQueueStatusRequest, ::loginpb::QueryQueueStatusResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_QueryQueueStatus_, context, request, response);
+}
+
+void LoginPreGate::Stub::async::QueryQueueStatus(::grpc::ClientContext* context, const ::loginpb::QueryQueueStatusRequest* request, ::loginpb::QueryQueueStatusResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::loginpb::QueryQueueStatusRequest, ::loginpb::QueryQueueStatusResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_QueryQueueStatus_, context, request, response, std::move(f));
+}
+
+void LoginPreGate::Stub::async::QueryQueueStatus(::grpc::ClientContext* context, const ::loginpb::QueryQueueStatusRequest* request, ::loginpb::QueryQueueStatusResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_QueryQueueStatus_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::loginpb::QueryQueueStatusResponse>* LoginPreGate::Stub::PrepareAsyncQueryQueueStatusRaw(::grpc::ClientContext* context, const ::loginpb::QueryQueueStatusRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::loginpb::QueryQueueStatusResponse, ::loginpb::QueryQueueStatusRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_QueryQueueStatus_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::loginpb::QueryQueueStatusResponse>* LoginPreGate::Stub::AsyncQueryQueueStatusRaw(::grpc::ClientContext* context, const ::loginpb::QueryQueueStatusRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncQueryQueueStatusRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
 LoginPreGate::Service::Service() {
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       LoginPreGate_method_names[0],
@@ -341,12 +366,29 @@ LoginPreGate::Service::Service() {
              ::loginpb::AssignGateResponse* resp) {
                return service->AssignGate(ctx, req, resp);
              }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      LoginPreGate_method_names[1],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< LoginPreGate::Service, ::loginpb::QueryQueueStatusRequest, ::loginpb::QueryQueueStatusResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](LoginPreGate::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::loginpb::QueryQueueStatusRequest* req,
+             ::loginpb::QueryQueueStatusResponse* resp) {
+               return service->QueryQueueStatus(ctx, req, resp);
+             }, this)));
 }
 
 LoginPreGate::Service::~Service() {
 }
 
 ::grpc::Status LoginPreGate::Service::AssignGate(::grpc::ServerContext* context, const ::loginpb::AssignGateRequest* request, ::loginpb::AssignGateResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status LoginPreGate::Service::QueryQueueStatus(::grpc::ServerContext* context, const ::loginpb::QueryQueueStatusRequest* request, ::loginpb::QueryQueueStatusResponse* response) {
   (void) context;
   (void) request;
   (void) response;

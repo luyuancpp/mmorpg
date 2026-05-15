@@ -48,15 +48,16 @@
 
 ## 三、真正的缺口清单
 
-### 缺口 #10: 开服削峰(Java Gateway 限流 + 排队)
-**风险:** 开服 5 万人同时点登录,login `player_locker` 排队 + DB 加载压力雪崩。
-**做法:**
-- `java/gateway_node/` 的 `/api/assign-gate` 加 Bucket4j+Redis 全局令牌桶(2000 token/s)
-- 拿不到令牌 → 返回 `{ code: QUEUEING, queue_pos, retry_after }`
-- 客户端 UI 显示排队,定时重试
-- 按 zone 分批放人
+### 缺口 #10: 开服削峰(Java Gateway 限流 + 排队) — ✅ 已落地
 
-**为什么放在 Gateway:** HTTP 短连接、Bucket4j 生态成熟、削峰失败不影响游戏中玩家。
+**两层互补已就绪:**
+
+1. **Bucket4j 限流**(2026-05-08):三层叠加(zone/IP/account cooldown)+ 开服波次,挡请求洪峰
+2. **AssignGate 真排队**(2026-05-14):Redis ZSET 做有序 FIFO,权威源在 go-zero login;Java AssignGateService 删本地签 HMAC,改 gRPC 转发;返回 `code=100 + queueSource="login"` 带真实 `queueRank/queueTotal`,客户端按 `retryAfterMs` 轮询 `/api/queue-status`
+
+**为什么真排队放 login 不放 Gateway:** 出队需要的状态(EnterGame 进度、PlayerSession、重连判定)全在 login;Bucket4j 是无序速率匙,真排队是有序容量阀,两者必须共存。详见 [login-queue-2026-05.md](./login-queue-2026-05.md) §1-2。
+
+**Kill switch:** `Queue.Enabled: false`(login.yaml 默认值),秒级回滚到 fast path。
 
 ### 缺口 #13: gate→login gRPC 长连接核查
 **风险:** 压测 `Bound=2704` 残留说明 gate 主动 connect 仍在持续发生。
@@ -106,7 +107,7 @@ ss -tan state time-wait | awk '{print $4}' | sort | uniq -c | sort -rn | head
 ```
 第1步: 缺口 #13 核查 → 快速 ss 命令定位短连源头(15 分钟)
 第2步: 缺口 #9  固化 sysctl(30 分钟)
-第3步: 缺口 #10 Java Gateway 加 Bucket4j 限流(2 天)
-第4步: 缺口 #11 QQ/微信端到端联调(3-5 天)
-第5步: 缺口 #2  阶梯压测找拐点(1 天)
+~~第3步: 缺口 #10 Java Gateway 加 Bucket4j 限流(2 天)~~ ✅ 2026-05-14 已落地
+第3步: 缺口 #11 QQ/微信端到端联调(3-5 天)
+第4步: 缺口 #2  阶梯压测找拐点(1 天,顺带跑排队压测,见 [login-queue-stress-runbook.md](../ops/login-queue-stress-runbook.md))
 ```

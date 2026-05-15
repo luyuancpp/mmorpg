@@ -1031,6 +1031,10 @@ class LoginPreGate final {
     // Login picks the least-loaded Gate for the given zone, signs a one-time
     // HMAC token. Client TCP-connects to the assigned gate and sends the
     // token as a ClientTokenVerifyRequest (first message after connect).
+    //
+    // When the zone is over capacity, AssignGate enqueues the caller and
+    // returns status=QUEUEING with a queue_token. The client then polls
+    // QueryQueueStatus until it receives a gate token.
     virtual ::grpc::Status AssignGate(::grpc::ClientContext* context, const ::loginpb::AssignGateRequest& request, ::loginpb::AssignGateResponse* response) = 0;
     std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::loginpb::AssignGateResponse>> AsyncAssignGate(::grpc::ClientContext* context, const ::loginpb::AssignGateRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::loginpb::AssignGateResponse>>(AsyncAssignGateRaw(context, request, cq));
@@ -1038,14 +1042,27 @@ class LoginPreGate final {
     std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::loginpb::AssignGateResponse>> PrepareAsyncAssignGate(::grpc::ClientContext* context, const ::loginpb::AssignGateRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::loginpb::AssignGateResponse>>(PrepareAsyncAssignGateRaw(context, request, cq));
     }
+    virtual ::grpc::Status QueryQueueStatus(::grpc::ClientContext* context, const ::loginpb::QueryQueueStatusRequest& request, ::loginpb::QueryQueueStatusResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::loginpb::QueryQueueStatusResponse>> AsyncQueryQueueStatus(::grpc::ClientContext* context, const ::loginpb::QueryQueueStatusRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::loginpb::QueryQueueStatusResponse>>(AsyncQueryQueueStatusRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::loginpb::QueryQueueStatusResponse>> PrepareAsyncQueryQueueStatus(::grpc::ClientContext* context, const ::loginpb::QueryQueueStatusRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::loginpb::QueryQueueStatusResponse>>(PrepareAsyncQueryQueueStatusRaw(context, request, cq));
+    }
     class async_interface {
      public:
       virtual ~async_interface() {}
       // Login picks the least-loaded Gate for the given zone, signs a one-time
       // HMAC token. Client TCP-connects to the assigned gate and sends the
       // token as a ClientTokenVerifyRequest (first message after connect).
+      //
+      // When the zone is over capacity, AssignGate enqueues the caller and
+      // returns status=QUEUEING with a queue_token. The client then polls
+      // QueryQueueStatus until it receives a gate token.
       virtual void AssignGate(::grpc::ClientContext* context, const ::loginpb::AssignGateRequest* request, ::loginpb::AssignGateResponse* response, std::function<void(::grpc::Status)>) = 0;
       virtual void AssignGate(::grpc::ClientContext* context, const ::loginpb::AssignGateRequest* request, ::loginpb::AssignGateResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      virtual void QueryQueueStatus(::grpc::ClientContext* context, const ::loginpb::QueryQueueStatusRequest* request, ::loginpb::QueryQueueStatusResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void QueryQueueStatus(::grpc::ClientContext* context, const ::loginpb::QueryQueueStatusRequest* request, ::loginpb::QueryQueueStatusResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
     };
     typedef class async_interface experimental_async_interface;
     virtual class async_interface* async() { return nullptr; }
@@ -1053,6 +1070,8 @@ class LoginPreGate final {
    private:
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::loginpb::AssignGateResponse>* AsyncAssignGateRaw(::grpc::ClientContext* context, const ::loginpb::AssignGateRequest& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::loginpb::AssignGateResponse>* PrepareAsyncAssignGateRaw(::grpc::ClientContext* context, const ::loginpb::AssignGateRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::loginpb::QueryQueueStatusResponse>* AsyncQueryQueueStatusRaw(::grpc::ClientContext* context, const ::loginpb::QueryQueueStatusRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::loginpb::QueryQueueStatusResponse>* PrepareAsyncQueryQueueStatusRaw(::grpc::ClientContext* context, const ::loginpb::QueryQueueStatusRequest& request, ::grpc::CompletionQueue* cq) = 0;
   };
   class Stub final : public StubInterface {
    public:
@@ -1064,11 +1083,20 @@ class LoginPreGate final {
     std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::loginpb::AssignGateResponse>> PrepareAsyncAssignGate(::grpc::ClientContext* context, const ::loginpb::AssignGateRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::loginpb::AssignGateResponse>>(PrepareAsyncAssignGateRaw(context, request, cq));
     }
+    ::grpc::Status QueryQueueStatus(::grpc::ClientContext* context, const ::loginpb::QueryQueueStatusRequest& request, ::loginpb::QueryQueueStatusResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::loginpb::QueryQueueStatusResponse>> AsyncQueryQueueStatus(::grpc::ClientContext* context, const ::loginpb::QueryQueueStatusRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::loginpb::QueryQueueStatusResponse>>(AsyncQueryQueueStatusRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::loginpb::QueryQueueStatusResponse>> PrepareAsyncQueryQueueStatus(::grpc::ClientContext* context, const ::loginpb::QueryQueueStatusRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::loginpb::QueryQueueStatusResponse>>(PrepareAsyncQueryQueueStatusRaw(context, request, cq));
+    }
     class async final :
       public StubInterface::async_interface {
      public:
       void AssignGate(::grpc::ClientContext* context, const ::loginpb::AssignGateRequest* request, ::loginpb::AssignGateResponse* response, std::function<void(::grpc::Status)>) override;
       void AssignGate(::grpc::ClientContext* context, const ::loginpb::AssignGateRequest* request, ::loginpb::AssignGateResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void QueryQueueStatus(::grpc::ClientContext* context, const ::loginpb::QueryQueueStatusRequest* request, ::loginpb::QueryQueueStatusResponse* response, std::function<void(::grpc::Status)>) override;
+      void QueryQueueStatus(::grpc::ClientContext* context, const ::loginpb::QueryQueueStatusRequest* request, ::loginpb::QueryQueueStatusResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
      private:
       friend class Stub;
       explicit async(Stub* stub): stub_(stub) { }
@@ -1082,7 +1110,10 @@ class LoginPreGate final {
     class async async_stub_{this};
     ::grpc::ClientAsyncResponseReader< ::loginpb::AssignGateResponse>* AsyncAssignGateRaw(::grpc::ClientContext* context, const ::loginpb::AssignGateRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::loginpb::AssignGateResponse>* PrepareAsyncAssignGateRaw(::grpc::ClientContext* context, const ::loginpb::AssignGateRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::loginpb::QueryQueueStatusResponse>* AsyncQueryQueueStatusRaw(::grpc::ClientContext* context, const ::loginpb::QueryQueueStatusRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::loginpb::QueryQueueStatusResponse>* PrepareAsyncQueryQueueStatusRaw(::grpc::ClientContext* context, const ::loginpb::QueryQueueStatusRequest& request, ::grpc::CompletionQueue* cq) override;
     const ::grpc::internal::RpcMethod rpcmethod_AssignGate_;
+    const ::grpc::internal::RpcMethod rpcmethod_QueryQueueStatus_;
   };
   static std::unique_ptr<Stub> NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options = ::grpc::StubOptions());
 
@@ -1093,7 +1124,12 @@ class LoginPreGate final {
     // Login picks the least-loaded Gate for the given zone, signs a one-time
     // HMAC token. Client TCP-connects to the assigned gate and sends the
     // token as a ClientTokenVerifyRequest (first message after connect).
+    //
+    // When the zone is over capacity, AssignGate enqueues the caller and
+    // returns status=QUEUEING with a queue_token. The client then polls
+    // QueryQueueStatus until it receives a gate token.
     virtual ::grpc::Status AssignGate(::grpc::ServerContext* context, const ::loginpb::AssignGateRequest* request, ::loginpb::AssignGateResponse* response);
+    virtual ::grpc::Status QueryQueueStatus(::grpc::ServerContext* context, const ::loginpb::QueryQueueStatusRequest* request, ::loginpb::QueryQueueStatusResponse* response);
   };
   template <class BaseClass>
   class WithAsyncMethod_AssignGate : public BaseClass {
@@ -1115,7 +1151,27 @@ class LoginPreGate final {
       ::grpc::Service::RequestAsyncUnary(0, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
-  typedef WithAsyncMethod_AssignGate<Service > AsyncService;
+  template <class BaseClass>
+  class WithAsyncMethod_QueryQueueStatus : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_QueryQueueStatus() {
+      ::grpc::Service::MarkMethodAsync(1);
+    }
+    ~WithAsyncMethod_QueryQueueStatus() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status QueryQueueStatus(::grpc::ServerContext* /*context*/, const ::loginpb::QueryQueueStatusRequest* /*request*/, ::loginpb::QueryQueueStatusResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestQueryQueueStatus(::grpc::ServerContext* context, ::loginpb::QueryQueueStatusRequest* request, ::grpc::ServerAsyncResponseWriter< ::loginpb::QueryQueueStatusResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(1, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  typedef WithAsyncMethod_AssignGate<WithAsyncMethod_QueryQueueStatus<Service > > AsyncService;
   template <class BaseClass>
   class WithCallbackMethod_AssignGate : public BaseClass {
    private:
@@ -1143,7 +1199,34 @@ class LoginPreGate final {
     virtual ::grpc::ServerUnaryReactor* AssignGate(
       ::grpc::CallbackServerContext* /*context*/, const ::loginpb::AssignGateRequest* /*request*/, ::loginpb::AssignGateResponse* /*response*/)  { return nullptr; }
   };
-  typedef WithCallbackMethod_AssignGate<Service > CallbackService;
+  template <class BaseClass>
+  class WithCallbackMethod_QueryQueueStatus : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_QueryQueueStatus() {
+      ::grpc::Service::MarkMethodCallback(1,
+          new ::grpc::internal::CallbackUnaryHandler< ::loginpb::QueryQueueStatusRequest, ::loginpb::QueryQueueStatusResponse>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::loginpb::QueryQueueStatusRequest* request, ::loginpb::QueryQueueStatusResponse* response) { return this->QueryQueueStatus(context, request, response); }));}
+    void SetMessageAllocatorFor_QueryQueueStatus(
+        ::grpc::MessageAllocator< ::loginpb::QueryQueueStatusRequest, ::loginpb::QueryQueueStatusResponse>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(1);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::loginpb::QueryQueueStatusRequest, ::loginpb::QueryQueueStatusResponse>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_QueryQueueStatus() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status QueryQueueStatus(::grpc::ServerContext* /*context*/, const ::loginpb::QueryQueueStatusRequest* /*request*/, ::loginpb::QueryQueueStatusResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* QueryQueueStatus(
+      ::grpc::CallbackServerContext* /*context*/, const ::loginpb::QueryQueueStatusRequest* /*request*/, ::loginpb::QueryQueueStatusResponse* /*response*/)  { return nullptr; }
+  };
+  typedef WithCallbackMethod_AssignGate<WithCallbackMethod_QueryQueueStatus<Service > > CallbackService;
   typedef CallbackService ExperimentalCallbackService;
   template <class BaseClass>
   class WithGenericMethod_AssignGate : public BaseClass {
@@ -1158,6 +1241,23 @@ class LoginPreGate final {
     }
     // disable synchronous version of this method
     ::grpc::Status AssignGate(::grpc::ServerContext* /*context*/, const ::loginpb::AssignGateRequest* /*request*/, ::loginpb::AssignGateResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_QueryQueueStatus : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_QueryQueueStatus() {
+      ::grpc::Service::MarkMethodGeneric(1);
+    }
+    ~WithGenericMethod_QueryQueueStatus() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status QueryQueueStatus(::grpc::ServerContext* /*context*/, const ::loginpb::QueryQueueStatusRequest* /*request*/, ::loginpb::QueryQueueStatusResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -1183,6 +1283,26 @@ class LoginPreGate final {
     }
   };
   template <class BaseClass>
+  class WithRawMethod_QueryQueueStatus : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_QueryQueueStatus() {
+      ::grpc::Service::MarkMethodRaw(1);
+    }
+    ~WithRawMethod_QueryQueueStatus() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status QueryQueueStatus(::grpc::ServerContext* /*context*/, const ::loginpb::QueryQueueStatusRequest* /*request*/, ::loginpb::QueryQueueStatusResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestQueryQueueStatus(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(1, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
   class WithRawCallbackMethod_AssignGate : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
@@ -1202,6 +1322,28 @@ class LoginPreGate final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     virtual ::grpc::ServerUnaryReactor* AssignGate(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_QueryQueueStatus : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_QueryQueueStatus() {
+      ::grpc::Service::MarkMethodRawCallback(1,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->QueryQueueStatus(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_QueryQueueStatus() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status QueryQueueStatus(::grpc::ServerContext* /*context*/, const ::loginpb::QueryQueueStatusRequest* /*request*/, ::loginpb::QueryQueueStatusResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* QueryQueueStatus(
       ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
   };
   template <class BaseClass>
@@ -1231,9 +1373,36 @@ class LoginPreGate final {
     // replace default version of method with streamed unary
     virtual ::grpc::Status StreamedAssignGate(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::loginpb::AssignGateRequest,::loginpb::AssignGateResponse>* server_unary_streamer) = 0;
   };
-  typedef WithStreamedUnaryMethod_AssignGate<Service > StreamedUnaryService;
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_QueryQueueStatus : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_QueryQueueStatus() {
+      ::grpc::Service::MarkMethodStreamed(1,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::loginpb::QueryQueueStatusRequest, ::loginpb::QueryQueueStatusResponse>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::loginpb::QueryQueueStatusRequest, ::loginpb::QueryQueueStatusResponse>* streamer) {
+                       return this->StreamedQueryQueueStatus(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_QueryQueueStatus() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status QueryQueueStatus(::grpc::ServerContext* /*context*/, const ::loginpb::QueryQueueStatusRequest* /*request*/, ::loginpb::QueryQueueStatusResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedQueryQueueStatus(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::loginpb::QueryQueueStatusRequest,::loginpb::QueryQueueStatusResponse>* server_unary_streamer) = 0;
+  };
+  typedef WithStreamedUnaryMethod_AssignGate<WithStreamedUnaryMethod_QueryQueueStatus<Service > > StreamedUnaryService;
   typedef Service SplitStreamedService;
-  typedef WithStreamedUnaryMethod_AssignGate<Service > StreamedService;
+  typedef WithStreamedUnaryMethod_AssignGate<WithStreamedUnaryMethod_QueryQueueStatus<Service > > StreamedService;
 };
 
 class LoginAdmin final {

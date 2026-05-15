@@ -136,3 +136,4 @@
 135=SceneMovementClientPlayerNotifyActorMoveList
 136=SceneMovementClientPlayerTeleportRequest
 137=SceneMovementClientPlayerNotifyMoveAck
+138=LoginPreGateQueryQueueStatus

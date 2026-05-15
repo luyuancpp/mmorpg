@@ -4,11 +4,12 @@ go 1.24.5
 
 require (
 	github.com/IBM/sarama v1.46.2
+	github.com/alicebob/miniredis/v2 v2.35.0
 	github.com/bwmarrin/snowflake v0.3.0
 	github.com/google/uuid v1.6.0
+	github.com/panjf2000/ants/v2 v2.12.0
 	github.com/redis/go-redis/v9 v9.16.0
 	github.com/zeromicro/go-zero v1.9.2
-	go.etcd.io/etcd/api/v3 v3.6.5
 	go.etcd.io/etcd/client/v3 v3.6.5
 	golang.org/x/net v0.48.0
 	google.golang.org/grpc v1.79.3
@@ -60,7 +61,6 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/openzipkin/zipkin-go v0.4.3 // indirect
-	github.com/panjf2000/ants/v2 v2.12.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.2 // indirect
 	github.com/pierrec/lz4/v4 v4.1.22 // indirect
 	github.com/prometheus/client_golang v1.21.1 // indirect
@@ -70,6 +70,8 @@ require (
 	github.com/rcrowley/go-metrics v0.0.0-20250401214520-65e299d6c5c9 // indirect
 	github.com/segmentio/kafka-go v0.4.47 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
+	github.com/yuin/gopher-lua v1.1.1 // indirect
+	go.etcd.io/etcd/api/v3 v3.6.5 // indirect
 	go.etcd.io/etcd/client/pkg/v3 v3.6.5 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/otel v1.39.0 // indirect

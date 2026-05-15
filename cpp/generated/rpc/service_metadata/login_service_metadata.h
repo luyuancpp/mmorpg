@@ -31,6 +31,10 @@ constexpr uint32_t LoginPreGateAssignGateMessageId = 118;
 constexpr uint32_t LoginPreGateAssignGateIndex = 0;
 #define LoginPreGateAssignGateMethod  ::LoginPreGate_Stub::descriptor()->method(0)
 
+constexpr uint32_t LoginPreGateQueryQueueStatusMessageId = 138;
+constexpr uint32_t LoginPreGateQueryQueueStatusIndex = 1;
+#define LoginPreGateQueryQueueStatusMethod  ::LoginPreGate_Stub::descriptor()->method(1)
+
 constexpr uint32_t LoginAdminRemovePlayersFromAccountsMessageId = 111;
 constexpr uint32_t LoginAdminRemovePlayersFromAccountsIndex = 0;
 #define LoginAdminRemovePlayersFromAccountsMethod  ::LoginAdmin_Stub::descriptor()->method(0)

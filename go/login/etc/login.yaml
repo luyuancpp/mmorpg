@@ -174,6 +174,43 @@ AuthProviders:
 #     AppKey: "${NETEASE_APP_KEY}"
 #     AppSecret: "${NETEASE_APP_SECRET}"
 
+# AssignGate login queue (Redis ZSET-backed). When Enabled=false (default),
+# AssignGate signs and returns a gate token immediately, just like the legacy
+# behavior. When Enabled=true:
+#   - capacity is computed per-zone from gate PlayerCount + ZoneCapacityOverride
+#   - over-capacity callers are enqueued and receive a queue_token; clients
+#     poll QueryQueueStatus until the dispatcher promotes them.
+#   - reconnect/replace callers (existing PlayerSession) bypass the queue.
+#
+# Roll-out checklist:
+#   1. Deploy with Enabled=false → verify no behavior change.
+#   2. Set ZoneCapacityOverride for each live zone (use observed peak * 0.9
+#      as the initial value; tune from there).
+#   3. Flip Enabled=true on one canary login pod, watch admit/queue counters.
+#   4. Roll out fleet-wide.
+#
+# DispatchInterval too low burns Redis QPS without improving fairness;
+# 1s is the sweet spot since gate PlayerCount only refreshes every few
+# seconds via etcd.
+#
+# AdmitTTL must outlive the worst-case "client reads admit token →
+# connects to gate" round-trip across mobile networks. 60s is generous.
+Queue:
+  Enabled: false
+  DispatchInterval: 1s
+  AdmitTTL: 60s
+  QueueEntryTTL: 1h
+  SoftCapMultiplier: 1.5
+  DefaultRetryAfterMs: 2000
+  DispatcherLockTTL: 30s
+  DispatcherLockKey: "dispatcher:lock:login_queue"
+  # ZoneCapacityOverride pins per-zone admission ceilings. Keys are zone IDs
+  # as decimal strings; values are absolute concurrent online player ceilings.
+  # When unset for a zone, FreeSlots falls back to PlayerCount * SoftCapMultiplier.
+  # ZoneCapacityOverride:
+  #   "1": 5000
+  #   "2": 5000
+
 # Kafka config
 Kafka:
   Brokers:

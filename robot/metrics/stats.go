@@ -34,6 +34,19 @@ type Stats struct {
 	tokenRefreshOK          atomic.Int64 // successful in-session RefreshToken RPC
 	tokenRefreshFail        atomic.Int64 // RefreshToken RPC returned error
 
+	// AssignGate queue observability (added with the 2026-05 login queue).
+	// queueEntered      = robots that hit code=100 at least once during this session
+	// queueAdmittedAfterWait = robots that were eventually admitted from the queue
+	// queueExpiredToken     = robots that saw 410 (queue token TTL'd out before admit)
+	// queueWaitTotalNs      = sum of (admitTime - firstQueueResponseTime) per robot
+	// queueMaxRankObserved  = high-water-mark of any robot's reported rank
+	queueEntered           atomic.Int64
+	queueAdmittedAfterWait atomic.Int64
+	queueExpiredToken      atomic.Int64
+	queueWaitTotalNs       atomic.Int64
+	queueWaitCount         atomic.Int64
+	queueMaxRankObserved   atomic.Int64
+
 	mu             sync.Mutex
 	loginCount     int64 // guarded by mu
 	loginTotalNs   int64 // guarded by mu — sum in nanoseconds
@@ -77,6 +90,36 @@ func (s *Stats) AccessReconnectOK()       { s.accessReconnectOK.Add(1) }
 func (s *Stats) AccessReconnectFallback() { s.accessReconnectFallback.Add(1) }
 func (s *Stats) TokenRefreshOK()          { s.tokenRefreshOK.Add(1) }
 func (s *Stats) TokenRefreshFail()        { s.tokenRefreshFail.Add(1) }
+
+// QueueEntered records that a robot hit code=100 (any source) at least once.
+// Idempotent within a single robot's lifecycle is the caller's contract — we
+// just count events so the report shows "this run had N queue events".
+func (s *Stats) QueueEntered()               { s.queueEntered.Add(1) }
+func (s *Stats) QueueAdmittedAfterWait()     { s.queueAdmittedAfterWait.Add(1) }
+func (s *Stats) QueueExpiredToken()          { s.queueExpiredToken.Add(1) }
+
+// QueueWait records the time a single robot spent waiting in the queue
+// (from first code=100 response to final code=0 admit). Used to surface
+// p50/p99 wait time in the report.
+func (s *Stats) QueueWait(d time.Duration) {
+	s.queueWaitTotalNs.Add(int64(d))
+	s.queueWaitCount.Add(1)
+}
+
+// QueueRankSeen tracks the highest rank observed across all robots. A
+// climbing high-water mark with no admits is the canonical signal of a
+// stuck dispatcher.
+func (s *Stats) QueueRankSeen(rank int64) {
+	for {
+		cur := s.queueMaxRankObserved.Load()
+		if rank <= cur {
+			return
+		}
+		if s.queueMaxRankObserved.CompareAndSwap(cur, rank) {
+			return
+		}
+	}
+}
 
 // StartReporter prints a summary every interval until stop is closed.
 func (s *Stats) StartReporter(interval time.Duration, stop <-chan struct{}) {
@@ -131,7 +174,8 @@ func (s *Stats) report() {
 
 	zap.L().Info(fmt.Sprintf("[stats %s] conn=%d login_ok=%d login_fail=%d login_stuck=%d enter_ok=%d enter_fail=%d "+
 		"msg_sent=%d(%.0f/s) msg_recv=%d(%.0f/s) skill=%d scene_switch=%d avg_login=%s max_login=%s "+
-		"recon_ok=%d recon_fb=%d refresh_ok=%d refresh_fail=%d",
+		"recon_ok=%d recon_fb=%d refresh_ok=%d refresh_fail=%d "+
+		"q_entered=%d q_admitted=%d q_expired=%d q_avg_wait=%s q_max_rank=%d",
 		elapsed,
 		s.connected.Load(),
 		s.loginOK.Load(), s.loginFail.Load(), s.loginStuck.Load(),
@@ -143,7 +187,19 @@ func (s *Stats) report() {
 		max.Truncate(time.Millisecond),
 		s.accessReconnectOK.Load(), s.accessReconnectFallback.Load(),
 		s.tokenRefreshOK.Load(), s.tokenRefreshFail.Load(),
+		s.queueEntered.Load(), s.queueAdmittedAfterWait.Load(), s.queueExpiredToken.Load(),
+		s.avgQueueWait().Truncate(time.Millisecond), s.queueMaxRankObserved.Load(),
 	))
+}
+
+// avgQueueWait returns the running mean of QueueWait observations.
+// Zero when no robot has been admitted from the queue yet.
+func (s *Stats) avgQueueWait() time.Duration {
+	count := s.queueWaitCount.Load()
+	if count == 0 {
+		return 0
+	}
+	return time.Duration(s.queueWaitTotalNs.Load() / count)
 }
 
 // LoginRecord captures one login attempt for post-hoc analysis / ML training.

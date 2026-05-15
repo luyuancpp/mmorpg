@@ -106,6 +106,75 @@ struct RefreshTokenRequestDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 RefreshTokenRequestDefaultTypeInternal _RefreshTokenRequest_default_instance_;
 
+inline constexpr QueryQueueStatusResponse::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        ip_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        token_payload_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        token_signature_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        error_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        status_{0u},
+        port_{0u},
+        token_deadline_{::int64_t{0}},
+        queue_rank_{0u},
+        queue_total_{0u},
+        retry_after_ms_{0u} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR QueryQueueStatusResponse::QueryQueueStatusResponse(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(QueryQueueStatusResponse_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct QueryQueueStatusResponseDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR QueryQueueStatusResponseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~QueryQueueStatusResponseDefaultTypeInternal() {}
+  union {
+    QueryQueueStatusResponse _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 QueryQueueStatusResponseDefaultTypeInternal _QueryQueueStatusResponse_default_instance_;
+
+inline constexpr QueryQueueStatusRequest::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        queue_token_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()) {}
+
+template <typename>
+PROTOBUF_CONSTEXPR QueryQueueStatusRequest::QueryQueueStatusRequest(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(QueryQueueStatusRequest_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct QueryQueueStatusRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR QueryQueueStatusRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~QueryQueueStatusRequestDefaultTypeInternal() {}
+  union {
+    QueryQueueStatusRequest _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 QueryQueueStatusRequestDefaultTypeInternal _QueryQueueStatusRequest_default_instance_;
+
 inline constexpr LoginSessionInfo::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
@@ -298,8 +367,15 @@ inline constexpr AssignGateResponse::Impl_::Impl_(
         error_(
             &::google::protobuf::internal::fixed_address_empty_string,
             ::_pbi::ConstantInitialized()),
+        queue_token_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        port_{0u},
+        status_{0u},
         token_deadline_{::int64_t{0}},
-        port_{0u} {}
+        queue_rank_{0u},
+        queue_total_{0u},
+        retry_after_ms_{0u} {}
 
 template <typename>
 PROTOBUF_CONSTEXPR AssignGateResponse::AssignGateResponse(::_pbi::ConstantInitialized)
@@ -324,6 +400,15 @@ PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
 inline constexpr AssignGateRequest::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
+        queue_token_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        account_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        device_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
         zone_id_{0u} {}
 
 template <typename>
@@ -632,23 +717,67 @@ const ::uint32_t
         4,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::loginpb::AssignGateRequest, _impl_._has_bits_),
-        4, // hasbit index offset
+        7, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::loginpb::AssignGateRequest, _impl_.zone_id_),
+        PROTOBUF_FIELD_OFFSET(::loginpb::AssignGateRequest, _impl_.queue_token_),
+        PROTOBUF_FIELD_OFFSET(::loginpb::AssignGateRequest, _impl_.account_),
+        PROTOBUF_FIELD_OFFSET(::loginpb::AssignGateRequest, _impl_.device_id_),
+        3,
         0,
+        1,
+        2,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::loginpb::AssignGateResponse, _impl_._has_bits_),
-        9, // hasbit index offset
+        14, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::loginpb::AssignGateResponse, _impl_.ip_),
         PROTOBUF_FIELD_OFFSET(::loginpb::AssignGateResponse, _impl_.port_),
         PROTOBUF_FIELD_OFFSET(::loginpb::AssignGateResponse, _impl_.token_payload_),
         PROTOBUF_FIELD_OFFSET(::loginpb::AssignGateResponse, _impl_.token_signature_),
         PROTOBUF_FIELD_OFFSET(::loginpb::AssignGateResponse, _impl_.token_deadline_),
         PROTOBUF_FIELD_OFFSET(::loginpb::AssignGateResponse, _impl_.error_),
+        PROTOBUF_FIELD_OFFSET(::loginpb::AssignGateResponse, _impl_.status_),
+        PROTOBUF_FIELD_OFFSET(::loginpb::AssignGateResponse, _impl_.queue_token_),
+        PROTOBUF_FIELD_OFFSET(::loginpb::AssignGateResponse, _impl_.queue_rank_),
+        PROTOBUF_FIELD_OFFSET(::loginpb::AssignGateResponse, _impl_.queue_total_),
+        PROTOBUF_FIELD_OFFSET(::loginpb::AssignGateResponse, _impl_.retry_after_ms_),
         0,
         5,
         1,
         2,
+        7,
+        3,
+        6,
         4,
+        8,
+        9,
+        10,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::loginpb::QueryQueueStatusRequest, _impl_._has_bits_),
+        4, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::loginpb::QueryQueueStatusRequest, _impl_.queue_token_),
+        0,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::loginpb::QueryQueueStatusResponse, _impl_._has_bits_),
+        13, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::loginpb::QueryQueueStatusResponse, _impl_.status_),
+        PROTOBUF_FIELD_OFFSET(::loginpb::QueryQueueStatusResponse, _impl_.ip_),
+        PROTOBUF_FIELD_OFFSET(::loginpb::QueryQueueStatusResponse, _impl_.port_),
+        PROTOBUF_FIELD_OFFSET(::loginpb::QueryQueueStatusResponse, _impl_.token_payload_),
+        PROTOBUF_FIELD_OFFSET(::loginpb::QueryQueueStatusResponse, _impl_.token_signature_),
+        PROTOBUF_FIELD_OFFSET(::loginpb::QueryQueueStatusResponse, _impl_.token_deadline_),
+        PROTOBUF_FIELD_OFFSET(::loginpb::QueryQueueStatusResponse, _impl_.queue_rank_),
+        PROTOBUF_FIELD_OFFSET(::loginpb::QueryQueueStatusResponse, _impl_.queue_total_),
+        PROTOBUF_FIELD_OFFSET(::loginpb::QueryQueueStatusResponse, _impl_.retry_after_ms_),
+        PROTOBUF_FIELD_OFFSET(::loginpb::QueryQueueStatusResponse, _impl_.error_),
+        4,
+        0,
+        5,
+        1,
+        2,
+        6,
+        7,
+        8,
+        9,
         3,
         0x000, // bitmap
         PROTOBUF_FIELD_OFFSET(::loginpb::RemovePlayersFromAccountsRequest, _impl_.player_ids_),
@@ -680,9 +809,11 @@ static const ::_pbi::MigrationSchema
         {86, sizeof(::loginpb::RefreshTokenRequest)},
         {91, sizeof(::loginpb::RefreshTokenResponse)},
         {104, sizeof(::loginpb::AssignGateRequest)},
-        {109, sizeof(::loginpb::AssignGateResponse)},
-        {124, sizeof(::loginpb::RemovePlayersFromAccountsRequest)},
-        {126, sizeof(::loginpb::RemovePlayersFromAccountsResponse)},
+        {115, sizeof(::loginpb::AssignGateResponse)},
+        {140, sizeof(::loginpb::QueryQueueStatusRequest)},
+        {145, sizeof(::loginpb::QueryQueueStatusResponse)},
+        {168, sizeof(::loginpb::RemovePlayersFromAccountsRequest)},
+        {170, sizeof(::loginpb::RemovePlayersFromAccountsResponse)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::loginpb::_LoginSessionInfo_default_instance_._instance,
@@ -701,6 +832,8 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::loginpb::_RefreshTokenResponse_default_instance_._instance,
     &::loginpb::_AssignGateRequest_default_instance_._instance,
     &::loginpb::_AssignGateResponse_default_instance_._instance,
+    &::loginpb::_QueryQueueStatusRequest_default_instance_._instance,
+    &::loginpb::_QueryQueueStatusResponse_default_instance_._instance,
     &::loginpb::_RemovePlayersFromAccountsRequest_default_instance_._instance,
     &::loginpb::_RemovePlayersFromAccountsResponse_default_instance_._instance,
 };
@@ -741,28 +874,41 @@ const char descriptor_table_protodef_proto_2flogin_2flogin_2eproto[] ABSL_ATTRIB
     "(\0132\017.TipInfoMessage\022\024\n\014access_token\030\002 \001("
     "\t\022\025\n\rrefresh_token\030\003 \001(\t\022\033\n\023access_token"
     "_expire\030\004 \001(\003\022\034\n\024refresh_token_expire\030\005 "
-    "\001(\003\"$\n\021AssignGateRequest\022\017\n\007zone_id\030\001 \001("
-    "\r\"\205\001\n\022AssignGateResponse\022\n\n\002ip\030\001 \001(\t\022\014\n\004"
-    "port\030\002 \001(\r\022\025\n\rtoken_payload\030\003 \001(\014\022\027\n\017tok"
-    "en_signature\030\004 \001(\014\022\026\n\016token_deadline\030\005 \001"
-    "(\003\022\r\n\005error\030\006 \001(\t\"6\n RemovePlayersFromAc"
-    "countsRequest\022\022\n\nplayer_ids\030\001 \003(\004\"i\n!Rem"
-    "ovePlayersFromAccountsResponse\022\025\n\rremove"
-    "d_count\030\001 \001(\r\022\027\n\017not_found_count\030\002 \001(\r\022\024"
-    "\n\014failed_count\030\003 \001(\r2\305\003\n\021ClientPlayerLog"
-    "in\0226\n\005Login\022\025.loginpb.LoginRequest\032\026.log"
-    "inpb.LoginResponse\022K\n\014CreatePlayer\022\034.log"
-    "inpb.CreatePlayerRequest\032\035.loginpb.Creat"
-    "ePlayerResponse\022B\n\tEnterGame\022\031.loginpb.E"
-    "nterGameRequest\032\032.loginpb.EnterGameRespo"
-    "nse\022C\n\tLeaveGame\022\031.loginpb.LeaveGameRequ"
-    "est\032\033.loginpb.LoginEmptyResponse\022N\n\nDisc"
-    "onnect\022#.loginpb.LoginNodeDisconnectRequ"
-    "est\032\033.loginpb.LoginEmptyResponse\022K\n\014Refr"
-    "eshToken\022\034.loginpb.RefreshTokenRequest\032\035"
-    ".loginpb.RefreshTokenResponse\032\005\210\250\303\001\0012U\n\014"
-    "LoginPreGate\022E\n\nAssignGate\022\032.loginpb.Ass"
-    "ignGateRequest\032\033.loginpb.AssignGateRespo"
+    "\001(\003\"]\n\021AssignGateRequest\022\017\n\007zone_id\030\001 \001("
+    "\r\022\023\n\013queue_token\030\002 \001(\t\022\017\n\007account\030\003 \001(\t\022"
+    "\021\n\tdevice_id\030\004 \001(\t\"\353\001\n\022AssignGateRespons"
+    "e\022\n\n\002ip\030\001 \001(\t\022\014\n\004port\030\002 \001(\r\022\025\n\rtoken_pay"
+    "load\030\003 \001(\014\022\027\n\017token_signature\030\004 \001(\014\022\026\n\016t"
+    "oken_deadline\030\005 \001(\003\022\r\n\005error\030\006 \001(\t\022\016\n\006st"
+    "atus\030\007 \001(\r\022\023\n\013queue_token\030\010 \001(\t\022\022\n\nqueue"
+    "_rank\030\t \001(\r\022\023\n\013queue_total\030\n \001(\r\022\026\n\016retr"
+    "y_after_ms\030\013 \001(\r\".\n\027QueryQueueStatusRequ"
+    "est\022\023\n\013queue_token\030\001 \001(\t\"\334\001\n\030QueryQueueS"
+    "tatusResponse\022\016\n\006status\030\001 \001(\r\022\n\n\002ip\030\002 \001("
+    "\t\022\014\n\004port\030\003 \001(\r\022\025\n\rtoken_payload\030\004 \001(\014\022\027"
+    "\n\017token_signature\030\005 \001(\014\022\026\n\016token_deadlin"
+    "e\030\006 \001(\003\022\022\n\nqueue_rank\030\007 \001(\r\022\023\n\013queue_tot"
+    "al\030\010 \001(\r\022\026\n\016retry_after_ms\030\t \001(\r\022\r\n\005erro"
+    "r\030\n \001(\t\"6\n RemovePlayersFromAccountsRequ"
+    "est\022\022\n\nplayer_ids\030\001 \003(\004\"i\n!RemovePlayers"
+    "FromAccountsResponse\022\025\n\rremoved_count\030\001 "
+    "\001(\r\022\027\n\017not_found_count\030\002 \001(\r\022\024\n\014failed_c"
+    "ount\030\003 \001(\r2\305\003\n\021ClientPlayerLogin\0226\n\005Logi"
+    "n\022\025.loginpb.LoginRequest\032\026.loginpb.Login"
+    "Response\022K\n\014CreatePlayer\022\034.loginpb.Creat"
+    "ePlayerRequest\032\035.loginpb.CreatePlayerRes"
+    "ponse\022B\n\tEnterGame\022\031.loginpb.EnterGameRe"
+    "quest\032\032.loginpb.EnterGameResponse\022C\n\tLea"
+    "veGame\022\031.loginpb.LeaveGameRequest\032\033.logi"
+    "npb.LoginEmptyResponse\022N\n\nDisconnect\022#.l"
+    "oginpb.LoginNodeDisconnectRequest\032\033.logi"
+    "npb.LoginEmptyResponse\022K\n\014RefreshToken\022\034"
+    ".loginpb.RefreshTokenRequest\032\035.loginpb.R"
+    "efreshTokenResponse\032\005\210\250\303\001\0012\256\001\n\014LoginPreG"
+    "ate\022E\n\nAssignGate\022\032.loginpb.AssignGateRe"
+    "quest\032\033.loginpb.AssignGateResponse\022W\n\020Qu"
+    "eryQueueStatus\022 .loginpb.QueryQueueStatu"
+    "sRequest\032!.loginpb.QueryQueueStatusRespo"
     "nse2\200\001\n\nLoginAdmin\022r\n\031RemovePlayersFromA"
     "ccounts\022).loginpb.RemovePlayersFromAccou"
     "ntsRequest\032*.loginpb.RemovePlayersFromAc"
@@ -780,13 +926,13 @@ static ::absl::once_flag descriptor_table_proto_2flogin_2flogin_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2flogin_2flogin_2eproto = {
     false,
     false,
-    2443,
+    2963,
     descriptor_table_protodef_proto_2flogin_2flogin_2eproto,
     "proto/login/login.proto",
     &descriptor_table_proto_2flogin_2flogin_2eproto_once,
     descriptor_table_proto_2flogin_2flogin_2eproto_deps,
     4,
-    18,
+    20,
     schemas,
     file_default_instances,
     TableStruct_proto_2flogin_2flogin_2eproto::offsets,
@@ -4927,21 +5073,40 @@ AssignGateRequest::AssignGateRequest(::google::protobuf::Arena* PROTOBUF_NULLABL
   SharedCtor(arena);
   // @@protoc_insertion_point(arena_constructor:loginpb.AssignGateRequest)
 }
+PROTOBUF_NDEBUG_INLINE AssignGateRequest::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    const ::loginpb::AssignGateRequest& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        queue_token_(arena, from.queue_token_),
+        account_(arena, from.account_),
+        device_id_(arena, from.device_id_) {}
+
 AssignGateRequest::AssignGateRequest(
-    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const AssignGateRequest& from)
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const AssignGateRequest& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, AssignGateRequest_class_data_.base()),
+    : ::google::protobuf::Message(arena, AssignGateRequest_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::Message(arena),
+    : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
-      _impl_(from._impl_) {
+  AssignGateRequest* const _this = this;
+  (void)_this;
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  _impl_.zone_id_ = from._impl_.zone_id_;
+
+  // @@protoc_insertion_point(copy_constructor:loginpb.AssignGateRequest)
 }
 PROTOBUF_NDEBUG_INLINE AssignGateRequest::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
-      : _cached_size_{0} {}
+      : _cached_size_{0},
+        queue_token_(arena),
+        account_(arena),
+        device_id_(arena) {}
 
 inline void AssignGateRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
@@ -4955,6 +5120,9 @@ inline void AssignGateRequest::SharedDtor(MessageLite& self) {
   AssignGateRequest& this_ = static_cast<AssignGateRequest&>(self);
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.queue_token_.Destroy();
+  this_._impl_.account_.Destroy();
+  this_._impl_.device_id_.Destroy();
   this_._impl_.~Impl_();
 }
 
@@ -4964,7 +5132,7 @@ inline void* PROTOBUF_NONNULL AssignGateRequest::PlacementNew_(
   return ::new (mem) AssignGateRequest(arena);
 }
 constexpr auto AssignGateRequest::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(AssignGateRequest),
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(AssignGateRequest),
                                             alignof(AssignGateRequest));
 }
 constexpr auto AssignGateRequest::InternalGenerateClassData_() {
@@ -5001,16 +5169,16 @@ AssignGateRequest::GetClassData() const {
   return AssignGateRequest_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<0, 1, 0, 0, 2>
+const ::_pbi::TcParseTable<2, 4, 0, 61, 2>
 AssignGateRequest::_table_ = {
   {
     PROTOBUF_FIELD_OFFSET(AssignGateRequest, _impl_._has_bits_),
     0, // no _extensions_
-    1, 0,  // max_field_number, fast_idx_mask
+    4, 24,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967294,  // skipmap
+    4294967280,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    1,  // num_field_entries
+    4,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
     AssignGateRequest_class_data_.base(),
@@ -5020,18 +5188,41 @@ AssignGateRequest::_table_ = {
     ::_pbi::TcParser::GetTable<::loginpb::AssignGateRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
+    // string device_id = 4;
+    {::_pbi::TcParser::FastUS1,
+     {34, 2, 0, PROTOBUF_FIELD_OFFSET(AssignGateRequest, _impl_.device_id_)}},
     // uint32 zone_id = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(AssignGateRequest, _impl_.zone_id_), 0>(),
-     {8, 0, 0, PROTOBUF_FIELD_OFFSET(AssignGateRequest, _impl_.zone_id_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(AssignGateRequest, _impl_.zone_id_), 3>(),
+     {8, 3, 0, PROTOBUF_FIELD_OFFSET(AssignGateRequest, _impl_.zone_id_)}},
+    // string queue_token = 2;
+    {::_pbi::TcParser::FastUS1,
+     {18, 0, 0, PROTOBUF_FIELD_OFFSET(AssignGateRequest, _impl_.queue_token_)}},
+    // string account = 3;
+    {::_pbi::TcParser::FastUS1,
+     {26, 1, 0, PROTOBUF_FIELD_OFFSET(AssignGateRequest, _impl_.account_)}},
   }}, {{
     65535, 65535
   }}, {{
     // uint32 zone_id = 1;
-    {PROTOBUF_FIELD_OFFSET(AssignGateRequest, _impl_.zone_id_), _Internal::kHasBitsOffset + 0, 0,
+    {PROTOBUF_FIELD_OFFSET(AssignGateRequest, _impl_.zone_id_), _Internal::kHasBitsOffset + 3, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+    // string queue_token = 2;
+    {PROTOBUF_FIELD_OFFSET(AssignGateRequest, _impl_.queue_token_), _Internal::kHasBitsOffset + 0, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // string account = 3;
+    {PROTOBUF_FIELD_OFFSET(AssignGateRequest, _impl_.account_), _Internal::kHasBitsOffset + 1, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // string device_id = 4;
+    {PROTOBUF_FIELD_OFFSET(AssignGateRequest, _impl_.device_id_), _Internal::kHasBitsOffset + 2, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
   }},
   // no aux_entries
   {{
+    "\31\0\13\7\11\0\0\0"
+    "loginpb.AssignGateRequest"
+    "queue_token"
+    "account"
+    "device_id"
   }},
 };
 PROTOBUF_NOINLINE void AssignGateRequest::Clear() {
@@ -5041,6 +5232,18 @@ PROTOBUF_NOINLINE void AssignGateRequest::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
+  cached_has_bits = _impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000007u) != 0) {
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      _impl_.queue_token_.ClearNonDefaultToEmpty();
+    }
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      _impl_.account_.ClearNonDefaultToEmpty();
+    }
+    if ((cached_has_bits & 0x00000004u) != 0) {
+      _impl_.device_id_.ClearNonDefaultToEmpty();
+    }
+  }
   _impl_.zone_id_ = 0u;
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
@@ -5062,11 +5265,41 @@ PROTOBUF_NOINLINE void AssignGateRequest::Clear() {
   (void)cached_has_bits;
 
   // uint32 zone_id = 1;
-  if ((this_._impl_._has_bits_[0] & 0x00000001u) != 0) {
+  if ((this_._impl_._has_bits_[0] & 0x00000008u) != 0) {
     if (this_._internal_zone_id() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
           1, this_._internal_zone_id(), target);
+    }
+  }
+
+  // string queue_token = 2;
+  if ((this_._impl_._has_bits_[0] & 0x00000001u) != 0) {
+    if (!this_._internal_queue_token().empty()) {
+      const ::std::string& _s = this_._internal_queue_token();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "loginpb.AssignGateRequest.queue_token");
+      target = stream->WriteStringMaybeAliased(2, _s, target);
+    }
+  }
+
+  // string account = 3;
+  if ((this_._impl_._has_bits_[0] & 0x00000002u) != 0) {
+    if (!this_._internal_account().empty()) {
+      const ::std::string& _s = this_._internal_account();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "loginpb.AssignGateRequest.account");
+      target = stream->WriteStringMaybeAliased(3, _s, target);
+    }
+  }
+
+  // string device_id = 4;
+  if ((this_._impl_._has_bits_[0] & 0x00000004u) != 0) {
+    if (!this_._internal_device_id().empty()) {
+      const ::std::string& _s = this_._internal_device_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "loginpb.AssignGateRequest.device_id");
+      target = stream->WriteStringMaybeAliased(4, _s, target);
     }
   }
 
@@ -5093,10 +5326,32 @@ PROTOBUF_NOINLINE void AssignGateRequest::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void)cached_has_bits;
 
-   {
-    // uint32 zone_id = 1;
-    cached_has_bits = this_._impl_._has_bits_[0];
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if ((cached_has_bits & 0x0000000fu) != 0) {
+    // string queue_token = 2;
     if ((cached_has_bits & 0x00000001u) != 0) {
+      if (!this_._internal_queue_token().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_queue_token());
+      }
+    }
+    // string account = 3;
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      if (!this_._internal_account().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_account());
+      }
+    }
+    // string device_id = 4;
+    if ((cached_has_bits & 0x00000004u) != 0) {
+      if (!this_._internal_device_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_device_id());
+      }
+    }
+    // uint32 zone_id = 1;
+    if ((cached_has_bits & 0x00000008u) != 0) {
       if (this_._internal_zone_id() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_zone_id());
@@ -5116,9 +5371,38 @@ void AssignGateRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, const
   (void) cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if ((cached_has_bits & 0x00000001u) != 0) {
-    if (from._internal_zone_id() != 0) {
-      _this->_impl_.zone_id_ = from._impl_.zone_id_;
+  if ((cached_has_bits & 0x0000000fu) != 0) {
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      if (!from._internal_queue_token().empty()) {
+        _this->_internal_set_queue_token(from._internal_queue_token());
+      } else {
+        if (_this->_impl_.queue_token_.IsDefault()) {
+          _this->_internal_set_queue_token("");
+        }
+      }
+    }
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      if (!from._internal_account().empty()) {
+        _this->_internal_set_account(from._internal_account());
+      } else {
+        if (_this->_impl_.account_.IsDefault()) {
+          _this->_internal_set_account("");
+        }
+      }
+    }
+    if ((cached_has_bits & 0x00000004u) != 0) {
+      if (!from._internal_device_id().empty()) {
+        _this->_internal_set_device_id(from._internal_device_id());
+      } else {
+        if (_this->_impl_.device_id_.IsDefault()) {
+          _this->_internal_set_device_id("");
+        }
+      }
+    }
+    if ((cached_has_bits & 0x00000008u) != 0) {
+      if (from._internal_zone_id() != 0) {
+        _this->_impl_.zone_id_ = from._impl_.zone_id_;
+      }
     }
   }
   _this->_impl_._has_bits_[0] |= cached_has_bits;
@@ -5135,8 +5419,13 @@ void AssignGateRequest::CopyFrom(const AssignGateRequest& from) {
 
 void AssignGateRequest::InternalSwap(AssignGateRequest* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
   using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.queue_token_, &other->_impl_.queue_token_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.account_, &other->_impl_.account_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.device_id_, &other->_impl_.device_id_, arena);
   swap(_impl_.zone_id_, other->_impl_.zone_id_);
 }
 
@@ -5171,7 +5460,8 @@ PROTOBUF_NDEBUG_INLINE AssignGateResponse::Impl_::Impl_(
         ip_(arena, from.ip_),
         token_payload_(arena, from.token_payload_),
         token_signature_(arena, from.token_signature_),
-        error_(arena, from.error_) {}
+        error_(arena, from.error_),
+        queue_token_(arena, from.queue_token_) {}
 
 AssignGateResponse::AssignGateResponse(
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
@@ -5187,12 +5477,12 @@ AssignGateResponse::AssignGateResponse(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
   ::memcpy(reinterpret_cast<char *>(&_impl_) +
-               offsetof(Impl_, token_deadline_),
+               offsetof(Impl_, port_),
            reinterpret_cast<const char *>(&from._impl_) +
-               offsetof(Impl_, token_deadline_),
-           offsetof(Impl_, port_) -
-               offsetof(Impl_, token_deadline_) +
-               sizeof(Impl_::port_));
+               offsetof(Impl_, port_),
+           offsetof(Impl_, retry_after_ms_) -
+               offsetof(Impl_, port_) +
+               sizeof(Impl_::retry_after_ms_));
 
   // @@protoc_insertion_point(copy_constructor:loginpb.AssignGateResponse)
 }
@@ -5203,16 +5493,17 @@ PROTOBUF_NDEBUG_INLINE AssignGateResponse::Impl_::Impl_(
         ip_(arena),
         token_payload_(arena),
         token_signature_(arena),
-        error_(arena) {}
+        error_(arena),
+        queue_token_(arena) {}
 
 inline void AssignGateResponse::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char *>(&_impl_) +
-               offsetof(Impl_, token_deadline_),
+               offsetof(Impl_, port_),
            0,
-           offsetof(Impl_, port_) -
-               offsetof(Impl_, token_deadline_) +
-               sizeof(Impl_::port_));
+           offsetof(Impl_, retry_after_ms_) -
+               offsetof(Impl_, port_) +
+               sizeof(Impl_::retry_after_ms_));
 }
 AssignGateResponse::~AssignGateResponse() {
   // @@protoc_insertion_point(destructor:loginpb.AssignGateResponse)
@@ -5226,6 +5517,7 @@ inline void AssignGateResponse::SharedDtor(MessageLite& self) {
   this_._impl_.token_payload_.Destroy();
   this_._impl_.token_signature_.Destroy();
   this_._impl_.error_.Destroy();
+  this_._impl_.queue_token_.Destroy();
   this_._impl_.~Impl_();
 }
 
@@ -5272,16 +5564,16 @@ AssignGateResponse::GetClassData() const {
   return AssignGateResponse_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<3, 6, 0, 42, 2>
+const ::_pbi::TcParseTable<4, 11, 0, 61, 2>
 AssignGateResponse::_table_ = {
   {
     PROTOBUF_FIELD_OFFSET(AssignGateResponse, _impl_._has_bits_),
     0, // no _extensions_
-    6, 56,  // max_field_number, fast_idx_mask
+    11, 120,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967232,  // skipmap
+    4294965248,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    6,  // num_field_entries
+    11,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
     AssignGateResponse_class_data_.base(),
@@ -5305,11 +5597,29 @@ AssignGateResponse::_table_ = {
     {::_pbi::TcParser::FastBS1,
      {34, 2, 0, PROTOBUF_FIELD_OFFSET(AssignGateResponse, _impl_.token_signature_)}},
     // int64 token_deadline = 5;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(AssignGateResponse, _impl_.token_deadline_), 4>(),
-     {40, 4, 0, PROTOBUF_FIELD_OFFSET(AssignGateResponse, _impl_.token_deadline_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(AssignGateResponse, _impl_.token_deadline_), 7>(),
+     {40, 7, 0, PROTOBUF_FIELD_OFFSET(AssignGateResponse, _impl_.token_deadline_)}},
     // string error = 6;
     {::_pbi::TcParser::FastUS1,
      {50, 3, 0, PROTOBUF_FIELD_OFFSET(AssignGateResponse, _impl_.error_)}},
+    // uint32 status = 7;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(AssignGateResponse, _impl_.status_), 6>(),
+     {56, 6, 0, PROTOBUF_FIELD_OFFSET(AssignGateResponse, _impl_.status_)}},
+    // string queue_token = 8;
+    {::_pbi::TcParser::FastUS1,
+     {66, 4, 0, PROTOBUF_FIELD_OFFSET(AssignGateResponse, _impl_.queue_token_)}},
+    // uint32 queue_rank = 9;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(AssignGateResponse, _impl_.queue_rank_), 8>(),
+     {72, 8, 0, PROTOBUF_FIELD_OFFSET(AssignGateResponse, _impl_.queue_rank_)}},
+    // uint32 queue_total = 10;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(AssignGateResponse, _impl_.queue_total_), 9>(),
+     {80, 9, 0, PROTOBUF_FIELD_OFFSET(AssignGateResponse, _impl_.queue_total_)}},
+    // uint32 retry_after_ms = 11;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(AssignGateResponse, _impl_.retry_after_ms_), 10>(),
+     {88, 10, 0, PROTOBUF_FIELD_OFFSET(AssignGateResponse, _impl_.retry_after_ms_)}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
     {::_pbi::TcParser::MiniParse, {}},
   }}, {{
     65535, 65535
@@ -5327,18 +5637,34 @@ AssignGateResponse::_table_ = {
     {PROTOBUF_FIELD_OFFSET(AssignGateResponse, _impl_.token_signature_), _Internal::kHasBitsOffset + 2, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kBytes | ::_fl::kRepAString)},
     // int64 token_deadline = 5;
-    {PROTOBUF_FIELD_OFFSET(AssignGateResponse, _impl_.token_deadline_), _Internal::kHasBitsOffset + 4, 0,
+    {PROTOBUF_FIELD_OFFSET(AssignGateResponse, _impl_.token_deadline_), _Internal::kHasBitsOffset + 7, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kInt64)},
     // string error = 6;
     {PROTOBUF_FIELD_OFFSET(AssignGateResponse, _impl_.error_), _Internal::kHasBitsOffset + 3, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // uint32 status = 7;
+    {PROTOBUF_FIELD_OFFSET(AssignGateResponse, _impl_.status_), _Internal::kHasBitsOffset + 6, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+    // string queue_token = 8;
+    {PROTOBUF_FIELD_OFFSET(AssignGateResponse, _impl_.queue_token_), _Internal::kHasBitsOffset + 4, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // uint32 queue_rank = 9;
+    {PROTOBUF_FIELD_OFFSET(AssignGateResponse, _impl_.queue_rank_), _Internal::kHasBitsOffset + 8, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+    // uint32 queue_total = 10;
+    {PROTOBUF_FIELD_OFFSET(AssignGateResponse, _impl_.queue_total_), _Internal::kHasBitsOffset + 9, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+    // uint32 retry_after_ms = 11;
+    {PROTOBUF_FIELD_OFFSET(AssignGateResponse, _impl_.retry_after_ms_), _Internal::kHasBitsOffset + 10, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
   }},
   // no aux_entries
   {{
-    "\32\2\0\0\0\0\5\0"
+    "\32\2\0\0\0\0\5\0\13\0\0\0\0\0\0\0"
     "loginpb.AssignGateResponse"
     "ip"
     "error"
+    "queue_token"
   }},
 };
 PROTOBUF_NOINLINE void AssignGateResponse::Clear() {
@@ -5349,7 +5675,7 @@ PROTOBUF_NOINLINE void AssignGateResponse::Clear() {
   (void) cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  if ((cached_has_bits & 0x0000000fu) != 0) {
+  if ((cached_has_bits & 0x0000001fu) != 0) {
     if ((cached_has_bits & 0x00000001u) != 0) {
       _impl_.ip_.ClearNonDefaultToEmpty();
     }
@@ -5362,11 +5688,19 @@ PROTOBUF_NOINLINE void AssignGateResponse::Clear() {
     if ((cached_has_bits & 0x00000008u) != 0) {
       _impl_.error_.ClearNonDefaultToEmpty();
     }
+    if ((cached_has_bits & 0x00000010u) != 0) {
+      _impl_.queue_token_.ClearNonDefaultToEmpty();
+    }
   }
-  if ((cached_has_bits & 0x00000030u) != 0) {
-    ::memset(&_impl_.token_deadline_, 0, static_cast<::size_t>(
-        reinterpret_cast<char*>(&_impl_.port_) -
-        reinterpret_cast<char*>(&_impl_.token_deadline_)) + sizeof(_impl_.port_));
+  if ((cached_has_bits & 0x000000e0u) != 0) {
+    ::memset(&_impl_.port_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.token_deadline_) -
+        reinterpret_cast<char*>(&_impl_.port_)) + sizeof(_impl_.token_deadline_));
+  }
+  if ((cached_has_bits & 0x00000700u) != 0) {
+    ::memset(&_impl_.queue_rank_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.retry_after_ms_) -
+        reinterpret_cast<char*>(&_impl_.queue_rank_)) + sizeof(_impl_.retry_after_ms_));
   }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
@@ -5423,7 +5757,7 @@ PROTOBUF_NOINLINE void AssignGateResponse::Clear() {
   }
 
   // int64 token_deadline = 5;
-  if ((this_._impl_._has_bits_[0] & 0x00000010u) != 0) {
+  if ((this_._impl_._has_bits_[0] & 0x00000080u) != 0) {
     if (this_._internal_token_deadline() != 0) {
       target =
           ::google::protobuf::internal::WireFormatLite::WriteInt64ToArrayWithField<5>(
@@ -5438,6 +5772,52 @@ PROTOBUF_NOINLINE void AssignGateResponse::Clear() {
       ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
           _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "loginpb.AssignGateResponse.error");
       target = stream->WriteStringMaybeAliased(6, _s, target);
+    }
+  }
+
+  // uint32 status = 7;
+  if ((this_._impl_._has_bits_[0] & 0x00000040u) != 0) {
+    if (this_._internal_status() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          7, this_._internal_status(), target);
+    }
+  }
+
+  // string queue_token = 8;
+  if ((this_._impl_._has_bits_[0] & 0x00000010u) != 0) {
+    if (!this_._internal_queue_token().empty()) {
+      const ::std::string& _s = this_._internal_queue_token();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "loginpb.AssignGateResponse.queue_token");
+      target = stream->WriteStringMaybeAliased(8, _s, target);
+    }
+  }
+
+  // uint32 queue_rank = 9;
+  if ((this_._impl_._has_bits_[0] & 0x00000100u) != 0) {
+    if (this_._internal_queue_rank() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          9, this_._internal_queue_rank(), target);
+    }
+  }
+
+  // uint32 queue_total = 10;
+  if ((this_._impl_._has_bits_[0] & 0x00000200u) != 0) {
+    if (this_._internal_queue_total() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          10, this_._internal_queue_total(), target);
+    }
+  }
+
+  // uint32 retry_after_ms = 11;
+  if ((this_._impl_._has_bits_[0] & 0x00000400u) != 0) {
+    if (this_._internal_retry_after_ms() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          11, this_._internal_retry_after_ms(), target);
     }
   }
 
@@ -5466,7 +5846,7 @@ PROTOBUF_NOINLINE void AssignGateResponse::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if ((cached_has_bits & 0x0000003fu) != 0) {
+  if ((cached_has_bits & 0x000000ffu) != 0) {
     // string ip = 1;
     if ((cached_has_bits & 0x00000001u) != 0) {
       if (!this_._internal_ip().empty()) {
@@ -5495,11 +5875,11 @@ PROTOBUF_NOINLINE void AssignGateResponse::Clear() {
                                         this_._internal_error());
       }
     }
-    // int64 token_deadline = 5;
+    // string queue_token = 8;
     if ((cached_has_bits & 0x00000010u) != 0) {
-      if (this_._internal_token_deadline() != 0) {
-        total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(
-            this_._internal_token_deadline());
+      if (!this_._internal_queue_token().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_queue_token());
       }
     }
     // uint32 port = 2;
@@ -5507,6 +5887,43 @@ PROTOBUF_NOINLINE void AssignGateResponse::Clear() {
       if (this_._internal_port() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_port());
+      }
+    }
+    // uint32 status = 7;
+    if ((cached_has_bits & 0x00000040u) != 0) {
+      if (this_._internal_status() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_status());
+      }
+    }
+    // int64 token_deadline = 5;
+    if ((cached_has_bits & 0x00000080u) != 0) {
+      if (this_._internal_token_deadline() != 0) {
+        total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(
+            this_._internal_token_deadline());
+      }
+    }
+  }
+  if ((cached_has_bits & 0x00000700u) != 0) {
+    // uint32 queue_rank = 9;
+    if ((cached_has_bits & 0x00000100u) != 0) {
+      if (this_._internal_queue_rank() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_queue_rank());
+      }
+    }
+    // uint32 queue_total = 10;
+    if ((cached_has_bits & 0x00000200u) != 0) {
+      if (this_._internal_queue_total() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_queue_total());
+      }
+    }
+    // uint32 retry_after_ms = 11;
+    if ((cached_has_bits & 0x00000400u) != 0) {
+      if (this_._internal_retry_after_ms() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_retry_after_ms());
       }
     }
   }
@@ -5523,7 +5940,7 @@ void AssignGateResponse::MergeImpl(::google::protobuf::MessageLite& to_msg, cons
   (void) cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if ((cached_has_bits & 0x0000003fu) != 0) {
+  if ((cached_has_bits & 0x000000ffu) != 0) {
     if ((cached_has_bits & 0x00000001u) != 0) {
       if (!from._internal_ip().empty()) {
         _this->_internal_set_ip(from._internal_ip());
@@ -5561,13 +5978,44 @@ void AssignGateResponse::MergeImpl(::google::protobuf::MessageLite& to_msg, cons
       }
     }
     if ((cached_has_bits & 0x00000010u) != 0) {
-      if (from._internal_token_deadline() != 0) {
-        _this->_impl_.token_deadline_ = from._impl_.token_deadline_;
+      if (!from._internal_queue_token().empty()) {
+        _this->_internal_set_queue_token(from._internal_queue_token());
+      } else {
+        if (_this->_impl_.queue_token_.IsDefault()) {
+          _this->_internal_set_queue_token("");
+        }
       }
     }
     if ((cached_has_bits & 0x00000020u) != 0) {
       if (from._internal_port() != 0) {
         _this->_impl_.port_ = from._impl_.port_;
+      }
+    }
+    if ((cached_has_bits & 0x00000040u) != 0) {
+      if (from._internal_status() != 0) {
+        _this->_impl_.status_ = from._impl_.status_;
+      }
+    }
+    if ((cached_has_bits & 0x00000080u) != 0) {
+      if (from._internal_token_deadline() != 0) {
+        _this->_impl_.token_deadline_ = from._impl_.token_deadline_;
+      }
+    }
+  }
+  if ((cached_has_bits & 0x00000700u) != 0) {
+    if ((cached_has_bits & 0x00000100u) != 0) {
+      if (from._internal_queue_rank() != 0) {
+        _this->_impl_.queue_rank_ = from._impl_.queue_rank_;
+      }
+    }
+    if ((cached_has_bits & 0x00000200u) != 0) {
+      if (from._internal_queue_total() != 0) {
+        _this->_impl_.queue_total_ = from._impl_.queue_total_;
+      }
+    }
+    if ((cached_has_bits & 0x00000400u) != 0) {
+      if (from._internal_retry_after_ms() != 0) {
+        _this->_impl_.retry_after_ms_ = from._impl_.retry_after_ms_;
       }
     }
   }
@@ -5593,15 +6041,860 @@ void AssignGateResponse::InternalSwap(AssignGateResponse* PROTOBUF_RESTRICT PROT
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.token_payload_, &other->_impl_.token_payload_, arena);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.token_signature_, &other->_impl_.token_signature_, arena);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.error_, &other->_impl_.error_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.queue_token_, &other->_impl_.queue_token_, arena);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(AssignGateResponse, _impl_.port_)
-      + sizeof(AssignGateResponse::_impl_.port_)
-      - PROTOBUF_FIELD_OFFSET(AssignGateResponse, _impl_.token_deadline_)>(
-          reinterpret_cast<char*>(&_impl_.token_deadline_),
-          reinterpret_cast<char*>(&other->_impl_.token_deadline_));
+      PROTOBUF_FIELD_OFFSET(AssignGateResponse, _impl_.retry_after_ms_)
+      + sizeof(AssignGateResponse::_impl_.retry_after_ms_)
+      - PROTOBUF_FIELD_OFFSET(AssignGateResponse, _impl_.port_)>(
+          reinterpret_cast<char*>(&_impl_.port_),
+          reinterpret_cast<char*>(&other->_impl_.port_));
 }
 
 ::google::protobuf::Metadata AssignGateResponse::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class QueryQueueStatusRequest::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<QueryQueueStatusRequest>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(QueryQueueStatusRequest, _impl_._has_bits_);
+};
+
+QueryQueueStatusRequest::QueryQueueStatusRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, QueryQueueStatusRequest_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:loginpb.QueryQueueStatusRequest)
+}
+PROTOBUF_NDEBUG_INLINE QueryQueueStatusRequest::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    const ::loginpb::QueryQueueStatusRequest& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        queue_token_(arena, from.queue_token_) {}
+
+QueryQueueStatusRequest::QueryQueueStatusRequest(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const QueryQueueStatusRequest& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, QueryQueueStatusRequest_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  QueryQueueStatusRequest* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+
+  // @@protoc_insertion_point(copy_constructor:loginpb.QueryQueueStatusRequest)
+}
+PROTOBUF_NDEBUG_INLINE QueryQueueStatusRequest::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        queue_token_(arena) {}
+
+inline void QueryQueueStatusRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+}
+QueryQueueStatusRequest::~QueryQueueStatusRequest() {
+  // @@protoc_insertion_point(destructor:loginpb.QueryQueueStatusRequest)
+  SharedDtor(*this);
+}
+inline void QueryQueueStatusRequest::SharedDtor(MessageLite& self) {
+  QueryQueueStatusRequest& this_ = static_cast<QueryQueueStatusRequest&>(self);
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.queue_token_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL QueryQueueStatusRequest::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) QueryQueueStatusRequest(arena);
+}
+constexpr auto QueryQueueStatusRequest::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(QueryQueueStatusRequest),
+                                            alignof(QueryQueueStatusRequest));
+}
+constexpr auto QueryQueueStatusRequest::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_QueryQueueStatusRequest_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &QueryQueueStatusRequest::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<QueryQueueStatusRequest>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &QueryQueueStatusRequest::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<QueryQueueStatusRequest>(), &QueryQueueStatusRequest::ByteSizeLong,
+              &QueryQueueStatusRequest::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(QueryQueueStatusRequest, _impl_._cached_size_),
+          false,
+      },
+      &QueryQueueStatusRequest::kDescriptorMethods,
+      &descriptor_table_proto_2flogin_2flogin_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull QueryQueueStatusRequest_class_data_ =
+        QueryQueueStatusRequest::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+QueryQueueStatusRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&QueryQueueStatusRequest_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(QueryQueueStatusRequest_class_data_.tc_table);
+  return QueryQueueStatusRequest_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<0, 1, 0, 51, 2>
+QueryQueueStatusRequest::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(QueryQueueStatusRequest, _impl_._has_bits_),
+    0, // no _extensions_
+    1, 0,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967294,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    1,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    QueryQueueStatusRequest_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::loginpb::QueryQueueStatusRequest>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // string queue_token = 1;
+    {::_pbi::TcParser::FastUS1,
+     {10, 0, 0, PROTOBUF_FIELD_OFFSET(QueryQueueStatusRequest, _impl_.queue_token_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // string queue_token = 1;
+    {PROTOBUF_FIELD_OFFSET(QueryQueueStatusRequest, _impl_.queue_token_), _Internal::kHasBitsOffset + 0, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+  }},
+  // no aux_entries
+  {{
+    "\37\13\0\0\0\0\0\0"
+    "loginpb.QueryQueueStatusRequest"
+    "queue_token"
+  }},
+};
+PROTOBUF_NOINLINE void QueryQueueStatusRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:loginpb.QueryQueueStatusRequest)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000001u) != 0) {
+    _impl_.queue_token_.ClearNonDefaultToEmpty();
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL QueryQueueStatusRequest::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const QueryQueueStatusRequest& this_ = static_cast<const QueryQueueStatusRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL QueryQueueStatusRequest::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const QueryQueueStatusRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(serialize_to_array_start:loginpb.QueryQueueStatusRequest)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  // string queue_token = 1;
+  if ((this_._impl_._has_bits_[0] & 0x00000001u) != 0) {
+    if (!this_._internal_queue_token().empty()) {
+      const ::std::string& _s = this_._internal_queue_token();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "loginpb.QueryQueueStatusRequest.queue_token");
+      target = stream->WriteStringMaybeAliased(1, _s, target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:loginpb.QueryQueueStatusRequest)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t QueryQueueStatusRequest::ByteSizeLong(const MessageLite& base) {
+  const QueryQueueStatusRequest& this_ = static_cast<const QueryQueueStatusRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t QueryQueueStatusRequest::ByteSizeLong() const {
+  const QueryQueueStatusRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:loginpb.QueryQueueStatusRequest)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+   {
+    // string queue_token = 1;
+    cached_has_bits = this_._impl_._has_bits_[0];
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      if (!this_._internal_queue_token().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_queue_token());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void QueryQueueStatusRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<QueryQueueStatusRequest*>(&to_msg);
+  auto& from = static_cast<const QueryQueueStatusRequest&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:loginpb.QueryQueueStatusRequest)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000001u) != 0) {
+    if (!from._internal_queue_token().empty()) {
+      _this->_internal_set_queue_token(from._internal_queue_token());
+    } else {
+      if (_this->_impl_.queue_token_.IsDefault()) {
+        _this->_internal_set_queue_token("");
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void QueryQueueStatusRequest::CopyFrom(const QueryQueueStatusRequest& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:loginpb.QueryQueueStatusRequest)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void QueryQueueStatusRequest::InternalSwap(QueryQueueStatusRequest* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.queue_token_, &other->_impl_.queue_token_, arena);
+}
+
+::google::protobuf::Metadata QueryQueueStatusRequest::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class QueryQueueStatusResponse::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<QueryQueueStatusResponse>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(QueryQueueStatusResponse, _impl_._has_bits_);
+};
+
+QueryQueueStatusResponse::QueryQueueStatusResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, QueryQueueStatusResponse_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:loginpb.QueryQueueStatusResponse)
+}
+PROTOBUF_NDEBUG_INLINE QueryQueueStatusResponse::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    const ::loginpb::QueryQueueStatusResponse& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        ip_(arena, from.ip_),
+        token_payload_(arena, from.token_payload_),
+        token_signature_(arena, from.token_signature_),
+        error_(arena, from.error_) {}
+
+QueryQueueStatusResponse::QueryQueueStatusResponse(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const QueryQueueStatusResponse& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, QueryQueueStatusResponse_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  QueryQueueStatusResponse* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::memcpy(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, status_),
+           reinterpret_cast<const char *>(&from._impl_) +
+               offsetof(Impl_, status_),
+           offsetof(Impl_, retry_after_ms_) -
+               offsetof(Impl_, status_) +
+               sizeof(Impl_::retry_after_ms_));
+
+  // @@protoc_insertion_point(copy_constructor:loginpb.QueryQueueStatusResponse)
+}
+PROTOBUF_NDEBUG_INLINE QueryQueueStatusResponse::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        ip_(arena),
+        token_payload_(arena),
+        token_signature_(arena),
+        error_(arena) {}
+
+inline void QueryQueueStatusResponse::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, status_),
+           0,
+           offsetof(Impl_, retry_after_ms_) -
+               offsetof(Impl_, status_) +
+               sizeof(Impl_::retry_after_ms_));
+}
+QueryQueueStatusResponse::~QueryQueueStatusResponse() {
+  // @@protoc_insertion_point(destructor:loginpb.QueryQueueStatusResponse)
+  SharedDtor(*this);
+}
+inline void QueryQueueStatusResponse::SharedDtor(MessageLite& self) {
+  QueryQueueStatusResponse& this_ = static_cast<QueryQueueStatusResponse&>(self);
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.ip_.Destroy();
+  this_._impl_.token_payload_.Destroy();
+  this_._impl_.token_signature_.Destroy();
+  this_._impl_.error_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL QueryQueueStatusResponse::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) QueryQueueStatusResponse(arena);
+}
+constexpr auto QueryQueueStatusResponse::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(QueryQueueStatusResponse),
+                                            alignof(QueryQueueStatusResponse));
+}
+constexpr auto QueryQueueStatusResponse::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_QueryQueueStatusResponse_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &QueryQueueStatusResponse::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<QueryQueueStatusResponse>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &QueryQueueStatusResponse::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<QueryQueueStatusResponse>(), &QueryQueueStatusResponse::ByteSizeLong,
+              &QueryQueueStatusResponse::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(QueryQueueStatusResponse, _impl_._cached_size_),
+          false,
+      },
+      &QueryQueueStatusResponse::kDescriptorMethods,
+      &descriptor_table_proto_2flogin_2flogin_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull QueryQueueStatusResponse_class_data_ =
+        QueryQueueStatusResponse::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+QueryQueueStatusResponse::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&QueryQueueStatusResponse_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(QueryQueueStatusResponse_class_data_.tc_table);
+  return QueryQueueStatusResponse_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<4, 10, 0, 56, 2>
+QueryQueueStatusResponse::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(QueryQueueStatusResponse, _impl_._has_bits_),
+    0, // no _extensions_
+    10, 120,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294966272,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    10,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    QueryQueueStatusResponse_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::loginpb::QueryQueueStatusResponse>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    {::_pbi::TcParser::MiniParse, {}},
+    // uint32 status = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(QueryQueueStatusResponse, _impl_.status_), 4>(),
+     {8, 4, 0, PROTOBUF_FIELD_OFFSET(QueryQueueStatusResponse, _impl_.status_)}},
+    // string ip = 2;
+    {::_pbi::TcParser::FastUS1,
+     {18, 0, 0, PROTOBUF_FIELD_OFFSET(QueryQueueStatusResponse, _impl_.ip_)}},
+    // uint32 port = 3;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(QueryQueueStatusResponse, _impl_.port_), 5>(),
+     {24, 5, 0, PROTOBUF_FIELD_OFFSET(QueryQueueStatusResponse, _impl_.port_)}},
+    // bytes token_payload = 4;
+    {::_pbi::TcParser::FastBS1,
+     {34, 1, 0, PROTOBUF_FIELD_OFFSET(QueryQueueStatusResponse, _impl_.token_payload_)}},
+    // bytes token_signature = 5;
+    {::_pbi::TcParser::FastBS1,
+     {42, 2, 0, PROTOBUF_FIELD_OFFSET(QueryQueueStatusResponse, _impl_.token_signature_)}},
+    // int64 token_deadline = 6;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(QueryQueueStatusResponse, _impl_.token_deadline_), 6>(),
+     {48, 6, 0, PROTOBUF_FIELD_OFFSET(QueryQueueStatusResponse, _impl_.token_deadline_)}},
+    // uint32 queue_rank = 7;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(QueryQueueStatusResponse, _impl_.queue_rank_), 7>(),
+     {56, 7, 0, PROTOBUF_FIELD_OFFSET(QueryQueueStatusResponse, _impl_.queue_rank_)}},
+    // uint32 queue_total = 8;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(QueryQueueStatusResponse, _impl_.queue_total_), 8>(),
+     {64, 8, 0, PROTOBUF_FIELD_OFFSET(QueryQueueStatusResponse, _impl_.queue_total_)}},
+    // uint32 retry_after_ms = 9;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(QueryQueueStatusResponse, _impl_.retry_after_ms_), 9>(),
+     {72, 9, 0, PROTOBUF_FIELD_OFFSET(QueryQueueStatusResponse, _impl_.retry_after_ms_)}},
+    // string error = 10;
+    {::_pbi::TcParser::FastUS1,
+     {82, 3, 0, PROTOBUF_FIELD_OFFSET(QueryQueueStatusResponse, _impl_.error_)}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // uint32 status = 1;
+    {PROTOBUF_FIELD_OFFSET(QueryQueueStatusResponse, _impl_.status_), _Internal::kHasBitsOffset + 4, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+    // string ip = 2;
+    {PROTOBUF_FIELD_OFFSET(QueryQueueStatusResponse, _impl_.ip_), _Internal::kHasBitsOffset + 0, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // uint32 port = 3;
+    {PROTOBUF_FIELD_OFFSET(QueryQueueStatusResponse, _impl_.port_), _Internal::kHasBitsOffset + 5, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+    // bytes token_payload = 4;
+    {PROTOBUF_FIELD_OFFSET(QueryQueueStatusResponse, _impl_.token_payload_), _Internal::kHasBitsOffset + 1, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kBytes | ::_fl::kRepAString)},
+    // bytes token_signature = 5;
+    {PROTOBUF_FIELD_OFFSET(QueryQueueStatusResponse, _impl_.token_signature_), _Internal::kHasBitsOffset + 2, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kBytes | ::_fl::kRepAString)},
+    // int64 token_deadline = 6;
+    {PROTOBUF_FIELD_OFFSET(QueryQueueStatusResponse, _impl_.token_deadline_), _Internal::kHasBitsOffset + 6, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kInt64)},
+    // uint32 queue_rank = 7;
+    {PROTOBUF_FIELD_OFFSET(QueryQueueStatusResponse, _impl_.queue_rank_), _Internal::kHasBitsOffset + 7, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+    // uint32 queue_total = 8;
+    {PROTOBUF_FIELD_OFFSET(QueryQueueStatusResponse, _impl_.queue_total_), _Internal::kHasBitsOffset + 8, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+    // uint32 retry_after_ms = 9;
+    {PROTOBUF_FIELD_OFFSET(QueryQueueStatusResponse, _impl_.retry_after_ms_), _Internal::kHasBitsOffset + 9, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+    // string error = 10;
+    {PROTOBUF_FIELD_OFFSET(QueryQueueStatusResponse, _impl_.error_), _Internal::kHasBitsOffset + 3, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+  }},
+  // no aux_entries
+  {{
+    "\40\0\2\0\0\0\0\0\0\0\5\0\0\0\0\0"
+    "loginpb.QueryQueueStatusResponse"
+    "ip"
+    "error"
+  }},
+};
+PROTOBUF_NOINLINE void QueryQueueStatusResponse::Clear() {
+// @@protoc_insertion_point(message_clear_start:loginpb.QueryQueueStatusResponse)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if ((cached_has_bits & 0x0000000fu) != 0) {
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      _impl_.ip_.ClearNonDefaultToEmpty();
+    }
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      _impl_.token_payload_.ClearNonDefaultToEmpty();
+    }
+    if ((cached_has_bits & 0x00000004u) != 0) {
+      _impl_.token_signature_.ClearNonDefaultToEmpty();
+    }
+    if ((cached_has_bits & 0x00000008u) != 0) {
+      _impl_.error_.ClearNonDefaultToEmpty();
+    }
+  }
+  if ((cached_has_bits & 0x000000f0u) != 0) {
+    ::memset(&_impl_.status_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.queue_rank_) -
+        reinterpret_cast<char*>(&_impl_.status_)) + sizeof(_impl_.queue_rank_));
+  }
+  if ((cached_has_bits & 0x00000300u) != 0) {
+    ::memset(&_impl_.queue_total_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.retry_after_ms_) -
+        reinterpret_cast<char*>(&_impl_.queue_total_)) + sizeof(_impl_.retry_after_ms_));
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL QueryQueueStatusResponse::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const QueryQueueStatusResponse& this_ = static_cast<const QueryQueueStatusResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL QueryQueueStatusResponse::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const QueryQueueStatusResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(serialize_to_array_start:loginpb.QueryQueueStatusResponse)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  // uint32 status = 1;
+  if ((this_._impl_._has_bits_[0] & 0x00000010u) != 0) {
+    if (this_._internal_status() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          1, this_._internal_status(), target);
+    }
+  }
+
+  // string ip = 2;
+  if ((this_._impl_._has_bits_[0] & 0x00000001u) != 0) {
+    if (!this_._internal_ip().empty()) {
+      const ::std::string& _s = this_._internal_ip();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "loginpb.QueryQueueStatusResponse.ip");
+      target = stream->WriteStringMaybeAliased(2, _s, target);
+    }
+  }
+
+  // uint32 port = 3;
+  if ((this_._impl_._has_bits_[0] & 0x00000020u) != 0) {
+    if (this_._internal_port() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          3, this_._internal_port(), target);
+    }
+  }
+
+  // bytes token_payload = 4;
+  if ((this_._impl_._has_bits_[0] & 0x00000002u) != 0) {
+    if (!this_._internal_token_payload().empty()) {
+      const ::std::string& _s = this_._internal_token_payload();
+      target = stream->WriteBytesMaybeAliased(4, _s, target);
+    }
+  }
+
+  // bytes token_signature = 5;
+  if ((this_._impl_._has_bits_[0] & 0x00000004u) != 0) {
+    if (!this_._internal_token_signature().empty()) {
+      const ::std::string& _s = this_._internal_token_signature();
+      target = stream->WriteBytesMaybeAliased(5, _s, target);
+    }
+  }
+
+  // int64 token_deadline = 6;
+  if ((this_._impl_._has_bits_[0] & 0x00000040u) != 0) {
+    if (this_._internal_token_deadline() != 0) {
+      target =
+          ::google::protobuf::internal::WireFormatLite::WriteInt64ToArrayWithField<6>(
+              stream, this_._internal_token_deadline(), target);
+    }
+  }
+
+  // uint32 queue_rank = 7;
+  if ((this_._impl_._has_bits_[0] & 0x00000080u) != 0) {
+    if (this_._internal_queue_rank() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          7, this_._internal_queue_rank(), target);
+    }
+  }
+
+  // uint32 queue_total = 8;
+  if ((this_._impl_._has_bits_[0] & 0x00000100u) != 0) {
+    if (this_._internal_queue_total() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          8, this_._internal_queue_total(), target);
+    }
+  }
+
+  // uint32 retry_after_ms = 9;
+  if ((this_._impl_._has_bits_[0] & 0x00000200u) != 0) {
+    if (this_._internal_retry_after_ms() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          9, this_._internal_retry_after_ms(), target);
+    }
+  }
+
+  // string error = 10;
+  if ((this_._impl_._has_bits_[0] & 0x00000008u) != 0) {
+    if (!this_._internal_error().empty()) {
+      const ::std::string& _s = this_._internal_error();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "loginpb.QueryQueueStatusResponse.error");
+      target = stream->WriteStringMaybeAliased(10, _s, target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:loginpb.QueryQueueStatusResponse)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t QueryQueueStatusResponse::ByteSizeLong(const MessageLite& base) {
+  const QueryQueueStatusResponse& this_ = static_cast<const QueryQueueStatusResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t QueryQueueStatusResponse::ByteSizeLong() const {
+  const QueryQueueStatusResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:loginpb.QueryQueueStatusResponse)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if ((cached_has_bits & 0x000000ffu) != 0) {
+    // string ip = 2;
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      if (!this_._internal_ip().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_ip());
+      }
+    }
+    // bytes token_payload = 4;
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      if (!this_._internal_token_payload().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::BytesSize(
+                                        this_._internal_token_payload());
+      }
+    }
+    // bytes token_signature = 5;
+    if ((cached_has_bits & 0x00000004u) != 0) {
+      if (!this_._internal_token_signature().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::BytesSize(
+                                        this_._internal_token_signature());
+      }
+    }
+    // string error = 10;
+    if ((cached_has_bits & 0x00000008u) != 0) {
+      if (!this_._internal_error().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_error());
+      }
+    }
+    // uint32 status = 1;
+    if ((cached_has_bits & 0x00000010u) != 0) {
+      if (this_._internal_status() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_status());
+      }
+    }
+    // uint32 port = 3;
+    if ((cached_has_bits & 0x00000020u) != 0) {
+      if (this_._internal_port() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_port());
+      }
+    }
+    // int64 token_deadline = 6;
+    if ((cached_has_bits & 0x00000040u) != 0) {
+      if (this_._internal_token_deadline() != 0) {
+        total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(
+            this_._internal_token_deadline());
+      }
+    }
+    // uint32 queue_rank = 7;
+    if ((cached_has_bits & 0x00000080u) != 0) {
+      if (this_._internal_queue_rank() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_queue_rank());
+      }
+    }
+  }
+  if ((cached_has_bits & 0x00000300u) != 0) {
+    // uint32 queue_total = 8;
+    if ((cached_has_bits & 0x00000100u) != 0) {
+      if (this_._internal_queue_total() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_queue_total());
+      }
+    }
+    // uint32 retry_after_ms = 9;
+    if ((cached_has_bits & 0x00000200u) != 0) {
+      if (this_._internal_retry_after_ms() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_retry_after_ms());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void QueryQueueStatusResponse::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<QueryQueueStatusResponse*>(&to_msg);
+  auto& from = static_cast<const QueryQueueStatusResponse&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:loginpb.QueryQueueStatusResponse)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if ((cached_has_bits & 0x000000ffu) != 0) {
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      if (!from._internal_ip().empty()) {
+        _this->_internal_set_ip(from._internal_ip());
+      } else {
+        if (_this->_impl_.ip_.IsDefault()) {
+          _this->_internal_set_ip("");
+        }
+      }
+    }
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      if (!from._internal_token_payload().empty()) {
+        _this->_internal_set_token_payload(from._internal_token_payload());
+      } else {
+        if (_this->_impl_.token_payload_.IsDefault()) {
+          _this->_internal_set_token_payload("");
+        }
+      }
+    }
+    if ((cached_has_bits & 0x00000004u) != 0) {
+      if (!from._internal_token_signature().empty()) {
+        _this->_internal_set_token_signature(from._internal_token_signature());
+      } else {
+        if (_this->_impl_.token_signature_.IsDefault()) {
+          _this->_internal_set_token_signature("");
+        }
+      }
+    }
+    if ((cached_has_bits & 0x00000008u) != 0) {
+      if (!from._internal_error().empty()) {
+        _this->_internal_set_error(from._internal_error());
+      } else {
+        if (_this->_impl_.error_.IsDefault()) {
+          _this->_internal_set_error("");
+        }
+      }
+    }
+    if ((cached_has_bits & 0x00000010u) != 0) {
+      if (from._internal_status() != 0) {
+        _this->_impl_.status_ = from._impl_.status_;
+      }
+    }
+    if ((cached_has_bits & 0x00000020u) != 0) {
+      if (from._internal_port() != 0) {
+        _this->_impl_.port_ = from._impl_.port_;
+      }
+    }
+    if ((cached_has_bits & 0x00000040u) != 0) {
+      if (from._internal_token_deadline() != 0) {
+        _this->_impl_.token_deadline_ = from._impl_.token_deadline_;
+      }
+    }
+    if ((cached_has_bits & 0x00000080u) != 0) {
+      if (from._internal_queue_rank() != 0) {
+        _this->_impl_.queue_rank_ = from._impl_.queue_rank_;
+      }
+    }
+  }
+  if ((cached_has_bits & 0x00000300u) != 0) {
+    if ((cached_has_bits & 0x00000100u) != 0) {
+      if (from._internal_queue_total() != 0) {
+        _this->_impl_.queue_total_ = from._impl_.queue_total_;
+      }
+    }
+    if ((cached_has_bits & 0x00000200u) != 0) {
+      if (from._internal_retry_after_ms() != 0) {
+        _this->_impl_.retry_after_ms_ = from._impl_.retry_after_ms_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void QueryQueueStatusResponse::CopyFrom(const QueryQueueStatusResponse& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:loginpb.QueryQueueStatusResponse)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void QueryQueueStatusResponse::InternalSwap(QueryQueueStatusResponse* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.ip_, &other->_impl_.ip_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.token_payload_, &other->_impl_.token_payload_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.token_signature_, &other->_impl_.token_signature_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.error_, &other->_impl_.error_, arena);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(QueryQueueStatusResponse, _impl_.retry_after_ms_)
+      + sizeof(QueryQueueStatusResponse::_impl_.retry_after_ms_)
+      - PROTOBUF_FIELD_OFFSET(QueryQueueStatusResponse, _impl_.status_)>(
+          reinterpret_cast<char*>(&_impl_.status_),
+          reinterpret_cast<char*>(&other->_impl_.status_));
+}
+
+::google::protobuf::Metadata QueryQueueStatusResponse::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // ===================================================================

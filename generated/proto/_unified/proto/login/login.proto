@@ -115,7 +115,23 @@ service ClientPlayerLogin  {
 
 message AssignGateRequest {
   uint32 zone_id = 1;
+  // Re-entry by a client already in the queue: server validates the token,
+  // skips capacity check, and returns the current rank (or admit token if
+  // dispatcher already promoted this entry). Empty on first call.
+  string queue_token = 2;
+  // Optional account/device for reconnect-exemption. When server sees an
+  // existing PlayerSession for this account on a live gate, it bypasses
+  // the queue and returns a fresh gate token bound to that gate.
+  string account = 3;
+  string device_id = 4;
 }
+
+// AssignGateStatus mirrors AssignGateResponse.status / QueryQueueStatusResponse.status.
+// Kept as raw uint32 in the messages for lite-runtime compatibility, documented here.
+//   0 = ADMITTED  (gate token populated; client connects to gate)
+//   1 = QUEUEING  (queue_token + queue_rank populated; client polls QueryQueueStatus)
+//   2 = ERROR     (error field populated)
+//   3 = EXPIRED   (queue_token expired or unknown — client must restart from /assign-gate)
 
 message AssignGateResponse {
   string ip = 1;
@@ -124,13 +140,47 @@ message AssignGateResponse {
   bytes token_signature = 4;  // HMAC-SHA256 signature — pass to ClientTokenVerifyRequest.signature
   int64 token_deadline = 5;   // unix seconds when token expires (informational for client)
   string error = 6;           // non-empty on failure (no gate available, etc.)
+
+  // Queue protocol (added 2026-05). status=0 means the legacy fields above
+  // are populated and the client connects directly. status=1 means the client
+  // is in the queue and must poll QueryQueueStatus.
+  uint32 status = 7;
+  string queue_token = 8;     // opaque token, present when status=1
+  uint32 queue_rank = 9;      // 0-based position; 0 = "you are next"
+  uint32 queue_total = 10;    // total queue length for this zone (for UI)
+  uint32 retry_after_ms = 11; // suggested poll interval (e.g. 2000)
+}
+
+message QueryQueueStatusRequest {
+  string queue_token = 1;
+}
+
+message QueryQueueStatusResponse {
+  uint32 status = 1;          // 0=ADMITTED, 1=QUEUEING, 3=EXPIRED
+  // status=0: gate token (same shape as AssignGateResponse)
+  string ip = 2;
+  uint32 port = 3;
+  bytes token_payload = 4;
+  bytes token_signature = 5;
+  int64 token_deadline = 6;
+  // status=1
+  uint32 queue_rank = 7;
+  uint32 queue_total = 8;
+  uint32 retry_after_ms = 9;
+  // status=3 or any error
+  string error = 10;
 }
 
 service LoginPreGate {
   // Login picks the least-loaded Gate for the given zone, signs a one-time
   // HMAC token. Client TCP-connects to the assigned gate and sends the
   // token as a ClientTokenVerifyRequest (first message after connect).
+  //
+  // When the zone is over capacity, AssignGate enqueues the caller and
+  // returns status=QUEUEING with a queue_token. The client then polls
+  // QueryQueueStatus until it receives a gate token.
   rpc AssignGate (AssignGateRequest) returns (AssignGateResponse);
+  rpc QueryQueueStatus (QueryQueueStatusRequest) returns (QueryQueueStatusResponse);
 }
 
 // ── Admin-only RPCs (internal, not client-facing) ──────────────
