@@ -528,6 +528,32 @@ void SceneHandler::RoutePlayerStringMsg(::google::protobuf::RpcController* contr
 		const auto localPlayer = tlsEcs.GetPlayer(playerId);
 		if (localPlayer != entt::null && request->node_list_size() == 0)
 		{
+			// Cross-zone Frozen gate (cross-zone-readiness-audit.md §11.3).
+			// If the player is mid-cross-zone-migration the source-side
+			// entity is alive only to wait for the destination's ACK; any
+			// client message dispatched to it would mutate state that's
+			// about to be DestroyPlayer'd. Drop the message and let the
+			// client retry once the migration completes (the gate session
+			// is preserved across Frozen, so client stays connected).
+			//
+			// IMPORTANT messages are logged as ERROR so ops can see if the
+			// destination zone is taking too long to ACK and clients are
+			// piling up retries — that's a reaper / ACK failure signal.
+			if (PlayerLifecycleSystem::IsCrossZoneFrozen(localPlayer))
+			{
+				if (importantRoute)
+				{
+					LOG_ERROR << "RoutePlayerStringMsg dropped: player frozen for cross-zone migration "
+							  << "(IMPORTANT, may need client retry), player_id=" << playerId;
+				}
+				else
+				{
+					LOG_DEBUG << "RoutePlayerStringMsg dropped: player frozen for cross-zone migration "
+							  << "(NORMAL, silent drop), player_id=" << playerId;
+				}
+				return;
+			}
+
 			LOG_TRACE << "RoutePlayerStringMsg local hit, player_id=" << playerId;
 			return;
 		}
