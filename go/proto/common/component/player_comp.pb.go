@@ -176,9 +176,13 @@ func (x *Account) GetAccount() string {
 }
 
 type UnregisterPlayer struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Wall-clock millis when HandleExitGameNode was called (and SavePlayerToRedis
+	// was enqueued). Used to detect saves that outrun the player_locator
+	// reconnect lease (30s). See todo.md #280 / NOTES Part 2 P0.
+	LogoutInitiatedMs int64 `protobuf:"varint,1,opt,name=logout_initiated_ms,json=logoutInitiatedMs,proto3" json:"logout_initiated_ms,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *UnregisterPlayer) Reset() {
@@ -209,6 +213,13 @@ func (x *UnregisterPlayer) ProtoReflect() protoreflect.Message {
 // Deprecated: Use UnregisterPlayer.ProtoReflect.Descriptor instead.
 func (*UnregisterPlayer) Descriptor() ([]byte, []int) {
 	return file_proto_common_component_player_comp_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *UnregisterPlayer) GetLogoutInitiatedMs() int64 {
+	if x != nil {
+		return x.LogoutInitiatedMs
+	}
+	return 0
 }
 
 type PlayerUint64Comp struct {
@@ -375,8 +386,9 @@ const file_proto_common_component_player_comp_proto_rawDesc = "" +
 	"CoverLogin\"\b\n" +
 	"\x06Player\"#\n" +
 	"\aAccount\x12\x18\n" +
-	"\aaccount\x18\x01 \x01(\tR\aaccount\"\x12\n" +
-	"\x10UnregisterPlayer\"I\n" +
+	"\aaccount\x18\x01 \x01(\tR\aaccount\"B\n" +
+	"\x10UnregisterPlayer\x12.\n" +
+	"\x13logout_initiated_ms\x18\x01 \x01(\x03R\x11logoutInitiatedMs\"I\n" +
 	"\x10PlayerUint64Comp\x125\n" +
 	"\x16registration_timestamp\x18\x01 \x01(\x04R\x15registrationTimestamp\"(\n" +
 	"\x10PlayerUint32Comp\x12\x14\n" +

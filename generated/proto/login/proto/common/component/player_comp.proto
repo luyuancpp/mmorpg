@@ -24,7 +24,17 @@ message Account
 
 message UnregisterPlayer
 {
+	// Wall-clock millis when HandleExitGameNode was called (and SavePlayerToRedis
+	// was enqueued). Used to detect saves that outrun the player_locator
+	// reconnect lease (30s). See todo.md #280 / NOTES Part 2 P0.
+	int64 logout_initiated_ms = 1;
 }
+
+// NOTE: PlayerFrozenComp is intentionally NOT defined here.
+// It is a pure runtime marker (no persistence, no serialization, no IPC),
+// declared in cpp/libs/services/scene/player/comp/player_frozen_comp.h as
+// a plain C++ struct — proto is the wrong tool for "transient ECS tag".
+// See docs/design/cross-zone-readiness-audit.md §3.2 件 2.
 
 message PlayerUint64Comp
 {

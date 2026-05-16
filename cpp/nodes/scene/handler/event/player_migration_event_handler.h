@@ -9,4 +9,5 @@ public:
 
     static void UnRegister();
     static void HandlePlayerMigrationEvent(const PlayerMigrationEvent& event);
+    static void PlayerMigrationAckEventHandler(const PlayerMigrationAckEvent& event);
 };
