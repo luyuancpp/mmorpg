@@ -1,6 +1,6 @@
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet("help", "pbgen-build", "pbgen-run", "proto-gen-build", "proto-gen-run", "tree", "naming-audit", "naming-apply", "third-party-grpc-build", "iwyu-run", "k8s-infra-up", "k8s-infra-down", "k8s-infra-status", "k8s-zone-up", "k8s-zone-down", "k8s-zone-status", "k8s-all-up", "k8s-all-down", "k8s-all-status", "k8s-build-all", "k8s-exposure-preflight", "k8s-stage-runtime", "k8s-image-preflight", "k8s-build-image", "k8s-push-image", "k8s-release-zone", "k8s-release-all", "go-svc-start", "go-svc-start-exe", "go-svc-stop", "go-svc-status", "go-svc-list", "go-svc-build", "go-svc-build-images", "go-svc-push-images", "java-svc-build-image", "java-svc-push-image", "cpp-node-start", "cpp-node-stop", "cpp-node-status", "cpp-node-list", "dev-start", "dev-start-exe", "dev-start-zones", "dev-stop", "dev-status", "dev-robot-zones", "merge-zone")]
+    [ValidateSet("help", "pbgen-build", "pbgen-run", "proto-gen-build", "proto-gen-run", "tree", "naming-audit", "naming-apply", "third-party-grpc-build", "iwyu-run", "k8s-infra-up", "k8s-infra-down", "k8s-infra-status", "k8s-zone-up", "k8s-zone-down", "k8s-zone-status", "k8s-zone-rollback", "k8s-all-up", "k8s-all-down", "k8s-all-status", "k8s-build-all", "k8s-exposure-preflight", "k8s-stage-runtime", "k8s-image-preflight", "k8s-build-image", "k8s-push-image", "k8s-release-zone", "k8s-release-all", "go-svc-start", "go-svc-start-exe", "go-svc-stop", "go-svc-status", "go-svc-list", "go-svc-build", "go-svc-build-images", "go-svc-push-images", "java-svc-build-image", "java-svc-push-image", "cpp-node-start", "cpp-node-stop", "cpp-node-status", "cpp-node-list", "dev-start", "dev-start-exe", "dev-start-zones", "dev-stop", "dev-status", "dev-robot-zones", "merge-zone", "kafka-offset-reset")]
     [string]$Command,
 
     [string]$ConfigPath = "",
@@ -93,7 +93,36 @@ param(
     [string]$MergeMySqlDsn = "root:@tcp(127.0.0.1:3306)/mmorpg?charset=utf8mb4&parseTime=true&loc=Local",
     [string]$MergeRedisAddr = "127.0.0.1:6379",
     [string]$MergeRedisPassword = "",
-    [int]$MergeRedisDB = 2
+    [int]$MergeRedisDB = 2,
+
+    # ── kafka-offset-reset ────────────────────────────────────────
+    # See tools/scripts/kafka_offset_reset.ps1 for full docs.
+    # Used by zone rollback (docs/design/zone_data_rollback.md §3 step 4).
+    [string]$KafkaBootstrapServer = "kafka:9092",
+    [string]$KafkaGroup = "",
+    [string]$KafkaTopic = "",
+    [string]$KafkaToDatetime = "",      # ISO 8601 UTC, e.g. "2026-05-15T03:17:00Z"
+    [switch]$KafkaToEarliest,
+    [switch]$KafkaToLatest,
+    [switch]$KafkaDeleteAndRecreate,
+    [int]$KafkaPartitions = 0,
+    [int]$KafkaReplicationFactor = 1,
+    [string]$KafkaBin = "",
+    [switch]$KafkaApply,
+
+    # ── k8s-zone-rollback ─────────────────────────────────────────
+    # See tools/scripts/k8s_zone_rollback.ps1 for full docs.
+    # Wraps docs/design/zone_data_rollback.md §3 5-step disaster recovery.
+    [string]$RollbackTargetTime = "",       # ISO 8601 UTC
+    [string]$RollbackRedisHost = "",
+    [string]$RollbackRedisPort = "6379",
+    [string]$RollbackRedisPassword = "",
+    [int]$RollbackRedisDB = 0,
+    [string]$RollbackKafkaTopic = "db_task_topic",
+    [string]$RollbackKafkaGroup = "db_rpc_consumer_group",
+    [switch]$RollbackSkipMySqlPause,
+    [int]$RollbackKafkaDrainTimeoutSec = 300,
+    [switch]$RollbackApply
 )
 
 $ErrorActionPreference = "Stop"
@@ -683,6 +712,47 @@ switch ($Command) {
         if ($MergeRedisPassword -ne "") { $mergeArgs += @("-RedisPassword", $MergeRedisPassword) }
         if ($DryRun) { $mergeArgs += "-DryRun" }
         & (Join-Path $ScriptDir "merge_zone.ps1") @mergeArgs
+    }
+    "kafka-offset-reset" {
+        # Wraps kafka_offset_reset.ps1 — see docs/design/zone_data_rollback.md §3 step 4.
+        # Used during zone rollback to reset db_task_topic offsets before restarting a zone.
+        $kArgs = @("-BootstrapServer", $KafkaBootstrapServer, "-Topic", $KafkaTopic)
+        if ($KafkaGroup -ne "")               { $kArgs += @("-Group", $KafkaGroup) }
+        if ($KafkaToDatetime -ne "")          { $kArgs += @("-ToDatetime", $KafkaToDatetime) }
+        if ($KafkaToEarliest)                 { $kArgs += "-ToEarliest" }
+        if ($KafkaToLatest)                   { $kArgs += "-ToLatest" }
+        if ($KafkaDeleteAndRecreate)          { $kArgs += "-DeleteAndRecreateTopic" }
+        if ($KafkaPartitions -gt 0)           { $kArgs += @("-Partitions", $KafkaPartitions) }
+        if ($KafkaReplicationFactor -ne 1)    { $kArgs += @("-ReplicationFactor", $KafkaReplicationFactor) }
+        if ($KafkaBin -ne "")                 { $kArgs += @("-KafkaBin", $KafkaBin) }
+        if ($KafkaApply)                      { $kArgs += "-Apply" }
+        & (Join-Path $ScriptDir "kafka_offset_reset.ps1") @kArgs
+    }
+    "k8s-zone-rollback" {
+        # Wraps k8s_zone_rollback.ps1 — see docs/design/zone_data_rollback.md §3.
+        # Orchestrates: zone-down → Kafka drain → MySQL PITR (manual) → Redis FLUSHDB
+        #             → Kafka offset reset → zone-up → verification checklist.
+        if ($RollbackTargetTime -eq "") {
+            throw "k8s-zone-rollback requires -RollbackTargetTime (ISO 8601 UTC, e.g. '2026-05-15T14:23:00Z')"
+        }
+        $rbArgs = @(
+            "-ZoneName", $ZoneName,
+            "-ZoneId", $ZoneId,
+            "-TargetTime", $RollbackTargetTime,
+            "-KafkaBootstrap", $KafkaBootstrapServer,
+            "-KafkaTopic", $RollbackKafkaTopic,
+            "-KafkaGroup", $RollbackKafkaGroup,
+            "-NodeImage", $NodeImage,
+            "-NamespacePrefix", $NamespacePrefix,
+            "-KafkaDrainTimeoutSec", $RollbackKafkaDrainTimeoutSec
+        )
+        if ($RollbackRedisHost -ne "")     { $rbArgs += @("-RedisHost", $RollbackRedisHost) }
+        if ($RollbackRedisPort -ne "6379") { $rbArgs += @("-RedisPort", $RollbackRedisPort) }
+        if ($RollbackRedisPassword -ne "") { $rbArgs += @("-RedisPassword", $RollbackRedisPassword) }
+        if ($RollbackRedisDB -ne 0)        { $rbArgs += @("-RedisDB", $RollbackRedisDB) }
+        if ($RollbackSkipMySqlPause)       { $rbArgs += "-SkipMySqlPause" }
+        if ($RollbackApply)                { $rbArgs += "-Apply" }
+        & (Join-Path $ScriptDir "k8s_zone_rollback.ps1") @rbArgs
     }
     "dev-robot-zones" {
         # Per-zone parallel robot launch. Builds robot once, then for each
