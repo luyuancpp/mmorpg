@@ -100,6 +100,25 @@ wired — Gate just ignores `hmac_session_key`, falls back to the
 adler32-only path. **Backward compatible**: an old client and a new
 server (or vice versa) keep working at the adler32 floor.
 
+## What landed 2026-05-16 — slice A closed
+
+After #102 (login queue) was committed in `708d54507`, `proto-gen-run`
+ran cleanly against a working tree without unrelated dirty generated
+files. That cleared the blocker noted above. Slice A is now closed:
+
+| Layer | File | Change |
+|---|---|---|
+| codegen output | `cpp/generated/proto/common/base/message.pb.{h,cc}` | `GateTokenPayload::hmac_session_key()` accessor materialized (TcParseTable bumped from 3-field to 4-field) |
+| codegen output | `go/proto/common/base/message.pb.go` | `HmacSessionKey []byte` field + `GetHmacSessionKey()` accessor materialized |
+| codegen output | `go/proto/common/component/player_comp.pb.go` | back-fill of `UnregisterPlayer.logout_initiated_ms` (#280 derivative that wasn't picked up in earlier proto-gen runs) |
+| codegen output | `generated/proto/_unified/`, `generated/proto/db/`, `generated/proto/login/` | 3-way mirror sync of the proto declarations — these are flat-text mirrors that proto-gen rewrites; they were always going to drift until proto-gen ran cleanly |
+| Go login | `go/login/internal/logic/pkg/loginqueue/gatetoken.go` | `crypto/rand.Read(sessionKey)` generates the 32-byte key; `payload.HmacSessionKey = sessionKey` populates the field. The TODO placeholder is gone. `go vet` exit=0 verified. |
+| C++ gate | `cpp/nodes/gate/handler/rpc/client_message_processor.cpp::HandleClientTokenVerify` | After expiry check + before `session.verified = true`: `session.hmacSessionKey.assign(payload.hmac_session_key())` plus an `IllegalPacketCounter::Reset(session.illegalPacketCount)` since a fresh handshake means pre-handshake noise is behind us. |
+
+Empty / missing `hmac_session_key` continues to land as an empty
+`std::string` on the gate side — backward compatible: gate keeps
+running adler32-only for any client that doesn't supply the field.
+
 ---
 
 ## What's NOT done yet (tracked as #76 follow-ups)

@@ -24,6 +24,10 @@ message Account
 
 message UnregisterPlayer
 {
+	// Wall-clock millis when HandleExitGameNode was called (and SavePlayerToRedis
+	// was enqueued). Used to detect saves that outrun the player_locator
+	// reconnect lease (30s). See todo.md #280 / NOTES Part 2 P0.
+	int64 logout_initiated_ms = 1;
 }
 
 message PlayerUint64Comp

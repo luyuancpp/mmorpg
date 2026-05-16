@@ -17,6 +17,7 @@ package loginqueue
 
 import (
 	"crypto/hmac"
+	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
@@ -29,6 +30,13 @@ import (
 
 	"google.golang.org/protobuf/proto"
 )
+
+// hmacSessionKeyLen is the size in bytes of the per-session HMAC key carried
+// inside GateTokenPayload (todo.md #76 message tampering). 32 bytes = 256
+// bits matches HMAC-SHA256's natural key size and is well above the 128-bit
+// security floor expected for anti-tamper. The key is regenerated on every
+// AssignGate call — there is no Redis state to rotate.
+const hmacSessionKeyLen = 32
 
 // GateCandidate is the projection of NodeInfo we need for selection. Kept
 // minimal so capacity.go can build it from any source (etcd watcher today,
@@ -66,10 +74,23 @@ func PickAndSignGateToken(candidates []GateCandidate, secret []byte, ttl time.Du
 	best := sorted[0]
 
 	expireTS := time.Now().Add(ttl).Unix()
+
+	// Generate a fresh per-session HMAC key (todo.md #76 slice A). 32
+	// random bytes from crypto/rand. The key piggybacks on the existing
+	// HMAC-SHA256 signature over payloadBytes, so an attacker tampering
+	// with it on the wire would invalidate the gate token signature and
+	// the gate would reject the whole handshake. No Redis state — fresh
+	// key on every AssignGate call.
+	sessionKey := make([]byte, hmacSessionKeyLen)
+	if _, err := rand.Read(sessionKey); err != nil {
+		return nil, fmt.Errorf("generate hmac session key: %w", err)
+	}
+
 	payload := &commonpb.GateTokenPayload{
 		GateNodeId:      best.NodeID,
 		ZoneId:          best.ZoneID,
 		ExpireTimestamp: expireTS,
+		HmacSessionKey:  sessionKey,
 	}
 	payloadBytes, err := proto.Marshal(payload)
 	if err != nil {
