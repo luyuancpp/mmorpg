@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"data_service/internal/config"
+	"data_service/internal/metrics"
 	"data_service/internal/server"
 	"data_service/internal/svc"
 	"proto/data_service"
@@ -30,6 +31,11 @@ func main() {
 		defer svcCtx.SnapshotStore.Close()
 	}
 
+	// Start Prometheus /metrics endpoint. Empty addr → no-op.
+	// Surfaces per-RPC outcome / latency, lock contention, version mismatch,
+	// rollback counts. See internal/metrics/metrics.go.
+	metrics.Start(c.MetricsListenAddr)
+
 	s := zrpc.MustNewServer(c.RpcServerConf, func(grpcServer *grpc.Server) {
 		data_service.RegisterDataServiceServer(grpcServer, server.NewDataServiceServer(svcCtx))
 
@@ -49,6 +55,9 @@ func main() {
 		fmt.Printf("  etcd:        %v\n", c.Etcd.Hosts)
 	}
 	fmt.Printf("  redis:       %s\n", c.MappingRedis.Host)
+	if c.MetricsListenAddr != "" {
+		fmt.Printf("  metrics:     %s/metrics\n", c.MetricsListenAddr)
+	}
 	fmt.Println("=============================================================")
 	s.Start()
 }

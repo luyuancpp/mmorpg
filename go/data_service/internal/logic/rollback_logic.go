@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"data_service/internal/constants"
+	"data_service/internal/metrics"
 	"data_service/internal/store"
 	"data_service/internal/svc"
 	loginpb "proto/login"
@@ -50,8 +51,14 @@ func RollbackPlayer(ctx context.Context, svcCtx *svc.ServiceContext, req *Rollba
 
 	resp, err := rollbackSinglePlayer(ctx, svcCtx, req)
 	if err != nil {
+		metrics.ObserveRollback("player", "failed", 0, 0)
 		logx.Errorf("[Rollback] player %d failed: %v", req.PlayerID, err)
 		return resp, err
+	}
+	if resp.ErrorCode != constants.ErrCodeOK {
+		metrics.ObserveRollback("player", "failed", 0, 0)
+	} else {
+		metrics.ObserveRollback("player", "ok", 1, 0)
 	}
 
 	// Write audit log
@@ -258,6 +265,15 @@ func RollbackZone(ctx context.Context, svcCtx *svc.ServiceContext, req *Rollback
 	logx.Infof("[Rollback] zone %d complete: affected=%d failed=%d orphans_cleaned=%d",
 		req.ZoneID, affected, failed, orphansCleaned)
 
+	// Metrics: outcome=ok if everyone succeeded, partial if any failures, failed if all failed
+	rbOutcome := "ok"
+	if failed > 0 && affected == 0 {
+		rbOutcome = "failed"
+	} else if failed > 0 {
+		rbOutcome = "partial"
+	}
+	metrics.ObserveRollback("zone", rbOutcome, affected, orphansCleaned)
+
 	return &RollbackZoneResp{
 		PlayersAffected:  affected,
 		PlayersFailed:    failed,
@@ -385,6 +401,14 @@ func RollbackAll(ctx context.Context, svcCtx *svc.ServiceContext, req *RollbackA
 
 	logx.Infof("[Rollback] FULL SERVER complete: zones=%d affected=%d failed=%d",
 		zonesProcessed, totalAffected, totalFailed)
+
+	rbOutcome := "ok"
+	if totalFailed > 0 && totalAffected == 0 {
+		rbOutcome = "failed"
+	} else if totalFailed > 0 {
+		rbOutcome = "partial"
+	}
+	metrics.ObserveRollback("server", rbOutcome, totalAffected, 0)
 
 	return &RollbackAllResp{
 		ZonesProcessed:  zonesProcessed,
