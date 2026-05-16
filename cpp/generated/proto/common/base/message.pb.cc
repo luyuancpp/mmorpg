@@ -155,6 +155,9 @@ PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
 inline constexpr GateTokenPayload::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
+        hmac_session_key_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
         gate_node_id_{0u},
         zone_id_{0u},
         expire_timestamp_{::int64_t{0}} {}
@@ -1064,13 +1067,15 @@ const ::uint32_t
         1,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::GateTokenPayload, _impl_._has_bits_),
-        6, // hasbit index offset
+        7, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::GateTokenPayload, _impl_.gate_node_id_),
         PROTOBUF_FIELD_OFFSET(::GateTokenPayload, _impl_.zone_id_),
         PROTOBUF_FIELD_OFFSET(::GateTokenPayload, _impl_.expire_timestamp_),
-        0,
+        PROTOBUF_FIELD_OFFSET(::GateTokenPayload, _impl_.hmac_session_key_),
         1,
         2,
+        3,
+        0,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::ClientTokenVerifyRequest, _impl_._has_bits_),
         5, // hasbit index offset
@@ -1117,8 +1122,8 @@ static const ::_pbi::MigrationSchema
         {194, sizeof(::NodeHandshakeRequest)},
         {203, sizeof(::NodeHandshakeResponse)},
         {210, sizeof(::GateTokenPayload)},
-        {219, sizeof(::ClientTokenVerifyRequest)},
-        {226, sizeof(::ClientTokenVerifyResponse)},
+        {221, sizeof(::ClientTokenVerifyRequest)},
+        {228, sizeof(::ClientTokenVerifyResponse)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::_RoutingNodeInfo_default_instance_._instance,
@@ -1220,13 +1225,13 @@ const char descriptor_table_protodef_proto_2fcommon_2fbase_2fmessage_2eproto[] A
     "n\030\002 \001(\t\022\034\n\tself_node\030\003 \001(\0132\t.NodeInfo\"]\n"
     "\025NodeHandshakeResponse\022&\n\rerror_message\030"
     "\001 \001(\0132\017.TipInfoMessage\022\034\n\tpeer_node\030\002 \001("
-    "\0132\t.NodeInfo\"S\n\020GateTokenPayload\022\024\n\014gate"
+    "\0132\t.NodeInfo\"m\n\020GateTokenPayload\022\024\n\014gate"
     "_node_id\030\001 \001(\r\022\017\n\007zone_id\030\002 \001(\r\022\030\n\020expir"
-    "e_timestamp\030\003 \001(\003\">\n\030ClientTokenVerifyRe"
-    "quest\022\017\n\007payload\030\001 \001(\014\022\021\n\tsignature\030\002 \001("
-    "\014\";\n\031ClientTokenVerifyResponse\022\017\n\007succes"
-    "s\030\001 \001(\010\022\r\n\005error\030\002 \001(\tB\rZ\013common/baseb\006p"
-    "roto3"
+    "e_timestamp\030\003 \001(\003\022\030\n\020hmac_session_key\030\004 "
+    "\001(\014\">\n\030ClientTokenVerifyRequest\022\017\n\007paylo"
+    "ad\030\001 \001(\014\022\021\n\tsignature\030\002 \001(\014\";\n\031ClientTok"
+    "enVerifyResponse\022\017\n\007success\030\001 \001(\010\022\r\n\005err"
+    "or\030\002 \001(\tB\rZ\013common/baseb\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fcommon_2fbase_2fmessage_2eproto_deps[3] = {
@@ -1238,7 +1243,7 @@ static ::absl::once_flag descriptor_table_proto_2fcommon_2fbase_2fmessage_2eprot
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fbase_2fmessage_2eproto = {
     false,
     false,
-    2885,
+    2911,
     descriptor_table_protodef_proto_2fcommon_2fbase_2fmessage_2eproto,
     "proto/common/base/message.proto",
     &descriptor_table_proto_2fcommon_2fbase_2fmessage_2eproto_once,
@@ -9866,21 +9871,42 @@ GateTokenPayload::GateTokenPayload(::google::protobuf::Arena* PROTOBUF_NULLABLE 
   SharedCtor(arena);
   // @@protoc_insertion_point(arena_constructor:GateTokenPayload)
 }
+PROTOBUF_NDEBUG_INLINE GateTokenPayload::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    const ::GateTokenPayload& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        hmac_session_key_(arena, from.hmac_session_key_) {}
+
 GateTokenPayload::GateTokenPayload(
-    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const GateTokenPayload& from)
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const GateTokenPayload& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, GateTokenPayload_class_data_.base()),
+    : ::google::protobuf::Message(arena, GateTokenPayload_class_data_.base()) {
 #else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::Message(arena),
+    : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
-      _impl_(from._impl_) {
+  GateTokenPayload* const _this = this;
+  (void)_this;
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::memcpy(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, gate_node_id_),
+           reinterpret_cast<const char *>(&from._impl_) +
+               offsetof(Impl_, gate_node_id_),
+           offsetof(Impl_, expire_timestamp_) -
+               offsetof(Impl_, gate_node_id_) +
+               sizeof(Impl_::expire_timestamp_));
+
+  // @@protoc_insertion_point(copy_constructor:GateTokenPayload)
 }
 PROTOBUF_NDEBUG_INLINE GateTokenPayload::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
-      : _cached_size_{0} {}
+      : _cached_size_{0},
+        hmac_session_key_(arena) {}
 
 inline void GateTokenPayload::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
@@ -9899,6 +9925,7 @@ inline void GateTokenPayload::SharedDtor(MessageLite& self) {
   GateTokenPayload& this_ = static_cast<GateTokenPayload&>(self);
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.hmac_session_key_.Destroy();
   this_._impl_.~Impl_();
 }
 
@@ -9908,7 +9935,7 @@ inline void* PROTOBUF_NONNULL GateTokenPayload::PlacementNew_(
   return ::new (mem) GateTokenPayload(arena);
 }
 constexpr auto GateTokenPayload::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(GateTokenPayload),
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(GateTokenPayload),
                                             alignof(GateTokenPayload));
 }
 constexpr auto GateTokenPayload::InternalGenerateClassData_() {
@@ -9945,16 +9972,16 @@ GateTokenPayload::GetClassData() const {
   return GateTokenPayload_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<2, 3, 0, 0, 2>
+const ::_pbi::TcParseTable<2, 4, 0, 0, 2>
 GateTokenPayload::_table_ = {
   {
     PROTOBUF_FIELD_OFFSET(GateTokenPayload, _impl_._has_bits_),
     0, // no _extensions_
-    3, 24,  // max_field_number, fast_idx_mask
+    4, 24,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967288,  // skipmap
+    4294967280,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    3,  // num_field_entries
+    4,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
     GateTokenPayload_class_data_.base(),
@@ -9964,28 +9991,33 @@ GateTokenPayload::_table_ = {
     ::_pbi::TcParser::GetTable<::GateTokenPayload>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    {::_pbi::TcParser::MiniParse, {}},
+    // bytes hmac_session_key = 4;
+    {::_pbi::TcParser::FastBS1,
+     {34, 0, 0, PROTOBUF_FIELD_OFFSET(GateTokenPayload, _impl_.hmac_session_key_)}},
     // uint32 gate_node_id = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GateTokenPayload, _impl_.gate_node_id_), 0>(),
-     {8, 0, 0, PROTOBUF_FIELD_OFFSET(GateTokenPayload, _impl_.gate_node_id_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GateTokenPayload, _impl_.gate_node_id_), 1>(),
+     {8, 1, 0, PROTOBUF_FIELD_OFFSET(GateTokenPayload, _impl_.gate_node_id_)}},
     // uint32 zone_id = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GateTokenPayload, _impl_.zone_id_), 1>(),
-     {16, 1, 0, PROTOBUF_FIELD_OFFSET(GateTokenPayload, _impl_.zone_id_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GateTokenPayload, _impl_.zone_id_), 2>(),
+     {16, 2, 0, PROTOBUF_FIELD_OFFSET(GateTokenPayload, _impl_.zone_id_)}},
     // int64 expire_timestamp = 3;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(GateTokenPayload, _impl_.expire_timestamp_), 2>(),
-     {24, 2, 0, PROTOBUF_FIELD_OFFSET(GateTokenPayload, _impl_.expire_timestamp_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(GateTokenPayload, _impl_.expire_timestamp_), 3>(),
+     {24, 3, 0, PROTOBUF_FIELD_OFFSET(GateTokenPayload, _impl_.expire_timestamp_)}},
   }}, {{
     65535, 65535
   }}, {{
     // uint32 gate_node_id = 1;
-    {PROTOBUF_FIELD_OFFSET(GateTokenPayload, _impl_.gate_node_id_), _Internal::kHasBitsOffset + 0, 0,
+    {PROTOBUF_FIELD_OFFSET(GateTokenPayload, _impl_.gate_node_id_), _Internal::kHasBitsOffset + 1, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
     // uint32 zone_id = 2;
-    {PROTOBUF_FIELD_OFFSET(GateTokenPayload, _impl_.zone_id_), _Internal::kHasBitsOffset + 1, 0,
+    {PROTOBUF_FIELD_OFFSET(GateTokenPayload, _impl_.zone_id_), _Internal::kHasBitsOffset + 2, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
     // int64 expire_timestamp = 3;
-    {PROTOBUF_FIELD_OFFSET(GateTokenPayload, _impl_.expire_timestamp_), _Internal::kHasBitsOffset + 2, 0,
+    {PROTOBUF_FIELD_OFFSET(GateTokenPayload, _impl_.expire_timestamp_), _Internal::kHasBitsOffset + 3, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kInt64)},
+    // bytes hmac_session_key = 4;
+    {PROTOBUF_FIELD_OFFSET(GateTokenPayload, _impl_.hmac_session_key_), _Internal::kHasBitsOffset + 0, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kBytes | ::_fl::kRepAString)},
   }},
   // no aux_entries
   {{
@@ -9999,7 +10031,10 @@ PROTOBUF_NOINLINE void GateTokenPayload::Clear() {
   (void) cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  if ((cached_has_bits & 0x00000007u) != 0) {
+  if ((cached_has_bits & 0x00000001u) != 0) {
+    _impl_.hmac_session_key_.ClearNonDefaultToEmpty();
+  }
+  if ((cached_has_bits & 0x0000000eu) != 0) {
     ::memset(&_impl_.gate_node_id_, 0, static_cast<::size_t>(
         reinterpret_cast<char*>(&_impl_.expire_timestamp_) -
         reinterpret_cast<char*>(&_impl_.gate_node_id_)) + sizeof(_impl_.expire_timestamp_));
@@ -10024,7 +10059,7 @@ PROTOBUF_NOINLINE void GateTokenPayload::Clear() {
   (void)cached_has_bits;
 
   // uint32 gate_node_id = 1;
-  if ((this_._impl_._has_bits_[0] & 0x00000001u) != 0) {
+  if ((this_._impl_._has_bits_[0] & 0x00000002u) != 0) {
     if (this_._internal_gate_node_id() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
@@ -10033,7 +10068,7 @@ PROTOBUF_NOINLINE void GateTokenPayload::Clear() {
   }
 
   // uint32 zone_id = 2;
-  if ((this_._impl_._has_bits_[0] & 0x00000002u) != 0) {
+  if ((this_._impl_._has_bits_[0] & 0x00000004u) != 0) {
     if (this_._internal_zone_id() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
@@ -10042,11 +10077,19 @@ PROTOBUF_NOINLINE void GateTokenPayload::Clear() {
   }
 
   // int64 expire_timestamp = 3;
-  if ((this_._impl_._has_bits_[0] & 0x00000004u) != 0) {
+  if ((this_._impl_._has_bits_[0] & 0x00000008u) != 0) {
     if (this_._internal_expire_timestamp() != 0) {
       target =
           ::google::protobuf::internal::WireFormatLite::WriteInt64ToArrayWithField<3>(
               stream, this_._internal_expire_timestamp(), target);
+    }
+  }
+
+  // bytes hmac_session_key = 4;
+  if ((this_._impl_._has_bits_[0] & 0x00000001u) != 0) {
+    if (!this_._internal_hmac_session_key().empty()) {
+      const ::std::string& _s = this_._internal_hmac_session_key();
+      target = stream->WriteBytesMaybeAliased(4, _s, target);
     }
   }
 
@@ -10075,23 +10118,30 @@ PROTOBUF_NOINLINE void GateTokenPayload::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if ((cached_has_bits & 0x00000007u) != 0) {
-    // uint32 gate_node_id = 1;
+  if ((cached_has_bits & 0x0000000fu) != 0) {
+    // bytes hmac_session_key = 4;
     if ((cached_has_bits & 0x00000001u) != 0) {
+      if (!this_._internal_hmac_session_key().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::BytesSize(
+                                        this_._internal_hmac_session_key());
+      }
+    }
+    // uint32 gate_node_id = 1;
+    if ((cached_has_bits & 0x00000002u) != 0) {
       if (this_._internal_gate_node_id() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_gate_node_id());
       }
     }
     // uint32 zone_id = 2;
-    if ((cached_has_bits & 0x00000002u) != 0) {
+    if ((cached_has_bits & 0x00000004u) != 0) {
       if (this_._internal_zone_id() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_zone_id());
       }
     }
     // int64 expire_timestamp = 3;
-    if ((cached_has_bits & 0x00000004u) != 0) {
+    if ((cached_has_bits & 0x00000008u) != 0) {
       if (this_._internal_expire_timestamp() != 0) {
         total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(
             this_._internal_expire_timestamp());
@@ -10111,18 +10161,27 @@ void GateTokenPayload::MergeImpl(::google::protobuf::MessageLite& to_msg, const 
   (void) cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if ((cached_has_bits & 0x00000007u) != 0) {
+  if ((cached_has_bits & 0x0000000fu) != 0) {
     if ((cached_has_bits & 0x00000001u) != 0) {
+      if (!from._internal_hmac_session_key().empty()) {
+        _this->_internal_set_hmac_session_key(from._internal_hmac_session_key());
+      } else {
+        if (_this->_impl_.hmac_session_key_.IsDefault()) {
+          _this->_internal_set_hmac_session_key("");
+        }
+      }
+    }
+    if ((cached_has_bits & 0x00000002u) != 0) {
       if (from._internal_gate_node_id() != 0) {
         _this->_impl_.gate_node_id_ = from._impl_.gate_node_id_;
       }
     }
-    if ((cached_has_bits & 0x00000002u) != 0) {
+    if ((cached_has_bits & 0x00000004u) != 0) {
       if (from._internal_zone_id() != 0) {
         _this->_impl_.zone_id_ = from._impl_.zone_id_;
       }
     }
-    if ((cached_has_bits & 0x00000004u) != 0) {
+    if ((cached_has_bits & 0x00000008u) != 0) {
       if (from._internal_expire_timestamp() != 0) {
         _this->_impl_.expire_timestamp_ = from._impl_.expire_timestamp_;
       }
@@ -10142,8 +10201,11 @@ void GateTokenPayload::CopyFrom(const GateTokenPayload& from) {
 
 void GateTokenPayload::InternalSwap(GateTokenPayload* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
   using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.hmac_session_key_, &other->_impl_.hmac_session_key_, arena);
   ::google::protobuf::internal::memswap<
       PROTOBUF_FIELD_OFFSET(GateTokenPayload, _impl_.expire_timestamp_)
       + sizeof(GateTokenPayload::_impl_.expire_timestamp_)

@@ -618,9 +618,28 @@ void RpcClientSessionHandler::DispatchTokenVerify(const muduo::net::TcpConnectio
 		return;
 	}
 
+	// todo.md #76 slice A — install the per-session HMAC key carried in
+	// the verified token payload. Empty bytes mean "client/server pair
+	// hasn't rolled out the signed-message path yet" — we accept the
+	// verification anyway and fall back to the adler32-only path in
+	// codec.cpp. Once the wire-format slot for `hmac_tag` lands
+	// (slice B), absent key here flags the connection as "unsigned-
+	// allowed" so the gate's per-message verifier knows whether to
+	// require a tag.
+	//
+	// Resetting the illegal-packet counter on a verified handshake is
+	// intentional: a fresh ClientTokenVerify means the client has just
+	// completed AssignGate, so any pre-handshake packet noise is
+	// behind us. If illegal packets resume after this point, that's a
+	// real attack signal and the threshold counter starts again from
+	// zero.
+	session.hmacSessionKey.assign(payload.hmac_session_key());
+	IllegalPacketCounter::Reset(session.illegalPacketCount);
+
 	session.verified = true;
 	sendReply(true, "");
-	LOG_DEBUG << "[Token] Session verified, session_id: " << sessionId;
+	LOG_DEBUG << "[Token] Session verified, session_id: " << sessionId
+			  << " hmac_key_len=" << session.hmacSessionKey.size();
 }
 
 void RpcClientSessionHandler::OnNodeRemoveEventHandler(const OnNodeRemoveEvent &pb)
