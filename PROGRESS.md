@@ -1,4 +1,4 @@
-# 本会话推进进度 — 2026-05-15(v3)/ 2026-05-16(v4 / v5 / v6)
+# 本会话推进进度 — 2026-05-15(v3)/ 2026-05-16(v4 / v5 / v6 / v7)
 
 > **会话目标**:用户说「全部做啊」(回档 / 跨服 / 合服全部做完)
 > **采用策略**:基于 AUDIT.md 的真实现状,按 P0 → P1 → P2 顺序逐项推进
@@ -6,7 +6,9 @@
 > **v3 更新**:第三会话尝试推进 #11,**摸完代码发现 bag 完全无持久化路径**,落档 bag-rollback-feasibility-analysis.md
 > **v4 更新**:第四会话用户确认「玩家肯定要跨 zone 玩」,深查跨 zone 链路后**写新审计文档 cross-zone-readiness-audit.md(权威),修订 mmo_cross_server_architecture.md §7-8 §11 §13**
 > **v5 更新**:同会话延续,代码层面落地了**步骤 2(PlayerFrozenComp + 延后 DestroyPlayer)**,过程中又发现两个新事实并落档
-> **v6 更新(本节)**:推进 #27(proto 重新生成)+ #28(Kafka topic 订阅接线)。打开 #29 时发现需要先做分类决策才能改 17 个 system 文件,**落档 cross-zone-readiness-audit.md §11 业务系统 Frozen 接入分类指南**,#29 留给下次会话按指南分批实施
+> **v6 更新**:推进 #27(proto 重新生成)+ #28(Kafka topic 订阅接线)。打开 #29 时发现需要先做分类决策才能改 17 个 system 文件,**落档 cross-zone-readiness-audit.md §11 业务系统 Frozen 接入分类指南**
+> **v7 更新(本节)**:**提交 + push 累计 8 个 commit 到 GitHub**,然后实施 #29(业务系统 Frozen 检查,§11.1+11.2+11.3 三类共 8 个文件)+ #25(ACK + reaper 完整链路)。**跨 zone 修复三件套(Frozen + ACK + reaper)代码层面全部落地**
+
 
 ---
 
@@ -505,3 +507,4 @@ go mod tidy
 - **2026-05-16 v4**:用户确认「玩家肯定要跨 zone 玩」是核心设计。深查跨 zone 链路后,**写新审计文档 cross-zone-readiness-audit.md(Kafka 自治 + 三件套权威方案)+ 同步修订 mmo_cross_server_architecture.md §7-8 §11 §13 + 更新 AUDIT/PROGRESS/bag-rollback-feasibility-analysis 反映真相**
 - **2026-05-16 v5**(同日续第五会话):用户要求按「文档→改文档→改代码」顺序继续。**代码层面实施步骤 2(PlayerFrozenComp + 延后 DestroyPlayer)**。两个会话内发现:① `player_migrate` topic 当前没人订阅(落档为 audit §10);② 用户纠正 Kafka 必须 pb 不能 JSON,撤回 JSON 改 `PlayerMigrationAckEvent` protobuf。步骤 2 代码已落 7 件,剩 3 个子任务:**#27 proto 重新生成(必须,否则编译不过)/ #28 topic 订阅接线 / #29 业务系统加 Frozen 检查**
 - **2026-05-16 v6**(同日续第六会话):**完成 #27(proto 重新生成)+ #28(Kafka topic 订阅接线)**。Proto-gen 跑通(从主仓拷 go.mod + 二进制绕开 worktree gitignore 限制),PlayerMigrationAckEvent 类已生成。Scene main.cpp 加 RegisterKafkaMessageHandler 订阅 `player_migrate` + `player_migrate_ack` topic。打开 #29 时发现需要先做 17 个 system 的分类决策(写入/tick/消息/跨玩家影响),**落档 cross-zone-readiness-audit.md §11 业务系统 Frozen 接入分类指南**,#29 留给下次会话按指南分批实施。**未做 cpp MSBuild 编译验证**(本会话上下文不够,留 caveat 给下次会话)
+- **2026-05-16 v7**(同日续第七会话):**git 分支首次 push 到 GitHub**(分支 `worktree-rollback-cross-merge`,累计 10 个 commit,PR 模板 URL `https://github.com/luyuancpp/mmorpg/pull/new/worktree-rollback-cross-merge`)。然后**完成 #29(业务系统 Frozen 检查,§11.1+11.2+11.3 三类共 7 个文件)+ #25(ACK + reaper 完整链路)**。跨 zone 修复三件套(Frozen + ACK + reaper)代码层面**全部落地**。reaper:cross_zone_reaper.{h,cpp} 新文件 + HandleCrossZoneTransfer 接 RecordMigrationStart + HandlePlayerMigrationAck 接 RecordMigrationDone + scene/main.cpp 启动 timer。Redis 状态 player_migration:{playerId} TTL=120s + 10s 周期 SCAN+HMGET tick + 30s 单次 deadline + 3 次 attempts 上限 + 失败兜底 unfreeze+tip+DEL + 启动时 ScanAndRecover 处理 source 重启。常量都暴露在 header 顶部。**仍未做 cpp MSBuild 编译验证**(留下次会话第一件事跑)。本会话最后两个 commit:`61d4901f4` 业务 system Frozen gate / `5f236edf6` reaper 实现
