@@ -13,6 +13,7 @@
 #include "combat/buff/constants/buff.h"
 #include "proto/common/event/skill_event.pb.h"
 #include "core/utils/utility/utility.h"
+#include "player/comp/player_frozen_comp.h" // Frozen exclude — cross-zone-readiness-audit.md §11.2
 #include "core/system/id_generator.h"
 #include <thread_context/ecs_context.h>
 
@@ -486,7 +487,14 @@ void ProcessBuffs(const entt::entity target, BuffListComp& buffListComp, const d
 }
 
 void BuffSystem::Update(const double delta) {
-    for (auto&& [target, buffListComp] : tlsEcs.actorRegistry.view<BuffListComp>().each()) {
+    // PlayerFrozenComp exclude: buff timers must NOT keep counting down on
+    // the source side while the player is mid-cross-zone-migration. The
+    // marshaled PlayerAllData carries the buff list with its current
+    // remaining time; if we kept ticking here a 30s buff could expire on
+    // the source mid-flight and the destination would resurrect it as if
+    // fresh.  cross-zone-readiness-audit.md §11.2.
+    for (auto&& [target, buffListComp] : tlsEcs.actorRegistry.view<BuffListComp>(
+            entt::exclude<PlayerFrozenComp>).each()) {
         ProcessBuffs(target, buffListComp, delta);
         BuffSystem::RemovePendingBuffs(target, buffListComp);
     }
