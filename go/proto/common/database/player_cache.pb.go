@@ -21,10 +21,36 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// PlayerAllData — full snapshot carried across cross-zone migration,
+// persisted by SavePlayerToRedis on logout, and snapshot'd for rollback.
+//
+// Until 2026-05-16 this only contained player_database_data and
+// player_database_1_data — meaning bag/quest/mail were silently dropped
+// on every logout and every cross-zone hop. cross-zone-readiness-audit.md
+// §3.2 件 1 designed the fix: add the three missing data classes as
+// independent sub-messages here (NOT inside player_database, which is
+// already a 7-component grab-bag).
+//
+// Sub-message status (2026-05-16):
+//   - bag_data   — schema landed (conservative subset; game-design
+//     extensions tracked as TODOs in BagAllData proto)
+//   - quest_data — schema sketched; quest system itself doesn't exist
+//     in cpp yet, so the field is reserved for when it does
+//   - mail_data  — schema sketched; default plan is mail rides over an
+//     independent Go service, NOT via PlayerAllData.
+//     See cross-zone-readiness-audit.md §3.3.
+//
+// Wire-compatibility note: field numbers 4/5/6 are the canonical slots
+// — even if cpp Marshal/Unmarshal doesn't populate quest_data/mail_data
+// today, leaving them numbered prevents future schema drift between
+// the proto and any side-channel storage.
 type PlayerAllData struct {
 	state                protoimpl.MessageState `protogen:"open.v1"`
 	PlayerDatabaseData   *PlayerDatabase        `protobuf:"bytes,2,opt,name=player_database_data,json=playerDatabaseData,proto3" json:"player_database_data,omitempty"`
 	PlayerDatabase_1Data *PlayerDatabase_1      `protobuf:"bytes,3,opt,name=player_database_1_data,json=playerDatabase1Data,proto3" json:"player_database_1_data,omitempty"`
+	BagData              *BagAllData            `protobuf:"bytes,4,opt,name=bag_data,json=bagData,proto3" json:"bag_data,omitempty"`
+	QuestData            *QuestAllData          `protobuf:"bytes,5,opt,name=quest_data,json=questData,proto3" json:"quest_data,omitempty"`
+	MailData             *MailAllData           `protobuf:"bytes,6,opt,name=mail_data,json=mailData,proto3" json:"mail_data,omitempty"`
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
 }
@@ -73,14 +99,39 @@ func (x *PlayerAllData) GetPlayerDatabase_1Data() *PlayerDatabase_1 {
 	return nil
 }
 
+func (x *PlayerAllData) GetBagData() *BagAllData {
+	if x != nil {
+		return x.BagData
+	}
+	return nil
+}
+
+func (x *PlayerAllData) GetQuestData() *QuestAllData {
+	if x != nil {
+		return x.QuestData
+	}
+	return nil
+}
+
+func (x *PlayerAllData) GetMailData() *MailAllData {
+	if x != nil {
+		return x.MailData
+	}
+	return nil
+}
+
 var File_proto_common_database_player_cache_proto protoreflect.FileDescriptor
 
 const file_proto_common_database_player_cache_proto_rawDesc = "" +
 	"\n" +
-	"(proto/common/database/player_cache.proto\x1a0proto/common/database/mysql_database_table.proto\"\x9c\x01\n" +
+	"(proto/common/database/player_cache.proto\x1a0proto/common/database/mysql_database_table.proto\x1a/proto/common/database/bag_quest_mail_data.proto\"\x9d\x02\n" +
 	"\rPlayerAllData\x12B\n" +
 	"\x14player_database_data\x18\x02 \x01(\v2\x10.player_databaseR\x12playerDatabaseData\x12G\n" +
-	"\x16player_database_1_data\x18\x03 \x01(\v2\x12.player_database_1R\x13playerDatabase1DataB\x17Z\x15proto/common/databaseb\x06proto3"
+	"\x16player_database_1_data\x18\x03 \x01(\v2\x12.player_database_1R\x13playerDatabase1Data\x12&\n" +
+	"\bbag_data\x18\x04 \x01(\v2\v.BagAllDataR\abagData\x12,\n" +
+	"\n" +
+	"quest_data\x18\x05 \x01(\v2\r.QuestAllDataR\tquestData\x12)\n" +
+	"\tmail_data\x18\x06 \x01(\v2\f.MailAllDataR\bmailDataB\x17Z\x15proto/common/databaseb\x06proto3"
 
 var (
 	file_proto_common_database_player_cache_proto_rawDescOnce sync.Once
@@ -99,15 +150,21 @@ var file_proto_common_database_player_cache_proto_goTypes = []any{
 	(*PlayerAllData)(nil),    // 0: PlayerAllData
 	(*PlayerDatabase)(nil),   // 1: player_database
 	(*PlayerDatabase_1)(nil), // 2: player_database_1
+	(*BagAllData)(nil),       // 3: BagAllData
+	(*QuestAllData)(nil),     // 4: QuestAllData
+	(*MailAllData)(nil),      // 5: MailAllData
 }
 var file_proto_common_database_player_cache_proto_depIdxs = []int32{
 	1, // 0: PlayerAllData.player_database_data:type_name -> player_database
 	2, // 1: PlayerAllData.player_database_1_data:type_name -> player_database_1
-	2, // [2:2] is the sub-list for method output_type
-	2, // [2:2] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	3, // 2: PlayerAllData.bag_data:type_name -> BagAllData
+	4, // 3: PlayerAllData.quest_data:type_name -> QuestAllData
+	5, // 4: PlayerAllData.mail_data:type_name -> MailAllData
+	5, // [5:5] is the sub-list for method output_type
+	5, // [5:5] is the sub-list for method input_type
+	5, // [5:5] is the sub-list for extension type_name
+	5, // [5:5] is the sub-list for extension extendee
+	0, // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_proto_common_database_player_cache_proto_init() }
@@ -116,6 +173,7 @@ func file_proto_common_database_player_cache_proto_init() {
 		return
 	}
 	file_proto_common_database_mysql_database_table_proto_init()
+	file_proto_common_database_bag_quest_mail_data_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

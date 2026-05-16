@@ -30,6 +30,7 @@
 #include "google/protobuf/extension_set.h"  // IWYU pragma: export
 #include "google/protobuf/unknown_field_set.h"
 #include "proto/common/database/mysql_database_table.pb.h"
+#include "proto/common/database/bag_quest_mail_data.pb.h"
 // @@protoc_insertion_point(includes)
 
 // Must be included last.
@@ -213,6 +214,9 @@ class PlayerAllData final : public ::google::protobuf::Message
   enum : int {
     kPlayerDatabaseDataFieldNumber = 2,
     kPlayerDatabase1DataFieldNumber = 3,
+    kBagDataFieldNumber = 4,
+    kQuestDataFieldNumber = 5,
+    kMailDataFieldNumber = 6,
   };
   // .player_database player_database_data = 2;
   bool has_player_database_data() const;
@@ -244,12 +248,57 @@ class PlayerAllData final : public ::google::protobuf::Message
   ::player_database_1* PROTOBUF_NONNULL _internal_mutable_player_database_1_data();
 
   public:
+  // .BagAllData bag_data = 4;
+  bool has_bag_data() const;
+  void clear_bag_data() ;
+  const ::BagAllData& bag_data() const;
+  [[nodiscard]] ::BagAllData* PROTOBUF_NULLABLE release_bag_data();
+  ::BagAllData* PROTOBUF_NONNULL mutable_bag_data();
+  void set_allocated_bag_data(::BagAllData* PROTOBUF_NULLABLE value);
+  void unsafe_arena_set_allocated_bag_data(::BagAllData* PROTOBUF_NULLABLE value);
+  ::BagAllData* PROTOBUF_NULLABLE unsafe_arena_release_bag_data();
+
+  private:
+  const ::BagAllData& _internal_bag_data() const;
+  ::BagAllData* PROTOBUF_NONNULL _internal_mutable_bag_data();
+
+  public:
+  // .QuestAllData quest_data = 5;
+  bool has_quest_data() const;
+  void clear_quest_data() ;
+  const ::QuestAllData& quest_data() const;
+  [[nodiscard]] ::QuestAllData* PROTOBUF_NULLABLE release_quest_data();
+  ::QuestAllData* PROTOBUF_NONNULL mutable_quest_data();
+  void set_allocated_quest_data(::QuestAllData* PROTOBUF_NULLABLE value);
+  void unsafe_arena_set_allocated_quest_data(::QuestAllData* PROTOBUF_NULLABLE value);
+  ::QuestAllData* PROTOBUF_NULLABLE unsafe_arena_release_quest_data();
+
+  private:
+  const ::QuestAllData& _internal_quest_data() const;
+  ::QuestAllData* PROTOBUF_NONNULL _internal_mutable_quest_data();
+
+  public:
+  // .MailAllData mail_data = 6;
+  bool has_mail_data() const;
+  void clear_mail_data() ;
+  const ::MailAllData& mail_data() const;
+  [[nodiscard]] ::MailAllData* PROTOBUF_NULLABLE release_mail_data();
+  ::MailAllData* PROTOBUF_NONNULL mutable_mail_data();
+  void set_allocated_mail_data(::MailAllData* PROTOBUF_NULLABLE value);
+  void unsafe_arena_set_allocated_mail_data(::MailAllData* PROTOBUF_NULLABLE value);
+  ::MailAllData* PROTOBUF_NULLABLE unsafe_arena_release_mail_data();
+
+  private:
+  const ::MailAllData& _internal_mail_data() const;
+  ::MailAllData* PROTOBUF_NONNULL _internal_mutable_mail_data();
+
+  public:
   // @@protoc_insertion_point(class_scope:PlayerAllData)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<1, 2,
-                                   2, 0,
+  static const ::google::protobuf::internal::TcParseTable<3, 5,
+                                   5, 0,
                                    2>
       _table_;
 
@@ -272,6 +321,9 @@ class PlayerAllData final : public ::google::protobuf::Message
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::player_database* PROTOBUF_NULLABLE player_database_data_;
     ::player_database_1* PROTOBUF_NULLABLE player_database_1_data_;
+    ::BagAllData* PROTOBUF_NULLABLE bag_data_;
+    ::QuestAllData* PROTOBUF_NULLABLE quest_data_;
+    ::MailAllData* PROTOBUF_NULLABLE mail_data_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -480,6 +532,285 @@ inline void PlayerAllData::set_allocated_player_database_1_data(::player_databas
 
   _impl_.player_database_1_data_ = reinterpret_cast<::player_database_1*>(value);
   // @@protoc_insertion_point(field_set_allocated:PlayerAllData.player_database_1_data)
+}
+
+// .BagAllData bag_data = 4;
+inline bool PlayerAllData::has_bag_data() const {
+  bool value = (_impl_._has_bits_[0] & 0x00000004u) != 0;
+  PROTOBUF_ASSUME(!value || _impl_.bag_data_ != nullptr);
+  return value;
+}
+inline const ::BagAllData& PlayerAllData::_internal_bag_data() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  const ::BagAllData* p = _impl_.bag_data_;
+  return p != nullptr ? *p : reinterpret_cast<const ::BagAllData&>(::_BagAllData_default_instance_);
+}
+inline const ::BagAllData& PlayerAllData::bag_data() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:PlayerAllData.bag_data)
+  return _internal_bag_data();
+}
+inline void PlayerAllData::unsafe_arena_set_allocated_bag_data(
+    ::BagAllData* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.bag_data_);
+  }
+  _impl_.bag_data_ = reinterpret_cast<::BagAllData*>(value);
+  if (value != nullptr) {
+    _impl_._has_bits_[0] |= 0x00000004u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000004u;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:PlayerAllData.bag_data)
+}
+inline ::BagAllData* PROTOBUF_NULLABLE PlayerAllData::release_bag_data() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+
+  _impl_._has_bits_[0] &= ~0x00000004u;
+  ::BagAllData* released = _impl_.bag_data_;
+  _impl_.bag_data_ = nullptr;
+  if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
+    auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    if (GetArena() == nullptr) {
+      delete old;
+    }
+  } else {
+    if (GetArena() != nullptr) {
+      released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    }
+  }
+  return released;
+}
+inline ::BagAllData* PROTOBUF_NULLABLE PlayerAllData::unsafe_arena_release_bag_data() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:PlayerAllData.bag_data)
+
+  _impl_._has_bits_[0] &= ~0x00000004u;
+  ::BagAllData* temp = _impl_.bag_data_;
+  _impl_.bag_data_ = nullptr;
+  return temp;
+}
+inline ::BagAllData* PROTOBUF_NONNULL PlayerAllData::_internal_mutable_bag_data() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.bag_data_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::BagAllData>(GetArena());
+    _impl_.bag_data_ = reinterpret_cast<::BagAllData*>(p);
+  }
+  return _impl_.bag_data_;
+}
+inline ::BagAllData* PROTOBUF_NONNULL PlayerAllData::mutable_bag_data()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  _impl_._has_bits_[0] |= 0x00000004u;
+  ::BagAllData* _msg = _internal_mutable_bag_data();
+  // @@protoc_insertion_point(field_mutable:PlayerAllData.bag_data)
+  return _msg;
+}
+inline void PlayerAllData::set_allocated_bag_data(::BagAllData* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (message_arena == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.bag_data_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = reinterpret_cast<::google::protobuf::Message*>(value)->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    _impl_._has_bits_[0] |= 0x00000004u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000004u;
+  }
+
+  _impl_.bag_data_ = reinterpret_cast<::BagAllData*>(value);
+  // @@protoc_insertion_point(field_set_allocated:PlayerAllData.bag_data)
+}
+
+// .QuestAllData quest_data = 5;
+inline bool PlayerAllData::has_quest_data() const {
+  bool value = (_impl_._has_bits_[0] & 0x00000008u) != 0;
+  PROTOBUF_ASSUME(!value || _impl_.quest_data_ != nullptr);
+  return value;
+}
+inline const ::QuestAllData& PlayerAllData::_internal_quest_data() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  const ::QuestAllData* p = _impl_.quest_data_;
+  return p != nullptr ? *p : reinterpret_cast<const ::QuestAllData&>(::_QuestAllData_default_instance_);
+}
+inline const ::QuestAllData& PlayerAllData::quest_data() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:PlayerAllData.quest_data)
+  return _internal_quest_data();
+}
+inline void PlayerAllData::unsafe_arena_set_allocated_quest_data(
+    ::QuestAllData* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.quest_data_);
+  }
+  _impl_.quest_data_ = reinterpret_cast<::QuestAllData*>(value);
+  if (value != nullptr) {
+    _impl_._has_bits_[0] |= 0x00000008u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000008u;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:PlayerAllData.quest_data)
+}
+inline ::QuestAllData* PROTOBUF_NULLABLE PlayerAllData::release_quest_data() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+
+  _impl_._has_bits_[0] &= ~0x00000008u;
+  ::QuestAllData* released = _impl_.quest_data_;
+  _impl_.quest_data_ = nullptr;
+  if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
+    auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    if (GetArena() == nullptr) {
+      delete old;
+    }
+  } else {
+    if (GetArena() != nullptr) {
+      released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    }
+  }
+  return released;
+}
+inline ::QuestAllData* PROTOBUF_NULLABLE PlayerAllData::unsafe_arena_release_quest_data() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:PlayerAllData.quest_data)
+
+  _impl_._has_bits_[0] &= ~0x00000008u;
+  ::QuestAllData* temp = _impl_.quest_data_;
+  _impl_.quest_data_ = nullptr;
+  return temp;
+}
+inline ::QuestAllData* PROTOBUF_NONNULL PlayerAllData::_internal_mutable_quest_data() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.quest_data_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::QuestAllData>(GetArena());
+    _impl_.quest_data_ = reinterpret_cast<::QuestAllData*>(p);
+  }
+  return _impl_.quest_data_;
+}
+inline ::QuestAllData* PROTOBUF_NONNULL PlayerAllData::mutable_quest_data()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  _impl_._has_bits_[0] |= 0x00000008u;
+  ::QuestAllData* _msg = _internal_mutable_quest_data();
+  // @@protoc_insertion_point(field_mutable:PlayerAllData.quest_data)
+  return _msg;
+}
+inline void PlayerAllData::set_allocated_quest_data(::QuestAllData* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (message_arena == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.quest_data_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = reinterpret_cast<::google::protobuf::Message*>(value)->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    _impl_._has_bits_[0] |= 0x00000008u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000008u;
+  }
+
+  _impl_.quest_data_ = reinterpret_cast<::QuestAllData*>(value);
+  // @@protoc_insertion_point(field_set_allocated:PlayerAllData.quest_data)
+}
+
+// .MailAllData mail_data = 6;
+inline bool PlayerAllData::has_mail_data() const {
+  bool value = (_impl_._has_bits_[0] & 0x00000010u) != 0;
+  PROTOBUF_ASSUME(!value || _impl_.mail_data_ != nullptr);
+  return value;
+}
+inline const ::MailAllData& PlayerAllData::_internal_mail_data() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  const ::MailAllData* p = _impl_.mail_data_;
+  return p != nullptr ? *p : reinterpret_cast<const ::MailAllData&>(::_MailAllData_default_instance_);
+}
+inline const ::MailAllData& PlayerAllData::mail_data() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:PlayerAllData.mail_data)
+  return _internal_mail_data();
+}
+inline void PlayerAllData::unsafe_arena_set_allocated_mail_data(
+    ::MailAllData* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.mail_data_);
+  }
+  _impl_.mail_data_ = reinterpret_cast<::MailAllData*>(value);
+  if (value != nullptr) {
+    _impl_._has_bits_[0] |= 0x00000010u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000010u;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:PlayerAllData.mail_data)
+}
+inline ::MailAllData* PROTOBUF_NULLABLE PlayerAllData::release_mail_data() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+
+  _impl_._has_bits_[0] &= ~0x00000010u;
+  ::MailAllData* released = _impl_.mail_data_;
+  _impl_.mail_data_ = nullptr;
+  if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
+    auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    if (GetArena() == nullptr) {
+      delete old;
+    }
+  } else {
+    if (GetArena() != nullptr) {
+      released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    }
+  }
+  return released;
+}
+inline ::MailAllData* PROTOBUF_NULLABLE PlayerAllData::unsafe_arena_release_mail_data() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:PlayerAllData.mail_data)
+
+  _impl_._has_bits_[0] &= ~0x00000010u;
+  ::MailAllData* temp = _impl_.mail_data_;
+  _impl_.mail_data_ = nullptr;
+  return temp;
+}
+inline ::MailAllData* PROTOBUF_NONNULL PlayerAllData::_internal_mutable_mail_data() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.mail_data_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::MailAllData>(GetArena());
+    _impl_.mail_data_ = reinterpret_cast<::MailAllData*>(p);
+  }
+  return _impl_.mail_data_;
+}
+inline ::MailAllData* PROTOBUF_NONNULL PlayerAllData::mutable_mail_data()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  _impl_._has_bits_[0] |= 0x00000010u;
+  ::MailAllData* _msg = _internal_mutable_mail_data();
+  // @@protoc_insertion_point(field_mutable:PlayerAllData.mail_data)
+  return _msg;
+}
+inline void PlayerAllData::set_allocated_mail_data(::MailAllData* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (message_arena == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.mail_data_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = reinterpret_cast<::google::protobuf::Message*>(value)->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    _impl_._has_bits_[0] |= 0x00000010u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000010u;
+  }
+
+  _impl_.mail_data_ = reinterpret_cast<::MailAllData*>(value);
+  // @@protoc_insertion_point(field_set_allocated:PlayerAllData.mail_data)
 }
 
 #ifdef __GNUC__
