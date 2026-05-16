@@ -1,9 +1,67 @@
 # 跨服 / 合服 / 回档 — 真实实现状态审计
 
-> **审计日期**: 2026-05-15(v1)/ 2026-05-16(v2 重大修正)
+> **审计日期**: 2026-05-15(v1)/ 2026-05-16(v2 重大修正 / v3 三件套代码落地)
 > **审计人**: AI(Claude)
 > **背景**: 用户问「跨服合服回档你给我做完了吗」。前两轮回答都基于不完整盘点,严重低估了已完成度。本文件是**逐文件交叉验证后**的真实状态,作为后续补刀的依据。
 > **审计方式**: 在 worktree `rollback-cross-merge` 上做 read-only 调研,未改任何实现代码。
+
+---
+
+## ⚠️ 2026-05-16 v3 三件套代码落地
+
+v2 给出「跨 zone 不可生产」的诊断 + 修复方案(Kafka 自治 + 三件套)。**v3 三件套代码层面全部落地并 push 到 GitHub**(分支 `worktree-rollback-cross-merge`,累计 11 commits)。
+
+### 三件套实施状态
+
+| 件 | 设计 | 代码 | 编译验证 |
+|---|---|---|---|
+| 件 1:PlayerAllData 数据完整化 | ✅ cross-zone-readiness-audit.md §3.2 | ❌ **未落** —— 阻塞产品定 ItemEntry schema | N/A |
+| 件 2:PlayerFrozenComp + 延后 DestroyPlayer | ✅ §3.2 件 2 | ✅ 完整(含 Frozen struct + Frozen-aware HandlePlayerAsyncSaved + IsCrossZoneFrozen 业务系统检查 §11.1+§11.2+§11.3 共 7 文件)| ❌ 待 MSBuild |
+| 件 3:player_migrate_ack + Redis state + reaper | ✅ §3.2 件 3 | ✅ 完整(PlayerMigrationAckEvent proto + ACK handler + cross_zone_reaper.{h,cpp} + 启动时 ScanAndRecover + 周期 SCAN+HMGET tick)| ❌ 待 MSBuild |
+
+### 真实完成度修正(v3)
+
+| 模块 | v1 | v2 | **v3** | v3 修正原因 |
+|---|---|---|---|---|
+| 回档 | ~95% | ~70% | **~70%**(无变化) | bag/quest/mail 仍不在快照(等件 1) |
+| 跨服 | ~85% | ~50% | **~75%** | 件 2 + 件 3 全套代码落地。**剩件 1 是真实数据完整性瓶颈**(阻塞产品 schema)|
+| 合服 | ~85% | ~85% | **~85%**(无变化) | 合服工具完整,但合服后玩家跨 zone 仍因件 1 丢数据 |
+
+### 跨服 75% 的边界
+
+**已可工作**(无件 1 前提下):
+- 玩家从 zone 1 跨 zone 到 zone 500 时,**7 个 ECS 组件**(Transform / Currency / Skill / Level / 2×Uint / DerivedAttrs)能正确跟随
+- Frozen 期间业务系统正确 reject 写入(Currency / Bag) + 跳过 tick(Movement / Buff / AFK) + drop 客户端消息
+- ACK 链路接通,正常情况下 50-200ms 完成转移
+- Kafka broker 失败 / 目的节点崩溃时 reaper 30s 后重发,3 次失败后玩家解冻继续在源 zone 玩
+- 源节点重启后 reaper 启动时清理 stale Redis 记录,不留 ghost 状态
+
+**仍不可工作**(件 1 缺):
+- bag / quest / mail 数据**100% 丢失**(`PlayerAllData` proto 里没有这三类字段)
+- 这是 v2 已识别的硬阻塞,v3 没动 —— 等产品 / 策划定 ItemEntry schema(强化 / 词条 / 宝石镶嵌)
+
+### v3 累计 commit 列表(在 worktree-rollback-cross-merge 分支)
+
+```
+b0c6d69cd  ops: MySQL binlog backup + Kafka offset reset + k8s-zone-rollback
+e2f7aad9e  audit: deferred-clawback bypass audit
+c5eafe47c  metrics: data_service Prometheus surface
+dd364e6bb  proto: add PlayerMigrationAckEvent
+db700c050  proto-gen: regenerate after PlayerMigrationAckEvent
+1a31d53a8  scene: cross-zone Frozen state + ACK protocol (audit step 2)
+fd03db132  docs: cross-zone audit + server-merge SOP + accumulated audits
+61d4901f4  scene: gate business systems on PlayerFrozenComp (audit §11)
+5f236edf6  scene: cross-zone reaper — Redis state + retry + restart recovery (audit step 3)
+25f47cc55  docs: PROGRESS.md v7
+```
+
+PR 模板:`https://github.com/luyuancpp/mmorpg/pull/new/worktree-rollback-cross-merge`
+
+### v3 留给下次会话的硬阻塞
+
+1. **MSBuild 编译验证** —— v3 累计 ~700 行 cpp 改动,所有 worktree diagnostics 都是 build-context 误报,真编译概率不为零有 include / link 错误。下次会话第一件事必须跑 `cd cpp/nodes/scene/build && msbuild scene.sln /p:Configuration=Debug`。
+2. **件 1 阻塞产品决策** —— ItemEntry schema 字段集
+3. **#30 / #31 跨 zone 收尾** —— `kSceneTransferFailed` tip code(reaper 失败兜底 UX)、reaper outcomes → metrics(可观测性)。两者都不阻塞功能,但完整性需要
 
 ---
 

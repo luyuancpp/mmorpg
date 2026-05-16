@@ -39,3 +39,4 @@
 38=ContractsKafkaBroadcastToPlayersEvent
 39=ContractsKafkaPushToPlayerEvent
 40=ContractsKafkaBroadcastToSceneEvent
+41=PlayerMigrationAckEvent
