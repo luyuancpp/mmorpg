@@ -116,33 +116,79 @@ Recommended storage:
 
 ## 7. Cross-Server Scene Transition Sequence (Critical Consistency Constraint)
 
+> **2026-05-16 修订**: 早期版本描述「SceneManager 严格 ACK 编排」,**实际实现是 Kafka 自治**。本节按代码事实重写。完整审计与修复方案见 [`cross-zone-readiness-audit.md`](cross-zone-readiness-audit.md)。
+
 Core invariant: at any given moment, only one Scene may write a player's data (Single Writer).
 
-Standard sequence:
+### 7.1 Actual Implementation — Kafka Self-Orchestrated Transfer
 
-1. SceneManager notifies the old Scene: release the player and flush to storage.
-2. Old Scene confirms "saved and released".
-3. Only then does SceneManager notify the new Scene: load the player.
-4. If step 2 times out, abort the migration — the new Scene must not load preemptively.
+The transfer is **driven by the source scene node itself, not by SceneManager**. Kafka's per-key partition ordering provides the serialization guarantee instead of synchronous ACK orchestration.
 
-This sequence guarantees:
+```
+zone 1 scene 节点                                         zone 500 scene 节点
 
-- No concurrent writes to the same player from two Scenes.
-- No state overwrites or rollback difficulties during scene transitions.
+[t1] HandleExitGameNode (player_lifecycle.cpp:375)
+       └─ SavePlayerToRedis (async)
+              ↓
+[t2] HandlePlayerAsyncSaved (line 163, Redis save complete)
+       ├─ HandleCrossZoneTransfer (line 434)
+       │     ├─ Marshal PlayerAllData
+       │     ├─ Kafka send "player_migrate" ────────┐
+       │     └─ remove<ChangeSceneInfoComp>         │
+       └─ DestroyPlayer ⚡ (current behavior — see  │
+          §7.3 for the planned Frozen-state         │
+          replacement)                              │
+                                                    │
+                              [t3] KafkaMessageHandler ◄┘
+                                    ├─ HandlePlayerMigration
+                                    │     ├─ InitPlayerFromAllData
+                                    │     └─ SavePlayerToRedis
+                                    └─ Player online in zone 500
+```
+
+### 7.2 Why Not SceneManager-Orchestrated
+
+Earlier iterations of this document described a 4-RPC handshake (old scene ↔ SceneManager ↔ new scene). **That design is rejected** for production deployment because:
+
+1. **Latency**: 4 RPCs add 500ms-1s per transition; with "freely visit any zone" as a core feature, frequent transitions become unbearable.
+2. **Single Point**: SceneManager outage blocks all cross-zone transfers.
+3. **Redundant Ordering**: Kafka with `partition_key=playerId` consistently hashes to the same partition, providing FIFO ordering for free.
+
+SceneManager's role is reduced to a **pure routing query**:
+- "Player wants to enter zone 500. Which scene node should host them?" → SceneManager returns `(node_id, scene_id)`.
+- SceneManager **does not** track in-flight transfers, hold session state, or send ACKs.
+
+### 7.3 Known Gaps & Planned Fixes (see cross-zone-readiness-audit.md)
+
+| Gap | Severity | Fix |
+|---|---|---|
+| `PlayerAllData` only carries 7 ECS components (no bag / quest / mail) | 🔴 Fatal — cross-zone silently drops these | Add `BagAllData / QuestAllData / MailAllData` sub-messages |
+| `DestroyPlayer` runs immediately after Kafka send; broker / dest-node failure loses the player | 🔴 Severe | Replace with `PlayerFrozenComp` + delay destroy until ACK |
+| No ACK from destination, no retry, no recovery on source-node restart | 🔴 Severe | Add `player_migrate_ack` Kafka topic + Redis `player_migration:{playerId}` state + reaper |
+
+The "Kafka self-orchestrated" pattern itself is correct. These gaps are **patch-level work**, not architectural rework.
 
 ## 8. Consistency Defense Layers
 
-Layer 1 (primary defense):
+> **2026-05-16 修订**: Layer 1 描述按实际实现修订(从 SceneManager 编排改为 Kafka 自治 + Frozen 状态)。其余层级保持。
 
-- SceneManager serializes the transition flow, enforcing Single Writer.
+Layer 1 (primary defense — actual form):
 
-Layer 2 (anomaly fallback):
+- **Source scene flushes to storage before publishing the migration message** (`HandlePlayerAsyncSaved` runs only after Redis save callback fires).
+- **Source scene retains the player entity in `PlayerFrozenComp` state** (planned, not yet implemented; see §7.3) until destination ACKs. Frozen entities accept zero writes — equivalent to "non-existent" for write-side purposes.
+- **Kafka `partition_key=playerId`** guarantees source-publish-order = destination-consume-order.
 
-- Data Service applies short-lived distributed locks on player keys (e.g. Redis `SETNX` + TTL ~3 seconds).
+Layer 2 (anomaly fallback — implemented):
 
-Layer 3 (last resort):
+- Data Service per-player distributed lock: `Router.AcquirePlayerLock` uses Redis `SETNX` + TTL (configured via `PlayerLockTTLSec`, default 3s). See `go/data_service/internal/routing/router.go:254-262`.
 
-- Critical data uses version numbers (optimistic locking) or transactional checks (WATCH/MULTI).
+Layer 3 (last resort — implemented):
+
+- Critical writes carry a `version` field. `SavePlayerData` / `SetPlayerField` check `expected_version` and atomically `INCR` on success. Mismatch returns `ErrCodeVersionMismatch` so callers know to refresh and retry. See `go/data_service/internal/logic/data_logic.go:152-175`.
+
+Layer 4 (failure recovery — planned):
+
+- Redis `player_migration:{playerId}` key tracks every in-flight transfer. A reaper running every 10s detects ACK timeouts and either re-publishes the migrate event (up to 3 attempts) or unfreezes the source-side player and notifies the client. See `cross-zone-readiness-audit.md §3.2 件 3` and §7 for the failure scenarios.
 
 Note: Redis single-threading only guarantees same-key single-connection FIFO; the real risk comes from upstream concurrent writes, so Single Writer must be enforced at the architecture layer.
 
@@ -195,8 +241,10 @@ Node-type strategies:
 
 ## 11. Integration Boundaries with Current Codebase
 
+> **2026-05-16 修订**: SceneManager 角色按 §7.2 修订(只做路由查询,不做转移编排)。
+
 - Gate: retains Kafka control-plane consumer, receiving SceneManager commands on `gate-{id}`.
-- SceneManager: responsible for scene-transition orchestration, region-lock strategy, Single Writer sequence execution.
+- **SceneManager: routing queries only — "which scene node should host player X in zone Y?". Does NOT orchestrate cross-zone transfers, hold in-flight migration state, or send ACKs.** Region-lock policy decisions still belong here (zone-level config check before approving the routing answer).
 - PlayerLocator: records the player's current Scene location; extensible to carry home_zone info.
 - Data Service: can extend existing `go/db/` or create new `go/data_service/`.
 
@@ -210,10 +258,23 @@ Node-type strategies:
 
 ## 13. Follow-Up Implementation Checklist
 
-- Complete differentiated implementations of `OnNodeIdConflictShutdown` in Node subclasses (Scene/Gate/Instance).
-- Add to the graceful shutdown flow: persist player data -> migrate/kick players -> actively deregister node key.
-- Data Service: add per-player lock and critical write version fields.
-- Establish cross-server scene-switch observability: per-phase latency, failure reasons, rollback counts.
+> **2026-05-16 修订**: 标注每项的真实状态。详细见 `AUDIT.md` + `cross-zone-readiness-audit.md`。
+
+### Already Done ✅
+
+- ~~Complete differentiated implementations of `OnNodeIdConflictShutdown` in Node subclasses (Scene/Gate)~~ — done at `cpp/nodes/scene/main.cpp:76` + `cpp/nodes/gate/main.cpp:96`. Instance node N/A (no separate Instance node binary exists).
+- ~~Data Service: add per-player lock and critical write version fields~~ — done. `Router.AcquirePlayerLock` (router.go:254) + `SavePlayerData` checkVersion + Incr __version (data_logic.go:152).
+- ~~Establish cross-server scene-switch observability~~ — metrics framework done at `go/data_service/internal/metrics/metrics.go`. Helper functions `ObserveCrossSceneTransition` / `ObserveCrossSceneTransitionOutcome` defined; **call sites in scene_manager pending** (P3).
+
+### Outstanding 🔴
+
+The following items block production-grade cross-zone deployment. All three are described in detail in [`cross-zone-readiness-audit.md`](cross-zone-readiness-audit.md):
+
+- **PlayerAllData data completeness** — currently carries only 7 ECS components, **drops bag / quest / mail on every cross-zone transition**. Add `BagAllData / QuestAllData / MailAllData` sub-messages and corresponding C++ Marshal/Unmarshal. (Severity: 🔴 fatal. Blocks all production cross-zone deployment.)
+- **PlayerFrozenComp state + delayed destroy** — replace immediate `DestroyPlayer` after Kafka send with a Frozen state that persists until ACK. Allows recovery on Kafka / destination failure.
+- **`player_migrate_ack` topic + Redis migration state + reaper** — destination publishes ACK; source uses Redis `player_migration:{playerId}` as in-flight state of truth; reaper handles ACK timeout / source-node restart recovery.
+
+Add to the graceful shutdown flow: persist player data -> migrate/kick players -> actively deregister node key. (Currently the shutdown hook calls `HandleExitGameNode` per player, which marshals only the 7 components — same data-loss issue as cross-zone.)
 ## 14. Cross-Scene Player Messaging
 
 ### 14.1 Problem
