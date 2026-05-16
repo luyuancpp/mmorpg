@@ -14,6 +14,7 @@
 #include "network/node_utils.h"
 #include "player/comp/last_persisted_snapshot_comp.h"
 #include "player/comp/player_frozen_comp.h"
+#include "player/system/cross_zone_reaper.h"
 #include "player/system/player_data_loader.h"
 #include "engine/core/type_define/type_define.h"
 #include "proto/common/event/player_migration_event.pb.h"
@@ -522,6 +523,14 @@ void PlayerLifecycleSystem::HandleCrossZoneTransfer(entt::entity playerEntity)
 	frozen.toZoneId = toZoneId;
 	frozen.migrateAttempts = 1;
 
+	// Persist a Redis migration record so the reaper can recover this
+	// migration if the Kafka publish above is lost / destination crashes /
+	// THIS scene node restarts before ACK arrives. attempt=1 because this
+	// is the original publish; the reaper bumps attempt on republish.
+	// See docs/design/cross-zone-readiness-audit.md §3.2 件 3.
+	CrossZoneReaper::RecordMigrationStart(
+		playerId, GetZoneId(), toZoneId, /*toNodeId=*/0u, /*attempt=*/1u);
+
 	tlsEcs.actorRegistry.remove<ChangeSceneInfoComp>(playerEntity);
 }
 
@@ -839,7 +848,11 @@ void PlayerLifecycleSystem::HandlePlayerMigrationAck(Guid playerId, uint32_t toZ
 	//   2. Remove gate session — the destination already accepted the player,
 	//      the client should have switched binding via gate routing.
 	//   3. Destroy entity.
+	//   4. Tell the reaper this migration is done so it stops watching the
+	//      Redis player_migration:{playerId} key. (DEL is idempotent — if the
+	//      reaper TTL beat us to it, this is a harmless no-op.)
 	tlsEcs.actorRegistry.remove<PlayerFrozenComp>(playerEntity);
 	RemovePlayerSession(playerId);
 	DestroyPlayer(playerId);
+	CrossZoneReaper::RecordMigrationDone(playerId);
 }

@@ -9,6 +9,7 @@
 #include "core/system/redis.h"
 #include "frame/manager/frame_time.h"
 #include "player/system/player_lifecycle.h"
+#include "player/system/cross_zone_reaper.h"
 #include "kafka/system/kafka.h"
 #include "proto/contracts/kafka/scene_command.pb.h"
 
@@ -110,6 +111,20 @@ int main(int argc, char *argv[])
                           << "cross-zone migration will not work on this node "
                           << "(group_id=" << crossZoneGroupId << ").";
             }
+
+            // Start the cross-zone reaper. Without this the Frozen state
+            // pattern (player_lifecycle.cpp) can leak — a player whose
+            // `player_migrate_ack` is dropped or whose destination crashes
+            // would stay frozen forever. The reaper scans the Redis
+            // `player_migration:*` records every 10s, re-publishes
+            // migrations whose ACK is overdue, and unfreezes / notifies
+            // the client when retries are exhausted. It also performs a
+            // restart-recovery sweep on the way in (StartTick calls
+            // ScanAndRecover before arming the periodic timer) so source-
+            // side crashes don't leak Redis records either.
+            //
+            // See docs/design/cross-zone-readiness-audit.md §3.2 件 3 + §7.
+            CrossZoneReaper::StartTick(n.GetLoop());
 
             context->dependencyGate.WaitAndRun(n, { SceneManagerNodeService },
                 [&context](auto&) {
