@@ -210,3 +210,9 @@ image/_*.png
 image/error*.png
 image/*.jpg
 image/*.jpeg
+
+# Atomic-layer intermediate plates from the AI redraw pipeline. These are
+# regeneratable from the *_redraw_*.py scripts and amount to hundreds of MB
+# per redraw run; the FINAL composed PNGs (top-level of each redraw_layers/
+# directory) are the only files worth committing. Keeps git history slim.
+q_daoist_login_buttons_redrawn_atomic/
