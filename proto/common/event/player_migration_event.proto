@@ -13,3 +13,24 @@ message PlayerMigrationEvent {
   int64 timestamp = 7;  // Event generation time
   ChangeSceneInfoComp scene_info = 9;
 }
+
+// Cross-zone migration acknowledgement.
+//
+// Published by the destination scene node on Kafka topic `player_migrate_ack`
+// after it successfully loads a migrating player from `PlayerMigrationEvent`.
+// The source-side scene node consumes this ACK to:
+//   1. Remove PlayerFrozenComp from the source-side entity.
+//   2. Finally call DestroyPlayer (which was deferred precisely until this ACK).
+//
+// See docs/design/cross-zone-readiness-audit.md §3.2 件 2-3 for the full ACK
+// protocol and §7 for failure handling (reaper-driven retry / timeout).
+//
+// Partition key MUST be player_id (same as the originating PlayerMigrationEvent)
+// so ACK arrives on the same Kafka partition's downstream — preserving ordering
+// with any subsequent migrations of the same player.
+message PlayerMigrationAckEvent {
+  uint64 player_id = 1;
+  uint32 from_zone = 2;   // The source zone that originated the migration.
+  uint32 to_zone = 3;     // The destination zone that accepted the player.
+  int64 ack_at_ms = 4;    // Wall-clock millis when the ACK was published.
+}
