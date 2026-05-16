@@ -10,12 +10,73 @@ spec:
       port: 3306
       targetPort: 3306
 ---
+# Persistent storage for MySQL data + binlog.
+# emptyDir was fine for dev smoke tests; once you turn on binlog + PITR
+# the volume MUST survive pod restarts or your "binlog archive" is a lie.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-data-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+  # storageClassName intentionally unset — let the cluster default fill in.
+  # Override per-environment via kustomize / helm if needed.
+---
+# Shared volume the backup CronJob writes into. Kept separate from data
+# PVC so retention/backup pruning never accidentally races mysqld writes.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-backup-pvc
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 50Gi
+---
+# my.cnf fragment that enables binary logging.
+# Without log-bin=ON, Point-in-Time Recovery (PITR) is impossible — and
+# zone_data_rollback.md §3 §"当前缺失基建" lists this as priority HIGH.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql-config
+data:
+  my.cnf: |
+    [mysqld]
+    # ── Binary logging (required for PITR) ───────────────────────────
+    log-bin = /var/lib/mysql/binlog/mysql-bin
+    binlog_format = ROW
+    binlog_row_image = FULL
+    server-id = 1
+    # Keep binlogs around for 7 days; the CronJob copies them out daily.
+    binlog_expire_logs_seconds = 604800
+    # Sync to disk per transaction — slower writes but no data loss on crash.
+    sync_binlog = 1
+    innodb_flush_log_at_trx_commit = 1
+
+    # ── Charset (matches deploy default) ─────────────────────────────
+    character-set-server = utf8mb4
+    collation-server = utf8mb4_unicode_ci
+
+    # ── Misc ─────────────────────────────────────────────────────────
+    max_connections = 500
+    skip-name-resolve = ON
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: mysql
 spec:
   replicas: 1
+  strategy:
+    # Recreate not RollingUpdate — only one pod can hold the PVC at a time.
+    type: Recreate
   selector:
     matchLabels:
       app: mysql
@@ -24,9 +85,23 @@ spec:
       labels:
         app: mysql
     spec:
+      initContainers:
+        # Ensure the binlog directory exists before mysqld starts.
+        # First-boot mysqld writes binlog under /var/lib/mysql/binlog/.
+        - name: init-binlog-dir
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - "mkdir -p /var/lib/mysql/binlog && chown -R 999:999 /var/lib/mysql"
+          volumeMounts:
+            - name: mysql-data
+              mountPath: /var/lib/mysql
       containers:
         - name: mysql
           image: mysql:8.0
+          args:
+            - --defaults-extra-file=/etc/mysql/conf.d/my.cnf
           env:
             - name: MYSQL_ROOT_PASSWORD
               value: "Mmorpg#2026db"
@@ -38,6 +113,9 @@ spec:
           volumeMounts:
             - name: mysql-data
               mountPath: /var/lib/mysql
+            - name: mysql-config
+              mountPath: /etc/mysql/conf.d
+              readOnly: true
           resources:
             requests:
               cpu: 200m
@@ -59,4 +137,8 @@ spec:
             timeoutSeconds: 5
       volumes:
         - name: mysql-data
-          emptyDir: {}
+          persistentVolumeClaim:
+            claimName: mysql-data-pvc
+        - name: mysql-config
+          configMap:
+            name: mysql-config
