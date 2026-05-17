@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <component size="2560,1080" opaque="false">
   <displayList>
-    <image id="n0" name="bg" src="00020001" fileName="bg_login.png" xy="0,0" size="2560,1080"/>
+    <image id="n0" name="bg" src="00020001" fileName="bg_scene.png" xy="0,0" size="2560,1080"/>
+    <image id="n17" name="uiBg" src="00020002" fileName="bg_ui.png" xy="0,0" size="2560,1080"/>
     <component id="n1" name="banner" src="c0000001" fileName="common/V3Banner.xml" xy="874,72" size="852,96"/>
     <text id="n2" name="bannerTitle" xy="904,66" size="792,108" fontSize="56" color="#3d2914" align="center" vAlign="middle" autoSize="none" singleLine="true" text="问道·登录"/>
 

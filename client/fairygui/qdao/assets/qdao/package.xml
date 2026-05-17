@@ -13,9 +13,8 @@
     <image id="0001000a" name="ornament.png" path="/" exported="true" size="360,360" qualityOption="source"/>
     <image id="0001000b" name="status_red.png" path="/" exported="true" size="128,128" qualityOption="source"/>
     <image id="0001000c" name="badges_sheet.png" path="/" exported="true" size="1024,512" qualityOption="source"/>
-    <image id="00020001" name="bg_login.png" path="/" exported="true" size="2048,864" qualityOption="source"/>
-    <image id="00020002" name="bg_scene.png" path="/" exported="true" size="2048,864" qualityOption="source"/>
-    <component id="a0000000" name="SmokeTest.xml" path="/" exported="true"/>
+    <image id="00020001" name="bg_scene.png" path="/" exported="true" size="2048,864" qualityOption="source"/>
+    <image id="00020002" name="bg_ui.png" path="/" exported="true" size="2048,864" qualityOption="source"/>
     <component id="c0000001" name="V3Banner.xml" path="/common/" exported="true"/>
     <component id="c0000002" name="V3Btn.xml" path="/common/" exported="true"/>
     <component id="c0000003" name="V3BtnAlt.xml" path="/common/" exported="true"/>

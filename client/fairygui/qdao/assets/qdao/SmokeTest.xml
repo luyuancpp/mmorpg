@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<component size="2560,1080">
-  <displayList>
-    <image id="n0" name="bg" src="00020001" fileName="bg_login.png" xy="0,0" size="2560,1080">
-    </image>
-    <text id="n1" name="title" xy="880,460" size="800,120" fontSize="64" color="#ff0000" align="center" vAlign="middle" autoSize="none" singleLine="true" text="SmokeTest">
-    </text>
-  </displayList>
-</component>
