@@ -91,6 +91,10 @@ void CrossZoneReaper::StartTick(muduo::net::EventLoop *loop)
     LOG_INFO << "[CrossZoneReaper] tick started, interval=" << kTickIntervalSec << "s, "
              << "per-attempt deadline=" << kPerAttemptDeadlineMs << "ms, "
              << "max attempts=" << kMaxAttempts;
+    // Structured metric: reaper lifecycle event. Operators use this
+    // to confirm reaper is actually running on the node (vs silently
+    // skipped due to misconfig).  cross-zone-readiness-audit.md §8.
+    LOG_INFO << "[CrossZoneReaper] metric=reaper_started";
 }
 
 void CrossZoneReaper::StopTick()
@@ -115,6 +119,15 @@ void CrossZoneReaper::RecordMigrationStart(Guid playerId, uint32_t fromZone,
                   << "if Kafka send also fails, the player will need manual intervention)";
         return;
     }
+
+    // Structured metric line (cross-zone-readiness-audit.md §8 — until the
+    // Prometheus C++ side or data_service Kafka consumer lands, the
+    // logs themselves are the metrics source. Loki/Promtail/grep can
+    // extract counters from these.  metric=migration_start indicates
+    // first-attempt publish or a reaper retry — distinguish by attempt.)
+    LOG_INFO << "[CrossZoneReaper] metric=migration_start player_id=" << playerId
+             << " from_zone=" << fromZone << " to_zone=" << toZone
+             << " attempt=" << attempt;
 
     const std::string key = MakeKey(playerId);
     const int64_t nowMs = TimeSystem::NowMillisecondsUTC();
@@ -158,6 +171,14 @@ void CrossZoneReaper::RecordMigrationDone(Guid playerId)
                  << "for player " << playerId << "; key will TTL-expire";
         return;
     }
+
+    // Structured metric: successful ACK round-trip. Reaper-retry-success
+    // also lands here (since RecordMigrationDone fires from
+    // HandlePlayerMigrationAck regardless of which attempt produced the
+    // ACK). To split retry-success from first-try-success the LokI query
+    // can join against the matching `migration_start` line with the same
+    // player_id and check attempt > 1.
+    LOG_INFO << "[CrossZoneReaper] metric=migration_done player_id=" << playerId;
 
     const std::string key = MakeKey(playerId);
     auto &redis = tlsRedis.GetZoneRedis();
@@ -227,6 +248,12 @@ namespace
 
         LOG_INFO << "[CrossZoneReaper] republished player_migrate for player " << playerId
                  << " (from_zone=" << fromZone << " → to_zone=" << toZone << ")";
+        // Structured metric: every successful republish bumps the retry
+        // counter. attempt-1 because the original send was attempt=1; this
+        // log fires AFTER the actual Kafka call so it's the count of
+        // *additional* attempts beyond the first.
+        LOG_INFO << "[CrossZoneReaper] metric=reaper_retry player_id=" << playerId
+                 << " from_zone=" << fromZone << " to_zone=" << toZone;
         return true;
     }
 
@@ -264,6 +291,13 @@ namespace
             LOG_WARN << "[CrossZoneReaper] declaring migration FAILED for player " << playerId
                      << " (attempt=" << attempt << ", max=" << CrossZoneReaper::kMaxAttempts
                      << "). Unfreezing, sending tip, keeping player on source zone.";
+            // Structured metric: terminal failure after retries exhausted.
+            // Operators dashboard this counter to know how often the
+            // reaper has to give up — non-zero rate is an alert
+            // (Kafka broker down / destination zones unhealthy / ...).
+            LOG_WARN << "[CrossZoneReaper] metric=reaper_failed player_id=" << playerId
+                     << " from_zone=" << fromZone << " to_zone=" << toZone
+                     << " attempt=" << attempt;
             tlsEcs.actorRegistry.remove<PlayerFrozenComp>(entity);
             // Distinct tip from kSceneTransferInProgress so the client UI
             // can dismiss the in-progress overlay and let the player retry
