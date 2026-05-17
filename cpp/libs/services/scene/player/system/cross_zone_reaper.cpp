@@ -265,11 +265,10 @@ namespace
                      << " (attempt=" << attempt << ", max=" << CrossZoneReaper::kMaxAttempts
                      << "). Unfreezing, sending tip, keeping player on source zone.";
             tlsEcs.actorRegistry.remove<PlayerFrozenComp>(entity);
-            // kSceneTransferFailed isn't a real tip code yet — placeholder
-            // until the tip table grows it. For now reuse the in-progress
-            // tip: client at least sees feedback.  TODO(#24 follow-up):
-            // add kSceneTransferFailed and route here.
-            PlayerTipSystem::SendToPlayer(entity, kSceneTransferInProgress, {});
+            // Distinct tip from kSceneTransferInProgress so the client UI
+            // can dismiss the in-progress overlay and let the player retry
+            // the portal manually. See cross_server_error_tip.proto.
+            PlayerTipSystem::SendToPlayer(entity, kSceneTransferFailed, {});
         }
 
         if (RedisReady())
