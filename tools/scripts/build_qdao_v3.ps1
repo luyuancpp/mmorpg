@@ -175,12 +175,15 @@ foreach ($a in $uiAtoms) {
 }
 
 # --- Backgrounds (full-screen art) ----------------------------------------
-# These are 2560x1080 source. Cap at 2048 so each fits in a single atlas
-# page; FairyGUI's <image> can stretch back up to 2560 in the screen layout.
+# Background source can be 2560x1080 or higher (for example 5120x2160).
+# Cap at 2048 so each fits in a single atlas page; FairyGUI's <image> can
+# stretch back up to 2560 in the screen layout.
 $MaxBgDim = 2048
+$srcSceneBackground = Join-Path $srcImage 'q_daoist_scene_bg_2560x1080.png'
+$srcUiBackground = Join-Path $srcImage 'q_daoist_login_ui_uncropped_highres_final_layers\q_daoist_login_background_ui_uncropped_final_5120x2160.png'
 $bgAtoms = @(
-    @{ Src=(Join-Path $srcImage 'q_daoist_login_clear_2560x1080.png'); Id='00020001'; Out='bg_login.png' },
-    @{ Src=(Join-Path $srcImage 'q_daoist_scene_bg_2560x1080.png');    Id='00020002'; Out='bg_scene.png' }
+  @{ Src=$srcSceneBackground; Id='00020001'; Out='bg_scene.png' },
+  @{ Src=$srcUiBackground;    Id='00020002'; Out='bg_ui.png' }
 )
 foreach ($b in $bgAtoms) {
     if (-not (Test-Path $b.Src)) { Write-Host "  [skip-bg] missing: $($b.Src)"; continue }
@@ -258,7 +261,6 @@ if ($IncludeGalleryAssets) {
 
 # --- Component manifest entries -------------------------------------------
 $components = @(
-  @{ Id='a0000000'; Name='SmokeTest.xml'; Path='/';        Export=$true  },
   @{ Id='c0000001'; Name='V3Banner.xml';  Path='/common/'; Export=$true  },
   @{ Id='c0000002'; Name='V3Btn.xml';     Path='/common/'; Export=$true  },
   @{ Id='c0000003'; Name='V3BtnAlt.xml';  Path='/common/'; Export=$true  },
@@ -594,25 +596,14 @@ Write-Utf8NoBom (Join-Path $pkgCommon 'V3Card.xml') @'
 # action strip. Controls remain real FairyGUI nodes so Unity can bind them.
 # ============================================================================
 
-Write-Utf8NoBom (Join-Path $pkgAssets 'SmokeTest.xml') @'
-<?xml version="1.0" encoding="utf-8"?>
-<component size="2560,1080">
-  <displayList>
-    <image id="n0" name="bg" src="00020001" fileName="v3/bg/bg_login.png" xy="0,0" size="2560,1080">
-    </image>
-    <text id="n1" name="title" xy="880,460" size="800,120" fontSize="64" color="#ff0000" align="center" vAlign="middle" autoSize="none" singleLine="true" text="SmokeTest">
-    </text>
-  </displayList>
-</component>
-'@
-
 # Login: reuse the reference scene as the first-screen visual, then place a
 # compact live login form over the central parchment area.
 Write-Utf8NoBom (Join-Path $pkgAssets 'LoginV3.xml') @'
 <?xml version="1.0" encoding="utf-8"?>
 <component size="2560,1080" opaque="false">
   <displayList>
-    <image id="n0" name="bg" src="00020001" fileName="v3/bg/bg_login.png" xy="0,0" size="2560,1080"/>
+    <image id="n0" name="bg" src="00020001" fileName="v3/bg/bg_scene.png" xy="0,0" size="2560,1080"/>
+    <image id="n17" name="uiBg" src="00020002" fileName="v3/bg/bg_ui.png" xy="0,0" size="2560,1080"/>
     <component id="n1" name="banner" src="c0000001" fileName="common/V3Banner.xml" xy="874,72" size="852,96"/>
     <text id="n2" name="bannerTitle" xy="904,66" size="792,108" fontSize="56" color="#3d2914" align="center" vAlign="middle" autoSize="none" singleLine="true" text="问道·登录"/>
 
@@ -647,7 +638,8 @@ Write-Utf8NoBom (Join-Path $pkgAssets 'ServersV3.xml') @'
 <?xml version="1.0" encoding="utf-8"?>
 <component size="2560,1080" opaque="false">
   <displayList>
-    <image id="n0" name="bg" src="00020001" fileName="v3/bg/bg_login.png" xy="0,0" size="2560,1080"/>
+    <image id="n0" name="bg" src="00020001" fileName="v3/bg/bg_scene.png" xy="0,0" size="2560,1080"/>
+    <image id="n19" name="uiBg" src="00020002" fileName="v3/bg/bg_ui.png" xy="0,0" size="2560,1080"/>
     <image id="n1" name="ornTL" src="0001000a" fileName="v3/ui/ornament.png" xy="492,44" size="118,118"/>
     <image id="n2" name="ornTR" src="0001000a" fileName="v3/ui/ornament.png" xy="2068,44" size="118,118"/>
     <component id="n3" name="banner" src="c0000001" fileName="common/V3Banner.xml" xy="888,66" size="842,88"/>
@@ -702,7 +694,8 @@ Write-Utf8NoBom (Join-Path $pkgAssets 'SceneV3.xml') @'
 <?xml version="1.0" encoding="utf-8"?>
 <component size="2560,1080" opaque="false">
   <displayList>
-    <image id="n0" name="bg" src="00020002" fileName="v3/bg/bg_scene.png" xy="0,0" size="2560,1080"/>
+    <image id="n0" name="bg" src="00020001" fileName="v3/bg/bg_scene.png" xy="0,0" size="2560,1080"/>
+    <image id="n7" name="uiBg" src="00020002" fileName="v3/bg/bg_ui.png" xy="0,0" size="2560,1080"/>
     <component id="n1" name="banner" src="c0000001" fileName="common/V3Banner.xml" xy="540,90" size="1480,118"/>
     <text id="n6" name="bannerTitle" xy="540,100" size="1480,98" fontSize="56" color="#3d2914" align="center" vAlign="middle" autoSize="none" singleLine="true" text="问道·主场景"/>
 
