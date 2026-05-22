@@ -39,8 +39,13 @@ inline uint32_t LogErrorContextAndReturn(const char* tag,
                                          uint32_t error_code,
                                          const ::google::protobuf::Message& request) {
     const auto* descriptor = request.GetDescriptor();
+    // protobuf >=27 returns absl::string_view from full_name(); muduo
+    // LogStream doesn't accept that. Materialize to std::string.
+    const std::string proto_name = descriptor
+        ? std::string(descriptor->full_name())
+        : std::string("<unknown>");
     LOG_ERROR << "[" << (tag ? tag : "?") << "] rejecting RPC: error_code=" << error_code
-              << " proto=" << (descriptor ? descriptor->full_name() : std::string("<unknown>"))
+              << " proto=" << proto_name
               << " request={ " << request.ShortDebugString() << " }";
     LOG_ERROR << GetCurrentStackTraceAsString(kMaxEntries);
     return error_code;

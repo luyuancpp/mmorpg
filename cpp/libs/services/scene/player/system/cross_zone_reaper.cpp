@@ -14,10 +14,12 @@
 #include "engine/infra/messaging/kafka/kafka_producer.h"
 #include "network/node_utils.h"
 #include "player/comp/player_frozen_comp.h"
+#include "player/system/player_data_loader.h"
 #include "player/system/player_lifecycle.h"
 #include "player/system/player_tip.h"
 #include "proto/common/event/player_migration_event.pb.h"
 #include "table/proto/tip/common_error_tip.pb.h"
+#include "table/proto/tip/cross_server_error_tip.pb.h"
 #include "thread_context/ecs_context.h"
 #include "thread_context/redis_manager.h"
 

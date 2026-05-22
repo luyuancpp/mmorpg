@@ -1,7 +1,7 @@
 #pragma once
 #include "entt/src/entt/entity/registry.hpp"
 #include "proto/common/database/player_cache.pb.h"
-#include "player/system/bag_marshal.h"
+#include "services/scene/player/system/bag_marshal.h"
 void PlayerDatabaseMessageFieldsUnmarshal(entt::entity player, const player_database& message);
 void PlayerDatabaseMessageFieldsMarshal(entt::entity player, player_database& message);
 
