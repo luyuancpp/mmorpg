@@ -536,6 +536,39 @@ void PlayerLifecycleSystem::HandleCrossZoneTransfer(entt::entity playerEntity)
 
 void PlayerLifecycleSystem::HandlePlayerMigration(const PlayerMigrationEvent &msg)
 {
+	// Idempotency guard — see cross-zone-failure-test-runbook.md §失败 D and
+	// task #32. Kafka rebalance can redeliver player_migrate after we already
+	// processed it (or the source's reaper republishes during a slow ACK
+	// window). If the player entity is already present on this node, the
+	// previous Init must have succeeded — we only need to re-emit the ACK so
+	// the source's reaper / DestroyPlayer path completes. Re-running Init
+	// would create a second entt entity (with the same player_id but a
+	// different entity handle) and the player would "double-spawn" — items
+	// flooded into bag, duplicate AOI entries, etc.
+	const auto existingPlayer = tlsEcs.GetPlayer(msg.player_id());
+	if (existingPlayer != entt::null && tlsEcs.actorRegistry.valid(existingPlayer))
+	{
+		LOG_INFO << "[CrossZone] HandlePlayerMigration: player " << msg.player_id()
+				 << " from zone " << msg.from_zone() << " already present on this node "
+				 << "(duplicate delivery / source reaper retry); skipping Init, "
+				 << "re-emitting ACK so source can converge.";
+		// Fall through to the ACK publish below. SavePlayerToRedis would also
+		// be redundant here (player is already loaded), so skip it too.
+		PlayerMigrationAckEvent ackEvent;
+		ackEvent.set_player_id(msg.player_id());
+		ackEvent.set_from_zone(msg.from_zone());
+		ackEvent.set_to_zone(msg.to_zone());
+		ackEvent.set_ack_at_ms(TimeSystem::NowMillisecondsUTC());
+
+		std::string ackBytes;
+		if (ackEvent.SerializeToString(&ackBytes))
+		{
+			KafkaProducer::Instance().send(
+				"player_migrate_ack", ackBytes, std::to_string(msg.player_id()), msg.from_zone());
+		}
+		return;
+	}
+
 	PlayerAllData playerAllDataMessage;
 	if (!playerAllDataMessage.ParseFromString(msg.serialized_player_data()))
 	{
