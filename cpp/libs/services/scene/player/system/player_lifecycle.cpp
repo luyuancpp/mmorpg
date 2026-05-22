@@ -563,17 +563,15 @@ void PlayerLifecycleSystem::SavePlayerToRedis(entt::entity player)
 	message->mutable_player_database_data()->set_player_id(playerId);
 	message->mutable_player_database_1_data()->set_player_id(playerId);
 
-	// Stamp the data-consistency stress probe (no-op when STRESS_TEST_PROBE
-	// is unset). MUST be before Save() for the same reason as set_player_id
-	// above — payload is serialized eagerly inside Save().
-	stresstest_probe::StampPlayerDatabase(*message->mutable_player_database_data());
-	stresstest_probe::StampPlayerDatabase1(*message->mutable_player_database_1_data());
-
-	// Dirty-save fast path (todo.md #204 / #226 slice B). If we have a
-	// snapshot from the previous successful save and the current payload
-	// equals it byte-for-byte (proto MessageDifferencer::Equals semantics
-	// — same field values, map order ignored, default vs unset treated
-	// equally), skip both the Redis write and the Kafka DBTask emission.
+	// Dirty-save fast path (todo.md #204 / #226 slice B).
+	// MUST run BEFORE stresstest_probe::Stamp* below (Review R2 fix,
+	// 2026-05-17). The probe writes non-business fields (timestamps /
+	// counters) into the message which would otherwise poison the
+	// equality check — under STRESS_TEST_PROBE the stamped fields
+	// change every call, so a post-stamp IsEqual always returns false
+	// and the optimization is silently disabled. Compare clean
+	// business data here, stamp probe only on the path that actually
+	// persists.
 	//
 	// Skipping is safe because:
 	//   - The previous save already committed identical bytes; reading
@@ -598,6 +596,13 @@ void PlayerLifecycleSystem::SavePlayerToRedis(entt::entity player)
 				  << " — proto-compare clean, last_save_ms=" << snap->saved_at_ms;
 		return;
 	}
+
+	// Stamp the data-consistency stress probe (no-op when STRESS_TEST_PROBE
+	// is unset). MUST be before Save() — payload is serialized eagerly
+	// inside Save(). Stamped after the dirty-save check (see R2 note above)
+	// so probe fields don't pollute the equality comparison.
+	stresstest_probe::StampPlayerDatabase(*message->mutable_player_database_data());
+	stresstest_probe::StampPlayerDatabase1(*message->mutable_player_database_1_data());
 
 	tlsRedisSystem.GetPlayerDataRedis()->Save(message, playerId);
 

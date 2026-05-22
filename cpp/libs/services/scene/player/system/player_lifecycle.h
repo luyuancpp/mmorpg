@@ -41,6 +41,15 @@ public:
 	// by EnterScene clearing the marker; cross-node reconnect is gated by the
 	// player_locator 30s lease. This method exposes the saving state for callers
 	// that want to log / reject / wait when the save outruns those mechanisms.
+	//
+	// THREADING (Review O3, 2026-05-17): MUST be called from the ECS thread
+	// only. Internally does tlsEcs.GetPlayer(playerId) +
+	// tlsEcs.actorRegistry.any_of<UnregisterPlayer>(...), both of which touch
+	// entt's registry. entt is NOT thread-safe; calling this from a Kafka
+	// consumer thread, a gRPC handler thread, or a GM tool background thread
+	// is a data race against any ECS mutation happening on the loop thread.
+	// If you need cross-thread access, post a task to the EventLoop and read
+	// the result back via a future / channel.
 	static bool IsSaveInFlight(Guid playerId);
 
 };

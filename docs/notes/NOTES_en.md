@@ -7,6 +7,15 @@
 > - `todo.md` — thought-stream (mixed zh/en, append new todos at the end)
 > - `todo_zh.md` / `todo_en.md` — language-split versions of the thought-stream
 
+> **Erratum (Review O1, 2026-05-17)**: commit `23cd38907`
+> "docs(notes): consolidate to 4 bilingual files" mistakenly stages 6
+> FairyGUI UI assets (`client/fairygui/qdao/assets/qdao/*.xml` + 2 PNGs +
+> their `.xml` metadata) alongside the docs consolidation. Those UI
+> changes are unrelated to docs and should have been a separate commit
+> or rolled into an adjacent UI fix. The history is already merged and
+> cannot be rewritten — this note is here so future `git bisect`
+> doesn't get misled by the file attribution.
+
 ---
 
 # Part 1 · Audit Report

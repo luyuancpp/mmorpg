@@ -4,17 +4,23 @@
 
 #include <thread_context/ecs_context.h>
 
-#include "core/utils/debug/stacktrace_system.h"
 #include "error_reporter/error_reporter.h"
 
 // Send error response to client.
 //
-// Side effect (todo.md #70 + #125): when err != 0, also log the full
+// Side effect (todo.md #70 + #125): when err != 0, also log the
 // triage context — error code, request proto type, ShortDebugString of the
-// request payload, and a stack trace. This is the "rejected-logic must
-// surface" rule from todo #97: any rejection path that returns an error
-// to the client must leave enough breadcrumbs for an on-call to triage
-// without going back to the client to ask "what did you send?".
+// request payload. This is the "rejected-logic must surface" rule from
+// todo #97: any rejection path that returns an error to the client must
+// leave enough breadcrumbs for an on-call to triage without going back to
+// the client to ask "what did you send?".
+//
+// Review R3 fix (2026-05-17): NO stacktrace on this path. SendErrorToClient
+// is the gate's reject hot-path; an adversarial client sending malformed
+// requests would turn boost::stacktrace allocation into a CPU hotspot. The
+// proto name + ShortDebugString + error_reporter record give enough
+// triage detail; a real crash still gets a full stack via HandleFatalSignal
+// (todo #105). The #include of stacktrace_system.h is dropped accordingly.
 //
 // Side effect (todo.md #250 slice A): also push the rejection into the
 // process-wide error_reporter buffer so cross-node aggregation can pick
@@ -41,7 +47,6 @@ void SendErrorToClient(const Request& request, Response& response, uint32_t err)
                   << " proto=" << protoName
                   << " message_id=" << messageId
                   << " request={ " << request.ShortDebugString() << " }";
-        LOG_ERROR << GetCurrentStackTraceAsString(kMaxEntries);
 
         // todo.md #250 slice A — record into process-wide buffer for
         // periodic shipping (slice C).
