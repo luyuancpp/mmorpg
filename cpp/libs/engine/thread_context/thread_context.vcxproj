@@ -25,6 +25,7 @@
     <ClCompile Include="redis_manager.cpp" />
     <ClCompile Include="rpc_request_context.cpp" />
     <ClCompile Include="snow_flake_manager.cpp" />
+    <ClCompile Include="trace_context_tls.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ecs_context.h" />
