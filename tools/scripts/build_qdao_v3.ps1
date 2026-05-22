@@ -472,18 +472,18 @@ endlocal
 # be stretched. ButtonAlt is the "secondary" cream variant — its 9-grid is
 # identical to the active list row, just exposed as a button.
 
-# V3Btn — primary green CTA, 360x96 (matches button PNG natural ratio when
+# V3Btn — primary green CTA, slightly downsized for denser layout.
 # centred on the green tile slice; controller toggles down-state offset).
 Write-Utf8NoBom (Join-Path $pkgCommon 'V3Btn.xml') @'
 <?xml version="1.0" encoding="utf-8"?>
-<component size="360,96" extention="Button" opaque="false">
+<component size="330,88" extention="Button" opaque="false">
   <controller name="button" pages="up,,down,,over,,disabled," selected="0"/>
   <displayList>
-    <image id="n0" name="bg" src="00010001" fileName="v3/ui/btn_green.png" xy="0,0" size="360,96">
+    <image id="n0" name="bg" src="00010001" fileName="v3/ui/btn_green.png" xy="0,0" size="330,88">
       <gearColor controller="button" values="#ffffff,#fff5d4,#ffffff,#666666"/>
     </image>
-    <text id="n1" name="title" xy="0,0" size="360,96" fontSize="32" color="#fff5d4" align="center" vAlign="middle" autoSize="none" singleLine="true" text=""/>
-    <graph id="n2" name="hit" xy="0,0" size="360,96" type="rect" lineSize="0" lineColor="#00000000" fillColor="#00000000">
+    <text id="n1" name="title" xy="0,0" size="330,88" fontSize="30" color="#fff5d4" align="center" vAlign="middle" autoSize="none" singleLine="true" text=""/>
+    <graph id="n2" name="hit" xy="0,0" size="330,88" type="rect" lineSize="0" lineColor="#00000000" fillColor="#00000000">
     </graph>
   </displayList>
   <Button mode="Common" downEffect="scale" downEffectValue="0.95"/>
@@ -494,17 +494,17 @@ Write-Utf8NoBom (Join-Path $pkgCommon 'V3Btn.xml') @'
 # black text. Used for non-primary actions (返回 / 刷新).
 Write-Utf8NoBom (Join-Path $pkgCommon 'V3BtnAlt.xml') @'
 <?xml version="1.0" encoding="utf-8"?>
-<component size="320,84" extention="Button" opaque="false">
+<component size="292,76" extention="Button" opaque="false">
   <controller name="button" pages="up,,down,,over,,disabled," selected="0"/>
   <displayList>
-    <image id="n0" name="bgIdle" src="00010002" fileName="v3/ui/list_idle.png" xy="0,0" size="320,84">
+    <image id="n0" name="bgIdle" src="00010002" fileName="v3/ui/list_idle.png" xy="0,0" size="292,76">
       <gearDisplay controller="button" pages="0,2,3"/>
     </image>
-    <image id="n1" name="bgDown" src="00010003" fileName="v3/ui/list_active.png" xy="0,0" size="320,84">
+    <image id="n1" name="bgDown" src="00010003" fileName="v3/ui/list_active.png" xy="0,0" size="292,76">
       <gearDisplay controller="button" pages="1"/>
     </image>
-    <text id="n2" name="title" xy="0,0" size="320,84" fontSize="28" color="#3d2914" align="center" vAlign="middle" autoSize="none" singleLine="true" text=""/>
-    <graph id="n3" name="hit" xy="0,0" size="320,84" type="rect" lineSize="0" lineColor="#00000000" fillColor="#00000000">
+    <text id="n2" name="title" xy="0,0" size="292,76" fontSize="26" color="#3d2914" align="center" vAlign="middle" autoSize="none" singleLine="true" text=""/>
+    <graph id="n3" name="hit" xy="0,0" size="292,76" type="rect" lineSize="0" lineColor="#00000000" fillColor="#00000000">
     </graph>
   </displayList>
   <Button mode="Common" downEffect="scale" downEffectValue="0.97"/>
@@ -515,20 +515,20 @@ Write-Utf8NoBom (Join-Path $pkgCommon 'V3BtnAlt.xml') @'
 # controller swaps idle/active art and title color.
 Write-Utf8NoBom (Join-Path $pkgCommon 'V3Tab.xml') @'
 <?xml version="1.0" encoding="utf-8"?>
-<component size="220,80" extention="Button" opaque="false">
+<component size="200,72" extention="Button" opaque="false">
   <controller name="button"  pages="up,,down,,over,,disabled," selected="0"/>
   <controller name="checked" pages="0,,1," selected="0"/>
   <displayList>
-    <image id="n0" name="bgIdle" src="00010002" fileName="v3/ui/list_idle.png" xy="0,0" size="220,80">
+    <image id="n0" name="bgIdle" src="00010002" fileName="v3/ui/list_idle.png" xy="0,0" size="200,72">
       <gearDisplay controller="checked" pages="0"/>
     </image>
-    <image id="n1" name="bgActive" src="00010003" fileName="v3/ui/list_active.png" xy="0,0" size="220,80">
+    <image id="n1" name="bgActive" src="00010003" fileName="v3/ui/list_active.png" xy="0,0" size="200,72">
       <gearDisplay controller="checked" pages="1"/>
     </image>
-    <text id="n2" name="title" xy="0,0" size="220,80" fontSize="26" color="#3d2914" align="center" vAlign="middle" autoSize="none" singleLine="true" text="">
+    <text id="n2" name="title" xy="0,0" size="200,72" fontSize="24" color="#3d2914" align="center" vAlign="middle" autoSize="none" singleLine="true" text="">
       <gearColor controller="checked" values="#3d2914,#fff5d4"/>
     </text>
-    <graph id="n3" name="hit" xy="0,0" size="220,80" type="rect" lineSize="0" lineColor="#00000000" fillColor="#00000000">
+    <graph id="n3" name="hit" xy="0,0" size="200,72" type="rect" lineSize="0" lineColor="#00000000" fillColor="#00000000">
     </graph>
   </displayList>
   <Button mode="Check" downEffect="scale" downEffectValue="0.97"/>
@@ -558,31 +558,32 @@ Write-Utf8NoBom (Join-Path $pkgCommon 'V3Banner.xml') @'
 </component>
 '@
 
-# V3Card — server / announcement row, 520x140. Composed of:
+# V3Card — server / announcement row, downsized to make each server entry
+# visually lighter in the list. Composed of:
 #   bgIdle / bgActive (gated by `checked`)
 #   statusDot (gated by `status`: 0=green/hidden, 1=red, 2=hidden)
 #   title (top), subtitle (bottom)
 Write-Utf8NoBom (Join-Path $pkgCommon 'V3Card.xml') @'
 <?xml version="1.0" encoding="utf-8"?>
-<component size="520,140" extention="Button" opaque="false">
+<component size="468,124" extention="Button" opaque="false">
   <controller name="button"  pages="up,,down,,over,,disabled," selected="0"/>
   <controller name="checked" pages="0,,1," selected="0"/>
   <controller name="status"  pages="0,,1,,2," selected="0"/>
   <displayList>
-    <image id="n0" name="bgIdle" src="00010004" fileName="v3/ui/card_med_idle.png" xy="0,0" size="520,140">
+    <image id="n0" name="bgIdle" src="00010004" fileName="v3/ui/card_med_idle.png" xy="0,0" size="468,124">
       <gearDisplay controller="checked" pages="0"/>
     </image>
-    <image id="n1" name="bgActive" src="00010005" fileName="v3/ui/card_med_active.png" xy="0,0" size="520,140">
+    <image id="n1" name="bgActive" src="00010005" fileName="v3/ui/card_med_active.png" xy="0,0" size="468,124">
       <gearDisplay controller="checked" pages="1"/>
     </image>
-    <image id="n2" name="statusDot" src="0001000b" fileName="v3/ui/status_red.png" xy="34,58" size="24,24">
+    <image id="n2" name="statusDot" src="0001000b" fileName="v3/ui/status_red.png" xy="30,50" size="22,22">
       <gearDisplay controller="status" pages="1"/>
     </image>
-    <text id="n3" name="title" xy="80,22" size="420,46" fontSize="32" color="#3d2914" autoSize="none" singleLine="true" text="">
+    <text id="n3" name="title" xy="70,18" size="380,40" fontSize="28" color="#3d2914" autoSize="none" singleLine="true" text="">
       <gearColor controller="checked" values="#3d2914,#9c2b1a"/>
     </text>
-    <text id="n4" name="subtitle" xy="80,76" size="420,40" fontSize="22" color="#5a4025" autoSize="none" singleLine="true" text=""/>
-    <graph id="n5" name="hit" xy="0,0" size="520,140" type="rect" lineSize="0" lineColor="#00000000" fillColor="#00000000">
+    <text id="n4" name="subtitle" xy="70,66" size="380,34" fontSize="20" color="#5a4025" autoSize="none" singleLine="true" text=""/>
+    <graph id="n5" name="hit" xy="0,0" size="468,124" type="rect" lineSize="0" lineColor="#00000000" fillColor="#00000000">
     </graph>
   </displayList>
   <Button mode="Check" downEffect="scale" downEffectValue="0.98"/>
@@ -622,7 +623,7 @@ Write-Utf8NoBom (Join-Path $pkgAssets 'LoginV3.xml') @'
 
     <image id="n14" name="bottomPane" src="00010008" fileName="v3/ui/bar.png" xy="930,802" size="1128,118"/>
     <text id="n15" name="status" xy="1052,846" size="540,34" fontSize="23" color="#fff0bd" align="left" vAlign="middle" autoSize="none" singleLine="true" text=""/>
-    <component id="n16" name="btnEnter" src="c0000002" fileName="common/V3Btn.xml" xy="1714,814" size="260,92">
+    <component id="n16" name="btnEnter" src="c0000002" fileName="common/V3Btn.xml" xy="1726,818" size="236,84">
       <Button title="登录"/>
     </component>
   </displayList>
@@ -645,9 +646,9 @@ Write-Utf8NoBom (Join-Path $pkgAssets 'ServersV3.xml') @'
     <component id="n3" name="banner" src="c0000001" fileName="common/V3Banner.xml" xy="888,66" size="842,88"/>
     <text id="n4" name="bannerTitle" xy="928,58" size="762,104" fontSize="54" color="#3d2914" align="center" vAlign="middle" autoSize="none" singleLine="true" text="选择区服"/>
 
-    <component id="n5" name="tabRecent" src="c0000004" fileName="common/V3Tab.xml" xy="690,172" size="260,76"><Button title="最近登录"/></component>
-    <component id="n6" name="tabRecommend" src="c0000004" fileName="common/V3Tab.xml" xy="964,172" size="300,76"><Button title="推荐服务器"/></component>
-    <component id="n7" name="tabAll" src="c0000004" fileName="common/V3Tab.xml" xy="1280,172" size="260,76"><Button title="全部区服"/></component>
+    <component id="n5" name="tabRecent" src="c0000004" fileName="common/V3Tab.xml" xy="702,176" size="236,68"><Button title="最近登录"/></component>
+    <component id="n6" name="tabRecommend" src="c0000004" fileName="common/V3Tab.xml" xy="978,176" size="272,68"><Button title="推荐服务器"/></component>
+    <component id="n7" name="tabAll" src="c0000004" fileName="common/V3Tab.xml" xy="1292,176" size="236,68"><Button title="全部区服"/></component>
 
     <image id="n8" name="search" src="00010009" fileName="v3/ui/input.png" xy="646,312" size="244,64"/>
     <text id="n9" name="searchHint" xy="704,324" size="160,36" fontSize="22" color="#8b7459" align="left" vAlign="middle" autoSize="none" singleLine="true" text="搜索"/>
@@ -674,13 +675,13 @@ Write-Utf8NoBom (Join-Path $pkgAssets 'ServersV3.xml') @'
     <image id="n13" name="bottomOrn" src="0001000a" fileName="v3/ui/ornament.png" xy="958,784" size="106,106"/>
     <text id="n14" name="selectedLabel" xy="1080,834" size="520,42" fontSize="28" color="#fff0bd" align="left" vAlign="middle" autoSize="none" singleLine="true" text="已选择"/>
 
-    <component id="n15" name="btnBack" src="c0000003" fileName="common/V3BtnAlt.xml" xy="642,880" size="260,74">
+    <component id="n15" name="btnBack" src="c0000003" fileName="common/V3BtnAlt.xml" xy="654,884" size="236,67">
       <Button title="返回"/>
     </component>
-    <component id="n16" name="btnRefresh" src="c0000003" fileName="common/V3BtnAlt.xml" xy="1660,826" size="220,74">
+    <component id="n16" name="btnRefresh" src="c0000003" fileName="common/V3BtnAlt.xml" xy="1670,830" size="200,67">
       <Button title="刷新"/>
     </component>
-    <component id="n17" name="btnEnter" src="c0000002" fileName="common/V3Btn.xml" xy="1816,816" size="220,92">
+    <component id="n17" name="btnEnter" src="c0000002" fileName="common/V3Btn.xml" xy="1826,820" size="200,84">
       <Button title="进入"/>
     </component>
 
@@ -702,7 +703,7 @@ Write-Utf8NoBom (Join-Path $pkgAssets 'SceneV3.xml') @'
     <image id="n2" name="ornTL" src="0001000a" fileName="v3/ui/ornament.png" xy="450,60" size="120,120"/>
     <image id="n3" name="ornTR" src="0001000a" fileName="v3/ui/ornament.png" xy="1990,60" size="120,120"/>
 
-    <component id="n4" name="btnBack" src="c0000003" fileName="common/V3BtnAlt.xml" xy="1120,920" size="320,84">
+    <component id="n4" name="btnBack" src="c0000003" fileName="common/V3BtnAlt.xml" xy="1134,924" size="292,76">
       <Button title="返回登录"/>
     </component>
 

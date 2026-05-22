@@ -21,7 +21,7 @@
 
     <image id="n14" name="bottomPane" src="00010008" fileName="bar.png" xy="930,802" size="1128,118"/>
     <text id="n15" name="status" xy="1052,846" size="540,34" fontSize="23" color="#fff0bd" align="left" vAlign="middle" autoSize="none" singleLine="true" text=""/>
-    <component id="n16" name="btnEnter" src="c0000002" fileName="common/V3Btn.xml" xy="1714,814" size="260,92">
+    <component id="n16" name="btnEnter" src="c0000002" fileName="common/V3Btn.xml" xy="1726,818" size="236,84">
       <Button title="登录"/>
     </component>
   </displayList>

@@ -9,7 +9,7 @@
     <image id="n2" name="ornTL" src="0001000a" fileName="ornament.png" xy="450,60" size="120,120"/>
     <image id="n3" name="ornTR" src="0001000a" fileName="ornament.png" xy="1990,60" size="120,120"/>
 
-    <component id="n4" name="btnBack" src="c0000003" fileName="common/V3BtnAlt.xml" xy="1120,920" size="320,84">
+    <component id="n4" name="btnBack" src="c0000003" fileName="common/V3BtnAlt.xml" xy="1134,924" size="292,76">
       <Button title="返回登录"/>
     </component>
 

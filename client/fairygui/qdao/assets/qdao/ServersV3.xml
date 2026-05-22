@@ -7,22 +7,25 @@
     <image id="n2" name="ornTR" src="0001000a" fileName="ornament.png" xy="2068,44" size="118,118"/>
     <component id="n3" name="banner" src="c0000001" fileName="common/V3Banner.xml" xy="888,66" size="842,88"/>
     <text id="n4" name="bannerTitle" xy="928,58" size="762,104" fontSize="54" color="#3d2914" align="center" vAlign="middle" autoSize="none" singleLine="true" text="选择区服"/>
-
-    <component id="n5" name="tabRecent" src="c0000004" fileName="common/V3Tab.xml" xy="690,172" size="260,76"><Button title="最近登录"/></component>
-    <component id="n6" name="tabRecommend" src="c0000004" fileName="common/V3Tab.xml" xy="964,172" size="300,76"><Button title="推荐服务器"/></component>
-    <component id="n7" name="tabAll" src="c0000004" fileName="common/V3Tab.xml" xy="1280,172" size="260,76"><Button title="全部区服"/></component>
-
+    <component id="n5" name="tabRecent" src="c0000004" fileName="common/V3Tab.xml" xy="701,175" size="236,68">
+      <Button title="最近登录"/>
+    </component>
+    <component id="n6" name="tabRecommend" src="c0000004" fileName="common/V3Tab.xml" xy="978,176" size="272,68">
+      <Button title="推荐服务器"/>
+    </component>
+    <component id="n7" name="tabAll" src="c0000004" fileName="common/V3Tab.xml" xy="1292,176" size="236,68">
+      <Button title="全部区服"/>
+    </component>
     <image id="n8" name="search" src="00010009" fileName="input.png" xy="646,312" size="244,64"/>
-    <text id="n9" name="searchHint" xy="704,324" size="160,36" fontSize="22" color="#8b7459" align="left" vAlign="middle" autoSize="none" singleLine="true" text="搜索"/>
-    <list id="n10" name="tabs" xy="642,398" size="252,430" overflow="hidden" lineGap="12" defaultItem="ui://qdao/V3Tab" selectionMode="Single" align="center">
+    <text id="n9" name="searchHint" xy="704,324" size="160,36" fontSize="22" color="#8b7459" vAlign="middle" autoSize="none" singleLine="true" text="搜索"/>
+    <list id="n10" name="tabs" xy="642,398" size="252,430" selectionMode="Single" overflow="hidden" lineGap="12" defaultItem="ui://qdao/V3Tab" align="center">
       <item title="近期"/>
       <item title="推荐"/>
       <item title="全部"/>
       <item title="新服"/>
       <item title="官方"/>
     </list>
-
-    <list id="n11" name="servers" xy="960,314" size="1074,462" layout="pagination" overflow="scroll" lineGap="12" columnGap="18" defaultItem="ui://qdao/V3Card" selectionMode="Single" align="center">
+    <list id="n11" name="servers" xy="960,314" size="1074,462" layout="pagination" selectionMode="Single" overflow="scroll" lineGap="12" defaultItem="ui://qdao/V3Card" align="center">
       <item title="云海宗"/>
       <item title="清风谷"/>
       <item title="碧落渊"/>
@@ -32,21 +35,18 @@
       <item title="蓬莱岛"/>
       <item title="瀛洲海"/>
     </list>
-
     <image id="n12" name="bottomPane" src="00010008" fileName="bar.png" xy="930,806" size="1128,118"/>
     <image id="n13" name="bottomOrn" src="0001000a" fileName="ornament.png" xy="958,784" size="106,106"/>
-    <text id="n14" name="selectedLabel" xy="1080,834" size="520,42" fontSize="28" color="#fff0bd" align="left" vAlign="middle" autoSize="none" singleLine="true" text="已选择"/>
-
-    <component id="n15" name="btnBack" src="c0000003" fileName="common/V3BtnAlt.xml" xy="642,880" size="260,74">
+    <text id="n14" name="selectedLabel" xy="1080,834" size="520,42" fontSize="28" color="#fff0bd" vAlign="middle" autoSize="none" singleLine="true" text="已选择"/>
+    <component id="n15" name="btnBack" src="c0000003" fileName="common/V3BtnAlt.xml" xy="654,884" size="236,67">
       <Button title="返回"/>
     </component>
-    <component id="n16" name="btnRefresh" src="c0000003" fileName="common/V3BtnAlt.xml" xy="1660,826" size="220,74">
+    <component id="n16" name="btnRefresh" src="c0000003" fileName="common/V3BtnAlt.xml" xy="1670,830" size="200,67">
       <Button title="刷新"/>
     </component>
-    <component id="n17" name="btnEnter" src="c0000002" fileName="common/V3Btn.xml" xy="1816,816" size="220,92">
+    <component id="n17" name="btnEnter" src="c0000002" fileName="common/V3Btn.xml" xy="1826,820" size="200,84">
       <Button title="进入"/>
     </component>
-
-    <text id="n18" name="status" xy="1080,884" size="540,28" fontSize="22" color="#fff0bd" align="left" vAlign="middle" autoSize="none" singleLine="true" text=""/>
+    <text id="n18" name="status" xy="1080,884" size="540,28" fontSize="22" color="#fff0bd" vAlign="middle" autoSize="none" singleLine="true" text=""/>
   </displayList>
 </component>

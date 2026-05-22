@@ -1,23 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
-<component size="520,140" extention="Button" opaque="false">
+<component size="468,124" extention="Button" opaque="false">
   <controller name="button"  pages="up,,down,,over,,disabled," selected="0"/>
   <controller name="checked" pages="0,,1," selected="0"/>
   <controller name="status"  pages="0,,1,,2," selected="0"/>
   <displayList>
-    <image id="n0" name="bgIdle" src="00010004" fileName="card_med_idle.png" xy="0,0" size="520,140">
+    <image id="n0" name="bgIdle" src="00010004" fileName="card_med_idle.png" xy="0,0" size="468,124">
       <gearDisplay controller="checked" pages="0"/>
     </image>
-    <image id="n1" name="bgActive" src="00010005" fileName="card_med_active.png" xy="0,0" size="520,140">
+    <image id="n1" name="bgActive" src="00010005" fileName="card_med_active.png" xy="0,0" size="468,124">
       <gearDisplay controller="checked" pages="1"/>
     </image>
-    <image id="n2" name="statusDot" src="0001000b" fileName="status_red.png" xy="34,58" size="24,24">
+    <image id="n2" name="statusDot" src="0001000b" fileName="status_red.png" xy="30,50" size="22,22">
       <gearDisplay controller="status" pages="1"/>
     </image>
-    <text id="n3" name="title" xy="80,22" size="420,46" fontSize="32" color="#3d2914" autoSize="none" singleLine="true" text="">
+    <text id="n3" name="title" xy="70,18" size="380,40" fontSize="28" color="#3d2914" autoSize="none" singleLine="true" text="">
       <gearColor controller="checked" values="#3d2914,#9c2b1a"/>
     </text>
-    <text id="n4" name="subtitle" xy="80,76" size="420,40" fontSize="22" color="#5a4025" autoSize="none" singleLine="true" text=""/>
-    <graph id="n5" name="hit" xy="0,0" size="520,140" type="rect" lineSize="0" lineColor="#00000000" fillColor="#00000000">
+    <text id="n4" name="subtitle" xy="70,66" size="380,34" fontSize="20" color="#5a4025" autoSize="none" singleLine="true" text=""/>
+    <graph id="n5" name="hit" xy="0,0" size="468,124" type="rect" lineSize="0" lineColor="#00000000" fillColor="#00000000">
     </graph>
   </displayList>
   <Button mode="Check" downEffect="scale" downEffectValue="0.98"/>
