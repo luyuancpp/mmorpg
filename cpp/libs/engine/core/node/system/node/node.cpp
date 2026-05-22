@@ -51,50 +51,56 @@ namespace
 	//   Linux:    kill -USR1 <pid>
 	//   Windows:  Ctrl+Break in the console (delivered as SIGBREAK)
 	//
-	// The handler is async-signal-unsafe in the strict sense (boost::stacktrace
-	// allocates), so this is a best-effort diagnostic intended for live triage —
-	// not for use as a hot-path tool. It does NOT terminate the process; the node
-	// keeps running after the dump.
+	// Async-signal-safety strategy (Review R1 fix, 2026-05-17):
+	//   The signal handler ONLY sets a sig_atomic_t flag — no mutex,
+	//   no allocation, no stdio, no localtime, no LOG_* (muduo's
+	//   logger acquires locks). The EventLoop poll function
+	//   `DrainPendingDiagnosticWork` runs every 250 ms and consumes
+	//   pending flags, executing the actually-heavy work (boost::stacktrace,
+	//   error_reporter dump, file I/O) from normal main-thread context
+	//   where mutex / fstream / localtime are fine.
 	//
-	// Registration is idempotent and best-effort: failures only log a warning.
+	// Cost of the 250 ms poll latency: acceptable for a diagnostic
+	// trigger. Ops sending the signal is already a manual action; a
+	// quarter-second delay before the dump file appears is invisible.
+	//
+	// Registration is idempotent and best-effort: failures only log a
+	// warning.
 	std::atomic<bool> gDiagnosticSignalInstalled{false};
 
+	// sig_atomic_t guarantees writes are atomic from a signal handler.
+	// volatile prevents the compiler from optimizing the read in the
+	// poll function away even though it doesn't see who writes it.
+	volatile std::sig_atomic_t gDumpStackPending{0};
+	volatile std::sig_atomic_t gDumpErrorReporterPending{0};
+	volatile std::sig_atomic_t gLastDumpSignum{0};
+
+	// Async-signal-safe: only assigns to sig_atomic_t. Everything else
+	// (re-install via std::signal, the actual dump work) is moved to
+	// the EventLoop drain function.
 	void HandleDiagnosticSignal(int signum)
 	{
-		// Re-install the handler; std::signal on POSIX may reset to SIG_DFL after
-		// each delivery depending on platform. Re-installing keeps subsequent
-		// triggers working without using sigaction directly.
+		gLastDumpSignum = static_cast<sig_atomic_t>(signum);
+		gDumpStackPending = 1;
+		gDumpErrorReporterPending = 1;
+		// Re-install the handler; std::signal is technically not in the
+		// POSIX async-signal-safe list, but is widely implemented as
+		// safe-enough across glibc/musl/Windows MSVCRT and the
+		// alternative (sigaction) needs platform-specific wrapping that
+		// muduo doesn't have today. Re-install lets subsequent triggers
+		// keep working without ourselves transitioning to sigaction.
 		std::signal(signum, &HandleDiagnosticSignal);
-		DumpProcessStackTraceOnSignal(signum);
-
-		// todo.md #250 slice D — also write the error_reporter snapshot to a
-		// timestamped file under logs/. Same trigger as the stack dump so a
-		// single signal gives the on-call both pieces. The dump path is logged
-		// at INFO so ops can find the file path in the same console session
-		// without scanning the filesystem.
-		const auto path = error_reporter::DumpSnapshotToDefaultPath();
-		if (!path.empty()) {
-			LOG_INFO << "Diagnostic dump: error_reporter snapshot -> " << path;
-		}
 	}
 
-	// SIGUSR2 dump-only handler (Linux). Same as the SIGUSR1 + SIGBREAK
-	// path in HandleDiagnosticSignal, but skips the stack trace — useful
-	// when ops only wants the error_reporter snapshot without the
-	// stacktrace allocation cost from boost::stacktrace. On Windows there
-	// is no SIGUSR2; ops uses SIGBREAK (which already dumps both).
+	// SIGUSR2 dump-only handler (Linux). Same async-signal-safe shape
+	// as HandleDiagnosticSignal: only sets a flag.
 #ifndef _WIN32
 	std::atomic<bool> gErrorReporterSignalInstalled{false};
 
 	void HandleErrorReporterDumpSignal(int signum)
 	{
+		gDumpErrorReporterPending = 1;
 		std::signal(signum, &HandleErrorReporterDumpSignal);
-		const auto path = error_reporter::DumpSnapshotToDefaultPath();
-		if (!path.empty()) {
-			LOG_INFO << "[SIGUSR2] error_reporter snapshot -> " << path;
-		} else {
-			LOG_WARN << "[SIGUSR2] error_reporter dump failed (path resolution / IO error)";
-		}
 	}
 
 	void InstallErrorReporterDumpHandlerOnce()
@@ -115,6 +121,45 @@ namespace
 #else
 	inline void InstallErrorReporterDumpHandlerOnce() {}
 #endif
+
+	// Drain function run from the EventLoop on a 250 ms cadence (set up
+	// in Node::Initialize). Consumes the sig_atomic_t flags set by the
+	// signal handlers and performs the actually-heavy work from a normal
+	// context where mutex / fstream / localtime / LOG_* are all safe.
+	//
+	// We do NOT bother making the flag-check atomic vs the work — the
+	// worst case is "signal arrives twice in 250 ms and we coalesce into
+	// one dump", which is benign for a diagnostic dump that already
+	// overwrites the previous file on each run.
+	void DrainPendingDiagnosticWork()
+	{
+		// Snapshot + clear so a new signal arriving during the dump
+		// schedules another pass on the next tick.
+		const bool dumpStack = (gDumpStackPending != 0);
+		const bool dumpReporter = (gDumpErrorReporterPending != 0);
+		if (!dumpStack && !dumpReporter)
+		{
+			return;
+		}
+		const int signum = static_cast<int>(gLastDumpSignum);
+		gDumpStackPending = 0;
+		gDumpErrorReporterPending = 0;
+
+		if (dumpStack)
+		{
+			DumpProcessStackTraceOnSignal(signum);
+		}
+
+		if (dumpReporter)
+		{
+			const auto path = error_reporter::DumpSnapshotToDefaultPath();
+			if (!path.empty()) {
+				LOG_INFO << "Diagnostic dump: error_reporter snapshot -> " << path;
+			} else {
+				LOG_WARN << "Diagnostic dump: error_reporter snapshot failed";
+			}
+		}
+	}
 
 	void InstallDiagnosticSignalHandlerOnce()
 	{
@@ -363,6 +408,11 @@ void Node::Initialize()
 	InstallDiagnosticSignalHandlerOnce();
 	InstallErrorReporterDumpHandlerOnce();
 	InstallFatalSignalHandlerOnce();
+	// Drain the sig_atomic_t flags set by the diagnostic / error_reporter
+	// signal handlers (Review R1 fix). 250 ms cadence is fast enough that
+	// ops doesn't notice the latency between sending SIGUSR1/SIGUSR2 and
+	// the dump file appearing, slow enough to be free CPU overhead.
+	eventLoop->runEvery(0.25, &DrainPendingDiagnosticWork);
 	RegisterHandlers();
 	RegisterEventHandlers();
 	LoadConfigs();

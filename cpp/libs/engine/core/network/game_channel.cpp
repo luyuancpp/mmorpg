@@ -320,10 +320,18 @@ void GameChannel::HandleRpcMessage(const TcpConnectionPtr &conn, const RpcMessag
         break;
     case GameMessageType::RPC_ERROR:
     {
-        // todo.md #70 + #125: on error path, log the full triage context.
+        // todo.md #70 + #125: on error path, log the triage context.
         // The peer rejected our request; surface which RPC fired and which
         // error code came back so the on-call can grep by error_code or
         // by message_id without round-tripping the peer.
+        //
+        // Review R3 fix (2026-05-17): NO stacktrace on this path. Under
+        // an attack where the peer hammers us with malformed requests
+        // that produce RPC_ERROR replies, boost::stacktrace allocation
+        // would become a CPU hotspot on the gate. The error_reporter
+        // record below + the IllegalPacketCounter forceClose path give
+        // enough breadcrumbs for triage; a real crash still gets a
+        // full stack via HandleFatalSignal (todo #105).
         const auto methodName = IsValidMessageId(rpcMessage.message_id())
             ? gRpcMethodRegistry[rpcMessage.message_id()].methodName
             : std::string("<unknown_method>");
@@ -332,7 +340,6 @@ void GameChannel::HandleRpcMessage(const TcpConnectionPtr &conn, const RpcMessag
                   << " method=" << methodName
                   << " error_code=" << rpcMessage.error()
                   << " body_size=" << rpcMessage.body().size();
-        LOG_ERROR << GetCurrentStackTraceAsString(kMaxEntries);
 
         // todo.md #250 slice A — record into process-wide buffer.
         std::ostringstream msg;
@@ -396,7 +403,12 @@ void GameChannel::ProcessMessage(const TcpConnectionPtr &conn, const GameRpcMess
     // NewRoot. For now, every RPC entry starts its own trace — gives
     // each handler chain its own grep-able id in TLOG_* output, no
     // cross-process correlation yet.
-    tracing::tlsTrace = tracing::NewRoot();
+    //
+    // Review O2 fix (2026-05-17): use Set() rather than direct assignment
+    // so the TLS log-prefix cache stays in sync. Direct assignment
+    // skips RefreshLogPrefix() and TLOG_* would emit stale or missing
+    // prefixes until the next mutator path ran.
+    tracing::Set(tracing::NewRoot());
 
     if (!IsValidMessageId(rpcMessage.message_id()))
     {
@@ -444,7 +456,15 @@ void GameChannel::SendErrorResponse(const GameRpcMessage &message, GameErrorCode
 {
     // todo.md #70 + #125: log the rejected request before responding so the
     // server side has a trail even if the peer never reports the failure
-    // upstream. Stack trace pinpoints which handler decided to reject.
+    // upstream.
+    //
+    // Review R3 fix (2026-05-17): NO stacktrace here either. This is the
+    // gate's reject hot-path; an adversarial client sending packets that
+    // produce SendErrorResponse on every receive would turn boost::stacktrace
+    // into a DoS amplifier. error_reporter::Record below + the
+    // IllegalPacketCounter kill switch (todo #236) plus the fatal handler
+    // (todo #105) cover the legitimate triage needs without exposing this
+    // path.
     const auto methodName = IsValidMessageId(message.message_id())
         ? gRpcMethodRegistry[message.message_id()].methodName
         : std::string("<unknown_method>");
@@ -452,7 +472,6 @@ void GameChannel::SendErrorResponse(const GameRpcMessage &message, GameErrorCode
               << " method=" << methodName
               << " error_code=" << errorCode
               << " request_body_size=" << message.body().size();
-    LOG_ERROR << GetCurrentStackTraceAsString(kMaxEntries);
 
     // todo.md #250 slice A — record outgoing rejection into process-wide buffer.
     std::ostringstream msg;

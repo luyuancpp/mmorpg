@@ -7,6 +7,13 @@
 > - `todo.md` — 思考流水(中英混排,新 todo 在末尾追加)
 > - `todo_zh.md` / `todo_en.md` — todo 流水的中/英分版
 
+> **勘误 / Erratum (Review O1, 2026-05-17)**: commit `23cd38907`
+> "docs(notes): consolidate to 4 bilingual files" 误把 6 个 FairyGUI UI
+> 资源(`client/fairygui/qdao/assets/qdao/*.xml` + 2 张 PNG + 它们的
+> `.xml` 配置)和文档整合 commit 在了一起。这些 UI 改动和文档整合无关,
+> 应该单独 commit 或归入相邻的 UI fix。git history 已合并无法 rewrite,
+> 留此勘误避免未来 bisect 时被误导。
+
 ---
 
 # 第一部分 · 核查报告 (Audit Report)
