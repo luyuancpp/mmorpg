@@ -108,6 +108,8 @@
     <ClCompile Include="player\system\player_skill.cpp" />
     <ClCompile Include="player\system\player_tip.cpp" />
     <ClCompile Include="player\system\stress_test_probe.cpp" />
+    <ClCompile Include="player\system\bag_marshal.cpp" />
+    <ClCompile Include="player\system\cross_zone_reaper.cpp" />
     <ClCompile Include="spatial\system\aoi.cpp" />
     <ClCompile Include="spatial\system\grid.cpp" />
     <ClCompile Include="spatial\system\interest.cpp" />

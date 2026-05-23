@@ -2,8 +2,36 @@ syntax = "proto3";
 option go_package = "proto/common/database";
 
 import "proto/common/database/mysql_database_table.proto";
+import "proto/common/database/bag_quest_mail_data.proto";
 
+// PlayerAllData — full snapshot carried across cross-zone migration,
+// persisted by SavePlayerToRedis on logout, and snapshot'd for rollback.
+//
+// Until 2026-05-16 this only contained player_database_data and
+// player_database_1_data — meaning bag/quest/mail were silently dropped
+// on every logout and every cross-zone hop. cross-zone-readiness-audit.md
+// §3.2 件 1 designed the fix: add the three missing data classes as
+// independent sub-messages here (NOT inside player_database, which is
+// already a 7-component grab-bag).
+//
+// Sub-message status (2026-05-16):
+//   • bag_data   — schema landed (conservative subset; game-design
+//                  extensions tracked as TODOs in BagAllData proto)
+//   • quest_data — schema sketched; quest system itself doesn't exist
+//                  in cpp yet, so the field is reserved for when it does
+//   • mail_data  — schema sketched; default plan is mail rides over an
+//                  independent Go service, NOT via PlayerAllData.
+//                  See cross-zone-readiness-audit.md §3.3.
+//
+// Wire-compatibility note: field numbers 4/5/6 are the canonical slots
+// — even if cpp Marshal/Unmarshal doesn't populate quest_data/mail_data
+// today, leaving them numbered prevents future schema drift between
+// the proto and any side-channel storage.
 message PlayerAllData {
   player_database player_database_data = 2;
   player_database_1 player_database_1_data = 3;
+
+  BagAllData   bag_data   = 4;
+  QuestAllData quest_data = 5;
+  MailAllData  mail_data  = 6;
 }

@@ -1,0 +1,135 @@
+# MySQL backup CronJob — daily mysqldump + binlog snapshot.
+#
+# Why this exists:
+#   docs/design/zone_data_rollback.md §3 lists "MySQL binlog 归档" as
+#   priority HIGH. Without it, the灾难恢复级 PITR procedure documented
+#   in §3.2 is theatre — there's nothing to point-in-time-recover from.
+#
+# What it does (every day at 03:17 UTC):
+#   1. mysqldump --all-databases --single-transaction --master-data=2
+#      → /backup/dump/dump-YYYYMMDD-HHMM.sql.gz
+#   2. Copy /var/lib/mysql/binlog/mysql-bin.* into /backup/binlog/
+#   3. Prune dumps older than 30 days, binlogs older than 14 days
+#
+# What it does NOT do:
+#   • Off-cluster archival (S3 / OSS / GCS). Add that as a sidecar / next
+#     CronJob — depends on cloud provider. The PVC bought us "survives pod
+#     restart"; off-cluster archival buys us "survives cluster loss".
+#   • Verify the dump is restorable. Run a periodic restore drill manually
+#     (see Runbook §"演练" in zone_data_rollback.md).
+#
+# Manual trigger:
+#   kubectl create job --from=cronjob/mysql-backup mysql-backup-manual-$(date +%s)
+---
+# Service account so we can RBAC the credentials path later if needed.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: mysql-backup
+---
+# Backup CronJob.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: mysql-backup
+spec:
+  # 03:17 UTC — off-peak, off the :00 minute so we don't share a fleet-wide
+  # spike (every CronJob author picks "0 3 * * *" — don't be that author).
+  schedule: "17 3 * * *"
+  concurrencyPolicy: Forbid          # never overlap two backups
+  successfulJobsHistoryLimit: 7      # keep last week of green runs
+  failedJobsHistoryLimit: 3          # keep last 3 red runs for forensics
+  startingDeadlineSeconds: 600       # if the controller is down >10min, skip this run
+
+  jobTemplate:
+    spec:
+      backoffLimit: 2                # retry twice then alert
+      activeDeadlineSeconds: 7200    # 2h cap — game DB shouldn't take longer
+      template:
+        spec:
+          serviceAccountName: mysql-backup
+          restartPolicy: OnFailure
+          containers:
+            - name: backup
+              image: mysql:8.0       # same image so mysqldump version matches server
+              env:
+                - name: MYSQL_HOST
+                  value: "mysql"
+                - name: MYSQL_USER
+                  value: "root"
+                - name: MYSQL_PASSWORD
+                  # In real deployments switch this to a Secret ref.
+                  # We keep it inline to match the existing mysql.yaml convention.
+                  value: "Mmorpg#2026db"
+              command:
+                - sh
+                - -ec
+                - |
+                  set -u
+                  STAMP="$(date -u +%Y%m%d-%H%M)"
+                  DUMP_DIR="/backup/dump"
+                  BINLOG_DIR="/backup/binlog"
+                  mkdir -p "$DUMP_DIR" "$BINLOG_DIR"
+
+                  echo "=== mysqldump start ($STAMP) ==="
+                  # --master-data=2: write binlog coordinates as a comment, so PITR
+                  #   knows the cut point without locking the server down.
+                  # --single-transaction: consistent snapshot for InnoDB without
+                  #   blocking writers.
+                  # --all-databases: capture every game DB; cheap relative to PITR.
+                  mysqldump \
+                    -h "$MYSQL_HOST" -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" \
+                    --all-databases \
+                    --single-transaction \
+                    --master-data=2 \
+                    --routines --triggers --events \
+                    --quick \
+                    | gzip > "$DUMP_DIR/dump-$STAMP.sql.gz"
+                  echo "Dump size: $(ls -lh $DUMP_DIR/dump-$STAMP.sql.gz | awk '{print $5}')"
+
+                  echo "=== binlog snapshot ==="
+                  # Tell the server to rotate so the file we just dumped is closed.
+                  mysql -h "$MYSQL_HOST" -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" \
+                    -e "FLUSH BINARY LOGS;"
+
+                  # Copy any binlog files we haven't archived yet. The CronJob
+                  # mounts the same PVC the server writes binlogs into.
+                  if [ -d /mysql-data/binlog ]; then
+                    cp -uv /mysql-data/binlog/mysql-bin.[0-9]* "$BINLOG_DIR/" || true
+                  else
+                    echo "WARN: /mysql-data/binlog not mounted — skipping binlog copy"
+                  fi
+
+                  echo "=== prune ==="
+                  # Keep 30 days of dumps, 14 days of binlogs. Tune per retention policy.
+                  find "$DUMP_DIR"   -name 'dump-*.sql.gz'    -mtime +30 -print -delete
+                  find "$BINLOG_DIR" -name 'mysql-bin.[0-9]*' -mtime +14 -print -delete
+
+                  echo "=== done ($STAMP) ==="
+              volumeMounts:
+                - name: backup
+                  mountPath: /backup
+                - name: mysql-data
+                  mountPath: /mysql-data
+                  readOnly: true
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 256Mi
+                limits:
+                  cpu: "1"
+                  memory: 1Gi
+          volumes:
+            - name: backup
+              persistentVolumeClaim:
+                claimName: mysql-backup-pvc
+            - name: mysql-data
+              persistentVolumeClaim:
+                claimName: mysql-data-pvc
+                # readOnly: true on volumeMounts above; the PVC itself is RWO,
+                # but k8s allows multiple read-only mounts of the same RWO PVC
+                # only when the second pod runs on the same node. In practice
+                # the CronJob will land on the MySQL node — works for single-node
+                # dev clusters. Production should switch mysql-data-pvc to RWX
+                # OR drop the binlog copy and rely on `mysqlbinlog --read-from-remote-server`
+                # against the live mysql Service.

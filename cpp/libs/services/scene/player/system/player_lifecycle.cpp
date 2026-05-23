@@ -13,6 +13,8 @@
 #include "core/utils/proto/proto_dirty_compare.h"
 #include "network/node_utils.h"
 #include "player/comp/last_persisted_snapshot_comp.h"
+#include "player/comp/player_frozen_comp.h"
+#include "player/system/cross_zone_reaper.h"
 #include "player/system/player_data_loader.h"
 #include "engine/core/type_define/type_define.h"
 #include "proto/common/event/player_migration_event.pb.h"
@@ -169,7 +171,34 @@ void PlayerLifecycleSystem::HandlePlayerAsyncSaved(Guid playerId, PlayerAllData 
 	auto playerEntity = tlsEcs.GetPlayer(playerId);
 	HandleCrossZoneTransfer(playerEntity);
 
-	if (tlsEcs.actorRegistry.any_of<UnregisterPlayer>(playerEntity))
+	// Cross-zone in flight — DO NOT destroy here.
+	// HandleCrossZoneTransfer set PlayerFrozenComp on the entity above and
+	// published `player_migrate` to Kafka. The entity must stay alive
+	// (write-disabled via the Frozen check in business systems) until either:
+	//   • the destination's `player_migrate_ack` arrives (ACK handler then
+	//     removes PlayerFrozenComp and calls DestroyPlayer);
+	//   • the reaper declares the migration failed (it then removes
+	//     PlayerFrozenComp and unfreezes the entity so the player keeps
+	//     playing on the source side).
+	//
+	// Before this change, the code fell straight through to DestroyPlayer
+	// after Kafka send. If the broker dropped the message or the destination
+	// node crashed, the player vanished on BOTH sides. See
+	// cross-zone-readiness-audit.md §1 失败 B and §3.2 件 2.
+	//
+	// IMPORTANT: this gate must come BEFORE the UnregisterPlayer branch
+	// below — HandleExitGameNode emplaces UnregisterPlayer on the entity
+	// before SavePlayerToRedis runs, so a cross-zone path also carries that
+	// tag. We want PlayerFrozenComp to win.
+	if (tlsEcs.actorRegistry.valid(playerEntity) &&
+		tlsEcs.actorRegistry.any_of<PlayerFrozenComp>(playerEntity))
+	{
+		LOG_INFO << "HandlePlayerAsyncSaved: player " << playerId
+				 << " is frozen for cross-zone migration; deferring destroy until ACK or reaper.";
+		// Still update last-persisted snapshot below so the dirty-save fast
+		// path stays correct if the migration fails and the player resumes.
+	}
+	else if (tlsEcs.actorRegistry.any_of<UnregisterPlayer>(playerEntity))
 	{
 		// Detect saves that outran the player_locator reconnect lease (30s).
 		// See todo.md #280, layer 3. logout_initiated_ms is stamped in
@@ -451,24 +480,95 @@ void PlayerLifecycleSystem::HandleCrossZoneTransfer(entt::entity playerEntity)
 	playerAllDataMessage.mutable_player_database_data()->set_player_id(playerId);
 	playerAllDataMessage.mutable_player_database_1_data()->set_player_id(playerId);
 
+	// ⚠️ KNOWN GAP (cross-zone-readiness-audit.md §1.3): PlayerAllData currently
+	// only carries the 7 ECS components present in player_database. bag, quest,
+	// and mail data are NOT in the proto and will silently vanish on every
+	// cross-zone transition until the BagAllData / QuestAllData / MailAllData
+	// sub-messages are added (audit doc §3.2 件 1, task #23).
+
+	const auto toZoneId = changeInfo->to_zone_id();
+
 	PlayerMigrationEvent request;
 	request.set_player_id(playerId);
 	request.set_from_zone(GetZoneId());
-	request.set_to_zone(changeInfo->to_zone_id());
+	request.set_to_zone(toZoneId);
 	request.mutable_scene_info()->CopyFrom(*changeInfo);
 	request.set_serialized_player_data(std::move(playerAllDataMessage.SerializeAsString()));
 
-	KafkaProducer::Instance().send("player_migrate", request.SerializeAsString(), std::to_string(playerId), changeInfo->to_zone_id());
+	KafkaProducer::Instance().send("player_migrate", request.SerializeAsString(), std::to_string(playerId), toZoneId);
 
-	LOG_INFO << "[CrossZone] Sent player transfer to zone " << changeInfo->to_zone_id() << ": " << playerId;
+	LOG_INFO << "[CrossZone] Sent player transfer to zone " << toZoneId << ": " << playerId;
 
 	PlayerTipSystem::SendToPlayer(playerEntity, kSceneTransferInProgress, {});
+
+	// Freeze the source-side entity instead of immediately destroying it.
+	// Before this change, `DestroyPlayer` ran in HandlePlayerAsyncSaved right
+	// after the Kafka send — meaning a Kafka broker failure or destination-node
+	// crash would lose the player on BOTH sides (source destroyed, destination
+	// never received). See cross-zone-readiness-audit.md §1 失败 B.
+	//
+	// PlayerFrozenComp keeps the entity alive but write-disabled until either:
+	//   • The destination publishes a `player_migrate_ack` (success path) —
+	//     the ACK handler removes the component and calls DestroyPlayer.
+	//   • The reaper declares the migration failed after retries (failure
+	//     path) — the reaper removes the component and unfreezes the entity
+	//     so the player keeps playing on the source side.
+	//
+	// All business systems (AOI / combat / currency / bag / etc.) must
+	// gate on `actorRegistry.any_of<PlayerFrozenComp>(player)` to skip
+	// writes. The audit doc §3.2 件 2 enumerates the systems that need
+	// the gate (still being threaded through — task #26).
+	auto& frozen = tlsEcs.actorRegistry.emplace_or_replace<PlayerFrozenComp>(playerEntity);
+	frozen.frozenAtMs = TimeSystem::NowMillisecondsUTC();
+	frozen.toZoneId = toZoneId;
+	frozen.migrateAttempts = 1;
+
+	// Persist a Redis migration record so the reaper can recover this
+	// migration if the Kafka publish above is lost / destination crashes /
+	// THIS scene node restarts before ACK arrives. attempt=1 because this
+	// is the original publish; the reaper bumps attempt on republish.
+	// See docs/design/cross-zone-readiness-audit.md §3.2 件 3.
+	CrossZoneReaper::RecordMigrationStart(
+		playerId, GetZoneId(), toZoneId, /*toNodeId=*/0u, /*attempt=*/1u);
 
 	tlsEcs.actorRegistry.remove<ChangeSceneInfoComp>(playerEntity);
 }
 
 void PlayerLifecycleSystem::HandlePlayerMigration(const PlayerMigrationEvent &msg)
 {
+	// Idempotency guard — see cross-zone-failure-test-runbook.md §失败 D and
+	// task #32. Kafka rebalance can redeliver player_migrate after we already
+	// processed it (or the source's reaper republishes during a slow ACK
+	// window). If the player entity is already present on this node, the
+	// previous Init must have succeeded — we only need to re-emit the ACK so
+	// the source's reaper / DestroyPlayer path completes. Re-running Init
+	// would create a second entt entity (with the same player_id but a
+	// different entity handle) and the player would "double-spawn" — items
+	// flooded into bag, duplicate AOI entries, etc.
+	const auto existingPlayer = tlsEcs.GetPlayer(msg.player_id());
+	if (existingPlayer != entt::null && tlsEcs.actorRegistry.valid(existingPlayer))
+	{
+		LOG_INFO << "[CrossZone] HandlePlayerMigration: player " << msg.player_id()
+				 << " from zone " << msg.from_zone() << " already present on this node "
+				 << "(duplicate delivery / source reaper retry); skipping Init, "
+				 << "re-emitting ACK so source can converge.";
+		// Fall through to the ACK publish below. SavePlayerToRedis would also
+		// be redundant here (player is already loaded), so skip it too.
+		PlayerMigrationAckEvent ackEvent;
+		ackEvent.set_player_id(msg.player_id());
+		ackEvent.set_from_zone(msg.from_zone());
+		ackEvent.set_to_zone(msg.to_zone());
+		ackEvent.set_ack_at_ms(TimeSystem::NowMillisecondsUTC());
+
+		std::string ackBytes;
+		if (ackEvent.SerializeToString(&ackBytes))
+		{
+			KafkaProducer::Instance().send(
+				"player_migrate_ack", ackBytes, std::to_string(msg.player_id()), msg.from_zone());
+		}
+		return;
+	}
+
 	PlayerAllData playerAllDataMessage;
 	if (!playerAllDataMessage.ParseFromString(msg.serialized_player_data()))
 	{
@@ -479,7 +579,61 @@ void PlayerLifecycleSystem::HandlePlayerMigration(const PlayerMigrationEvent &ms
 	PlayerGameNodeEntryInfoComp enterInfo;
 
 	auto player = InitPlayerFromAllData(playerAllDataMessage, enterInfo);
+	if (!tlsEcs.actorRegistry.valid(player))
+	{
+		// InitPlayerFromAllData rejected the payload (player_id=0 or other
+		// validation failure). Do NOT publish an ACK — the source needs to
+		// see the migration as failed and let the reaper retry / declare
+		// it lost.
+		LOG_ERROR << "[CrossZone] HandlePlayerMigration rejected player_id="
+				  << msg.player_id() << " from zone " << msg.from_zone()
+				  << "; no ACK will be sent.";
+		return;
+	}
+
 	SavePlayerToRedis(player);
+
+	// Publish `player_migrate_ack` so the source-side scene node can clear
+	// its PlayerFrozenComp and DestroyPlayer. Without this ACK the source
+	// entity sits frozen forever (or until the reaper times it out and
+	// unfreezes it, leading to double-presence).
+	//
+	// Payload is a `PlayerMigrationAckEvent` proto (see
+	// proto/common/event/player_migration_event.proto). We use protobuf
+	// rather than JSON for consistency with every other Kafka payload in
+	// this codebase — JSON parsing is an order of magnitude slower and
+	// costs us schema versioning / type safety.
+	//
+	// Kafka partition_key is the same playerId used by `player_migrate`, so
+	// ACK arrives on the same partition's downstream — preserving ordering
+	// with any subsequent migrations of the same player.
+	PlayerMigrationAckEvent ackEvent;
+	ackEvent.set_player_id(msg.player_id());
+	ackEvent.set_from_zone(msg.from_zone());
+	ackEvent.set_to_zone(msg.to_zone());
+	ackEvent.set_ack_at_ms(TimeSystem::NowMillisecondsUTC());
+
+	std::string ackBytes;
+	if (!ackEvent.SerializeToString(&ackBytes))
+	{
+		LOG_ERROR << "[CrossZone] Failed to serialize PlayerMigrationAckEvent for player "
+				  << msg.player_id() << " — source-side reaper will eventually retry the migration.";
+		return;
+	}
+
+	auto ackErr = KafkaProducer::Instance().send(
+		"player_migrate_ack", ackBytes, std::to_string(msg.player_id()), msg.from_zone());
+	if (ackErr != RdKafka::ERR_NO_ERROR)
+	{
+		LOG_ERROR << "[CrossZone] Failed to publish ACK for player " << msg.player_id()
+				  << " from_zone=" << msg.from_zone() << " err=" << RdKafka::err2str(ackErr)
+				  << " — source-side reaper will eventually retry the migration.";
+	}
+	else
+	{
+		LOG_INFO << "[CrossZone] Published ACK for player " << msg.player_id()
+				 << " (from_zone=" << msg.from_zone() << ", to_zone=" << msg.to_zone() << ").";
+	}
 }
 
 entt::entity PlayerLifecycleSystem::InitPlayerFromAllData(const PlayerAllData &playerAllData, const PlayerGameNodeEntryInfoComp &enterInfo)
@@ -665,4 +819,78 @@ bool PlayerLifecycleSystem::IsSaveInFlight(Guid playerId)
 		return false;
 	}
 	return tlsEcs.actorRegistry.any_of<UnregisterPlayer>(playerEntity);
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Cross-zone migration ACK / Frozen state helpers
+//
+// See docs/design/cross-zone-readiness-audit.md §3.2 件 2-3 for the
+// design rationale. Frozen state replaces the old "Kafka send → immediate
+// DestroyPlayer" pattern that silently lost players on broker / dest
+// failure.
+// ─────────────────────────────────────────────────────────────────────
+
+bool PlayerLifecycleSystem::IsCrossZoneFrozen(entt::entity player)
+{
+	if (!tlsEcs.actorRegistry.valid(player))
+	{
+		return false;
+	}
+	return tlsEcs.actorRegistry.any_of<PlayerFrozenComp>(player);
+}
+
+void PlayerLifecycleSystem::HandlePlayerMigrationAck(Guid playerId, uint32_t toZoneId)
+{
+	const auto playerEntity = tlsEcs.GetPlayer(playerId);
+	if (!tlsEcs.actorRegistry.valid(playerEntity))
+	{
+		// Already destroyed (reaper / restart recovery beat us, or this is a
+		// duplicate ACK from Kafka rebalance). Idempotent no-op.
+		LOG_INFO << "[CrossZone] ACK for player " << playerId
+				 << " (zone=" << toZoneId
+				 << ") arrived but entity is gone — assuming already-handled, ignoring.";
+		return;
+	}
+
+	const auto* frozen = tlsEcs.actorRegistry.try_get<PlayerFrozenComp>(playerEntity);
+	if (frozen == nullptr)
+	{
+		// Entity exists but isn't frozen — something is off. Could be:
+		//   • Player reconnected after a failed migration and is live again,
+		//     and a stale ACK from the failed attempt arrived late.
+		//   • Bug in the migration state machine.
+		// Log and bail — refusing to destroy a live player on an unverified ACK.
+		LOG_WARN << "[CrossZone] ACK for player " << playerId
+				 << " (zone=" << toZoneId
+				 << ") arrived but entity is NOT frozen — ignoring (possible stale ACK).";
+		return;
+	}
+
+	if (frozen->toZoneId != 0 && frozen->toZoneId != toZoneId)
+	{
+		// ACK from the wrong zone — almost certainly a duplicate from a
+		// previous failed migration attempt that the reaper already gave up on.
+		// Don't destroy.
+		LOG_WARN << "[CrossZone] ACK zone mismatch for player " << playerId
+				 << " — frozen.toZoneId=" << frozen->toZoneId
+				 << " ack.toZoneId=" << toZoneId << " — ignoring.";
+		return;
+	}
+
+	LOG_INFO << "[CrossZone] ACK confirmed for player " << playerId
+			 << " (zone=" << toZoneId << "); destroying source-side entity.";
+
+	// Order matters:
+	//   1. Remove Frozen so any business system that checks IsCrossZoneFrozen
+	//      between here and DestroyPlayer doesn't see a stale freeze.
+	//   2. Remove gate session — the destination already accepted the player,
+	//      the client should have switched binding via gate routing.
+	//   3. Destroy entity.
+	//   4. Tell the reaper this migration is done so it stops watching the
+	//      Redis player_migration:{playerId} key. (DEL is idempotent — if the
+	//      reaper TTL beat us to it, this is a harmless no-op.)
+	tlsEcs.actorRegistry.remove<PlayerFrozenComp>(playerEntity);
+	RemovePlayerSession(playerId);
+	DestroyPlayer(playerId);
+	CrossZoneReaper::RecordMigrationDone(playerId);
 }

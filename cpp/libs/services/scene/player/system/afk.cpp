@@ -5,6 +5,7 @@
 #include "core/constants/fps.h"
 #include "frame/manager/frame_time.h"
 #include "player/comp/afk_comp.h"
+#include "player/comp/player_frozen_comp.h"
 #include "proto/common/component/player_comp.pb.h"
 #include "thread_context/ecs_context.h"
 
@@ -20,7 +21,15 @@ void AfkSystem::Update(double delta)
     // 1. Check active players: if idle too long, mark AFK.
     //    Movement, AOI, and attribute sync systems use exclude<AfkComp>,
     //    so AFK players skip expensive per-tick processing automatically.
-    auto activeView = registry.view<Player, LastActiveFrameComp>(entt::exclude<AfkComp>);
+    //
+    //    PlayerFrozenComp exclude: cross-zone-migrating players are NOT
+    //    idle in the AFK sense — they're held write-disabled waiting for
+    //    the destination ACK. Without this exclude a slow ACK (>30s) would
+    //    flag them AFK, then the AFK-cleanup path could destroy them
+    //    before HandlePlayerMigrationAck runs, defeating Frozen's whole
+    //    purpose. cross-zone-readiness-audit.md §11.2.
+    auto activeView = registry.view<Player, LastActiveFrameComp>(
+        entt::exclude<AfkComp, PlayerFrozenComp>);
     for (auto &&[entity, player, lastActive] : activeView.each())
     {
         if (currentFrame - lastActive.frame >= kAfkInactivityFrames)
@@ -32,7 +41,12 @@ void AfkSystem::Update(double delta)
     }
 
     // 2. Check AFK players: if they received new input, remove AFK.
-    auto afkView = registry.view<Player, AfkComp, LastActiveFrameComp>();
+    //    Frozen players cannot receive client input (RoutePlayerStringMsg
+    //    drops them), so they cannot transition out of AFK while frozen.
+    //    Excluding them here is defensive — the activeView gate above
+    //    already prevents them entering AFK in the first place.
+    auto afkView = registry.view<Player, AfkComp, LastActiveFrameComp>(
+        entt::exclude<PlayerFrozenComp>);
     for (auto &&[entity, player, afkComp, lastActive] : afkView.each())
     {
         if (lastActive.frame > afkComp.afkStartFrame)

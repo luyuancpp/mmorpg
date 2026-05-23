@@ -13,6 +13,7 @@
 #include "modules/transaction_log/anomaly_detector.h"
 #include "modules/transaction_log/transaction_log_system.h"
 #include "proto/common/component/currency_comp.pb.h"
+#include "services/scene/player/system/player_lifecycle.h" // IsCrossZoneFrozen — see cross-zone-readiness-audit.md §11.1
 #include <ecs_context.h>
 
 // ---------------------------------------------------------------------------
@@ -62,6 +63,23 @@ uint32_t CurrencySystem::AddCurrency(entt::entity player, CurrencyType type, int
         LOG_ERROR << "CurrencySystem::AddCurrency: amount must be > 0, got "
                   << amount << " for CurrencyType=" << static_cast<uint32_t>(type)
                   << " entity=" << entt::to_integral(player);
+        return PrintStackAndReturnError(kInvalidParameter);
+    }
+
+    // ── Cross-zone Frozen check (Single Writer guarantee) ───────────────
+    // Player has been marshaled into PlayerAllData and published on Kafka
+    // for transfer to another zone; the source-side entity is alive only
+    // to receive the destination's ACK. Any AddCurrency at this point
+    // would write to the source-side CurrencyComp, never reach the
+    // destination, and silently disappear when DestroyPlayer fires on ACK.
+    // See docs/design/cross-zone-readiness-audit.md §11.1 (write-class
+    // gate catalogue).
+    if (PlayerLifecycleSystem::IsCrossZoneFrozen(player))
+    {
+        LOG_WARN << "CurrencySystem::AddCurrency rejected: player frozen for cross-zone migration. "
+                 << "CurrencyType=" << static_cast<uint32_t>(type)
+                 << " amount=" << amount
+                 << " entity=" << entt::to_integral(player);
         return PrintStackAndReturnError(kInvalidParameter);
     }
 
@@ -157,6 +175,19 @@ uint32_t CurrencySystem::DeductCurrency(entt::entity player, CurrencyType type, 
         LOG_ERROR << "CurrencySystem::DeductCurrency: amount must be > 0, got "
                   << amount << " for CurrencyType=" << static_cast<uint32_t>(type)
                   << " entity=" << entt::to_integral(player);
+        return PrintStackAndReturnError(kInvalidParameter);
+    }
+
+    // ── Cross-zone Frozen check (Single Writer guarantee) ───────────────
+    // See AddCurrency above for rationale. Deduct rejected for the same
+    // reason — the write would never reach the destination zone and the
+    // source entity is about to be DestroyPlayer'd on ACK.
+    if (PlayerLifecycleSystem::IsCrossZoneFrozen(player))
+    {
+        LOG_WARN << "CurrencySystem::DeductCurrency rejected: player frozen for cross-zone migration. "
+                 << "CurrencyType=" << static_cast<uint32_t>(type)
+                 << " amount=" << amount
+                 << " entity=" << entt::to_integral(player);
         return PrintStackAndReturnError(kInvalidParameter);
     }
 

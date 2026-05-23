@@ -30,6 +30,31 @@ public:
 	static void HandleExitGameNode(entt::entity player);
 	static void HandleCrossZoneTransfer(entt::entity playerEntity);
 	static void HandlePlayerMigration(const PlayerMigrationEvent& msg);
+
+	// Cross-zone migration ACK handler.
+	//
+	// Called when this node receives a `player_migrate_ack` Kafka message
+	// confirming the destination zone successfully loaded the migrating
+	// player. Removes PlayerFrozenComp and finally calls DestroyPlayer to
+	// release the source-side entity.
+	//
+	// If the matching Frozen entity is not present (player already destroyed
+	// by reaper / manual intervention / restart recovery), this is a no-op
+	// — duplicate ACKs are idempotent.
+	//
+	// See docs/design/cross-zone-readiness-audit.md §3.2 件 3 for the full
+	// ACK protocol and §7 for failure handling. The Kafka topic plumbing
+	// is task #25 (still pending — this stub only handles the "ACK arrived"
+	// half of the protocol).
+	static void HandlePlayerMigrationAck(Guid player_id, uint32_t to_zone_id);
+
+	// True iff this player is currently frozen for cross-zone migration.
+	// Business systems (AOI / combat / currency / bag / chat / movement)
+	// MUST check this and skip writes when it returns true — Frozen entities
+	// are conceptually "not on this node anymore" even though the entt entity
+	// still exists. See cross-zone-readiness-audit.md §3.2 件 2.
+	static bool IsCrossZoneFrozen(entt::entity player);
+
 	static entt::entity InitPlayerFromAllData(const PlayerAllData& playerAllData, const PlayerGameNodeEntryInfoComp& enterInfo);
 	static void SavePlayerToRedis(entt::entity player);
 

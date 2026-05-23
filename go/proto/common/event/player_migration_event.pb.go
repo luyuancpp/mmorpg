@@ -122,6 +122,88 @@ func (x *PlayerMigrationEvent) GetSceneInfo() *component.ChangeSceneInfoComp {
 	return nil
 }
 
+// Cross-zone migration acknowledgement.
+//
+// Published by the destination scene node on Kafka topic `player_migrate_ack`
+// after it successfully loads a migrating player from `PlayerMigrationEvent`.
+// The source-side scene node consumes this ACK to:
+//  1. Remove PlayerFrozenComp from the source-side entity.
+//  2. Finally call DestroyPlayer (which was deferred precisely until this ACK).
+//
+// See docs/design/cross-zone-readiness-audit.md §3.2 件 2-3 for the full ACK
+// protocol and §7 for failure handling (reaper-driven retry / timeout).
+//
+// Partition key MUST be player_id (same as the originating PlayerMigrationEvent)
+// so ACK arrives on the same Kafka partition's downstream — preserving ordering
+// with any subsequent migrations of the same player.
+type PlayerMigrationAckEvent struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PlayerId      uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	FromZone      uint32                 `protobuf:"varint,2,opt,name=from_zone,json=fromZone,proto3" json:"from_zone,omitempty"` // The source zone that originated the migration.
+	ToZone        uint32                 `protobuf:"varint,3,opt,name=to_zone,json=toZone,proto3" json:"to_zone,omitempty"`       // The destination zone that accepted the player.
+	AckAtMs       int64                  `protobuf:"varint,4,opt,name=ack_at_ms,json=ackAtMs,proto3" json:"ack_at_ms,omitempty"`  // Wall-clock millis when the ACK was published.
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PlayerMigrationAckEvent) Reset() {
+	*x = PlayerMigrationAckEvent{}
+	mi := &file_proto_common_event_player_migration_event_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PlayerMigrationAckEvent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PlayerMigrationAckEvent) ProtoMessage() {}
+
+func (x *PlayerMigrationAckEvent) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_common_event_player_migration_event_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PlayerMigrationAckEvent.ProtoReflect.Descriptor instead.
+func (*PlayerMigrationAckEvent) Descriptor() ([]byte, []int) {
+	return file_proto_common_event_player_migration_event_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *PlayerMigrationAckEvent) GetPlayerId() uint64 {
+	if x != nil {
+		return x.PlayerId
+	}
+	return 0
+}
+
+func (x *PlayerMigrationAckEvent) GetFromZone() uint32 {
+	if x != nil {
+		return x.FromZone
+	}
+	return 0
+}
+
+func (x *PlayerMigrationAckEvent) GetToZone() uint32 {
+	if x != nil {
+		return x.ToZone
+	}
+	return 0
+}
+
+func (x *PlayerMigrationAckEvent) GetAckAtMs() int64 {
+	if x != nil {
+		return x.AckAtMs
+	}
+	return 0
+}
+
 var File_proto_common_event_player_migration_event_proto protoreflect.FileDescriptor
 
 const file_proto_common_event_player_migration_event_proto_rawDesc = "" +
@@ -136,7 +218,12 @@ const file_proto_common_event_player_migration_event_proto_rawDesc = "" +
 	"\ato_zone\x18\x06 \x01(\rR\x06toZone\x12\x1c\n" +
 	"\ttimestamp\x18\a \x01(\x03R\ttimestamp\x123\n" +
 	"\n" +
-	"scene_info\x18\t \x01(\v2\x14.ChangeSceneInfoCompR\tsceneInfoB\x14Z\x12proto/common/eventb\x06proto3"
+	"scene_info\x18\t \x01(\v2\x14.ChangeSceneInfoCompR\tsceneInfo\"\x88\x01\n" +
+	"\x17PlayerMigrationAckEvent\x12\x1b\n" +
+	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x1b\n" +
+	"\tfrom_zone\x18\x02 \x01(\rR\bfromZone\x12\x17\n" +
+	"\ato_zone\x18\x03 \x01(\rR\x06toZone\x12\x1a\n" +
+	"\tack_at_ms\x18\x04 \x01(\x03R\aackAtMsB\x14Z\x12proto/common/eventb\x06proto3"
 
 var (
 	file_proto_common_event_player_migration_event_proto_rawDescOnce sync.Once
@@ -150,13 +237,14 @@ func file_proto_common_event_player_migration_event_proto_rawDescGZIP() []byte {
 	return file_proto_common_event_player_migration_event_proto_rawDescData
 }
 
-var file_proto_common_event_player_migration_event_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
+var file_proto_common_event_player_migration_event_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_proto_common_event_player_migration_event_proto_goTypes = []any{
 	(*PlayerMigrationEvent)(nil),          // 0: PlayerMigrationEvent
-	(*component.ChangeSceneInfoComp)(nil), // 1: ChangeSceneInfoComp
+	(*PlayerMigrationAckEvent)(nil),       // 1: PlayerMigrationAckEvent
+	(*component.ChangeSceneInfoComp)(nil), // 2: ChangeSceneInfoComp
 }
 var file_proto_common_event_player_migration_event_proto_depIdxs = []int32{
-	1, // 0: PlayerMigrationEvent.scene_info:type_name -> ChangeSceneInfoComp
+	2, // 0: PlayerMigrationEvent.scene_info:type_name -> ChangeSceneInfoComp
 	1, // [1:1] is the sub-list for method output_type
 	1, // [1:1] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name
@@ -175,7 +263,7 @@ func file_proto_common_event_player_migration_event_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_common_event_player_migration_event_proto_rawDesc), len(file_proto_common_event_player_migration_event_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   1,
+			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
