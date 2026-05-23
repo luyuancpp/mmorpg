@@ -2,8 +2,8 @@
 <packageDescription id="qdao2026">
   <resources>
     <image id="00010001" name="btn_green.png" path="/" exported="true" size="1024,325" scale="9grid" scale9grid="31,21,216,53" qualityOption="source"/>
-    <image id="00010002" name="list_idle.png" path="/" exported="true" size="1024,274" scale="9grid" scale9grid="23,14,214,38" qualityOption="source"/>
-    <image id="00010003" name="list_active.png" path="/" exported="true" size="1024,274" scale="9grid" scale9grid="23,14,214,38" qualityOption="source"/>
+    <image id="00010002" name="list_idle.png" path="/" exported="true" size="512,184" scale="9grid" scale9grid="32,32,448,120" qualityOption="source"/>
+    <image id="00010003" name="list_active.png" path="/" exported="true" size="512,184" scale="9grid" scale9grid="32,32,448,120" qualityOption="source"/>
     <image id="00010004" name="card_med_idle.png" path="/" exported="true" size="1024,249" scale="9grid" scale9grid="17,12,191,30" qualityOption="source"/>
     <image id="00010005" name="card_med_active.png" path="/" exported="true" size="1024,249" scale="9grid" scale9grid="17,12,191,30" qualityOption="source"/>
     <image id="00010006" name="card_wide_idle.png" path="/" exported="true" size="1024,226" scale="9grid" scale9grid="16,11,283,28" qualityOption="source"/>
