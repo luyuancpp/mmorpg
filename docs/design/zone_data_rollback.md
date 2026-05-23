@@ -166,12 +166,13 @@ pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-zone-up \
 
 ## 3. 当前缺失基建
 
-| 缺失项 | 说明 | 优先级 |
-|--------|------|--------|
-| MySQL 定时备份 + binlog 归档 | K8s MySQL pod 未配置自动备份，需加 CronJob 或用云 RDS | **高** |
-| Redis RDB/AOF 定期快照归档 | 当前 `--appendonly yes` 保证持久化，但无历史时间点恢复能力 | 低（可 FLUSHDB） |
-| Kafka offset 回档工具 | 需脚本将 consumer group offset 重置到指定时间戳 | 中 |
-| 一键 zone 回档脚本 | 将上述步骤封装为 `dev_tools.ps1 -Command k8s-zone-rollback` | 中 |
+| 缺失项 | 状态 | 说明 | 优先级 |
+|--------|------|------|--------|
+| MySQL 定时备份 + binlog 归档 | ✅ **已落地 (2026-05-15)** | `deploy/k8s/manifests/infra/mysql.yaml`(PVC + binlog on)+ `mysql-backup-cronjob.yaml`(每天 03:17 UTC dump + binlog 复制),SOP 见 [`docs/ops/mysql-backup-pitr-runbook.md`](../ops/mysql-backup-pitr-runbook.md) | ~~高~~ |
+| Redis RDB/AOF 定期快照归档 | 未做 | 当前 `--appendonly yes` 保证持久化，但无历史时间点恢复能力 | 低（可 FLUSHDB） |
+| Kafka offset 回档工具 | ✅ **已落地 (2026-05-15)** | `tools/scripts/kafka_offset_reset.ps1`(支持 to-datetime / to-earliest / to-latest / delete-and-recreate-topic 4 种模式,默认 dry-run),注册为 `dev_tools.ps1 -Command kafka-offset-reset` | ~~中~~ |
+| 一键 zone 回档脚本 | ✅ **已落地 (2026-05-15)** | `tools/scripts/k8s_zone_rollback.ps1`(7 步:zone-down / Kafka drain / MySQL PITR 提示暂停 / Redis FLUSHDB / kafka-offset-reset / zone-up / 验证清单),注册为 `dev_tools.ps1 -Command k8s-zone-rollback`,默认 dry-run | ~~中~~ |
+| 备份异地归档(S3/OSS) | 未做 | PVC 只防 pod 重启,不防整个集群 / 机房挂 | 高(生产前必做) |
 
 ---
 

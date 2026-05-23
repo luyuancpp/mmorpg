@@ -26,6 +26,15 @@ type CrossServerError int32
 const (
 	CrossServerError_kCross_server_errorOK    CrossServerError = 0
 	CrossServerError_kSceneTransferInProgress CrossServerError = 129
+	// Cross-zone migration failed after the source-side reaper exhausted
+	// its retries (or the destination ACK was repeatedly missing).
+	// Source side has unfrozen the player, kept them on the source zone,
+	// and sent this tip so the client UI can dismiss the in-progress
+	// overlay and let the player re-enter the portal manually.
+	// Producer: cpp/libs/services/scene/player/system/cross_zone_reaper.cpp
+	//
+	//	ProcessStaleEntry() (after kMaxAttempts exhausted).
+	CrossServerError_kSceneTransferFailed CrossServerError = 130
 )
 
 // Enum value maps for CrossServerError.
@@ -33,10 +42,12 @@ var (
 	CrossServerError_name = map[int32]string{
 		0:   "kCross_server_errorOK",
 		129: "kSceneTransferInProgress",
+		130: "kSceneTransferFailed",
 	}
 	CrossServerError_value = map[string]int32{
 		"kCross_server_errorOK":    0,
 		"kSceneTransferInProgress": 129,
+		"kSceneTransferFailed":     130,
 	}
 )
 
@@ -71,10 +82,11 @@ var File_cross_server_error_tip_proto protoreflect.FileDescriptor
 
 const file_cross_server_error_tip_proto_rawDesc = "" +
 	"\n" +
-	"\x1ccross_server_error_tip.proto*N\n" +
+	"\x1ccross_server_error_tip.proto*i\n" +
 	"\x12cross_server_error\x12\x19\n" +
 	"\x15kCross_server_errorOK\x10\x00\x12\x1d\n" +
-	"\x18kSceneTransferInProgress\x10\x81\x01B\x14Z\x12generated/pb/tableb\x06proto3"
+	"\x18kSceneTransferInProgress\x10\x81\x01\x12\x19\n" +
+	"\x14kSceneTransferFailed\x10\x82\x01B\x14Z\x12generated/pb/tableb\x06proto3"
 
 var (
 	file_cross_server_error_tip_proto_rawDescOnce sync.Once

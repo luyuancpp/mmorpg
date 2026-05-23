@@ -61,6 +61,7 @@
     <ClCompile Include="common\database\mysql_database_table.pb.cc" />
     <ClCompile Include="common\database\player_cache.pb.cc" />
     <ClCompile Include="common\database\rollback_database_table.pb.cc" />
+    <ClCompile Include="common\database\bag_quest_mail_data.pb.cc" />
     <ClCompile Include="common\event\actor_combat_state_event.pb.cc" />
     <ClCompile Include="common\event\actor_event.pb.cc" />
     <ClCompile Include="common\event\buff_event.pb.cc" />

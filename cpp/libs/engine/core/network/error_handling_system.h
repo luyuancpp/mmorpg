@@ -40,7 +40,12 @@ void SendErrorToClient(const Request& request, Response& response, uint32_t err)
 
     if (err != 0) {
         const auto* descriptor = request.GetDescriptor();
-        const std::string protoName = descriptor ? descriptor->full_name() : std::string("<unknown>");
+        // protobuf >=27 returns absl::string_view from full_name(); the
+        // implicit conversion to std::string is gone after the absl
+        // upgrade, so construct explicitly.
+        const std::string protoName = descriptor
+            ? std::string(descriptor->full_name())
+            : std::string("<unknown>");
         const auto messageId = request.message_content().message_id();
 
         LOG_ERROR << "[SendErrorToClient] rejecting RPC: error_code=" << err

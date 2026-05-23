@@ -9,6 +9,24 @@
 
 // Stateless system that handles all currency mutations.
 // Every add/deduct goes through this system — no direct field writes.
+//
+// ⚠️ DEFERRED-CLAWBACK INVARIANT (do not break):
+//   `AddCurrency` is the SINGLE unified currency-credit entry point. The
+//   补缴 (deferred clawback) hook in currency_system.cpp lines 95-128
+//   intercepts here. If you grant currency by:
+//     • calling `currency.mutable_values()->Set(idx, x)` directly
+//     • assigning to a `*balance = ...` pointer obtained outside this system
+//     • bypassing this class via Kafka writes that overwrite CurrencyComp
+//   the clawback hook is silently bypassed and any active debts won't deduct.
+//
+//   If you genuinely need a non-clawback path (e.g. snapshot restore), use
+//   the explicit TX_ROLLBACK_RESTORE / TX_SYSTEM_GRANT pathways and document
+//   why clawback should not apply to that grant.
+//
+//   Audit history (see docs/ops/deferred-clawback-bypass-audit-2026-05.md):
+//     • 2026-05-15: grep -r "mutable_values\(\)" cpp/ → 2 hits, both in
+//       currency_system.cpp (EnsureCurrencySlots init, ResolveCurrencyField
+//       private helper). 0 external callers. Invariant holds.
 class CurrencySystem
 {
 public:

@@ -30,6 +30,12 @@ message UnregisterPlayer
 	int64 logout_initiated_ms = 1;
 }
 
+// NOTE: PlayerFrozenComp is intentionally NOT defined here.
+// It is a pure runtime marker (no persistence, no serialization, no IPC),
+// declared in cpp/libs/services/scene/player/comp/player_frozen_comp.h as
+// a plain C++ struct — proto is the wrong tool for "transient ECS tag".
+// See docs/design/cross-zone-readiness-audit.md §3.2 件 2.
+
 message PlayerUint64Comp
 {
 	uint64 registration_timestamp  = 1;

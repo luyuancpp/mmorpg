@@ -17,6 +17,12 @@ type Config struct {
 
 	// Login admin gRPC client (for orphan account cleanup during rollback)
 	LoginAdminRpc zrpc.RpcClientConf `json:",optional"`
+
+	// Prometheus /metrics HTTP listen address (host:port). Empty = disabled.
+	// Scraped by Prometheus alongside scene_manager. Exposes per-RPC outcome /
+	// latency, per-player lock contention, version mismatch, rollback counts.
+	// See go/data_service/internal/metrics/metrics.go for the metric list.
+	MetricsListenAddr string `json:",optional"`
 }
 
 type DevRedisConfig struct {

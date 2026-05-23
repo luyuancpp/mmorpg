@@ -82,6 +82,78 @@ public:
 
     static std::size_t CalculateStackGridSize(std::size_t itemStackSize, std::size_t stackSize);
 
+    // ── Persistence/migration accessors ───────────────────────────────
+    // Added 2026-05-17 to let bag_marshal serialize/restore the bag's
+    // state across cross-zone migration / rollback / persistence
+    // (see docs/design/cross-zone-readiness-audit.md §3.2 件 1 +
+    // cpp/libs/services/scene/player/system/bag_marshal.{h,cpp}).
+    //
+    // These accessors are intentionally minimal — they expose just
+    // enough surface to iterate items and rebuild from a snapshot,
+    // without leaking ECS internals. Production gameplay still goes
+    // through AddItem / RemoveItem / Neaten / Unlock above.
+
+    // Iterate items as (guid, ItemComp) pairs. The ItemComp is the
+    // proto stored in the bag's internal item registry — caller MUST
+    // NOT mutate or persist the pointer beyond the loop, the next
+    // AddItem/RemoveItem can invalidate it.
+    template <typename Fn>
+    void ForEachItem(Fn&& fn) const
+    {
+        for (const auto& [entity, item] : itemRegistry_.view<ItemComp>().each())
+        {
+            // Reverse-lookup the guid: items_ maps guid → entity, so
+            // we walk items_ to find the guid matching this entity.
+            for (const auto& [guid, mappedEntity] : items_)
+            {
+                if (mappedEntity == entity)
+                {
+                    fn(guid, item);
+                    break;
+                }
+            }
+        }
+    }
+
+    // Get item position by guid (inverse of pos_). Returns kInvalidU32Id
+    // if the guid isn't in this bag. Used by marshal to fill
+    // ItemEntry.pos.
+    uint32_t GetItemPosByGuid(Guid guid) const
+    {
+        for (const auto& [pos, mappedGuid] : pos_)
+        {
+            if (mappedGuid == guid)
+            {
+                return pos;
+            }
+        }
+        return kInvalidU32Id;
+    }
+
+    // Replace the bag's contents wholesale. Used by bag_marshal::Unmarshal
+    // when receiving a migrating player or restoring a snapshot —
+    // destroys whatever was here and rebuilds from the snapshot.
+    //
+    // NOT for gameplay use. Skips AddItem's anomaly detection /
+    // transaction_log emission / gain-block checks because the items
+    // were already validated when they were originally added in the
+    // source zone / pre-snapshot state.
+    void ResetFromSnapshot();
+
+    // Insert one item entry at a known position with a known guid.
+    // Companion to ResetFromSnapshot. Used by bag_marshal::Unmarshal
+    // to replay items one by one without re-running stack/anomaly logic.
+    void InsertItemForRestore(Guid guid, uint32_t configId, uint32_t stackSize, uint32_t pos);
+
+    // Set capacity (replays Bag::Unlock's effect without the audit log).
+    // Used by Unmarshal to restore gameplay-unlocked slots.
+    void SetCapacityForRestore(std::size_t capacity)
+    {
+        capacity_ = capacity;
+    }
+
+    std::size_t GetCapacity() const { return capacity_; }
+
 private:
     Guid GeneratorItemGuid();
     bool IsInvalidItemGuid(const ItemComp &item) const;

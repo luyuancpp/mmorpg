@@ -593,3 +593,66 @@ bool Bag::CanStack(const ItemComp &litem, const ItemComp &ritem)
 {
 	return litem.config_id() == ritem.config_id();
 }
+
+// ── Snapshot/migration restore ────────────────────────────────────────
+// Wholesale replace bag contents from a snapshot — used by
+// bag_marshal::Unmarshal when receiving a migrating player or
+// restoring a rollback snapshot. NOT for gameplay use.
+//
+// Skips AddItem's anomaly detection / transaction_log / gain-block
+// checks because the items were already validated when originally
+// added in the source zone (or pre-snapshot state). Re-running those
+// checks here would double-count anomaly events and emit duplicate
+// TX_SYSTEM_GRANT records.
+//
+// See cpp/libs/services/scene/player/system/bag_marshal.{h,cpp} for
+// the proto bridge and docs/design/cross-zone-readiness-audit.md §3.2
+// 件 1 for the cross-zone migration design that motivated this.
+void Bag::ResetFromSnapshot()
+{
+	// Drop every ItemComp the bag holds — itemRegistry_ is a private
+	// entt::registry, dropping its entities effectively wipes the bag.
+	for (const auto &[guid, entity] : items_)
+	{
+		if (itemRegistry_.valid(entity))
+		{
+			itemRegistry_.destroy(entity);
+		}
+	}
+	items_.clear();
+	pos_.clear();
+	// capacity_ deliberately left alone — SetCapacityForRestore sets it
+	// from BagAllData.capacities before InsertItemForRestore calls fire.
+}
+
+void Bag::InsertItemForRestore(Guid guid, uint32_t configId, uint32_t stackSize, uint32_t pos)
+{
+	if (guid == kInvalidGuid)
+	{
+		LOG_ERROR << "Bag::InsertItemForRestore: refusing invalid guid (configId=" << configId << ")";
+		return;
+	}
+	if (items_.find(guid) != items_.end())
+	{
+		// Duplicate guid in snapshot — log and skip. Indicates upstream
+		// data corruption; better to drop one copy than crash.
+		LOG_ERROR << "Bag::InsertItemForRestore: duplicate guid=" << guid
+				  << " configId=" << configId << " in snapshot, skipping second copy";
+		return;
+	}
+
+	// Build the entt entity + ItemComp the same shape AddItem would.
+	auto itemEntity = itemRegistry_.create();
+	auto &itemComp = itemRegistry_.emplace<ItemComp>(itemEntity);
+	itemComp.set_item_id(guid);
+	itemComp.set_config_id(configId);
+	itemComp.set_size(stackSize);
+
+	items_[guid] = itemEntity;
+	// Position is persisted from the source-side bag layout. Don't
+	// auto-Neaten — the player expects items to be where they left them.
+	if (pos != kInvalidU32Id)
+	{
+		pos_[pos] = guid;
+	}
+}

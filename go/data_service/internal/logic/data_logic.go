@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"data_service/internal/constants"
+	"data_service/internal/metrics"
 	"data_service/internal/svc"
 
 	goredis "github.com/redis/go-redis/v9"
@@ -123,16 +124,20 @@ type SavePlayerDataResp struct {
 func acquirePlayerLock(ctx context.Context, svcCtx *svc.ServiceContext, playerID uint64) (goredis.Cmdable, uint32, error) {
 	client, err := svcCtx.Router.ClientForPlayer(ctx, playerID)
 	if err != nil {
+		metrics.ObservePlayerLock("error")
 		return nil, constants.ErrCodeRedis, err
 	}
 	locked, err := svcCtx.Router.AcquirePlayerLock(ctx, playerID)
 	if err != nil {
+		metrics.ObservePlayerLock("error")
 		return nil, constants.ErrCodeRedis, err
 	}
 	if !locked {
+		metrics.ObservePlayerLock("conflict")
 		logx.Errorf("player %d data is being written by another process", playerID)
 		return nil, constants.ErrCodeLockConflict, nil
 	}
+	metrics.ObservePlayerLock("acquired")
 	return client, 0, nil
 }
 
@@ -150,13 +155,21 @@ func checkVersion(ctx context.Context, client goredis.Cmdable, playerID uint64, 
 }
 
 func SavePlayerData(ctx context.Context, svcCtx *svc.ServiceContext, req *SavePlayerDataReq) (*SavePlayerDataResp, error) {
+	startTime := time.Now()
 	client, errCode, err := acquirePlayerLock(ctx, svcCtx, req.PlayerID)
 	if errCode != 0 {
+		outcome := "redis_error"
+		if errCode == constants.ErrCodeLockConflict {
+			outcome = "lock_conflict"
+		}
+		metrics.ObserveSavePlayerData(outcome, startTime)
 		return &SavePlayerDataResp{ErrorCode: errCode}, err
 	}
 	defer svcCtx.Router.ReleasePlayerLock(ctx, req.PlayerID)
 
 	if mismatch, curVer := checkVersion(ctx, client, req.PlayerID, req.ExpectedVersion); mismatch {
+		metrics.ObserveVersionMismatch("save_player_data")
+		metrics.ObserveSavePlayerData("version_mismatch", startTime)
 		return &SavePlayerDataResp{ErrorCode: constants.ErrCodeVersionMismatch, NewVersion: curVer}, nil
 	}
 
@@ -168,9 +181,11 @@ func SavePlayerData(ctx context.Context, svcCtx *svc.ServiceContext, req *SavePl
 	incrCmd := pipe.Incr(ctx, versionKey(req.PlayerID))
 	_, err = pipe.Exec(ctx)
 	if err != nil {
+		metrics.ObserveSavePlayerData("redis_error", startTime)
 		return &SavePlayerDataResp{ErrorCode: constants.ErrCodeRedis}, err
 	}
 
+	metrics.ObserveSavePlayerData("ok", startTime)
 	return &SavePlayerDataResp{NewVersion: uint64(incrCmd.Val())}, nil
 }
 

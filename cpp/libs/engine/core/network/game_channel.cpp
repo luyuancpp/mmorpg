@@ -335,16 +335,24 @@ void GameChannel::HandleRpcMessage(const TcpConnectionPtr &conn, const RpcMessag
         const auto methodName = IsValidMessageId(rpcMessage.message_id())
             ? gRpcMethodRegistry[rpcMessage.message_id()].methodName
             : std::string("<unknown_method>");
+        // GameRpcMessage carries payload in either `request` or `response`
+        // depending on type; an RPC_ERROR response itself has neither set,
+        // so just record the size of whichever is non-empty (typically 0).
+        const auto bodySize = rpcMessage.request().size() + rpcMessage.response().size();
         LOG_ERROR << "[GameChannel] RPC_ERROR received: message_id="
                   << rpcMessage.message_id()
                   << " method=" << methodName
                   << " error_code=" << rpcMessage.error()
-                  << " body_size=" << rpcMessage.body().size();
+                  << " body_size=" << bodySize;
+        // Per R3 fix (2026-05-17): NO stacktrace on this path — under an
+        // attack, boost::stacktrace allocation would become a CPU hotspot.
+        // The error_reporter::Record() below + IllegalPacketCounter
+        // forceClose path give enough breadcrumbs for triage.
 
         // todo.md #250 slice A — record into process-wide buffer.
         std::ostringstream msg;
         msg << "method=" << methodName << " message_id=" << rpcMessage.message_id()
-            << " body_size=" << rpcMessage.body().size();
+            << " body_size=" << bodySize;
         error_reporter::Record(rpcMessage.error(), "rpc_error_in", msg.str());
         break;
     }
@@ -468,15 +476,21 @@ void GameChannel::SendErrorResponse(const GameRpcMessage &message, GameErrorCode
     const auto methodName = IsValidMessageId(message.message_id())
         ? gRpcMethodRegistry[message.message_id()].methodName
         : std::string("<unknown_method>");
+    // The rejected message is typically a REQUEST; its payload is in the
+    // `request` field. RESPONSE-type rejects fall back to `response` size.
+    const auto requestBodySize = message.request().size() + message.response().size();
     LOG_ERROR << "[GameChannel] sending RPC_ERROR: message_id=" << message.message_id()
               << " method=" << methodName
               << " error_code=" << errorCode
-              << " request_body_size=" << message.body().size();
+              << " request_body_size=" << requestBodySize;
+    // Per R3 fix: NO stacktrace on RPC_ERROR send path either — same
+    // attack-cost concern as the receive path above. error_reporter::Record
+    // captures the breadcrumb for triage.
 
     // todo.md #250 slice A — record outgoing rejection into process-wide buffer.
     std::ostringstream msg;
     msg << "method=" << methodName << " message_id=" << message.message_id()
-        << " request_body_size=" << message.body().size();
+        << " request_body_size=" << requestBodySize;
     error_reporter::Record(static_cast<uint32_t>(errorCode), "rpc_error_out", msg.str());
 
     GameRpcMessage errorResponse;

@@ -41,3 +41,4 @@ const ContractsKafkaRedirectToGateEventEventId = 37
 const ContractsKafkaBroadcastToPlayersEventEventId = 38
 const ContractsKafkaPushToPlayerEventEventId = 39
 const ContractsKafkaBroadcastToSceneEventEventId = 40
+const PlayerMigrationAckEventEventId = 41
