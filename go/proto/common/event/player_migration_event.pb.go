@@ -32,8 +32,40 @@ type PlayerMigrationEvent struct {
 	ToZone               uint32                         `protobuf:"varint,6,opt,name=to_zone,json=toZone,proto3" json:"to_zone,omitempty"`
 	Timestamp            int64                          `protobuf:"varint,7,opt,name=timestamp,proto3" json:"timestamp,omitempty"` // Event generation time
 	SceneInfo            *component.ChangeSceneInfoComp `protobuf:"bytes,9,opt,name=scene_info,json=sceneInfo,proto3" json:"scene_info,omitempty"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
+	// SHA-256 of `serialized_player_data` taken at publish time.
+	//
+	// Why this exists (cross-zone-readiness-audit.md §7 失败 D):
+	//
+	//	Kafka rebalance / re-assignment can redeliver the same
+	//	`player_migrate` to the destination after we already processed it.
+	//	The destination's idempotency guard in HandlePlayerMigration
+	//	currently leans on "is the player entity already present in this
+	//	node's registry" — a structural check that catches the common
+	//	case but is fragile under restart-recovery (entity not yet built
+	//	when the duplicate arrives) and migration-failure-then-retry
+	//	(the reaper republishes a *fresh* payload that may differ from
+	//	the original, e.g. the player gained an item between the original
+	//	send and the retry).
+	//
+	//	The SHA-256 lets the destination distinguish:
+	//	  • exact-duplicate delivery (same hash) → skip Init, re-emit ACK
+	//	  • reaper retry with mutated payload (different hash) → process
+	//	    as a fresh migration, the source's most recent state wins
+	//
+	//	Source side computes once on send. Destination compares against
+	//	the hash it stamps onto a per-player de-dup key when it processes
+	//	a migration; details in HandlePlayerMigration.
+	//
+	// Wire compatibility:
+	//
+	//	Empty bytes is the "absent" signal. Older nodes (pre-this-field)
+	//	publish empty; destination treats empty hash as "fall back to the
+	//	structural check." The structural check still catches every case
+	//	we've seen in stress tests; the hash is belt-and-suspenders for
+	//	the rare edge case (reaper retry vs Kafka redelivery race).
+	PayloadSha256 []byte `protobuf:"bytes,10,opt,name=payload_sha256,json=payloadSha256,proto3" json:"payload_sha256,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *PlayerMigrationEvent) Reset() {
@@ -118,6 +150,13 @@ func (x *PlayerMigrationEvent) GetTimestamp() int64 {
 func (x *PlayerMigrationEvent) GetSceneInfo() *component.ChangeSceneInfoComp {
 	if x != nil {
 		return x.SceneInfo
+	}
+	return nil
+}
+
+func (x *PlayerMigrationEvent) GetPayloadSha256() []byte {
+	if x != nil {
+		return x.PayloadSha256
 	}
 	return nil
 }
@@ -208,7 +247,7 @@ var File_proto_common_event_player_migration_event_proto protoreflect.FileDescri
 
 const file_proto_common_event_player_migration_event_proto_rawDesc = "" +
 	"\n" +
-	"/proto/common/event/player_migration_event.proto\x1a'proto/common/component/scene_comp.proto\"\xc2\x02\n" +
+	"/proto/common/event/player_migration_event.proto\x1a'proto/common/component/scene_comp.proto\"\xe9\x02\n" +
 	"\x14PlayerMigrationEvent\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12&\n" +
 	"\x0fsource_scene_id\x18\x02 \x01(\x04R\rsourceSceneId\x12&\n" +
@@ -218,7 +257,9 @@ const file_proto_common_event_player_migration_event_proto_rawDesc = "" +
 	"\ato_zone\x18\x06 \x01(\rR\x06toZone\x12\x1c\n" +
 	"\ttimestamp\x18\a \x01(\x03R\ttimestamp\x123\n" +
 	"\n" +
-	"scene_info\x18\t \x01(\v2\x14.ChangeSceneInfoCompR\tsceneInfo\"\x88\x01\n" +
+	"scene_info\x18\t \x01(\v2\x14.ChangeSceneInfoCompR\tsceneInfo\x12%\n" +
+	"\x0epayload_sha256\x18\n" +
+	" \x01(\fR\rpayloadSha256\"\x88\x01\n" +
 	"\x17PlayerMigrationAckEvent\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x1b\n" +
 	"\tfrom_zone\x18\x02 \x01(\rR\bfromZone\x12\x17\n" +

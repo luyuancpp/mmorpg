@@ -319,6 +319,7 @@ inline constexpr player_database::Impl_::Impl_(
         level_component_{nullptr},
         currency_{nullptr},
         stress_test_probe_{nullptr},
+        merge_state_{nullptr},
         player_id_{::uint64_t{0u}} {}
 
 template <typename>
@@ -438,7 +439,7 @@ const ::uint32_t
         0,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::player_database, _impl_._has_bits_),
-        12, // hasbit index offset
+        13, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::player_database, _impl_.player_id_),
         PROTOBUF_FIELD_OFFSET(::player_database, _impl_.transform_),
         PROTOBUF_FIELD_OFFSET(::player_database, _impl_.uint64_pb_component_),
@@ -448,7 +449,8 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::player_database, _impl_.level_component_),
         PROTOBUF_FIELD_OFFSET(::player_database, _impl_.currency_),
         PROTOBUF_FIELD_OFFSET(::player_database, _impl_.stress_test_probe_),
-        8,
+        PROTOBUF_FIELD_OFFSET(::player_database, _impl_.merge_state_),
+        9,
         0,
         1,
         2,
@@ -457,6 +459,7 @@ const ::uint32_t
         5,
         6,
         7,
+        8,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::player_database_1, _impl_._has_bits_),
         5, // hasbit index offset
@@ -522,9 +525,9 @@ static const ::_pbi::MigrationSchema
         {51, sizeof(::account_share_database)},
         {56, sizeof(::player_centre_database)},
         {63, sizeof(::player_database)},
-        {84, sizeof(::player_database_1)},
-        {91, sizeof(::player_snapshot)},
-        {110, sizeof(::rollback_audit_log)},
+        {86, sizeof(::player_database_1)},
+        {93, sizeof(::player_snapshot)},
+        {112, sizeof(::rollback_audit_log)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::_user_default_instance_._instance,
@@ -571,7 +574,7 @@ const char descriptor_table_protodef_proto_2fcommon_2fdatabase_2fmysql_5fdatabas
     "base\022\021\n\tplayer_id\030\001 \001(\004\022+\n\nscene_info\030\002 "
     "\001(\0132\027.PlayerSceneContextComp:7\212\222\364\001\026playe"
     "r_centre_database\222\222\364\001\tplayer_id\262\222\364\001\tplay"
-    "er_id\"\270\003\n\017player_database\022\021\n\tplayer_id\030\001"
+    "er_id\"\344\003\n\017player_database\022\021\n\tplayer_id\030\001"
     " \001(\004\022\035\n\ttransform\030\002 \001(\0132\n.Transform\022.\n\023u"
     "int64_pb_component\030\003 \001(\0132\021.PlayerUint64C"
     "omp\022(\n\nskill_list\030\004 \001(\0132\024.PlayerSkillLis"
@@ -580,26 +583,27 @@ const char descriptor_table_protodef_proto_2fcommon_2fdatabase_2fmysql_5fdatabas
     "onent\030\006 \001(\0132\023.BaseAttributesComp\022#\n\017leve"
     "l_component\030\007 \001(\0132\n.LevelComp\022\037\n\010currenc"
     "y\030\010 \001(\0132\r.CurrencyComp\0221\n\021stress_test_pr"
-    "obe\030\t \001(\0132\026.PlayerStressTestProbe:5\212\222\364\001\017"
-    "player_database\222\222\364\001\tplayer_id\262\222\364\001\tplayer"
-    "_id\350\222\364\001\001\"\222\001\n\021player_database_1\022\021\n\tplayer"
-    "_id\030\001 \001(\004\0221\n\021stress_test_probe\030\002 \001(\0132\026.P"
-    "layerStressTestProbe:7\212\222\364\001\021player_databa"
-    "se_1\222\222\364\001\tplayer_id\262\222\364\001\tplayer_id\350\222\364\001\001\"\316\001"
-    "\n\017player_snapshot\022\n\n\002id\030\001 \001(\004\022\021\n\tplayer_"
-    "id\030\002 \001(\004\022\017\n\007zone_id\030\003 \001(\r\022\025\n\rsnapshot_ty"
-    "pe\030\004 \001(\r\022\022\n\ncreated_at\030\005 \001(\004\022\016\n\006reason\030\006"
-    " \001(\t\022\020\n\010operator\030\007 \001(\t\022\014\n\004data\030\010 \001(\014:0\212\222"
-    "\364\001\017player_snapshot\222\222\364\001\002id\262\222\364\001\002id\332\222\364\001\tpla"
-    "yer_id\"\273\002\n\022rollback_audit_log\022\n\n\002id\030\001 \001("
-    "\004\022\021\n\tplayer_id\030\002 \001(\004\022\017\n\007zone_id\030\003 \001(\r\022\025\n"
-    "\rrollback_type\030\004 \001(\r\022\030\n\020snapshot_id_used"
-    "\030\005 \001(\004\022 \n\030pre_rollback_snapshot_id\030\006 \001(\004"
-    "\022\023\n\013target_time\030\007 \001(\004\022\030\n\020players_affecte"
-    "d\030\010 \001(\r\022\026\n\016players_failed\030\t \001(\r\022\016\n\006reaso"
-    "n\030\n \001(\t\022\020\n\010operator\030\013 \001(\t\022\022\n\ncreated_at\030"
-    "\014 \001(\004:%\212\222\364\001\022rollback_audit_log\222\222\364\001\002id\262\222\364"
-    "\001\002idB\021Z\017common/databaseb\006proto3"
+    "obe\030\t \001(\0132\026.PlayerStressTestProbe\022*\n\013mer"
+    "ge_state\030\n \001(\0132\025.PlayerMergeStateComp:5\212"
+    "\222\364\001\017player_database\222\222\364\001\tplayer_id\262\222\364\001\tpl"
+    "ayer_id\350\222\364\001\001\"\222\001\n\021player_database_1\022\021\n\tpl"
+    "ayer_id\030\001 \001(\004\0221\n\021stress_test_probe\030\002 \001(\013"
+    "2\026.PlayerStressTestProbe:7\212\222\364\001\021player_da"
+    "tabase_1\222\222\364\001\tplayer_id\262\222\364\001\tplayer_id\350\222\364\001"
+    "\001\"\316\001\n\017player_snapshot\022\n\n\002id\030\001 \001(\004\022\021\n\tpla"
+    "yer_id\030\002 \001(\004\022\017\n\007zone_id\030\003 \001(\r\022\025\n\rsnapsho"
+    "t_type\030\004 \001(\r\022\022\n\ncreated_at\030\005 \001(\004\022\016\n\006reas"
+    "on\030\006 \001(\t\022\020\n\010operator\030\007 \001(\t\022\014\n\004data\030\010 \001(\014"
+    ":0\212\222\364\001\017player_snapshot\222\222\364\001\002id\262\222\364\001\002id\332\222\364\001"
+    "\tplayer_id\"\273\002\n\022rollback_audit_log\022\n\n\002id\030"
+    "\001 \001(\004\022\021\n\tplayer_id\030\002 \001(\004\022\017\n\007zone_id\030\003 \001("
+    "\r\022\025\n\rrollback_type\030\004 \001(\r\022\030\n\020snapshot_id_"
+    "used\030\005 \001(\004\022 \n\030pre_rollback_snapshot_id\030\006"
+    " \001(\004\022\023\n\013target_time\030\007 \001(\004\022\030\n\020players_aff"
+    "ected\030\010 \001(\r\022\026\n\016players_failed\030\t \001(\r\022\016\n\006r"
+    "eason\030\n \001(\t\022\020\n\010operator\030\013 \001(\t\022\022\n\ncreated"
+    "_at\030\014 \001(\004:%\212\222\364\001\022rollback_audit_log\222\222\364\001\002i"
+    "d\262\222\364\001\002idB\021Z\017common/databaseb\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fcommon_2fdatabase_2fmysql_5fdatabase_5ftable_2eproto_deps[7] = {
@@ -615,7 +619,7 @@ static ::absl::once_flag descriptor_table_proto_2fcommon_2fdatabase_2fmysql_5fda
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fdatabase_2fmysql_5fdatabase_5ftable_2eproto = {
     false,
     false,
-    2351,
+    2395,
     descriptor_table_protodef_proto_2fcommon_2fdatabase_2fmysql_5fdatabase_5ftable_2eproto,
     "proto/common/database/mysql_database_table.proto",
     &descriptor_table_proto_2fcommon_2fdatabase_2fmysql_5fdatabase_5ftable_2eproto_once,
@@ -3072,6 +3076,11 @@ void player_database::clear_stress_test_probe() {
   if (_impl_.stress_test_probe_ != nullptr) _impl_.stress_test_probe_->Clear();
   _impl_._has_bits_[0] &= ~0x00000080u;
 }
+void player_database::clear_merge_state() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.merge_state_ != nullptr) _impl_.merge_state_->Clear();
+  _impl_._has_bits_[0] &= ~0x00000100u;
+}
 player_database::player_database(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
     : ::google::protobuf::Message(arena, player_database_class_data_.base()) {
@@ -3126,6 +3135,9 @@ player_database::player_database(
   _impl_.stress_test_probe_ = ((cached_has_bits & 0x00000080u) != 0)
                 ? ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.stress_test_probe_)
                 : nullptr;
+  _impl_.merge_state_ = ((cached_has_bits & 0x00000100u) != 0)
+                ? ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.merge_state_)
+                : nullptr;
   _impl_.player_id_ = from._impl_.player_id_;
 
   // @@protoc_insertion_point(copy_constructor:player_database)
@@ -3160,6 +3172,7 @@ inline void player_database::SharedDtor(MessageLite& self) {
   delete this_._impl_.level_component_;
   delete this_._impl_.currency_;
   delete this_._impl_.stress_test_probe_;
+  delete this_._impl_.merge_state_;
   this_._impl_.~Impl_();
 }
 
@@ -3206,17 +3219,17 @@ player_database::GetClassData() const {
   return player_database_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<4, 9, 8, 0, 2>
+const ::_pbi::TcParseTable<4, 10, 9, 0, 2>
 player_database::_table_ = {
   {
     PROTOBUF_FIELD_OFFSET(player_database, _impl_._has_bits_),
     0, // no _extensions_
-    9, 120,  // max_field_number, fast_idx_mask
+    10, 120,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294966784,  // skipmap
+    4294966272,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    9,  // num_field_entries
-    8,  // num_aux_entries
+    10,  // num_field_entries
+    9,  // num_aux_entries
     offsetof(decltype(_table_), aux_entries),
     player_database_class_data_.base(),
     nullptr,  // post_loop_handler
@@ -3227,8 +3240,8 @@ player_database::_table_ = {
   }, {{
     {::_pbi::TcParser::MiniParse, {}},
     // uint64 player_id = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(player_database, _impl_.player_id_), 8>(),
-     {8, 8, 0, PROTOBUF_FIELD_OFFSET(player_database, _impl_.player_id_)}},
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(player_database, _impl_.player_id_), 9>(),
+     {8, 9, 0, PROTOBUF_FIELD_OFFSET(player_database, _impl_.player_id_)}},
     // .Transform transform = 2;
     {::_pbi::TcParser::FastMtS1,
      {18, 0, 0, PROTOBUF_FIELD_OFFSET(player_database, _impl_.transform_)}},
@@ -3253,7 +3266,9 @@ player_database::_table_ = {
     // .PlayerStressTestProbe stress_test_probe = 9;
     {::_pbi::TcParser::FastMtS1,
      {74, 7, 7, PROTOBUF_FIELD_OFFSET(player_database, _impl_.stress_test_probe_)}},
-    {::_pbi::TcParser::MiniParse, {}},
+    // .PlayerMergeStateComp merge_state = 10;
+    {::_pbi::TcParser::FastMtS1,
+     {82, 8, 8, PROTOBUF_FIELD_OFFSET(player_database, _impl_.merge_state_)}},
     {::_pbi::TcParser::MiniParse, {}},
     {::_pbi::TcParser::MiniParse, {}},
     {::_pbi::TcParser::MiniParse, {}},
@@ -3263,7 +3278,7 @@ player_database::_table_ = {
     65535, 65535
   }}, {{
     // uint64 player_id = 1;
-    {PROTOBUF_FIELD_OFFSET(player_database, _impl_.player_id_), _Internal::kHasBitsOffset + 8, 0,
+    {PROTOBUF_FIELD_OFFSET(player_database, _impl_.player_id_), _Internal::kHasBitsOffset + 9, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
     // .Transform transform = 2;
     {PROTOBUF_FIELD_OFFSET(player_database, _impl_.transform_), _Internal::kHasBitsOffset + 0, 0,
@@ -3289,6 +3304,9 @@ player_database::_table_ = {
     // .PlayerStressTestProbe stress_test_probe = 9;
     {PROTOBUF_FIELD_OFFSET(player_database, _impl_.stress_test_probe_), _Internal::kHasBitsOffset + 7, 7,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+    // .PlayerMergeStateComp merge_state = 10;
+    {PROTOBUF_FIELD_OFFSET(player_database, _impl_.merge_state_), _Internal::kHasBitsOffset + 8, 8,
+    (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
   }},
   {{
       {::_pbi::TcParser::GetTable<::Transform>()},
@@ -3299,6 +3317,7 @@ player_database::_table_ = {
       {::_pbi::TcParser::GetTable<::LevelComp>()},
       {::_pbi::TcParser::GetTable<::CurrencyComp>()},
       {::_pbi::TcParser::GetTable<::PlayerStressTestProbe>()},
+      {::_pbi::TcParser::GetTable<::PlayerMergeStateComp>()},
   }},
   {{
   }},
@@ -3345,6 +3364,10 @@ PROTOBUF_NOINLINE void player_database::Clear() {
       _impl_.stress_test_probe_->Clear();
     }
   }
+  if ((cached_has_bits & 0x00000100u) != 0) {
+    ABSL_DCHECK(_impl_.merge_state_ != nullptr);
+    _impl_.merge_state_->Clear();
+  }
   _impl_.player_id_ = ::uint64_t{0u};
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
@@ -3366,7 +3389,7 @@ PROTOBUF_NOINLINE void player_database::Clear() {
   (void)cached_has_bits;
 
   // uint64 player_id = 1;
-  if ((this_._impl_._has_bits_[0] & 0x00000100u) != 0) {
+  if ((this_._impl_._has_bits_[0] & 0x00000200u) != 0) {
     if (this_._internal_player_id() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
@@ -3428,6 +3451,13 @@ PROTOBUF_NOINLINE void player_database::Clear() {
   if ((cached_has_bits & 0x00000080u) != 0) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
         9, *this_._impl_.stress_test_probe_, this_._impl_.stress_test_probe_->GetCachedSize(), target,
+        stream);
+  }
+
+  // .PlayerMergeStateComp merge_state = 10;
+  if ((cached_has_bits & 0x00000100u) != 0) {
+    target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+        10, *this_._impl_.merge_state_, this_._impl_.merge_state_->GetCachedSize(), target,
         stream);
   }
 
@@ -3498,9 +3528,14 @@ PROTOBUF_NOINLINE void player_database::Clear() {
                     ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.stress_test_probe_);
     }
   }
-   {
-    // uint64 player_id = 1;
+  if ((cached_has_bits & 0x00000300u) != 0) {
+    // .PlayerMergeStateComp merge_state = 10;
     if ((cached_has_bits & 0x00000100u) != 0) {
+      total_size += 1 +
+                    ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.merge_state_);
+    }
+    // uint64 player_id = 1;
+    if ((cached_has_bits & 0x00000200u) != 0) {
       if (this_._internal_player_id() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
             this_._internal_player_id());
@@ -3587,9 +3622,19 @@ void player_database::MergeImpl(::google::protobuf::MessageLite& to_msg, const :
       }
     }
   }
-  if ((cached_has_bits & 0x00000100u) != 0) {
-    if (from._internal_player_id() != 0) {
-      _this->_impl_.player_id_ = from._impl_.player_id_;
+  if ((cached_has_bits & 0x00000300u) != 0) {
+    if ((cached_has_bits & 0x00000100u) != 0) {
+      ABSL_DCHECK(from._impl_.merge_state_ != nullptr);
+      if (_this->_impl_.merge_state_ == nullptr) {
+        _this->_impl_.merge_state_ = ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.merge_state_);
+      } else {
+        _this->_impl_.merge_state_->MergeFrom(*from._impl_.merge_state_);
+      }
+    }
+    if ((cached_has_bits & 0x00000200u) != 0) {
+      if (from._internal_player_id() != 0) {
+        _this->_impl_.player_id_ = from._impl_.player_id_;
+      }
     }
   }
   _this->_impl_._has_bits_[0] |= cached_has_bits;

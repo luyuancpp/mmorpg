@@ -11,6 +11,7 @@
 
 #include "engine/core/error_handling/error_handling.h"
 #include "engine/core/time/system/time.h"
+#include "engine/core/utils/encode/sha256.h"
 #include "engine/infra/messaging/kafka/kafka_producer.h"
 #include "network/node_utils.h"
 #include "player/comp/player_frozen_comp.h"
@@ -229,7 +230,17 @@ namespace
         event.set_player_id(playerId);
         event.set_from_zone(fromZone);
         event.set_to_zone(toZone);
-        event.set_serialized_player_data(payload.SerializeAsString());
+        const std::string serialized = payload.SerializeAsString();
+        // Stamp payload hash so the destination's two-tier dedup can
+        // recognise this republish as carrying mutated state vs the
+        // original send (cross-zone-readiness-audit.md §7 失败 D and
+        // PlayerMigrationEvent.payload_sha256 doc comment). Without
+        // this, a destination that already received the original
+        // publish would re-emit ACK without applying the latest state
+        // — the player would land on the destination with the old
+        // attempt's HP/buff/inventory.
+        event.set_payload_sha256(Sha256::HashToBytes(serialized));
+        event.set_serialized_player_data(serialized);
 
         std::string bytes;
         if (!event.SerializeToString(&bytes))

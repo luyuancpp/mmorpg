@@ -12,6 +12,7 @@
 #include "combat/buff/system/buff.h"
 #include "combat/skill/comp/skill_comp.h"
 #include "combat/skill/constants/skill.h"
+#include "player/comp/player_frozen_comp.h"  // cross-zone-readiness-audit.md §11.3 / §11.4
 #include "spatial/system/view.h"
 #include "proto/common/event/combat_event.pb.h"
 #include "proto/common/event/skill_event.pb.h"
@@ -207,6 +208,16 @@ void SkillSystem::HandleGeneralSkillSpell(const entt::entity casterEntity, const
         return;
     }
 
+    // Frozen caster: skill cast attempted while the player is mid cross-
+    // zone migration. The skill would resolve on the source side and never
+    // reach the destination — treat as no-op. cross-zone-readiness-audit.md §11.3.
+    if (tlsEcs.actorRegistry.any_of<PlayerFrozenComp>(casterEntity))
+    {
+        LOG_WARN << "SkillSystem::HandleGeneralSkillSpell rejected: caster frozen for cross-zone migration. "
+                 << "skill_id=" << skillId << " caster=" << entt::to_integral(casterEntity);
+        return;
+    }
+
 	HandleSkillSpell(casterEntity, skillId);
 
 	LOG_INFO << "Handling general skill spell. Caster: " << entt::to_integral(casterEntity)
@@ -260,6 +271,16 @@ void SkillSystem::HandleSkillFinish(const entt::entity casterEntity, uint64_t sk
 void SkillSystem::HandleChannelSkillSpell(entt::entity casterEntity, uint64_t skillId) {
     if (!tlsEcs.actorRegistry.valid(casterEntity))
     {
+        return;
+    }
+
+    // Frozen caster (channel variant). Same rationale as HandleGeneralSkillSpell —
+    // any in-flight migration means the source-side cast cannot reach the
+    // destination. cross-zone-readiness-audit.md §11.3.
+    if (tlsEcs.actorRegistry.any_of<PlayerFrozenComp>(casterEntity))
+    {
+        LOG_WARN << "SkillSystem::HandleChannelSkillSpell rejected: caster frozen for cross-zone migration. "
+                 << "skill_id=" << skillId << " caster=" << entt::to_integral(casterEntity);
         return;
     }
 
@@ -500,6 +521,20 @@ void CalculateSkillDamage(const entt::entity casterEntity, DamageEventComp& dama
 	{
 		return;
 	}
+
+    // Frozen target: skill landed on a player who is mid cross-zone
+    // migration. Source side no longer represents the player's authoritative
+    // state — applying damage here desynchronizes from the destination, which
+    // is about to spawn the player from the marshalled snapshot (full HP,
+    // stable buffs). Default policy per cross-zone-readiness-audit.md §11.4
+    // is "damage drop" — silently skip; caster's hit goes to lost.
+    if (tlsEcs.actorRegistry.any_of<PlayerFrozenComp>(targetEntity))
+    {
+        LOG_INFO << "[CrossZone] Damage on frozen target dropped. caster="
+                 << entt::to_integral(casterEntity) << " target=" << entt::to_integral(targetEntity)
+                 << " skill_id=" << damageEvent.skill_id();
+        return;
+    }
 
     if (IsTargetDead(targetEntity)) {
         LOG_INFO << "Target is already dead, skipping damage calculation.";

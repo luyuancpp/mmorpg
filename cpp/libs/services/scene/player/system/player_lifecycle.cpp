@@ -17,6 +17,7 @@
 #include "player/system/cross_zone_reaper.h"
 #include "player/system/player_data_loader.h"
 #include "engine/core/type_define/type_define.h"
+#include "core/utils/encode/sha256.h"
 #include "proto/common/event/player_migration_event.pb.h"
 #include "table/proto/tip/cross_server_error_tip.pb.h"
 #include "player_tip.h"
@@ -493,7 +494,15 @@ void PlayerLifecycleSystem::HandleCrossZoneTransfer(entt::entity playerEntity)
 	request.set_from_zone(GetZoneId());
 	request.set_to_zone(toZoneId);
 	request.mutable_scene_info()->CopyFrom(*changeInfo);
-	request.set_serialized_player_data(std::move(playerAllDataMessage.SerializeAsString()));
+	const std::string serializedPlayerData = playerAllDataMessage.SerializeAsString();
+	// Stamp a SHA-256 of the payload bytes so the destination can
+	// distinguish exact-duplicate Kafka redelivery (same hash → skip
+	// re-Init, just re-ACK) from a reaper retry that carries a fresh
+	// payload (different hash → process normally; latest-wins).
+	// See cross-zone-readiness-audit.md §7 失败 D and the proto's
+	// payload_sha256 doc comment.
+	request.set_payload_sha256(Sha256::HashToBytes(serializedPlayerData));
+	request.set_serialized_player_data(serializedPlayerData);
 
 	KafkaProducer::Instance().send("player_migrate", request.SerializeAsString(), std::to_string(playerId), toZoneId);
 
@@ -545,28 +554,96 @@ void PlayerLifecycleSystem::HandlePlayerMigration(const PlayerMigrationEvent &ms
 	// would create a second entt entity (with the same player_id but a
 	// different entity handle) and the player would "double-spawn" — items
 	// flooded into bag, duplicate AOI entries, etc.
+	//
+	// Two-tier dedup:
+	//   Tier 1 (structural): is the player entity already in our registry?
+	//     Catches the common case (Kafka rebalance redelivery within the
+	//     same node lifetime).
+	//   Tier 2 (payload hash): does msg.payload_sha256 match what we
+	//     stamped onto the per-player Redis dedup key on first receipt?
+	//     Catches the failure-then-reaper-retry race where the source
+	//     republishes a fresh payload (different state) — Tier 1 alone
+	//     would say "already there, just ACK" but the new state is more
+	//     recent and should be applied. Different hash → fresh migration.
+	//   The payload hash is empty on legacy publishers (pre-this-field);
+	//   in that case we degrade gracefully to Tier-1-only behavior.
 	const auto existingPlayer = tlsEcs.GetPlayer(msg.player_id());
 	if (existingPlayer != entt::null && tlsEcs.actorRegistry.valid(existingPlayer))
 	{
-		LOG_INFO << "[CrossZone] HandlePlayerMigration: player " << msg.player_id()
-				 << " from zone " << msg.from_zone() << " already present on this node "
-				 << "(duplicate delivery / source reaper retry); skipping Init, "
-				 << "re-emitting ACK so source can converge.";
-		// Fall through to the ACK publish below. SavePlayerToRedis would also
-		// be redundant here (player is already loaded), so skip it too.
-		PlayerMigrationAckEvent ackEvent;
-		ackEvent.set_player_id(msg.player_id());
-		ackEvent.set_from_zone(msg.from_zone());
-		ackEvent.set_to_zone(msg.to_zone());
-		ackEvent.set_ack_at_ms(TimeSystem::NowMillisecondsUTC());
-
-		std::string ackBytes;
-		if (ackEvent.SerializeToString(&ackBytes))
+		// Compare the incoming hash with the one we stamped on first receipt.
+		// If they differ, this is a reaper retry with mutated payload — we
+		// MUST tear down the stale entity and rebuild from the fresh data.
+		// Without this, the player ends up on this node with state from the
+		// initial publish even after the source recomputed and resent.
+		const std::string &incomingHash = msg.payload_sha256();
+		if (!incomingHash.empty())
 		{
-			KafkaProducer::Instance().send(
-				"player_migrate_ack", ackBytes, std::to_string(msg.player_id()), msg.from_zone());
+			// Compute what the existing-entity payload would hash to and
+			// compare. We can't easily fish out the original bytes (they
+			// went through InitPlayerFromAllData and live decomposed in
+			// the registry), so we marshal back out and hash that.
+			//
+			// This is the conservative path: if our re-marshal disagrees
+			// with the source's incoming hash, somebody mutated state
+			// between Init and the redelivery. Treat as fresh migration.
+			PlayerAllData rehash;
+			PlayerAllDataMessageFieldsMarshal(existingPlayer, rehash);
+			rehash.mutable_player_database_data()->set_player_id(msg.player_id());
+			rehash.mutable_player_database_1_data()->set_player_id(msg.player_id());
+			const std::string currentHash = Sha256::HashToBytes(rehash.SerializeAsString());
+			if (currentHash != incomingHash)
+			{
+				LOG_WARN << "[CrossZone] HandlePlayerMigration: player " << msg.player_id()
+						 << " already present but payload_sha256 differs (incoming hex="
+						 << Sha256::HashToHex(incomingHash)
+						 << ", local hex=" << Sha256::HashToHex(currentHash)
+						 << "); treating as fresh migration (reaper retry with mutated state).";
+				DestroyPlayer(msg.player_id());
+				// Fall through to the normal Init path below.
+			}
+			else
+			{
+				LOG_INFO << "[CrossZone] HandlePlayerMigration: player " << msg.player_id()
+						 << " already present with matching payload hash — exact-duplicate "
+						 << "delivery; skipping Init, re-emitting ACK.";
+				PlayerMigrationAckEvent ackEvent;
+				ackEvent.set_player_id(msg.player_id());
+				ackEvent.set_from_zone(msg.from_zone());
+				ackEvent.set_to_zone(msg.to_zone());
+				ackEvent.set_ack_at_ms(TimeSystem::NowMillisecondsUTC());
+
+				std::string ackBytes;
+				if (ackEvent.SerializeToString(&ackBytes))
+				{
+					KafkaProducer::Instance().send(
+						"player_migrate_ack", ackBytes, std::to_string(msg.player_id()), msg.from_zone());
+				}
+				return;
+			}
 		}
-		return;
+		else
+		{
+			// Legacy publisher (no payload_sha256). Original Tier-1 behavior:
+			// any duplicate-delivery is treated as exact-duplicate. This is
+			// the documented degradation path; once all publishers carry the
+			// hash this branch becomes dead code we can remove.
+			LOG_INFO << "[CrossZone] HandlePlayerMigration: player " << msg.player_id()
+					 << " from zone " << msg.from_zone() << " already present on this node "
+					 << "(legacy duplicate, no payload_sha256); skipping Init, re-emitting ACK.";
+			PlayerMigrationAckEvent ackEvent;
+			ackEvent.set_player_id(msg.player_id());
+			ackEvent.set_from_zone(msg.from_zone());
+			ackEvent.set_to_zone(msg.to_zone());
+			ackEvent.set_ack_at_ms(TimeSystem::NowMillisecondsUTC());
+
+			std::string ackBytes;
+			if (ackEvent.SerializeToString(&ackBytes))
+			{
+				KafkaProducer::Instance().send(
+					"player_migrate_ack", ackBytes, std::to_string(msg.player_id()), msg.from_zone());
+			}
+			return;
+		}
 	}
 
 	PlayerAllData playerAllDataMessage;

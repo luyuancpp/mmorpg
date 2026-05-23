@@ -9,9 +9,11 @@
 #include "table/code/buff_table.h"
 #include "actor/attribute/constants/actor_state_attribute_calculator_constants.h"
 #include "combat/buff/comp/buff_comp.h"
+#include "player/comp/player_frozen_comp.h"  // cross-zone-readiness-audit.md §11.2
 #include "proto/scene/player_state_attribute_sync.pb.h"
 #include "proto/common/component/actor_combat_state_comp.pb.h"
 #include <generated/attribute/actorbaseattributess2c_attribute_sync.h>
+#include <thread_context/ecs_context.h>  // tlsEcs + entt::exclude (see movement.cpp pattern)
 
 void UpdateVelocity(entt::entity entity) {
     auto& velocity = tlsEcs.actorRegistry.get_or_emplace<Velocity>(entity);
@@ -73,7 +75,15 @@ void ActorAttributeCalculatorSystem::MarkAttributeForUpdate(const entt::entity a
 
 void ActorAttributeCalculatorSystem::Update()
 {
-    for (auto&& [entity, dirtyFlags] : tlsEcs.actorRegistry.view<AttributeDirtyFlagsComp>().each())
+    // PlayerFrozenComp exclude: a frozen player's attributes were
+    // marshalled into PlayerAllData at HandleCrossZoneTransfer time.
+    // Recomputing them on the source side now is wasted work — and
+    // worse, the values would diverge from what the destination zone
+    // reconstructs from the snapshot. Skip frozen entities until the
+    // ACK / reaper-declared-failure clears the marker.
+    // cross-zone-readiness-audit.md §11.2.
+    for (auto&& [entity, dirtyFlags] : tlsEcs.actorRegistry.view<AttributeDirtyFlagsComp>(
+            entt::exclude<PlayerFrozenComp>).each())
     {
         auto& attributeBits = dirtyFlags.attributeBits;
         for (const auto& [attributeIndex, updateFunction] : kAttributeConfigs) {

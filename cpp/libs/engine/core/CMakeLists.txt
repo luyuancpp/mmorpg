@@ -67,6 +67,7 @@ set(SOURCE_FILES
     time/system/time.cpp
     node/system/zone_utils.cpp
     utils/encode/base64.cpp
+    utils/encode/sha256.cpp
     utils/file/file2string.cpp
     utils/log/async_log_file.cpp
     utils/proto/message_util.cpp

@@ -3598,6 +3598,8 @@ class EnterGameResponse final : public ::google::protobuf::Message
   enum : int {
     kErrorMessageFieldNumber = 1,
     kPlayerIdFieldNumber = 2,
+    kPostMergeNoticeTsFieldNumber = 3,
+    kForceRenameRequiredFieldNumber = 4,
   };
   // .TipInfoMessage error_message = 1;
   bool has_error_message() const;
@@ -3624,11 +3626,31 @@ class EnterGameResponse final : public ::google::protobuf::Message
   void _internal_set_player_id(::uint64_t value);
 
   public:
+  // int64 post_merge_notice_ts = 3;
+  void clear_post_merge_notice_ts() ;
+  ::int64_t post_merge_notice_ts() const;
+  void set_post_merge_notice_ts(::int64_t value);
+
+  private:
+  ::int64_t _internal_post_merge_notice_ts() const;
+  void _internal_set_post_merge_notice_ts(::int64_t value);
+
+  public:
+  // bool force_rename_required = 4;
+  void clear_force_rename_required() ;
+  bool force_rename_required() const;
+  void set_force_rename_required(bool value);
+
+  private:
+  bool _internal_force_rename_required() const;
+  void _internal_set_force_rename_required(bool value);
+
+  public:
   // @@protoc_insertion_point(class_scope:loginpb.EnterGameResponse)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<1, 2,
+  static const ::google::protobuf::internal::TcParseTable<2, 4,
                                    1, 0,
                                    2>
       _table_;
@@ -3652,6 +3674,8 @@ class EnterGameResponse final : public ::google::protobuf::Message
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::TipInfoMessage* PROTOBUF_NULLABLE error_message_;
     ::uint64_t player_id_;
+    ::int64_t post_merge_notice_ts_;
+    bool force_rename_required_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -6152,6 +6176,54 @@ inline ::uint64_t EnterGameResponse::_internal_player_id() const {
 inline void EnterGameResponse::_internal_set_player_id(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.player_id_ = value;
+}
+
+// int64 post_merge_notice_ts = 3;
+inline void EnterGameResponse::clear_post_merge_notice_ts() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.post_merge_notice_ts_ = ::int64_t{0};
+  _impl_._has_bits_[0] &= ~0x00000004u;
+}
+inline ::int64_t EnterGameResponse::post_merge_notice_ts() const {
+  // @@protoc_insertion_point(field_get:loginpb.EnterGameResponse.post_merge_notice_ts)
+  return _internal_post_merge_notice_ts();
+}
+inline void EnterGameResponse::set_post_merge_notice_ts(::int64_t value) {
+  _internal_set_post_merge_notice_ts(value);
+  _impl_._has_bits_[0] |= 0x00000004u;
+  // @@protoc_insertion_point(field_set:loginpb.EnterGameResponse.post_merge_notice_ts)
+}
+inline ::int64_t EnterGameResponse::_internal_post_merge_notice_ts() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.post_merge_notice_ts_;
+}
+inline void EnterGameResponse::_internal_set_post_merge_notice_ts(::int64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.post_merge_notice_ts_ = value;
+}
+
+// bool force_rename_required = 4;
+inline void EnterGameResponse::clear_force_rename_required() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.force_rename_required_ = false;
+  _impl_._has_bits_[0] &= ~0x00000008u;
+}
+inline bool EnterGameResponse::force_rename_required() const {
+  // @@protoc_insertion_point(field_get:loginpb.EnterGameResponse.force_rename_required)
+  return _internal_force_rename_required();
+}
+inline void EnterGameResponse::set_force_rename_required(bool value) {
+  _internal_set_force_rename_required(value);
+  _impl_._has_bits_[0] |= 0x00000008u;
+  // @@protoc_insertion_point(field_set:loginpb.EnterGameResponse.force_rename_required)
+}
+inline bool EnterGameResponse::_internal_force_rename_required() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.force_rename_required_;
+}
+inline void EnterGameResponse::_internal_set_force_rename_required(bool value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.force_rename_required_ = value;
 }
 
 // -------------------------------------------------------------------

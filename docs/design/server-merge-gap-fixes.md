@@ -11,6 +11,25 @@
 > - **P2-K** 不一致检测脚本
 > - **P3-H** 玩家通知机制
 
+## ⚠️ 实施现状(Reality Check, 2026-05-23)
+
+> 5 件差距分别落地到什么程度。**P0-G / P0-J 受底层数据结构限制并未真闭环**,见下表的"⚠️"行。
+>
+> | 差距 | 文档结论 | 实际落地 |
+> |---|---|---|
+> | **P0-G 昵称冲突** | G2 force_rename + 客户端 UI | 🟡 **部分**:`PlayerMergeStateComp.force_rename_required` 字段已加 + login 端读 Redis flag + Response 字段已下发。但**自动检测未实现** — 项目里没有 `player(name, zone_id)` SQL 表,昵称在 protobuf MEDIUMBLOB 里。当前走人工方案(预公告 + 自动加后缀),见 `merge-zone-runbook.md §4.4` |
+> | **P0-J 资源审计** | mail/friend/auction/chat/guild_application 等 audit | 🟡 **部分**:`tools/merge_zone/audit_resources.go` 框架在,但 `mail/auction/chat/guild_application` 这些表**项目里根本不存在**;只剩 friend/friend_request/guild_member/online_keys 4 个 auditor 真有用。等对应 Go 服务上线再补 |
+> | **P1-I 合服 runbook** | T-7/T-1/T-0/T+7 全周期 SOP | ✅ 已写 `docs/ops/merge-zone-runbook.md`(v1.1 已对齐真实情况) |
+> | **P2-K 不一致检测** | 跨表引用扫描 | 🟡 `tools/data_consistency_check/` 4 个 invariant(去 mail orphan 后)。脚本 build 通过但**没在生产/staging 真跑过** |
+> | **P3-H 玩家通知** | post_merge_notice 一次性提示 | ✅ proto 字段 + Redis flag + login 读取 + EnterGameResponse 下发,**等客户端 UI 接** |
+>
+> **总评**:基础设施 65% 闭环。**真正卡死的是 P0-G 名字冲突自动检测** —— 这件事要做,merge_zone 工具必须引 protobuf 依赖去解 player_database blob。当前回避的代价是:合服时**重名玩家依赖人工预公告处理**,客户端 UI 接好后 force_rename 才能被一致 stamp。
+>
+> 客户端没接的部分:
+> - `EnterGameResponse.post_merge_notice_ts` — 弹一次"已合服"通知
+> - `EnterGameResponse.force_rename_required` — 弹改名 UI(非空过不去)
+> - 改名 RPC 处理器需要在改名成功后 DEL Redis key `player_force_rename:{id}`(注释里已声明这是该处理器的责任,但没人改过那个 handler)
+
 ---
 
 ## 一、P0-G: 玩家昵称冲突

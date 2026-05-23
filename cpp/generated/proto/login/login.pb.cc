@@ -468,7 +468,9 @@ inline constexpr EnterGameResponse::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
         error_message_{nullptr},
-        player_id_{::uint64_t{0u}} {}
+        player_id_{::uint64_t{0u}},
+        post_merge_notice_ts_{::int64_t{0}},
+        force_rename_required_{false} {}
 
 template <typename>
 PROTOBUF_CONSTEXPR EnterGameResponse::EnterGameResponse(::_pbi::ConstantInitialized)
@@ -685,11 +687,15 @@ const ::uint32_t
         0,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::loginpb::EnterGameResponse, _impl_._has_bits_),
-        5, // hasbit index offset
+        7, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::loginpb::EnterGameResponse, _impl_.error_message_),
         PROTOBUF_FIELD_OFFSET(::loginpb::EnterGameResponse, _impl_.player_id_),
+        PROTOBUF_FIELD_OFFSET(::loginpb::EnterGameResponse, _impl_.post_merge_notice_ts_),
+        PROTOBUF_FIELD_OFFSET(::loginpb::EnterGameResponse, _impl_.force_rename_required_),
         0,
         1,
+        2,
+        3,
         0x000, // bitmap
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::loginpb::LoginNodeDisconnectRequest, _impl_._has_bits_),
@@ -803,17 +809,17 @@ static const ::_pbi::MigrationSchema
         {58, sizeof(::loginpb::CreatePlayerResponse)},
         {65, sizeof(::loginpb::EnterGameRequest)},
         {72, sizeof(::loginpb::EnterGameResponse)},
-        {79, sizeof(::loginpb::LeaveGameRequest)},
-        {80, sizeof(::loginpb::LoginNodeDisconnectRequest)},
-        {85, sizeof(::loginpb::LoginEmptyResponse)},
-        {86, sizeof(::loginpb::RefreshTokenRequest)},
-        {91, sizeof(::loginpb::RefreshTokenResponse)},
-        {104, sizeof(::loginpb::AssignGateRequest)},
-        {115, sizeof(::loginpb::AssignGateResponse)},
-        {140, sizeof(::loginpb::QueryQueueStatusRequest)},
-        {145, sizeof(::loginpb::QueryQueueStatusResponse)},
-        {168, sizeof(::loginpb::RemovePlayersFromAccountsRequest)},
-        {170, sizeof(::loginpb::RemovePlayersFromAccountsResponse)},
+        {83, sizeof(::loginpb::LeaveGameRequest)},
+        {84, sizeof(::loginpb::LoginNodeDisconnectRequest)},
+        {89, sizeof(::loginpb::LoginEmptyResponse)},
+        {90, sizeof(::loginpb::RefreshTokenRequest)},
+        {95, sizeof(::loginpb::RefreshTokenResponse)},
+        {108, sizeof(::loginpb::AssignGateRequest)},
+        {119, sizeof(::loginpb::AssignGateResponse)},
+        {144, sizeof(::loginpb::QueryQueueStatusRequest)},
+        {149, sizeof(::loginpb::QueryQueueStatusResponse)},
+        {172, sizeof(::loginpb::RemovePlayersFromAccountsRequest)},
+        {174, sizeof(::loginpb::RemovePlayersFromAccountsResponse)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::loginpb::_LoginSessionInfo_default_instance_._instance,
@@ -864,56 +870,57 @@ const char descriptor_table_protodef_proto_2flogin_2flogin_2eproto[] ABSL_ATTRIB
     "\030\001 \001(\0132\017.TipInfoMessage\0224\n\007players\030\002 \003(\013"
     "2#.loginpb.AccountSimplePlayerWrapper\"9\n"
     "\020EnterGameRequest\022\021\n\tplayer_id\030\001 \001(\004\022\022\n\n"
-    "request_id\030\002 \001(\t\"N\n\021EnterGameResponse\022&\n"
-    "\rerror_message\030\001 \001(\0132\017.TipInfoMessage\022\021\n"
-    "\tplayer_id\030\002 \001(\004\"\022\n\020LeaveGameRequest\"0\n\032"
-    "LoginNodeDisconnectRequest\022\022\n\nsession_id"
-    "\030\001 \001(\r\"\024\n\022LoginEmptyResponse\",\n\023RefreshT"
-    "okenRequest\022\025\n\rrefresh_token\030\001 \001(\t\"\246\001\n\024R"
-    "efreshTokenResponse\022&\n\rerror_message\030\001 \001"
-    "(\0132\017.TipInfoMessage\022\024\n\014access_token\030\002 \001("
-    "\t\022\025\n\rrefresh_token\030\003 \001(\t\022\033\n\023access_token"
-    "_expire\030\004 \001(\003\022\034\n\024refresh_token_expire\030\005 "
-    "\001(\003\"]\n\021AssignGateRequest\022\017\n\007zone_id\030\001 \001("
-    "\r\022\023\n\013queue_token\030\002 \001(\t\022\017\n\007account\030\003 \001(\t\022"
-    "\021\n\tdevice_id\030\004 \001(\t\"\353\001\n\022AssignGateRespons"
-    "e\022\n\n\002ip\030\001 \001(\t\022\014\n\004port\030\002 \001(\r\022\025\n\rtoken_pay"
-    "load\030\003 \001(\014\022\027\n\017token_signature\030\004 \001(\014\022\026\n\016t"
-    "oken_deadline\030\005 \001(\003\022\r\n\005error\030\006 \001(\t\022\016\n\006st"
-    "atus\030\007 \001(\r\022\023\n\013queue_token\030\010 \001(\t\022\022\n\nqueue"
-    "_rank\030\t \001(\r\022\023\n\013queue_total\030\n \001(\r\022\026\n\016retr"
-    "y_after_ms\030\013 \001(\r\".\n\027QueryQueueStatusRequ"
-    "est\022\023\n\013queue_token\030\001 \001(\t\"\334\001\n\030QueryQueueS"
-    "tatusResponse\022\016\n\006status\030\001 \001(\r\022\n\n\002ip\030\002 \001("
-    "\t\022\014\n\004port\030\003 \001(\r\022\025\n\rtoken_payload\030\004 \001(\014\022\027"
-    "\n\017token_signature\030\005 \001(\014\022\026\n\016token_deadlin"
-    "e\030\006 \001(\003\022\022\n\nqueue_rank\030\007 \001(\r\022\023\n\013queue_tot"
-    "al\030\010 \001(\r\022\026\n\016retry_after_ms\030\t \001(\r\022\r\n\005erro"
-    "r\030\n \001(\t\"6\n RemovePlayersFromAccountsRequ"
-    "est\022\022\n\nplayer_ids\030\001 \003(\004\"i\n!RemovePlayers"
-    "FromAccountsResponse\022\025\n\rremoved_count\030\001 "
-    "\001(\r\022\027\n\017not_found_count\030\002 \001(\r\022\024\n\014failed_c"
-    "ount\030\003 \001(\r2\305\003\n\021ClientPlayerLogin\0226\n\005Logi"
-    "n\022\025.loginpb.LoginRequest\032\026.loginpb.Login"
-    "Response\022K\n\014CreatePlayer\022\034.loginpb.Creat"
-    "ePlayerRequest\032\035.loginpb.CreatePlayerRes"
-    "ponse\022B\n\tEnterGame\022\031.loginpb.EnterGameRe"
-    "quest\032\032.loginpb.EnterGameResponse\022C\n\tLea"
-    "veGame\022\031.loginpb.LeaveGameRequest\032\033.logi"
-    "npb.LoginEmptyResponse\022N\n\nDisconnect\022#.l"
-    "oginpb.LoginNodeDisconnectRequest\032\033.logi"
-    "npb.LoginEmptyResponse\022K\n\014RefreshToken\022\034"
-    ".loginpb.RefreshTokenRequest\032\035.loginpb.R"
-    "efreshTokenResponse\032\005\210\250\303\001\0012\256\001\n\014LoginPreG"
-    "ate\022E\n\nAssignGate\022\032.loginpb.AssignGateRe"
-    "quest\032\033.loginpb.AssignGateResponse\022W\n\020Qu"
-    "eryQueueStatus\022 .loginpb.QueryQueueStatu"
-    "sRequest\032!.loginpb.QueryQueueStatusRespo"
-    "nse2\200\001\n\nLoginAdmin\022r\n\031RemovePlayersFromA"
-    "ccounts\022).loginpb.RemovePlayersFromAccou"
-    "ntsRequest\032*.loginpb.RemovePlayersFromAc"
-    "countsResponseB\023Z\021login/proto/loginb\006pro"
-    "to3"
+    "request_id\030\002 \001(\t\"\213\001\n\021EnterGameResponse\022&"
+    "\n\rerror_message\030\001 \001(\0132\017.TipInfoMessage\022\021"
+    "\n\tplayer_id\030\002 \001(\004\022\034\n\024post_merge_notice_t"
+    "s\030\003 \001(\003\022\035\n\025force_rename_required\030\004 \001(\010\"\022"
+    "\n\020LeaveGameRequest\"0\n\032LoginNodeDisconnec"
+    "tRequest\022\022\n\nsession_id\030\001 \001(\r\"\024\n\022LoginEmp"
+    "tyResponse\",\n\023RefreshTokenRequest\022\025\n\rref"
+    "resh_token\030\001 \001(\t\"\246\001\n\024RefreshTokenRespons"
+    "e\022&\n\rerror_message\030\001 \001(\0132\017.TipInfoMessag"
+    "e\022\024\n\014access_token\030\002 \001(\t\022\025\n\rrefresh_token"
+    "\030\003 \001(\t\022\033\n\023access_token_expire\030\004 \001(\003\022\034\n\024r"
+    "efresh_token_expire\030\005 \001(\003\"]\n\021AssignGateR"
+    "equest\022\017\n\007zone_id\030\001 \001(\r\022\023\n\013queue_token\030\002"
+    " \001(\t\022\017\n\007account\030\003 \001(\t\022\021\n\tdevice_id\030\004 \001(\t"
+    "\"\353\001\n\022AssignGateResponse\022\n\n\002ip\030\001 \001(\t\022\014\n\004p"
+    "ort\030\002 \001(\r\022\025\n\rtoken_payload\030\003 \001(\014\022\027\n\017toke"
+    "n_signature\030\004 \001(\014\022\026\n\016token_deadline\030\005 \001("
+    "\003\022\r\n\005error\030\006 \001(\t\022\016\n\006status\030\007 \001(\r\022\023\n\013queu"
+    "e_token\030\010 \001(\t\022\022\n\nqueue_rank\030\t \001(\r\022\023\n\013que"
+    "ue_total\030\n \001(\r\022\026\n\016retry_after_ms\030\013 \001(\r\"."
+    "\n\027QueryQueueStatusRequest\022\023\n\013queue_token"
+    "\030\001 \001(\t\"\334\001\n\030QueryQueueStatusResponse\022\016\n\006s"
+    "tatus\030\001 \001(\r\022\n\n\002ip\030\002 \001(\t\022\014\n\004port\030\003 \001(\r\022\025\n"
+    "\rtoken_payload\030\004 \001(\014\022\027\n\017token_signature\030"
+    "\005 \001(\014\022\026\n\016token_deadline\030\006 \001(\003\022\022\n\nqueue_r"
+    "ank\030\007 \001(\r\022\023\n\013queue_total\030\010 \001(\r\022\026\n\016retry_"
+    "after_ms\030\t \001(\r\022\r\n\005error\030\n \001(\t\"6\n RemoveP"
+    "layersFromAccountsRequest\022\022\n\nplayer_ids\030"
+    "\001 \003(\004\"i\n!RemovePlayersFromAccountsRespon"
+    "se\022\025\n\rremoved_count\030\001 \001(\r\022\027\n\017not_found_c"
+    "ount\030\002 \001(\r\022\024\n\014failed_count\030\003 \001(\r2\305\003\n\021Cli"
+    "entPlayerLogin\0226\n\005Login\022\025.loginpb.LoginR"
+    "equest\032\026.loginpb.LoginResponse\022K\n\014Create"
+    "Player\022\034.loginpb.CreatePlayerRequest\032\035.l"
+    "oginpb.CreatePlayerResponse\022B\n\tEnterGame"
+    "\022\031.loginpb.EnterGameRequest\032\032.loginpb.En"
+    "terGameResponse\022C\n\tLeaveGame\022\031.loginpb.L"
+    "eaveGameRequest\032\033.loginpb.LoginEmptyResp"
+    "onse\022N\n\nDisconnect\022#.loginpb.LoginNodeDi"
+    "sconnectRequest\032\033.loginpb.LoginEmptyResp"
+    "onse\022K\n\014RefreshToken\022\034.loginpb.RefreshTo"
+    "kenRequest\032\035.loginpb.RefreshTokenRespons"
+    "e\032\005\210\250\303\001\0012\256\001\n\014LoginPreGate\022E\n\nAssignGate\022"
+    "\032.loginpb.AssignGateRequest\032\033.loginpb.As"
+    "signGateResponse\022W\n\020QueryQueueStatus\022 .l"
+    "oginpb.QueryQueueStatusRequest\032!.loginpb"
+    ".QueryQueueStatusResponse2\200\001\n\nLoginAdmin"
+    "\022r\n\031RemovePlayersFromAccounts\022).loginpb."
+    "RemovePlayersFromAccountsRequest\032*.login"
+    "pb.RemovePlayersFromAccountsResponseB\023Z\021"
+    "login/proto/loginb\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2flogin_2flogin_2eproto_deps[4] = {
@@ -926,7 +933,7 @@ static ::absl::once_flag descriptor_table_proto_2flogin_2flogin_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2flogin_2flogin_2eproto = {
     false,
     false,
-    2963,
+    3025,
     descriptor_table_protodef_proto_2flogin_2flogin_2eproto,
     "proto/login/login.proto",
     &descriptor_table_proto_2flogin_2flogin_2eproto_once,
@@ -3649,7 +3656,13 @@ EnterGameResponse::EnterGameResponse(
   _impl_.error_message_ = ((cached_has_bits & 0x00000001u) != 0)
                 ? ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.error_message_)
                 : nullptr;
-  _impl_.player_id_ = from._impl_.player_id_;
+  ::memcpy(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, player_id_),
+           reinterpret_cast<const char *>(&from._impl_) +
+               offsetof(Impl_, player_id_),
+           offsetof(Impl_, force_rename_required_) -
+               offsetof(Impl_, player_id_) +
+               sizeof(Impl_::force_rename_required_));
 
   // @@protoc_insertion_point(copy_constructor:loginpb.EnterGameResponse)
 }
@@ -3663,9 +3676,9 @@ inline void EnterGameResponse::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena)
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, error_message_),
            0,
-           offsetof(Impl_, player_id_) -
+           offsetof(Impl_, force_rename_required_) -
                offsetof(Impl_, error_message_) +
-               sizeof(Impl_::player_id_));
+               sizeof(Impl_::force_rename_required_));
 }
 EnterGameResponse::~EnterGameResponse() {
   // @@protoc_insertion_point(destructor:loginpb.EnterGameResponse)
@@ -3722,16 +3735,16 @@ EnterGameResponse::GetClassData() const {
   return EnterGameResponse_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<1, 2, 1, 0, 2>
+const ::_pbi::TcParseTable<2, 4, 1, 0, 2>
 EnterGameResponse::_table_ = {
   {
     PROTOBUF_FIELD_OFFSET(EnterGameResponse, _impl_._has_bits_),
     0, // no _extensions_
-    2, 8,  // max_field_number, fast_idx_mask
+    4, 24,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967292,  // skipmap
+    4294967280,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    2,  // num_field_entries
+    4,  // num_field_entries
     1,  // num_aux_entries
     offsetof(decltype(_table_), aux_entries),
     EnterGameResponse_class_data_.base(),
@@ -3741,12 +3754,18 @@ EnterGameResponse::_table_ = {
     ::_pbi::TcParser::GetTable<::loginpb::EnterGameResponse>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // uint64 player_id = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(EnterGameResponse, _impl_.player_id_), 1>(),
-     {16, 1, 0, PROTOBUF_FIELD_OFFSET(EnterGameResponse, _impl_.player_id_)}},
+    // bool force_rename_required = 4;
+    {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(EnterGameResponse, _impl_.force_rename_required_), 3>(),
+     {32, 3, 0, PROTOBUF_FIELD_OFFSET(EnterGameResponse, _impl_.force_rename_required_)}},
     // .TipInfoMessage error_message = 1;
     {::_pbi::TcParser::FastMtS1,
      {10, 0, 0, PROTOBUF_FIELD_OFFSET(EnterGameResponse, _impl_.error_message_)}},
+    // uint64 player_id = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(EnterGameResponse, _impl_.player_id_), 1>(),
+     {16, 1, 0, PROTOBUF_FIELD_OFFSET(EnterGameResponse, _impl_.player_id_)}},
+    // int64 post_merge_notice_ts = 3;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(EnterGameResponse, _impl_.post_merge_notice_ts_), 2>(),
+     {24, 2, 0, PROTOBUF_FIELD_OFFSET(EnterGameResponse, _impl_.post_merge_notice_ts_)}},
   }}, {{
     65535, 65535
   }}, {{
@@ -3756,6 +3775,12 @@ EnterGameResponse::_table_ = {
     // uint64 player_id = 2;
     {PROTOBUF_FIELD_OFFSET(EnterGameResponse, _impl_.player_id_), _Internal::kHasBitsOffset + 1, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    // int64 post_merge_notice_ts = 3;
+    {PROTOBUF_FIELD_OFFSET(EnterGameResponse, _impl_.post_merge_notice_ts_), _Internal::kHasBitsOffset + 2, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kInt64)},
+    // bool force_rename_required = 4;
+    {PROTOBUF_FIELD_OFFSET(EnterGameResponse, _impl_.force_rename_required_), _Internal::kHasBitsOffset + 3, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kBool)},
   }},
   {{
       {::_pbi::TcParser::GetTable<::TipInfoMessage>()},
@@ -3775,7 +3800,11 @@ PROTOBUF_NOINLINE void EnterGameResponse::Clear() {
     ABSL_DCHECK(_impl_.error_message_ != nullptr);
     _impl_.error_message_->Clear();
   }
-  _impl_.player_id_ = ::uint64_t{0u};
+  if ((cached_has_bits & 0x0000000eu) != 0) {
+    ::memset(&_impl_.player_id_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.force_rename_required_) -
+        reinterpret_cast<char*>(&_impl_.player_id_)) + sizeof(_impl_.force_rename_required_));
+  }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
@@ -3812,6 +3841,24 @@ PROTOBUF_NOINLINE void EnterGameResponse::Clear() {
     }
   }
 
+  // int64 post_merge_notice_ts = 3;
+  if ((cached_has_bits & 0x00000004u) != 0) {
+    if (this_._internal_post_merge_notice_ts() != 0) {
+      target =
+          ::google::protobuf::internal::WireFormatLite::WriteInt64ToArrayWithField<3>(
+              stream, this_._internal_post_merge_notice_ts(), target);
+    }
+  }
+
+  // bool force_rename_required = 4;
+  if ((cached_has_bits & 0x00000008u) != 0) {
+    if (this_._internal_force_rename_required() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteBoolToArray(
+          4, this_._internal_force_rename_required(), target);
+    }
+  }
+
   if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
     target =
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
@@ -3837,7 +3884,7 @@ PROTOBUF_NOINLINE void EnterGameResponse::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if ((cached_has_bits & 0x00000003u) != 0) {
+  if ((cached_has_bits & 0x0000000fu) != 0) {
     // .TipInfoMessage error_message = 1;
     if ((cached_has_bits & 0x00000001u) != 0) {
       total_size += 1 +
@@ -3848,6 +3895,19 @@ PROTOBUF_NOINLINE void EnterGameResponse::Clear() {
       if (this_._internal_player_id() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
             this_._internal_player_id());
+      }
+    }
+    // int64 post_merge_notice_ts = 3;
+    if ((cached_has_bits & 0x00000004u) != 0) {
+      if (this_._internal_post_merge_notice_ts() != 0) {
+        total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(
+            this_._internal_post_merge_notice_ts());
+      }
+    }
+    // bool force_rename_required = 4;
+    if ((cached_has_bits & 0x00000008u) != 0) {
+      if (this_._internal_force_rename_required() != 0) {
+        total_size += 2;
       }
     }
   }
@@ -3865,7 +3925,7 @@ void EnterGameResponse::MergeImpl(::google::protobuf::MessageLite& to_msg, const
   (void) cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if ((cached_has_bits & 0x00000003u) != 0) {
+  if ((cached_has_bits & 0x0000000fu) != 0) {
     if ((cached_has_bits & 0x00000001u) != 0) {
       ABSL_DCHECK(from._impl_.error_message_ != nullptr);
       if (_this->_impl_.error_message_ == nullptr) {
@@ -3877,6 +3937,16 @@ void EnterGameResponse::MergeImpl(::google::protobuf::MessageLite& to_msg, const
     if ((cached_has_bits & 0x00000002u) != 0) {
       if (from._internal_player_id() != 0) {
         _this->_impl_.player_id_ = from._impl_.player_id_;
+      }
+    }
+    if ((cached_has_bits & 0x00000004u) != 0) {
+      if (from._internal_post_merge_notice_ts() != 0) {
+        _this->_impl_.post_merge_notice_ts_ = from._impl_.post_merge_notice_ts_;
+      }
+    }
+    if ((cached_has_bits & 0x00000008u) != 0) {
+      if (from._internal_force_rename_required() != 0) {
+        _this->_impl_.force_rename_required_ = from._impl_.force_rename_required_;
       }
     }
   }
@@ -3897,8 +3967,8 @@ void EnterGameResponse::InternalSwap(EnterGameResponse* PROTOBUF_RESTRICT PROTOB
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(EnterGameResponse, _impl_.player_id_)
-      + sizeof(EnterGameResponse::_impl_.player_id_)
+      PROTOBUF_FIELD_OFFSET(EnterGameResponse, _impl_.force_rename_required_)
+      + sizeof(EnterGameResponse::_impl_.force_rename_required_)
       - PROTOBUF_FIELD_OFFSET(EnterGameResponse, _impl_.error_message_)>(
           reinterpret_cast<char*>(&_impl_.error_message_),
           reinterpret_cast<char*>(&other->_impl_.error_message_));

@@ -1,0 +1,186 @@
+{
+  "_comment": [
+    "Grafana dashboard panels for rollback audit observability.",
+    "Drop these into an existing dashboard via 'Import JSON' or merge into a",
+    "fresh dashboard JSON under .panels[]. Counters/histograms emitted by",
+    "go/data_service/internal/metrics/metrics.go (rollback_*, cross_scene_*).",
+    "",
+    "Six panels — three columns × two rows:",
+    "  Row 1 (operational at-a-glance):",
+    "    1. Rollback rate by scope (player|zone|server) — usage volume",
+    "    2. Rollback outcome split (ok|partial|failed) — health",
+    "    3. Players affected (counter delta over time) — blast radius",
+    "  Row 2 (forensics):",
+    "    4. Orphan characters cleaned by scope — zone/server merge hygiene",
+    "    5. Cross-scene transition latency by phase (release|save|load|total)",
+    "    6. Cross-scene transition outcome split — Single Writer health",
+    "",
+    "Alerting (configure in Grafana, not in the JSON):",
+    "  - rollback_total{outcome='failed'} rate > 0.01/s for 5m → page on-call",
+    "  - rollback_total{scope='server'} > 0 in any 1m → page (full-server",
+    "    rollback should never happen unprompted)",
+    "  - cross_scene_transition_total{outcome!='ok'} share > 1% for 10m → page",
+    "",
+    "Source metrics:",
+    "  See go/data_service/internal/metrics/metrics.go (lines 72-90 rollback;",
+    "  lines 53-69 cross-scene). Subsystem prefix is 'data_service'."
+  ],
+  "panels": [
+    {
+      "title": "Rollback Rate by Scope",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "description": "Rate of rollback attempts by scope. player = single-player corrective; zone = mass action; server = full-server reset (should be vanishingly rare).",
+      "targets": [
+        {
+          "expr": "sum by (scope) (rate(data_service_rollback_total[5m]))",
+          "legendFormat": "{{scope}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 25,
+            "stacking": { "mode": "normal" }
+          }
+        }
+      },
+      "gridPos": { "x": 0, "y": 0, "w": 8, "h": 8 }
+    },
+    {
+      "title": "Rollback Outcome Split",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "description": "ok/partial/failed share over time. Sustained partial+failed > 1% suggests data plane (Redis/Kafka) instability — investigate before next rollback attempt.",
+      "targets": [
+        {
+          "expr": "sum by (outcome) (rate(data_service_rollback_total[5m]))",
+          "legendFormat": "{{outcome}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 35,
+            "stacking": { "mode": "percent" }
+          },
+          "color": { "mode": "palette-classic" }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "failed" },
+            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "partial" },
+            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "orange" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "ok" },
+            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "green" } }]
+          }
+        ]
+      },
+      "gridPos": { "x": 8, "y": 0, "w": 8, "h": 8 }
+    },
+    {
+      "title": "Players Affected (delta)",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "description": "Number of players whose data was actually restored, per scope. Spikes correspond to zone/server rollback events; player-scope is steady single-digit per-minute corrective work.",
+      "targets": [
+        {
+          "expr": "sum by (scope) (increase(data_service_rollback_players_affected_total[5m]))",
+          "legendFormat": "{{scope}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80
+          }
+        }
+      },
+      "gridPos": { "x": 16, "y": 0, "w": 8, "h": 8 }
+    },
+    {
+      "title": "Orphan Characters Cleaned by Scope",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "description": "Players created after the rollback target_time and scrubbed during zone/server rollback. Non-zero on player-scope rollback would be a bug — flag immediately.",
+      "targets": [
+        {
+          "expr": "sum by (scope) (increase(data_service_rollback_orphans_cleaned_total[5m]))",
+          "legendFormat": "{{scope}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80
+          }
+        }
+      },
+      "gridPos": { "x": 0, "y": 8, "w": 8, "h": 8 }
+    },
+    {
+      "title": "Cross-Scene Transition Latency (p95) by Phase",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "description": "Per-phase p95 latency. release = old-scene flush; save = data_service write; load = new-scene read; total = end-to-end. Sustained total > 1s = Single Writer pause is hurting players.",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (phase, le) (rate(data_service_cross_scene_transition_latency_seconds_bucket[5m])))",
+          "legendFormat": "{{phase}} p95"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10
+          }
+        }
+      },
+      "gridPos": { "x": 8, "y": 8, "w": 8, "h": 8 }
+    },
+    {
+      "title": "Cross-Scene Transition Outcome Split",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "description": "ok / release_timeout / save_failed / load_failed / aborted. Anything other than ok is a Single-Writer hazard — crashed transitions can leave a player flagged at two scenes.",
+      "targets": [
+        {
+          "expr": "sum by (outcome) (rate(data_service_cross_scene_transition_total[5m]))",
+          "legendFormat": "{{outcome}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 35,
+            "stacking": { "mode": "percent" }
+          }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "ok" },
+            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "green" } }]
+          }
+        ]
+      },
+      "gridPos": { "x": 16, "y": 8, "w": 8, "h": 8 }
+    }
+  ]
+}

@@ -3,6 +3,7 @@
 #include "proto/scene/player_state_attribute_sync.pb.h"
 #include "proto/common/component/actor_comp.pb.h"
 #include "actor/attribute/constants/actor_state_attribute_constants.h"
+#include "player/comp/player_frozen_comp.h"  // cross-zone-readiness-audit.md §11.2
 #include "spatial/comp/scene_node_scene_comp.h"
 #include "spatial/system/view.h"
 #include "rpc/service_metadata/player_state_attribute_sync_service_metadata.h"
@@ -57,7 +58,13 @@ void ActorStateAttributeSyncSystem::Update(const double delta)
 	const auto currentFrame = tlsFrameTimeManager.frameTime.current_frame();
 	EntityVector allAoiEntities, level1Entities, level2Entities, level3Entities;
 
-	for (auto [entity, transform] : tlsEcs.actorRegistry.view<Transform>().each())
+	// PlayerFrozenComp exclude: a frozen player's broadcast position /
+	// attribute snapshot was already captured into PlayerAllData. Source-
+	// side ongoing AOI broadcasts would leak stale state to neighbours
+	// and confuse the destination zone's first-frame reconciliation.
+	// cross-zone-readiness-audit.md §11.2.
+	for (auto [entity, transform] : tlsEcs.actorRegistry.view<Transform>(
+			entt::exclude<PlayerFrozenComp>).each())
 	{
 		const auto* aoiListComp = tlsEcs.actorRegistry.try_get<AoiListComp>(entity);
 		if (!aoiListComp || aoiListComp->entries.empty()) continue;
