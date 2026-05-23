@@ -190,6 +190,7 @@
     <ClCompile Include="time\system\time.cpp" />
     <ClCompile Include="node\system\zone_utils.cpp" />
     <ClCompile Include="utils\encode\base64.cpp" />
+    <ClCompile Include="utils\encode\sha256.cpp" />
     <ClCompile Include="utils\file\file2string.cpp">
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -408,6 +409,7 @@
     <ClInclude Include="utils\data_structures\double_buffer_queue.h" />
     <ClInclude Include="utils\defer\defer.h" />
     <ClInclude Include="utils\encode\base64.h" />
+    <ClInclude Include="utils\encode\sha256.h" />
     <ClInclude Include="utils\file\file2string.h" />
     <ClInclude Include="utils\id\node_id_generator.h" />
     <ClInclude Include="utils\id\snow_flake.h" />

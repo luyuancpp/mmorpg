@@ -464,8 +464,14 @@ type PlayerDatabase struct {
 	// Stress-test instrumentation. Empty during normal play. See
 	// PlayerStressTestProbe for the verification contract.
 	StressTestProbe *component.PlayerStressTestProbe `protobuf:"bytes,9,opt,name=stress_test_probe,json=stressTestProbe,proto3" json:"stress_test_probe,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	// Server-merge transient state (force_rename_required +
+	// post_merge_notice_seen_ms). Default-zero during normal play; stamped
+	// by tools/merge_zone/ during a maintenance-window merge and cleared
+	// on the first qualifying post-merge action. See player_comp.proto's
+	// PlayerMergeStateComp comment for the full contract.
+	MergeState    *component.PlayerMergeStateComp `protobuf:"bytes,10,opt,name=merge_state,json=mergeState,proto3" json:"merge_state,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *PlayerDatabase) Reset() {
@@ -557,6 +563,13 @@ func (x *PlayerDatabase) GetCurrency() *component.CurrencyComp {
 func (x *PlayerDatabase) GetStressTestProbe() *component.PlayerStressTestProbe {
 	if x != nil {
 		return x.StressTestProbe
+	}
+	return nil
+}
+
+func (x *PlayerDatabase) GetMergeState() *component.PlayerMergeStateComp {
+	if x != nil {
+		return x.MergeState
 	}
 	return nil
 }
@@ -893,7 +906,7 @@ const file_proto_common_database_mysql_database_table_proto_rawDesc = "" +
 	"\x16player_centre_database\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x126\n" +
 	"\n" +
-	"scene_info\x18\x02 \x01(\v2\x17.PlayerSceneContextCompR\tsceneInfo:7\x8a\x92\xf4\x01\x16player_centre_database\x92\x92\xf4\x01\tplayer_id\xb2\x92\xf4\x01\tplayer_id\"\xc5\x04\n" +
+	"scene_info\x18\x02 \x01(\v2\x17.PlayerSceneContextCompR\tsceneInfo:7\x8a\x92\xf4\x01\x16player_centre_database\x92\x92\xf4\x01\tplayer_id\xb2\x92\xf4\x01\tplayer_id\"\xfd\x04\n" +
 	"\x0fplayer_database\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12(\n" +
 	"\ttransform\x18\x02 \x01(\v2\n" +
@@ -906,7 +919,10 @@ const file_proto_common_database_mysql_database_table_proto_rawDesc = "" +
 	"\x0flevel_component\x18\a \x01(\v2\n" +
 	".LevelCompR\x0elevelComponent\x12)\n" +
 	"\bcurrency\x18\b \x01(\v2\r.CurrencyCompR\bcurrency\x12B\n" +
-	"\x11stress_test_probe\x18\t \x01(\v2\x16.PlayerStressTestProbeR\x0fstressTestProbe:5\x8a\x92\xf4\x01\x0fplayer_database\x92\x92\xf4\x01\tplayer_id\xb2\x92\xf4\x01\tplayer_id\xe8\x92\xf4\x01\x01\"\xad\x01\n" +
+	"\x11stress_test_probe\x18\t \x01(\v2\x16.PlayerStressTestProbeR\x0fstressTestProbe\x126\n" +
+	"\vmerge_state\x18\n" +
+	" \x01(\v2\x15.PlayerMergeStateCompR\n" +
+	"mergeState:5\x8a\x92\xf4\x01\x0fplayer_database\x92\x92\xf4\x01\tplayer_id\xb2\x92\xf4\x01\tplayer_id\xe8\x92\xf4\x01\x01\"\xad\x01\n" +
 	"\x11player_database_1\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12B\n" +
 	"\x11stress_test_probe\x18\x02 \x01(\v2\x16.PlayerStressTestProbeR\x0fstressTestProbe:7\x8a\x92\xf4\x01\x11player_database_1\x92\x92\xf4\x01\tplayer_id\xb2\x92\xf4\x01\tplayer_id\xe8\x92\xf4\x01\x01\"\x95\x02\n" +
@@ -972,6 +988,7 @@ var file_proto_common_database_mysql_database_table_proto_goTypes = []any{
 	(*component.LevelComp)(nil),              // 18: LevelComp
 	(*component.CurrencyComp)(nil),           // 19: CurrencyComp
 	(*component.PlayerStressTestProbe)(nil),  // 20: PlayerStressTestProbe
+	(*component.PlayerMergeStateComp)(nil),   // 21: PlayerMergeStateComp
 }
 var file_proto_common_database_mysql_database_table_proto_depIdxs = []int32{
 	11, // 0: user_accounts.simple_players:type_name -> AccountSimplePlayerList
@@ -984,12 +1001,13 @@ var file_proto_common_database_mysql_database_table_proto_depIdxs = []int32{
 	18, // 7: player_database.level_component:type_name -> LevelComp
 	19, // 8: player_database.currency:type_name -> CurrencyComp
 	20, // 9: player_database.stress_test_probe:type_name -> PlayerStressTestProbe
-	20, // 10: player_database_1.stress_test_probe:type_name -> PlayerStressTestProbe
-	11, // [11:11] is the sub-list for method output_type
-	11, // [11:11] is the sub-list for method input_type
-	11, // [11:11] is the sub-list for extension type_name
-	11, // [11:11] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	21, // 10: player_database.merge_state:type_name -> PlayerMergeStateComp
+	20, // 11: player_database_1.stress_test_probe:type_name -> PlayerStressTestProbe
+	12, // [12:12] is the sub-list for method output_type
+	12, // [12:12] is the sub-list for method input_type
+	12, // [12:12] is the sub-list for extension type_name
+	12, // [12:12] is the sub-list for extension extendee
+	0,  // [0:12] is the sub-list for field type_name
 }
 
 func init() { file_proto_common_database_mysql_database_table_proto_init() }

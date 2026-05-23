@@ -2443,6 +2443,7 @@ class player_database final : public ::google::protobuf::Message
     kLevelComponentFieldNumber = 7,
     kCurrencyFieldNumber = 8,
     kStressTestProbeFieldNumber = 9,
+    kMergeStateFieldNumber = 10,
     kPlayerIdFieldNumber = 1,
   };
   // .Transform transform = 2;
@@ -2565,6 +2566,21 @@ class player_database final : public ::google::protobuf::Message
   ::PlayerStressTestProbe* PROTOBUF_NONNULL _internal_mutable_stress_test_probe();
 
   public:
+  // .PlayerMergeStateComp merge_state = 10;
+  bool has_merge_state() const;
+  void clear_merge_state() ;
+  const ::PlayerMergeStateComp& merge_state() const;
+  [[nodiscard]] ::PlayerMergeStateComp* PROTOBUF_NULLABLE release_merge_state();
+  ::PlayerMergeStateComp* PROTOBUF_NONNULL mutable_merge_state();
+  void set_allocated_merge_state(::PlayerMergeStateComp* PROTOBUF_NULLABLE value);
+  void unsafe_arena_set_allocated_merge_state(::PlayerMergeStateComp* PROTOBUF_NULLABLE value);
+  ::PlayerMergeStateComp* PROTOBUF_NULLABLE unsafe_arena_release_merge_state();
+
+  private:
+  const ::PlayerMergeStateComp& _internal_merge_state() const;
+  ::PlayerMergeStateComp* PROTOBUF_NONNULL _internal_mutable_merge_state();
+
+  public:
   // uint64 player_id = 1;
   void clear_player_id() ;
   ::uint64_t player_id() const;
@@ -2579,8 +2595,8 @@ class player_database final : public ::google::protobuf::Message
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<4, 9,
-                                   8, 0,
+  static const ::google::protobuf::internal::TcParseTable<4, 10,
+                                   9, 0,
                                    2>
       _table_;
 
@@ -2609,6 +2625,7 @@ class player_database final : public ::google::protobuf::Message
     ::LevelComp* PROTOBUF_NULLABLE level_component_;
     ::CurrencyComp* PROTOBUF_NULLABLE currency_;
     ::PlayerStressTestProbe* PROTOBUF_NULLABLE stress_test_probe_;
+    ::PlayerMergeStateComp* PROTOBUF_NULLABLE merge_state_;
     ::uint64_t player_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -3844,7 +3861,7 @@ inline void player_centre_database::set_allocated_scene_info(::PlayerSceneContex
 inline void player_database::clear_player_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.player_id_ = ::uint64_t{0u};
-  _impl_._has_bits_[0] &= ~0x00000100u;
+  _impl_._has_bits_[0] &= ~0x00000200u;
 }
 inline ::uint64_t player_database::player_id() const {
   // @@protoc_insertion_point(field_get:player_database.player_id)
@@ -3852,7 +3869,7 @@ inline ::uint64_t player_database::player_id() const {
 }
 inline void player_database::set_player_id(::uint64_t value) {
   _internal_set_player_id(value);
-  _impl_._has_bits_[0] |= 0x00000100u;
+  _impl_._has_bits_[0] |= 0x00000200u;
   // @@protoc_insertion_point(field_set:player_database.player_id)
 }
 inline ::uint64_t player_database::_internal_player_id() const {
@@ -4606,6 +4623,99 @@ inline void player_database::set_allocated_stress_test_probe(::PlayerStressTestP
 
   _impl_.stress_test_probe_ = reinterpret_cast<::PlayerStressTestProbe*>(value);
   // @@protoc_insertion_point(field_set_allocated:player_database.stress_test_probe)
+}
+
+// .PlayerMergeStateComp merge_state = 10;
+inline bool player_database::has_merge_state() const {
+  bool value = (_impl_._has_bits_[0] & 0x00000100u) != 0;
+  PROTOBUF_ASSUME(!value || _impl_.merge_state_ != nullptr);
+  return value;
+}
+inline const ::PlayerMergeStateComp& player_database::_internal_merge_state() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  const ::PlayerMergeStateComp* p = _impl_.merge_state_;
+  return p != nullptr ? *p : reinterpret_cast<const ::PlayerMergeStateComp&>(::_PlayerMergeStateComp_default_instance_);
+}
+inline const ::PlayerMergeStateComp& player_database::merge_state() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:player_database.merge_state)
+  return _internal_merge_state();
+}
+inline void player_database::unsafe_arena_set_allocated_merge_state(
+    ::PlayerMergeStateComp* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.merge_state_);
+  }
+  _impl_.merge_state_ = reinterpret_cast<::PlayerMergeStateComp*>(value);
+  if (value != nullptr) {
+    _impl_._has_bits_[0] |= 0x00000100u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000100u;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:player_database.merge_state)
+}
+inline ::PlayerMergeStateComp* PROTOBUF_NULLABLE player_database::release_merge_state() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+
+  _impl_._has_bits_[0] &= ~0x00000100u;
+  ::PlayerMergeStateComp* released = _impl_.merge_state_;
+  _impl_.merge_state_ = nullptr;
+  if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
+    auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    if (GetArena() == nullptr) {
+      delete old;
+    }
+  } else {
+    if (GetArena() != nullptr) {
+      released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    }
+  }
+  return released;
+}
+inline ::PlayerMergeStateComp* PROTOBUF_NULLABLE player_database::unsafe_arena_release_merge_state() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:player_database.merge_state)
+
+  _impl_._has_bits_[0] &= ~0x00000100u;
+  ::PlayerMergeStateComp* temp = _impl_.merge_state_;
+  _impl_.merge_state_ = nullptr;
+  return temp;
+}
+inline ::PlayerMergeStateComp* PROTOBUF_NONNULL player_database::_internal_mutable_merge_state() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.merge_state_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::PlayerMergeStateComp>(GetArena());
+    _impl_.merge_state_ = reinterpret_cast<::PlayerMergeStateComp*>(p);
+  }
+  return _impl_.merge_state_;
+}
+inline ::PlayerMergeStateComp* PROTOBUF_NONNULL player_database::mutable_merge_state()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  _impl_._has_bits_[0] |= 0x00000100u;
+  ::PlayerMergeStateComp* _msg = _internal_mutable_merge_state();
+  // @@protoc_insertion_point(field_mutable:player_database.merge_state)
+  return _msg;
+}
+inline void player_database::set_allocated_merge_state(::PlayerMergeStateComp* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (message_arena == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.merge_state_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = reinterpret_cast<::google::protobuf::Message*>(value)->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    _impl_._has_bits_[0] |= 0x00000100u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000100u;
+  }
+
+  _impl_.merge_state_ = reinterpret_cast<::PlayerMergeStateComp*>(value);
+  // @@protoc_insertion_point(field_set_allocated:player_database.merge_state)
 }
 
 // -------------------------------------------------------------------

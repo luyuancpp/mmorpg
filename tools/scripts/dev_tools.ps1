@@ -1,6 +1,6 @@
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet("help", "pbgen-build", "pbgen-run", "proto-gen-build", "proto-gen-run", "tree", "naming-audit", "naming-apply", "third-party-grpc-build", "iwyu-run", "k8s-infra-up", "k8s-infra-down", "k8s-infra-status", "k8s-zone-up", "k8s-zone-down", "k8s-zone-status", "k8s-zone-rollback", "k8s-all-up", "k8s-all-down", "k8s-all-status", "k8s-build-all", "k8s-exposure-preflight", "k8s-stage-runtime", "k8s-image-preflight", "k8s-build-image", "k8s-push-image", "k8s-release-zone", "k8s-release-all", "go-svc-start", "go-svc-start-exe", "go-svc-stop", "go-svc-status", "go-svc-list", "go-svc-build", "go-svc-build-images", "go-svc-push-images", "java-svc-build-image", "java-svc-push-image", "cpp-node-start", "cpp-node-stop", "cpp-node-status", "cpp-node-list", "dev-start", "dev-start-exe", "dev-start-zones", "dev-stop", "dev-status", "dev-robot-zones", "merge-zone", "kafka-offset-reset")]
+    [ValidateSet("help", "pbgen-build", "pbgen-run", "proto-gen-build", "proto-gen-run", "tree", "naming-audit", "naming-apply", "third-party-grpc-build", "iwyu-run", "k8s-infra-up", "k8s-infra-down", "k8s-infra-status", "k8s-zone-up", "k8s-zone-down", "k8s-zone-status", "k8s-zone-rollback", "k8s-all-up", "k8s-all-down", "k8s-all-status", "k8s-build-all", "k8s-exposure-preflight", "k8s-stage-runtime", "k8s-image-preflight", "k8s-build-image", "k8s-push-image", "k8s-release-zone", "k8s-release-all", "go-svc-start", "go-svc-start-exe", "go-svc-stop", "go-svc-status", "go-svc-list", "go-svc-build", "go-svc-build-images", "go-svc-push-images", "java-svc-build-image", "java-svc-push-image", "cpp-node-start", "cpp-node-stop", "cpp-node-status", "cpp-node-list", "dev-start", "dev-start-exe", "dev-start-zones", "dev-stop", "dev-status", "dev-robot-zones", "merge-zone", "merge-zone-audit", "kafka-offset-reset")]
     [string]$Command,
 
     [string]$ConfigPath = "",
@@ -94,6 +94,9 @@ param(
     [string]$MergeRedisAddr = "127.0.0.1:6379",
     [string]$MergeRedisPassword = "",
     [int]$MergeRedisDB = 2,
+    # merge-zone-audit only — switches to post-merge verification mode that
+    # asserts source-zone state has been emptied. See merge-zone-runbook.md §5.5.
+    [switch]$VerifyMerged,
 
     # ── kafka-offset-reset ────────────────────────────────────────
     # See tools/scripts/kafka_offset_reset.ps1 for full docs.
@@ -708,10 +711,51 @@ switch ($Command) {
         & (Join-Path $ScriptDir "go_services.ps1") -Command status
     }
     "merge-zone" {
-        $mergeArgs = @("-SourceZone", $MergeSourceZone, "-TargetZone", $MergeTargetZone, "-MySqlDsn", $MergeMySqlDsn, "-RedisAddr", $MergeRedisAddr, "-RedisDB", $MergeRedisDB)
-        if ($MergeRedisPassword -ne "") { $mergeArgs += @("-RedisPassword", $MergeRedisPassword) }
-        if ($DryRun) { $mergeArgs += "-DryRun" }
-        & (Join-Path $ScriptDir "merge_zone.ps1") @mergeArgs
+        # Drives tools/merge_zone/main.go directly via `go run`. The earlier
+        # implementation invoked a `merge_zone.ps1` wrapper that never
+        # actually existed in the repo — we route to `go run` to remove the
+        # phantom dependency. See docs/ops/merge-zone-runbook.md §5.
+        if ($MergeSourceZone -le 0 -or $MergeTargetZone -le 0) {
+            throw "merge-zone requires -MergeSourceZone <id> and -MergeTargetZone <id>"
+        }
+        $repoRoot = Resolve-Path (Join-Path $ScriptDir "..\..")
+        $mergeGoArgs = @(
+            "run", "./tools/merge_zone",
+            "-source-zone", $MergeSourceZone,
+            "-target-zone", $MergeTargetZone,
+            "-mysql-dsn", $MergeMySqlDsn,
+            "-redis-addr", $MergeRedisAddr,
+            "-redis-db", $MergeRedisDB
+        )
+        if ($MergeRedisPassword -ne "") { $mergeGoArgs += @("-redis-password", $MergeRedisPassword) }
+        if ($DryRun) { $mergeGoArgs += "-dry-run" } else { $mergeGoArgs += "-apply" }
+        Push-Location $repoRoot
+        try { & go @mergeGoArgs }
+        finally { Pop-Location }
+    }
+    "merge-zone-audit" {
+        # Read-only inspection — see tools/merge_zone/audit_resources.go and
+        # docs/ops/merge-zone-runbook.md §4.2. Reports per-resource counts +
+        # conflicts; never writes. Safe to run any time, even on a live zone.
+        # T-1 day uses default mode; post-merge verification uses -VerifyMerged.
+        if ($MergeSourceZone -le 0 -or $MergeTargetZone -le 0) {
+            throw "merge-zone-audit requires -MergeSourceZone <id> and -MergeTargetZone <id>"
+        }
+        $repoRoot = Resolve-Path (Join-Path $ScriptDir "..\..")
+        $auditArgs = @(
+            "run", "./tools/merge_zone",
+            "-mode", "audit",
+            "-source-zone", $MergeSourceZone,
+            "-target-zone", $MergeTargetZone,
+            "-mysql-dsn", $MergeMySqlDsn,
+            "-redis-addr", $MergeRedisAddr,
+            "-redis-db", $MergeRedisDB
+        )
+        if ($MergeRedisPassword -ne "") { $auditArgs += @("-redis-password", $MergeRedisPassword) }
+        if ($VerifyMerged) { $auditArgs += "-verify-merged" }
+        Push-Location $repoRoot
+        try { & go @auditArgs }
+        finally { Pop-Location }
     }
     "kafka-offset-reset" {
         # Wraps kafka_offset_reset.ps1 — see docs/design/zone_data_rollback.md §3 step 4.

@@ -277,10 +277,90 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 	// suppress the outer defer.
 	lockHandedOff = true
 
+	// Post-merge one-shot signals (server-merge-gap-fixes.md §1 / §5).
+	// Read flags stamped by tools/merge_zone/post_merge_stamp.go; if
+	// either is set, populate the response and DELete the key so the
+	// next login doesn't re-trigger the UI. Best-effort: read errors
+	// don't block login (the player can still enter; they just miss
+	// the one-shot notice this round and we'll catch them next time).
+	consumePostMergeFlags(ctx, l.svcCtx.RedisClient, in.PlayerId, resp)
+
 	// RPC returns success; client waits for Gate/Scene push to know they're in.
 	resp.ErrorMessage = nil
 	resp.PlayerId = in.PlayerId
 	return resp, nil
+}
+
+// consumePostMergeFlags reads the two Redis flag keys written by
+// tools/merge_zone/post_merge_stamp.go and:
+//   • populates resp.PostMergeNoticeTs / resp.ForceRenameRequired
+//   • DELetes the keys so subsequent logins don't re-fire the UI
+//
+// Best-effort: any Redis error is logged and swallowed. The semantic
+// is "show notice once if possible"; missing it is recoverable, and
+// blocking the player's login because we can't read a flag is worse
+// than the alternative.
+//
+// Key prefixes are duplicated from tools/merge_zone/post_merge_stamp.go
+// — keep them in sync. Crossing module boundaries (tools/merge_zone
+// has its own go.mod) for a constants file isn't worth the build
+// complexity for two short strings.
+func consumePostMergeFlags(
+	ctx context.Context,
+	rdb *redis.Client,
+	playerID uint64,
+	resp *login_proto.EnterGameResponse,
+) {
+	const (
+		mergeNoticeKey = "player_merge_notice:"
+		forceRenameKey = "player_force_rename:"
+	)
+	pidStr := strconv.FormatUint(playerID, 10)
+
+	// One pipeline read for both keys; one pipeline DEL for both. Two
+	// pipelines instead of one because we don't want to DEL keys we
+	// haven't yet read — Redis doesn't promise GET-then-DEL atomicity
+	// in a single pipeline (it's two separate ops on the wire).
+	pipe := rdb.Pipeline()
+	noticeCmd := pipe.Get(ctx, mergeNoticeKey+pidStr)
+	renameCmd := pipe.Get(ctx, forceRenameKey+pidStr)
+	if _, err := pipe.Exec(ctx); err != nil && err != redis.Nil {
+		// Pipeline-level errors (network) are non-fatal. Per-key Nil
+		// errors are normal — most players don't have these flags.
+		logx.Errorf("consumePostMergeFlags: pipeline get failed for player=%d: %v (continuing)", playerID, err)
+		return
+	}
+
+	if v, err := noticeCmd.Result(); err == nil && v != "" {
+		if ts, parseErr := strconv.ParseInt(v, 10, 64); parseErr == nil {
+			resp.PostMergeNoticeTs = ts
+		}
+	}
+	if _, err := renameCmd.Result(); err == nil {
+		// Mere presence of the key is the signal; value is the merge
+		// timestamp for ops audit but doesn't gate the flag itself.
+		resp.ForceRenameRequired = true
+	}
+
+	if resp.PostMergeNoticeTs == 0 && !resp.ForceRenameRequired {
+		// Nothing to consume — skip the DEL round-trip.
+		return
+	}
+
+	delPipe := rdb.Pipeline()
+	if resp.PostMergeNoticeTs != 0 {
+		delPipe.Del(ctx, mergeNoticeKey+pidStr)
+	}
+	if resp.ForceRenameRequired {
+		// NOTE: we do NOT DEL the rename flag here — only the rename
+		// RPC handler deletes it after a successful name change. If
+		// we deleted on EnterGame, the player could press "skip" on
+		// the rename UI and we'd lose the flag forever. Leave the key
+		// in place; the rename handler is the single deleter.
+	}
+	if _, err := delPipe.Exec(ctx); err != nil {
+		logx.Errorf("consumePostMergeFlags: pipeline del failed for player=%d: %v (flags consumed but not cleared, will re-fire next login)", playerID, err)
+	}
 }
 
 func buildEnterGameSessionState(in *login_proto.EnterGameRequest, sessionDetails *login_proto_common.SessionDetails, account string) enterGameSessionState {

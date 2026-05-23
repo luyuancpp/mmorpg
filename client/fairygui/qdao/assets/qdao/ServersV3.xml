@@ -2,7 +2,7 @@
 <component size="2560,1080" opaque="false">
   <displayList>
     <image id="n0" name="bg" src="00020001" fileName="bg_scene.png" xy="0,0" size="2560,1080"/>
-    <image id="n19" name="uiBg" src="00020002" fileName="bg_ui.png" xy="-4,-4" size="2560,1080"/>
+    <image id="n19" name="uiBg" src="00020002" fileName="bg_ui.png" xy="-7,-7" size="2560,1080"/>
     <image id="n1" name="ornTL" src="0001000a" fileName="ornament.png" xy="492,44" size="118,118"/>
     <image id="n2" name="ornTR" src="0001000a" fileName="ornament.png" xy="2068,44" size="118,118"/>
     <component id="n5" name="tabRecent" src="c0000004" fileName="common/V3Tab.xml" xy="719,200" size="200,70">
@@ -14,9 +14,9 @@
     <component id="n7" name="tabAll" src="c0000004" fileName="common/V3Tab.xml" xy="1299,200" size="200,70">
       <Button title="全部区服"/>
     </component>
-    <image id="n8" name="search" src="00010009" fileName="input.png" xy="645,309" size="200,50"/>
-    <text id="n9" name="searchHint" xy="685,319" size="144,30" fontSize="22" color="#8b7459" vAlign="middle" autoSize="none" singleLine="true" text="搜索"/>
-    <list id="n10" name="tabs" xy="649,369" size="252,430300" selectionMode="Single" overflow="hidden" lineGap="12" defaultItem="ui://qdao/V3Tab" align="center">
+    <image id="n8" name="search" src="00010009" fileName="input.png" xy="643,316" size="200,30"/>
+    <text id="n9" name="searchHint" xy="646,313" size="200,32" fontSize="22" color="#8b7459" vAlign="middle" autoSize="none" singleLine="true" text="搜索"/>
+    <list id="n10" name="tabs" xy="639,369" size="210,400" selectionMode="Single" overflow="hidden" lineGap="12" defaultItem="ui://qdao/V3Tab" align="center">
       <item title="近期"/>
       <item title="推荐"/>
       <item title="全部"/>

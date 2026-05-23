@@ -443,6 +443,7 @@ class PlayerMigrationEvent final : public ::google::protobuf::Message
   // accessors -------------------------------------------------------
   enum : int {
     kSerializedPlayerDataFieldNumber = 4,
+    kPayloadSha256FieldNumber = 10,
     kSceneInfoFieldNumber = 9,
     kPlayerIdFieldNumber = 1,
     kSourceSceneIdFieldNumber = 2,
@@ -464,6 +465,21 @@ class PlayerMigrationEvent final : public ::google::protobuf::Message
   const ::std::string& _internal_serialized_player_data() const;
   PROTOBUF_ALWAYS_INLINE void _internal_set_serialized_player_data(const ::std::string& value);
   ::std::string* PROTOBUF_NONNULL _internal_mutable_serialized_player_data();
+
+  public:
+  // bytes payload_sha256 = 10;
+  void clear_payload_sha256() ;
+  const ::std::string& payload_sha256() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_payload_sha256(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_payload_sha256();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_payload_sha256();
+  void set_allocated_payload_sha256(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_payload_sha256() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_payload_sha256(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_payload_sha256();
 
   public:
   // .ChangeSceneInfoComp scene_info = 9;
@@ -545,7 +561,7 @@ class PlayerMigrationEvent final : public ::google::protobuf::Message
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<4, 8,
+  static const ::google::protobuf::internal::TcParseTable<4, 9,
                                    1, 0,
                                    2>
       _table_;
@@ -568,6 +584,7 @@ class PlayerMigrationEvent final : public ::google::protobuf::Message
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::google::protobuf::internal::ArenaStringPtr serialized_player_data_;
+    ::google::protobuf::internal::ArenaStringPtr payload_sha256_;
     ::ChangeSceneInfoComp* PROTOBUF_NULLABLE scene_info_;
     ::uint64_t player_id_;
     ::uint64_t source_scene_id_;
@@ -603,7 +620,7 @@ extern const ::google::protobuf::internal::ClassDataFull PlayerMigrationEvent_cl
 inline void PlayerMigrationEvent::clear_player_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.player_id_ = ::uint64_t{0u};
-  _impl_._has_bits_[0] &= ~0x00000004u;
+  _impl_._has_bits_[0] &= ~0x00000008u;
 }
 inline ::uint64_t PlayerMigrationEvent::player_id() const {
   // @@protoc_insertion_point(field_get:PlayerMigrationEvent.player_id)
@@ -611,7 +628,7 @@ inline ::uint64_t PlayerMigrationEvent::player_id() const {
 }
 inline void PlayerMigrationEvent::set_player_id(::uint64_t value) {
   _internal_set_player_id(value);
-  _impl_._has_bits_[0] |= 0x00000004u;
+  _impl_._has_bits_[0] |= 0x00000008u;
   // @@protoc_insertion_point(field_set:PlayerMigrationEvent.player_id)
 }
 inline ::uint64_t PlayerMigrationEvent::_internal_player_id() const {
@@ -627,7 +644,7 @@ inline void PlayerMigrationEvent::_internal_set_player_id(::uint64_t value) {
 inline void PlayerMigrationEvent::clear_source_scene_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.source_scene_id_ = ::uint64_t{0u};
-  _impl_._has_bits_[0] &= ~0x00000008u;
+  _impl_._has_bits_[0] &= ~0x00000010u;
 }
 inline ::uint64_t PlayerMigrationEvent::source_scene_id() const {
   // @@protoc_insertion_point(field_get:PlayerMigrationEvent.source_scene_id)
@@ -635,7 +652,7 @@ inline ::uint64_t PlayerMigrationEvent::source_scene_id() const {
 }
 inline void PlayerMigrationEvent::set_source_scene_id(::uint64_t value) {
   _internal_set_source_scene_id(value);
-  _impl_._has_bits_[0] |= 0x00000008u;
+  _impl_._has_bits_[0] |= 0x00000010u;
   // @@protoc_insertion_point(field_set:PlayerMigrationEvent.source_scene_id)
 }
 inline ::uint64_t PlayerMigrationEvent::_internal_source_scene_id() const {
@@ -651,7 +668,7 @@ inline void PlayerMigrationEvent::_internal_set_source_scene_id(::uint64_t value
 inline void PlayerMigrationEvent::clear_target_scene_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.target_scene_id_ = ::uint64_t{0u};
-  _impl_._has_bits_[0] &= ~0x00000010u;
+  _impl_._has_bits_[0] &= ~0x00000020u;
 }
 inline ::uint64_t PlayerMigrationEvent::target_scene_id() const {
   // @@protoc_insertion_point(field_get:PlayerMigrationEvent.target_scene_id)
@@ -659,7 +676,7 @@ inline ::uint64_t PlayerMigrationEvent::target_scene_id() const {
 }
 inline void PlayerMigrationEvent::set_target_scene_id(::uint64_t value) {
   _internal_set_target_scene_id(value);
-  _impl_._has_bits_[0] |= 0x00000010u;
+  _impl_._has_bits_[0] |= 0x00000020u;
   // @@protoc_insertion_point(field_set:PlayerMigrationEvent.target_scene_id)
 }
 inline ::uint64_t PlayerMigrationEvent::_internal_target_scene_id() const {
@@ -740,7 +757,7 @@ inline void PlayerMigrationEvent::set_allocated_serialized_player_data(::std::st
 inline void PlayerMigrationEvent::clear_from_zone() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.from_zone_ = 0u;
-  _impl_._has_bits_[0] &= ~0x00000020u;
+  _impl_._has_bits_[0] &= ~0x00000040u;
 }
 inline ::uint32_t PlayerMigrationEvent::from_zone() const {
   // @@protoc_insertion_point(field_get:PlayerMigrationEvent.from_zone)
@@ -748,7 +765,7 @@ inline ::uint32_t PlayerMigrationEvent::from_zone() const {
 }
 inline void PlayerMigrationEvent::set_from_zone(::uint32_t value) {
   _internal_set_from_zone(value);
-  _impl_._has_bits_[0] |= 0x00000020u;
+  _impl_._has_bits_[0] |= 0x00000040u;
   // @@protoc_insertion_point(field_set:PlayerMigrationEvent.from_zone)
 }
 inline ::uint32_t PlayerMigrationEvent::_internal_from_zone() const {
@@ -764,7 +781,7 @@ inline void PlayerMigrationEvent::_internal_set_from_zone(::uint32_t value) {
 inline void PlayerMigrationEvent::clear_to_zone() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.to_zone_ = 0u;
-  _impl_._has_bits_[0] &= ~0x00000040u;
+  _impl_._has_bits_[0] &= ~0x00000080u;
 }
 inline ::uint32_t PlayerMigrationEvent::to_zone() const {
   // @@protoc_insertion_point(field_get:PlayerMigrationEvent.to_zone)
@@ -772,7 +789,7 @@ inline ::uint32_t PlayerMigrationEvent::to_zone() const {
 }
 inline void PlayerMigrationEvent::set_to_zone(::uint32_t value) {
   _internal_set_to_zone(value);
-  _impl_._has_bits_[0] |= 0x00000040u;
+  _impl_._has_bits_[0] |= 0x00000080u;
   // @@protoc_insertion_point(field_set:PlayerMigrationEvent.to_zone)
 }
 inline ::uint32_t PlayerMigrationEvent::_internal_to_zone() const {
@@ -788,7 +805,7 @@ inline void PlayerMigrationEvent::_internal_set_to_zone(::uint32_t value) {
 inline void PlayerMigrationEvent::clear_timestamp() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.timestamp_ = ::int64_t{0};
-  _impl_._has_bits_[0] &= ~0x00000080u;
+  _impl_._has_bits_[0] &= ~0x00000100u;
 }
 inline ::int64_t PlayerMigrationEvent::timestamp() const {
   // @@protoc_insertion_point(field_get:PlayerMigrationEvent.timestamp)
@@ -796,7 +813,7 @@ inline ::int64_t PlayerMigrationEvent::timestamp() const {
 }
 inline void PlayerMigrationEvent::set_timestamp(::int64_t value) {
   _internal_set_timestamp(value);
-  _impl_._has_bits_[0] |= 0x00000080u;
+  _impl_._has_bits_[0] |= 0x00000100u;
   // @@protoc_insertion_point(field_set:PlayerMigrationEvent.timestamp)
 }
 inline ::int64_t PlayerMigrationEvent::_internal_timestamp() const {
@@ -810,7 +827,7 @@ inline void PlayerMigrationEvent::_internal_set_timestamp(::int64_t value) {
 
 // .ChangeSceneInfoComp scene_info = 9;
 inline bool PlayerMigrationEvent::has_scene_info() const {
-  bool value = (_impl_._has_bits_[0] & 0x00000002u) != 0;
+  bool value = (_impl_._has_bits_[0] & 0x00000004u) != 0;
   PROTOBUF_ASSUME(!value || _impl_.scene_info_ != nullptr);
   return value;
 }
@@ -831,16 +848,16 @@ inline void PlayerMigrationEvent::unsafe_arena_set_allocated_scene_info(
   }
   _impl_.scene_info_ = reinterpret_cast<::ChangeSceneInfoComp*>(value);
   if (value != nullptr) {
-    _impl_._has_bits_[0] |= 0x00000002u;
+    _impl_._has_bits_[0] |= 0x00000004u;
   } else {
-    _impl_._has_bits_[0] &= ~0x00000002u;
+    _impl_._has_bits_[0] &= ~0x00000004u;
   }
   // @@protoc_insertion_point(field_unsafe_arena_set_allocated:PlayerMigrationEvent.scene_info)
 }
 inline ::ChangeSceneInfoComp* PROTOBUF_NULLABLE PlayerMigrationEvent::release_scene_info() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
 
-  _impl_._has_bits_[0] &= ~0x00000002u;
+  _impl_._has_bits_[0] &= ~0x00000004u;
   ::ChangeSceneInfoComp* released = _impl_.scene_info_;
   _impl_.scene_info_ = nullptr;
   if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
@@ -860,7 +877,7 @@ inline ::ChangeSceneInfoComp* PROTOBUF_NULLABLE PlayerMigrationEvent::unsafe_are
   ::google::protobuf::internal::TSanWrite(&_impl_);
   // @@protoc_insertion_point(field_release:PlayerMigrationEvent.scene_info)
 
-  _impl_._has_bits_[0] &= ~0x00000002u;
+  _impl_._has_bits_[0] &= ~0x00000004u;
   ::ChangeSceneInfoComp* temp = _impl_.scene_info_;
   _impl_.scene_info_ = nullptr;
   return temp;
@@ -875,7 +892,7 @@ inline ::ChangeSceneInfoComp* PROTOBUF_NONNULL PlayerMigrationEvent::_internal_m
 }
 inline ::ChangeSceneInfoComp* PROTOBUF_NONNULL PlayerMigrationEvent::mutable_scene_info()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  _impl_._has_bits_[0] |= 0x00000002u;
+  _impl_._has_bits_[0] |= 0x00000004u;
   ::ChangeSceneInfoComp* _msg = _internal_mutable_scene_info();
   // @@protoc_insertion_point(field_mutable:PlayerMigrationEvent.scene_info)
   return _msg;
@@ -892,13 +909,78 @@ inline void PlayerMigrationEvent::set_allocated_scene_info(::ChangeSceneInfoComp
     if (message_arena != submessage_arena) {
       value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
     }
-    _impl_._has_bits_[0] |= 0x00000002u;
+    _impl_._has_bits_[0] |= 0x00000004u;
   } else {
-    _impl_._has_bits_[0] &= ~0x00000002u;
+    _impl_._has_bits_[0] &= ~0x00000004u;
   }
 
   _impl_.scene_info_ = reinterpret_cast<::ChangeSceneInfoComp*>(value);
   // @@protoc_insertion_point(field_set_allocated:PlayerMigrationEvent.scene_info)
+}
+
+// bytes payload_sha256 = 10;
+inline void PlayerMigrationEvent::clear_payload_sha256() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.payload_sha256_.ClearToEmpty();
+  _impl_._has_bits_[0] &= ~0x00000002u;
+}
+inline const ::std::string& PlayerMigrationEvent::payload_sha256() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:PlayerMigrationEvent.payload_sha256)
+  return _internal_payload_sha256();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void PlayerMigrationEvent::set_payload_sha256(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000002u;
+  _impl_.payload_sha256_.SetBytes(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:PlayerMigrationEvent.payload_sha256)
+}
+inline ::std::string* PROTOBUF_NONNULL PlayerMigrationEvent::mutable_payload_sha256()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::std::string* _s = _internal_mutable_payload_sha256();
+  // @@protoc_insertion_point(field_mutable:PlayerMigrationEvent.payload_sha256)
+  return _s;
+}
+inline const ::std::string& PlayerMigrationEvent::_internal_payload_sha256() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.payload_sha256_.Get();
+}
+inline void PlayerMigrationEvent::_internal_set_payload_sha256(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000002u;
+  _impl_.payload_sha256_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL PlayerMigrationEvent::_internal_mutable_payload_sha256() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_._has_bits_[0] |= 0x00000002u;
+  return _impl_.payload_sha256_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE PlayerMigrationEvent::release_payload_sha256() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:PlayerMigrationEvent.payload_sha256)
+  if ((_impl_._has_bits_[0] & 0x00000002u) == 0) {
+    return nullptr;
+  }
+  _impl_._has_bits_[0] &= ~0x00000002u;
+  auto* released = _impl_.payload_sha256_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.payload_sha256_.Set("", GetArena());
+  }
+  return released;
+}
+inline void PlayerMigrationEvent::set_allocated_payload_sha256(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    _impl_._has_bits_[0] |= 0x00000002u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000002u;
+  }
+  _impl_.payload_sha256_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.payload_sha256_.IsDefault()) {
+    _impl_.payload_sha256_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:PlayerMigrationEvent.payload_sha256)
 }
 
 // -------------------------------------------------------------------

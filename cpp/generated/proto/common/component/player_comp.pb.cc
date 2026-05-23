@@ -127,6 +127,33 @@ struct PlayerStressTestProbeDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PlayerStressTestProbeDefaultTypeInternal _PlayerStressTestProbe_default_instance_;
+
+inline constexpr PlayerMergeStateComp::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        force_rename_stamped_ms_{::int64_t{0}},
+        post_merge_notice_seen_ms_{::int64_t{0}},
+        force_rename_required_{false} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR PlayerMergeStateComp::PlayerMergeStateComp(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(PlayerMergeStateComp_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct PlayerMergeStateCompDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR PlayerMergeStateCompDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~PlayerMergeStateCompDefaultTypeInternal() {}
+  union {
+    PlayerMergeStateComp _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PlayerMergeStateCompDefaultTypeInternal _PlayerMergeStateComp_default_instance_;
 template <typename>
 PROTOBUF_CONSTEXPR Player::Player(::_pbi::ConstantInitialized)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
@@ -245,6 +272,15 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::PlayerStressTestProbe, _impl_.test_sig_),
         1,
         0,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::PlayerMergeStateComp, _impl_._has_bits_),
+        6, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::PlayerMergeStateComp, _impl_.force_rename_required_),
+        PROTOBUF_FIELD_OFFSET(::PlayerMergeStateComp, _impl_.force_rename_stamped_ms_),
+        PROTOBUF_FIELD_OFFSET(::PlayerMergeStateComp, _impl_.post_merge_notice_seen_ms_),
+        2,
+        0,
+        1,
 };
 
 static const ::_pbi::MigrationSchema
@@ -257,6 +293,7 @@ static const ::_pbi::MigrationSchema
         {13, sizeof(::PlayerUint64Comp)},
         {18, sizeof(::PlayerUint32Comp)},
         {23, sizeof(::PlayerStressTestProbe)},
+        {30, sizeof(::PlayerMergeStateComp)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::_NormalLogin_default_instance_._instance,
@@ -267,6 +304,7 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::_PlayerUint64Comp_default_instance_._instance,
     &::_PlayerUint32Comp_default_instance_._instance,
     &::_PlayerStressTestProbe_default_instance_._instance,
+    &::_PlayerMergeStateComp_default_instance_._instance,
 };
 const char descriptor_table_protodef_proto_2fcommon_2fcomponent_2fplayer_5fcomp_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
@@ -277,20 +315,23 @@ const char descriptor_table_protodef_proto_2fcommon_2fcomponent_2fplayer_5fcomp_
     "\n\020PlayerUint64Comp\022\036\n\026registration_times"
     "tamp\030\001 \001(\004\"!\n\020PlayerUint32Comp\022\r\n\005class\030"
     "\001 \001(\r\";\n\025PlayerStressTestProbe\022\020\n\010test_s"
-    "eq\030\001 \001(\004\022\020\n\010test_sig\030\002 \001(\014B\022Z\020common/com"
-    "ponentb\006proto3"
+    "eq\030\001 \001(\004\022\020\n\010test_sig\030\002 \001(\014\"y\n\024PlayerMerg"
+    "eStateComp\022\035\n\025force_rename_required\030\001 \001("
+    "\010\022\037\n\027force_rename_stamped_ms\030\002 \001(\003\022!\n\031po"
+    "st_merge_notice_seen_ms\030\003 \001(\003B\022Z\020common/"
+    "componentb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fcomponent_2fplayer_5fcomp_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fcomponent_2fplayer_5fcomp_2eproto = {
     false,
     false,
-    334,
+    457,
     descriptor_table_protodef_proto_2fcommon_2fcomponent_2fplayer_5fcomp_2eproto,
     "proto/common/component/player_comp.proto",
     &descriptor_table_proto_2fcommon_2fcomponent_2fplayer_5fcomp_2eproto_once,
     nullptr,
     0,
-    8,
+    9,
     schemas,
     file_default_instances,
     TableStruct_proto_2fcommon_2fcomponent_2fplayer_5fcomp_2eproto::offsets,
@@ -1880,6 +1921,313 @@ void PlayerStressTestProbe::InternalSwap(PlayerStressTestProbe* PROTOBUF_RESTRIC
 }
 
 ::google::protobuf::Metadata PlayerStressTestProbe::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class PlayerMergeStateComp::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<PlayerMergeStateComp>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(PlayerMergeStateComp, _impl_._has_bits_);
+};
+
+PlayerMergeStateComp::PlayerMergeStateComp(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, PlayerMergeStateComp_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:PlayerMergeStateComp)
+}
+PlayerMergeStateComp::PlayerMergeStateComp(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const PlayerMergeStateComp& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, PlayerMergeStateComp_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(from._impl_) {
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+PROTOBUF_NDEBUG_INLINE PlayerMergeStateComp::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0} {}
+
+inline void PlayerMergeStateComp::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, force_rename_stamped_ms_),
+           0,
+           offsetof(Impl_, force_rename_required_) -
+               offsetof(Impl_, force_rename_stamped_ms_) +
+               sizeof(Impl_::force_rename_required_));
+}
+PlayerMergeStateComp::~PlayerMergeStateComp() {
+  // @@protoc_insertion_point(destructor:PlayerMergeStateComp)
+  SharedDtor(*this);
+}
+inline void PlayerMergeStateComp::SharedDtor(MessageLite& self) {
+  PlayerMergeStateComp& this_ = static_cast<PlayerMergeStateComp&>(self);
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL PlayerMergeStateComp::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) PlayerMergeStateComp(arena);
+}
+constexpr auto PlayerMergeStateComp::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(PlayerMergeStateComp),
+                                            alignof(PlayerMergeStateComp));
+}
+constexpr auto PlayerMergeStateComp::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_PlayerMergeStateComp_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &PlayerMergeStateComp::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<PlayerMergeStateComp>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &PlayerMergeStateComp::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<PlayerMergeStateComp>(), &PlayerMergeStateComp::ByteSizeLong,
+              &PlayerMergeStateComp::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(PlayerMergeStateComp, _impl_._cached_size_),
+          false,
+      },
+      &PlayerMergeStateComp::kDescriptorMethods,
+      &descriptor_table_proto_2fcommon_2fcomponent_2fplayer_5fcomp_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull PlayerMergeStateComp_class_data_ =
+        PlayerMergeStateComp::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+PlayerMergeStateComp::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&PlayerMergeStateComp_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(PlayerMergeStateComp_class_data_.tc_table);
+  return PlayerMergeStateComp_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<2, 3, 0, 0, 2>
+PlayerMergeStateComp::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(PlayerMergeStateComp, _impl_._has_bits_),
+    0, // no _extensions_
+    3, 24,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967288,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    3,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    PlayerMergeStateComp_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::PlayerMergeStateComp>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    {::_pbi::TcParser::MiniParse, {}},
+    // bool force_rename_required = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(PlayerMergeStateComp, _impl_.force_rename_required_), 2>(),
+     {8, 2, 0, PROTOBUF_FIELD_OFFSET(PlayerMergeStateComp, _impl_.force_rename_required_)}},
+    // int64 force_rename_stamped_ms = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(PlayerMergeStateComp, _impl_.force_rename_stamped_ms_), 0>(),
+     {16, 0, 0, PROTOBUF_FIELD_OFFSET(PlayerMergeStateComp, _impl_.force_rename_stamped_ms_)}},
+    // int64 post_merge_notice_seen_ms = 3;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(PlayerMergeStateComp, _impl_.post_merge_notice_seen_ms_), 1>(),
+     {24, 1, 0, PROTOBUF_FIELD_OFFSET(PlayerMergeStateComp, _impl_.post_merge_notice_seen_ms_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // bool force_rename_required = 1;
+    {PROTOBUF_FIELD_OFFSET(PlayerMergeStateComp, _impl_.force_rename_required_), _Internal::kHasBitsOffset + 2, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kBool)},
+    // int64 force_rename_stamped_ms = 2;
+    {PROTOBUF_FIELD_OFFSET(PlayerMergeStateComp, _impl_.force_rename_stamped_ms_), _Internal::kHasBitsOffset + 0, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kInt64)},
+    // int64 post_merge_notice_seen_ms = 3;
+    {PROTOBUF_FIELD_OFFSET(PlayerMergeStateComp, _impl_.post_merge_notice_seen_ms_), _Internal::kHasBitsOffset + 1, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kInt64)},
+  }},
+  // no aux_entries
+  {{
+  }},
+};
+PROTOBUF_NOINLINE void PlayerMergeStateComp::Clear() {
+// @@protoc_insertion_point(message_clear_start:PlayerMergeStateComp)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000007u) != 0) {
+    ::memset(&_impl_.force_rename_stamped_ms_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.force_rename_required_) -
+        reinterpret_cast<char*>(&_impl_.force_rename_stamped_ms_)) + sizeof(_impl_.force_rename_required_));
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL PlayerMergeStateComp::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const PlayerMergeStateComp& this_ = static_cast<const PlayerMergeStateComp&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL PlayerMergeStateComp::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const PlayerMergeStateComp& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(serialize_to_array_start:PlayerMergeStateComp)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  // bool force_rename_required = 1;
+  if ((this_._impl_._has_bits_[0] & 0x00000004u) != 0) {
+    if (this_._internal_force_rename_required() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteBoolToArray(
+          1, this_._internal_force_rename_required(), target);
+    }
+  }
+
+  // int64 force_rename_stamped_ms = 2;
+  if ((this_._impl_._has_bits_[0] & 0x00000001u) != 0) {
+    if (this_._internal_force_rename_stamped_ms() != 0) {
+      target =
+          ::google::protobuf::internal::WireFormatLite::WriteInt64ToArrayWithField<2>(
+              stream, this_._internal_force_rename_stamped_ms(), target);
+    }
+  }
+
+  // int64 post_merge_notice_seen_ms = 3;
+  if ((this_._impl_._has_bits_[0] & 0x00000002u) != 0) {
+    if (this_._internal_post_merge_notice_seen_ms() != 0) {
+      target =
+          ::google::protobuf::internal::WireFormatLite::WriteInt64ToArrayWithField<3>(
+              stream, this_._internal_post_merge_notice_seen_ms(), target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:PlayerMergeStateComp)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t PlayerMergeStateComp::ByteSizeLong(const MessageLite& base) {
+  const PlayerMergeStateComp& this_ = static_cast<const PlayerMergeStateComp&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t PlayerMergeStateComp::ByteSizeLong() const {
+  const PlayerMergeStateComp& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:PlayerMergeStateComp)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000007u) != 0) {
+    // int64 force_rename_stamped_ms = 2;
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      if (this_._internal_force_rename_stamped_ms() != 0) {
+        total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(
+            this_._internal_force_rename_stamped_ms());
+      }
+    }
+    // int64 post_merge_notice_seen_ms = 3;
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      if (this_._internal_post_merge_notice_seen_ms() != 0) {
+        total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(
+            this_._internal_post_merge_notice_seen_ms());
+      }
+    }
+    // bool force_rename_required = 1;
+    if ((cached_has_bits & 0x00000004u) != 0) {
+      if (this_._internal_force_rename_required() != 0) {
+        total_size += 2;
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void PlayerMergeStateComp::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<PlayerMergeStateComp*>(&to_msg);
+  auto& from = static_cast<const PlayerMergeStateComp&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:PlayerMergeStateComp)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if ((cached_has_bits & 0x00000007u) != 0) {
+    if ((cached_has_bits & 0x00000001u) != 0) {
+      if (from._internal_force_rename_stamped_ms() != 0) {
+        _this->_impl_.force_rename_stamped_ms_ = from._impl_.force_rename_stamped_ms_;
+      }
+    }
+    if ((cached_has_bits & 0x00000002u) != 0) {
+      if (from._internal_post_merge_notice_seen_ms() != 0) {
+        _this->_impl_.post_merge_notice_seen_ms_ = from._impl_.post_merge_notice_seen_ms_;
+      }
+    }
+    if ((cached_has_bits & 0x00000004u) != 0) {
+      if (from._internal_force_rename_required() != 0) {
+        _this->_impl_.force_rename_required_ = from._impl_.force_rename_required_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void PlayerMergeStateComp::CopyFrom(const PlayerMergeStateComp& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:PlayerMergeStateComp)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void PlayerMergeStateComp::InternalSwap(PlayerMergeStateComp* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(PlayerMergeStateComp, _impl_.force_rename_required_)
+      + sizeof(PlayerMergeStateComp::_impl_.force_rename_required_)
+      - PROTOBUF_FIELD_OFFSET(PlayerMergeStateComp, _impl_.force_rename_stamped_ms_)>(
+          reinterpret_cast<char*>(&_impl_.force_rename_stamped_ms_),
+          reinterpret_cast<char*>(&other->_impl_.force_rename_stamped_ms_));
+}
+
+::google::protobuf::Metadata PlayerMergeStateComp::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // @@protoc_insertion_point(namespace_scope)

@@ -513,11 +513,35 @@ func (x *EnterGameRequest) GetRequestId() string {
 }
 
 type EnterGameResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ErrorMessage  *base.TipInfoMessage   `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
-	PlayerId      uint64                 `protobuf:"varint,2,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state        protoimpl.MessageState `protogen:"open.v1"`
+	ErrorMessage *base.TipInfoMessage   `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	PlayerId     uint64                 `protobuf:"varint,2,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	// ─── Post-merge one-shot signals (server-merge-gap-fixes.md §1 / §5) ───
+	//
+	// These two fields are non-zero **only on the first successful EnterGame
+	// after a server merge**. They drive client UI:
+	//
+	//   - post_merge_notice_ts > 0  →  client SHOULD show a one-shot
+	//     "Your zone was merged into <new_zone_name> on <date>" notice.
+	//     The timestamp is the merge wall-clock millis (set by
+	//     tools/merge_zone/post_merge_stamp.go), useful for the notice
+	//     copy. Login server clears the underlying Redis flag before
+	//     returning, so the value is non-zero exactly once per merge.
+	//
+	//   - force_rename_required = true  →  client MUST show a forced-rename
+	//     UI before letting the player into the world. Set when the
+	//     player's name collided with an existing name in the merge
+	//     target zone. Client uses the existing rename RPC; the rename
+	//     handler clears the flag on success.
+	//
+	// Wire compat: pre-this-field clients ignore both — they still enter
+	// the game; they just don't see the notice / rename UI. That's fine
+	// for staged rollout: server starts populating the fields whenever
+	// the post_merge_stamp lands, no client gate needed.
+	PostMergeNoticeTs   int64 `protobuf:"varint,3,opt,name=post_merge_notice_ts,json=postMergeNoticeTs,proto3" json:"post_merge_notice_ts,omitempty"`
+	ForceRenameRequired bool  `protobuf:"varint,4,opt,name=force_rename_required,json=forceRenameRequired,proto3" json:"force_rename_required,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *EnterGameResponse) Reset() {
@@ -562,6 +586,20 @@ func (x *EnterGameResponse) GetPlayerId() uint64 {
 		return x.PlayerId
 	}
 	return 0
+}
+
+func (x *EnterGameResponse) GetPostMergeNoticeTs() int64 {
+	if x != nil {
+		return x.PostMergeNoticeTs
+	}
+	return 0
+}
+
+func (x *EnterGameResponse) GetForceRenameRequired() bool {
+	if x != nil {
+		return x.ForceRenameRequired
+	}
+	return false
 }
 
 type LeaveGameRequest struct {
@@ -1311,10 +1349,12 @@ const file_proto_login_login_proto_rawDesc = "" +
 	"\x10EnterGameRequest\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x1d\n" +
 	"\n" +
-	"request_id\x18\x02 \x01(\tR\trequestId\"f\n" +
+	"request_id\x18\x02 \x01(\tR\trequestId\"\xcb\x01\n" +
 	"\x11EnterGameResponse\x124\n" +
 	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\x12\x1b\n" +
-	"\tplayer_id\x18\x02 \x01(\x04R\bplayerId\"\x12\n" +
+	"\tplayer_id\x18\x02 \x01(\x04R\bplayerId\x12/\n" +
+	"\x14post_merge_notice_ts\x18\x03 \x01(\x03R\x11postMergeNoticeTs\x122\n" +
+	"\x15force_rename_required\x18\x04 \x01(\bR\x13forceRenameRequired\"\x12\n" +
 	"\x10LeaveGameRequest\";\n" +
 	"\x1aLoginNodeDisconnectRequest\x12\x1d\n" +
 	"\n" +

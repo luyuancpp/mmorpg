@@ -3,6 +3,36 @@
 > **Discussion Date**: 2025-03-25
 > **Context**: MMO/MOBA microservice architecture rollback design discussion
 
+## ⚠️ 实施现状(Reality Check, 2026-05-23)
+
+> 这份文档讨论了完整的回档设计,**包括许多尚未在本仓库实现的子系统**。
+> 阅读时请把**已实现**和**规划中**分开看,避免照着文档以为有的功能其实并不存在。
+>
+> | 子系统 | 状态 | 落地位置 |
+> |---|---|---|
+> | `RollbackPlayer` / `RollbackZone` / `RollbackAll` RPC | ✅ 已实现 | `go/data_service/internal/logic/rollback_logic.go`(394 行) |
+> | `transaction_log` 协议 + 双向操作类型 | ✅ enum 已加完(含 TX_ITEM_AWARD 等 4 个 replay 用 op) | `proto/common/rollback/transaction_log.proto` |
+> | `transaction_log` 业务侧 hook 点 | 🟡 部分 — currency 已 hook;**bag/quest/mail/skill 未 hook** | `cpp/libs/modules/currency/system/currency_system.cpp` |
+> | `BatchRecallItems` GM 工具 | ✅ 已实现 | `go/data_service/internal/logic/recall_logic.go` |
+> | 补缴 (Deferred Clawback) | ✅ 已实现并防旁路审计 PASS | `cpp/libs/modules/currency/system/currency_system.cpp` |
+> | 物品 UUID (SnowFlake) | ✅ 已实现 | `cpp/libs/engine/core/utils/id/snow_flake.h` |
+> | 跨服节点崩溃后的 PostCrashReplay 工具 | ❌ **未实现** — 设计文档级,工具骨架未写 | (待) |
+> | **mail 服务** | ❌ **服务级别整体未实现** — 既无 MySQL 表也无 Go 服务 | (待) |
+> | **auction 服务** | ❌ **服务级别整体未实现** | (待) |
+> | **chat 历史持久化** | 🟡 proto 有,DB 表不存在 | `proto/chat/chat.proto` 仅协议 |
+> | **bag 持久化(跨 zone 安全)** | ❌ proto 有,Marshal/Unmarshal 未接 | 详见 `cross-zone-readiness-audit.md §3.2 件 1` |
+> | quest 系统 | ❌ proto 占位,系统未实现 | 同上 |
+>
+> **影响阅读这份文档时的判断**:
+>
+> - 文档第 91 行写"Applies to ALL bidirectional ops: trade, mail attachments, guild bank, auction house, party loot" — 这是**设计意图**,实际只 currency 接了
+> - 文档第 134 行"On auction house → delist and delete" — 假设 auction 服务存在;**当前不存在**
+> - 文档第 100 行的 transaction_log 字段都已经在 proto 里 ✅
+>
+> **如果你正在排期这份文档相关的工作**,先核对上面的状态表;表里 ❌ 的项是真正的工作量。
+
+---
+
 ## Conversation Summary (完整对话记录)
 
 ### Q1: MMO/MOBA 微服务中单人回档怎么做？

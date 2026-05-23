@@ -29,6 +29,9 @@ import (
 const playerZoneKeyPrefix = "player:zone:"
 
 func main() {
+	mode := flag.String("mode", "merge", "Operation mode: 'merge' (default; runs the 5-step merge) or 'audit' (read-only resource audit, see audit_resources.go)")
+	verifyMerged := flag.Bool("verify-merged", false, "Audit-only: post-merge verification mode (expects source-zone state to be empty)")
+
 	sourceZone := flag.Uint("source-zone", 0, "Source zone ID to merge FROM (required)")
 	targetZone := flag.Uint("target-zone", 0, "Target zone ID to merge INTO (required)")
 	mysqlDSN := flag.String("mysql-dsn", "root:@tcp(127.0.0.1:3306)/mmorpg?charset=utf8mb4&parseTime=true&loc=Local", "MySQL DSN (guild table)")
@@ -68,6 +71,29 @@ func main() {
 		fmt.Fprintln(os.Stderr, "ERROR: source and target zone must be different")
 		os.Exit(1)
 	}
+
+	// ── Audit mode: read-only inspection, dispatch early before any
+	// merge-mode safety checks. See audit_resources.go.
+	if *mode == "audit" {
+		runAuditEntry(auditEntryParams{
+			src:           uint32(*sourceZone),
+			dst:           uint32(*targetZone),
+			mysqlDSN:      *mysqlDSN,
+			mappingAddr:   firstNonEmpty(*mappingAddr, *redisAddr),
+			mappingPwd:    firstNonEmpty(*mappingPassword, *redisPassword),
+			mappingDB:     *mappingDB,
+			rankAddr:      *redisAddr,
+			rankPwd:       *redisPassword,
+			rankDB:        *redisDB,
+			verifyMerged:  *verifyMerged,
+		})
+		return
+	}
+	if *mode != "merge" {
+		fmt.Fprintf(os.Stderr, "ERROR: unknown -mode %q (expected 'merge' or 'audit')\n", *mode)
+		os.Exit(1)
+	}
+
 	if !*dryRun && !*apply {
 		fmt.Fprintln(os.Stderr, "ERROR: refuse to modify data: pass -dry-run to preview, or -apply to write")
 		os.Exit(1)
@@ -113,6 +139,14 @@ func main() {
 		mapUpdated     int
 		blobPlayers    int
 		blobKeysCopied int
+		// Captured from the player.name conflict probe so the post-merge
+		// stamp step can flag exactly the colliding source players for
+		// forced rename. Currently always nil — see the "P0-G:..." block
+		// in the guild step below for why detection isn't implemented.
+		// Type is []uint64 (player_id list); the stamp call site adapts.
+		playerNameConflicts []uint64
+		noticeStamped       int
+		renameStamped       int
 	)
 
 	mapRdb := redis.NewClient(&redis.Options{Addr: mAddr, Password: mPass, DB: *mappingDB})
@@ -174,6 +208,31 @@ func main() {
 		if err := db.PingContext(ctx); err != nil {
 			log.Fatalf("mysql ping: %v", err)
 		}
+
+		// P0-G: player nickname conflict detection — NOT IMPLEMENTED.
+		//
+		// 2026-05-23 reality check: this codebase has no `player` table
+		// with `name` and `zone_id` columns. The real schema is
+		// `player_database(player_id BIGINT, transform MEDIUMBLOB, ...)`
+		// with nicknames embedded inside the protobuf-encoded
+		// MEDIUMBLOB components. Automated conflict detection requires
+		// decoding those blobs across both zones — a non-trivial proto
+		// dependency I deliberately deferred.
+		//
+		// The earlier shape of this site ran a SQL query against
+		// `player.name` / `player.zone_id` and silently degraded to a
+		// "WARN: probe failed" log line when the columns didn't exist —
+		// which read as "no conflicts found" to operators. That
+		// silent-pass was worse than no check at all, so we print an
+		// explicit reminder instead and rely on the manual procedure
+		// documented in docs/ops/merge-zone-runbook.md §4.4.
+		log.Printf("Player name conflict check: NOT IMPLEMENTED (nicknames live inside player_database blob).")
+		log.Printf("ACTION: follow merge-zone-runbook.md §4.4 — pre-merge announce window or manual suffix.")
+		// playerNameConflicts intentionally left nil; downstream stamp
+		// step will skip the force-rename flag because there's nothing
+		// to stamp. The notice-flag still works (it's per-source-player,
+		// not per-conflict).
+
 		guildCount, err = doGuildMySQL(ctx, db, src, dst, *dryRun)
 		if err != nil {
 			log.Fatalf("guild MySQL: %v", err)
@@ -205,8 +264,25 @@ func main() {
 			mapMatch, mapUpdated, verbWrite(*dryRun), mAddr, *mappingDB)
 	}
 
-	log.Printf("=== Done (players_in_source=%d guild_rows=%d rank_entries=%d map_matched=%d map_updated=%d blob_players=%d blob_keys=%d) ===",
-		len(playerIDs), guildCount, rankCount, mapMatch, mapUpdated, blobPlayers, blobKeysCopied)
+	// Post-merge player flags (P3-H notice + P0-G force-rename).
+	// Run AFTER mapping remap so that login-time reads of these flags
+	// happen against players whose home_zone has already been moved to
+	// dst — otherwise a flag-read between remap and stamp would race.
+	// See post_merge_stamp.go for wire format and login-side contract.
+	noticeStamped, renameStamped, stampErr := stampPostMergeFlags(
+		ctx, mapRdb, playerIDs, playerNameConflicts, stampNowUnixMs(), *dryRun)
+	if stampErr != nil {
+		// Stamp errors are warned but non-fatal — the merge as a whole
+		// has already succeeded by this point and partial flag coverage
+		// degrades to "some players don't see the notice", which is
+		// strictly recoverable (re-run -apply will re-stamp).
+		log.Printf("WARN: post-merge stamp had errors: %v", stampErr)
+	}
+	log.Printf("Post-merge flags: %d notice keys %s, %d force-rename keys %s",
+		noticeStamped, verbWrite(*dryRun), renameStamped, verbWrite(*dryRun))
+
+	log.Printf("=== Done (players_in_source=%d guild_rows=%d rank_entries=%d map_matched=%d map_updated=%d blob_players=%d blob_keys=%d notice=%d rename=%d) ===",
+		len(playerIDs), guildCount, rankCount, mapMatch, mapUpdated, blobPlayers, blobKeysCopied, noticeStamped, renameStamped)
 }
 
 func verbWrite(dry bool) string {

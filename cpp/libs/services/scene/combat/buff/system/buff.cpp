@@ -262,6 +262,20 @@ uint32_t BuffSystem::OnBuffAwake(const entt::entity parent, const uint32_t buffT
 
 void BuffSystem::OnBuffStart(entt::entity parent, BuffEntry& buff, const BuffTable* buffTable)
 {
+    // Frozen target: buff applied to a player who is mid cross-zone migration.
+    // The buff state was captured into PlayerAllData at HandleCrossZoneTransfer
+    // and the destination zone will recreate the buff list from the snapshot.
+    // Adding a buff on the source side now produces a buff that nobody but
+    // this dying source-side entity can see — a leak. Default policy per
+    // cross-zone-readiness-audit.md §11.4 is "buff drop".
+    if (tlsEcs.actorRegistry.any_of<PlayerFrozenComp>(parent))
+    {
+        LOG_INFO << "[CrossZone] Buff on frozen target dropped. parent="
+                 << entt::to_integral(parent)
+                 << " buff_table=" << (buffTable ? buffTable->id() : 0);
+        return;
+    }
+
     // Maintain stealth tag cache
     if (buffTable && buffTable->buff_type() == kBuffTypeStealth)
     {

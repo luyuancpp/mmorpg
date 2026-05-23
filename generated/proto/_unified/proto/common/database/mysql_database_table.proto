@@ -104,6 +104,12 @@ message player_database
   // Stress-test instrumentation. Empty during normal play. See
   // PlayerStressTestProbe for the verification contract.
   PlayerStressTestProbe stress_test_probe = 9;
+  // Server-merge transient state (force_rename_required +
+  // post_merge_notice_seen_ms). Default-zero during normal play; stamped
+  // by tools/merge_zone/ during a maintenance-window merge and cleared
+  // on the first qualifying post-merge action. See player_comp.proto's
+  // PlayerMergeStateComp comment for the full contract.
+  PlayerMergeStateComp merge_state = 10;
 }
 
 message player_database_1

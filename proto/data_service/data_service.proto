@@ -296,6 +296,14 @@ message BatchRecallItemsResponse {
 }
 
 // ── Transaction Log Query ──────────────────────────────────────
+//
+// PostCrashReplay usage (cross-server-rollback-gap-fixes.md §2.4 B2):
+//   Scene calls this with player_id + time_start=last_save_ms +
+//   tx_types=[TX_ITEM_AWARD, TX_QUEST_COMPLETE, TX_LEVEL_UP, TX_BUFF_GAIN]
+//   to fetch the "additive" ops the player earned between persistence
+//   checkpoint and crash. Each returned row's tx_id is the dedup key
+//   the replay tool tracks so a second replay of the same window is a
+//   no-op. See transaction_log.proto's TX_ITEM_AWARD..TX_BUFF_GAIN doc.
 
 message QueryTransactionLogRequest {
   uint64 player_id = 1;                // 0 = query all players
