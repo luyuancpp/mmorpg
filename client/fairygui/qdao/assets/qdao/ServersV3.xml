@@ -15,7 +15,7 @@
       <Button title="全部区服"/>
     </component>
     <image id="n8" name="search" src="00010009" fileName="input.png" xy="645,309" size="200,50"/>
-    <text id="n9" name="searchHint" xy="699,319" size="160,36" fontSize="22" color="#8b7459" vAlign="middle" autoSize="none" singleLine="true" text="搜索"/>
+    <text id="n9" name="searchHint" xy="685,319" size="144,30" fontSize="22" color="#8b7459" vAlign="middle" autoSize="none" singleLine="true" text="搜索"/>
     <list id="n10" name="tabs" xy="649,369" size="252,430300" selectionMode="Single" overflow="hidden" lineGap="12" defaultItem="ui://qdao/V3Tab" align="center">
       <item title="近期"/>
       <item title="推荐"/>
