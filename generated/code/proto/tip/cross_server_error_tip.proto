@@ -7,13 +7,5 @@ enum cross_server_error {
   kCross_server_errorOK = 0;
 
   kSceneTransferInProgress = 129;
-  // Cross-zone migration failed after the source-side reaper exhausted
-  // its retries (or the destination ACK was repeatedly missing).
-  // Source side has unfrozen the player, kept them on the source zone,
-  // and sent this tip so the client UI can dismiss the in-progress
-  // overlay and let the player re-enter the portal manually.
-  // Producer: cpp/libs/services/scene/player/system/cross_zone_reaper.cpp
-  //           ProcessStaleEntry() (after kMaxAttempts exhausted).
-  kSceneTransferFailed = 130;
 
 };

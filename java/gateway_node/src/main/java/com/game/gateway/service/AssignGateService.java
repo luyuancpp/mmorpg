@@ -69,7 +69,7 @@ public class AssignGateService {
                 req.getDeviceId()
         );
         try {
-            var rsp = rpc.assignGate(rpcReq);
+            var rsp = rpc.assignGate(rpcReq, req.getZoneId());
             return mapAssignGate(rsp);
         } catch (StatusRuntimeException e) {
             Status.Code c = e.getStatus().getCode();
@@ -90,8 +90,13 @@ public class AssignGateService {
 
     /**
      * Polls the queue for status. Used by {@code POST /api/queue-status}.
+     *
+     * <p>{@code zoneId} is the routing hint (see {@link com.game.gateway.dto.QueueStatusRequest}):
+     * the poll must reach the same login.rpc instance that issued the
+     * queue_token, otherwise the lookup misses the queue entry and falsely
+     * returns EXPIRED.
      */
-    public AssignGateResponse queryQueueStatus(String queueToken) {
+    public AssignGateResponse queryQueueStatus(String queueToken, int zoneId) {
         if (queueToken == null || queueToken.isBlank()) {
             AssignGateResponse out = new AssignGateResponse();
             out.setCode(HTTP_QUEUE_EXPIRED);
@@ -100,7 +105,7 @@ public class AssignGateService {
         }
         var rpcReq = new LoginRpcClient.QueryQueueStatusRequestProto(queueToken);
         try {
-            var rsp = rpc.queryQueueStatus(rpcReq);
+            var rsp = rpc.queryQueueStatus(rpcReq, zoneId);
             return mapQueueStatus(rsp, queueToken);
         } catch (StatusRuntimeException e) {
             Status.Code c = e.getStatus().getCode();

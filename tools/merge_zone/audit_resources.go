@@ -267,43 +267,55 @@ func printAuditReport(results []ResourceAudit) (blockCount, warnCount int) {
 // optional table (e.g. chat_history not deployed yet) should not break
 // the merge gate.
 
-// auditPlayerNameConflicts — explicit "not implemented" notice (was
-// the silent-failing P0-G check until 2026-05-23).
+// auditPlayerNameConflicts — explicit "not applicable" notice (was a
+// silent-failing P0-G check until 2026-05-23, then a "not implemented"
+// notice. The 2026-05-23-pm reality check went one layer deeper).
 //
 // History (kept as a cautionary comment for future engineers):
-//   The earlier shape of this auditor ran a SQL query against
-//   `player.name` and `player.zone_id`. Both columns are entirely
-//   fictional in this codebase — the real `player_database` schema
-//   has only `player_id BIGINT` plus seven MEDIUMBLOB component
-//   columns (transform / uint64_pb_component / skill_list /
-//   uint32_pb_component / derived_attributes_component /
-//   level_component / currency). Player nicknames are inside the
-//   serialized PlayerUint64Comp / PlayerUint32Comp / similar protobuf
-//   bytes, NOT exposed as a queryable column.
+//   The earliest shape ran SQL against `player.name` / `player.zone_id`.
+//   Both columns are entirely fictional in this codebase — the real
+//   `player_database` schema has only `player_id BIGINT` plus seven
+//   MEDIUMBLOB component columns. Discovering that triggered v1.1 of
+//   this audit, which turned the row into a block-severity "not
+//   implemented; see merge-zone-runbook.md §4.4" hint pointing at a
+//   manual rename procedure.
 //
-//   Detecting nickname collisions therefore requires:
-//     1) reading every source-zone player blob from data Redis
-//     2) protobuf-decoding it
-//     3) comparing the decoded name against the destination zone's
-//        decoded names
+//   Then I went looking for *which* protobuf field actually holds the
+//   nickname so a future protobuf-decoding implementation knew where
+//   to look. Result:
+//     - CreatePlayerRequest is an empty message — no nickname on creation
+//     - AccountSimplePlayer carries only player_id
+//     - PlayerUint32Comp / PlayerUint64Comp carry class /
+//       registration_timestamp respectively, no name field
+//     - user.display_name column exists in the SQL schema but
+//       grep across go/ + cpp/ shows zero readers and zero writers;
+//       it's a placeholder column on a placeholder table
 //
-//   That work involves importing google.golang.org/protobuf and
-//   keeping field-number assumptions in sync with proto codegen — a
-//   non-trivial refactor that crosses the merge_zone module's go.mod
-//   boundary. Held for a future session (see merge-zone-runbook.md
-//   §4.4 for the manual workaround in the meantime).
+//   So the project today has NO PLAYER NICKNAME at all. Players are
+//   identified to other players by player_id (uint64). The "two
+//   players named 剑圣 in different zones merge" scenario described
+//   in server-merge-gap-fixes.md §1 cannot happen because nobody has
+//   a name to clash on.
+//
+//   The force_rename plumbing (PlayerMergeStateComp + Redis flag +
+//   EnterGameResponse field + post_merge_stamp.go's parameter seam)
+//   is NOT dead code — it's pre-wired for the day someone enables a
+//   nickname surface. Until then this auditor reports the situation
+//   so operators don't blindly follow a manual procedure for a
+//   problem they don't have.
 //
 // What this auditor does today:
-//   It surfaces a single block-severity row that says "manual check
-//   required — schema does not expose nicknames as a column".
-//   Block severity guarantees the merge gate prints a noisy reminder;
-//   silent "info: ok" would be worse.
+//   Returns an info-severity row that says "not applicable — no
+//   nickname surface in this codebase". Severity is intentionally
+//   info, not block: blocking would force ops to skip a real audit
+//   gate to merge, which is counterproductive when the gate guards
+//   nothing.
 func auditPlayerNameConflicts(ctx context.Context, cfg auditConfig) ResourceAudit {
 	return ResourceAudit{
-		Name:        "player.name (manual)",
-		UniqueScope: "per_zone",
-		Severity:    "block",
-		Notes:       "automated detection NOT IMPLEMENTED — nicknames live inside player_database MEDIUMBLOB, not a queryable column. Follow merge-zone-runbook.md §4.4: announce pre-merge rename window or apply temp-suffix manually.",
+		Name:        "player.name (n/a)",
+		UniqueScope: "n/a",
+		Severity:    "info",
+		Notes:       "NOT APPLICABLE — project has no player nickname field today (CreatePlayer is empty; user.display_name is unused). force_rename plumbing is pre-wired for future enable. See merge-zone-runbook.md §4.4.",
 	}
 }
 

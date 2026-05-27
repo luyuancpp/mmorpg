@@ -22,7 +22,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -71,6 +73,23 @@ public class LoginRpcClient {
 
     private final LoginGrpcProperties props;
     private final List<ManagedChannel> channels = new ArrayList<>();
+    /**
+     * Zone-aware routing map: {@code zoneId -> channel}. Populated when an
+     * endpoint is configured as {@code "<zoneId>=host:port"}; left empty when
+     * all endpoints are bare {@code host:port} (in which case we fall back to
+     * round-robin over {@link #channels}).
+     *
+     * <p><b>Why zone-aware routing matters.</b> Each {@code login.rpc} instance
+     * watches only its own zone's gate registrations in etcd
+     * (prefix {@code GateNodeService.rpc/zone/{ZoneId}/...}). A pure
+     * round-robin client therefore has a 2-in-3 chance of dispatching a
+     * {@code zone_id=1} AssignGate to a {@code z2_login} or {@code z3_login},
+     * which sees zero gate candidates for that zone and replies
+     * {@code "no gate available for requested zone"}. Stress run 2026-05-24
+     * caught this on the first 3-zone × 15000 attempt — see
+     * {@code docs/design/stress-3zone-2026-05-23-postmortem.md §I}.
+     */
+    private final Map<Integer, ManagedChannel> channelByZone = new LinkedHashMap<>();
     private final AtomicInteger rr = new AtomicInteger();
 
     private final MethodDescriptor<LoginRequestProto, LoginResponseProto> loginMethod;
@@ -112,6 +131,25 @@ public class LoginRpcClient {
         for (String raw : eps) {
             String ep = raw.trim();
             if (ep.isEmpty()) continue;
+
+            // Two accepted shapes:
+            //   "host:port"            — bare endpoint, joins the round-robin pool only
+            //   "<zoneId>=host:port"   — also indexed by zone for zone-aware routing
+            // Mixing both is allowed: zone-tagged endpoints route AssignGate by
+            // zone, unzoned ones still serve RefreshToken (which has no zone).
+            Integer zoneTag = null;
+            int eq = ep.indexOf('=');
+            if (eq > 0) {
+                String prefix = ep.substring(0, eq).trim();
+                try {
+                    zoneTag = Integer.parseInt(prefix);
+                } catch (NumberFormatException nfe) {
+                    log.warn("login.grpc endpoint zone prefix not a number, ignoring zone tag: {}", ep);
+                    zoneTag = null;
+                }
+                ep = ep.substring(eq + 1).trim();
+            }
+
             String[] hp = ep.split(":");
             if (hp.length != 2) {
                 log.warn("login.grpc endpoint malformed, skipped: {}", ep);
@@ -124,7 +162,15 @@ public class LoginRpcClient {
                     .keepAliveWithoutCalls(true)
                     .build();
             channels.add(ch);
-            log.info("login.rpc channel up: {}", ep);
+            if (zoneTag != null) {
+                ManagedChannel prev = channelByZone.put(zoneTag, ch);
+                if (prev != null) {
+                    log.warn("login.grpc duplicate zone tag {} — overriding previous channel", zoneTag);
+                }
+                log.info("login.rpc channel up (zone={}): {}", zoneTag, ep);
+            } else {
+                log.info("login.rpc channel up: {}", ep);
+            }
         }
         if (channels.isEmpty()) {
             log.warn("LoginRpcClient has no endpoints; /api/login will fail");
@@ -148,6 +194,15 @@ public class LoginRpcClient {
         return unaryCall(loginMethod, req);
     }
 
+    /**
+     * Zone-aware Login: routes to the {@code login.rpc} instance that watches
+     * gates for the given zone. Falls back to round-robin when no zone-tagged
+     * channel is configured.
+     */
+    public LoginResponseProto login(LoginRequestProto req, int zoneId) {
+        return unaryCall(loginMethod, req, zoneId);
+    }
+
     /** Calls {@code ClientPlayerLogin.RefreshToken}. Throws on terminal failure. */
     public RefreshTokenResponseProto refreshToken(RefreshTokenRequestProto req) {
         return unaryCall(refreshTokenMethod, req);
@@ -158,16 +213,53 @@ public class LoginRpcClient {
         return unaryCall(assignGateMethod, req);
     }
 
+    /**
+     * Zone-aware AssignGate: see {@link #login(LoginRequestProto, int)} for
+     * routing semantics.
+     */
+    public AssignGateResponseProto assignGate(AssignGateRequestProto req, int zoneId) {
+        return unaryCall(assignGateMethod, req, zoneId);
+    }
+
     /** Calls {@code LoginPreGate.QueryQueueStatus}. Throws on terminal failure. */
     public QueryQueueStatusResponseProto queryQueueStatus(QueryQueueStatusRequestProto req) {
         return unaryCall(queueStatusMethod, req);
     }
 
+    /**
+     * Zone-aware QueryQueueStatus: when the queue token was issued by a
+     * specific zone's login, the status poll has to come back to the same
+     * instance — otherwise the lookup can't find the queue entry.
+     */
+    public QueryQueueStatusResponseProto queryQueueStatus(QueryQueueStatusRequestProto req, int zoneId) {
+        return unaryCall(queueStatusMethod, req, zoneId);
+    }
+
     private <Q, R> R unaryCall(MethodDescriptor<Q, R> method, Q req) {
+        return unaryCall(method, req, 0);
+    }
+
+    private <Q, R> R unaryCall(MethodDescriptor<Q, R> method, Q req, int zoneId) {
         if (channels.isEmpty()) {
             throw new IllegalStateException("login.rpc no endpoint");
         }
-        ManagedChannel ch = channels.get(Math.floorMod(rr.getAndIncrement(), channels.size()));
+        // Pick a zone-pinned channel when possible; otherwise round-robin.
+        // zoneId == 0 means "caller doesn't know / doesn't care" (e.g.
+        // RefreshToken — the access_token doesn't carry a zone).
+        ManagedChannel ch = null;
+        if (zoneId != 0) {
+            ch = channelByZone.get(zoneId);
+            if (ch == null) {
+                // Configured channels don't cover this zone — fail loud
+                // instead of silently falling back to round-robin, which is
+                // exactly the behaviour the round-robin-only client had before
+                // and the one that produced "no gate available" in stress.
+                log.warn("login.rpc no zone-pinned channel for zone={}, falling back to round-robin (config drift?)", zoneId);
+            }
+        }
+        if (ch == null) {
+            ch = channels.get(Math.floorMod(rr.getAndIncrement(), channels.size()));
+        }
         CallOptions opts = CallOptions.DEFAULT.withDeadlineAfter(props.getTimeoutMs(), TimeUnit.MILLISECONDS);
 
         int attempts = 1 + Math.max(0, props.getRetry());

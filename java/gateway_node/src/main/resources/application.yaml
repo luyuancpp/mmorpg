@@ -57,9 +57,25 @@ gate:
       #   - { offset-sec: 120, allow-zones: [-1] }   # -1 = all zones
 
 # go-zero login.rpc client
+#
+# Multi-zone stress 2026-05: each zone runs its own login.rpc instance with
+# ListenOn shifted by (zone-1)*1000. dev start-zones launches:
+#   z1_login = 127.0.0.1:53000 (base 53000 + 0)
+#   z2_login = 127.0.0.1:54000 (base 53000 + 1000)
+#   z3_login = 127.0.0.1:55000 (base 53000 + 2000)
+#
+# Endpoint syntax: "<zoneId>=host:port" pins the channel to a zone (used by
+# AssignGate / Login / queue-status, all of which know their target zone).
+# Bare "host:port" still works for round-robin fallback (RefreshToken takes
+# this path because the access_token doesn't carry a zone). Mixing is allowed.
+#
+# Why zone-pinning matters: each go-zero login.rpc only watches its own zone's
+# gate registrations in etcd. A round-robin client misroutes 2-in-3
+# AssignGate calls to a wrong-zone instance and gets "no gate available for
+# requested zone" — see docs/design/stress-3zone-2026-05-23-postmortem.md §I.
 login:
   grpc:
-    endpoints: "127.0.0.1:51000"
+    endpoints: "1=127.0.0.1:53000,2=127.0.0.1:54000,3=127.0.0.1:55000"
     timeout-ms: 3000
     retry: 1
 

@@ -36,7 +36,13 @@ public class LoginService {
                 req.getAuthToken()
         );
         try {
-            LoginRpcClient.LoginResponseProto rsp = rpc.login(rpcReq);
+            // Zone-aware route: each go-zero login.rpc instance only watches
+            // its own zone's player_locator / scene_manager etc., so
+            // round-robin would scatter Login calls across the wrong zones
+            // and produce sporadic "no gate available" / session-bind errors.
+            // See LoginRpcClient.unaryCall(method, req, zoneId) and the
+            // 2026-05-24 stress postmortem §I.
+            LoginRpcClient.LoginResponseProto rsp = rpc.login(rpcReq, (int) req.getZoneId());
             if (rsp.hasError()) {
                 int upstream = rsp.errorCode == null ? -1 : rsp.errorCode;
                 String msg = rsp.errorMessage != null ? rsp.errorMessage : ("upstream_err=" + upstream);

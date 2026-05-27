@@ -1,0 +1,31 @@
+# Smoke run validating the cpp Node ID hijack fix (etcd_service.cpp HandlePutEvent
+# now skips hijack detection while myInfo.node_id() == 0, see
+# docs/design/stress-3zone-2026-05-23-postmortem.md §E).
+#
+# Single zone, 5000 robots — same shape as a third of the full 45k run, but
+# small enough to finish in ~5 minutes and large enough that the open-server
+# burst still hammers the gate-selection / login path.
+#
+# We pick zone 1 on purpose: that's the one that lost 4 cpp processes to the
+# hijack race in 2026-05-23 round 3, so if the fix held, all 6 zone-1 cpp
+# nodes (2 gate + 4 scene) should still be alive at the end of the smoke.
+
+gateway_addr: "http://127.0.0.1:8081"
+zone_id: 1
+robot_count: 5000
+account_fmt: "smoke5k_%05d"
+password: "123456"
+skill_ids: []
+table_dir: "F:/work/mmorpg/generated/tables"
+action_interval: 5
+report_interval: 5
+
+mode: "stress"
+
+auth_type: "password"
+use_http_login: true
+
+profile: "stress"
+
+llm:
+  enabled: false

@@ -510,7 +510,7 @@ func assignGateHTTPLocal(cfg *config.Config, zoneId uint32) (*gateAssignmentLoca
 			// Bucket4j-ratelimit path: no token, re-call /assign-gate so a
 			// fresh limiter check decides whether we're allowed through now.
 			if rsp.QueueSource == "login" && rsp.QueueToken != "" {
-				rsp, err = httpQueueStatus(cfg.GatewayAddr, rsp.QueueToken, 5*time.Second)
+				rsp, err = httpQueueStatus(cfg.GatewayAddr, rsp.QueueToken, req.ZoneID, 5*time.Second)
 			} else {
 				rsp, err = httpAssignGate(cfg.GatewayAddr, req, 5*time.Second)
 			}

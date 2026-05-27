@@ -243,23 +243,47 @@ void EtcdService::StartWatchingPrefixes() {
 void EtcdService::HandlePutEvent(const std::string& key, const std::string& value) {
 	// Hijack detection: if another node overwrote our exact node_id key
 	// with a different UUID, our identity is stolen.
+	//
+	// The check MUST be skipped while we're still in the boot window before
+	// NodeId CAS has committed a real id. During that window MakeNodeEtcdKey
+	// renders to ".../node_id/0" — a transient key that EVERY un-allocated
+	// peer of the same {zone, type} hashes to. Each peer Watch'es it; the
+	// first peer to PUT (during NodeAllocator's CAS attempt) trips the
+	// "different UUID under my key" branch in every other booting peer and
+	// sends them all into kReRegistrationFailed FATAL — even though no one
+	// ever owned node_id=0 in the first place.
+	//
+	// Stress run 2026-05-23, third pass: zone-1 launched 6 cpp processes
+	// (2 gate + 4 scene) concurrently, 4 of them committed suicide inside a
+	// 2-second window with this exact symptom (z1_scene_2/3/4 + z1_gate_2;
+	// see docs/design/stress-3zone-2026-05-23-postmortem.md §E). The CAS
+	// loser path in NodeAllocator already handles "id taken" by retrying
+	// with the next id, so we don't need Watch-level enforcement during
+	// boot — it's redundant and hostile to concurrent same-zone launches.
+	//
+	// Real hijacks (a re-registration races a stale lease holder) only
+	// matter once we've successfully bound a non-zero id, so gating the
+	// FATAL on `myInfo.node_id() != 0` keeps that protection intact while
+	// removing the boot-time false positive.
 	const auto &myInfo = gNode->GetNodeInfo();
-	const auto myKey = gNode->GetEtcdManager().MakeNodeEtcdKey(myInfo);
-	if (key == myKey)
-	{
-		NodeInfo remoteInfo;
-		if (google::protobuf::util::JsonStringToMessage(value, &remoteInfo).ok())
+	if (myInfo.node_id() != 0) {
+		const auto myKey = gNode->GetEtcdManager().MakeNodeEtcdKey(myInfo);
+		if (key == myKey)
 		{
-			if (!remoteInfo.node_uuid().empty() &&
-				remoteInfo.node_uuid() != myInfo.node_uuid())
+			NodeInfo remoteInfo;
+			if (google::protobuf::util::JsonStringToMessage(value, &remoteInfo).ok())
 			{
-				LOG_ERROR << "Node ID hijack detected via Watch! key=" << key
-						  << " my_uuid=" << myInfo.node_uuid()
-						  << " remote_uuid=" << remoteInfo.node_uuid();
-				gNode->OnNodeIdConflictShutdown(NodeIdConflictReason::kReRegistrationFailed);
-				LOG_FATAL << "Another node has claimed our node_id=" << myInfo.node_id()
-						  << " via etcd Watch. Terminating to prevent SnowFlake collision.";
-				return;
+				if (!remoteInfo.node_uuid().empty() &&
+					remoteInfo.node_uuid() != myInfo.node_uuid())
+				{
+					LOG_ERROR << "Node ID hijack detected via Watch! key=" << key
+							  << " my_uuid=" << myInfo.node_uuid()
+							  << " remote_uuid=" << remoteInfo.node_uuid();
+					gNode->OnNodeIdConflictShutdown(NodeIdConflictReason::kReRegistrationFailed);
+					LOG_FATAL << "Another node has claimed our node_id=" << myInfo.node_id()
+							  << " via etcd Watch. Terminating to prevent SnowFlake collision.";
+					return;
+				}
 			}
 		}
 	}

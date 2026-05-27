@@ -87,8 +87,18 @@ message EnterGameResponse
   //   • force_rename_required = true  →  client MUST show a forced-rename
   //     UI before letting the player into the world. Set when the
   //     player's name collided with an existing name in the merge
-  //     target zone. Client uses the existing rename RPC; the rename
-  //     handler clears the flag on success.
+  //     target zone.
+  //
+  //     2026-05-23 reality note: this project has no player nickname
+  //     field today (CreatePlayer is empty; user.display_name is unused;
+  //     no rename RPC exists). The flag is pre-wired so that when a
+  //     nickname surface lands, the merge tool can already stamp it
+  //     and login can already deliver it without re-doing protocol.
+  //     The eventual rename RPC will be responsible for DELeting the
+  //     `player_force_rename:{player_id}` Redis key on a successful
+  //     rename — login does NOT clear it on EnterGame because the
+  //     client could otherwise dismiss the rename UI and lose the
+  //     gate (see go/login/.../entergamelogic.go::consumePostMergeFlags).
   //
   // Wire compat: pre-this-field clients ignore both — they still enter
   // the game; they just don't see the notice / rename UI. That's fine

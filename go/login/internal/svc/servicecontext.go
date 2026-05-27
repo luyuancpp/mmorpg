@@ -237,12 +237,20 @@ func (g *gateWatcherCapacityProvider) ZoneCapacity(zoneID uint32) uint32 {
 // imports and Redis writes (helpful for env-by-env rollout).
 func (s *ServiceContext) initLoginQueue() {
 	cfg := config.AppConfig.Queue
-	if !cfg.Enabled {
-		return
-	}
+
+	// queueCapProvider is consumed by BOTH the queue path AND the fast path
+	// (signFastPath in assigngatelogic.go), so it has to be wired up
+	// regardless of cfg.Enabled. The original guard skipped it whenever the
+	// queue was off, which made every AssignGate call to a Queue.Enabled=false
+	// login crash on a nil-receiver method call inside CandidatesForZone.
+	// Found during 3-zone × 15000 stress 2026-05.
 	s.queueCapProvider = &gateWatcherCapacityProvider{
 		watcher: s.GateWatcher,
 		caps:    cfg.ZoneCapacityOverride,
+	}
+
+	if !cfg.Enabled {
+		return
 	}
 	s.LoginQueue = loginqueue.New(
 		s.RedisClient,
