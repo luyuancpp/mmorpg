@@ -352,11 +352,16 @@ func consumePostMergeFlags(
 		delPipe.Del(ctx, mergeNoticeKey+pidStr)
 	}
 	if resp.ForceRenameRequired {
-		// NOTE: we do NOT DEL the rename flag here — only the rename
-		// RPC handler deletes it after a successful name change. If
-		// we deleted on EnterGame, the player could press "skip" on
-		// the rename UI and we'd lose the flag forever. Leave the key
-		// in place; the rename handler is the single deleter.
+		// NOTE: we do NOT DEL the rename flag here — clearing it must
+		// happen only after the player has actually picked a new name.
+		// Otherwise a player who dismisses the rename UI loses the gate
+		// permanently. Today the project has no rename RPC at all
+		// (CreatePlayer is empty, no nickname surface; see
+		// docs/ops/merge-zone-runbook.md §4.4 reality note); when a
+		// rename RPC eventually lands, *that* handler is the single
+		// deleter of `player_force_rename:{player_id}`. Until then the
+		// flag is dormant — force_rename_required will never be set
+		// because nobody can stamp it without a name to clash on.
 	}
 	if _, err := delPipe.Exec(ctx); err != nil {
 		logx.Errorf("consumePostMergeFlags: pipeline del failed for player=%d: %v (flags consumed but not cleared, will re-fire next login)", playerID, err)

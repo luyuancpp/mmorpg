@@ -137,20 +137,38 @@ pwsh -File tools/scripts/dev_tools.ps1 -Command merge-zone-audit `
 
 ### 4.4 处理昵称冲突(P0-G)
 
-⚠️ **2026-05-23 现状**:**自动检测当前未实现**。原因:
+⚠️ **2026-05-23 现状(实地核对结论)**:**昵称冲突在当前项目里不是问题** — 因为玩家**根本没有昵称字段**。
 
-1. 项目里没有 `player(name, zone_id)` 这种 SQL 表 — 玩家昵称在 `player_database` 的 protobuf MEDIUMBLOB 里
-2. 玩家 `home_zone` 不在 MySQL 列里,只在 mapping Redis (`player:zone:{id}`)
-3. 要做检测需 merge_zone 工具引 protobuf 依赖 + 解 blob —— 待后续会话实现
+实地核对(2026-05-23):
 
-**当前必须走的人工流程**:
+| 我检查的地方 | 结果 |
+|---|---|
+| `proto/login/login.proto::CreatePlayerRequest` | 空 message,创角不传昵称 |
+| `proto/common/base/user_accounts.proto::AccountSimplePlayer` | 只有 `player_id` |
+| `proto/common/database/mysql_database_table.proto::player_database` | 7 字段,无昵称 |
+| `PlayerUint32Comp` / `PlayerUint64Comp` | 只有 `class` / `registration_timestamp` |
+| `user.display_name` 列存在 | ✅ 列存在,但 grep 业务代码**无人读写** —— 是占位字段 |
+| 玩家显示用什么? | 通常是 `player_id`(uint64),直接显示数字 |
 
-- **方案 A(强烈推荐)**:合服公告里写明 **N 天前自动改名规则**:"合服当日,源服与目标服重名玩家,源服一方将被自动加 `_<src_zone_id>` 后缀"。N=3 天给玩家充分窗口自己改名。**这是当前唯一能闭环的办法**。
-- **方案 B(临时上线后补救)**:合服后玩家投诉到客服,GM 用单玩家改名工具处理。劣化体验。
+**结论**:
 
-**等自动检测落地后**,本节会改为"工具自动 stamp `force_rename_required` flag,客户端登录时见 flag 弹改名 UI"。届时方案 A/B 都不再需要。
+1. **当前合服无昵称冲突可担心** — 玩家不会因为"重名"看到错误,因为没人显示名字
+2. **future-proof 链路已经全套搭好**(`PlayerMergeStateComp.force_rename_required` + Redis flag + EnterGameResponse 下发) — 一旦项目以后增加昵称字段,只需补"冲突检测"那一步即可启用
+3. **当前 runbook 本节是个"无操作"指引** — 真到合服那天直接跳过这一节
 
-**force_rename_required flag 链路是预先搭好的**(proto 字段、login 端读取、客户端字段)—— 缺的只是合服时的"到底该 stamp 哪些 player_id"。所以将来上 protobuf 解码后只需要补一个 stamp 的 player_id 列表即可,基础设施不会再动。
+**如果未来项目加了昵称字段(`user.display_name` 被启用,或 `player_database` 加 `name` 列)**:
+
+- 重新写本节的人工方案 A(预公告 + 自动加后缀)
+- 在 `tools/merge_zone/main.go` 加 SQL 检测填进现有的 `forceRenamePlayerIDs` 参数(`post_merge_stamp.go` 的 stamp 接口已留 seam)
+- 客户端配合 `EnterGameResponse.force_rename_required` 弹改名 UI
+
+**已经搭好的基础设施明细**(future-proof 价值)— 不是死代码:
+
+- ✅ `PlayerMergeStateComp` proto 字段 + codegen 输出
+- ✅ `tools/merge_zone/post_merge_stamp.go::stampPostMergeFlags(..., forceRenamePlayerIDs)` 参数预留
+- ✅ `go/login/.../entergamelogic.go::consumePostMergeFlags` 读取 Redis flag + 下发 Response
+- ✅ `EnterGameResponse.force_rename_required` 字段在客户端 codegen 已有
+- ✅ `audit_resources.go::auditPlayerNameConflicts` block 级提示,触发合服时不会被遗忘
 
 ### 4.5 通知 ops 维护窗口
 

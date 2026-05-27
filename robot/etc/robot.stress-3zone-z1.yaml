@@ -1,0 +1,40 @@
+# 3-zone stress: zone 1 — 15000 robots
+#
+# Pair this with robot.stress-3zone-z2.yaml and -z3.yaml; account_fmt is
+# disjoint across the three so EnterGame never sees a same-account collision
+# and the metrics are clean.
+#
+# Total open-server burst when all three start together:
+#   45000 robots × (POST /api/login + POST /api/assign-gate) → Gateway
+#   45000 long-lived TCP gate connections after admission
+#
+# Pre-flight (must be done):
+#   1. mysql ... < java/gateway_node/src/main/resources/seed_stress_3zones.sql
+#   2. sysctl: ip_local_port_range="1024 65535", tcp_tw_reuse=1,
+#              somaxconn=65535, tcp_max_syn_backlog=65535
+#      (see docs/ops/gate-kernel-tuning-runbook.md)
+#   3. ulimit -n 200000 in each robot shell
+
+gateway_addr: "http://127.0.0.1:8081"
+zone_id: 1
+robot_count: 45000
+account_fmt: "z1bot_%05d"
+password: "123456"
+skill_ids: []
+# Absolute path on purpose: run-stress-3zone.{sh,ps1} chdir's each robot
+# into logs/stress-3zone-<ts>/z{1,2,3}/, so the original relative
+# "../generated/tables" would resolve to logs/stress-3zone-<ts>/generated/tables
+# (non-existent). Edit this path if the run host has the repo elsewhere.
+table_dir: "F:/work/mmorpg/generated/tables"
+action_interval: 5
+report_interval: 5
+
+mode: "stress"
+
+auth_type: "password"
+use_http_login: true
+
+profile: "stress"
+
+llm:
+  enabled: false

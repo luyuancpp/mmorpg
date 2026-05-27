@@ -2,8 +2,14 @@
 Etcd:
   Hosts:
     - "127.0.0.1:2379" # Etcd 集群节点地址（单机部署填1个，集群需填所有节点IP:端口）
-  KeepaliveInterval: 1 # 服务心跳间隔（单位：秒）：当前服务向Etcd发送“存活信号”的频率
-  NodeTTLSeconds: 60 # 服务存活超时（单位：秒）：超过该时间无心跳，Etcd标记服务“下线”  NodeRemovalGraceSeconds: 300 # 节点下线宽限期（单位：秒）：etcd DELETE 后延迟移除，断点调试时节点不会立即被摘除。生产环境设为 0
+  KeepaliveInterval: 1 # 服务心跳间隔(单位:秒):当前服务向 Etcd 发送"存活信号"的频率
+  NodeTTLSeconds: 180 # 服务存活超时(单位:秒):超过该时间无心跳,Etcd 标记服务"下线"
+  # 2026-05-24 stress: 60s TTL 在 45k 开服浪涌时容易因为 keepalive
+  # goroutine 被 grpc/IO 抢占导致一帧 keepalive 应答超过 60s,触发
+  # NodeIdConflictReason::kLeaseExpiredByEtcd FATAL(见 z1_scene_1 22:52
+  # 自杀,postmortem §A)。改 180s 给热点路径留 3 倍 buffer,等业务
+  # 进入稳态再追根因。
+  # NodeRemovalGraceSeconds: 300 # 节点下线宽限期(单位:秒):etcd DELETE 后延迟移除,断点调试时节点不会立即被摘除。生产环境设为 0
 # 表格数据目录配置（存储静态配置表、业务数据表等文件的根路径）
 TableDataDirectory: "../generated/tables/" # 路径可自定义（相对路径/绝对路径均可）
 # 示例说明：若配置为 "./data/table"，则角色配置表可能存于 "./data/table/role_config.xlsx"，道具表存于 "./data/table/item_config.json"
@@ -44,9 +50,27 @@ Kafka:
     - "localhost:9092" # Kafka 集群 Broker 地址（单机填1个，集群需填所有Broker IP:端口）
   Topics:
     - "game-events" # 默认消息主题（如游戏内事件：角色升级、道具交易等）
-  GroupID: "game-consumer-group" # Kafka 消费者组ID（同组消费者共同消费主题消息，避免重复消费）
-  EnableAutoCommit: true # 是否自动提交消费偏移量（true=消费后自动记录位置，false=需手动提交）
-  AutoOffsetReset: "earliest" # 无消费记录时的偏移量重置策略（earliest=从最早消息开始消费，latest=从最新消息开始消费）
+  # Kafka consumer group ID.
+  #
+  # Empty string on purpose: when blank, the cpp engine falls back to
+  # `<groupPrefix>-<node_id>` per instance (see
+  # cpp/libs/engine/core/node/system/node/node_kafka_command_handler.h:150).
+  # Sharing one group across the entire fleet (every gate + scene + ...) was
+  # the original behavior, but it made Kafka rebalance happily hand a
+  # `gate-{N}` partition to a process that wasn't actually gate-N — so a
+  # zone-2 BindSession could land on z1_gate, where ValidateCommandTarget
+  # silently dropped it because target_gate_id != node.GetNodeId(). Stress
+  # 2026-05-24 saw this surface as z2/z3 `scene_notified=1` ratios at 5%
+  # while z1 was at 100%; see docs/design/stress-3zone-2026-05-23-postmortem.md
+  # §J.6.
+  #
+  # Per-instance groupId means every node only competes for partitions of
+  # its own topic, which is what we always wanted: gate-N's group consumes
+  # gate-N. ValidateCommandTarget then only ever sees correctly-routed
+  # commands.
+  GroupID: ""
+  EnableAutoCommit: true
+  AutoOffsetReset: "earliest"
 
 # Gate 连接令牌 HMAC 共享密钥（Login 签发，Gate 验证）
 # 必须与 Go Login 的 GateTokenSecret 保持一致。

@@ -47,9 +47,15 @@ func httpAssignGate(gatewayAddr string, req *httpAssignGateRequest, timeout time
 
 // httpQueueStatus polls POST /api/queue-status with an existing queue_token.
 // Used by queue-aware robots when AssignGate returns code=100 + queueSource="login".
-func httpQueueStatus(gatewayAddr, queueToken string, timeout time.Duration) (*httpAssignGateResponse, error) {
+//
+// zoneId is a routing hint: in 3-zone deployments the Java Gateway uses it to
+// dispatch the poll to the same login.rpc instance that issued the token (each
+// instance only watches its own zone's queue state). A 0 falls back to
+// round-robin, which is fine for single-zone setups but produces sporadic
+// EXPIRED responses across multi-zone configs.
+func httpQueueStatus(gatewayAddr, queueToken string, zoneId uint32, timeout time.Duration) (*httpAssignGateResponse, error) {
 	return postJSON(gatewayAddr+"/api/queue-status",
-		map[string]string{"queue_token": queueToken}, timeout)
+		map[string]any{"queue_token": queueToken, "zone_id": zoneId}, timeout)
 }
 
 func postJSON(url string, payload any, timeout time.Duration) (*httpAssignGateResponse, error) {
@@ -64,7 +70,7 @@ func postJSON(url string, payload any, timeout time.Duration) (*httpAssignGateRe
 		return nil, err
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
-	httpResp, err := http.DefaultClient.Do(httpReq)
+	httpResp, err := sharedHTTPClient.Do(httpReq)
 	if err != nil {
 		return nil, fmt.Errorf("POST %s: %w", url, err)
 	}
@@ -122,7 +128,7 @@ func AssignGateWithQueue(
 			}
 
 			if resp.QueueSource == "login" && resp.QueueToken != "" {
-				resp, err = httpQueueStatus(gatewayAddr, resp.QueueToken, perCallTimeout)
+				resp, err = httpQueueStatus(gatewayAddr, resp.QueueToken, req.ZoneID, perCallTimeout)
 			} else {
 				// ratelimit (or unspecified): re-call /assign-gate.
 				resp, err = httpAssignGate(gatewayAddr, req, perCallTimeout)

@@ -67,7 +67,7 @@ func httpLogin(gatewayAddr string, req *httpLoginRequest, timeout time.Duration)
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
 
-	httpResp, err := http.DefaultClient.Do(httpReq)
+	httpResp, err := sharedHTTPClient.Do(httpReq)
 	if err != nil {
 		return nil, fmt.Errorf("POST /api/login: %w", err)
 	}
@@ -105,7 +105,7 @@ func httpRefreshToken(gatewayAddr, refreshToken string, timeout time.Duration) (
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
 
-	httpResp, err := http.DefaultClient.Do(httpReq)
+	httpResp, err := sharedHTTPClient.Do(httpReq)
 	if err != nil {
 		return nil, fmt.Errorf("POST /api/refresh-token: %w", err)
 	}

@@ -37,6 +37,6 @@ public class QueueStatusController {
 
     @PostMapping("/queue-status")
     public AssignGateResponse queueStatus(@RequestBody QueueStatusRequest req) {
-        return assignGateService.queryQueueStatus(req.getQueueToken());
+        return assignGateService.queryQueueStatus(req.getQueueToken(), req.getZoneId());
     }
 }

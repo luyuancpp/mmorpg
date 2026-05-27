@@ -451,6 +451,17 @@ void HandleGrpcNodeMessage(SessionId sessionId, const RpcClientMessagePtr &reque
 	sessionDetails.set_gate_node_id(gNode->GetNodeId());
 	sessionDetails.set_gate_instance_id(gNode->GetNodeInfo().node_uuid());
 
+	// Stress diagnostic 2026-05-24: scene_manager observed gate_id="0" in
+	// EnterScene requests during 3-zone × 15000 round 2, even though cpp
+	// gate had long since completed NodeId CAS. Logging the actual values
+	// at the SessionDetails build site to confirm whether (a) the cast
+	// drops the high bits, (b) gNode->GetNodeId() is genuinely 0 here, or
+	// (c) login overwrites the field somewhere downstream.
+	LOG_INFO << "[diag] SessionDetails to login: session_id=" << sessionId
+			 << " player_id=" << sessionIt->second.playerId
+			 << " gate_node_id=" << gNode->GetNodeId()
+			 << " message_id=" << request->message_id();
+
 	if (rpcHandlerMeta.sender)
 	{
 		// Scene nodes hold player entities in memory -- require session affinity binding.

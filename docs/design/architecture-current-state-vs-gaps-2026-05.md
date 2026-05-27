@@ -89,6 +89,17 @@ ss -tan state time-wait | awk '{print $4}' | sort | uniq -c | sort -rn | head
 **现状:** 单点结果有了,但没系统压到拐点。
 **待做:** 阶梯 45k → 60k → 80k → 100k → 120k,画 QPS-延迟曲线。
 
+### 缺口 #15: Server-list 走 OSS + CDN 静态发布
+**风险:** `/api/server-list` 每次裸打 MySQL(`ServerListService.java:25-31`),无缓存无限流。开服 5w~50w 客户端冷启动时单点必崩,且跟 #10/#14 抢 Gateway 容量。
+**待做:**
+- Java Gateway 加 `ServerListPublisher` + 阿里云 OSS SDK + CDN purge,运维改 zone 后异步发布 json 到 OSS
+- `/api/server-list` 保留但降级:Caffeine 30s + Bucket4j 限流 + Cache-Control + If-None-Match
+- robot / Unity 客户端加三档 `serverlist_mode`:file(本地)/ gateway(联调)/ cdn(生产)
+- 本地用 MinIO 模拟 OSS;客户端兜底 CDN→备 CDN→Gateway
+- 详细设计 + Phase 划分 + Schema 契约:[serverlist-static-publish-2026-05.md](./serverlist-static-publish-2026-05.md)
+
+**优先级:** 开服前必须上,否则开服那一秒玩家连服务器列表都拉不到。
+
 ---
 
 ## 四、不做(明确排除)

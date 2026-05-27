@@ -1,0 +1,23 @@
+# 3-zone stress: zone 3 — 15000 robots
+# Companion to robot.stress-3zone-z1.yaml. See z1 for full preamble.
+
+gateway_addr: "http://127.0.0.1:8081"
+zone_id: 3
+robot_count: 15000
+account_fmt: "z3bot_%05d"
+password: "123456"
+skill_ids: []
+# Absolute path — see z1 yaml for rationale.
+table_dir: "F:/work/mmorpg/generated/tables"
+action_interval: 5
+report_interval: 7
+
+mode: "stress"
+
+auth_type: "password"
+use_http_login: true
+
+profile: "stress"
+
+llm:
+  enabled: false

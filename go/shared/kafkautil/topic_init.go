@@ -61,7 +61,39 @@ func EnsureTopics(brokers []string, specs []TopicSpec) error {
 			}
 			logx.Infof("kafka topic created: %s (partitions=%d, retention=%dms)", spec.Name, partitions, spec.RetentionMs)
 		} else {
-			// Topic exists — update retention if specified
+			// Topic exists — update retention AND grow partitions if our spec
+			// asks for more than the broker currently has.
+			//
+			// History: this branch used to update only retention.ms. The first
+			// boot ever auto-created topics with the broker default
+			// num.partitions=1 (we were on sarama auto-create back then), so
+			// every subsequent run found the topic and skipped partition
+			// allocation forever. db_task_zone_N silently stayed at 1
+			// partition no matter what the spec said, which serialized every
+			// db worker onto a single partition and capped EnterGame
+			// throughput at one db SELECT at a time. Stress run 2026-05-24
+			// surfaced this when 5000-robot smoke runs piled 22k tasks on
+			// partition 0 and timed out (see
+			// docs/design/stress-3zone-2026-05-23-postmortem.md §G.4).
+			//
+			// Note: Kafka does NOT rebalance existing keys when partitions
+			// grow. New keys hash across the larger space, but messages
+			// already in the log stay where they were. That's fine for
+			// db_task (work queue, no per-key ordering survives a partition
+			// add anyway), but be careful applying this to topics where
+			// per-key ordering matters across boots — in those cases the
+			// safer fix is to rename the topic.
+			existingDetail := existing[spec.Name]
+			if spec.Partitions > 0 && existingDetail.NumPartitions < spec.Partitions {
+				if err := admin.CreatePartitions(spec.Name, spec.Partitions, nil, false); err != nil {
+					logx.Errorf("kafka grow partitions %s %d->%d: %v",
+						spec.Name, existingDetail.NumPartitions, spec.Partitions, err)
+				} else {
+					logx.Infof("kafka topic %s partitions grown: %d -> %d",
+						spec.Name, existingDetail.NumPartitions, spec.Partitions)
+				}
+			}
+
 			if spec.RetentionMs > 0 {
 				entries := map[string]*string{
 					"retention.ms": &retentionStr,

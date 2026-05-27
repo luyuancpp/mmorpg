@@ -178,7 +178,18 @@ services:
       - ETCD_NAME=default
       - ETCD_INITIAL_CLUSTER=default=http://etcd:2380
       - ETCD_INITIAL_ADVERTISE_PEER_URLS=http://etcd:2380
-      - ETCD_ADVERTISE_CLIENT_URLS=http://etcd:2379,http://${HOST_IP:-host.docker.internal}:2379  # Advertised client URLs
+      - ETCD_ADVERTISE_CLIENT_URLS=http://${HOST_IP:-127.0.0.1}:2379  # Advertised client URLs
+      # ^^^^ Single advertise URL on purpose. Originally we advertised both
+      # `etcd:2379` (container hostname, only resolvable inside the compose
+      # network) and `host.docker.internal:2379` (resolvable on the host but
+      # may map to a stale Docker host-only IP, e.g. 192.168.1.12). Once a
+      # client receives the advertised list it auto-syncs against ALL of them
+      # — every grpc call ends up serially racing the dial timeout on the
+      # broken URLs (~30s each), which made `kv.Get` for the gate node prefix
+      # exceed login's 3s ServiceDiscoveryTimeout and surfaced as
+      # `DEADLINE_EXCEEDED` in the gateway during the 3-zone × 15000 stress
+      # 2026-05. Keeping only the loopback URL makes auto-sync a no-op and
+      # restores stable RPC latency.
       - ETCD_LISTEN_CLIENT_URLS=http://0.0.0.0:2379  # Listen on all interfaces for client connections
       - ETCD_LISTEN_PEER_URLS=http://0.0.0.0:2380  # Listen on all interfaces for peer communication
     volumes:
