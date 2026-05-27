@@ -45,7 +45,12 @@ Locker:
   # a heartbeat goroutine that renews the lock at TTL/3 intervals, so this
   # only needs to survive a short Redis blip plus one heartbeat miss. If the
   # login process crashes mid-chain, the lock auto-expires after ~TTL.
-  PlayerLockTTL: 30 # 30 seconds (heartbeat renews every ~10s)
+  PlayerLockTTL: 120 # 120 seconds (heartbeat renews every ~40s)
+  # 2026-05-25 stress: 30s 在 45k 浪涌下被 Redis QPS 飙升压挤,
+  # heartbeat goroutine 一帧调度延迟超过 30s 就丢锁,触发 65k 次
+  # `EnterGame lost lock mid-chain`(见 postmortem §L.3)。120s 给
+  # heartbeat 4× 容错,稳态 prod 下不会增加锁占用 —— EnterGame
+  # 链路正常完成在 ~3s,锁会被显式释放,不依赖 TTL。
 
 # Account config
 Account:
@@ -62,10 +67,25 @@ Registry:
     DialTimeout: 10s
 
 # Timeout config
+#
+# 2026-05-24 stress: ServiceDiscoveryTimeout used to be 3s (per
+# pkg/node/watcher.go default). Under 45k open-server burst the etcd
+# kv.Get on the gate-prefix occasionally took >5s when etcd's auto-sync
+# was probing stale advertise URLs (see postmortem §3). Bumped to 30s so
+# AssignGate fast-path stops surfacing as "no gate available" purely
+# because the discovery probe lost the race against the per-call deadline.
+# 30s is conservative — production prod-tier latency is sub-100ms; the
+# headroom only matters when something is already misbehaving.
 Timeouts:
-  EtcdDialTimeout: 10s
-  ServiceDiscoveryTimeout: 10s
-  TaskWaitTimeout: 5s
+  EtcdDialTimeout: 30s
+  ServiceDiscoveryTimeout: 30s
+  TaskWaitTimeout: 30s
+  # 2026-05-25 stress §M: 5s 在 45k 浪涌下被 db worker 池吞噬,
+  # login.EnterGame submit preload → Kafka db_task → MySQL SELECT → ACK
+  # 总链路在 partition=5 + 1 worker/zone 配置下 5s 撑不住,触发 47802
+  # 次 preload timeout(取代 lock 成为第八轮新瓶颈)。30s 给 6× 容错,
+  # 真正长尾的 SELECT 也能完成 ACK;稳态 prod 下应该 100ms 内 ACK,
+  # 30s 只在浪涌期生效。后续考虑把 partition 拉到 10/20 并行更多。
   LoginTotalTimeout: 10s # Total login timeout (including Redis load, DB ops, etc.)
   RoleCacheExpire: 24h
   TaskManagerCleanInterval: 5s # Task manager cleanup interval
@@ -217,7 +237,14 @@ Kafka:
     - "127.0.0.1:9092"
   GroupID: "db_rpc_consumer_group"
   # Topic is derived from Node.ZoneId at startup (db_task_zone_{ZoneId})
-  PartitionCnt: 5
+  PartitionCnt: 10  # 2026-05-26 stress §10part: 5->10 to lift db worker pool
+  # ⚠️ AUTHORITY: login.go:50 EnsureTopics 启动时按这里调 CreatePartitions
+  # 扩 broker。db/etc/db.yaml 的 PartitionCnt 必须与此一致。
+  # 2026-05-25 stress §N: db worker count = partition count (per
+  # go/db/internal/kafka/key_ordered_consumer.go workers map). 5 partition
+  # 在 45k 浪涌下端到端 100-500ms / task,稳态吞吐 50-100/s 远低于浪涌
+  # 250/s,触发 87k 次 preload timeout。10 partition 把 worker 池容量
+  # 翻倍,期望 preload_to 减半,scene_notified=1 翻倍。
   InitialPartition: 5
   DialTimeout: 10s
   ReadTimeout: 30s
