@@ -422,6 +422,8 @@ net.ipv4.tcp_max_syn_backlog     = 65535
 | 12 | **gate 的 `HandleGrpcNodeMessage` 保留为"协议路由器"**,登录只是它转发的 RPC 之一(EnterGame/LeaveGame/CreatePlayer/Disconnect 必须经它)| **2026-05-08** | [gate-login-rpc-boundary.md](./gate-login-rpc-boundary.md) |
 | 13 | **Gateway 限流**:Bucket4j + Redis,三层叠加(zone/ip/account cooldown)+ 开服波次 | **2026-05-08** | [open-server-rate-limit-design.md](./open-server-rate-limit-design.md) |
 | 14 | **AssignGate 真排队**:权威源放 go-zero login(不是 Java Gateway),Redis ZSET 做有序 FIFO + 单 leader dispatcher;Java AssignGateService 删本地签 HMAC,改成 gRPC 转发;Bucket4j 保留作为前置闸,两层互补 | **2026-05-14** | [login-queue-2026-05.md](./login-queue-2026-05.md) |
+| 15 | **Server-list 走 OSS + CDN 静态发布**:玩家读路径不经过 Java Gateway / MySQL;运维改 zone 后异步生成 json 推 OSS + purge CDN;Gateway `/api/server-list` 仅作降级兜底(Caffeine 30s + Bucket4j);客户端三档:CDN 主 → CDN 备 → Gateway。zone 数据仍存 MySQL `zone_config`,**不进 Excel** | **2026-05-23** | [serverlist-static-publish-2026-05.md](./serverlist-static-publish-2026-05.md) |
+| 16 | **`db_task_zone_{ZoneId}` partition 5→10**:解掉 2026-05-25 §N 基线的 db worker 池容量瓶颈;实测拐点从"开服打开就崩"上移到 **25k conn 之内 100% 干净 / 25k–45k 逐步降级**(单 zone smoke);AUTHORITY 在 `login.yaml`(EnsureTopics),`db.yaml` 是 MIRROR,两处必须同步改否则 worker/partition skew;下一瓶颈不再是 partition 而是 `entergamelogic.go` 里 `player_locker:{playerId}` 的 120s TTL 滞留(异步链没归还锁 + robot 6s 重连节奏命中)— 不是 PreloadPool 池满(实测 dropped=0)| **2026-05-27** | [stress-1zone-45k-2026-05-partition-10.md](./stress-1zone-45k-2026-05-partition-10.md) |
 
 ---
 

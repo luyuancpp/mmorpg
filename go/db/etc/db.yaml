@@ -13,7 +13,10 @@ ServerConfig:
       - "127.0.0.1:9092" # Kafka broker address
     GroupID: "db_rpc_consumer_group" # Kafka consumer group ID (must be unique)
     # Topic and DBName are derived from ZoneId at startup (db_task_zone_{ZoneId}, zone_{ZoneId}_db)
-    PartitionCnt: 5 # Topic partition count (must match Kafka topic)
+    PartitionCnt: 10 # ⚠️ MIRROR of go/login/etc/login.yaml Kafka.PartitionCnt.
+                     # broker 端真实 partition 数由 login 启动时 EnsureTopics
+                     # 决定(login.go:50)。此处只控制 db_rpc consumer worker 数。
+                     # 两边必须一致:不一致就 worker 空转或 partition 没人消费。
     IsOfflineExpand: false # Default false; dynamic expansion mode
   Database:
     Hosts: "127.0.0.1:3306"

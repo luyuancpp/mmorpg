@@ -100,9 +100,11 @@ tcp_max_syn_backlog = 65535
 - **#11** QQ/微信 provider 端到端联调 + 账号映射
 - **#13** 核查 cpp gate→go-zero login gRPC 是否长连复用(压测 Bound=2704 残留)
 - **#9 / #2** sysctl 固化 + 阶梯压测找拐点
+- **#15** Server-list 走 OSS + CDN 静态发布(Gateway 仅降级兜底)— 设计已出,B/C 待做,见 [serverlist-static-publish-2026-05.md](docs/design/serverlist-static-publish-2026-05.md)
 
 **已完成**:
 - ~~**#10** Java Gateway 加 Bucket4j 限流 + 排队(防开服风暴)~~ — ✅ Bucket4j 2026-05-08 + AssignGate 真排队 2026-05-14,见 [login-queue-2026-05.md](docs/design/login-queue-2026-05.md)
+- ~~**db_task partition 5→10**~~ — ✅ 2026-05-27,单 zone smoke 实测拐点从 "开服即崩" → "25k 内 100% 干净 / 25-45k 逐步降级";下一瓶颈在 `entergamelogic.go` 里 `player_locker:{playerId}` 的 120s TTL 滞留(异步链未归还锁 + robot 6s 重连节奏命中,err25 `kLoginInProgress`),见 [stress-1zone-45k-2026-05-partition-10.md](docs/design/stress-1zone-45k-2026-05-partition-10.md)
 
 ---
 
@@ -119,6 +121,8 @@ tcp_max_syn_backlog = 65535
 | login 简化历史 | [docs/design/login-simplification-2026-04.md](docs/design/login-simplification-2026-04.md) |
 | 现状盘点 vs 缺口 | [docs/design/architecture-current-state-vs-gaps-2026-05.md](docs/design/architecture-current-state-vs-gaps-2026-05.md) |
 | 登录排队设计 | [docs/design/login-queue-2026-05.md](docs/design/login-queue-2026-05.md) |
+| Server-list 静态发布 | [docs/design/serverlist-static-publish-2026-05.md](docs/design/serverlist-static-publish-2026-05.md) |
+| db_task partition 5→10 复盘 | [docs/design/stress-1zone-45k-2026-05-partition-10.md](docs/design/stress-1zone-45k-2026-05-partition-10.md) |
 | 内核调优 SOP | [docs/ops/gate-kernel-tuning-runbook.md](docs/ops/gate-kernel-tuning-runbook.md) |
 | 排队压测判读 | [docs/ops/login-queue-stress-runbook.md](docs/ops/login-queue-stress-runbook.md) |
 | 压测复盘 | [docs/design/stress-test-2026-05-ephemeral-port.md](docs/design/stress-test-2026-05-ephemeral-port.md) |
