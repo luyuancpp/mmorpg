@@ -235,3 +235,38 @@ robot/.../
 *.exe.old
 *.exe~
 tools/proto/protogen/
+
+# Build / cache artefacts surfaced during 2026-05 stress series.
+# Bulk-blocked so future `git add -A` doesn't accidentally commit GB of
+# compiled / generated / log content.
+#
+# - robot/logs/                          : per-run stress stderr/stdout (GB / run)
+# - bin/nodes/                           : compiled C++ node binaries
+# - cpp/generated/config/, cpp/generated/lua/ : codegen output
+# - cpp/libs/base/, cpp/libs/services/slg/, cpp/nodes/slg_map/ :
+#                                          WIP / submodule-like checkouts
+# - cpp/libs/engine/muduo_windows/src/boost-download/ : boost fetch cache
+# - client/fairygui/qdao/.objs/          : FairyGUI build artefacts
+# - lib/pkgconfig/                       : pkg-config output from build
+# - generated/code/java/bit_index/, generated/robot/proto/go-zero/,
+#   java/config_node/src/main/java/com/game/table/bit_index/ :
+#                                          project-internal codegen mirrors
+# - **/__pycache__/                      : Python bytecode cache
+# - tools/docs/protogen/                 : codegen output
+# - .claude/worktrees/                   : ephemeral Claude Code worktrees
+robot/logs/
+bin/nodes/
+cpp/generated/config/
+cpp/generated/lua/
+cpp/libs/base/
+cpp/libs/services/slg/
+cpp/nodes/slg_map/
+cpp/libs/engine/muduo_windows/src/boost-download/
+client/fairygui/qdao/.objs/
+lib/pkgconfig/
+generated/code/java/bit_index/
+generated/robot/proto/go-zero/
+java/config_node/src/main/java/com/game/table/bit_index/
+**/__pycache__/
+tools/docs/protogen/
+.claude/worktrees/
