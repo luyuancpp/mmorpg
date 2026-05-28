@@ -78,6 +78,26 @@ type worker struct {
 	topic         string
 	retryQueueKey string
 	wg            *sync.WaitGroup
+
+	// subShardCount is the number of intra-partition parallel goroutines
+	// that share the work for this partition. With subShardCount=1 the
+	// worker is the legacy single-goroutine behaviour. With N>1, the
+	// `start` goroutine becomes a router that hashes by task.Key into N
+	// sub-channels, each consumed by its own goroutine.
+	//
+	// Why this exists: MySQL pool capacity (MaxOpenConn=30) was hugely
+	// underused because partition=10 worker.start was strictly serial —
+	// only 10 MySQL connections in flight, 20 idle. With subShardCount=4
+	// effective parallelism becomes 10×4=40, saturating the pool.
+	//
+	// Per-key ordering is preserved: same key.hash → same sub-channel →
+	// same goroutine → same coalesce window. The batch coalescer only
+	// looks at the *contiguous* tasks the sub-worker drained, so it
+	// works identically to the legacy path within each shard.
+	//
+	// See 2026-05-28 stress §5 ("反转:db worker 串行才是真天花板").
+	subShardCount int
+	subShardChans []chan *workerTask
 }
 
 // workerTask wraps either a Kafka message or a pre-parsed retry task.
@@ -277,7 +297,19 @@ func NewKeyOrderedKafkaConsumer(
 	lockerIns := locker.NewRedisLocker(redisClient)
 
 	workers := make(map[int32]*worker)
+	subShardCount := cfg.ServerConfig.Kafka.SubShardCount
+	if subShardCount <= 0 {
+		subShardCount = 1 // 1 = legacy single-goroutine-per-partition behaviour
+	}
 	for i := int32(0); i < cfg.ServerConfig.Kafka.PartitionCnt; i++ {
+		shardChans := make([]chan *workerTask, subShardCount)
+		for s := 0; s < subShardCount; s++ {
+			// 256 buffer per sub-channel is enough: the router fans tasks
+			// in, sub-workers drain via batch + processTaskBatch. If a
+			// shard backs up, the router will block (which propagates
+			// backpressure into Kafka — the desired behaviour).
+			shardChans[s] = make(chan *workerTask, 256)
+		}
 		workers[i] = &worker{
 			partition:     i,
 			taskCh:        make(chan *workerTask, 1000),
@@ -287,6 +319,8 @@ func NewKeyOrderedKafkaConsumer(
 			topic:         cfg.ServerConfig.Kafka.Topic,
 			retryQueueKey: retryQueueKey,
 			wg:            wg,
+			subShardCount: subShardCount,
+			subShardChans: shardChans,
 		}
 	}
 
@@ -405,25 +439,113 @@ func (w *worker) start(isOfflineExpand bool) {
 		logx.Infof("worker stopped: partition=%d, topic=%s", w.partition, w.topic)
 	}()
 
-	logx.Infof("worker started: partition=%d, topic=%s, isOfflineExpand=%v", w.partition, w.topic, isOfflineExpand)
+	logx.Infof("worker started: partition=%d, topic=%s, isOfflineExpand=%v, subShards=%d",
+		w.partition, w.topic, isOfflineExpand, w.subShardCount)
 
+	// Launch one sub-worker goroutine per sub-shard. Each sub-worker
+	// drains its own channel and does its own batch coalesce, so per-key
+	// ordering is preserved (same key.hash → same shard → same goroutine).
+	//
+	// We use an inner WaitGroup so this function only returns once every
+	// sub-worker has fully drained on shutdown; otherwise the outer wg
+	// would mark the worker done while sub-workers are still touching
+	// MySQL/Redis.
+	var subWg sync.WaitGroup
+	for s := 0; s < w.subShardCount; s++ {
+		subWg.Add(1)
+		go w.runSubShard(s, isOfflineExpand, &subWg)
+	}
+
+	// Router loop: drain w.taskCh and fan each task out to the right
+	// sub-shard by hash(task.Key). On shutdown, close all sub-channels
+	// so the sub-workers exit.
 	for {
 		select {
 		case <-w.ctx.Done():
 			logx.Infof("worker received stop signal: partition=%d", w.partition)
+			for _, ch := range w.subShardChans {
+				close(ch)
+			}
+			subWg.Wait()
 			return
 		case task, ok := <-w.taskCh:
 			if !ok {
 				logx.Infof("worker task channel closed: partition=%d", w.partition)
+				for _, ch := range w.subShardChans {
+					close(ch)
+				}
+				subWg.Wait()
+				return
+			}
+			w.routeToSubShard(task)
+		}
+	}
+}
+
+// routeToSubShard picks the destination sub-shard for one task.
+//
+// We pre-extract the routing key (dbTask.Key for retry tasks, or the
+// Key/MsgType pair encoded into the kafka payload for fresh tasks).
+// Same routing key always lands in the same sub-shard, so two tasks
+// for the same player can never run concurrently in different goroutines,
+// preserving read-after-write semantics.
+func (w *worker) routeToSubShard(task *workerTask) {
+	if w.subShardCount <= 1 {
+		// Legacy: only one sub-shard, no routing needed.
+		w.subShardChans[0] <- task
+		return
+	}
+
+	routingKey := uint64(0)
+	switch {
+	case task.dbTask != nil:
+		routingKey = task.dbTask.Key
+	case task.kafkaMsg != nil:
+		// Decode just enough to read Key. We pay the cost twice (here +
+		// in handleTask) for fresh kafka tasks, but only once for retry
+		// tasks. Acceptable; the alternative (storing parsed dbTask on
+		// workerTask) churns more allocator pressure.
+		var t db_proto.DBTask
+		if err := proto.Unmarshal(task.kafkaMsg.Value, &t); err == nil {
+			routingKey = t.Key
+		} else {
+			logx.Errorf("routeToSubShard: failed to peek Key, partition=%d, offset=%d: %v",
+				w.partition, task.kafkaMsg.Offset, err)
+			// Fall through with routingKey=0; the handleTask path will
+			// log + drop the malformed message.
+		}
+	}
+
+	shard := int(routingKey % uint64(w.subShardCount))
+	select {
+	case w.subShardChans[shard] <- task:
+	case <-w.ctx.Done():
+		// Don't deadlock on shutdown if a shard is already gone.
+	}
+}
+
+// runSubShard is the per-sub-channel drain + batch-coalesce loop. This
+// is what used to be the body of worker.start before the sub-shard
+// refactor; logic inside is unchanged so per-key ordering and the
+// processTaskBatch coalescer keep working identically.
+func (w *worker) runSubShard(shardIdx int, isOfflineExpand bool, subWg *sync.WaitGroup) {
+	defer subWg.Done()
+	ch := w.subShardChans[shardIdx]
+
+	for {
+		select {
+		case <-w.ctx.Done():
+			return
+		case task, ok := <-ch:
+			if !ok {
 				return
 			}
 
-			// Drain all immediately available tasks from the channel
 			batch := []*workerTask{task}
 		drainLoop:
 			for {
 				select {
-				case t, ok := <-w.taskCh:
+				case t, ok := <-ch:
 					if !ok {
 						break drainLoop
 					}
