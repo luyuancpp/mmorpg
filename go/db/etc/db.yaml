@@ -18,12 +18,26 @@ ServerConfig:
                      # 决定(login.go:50)。此处只控制 db_rpc consumer worker 数。
                      # 两边必须一致:不一致就 worker 空转或 partition 没人消费。
     IsOfflineExpand: false # Default false; dynamic expansion mode
+    SubShardCount: 4 # 2026-05-28 stress §5: partition=10 × 1 worker per
+                     # partition was the real throughput cap (not MySQL
+                     # pool). SubShardCount=4 splits each partition's
+                     # work across 4 goroutines (hash by Key, per-key
+                     # ordering preserved), giving 10×4=40 effective
+                     # parallelism and finally saturating MaxOpenConn=30.
   Database:
     Hosts: "127.0.0.1:3306"
     User: "root"
     Passwd: "Mmorpg#2026db"
-    MaxOpenConn: 10
-    MaxIdleConn: 3
+    MaxOpenConn: 30 # 2026-05-28 deep-dive §1: 10 was the real bottleneck.
+                    # partition=10 + MaxOpenConn=10 meant every worker
+                    # competed for exactly one MySQL connection; under
+                    # ~90 task/s steady input the pool was always full
+                    # and Kafka backlog grew to 91k. 30 gives 3x
+                    # headroom; MySQL default max_connections=151 leaves
+                    # plenty for robot/admin/verifier processes.
+    MaxIdleConn: 10 # raised from 3 to keep the warm-pool sized for the
+                    # new MaxOpenConn — otherwise the pool churns
+                    # connections under load.
     Net: ""
   RedisClient:
     Hosts: "127.0.0.1:6379"

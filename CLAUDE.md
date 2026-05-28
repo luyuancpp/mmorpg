@@ -107,6 +107,8 @@ tcp_max_syn_backlog = 65535
 - ~~**db_task partition 5→10**~~ — ✅ 2026-05-27,单 zone smoke 实测拐点从 "开服即崩" → "25k 内 100% 干净 / 25-45k 逐步降级";下一瓶颈在 `entergamelogic.go` 里 `player_locker:{playerId}` 的 120s TTL 滞留(异步链未归还锁 + robot 6s 重连节奏命中,err25 `kLoginInProgress`),见 [stress-1zone-45k-2026-05-partition-10.md](docs/design/stress-1zone-45k-2026-05-partition-10.md)
 - ~~**dispatcher GC tick + dispatcherTaskTTL 联动修复**~~ — ✅ 2026-05-28,prometheus histogram 仪表化 12 个 EnterGame 异步链子阶段,定位 callback_wait 是真凶;dispatcher GC tick `defaultTTL/2→1s` 让 5s TTL 真生效;25k smoke 23m 全跑 robot 视角 0 失败(上轮 T+21m 已雪崩冻死)。**警示**:后台仍 46% preload_failed,scene-side Redis NIL retry 兜底,下次要在 db_rpc consumer 端继续打点。见 [stress-1zone-25k-2026-05-28-callback-wait.md](docs/design/stress-1zone-25k-2026-05-28-callback-wait.md)
 - **46% preload_failed 深挖完毕** — ⚠️ 2026-05-28,Kafka lag 91k + MaxOpenConn=10 = MySQL 连接池才是真瓶颈;scene-side `kMaxLoadRetries=6 / 122s 总预算`(2/4/8/16/32/60s 退避)是兜底机制让 robot 看不见失败;preload 失败时锁正常释放(player_locker:* 实测 0)+ session 状态保留 + Bind/EnterScene 不发,robot enter_ok 是 RPC 同步成功不等 scene-ready;6 个代码陷阱审查(lock heartbeat / saveToRedis 失败 / 同 playerId in-flight / sub_cache 部分命中 / TaskResult LPop / batch coalesce)— 见 [stress-1zone-25k-2026-05-28-deep-dive.md](docs/design/stress-1zone-25k-2026-05-28-deep-dive.md);**下一步**(按 ROI):MaxOpenConn 10→30 + db_rpc 子阶段打点
+- **MaxOpenConn 10→30 实测解一半** — ⚠️ 2026-05-28,preload{success} avg 5.14s → 34.6ms(降 99.3%) + fail% 46% → 29%,但 Kafka backlog 仍 80k;**反转**:db worker 串行才是真天花板,不是 MySQL 池(10 partition × 1 worker × 1 conn = 实际只用 10,池里 20 个闲);见 [stress-1zone-25k-2026-05-28-maxopenconn.md](docs/design/stress-1zone-25k-2026-05-28-maxopenconn.md)
+- ~~**Worker sub-shard (方案 A)**~~ — ✅ 2026-05-28,`SubShardCount=4` 让每 partition 内开 4 个 goroutine 按 `hash(Key)` 路由(保 per-key 顺序),10×4=40 路并发。实测 **23 分钟全跑 robot 视角 0 失败 + max_login 209ms(-64%) + Kafka backlog -95% + throughput +160%**。同时 `tools/scripts/stress_summarize.ps1` 上线,以后压测复盘只读它输出。见 [stress-1zone-25k-2026-05-28-subshard.md](docs/design/stress-1zone-25k-2026-05-28-subshard.md)
 
 ---
 
@@ -127,6 +129,10 @@ tcp_max_syn_backlog = 65535
 | db_task partition 5→10 复盘 | [docs/design/stress-1zone-45k-2026-05-partition-10.md](docs/design/stress-1zone-45k-2026-05-partition-10.md) |
 | dispatcher GC + callback_wait 修复 | [docs/design/stress-1zone-25k-2026-05-28-callback-wait.md](docs/design/stress-1zone-25k-2026-05-28-callback-wait.md) |
 | 46% 后台 preload_failed 深挖 | [docs/design/stress-1zone-25k-2026-05-28-deep-dive.md](docs/design/stress-1zone-25k-2026-05-28-deep-dive.md) |
+| MaxOpenConn 10→30 实测 | [docs/design/stress-1zone-25k-2026-05-28-maxopenconn.md](docs/design/stress-1zone-25k-2026-05-28-maxopenconn.md) |
+| Worker sub-shard (方案 A) | [docs/design/stress-1zone-25k-2026-05-28-subshard.md](docs/design/stress-1zone-25k-2026-05-28-subshard.md) |
+| dispatcher GC + callback_wait 修复 | [docs/design/stress-1zone-25k-2026-05-28-callback-wait.md](docs/design/stress-1zone-25k-2026-05-28-callback-wait.md) |
+| 46% 后台 preload_failed 深挖 | [docs/design/stress-1zone-25k-2026-05-28-deep-dive.md](docs/design/stress-1zone-25k-2026-05-28-deep-dive.md) |
 | 内核调优 SOP | [docs/ops/gate-kernel-tuning-runbook.md](docs/ops/gate-kernel-tuning-runbook.md) |
 | 排队压测判读 | [docs/ops/login-queue-stress-runbook.md](docs/ops/login-queue-stress-runbook.md) |
 | 压测复盘 | [docs/design/stress-test-2026-05-ephemeral-port.md](docs/design/stress-test-2026-05-ephemeral-port.md) |
@@ -144,3 +150,8 @@ tcp_max_syn_backlog = 65535
 5. **新增第三方登录渠道** 走 AuthProvider 框架,4 步搞定,见 auth-provider-framework.md §How to Add。
 6. **加锁优先用 `RedisLocker`**,不要再发明轮子。
 7. **写架构变更先更新 ARCH.md §11 决策表**,再写专题文档。
+8. **压测复盘只读 `stress_summarize.ps1` 输出,不要手 grep raw prom dump**。
+   - 命令: `pwsh tools/scripts/stress_summarize.ps1 -RunDir robot/logs/stress-<name>-<ts>`
+   - 输出三段二维表:robot 每分钟 stats + entergame_total + dataloader stage avg + Kafka lag,~2KB 上下文。
+   - 跑完手动拉 `curl -s http://127.0.0.1:9101/metrics > $RunDir/prom-snapshots/t<n>m_<tag>.txt` 存 snapshot,脚本会自动吃。
+   - 历史复盘文档(`stress-1zone-*.md`)直接复用脚本输出的表格,不要再贴 raw count/sum 数字。

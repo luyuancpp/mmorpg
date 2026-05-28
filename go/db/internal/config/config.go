@@ -47,6 +47,18 @@ type KafkaConfig struct {
 	Topic           string   `json:"Topic,optional"`  // Derived from ZoneId at startup
 	PartitionCnt    int32    `json:"PartitionCnt"`    // Partition count
 	IsOfflineExpand bool     `json:"IsOfflineExpand"` // Offline expansion: true = maintenance mode
+
+	// SubShardCount controls intra-partition parallelism. 0 or 1 = legacy
+	// behaviour (single goroutine per partition, max parallelism =
+	// PartitionCnt). N>1 = each partition's worker becomes a router that
+	// fans tasks across N sub-goroutines by hash(task.Key), so per-key
+	// ordering is preserved while overall throughput multiplies by N.
+	//
+	// Why this exists: under MaxOpenConn=30 the MySQL pool was massively
+	// underused because partition=10 = strictly 10 in-flight queries.
+	// With SubShardCount=4, effective parallelism becomes 10×4=40 and the
+	// pool actually fills. See 2026-05-28 stress maxopenconn doc §3.
+	SubShardCount int `json:"SubShardCount,optional"`
 }
 
 var AppConfig Config
