@@ -206,6 +206,13 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 	const chainBudget = 5 * time.Minute
 	chainCtx, chainCancel := context.WithTimeout(context.Background(), chainBudget)
 
+	// chainStart is the t0 for the total / preload latency histograms.
+	// We start the clock here (not before TryLock) because the histograms
+	// are measuring "what happens AFTER the lock is taken until we release
+	// it", which is the exact window we need to attribute the err25 stalls
+	// to a specific stage. See metrics.go for the bucket rationale.
+	chainStart := time.Now()
+
 	releaseLock := func() {
 		releaseCtx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 		defer cancel()
@@ -228,6 +235,12 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 		func(err error) {
 			logx.Errorf("EnterGame lost lock mid-chain [PlayerId=%d]: %v", playerID, err)
 			chainCancel()
+			// Mark this chain as "lock_lost" for the total histogram.
+			// observeTotal in onPreloadComplete won't run because the
+			// dispatcher callback may never fire after the chain is
+			// cancelled mid-flight; record it here so the histogram has
+			// closure even on the lost-lock path.
+			observeTotal(chainStart, ResultLockLost)
 		},
 	)
 
@@ -237,22 +250,57 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 		defer chainCancel()
 		defer releaseLock()
 
+		// preloadSeconds: from chain start to the moment the dispatcher
+		// callback fires. Includes Kafka send + DB worker turnaround +
+		// dispatcher Pub/Sub delivery.
+		preloadResult := ResultSuccess
+		if err != nil {
+			preloadResult = ResultPreloadFailed
+		}
+		preloadSeconds.ObserveFloat(time.Since(chainStart).Seconds(), preloadResult)
+
 		if err != nil {
 			logx.Errorf("EnterGame preload failed [PlayerId=%d]: %v", playerID, err)
+			observeTotal(chainStart, ResultPreloadFailed)
 			return
 		}
 
+		// applySeconds wraps the whole apply phase (GetSession + persist
+		// + BindGate + EnterScene). Sub-stages are recorded separately
+		// inside applyLoadedPlayerSession.
+		applyStart := time.Now()
 		decision, applyErr := l.applyLoadedPlayerSession(chainCtx, enterCtx)
+		applyResult := ResultSuccess
+		if applyErr != nil {
+			applyResult = ResultApplyFailed
+		}
+		applySeconds.ObserveFloat(time.Since(applyStart).Seconds(), applyResult)
+
 		if applyErr != nil {
 			logx.Errorf("EnterGame apply session failed [PlayerId=%d]: %v", playerID, applyErr)
+			observeTotal(chainStart, ResultApplyFailed)
 			return
 		}
 		logx.Infof("EnterGame complete (decision=%d) playerId=%d", decision, playerID)
 
 		cleanupLoginSessionState(chainCtx, l.svcCtx, sessionID, "enterGame")
+		observeTotal(chainStart, ResultSuccess)
 	}
 
-	const dispatcherTaskTTL = 30 * time.Second
+	// dispatcherTaskTTL caps how long the EnsurePlayerAllDataInRedisAsync
+	// chain will wait for DB-task callbacks before declaring the preload
+	// failed. The (f) instrumented 25k smoke (2026-05-28) showed:
+	//   - successful preload avg = 3s
+	//   - failed preload avg = 35s (was 30s + dispatcher overhead)
+	//   - 2.7% failure rate consumed 25% of the preload pool's wall time
+	// 30s was way too generous: while a failed preload sits in the wait,
+	// player_locker:{playerId} stays held, every reconnect for that
+	// account hits err25, and the failure cascades into a retry storm.
+	// 5s lets the chain give up early — the client retry path is faster
+	// than waiting for an unresponsive Kafka/dispatcher leg, and the
+	// scene-side Redis NIL retry already compensates for genuinely lost
+	// preloads.
+	const dispatcherTaskTTL = 5 * time.Second
 	ok := l.svcCtx.SubmitPreload(func() {
 		dataloader.EnsurePlayerAllDataInRedisAsync(
 			chainCtx,
@@ -380,25 +428,37 @@ func buildEnterGameSessionState(in *login_proto.EnterGameRequest, sessionDetails
 }
 
 func (l *EnterGameLogic) applyLoadedPlayerSession(ctx context.Context, state enterGameSessionState) (sessionmanager.EnterGameDecision, error) {
+	// Stage observation: GetSession round-trip to player_locator.
+	getSessionTimer := observeStage(applyGetSessionSeconds)
 	existing, err := sessionmanager.GetSession(ctx, l.svcCtx.PlayerLocatorClient, state.playerID)
+	getSessionTimer()
 	if err != nil {
 		return sessionmanager.FirstLogin, err
 	}
 
 	decision := sessionmanager.DecideEnterGame(existing, state.account)
+
+	// Stage observation: persistEnterGameSession (SetSession or Reconnect).
+	// Label by decision so the reconnect (CAS) tail doesn't get hidden by the
+	// first/replace (write) tail.
+	persistTimer := observeStage(applyPersistSessionSeconds, decisionLabel(decision))
 	version, err := l.persistEnterGameSession(ctx, decision, existing, state)
+	persistTimer()
 	if err != nil {
 		return decision, err
 	}
 
 	// Notify Gate: bind the session and carry the login decision so Gate can forward to Scene.
 	enterGsType := sessionmanager.DecisionToEnterGsType(decision)
-	if err := l.svcCtx.SendBindSessionToGate(
+	bindTimer := observeStage(applyBindGateSeconds)
+	bindErr := l.svcCtx.SendBindSessionToGate(
 		state.gateID, state.gateInstanceID,
 		state.sessionID, state.playerID, version, enterGsType,
-	); err != nil {
-		logx.Errorf("Failed to send BindSessionToGate for player %d: %v", state.playerID, err)
-		return decision, err
+	)
+	bindTimer()
+	if bindErr != nil {
+		logx.Errorf("Failed to send BindSessionToGate for player %d: %v", state.playerID, bindErr)
+		return decision, bindErr
 	}
 
 	// Route player to Scene node via SceneManager.
@@ -409,6 +469,11 @@ func (l *EnterGameLogic) applyLoadedPlayerSession(ctx context.Context, state ent
 		sceneID = existing.SceneID
 	}
 	smTimeout := time.Duration(config.AppConfig.SceneManagerRpc.Timeout) * time.Millisecond
+	// Stage observation: SceneManager.EnterScene RPC. This is the prime
+	// suspect under load — it routes through SceneManager → Scene
+	// AssignScene + Kafka. If err25 root cause is "async chain stalls",
+	// this histogram is where the long tail will appear.
+	enterSceneTimer := observeStage(applyEnterSceneSeconds)
 	enterResp, err := l.svcCtx.SceneManagerClient.EnterScene(ctx, &smpb.EnterSceneRequest{
 		PlayerId:       state.playerID,
 		SceneId:        sceneID,
@@ -419,6 +484,7 @@ func (l *EnterGameLogic) applyLoadedPlayerSession(ctx context.Context, state ent
 		GateZoneId:     config.AppConfig.Node.ZoneId,
 		ZoneId:         config.AppConfig.Node.ZoneId,
 	}, zrpc.WithCallTimeout(smTimeout))
+	enterSceneTimer()
 	if err != nil {
 		logx.Errorf("SceneManager.EnterScene failed for player %d: %v", state.playerID, err)
 		return decision, err
