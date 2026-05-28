@@ -105,6 +105,7 @@ tcp_max_syn_backlog = 65535
 **已完成**:
 - ~~**#10** Java Gateway 加 Bucket4j 限流 + 排队(防开服风暴)~~ — ✅ Bucket4j 2026-05-08 + AssignGate 真排队 2026-05-14,见 [login-queue-2026-05.md](docs/design/login-queue-2026-05.md)
 - ~~**db_task partition 5→10**~~ — ✅ 2026-05-27,单 zone smoke 实测拐点从 "开服即崩" → "25k 内 100% 干净 / 25-45k 逐步降级";下一瓶颈在 `entergamelogic.go` 里 `player_locker:{playerId}` 的 120s TTL 滞留(异步链未归还锁 + robot 6s 重连节奏命中,err25 `kLoginInProgress`),见 [stress-1zone-45k-2026-05-partition-10.md](docs/design/stress-1zone-45k-2026-05-partition-10.md)
+- ~~**dispatcher GC tick + dispatcherTaskTTL 联动修复**~~ — ✅ 2026-05-28,prometheus histogram 仪表化 12 个 EnterGame 异步链子阶段,定位 callback_wait 是真凶;dispatcher GC tick `defaultTTL/2→1s` 让 5s TTL 真生效;25k smoke 23m 全跑 robot 视角 0 失败(上轮 T+21m 已雪崩冻死)。**警示**:后台仍 46% preload_failed,scene-side Redis NIL retry 兜底,下次要在 db_rpc consumer 端继续打点。见 [stress-1zone-25k-2026-05-28-callback-wait.md](docs/design/stress-1zone-25k-2026-05-28-callback-wait.md)
 
 ---
 
@@ -123,6 +124,7 @@ tcp_max_syn_backlog = 65535
 | 登录排队设计 | [docs/design/login-queue-2026-05.md](docs/design/login-queue-2026-05.md) |
 | Server-list 静态发布 | [docs/design/serverlist-static-publish-2026-05.md](docs/design/serverlist-static-publish-2026-05.md) |
 | db_task partition 5→10 复盘 | [docs/design/stress-1zone-45k-2026-05-partition-10.md](docs/design/stress-1zone-45k-2026-05-partition-10.md) |
+| dispatcher GC + callback_wait 修复 | [docs/design/stress-1zone-25k-2026-05-28-callback-wait.md](docs/design/stress-1zone-25k-2026-05-28-callback-wait.md) |
 | 内核调优 SOP | [docs/ops/gate-kernel-tuning-runbook.md](docs/ops/gate-kernel-tuning-runbook.md) |
 | 排队压测判读 | [docs/ops/login-queue-stress-runbook.md](docs/ops/login-queue-stress-runbook.md) |
 | 压测复盘 | [docs/design/stress-test-2026-05-ephemeral-port.md](docs/design/stress-test-2026-05-ephemeral-port.md) |

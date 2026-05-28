@@ -123,7 +123,23 @@ func (d *TaskResultDispatcher) run() {
 		cancel()
 	}()
 
-	gc := time.NewTicker(d.defaultTTL / 2)
+	// GC tick interval. Originally `defaultTTL / 2` (so 15s when defaultTTL
+	// is the default 30s). That made per-entry TTL effectively rounded UP to
+	// the next 15s tick — registering with ttl=5s still meant timeout
+	// callbacks fired at most every 15s, hiding the real 5s SLO.
+	//
+	// 2026-05-28 stress §(1)+(3): we lowered dispatcherTaskTTL from 30s to 5s
+	// in entergamelogic.go to bound how long player_locker stays held when
+	// the async chain stalls. But entergame_preload_seconds{preload_failed}
+	// observed 12s avg afterwards (not the expected 5s), and prom data
+	// showed dataloader_preload_callback_wait_seconds buckets all between
+	// 5s and 20s — exactly the "next 15s tick" rounding behaviour.
+	//
+	// Switch to a fixed 1s tick: cheap (one map scan per second, bounded
+	// by pending size which is in the hundreds at most), and makes the
+	// per-entry TTL the actual SLO with at most ~1s of slop.
+	const gcInterval = 1 * time.Second
+	gc := time.NewTicker(gcInterval)
 	defer gc.Stop()
 
 	for {
