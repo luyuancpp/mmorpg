@@ -255,7 +255,17 @@
       "PowerShell(docker compose *)",
       "PowerShell(& F:\\\\work\\\\mmorpg\\\\tools\\\\scripts\\\\dev_tools.ps1 -Command dev-start-exe -GateCount 2 -SceneCount 4 2>&1 | Select-Object -Last 40)",
       "PowerShell(& F:\\\\work\\\\mmorpg\\\\tools\\\\scripts\\\\dev_tools.ps1 -Command dev-status 2>&1 | Select-Object -Last 40)",
-      "PowerShell(& F:\\\\work\\\\mmorpg\\\\tools\\\\scripts\\\\dev_tools.ps1 -Command go-svc-status 2>&1 | Select-Object -Last 30)"
+      "PowerShell(& F:\\\\work\\\\mmorpg\\\\tools\\\\scripts\\\\dev_tools.ps1 -Command go-svc-status 2>&1 | Select-Object -Last 30)",
+      "PowerShell(& F:\\\\work\\\\mmorpg\\\\tools\\\\scripts\\\\dev_tools.ps1 -Command go-svc-status 2>&1 | Select-Object -Last 25)",
+      "Bash(curl -s http://127.0.0.1:9101/metrics)",
+      "Bash(python3 -c 'import sys,json; d=json.loads\\(sys.stdin.read\\(\\)\\); brokers=d.get\\('\\\\''brokers'\\\\'',[]\\); *)",
+      "PowerShell(docker exec kafka *)",
+      "Bash(python3 -c ' *)",
+      "Bash(python3 -)",
+      "PowerShell(pwsh -NoProfile -File F:\\\\work\\\\mmorpg\\\\tools\\\\scripts\\\\stress_summarize.ps1 -RunDir F:\\\\work\\\\mmorpg\\\\robot\\\\logs\\\\stress-1zone-25k-mysqlpool-20260528-095929 2>&1 | Select-Object -First 80)",
+      "Bash(rm *)",
+      "Bash(xargs grep -lE \"robot.exe|robot\\\\.stress-1zone|stress-1zone-25k\")",
+      "PowerShell(Get-Command *)"
     ]
   }
 }
