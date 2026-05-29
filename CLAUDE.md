@@ -109,6 +109,7 @@ tcp_max_syn_backlog = 65535
 - **46% preload_failed 深挖完毕** — ⚠️ 2026-05-28,Kafka lag 91k + MaxOpenConn=10 = MySQL 连接池才是真瓶颈;scene-side `kMaxLoadRetries=6 / 122s 总预算`(2/4/8/16/32/60s 退避)是兜底机制让 robot 看不见失败;preload 失败时锁正常释放(player_locker:* 实测 0)+ session 状态保留 + Bind/EnterScene 不发,robot enter_ok 是 RPC 同步成功不等 scene-ready;6 个代码陷阱审查(lock heartbeat / saveToRedis 失败 / 同 playerId in-flight / sub_cache 部分命中 / TaskResult LPop / batch coalesce)— 见 [stress-1zone-25k-2026-05-28-deep-dive.md](docs/design/stress-1zone-25k-2026-05-28-deep-dive.md);**下一步**(按 ROI):MaxOpenConn 10→30 + db_rpc 子阶段打点
 - **MaxOpenConn 10→30 实测解一半** — ⚠️ 2026-05-28,preload{success} avg 5.14s → 34.6ms(降 99.3%) + fail% 46% → 29%,但 Kafka backlog 仍 80k;**反转**:db worker 串行才是真天花板,不是 MySQL 池(10 partition × 1 worker × 1 conn = 实际只用 10,池里 20 个闲);见 [stress-1zone-25k-2026-05-28-maxopenconn.md](docs/design/stress-1zone-25k-2026-05-28-maxopenconn.md)
 - ~~**Worker sub-shard (方案 A)**~~ — ✅ 2026-05-28,`SubShardCount=4` 让每 partition 内开 4 个 goroutine 按 `hash(Key)` 路由(保 per-key 顺序),10×4=40 路并发。实测 **23 分钟全跑 robot 视角 0 失败 + max_login 209ms(-64%) + Kafka backlog -95% + throughput +160%**。同时 `tools/scripts/stress_summarize.ps1` 上线,以后压测复盘只读它输出。见 [stress-1zone-25k-2026-05-28-subshard.md](docs/design/stress-1zone-25k-2026-05-28-subshard.md)
+- **dispatcher subscriber 同步 LPop 解 95% 假失败** — ⚠️ 2026-05-29(代码改完待 Round 8 验证),Round 7 真相:`callback_wait_seconds_count{success}=2437` vs `{failed}=44444`,**95% 的 task 数据已落 Redis 但 dispatcher 5s 内 dispatch 不到**。subscriber 主循环串行 LPop(5-10ms × 200/s 满载),go-redis psub.Channel 默认 buf=100 + sendTimeout=60s 让消息排队 5-25s 后到达,被 GC sweep 当 timeout。修方案:`dispatch()` 里 take() 后把 LPop+Unmarshal+cb 全下沉到独立 goroutine,subscriber 主循环只做 µs 级 take()。见 [stress-1zone-25k-2026-05-29-dispatcher-async-lpop.md](docs/design/stress-1zone-25k-2026-05-29-dispatcher-async-lpop.md)
 
 ---
 
@@ -131,6 +132,7 @@ tcp_max_syn_backlog = 65535
 | 46% 后台 preload_failed 深挖 | [docs/design/stress-1zone-25k-2026-05-28-deep-dive.md](docs/design/stress-1zone-25k-2026-05-28-deep-dive.md) |
 | MaxOpenConn 10→30 实测 | [docs/design/stress-1zone-25k-2026-05-28-maxopenconn.md](docs/design/stress-1zone-25k-2026-05-28-maxopenconn.md) |
 | Worker sub-shard (方案 A) | [docs/design/stress-1zone-25k-2026-05-28-subshard.md](docs/design/stress-1zone-25k-2026-05-28-subshard.md) |
+| Dispatcher subscriber 异步 LPop | [docs/design/stress-1zone-25k-2026-05-29-dispatcher-async-lpop.md](docs/design/stress-1zone-25k-2026-05-29-dispatcher-async-lpop.md) |
 | dispatcher GC + callback_wait 修复 | [docs/design/stress-1zone-25k-2026-05-28-callback-wait.md](docs/design/stress-1zone-25k-2026-05-28-callback-wait.md) |
 | 46% 后台 preload_failed 深挖 | [docs/design/stress-1zone-25k-2026-05-28-deep-dive.md](docs/design/stress-1zone-25k-2026-05-28-deep-dive.md) |
 | 内核调优 SOP | [docs/ops/gate-kernel-tuning-runbook.md](docs/ops/gate-kernel-tuning-runbook.md) |
