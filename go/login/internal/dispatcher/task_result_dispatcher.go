@@ -187,6 +187,18 @@ func (d *TaskResultDispatcher) subscribeLoop(ctx context.Context, gc *time.Ticke
 }
 
 // dispatch handles one notification for taskID.
+//
+// 2026-05-29 stress §Round 7 postmortem: previously this method ran the LPop
+// + Unmarshal SYNCHRONOUSLY on the subscriber goroutine. Each Redis LPop is
+// 5-10ms; under 200 task/s steady-state we saw the go-redis Pub/Sub msgCh
+// (default buffer 100, send timeout 60s) back up — messages that did make it
+// in arrived 1-10s late and missed the 5s registration TTL, surfacing as
+// 95% callback_wait{failed} despite the data already being in Redis.
+//
+// Fix: take() under the mutex is microseconds (map delete). LPop +
+// Unmarshal + user callback are all moved to a per-message goroutine so the
+// subscriber loop dequeues msgCh at full speed. Callback fan-out remains
+// goroutine-per-message — same as before, just hoisted earlier.
 func (d *TaskResultDispatcher) dispatch(ctx context.Context, taskID string) {
 	cb := d.take(taskID)
 	if cb == nil {
@@ -195,20 +207,20 @@ func (d *TaskResultDispatcher) dispatch(ctx context.Context, taskID string) {
 		return
 	}
 
-	resultKey := fmt.Sprintf("task:result:%s", taskID)
-	bytesVal, err := d.rc.LPop(ctx, resultKey).Bytes()
-	if err != nil {
-		go cb(nil, fmt.Errorf("lpop %s: %w", resultKey, err))
-		return
-	}
-	res := &db_proto.TaskResult{}
-	if err := proto.Unmarshal(bytesVal, res); err != nil {
-		go cb(nil, fmt.Errorf("unmarshal task result %s: %w", taskID, err))
-		return
-	}
-	// Fire callback in its own goroutine so a slow callback can't stall the
-	// subscriber loop.
-	go cb(res, nil)
+	go func() {
+		resultKey := fmt.Sprintf("task:result:%s", taskID)
+		bytesVal, err := d.rc.LPop(ctx, resultKey).Bytes()
+		if err != nil {
+			cb(nil, fmt.Errorf("lpop %s: %w", resultKey, err))
+			return
+		}
+		res := &db_proto.TaskResult{}
+		if err := proto.Unmarshal(bytesVal, res); err != nil {
+			cb(nil, fmt.Errorf("unmarshal task result %s: %w", taskID, err))
+			return
+		}
+		cb(res, nil)
+	}()
 }
 
 // sweepExpired fires timeout callbacks for entries whose TTL has elapsed. This
