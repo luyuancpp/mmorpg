@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include "node/system/etcd/etcd_service.h"
+#include "time/comp/timer_task_comp.h"
 
 class ServiceDiscoveryManager {
 public:
@@ -16,4 +17,6 @@ public:
 
 	EtcdService etcdService;
 
+private:
+	TimerTaskComp serviceNodeSyncTimer_;
 };

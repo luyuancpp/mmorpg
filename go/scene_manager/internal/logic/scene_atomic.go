@@ -43,6 +43,43 @@ end
 return redis.call('INCR', KEYS[2])
 `
 
+// luaReserveBestWorldChannel atomically selects the least-loaded live world
+// channel from ARGV scene/node pairs and reserves one player slot on it.
+// Selection and INCR have to be a single Redis operation during login storms,
+// otherwise many concurrent calls can observe the same zero-count channel.
+//
+// ARGV = sceneId1, nodeId1, sceneId2, nodeId2, ...
+// Return = {sceneId, nodeId, newCount}, or nil if every candidate went stale.
+const luaReserveBestWorldChannel = `
+local bestScene = nil
+local bestNode = nil
+local bestCount = nil
+
+for i = 1, #ARGV, 2 do
+    local sceneId = ARGV[i]
+    local nodeId = ARGV[i + 1]
+    local sceneNodeKey = 'scene:' .. sceneId .. ':node'
+    if redis.call('GET', sceneNodeKey) == nodeId then
+        local countKey = 'instance:' .. sceneId .. ':player_count'
+        local raw = redis.call('GET', countKey)
+        local count = tonumber(raw or '0') or 0
+        if bestCount == nil or count < bestCount then
+            bestScene = sceneId
+            bestNode = nodeId
+            bestCount = count
+        end
+    end
+end
+
+if bestScene == nil then
+    return nil
+end
+
+local newCount = redis.call('INCR', 'instance:' .. bestScene .. ':player_count')
+redis.call('INCR', 'node:' .. bestNode .. ':player_count')
+return {bestScene, bestNode, tostring(newCount)}
+`
+
 // luaAtomicDestroyInstance atomically:
 //   1. checks instance:{id}:player_count is missing or equals "0",
 //   2. if yes, reads scene:{id}:node into a local, then wipes every
@@ -99,6 +136,35 @@ func AtomicIncrPlayerCountIfSceneExists(svcCtx *svc.ServiceContext, sceneId uint
 		return 0, err
 	}
 	return toInt64(raw), nil
+}
+
+// ReserveBestWorldChannel picks and reserves a world channel in one Redis
+// script so bursty EnterScene traffic spreads across channels instead of
+// stampeding the same zero-count scene.
+func ReserveBestWorldChannel(svcCtx *svc.ServiceContext, candidates []WorldChannelCandidate) (uint64, string, int64, error) {
+	if len(candidates) == 0 {
+		return 0, "", 0, nil
+	}
+
+	args := make([]any, 0, len(candidates)*2)
+	for _, candidate := range candidates {
+		args = append(args, strconv.FormatUint(candidate.SceneID, 10), candidate.NodeID)
+	}
+
+	raw, err := svcCtx.Redis.Eval(luaReserveBestWorldChannel, nil, args...)
+	if err != nil {
+		return 0, "", 0, err
+	}
+
+	parts := toSlice(raw)
+	if len(parts) < 3 {
+		return 0, "", 0, nil
+	}
+
+	sceneId, _ := strconv.ParseUint(toString(parts[0]), 10, 64)
+	nodeId := toString(parts[1])
+	count := toInt64(parts[2])
+	return sceneId, nodeId, count, nil
 }
 
 // AtomicDestroyIfIdle is the race-safe replacement for the multi-step
@@ -158,4 +224,21 @@ func toString(v any) string {
 		return ""
 	}
 	return fmt.Sprint(v)
+}
+
+func toSlice(v any) []any {
+	switch x := v.(type) {
+	case []any:
+		return x
+	case []string:
+		out := make([]any, len(x))
+		for i := range x {
+			out[i] = x[i]
+		}
+		return out
+	case nil:
+		return nil
+	}
+	logx.Errorf("[Lua] unexpected array reply type %T: %v", v, v)
+	return nil
 }

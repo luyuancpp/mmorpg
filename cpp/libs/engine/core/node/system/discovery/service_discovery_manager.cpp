@@ -13,10 +13,14 @@ void ServiceDiscoveryManager::Init()
 {
 	etcdService.Init();
 	FetchServiceNodes();
+	serviceNodeSyncTimer_.RunEvery(2.0, [this] {
+		FetchServiceNodes();
+	});
 }
 
 void ServiceDiscoveryManager::Shutdown()
 {
+	serviceNodeSyncTimer_.Cancel();
 	etcdService.Shutdown();
 }
 

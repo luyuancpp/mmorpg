@@ -71,8 +71,8 @@ WorldChannelCount: 1
 # until the live shard is profiled — splitting a map that does not need
 # splitting wastes memory and fragments social density.
 #
-# WorldChannelCountByConfId:
-#   1: 4   # capital city (hot)
+WorldChannelCountByConfId:
+  "1": 16  # stress-test spawn map layers
 #   2: 2   # major hub
 #   # 16: 1  # any id not listed uses WorldChannelCount (implicit)
 

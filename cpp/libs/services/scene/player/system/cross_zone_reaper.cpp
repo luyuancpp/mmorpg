@@ -21,6 +21,7 @@
 #include "proto/common/event/player_migration_event.pb.h"
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "table/proto/tip/cross_server_error_tip.pb.h"
+#include "table/proto/tip/scene_error_tip.pb.h"
 #include "thread_context/ecs_context.h"
 #include "thread_context/redis_manager.h"
 
@@ -312,10 +313,10 @@ namespace
                      << " from_zone=" << fromZone << " to_zone=" << toZone
                      << " attempt=" << attempt;
             tlsEcs.actorRegistry.remove<PlayerFrozenComp>(entity);
-            // Distinct tip from kSceneTransferInProgress so the client UI
-            // can dismiss the in-progress overlay and let the player retry
-            // the portal manually. See cross_server_error_tip.proto.
-            PlayerTipSystem::SendToPlayer(entity, kSceneTransferFailed, {});
+            // The generated table currently exposes the generic enter-scene
+            // failure tip; use it so the client can dismiss the in-progress
+            // overlay and let the player retry the portal manually.
+            PlayerTipSystem::SendToPlayer(entity, kEnterSceneFailed, {});
         }
 
         if (RedisReady())

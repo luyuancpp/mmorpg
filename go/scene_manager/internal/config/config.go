@@ -1,6 +1,8 @@
 package config
 
 import (
+	"strconv"
+
 	"github.com/zeromicro/go-zero/zrpc"
 )
 
@@ -37,7 +39,7 @@ type Config struct {
 	//   WorldChannelCountByConfId:
 	//     1001: 4      # big city — 4 channels
 	//     1010: 1      # tutorial — 1 channel
-	WorldChannelCountByConfId map[uint64]int `json:",optional"`
+	WorldChannelCountByConfId map[string]int `json:",optional"`
 
 	// StrictNodeTypeSeparation: when true, main-world creation is only routed
 	// to nodes whose scene_node_type is kMainSceneNode/kMainSceneCrossNode,
@@ -140,8 +142,14 @@ type Config struct {
 // honoring per-confId overrides, clamped to at least 1.
 func (c *Config) ChannelCountFor(confId uint64) int {
 	if c.WorldChannelCountByConfId != nil {
-		if v, ok := c.WorldChannelCountByConfId[confId]; ok && v > 0 {
-			return v
+		for key, value := range c.WorldChannelCountByConfId {
+			if value <= 0 {
+				continue
+			}
+			parsed, err := strconv.ParseUint(key, 10, 64)
+			if err == nil && parsed == confId {
+				return value
+			}
 		}
 	}
 	if c.WorldChannelCount < 1 {

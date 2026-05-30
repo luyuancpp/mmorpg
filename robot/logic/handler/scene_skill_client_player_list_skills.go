@@ -9,6 +9,7 @@ import (
 
 func SceneSkillClientPlayerListSkillsHandler(player *gameobject.Player, response *scene.ListSkillsResponse) {
 	if response.SkillList == nil {
+		player.SetOwnedSkillIDs(nil)
 		return
 	}
 	var ids []uint32

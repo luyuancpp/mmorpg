@@ -1040,9 +1040,9 @@ func TestInitWorldScenes_StrictMode_SkipsInstanceOnlyZone(t *testing.T) {
 func TestChannelCountFor_PerConfIdOverride(t *testing.T) {
 	c := &config.Config{
 		WorldChannelCount: 2,
-		WorldChannelCountByConfId: map[uint64]int{
-			1001: 5,
-			1002: 1,
+		WorldChannelCountByConfId: map[string]int{
+			"1001": 5,
+			"1002": 1,
 		},
 	}
 
@@ -1060,9 +1060,9 @@ func TestChannelCountFor_ClampsToOne(t *testing.T) {
 func TestInitWorldScenes_PerConfIdOverride(t *testing.T) {
 	sc, mr := newTestSvcCtxWithWorldScenes(t)
 	sc.Config.WorldChannelCount = 2
-	sc.Config.WorldChannelCountByConfId = map[uint64]int{
-		1001: 4, // hot city
-		1002: 1, // tutorial
+	sc.Config.WorldChannelCountByConfId = map[string]int{
+		"1001": 4, // hot city
+		"1002": 1, // tutorial
 	}
 	ctx := context.Background()
 

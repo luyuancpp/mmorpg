@@ -23,6 +23,11 @@ const (
 	WorldChannelsKeyFmt = "world_channels:zone:%d:%d"
 )
 
+type WorldChannelCandidate struct {
+	SceneID uint64
+	NodeID  string
+}
+
 func worldChannelsKey(zoneID uint32, confId uint64) string {
 	return fmt.Sprintf(WorldChannelsKeyFmt, zoneID, confId)
 }
@@ -245,6 +250,75 @@ func GetBestWorldChannel(ctx context.Context, svcCtx *svc.ServiceContext, confId
 	}
 
 	return 0, "", nil
+}
+
+// ReserveBestWorldChannelForEnter selects and reserves a world channel for an
+// EnterScene request. It preserves GetBestWorldChannel's stale-channel healing,
+// then performs the final least-loaded choice and player-count reservation in
+// one Redis Lua script.
+func ReserveBestWorldChannelForEnter(ctx context.Context, svcCtx *svc.ServiceContext, confId uint64, zoneId uint32) (uint64, string, error) {
+	channelSetKey := worldChannelsKey(zoneId, confId)
+	members, err := svcCtx.Redis.Smembers(channelSetKey)
+	if err != nil || len(members) == 0 {
+		return 0, "", err
+	}
+
+	var candidates []WorldChannelCandidate
+	var staleSceneIds []uint64
+
+	for _, m := range members {
+		sceneId, _ := strconv.ParseUint(m, 10, 64)
+		if sceneId == 0 {
+			continue
+		}
+
+		nodeKey := fmt.Sprintf("scene:%d:node", sceneId)
+		nid, _ := svcCtx.Redis.Get(nodeKey)
+		if nid == "" || !IsNodeAlive(svcCtx, zoneId, nid) {
+			staleSceneIds = append(staleSceneIds, sceneId)
+			continue
+		}
+		candidates = append(candidates, WorldChannelCandidate{SceneID: sceneId, NodeID: nid})
+	}
+
+	if len(candidates) == 0 {
+		liveNodes := getNodesForPurpose(svcCtx, zoneId, constants.NodePurposeWorld)
+		sort.Strings(liveNodes)
+		if len(liveNodes) == 0 {
+			logx.Errorf("[World] All %d channels for conf %d (zone %d) are stale and no live nodes available",
+				len(staleSceneIds), confId, zoneId)
+			return 0, "", nil
+		}
+
+		logx.Infof("[World] All %d channels for conf %d (zone %d) are stale, lazy-reassigning to %d live nodes",
+			len(staleSceneIds), confId, zoneId, len(liveNodes))
+
+		for i, sceneId := range staleSceneIds {
+			targetNode := assignNodeByHash(confId*1000+uint64(i), liveNodes)
+			nodeKey := fmt.Sprintf("scene:%d:node", sceneId)
+			oldNode, _ := svcCtx.Redis.Get(nodeKey)
+			if err := svcCtx.Redis.Set(nodeKey, targetNode); err != nil {
+				logx.Errorf("[World] Reserve lazy-reassign: failed to update scene %d -> node %s: %v", sceneId, targetNode, err)
+				continue
+			}
+			if oldNode != "" && oldNode != targetNode {
+				svcCtx.Redis.Srem(nodeScenesKey(oldNode), fmt.Sprintf("%d", sceneId))
+			}
+			svcCtx.Redis.Sadd(nodeScenesKey(targetNode), fmt.Sprintf("%d", sceneId))
+
+			if _, err := RequestNodeCreateScene(ctx, svcCtx, targetNode, uint32(confId), sceneId); err != nil {
+				logx.Errorf("[World] Reserve lazy-reassign: CreateScene failed for scene %d on node %s: %v", sceneId, targetNode, err)
+				continue
+			}
+			candidates = append(candidates, WorldChannelCandidate{SceneID: sceneId, NodeID: targetNode})
+		}
+	}
+
+	sceneId, nodeId, _, err := ReserveBestWorldChannel(svcCtx, candidates)
+	if err != nil {
+		return 0, "", err
+	}
+	return sceneId, nodeId, nil
 }
 
 // reassignSceneNode moves a scene's node mapping atomically from the

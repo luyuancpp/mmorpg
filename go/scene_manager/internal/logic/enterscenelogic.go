@@ -59,9 +59,10 @@ func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (*scen
 	if targetZoneId == 0 && in.SceneId != 0 {
 		targetZoneId = GetSceneZone(l.svcCtx, in.SceneId)
 	}
+	currentLoc, locErr := GetPlayerLocation(l.ctx, l.svcCtx, in.PlayerId)
 	if targetZoneId == 0 {
-		if loc, _ := GetPlayerLocation(l.ctx, l.svcCtx, in.PlayerId); loc != nil && loc.ZoneId != 0 {
-			targetZoneId = loc.ZoneId
+		if locErr == nil && currentLoc != nil && currentLoc.ZoneId != 0 {
+			targetZoneId = currentLoc.ZoneId
 		}
 	}
 	if targetZoneId == 0 {
@@ -69,7 +70,7 @@ func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (*scen
 	}
 
 	// 2. Resolve the target scene (sceneId + nodeId).
-	sceneId, nodeId, err := l.resolveScene(in.SceneId, in.SceneConfId, targetZoneId)
+	sceneId, nodeId, reserved, err := l.resolveSceneForEnter(in.SceneId, in.SceneConfId, targetZoneId)
 	if err != nil {
 		return errResp(constants.ErrNoAvailableNode, err.Error()), nil
 	}
@@ -82,9 +83,11 @@ func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (*scen
 	// 4. IDEMPOTENCY CHECK: Is player already in the same scene on the same node?
 	//    Location is unchanged, but we must still route the gate so the new
 	//    session/connection is wired to the correct scene node.
-	currentLoc, err := GetPlayerLocation(l.ctx, l.svcCtx, in.PlayerId)
-	if err == nil && currentLoc != nil {
+	if locErr == nil && currentLoc != nil {
 		if currentLoc.SceneId == sceneId && currentLoc.NodeId == nodeId {
+			if reserved {
+				DecrInstancePlayerCount(l.svcCtx, sceneId)
+			}
 			l.Logger.Infof("Player %d already in scene %d, sending route to gate (reconnect)", in.PlayerId, sceneId)
 			if in.GateId != "" {
 				if err := l.routePlayerToGate(in, nodeId, sceneId); err != nil {
@@ -95,9 +98,17 @@ func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (*scen
 		}
 	}
 
-	// 5. Decrement old scene instance count if player is switching scenes.
-	if currentLoc != nil && currentLoc.SceneId != 0 && currentLoc.SceneId != sceneId {
-		DecrInstancePlayerCount(l.svcCtx, currentLoc.SceneId)
+	if !reserved {
+		count, err := AtomicIncrPlayerCountIfSceneExists(l.svcCtx, sceneId)
+		if err != nil {
+			return errResp(constants.ErrUpdateLocation, fmt.Sprintf("reserve scene player count failed: %v", err)), nil
+		}
+		if count < 0 {
+			return errResp(constants.ErrNoAvailableNode, fmt.Sprintf("scene %d disappeared during enter", sceneId)), nil
+		}
+		if nodeId != "" {
+			l.svcCtx.Redis.Incr(fmt.Sprintf(NodePlayerCountKey, nodeId))
+		}
 	}
 
 	// 5b. Cross-node switch: notify the old scene node to release the player so
@@ -113,8 +124,15 @@ func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (*scen
 
 	// 6. Update Player Location (Source of Truth)
 	if err := UpdatePlayerLocation(l.ctx, l.svcCtx, in.PlayerId, sceneId, nodeId, targetZoneId); err != nil {
+		DecrInstancePlayerCount(l.svcCtx, sceneId)
 		l.Logger.Errorf("Failed to update player location: %v", err)
 		return errResp(constants.ErrUpdateLocation, "Failed to update location"), nil
+	}
+
+	// 6b. Decrement old scene instance count after the new reservation is
+	// committed so concurrent world-channel selection sees the in-flight enter.
+	if currentLoc != nil && currentLoc.SceneId != 0 && currentLoc.SceneId != sceneId {
+		DecrInstancePlayerCount(l.svcCtx, currentLoc.SceneId)
 	}
 
 	// 7. Send Route Command to Gate (via Kafka) — best-effort notification.
@@ -125,9 +143,6 @@ func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (*scen
 	} else {
 		l.Logger.Infof("No GateID in EnterScene request for player %d", in.PlayerId)
 	}
-
-	// 8. Track instance player count.
-	IncrInstancePlayerCount(l.svcCtx, sceneId)
 
 	l.Logger.Infof("Player %d entered scene %d on node %s (zone %d)", in.PlayerId, sceneId, nodeId, targetZoneId)
 	return &scene_manager.EnterSceneResponse{ErrorCode: 0}, nil
@@ -167,13 +182,13 @@ func (l *EnterSceneLogic) sendRedirectToGate(in *scene_manager.EnterSceneRequest
 	}
 
 	event := &kafkacontracts.RedirectToGateEvent{
-		PlayerId:         in.PlayerId,
-		SessionId:        in.SessionId,
-		TargetGateIp:     redirect.TargetGateIp,
-		TargetGatePort:   redirect.TargetGatePort,
-		TokenPayload:     redirect.TokenPayload,
-		TokenSignature:   redirect.TokenSignature,
-		TokenDeadline:    redirect.TokenDeadline,
+		PlayerId:       in.PlayerId,
+		SessionId:      in.SessionId,
+		TargetGateIp:   redirect.TargetGateIp,
+		TargetGatePort: redirect.TargetGatePort,
+		TokenPayload:   redirect.TokenPayload,
+		TokenSignature: redirect.TokenSignature,
+		TokenDeadline:  redirect.TokenDeadline,
 	}
 	payload, err := proto.Marshal(event)
 	if err != nil {
@@ -262,6 +277,27 @@ func (l *EnterSceneLogic) resolveScene(sceneId uint64, sceneConfId uint64, zoneI
 		return 0, "", fmt.Errorf("no available channel for conf %d in zone %d", sceneConfId, zoneId)
 	}
 	return sid, nid, nil
+}
+
+func (l *EnterSceneLogic) resolveSceneForEnter(sceneId uint64, sceneConfId uint64, zoneId uint32) (uint64, string, bool, error) {
+	if sceneId != 0 {
+		sid, nid, err := l.resolveScene(sceneId, sceneConfId, zoneId)
+		return sid, nid, false, err
+	}
+
+	if sceneConfId == 0 {
+		if wids := worldConfIds(); len(wids) > 0 {
+			sceneConfId = wids[0]
+		} else {
+			return 0, "", false, fmt.Errorf("no scene_conf_id provided and no default world scene configured")
+		}
+	}
+
+	sid, nid, err := ReserveBestWorldChannelForEnter(l.ctx, l.svcCtx, sceneConfId, zoneId)
+	if err != nil || sid == 0 {
+		return 0, "", false, fmt.Errorf("no available channel for conf %d in zone %d", sceneConfId, zoneId)
+	}
+	return sid, nid, true, nil
 }
 
 // routePlayerToGate builds a GateCommand and pushes it to the gate's Kafka topic.
