@@ -9,6 +9,7 @@
 #include "proto/common/component/player_skill_comp.pb.h"
 #include "player/system/player_skill.h"
 #include "table/code/skill_table.h"
+#include <thread_context/ecs_context.h>
 
 ///<<< END WRITING YOUR CODE
 
@@ -58,6 +59,13 @@ void SceneSkillClientPlayerHandler::ListSkills(entt::entity player,const ::ListS
 	::ListSkillsResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
+	if (const auto* skillList = tlsEcs.actorRegistry.try_get<PlayerSkillListComp>(player);
+		skillList != nullptr)
+	{
+		response->mutable_skill_list()->CopyFrom(*skillList);
+		return;
+	}
+	response->mutable_skill_list();
 ///<<< END WRITING YOUR CODE
 
 }

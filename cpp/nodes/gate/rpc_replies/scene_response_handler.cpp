@@ -9,6 +9,7 @@ extern MessageResponseDispatcher gRpcResponseDispatcher;
 ///<<< BEGIN WRITING YOUR CODE
 #include "node/system/node/node.h"
 #include "session/manager/session_manager.h"
+#include "gate_codec.h"
 
 ///<<< END WRITING YOUR CODE
 
@@ -51,6 +52,26 @@ void OnSceneSendMessageToPlayerReply(const muduo::net::TcpConnectionPtr& conn, c
 void OnSceneProcessClientPlayerMessageReply(const muduo::net::TcpConnectionPtr& conn, const std::shared_ptr<::ProcessClientPlayerMessageResponse>& replied, muduo::Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
+    if (!replied)
+    {
+        return;
+    }
+
+    const auto sessionId = replied->session_id();
+    auto sessionIt = tlsSessionManager.sessions().find(sessionId);
+    if (sessionIt == tlsSessionManager.sessions().end())
+    {
+        LOG_WARN << "SceneProcessClientPlayerMessageReply: session not found, session_id="
+                 << sessionId << ", message_id=" << replied->message_content().message_id();
+        return;
+    }
+
+    if (!replied->has_message_content())
+    {
+        return;
+    }
+
+    GetGateCodec().send(sessionIt->second.conn, replied->message_content());
 ///<<< END WRITING YOUR CODE
 }
 

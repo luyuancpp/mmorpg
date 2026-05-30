@@ -24,13 +24,19 @@ static uint32_t kNodeTypeToMessageId[eNodeType_ARRAYSIZE] = {
 };
 
 void NodeHandshakeManager::TryRegisterNodeSession(uint32_t nodeType, const muduo::net::TcpConnectionPtr& conn) const {
+	if (nodeType >= eNodeType_ARRAYSIZE || kNodeTypeToMessageId[nodeType] == 0) {
+		return;
+	}
 	entt::registry& registry = tlsNodeContextManager.GetRegistry(nodeType);
 	for (const auto& [entity, client, nodeInfo] : registry.view<RpcClientPtr, NodeInfo>().each()) {
 		if (client->GetConnection() == nullptr || client->GetConnection().get() != conn.get()) continue;
 		LOG_INFO << "Peer address match in " << NodeUtils::GetRegistryName(registry)
 			<< ": " << conn->peerAddress().toIpPort();
 		auto clientCopy = client;
-		registry.get_or_emplace<TimerTaskComp>(entity).RunAfter(0.5, [conn, this, nodeType, clientCopy]() {
+		registry.get_or_emplace<TimerTaskComp>(entity).RunEvery(0.5, [conn, nodeType, clientCopy]() {
+			if (!conn || !conn->connected() || !clientCopy || !clientCopy->connected()) {
+				return;
+			}
 			NodeHandshakeRequest req;
 			req.mutable_self_node()->CopyFrom(GetNodeInfo());
 			clientCopy->CallRemoteMethod(kNodeTypeToMessageId[nodeType], req);
@@ -58,33 +64,47 @@ void NodeHandshakeManager::OnNodeHandshake(
 	auto tryRegister = [&, this](const TcpConnectionPtr& conn, uint32_t nodeType) -> bool {
 		entt::registry& registry = tlsNodeContextManager.GetRegistry(nodeType);
 		const auto& nodeList = tlsEcs.nodeGlobalRegistry.get_or_emplace<ServiceNodeList>(tlsEcs.GrpcNodeEntity());
+		const NodeInfo* nodeToRegister = &peerNode;
 		for (auto& serverNode : nodeList[nodeType].node_list()) {
-			if (!NodeUtils::IsSameNode(serverNode.node_uuid(), peerNode.node_uuid())) continue;
-
-			// uuid is the only globally-unique handle for a remote node, so we
-			// look up (or freshly allocate) the entity by uuid. Previously the
-			// entity slot was keyed by node_id, which silently aliased nodes
-			// from different zones onto the same slot.
-			entt::entity nodeEntity = entt::null;
-			if (const auto found = NodeUtils::FindNodeEntityByUuid(nodeType, peerNode.node_uuid()); found) {
-				nodeEntity = *found;
-				// Reset session-bound components on re-registration so any
-				// stale RpcSession from a previous connection is cleared.
-				registry.remove<RpcSession>(nodeEntity);
-			} else {
-				nodeEntity = registry.create();
-				LOG_TRACE << "Allocated new entity " << entt::to_integral(nodeEntity)
-					<< " for handshaking peer uuid=" << peerNode.node_uuid();
+			if (!NodeUtils::IsSameNode(serverNode.node_uuid(), peerNode.node_uuid())) {
+				continue;
 			}
-
-			registry.emplace<RpcSession>(nodeEntity, RpcSession{ conn , request.self_node().node_uuid()});
-			LOG_INFO << "Node registered, id: " << peerNode.node_id()
-				<< " uuid: " << peerNode.node_uuid()
-				<< " entity: " << entt::to_integral(nodeEntity)
-				<< " in " << NodeUtils::GetRegistryName(registry);
-			return true;
+			nodeToRegister = &serverNode;
+			break;
 		}
-		return false;
+
+		if (NodeUtils::IsZoneScopedNodeType(nodeType) &&
+			nodeToRegister->zone_id() != gNode->GetNodeInfo().zone_id()) {
+			LOG_WARN << "Reject node registration from foreign zone. type=" << nodeType
+				<< ", node_zone=" << nodeToRegister->zone_id()
+				<< ", self_zone=" << gNode->GetNodeInfo().zone_id()
+				<< ", uuid=" << nodeToRegister->node_uuid();
+			return false;
+		}
+
+		// uuid is the only globally-unique handle for a remote node, so we
+		// look up (or freshly allocate) the entity by uuid. Previously the
+		// entity slot was keyed by node_id, which silently aliased nodes
+		// from different zones onto the same slot.
+		entt::entity nodeEntity = entt::null;
+		if (const auto found = NodeUtils::FindNodeEntityByUuid(nodeType, nodeToRegister->node_uuid()); found) {
+			nodeEntity = *found;
+			// Reset session-bound components on re-registration so any
+			// stale RpcSession from a previous connection is cleared.
+			registry.remove<RpcSession>(nodeEntity);
+		} else {
+			nodeEntity = registry.create();
+			LOG_TRACE << "Allocated new entity " << entt::to_integral(nodeEntity)
+				<< " for handshaking peer uuid=" << nodeToRegister->node_uuid();
+		}
+
+		registry.emplace_or_replace<NodeInfo>(nodeEntity, *nodeToRegister);
+		registry.emplace<RpcSession>(nodeEntity, RpcSession{ conn , nodeToRegister->node_uuid()});
+		LOG_INFO << "Node registered, id: " << nodeToRegister->node_id()
+			<< " uuid: " << nodeToRegister->node_uuid()
+			<< " entity: " << entt::to_integral(nodeEntity)
+			<< " in " << NodeUtils::GetRegistryName(registry);
+		return true;
 		};
 
 	auto& conn = tlsRpc.conn;
@@ -111,7 +131,10 @@ void NodeHandshakeManager::OnHandshakeReplied(const NodeHandshakeResponse& respo
 		for (const auto& [entity, client, nodeInfo] : registry.view<RpcClientPtr, NodeInfo>().each()) {
 			if (!NodeUtils::IsSameNode(nodeInfo.node_uuid(), response.peer_node().node_uuid())) continue;
 			auto clientCopy = client;
-			registry.get<TimerTaskComp>(entity).RunAfter(0.5, [this, clientCopy, nodeType]() {
+			registry.get_or_emplace<TimerTaskComp>(entity).RunEvery(0.5, [clientCopy, nodeType]() {
+				if (!clientCopy || !clientCopy->connected()) {
+					return;
+				}
 				NodeHandshakeRequest req;
 				*req.mutable_self_node() = GetNodeInfo();
 				clientCopy->CallRemoteMethod(kNodeTypeToMessageId[nodeType], req);
@@ -150,4 +173,3 @@ void NodeHandshakeManager::TriggerNodeConnectionEvent(entt::registry& registry, 
 		break;
 	}
 }
-
