@@ -565,25 +565,25 @@ Write-Utf8NoBom (Join-Path $pkgCommon 'V3Banner.xml') @'
 #   title (top), subtitle (bottom)
 Write-Utf8NoBom (Join-Path $pkgCommon 'V3Card.xml') @'
 <?xml version="1.0" encoding="utf-8"?>
-<component size="468,124" extention="Button" opaque="false">
+<component size="500,106" extention="Button" opaque="false">
   <controller name="button"  pages="up,,down,,over,,disabled," selected="0"/>
   <controller name="checked" pages="0,,1," selected="0"/>
   <controller name="status"  pages="0,,1,,2," selected="0"/>
   <displayList>
-    <image id="n0" name="bgIdle" src="00010004" fileName="v3/ui/card_med_idle.png" xy="0,0" size="468,124">
+    <image id="n0" name="bgIdle" src="00010004" fileName="v3/ui/card_med_idle.png" xy="0,0" size="500,106">
       <gearDisplay controller="checked" pages="0"/>
     </image>
-    <image id="n1" name="bgActive" src="00010005" fileName="v3/ui/card_med_active.png" xy="0,0" size="468,124">
+    <image id="n1" name="bgActive" src="00010005" fileName="v3/ui/card_med_active.png" xy="0,0" size="500,106">
       <gearDisplay controller="checked" pages="1"/>
     </image>
     <image id="n2" name="statusDot" src="0001000b" fileName="v3/ui/status_red.png" xy="30,50" size="22,22">
       <gearDisplay controller="status" pages="1"/>
     </image>
-    <text id="n3" name="title" xy="70,18" size="380,40" fontSize="28" color="#3d2914" autoSize="none" singleLine="true" text="">
+    <text id="n3" name="title" xy="88,18" size="246,28" fontSize="22" color="#3d2914" autoSize="none" singleLine="true" text="">
       <gearColor controller="checked" values="#3d2914,#9c2b1a"/>
     </text>
-    <text id="n4" name="subtitle" xy="70,66" size="380,34" fontSize="20" color="#5a4025" autoSize="none" singleLine="true" text=""/>
-    <graph id="n5" name="hit" xy="0,0" size="468,124" type="rect" lineSize="0" lineColor="#00000000" fillColor="#00000000">
+    <text id="n4" name="subtitle" xy="88,54" size="238,26" fontSize="18" color="#5a4025" autoSize="none" singleLine="true" text=""/>
+    <graph id="n5" name="hit" xy="0,0" size="500,106" type="rect" lineSize="0" lineColor="#00000000" fillColor="#00000000">
     </graph>
   </displayList>
   <Button mode="Check" downEffect="scale" downEffectValue="0.98"/>
@@ -642,9 +642,9 @@ Write-Utf8NoBom (Join-Path $pkgAssets 'ServersV3.xml') @'
     <image id="n0" name="bg" src="00020001" fileName="v3/bg/bg_scene.png" xy="0,0" size="2560,1080"/>
     <image id="n1" name="uiBg" src="00020002" fileName="v3/bg/bg_ui.png" xy="0,0" size="2560,1080"/>
 
-    <component id="n5" name="tabRecent" src="c0000004" fileName="common/V3Tab.xml" xy="780,176" size="260,66"><Button title="最近登录"/></component>
-    <component id="n6" name="tabRecommend" src="c0000004" fileName="common/V3Tab.xml" xy="1066,176" size="260,66"><Button title="推荐服务器"/></component>
-    <component id="n7" name="tabAll" src="c0000004" fileName="common/V3Tab.xml" xy="1376,176" size="260,66"><Button title="全部区服"/></component>
+    <component id="n5" name="tabRecent" src="c0000004" fileName="common/V3Tab.xml" xy="696,204" size="258,60"><Button title="最近登录"/></component>
+    <component id="n6" name="tabRecommend" src="c0000004" fileName="common/V3Tab.xml" xy="1034,204" size="220,52"><Button title="推荐服务器"/></component>
+    <component id="n7" name="tabAll" src="c0000004" fileName="common/V3Tab.xml" xy="1412,204" size="280,52"><Button title="全部区服"/></component>
 
     <image id="n8" name="search" src="00010009" fileName="v3/ui/input.png" xy="646,312" size="244,64"/>
     <text id="n9" name="searchHint" xy="704,324" size="160,36" fontSize="22" color="#8b7459" align="left" vAlign="middle" autoSize="none" singleLine="true" text="搜索"/>
@@ -657,7 +657,7 @@ Write-Utf8NoBom (Join-Path $pkgAssets 'ServersV3.xml') @'
       <item title="官方"/>
     </list>
 
-    <list id="n11" name="servers" xy="1022,302" size="1114,508" layout="pagination" overflow="scroll" lineGap="17" columnGap="28" defaultItem="ui://qdao/V3Card" selectionMode="Single" align="center">
+    <list id="n11" name="servers" xy="900,304" size="1120,430" layout="pagination" overflow="scroll" lineGap="2" columnGap="48" defaultItem="ui://qdao/V3Card" selectionMode="Single" align="center">
       <item title="云海宗"/>
       <item title="清风谷"/>
       <item title="碧落渊"/>
