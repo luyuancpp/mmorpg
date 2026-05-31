@@ -20,7 +20,7 @@
   "includeHighResolution": 0,
   "branchProcessing": 0,
   "atlasSetting": {
-    "maxSize": 2048,
+    "maxSize": 4096,
     "paging": true,
     "sizeOption": "pot",
     "forceSquare": false,

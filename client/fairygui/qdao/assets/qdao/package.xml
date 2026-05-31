@@ -22,6 +22,7 @@
     <component id="c0000004" name="V3Tab.xml" path="/common/" exported="true" />
     <component id="c0000005" name="V3Input.xml" path="/common/" exported="true" />
     <component id="c0000006" name="V3Card.xml" path="/common/" exported="true" />
+    <component id="c0000007" name="V3TopTab.xml" path="/common/" exported="true" />
     <component id="a0000001" name="LoginV3.xml" path="/" exported="true" />
     <component id="a0000002" name="ServersV3.xml" path="/" exported="true" />
     <component id="a0000003" name="SceneV3.xml" path="/" exported="true" />
