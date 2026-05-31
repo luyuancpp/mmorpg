@@ -25,24 +25,24 @@
     <component id="a0000001" name="LoginV3.xml" path="/" exported="true" />
     <component id="a0000002" name="ServersV3.xml" path="/" exported="true" />
     <component id="a0000003" name="SceneV3.xml" path="/" exported="true" />
-    <image id="00022001" name="fx_top_tab_active.png" path="/" exported="true" size="306,97" disableTrim="true" duplicatePadding="true" qualityOption="source" />
-    <image id="00022002" name="fx_top_tab_idle_mid.png" path="/" exported="true" size="431,92" disableTrim="true" duplicatePadding="true" qualityOption="source" />
-    <image id="00022003" name="fx_top_tab_idle_right.png" path="/" exported="true" size="495,96" disableTrim="true" duplicatePadding="true" qualityOption="source" />
-    <image id="00022004" name="fx_search_box.png" path="/" exported="true" size="315,63" disableTrim="true" duplicatePadding="true" qualityOption="source" />
-    <image id="00022005" name="fx_left_row_active.png" path="/" exported="true" size="313,84" disableTrim="true" duplicatePadding="true" qualityOption="source" />
-    <image id="00022006" name="fx_left_row_idle_1.png" path="/" exported="true" size="313,84" disableTrim="true" duplicatePadding="true" qualityOption="source" />
-    <image id="00022007" name="fx_left_row_idle_2.png" path="/" exported="true" size="313,84" disableTrim="true" duplicatePadding="true" qualityOption="source" />
-    <image id="00022008" name="fx_left_row_idle_3.png" path="/" exported="true" size="313,84" disableTrim="true" duplicatePadding="true" qualityOption="source" />
-    <image id="00022009" name="fx_left_row_idle_4.png" path="/" exported="true" size="313,83" disableTrim="true" duplicatePadding="true" qualityOption="source" />
-    <image id="00022010" name="fx_server_card_0.png" path="/" exported="true" size="574,126" disableTrim="true" duplicatePadding="true" qualityOption="source" />
-    <image id="00022011" name="fx_server_card_1.png" path="/" exported="true" size="521,126" disableTrim="true" duplicatePadding="true" qualityOption="source" />
-    <image id="00022012" name="fx_server_card_2.png" path="/" exported="true" size="574,127" disableTrim="true" duplicatePadding="true" qualityOption="source" />
-    <image id="00022013" name="fx_server_card_3.png" path="/" exported="true" size="521,127" disableTrim="true" duplicatePadding="true" qualityOption="source" />
-    <image id="00022014" name="fx_server_card_4.png" path="/" exported="true" size="574,126" disableTrim="true" duplicatePadding="true" qualityOption="source" />
-    <image id="00022015" name="fx_server_card_5.png" path="/" exported="true" size="520,127" disableTrim="true" duplicatePadding="true" qualityOption="source" />
-    <image id="00022016" name="fx_server_card_6.png" path="/" exported="true" size="574,128" disableTrim="true" duplicatePadding="true" qualityOption="source" />
-    <image id="00022017" name="fx_server_card_7.png" path="/" exported="true" size="521,129" disableTrim="true" duplicatePadding="true" qualityOption="source" />
-    <image id="00022018" name="fx_bottom_bar.png" path="/" exported="true" size="1472,208" disableTrim="true" duplicatePadding="true" qualityOption="source" />
+    <image id="00022001" name="fx_top_tab_active.png" path="/" exported="true" size="260,76" disableTrim="true" duplicatePadding="true" qualityOption="source" />
+    <image id="00022002" name="fx_top_tab_idle_mid.png" path="/" exported="true" size="300,66" disableTrim="true" duplicatePadding="true" qualityOption="source" />
+    <image id="00022003" name="fx_top_tab_idle_right.png" path="/" exported="true" size="344,66" disableTrim="true" duplicatePadding="true" qualityOption="source" />
+    <image id="00022004" name="fx_search_box.png" path="/" exported="true" size="250,61" disableTrim="true" duplicatePadding="true" qualityOption="source" />
+    <image id="00022005" name="fx_left_row_active.png" path="/" exported="true" size="240,65" disableTrim="true" duplicatePadding="true" qualityOption="source" />
+    <image id="00022006" name="fx_left_row_idle_1.png" path="/" exported="true" size="240,65" disableTrim="true" duplicatePadding="true" qualityOption="source" />
+    <image id="00022007" name="fx_left_row_idle_2.png" path="/" exported="true" size="240,65" disableTrim="true" duplicatePadding="true" qualityOption="source" />
+    <image id="00022008" name="fx_left_row_idle_3.png" path="/" exported="true" size="240,65" disableTrim="true" duplicatePadding="true" qualityOption="source" />
+    <image id="00022009" name="fx_left_row_idle_4.png" path="/" exported="true" size="240,65" disableTrim="true" duplicatePadding="true" qualityOption="source" />
+    <image id="00022010" name="fx_server_card_0.png" path="/" exported="true" size="473,100" disableTrim="true" duplicatePadding="true" qualityOption="source" />
+    <image id="00022011" name="fx_server_card_1.png" path="/" exported="true" size="473,100" disableTrim="true" duplicatePadding="true" qualityOption="source" />
+    <image id="00022012" name="fx_server_card_2.png" path="/" exported="true" size="473,100" disableTrim="true" duplicatePadding="true" qualityOption="source" />
+    <image id="00022013" name="fx_server_card_3.png" path="/" exported="true" size="473,100" disableTrim="true" duplicatePadding="true" qualityOption="source" />
+    <image id="00022014" name="fx_server_card_4.png" path="/" exported="true" size="473,100" disableTrim="true" duplicatePadding="true" qualityOption="source" />
+    <image id="00022015" name="fx_server_card_5.png" path="/" exported="true" size="473,100" disableTrim="true" duplicatePadding="true" qualityOption="source" />
+    <image id="00022016" name="fx_server_card_6.png" path="/" exported="true" size="473,100" disableTrim="true" duplicatePadding="true" qualityOption="source" />
+    <image id="00022017" name="fx_server_card_7.png" path="/" exported="true" size="473,100" disableTrim="true" duplicatePadding="true" qualityOption="source" />
+    <image id="00022018" name="fx_bottom_bar.png" path="/" exported="true" size="1250,180" disableTrim="true" duplicatePadding="true" qualityOption="source" />
     <image id="00023000" name="fx_server_card_0_base.png" path="/" exported="true" size="574,126" disableTrim="true" duplicatePadding="true" qualityOption="source" />
     <image id="00023001" name="fx_server_card_0_dot.png" path="/" exported="true" size="54,58" disableTrim="true" duplicatePadding="true" qualityOption="source" />
     <image id="00023002" name="fx_server_card_0_stroke.png" path="/" exported="true" size="162,44" disableTrim="true" duplicatePadding="true" qualityOption="source" />
