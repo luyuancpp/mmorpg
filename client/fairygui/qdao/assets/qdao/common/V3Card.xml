@@ -1,23 +1,47 @@
 <?xml version="1.0" encoding="utf-8"?>
-<component size="468,124" extention="Button" opaque="false">
-  <controller name="button"  pages="up,,down,,over,,disabled," selected="0"/>
+<component size="473,100" extention="Button" opaque="false">
+  <controller name="button" pages="up,,down,,over,,disabled," selected="0"/>
   <controller name="checked" pages="0,,1," selected="0"/>
-  <controller name="status"  pages="0,,1,,2," selected="0"/>
+  <controller name="status" pages="0,,1,,2," selected="0"/>
+  <controller name="badge" pages="0,,1,,2,,3,,4,,5,,6,,7," selected="0"/>
   <displayList>
-    <image id="n0" name="bgIdle" src="00010004" fileName="card_med_idle.png" xy="0,0" size="468,124">
+    <image id="n0" name="bgIdle" src="00023004" fileName="fx_server_card_1_base.png" xy="0,0" size="473,100">
       <gearDisplay controller="checked" pages="0"/>
     </image>
-    <image id="n1" name="bgActive" src="00010005" fileName="card_med_active.png" xy="0,0" size="468,124">
+    <image id="n1" name="bgActive" src="00023000" fileName="fx_server_card_0_base.png" xy="0,0" size="473,100">
       <gearDisplay controller="checked" pages="1"/>
     </image>
-    <image id="n2" name="statusDot" src="0001000b" fileName="status_red.png" xy="30,50" size="22,22">
-      <gearDisplay controller="status" pages="1"/>
+    <image id="n2" name="statusDot" src="00023001" fileName="fx_server_card_0_dot.png" xy="17,17" size="47,46"/>
+    <image id="n6" name="inkStroke" src="00023002" fileName="fx_server_card_0_stroke.png" xy="75,24" size="142,35"/>
+    <image id="b0" name="badge0" src="00023003" fileName="fx_server_card_0_badge.png" xy="357,0" size="116,100">
+      <gearDisplay controller="badge" pages="0"/>
     </image>
-    <text id="n3" name="title" xy="70,18" size="380,40" fontSize="28" color="#3d2914" autoSize="none" singleLine="true" text="">
+    <image id="b1" name="badge1" src="00023007" fileName="fx_server_card_1_badge.png" xy="357,0" size="116,100">
+      <gearDisplay controller="badge" pages="1"/>
+    </image>
+    <image id="b2" name="badge2" src="0002300b" fileName="fx_server_card_2_badge.png" xy="357,0" size="116,100">
+      <gearDisplay controller="badge" pages="2"/>
+    </image>
+    <image id="b3" name="badge3" src="0002300f" fileName="fx_server_card_3_badge.png" xy="357,0" size="116,100">
+      <gearDisplay controller="badge" pages="3"/>
+    </image>
+    <image id="b4" name="badge4" src="00023013" fileName="fx_server_card_4_badge.png" xy="357,0" size="116,100">
+      <gearDisplay controller="badge" pages="4"/>
+    </image>
+    <image id="b5" name="badge5" src="00023017" fileName="fx_server_card_5_badge.png" xy="357,0" size="116,100">
+      <gearDisplay controller="badge" pages="5"/>
+    </image>
+    <image id="b6" name="badge6" src="0002301b" fileName="fx_server_card_6_badge.png" xy="357,0" size="116,100">
+      <gearDisplay controller="badge" pages="6"/>
+    </image>
+    <image id="b7" name="badge7" src="0002301f" fileName="fx_server_card_7_badge.png" xy="357,0" size="116,100">
+      <gearDisplay controller="badge" pages="7"/>
+    </image>
+    <text id="n3" name="title" xy="82,18" size="230,28" fontSize="22" color="#5a4025" autoSize="none" singleLine="true" text="">
       <gearColor controller="checked" values="#3d2914,#9c2b1a"/>
     </text>
-    <text id="n4" name="subtitle" xy="70,66" size="380,34" fontSize="20" color="#5a4025" autoSize="none" singleLine="true" text=""/>
-    <graph id="n5" name="hit" xy="0,0" size="468,124" type="rect" lineSize="0" lineColor="#00000000" fillColor="#00000000">
+    <text id="n4" name="subtitle" xy="82,52" size="220,26" fontSize="18" color="#5a4025" autoSize="none" singleLine="true" text=""/>
+    <graph id="n5" name="hit" xy="0,0" size="473,100" type="rect" lineSize="0" lineColor="#01000000" fillColor="#01000000">
     </graph>
   </displayList>
   <Button mode="Check" downEffect="scale" downEffectValue="0.98"/>
