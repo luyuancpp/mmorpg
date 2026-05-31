@@ -26,7 +26,7 @@
       <item title="新服"/>
       <item title="官方"/>
     </list>
-    <list id="n11" name="servers" xy="957,307" size="968,484" layout="pagination" overflow="scroll" lineGap="28" columnGap="22" defaultItem="ui://qdao/V3Card" selectionMode="Single" align="center">
+    <list id="n11" name="servers" xy="929,307" size="1040,484" layout="pagination" overflow="scroll" lineGap="28" columnGap="60" defaultItem="ui://qdao/V3Card" selectionMode="Single" align="center">
       <item title="云海宗"/>
       <item title="清风谷"/>
       <item title="碧落渊"/>
