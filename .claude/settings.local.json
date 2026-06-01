@@ -265,7 +265,14 @@
       "PowerShell(pwsh -NoProfile -File F:\\\\work\\\\mmorpg\\\\tools\\\\scripts\\\\stress_summarize.ps1 -RunDir F:\\\\work\\\\mmorpg\\\\robot\\\\logs\\\\stress-1zone-25k-mysqlpool-20260528-095929 2>&1 | Select-Object -First 80)",
       "Bash(rm *)",
       "Bash(xargs grep -lE \"robot.exe|robot\\\\.stress-1zone|stress-1zone-25k\")",
-      "PowerShell(Get-Command *)"
+      "PowerShell(Get-Command *)",
+      "PowerShell(docker exec redis *)",
+      "Bash(grep -nE \"bin/go_services|bin\\\\\\\\\\\\\\\\go_services|go-svc-build|build-and-copy|copy.*db\\\\\\\\.exe\" /f/work/mmorpg/tools/scripts/go_services.ps1)",
+      "Bash(grep -nE \"build|exe|\\\\\\\\.go|go build\" /f/work/mmorpg/tools/scripts/go_services.ps1)",
+      "Bash(sort -k5 -n -r)",
+      "Bash(awk 'NR<=5000{print}' bin/logs/cpp_nodes/gate.20260530-104739.luyuan.50892.log)",
+      "Bash(pwsh tools/scripts/stress_summarize.ps1 -RunDir robot/logs/stress-45k-z1-20260530-102927)",
+      "Bash(awk '/^## ?7\\\\./,/^## ?8\\\\./' CLAUDE.md)"
     ]
   }
 }
