@@ -20,10 +20,13 @@ CREATE TABLE IF NOT EXISTS player_database (
   skill_list MEDIUMBLOB,
   uint32_pb_component MEDIUMBLOB,
   derived_attributes_component MEDIUMBLOB,
-  level_component MEDIUMBLOB
+  level_component MEDIUMBLOB,
+  currency MEDIUMBLOB,
+  stress_test_probe MEDIUMBLOB,
+  merge_state MEDIUMBLOB
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='player_database';
 
 CREATE TABLE IF NOT EXISTS player_database_1 (
-  player_id bigint unsigned NOT NULL DEFAULT 0
+  player_id bigint unsigned NOT NULL DEFAULT 0,
+  stress_test_probe MEDIUMBLOB
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='player_database_1';
-

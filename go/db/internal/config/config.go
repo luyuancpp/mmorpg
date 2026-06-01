@@ -42,11 +42,12 @@ type RedisConfig struct {
 
 // KafkaConfig holds Kafka consumer settings.
 type KafkaConfig struct {
-	Brokers         []string `json:"Brokers"`         // Broker addresses
-	GroupID         string   `json:"GroupID"`         // Consumer group ID
-	Topic           string   `json:"Topic,optional"`  // Derived from ZoneId at startup
-	PartitionCnt    int32    `json:"PartitionCnt"`    // Partition count
-	IsOfflineExpand bool     `json:"IsOfflineExpand"` // Offline expansion: true = maintenance mode
+	Brokers         []string `json:"Brokers"`                    // Broker addresses
+	GroupID         string   `json:"GroupID"`                    // Consumer group ID
+	Topic           string   `json:"Topic,optional"`             // Derived from ZoneId at startup
+	PartitionCnt    int32    `json:"PartitionCnt"`               // Partition count
+	RetentionMs     int64    `json:"RetentionMs,default=300000"` // Topic retention in ms (default 5 min; matches login)
+	IsOfflineExpand bool     `json:"IsOfflineExpand"`            // Offline expansion: true = maintenance mode
 
 	// SubShardCount controls intra-partition parallelism. 0 or 1 = legacy
 	// behaviour (single goroutine per partition, max parallelism =

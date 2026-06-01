@@ -14,4 +14,10 @@
       - kafka topic offset reset(`pwsh tools/scripts/dev_tools.ps1 -Command kafka-offset-reset`)+ broker 数据目录可选清,生产/历史不要清
       - prom snapshot 目录 = 新建 `robot/logs/stress-<name>-<ts>/prom-snapshots/`
    3. **压测中** — 至少在 ramp 完成 / 稳态中段 / 稳态末 三个时刻拉 snapshot 进 prom-snapshots/。
-   4. **跑测后** — 跑 `stress_summarize.ps1` 出 Round N 表,与 `prev-summary.txt` 二维对比写进新复盘文档,贴 ARCH §11 决策行 + 更新 CLAUDE.md §7 已完成清单。**不要在没有对比表的情况下声明"性能提升"**。
+   4. **跑测后** — 跑 `stress_summarize.ps1` 出 Round N 表,与 `prev-summary.txt` 二维对比写进新复盘文档,贴 ARCH §11 决策行 + 更新 CLAUDE.md §7
+   5. **压期间不能上传任何日志**
+   6. **每次登录压测的话你帮我把所有redis mysql etcd 数据全部删除再新的压测**
+   7. **不要读client目录**
+   8. **保证修改代码的正确性，数据一致性**
+   9. **中文回复**
+   已完成清单。**不要在没有对比表的情况下声明"性能提升"**。

@@ -1,6 +1,6 @@
 # Base RPC service config
 Name: login.rpc
-ListenOn: 127.0.0.1:51000
+ListenOn: 127.0.0.1:53000
 Timeout: 100000 # Max server-side timeout per request (10s)
 
 # Canonical go-zero RPC registration/discovery settings.
@@ -245,7 +245,7 @@ Kafka:
   # 在 45k 浪涌下端到端 100-500ms / task,稳态吞吐 50-100/s 远低于浪涌
   # 250/s,触发 87k 次 preload timeout。10 partition 把 worker 池容量
   # 翻倍,期望 preload_to 减半,scene_notified=1 翻倍。
-  InitialPartition: 5
+  InitialPartition: 10
   DialTimeout: 10s
   ReadTimeout: 30s
   WriteTimeout: 10s

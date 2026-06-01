@@ -739,6 +739,17 @@ func (h *consumerGroupHandler) Setup(session sarama.ConsumerGroupSession) error 
 		}
 		logx.Infof("consumer group assigned partitions: groupID=%s, topic=%s, partitions=%v",
 			h.consumer.groupID, h.consumer.topic, partitionIDs)
+		// Warn loudly when we end up owning fewer partitions than configured.
+		// Round 10 of the 45k stress (2026-05-31) caught a silent regression
+		// where the consumer joined a 1-partition topic and got stranded on
+		// partition 0 forever after login grew it to 10. Without this check
+		// we only noticed via downstream Kafka lag on partitions 1..9. The
+		// real fix lives in db.go (EnsureTopics before consumer start); this
+		// is the alarm bell that catches future races.
+		if int32(len(partitions)) < h.consumer.partitionCount {
+			logx.Errorf("partition under-claim: groupID=%s, topic=%s, claimed=%d, configured=%d — likely topic was created with fewer partitions than configured before this consumer joined",
+				h.consumer.groupID, h.consumer.topic, len(partitions), h.consumer.partitionCount)
+		}
 	} else {
 		logx.Errorf("no partitions assigned: groupID=%s, topic=%s", h.consumer.groupID, h.consumer.topic)
 	}

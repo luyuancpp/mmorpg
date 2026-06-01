@@ -13,15 +13,27 @@ package loginsession
 
 import (
 	"context"
+	"errors"
 	"strconv"
 	"time"
 
 	"login/internal/config"
 	"login/internal/constants"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/redis/go-redis/v9"
 	"github.com/zeromicro/go-zero/core/logx"
 )
+
+// cleanupMissTotal counts Cleanup() calls where the session key was already
+// absent in Redis (legitimate race: Disconnect arrived before BindSession
+// committed, or a duplicate Disconnect). Surfaced as a metric so the previous
+// Error-level spam can stay at Debug without losing observability.
+var cleanupMissTotal = promauto.NewCounterVec(prometheus.CounterOpts{
+	Name: "loginsession_cleanup_miss_total",
+	Help: "Cleanup() called but session key absent (Disconnect/BindSession race).",
+}, []string{"caller"})
 
 func sessionKey(sessionID uint32) string {
 	return "login_session:" + strconv.FormatUint(uint64(sessionID), 10)
@@ -78,11 +90,23 @@ func GetAccount(ctx context.Context, rdb *redis.Client, sessionID uint32) (strin
 }
 
 // Cleanup removes the session key and the device-set entry.
+//
+// `redis: nil` here is a legitimate race (Disconnect arriving before BindSession
+// committed, or a second Cleanup for the same sessionId). Round 14 demotes that
+// case to Debug and surfaces it via a Prometheus counter so the login ERROR log
+// is no longer flooded under high reconnect churn (45k-bot stress saw tens of
+// thousands of these per minute, drowning out real errors). Real Redis errors
+// (connection drop, command timeout) stay at Error level.
 func Cleanup(ctx context.Context, rdb *redis.Client, sessionID uint32, logicTag string) {
 	key := sessionKey(sessionID)
 	account, err := rdb.Get(ctx, key).Result()
 	if err != nil {
-		logx.Errorf("[%s] get account failed for cleanup: sessionId=%d err=%v", logicTag, sessionID, err)
+		if errors.Is(err, redis.Nil) {
+			cleanupMissTotal.WithLabelValues(logicTag).Inc()
+			logx.Debugf("[%s] cleanup miss (session not in redis, expected race): sessionId=%d", logicTag, sessionID)
+		} else {
+			logx.Errorf("[%s] get account failed for cleanup: sessionId=%d err=%v", logicTag, sessionID, err)
+		}
 	} else {
 		rdb.SRem(ctx, constants.GenerateSessionKey(account), sessionID)
 	}

@@ -12,9 +12,11 @@ import (
 	"os/signal"
 	db_grpc "proto/db"
 	"shared/grpcstats"
+	"shared/kafkautil"
 	"syscall"
 
 	"github.com/zeromicro/go-zero/core/conf"
+	"github.com/zeromicro/go-zero/core/logx"
 	"github.com/zeromicro/go-zero/core/service"
 	"github.com/zeromicro/go-zero/zrpc"
 	"google.golang.org/grpc"
@@ -35,6 +37,27 @@ func main() {
 	}
 	config.AppConfig.ServerConfig.Kafka.Topic = config.DbTaskTopic(config.AppConfig.ZoneId)
 	config.AppConfig.ServerConfig.Database.DBName = config.ZoneDBName(config.AppConfig.ZoneId)
+
+	// Ensure the db_task topic exists with the desired partition count BEFORE
+	// the sarama consumer joins. If the topic doesn't exist when sarama
+	// connects, the broker auto-creates it with num.partitions=1 and sarama
+	// permanently assigns this consumer partition 0 only — any later
+	// partition expansion (e.g. login's EnsureTopics call growing it to 10)
+	// strands the other 9 partitions with no consumer until the next process
+	// restart. Round 10 of the 45k stress (2026-05-31) caught this with
+	// ~19.5k preload tasks stuck on partitions 1..9 while only ~764 on
+	// partition 0 drained, capping SceneManager.EnterScene throughput at
+	// ~4/s and timing out 78% of robots on "scene ready".
+	if err := kafkautil.EnsureTopics(
+		config.AppConfig.ServerConfig.Kafka.Brokers,
+		[]kafkautil.TopicSpec{{
+			Name:        config.AppConfig.ServerConfig.Kafka.Topic,
+			Partitions:  config.AppConfig.ServerConfig.Kafka.PartitionCnt,
+			RetentionMs: config.AppConfig.ServerConfig.Kafka.RetentionMs,
+		}},
+	); err != nil {
+		logx.Errorf("EnsureTopics: %v (non-fatal, continuing)", err)
+	}
 
 	ctx := svc.NewServiceContext()
 

@@ -77,6 +77,20 @@ func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (*scen
 
 	// 3. CROSS-ZONE CHECK: If gate is in a different zone, redirect the player.
 	if in.GateZoneId != 0 && targetZoneId != 0 && in.GateZoneId != targetZoneId {
+		// The reserve in step 2 may have already INCR'd the target scene's
+		// counters; release them before bailing out so the redirect path
+		// doesn't leak. The follow-up EnterScene from the new gate will
+		// re-reserve from scratch.
+		if reserved {
+			DecrInstancePlayerCount(l.svcCtx, sceneId)
+		}
+		// Historically the player-was-in-another-zone case never decremented
+		// the old scene's counter on redirect, so the old zone's
+		// instance:{id}:player_count slowly drifted up under cross-zone
+		// teleport. Drop it here while we have the location loaded.
+		if currentLoc != nil && currentLoc.SceneId != 0 && currentLoc.SceneId != sceneId {
+			DecrInstancePlayerCount(l.svcCtx, currentLoc.SceneId)
+		}
 		return l.handleCrossZoneRedirect(in, targetZoneId)
 	}
 
@@ -106,6 +120,12 @@ func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (*scen
 		if count < 0 {
 			return errResp(constants.ErrNoAvailableNode, fmt.Sprintf("scene %d disappeared during enter", sceneId)), nil
 		}
+		// AtomicIncrPlayerCountIfSceneExists only bumps the per-scene
+		// counter — bump the per-node aggregate to match what
+		// IncrInstancePlayerCount/ReserveBestWorldChannel do, so the
+		// composite-load score stays consistent across both reservation
+		// paths. Don't double-call IncrInstancePlayerCount here: that
+		// would re-INCR the per-scene counter the Lua already moved.
 		if nodeId != "" {
 			l.svcCtx.Redis.Incr(fmt.Sprintf(NodePlayerCountKey, nodeId))
 		}
@@ -114,9 +134,12 @@ func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (*scen
 	// 5b. Cross-node switch: notify the old scene node to release the player so
 	// it persists state and tears down the entity. Same-node switches skip this
 	// because the C++ node reuses the in-memory entity directly.
-	// Sync RPC with a short timeout: usually completes in 1-5ms (LAN); if the
-	// old node is stuck/dead we drop the wait after 500ms and continue. AFK
-	// cleanup on the old node remains the fallback.
+	//
+	// Round 14: dispatchReleasePlayer is fully async — caller returns immediately
+	// while the release + retry chain runs in a background goroutine. Previously
+	// the sync 500ms deadline pinned EnterScene latency at ~535ms under 45k-bot
+	// load, cascading into 71k robot-side scene-ready timeouts. AFK cleanup on
+	// the old node remains the final fallback.
 	if currentLoc != nil && currentLoc.NodeId != "" && currentLoc.NodeId != nodeId {
 		dispatchReleasePlayer(l.svcCtx, l.Logger, targetZoneId,
 			currentLoc.NodeId, in.PlayerId, sceneId, nodeId)

@@ -65,6 +65,13 @@ void SceneSkillClientPlayerHandler::ListSkills(entt::entity player,const ::ListS
 		response->mutable_skill_list()->CopyFrom(*skillList);
 		return;
 	}
+	// Force the skill_list field to be present (even if empty) so the
+	// client/robot can distinguish "we replied with no skills yet" from
+	// "the response was dropped". Robot's
+	// SceneSkillClientPlayerListSkillsHandler treats a nil SkillList as
+	// "skills cleared" via SetOwnedSkillIDs(nil)+SignalSkillsReady, so an
+	// explicit empty list keeps that signal firing on first login. Do not
+	// remove this line.
 	response->mutable_skill_list();
 ///<<< END WRITING YOUR CODE
 

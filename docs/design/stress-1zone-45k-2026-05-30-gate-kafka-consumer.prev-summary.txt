@@ -1,0 +1,48 @@
+﻿
+Run directory: F:\work\mmorpg\robot\logs\stress-45k-z1-20260530-102927
+
+=== Robot per-minute stats =============================================
+
+  time   conn        login_ok   enter_ok   enter_fail  recon_fb  max_login  msg/s
+  ----   ----        --------   --------   ----------  --------  ---------  -----
+  1m0s         2,104      2,076      2,076           0         0 336ms      145/s
+  2m0s         6,078      6,030      6,030           0         0 791ms      332/s
+
+=== EnterGame end-to-end (entergame_*) =================================
+
+  snapshot                       success  preload_failed  apply_failed  fail%   preload{ok}avg  preload{fail}avg  apply avg
+  --------                       -------  --------------  ------------  -----   --------------  ----------------  ---------
+  t_final_before_stop              23,711             140             0 0.6%    114.2ms         5,460.7ms         285.3ms
+  t_now_after_resume               12,741               0             0 0.0%     51.6ms         -                 249.4ms
+  t00m_before                           0               0             0 0.0%    -               -                 -
+  t00m_ramp                           762               0             0 0.0%     15.4ms         -                  42.0ms
+  t02m_steady                       6,472               0             0 0.0%     14.0ms         -                 137.6ms
+  t05m_steady                      18,747             126             0 0.7%     61.1ms         5,489.5ms         266.0ms
+
+=== Dataloader per-stage avg (dataloader_preload_*) ====================
+
+  snapshot                       cache_check  sub_cache  dispatcher  kafka_send  cb_wait{ok}  cb_wait{fail}
+  --------                       -----------  ---------  ----------  ----------  -----------  -------------
+  t_final_before_stop              2.3ms        4.5ms      0.0ms     322.7ms      86.9ms      5,447.6ms
+  t_now_after_resume               2.7ms        5.0ms      0.0ms     107.6ms      30.7ms      -
+  t00m_before                    -            -          -           -           -            -
+  t00m_ramp                        1.6ms        3.2ms      0.0ms       4.8ms       8.7ms      -
+  t02m_steady                      1.9ms        3.6ms      0.0ms      10.1ms      15.7ms      -
+  t05m_steady                      2.5ms        4.6ms      0.0ms      93.6ms      98.4ms      5,447.6ms
+
+=== Kafka consumer lag (live) ==========================================
+
+  partition    current      log_end       lag
+  ---------    -------      -------       ---
+  0            4,399        4,399         0
+  1            4,207        4,207         0
+  2            4,172        4,172         0
+  3            4,327        4,327         0
+  4            4,599        4,599         0
+  5            3,968        3,968         0
+  6            3,860        3,860         0
+  7            4,413        4,413         0
+  8            4,208        4,208         0
+  9            4,529        4,529         0
+
+  TOTAL LAG: 0

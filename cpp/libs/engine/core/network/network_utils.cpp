@@ -25,10 +25,15 @@ std::optional<entt::entity> ResolveLocalZoneGateEntity(SessionId sessionId)
 		return entity;
 	}
 
-	// Defensive fallback for local single-zone/dev launches where the caller's
-	// thread-local zone context can lag node discovery. Only accept an
-	// unscoped match when it is unique, otherwise cross-zone ambiguity remains
-	// a hard miss.
+	// Defensive fallback for the brief window where the thread-local zone
+	// context (GetZoneId()) lags behind node discovery — e.g. early in
+	// startup before NodeContext is fully populated, or in dev/single-zone
+	// launches where zone propagation hasn't happened yet. The local-thread
+	// gate registry is already filtered down to same-zone gates by
+	// registration_manager.cpp's IsZoneScopedNodeType check, so a unique
+	// node_id match here is safe. Cross-zone routing is NOT this path's
+	// responsibility — true cross-zone targets are handled by the gate
+	// redirect flow upstream.
 	auto &registry = tlsNodeContextManager.GetRegistry(eNodeType::GateNodeService);
 	std::optional<entt::entity> uniqueMatch;
 	size_t matches = 0;
@@ -42,7 +47,7 @@ std::optional<entt::entity> ResolveLocalZoneGateEntity(SessionId sessionId)
 	}
 	if (matches == 1)
 	{
-		LOG_WARN << "ResolveLocalZoneGateEntity fallback by node_id, session_id="
+		LOG_WARN << "ResolveLocalZoneGateEntity zone-context-lag fallback, session_id="
 				 << sessionId << ", gate_node_id=" << gateNodeId
 				 << ", zone_id=" << zoneId;
 		return uniqueMatch;

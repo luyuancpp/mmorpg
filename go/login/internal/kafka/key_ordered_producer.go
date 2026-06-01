@@ -64,10 +64,6 @@ func NewKeyOrderedKafkaProducer(cfg config.KafkaConfig) (*KeyOrderedKafkaProduce
 	config.Producer.Idempotent = cfg.Idempotent
 	config.Net.MaxOpenRequests = 1 // required by idempotency
 
-	if cfg.Idempotent {
-		config.Producer.Transaction.ID = fmt.Sprintf("kafka-producer-%d", time.Now().UnixNano())
-	}
-
 	if err := config.Validate(); err != nil {
 		logx.Errorf("invalid Kafka config: %v", err)
 		return nil, err
@@ -86,22 +82,12 @@ func NewKeyOrderedKafkaProducer(cfg config.KafkaConfig) (*KeyOrderedKafkaProduce
 		return nil, fmt.Errorf("failed to create producer: %w", err)
 	}
 
-	if cfg.Idempotent {
-		if !producer.IsTransactional() {
-			producer.Close()
-			client.Close()
-			return nil, fmt.Errorf("idempotent producer requires transaction support (Kafka >= 0.11.0.0)")
-		}
-		if err := producer.BeginTxn(); err != nil {
-			producer.Close()
-			client.Close()
-			logx.Errorf("failed to begin transaction: %v", err)
-			return nil, fmt.Errorf("failed to begin transaction: %w", err)
-		}
-	}
-
 	consistentHash := consistent.NewConsistent(20)
-	for i := int32(0); i < int32(cfg.InitialPartition); i++ {
+	initialPartition := cfg.InitialPartition
+	if initialPartition <= 0 {
+		initialPartition = int(cfg.PartitionCnt)
+	}
+	for i := int32(0); i < int32(initialPartition); i++ {
 		consistentHash.AddPartition(i)
 	}
 
@@ -131,7 +117,7 @@ func NewKeyOrderedKafkaProducer(cfg config.KafkaConfig) (*KeyOrderedKafkaProduce
 		producer:              producer,
 		client:                client,
 		topic:                 cfg.Topic,
-		partitionCnt:          cfg.InitialPartition,
+		partitionCnt:          initialPartition,
 		ctx:                   ctx,
 		cancel:                cancel,
 		consistent:            consistentHash,
