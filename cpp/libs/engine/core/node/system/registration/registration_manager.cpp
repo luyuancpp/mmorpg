@@ -33,7 +33,14 @@ void NodeHandshakeManager::TryRegisterNodeSession(uint32_t nodeType, const muduo
 		LOG_INFO << "Peer address match in " << NodeUtils::GetRegistryName(registry)
 			<< ": " << conn->peerAddress().toIpPort();
 		auto clientCopy = client;
-		registry.get_or_emplace<TimerTaskComp>(entity).RunEvery(0.5, [conn, nodeType, clientCopy]() {
+		// One-shot retry. The retry chain naturally terminates when the
+		// peer replies success: OnHandshakeReplied calls
+		// registry.remove<TimerTaskComp>(entity), so this timer (and any
+		// future scheduling on the same entity) is cancelled. If the reply
+		// fails, OnHandshakeReplied schedules another RunAfter(0.5),
+		// keeping retries paced at ~2/s instead of the busy 500ms loop the
+		// previous RunEvery would spin even after success.
+		registry.get_or_emplace<TimerTaskComp>(entity).RunAfter(0.5, [conn, nodeType, clientCopy]() {
 			if (!conn || !conn->connected() || !clientCopy || !clientCopy->connected()) {
 				return;
 			}
@@ -131,7 +138,12 @@ void NodeHandshakeManager::OnHandshakeReplied(const NodeHandshakeResponse& respo
 		for (const auto& [entity, client, nodeInfo] : registry.view<RpcClientPtr, NodeInfo>().each()) {
 			if (!NodeUtils::IsSameNode(nodeInfo.node_uuid(), response.peer_node().node_uuid())) continue;
 			auto clientCopy = client;
-			registry.get_or_emplace<TimerTaskComp>(entity).RunEvery(0.5, [clientCopy, nodeType]() {
+			// One-shot retry on handshake failure. The retry chain stops
+			// the moment the peer replies success — OnHandshakeReplied
+			// removes TimerTaskComp from this entity. RunEvery here would
+			// keep firing every 500ms even after the success reply
+			// arrives, double-handshaking the peer indefinitely.
+			registry.get_or_emplace<TimerTaskComp>(entity).RunAfter(0.5, [clientCopy, nodeType]() {
 				if (!clientCopy || !clientCopy->connected()) {
 					return;
 				}

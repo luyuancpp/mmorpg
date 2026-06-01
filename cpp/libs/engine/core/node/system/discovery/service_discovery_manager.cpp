@@ -143,6 +143,20 @@ void ServiceDiscoveryManager::AddServiceNode(const std::string &nodeJson, uint32
 void ServiceDiscoveryManager::HandleServiceNodeStart(const std::string &key, const std::string &value)
 {
 	LOG_TRACE << "Service node start, key: " << key << ", value: " << value;
+
+	// Filter out allocation-slot keys before we attempt to parse the value as
+	// a NodeInfo JSON. EtcdManager::RegisterNodeService writes the
+	// `<Service>.rpc/allocated/...` slot with the raw node_uuid as the value
+	// (it's a CAS-only existence claim, not service discovery data), so a
+	// blanket parse would log "Parse node JSON failed ... expected '{'" once
+	// per RangeQuery hit per node — under the 45k stress run this produced
+	// thousands of error lines per second and crowded out signal logs.
+	if (key.find("/allocated/") != std::string::npos)
+	{
+		LOG_TRACE << "Skip allocation-slot key for service discovery: " << key;
+		return;
+	}
+
 	if (const auto nodeType = NodeUtils::GetServiceTypeFromPrefix(key); eNodeType_IsValid(nodeType))
 	{
 		AddServiceNode(value, nodeType);

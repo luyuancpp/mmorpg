@@ -1,6 +1,7 @@
 #include "kafka_manager.h"
 #include "proto/common/base/config.pb.h"
 #include <muduo/base/Logging.h>
+#include <muduo/net/EventLoop.h>
 #include <boost/algorithm/string/join.hpp>
 #include "thread_context/redis_manager.h"
 #include "messaging/kafka/kafka_consumer.h"
@@ -28,7 +29,29 @@ std::vector<std::string> CollectTopics(const KafkaConfig& config) {
 }
 }
 
+KafkaManager::KafkaManager() = default;
+
+KafkaManager::~KafkaManager() = default;
+
 bool KafkaManager::Init(const KafkaConfig& config) {
+	// The deploy yaml intentionally leaves Kafka.GroupID empty so each node
+	// derives a per-node-id group later (see node_kafka_command_handler.h).
+	// Skip the eager top-level subscribe in that case instead of letting
+	// KafkaConsumer::init bail with a misleading librdkafka error: the real
+	// subscribe happens via Node::RegisterKafkaMessageHandler when
+	// SetKafkaHandlers fires, which always supplies a non-empty group id.
+	if (config.group_id().empty()) {
+		LOG_INFO << "KafkaManager::Init skipped: empty default group_id. "
+			<< "Per-node Kafka consumer will be created via "
+			<< "RegisterKafkaCommandHandler.";
+		// Producer brokers still need to be wired up for outbound Publish().
+		const std::string brokers = JoinBrokers(config);
+		if (!brokers.empty()) {
+			KafkaProducer::Instance().setBrokers(brokers);
+		}
+		return true;
+	}
+
 	auto zoneId = tlsNodeConfigManager.GetGameConfig().zone_id();
 	return Subscribe(
 		config,
@@ -59,8 +82,8 @@ bool KafkaManager::Subscribe(const KafkaConfig& config,
 	// Defer producer creation until first Publish() call to save rdkafka threads.
 	KafkaProducer::Instance().setBrokers(brokers);
 
-	KafkaConsumer::Instance().stop();
-	if (!KafkaConsumer::Instance().init(
+	auto consumer = std::make_unique<KafkaConsumer>();
+	if (!consumer->init(
 		brokers,
 		effectiveGroupId,
 		topics,
@@ -72,11 +95,16 @@ bool KafkaManager::Subscribe(const KafkaConfig& config,
 		return false;
 	}
 
-	if (!KafkaConsumer::Instance().start()) {
+	if (!consumer->start()) {
 		LOG_ERROR << "KafkaManager: Failed to start Kafka consumer for topics: "
 			<< boost::algorithm::join(topics, ",");
 		return false;
 	}
+
+	if (dispatchLoop_) {
+		consumer->startBackgroundPolling(&dispatchLoop_->get());
+	}
+	consumers_.push_back(std::move(consumer));
 
 	LOG_INFO << "KafkaManager initialized successfully. Brokers: " << brokers
 		<< " Topics: " << boost::algorithm::join(topics, ",");
@@ -95,11 +123,33 @@ bool KafkaManager::Publish(const std::string& topic, const std::string& msg) {
 }
 
 void KafkaManager::Poll() {
-	KafkaConsumer::Instance().poll();
+	for (auto& consumer : consumers_) {
+		if (consumer) {
+			consumer->poll();
+		}
+	}
+}
+
+void KafkaManager::StartBackgroundPolling(muduo::net::EventLoop* dispatchLoop) {
+	if (!dispatchLoop) {
+		LOG_ERROR << "KafkaManager::StartBackgroundPolling requires a non-null dispatch loop.";
+		return;
+	}
+	dispatchLoop_ = std::ref(*dispatchLoop);
+	for (auto& consumer : consumers_) {
+		if (consumer) {
+			consumer->startBackgroundPolling(dispatchLoop);
+		}
+	}
 }
 
 void KafkaManager::Shutdown() {
-	KafkaConsumer::Instance().stop();
+	for (auto& consumer : consumers_) {
+		if (consumer) {
+			consumer->stop();
+		}
+	}
+	consumers_.clear();
 
 	if (KafkaProducer::Instance().initialized()) {
 		KafkaProducer::Instance().poll(); // flush if needed
@@ -107,4 +157,3 @@ void KafkaManager::Shutdown() {
 
 	LOG_INFO << "KafkaManager has been shut down.";
 }
-

@@ -300,7 +300,18 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 	// than waiting for an unresponsive Kafka/dispatcher leg, and the
 	// scene-side Redis NIL retry already compensates for genuinely lost
 	// preloads.
-	const dispatcherTaskTTL = 5 * time.Second
+	//
+	// 2026-06-01 Round 14 §P6: after Round 14 P0 unblocked EnterScene the
+	// EnterGame throughput jumped +15% and pushed the DB consumer→dispatch
+	// chain past its critical point; cb_wait{ok} avg climbed 85ms → 275ms
+	// and ~4% of preloads hit the 5s TTL with cb_wait{fail}=5.5s exactly.
+	// Round 15 short-term stop-loss: bump TTL to 8s so transient queueing
+	// inside db_rpc + task_result_dispatcher does NOT cascade into preload
+	// failures. Real fix lives in P5 (db service sub-shard parallelism)
+	// and P7 (dispatcher worker pool); 8s is just the absorbing buffer
+	// while those land. Revisit downward once cb_wait{ok} drops back to
+	// <100ms steady-state.
+	const dispatcherTaskTTL = 8 * time.Second
 	ok := l.svcCtx.SubmitPreload(func() {
 		dataloader.EnsurePlayerAllDataInRedisAsync(
 			chainCtx,
@@ -341,8 +352,8 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 
 // consumePostMergeFlags reads the two Redis flag keys written by
 // tools/merge_zone/post_merge_stamp.go and:
-//   • populates resp.PostMergeNoticeTs / resp.ForceRenameRequired
-//   • DELetes the keys so subsequent logins don't re-fire the UI
+//   - populates resp.PostMergeNoticeTs / resp.ForceRenameRequired
+//   - DELetes the keys so subsequent logins don't re-fire the UI
 //
 // Best-effort: any Redis error is logged and swallowed. The semantic
 // is "show notice once if possible"; missing it is recoverable, and

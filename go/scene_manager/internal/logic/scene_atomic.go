@@ -29,9 +29,9 @@ import (
 // serializes them.
 
 // luaAtomicIncrPlayerCount atomically:
-//   1. checks scene:{id}:node still exists,
-//   2. if yes, INCRs instance:{id}:player_count and returns the new count,
-//   3. if no, returns -1 without creating the player_count key.
+//  1. checks scene:{id}:node still exists,
+//  2. if yes, INCRs instance:{id}:player_count and returns the new count,
+//  3. if no, returns -1 without creating the player_count key.
 //
 // KEYS[1] = scene:{id}:node
 // KEYS[2] = instance:{id}:player_count
@@ -44,50 +44,70 @@ return redis.call('INCR', KEYS[2])
 `
 
 // luaReserveBestWorldChannel atomically selects the least-loaded live world
-// channel from ARGV scene/node pairs and reserves one player slot on it.
+// channel from KEYS scene/count pairs and reserves one player slot on it.
 // Selection and INCR have to be a single Redis operation during login storms,
 // otherwise many concurrent calls can observe the same zero-count channel.
 //
-// ARGV = sceneId1, nodeId1, sceneId2, nodeId2, ...
+// KEYS are laid out as 2N + 1 + 1 entries so every key the script touches is
+// declared up-front, which is the Redis Cluster contract:
+//
+//	KEYS[1..2N] = scene:{id}:node, instance:{id}:player_count, ...
+//	              (interleaved per candidate)
+//	KEYS[2N+1]  = node:{bestNode}:player_count (one per candidate, packed
+//	              starting at index 2N+1 so the script can look up the
+//	              chosen candidate's node counter without string-building
+//	              a key from data).
+//
+// ARGV[i] for i in 1..N = nodeId string for candidate i, used both for the
+// equality check against scene:{id}:node and to remember the picked node.
+//
 // Return = {sceneId, nodeId, newCount}, or nil if every candidate went stale.
+//
+// NOTE: keys are constructed from Go (see ReserveBestWorldChannel) and
+// passed in fixed slots. The script never builds a key from ARGV data,
+// which means it stays Cluster-safe.
 const luaReserveBestWorldChannel = `
-local bestScene = nil
-local bestNode = nil
+local n = #ARGV
+local bestIdx = nil
 local bestCount = nil
 
-for i = 1, #ARGV, 2 do
-    local sceneId = ARGV[i]
-    local nodeId = ARGV[i + 1]
-    local sceneNodeKey = 'scene:' .. sceneId .. ':node'
-    if redis.call('GET', sceneNodeKey) == nodeId then
-        local countKey = 'instance:' .. sceneId .. ':player_count'
+for i = 1, n do
+    local sceneNodeKey = KEYS[(i - 1) * 2 + 1]
+    local countKey = KEYS[(i - 1) * 2 + 2]
+    if redis.call('GET', sceneNodeKey) == ARGV[i] then
         local raw = redis.call('GET', countKey)
         local count = tonumber(raw or '0') or 0
         if bestCount == nil or count < bestCount then
-            bestScene = sceneId
-            bestNode = nodeId
+            bestIdx = i
             bestCount = count
         end
     end
 end
 
-if bestScene == nil then
+if bestIdx == nil then
     return nil
 end
 
-local newCount = redis.call('INCR', 'instance:' .. bestScene .. ':player_count')
-redis.call('INCR', 'node:' .. bestNode .. ':player_count')
-return {bestScene, bestNode, tostring(newCount)}
+local bestCountKey = KEYS[(bestIdx - 1) * 2 + 2]
+local bestNodeKey = KEYS[2 * n + bestIdx]
+local newCount = redis.call('INCR', bestCountKey)
+redis.call('INCR', bestNodeKey)
+
+-- ARGV[bestIdx] is the chosen nodeId; recover the sceneId from its
+-- scene:{id}:node key by stripping the prefix/suffix on the caller side.
+-- To keep the script simple we return the sceneId via ARGV index — Go
+-- side knows the candidate order and can map back.
+return {tostring(bestIdx), ARGV[bestIdx], tostring(newCount)}
 `
 
 // luaAtomicDestroyInstance atomically:
-//   1. checks instance:{id}:player_count is missing or equals "0",
-//   2. if yes, reads scene:{id}:node into a local, then wipes every
-//      scene-scoped Redis key and removes the scene from the active set,
-//      and returns the nodeId (so the caller can fire DestroyScene RPC and
-//      decrement node counters outside the script),
-//   3. if no (player count > 0), returns empty string without touching
-//      anything — destroy was a false alarm, try again next tick.
+//  1. checks instance:{id}:player_count is missing or equals "0",
+//  2. if yes, reads scene:{id}:node into a local, then wipes every
+//     scene-scoped Redis key and removes the scene from the active set,
+//     and returns the nodeId (so the caller can fire DestroyScene RPC and
+//     decrement node counters outside the script),
+//  3. if no (player count > 0), returns empty string without touching
+//     anything — destroy was a false alarm, try again next tick.
 //
 // KEYS[1] = scene:{id}:node
 // KEYS[2] = instance:{id}:player_count
@@ -141,17 +161,43 @@ func AtomicIncrPlayerCountIfSceneExists(svcCtx *svc.ServiceContext, sceneId uint
 // ReserveBestWorldChannel picks and reserves a world channel in one Redis
 // script so bursty EnterScene traffic spreads across channels instead of
 // stampeding the same zero-count scene.
+//
+// KEY layout passed to the script:
+//
+//	KEYS[1..2N]   = scene:{id}:node, instance:{id}:player_count, ...
+//	                interleaved per candidate (N candidates total)
+//	KEYS[2N+1..3N] = node:{candidateNode}:player_count, one per candidate,
+//	                 indexed identically to ARGV so the script can pick
+//	                 the winner's node key without string-building.
+//
+// ARGV[i] = candidate i's nodeId string. Used both as the value the
+// scene:{id}:node GET is compared to, and as the node identifier
+// returned to Go.
 func ReserveBestWorldChannel(svcCtx *svc.ServiceContext, candidates []WorldChannelCandidate) (uint64, string, int64, error) {
 	if len(candidates) == 0 {
 		return 0, "", 0, nil
 	}
 
-	args := make([]any, 0, len(candidates)*2)
-	for _, candidate := range candidates {
-		args = append(args, strconv.FormatUint(candidate.SceneID, 10), candidate.NodeID)
+	n := len(candidates)
+	keys := make([]string, 0, 3*n)
+	// Pairs: scene_node_key, count_key, scene_node_key, count_key, ...
+	for _, c := range candidates {
+		keys = append(keys,
+			fmt.Sprintf(SceneNodeKeyFmt, c.SceneID),
+			fmt.Sprintf(InstancePlayerCountKey, c.SceneID),
+		)
+	}
+	// Trailing N entries: per-candidate node player_count keys.
+	for _, c := range candidates {
+		keys = append(keys, fmt.Sprintf(NodePlayerCountKey, c.NodeID))
 	}
 
-	raw, err := svcCtx.Redis.Eval(luaReserveBestWorldChannel, nil, args...)
+	args := make([]any, 0, n)
+	for _, c := range candidates {
+		args = append(args, c.NodeID)
+	}
+
+	raw, err := svcCtx.Redis.Eval(luaReserveBestWorldChannel, keys, args...)
 	if err != nil {
 		return 0, "", 0, err
 	}
@@ -161,10 +207,15 @@ func ReserveBestWorldChannel(svcCtx *svc.ServiceContext, candidates []WorldChann
 		return 0, "", 0, nil
 	}
 
-	sceneId, _ := strconv.ParseUint(toString(parts[0]), 10, 64)
-	nodeId := toString(parts[1])
+	bestIdx, _ := strconv.Atoi(toString(parts[0]))
+	if bestIdx < 1 || bestIdx > n {
+		logx.Errorf("[Lua] luaReserveBestWorldChannel returned out-of-range bestIdx=%d (n=%d)", bestIdx, n)
+		return 0, "", 0, nil
+	}
+	winner := candidates[bestIdx-1]
 	count := toInt64(parts[2])
-	return sceneId, nodeId, count, nil
+	// parts[1] is the same nodeId we passed in; trust the Go-side mapping.
+	return winner.SceneID, winner.NodeID, count, nil
 }
 
 // AtomicDestroyIfIdle is the race-safe replacement for the multi-step

@@ -57,17 +57,17 @@ void OnSceneProcessClientPlayerMessageReply(const muduo::net::TcpConnectionPtr& 
         return;
     }
 
+    if (!replied->has_message_content())
+    {
+        return;
+    }
+
     const auto sessionId = replied->session_id();
     auto sessionIt = tlsSessionManager.sessions().find(sessionId);
     if (sessionIt == tlsSessionManager.sessions().end())
     {
         LOG_WARN << "SceneProcessClientPlayerMessageReply: session not found, session_id="
                  << sessionId << ", message_id=" << replied->message_content().message_id();
-        return;
-    }
-
-    if (!replied->has_message_content())
-    {
         return;
     }
 

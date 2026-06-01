@@ -7,6 +7,7 @@
 extern MessageResponseDispatcher gRpcResponseDispatcher;
 
 ///<<< BEGIN WRITING YOUR CODE
+#include "node/system/node/node.h"
 ///<<< END WRITING YOUR CODE
 
 void InitGateReply()
@@ -78,6 +79,11 @@ void OnGateBroadcastToAllReply(const muduo::net::TcpConnectionPtr& conn, const s
 void OnGateNodeHandshakeReply(const muduo::net::TcpConnectionPtr& conn, const std::shared_ptr<::NodeHandshakeResponse>& replied, muduo::Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
+    if (!replied)
+    {
+        return;
+    }
+    gNode->GetNodeRegistrationManager().OnHandshakeReplied(*replied);
 ///<<< END WRITING YOUR CODE
 }
 

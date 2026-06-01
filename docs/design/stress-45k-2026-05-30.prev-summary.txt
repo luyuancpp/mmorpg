@@ -1,0 +1,43 @@
+﻿
+Run directory: F:\work\mmorpg\robot\logs\stress-retry-100-schemafix-clean-20260530-101053
+
+=== Robot per-minute stats =============================================
+
+  time   conn        login_ok   enter_ok   enter_fail  recon_fb  max_login  msg/s
+  ----   ----        --------   --------   ----------  --------  ---------  -----
+  1m0s           152        152        152           0         0 331ms      10/s
+
+=== EnterGame end-to-end (entergame_*) =================================
+
+  snapshot                       success  preload_failed  apply_failed  fail%   preload{ok}avg  preload{fail}avg  apply avg
+  --------                       -------  --------------  ------------  -----   --------------  ----------------  ---------
+  t00m_before                           0               0             0 0.0%    -               -                 -
+  t00m_ramp                           100               0             0 0.0%     18.5ms         -                  27.2ms
+  t01m_mid                            145               0             0 0.0%     13.3ms         -                  35.9ms
+  t02m_end                            178               0             0 0.0%     11.1ms         -                  41.9ms
+
+=== Dataloader per-stage avg (dataloader_preload_*) ====================
+
+  snapshot                       cache_check  sub_cache  dispatcher  kafka_send  cb_wait{ok}  cb_wait{fail}
+  --------                       -----------  ---------  ----------  ----------  -----------  -------------
+  t00m_before                    -            -          -           -           -            -
+  t00m_ramp                        1.6ms        3.2ms      0.0ms       3.4ms       8.7ms      -
+  t01m_mid                         1.6ms        3.2ms      0.0ms       3.4ms       8.7ms      -
+  t02m_end                         1.6ms        3.2ms      0.0ms       3.4ms       8.7ms      -
+
+=== Kafka consumer lag (live) ==========================================
+
+  partition    current      log_end       lag
+  ---------    -------      -------       ---
+  0            32           32            0
+  1            51           51            0
+  2            74           74            0
+  3            64           64            0
+  4            67           67            0
+  5            49           49            0
+  6            46           46            0
+  7            56           56            0
+  8            67           67            0
+  9            50           50            0
+
+  TOTAL LAG: 0

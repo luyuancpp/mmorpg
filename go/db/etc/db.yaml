@@ -18,26 +18,40 @@ ServerConfig:
                      # 决定(login.go:50)。此处只控制 db_rpc consumer worker 数。
                      # 两边必须一致:不一致就 worker 空转或 partition 没人消费。
     IsOfflineExpand: false # Default false; dynamic expansion mode
-    SubShardCount: 4 # 2026-05-28 stress §5: partition=10 × 1 worker per
+    SubShardCount: 8 # 2026-05-28 stress §5: partition=10 × 1 worker per
                      # partition was the real throughput cap (not MySQL
                      # pool). SubShardCount=4 splits each partition's
                      # work across 4 goroutines (hash by Key, per-key
                      # ordering preserved), giving 10×4=40 effective
                      # parallelism and finally saturating MaxOpenConn=30.
+                     # 2026-06-01 Round 14 §P5: after Round 14 P0 lifted
+                     # EnterGame throughput +15% the db consumer→dispatch
+                     # chain became the new bottleneck (preload_failed
+                     # 0→3,663 @ t18m, cb_wait{ok} 85→275ms). Bump 4→8
+                     # = 10×8=80 effective parallelism, paired with
+                     # MaxOpenConn 30→60 below so MySQL pool stays the
+                     # limiter we WANT (linear scaling) rather than the
+                     # per-partition goroutine count.
   Database:
     Hosts: "127.0.0.1:3306"
     User: "root"
     Passwd: "Mmorpg#2026db"
-    MaxOpenConn: 30 # 2026-05-28 deep-dive §1: 10 was the real bottleneck.
+    MaxOpenConn: 60 # 2026-05-28 deep-dive §1: 10 was the real bottleneck.
                     # partition=10 + MaxOpenConn=10 meant every worker
                     # competed for exactly one MySQL connection; under
                     # ~90 task/s steady input the pool was always full
                     # and Kafka backlog grew to 91k. 30 gives 3x
                     # headroom; MySQL default max_connections=151 leaves
                     # plenty for robot/admin/verifier processes.
-    MaxIdleConn: 10 # raised from 3 to keep the warm-pool sized for the
+                    # 2026-06-01 Round 14 §P5: 30→60 to match
+                    # SubShardCount 4→8 (10 partitions × 8 sub-shards
+                    # = 80 effective workers, 60 connections keeps the
+                    # pool the limiter without starving robot+admin
+                    # clients; still well under MySQL 151 default).
+    MaxIdleConn: 20 # raised from 3 to keep the warm-pool sized for the
                     # new MaxOpenConn — otherwise the pool churns
-                    # connections under load.
+                    # connections under load. 2026-06-01 Round 14: 10→20
+                    # tracks MaxOpenConn 30→60 so warm-idle stays at 1/3.
     Net: ""
   RedisClient:
     Hosts: "127.0.0.1:6379"

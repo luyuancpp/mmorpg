@@ -180,7 +180,20 @@ void EtcdService::OnTxnSucceeded(const std::string& key) {
 	// left behind when two zones race for the same node_id.
 	if (IsNodeAllocationKey(key)) {
 		LOG_INFO << "Global node-id allocation acquired: " << key;
-		gNode->GetEtcdManager().PublishNodeInfoAfterAllocation();
+		if (registrationMode_ == RegistrationMode::kReRegisterExisting)
+		{
+			// Re-registration path: gRPC server stayed up across the lease loss,
+			// so peers won't get "connection refused" if we advertise immediately.
+			gNode->GetEtcdManager().PublishNodeInfoAfterAllocation();
+			return;
+		}
+		// Initial boot: kick off RPC/gRPC startup now. The discovery publish is
+		// deferred to PublishDiscoveryAfterGrpcReady() (called at the end of
+		// Node::StartGrpcServer) so peers can't dial our gRPC port before it's
+		// bound. Without this deferral, scene_manager sees the node via etcd
+		// watch within milliseconds of the alloc-key txn, dials gRPC, and gets
+		// "connection refused" because StartGrpcServer hasn't run yet.
+		ActivateSnowFlakeAfterGuard();
 		return;
 	}
 
@@ -195,19 +208,34 @@ void EtcdService::OnTxnSucceeded(const std::string& key) {
 		return;
 	}
 
-	ActivateSnowFlakeAfterGuard();
+	// Initial-boot serviceKey publish confirmed. SnowFlake was already activated
+	// from OnTxnSucceeded(allocKey) -> ActivateSnowFlakeAfterGuard (which also
+	// started the gRPC server, which then published the discovery key).
+	LOG_INFO << "Node service info published: node_id=" << gNode->GetNodeInfo().node_id();
 }
 
-void EtcdService::OnTxnFailed(const std::string& key) {
-	if (registrationMode_ == RegistrationMode::kReRegisterExisting) {
+void EtcdService::PublishDiscoveryAfterGrpcReady()
+{
+	if (registrationMode_ == RegistrationMode::kReRegisterExisting)
+	{
+		// Re-registration already published in OnTxnSucceeded(allocKey).
+		return;
+	}
+	gNode->GetEtcdManager().PublishNodeInfoAfterAllocation();
+}
+
+void EtcdService::OnTxnFailed(const std::string &key)
+{
+	if (registrationMode_ == RegistrationMode::kReRegisterExisting)
+	{
 		SetRegistrationMode(RegistrationMode::kInitialBoot, "re-registration failed");
 		gNode->OnNodeIdConflictShutdown(NodeIdConflictReason::kReRegistrationFailed);
 		LOG_FATAL << "Node re-registration FAILED for key: " << key
-			<< ", node_id=" << gNode->GetNodeInfo().node_id()
-			<< ". Another node has claimed this ID — SnowFlake collision is inevitable. "
-			   "Active players on this node will be disconnected and must reconnect "
-			   "through the normal login flow to be routed to a healthy node. "
-			   "This process must terminate now.";
+				  << ", node_id=" << gNode->GetNodeInfo().node_id()
+				  << ". Another node has claimed this ID — SnowFlake collision is inevitable. "
+					 "Active players on this node will be disconnected and must reconnect "
+					 "through the normal login flow to be routed to a healthy node. "
+					 "This process must terminate now.";
 		return;
 	}
 
@@ -216,7 +244,8 @@ void EtcdService::OnTxnFailed(const std::string& key) {
 	// AcquireNode pass deterministically skips this id (the local
 	// ServiceNodeList snapshot lags the etcd watch stream during cold
 	// start, so without this hint we'd loop on the same id forever).
-	if (IsNodeAllocationKey(key)) {
+	if (IsNodeAllocationKey(key))
+	{
 		const auto lostId = gNode->GetNodeInfo().node_id();
 		NodeAllocator::RecordLostId(lostId);
 		LOG_INFO << "Global node-id allocation lost: " << key
@@ -225,7 +254,8 @@ void EtcdService::OnTxnFailed(const std::string& key) {
 		return;
 	}
 
-	if (IsNodeIdKey(key)) {
+	if (IsNodeIdKey(key))
+	{
 		acquireNodeTimer.RunAfter(1, [] { NodeAllocator::AcquireNode(); });
 		return;
 	}
@@ -233,14 +263,17 @@ void EtcdService::OnTxnFailed(const std::string& key) {
 	acquirePortTimer.RunAfter(1, [] { NodeAllocator::AcquireNodePort(); });
 }
 
-void EtcdService::StartWatchingPrefixes() {
-	for (const auto& prefix : tlsNodeConfigManager.GetBaseDeployConfig().service_discovery_prefixes()) {
+void EtcdService::StartWatchingPrefixes()
+{
+	for (const auto &prefix : tlsNodeConfigManager.GetBaseDeployConfig().service_discovery_prefixes())
+	{
 		EtcdHelper::StartWatchingPrefix(prefix, revision[prefix]);
 		LOG_INFO << "Watching prefix: " << prefix << " from revision " << revision[prefix];
 	}
 }
 
-void EtcdService::HandlePutEvent(const std::string& key, const std::string& value) {
+void EtcdService::HandlePutEvent(const std::string &key, const std::string &value)
+{
 	// Hijack detection: if another node overwrote our exact node_id key
 	// with a different UUID, our identity is stolen.
 	//
@@ -266,7 +299,8 @@ void EtcdService::HandlePutEvent(const std::string& key, const std::string& valu
 	// FATAL on `myInfo.node_id() != 0` keeps that protection intact while
 	// removing the boot-time false positive.
 	const auto &myInfo = gNode->GetNodeInfo();
-	if (myInfo.node_id() != 0) {
+	if (myInfo.node_id() != 0)
+	{
 		const auto myKey = gNode->GetEtcdManager().MakeNodeEtcdKey(myInfo);
 		if (key == myKey)
 		{
@@ -291,57 +325,70 @@ void EtcdService::HandlePutEvent(const std::string& key, const std::string& valu
 	gNode->GetServiceDiscoveryManager().HandleServiceNodeStart(key, value);
 }
 
-void EtcdService::HandleDeleteEvent(const std::string& key, const std::string& value) {
+void EtcdService::HandleDeleteEvent(const std::string &key, const std::string &value)
+{
 	gNode->HandleServiceNodeStop(key, value);
 }
 
-void EtcdService::OnWatchResponse(const etcdserverpb::WatchResponse& response) {
+void EtcdService::OnWatchResponse(const etcdserverpb::WatchResponse &response)
+{
 	// Registration flow map:
 	// 1) Initial boot: Watch ready -> Lease -> Port CAS -> NodeId CAS -> StartRpcServer
 	// 2) Re-register: Health monitor detects missing snapshot -> Lease -> Port CAS -> NodeId CAS (same node_id)
 	//    If same node_id is already occupied, process exits via LOG_FATAL to protect identity invariants.
-	if (!hasSentWatch) {
+	if (!hasSentWatch)
+	{
 		RequestNodeLease();
 		hasSentWatch = true;
 	}
 
-	if (response.canceled()) {
+	if (response.canceled())
+	{
 		LOG_WARN << "Watch canceled: " << response.cancel_reason() << ", will re-establish watches";
 		ScheduleWatchReconnect();
 		return;
 	}
 
 	// Track revision for reconnect
-	if (response.header().revision() > 0) {
-		for (auto& [prefix, rev] : revision) {
-			if (response.header().revision() + 1 > rev) {
+	if (response.header().revision() > 0)
+	{
+		for (auto &[prefix, rev] : revision)
+		{
+			if (response.header().revision() + 1 > rev)
+			{
 				rev = response.header().revision() + 1;
 			}
 		}
 	}
 
-	for (const auto& event : response.events()) {
-		if (event.type() == mvccpb::Event_EventType::Event_EventType_PUT) {
+	for (const auto &event : response.events())
+	{
+		if (event.type() == mvccpb::Event_EventType::Event_EventType_PUT)
+		{
 			HandlePutEvent(event.kv().key(), event.kv().value());
 		}
-		else if (event.type() == mvccpb::Event_EventType::Event_EventType_DELETE) {
+		else if (event.type() == mvccpb::Event_EventType::Event_EventType_DELETE)
+		{
 			HandleDeleteEvent(event.kv().key(), event.prev_kv().value());
 		}
 	}
 }
 
-void EtcdService::ScheduleWatchReconnect() {
+void EtcdService::ScheduleWatchReconnect()
+{
 	static constexpr double kWatchReconnectDelaySec = 2.0;
-	watchReconnectTimer.RunAfter(kWatchReconnectDelaySec, [this] {
-		LOG_INFO << "Re-establishing etcd watches after stream break";
-		StartWatchingPrefixes();
-	});
+	watchReconnectTimer.RunAfter(kWatchReconnectDelaySec, [this]
+								 {
+	LOG_INFO << "Re-establishing etcd watches after stream break";
+	StartWatchingPrefixes(); });
 }
 
-void EtcdService::RequestNodeLease() {
-	if (leaseRequestInFlight_) {
+void EtcdService::RequestNodeLease()
+{
+	if (leaseRequestInFlight_)
+	{
 		LOG_TRACE << "Skip lease request because one is already in flight. mode="
-			<< RegistrationModeName(registrationMode_);
+				  << RegistrationModeName(registrationMode_);
 		return;
 	}
 
@@ -350,15 +397,18 @@ void EtcdService::RequestNodeLease() {
 	gNode->GetEtcdManager().RequestNodeLease();
 }
 
-void EtcdService::StartLeaseKeepAlive() {
+void EtcdService::StartLeaseKeepAlive()
+{
 	gNode->GetEtcdManager().StartLeaseKeepAlive();
 }
 
-void EtcdService::RegisterService() {
+void EtcdService::RegisterService()
+{
 	gNode->GetEtcdManager().RegisterNodeService();
 }
 
-void EtcdService::Shutdown() {
+void EtcdService::Shutdown()
+{
 	grpcHandlerTimer.Cancel();
 	acquireNodeTimer.Cancel();
 	acquirePortTimer.Cancel();
@@ -366,7 +416,7 @@ void EtcdService::Shutdown() {
 	leaseRequestInFlight_ = false;
 	SetRegistrationMode(RegistrationMode::kInitialBoot, "service shutdown");
 
-	auto emptyHandler = [](const ClientContext&, const ::google::protobuf::Message&) {};
+	auto emptyHandler = [](const ClientContext &, const ::google::protobuf::Message &) {};
 	etcdserverpb::AsyncKVRangeHandler = emptyHandler;
 	etcdserverpb::AsyncKVPutHandler = emptyHandler;
 	etcdserverpb::AsyncKVDeleteRangeHandler = emptyHandler;
@@ -378,8 +428,10 @@ void EtcdService::Shutdown() {
 	gNode->GetEtcdManager().Shutdown();
 }
 
-void EtcdService::RequestReRegistration() {
-	if (registrationMode_ == RegistrationMode::kReRegisterExisting) {
+void EtcdService::RequestReRegistration()
+{
+	if (registrationMode_ == RegistrationMode::kReRegisterExisting)
+	{
 		LOG_DEBUG << "Re-registration already in progress, skipping duplicate attempt.";
 		return;
 	}
@@ -387,11 +439,13 @@ void EtcdService::RequestReRegistration() {
 	RequestNodeLease();
 }
 
-void EtcdService::OnLeaseGranted(const etcdserverpb::LeaseGrantResponse& reply) {
+void EtcdService::OnLeaseGranted(const etcdserverpb::LeaseGrantResponse &reply)
+{
 	leaseRequestInFlight_ = false;
 	leaseId = reply.id();
 
-	if (leaseId <= 0) {
+	if (leaseId <= 0)
+	{
 		LOG_ERROR << "Invalid lease ID received.";
 		return;
 	}
@@ -402,19 +456,25 @@ void EtcdService::OnLeaseGranted(const etcdserverpb::LeaseGrantResponse& reply) 
 
 	StartLeaseKeepAlive();
 
-	if (registrationMode_ == RegistrationMode::kReRegisterExisting) {
+	if (registrationMode_ == RegistrationMode::kReRegisterExisting)
+	{
 		NodeAllocator::ReRegisterExistingNode();
-	} else {
+	}
+	else
+	{
 		NodeAllocator::AcquireNodePort(); // Only acquire port initially
 	}
 }
 
-void EtcdService::OnKeepAliveResponse(const etcdserverpb::LeaseKeepAliveResponse& reply) {
-	if (reply.ttl() <= 0) {
+void EtcdService::OnKeepAliveResponse(const etcdserverpb::LeaseKeepAliveResponse &reply)
+{
+	if (reply.ttl() <= 0)
+	{
 		gNode->OnNodeIdConflictShutdown(NodeIdConflictReason::kLeaseExpiredByEtcd);
 		LOG_FATAL << "Lease keepalive returned TTL=0, lease has expired on etcd server. "
-			"node_id=" << gNode->GetNodeInfo().node_id()
-			<< ". Another node may claim this ID — terminating to prevent SnowFlake collision.";
+					 "node_id="
+				  << gNode->GetNodeInfo().node_id()
+				  << ". Another node may claim this ID — terminating to prevent SnowFlake collision.";
 		return;
 	}
 
@@ -422,8 +482,10 @@ void EtcdService::OnKeepAliveResponse(const etcdserverpb::LeaseKeepAliveResponse
 	LOG_TRACE << "Lease keepalive ACK, ttl=" << reply.ttl();
 }
 
-bool EtcdService::IsLeasePresumablyExpired() const {
-	if (leaseTtlSeconds_ <= 0) {
+bool EtcdService::IsLeasePresumablyExpired() const
+{
+	if (leaseTtlSeconds_ <= 0)
+	{
 		return false; // Lease not yet granted
 	}
 
@@ -432,12 +494,14 @@ bool EtcdService::IsLeasePresumablyExpired() const {
 	return elapsedSeconds > leaseTtlSeconds_;
 }
 
-void EtcdService::ActivateSnowFlakeAfterGuard() {
-	const auto& info = gNode->GetNodeInfo();
+void EtcdService::ActivateSnowFlakeAfterGuard()
+{
+	const auto &info = gNode->GetNodeInfo();
 	std::string guardKey = EtcdManager::MakeSnowFlakeGuardKey(info);
 
-	auto& redis = tlsRedis.GetZoneRedis();
-	if (!redis || !redis->connected()) {
+	auto &redis = tlsRedis.GetZoneRedis();
+	if (!redis || !redis->connected())
+	{
 		LOG_WARN << "Redis not connected, activating SnowFlake without guard for node_id=" << info.node_id();
 		tlsSnowflakeManager.OnNodeStart(info.node_id());
 		gNode->StartRpcServer();
@@ -445,24 +509,27 @@ void EtcdService::ActivateSnowFlakeAfterGuard() {
 	}
 
 	redis->command(
-		[nodeId = info.node_id(), guardKey](hiredis::Hiredis*, redisReply* reply) {
+		[nodeId = info.node_id(), guardKey](hiredis::Hiredis *, redisReply *reply)
+		{
 			tlsSnowflakeManager.OnNodeStart(nodeId);
 
-			if (reply != nullptr && reply->type == REDIS_REPLY_STRING) {
+			if (reply != nullptr && reply->type == REDIS_REPLY_STRING)
+			{
 				uint64_t lastTs = std::strtoull(reply->str, nullptr, 10);
 				uint64_t now = TimeSystem::NowSecondsUTC();
 				tlsSnowflakeManager.SetGuardTime(now);
 				LOG_INFO << "SnowFlake guard applied: last_ts=" << lastTs
-					<< ", guard_to=" << now
-					<< ", node_id=" << nodeId
-					<< ". Generator will skip current second.";
-			} else {
+						 << ", guard_to=" << now
+						 << ", node_id=" << nodeId
+						 << ". Generator will skip current second.";
+			}
+			else
+			{
 				LOG_INFO << "No SnowFlake guard found for " << guardKey
-					<< ", node_id=" << nodeId;
+						 << ", node_id=" << nodeId;
 			}
 
 			gNode->StartRpcServer();
 		},
 		"GET %s", guardKey.c_str());
 }
-

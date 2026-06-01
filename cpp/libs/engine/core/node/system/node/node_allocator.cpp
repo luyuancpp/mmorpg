@@ -73,7 +73,7 @@ void NodeAllocator::AcquireNode()
 	// gets cleaned up by the discovery layer; lostIds is process-local and
 	// only matters for the same boot).
 	bool found = false;
-	for (uint32_t id = 0; id <= kMaxNodeId; ++id)
+	for (uint32_t id = 1; id <= kMaxNodeId; ++id)
 	{
 		if (usedIds.find(id) == usedIds.end())
 		{

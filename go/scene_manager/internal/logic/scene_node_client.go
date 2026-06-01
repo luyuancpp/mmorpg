@@ -238,38 +238,42 @@ func RemoveNodeConn(nodeId string) {
 	}
 }
 
-// dispatchReleasePlayer sends a ReleasePlayer notification to the player's
-// previous scene node with bounded latency and a background retry chain.
+// dispatchReleasePlayer fires a ReleasePlayer notification to the player's
+// previous scene node fully asynchronously.
 //
-// Behaviour:
-//  1. Synchronous attempt with a 500ms deadline so EnterScene latency stays
-//     bounded even when the old node is slow.
-//  2. On failure / timeout, fires off a background goroutine that retries up
-//     to 2 more times with exponential backoff (1s, 3s) using a fresh
-//     context.Background() so request cancellation does not abort recovery.
-//  3. Every terminal outcome is reported to Prometheus so dashboards can
-//     alert when residual entities accumulate (timeout/error spikes).
+// History: prior to Round 14 this did a 500ms synchronous attempt on the hot
+// path so EnterScene could "feel" the old node release before returning. Under
+// 45k-bot load that 500ms deadline turned into a hard cliff — every reconnect
+// hit it (scene node gRPC server was contended, NUM_POLLERS=2), pinning
+// scene_manager.EnterScene latency at ~535ms and starving NotifyEnterScene
+// (71k robot-side scene-ready timeouts).
 //
-// Failures are non-fatal — the caller (EnterScene) continues regardless.
-// AFK cleanup on the old node is the final fallback when every retry fails.
+// New behaviour (Round 14):
+//  1. Caller returns immediately; the entire attempt + retry chain runs in a
+//     detached goroutine with context.Background() so request cancellation
+//     never aborts release.
+//  2. First attempt has a 1s deadline (was 500ms, but now off the hot path);
+//     followed by up to 2 retries with 1s/3s backoff and 1s deadline each.
+//  3. Every terminal outcome (ok / retry_ok / timeout / error) is reported to
+//     Prometheus via metrics.ObserveReleasePlayer.
+//
+// Failures are non-fatal — the C++ scene node's AFK sweeper is the final
+// safety net for any player who is never released.
 func dispatchReleasePlayer(svcCtx *svc.ServiceContext, log logx.Logger, zoneID uint32,
 	oldNodeId string, playerId uint64, targetSceneId uint64, targetNodeId string) {
-
-	syncCtx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
-	err := RequestNodeReleasePlayer(syncCtx, svcCtx, oldNodeId, playerId, targetSceneId, targetNodeId)
-	cancel()
-
-	if err == nil {
-		metrics.ObserveReleasePlayer(zoneID, "ok")
-		return
-	}
-
-	log.Errorf("ReleasePlayer first attempt failed for player %d on old node %s (will retry in background): %v",
-		playerId, oldNodeId, err)
-
-	// Background retry chain. Capture only what we need so EnterScene's logger
-	// (which holds the request ctx) is not used after the request returns.
 	go func() {
+		attemptCtx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+		err := RequestNodeReleasePlayer(attemptCtx, svcCtx, oldNodeId, playerId, targetSceneId, targetNodeId)
+		cancel()
+
+		if err == nil {
+			metrics.ObserveReleasePlayer(zoneID, "ok")
+			return
+		}
+
+		logx.Errorf("ReleasePlayer first attempt failed for player %d on old node %s (will retry in background): %v",
+			playerId, oldNodeId, err)
+
 		backoffs := []time.Duration{1 * time.Second, 3 * time.Second}
 		var lastErr = err
 		for i, backoff := range backoffs {
@@ -292,4 +296,5 @@ func dispatchReleasePlayer(svcCtx *svc.ServiceContext, log logx.Logger, zoneID u
 		logx.Errorf("[ReleasePlayer] All retries exhausted for player %d on old node %s; relying on AFK cleanup. last_err=%v",
 			playerId, oldNodeId, lastErr)
 	}()
+	_ = log // logger no longer used on hot path — kept in signature for ABI stability
 }

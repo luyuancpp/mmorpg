@@ -207,8 +207,10 @@ protected:
     TimerTaskComp serviceHealthMonitorTimer;
     TimerTaskComp acquireNodeTimer;
     TimerTaskComp acquirePortTimer;
-    TimerTaskComp kafkaProducerTimer;
-    TimerTaskComp kafkaConsumerTimer;
+    // Kafka consumption is driven by KafkaConsumer::startBackgroundPolling
+    // (a dedicated thread that queueInLoop's callbacks back into eventLoop).
+    // The producer is non-blocking and flushes via KafkaManager::Shutdown.
+    // No EventLoop timer is required for either path.
     CanConnectNodeTypeList targetNodeTypeWhitelist;
     ClientList disconnectedClientList;
     std::unordered_map<std::string, int64_t> revision;

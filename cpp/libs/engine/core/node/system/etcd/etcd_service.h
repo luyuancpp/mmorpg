@@ -18,7 +18,15 @@ public:
     void RegisterService();
     void StartLeaseKeepAlive();
 
-	int64_t GetLeaseId() const { return leaseId; }
+    // Called by Node::StartGrpcServer after the gRPC port is bound and accepting
+    // connections. Publishes the discovery key (NodeInfo) that peers watch.
+    // The publish was deliberately deferred from OnTxnSucceeded(allocKey) so
+    // peers don't see the node alive via etcd watch and dial gRPC before the
+    // port is open (cold-start "connection refused" race).
+    // No-op for re-registration mode (gRPC stayed up, publish happened early).
+    void PublishDiscoveryAfterGrpcReady();
+
+    int64_t GetLeaseId() const { return leaseId; }
 
     // Returns true if we haven't received a keepalive ACK within the lease TTL,
     // meaning etcd has likely expired our lease and another node could claim our ID.

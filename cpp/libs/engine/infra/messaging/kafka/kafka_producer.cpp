@@ -72,7 +72,11 @@ RdKafka::ErrorCode KafkaProducer::send(const std::string& topic, const std::stri
 		LOG_ERROR << "Produce failed: " << RdKafka::err2str(resp);
 	}
 	else {
-		LOG_INFO << "[Kafka] Message queued to topic " << topic;
+		// Producer ack per message — fires at steady-state Kafka write rate
+		// (stress-1zone-45k saw 200+/s, which would burn ~17M INFO lines/day
+		// on dev hosts). Keep the breadcrumb at DEBUG so it's available when
+		// LogLevel is dropped but invisible at production WARN/INFO.
+		LOG_DEBUG << "[Kafka] Message queued to topic " << topic;
 	}
 
 	poll(); // Ensure delivery callbacks are dispatched
@@ -86,7 +90,9 @@ void KafkaProducer::dr_cb(RdKafka::Message& message) {
 		LOG_ERROR << "[Kafka] Delivery failed: " << message.errstr();
 	}
 	else {
-		LOG_INFO << "[Kafka] Delivered message to topic " << message.topic_name()
+		// Per-message delivery breadcrumb — same volume as send() success.
+		// Demote to DEBUG; failures still surface at ERROR above.
+		LOG_DEBUG << "[Kafka] Delivered message to topic " << message.topic_name()
 			<< " [" << message.partition() << "] at offset "
 			<< message.offset();
 	}

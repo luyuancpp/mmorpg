@@ -480,8 +480,17 @@ void Node::InitKafka()
 
 void Node::StartKafkaPolling()
 {
-	kafkaConsumerTimer.RunEvery(0.1, [this]
-								{ kafkaManager.Poll(); });
+	// Drive Kafka consumption from a dedicated thread, dispatching decoded
+	// messages back into the muduo EventLoop. The legacy 100ms timer model
+	// shared the loop with RPC / client TCP / scene-response forwarding;
+	// during the 45k stress run (stress-1zone-45k-2026-05-30) the loop
+	// stalled long enough for librdkafka to leave the group, leaving
+	// gate-group-1 with no active members and Kafka command lag at 17k.
+	//
+	// queueInLoop preserves the single-threaded callback invariant the rest
+	// of the codebase relies on — the consumer thread never touches ECS or
+	// node state directly, only enqueues the existing callback.
+	kafkaManager.StartBackgroundPolling(eventLoop);
 }
 
 bool Node::RegisterKafkaMessageHandler(const std::vector<std::string> &topics,
@@ -512,11 +521,8 @@ bool Node::RegisterKafkaMessageHandler(const std::vector<std::string> &topics,
 			 << ", topics=" << boost::algorithm::join(topics, ",")
 			 << ", partitions=" << FormatKafkaPartitions(partitions);
 
-	if (!kafkaPollingStarted)
-	{
-		StartKafkaPolling();
-		kafkaPollingStarted = true;
-	}
+	StartKafkaPolling();
+	kafkaPollingStarted = true;
 
 	return true;
 }
@@ -540,6 +546,10 @@ void Node::StartGrpcServer()
 {
 	if (grpcServices_.empty())
 	{
+		// No gRPC server to start. The discovery publish was deferred from
+		// OnTxnSucceeded(allocKey), so we must publish now or this node will
+		// never become discoverable to peers.
+		serviceDiscoveryManager.etcdService.PublishDiscoveryAfterGrpcReady();
 		return;
 	}
 
@@ -547,6 +557,9 @@ void Node::StartGrpcServer()
 	if (grpcEp.port() == 0)
 	{
 		LOG_ERROR << "gRPC server port not allocated, skipping gRPC server start.";
+		// Same as above: publish now so the node still becomes discoverable
+		// even when gRPC startup is skipped.
+		serviceDiscoveryManager.etcdService.PublishDiscoveryAfterGrpcReady();
 		return;
 	}
 
@@ -555,9 +568,15 @@ void Node::StartGrpcServer()
 	grpc::ServerBuilder builder;
 	builder.AddListeningPort(serverAddress, grpc::InsecureServerCredentials());
 
-	// Limit gRPC sync server thread pool: control-plane RPCs (CreateScene, DestroyScene)
-	// are low-frequency and dispatched to the muduo loop anyway, so 1-2 pollers suffice.
-	int maxPollers = 2;
+	// gRPC sync server thread pool size.
+	// Round 14: bumped default 2 -> 8. Under 45k-bot stress with high reconnect
+	// churn, scene_manager.EnterScene -> scene-node ReleasePlayer was hitting a
+	// 500ms cliff because only 2 pollers were available to drain incoming RPCs
+	// while gRPC handlers waited on the muduo loop dispatch round-trip
+	// (runInLoop + promise/future). 8 pollers give enough slack for burst
+	// reconnect handling without measurable thread overhead on idle nodes.
+	// Override via GRPC_SERVER_MAX_POLLERS env if needed.
+	int maxPollers = 8;
 	if (const char *env = GetNonEmptyEnv("GRPC_SERVER_MAX_POLLERS"))
 	{
 		const int parsed = std::atoi(env);
@@ -589,6 +608,13 @@ void Node::StartGrpcServer()
 		grpcServer_->Wait(); });
 
 	LOG_INFO << "gRPC server started on " << serverAddress;
+
+	// gRPC port is now bound and accepting connections (BuildAndStart returns
+	// after listener bind per grpc docs). Safe to advertise this node in etcd
+	// so peers can discover and dial us. Without this deferral, scene_manager
+	// would see the node via etcd watch and dial gRPC before the port is open,
+	// triggering "connection refused" + dead-node markings during cold start.
+	serviceDiscoveryManager.etcdService.PublishDiscoveryAfterGrpcReady();
 }
 
 void Node::ShutdownGrpcServer()
@@ -783,8 +809,6 @@ void Node::ShutdownInLoop()
 	serviceHealthMonitorTimer.Cancel();
 	acquireNodeTimer.Cancel();
 	acquirePortTimer.Cancel();
-	kafkaProducerTimer.Cancel();
-	kafkaConsumerTimer.Cancel();
 	ReleaseNodeId();
 	serviceDiscoveryManager.Shutdown();
 	kafkaManager.Shutdown();
@@ -891,6 +915,18 @@ void Node::HandleServiceNodeStop(const std::string &key, const std::string &node
 {
 	eventLoop->assertInLoopThread();
 	LOG_INFO << "Service node stop, key: " << key << ", value: " << nodeJson;
+
+	// Mirror HandleServiceNodeStart: allocation-slot keys store a raw uuid,
+	// not a NodeInfo JSON. Etcd lease revoke fires DELETE for both the
+	// allocation key AND the discovery key in the same shutdown, so without
+	// this guard every clean stop produces a spurious "Parse node JSON
+	// failed" error line per node type. The real removal is driven by the
+	// matching discovery-key DELETE that comes through alongside it.
+	if (key.find("/allocated/") != std::string::npos)
+	{
+		LOG_TRACE << "Skip allocation-slot delete for service discovery: " << key;
+		return;
+	}
 
 	NodeInfo stoppedNode;
 	auto parseResult = google::protobuf::util::JsonStringToMessage(nodeJson, &stoppedNode);
