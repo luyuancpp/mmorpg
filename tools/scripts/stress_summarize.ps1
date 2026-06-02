@@ -165,9 +165,25 @@ if ($rowCount -eq 0) {
 
 $snapDir = Join-Path $RunDirResolved "prom-snapshots"
 $snapshots = @()
+$smSnapshots = @()
+$dbSnapshots = @()
 
 if (Test-Path $snapDir) {
-    $snapshots += Get-ChildItem $snapDir -Filter "*.txt" | Sort-Object Name
+    $allTxt = Get-ChildItem $snapDir -Filter "*.txt" | Sort-Object Name
+    # New multi-endpoint layout (Round 16+) uses suffixes: t{N}m_login.txt,
+    # t{N}m_sm.txt, t{N}m_db.txt. Old single-endpoint layout used bare
+    # t{N}m.txt and only ever contained login metrics.
+    $loginTxt = $allTxt | Where-Object { $_.BaseName -match '_login$' }
+    $smTxt    = $allTxt | Where-Object { $_.BaseName -match '_sm$' }
+    $dbTxt    = $allTxt | Where-Object { $_.BaseName -match '_db$' }
+    if ($loginTxt.Count -gt 0) {
+        $snapshots   += $loginTxt
+        $smSnapshots += $smTxt
+        $dbSnapshots += $dbTxt
+    } else {
+        # Legacy: bare t{N}m.txt files all hold login metrics.
+        $snapshots += $allTxt
+    }
 }
 
 if ($ProbePromUrl) {
@@ -261,6 +277,80 @@ if ($snapshots.Count -eq 0) {
         $name = $snap.BaseName
         $line = "  {0,-30} {1,-12} {2,-10} {3,-11} {4,-11} {5,-12} {6}" -f `
             $name, $cacheAvg, $subAvg, $dispatcherAvg, $kafkaAvg, $cbOkAvg, $cbFailAvg
+        Write-Host $line
+    }
+}
+
+# ----- 2b. SceneManager EnterScene stage breakdown (Round 16+) ----------
+
+if ($smSnapshots.Count -gt 0) {
+    Write-Host ""
+    Write-Host "=== SceneManager EnterScene stages (scene_manager_enter_scene_stage_seconds) ===" -ForegroundColor Yellow
+    Write-Host ""
+    "  snapshot                       dedup     scene_res reserve  upd_loc  route_gt rel_disp cross_zn" | Write-Host
+    "  --------                       --------- --------- -------- -------- -------- -------- --------" | Write-Host
+
+    $stages = @('dedup','scene_resolve','reserve','update_loc','route_gate','release_dispatch','cross_zone')
+    foreach ($snap in $smSnapshots) {
+        $m = Read-PromSnapshot $snap.FullName
+        $cells = @()
+        foreach ($st in $stages) {
+            # Sum across all zone_id labels.
+            $sumK = "scene_manager_enter_scene_stage_seconds_sum"
+            $cntK = "scene_manager_enter_scene_stage_seconds_count"
+            $sumV = 0.0; $cntV = 0.0
+            foreach ($k in $m.Keys) {
+                if ($k -match "^$sumK\{.*stage=`"$st`"") { $sumV += [double]$m[$k] }
+                if ($k -match "^$cntK\{.*stage=`"$st`"") { $cntV += [double]$m[$k] }
+            }
+            $cells += (Format-Avg $sumV $cntV)
+        }
+        $name = $snap.BaseName
+        $line = "  {0,-30} {1,-9} {2,-9} {3,-8} {4,-8} {5,-8} {6,-8} {7}" -f `
+            $name, $cells[0], $cells[1], $cells[2], $cells[3], $cells[4], $cells[5], $cells[6]
+        Write-Host $line
+    }
+}
+
+# ----- 2c. DB per-task stage breakdown (Round 16+) ----------------------
+
+if ($dbSnapshots.Count -gt 0) {
+    Write-Host ""
+    Write-Host "=== DB task stages (db_task_stage_seconds, db_task_result_total) ===" -ForegroundColor Yellow
+    Write-Host ""
+    "  snapshot                       read_total read_hdlr cache_wr publish  | write_total write_hdlr | ok      err" | Write-Host
+    "  --------                       ---------- --------- -------- -------- | ----------- ---------- | ------- ----" | Write-Host
+
+    foreach ($snap in $dbSnapshots) {
+        $m = Read-PromSnapshot $snap.FullName
+
+        $readTotalAvg = Format-Avg `
+            (Get-Metric $m 'db_task_stage_seconds_sum{stage="op_total",op="read"}') `
+            (Get-Metric $m 'db_task_stage_seconds_count{stage="op_total",op="read"}')
+        $readHdlrAvg = Format-Avg `
+            (Get-Metric $m 'db_task_stage_seconds_sum{stage="op_handler",op="read"}') `
+            (Get-Metric $m 'db_task_stage_seconds_count{stage="op_handler",op="read"}')
+        $readCacheAvg = Format-Avg `
+            (Get-Metric $m 'db_task_stage_seconds_sum{stage="cache_write",op="read"}') `
+            (Get-Metric $m 'db_task_stage_seconds_count{stage="cache_write",op="read"}')
+        $publishAvg = Format-Avg `
+            (Get-Metric $m 'db_task_stage_seconds_sum{stage="result_publish",op="read"}') `
+            (Get-Metric $m 'db_task_stage_seconds_count{stage="result_publish",op="read"}')
+
+        $writeTotalAvg = Format-Avg `
+            (Get-Metric $m 'db_task_stage_seconds_sum{stage="op_total",op="write"}') `
+            (Get-Metric $m 'db_task_stage_seconds_count{stage="op_total",op="write"}')
+        $writeHdlrAvg = Format-Avg `
+            (Get-Metric $m 'db_task_stage_seconds_sum{stage="op_handler",op="write"}') `
+            (Get-Metric $m 'db_task_stage_seconds_count{stage="op_handler",op="write"}')
+
+        $okCnt  = (Get-Metric $m 'db_task_result_total{op="read",result="ok"}') + (Get-Metric $m 'db_task_result_total{op="write",result="ok"}')
+        $errCnt = (Get-Metric $m 'db_task_result_total{op="read",result="error"}') + (Get-Metric $m 'db_task_result_total{op="write",result="error"}')
+
+        $name = $snap.BaseName
+        $line = "  {0,-30} {1,-10} {2,-9} {3,-8} {4,-8} | {5,-11} {6,-10} | {7,-7} {8}" -f `
+            $name, $readTotalAvg, $readHdlrAvg, $readCacheAvg, $publishAvg, $writeTotalAvg, $writeHdlrAvg, `
+            (Format-Number $okCnt 7), (Format-Number $errCnt 4)
         Write-Host $line
     }
 }

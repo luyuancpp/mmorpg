@@ -145,7 +145,35 @@ var (
 		Help:      "Cross-node ReleasePlayer outcomes (ok|retry_ok|timeout|error).",
 	}, []string{"zone_id", "outcome"})
 
+	// enterSceneStageSeconds breaks the EnterScene RPC end-to-end latency
+	// into deterministic sub-stages so we can see which Redis op / Kafka
+	// send dominates under load. Round 15 (45k) saw the parent
+	// `entergame_apply_enter_scene_seconds` avg climb 26.6ms → 35.6ms while
+	// every other apply sub-stage (get_session / persist / bind_gate)
+	// stayed flat sub-3ms. This split tells us whether the regression sits
+	// in dedup / zone-resolve / scene-resolve / reserve / update-loc /
+	// route-gate. stage values: see EnterSceneStage* constants below.
+	enterSceneStageSeconds = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Subsystem: subsystem,
+		Name:      "enter_scene_stage_seconds",
+		Help:      "EnterScene RPC sub-stage latency (zone_id, stage). Stage values: dedup|scene_resolve|reserve|update_loc|route_gate|release_dispatch|cross_zone.",
+		Buckets:   []float64{0.0005, 0.001, 0.002, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2, 5},
+	}, []string{"zone_id", "stage"})
+
 	registerOnce sync.Once
+)
+
+// EnterScene sub-stage labels. Keep these in sync with the call sites in
+// internal/logic/enterscenelogic.go; new stages must be both added here and
+// documented in enterSceneStageSeconds.Help.
+const (
+	EnterSceneStageDedup           = "dedup"
+	EnterSceneStageSceneResolve    = "scene_resolve"
+	EnterSceneStageReserve         = "reserve"
+	EnterSceneStageUpdateLoc       = "update_loc"
+	EnterSceneStageRouteGate       = "route_gate"
+	EnterSceneStageReleaseDispatch = "release_dispatch"
+	EnterSceneStageCrossZone       = "cross_zone"
 )
 
 func register() {
@@ -156,9 +184,19 @@ func register() {
 			mirrorColocateTotal, instanceDestroyedTotal,
 			enterSceneRejectedTotal, sceneOrphansReconciledTotal,
 			mirrorSourceMissingTotal, mirrorDedupTotal,
-			releasePlayerTotal,
+			releasePlayerTotal, enterSceneStageSeconds,
 		)
 	})
+}
+
+// ObserveEnterSceneStage records one sub-stage latency for the EnterScene
+// RPC. Use the EnterSceneStage* constants for the stage label. zoneID may
+// be 0 when the stage runs before the zone is resolved (dedup).
+func ObserveEnterSceneStage(zoneID uint32, stage string, d time.Duration) {
+	register()
+	enterSceneStageSeconds.WithLabelValues(
+		strconv.FormatUint(uint64(zoneID), 10), stage,
+	).Observe(d.Seconds())
 }
 
 // ObserveMirrorColocate records one mirror placement outcome. outcome is

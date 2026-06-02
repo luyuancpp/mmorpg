@@ -6,6 +6,7 @@ import (
 	kafkacontracts "proto/contracts/kafka"
 	game "scene_manager/generated/pb/game"
 	"scene_manager/internal/constants"
+	"scene_manager/internal/metrics"
 	"strconv"
 	"time"
 
@@ -40,8 +41,10 @@ func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (*scen
 	// 0. REQUEST-LEVEL DEDUPLICATION: If caller provided a request_id,
 	//    use Redis SET NX to guarantee at-most-once processing.
 	if in.RequestId != "" {
+		dedupStart := time.Now()
 		dedupeKey := fmt.Sprintf("enter_scene:dedup:%s", in.RequestId)
 		ok, err := l.svcCtx.Redis.SetnxEx(dedupeKey, "1", 60)
+		metrics.ObserveEnterSceneStage(in.GateZoneId, metrics.EnterSceneStageDedup, time.Since(dedupStart))
 		if err != nil {
 			l.Logger.Errorf("Dedup Redis error (non-fatal, proceeding): %v", err)
 		} else if !ok {
@@ -70,13 +73,16 @@ func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (*scen
 	}
 
 	// 2. Resolve the target scene (sceneId + nodeId).
+	resolveStart := time.Now()
 	sceneId, nodeId, reserved, err := l.resolveSceneForEnter(in.SceneId, in.SceneConfId, targetZoneId)
+	metrics.ObserveEnterSceneStage(targetZoneId, metrics.EnterSceneStageSceneResolve, time.Since(resolveStart))
 	if err != nil {
 		return errResp(constants.ErrNoAvailableNode, err.Error()), nil
 	}
 
 	// 3. CROSS-ZONE CHECK: If gate is in a different zone, redirect the player.
 	if in.GateZoneId != 0 && targetZoneId != 0 && in.GateZoneId != targetZoneId {
+		crossStart := time.Now()
 		// The reserve in step 2 may have already INCR'd the target scene's
 		// counters; release them before bailing out so the redirect path
 		// doesn't leak. The follow-up EnterScene from the new gate will
@@ -91,7 +97,9 @@ func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (*scen
 		if currentLoc != nil && currentLoc.SceneId != 0 && currentLoc.SceneId != sceneId {
 			DecrInstancePlayerCount(l.svcCtx, currentLoc.SceneId)
 		}
-		return l.handleCrossZoneRedirect(in, targetZoneId)
+		resp, redirErr := l.handleCrossZoneRedirect(in, targetZoneId)
+		metrics.ObserveEnterSceneStage(targetZoneId, metrics.EnterSceneStageCrossZone, time.Since(crossStart))
+		return resp, redirErr
 	}
 
 	// 4. IDEMPOTENCY CHECK: Is player already in the same scene on the same node?
@@ -113,11 +121,14 @@ func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (*scen
 	}
 
 	if !reserved {
+		reserveStart := time.Now()
 		count, err := AtomicIncrPlayerCountIfSceneExists(l.svcCtx, sceneId)
 		if err != nil {
+			metrics.ObserveEnterSceneStage(targetZoneId, metrics.EnterSceneStageReserve, time.Since(reserveStart))
 			return errResp(constants.ErrUpdateLocation, fmt.Sprintf("reserve scene player count failed: %v", err)), nil
 		}
 		if count < 0 {
+			metrics.ObserveEnterSceneStage(targetZoneId, metrics.EnterSceneStageReserve, time.Since(reserveStart))
 			return errResp(constants.ErrNoAvailableNode, fmt.Sprintf("scene %d disappeared during enter", sceneId)), nil
 		}
 		// AtomicIncrPlayerCountIfSceneExists only bumps the per-scene
@@ -129,6 +140,7 @@ func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (*scen
 		if nodeId != "" {
 			l.svcCtx.Redis.Incr(fmt.Sprintf(NodePlayerCountKey, nodeId))
 		}
+		metrics.ObserveEnterSceneStage(targetZoneId, metrics.EnterSceneStageReserve, time.Since(reserveStart))
 	}
 
 	// 5b. Cross-node switch: notify the old scene node to release the player so
@@ -141,16 +153,21 @@ func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (*scen
 	// load, cascading into 71k robot-side scene-ready timeouts. AFK cleanup on
 	// the old node remains the final fallback.
 	if currentLoc != nil && currentLoc.NodeId != "" && currentLoc.NodeId != nodeId {
+		relStart := time.Now()
 		dispatchReleasePlayer(l.svcCtx, l.Logger, targetZoneId,
 			currentLoc.NodeId, in.PlayerId, sceneId, nodeId)
+		metrics.ObserveEnterSceneStage(targetZoneId, metrics.EnterSceneStageReleaseDispatch, time.Since(relStart))
 	}
 
 	// 6. Update Player Location (Source of Truth)
+	updStart := time.Now()
 	if err := UpdatePlayerLocation(l.ctx, l.svcCtx, in.PlayerId, sceneId, nodeId, targetZoneId); err != nil {
+		metrics.ObserveEnterSceneStage(targetZoneId, metrics.EnterSceneStageUpdateLoc, time.Since(updStart))
 		DecrInstancePlayerCount(l.svcCtx, sceneId)
 		l.Logger.Errorf("Failed to update player location: %v", err)
 		return errResp(constants.ErrUpdateLocation, "Failed to update location"), nil
 	}
+	metrics.ObserveEnterSceneStage(targetZoneId, metrics.EnterSceneStageUpdateLoc, time.Since(updStart))
 
 	// 6b. Decrement old scene instance count after the new reservation is
 	// committed so concurrent world-channel selection sees the in-flight enter.
@@ -160,9 +177,11 @@ func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (*scen
 
 	// 7. Send Route Command to Gate (via Kafka) — best-effort notification.
 	if in.GateId != "" {
+		routeStart := time.Now()
 		if err := l.routePlayerToGate(in, nodeId, sceneId); err != nil {
 			l.Logger.Errorf("Failed to route player %d to gate (non-fatal): %v", in.PlayerId, err)
 		}
+		metrics.ObserveEnterSceneStage(targetZoneId, metrics.EnterSceneStageRouteGate, time.Since(routeStart))
 	} else {
 		l.Logger.Infof("No GateID in EnterScene request for player %d", in.PlayerId)
 	}

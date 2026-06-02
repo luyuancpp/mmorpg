@@ -126,4 +126,8 @@ CleanupOrphanChannelsOnStartup: true
 #   scene_manager_node_scene_count    - scene entities on the node
 #   scene_manager_node_load_score     - composite score used for scheduling
 #   scene_manager_nodes_by_role{zone_id,role} - live node count per role
-# MetricsListenAddr: ":9150"
+# Plus per-stage EnterScene histograms:
+#   scene_manager_enter_scene_stage_seconds{zone_id,stage}
+# Enabled by default in dev so stress runs can scrape :9150 alongside
+# login :9101. Disable for prod by setting MetricsListenAddr: "".
+MetricsListenAddr: ":9150"

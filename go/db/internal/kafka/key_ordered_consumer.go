@@ -4,6 +4,7 @@ import (
 	"context"
 	db_config "db/internal/config"
 	"db/internal/logic/pkg/proto_sql"
+	"db/internal/metrics"
 	"encoding/binary"
 	"errors"
 	"fmt"
@@ -146,12 +147,15 @@ func handleDBReadOp(
 
 	// Write-back: update Redis cache so login can hit cache next time
 	cacheKey := buildCacheKey(task)
+	cacheStart := time.Now()
 	if err := redisClient.Set(ctx, cacheKey, resultData, cacheTTL()).Err(); err != nil {
 		logx.Errorf("cache write-back failed on read: key=%s, taskID=%s, err=%v", cacheKey, task.TaskId, err)
 	}
+	metrics.ObserveStage(metrics.StageCacheWrite, "read", time.Since(cacheStart))
 
 	// Write result to Redis (read ops only)
 	if task.TaskId != "" {
+		publishStart := time.Now()
 		result := &db_proto.TaskResult{
 			Success: true,
 			Data:    resultData,
@@ -175,6 +179,7 @@ func handleDBReadOp(
 		if err := redisClient.Publish(ctx, taskResultNotifyChannel, task.TaskId).Err(); err != nil {
 			logx.Errorf("publish task result notify failed: taskID=%s, err=%v", task.TaskId, err)
 		}
+		metrics.ObserveStage(metrics.StageResultPublish, "read", time.Since(publishStart))
 	}
 
 	return ""
@@ -265,9 +270,11 @@ func handleDBWriteOp(
 		logx.Errorf("cache write-back marshal failed: key=%s, taskID=%s, err=%v", cacheKey, task.TaskId, err)
 		return ""
 	}
+	cacheStart := time.Now()
 	if err := redisClient.Set(ctx, cacheKey, data, cacheTTL()).Err(); err != nil {
 		logx.Errorf("cache write-back failed on write: key=%s, taskID=%s, err=%v", cacheKey, task.TaskId, err)
 	}
+	metrics.ObserveStage(metrics.StageCacheWrite, "write", time.Since(cacheStart))
 
 	return ""
 }
@@ -867,13 +874,24 @@ func tryLockAndProcess(ctx context.Context, worker *worker, key string, task *db
 }
 
 func processTaskWithoutLock(ctx context.Context, redisClient redis.Cmdable, task *db_proto.DBTask) error {
+	totalStart := time.Now()
+	opLabel := task.Op
+	if opLabel != "read" && opLabel != "write" {
+		opLabel = "unknown"
+	}
+	defer func() {
+		metrics.ObserveStage(metrics.StageOpTotal, opLabel, time.Since(totalStart))
+	}()
+
 	mt, err := protoregistry.GlobalTypes.FindMessageByName(protoreflect.FullName(task.MsgType))
 	if err != nil {
+		metrics.ObserveResult(opLabel, "error")
 		return fmt.Errorf("find message type failed: type=%s, taskID=%s, err=%w", task.MsgType, task.TaskId, err)
 	}
 
 	msg := dynamicpb.NewMessage(mt.Descriptor())
 	if err := proto.Unmarshal(task.Body, msg); err != nil {
+		metrics.ObserveResult(opLabel, "error")
 		return fmt.Errorf("unmarshal task body failed: taskID=%s, err=%w", task.TaskId, err)
 	}
 
@@ -882,15 +900,19 @@ func processTaskWithoutLock(ctx context.Context, redisClient redis.Cmdable, task
 	if !ok {
 		resultErr = fmt.Sprintf("unsupported op: %s", task.Op)
 	} else {
+		handlerStart := time.Now()
 		resultErr = handler(ctx, redisClient, task, msg)
+		metrics.ObserveStage(metrics.StageOpHandler, opLabel, time.Since(handlerStart))
 	}
 
 	logx.Infof("task processed: taskID=%s, op=%s, success=%v, err=%s",
 		task.TaskId, task.Op, resultErr == "", resultErr)
 
 	if resultErr != "" {
+		metrics.ObserveResult(opLabel, "error")
 		return fmt.Errorf("%s", resultErr)
 	}
+	metrics.ObserveResult(opLabel, "ok")
 	return nil
 }
 

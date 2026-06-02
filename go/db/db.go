@@ -4,6 +4,7 @@ import (
 	"db/internal/config"
 	"db/internal/kafka"
 	"db/internal/logic/pkg/proto_sql"
+	"db/internal/metrics"
 	server "db/internal/server/db"
 	"db/internal/svc"
 	"flag"
@@ -78,6 +79,9 @@ func main() {
 
 	// Initialize database
 	proto_sql.InitDB()
+
+	// Start Prometheus /metrics endpoint (no-op when MetricsListenAddr empty).
+	metrics.Start(config.AppConfig.MetricsListenAddr)
 
 	// Start gRPC server
 	s := zrpc.MustNewServer(config.AppConfig.RpcServerConf, func(grpcServer *grpc.Server) {

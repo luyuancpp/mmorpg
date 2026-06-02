@@ -11,6 +11,13 @@ type Config struct {
 	zrpc.RpcServerConf
 	ZoneId       uint32       `json:"ZoneId"`
 	ServerConfig ServerConfig `json:"ServerConfig"`
+
+	// MetricsListenAddr is the bind address for the Prometheus /metrics
+	// HTTP endpoint. Leave empty to disable (production default; opt-in
+	// via deploy config). Dev default is set in etc/db.yaml so stress
+	// runs can scrape per-task stage histograms alongside login :9101
+	// and scene_manager :9150.
+	MetricsListenAddr string `json:"MetricsListenAddr,optional"`
 }
 
 // ServerConfig holds core service settings.
