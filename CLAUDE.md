@@ -1,8 +1,12 @@
 
 8. **压测复盘只读 `stress_summarize.ps1` 输出,不要手 grep raw prom dump**。
    - 命令: `pwsh tools/scripts/stress_summarize.ps1 -RunDir robot/logs/stress-<name>-<ts>`
-   - 输出三段二维表:robot 每分钟 stats + entergame_total + dataloader stage avg + Kafka lag,~2KB 上下文。
-   - 跑完手动拉 `curl -s http://127.0.0.1:9101/metrics > $RunDir/prom-snapshots/t<n>m_<tag>.txt` 存 snapshot,脚本会自动吃。
+   - 输出五段二维表:robot 每分钟 stats + entergame_total + dataloader stage avg + SceneManager EnterScene 子阶段 + DB task 子阶段 + Kafka lag,~3KB 上下文。
+   - **Round 16+ 推荐用 `tools/scripts/stress_snap.ps1` 后台批量拉 snapshot**(并行 scrape 三端口):
+     `pwsh tools/scripts/stress_snap.ps1 -RunDir robot/logs/stress-<name>-<ts> -StartTime '<yyyy-MM-dd HH:mm:ss>' -Stages 2,5,10,15,18`
+     端口分工: `:9101` login / `:9150` scene_manager / `:9160` db。
+     文件命名 `t<N>m_login.txt` / `t<N>m_sm.txt` / `t<N>m_db.txt` —— summarize 脚本自动按后缀分流。
+   - 旧式单端口手拉(legacy 兼容): `curl -s http://127.0.0.1:9101/metrics > $RunDir/prom-snapshots/t<n>m.txt`。
    - 历史复盘文档(`stress-1zone-*.md`)直接复用脚本输出的表格,不要再贴 raw count/sum 数字。
 9. **压测前后**强制按以下顺序操作,任何一步漏了都重来:
    1. **跑测前** — 把上一次压测的 `stress_summarize.ps1` 输出存为 `prev-summary.txt`(放在 `docs/design/stress-<round>-<date>.md` 同目录或 commit 到对比 PR 描述里),作为 Round N 的对比基线。`prev-summary.txt` 不存就不许开下一轮。

@@ -58,3 +58,13 @@ ServerConfig:
     DefaultTTLSeconds: 3600
     Password: ""
     DB: 0
+
+# Prometheus /metrics endpoint. Dev default; disable for prod by setting
+# empty string. Exposes:
+#   db_task_stage_seconds{stage,op}  - per-task sub-stage latency
+#     (op_total | op_handler | cache_write | result_publish)
+#   db_task_result_total{op,result}  - terminal task outcome counter
+# Round 16 stress runs scrape :9160 alongside login :9101 and
+# scene_manager :9150 to attribute the dataloader_preload_callback_wait
+# 11.8 ms → 31.4 ms regression seen in Round 15.
+MetricsListenAddr: ":9160"

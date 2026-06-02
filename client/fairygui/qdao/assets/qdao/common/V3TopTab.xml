@@ -18,10 +18,10 @@
     <graph id="h0" name="hitActive" xy="0,0" size="258,60" type="rect" lineSize="0" lineColor="#01000000" fillColor="#01000000">
       <gearDisplay controller="style" pages="0"/>
     </graph>
-    <graph id="h1" name="hitMid" xy="0,3" size="220,52" type="rect" lineSize="0" lineColor="#01000000" fillColor="#01000000">
+    <graph id="h1" name="hitMid" xy="0,3" size="258,52" type="rect" lineSize="0" lineColor="#01000000" fillColor="#01000000">
       <gearDisplay controller="style" pages="1"/>
     </graph>
-    <graph id="h2" name="hitRight" xy="0,3" size="280,52" type="rect" lineSize="0" lineColor="#01000000" fillColor="#01000000">
+    <graph id="h2" name="hitRight" xy="0,3" size="290,52" type="rect" lineSize="0" lineColor="#01000000" fillColor="#01000000">
       <gearDisplay controller="style" pages="2"/>
     </graph>
   </displayList>
