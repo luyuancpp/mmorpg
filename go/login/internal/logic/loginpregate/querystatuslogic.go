@@ -16,8 +16,8 @@ import (
 // Lifecycle of a queue token across this RPC:
 //
 //	first poll  → token verifies + queueId still in ZSET → QUEUEING (rank, total)
-//	dispatcher promotes → admit:{queueId} populated
-//	next poll   → consumeAdmit fires → ADMITTED (with gate token)
+//	dispatcher promotes → admit:{queueId} populated with AdmitSlot (gate pick only)
+//	next poll   → consumeAdmitAndSign fires → ADMITTED (gate token signed NOW)
 //	subsequent  → admit consumed; token-index TTL still alive but ZSET miss → EXPIRED
 //
 // The ADMITTED → EXPIRED transition deliberately gives the client exactly
@@ -25,6 +25,9 @@ import (
 // between this RPC and the gate TCP connect), they'll see EXPIRED on the
 // next poll and the UI should fall back to /api/assign-gate (which is
 // idempotent against the queue: enqueue with a fresh queueId).
+//
+// Signing happens HERE (consume time), not at dispatcher admit time —
+// see consumeAdmitAndSign for the R17 R1 fix rationale.
 type QueryQueueStatusLogic struct {
 	ctx    context.Context
 	svcCtx *svc.ServiceContext
@@ -58,7 +61,17 @@ func (l *QueryQueueStatusLogic) QueryQueueStatus(in *loginpb.QueryQueueStatusReq
 		}, nil
 	}
 
-	state, err := l.svcCtx.LoginQueue.Lookup(l.ctx, in.QueueToken)
+	state, err := l.svcCtx.LoginQueue.Lookup(l.ctx, in.QueueToken, func(slot *loginqueue.AdmitSlot) (*loginqueue.AdmitToken, error) {
+		// Sign at consume time so the 5-min token TTL begins now (R17 R1
+		// fix). The dispatcher only picked the gate; signing here means a
+		// client that polled slowly still gets a full-TTL token.
+		return loginqueue.SignGateToken(&loginqueue.GateCandidate{
+			NodeID: slot.NodeID,
+			IP:     slot.IP,
+			Port:   slot.Port,
+			ZoneID: slot.ZoneID,
+		}, l.svcCtx.QueueHmacSecret(), gateTokenTTL)
+	})
 	if err != nil {
 		// Redis flap or similar — log so on-call can correlate with Redis
 		// metrics. We deliberately don't expose the raw error to the client
