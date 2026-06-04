@@ -26,14 +26,29 @@ type Player struct {
 
 	skillsReady     chan struct{} // closed when ListSkills response arrives
 	skillsReadyOnce sync.Once
+
+	// currency state populated by GetCurrencyListResponse / GmAddCurrencyResponse.
+	// values mirrors CurrencyComp.values (slot index = currency type id).
+	// lastBalanceAfter is whatever the most recent GmAddCurrency / GmDeductCurrency
+	// returned, useful when the scenario only cares about a single type round-trip.
+	currencyValues       []uint64
+	currencyHasList      bool // GetCurrencyListResponse seen at least once
+	lastBalanceAfter     uint64
+	lastBalanceAfterSeen bool
+	currencyListReady    chan struct{} // closed on first GetCurrencyListResponse
+	currencyListReadyOne sync.Once
+	currencyAddReady     chan struct{} // closed on first GmAddCurrencyResponse
+	currencyAddReadyOne  sync.Once
 }
 
 // NewPlayer creates a Player with an initialized scene-ready channel.
 func NewPlayer(id uint64) *Player {
 	return &Player{
-		ID:          id,
-		sceneReady:  make(chan struct{}),
-		skillsReady: make(chan struct{}),
+		ID:                id,
+		sceneReady:        make(chan struct{}),
+		skillsReady:       make(chan struct{}),
+		currencyListReady: make(chan struct{}),
+		currencyAddReady:  make(chan struct{}),
 	}
 }
 
@@ -220,6 +235,109 @@ func (p *Player) GetOwnedSkillIDs() []uint32 {
 	out := make([]uint32, len(p.ownedSkillIDs))
 	copy(out, p.ownedSkillIDs)
 	return out
+}
+
+// SetCurrencyValues records the full CurrencyComp.values slice from a
+// GetCurrencyListResponse, then signals currencyListReady so a scenario can
+// proceed only after the initial balance snapshot lands.
+func (p *Player) SetCurrencyValues(values []uint64) {
+	p.mu.Lock()
+	if values == nil {
+		p.currencyValues = nil
+	} else {
+		p.currencyValues = make([]uint64, len(values))
+		copy(p.currencyValues, values)
+	}
+	p.currencyHasList = true
+	p.mu.Unlock()
+	p.currencyListReadyOne.Do(func() { close(p.currencyListReady) })
+}
+
+// GetCurrencyValue returns the balance at slot `typeID` (CurrencyType enum).
+// Returns (0, false) if no GetCurrencyListResponse has landed yet, or the
+// slot is out of range.
+func (p *Player) GetCurrencyValue(typeID uint32) (uint64, bool) {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	if !p.currencyHasList {
+		return 0, false
+	}
+	idx := int(typeID)
+	if idx < 0 || idx >= len(p.currencyValues) {
+		return 0, true // list seen, slot just empty (proto repeated may be short)
+	}
+	return p.currencyValues[idx], true
+}
+
+// SetLastBalanceAfter records balance_after from a GmAddCurrencyResponse /
+// GmDeductCurrencyResponse, and signals currencyAddReady on first call so a
+// scenario can wait for the GM RPC to round-trip.
+func (p *Player) SetLastBalanceAfter(balance uint64) {
+	p.mu.Lock()
+	p.lastBalanceAfter = balance
+	p.lastBalanceAfterSeen = true
+	p.mu.Unlock()
+	p.currencyAddReadyOne.Do(func() { close(p.currencyAddReady) })
+}
+
+// GetLastBalanceAfter returns the most recent GmAddCurrency / GmDeductCurrency
+// balance_after; second return is false if no GM response has been seen yet.
+func (p *Player) GetLastBalanceAfter() (uint64, bool) {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	return p.lastBalanceAfter, p.lastBalanceAfterSeen
+}
+
+// ResetCurrencyListReady re-arms the currencyListReady channel so the
+// next WaitCurrencyListReady call blocks until the *next* GetCurrencyList
+// response arrives. The currency-crash-window scenario calls this before
+// each round-trip so a single session can sample the balance multiple
+// times. Safe to call from any goroutine.
+func (p *Player) ResetCurrencyListReady() {
+	p.mu.Lock()
+	p.currencyListReady = make(chan struct{})
+	p.currencyListReadyOne = sync.Once{}
+	p.currencyHasList = false
+	p.currencyValues = nil
+	p.mu.Unlock()
+}
+
+// ResetCurrencyAddReady is the GmAddCurrency twin of ResetCurrencyListReady.
+func (p *Player) ResetCurrencyAddReady() {
+	p.mu.Lock()
+	p.currencyAddReady = make(chan struct{})
+	p.currencyAddReadyOne = sync.Once{}
+	p.lastBalanceAfterSeen = false
+	p.lastBalanceAfter = 0
+	p.mu.Unlock()
+}
+
+// WaitCurrencyListReady blocks until SetCurrencyValues is called or ctx
+// is cancelled. Used after sending GetCurrencyListRequest.
+func (p *Player) WaitCurrencyListReady(ctx context.Context) error {
+	p.mu.RLock()
+	ch := p.currencyListReady
+	p.mu.RUnlock()
+	select {
+	case <-ch:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+
+// WaitCurrencyAddReady blocks until SetLastBalanceAfter fires (= a
+// GmAddCurrencyResponse landed) or ctx is cancelled.
+func (p *Player) WaitCurrencyAddReady(ctx context.Context) error {
+	p.mu.RLock()
+	ch := p.currencyAddReady
+	p.mu.RUnlock()
+	select {
+	case <-ch:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
 }
 
 // playerMap is a concurrent-safe map of player ID → *Player.

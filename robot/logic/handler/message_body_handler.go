@@ -60,6 +60,8 @@ var messageHandlers = map[uint32]handlerFunc{
 	game.SceneSkillClientPlayerNotifySkillUsedMessageId: unmarshalAndCall(SceneSkillClientPlayerNotifySkillUsedHandler),
 	game.SceneSkillClientPlayerNotifySkillInterruptedMessageId: unmarshalAndCall(SceneSkillClientPlayerNotifySkillInterruptedHandler),
 	game.SceneSkillClientPlayerListSkillsMessageId: unmarshalAndCall(SceneSkillClientPlayerListSkillsHandler),
+	game.SceneCurrencyClientPlayerGmAddCurrencyMessageId: unmarshalAndCall(SceneCurrencyClientPlayerGmAddCurrencyHandler),
+	game.SceneCurrencyClientPlayerGetCurrencyListMessageId: unmarshalAndCall(SceneCurrencyClientPlayerGetCurrencyListHandler),
 }
 
 func MessageBodyHandler(client *pkg.GameClient, response *base.MessageContent) {

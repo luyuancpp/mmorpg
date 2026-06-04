@@ -175,6 +175,14 @@ func runLoginTests(host string, port int, cfg *config.Config, stats *metrics.Sta
 			}
 			return testMultiRobotBehavior(host, port, cfg.AccountFmt, cfg.Password, stats, tokenPayload, tokenSig, n)
 		}},
+
+		// --- Currency persistence (in-process smoke; full crash-window
+		// matrix lives under currency-crash-snapshot mode driven by
+		// tools/scripts/currency_crash_window.ps1). See
+		// docs/notes/currency-crash-window-verification.md.
+		{"CurrencyCrashWindow", func() testResult {
+			return testCurrencyCrashWindow(host, port, account, cfg.Password, stats, tokenPayload, tokenSig)
+		}},
 	}
 
 	zap.L().Info("======== Login Test Suite ========", zap.Int("scenarios", len(scenarios)))

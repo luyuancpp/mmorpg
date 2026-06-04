@@ -15,6 +15,7 @@
 #include "player/comp/last_persisted_snapshot_comp.h"
 #include "player/comp/player_frozen_comp.h"
 #include "player/system/cross_zone_reaper.h"
+#include "player/system/dirty_save_stats.h"
 #include "player/system/player_data_loader.h"
 #include "engine/core/type_define/type_define.h"
 #include "core/utils/encode/sha256.h"
@@ -794,6 +795,13 @@ void PlayerLifecycleSystem::SavePlayerToRedis(entt::entity player)
 	message->mutable_player_database_data()->set_player_id(playerId);
 	message->mutable_player_database_1_data()->set_player_id(playerId);
 
+	// Count every save attempt that reaches the fast-path check (i.e. we
+	// already paid the marshal cost). The pre-condition failures above
+	// (invalid entity) are not interesting for the skip-rate denominator —
+	// they'd skew the ratio without telling us anything about dirty-save
+	// effectiveness.
+	dirty_save_stats::IncTotal();
+
 	// Dirty-save fast path (todo.md #204 / #226 slice B).
 	// MUST run BEFORE stresstest_probe::Stamp* below (Review R2 fix,
 	// 2026-05-17). The probe writes non-business fields (timestamps /
@@ -823,6 +831,7 @@ void PlayerLifecycleSystem::SavePlayerToRedis(entt::entity player)
 		snap != nullptr && snap->HasSnapshot() &&
 		dirty_save::IsEqual(*message, *snap->snapshot))
 	{
+		dirty_save_stats::IncSkipped();
 		LOG_DEBUG << "[SavePlayerToRedis] no-op for player " << playerId
 				  << " — proto-compare clean, last_save_ms=" << snap->saved_at_ms;
 		return;

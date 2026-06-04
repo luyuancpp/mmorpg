@@ -96,6 +96,20 @@ func main() {
 		return
 	}
 
+	// Currency-crash-snapshot mode: single login → optional GmAddCurrency →
+	// readback → write snapshot JSON → exit. Driven by an external script
+	// that runs the robot twice per case (pre/post kill) and diffs the JSON.
+	// See docs/notes/currency-crash-window-verification.md.
+	if cfg.Mode == "currency-crash-snapshot" {
+		host, portStr, tokenPayload, tokenSig, err := resolveGateAddrLocal(cfg)
+		if err != nil {
+			zap.L().Fatal("resolve gate address", zap.Error(err))
+		}
+		port, _ := strconv.Atoi(portStr)
+		runCurrencyCrashSnapshotMode(host, port, cfg, stats, tokenPayload, tokenSig)
+		return
+	}
+
 	stopReport := make(chan struct{})
 	reportInterval := time.Duration(cfg.ReportInterval) * time.Second
 	if reportInterval <= 0 {

@@ -1,8 +1,16 @@
 # Proto-Compare-Driven Dirty Save — Design (todo.md #204 + #226)
 
-> **Status:** 2026-05-14 — comparison primitive landed (`proto_dirty_compare.h`);
-> integration into `SavePlayerToRedis` is **not yet wired**.
-> This document captures why the integration is staged separately.
+> **Status:** 2026-06-03 — slices A / B / C all landed. Comparison primitive
+> (`proto_dirty_compare.h`), `PlayerLastPersistedSnapshotComp`, the
+> `SavePlayerToRedis` fast-path, and the `HandlePlayerAsyncSaved`
+> snapshot-replace are all in. Slice D (counter / metric) added 2026-06-03
+> via `dirty_save_stats.h` + the 30 s LOG_INFO `[DirtySave] total=X
+> skipped=Y skip_pct=Z%` line piggy-backed on RedisSystem's queue
+> snapshot timer. Stress-test reverification is the remaining work
+> (Round 17+).
+>
+> Original 2026-05-14 status (kept for context): comparison primitive
+> landed; integration into `SavePlayerToRedis` was not yet wired.
 
 ---
 
@@ -90,73 +98,68 @@ wire it depends on decisions we don't have to make today:
 
 ---
 
-## What landed in this commit (2026-05-14)
+## What landed in this commit (2026-05-14, then 2026-05-17, then 2026-06-03)
 
-| File | Change |
-|---|---|
-| `cpp/libs/engine/core/utils/proto/proto_dirty_compare.h` | `dirty_save::IsEqual()` and `dirty_save::ShouldPersist()` — header-only wrapper around `MessageDifferencer::Equals` with safe defaults |
-| `docs/design/proto-compare-dirty-save.md` | this file |
-
-That's it. The integration into `SavePlayerToRedis` itself is **not
-done in this slice** — see "What's NOT done" below.
+| File | Slice | Date | Change |
+|---|---|---|---|
+| `cpp/libs/engine/core/utils/proto/proto_dirty_compare.h` | primitive | 2026-05-14 | `dirty_save::IsEqual()` and `dirty_save::ShouldPersist()` — header-only wrapper around `MessageDifferencer::Equals` with safe defaults |
+| `cpp/libs/services/scene/player/comp/last_persisted_snapshot_comp.h` | A | ~2026-05-17 | `PlayerLastPersistedSnapshotComp` ECS component holding the last persisted `PlayerAllData` |
+| `cpp/libs/services/scene/player/system/player_lifecycle.cpp::SavePlayerToRedis` | B | ~2026-05-17 | Fast-path `IsEqual` check at function entry; early return skips Redis Save + both Kafka DBTasks |
+| `cpp/libs/services/scene/player/system/player_lifecycle.cpp::HandlePlayerAsyncSaved` | A | ~2026-05-17 | Calls `snap.Replace(message)` on successful save so the next call has a baseline |
+| `cpp/libs/services/scene/player/system/player_lifecycle.cpp` (probe order fix) | R2 | 2026-05-17 | `IsEqual` check moved BEFORE `stresstest_probe::Stamp*` so probe writes don't poison the equality |
+| `cpp/libs/services/scene/player/system/dirty_save_stats.h` | C | 2026-06-03 | Two atomic counters (`Total`, `Skipped`) read on the 30 s timer |
+| `cpp/libs/services/scene/core/system/redis.cpp` | C | 2026-06-03 | `LOG_INFO "[DirtySave] total=X skipped=Y skip_pct=Z%"` emitted every 30 s alongside `LogQueueSnapshot` |
+| `tools/scripts/stress_summarize.ps1` | C | 2026-06-03 | Section 2bb parses `[DirtySave]` lines from `run/logs/cpp_nodes/scene_*.log` and prints the latest sample |
+| `docs/design/proto-compare-dirty-save.md` | doc | 2026-06-03 | Status updated to reflect actual integration |
 
 ---
 
 ## What's NOT done yet (tracked as #204 follow-ups)
 
-### A. Snapshot retention component — **S, ~1 day**
+### A. ~~Snapshot retention component~~ — **DONE 2026-05-17**
 
-Add `PlayerLastPersistedSnapshotComp` (or whatever name fits the project's
-component naming) that holds the last successfully persisted
-`PlayerAllData`. Update it inside `HandlePlayerAsyncSaved` after the save
-callback fires successfully, **before** any of the existing
-post-save side effects (DestroyPlayer / cross-zone transfer).
+`PlayerLastPersistedSnapshotComp` exists; `HandlePlayerAsyncSaved` calls
+`snap.Replace(message)` on success.
 
-### B. SavePlayerToRedis fast-path — **S, ~half day**
+### B. ~~SavePlayerToRedis fast-path~~ — **DONE 2026-05-17**
 
-At the top of `SavePlayerToRedis`:
+`SavePlayerToRedis` has the `IsEqual` early-return at line ~822. Both the
+Redis Save and the two `sendSubTableTask` Kafka emits are skipped on a
+match — verified by reading the function body, the early return is at the
+start of the function so neither happens.
 
-```cpp
-PlayerAllData current;
-PlayerAllDataMessageFieldsMarshal(player, current);
+### C. ~~Counter / metric~~ — **DONE 2026-06-03**
 
-const auto* last = tlsEcs.actorRegistry.try_get<PlayerLastPersistedSnapshotComp>(player);
-if (last && dirty_save::IsEqual(current, last->snapshot()))
-{
-    LOG_DEBUG << "[SavePlayerToRedis] no-op for player " << playerId
-              << " — proto-compare clean";
-    return;
-}
+Not Prometheus (cpp scene has no metrics endpoint yet); instead two
+atomic counters in `dirty_save_stats.h` and a `LOG_INFO` line emitted
+every 30 s on the existing `RedisSystem` snapshot timer. Parsed by
+`stress_summarize.ps1` as section 2bb so Round 17+ summaries surface
+the skip rate alongside SceneManager / DB tables.
+
+### D. Stress reverification — **PENDING (Round 17)**
+
+The hand-rolled `dirty` flags on individual components are now redundant
+for the "is this save necessary?" question. Codebase grep:
+
+```
+PlayerCurrencyComp::dirty   — runtime-only marker, kept (drives debt
+                               persist-vs-skip; not the same as
+                               PlayerAllData-level dirty)
+PlayerSkill changed flag    — TODO: audit and possibly remove
 ```
 
-Cost: one extra full-tree comparison per save. Order of magnitude
-~few hundred microseconds for a typical player; far cheaper than the
-Redis + Kafka round trip we're skipping.
-
-### C. Counter / metric — **S, ~half day**
-
-`scene_dirty_save_skipped_total` Prometheus counter so we can prove the
-optimization is firing in prod. A first-week sanity check should show
-this counter rising during idle/AFK periods (no mutation = nothing to
-write) and staying near zero during active gameplay.
-
-### D. Stress reverification — **M, 1 day**
-
-The hand-rolled `dirty` flags on individual components become redundant
-once `MessageDifferencer` is in charge of "is this save necessary?"; we
-should also verify they're not being relied on for **other** semantics
-(e.g. "decide whether to recompute a cache") before deleting them. A
-codebase grep for `dirty` membership reads should find them all.
+Round 17 should also verify that the `[DirtySave]` skip rate is non-zero
+under realistic stress traffic — anything below ~30 % at idle/AFK density
+suggests a bug (stress probe order, snapshot Replace not firing, etc.).
 
 ---
 
 ## Open questions
 
-1. **What about Kafka write tasks?** `SavePlayerToRedis` issues two
-   Kafka DBTasks alongside the Redis Save. If we skip the Redis path
-   we should skip those too — same comparison, same answer. Plumb
-   the skip decision through; don't let the Kafka path become a
-   silent bypass of the dirty check.
+1. ~~**What about Kafka write tasks?**~~ — **Resolved by slice B**:
+   the `SavePlayerToRedis` early return short-circuits the entire
+   function, so neither the Redis Save nor the two `sendSubTableTask`
+   Kafka emits run on a skip.
 
 2. **Reading after skip.** If we skip a save, the Redis blob remains
    the previous successful save. A subsequent same-node `EnterScene`
