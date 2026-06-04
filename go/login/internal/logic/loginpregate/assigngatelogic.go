@@ -132,7 +132,18 @@ func (l *AssignGateLogic) handleReentry(token string) (*loginpb.AssignGateRespon
 		logx.Infof("[loginqueue] reentry token rejected: %v", err)
 		return &loginpb.AssignGateResponse{Status: uint32(loginqueue.StatusExpired), Error: err.Error()}, nil
 	}
-	state, err := l.svcCtx.LoginQueue.Lookup(l.ctx, token)
+	// signFn signs the gate token at consume time (R17 R1 fix) so the
+	// 5-min TTL starts when the client receives this response, not when
+	// the dispatcher picked the gate minutes earlier.
+	signFn := func(slot *loginqueue.AdmitSlot) (*loginqueue.AdmitToken, error) {
+		return loginqueue.SignGateToken(&loginqueue.GateCandidate{
+			NodeID: slot.NodeID,
+			IP:     slot.IP,
+			Port:   slot.Port,
+			ZoneID: slot.ZoneID,
+		}, l.svcCtx.QueueHmacSecret(), gateTokenTTL)
+	}
+	state, err := l.svcCtx.LoginQueue.Lookup(l.ctx, token, signFn)
 	if err != nil {
 		return &loginpb.AssignGateResponse{Status: uint32(loginqueue.StatusError), Error: "queue lookup failed"}, nil
 	}

@@ -71,6 +71,19 @@ func startIntegrationFixture(t *testing.T, prov *integrationProvider) (*Queue, *
 	return q, d, rdb, cleanup
 }
 
+// stubSignFn is the test-side gate-token signer. The Dispatcher (in the
+// fixture above) writes AdmitSlot into admit:{queueId}; Lookup needs a
+// SignAdmitFn to turn that slot into an AdmitToken at consume time. The
+// stub copies slot fields straight through and stamps a fixed deadline,
+// matching what production handlers do via SignGateToken.
+func stubSignFn(slot *AdmitSlot) (*AdmitToken, error) {
+	return &AdmitToken{
+		IP:            slot.IP,
+		Port:          slot.Port,
+		TokenDeadline: time.Now().Unix() + 300,
+	}, nil
+}
+
 // waitFor polls fn at 10ms intervals until it returns true or timeout.
 // Used to assert against eventual conditions (the dispatcher runs async).
 func waitFor(t *testing.T, timeout time.Duration, msg string, fn func() bool) {
@@ -121,7 +134,7 @@ func TestIntegration_QueueDrainAdmits(t *testing.T) {
 			if _, ok := admitted[tok]; ok {
 				continue
 			}
-			st, err := q.Lookup(ctx, tok)
+			st, err := q.Lookup(ctx, tok, stubSignFn)
 			if err != nil {
 				continue
 			}
@@ -170,7 +183,7 @@ func TestIntegration_DispatcherRespectsCapacity(t *testing.T) {
 	// was admitted — capacity is full, queue must hold.
 	time.Sleep(500 * time.Millisecond)
 	for _, tok := range stuck {
-		st, err := q.Lookup(ctx, tok)
+		st, err := q.Lookup(ctx, tok, stubSignFn)
 		if err != nil {
 			t.Fatalf("lookup: %v", err)
 		}
@@ -191,7 +204,7 @@ func TestIntegration_DispatcherRespectsCapacity(t *testing.T) {
 	waitFor(t, 2*time.Second, "exactly 2 admitted after capacity opened", func() bool {
 		admittedCount = 0
 		for _, tok := range stuck {
-			st, err := q.Lookup(ctx, tok)
+			st, err := q.Lookup(ctx, tok, stubSignFn)
 			if err == nil && st.Status == StatusAdmitted {
 				admittedCount++
 			}

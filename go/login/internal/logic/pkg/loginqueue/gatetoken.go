@@ -55,7 +55,33 @@ type GateCandidate struct {
 //
 // Returned AdmitToken matches the wire shape AssignGateResponse expects, so
 // callers can copy fields directly without re-marshalling.
+//
+// Convenience wrapper around PickGate + SignGateToken — kept for the
+// AssignGate fast-path (no queue) which still picks-and-signs in one shot
+// because there is no admit-cache delay between the two halves.
+//
+// The QUEUE path (PopAdmit + consumeAdmit) deliberately splits the two
+// stages: dispatcher PickGate at admit time, sign at consume time. See
+// the comment on `consumeAdmitAndSign` for the rationale (R17 R1 root
+// cause — admit could sit in Redis for 4-5 minutes and burn the token's
+// 5-min TTL before the client redeemed it).
 func PickAndSignGateToken(candidates []GateCandidate, secret []byte, ttl time.Duration) (*AdmitToken, error) {
+	gate, err := PickGate(candidates)
+	if err != nil {
+		return nil, err
+	}
+	return SignGateToken(gate, secret, ttl)
+}
+
+// PickGate is the gate-selection half of PickAndSignGateToken — chooses
+// the least-loaded candidate without signing. Returned value carries the
+// minimum endpoint info needed for a later SignGateToken call to produce
+// a fresh-TTL token.
+//
+// Splitting selection from signing lets the queue dispatcher decide
+// "this entry is admitted to gate X" at admit time but defer the token
+// HMAC + expire until the client actually polls for it.
+func PickGate(candidates []GateCandidate) (*GateCandidate, error) {
 	if len(candidates) == 0 {
 		return nil, fmt.Errorf("no gate candidates")
 	}
@@ -72,6 +98,22 @@ func PickAndSignGateToken(candidates []GateCandidate, secret []byte, ttl time.Du
 		return sorted[i].NodeID < sorted[j].NodeID
 	})
 	best := sorted[0]
+	return &best, nil
+}
+
+// SignGateToken builds + HMACs a GateTokenPayload for the chosen gate.
+// `ttl` starts from time.Now() at the moment this call runs — that is the
+// whole point of separating it from PickGate: a slow Redis round-trip
+// between admit-pick and client-consume must NOT eat into the token's
+// validity window.
+//
+// Caller is responsible for handing AdmitToken back to the client (write
+// to admit:{queueId}, return inline in AssignGateResponse, etc.). The
+// shape mirrors what AssignGateResponse expects.
+func SignGateToken(gate *GateCandidate, secret []byte, ttl time.Duration) (*AdmitToken, error) {
+	if gate == nil {
+		return nil, fmt.Errorf("nil gate")
+	}
 
 	expireTS := time.Now().Add(ttl).Unix()
 
@@ -80,15 +122,15 @@ func PickAndSignGateToken(candidates []GateCandidate, secret []byte, ttl time.Du
 	// HMAC-SHA256 signature over payloadBytes, so an attacker tampering
 	// with it on the wire would invalidate the gate token signature and
 	// the gate would reject the whole handshake. No Redis state — fresh
-	// key on every AssignGate call.
+	// key on every sign call (which is now per-consume, not per-admit).
 	sessionKey := make([]byte, hmacSessionKeyLen)
 	if _, err := rand.Read(sessionKey); err != nil {
 		return nil, fmt.Errorf("generate hmac session key: %w", err)
 	}
 
 	payload := &commonpb.GateTokenPayload{
-		GateNodeId:      best.NodeID,
-		ZoneId:          best.ZoneID,
+		GateNodeId:      gate.NodeID,
+		ZoneId:          gate.ZoneID,
 		ExpireTimestamp: expireTS,
 		HmacSessionKey:  sessionKey,
 	}
@@ -100,8 +142,8 @@ func PickAndSignGateToken(candidates []GateCandidate, secret []byte, ttl time.Du
 	signature := hmacHex(secret, payloadBytes)
 
 	return &AdmitToken{
-		IP:             best.IP,
-		Port:           best.Port,
+		IP:             gate.IP,
+		Port:           gate.Port,
 		TokenPayload:   payloadBytes,
 		TokenSignature: signature,
 		TokenDeadline:  expireTS,

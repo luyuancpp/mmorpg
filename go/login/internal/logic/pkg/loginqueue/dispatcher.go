@@ -244,15 +244,29 @@ func (d *Dispatcher) dispatchOnce(ctx context.Context) {
 
 		batch := min(free, uint32(queueLen))
 
-		signFn := func(zoneID uint32, _ string) (*AdmitToken, error) {
+		// Pick a gate per entry but DO NOT sign the token here — the HMAC
+		// + expire happen at consume time inside consumeAdmitAndSign so
+		// the 5-min TTL window starts when the client redeems the admit,
+		// not when we picked the gate (R17 R1 fix). The dispatcher's job
+		// reduces to "decide which gate is least loaded right now".
+		pickFn := func(zoneID uint32, _ string) (*AdmitSlot, error) {
 			candidates, err := d.provider.CandidatesForZone(ctx, zoneID)
 			if err != nil {
 				return nil, err
 			}
-			return PickAndSignGateToken(candidates, d.hmacSecret, d.gateTokenTTL)
+			gate, err := PickGate(candidates)
+			if err != nil {
+				return nil, err
+			}
+			return &AdmitSlot{
+				NodeID: gate.NodeID,
+				IP:     gate.IP,
+				Port:   gate.Port,
+				ZoneID: gate.ZoneID,
+			}, nil
 		}
 
-		admitted, err := d.queue.PopAdmit(ctx, zoneID, int(batch), signFn)
+		admitted, err := d.queue.PopAdmit(ctx, zoneID, int(batch), pickFn)
 		if err != nil {
 			logx.Errorf("[loginqueue] PopAdmit zone=%d err=%v", zoneID, err)
 			continue

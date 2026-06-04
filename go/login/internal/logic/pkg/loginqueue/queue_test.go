@@ -92,9 +92,14 @@ func TestZonesAreIndependent(t *testing.T) {
 }
 
 // TestPopAdmitWritesAdmitToken exercises the dispatcher path. We pop one
-// entry, supply a stub signFn, and verify Lookup transitions through
+// entry, supply a stub pickFn, and verify Lookup transitions through
 // QUEUEING → ADMITTED → EXPIRED on subsequent polls. This pins the
 // "exactly-once admit" contract that prevents double-issued gate tokens.
+//
+// Post-R17-R1 (2026-06-04): the dispatcher only PICKS a gate at admit
+// time (writing an AdmitSlot to admit:{queueId}); the gate token's HMAC
+// + expire are computed inside Lookup via signFn. The test asserts both
+// halves work — pickFn writes the slot, signFn turns it into a token.
 func TestPopAdmitWritesAdmitToken(t *testing.T) {
 	q, _, _, cleanup := newTestQueue(t)
 	defer cleanup()
@@ -105,8 +110,16 @@ func TestPopAdmitWritesAdmitToken(t *testing.T) {
 		t.Fatalf("enqueue: %v", err)
 	}
 
+	stubSign := func(slot *AdmitSlot) (*AdmitToken, error) {
+		return &AdmitToken{
+			IP:            slot.IP,
+			Port:          slot.Port,
+			TokenDeadline: time.Now().Unix() + 300,
+		}, nil
+	}
+
 	// Before PopAdmit: status must be QUEUEING.
-	state, err := q.Lookup(ctx, res.QueueToken)
+	state, err := q.Lookup(ctx, res.QueueToken, stubSign)
 	if err != nil {
 		t.Fatalf("lookup before admit: %v", err)
 	}
@@ -114,11 +127,10 @@ func TestPopAdmitWritesAdmitToken(t *testing.T) {
 		t.Errorf("status before admit = %d, want %d", state.Status, StatusQueueing)
 	}
 
-	stubAdmit := &AdmitToken{IP: "10.0.0.5", Port: 9000, TokenDeadline: time.Now().Unix() + 300}
-	signFn := func(zoneID uint32, queueID string) (*AdmitToken, error) {
-		return stubAdmit, nil
+	pickFn := func(zoneID uint32, queueID string) (*AdmitSlot, error) {
+		return &AdmitSlot{NodeID: 1, IP: "10.0.0.5", Port: 9000, ZoneID: zoneID}, nil
 	}
-	n, err := q.PopAdmit(ctx, 1, 5, signFn)
+	n, err := q.PopAdmit(ctx, 1, 5, pickFn)
 	if err != nil {
 		t.Fatalf("popadmit: %v", err)
 	}
@@ -126,8 +138,9 @@ func TestPopAdmitWritesAdmitToken(t *testing.T) {
 		t.Errorf("popadmit count = %d, want 1", n)
 	}
 
-	// First Lookup after admit: ADMITTED with admit token.
-	state, err = q.Lookup(ctx, res.QueueToken)
+	// First Lookup after admit: ADMITTED with admit token signed by stubSign
+	// at consume time (the slot we wrote at admit time has IP=10.0.0.5).
+	state, err = q.Lookup(ctx, res.QueueToken, stubSign)
 	if err != nil {
 		t.Fatalf("lookup after admit: %v", err)
 	}
@@ -141,7 +154,7 @@ func TestPopAdmitWritesAdmitToken(t *testing.T) {
 	// Second Lookup: admit was consumed → EXPIRED-equivalent (still
 	// QUEUEING with rank 0 in our impl because the meta key is alive but
 	// the ZSET member is gone). Either way, NOT a second ADMITTED.
-	state, err = q.Lookup(ctx, res.QueueToken)
+	state, err = q.Lookup(ctx, res.QueueToken, stubSign)
 	if err != nil {
 		t.Fatalf("lookup after consume: %v", err)
 	}
@@ -225,9 +238,8 @@ func TestFreeSlotsAccountsForAdmittedInFlight(t *testing.T) {
 	// Enqueue + admit one entry. admitted should now be 1, free should
 	// drop by exactly 1.
 	res, _ := q.Enqueue(ctx, 1, "alice", "dev1")
-	stubAdmit := &AdmitToken{IP: "10.0.0.1", Port: 9000}
-	if _, err := q.PopAdmit(ctx, 1, 1, func(z uint32, qid string) (*AdmitToken, error) {
-		return stubAdmit, nil
+	if _, err := q.PopAdmit(ctx, 1, 1, func(z uint32, qid string) (*AdmitSlot, error) {
+		return &AdmitSlot{NodeID: 1, IP: "10.0.0.1", Port: 9000, ZoneID: z}, nil
 	}); err != nil {
 		t.Fatalf("popadmit: %v", err)
 	}
@@ -289,7 +301,7 @@ func TestFreeSlotsErrorsWhenNoGates(t *testing.T) {
 	}
 }
 
-// TestPopAdmitReQueuesOnSignFailure: signFn returning err must not lose
+// TestPopAdmitReQueuesOnSignFailure: pickFn returning err must not lose
 // the queue entry. We re-add at the front (score=0) so the next dispatcher
 // tick retries with hopefully-recovered state.
 func TestPopAdmitReQueuesOnSignFailure(t *testing.T) {
@@ -299,10 +311,10 @@ func TestPopAdmitReQueuesOnSignFailure(t *testing.T) {
 
 	res, _ := q.Enqueue(ctx, 1, "alice", "dev1")
 
-	signFnFail := func(z uint32, qid string) (*AdmitToken, error) {
+	pickFnFail := func(z uint32, qid string) (*AdmitSlot, error) {
 		return nil, context.DeadlineExceeded
 	}
-	n, err := q.PopAdmit(ctx, 1, 1, signFnFail)
+	n, err := q.PopAdmit(ctx, 1, 1, pickFnFail)
 	if err != nil {
 		t.Fatalf("popadmit: %v", err)
 	}
@@ -310,8 +322,14 @@ func TestPopAdmitReQueuesOnSignFailure(t *testing.T) {
 		t.Errorf("admitted count on fail = %d, want 0", n)
 	}
 
-	// Entry should still be queryable via Lookup.
-	state, err := q.Lookup(ctx, res.QueueToken)
+	// Entry should still be queryable via Lookup. signFn would never be
+	// invoked here because no admit slot exists yet — pass a stub that
+	// loudly fails the test if it somehow runs.
+	stubSign := func(slot *AdmitSlot) (*AdmitToken, error) {
+		t.Fatal("signFn called for an entry that never got an admit slot")
+		return nil, nil
+	}
+	state, err := q.Lookup(ctx, res.QueueToken, stubSign)
 	if err != nil {
 		t.Fatalf("lookup after failed admit: %v", err)
 	}

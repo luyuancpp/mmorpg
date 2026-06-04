@@ -49,15 +49,48 @@ const (
 	StatusExpired  Status = 3
 )
 
-// AdmitToken is what dispatcher writes to admit:{queueId} and what the
-// client retrieves on its next AssignGate / QueryQueueStatus call. The
+// AdmitToken is what the consume-time gate-token signer produces and what
+// the client retrieves on its next AssignGate / QueryQueueStatus call. The
 // fields mirror AssignGateResponse so handlers can copy directly.
+//
+// IMPORTANT: AdmitToken is **never written to Redis** in the queue path.
+// What goes into admit:{queueId} is an AdmitSlot (gate-pick only) — the
+// HMAC + expire is computed at consume time so the 5-min token TTL starts
+// when the client redeems the admit, not when the dispatcher issued it.
+// See `consumeAdmitAndSign` for the rationale (R17 R1 root cause).
+//
+// The fast-path /assign-gate handler (no queue) builds AdmitToken inline
+// via PickAndSignGateToken because there is no Redis caching between sign
+// and use; the field shape is shared for handler-side simplicity.
 type AdmitToken struct {
 	IP             string `json:"ip"`
 	Port           uint32 `json:"port"`
 	TokenPayload   []byte `json:"token_payload"`
 	TokenSignature []byte `json:"token_signature"`
 	TokenDeadline  int64  `json:"token_deadline"`
+}
+
+// AdmitSlot is what dispatcher writes to admit:{queueId} after picking a
+// gate but BEFORE signing the gate token. It carries everything needed to
+// produce a fresh AdmitToken at consume time — the gate endpoint identity
+// plus the zone it belongs to. No HMAC, no expire.
+//
+// Why split this out from AdmitToken (R17 R1 fix, 2026-06-04):
+//   - dispatcher.PopAdmit may run minutes ahead of the client's polling
+//     consume. If we put a signed AdmitToken in Redis at PopAdmit time,
+//     its expire_timestamp starts counting immediately and the client
+//     can receive a token with only a few seconds of life left.
+//   - Splitting "decide which gate" (admit-time) from "issue the HMAC"
+//     (consume-time) means the 5-min token TTL window always starts
+//     when the client is about to use it.
+//
+// Memory cost: AdmitSlot is smaller than AdmitToken (no payload bytes,
+// no 64-byte hex signature), so this is also strictly cheaper for Redis.
+type AdmitSlot struct {
+	NodeID uint32 `json:"node_id"`
+	IP     string `json:"ip"`
+	Port   uint32 `json:"port"`
+	ZoneID uint32 `json:"zone_id"`
 }
 
 // EnqueueResult bundles everything the AssignGate handler needs to build a
@@ -173,8 +206,23 @@ func (q *Queue) Enqueue(ctx context.Context, zoneID uint32, account, deviceID st
 
 // ── Lookup (QueryQueueStatus) ─────────────────────────────────────────
 
-// Lookup translates a queue token to its current state.
-func (q *Queue) Lookup(ctx context.Context, token string) (*QueueState, error) {
+// SignAdmitFn is the consume-time gate-token signer. Lookup invokes it
+// after GetDel admit:{queueId} succeeds, so the resulting AdmitToken's
+// HMAC + expire begin at consume time rather than admit time. This is
+// the heart of the R17 R1 fix: a 5-min token TTL must mean "5 min after
+// the client receives it", not "5 min after the dispatcher picked the
+// gate".
+//
+// The slot argument is whatever AdmitSlot the dispatcher stored at admit
+// time (gate IP/Port/NodeID/ZoneID). Returning (nil, err) makes Lookup
+// surface the error to the caller; returning (nil, nil) is not allowed —
+// either we sign successfully or we have an error.
+type SignAdmitFn func(slot *AdmitSlot) (*AdmitToken, error)
+
+// Lookup translates a queue token to its current state. The signFn is
+// invoked iff admit:{queueId} is present, so callers always pass a
+// non-nil function — see queuestatuslogic / assigngatelogic.
+func (q *Queue) Lookup(ctx context.Context, token string, signFn SignAdmitFn) (*QueueState, error) {
 	queueID, err := q.rdb.Get(ctx, tokenIndexKey(token)).Result()
 	if errors.Is(err, redis.Nil) {
 		// Token-index entry gone (e.g. evicted under memory pressure, or
@@ -187,10 +235,11 @@ func (q *Queue) Lookup(ctx context.Context, token string) (*QueueState, error) {
 		return nil, fmt.Errorf("lookup token index: %w", err)
 	}
 
-	// Admitted? Take the admit token + clean up so a second poll doesn't
-	// double-admit (the dispatcher set status='admitted' atomically; here we
-	// turn that into a one-shot consume).
-	admit, err := q.consumeAdmit(ctx, queueID)
+	// Admitted? Take the admit slot, sign a fresh-TTL gate token now, and
+	// clean up so a second poll doesn't double-admit (the dispatcher set
+	// status='admitted' atomically; here we turn that into a one-shot
+	// consume-and-sign).
+	admit, err := q.consumeAdmitAndSign(ctx, queueID, signFn)
 	if err != nil {
 		return nil, err
 	}
@@ -236,10 +285,19 @@ func (q *Queue) Lookup(ctx context.Context, token string) (*QueueState, error) {
 	return &QueueState{Status: StatusQueueing, Rank: uint32(rank), Total: uint32(total)}, nil
 }
 
-// consumeAdmit atomically reads-and-deletes admit:{queueId}. Returns nil if
-// no admit has been issued yet for this queueId. Also SREMs from the
-// admitted set so capacity accounting is honest.
-func (q *Queue) consumeAdmit(ctx context.Context, queueID string) (*AdmitToken, error) {
+// consumeAdmitAndSign atomically reads-and-deletes admit:{queueId},
+// invokes signFn on the stored AdmitSlot to mint a fresh-TTL gate
+// token, and returns the resulting AdmitToken. Returns (nil, nil) if no
+// admit slot exists yet (caller treats as "still queueing").
+//
+// The signFn argument is what makes this fix work: the gate token's
+// HMAC + expire are computed HERE, at consume time, so the 5-min
+// token TTL window begins when the client redeems the admit — not when
+// the dispatcher picked the gate. Before this split (pre-2026-06-04)
+// signing happened inside PopAdmit and the token could sit in Redis for
+// 4-5 min before the client GetDel'd it, burning most of its TTL. See
+// stress-1zone-45k-2026-06-03-round17.md §4 R1 for the diagnosis.
+func (q *Queue) consumeAdmitAndSign(ctx context.Context, queueID string, signFn SignAdmitFn) (*AdmitToken, error) {
 	// GETDEL is single-RTT; if the admit was issued under SET NX it still
 	// resolves cleanly. If admit:{queueId} didn't exist, GETDEL returns
 	// redis.Nil and we treat it as "still queueing".
@@ -251,9 +309,24 @@ func (q *Queue) consumeAdmit(ctx context.Context, queueID string) (*AdmitToken, 
 		return nil, fmt.Errorf("getdel admit: %w", err)
 	}
 
-	var admit AdmitToken
-	if err := json.Unmarshal(val, &admit); err != nil {
-		return nil, fmt.Errorf("unmarshal admit token: %w", err)
+	var slot AdmitSlot
+	if err := json.Unmarshal(val, &slot); err != nil {
+		return nil, fmt.Errorf("unmarshal admit slot: %w", err)
+	}
+
+	// Sign NOW so the token's expire starts ticking from this moment.
+	if signFn == nil {
+		return nil, fmt.Errorf("consumeAdmitAndSign: nil signFn (caller bug)")
+	}
+	admit, err := signFn(&slot)
+	if err != nil {
+		// We've already GETDEL'd the slot — the entry is gone from Redis.
+		// Surface the signing error; the client will see code=500 and can
+		// restart from /assign-gate to get re-enqueued. We could try to
+		// put the slot back, but a signing failure usually means "no gate
+		// candidates available" or HMAC-secret misconfig, neither of
+		// which is fixed by retrying with the same slot.
+		return nil, fmt.Errorf("sign admit token: %w", err)
 	}
 
 	// Best-effort cleanup of capacity accounting + token index. Failures are
@@ -288,22 +361,34 @@ func (q *Queue) consumeAdmit(ctx context.Context, queueID string) (*AdmitToken, 
 	// We deliberately keep meta + token index alive for their TTL window so a
 	// duplicate poll (client retried mid-network) sees StatusExpired rather
 	// than re-enqueueing under a fresh queueId.
-	return &admit, nil
+	return admit, nil
 }
 
 // ── Dispatcher-facing (admit a batch) ─────────────────────────────────
 
-// PopAdmit pops up to n entries from the front of zoneId's queue and writes
-// admit:{queueId} for each. Caller (the dispatcher) supplies the per-entry
-// token via signFn so this package stays free of gate-token signing logic.
+// PickAdmitSlotFn is the dispatcher-side gate selector used by PopAdmit.
+// It chooses which gate the queue entry will be assigned to without
+// signing the gate token — the HMAC + expire happen later, at consume
+// time, in consumeAdmitAndSign.
 //
-// Returns the number of entries actually admitted (may be < n if the queue
-// is shorter than expected, or if some signFn calls fail).
+// Returning (nil, err) makes PopAdmit re-add the entry to the front of
+// the ZSET so the next dispatcher tick retries; returning (nil, nil) is
+// treated as a no-gate-available outcome and skips the entry entirely.
+type PickAdmitSlotFn func(zoneID uint32, queueID string) (*AdmitSlot, error)
+
+// PopAdmit pops up to n entries from the front of zoneId's queue and
+// writes admit:{queueId} = AdmitSlot for each. Caller (the dispatcher)
+// supplies pickFn that selects a gate without signing — sign happens
+// later at consume time so the token's 5-min TTL starts when the
+// client redeems it (R17 R1 fix, see consumeAdmitAndSign).
+//
+// Returns the number of entries actually admitted (may be < n if the
+// queue is shorter than expected, or if some pickFn calls fail).
 func (q *Queue) PopAdmit(
 	ctx context.Context,
 	zoneID uint32,
 	n int,
-	signFn func(zoneID uint32, queueID string) (*AdmitToken, error),
+	pickFn PickAdmitSlotFn,
 ) (int, error) {
 	if n <= 0 {
 		return 0, nil
@@ -322,15 +407,20 @@ func (q *Queue) PopAdmit(
 		if !ok || queueID == "" {
 			continue
 		}
-		admit, err := signFn(zoneID, queueID)
+		slot, err := pickFn(zoneID, queueID)
 		if err != nil {
-			// Couldn't pick a gate or sign the token — the entry is gone from
-			// ZSET. Best-effort: re-add at the front so the next dispatcher
-			// tick retries. Score = 0 to put it ahead of newcomers.
+			// Couldn't pick a gate — the entry is gone from ZSET. Best-effort
+			// re-add at the front so the next dispatcher tick retries. Score
+			// = 0 to put it ahead of newcomers.
 			q.rdb.ZAdd(ctx, zoneZSetKey(zoneID), redis.Z{Score: 0, Member: queueID})
 			continue
 		}
-		blob, err := json.Marshal(admit)
+		if slot == nil {
+			// pickFn signaled "no gate available right now". Drop the entry —
+			// the client will re-enqueue on its next /assign-gate retry.
+			continue
+		}
+		blob, err := json.Marshal(slot)
 		if err != nil {
 			continue
 		}
