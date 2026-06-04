@@ -4,6 +4,7 @@
 
 #include "muduo/net/EventLoop.h"
 
+#include "player/system/dirty_save_stats.h"
 #include "player/system/player_lifecycle.h"
 #include "thread_context/ecs_context.h"
 #include "thread_context/redis_manager.h"
@@ -50,6 +51,19 @@ void RedisSystem::Initialize(muduo::net::EventLoop* loop)
         if (playerRedis)
         {
             playerRedis->LogQueueSnapshot("RedisSystem");
+        }
+        // Piggyback on the same 30s tick so a fresh timer isn't needed
+        // just for two counters. Format is parsed by
+        // tools/scripts/stress_summarize.ps1 — keep the prefix and the
+        // key=value layout stable, or update the parser.
+        const auto stats = dirty_save_stats::Read();
+        if (stats.total > 0)
+        {
+            const uint32_t pctTenths = stats.SkipPctTenths();
+            LOG_INFO << "[DirtySave] total=" << stats.total
+                     << " skipped=" << stats.skipped
+                     << " skip_pct=" << (pctTenths / 10) << "."
+                     << (pctTenths % 10) << "%";
         } });
     snapshotTimerActive_ = true;
 

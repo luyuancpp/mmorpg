@@ -32,6 +32,12 @@ type Config struct {
 	// DataStress configures the data-consistency stress mode.
 	DataStress DataStressConfig `yaml:"data_stress"`
 
+	// CurrencyCrash configures the "currency-crash-snapshot" mode used by
+	// docs/notes/currency-crash-window-verification.md. Driven by an external
+	// PowerShell script that runs the robot twice per case (pre/post kill) so
+	// only one of the two legs needs to actually mutate the balance.
+	CurrencyCrash CurrencyCrashConfig `yaml:"currency_crash"`
+
 	// Auth type for login: "" or "password" (default), "satoken" (requires satoken_addr).
 	AuthType    string `yaml:"auth_type"`
 	SaTokenAddr string `yaml:"satoken_addr"` // SA-Token dev-login endpoint, e.g. "http://127.0.0.1:18080"
@@ -78,7 +84,26 @@ type DataStressConfig struct {
 	VerifyRedisDB       int    `yaml:"verify_redis_db"`
 }
 
-// LLMConfig configures the OpenAI-compatible endpoint for AI-driven behavior.
+// CurrencyCrashConfig configures the "currency-crash-snapshot" mode.
+//
+// Each robot run is one *snapshot* (login → read pre balance → optionally
+// add gold → read post balance → exit). The orchestration script
+// (tools/scripts/currency_crash_window.ps1) runs the robot twice per
+// case A/B/C/D and diffs the two snapshots' results from
+// `robot/logs/currency_crash_window/<run>/snapshot.json`.
+type CurrencyCrashConfig struct {
+	// Account override. If empty, falls back to fmt.Sprintf(AccountFmt, 1).
+	Account string `yaml:"account"`
+
+	// AddAmount: gold to add via GmAddCurrency. 0 = read-only snapshot
+	// (post-kill leg uses this).
+	AddAmount int64 `yaml:"add_amount"`
+
+	// OutputPath: file to write the snapshot JSON
+	// ({pre_balance, post_balance, player_id, account, ts}).
+	// Default: "logs/currency_crash_window/snapshot.json"
+	OutputPath string `yaml:"output_path"`
+}
 type LLMConfig struct {
 	Enabled  bool   `yaml:"enabled"`
 	Endpoint string `yaml:"endpoint"` // e.g. "http://localhost:11434/v1/chat/completions"
@@ -138,10 +163,10 @@ func (c *Config) validate() error {
 		return fmt.Errorf("account_fmt must be set")
 	}
 	switch c.Mode {
-	case "", "stress", "login-test", "data-stress":
+	case "", "stress", "login-test", "data-stress", "currency-crash-snapshot":
 		// valid
 	default:
-		return fmt.Errorf("unknown mode %q (expected stress, login-test, or data-stress)", c.Mode)
+		return fmt.Errorf("unknown mode %q (expected stress, login-test, data-stress, or currency-crash-snapshot)", c.Mode)
 	}
 	if c.AuthType == "satoken" && c.SaTokenAddr == "" {
 		return fmt.Errorf("satoken_addr must be set when auth_type is satoken")

@@ -312,6 +312,92 @@ if ($smSnapshots.Count -gt 0) {
     }
 }
 
+# ----- 2bb. Dirty-save skip rate (cpp scene log, parsed not scraped) ----
+#
+# Why log-parsing instead of a Prometheus scrape: cpp scene processes don't
+# expose a metrics HTTP endpoint today (only go SceneManager :9150 and go
+# db :9160 do). The two atomic counters live in dirty_save_stats.h and emit
+# one LOG_INFO line every 30 s from the RedisSystem snapshot timer. We pull
+# the LATEST line from the most recent scene_*.log and surface the
+# total / skipped / skip_pct triple.
+#
+# Stays silent when no [DirtySave] line is found — keeps legacy stress
+# runs (pre-dirty-save-metric) clean and avoids a noisy "0 saves" line in
+# very short smoke tests.
+
+# Resolve repo root once from the script's own location ($PSScriptRoot is
+# tools/scripts/, so two levels up is the repo root) — stress_summarize.ps1
+# doesn't otherwise need it, but the dirty-save log scan below does.
+$RepoRoot = Resolve-Path (Join-Path $PSScriptRoot "..\..")
+$cppLogDir = Join-Path $RepoRoot "run\logs\cpp_nodes"
+
+# Only scan scene*.log files (gate logs don't run SavePlayerToRedis).
+# The glob deliberately omits the underscore so it matches both legacy
+# single-instance "scene.stdout.log" and multi-instance "scene_1.stdout.log".
+$sceneLogs = @()
+if (Test-Path $cppLogDir) {
+    $sceneLogs = Get-ChildItem -Path $cppLogDir -Filter 'scene*.log' `
+                 -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending
+}
+
+$dirtySaveLines = @()
+foreach ($log in $sceneLogs) {
+    # Tail-style scan: read the file once and keep all matches; counters
+    # are monotonic so the LAST match per file is the cumulative total.
+    #
+    # Use FileShare.ReadWrite — the scene process holds an open write
+    # handle on its own stdout log while it's running, and the default
+    # File::ReadLines opens with FileShare.None which would throw
+    # "being used by another process". Round 17 (2026-06-03) hit this
+    # the first time we ran the parser against a still-running scene.
+    $fs = $null
+    $sr = $null
+    try {
+        $fs = [System.IO.FileStream]::new(
+            $log.FullName,
+            [System.IO.FileMode]::Open,
+            [System.IO.FileAccess]::Read,
+            [System.IO.FileShare]::ReadWrite)
+        $sr = [System.IO.StreamReader]::new($fs)
+        while (-not $sr.EndOfStream) {
+            $line = $sr.ReadLine()
+            if ($line -match '\[DirtySave\] total=(?<total>\d+) skipped=(?<skipped>\d+) skip_pct=(?<pct>[0-9.]+)%') {
+                $dirtySaveLines += [pscustomobject]@{
+                    Log     = $log.Name
+                    Total   = [int64]$matches['total']
+                    Skipped = [int64]$matches['skipped']
+                    Pct     = [double]$matches['pct']
+                }
+            }
+        }
+    } finally {
+        if ($sr) { $sr.Dispose() }
+        if ($fs) { $fs.Dispose() }
+    }
+}
+
+if ($dirtySaveLines.Count -gt 0) {
+    Write-Host ""
+    Write-Host "=== Dirty-save skip rate (cpp scene LOG_INFO [DirtySave]) ============" -ForegroundColor Yellow
+    Write-Host ""
+    "  scene_log                      total       skipped     skip_pct" | Write-Host
+    "  ---------                      -----       -------     --------" | Write-Host
+
+    # Group by log file and take the last (== highest, monotonic) sample
+    # per scene instance. With one scene_1.log this is just one row; with
+    # multi-scene runs each instance gets its own row.
+    $byLog = $dirtySaveLines | Group-Object -Property Log
+    foreach ($g in $byLog) {
+        $latest = $g.Group | Select-Object -Last 1
+        $line = "  {0,-30} {1,-11} {2,-11} {3,5:N1}%" -f `
+            $g.Name, `
+            (Format-Number $latest.Total 11), `
+            (Format-Number $latest.Skipped 11), `
+            $latest.Pct
+        Write-Host $line
+    }
+}
+
 # ----- 2c. DB per-task stage breakdown (Round 16+) ----------------------
 
 if ($dbSnapshots.Count -gt 0) {

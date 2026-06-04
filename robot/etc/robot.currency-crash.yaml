@@ -1,0 +1,39 @@
+# Robot config for the currency-crash-window verification.
+# Runs ONE login → optional GmAddCurrency → readback → write JSON snapshot.
+# Driven by tools/scripts/currency_crash_window.ps1, which calls the robot
+# twice per case (pre-kill leg, post-restart leg) and diffs the two snapshots.
+#
+# See docs/notes/currency-crash-window-verification.md.
+
+gateway_addr: "http://127.0.0.1:8081"
+zone_id: 1
+robot_count: 1
+account_fmt: "robot_%04d"
+password: "123456"
+table_dir: "../generated/tables"
+report_interval: 5
+
+mode: "currency-crash-snapshot"
+
+# Auth: same as default robot.yaml. Override on the command line if needed.
+auth_type: "satoken"
+satoken_addr: "http://127.0.0.1:18080"
+
+# Currency-crash-snapshot specifics. The driver script overrides
+# `add_amount` and `output_path` between legs:
+#   pre-kill leg : add_amount = 10000, output_path = .../leg_pre.json
+#   post-restart : add_amount = 0    , output_path = .../leg_post.json
+currency_crash:
+  account: "robot_0001"
+  add_amount: 10000
+  output_path: "logs/currency_crash_window/snapshot.json"
+
+# Profile is irrelevant in snapshot mode (no AI loop runs) but the
+# config validator still expects something legal-ish.
+profile: "stress"
+
+llm:
+  enabled: false
+  endpoint: ""
+  api_key: ""
+  model: ""
