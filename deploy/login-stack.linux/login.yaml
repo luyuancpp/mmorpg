@@ -139,7 +139,7 @@ Kafka:
   CompressionType: 0
   Idempotent: true
   MaxOpenRequests: 1
-  RetentionMs: 300000
+  RetentionMs: 86400000  # 24h, P1 数据安全加固 2026-06-03(旧值 300000 = 5min,太短)
 
 PreloadPool:
   Size: 256

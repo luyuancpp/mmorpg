@@ -47,6 +47,12 @@ type Stats struct {
 	queueWaitCount         atomic.Int64
 	queueMaxRankObserved   atomic.Int64
 
+	// gateTokenRetry: VerifyGateToken 失败时,robot 不再消耗 retry / 不算 LoginFail,
+	// 而是关掉本次连接、重新走 AssignGate(下一次 attempt 会拿到全新 token)。这个
+	// 计数器记录"被 token-expired 反弹"的次数,Round 19 用来确认 5min→10min 后
+	// 该路径是否真正归零。详见 docs/design/stress-1zone-45k-2026-06-04-round18.md §R2。
+	gateTokenRetry atomic.Int64
+
 	mu             sync.Mutex
 	loginCount     int64 // guarded by mu
 	loginTotalNs   int64 // guarded by mu — sum in nanoseconds
@@ -121,6 +127,13 @@ func (s *Stats) QueueRankSeen(rank int64) {
 	}
 }
 
+// GateTokenRetry 记录一次 "VerifyGateToken 失败 → 不计 LoginFail / 不消耗 retry,
+// 重新走 AssignGate" 的反弹。R17 R2 收尾的核心信号:Round 19 这个值应该接近 0
+// (gateTokenTTL 拉长到 10min 后,robot polling→VerifyGateToken 链路延迟应当
+// 完全覆盖掉 token TTL 窗口)。
+func (s *Stats) GateTokenRetry() { s.gateTokenRetry.Add(1) }
+func (s *Stats) GateTokenRetryCount() int64 { return s.gateTokenRetry.Load() }
+
 // StartReporter prints a summary every interval until stop is closed.
 func (s *Stats) StartReporter(interval time.Duration, stop <-chan struct{}) {
 	go func() {
@@ -175,7 +188,7 @@ func (s *Stats) report() {
 	zap.L().Info(fmt.Sprintf("[stats %s] conn=%d login_ok=%d login_fail=%d login_stuck=%d enter_ok=%d enter_fail=%d "+
 		"msg_sent=%d(%.0f/s) msg_recv=%d(%.0f/s) skill=%d scene_switch=%d avg_login=%s max_login=%s "+
 		"recon_ok=%d recon_fb=%d refresh_ok=%d refresh_fail=%d "+
-		"q_entered=%d q_admitted=%d q_expired=%d q_avg_wait=%s q_max_rank=%d",
+		"q_entered=%d q_admitted=%d q_expired=%d q_avg_wait=%s q_max_rank=%d gate_token_retry=%d",
 		elapsed,
 		s.connected.Load(),
 		s.loginOK.Load(), s.loginFail.Load(), s.loginStuck.Load(),
@@ -189,6 +202,7 @@ func (s *Stats) report() {
 		s.tokenRefreshOK.Load(), s.tokenRefreshFail.Load(),
 		s.queueEntered.Load(), s.queueAdmittedAfterWait.Load(), s.queueExpiredToken.Load(),
 		s.avgQueueWait().Truncate(time.Millisecond), s.queueMaxRankObserved.Load(),
+		s.gateTokenRetry.Load(),
 	))
 }
 

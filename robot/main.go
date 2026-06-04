@@ -181,25 +181,36 @@ func runRobot(account string, cfg *config.Config, stats *metrics.Stats, stop <-c
 			backoff = min(backoff*2, 30*time.Second)
 		}
 
-		ok, tok, exp := runRobotOnce(account, cfg, stats, stop, cachedAccessToken, cachedAccessExpire)
+		ok, tok, exp, tokenExpired := runRobotOnce(account, cfg, stats, stop, cachedAccessToken, cachedAccessExpire)
 		cachedAccessToken, cachedAccessExpire = tok, exp
 		if ok {
 			return // played successfully (or stop signal)
+		}
+		// R17 R2 收尾(Round 19): VerifyGateToken 失败 = gate token 已过期,
+		// 这是 dispatcher 签名时间 → robot 拨上来的链路延迟问题,不是 robot
+		// 自己的错。下一次 attempt 会重新走 resolveGateAddrLocal 拿全新 token,
+		// 所以这一轮不应该消耗 retry 预算,也不算 login_fail。
+		// 抵消本次 attempt 自增,backoff 用一个非常短的固定值(token 拿新的就 OK)。
+		if tokenExpired {
+			attempt--
+			backoff = 200 * time.Millisecond
 		}
 	}
 	zap.L().Error("robot gave up after retries", zap.String("account", account), zap.Int("maxRetries", maxRetries))
 }
 
 // runRobotOnce attempts a single connect→login→play cycle.
-// Returns (ok, newAccessToken, newAccessExpire):
+// Returns (ok, newAccessToken, newAccessExpire, tokenExpired):
 //   - ok=true: session ended gracefully, caller should stop retrying.
 //   - ok=false: caller should back off and retry.
+//   - tokenExpired=true: VerifyGateToken 失败,外层应该 attempt-- 抵消本次 retry,
+//     直接重新走 AssignGate 拿新 token(R17 R2 收尾,Round 19)。
 //
 // On login failure the previous cached token is preserved (maybe the issue was
 // transient). On successful login we hand back whatever the server rotated to,
 // falling back to the incoming token if access_token reconnect took the path
 // where the server doesn't rotate.
-func runRobotOnce(account string, cfg *config.Config, stats *metrics.Stats, stop <-chan struct{}, prevAccessToken string, prevAccessExpire int64) (ok bool, newAccessToken string, newAccessExpire int64) {
+func runRobotOnce(account string, cfg *config.Config, stats *metrics.Stats, stop <-chan struct{}, prevAccessToken string, prevAccessExpire int64) (ok bool, newAccessToken string, newAccessExpire int64, tokenExpired bool) {
 	newAccessToken, newAccessExpire = prevAccessToken, prevAccessExpire
 	// Fetch a fresh gate token for each connection attempt so the 5-min TTL
 	// is never stale — even under high robot counts or retry backoff.
@@ -234,8 +245,13 @@ func runRobotOnce(account string, cfg *config.Config, stats *metrics.Stats, stop
 
 	if len(tokenPayload) > 0 {
 		if err := gc.VerifyGateToken(tokenPayload, tokenSig); err != nil {
-			zap.L().Error("gate token failed", zap.String("account", account), zap.Error(err))
-			stats.LoginFail()
+			// R17 R2 收尾(Round 19): gate token 过期不算 robot 的错,也不消耗
+			// retry 预算 —— 让外层重新走 AssignGate 拿一个全新 token。计入
+			// gate_token_retry 计数器以便复盘观测。详见
+			// docs/design/stress-1zone-45k-2026-06-04-round18.md §R2。
+			zap.L().Warn("gate token verify failed, will refetch", zap.String("account", account), zap.Error(err))
+			stats.GateTokenRetry()
+			tokenExpired = true
 			return
 		}
 	}

@@ -184,7 +184,9 @@ type KafkaConfig struct {
 	CompressionType  sarama.CompressionCodec `json:"CompressionType"` // none/gzip/snappy
 	Idempotent       bool                    `json:"Idempotent"`
 	MaxOpenRequests  int                     `json:"MaxOpenRequests"` // Must be 1 when idempotent
-	RetentionMs      int64                   `json:"RetentionMs,default=300000"` // Topic retention in ms (default 5 min)
+	RetentionMs      int64                   `json:"RetentionMs,default=86400000"` // Topic retention in ms (default 24h)
+	                                                                                  // P1 数据安全加固 2026-06-03: 旧值 300000 (5min)
+	                                                                                  // 太短,db service 卡住会丢数据
 }
 
 // SnowflakeConf holds snowflake ID generator settings.

@@ -5,12 +5,11 @@ import (
 	"fmt"
 	"os"
 	"scene_manager/internal/config"
-	"strconv"
-	"strings"
 	"time"
 
 	"shared/generated/table"
 	"shared/snowflake"
+	"shared/snowflakealloc"
 
 	"github.com/segmentio/kafka-go"
 	"github.com/zeromicro/go-zero/core/logx"
@@ -19,11 +18,12 @@ import (
 )
 
 type ServiceContext struct {
-	Config     config.Config
-	Redis      *redis.Redis
-	Kafka      *kafka.Writer
-	Etcd       *clientv3.Client
-	SceneIDGen *snowflake.Node
+	Config      config.Config
+	Redis       *redis.Redis
+	Kafka       *kafka.Writer
+	Etcd        *clientv3.Client
+	SceneIDGen  *snowflake.Node
+	snowflakeHd *snowflakealloc.Handle // 持有 worker id 的 etcd lease,进程退出时 Close
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
@@ -37,6 +37,24 @@ func NewServiceContext(c config.Config) *ServiceContext {
 
 	table.LoadTables(c.TableDir, c.UseBinary)
 
+	// 通过 shared/snowflakealloc 拿一个独立于 NodeInfo.NodeId 的 Snowflake worker id。
+	// 关键点:
+	//   - prefix="/scene_manager" 与历史 key 完全一致(老的 mustAllocNodeID 用的就是这套路径),
+	//     所以同 hostname 重启仍然复用同一个 worker id —— 不破坏现网数据。
+	//   - 这个 worker id 与 noderegistry 里分配的 NodeInfo.NodeId **解耦**,
+	//     reRegister 切换 NodeInfo.NodeId 不会影响 Snowflake ID 生成。
+	host, err := os.Hostname()
+	if err != nil {
+		panic(fmt.Sprintf("snowflake: failed to get hostname: %v", err))
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	hd, err := snowflakealloc.AllocateWithKeepAlive(ctx, etcdCli, "/scene_manager", host, snowflakealloc.Options{LeaseTTL: 60})
+	if err != nil {
+		panic(fmt.Sprintf("snowflake worker id alloc failed: %v", err))
+	}
+	logx.Infof("[scene_manager] snowflake worker id = %d (host=%s)", hd.WorkerID, host)
+
 	return &ServiceContext{
 		Config: c,
 		Redis:  redis.MustNewRedis(c.Redis.RedisConf),
@@ -48,144 +66,18 @@ func NewServiceContext(c config.Config) *ServiceContext {
 			WriteTimeout:           1 * time.Second,
 			Async:                  true,
 		},
-		Etcd:       etcdCli,
-		SceneIDGen: snowflake.NewNode(mustAllocNodeID(etcdCli)),
+		Etcd:        etcdCli,
+		SceneIDGen:  snowflake.NewNode(hd.WorkerID),
+		snowflakeHd: hd,
 	}
 }
 
-const (
-	snowflakeNodePrefix = "/scene_manager/snowflake_nodes/"
-	snowflakeIDPrefix   = "/scene_manager/snowflake_ids/"
-	snowflakeLeaseTTL   = 60 // seconds
-)
-
-// mustAllocNodeID allocates a globally unique SnowFlake node ID via etcd.
-// Same hostname always gets the same ID (survives restarts).
-// Different hostnames are guaranteed different IDs (atomic CAS).
-//
-// Each allocation is protected by an etcd lease (60s TTL, background KeepAlive).
-// When a pod dies, both its hostname key and ID slot key expire automatically,
-// making the ID available for recycling by future allocations.
-//
-// Key layout:
-//   /scene_manager/snowflake_nodes/{hostname} -> id   (lease)
-//   /scene_manager/snowflake_ids/{id}         -> host (lease)
-func mustAllocNodeID(cli *clientv3.Client) uint64 {
-	host, err := os.Hostname()
-	if err != nil {
-		panic("snowflake: failed to get hostname: " + err.Error())
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	// Grant a lease and start background keep-alive.
-	leaseResp, err := cli.Grant(ctx, snowflakeLeaseTTL)
-	if err != nil {
-		panic(fmt.Sprintf("snowflake: etcd lease grant failed: %v", err))
-	}
-	leaseID := leaseResp.ID
-
-	// KeepAlive runs until the etcd client is closed or the process exits.
-	// We MUST drain the response channel: if nobody reads from it, the etcd
-	// client's 16-slot buffer fills up and emits
-	//   "lease keepalive response queue is full; dropping response send"
-	// every ttl/3 seconds. Spin a tiny goroutine that just discards responses
-	// (the lease itself stays alive regardless).
-	kaCh, err := cli.KeepAlive(context.Background(), leaseID)
-	if err != nil {
-		panic(fmt.Sprintf("snowflake: etcd keep-alive failed: %v", err))
-	}
-	go func() {
-		for range kaCh {
-		}
-	}()
-
-	hostKey := snowflakeNodePrefix + host
-
-	for {
-		// 1. Try to reclaim existing hostname entry with our new lease.
-		resp, err := cli.Get(ctx, hostKey)
-		if err != nil {
-			panic(fmt.Sprintf("snowflake: etcd get failed: %v", err))
-		}
-		if len(resp.Kvs) > 0 {
-			id, _ := strconv.ParseUint(string(resp.Kvs[0].Value), 10, 64)
-			idStr := string(resp.Kvs[0].Value)
-			idKey := snowflakeIDPrefix + idStr
-
-			txnResp, err := cli.Txn(ctx).
-				If(clientv3.Compare(clientv3.Value(hostKey), "=", idStr)).
-				Then(
-					clientv3.OpPut(hostKey, idStr, clientv3.WithLease(leaseID)),
-					clientv3.OpPut(idKey, host, clientv3.WithLease(leaseID)),
-				).
-				Commit()
-			if err == nil && txnResp.Succeeded {
-				logx.Infof("[SnowFlake] reused node ID = %d (hostname=%s)", id, host)
-				return id
-			}
-		}
-
-		// 2. Collect all IDs currently in use.
-		usedIDs := make(map[uint64]bool)
-
-		// New-style ID slot keys (with lease).
-		idsResp, err := cli.Get(ctx, snowflakeIDPrefix, clientv3.WithPrefix())
-		if err != nil {
-			panic(fmt.Sprintf("snowflake: etcd scan ids failed: %v", err))
-		}
-		for _, kv := range idsResp.Kvs {
-			idStr := strings.TrimPrefix(string(kv.Key), snowflakeIDPrefix)
-			id, _ := strconv.ParseUint(idStr, 10, 64)
-			usedIDs[id] = true
-		}
-
-		// Old-style hostname keys (backward compat: permanent keys from before lease migration).
-		nodesResp, err := cli.Get(ctx, snowflakeNodePrefix, clientv3.WithPrefix())
-		if err != nil {
-			panic(fmt.Sprintf("snowflake: etcd scan nodes failed: %v", err))
-		}
-		for _, kv := range nodesResp.Kvs {
-			id, _ := strconv.ParseUint(string(kv.Value), 10, 64)
-			usedIDs[id] = true
-		}
-
-		// 3. Find the smallest free ID.
-		targetID := uint64(snowflake.NodeMask) + 1
-		for i := uint64(0); i <= snowflake.NodeMask; i++ {
-			if !usedIDs[i] {
-				targetID = i
-				break
-			}
-		}
-		if targetID > snowflake.NodeMask {
-			panic(fmt.Sprintf("snowflake: node ID pool exhausted (max %d)", snowflake.NodeMask))
-		}
-
-		// 4. Atomically claim the ID (dual-key CAS).
-		idStr := strconv.FormatUint(targetID, 10)
-		idKey := snowflakeIDPrefix + idStr
-
-		txnResp, err := cli.Txn(ctx).
-			If(
-				clientv3.Compare(clientv3.CreateRevision(hostKey), "=", 0),
-				clientv3.Compare(clientv3.CreateRevision(idKey), "=", 0),
-			).
-			Then(
-				clientv3.OpPut(hostKey, idStr, clientv3.WithLease(leaseID)),
-				clientv3.OpPut(idKey, host, clientv3.WithLease(leaseID)),
-			).
-			Commit()
-		if err != nil {
-			panic(fmt.Sprintf("snowflake: etcd txn failed: %v", err))
-		}
-
-		if txnResp.Succeeded {
-			logx.Infof("[SnowFlake] allocated node ID = %d (hostname=%s)", targetID, host)
-			return targetID
-		}
-		// CAS failed — another instance raced us. Retry with fresh scan.
+// Stop 释放 Snowflake worker id 的 etcd lease(以及 KeepAlive goroutine)。
+// scene_manager 主流程在退出时应当调用,否则 worker id 要等 lease TTL 自然过期才能复用。
+func (sc *ServiceContext) Stop() {
+	if sc.snowflakeHd != nil {
+		sc.snowflakeHd.Close()
+		sc.snowflakeHd = nil
 	}
 }
 

@@ -109,7 +109,17 @@ services:
     container_name: redis
     ports:
       - "6379:6379"
-    command: redis-server --appendonly yes
+    # P0 OOM 防御(2026-06-03 docs/notes/redis-oom-data-safety-qa-record.md):
+    #   - maxmemory 8gb         避免撑爆宿主机内存触发 OOM Killer 让所有容器一起死
+    #   - allkeys-lfu           满了按 LFU 淘汰冷 key,服务存活;LFU 比 LRU 对游戏 cache
+    #                           命中率更高 — 在线玩家高频访问自然保留,冷玩家 cache 优先淘汰
+    #   - notify-keyspace-events Eg  开启 evict/expire 事件通知,为后续应用层主动卸载预留
+    command: >
+      redis-server
+      --appendonly yes
+      --maxmemory 8gb
+      --maxmemory-policy allkeys-lfu
+      --notify-keyspace-events Eg
     volumes:
       - redis-data:/data
     restart: unless-stopped
