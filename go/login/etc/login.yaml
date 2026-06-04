@@ -257,4 +257,7 @@ Kafka:
   CompressionType: 0
   Idempotent: true
   MaxOpenRequests: 1
-  RetentionMs: 300000 # Topic retention: 5 min (enough for DB service restart)
+  RetentionMs: 86400000 # Topic retention: 24h (P1 数据安全加固 2026-06-03)
+                        # 旧值 300000 (5min) 会让 db service 卡住超过 5 分钟时丢数据,
+                        # 24h 给运维处理事故留出充足窗口。详见
+                        # docs/notes/redis-oom-data-safety-qa-record.md P1 章节。

@@ -1,8 +1,17 @@
 package node
 
+// 本文件中的 allocator 逻辑在 guild / friend / player_locator / scene_manager
+// 四个服务里是逐字相同的副本(只有 import 包名不同)。
+// 若需修改 allocator 行为,请同步修改另外三个服务的对应文件:
+//   - go/guild/internal/node/node.go
+//   - go/friend/internal/node/node.go
+//   - go/scene_manager/internal/noderegistry/registry.go
+
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -12,7 +21,14 @@ import (
 
 	"player_locator/internal/config"
 	proto_common "proto/common/base"
+	"shared/snowflake"
 )
+
+// nodeIDMin 是合法 node_id 的下界。0 永远作为 "未分配 / 非法值" 保留。
+const nodeIDMin uint32 = 1
+
+// nodeIDMax 与 Snowflake worker id 位宽对齐(shared/snowflake.NodeMask)。
+var nodeIDMax = uint32(snowflake.NodeMask)
 
 type Node struct {
 	Info       *proto_common.NodeInfo
@@ -25,9 +41,18 @@ func rpcPrefix(nodeType uint32) string {
 	return fmt.Sprintf("%s.rpc", proto_common.ENodeType_name[int32(nodeType)])
 }
 
-func rpcPath(nodeType, zoneId, nodeId uint32) string {
-	prefix := rpcPrefix(nodeType)
+func rpcPath(prefix string, zoneId, nodeType, nodeId uint32) string {
 	return fmt.Sprintf("%s/zone/%d/node_type/%d/node_id/%d", prefix, zoneId, nodeType, nodeId)
+}
+
+// allocationKey 是跨 zone 的全局占位 key —— 路径里不带 zone,
+// 因此两个 zone 的实例不可能同时拿到同一个 (node_type, node_id)。
+func allocationKey(prefix string, nodeType, nodeID uint32) string {
+	return fmt.Sprintf("%s/allocated/node_type/%d/node_id/%d", prefix, nodeType, nodeID)
+}
+
+func allocationKeyPrefix(prefix string, nodeType uint32) string {
+	return fmt.Sprintf("%s/allocated/node_type/%d/node_id/", prefix, nodeType)
 }
 
 func NewNode(nodeType uint32, ip string, port uint32) (*Node, error) {
@@ -41,7 +66,6 @@ func NewNode(nodeType uint32, ip string, port uint32) (*Node, error) {
 		return nil, fmt.Errorf("etcd connect failed: %w", err)
 	}
 
-	// Create etcd lease
 	grant, err := client.Grant(context.Background(), cfg.Node.LeaseTTL)
 	if err != nil {
 		client.Close()
@@ -60,14 +84,14 @@ func NewNode(nodeType uint32, ip string, port uint32) (*Node, error) {
 		NodeUuid:     uuid.New().String(),
 	}
 
-	// Allocate node ID (find first unused slot)
 	prefix := rpcPrefix(nodeType)
 	nodeID, err := allocateNodeID(context.Background(), client, prefix, info, grant.ID)
 	if err != nil {
+		_, _ = client.Revoke(context.Background(), grant.ID)
 		client.Close()
 		return nil, err
 	}
-	info.NodeId = uint32(nodeID)
+	info.NodeId = nodeID
 
 	return &Node{
 		Info:    info,
@@ -76,50 +100,88 @@ func NewNode(nodeType uint32, ip string, port uint32) (*Node, error) {
 	}, nil
 }
 
+// allocateNodeID 在 (node_type) 下找空闲 node_id 并通过 etcd Txn CAS 占住。
+// 详细设计见 go/guild/internal/node/node.go 同名函数。
 func allocateNodeID(ctx context.Context, client *clientv3.Client, prefix string, info *proto_common.NodeInfo, leaseID clientv3.LeaseID) (uint32, error) {
-	resp, err := client.Get(ctx, prefix, clientv3.WithPrefix())
+	usedIDs, err := scanUsedNodeIDs(ctx, client, prefix, info.NodeType)
 	if err != nil {
-		return 0, fmt.Errorf("etcd get failed: %w", err)
+		return 0, err
 	}
 
-	usedIDs := make(map[uint32]bool)
-	var maxID uint32
-	for _, kv := range resp.Kvs {
-		var n proto_common.NodeInfo
-		if err := protojson.Unmarshal(kv.Value, &n); err != nil {
-			continue
-		}
-		usedIDs[n.NodeId] = true
-		if n.NodeId > maxID {
-			maxID = n.NodeId
-		}
-	}
-
-	for id := uint32(0); id < maxID+10; id++ {
+	for id := nodeIDMin; id <= nodeIDMax; id++ {
 		if usedIDs[id] {
 			continue
 		}
-
-		info.NodeId = id
-		data, err := protojson.Marshal(info)
+		ok, err := tryClaimNodeID(ctx, client, prefix, id, info, leaseID)
 		if err != nil {
+			logx.Errorf("player_locator allocator: txn failed for node_id=%d: %v", id, err)
 			continue
 		}
-
-		key := rpcPath(info.NodeType, info.ZoneId, id)
-		txnResp, err := client.Txn(ctx).
-			If(clientv3.Compare(clientv3.Version(key), "=", 0)).
-			Then(clientv3.OpPut(key, string(data), clientv3.WithLease(leaseID))).
-			Commit()
-		if err != nil {
-			continue
-		}
-		if txnResp.Succeeded {
+		if ok {
 			return id, nil
+		}
+		usedIDs[id] = true
+	}
+	return 0, fmt.Errorf("no available node_id in [%d, %d]", nodeIDMin, nodeIDMax)
+}
+
+func scanUsedNodeIDs(ctx context.Context, client *clientv3.Client, prefix string, nodeType uint32) (map[uint32]bool, error) {
+	used := make(map[uint32]bool)
+
+	allocPrefix := allocationKeyPrefix(prefix, nodeType)
+	allocResp, err := client.Get(ctx, allocPrefix, clientv3.WithPrefix())
+	if err != nil {
+		return nil, fmt.Errorf("etcd get alloc prefix: %w", err)
+	}
+	for _, kv := range allocResp.Kvs {
+		tail := strings.TrimPrefix(string(kv.Key), allocPrefix)
+		if id, err := strconv.ParseUint(tail, 10, 32); err == nil {
+			used[uint32(id)] = true
 		}
 	}
 
-	return 0, fmt.Errorf("failed to allocate node ID")
+	rpcResp, err := client.Get(ctx, prefix, clientv3.WithPrefix())
+	if err != nil {
+		return nil, fmt.Errorf("etcd get rpc prefix: %w", err)
+	}
+	for _, kv := range rpcResp.Kvs {
+		key := string(kv.Key)
+		if strings.Contains(key, "/allocated/") {
+			continue
+		}
+		var ni proto_common.NodeInfo
+		if err := protojson.Unmarshal(kv.Value, &ni); err != nil {
+			continue
+		}
+		if ni.NodeId >= nodeIDMin {
+			used[ni.NodeId] = true
+		}
+	}
+
+	return used, nil
+}
+
+func tryClaimNodeID(ctx context.Context, client *clientv3.Client, prefix string, nodeID uint32, info *proto_common.NodeInfo, leaseID clientv3.LeaseID) (bool, error) {
+	allocKey := allocationKey(prefix, info.NodeType, nodeID)
+	rpcKey := rpcPath(prefix, info.ZoneId, info.NodeType, nodeID)
+
+	info.NodeId = nodeID
+	value, err := protojson.Marshal(info)
+	if err != nil {
+		return false, fmt.Errorf("marshal node info: %w", err)
+	}
+
+	txnResp, err := client.Txn(ctx).
+		If(clientv3.Compare(clientv3.Version(allocKey), "=", 0)).
+		Then(
+			clientv3.OpPut(allocKey, info.NodeUuid, clientv3.WithLease(leaseID)),
+			clientv3.OpPut(rpcKey, string(value), clientv3.WithLease(leaseID)),
+		).
+		Commit()
+	if err != nil {
+		return false, err
+	}
+	return txnResp.Succeeded, nil
 }
 
 func (n *Node) KeepAlive() error {
@@ -153,14 +215,22 @@ func (n *Node) Close() error {
 	if n.cancelFunc != nil {
 		n.cancelFunc()
 	}
+	if n.client == nil {
+		return nil
+	}
 
-	key := rpcPath(n.Info.NodeType, n.Info.ZoneId, n.Info.NodeId)
-	if _, err := n.client.Delete(context.Background(), key); err != nil {
-		logx.Errorf("Failed to delete node key: %v", err)
+	prefix := rpcPrefix(n.Info.NodeType)
+	rpcKey := rpcPath(prefix, n.Info.ZoneId, n.Info.NodeType, n.Info.NodeId)
+	allocKey := allocationKey(prefix, n.Info.NodeType, n.Info.NodeId)
+
+	if _, err := n.client.Txn(context.Background()).
+		Then(clientv3.OpDelete(rpcKey), clientv3.OpDelete(allocKey)).
+		Commit(); err != nil {
+		logx.Errorf("player_locator node close: delete keys failed: %v", err)
 	}
 
 	if _, err := n.client.Revoke(context.Background(), n.leaseID); err != nil {
-		logx.Errorf("Failed to revoke lease: %v", err)
+		logx.Errorf("player_locator node close: revoke lease failed: %v", err)
 	}
 
 	return n.client.Close()

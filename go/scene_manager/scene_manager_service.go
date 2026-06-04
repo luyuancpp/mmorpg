@@ -32,6 +32,7 @@ func main() {
 	var c config.Config
 	conf.MustLoad(*configFile, &c)
 	svcCtx := svc.NewServiceContext(c)
+	defer svcCtx.Stop()
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

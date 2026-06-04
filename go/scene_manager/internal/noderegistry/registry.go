@@ -4,12 +4,22 @@
 // The value is a protojson-serialized NodeInfo message.
 package noderegistry
 
+// 本文件中的 allocator 逻辑在 guild / friend / player_locator / scene_manager
+// 四个服务里是逐字相同的副本(只有 import 包名和 reRegister 行为不同)。
+// 若需修改 allocator 行为,请同步修改另外三个服务的对应文件:
+//   - go/guild/internal/node/node.go
+//   - go/friend/internal/node/node.go
+//   - go/player_locator/internal/node/node.go
+
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"strings"
 	"time"
 
 	base "proto/common/base"
+	"shared/snowflake"
 
 	"github.com/google/uuid"
 	"github.com/zeromicro/go-zero/core/logx"
@@ -17,13 +27,21 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
+// nodeIDMin 是合法 node_id 的下界。0 永远作为 "未分配 / 非法值" 保留。
+const nodeIDMin uint32 = 1
+
+// nodeIDMax 与 Snowflake worker id 位宽对齐(shared/snowflake.NodeMask)。
+var nodeIDMax = uint32(snowflake.NodeMask)
+
 // NodeRegistration manages etcd registration with lease and keepalive.
 type NodeRegistration struct {
 	client   *clientv3.Client
 	leaseID  clientv3.LeaseID
 	ttl      int64
-	key      string
-	value    string
+	prefix   string // rpcPrefix(nodeType),用于构造两个 key
+	rpcKey   string // 当前生效的 rpcPath(随 reRegister 可能变,如果 node_id 换了)
+	allocKey string // 当前生效的 allocation key(随 node_id 一起变)
+	value    string // 当前 rpcPath 写入的 NodeInfo protojson
 	cancelFn context.CancelFunc
 	Info     *base.NodeInfo
 }
@@ -33,9 +51,19 @@ func rpcPrefix(nodeType uint32) string {
 	return fmt.Sprintf("%s.rpc", base.ENodeType_name[int32(nodeType)])
 }
 
-// rpcPath returns the full etcd key for a node instance.
+// rpcPath 是 per-zone 服务发现 key,C++ 端按这个路径 watch NodeInfo。
 func rpcPath(prefix string, zoneId, nodeType, nodeId uint32) string {
 	return fmt.Sprintf("%s/zone/%d/node_type/%d/node_id/%d", prefix, zoneId, nodeType, nodeId)
+}
+
+// allocationKey 是跨 zone 的全局占位 key —— 路径里不带 zone,
+// 因���两个 zone 的实例不可能同时拿到同一个 (node_type, node_id)。
+func allocationKey(prefix string, nodeType, nodeID uint32) string {
+	return fmt.Sprintf("%s/allocated/node_type/%d/node_id/%d", prefix, nodeType, nodeID)
+}
+
+func allocationKeyPrefix(prefix string, nodeType uint32) string {
+	return fmt.Sprintf("%s/allocated/node_type/%d/node_id/", prefix, nodeType)
 }
 
 // Register creates a NodeInfo entry in etcd with a lease, using atomic CAS for node_id allocation.
@@ -69,69 +97,113 @@ func Register(cli *clientv3.Client, nodeType, zoneId uint32, ip string, port uin
 	// Allocate node_id via CAS
 	nodeID, err := allocateNodeID(ctx, cli, prefix, info, leaseResp.ID)
 	if err != nil {
+		_, _ = cli.Revoke(context.Background(), leaseResp.ID)
 		return nil, fmt.Errorf("node ID allocation failed: %w", err)
 	}
 	info.NodeId = nodeID
 
-	key := rpcPath(prefix, zoneId, nodeType, nodeID)
+	rpcKey := rpcPath(prefix, zoneId, nodeType, nodeID)
+	allocKey := allocationKey(prefix, nodeType, nodeID)
 	value, err := protojson.Marshal(info)
 	if err != nil {
+		_, _ = cli.Revoke(context.Background(), leaseResp.ID)
 		return nil, fmt.Errorf("protojson marshal failed: %w", err)
 	}
 
 	return &NodeRegistration{
-		client:  cli,
-		leaseID: leaseResp.ID,
-		ttl:     ttl,
-		key:     key,
-		value:   string(value),
-		Info:    info,
+		client:   cli,
+		leaseID:  leaseResp.ID,
+		ttl:      ttl,
+		prefix:   prefix,
+		rpcKey:   rpcKey,
+		allocKey: allocKey,
+		value:    string(value),
+		Info:     info,
 	}, nil
 }
 
-// allocateNodeID finds the smallest unused node_id under the prefix via etcd CAS.
+// allocateNodeID 在 (node_type) 下找空闲 node_id 并通过 etcd Txn CAS 占住。
+// 详细设计见 go/guild/internal/node/node.go 同名函数。
 func allocateNodeID(ctx context.Context, cli *clientv3.Client, prefix string, info *base.NodeInfo, leaseID clientv3.LeaseID) (uint32, error) {
-	resp, err := cli.Get(ctx, prefix, clientv3.WithPrefix())
+	usedIDs, err := scanUsedNodeIDs(ctx, cli, prefix, info.NodeType)
 	if err != nil {
 		return 0, err
 	}
 
-	usedIDs := make(map[uint32]bool)
-	maxID := uint32(0)
-	for _, kv := range resp.Kvs {
+	for id := nodeIDMin; id <= nodeIDMax; id++ {
+		if usedIDs[id] {
+			continue
+		}
+		ok, err := tryClaimNodeID(ctx, cli, prefix, id, info, leaseID)
+		if err != nil {
+			logx.Errorf("scene_manager allocator: txn failed for node_id=%d: %v", id, err)
+			continue
+		}
+		if ok {
+			return id, nil
+		}
+		usedIDs[id] = true
+	}
+	return 0, fmt.Errorf("no available node_id in [%d, %d]", nodeIDMin, nodeIDMax)
+}
+
+func scanUsedNodeIDs(ctx context.Context, cli *clientv3.Client, prefix string, nodeType uint32) (map[uint32]bool, error) {
+	used := make(map[uint32]bool)
+
+	allocPrefix := allocationKeyPrefix(prefix, nodeType)
+	allocResp, err := cli.Get(ctx, allocPrefix, clientv3.WithPrefix())
+	if err != nil {
+		return nil, fmt.Errorf("etcd get alloc prefix: %w", err)
+	}
+	for _, kv := range allocResp.Kvs {
+		tail := strings.TrimPrefix(string(kv.Key), allocPrefix)
+		if id, err := strconv.ParseUint(tail, 10, 32); err == nil {
+			used[uint32(id)] = true
+		}
+	}
+
+	rpcResp, err := cli.Get(ctx, prefix, clientv3.WithPrefix())
+	if err != nil {
+		return nil, fmt.Errorf("etcd get rpc prefix: %w", err)
+	}
+	for _, kv := range rpcResp.Kvs {
+		key := string(kv.Key)
+		if strings.Contains(key, "/allocated/") {
+			continue
+		}
 		var ni base.NodeInfo
 		if err := protojson.Unmarshal(kv.Value, &ni); err != nil {
 			continue
 		}
-		usedIDs[ni.NodeId] = true
-		if ni.NodeId > maxID {
-			maxID = ni.NodeId
+		if ni.NodeId >= nodeIDMin {
+			used[ni.NodeId] = true
 		}
 	}
 
-	searchRange := maxID + 10
-	for id := uint32(0); id < searchRange; id++ {
-		if usedIDs[id] {
-			continue
-		}
-		info.NodeId = id
-		val, err := protojson.Marshal(info)
-		if err != nil {
-			continue
-		}
-		key := rpcPath(prefix, info.ZoneId, info.NodeType, id)
-		txnResp, err := cli.Txn(ctx).
-			If(clientv3.Compare(clientv3.Version(key), "=", 0)).
-			Then(clientv3.OpPut(key, string(val), clientv3.WithLease(leaseID))).
-			Commit()
-		if err != nil {
-			continue
-		}
-		if txnResp.Succeeded {
-			return id, nil
-		}
+	return used, nil
+}
+
+func tryClaimNodeID(ctx context.Context, cli *clientv3.Client, prefix string, nodeID uint32, info *base.NodeInfo, leaseID clientv3.LeaseID) (bool, error) {
+	allocKey := allocationKey(prefix, info.NodeType, nodeID)
+	rpcKey := rpcPath(prefix, info.ZoneId, info.NodeType, nodeID)
+
+	info.NodeId = nodeID
+	value, err := protojson.Marshal(info)
+	if err != nil {
+		return false, fmt.Errorf("marshal node info: %w", err)
 	}
-	return 0, fmt.Errorf("no available node_id in range [0, %d)", searchRange)
+
+	txnResp, err := cli.Txn(ctx).
+		If(clientv3.Compare(clientv3.Version(allocKey), "=", 0)).
+		Then(
+			clientv3.OpPut(allocKey, info.NodeUuid, clientv3.WithLease(leaseID)),
+			clientv3.OpPut(rpcKey, string(value), clientv3.WithLease(leaseID)),
+		).
+		Commit()
+	if err != nil {
+		return false, err
+	}
+	return txnResp.Succeeded, nil
 }
 
 // KeepAlive starts a background goroutine that maintains the etcd lease
@@ -162,7 +234,27 @@ func (nr *NodeRegistration) KeepAlive() {
 	}()
 }
 
-// reRegister grants a new lease and re-puts the node key.
+// reRegister 在 lease 丢失后重新注册到 etcd。
+//
+// 关键安全点:
+//
+//	旧实现是直接 Put(nr.key, nr.value, 新 lease) —— 这是个严重 bug。
+//	lease 丢失 → 老 allocationKey/rpcKey 会被 etcd 自动清掉 → 期间另一个实例可能已经
+//	抢占了同一个 node_id。如果此时盲目 Put 老 key,会覆盖别人的 NodeInfo,
+//	C++ watcher 把客户端路由到错误节点。
+//
+// 新实现:
+//  1. 拿新 lease。
+//  2. 先尝试 "CAS 重夺原 node_id":要求 allocationKey 当前不存在
+//     (它本来就该不存在,因为老 lease 已经被 revoke / expired)。
+//     用同一个 Txn 重新 Put allocationKey + rpcKey,挂新 lease。
+//     注意:这里不能用 "Value == nr.Info.NodeUuid" 作为条件 —— 因为 lease 过期后
+//     etcd 已经把 key 删了,Value 是空的;能成功的唯一条件是 "key 仍然不存在",
+//     这恰好覆盖了 "别人没抢" 这个语义。
+//  3. CAS 失败 → 说明原 node_id 已被其他 uuid 占用。这时绝不覆盖,而是调用
+//     allocateNodeID 拿一个全新的 node_id,更新 nr.rpcKey / nr.allocKey / Info.NodeId / nr.value。
+//     scene_manager 没有 "我必须是 node N" 的持久化语义,换 ID 是安全的。
+//  4. 拿到新 / 重夺到旧 node_id 之后,重新启动 KeepAlive。
 func (nr *NodeRegistration) reRegister(ctx context.Context) {
 	backoff := time.Second
 	for {
@@ -181,14 +273,49 @@ func (nr *NodeRegistration) reRegister(ctx context.Context) {
 		}
 		nr.leaseID = resp.ID
 
-		_, err = nr.client.Put(ctx, nr.key, nr.value, clientv3.WithLease(nr.leaseID))
+		// 步骤 1:试着 CAS 重夺原 node_id —— allocationKey 不存在才能写入。
+		txnResp, err := nr.client.Txn(ctx).
+			If(clientv3.Compare(clientv3.Version(nr.allocKey), "=", 0)).
+			Then(
+				clientv3.OpPut(nr.allocKey, nr.Info.NodeUuid, clientv3.WithLease(nr.leaseID)),
+				clientv3.OpPut(nr.rpcKey, nr.value, clientv3.WithLease(nr.leaseID)),
+			).
+			Commit()
 		if err != nil {
-			logx.Errorf("[NodeRegistry] re-put failed: %v, retrying in %v", err, backoff)
+			logx.Errorf("[NodeRegistry] re-claim txn failed: %v, retrying in %v", err, backoff)
+			_, _ = nr.client.Revoke(context.Background(), nr.leaseID)
 			time.Sleep(backoff)
 			backoff = min(backoff*2, 30*time.Second)
 			continue
 		}
 
+		if !txnResp.Succeeded {
+			// 步骤 2:原 node_id 已被别的实例占用 —— 决不能 Put 覆盖。
+			// 改成 allocate 一个全新的 node_id。
+			logx.Errorf("[NodeRegistry] original node_id=%d taken by another instance, allocating new one",
+				nr.Info.NodeId)
+			newID, err := allocateNodeID(ctx, nr.client, nr.prefix, nr.Info, nr.leaseID)
+			if err != nil {
+				logx.Errorf("[NodeRegistry] re-allocate node_id failed: %v, retrying in %v", err, backoff)
+				_, _ = nr.client.Revoke(context.Background(), nr.leaseID)
+				time.Sleep(backoff)
+				backoff = min(backoff*2, 30*time.Second)
+				continue
+			}
+			// allocateNodeID 已经把 NodeId 写回 nr.Info 并完成双 key Put,
+			// 这里只需要同步更新本地缓存的 key/value。
+			nr.Info.NodeId = newID
+			nr.rpcKey = rpcPath(nr.prefix, nr.Info.ZoneId, nr.Info.NodeType, newID)
+			nr.allocKey = allocationKey(nr.prefix, nr.Info.NodeType, newID)
+			if v, err := protojson.Marshal(nr.Info); err == nil {
+				nr.value = string(v)
+			}
+			logx.Infof("[NodeRegistry] re-registered with new node_id=%d", newID)
+		} else {
+			logx.Infof("[NodeRegistry] re-claimed original node_id=%d", nr.Info.NodeId)
+		}
+
+		// 步骤 3:重启 KeepAlive。
 		ch, err := nr.client.KeepAlive(ctx, nr.leaseID)
 		if err != nil {
 			logx.Errorf("[NodeRegistry] restart keepalive failed: %v", err)
@@ -215,7 +342,7 @@ func (nr *NodeRegistration) reRegister(ctx context.Context) {
 	}
 }
 
-// Close stops keepalive, deletes the etcd key, and revokes the lease.
+// Close 停止 keepalive,删除两个 key(rpcPath + allocationKey),并 Revoke lease。
 func (nr *NodeRegistration) Close() {
 	if nr.cancelFn != nil {
 		nr.cancelFn()
@@ -224,8 +351,13 @@ func (nr *NodeRegistration) Close() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	if _, err := nr.client.Delete(ctx, nr.key); err != nil {
-		logx.Errorf("[NodeRegistry] failed to delete key: %v", err)
+	if _, err := nr.client.Txn(ctx).
+		Then(
+			clientv3.OpDelete(nr.rpcKey),
+			clientv3.OpDelete(nr.allocKey),
+		).
+		Commit(); err != nil {
+		logx.Errorf("[NodeRegistry] failed to delete keys: %v", err)
 	}
 	if _, err := nr.client.Revoke(ctx, nr.leaseID); err != nil {
 		logx.Errorf("[NodeRegistry] failed to revoke lease: %v", err)

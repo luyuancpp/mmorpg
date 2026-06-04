@@ -283,7 +283,7 @@ func (s *ServiceContext) initLoginQueue() {
 		s.queueCapProvider,
 		s.RedisClient,
 		s.QueueHmacSecret(),
-		5*time.Minute, // gateTokenTTL — must match assigngatelogic.gateTokenTTL
+		10*time.Minute, // gateTokenTTL — must match assigngatelogic.gateTokenTTL (Round 19, R17 R2 收尾)
 		cfg.DispatchInterval,
 		cfg.SoftCapMultiplier,
 		cfg.DispatcherLockTTL,

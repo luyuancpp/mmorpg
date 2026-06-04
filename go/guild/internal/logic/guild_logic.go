@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/bwmarrin/snowflake"
 	"github.com/zeromicro/go-zero/core/logx"
 
 	"guild/internal/constants"
 	"guild/internal/data"
 	base "proto/common/base"
 	pb "proto/guild"
+	"shared/snowflake"
 )
 
 type GuildLogic struct {
@@ -39,7 +39,7 @@ func (l *GuildLogic) CreateGuild(ctx context.Context, req *pb.CreateGuildRequest
 	}
 
 	now := time.Now().UnixMilli()
-	guildID := uint64(l.snowflake.Generate().Int64())
+	guildID := l.snowflake.Generate()
 
 	guild := &data.GuildData{
 		GuildID:      guildID,

@@ -53,7 +53,9 @@ type KafkaConfig struct {
 	GroupID         string   `json:"GroupID"`                    // Consumer group ID
 	Topic           string   `json:"Topic,optional"`             // Derived from ZoneId at startup
 	PartitionCnt    int32    `json:"PartitionCnt"`               // Partition count
-	RetentionMs     int64    `json:"RetentionMs,default=300000"` // Topic retention in ms (default 5 min; matches login)
+	RetentionMs     int64    `json:"RetentionMs,default=86400000"` // Topic retention in ms (default 24h; matches login)
+	                                                                // P1 数据安全加固 2026-06-03: 旧值 300000 (5min)
+	                                                                // db service 卡 5min+ 会丢数据,24h 给运维事故充足窗口
 	IsOfflineExpand bool     `json:"IsOfflineExpand"`            // Offline expansion: true = maintenance mode
 
 	// SubShardCount controls intra-partition parallelism. 0 or 1 = legacy

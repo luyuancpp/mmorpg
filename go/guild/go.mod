@@ -3,7 +3,6 @@ module guild
 go 1.24.5
 
 require (
-	github.com/bwmarrin/snowflake v0.3.0
 	github.com/go-sql-driver/mysql v1.9.0
 	github.com/google/uuid v1.6.0
 	github.com/redis/go-redis/v9 v9.16.0
