@@ -192,7 +192,10 @@ func dataStressOneRound(
 
 	if len(tokenPayload) > 0 {
 		if err := gc.VerifyGateToken(tokenPayload, tokenSig); err != nil {
-			stats.LoginFail()
+			// R17 R2 收尾(Round 19): gate token 过期不算 login_fail,
+			// 由 data_stress 上层 retry 逻辑重新拿 token。详见
+			// docs/design/stress-1zone-45k-2026-06-04-round18.md §R2。
+			stats.GateTokenRetry()
 			return
 		}
 	}

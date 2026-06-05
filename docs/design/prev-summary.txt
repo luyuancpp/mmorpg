@@ -1,0 +1,72 @@
+
+Run directory: F:\work\mmorpg\robot\logs\stress-round18-20260604-062122
+
+=== Robot per-minute stats =============================================
+
+  time   conn        login_ok   enter_ok   enter_fail  recon_fb  max_login  msg/s
+  ----   ----        --------   --------   ----------  --------  ---------  -----
+  1m0s         1,193      1,182      1,182           0         0 797ms      251/s
+
+=== EnterGame end-to-end (entergame_*) =================================
+
+  snapshot                       success  preload_failed  apply_failed  fail%   preload{ok}avg  preload{fail}avg  apply avg
+  --------                       -------  --------------  ------------  -----   --------------  ----------------  ---------
+  t10m_login                       29,843               0             3 0.0%     10.4ms         -                  33.2ms
+  t15m_login                       50,778               0             4 0.0%     12.1ms         -                  35.0ms
+  t18m_login                       63,449               0             5 0.0%     13.3ms         -                  36.0ms
+  t2m_login                         2,634               0             0 0.0%     14.9ms         -                  27.8ms
+  t5m_login                         9,678               0             0 0.0%      8.8ms         -                  32.6ms
+
+=== Dataloader per-stage avg (dataloader_preload_*) ====================
+
+  snapshot                       cache_check  sub_cache  dispatcher  kafka_send  cb_wait{ok}  cb_wait{fail}
+  --------                       -----------  ---------  ----------  ----------  -----------  -------------
+  t10m_login                       1.6ms        3.2ms      0.0ms       2.0ms      21.2ms      -
+  t15m_login                       1.7ms        3.3ms      0.0ms       2.1ms      29.0ms      -
+  t18m_login                       1.7ms        3.3ms      0.0ms       2.3ms      34.4ms      -
+  t2m_login                        1.5ms        3.0ms      0.0ms       2.1ms       9.4ms      -
+  t5m_login                        1.6ms        3.1ms      0.0ms       2.0ms      10.2ms      -
+
+=== SceneManager EnterScene stages (scene_manager_enter_scene_stage_seconds) ===
+
+  snapshot                       dedup     scene_res reserve  upd_loc  route_gt rel_disp cross_zn
+  --------                       --------- --------- -------- -------- -------- -------- --------
+  t10m_sm                        -          23.4ms   -          0.7ms    0.3ms  -        -
+  t15m_sm                        -          23.7ms   -          0.7ms    0.3ms  -        -
+  t18m_sm                        -          24.1ms   -          0.7ms    0.4ms  -        -
+  t2m_sm                         -          23.8ms   -          0.7ms    0.3ms  -        -
+  t5m_sm                         -          23.7ms   -          0.7ms    0.3ms  -        -
+
+=== Dirty-save skip rate (cpp scene LOG_INFO [DirtySave]) ============
+
+  scene_log                      total       skipped     skip_pct
+  ---------                      -----       -------     --------
+  scene.stdout.log                   106,691      72,850  68.2%
+
+=== DB task stages (db_task_stage_seconds, db_task_result_total) ===
+
+  snapshot                       read_total read_hdlr cache_wr publish  | write_total write_hdlr | ok      err
+  --------                       ---------- --------- -------- -------- | ----------- ---------- | ------- ----
+  t10m_db                        -          -         -        -        | -           -          |  30,106    0
+  t15m_db                        -          -         -        -        | -           -          |  48,343    0
+  t18m_db                        -          -         -        -        | -           -          |  60,818    0
+  t2m_db                         -          -         -        -        | -           -          |   4,878    0
+  t5m_db                         -          -         -        -        | -           -          |  10,764    0
+
+=== Kafka consumer lag (live) ==========================================
+
+  partition    current      log_end       lag
+  ---------    -------      -------       ---
+  0            19,548       19,548        0
+  1            20,616       20,616        0
+  2            20,350       20,350        0
+  3            19,740       19,740        0
+  4            20,500       20,500        0
+  5            19,976       19,976        0
+  6            20,894       20,894        0
+  7            20,008       20,008        0
+  8            20,870       20,870        0
+  9            20,366       20,366        0
+
+  TOTAL LAG: 0
+
