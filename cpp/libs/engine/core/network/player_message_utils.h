@@ -25,7 +25,6 @@ void BroadcastMessageToAll(uint32_t messageId, const google::protobuf::Message &
 void SendMessageToPlayerOnGrpcNode(uint32_t messageId, const google::protobuf::Message& message, Guid playerId);
 void SendMessageToPlayerOnGrpcNode(uint32_t messageId, const google::protobuf::Message& message, entt::entity player);
 
-
 void SendMessageToPlayerOnNode(uint32_t wrappedMessageId,
 	uint32_t nodeType,
 	uint32_t messageId,
@@ -37,14 +36,12 @@ void SendMessageToPlayerOnNode(uint32_t wrappedMessageId,
 	const google::protobuf::Message& message,
 	Guid playerId);
 
-
 void SendMessageToPlayerOnSceneNode(uint32_t messageId,
 	const google::protobuf::Message& message,
 	entt::entity playerEntity);
 void SendMessageToPlayerOnSceneNode(uint32_t messageId,
 	const google::protobuf::Message& message,
 	Guid playerId);
-
 
 void CallMethodOnPlayerNode(
 	uint32_t remoteMethodId,
