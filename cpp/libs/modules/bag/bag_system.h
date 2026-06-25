@@ -14,18 +14,25 @@ constexpr std::size_t kBagMaxCapacity{100};
 constexpr std::size_t kTempBagMaxCapacity{200};
 constexpr std::size_t kWarehouseMaxCapacity{200};
 
-struct BagCapacity
+// Fixed, always-present bag slots that every player owns. Stored as a
+// dense std::array<Bag, kBagTypeCount> in PlayerBagsComp, so each value
+// doubles as BOTH the array index AND the persisted bag_type on the wire
+// (BagAllData.ItemEntry.bag_type).
+//
+// Extending this enum:
+//   * New PERMANENT per-player bag (pet bag / material bag / ...): append
+//     a new entry right before kBagTypeCount and bump nothing else. Never
+//     renumber an existing value — the numbers are a persistence contract.
+//   * Runtime/temporary bags (event bags, per-pet bags that come and go):
+//     these have NO fixed slot, do not add them here. Put them in an
+//     id-keyed map instead — see the note in player_bags_comp.h.
+enum BagType : uint32_t
 {
-    std::size_t size_{kDefaultCapacity};
-};
-
-enum EnumBagType : uint32_t
-{
-    kBag = 0,
-    kWarehouse = 1,
-    kEquipment = 2,
-    kTemporary = 3,
-    kBagMax = 4,
+    kInventory = 0,  // main character inventory (人物背包)
+    kWarehouse = 1,  // bank / storage           (仓库)
+    kEquipment = 2,  // worn equipment slots     (装备栏)
+    kTemporary = 3,  // overflow / loot pickup   (溢出临时格)
+    kBagTypeCount = 4,
 };
 
 struct RemoveItemByPosParam

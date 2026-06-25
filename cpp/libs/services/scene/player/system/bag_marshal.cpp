@@ -12,11 +12,13 @@
 // Real implementation as of 2026-05-17:
 //   • Marshal walks all four Bag instances in PlayerBagsComp, emitting
 //     one ItemEntry per (guid, configId, stackSize, pos, bagType) and
-//     one capacity entry per bag.
-//   • Unmarshal reverses: for each bag clear the contents, set capacity
-//     from the snapshot, then insert items via Bag::InsertItemForRestore
-//     so the same guid+pos layout the player saw in the source zone is
-//     preserved on the destination.
+//     one capacity entry per bag. It then walks dynamicBags_, emitting
+//     one DynamicBagData (bag_id + capacity + items) per transient bag.
+//   • Unmarshal reverses: for each fixed bag clear the contents, set
+//     capacity from the snapshot, then insert items via
+//     Bag::InsertItemForRestore so the same guid+pos layout the player
+//     saw in the source zone is preserved on the destination. It then
+//     rebuilds dynamicBags_ from the DynamicBagData list.
 //
 // Schema is the conservative 5-field subset (item_uuid / config_id /
 // stack_size / pos / bag_type). Game-design extensions (enchant level,
@@ -41,11 +43,11 @@ void Marshal(entt::entity player, BagAllData& out)
         return;
     }
 
-    // Capacity slot per EnumBagType, in order kBag/kWarehouse/kEquipment/
-    // kTemporary. We always emit kBagMax entries so the consumer can
+    // Capacity slot per BagType, in order kInventory/kWarehouse/kEquipment/
+    // kTemporary. We always emit kBagTypeCount entries so the consumer can
     // index bag_type → capacity directly without a sparse map.
-    out.mutable_capacities()->Reserve(static_cast<int>(kBagMax));
-    for (uint32_t bagType = 0; bagType < static_cast<uint32_t>(kBagMax); ++bagType)
+    out.mutable_capacities()->Reserve(static_cast<int>(kBagTypeCount));
+    for (uint32_t bagType = 0; bagType < static_cast<uint32_t>(kBagTypeCount); ++bagType)
     {
         out.add_capacities(static_cast<uint32_t>(bags->bags[bagType].Capacity()));
     }
@@ -53,7 +55,7 @@ void Marshal(entt::entity player, BagAllData& out)
     // Items across all four bags. ItemEntry.bag_type tags which bag
     // each entry belongs to, so the wire shape is one flat list and
     // the consumer can group on read.
-    for (uint32_t bagType = 0; bagType < static_cast<uint32_t>(kBagMax); ++bagType)
+    for (uint32_t bagType = 0; bagType < static_cast<uint32_t>(kBagTypeCount); ++bagType)
     {
         const auto& bag = bags->bags[bagType];
         bag.ForEachItem([&out, bagType, &bag](Guid guid, const ItemComp& item) {
@@ -63,6 +65,25 @@ void Marshal(entt::entity player, BagAllData& out)
             entry->set_stack_size(item.size());
             entry->set_pos(bag.GetItemPosByGuid(guid));
             entry->set_bag_type(bagType);
+        });
+    }
+
+    // Transient runtime bags (event bags / per-pet bags). Each gets its
+    // own DynamicBagData carrying bag_id + capacity + items. Empty for
+    // most players, so this loop usually does nothing.
+    for (const auto& [bagId, bag] : bags->dynamicBags_)
+    {
+        BagAllData::DynamicBagData* dyn = out.add_dynamic_bags();
+        dyn->set_bag_id(bagId);
+        dyn->set_capacity(static_cast<uint32_t>(bag.Capacity()));
+        bag.ForEachItem([dyn, &bag](Guid guid, const ItemComp& item) {
+            ItemEntry* entry = dyn->add_items();
+            entry->set_item_uuid(static_cast<uint64_t>(guid));
+            entry->set_config_id(item.config_id());
+            entry->set_stack_size(item.size());
+            entry->set_pos(bag.GetItemPosByGuid(guid));
+            // bag_type is meaningless for dynamic bags (identified by
+            // bag_id); leave it at the proto default 0.
         });
     }
 }
@@ -75,12 +96,12 @@ void Unmarshal(entt::entity player, const BagAllData& in)
     // capacity_ via the bag's own bookkeeping, so getting capacities
     // straight before items go in matters.
     //
-    // The capacities array on the wire SHOULD have exactly kBagMax
+    // The capacities array on the wire SHOULD have exactly kBagTypeCount
     // entries (Marshal always emits that many). If we receive a
     // shorter array (older client / corrupt payload), the missing
     // bags fall through to default capacity_ from the Bag default ctor.
     const int caps = in.capacities_size();
-    for (uint32_t bagType = 0; bagType < static_cast<uint32_t>(kBagMax); ++bagType)
+    for (uint32_t bagType = 0; bagType < static_cast<uint32_t>(kBagTypeCount); ++bagType)
     {
         bags.bags[bagType].ResetFromSnapshot();
         if (static_cast<int>(bagType) < caps)
@@ -96,11 +117,11 @@ void Unmarshal(entt::entity player, const BagAllData& in)
     for (const auto& entry : in.items())
     {
         const uint32_t bagType = entry.bag_type();
-        if (bagType >= static_cast<uint32_t>(kBagMax))
+        if (bagType >= static_cast<uint32_t>(kBagTypeCount))
         {
             LOG_WARN << "[bag_marshal] dropping ItemEntry with bag_type="
-                     << bagType << " (out of range, kBagMax="
-                     << static_cast<uint32_t>(kBagMax) << ") "
+                     << bagType << " (out of range, kBagTypeCount="
+                     << static_cast<uint32_t>(kBagTypeCount) << ") "
                      << "item_uuid=" << entry.item_uuid()
                      << " config_id=" << entry.config_id()
                      << " player=" << entt::to_integral(player);
@@ -111,6 +132,25 @@ void Unmarshal(entt::entity player, const BagAllData& in)
             entry.config_id(),
             entry.stack_size(),
             entry.pos());
+    }
+
+    // Transient runtime bags. Rebuild dynamicBags_ from scratch so a
+    // re-Unmarshal (e.g. rollback into an already-populated entity)
+    // doesn't leave stale bags behind.
+    bags.dynamicBags_.clear();
+    for (const auto& dyn : in.dynamic_bags())
+    {
+        Bag& bag = bags.dynamicBags_[dyn.bag_id()];
+        bag.ResetFromSnapshot();
+        bag.SetCapacityForRestore(static_cast<std::size_t>(dyn.capacity()));
+        for (const auto& entry : dyn.items())
+        {
+            bag.InsertItemForRestore(
+                static_cast<Guid>(entry.item_uuid()),
+                entry.config_id(),
+                entry.stack_size(),
+                entry.pos());
+        }
     }
 }
 
