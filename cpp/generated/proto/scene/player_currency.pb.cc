@@ -384,7 +384,7 @@ const char descriptor_table_protodef_proto_2fscene_2fplayer_5fcurrency_2eproto[]
     "Message\"1\n\030GmUnblockCurrencyRequest\022\025\n\rc"
     "urrency_type\030\001 \001(\r\"C\n\031GmUnblockCurrencyR"
     "esponse\022&\n\rerror_message\030\001 \001(\0132\017.TipInfo"
-    "Message2\203\003\n\031SceneCurrencyClientPlayer\022>\n"
+    "Message2\210\003\n\031SceneCurrencyClientPlayer\022>\n"
     "\rGmAddCurrency\022\025.GmAddCurrencyRequest\032\026."
     "GmAddCurrencyResponse\022G\n\020GmDeductCurrenc"
     "y\022\030.GmDeductCurrencyRequest\032\031.GmDeductCu"
@@ -393,8 +393,8 @@ const char descriptor_table_protodef_proto_2fscene_2fplayer_5fcurrency_2eproto[]
     "onse\022D\n\017GmBlockCurrency\022\027.GmBlockCurrenc"
     "yRequest\032\030.GmBlockCurrencyResponse\022J\n\021Gm"
     "UnblockCurrency\022\031.GmUnblockCurrencyReque"
-    "st\032\032.GmUnblockCurrencyResponse\032\005\200\250\303\001\001B\016Z"
-    "\005scene\200\001\001\230\324a\003b\006proto3"
+    "st\032\032.GmUnblockCurrencyResponse\032\n\200\250\303\001\001\210\250\303"
+    "\001\001B\016Z\005scene\200\001\001\230\324a\003b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fscene_2fplayer_5fcurrency_2eproto_deps[3] = {
@@ -406,7 +406,7 @@ static ::absl::once_flag descriptor_table_proto_2fscene_2fplayer_5fcurrency_2epr
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fscene_2fplayer_5fcurrency_2eproto = {
     false,
     false,
-    1221,
+    1226,
     descriptor_table_protodef_proto_2fscene_2fplayer_5fcurrency_2eproto,
     "proto/scene/player_currency.proto",
     &descriptor_table_proto_2fscene_2fplayer_5fcurrency_2eproto_once,

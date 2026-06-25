@@ -76,7 +76,14 @@ void ActorStateAttributeSyncSystem::Update(const double delta)
 			allAoiEntities.emplace_back(e);
 		}
 
-		ActorBaseAttributesS2CSyncAttributes(entity, ScenePlayerSyncSyncBaseAttributeMessageId, allAoiEntities);
+		// R20 load shed: base-attribute broadcast was running EVERY frame to every
+		// visible neighbour, one of the heaviest per-frame AOI costs under 45k
+		// concentrated players. It is already dirty-gated (only emits on change),
+		// so dropping to every 2nd frame delays a sync by at most one frame
+		// (~33ms) while halving the per-frame target-list iteration + dispatch.
+		if (currentFrame % 2 == 0) {
+			ActorBaseAttributesS2CSyncAttributes(entity, ScenePlayerSyncSyncBaseAttributeMessageId, allAoiEntities);
+		}
 
 		// Single-pass distance classification: compute distance once per neighbor
 		level1Entities.clear();

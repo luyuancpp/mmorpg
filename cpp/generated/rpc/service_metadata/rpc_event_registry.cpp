@@ -910,6 +910,11 @@ bool IsClientMessageId(uint32_t messageId)
 	case SceneClientPlayerCommonSendTipToClientMessageId:
 	case SceneClientPlayerCommonKickPlayerMessageId:
 	case SceneClientPlayerCommonRedirectToGateMessageId:
+	case SceneCurrencyClientPlayerGmAddCurrencyMessageId:
+	case SceneCurrencyClientPlayerGmDeductCurrencyMessageId:
+	case SceneCurrencyClientPlayerGetCurrencyListMessageId:
+	case SceneCurrencyClientPlayerGmBlockCurrencyMessageId:
+	case SceneCurrencyClientPlayerGmUnblockCurrencyMessageId:
 	case SceneMovementClientPlayerMoveStartMessageId:
 	case SceneMovementClientPlayerMoveStopMessageId:
 	case SceneMovementClientPlayerMoveSyncMessageId:
