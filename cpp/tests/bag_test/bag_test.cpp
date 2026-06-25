@@ -563,6 +563,103 @@ TEST(BagTest, Neaten1)
     EXPECT_EQ(kDefaultCapacity, bag.GetTotalItemCount(kStack11));
 }
 
+// 关键回归:位置已经是连续的 0,1(没有空洞),但同一 config 是"一高一低"两个
+// 未满堆。早退判据必须识别出"前面没满"仍需整理,绝不能因为位置紧凑就跳过。
+TEST(BagTest, MergeAndCompactMergesHighLowStacksEvenWhenContiguous)
+{
+    Bag bag;
+    bag.ExpandCapacity(kDefaultCapacity);
+
+    // 两个满堆 -> pos 0,1,位置天然连续无空洞
+    EXPECT_EQ(kSuccess, bag.AddItem(MakeItem(kStack10, MaxStack(kStack10) * 2)));
+    EXPECT_EQ(2, bag.OccupiedGridCount());
+
+    // 各削到 1 单位 -> [1,1] 一高一低(两个未满堆),位置仍是 0,1 连续
+    FillAndReduceToOne(bag, kStack10, 0, 2);
+    EXPECT_EQ(1, bag.GetItemCompByPos(0)->size());
+    EXPECT_EQ(1, bag.GetItemCompByPos(1)->size());
+
+    // 位置紧凑但前面没满 —— 必须整理。若早退误判为"已最优"则此处不会合并。
+    bag.MergeAndCompact();
+
+    EXPECT_EQ(1, bag.OccupiedGridCount());
+    EXPECT_EQ(1, bag.GridSlotCount());
+    EXPECT_EQ(2, bag.GetItemCompByPos(0)->size()); // 1+1 合成一个满前堆
+    EXPECT_EQ(2, bag.GetTotalItemCount(kStack10));
+}
+
+// 已最优(满堆在前 + 至多一个未满堆 + 位置连续)时早退:整理应是无操作,
+// 既不改 size 也不挪动 guid 的位置。
+TEST(BagTest, MergeAndCompactIsNoOpWhenAlreadyOptimal)
+{
+    Bag bag;
+    bag.ExpandCapacity(kDefaultCapacity);
+
+    const auto maxStack10 = MaxStack(kStack10);
+    // [满, 满, 余3] 的 kStack10:前面是满堆,仅末尾一个未满堆 -> 已最优
+    EXPECT_EQ(kSuccess, bag.AddItem(MakeItem(kStack10, maxStack10 * 2 + 3)));
+    // 另一种物品一个满堆
+    EXPECT_EQ(kSuccess, bag.AddItem(MakeItem(kStack11)));
+    EXPECT_EQ(4, bag.OccupiedGridCount());
+
+    // 记录整理前每个格子的 guid 与 size
+    const auto slotCount = (uint32_t)bag.GridSlotCount();
+    std::vector<Guid> beforeGuid(slotCount);
+    std::vector<uint32_t> beforeSize(slotCount);
+    for (uint32_t i = 0; i < slotCount; ++i)
+    {
+        auto *item = bag.GetItemCompByPos(i);
+        ASSERT_NE(nullptr, item);
+        beforeGuid[i] = item->item_id();
+        beforeSize[i] = item->size();
+    }
+
+    bag.MergeAndCompact(); // 已最优 -> 早退,什么都不该变
+
+    EXPECT_EQ(4, bag.OccupiedGridCount());
+    EXPECT_EQ(slotCount, (uint32_t)bag.GridSlotCount());
+    for (uint32_t i = 0; i < slotCount; ++i)
+    {
+        auto *item = bag.GetItemCompByPos(i);
+        ASSERT_NE(nullptr, item);
+        EXPECT_EQ(beforeGuid[i], item->item_id()); // guid 留在原位
+        EXPECT_EQ(beforeSize[i], item->size());    // size 未变
+    }
+}
+
+// 关键回归:布局为 [未满, 满](未满堆排在满堆前面),位置已连续无空洞、
+// 每种 config 也只有 1 个未满堆,但"前面没满"。整理必须把满堆挪到前面、
+// 未满堆落到末尾(满堆在前不变量)。
+TEST(BagTest, MergeAndCompactMovesFullStacksToFront)
+{
+    Bag bag;
+    bag.ExpandCapacity(kDefaultCapacity);
+
+    // pos0 放一个未满堆(kStack10,1 单位),pos1 放一个满堆(kStack11)。
+    // 两种 config 不同,不会互相合并;构成 [未满, 满] 的逆序布局。
+    EXPECT_EQ(kSuccess, bag.AddItem(MakeItem(kStack10, 1)));
+    EXPECT_EQ(kSuccess, bag.AddItem(MakeItem(kStack11))); // 默认满堆
+    EXPECT_EQ(2, bag.OccupiedGridCount());
+
+    const auto partialGuid = bag.GetItemCompByPos(0)->item_id(); // kStack10 未满堆
+    const auto fullGuid = bag.GetItemCompByPos(1)->item_id();    // kStack11 满堆
+    EXPECT_EQ(1, bag.GetItemCompByPos(0)->size());
+    EXPECT_EQ(MaxStack(kStack11), bag.GetItemCompByPos(1)->size());
+
+    bag.MergeAndCompact(); // [未满, 满] -> 满堆必须挪到前面
+
+    EXPECT_EQ(2, bag.OccupiedGridCount());
+    EXPECT_EQ(2, bag.GridSlotCount());
+    // pos0 现在是满堆,pos1 是未满堆。
+    EXPECT_EQ(fullGuid, bag.GetItemCompByPos(0)->item_id());
+    EXPECT_EQ(MaxStack(kStack11), bag.GetItemCompByPos(0)->size());
+    EXPECT_EQ(partialGuid, bag.GetItemCompByPos(1)->item_id());
+    EXPECT_EQ(1, bag.GetItemCompByPos(1)->size());
+    // 数量守恒。
+    EXPECT_EQ(1, bag.GetTotalItemCount(kStack10));
+    EXPECT_EQ(MaxStack(kStack11), bag.GetTotalItemCount(kStack11));
+}
+
 TEST(BagTest, Neaten400)
 {
     Bag bag;
