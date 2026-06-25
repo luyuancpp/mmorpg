@@ -52,10 +52,10 @@ void VerifyLastAdded(Bag &bag, uint32_t pos, uint32_t configId, uint32_t size)
 RemoveItemByPosParam MakeRemoveParam(Bag &bag, uint32_t pos, uint32_t configId, uint32_t removeSize = 1)
 {
     RemoveItemByPosParam dp;
-    dp.posToGuid_ = pos;
-    dp.item_guid_ = bag.GetItemCompByPos(pos)->item_id();
-    dp.item_config_id_ = configId;
-    dp.size_ = removeSize;
+    dp.pos = pos;
+    dp.item_guid = bag.GetItemCompByPos(pos)->item_id();
+    dp.item_config_id = configId;
+    dp.size = removeSize;
     return dp;
 }
 
@@ -504,19 +504,19 @@ TEST(BagTest, RemoveItemByPos)
     RemoveItemByPosParam dp;
     EXPECT_EQ(kBagDelItemPos, bag.RemoveItemByPos(dp));
 
-    dp.posToGuid_ = 0;
+    dp.pos = 0;
     EXPECT_EQ(kBagDelItemGuid, bag.RemoveItemByPos(dp));
 
-    dp.item_guid_ = Bag::LastGeneratedItemGuid();
+    dp.item_guid = Bag::LastGeneratedItemGuid();
     EXPECT_EQ(kBagDelItemConfig, bag.RemoveItemByPos(dp));
 
     // Remove 1 unit
-    dp.item_config_id_ = kStack10;
+    dp.item_config_id = kStack10;
     EXPECT_EQ(kSuccess, bag.RemoveItemByPos(dp));
     EXPECT_EQ(maxStack - 1, bag.GetTotalItemCount(kStack10));
 
     // Remove the rest
-    dp.size_ = maxStack - 1;
+    dp.size = maxStack - 1;
     EXPECT_EQ(kSuccess, bag.RemoveItemByPos(dp));
     EXPECT_EQ(0, bag.GetTotalItemCount(kStack10));
     EXPECT_EQ(1, bag.OccupiedGridCount());
