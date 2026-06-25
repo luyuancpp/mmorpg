@@ -57,6 +57,10 @@ class BagAllData;
 struct BagAllDataDefaultTypeInternal;
 extern BagAllDataDefaultTypeInternal _BagAllData_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull BagAllData_class_data_;
+class BagAllData_DynamicBagData;
+struct BagAllData_DynamicBagDataDefaultTypeInternal;
+extern BagAllData_DynamicBagDataDefaultTypeInternal _BagAllData_DynamicBagData_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull BagAllData_DynamicBagData_class_data_;
 class ItemEntry;
 struct ItemEntryDefaultTypeInternal;
 extern ItemEntryDefaultTypeInternal _ItemEntry_default_instance_;
@@ -143,7 +147,7 @@ class QuestEntry final : public ::google::protobuf::Message
     return *reinterpret_cast<const QuestEntry*>(
         &_QuestEntry_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 2;
+  static constexpr int kIndexInFileMessages = 3;
   friend void swap(QuestEntry& a, QuestEntry& b) { a.Swap(&b); }
   inline void Swap(QuestEntry* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -609,7 +613,7 @@ class QuestAllData final : public ::google::protobuf::Message
     return *reinterpret_cast<const QuestAllData*>(
         &_QuestAllData_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 3;
+  static constexpr int kIndexInFileMessages = 4;
   friend void swap(QuestAllData& a, QuestAllData& b) { a.Swap(&b); }
   inline void Swap(QuestAllData* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -827,7 +831,7 @@ class MailEntry final : public ::google::protobuf::Message
     return *reinterpret_cast<const MailEntry*>(
         &_MailEntry_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 4;
+  static constexpr int kIndexInFileMessages = 5;
   friend void swap(MailEntry& a, MailEntry& b) { a.Swap(&b); }
   inline void Swap(MailEntry* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -1094,30 +1098,30 @@ class MailEntry final : public ::google::protobuf::Message
 extern const ::google::protobuf::internal::ClassDataFull MailEntry_class_data_;
 // -------------------------------------------------------------------
 
-class BagAllData final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:BagAllData) */ {
+class BagAllData_DynamicBagData final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:BagAllData.DynamicBagData) */ {
  public:
-  inline BagAllData() : BagAllData(nullptr) {}
-  ~BagAllData() PROTOBUF_FINAL;
+  inline BagAllData_DynamicBagData() : BagAllData_DynamicBagData(nullptr) {}
+  ~BagAllData_DynamicBagData() PROTOBUF_FINAL;
 
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(BagAllData* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+  void operator delete(BagAllData_DynamicBagData* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
     SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(BagAllData));
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(BagAllData_DynamicBagData));
   }
 #endif
 
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR BagAllData(::google::protobuf::internal::ConstantInitialized);
+  explicit PROTOBUF_CONSTEXPR BagAllData_DynamicBagData(::google::protobuf::internal::ConstantInitialized);
 
-  inline BagAllData(const BagAllData& from) : BagAllData(nullptr, from) {}
-  inline BagAllData(BagAllData&& from) noexcept
-      : BagAllData(nullptr, ::std::move(from)) {}
-  inline BagAllData& operator=(const BagAllData& from) {
+  inline BagAllData_DynamicBagData(const BagAllData_DynamicBagData& from) : BagAllData_DynamicBagData(nullptr, from) {}
+  inline BagAllData_DynamicBagData(BagAllData_DynamicBagData&& from) noexcept
+      : BagAllData_DynamicBagData(nullptr, ::std::move(from)) {}
+  inline BagAllData_DynamicBagData& operator=(const BagAllData_DynamicBagData& from) {
     CopyFrom(from);
     return *this;
   }
-  inline BagAllData& operator=(BagAllData&& from) noexcept {
+  inline BagAllData_DynamicBagData& operator=(BagAllData_DynamicBagData&& from) noexcept {
     if (this == &from) return *this;
     if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
       InternalSwap(&from);
@@ -1145,13 +1149,13 @@ class BagAllData final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const BagAllData& default_instance() {
-    return *reinterpret_cast<const BagAllData*>(
-        &_BagAllData_default_instance_);
+  static const BagAllData_DynamicBagData& default_instance() {
+    return *reinterpret_cast<const BagAllData_DynamicBagData*>(
+        &_BagAllData_DynamicBagData_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 1;
-  friend void swap(BagAllData& a, BagAllData& b) { a.Swap(&b); }
-  inline void Swap(BagAllData* PROTOBUF_NONNULL other) {
+  friend void swap(BagAllData_DynamicBagData& a, BagAllData_DynamicBagData& b) { a.Swap(&b); }
+  inline void Swap(BagAllData_DynamicBagData* PROTOBUF_NONNULL other) {
     if (other == this) return;
     if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
       InternalSwap(other);
@@ -1159,7 +1163,7 @@ class BagAllData final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(BagAllData* PROTOBUF_NONNULL other) {
+  void UnsafeArenaSwap(BagAllData_DynamicBagData* PROTOBUF_NONNULL other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -1167,13 +1171,13 @@ class BagAllData final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  BagAllData* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<BagAllData>(arena);
+  BagAllData_DynamicBagData* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<BagAllData_DynamicBagData>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const BagAllData& from);
+  void CopyFrom(const BagAllData_DynamicBagData& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const BagAllData& from) { BagAllData::MergeImpl(*this, from); }
+  void MergeFrom(const BagAllData_DynamicBagData& from) { BagAllData_DynamicBagData::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(::google::protobuf::MessageLite& to_msg,
@@ -1209,18 +1213,18 @@ class BagAllData final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
   static void SharedDtor(MessageLite& self);
-  void InternalSwap(BagAllData* PROTOBUF_NONNULL other);
+  void InternalSwap(BagAllData_DynamicBagData* PROTOBUF_NONNULL other);
  private:
   template <typename T>
   friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "BagAllData"; }
+  static ::absl::string_view FullMessageName() { return "BagAllData.DynamicBagData"; }
 
  protected:
-  explicit BagAllData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  BagAllData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const BagAllData& from);
-  BagAllData(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, BagAllData&& from) noexcept
-      : BagAllData(arena) {
+  explicit BagAllData_DynamicBagData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  BagAllData_DynamicBagData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const BagAllData_DynamicBagData& from);
+  BagAllData_DynamicBagData(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, BagAllData_DynamicBagData&& from) noexcept
+      : BagAllData_DynamicBagData(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
@@ -1237,10 +1241,11 @@ class BagAllData final : public ::google::protobuf::Message
 
   // accessors -------------------------------------------------------
   enum : int {
-    kItemsFieldNumber = 1,
-    kCapacitiesFieldNumber = 2,
+    kItemsFieldNumber = 3,
+    kBagIdFieldNumber = 1,
+    kCapacityFieldNumber = 2,
   };
-  // repeated .ItemEntry items = 1;
+  // repeated .ItemEntry items = 3;
   int items_size() const;
   private:
   int _internal_items_size() const;
@@ -1257,29 +1262,31 @@ class BagAllData final : public ::google::protobuf::Message
   const ::ItemEntry& items(int index) const;
   ::ItemEntry* PROTOBUF_NONNULL add_items();
   const ::google::protobuf::RepeatedPtrField<::ItemEntry>& items() const;
-  // repeated uint32 capacities = 2;
-  int capacities_size() const;
-  private:
-  int _internal_capacities_size() const;
-
-  public:
-  void clear_capacities() ;
-  ::uint32_t capacities(int index) const;
-  void set_capacities(int index, ::uint32_t value);
-  void add_capacities(::uint32_t value);
-  const ::google::protobuf::RepeatedField<::uint32_t>& capacities() const;
-  ::google::protobuf::RepeatedField<::uint32_t>* PROTOBUF_NONNULL mutable_capacities();
+  // uint64 bag_id = 1;
+  void clear_bag_id() ;
+  ::uint64_t bag_id() const;
+  void set_bag_id(::uint64_t value);
 
   private:
-  const ::google::protobuf::RepeatedField<::uint32_t>& _internal_capacities() const;
-  ::google::protobuf::RepeatedField<::uint32_t>* PROTOBUF_NONNULL _internal_mutable_capacities();
+  ::uint64_t _internal_bag_id() const;
+  void _internal_set_bag_id(::uint64_t value);
 
   public:
-  // @@protoc_insertion_point(class_scope:BagAllData)
+  // uint32 capacity = 2;
+  void clear_capacity() ;
+  ::uint32_t capacity() const;
+  void set_capacity(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_capacity() const;
+  void _internal_set_capacity(::uint32_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:BagAllData.DynamicBagData)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<1, 2,
+  static const ::google::protobuf::internal::TcParseTable<2, 3,
                                    1, 0,
                                    2>
       _table_;
@@ -1298,18 +1305,19 @@ class BagAllData final : public ::google::protobuf::Message
     inline explicit Impl_(
         ::google::protobuf::internal::InternalVisibility visibility,
         ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-        const BagAllData& from_msg);
-    ::google::protobuf::RepeatedPtrField< ::ItemEntry > items_;
-    ::google::protobuf::RepeatedField<::uint32_t> capacities_;
-    ::google::protobuf::internal::CachedSize _capacities_cached_byte_size_;
+        const BagAllData_DynamicBagData& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::RepeatedPtrField< ::ItemEntry > items_;
+    ::uint64_t bag_id_;
+    ::uint32_t capacity_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
   friend struct ::TableStruct_proto_2fcommon_2fdatabase_2fbag_5fquest_5fmail_5fdata_2eproto;
 };
 
-extern const ::google::protobuf::internal::ClassDataFull BagAllData_class_data_;
+extern const ::google::protobuf::internal::ClassDataFull BagAllData_DynamicBagData_class_data_;
 // -------------------------------------------------------------------
 
 class MailAllData final : public ::google::protobuf::Message
@@ -1367,7 +1375,7 @@ class MailAllData final : public ::google::protobuf::Message
     return *reinterpret_cast<const MailAllData*>(
         &_MailAllData_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 5;
+  static constexpr int kIndexInFileMessages = 6;
   friend void swap(MailAllData& a, MailAllData& b) { a.Swap(&b); }
   inline void Swap(MailAllData* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -1507,6 +1515,244 @@ class MailAllData final : public ::google::protobuf::Message
 };
 
 extern const ::google::protobuf::internal::ClassDataFull MailAllData_class_data_;
+// -------------------------------------------------------------------
+
+class BagAllData final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:BagAllData) */ {
+ public:
+  inline BagAllData() : BagAllData(nullptr) {}
+  ~BagAllData() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(BagAllData* PROTOBUF_NONNULL msg, std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(BagAllData));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR BagAllData(::google::protobuf::internal::ConstantInitialized);
+
+  inline BagAllData(const BagAllData& from) : BagAllData(nullptr, from) {}
+  inline BagAllData(BagAllData&& from) noexcept
+      : BagAllData(nullptr, ::std::move(from)) {}
+  inline BagAllData& operator=(const BagAllData& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline BagAllData& operator=(BagAllData&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const BagAllData& default_instance() {
+    return *reinterpret_cast<const BagAllData*>(
+        &_BagAllData_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 2;
+  friend void swap(BagAllData& a, BagAllData& b) { a.Swap(&b); }
+  inline void Swap(BagAllData* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(BagAllData* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  BagAllData* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<BagAllData>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const BagAllData& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const BagAllData& from) { BagAllData::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(BagAllData* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "BagAllData"; }
+
+ protected:
+  explicit BagAllData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  BagAllData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const BagAllData& from);
+  BagAllData(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, BagAllData&& from) noexcept
+      : BagAllData(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+  using DynamicBagData = BagAllData_DynamicBagData;
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kItemsFieldNumber = 1,
+    kCapacitiesFieldNumber = 2,
+    kDynamicBagsFieldNumber = 3,
+  };
+  // repeated .ItemEntry items = 1;
+  int items_size() const;
+  private:
+  int _internal_items_size() const;
+
+  public:
+  void clear_items() ;
+  ::ItemEntry* PROTOBUF_NONNULL mutable_items(int index);
+  ::google::protobuf::RepeatedPtrField<::ItemEntry>* PROTOBUF_NONNULL mutable_items();
+
+  private:
+  const ::google::protobuf::RepeatedPtrField<::ItemEntry>& _internal_items() const;
+  ::google::protobuf::RepeatedPtrField<::ItemEntry>* PROTOBUF_NONNULL _internal_mutable_items();
+  public:
+  const ::ItemEntry& items(int index) const;
+  ::ItemEntry* PROTOBUF_NONNULL add_items();
+  const ::google::protobuf::RepeatedPtrField<::ItemEntry>& items() const;
+  // repeated uint32 capacities = 2;
+  int capacities_size() const;
+  private:
+  int _internal_capacities_size() const;
+
+  public:
+  void clear_capacities() ;
+  ::uint32_t capacities(int index) const;
+  void set_capacities(int index, ::uint32_t value);
+  void add_capacities(::uint32_t value);
+  const ::google::protobuf::RepeatedField<::uint32_t>& capacities() const;
+  ::google::protobuf::RepeatedField<::uint32_t>* PROTOBUF_NONNULL mutable_capacities();
+
+  private:
+  const ::google::protobuf::RepeatedField<::uint32_t>& _internal_capacities() const;
+  ::google::protobuf::RepeatedField<::uint32_t>* PROTOBUF_NONNULL _internal_mutable_capacities();
+
+  public:
+  // repeated .BagAllData.DynamicBagData dynamic_bags = 3;
+  int dynamic_bags_size() const;
+  private:
+  int _internal_dynamic_bags_size() const;
+
+  public:
+  void clear_dynamic_bags() ;
+  ::BagAllData_DynamicBagData* PROTOBUF_NONNULL mutable_dynamic_bags(int index);
+  ::google::protobuf::RepeatedPtrField<::BagAllData_DynamicBagData>* PROTOBUF_NONNULL mutable_dynamic_bags();
+
+  private:
+  const ::google::protobuf::RepeatedPtrField<::BagAllData_DynamicBagData>& _internal_dynamic_bags() const;
+  ::google::protobuf::RepeatedPtrField<::BagAllData_DynamicBagData>* PROTOBUF_NONNULL _internal_mutable_dynamic_bags();
+  public:
+  const ::BagAllData_DynamicBagData& dynamic_bags(int index) const;
+  ::BagAllData_DynamicBagData* PROTOBUF_NONNULL add_dynamic_bags();
+  const ::google::protobuf::RepeatedPtrField<::BagAllData_DynamicBagData>& dynamic_bags() const;
+  // @@protoc_insertion_point(class_scope:BagAllData)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<2, 3,
+                                   2, 0,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const BagAllData& from_msg);
+    ::google::protobuf::RepeatedPtrField< ::ItemEntry > items_;
+    ::google::protobuf::RepeatedField<::uint32_t> capacities_;
+    ::google::protobuf::internal::CachedSize _capacities_cached_byte_size_;
+    ::google::protobuf::RepeatedPtrField< ::BagAllData_DynamicBagData > dynamic_bags_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fcommon_2fdatabase_2fbag_5fquest_5fmail_5fdata_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull BagAllData_class_data_;
 
 // ===================================================================
 
@@ -1646,6 +1892,108 @@ inline void ItemEntry::_internal_set_bag_type(::uint32_t value) {
 
 // -------------------------------------------------------------------
 
+// BagAllData_DynamicBagData
+
+// uint64 bag_id = 1;
+inline void BagAllData_DynamicBagData::clear_bag_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.bag_id_ = ::uint64_t{0u};
+  _impl_._has_bits_[0] &= ~0x00000001u;
+}
+inline ::uint64_t BagAllData_DynamicBagData::bag_id() const {
+  // @@protoc_insertion_point(field_get:BagAllData.DynamicBagData.bag_id)
+  return _internal_bag_id();
+}
+inline void BagAllData_DynamicBagData::set_bag_id(::uint64_t value) {
+  _internal_set_bag_id(value);
+  _impl_._has_bits_[0] |= 0x00000001u;
+  // @@protoc_insertion_point(field_set:BagAllData.DynamicBagData.bag_id)
+}
+inline ::uint64_t BagAllData_DynamicBagData::_internal_bag_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.bag_id_;
+}
+inline void BagAllData_DynamicBagData::_internal_set_bag_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.bag_id_ = value;
+}
+
+// uint32 capacity = 2;
+inline void BagAllData_DynamicBagData::clear_capacity() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.capacity_ = 0u;
+  _impl_._has_bits_[0] &= ~0x00000002u;
+}
+inline ::uint32_t BagAllData_DynamicBagData::capacity() const {
+  // @@protoc_insertion_point(field_get:BagAllData.DynamicBagData.capacity)
+  return _internal_capacity();
+}
+inline void BagAllData_DynamicBagData::set_capacity(::uint32_t value) {
+  _internal_set_capacity(value);
+  _impl_._has_bits_[0] |= 0x00000002u;
+  // @@protoc_insertion_point(field_set:BagAllData.DynamicBagData.capacity)
+}
+inline ::uint32_t BagAllData_DynamicBagData::_internal_capacity() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.capacity_;
+}
+inline void BagAllData_DynamicBagData::_internal_set_capacity(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.capacity_ = value;
+}
+
+// repeated .ItemEntry items = 3;
+inline int BagAllData_DynamicBagData::_internal_items_size() const {
+  return _internal_items().size();
+}
+inline int BagAllData_DynamicBagData::items_size() const {
+  return _internal_items_size();
+}
+inline void BagAllData_DynamicBagData::clear_items() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.items_.Clear();
+}
+inline ::ItemEntry* PROTOBUF_NONNULL BagAllData_DynamicBagData::mutable_items(int index)
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable:BagAllData.DynamicBagData.items)
+  return _internal_mutable_items()->Mutable(index);
+}
+inline ::google::protobuf::RepeatedPtrField<::ItemEntry>* PROTOBUF_NONNULL BagAllData_DynamicBagData::mutable_items()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable_list:BagAllData.DynamicBagData.items)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _internal_mutable_items();
+}
+inline const ::ItemEntry& BagAllData_DynamicBagData::items(int index) const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:BagAllData.DynamicBagData.items)
+  return _internal_items().Get(index);
+}
+inline ::ItemEntry* PROTOBUF_NONNULL BagAllData_DynamicBagData::add_items()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::ItemEntry* _add = _internal_mutable_items()->Add();
+  // @@protoc_insertion_point(field_add:BagAllData.DynamicBagData.items)
+  return _add;
+}
+inline const ::google::protobuf::RepeatedPtrField<::ItemEntry>& BagAllData_DynamicBagData::items() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_list:BagAllData.DynamicBagData.items)
+  return _internal_items();
+}
+inline const ::google::protobuf::RepeatedPtrField<::ItemEntry>&
+BagAllData_DynamicBagData::_internal_items() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.items_;
+}
+inline ::google::protobuf::RepeatedPtrField<::ItemEntry>* PROTOBUF_NONNULL
+BagAllData_DynamicBagData::_internal_mutable_items() {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return &_impl_.items_;
+}
+
+// -------------------------------------------------------------------
+
 // BagAllData
 
 // repeated .ItemEntry items = 1;
@@ -1742,6 +2090,56 @@ inline ::google::protobuf::RepeatedField<::uint32_t>* PROTOBUF_NONNULL
 BagAllData::_internal_mutable_capacities() {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return &_impl_.capacities_;
+}
+
+// repeated .BagAllData.DynamicBagData dynamic_bags = 3;
+inline int BagAllData::_internal_dynamic_bags_size() const {
+  return _internal_dynamic_bags().size();
+}
+inline int BagAllData::dynamic_bags_size() const {
+  return _internal_dynamic_bags_size();
+}
+inline void BagAllData::clear_dynamic_bags() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.dynamic_bags_.Clear();
+}
+inline ::BagAllData_DynamicBagData* PROTOBUF_NONNULL BagAllData::mutable_dynamic_bags(int index)
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable:BagAllData.dynamic_bags)
+  return _internal_mutable_dynamic_bags()->Mutable(index);
+}
+inline ::google::protobuf::RepeatedPtrField<::BagAllData_DynamicBagData>* PROTOBUF_NONNULL BagAllData::mutable_dynamic_bags()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable_list:BagAllData.dynamic_bags)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _internal_mutable_dynamic_bags();
+}
+inline const ::BagAllData_DynamicBagData& BagAllData::dynamic_bags(int index) const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:BagAllData.dynamic_bags)
+  return _internal_dynamic_bags().Get(index);
+}
+inline ::BagAllData_DynamicBagData* PROTOBUF_NONNULL BagAllData::add_dynamic_bags()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::BagAllData_DynamicBagData* _add = _internal_mutable_dynamic_bags()->Add();
+  // @@protoc_insertion_point(field_add:BagAllData.dynamic_bags)
+  return _add;
+}
+inline const ::google::protobuf::RepeatedPtrField<::BagAllData_DynamicBagData>& BagAllData::dynamic_bags() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_list:BagAllData.dynamic_bags)
+  return _internal_dynamic_bags();
+}
+inline const ::google::protobuf::RepeatedPtrField<::BagAllData_DynamicBagData>&
+BagAllData::_internal_dynamic_bags() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.dynamic_bags_;
+}
+inline ::google::protobuf::RepeatedPtrField<::BagAllData_DynamicBagData>* PROTOBUF_NONNULL
+BagAllData::_internal_mutable_dynamic_bags() {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return &_impl_.dynamic_bags_;
 }
 
 // -------------------------------------------------------------------
