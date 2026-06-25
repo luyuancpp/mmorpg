@@ -140,7 +140,7 @@ std::array<std::size_t, kBagMax> SnapshotCapacities(entt::entity player)
     const auto& bags = tlsEcs.actorRegistry.get<PlayerBagsComp>(player);
     for (uint32_t i = 0; i < kBagMax; ++i)
     {
-        caps[i] = bags.bags[i].GetCapacity();
+        caps[i] = bags.bags[i].Capacity();
     }
     return caps;
 }
