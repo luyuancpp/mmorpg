@@ -215,23 +215,52 @@ Bound        15470→  2704    (5.7x 缓解)
 
 ## 6. 游戏内通信:Kafka + gRPC 解耦
 
-### Kafka topic 路由
+### 6.1 核心原则:控制面走消息总线,数据面走直连 RPC
+
+整个游戏内通信按"是否延迟敏感"分两个平面,各用最合适的传输:
+
+| 平面 | 路径 | 传输 | 理由 |
+|---|---|---|---|
+| **游戏热路径**(客户端包 ↔ scene) | C++ Gate ↔ C++ Scene | **直连 gRPC**(lazy 建连 + channel pool + 同区) | 延迟敏感,要常驻有状态低延迟通道 |
+| **控制面**(RoutePlayer / Kick / Bind / LeaseExpired / Redirect) | Go 服务 → `gate-{gateId}` topic → Gate | **Kafka** | 低频、fire-and-forget,要解耦防连接爆炸 |
+| **业务反向推送**(好友/公会 server→client) | Go 服务 → Kafka → Gate → client TCP | **Kafka** | 异步通知,非实时 |
+
+### 6.2 Kafka topic 路由(控制面)
 
 | Topic | 方向 | 消息 | 用途 |
 |---|---|---|---|
 | `gate-{gateId}` | Login → Gate | `GateCommand{BindSession}` | 绑定会话 + enter_gs_type |
 | `gate-{gateId}` | Login → Gate | `GateCommand{KickPlayer}` | 顶号踢人 |
 | `gate-{gateId}` | SceneManager → Gate | `GateCommand{RoutePlayer}` | 分配 scene 节点 |
+| `gate-{gateId}` | SceneManager → Gate | `GateCommand{RedirectToGate}` | 跨区切 Gate 重定向 |
 | `gate-{gateId}` | player_locator → Gate | `GateCommand{PlayerLeaseExpired}` | 30s 重连超时清理 |
+| `gate-{gateId}` | Friend/Guild → Gate | `PushToPlayerEvent` / `BroadcastToPlayersEvent` | 业务反向推送 |
 
-### 为什么用 Kafka 而不是 gRPC stream
+### 6.3 为什么控制面用 Kafka 而不是 gRPC stream(决策定论)
 
-- 异步解耦 — Login/SceneManager 不需要保持到每个 Gate 的长连
-- 顺序保证 — 同 playerId 走同一 partition(`KeyOrderedKafkaProducer`)
-- 重启韧性 — Gate 重启后从 offset 继续消费,不丢消息
-- 扇出 — `gate-{gateId}` 命名模式天然支持横向扩 Gate
+**这些控制/推送消息本就不该用 stream,正因为要避免网状长连接。**
 
-详见 [player_login_flow.md](./player_login_flow.md) §数据流总结
+如果把 RoutePlayer/Kick/Push 改成 gRPC stream,意味着每个 Go 服务(login、scene_manager、player_locator、friend、guild)都要对**每一个 Gate** 维持一条常驻流 → 这正是要避免的 N×M 长连接爆炸(40,000 Gate 规模下不可接受),严格比 Kafka 更差。Kafka 在这里给出:
+
+- **异步解耦** — Go 服务不需要知道/连接具体哪个 Gate 实例,只发 `gate-{gateId}`
+- **顺序保证** — 同 playerId 走同一 partition(`KeyOrderedKafkaProducer`)
+- **重启韧性** — Gate 重启后从 offset 继续消费,消息不丢;配合 `target_instance_id` 做防僵尸过滤
+- **扇出** — `gate-{gateId}` 命名模式天然支持横向扩 Gate
+
+而 bidi-stream 真正该用的地方——常驻、有状态、有序、低延迟的点对点通道——已经用在 C++ Gate↔Scene 的直连 gRPC 上,与 go-zero/kratos 框架选型无关。
+
+### 6.4 不要为 stream 迁移到 kratos(否决)
+
+- **前提是误解**:go-zero 跑在标准 `grpc-go` 之上,**运行时完全支持** server/client/bidi streaming;只是 `goctl` 脚手架面向 unary,流式需在底层 `grpc.Server` 上自行注册(`zrpc` 提供 `AddOptions` / 自定义 register 钩子)。
+- **代价极大收益≈0**:迁移 kratos 需重写所有服务启动 / 配置 / 中间件 / 服务发现 / etcd 集成,而要解决的"拿不到 stream"问题并不存在。
+- **结论**:维持 go-zero。控制面继续 Kafka,游戏热路径继续直连 gRPC。
+
+### 6.5 后续可选演进(非对错问题)
+
+- 若嫌 Kafka 对"一条路由信令"偏重(延迟几 ms~几十 ms、运维偏重),控制面可评估更轻量的 **NATS**(或 Redis pub/sub):解耦相同、延迟更低、运维更简单。**代价**:当前用 Kafka retention 做的 `target_instance_id` 防僵尸需自行补齐。
+- 若某些控制消息需要同步 ack(如"踢人是否成功"),让 Gate 回一个 `gate-event` 事件即可,**不需要 stream**。
+
+详见 [player_login_flow.md](./player_login_flow.md) §数据流总结、[gate-scene-relay-architecture](连接爆炸与解法)。
 
 ---
 
