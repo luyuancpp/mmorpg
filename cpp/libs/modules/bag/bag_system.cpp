@@ -531,12 +531,12 @@ void Bag::Unlock(std::size_t sz)
 	capacity_ += sz;
 }
 
-Guid Bag::GeneratorItemGuid()
+Guid Bag::GenerateItemGuid()
 {
 	return tlsSnowflakeManager.GenerateItemGuid();
 }
 
-Guid Bag::LastGeneratorItemGuid()
+Guid Bag::LastGeneratedItemGuid()
 {
 	return tlsSnowflakeManager.GetLastGeneratedItemGuid();
 }
@@ -544,6 +544,22 @@ Guid Bag::LastGeneratorItemGuid()
 bool Bag::IsInvalidItemGuid(const ItemComp &item) const
 {
 	return item.item_id() == kInvalidGuid || item.item_id() <= 0;
+}
+
+ItemComp *Bag::InsertItemEntity(ItemComp proto)
+{
+	auto entity = itemRegistry_.create();
+	auto &stored = itemRegistry_.emplace<ItemComp>(entity, std::move(proto));
+
+	auto [it, inserted] = items_.emplace(stored.item_id(), entity);
+	if (!inserted)
+	{
+		// Duplicate guid — roll the entity back so items_ and itemRegistry_
+		// stay perfectly in sync (the half-created entity must not leak).
+		itemRegistry_.destroy(entity);
+		return nullptr;
+	}
+	return &stored;
 }
 
 void Bag::DestroyItem(Guid guid)
@@ -562,6 +578,29 @@ void Bag::DestroyItem(Guid guid)
 		itemRegistry_.destroy(guidIt->second);
 	}
 	items_.erase(guidIt);
+
+	// Free its grid slot too (pos_ maps pos->guid, so scan for the guid).
+	for (auto posIt = pos_.begin(); posIt != pos_.end(); ++posIt)
+	{
+		if (posIt->second == guid)
+		{
+			pos_.erase(posIt);
+			break;
+		}
+	}
+}
+
+void Bag::ClearAllItems()
+{
+	for (const auto &[guid, entity] : items_)
+	{
+		if (itemRegistry_.valid(entity))
+		{
+			itemRegistry_.destroy(entity);
+		}
+	}
+	items_.clear();
+	pos_.clear();
 }
 
 std::size_t Bag::CalculateStackGridSize(std::size_t total_size, std::size_t max_stack_size)
@@ -571,7 +610,7 @@ std::size_t Bag::CalculateStackGridSize(std::size_t total_size, std::size_t max_
 
 uint32_t Bag::OnNewGrid(Guid guid)
 {
-	const auto gridSize = size();
+	const auto gridSize = Capacity();
 	for (uint32_t i = 0; i < gridSize; ++i)
 	{
 		if (pos_.contains(i))
@@ -605,19 +644,10 @@ bool Bag::CanStack(const ItemComp &leftItem, const ItemComp &rightItem)
 // 件 1 for the cross-zone migration design that motivated this.
 void Bag::ResetFromSnapshot()
 {
-	// Drop every ItemComp the bag holds — itemRegistry_ is a private
-	// entt::registry, dropping its entities effectively wipes the bag.
-	for (const auto &[guid, entity] : items_)
-	{
-		if (itemRegistry_.valid(entity))
-		{
-			itemRegistry_.destroy(entity);
-		}
-	}
-	items_.clear();
-	pos_.clear();
+	// ClearAllItems drops every entity + items_ + pos_ entry.
 	// capacity_ deliberately left alone — SetCapacityForRestore sets it
 	// from BagAllData.capacities before InsertItemForRestore calls fire.
+	ClearAllItems();
 }
 
 void Bag::InsertItemForRestore(Guid guid, uint32_t configId, uint32_t stackSize, uint32_t pos)
@@ -636,14 +666,20 @@ void Bag::InsertItemForRestore(Guid guid, uint32_t configId, uint32_t stackSize,
 		return;
 	}
 
-	// Build the entt entity + ItemComp the same shape AddItem would.
-	auto itemEntity = itemRegistry_.create();
-	auto &itemComp = itemRegistry_.emplace<ItemComp>(itemEntity);
-	itemComp.set_item_id(guid);
-	itemComp.set_config_id(configId);
-	itemComp.set_size(stackSize);
+	// Build the ItemComp the same shape AddItem would, then route through
+	// the single InsertItemEntity chokepoint so items_/itemRegistry_ stay
+	// in sync.
+	ItemComp proto;
+	proto.set_item_id(guid);
+	proto.set_config_id(configId);
+	proto.set_size(stackSize);
 
-	items_[guid] = itemEntity;
+	if (InsertItemEntity(std::move(proto)) == nullptr)
+	{
+		LOG_ERROR << "Bag::InsertItemForRestore: duplicate guid=" << guid
+				  << " configId=" << configId << ", skipping";
+		return;
+	}
 	// Position is persisted from the source-side bag layout. Don't
 	// auto-Neaten — the player expects items to be where they left them.
 	if (pos != kInvalidU32Id)
