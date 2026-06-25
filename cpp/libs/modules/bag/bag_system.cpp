@@ -109,19 +109,17 @@ uint32_t Bag::CheckItemsAvailable(const ItemCountMap &requiredItems)
 
 	for (const auto &[entity, item] : itemRegistry.view<ItemComp>().each()) // 遍历背包内每个物品实体
 	{
-		auto configId = item.config_id();        // 当前物品的 config
-		auto it = itemsToCheck.find(configId);   // 看这个 config 是否在需求清单里
-		if (it != itemsToCheck.end())            // 命中需求
+		auto it = itemsToCheck.find(item.config_id()); // 这个 config 在需求清单里吗
+		if (it == itemsToCheck.end())
 		{
-			if (item.size() >= it->second)       // 这一堆的数量已经够抵这个 config 的剩余需求
-			{
-				itemsToCheck.erase(it);          // 该 config 需求已满足,从清单移除
-			}
-			else                                  // 这一堆不够,只能抵掉一部分
-			{
-				it->second -= item.size();       // 扣减剩余需求,继续找后面的同 config 堆叠
-			}
+			continue; // 不是需要的物品,跳过
 		}
+		if (item.size() >= it->second)
+		{
+			itemsToCheck.erase(it); // 这一堆就够抵该 config 的全部剩余需求 -> 该项满足
+			continue;
+		}
+		it->second -= item.size(); // 这一堆只够抵一部分 -> 扣减后继续找后面的同 config 堆叠
 	}
 
 	// 清单空 => 所有需求都被满足;否则返回物品不足错误。
@@ -171,7 +169,7 @@ uint32_t Bag::RemoveItemByPos(const RemoveItemByPosParam &param)
 	// 必须四者全部对得上才会扣减——这是一连串卫语句(guard),任何一项不一致就
 	// 立刻返回对应错误,绝不误删别的格子。全部是 O(1) 哈希查找,无遍历。
 
-	if (param.size <= 0) // 删除数量必须 > 0(无符号,等价于 != 0)
+	if (param.size == 0) // 删除数量必须 > 0(size 是无符号,== 0 即"没要求删任何东西")
 	{
 		return PrintStackAndReturnError(kBagDelItemSize);
 	}
@@ -537,7 +535,8 @@ uint32_t Bag::AddStackableItem(ItemComp itemProto, uint32_t maxStackSize)
 uint32_t Bag::AddItem(const InitItemParam &initItemParam)
 {
 	auto itemProto = initItemParam.itemPBComp;
-	if (itemProto.config_id() <= 0 || itemProto.size() <= 0)
+	// config_id / size 都是无符号:== 0 即"没指定物品"或"数量为 0",均属非法入参。
+	if (itemProto.config_id() == 0 || itemProto.size() == 0)
 	{
 		LOG_ERROR << "bag add item player:" << PlayerGuid();
 		return PrintStackAndReturnError(kBagAddItemInvalidParam);
@@ -545,7 +544,7 @@ uint32_t Bag::AddItem(const InitItemParam &initItemParam)
 
 	LookupItem(itemProto.config_id());
 
-	if (itemRow->max_stack_size() <= 0)
+	if (itemRow->max_stack_size() == 0)
 	{
 		return PrintStackAndReturnError(kInvalidTableData);
 	}
