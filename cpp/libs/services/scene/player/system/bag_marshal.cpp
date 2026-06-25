@@ -47,7 +47,7 @@ void Marshal(entt::entity player, BagAllData& out)
     out.mutable_capacities()->Reserve(static_cast<int>(kBagMax));
     for (uint32_t bagType = 0; bagType < static_cast<uint32_t>(kBagMax); ++bagType)
     {
-        out.add_capacities(static_cast<uint32_t>(bags->bags[bagType].GetCapacity()));
+        out.add_capacities(static_cast<uint32_t>(bags->bags[bagType].Capacity()));
     }
 
     // Items across all four bags. ItemEntry.bag_type tags which bag

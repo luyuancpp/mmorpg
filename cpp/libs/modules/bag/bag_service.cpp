@@ -77,7 +77,7 @@ uint32_t BagService::AddItem(
 	if (result == kSuccess)
 	{
 		TransactionLogSystem::LogItemCreate(
-			playerEntity, Bag::LastGeneratorItemGuid(),
+			playerEntity, Bag::LastGeneratedItemGuid(),
 			param.itemPBComp.config_id(),
 			param.itemPBComp.size(),
 			TX_SYSTEM_GRANT);
@@ -109,7 +109,7 @@ uint32_t BagService::RemoveItem(
 	}
 
 	// Capture item info for transaction log before destroying.
-	auto *itemComp = bag.GetItemBaseByGuid(guid);
+	auto *itemComp = bag.GetItemCompByGuid(guid);
 	uint32_t capturedConfigId = 0;
 	uint32_t capturedSize = 0;
 	if (itemComp != nullptr)
