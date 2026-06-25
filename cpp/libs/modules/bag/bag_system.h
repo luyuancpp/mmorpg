@@ -39,18 +39,17 @@ struct RemoveItemByPosParam
 class Bag
 {
 public:
-    Bag();
-    ~Bag();
-
-    std::size_t size() const { return capacity_; }
+    // Capacity = how many grid slots this bag has unlocked. NOT the number
+    // of items currently held (that's ItemGridSize()).
+    std::size_t Capacity() const { return capacity_; }
     [[nodiscard]] Guid PlayerGuid() const { return player_guid_; }
     std::size_t ItemGridSize() const { return items_.size(); }
     std::size_t PosSize() const { return pos_.size(); }
     const PosMap &pos() const { return pos_; }
 
     std::size_t GetItemStackSize(uint32_t config_id) const;
-    ItemComp *GetItemBaseByGuid(Guid guid);
-    ItemComp *GetItemBaseByPos(uint32_t pos);
+    ItemComp *GetItemCompByGuid(Guid guid);
+    ItemComp *GetItemCompByPos(uint32_t pos);
     entt::entity GetItemByGuid(Guid guid);
     entt::entity GetItemByPos(uint32_t pos);
     uint32_t GetItemPos(Guid guid);
@@ -60,16 +59,16 @@ public:
     uint32_t RemoveItems(const ItemCountMap &itemsToRemove);
     uint32_t RemoveItemByPos(const RemoveItemByPosParam &param);
 
-    bool IsFull() const { return items_.size() >= size(); }
+    bool IsFull() const { return items_.size() >= Capacity(); }
     bool HasSufficientSpace(std::size_t s) const
     {
         ValidateCapacity();
-        return size() - items_.size() >= s;
+        return Capacity() - items_.size() >= s;
     }
     bool IsSpaceInsufficient(std::size_t s) const
     {
         ValidateCapacity();
-        return size() - items_.size() < s;
+        return Capacity() - items_.size() < s;
     }
 
     uint32_t AddItem(const InitItemParam &itemParam);
@@ -78,7 +77,7 @@ public:
     void Neaten();
     void Unlock(std::size_t additionalSize);
 
-    static Guid LastGeneratorItemGuid();
+    static Guid LastGeneratedItemGuid();
 
     static std::size_t CalculateStackGridSize(std::size_t itemStackSize, std::size_t stackSize);
 
@@ -152,29 +151,47 @@ public:
         capacity_ = capacity;
     }
 
-    std::size_t GetCapacity() const { return capacity_; }
-
 private:
-    Guid GeneratorItemGuid();
-    bool IsInvalidItemGuid(const ItemComp &item) const;
+    // ── Item-storage invariant helpers ────────────────────────────────
+    // items_ (guid→entity) and itemRegistry_ (entity→ItemComp) MUST stay
+    // in lockstep. To make it impossible to update one and forget the
+    // other, ALL creation goes through InsertItemEntity and ALL removal
+    // through DestroyItem / ClearAllItems. Do not call itemRegistry_
+    // .create()/.destroy() or items_.emplace()/.erase() directly anywhere
+    // else.
+
+    // Create the ECS entity for `proto`, store the component, and register
+    // it in items_ — atomically. Returns the stored component, or nullptr
+    // if the guid already exists (the half-created entity is rolled back).
+    // `proto` must already have its item_id / config_id / size set.
+    ItemComp *InsertItemEntity(ItemComp proto);
+
+    // Remove one item everywhere: destroys its ECS entity, drops it from
+    // items_, and frees its grid slot in pos_. Safe to call with an
+    // unknown guid (no-op).
     void DestroyItem(Guid guid);
+
+    // Drop every item the bag holds (entities + items_ + pos_). capacity_
+    // is left untouched. Used by ResetFromSnapshot.
+    void ClearAllItems();
+
+    Guid GenerateItemGuid();
+    bool IsInvalidItemGuid(const ItemComp &item) const;
     uint32_t OnNewGrid(Guid guid);
     static bool CanStack(const ItemComp &item1, const ItemComp &item2);
 
     uint32_t AddNonStackableItem(ItemComp itemPBComp);
     uint32_t AddStackableItem(ItemComp itemPBComp, uint32_t maxStackSize);
 
-    std::size_t empty_grid_size() const
+    std::size_t EmptyGridCount() const
     {
         ValidateCapacity();
-        return size() - items_.size();
+        return Capacity() - items_.size();
     }
-    void ValidateCapacity() const { assert(size() >= items_.size()); }
+    void ValidateCapacity() const { assert(Capacity() >= items_.size()); }
 
-    entt::entity entity_{};
     ItemsMap items_{};
     PosMap pos_{};
-    uint32_t type_{};
     std::size_t capacity_{kDefaultCapacity};
     entt::registry itemRegistry_{};
     Guid player_guid_{kInvalidGuid};
