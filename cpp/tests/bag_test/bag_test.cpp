@@ -81,8 +81,8 @@ TEST(BagTest, AddNewGridItem)
     Bag bag;
     auto item = MakeItem(kNonStack1);
     EXPECT_EQ(kSuccess, bag.AddItem(item));
-    EXPECT_EQ(1, bag.ItemGridSize());
-    EXPECT_EQ(1, bag.PosSize());
+    EXPECT_EQ(1, bag.OccupiedGridCount());
+    EXPECT_EQ(1, bag.PositionCount());
     VerifyLastAdded(bag, 0, kNonStack1, item.itemPBComp.size());
 }
 
@@ -95,34 +95,34 @@ TEST(BagTest, AddNewGridItemFull)
     for (uint32_t i = 0; i < (uint32_t)kDefaultCapacity; i++)
     {
         EXPECT_EQ(kSuccess, bag.AddItem(item));
-        EXPECT_EQ(i + 1, bag.ItemGridSize());
-        EXPECT_EQ(i + 1, bag.PosSize());
+        EXPECT_EQ(i + 1, bag.OccupiedGridCount());
+        EXPECT_EQ(i + 1, bag.PositionCount());
         VerifyLastAdded(bag, i, kNonStack1, item.itemPBComp.size());
     }
-    EXPECT_EQ(kDefaultCapacity, bag.ItemGridSize());
-    EXPECT_EQ(kDefaultCapacity, bag.PosSize());
+    EXPECT_EQ(kDefaultCapacity, bag.OccupiedGridCount());
+    EXPECT_EQ(kDefaultCapacity, bag.PositionCount());
 
     // Full — adding one more fails
     EXPECT_EQ(kBagAddItemBagFull, bag.AddItem(item));
 
-    // Unlock more slots and fill again
-    bag.Unlock(kDefaultCapacity);
+    // ExpandCapacity more slots and fill again
+    bag.ExpandCapacity(kDefaultCapacity);
     for (uint32_t i = 0; i < (uint32_t)kDefaultCapacity; i++)
     {
         EXPECT_EQ(kSuccess, bag.AddItem(item));
         uint32_t idx = i + (uint32_t)kDefaultCapacity;
-        EXPECT_EQ(idx + 1, bag.ItemGridSize());
-        EXPECT_EQ(idx + 1, bag.PosSize());
+        EXPECT_EQ(idx + 1, bag.OccupiedGridCount());
+        EXPECT_EQ(idx + 1, bag.PositionCount());
         VerifyLastAdded(bag, idx, kNonStack1, item.itemPBComp.size());
     }
-    EXPECT_EQ(kDefaultCapacity * 2, bag.ItemGridSize());
-    EXPECT_EQ(kDefaultCapacity * 2, bag.PosSize());
+    EXPECT_EQ(kDefaultCapacity * 2, bag.OccupiedGridCount());
+    EXPECT_EQ(kDefaultCapacity * 2, bag.PositionCount());
 }
 
 TEST(BagTest, Add10CanStack10CanNotStack)
 {
     Bag bag;
-    bag.Unlock(kDefaultCapacity);
+    bag.ExpandCapacity(kDefaultCapacity);
 
     // Fill all initial slots with non-stackable items
     auto nonStack = MakeItem(kNonStack1, MaxStack(kNonStack1) * kDefaultCapacity);
@@ -132,8 +132,8 @@ TEST(BagTest, Add10CanStack10CanNotStack)
     auto stackable = MakeItem(kStack10, MaxStack(kStack10) * kDefaultCapacity);
     EXPECT_EQ(kSuccess, bag.AddItem(stackable));
 
-    EXPECT_EQ(kDefaultCapacity * 2, bag.ItemGridSize());
-    EXPECT_EQ(kDefaultCapacity * 2, bag.PosSize());
+    EXPECT_EQ(kDefaultCapacity * 2, bag.OccupiedGridCount());
+    EXPECT_EQ(kDefaultCapacity * 2, bag.PositionCount());
 }
 
 TEST(BagTest, AddStackItem12121212)
@@ -154,11 +154,11 @@ TEST(BagTest, AddStackItem12121212)
             break;
         EXPECT_EQ(kSuccess, ret);
 
-        auto gridSize = Bag::CalculateStackGridSize(totalSize, maxStack);
+        auto gridSize = Bag::GridsNeededFor(totalSize, maxStack);
         uint32_t lastIdx = uint32_t(gridSize - 1);
 
-        EXPECT_EQ(gridSize, bag.ItemGridSize());
-        EXPECT_EQ(gridSize, bag.PosSize());
+        EXPECT_EQ(gridSize, bag.OccupiedGridCount());
+        EXPECT_EQ(gridSize, bag.PositionCount());
 
         if (totalSize % maxStack == 0)
         {
@@ -176,8 +176,8 @@ TEST(BagTest, AddStackItem12121212)
         EXPECT_EQ(Bag::LastGeneratedItemGuid(), bag.GetItemCompByGuid(Bag::LastGeneratedItemGuid())->item_id());
     }
 
-    EXPECT_EQ(kDefaultCapacity, bag.ItemGridSize());
-    EXPECT_EQ(kDefaultCapacity, bag.PosSize());
+    EXPECT_EQ(kDefaultCapacity, bag.OccupiedGridCount());
+    EXPECT_EQ(kDefaultCapacity, bag.PositionCount());
 }
 
 TEST(BagTest, AddStackItemUnlock)
@@ -189,26 +189,26 @@ TEST(BagTest, AddStackItemUnlock)
     for (uint32_t i = 0; i < (uint32_t)kDefaultCapacity; i++)
     {
         EXPECT_EQ(kSuccess, bag.AddItem(item));
-        EXPECT_EQ(i + 1, bag.ItemGridSize());
-        EXPECT_EQ(i + 1, bag.PosSize());
+        EXPECT_EQ(i + 1, bag.OccupiedGridCount());
+        EXPECT_EQ(i + 1, bag.PositionCount());
         VerifyLastAdded(bag, i, kStack10, item.itemPBComp.size());
     }
-    EXPECT_EQ(kDefaultCapacity, bag.ItemGridSize());
-    EXPECT_EQ(kDefaultCapacity, bag.PosSize());
+    EXPECT_EQ(kDefaultCapacity, bag.OccupiedGridCount());
+    EXPECT_EQ(kDefaultCapacity, bag.PositionCount());
 
     // Full — unlock and fill again
     EXPECT_EQ(kBagAddItemBagFull, bag.AddItem(item));
-    bag.Unlock(kDefaultCapacity);
+    bag.ExpandCapacity(kDefaultCapacity);
     for (uint32_t i = 0; i < (uint32_t)kDefaultCapacity; i++)
     {
         EXPECT_EQ(kSuccess, bag.AddItem(item));
         uint32_t idx = i + (uint32_t)kDefaultCapacity;
-        EXPECT_EQ(idx + 1, bag.ItemGridSize());
-        EXPECT_EQ(idx + 1, bag.PosSize());
+        EXPECT_EQ(idx + 1, bag.OccupiedGridCount());
+        EXPECT_EQ(idx + 1, bag.PositionCount());
         VerifyLastAdded(bag, idx, kStack10, item.itemPBComp.size());
     }
-    EXPECT_EQ(kDefaultCapacity * 2, bag.ItemGridSize());
-    EXPECT_EQ(kDefaultCapacity * 2, bag.PosSize());
+    EXPECT_EQ(kDefaultCapacity * 2, bag.OccupiedGridCount());
+    EXPECT_EQ(kDefaultCapacity * 2, bag.PositionCount());
 }
 
 TEST(BagTest, AdequateSizeAddItemCannotStackItemFull)
@@ -270,7 +270,7 @@ TEST(BagTest, HasEnoughSpaceEmptyRequest)
     {
         EXPECT_EQ(kSuccess, bag.AddItem(MakeItem(kNonStack1)));
     }
-    EXPECT_EQ(kDefaultCapacity, bag.ItemGridSize());
+    EXPECT_EQ(kDefaultCapacity, bag.OccupiedGridCount());
 
     ItemCountMap empty;
     EXPECT_EQ(kSuccess, bag.HasEnoughSpace(empty));
@@ -312,7 +312,7 @@ TEST(BagTest, HasEnoughSpaceSoaksExistingStacks)
     // Put one partial stack in the bag: occupies 1 grid, leaves (maxStack - 1)
     // units of room inside it. 9 empty grids remain.
     EXPECT_EQ(kSuccess, bag.AddItem(MakeItem(kStack10, 1)));
-    EXPECT_EQ(1, bag.ItemGridSize());
+    EXPECT_EQ(1, bag.OccupiedGridCount());
 
     // Requesting (maxStack - 1) units fits entirely inside the existing stack:
     // 0 new grids needed.
@@ -375,7 +375,7 @@ TEST(BagTest, HasEnoughSpaceFullStackNoRoom)
 
     // One FULL stack -> 1 grid used, 0 room inside it. 9 grids free.
     EXPECT_EQ(kSuccess, bag.AddItem(MakeItem(kStack10)));
-    EXPECT_EQ(1, bag.ItemGridSize());
+    EXPECT_EQ(1, bag.OccupiedGridCount());
 
     // 9 full stacks fit in the 9 remaining grids.
     ItemCountMap fits{{kStack10, maxStack * 9}};
@@ -389,61 +389,61 @@ TEST(BagTest, HasEnoughSpaceFullStackNoRoom)
 TEST(BagTest, AdequateItem)
 {
     Bag bag;
-    bag.Unlock(20);
+    bag.ExpandCapacity(20);
     auto maxStack10 = MaxStack(kStack10);
     auto maxStack11 = MaxStack(kStack11);
 
     // Empty bag — no items
     ItemCountMap required{{kStack10, 1}};
-    EXPECT_EQ(kBagInsufficientItems, bag.HasSufficientItems(required));
+    EXPECT_EQ(kBagInsufficientItems, bag.HasEnoughItems(required));
 
     // Add one full stack of id 10
     EXPECT_EQ(kSuccess, bag.AddItem(MakeItem(kStack10)));
-    EXPECT_EQ(kSuccess, bag.HasSufficientItems(required));
+    EXPECT_EQ(kSuccess, bag.HasEnoughItems(required));
 
     required[kStack10] = maxStack10 / 2;
-    EXPECT_EQ(kSuccess, bag.HasSufficientItems(required));
+    EXPECT_EQ(kSuccess, bag.HasEnoughItems(required));
 
     // Also require 1 non-stackable — not in bag yet
     required.emplace(kNonStack1, 1);
-    EXPECT_EQ(kBagInsufficientItems, bag.HasSufficientItems(required));
+    EXPECT_EQ(kBagInsufficientItems, bag.HasEnoughItems(required));
 
     // Add a non-stackable item
     EXPECT_EQ(kSuccess, bag.AddItem(MakeItem(kNonStack1)));
-    EXPECT_EQ(kSuccess, bag.HasSufficientItems(required));
+    EXPECT_EQ(kSuccess, bag.HasEnoughItems(required));
 
     // Require exactly 1 full stack of id 10
     required[kStack10] = maxStack10;
-    EXPECT_EQ(kSuccess, bag.HasSufficientItems(required));
+    EXPECT_EQ(kSuccess, bag.HasEnoughItems(required));
 
     // Require more than available
     required[kStack10] = maxStack10 + 1;
-    EXPECT_EQ(kBagInsufficientItems, bag.HasSufficientItems(required));
+    EXPECT_EQ(kBagInsufficientItems, bag.HasEnoughItems(required));
 
     required[kStack10] = maxStack10 * 3;
-    EXPECT_EQ(kBagInsufficientItems, bag.HasSufficientItems(required));
+    EXPECT_EQ(kBagInsufficientItems, bag.HasEnoughItems(required));
 
     // Add second stack of id 10 — still not enough for 3 stacks
     EXPECT_EQ(kSuccess, bag.AddItem(MakeItem(kStack10)));
-    EXPECT_EQ(kBagInsufficientItems, bag.HasSufficientItems(required));
+    EXPECT_EQ(kBagInsufficientItems, bag.HasEnoughItems(required));
 
     // Add id 11 — doesn't help with id 10 requirement
     EXPECT_EQ(kSuccess, bag.AddItem(MakeItem(kStack11, maxStack11 * 3)));
-    EXPECT_EQ(kBagInsufficientItems, bag.HasSufficientItems(required));
+    EXPECT_EQ(kBagInsufficientItems, bag.HasEnoughItems(required));
 
     // Third stack of id 10 — now have 3 stacks
     EXPECT_EQ(kSuccess, bag.AddItem(MakeItem(kStack10)));
-    EXPECT_EQ(kSuccess, bag.HasSufficientItems(required));
+    EXPECT_EQ(kSuccess, bag.HasEnoughItems(required));
 
     // Also require 3 stacks of id 11 — we added 3 stacks above
     required[kStack11] = maxStack11 * 3;
-    EXPECT_EQ(kSuccess, bag.HasSufficientItems(required));
+    EXPECT_EQ(kSuccess, bag.HasEnoughItems(required));
 }
 
 TEST(BagTest, DelItem)
 {
     Bag bag;
-    bag.Unlock(20);
+    bag.ExpandCapacity(20);
     auto maxStack10 = MaxStack(kStack10);
     auto maxStack11 = MaxStack(kStack11);
 
@@ -455,10 +455,10 @@ TEST(BagTest, DelItem)
     // Remove 1 unit of id 10
     ItemCountMap toRemove{{kStack10, 1}};
     EXPECT_EQ(kSuccess, bag.RemoveItems(toRemove));
-    EXPECT_EQ(maxStack10 * 2 - 1, bag.GetItemStackSize(kStack10));
-    EXPECT_EQ(MaxStack(kNonStack1), bag.GetItemStackSize(kNonStack1));
-    EXPECT_EQ(MaxStack(kNonStack2), bag.GetItemStackSize(kNonStack2));
-    EXPECT_EQ(maxStack11, bag.GetItemStackSize(kStack11));
+    EXPECT_EQ(maxStack10 * 2 - 1, bag.GetTotalItemCount(kStack10));
+    EXPECT_EQ(MaxStack(kNonStack1), bag.GetTotalItemCount(kNonStack1));
+    EXPECT_EQ(MaxStack(kNonStack2), bag.GetTotalItemCount(kNonStack2));
+    EXPECT_EQ(maxStack11, bag.GetTotalItemCount(kStack11));
 
     // Remove everything remaining
     toRemove[kStack10] = maxStack10 * 2 - 1;
@@ -466,14 +466,14 @@ TEST(BagTest, DelItem)
     toRemove[kNonStack2] = MaxStack(kNonStack2);
     toRemove[kStack11] = maxStack11;
     EXPECT_EQ(kSuccess, bag.RemoveItems(toRemove));
-    EXPECT_EQ(0, bag.GetItemStackSize(kStack10));
-    EXPECT_EQ(0, bag.GetItemStackSize(kNonStack1));
-    EXPECT_EQ(0, bag.GetItemStackSize(kNonStack2));
-    EXPECT_EQ(0, bag.GetItemStackSize(kStack11));
+    EXPECT_EQ(0, bag.GetTotalItemCount(kStack10));
+    EXPECT_EQ(0, bag.GetTotalItemCount(kNonStack1));
+    EXPECT_EQ(0, bag.GetTotalItemCount(kNonStack2));
+    EXPECT_EQ(0, bag.GetTotalItemCount(kStack11));
 
     // Grid slots remain (empty)
-    EXPECT_EQ(5, bag.ItemGridSize());
-    EXPECT_EQ(5, bag.PosSize());
+    EXPECT_EQ(5, bag.OccupiedGridCount());
+    EXPECT_EQ(5, bag.PositionCount());
     for (uint32_t p : {0u, 1u, 2u, 3u, 4u})
     {
         EXPECT_TRUE(bag.pos().find(p) != bag.pos().end());
@@ -484,12 +484,12 @@ TEST(BagTest, Del)
 {
     Bag bag;
     EXPECT_EQ(kSuccess, bag.AddItem(MakeItem(kNonStack1)));
-    EXPECT_EQ(1, bag.ItemGridSize());
-    EXPECT_EQ(1, bag.PosSize());
+    EXPECT_EQ(1, bag.OccupiedGridCount());
+    EXPECT_EQ(1, bag.PositionCount());
 
     EXPECT_EQ(kSuccess, bag.RemoveItem(Bag::LastGeneratedItemGuid()));
-    EXPECT_EQ(0, bag.ItemGridSize());
-    EXPECT_EQ(0, bag.PosSize());
+    EXPECT_EQ(0, bag.OccupiedGridCount());
+    EXPECT_EQ(0, bag.PositionCount());
 }
 
 TEST(BagTest, RemoveItemByPos)
@@ -497,8 +497,8 @@ TEST(BagTest, RemoveItemByPos)
     Bag bag;
     auto maxStack = MaxStack(kStack10);
     EXPECT_EQ(kSuccess, bag.AddItem(MakeItem(kStack10)));
-    EXPECT_EQ(1, bag.ItemGridSize());
-    EXPECT_EQ(1, bag.PosSize());
+    EXPECT_EQ(1, bag.OccupiedGridCount());
+    EXPECT_EQ(1, bag.PositionCount());
 
     // Missing fields → various errors
     RemoveItemByPosParam dp;
@@ -513,14 +513,14 @@ TEST(BagTest, RemoveItemByPos)
     // Remove 1 unit
     dp.item_config_id_ = kStack10;
     EXPECT_EQ(kSuccess, bag.RemoveItemByPos(dp));
-    EXPECT_EQ(maxStack - 1, bag.GetItemStackSize(kStack10));
+    EXPECT_EQ(maxStack - 1, bag.GetTotalItemCount(kStack10));
 
     // Remove the rest
     dp.size_ = maxStack - 1;
     EXPECT_EQ(kSuccess, bag.RemoveItemByPos(dp));
-    EXPECT_EQ(0, bag.GetItemStackSize(kStack10));
-    EXPECT_EQ(1, bag.ItemGridSize());
-    EXPECT_EQ(1, bag.PosSize());
+    EXPECT_EQ(0, bag.GetTotalItemCount(kStack10));
+    EXPECT_EQ(1, bag.OccupiedGridCount());
+    EXPECT_EQ(1, bag.PositionCount());
     EXPECT_EQ(0, bag.GetItemCompByPos(0)->size());
     EXPECT_EQ(0, bag.GetItemCompByGuid(Bag::LastGeneratedItemGuid())->size());
 }
@@ -539,7 +539,7 @@ void FillAndReduceToOne(Bag &bag, uint32_t configId, uint32_t startPos, uint32_t
 TEST(BagTest, Neaten1)
 {
     Bag bag;
-    bag.Unlock(kDefaultCapacity);
+    bag.ExpandCapacity(kDefaultCapacity);
 
     // Fill both halves with full stacks
     EXPECT_EQ(kSuccess, bag.AddItem(MakeItem(kStack10, MaxStack(kStack10) * kDefaultCapacity)));
@@ -549,18 +549,18 @@ TEST(BagTest, Neaten1)
     FillAndReduceToOne(bag, kStack10, 0, (uint32_t)kDefaultCapacity);
     FillAndReduceToOne(bag, kStack11, (uint32_t)kDefaultCapacity, (uint32_t)kDefaultCapacity);
 
-    for (uint32_t i = 0; i < (uint32_t)bag.PosSize(); ++i)
+    for (uint32_t i = 0; i < (uint32_t)bag.PositionCount(); ++i)
         EXPECT_EQ(1, bag.GetItemCompByPos(i)->size());
 
-    bag.Neaten();
+    bag.MergeAndCompact();
 
     // 10 units of each config consolidate into 1 slot each (size = 10)
-    EXPECT_EQ(2, bag.ItemGridSize());
-    EXPECT_EQ(2, bag.PosSize());
+    EXPECT_EQ(2, bag.OccupiedGridCount());
+    EXPECT_EQ(2, bag.PositionCount());
     for (auto &[pos, guid] : bag.pos())
         EXPECT_EQ(kDefaultCapacity, (std::size_t)bag.GetItemCompByPos(bag.GetItemPos(guid))->size());
-    EXPECT_EQ(kDefaultCapacity, bag.GetItemStackSize(kStack10));
-    EXPECT_EQ(kDefaultCapacity, bag.GetItemStackSize(kStack11));
+    EXPECT_EQ(kDefaultCapacity, bag.GetTotalItemCount(kStack10));
+    EXPECT_EQ(kDefaultCapacity, bag.GetTotalItemCount(kStack11));
 }
 
 TEST(BagTest, Neaten400)
@@ -568,7 +568,7 @@ TEST(BagTest, Neaten400)
     Bag bag;
     constexpr std::size_t kSlots = 400;
     constexpr std::size_t kHalf = kSlots / 2;
-    bag.Unlock(kSlots);
+    bag.ExpandCapacity(kSlots);
 
     EXPECT_EQ(kSuccess, bag.AddItem(MakeItem(kStack10, MaxStack(kStack10) * (uint32_t)kHalf)));
     EXPECT_EQ(kSuccess, bag.AddItem(MakeItem(kStack11, MaxStack(kStack11) * (uint32_t)kHalf)));
@@ -576,18 +576,18 @@ TEST(BagTest, Neaten400)
     FillAndReduceToOne(bag, kStack10, 0, (uint32_t)kHalf);
     FillAndReduceToOne(bag, kStack11, (uint32_t)kHalf, (uint32_t)kHalf);
 
-    for (uint32_t i = 0; i < (uint32_t)bag.PosSize(); ++i)
+    for (uint32_t i = 0; i < (uint32_t)bag.PositionCount(); ++i)
         EXPECT_EQ(1, bag.GetItemCompByPos(i)->size());
 
-    bag.Neaten();
+    bag.MergeAndCompact();
 
     // kHalf units of each config consolidate into 1 slot each (size = kHalf)
-    EXPECT_EQ(2, bag.ItemGridSize());
-    EXPECT_EQ(2, bag.PosSize());
+    EXPECT_EQ(2, bag.OccupiedGridCount());
+    EXPECT_EQ(2, bag.PositionCount());
     for (auto &[pos, guid] : bag.pos())
         EXPECT_EQ(kHalf, (std::size_t)bag.GetItemCompByPos(bag.GetItemPos(guid))->size());
-    EXPECT_EQ(kHalf, bag.GetItemStackSize(kStack10));
-    EXPECT_EQ(kHalf, bag.GetItemStackSize(kStack11));
+    EXPECT_EQ(kHalf, bag.GetTotalItemCount(kStack10));
+    EXPECT_EQ(kHalf, bag.GetTotalItemCount(kStack11));
 }
 
 TEST(BagTest, Neaten400_1)
@@ -597,7 +597,7 @@ TEST(BagTest, Neaten400_1)
     constexpr std::size_t kHalf = kSlots / 2;
     constexpr std::size_t kQuarter = kSlots / 4;
     constexpr std::size_t kMaxStack = 999;
-    bag.Unlock(kSlots);
+    bag.ExpandCapacity(kSlots);
 
     // Fill 200 slots of each item type
     EXPECT_EQ(kSuccess, bag.AddItem(MakeItem(kStack10, MaxStack(kStack10) * (uint32_t)kHalf)));
@@ -608,7 +608,7 @@ TEST(BagTest, Neaten400_1)
     FillAndReduceToOne(bag, kStack11, (uint32_t)kHalf, (uint32_t)kQuarter);
 
     // Layout: [0..99]=1, [100..199]=999, [200..299]=1, [300..399]=999
-    for (uint32_t i = 0; i < (uint32_t)bag.PosSize(); ++i)
+    for (uint32_t i = 0; i < (uint32_t)bag.PositionCount(); ++i)
     {
         if (i < kQuarter)
             EXPECT_EQ(1, bag.GetItemCompByPos(i)->size());
@@ -620,14 +620,14 @@ TEST(BagTest, Neaten400_1)
             EXPECT_EQ(kMaxStack, bag.GetItemCompByPos(i)->size());
     }
 
-    bag.Neaten();
+    bag.MergeAndCompact();
 
     // 200 full stacks (999) + 2 consolidated partial stacks (kQuarter units each)
-    EXPECT_EQ(kHalf + 2, bag.ItemGridSize());
-    EXPECT_EQ(kHalf + 2, bag.PosSize());
+    EXPECT_EQ(kHalf + 2, bag.OccupiedGridCount());
+    EXPECT_EQ(kHalf + 2, bag.PositionCount());
 
     UInt32Set pos999, posPartial;
-    for (uint32_t i = 0; i < (uint32_t)bag.PosSize(); ++i)
+    for (uint32_t i = 0; i < (uint32_t)bag.PositionCount(); ++i)
     {
         auto sz = bag.GetItemCompByPos(i)->size();
         if (sz == kMaxStack)
@@ -637,14 +637,14 @@ TEST(BagTest, Neaten400_1)
     }
     EXPECT_EQ(kHalf, pos999.size());
     EXPECT_EQ(2, posPartial.size());
-    EXPECT_EQ(kHalf / 2 * kMaxStack + kQuarter, bag.GetItemStackSize(kStack10));
-    EXPECT_EQ(kHalf / 2 * kMaxStack + kQuarter, bag.GetItemStackSize(kStack11));
+    EXPECT_EQ(kHalf / 2 * kMaxStack + kQuarter, bag.GetTotalItemCount(kStack10));
+    EXPECT_EQ(kHalf / 2 * kMaxStack + kQuarter, bag.GetTotalItemCount(kStack11));
 }
 
 TEST(BagTest, NeatenCanNotStack)
 {
     Bag bag;
-    bag.Unlock(kDefaultCapacity);
+    bag.ExpandCapacity(kDefaultCapacity);
 
     // First half: stackable, second half: non-stackable
     EXPECT_EQ(kSuccess, bag.AddItem(MakeItem(kStack10, MaxStack(kStack10) * kDefaultCapacity)));
@@ -653,22 +653,22 @@ TEST(BagTest, NeatenCanNotStack)
     // Reduce stackable slots to 1 unit each
     FillAndReduceToOne(bag, kStack10, 0, (uint32_t)kDefaultCapacity);
 
-    for (uint32_t i = 0; i < (uint32_t)bag.PosSize(); ++i)
+    for (uint32_t i = 0; i < (uint32_t)bag.PositionCount(); ++i)
         EXPECT_EQ(1, bag.GetItemCompByPos(i)->size());
 
-    bag.Neaten();
+    bag.MergeAndCompact();
 
     // 1 consolidated stack + kDefaultCapacity non-stackable slots
-    EXPECT_EQ(kDefaultCapacity + 1, bag.ItemGridSize());
-    EXPECT_EQ(kDefaultCapacity + 1, bag.PosSize());
+    EXPECT_EQ(kDefaultCapacity + 1, bag.OccupiedGridCount());
+    EXPECT_EQ(kDefaultCapacity + 1, bag.PositionCount());
     for (auto &[pos, guid] : bag.pos())
     {
         auto sz = (std::size_t)bag.GetItemCompByPos(bag.GetItemPos(guid))->size();
         if (sz != kDefaultCapacity)
             EXPECT_EQ(1, sz);
     }
-    EXPECT_EQ(kDefaultCapacity, bag.GetItemStackSize(kStack10));
-    EXPECT_EQ(kDefaultCapacity, bag.GetItemStackSize(kNonStack1));
+    EXPECT_EQ(kDefaultCapacity, bag.GetTotalItemCount(kStack10));
+    EXPECT_EQ(kDefaultCapacity, bag.GetTotalItemCount(kNonStack1));
 }
 
 // ---------------------------------------------------------------------------
@@ -678,7 +678,7 @@ TEST(BagTest, NeatenCanNotStack)
 TEST(BagTest, BlockItemPreventsAdd)
 {
     Bag bag;
-    bag.Unlock(kBagMaxCapacity);
+    bag.ExpandCapacity(kBagMaxCapacity);
     PlayerItemBlockList blockList;
 
     // Block the non-stackable item config
@@ -687,17 +687,17 @@ TEST(BagTest, BlockItemPreventsAdd)
 
     // BagService::AddItem should fail for blocked config
     EXPECT_NE(kSuccess, BagService::AddItem(entt::null, bag, blockList, MakeItem(kNonStack1)));
-    EXPECT_EQ(0, bag.ItemGridSize());
+    EXPECT_EQ(0, bag.OccupiedGridCount());
 
     // Other items unaffected
     EXPECT_EQ(kSuccess, BagService::AddItem(entt::null, bag, blockList, MakeItem(kStack10, 1)));
-    EXPECT_EQ(1, bag.ItemGridSize());
+    EXPECT_EQ(1, bag.OccupiedGridCount());
 }
 
 TEST(BagTest, UnblockItemAllowsAdd)
 {
     Bag bag;
-    bag.Unlock(kBagMaxCapacity);
+    bag.ExpandCapacity(kBagMaxCapacity);
     PlayerItemBlockList blockList;
 
     blockList.Block(kNonStack1);
@@ -706,7 +706,7 @@ TEST(BagTest, UnblockItemAllowsAdd)
     blockList.Unblock(kNonStack1);
     EXPECT_FALSE(blockList.IsBlocked(kNonStack1));
     EXPECT_EQ(kSuccess, BagService::AddItem(entt::null, bag, blockList, MakeItem(kNonStack1)));
-    EXPECT_EQ(1, bag.ItemGridSize());
+    EXPECT_EQ(1, bag.OccupiedGridCount());
 }
 
 TEST(BagTest, BlockItemIdempotent)
@@ -740,12 +740,12 @@ TEST(GainBlockServiceTest, GlobalItemBlockPreventsAdd)
 {
     GainBlockService::ClearAllGlobalBlocks();
     Bag bag;
-    bag.Unlock(kBagMaxCapacity);
+    bag.ExpandCapacity(kBagMaxCapacity);
     PlayerItemBlockList blockList;
 
     // Before global block, item can be added
     EXPECT_EQ(kSuccess, BagService::AddItem(entt::null, bag, blockList, MakeItem(kNonStack1)));
-    EXPECT_EQ(1, bag.ItemGridSize());
+    EXPECT_EQ(1, bag.OccupiedGridCount());
 
     // Global block on kStack10
     GainBlockService::BlockGlobal(GainBlockService::GainType::kItem, kStack10);
@@ -753,11 +753,11 @@ TEST(GainBlockServiceTest, GlobalItemBlockPreventsAdd)
 
     // AddItem should fail for globally blocked item
     EXPECT_NE(kSuccess, BagService::AddItem(entt::null, bag, blockList, MakeItem(kStack10, 1)));
-    EXPECT_EQ(1, bag.ItemGridSize()); // unchanged
+    EXPECT_EQ(1, bag.OccupiedGridCount()); // unchanged
 
     // Non-blocked items still work
     EXPECT_EQ(kSuccess, BagService::AddItem(entt::null, bag, blockList, MakeItem(kNonStack2)));
-    EXPECT_EQ(2, bag.ItemGridSize());
+    EXPECT_EQ(2, bag.OccupiedGridCount());
 
     GainBlockService::ClearAllGlobalBlocks();
 }
@@ -766,7 +766,7 @@ TEST(GainBlockServiceTest, GlobalUnblockAllowsAdd)
 {
     GainBlockService::ClearAllGlobalBlocks();
     Bag bag;
-    bag.Unlock(kBagMaxCapacity);
+    bag.ExpandCapacity(kBagMaxCapacity);
     PlayerItemBlockList blockList;
 
     GainBlockService::BlockGlobal(GainBlockService::GainType::kItem, kNonStack1);
@@ -829,7 +829,7 @@ TEST(GainBlockServiceTest, GlobalAndPerPlayerBlockCombo)
 {
     GainBlockService::ClearAllGlobalBlocks();
     Bag bag;
-    bag.Unlock(kBagMaxCapacity);
+    bag.ExpandCapacity(kBagMaxCapacity);
     PlayerItemBlockList blockList;
 
     // Per-player block on kNonStack1, global block on kStack10
@@ -839,7 +839,7 @@ TEST(GainBlockServiceTest, GlobalAndPerPlayerBlockCombo)
     EXPECT_NE(kSuccess, BagService::AddItem(entt::null, bag, blockList, MakeItem(kNonStack1)));  // per-player blocked
     EXPECT_NE(kSuccess, BagService::AddItem(entt::null, bag, blockList, MakeItem(kStack10, 1))); // globally blocked
     EXPECT_EQ(kSuccess, BagService::AddItem(entt::null, bag, blockList, MakeItem(kNonStack2)));  // neither blocked
-    EXPECT_EQ(1, bag.ItemGridSize());
+    EXPECT_EQ(1, bag.OccupiedGridCount());
 
     GainBlockService::ClearAllGlobalBlocks();
 }

@@ -11,7 +11,7 @@
 #include "core/utils/defer/defer.h"
 #include <thread_context/snow_flake_manager.h>
 
-std::size_t Bag::GetItemStackSize(uint32_t config_id) const
+std::size_t Bag::GetTotalItemCount(uint32_t config_id) const
 {
 	std::size_t totalSize = 0;
 	for (const auto &[entity, item] : itemRegistry_.view<ItemComp>().each())
@@ -128,7 +128,7 @@ uint32_t Bag::HasEnoughSpace(const ItemCountMap &itemsToAdd)
 		// The overflow occupies fresh grids, maxStack units per grid (1 per grid
 		// for non-stackable since maxStack == 1).
 		// 溢出部分占用新格子,每格装 maxStack 个(不可叠加因 maxStack==1 即每格 1 个)。
-		gridsNeeded += CalculateStackGridSize(overflow, maxStack); // 折算成向上取整的格子数并累加
+		gridsNeeded += GridsNeededFor(overflow, maxStack); // 折算成向上取整的格子数并累加
 	}
 
 	if (gridsNeeded > EmptyGridCount()) // 需要的格子数超过了当前空格子数
@@ -138,7 +138,7 @@ uint32_t Bag::HasEnoughSpace(const ItemCountMap &itemsToAdd)
 	return kSuccess; // 放得下
 }
 
-uint32_t Bag::HasSufficientItems(const ItemCountMap &requiredItems)
+uint32_t Bag::HasEnoughItems(const ItemCountMap &requiredItems)
 {
 	// 只读检查:背包里是否拥有 requiredItems 要求的每一项 (config_id -> 需求数量)。
 	// 思路:把需求拷一份,遍历背包逐个堆叠去抵扣,需求全部清零即满足。
@@ -167,7 +167,7 @@ uint32_t Bag::HasSufficientItems(const ItemCountMap &requiredItems)
 
 uint32_t Bag::RemoveItems(const ItemCountMap &itemsToRemove)
 {
-	RETURN_ON_ERROR(HasSufficientItems(itemsToRemove));
+	RETURN_ON_ERROR(HasEnoughItems(itemsToRemove));
 
 	auto remainingToRemove = itemsToRemove;
 
@@ -244,7 +244,7 @@ uint32_t Bag::RemoveItemByPos(const RemoveItemByPosParam &param)
 	return kSuccess;
 }
 
-void Bag::Neaten()
+void Bag::MergeAndCompact()
 {
 	// Group partially-filled stackable items by config so they can be merged.
 	std::vector<EntityVector> stackableItemGroups;
@@ -431,7 +431,7 @@ uint32_t Bag::AddStackableItem(ItemComp itemProto, uint32_t maxStackSize)
 	std::size_t newGridCount = 0;
 	if (remainingToPlace > 0)
 	{
-		newGridCount = CalculateStackGridSize(remainingToPlace, maxStackSize);
+		newGridCount = GridsNeededFor(remainingToPlace, maxStackSize);
 		if (IsSpaceInsufficient(newGridCount))
 		{
 			return PrintStackAndReturnError(kBagAddItemBagFull);
@@ -523,7 +523,7 @@ uint32_t Bag::RemoveItem(Guid del_guid)
 	return kSuccess;
 }
 
-void Bag::Unlock(std::size_t sz)
+void Bag::ExpandCapacity(std::size_t sz)
 {
 	capacity_ += sz;
 }
@@ -600,7 +600,7 @@ void Bag::ClearAllItems()
 	pos_.clear();
 }
 
-std::size_t Bag::CalculateStackGridSize(std::size_t total_size, std::size_t max_stack_size)
+std::size_t Bag::GridsNeededFor(std::size_t total_size, std::size_t max_stack_size)
 {
 	return (total_size + max_stack_size - 1) / max_stack_size;
 }
@@ -678,7 +678,7 @@ void Bag::InsertItemForRestore(Guid guid, uint32_t configId, uint32_t stackSize,
 		return;
 	}
 	// Position is persisted from the source-side bag layout. Don't
-	// auto-Neaten — the player expects items to be where they left them.
+	// auto-MergeAndCompact — the player expects items to be where they left them.
 	if (pos != kInvalidU32Id)
 	{
 		pos_[pos] = guid;
