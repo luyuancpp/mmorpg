@@ -429,11 +429,11 @@ TEST(BagTest, Neaten1)
 
     bag.Neaten();
 
-    // 10 units of each config → 1 slot each
+    // 10 units of each config consolidate into 1 slot each (size = 10)
     EXPECT_EQ(2, bag.ItemGridSize());
     EXPECT_EQ(2, bag.PosSize());
     for (auto &[pos, guid] : bag.pos())
-        EXPECT_EQ(1, (std::size_t)bag.GetItemBaseByPos(bag.GetItemPos(guid))->size());
+        EXPECT_EQ(kDefaultCapacity, (std::size_t)bag.GetItemBaseByPos(bag.GetItemPos(guid))->size());
     EXPECT_EQ(kDefaultCapacity, bag.GetItemStackSize(kStack10));
     EXPECT_EQ(kDefaultCapacity, bag.GetItemStackSize(kStack11));
 }
@@ -456,10 +456,11 @@ TEST(BagTest, Neaten400)
 
     bag.Neaten();
 
+    // kHalf units of each config consolidate into 1 slot each (size = kHalf)
     EXPECT_EQ(2, bag.ItemGridSize());
     EXPECT_EQ(2, bag.PosSize());
     for (auto &[pos, guid] : bag.pos())
-        EXPECT_EQ(1, (std::size_t)bag.GetItemBaseByPos(bag.GetItemPos(guid))->size());
+        EXPECT_EQ(kHalf, (std::size_t)bag.GetItemBaseByPos(bag.GetItemPos(guid))->size());
     EXPECT_EQ(kHalf, bag.GetItemStackSize(kStack10));
     EXPECT_EQ(kHalf, bag.GetItemStackSize(kStack11));
 }
@@ -496,21 +497,21 @@ TEST(BagTest, Neaten400_1)
 
     bag.Neaten();
 
-    // 200 full stacks + 2 partial (100 units each)
+    // 200 full stacks (999) + 2 consolidated partial stacks (kQuarter units each)
     EXPECT_EQ(kHalf + 2, bag.ItemGridSize());
     EXPECT_EQ(kHalf + 2, bag.PosSize());
 
-    UInt32Set pos999, pos1;
+    UInt32Set pos999, posPartial;
     for (uint32_t i = 0; i < (uint32_t)bag.PosSize(); ++i)
     {
         auto sz = bag.GetItemBaseByPos(i)->size();
         if (sz == kMaxStack)
             pos999.emplace(i);
-        else if (sz == 1)
-            pos1.emplace(i);
+        else if (sz == kQuarter)
+            posPartial.emplace(i);
     }
     EXPECT_EQ(kHalf, pos999.size());
-    EXPECT_EQ(2, pos1.size());
+    EXPECT_EQ(2, posPartial.size());
     EXPECT_EQ(kHalf / 2 * kMaxStack + kQuarter, bag.GetItemStackSize(kStack10));
     EXPECT_EQ(kHalf / 2 * kMaxStack + kQuarter, bag.GetItemStackSize(kStack11));
 }
