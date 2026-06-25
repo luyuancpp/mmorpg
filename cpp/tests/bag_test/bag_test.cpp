@@ -46,7 +46,7 @@ void VerifyLastAdded(Bag &bag, uint32_t pos, uint32_t configId, uint32_t size)
     EXPECT_EQ(size, byGuid->size());
     EXPECT_EQ(guid, byPos->item_id());
     EXPECT_EQ(guid, byGuid->item_id());
-    EXPECT_EQ(pos, bag.GetItemPos(guid));
+    EXPECT_EQ(pos, bag.GetItemPosByGuid(guid));
 }
 
 RemoveItemByPosParam MakeRemoveParam(Bag &bag, uint32_t pos, uint32_t configId, uint32_t removeSize = 1)
@@ -171,7 +171,7 @@ TEST(BagTest, AddStackItem12121212)
         }
 
         EXPECT_EQ(kStack9, bag.GetItemCompByGuid(Bag::LastGeneratedItemGuid())->config_id());
-        EXPECT_EQ(lastIdx, bag.GetItemPos(Bag::LastGeneratedItemGuid()));
+        EXPECT_EQ(lastIdx, bag.GetItemPosByGuid(Bag::LastGeneratedItemGuid()));
         EXPECT_EQ(Bag::LastGeneratedItemGuid(), bag.GetItemCompByPos(lastIdx)->item_id());
         EXPECT_EQ(Bag::LastGeneratedItemGuid(), bag.GetItemCompByGuid(Bag::LastGeneratedItemGuid())->item_id());
     }
@@ -558,7 +558,7 @@ TEST(BagTest, Neaten1)
     EXPECT_EQ(2, bag.OccupiedGridCount());
     EXPECT_EQ(2, bag.PositionCount());
     for (auto &[pos, guid] : bag.pos())
-        EXPECT_EQ(kDefaultCapacity, (std::size_t)bag.GetItemCompByPos(bag.GetItemPos(guid))->size());
+        EXPECT_EQ(kDefaultCapacity, (std::size_t)bag.GetItemCompByPos(bag.GetItemPosByGuid(guid))->size());
     EXPECT_EQ(kDefaultCapacity, bag.GetTotalItemCount(kStack10));
     EXPECT_EQ(kDefaultCapacity, bag.GetTotalItemCount(kStack11));
 }
@@ -585,7 +585,7 @@ TEST(BagTest, Neaten400)
     EXPECT_EQ(2, bag.OccupiedGridCount());
     EXPECT_EQ(2, bag.PositionCount());
     for (auto &[pos, guid] : bag.pos())
-        EXPECT_EQ(kHalf, (std::size_t)bag.GetItemCompByPos(bag.GetItemPos(guid))->size());
+        EXPECT_EQ(kHalf, (std::size_t)bag.GetItemCompByPos(bag.GetItemPosByGuid(guid))->size());
     EXPECT_EQ(kHalf, bag.GetTotalItemCount(kStack10));
     EXPECT_EQ(kHalf, bag.GetTotalItemCount(kStack11));
 }
@@ -663,7 +663,7 @@ TEST(BagTest, NeatenCanNotStack)
     EXPECT_EQ(kDefaultCapacity + 1, bag.PositionCount());
     for (auto &[pos, guid] : bag.pos())
     {
-        auto sz = (std::size_t)bag.GetItemCompByPos(bag.GetItemPos(guid))->size();
+        auto sz = (std::size_t)bag.GetItemCompByPos(bag.GetItemPosByGuid(guid))->size();
         if (sz != kDefaultCapacity)
             EXPECT_EQ(1, sz);
     }
