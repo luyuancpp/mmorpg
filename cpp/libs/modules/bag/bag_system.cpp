@@ -62,109 +62,106 @@ uint32_t Bag::GetItemPos(Guid guid)
 
 uint32_t Bag::HasEnoughSpace(const ItemCountMap &itemsToAdd)
 {
-	// Dry-run capacity check (no mutation). Walks the request in three steps:
-	//   1. Non-stackable items each need their own grid, charged immediately.
-	//   2. Stackable items first soak into the free space of existing stacks.
-	//   3. Whatever stackable amount is left is charged as new grids.
-	auto emptySize = EmptyGridCount();
-	ItemCountMap pendingStackItems;
-	bool hasStackableItem = false;
+	// Dry-run capacity check (no mutation): can the bag hold every
+	// (config_id -> count) in itemsToAdd, given what it already contains?
+	//
+	// The request freely mixes two kinds of items:
+	//   * Non-stackable (max_stack_size == 1): every unit needs its own grid.
+	//   * Stackable: units first top up the free room of existing stacks of the
+	//     same config; only the overflow needs brand-new grids.
+	//
+	// Strategy: figure out how many NEW grids the whole request needs, then
+	// compare that single total against the free-grid count once. Two linear
+	// passes, no map mutation mid-flight.
+	//
+	// 只读容量预检(不修改背包):在背包已有内容的前提下,判断能否一次性
+	// 放下 itemsToAdd 里的每一项 (config_id -> 数量)。
+	// 请求里可以同时混有两类物品:
+	//   * 不可叠加 (max_stack_size == 1):每个单位都要单独占一格。
+	//   * 可叠加:单位先去填满同 config 现有堆叠的空余,只有溢出部分才占新格。
+	// 思路:先算出整批请求总共需要多少个"新格子",最后和空格子数量比一次即可。
+	// 两遍线性遍历,中途不修改任何 map。
 
-	// Step 1: charge non-stackable items, defer stackable ones.
-	for (const auto &[configId, count] : itemsToAdd)
+	// Pass 1 - measure the spare room in existing stacks, per requested config.
+	// Walk the bag once (O(items)); configs that aren't being added are skipped,
+	// and a non-stackable config never contributes room (its stacks are full at
+	// size 1).
+	// 第一遍 —— 统计背包中"请求涉及的 config"在现有堆叠里的空余容量。
+	// 只遍历背包一次 (O(物品数));没在请求里的 config 直接跳过;不可叠加 config
+	// 不会贡献空余(它的堆叠在 size==1 时就已经满了)。
+	std::unordered_map<uint32_t, uint32_t> freeRoomByConfig; // config_id -> 现有堆叠累计空余单位数
+	for (const auto &[entity, item] : itemRegistry_.view<ItemComp>().each()) // 遍历背包内每一个物品实体
 	{
-		LookupItem(configId);
-
-		if (itemRow->max_stack_size() <= 0)
+		if (!itemsToAdd.contains(item.config_id())) // 这个物品的 config 不在本次请求里
 		{
-			LOG_ERROR << "config error:" << configId << " player:" << PlayerGuid();
-			return PrintStackAndReturnError(kInvalidTableData);
+			continue; // 与本次请求无关,跳过
 		}
-
-		if (itemRow->max_stack_size() == 1)
+		LookupItemOrContinue(item.config_id());     // 查物品表(查不到则 continue),注入 itemRow
+		const uint32_t maxStack = itemRow->max_stack_size(); // 该 config 的单格最大堆叠上限
+		// `<` guards against a corrupt over-full stack underflowing the subtraction.
+		// 用 `<` 判断,防止异常的"超满堆叠"在做减法时无符号下溢成巨大值。
+		if (item.size() < maxStack) // 这个堆叠还没满,才有空余
 		{
-			std::size_t needGridSize = static_cast<std::size_t>(itemRow->max_stack_size() * count);
-			if (emptySize <= 0 || emptySize < needGridSize)
-			{
-				return PrintStackAndReturnError(kBagItemNotStacked);
-			}
-			emptySize -= needGridSize;
-		}
-		else
-		{
-			pendingStackItems.emplace(configId, count);
-			hasStackableItem = true;
+			freeRoomByConfig[item.config_id()] += maxStack - item.size(); // 累加该 config 的空余容量
 		}
 	}
 
-	if (!hasStackableItem)
+	// Pass 2 - sum the new grids each config still needs after soaking into the
+	// free room measured above.
+	// 第二遍 —— 每个 config 把数量先吸进上面统计的空余,再累加仍需要的新格子数。
+	std::size_t gridsNeeded = 0; // 整批请求总共需要的新格子数
+	for (const auto &[configId, count] : itemsToAdd) // 遍历本次请求的每一项
 	{
-		return kSuccess;
-	}
-
-	// Step 2: soak stackable demand into the free space of existing stacks.
-	for (const auto &[_, item] : itemRegistry_.view<ItemComp>().each())
-	{
-		for (auto &[stackConfigId, stackCount] : pendingStackItems)
+		LookupItem(configId);                        // 查物品表(查不到直接返回错误),注入 itemRow
+		const uint32_t maxStack = itemRow->max_stack_size(); // 该 config 的单格最大堆叠上限
+		if (maxStack == 0) // 配置非法:堆叠上限不能为 0
 		{
-			if (item.config_id() != stackConfigId)
-			{
-				continue;
-			}
-
-			LookupItemOrContinue(stackConfigId);
-			auto remainStackSize = itemRow->max_stack_size() - item.size();
-			if (remainStackSize <= 0)
-			{
-				continue;
-			}
-
-			if (stackCount <= remainStackSize)
-			{
-				pendingStackItems.erase(stackConfigId);
-				break;
-			}
-
-			stackCount -= remainStackSize;
+			LOG_ERROR << "config error:" << configId << " player:" << PlayerGuid(); // 打错误日志
+			return PrintStackAndReturnError(kInvalidTableData); // 返回表数据非法错误
 		}
+
+		// How many units fit into existing stacks (always 0 for non-stackable).
+		// 能塞进现有堆叠的单位数(不可叠加物品恒为 0)。
+		const uint32_t freeRoom = freeRoomByConfig.contains(configId) ? freeRoomByConfig[configId] : 0; // 取该 config 的空余,无则为 0
+		const uint32_t overflow = count > freeRoom ? count - freeRoom : 0; // 吸完空余后还剩多少需要新格子
+
+		// The overflow occupies fresh grids, maxStack units per grid (1 per grid
+		// for non-stackable since maxStack == 1).
+		// 溢出部分占用新格子,每格装 maxStack 个(不可叠加因 maxStack==1 即每格 1 个)。
+		gridsNeeded += CalculateStackGridSize(overflow, maxStack); // 折算成向上取整的格子数并累加
 	}
 
-	// Step 3: charge the leftover stackable demand as fresh grids.
-	for (const auto &[configId, count] : pendingStackItems)
+	if (gridsNeeded > EmptyGridCount()) // 需要的格子数超过了当前空格子数
 	{
-		LookupItemOrContinue(configId);
-		auto needGridSize = CalculateStackGridSize(count, itemRow->max_stack_size());
-		if (emptySize <= 0 || emptySize < needGridSize)
-		{
-			return PrintStackAndReturnError(kBagItemNotStacked);
-		}
-		emptySize -= needGridSize;
+		return PrintStackAndReturnError(kBagItemNotStacked); // 放不下,返回空间不足错误
 	}
-
-	return kSuccess;
+	return kSuccess; // 放得下
 }
 
 uint32_t Bag::HasSufficientItems(const ItemCountMap &requiredItems)
 {
-	auto itemsToCheck = requiredItems;
+	// 只读检查:背包里是否拥有 requiredItems 要求的每一项 (config_id -> 需求数量)。
+	// 思路:把需求拷一份,遍历背包逐个堆叠去抵扣,需求全部清零即满足。
+	auto itemsToCheck = requiredItems; // 拷贝一份需求,边遍历边扣减(不污染入参)
 
-	for (const auto &[entity, item] : itemRegistry_.view<ItemComp>().each())
+	for (const auto &[entity, item] : itemRegistry_.view<ItemComp>().each()) // 遍历背包内每个物品实体
 	{
-		auto configId = item.config_id();
-		auto it = itemsToCheck.find(configId);
-		if (it != itemsToCheck.end())
+		auto configId = item.config_id();        // 当前物品的 config
+		auto it = itemsToCheck.find(configId);   // 看这个 config 是否在需求清单里
+		if (it != itemsToCheck.end())            // 命中需求
 		{
-			if (item.size() >= it->second)
+			if (item.size() >= it->second)       // 这一堆的数量已经够抵这个 config 的剩余需求
 			{
-				itemsToCheck.erase(it);
+				itemsToCheck.erase(it);          // 该 config 需求已满足,从清单移除
 			}
-			else
+			else                                  // 这一堆不够,只能抵掉一部分
 			{
-				it->second -= item.size();
+				it->second -= item.size();       // 扣减剩余需求,继续找后面的同 config 堆叠
 			}
 		}
 	}
 
+	// 清单空 => 所有需求都被满足;否则返回物品不足错误。
 	return itemsToCheck.empty() ? kSuccess : PrintStackAndReturnError(kBagInsufficientItems);
 }
 

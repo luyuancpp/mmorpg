@@ -44,7 +44,7 @@
 //                                 get_or_emplace to create PlayerBagsComp,
 //                                 so HandlePlayerMigration on destination
 //                                 doesn't have to pre-emplace.
-//   5. BagUnmarshalDropsBadType — bag_type >= kBagMax in incoming
+//   5. BagUnmarshalDropsBadType — bag_type >= kBagTypeCount in incoming
 //                                 BagAllData is dropped with WARN, not
 //                                 crashed.
 //   6. FrozenCompMarker         — PlayerFrozenComp emplace/remove +
@@ -62,7 +62,7 @@
 namespace
 {
 
-// One-shot helper: emplace 4 bags with a few items spread across kBag /
+// One-shot helper: emplace 4 bags with a few items spread across kInventory /
 // kWarehouse / kEquipment, return the player entity. Capacities deliberately
 // non-default to verify capacities[] round-trip carries unlock state.
 entt::entity CreatePlayerWithStockedBags(uint32_t playerSeed)
@@ -72,12 +72,12 @@ entt::entity CreatePlayerWithStockedBags(uint32_t playerSeed)
 
     auto& bags = reg.emplace<PlayerBagsComp>(player);
 
-    // kBag (0): 3 items at pos 0/1/2.
-    bags.bags[kBag].SetCapacityForRestore(50);
-    bags.bags[kBag].InsertItemForRestore(
+    // kInventory (0): 3 items at pos 0/1/2.
+    bags.bags[kInventory].SetCapacityForRestore(50);
+    bags.bags[kInventory].InsertItemForRestore(
         /*guid=*/100ULL + playerSeed, /*configId=*/1001, /*stackSize=*/5, /*pos=*/0);
-    bags.bags[kBag].InsertItemForRestore(101ULL + playerSeed, 1002, 1, 1);
-    bags.bags[kBag].InsertItemForRestore(102ULL + playerSeed, 1003, 99, 2);
+    bags.bags[kInventory].InsertItemForRestore(101ULL + playerSeed, 1002, 1, 1);
+    bags.bags[kInventory].InsertItemForRestore(102ULL + playerSeed, 1003, 99, 2);
 
     // kWarehouse (1): 1 item.
     bags.bags[kWarehouse].SetCapacityForRestore(100);
@@ -121,7 +121,7 @@ std::vector<ItemSnapshot> SnapshotPlayerBags(entt::entity player)
 {
     std::vector<ItemSnapshot> out;
     const auto& bags = tlsEcs.actorRegistry.get<PlayerBagsComp>(player);
-    for (uint32_t bagType = 0; bagType < static_cast<uint32_t>(kBagMax); ++bagType)
+    for (uint32_t bagType = 0; bagType < static_cast<uint32_t>(kBagTypeCount); ++bagType)
     {
         const auto& bag = bags.bags[bagType];
         bag.ForEachItem([&](Guid guid, const ItemComp& item) {
@@ -134,11 +134,11 @@ std::vector<ItemSnapshot> SnapshotPlayerBags(entt::entity player)
 }
 
 // Capacity vector helper.
-std::array<std::size_t, kBagMax> SnapshotCapacities(entt::entity player)
+std::array<std::size_t, kBagTypeCount> SnapshotCapacities(entt::entity player)
 {
-    std::array<std::size_t, kBagMax> caps{};
+    std::array<std::size_t, kBagTypeCount> caps{};
     const auto& bags = tlsEcs.actorRegistry.get<PlayerBagsComp>(player);
-    for (uint32_t i = 0; i < kBagMax; ++i)
+    for (uint32_t i = 0; i < kBagTypeCount; ++i)
     {
         caps[i] = bags.bags[i].Capacity();
     }
@@ -165,7 +165,7 @@ TEST(CrossZoneBagMarshal, RoundTripPreservesAllItemsAndCapacities)
 
     // Verify Marshal output sizes — sanity check before round-trip.
     EXPECT_EQ(wire.items_size(), 6) << "expected 3+1+2+0 items across 4 bags";
-    EXPECT_EQ(wire.capacities_size(), static_cast<int>(kBagMax));
+    EXPECT_EQ(wire.capacities_size(), static_cast<int>(kBagTypeCount));
 
     // Actually serialize/parse to catch proto schema bugs (any missing
     // field in the .proto would silently drop here).
@@ -201,8 +201,8 @@ TEST(CrossZoneBagMarshal, EmptyBagRoundTrip)
     BagAllData wire;
     bag_marshal::Marshal(source, wire);
     EXPECT_EQ(wire.items_size(), 0);
-    EXPECT_EQ(wire.capacities_size(), static_cast<int>(kBagMax))
-        << "Marshal must always emit kBagMax capacities even for empty bags, "
+    EXPECT_EQ(wire.capacities_size(), static_cast<int>(kBagTypeCount))
+        << "Marshal must always emit kBagTypeCount capacities even for empty bags, "
         << "so destination can index bag_type → capacity directly.";
 
     const auto dest = tlsEcs.actorRegistry.create();
@@ -242,7 +242,7 @@ TEST(CrossZoneBagMarshal, UnmarshalCreatesPlayerBagsComp)
     item->set_config_id(1234);
     item->set_stack_size(7);
     item->set_pos(3);
-    item->set_bag_type(static_cast<uint32_t>(kBag));
+    item->set_bag_type(static_cast<uint32_t>(kInventory));
 
     bag_marshal::Unmarshal(player, wire);
     ASSERT_TRUE(tlsEcs.actorRegistry.any_of<PlayerBagsComp>(player))
@@ -255,7 +255,7 @@ TEST(CrossZoneBagMarshal, UnmarshalCreatesPlayerBagsComp)
     EXPECT_EQ(items[0].configId, 1234u);
     EXPECT_EQ(items[0].stackSize, 7u);
     EXPECT_EQ(items[0].pos, 3u);
-    EXPECT_EQ(items[0].bagType, static_cast<uint32_t>(kBag));
+    EXPECT_EQ(items[0].bagType, static_cast<uint32_t>(kInventory));
 }
 
 TEST(CrossZoneBagMarshal, UnmarshalDropsOutOfRangeBagType)
@@ -264,20 +264,20 @@ TEST(CrossZoneBagMarshal, UnmarshalDropsOutOfRangeBagType)
 
     const auto player = tlsEcs.actorRegistry.create();
     BagAllData wire;
-    // Two items: one valid (kBag), one bag_type out of range.
+    // Two items: one valid (kInventory), one bag_type out of range.
     auto* good = wire.add_items();
     good->set_item_uuid(1);
     good->set_config_id(100);
     good->set_stack_size(1);
     good->set_pos(0);
-    good->set_bag_type(static_cast<uint32_t>(kBag));
+    good->set_bag_type(static_cast<uint32_t>(kInventory));
 
     auto* bad = wire.add_items();
     bad->set_item_uuid(2);
     bad->set_config_id(200);
     bad->set_stack_size(1);
     bad->set_pos(0);
-    bad->set_bag_type(static_cast<uint32_t>(kBagMax) + 5);  // future / corrupt
+    bad->set_bag_type(static_cast<uint32_t>(kBagTypeCount) + 5);  // future / corrupt
 
     bag_marshal::Unmarshal(player, wire);
     const auto items = SnapshotPlayerBags(player);

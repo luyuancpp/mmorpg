@@ -261,6 +261,131 @@ TEST(BagTest, AdequateSizeAddItemmixtureFull)
     EXPECT_EQ(kBagItemNotStacked, bag.HasEnoughSpace(needed));
 }
 
+// HasEnoughSpace: empty request always fits, even on a full bag.
+TEST(BagTest, HasEnoughSpaceEmptyRequest)
+{
+    Bag bag;
+    // Fill every slot so EmptyGridCount() == 0.
+    for (uint32_t i = 0; i < (uint32_t)kDefaultCapacity; i++)
+    {
+        EXPECT_EQ(kSuccess, bag.AddItem(MakeItem(kNonStack1)));
+    }
+    EXPECT_EQ(kDefaultCapacity, bag.ItemGridSize());
+
+    ItemCountMap empty;
+    EXPECT_EQ(kSuccess, bag.HasEnoughSpace(empty));
+
+    // A zero-count entry must not consume a grid either (no false "full").
+    ItemCountMap zeroCount{{kNonStack1, 0}, {kStack10, 0}};
+    EXPECT_EQ(kSuccess, bag.HasEnoughSpace(zeroCount));
+}
+
+// HasEnoughSpace: a single config requested in BOTH stackable and non-stackable
+// flavours via one map is impossible (one config has one max_stack_size), but a
+// request CAN mix several configs of different kinds. Verify the new-grid math
+// for a pure stackable request that packs across multiple grids.
+TEST(BagTest, HasEnoughSpaceStackablePacking)
+{
+    Bag bag; // kDefaultCapacity (10) empty grids
+    const auto maxStack = MaxStack(kStack10);
+
+    // Exactly 10 full stacks -> 10 grids -> fits.
+    ItemCountMap exactly{{kStack10, maxStack * (uint32_t)kDefaultCapacity}};
+    EXPECT_EQ(kSuccess, bag.HasEnoughSpace(exactly));
+
+    // One unit more -> needs an 11th grid -> fails.
+    ItemCountMap oneOver{{kStack10, maxStack * (uint32_t)kDefaultCapacity + 1}};
+    EXPECT_EQ(kBagItemNotStacked, bag.HasEnoughSpace(oneOver));
+
+    // A partial last grid still counts as a whole grid: maxStack + 1 -> 2 grids.
+    ItemCountMap partial{{kStack10, maxStack + 1}};
+    EXPECT_EQ(kSuccess, bag.HasEnoughSpace(partial));
+}
+
+// HasEnoughSpace: stackable demand first soaks into the free room of existing
+// partial stacks before charging new grids.
+TEST(BagTest, HasEnoughSpaceSoaksExistingStacks)
+{
+    Bag bag; // 10 empty grids
+    const auto maxStack = MaxStack(kStack10);
+
+    // Put one partial stack in the bag: occupies 1 grid, leaves (maxStack - 1)
+    // units of room inside it. 9 empty grids remain.
+    EXPECT_EQ(kSuccess, bag.AddItem(MakeItem(kStack10, 1)));
+    EXPECT_EQ(1, bag.ItemGridSize());
+
+    // Requesting (maxStack - 1) units fits entirely inside the existing stack:
+    // 0 new grids needed.
+    ItemCountMap intoExisting{{kStack10, maxStack - 1}};
+    EXPECT_EQ(kSuccess, bag.HasEnoughSpace(intoExisting));
+
+    // Free room (maxStack - 1) + 9 empty grids * maxStack is the true ceiling.
+    // Ask for exactly that -> fits.
+    const uint32_t ceiling = (maxStack - 1) + 9 * maxStack;
+    ItemCountMap atCeiling{{kStack10, ceiling}};
+    EXPECT_EQ(kSuccess, bag.HasEnoughSpace(atCeiling));
+
+    // One unit over the ceiling -> fails.
+    ItemCountMap overCeiling{{kStack10, ceiling + 1}};
+    EXPECT_EQ(kBagItemNotStacked, bag.HasEnoughSpace(overCeiling));
+}
+
+// HasEnoughSpace: a request mixing non-stackable + stackable configs, against a
+// bag that already holds a partial stack to soak into.
+TEST(BagTest, HasEnoughSpaceMixedWithExistingStack)
+{
+    Bag bag; // 10 empty grids
+    const auto maxStack = MaxStack(kStack10);
+
+    // One partial stack of kStack10 (1 grid used, maxStack-1 room). 9 grids free.
+    EXPECT_EQ(kSuccess, bag.AddItem(MakeItem(kStack10, 1)));
+
+    // Request: 9 non-stackable (9 grids) + (maxStack - 1) stackable (soaks into
+    // the existing stack, 0 new grids) = 9 grids needed == 9 free. Fits exactly.
+    ItemCountMap fits{
+        {kNonStack1, 9},
+        {kStack10, maxStack - 1}};
+    EXPECT_EQ(kSuccess, bag.HasEnoughSpace(fits));
+
+    // Bump the stackable demand by maxStack units -> needs 1 extra grid -> 10 > 9.
+    ItemCountMap overflow{
+        {kNonStack1, 9},
+        {kStack10, maxStack - 1 + maxStack}};
+    EXPECT_EQ(kBagItemNotStacked, bag.HasEnoughSpace(overflow));
+}
+
+// HasEnoughSpace: multiple DISTINCT non-stackable configs each cost one grid per
+// unit and are summed together.
+TEST(BagTest, HasEnoughSpaceMultipleNonStackable)
+{
+    Bag bag; // 10 empty grids
+    ItemCountMap fits{{kNonStack1, 4}, {kNonStack2, 6}}; // 4 + 6 = 10
+    EXPECT_EQ(kSuccess, bag.HasEnoughSpace(fits));
+
+    ItemCountMap overflow{{kNonStack1, 5}, {kNonStack2, 6}}; // 5 + 6 = 11 > 10
+    EXPECT_EQ(kBagItemNotStacked, bag.HasEnoughSpace(overflow));
+}
+
+// HasEnoughSpace: a full stack contributes ZERO free room (the `< maxStack`
+// guard), so the request can only use empty grids.
+TEST(BagTest, HasEnoughSpaceFullStackNoRoom)
+{
+    Bag bag; // 10 empty grids
+    const auto maxStack = MaxStack(kStack10);
+
+    // One FULL stack -> 1 grid used, 0 room inside it. 9 grids free.
+    EXPECT_EQ(kSuccess, bag.AddItem(MakeItem(kStack10)));
+    EXPECT_EQ(1, bag.ItemGridSize());
+
+    // 9 full stacks fit in the 9 remaining grids.
+    ItemCountMap fits{{kStack10, maxStack * 9}};
+    EXPECT_EQ(kSuccess, bag.HasEnoughSpace(fits));
+
+    // 9 full stacks + 1 unit needs a 10th new grid -> only 9 free -> fails.
+    ItemCountMap overflow{{kStack10, maxStack * 9 + 1}};
+    EXPECT_EQ(kBagItemNotStacked, bag.HasEnoughSpace(overflow));
+}
+
 TEST(BagTest, AdequateItem)
 {
     Bag bag;

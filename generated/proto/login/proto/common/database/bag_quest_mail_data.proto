@@ -53,14 +53,14 @@ message ItemEntry {
   uint32 stack_size = 3;
 
   // Slot index within bag_type. Equipment slots have well-known
-  // semantics (head/chest/...) defined by EnumBagType + a slot
+  // semantics (head/chest/...) defined by BagType + a slot
   // sub-enum that lives in cpp/libs/modules/bag/. Inventory bags
   // use position 0..capacity-1 freely.
   uint32 pos = 4;
 
-  // Which bag this entry belongs to. Mirrors EnumBagType in
-  // cpp/libs/modules/bag/bag_system.h:22-29:
-  //   0 = kBag (main inventory)
+  // Which bag this entry belongs to. Mirrors BagType in
+  // cpp/libs/modules/bag/bag_system.h:
+  //   0 = kInventory (main inventory)
   //   1 = kWarehouse
   //   2 = kEquipment
   //   3 = kTemporary
@@ -98,12 +98,30 @@ message ItemEntry {
 // cpp/libs/modules/bag/bag_system.h's Bag class — all four bag_type
 // instances are flattened here, distinguished by ItemEntry.bag_type.
 message BagAllData {
+  // One transient, runtime-keyed bag (event bag / per-pet bag). These
+  // have NO fixed BagType slot — they come and go at runtime, keyed by
+  // a uint64 owner id — so they're carried out-of-band from the fixed
+  // `items`/`capacities` arrays above. Mirrors
+  // PlayerBagsComp::dynamicBags_ (cpp/libs/modules/bag/comp/).
+  message DynamicBagData {
+    // Owner id of this transient bag: event id, pet guid, etc. Matches
+    // the key in PlayerBagsComp::dynamicBags_.
+    uint64 bag_id = 1;
+
+    // Unlocked slot count for this bag (Bag::Capacity()).
+    uint32 capacity = 2;
+
+    // Items in this bag. ItemEntry.bag_type is IGNORED here (the bag is
+    // identified by bag_id, not BagType) and should be left 0.
+    repeated ItemEntry items = 3;
+  }
+
   // All item entries across all bag_type buckets. Marshaller groups
   // by bag_type for ECS reconstruction; consumers can bucket on read.
   repeated ItemEntry items = 1;
 
   // Per-bag capacity for the four bag types. Index aligns with
-  // EnumBagType (kBag=0, kWarehouse=1, kEquipment=2, kTemporary=3).
+  // BagType (kInventory=0, kWarehouse=1, kEquipment=2, kTemporary=3).
   // Default values come from kBagMaxCapacity / kWarehouseMaxCapacity
   // / kEquipmentCapacity / kTempBagMaxCapacity in bag_system.h —
   // those are compile-time constants today, but a player may have
@@ -111,10 +129,14 @@ message BagAllData {
   // player capacity preserves that progression.
   repeated uint32 capacities = 2;
 
+  // Transient runtime bags (event bags / per-pet bags). Empty for most
+  // players. Each carries its own owner id + capacity + items.
+  repeated DynamicBagData dynamic_bags = 3;
+
   // ─── TODO: game-design extensions ──────────────────────────────
-  // 3: bag-wide currency (e.g. material points): not common, but cheap
+  // 4: bag-wide currency (e.g. material points): not common, but cheap
   //    to add later if needed.
-  // 4: collection-album state: if the project has a collection book
+  // 5: collection-album state: if the project has a collection book
   //    that pings on first-time-acquired, its acquired-set could live here.
 }
 
