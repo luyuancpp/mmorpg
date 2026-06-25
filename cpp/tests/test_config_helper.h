@@ -46,9 +46,9 @@ namespace test_config
         addCandidate(candidates, fs::current_path());
         addCandidate(candidates, fs::current_path() / "bin");
 
-        if (argc > 0 && argv[0] != nullptr)
+        if (argc > 1 && argv[1] != nullptr)
         {
-            const fs::path exeDir = fs::absolute(argv[0]).parent_path();
+            const fs::path exeDir = fs::absolute(argv[1]).parent_path();
             addCandidate(candidates, exeDir);
             addCandidate(candidates, exeDir / "bin");
             addCandidate(candidates, exeDir.parent_path());
