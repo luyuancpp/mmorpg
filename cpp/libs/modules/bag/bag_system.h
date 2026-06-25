@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <unordered_map>
 #include <vector>
@@ -66,6 +66,8 @@ public:
 
     uint32_t HasEnoughSpace(const ItemCountMap &itemsToAdd);
     uint32_t HasEnoughItems(const ItemCountMap &requiredItems);
+    uint32_t AddItems(const ItemCountMap &itemsToAdd);
+    uint32_t AddItems(const std::vector<InitItemParam> &itemsToAdd);
     uint32_t RemoveItems(const ItemCountMap &itemsToRemove);
     uint32_t RemoveItemByPos(const RemoveItemByPosParam &param);
 

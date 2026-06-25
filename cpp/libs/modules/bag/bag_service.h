@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <unordered_set>
 
@@ -38,6 +38,27 @@ public:
 		Bag &bag,
 		const PlayerItemBlockList &blockList,
 		const InitItemParam &param);
+
+	// Orchestrated batch AddItems (config_id → count):
+	//   transactional — all-or-nothing space check, then per-config
+	//   block check → Bag::AddItem → transaction log → anomaly detection.
+	//   Symmetric with Bag::RemoveItems.
+	static uint32_t AddItems(
+		entt::entity playerEntity,
+		Bag &bag,
+		const PlayerItemBlockList &blockList,
+		const ItemCountMap &itemsToAdd);
+
+	// Orchestrated batch AddItems carrying full ItemComp per piece
+	//   (mail attachments mixing equipment + stackable items): preserves
+	//   each piece's preassigned guid / attributes. Transactional —
+	//   all-or-nothing space check, then per-piece
+	//   block check → Bag::AddItem → transaction log → anomaly detection.
+	static uint32_t AddItems(
+		entt::entity playerEntity,
+		Bag &bag,
+		const PlayerItemBlockList &blockList,
+		const std::vector<InitItemParam> &itemsToAdd);
 
 	// Orchestrated RemoveItem:
 	//   capture item info → Bag::RemoveItem → transaction log
