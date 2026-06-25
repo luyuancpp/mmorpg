@@ -41,14 +41,14 @@ type ItemEntry struct {
 	// entry). For non-stackable items (equipment) this is always 1.
 	StackSize uint32 `protobuf:"varint,3,opt,name=stack_size,json=stackSize,proto3" json:"stack_size,omitempty"`
 	// Slot index within bag_type. Equipment slots have well-known
-	// semantics (head/chest/...) defined by EnumBagType + a slot
+	// semantics (head/chest/...) defined by BagType + a slot
 	// sub-enum that lives in cpp/libs/modules/bag/. Inventory bags
 	// use position 0..capacity-1 freely.
 	Pos uint32 `protobuf:"varint,4,opt,name=pos,proto3" json:"pos,omitempty"`
-	// Which bag this entry belongs to. Mirrors EnumBagType in
-	// cpp/libs/modules/bag/bag_system.h:22-29:
+	// Which bag this entry belongs to. Mirrors BagType in
+	// cpp/libs/modules/bag/bag_system.h:
 	//
-	//	0 = kBag (main inventory)
+	//	0 = kInventory (main inventory)
 	//	1 = kWarehouse
 	//	2 = kEquipment
 	//	3 = kTemporary
@@ -135,13 +135,16 @@ type BagAllData struct {
 	// by bag_type for ECS reconstruction; consumers can bucket on read.
 	Items []*ItemEntry `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
 	// Per-bag capacity for the four bag types. Index aligns with
-	// EnumBagType (kBag=0, kWarehouse=1, kEquipment=2, kTemporary=3).
+	// BagType (kInventory=0, kWarehouse=1, kEquipment=2, kTemporary=3).
 	// Default values come from kBagMaxCapacity / kWarehouseMaxCapacity
 	// / kEquipmentCapacity / kTempBagMaxCapacity in bag_system.h —
 	// those are compile-time constants today, but a player may have
 	// unlocked extra slots via gameplay (Bag::Unlock); persisting per-
 	// player capacity preserves that progression.
-	Capacities    []uint32 `protobuf:"varint,2,rep,packed,name=capacities,proto3" json:"capacities,omitempty"`
+	Capacities []uint32 `protobuf:"varint,2,rep,packed,name=capacities,proto3" json:"capacities,omitempty"`
+	// Transient runtime bags (event bags / per-pet bags). Empty for most
+	// players. Each carries its own owner id + capacity + items.
+	DynamicBags   []*BagAllData_DynamicBagData `protobuf:"bytes,3,rep,name=dynamic_bags,json=dynamicBags,proto3" json:"dynamic_bags,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -186,6 +189,13 @@ func (x *BagAllData) GetItems() []*ItemEntry {
 func (x *BagAllData) GetCapacities() []uint32 {
 	if x != nil {
 		return x.Capacities
+	}
+	return nil
+}
+
+func (x *BagAllData) GetDynamicBags() []*BagAllData_DynamicBagData {
+	if x != nil {
+		return x.DynamicBags
 	}
 	return nil
 }
@@ -504,6 +514,76 @@ func (x *MailAllData) GetMails() []*MailEntry {
 	return nil
 }
 
+// One transient, runtime-keyed bag (event bag / per-pet bag). These
+// have NO fixed BagType slot — they come and go at runtime, keyed by
+// a uint64 owner id — so they're carried out-of-band from the fixed
+// `items`/`capacities` arrays above. Mirrors
+// PlayerBagsComp::dynamicBags_ (cpp/libs/modules/bag/comp/).
+type BagAllData_DynamicBagData struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Owner id of this transient bag: event id, pet guid, etc. Matches
+	// the key in PlayerBagsComp::dynamicBags_.
+	BagId uint64 `protobuf:"varint,1,opt,name=bag_id,json=bagId,proto3" json:"bag_id,omitempty"`
+	// Unlocked slot count for this bag (Bag::Capacity()).
+	Capacity uint32 `protobuf:"varint,2,opt,name=capacity,proto3" json:"capacity,omitempty"`
+	// Items in this bag. ItemEntry.bag_type is IGNORED here (the bag is
+	// identified by bag_id, not BagType) and should be left 0.
+	Items         []*ItemEntry `protobuf:"bytes,3,rep,name=items,proto3" json:"items,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *BagAllData_DynamicBagData) Reset() {
+	*x = BagAllData_DynamicBagData{}
+	mi := &file_proto_common_database_bag_quest_mail_data_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BagAllData_DynamicBagData) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BagAllData_DynamicBagData) ProtoMessage() {}
+
+func (x *BagAllData_DynamicBagData) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_common_database_bag_quest_mail_data_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BagAllData_DynamicBagData.ProtoReflect.Descriptor instead.
+func (*BagAllData_DynamicBagData) Descriptor() ([]byte, []int) {
+	return file_proto_common_database_bag_quest_mail_data_proto_rawDescGZIP(), []int{1, 0}
+}
+
+func (x *BagAllData_DynamicBagData) GetBagId() uint64 {
+	if x != nil {
+		return x.BagId
+	}
+	return 0
+}
+
+func (x *BagAllData_DynamicBagData) GetCapacity() uint32 {
+	if x != nil {
+		return x.Capacity
+	}
+	return 0
+}
+
+func (x *BagAllData_DynamicBagData) GetItems() []*ItemEntry {
+	if x != nil {
+		return x.Items
+	}
+	return nil
+}
+
 var File_proto_common_database_bag_quest_mail_data_proto protoreflect.FileDescriptor
 
 const file_proto_common_database_bag_quest_mail_data_proto_rawDesc = "" +
@@ -515,14 +595,20 @@ const file_proto_common_database_bag_quest_mail_data_proto_rawDesc = "" +
 	"\n" +
 	"stack_size\x18\x03 \x01(\rR\tstackSize\x12\x10\n" +
 	"\x03pos\x18\x04 \x01(\rR\x03pos\x12\x19\n" +
-	"\bbag_type\x18\x05 \x01(\rR\abagType\"N\n" +
+	"\bbag_type\x18\x05 \x01(\rR\abagType\"\xf4\x01\n" +
 	"\n" +
 	"BagAllData\x12 \n" +
 	"\x05items\x18\x01 \x03(\v2\n" +
 	".ItemEntryR\x05items\x12\x1e\n" +
 	"\n" +
 	"capacities\x18\x02 \x03(\rR\n" +
-	"capacities\"\x81\x01\n" +
+	"capacities\x12=\n" +
+	"\fdynamic_bags\x18\x03 \x03(\v2\x1a.BagAllData.DynamicBagDataR\vdynamicBags\x1ae\n" +
+	"\x0eDynamicBagData\x12\x15\n" +
+	"\x06bag_id\x18\x01 \x01(\x04R\x05bagId\x12\x1a\n" +
+	"\bcapacity\x18\x02 \x01(\rR\bcapacity\x12 \n" +
+	"\x05items\x18\x03 \x03(\v2\n" +
+	".ItemEntryR\x05items\"\x81\x01\n" +
 	"\n" +
 	"QuestEntry\x12\x1b\n" +
 	"\tconfig_id\x18\x01 \x01(\rR\bconfigId\x12\x1a\n" +
@@ -561,25 +647,28 @@ func file_proto_common_database_bag_quest_mail_data_proto_rawDescGZIP() []byte {
 	return file_proto_common_database_bag_quest_mail_data_proto_rawDescData
 }
 
-var file_proto_common_database_bag_quest_mail_data_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_proto_common_database_bag_quest_mail_data_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_proto_common_database_bag_quest_mail_data_proto_goTypes = []any{
-	(*ItemEntry)(nil),    // 0: ItemEntry
-	(*BagAllData)(nil),   // 1: BagAllData
-	(*QuestEntry)(nil),   // 2: QuestEntry
-	(*QuestAllData)(nil), // 3: QuestAllData
-	(*MailEntry)(nil),    // 4: MailEntry
-	(*MailAllData)(nil),  // 5: MailAllData
+	(*ItemEntry)(nil),                 // 0: ItemEntry
+	(*BagAllData)(nil),                // 1: BagAllData
+	(*QuestEntry)(nil),                // 2: QuestEntry
+	(*QuestAllData)(nil),              // 3: QuestAllData
+	(*MailEntry)(nil),                 // 4: MailEntry
+	(*MailAllData)(nil),               // 5: MailAllData
+	(*BagAllData_DynamicBagData)(nil), // 6: BagAllData.DynamicBagData
 }
 var file_proto_common_database_bag_quest_mail_data_proto_depIdxs = []int32{
 	0, // 0: BagAllData.items:type_name -> ItemEntry
-	2, // 1: QuestAllData.active:type_name -> QuestEntry
-	0, // 2: MailEntry.attached_items:type_name -> ItemEntry
-	4, // 3: MailAllData.mails:type_name -> MailEntry
-	4, // [4:4] is the sub-list for method output_type
-	4, // [4:4] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	6, // 1: BagAllData.dynamic_bags:type_name -> BagAllData.DynamicBagData
+	2, // 2: QuestAllData.active:type_name -> QuestEntry
+	0, // 3: MailEntry.attached_items:type_name -> ItemEntry
+	4, // 4: MailAllData.mails:type_name -> MailEntry
+	0, // 5: BagAllData.DynamicBagData.items:type_name -> ItemEntry
+	6, // [6:6] is the sub-list for method output_type
+	6, // [6:6] is the sub-list for method input_type
+	6, // [6:6] is the sub-list for extension type_name
+	6, // [6:6] is the sub-list for extension extendee
+	0, // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_proto_common_database_bag_quest_mail_data_proto_init() }
@@ -593,7 +682,7 @@ func file_proto_common_database_bag_quest_mail_data_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_common_database_bag_quest_mail_data_proto_rawDesc), len(file_proto_common_database_bag_quest_mail_data_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
