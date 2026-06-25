@@ -14,7 +14,7 @@
 std::size_t Bag::GetTotalItemCount(uint32_t config_id) const
 {
 	std::size_t totalSize = 0;
-	for (const auto &[entity, item] : itemRegistry_.view<ItemComp>().each())
+	for (const auto &[entity, item] : itemRegistry.view<ItemComp>().each())
 	{
 		if (item.config_id() == config_id)
 		{
@@ -26,32 +26,32 @@ std::size_t Bag::GetTotalItemCount(uint32_t config_id) const
 
 ItemComp *Bag::GetItemCompByGuid(Guid guid)
 {
-	auto guidIt = items_.find(guid);
-	return (guidIt != items_.end()) ? itemRegistry_.try_get<ItemComp>(guidIt->second) : nullptr;
+	auto guidIt = items.find(guid);
+	return (guidIt != items.end()) ? itemRegistry.try_get<ItemComp>(guidIt->second) : nullptr;
 }
 
 ItemComp *Bag::GetItemCompByPos(uint32_t pos)
 {
-	auto posIt = pos_.find(pos);
-	return (posIt != pos_.end()) ? GetItemCompByGuid(posIt->second) : nullptr;
+	auto posIt = posToGuid.find(pos);
+	return (posIt != posToGuid.end()) ? GetItemCompByGuid(posIt->second) : nullptr;
 }
 
 entt::entity Bag::GetItemByGuid(Guid guid)
 {
-	auto guidIt = items_.find(guid);
-	return (guidIt != items_.end()) ? guidIt->second : entt::null;
+	auto guidIt = items.find(guid);
+	return (guidIt != items.end()) ? guidIt->second : entt::null;
 }
 
 entt::entity Bag::GetItemByPos(uint32_t pos)
 {
-	auto posIt = pos_.find(pos);
-	return (posIt != pos_.end()) ? GetItemByGuid(posIt->second) : entt::null;
+	auto posIt = posToGuid.find(pos);
+	return (posIt != posToGuid.end()) ? GetItemByGuid(posIt->second) : entt::null;
 }
 
 ItemCountMap Bag::MeasureFreeRoomPerConfig(const ItemCountMap &itemsToAdd) const
 {
 	ItemCountMap freeRoomByConfig;
-	for (const auto &[entity, item] : itemRegistry_.view<ItemComp>().each())
+	for (const auto &[entity, item] : itemRegistry.view<ItemComp>().each())
 	{
 		if (!itemsToAdd.contains(item.config_id()))
 		{
@@ -106,7 +106,7 @@ uint32_t Bag::HasEnoughItems(const ItemCountMap &requiredItems)
 	// 思路:把需求拷一份,遍历背包逐个堆叠去抵扣,需求全部清零即满足。
 	auto itemsToCheck = requiredItems; // 拷贝一份需求,边遍历边扣减(不污染入参)
 
-	for (const auto &[entity, item] : itemRegistry_.view<ItemComp>().each()) // 遍历背包内每个物品实体
+	for (const auto &[entity, item] : itemRegistry.view<ItemComp>().each()) // 遍历背包内每个物品实体
 	{
 		auto configId = item.config_id();        // 当前物品的 config
 		auto it = itemsToCheck.find(configId);   // 看这个 config 是否在需求清单里
@@ -129,12 +129,12 @@ uint32_t Bag::HasEnoughItems(const ItemCountMap &requiredItems)
 
 // 把某个 config 需要扣除的数量从它的若干堆叠里抽走。
 // 同一种物品的数量可能分散在多个堆叠里(例如 2.5 个满堆),所以要逐堆抽,
-// 直到抽够 count 为止。被抽光的堆叠 size 变 0 但格子保留(items_/pos_ 不删),
+// 直到抽够 count 为止。被抽光的堆叠 size 变 0 但格子保留(items/posToGuid 不删),
 // 后续 AddStackableItem 可以再填回去——这与 RemoveItem(guid) 的"彻底删格"不同。
 // 前置条件:调用方已用 HasEnoughItems 确认库存足够,这里不再校验。
 void Bag::DrainItemStacks(uint32_t configId, uint32_t count)
 {
-	for (const auto &[entity, item] : itemRegistry_.view<ItemComp>().each()) // 遍历背包堆叠
+	for (const auto &[entity, item] : itemRegistry.view<ItemComp>().each()) // 遍历背包堆叠
 	{
 		if (count == 0)
 		{
@@ -170,40 +170,40 @@ uint32_t Bag::RemoveItemByPos(const RemoveItemByPosParam &param)
 	// 必须四者全部对得上才会扣减——这是一连串卫语句(guard),任何一项不一致就
 	// 立刻返回对应错误,绝不误删别的格子。全部是 O(1) 哈希查找,无遍历。
 
-	if (param.size_ <= 0) // 删除数量必须 > 0(无符号,等价于 != 0)
+	if (param.size <= 0) // 删除数量必须 > 0(无符号,等价于 != 0)
 	{
 		return PrintStackAndReturnError(kBagDelItemSize);
 	}
 
-	auto posIt = pos_.find(param.pos_); // 1) 这个格子位置存在吗
-	if (posIt == pos_.end())
+	auto posIt = posToGuid.find(param.pos); // 1) 这个格子位置存在吗
+	if (posIt == posToGuid.end())
 	{
 		return PrintStackAndReturnError(kBagDelItemPos);
 	}
 
-	if (posIt->second != param.item_guid_) // 2) 该位置上的物品 guid 是否就是调用方说的那个
+	if (posIt->second != param.item_guid) // 2) 该位置上的物品 guid 是否就是调用方说的那个
 	{
 		return PrintStackAndReturnError(kBagDelItemGuid);
 	}
 
-	auto guidIt = items_.find(param.item_guid_); // 3) 该 guid 在物品表里真的存在吗
-	if (guidIt == items_.end())
+	auto guidIt = items.find(param.item_guid); // 3) 该 guid 在物品表里真的存在吗
+	if (guidIt == items.end())
 	{
 		return PrintStackAndReturnError(kBagDelItemFindItem);
 	}
 
-	auto &item = itemRegistry_.get<ItemComp>(guidIt->second); // 取出该物品组件
-	if (item.config_id() != param.item_config_id_) // 4) 物品的 config 是否与调用方一致(防张冠李戴)
+	auto &item = itemRegistry.get<ItemComp>(guidIt->second); // 取出该物品组件
+	if (item.config_id() != param.item_config_id) // 4) 物品的 config 是否与调用方一致(防张冠李戴)
 	{
 		return PrintStackAndReturnError(kBagDelItemConfig);
 	}
 
-	if (item.size() < param.size_) // 5) 这一堆的数量是否够扣
+	if (item.size() < param.size) // 5) 这一堆的数量是否够扣
 	{
 		return PrintStackAndReturnError(kBagItemDeletionSizeMismatch);
 	}
 
-	item.set_size(item.size() - param.size_); // 校验全通过,扣减数量(扣光则 size=0,格子保留作空格)
+	item.set_size(item.size() - param.size); // 校验全通过,扣减数量(扣光则 size=0,格子保留作空格)
 	return kSuccess;
 }
 
@@ -212,13 +212,13 @@ void Bag::MergeAndCompact()
 	// 背包整理:把同一种可叠加物品散落各格的"零头"合并成尽量少的满堆,
 	// 再把所有物品的格子位置重新紧凑排布(0,1,2,...),消除中间空洞。
 	// 三步:① 按 config 把"未满的可叠加堆"分组 ② 每组合并、多余的清空待删
-	//       ③ 删空堆 + 重建 pos_ 布局。
+	//       ③ 删空堆 + 重建 posToGuid 布局。
 
 	// ① 分组 —— 把同 config_id 的"未满可叠加堆"归到一组。
 	// 直接用 config_id 做哈希分组,O(物品数)。CanStack 本质就是比 config_id,
 	// 所以这里完全等价,且避免了原来"逐物品线性扫已有组"的 O(物品数 × 组数) 开销。
 	std::unordered_map<uint32_t, EntityVector> groupsByConfig; // config_id -> 同种未满堆的实体列表
-	for (auto &&[entity, item] : itemRegistry_.view<ItemComp>().each()) // 遍历背包每个物品
+	for (auto &&[entity, item] : itemRegistry.view<ItemComp>().each()) // 遍历背包每个物品
 	{
 		LookupItemOrContinue(item.config_id());        // 查物品表(查不到跳过),注入 itemRow
 		if (itemRow->max_stack_size() <= 1)
@@ -243,14 +243,14 @@ void Bag::MergeAndCompact()
 		uint32_t totalStackSize = 0;
 		for (auto &entity : group)
 		{
-			totalStackSize += itemRegistry_.get<ItemComp>(entity).size();
+			totalStackSize += itemRegistry.get<ItemComp>(entity).size();
 		}
 
 		// 前面的格子逐个填满 maxStack,直到剩余量能塞进一格为止。
 		std::size_t index = 0;
 		for (; index < group.size(); ++index)
 		{
-			auto &currentItem = itemRegistry_.get<ItemComp>(group[index]);
+			auto &currentItem = itemRegistry.get<ItemComp>(group[index]);
 			if (totalStackSize <= maxStack)
 			{
 				currentItem.set_size(totalStackSize); // 余量一格放下,合并完成
@@ -264,7 +264,7 @@ void Bag::MergeAndCompact()
 		// 合并后多出来的格子全部清空,记录 guid 等待删除。
 		for (; index < group.size(); ++index)
 		{
-			auto &currentItem = itemRegistry_.get<ItemComp>(group[index]);
+			auto &currentItem = itemRegistry.get<ItemComp>(group[index]);
 			currentItem.set_size(0);
 			emptiedItemGuids.emplace_back(currentItem.item_id());
 		}
@@ -273,17 +273,17 @@ void Bag::MergeAndCompact()
 	// ③ 删空堆,再把剩余物品紧凑重排到 pos 0,1,2,...
 	for (auto &guid : emptiedItemGuids)
 	{
-		DestroyItem(guid); // 释放实体 + items_ + pos_ 槽位
+		DestroyItem(guid); // 释放实体 + items + posToGuid 槽位
 	}
 
-	// 重建位置布局:清空旧 pos_,按顺序把剩余物品依次填入 0,1,2,...
+	// 重建位置布局:清空旧 posToGuid,按顺序把剩余物品依次填入 0,1,2,...
 	// 直接顺序赋值,O(物品数);避免对每个物品调 OnNewGrid(每次都 O(容量) 找空位 → O(物品数 × 容量))。
 	// 剩余物品数必然 <= 容量(整理只会减少占用),所以下标不会越界。
-	pos_.clear();
+	posToGuid.clear();
 	uint32_t nextPos = 0;
-	for (auto &[guid, entity] : items_)
+	for (auto &[guid, entity] : items)
 	{
-		pos_[nextPos++] = guid;
+		posToGuid[nextPos++] = guid;
 	}
 }
 
@@ -316,7 +316,7 @@ uint32_t Bag::AddNonStackableItem(ItemComp itemProto)
 		}
 		const auto guid = piece.item_id();
 
-		// 经 InsertItemEntity 单一入口写入,保证 items_/itemRegistry_ 同步;
+		// 经 InsertItemEntity 单一入口写入,保证 items/itemRegistry 同步;
 		// 返回 nullptr 表示 guid 撞车,回滚并报错。
 		if (InsertItemEntity(std::move(piece)) == nullptr)
 		{
@@ -333,7 +333,7 @@ uint32_t Bag::PlanStackIntoExistingStacks(const ItemComp &proto, uint32_t maxSta
 										  std::vector<StackFill> &outFillPlan) const
 {
 	uint32_t remaining = proto.size();
-	for (auto &&[entity, item] : itemRegistry_.view<ItemComp>().each())
+	for (auto &&[entity, item] : itemRegistry.view<ItemComp>().each())
 	{
 		if (remaining == 0)
 		{
@@ -365,7 +365,7 @@ void Bag::ApplyStackFill(const std::vector<StackFill> &fillPlan)
 {
 	for (const auto &plan : fillPlan)
 	{
-		auto &item = itemRegistry_.get<ItemComp>(plan.entity);
+		auto &item = itemRegistry.get<ItemComp>(plan.entity);
 		item.set_size(item.size() + plan.amount);
 	}
 }
@@ -487,19 +487,19 @@ uint32_t Bag::AddItems(const std::vector<InitItemParam> &itemsToAdd)
 
 uint32_t Bag::RemoveItem(Guid del_guid)
 {
-	if (!items_.contains(del_guid))
+	if (!items.contains(del_guid))
 	{
 		return PrintStackAndReturnError(kBagDeleteItemFindGuid);
 	}
 
-	// DestroyItem frees the entity, the items_ entry, and the pos_ slot.
+	// DestroyItem frees the entity, the items entry, and the posToGuid slot.
 	DestroyItem(del_guid);
 	return kSuccess;
 }
 
 void Bag::ExpandCapacity(std::size_t sz)
 {
-	capacity_ += sz;
+	capacity += sz;
 }
 
 Guid Bag::GenerateItemGuid()
@@ -519,15 +519,15 @@ bool Bag::IsInvalidItemGuid(const ItemComp &item) const
 
 ItemComp *Bag::InsertItemEntity(ItemComp proto)
 {
-	auto entity = itemRegistry_.create();
-	auto &stored = itemRegistry_.emplace<ItemComp>(entity, std::move(proto));
+	auto entity = itemRegistry.create();
+	auto &stored = itemRegistry.emplace<ItemComp>(entity, std::move(proto));
 
-	auto [it, inserted] = items_.emplace(stored.item_id(), entity);
+	auto [it, inserted] = items.emplace(stored.item_id(), entity);
 	if (!inserted)
 	{
-		// Duplicate guid — roll the entity back so items_ and itemRegistry_
+		// Duplicate guid — roll the entity back so items and itemRegistry
 		// stay perfectly in sync (the half-created entity must not leak).
-		itemRegistry_.destroy(entity);
+		itemRegistry.destroy(entity);
 		return nullptr;
 	}
 	return &stored;
@@ -535,27 +535,27 @@ ItemComp *Bag::InsertItemEntity(ItemComp proto)
 
 void Bag::DestroyItem(Guid guid)
 {
-	auto guidIt = items_.find(guid);
-	if (guidIt == items_.end())
+	auto guidIt = items.find(guid);
+	if (guidIt == items.end())
 	{
 		return;
 	}
 	// Destroy the backing ECS entity too — otherwise the size-0 component
-	// lingers in itemRegistry_ as an orphan that view<ItemComp> still sees,
+	// lingers in itemRegistry as an orphan that view<ItemComp> still sees,
 	// letting a later AddStackableItem stack into an item no longer in
-	// items_ (units would be silently lost).
-	if (itemRegistry_.valid(guidIt->second))
+	// items (units would be silently lost).
+	if (itemRegistry.valid(guidIt->second))
 	{
-		itemRegistry_.destroy(guidIt->second);
+		itemRegistry.destroy(guidIt->second);
 	}
-	items_.erase(guidIt);
+	items.erase(guidIt);
 
-	// Free its grid slot too (pos_ maps pos->guid, so scan for the guid).
-	for (auto posIt = pos_.begin(); posIt != pos_.end(); ++posIt)
+	// Free its grid slot too (posToGuid maps pos->guid, so scan for the guid).
+	for (auto posIt = posToGuid.begin(); posIt != posToGuid.end(); ++posIt)
 	{
 		if (posIt->second == guid)
 		{
-			pos_.erase(posIt);
+			posToGuid.erase(posIt);
 			break;
 		}
 	}
@@ -563,15 +563,15 @@ void Bag::DestroyItem(Guid guid)
 
 void Bag::ClearAllItems()
 {
-	for (const auto &[guid, entity] : items_)
+	for (const auto &[guid, entity] : items)
 	{
-		if (itemRegistry_.valid(entity))
+		if (itemRegistry.valid(entity))
 		{
-			itemRegistry_.destroy(entity);
+			itemRegistry.destroy(entity);
 		}
 	}
-	items_.clear();
-	pos_.clear();
+	items.clear();
+	posToGuid.clear();
 }
 
 std::size_t Bag::GridsNeededFor(std::size_t total_size, std::size_t max_stack_size)
@@ -584,11 +584,11 @@ uint32_t Bag::OnNewGrid(Guid guid)
 	const auto gridSize = Capacity();
 	for (uint32_t i = 0; i < gridSize; ++i)
 	{
-		if (pos_.contains(i))
+		if (posToGuid.contains(i))
 		{
 			continue;
 		}
-		pos_.emplace(i, guid);
+		posToGuid.emplace(i, guid);
 		return i;
 	}
 	return kInvalidU32Id;
@@ -615,8 +615,8 @@ bool Bag::CanStack(const ItemComp &leftItem, const ItemComp &rightItem)
 // 件 1 for the cross-zone migration design that motivated this.
 void Bag::ResetFromSnapshot()
 {
-	// ClearAllItems drops every entity + items_ + pos_ entry.
-	// capacity_ deliberately left alone — SetCapacityForRestore sets it
+	// ClearAllItems drops every entity + items + posToGuid entry.
+	// capacity deliberately left alone — SetCapacityForRestore sets it
 	// from BagAllData.capacities before InsertItemForRestore calls fire.
 	ClearAllItems();
 }
@@ -628,7 +628,7 @@ void Bag::InsertItemForRestore(Guid guid, uint32_t configId, uint32_t stackSize,
 		LOG_ERROR << "Bag::InsertItemForRestore: refusing invalid guid (configId=" << configId << ")";
 		return;
 	}
-	if (items_.find(guid) != items_.end())
+	if (items.find(guid) != items.end())
 	{
 		// Duplicate guid in snapshot — log and skip. Indicates upstream
 		// data corruption; better to drop one copy than crash.
@@ -638,7 +638,7 @@ void Bag::InsertItemForRestore(Guid guid, uint32_t configId, uint32_t stackSize,
 	}
 
 	// Build the ItemComp the same shape AddItem would, then route through
-	// the single InsertItemEntity chokepoint so items_/itemRegistry_ stay
+	// the single InsertItemEntity chokepoint so items/itemRegistry stay
 	// in sync.
 	ItemComp proto;
 	proto.set_item_id(guid);
@@ -655,6 +655,6 @@ void Bag::InsertItemForRestore(Guid guid, uint32_t configId, uint32_t stackSize,
 	// auto-MergeAndCompact — the player expects items to be where they left them.
 	if (pos != kInvalidU32Id)
 	{
-		pos_[pos] = guid;
+		posToGuid[pos] = guid;
 	}
 }

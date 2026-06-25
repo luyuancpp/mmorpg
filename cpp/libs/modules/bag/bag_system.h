@@ -40,10 +40,10 @@ enum BagType : uint32_t
 
 struct RemoveItemByPosParam
 {
-    Guid item_guid_{kInvalidGuid};
-    uint32_t item_config_id_{kInvalidU32Id};
-    uint32_t pos_{kInvalidU32Id};
-    uint32_t size_{1};
+    Guid item_guid{kInvalidGuid};
+    uint32_t item_config_id{kInvalidU32Id};
+    uint32_t pos{kInvalidU32Id};
+    uint32_t size{1};
 };
 
 class Bag
@@ -51,11 +51,11 @@ class Bag
 public:
     // Capacity = how many grid slots this bag has unlocked. NOT the number
     // of items currently held (that's OccupiedGridCount()).
-    std::size_t Capacity() const { return capacity_; }
-    [[nodiscard]] Guid PlayerGuid() const { return player_guid_; }
-    std::size_t OccupiedGridCount() const { return items_.size(); }
-    std::size_t PositionCount() const { return pos_.size(); }
-    const PosMap &pos() const { return pos_; }
+    std::size_t Capacity() const { return capacity; }
+    [[nodiscard]] Guid PlayerGuid() const { return playerGuid; }
+    std::size_t OccupiedGridCount() const { return items.size(); }
+    std::size_t PositionCount() const { return posToGuid.size(); }
+    const PosMap &pos() const { return posToGuid; }
 
     std::size_t GetTotalItemCount(uint32_t config_id) const;
     ItemComp *GetItemCompByGuid(Guid guid);
@@ -70,16 +70,16 @@ public:
     uint32_t RemoveItems(const ItemCountMap &itemsToRemove);
     uint32_t RemoveItemByPos(const RemoveItemByPosParam &param);
 
-    bool IsFull() const { return items_.size() >= Capacity(); }
+    bool IsFull() const { return items.size() >= Capacity(); }
     bool HasSufficientSpace(std::size_t s) const
     {
         ValidateCapacity();
-        return Capacity() - items_.size() >= s;
+        return Capacity() - items.size() >= s;
     }
     bool IsSpaceInsufficient(std::size_t s) const
     {
         ValidateCapacity();
-        return Capacity() - items_.size() < s;
+        return Capacity() - items.size() < s;
     }
 
     uint32_t AddItem(const InitItemParam &itemParam);
@@ -110,21 +110,21 @@ public:
     template <typename Fn>
     void ForEachItem(Fn&& fn) const
     {
-        // item.item_id() IS the guid (it's the key under which items_
+        // item.item_id() IS the guid (it's the key under which items
         // stored this entity — see InsertItemEntity). No reverse scan
-        // of items_ needed; this keeps iteration O(n) instead of O(n²).
-        for (const auto& [entity, item] : itemRegistry_.view<ItemComp>().each())
+        // of items needed; this keeps iteration O(n) instead of O(n²).
+        for (const auto& [entity, item] : itemRegistry.view<ItemComp>().each())
         {
             fn(static_cast<Guid>(item.item_id()), item);
         }
     }
 
-    // Get item position by guid (inverse of pos_). Returns kInvalidU32Id
+    // Get item position by guid (inverse of posToGuid). Returns kInvalidU32Id
     // if the guid isn't in this bag. Used by marshal to fill
     // ItemEntry.pos.
     uint32_t GetItemPosByGuid(Guid guid) const
     {
-        for (const auto& [pos, mappedGuid] : pos_)
+        for (const auto& [pos, mappedGuid] : posToGuid)
         {
             if (mappedGuid == guid)
             {
@@ -151,32 +151,32 @@ public:
 
     // Set capacity (replays Bag::ExpandCapacity's effect without the audit log).
     // Used by Unmarshal to restore gameplay-unlocked slots.
-    void SetCapacityForRestore(std::size_t capacity)
+    void SetCapacityForRestore(std::size_t newCapacity)
     {
-        capacity_ = capacity;
+        capacity = newCapacity;
     }
 
 private:
     // ── Item-storage invariant helpers ────────────────────────────────
-    // items_ (guid→entity) and itemRegistry_ (entity→ItemComp) MUST stay
+    // items (guid→entity) and itemRegistry (entity→ItemComp) MUST stay
     // in lockstep. To make it impossible to update one and forget the
     // other, ALL creation goes through InsertItemEntity and ALL removal
-    // through DestroyItem / ClearAllItems. Do not call itemRegistry_
-    // .create()/.destroy() or items_.emplace()/.erase() directly anywhere
+    // through DestroyItem / ClearAllItems. Do not call itemRegistry
+    // .create()/.destroy() or items.emplace()/.erase() directly anywhere
     // else.
 
     // Create the ECS entity for `proto`, store the component, and register
-    // it in items_ — atomically. Returns the stored component, or nullptr
+    // it in items — atomically. Returns the stored component, or nullptr
     // if the guid already exists (the half-created entity is rolled back).
     // `proto` must already have its item_id / config_id / size set.
     ItemComp *InsertItemEntity(ItemComp proto);
 
     // Remove one item everywhere: destroys its ECS entity, drops it from
-    // items_, and frees its grid slot in pos_. Safe to call with an
+    // items, and frees its grid slot in posToGuid. Safe to call with an
     // unknown guid (no-op).
     void DestroyItem(Guid guid);
 
-    // Drop every item the bag holds (entities + items_ + pos_). capacity_
+    // Drop every item the bag holds (entities + items + posToGuid). capacity
     // is left untouched. Used by ResetFromSnapshot.
     void ClearAllItems();
 
@@ -225,13 +225,13 @@ private:
     std::size_t EmptyGridCount() const
     {
         ValidateCapacity();
-        return Capacity() - items_.size();
+        return Capacity() - items.size();
     }
-    void ValidateCapacity() const { assert(Capacity() >= items_.size()); }
+    void ValidateCapacity() const { assert(Capacity() >= items.size()); }
 
-    ItemsMap items_{};
-    PosMap pos_{};
-    std::size_t capacity_{kDefaultCapacity};
-    entt::registry itemRegistry_{};
-    Guid player_guid_{kInvalidGuid};
+    ItemsMap items{};
+    PosMap posToGuid{};
+    std::size_t capacity{kDefaultCapacity};
+    entt::registry itemRegistry{};
+    Guid playerGuid{kInvalidGuid};
 };
