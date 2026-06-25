@@ -627,37 +627,128 @@ TEST(BagTest, MergeAndCompactIsNoOpWhenAlreadyOptimal)
     }
 }
 
-// 关键回归:布局为 [未满, 满](未满堆排在满堆前面),位置已连续无空洞、
-// 每种 config 也只有 1 个未满堆,但"前面没满"。整理必须把满堆挪到前面、
-// 未满堆落到末尾(满堆在前不变量)。
-TEST(BagTest, MergeAndCompactMovesFullStacksToFront)
+// 关键回归:同一 config 的布局为 [未满, 满](未满堆排在满堆前面),位置已连续、
+// 该 config 也只有 1 个未满堆。整理必须把满堆挪到组内前面、未满堆落到组内末尾
+// (同种内满堆在前不变量)。
+TEST(BagTest, MergeAndCompactPutsFullBeforePartialWithinConfig)
 {
     Bag bag;
     bag.ExpandCapacity(kDefaultCapacity);
 
-    // pos0 放一个未满堆(kStack10,1 单位),pos1 放一个满堆(kStack11)。
-    // 两种 config 不同,不会互相合并;构成 [未满, 满] 的逆序布局。
-    EXPECT_EQ(kSuccess, bag.AddItem(MakeItem(kStack10, 1)));
-    EXPECT_EQ(kSuccess, bag.AddItem(MakeItem(kStack11))); // 默认满堆
+    const auto maxStack10 = MaxStack(kStack10);
+    // 同种 kStack10 两个满堆 [满, 满],再把 pos0 削成 1 单位 -> [未满, 满]。
+    EXPECT_EQ(kSuccess, bag.AddItem(MakeItem(kStack10, maxStack10 * 2)));
     EXPECT_EQ(2, bag.OccupiedGridCount());
+    auto dp = MakeRemoveParam(bag, 0, kStack10, maxStack10 - 1);
+    EXPECT_EQ(kSuccess, bag.RemoveItemByPos(dp));
 
-    const auto partialGuid = bag.GetItemCompByPos(0)->item_id(); // kStack10 未满堆
-    const auto fullGuid = bag.GetItemCompByPos(1)->item_id();    // kStack11 满堆
+    const auto partialGuid = bag.GetItemCompByPos(0)->item_id(); // 未满堆
+    const auto fullGuid = bag.GetItemCompByPos(1)->item_id();    // 满堆
     EXPECT_EQ(1, bag.GetItemCompByPos(0)->size());
-    EXPECT_EQ(MaxStack(kStack11), bag.GetItemCompByPos(1)->size());
+    EXPECT_EQ(maxStack10, bag.GetItemCompByPos(1)->size());
 
-    bag.MergeAndCompact(); // [未满, 满] -> 满堆必须挪到前面
+    bag.MergeAndCompact(); // [未满, 满] -> 同种内满堆挪到前面
 
     EXPECT_EQ(2, bag.OccupiedGridCount());
     EXPECT_EQ(2, bag.GridSlotCount());
     // pos0 现在是满堆,pos1 是未满堆。
     EXPECT_EQ(fullGuid, bag.GetItemCompByPos(0)->item_id());
-    EXPECT_EQ(MaxStack(kStack11), bag.GetItemCompByPos(0)->size());
+    EXPECT_EQ(maxStack10, bag.GetItemCompByPos(0)->size());
     EXPECT_EQ(partialGuid, bag.GetItemCompByPos(1)->item_id());
     EXPECT_EQ(1, bag.GetItemCompByPos(1)->size());
     // 数量守恒。
-    EXPECT_EQ(1, bag.GetTotalItemCount(kStack10));
+    EXPECT_EQ(maxStack10 + 1, bag.GetTotalItemCount(kStack10));
+}
+
+// 关键回归:不同 config 的满堆按 config 逆序排列 [config11, config10],
+// 整理必须按 config 升序把同种聚拢 -> [config10, config11]。
+TEST(BagTest, MergeAndCompactGroupsAndSortsByConfigAscending)
+{
+    Bag bag;
+    bag.ExpandCapacity(kDefaultCapacity);
+
+    // pos0 放 kStack11 满堆,pos1 放 kStack10 满堆 -> config 逆序布局。
+    EXPECT_EQ(kSuccess, bag.AddItem(MakeItem(kStack11)));
+    EXPECT_EQ(kSuccess, bag.AddItem(MakeItem(kStack10)));
+    EXPECT_EQ(2, bag.OccupiedGridCount());
+    EXPECT_EQ(kStack11, bag.GetItemCompByPos(0)->config_id());
+    EXPECT_EQ(kStack10, bag.GetItemCompByPos(1)->config_id());
+
+    bag.MergeAndCompact(); // [config11, config10] -> 按 config 升序聚拢
+
+    EXPECT_EQ(2, bag.OccupiedGridCount());
+    EXPECT_EQ(2, bag.GridSlotCount());
+    // 同种聚拢:config 小的在前。
+    EXPECT_EQ(kStack10, bag.GetItemCompByPos(0)->config_id());
+    EXPECT_EQ(kStack11, bag.GetItemCompByPos(1)->config_id());
+    EXPECT_EQ(MaxStack(kStack10), bag.GetItemCompByPos(0)->size());
+    EXPECT_EQ(MaxStack(kStack11), bag.GetItemCompByPos(1)->size());
+    // 数量守恒。
+    EXPECT_EQ(MaxStack(kStack10), bag.GetTotalItemCount(kStack10));
     EXPECT_EQ(MaxStack(kStack11), bag.GetTotalItemCount(kStack11));
+}
+
+// 综合端到端:三种 config 各有"一高一低"两个未满堆,且 config 按降序摆放
+// (11,10,9)。整理必须同时做到:① 同种内合并出 [满, 零头] ② 按 config 升序
+// 把同种聚拢 ③ 组内满堆在前。最终布局应是
+// [9满, 9零头, 10满, 10零头, 11满, 11零头]。
+TEST(BagTest, MergeAndCompactGroupsMergesAndOrdersMultipleConfigs)
+{
+    Bag bag;
+    bag.ExpandCapacity(kDefaultCapacity);
+
+    const auto max9 = MaxStack(kStack9);
+    const auto max10 = MaxStack(kStack10);
+    const auto max11 = MaxStack(kStack11);
+
+    // 按 config 降序铺:11 占 pos0,1;10 占 pos2,3;9 占 pos4,5。各两个满堆。
+    EXPECT_EQ(kSuccess, bag.AddItem(MakeItem(kStack11, max11 * 2)));
+    EXPECT_EQ(kSuccess, bag.AddItem(MakeItem(kStack10, max10 * 2)));
+    EXPECT_EQ(kSuccess, bag.AddItem(MakeItem(kStack9, max9 * 2)));
+    EXPECT_EQ(6, bag.OccupiedGridCount());
+
+    // 把每种的第一格削成 1 单位 -> 每种都成 [1, 满] 的一高一低。
+    auto dp11 = MakeRemoveParam(bag, 0, kStack11, max11 - 1);
+    EXPECT_EQ(kSuccess, bag.RemoveItemByPos(dp11));
+    auto dp10 = MakeRemoveParam(bag, 2, kStack10, max10 - 1);
+    EXPECT_EQ(kSuccess, bag.RemoveItemByPos(dp10));
+    auto dp9 = MakeRemoveParam(bag, 4, kStack9, max9 - 1);
+    EXPECT_EQ(kSuccess, bag.RemoveItemByPos(dp9));
+
+    bag.MergeAndCompact();
+
+    // 每种合并成 [满, 1],仍占 2 格,共 6 格。
+    EXPECT_EQ(6, bag.OccupiedGridCount());
+    EXPECT_EQ(6, bag.GridSlotCount());
+
+    // 期望布局:config 升序聚拢、组内满堆在前。
+    EXPECT_EQ(kStack9, bag.GetItemCompByPos(0)->config_id());
+    EXPECT_EQ(max9, bag.GetItemCompByPos(0)->size());
+    EXPECT_EQ(kStack9, bag.GetItemCompByPos(1)->config_id());
+    EXPECT_EQ(1, bag.GetItemCompByPos(1)->size());
+
+    EXPECT_EQ(kStack10, bag.GetItemCompByPos(2)->config_id());
+    EXPECT_EQ(max10, bag.GetItemCompByPos(2)->size());
+    EXPECT_EQ(kStack10, bag.GetItemCompByPos(3)->config_id());
+    EXPECT_EQ(1, bag.GetItemCompByPos(3)->size());
+
+    EXPECT_EQ(kStack11, bag.GetItemCompByPos(4)->config_id());
+    EXPECT_EQ(max11, bag.GetItemCompByPos(4)->size());
+    EXPECT_EQ(kStack11, bag.GetItemCompByPos(5)->config_id());
+    EXPECT_EQ(1, bag.GetItemCompByPos(5)->size());
+
+    // 数量守恒:每种 = 满堆 + 1。
+    EXPECT_EQ(max9 + 1, bag.GetTotalItemCount(kStack9));
+    EXPECT_EQ(max10 + 1, bag.GetTotalItemCount(kStack10));
+    EXPECT_EQ(max11 + 1, bag.GetTotalItemCount(kStack11));
+
+    // 幂等:已最优,再整理一次应是无操作(早退)。
+    std::vector<Guid> beforeGuid(6);
+    for (uint32_t i = 0; i < 6; ++i)
+        beforeGuid[i] = bag.GetItemCompByPos(i)->item_id();
+    bag.MergeAndCompact();
+    for (uint32_t i = 0; i < 6; ++i)
+        EXPECT_EQ(beforeGuid[i], bag.GetItemCompByPos(i)->item_id());
 }
 
 TEST(BagTest, Neaten400)
