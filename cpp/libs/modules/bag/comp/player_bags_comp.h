@@ -24,7 +24,7 @@
 //   bags[kTemporary]  = temp/loot bag    (capacity kTempBagMaxCapacity)
 //
 // Capacities themselves are persisted in BagAllData.capacities so that
-// gameplay-unlocked slots (Bag::Unlock) survive across cross-zone hops.
+// gameplay-unlocked slots (Bag::ExpandCapacity) survive across cross-zone hops.
 //
 // Two storage tiers:
 //   * bags          — the fixed, always-present core bags. Dense array

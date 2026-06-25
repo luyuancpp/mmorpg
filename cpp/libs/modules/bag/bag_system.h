@@ -47,14 +47,14 @@ class Bag
 {
 public:
     // Capacity = how many grid slots this bag has unlocked. NOT the number
-    // of items currently held (that's ItemGridSize()).
+    // of items currently held (that's OccupiedGridCount()).
     std::size_t Capacity() const { return capacity_; }
     [[nodiscard]] Guid PlayerGuid() const { return player_guid_; }
-    std::size_t ItemGridSize() const { return items_.size(); }
-    std::size_t PosSize() const { return pos_.size(); }
+    std::size_t OccupiedGridCount() const { return items_.size(); }
+    std::size_t PositionCount() const { return pos_.size(); }
     const PosMap &pos() const { return pos_; }
 
-    std::size_t GetItemStackSize(uint32_t config_id) const;
+    std::size_t GetTotalItemCount(uint32_t config_id) const;
     ItemComp *GetItemCompByGuid(Guid guid);
     ItemComp *GetItemCompByPos(uint32_t pos);
     entt::entity GetItemByGuid(Guid guid);
@@ -62,7 +62,7 @@ public:
     uint32_t GetItemPos(Guid guid);
 
     uint32_t HasEnoughSpace(const ItemCountMap &itemsToAdd);
-    uint32_t HasSufficientItems(const ItemCountMap &requiredItems);
+    uint32_t HasEnoughItems(const ItemCountMap &requiredItems);
     uint32_t RemoveItems(const ItemCountMap &itemsToRemove);
     uint32_t RemoveItemByPos(const RemoveItemByPosParam &param);
 
@@ -81,12 +81,12 @@ public:
     uint32_t AddItem(const InitItemParam &itemParam);
     uint32_t RemoveItem(Guid guid);
 
-    void Neaten();
-    void Unlock(std::size_t additionalSize);
+    void MergeAndCompact();
+    void ExpandCapacity(std::size_t additionalSize);
 
     static Guid LastGeneratedItemGuid();
 
-    static std::size_t CalculateStackGridSize(std::size_t itemStackSize, std::size_t stackSize);
+    static std::size_t GridsNeededFor(std::size_t itemStackSize, std::size_t stackSize);
 
     // ── Persistence/migration accessors ───────────────────────────────
     // Added 2026-05-17 to let bag_marshal serialize/restore the bag's
@@ -97,7 +97,7 @@ public:
     // These accessors are intentionally minimal — they expose just
     // enough surface to iterate items and rebuild from a snapshot,
     // without leaking ECS internals. Production gameplay still goes
-    // through AddItem / RemoveItem / Neaten / Unlock above.
+    // through AddItem / RemoveItem / MergeAndCompact / ExpandCapacity above.
 
     // Iterate items as (guid, ItemComp) pairs. The ItemComp is the
     // proto stored in the bag's internal item registry — caller MUST
@@ -151,7 +151,7 @@ public:
     // to replay items one by one without re-running stack/anomaly logic.
     void InsertItemForRestore(Guid guid, uint32_t configId, uint32_t stackSize, uint32_t pos);
 
-    // Set capacity (replays Bag::Unlock's effect without the audit log).
+    // Set capacity (replays Bag::ExpandCapacity's effect without the audit log).
     // Used by Unmarshal to restore gameplay-unlocked slots.
     void SetCapacityForRestore(std::size_t capacity)
     {
