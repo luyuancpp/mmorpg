@@ -125,7 +125,7 @@ uint32_t BagService::AddItems(
 	}
 
 	// ── All-or-nothing space check before any mutation ───────────────────
-	RETURN_ON_ERROR(bag.HasEnoughSpace(itemsToAdd));
+	RETURN_ON_ERROR(bag.CheckSpaceFor(itemsToAdd));
 
 	// ── Apply per config: Bag::AddItem → transaction log + anomaly ───────
 	for (const auto &[configId, count] : itemsToAdd)
@@ -186,14 +186,14 @@ uint32_t BagService::AddItems(
 	}
 
 	// ── All-or-nothing space pre-check before any mutation ───────────────
-	// Aggregate config -> total size; HasEnoughSpace handles equipment
+	// Aggregate config -> total size; CheckSpaceFor handles equipment
 	// (maxStack==1, one grid per unit) and stackables uniformly.
 	ItemCountMap requiredSpace;
 	for (const auto &param : itemsToAdd)
 	{
 		requiredSpace[param.itemPBComp.config_id()] += param.itemPBComp.size();
 	}
-	RETURN_ON_ERROR(bag.HasEnoughSpace(requiredSpace));
+	RETURN_ON_ERROR(bag.CheckSpaceFor(requiredSpace));
 
 	// ── Apply per piece, interleaving the transaction log ────────────────
 	// Add one piece at a time so LastGeneratedItemGuid() yields the guid
