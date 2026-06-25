@@ -1,27 +1,64 @@
+# mmorpg AI 协作守则
 
-8. **压测复盘只读 `stress_summarize.ps1` 输出,不要手 grep raw prom dump**。
-   - 命令: `pwsh tools/scripts/stress_summarize.ps1 -RunDir robot/logs/stress-<name>-<ts>`
-   - 输出五段二维表:robot 每分钟 stats + entergame_total + dataloader stage avg + SceneManager EnterScene 子阶段 + DB task 子阶段 + Kafka lag,~3KB 上下文。
-   - **Round 16+ 推荐用 `tools/scripts/stress_snap.ps1` 后台批量拉 snapshot**(并行 scrape 三端口):
-     `pwsh tools/scripts/stress_snap.ps1 -RunDir robot/logs/stress-<name>-<ts> -StartTime '<yyyy-MM-dd HH:mm:ss>' -Stages 2,5,10,15,18`
-     端口分工: `:9101` login / `:9150` scene_manager / `:9160` db。
-     文件命名 `t<N>m_login.txt` / `t<N>m_sm.txt` / `t<N>m_db.txt` —— summarize 脚本自动按后缀分流。
-   - 旧式单端口手拉(legacy 兼容): `curl -s http://127.0.0.1:9101/metrics > $RunDir/prom-snapshots/t<n>m.txt`。
-   - 历史复盘文档(`stress-1zone-*.md`)直接复用脚本输出的表格,不要再贴 raw count/sum 数字。
-9. **压测前后**强制按以下顺序操作,任何一步漏了都重来:
-   1. **跑测前** — 把上一次压测的 `stress_summarize.ps1` 输出存为 `prev-summary.txt`(放在 `docs/design/stress-<round>-<date>.md` 同目录或 commit 到对比 PR 描述里),作为 Round N 的对比基线。`prev-summary.txt` 不存就不许开下一轮。
-   2. **跑测前** — 清空所有可能污染数据的日志/缓存:
-      - `robot/logs/stress-*` 旧目录(留最近 1 个备查,其余删掉)
-      - `bin/log/*` cpp gate/scene 日志
-      - 各 go service stderr/stdout(`go-svc-stop` + 删 `tools/scripts/.run/` 的 pid/log)
-      - `redis-cli FLUSHALL` 清掉残留 lock / session / task:result key
-      - kafka topic offset reset(`pwsh tools/scripts/dev_tools.ps1 -Command kafka-offset-reset`)+ broker 数据目录可选清,生产/历史不要清
-      - prom snapshot 目录 = 新建 `robot/logs/stress-<name>-<ts>/prom-snapshots/`
-   3. **压测中** — 至少在 ramp 完成 / 稳态中段 / 稳态末 三个时刻拉 snapshot 进 prom-snapshots/。
-   4. **跑测后** — 跑 `stress_summarize.ps1` 出 Round N 表,与 `prev-summary.txt` 二维对比写进新复盘文档,贴 ARCH §11 决策行 + 更新 CLAUDE.md §7
-   5. **压期间不能上传任何日志**
-   6. **每次登录压测的话你帮我把所有redis mysql etcd 数据全部删除再新的压测**
-   7. **不要读client目录**
-   8. **保证修改代码的正确性，数据一致性**
-   9. **中文回复**
-   已完成清单。**不要在没有对比表的情况下声明"性能提升"**。
+> 给本项目所有 AI Agent(Claude Code / Cursor / Copilot 等)的工作守则,人类开发者同样遵守。
+
+## 1. 第一原则
+
+**AI 没有跨会话记忆**。每次新会话动手前必须按序读完:
+
+1. `PROGRESS.md` —— 当前进度
+2. `CLAUDE.md` —— 项目规范(宪法)
+3. `.github/copilot-instructions.md` —— 架构/构建/编码细则
+4. `docs/design/<相关服务>.md` —— 任务相关设计
+5. `git log -20 --oneline` —— 最近改动
+6. 当前打开的 PR / Issue
+
+**没读懂就动手 = 失忆人改代码**,会出大问题。
+
+## 2. AI 能做的
+
+写代码(C++ / Go / Java / proto / yaml / shell / ps1)/ 文档 / 测试;跑本地 build / test / lint;跑本地 docker-compose / dev_tools.ps1;建议 commit message 与 PR 描述;代码审查 / 设计评审;分析 `stress_summarize` 输出表。
+
+## 3. AI 不能做的
+
+- ❌ `git push` / `git tag`(人手动推);`git commit`(除非用户明说"帮我 commit")
+- ❌ 登录任何远端账号(GitHub / k8s / 云厂商 / 注册表);改 CI 凭证 / secrets
+- ❌ 写 secret / token / 密码到 git 跟踪文件
+- ❌ `kubectl apply` 到生产(只能本地 / 指定 dev 集群);`docker push` 到 registry
+- ❌ 读 `client/` 目录
+- ❌ 用 `--no-verify`、注释断言、跳 test 等方式绕过安全检查
+
+## 4. AI 执行方式
+
+默认 **直接执行**:读 §1 → 改代码/proto/yaml/脚本/文档 → 跑 build/test/lint → 汇报改动范围 + 验证 + 剩余风险。需 commit 时等人发话。
+
+遇 §3 禁令、§6 红线,或要装/升级工具、改系统环境、写 secrets、碰生产、push/tag、改 30+ 文件 → **立刻停止报告**,等授权。
+
+### 4.1 编译 / 压测协作
+
+涉及编译或压测时,Claude 必须先给出可执行细节:目标服务 / 目标场景、具体命令、工作目录、环境变量、前置清理、期望产物、通过标准、失败时要保留的日志或摘要。Codex 按这些细节执行本地编译 / 压测 / 汇总,不自行脑补压测口径或宣称性能结论。
+
+## 5. 失败时怎么办
+
+不"假装成功"(老实报错)、不自动重试 5 次(报错后等决策)、不绕过失败(注释断言/跳 test)、不擦屁股式 `git reset / checkout --` 销毁进度。
+
+## 6. 触碰红线 → 立刻停止 + 报告
+
+任务范围明显扩大或漏关键文件 / 规范文档自相矛盾 / 要改 30+ 文件 / 要写 secrets 进 git / 要改系统环境 / 要关防火墙 / build 改坏别的服务 / 即将 push 远端。
+
+## 7. 压测纪律
+
+以 `CLAUDE.md §6` 为准。**核心**:跑测前必有 `prev-summary.txt` 且清空 redis/mysql/etcd/kafka offset;至少 3 次 prom snapshot(ramp 完/稳态中/稳态末);只读 `stress_summarize.ps1` 五段二维表,不手 grep raw prom;没对比表不准声明"性能提升";压期不上传日志;登录压测前清空 redis/mysql/etcd 数据。
+
+## 8. 决策记录
+
+- 大决策 → `docs/design/`(架构总图)
+- 服务级 → `docs/design/<service>.md`
+- 压测结果 → `docs/design/stress-<round>-*.md`
+- 进度 → `PROGRESS.md`(只追加,不删旧的)
+
+**没写文档 = 没说过**。
+
+## 9. 中文回复
+
+继承 `CLAUDE.md §2`:所有对话产出、注释、commit、文档全中文。

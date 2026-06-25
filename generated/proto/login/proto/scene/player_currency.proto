@@ -65,6 +65,7 @@ message GmUnblockCurrencyResponse
 service SceneCurrencyClientPlayer
 {
   option (OptionIsPlayerService) = true;
+  option (OptionIsClientProtocolService) = true;
   rpc GmAddCurrency (GmAddCurrencyRequest) returns (GmAddCurrencyResponse);
   rpc GmDeductCurrency (GmDeductCurrencyRequest) returns (GmDeductCurrencyResponse);
   rpc GetCurrencyList (GetCurrencyListRequest) returns (GetCurrencyListResponse);

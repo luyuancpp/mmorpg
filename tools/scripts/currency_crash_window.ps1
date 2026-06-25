@@ -62,7 +62,14 @@ param(
     [string]$Account = "robot_0001",
     [switch]$NoReset,
     [string]$OutDir,
-    [int]$ScenePort = 9150
+    # Deprecated/unused: scene readiness is now detected via the scene process +
+    # cpp_nodes.ps1's "STARTED SUCCESSFULLY" banner, not a fixed metrics port
+    # (scene ports are assigned dynamically; 9150 is scene_manager, not scene).
+    # Kept only so older invocations passing -ScenePort don't error.
+    [int]$ScenePort = 9150,
+    # Zone whose MySQL schema (zone_<Zone>_db) gets wiped between cases. Must
+    # match the robot config's zone_id (robot.currency-crash.yaml -> zone_id: 1).
+    [int]$Zone = 1
 )
 
 $ResetData = -not $NoReset
@@ -86,32 +93,64 @@ Write-Host "Out dir: $OutDir" -ForegroundColor Cyan
 # ── Helpers ────────────────────���─────────────────────────────────────────
 
 function Invoke-DataReset {
-    Write-Host "[reset] flushing redis / mysql / kafka offsets..." -ForegroundColor Yellow
+    param([int]$Zone = 1)
+    Write-Host "[reset] flushing redis / mysql / kafka offsets (zone $Zone)..." -ForegroundColor Yellow
 
     # Per CLAUDE.md §9.6: every kill-test login round must wipe redis/mysql/etcd
     # before the next round. We trim the wipe set to what currency persistence
     # actually depends on so this script stays usable outside stress contexts.
+    #
+    # This dev box runs infra (redis/mysql/kafka) inside docker containers and
+    # the host redis-cli/mysql clients are NOT installed, so we detect the host
+    # CLI first and fall back to `docker exec <container>` transparently.
+
+    $hasDocker = [bool](Get-Command docker -ErrorAction SilentlyContinue)
 
     # Redis full flush — we want a clean PlayerAllData parent-key state.
-    & redis-cli FLUSHALL | Out-Null
+    if (Get-Command redis-cli -ErrorAction SilentlyContinue) {
+        & redis-cli FLUSHALL | Out-Null
+    } elseif ($hasDocker) {
+        & docker exec redis redis-cli FLUSHALL | Out-Null
+    } else {
+        throw "[reset] redis-cli not on PATH and docker unavailable — cannot flush redis"
+    }
 
-    # MySQL: truncate the player tables. Keep table definitions (DROP would
-    # force a re-init dance). We touch only the tables this verification reads.
+    # MySQL: truncate the player tables in the zone-isolated schema (zone_<N>_db,
+    # see repo memory db-zone-isolation). Keep table definitions (DROP would force
+    # a re-init dance). We touch only the tables this verification reads.
     $mysqlPwd = $env:MYSQL_PASSWORD
-    if (-not $mysqlPwd) { $mysqlPwd = "root" }
-    $sql = @'
+    if (-not $mysqlPwd) { $mysqlPwd = "Mmorpg#2026db" }
+    $dbName = "zone_${Zone}_db"
+    $sql = @"
+SET FOREIGN_KEY_CHECKS=0;
 TRUNCATE TABLE player_database;
 TRUNCATE TABLE player_database_1;
 TRUNCATE TABLE player_centre_database;
 TRUNCATE TABLE user_accounts;
 TRUNCATE TABLE account_share_database;
-'@
-    $sql | & mysql -uroot "-p$mysqlPwd" mmo 2>&1 | Out-Null
+SET FOREIGN_KEY_CHECKS=1;
+"@
+    if (Get-Command mysql -ErrorAction SilentlyContinue) {
+        $sql | & mysql -uroot "-p$mysqlPwd" $dbName 2>&1 | Out-Null
+    } elseif ($hasDocker) {
+        $sql | & docker exec -i mysql mysql -uroot "-p$mysqlPwd" $dbName 2>&1 | Out-Null
+    } else {
+        throw "[reset] mysql client not on PATH and docker unavailable — cannot truncate $dbName"
+    }
 
-    # Kafka offset reset — reuse the project helper.
-    $kafkaReset = Join-Path $RepoRoot "tools\scripts\kafka_offset_reset.ps1"
-    if (Test-Path $kafkaReset) {
-        & pwsh -NoProfile -File $kafkaReset 2>&1 | Out-Null
+    # Kafka offset reset — best-effort only. After a full redis flush + mysql
+    # truncate, fresh accounts get brand-new SnowFlake player_ids, so any stale
+    # db-task messages reference ids that no longer exist and age out within the
+    # 60s topic retention. Resetting also requires the consumer group to be idle,
+    # which it isn't while the db service runs, so we treat failure as non-fatal.
+    if ($hasDocker) {
+        try {
+            & docker exec kafka /opt/kafka/bin/kafka-consumer-groups.sh `
+                --bootstrap-server kafka:29092 --all-groups --all-topics `
+                --reset-offsets --to-latest --execute 2>&1 | Out-Null
+        } catch {
+            Write-Host "[reset] kafka offset reset skipped (non-fatal): $($_.Exception.Message)" -ForegroundColor DarkYellow
+        }
     }
 }
 
@@ -146,18 +185,60 @@ function Start-Scene {
         Write-Host "[scene] starting with default save interval (300s)" -ForegroundColor DarkCyan
     }
     $cppNodes = Join-Path $RepoRoot "tools\scripts\cpp_nodes.ps1"
-    & pwsh -NoProfile -File $cppNodes -Command start -Nodes scene -SceneCount 1 | Out-Host
 
-    # Wait for scene metrics port to come up so the next robot leg doesn't
-    # race the bind. 30s budget is plenty on a dev box.
-    $deadline = (Get-Date).AddSeconds(30)
-    while ((Get-Date) -lt $deadline) {
-        $tcp = Test-NetConnection -ComputerName 127.0.0.1 -Port $ScenePort `
-            -InformationLevel Quiet -WarningAction SilentlyContinue
-        if ($tcp) { return }
-        Start-Sleep -Milliseconds 500
+    # cpp_nodes.ps1 launches scene.exe detached and blocks until it reads
+    # "STARTED SUCCESSFULLY" from the scene log (or times out). That banner is
+    # the real readiness signal — scene's TCP/gRPC ports are assigned
+    # dynamically via the etcd allocator (e.g. 20000/50000), so there is NO
+    # fixed port to probe. (Port 9150 is the Go scene_manager's metrics port,
+    # NOT scene — probing it gave an instant false-positive that let the robot
+    # leg race a not-yet-existent scene.)
+    #
+    # The first scene.exe launch of a session can fail with "Access is denied"
+    # (Defender real-time scan / a briefly-held stdout log handle); cpp_nodes.ps1
+    # swallows that Start-Process error, so we verify a scene process actually
+    # came up and retry the launch a few times if it didn't.
+    $maxAttempts = 4
+    for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
+        # IMPORTANT: launch cpp_nodes fire-and-forget — do NOT block on it.
+        # cpp_nodes.ps1 starts scene.exe via Start-Process with redirected std
+        # handles (CreateProcess bInheritHandles=TRUE), so the detached scene
+        # inherits and holds open every inheritable handle of the launcher,
+        # including its redirected stdout. Any wait that depends on that handle
+        # reaching EOF (a `| Out-Host` pipe, or `Start-Process -Wait` on a
+        # file-redirected child) therefore blocks for scene's entire lifetime
+        # and deadlocks the driver. Instead we fire cpp_nodes and poll for the
+        # scene process + its "STARTED SUCCESSFULLY" readiness banner ourselves.
+        $startLog = Join-Path $OutDir "scene-start-attempt$attempt.log"
+        Start-Process -FilePath "pwsh" `
+            -ArgumentList @('-NoProfile','-File', $cppNodes, '-Command','start','-Nodes','scene','-SceneCount','1') `
+            -WorkingDirectory $RepoRoot `
+            -RedirectStandardOutput $startLog `
+            -RedirectStandardError  "$startLog.err" `
+            -WindowStyle Hidden | Out-Null
+
+        # Wait for scene to come up. cpp_nodes writes "STARTED SUCCESSFULLY" to
+        # the scene node log once it's fully registered; that banner (plus a
+        # live scene process) is the real readiness signal.
+        $deadline = (Get-Date).AddSeconds(45)
+        while ((Get-Date) -lt $deadline) {
+            if (Get-Process scene -ErrorAction SilentlyContinue) {
+                $sceneLog = Get-ChildItem (Join-Path $RepoRoot "run\logs\cpp_nodes\scene.*.log") `
+                    -ErrorAction SilentlyContinue | Sort-Object LastWriteTime | Select-Object -Last 1
+                if ($sceneLog -and (Select-String -Path $sceneLog.FullName -Pattern "STARTED SUCCESSFULLY" -Quiet -ErrorAction SilentlyContinue)) {
+                    # Give scene_manager a moment to observe the new scene's etcd
+                    # registration before the robot leg tries to enter the scene.
+                    Start-Sleep -Seconds 3
+                    return
+                }
+            }
+            Start-Sleep -Milliseconds 500
+        }
+        Write-Host "[scene] launch attempt $attempt did not become ready in 45s; retrying..." -ForegroundColor Yellow
+        Stop-SceneProcess
+        Start-Sleep -Seconds 2
     }
-    throw "scene did not bind metrics port $ScenePort within 30s"
+    throw "scene failed to start after $maxAttempts attempts"
 }
 
 function Invoke-RobotLeg {
@@ -213,7 +294,7 @@ function Invoke-CrashCase {
     Write-Host "`n========== CASE $Name ($Account, wait=$WaitSeconds`s, kill=$Kill, expect $Expected) ==========" `
         -ForegroundColor Cyan
 
-    if ($ResetData) { Invoke-DataReset }
+    if ($ResetData) { Invoke-DataReset -Zone $Zone }
 
     # Make sure scene is fresh with the right save-interval setting.
     Stop-SceneProcess
