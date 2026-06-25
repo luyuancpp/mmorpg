@@ -62,7 +62,6 @@ public:
     ItemComp *GetItemCompByPos(uint32_t pos);
     entt::entity GetItemByGuid(Guid guid);
     entt::entity GetItemByPos(uint32_t pos);
-    uint32_t GetItemPos(Guid guid);
 
     uint32_t HasEnoughSpace(const ItemCountMap &itemsToAdd);
     uint32_t HasEnoughItems(const ItemCountMap &requiredItems);
@@ -111,18 +110,12 @@ public:
     template <typename Fn>
     void ForEachItem(Fn&& fn) const
     {
+        // item.item_id() IS the guid (it's the key under which items_
+        // stored this entity — see InsertItemEntity). No reverse scan
+        // of items_ needed; this keeps iteration O(n) instead of O(n²).
         for (const auto& [entity, item] : itemRegistry_.view<ItemComp>().each())
         {
-            // Reverse-lookup the guid: items_ maps guid → entity, so
-            // we walk items_ to find the guid matching this entity.
-            for (const auto& [guid, mappedEntity] : items_)
-            {
-                if (mappedEntity == entity)
-                {
-                    fn(guid, item);
-                    break;
-                }
-            }
+            fn(static_cast<Guid>(item.item_id()), item);
         }
     }
 

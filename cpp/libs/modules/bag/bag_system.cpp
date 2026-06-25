@@ -48,18 +48,6 @@ entt::entity Bag::GetItemByPos(uint32_t pos)
 	return (posIt != pos_.end()) ? GetItemByGuid(posIt->second) : entt::null;
 }
 
-uint32_t Bag::GetItemPos(Guid guid)
-{
-	for (const auto &[pos, mappedGuid] : pos_)
-	{
-		if (mappedGuid == guid)
-		{
-			return pos;
-		}
-	}
-	return kInvalidU32Id;
-}
-
 ItemCountMap Bag::MeasureFreeRoomPerConfig(const ItemCountMap &itemsToAdd) const
 {
 	ItemCountMap freeRoomByConfig;
