@@ -399,6 +399,7 @@ bool Bag::MergeAndCompact()
 	{
 		posToGuid[nextPos++] = key.guid;
 	}
+	return true;
 }
 
 uint32_t Bag::AddNonStackableItem(ItemComp itemProto)
