@@ -207,12 +207,105 @@ uint32_t Bag::RemoveItemByPos(const RemoveItemByPosParam &param)
 	return kSuccess;
 }
 
+bool Bag::IsFullStack(const ItemComp &item) const
+{
+	// 判断一个堆是否"已满"(size 达到该 config 的堆叠上限)。
+	// 不可叠加物品(max==1, size==1)恒为满,自然归入"满堆"放前面。
+	// 查表失败的脏数据当满堆处理 —— 避免整理时反复把它当未满堆挪来挪去/死循环。
+	const auto [row, result] = ItemTableManager::Instance().FindByIdSilent(item.config_id());
+	if (!row)
+	{
+		LOG_ERROR << "Bag::IsFullStack: item row not found config=" << item.config_id()
+				  << " player " << PlayerGuid();
+		return true;
+	}
+	return item.size() >= row->max_stack_size();
+}
+
+bool Bag::IsAlreadyMergedAndCompact() const
+{
+	// 只读判断"是否还需要整理",不改任何状态。三件事都满足才算已最优:
+	//   ① 没有可合并的零散堆:每个可叠加 config 至多只有 1 个未满堆。
+	//      同种物品一旦出现 >=2 个未满堆(一高一低 / 两个半堆),就能合并出
+	//      更少的格子,必须整理。这一条独立于格子是否紧凑。
+	//   ② 格子已紧凑:posToGuid 的键正好是 0,1,...,n-1,没有中间空洞。
+	//   ③ "前面必须是满堆":所有满堆的下标都小于任意未满堆的下标。
+	//      即满堆在前、未满堆只能落在最末尾(123满 4不满 / 123满4满 / 123满没有4)。
+	//      只要有一个满堆排在某个未满堆后面(如 [未满, 满]),就算位置已连续
+	//      也必须整理,把满堆挪到前面。
+
+	// ① 检查是否存在"同 config 出现 >=2 个未满堆"。
+	std::unordered_map<uint32_t, uint32_t> partialCountByConfig;
+	for (auto &&[entity, item] : itemRegistry.view<ItemComp>().each())
+	{
+		LookupItemOrContinue(item.config_id());
+		if (itemRow->max_stack_size() <= 1)
+		{
+			continue; // 不可叠加:不参与合并
+		}
+		if (item.size() >= itemRow->max_stack_size())
+		{
+			continue; // 满堆:不参与合并
+		}
+		if (++partialCountByConfig[item.config_id()] >= 2)
+		{
+			return false; // 同种有 >=2 个零散堆,可合并 -> 需要整理
+		}
+	}
+
+	// ② 检查格子是否紧凑:键唯一且数量 == size,只要每个键都 < size,
+	//    就等价于键集合恰为 {0,1,...,size-1}。
+	for (const auto &[pos, guid] : posToGuid)
+	{
+		if (pos >= posToGuid.size())
+		{
+			return false; // 存在空洞 -> 需要整理
+		}
+	}
+
+	// ③ 检查"满堆在前":求满堆最大下标与未满堆最小下标,满堆必须全部在前。
+	int64_t maxFullPos = -1;                       // 满堆里最大的下标(无满堆则保持 -1)
+	int64_t minPartialPos = INT64_MAX;             // 未满堆里最小的下标(无未满堆则保持 MAX)
+	for (const auto &[pos, guid] : posToGuid)
+	{
+		auto guidIt = items.find(guid);
+		if (guidIt == items.end())
+		{
+			return false; // 容器不一致 -> 交给整理重建
+		}
+		const auto &item = itemRegistry.get<ItemComp>(guidIt->second);
+		if (IsFullStack(item))
+		{
+			maxFullPos = std::max<int64_t>(maxFullPos, pos);
+		}
+		else
+		{
+			minPartialPos = std::min<int64_t>(minPartialPos, pos);
+		}
+	}
+	if (maxFullPos > minPartialPos)
+	{
+		return false; // 有满堆排在未满堆后面 -> 前面没满,需要整理
+	}
+
+	return true; // 既无可合并的堆,格子也已紧凑,且满堆全在前面
+}
+
 void Bag::MergeAndCompact()
 {
 	// 背包整理:把同一种可叠加物品散落各格的"零头"合并成尽量少的满堆,
 	// 再把所有物品的格子位置重新紧凑排布(0,1,2,...),消除中间空洞。
 	// 三步:① 按 config 把"未满的可叠加堆"分组 ② 每组合并、多余的清空待删
 	//       ③ 删空堆 + 重建 posToGuid 布局。
+
+	// 早退(热路径):本函数每次玩家打开背包都会被调一次,绝大多数情况下背包
+	// 早已整理好、无需再动。先做一遍只读 O(物品数) 检查,若已是最优布局就直接
+	// 返回 —— 既省掉后面的销毁/重建开销,更关键的是"不打乱玩家已经摆好的布局"
+	// (后面的重建会清空 posToGuid 按 items 哈希序重排,会让本已整齐的物品换位)。
+	if (IsAlreadyMergedAndCompact())
+	{
+		return;
+	}
 
 	// ① 分组 —— 把同 config_id 的"未满可叠加堆"归到一组。
 	// 直接用 config_id 做哈希分组,O(物品数)。CanStack 本质就是比 config_id,
@@ -276,14 +369,28 @@ void Bag::MergeAndCompact()
 		DestroyItem(guid); // 释放实体 + items + posToGuid 槽位
 	}
 
-	// 重建位置布局:清空旧 posToGuid,按顺序把剩余物品依次填入 0,1,2,...
-	// 直接顺序赋值,O(物品数);避免对每个物品调 AllocateGridSlot(每次都 O(容量) 找空位 → O(物品数 × 容量))。
+	// 重建位置布局:清空旧 posToGuid,先把"满堆"铺到前面的低位下标,
+	// 再把"未满堆"接在后面 —— 保证"前面一定是满的",未满堆只落在末尾
+	// (123满 4不满 / 123满4满 / 123满没有4)。两趟顺序赋值,O(物品数),
+	// 避免对每个物品调 AllocateGridSlot(每次 O(容量) 找空位 → O(物品数 × 容量))。
 	// 剩余物品数必然 <= 容量(整理只会减少占用),所以下标不会越界。
 	posToGuid.clear();
 	uint32_t nextPos = 0;
+	// 第一趟:满堆(含恒为满的不可叠加物品)排到前面。
 	for (auto &[guid, entity] : items)
 	{
-		posToGuid[nextPos++] = guid;
+		if (IsFullStack(itemRegistry.get<ItemComp>(entity)))
+		{
+			posToGuid[nextPos++] = guid;
+		}
+	}
+	// 第二趟:未满堆放到最后。
+	for (auto &[guid, entity] : items)
+	{
+		if (!IsFullStack(itemRegistry.get<ItemComp>(entity)))
+		{
+			posToGuid[nextPos++] = guid;
+		}
 	}
 }
 
