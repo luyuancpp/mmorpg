@@ -22,6 +22,7 @@ import org.mockito.ArgumentCaptor;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -62,7 +63,7 @@ class LoginEndpointIntegrationTest {
      * Replace the real gRPC client with a Mockito mock so the test does not
      * need a running login.rpc backend. The constructor still runs (it walks
      * the configured endpoints), but no calls are issued because we override
-     * {@code login()} / {@code refreshToken()}.
+     * {@code login(..., zoneId)} / {@code refreshToken()}.
      */
     @MockBean private LoginRpcClient loginRpcClient;
 
@@ -73,7 +74,7 @@ class LoginEndpointIntegrationTest {
         upstream.refreshToken = "refresh-xyz";
         upstream.accessTokenExpire = 1_700_000_000L;
         upstream.refreshTokenExpire = 1_702_000_000L;
-        when(loginRpcClient.login(any(LoginRpcClient.LoginRequestProto.class))).thenReturn(upstream);
+        when(loginRpcClient.login(any(LoginRpcClient.LoginRequestProto.class), anyInt())).thenReturn(upstream);
 
         LoginRequest req = new LoginRequest();
         req.setZoneId(1);
@@ -101,7 +102,7 @@ class LoginEndpointIntegrationTest {
         LoginRpcClient.LoginResponseProto upstream = new LoginRpcClient.LoginResponseProto();
         upstream.errorCode = 42;
         upstream.errorMessage = "auth_provider_rejected";
-        when(loginRpcClient.login(any(LoginRpcClient.LoginRequestProto.class))).thenReturn(upstream);
+        when(loginRpcClient.login(any(LoginRpcClient.LoginRequestProto.class), anyInt())).thenReturn(upstream);
 
         LoginRequest req = new LoginRequest();
         req.setAuthType("wechat");
@@ -117,7 +118,7 @@ class LoginEndpointIntegrationTest {
 
     @Test
     void loginEndpoint_unavailableMapsTo500() throws Exception {
-        when(loginRpcClient.login(any(LoginRpcClient.LoginRequestProto.class)))
+        when(loginRpcClient.login(any(LoginRpcClient.LoginRequestProto.class), anyInt()))
                 .thenThrow(new StatusRuntimeException(Status.UNAVAILABLE.withDescription("login down")));
 
         LoginRequest req = new LoginRequest();
@@ -175,7 +176,7 @@ class LoginEndpointIntegrationTest {
         LoginRpcClient.LoginResponseProto upstream = new LoginRpcClient.LoginResponseProto();
         upstream.accessToken = "wx-access";
         upstream.refreshToken = "wx-refresh";
-        when(loginRpcClient.login(any(LoginRpcClient.LoginRequestProto.class))).thenReturn(upstream);
+        when(loginRpcClient.login(any(LoginRpcClient.LoginRequestProto.class), anyInt())).thenReturn(upstream);
 
         LoginRequest req = new LoginRequest();
         req.setZoneId(1);
@@ -192,7 +193,7 @@ class LoginEndpointIntegrationTest {
 
         ArgumentCaptor<LoginRpcClient.LoginRequestProto> captor =
                 ArgumentCaptor.forClass(LoginRpcClient.LoginRequestProto.class);
-        verify(loginRpcClient).login(captor.capture());
+        verify(loginRpcClient).login(captor.capture(), anyInt());
         LoginRpcClient.LoginRequestProto sent = captor.getValue();
         assertEquals("wechat", sent.authType, "auth_type lost on the way to gRPC");
         assertEquals("oauth-code-from-mp-sdk", sent.authToken, "auth_token lost on the way to gRPC");
@@ -207,7 +208,7 @@ class LoginEndpointIntegrationTest {
         LoginRpcClient.LoginResponseProto upstream = new LoginRpcClient.LoginResponseProto();
         upstream.accessToken = "qq-access";
         upstream.refreshToken = "qq-refresh";
-        when(loginRpcClient.login(any(LoginRpcClient.LoginRequestProto.class))).thenReturn(upstream);
+        when(loginRpcClient.login(any(LoginRpcClient.LoginRequestProto.class), anyInt())).thenReturn(upstream);
 
         LoginRequest req = new LoginRequest();
         req.setAuthType("qq");
@@ -225,7 +226,7 @@ class LoginEndpointIntegrationTest {
 
         ArgumentCaptor<LoginRpcClient.LoginRequestProto> captor =
                 ArgumentCaptor.forClass(LoginRpcClient.LoginRequestProto.class);
-        verify(loginRpcClient).login(captor.capture());
+        verify(loginRpcClient).login(captor.capture(), anyInt());
         assertEquals("qq", captor.getValue().authType);
         assertEquals("qq-platform-access-token-rawvalue", captor.getValue().authToken);
     }

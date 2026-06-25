@@ -148,8 +148,51 @@ pwsh tools/scripts/currency_crash_window.ps1 -NoReset
 
 ## 执行结果
 
-> 待跑。脚本输出会自动覆盖到这里(直接 paste `summary.md` 即可)。
-> 跑完后追加: 周期 save 实际触发时间戳 + Round 17 压测前的 baseline 标注。
+> 状态:**驱动已修复并能端到端跑通,但真实结果被一个服务端 bug 阻塞,已定位并修复 proto,
+> 待重新编译 gate 后才能取到可信数据。在 gate 重编译前,不写入任何捏造的结果表。**
+
+### 本轮做了什么
+
+1. **修复驱动脚本** `tools/scripts/currency_crash_window.ps1`:
+   - `Invoke-DataReset`:改为走 `docker exec` 操作 redis/mysql,库名 `zone_1_db`,
+     mysql root 密码默认 `Mmorpg#2026db`,新增 `-Zone` 参数(原来用的 host `redis-cli`/`mysql`
+     不存在、库名/密码也不对)。
+   - `Start-Scene` **死锁修复**:`cpp_nodes.ps1` 用 `Start-Process -RedirectStandardOutput`
+     拉起 `scene.exe`,Windows `CreateProcess` 的 `bInheritHandles=TRUE` 使 detached 的 scene
+     继承并一直占着启动器 pwsh 的标准句柄;任何依赖该句柄 EOF 的等待(`... | Out-Host` 管道、
+     或 `Start-Process -Wait` 等重定向流)都会被 scene 的整个生命周期阻塞 → 驱动卡死。
+     改为 **fire-and-forget 启动 + 轮询就绪**(轮询 `Get-Process scene` 并在
+     `run/logs/cpp_nodes/scene.*.log` 中匹配 `STARTED SUCCESSFULLY` 横幅,45s 超时重试 4 次)。
+   - 备注:scene 端口是 etcd 动态分配(无固定 metrics 端口);9150 是 Go 的 scene_manager,
+     **不是** scene,不要拿它探活。
+
+2. **定位真正阻塞点(服务端 bug)**:机器人能正常登录并进入场景(scene 日志可见
+   `HandleEnterScene ... saved to Redis`),但 `GetCurrencyList`(message id **54**)超时,
+   导致币值快照全为 0、结果退化(A 假失败、C/D 假通过)。
+   gate 日志:`ERROR Invalid or unauthorized message ID: 54`。
+   - 拦截点:`cpp/nodes/gate/handler/rpc/client_message_processor.cpp` 的
+     `IsClientMessageId(msg_id)` 白名单校验。
+   - 白名单由生成代码 `cpp/generated/rpc/service_metadata/rpc_event_registry.cpp` 的
+     `IsClientMessageId` 决定,只对带 `option (OptionIsClientProtocolService) = true;`
+     的 service 放行。
+   - **根因**:`proto/scene/player_currency.proto` 的 `service SceneCurrencyClientPlayer`
+     只设了 `OptionIsPlayerService`,**漏了 `OptionIsClientProtocolService`**,而所有兄弟
+     `Scene*ClientPlayer`(skill/scene/movement/common)都设了它 → 货币消息 id 被排除在 gate 白名单外。
+
+3. **已修复 + 已重新生成**:
+   - 给 `SceneCurrencyClientPlayer` 补上 `option (OptionIsClientProtocolService) = true;`。
+   - 执行 `dev.bat proto` 重新生成,确认 `rpc_event_registry.cpp` 的 `IsClientMessageId`
+     switch 现已包含 `SceneCurrencyClientPlayerGetCurrencyListMessageId` 等全部货币 case。
+
+### 待办(取真实结果的前置条件)
+
+- [ ] **重新编译 gate C++ 节点**(按仓库约定 C++ 编译由本人手动执行,Agent 不自动触发)。
+- [ ] 用新 gate 重启栈,重跑驱动:
+      `Start-Process pwsh -ArgumentList @('-NoProfile','-File','tools\scripts\currency_crash_window.ps1','-Cases','A,C,D') -RedirectStandardOutput run\logs\java\driver.log -RedirectStandardError run\logs\java\driver.err -WindowStyle Hidden`
+      (case B = 350s 慢档,本轮按计划跳过)。
+- [ ] 把生成的 `robot\logs\currency-crash-window-<ts>\summary.md` 的 markdown 表粘贴替换本节,
+      并补:周期 save 实际触发时间戳(scene 日志 grep `Periodic ... save`)。
+- 预期:A `Lost > 0`(kill 在两次 save 之间,金币回退),C/D `Lost == 0`(已落库,保住)。
 
 ---
 

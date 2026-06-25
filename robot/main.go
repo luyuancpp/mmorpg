@@ -156,7 +156,16 @@ func main() {
 // runRobot is the full lifecycle for one robot (one goroutine).
 func runRobot(account string, cfg *config.Config, stats *metrics.Stats, stop <-chan struct{}) {
 	const maxRetries = 5
+	// Token-expiry refetches deliberately do NOT consume the normal retry
+	// budget (see the tokenExpired branch below), but they MUST be bounded:
+	// otherwise a permanently-unreachable / mis-signing gate would make a robot
+	// spin forever (attempt-- never advances), turning a real outage into an
+	// invisible hang instead of a counted failure. The cap is generous —
+	// transient expiry during the 78k-concurrency ramp only needs a handful of
+	// refetches. Round 19 hardening.
+	const maxTokenExpiredRetries = 20
 	backoff := 3 * time.Second
+	tokenExpiredRetries := 0
 
 	// access_token reconnect cache: carried across retry attempts so a failed
 	// session (e.g. scene-ready timeout) doesn't pay the full primary-auth
@@ -191,7 +200,18 @@ func runRobot(account string, cfg *config.Config, stats *metrics.Stats, stop <-c
 		// 自己的错。下一次 attempt 会重新走 resolveGateAddrLocal 拿全新 token,
 		// 所以这一轮不应该消耗 retry 预算,也不算 login_fail。
 		// 抵消本次 attempt 自增,backoff 用一个非常短的固定值(token 拿新的就 OK)。
+		// 但有上限:连续 token 过期超过 maxTokenExpiredRetries 说明 gate 真的有
+		// 问题(宕机 / 时钟漂移 / 签名错),此时给一次 LoginFail 让它显式可见,
+		// 而不是无限自旋假装"没失败"。
 		if tokenExpired {
+			tokenExpiredRetries++
+			if tokenExpiredRetries > maxTokenExpiredRetries {
+				zap.L().Error("robot gave up after repeated gate-token expiry",
+					zap.String("account", account),
+					zap.Int("tokenExpiredRetries", tokenExpiredRetries))
+				stats.LoginFail()
+				return
+			}
 			attempt--
 			backoff = 200 * time.Millisecond
 		}
@@ -212,8 +232,9 @@ func runRobot(account string, cfg *config.Config, stats *metrics.Stats, stop <-c
 // where the server doesn't rotate.
 func runRobotOnce(account string, cfg *config.Config, stats *metrics.Stats, stop <-chan struct{}, prevAccessToken string, prevAccessExpire int64) (ok bool, newAccessToken string, newAccessExpire int64, tokenExpired bool) {
 	newAccessToken, newAccessExpire = prevAccessToken, prevAccessExpire
-	// Fetch a fresh gate token for each connection attempt so the 5-min TTL
-	// is never stale — even under high robot counts or retry backoff.
+	// Fetch a fresh gate token for each connection attempt so the gate token
+	// TTL (10min since Round 19, see login assigngatelogic.gateTokenTTL) is
+	// never stale — even under high robot counts or retry backoff.
 	host, portStr, tokenPayload, tokenSig, err := resolveGateAddrLocal(cfg)
 	if err != nil {
 		zap.L().Error("resolve gate address failed", zap.String("account", account), zap.Error(err))
@@ -302,7 +323,15 @@ func runRobotOnce(account string, cfg *config.Config, stats *metrics.Stats, stop
 	go runTokenRefresher(gc, cfg.GatewayAddr, stats, stop, recvDone)
 
 	// Wait for scene node to be bound (NotifyEnterScene) before sending scene-targeted messages.
-	waitCtx, waitCancel := context.WithTimeout(context.Background(), 15*time.Second)
+	// Round 20: 15s -> 60s. EnterGame already succeeded here (we have a player_id);
+	// a real UE client does NOT tear down its verified session and re-auth just
+	// because the first NotifyEnterScene is slow. Under 45k concentrated players the
+	// scene EventLoop backlog can delay NotifyEnterScene past 15s, and the old short
+	// timeout turned every slow load into disconnect -> reconnect -> re-EnterScene,
+	// a self-amplifying retry storm (R19: ~36k give-up leaves churning the scene).
+	// A patient wait lets the saturated-but-draining scene deliver the notify, which
+	// collapses the churn and lets the backlog drain for everyone.
+	waitCtx, waitCancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer waitCancel()
 	if err := player.WaitSceneReady(waitCtx); err != nil {
 		zap.L().Error("timed out waiting for scene ready", zap.String("account", gc.Account), zap.Error(err))
