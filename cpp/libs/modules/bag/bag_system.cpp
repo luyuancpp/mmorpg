@@ -68,7 +68,7 @@ ItemCountMap Bag::MeasureFreeRoomPerConfig(const ItemCountMap &itemsToAdd) const
 	return freeRoomByConfig;
 }
 
-uint32_t Bag::HasEnoughSpace(const ItemCountMap &itemsToAdd)
+uint32_t Bag::CheckSpaceFor(const ItemCountMap &itemsToAdd)
 {
 	// 只读容量预检(不改背包):背包能否一次性放下 itemsToAdd 的每一项?
 	// 可叠加物品先填满同 config 现有堆叠的空余,只有溢出部分才占新格子;
@@ -100,7 +100,7 @@ uint32_t Bag::HasEnoughSpace(const ItemCountMap &itemsToAdd)
 	return kSuccess;
 }
 
-uint32_t Bag::HasEnoughItems(const ItemCountMap &requiredItems)
+uint32_t Bag::CheckItemsAvailable(const ItemCountMap &requiredItems)
 {
 	// 只读检查:背包里是否拥有 requiredItems 要求的每一项 (config_id -> 需求数量)。
 	// 思路:把需求拷一份,遍历背包逐个堆叠去抵扣,需求全部清零即满足。
@@ -131,7 +131,7 @@ uint32_t Bag::HasEnoughItems(const ItemCountMap &requiredItems)
 // 同一种物品的数量可能分散在多个堆叠里(例如 2.5 个满堆),所以要逐堆抽,
 // 直到抽够 count 为止。被抽光的堆叠 size 变 0 但格子保留(items/posToGuid 不删),
 // 后续 AddStackableItem 可以再填回去——这与 RemoveItem(guid) 的"彻底删格"不同。
-// 前置条件:调用方已用 HasEnoughItems 确认库存足够,这里不再校验。
+// 前置条件:调用方已用 CheckItemsAvailable 确认库存足够,这里不再校验。
 void Bag::DrainItemStacks(uint32_t configId, uint32_t count)
 {
 	for (const auto &[entity, item] : itemRegistry.view<ItemComp>().each()) // 遍历背包堆叠
@@ -153,7 +153,7 @@ void Bag::DrainItemStacks(uint32_t configId, uint32_t count)
 uint32_t Bag::RemoveItems(const ItemCountMap &itemsToRemove)
 {
 	// 事务语义:先确认每种物品都够扣,任何一种不够就整体失败,绝不做部分删除。
-	RETURN_ON_ERROR(HasEnoughItems(itemsToRemove));
+	RETURN_ON_ERROR(CheckItemsAvailable(itemsToRemove));
 
 	// 主流程到这里就一句话:每种物品要扣多少,就从它的堆叠里抽走多少。
 	// "跨多堆抽取"的细节被收进 DrainItemStacks,主函数只表达意图。
@@ -277,7 +277,7 @@ void Bag::MergeAndCompact()
 	}
 
 	// 重建位置布局:清空旧 posToGuid,按顺序把剩余物品依次填入 0,1,2,...
-	// 直接顺序赋值,O(物品数);避免对每个物品调 OnNewGrid(每次都 O(容量) 找空位 → O(物品数 × 容量))。
+	// 直接顺序赋值,O(物品数);避免对每个物品调 AllocateGridSlot(每次都 O(容量) 找空位 → O(物品数 × 容量))。
 	// 剩余物品数必然 <= 容量(整理只会减少占用),所以下标不会越界。
 	posToGuid.clear();
 	uint32_t nextPos = 0;
@@ -324,7 +324,7 @@ uint32_t Bag::AddNonStackableItem(ItemComp itemProto)
 			return PrintStackAndReturnError(kBagDeleteItemAlreadyHasGuid);
 		}
 
-		OnNewGrid(guid); // 给这一件分配一个空格子
+		AllocateGridSlot(guid); // 给这一件分配一个空格子
 	}
 	return kSuccess;
 }
@@ -387,7 +387,7 @@ uint32_t Bag::SpillIntoNewGrids(ItemComp proto, uint32_t maxStackSize,
 			LOG_ERROR << "AddStackableItem: duplicate guid " << guid << " player " << PlayerGuid();
 			return PrintStackAndReturnError(kBagDeleteItemAlreadyHasGuid);
 		}
-		OnNewGrid(guid);
+		AllocateGridSlot(guid);
 	}
 	return kSuccess;
 }
@@ -445,9 +445,9 @@ uint32_t Bag::AddItem(const InitItemParam &initItemParam)
 
 uint32_t Bag::AddItems(const ItemCountMap &itemsToAdd)
 {
-	// 事务语义:与 RemoveItems 完全对称。先用 HasEnoughSpace 整体校验,
+	// 事务语义:与 RemoveItems 完全对称。先用 CheckSpaceFor 整体校验,
 	// 任何一种物品放不下就整体失败,绝不做"前几种已进包、后一种失败"的部分添加。
-	RETURN_ON_ERROR(HasEnoughSpace(itemsToAdd));
+	RETURN_ON_ERROR(CheckSpaceFor(itemsToAdd));
 
 	// 校验通过后逐个按配置发放。每个 config 复用单个 AddItem 的完整逻辑
 	// (堆叠/非堆叠分发、铺格子等),主函数只表达"批量发放"的意图。
@@ -467,15 +467,15 @@ uint32_t Bag::AddItems(const std::vector<InitItemParam> &itemsToAdd)
 	// 与 ItemCountMap 版的区别:每个 InitItemParam 携带各自完整的 ItemComp
 	//   (预设 guid、强化等级、随机词条、绑定状态……),逐件原样写入,绝不丢属性。
 
-	// 事务前置:先把整批的格子需求汇总成 config->总数,用 HasEnoughSpace 一次性校验。
-	// HasEnoughSpace 对装备(maxStack==1)同样正确——每个单位各占一格、无现有堆叠可填。
+	// 事务前置:先把整批的格子需求汇总成 config->总数,用 CheckSpaceFor 一次性校验。
+	// CheckSpaceFor 对装备(maxStack==1)同样正确——每个单位各占一格、无现有堆叠可填。
 	// 任何一项放不下就整体失败,绝不做"前几件已进包、后一件失败"的部分添加。
 	ItemCountMap requiredSpace;
 	for (const auto &param : itemsToAdd)
 	{
 		requiredSpace[param.itemPBComp.config_id()] += param.itemPBComp.size();
 	}
-	RETURN_ON_ERROR(HasEnoughSpace(requiredSpace));
+	RETURN_ON_ERROR(CheckSpaceFor(requiredSpace));
 
 	// 校验通过后逐件发放,复用单个 AddItem 的完整逻辑(装备走非堆叠、普通物品走堆叠)。
 	for (const auto &param : itemsToAdd)
@@ -574,12 +574,12 @@ void Bag::ClearAllItems()
 	posToGuid.clear();
 }
 
-std::size_t Bag::GridsNeededFor(std::size_t total_size, std::size_t max_stack_size)
+std::size_t Bag::GridsNeededFor(std::size_t totalSize, std::size_t maxStackSize)
 {
-	return (total_size + max_stack_size - 1) / max_stack_size;
+	return (totalSize + maxStackSize - 1) / maxStackSize;
 }
 
-uint32_t Bag::OnNewGrid(Guid guid)
+uint32_t Bag::AllocateGridSlot(Guid guid)
 {
 	const auto gridSize = Capacity();
 	for (uint32_t i = 0; i < gridSize; ++i)

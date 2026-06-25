@@ -54,8 +54,10 @@ public:
     std::size_t Capacity() const { return capacity; }
     [[nodiscard]] Guid PlayerGuid() const { return playerGuid; }
     std::size_t OccupiedGridCount() const { return items.size(); }
-    std::size_t PositionCount() const { return posToGuid.size(); }
-    const PosMap &pos() const { return posToGuid; }
+    // Number of grid slots recorded in the position map. Invariant: equals
+    // OccupiedGridCount() — every held item owns exactly one grid slot.
+    std::size_t GridSlotCount() const { return posToGuid.size(); }
+    const PosMap &GridSlots() const { return posToGuid; }
 
     std::size_t GetTotalItemCount(uint32_t config_id) const;
     ItemComp *GetItemCompByGuid(Guid guid);
@@ -63,26 +65,21 @@ public:
     entt::entity GetItemByGuid(Guid guid);
     entt::entity GetItemByPos(uint32_t pos);
 
-    uint32_t HasEnoughSpace(const ItemCountMap &itemsToAdd);
-    uint32_t HasEnoughItems(const ItemCountMap &requiredItems);
+    uint32_t CheckSpaceFor(const ItemCountMap &itemsToAdd);
+    uint32_t CheckItemsAvailable(const ItemCountMap &requiredItems);
     uint32_t AddItems(const ItemCountMap &itemsToAdd);
     uint32_t AddItems(const std::vector<InitItemParam> &itemsToAdd);
     uint32_t RemoveItems(const ItemCountMap &itemsToRemove);
     uint32_t RemoveItemByPos(const RemoveItemByPosParam &param);
 
     bool IsFull() const { return items.size() >= Capacity(); }
-    bool HasSufficientSpace(std::size_t s) const
+    bool IsSpaceInsufficient(std::size_t gridCount) const
     {
-        ValidateCapacity();
-        return Capacity() - items.size() >= s;
-    }
-    bool IsSpaceInsufficient(std::size_t s) const
-    {
-        ValidateCapacity();
-        return Capacity() - items.size() < s;
+        AssertCapacityInvariant();
+        return Capacity() - items.size() < gridCount;
     }
 
-    uint32_t AddItem(const InitItemParam &itemParam);
+    uint32_t AddItem(const InitItemParam &initItemParam);
     uint32_t RemoveItem(Guid guid);
 
     void MergeAndCompact();
@@ -90,7 +87,7 @@ public:
 
     static Guid LastGeneratedItemGuid();
 
-    static std::size_t GridsNeededFor(std::size_t itemStackSize, std::size_t stackSize);
+    static std::size_t GridsNeededFor(std::size_t totalSize, std::size_t maxStackSize);
 
     // ── Persistence/migration accessors ───────────────────────────────
     // Added 2026-05-17 to let bag_marshal serialize/restore the bag's
@@ -182,13 +179,13 @@ private:
 
     Guid GenerateItemGuid();
     bool IsInvalidItemGuid(const ItemComp &item) const;
-    uint32_t OnNewGrid(Guid guid);
-    static bool CanStack(const ItemComp &item1, const ItemComp &item2);
+    uint32_t AllocateGridSlot(Guid guid);
+    static bool CanStack(const ItemComp &leftItem, const ItemComp &rightItem);
 
-    uint32_t AddNonStackableItem(ItemComp itemPBComp);
-    uint32_t AddStackableItem(ItemComp itemPBComp, uint32_t maxStackSize);
+    uint32_t AddNonStackableItem(ItemComp itemProto);
+    uint32_t AddStackableItem(ItemComp itemProto, uint32_t maxStackSize);
 
-    // ── HasEnoughSpace helper ─────────────────────────────────────────
+    // ── CheckSpaceFor helper ──────────────────────────────────────────
     // For every config in itemsToAdd, sum the spare room left in the bag's
     // existing stacks of that config (config_id -> free units). Configs not
     // being added, and non-stackable configs (full at size 1), contribute 0.
@@ -219,15 +216,15 @@ private:
     // Drain `count` units of one config from its stacks. The quantity may be
     // spread across several stacks; each drained stack keeps its grid slot
     // (size becomes 0). Precondition: the bag holds at least `count` of
-    // configId (callers go through HasEnoughItems first).
+    // configId (callers go through CheckItemsAvailable first).
     void DrainItemStacks(uint32_t configId, uint32_t count);
 
     std::size_t EmptyGridCount() const
     {
-        ValidateCapacity();
+        AssertCapacityInvariant();
         return Capacity() - items.size();
     }
-    void ValidateCapacity() const { assert(Capacity() >= items.size()); }
+    void AssertCapacityInvariant() const { assert(Capacity() >= items.size()); }
 
     ItemsMap items{};
     PosMap posToGuid{};
