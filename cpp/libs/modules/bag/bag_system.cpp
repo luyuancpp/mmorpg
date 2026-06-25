@@ -367,89 +367,94 @@ uint32_t Bag::AddNonStackableItem(ItemComp itemProto)
 	return kSuccess;
 }
 
-uint32_t Bag::AddStackableItem(ItemComp itemProto, uint32_t maxStackSize)
+uint32_t Bag::PlanStackIntoExistingStacks(const ItemComp &proto, uint32_t maxStackSize,
+										  std::vector<StackFill> &outFillPlan) const
 {
-	// 放入可叠加物品,分四步,前两步只"算账"不改背包,后两步才真正写入:
-	//   ① 扫描同 config 的未满堆,记下每个堆能补多少,算出补完后还剩多少要占新格。
-	//   ② 用剩余量算需要几个新格子;若空格不够,直接整体失败(不留脏状态)。
-	//   ③ 按 ① 记下的计划,把已有堆补满。
-	//   ④ 剩余量铺到新格子里。
-	// 之所以"先算后写",是为了事务性:必须确认放得下才动手,否则会出现
-	// "补了一半才发现满了"的半完成状态。
-
-	const uint32_t totalToAdd = itemProto.size(); // 本次要放入的总数量
-
-	// ① 扫描已有未满堆,记录每个堆计划补入的数量(此步不改任何 size)。
-	std::vector<std::pair<entt::entity, uint32_t>> fillPlan; // (目标堆实体, 计划补入量)
-	uint32_t remaining = totalToAdd; // 还没安排去处的数量
-	for (auto &&[entity, item] : itemRegistry_.view<ItemComp>().each()) // 遍历背包每个物品
+	uint32_t remaining = proto.size();
+	for (auto &&[entity, item] : itemRegistry_.view<ItemComp>().each())
 	{
 		if (remaining == 0)
 		{
-			break; // 已全部安排完,无需再找堆
+			break;
 		}
-		if (!CanStack(item, itemProto))
+		if (!CanStack(item, proto))
 		{
-			continue; // 不是同种可叠加物品,跳过
+			continue;
 		}
-		if (item.size() > maxStackSize) // 异常:堆叠数已超上限(脏数据),跳过以免容量算成负数
+		if (item.size() > maxStackSize)
 		{
+			// 脏数据:堆叠数已超上限。跳过,否则 maxStackSize - size 会下溢成巨大值。
 			LOG_ERROR << "AddStackableItem: item.size() " << item.size() << " > maxStackSize " << maxStackSize << " player " << PlayerGuid();
 			continue;
 		}
-		const uint32_t room = maxStackSize - item.size(); // 这个堆还能再装多少
+		const uint32_t room = maxStackSize - item.size();
 		if (room == 0)
 		{
-			continue; // 已满,无空间
+			continue;
 		}
-		const uint32_t fill = remaining < room ? remaining : room; // 这个堆实际补入量(剩余量与空间取小)
-		fillPlan.emplace_back(entity, fill); // 记入计划
-		remaining -= fill;                   // 更新还需安排的数量
+		const uint32_t fill = remaining < room ? remaining : room;
+		outFillPlan.emplace_back(StackFill{entity, fill});
+		remaining -= fill;
 	}
+	return remaining;
+}
 
-	// ② 剩余量需要几个全新格子;若空格不够,整体失败(此时尚未改背包,安全)。
-	std::size_t newGridCount = 0; // 还需新开的格子数
-	if (remaining > 0)
+void Bag::ApplyStackFill(const std::vector<StackFill> &fillPlan)
+{
+	for (const auto &plan : fillPlan)
 	{
-		newGridCount = GridsNeededFor(remaining, maxStackSize); // 剩余量向上取整折成格子数
-		if (IsSpaceInsufficient(newGridCount)) // 空格不足以容纳
-		{
-			return PrintStackAndReturnError(kBagAddItemBagFull);
-		}
+		auto &item = itemRegistry_.get<ItemComp>(plan.entity);
+		item.set_size(item.size() + plan.amount);
 	}
+}
 
-	// ③ 执行计划:把已有堆按 ① 记录的量补满(到这里空间已确认充足)。
-	for (auto &[entity, fill] : fillPlan)
-	{
-		auto &item = itemRegistry_.get<ItemComp>(entity);
-		item.set_size(item.size() + fill); // 补入计划数量
-	}
-
-	if (remaining == 0)
-	{
-		return kSuccess; // 全部塞进了已有堆,无需新格子
-	}
-
-	// ④ 把剩余量铺到新格子,每格最多装 maxStackSize 个。
+uint32_t Bag::SpillIntoNewGrids(ItemComp proto, uint32_t maxStackSize,
+								uint32_t remaining, std::size_t newGridCount)
+{
 	for (std::size_t i = 0; i < newGridCount; ++i)
 	{
-		ItemComp piece = itemProto;                 // 复制一份作为新格物品
-		piece.set_item_id(GenerateItemGuid());      // 新格必须各自有唯一 guid
-		const uint32_t put = maxStackSize < remaining ? maxStackSize : remaining; // 这一格放多少(满格或剩余取小)
-		piece.set_size(put);                        // 设定该格数量
-		remaining -= put;                           // 扣减剩余量
+		ItemComp piece = proto;
+		piece.set_item_id(GenerateItemGuid());
+		const uint32_t put = maxStackSize < remaining ? maxStackSize : remaining;
+		piece.set_size(put);
+		remaining -= put;
 		const auto guid = piece.item_id();
 
-		// 经 InsertItemEntity 单一入口写入,保证 items_/itemRegistry_ 同步;撞 guid 则回滚报错。
 		if (InsertItemEntity(std::move(piece)) == nullptr)
 		{
 			LOG_ERROR << "AddStackableItem: duplicate guid " << guid << " player " << PlayerGuid();
 			return PrintStackAndReturnError(kBagDeleteItemAlreadyHasGuid);
 		}
-
-		OnNewGrid(guid); // 给这一格分配空位
+		OnNewGrid(guid);
 	}
 	return kSuccess;
+}
+
+uint32_t Bag::AddStackableItem(ItemComp itemProto, uint32_t maxStackSize)
+{
+	// 事务性:先把"怎么放"全部规划好(PlanStackIntoExistingStacks 不改背包),
+	// 确认放得下后再真正写入(ApplyStackFill / SpillIntoNewGrids)。
+	// 顺序不能反——一旦先改了堆才发现放不下,就会留下半完成的脏状态。
+	std::vector<StackFill> fillPlan;
+	const uint32_t remaining = PlanStackIntoExistingStacks(itemProto, maxStackSize, fillPlan);
+
+	std::size_t newGridCount = 0;
+	if (remaining > 0)
+	{
+		newGridCount = GridsNeededFor(remaining, maxStackSize);
+		if (IsSpaceInsufficient(newGridCount))
+		{
+			return PrintStackAndReturnError(kBagAddItemBagFull);
+		}
+	}
+
+	ApplyStackFill(fillPlan);
+
+	if (remaining == 0)
+	{
+		return kSuccess;
+	}
+	return SpillIntoNewGrids(std::move(itemProto), maxStackSize, remaining, newGridCount);
 }
 
 uint32_t Bag::AddItem(const InitItemParam &initItemParam)
