@@ -82,7 +82,7 @@ public:
     uint32_t AddItem(const InitItemParam &initItemParam);
     uint32_t RemoveItem(Guid guid);
 
-    void MergeAndCompact();
+    bool MergeAndCompact();
     void ExpandCapacity(std::size_t additionalSize);
 
     static Guid LastGeneratedItemGuid();
@@ -182,18 +182,14 @@ private:
     uint32_t AllocateGridSlot(Guid guid);
     static bool CanStack(const ItemComp &leftItem, const ItemComp &rightItem);
 
-    // Whether `item` is a full stack (size at its config's max_stack_size).
-    // Non-stackable items (max==1) are always full. Used to keep full stacks
-    // at the front grid slots during MergeAndCompact's rebuild.
-    bool IsFullStack(const ItemComp &item) const;
-
     // Read-only early-out for MergeAndCompact, which runs on EVERY bag open
     // (hot path). Returns true when the bag is already optimal so the caller
     // can skip the destroy/rebuild entirely — and, just as important, avoid
     // reshuffling an already-tidy layout under the player. Optimal means all
     // three hold: (1) no stackable config has 2+ partial stacks to merge,
-    // (2) grid slots are contiguous 0..n-1, (3) every full stack sits before
-    // every partial stack (front-loaded).
+    // (2) grid slots are contiguous 0..n-1, (3) slots are laid out by
+    // (config_id ascending, size descending) — same configs grouped together,
+    // full stacks before partials within each group.
     bool IsAlreadyMergedAndCompact() const;
 
     uint32_t AddNonStackableItem(ItemComp itemProto);

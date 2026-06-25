@@ -1,5 +1,6 @@
 ﻿#include "bag_system.h"
 
+#include <algorithm>
 #include <vector>
 
 #include "engine/core/error_handling/error_handling.h"
@@ -207,21 +208,6 @@ uint32_t Bag::RemoveItemByPos(const RemoveItemByPosParam &param)
 	return kSuccess;
 }
 
-bool Bag::IsFullStack(const ItemComp &item) const
-{
-	// 判断一个堆是否"已满"(size 达到该 config 的堆叠上限)。
-	// 不可叠加物品(max==1, size==1)恒为满,自然归入"满堆"放前面。
-	// 查表失败的脏数据当满堆处理 —— 避免整理时反复把它当未满堆挪来挪去/死循环。
-	const auto [row, result] = ItemTableManager::Instance().FindByIdSilent(item.config_id());
-	if (!row)
-	{
-		LOG_ERROR << "Bag::IsFullStack: item row not found config=" << item.config_id()
-				  << " player " << PlayerGuid();
-		return true;
-	}
-	return item.size() >= row->max_stack_size();
-}
-
 bool Bag::IsAlreadyMergedAndCompact() const
 {
 	// 只读判断"是否还需要整理",不改任何状态。三件事都满足才算已最优:
@@ -229,10 +215,10 @@ bool Bag::IsAlreadyMergedAndCompact() const
 	//      同种物品一旦出现 >=2 个未满堆(一高一低 / 两个半堆),就能合并出
 	//      更少的格子,必须整理。这一条独立于格子是否紧凑。
 	//   ② 格子已紧凑:posToGuid 的键正好是 0,1,...,n-1,没有中间空洞。
-	//   ③ "前面必须是满堆":所有满堆的下标都小于任意未满堆的下标。
-	//      即满堆在前、未满堆只能落在最末尾(123满 4不满 / 123满4满 / 123满没有4)。
-	//      只要有一个满堆排在某个未满堆后面(如 [未满, 满]),就算位置已连续
-	//      也必须整理,把满堆挪到前面。
+	//   ③ 排布已是 (config 升序, size 降序):同种物品聚在一起、组内满堆在前、
+	//      零头落到该组末尾。按 pos 0..n-1 顺序读出,相邻两格必须满足
+	//      "config 不减;同 config 时 size 不增"。任何一处违反(同种没聚拢、
+	//      或组内满堆排在零头后面),就算位置已连续也要整理。
 
 	// ① 检查是否存在"同 config 出现 >=2 个未满堆"。
 	std::unordered_map<uint32_t, uint32_t> partialCountByConfig;
@@ -263,35 +249,45 @@ bool Bag::IsAlreadyMergedAndCompact() const
 		}
 	}
 
-	// ③ 检查"满堆在前":求满堆最大下标与未满堆最小下标,满堆必须全部在前。
-	int64_t maxFullPos = -1;                       // 满堆里最大的下标(无满堆则保持 -1)
-	int64_t minPartialPos = INT64_MAX;             // 未满堆里最小的下标(无未满堆则保持 MAX)
-	for (const auto &[pos, guid] : posToGuid)
+	// ③ 按 pos 顺序检查 (config 升序, size 降序)。
+	bool hasPrev = false;
+	uint32_t prevConfig = 0;
+	uint32_t prevSize = 0;
+	for (uint32_t pos = 0; pos < posToGuid.size(); ++pos)
 	{
-		auto guidIt = items.find(guid);
+		auto posIt = posToGuid.find(pos);
+		if (posIt == posToGuid.end())
+		{
+			return false; // 不连续(②应已挡住,这里双保险)
+		}
+		auto guidIt = items.find(posIt->second);
 		if (guidIt == items.end())
 		{
 			return false; // 容器不一致 -> 交给整理重建
 		}
 		const auto &item = itemRegistry.get<ItemComp>(guidIt->second);
-		if (IsFullStack(item))
+		const uint32_t curConfig = item.config_id();
+		const uint32_t curSize = item.size();
+		if (hasPrev)
 		{
-			maxFullPos = std::max<int64_t>(maxFullPos, pos);
+			if (curConfig < prevConfig)
+			{
+				return false; // config 没升序 -> 同种没聚拢
+			}
+			if (curConfig == prevConfig && curSize > prevSize)
+			{
+				return false; // 同 config 内 size 没降序 -> 满堆排在零头后面
+			}
 		}
-		else
-		{
-			minPartialPos = std::min<int64_t>(minPartialPos, pos);
-		}
-	}
-	if (maxFullPos > minPartialPos)
-	{
-		return false; // 有满堆排在未满堆后面 -> 前面没满,需要整理
+		prevConfig = curConfig;
+		prevSize = curSize;
+		hasPrev = true;
 	}
 
-	return true; // 既无可合并的堆,格子也已紧凑,且满堆全在前面
+	return true; // 无可合并的堆、格子已紧凑,且已是 (config 升序, size 降序) 布局
 }
 
-void Bag::MergeAndCompact()
+bool Bag::MergeAndCompact()
 {
 	// 背包整理:把同一种可叠加物品散落各格的"零头"合并成尽量少的满堆,
 	// 再把所有物品的格子位置重新紧凑排布(0,1,2,...),消除中间空洞。
@@ -304,7 +300,7 @@ void Bag::MergeAndCompact()
 	// (后面的重建会清空 posToGuid 按 items 哈希序重排,会让本已整齐的物品换位)。
 	if (IsAlreadyMergedAndCompact())
 	{
-		return;
+		return false;
 	}
 
 	// ① 分组 —— 把同 config_id 的"未满可叠加堆"归到一组。
@@ -369,28 +365,39 @@ void Bag::MergeAndCompact()
 		DestroyItem(guid); // 释放实体 + items + posToGuid 槽位
 	}
 
-	// 重建位置布局:清空旧 posToGuid,先把"满堆"铺到前面的低位下标,
-	// 再把"未满堆"接在后面 —— 保证"前面一定是满的",未满堆只落在末尾
-	// (123满 4不满 / 123满4满 / 123满没有4)。两趟顺序赋值,O(物品数),
-	// 避免对每个物品调 AllocateGridSlot(每次 O(容量) 找空位 → O(物品数 × 容量))。
+	// 重建位置布局:把剩余物品按 (config 升序, size 降序) 排序后依次铺到
+	// pos 0,1,2,... —— 同种物品聚在一起、组内满堆在前、零头落到该组末尾,
+	// 得到 [config A: 满..满 零头][config B: 满..满 零头]... 的布局。
+	// 先快照成数组再 std::sort,O(物品数 × log 物品数);比对每个物品调
+	// AllocateGridSlot(每次 O(容量) 找空位 → O(物品数 × 容量))更省。
 	// 剩余物品数必然 <= 容量(整理只会减少占用),所以下标不会越界。
+	struct OrderKey
+	{
+		Guid guid;
+		uint32_t configId;
+		uint32_t size;
+	};
+	std::vector<OrderKey> ordered;
+	ordered.reserve(items.size());
+	for (auto &[guid, entity] : items)
+	{
+		const auto &item = itemRegistry.get<ItemComp>(entity);
+		ordered.emplace_back(OrderKey{guid, item.config_id(), item.size()});
+	}
+	std::sort(ordered.begin(), ordered.end(), [](const OrderKey &a, const OrderKey &b)
+			  {
+				  if (a.configId != b.configId)
+				  {
+					  return a.configId < b.configId; // 同种聚拢
+				  }
+				  return a.size > b.size;             // 满堆在前、零头在后
+			  });
+
 	posToGuid.clear();
 	uint32_t nextPos = 0;
-	// 第一趟:满堆(含恒为满的不可叠加物品)排到前面。
-	for (auto &[guid, entity] : items)
+	for (const auto &key : ordered)
 	{
-		if (IsFullStack(itemRegistry.get<ItemComp>(entity)))
-		{
-			posToGuid[nextPos++] = guid;
-		}
-	}
-	// 第二趟:未满堆放到最后。
-	for (auto &[guid, entity] : items)
-	{
-		if (!IsFullStack(itemRegistry.get<ItemComp>(entity)))
-		{
-			posToGuid[nextPos++] = guid;
-		}
+		posToGuid[nextPos++] = key.guid;
 	}
 }
 
