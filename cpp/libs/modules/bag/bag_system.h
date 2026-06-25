@@ -1,5 +1,8 @@
 #pragma once
 
+#include <unordered_map>
+#include <vector>
+
 #include "entt/src/entt/entity/registry.hpp"
 #include "engine/core/type_define/type_define.h"
 
@@ -189,6 +192,40 @@ private:
 
     uint32_t AddNonStackableItem(ItemComp itemPBComp);
     uint32_t AddStackableItem(ItemComp itemPBComp, uint32_t maxStackSize);
+
+    // ── HasEnoughSpace helper ─────────────────────────────────────────
+    // For every config in itemsToAdd, sum the spare room left in the bag's
+    // existing stacks of that config (config_id -> free units). Configs not
+    // being added, and non-stackable configs (full at size 1), contribute 0.
+    ItemCountMap MeasureFreeRoomPerConfig(const ItemCountMap &itemsToAdd) const;
+
+    // ── AddStackableItem helpers ──────────────────────────────────────
+    // One planned top-up: pour `amount` more units into existing stack `entity`.
+    struct StackFill
+    {
+        entt::entity entity;
+        uint32_t amount;
+    };
+
+    // Plan (no mutation) how the incoming units fill existing stacks of the
+    // same config. Fills outFillPlan and returns the leftover count that still
+    // needs brand-new grids.
+    uint32_t PlanStackIntoExistingStacks(const ItemComp &proto, uint32_t maxStackSize,
+                                         std::vector<StackFill> &outFillPlan) const;
+
+    // Execute a plan from PlanStackIntoExistingStacks (mutates stack sizes).
+    void ApplyStackFill(const std::vector<StackFill> &fillPlan);
+
+    // Place `remaining` leftover units into `newGridCount` freshly created
+    // grids, maxStackSize units per grid.
+    uint32_t SpillIntoNewGrids(ItemComp proto, uint32_t maxStackSize,
+                               uint32_t remaining, std::size_t newGridCount);
+
+    // Drain `count` units of one config from its stacks. The quantity may be
+    // spread across several stacks; each drained stack keeps its grid slot
+    // (size becomes 0). Precondition: the bag holds at least `count` of
+    // configId (callers go through HasEnoughItems first).
+    void DrainItemStacks(uint32_t configId, uint32_t count);
 
     std::size_t EmptyGridCount() const
     {

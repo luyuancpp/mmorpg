@@ -165,158 +165,141 @@ uint32_t Bag::HasEnoughItems(const ItemCountMap &requiredItems)
 	return itemsToCheck.empty() ? kSuccess : PrintStackAndReturnError(kBagInsufficientItems);
 }
 
+// 把某个 config 需要扣除的数量从它的若干堆叠里抽走。
+// 同一种物品的数量可能分散在多个堆叠里(例如 2.5 个满堆),所以要逐堆抽,
+// 直到抽够 count 为止。被抽光的堆叠 size 变 0 但格子保留(items_/pos_ 不删),
+// 后续 AddStackableItem 可以再填回去——这与 RemoveItem(guid) 的"彻底删格"不同。
+// 前置条件:调用方已用 HasEnoughItems 确认库存足够,这里不再校验。
+void Bag::DrainItemStacks(uint32_t configId, uint32_t count)
+{
+	for (const auto &[entity, item] : itemRegistry_.view<ItemComp>().each()) // 遍历背包堆叠
+	{
+		if (count == 0)
+		{
+			break; // 这种物品已经抽够了
+		}
+		if (item.config_id() != configId)
+		{
+			continue; // 不是目标物品,跳过
+		}
+		const uint32_t take = count < item.size() ? count : item.size(); // 这一堆最多能抽多少(需求与库存取小)
+		item.set_size(item.size() - take);                               // 抽走(抽光则 size=0,留作空格)
+		count -= take;                                                   // 更新还需抽取的数量
+	}
+}
+
 uint32_t Bag::RemoveItems(const ItemCountMap &itemsToRemove)
 {
+	// 事务语义:先确认每种物品都够扣,任何一种不够就整体失败,绝不做部分删除。
 	RETURN_ON_ERROR(HasEnoughItems(itemsToRemove));
 
-	auto remainingToRemove = itemsToRemove;
-
-	// Walk every stack, decrementing the still-needed counts. Slots that
-	// reach size 0 are intentionally kept as empty grids (see DelItem test);
-	// a later AddStackableItem can refill them.
-	for (const auto &[entity, item] : itemRegistry_.view<ItemComp>().each())
+	// 主流程到这里就一句话:每种物品要扣多少,就从它的堆叠里抽走多少。
+	// "跨多堆抽取"的细节被收进 DrainItemStacks,主函数只表达意图。
+	for (const auto &[configId, count] : itemsToRemove)
 	{
-		for (auto &[removeConfigId, removeCount] : remainingToRemove)
-		{
-			if (item.config_id() != removeConfigId)
-			{
-				continue;
-			}
-
-			const auto currentSize = item.size();
-			if (removeCount <= currentSize)
-			{
-				item.set_size(currentSize - removeCount);
-				remainingToRemove.erase(removeConfigId);
-				break;
-			}
-
-			// This stack is fully consumed; keep looking for more.
-			removeCount -= currentSize;
-			item.set_size(0);
-		}
-
-		if (remainingToRemove.empty())
-		{
-			break;
-		}
+		DrainItemStacks(configId, count);
 	}
-
 	return kSuccess;
 }
 
 uint32_t Bag::RemoveItemByPos(const RemoveItemByPosParam &param)
 {
-	if (param.size_ <= 0)
+	// 按"格子位置"精确删除指定物品的若干数量。调用方给出 pos/guid/config/size,
+	// 必须四者全部对得上才会扣减——这是一连串卫语句(guard),任何一项不一致就
+	// 立刻返回对应错误,绝不误删别的格子。全部是 O(1) 哈希查找,无遍历。
+
+	if (param.size_ <= 0) // 删除数量必须 > 0(无符号,等价于 != 0)
 	{
 		return PrintStackAndReturnError(kBagDelItemSize);
 	}
 
-	auto posIt = pos_.find(param.pos_);
+	auto posIt = pos_.find(param.pos_); // 1) 这个格子位置存在吗
 	if (posIt == pos_.end())
 	{
 		return PrintStackAndReturnError(kBagDelItemPos);
 	}
 
-	if (posIt->second != param.item_guid_)
+	if (posIt->second != param.item_guid_) // 2) 该位置上的物品 guid 是否就是调用方说的那个
 	{
 		return PrintStackAndReturnError(kBagDelItemGuid);
 	}
 
-	auto guidIt = items_.find(param.item_guid_);
+	auto guidIt = items_.find(param.item_guid_); // 3) 该 guid 在物品表里真的存在吗
 	if (guidIt == items_.end())
 	{
 		return PrintStackAndReturnError(kBagDelItemFindItem);
 	}
 
-	auto &item = itemRegistry_.get<ItemComp>(guidIt->second);
-	if (item.config_id() != param.item_config_id_)
+	auto &item = itemRegistry_.get<ItemComp>(guidIt->second); // 取出该物品组件
+	if (item.config_id() != param.item_config_id_) // 4) 物品的 config 是否与调用方一致(防张冠李戴)
 	{
 		return PrintStackAndReturnError(kBagDelItemConfig);
 	}
 
-	if (item.size() < param.size_)
+	if (item.size() < param.size_) // 5) 这一堆的数量是否够扣
 	{
 		return PrintStackAndReturnError(kBagItemDeletionSizeMismatch);
 	}
 
-	item.set_size(item.size() - param.size_);
+	item.set_size(item.size() - param.size_); // 校验全通过,扣减数量(扣光则 size=0,格子保留作空格)
 	return kSuccess;
 }
 
 void Bag::MergeAndCompact()
 {
-	// Group partially-filled stackable items by config so they can be merged.
-	std::vector<EntityVector> stackableItemGroups;
+	// 背包整理:把同一种可叠加物品散落各格的"零头"合并成尽量少的满堆,
+	// 再把所有物品的格子位置重新紧凑排布(0,1,2,...),消除中间空洞。
+	// 三步:① 按 config 把"未满的可叠加堆"分组 ② 每组合并、多余的清空待删
+	//       ③ 删空堆 + 重建 pos_ 布局。
 
-	for (auto &&[entity, item] : itemRegistry_.view<ItemComp>().each())
+	// ① 分组 —— 把同 config_id 的"未满可叠加堆"归到一组。
+	// 直接用 config_id 做哈希分组,O(物品数)。CanStack 本质就是比 config_id,
+	// 所以这里完全等价,且避免了原来"逐物品线性扫已有组"的 O(物品数 × 组数) 开销。
+	std::unordered_map<uint32_t, EntityVector> groupsByConfig; // config_id -> 同种未满堆的实体列表
+	for (auto &&[entity, item] : itemRegistry_.view<ItemComp>().each()) // 遍历背包每个物品
 	{
-		LookupItemOrContinue(item.config_id());
-
+		LookupItemOrContinue(item.config_id());        // 查物品表(查不到跳过),注入 itemRow
 		if (itemRow->max_stack_size() <= 1)
 		{
-			continue; // non-stackable: nothing to merge
+			continue; // 不可叠加:无可合并,跳过
 		}
-
 		if (item.size() >= itemRow->max_stack_size())
 		{
-			continue; // already a full stack
+			continue; // 已经是满堆:无需参与合并,跳过
 		}
-
-		bool addedToGroup = false;
-		for (auto &group : stackableItemGroups)
-		{
-			auto &groupAnchor = itemRegistry_.get<ItemComp>(*group.begin());
-			if (!CanStack(item, groupAnchor))
-			{
-				continue;
-			}
-
-			group.emplace_back(entity);
-			addedToGroup = true;
-			break;
-		}
-
-		if (!addedToGroup)
-		{
-			stackableItemGroups.emplace_back(EntityVector{entity});
-		}
+		groupsByConfig[item.config_id()].emplace_back(entity); // 未满堆,按 config 入组
 	}
 
-	// Merge each group: refill leading slots to full, empty the rest.
-	GuidVector emptiedItemGuids;
-	for (auto &group : stackableItemGroups)
+	// ② 合并每组 —— 把组内总数量重新分配:前几格填满,最后一格放余数,其余清 0。
+	GuidVector emptiedItemGuids; // 被清空(size=0)、待删除的物品 guid
+	for (auto &[configId, group] : groupsByConfig) // 遍历每个 config 分组
 	{
-		if (group.empty())
-		{
-			continue;
-		}
+		LookupItemOrContinue(configId);            // 注入 itemRow,拿该 config 的堆叠上限
+		const uint32_t maxStack = itemRow->max_stack_size();
 
-		auto &groupAnchor = itemRegistry_.get<ItemComp>(*group.begin());
-		LookupItemOrContinue(groupAnchor.config_id());
-
+		// 先求出该 config 这些未满堆里的总数量。
 		uint32_t totalStackSize = 0;
 		for (auto &entity : group)
 		{
 			totalStackSize += itemRegistry_.get<ItemComp>(entity).size();
 		}
 
+		// 前面的格子逐个填满 maxStack,直到剩余量能塞进一格为止。
 		std::size_t index = 0;
-		for (index = 0; index < group.size(); ++index)
+		for (; index < group.size(); ++index)
 		{
 			auto &currentItem = itemRegistry_.get<ItemComp>(group[index]);
-
-			if (totalStackSize <= itemRow->max_stack_size())
+			if (totalStackSize <= maxStack)
 			{
-				currentItem.set_size(totalStackSize);
-				++index;
+				currentItem.set_size(totalStackSize); // 余量一格放下,合并完成
+				++index;                              // 这一格已用,后面的都要清空
 				break;
 			}
-
-			currentItem.set_size(itemRow->max_stack_size());
-			totalStackSize -= itemRow->max_stack_size();
+			currentItem.set_size(maxStack);           // 这一格填满
+			totalStackSize -= maxStack;               // 扣掉已分配的量
 		}
 
+		// 合并后多出来的格子全部清空,记录 guid 等待删除。
 		for (; index < group.size(); ++index)
 		{
 			auto &currentItem = itemRegistry_.get<ItemComp>(group[index]);
@@ -325,164 +308,146 @@ void Bag::MergeAndCompact()
 		}
 	}
 
-	// Drop the now-empty items, then rebuild the position layout.
+	// ③ 删空堆,再把剩余物品紧凑重排到 pos 0,1,2,...
 	for (auto &guid : emptiedItemGuids)
 	{
-		DestroyItem(guid);
+		DestroyItem(guid); // 释放实体 + items_ + pos_ 槽位
 	}
 
+	// 重建位置布局:清空旧 pos_,按顺序把剩余物品依次填入 0,1,2,...
+	// 直接顺序赋值,O(物品数);避免对每个物品调 OnNewGrid(每次都 O(容量) 找空位 → O(物品数 × 容量))。
+	// 剩余物品数必然 <= 容量(整理只会减少占用),所以下标不会越界。
 	pos_.clear();
-
+	uint32_t nextPos = 0;
 	for (auto &[guid, entity] : items_)
 	{
-		auto &item = itemRegistry_.get<ItemComp>(entity);
-		OnNewGrid(item.item_id());
+		pos_[nextPos++] = guid;
 	}
 }
 
 uint32_t Bag::AddNonStackableItem(ItemComp itemProto)
 {
-	if (IsSpaceInsufficient(itemProto.size()))
+	// 不可叠加物品(装备等):每一件都独占一格,size 即"要放几件"。
+	// 统一处理:把 itemProto 拆成 pieceCount 件、每件 size=1 单独入格。
+	//   * 单件 (pieceCount==1):若调用方预先指定了 guid 就沿用,否则铸一个新的。
+	//   * 多件 (pieceCount>1):每件都必须有各自唯一的 guid,所以一律铸新。
+	const uint32_t pieceCount = itemProto.size(); // 要放入的件数
+
+	if (IsSpaceInsufficient(pieceCount)) // 空格不够放下这么多件
 	{
 		// TODO: overflow to temp bag or mail
 		return PrintStackAndReturnError(kBagAddItemBagFull);
 	}
 
-	if (itemProto.size() == 1)
-	{
-		// A pre-assigned guid is honored; otherwise mint a fresh one.
-		if (IsInvalidItemGuid(itemProto))
-		{
-			itemProto.set_item_id(GenerateItemGuid());
-		}
-		const auto guid = itemProto.item_id();
+	// 只有"单件"才允许沿用调用方预设的 guid;多件无法共用一个 guid,必须各自铸新。
+	const bool honorPreassignedGuid = (pieceCount == 1);
 
-		if (InsertItemEntity(std::move(itemProto)) == nullptr)
+	for (uint32_t i = 0; i < pieceCount; ++i) // 逐件创建并入格
+	{
+		ItemComp piece = itemProto; // 复制一份作为这一件
+		piece.set_size(1);          // 不可叠加:每件固定 size=1
+
+		// 沿用预设 guid 仅限单件且 guid 合法;其余情况一律铸新 guid。
+		if (!honorPreassignedGuid || IsInvalidItemGuid(piece))
+		{
+			piece.set_item_id(GenerateItemGuid());
+		}
+		const auto guid = piece.item_id();
+
+		// 经 InsertItemEntity 单一入口写入,保证 items_/itemRegistry_ 同步;
+		// 返回 nullptr 表示 guid 撞车,回滚并报错。
+		if (InsertItemEntity(std::move(piece)) == nullptr)
 		{
 			LOG_ERROR << "AddNonStackableItem: duplicate guid " << guid << " player " << PlayerGuid();
 			return PrintStackAndReturnError(kBagDeleteItemAlreadyHasGuid);
 		}
 
-		OnNewGrid(guid);
-	}
-	else
-	{
-		// TODO: equipment list with unique guids per piece
-		const uint32_t pieceCount = itemProto.size();
-		for (uint32_t i = 0; i < pieceCount; ++i)
-		{
-			ItemComp piece = itemProto;
-			piece.set_size(1);
-			piece.set_item_id(GenerateItemGuid());
-			const auto guid = piece.item_id();
-
-			if (InsertItemEntity(std::move(piece)) == nullptr)
-			{
-				LOG_ERROR << "AddNonStackableItem(batch): duplicate guid " << guid << " player " << PlayerGuid();
-				return PrintStackAndReturnError(kBagDeleteItemAlreadyHasGuid);
-			}
-
-			OnNewGrid(guid);
-		}
+		OnNewGrid(guid); // 给这一件分配一个空格子
 	}
 	return kSuccess;
 }
 
 uint32_t Bag::AddStackableItem(ItemComp itemProto, uint32_t maxStackSize)
 {
-	// Adds a stackable item in four phases:
-	//   1. Scan existing stacks of the same config that still have room.
-	//   2. Compute how many brand-new grids the leftover would need, and
-	//      bail out early if the bag can't fit them.
-	//   3. Top up the existing stacks found in phase 1.
-	//   4. Spill whatever is left into freshly created grids.
-	// Phase 1: find existing stacks with remaining capacity
-	EntityVector stackTargets;
-	std::size_t remainingToPlace = itemProto.size();
-	for (auto &&[entity, item] : itemRegistry_.view<ItemComp>().each())
+	// 放入可叠加物品,分四步,前两步只"算账"不改背包,后两步才真正写入:
+	//   ① 扫描同 config 的未满堆,记下每个堆能补多少,算出补完后还剩多少要占新格。
+	//   ② 用剩余量算需要几个新格子;若空格不够,直接整体失败(不留脏状态)。
+	//   ③ 按 ① 记下的计划,把已有堆补满。
+	//   ④ 剩余量铺到新格子里。
+	// 之所以"先算后写",是为了事务性:必须确认放得下才动手,否则会出现
+	// "补了一半才发现满了"的半完成状态。
+
+	const uint32_t totalToAdd = itemProto.size(); // 本次要放入的总数量
+
+	// ① 扫描已有未满堆,记录每个堆计划补入的数量(此步不改任何 size)。
+	std::vector<std::pair<entt::entity, uint32_t>> fillPlan; // (目标堆实体, 计划补入量)
+	uint32_t remaining = totalToAdd; // 还没安排去处的数量
+	for (auto &&[entity, item] : itemRegistry_.view<ItemComp>().each()) // 遍历背包每个物品
 	{
+		if (remaining == 0)
+		{
+			break; // 已全部安排完,无需再找堆
+		}
 		if (!CanStack(item, itemProto))
 		{
-			continue;
+			continue; // 不是同种可叠加物品,跳过
 		}
-		if (item.size() > maxStackSize)
+		if (item.size() > maxStackSize) // 异常:堆叠数已超上限(脏数据),跳过以免容量算成负数
 		{
 			LOG_ERROR << "AddStackableItem: item.size() " << item.size() << " > maxStackSize " << maxStackSize << " player " << PlayerGuid();
 			continue;
 		}
-		auto remainStackSize = maxStackSize - item.size();
-		if (remainStackSize <= 0)
+		const uint32_t room = maxStackSize - item.size(); // 这个堆还能再装多少
+		if (room == 0)
 		{
-			continue;
+			continue; // 已满,无空间
 		}
-		stackTargets.emplace_back(entity);
-		if (remainingToPlace > remainStackSize)
-		{
-			remainingToPlace -= remainStackSize;
-		}
-		else
-		{
-			remainingToPlace = 0;
-			break;
-		}
+		const uint32_t fill = remaining < room ? remaining : room; // 这个堆实际补入量(剩余量与空间取小)
+		fillPlan.emplace_back(entity, fill); // 记入计划
+		remaining -= fill;                   // 更新还需安排的数量
 	}
 
-	// Phase 2: check if remaining items fit in empty grids
-	std::size_t newGridCount = 0;
-	if (remainingToPlace > 0)
+	// ② 剩余量需要几个全新格子;若空格不够,整体失败(此时尚未改背包,安全)。
+	std::size_t newGridCount = 0; // 还需新开的格子数
+	if (remaining > 0)
 	{
-		newGridCount = GridsNeededFor(remainingToPlace, maxStackSize);
-		if (IsSpaceInsufficient(newGridCount))
+		newGridCount = GridsNeededFor(remaining, maxStackSize); // 剩余量向上取整折成格子数
+		if (IsSpaceInsufficient(newGridCount)) // 空格不足以容纳
 		{
 			return PrintStackAndReturnError(kBagAddItemBagFull);
 		}
 	}
 
-	// Phase 3: apply stacking to existing items
-	auto remainingToStack = itemProto.size();
-	for (auto &entity : stackTargets)
+	// ③ 执行计划:把已有堆按 ① 记录的量补满(到这里空间已确认充足)。
+	for (auto &[entity, fill] : fillPlan)
 	{
 		auto &item = itemRegistry_.get<ItemComp>(entity);
-		auto remainStackSize = maxStackSize - item.size();
-		if (remainStackSize >= remainingToStack)
-		{
-			item.set_size(item.size() + remainingToStack);
-			remainingToStack = 0;
-			break;
-		}
-		item.set_size(item.size() + remainStackSize);
-		remainingToStack -= remainStackSize;
+		item.set_size(item.size() + fill); // 补入计划数量
 	}
 
-	if (remainingToStack <= 0)
+	if (remaining == 0)
 	{
-		return kSuccess;
+		return kSuccess; // 全部塞进了已有堆,无需新格子
 	}
 
-	// Phase 4: place remainder into new grids
-	for (size_t i = 0; i < newGridCount; ++i)
+	// ④ 把剩余量铺到新格子,每格最多装 maxStackSize 个。
+	for (std::size_t i = 0; i < newGridCount; ++i)
 	{
-		ItemComp piece = itemProto;
-		piece.set_item_id(GenerateItemGuid());
-
-		if (maxStackSize >= remainingToStack)
-		{
-			piece.set_size(remainingToStack);
-		}
-		else
-		{
-			piece.set_size(maxStackSize);
-			remainingToStack -= maxStackSize;
-		}
+		ItemComp piece = itemProto;                 // 复制一份作为新格物品
+		piece.set_item_id(GenerateItemGuid());      // 新格必须各自有唯一 guid
+		const uint32_t put = maxStackSize < remaining ? maxStackSize : remaining; // 这一格放多少(满格或剩余取小)
+		piece.set_size(put);                        // 设定该格数量
+		remaining -= put;                           // 扣减剩余量
 		const auto guid = piece.item_id();
 
+		// 经 InsertItemEntity 单一入口写入,保证 items_/itemRegistry_ 同步;撞 guid 则回滚报错。
 		if (InsertItemEntity(std::move(piece)) == nullptr)
 		{
 			LOG_ERROR << "AddStackableItem: duplicate guid " << guid << " player " << PlayerGuid();
 			return PrintStackAndReturnError(kBagDeleteItemAlreadyHasGuid);
 		}
 
-		OnNewGrid(guid);
+		OnNewGrid(guid); // 给这一格分配空位
 	}
 	return kSuccess;
 }
