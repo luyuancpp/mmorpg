@@ -105,11 +105,11 @@ inline const GlobalVariableTableData& FindAllGlobalVariableTable() {
     return GlobalVariableTableManager::Instance().FindAll();
 }
 
-#define LookupGlobalVariable(tableId) \
+#define LookupGlobalVariableOrReturnError(tableId) \
     const auto [globalVariableRow, globalVariableResult] = GlobalVariableTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(globalVariableRow)) { LOG_ERROR << "GlobalVariable row not found for ID: " << tableId; return globalVariableResult; } } while(0)
 
-#define LookupGlobalVariableAs(prefix, tableId) \
+#define LookupGlobalVariableAsOrReturnError(prefix, tableId) \
     const auto [prefix##GlobalVariableRow, prefix##GlobalVariableResult] = GlobalVariableTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(prefix##GlobalVariableRow)) { LOG_ERROR << "GlobalVariable row not found for ID: " << tableId; return prefix##GlobalVariableResult; } } while(0)
 
@@ -117,7 +117,7 @@ inline const GlobalVariableTableData& FindAllGlobalVariableTable() {
     const auto [globalVariableRow, globalVariableResult] = GlobalVariableTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(globalVariableRow)) { LOG_ERROR << "GlobalVariable row not found for ID: " << tableId; return customReturnValue; } } while(0)
 
-#define LookupGlobalVariableOrVoid(tableId) \
+#define LookupGlobalVariableOrReturnVoid(tableId) \
     const auto [globalVariableRow, globalVariableResult] = GlobalVariableTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(globalVariableRow)) { LOG_ERROR << "GlobalVariable row not found for ID: " << tableId; return; } } while(0)
 
@@ -125,6 +125,6 @@ inline const GlobalVariableTableData& FindAllGlobalVariableTable() {
     const auto [globalVariableRow, globalVariableResult] = GlobalVariableTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(globalVariableRow)) { LOG_ERROR << "GlobalVariable row not found for ID: " << tableId; continue; } } while(0)
 
-#define LookupGlobalVariableOrFalse(tableId) \
+#define LookupGlobalVariableOrReturnFalse(tableId) \
     const auto [globalVariableRow, globalVariableResult] = GlobalVariableTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(globalVariableRow)) { LOG_ERROR << "GlobalVariable row not found for ID: " << tableId; return false; } } while(0)

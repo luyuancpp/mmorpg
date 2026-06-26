@@ -105,11 +105,11 @@ inline const MessageLimiterTableData& FindAllMessageLimiterTable() {
     return MessageLimiterTableManager::Instance().FindAll();
 }
 
-#define LookupMessageLimiter(tableId) \
+#define LookupMessageLimiterOrReturnError(tableId) \
     const auto [messageLimiterRow, messageLimiterResult] = MessageLimiterTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(messageLimiterRow)) { LOG_ERROR << "MessageLimiter row not found for ID: " << tableId; return messageLimiterResult; } } while(0)
 
-#define LookupMessageLimiterAs(prefix, tableId) \
+#define LookupMessageLimiterAsOrReturnError(prefix, tableId) \
     const auto [prefix##MessageLimiterRow, prefix##MessageLimiterResult] = MessageLimiterTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(prefix##MessageLimiterRow)) { LOG_ERROR << "MessageLimiter row not found for ID: " << tableId; return prefix##MessageLimiterResult; } } while(0)
 
@@ -117,7 +117,7 @@ inline const MessageLimiterTableData& FindAllMessageLimiterTable() {
     const auto [messageLimiterRow, messageLimiterResult] = MessageLimiterTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(messageLimiterRow)) { LOG_ERROR << "MessageLimiter row not found for ID: " << tableId; return customReturnValue; } } while(0)
 
-#define LookupMessageLimiterOrVoid(tableId) \
+#define LookupMessageLimiterOrReturnVoid(tableId) \
     const auto [messageLimiterRow, messageLimiterResult] = MessageLimiterTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(messageLimiterRow)) { LOG_ERROR << "MessageLimiter row not found for ID: " << tableId; return; } } while(0)
 
@@ -125,6 +125,6 @@ inline const MessageLimiterTableData& FindAllMessageLimiterTable() {
     const auto [messageLimiterRow, messageLimiterResult] = MessageLimiterTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(messageLimiterRow)) { LOG_ERROR << "MessageLimiter row not found for ID: " << tableId; continue; } } while(0)
 
-#define LookupMessageLimiterOrFalse(tableId) \
+#define LookupMessageLimiterOrReturnFalse(tableId) \
     const auto [messageLimiterRow, messageLimiterResult] = MessageLimiterTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(messageLimiterRow)) { LOG_ERROR << "MessageLimiter row not found for ID: " << tableId; return false; } } while(0)

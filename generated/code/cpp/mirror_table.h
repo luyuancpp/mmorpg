@@ -130,11 +130,11 @@ inline const MirrorTableData& FindAllMirrorTable() {
     return MirrorTableManager::Instance().FindAll();
 }
 
-#define LookupMirror(tableId) \
+#define LookupMirrorOrReturnError(tableId) \
     const auto [mirrorRow, mirrorResult] = MirrorTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(mirrorRow)) { LOG_ERROR << "Mirror row not found for ID: " << tableId; return mirrorResult; } } while(0)
 
-#define LookupMirrorAs(prefix, tableId) \
+#define LookupMirrorAsOrReturnError(prefix, tableId) \
     const auto [prefix##MirrorRow, prefix##MirrorResult] = MirrorTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(prefix##MirrorRow)) { LOG_ERROR << "Mirror row not found for ID: " << tableId; return prefix##MirrorResult; } } while(0)
 
@@ -142,7 +142,7 @@ inline const MirrorTableData& FindAllMirrorTable() {
     const auto [mirrorRow, mirrorResult] = MirrorTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(mirrorRow)) { LOG_ERROR << "Mirror row not found for ID: " << tableId; return customReturnValue; } } while(0)
 
-#define LookupMirrorOrVoid(tableId) \
+#define LookupMirrorOrReturnVoid(tableId) \
     const auto [mirrorRow, mirrorResult] = MirrorTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(mirrorRow)) { LOG_ERROR << "Mirror row not found for ID: " << tableId; return; } } while(0)
 
@@ -150,6 +150,6 @@ inline const MirrorTableData& FindAllMirrorTable() {
     const auto [mirrorRow, mirrorResult] = MirrorTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(mirrorRow)) { LOG_ERROR << "Mirror row not found for ID: " << tableId; continue; } } while(0)
 
-#define LookupMirrorOrFalse(tableId) \
+#define LookupMirrorOrReturnFalse(tableId) \
     const auto [mirrorRow, mirrorResult] = MirrorTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(mirrorRow)) { LOG_ERROR << "Mirror row not found for ID: " << tableId; return false; } } while(0)

@@ -105,11 +105,11 @@ inline const CooldownTableData& FindAllCooldownTable() {
     return CooldownTableManager::Instance().FindAll();
 }
 
-#define LookupCooldown(tableId) \
+#define LookupCooldownOrReturnError(tableId) \
     const auto [cooldownRow, cooldownResult] = CooldownTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(cooldownRow)) { LOG_ERROR << "Cooldown row not found for ID: " << tableId; return cooldownResult; } } while(0)
 
-#define LookupCooldownAs(prefix, tableId) \
+#define LookupCooldownAsOrReturnError(prefix, tableId) \
     const auto [prefix##CooldownRow, prefix##CooldownResult] = CooldownTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(prefix##CooldownRow)) { LOG_ERROR << "Cooldown row not found for ID: " << tableId; return prefix##CooldownResult; } } while(0)
 
@@ -117,7 +117,7 @@ inline const CooldownTableData& FindAllCooldownTable() {
     const auto [cooldownRow, cooldownResult] = CooldownTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(cooldownRow)) { LOG_ERROR << "Cooldown row not found for ID: " << tableId; return customReturnValue; } } while(0)
 
-#define LookupCooldownOrVoid(tableId) \
+#define LookupCooldownOrReturnVoid(tableId) \
     const auto [cooldownRow, cooldownResult] = CooldownTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(cooldownRow)) { LOG_ERROR << "Cooldown row not found for ID: " << tableId; return; } } while(0)
 
@@ -125,6 +125,6 @@ inline const CooldownTableData& FindAllCooldownTable() {
     const auto [cooldownRow, cooldownResult] = CooldownTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(cooldownRow)) { LOG_ERROR << "Cooldown row not found for ID: " << tableId; continue; } } while(0)
 
-#define LookupCooldownOrFalse(tableId) \
+#define LookupCooldownOrReturnFalse(tableId) \
     const auto [cooldownRow, cooldownResult] = CooldownTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(cooldownRow)) { LOG_ERROR << "Cooldown row not found for ID: " << tableId; return false; } } while(0)

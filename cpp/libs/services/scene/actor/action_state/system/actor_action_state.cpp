@@ -48,7 +48,7 @@ namespace {
 }
 
 uint32_t ActorActionStateSystem::TryPerformAction(entt::entity actorEntity, uint32_t actorAction, uint32_t successState) {
-    LookupActorActionState(actorAction);
+    LookupActorActionStateOrReturnError(actorAction);
 
     const auto *actorStatePbComponent = tlsEcs.actorRegistry.try_get<ActorStateComp>(actorEntity);
     if (!actorStatePbComponent)
@@ -75,7 +75,7 @@ uint32_t ActorActionStateSystem::TryPerformAction(entt::entity actorEntity, uint
 
 
 uint32_t ActorActionStateSystem::CanExecuteActionWithoutStateChange(entt::entity actorEntity, uint32_t actorAction) {
-    LookupActorActionState(actorAction);
+    LookupActorActionStateOrReturnError(actorAction);
 
     ECS_GET_OR_RETURN(actorStatePbComponent, ActorStateComp, actorEntity, kSuccess);
     for (const auto &actorState : actorStatePbComponent->state_list() | std::views::keys)

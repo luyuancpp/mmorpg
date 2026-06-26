@@ -105,11 +105,11 @@ inline const ActorActionCombatStateTableData& FindAllActorActionCombatStateTable
     return ActorActionCombatStateTableManager::Instance().FindAll();
 }
 
-#define LookupActorActionCombatState(tableId) \
+#define LookupActorActionCombatStateOrReturnError(tableId) \
     const auto [actorActionCombatStateRow, actorActionCombatStateResult] = ActorActionCombatStateTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(actorActionCombatStateRow)) { LOG_ERROR << "ActorActionCombatState row not found for ID: " << tableId; return actorActionCombatStateResult; } } while(0)
 
-#define LookupActorActionCombatStateAs(prefix, tableId) \
+#define LookupActorActionCombatStateAsOrReturnError(prefix, tableId) \
     const auto [prefix##ActorActionCombatStateRow, prefix##ActorActionCombatStateResult] = ActorActionCombatStateTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(prefix##ActorActionCombatStateRow)) { LOG_ERROR << "ActorActionCombatState row not found for ID: " << tableId; return prefix##ActorActionCombatStateResult; } } while(0)
 
@@ -117,7 +117,7 @@ inline const ActorActionCombatStateTableData& FindAllActorActionCombatStateTable
     const auto [actorActionCombatStateRow, actorActionCombatStateResult] = ActorActionCombatStateTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(actorActionCombatStateRow)) { LOG_ERROR << "ActorActionCombatState row not found for ID: " << tableId; return customReturnValue; } } while(0)
 
-#define LookupActorActionCombatStateOrVoid(tableId) \
+#define LookupActorActionCombatStateOrReturnVoid(tableId) \
     const auto [actorActionCombatStateRow, actorActionCombatStateResult] = ActorActionCombatStateTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(actorActionCombatStateRow)) { LOG_ERROR << "ActorActionCombatState row not found for ID: " << tableId; return; } } while(0)
 
@@ -125,6 +125,6 @@ inline const ActorActionCombatStateTableData& FindAllActorActionCombatStateTable
     const auto [actorActionCombatStateRow, actorActionCombatStateResult] = ActorActionCombatStateTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(actorActionCombatStateRow)) { LOG_ERROR << "ActorActionCombatState row not found for ID: " << tableId; continue; } } while(0)
 
-#define LookupActorActionCombatStateOrFalse(tableId) \
+#define LookupActorActionCombatStateOrReturnFalse(tableId) \
     const auto [actorActionCombatStateRow, actorActionCombatStateResult] = ActorActionCombatStateTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(actorActionCombatStateRow)) { LOG_ERROR << "ActorActionCombatState row not found for ID: " << tableId; return false; } } while(0)

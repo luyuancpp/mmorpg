@@ -9,18 +9,18 @@ struct BuffEntry;
 class ModifierBuffImplSystem {
 public:
 	// On buff start
-	static bool OnBuffStart(entt::entity parent, BuffEntry& buff, const BuffTable* buffTable);
+	static void OnBuffStart(entt::entity parent, BuffEntry& buff, const BuffTable* buffTable);
 
 	// On buff refresh
 	static void OnBuffRefresh(entt::entity parent, uint32_t buffTableId, const SkillContextPtrComp& abilityContext, BuffEntry& buffComp);
 
 	// On buff remove
-	static bool OnBuffRemove(entt::entity parent, BuffEntry& buff, const BuffTable* buffTable);
+	static void OnBuffRemove(entt::entity parent, BuffEntry& buff, const BuffTable* buffTable);
 
 	// On buff destroy
-	static bool OnBuffDestroy(entt::entity parent, BuffEntry& buff, const BuffTable* buffTable);
+	static void OnBuffDestroy(entt::entity parent, BuffEntry& buff, const BuffTable* buffTable);
 	
-	static bool OnIntervalThink(entt::entity parent, BuffEntry& buffComp, const BuffTable* buffTable);
+	static void OnIntervalThink(entt::entity parent, BuffEntry& buffComp, const BuffTable* buffTable);
 
 	static void OnSkillHit(entt::entity caster, entt::entity target);
 private:

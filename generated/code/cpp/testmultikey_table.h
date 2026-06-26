@@ -165,11 +165,11 @@ inline const TestMultiKeyTableData& FindAllTestMultiKeyTable() {
     return TestMultiKeyTableManager::Instance().FindAll();
 }
 
-#define LookupTestMultiKey(tableId) \
+#define LookupTestMultiKeyOrReturnError(tableId) \
     const auto [testMultiKeyRow, testMultiKeyResult] = TestMultiKeyTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(testMultiKeyRow)) { LOG_ERROR << "TestMultiKey row not found for ID: " << tableId; return testMultiKeyResult; } } while(0)
 
-#define LookupTestMultiKeyAs(prefix, tableId) \
+#define LookupTestMultiKeyAsOrReturnError(prefix, tableId) \
     const auto [prefix##TestMultiKeyRow, prefix##TestMultiKeyResult] = TestMultiKeyTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(prefix##TestMultiKeyRow)) { LOG_ERROR << "TestMultiKey row not found for ID: " << tableId; return prefix##TestMultiKeyResult; } } while(0)
 
@@ -177,7 +177,7 @@ inline const TestMultiKeyTableData& FindAllTestMultiKeyTable() {
     const auto [testMultiKeyRow, testMultiKeyResult] = TestMultiKeyTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(testMultiKeyRow)) { LOG_ERROR << "TestMultiKey row not found for ID: " << tableId; return customReturnValue; } } while(0)
 
-#define LookupTestMultiKeyOrVoid(tableId) \
+#define LookupTestMultiKeyOrReturnVoid(tableId) \
     const auto [testMultiKeyRow, testMultiKeyResult] = TestMultiKeyTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(testMultiKeyRow)) { LOG_ERROR << "TestMultiKey row not found for ID: " << tableId; return; } } while(0)
 
@@ -185,6 +185,6 @@ inline const TestMultiKeyTableData& FindAllTestMultiKeyTable() {
     const auto [testMultiKeyRow, testMultiKeyResult] = TestMultiKeyTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(testMultiKeyRow)) { LOG_ERROR << "TestMultiKey row not found for ID: " << tableId; continue; } } while(0)
 
-#define LookupTestMultiKeyOrFalse(tableId) \
+#define LookupTestMultiKeyOrReturnFalse(tableId) \
     const auto [testMultiKeyRow, testMultiKeyResult] = TestMultiKeyTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(testMultiKeyRow)) { LOG_ERROR << "TestMultiKey row not found for ID: " << tableId; return false; } } while(0)

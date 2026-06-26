@@ -202,11 +202,23 @@ inline const {{ sheetname }}TableData& FindAll{{ sheetname }}Table() {
     return {{ sheetname }}TableManager::Instance().FindAll();
 }
 
-#define Lookup{{ sheetname }}(tableId) \
+// ---- Lookup guard macros ----
+// Each macro looks up a row by tableId and, on success, injects two locals into
+// the current scope:
+//   {{ sheetname[0] | lower }}{{ sheetname[1:] }}Row    -> const {{ sheetname }}Table* (the matched row)
+//   {{ sheetname[0] | lower }}{{ sheetname[1:] }}Result -> uint32_t status (kInvalidTableId on miss)
+// On a miss they log an error and bail out; the suffix spells out HOW they bail:
+//   OrReturnError -> return the kInvalidTableId status code
+//   OrReturn      -> return a caller-supplied value
+//   OrReturnVoid  -> return; (for void functions)
+//   OrReturnFalse -> return false;
+//   OrContinue    -> continue; (skip to the next loop iteration)
+
+#define Lookup{{ sheetname }}OrReturnError(tableId) \
     const auto [{{ sheetname[0] | lower }}{{ sheetname[1:] }}Row, {{ sheetname[0] | lower }}{{ sheetname[1:] }}Result] = {{ sheetname }}TableManager::Instance().FindByIdSilent(tableId); \
     do { if (!({{ sheetname[0] | lower }}{{ sheetname[1:] }}Row)) { LOG_ERROR << "{{ sheetname }} row not found for ID: " << tableId; return {{ sheetname[0] | lower }}{{ sheetname[1:] }}Result; } } while(0)
 
-#define Lookup{{ sheetname }}As(prefix, tableId) \
+#define Lookup{{ sheetname }}AsOrReturnError(prefix, tableId) \
     const auto [prefix##{{ sheetname }}Row, prefix##{{ sheetname }}Result] = {{ sheetname }}TableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(prefix##{{ sheetname }}Row)) { LOG_ERROR << "{{ sheetname }} row not found for ID: " << tableId; return prefix##{{ sheetname }}Result; } } while(0)
 
@@ -214,7 +226,7 @@ inline const {{ sheetname }}TableData& FindAll{{ sheetname }}Table() {
     const auto [{{ sheetname[0] | lower }}{{ sheetname[1:] }}Row, {{ sheetname[0] | lower }}{{ sheetname[1:] }}Result] = {{ sheetname }}TableManager::Instance().FindByIdSilent(tableId); \
     do { if (!({{ sheetname[0] | lower }}{{ sheetname[1:] }}Row)) { LOG_ERROR << "{{ sheetname }} row not found for ID: " << tableId; return customReturnValue; } } while(0)
 
-#define Lookup{{ sheetname }}OrVoid(tableId) \
+#define Lookup{{ sheetname }}OrReturnVoid(tableId) \
     const auto [{{ sheetname[0] | lower }}{{ sheetname[1:] }}Row, {{ sheetname[0] | lower }}{{ sheetname[1:] }}Result] = {{ sheetname }}TableManager::Instance().FindByIdSilent(tableId); \
     do { if (!({{ sheetname[0] | lower }}{{ sheetname[1:] }}Row)) { LOG_ERROR << "{{ sheetname }} row not found for ID: " << tableId; return; } } while(0)
 
@@ -222,6 +234,6 @@ inline const {{ sheetname }}TableData& FindAll{{ sheetname }}Table() {
     const auto [{{ sheetname[0] | lower }}{{ sheetname[1:] }}Row, {{ sheetname[0] | lower }}{{ sheetname[1:] }}Result] = {{ sheetname }}TableManager::Instance().FindByIdSilent(tableId); \
     do { if (!({{ sheetname[0] | lower }}{{ sheetname[1:] }}Row)) { LOG_ERROR << "{{ sheetname }} row not found for ID: " << tableId; continue; } } while(0)
 
-#define Lookup{{ sheetname }}OrFalse(tableId) \
+#define Lookup{{ sheetname }}OrReturnFalse(tableId) \
     const auto [{{ sheetname[0] | lower }}{{ sheetname[1:] }}Row, {{ sheetname[0] | lower }}{{ sheetname[1:] }}Result] = {{ sheetname }}TableManager::Instance().FindByIdSilent(tableId); \
     do { if (!({{ sheetname[0] | lower }}{{ sheetname[1:] }}Row)) { LOG_ERROR << "{{ sheetname }} row not found for ID: " << tableId; return false; } } while(0)

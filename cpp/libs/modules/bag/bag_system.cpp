@@ -80,7 +80,7 @@ uint32_t Bag::CheckSpaceFor(const ItemCountMap &itemsToAdd)
 	std::size_t gridsNeeded = 0;
 	for (const auto &[configId, count] : itemsToAdd)
 	{
-		LookupItem(configId);
+		LookupItemOrReturnError(configId);
 		const uint32_t maxStack = itemRow->max_stack_size();
 		if (maxStack == 0)
 		{
@@ -542,7 +542,7 @@ uint32_t Bag::AddItem(const InitItemParam &initItemParam)
 		return PrintStackAndReturnError(kBagAddItemInvalidParam);
 	}
 
-	LookupItem(itemProto.config_id());
+	LookupItemOrReturnError(itemProto.config_id());
 
 	if (itemRow->max_stack_size() == 0)
 	{

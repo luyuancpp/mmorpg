@@ -118,11 +118,11 @@ inline const WorldTableData& FindAllWorldTable() {
     return WorldTableManager::Instance().FindAll();
 }
 
-#define LookupWorld(tableId) \
+#define LookupWorldOrReturnError(tableId) \
     const auto [worldRow, worldResult] = WorldTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(worldRow)) { LOG_ERROR << "World row not found for ID: " << tableId; return worldResult; } } while(0)
 
-#define LookupWorldAs(prefix, tableId) \
+#define LookupWorldAsOrReturnError(prefix, tableId) \
     const auto [prefix##WorldRow, prefix##WorldResult] = WorldTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(prefix##WorldRow)) { LOG_ERROR << "World row not found for ID: " << tableId; return prefix##WorldResult; } } while(0)
 
@@ -130,7 +130,7 @@ inline const WorldTableData& FindAllWorldTable() {
     const auto [worldRow, worldResult] = WorldTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(worldRow)) { LOG_ERROR << "World row not found for ID: " << tableId; return customReturnValue; } } while(0)
 
-#define LookupWorldOrVoid(tableId) \
+#define LookupWorldOrReturnVoid(tableId) \
     const auto [worldRow, worldResult] = WorldTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(worldRow)) { LOG_ERROR << "World row not found for ID: " << tableId; return; } } while(0)
 
@@ -138,6 +138,6 @@ inline const WorldTableData& FindAllWorldTable() {
     const auto [worldRow, worldResult] = WorldTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(worldRow)) { LOG_ERROR << "World row not found for ID: " << tableId; continue; } } while(0)
 
-#define LookupWorldOrFalse(tableId) \
+#define LookupWorldOrReturnFalse(tableId) \
     const auto [worldRow, worldResult] = WorldTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(worldRow)) { LOG_ERROR << "World row not found for ID: " << tableId; return false; } } while(0)

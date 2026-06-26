@@ -139,11 +139,11 @@ inline const BuffTableData& FindAllBuffTable() {
     return BuffTableManager::Instance().FindAll();
 }
 
-#define LookupBuff(tableId) \
+#define LookupBuffOrReturnError(tableId) \
     const auto [buffRow, buffResult] = BuffTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(buffRow)) { LOG_ERROR << "Buff row not found for ID: " << tableId; return buffResult; } } while(0)
 
-#define LookupBuffAs(prefix, tableId) \
+#define LookupBuffAsOrReturnError(prefix, tableId) \
     const auto [prefix##BuffRow, prefix##BuffResult] = BuffTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(prefix##BuffRow)) { LOG_ERROR << "Buff row not found for ID: " << tableId; return prefix##BuffResult; } } while(0)
 
@@ -151,7 +151,7 @@ inline const BuffTableData& FindAllBuffTable() {
     const auto [buffRow, buffResult] = BuffTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(buffRow)) { LOG_ERROR << "Buff row not found for ID: " << tableId; return customReturnValue; } } while(0)
 
-#define LookupBuffOrVoid(tableId) \
+#define LookupBuffOrReturnVoid(tableId) \
     const auto [buffRow, buffResult] = BuffTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(buffRow)) { LOG_ERROR << "Buff row not found for ID: " << tableId; return; } } while(0)
 
@@ -159,6 +159,6 @@ inline const BuffTableData& FindAllBuffTable() {
     const auto [buffRow, buffResult] = BuffTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(buffRow)) { LOG_ERROR << "Buff row not found for ID: " << tableId; continue; } } while(0)
 
-#define LookupBuffOrFalse(tableId) \
+#define LookupBuffOrReturnFalse(tableId) \
     const auto [buffRow, buffResult] = BuffTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(buffRow)) { LOG_ERROR << "Buff row not found for ID: " << tableId; return false; } } while(0)

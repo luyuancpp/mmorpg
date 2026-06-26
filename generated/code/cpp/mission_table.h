@@ -127,11 +127,11 @@ inline const MissionTableData& FindAllMissionTable() {
     return MissionTableManager::Instance().FindAll();
 }
 
-#define LookupMission(tableId) \
+#define LookupMissionOrReturnError(tableId) \
     const auto [missionRow, missionResult] = MissionTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(missionRow)) { LOG_ERROR << "Mission row not found for ID: " << tableId; return missionResult; } } while(0)
 
-#define LookupMissionAs(prefix, tableId) \
+#define LookupMissionAsOrReturnError(prefix, tableId) \
     const auto [prefix##MissionRow, prefix##MissionResult] = MissionTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(prefix##MissionRow)) { LOG_ERROR << "Mission row not found for ID: " << tableId; return prefix##MissionResult; } } while(0)
 
@@ -139,7 +139,7 @@ inline const MissionTableData& FindAllMissionTable() {
     const auto [missionRow, missionResult] = MissionTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(missionRow)) { LOG_ERROR << "Mission row not found for ID: " << tableId; return customReturnValue; } } while(0)
 
-#define LookupMissionOrVoid(tableId) \
+#define LookupMissionOrReturnVoid(tableId) \
     const auto [missionRow, missionResult] = MissionTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(missionRow)) { LOG_ERROR << "Mission row not found for ID: " << tableId; return; } } while(0)
 
@@ -147,6 +147,6 @@ inline const MissionTableData& FindAllMissionTable() {
     const auto [missionRow, missionResult] = MissionTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(missionRow)) { LOG_ERROR << "Mission row not found for ID: " << tableId; continue; } } while(0)
 
-#define LookupMissionOrFalse(tableId) \
+#define LookupMissionOrReturnFalse(tableId) \
     const auto [missionRow, missionResult] = MissionTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(missionRow)) { LOG_ERROR << "Mission row not found for ID: " << tableId; return false; } } while(0)

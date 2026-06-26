@@ -65,7 +65,7 @@ uint32_t CombatStateSystem::ValidateSkillUsage(const entt::entity entityId, cons
         return kSuccess;
     }
 
-    LookupActorActionCombatState(combatAction);
+    LookupActorActionCombatStateOrReturnError(combatAction);
 
     for (const auto &stateKey : combatStateCollection->states() | std::views::keys)
     {

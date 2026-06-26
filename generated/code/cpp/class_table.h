@@ -109,11 +109,11 @@ inline const ClassTableData& FindAllClassTable() {
     return ClassTableManager::Instance().FindAll();
 }
 
-#define LookupClass(tableId) \
+#define LookupClassOrReturnError(tableId) \
     const auto [classRow, classResult] = ClassTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(classRow)) { LOG_ERROR << "Class row not found for ID: " << tableId; return classResult; } } while(0)
 
-#define LookupClassAs(prefix, tableId) \
+#define LookupClassAsOrReturnError(prefix, tableId) \
     const auto [prefix##ClassRow, prefix##ClassResult] = ClassTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(prefix##ClassRow)) { LOG_ERROR << "Class row not found for ID: " << tableId; return prefix##ClassResult; } } while(0)
 
@@ -121,7 +121,7 @@ inline const ClassTableData& FindAllClassTable() {
     const auto [classRow, classResult] = ClassTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(classRow)) { LOG_ERROR << "Class row not found for ID: " << tableId; return customReturnValue; } } while(0)
 
-#define LookupClassOrVoid(tableId) \
+#define LookupClassOrReturnVoid(tableId) \
     const auto [classRow, classResult] = ClassTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(classRow)) { LOG_ERROR << "Class row not found for ID: " << tableId; return; } } while(0)
 
@@ -129,6 +129,6 @@ inline const ClassTableData& FindAllClassTable() {
     const auto [classRow, classResult] = ClassTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(classRow)) { LOG_ERROR << "Class row not found for ID: " << tableId; continue; } } while(0)
 
-#define LookupClassOrFalse(tableId) \
+#define LookupClassOrReturnFalse(tableId) \
     const auto [classRow, classResult] = ClassTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(classRow)) { LOG_ERROR << "Class row not found for ID: " << tableId; return false; } } while(0)

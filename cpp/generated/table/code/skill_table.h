@@ -127,11 +127,11 @@ inline const SkillTableData& FindAllSkillTable() {
     return SkillTableManager::Instance().FindAll();
 }
 
-#define LookupSkill(tableId) \
+#define LookupSkillOrReturnError(tableId) \
     const auto [skillRow, skillResult] = SkillTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(skillRow)) { LOG_ERROR << "Skill row not found for ID: " << tableId; return skillResult; } } while(0)
 
-#define LookupSkillAs(prefix, tableId) \
+#define LookupSkillAsOrReturnError(prefix, tableId) \
     const auto [prefix##SkillRow, prefix##SkillResult] = SkillTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(prefix##SkillRow)) { LOG_ERROR << "Skill row not found for ID: " << tableId; return prefix##SkillResult; } } while(0)
 
@@ -139,7 +139,7 @@ inline const SkillTableData& FindAllSkillTable() {
     const auto [skillRow, skillResult] = SkillTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(skillRow)) { LOG_ERROR << "Skill row not found for ID: " << tableId; return customReturnValue; } } while(0)
 
-#define LookupSkillOrVoid(tableId) \
+#define LookupSkillOrReturnVoid(tableId) \
     const auto [skillRow, skillResult] = SkillTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(skillRow)) { LOG_ERROR << "Skill row not found for ID: " << tableId; return; } } while(0)
 
@@ -147,6 +147,6 @@ inline const SkillTableData& FindAllSkillTable() {
     const auto [skillRow, skillResult] = SkillTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(skillRow)) { LOG_ERROR << "Skill row not found for ID: " << tableId; continue; } } while(0)
 
-#define LookupSkillOrFalse(tableId) \
+#define LookupSkillOrReturnFalse(tableId) \
     const auto [skillRow, skillResult] = SkillTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(skillRow)) { LOG_ERROR << "Skill row not found for ID: " << tableId; return false; } } while(0)

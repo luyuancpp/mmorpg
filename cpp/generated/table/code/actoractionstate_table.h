@@ -105,11 +105,11 @@ inline const ActorActionStateTableData& FindAllActorActionStateTable() {
     return ActorActionStateTableManager::Instance().FindAll();
 }
 
-#define LookupActorActionState(tableId) \
+#define LookupActorActionStateOrReturnError(tableId) \
     const auto [actorActionStateRow, actorActionStateResult] = ActorActionStateTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(actorActionStateRow)) { LOG_ERROR << "ActorActionState row not found for ID: " << tableId; return actorActionStateResult; } } while(0)
 
-#define LookupActorActionStateAs(prefix, tableId) \
+#define LookupActorActionStateAsOrReturnError(prefix, tableId) \
     const auto [prefix##ActorActionStateRow, prefix##ActorActionStateResult] = ActorActionStateTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(prefix##ActorActionStateRow)) { LOG_ERROR << "ActorActionState row not found for ID: " << tableId; return prefix##ActorActionStateResult; } } while(0)
 
@@ -117,7 +117,7 @@ inline const ActorActionStateTableData& FindAllActorActionStateTable() {
     const auto [actorActionStateRow, actorActionStateResult] = ActorActionStateTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(actorActionStateRow)) { LOG_ERROR << "ActorActionState row not found for ID: " << tableId; return customReturnValue; } } while(0)
 
-#define LookupActorActionStateOrVoid(tableId) \
+#define LookupActorActionStateOrReturnVoid(tableId) \
     const auto [actorActionStateRow, actorActionStateResult] = ActorActionStateTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(actorActionStateRow)) { LOG_ERROR << "ActorActionState row not found for ID: " << tableId; return; } } while(0)
 
@@ -125,6 +125,6 @@ inline const ActorActionStateTableData& FindAllActorActionStateTable() {
     const auto [actorActionStateRow, actorActionStateResult] = ActorActionStateTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(actorActionStateRow)) { LOG_ERROR << "ActorActionState row not found for ID: " << tableId; continue; } } while(0)
 
-#define LookupActorActionStateOrFalse(tableId) \
+#define LookupActorActionStateOrReturnFalse(tableId) \
     const auto [actorActionStateRow, actorActionStateResult] = ActorActionStateTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(actorActionStateRow)) { LOG_ERROR << "ActorActionState row not found for ID: " << tableId; return false; } } while(0)

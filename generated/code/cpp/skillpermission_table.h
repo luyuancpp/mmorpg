@@ -109,11 +109,11 @@ inline const SkillPermissionTableData& FindAllSkillPermissionTable() {
     return SkillPermissionTableManager::Instance().FindAll();
 }
 
-#define LookupSkillPermission(tableId) \
+#define LookupSkillPermissionOrReturnError(tableId) \
     const auto [skillPermissionRow, skillPermissionResult] = SkillPermissionTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(skillPermissionRow)) { LOG_ERROR << "SkillPermission row not found for ID: " << tableId; return skillPermissionResult; } } while(0)
 
-#define LookupSkillPermissionAs(prefix, tableId) \
+#define LookupSkillPermissionAsOrReturnError(prefix, tableId) \
     const auto [prefix##SkillPermissionRow, prefix##SkillPermissionResult] = SkillPermissionTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(prefix##SkillPermissionRow)) { LOG_ERROR << "SkillPermission row not found for ID: " << tableId; return prefix##SkillPermissionResult; } } while(0)
 
@@ -121,7 +121,7 @@ inline const SkillPermissionTableData& FindAllSkillPermissionTable() {
     const auto [skillPermissionRow, skillPermissionResult] = SkillPermissionTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(skillPermissionRow)) { LOG_ERROR << "SkillPermission row not found for ID: " << tableId; return customReturnValue; } } while(0)
 
-#define LookupSkillPermissionOrVoid(tableId) \
+#define LookupSkillPermissionOrReturnVoid(tableId) \
     const auto [skillPermissionRow, skillPermissionResult] = SkillPermissionTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(skillPermissionRow)) { LOG_ERROR << "SkillPermission row not found for ID: " << tableId; return; } } while(0)
 
@@ -129,6 +129,6 @@ inline const SkillPermissionTableData& FindAllSkillPermissionTable() {
     const auto [skillPermissionRow, skillPermissionResult] = SkillPermissionTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(skillPermissionRow)) { LOG_ERROR << "SkillPermission row not found for ID: " << tableId; continue; } } while(0)
 
-#define LookupSkillPermissionOrFalse(tableId) \
+#define LookupSkillPermissionOrReturnFalse(tableId) \
     const auto [skillPermissionRow, skillPermissionResult] = SkillPermissionTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(skillPermissionRow)) { LOG_ERROR << "SkillPermission row not found for ID: " << tableId; return false; } } while(0)

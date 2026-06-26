@@ -105,11 +105,11 @@ inline const ItemTableData& FindAllItemTable() {
     return ItemTableManager::Instance().FindAll();
 }
 
-#define LookupItem(tableId) \
+#define LookupItemOrReturnError(tableId) \
     const auto [itemRow, itemResult] = ItemTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(itemRow)) { LOG_ERROR << "Item row not found for ID: " << tableId; return itemResult; } } while(0)
 
-#define LookupItemAs(prefix, tableId) \
+#define LookupItemAsOrReturnError(prefix, tableId) \
     const auto [prefix##ItemRow, prefix##ItemResult] = ItemTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(prefix##ItemRow)) { LOG_ERROR << "Item row not found for ID: " << tableId; return prefix##ItemResult; } } while(0)
 
@@ -117,7 +117,7 @@ inline const ItemTableData& FindAllItemTable() {
     const auto [itemRow, itemResult] = ItemTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(itemRow)) { LOG_ERROR << "Item row not found for ID: " << tableId; return customReturnValue; } } while(0)
 
-#define LookupItemOrVoid(tableId) \
+#define LookupItemOrReturnVoid(tableId) \
     const auto [itemRow, itemResult] = ItemTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(itemRow)) { LOG_ERROR << "Item row not found for ID: " << tableId; return; } } while(0)
 
@@ -125,6 +125,6 @@ inline const ItemTableData& FindAllItemTable() {
     const auto [itemRow, itemResult] = ItemTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(itemRow)) { LOG_ERROR << "Item row not found for ID: " << tableId; continue; } } while(0)
 
-#define LookupItemOrFalse(tableId) \
+#define LookupItemOrReturnFalse(tableId) \
     const auto [itemRow, itemResult] = ItemTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(itemRow)) { LOG_ERROR << "Item row not found for ID: " << tableId; return false; } } while(0)
