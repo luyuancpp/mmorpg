@@ -52,9 +52,10 @@ private:
 	static uint32_t CheckMissionAcceptance(const AcceptMissionEvent& acceptEvent, MissionsComp& missionComp, const IMissionConfig& config);
 	static bool UpdateMissionProgress(const ConditionEvent& conditionEvent, MissionComp& mission, const IMissionConfig& config);
 	static bool UpdateProgressIfConditionMatches(const ConditionEvent& conditionEvent, MissionComp& mission, int index, const ConditionTable* conditionRow, uint32_t targetCount);
-	static void UpdateMissionStatus(MissionComp& mission, const google::protobuf::RepeatedField<uint32_t>& missionConditions, const google::protobuf::RepeatedField<uint32_t>& targetCounts);
-	static bool AreAllConditionsFulfilled(const MissionComp& mission, uint32_t missionId, MissionsComp& missionComp, const IMissionConfig& config);
+	static bool AreAllConditionsFulfilled(const MissionComp& mission, uint32_t missionId, const IMissionConfig& config);
 	static void OnMissionCompletion(entt::entity player, const std::unordered_set<uint32_t>& completedMissions, MissionsComp& comp, const IMissionConfig& config);
-	static void DeleteMissionClassification(MissionsComp& comp, uint32_t missionId, const IMissionConfig& config);
-	static void RemoveMissionClassification(MissionsComp& missionComp, uint32_t missionId, const IMissionConfig& config);
+	// Removes all index entries for a mission: the condition->missions lookup and the type filter.
+	static void UnregisterMissionIndexes(MissionsComp& comp, uint32_t missionId, const IMissionConfig& config);
+	// Removes a mission from the condition->missions lookup only.
+	static void RemoveMissionFromConditionIndex(MissionsComp& missionComp, uint32_t missionId, const IMissionConfig& config);
 };

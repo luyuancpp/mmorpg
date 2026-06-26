@@ -388,6 +388,41 @@ TEST(MissionsComp, ConditionAmount)
 	EXPECT_TRUE(missions.IsComplete(missionId));
 }
 
+TEST(MissionsComp, ProgressClampedToTarget)
+{
+	const auto player = CreateTestPlayer();
+	auto &missions = GetPlayerMissionsComp(player);
+
+	// Mission 6 has several conditions; satisfying only the first keeps the
+	// mission accepted, which lets us inspect that one slot's stored progress.
+	constexpr uint32_t missionId = 6;
+	auto acceptEv = MakeAcceptEvent(player, missionId);
+	EXPECT_EQ(kSuccess, MissionSystem::AcceptMission(acceptEv, missions, MissionConfig::GetSingleton()));
+
+	auto firstSlotProgress = [&]() -> uint32_t {
+		const auto &allMissions = missions.GetMissionList().missions();
+		const auto it = allMissions.find(missionId);
+		return it->second.progress(0);
+	};
+
+	// Fire a huge amount at the first condition (KillMonster, condition id 1).
+	auto condEv = MakeConditionEvent(player, eConditionType::kConditionKillMonster, 1000000);
+	condEv.add_condition_ids(1);
+	MissionSystem::HandleConditionEvent(condEv, missions, MissionConfig::GetSingleton());
+
+	// The mission stays accepted because the remaining conditions are unmet.
+	EXPECT_TRUE(missions.IsAccepted(missionId));
+
+	// Progress must be clamped to the condition target, never the raw amount.
+	const uint32_t clamped = firstSlotProgress();
+	EXPECT_GT(clamped, 0u);
+	EXPECT_LT(clamped, 1000000u);
+
+	// Re-firing the same event must not push progress beyond the target.
+	MissionSystem::HandleConditionEvent(condEv, missions, MissionConfig::GetSingleton());
+	EXPECT_EQ(clamped, firstSlotProgress());
+}
+
 TEST(MissionsComp, MissionRewardList)
 {
 	const auto player = CreateTestPlayer();
