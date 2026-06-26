@@ -109,11 +109,11 @@ inline const TestTableData& FindAllTestTable() {
     return TestTableManager::Instance().FindAll();
 }
 
-#define LookupTest(tableId) \
+#define LookupTestOrReturnError(tableId) \
     const auto [testRow, testResult] = TestTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(testRow)) { LOG_ERROR << "Test row not found for ID: " << tableId; return testResult; } } while(0)
 
-#define LookupTestAs(prefix, tableId) \
+#define LookupTestAsOrReturnError(prefix, tableId) \
     const auto [prefix##TestRow, prefix##TestResult] = TestTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(prefix##TestRow)) { LOG_ERROR << "Test row not found for ID: " << tableId; return prefix##TestResult; } } while(0)
 
@@ -121,7 +121,7 @@ inline const TestTableData& FindAllTestTable() {
     const auto [testRow, testResult] = TestTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(testRow)) { LOG_ERROR << "Test row not found for ID: " << tableId; return customReturnValue; } } while(0)
 
-#define LookupTestOrVoid(tableId) \
+#define LookupTestOrReturnVoid(tableId) \
     const auto [testRow, testResult] = TestTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(testRow)) { LOG_ERROR << "Test row not found for ID: " << tableId; return; } } while(0)
 
@@ -129,6 +129,6 @@ inline const TestTableData& FindAllTestTable() {
     const auto [testRow, testResult] = TestTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(testRow)) { LOG_ERROR << "Test row not found for ID: " << tableId; continue; } } while(0)
 
-#define LookupTestOrFalse(tableId) \
+#define LookupTestOrReturnFalse(tableId) \
     const auto [testRow, testResult] = TestTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(testRow)) { LOG_ERROR << "Test row not found for ID: " << tableId; return false; } } while(0)

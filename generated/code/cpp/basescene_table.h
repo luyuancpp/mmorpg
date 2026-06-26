@@ -105,11 +105,11 @@ inline const BaseSceneTableData& FindAllBaseSceneTable() {
     return BaseSceneTableManager::Instance().FindAll();
 }
 
-#define LookupBaseScene(tableId) \
+#define LookupBaseSceneOrReturnError(tableId) \
     const auto [baseSceneRow, baseSceneResult] = BaseSceneTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(baseSceneRow)) { LOG_ERROR << "BaseScene row not found for ID: " << tableId; return baseSceneResult; } } while(0)
 
-#define LookupBaseSceneAs(prefix, tableId) \
+#define LookupBaseSceneAsOrReturnError(prefix, tableId) \
     const auto [prefix##BaseSceneRow, prefix##BaseSceneResult] = BaseSceneTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(prefix##BaseSceneRow)) { LOG_ERROR << "BaseScene row not found for ID: " << tableId; return prefix##BaseSceneResult; } } while(0)
 
@@ -117,7 +117,7 @@ inline const BaseSceneTableData& FindAllBaseSceneTable() {
     const auto [baseSceneRow, baseSceneResult] = BaseSceneTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(baseSceneRow)) { LOG_ERROR << "BaseScene row not found for ID: " << tableId; return customReturnValue; } } while(0)
 
-#define LookupBaseSceneOrVoid(tableId) \
+#define LookupBaseSceneOrReturnVoid(tableId) \
     const auto [baseSceneRow, baseSceneResult] = BaseSceneTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(baseSceneRow)) { LOG_ERROR << "BaseScene row not found for ID: " << tableId; return; } } while(0)
 
@@ -125,6 +125,6 @@ inline const BaseSceneTableData& FindAllBaseSceneTable() {
     const auto [baseSceneRow, baseSceneResult] = BaseSceneTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(baseSceneRow)) { LOG_ERROR << "BaseScene row not found for ID: " << tableId; continue; } } while(0)
 
-#define LookupBaseSceneOrFalse(tableId) \
+#define LookupBaseSceneOrReturnFalse(tableId) \
     const auto [baseSceneRow, baseSceneResult] = BaseSceneTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(baseSceneRow)) { LOG_ERROR << "BaseScene row not found for ID: " << tableId; return false; } } while(0)

@@ -118,11 +118,11 @@ inline const ConditionTableData& FindAllConditionTable() {
     return ConditionTableManager::Instance().FindAll();
 }
 
-#define LookupCondition(tableId) \
+#define LookupConditionOrReturnError(tableId) \
     const auto [conditionRow, conditionResult] = ConditionTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(conditionRow)) { LOG_ERROR << "Condition row not found for ID: " << tableId; return conditionResult; } } while(0)
 
-#define LookupConditionAs(prefix, tableId) \
+#define LookupConditionAsOrReturnError(prefix, tableId) \
     const auto [prefix##ConditionRow, prefix##ConditionResult] = ConditionTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(prefix##ConditionRow)) { LOG_ERROR << "Condition row not found for ID: " << tableId; return prefix##ConditionResult; } } while(0)
 
@@ -130,7 +130,7 @@ inline const ConditionTableData& FindAllConditionTable() {
     const auto [conditionRow, conditionResult] = ConditionTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(conditionRow)) { LOG_ERROR << "Condition row not found for ID: " << tableId; return customReturnValue; } } while(0)
 
-#define LookupConditionOrVoid(tableId) \
+#define LookupConditionOrReturnVoid(tableId) \
     const auto [conditionRow, conditionResult] = ConditionTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(conditionRow)) { LOG_ERROR << "Condition row not found for ID: " << tableId; return; } } while(0)
 
@@ -138,6 +138,6 @@ inline const ConditionTableData& FindAllConditionTable() {
     const auto [conditionRow, conditionResult] = ConditionTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(conditionRow)) { LOG_ERROR << "Condition row not found for ID: " << tableId; continue; } } while(0)
 
-#define LookupConditionOrFalse(tableId) \
+#define LookupConditionOrReturnFalse(tableId) \
     const auto [conditionRow, conditionResult] = ConditionTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(conditionRow)) { LOG_ERROR << "Condition row not found for ID: " << tableId; return false; } } while(0)

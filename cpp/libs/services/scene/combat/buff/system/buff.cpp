@@ -35,7 +35,7 @@ uint64_t GenerateUniqueBuffId(const BuffListComp& buffList)
 bool IsTargetImmune(const BuffListComp& buffList, const BuffTable* buffTableParam)
 {
     for (const auto& buff : buffList | std::views::values) {
-        LookupBuff(buff.buffPb.buff_table_id());
+        LookupBuffOrReturnError(buff.buffPb.buff_table_id());
         for (const auto& tag : buffTableParam->tag() | std::views::keys) {
             if (buffRow->immune_tag().contains(tag)) {
                 return true;
@@ -54,6 +54,26 @@ BuffMessagePtr CreateBuffDataPtr(const BuffTable* buffTable) {
     }
 }
 
+// True if the entity still has a stealth buff other than the given one.
+bool HasStealthBuffExcept(const entt::entity parent, const uint64_t excludeBuffId)
+{
+    const auto* buffList = tlsEcs.actorRegistry.try_get<BuffListComp>(parent);
+    if (!buffList) {
+        return false;
+    }
+
+    for (const auto& entry : *buffList | std::views::values) {
+        if (entry.buffPb.buff_id() == excludeBuffId) {
+            continue;
+        }
+        const auto [tbl, res] = BuffTableManager::Instance().FindById(entry.buffPb.buff_table_id());
+        if (tbl && tbl->buff_type() == kBuffTypeStealth) {
+            return true;
+        }
+    }
+    return false;
+}
+
 // Add or update buff (with abilityContext)
 std::tuple<uint32_t, uint64_t> BuffSystem::AddOrUpdateBuff(
     const entt::entity parent,
@@ -67,12 +87,20 @@ std::tuple<uint32_t, uint64_t> BuffSystem::AddOrUpdateBuff(
 
     LookupBuffOrReturn(buffTableId, (std::make_tuple(buffResult, UINT64_MAX)));
 
-    auto result = CanCreateBuff(parent, buffTableId);
-    if (result != kSuccess) {
+    if (const auto result = CanCreateBuff(parent, buffTableId); result != kSuccess) {
         return {result, UINT64_MAX};
     }
 
     auto& buffList = tlsEcs.actorRegistry.get_or_emplace<BuffListComp>(parent);
+
+    // Pure dispel buffs and stack/refresh of an existing buff don't create a new entry.
+    if (DispelBuffsOnAwake(parent, buffTableId)) {
+        return {kSuccess, UINT64_MAX};
+    }
+
+    if (HandleExistingBuff(parent, buffTableId, abilityContext)) {
+        return {kSuccess, UINT64_MAX};
+    }
 
     BuffEntry newBuff;
     if (abilityContext != nullptr)
@@ -80,14 +108,6 @@ std::tuple<uint32_t, uint64_t> BuffSystem::AddOrUpdateBuff(
         newBuff.buffPb.set_caster(abilityContext->caster());
     }
     newBuff.buffPb.set_processed_caster(buffRow->no_caster() ? entt::null : (abilityContext ? abilityContext->caster() : entt::null));
-
-    if (OnBuffAwake(parent, buffTableId) == kSuccess) {
-        return {result, UINT64_MAX};
-    }
-
-    if (HandleExistingBuff(parent, buffTableId, abilityContext)) {
-        return {result, UINT64_MAX};
-    }
 
     uint64_t newBuffId = GenerateUniqueBuffId(buffList);
     newBuff.buffPb.set_buff_id(newBuffId);
@@ -180,7 +200,7 @@ void BuffSystem::OnBuffExpire(const entt::entity parent, const uint64_t buffId)
     }
 
     const auto buffTableId = buffIt->second.buffPb.buff_table_id();
-    LookupBuffOrVoid(buffTableId);
+    LookupBuffOrReturnVoid(buffTableId);
 
     OnBuffRemove(parent, buffIt->second, buffRow);
     buffList.erase(buffId);
@@ -190,7 +210,7 @@ void BuffSystem::OnBuffExpire(const entt::entity parent, const uint64_t buffId)
 // Check if buff can be created
 uint32_t BuffSystem::CanCreateBuff(const entt::entity parentEntity, const uint32_t buffTableId)
 {
-    LookupBuff(buffTableId);
+    LookupBuffOrReturnError(buffTableId);
 
     const auto *buffList = tlsEcs.actorRegistry.try_get<BuffListComp>(parentEntity);
     if (buffList)
@@ -211,7 +231,7 @@ bool BuffSystem::HandleExistingBuff(const entt::entity parentEntity,
     const uint32_t buffTableId,
     const SkillContextPtrComp& abilityContext)
 {
-    LookupBuffOrFalse(buffTableId);
+    LookupBuffOrReturnFalse(buffTableId);
 
     if (!abilityContext) {
         return false;
@@ -230,17 +250,22 @@ bool BuffSystem::HandleExistingBuff(const entt::entity parentEntity,
     return false;
 }
 
-// Buff awake handler (dispel on instantiation, before activation)
-uint32_t BuffSystem::OnBuffAwake(const entt::entity parent, const uint32_t buffTableId)
+// Dispel matching buffs on awake; returns true if this is a pure Dispel buff
+// (consumed without being added to the buff list).
+bool BuffSystem::DispelBuffsOnAwake(const entt::entity parent, const uint32_t buffTableId)
 {
-    LookupBuffAs(add, buffTableId);
+    const auto [addBuffRow, addBuffResult] = BuffTableManager::Instance().FindByIdSilent(buffTableId);
+    if (!addBuffRow) {
+        LOG_ERROR << "Buff row not found for ID: " << buffTableId;
+        return false;
+    }
 
     UInt64Vector dispelBuffIdList;
     auto &buffList = tlsEcs.actorRegistry.get<BuffListComp>(parent);
-    for (auto& [buffId, buffPbComp] : buffList) {
-        LookupBuffOrContinue(buffTableId);
-        for (const auto& removeTag : addBuffRow->dispel_tag() | std::views::keys) {
-            if (buffRow->tag().contains(removeTag)) {
+    for (auto& [buffId, entry] : buffList) {
+        LookupBuffOrContinue(entry.buffPb.buff_table_id());
+        for (const auto& dispelTag : addBuffRow->dispel_tag() | std::views::keys) {
+            if (buffRow->tag().contains(dispelTag)) {
                 dispelBuffIdList.emplace_back(buffId);
                 break;
             }
@@ -251,13 +276,7 @@ uint32_t BuffSystem::OnBuffAwake(const entt::entity parent, const uint32_t buffT
         BuffSystem::OnBuffExpire(parent, buffId);
     }
 
-    if (addBuffRow->buff_type() != kBuffTypeDispel) {
-        return MAKE_ERROR_MSG(kInvalidTableData,
-            "buff_type=" << addBuffRow->buff_type()
-            << " buffTableId=" << buffTableId);
-    }
-
-    return kSuccess;
+    return addBuffRow->buff_type() == kBuffTypeDispel;
 }
 
 void BuffSystem::OnBuffStart(entt::entity parent, BuffEntry& buff, const BuffTable* buffTable)
@@ -266,7 +285,7 @@ void BuffSystem::OnBuffStart(entt::entity parent, BuffEntry& buff, const BuffTab
     // The buff state was captured into PlayerAllData at HandleCrossZoneTransfer
     // and the destination zone will recreate the buff list from the snapshot.
     // Adding a buff on the source side now produces a buff that nobody but
-    // this dying source-side entity can see — a leak. Default policy per
+    // this dying source-side entity can see - a leak. Default policy per
     // cross-zone-readiness-audit.md §11.4 is "buff drop".
     if (tlsEcs.actorRegistry.any_of<PlayerFrozenComp>(parent))
     {
@@ -282,13 +301,9 @@ void BuffSystem::OnBuffStart(entt::entity parent, BuffEntry& buff, const BuffTab
         tlsEcs.actorRegistry.emplace_or_replace<StealthedTagComp>(parent);
     }
 
-    if (BuffImplSystem::OnBuffStart(parent, buff, buffTable)) {
-        return;
-    } else if (ModifierBuffImplSystem::OnBuffStart(parent, buff, buffTable)) {
-        return;
-    } else if (MotionModifierBuffImplSystem::OnBuffStart(parent, buff, buffTable)) {
-        return;
-    }
+    BuffImplSystem::OnBuffStart(parent, buff, buffTable);
+    ModifierBuffImplSystem::OnBuffStart(parent, buff, buffTable);
+    MotionModifierBuffImplSystem::OnBuffStart(parent, buff, buffTable);
 }
 
 void BuffSystem::OnBuffRefresh(entt::entity parent, uint32_t buffTableId, const SkillContextPtrComp& abilityContext, BuffEntry& buffComp)
@@ -298,42 +313,21 @@ void BuffSystem::OnBuffRefresh(entt::entity parent, uint32_t buffTableId, const 
 
 void BuffSystem::OnBuffRemove(const entt::entity parent, BuffEntry& buffComp, const BuffTable* buffTable)
 {
-    // Maintain stealth tag cache: remove tag only if no other stealth buffs remain
-    if (buffTable && buffTable->buff_type() == kBuffTypeStealth)
+    // Maintain stealth tag cache: drop the tag only when no other stealth buff remains
+    // (this buff is still in the list at this point, so exclude it from the scan).
+    if (buffTable && buffTable->buff_type() == kBuffTypeStealth &&
+        !HasStealthBuffExcept(parent, buffComp.buffPb.buff_id()))
     {
-        bool hasOtherStealth = false;
-        if (const auto* buffList = tlsEcs.actorRegistry.try_get<BuffListComp>(parent))
-        {
-            for (const auto& [id, entry] : *buffList)
-            {
-                if (entry.buffPb.buff_id() == buffComp.buffPb.buff_id()) continue;
-                const auto [tbl, res] = BuffTableManager::Instance().FindById(entry.buffPb.buff_table_id());
-                if (tbl && tbl->buff_type() == kBuffTypeStealth)
-                {
-                    hasOtherStealth = true;
-                    break;
-                }
-            }
-        }
-        if (!hasOtherStealth)
-        {
-            tlsEcs.actorRegistry.remove<StealthedTagComp>(parent);
-        }
+        tlsEcs.actorRegistry.remove<StealthedTagComp>(parent);
     }
 
-    if (ModifierBuffImplSystem::OnBuffRemove(parent, buffComp, buffTable)) {
-        return;
-    }
-    else if (MotionModifierBuffImplSystem::OnBuffRemove(parent, buffComp, buffTable)) {
-        return;
-    }
+    ModifierBuffImplSystem::OnBuffRemove(parent, buffComp, buffTable);
+    MotionModifierBuffImplSystem::OnBuffRemove(parent, buffComp, buffTable);
 }
 
 void BuffSystem::OnBuffDestroy(entt::entity parent, const uint64_t buffId, const BuffTable* buffTable)
 {
-    if (BuffImplSystem::OnBuffDestroy(parent, buffId, buffTable)) {
-        return;
-    }
+    BuffImplSystem::OnBuffDestroy(parent, buffId, buffTable);
 }
 
 // Buff periodic interval handler
@@ -348,17 +342,11 @@ void BuffSystem::OnIntervalThink(entt::entity parent, uint64_t buffId)
     }
 
     const auto buffTableId = buffIt->second.buffPb.buff_table_id();
-    LookupBuffOrVoid(buffTableId);
+    LookupBuffOrReturnVoid(buffTableId);
 
-    if (BuffImplSystem::OnIntervalThink(parent, buffIt->second, buffRow)) {
-        return;
-    }
-    else if (ModifierBuffImplSystem::OnIntervalThink(parent, buffIt->second, buffRow)) {
-        return;
-    }
-    else if (MotionModifierBuffImplSystem::OnIntervalThink(parent, buffIt->second, buffRow)) {
-        return;
-    }
+    BuffImplSystem::OnIntervalThink(parent, buffIt->second, buffRow);
+    ModifierBuffImplSystem::OnIntervalThink(parent, buffIt->second, buffRow);
+    MotionModifierBuffImplSystem::OnIntervalThink(parent, buffIt->second, buffRow);
 }
 void BuffSystem::OnSkillExecuted(SkillExecutedEvent& event)
 {
@@ -383,7 +371,8 @@ void BuffSystem::OnBeforeTakeDamage(const entt::entity casterEntity, const entt:
 
 void BuffSystem::OnAfterTakeDamage(const entt::entity casterEntity, const entt::entity targetEntity, DamageEventComp& damageEvent)
 {
-    BuffImplSystem::UpdateLastDamageOrSkillHitTime(entt::to_entity(damageEvent.attacker_id()), casterEntity);
+    // casterEntity is the entity that just took damage -> reset its combat-idle buff.
+    BuffImplSystem::ResetCombatIdleBuff(entt::to_entity(damageEvent.attacker_id()), casterEntity);
 }
 
 void BuffSystem::OnBeforeDead(entt::entity parent)
@@ -422,18 +411,7 @@ bool BuffSystem::AddSubBuffs(entt::entity parent,
     }
 
     buffComp.buffPb.set_has_added_sub_buff(true);
-
-    for (const auto& subBuff : buffTable->sub_buff()) {
-        auto [result, newBuffId] = BuffSystem::AddOrUpdateBuff(parent, subBuff, buffComp.skillContext);
-
-        if (result != kSuccess || newBuffId == UINT64_MAX) {
-            continue;
-        }
-
-        // Add to sub-buff list (false = not yet activated)
-        buffComp.buffPb.mutable_sub_buff_list_id()->emplace(newBuffId, false);
-    }
-
+    AddSubBuffsWithoutCheck(parent, buffTable, buffComp);
     return true;
 }
 
@@ -468,11 +446,11 @@ void BuffSystem::AddSubBuffsWithoutCheck(entt::entity parent,
 }
 
 bool CanApplyMoreTicks(const BuffPeriodicBuffComp& periodicBuff, const BuffTable* buffTable) {
-    return (buffTable->interval_count() <= 0) || (periodicBuff.ticks_done() + 1 <= buffTable->interval_count());
+    return (buffTable->interval_count() == 0) || (periodicBuff.ticks_done() + 1 <= buffTable->interval_count());
 }
 
 void UpdatePeriodicBuff(const entt::entity target, const uint64_t buffId, BuffEntry& buffComp, double delta) {
-    LookupBuffOrVoid(buffComp.buffPb.buff_table_id());
+    LookupBuffOrReturnVoid(buffComp.buffPb.buff_table_id());
 
     if (buffRow->interval() <= 0) {
         return;

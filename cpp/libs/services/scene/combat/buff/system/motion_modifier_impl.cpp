@@ -1,8 +1,7 @@
 #include "motion_modifier_impl.h"
 
-bool MotionModifierBuffImplSystem::OnBuffStart(entt::entity parent, BuffEntry& buff, const BuffTable* buffTable)
+void MotionModifierBuffImplSystem::OnBuffStart(entt::entity parent, BuffEntry& buff, const BuffTable* buffTable)
 {
-    return false;
 }
 
 void MotionModifierBuffImplSystem::OnBuffRefresh(entt::entity parent, uint32_t buffTableId,
@@ -10,27 +9,16 @@ void MotionModifierBuffImplSystem::OnBuffRefresh(entt::entity parent, uint32_t b
 {
 }
 
-bool MotionModifierBuffImplSystem::OnBuffRemove(entt::entity parent, BuffEntry& buff, const BuffTable* buffTable)
+void MotionModifierBuffImplSystem::OnBuffRemove(entt::entity parent, BuffEntry& buff, const BuffTable* buffTable)
 {
-    if (buffTable == nullptr) {
-        return false;
-    }
-    
-    return false;
 }
 
-bool MotionModifierBuffImplSystem::OnBuffDestroy(entt::entity parent, BuffEntry& buff, const BuffTable* buffTable)
+void MotionModifierBuffImplSystem::OnBuffDestroy(entt::entity parent, BuffEntry& buff, const BuffTable* buffTable)
 {
-    if (buffTable == nullptr) {
-        return false;
-    }
-    
-    return false;
 }
 
-bool MotionModifierBuffImplSystem::OnIntervalThink(entt::entity parent, BuffEntry& buffComp, const BuffTable* buffTable)
+void MotionModifierBuffImplSystem::OnIntervalThink(entt::entity parent, BuffEntry& buffComp, const BuffTable* buffTable)
 {
-    return false;
 }
 
 

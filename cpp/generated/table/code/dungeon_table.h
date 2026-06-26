@@ -118,11 +118,11 @@ inline const DungeonTableData& FindAllDungeonTable() {
     return DungeonTableManager::Instance().FindAll();
 }
 
-#define LookupDungeon(tableId) \
+#define LookupDungeonOrReturnError(tableId) \
     const auto [dungeonRow, dungeonResult] = DungeonTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(dungeonRow)) { LOG_ERROR << "Dungeon row not found for ID: " << tableId; return dungeonResult; } } while(0)
 
-#define LookupDungeonAs(prefix, tableId) \
+#define LookupDungeonAsOrReturnError(prefix, tableId) \
     const auto [prefix##DungeonRow, prefix##DungeonResult] = DungeonTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(prefix##DungeonRow)) { LOG_ERROR << "Dungeon row not found for ID: " << tableId; return prefix##DungeonResult; } } while(0)
 
@@ -130,7 +130,7 @@ inline const DungeonTableData& FindAllDungeonTable() {
     const auto [dungeonRow, dungeonResult] = DungeonTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(dungeonRow)) { LOG_ERROR << "Dungeon row not found for ID: " << tableId; return customReturnValue; } } while(0)
 
-#define LookupDungeonOrVoid(tableId) \
+#define LookupDungeonOrReturnVoid(tableId) \
     const auto [dungeonRow, dungeonResult] = DungeonTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(dungeonRow)) { LOG_ERROR << "Dungeon row not found for ID: " << tableId; return; } } while(0)
 
@@ -138,6 +138,6 @@ inline const DungeonTableData& FindAllDungeonTable() {
     const auto [dungeonRow, dungeonResult] = DungeonTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(dungeonRow)) { LOG_ERROR << "Dungeon row not found for ID: " << tableId; continue; } } while(0)
 
-#define LookupDungeonOrFalse(tableId) \
+#define LookupDungeonOrReturnFalse(tableId) \
     const auto [dungeonRow, dungeonResult] = DungeonTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(dungeonRow)) { LOG_ERROR << "Dungeon row not found for ID: " << tableId; return false; } } while(0)

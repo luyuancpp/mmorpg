@@ -9,40 +9,23 @@
 #include "combat/buff/constants/buff.h"
 #include <thread_context/ecs_context.h>
 
-bool ModifierBuffImplSystem::OnBuffStart(entt::entity parent, BuffEntry& buff, const BuffTable* buffTable) {
-    if (buffTable == nullptr) {
-        return false;
-    }
-
-    if(IsMovementSpeedBuff(buffTable))
-    {
+void ModifierBuffImplSystem::OnBuffStart(entt::entity parent, BuffEntry& buff, const BuffTable* buffTable) {
+    if (buffTable && IsMovementSpeedBuff(buffTable)) {
         ActorAttributeCalculatorSystem::MarkAttributeForUpdate(parent, kVelocity);
-        return true;
     }
-
-    return false;
 }
 
 void ModifierBuffImplSystem::OnBuffRefresh(entt::entity parent, uint32_t buffTableId,
     const SkillContextPtrComp& abilityContext, BuffEntry& buffComp) {
 }
 
-bool ModifierBuffImplSystem::OnBuffRemove(const entt::entity parent, BuffEntry& buff, const BuffTable* buffTable) {
-    if (buffTable == nullptr) {
-        return false;
-    }
-
-    if(IsMovementSpeedBuff(buffTable))
-    {
+void ModifierBuffImplSystem::OnBuffRemove(const entt::entity parent, BuffEntry& buff, const BuffTable* buffTable) {
+    if (buffTable && IsMovementSpeedBuff(buffTable)) {
         ActorAttributeCalculatorSystem::MarkAttributeForUpdate(parent, kVelocity);
-        return true;
     }
-
-    return false;
 }
 
-bool ModifierBuffImplSystem::OnBuffDestroy(entt::entity parent, BuffEntry& buff, const BuffTable* buffTable) {
-    return false;
+void ModifierBuffImplSystem::OnBuffDestroy(entt::entity parent, BuffEntry& buff, const BuffTable* buffTable) {
 }
 
 static bool OnHealthRegenerationBasedOnLostHealth(entt::entity parent, BuffEntry& buffComp, const BuffTable* buffTable)
@@ -73,14 +56,10 @@ static bool OnHealthRegenerationBasedOnLostHealth(entt::entity parent, BuffEntry
     return true;
 }
 
-bool ModifierBuffImplSystem::OnIntervalThink(entt::entity parent, BuffEntry& buffComp, const BuffTable* buffTable)
+void ModifierBuffImplSystem::OnIntervalThink(entt::entity parent, BuffEntry& buffComp, const BuffTable* buffTable)
 {
-    switch (buffTable->buff_type())
-    {
-    case kBuffTypeHealthRegenerationBasedOnLostHealth:
-        return OnHealthRegenerationBasedOnLostHealth(parent, buffComp, buffTable);
-    default:
-        return false;
+    if (buffTable && buffTable->buff_type() == kBuffTypeHealthRegenerationBasedOnLostHealth) {
+        OnHealthRegenerationBasedOnLostHealth(parent, buffComp, buffTable);
     }
 }
 

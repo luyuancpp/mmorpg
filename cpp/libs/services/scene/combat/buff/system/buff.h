@@ -41,9 +41,10 @@ public:
     static bool HandleExistingBuff(entt::entity parentEntity, uint32_t buffTableId, const SkillContextPtrComp& abilityContext);
 
     // Fired after instantiation but before activation (not yet in buff container).
-    // Example: on receiving a debuff, dispel all debuffs and grant a shield.
-    // A buff may be destroyed before it ever takes effect (watch lifecycle).
-    static uint32_t OnBuffAwake(entt::entity parent, uint32_t buffTableId);
+    // Dispels existing buffs whose tags match this buff's dispel_tag. Returns true
+    // if the new buff is a pure Dispel buff and should be consumed without being
+    // added to the buff list.
+    static bool DispelBuffsOnAwake(entt::entity parent, uint32_t buffTableId);
 
     // Called when buff takes effect (added to buff container). Designer-configurable.
     static void OnBuffStart(entt::entity parent, BuffEntry& buffComp, const BuffTable* buffTable);

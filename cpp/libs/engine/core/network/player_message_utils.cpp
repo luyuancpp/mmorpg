@@ -350,48 +350,72 @@ void SendMessageToPlayerOnNode(uint32_t wrappedMessageId,
 	SendMessageToPlayerOnNode(wrappedMessageId, nodeType, messageId, message, tlsEcs.GetPlayer(playerId));
 }
 
+namespace {
+
+// Validate player and return its session snapshot. Logs and returns null on failure.
+const PlayerSessionSnapshotComp* ResolvePlayerSessionSnapshot(entt::entity playerEntity, const char* context)
+{
+	if (!tlsEcs.actorRegistry.valid(playerEntity))
+	{
+		LOG_ERROR << context << ": invalid player entity -> " << entt::to_integral(playerEntity);
+		return nullptr;
+	}
+	const auto* snapshot = tlsEcs.actorRegistry.try_get<PlayerSessionSnapshotComp>(playerEntity);
+	if (!snapshot)
+	{
+		LOG_ERROR << context << ": player session snapshot not found -> " << entt::to_integral(playerEntity);
+	}
+	return snapshot;
+}
+
+// Resolve the RpcSession of the node a player is connected to for the given node type.
+// Logs and returns null on any failure.
+RpcSession* ResolvePlayerNodeSession(const PlayerSessionSnapshotComp& snapshot, uint32_t nodeType,
+	entt::entity playerEntity, const char* context)
+{
+	const auto& nodeIdMap = snapshot.node_id();
+	const auto it = nodeIdMap.find(nodeType);
+	if (it == nodeIdMap.end())
+	{
+		LOG_ERROR << context << ": node type not found in player session snapshot: " << nodeType
+			<< ", player entity: " << entt::to_integral(playerEntity);
+		return nullptr;
+	}
+
+	auto& registry = tlsNodeContextManager.GetRegistry(nodeType);
+	const entt::entity nodeEntity{ it->second };
+	if (!registry.valid(nodeEntity))
+	{
+		LOG_ERROR << context << ": node entity invalid for player -> " << entt::to_integral(playerEntity)
+			<< ", node id: " << it->second;
+		return nullptr;
+	}
+
+	auto* session = registry.try_get<RpcSession>(nodeEntity);
+	if (!session)
+	{
+		LOG_ERROR << context << ": RpcSession not found for node -> " << it->second;
+	}
+	return session;
+}
+
+}  // namespace
+
 void SendMessageToPlayerOnNode(uint32_t wrappedMessageId,
 							   uint32_t nodeType,
 							   uint32_t messageId,
 							   const google::protobuf::Message &message,
 							   entt::entity playerEntity)
 {
-	if (!tlsEcs.actorRegistry.valid(playerEntity))
-	{
-		LOG_ERROR << "Invalid player entity -> " << entt::to_integral(playerEntity);
-		return;
-	}
-
-	const auto *playerSessionSnapshotPB = tlsEcs.actorRegistry.try_get<PlayerSessionSnapshotComp>(playerEntity);
+	const auto *playerSessionSnapshotPB = ResolvePlayerSessionSnapshot(playerEntity, "SendMessageToPlayerOnNode");
 	if (!playerSessionSnapshotPB)
 	{
-		LOG_ERROR << "Player session info not found -> " << entt::to_integral(playerEntity);
 		return;
 	}
 
-	const auto &nodeIdMap = playerSessionSnapshotPB->node_id();
-	auto it = nodeIdMap.find(nodeType);
-	if (it == nodeIdMap.end())
-	{
-		LOG_ERROR << "Node type not found in player session snapshot: " << nodeType
-				  << ", player entity: " << entt::to_integral(playerEntity);
-		return;
-	}
-
-	entt::entity nodeEntity{it->second};
-
-	auto &registry = tlsNodeContextManager.GetRegistry(nodeType);
-	if (!registry.valid(nodeEntity))
-	{
-		LOG_ERROR << "Node entity invalid for player -> " << entt::to_integral(playerEntity)
-				  << ", node ID: " << entt::to_integral(nodeEntity);
-		return;
-	}
-
-	const auto session = registry.try_get<RpcSession>(nodeEntity);
+	auto *session = ResolvePlayerNodeSession(*playerSessionSnapshotPB, nodeType, playerEntity, "SendMessageToPlayerOnNode");
 	if (!session)
 	{
-		LOG_ERROR << "RpcSession not found for node: " << entt::to_integral(nodeEntity);
 		return;
 	}
 
@@ -420,43 +444,15 @@ void CallMethodOnPlayerNode(
 	const google::protobuf::Message &message,
 	entt::entity player)
 {
-	if (!tlsEcs.actorRegistry.valid(player))
-	{
-		LOG_ERROR << "Invalid player entity.";
-		return;
-	}
-
-	const auto *playerSessionSnapshotPB = tlsEcs.actorRegistry.try_get<PlayerSessionSnapshotComp>(player);
+	const auto *playerSessionSnapshotPB = ResolvePlayerSessionSnapshot(player, "CallMethodOnPlayerNode");
 	if (!playerSessionSnapshotPB)
 	{
-		LOG_ERROR << "PlayerSessionSnapshotComp not found for player -> " << entt::to_integral(player);
 		return;
 	}
 
-	const auto &nodeIdMap = playerSessionSnapshotPB->node_id();
-	auto it = nodeIdMap.find(nodeType);
-	if (it == nodeIdMap.end())
-	{
-		LOG_ERROR << "Node type not found in player session snapshot: " << nodeType
-				  << ", player entity: " << entt::to_integral(player);
-		return;
-	}
-
-	entt::entity targetNodeEntity{it->second};
-
-	auto &registry = tlsNodeContextManager.GetRegistry(nodeType);
-
-	if (!registry.valid(targetNodeEntity))
-	{
-		LOG_ERROR << "Invalid target node for player -> " << entt::to_integral(player)
-				  << ", node_id: " << it->second;
-		return;
-	}
-
-	const auto session = registry.try_get<RpcSession>(targetNodeEntity);
+	auto *session = ResolvePlayerNodeSession(*playerSessionSnapshotPB, nodeType, player, "CallMethodOnPlayerNode");
 	if (!session)
 	{
-		LOG_ERROR << "RpcSession not found for node -> " << it->second;
 		return;
 	}
 

@@ -105,11 +105,11 @@ inline const MonsterTableData& FindAllMonsterTable() {
     return MonsterTableManager::Instance().FindAll();
 }
 
-#define LookupMonster(tableId) \
+#define LookupMonsterOrReturnError(tableId) \
     const auto [monsterRow, monsterResult] = MonsterTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(monsterRow)) { LOG_ERROR << "Monster row not found for ID: " << tableId; return monsterResult; } } while(0)
 
-#define LookupMonsterAs(prefix, tableId) \
+#define LookupMonsterAsOrReturnError(prefix, tableId) \
     const auto [prefix##MonsterRow, prefix##MonsterResult] = MonsterTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(prefix##MonsterRow)) { LOG_ERROR << "Monster row not found for ID: " << tableId; return prefix##MonsterResult; } } while(0)
 
@@ -117,7 +117,7 @@ inline const MonsterTableData& FindAllMonsterTable() {
     const auto [monsterRow, monsterResult] = MonsterTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(monsterRow)) { LOG_ERROR << "Monster row not found for ID: " << tableId; return customReturnValue; } } while(0)
 
-#define LookupMonsterOrVoid(tableId) \
+#define LookupMonsterOrReturnVoid(tableId) \
     const auto [monsterRow, monsterResult] = MonsterTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(monsterRow)) { LOG_ERROR << "Monster row not found for ID: " << tableId; return; } } while(0)
 
@@ -125,6 +125,6 @@ inline const MonsterTableData& FindAllMonsterTable() {
     const auto [monsterRow, monsterResult] = MonsterTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(monsterRow)) { LOG_ERROR << "Monster row not found for ID: " << tableId; continue; } } while(0)
 
-#define LookupMonsterOrFalse(tableId) \
+#define LookupMonsterOrReturnFalse(tableId) \
     const auto [monsterRow, monsterResult] = MonsterTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(monsterRow)) { LOG_ERROR << "Monster row not found for ID: " << tableId; return false; } } while(0)

@@ -39,6 +39,41 @@ uint64_t GenerateUniqueSkillId(const SkillContextCompMap& casterSkillContexts, c
 	return newSkillId;
 }
 
+// Reject casts from a player mid cross-zone migration: the source-side cast
+// would never reach the destination. cross-zone-readiness-audit.md §11.3.
+bool IsCasterFrozenForMigration(entt::entity casterEntity, uint64_t skillId, const char* where) {
+	if (!tlsEcs.actorRegistry.any_of<PlayerFrozenComp>(casterEntity)) {
+		return false;
+	}
+	LOG_WARN << where << " rejected: caster frozen for cross-zone migration. "
+		<< "skill_id=" << skillId << " caster=" << entt::to_integral(casterEntity);
+	return true;
+}
+
+// Mirror a skill context onto the target's context map (if the target has one).
+void AddTargetSkillContext(entt::entity target, const SkillContextPtrComp& context) {
+	if (auto* targetSkillContextMap = tlsEcs.actorRegistry.try_get<SkillContextCompMap>(target)) {
+		targetSkillContextMap->emplace(context->skillid(), context);
+	}
+}
+
+// Drop a skill context from the target's context map (if the target has one).
+void RemoveTargetSkillContext(entt::entity target, uint64_t skillId) {
+	if (auto* targetSkillContextMap = tlsEcs.actorRegistry.try_get<SkillContextCompMap>(target)) {
+		targetSkillContextMap->erase(skillId);
+	}
+}
+
+// Look up a skill context on the caster's context map; nullptr if absent.
+SkillContextPtrComp FindCasterSkillContext(entt::entity caster, uint64_t skillId) {
+	auto* casterSkillContextMap = tlsEcs.actorRegistry.try_get<SkillContextCompMap>(caster);
+	if (!casterSkillContextMap) {
+		return nullptr;
+	}
+	const auto it = casterSkillContextMap->find(skillId);
+	return it != casterSkillContextMap->end() ? it->second : nullptr;
+}
+
 void SkillSystem::StartCooldown(entt::entity caster, const SkillTable* skillTable) {
 	ECS_GET_OR_VOID(coolDownComp, CooldownTimeListComp, caster);
 	CooldownTimeComp comp;
@@ -68,9 +103,10 @@ std::shared_ptr<SkillContextComp> CreateSkillContext(entt::entity caster, const 
 	context->set_skilltableid(request->skill_table_id());
 	context->set_target(request->target_id());
 	context->set_casttime(TimeSystem::NowMilliseconds());
-	const auto *casterContexts = tlsEcs.actorRegistry.try_get<SkillContextCompMap>(caster);
-	context->set_skillid(GenerateUniqueSkillId(
-		casterContexts ? *casterContexts : SkillContextCompMap{}, {}));
+
+	static const SkillContextCompMap kEmptyContexts;
+	const auto* casterContexts = tlsEcs.actorRegistry.try_get<SkillContextCompMap>(caster);
+	context->set_skillid(GenerateUniqueSkillId(casterContexts ? *casterContexts : kEmptyContexts, kEmptyContexts));
 	return context;
 }
 
@@ -80,11 +116,7 @@ void AddSkillContext(entt::entity caster, const ReleaseSkillRequest* request, st
 
 	entt::entity target{ request->target_id() };
 	if (tlsEcs.actorRegistry.valid(target)) {
-		auto *targetSkillContextMap = tlsEcs.actorRegistry.try_get<SkillContextCompMap>(target);
-		if (targetSkillContextMap)
-		{
-			targetSkillContextMap->emplace(context->skillid(), context);
-		}
+		AddTargetSkillContext(target, context);
 	}
 }
 
@@ -105,7 +137,7 @@ void ApplySkillHitEffectIfValid(const entt::entity casterEntity, const uint64_t 
 }
 
 uint32_t SkillSystem::ReleaseSkill(const entt::entity casterEntity, const ReleaseSkillRequest* request) {
-	LookupSkill(request->skill_table_id());
+	LookupSkillOrReturnError(request->skill_table_id());
 
 	RETURN_ON_ERROR(CheckSkillPrerequisites(casterEntity, request));
 	LookAtTargetPosition(casterEntity, request);
@@ -129,8 +161,8 @@ uint32_t CheckPlayerLevel(const entt::entity casterEntity, const SkillTable* ski
 	return kSuccess;
 }
 
-uint32_t canUseSkillInCurrentState(const uint32_t state, const uint32_t skill) {
-	LookupSkillPermission(state);
+uint32_t CanUseSkillInCurrentState(const uint32_t state, const uint32_t skill) {
+	LookupSkillPermissionOrReturnError(state);
 
 	const auto skillTypeIndex = (1 << skill);
 	if (skillTypeIndex >= skillPermissionRow->skill_type_size())
@@ -149,18 +181,15 @@ uint32_t CheckBuff(const entt::entity casterEntity, const SkillTable* skillTable
 
 	ECS_GET_OR_RETURN(combatStateCollection, CombatStateCollectionComp, casterEntity, kSuccess);
 
-	for (auto &[currentState, buffList] : combatStateCollection->states())
+	// Every active combat state must permit every skill type this skill carries.
+	for (const auto& [currentState, buffList] : combatStateCollection->states())
 	{
-        for (const auto& skillType : skillTable->skill_type()) {
-            const auto skill = static_cast<eSkillType>(skillType);
-            const auto result = canUseSkillInCurrentState(currentState, skill);
-            if (result != kSuccess) {
-                return result;  // Return error code if any skill can't be used
-            }
-        }
+		for (const auto& skillType : skillTable->skill_type()) {
+			RETURN_ON_ERROR(CanUseSkillInCurrentState(currentState, static_cast<eSkillType>(skillType)));
+		}
 	}
 
-	return kSuccess;  // All skills can be used in the current state
+	return kSuccess;
 }
 
 
@@ -176,7 +205,7 @@ uint32_t CheckItemUse(const entt::entity casterEntity, const SkillTable* skillTa
 }
 
 uint32_t SkillSystem::CheckSkillPrerequisites(const entt::entity casterEntity, const ::ReleaseSkillRequest* request) {
-	LookupSkill(request->skill_table_id());
+	LookupSkillOrReturnError(request->skill_table_id());
 
 	RETURN_ON_ERROR(ValidateTarget(request));
 	RETURN_ON_ERROR(CheckCooldown(casterEntity, skillRow));
@@ -191,7 +220,7 @@ uint32_t SkillSystem::CheckSkillPrerequisites(const entt::entity casterEntity, c
 }
 
 bool SkillSystem::IsSkillOfType(const uint32_t skillTableId, const uint32_t skillType) {
-	LookupSkillOrFalse(skillTableId);
+	LookupSkillOrReturnFalse(skillTableId);
 
 	for (auto& tabSkillType : skillRow->skill_type()) {
 		if ((1 << tabSkillType) == skillType) {
@@ -210,11 +239,9 @@ void SkillSystem::HandleGeneralSkillSpell(const entt::entity casterEntity, const
 
     // Frozen caster: skill cast attempted while the player is mid cross-
     // zone migration. The skill would resolve on the source side and never
-    // reach the destination — treat as no-op. cross-zone-readiness-audit.md §11.3.
-    if (tlsEcs.actorRegistry.any_of<PlayerFrozenComp>(casterEntity))
+    // reach the destination - treat as no-op. cross-zone-readiness-audit.md §11.3.
+    if (IsCasterFrozenForMigration(casterEntity, skillId, "SkillSystem::HandleGeneralSkillSpell"))
     {
-        LOG_WARN << "SkillSystem::HandleGeneralSkillSpell rejected: caster frozen for cross-zone migration. "
-                 << "skill_id=" << skillId << " caster=" << entt::to_integral(casterEntity);
         return;
     }
 
@@ -229,15 +256,13 @@ void SkillSystem::HandleGeneralSkillSpell(const entt::entity casterEntity, const
 
 // Set up a timer for skill recovery after casting
 void SkillSystem::HandleSkillRecovery(const entt::entity casterEntity, uint64_t skillId) {
-	ECS_GET_OR_VOID(casterSkillContextMap, SkillContextCompMap, casterEntity);
-	auto skillContentIt = casterSkillContextMap->find(skillId);
-
-	if (skillContentIt == casterSkillContextMap->end())
+	const auto skillContext = FindCasterSkillContext(casterEntity, skillId);
+	if (!skillContext)
 	{
 		return;
 	}
 
-	LookupSkillOrVoid(skillContentIt->second->skilltableid());
+	LookupSkillOrReturnVoid(skillContext->skilltableid());
 
 	auto& recoveryTimer = tlsEcs.actorRegistry.get_or_emplace<RecoveryTimerComp>(casterEntity).timer;
 	recoveryTimer.RunAfter(skillRow->recovery_time(), [casterEntity, skillId] {
@@ -258,11 +283,7 @@ void SkillSystem::HandleSkillFinish(const entt::entity casterEntity, uint64_t sk
 	{
 		entt::entity target = entt::to_entity(skillContentIt->second->target());
 		if (tlsEcs.actorRegistry.valid(target)) {
-			auto *targetSkillContextMap = tlsEcs.actorRegistry.try_get<SkillContextCompMap>(target);
-			if (targetSkillContextMap)
-			{
-				targetSkillContextMap->erase(skillId);
-			}
+			RemoveTargetSkillContext(target, skillId);
 		}
 		casterSkillContextMap->erase(skillContentIt);
 	}
@@ -274,17 +295,15 @@ void SkillSystem::HandleChannelSkillSpell(entt::entity casterEntity, uint64_t sk
         return;
     }
 
-    // Frozen caster (channel variant). Same rationale as HandleGeneralSkillSpell —
+    // Frozen caster (channel variant). Same rationale as HandleGeneralSkillSpell -
     // any in-flight migration means the source-side cast cannot reach the
     // destination. cross-zone-readiness-audit.md §11.3.
-    if (tlsEcs.actorRegistry.any_of<PlayerFrozenComp>(casterEntity))
+    if (IsCasterFrozenForMigration(casterEntity, skillId, "SkillSystem::HandleChannelSkillSpell"))
     {
-        LOG_WARN << "SkillSystem::HandleChannelSkillSpell rejected: caster frozen for cross-zone migration. "
-                 << "skill_id=" << skillId << " caster=" << entt::to_integral(casterEntity);
         return;
     }
 
-	LookupSkillOrVoid(skillId);
+	LookupSkillOrReturnVoid(skillId);
 
 	LOG_INFO << "Handling channel skill spell. Caster: " << entt::to_integral(casterEntity)
 		<< ", Skill ID: " << skillId;
@@ -317,7 +336,7 @@ void SkillSystem::HandleChannelFinish(const entt::entity casterEntity, const uin
 }
 
 uint32_t SkillSystem::ValidateTarget(const ::ReleaseSkillRequest* request) {
-	LookupSkill(request->skill_table_id());
+	LookupSkillOrReturnError(request->skill_table_id());
 
 	// Validate target ID
 	if (!skillRow->targeting_mode().empty() && request->target_id() <= 0) {
@@ -326,42 +345,37 @@ uint32_t SkillSystem::ValidateTarget(const ::ReleaseSkillRequest* request) {
 			<< " skill_table_id=" << request->skill_table_id());
 	}
 
-	uint32_t err = kSuccess;
-
 	for (auto& tabSkillType : skillRow->targeting_mode()) {
-		if ((1 << tabSkillType) == kNoTargetRequired) {
+		const auto targetingMode = (1 << tabSkillType);
+
+		// No target / AOE skills don't need a specific target entity.
+		if (targetingMode == kNoTargetRequired || targetingMode == kAreaOfEffect) {
 			return kSuccess;
 		}
 
-		if ((1 << tabSkillType) == kTargetedSkill) {
-			entt::entity target{ request->target_id() };
-
-			// Validate target entity
-			if (!tlsEcs.actorRegistry.valid(target)) {
-				return MAKE_ERROR_MSG(kSkillInvalidTargetId,
-					"target_id=" << request->target_id()
-					<< " skill_table_id=" << request->skill_table_id()
-					<< " reason=entity_invalid");
-			}
-
-			// Check target entity type
-			bool isValidTargetType = tlsEcs.actorRegistry.any_of<Player>(target) || tlsEcs.actorRegistry.any_of<Npc>(target);
-			if (!isValidTargetType) {
-				return MAKE_ERROR_MSG(kSkillInvalidTargetId,
-					"target_id=" << request->target_id()
-					<< " skill_table_id=" << request->skill_table_id()
-					<< " reason=invalid_entity_type");
-			}
-
-			return kSuccess;
+		if (targetingMode != kTargetedSkill) {
+			continue;
 		}
 
-		if ((1 << tabSkillType) == kAreaOfEffect) {
-			return kSuccess;
+		const entt::entity target{ request->target_id() };
+		if (!tlsEcs.actorRegistry.valid(target)) {
+			return MAKE_ERROR_MSG(kSkillInvalidTargetId,
+				"target_id=" << request->target_id()
+				<< " skill_table_id=" << request->skill_table_id()
+				<< " reason=entity_invalid");
 		}
+
+		if (!tlsEcs.actorRegistry.any_of<Player>(target) && !tlsEcs.actorRegistry.any_of<Npc>(target)) {
+			return MAKE_ERROR_MSG(kSkillInvalidTargetId,
+				"target_id=" << request->target_id()
+				<< " skill_table_id=" << request->skill_table_id()
+				<< " reason=invalid_entity_type");
+		}
+
+		return kSuccess;
 	}
 
-	return err;
+	return kSuccess;
 }
 
 // Common interrupt-or-reject check for casting/recovery/channel timers
@@ -454,17 +468,13 @@ void SkillSystem::SendSkillInterruptedMessage(const entt::entity casterEntity, c
 }
 
 void SkillSystem::TriggerSkillEffect(const entt::entity casterEntity, const uint64_t skillId) {
-	ECS_GET_OR_VOID(casterSkillContextMap, SkillContextCompMap, casterEntity);
-	const auto skillContextIt = casterSkillContextMap->find(skillId);
-
-	if (skillContextIt == casterSkillContextMap->end())
+	const auto skillContext = FindCasterSkillContext(casterEntity, skillId);
+	if (!skillContext)
 	{
 		return;
 	}
 
-	const auto& skillContext = skillContextIt->second;
-	
-	LookupSkillOrVoid(skillContext->skilltableid());
+	LookupSkillOrReturnVoid(skillContext->skilltableid());
 
 	LOG_INFO << "Triggering skill effect. Caster: " << entt::to_integral(casterEntity) << ", Skill ID: " << skillId;
 
@@ -504,16 +514,14 @@ double CalculateFinalDamage(const entt::entity casterEntity, const entt::entity 
 
 
 void CalculateSkillDamage(const entt::entity casterEntity, DamageEventComp& damageEvent) {
-	ECS_GET_OR_VOID(casterSkillContextMap, SkillContextCompMap, casterEntity);
-	auto skillContentIt = casterSkillContextMap->find(damageEvent.skill_id());
-
-	if (skillContentIt == casterSkillContextMap->end())
+	const auto skillContext = FindCasterSkillContext(casterEntity, damageEvent.skill_id());
+	if (!skillContext)
 	{
 		LOG_ERROR << "Skill context not found for skill ID: " << damageEvent.skill_id();
         return;
 	}
 
-	LookupSkillOrVoid(skillContentIt->second->skilltableid());
+	LookupSkillOrReturnVoid(skillContext->skilltableid());
 
     auto targetEntity = entt::to_entity(damageEvent.target());
 
@@ -546,7 +554,7 @@ void CalculateSkillDamage(const entt::entity casterEntity, DamageEventComp& dama
 
 	damageEvent.set_attacker_id(entt::to_integral(casterEntity));
 
-    double baseDamage = SkillTableManager::Instance().GetDamage(skillContentIt->second->skilltableid());
+    double baseDamage = SkillTableManager::Instance().GetDamage(skillContext->skilltableid());
     double finalDamage = CalculateFinalDamage(casterEntity, targetEntity, baseDamage);
     damageEvent.set_damage(finalDamage);
 }
@@ -612,15 +620,11 @@ void DealDamage(DamageEventComp& damageEvent, const entt::entity caster, const e
 }
 
 void SkillSystem::HandleSkillSpell(const entt::entity casterEntity, const uint64_t skillId) {
-	ECS_GET_OR_VOID(casterSkillContextMap, SkillContextCompMap, casterEntity);
-	const auto skillContextIt = casterSkillContextMap->find(skillId);
-
-	if (skillContextIt == casterSkillContextMap->end())
+	const auto skillContext = FindCasterSkillContext(casterEntity, skillId);
+	if (!skillContext)
 	{
 		return;
 	}
-
-	const auto& skillContext = skillContextIt->second;
 
 	const entt::entity targetEntity = entt::to_entity(skillContext->target());
 

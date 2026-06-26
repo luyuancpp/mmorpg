@@ -105,11 +105,11 @@ inline const RewardTableData& FindAllRewardTable() {
     return RewardTableManager::Instance().FindAll();
 }
 
-#define LookupReward(tableId) \
+#define LookupRewardOrReturnError(tableId) \
     const auto [rewardRow, rewardResult] = RewardTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(rewardRow)) { LOG_ERROR << "Reward row not found for ID: " << tableId; return rewardResult; } } while(0)
 
-#define LookupRewardAs(prefix, tableId) \
+#define LookupRewardAsOrReturnError(prefix, tableId) \
     const auto [prefix##RewardRow, prefix##RewardResult] = RewardTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(prefix##RewardRow)) { LOG_ERROR << "Reward row not found for ID: " << tableId; return prefix##RewardResult; } } while(0)
 
@@ -117,7 +117,7 @@ inline const RewardTableData& FindAllRewardTable() {
     const auto [rewardRow, rewardResult] = RewardTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(rewardRow)) { LOG_ERROR << "Reward row not found for ID: " << tableId; return customReturnValue; } } while(0)
 
-#define LookupRewardOrVoid(tableId) \
+#define LookupRewardOrReturnVoid(tableId) \
     const auto [rewardRow, rewardResult] = RewardTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(rewardRow)) { LOG_ERROR << "Reward row not found for ID: " << tableId; return; } } while(0)
 
@@ -125,6 +125,6 @@ inline const RewardTableData& FindAllRewardTable() {
     const auto [rewardRow, rewardResult] = RewardTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(rewardRow)) { LOG_ERROR << "Reward row not found for ID: " << tableId; continue; } } while(0)
 
-#define LookupRewardOrFalse(tableId) \
+#define LookupRewardOrReturnFalse(tableId) \
     const auto [rewardRow, rewardResult] = RewardTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(rewardRow)) { LOG_ERROR << "Reward row not found for ID: " << tableId; return false; } } while(0)

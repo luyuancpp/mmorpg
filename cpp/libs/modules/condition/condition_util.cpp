@@ -23,7 +23,7 @@ constexpr size_t kComparisonFunctionCount = std::size(kComparisonFunctions);
 namespace condition_util {
 
 bool IsFulfilled(uint32_t conditionId, uint32_t progressValue, uint32_t targetCountOverride) {
-	LookupConditionOrFalse(conditionId);
+	LookupConditionOrReturnFalse(conditionId);
 	const auto cmpIndex = static_cast<size_t>(conditionRow->comparison_op());
 	if (cmpIndex >= kComparisonFunctionCount) return false;
 	const uint32_t target = (targetCountOverride > 0) ? targetCountOverride : conditionRow->target_count();

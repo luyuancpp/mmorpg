@@ -43,7 +43,7 @@ struct MissionConfig : public IMissionConfig
 
     bool AutoReward(uint32_t missionTableId) const override
     {
-        LookupMissionOrFalse(missionTableId);
+        LookupMissionOrReturnFalse(missionTableId);
         return missionRow->auto_reward() > 0;
     }
 
@@ -66,7 +66,7 @@ struct MissionConfig : public IMissionConfig
     }
 
     bool CheckTypeRepeated() const override { return true; }
-    bool HasKey(uint32_t missionTableId) const override { LookupMissionOrFalse(missionTableId); return true; }
+    bool HasKey(uint32_t missionTableId) const override { LookupMissionOrReturnFalse(missionTableId); return true; }
 
 private:
     static const ::google::protobuf::RepeatedField<uint32_t>& EmptyRepeatedField()
