@@ -25,31 +25,51 @@
 #include <limits>
 #include <thread_context/ecs_context.h>
 
+namespace {
+
+// Best-effort player guid for logging (0 if the Guid component is absent).
+uint64_t GuidForLog(entt::entity player)
+{
+	const auto* g = tlsEcs.actorRegistry.try_get<Guid>(player);
+	return g ? *g : 0;
+}
+
+// Validate a hiredis reply and parse its payload into a protobuf message.
+// Returns false (silently) when the reply is nil/missing or the player is
+// gone; logs and returns false on an oversized or corrupt payload.
+template <typename T>
+bool ParsePlayerRedisReply(entt::entity player, void* replyVoid, const char* payloadName, T& out)
+{
+	auto* reply = static_cast<redisReply*>(replyVoid);
+	if (reply == nullptr || reply->type == REDIS_REPLY_NIL)
+	{
+		return false;
+	}
+	if (!tlsEcs.actorRegistry.valid(player))
+	{
+		return false;
+	}
+	if (reply->len > static_cast<size_t>(std::numeric_limits<int>::max()))
+	{
+		LOG_ERROR << payloadName << " payload too large for protobuf parser, len=" << reply->len;
+		return false;
+	}
+	if (!out.ParseFromArray(reply->str, static_cast<int>(reply->len)))
+	{
+		LOG_ERROR << "Failed to parse " << payloadName << " from Redis for player " << GuidForLog(player);
+		return false;
+	}
+	return true;
+}
+
+}  // namespace
+
 // Callback wrapper for Hiredis
 void PlayerSceneSystem::OnGetTeamInfo(entt::entity player, void* replyVoid)
 {
-	redisReply* reply = static_cast<redisReply*>(replyVoid);
-	if (reply == nullptr || reply->type == REDIS_REPLY_NIL)
-	{
-		return;
-	}
-
-	if (!tlsEcs.actorRegistry.valid(player))
-	{
-		return;
-	}
-
 	TeamInfo teamInfo;
-	if (reply->len > static_cast<size_t>(std::numeric_limits<int>::max()))
+	if (!ParsePlayerRedisReply(player, replyVoid, "TeamInfo", teamInfo))
 	{
-		LOG_ERROR << "TeamInfo payload too large for protobuf parser, len=" << reply->len;
-		return;
-	}
-
-	if (!teamInfo.ParseFromArray(reply->str, static_cast<int>(reply->len)))
-	{
-		const auto* g = tlsEcs.actorRegistry.try_get<Guid>(player);
-		LOG_ERROR << "Failed to parse TeamInfo from Redis for player " << (g ? *g : 0);
 		return;
 	}
 
@@ -76,28 +96,9 @@ void PlayerSceneSystem::OnGetTeamInfo(entt::entity player, void* replyVoid)
 
 void PlayerSceneSystem::OnGetLeaderLocation(entt::entity player, void* replyVoid)
 {
-	redisReply* reply = static_cast<redisReply*>(replyVoid);
-	if (reply == nullptr || reply->type == REDIS_REPLY_NIL)
-	{
-		return;
-	}
-
-	if (!tlsEcs.actorRegistry.valid(player))
-	{
-		return;
-	}
-
 	storage::PlayerLocation loc;
-	if (reply->len > static_cast<size_t>(std::numeric_limits<int>::max()))
+	if (!ParsePlayerRedisReply(player, replyVoid, "PlayerLocation", loc))
 	{
-		LOG_ERROR << "PlayerLocation payload too large for protobuf parser, len=" << reply->len;
-		return;
-	}
-
-	if (!loc.ParseFromArray(reply->str, static_cast<int>(reply->len)))
-	{
-		const auto* g = tlsEcs.actorRegistry.try_get<Guid>(player);
-		LOG_ERROR << "Failed to parse PlayerLocation from Redis for player " << (g ? *g : 0);
 		return;
 	}
 
@@ -120,8 +121,7 @@ void PlayerSceneSystem::OnGetLeaderLocation(entt::entity player, void* replyVoid
 		const auto* playerSessionPB = tlsEcs.actorRegistry.try_get<PlayerSessionSnapshotComp>(player);
 		if (!playerSessionPB)
 		{
-			const auto* g = tlsEcs.actorRegistry.try_get<Guid>(player);
-			LOG_ERROR << "PlayerSessionSnapshotComp missing for follower " << (g ? *g : 0);
+			LOG_ERROR << "PlayerSessionSnapshotComp missing for follower " << GuidForLog(player);
 			return;
 		}
 
@@ -176,8 +176,7 @@ void PlayerSceneSystem::HandleEnterScene(entt::entity player, entt::entity scene
 	auto *oldSceneComp = tlsEcs.actorRegistry.try_get<SceneEntityComp>(player);
 	if (oldSceneComp != nullptr && oldSceneComp->sceneEntity == scene)
 	{
-		const auto* g = tlsEcs.actorRegistry.try_get<Guid>(player);
-		LOG_INFO << "HandleEnterScene: player " << (g ? *g : 0)
+		LOG_INFO << "HandleEnterScene: player " << GuidForLog(player)
 		         << " already in scene_id=" << sceneInfo->scene_id() << ", skipping";
 		return;
 	}
@@ -216,8 +215,7 @@ void PlayerSceneSystem::HandleEnterScene(entt::entity player, entt::entity scene
 	message.mutable_scene_info()->CopyFrom(*sceneInfo);
 	SendMessageToClientViaGate(SceneSceneClientPlayerNotifyEnterSceneMessageId, message, player);
 
-	const auto* g = tlsEcs.actorRegistry.try_get<Guid>(player);
-	LOG_INFO << "HandleEnterScene: player " << (g ? *g : 0)
+	LOG_INFO << "HandleEnterScene: player " << GuidForLog(player)
 			 << " entered scene_id=" << sceneInfo->scene_id();
 
 	// 5. Team Follow Logic: if player is in a team, check leader location.

@@ -138,7 +138,7 @@ uint32_t MissionSystem::AbandonMission(const AbandonParam &param, MissionsComp &
 // use OnMissionCompletion instead (called from HandleConditionEvent).
 // The distinction is intentional — do NOT collapse the two functions.
 // See todo.md #225 for the historical lesson.
-void MissionSystem::CompleteAllMissions(entt::entity playerEntity, uint32_t /*op*/, MissionsComp &missionComp)
+void MissionSystem::CompleteAllMissions(entt::entity /*playerEntity*/, MissionsComp &missionComp)
 {
 	for (const auto &missionId : missionComp.GetMissionList().missions() | std::views::keys)
 	{
