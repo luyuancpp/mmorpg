@@ -75,7 +75,7 @@ TEST(MissionsComp, AcceptMission)
 	EXPECT_EQ(acceptedCount, missions.MissionSize());
 	EXPECT_EQ(0, missions.CompleteSize());
 
-	MissionSystem::CompleteAllMissions(player, 0, missions);
+	MissionSystem::CompleteAllMissions(player, missions);
 	EXPECT_EQ(0, missions.MissionSize());
 	EXPECT_EQ(acceptedCount, missions.CompleteSize());
 }

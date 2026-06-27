@@ -23,7 +23,7 @@
 // numeric weight for eviction decisions.
 static AoiPriority DetermineAoiPriority(entt::entity observer, entt::entity target)
 {
-    // Same team → kTeammate
+    // Same team -> kTeammate
     const auto* observerTeam = tlsEcs.actorRegistry.try_get<TeamId>(observer);
     const auto* targetTeam   = tlsEcs.actorRegistry.try_get<TeamId>(target);
     if (observerTeam && targetTeam &&
@@ -89,7 +89,7 @@ void AoiSystem::UpdateGridState(const entt::entity entity, SceneGridListComp& gr
         gridList[previousGridId].entities.erase(entity);
         gridList[currentGridId].entities.insert(entity);
 
-        // Hex has const members → copy assignment is deleted → emplace_or_replace won't compile.
+        // Hex has const members -> copy assignment is deleted -> emplace_or_replace won't compile.
         // Use remove + emplace instead.
         tlsEcs.actorRegistry.remove<Hex>(entity);
         tlsEcs.actorRegistry.emplace<Hex>(entity, currentHex);
@@ -122,19 +122,20 @@ void AoiSystem::HandleEntityVisibility(entt::entity entity, SceneGridListComp& g
         }
     }
 
-    // Entities in grids the observer is leaving
+    // Entities in grids the observer is leaving.
+    // The observer's own AoiListComp does not change identity during this loop
+    // (RemoveAoiEntity only erases entries), so look it up once.
+    auto* entityAoi = tlsEcs.actorRegistry.try_get<AoiListComp>(entity);
     for (const auto& gridId : gridsToLeave) {
         auto gridIt = gridList.find(gridId);
         if (gridIt == gridList.end()) continue;
 
         for (const auto& otherEntity : gridIt->second.entities) {
-            // Skip removal of pinned entities — they are managed by buff/skill lifecycle.
-            auto* entityAoi = tlsEcs.actorRegistry.try_get<AoiListComp>(entity);
+            // Drop the observer's view of otherEntity, unless that entry is
+            // pinned (pinned entries are managed by buff/skill lifecycle).
             if (entityAoi) {
                 auto it = entityAoi->entries.find(otherEntity);
-                if (it != entityAoi->entries.end() && it->second.priority == AoiPriority::kPinned) {
-                    // Pinned — do not remove.
-                } else if (it != entityAoi->entries.end()) {
+                if (it != entityAoi->entries.end() && it->second.priority != AoiPriority::kPinned) {
                     entitiesLeavingView.insert(otherEntity);
                     InterestSystem::RemoveAoiEntity(entity, otherEntity);
                 }
