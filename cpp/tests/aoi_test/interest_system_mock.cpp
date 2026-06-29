@@ -1,7 +1,7 @@
 #include "spatial/system/interest.h"
 #include "spatial/comp/scene_node_scene_comp.h"
 #include <modules/scene/comp/scene_comp.h>
-#include <thread_context/registry_manager.h>
+#include <thread_context/ecs_context.h>
 
 // ---------------------------------------------------------------------------
 // Test mock — mirrors production logic with policy-based weight comparison

@@ -1,7 +1,7 @@
 #include "spatial/system/view.h"
 #include "proto/common/component/actor_comp.pb.h"
 #include "engine/core/type_define/type_define.h"
-#include <thread_context/registry_manager.h>
+#include <thread_context/ecs_context.h>
 
 extern EntityUnorderedMap entitiesToNotifyEntry;
 extern EntityUnorderedMap entitiesToNotifyExit;

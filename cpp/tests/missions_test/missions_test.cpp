@@ -2,7 +2,6 @@
 
 #include "table/code/condition_table.h"
 #include "table/code/mission_table.h"
-#include "modules/mission/constants/mission.h"
 #include "modules/mission/comp/mission_comp.h"
 #include "modules/mission/comp/missions_config_comp.h"
 #include "modules/mission/system/mission.h"
@@ -13,8 +12,7 @@
 
 #include "proto/common/component/mission_comp.pb.h"
 #include "proto/common/event/mission_event.pb.h"
-#include <thread_context/registry_manager.h>
-#include <thread_context/dispatcher_manager.h>
+#include <thread_context/ecs_context.h>
 #include "../test_config_helper.h"
 
 // ---------------------------------------------------------------------------

@@ -5,7 +5,7 @@
 #include "table/code/bit_index/reward_table_id_bit_index.h"
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "table/proto/tip/reward_error_tip.pb.h"
-#include <thread_context/registry_manager.h>
+#include <thread_context/ecs_context.h>
 #include "../test_config_helper.h"
 
 decltype(auto) CreatePlayerEntityWithRewardComponent()

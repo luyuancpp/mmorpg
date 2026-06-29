@@ -9,7 +9,7 @@
 #include "proto/common/component/node_player_comp.pb.h"
 #include "proto/common/base/node.pb.h"
 #include "thread_context/node_context_manager.h"
-#include <thread_context/registry_manager.h>
+#include <thread_context/ecs_context.h>
 #include <muduo/base/Logging.h>
 #include <modules/scene/comp/scene_node_comp.h>
 #include <scene/system/scene_node_state.h>
