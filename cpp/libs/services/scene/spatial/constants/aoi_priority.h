@@ -69,6 +69,28 @@ inline constexpr AoiPriorityPolicy kPolicyPvpArena {{
 }};
 
 // ---------------------------------------------------------------------------
+// Policy handle — stored on the scene as a plain enum (no pointer/reference),
+// resolved to a static policy via PolicyOf(). Avoids dangling references.
+// ---------------------------------------------------------------------------
+enum class AoiPolicyKind : uint8_t
+{
+    kOpenWorld = 0,
+    kDungeon   = 1,
+    kPvpArena  = 2,
+};
+
+[[nodiscard]] inline const AoiPriorityPolicy& PolicyOf(AoiPolicyKind kind)
+{
+    switch (kind)
+    {
+    case AoiPolicyKind::kDungeon:  return kPolicyDungeon;
+    case AoiPolicyKind::kPvpArena: return kPolicyPvpArena;
+    case AoiPolicyKind::kOpenWorld:
+    default:                       return kPolicyOpenWorld;
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Dynamic AOI capacity — resolved per-entity per-frame.
 // effectiveCapacity = min(clientReportedCapacity, serverPressureCapacity)
 // ---------------------------------------------------------------------------

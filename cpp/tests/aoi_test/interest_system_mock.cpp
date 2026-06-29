@@ -16,7 +16,7 @@ static const AoiPriorityPolicy& MockGetPolicy(entt::entity watcher)
         {
             if (const auto* pc = tlsEcs.sceneRegistry.try_get<ScenePriorityPolicyComp>(sc->sceneEntity))
             {
-                if (pc->policy) return *pc->policy;
+                return PolicyOf(pc->policy);
             }
         }
     }
