@@ -127,6 +127,18 @@ inline const SkillTableData& FindAllSkillTable() {
     return SkillTableManager::Instance().FindAll();
 }
 
+// ---- Lookup guard macros ----
+// Each macro looks up a row by tableId and, on success, injects two locals into
+// the current scope:
+//   skillRow    -> const SkillTable* (the matched row)
+//   skillResult -> uint32_t status (kInvalidTableId on miss)
+// On a miss they log an error and bail out; the suffix spells out HOW they bail:
+//   OrReturnError -> return the kInvalidTableId status code
+//   OrReturn      -> return a caller-supplied value
+//   OrReturnVoid  -> return; (for void functions)
+//   OrReturnFalse -> return false;
+//   OrContinue    -> continue; (skip to the next loop iteration)
+
 #define LookupSkillOrReturnError(tableId) \
     const auto [skillRow, skillResult] = SkillTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(skillRow)) { LOG_ERROR << "Skill row not found for ID: " << tableId; return skillResult; } } while(0)

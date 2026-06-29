@@ -165,6 +165,18 @@ inline const TestMultiKeyTableData& FindAllTestMultiKeyTable() {
     return TestMultiKeyTableManager::Instance().FindAll();
 }
 
+// ---- Lookup guard macros ----
+// Each macro looks up a row by tableId and, on success, injects two locals into
+// the current scope:
+//   testMultiKeyRow    -> const TestMultiKeyTable* (the matched row)
+//   testMultiKeyResult -> uint32_t status (kInvalidTableId on miss)
+// On a miss they log an error and bail out; the suffix spells out HOW they bail:
+//   OrReturnError -> return the kInvalidTableId status code
+//   OrReturn      -> return a caller-supplied value
+//   OrReturnVoid  -> return; (for void functions)
+//   OrReturnFalse -> return false;
+//   OrContinue    -> continue; (skip to the next loop iteration)
+
 #define LookupTestMultiKeyOrReturnError(tableId) \
     const auto [testMultiKeyRow, testMultiKeyResult] = TestMultiKeyTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(testMultiKeyRow)) { LOG_ERROR << "TestMultiKey row not found for ID: " << tableId; return testMultiKeyResult; } } while(0)

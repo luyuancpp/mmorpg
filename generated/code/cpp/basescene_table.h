@@ -105,6 +105,18 @@ inline const BaseSceneTableData& FindAllBaseSceneTable() {
     return BaseSceneTableManager::Instance().FindAll();
 }
 
+// ---- Lookup guard macros ----
+// Each macro looks up a row by tableId and, on success, injects two locals into
+// the current scope:
+//   baseSceneRow    -> const BaseSceneTable* (the matched row)
+//   baseSceneResult -> uint32_t status (kInvalidTableId on miss)
+// On a miss they log an error and bail out; the suffix spells out HOW they bail:
+//   OrReturnError -> return the kInvalidTableId status code
+//   OrReturn      -> return a caller-supplied value
+//   OrReturnVoid  -> return; (for void functions)
+//   OrReturnFalse -> return false;
+//   OrContinue    -> continue; (skip to the next loop iteration)
+
 #define LookupBaseSceneOrReturnError(tableId) \
     const auto [baseSceneRow, baseSceneResult] = BaseSceneTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(baseSceneRow)) { LOG_ERROR << "BaseScene row not found for ID: " << tableId; return baseSceneResult; } } while(0)

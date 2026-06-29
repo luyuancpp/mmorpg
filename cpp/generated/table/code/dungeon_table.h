@@ -118,6 +118,18 @@ inline const DungeonTableData& FindAllDungeonTable() {
     return DungeonTableManager::Instance().FindAll();
 }
 
+// ---- Lookup guard macros ----
+// Each macro looks up a row by tableId and, on success, injects two locals into
+// the current scope:
+//   dungeonRow    -> const DungeonTable* (the matched row)
+//   dungeonResult -> uint32_t status (kInvalidTableId on miss)
+// On a miss they log an error and bail out; the suffix spells out HOW they bail:
+//   OrReturnError -> return the kInvalidTableId status code
+//   OrReturn      -> return a caller-supplied value
+//   OrReturnVoid  -> return; (for void functions)
+//   OrReturnFalse -> return false;
+//   OrContinue    -> continue; (skip to the next loop iteration)
+
 #define LookupDungeonOrReturnError(tableId) \
     const auto [dungeonRow, dungeonResult] = DungeonTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(dungeonRow)) { LOG_ERROR << "Dungeon row not found for ID: " << tableId; return dungeonResult; } } while(0)

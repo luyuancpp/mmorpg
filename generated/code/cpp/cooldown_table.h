@@ -105,6 +105,18 @@ inline const CooldownTableData& FindAllCooldownTable() {
     return CooldownTableManager::Instance().FindAll();
 }
 
+// ---- Lookup guard macros ----
+// Each macro looks up a row by tableId and, on success, injects two locals into
+// the current scope:
+//   cooldownRow    -> const CooldownTable* (the matched row)
+//   cooldownResult -> uint32_t status (kInvalidTableId on miss)
+// On a miss they log an error and bail out; the suffix spells out HOW they bail:
+//   OrReturnError -> return the kInvalidTableId status code
+//   OrReturn      -> return a caller-supplied value
+//   OrReturnVoid  -> return; (for void functions)
+//   OrReturnFalse -> return false;
+//   OrContinue    -> continue; (skip to the next loop iteration)
+
 #define LookupCooldownOrReturnError(tableId) \
     const auto [cooldownRow, cooldownResult] = CooldownTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(cooldownRow)) { LOG_ERROR << "Cooldown row not found for ID: " << tableId; return cooldownResult; } } while(0)

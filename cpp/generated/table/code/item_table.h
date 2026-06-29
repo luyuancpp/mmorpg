@@ -105,6 +105,18 @@ inline const ItemTableData& FindAllItemTable() {
     return ItemTableManager::Instance().FindAll();
 }
 
+// ---- Lookup guard macros ----
+// Each macro looks up a row by tableId and, on success, injects two locals into
+// the current scope:
+//   itemRow    -> const ItemTable* (the matched row)
+//   itemResult -> uint32_t status (kInvalidTableId on miss)
+// On a miss they log an error and bail out; the suffix spells out HOW they bail:
+//   OrReturnError -> return the kInvalidTableId status code
+//   OrReturn      -> return a caller-supplied value
+//   OrReturnVoid  -> return; (for void functions)
+//   OrReturnFalse -> return false;
+//   OrContinue    -> continue; (skip to the next loop iteration)
+
 #define LookupItemOrReturnError(tableId) \
     const auto [itemRow, itemResult] = ItemTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(itemRow)) { LOG_ERROR << "Item row not found for ID: " << tableId; return itemResult; } } while(0)
