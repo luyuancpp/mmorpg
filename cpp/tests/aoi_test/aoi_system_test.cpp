@@ -619,10 +619,10 @@ protected:
         return e;
     }
 
-    void SetPolicy(const AoiPriorityPolicy* policy)
+    void SetPolicy(AoiPolicyKind kind)
     {
         tlsEcs.sceneRegistry.emplace_or_replace<ScenePriorityPolicyComp>(sceneEntity,
-            ScenePriorityPolicyComp{policy});
+            ScenePriorityPolicyComp{kind});
     }
 };
 
@@ -638,7 +638,7 @@ TEST_F(AoiPriorityPolicyTest, DefaultPolicyIsOpenWorld)
 // Open-world policy: quest NPC weight (3) > attacker weight (2).
 TEST_F(AoiPriorityPolicyTest, OpenWorldQuestNpcOutranksAttacker)
 {
-    SetPolicy(&kPolicyOpenWorld);
+    SetPolicy(AoiPolicyKind::kOpenWorld);
     EXPECT_GT(kPolicyOpenWorld.GetWeight(AoiPriority::kQuestNpc),
               kPolicyOpenWorld.GetWeight(AoiPriority::kAttacker));
 }
@@ -646,7 +646,7 @@ TEST_F(AoiPriorityPolicyTest, OpenWorldQuestNpcOutranksAttacker)
 // Dungeon policy: attacker weight (3) > quest NPC weight (1).
 TEST_F(AoiPriorityPolicyTest, DungeonAttackerOutranksQuestNpc)
 {
-    SetPolicy(&kPolicyDungeon);
+    SetPolicy(AoiPolicyKind::kDungeon);
     EXPECT_GT(kPolicyDungeon.GetWeight(AoiPriority::kAttacker),
               kPolicyDungeon.GetWeight(AoiPriority::kQuestNpc));
 }
@@ -654,7 +654,7 @@ TEST_F(AoiPriorityPolicyTest, DungeonAttackerOutranksQuestNpc)
 // Dungeon policy: boss weight (4) > attacker weight (3).
 TEST_F(AoiPriorityPolicyTest, DungeonBossOutranksAttacker)
 {
-    SetPolicy(&kPolicyDungeon);
+    SetPolicy(AoiPolicyKind::kDungeon);
     EXPECT_GT(kPolicyDungeon.GetWeight(AoiPriority::kBoss),
               kPolicyDungeon.GetWeight(AoiPriority::kAttacker));
 }
@@ -662,7 +662,7 @@ TEST_F(AoiPriorityPolicyTest, DungeonBossOutranksAttacker)
 // PvP arena policy: attacker weight (4) > boss weight (3).
 TEST_F(AoiPriorityPolicyTest, PvpAttackerOutranksBoss)
 {
-    SetPolicy(&kPolicyPvpArena);
+    SetPolicy(AoiPolicyKind::kPvpArena);
     EXPECT_GT(kPolicyPvpArena.GetWeight(AoiPriority::kAttacker),
               kPolicyPvpArena.GetWeight(AoiPriority::kBoss));
 }
@@ -679,7 +679,7 @@ TEST_F(AoiPriorityPolicyTest, PinnedAlwaysMaxWeight)
 // via AddAoiEntity (priority upgrade path).
 TEST_F(AoiPriorityPolicyTest, PolicyAffectsUpgradeDecision)
 {
-    SetPolicy(&kPolicyDungeon);
+    SetPolicy(AoiPolicyKind::kDungeon);
     auto watcher = SpawnAt(0, 0);
     auto target  = SpawnAt(5, 0);
 
@@ -688,7 +688,7 @@ TEST_F(AoiPriorityPolicyTest, PolicyAffectsUpgradeDecision)
     ASSERT_NE(comp, nullptr);
     EXPECT_EQ(comp->entries.at(target).priority, AoiPriority::kQuestNpc);
 
-    // kBoss has higher weight than kQuestNpc in dungeon policy → upgrade succeeds.
+    // kBoss has higher weight than kQuestNpc in dungeon policy -> upgrade succeeds.
     InterestSystem::AddAoiEntity(watcher, target, AoiPriority::kBoss);
     EXPECT_EQ(comp->entries.at(target).priority, AoiPriority::kBoss);
 }
@@ -697,7 +697,7 @@ TEST_F(AoiPriorityPolicyTest, PolicyAffectsUpgradeDecision)
 // to attacker should succeed.
 TEST_F(AoiPriorityPolicyTest, UpgradePriorityUsesPolicy)
 {
-    SetPolicy(&kPolicyPvpArena);
+    SetPolicy(AoiPolicyKind::kPvpArena);
     auto watcher = SpawnAt(0, 0);
     auto target  = SpawnAt(5, 0);
 
@@ -706,7 +706,7 @@ TEST_F(AoiPriorityPolicyTest, UpgradePriorityUsesPolicy)
 
     auto* comp = tlsEcs.actorRegistry.try_get<AoiListComp>(watcher);
     ASSERT_NE(comp, nullptr);
-    // In PvP: attacker weight (4) > boss weight (3) → upgrade should happen.
+    // In PvP: attacker weight (4) > boss weight (3) -> upgrade should happen.
     EXPECT_EQ(comp->entries.at(target).priority, AoiPriority::kAttacker);
 }
 
@@ -714,7 +714,7 @@ TEST_F(AoiPriorityPolicyTest, UpgradePriorityUsesPolicy)
 // so upgrading from kQuestNpc to kAttacker should be a no-op.
 TEST_F(AoiPriorityPolicyTest, UpgradePriorityNoOpWhenWeightIsLower)
 {
-    SetPolicy(&kPolicyOpenWorld);
+    SetPolicy(AoiPolicyKind::kOpenWorld);
     auto watcher = SpawnAt(0, 0);
     auto target  = SpawnAt(5, 0);
 

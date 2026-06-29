@@ -64,5 +64,5 @@ struct ScenePressureComp
 // ---------------------------------------------------------------------------
 struct ScenePriorityPolicyComp
 {
-    const AoiPriorityPolicy* policy = &kPolicyOpenWorld;
+    AoiPolicyKind policy = AoiPolicyKind::kOpenWorld;
 };

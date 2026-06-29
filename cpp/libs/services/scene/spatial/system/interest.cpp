@@ -70,10 +70,7 @@ const AoiPriorityPolicy& InterestSystem::GetPriorityPolicy(entt::entity watcher)
         {
             if (const auto* policyComp = tlsEcs.sceneRegistry.try_get<ScenePriorityPolicyComp>(sceneComp->sceneEntity))
             {
-                if (policyComp->policy != nullptr)
-                {
-                    return *policyComp->policy;
-                }
+                return PolicyOf(policyComp->policy);
             }
         }
     }
