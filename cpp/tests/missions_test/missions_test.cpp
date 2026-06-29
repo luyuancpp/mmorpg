@@ -2,6 +2,7 @@
 
 #include "table/code/condition_table.h"
 #include "table/code/mission_table.h"
+#include "modules/condition/condition_type.h"
 #include "modules/mission/comp/mission_comp.h"
 #include "modules/mission/comp/missions_config_comp.h"
 #include "modules/mission/system/mission.h"
