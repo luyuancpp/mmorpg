@@ -26,7 +26,7 @@
 #include "engine/core/type_define/type_define.h"
 #include "engine/core/utils/random/random.h"
 #include "thread_context/redis_manager.h"
-#include <thread_context/registry_manager.h>
+#include <thread_context/ecs_context.h>
 
 extern const Point kDefaultSize(20.0, 20.0);
 extern const Point kOrigin(0.0, 0.0);

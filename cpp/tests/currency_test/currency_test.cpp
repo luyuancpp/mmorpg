@@ -5,7 +5,7 @@
 #include "modules/currency/system/currency_system.h"
 #include "proto/common/component/currency_comp.pb.h"
 #include "table/proto/tip/common_error_tip.pb.h"
-#include <thread_context/registry_manager.h>
+#include <thread_context/ecs_context.h>
 
 // ---------------------------------------------------------------------------
 // Helpers
