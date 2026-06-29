@@ -1,6 +1,7 @@
 #include "modules/reward/system/reward.h"
 #include <gtest/gtest.h>
 
+#include "modules/reward/comp/reward_comp.h"
 #include "table/code/reward_table.h"
 #include "table/code/bit_index/reward_table_id_bit_index.h"
 #include "table/proto/tip/common_error_tip.pb.h"
