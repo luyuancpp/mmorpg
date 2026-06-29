@@ -105,6 +105,18 @@ inline const ActorActionCombatStateTableData& FindAllActorActionCombatStateTable
     return ActorActionCombatStateTableManager::Instance().FindAll();
 }
 
+// ---- Lookup guard macros ----
+// Each macro looks up a row by tableId and, on success, injects two locals into
+// the current scope:
+//   actorActionCombatStateRow    -> const ActorActionCombatStateTable* (the matched row)
+//   actorActionCombatStateResult -> uint32_t status (kInvalidTableId on miss)
+// On a miss they log an error and bail out; the suffix spells out HOW they bail:
+//   OrReturnError -> return the kInvalidTableId status code
+//   OrReturn      -> return a caller-supplied value
+//   OrReturnVoid  -> return; (for void functions)
+//   OrReturnFalse -> return false;
+//   OrContinue    -> continue; (skip to the next loop iteration)
+
 #define LookupActorActionCombatStateOrReturnError(tableId) \
     const auto [actorActionCombatStateRow, actorActionCombatStateResult] = ActorActionCombatStateTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(actorActionCombatStateRow)) { LOG_ERROR << "ActorActionCombatState row not found for ID: " << tableId; return actorActionCombatStateResult; } } while(0)

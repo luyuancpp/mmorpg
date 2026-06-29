@@ -130,6 +130,18 @@ inline const MirrorTableData& FindAllMirrorTable() {
     return MirrorTableManager::Instance().FindAll();
 }
 
+// ---- Lookup guard macros ----
+// Each macro looks up a row by tableId and, on success, injects two locals into
+// the current scope:
+//   mirrorRow    -> const MirrorTable* (the matched row)
+//   mirrorResult -> uint32_t status (kInvalidTableId on miss)
+// On a miss they log an error and bail out; the suffix spells out HOW they bail:
+//   OrReturnError -> return the kInvalidTableId status code
+//   OrReturn      -> return a caller-supplied value
+//   OrReturnVoid  -> return; (for void functions)
+//   OrReturnFalse -> return false;
+//   OrContinue    -> continue; (skip to the next loop iteration)
+
 #define LookupMirrorOrReturnError(tableId) \
     const auto [mirrorRow, mirrorResult] = MirrorTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(mirrorRow)) { LOG_ERROR << "Mirror row not found for ID: " << tableId; return mirrorResult; } } while(0)

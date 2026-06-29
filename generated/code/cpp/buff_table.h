@@ -139,6 +139,18 @@ inline const BuffTableData& FindAllBuffTable() {
     return BuffTableManager::Instance().FindAll();
 }
 
+// ---- Lookup guard macros ----
+// Each macro looks up a row by tableId and, on success, injects two locals into
+// the current scope:
+//   buffRow    -> const BuffTable* (the matched row)
+//   buffResult -> uint32_t status (kInvalidTableId on miss)
+// On a miss they log an error and bail out; the suffix spells out HOW they bail:
+//   OrReturnError -> return the kInvalidTableId status code
+//   OrReturn      -> return a caller-supplied value
+//   OrReturnVoid  -> return; (for void functions)
+//   OrReturnFalse -> return false;
+//   OrContinue    -> continue; (skip to the next loop iteration)
+
 #define LookupBuffOrReturnError(tableId) \
     const auto [buffRow, buffResult] = BuffTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(buffRow)) { LOG_ERROR << "Buff row not found for ID: " << tableId; return buffResult; } } while(0)

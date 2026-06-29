@@ -127,6 +127,18 @@ inline const MissionTableData& FindAllMissionTable() {
     return MissionTableManager::Instance().FindAll();
 }
 
+// ---- Lookup guard macros ----
+// Each macro looks up a row by tableId and, on success, injects two locals into
+// the current scope:
+//   missionRow    -> const MissionTable* (the matched row)
+//   missionResult -> uint32_t status (kInvalidTableId on miss)
+// On a miss they log an error and bail out; the suffix spells out HOW they bail:
+//   OrReturnError -> return the kInvalidTableId status code
+//   OrReturn      -> return a caller-supplied value
+//   OrReturnVoid  -> return; (for void functions)
+//   OrReturnFalse -> return false;
+//   OrContinue    -> continue; (skip to the next loop iteration)
+
 #define LookupMissionOrReturnError(tableId) \
     const auto [missionRow, missionResult] = MissionTableManager::Instance().FindByIdSilent(tableId); \
     do { if (!(missionRow)) { LOG_ERROR << "Mission row not found for ID: " << tableId; return missionResult; } } while(0)
