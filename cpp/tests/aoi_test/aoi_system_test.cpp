@@ -12,7 +12,6 @@
 #include "spatial/system/aoi.h"
 #include <gtest/gtest.h>
 #include "hexagons_grid.h"
-#include "core/network/message_system.h"
 #include "spatial/comp/grid_comp.h"
 #include "spatial/comp/scene_node_scene_comp.h"
 #include "spatial/constants/aoi_priority.h"
