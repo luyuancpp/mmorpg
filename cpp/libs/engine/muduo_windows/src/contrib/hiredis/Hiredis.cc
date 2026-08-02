@@ -25,8 +25,14 @@ Hiredis::Hiredis(EventLoop* loop, const InetAddress& serverAddr)
 Hiredis::~Hiredis()
 {
   LOG_DEBUG << this;
+  // redisAsyncFree 先执行挂起 command 的 null-reply 回调,再通过 ev.cleanup
+  // 注销 Channel。断言必须放在 free 之后,否则正常停机时活跃连接必然触发断言。
+  if (context_)
+  {
+    ::redisAsyncFree(context_);
+    context_ = NULL;
+  }
   assert(!channel_ || channel_->isNoneEvent());
-  ::redisAsyncFree(context_);
 }
 
 bool Hiredis::connected() const
@@ -88,6 +94,12 @@ void Hiredis::setChannel()
 void Hiredis::removeChannel()
 {
   LOG_DEBUG << this;
+  // cleanup 与 disconnect callback 都可能走到这里;hiredis 明确允许 event
+  // cleanup 重复执行,adapter 也必须幂等。
+  if (!channel_)
+  {
+    return;
+  }
   channel_->disableAll();
   channel_->remove();
   loop_->queueInLoop(std::bind(dummy, channel_));
@@ -148,6 +160,13 @@ void Hiredis::connectCallback(int status)
   {
     connectCb_(this, status);
   }
+
+  // 连接失败时 hiredis 会在 connect callback 返回后自动释放 context。
+  // 外部 callback 仍可在返回前读取 errstr,随后必须清空 wrapper 中的悬空指针。
+  if (status != REDIS_OK)
+  {
+    context_ = NULL;
+  }
 }
 
 /* static */ void Hiredis::disconnectCallback(const redisAsyncContext* ac, int status)
@@ -165,6 +184,10 @@ void Hiredis::disconnectCallback(int status)
   {
     disconnectCb_(this, status);
   }
+
+  // hiredis 在 disconnect callback 返回后立即释放 redisAsyncContext;
+  // 及时清空,避免下次重连析构 wrapper 时对悬空指针二次 free。
+  context_ = NULL;
 }
 
 void Hiredis::addRead(void* privdata)
@@ -199,6 +222,7 @@ void Hiredis::cleanup(void* privdata)
 {
   Hiredis* hiredis = static_cast<Hiredis*>(privdata);
   LOG_DEBUG << hiredis;
+  hiredis->removeChannel();
 }
 
 int Hiredis::command(const CommandCallback& cb, muduo::StringArg cmd, ...)
