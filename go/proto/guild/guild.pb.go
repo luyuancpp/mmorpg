@@ -10,6 +10,7 @@ import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	base "proto/common/base"
+	_ "proto/db"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -1335,7 +1336,7 @@ var File_proto_guild_guild_proto protoreflect.FileDescriptor
 
 const file_proto_guild_guild_proto_rawDesc = "" +
 	"\n" +
-	"\x17proto/guild/guild.proto\x12\aguildpb\x1a\x1bproto/common/base/tip.proto\"\xc2\x01\n" +
+	"\x17proto/guild/guild.proto\x12\aguildpb\x1a\x1bproto/db/proto_option.proto\x1a\x1bproto/common/base/tip.proto\"\xc2\x01\n" +
 	"\vGuildMember\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x12\n" +
 	"\x04role\x18\x02 \x01(\rR\x04role\x12 \n" +
@@ -1421,7 +1422,7 @@ const file_proto_guild_guild_proto_rawDesc = "" +
 	"\azone_id\x18\x02 \x01(\rR\x06zoneId\"\x82\x01\n" +
 	"\x1bGetGuildRankByGuildResponse\x124\n" +
 	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\x12-\n" +
-	"\x05entry\x18\x02 \x01(\v2\x17.guildpb.GuildRankEntryR\x05entry2\xa2\x06\n" +
+	"\x05entry\x18\x02 \x01(\v2\x17.guildpb.GuildRankEntryR\x05entry2\xa9\x06\n" +
 	"\fGuildService\x12H\n" +
 	"\vCreateGuild\x12\x1b.guildpb.CreateGuildRequest\x1a\x1c.guildpb.CreateGuildResponse\x12?\n" +
 	"\bGetGuild\x12\x18.guildpb.GetGuildRequest\x1a\x19.guildpb.GetGuildResponse\x12Q\n" +
@@ -1433,7 +1434,7 @@ const file_proto_guild_guild_proto_rawDesc = "" +
 	"\x0fSetAnnouncement\x12\x1f.guildpb.SetAnnouncementRequest\x1a .guildpb.SetAnnouncementResponse\x12W\n" +
 	"\x10UpdateGuildScore\x12 .guildpb.UpdateGuildScoreRequest\x1a!.guildpb.UpdateGuildScoreResponse\x12K\n" +
 	"\fGetGuildRank\x12\x1c.guildpb.GetGuildRankRequest\x1a\x1d.guildpb.GetGuildRankResponse\x12`\n" +
-	"\x13GetGuildRankByGuild\x12#.guildpb.GetGuildRankByGuildRequest\x1a$.guildpb.GetGuildRankByGuildResponseB\rZ\vproto/guildb\x06proto3"
+	"\x13GetGuildRankByGuild\x12#.guildpb.GetGuildRankByGuildRequest\x1a$.guildpb.GetGuildRankByGuildResponse\x1a\x05\x88\xa8\xc3\x01\x01B\rZ\vproto/guildb\x06proto3"
 
 var (
 	file_proto_guild_guild_proto_rawDescOnce sync.Once

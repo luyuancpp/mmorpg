@@ -34,6 +34,11 @@ const (
 // GuildServiceClient is the client API for GuildService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// 客户端经 gate → client_rpc_router 到达(只承诺路由服模式)。
+// 身份与 zone 一律由服务端决定:请求体里的 player_id / zone_id 只对内部调用(无会话)生效。
+// 本开关是服务级的,UpdateGuildScore 也会进 gate 白名单与路由表;
+// 它对客户端的拒绝在 go/guild/internal/session 的方法白名单里(port-decisions D-9)。
 type GuildServiceClient interface {
 	CreateGuild(ctx context.Context, in *CreateGuildRequest, opts ...grpc.CallOption) (*CreateGuildResponse, error)
 	GetGuild(ctx context.Context, in *GetGuildRequest, opts ...grpc.CallOption) (*GetGuildResponse, error)
@@ -159,6 +164,11 @@ func (c *guildServiceClient) GetGuildRankByGuild(ctx context.Context, in *GetGui
 // GuildServiceServer is the server API for GuildService service.
 // All implementations must embed UnimplementedGuildServiceServer
 // for forward compatibility.
+//
+// 客户端经 gate → client_rpc_router 到达(只承诺路由服模式)。
+// 身份与 zone 一律由服务端决定:请求体里的 player_id / zone_id 只对内部调用(无会话)生效。
+// 本开关是服务级的,UpdateGuildScore 也会进 gate 白名单与路由表;
+// 它对客户端的拒绝在 go/guild/internal/session 的方法白名单里(port-decisions D-9)。
 type GuildServiceServer interface {
 	CreateGuild(context.Context, *CreateGuildRequest) (*CreateGuildResponse, error)
 	GetGuild(context.Context, *GetGuildRequest) (*GetGuildResponse, error)
