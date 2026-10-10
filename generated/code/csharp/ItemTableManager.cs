@@ -34,6 +34,8 @@ namespace MmorpgClient.Table
         private static readonly JsonParser s_jsonParser =
             new JsonParser(JsonParser.Settings.Default.WithIgnoreUnknownFields(true));
 
+        private static readonly ItemTable[] s_emptyRows = new ItemTable[0];
+
         [ThreadStatic]
         private static Random s_random;
 
@@ -65,12 +67,14 @@ namespace MmorpgClient.Table
             public readonly ItemTableData Container;
             public readonly RepeatedField<ItemTable> Rows;
             public readonly Dictionary<uint, ItemTable> KvData;
+            public readonly Dictionary<uint, IReadOnlyList<ItemTable>> IdxAffixRule;
 
             public Snapshot(ItemTableData container, int capacity)
             {
                 Container = container;
                 Rows = container.Data;
                 KvData = new Dictionary<uint, ItemTable>(capacity);
+                IdxAffixRule = new Dictionary<uint, IReadOnlyList<ItemTable>>();
             }
         }
 
@@ -117,9 +121,11 @@ namespace MmorpgClient.Table
             {
                 ItemTable row = rows[i];
                 snap.KvData[row.Id] = row;
+                Index(snap.IdxAffixRule, row.AffixRule, row);
             }
 
             // 索引建完了,把所有桶从可变 List 冻成数组 —— 冻之前它们是可以被强转回 List 改掉的。
+            Freeze(snap.IdxAffixRule);
 
             // 原子换快照：到这一行为止读线程看到的都是上一代，之后看到的都是完整的新一代。
             _snapshot = snap;
@@ -162,6 +168,14 @@ namespace MmorpgClient.Table
             get { return _snapshot.KvData; }
         }
 
+        /// <summary>Secondary index lookup on affix_rule; 未命中返回空集合。</summary>
+        public IReadOnlyList<ItemTable> GetByAffixRule(uint key)
+        {
+            Snapshot snap = _snapshot;
+            return Bucket(snap.IdxAffixRule, key);
+        }
+        // FK: affix_rule → EquipAffixRule.id
+
         // ---- Exists ----
 
         public bool Exists(uint id)
@@ -177,6 +191,12 @@ namespace MmorpgClient.Table
         {
             Snapshot snap = _snapshot;
             return snap.Rows.Count;
+        }
+
+        public int CountByAffixRuleIndex(uint key)
+        {
+            Snapshot snap = _snapshot;
+            return Bucket(snap.IdxAffixRule, key).Count;
         }
 
         // ---- FindByIds (IN) ----
@@ -243,6 +263,30 @@ namespace MmorpgClient.Table
         }
 
         // ---- internals ----
+
+        private static void Index<TKey>(Dictionary<TKey, IReadOnlyList<ItemTable>> map, TKey key, ItemTable row)
+        {
+            // 建索引期间桶是 List(要 Add);Rebuild 末尾 Freeze() 会把它换成数组。
+            // 这个向下转换只在 Freeze 之前成立,而 Index 只在 Rebuild 的循环里调用。
+            IReadOnlyList<ItemTable> existing;
+            List<ItemTable> bucket;
+            if (map.TryGetValue(key, out existing))
+            {
+                bucket = (List<ItemTable>)existing;
+            }
+            else
+            {
+                bucket = new List<ItemTable>();
+                map[key] = bucket;
+            }
+            bucket.Add(row);
+        }
+
+        private static IReadOnlyList<ItemTable> Bucket<TKey>(Dictionary<TKey, IReadOnlyList<ItemTable>> map, TKey key)
+        {
+            IReadOnlyList<ItemTable> bucket;
+            return map.TryGetValue(key, out bucket) ? bucket : s_emptyRows;
+        }
 
         /// <summary>
         /// 把索引里的桶从可变 List 冻成数组。**必须在 Rebuild 的最后调用**。

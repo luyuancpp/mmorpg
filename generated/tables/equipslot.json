@@ -11,6 +11,26 @@
   {
    "equip_kind": 2,
    "id": 2
+  },
+  {
+   "equip_kind": 11,
+   "id": 3,
+   "name": "武器"
+  },
+  {
+   "equip_kind": 12,
+   "id": 4,
+   "name": "帽子"
+  },
+  {
+   "equip_kind": 13,
+   "id": 5,
+   "name": "衣服"
+  },
+  {
+   "equip_kind": 14,
+   "id": 6,
+   "name": "鞋子"
   }
  ]
 }

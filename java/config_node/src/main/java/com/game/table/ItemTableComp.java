@@ -53,4 +53,46 @@ public final class ItemTableComp {
         }
     }
 
+    public record Name(String value) {
+        public static Name from(ItemTable row) {
+            return new Name(row.getName());
+        }
+    }
+
+    public record Description(String value) {
+        public static Description from(ItemTable row) {
+            return new Description(row.getDescription());
+        }
+    }
+
+    public record Icon_key(String value) {
+        public static Icon_key from(ItemTable row) {
+            return new Icon_key(row.getIconKey());
+        }
+    }
+
+    public record Equip_level(int value) {
+        public static Equip_level from(ItemTable row) {
+            return new Equip_level(row.getEquipLevel());
+        }
+    }
+
+    public record Equip_class(int value) {
+        public static Equip_class from(ItemTable row) {
+            return new Equip_class(row.getEquipClass());
+        }
+    }
+
+    public record Affix_pool(int value) {
+        public static Affix_pool from(ItemTable row) {
+            return new Affix_pool(row.getAffixPool());
+        }
+    }
+
+    public record Affix_rule(int value) {
+        public static Affix_rule from(ItemTable row) {
+            return new Affix_rule(row.getAffixRule());
+        }
+    }
+
 }

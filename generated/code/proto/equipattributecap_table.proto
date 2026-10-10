@@ -1,0 +1,21 @@
+
+syntax = "proto3";
+
+option go_package = "generated/pb/table";
+
+option java_package = "com.game.table";
+option java_outer_classname = "EquipAttributeCapTableOuterClass";
+option java_multiple_files = true;
+
+
+message EquipAttributeCapTable {
+	uint32 id = 1;
+	uint32 attr_id = 2;
+	uint32 level = 3;
+	uint32 min_value = 4;
+	uint32 cap = 5;
+}
+
+message EquipAttributeCapTableData {
+	repeated EquipAttributeCapTable data = 1;
+}

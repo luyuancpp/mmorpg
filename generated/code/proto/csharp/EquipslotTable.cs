@@ -22,15 +22,15 @@ public static partial class EquipslotTableReflection {
   static EquipslotTableReflection() {
     byte[] descriptorData = global::System.Convert.FromBase64String(
         string.Concat(
-          "ChVlcXVpcHNsb3RfdGFibGUucHJvdG8iMAoORXF1aXBTbG90VGFibGUSCgoC",
-          "aWQYASABKA0SEgoKZXF1aXBfa2luZBgCIAEoDSIzChJFcXVpcFNsb3RUYWJs",
-          "ZURhdGESHQoEZGF0YRgBIAMoCzIPLkVxdWlwU2xvdFRhYmxlQkAKDmNvbS5n",
-          "YW1lLnRhYmxlQhhFcXVpcFNsb3RUYWJsZU91dGVyQ2xhc3NQAVoSZ2VuZXJh",
-          "dGVkL3BiL3RhYmxlYgZwcm90bzM="));
+          "ChVlcXVpcHNsb3RfdGFibGUucHJvdG8iPgoORXF1aXBTbG90VGFibGUSCgoC",
+          "aWQYASABKA0SEgoKZXF1aXBfa2luZBgCIAEoDRIMCgRuYW1lGAMgASgJIjMK",
+          "EkVxdWlwU2xvdFRhYmxlRGF0YRIdCgRkYXRhGAEgAygLMg8uRXF1aXBTbG90",
+          "VGFibGVCQAoOY29tLmdhbWUudGFibGVCGEVxdWlwU2xvdFRhYmxlT3V0ZXJD",
+          "bGFzc1ABWhJnZW5lcmF0ZWQvcGIvdGFibGViBnByb3RvMw=="));
     descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
         new pbr::FileDescriptor[] { },
         new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-          new pbr::GeneratedClrTypeInfo(typeof(global::EquipSlotTable), global::EquipSlotTable.Parser, new[]{ "Id", "EquipKind" }, null, null, null, null),
+          new pbr::GeneratedClrTypeInfo(typeof(global::EquipSlotTable), global::EquipSlotTable.Parser, new[]{ "Id", "EquipKind", "Name" }, null, null, null, null),
           new pbr::GeneratedClrTypeInfo(typeof(global::EquipSlotTableData), global::EquipSlotTableData.Parser, new[]{ "Data" }, null, null, null, null)
         }));
   }
@@ -75,6 +75,7 @@ public sealed partial class EquipSlotTable : pb::IMessage<EquipSlotTable>
   public EquipSlotTable(EquipSlotTable other) : this() {
     id_ = other.id_;
     equipKind_ = other.equipKind_;
+    name_ = other.name_;
     _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
   }
 
@@ -108,6 +109,18 @@ public sealed partial class EquipSlotTable : pb::IMessage<EquipSlotTable>
     }
   }
 
+  /// <summary>Field number for the "name" field.</summary>
+  public const int NameFieldNumber = 3;
+  private string name_ = "";
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public string Name {
+    get { return name_; }
+    set {
+      name_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+    }
+  }
+
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public override bool Equals(object other) {
@@ -125,6 +138,7 @@ public sealed partial class EquipSlotTable : pb::IMessage<EquipSlotTable>
     }
     if (Id != other.Id) return false;
     if (EquipKind != other.EquipKind) return false;
+    if (Name != other.Name) return false;
     return Equals(_unknownFields, other._unknownFields);
   }
 
@@ -134,6 +148,7 @@ public sealed partial class EquipSlotTable : pb::IMessage<EquipSlotTable>
     int hash = 1;
     if (Id != 0) hash ^= Id.GetHashCode();
     if (EquipKind != 0) hash ^= EquipKind.GetHashCode();
+    if (Name.Length != 0) hash ^= Name.GetHashCode();
     if (_unknownFields != null) {
       hash ^= _unknownFields.GetHashCode();
     }
@@ -160,6 +175,10 @@ public sealed partial class EquipSlotTable : pb::IMessage<EquipSlotTable>
       output.WriteRawTag(16);
       output.WriteUInt32(EquipKind);
     }
+    if (Name.Length != 0) {
+      output.WriteRawTag(26);
+      output.WriteString(Name);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(output);
     }
@@ -178,6 +197,10 @@ public sealed partial class EquipSlotTable : pb::IMessage<EquipSlotTable>
       output.WriteRawTag(16);
       output.WriteUInt32(EquipKind);
     }
+    if (Name.Length != 0) {
+      output.WriteRawTag(26);
+      output.WriteString(Name);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(ref output);
     }
@@ -193,6 +216,9 @@ public sealed partial class EquipSlotTable : pb::IMessage<EquipSlotTable>
     }
     if (EquipKind != 0) {
       size += 1 + pb::CodedOutputStream.ComputeUInt32Size(EquipKind);
+    }
+    if (Name.Length != 0) {
+      size += 1 + pb::CodedOutputStream.ComputeStringSize(Name);
     }
     if (_unknownFields != null) {
       size += _unknownFields.CalculateSize();
@@ -211,6 +237,9 @@ public sealed partial class EquipSlotTable : pb::IMessage<EquipSlotTable>
     }
     if (other.EquipKind != 0) {
       EquipKind = other.EquipKind;
+    }
+    if (other.Name.Length != 0) {
+      Name = other.Name;
     }
     _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
   }
@@ -239,6 +268,10 @@ public sealed partial class EquipSlotTable : pb::IMessage<EquipSlotTable>
           EquipKind = input.ReadUInt32();
           break;
         }
+        case 26: {
+          Name = input.ReadString();
+          break;
+        }
       }
     }
   #endif
@@ -264,6 +297,10 @@ public sealed partial class EquipSlotTable : pb::IMessage<EquipSlotTable>
         }
         case 16: {
           EquipKind = input.ReadUInt32();
+          break;
+        }
+        case 26: {
+          Name = input.ReadString();
           break;
         }
       }

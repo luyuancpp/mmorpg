@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x15\x65quipslot_table.proto\"0\n\x0e\x45quipSlotTable\x12\n\n\x02id\x18\x01 \x01(\r\x12\x12\n\nequip_kind\x18\x02 \x01(\r\"3\n\x12\x45quipSlotTableData\x12\x1d\n\x04\x64\x61ta\x18\x01 \x03(\x0b\x32\x0f.EquipSlotTableB@\n\x0e\x63om.game.tableB\x18\x45quipSlotTableOuterClassP\x01Z\x12generated/pb/tableb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x15\x65quipslot_table.proto\">\n\x0e\x45quipSlotTable\x12\n\n\x02id\x18\x01 \x01(\r\x12\x12\n\nequip_kind\x18\x02 \x01(\r\x12\x0c\n\x04name\x18\x03 \x01(\t\"3\n\x12\x45quipSlotTableData\x12\x1d\n\x04\x64\x61ta\x18\x01 \x03(\x0b\x32\x0f.EquipSlotTableB@\n\x0e\x63om.game.tableB\x18\x45quipSlotTableOuterClassP\x01Z\x12generated/pb/tableb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -33,7 +33,7 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._loaded_options = None
   _globals['DESCRIPTOR']._serialized_options = b'\n\016com.game.tableB\030EquipSlotTableOuterClassP\001Z\022generated/pb/table'
   _globals['_EQUIPSLOTTABLE']._serialized_start=25
-  _globals['_EQUIPSLOTTABLE']._serialized_end=73
-  _globals['_EQUIPSLOTTABLEDATA']._serialized_start=75
-  _globals['_EQUIPSLOTTABLEDATA']._serialized_end=126
+  _globals['_EQUIPSLOTTABLE']._serialized_end=87
+  _globals['_EQUIPSLOTTABLEDATA']._serialized_start=89
+  _globals['_EQUIPSLOTTABLEDATA']._serialized_end=140
 # @@protoc_insertion_point(module_scope)

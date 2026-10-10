@@ -22,17 +22,23 @@ public static partial class ItemTableReflection {
   static ItemTableReflection() {
     byte[] descriptorData = global::System.Convert.FromBase64String(
         string.Concat(
-          "ChBpdGVtX3RhYmxlLnByb3RvIooBCglJdGVtVGFibGUSCgoCaWQYASABKA0S",
-          "FgoObWF4X3N0YWNrX3NpemUYAiABKA0SEgoKZXF1aXBfa2luZBgDIAEoDRIV",
-          "Cg1iYXR0bGVfdXNhYmxlGAQgASgNEhYKDmJhdHRsZV9oZWFsX2hwGAUgASgE",
-          "EhYKDmJhdHRsZV9oZWFsX21wGAYgASgEIikKDUl0ZW1UYWJsZURhdGESGAoE",
-          "ZGF0YRgBIAMoCzIKLkl0ZW1UYWJsZUI7Cg5jb20uZ2FtZS50YWJsZUITSXRl",
-          "bVRhYmxlT3V0ZXJDbGFzc1ABWhJnZW5lcmF0ZWQvcGIvdGFibGViBnByb3Rv",
-          "Mw=="));
+          "ChBpdGVtX3RhYmxlLnByb3RvIj4KDUl0ZW1iYXNlX2F0dHISFAoMYmFzZV9h",
+          "dHRyX2lkGAEgASgNEhcKD2Jhc2VfYXR0cl92YWx1ZRgCIAEoDSK0AgoJSXRl",
+          "bVRhYmxlEgoKAmlkGAEgASgNEhYKDm1heF9zdGFja19zaXplGAIgASgNEhIK",
+          "CmVxdWlwX2tpbmQYAyABKA0SFQoNYmF0dGxlX3VzYWJsZRgEIAEoDRIWCg5i",
+          "YXR0bGVfaGVhbF9ocBgFIAEoBBIWCg5iYXR0bGVfaGVhbF9tcBgGIAEoBBIM",
+          "CgRuYW1lGAcgASgJEhMKC2Rlc2NyaXB0aW9uGAggASgJEhAKCGljb25fa2V5",
+          "GAkgASgJEhMKC2VxdWlwX2xldmVsGAogASgNEhMKC2VxdWlwX2NsYXNzGAsg",
+          "ASgNEhIKCmFmZml4X3Bvb2wYDCABKA0SEgoKYWZmaXhfcnVsZRgNIAEoDRIh",
+          "CgliYXNlX2F0dHIYDiADKAsyDi5JdGVtYmFzZV9hdHRyIikKDUl0ZW1UYWJs",
+          "ZURhdGESGAoEZGF0YRgBIAMoCzIKLkl0ZW1UYWJsZUI7Cg5jb20uZ2FtZS50",
+          "YWJsZUITSXRlbVRhYmxlT3V0ZXJDbGFzc1ABWhJnZW5lcmF0ZWQvcGIvdGFi",
+          "bGViBnByb3RvMw=="));
     descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
         new pbr::FileDescriptor[] { },
         new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-          new pbr::GeneratedClrTypeInfo(typeof(global::ItemTable), global::ItemTable.Parser, new[]{ "Id", "MaxStackSize", "EquipKind", "BattleUsable", "BattleHealHp", "BattleHealMp" }, null, null, null, null),
+          new pbr::GeneratedClrTypeInfo(typeof(global::Itembase_attr), global::Itembase_attr.Parser, new[]{ "BaseAttrId", "BaseAttrValue" }, null, null, null, null),
+          new pbr::GeneratedClrTypeInfo(typeof(global::ItemTable), global::ItemTable.Parser, new[]{ "Id", "MaxStackSize", "EquipKind", "BattleUsable", "BattleHealHp", "BattleHealMp", "Name", "Description", "IconKey", "EquipLevel", "EquipClass", "AffixPool", "AffixRule", "BaseAttr" }, null, null, null, null),
           new pbr::GeneratedClrTypeInfo(typeof(global::ItemTableData), global::ItemTableData.Parser, new[]{ "Data" }, null, null, null, null)
         }));
   }
@@ -40,6 +46,241 @@ public static partial class ItemTableReflection {
 
 }
 #region Messages
+[global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+public sealed partial class Itembase_attr : pb::IMessage<Itembase_attr>
+#if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    , pb::IBufferMessage
+#endif
+{
+  private static readonly pb::MessageParser<Itembase_attr> _parser = new pb::MessageParser<Itembase_attr>(() => new Itembase_attr());
+  private pb::UnknownFieldSet _unknownFields;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public static pb::MessageParser<Itembase_attr> Parser { get { return _parser; } }
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public static pbr::MessageDescriptor Descriptor {
+    get { return global::ItemTableReflection.Descriptor.MessageTypes[0]; }
+  }
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  pbr::MessageDescriptor pb::IMessage.Descriptor {
+    get { return Descriptor; }
+  }
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public Itembase_attr() {
+    OnConstruction();
+  }
+
+  partial void OnConstruction();
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public Itembase_attr(Itembase_attr other) : this() {
+    baseAttrId_ = other.baseAttrId_;
+    baseAttrValue_ = other.baseAttrValue_;
+    _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+  }
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public Itembase_attr Clone() {
+    return new Itembase_attr(this);
+  }
+
+  /// <summary>Field number for the "base_attr_id" field.</summary>
+  public const int BaseAttrIdFieldNumber = 1;
+  private uint baseAttrId_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public uint BaseAttrId {
+    get { return baseAttrId_; }
+    set {
+      baseAttrId_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "base_attr_value" field.</summary>
+  public const int BaseAttrValueFieldNumber = 2;
+  private uint baseAttrValue_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public uint BaseAttrValue {
+    get { return baseAttrValue_; }
+    set {
+      baseAttrValue_ = value;
+    }
+  }
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public override bool Equals(object other) {
+    return Equals(other as Itembase_attr);
+  }
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public bool Equals(Itembase_attr other) {
+    if (ReferenceEquals(other, null)) {
+      return false;
+    }
+    if (ReferenceEquals(other, this)) {
+      return true;
+    }
+    if (BaseAttrId != other.BaseAttrId) return false;
+    if (BaseAttrValue != other.BaseAttrValue) return false;
+    return Equals(_unknownFields, other._unknownFields);
+  }
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public override int GetHashCode() {
+    int hash = 1;
+    if (BaseAttrId != 0) hash ^= BaseAttrId.GetHashCode();
+    if (BaseAttrValue != 0) hash ^= BaseAttrValue.GetHashCode();
+    if (_unknownFields != null) {
+      hash ^= _unknownFields.GetHashCode();
+    }
+    return hash;
+  }
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public override string ToString() {
+    return pb::JsonFormatter.ToDiagnosticString(this);
+  }
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public void WriteTo(pb::CodedOutputStream output) {
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    output.WriteRawMessage(this);
+  #else
+    if (BaseAttrId != 0) {
+      output.WriteRawTag(8);
+      output.WriteUInt32(BaseAttrId);
+    }
+    if (BaseAttrValue != 0) {
+      output.WriteRawTag(16);
+      output.WriteUInt32(BaseAttrValue);
+    }
+    if (_unknownFields != null) {
+      _unknownFields.WriteTo(output);
+    }
+  #endif
+  }
+
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+    if (BaseAttrId != 0) {
+      output.WriteRawTag(8);
+      output.WriteUInt32(BaseAttrId);
+    }
+    if (BaseAttrValue != 0) {
+      output.WriteRawTag(16);
+      output.WriteUInt32(BaseAttrValue);
+    }
+    if (_unknownFields != null) {
+      _unknownFields.WriteTo(ref output);
+    }
+  }
+  #endif
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int CalculateSize() {
+    int size = 0;
+    if (BaseAttrId != 0) {
+      size += 1 + pb::CodedOutputStream.ComputeUInt32Size(BaseAttrId);
+    }
+    if (BaseAttrValue != 0) {
+      size += 1 + pb::CodedOutputStream.ComputeUInt32Size(BaseAttrValue);
+    }
+    if (_unknownFields != null) {
+      size += _unknownFields.CalculateSize();
+    }
+    return size;
+  }
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public void MergeFrom(Itembase_attr other) {
+    if (other == null) {
+      return;
+    }
+    if (other.BaseAttrId != 0) {
+      BaseAttrId = other.BaseAttrId;
+    }
+    if (other.BaseAttrValue != 0) {
+      BaseAttrValue = other.BaseAttrValue;
+    }
+    _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+  }
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public void MergeFrom(pb::CodedInputStream input) {
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    input.ReadRawMessage(this);
+  #else
+    uint tag;
+    while ((tag = input.ReadTag()) != 0) {
+    if ((tag & 7) == 4) {
+      // Abort on any end group tag.
+      return;
+    }
+    switch(tag) {
+        default:
+          _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+          break;
+        case 8: {
+          BaseAttrId = input.ReadUInt32();
+          break;
+        }
+        case 16: {
+          BaseAttrValue = input.ReadUInt32();
+          break;
+        }
+      }
+    }
+  #endif
+  }
+
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+    uint tag;
+    while ((tag = input.ReadTag()) != 0) {
+    if ((tag & 7) == 4) {
+      // Abort on any end group tag.
+      return;
+    }
+    switch(tag) {
+        default:
+          _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+          break;
+        case 8: {
+          BaseAttrId = input.ReadUInt32();
+          break;
+        }
+        case 16: {
+          BaseAttrValue = input.ReadUInt32();
+          break;
+        }
+      }
+    }
+  }
+  #endif
+
+}
+
 [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
 public sealed partial class ItemTable : pb::IMessage<ItemTable>
 #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
@@ -55,7 +296,7 @@ public sealed partial class ItemTable : pb::IMessage<ItemTable>
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public static pbr::MessageDescriptor Descriptor {
-    get { return global::ItemTableReflection.Descriptor.MessageTypes[0]; }
+    get { return global::ItemTableReflection.Descriptor.MessageTypes[1]; }
   }
 
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -81,6 +322,14 @@ public sealed partial class ItemTable : pb::IMessage<ItemTable>
     battleUsable_ = other.battleUsable_;
     battleHealHp_ = other.battleHealHp_;
     battleHealMp_ = other.battleHealMp_;
+    name_ = other.name_;
+    description_ = other.description_;
+    iconKey_ = other.iconKey_;
+    equipLevel_ = other.equipLevel_;
+    equipClass_ = other.equipClass_;
+    affixPool_ = other.affixPool_;
+    affixRule_ = other.affixRule_;
+    baseAttr_ = other.baseAttr_.Clone();
     _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
   }
 
@@ -162,6 +411,101 @@ public sealed partial class ItemTable : pb::IMessage<ItemTable>
     }
   }
 
+  /// <summary>Field number for the "name" field.</summary>
+  public const int NameFieldNumber = 7;
+  private string name_ = "";
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public string Name {
+    get { return name_; }
+    set {
+      name_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+    }
+  }
+
+  /// <summary>Field number for the "description" field.</summary>
+  public const int DescriptionFieldNumber = 8;
+  private string description_ = "";
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public string Description {
+    get { return description_; }
+    set {
+      description_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+    }
+  }
+
+  /// <summary>Field number for the "icon_key" field.</summary>
+  public const int IconKeyFieldNumber = 9;
+  private string iconKey_ = "";
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public string IconKey {
+    get { return iconKey_; }
+    set {
+      iconKey_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+    }
+  }
+
+  /// <summary>Field number for the "equip_level" field.</summary>
+  public const int EquipLevelFieldNumber = 10;
+  private uint equipLevel_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public uint EquipLevel {
+    get { return equipLevel_; }
+    set {
+      equipLevel_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "equip_class" field.</summary>
+  public const int EquipClassFieldNumber = 11;
+  private uint equipClass_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public uint EquipClass {
+    get { return equipClass_; }
+    set {
+      equipClass_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "affix_pool" field.</summary>
+  public const int AffixPoolFieldNumber = 12;
+  private uint affixPool_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public uint AffixPool {
+    get { return affixPool_; }
+    set {
+      affixPool_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "affix_rule" field.</summary>
+  public const int AffixRuleFieldNumber = 13;
+  private uint affixRule_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public uint AffixRule {
+    get { return affixRule_; }
+    set {
+      affixRule_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "base_attr" field.</summary>
+  public const int BaseAttrFieldNumber = 14;
+  private static readonly pb::FieldCodec<global::Itembase_attr> _repeated_baseAttr_codec
+      = pb::FieldCodec.ForMessage(114, global::Itembase_attr.Parser);
+  private readonly pbc::RepeatedField<global::Itembase_attr> baseAttr_ = new pbc::RepeatedField<global::Itembase_attr>();
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public pbc::RepeatedField<global::Itembase_attr> BaseAttr {
+    get { return baseAttr_; }
+  }
+
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public override bool Equals(object other) {
@@ -183,6 +527,14 @@ public sealed partial class ItemTable : pb::IMessage<ItemTable>
     if (BattleUsable != other.BattleUsable) return false;
     if (BattleHealHp != other.BattleHealHp) return false;
     if (BattleHealMp != other.BattleHealMp) return false;
+    if (Name != other.Name) return false;
+    if (Description != other.Description) return false;
+    if (IconKey != other.IconKey) return false;
+    if (EquipLevel != other.EquipLevel) return false;
+    if (EquipClass != other.EquipClass) return false;
+    if (AffixPool != other.AffixPool) return false;
+    if (AffixRule != other.AffixRule) return false;
+    if(!baseAttr_.Equals(other.baseAttr_)) return false;
     return Equals(_unknownFields, other._unknownFields);
   }
 
@@ -196,6 +548,14 @@ public sealed partial class ItemTable : pb::IMessage<ItemTable>
     if (BattleUsable != 0) hash ^= BattleUsable.GetHashCode();
     if (BattleHealHp != 0UL) hash ^= BattleHealHp.GetHashCode();
     if (BattleHealMp != 0UL) hash ^= BattleHealMp.GetHashCode();
+    if (Name.Length != 0) hash ^= Name.GetHashCode();
+    if (Description.Length != 0) hash ^= Description.GetHashCode();
+    if (IconKey.Length != 0) hash ^= IconKey.GetHashCode();
+    if (EquipLevel != 0) hash ^= EquipLevel.GetHashCode();
+    if (EquipClass != 0) hash ^= EquipClass.GetHashCode();
+    if (AffixPool != 0) hash ^= AffixPool.GetHashCode();
+    if (AffixRule != 0) hash ^= AffixRule.GetHashCode();
+    hash ^= baseAttr_.GetHashCode();
     if (_unknownFields != null) {
       hash ^= _unknownFields.GetHashCode();
     }
@@ -238,6 +598,35 @@ public sealed partial class ItemTable : pb::IMessage<ItemTable>
       output.WriteRawTag(48);
       output.WriteUInt64(BattleHealMp);
     }
+    if (Name.Length != 0) {
+      output.WriteRawTag(58);
+      output.WriteString(Name);
+    }
+    if (Description.Length != 0) {
+      output.WriteRawTag(66);
+      output.WriteString(Description);
+    }
+    if (IconKey.Length != 0) {
+      output.WriteRawTag(74);
+      output.WriteString(IconKey);
+    }
+    if (EquipLevel != 0) {
+      output.WriteRawTag(80);
+      output.WriteUInt32(EquipLevel);
+    }
+    if (EquipClass != 0) {
+      output.WriteRawTag(88);
+      output.WriteUInt32(EquipClass);
+    }
+    if (AffixPool != 0) {
+      output.WriteRawTag(96);
+      output.WriteUInt32(AffixPool);
+    }
+    if (AffixRule != 0) {
+      output.WriteRawTag(104);
+      output.WriteUInt32(AffixRule);
+    }
+    baseAttr_.WriteTo(output, _repeated_baseAttr_codec);
     if (_unknownFields != null) {
       _unknownFields.WriteTo(output);
     }
@@ -272,6 +661,35 @@ public sealed partial class ItemTable : pb::IMessage<ItemTable>
       output.WriteRawTag(48);
       output.WriteUInt64(BattleHealMp);
     }
+    if (Name.Length != 0) {
+      output.WriteRawTag(58);
+      output.WriteString(Name);
+    }
+    if (Description.Length != 0) {
+      output.WriteRawTag(66);
+      output.WriteString(Description);
+    }
+    if (IconKey.Length != 0) {
+      output.WriteRawTag(74);
+      output.WriteString(IconKey);
+    }
+    if (EquipLevel != 0) {
+      output.WriteRawTag(80);
+      output.WriteUInt32(EquipLevel);
+    }
+    if (EquipClass != 0) {
+      output.WriteRawTag(88);
+      output.WriteUInt32(EquipClass);
+    }
+    if (AffixPool != 0) {
+      output.WriteRawTag(96);
+      output.WriteUInt32(AffixPool);
+    }
+    if (AffixRule != 0) {
+      output.WriteRawTag(104);
+      output.WriteUInt32(AffixRule);
+    }
+    baseAttr_.WriteTo(ref output, _repeated_baseAttr_codec);
     if (_unknownFields != null) {
       _unknownFields.WriteTo(ref output);
     }
@@ -300,6 +718,28 @@ public sealed partial class ItemTable : pb::IMessage<ItemTable>
     if (BattleHealMp != 0UL) {
       size += 1 + pb::CodedOutputStream.ComputeUInt64Size(BattleHealMp);
     }
+    if (Name.Length != 0) {
+      size += 1 + pb::CodedOutputStream.ComputeStringSize(Name);
+    }
+    if (Description.Length != 0) {
+      size += 1 + pb::CodedOutputStream.ComputeStringSize(Description);
+    }
+    if (IconKey.Length != 0) {
+      size += 1 + pb::CodedOutputStream.ComputeStringSize(IconKey);
+    }
+    if (EquipLevel != 0) {
+      size += 1 + pb::CodedOutputStream.ComputeUInt32Size(EquipLevel);
+    }
+    if (EquipClass != 0) {
+      size += 1 + pb::CodedOutputStream.ComputeUInt32Size(EquipClass);
+    }
+    if (AffixPool != 0) {
+      size += 1 + pb::CodedOutputStream.ComputeUInt32Size(AffixPool);
+    }
+    if (AffixRule != 0) {
+      size += 1 + pb::CodedOutputStream.ComputeUInt32Size(AffixRule);
+    }
+    size += baseAttr_.CalculateSize(_repeated_baseAttr_codec);
     if (_unknownFields != null) {
       size += _unknownFields.CalculateSize();
     }
@@ -330,6 +770,28 @@ public sealed partial class ItemTable : pb::IMessage<ItemTable>
     if (other.BattleHealMp != 0UL) {
       BattleHealMp = other.BattleHealMp;
     }
+    if (other.Name.Length != 0) {
+      Name = other.Name;
+    }
+    if (other.Description.Length != 0) {
+      Description = other.Description;
+    }
+    if (other.IconKey.Length != 0) {
+      IconKey = other.IconKey;
+    }
+    if (other.EquipLevel != 0) {
+      EquipLevel = other.EquipLevel;
+    }
+    if (other.EquipClass != 0) {
+      EquipClass = other.EquipClass;
+    }
+    if (other.AffixPool != 0) {
+      AffixPool = other.AffixPool;
+    }
+    if (other.AffixRule != 0) {
+      AffixRule = other.AffixRule;
+    }
+    baseAttr_.Add(other.baseAttr_);
     _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
   }
 
@@ -371,6 +833,38 @@ public sealed partial class ItemTable : pb::IMessage<ItemTable>
         }
         case 48: {
           BattleHealMp = input.ReadUInt64();
+          break;
+        }
+        case 58: {
+          Name = input.ReadString();
+          break;
+        }
+        case 66: {
+          Description = input.ReadString();
+          break;
+        }
+        case 74: {
+          IconKey = input.ReadString();
+          break;
+        }
+        case 80: {
+          EquipLevel = input.ReadUInt32();
+          break;
+        }
+        case 88: {
+          EquipClass = input.ReadUInt32();
+          break;
+        }
+        case 96: {
+          AffixPool = input.ReadUInt32();
+          break;
+        }
+        case 104: {
+          AffixRule = input.ReadUInt32();
+          break;
+        }
+        case 114: {
+          baseAttr_.AddEntriesFrom(input, _repeated_baseAttr_codec);
           break;
         }
       }
@@ -416,6 +910,38 @@ public sealed partial class ItemTable : pb::IMessage<ItemTable>
           BattleHealMp = input.ReadUInt64();
           break;
         }
+        case 58: {
+          Name = input.ReadString();
+          break;
+        }
+        case 66: {
+          Description = input.ReadString();
+          break;
+        }
+        case 74: {
+          IconKey = input.ReadString();
+          break;
+        }
+        case 80: {
+          EquipLevel = input.ReadUInt32();
+          break;
+        }
+        case 88: {
+          EquipClass = input.ReadUInt32();
+          break;
+        }
+        case 96: {
+          AffixPool = input.ReadUInt32();
+          break;
+        }
+        case 104: {
+          AffixRule = input.ReadUInt32();
+          break;
+        }
+        case 114: {
+          baseAttr_.AddEntriesFrom(ref input, _repeated_baseAttr_codec);
+          break;
+        }
       }
     }
   }
@@ -438,7 +964,7 @@ public sealed partial class ItemTableData : pb::IMessage<ItemTableData>
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public static pbr::MessageDescriptor Descriptor {
-    get { return global::ItemTableReflection.Descriptor.MessageTypes[1]; }
+    get { return global::ItemTableReflection.Descriptor.MessageTypes[2]; }
   }
 
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]

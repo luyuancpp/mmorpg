@@ -40,6 +40,20 @@
 
 #include "CfgItemRow.generated.h"
 
+/// Item.base_attr 的子消息行。
+USTRUCT(BlueprintType)
+struct FCfgItemBaseAttr
+{
+	GENERATED_BODY()
+
+	/** 基础属性:每槽 (EquipAttribute.id, 数值),最多 3 条;用不到的槽留空,不要填 0 */
+	UPROPERTY(BlueprintReadOnly, Category = "Config|Item")
+	int32 base_attr_id = 0;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Config|Item")
+	int32 base_attr_value = 0;
+};
+
 /// Item 的一行。字段名与 item.json 的键逐字符一致(snake_case),
 /// 见文件头「字段名口径」。
 ///
@@ -77,4 +91,35 @@ struct FCfgItemRow : public FTableRowBase
 	/** 战斗内使用回复的法力值(0=不回蓝)。按当前属性单位(法力 ×4)填 */
 	UPROPERTY(BlueprintReadOnly, Category = "Config|Item")
 	int64 battle_heal_mp = 0;
+
+	/** 物品名(下发客户端) */
+	UPROPERTY(BlueprintReadOnly, Category = "Config|Item")
+	FString name;
+
+	/** 描述(下发客户端 tooltip) */
+	UPROPERTY(BlueprintReadOnly, Category = "Config|Item")
+	FString description;
+
+	/** 图标 Resources 路径(UI/ 开头,不带扩展名);空 = 客户端兜底图标 */
+	UPROPERTY(BlueprintReadOnly, Category = "Config|Item")
+	FString icon_key;
+
+	/** 佩戴等级,同时是查属性上限(EquipAttributeCap)用的装备等级 */
+	UPROPERTY(BlueprintReadOnly, Category = "Config|Item")
+	int32 equip_level = 0;
+
+	/** 职业要求(Class.id);0 = 不限 */
+	UPROPERTY(BlueprintReadOnly, Category = "Config|Item")
+	int32 equip_class = 0;
+
+	/** 随机属性池(EquipAffixPool.pool_id,不是那张表的主键,所以不设外键);0 = 不掷 */
+	UPROPERTY(BlueprintReadOnly, Category = "Config|Item")
+	int32 affix_pool = 0;
+
+	/** 掷值规则。FK -> EquipAffixRule.id;0 = 不掷 */
+	UPROPERTY(BlueprintReadOnly, Category = "Config|Item")
+	int32 affix_rule = 0;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Config|Item")
+	TArray<FCfgItemBaseAttr> base_attr;
 };
