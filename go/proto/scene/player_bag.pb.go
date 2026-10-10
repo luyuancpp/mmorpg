@@ -24,24 +24,185 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// 实例与布局分离；显示信息不写入玩家持久化记录。
-type BagItemInfo struct {
+// 装备 tooltip 的一行属性(设计文档 docs/design/equipment-attributes.md §3.2)。
+// 客户端零配表:名称、上限、是否百分比全部由服务器下发。
+type EquipAttrLineInfo struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ItemId        uint64                 `protobuf:"varint,1,opt,name=item_id,json=itemId,proto3" json:"item_id,omitempty"`
-	ConfigId      uint32                 `protobuf:"varint,2,opt,name=config_id,json=configId,proto3" json:"config_id,omitempty"`
-	Count         uint32                 `protobuf:"varint,3,opt,name=count,proto3" json:"count,omitempty"`
-	MaxStack      uint32                 `protobuf:"varint,4,opt,name=max_stack,json=maxStack,proto3" json:"max_stack,omitempty"`
-	EquipKind     uint32                 `protobuf:"varint,5,opt,name=equip_kind,json=equipKind,proto3" json:"equip_kind,omitempty"`
-	Name          string                 `protobuf:"bytes,6,opt,name=name,proto3" json:"name,omitempty"` // 当前物品表尚无展示字段，缺配时为空。
-	Description   string                 `protobuf:"bytes,7,opt,name=description,proto3" json:"description,omitempty"`
-	IconKey       string                 `protobuf:"bytes,8,opt,name=icon_key,json=iconKey,proto3" json:"icon_key,omitempty"`
+	AttrId        uint32                 `protobuf:"varint,1,opt,name=attr_id,json=attrId,proto3" json:"attr_id,omitempty"` // EquipAttribute 表 id
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Tier          uint32                 `protobuf:"varint,3,opt,name=tier,proto3" json:"tier,omitempty"`       // 0 基础属性 / 1 蓝 / 2 粉 / 3 黄 / 4 绿(预留)
+	Value         uint64                 `protobuf:"varint,4,opt,name=value,proto3" json:"value,omitempty"`     // 当前值(已按当前表上限夹取)
+	Cap           uint64                 `protobuf:"varint,5,opt,name=cap,proto3" json:"cap,omitempty"`         // 上限;基础属性行为 0,客户端不显示「/上限」
+	Percent       bool                   `protobuf:"varint,6,opt,name=percent,proto3" json:"percent,omitempty"` // true = 显示成 N%
+	Seq           uint32                 `protobuf:"varint,7,opt,name=seq,proto3" json:"seq,omitempty"`         // 档内序号;显示顺序 = (tier, seq)
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
+func (x *EquipAttrLineInfo) Reset() {
+	*x = EquipAttrLineInfo{}
+	mi := &file_proto_scene_player_bag_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EquipAttrLineInfo) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EquipAttrLineInfo) ProtoMessage() {}
+
+func (x *EquipAttrLineInfo) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_scene_player_bag_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EquipAttrLineInfo.ProtoReflect.Descriptor instead.
+func (*EquipAttrLineInfo) Descriptor() ([]byte, []int) {
+	return file_proto_scene_player_bag_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *EquipAttrLineInfo) GetAttrId() uint32 {
+	if x != nil {
+		return x.AttrId
+	}
+	return 0
+}
+
+func (x *EquipAttrLineInfo) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *EquipAttrLineInfo) GetTier() uint32 {
+	if x != nil {
+		return x.Tier
+	}
+	return 0
+}
+
+func (x *EquipAttrLineInfo) GetValue() uint64 {
+	if x != nil {
+		return x.Value
+	}
+	return 0
+}
+
+func (x *EquipAttrLineInfo) GetCap() uint64 {
+	if x != nil {
+		return x.Cap
+	}
+	return 0
+}
+
+func (x *EquipAttrLineInfo) GetPercent() bool {
+	if x != nil {
+		return x.Percent
+	}
+	return false
+}
+
+func (x *EquipAttrLineInfo) GetSeq() uint32 {
+	if x != nil {
+		return x.Seq
+	}
+	return 0
+}
+
+// 装备栏的一个槽位定义(含空槽),客户端据此画出全部栏位。
+type EquipSlotInfo struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Slot          uint32                 `protobuf:"varint,1,opt,name=slot,proto3" json:"slot,omitempty"`
+	EquipKind     uint32                 `protobuf:"varint,2,opt,name=equip_kind,json=equipKind,proto3" json:"equip_kind,omitempty"`
+	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"` // 部位名(武器 / 帽子 …);只有「没配名字却被占着」的槽才会为空
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EquipSlotInfo) Reset() {
+	*x = EquipSlotInfo{}
+	mi := &file_proto_scene_player_bag_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EquipSlotInfo) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EquipSlotInfo) ProtoMessage() {}
+
+func (x *EquipSlotInfo) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_scene_player_bag_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EquipSlotInfo.ProtoReflect.Descriptor instead.
+func (*EquipSlotInfo) Descriptor() ([]byte, []int) {
+	return file_proto_scene_player_bag_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *EquipSlotInfo) GetSlot() uint32 {
+	if x != nil {
+		return x.Slot
+	}
+	return 0
+}
+
+func (x *EquipSlotInfo) GetEquipKind() uint32 {
+	if x != nil {
+		return x.EquipKind
+	}
+	return 0
+}
+
+func (x *EquipSlotInfo) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+// 实例与布局分离；显示信息不写入玩家持久化记录。
+type BagItemInfo struct {
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	ItemId      uint64                 `protobuf:"varint,1,opt,name=item_id,json=itemId,proto3" json:"item_id,omitempty"`
+	ConfigId    uint32                 `protobuf:"varint,2,opt,name=config_id,json=configId,proto3" json:"config_id,omitempty"`
+	Count       uint32                 `protobuf:"varint,3,opt,name=count,proto3" json:"count,omitempty"`
+	MaxStack    uint32                 `protobuf:"varint,4,opt,name=max_stack,json=maxStack,proto3" json:"max_stack,omitempty"`
+	EquipKind   uint32                 `protobuf:"varint,5,opt,name=equip_kind,json=equipKind,proto3" json:"equip_kind,omitempty"`
+	Name        string                 `protobuf:"bytes,6,opt,name=name,proto3" json:"name,omitempty"` // 来自物品表;缺配时为空,客户端不许编造。
+	Description string                 `protobuf:"bytes,7,opt,name=description,proto3" json:"description,omitempty"`
+	IconKey     string                 `protobuf:"bytes,8,opt,name=icon_key,json=iconKey,proto3" json:"icon_key,omitempty"`
+	// ── 以下仅装备(equip_kind != 0)有意义 ──
+	EquipLevel     uint32               `protobuf:"varint,9,opt,name=equip_level,json=equipLevel,proto3" json:"equip_level,omitempty"`               // 佩戴等级
+	EquipClass     uint32               `protobuf:"varint,10,opt,name=equip_class,json=equipClass,proto3" json:"equip_class,omitempty"`              // 职业要求,0 = 不限
+	EquipClassName string               `protobuf:"bytes,11,opt,name=equip_class_name,json=equipClassName,proto3" json:"equip_class_name,omitempty"` // 职业名;职业表无名称列时为空
+	BaseAttrs      []*EquipAttrLineInfo `protobuf:"bytes,12,rep,name=base_attrs,json=baseAttrs,proto3" json:"base_attrs,omitempty"`                  // 基础属性,seq 升序
+	Affixes        []*EquipAttrLineInfo `protobuf:"bytes,13,rep,name=affixes,proto3" json:"affixes,omitempty"`                                       // 随机属性,已按 (tier, seq) 排好
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
 func (x *BagItemInfo) Reset() {
 	*x = BagItemInfo{}
-	mi := &file_proto_scene_player_bag_proto_msgTypes[0]
+	mi := &file_proto_scene_player_bag_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -53,7 +214,7 @@ func (x *BagItemInfo) String() string {
 func (*BagItemInfo) ProtoMessage() {}
 
 func (x *BagItemInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_player_bag_proto_msgTypes[0]
+	mi := &file_proto_scene_player_bag_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -66,7 +227,7 @@ func (x *BagItemInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BagItemInfo.ProtoReflect.Descriptor instead.
 func (*BagItemInfo) Descriptor() ([]byte, []int) {
-	return file_proto_scene_player_bag_proto_rawDescGZIP(), []int{0}
+	return file_proto_scene_player_bag_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *BagItemInfo) GetItemId() uint64 {
@@ -125,6 +286,41 @@ func (x *BagItemInfo) GetIconKey() string {
 	return ""
 }
 
+func (x *BagItemInfo) GetEquipLevel() uint32 {
+	if x != nil {
+		return x.EquipLevel
+	}
+	return 0
+}
+
+func (x *BagItemInfo) GetEquipClass() uint32 {
+	if x != nil {
+		return x.EquipClass
+	}
+	return 0
+}
+
+func (x *BagItemInfo) GetEquipClassName() string {
+	if x != nil {
+		return x.EquipClassName
+	}
+	return ""
+}
+
+func (x *BagItemInfo) GetBaseAttrs() []*EquipAttrLineInfo {
+	if x != nil {
+		return x.BaseAttrs
+	}
+	return nil
+}
+
+func (x *BagItemInfo) GetAffixes() []*EquipAttrLineInfo {
+	if x != nil {
+		return x.Affixes
+	}
+	return nil
+}
+
 type BagSlotInfo struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Slot          uint32                 `protobuf:"varint,1,opt,name=slot,proto3" json:"slot,omitempty"`
@@ -137,7 +333,7 @@ type BagSlotInfo struct {
 
 func (x *BagSlotInfo) Reset() {
 	*x = BagSlotInfo{}
-	mi := &file_proto_scene_player_bag_proto_msgTypes[1]
+	mi := &file_proto_scene_player_bag_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -149,7 +345,7 @@ func (x *BagSlotInfo) String() string {
 func (*BagSlotInfo) ProtoMessage() {}
 
 func (x *BagSlotInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_player_bag_proto_msgTypes[1]
+	mi := &file_proto_scene_player_bag_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -162,7 +358,7 @@ func (x *BagSlotInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BagSlotInfo.ProtoReflect.Descriptor instead.
 func (*BagSlotInfo) Descriptor() ([]byte, []int) {
-	return file_proto_scene_player_bag_proto_rawDescGZIP(), []int{1}
+	return file_proto_scene_player_bag_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *BagSlotInfo) GetSlot() uint32 {
@@ -194,18 +390,21 @@ func (x *BagSlotInfo) GetHeight() uint32 {
 }
 
 type BagLayoutInfo struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	BagType       uint32                 `protobuf:"varint,1,opt,name=bag_type,json=bagType,proto3" json:"bag_type,omitempty"` // 0 人物背包 / 1 仓库 / 2 装备栏 / 3 临时格。
-	Capacity      uint32                 `protobuf:"varint,2,opt,name=capacity,proto3" json:"capacity,omitempty"`
-	Slots         []*BagSlotInfo         `protobuf:"bytes,3,rep,name=slots,proto3" json:"slots,omitempty"` // 顺序无语义，位置只认 slot。
-	CanSort       bool                   `protobuf:"varint,4,opt,name=can_sort,json=canSort,proto3" json:"can_sort,omitempty"`
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	BagType  uint32                 `protobuf:"varint,1,opt,name=bag_type,json=bagType,proto3" json:"bag_type,omitempty"` // 0 人物背包 / 1 仓库 / 2 装备栏 / 3 临时格。
+	Capacity uint32                 `protobuf:"varint,2,opt,name=capacity,proto3" json:"capacity,omitempty"`
+	Slots    []*BagSlotInfo         `protobuf:"bytes,3,rep,name=slots,proto3" json:"slots,omitempty"` // 顺序无语义，位置只认 slot。
+	CanSort  bool                   `protobuf:"varint,4,opt,name=can_sort,json=canSort,proto3" json:"can_sort,omitempty"`
+	// 仅装备栏(bag_type = 2):槽位定义,slot 升序。服务器只下发容量内的槽;
+	// 没配部位名的槽(不对玩家展示)只在被占用时才下发。
+	EquipSlots    []*EquipSlotInfo `protobuf:"bytes,5,rep,name=equip_slots,json=equipSlots,proto3" json:"equip_slots,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *BagLayoutInfo) Reset() {
 	*x = BagLayoutInfo{}
-	mi := &file_proto_scene_player_bag_proto_msgTypes[2]
+	mi := &file_proto_scene_player_bag_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -217,7 +416,7 @@ func (x *BagLayoutInfo) String() string {
 func (*BagLayoutInfo) ProtoMessage() {}
 
 func (x *BagLayoutInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_player_bag_proto_msgTypes[2]
+	mi := &file_proto_scene_player_bag_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -230,7 +429,7 @@ func (x *BagLayoutInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BagLayoutInfo.ProtoReflect.Descriptor instead.
 func (*BagLayoutInfo) Descriptor() ([]byte, []int) {
-	return file_proto_scene_player_bag_proto_rawDescGZIP(), []int{2}
+	return file_proto_scene_player_bag_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *BagLayoutInfo) GetBagType() uint32 {
@@ -261,6 +460,13 @@ func (x *BagLayoutInfo) GetCanSort() bool {
 	return false
 }
 
+func (x *BagLayoutInfo) GetEquipSlots() []*EquipSlotInfo {
+	if x != nil {
+		return x.EquipSlots
+	}
+	return nil
+}
+
 type BagInfo struct {
 	state         protoimpl.MessageState  `protogen:"open.v1"`
 	Items         []*BagItemInfo          `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"` // 顺序无语义，布局通过 item_id 关联。
@@ -272,7 +478,7 @@ type BagInfo struct {
 
 func (x *BagInfo) Reset() {
 	*x = BagInfo{}
-	mi := &file_proto_scene_player_bag_proto_msgTypes[3]
+	mi := &file_proto_scene_player_bag_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -284,7 +490,7 @@ func (x *BagInfo) String() string {
 func (*BagInfo) ProtoMessage() {}
 
 func (x *BagInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_player_bag_proto_msgTypes[3]
+	mi := &file_proto_scene_player_bag_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -297,7 +503,7 @@ func (x *BagInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BagInfo.ProtoReflect.Descriptor instead.
 func (*BagInfo) Descriptor() ([]byte, []int) {
-	return file_proto_scene_player_bag_proto_rawDescGZIP(), []int{3}
+	return file_proto_scene_player_bag_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *BagInfo) GetItems() []*BagItemInfo {
@@ -330,7 +536,7 @@ type GetBagRequest struct {
 
 func (x *GetBagRequest) Reset() {
 	*x = GetBagRequest{}
-	mi := &file_proto_scene_player_bag_proto_msgTypes[4]
+	mi := &file_proto_scene_player_bag_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -342,7 +548,7 @@ func (x *GetBagRequest) String() string {
 func (*GetBagRequest) ProtoMessage() {}
 
 func (x *GetBagRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_player_bag_proto_msgTypes[4]
+	mi := &file_proto_scene_player_bag_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -355,7 +561,7 @@ func (x *GetBagRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetBagRequest.ProtoReflect.Descriptor instead.
 func (*GetBagRequest) Descriptor() ([]byte, []int) {
-	return file_proto_scene_player_bag_proto_rawDescGZIP(), []int{4}
+	return file_proto_scene_player_bag_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *GetBagRequest) GetBagType() uint32 {
@@ -375,7 +581,7 @@ type GetBagResponse struct {
 
 func (x *GetBagResponse) Reset() {
 	*x = GetBagResponse{}
-	mi := &file_proto_scene_player_bag_proto_msgTypes[5]
+	mi := &file_proto_scene_player_bag_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -387,7 +593,7 @@ func (x *GetBagResponse) String() string {
 func (*GetBagResponse) ProtoMessage() {}
 
 func (x *GetBagResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_player_bag_proto_msgTypes[5]
+	mi := &file_proto_scene_player_bag_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -400,7 +606,7 @@ func (x *GetBagResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetBagResponse.ProtoReflect.Descriptor instead.
 func (*GetBagResponse) Descriptor() ([]byte, []int) {
-	return file_proto_scene_player_bag_proto_rawDescGZIP(), []int{5}
+	return file_proto_scene_player_bag_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *GetBagResponse) GetErrorMessage() *base.TipInfoMessage {
@@ -426,7 +632,7 @@ type SortBagRequest struct {
 
 func (x *SortBagRequest) Reset() {
 	*x = SortBagRequest{}
-	mi := &file_proto_scene_player_bag_proto_msgTypes[6]
+	mi := &file_proto_scene_player_bag_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -438,7 +644,7 @@ func (x *SortBagRequest) String() string {
 func (*SortBagRequest) ProtoMessage() {}
 
 func (x *SortBagRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_player_bag_proto_msgTypes[6]
+	mi := &file_proto_scene_player_bag_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -451,7 +657,7 @@ func (x *SortBagRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SortBagRequest.ProtoReflect.Descriptor instead.
 func (*SortBagRequest) Descriptor() ([]byte, []int) {
-	return file_proto_scene_player_bag_proto_rawDescGZIP(), []int{6}
+	return file_proto_scene_player_bag_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *SortBagRequest) GetBagType() uint32 {
@@ -472,7 +678,7 @@ type SortBagResponse struct {
 
 func (x *SortBagResponse) Reset() {
 	*x = SortBagResponse{}
-	mi := &file_proto_scene_player_bag_proto_msgTypes[7]
+	mi := &file_proto_scene_player_bag_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -484,7 +690,7 @@ func (x *SortBagResponse) String() string {
 func (*SortBagResponse) ProtoMessage() {}
 
 func (x *SortBagResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_player_bag_proto_msgTypes[7]
+	mi := &file_proto_scene_player_bag_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -497,7 +703,7 @@ func (x *SortBagResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SortBagResponse.ProtoReflect.Descriptor instead.
 func (*SortBagResponse) Descriptor() ([]byte, []int) {
-	return file_proto_scene_player_bag_proto_rawDescGZIP(), []int{7}
+	return file_proto_scene_player_bag_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *SortBagResponse) GetErrorMessage() *base.TipInfoMessage {
@@ -521,11 +727,340 @@ func (x *SortBagResponse) GetChanged() bool {
 	return false
 }
 
+// 穿上:物品必须在人物背包里。取接受该部位的槽位里第一个空槽;都占着就替换
+// 槽号最小的那个,旧装备回背包。成功回两个包的全量,客户端整体覆盖。
+type EquipItemRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ItemId        uint64                 `protobuf:"varint,1,opt,name=item_id,json=itemId,proto3" json:"item_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EquipItemRequest) Reset() {
+	*x = EquipItemRequest{}
+	mi := &file_proto_scene_player_bag_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EquipItemRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EquipItemRequest) ProtoMessage() {}
+
+func (x *EquipItemRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_scene_player_bag_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EquipItemRequest.ProtoReflect.Descriptor instead.
+func (*EquipItemRequest) Descriptor() ([]byte, []int) {
+	return file_proto_scene_player_bag_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *EquipItemRequest) GetItemId() uint64 {
+	if x != nil {
+		return x.ItemId
+	}
+	return 0
+}
+
+type EquipItemResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ErrorMessage  *base.TipInfoMessage   `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	Bag           *BagInfo               `protobuf:"bytes,2,opt,name=bag,proto3" json:"bag,omitempty"`             // 人物背包
+	Equipment     *BagInfo               `protobuf:"bytes,3,opt,name=equipment,proto3" json:"equipment,omitempty"` // 装备栏
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EquipItemResponse) Reset() {
+	*x = EquipItemResponse{}
+	mi := &file_proto_scene_player_bag_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EquipItemResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EquipItemResponse) ProtoMessage() {}
+
+func (x *EquipItemResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_scene_player_bag_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EquipItemResponse.ProtoReflect.Descriptor instead.
+func (*EquipItemResponse) Descriptor() ([]byte, []int) {
+	return file_proto_scene_player_bag_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *EquipItemResponse) GetErrorMessage() *base.TipInfoMessage {
+	if x != nil {
+		return x.ErrorMessage
+	}
+	return nil
+}
+
+func (x *EquipItemResponse) GetBag() *BagInfo {
+	if x != nil {
+		return x.Bag
+	}
+	return nil
+}
+
+func (x *EquipItemResponse) GetEquipment() *BagInfo {
+	if x != nil {
+		return x.Equipment
+	}
+	return nil
+}
+
+// 卸下:物品必须在装备栏里,回到人物背包(背包满则拒绝)。
+type UnequipItemRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ItemId        uint64                 `protobuf:"varint,1,opt,name=item_id,json=itemId,proto3" json:"item_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UnequipItemRequest) Reset() {
+	*x = UnequipItemRequest{}
+	mi := &file_proto_scene_player_bag_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UnequipItemRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UnequipItemRequest) ProtoMessage() {}
+
+func (x *UnequipItemRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_scene_player_bag_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UnequipItemRequest.ProtoReflect.Descriptor instead.
+func (*UnequipItemRequest) Descriptor() ([]byte, []int) {
+	return file_proto_scene_player_bag_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *UnequipItemRequest) GetItemId() uint64 {
+	if x != nil {
+		return x.ItemId
+	}
+	return 0
+}
+
+type UnequipItemResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ErrorMessage  *base.TipInfoMessage   `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	Bag           *BagInfo               `protobuf:"bytes,2,opt,name=bag,proto3" json:"bag,omitempty"`
+	Equipment     *BagInfo               `protobuf:"bytes,3,opt,name=equipment,proto3" json:"equipment,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UnequipItemResponse) Reset() {
+	*x = UnequipItemResponse{}
+	mi := &file_proto_scene_player_bag_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UnequipItemResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UnequipItemResponse) ProtoMessage() {}
+
+func (x *UnequipItemResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_scene_player_bag_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UnequipItemResponse.ProtoReflect.Descriptor instead.
+func (*UnequipItemResponse) Descriptor() ([]byte, []int) {
+	return file_proto_scene_player_bag_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *UnequipItemResponse) GetErrorMessage() *base.TipInfoMessage {
+	if x != nil {
+		return x.ErrorMessage
+	}
+	return nil
+}
+
+func (x *UnequipItemResponse) GetBag() *BagInfo {
+	if x != nil {
+		return x.Bag
+	}
+	return nil
+}
+
+func (x *UnequipItemResponse) GetEquipment() *BagInfo {
+	if x != nil {
+		return x.Equipment
+	}
+	return nil
+}
+
+// 开发 / 测试用发物(prod 关闭,不是鉴权,见 cpp/nodes/gate/SECURITY.md)。
+type GmGrantItemRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ConfigId      uint32                 `protobuf:"varint,1,opt,name=config_id,json=configId,proto3" json:"config_id,omitempty"`
+	Count         uint32                 `protobuf:"varint,2,opt,name=count,proto3" json:"count,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GmGrantItemRequest) Reset() {
+	*x = GmGrantItemRequest{}
+	mi := &file_proto_scene_player_bag_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GmGrantItemRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GmGrantItemRequest) ProtoMessage() {}
+
+func (x *GmGrantItemRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_scene_player_bag_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GmGrantItemRequest.ProtoReflect.Descriptor instead.
+func (*GmGrantItemRequest) Descriptor() ([]byte, []int) {
+	return file_proto_scene_player_bag_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *GmGrantItemRequest) GetConfigId() uint32 {
+	if x != nil {
+		return x.ConfigId
+	}
+	return 0
+}
+
+func (x *GmGrantItemRequest) GetCount() uint32 {
+	if x != nil {
+		return x.Count
+	}
+	return 0
+}
+
+type GmGrantItemResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ErrorMessage  *base.TipInfoMessage   `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	Bag           *BagInfo               `protobuf:"bytes,2,opt,name=bag,proto3" json:"bag,omitempty"` // 人物背包
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GmGrantItemResponse) Reset() {
+	*x = GmGrantItemResponse{}
+	mi := &file_proto_scene_player_bag_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GmGrantItemResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GmGrantItemResponse) ProtoMessage() {}
+
+func (x *GmGrantItemResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_scene_player_bag_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GmGrantItemResponse.ProtoReflect.Descriptor instead.
+func (*GmGrantItemResponse) Descriptor() ([]byte, []int) {
+	return file_proto_scene_player_bag_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *GmGrantItemResponse) GetErrorMessage() *base.TipInfoMessage {
+	if x != nil {
+		return x.ErrorMessage
+	}
+	return nil
+}
+
+func (x *GmGrantItemResponse) GetBag() *BagInfo {
+	if x != nil {
+		return x.Bag
+	}
+	return nil
+}
+
 var File_proto_scene_player_bag_proto protoreflect.FileDescriptor
 
 const file_proto_scene_player_bag_proto_rawDesc = "" +
 	"\n" +
-	"\x1cproto/scene/player_bag.proto\x1a\x1bproto/db/proto_option.proto\x1a\x1bproto/common/base/tip.proto\x1a*proto/common/component/currency_comp.proto\"\xe6\x01\n" +
+	"\x1cproto/scene/player_bag.proto\x1a\x1bproto/db/proto_option.proto\x1a\x1bproto/common/base/tip.proto\x1a*proto/common/component/currency_comp.proto\"\xa8\x01\n" +
+	"\x11EquipAttrLineInfo\x12\x17\n" +
+	"\aattr_id\x18\x01 \x01(\rR\x06attrId\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
+	"\x04tier\x18\x03 \x01(\rR\x04tier\x12\x14\n" +
+	"\x05value\x18\x04 \x01(\x04R\x05value\x12\x10\n" +
+	"\x03cap\x18\x05 \x01(\x04R\x03cap\x12\x18\n" +
+	"\apercent\x18\x06 \x01(\bR\apercent\x12\x10\n" +
+	"\x03seq\x18\a \x01(\rR\x03seq\"V\n" +
+	"\rEquipSlotInfo\x12\x12\n" +
+	"\x04slot\x18\x01 \x01(\rR\x04slot\x12\x1d\n" +
+	"\n" +
+	"equip_kind\x18\x02 \x01(\rR\tequipKind\x12\x12\n" +
+	"\x04name\x18\x03 \x01(\tR\x04name\"\xb3\x03\n" +
 	"\vBagItemInfo\x12\x17\n" +
 	"\aitem_id\x18\x01 \x01(\x04R\x06itemId\x12\x1b\n" +
 	"\tconfig_id\x18\x02 \x01(\rR\bconfigId\x12\x14\n" +
@@ -535,17 +1070,28 @@ const file_proto_scene_player_bag_proto_rawDesc = "" +
 	"equip_kind\x18\x05 \x01(\rR\tequipKind\x12\x12\n" +
 	"\x04name\x18\x06 \x01(\tR\x04name\x12 \n" +
 	"\vdescription\x18\a \x01(\tR\vdescription\x12\x19\n" +
-	"\bicon_key\x18\b \x01(\tR\aiconKey\"h\n" +
+	"\bicon_key\x18\b \x01(\tR\aiconKey\x12\x1f\n" +
+	"\vequip_level\x18\t \x01(\rR\n" +
+	"equipLevel\x12\x1f\n" +
+	"\vequip_class\x18\n" +
+	" \x01(\rR\n" +
+	"equipClass\x12(\n" +
+	"\x10equip_class_name\x18\v \x01(\tR\x0eequipClassName\x121\n" +
+	"\n" +
+	"base_attrs\x18\f \x03(\v2\x12.EquipAttrLineInfoR\tbaseAttrs\x12,\n" +
+	"\aaffixes\x18\r \x03(\v2\x12.EquipAttrLineInfoR\aaffixes\"h\n" +
 	"\vBagSlotInfo\x12\x12\n" +
 	"\x04slot\x18\x01 \x01(\rR\x04slot\x12\x17\n" +
 	"\aitem_id\x18\x02 \x01(\x04R\x06itemId\x12\x14\n" +
 	"\x05width\x18\x03 \x01(\rR\x05width\x12\x16\n" +
-	"\x06height\x18\x04 \x01(\rR\x06height\"\x85\x01\n" +
+	"\x06height\x18\x04 \x01(\rR\x06height\"\xb6\x01\n" +
 	"\rBagLayoutInfo\x12\x19\n" +
 	"\bbag_type\x18\x01 \x01(\rR\abagType\x12\x1a\n" +
 	"\bcapacity\x18\x02 \x01(\rR\bcapacity\x12\"\n" +
 	"\x05slots\x18\x03 \x03(\v2\f.BagSlotInfoR\x05slots\x12\x19\n" +
-	"\bcan_sort\x18\x04 \x01(\bR\acanSort\"\x80\x01\n" +
+	"\bcan_sort\x18\x04 \x01(\bR\acanSort\x12/\n" +
+	"\vequip_slots\x18\x05 \x03(\v2\x0e.EquipSlotInfoR\n" +
+	"equipSlots\"\x80\x01\n" +
 	"\aBagInfo\x12\"\n" +
 	"\x05items\x18\x01 \x03(\v2\f.BagItemInfoR\x05items\x12&\n" +
 	"\x06layout\x18\x02 \x01(\v2\x0e.BagLayoutInfoR\x06layout\x12)\n" +
@@ -560,10 +1106,31 @@ const file_proto_scene_player_bag_proto_rawDesc = "" +
 	"\x0fSortBagResponse\x124\n" +
 	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\x12\x1a\n" +
 	"\x03bag\x18\x02 \x01(\v2\b.BagInfoR\x03bag\x12\x18\n" +
-	"\achanged\x18\x03 \x01(\bR\achanged2{\n" +
+	"\achanged\x18\x03 \x01(\bR\achanged\"+\n" +
+	"\x10EquipItemRequest\x12\x17\n" +
+	"\aitem_id\x18\x01 \x01(\x04R\x06itemId\"\x8d\x01\n" +
+	"\x11EquipItemResponse\x124\n" +
+	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\x12\x1a\n" +
+	"\x03bag\x18\x02 \x01(\v2\b.BagInfoR\x03bag\x12&\n" +
+	"\tequipment\x18\x03 \x01(\v2\b.BagInfoR\tequipment\"-\n" +
+	"\x12UnequipItemRequest\x12\x17\n" +
+	"\aitem_id\x18\x01 \x01(\x04R\x06itemId\"\x8f\x01\n" +
+	"\x13UnequipItemResponse\x124\n" +
+	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\x12\x1a\n" +
+	"\x03bag\x18\x02 \x01(\v2\b.BagInfoR\x03bag\x12&\n" +
+	"\tequipment\x18\x03 \x01(\v2\b.BagInfoR\tequipment\"G\n" +
+	"\x12GmGrantItemRequest\x12\x1b\n" +
+	"\tconfig_id\x18\x01 \x01(\rR\bconfigId\x12\x14\n" +
+	"\x05count\x18\x02 \x01(\rR\x05count\"g\n" +
+	"\x13GmGrantItemResponse\x124\n" +
+	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\x12\x1a\n" +
+	"\x03bag\x18\x02 \x01(\v2\b.BagInfoR\x03bag2\xa3\x02\n" +
 	"\x14SceneBagClientPlayer\x12)\n" +
 	"\x06GetBag\x12\x0e.GetBagRequest\x1a\x0f.GetBagResponse\x12,\n" +
-	"\aSortBag\x12\x0f.SortBagRequest\x1a\x10.SortBagResponse\x1a\n" +
+	"\aSortBag\x12\x0f.SortBagRequest\x1a\x10.SortBagResponse\x122\n" +
+	"\tEquipItem\x12\x11.EquipItemRequest\x1a\x12.EquipItemResponse\x128\n" +
+	"\vUnequipItem\x12\x13.UnequipItemRequest\x1a\x14.UnequipItemResponse\x128\n" +
+	"\vGmGrantItem\x12\x13.GmGrantItemRequest\x1a\x14.GmGrantItemResponse\x1a\n" +
 	"\x80\xa8\xc3\x01\x01\x88\xa8\xc3\x01\x01B\x14\x98\xd4a\x03Z\vproto/scene\x80\x01\x01b\x06proto3"
 
 var (
@@ -578,37 +1145,62 @@ func file_proto_scene_player_bag_proto_rawDescGZIP() []byte {
 	return file_proto_scene_player_bag_proto_rawDescData
 }
 
-var file_proto_scene_player_bag_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_proto_scene_player_bag_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
 var file_proto_scene_player_bag_proto_goTypes = []any{
-	(*BagItemInfo)(nil),            // 0: BagItemInfo
-	(*BagSlotInfo)(nil),            // 1: BagSlotInfo
-	(*BagLayoutInfo)(nil),          // 2: BagLayoutInfo
-	(*BagInfo)(nil),                // 3: BagInfo
-	(*GetBagRequest)(nil),          // 4: GetBagRequest
-	(*GetBagResponse)(nil),         // 5: GetBagResponse
-	(*SortBagRequest)(nil),         // 6: SortBagRequest
-	(*SortBagResponse)(nil),        // 7: SortBagResponse
-	(*component.CurrencyComp)(nil), // 8: CurrencyComp
-	(*base.TipInfoMessage)(nil),    // 9: TipInfoMessage
+	(*EquipAttrLineInfo)(nil),      // 0: EquipAttrLineInfo
+	(*EquipSlotInfo)(nil),          // 1: EquipSlotInfo
+	(*BagItemInfo)(nil),            // 2: BagItemInfo
+	(*BagSlotInfo)(nil),            // 3: BagSlotInfo
+	(*BagLayoutInfo)(nil),          // 4: BagLayoutInfo
+	(*BagInfo)(nil),                // 5: BagInfo
+	(*GetBagRequest)(nil),          // 6: GetBagRequest
+	(*GetBagResponse)(nil),         // 7: GetBagResponse
+	(*SortBagRequest)(nil),         // 8: SortBagRequest
+	(*SortBagResponse)(nil),        // 9: SortBagResponse
+	(*EquipItemRequest)(nil),       // 10: EquipItemRequest
+	(*EquipItemResponse)(nil),      // 11: EquipItemResponse
+	(*UnequipItemRequest)(nil),     // 12: UnequipItemRequest
+	(*UnequipItemResponse)(nil),    // 13: UnequipItemResponse
+	(*GmGrantItemRequest)(nil),     // 14: GmGrantItemRequest
+	(*GmGrantItemResponse)(nil),    // 15: GmGrantItemResponse
+	(*component.CurrencyComp)(nil), // 16: CurrencyComp
+	(*base.TipInfoMessage)(nil),    // 17: TipInfoMessage
 }
 var file_proto_scene_player_bag_proto_depIdxs = []int32{
-	1,  // 0: BagLayoutInfo.slots:type_name -> BagSlotInfo
-	0,  // 1: BagInfo.items:type_name -> BagItemInfo
-	2,  // 2: BagInfo.layout:type_name -> BagLayoutInfo
-	8,  // 3: BagInfo.currency:type_name -> CurrencyComp
-	9,  // 4: GetBagResponse.error_message:type_name -> TipInfoMessage
-	3,  // 5: GetBagResponse.bag:type_name -> BagInfo
-	9,  // 6: SortBagResponse.error_message:type_name -> TipInfoMessage
-	3,  // 7: SortBagResponse.bag:type_name -> BagInfo
-	4,  // 8: SceneBagClientPlayer.GetBag:input_type -> GetBagRequest
-	6,  // 9: SceneBagClientPlayer.SortBag:input_type -> SortBagRequest
-	5,  // 10: SceneBagClientPlayer.GetBag:output_type -> GetBagResponse
-	7,  // 11: SceneBagClientPlayer.SortBag:output_type -> SortBagResponse
-	10, // [10:12] is the sub-list for method output_type
-	8,  // [8:10] is the sub-list for method input_type
-	8,  // [8:8] is the sub-list for extension type_name
-	8,  // [8:8] is the sub-list for extension extendee
-	0,  // [0:8] is the sub-list for field type_name
+	0,  // 0: BagItemInfo.base_attrs:type_name -> EquipAttrLineInfo
+	0,  // 1: BagItemInfo.affixes:type_name -> EquipAttrLineInfo
+	3,  // 2: BagLayoutInfo.slots:type_name -> BagSlotInfo
+	1,  // 3: BagLayoutInfo.equip_slots:type_name -> EquipSlotInfo
+	2,  // 4: BagInfo.items:type_name -> BagItemInfo
+	4,  // 5: BagInfo.layout:type_name -> BagLayoutInfo
+	16, // 6: BagInfo.currency:type_name -> CurrencyComp
+	17, // 7: GetBagResponse.error_message:type_name -> TipInfoMessage
+	5,  // 8: GetBagResponse.bag:type_name -> BagInfo
+	17, // 9: SortBagResponse.error_message:type_name -> TipInfoMessage
+	5,  // 10: SortBagResponse.bag:type_name -> BagInfo
+	17, // 11: EquipItemResponse.error_message:type_name -> TipInfoMessage
+	5,  // 12: EquipItemResponse.bag:type_name -> BagInfo
+	5,  // 13: EquipItemResponse.equipment:type_name -> BagInfo
+	17, // 14: UnequipItemResponse.error_message:type_name -> TipInfoMessage
+	5,  // 15: UnequipItemResponse.bag:type_name -> BagInfo
+	5,  // 16: UnequipItemResponse.equipment:type_name -> BagInfo
+	17, // 17: GmGrantItemResponse.error_message:type_name -> TipInfoMessage
+	5,  // 18: GmGrantItemResponse.bag:type_name -> BagInfo
+	6,  // 19: SceneBagClientPlayer.GetBag:input_type -> GetBagRequest
+	8,  // 20: SceneBagClientPlayer.SortBag:input_type -> SortBagRequest
+	10, // 21: SceneBagClientPlayer.EquipItem:input_type -> EquipItemRequest
+	12, // 22: SceneBagClientPlayer.UnequipItem:input_type -> UnequipItemRequest
+	14, // 23: SceneBagClientPlayer.GmGrantItem:input_type -> GmGrantItemRequest
+	7,  // 24: SceneBagClientPlayer.GetBag:output_type -> GetBagResponse
+	9,  // 25: SceneBagClientPlayer.SortBag:output_type -> SortBagResponse
+	11, // 26: SceneBagClientPlayer.EquipItem:output_type -> EquipItemResponse
+	13, // 27: SceneBagClientPlayer.UnequipItem:output_type -> UnequipItemResponse
+	15, // 28: SceneBagClientPlayer.GmGrantItem:output_type -> GmGrantItemResponse
+	24, // [24:29] is the sub-list for method output_type
+	19, // [19:24] is the sub-list for method input_type
+	19, // [19:19] is the sub-list for extension type_name
+	19, // [19:19] is the sub-list for extension extendee
+	0,  // [0:19] is the sub-list for field type_name
 }
 
 func init() { file_proto_scene_player_bag_proto_init() }
@@ -622,7 +1214,7 @@ func file_proto_scene_player_bag_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_scene_player_bag_proto_rawDesc), len(file_proto_scene_player_bag_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   8,
+			NumMessages:   16,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

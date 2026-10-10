@@ -126,6 +126,171 @@ func (x *CalculatedAttributesComp) GetIsDead() bool {
 	return false
 }
 
+// 战斗类属性(设计文档 docs/design/equipment-attributes.md §3.3)。
+//
+// 只装**装备等外部来源的加成部分**,不含角色基础暴击率 / 基础抗性
+// (那两项仍在 BaseAttributesComp.critchance / resistance)。运行时派生,不落库:
+// PlayerAttributeSystem::Recalculate 每次从装备栏现算并整块覆盖,不做增量维护。
+// 百分比一律是整数百分点。
+//
+// **字段号 == equiprules::CombatStat 枚举值 == EquipAttribute 表 effect=5 行的
+// effect_param**,三处不得错位;新增只能追加。
+type CombatAttributes struct {
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	PhysicalCritRate    uint64                 `protobuf:"varint,1,opt,name=physical_crit_rate,json=physicalCritRate,proto3" json:"physical_crit_rate,omitempty"`          // 物理必杀率(普攻 / 物理技能)
+	MagicCritRate       uint64                 `protobuf:"varint,2,opt,name=magic_crit_rate,json=magicCritRate,proto3" json:"magic_crit_rate,omitempty"`                   // 法术必杀率(法术技能)
+	ComboRate           uint64                 `protobuf:"varint,3,opt,name=combo_rate,json=comboRate,proto3" json:"combo_rate,omitempty"`                                 // 物理连击率
+	CounterRate         uint64                 `protobuf:"varint,4,opt,name=counter_rate,json=counterRate,proto3" json:"counter_rate,omitempty"`                           // 反击率
+	ReflectRate         uint64                 `protobuf:"varint,5,opt,name=reflect_rate,json=reflectRate,proto3" json:"reflect_rate,omitempty"`                           // 反震率
+	SkillLevelBonus     uint64                 `protobuf:"varint,6,opt,name=skill_level_bonus,json=skillLevelBonus,proto3" json:"skill_level_bonus,omitempty"`             // 所有技能上升(技能伤害表达式的等级参数 +N)
+	IgnoreAilmentResist uint64                 `protobuf:"varint,7,opt,name=ignore_ailment_resist,json=ignoreAilmentResist,proto3" json:"ignore_ailment_resist,omitempty"` // 忽视所有抗异常(进攻方,抵扣目标的抗异常)
+	ResistPoison        uint64                 `protobuf:"varint,8,opt,name=resist_poison,json=resistPoison,proto3" json:"resist_poison,omitempty"`                        // 抗中毒
+	ResistFreeze        uint64                 `protobuf:"varint,9,opt,name=resist_freeze,json=resistFreeze,proto3" json:"resist_freeze,omitempty"`                        // 抗冰冻
+	ResistSleep         uint64                 `protobuf:"varint,10,opt,name=resist_sleep,json=resistSleep,proto3" json:"resist_sleep,omitempty"`                          // 抗昏睡(引擎映射到眩晕)
+	ResistForget        uint64                 `protobuf:"varint,11,opt,name=resist_forget,json=resistForget,proto3" json:"resist_forget,omitempty"`                       // 抗遗忘(引擎映射到沉默)
+	ResistConfusion     uint64                 `protobuf:"varint,12,opt,name=resist_confusion,json=resistConfusion,proto3" json:"resist_confusion,omitempty"`              // 抗混乱(引擎暂无混乱状态,未消费)
+	ResistAllAilment    uint64                 `protobuf:"varint,13,opt,name=resist_all_ailment,json=resistAllAilment,proto3" json:"resist_all_ailment,omitempty"`         // 所有抗异常
+	MagicResist         uint64                 `protobuf:"varint,14,opt,name=magic_resist,json=magicResist,proto3" json:"magic_resist,omitempty"`                          // 抗法术(叠加在基础抗性上,仅对法术伤害)
+	PhysicalResist      uint64                 `protobuf:"varint,15,opt,name=physical_resist,json=physicalResist,proto3" json:"physical_resist,omitempty"`                 // 抗物理(叠加在基础抗性上,仅对物理伤害)
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *CombatAttributes) Reset() {
+	*x = CombatAttributes{}
+	mi := &file_proto_common_component_actor_attribute_state_comp_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CombatAttributes) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CombatAttributes) ProtoMessage() {}
+
+func (x *CombatAttributes) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_common_component_actor_attribute_state_comp_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CombatAttributes.ProtoReflect.Descriptor instead.
+func (*CombatAttributes) Descriptor() ([]byte, []int) {
+	return file_proto_common_component_actor_attribute_state_comp_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *CombatAttributes) GetPhysicalCritRate() uint64 {
+	if x != nil {
+		return x.PhysicalCritRate
+	}
+	return 0
+}
+
+func (x *CombatAttributes) GetMagicCritRate() uint64 {
+	if x != nil {
+		return x.MagicCritRate
+	}
+	return 0
+}
+
+func (x *CombatAttributes) GetComboRate() uint64 {
+	if x != nil {
+		return x.ComboRate
+	}
+	return 0
+}
+
+func (x *CombatAttributes) GetCounterRate() uint64 {
+	if x != nil {
+		return x.CounterRate
+	}
+	return 0
+}
+
+func (x *CombatAttributes) GetReflectRate() uint64 {
+	if x != nil {
+		return x.ReflectRate
+	}
+	return 0
+}
+
+func (x *CombatAttributes) GetSkillLevelBonus() uint64 {
+	if x != nil {
+		return x.SkillLevelBonus
+	}
+	return 0
+}
+
+func (x *CombatAttributes) GetIgnoreAilmentResist() uint64 {
+	if x != nil {
+		return x.IgnoreAilmentResist
+	}
+	return 0
+}
+
+func (x *CombatAttributes) GetResistPoison() uint64 {
+	if x != nil {
+		return x.ResistPoison
+	}
+	return 0
+}
+
+func (x *CombatAttributes) GetResistFreeze() uint64 {
+	if x != nil {
+		return x.ResistFreeze
+	}
+	return 0
+}
+
+func (x *CombatAttributes) GetResistSleep() uint64 {
+	if x != nil {
+		return x.ResistSleep
+	}
+	return 0
+}
+
+func (x *CombatAttributes) GetResistForget() uint64 {
+	if x != nil {
+		return x.ResistForget
+	}
+	return 0
+}
+
+func (x *CombatAttributes) GetResistConfusion() uint64 {
+	if x != nil {
+		return x.ResistConfusion
+	}
+	return 0
+}
+
+func (x *CombatAttributes) GetResistAllAilment() uint64 {
+	if x != nil {
+		return x.ResistAllAilment
+	}
+	return 0
+}
+
+func (x *CombatAttributes) GetMagicResist() uint64 {
+	if x != nil {
+		return x.MagicResist
+	}
+	return 0
+}
+
+func (x *CombatAttributes) GetPhysicalResist() uint64 {
+	if x != nil {
+		return x.PhysicalResist
+	}
+	return 0
+}
+
 // 二级属性(服务器按 AttributeDimension 表系数重算,不落库;设计文档
 // docs/design/player-attribute-allocation.md §3)。
 // 全部 uint64:与 BaseAttributesComp / BattlePlayerSnapshot 同口径,战斗公式不窄化。
@@ -137,13 +302,14 @@ type DerivedAttributesComp struct {
 	MagicAttack    uint64                 `protobuf:"varint,4,opt,name=magic_attack,json=magicAttack,proto3" json:"magic_attack,omitempty"`          // 法伤(技能加成)
 	Defense        uint64                 `protobuf:"varint,5,opt,name=defense,proto3" json:"defense,omitempty"`                                     // 防御(加法减伤)
 	Speed          uint64                 `protobuf:"varint,6,opt,name=speed,proto3" json:"speed,omitempty"`                                         // 速度(同步写入 BaseAttributesComp.speed 供出手序)
+	Combat         *CombatAttributes      `protobuf:"bytes,7,opt,name=combat,proto3" json:"combat,omitempty"`                                        // 战斗类属性的装备加成(开战时原样拷进 BattlePlayerSnapshot.combat)
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
 
 func (x *DerivedAttributesComp) Reset() {
 	*x = DerivedAttributesComp{}
-	mi := &file_proto_common_component_actor_attribute_state_comp_proto_msgTypes[2]
+	mi := &file_proto_common_component_actor_attribute_state_comp_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -155,7 +321,7 @@ func (x *DerivedAttributesComp) String() string {
 func (*DerivedAttributesComp) ProtoMessage() {}
 
 func (x *DerivedAttributesComp) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_common_component_actor_attribute_state_comp_proto_msgTypes[2]
+	mi := &file_proto_common_component_actor_attribute_state_comp_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -168,7 +334,7 @@ func (x *DerivedAttributesComp) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DerivedAttributesComp.ProtoReflect.Descriptor instead.
 func (*DerivedAttributesComp) Descriptor() ([]byte, []int) {
-	return file_proto_common_component_actor_attribute_state_comp_proto_rawDescGZIP(), []int{2}
+	return file_proto_common_component_actor_attribute_state_comp_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *DerivedAttributesComp) GetMaxHealth() uint64 {
@@ -213,6 +379,13 @@ func (x *DerivedAttributesComp) GetSpeed() uint64 {
 	return 0
 }
 
+func (x *DerivedAttributesComp) GetCombat() *CombatAttributes {
+	if x != nil {
+		return x.Combat
+	}
+	return nil
+}
+
 var File_proto_common_component_actor_attribute_state_comp_proto protoreflect.FileDescriptor
 
 const file_proto_common_component_actor_attribute_state_comp_proto_rawDesc = "" +
@@ -227,7 +400,25 @@ const file_proto_common_component_actor_attribute_state_comp_proto_rawDesc = "" 
 	"\x18CalculatedAttributesComp\x12!\n" +
 	"\fattack_power\x18\x01 \x01(\rR\vattackPower\x12#\n" +
 	"\rdefense_power\x18\x02 \x01(\rR\fdefensePower\x12\x16\n" +
-	"\x06isDead\x18\x03 \x01(\bR\x06isDead\"\xcd\x01\n" +
+	"\x06isDead\x18\x03 \x01(\bR\x06isDead\"\xe4\x04\n" +
+	"\x10CombatAttributes\x12,\n" +
+	"\x12physical_crit_rate\x18\x01 \x01(\x04R\x10physicalCritRate\x12&\n" +
+	"\x0fmagic_crit_rate\x18\x02 \x01(\x04R\rmagicCritRate\x12\x1d\n" +
+	"\n" +
+	"combo_rate\x18\x03 \x01(\x04R\tcomboRate\x12!\n" +
+	"\fcounter_rate\x18\x04 \x01(\x04R\vcounterRate\x12!\n" +
+	"\freflect_rate\x18\x05 \x01(\x04R\vreflectRate\x12*\n" +
+	"\x11skill_level_bonus\x18\x06 \x01(\x04R\x0fskillLevelBonus\x122\n" +
+	"\x15ignore_ailment_resist\x18\a \x01(\x04R\x13ignoreAilmentResist\x12#\n" +
+	"\rresist_poison\x18\b \x01(\x04R\fresistPoison\x12#\n" +
+	"\rresist_freeze\x18\t \x01(\x04R\fresistFreeze\x12!\n" +
+	"\fresist_sleep\x18\n" +
+	" \x01(\x04R\vresistSleep\x12#\n" +
+	"\rresist_forget\x18\v \x01(\x04R\fresistForget\x12)\n" +
+	"\x10resist_confusion\x18\f \x01(\x04R\x0fresistConfusion\x12,\n" +
+	"\x12resist_all_ailment\x18\r \x01(\x04R\x10resistAllAilment\x12!\n" +
+	"\fmagic_resist\x18\x0e \x01(\x04R\vmagicResist\x12'\n" +
+	"\x0fphysical_resist\x18\x0f \x01(\x04R\x0ephysicalResist\"\xf8\x01\n" +
 	"\x15DerivedAttributesComp\x12\x1d\n" +
 	"\n" +
 	"max_health\x18\x01 \x01(\x04R\tmaxHealth\x12\x19\n" +
@@ -235,7 +426,8 @@ const file_proto_common_component_actor_attribute_state_comp_proto_rawDesc = "" 
 	"\x0fphysical_attack\x18\x03 \x01(\x04R\x0ephysicalAttack\x12!\n" +
 	"\fmagic_attack\x18\x04 \x01(\x04R\vmagicAttack\x12\x18\n" +
 	"\adefense\x18\x05 \x01(\x04R\adefense\x12\x14\n" +
-	"\x05speed\x18\x06 \x01(\x04R\x05speedB\x18Z\x16proto/common/componentb\x06proto3"
+	"\x05speed\x18\x06 \x01(\x04R\x05speed\x12)\n" +
+	"\x06combat\x18\a \x01(\v2\x11.CombatAttributesR\x06combatB\x18Z\x16proto/common/componentb\x06proto3"
 
 var (
 	file_proto_common_component_actor_attribute_state_comp_proto_rawDescOnce sync.Once
@@ -249,20 +441,22 @@ func file_proto_common_component_actor_attribute_state_comp_proto_rawDescGZIP() 
 	return file_proto_common_component_actor_attribute_state_comp_proto_rawDescData
 }
 
-var file_proto_common_component_actor_attribute_state_comp_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_proto_common_component_actor_attribute_state_comp_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_proto_common_component_actor_attribute_state_comp_proto_goTypes = []any{
 	(*CombatStateFlagsComp)(nil),     // 0: CombatStateFlagsComp
 	(*CalculatedAttributesComp)(nil), // 1: CalculatedAttributesComp
-	(*DerivedAttributesComp)(nil),    // 2: DerivedAttributesComp
-	nil,                              // 3: CombatStateFlagsComp.StateFlagsEntry
+	(*CombatAttributes)(nil),         // 2: CombatAttributes
+	(*DerivedAttributesComp)(nil),    // 3: DerivedAttributesComp
+	nil,                              // 4: CombatStateFlagsComp.StateFlagsEntry
 }
 var file_proto_common_component_actor_attribute_state_comp_proto_depIdxs = []int32{
-	3, // 0: CombatStateFlagsComp.state_flags:type_name -> CombatStateFlagsComp.StateFlagsEntry
-	1, // [1:1] is the sub-list for method output_type
-	1, // [1:1] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	4, // 0: CombatStateFlagsComp.state_flags:type_name -> CombatStateFlagsComp.StateFlagsEntry
+	2, // 1: DerivedAttributesComp.combat:type_name -> CombatAttributes
+	2, // [2:2] is the sub-list for method output_type
+	2, // [2:2] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_proto_common_component_actor_attribute_state_comp_proto_init() }
@@ -276,7 +470,7 @@ func file_proto_common_component_actor_attribute_state_comp_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_common_component_actor_attribute_state_comp_proto_rawDesc), len(file_proto_common_component_actor_attribute_state_comp_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
