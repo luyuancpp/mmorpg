@@ -518,11 +518,11 @@ constexpr RecommendFriendsRequest::ParseTableT_ RecommendFriendsRequest::Interna
     {
       PROTOBUF_FIELD_OFFSET(RecommendFriendsRequest, _impl_._has_bits_),
       0, // no _extensions_
-      2, 8,  // max_field_number, fast_idx_mask
+      5, 56,  // max_field_number, fast_idx_mask
       offsetof(ParseTableT_, field_lookup_table),
-      4294967292,  // skipmap
+      4294967264,  // skipmap
       offsetof(ParseTableT_, field_entries),
-      2,  // num_field_entries
+      5,  // num_field_entries
       0,  // num_aux_entries
       offsetof(ParseTableT_, field_names),  // no aux_entries
       class_data,
@@ -532,24 +532,49 @@ constexpr RecommendFriendsRequest::ParseTableT_ RecommendFriendsRequest::Interna
       ::_pbi::TcParser::GetTable<::friendpb::RecommendFriendsRequest>(),  // to_prefetch
       #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
     }, {{
+      {::_pbi::TcParser::MiniParse, {}},
+      // uint32 limit = 1;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RecommendFriendsRequest, _impl_.limit_), 3>(),
+       {8, 3, 0,
+        PROTOBUF_FIELD_OFFSET(RecommendFriendsRequest, _impl_.limit_)}},
       // repeated uint64 exclude_player_ids = 2;
       {::_pbi::TcParser::FastV64P1,
        {18, 0, 0,
         PROTOBUF_FIELD_OFFSET(RecommendFriendsRequest, _impl_.exclude_player_ids_)}},
-      // uint32 limit = 1;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RecommendFriendsRequest, _impl_.limit_), 1>(),
-       {8, 1, 0,
-        PROTOBUF_FIELD_OFFSET(RecommendFriendsRequest, _impl_.limit_)}},
+      // bool online_only = 3;
+      {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(RecommendFriendsRequest, _impl_.online_only_), 4>(),
+       {24, 4, 0,
+        PROTOBUF_FIELD_OFFSET(RecommendFriendsRequest, _impl_.online_only_)}},
+      // string cursor = 4;
+      {::_pbi::TcParser::FastUS1,
+       {34, 1, 0,
+        PROTOBUF_FIELD_OFFSET(RecommendFriendsRequest, _impl_.cursor_)}},
+      // string query = 5;
+      {::_pbi::TcParser::FastUS1,
+       {42, 2, 0,
+        PROTOBUF_FIELD_OFFSET(RecommendFriendsRequest, _impl_.query_)}},
+      {::_pbi::TcParser::MiniParse, {}},
+      {::_pbi::TcParser::MiniParse, {}},
     }}, {{
       65535, 65535
     }}, {{
       // uint32 limit = 1;
-      {PROTOBUF_FIELD_OFFSET(RecommendFriendsRequest, _impl_.limit_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      {PROTOBUF_FIELD_OFFSET(RecommendFriendsRequest, _impl_.limit_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
       // repeated uint64 exclude_player_ids = 2;
       {PROTOBUF_FIELD_OFFSET(RecommendFriendsRequest, _impl_.exclude_player_ids_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcRepeated | ::_fl::kPackedUInt64)},
+      // bool online_only = 3;
+      {PROTOBUF_FIELD_OFFSET(RecommendFriendsRequest, _impl_.online_only_), _Internal::kHasBitsOffset + 4, 0, (0 | ::_fl::kFcOptional | ::_fl::kBool)},
+      // string cursor = 4;
+      {PROTOBUF_FIELD_OFFSET(RecommendFriendsRequest, _impl_.cursor_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+      // string query = 5;
+      {PROTOBUF_FIELD_OFFSET(RecommendFriendsRequest, _impl_.query_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
     }},
     // no aux_entries
     {{
+      "\40\0\0\0\6\5\0\0"
+      "friendpb.RecommendFriendsRequest"
+      "cursor"
+      "query"
     }},
   };
 }
@@ -565,7 +590,14 @@ inline constexpr RecommendFriendsRequest::Impl_::Impl_(
          }
         ,
         _exclude_player_ids_cached_byte_size_{0},
-        limit_{0u} {}
+        cursor_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        query_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        limit_{0u},
+        online_only_{false} {}
 
 template <typename>
 constexpr RecommendFriendsRequest::RecommendFriendsRequest(::_pbi::ConstantInitialized,
@@ -671,11 +703,11 @@ constexpr RecommendEntry::ParseTableT_ RecommendEntry::InternalGenerateParseTabl
     {
       PROTOBUF_FIELD_OFFSET(RecommendEntry, _impl_._has_bits_),
       0, // no _extensions_
-      4, 24,  // max_field_number, fast_idx_mask
+      10, 120,  // max_field_number, fast_idx_mask
       offsetof(ParseTableT_, field_lookup_table),
-      4294967280,  // skipmap
+      4294966272,  // skipmap
       offsetof(ParseTableT_, field_entries),
-      4,  // num_field_entries
+      10,  // num_field_entries
       0,  // num_aux_entries
       offsetof(ParseTableT_, field_names),  // no aux_entries
       class_data,
@@ -685,36 +717,82 @@ constexpr RecommendEntry::ParseTableT_ RecommendEntry::InternalGenerateParseTabl
       ::_pbi::TcParser::GetTable<::friendpb::RecommendEntry>(),  // to_prefetch
       #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
     }, {{
-      // int64 last_active_ms = 4;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(RecommendEntry, _impl_.last_active_ms_), 3>(),
-       {32, 3, 0,
-        PROTOBUF_FIELD_OFFSET(RecommendEntry, _impl_.last_active_ms_)}},
+      {::_pbi::TcParser::MiniParse, {}},
       // uint64 candidate_player_id = 1;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(RecommendEntry, _impl_.candidate_player_id_), 0>(),
-       {8, 0, 0,
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(RecommendEntry, _impl_.candidate_player_id_), 2>(),
+       {8, 2, 0,
         PROTOBUF_FIELD_OFFSET(RecommendEntry, _impl_.candidate_player_id_)}},
       // uint32 mutual_friends = 2;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RecommendEntry, _impl_.mutual_friends_), 1>(),
-       {16, 1, 0,
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RecommendEntry, _impl_.mutual_friends_), 3>(),
+       {16, 3, 0,
         PROTOBUF_FIELD_OFFSET(RecommendEntry, _impl_.mutual_friends_)}},
       // bool is_online = 3;
-      {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(RecommendEntry, _impl_.is_online_), 2>(),
-       {24, 2, 0,
+      {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(RecommendEntry, _impl_.is_online_), 4>(),
+       {24, 4, 0,
         PROTOBUF_FIELD_OFFSET(RecommendEntry, _impl_.is_online_)}},
+      // int64 last_active_ms = 4;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(RecommendEntry, _impl_.last_active_ms_), 5>(),
+       {32, 5, 0,
+        PROTOBUF_FIELD_OFFSET(RecommendEntry, _impl_.last_active_ms_)}},
+      // string name = 5;
+      {::_pbi::TcParser::FastUS1,
+       {42, 0, 0,
+        PROTOBUF_FIELD_OFFSET(RecommendEntry, _impl_.name_)}},
+      // uint32 level = 6;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RecommendEntry, _impl_.level_), 6>(),
+       {48, 6, 0,
+        PROTOBUF_FIELD_OFFSET(RecommendEntry, _impl_.level_)}},
+      // uint32 class_id = 7;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RecommendEntry, _impl_.class_id_), 7>(),
+       {56, 7, 0,
+        PROTOBUF_FIELD_OFFSET(RecommendEntry, _impl_.class_id_)}},
+      // uint32 gender = 8;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RecommendEntry, _impl_.gender_), 8>(),
+       {64, 8, 0,
+        PROTOBUF_FIELD_OFFSET(RecommendEntry, _impl_.gender_)}},
+      // string appearance_id = 9;
+      {::_pbi::TcParser::FastUS1,
+       {74, 1, 0,
+        PROTOBUF_FIELD_OFFSET(RecommendEntry, _impl_.appearance_id_)}},
+      // uint32 zone_id = 10;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RecommendEntry, _impl_.zone_id_), 9>(),
+       {80, 9, 0,
+        PROTOBUF_FIELD_OFFSET(RecommendEntry, _impl_.zone_id_)}},
+      {::_pbi::TcParser::MiniParse, {}},
+      {::_pbi::TcParser::MiniParse, {}},
+      {::_pbi::TcParser::MiniParse, {}},
+      {::_pbi::TcParser::MiniParse, {}},
+      {::_pbi::TcParser::MiniParse, {}},
     }}, {{
       65535, 65535
     }}, {{
       // uint64 candidate_player_id = 1;
-      {PROTOBUF_FIELD_OFFSET(RecommendEntry, _impl_.candidate_player_id_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      {PROTOBUF_FIELD_OFFSET(RecommendEntry, _impl_.candidate_player_id_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
       // uint32 mutual_friends = 2;
-      {PROTOBUF_FIELD_OFFSET(RecommendEntry, _impl_.mutual_friends_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      {PROTOBUF_FIELD_OFFSET(RecommendEntry, _impl_.mutual_friends_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
       // bool is_online = 3;
-      {PROTOBUF_FIELD_OFFSET(RecommendEntry, _impl_.is_online_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kBool)},
+      {PROTOBUF_FIELD_OFFSET(RecommendEntry, _impl_.is_online_), _Internal::kHasBitsOffset + 4, 0, (0 | ::_fl::kFcOptional | ::_fl::kBool)},
       // int64 last_active_ms = 4;
-      {PROTOBUF_FIELD_OFFSET(RecommendEntry, _impl_.last_active_ms_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kInt64)},
+      {PROTOBUF_FIELD_OFFSET(RecommendEntry, _impl_.last_active_ms_), _Internal::kHasBitsOffset + 5, 0, (0 | ::_fl::kFcOptional | ::_fl::kInt64)},
+      // string name = 5;
+      {PROTOBUF_FIELD_OFFSET(RecommendEntry, _impl_.name_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+      // uint32 level = 6;
+      {PROTOBUF_FIELD_OFFSET(RecommendEntry, _impl_.level_), _Internal::kHasBitsOffset + 6, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      // uint32 class_id = 7;
+      {PROTOBUF_FIELD_OFFSET(RecommendEntry, _impl_.class_id_), _Internal::kHasBitsOffset + 7, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      // uint32 gender = 8;
+      {PROTOBUF_FIELD_OFFSET(RecommendEntry, _impl_.gender_), _Internal::kHasBitsOffset + 8, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      // string appearance_id = 9;
+      {PROTOBUF_FIELD_OFFSET(RecommendEntry, _impl_.appearance_id_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+      // uint32 zone_id = 10;
+      {PROTOBUF_FIELD_OFFSET(RecommendEntry, _impl_.zone_id_), _Internal::kHasBitsOffset + 9, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
     }},
     // no aux_entries
     {{
+      "\27\0\0\0\0\4\0\0\0\15\0\0\0\0\0\0"
+      "friendpb.RecommendEntry"
+      "name"
+      "appearance_id"
     }},
   };
 }
@@ -724,10 +802,20 @@ inline constexpr RecommendEntry::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
+        name_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        appearance_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
         candidate_player_id_{::uint64_t{0u}},
         mutual_friends_{0u},
         is_online_{false},
-        last_active_ms_{::int64_t{0}} {}
+        last_active_ms_{::int64_t{0}},
+        level_{0u},
+        class_id_{0u},
+        gender_{0u},
+        zone_id_{0u} {}
 
 template <typename>
 constexpr RecommendEntry::RecommendEntry(::_pbi::ConstantInitialized,
@@ -745,7 +833,7 @@ inline void* PROTOBUF_NONNULL RecommendEntry::PlacementNew_(
   return ::new (mem) RecommendEntry(arena);
 }
 constexpr auto RecommendEntry::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(RecommendEntry), alignof(RecommendEntry));
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(RecommendEntry), alignof(RecommendEntry));
 }
 constexpr auto RecommendEntry::InternalGenerateClassData_(
     const MessageLite& prototype,
@@ -1523,11 +1611,11 @@ constexpr FriendEntry::ParseTableT_ FriendEntry::InternalGenerateParseTable_(con
     {
       PROTOBUF_FIELD_OFFSET(FriendEntry, _impl_._has_bits_),
       0, // no _extensions_
-      4, 24,  // max_field_number, fast_idx_mask
+      10, 120,  // max_field_number, fast_idx_mask
       offsetof(ParseTableT_, field_lookup_table),
-      4294967280,  // skipmap
+      4294966272,  // skipmap
       offsetof(ParseTableT_, field_entries),
-      4,  // num_field_entries
+      10,  // num_field_entries
       0,  // num_aux_entries
       offsetof(ParseTableT_, field_names),  // no aux_entries
       class_data,
@@ -1537,36 +1625,82 @@ constexpr FriendEntry::ParseTableT_ FriendEntry::InternalGenerateParseTable_(con
       ::_pbi::TcParser::GetTable<::friendpb::FriendEntry>(),  // to_prefetch
       #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
     }, {{
-      // bool is_online = 4;
-      {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(FriendEntry, _impl_.is_online_), 3>(),
-       {32, 3, 0,
-        PROTOBUF_FIELD_OFFSET(FriendEntry, _impl_.is_online_)}},
+      {::_pbi::TcParser::MiniParse, {}},
       // uint64 friend_player_id = 1;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(FriendEntry, _impl_.friend_player_id_), 0>(),
-       {8, 0, 0,
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(FriendEntry, _impl_.friend_player_id_), 2>(),
+       {8, 2, 0,
         PROTOBUF_FIELD_OFFSET(FriendEntry, _impl_.friend_player_id_)}},
       // int64 since_ms = 2;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(FriendEntry, _impl_.since_ms_), 1>(),
-       {16, 1, 0,
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(FriendEntry, _impl_.since_ms_), 3>(),
+       {16, 3, 0,
         PROTOBUF_FIELD_OFFSET(FriendEntry, _impl_.since_ms_)}},
       // int64 last_active_ms = 3;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(FriendEntry, _impl_.last_active_ms_), 2>(),
-       {24, 2, 0,
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(FriendEntry, _impl_.last_active_ms_), 4>(),
+       {24, 4, 0,
         PROTOBUF_FIELD_OFFSET(FriendEntry, _impl_.last_active_ms_)}},
+      // bool is_online = 4;
+      {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(FriendEntry, _impl_.is_online_), 5>(),
+       {32, 5, 0,
+        PROTOBUF_FIELD_OFFSET(FriendEntry, _impl_.is_online_)}},
+      // string name = 5;
+      {::_pbi::TcParser::FastUS1,
+       {42, 0, 0,
+        PROTOBUF_FIELD_OFFSET(FriendEntry, _impl_.name_)}},
+      // uint32 level = 6;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(FriendEntry, _impl_.level_), 6>(),
+       {48, 6, 0,
+        PROTOBUF_FIELD_OFFSET(FriendEntry, _impl_.level_)}},
+      // uint32 class_id = 7;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(FriendEntry, _impl_.class_id_), 7>(),
+       {56, 7, 0,
+        PROTOBUF_FIELD_OFFSET(FriendEntry, _impl_.class_id_)}},
+      // uint32 gender = 8;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(FriendEntry, _impl_.gender_), 8>(),
+       {64, 8, 0,
+        PROTOBUF_FIELD_OFFSET(FriendEntry, _impl_.gender_)}},
+      // string appearance_id = 9;
+      {::_pbi::TcParser::FastUS1,
+       {74, 1, 0,
+        PROTOBUF_FIELD_OFFSET(FriendEntry, _impl_.appearance_id_)}},
+      // uint32 zone_id = 10;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(FriendEntry, _impl_.zone_id_), 9>(),
+       {80, 9, 0,
+        PROTOBUF_FIELD_OFFSET(FriendEntry, _impl_.zone_id_)}},
+      {::_pbi::TcParser::MiniParse, {}},
+      {::_pbi::TcParser::MiniParse, {}},
+      {::_pbi::TcParser::MiniParse, {}},
+      {::_pbi::TcParser::MiniParse, {}},
+      {::_pbi::TcParser::MiniParse, {}},
     }}, {{
       65535, 65535
     }}, {{
       // uint64 friend_player_id = 1;
-      {PROTOBUF_FIELD_OFFSET(FriendEntry, _impl_.friend_player_id_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      {PROTOBUF_FIELD_OFFSET(FriendEntry, _impl_.friend_player_id_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
       // int64 since_ms = 2;
-      {PROTOBUF_FIELD_OFFSET(FriendEntry, _impl_.since_ms_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kInt64)},
+      {PROTOBUF_FIELD_OFFSET(FriendEntry, _impl_.since_ms_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kInt64)},
       // int64 last_active_ms = 3;
-      {PROTOBUF_FIELD_OFFSET(FriendEntry, _impl_.last_active_ms_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kInt64)},
+      {PROTOBUF_FIELD_OFFSET(FriendEntry, _impl_.last_active_ms_), _Internal::kHasBitsOffset + 4, 0, (0 | ::_fl::kFcOptional | ::_fl::kInt64)},
       // bool is_online = 4;
-      {PROTOBUF_FIELD_OFFSET(FriendEntry, _impl_.is_online_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kBool)},
+      {PROTOBUF_FIELD_OFFSET(FriendEntry, _impl_.is_online_), _Internal::kHasBitsOffset + 5, 0, (0 | ::_fl::kFcOptional | ::_fl::kBool)},
+      // string name = 5;
+      {PROTOBUF_FIELD_OFFSET(FriendEntry, _impl_.name_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+      // uint32 level = 6;
+      {PROTOBUF_FIELD_OFFSET(FriendEntry, _impl_.level_), _Internal::kHasBitsOffset + 6, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      // uint32 class_id = 7;
+      {PROTOBUF_FIELD_OFFSET(FriendEntry, _impl_.class_id_), _Internal::kHasBitsOffset + 7, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      // uint32 gender = 8;
+      {PROTOBUF_FIELD_OFFSET(FriendEntry, _impl_.gender_), _Internal::kHasBitsOffset + 8, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      // string appearance_id = 9;
+      {PROTOBUF_FIELD_OFFSET(FriendEntry, _impl_.appearance_id_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+      // uint32 zone_id = 10;
+      {PROTOBUF_FIELD_OFFSET(FriendEntry, _impl_.zone_id_), _Internal::kHasBitsOffset + 9, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
     }},
     // no aux_entries
     {{
+      "\24\0\0\0\0\4\0\0\0\15\0\0\0\0\0\0"
+      "friendpb.FriendEntry"
+      "name"
+      "appearance_id"
     }},
   };
 }
@@ -1576,10 +1710,20 @@ inline constexpr FriendEntry::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
+        name_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        appearance_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
         friend_player_id_{::uint64_t{0u}},
         since_ms_{::int64_t{0}},
         last_active_ms_{::int64_t{0}},
-        is_online_{false} {}
+        is_online_{false},
+        level_{0u},
+        class_id_{0u},
+        gender_{0u},
+        zone_id_{0u} {}
 
 template <typename>
 constexpr FriendEntry::FriendEntry(::_pbi::ConstantInitialized,
@@ -1597,7 +1741,7 @@ inline void* PROTOBUF_NONNULL FriendEntry::PlacementNew_(
   return ::new (mem) FriendEntry(arena);
 }
 constexpr auto FriendEntry::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(FriendEntry), alignof(FriendEntry));
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(FriendEntry), alignof(FriendEntry));
 }
 constexpr auto FriendEntry::InternalGenerateClassData_(
     const MessageLite& prototype,
@@ -2697,11 +2841,11 @@ constexpr RecommendFriendsResponse::ParseTableT_ RecommendFriendsResponse::Inter
     {
       PROTOBUF_FIELD_OFFSET(RecommendFriendsResponse, _impl_._has_bits_),
       0, // no _extensions_
-      2, 8,  // max_field_number, fast_idx_mask
+      4, 24,  // max_field_number, fast_idx_mask
       offsetof(ParseTableT_, field_lookup_table),
-      4294967292,  // skipmap
+      4294967280,  // skipmap
       offsetof(ParseTableT_, field_entries),
-      2,  // num_field_entries
+      4,  // num_field_entries
       2,  // num_aux_entries
       offsetof(ParseTableT_, aux_entries),
       class_data,
@@ -2711,21 +2855,33 @@ constexpr RecommendFriendsResponse::ParseTableT_ RecommendFriendsResponse::Inter
       ::_pbi::TcParser::GetTable<::friendpb::RecommendFriendsResponse>(),  // to_prefetch
       #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
     }, {{
+      // bool online_directory = 4;
+      {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(RecommendFriendsResponse, _impl_.online_directory_), 3>(),
+       {32, 3, 0,
+        PROTOBUF_FIELD_OFFSET(RecommendFriendsResponse, _impl_.online_directory_)}},
+      // .TipInfoMessage error_message = 1;
+      {::_pbi::TcParser::FastMtS1,
+       {10, 2, 0,
+        PROTOBUF_FIELD_OFFSET(RecommendFriendsResponse, _impl_.error_message_)}},
       // repeated .friendpb.RecommendEntry candidates = 2;
       {::_pbi::TcParser::FastMtR1,
        {18, 0, 1,
         PROTOBUF_FIELD_OFFSET(RecommendFriendsResponse, _impl_.candidates_)}},
-      // .TipInfoMessage error_message = 1;
-      {::_pbi::TcParser::FastMtS1,
-       {10, 1, 0,
-        PROTOBUF_FIELD_OFFSET(RecommendFriendsResponse, _impl_.error_message_)}},
+      // string next_cursor = 3;
+      {::_pbi::TcParser::FastUS1,
+       {26, 1, 0,
+        PROTOBUF_FIELD_OFFSET(RecommendFriendsResponse, _impl_.next_cursor_)}},
     }}, {{
       65535, 65535
     }}, {{
       // .TipInfoMessage error_message = 1;
-      {PROTOBUF_FIELD_OFFSET(RecommendFriendsResponse, _impl_.error_message_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+      {PROTOBUF_FIELD_OFFSET(RecommendFriendsResponse, _impl_.error_message_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
       // repeated .friendpb.RecommendEntry candidates = 2;
       {PROTOBUF_FIELD_OFFSET(RecommendFriendsResponse, _impl_.candidates_), _Internal::kHasBitsOffset + 0, 1, (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
+      // string next_cursor = 3;
+      {PROTOBUF_FIELD_OFFSET(RecommendFriendsResponse, _impl_.next_cursor_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+      // bool online_directory = 4;
+      {PROTOBUF_FIELD_OFFSET(RecommendFriendsResponse, _impl_.online_directory_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kBool)},
     }},
     {{
         #ifndef PROTOBUF_MESSAGE_GLOBALS
@@ -2740,6 +2896,9 @@ constexpr RecommendFriendsResponse::ParseTableT_ RecommendFriendsResponse::Inter
         #endif
     }},
     {{
+      "\41\0\0\13\0\0\0\0"
+      "friendpb.RecommendFriendsResponse"
+      "next_cursor"
     }},
   };
 }
@@ -2754,7 +2913,11 @@ inline constexpr RecommendFriendsResponse::Impl_::Impl_(
             PROTOBUF_FIELD_OFFSET(::friendpb::RecommendFriendsResponse, _impl_.candidates_)>()
          }
         ,
-        error_message_{nullptr} {}
+        next_cursor_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        error_message_{nullptr},
+        online_directory_{false} {}
 
 template <typename>
 constexpr RecommendFriendsResponse::RecommendFriendsResponse(::_pbi::ConstantInitialized,
@@ -3788,15 +3951,27 @@ const ::uint32_t
         protodesc_cold) = {
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::friendpb::FriendEntry, _impl_._has_bits_),
-        7, // hasbit index offset
+        13, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::friendpb::FriendEntry, _impl_.friend_player_id_),
         PROTOBUF_FIELD_OFFSET(::friendpb::FriendEntry, _impl_.since_ms_),
         PROTOBUF_FIELD_OFFSET(::friendpb::FriendEntry, _impl_.last_active_ms_),
         PROTOBUF_FIELD_OFFSET(::friendpb::FriendEntry, _impl_.is_online_),
-        0,
-        1,
+        PROTOBUF_FIELD_OFFSET(::friendpb::FriendEntry, _impl_.name_),
+        PROTOBUF_FIELD_OFFSET(::friendpb::FriendEntry, _impl_.level_),
+        PROTOBUF_FIELD_OFFSET(::friendpb::FriendEntry, _impl_.class_id_),
+        PROTOBUF_FIELD_OFFSET(::friendpb::FriendEntry, _impl_.gender_),
+        PROTOBUF_FIELD_OFFSET(::friendpb::FriendEntry, _impl_.appearance_id_),
+        PROTOBUF_FIELD_OFFSET(::friendpb::FriendEntry, _impl_.zone_id_),
         2,
         3,
+        4,
+        5,
+        0,
+        6,
+        7,
+        8,
+        1,
+        9,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::friendpb::FriendRequest, _impl_._has_bits_),
         7, // hasbit index offset
@@ -3901,29 +4076,51 @@ const ::uint32_t
         0,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::friendpb::RecommendFriendsRequest, _impl_._has_bits_),
-        5, // hasbit index offset
+        8, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::friendpb::RecommendFriendsRequest, _impl_.limit_),
         PROTOBUF_FIELD_OFFSET(::friendpb::RecommendFriendsRequest, _impl_.exclude_player_ids_),
-        1,
+        PROTOBUF_FIELD_OFFSET(::friendpb::RecommendFriendsRequest, _impl_.online_only_),
+        PROTOBUF_FIELD_OFFSET(::friendpb::RecommendFriendsRequest, _impl_.cursor_),
+        PROTOBUF_FIELD_OFFSET(::friendpb::RecommendFriendsRequest, _impl_.query_),
+        3,
         0,
+        4,
+        1,
+        2,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::friendpb::RecommendEntry, _impl_._has_bits_),
-        7, // hasbit index offset
+        13, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::friendpb::RecommendEntry, _impl_.candidate_player_id_),
         PROTOBUF_FIELD_OFFSET(::friendpb::RecommendEntry, _impl_.mutual_friends_),
         PROTOBUF_FIELD_OFFSET(::friendpb::RecommendEntry, _impl_.is_online_),
         PROTOBUF_FIELD_OFFSET(::friendpb::RecommendEntry, _impl_.last_active_ms_),
-        0,
-        1,
+        PROTOBUF_FIELD_OFFSET(::friendpb::RecommendEntry, _impl_.name_),
+        PROTOBUF_FIELD_OFFSET(::friendpb::RecommendEntry, _impl_.level_),
+        PROTOBUF_FIELD_OFFSET(::friendpb::RecommendEntry, _impl_.class_id_),
+        PROTOBUF_FIELD_OFFSET(::friendpb::RecommendEntry, _impl_.gender_),
+        PROTOBUF_FIELD_OFFSET(::friendpb::RecommendEntry, _impl_.appearance_id_),
+        PROTOBUF_FIELD_OFFSET(::friendpb::RecommendEntry, _impl_.zone_id_),
         2,
         3,
+        4,
+        5,
+        0,
+        6,
+        7,
+        8,
+        1,
+        9,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::friendpb::RecommendFriendsResponse, _impl_._has_bits_),
-        5, // hasbit index offset
+        7, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::friendpb::RecommendFriendsResponse, _impl_.error_message_),
         PROTOBUF_FIELD_OFFSET(::friendpb::RecommendFriendsResponse, _impl_.candidates_),
-        1,
+        PROTOBUF_FIELD_OFFSET(::friendpb::RecommendFriendsResponse, _impl_.next_cursor_),
+        PROTOBUF_FIELD_OFFSET(::friendpb::RecommendFriendsResponse, _impl_.online_directory_),
+        2,
         0,
+        1,
+        3,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::friendpb::FriendEventS2C, _impl_._has_bits_),
         6, // hasbit index offset
@@ -3938,30 +4135,30 @@ const ::uint32_t
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, sizeof(::friendpb::FriendEntry)},
-        {11, sizeof(::friendpb::FriendRequest)},
-        {22, sizeof(::friendpb::AddFriendRequest)},
-        {27, sizeof(::friendpb::AddFriendResponse)},
-        {32, sizeof(::friendpb::AcceptFriendRequest)},
-        {37, sizeof(::friendpb::AcceptFriendResponse)},
-        {42, sizeof(::friendpb::RejectFriendRequest)},
-        {47, sizeof(::friendpb::RejectFriendResponse)},
-        {52, sizeof(::friendpb::RemoveFriendRequest)},
-        {57, sizeof(::friendpb::RemoveFriendResponse)},
-        {62, sizeof(::friendpb::GetFriendListRequest)},
-        {63, sizeof(::friendpb::GetFriendListResponse)},
-        {70, sizeof(::friendpb::GetPendingRequestsRequest)},
-        {71, sizeof(::friendpb::GetPendingRequestsResponse)},
-        {78, sizeof(::friendpb::BlockRequest)},
-        {83, sizeof(::friendpb::BlockResponse)},
-        {88, sizeof(::friendpb::UnblockRequest)},
-        {93, sizeof(::friendpb::UnblockResponse)},
-        {98, sizeof(::friendpb::ListBlocksRequest)},
-        {99, sizeof(::friendpb::BlockEntry)},
-        {106, sizeof(::friendpb::ListBlocksResponse)},
-        {113, sizeof(::friendpb::RecommendFriendsRequest)},
-        {120, sizeof(::friendpb::RecommendEntry)},
-        {131, sizeof(::friendpb::RecommendFriendsResponse)},
-        {138, sizeof(::friendpb::FriendEventS2C)},
+        {23, sizeof(::friendpb::FriendRequest)},
+        {34, sizeof(::friendpb::AddFriendRequest)},
+        {39, sizeof(::friendpb::AddFriendResponse)},
+        {44, sizeof(::friendpb::AcceptFriendRequest)},
+        {49, sizeof(::friendpb::AcceptFriendResponse)},
+        {54, sizeof(::friendpb::RejectFriendRequest)},
+        {59, sizeof(::friendpb::RejectFriendResponse)},
+        {64, sizeof(::friendpb::RemoveFriendRequest)},
+        {69, sizeof(::friendpb::RemoveFriendResponse)},
+        {74, sizeof(::friendpb::GetFriendListRequest)},
+        {75, sizeof(::friendpb::GetFriendListResponse)},
+        {82, sizeof(::friendpb::GetPendingRequestsRequest)},
+        {83, sizeof(::friendpb::GetPendingRequestsResponse)},
+        {90, sizeof(::friendpb::BlockRequest)},
+        {95, sizeof(::friendpb::BlockResponse)},
+        {100, sizeof(::friendpb::UnblockRequest)},
+        {105, sizeof(::friendpb::UnblockResponse)},
+        {110, sizeof(::friendpb::ListBlocksRequest)},
+        {111, sizeof(::friendpb::BlockEntry)},
+        {118, sizeof(::friendpb::ListBlocksResponse)},
+        {125, sizeof(::friendpb::RecommendFriendsRequest)},
+        {138, sizeof(::friendpb::RecommendEntry)},
+        {161, sizeof(::friendpb::RecommendFriendsResponse)},
+        {172, sizeof(::friendpb::FriendEventS2C)},
 };
 static const ::_pbi::MessageGlobalsBase* PROTOBUF_NONNULL const
     file_message_globals[] = {
@@ -3996,82 +4193,89 @@ const char descriptor_table_protodef_proto_2ffriend_2ffriend_2eproto[] ABSL_ATTR
     "\n\031proto/friend/friend.proto\022\010friendpb\032\033p"
     "roto/db/proto_option.proto\032\035proto/common"
     "/base/empty.proto\032\033proto/common/base/tip"
-    ".proto\"d\n\013FriendEntry\022\030\n\020friend_player_i"
-    "d\030\001 \001(\004\022\020\n\010since_ms\030\002 \001(\003\022\026\n\016last_active"
-    "_ms\030\003 \001(\003\022\021\n\tis_online\030\004 \001(\010\"\205\001\n\rFriendR"
-    "equest\022\026\n\016from_player_id\030\001 \001(\004\022\024\n\014to_pla"
-    "yer_id\030\002 \001(\004\022\027\n\017request_time_ms\030\003 \001(\003\022-\n"
-    "\006status\030\004 \001(\0162\035.friendpb.FriendRequestSt"
-    "atus\"=\n\020AddFriendRequest\022\030\n\020target_playe"
-    "r_id\030\002 \001(\004J\004\010\001\020\002R\tplayer_id\";\n\021AddFriend"
+    ".proto\"\313\001\n\013FriendEntry\022\030\n\020friend_player_"
+    "id\030\001 \001(\004\022\020\n\010since_ms\030\002 \001(\003\022\026\n\016last_activ"
+    "e_ms\030\003 \001(\003\022\021\n\tis_online\030\004 \001(\010\022\014\n\004name\030\005 "
+    "\001(\t\022\r\n\005level\030\006 \001(\r\022\020\n\010class_id\030\007 \001(\r\022\016\n\006"
+    "gender\030\010 \001(\r\022\025\n\rappearance_id\030\t \001(\t\022\017\n\007z"
+    "one_id\030\n \001(\r\"\205\001\n\rFriendRequest\022\026\n\016from_p"
+    "layer_id\030\001 \001(\004\022\024\n\014to_player_id\030\002 \001(\004\022\027\n\017"
+    "request_time_ms\030\003 \001(\003\022-\n\006status\030\004 \001(\0162\035."
+    "friendpb.FriendRequestStatus\"=\n\020AddFrien"
+    "dRequest\022\030\n\020target_player_id\030\002 \001(\004J\004\010\001\020\002"
+    "R\tplayer_id\";\n\021AddFriendResponse\022&\n\rerro"
+    "r_message\030\001 \001(\0132\017.TipInfoMessage\">\n\023Acce"
+    "ptFriendRequest\022\026\n\016from_player_id\030\002 \001(\004J"
+    "\004\010\001\020\002R\tplayer_id\">\n\024AcceptFriendResponse"
+    "\022&\n\rerror_message\030\001 \001(\0132\017.TipInfoMessage"
+    "\">\n\023RejectFriendRequest\022\026\n\016from_player_i"
+    "d\030\002 \001(\004J\004\010\001\020\002R\tplayer_id\">\n\024RejectFriend"
     "Response\022&\n\rerror_message\030\001 \001(\0132\017.TipInf"
-    "oMessage\">\n\023AcceptFriendRequest\022\026\n\016from_"
-    "player_id\030\002 \001(\004J\004\010\001\020\002R\tplayer_id\">\n\024Acce"
-    "ptFriendResponse\022&\n\rerror_message\030\001 \001(\0132"
-    "\017.TipInfoMessage\">\n\023RejectFriendRequest\022"
-    "\026\n\016from_player_id\030\002 \001(\004J\004\010\001\020\002R\tplayer_id"
-    "\">\n\024RejectFriendResponse\022&\n\rerror_messag"
-    "e\030\001 \001(\0132\017.TipInfoMessage\"@\n\023RemoveFriend"
-    "Request\022\030\n\020target_player_id\030\002 \001(\004J\004\010\001\020\002R"
-    "\tplayer_id\">\n\024RemoveFriendResponse\022&\n\rer"
-    "ror_message\030\001 \001(\0132\017.TipInfoMessage\"\'\n\024Ge"
-    "tFriendListRequestJ\004\010\001\020\002R\tplayer_id\"g\n\025G"
-    "etFriendListResponse\022&\n\rerror_message\030\001 "
-    "\001(\0132\017.TipInfoMessage\022&\n\007friends\030\002 \003(\0132\025."
-    "friendpb.FriendEntry\",\n\031GetPendingReques"
-    "tsRequestJ\004\010\001\020\002R\tplayer_id\"o\n\032GetPending"
-    "RequestsResponse\022&\n\rerror_message\030\001 \001(\0132"
-    "\017.TipInfoMessage\022)\n\010requests\030\002 \003(\0132\027.fri"
-    "endpb.FriendRequest\"(\n\014BlockRequest\022\030\n\020t"
-    "arget_player_id\030\001 \001(\004\"7\n\rBlockResponse\022&"
-    "\n\rerror_message\030\001 \001(\0132\017.TipInfoMessage\"*"
-    "\n\016UnblockRequest\022\030\n\020target_player_id\030\001 \001"
-    "(\004\"9\n\017UnblockResponse\022&\n\rerror_message\030\001"
-    " \001(\0132\017.TipInfoMessage\"\023\n\021ListBlocksReque"
-    "st\"9\n\nBlockEntry\022\031\n\021blocked_player_id\030\001 "
-    "\001(\004\022\020\n\010since_ms\030\002 \001(\003\"b\n\022ListBlocksRespo"
-    "nse\022&\n\rerror_message\030\001 \001(\0132\017.TipInfoMess"
-    "age\022$\n\006blocks\030\002 \003(\0132\024.friendpb.BlockEntr"
-    "y\"D\n\027RecommendFriendsRequest\022\r\n\005limit\030\001 "
-    "\001(\r\022\032\n\022exclude_player_ids\030\002 \003(\004\"p\n\016Recom"
-    "mendEntry\022\033\n\023candidate_player_id\030\001 \001(\004\022\026"
-    "\n\016mutual_friends\030\002 \001(\r\022\021\n\tis_online\030\003 \001("
-    "\010\022\026\n\016last_active_ms\030\004 \001(\003\"p\n\030RecommendFr"
-    "iendsResponse\022&\n\rerror_message\030\001 \001(\0132\017.T"
-    "ipInfoMessage\022,\n\ncandidates\030\002 \003(\0132\030.frie"
-    "ndpb.RecommendEntry\"b\n\016FriendEventS2C\022+\n"
-    "\006reason\030\001 \001(\0162\033.friendpb.FriendEventReas"
-    "on\022\024\n\014by_player_id\030\002 \001(\004\022\r\n\005ts_ms\030\003 \001(\003*"
-    "\207\001\n\023FriendRequestStatus\022\032\n\026FRIEND_REQUES"
-    "T_UNKNOWN\020\000\022\032\n\026FRIEND_REQUEST_PENDING\020\001\022"
-    "\033\n\027FRIEND_REQUEST_ACCEPTED\020\002\022\033\n\027FRIEND_R"
-    "EQUEST_REJECTED\020\003*\214\001\n\021FriendEventReason\022"
-    "#\n\037FRIEND_EVENT_REASON_UNSPECIFIED\020\000\022(\n$"
-    "FRIEND_EVENT_REASON_REQUEST_RECEIVED\020\001\022("
-    "\n$FRIEND_EVENT_REASON_REQUEST_ACCEPTED\020\002"
-    "2\326\006\n\022ClientPlayerFriend\022D\n\tAddFriend\022\032.f"
-    "riendpb.AddFriendRequest\032\033.friendpb.AddF"
-    "riendResponse\022M\n\014AcceptFriend\022\035.friendpb"
-    ".AcceptFriendRequest\032\036.friendpb.AcceptFr"
-    "iendResponse\022M\n\014RejectFriend\022\035.friendpb."
-    "RejectFriendRequest\032\036.friendpb.RejectFri"
-    "endResponse\022M\n\014RemoveFriend\022\035.friendpb.R"
-    "emoveFriendRequest\032\036.friendpb.RemoveFrie"
-    "ndResponse\022P\n\rGetFriendList\022\036.friendpb.G"
-    "etFriendListRequest\032\037.friendpb.GetFriend"
-    "ListResponse\022_\n\022GetPendingRequests\022#.fri"
-    "endpb.GetPendingRequestsRequest\032$.friend"
-    "pb.GetPendingRequestsResponse\0228\n\005Block\022\026"
-    ".friendpb.BlockRequest\032\027.friendpb.BlockR"
-    "esponse\022>\n\007Unblock\022\030.friendpb.UnblockReq"
-    "uest\032\031.friendpb.UnblockResponse\022G\n\nListB"
-    "locks\022\033.friendpb.ListBlocksRequest\032\034.fri"
-    "endpb.ListBlocksResponse\022Y\n\020RecommendFri"
-    "ends\022!.friendpb.RecommendFriendsRequest\032"
-    "\".friendpb.RecommendFriendsResponse\0225\n\021N"
-    "otifyFriendEvent\022\030.friendpb.FriendEventS"
-    "2C\032\006.Empty\032\005\210\250\303\001\001B\025Z\023friend/proto/friend"
-    "b\006proto3"
+    "oMessage\"@\n\023RemoveFriendRequest\022\030\n\020targe"
+    "t_player_id\030\002 \001(\004J\004\010\001\020\002R\tplayer_id\">\n\024Re"
+    "moveFriendResponse\022&\n\rerror_message\030\001 \001("
+    "\0132\017.TipInfoMessage\"\'\n\024GetFriendListReque"
+    "stJ\004\010\001\020\002R\tplayer_id\"g\n\025GetFriendListResp"
+    "onse\022&\n\rerror_message\030\001 \001(\0132\017.TipInfoMes"
+    "sage\022&\n\007friends\030\002 \003(\0132\025.friendpb.FriendE"
+    "ntry\",\n\031GetPendingRequestsRequestJ\004\010\001\020\002R"
+    "\tplayer_id\"o\n\032GetPendingRequestsResponse"
+    "\022&\n\rerror_message\030\001 \001(\0132\017.TipInfoMessage"
+    "\022)\n\010requests\030\002 \003(\0132\027.friendpb.FriendRequ"
+    "est\"(\n\014BlockRequest\022\030\n\020target_player_id\030"
+    "\001 \001(\004\"7\n\rBlockResponse\022&\n\rerror_message\030"
+    "\001 \001(\0132\017.TipInfoMessage\"*\n\016UnblockRequest"
+    "\022\030\n\020target_player_id\030\001 \001(\004\"9\n\017UnblockRes"
+    "ponse\022&\n\rerror_message\030\001 \001(\0132\017.TipInfoMe"
+    "ssage\"\023\n\021ListBlocksRequest\"9\n\nBlockEntry"
+    "\022\031\n\021blocked_player_id\030\001 \001(\004\022\020\n\010since_ms\030"
+    "\002 \001(\003\"b\n\022ListBlocksResponse\022&\n\rerror_mes"
+    "sage\030\001 \001(\0132\017.TipInfoMessage\022$\n\006blocks\030\002 "
+    "\003(\0132\024.friendpb.BlockEntry\"x\n\027RecommendFr"
+    "iendsRequest\022\r\n\005limit\030\001 \001(\r\022\032\n\022exclude_p"
+    "layer_ids\030\002 \003(\004\022\023\n\013online_only\030\003 \001(\010\022\016\n\006"
+    "cursor\030\004 \001(\t\022\r\n\005query\030\005 \001(\t\"\327\001\n\016Recommen"
+    "dEntry\022\033\n\023candidate_player_id\030\001 \001(\004\022\026\n\016m"
+    "utual_friends\030\002 \001(\r\022\021\n\tis_online\030\003 \001(\010\022\026"
+    "\n\016last_active_ms\030\004 \001(\003\022\014\n\004name\030\005 \001(\t\022\r\n\005"
+    "level\030\006 \001(\r\022\020\n\010class_id\030\007 \001(\r\022\016\n\006gender\030"
+    "\010 \001(\r\022\025\n\rappearance_id\030\t \001(\t\022\017\n\007zone_id\030"
+    "\n \001(\r\"\237\001\n\030RecommendFriendsResponse\022&\n\rer"
+    "ror_message\030\001 \001(\0132\017.TipInfoMessage\022,\n\nca"
+    "ndidates\030\002 \003(\0132\030.friendpb.RecommendEntry"
+    "\022\023\n\013next_cursor\030\003 \001(\t\022\030\n\020online_director"
+    "y\030\004 \001(\010\"b\n\016FriendEventS2C\022+\n\006reason\030\001 \001("
+    "\0162\033.friendpb.FriendEventReason\022\024\n\014by_pla"
+    "yer_id\030\002 \001(\004\022\r\n\005ts_ms\030\003 \001(\003*\207\001\n\023FriendRe"
+    "questStatus\022\032\n\026FRIEND_REQUEST_UNKNOWN\020\000\022"
+    "\032\n\026FRIEND_REQUEST_PENDING\020\001\022\033\n\027FRIEND_RE"
+    "QUEST_ACCEPTED\020\002\022\033\n\027FRIEND_REQUEST_REJEC"
+    "TED\020\003*\214\001\n\021FriendEventReason\022#\n\037FRIEND_EV"
+    "ENT_REASON_UNSPECIFIED\020\000\022(\n$FRIEND_EVENT"
+    "_REASON_REQUEST_RECEIVED\020\001\022(\n$FRIEND_EVE"
+    "NT_REASON_REQUEST_ACCEPTED\020\0022\326\006\n\022ClientP"
+    "layerFriend\022D\n\tAddFriend\022\032.friendpb.AddF"
+    "riendRequest\032\033.friendpb.AddFriendRespons"
+    "e\022M\n\014AcceptFriend\022\035.friendpb.AcceptFrien"
+    "dRequest\032\036.friendpb.AcceptFriendResponse"
+    "\022M\n\014RejectFriend\022\035.friendpb.RejectFriend"
+    "Request\032\036.friendpb.RejectFriendResponse\022"
+    "M\n\014RemoveFriend\022\035.friendpb.RemoveFriendR"
+    "equest\032\036.friendpb.RemoveFriendResponse\022P"
+    "\n\rGetFriendList\022\036.friendpb.GetFriendList"
+    "Request\032\037.friendpb.GetFriendListResponse"
+    "\022_\n\022GetPendingRequests\022#.friendpb.GetPen"
+    "dingRequestsRequest\032$.friendpb.GetPendin"
+    "gRequestsResponse\0228\n\005Block\022\026.friendpb.Bl"
+    "ockRequest\032\027.friendpb.BlockResponse\022>\n\007U"
+    "nblock\022\030.friendpb.UnblockRequest\032\031.frien"
+    "dpb.UnblockResponse\022G\n\nListBlocks\022\033.frie"
+    "ndpb.ListBlocksRequest\032\034.friendpb.ListBl"
+    "ocksResponse\022Y\n\020RecommendFriends\022!.frien"
+    "dpb.RecommendFriendsRequest\032\".friendpb.R"
+    "ecommendFriendsResponse\0225\n\021NotifyFriendE"
+    "vent\022\030.friendpb.FriendEventS2C\032\006.Empty\032\005"
+    "\210\250\303\001\001B\025Z\023friend/proto/friendb\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2ffriend_2ffriend_2eproto_deps[3] = {
@@ -4083,7 +4287,7 @@ static ::absl::once_flag descriptor_table_proto_2ffriend_2ffriend_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2ffriend_2ffriend_2eproto = {
     false,
     false,
-    3128,
+    3436,
     descriptor_table_protodef_proto_2ffriend_2ffriend_2eproto,
     "proto/friend/friend.proto",
     &descriptor_table_proto_2ffriend_2ffriend_2eproto_once,
@@ -4122,30 +4326,54 @@ FriendEntry::FriendEntry(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
   SharedCtor(arena);
   // @@protoc_insertion_point(arena_constructor:friendpb.FriendEntry)
 }
+PROTOBUF_NDEBUG_INLINE FriendEntry::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::friendpb::FriendEntry& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        name_(arena, from.name_),
+        appearance_id_(arena, from.appearance_id_) {}
+
 FriendEntry::FriendEntry(
-    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const FriendEntry& from)
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const FriendEntry& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, FriendEntry_get_class_data()),
+    : ::google::protobuf::Message(arena, FriendEntry_get_class_data()) {
+
 #else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::Message(arena),
+    : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
-      _impl_(from._impl_) {
+  FriendEntry* const _this = this;
+  (void)_this;
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::memcpy(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, friend_player_id_),
+           reinterpret_cast<const char*>(&from._impl_) +
+               offsetof(Impl_, friend_player_id_),
+           offsetof(Impl_, zone_id_) -
+               offsetof(Impl_, friend_player_id_) +
+               sizeof(Impl_::zone_id_));
+
+  // @@protoc_insertion_point(copy_constructor:friendpb.FriendEntry)
 }
 PROTOBUF_NDEBUG_INLINE FriendEntry::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
-      : _cached_size_{0} {}
+      : _cached_size_{0},
+        name_(arena),
+        appearance_id_(arena) {}
 
 inline void FriendEntry::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char*>(&_impl_) +
                offsetof(Impl_, friend_player_id_),
            0,
-           offsetof(Impl_, is_online_) -
+           offsetof(Impl_, zone_id_) -
                offsetof(Impl_, friend_player_id_) +
-               sizeof(Impl_::is_online_));
+               sizeof(Impl_::zone_id_));
 }
 FriendEntry::~FriendEntry() {
   // @@protoc_insertion_point(destructor:friendpb.FriendEntry)
@@ -4158,6 +4386,8 @@ inline void FriendEntry::SharedDtor(MessageLite& self) {
   }
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.name_.Destroy();
+  this_._impl_.appearance_id_.Destroy();
   this_._impl_.~Impl_();
 }
 
@@ -4195,10 +4425,23 @@ PROTOBUF_NOINLINE void FriendEntry::Clear() {
   (void) cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      _impl_.name_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      _impl_.appearance_id_.ClearNonDefaultToEmpty();
+    }
+  }
+  if (BatchCheckHasBit(cached_has_bits, 0x000000fcU)) {
     ::memset(&_impl_.friend_player_id_, 0, static_cast<::size_t>(
-        reinterpret_cast<char*>(&_impl_.is_online_) -
-        reinterpret_cast<char*>(&_impl_.friend_player_id_)) + sizeof(_impl_.is_online_));
+        reinterpret_cast<char*>(&_impl_.class_id_) -
+        reinterpret_cast<char*>(&_impl_.friend_player_id_)) + sizeof(_impl_.class_id_));
+  }
+  if (BatchCheckHasBit(cached_has_bits, 0x00000300U)) {
+    ::memset(&_impl_.gender_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.zone_id_) -
+        reinterpret_cast<char*>(&_impl_.gender_)) + sizeof(_impl_.zone_id_));
   }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
@@ -4224,7 +4467,7 @@ PROTOBUF_NOINLINE void FriendEntry::Clear() {
 
   cached_has_bits = this_._impl_._has_bits_[0];
   // uint64 friend_player_id = 1;
-  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
     if (this_._internal_friend_player_id() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
@@ -4233,7 +4476,7 @@ PROTOBUF_NOINLINE void FriendEntry::Clear() {
   }
 
   // int64 since_ms = 2;
-  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
     if (this_._internal_since_ms() != 0) {
       target =
           ::google::protobuf::internal::WireFormatLite::WriteInt64ToArrayWithField<2>(
@@ -4242,7 +4485,7 @@ PROTOBUF_NOINLINE void FriendEntry::Clear() {
   }
 
   // int64 last_active_ms = 3;
-  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000010U)) {
     if (this_._internal_last_active_ms() != 0) {
       target =
           ::google::protobuf::internal::WireFormatLite::WriteInt64ToArrayWithField<3>(
@@ -4251,11 +4494,67 @@ PROTOBUF_NOINLINE void FriendEntry::Clear() {
   }
 
   // bool is_online = 4;
-  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000020U)) {
     if (this_._internal_is_online() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteBoolToArray(
           4, this_._internal_is_online(), target);
+    }
+  }
+
+  // string name = 5;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (!this_._internal_name().empty()) {
+      const ::std::string& _s = this_._internal_name();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "friendpb.FriendEntry.name");
+      target = stream->WriteStringMaybeAliased(5, _s, target);
+    }
+  }
+
+  // uint32 level = 6;
+  if (CheckHasBit(cached_has_bits, 0x00000040U)) {
+    if (this_._internal_level() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          6, this_._internal_level(), target);
+    }
+  }
+
+  // uint32 class_id = 7;
+  if (CheckHasBit(cached_has_bits, 0x00000080U)) {
+    if (this_._internal_class_id() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          7, this_._internal_class_id(), target);
+    }
+  }
+
+  // uint32 gender = 8;
+  if (CheckHasBit(cached_has_bits, 0x00000100U)) {
+    if (this_._internal_gender() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          8, this_._internal_gender(), target);
+    }
+  }
+
+  // string appearance_id = 9;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (!this_._internal_appearance_id().empty()) {
+      const ::std::string& _s = this_._internal_appearance_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "friendpb.FriendEntry.appearance_id");
+      target = stream->WriteStringMaybeAliased(9, _s, target);
+    }
+  }
+
+  // uint32 zone_id = 10;
+  if (CheckHasBit(cached_has_bits, 0x00000200U)) {
+    if (this_._internal_zone_id() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          10, this_._internal_zone_id(), target);
     }
   }
 
@@ -4284,32 +4583,76 @@ PROTOBUF_NOINLINE void FriendEntry::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
-    // uint64 friend_player_id = 1;
+  if (BatchCheckHasBit(cached_has_bits, 0x000000ffU)) {
+    // string name = 5;
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!this_._internal_name().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_name());
+      }
+    }
+    // string appearance_id = 9;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!this_._internal_appearance_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_appearance_id());
+      }
+    }
+    // uint64 friend_player_id = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
       if (this_._internal_friend_player_id() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
             this_._internal_friend_player_id());
       }
     }
     // int64 since_ms = 2;
-    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
       if (this_._internal_since_ms() != 0) {
         total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(
             this_._internal_since_ms());
       }
     }
     // int64 last_active_ms = 3;
-    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
       if (this_._internal_last_active_ms() != 0) {
         total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(
             this_._internal_last_active_ms());
       }
     }
     // bool is_online = 4;
-    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
       if (this_._internal_is_online() != 0) {
         total_size += 2;
+      }
+    }
+    // uint32 level = 6;
+    if (CheckHasBit(cached_has_bits, 0x00000040U)) {
+      if (this_._internal_level() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_level());
+      }
+    }
+    // uint32 class_id = 7;
+    if (CheckHasBit(cached_has_bits, 0x00000080U)) {
+      if (this_._internal_class_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_class_id());
+      }
+    }
+  }
+  if (BatchCheckHasBit(cached_has_bits, 0x00000300U)) {
+    // uint32 gender = 8;
+    if (CheckHasBit(cached_has_bits, 0x00000100U)) {
+      if (this_._internal_gender() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_gender());
+      }
+    }
+    // uint32 zone_id = 10;
+    if (CheckHasBit(cached_has_bits, 0x00000200U)) {
+      if (this_._internal_zone_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_zone_id());
       }
     }
   }
@@ -4330,25 +4673,65 @@ void FriendEntry::MergeImpl(::google::protobuf::MessageLite& to_msg,
   (void)cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x000000ffU)) {
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!from._internal_name().empty()) {
+        _this->_internal_set_name(from._internal_name());
+      } else {
+        if (_this->_impl_.name_.IsDefault()) {
+          _this->_internal_set_name("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!from._internal_appearance_id().empty()) {
+        _this->_internal_set_appearance_id(from._internal_appearance_id());
+      } else {
+        if (_this->_impl_.appearance_id_.IsDefault()) {
+          _this->_internal_set_appearance_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
       if (from._internal_friend_player_id() != 0) {
         _this->_impl_.friend_player_id_ = from._impl_.friend_player_id_;
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
       if (from._internal_since_ms() != 0) {
         _this->_impl_.since_ms_ = from._impl_.since_ms_;
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
       if (from._internal_last_active_ms() != 0) {
         _this->_impl_.last_active_ms_ = from._impl_.last_active_ms_;
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
       if (from._internal_is_online() != 0) {
         _this->_impl_.is_online_ = from._impl_.is_online_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000040U)) {
+      if (from._internal_level() != 0) {
+        _this->_impl_.level_ = from._impl_.level_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000080U)) {
+      if (from._internal_class_id() != 0) {
+        _this->_impl_.class_id_ = from._impl_.class_id_;
+      }
+    }
+  }
+  if (BatchCheckHasBit(cached_has_bits, 0x00000300U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000100U)) {
+      if (from._internal_gender() != 0) {
+        _this->_impl_.gender_ = from._impl_.gender_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000200U)) {
+      if (from._internal_zone_id() != 0) {
+        _this->_impl_.zone_id_ = from._impl_.zone_id_;
       }
     }
   }
@@ -4367,11 +4750,15 @@ void FriendEntry::CopyFrom(const FriendEntry& from) {
 
 void FriendEntry::InternalSwap(FriendEntry* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
   using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.name_, &other->_impl_.name_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.appearance_id_, &other->_impl_.appearance_id_, arena);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(FriendEntry, _impl_.is_online_)
-      + sizeof(FriendEntry::_impl_.is_online_)
+      PROTOBUF_FIELD_OFFSET(FriendEntry, _impl_.zone_id_)
+      + sizeof(FriendEntry::_impl_.zone_id_)
       - PROTOBUF_FIELD_OFFSET(FriendEntry, _impl_.friend_player_id_)>(
           reinterpret_cast<char*>(&_impl_.friend_player_id_),
           reinterpret_cast<char*>(&other->_impl_.friend_player_id_));
@@ -8307,7 +8694,9 @@ PROTOBUF_NDEBUG_INLINE RecommendFriendsRequest::Impl_::Impl_(
           , from.exclude_player_ids_
         }
         ,
-        _exclude_player_ids_cached_byte_size_{0} {}
+        _exclude_player_ids_cached_byte_size_{0},
+        cursor_(arena, from.cursor_),
+        query_(arena, from.query_) {}
 
 RecommendFriendsRequest::RecommendFriendsRequest(
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
@@ -8323,7 +8712,13 @@ RecommendFriendsRequest::RecommendFriendsRequest(
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
-  _impl_.limit_ = from._impl_.limit_;
+  ::memcpy(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, limit_),
+           reinterpret_cast<const char*>(&from._impl_) +
+               offsetof(Impl_, limit_),
+           offsetof(Impl_, online_only_) -
+               offsetof(Impl_, limit_) +
+               sizeof(Impl_::online_only_));
 
   // @@protoc_insertion_point(copy_constructor:friendpb.RecommendFriendsRequest)
 }
@@ -8336,11 +8731,18 @@ PROTOBUF_NDEBUG_INLINE RecommendFriendsRequest::Impl_::Impl_(
             PROTOBUF_FIELD_OFFSET(::friendpb::RecommendFriendsRequest, _impl_.exclude_player_ids_)>()
          }
         ,
-        _exclude_player_ids_cached_byte_size_{0} {}
+        _exclude_player_ids_cached_byte_size_{0},
+        cursor_(arena),
+        query_(arena) {}
 
 inline void RecommendFriendsRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
-  _impl_.limit_ = {};
+  ::memset(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, limit_),
+           0,
+           offsetof(Impl_, online_only_) -
+               offsetof(Impl_, limit_) +
+               sizeof(Impl_::online_only_));
 }
 RecommendFriendsRequest::~RecommendFriendsRequest() {
   // @@protoc_insertion_point(destructor:friendpb.RecommendFriendsRequest)
@@ -8353,6 +8755,8 @@ inline void RecommendFriendsRequest::SharedDtor(MessageLite& self) {
   }
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.cursor_.Destroy();
+  this_._impl_.query_.Destroy();
   this_._impl_.~Impl_();
 }
 
@@ -8390,10 +8794,22 @@ PROTOBUF_NOINLINE void RecommendFriendsRequest::Clear() {
   (void) cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
-    _impl_.exclude_player_ids_.Clear();
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      _impl_.exclude_player_ids_.Clear();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      _impl_.cursor_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      _impl_.query_.ClearNonDefaultToEmpty();
+    }
   }
-  _impl_.limit_ = 0u;
+  if (BatchCheckHasBit(cached_has_bits, 0x00000018U)) {
+    ::memset(&_impl_.limit_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.online_only_) -
+        reinterpret_cast<char*>(&_impl_.limit_)) + sizeof(_impl_.online_only_));
+  }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
@@ -8418,7 +8834,7 @@ PROTOBUF_NOINLINE void RecommendFriendsRequest::Clear() {
 
   cached_has_bits = this_._impl_._has_bits_[0];
   // uint32 limit = 1;
-  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
     if (this_._internal_limit() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
@@ -8434,6 +8850,35 @@ PROTOBUF_NOINLINE void RecommendFriendsRequest::Clear() {
         target = stream->WriteUInt64Packed(
             2, this_._internal_exclude_player_ids(), byte_size, target);
       }
+    }
+  }
+
+  // bool online_only = 3;
+  if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+    if (this_._internal_online_only() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteBoolToArray(
+          3, this_._internal_online_only(), target);
+    }
+  }
+
+  // string cursor = 4;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (!this_._internal_cursor().empty()) {
+      const ::std::string& _s = this_._internal_cursor();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "friendpb.RecommendFriendsRequest.cursor");
+      target = stream->WriteStringMaybeAliased(4, _s, target);
+    }
+  }
+
+  // string query = 5;
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (!this_._internal_query().empty()) {
+      const ::std::string& _s = this_._internal_query();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "friendpb.RecommendFriendsRequest.query");
+      target = stream->WriteStringMaybeAliased(5, _s, target);
     }
   }
 
@@ -8462,7 +8907,7 @@ PROTOBUF_NOINLINE void RecommendFriendsRequest::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000001fU)) {
     // repeated uint64 exclude_player_ids = 2;
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       total_size +=
@@ -8470,11 +8915,31 @@ PROTOBUF_NOINLINE void RecommendFriendsRequest::Clear() {
               this_._internal_exclude_player_ids(), 1,
               this_._impl_._exclude_player_ids_cached_byte_size_);
     }
-    // uint32 limit = 1;
+    // string cursor = 4;
     if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!this_._internal_cursor().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_cursor());
+      }
+    }
+    // string query = 5;
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (!this_._internal_query().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_query());
+      }
+    }
+    // uint32 limit = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
       if (this_._internal_limit() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_limit());
+      }
+    }
+    // bool online_only = 3;
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+      if (this_._internal_online_only() != 0) {
+        total_size += 2;
       }
     }
   }
@@ -8495,13 +8960,36 @@ void RecommendFriendsRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
   (void)cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000001fU)) {
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       _this->_internal_mutable_exclude_player_ids()->MergeFrom(from._internal_exclude_player_ids());
     }
     if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!from._internal_cursor().empty()) {
+        _this->_internal_set_cursor(from._internal_cursor());
+      } else {
+        if (_this->_impl_.cursor_.IsDefault()) {
+          _this->_internal_set_cursor("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (!from._internal_query().empty()) {
+        _this->_internal_set_query(from._internal_query());
+      } else {
+        if (_this->_impl_.query_.IsDefault()) {
+          _this->_internal_set_query("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
       if (from._internal_limit() != 0) {
         _this->_impl_.limit_ = from._impl_.limit_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+      if (from._internal_online_only() != 0) {
+        _this->_impl_.online_only_ = from._impl_.online_only_;
       }
     }
   }
@@ -8520,10 +9008,19 @@ void RecommendFriendsRequest::CopyFrom(const RecommendFriendsRequest& from) {
 
 void RecommendFriendsRequest::InternalSwap(RecommendFriendsRequest* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
   using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   _impl_.exclude_player_ids_.InternalSwap(&other->_impl_.exclude_player_ids_);
-  swap(_impl_.limit_, other->_impl_.limit_);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.cursor_, &other->_impl_.cursor_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.query_, &other->_impl_.query_, arena);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(RecommendFriendsRequest, _impl_.online_only_)
+      + sizeof(RecommendFriendsRequest::_impl_.online_only_)
+      - PROTOBUF_FIELD_OFFSET(RecommendFriendsRequest, _impl_.limit_)>(
+          reinterpret_cast<char*>(&_impl_.limit_),
+          reinterpret_cast<char*>(&other->_impl_.limit_));
 }
 
 ::google::protobuf::Metadata RecommendFriendsRequest::GetMetadata() const {
@@ -8540,30 +9037,54 @@ RecommendEntry::RecommendEntry(::google::protobuf::Arena* PROTOBUF_NULLABLE aren
   SharedCtor(arena);
   // @@protoc_insertion_point(arena_constructor:friendpb.RecommendEntry)
 }
+PROTOBUF_NDEBUG_INLINE RecommendEntry::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::friendpb::RecommendEntry& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        name_(arena, from.name_),
+        appearance_id_(arena, from.appearance_id_) {}
+
 RecommendEntry::RecommendEntry(
-    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const RecommendEntry& from)
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const RecommendEntry& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, RecommendEntry_get_class_data()),
+    : ::google::protobuf::Message(arena, RecommendEntry_get_class_data()) {
+
 #else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::Message(arena),
+    : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
-      _impl_(from._impl_) {
+  RecommendEntry* const _this = this;
+  (void)_this;
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::memcpy(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, candidate_player_id_),
+           reinterpret_cast<const char*>(&from._impl_) +
+               offsetof(Impl_, candidate_player_id_),
+           offsetof(Impl_, zone_id_) -
+               offsetof(Impl_, candidate_player_id_) +
+               sizeof(Impl_::zone_id_));
+
+  // @@protoc_insertion_point(copy_constructor:friendpb.RecommendEntry)
 }
 PROTOBUF_NDEBUG_INLINE RecommendEntry::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
-      : _cached_size_{0} {}
+      : _cached_size_{0},
+        name_(arena),
+        appearance_id_(arena) {}
 
 inline void RecommendEntry::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char*>(&_impl_) +
                offsetof(Impl_, candidate_player_id_),
            0,
-           offsetof(Impl_, last_active_ms_) -
+           offsetof(Impl_, zone_id_) -
                offsetof(Impl_, candidate_player_id_) +
-               sizeof(Impl_::last_active_ms_));
+               sizeof(Impl_::zone_id_));
 }
 RecommendEntry::~RecommendEntry() {
   // @@protoc_insertion_point(destructor:friendpb.RecommendEntry)
@@ -8576,6 +9097,8 @@ inline void RecommendEntry::SharedDtor(MessageLite& self) {
   }
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.name_.Destroy();
+  this_._impl_.appearance_id_.Destroy();
   this_._impl_.~Impl_();
 }
 
@@ -8613,10 +9136,23 @@ PROTOBUF_NOINLINE void RecommendEntry::Clear() {
   (void) cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      _impl_.name_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      _impl_.appearance_id_.ClearNonDefaultToEmpty();
+    }
+  }
+  if (BatchCheckHasBit(cached_has_bits, 0x000000fcU)) {
     ::memset(&_impl_.candidate_player_id_, 0, static_cast<::size_t>(
-        reinterpret_cast<char*>(&_impl_.last_active_ms_) -
-        reinterpret_cast<char*>(&_impl_.candidate_player_id_)) + sizeof(_impl_.last_active_ms_));
+        reinterpret_cast<char*>(&_impl_.class_id_) -
+        reinterpret_cast<char*>(&_impl_.candidate_player_id_)) + sizeof(_impl_.class_id_));
+  }
+  if (BatchCheckHasBit(cached_has_bits, 0x00000300U)) {
+    ::memset(&_impl_.gender_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.zone_id_) -
+        reinterpret_cast<char*>(&_impl_.gender_)) + sizeof(_impl_.zone_id_));
   }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
@@ -8642,7 +9178,7 @@ PROTOBUF_NOINLINE void RecommendEntry::Clear() {
 
   cached_has_bits = this_._impl_._has_bits_[0];
   // uint64 candidate_player_id = 1;
-  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
     if (this_._internal_candidate_player_id() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
@@ -8651,7 +9187,7 @@ PROTOBUF_NOINLINE void RecommendEntry::Clear() {
   }
 
   // uint32 mutual_friends = 2;
-  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
     if (this_._internal_mutual_friends() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
@@ -8660,7 +9196,7 @@ PROTOBUF_NOINLINE void RecommendEntry::Clear() {
   }
 
   // bool is_online = 3;
-  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000010U)) {
     if (this_._internal_is_online() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteBoolToArray(
@@ -8669,11 +9205,67 @@ PROTOBUF_NOINLINE void RecommendEntry::Clear() {
   }
 
   // int64 last_active_ms = 4;
-  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000020U)) {
     if (this_._internal_last_active_ms() != 0) {
       target =
           ::google::protobuf::internal::WireFormatLite::WriteInt64ToArrayWithField<4>(
               stream, this_._internal_last_active_ms(), target);
+    }
+  }
+
+  // string name = 5;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (!this_._internal_name().empty()) {
+      const ::std::string& _s = this_._internal_name();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "friendpb.RecommendEntry.name");
+      target = stream->WriteStringMaybeAliased(5, _s, target);
+    }
+  }
+
+  // uint32 level = 6;
+  if (CheckHasBit(cached_has_bits, 0x00000040U)) {
+    if (this_._internal_level() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          6, this_._internal_level(), target);
+    }
+  }
+
+  // uint32 class_id = 7;
+  if (CheckHasBit(cached_has_bits, 0x00000080U)) {
+    if (this_._internal_class_id() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          7, this_._internal_class_id(), target);
+    }
+  }
+
+  // uint32 gender = 8;
+  if (CheckHasBit(cached_has_bits, 0x00000100U)) {
+    if (this_._internal_gender() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          8, this_._internal_gender(), target);
+    }
+  }
+
+  // string appearance_id = 9;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (!this_._internal_appearance_id().empty()) {
+      const ::std::string& _s = this_._internal_appearance_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "friendpb.RecommendEntry.appearance_id");
+      target = stream->WriteStringMaybeAliased(9, _s, target);
+    }
+  }
+
+  // uint32 zone_id = 10;
+  if (CheckHasBit(cached_has_bits, 0x00000200U)) {
+    if (this_._internal_zone_id() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          10, this_._internal_zone_id(), target);
     }
   }
 
@@ -8702,32 +9294,76 @@ PROTOBUF_NOINLINE void RecommendEntry::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
-    // uint64 candidate_player_id = 1;
+  if (BatchCheckHasBit(cached_has_bits, 0x000000ffU)) {
+    // string name = 5;
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!this_._internal_name().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_name());
+      }
+    }
+    // string appearance_id = 9;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!this_._internal_appearance_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_appearance_id());
+      }
+    }
+    // uint64 candidate_player_id = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
       if (this_._internal_candidate_player_id() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
             this_._internal_candidate_player_id());
       }
     }
     // uint32 mutual_friends = 2;
-    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
       if (this_._internal_mutual_friends() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_mutual_friends());
       }
     }
     // bool is_online = 3;
-    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
       if (this_._internal_is_online() != 0) {
         total_size += 2;
       }
     }
     // int64 last_active_ms = 4;
-    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
       if (this_._internal_last_active_ms() != 0) {
         total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(
             this_._internal_last_active_ms());
+      }
+    }
+    // uint32 level = 6;
+    if (CheckHasBit(cached_has_bits, 0x00000040U)) {
+      if (this_._internal_level() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_level());
+      }
+    }
+    // uint32 class_id = 7;
+    if (CheckHasBit(cached_has_bits, 0x00000080U)) {
+      if (this_._internal_class_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_class_id());
+      }
+    }
+  }
+  if (BatchCheckHasBit(cached_has_bits, 0x00000300U)) {
+    // uint32 gender = 8;
+    if (CheckHasBit(cached_has_bits, 0x00000100U)) {
+      if (this_._internal_gender() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_gender());
+      }
+    }
+    // uint32 zone_id = 10;
+    if (CheckHasBit(cached_has_bits, 0x00000200U)) {
+      if (this_._internal_zone_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_zone_id());
       }
     }
   }
@@ -8748,25 +9384,65 @@ void RecommendEntry::MergeImpl(::google::protobuf::MessageLite& to_msg,
   (void)cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x000000ffU)) {
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!from._internal_name().empty()) {
+        _this->_internal_set_name(from._internal_name());
+      } else {
+        if (_this->_impl_.name_.IsDefault()) {
+          _this->_internal_set_name("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!from._internal_appearance_id().empty()) {
+        _this->_internal_set_appearance_id(from._internal_appearance_id());
+      } else {
+        if (_this->_impl_.appearance_id_.IsDefault()) {
+          _this->_internal_set_appearance_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
       if (from._internal_candidate_player_id() != 0) {
         _this->_impl_.candidate_player_id_ = from._impl_.candidate_player_id_;
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
       if (from._internal_mutual_friends() != 0) {
         _this->_impl_.mutual_friends_ = from._impl_.mutual_friends_;
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
       if (from._internal_is_online() != 0) {
         _this->_impl_.is_online_ = from._impl_.is_online_;
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
       if (from._internal_last_active_ms() != 0) {
         _this->_impl_.last_active_ms_ = from._impl_.last_active_ms_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000040U)) {
+      if (from._internal_level() != 0) {
+        _this->_impl_.level_ = from._impl_.level_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000080U)) {
+      if (from._internal_class_id() != 0) {
+        _this->_impl_.class_id_ = from._impl_.class_id_;
+      }
+    }
+  }
+  if (BatchCheckHasBit(cached_has_bits, 0x00000300U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000100U)) {
+      if (from._internal_gender() != 0) {
+        _this->_impl_.gender_ = from._impl_.gender_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000200U)) {
+      if (from._internal_zone_id() != 0) {
+        _this->_impl_.zone_id_ = from._impl_.zone_id_;
       }
     }
   }
@@ -8785,11 +9461,15 @@ void RecommendEntry::CopyFrom(const RecommendEntry& from) {
 
 void RecommendEntry::InternalSwap(RecommendEntry* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
   using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.name_, &other->_impl_.name_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.appearance_id_, &other->_impl_.appearance_id_, arena);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(RecommendEntry, _impl_.last_active_ms_)
-      + sizeof(RecommendEntry::_impl_.last_active_ms_)
+      PROTOBUF_FIELD_OFFSET(RecommendEntry, _impl_.zone_id_)
+      + sizeof(RecommendEntry::_impl_.zone_id_)
       - PROTOBUF_FIELD_OFFSET(RecommendEntry, _impl_.candidate_player_id_)>(
           reinterpret_cast<char*>(&_impl_.candidate_player_id_),
           reinterpret_cast<char*>(&other->_impl_.candidate_player_id_));
@@ -8803,7 +9483,7 @@ void RecommendEntry::InternalSwap(RecommendEntry* PROTOBUF_RESTRICT PROTOBUF_NON
 void RecommendFriendsResponse::clear_error_message() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (_impl_.error_message_ != nullptr) _impl_.error_message_->Clear();
-  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
 }
 RecommendFriendsResponse::RecommendFriendsResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
@@ -8826,7 +9506,8 @@ PROTOBUF_NDEBUG_INLINE RecommendFriendsResponse::Impl_::Impl_(
               PROTOBUF_FIELD_OFFSET(::friendpb::RecommendFriendsResponse, _impl_.candidates_)>()
           , from.candidates_
         }
-     {}
+        ,
+        next_cursor_(arena, from.next_cursor_) {}
 
 RecommendFriendsResponse::RecommendFriendsResponse(
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
@@ -8843,9 +9524,10 @@ RecommendFriendsResponse::RecommendFriendsResponse(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
   ::uint32_t cached_has_bits = _impl_._has_bits_[0];
-  _impl_.error_message_ = (CheckHasBit(cached_has_bits, 0x00000002U))
+  _impl_.error_message_ = (CheckHasBit(cached_has_bits, 0x00000004U))
                 ? ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.error_message_)
                 : nullptr;
+  _impl_.online_directory_ = from._impl_.online_directory_;
 
   // @@protoc_insertion_point(copy_constructor:friendpb.RecommendFriendsResponse)
 }
@@ -8857,11 +9539,17 @@ PROTOBUF_NDEBUG_INLINE RecommendFriendsResponse::Impl_::Impl_(
             ::friendpb::RecommendFriendsResponse,
             PROTOBUF_FIELD_OFFSET(::friendpb::RecommendFriendsResponse, _impl_.candidates_)>()
          }
-     {}
+        ,
+        next_cursor_(arena) {}
 
 inline void RecommendFriendsResponse::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
-  _impl_.error_message_ = {};
+  ::memset(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, error_message_),
+           0,
+           offsetof(Impl_, online_directory_) -
+               offsetof(Impl_, error_message_) +
+               sizeof(Impl_::online_directory_));
 }
 RecommendFriendsResponse::~RecommendFriendsResponse() {
   // @@protoc_insertion_point(destructor:friendpb.RecommendFriendsResponse)
@@ -8874,6 +9562,7 @@ inline void RecommendFriendsResponse::SharedDtor(MessageLite& self) {
   }
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.next_cursor_.Destroy();
   delete this_._impl_.error_message_;
   this_._impl_.~Impl_();
 }
@@ -8912,15 +9601,19 @@ PROTOBUF_NOINLINE void RecommendFriendsResponse::Clear() {
   (void) cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       _impl_.candidates_.Clear();
     }
     if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      _impl_.next_cursor_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
       ABSL_DCHECK(_impl_.error_message_ != nullptr);
       _impl_.error_message_->Clear();
     }
   }
+  _impl_.online_directory_ = false;
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
@@ -8945,7 +9638,7 @@ PROTOBUF_NOINLINE void RecommendFriendsResponse::Clear() {
 
   cached_has_bits = this_._impl_._has_bits_[0];
   // .TipInfoMessage error_message = 1;
-  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
         1, *this_._impl_.error_message_, this_._impl_.error_message_->GetCachedSize(), target,
         stream);
@@ -8961,6 +9654,25 @@ PROTOBUF_NOINLINE void RecommendFriendsResponse::Clear() {
           ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
               2, repfield, repfield.GetCachedSize(),
               target, stream);
+    }
+  }
+
+  // string next_cursor = 3;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (!this_._internal_next_cursor().empty()) {
+      const ::std::string& _s = this_._internal_next_cursor();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "friendpb.RecommendFriendsResponse.next_cursor");
+      target = stream->WriteStringMaybeAliased(3, _s, target);
+    }
+  }
+
+  // bool online_directory = 4;
+  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+    if (this_._internal_online_directory() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteBoolToArray(
+          4, this_._internal_online_directory(), target);
     }
   }
 
@@ -8989,7 +9701,7 @@ PROTOBUF_NOINLINE void RecommendFriendsResponse::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
     // repeated .friendpb.RecommendEntry candidates = 2;
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       total_size += 1UL * this_._internal_candidates_size();
@@ -8997,10 +9709,23 @@ PROTOBUF_NOINLINE void RecommendFriendsResponse::Clear() {
         total_size += ::google::protobuf::internal::WireFormatLite::MessageSize(msg);
       }
     }
-    // .TipInfoMessage error_message = 1;
+    // string next_cursor = 3;
     if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!this_._internal_next_cursor().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_next_cursor());
+      }
+    }
+    // .TipInfoMessage error_message = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
       total_size += 1 +
                     ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.error_message_);
+    }
+    // bool online_directory = 4;
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (this_._internal_online_directory() != 0) {
+        total_size += 2;
+      }
     }
   }
   return this_.MaybeComputeUnknownFieldsSize(total_size,
@@ -9021,18 +9746,32 @@ void RecommendFriendsResponse::MergeImpl(::google::protobuf::MessageLite& to_msg
   (void)cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       _this->_internal_mutable_candidates()->InternalMergeFromWithArena(
           ::google::protobuf::MessageLite::internal_visibility(), arena,
           from._internal_candidates());
     }
     if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!from._internal_next_cursor().empty()) {
+        _this->_internal_set_next_cursor(from._internal_next_cursor());
+      } else {
+        if (_this->_impl_.next_cursor_.IsDefault()) {
+          _this->_internal_set_next_cursor("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
       ABSL_DCHECK(from._impl_.error_message_ != nullptr);
       if (_this->_impl_.error_message_ == nullptr) {
         _this->_impl_.error_message_ = ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.error_message_);
       } else {
         _this->_impl_.error_message_->MergeFrom(*from._impl_.error_message_);
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (from._internal_online_directory() != 0) {
+        _this->_impl_.online_directory_ = from._impl_.online_directory_;
       }
     }
   }
@@ -9051,10 +9790,18 @@ void RecommendFriendsResponse::CopyFrom(const RecommendFriendsResponse& from) {
 
 void RecommendFriendsResponse::InternalSwap(RecommendFriendsResponse* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
   using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   _impl_.candidates_.InternalSwap(&other->_impl_.candidates_);
-  swap(_impl_.error_message_, other->_impl_.error_message_);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.next_cursor_, &other->_impl_.next_cursor_, arena);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(RecommendFriendsResponse, _impl_.online_directory_)
+      + sizeof(RecommendFriendsResponse::_impl_.online_directory_)
+      - PROTOBUF_FIELD_OFFSET(RecommendFriendsResponse, _impl_.error_message_)>(
+          reinterpret_cast<char*>(&_impl_.error_message_),
+          reinterpret_cast<char*>(&other->_impl_.error_message_));
 }
 
 ::google::protobuf::Metadata RecommendFriendsResponse::GetMetadata() const {

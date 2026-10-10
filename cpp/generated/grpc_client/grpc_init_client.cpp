@@ -101,6 +101,16 @@ namespace guildpb {
     void HandleGuildCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, GrpcTag* grpcTag);
 }
 
+namespace guildpb {
+    void SetGuildInternalHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
+    void SetGuildInternalIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
+    void SetGuildInternalFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler);
+    void SetGuildInternalIfEmptyFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler);
+    void SetGuildInternalCallDeadline(std::chrono::milliseconds deadline);
+    void InitGuildInternalGrpcNode(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity);
+    void HandleGuildInternalCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, GrpcTag* grpcTag);
+}
+
 namespace loginpb {
     void SetLoginHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
     void SetLoginIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
@@ -109,6 +119,16 @@ namespace loginpb {
     void SetLoginCallDeadline(std::chrono::milliseconds deadline);
     void InitLoginGrpcNode(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity);
     void HandleLoginCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, GrpcTag* grpcTag);
+}
+
+namespace match {
+    void SetMatchInternalHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
+    void SetMatchInternalIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
+    void SetMatchInternalFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler);
+    void SetMatchInternalIfEmptyFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler);
+    void SetMatchInternalCallDeadline(std::chrono::milliseconds deadline);
+    void InitMatchInternalGrpcNode(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity);
+    void HandleMatchInternalCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, GrpcTag* grpcTag);
 }
 
 namespace match {
@@ -189,7 +209,11 @@ void SetIfEmptyHandler(const std::function<void(const ClientContext&, const ::go
 
     guildpb::SetGuildIfEmptyHandler(handler);
 
+    guildpb::SetGuildInternalIfEmptyHandler(handler);
+
     loginpb::SetLoginIfEmptyHandler(handler);
+
+    match::SetMatchInternalIfEmptyHandler(handler);
 
     match::SetMatchServiceIfEmptyHandler(handler);
 
@@ -223,7 +247,11 @@ void SetHandler(const std::function<void(const ClientContext&, const ::google::p
 
     guildpb::SetGuildHandler(handler);
 
+    guildpb::SetGuildInternalHandler(handler);
+
     loginpb::SetLoginHandler(handler);
+
+    match::SetMatchInternalHandler(handler);
 
     match::SetMatchServiceHandler(handler);
 
@@ -257,7 +285,11 @@ void SetIfEmptyFailedHandler(const std::function<void(const GrpcCallFailure&, co
 
     guildpb::SetGuildIfEmptyFailedHandler(handler);
 
+    guildpb::SetGuildInternalIfEmptyFailedHandler(handler);
+
     loginpb::SetLoginIfEmptyFailedHandler(handler);
+
+    match::SetMatchInternalIfEmptyFailedHandler(handler);
 
     match::SetMatchServiceIfEmptyFailedHandler(handler);
 
@@ -291,7 +323,11 @@ void SetFailedHandler(const std::function<void(const GrpcCallFailure&, const ::g
 
     guildpb::SetGuildFailedHandler(handler);
 
+    guildpb::SetGuildInternalFailedHandler(handler);
+
     loginpb::SetLoginFailedHandler(handler);
+
+    match::SetMatchInternalFailedHandler(handler);
 
     match::SetMatchServiceFailedHandler(handler);
 
@@ -332,8 +368,14 @@ void SetGrpcCallDeadline(uint32_t nodeType, std::chrono::milliseconds deadline){
     if (static_cast<uint32_t>(common::base::eNodeType::GuildNodeService) == nodeType) {
         guildpb::SetGuildCallDeadline(deadline);
     }
+    if (static_cast<uint32_t>(common::base::eNodeType::GuildNodeService) == nodeType) {
+        guildpb::SetGuildInternalCallDeadline(deadline);
+    }
     if (static_cast<uint32_t>(common::base::eNodeType::LoginNodeService) == nodeType) {
         loginpb::SetLoginCallDeadline(deadline);
+    }
+    if (static_cast<uint32_t>(common::base::eNodeType::MatchNodeService) == nodeType) {
+        match::SetMatchInternalCallDeadline(deadline);
     }
     if (static_cast<uint32_t>(common::base::eNodeType::MatchNodeService) == nodeType) {
         match::SetMatchServiceCallDeadline(deadline);
@@ -386,7 +428,7 @@ void HandleCompletedQueueMessage(entt::registry& registry){
                 client_rpc_router::HandleClientRpcRouterCompletedQueueMessage(registry, e, completeQueueComp, grpcTag);
             }
             else if (common::base::eNodeType::DataServiceNodeService == nodeType &&
-                (messageId == 86u || messageId == 87u || messageId == 88u || messageId == 89u || messageId == 90u || messageId == 91u || messageId == 92u || messageId == 93u || messageId == 96u || messageId == 97u || messageId == 98u || messageId == 99u || messageId == 100u || messageId == 101u || messageId == 105u || messageId == 108u || messageId == 114u || messageId == 129u || messageId == 180u || messageId == 229u || messageId == 231u || messageId == 237u)) {
+                (messageId == 86u || messageId == 87u || messageId == 88u || messageId == 89u || messageId == 90u || messageId == 91u || messageId == 92u || messageId == 93u || messageId == 96u || messageId == 97u || messageId == 98u || messageId == 99u || messageId == 100u || messageId == 101u || messageId == 105u || messageId == 108u || messageId == 114u || messageId == 129u || messageId == 180u || messageId == 229u || messageId == 231u || messageId == 237u || messageId == 248u)) {
                 data_service::HandleDataServiceCompletedQueueMessage(registry, e, completeQueueComp, grpcTag);
             }
             else if (common::base::eNodeType::EtcdNodeService == nodeType &&
@@ -401,9 +443,17 @@ void HandleCompletedQueueMessage(entt::registry& registry){
                 (messageId == 8u || messageId == 15u || messageId == 19u || messageId == 27u || messageId == 29u || messageId == 35u || messageId == 38u || messageId == 39u || messageId == 52u || messageId == 53u || messageId == 60u || messageId == 76u || messageId == 120u || messageId == 216u || messageId == 217u || messageId == 218u || messageId == 219u || messageId == 220u || messageId == 221u || messageId == 222u || messageId == 223u || messageId == 228u || messageId == 233u || messageId == 239u || messageId == 240u || messageId == 241u || messageId == 242u || messageId == 243u)) {
                 guildpb::HandleGuildCompletedQueueMessage(registry, e, completeQueueComp, grpcTag);
             }
+            else if (common::base::eNodeType::GuildNodeService == nodeType &&
+                (messageId == 244u)) {
+                guildpb::HandleGuildInternalCompletedQueueMessage(registry, e, completeQueueComp, grpcTag);
+            }
             else if (common::base::eNodeType::LoginNodeService == nodeType &&
                 (messageId == 14u || messageId == 17u || messageId == 26u || messageId == 48u || messageId == 58u || messageId == 111u || messageId == 118u || messageId == 127u || messageId == 138u)) {
                 loginpb::HandleLoginCompletedQueueMessage(registry, e, completeQueueComp, grpcTag);
+            }
+            else if (common::base::eNodeType::MatchNodeService == nodeType &&
+                (messageId == 245u)) {
+                match::HandleMatchInternalCompletedQueueMessage(registry, e, completeQueueComp, grpcTag);
             }
             else if (common::base::eNodeType::MatchNodeService == nodeType &&
                 (messageId == 148u || messageId == 151u || messageId == 152u || messageId == 153u || messageId == 154u || messageId == 156u || messageId == 157u || messageId == 163u || messageId == 164u || messageId == 179u)) {
@@ -460,8 +510,14 @@ void InitGrpcNode(const std::shared_ptr< ::grpc::ChannelInterface>& channel, ent
     if (common::base::eNodeType::GuildNodeService == nodeType) {
         guildpb::InitGuildGrpcNode(channel, registry, nodeEntity);
     }
+    if (common::base::eNodeType::GuildNodeService == nodeType) {
+        guildpb::InitGuildInternalGrpcNode(channel, registry, nodeEntity);
+    }
     if (common::base::eNodeType::LoginNodeService == nodeType) {
         loginpb::InitLoginGrpcNode(channel, registry, nodeEntity);
+    }
+    if (common::base::eNodeType::MatchNodeService == nodeType) {
+        match::InitMatchInternalGrpcNode(channel, registry, nodeEntity);
     }
     if (common::base::eNodeType::MatchNodeService == nodeType) {
         match::InitMatchServiceGrpcNode(channel, registry, nodeEntity);

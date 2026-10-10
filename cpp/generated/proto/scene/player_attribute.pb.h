@@ -150,6 +150,14 @@ extern const ::google::protobuf::internal::ClassDataFull AutoAllocateAttributePo
 #else
 extern const AutoAllocateAttributePointsResponse_SuggestedEntry_DoNotUseGlobalsTypeInternal AutoAllocateAttributePointsResponse_SuggestedEntry_DoNotUse_globals_;
 #endif  // PROTOBUF_MESSAGE_GLOBALS
+class CombatAttributeInfo;
+struct CombatAttributeInfoGlobalsTypeInternal;
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+extern CombatAttributeInfoGlobalsTypeInternal CombatAttributeInfo_globals_;
+extern const ::google::protobuf::internal::ClassDataFull CombatAttributeInfo_class_data_;
+#else
+extern const CombatAttributeInfoGlobalsTypeInternal CombatAttributeInfo_globals_;
+#endif  // PROTOBUF_MESSAGE_GLOBALS
 class CreateAttributeSchemeRequest;
 struct CreateAttributeSchemeRequestGlobalsTypeInternal;
 #ifndef PROTOBUF_MESSAGE_GLOBALS
@@ -321,7 +329,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED SwitchAttributeSchemeRequest final 
   [[nodiscard]] static const SwitchAttributeSchemeRequest& default_instance() {
     return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<SwitchAttributeSchemeRequest>(&SwitchAttributeSchemeRequest_globals_);
   }
-  static constexpr int kIndexInFileMessages = 17;
+  static constexpr int kIndexInFileMessages = 18;
   friend void swap(SwitchAttributeSchemeRequest& a, SwitchAttributeSchemeRequest& b) { a.Swap(&b); }
   inline void Swap(SwitchAttributeSchemeRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -522,7 +530,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED ResetAttributePointsRequest final :
   [[nodiscard]] static const ResetAttributePointsRequest& default_instance() {
     return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<ResetAttributePointsRequest>(&ResetAttributePointsRequest_globals_);
   }
-  static constexpr int kIndexInFileMessages = 10;
+  static constexpr int kIndexInFileMessages = 11;
   friend void swap(ResetAttributePointsRequest& a, ResetAttributePointsRequest& b) { a.Swap(&b); }
   inline void Swap(ResetAttributePointsRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -723,7 +731,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED RenameAttributeSchemeRequest final 
   [[nodiscard]] static const RenameAttributeSchemeRequest& default_instance() {
     return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<RenameAttributeSchemeRequest>(&RenameAttributeSchemeRequest_globals_);
   }
-  static constexpr int kIndexInFileMessages = 19;
+  static constexpr int kIndexInFileMessages = 20;
   friend void swap(RenameAttributeSchemeRequest& a, RenameAttributeSchemeRequest& b) { a.Swap(&b); }
   inline void Swap(RenameAttributeSchemeRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -941,7 +949,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GmSetPlayerLevelRequest final : pub
   [[nodiscard]] static const GmSetPlayerLevelRequest& default_instance() {
     return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<GmSetPlayerLevelRequest>(&GmSetPlayerLevelRequest_globals_);
   }
-  static constexpr int kIndexInFileMessages = 22;
+  static constexpr int kIndexInFileMessages = 23;
   friend void swap(GmSetPlayerLevelRequest& a, GmSetPlayerLevelRequest& b) { a.Swap(&b); }
   inline void Swap(GmSetPlayerLevelRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -1141,7 +1149,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GetAttributePanelRequest final : pu
   [[nodiscard]] static const GetAttributePanelRequest& default_instance() {
     return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<GetAttributePanelRequest>(&GetAttributePanelRequest_globals_);
   }
-  static constexpr int kIndexInFileMessages = 5;
+  static constexpr int kIndexInFileMessages = 6;
   friend void swap(GetAttributePanelRequest& a, GetAttributePanelRequest& b) { a.Swap(&b); }
   inline void Swap(GetAttributePanelRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -1565,7 +1573,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED CreateAttributeSchemeRequest final 
   [[nodiscard]] static const CreateAttributeSchemeRequest& default_instance() {
     return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<CreateAttributeSchemeRequest>(&CreateAttributeSchemeRequest_globals_);
   }
-  static constexpr int kIndexInFileMessages = 15;
+  static constexpr int kIndexInFileMessages = 16;
   friend void swap(CreateAttributeSchemeRequest& a, CreateAttributeSchemeRequest& b) { a.Swap(&b); }
   inline void Swap(CreateAttributeSchemeRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -1715,6 +1723,260 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED CreateAttributeSchemeRequest final 
 };
 // -------------------------------------------------------------------
 
+class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED CombatAttributeInfo final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:CombatAttributeInfo) */ {
+ public:
+  inline CombatAttributeInfo() : CombatAttributeInfo(nullptr) {}
+  ~CombatAttributeInfo() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(CombatAttributeInfo* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(CombatAttributeInfo));
+  }
+#endif
+
+  template <typename = void>
+  explicit constexpr CombatAttributeInfo(::google::protobuf::internal::ConstantInitialized,
+                           const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+                               class_data);
+
+  inline CombatAttributeInfo(const CombatAttributeInfo& from) : CombatAttributeInfo(nullptr, from) {}
+  inline CombatAttributeInfo(CombatAttributeInfo&& from) noexcept : CombatAttributeInfo(nullptr, ::std::move(from)) {}
+  inline CombatAttributeInfo& operator=(const CombatAttributeInfo& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline CombatAttributeInfo& operator=(CombatAttributeInfo&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  [[nodiscard]] inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  [[nodiscard]] inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL
+  mutable_unknown_fields() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL
+  GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  [[nodiscard]] static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  [[nodiscard]] static const CombatAttributeInfo& default_instance() {
+    return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<CombatAttributeInfo>(&CombatAttributeInfo_globals_);
+  }
+  static constexpr int kIndexInFileMessages = 4;
+  friend void swap(CombatAttributeInfo& a, CombatAttributeInfo& b) { a.Swap(&b); }
+  inline void Swap(CombatAttributeInfo* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(CombatAttributeInfo* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  [[nodiscard]] CombatAttributeInfo* PROTOBUF_NONNULL
+  New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<CombatAttributeInfo>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const CombatAttributeInfo& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const CombatAttributeInfo& from) { CombatAttributeInfo::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  [[nodiscard]] bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  [[nodiscard]] static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  [[nodiscard]] static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  [[nodiscard]] ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] ::size_t ByteSizeLong() const final;
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] int GetCachedSize() const {
+    return _impl_._cached_size_.Get();
+  }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(CombatAttributeInfo* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "CombatAttributeInfo"; }
+
+  explicit CombatAttributeInfo(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  CombatAttributeInfo(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const CombatAttributeInfo& from);
+  CombatAttributeInfo(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, CombatAttributeInfo&& from) noexcept
+      : CombatAttributeInfo(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_(
+      const MessageLite& prototype,
+      const ::google::protobuf::internal::TcParseTableBase* PROTOBUF_NULLABLE tc_table = nullptr);
+
+  [[nodiscard]] ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kNameFieldNumber = 2,
+    kCombatIdFieldNumber = 1,
+    kPercentFieldNumber = 4,
+    kValueFieldNumber = 3,
+    kSortFieldNumber = 5,
+  };
+  // string name = 2;
+  void clear_name() ;
+  [[nodiscard]] const ::std::string& name() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_name(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_name();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_name();
+  void set_allocated_name(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_name() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_name(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_name();
+
+  public:
+  // uint32 combat_id = 1;
+  void clear_combat_id() ;
+  [[nodiscard]] ::uint32_t combat_id() const;
+  void set_combat_id(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_combat_id() const;
+  void _internal_set_combat_id(::uint32_t value);
+
+  public:
+  // bool percent = 4;
+  void clear_percent() ;
+  [[nodiscard]] bool percent() const;
+  void set_percent(bool value);
+
+  private:
+  bool _internal_percent() const;
+  void _internal_set_percent(bool value);
+
+  public:
+  // uint64 value = 3;
+  void clear_value() ;
+  [[nodiscard]] ::uint64_t value() const;
+  void set_value(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_value() const;
+  void _internal_set_value(::uint64_t value);
+
+  public:
+  // uint32 sort = 5;
+  void clear_sort() ;
+  [[nodiscard]] ::uint32_t sort() const;
+  void set_sort(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_sort() const;
+  void _internal_set_sort(::uint32_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:CombatAttributeInfo)
+ private:
+  class _Internal;
+  using ParseTableT_ =
+      ::google::protobuf::internal::TcParseTable<3, 5,
+                          0, 32,
+                          2>;
+  static constexpr ParseTableT_ InternalGenerateParseTable_(
+      const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
+  friend class ::google::protobuf::internal::TcParser;
+  #ifndef PROTOBUF_MESSAGE_GLOBALS
+  static const ParseTableT_ _table_;
+  #endif
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  friend ::google::protobuf::internal::PrivateAccess;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                                    ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const CombatAttributeInfo& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::ArenaStringPtr name_;
+    ::uint32_t combat_id_;
+    bool percent_;
+    ::uint64_t value_;
+    ::uint32_t sort_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fscene_2fplayer_5fattribute_2eproto;
+};
+// -------------------------------------------------------------------
+
 class PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED AutoAllocateAttributePointsResponse_SuggestedEntry_DoNotUse final
     : public ::google::protobuf::internal::MapEntry<::uint32_t, ::uint32_t,
                              ::google::protobuf::internal::WireFormatLite::TYPE_UINT32,
@@ -1820,7 +2082,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED AutoAllocateAttributePointsRequest 
   [[nodiscard]] static const AutoAllocateAttributePointsRequest& default_instance() {
     return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<AutoAllocateAttributePointsRequest>(&AutoAllocateAttributePointsRequest_globals_);
   }
-  static constexpr int kIndexInFileMessages = 12;
+  static constexpr int kIndexInFileMessages = 13;
   friend void swap(AutoAllocateAttributePointsRequest& a, AutoAllocateAttributePointsRequest& b) { a.Swap(&b); }
   inline void Swap(AutoAllocateAttributePointsRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -2629,6 +2891,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED AttributeDimensionInfo final : publ
     kAllocatedFieldNumber = 5,
     kCapFieldNumber = 7,
     kSortFieldNumber = 8,
+    kBonusFieldNumber = 9,
   };
   // string name = 3;
   void clear_name() ;
@@ -2720,11 +2983,21 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED AttributeDimensionInfo final : publ
   void _internal_set_sort(::uint32_t value);
 
   public:
+  // uint32 bonus = 9;
+  void clear_bonus() ;
+  [[nodiscard]] ::uint32_t bonus() const;
+  void set_bonus(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_bonus() const;
+  void _internal_set_bonus(::uint32_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:AttributeDimensionInfo)
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<3, 8,
+      ::google::protobuf::internal::TcParseTable<4, 9,
                           0, 47,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
@@ -2761,6 +3034,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED AttributeDimensionInfo final : publ
     ::uint32_t allocated_;
     ::uint32_t cap_;
     ::uint32_t sort_;
+    ::uint32_t bonus_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -2873,7 +3147,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED AutoAllocateAttributePointsResponse
   [[nodiscard]] static const AutoAllocateAttributePointsResponse& default_instance() {
     return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<AutoAllocateAttributePointsResponse>(&AutoAllocateAttributePointsResponse_globals_);
   }
-  static constexpr int kIndexInFileMessages = 14;
+  static constexpr int kIndexInFileMessages = 15;
   friend void swap(AutoAllocateAttributePointsResponse& a, AutoAllocateAttributePointsResponse& b) { a.Swap(&b); }
   inline void Swap(AutoAllocateAttributePointsResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -3110,7 +3384,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED AttributePanelInfo final : public :
   [[nodiscard]] static const AttributePanelInfo& default_instance() {
     return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<AttributePanelInfo>(&AttributePanelInfo_globals_);
   }
-  static constexpr int kIndexInFileMessages = 4;
+  static constexpr int kIndexInFileMessages = 5;
   friend void swap(AttributePanelInfo& a, AttributePanelInfo& b) { a.Swap(&b); }
   inline void Swap(AttributePanelInfo* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -3205,6 +3479,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED AttributePanelInfo final : public :
     kPoolsFieldNumber = 1,
     kDimensionsFieldNumber = 2,
     kSchemesFieldNumber = 3,
+    kCombatFieldNumber = 10,
     kDerivedFieldNumber = 6,
     kActiveSchemeIdFieldNumber = 4,
     kMaxSchemesFieldNumber = 5,
@@ -3273,6 +3548,27 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED AttributePanelInfo final : public :
   private:
   const ::google::protobuf::RepeatedPtrField<::AttributeSchemeInfo>& _internal_schemes() const;
   ::google::protobuf::RepeatedPtrField<::AttributeSchemeInfo>* PROTOBUF_NONNULL _internal_mutable_schemes();
+
+  public:
+  // repeated .CombatAttributeInfo combat = 10;
+  [[nodiscard]] int combat_size()
+      const;
+  private:
+  int _internal_combat_size() const;
+
+  public:
+  void clear_combat() ;
+  [[nodiscard]] const ::CombatAttributeInfo& combat(int index) const;
+  [[nodiscard]] ::CombatAttributeInfo* PROTOBUF_NONNULL mutable_combat(int index);
+  ::CombatAttributeInfo* PROTOBUF_NONNULL add_combat();
+  [[nodiscard]] const ::google::protobuf::RepeatedPtrField<::CombatAttributeInfo>&
+  combat() const;
+  [[nodiscard]] ::google::protobuf::RepeatedPtrField<::CombatAttributeInfo>* PROTOBUF_NONNULL
+  mutable_combat();
+
+  private:
+  const ::google::protobuf::RepeatedPtrField<::CombatAttributeInfo>& _internal_combat() const;
+  ::google::protobuf::RepeatedPtrField<::CombatAttributeInfo>* PROTOBUF_NONNULL _internal_mutable_combat();
 
   public:
   // .DerivedAttributeInfo derived = 6;
@@ -3345,8 +3641,8 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED AttributePanelInfo final : public :
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<4, 9,
-                          4, 0,
+      ::google::protobuf::internal::TcParseTable<4, 10,
+                          5, 0,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
       const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
@@ -3377,6 +3673,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED AttributePanelInfo final : public :
     ::google::protobuf::RepeatedPtrField< ::AttributePoolInfo > pools_;
     ::google::protobuf::RepeatedPtrField< ::AttributeDimensionInfo > dimensions_;
     ::google::protobuf::RepeatedPtrField< ::AttributeSchemeInfo > schemes_;
+    ::google::protobuf::RepeatedPtrField< ::CombatAttributeInfo > combat_;
     ::DerivedAttributeInfo* PROTOBUF_NULLABLE derived_;
     ::uint32_t active_scheme_id_;
     ::uint32_t max_schemes_;
@@ -3446,7 +3743,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED AllocateAttributePointsRequest fina
   [[nodiscard]] static const AllocateAttributePointsRequest& default_instance() {
     return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<AllocateAttributePointsRequest>(&AllocateAttributePointsRequest_globals_);
   }
-  static constexpr int kIndexInFileMessages = 8;
+  static constexpr int kIndexInFileMessages = 9;
   friend void swap(AllocateAttributePointsRequest& a, AllocateAttributePointsRequest& b) { a.Swap(&b); }
   inline void Swap(AllocateAttributePointsRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -3665,7 +3962,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED SwitchAttributeSchemeResponse final
   [[nodiscard]] static const SwitchAttributeSchemeResponse& default_instance() {
     return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<SwitchAttributeSchemeResponse>(&SwitchAttributeSchemeResponse_globals_);
   }
-  static constexpr int kIndexInFileMessages = 18;
+  static constexpr int kIndexInFileMessages = 19;
   friend void swap(SwitchAttributeSchemeResponse& a, SwitchAttributeSchemeResponse& b) { a.Swap(&b); }
   inline void Swap(SwitchAttributeSchemeResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -3890,7 +4187,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED ResetAttributePointsResponse final 
   [[nodiscard]] static const ResetAttributePointsResponse& default_instance() {
     return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<ResetAttributePointsResponse>(&ResetAttributePointsResponse_globals_);
   }
-  static constexpr int kIndexInFileMessages = 11;
+  static constexpr int kIndexInFileMessages = 12;
   friend void swap(ResetAttributePointsResponse& a, ResetAttributePointsResponse& b) { a.Swap(&b); }
   inline void Swap(ResetAttributePointsResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -4115,7 +4412,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED RenameAttributeSchemeResponse final
   [[nodiscard]] static const RenameAttributeSchemeResponse& default_instance() {
     return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<RenameAttributeSchemeResponse>(&RenameAttributeSchemeResponse_globals_);
   }
-  static constexpr int kIndexInFileMessages = 20;
+  static constexpr int kIndexInFileMessages = 21;
   friend void swap(RenameAttributeSchemeResponse& a, RenameAttributeSchemeResponse& b) { a.Swap(&b); }
   inline void Swap(RenameAttributeSchemeResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -4340,7 +4637,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GmSetPlayerLevelResponse final : pu
   [[nodiscard]] static const GmSetPlayerLevelResponse& default_instance() {
     return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<GmSetPlayerLevelResponse>(&GmSetPlayerLevelResponse_globals_);
   }
-  static constexpr int kIndexInFileMessages = 23;
+  static constexpr int kIndexInFileMessages = 24;
   friend void swap(GmSetPlayerLevelResponse& a, GmSetPlayerLevelResponse& b) { a.Swap(&b); }
   inline void Swap(GmSetPlayerLevelResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -4565,7 +4862,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GetAttributePanelResponse final : p
   [[nodiscard]] static const GetAttributePanelResponse& default_instance() {
     return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<GetAttributePanelResponse>(&GetAttributePanelResponse_globals_);
   }
-  static constexpr int kIndexInFileMessages = 6;
+  static constexpr int kIndexInFileMessages = 7;
   friend void swap(GetAttributePanelResponse& a, GetAttributePanelResponse& b) { a.Swap(&b); }
   inline void Swap(GetAttributePanelResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -4790,7 +5087,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED CreateAttributeSchemeResponse final
   [[nodiscard]] static const CreateAttributeSchemeResponse& default_instance() {
     return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<CreateAttributeSchemeResponse>(&CreateAttributeSchemeResponse_globals_);
   }
-  static constexpr int kIndexInFileMessages = 16;
+  static constexpr int kIndexInFileMessages = 17;
   friend void swap(CreateAttributeSchemeResponse& a, CreateAttributeSchemeResponse& b) { a.Swap(&b); }
   inline void Swap(CreateAttributeSchemeResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -5027,7 +5324,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED AttributePanelChangedS2C final : pu
   [[nodiscard]] static const AttributePanelChangedS2C& default_instance() {
     return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<AttributePanelChangedS2C>(&AttributePanelChangedS2C_globals_);
   }
-  static constexpr int kIndexInFileMessages = 21;
+  static constexpr int kIndexInFileMessages = 22;
   friend void swap(AttributePanelChangedS2C& a, AttributePanelChangedS2C& b) { a.Swap(&b); }
   inline void Swap(AttributePanelChangedS2C* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -5234,7 +5531,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED AllocateAttributePointsResponse fin
   [[nodiscard]] static const AllocateAttributePointsResponse& default_instance() {
     return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<AllocateAttributePointsResponse>(&AllocateAttributePointsResponse_globals_);
   }
-  static constexpr int kIndexInFileMessages = 9;
+  static constexpr int kIndexInFileMessages = 10;
   friend void swap(AllocateAttributePointsResponse& a, AllocateAttributePointsResponse& b) { a.Swap(&b); }
   inline void Swap(AllocateAttributePointsResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -5817,6 +6114,30 @@ inline void AttributeDimensionInfo::_internal_set_sort(::uint32_t value) {
   _impl_.sort_ = value;
 }
 
+// uint32 bonus = 9;
+inline void AttributeDimensionInfo::clear_bonus() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.bonus_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000100U);
+}
+inline ::uint32_t AttributeDimensionInfo::bonus() const {
+  // @@protoc_insertion_point(field_get:AttributeDimensionInfo.bonus)
+  return _internal_bonus();
+}
+inline void AttributeDimensionInfo::set_bonus(::uint32_t value) {
+  _internal_set_bonus(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000100U);
+  // @@protoc_insertion_point(field_set:AttributeDimensionInfo.bonus)
+}
+inline ::uint32_t AttributeDimensionInfo::_internal_bonus() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.bonus_;
+}
+inline void AttributeDimensionInfo::_internal_set_bonus(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.bonus_ = value;
+}
+
 // -------------------------------------------------------------------
 
 // AttributePoolInfo
@@ -6343,6 +6664,170 @@ inline void DerivedAttributeInfo::_internal_set_mana(::uint64_t value) {
 
 // -------------------------------------------------------------------
 
+// CombatAttributeInfo
+
+// uint32 combat_id = 1;
+inline void CombatAttributeInfo::clear_combat_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.combat_id_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+}
+inline ::uint32_t CombatAttributeInfo::combat_id() const {
+  // @@protoc_insertion_point(field_get:CombatAttributeInfo.combat_id)
+  return _internal_combat_id();
+}
+inline void CombatAttributeInfo::set_combat_id(::uint32_t value) {
+  _internal_set_combat_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  // @@protoc_insertion_point(field_set:CombatAttributeInfo.combat_id)
+}
+inline ::uint32_t CombatAttributeInfo::_internal_combat_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.combat_id_;
+}
+inline void CombatAttributeInfo::_internal_set_combat_id(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.combat_id_ = value;
+}
+
+// string name = 2;
+inline void CombatAttributeInfo::clear_name() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.name_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+}
+inline const ::std::string& CombatAttributeInfo::name() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:CombatAttributeInfo.name)
+  return _internal_name();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void CombatAttributeInfo::set_name(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  _impl_.name_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:CombatAttributeInfo.name)
+}
+inline ::std::string* PROTOBUF_NONNULL CombatAttributeInfo::mutable_name()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::std::string* _s = _internal_mutable_name();
+  // @@protoc_insertion_point(field_mutable:CombatAttributeInfo.name)
+  return _s;
+}
+inline const ::std::string& CombatAttributeInfo::_internal_name() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.name_.Get();
+}
+inline void CombatAttributeInfo::_internal_set_name(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.name_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL CombatAttributeInfo::_internal_mutable_name() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.name_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE CombatAttributeInfo::release_name() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:CombatAttributeInfo.name)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000001U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  auto* released = _impl_.name_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.name_.Set("", GetArena());
+  }
+  return released;
+}
+inline void CombatAttributeInfo::set_allocated_name(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+  _impl_.name_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.name_.IsDefault()) {
+    _impl_.name_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:CombatAttributeInfo.name)
+}
+
+// uint64 value = 3;
+inline void CombatAttributeInfo::clear_value() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.value_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+}
+inline ::uint64_t CombatAttributeInfo::value() const {
+  // @@protoc_insertion_point(field_get:CombatAttributeInfo.value)
+  return _internal_value();
+}
+inline void CombatAttributeInfo::set_value(::uint64_t value) {
+  _internal_set_value(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  // @@protoc_insertion_point(field_set:CombatAttributeInfo.value)
+}
+inline ::uint64_t CombatAttributeInfo::_internal_value() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.value_;
+}
+inline void CombatAttributeInfo::_internal_set_value(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.value_ = value;
+}
+
+// bool percent = 4;
+inline void CombatAttributeInfo::clear_percent() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.percent_ = false;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+}
+inline bool CombatAttributeInfo::percent() const {
+  // @@protoc_insertion_point(field_get:CombatAttributeInfo.percent)
+  return _internal_percent();
+}
+inline void CombatAttributeInfo::set_percent(bool value) {
+  _internal_set_percent(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  // @@protoc_insertion_point(field_set:CombatAttributeInfo.percent)
+}
+inline bool CombatAttributeInfo::_internal_percent() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.percent_;
+}
+inline void CombatAttributeInfo::_internal_set_percent(bool value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.percent_ = value;
+}
+
+// uint32 sort = 5;
+inline void CombatAttributeInfo::clear_sort() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.sort_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+}
+inline ::uint32_t CombatAttributeInfo::sort() const {
+  // @@protoc_insertion_point(field_get:CombatAttributeInfo.sort)
+  return _internal_sort();
+}
+inline void CombatAttributeInfo::set_sort(::uint32_t value) {
+  _internal_set_sort(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  // @@protoc_insertion_point(field_set:CombatAttributeInfo.sort)
+}
+inline ::uint32_t CombatAttributeInfo::_internal_sort() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.sort_;
+}
+inline void CombatAttributeInfo::_internal_set_sort(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.sort_ = value;
+}
+
+// -------------------------------------------------------------------
+
 // AttributePanelInfo
 
 // repeated .AttributePoolInfo pools = 1;
@@ -6514,7 +6999,7 @@ AttributePanelInfo::_internal_mutable_schemes() {
 inline void AttributePanelInfo::clear_active_scheme_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.active_scheme_id_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
 }
 inline ::uint32_t AttributePanelInfo::active_scheme_id() const {
   // @@protoc_insertion_point(field_get:AttributePanelInfo.active_scheme_id)
@@ -6522,7 +7007,7 @@ inline ::uint32_t AttributePanelInfo::active_scheme_id() const {
 }
 inline void AttributePanelInfo::set_active_scheme_id(::uint32_t value) {
   _internal_set_active_scheme_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
   // @@protoc_insertion_point(field_set:AttributePanelInfo.active_scheme_id)
 }
 inline ::uint32_t AttributePanelInfo::_internal_active_scheme_id() const {
@@ -6538,7 +7023,7 @@ inline void AttributePanelInfo::_internal_set_active_scheme_id(::uint32_t value)
 inline void AttributePanelInfo::clear_max_schemes() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.max_schemes_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000040U);
 }
 inline ::uint32_t AttributePanelInfo::max_schemes() const {
   // @@protoc_insertion_point(field_get:AttributePanelInfo.max_schemes)
@@ -6546,7 +7031,7 @@ inline ::uint32_t AttributePanelInfo::max_schemes() const {
 }
 inline void AttributePanelInfo::set_max_schemes(::uint32_t value) {
   _internal_set_max_schemes(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
   // @@protoc_insertion_point(field_set:AttributePanelInfo.max_schemes)
 }
 inline ::uint32_t AttributePanelInfo::_internal_max_schemes() const {
@@ -6560,14 +7045,14 @@ inline void AttributePanelInfo::_internal_set_max_schemes(::uint32_t value) {
 
 // .DerivedAttributeInfo derived = 6;
 inline bool AttributePanelInfo::has_derived() const {
-  bool value = CheckHasBit(_impl_._has_bits_[0], 0x00000008U);
+  bool value = CheckHasBit(_impl_._has_bits_[0], 0x00000010U);
   PROTOBUF_ASSUME(!value || _impl_.derived_ != nullptr);
   return value;
 }
 inline void AttributePanelInfo::clear_derived() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (_impl_.derived_ != nullptr) _impl_.derived_->Clear();
-  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
 }
 inline const ::DerivedAttributeInfo& AttributePanelInfo::_internal_derived() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
@@ -6586,16 +7071,16 @@ inline void AttributePanelInfo::unsafe_arena_set_allocated_derived(
   }
   _impl_.derived_ = reinterpret_cast<::DerivedAttributeInfo*>(value);
   if (value != nullptr) {
-    SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+    SetHasBit(_impl_._has_bits_[0], 0x00000010U);
   } else {
-    ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+    ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
   }
   // @@protoc_insertion_point(field_unsafe_arena_set_allocated:AttributePanelInfo.derived)
 }
 inline ::DerivedAttributeInfo* PROTOBUF_NULLABLE AttributePanelInfo::release_derived() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
 
-  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
   ::DerivedAttributeInfo* released = _impl_.derived_;
   _impl_.derived_ = nullptr;
   if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
@@ -6615,7 +7100,7 @@ inline ::DerivedAttributeInfo* PROTOBUF_NULLABLE AttributePanelInfo::unsafe_aren
   ::google::protobuf::internal::TSanWrite(&_impl_);
   // @@protoc_insertion_point(field_release:AttributePanelInfo.derived)
 
-  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
   ::DerivedAttributeInfo* temp = _impl_.derived_;
   _impl_.derived_ = nullptr;
   return temp;
@@ -6630,7 +7115,7 @@ inline ::DerivedAttributeInfo* PROTOBUF_NONNULL AttributePanelInfo::_internal_mu
 }
 inline ::DerivedAttributeInfo* PROTOBUF_NONNULL AttributePanelInfo::mutable_derived()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
   ::DerivedAttributeInfo* _msg = _internal_mutable_derived();
   // @@protoc_insertion_point(field_mutable:AttributePanelInfo.derived)
   return _msg;
@@ -6647,9 +7132,9 @@ inline void AttributePanelInfo::set_allocated_derived(::DerivedAttributeInfo* PR
     if (message_arena != submessage_arena) {
       value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
     }
-    SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+    SetHasBit(_impl_._has_bits_[0], 0x00000010U);
   } else {
-    ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+    ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
   }
 
   _impl_.derived_ = reinterpret_cast<::DerivedAttributeInfo*>(value);
@@ -6660,7 +7145,7 @@ inline void AttributePanelInfo::set_allocated_derived(::DerivedAttributeInfo* PR
 inline void AttributePanelInfo::clear_level() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.level_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000100U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000200U);
 }
 inline ::uint32_t AttributePanelInfo::level() const {
   // @@protoc_insertion_point(field_get:AttributePanelInfo.level)
@@ -6668,7 +7153,7 @@ inline ::uint32_t AttributePanelInfo::level() const {
 }
 inline void AttributePanelInfo::set_level(::uint32_t value) {
   _internal_set_level(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000100U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000200U);
   // @@protoc_insertion_point(field_set:AttributePanelInfo.level)
 }
 inline ::uint32_t AttributePanelInfo::_internal_level() const {
@@ -6684,7 +7169,7 @@ inline void AttributePanelInfo::_internal_set_level(::uint32_t value) {
 inline void AttributePanelInfo::clear_switch_cooldown_until() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.switch_cooldown_until_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000040U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000080U);
 }
 inline ::uint64_t AttributePanelInfo::switch_cooldown_until() const {
   // @@protoc_insertion_point(field_get:AttributePanelInfo.switch_cooldown_until)
@@ -6692,7 +7177,7 @@ inline ::uint64_t AttributePanelInfo::switch_cooldown_until() const {
 }
 inline void AttributePanelInfo::set_switch_cooldown_until(::uint64_t value) {
   _internal_set_switch_cooldown_until(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000080U);
   // @@protoc_insertion_point(field_set:AttributePanelInfo.switch_cooldown_until)
 }
 inline ::uint64_t AttributePanelInfo::_internal_switch_cooldown_until() const {
@@ -6708,7 +7193,7 @@ inline void AttributePanelInfo::_internal_set_switch_cooldown_until(::uint64_t v
 inline void AttributePanelInfo::clear_create_scheme_cost_gold() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.create_scheme_cost_gold_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000080U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000100U);
 }
 inline ::uint64_t AttributePanelInfo::create_scheme_cost_gold() const {
   // @@protoc_insertion_point(field_get:AttributePanelInfo.create_scheme_cost_gold)
@@ -6716,7 +7201,7 @@ inline ::uint64_t AttributePanelInfo::create_scheme_cost_gold() const {
 }
 inline void AttributePanelInfo::set_create_scheme_cost_gold(::uint64_t value) {
   _internal_set_create_scheme_cost_gold(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000080U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000100U);
   // @@protoc_insertion_point(field_set:AttributePanelInfo.create_scheme_cost_gold)
 }
 inline ::uint64_t AttributePanelInfo::_internal_create_scheme_cost_gold() const {
@@ -6726,6 +7211,61 @@ inline ::uint64_t AttributePanelInfo::_internal_create_scheme_cost_gold() const 
 inline void AttributePanelInfo::_internal_set_create_scheme_cost_gold(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.create_scheme_cost_gold_ = value;
+}
+
+// repeated .CombatAttributeInfo combat = 10;
+inline int AttributePanelInfo::_internal_combat_size() const {
+  return _internal_combat().size();
+}
+inline int AttributePanelInfo::combat_size() const {
+  return _internal_combat_size();
+}
+inline void AttributePanelInfo::clear_combat() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.combat_.Clear();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+}
+inline const ::CombatAttributeInfo& AttributePanelInfo::combat(int index) const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:AttributePanelInfo.combat)
+  return _internal_combat().Get(index);
+}
+inline ::CombatAttributeInfo* PROTOBUF_NONNULL AttributePanelInfo::mutable_combat(int index)
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable:AttributePanelInfo.combat)
+  return _internal_mutable_combat()->Mutable(index);
+}
+inline ::CombatAttributeInfo* PROTOBUF_NONNULL AttributePanelInfo::add_combat()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::CombatAttributeInfo* _add =
+      _internal_mutable_combat()->InternalAddWithArena(
+          ::google::protobuf::MessageLite::internal_visibility(), GetArena());
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  // @@protoc_insertion_point(field_add:AttributePanelInfo.combat)
+  return _add;
+}
+inline const ::google::protobuf::RepeatedPtrField<::CombatAttributeInfo>& AttributePanelInfo::combat() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_list:AttributePanelInfo.combat)
+  return _internal_combat();
+}
+inline ::google::protobuf::RepeatedPtrField<::CombatAttributeInfo>* PROTOBUF_NONNULL
+AttributePanelInfo::mutable_combat() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  // @@protoc_insertion_point(field_mutable_list:AttributePanelInfo.combat)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _internal_mutable_combat();
+}
+inline const ::google::protobuf::RepeatedPtrField<::CombatAttributeInfo>&
+AttributePanelInfo::_internal_combat() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.combat_;
+}
+inline ::google::protobuf::RepeatedPtrField<::CombatAttributeInfo>* PROTOBUF_NONNULL
+AttributePanelInfo::_internal_mutable_combat() {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return &_impl_.combat_;
 }
 
 // -------------------------------------------------------------------

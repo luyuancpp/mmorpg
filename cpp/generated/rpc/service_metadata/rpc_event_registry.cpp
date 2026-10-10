@@ -12,7 +12,9 @@
 #include "proto/friend/friend.pb.h"
 #include "proto/gate/gate_service.pb.h"
 #include "proto/guild/guild.pb.h"
+#include "proto/guild/guild_internal.pb.h"
 #include "proto/login/login.pb.h"
+#include "proto/match/match_internal.pb.h"
 #include "proto/match/match_service.pb.h"
 #include "proto/scene/client_player_common.pb.h"
 #include "proto/scene/player_activity.pb.h"
@@ -45,7 +47,9 @@
 #include "rpc/service_metadata/friend_service_metadata.h"
 #include "rpc/service_metadata/gate_service_service_metadata.h"
 #include "rpc/service_metadata/guild_service_metadata.h"
+#include "rpc/service_metadata/guild_internal_service_metadata.h"
 #include "rpc/service_metadata/login_service_metadata.h"
+#include "rpc/service_metadata/match_internal_service_metadata.h"
 #include "rpc/service_metadata/match_service_service_metadata.h"
 #include "rpc/service_metadata/client_player_common_service_metadata.h"
 #include "rpc/service_metadata/player_activity_service_metadata.h"
@@ -164,6 +168,7 @@ namespace data_service{void SendDataServiceAllocateIdSegment(entt::registry& , e
 namespace data_service{void SendDataServiceReservePlayerName(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace data_service{void SendDataServiceReleasePlayerName(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace data_service{void SendDataServiceBatchGetPlayerName(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace data_service{void SendDataServiceGetPlayerAssetOpLedger(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace etcdserverpb{void SendKVRange(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace etcdserverpb{void SendKVPut(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace etcdserverpb{void SendKVDeleteRange(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
@@ -214,6 +219,7 @@ namespace guildpb{void SendGuildServiceLightGuildLantern(entt::registry& , entt:
 namespace guildpb{void SendGuildServiceClaimGuildReunion(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace guildpb{void SendGuildServiceStartGuildTrial(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace guildpb{void SendGuildServiceRespondGuildTrialInvite(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace guildpb{void SendGuildInternalListAppliedAssetOpsSince(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace loginpb{void SendClientPlayerLoginLogin(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace loginpb{void SendClientPlayerLoginCreatePlayer(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace loginpb{void SendClientPlayerLoginEnterGame(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
@@ -223,6 +229,7 @@ namespace loginpb{void SendClientPlayerLoginRefreshToken(entt::registry& , entt:
 namespace loginpb{void SendLoginPreGateAssignGate(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace loginpb{void SendLoginPreGateQueryQueueStatus(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace loginpb{void SendLoginAdminRemovePlayersFromAccounts(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace match{void SendMatchInternalStartActivityBattle(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace match{void SendMatchServiceJoinQueue(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace match{void SendMatchServiceCancelQueue(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace match{void SendMatchServiceGetQueueStatus(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
@@ -269,7 +276,7 @@ namespace trade{void SendTradeAdminSeedListing(entt::registry& , entt::entity , 
 // 容量以 rpc_event_registry.h 的 kMaxRpcMethodCount 为准;static_assert 把
 // "半途 regen 导致头文件容量落后于本轮 message id 数"的事故(2026-09-01,
 // InitMessageInfo 越界写导致节点启动断言)变成编译错误而不是运行期崩溃。
-static_assert(kMaxRpcMethodCount == 244,
+static_assert(kMaxRpcMethodCount == 250,
     "kMaxRpcMethodCount out of sync with this generation run - rerun the full proto generator");
 std::array<RpcMethodMeta, kMaxRpcMethodCount> gRpcMethodRegistry;
 
@@ -494,6 +501,11 @@ void InitMessageInfo()
         std::make_unique<::data_service::BatchGetPlayerNameRequest>(),
         std::make_unique<::data_service::BatchGetPlayerNameResponse>(),
         nullptr, 1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceBatchGetPlayerName};
+    gRpcMethodRegistry[DataServiceGetPlayerAssetOpLedgerMessageId] = RpcMethodMeta{
+        "DataService", "GetPlayerAssetOpLedger",
+        std::make_unique<::data_service::GetPlayerAssetOpLedgerRequest>(),
+        std::make_unique<::data_service::GetPlayerAssetOpLedgerResponse>(),
+        nullptr, 1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceGetPlayerAssetOpLedger};
 
     // --- KV ---
     gRpcMethodRegistry[KVRangeMessageId] = RpcMethodMeta{
@@ -807,6 +819,13 @@ void InitMessageInfo()
         std::make_unique<::guildpb::RespondGuildTrialInviteResponse>(),
         nullptr, 1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceRespondGuildTrialInvite};
 
+    // --- GuildInternal ---
+    gRpcMethodRegistry[GuildInternalListAppliedAssetOpsSinceMessageId] = RpcMethodMeta{
+        "GuildInternal", "ListAppliedAssetOpsSince",
+        std::make_unique<::guildpb::ListAppliedAssetOpsSinceRequest>(),
+        std::make_unique<::guildpb::ListAppliedAssetOpsSinceResponse>(),
+        nullptr, 1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildInternalListAppliedAssetOpsSince};
+
     // --- ClientPlayerLogin ---
     gRpcMethodRegistry[ClientPlayerLoginLoginMessageId] = RpcMethodMeta{
         "ClientPlayerLogin", "Login",
@@ -857,6 +876,13 @@ void InitMessageInfo()
         std::make_unique<::loginpb::RemovePlayersFromAccountsRequest>(),
         std::make_unique<::loginpb::RemovePlayersFromAccountsResponse>(),
         nullptr, 1, common::base::eNodeType::LoginNodeService, loginpb::SendLoginAdminRemovePlayersFromAccounts};
+
+    // --- MatchInternal ---
+    gRpcMethodRegistry[MatchInternalStartActivityBattleMessageId] = RpcMethodMeta{
+        "MatchInternal", "StartActivityBattle",
+        std::make_unique<::match::StartActivityBattleRequest>(),
+        std::make_unique<::match::StartActivityBattleResponse>(),
+        nullptr, 1, common::base::eNodeType::MatchNodeService, match::SendMatchInternalStartActivityBattle};
 
     // --- MatchService ---
     gRpcMethodRegistry[MatchServiceJoinQueueMessageId] = RpcMethodMeta{
@@ -991,6 +1017,21 @@ void InitMessageInfo()
         "SceneBagClientPlayer", "SortBag",
         std::make_unique<::SortBagRequest>(),
         std::make_unique<::SortBagResponse>(),
+        std::make_unique<SceneBagClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+    gRpcMethodRegistry[SceneBagClientPlayerEquipItemMessageId] = RpcMethodMeta{
+        "SceneBagClientPlayer", "EquipItem",
+        std::make_unique<::EquipItemRequest>(),
+        std::make_unique<::EquipItemResponse>(),
+        std::make_unique<SceneBagClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+    gRpcMethodRegistry[SceneBagClientPlayerUnequipItemMessageId] = RpcMethodMeta{
+        "SceneBagClientPlayer", "UnequipItem",
+        std::make_unique<::UnequipItemRequest>(),
+        std::make_unique<::UnequipItemResponse>(),
+        std::make_unique<SceneBagClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+    gRpcMethodRegistry[SceneBagClientPlayerGmGrantItemMessageId] = RpcMethodMeta{
+        "SceneBagClientPlayer", "GmGrantItem",
+        std::make_unique<::GmGrantItemRequest>(),
+        std::make_unique<::GmGrantItemResponse>(),
         std::make_unique<SceneBagClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
 
     // --- SceneCurrencyClientPlayer ---
@@ -1650,6 +1691,9 @@ bool IsClientMessageId(uint32_t messageId)
 	case SceneAttributeClientPlayerGmSetPlayerLevelMessageId:
 	case SceneBagClientPlayerGetBagMessageId:
 	case SceneBagClientPlayerSortBagMessageId:
+	case SceneBagClientPlayerEquipItemMessageId:
+	case SceneBagClientPlayerUnequipItemMessageId:
+	case SceneBagClientPlayerGmGrantItemMessageId:
 	case SceneCurrencyClientPlayerGmAddCurrencyMessageId:
 	case SceneCurrencyClientPlayerGmDeductCurrencyMessageId:
 	case SceneCurrencyClientPlayerGetCurrencyListMessageId:
@@ -1841,14 +1885,6 @@ bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
 		tlsEcs.dispatcher.trigger(event);
 		return true;
 	}
-	case ContractsKafkaBindBattleEventEventId: {
-		contracts::kafka::BindBattleEvent event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.trigger(event);
-		return true;
-	}
 	case ContractsKafkaBindSessionEventEventId: {
 		contracts::kafka::BindSessionEvent event;
 		if (!event.ParseFromString(payload)) {
@@ -1931,14 +1967,6 @@ bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
 	}
 	case ContractsKafkaRoutePlayerEventEventId: {
 		contracts::kafka::RoutePlayerEvent event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.trigger(event);
-		return true;
-	}
-	case ContractsKafkaUnbindBattleEventEventId: {
-		contracts::kafka::UnbindBattleEvent event;
 		if (!event.ParseFromString(payload)) {
 			return false;
 		}

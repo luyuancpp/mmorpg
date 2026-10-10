@@ -73,7 +73,7 @@ func (EInBattleState) EnumDescriptor() ([]byte, []int) {
 type InBattleComp struct {
 	state             protoimpl.MessageState `protogen:"open.v1"`
 	BattleId          uint64                 `protobuf:"varint,1,opt,name=battle_id,json=battleId,proto3" json:"battle_id,omitempty"`
-	BattleNodeId      uint32                 `protobuf:"varint,2,opt,name=battle_node_id,json=battleNodeId,proto3" json:"battle_node_id,omitempty"` // 重连时重发 BindBattleEvent 用
+	BattleNodeId      uint32                 `protobuf:"varint,2,opt,name=battle_node_id,json=battleNodeId,proto3" json:"battle_node_id,omitempty"` // 战斗所在 battle 节点(日志/排障;也随 battle:ctx 持久化)。重连不再用它:客户端凭 battle_id 补签
 	DeadlineMs        uint64                 `protobuf:"varint,3,opt,name=deadline_ms,json=deadlineMs,proto3" json:"deadline_ms,omitempty"`         // 作废期限(Unix 毫秒);reaper 过期即解冻
 	State             EInBattleState         `protobuf:"varint,4,opt,name=state,proto3,enum=EInBattleState" json:"state,omitempty"`
 	PrepareDeadlineMs uint64                 `protobuf:"varint,5,opt,name=prepare_deadline_ms,json=prepareDeadlineMs,proto3" json:"prepare_deadline_ms,omitempty"` // PREPARING 态的作废期限;收到 BattleConfirmedEvent 后升级为 FIGHTING 并以 deadline_ms 为准

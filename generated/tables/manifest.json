@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
-  "version": 21,
-  "content_digest": "c63dfcca06ba1d68c8f549c78cb85c6effff3c1e6672423d1b9a544087f00bba",
-  "generated_at": "2026-10-10T14:37:54Z",
+  "version": 22,
+  "content_digest": "996cd71dddd30f2bef7eadb1abef9c70870418c1bbbecfa3296582ba3003d84f",
+  "generated_at": "2026-10-10T14:51:20Z",
   "source_rev": {
-    "commit": "f76d3910716dcdbb6b3cc73278c8d5eb19644a00",
-    "data_dirty": false
+    "commit": "ae5f7e71951f362b49e218bc522d72f2d5c50aec",
+    "data_dirty": true
   },
   "table_count": 39,
   "tables": [
@@ -609,24 +609,24 @@
     },
     {
       "name": "MessageLimiter",
-      "rows": 73,
+      "rows": 78,
       "source": {
         "file": "MessageLimiter.xlsx",
-        "size": 6150,
-        "sha256": "43a5f20af77534e72ec64c2d0727538ac7489536bd5a16c635b4e03cdb36da61"
+        "size": 6241,
+        "sha256": "a88b99e890fe3e578e80a4a78786913e5784b7a51aa314cf307e065c6c6020fb"
       },
       "artifacts": [
         {
           "kind": "json",
           "file": "messagelimiter.json",
-          "size": 6520,
-          "sha256": "a04b1c9d78ca9bb3ad577c1b8edceb2786b8b5342df41c333d23a33da515554c"
+          "size": 6966,
+          "sha256": "32a2c8a278f59438b8fd9b93de52be2c2d4b43c35f806a4783522072462198c4"
         },
         {
           "kind": "binary",
           "file": "messagelimiter.pb",
-          "size": 857,
-          "sha256": "ee6b694c74206b4662ac48fee6e6b5f133324c327369e616f594acd8692bd4e3"
+          "size": 917,
+          "sha256": "b78ef39be1cd759c7f7db66d9ac29281c9b6dc710493a7cba378512bbe94a172"
         }
       ]
     },

@@ -1601,7 +1601,7 @@ const file_proto_friend_friend_proto_rawDesc = "" +
 	"\n" +
 	"ListBlocks\x12\x1b.friendpb.ListBlocksRequest\x1a\x1c.friendpb.ListBlocksResponse\x12Y\n" +
 	"\x10RecommendFriends\x12!.friendpb.RecommendFriendsRequest\x1a\".friendpb.RecommendFriendsResponse\x125\n" +
-	"\x11NotifyFriendEvent\x12\x18.friendpb.FriendEventS2C\x1a\x06.Empty\x1a\x05\x88\xa8\xc3\x01\x01B\x15Z\x13friend/proto/friendb\x06proto3"
+	"\x11NotifyFriendEvent\x12\x18.friendpb.FriendEventS2C\x1a\x06.Empty\x1a\x05\x88\xa8\xc3\x01\x01B\x0eZ\fproto/friendb\x06proto3"
 
 var (
 	file_proto_friend_friend_proto_rawDescOnce sync.Once

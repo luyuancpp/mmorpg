@@ -153,6 +153,7 @@ const (
 	EBattleEventType_BATTLE_EVENT_MISS        EBattleEventType = 12 // 未命中/闪避(演出:目标头顶"闪");value=0
 	EBattleEventType_BATTLE_EVENT_BLOCK       EBattleEventType = 13 // 格挡(预留,一期不产出)
 	EBattleEventType_BATTLE_EVENT_MANA        EBattleEventType = 14 // 法力变化:value=变化绝对值,is_negative 由 target_health_after 之外的 mana_after 表达
+	EBattleEventType_BATTLE_EVENT_RESIST      EBattleEventType = 15 // 异常状态被抵抗:source=施加者,target=抵抗者,buff_table_id=被抵抗的 buff;老客户端忽略
 )
 
 // Enum value maps for EBattleEventType.
@@ -173,6 +174,7 @@ var (
 		12: "BATTLE_EVENT_MISS",
 		13: "BATTLE_EVENT_BLOCK",
 		14: "BATTLE_EVENT_MANA",
+		15: "BATTLE_EVENT_RESIST",
 	}
 	EBattleEventType_value = map[string]int32{
 		"BATTLE_EVENT_NONE":        0,
@@ -190,6 +192,7 @@ var (
 		"BATTLE_EVENT_MISS":        12,
 		"BATTLE_EVENT_BLOCK":       13,
 		"BATTLE_EVENT_MANA":        14,
+		"BATTLE_EVENT_RESIST":      15,
 	}
 )
 
@@ -218,6 +221,59 @@ func (x EBattleEventType) Number() protoreflect.EnumNumber {
 // Deprecated: Use EBattleEventType.Descriptor instead.
 func (EBattleEventType) EnumDescriptor() ([]byte, []int) {
 	return file_proto_battle_battle_data_proto_rawDescGZIP(), []int{2}
+}
+
+// 一段伤害 / 出手是怎么来的(equipment-attributes.md §4.5)。0 = 普通,老客户端不读也不影响演出。
+type EBattleHitKind int32
+
+const (
+	EBattleHitKind_BATTLE_HIT_NORMAL  EBattleHitKind = 0
+	EBattleHitKind_BATTLE_HIT_COMBO   EBattleHitKind = 1 // 连击追加段(与首段同 group_id,hit_index 递增)
+	EBattleHitKind_BATTLE_HIT_COUNTER EBattleHitKind = 2 // 反击(受击者还手的 ATTACK / DAMAGE)
+	EBattleHitKind_BATTLE_HIT_REFLECT EBattleHitKind = 3 // 反震(DAMAGE:source=受击者,target=出手者)
+)
+
+// Enum value maps for EBattleHitKind.
+var (
+	EBattleHitKind_name = map[int32]string{
+		0: "BATTLE_HIT_NORMAL",
+		1: "BATTLE_HIT_COMBO",
+		2: "BATTLE_HIT_COUNTER",
+		3: "BATTLE_HIT_REFLECT",
+	}
+	EBattleHitKind_value = map[string]int32{
+		"BATTLE_HIT_NORMAL":  0,
+		"BATTLE_HIT_COMBO":   1,
+		"BATTLE_HIT_COUNTER": 2,
+		"BATTLE_HIT_REFLECT": 3,
+	}
+)
+
+func (x EBattleHitKind) Enum() *EBattleHitKind {
+	p := new(EBattleHitKind)
+	*p = x
+	return p
+}
+
+func (x EBattleHitKind) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (EBattleHitKind) Descriptor() protoreflect.EnumDescriptor {
+	return file_proto_battle_battle_data_proto_enumTypes[3].Descriptor()
+}
+
+func (EBattleHitKind) Type() protoreflect.EnumType {
+	return &file_proto_battle_battle_data_proto_enumTypes[3]
+}
+
+func (x EBattleHitKind) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use EBattleHitKind.Descriptor instead.
+func (EBattleHitKind) EnumDescriptor() ([]byte, []int) {
+	return file_proto_battle_battle_data_proto_rawDescGZIP(), []int{3}
 }
 
 // ---- 胜负 ----
@@ -257,11 +313,11 @@ func (x EBattleOutcome) String() string {
 }
 
 func (EBattleOutcome) Descriptor() protoreflect.EnumDescriptor {
-	return file_proto_battle_battle_data_proto_enumTypes[3].Descriptor()
+	return file_proto_battle_battle_data_proto_enumTypes[4].Descriptor()
 }
 
 func (EBattleOutcome) Type() protoreflect.EnumType {
-	return &file_proto_battle_battle_data_proto_enumTypes[3]
+	return &file_proto_battle_battle_data_proto_enumTypes[4]
 }
 
 func (x EBattleOutcome) Number() protoreflect.EnumNumber {
@@ -270,7 +326,7 @@ func (x EBattleOutcome) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use EBattleOutcome.Descriptor instead.
 func (EBattleOutcome) EnumDescriptor() ([]byte, []int) {
-	return file_proto_battle_battle_data_proto_rawDescGZIP(), []int{3}
+	return file_proto_battle_battle_data_proto_rawDescGZIP(), []int{4}
 }
 
 // ---- 活动对局上下文(帮会同道历练,docs/design/guild-phase2/06-activities.md §6.17) ----
@@ -310,11 +366,11 @@ func (x EBattleActivityKind) String() string {
 }
 
 func (EBattleActivityKind) Descriptor() protoreflect.EnumDescriptor {
-	return file_proto_battle_battle_data_proto_enumTypes[4].Descriptor()
+	return file_proto_battle_battle_data_proto_enumTypes[5].Descriptor()
 }
 
 func (EBattleActivityKind) Type() protoreflect.EnumType {
-	return &file_proto_battle_battle_data_proto_enumTypes[4]
+	return &file_proto_battle_battle_data_proto_enumTypes[5]
 }
 
 func (x EBattleActivityKind) Number() protoreflect.EnumNumber {
@@ -323,7 +379,7 @@ func (x EBattleActivityKind) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use EBattleActivityKind.Descriptor instead.
 func (EBattleActivityKind) EnumDescriptor() ([]byte, []int) {
-	return file_proto_battle_battle_data_proto_rawDescGZIP(), []int{4}
+	return file_proto_battle_battle_data_proto_rawDescGZIP(), []int{5}
 }
 
 // ---- 路由信息:battle 节点出站消息(Kafka)所需的全部定位数据,快照携带,battle 不查 etcd ----
@@ -561,10 +617,13 @@ type BattlePlayerSnapshot struct {
 	Defense          uint64                        `protobuf:"varint,15,opt,name=defense,proto3" json:"defense,omitempty"`                                          // 防御
 	// 出战宝宝(宝宝系统,player-pet.md §5):与主人同队的独立行动单位。
 	// 核心线同时只能带 1 只,repeated 是为了二期多宠不改 wire。
-	Pets          []*BattlePetSnapshot `protobuf:"bytes,16,rep,name=pets,proto3" json:"pets,omitempty"`
-	AppearanceId  string               `protobuf:"bytes,17,opt,name=appearance_id,json=appearanceId,proto3" json:"appearance_id,omitempty"` // 与主城、选角一致的玩家外观身份。
-	ClassId       uint32               `protobuf:"varint,18,opt,name=class_id,json=classId,proto3" json:"class_id,omitempty"`
-	Gender        uint32               `protobuf:"varint,19,opt,name=gender,proto3" json:"gender,omitempty"`
+	Pets         []*BattlePetSnapshot `protobuf:"bytes,16,rep,name=pets,proto3" json:"pets,omitempty"`
+	AppearanceId string               `protobuf:"bytes,17,opt,name=appearance_id,json=appearanceId,proto3" json:"appearance_id,omitempty"` // 与主城、选角一致的玩家外观身份。
+	ClassId      uint32               `protobuf:"varint,18,opt,name=class_id,json=classId,proto3" json:"class_id,omitempty"`
+	Gender       uint32               `protobuf:"varint,19,opt,name=gender,proto3" json:"gender,omitempty"`
+	// 战斗类属性的装备加成(必杀 / 连击 / 反击 / 反震 / 抗性等,equipment-attributes.md §3.3)。
+	// scene 侧原样拷自 DerivedAttributesComp.combat;不带 = 全 0 = 引擎行为与装备系统落地前逐位一致。
+	Combat        *component.CombatAttributes `protobuf:"bytes,20,opt,name=combat,proto3" json:"combat,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -730,6 +789,13 @@ func (x *BattlePlayerSnapshot) GetGender() uint32 {
 		return x.Gender
 	}
 	return 0
+}
+
+func (x *BattlePlayerSnapshot) GetCombat() *component.CombatAttributes {
+	if x != nil {
+		return x.Combat
+	}
+	return nil
 }
 
 // ---- 宝宝战斗快照:与主人同队、独立行动的战斗单位(设计文档 player-pet.md §5)----
@@ -898,8 +964,11 @@ type BattleActorState struct {
 	AppearanceId        string                        `protobuf:"bytes,24,opt,name=appearance_id,json=appearanceId,proto3" json:"appearance_id,omitempty"`                                                                                                    // 玩家来自快照；重连/观战保持同一身份。
 	ClassId             uint32                        `protobuf:"varint,25,opt,name=class_id,json=classId,proto3" json:"class_id,omitempty"`
 	Gender              uint32                        `protobuf:"varint,26,opt,name=gender,proto3" json:"gender,omitempty"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	// 战斗类属性的装备加成(来自快照;怪物 / 宝宝全 0)。只供引擎判定用:
+	// 下发给客户端的状态快照里会被清空,不暴露对手的装备概率。
+	Combat        *component.CombatAttributes `protobuf:"bytes,27,opt,name=combat,proto3" json:"combat,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *BattleActorState) Reset() {
@@ -1114,6 +1183,13 @@ func (x *BattleActorState) GetGender() uint32 {
 	return 0
 }
 
+func (x *BattleActorState) GetCombat() *component.CombatAttributes {
+	if x != nil {
+		return x.Combat
+	}
+	return nil
+}
+
 type BattleAction struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ActionType    EBattleActionType      `protobuf:"varint,1,opt,name=action_type,json=actionType,proto3,enum=EBattleActionType" json:"action_type,omitempty"`
@@ -1197,6 +1273,7 @@ type BattleEventItem struct {
 	GroupId           uint32                 `protobuf:"varint,11,opt,name=group_id,json=groupId,proto3" json:"group_id,omitempty"`                           // 同一次行动/施法内的事件共用(演出:群攻多目标同一拍);每次行动递增
 	HitIndex          uint32                 `protobuf:"varint,12,opt,name=hit_index,json=hitIndex,proto3" json:"hit_index,omitempty"`                        // 多段攻击的段序(0 起)
 	TargetManaAfter   uint64                 `protobuf:"varint,13,opt,name=target_mana_after,json=targetManaAfter,proto3" json:"target_mana_after,omitempty"` // 目标结算后法力(BATTLE_EVENT_MANA 与技能耗蓝演出用)
+	HitKind           EBattleHitKind         `protobuf:"varint,14,opt,name=hit_kind,json=hitKind,proto3,enum=EBattleHitKind" json:"hit_kind,omitempty"`       // 连击 / 反击 / 反震标注;普通出手为 0
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }
@@ -1320,6 +1397,13 @@ func (x *BattleEventItem) GetTargetManaAfter() uint64 {
 		return x.TargetManaAfter
 	}
 	return 0
+}
+
+func (x *BattleEventItem) GetHitKind() EBattleHitKind {
+	if x != nil {
+		return x.HitKind
+	}
+	return EBattleHitKind_BATTLE_HIT_NORMAL
 }
 
 // ---- 单个玩家的结算数据(battle -> scene,scene 是唯一应用者) ----
@@ -1689,7 +1773,7 @@ var File_proto_battle_battle_data_proto protoreflect.FileDescriptor
 
 const file_proto_battle_battle_data_proto_rawDesc = "" +
 	"\n" +
-	"\x1eproto/battle/battle_data.proto\x1a'proto/common/component/actor_comp.proto\"\xe3\x01\n" +
+	"\x1eproto/battle/battle_data.proto\x1a'proto/common/component/actor_comp.proto\x1a7proto/common/component/actor_attribute_state_comp.proto\"\xe3\x01\n" +
 	"\rBattleRouting\x12\x1d\n" +
 	"\n" +
 	"session_id\x18\x01 \x01(\rR\tsessionId\x12 \n" +
@@ -1707,7 +1791,7 @@ const file_proto_battle_battle_data_proto_rawDesc = "" +
 	"\tcaster_id\x18\x05 \x01(\x04R\bcasterId\"K\n" +
 	"\x0fBattleItemEntry\x12\"\n" +
 	"\ritem_table_id\x18\x01 \x01(\rR\vitemTableId\x12\x14\n" +
-	"\x05count\x18\x02 \x01(\x04R\x05count\"\xb6\x05\n" +
+	"\x05count\x18\x02 \x01(\x04R\x05count\"\xe1\x05\n" +
 	"\x14BattlePlayerSnapshot\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x1f\n" +
 	"\vplayer_name\x18\x02 \x01(\tR\n" +
@@ -1731,7 +1815,8 @@ const file_proto_battle_battle_data_proto_rawDesc = "" +
 	"\x04pets\x18\x10 \x03(\v2\x12.BattlePetSnapshotR\x04pets\x12#\n" +
 	"\rappearance_id\x18\x11 \x01(\tR\fappearanceId\x12\x19\n" +
 	"\bclass_id\x18\x12 \x01(\rR\aclassId\x12\x16\n" +
-	"\x06gender\x18\x13 \x01(\rR\x06gender\"\xab\x03\n" +
+	"\x06gender\x18\x13 \x01(\rR\x06gender\x12)\n" +
+	"\x06combat\x18\x14 \x01(\v2\x11.CombatAttributesR\x06combat\"\xab\x03\n" +
 	"\x11BattlePetSnapshot\x12\x15\n" +
 	"\x06pet_id\x18\x01 \x01(\x04R\x05petId\x12&\n" +
 	"\x0fowner_player_id\x18\x02 \x01(\x04R\rownerPlayerId\x12\x19\n" +
@@ -1747,7 +1832,7 @@ const file_proto_battle_battle_data_proto_rawDesc = "" +
 	"\fmagic_attack\x18\n" +
 	" \x01(\x04R\vmagicAttack\x12\x18\n" +
 	"\adefense\x18\v \x01(\x04R\adefense\x12&\n" +
-	"\x0fskill_table_ids\x18\f \x03(\rR\rskillTableIds\"\xe8\a\n" +
+	"\x0fskill_table_ids\x18\f \x03(\rR\rskillTableIds\"\x93\b\n" +
 	"\x10BattleActorState\x12\x19\n" +
 	"\bactor_id\x18\x01 \x01(\x04R\aactorId\x120\n" +
 	"\n" +
@@ -1781,7 +1866,8 @@ const file_proto_battle_battle_data_proto_rawDesc = "" +
 	"\x06pet_id\x18\x17 \x01(\x04R\x05petId\x12#\n" +
 	"\rappearance_id\x18\x18 \x01(\tR\fappearanceId\x12\x19\n" +
 	"\bclass_id\x18\x19 \x01(\rR\aclassId\x12\x16\n" +
-	"\x06gender\x18\x1a \x01(\rR\x06gender\x1aF\n" +
+	"\x06gender\x18\x1a \x01(\rR\x06gender\x12)\n" +
+	"\x06combat\x18\x1b \x01(\v2\x11.CombatAttributesR\x06combat\x1aF\n" +
 	"\x18SkillCooldownRoundsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\rR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\rR\x05value:\x028\x01\"\xaa\x01\n" +
@@ -1790,7 +1876,7 @@ const file_proto_battle_battle_data_proto_rawDesc = "" +
 	"actionType\x12$\n" +
 	"\x0eskill_table_id\x18\x02 \x01(\rR\fskillTableId\x12\x1b\n" +
 	"\ttarget_id\x18\x03 \x01(\x04R\btargetId\x12\"\n" +
-	"\ritem_table_id\x18\x04 \x01(\rR\vitemTableId\"\xd0\x03\n" +
+	"\ritem_table_id\x18\x04 \x01(\rR\vitemTableId\"\xfc\x03\n" +
 	"\x0fBattleEventItem\x120\n" +
 	"\n" +
 	"event_type\x18\x01 \x01(\x0e2\x11.eBattleEventTypeR\teventType\x12\x1b\n" +
@@ -1807,7 +1893,8 @@ const file_proto_battle_battle_data_proto_rawDesc = "" +
 	" \x01(\rR\vitemTableId\x12\x19\n" +
 	"\bgroup_id\x18\v \x01(\rR\agroupId\x12\x1b\n" +
 	"\thit_index\x18\f \x01(\rR\bhitIndex\x12*\n" +
-	"\x11target_mana_after\x18\r \x01(\x04R\x0ftargetManaAfter\"W\n" +
+	"\x11target_mana_after\x18\r \x01(\x04R\x0ftargetManaAfter\x12*\n" +
+	"\bhit_kind\x18\x0e \x01(\x0e2\x0f.eBattleHitKindR\ahitKind\"W\n" +
 	"\x13BattleMonsterDefeat\x12*\n" +
 	"\x11monster_config_id\x18\x01 \x01(\rR\x0fmonsterConfigId\x12\x14\n" +
 	"\x05count\x18\x02 \x01(\rR\x05count\"\xba\x04\n" +
@@ -1853,7 +1940,7 @@ const file_proto_battle_battle_data_proto_rawDesc = "" +
 	"\x13BATTLE_ACTION_SKILL\x10\x02\x12\x18\n" +
 	"\x14BATTLE_ACTION_DEFEND\x10\x03\x12\x16\n" +
 	"\x12BATTLE_ACTION_ITEM\x10\x04\x12\x16\n" +
-	"\x12BATTLE_ACTION_FLEE\x10\x05*\x84\x03\n" +
+	"\x12BATTLE_ACTION_FLEE\x10\x05*\x9d\x03\n" +
 	"\x10eBattleEventType\x12\x15\n" +
 	"\x11BATTLE_EVENT_NONE\x10\x00\x12\x17\n" +
 	"\x13BATTLE_EVENT_ATTACK\x10\x01\x12\x16\n" +
@@ -1870,7 +1957,13 @@ const file_proto_battle_battle_data_proto_rawDesc = "" +
 	"\x11BATTLE_EVENT_FLEE\x10\v\x12\x15\n" +
 	"\x11BATTLE_EVENT_MISS\x10\f\x12\x16\n" +
 	"\x12BATTLE_EVENT_BLOCK\x10\r\x12\x15\n" +
-	"\x11BATTLE_EVENT_MANA\x10\x0e*\x83\x01\n" +
+	"\x11BATTLE_EVENT_MANA\x10\x0e\x12\x17\n" +
+	"\x13BATTLE_EVENT_RESIST\x10\x0f*m\n" +
+	"\x0eeBattleHitKind\x12\x15\n" +
+	"\x11BATTLE_HIT_NORMAL\x10\x00\x12\x14\n" +
+	"\x10BATTLE_HIT_COMBO\x10\x01\x12\x16\n" +
+	"\x12BATTLE_HIT_COUNTER\x10\x02\x12\x16\n" +
+	"\x12BATTLE_HIT_REFLECT\x10\x03*\x83\x01\n" +
 	"\x0eeBattleOutcome\x12\x1a\n" +
 	"\x16BATTLE_OUTCOME_ONGOING\x10\x00\x12\x1d\n" +
 	"\x19BATTLE_OUTCOME_SIDE_A_WIN\x10\x01\x12\x1d\n" +
@@ -1892,53 +1985,58 @@ func file_proto_battle_battle_data_proto_rawDescGZIP() []byte {
 	return file_proto_battle_battle_data_proto_rawDescData
 }
 
-var file_proto_battle_battle_data_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
+var file_proto_battle_battle_data_proto_enumTypes = make([]protoimpl.EnumInfo, 6)
 var file_proto_battle_battle_data_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_proto_battle_battle_data_proto_goTypes = []any{
 	(EBattleActorType)(0),                // 0: eBattleActorType
 	(EBattleActionType)(0),               // 1: eBattleActionType
 	(EBattleEventType)(0),                // 2: eBattleEventType
-	(EBattleOutcome)(0),                  // 3: eBattleOutcome
-	(EBattleActivityKind)(0),             // 4: eBattleActivityKind
-	(*BattleRouting)(nil),                // 5: BattleRouting
-	(*BattleBuffEntry)(nil),              // 6: BattleBuffEntry
-	(*BattleItemEntry)(nil),              // 7: BattleItemEntry
-	(*BattlePlayerSnapshot)(nil),         // 8: BattlePlayerSnapshot
-	(*BattlePetSnapshot)(nil),            // 9: BattlePetSnapshot
-	(*BattleActorState)(nil),             // 10: BattleActorState
-	(*BattleAction)(nil),                 // 11: BattleAction
-	(*BattleEventItem)(nil),              // 12: BattleEventItem
-	(*BattleMonsterDefeat)(nil),          // 13: BattleMonsterDefeat
-	(*BattleSettlementData)(nil),         // 14: BattleSettlementData
-	(*BattlePetSettlementData)(nil),      // 15: BattlePetSettlementData
-	(*BattleActivityContext)(nil),        // 16: BattleActivityContext
-	nil,                                  // 17: BattleActorState.SkillCooldownRoundsEntry
-	(*component.BaseAttributesComp)(nil), // 18: BaseAttributesComp
+	(EBattleHitKind)(0),                  // 3: eBattleHitKind
+	(EBattleOutcome)(0),                  // 4: eBattleOutcome
+	(EBattleActivityKind)(0),             // 5: eBattleActivityKind
+	(*BattleRouting)(nil),                // 6: BattleRouting
+	(*BattleBuffEntry)(nil),              // 7: BattleBuffEntry
+	(*BattleItemEntry)(nil),              // 8: BattleItemEntry
+	(*BattlePlayerSnapshot)(nil),         // 9: BattlePlayerSnapshot
+	(*BattlePetSnapshot)(nil),            // 10: BattlePetSnapshot
+	(*BattleActorState)(nil),             // 11: BattleActorState
+	(*BattleAction)(nil),                 // 12: BattleAction
+	(*BattleEventItem)(nil),              // 13: BattleEventItem
+	(*BattleMonsterDefeat)(nil),          // 14: BattleMonsterDefeat
+	(*BattleSettlementData)(nil),         // 15: BattleSettlementData
+	(*BattlePetSettlementData)(nil),      // 16: BattlePetSettlementData
+	(*BattleActivityContext)(nil),        // 17: BattleActivityContext
+	nil,                                  // 18: BattleActorState.SkillCooldownRoundsEntry
+	(*component.BaseAttributesComp)(nil), // 19: BaseAttributesComp
+	(*component.CombatAttributes)(nil),   // 20: CombatAttributes
 }
 var file_proto_battle_battle_data_proto_depIdxs = []int32{
-	18, // 0: BattlePlayerSnapshot.base_attributes:type_name -> BaseAttributesComp
-	6,  // 1: BattlePlayerSnapshot.buffs:type_name -> BattleBuffEntry
-	7,  // 2: BattlePlayerSnapshot.items:type_name -> BattleItemEntry
-	5,  // 3: BattlePlayerSnapshot.routing:type_name -> BattleRouting
-	9,  // 4: BattlePlayerSnapshot.pets:type_name -> BattlePetSnapshot
-	18, // 5: BattlePetSnapshot.base_attributes:type_name -> BaseAttributesComp
-	0,  // 6: BattleActorState.actor_type:type_name -> eBattleActorType
-	18, // 7: BattleActorState.attributes:type_name -> BaseAttributesComp
-	6,  // 8: BattleActorState.buffs:type_name -> BattleBuffEntry
-	17, // 9: BattleActorState.skill_cooldown_rounds:type_name -> BattleActorState.SkillCooldownRoundsEntry
-	1,  // 10: BattleAction.action_type:type_name -> eBattleActionType
-	2,  // 11: BattleEventItem.event_type:type_name -> eBattleEventType
-	3,  // 12: BattleSettlementData.outcome:type_name -> eBattleOutcome
-	7,  // 13: BattleSettlementData.items_consumed:type_name -> BattleItemEntry
-	7,  // 14: BattleSettlementData.items_gained:type_name -> BattleItemEntry
-	15, // 15: BattleSettlementData.pets:type_name -> BattlePetSettlementData
-	13, // 16: BattleSettlementData.defeated_monsters:type_name -> BattleMonsterDefeat
-	4,  // 17: BattleActivityContext.kind:type_name -> eBattleActivityKind
-	18, // [18:18] is the sub-list for method output_type
-	18, // [18:18] is the sub-list for method input_type
-	18, // [18:18] is the sub-list for extension type_name
-	18, // [18:18] is the sub-list for extension extendee
-	0,  // [0:18] is the sub-list for field type_name
+	19, // 0: BattlePlayerSnapshot.base_attributes:type_name -> BaseAttributesComp
+	7,  // 1: BattlePlayerSnapshot.buffs:type_name -> BattleBuffEntry
+	8,  // 2: BattlePlayerSnapshot.items:type_name -> BattleItemEntry
+	6,  // 3: BattlePlayerSnapshot.routing:type_name -> BattleRouting
+	10, // 4: BattlePlayerSnapshot.pets:type_name -> BattlePetSnapshot
+	20, // 5: BattlePlayerSnapshot.combat:type_name -> CombatAttributes
+	19, // 6: BattlePetSnapshot.base_attributes:type_name -> BaseAttributesComp
+	0,  // 7: BattleActorState.actor_type:type_name -> eBattleActorType
+	19, // 8: BattleActorState.attributes:type_name -> BaseAttributesComp
+	7,  // 9: BattleActorState.buffs:type_name -> BattleBuffEntry
+	18, // 10: BattleActorState.skill_cooldown_rounds:type_name -> BattleActorState.SkillCooldownRoundsEntry
+	20, // 11: BattleActorState.combat:type_name -> CombatAttributes
+	1,  // 12: BattleAction.action_type:type_name -> eBattleActionType
+	2,  // 13: BattleEventItem.event_type:type_name -> eBattleEventType
+	3,  // 14: BattleEventItem.hit_kind:type_name -> eBattleHitKind
+	4,  // 15: BattleSettlementData.outcome:type_name -> eBattleOutcome
+	8,  // 16: BattleSettlementData.items_consumed:type_name -> BattleItemEntry
+	8,  // 17: BattleSettlementData.items_gained:type_name -> BattleItemEntry
+	16, // 18: BattleSettlementData.pets:type_name -> BattlePetSettlementData
+	14, // 19: BattleSettlementData.defeated_monsters:type_name -> BattleMonsterDefeat
+	5,  // 20: BattleActivityContext.kind:type_name -> eBattleActivityKind
+	21, // [21:21] is the sub-list for method output_type
+	21, // [21:21] is the sub-list for method input_type
+	21, // [21:21] is the sub-list for extension type_name
+	21, // [21:21] is the sub-list for extension extendee
+	0,  // [0:21] is the sub-list for field type_name
 }
 
 func init() { file_proto_battle_battle_data_proto_init() }
@@ -1951,7 +2049,7 @@ func file_proto_battle_battle_data_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_battle_battle_data_proto_rawDesc), len(file_proto_battle_battle_data_proto_rawDesc)),
-			NumEnums:      5,
+			NumEnums:      6,
 			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   0,

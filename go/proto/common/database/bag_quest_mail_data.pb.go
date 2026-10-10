@@ -65,7 +65,14 @@ type ItemEntry struct {
 	// 字段号从 13 起:6–12 已被上面那张 TODO 表预定,占用它们会让日后加那些
 	// 字段时撞号。0 = 旧存档没盖过章,还原后按 item_uuid 排序(与本字段落地前
 	// 的行为一致),并由 ItemStore 从现有实例重建水位。
-	AcquireSeq    uint64 `protobuf:"varint,13,opt,name=acquire_seq,json=acquireSeq,proto3" json:"acquire_seq,omitempty"`
+	AcquireSeq uint64 `protobuf:"varint,13,opt,name=acquire_seq,json=acquireSeq,proto3" json:"acquire_seq,omitempty"`
+	// 装备实例数据(随机属性行)。镜像 ItemComp.equip,设计文档
+	// docs/design/equipment-attributes.md §3.1。
+	//
+	// presence 有语义:有这一段 = 该实例已掷过属性(哪怕 0 条)。存盘 / 读盘
+	// 只在 has_equip() 时拷贝,否则还原后会被当成「没初始化过」再掷一次。
+	// 字段号取 14:6–12 仍留给上面那张 TODO 表。
+	Equip         *component.EquipInstanceData `protobuf:"bytes,14,opt,name=equip,proto3" json:"equip,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -140,6 +147,13 @@ func (x *ItemEntry) GetAcquireSeq() uint64 {
 		return x.AcquireSeq
 	}
 	return 0
+}
+
+func (x *ItemEntry) GetEquip() *component.EquipInstanceData {
+	if x != nil {
+		return x.Equip
+	}
+	return nil
 }
 
 // All bags / warehouses / equipment slots / temp bags for one player.
@@ -705,7 +719,7 @@ var File_proto_common_database_bag_quest_mail_data_proto protoreflect.FileDescri
 
 const file_proto_common_database_bag_quest_mail_data_proto_rawDesc = "" +
 	"\n" +
-	"/proto/common/database/bag_quest_mail_data.proto\x1a+proto/common/component/item_base_comp.proto\x1a)proto/common/component/mission_comp.proto\"\xb2\x01\n" +
+	"/proto/common/database/bag_quest_mail_data.proto\x1a+proto/common/component/item_base_comp.proto\x1a)proto/common/component/mission_comp.proto\"\xdc\x01\n" +
 	"\tItemEntry\x12\x1b\n" +
 	"\titem_uuid\x18\x01 \x01(\x04R\bitemUuid\x12\x1b\n" +
 	"\tconfig_id\x18\x02 \x01(\rR\bconfigId\x12\x1d\n" +
@@ -714,7 +728,8 @@ const file_proto_common_database_bag_quest_mail_data_proto_rawDesc = "" +
 	"\x03pos\x18\x04 \x01(\rR\x03pos\x12\x19\n" +
 	"\bbag_type\x18\x05 \x01(\rR\abagType\x12\x1f\n" +
 	"\vacquire_seq\x18\r \x01(\x04R\n" +
-	"acquireSeq\"\x94\x02\n" +
+	"acquireSeq\x12(\n" +
+	"\x05equip\x18\x0e \x01(\v2\x12.EquipInstanceDataR\x05equip\"\x94\x02\n" +
 	"\n" +
 	"BagAllData\x12 \n" +
 	"\x05items\x18\x01 \x03(\v2\n" +
@@ -777,30 +792,32 @@ func file_proto_common_database_bag_quest_mail_data_proto_rawDescGZIP() []byte {
 
 var file_proto_common_database_bag_quest_mail_data_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_proto_common_database_bag_quest_mail_data_proto_goTypes = []any{
-	(*ItemEntry)(nil),                 // 0: ItemEntry
-	(*BagAllData)(nil),                // 1: BagAllData
-	(*QuestEntry)(nil),                // 2: QuestEntry
-	(*QuestScopeData)(nil),            // 3: QuestScopeData
-	(*QuestAllData)(nil),              // 4: QuestAllData
-	(*MailEntry)(nil),                 // 5: MailEntry
-	(*MailAllData)(nil),               // 6: MailAllData
-	(*BagAllData_DynamicBagData)(nil), // 7: BagAllData.DynamicBagData
-	(*component.MissionListComp)(nil), // 8: MissionListComp
+	(*ItemEntry)(nil),                   // 0: ItemEntry
+	(*BagAllData)(nil),                  // 1: BagAllData
+	(*QuestEntry)(nil),                  // 2: QuestEntry
+	(*QuestScopeData)(nil),              // 3: QuestScopeData
+	(*QuestAllData)(nil),                // 4: QuestAllData
+	(*MailEntry)(nil),                   // 5: MailEntry
+	(*MailAllData)(nil),                 // 6: MailAllData
+	(*BagAllData_DynamicBagData)(nil),   // 7: BagAllData.DynamicBagData
+	(*component.EquipInstanceData)(nil), // 8: EquipInstanceData
+	(*component.MissionListComp)(nil),   // 9: MissionListComp
 }
 var file_proto_common_database_bag_quest_mail_data_proto_depIdxs = []int32{
-	0, // 0: BagAllData.items:type_name -> ItemEntry
-	7, // 1: BagAllData.dynamic_bags:type_name -> BagAllData.DynamicBagData
-	8, // 2: QuestScopeData.mission_list:type_name -> MissionListComp
-	2, // 3: QuestAllData.active:type_name -> QuestEntry
-	3, // 4: QuestAllData.scopes:type_name -> QuestScopeData
-	0, // 5: MailEntry.attached_items:type_name -> ItemEntry
-	5, // 6: MailAllData.mails:type_name -> MailEntry
-	0, // 7: BagAllData.DynamicBagData.items:type_name -> ItemEntry
-	8, // [8:8] is the sub-list for method output_type
-	8, // [8:8] is the sub-list for method input_type
-	8, // [8:8] is the sub-list for extension type_name
-	8, // [8:8] is the sub-list for extension extendee
-	0, // [0:8] is the sub-list for field type_name
+	8, // 0: ItemEntry.equip:type_name -> EquipInstanceData
+	0, // 1: BagAllData.items:type_name -> ItemEntry
+	7, // 2: BagAllData.dynamic_bags:type_name -> BagAllData.DynamicBagData
+	9, // 3: QuestScopeData.mission_list:type_name -> MissionListComp
+	2, // 4: QuestAllData.active:type_name -> QuestEntry
+	3, // 5: QuestAllData.scopes:type_name -> QuestScopeData
+	0, // 6: MailEntry.attached_items:type_name -> ItemEntry
+	5, // 7: MailAllData.mails:type_name -> MailEntry
+	0, // 8: BagAllData.DynamicBagData.items:type_name -> ItemEntry
+	9, // [9:9] is the sub-list for method output_type
+	9, // [9:9] is the sub-list for method input_type
+	9, // [9:9] is the sub-list for extension type_name
+	9, // [9:9] is the sub-list for extension extendee
+	0, // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_proto_common_database_bag_quest_mail_data_proto_init() }

@@ -886,7 +886,7 @@ func (x *ListMyInvitesResponse) GetServerTimeMs() uint64 {
 type TeamMemberView struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	PlayerId      uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
-	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`                       // 仓库暂无昵称,恒为 ""(§G.2)
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`                       // 从玩家存档资料(PlayerProfileComp.name)读取;未取名 / 旧存档为 "",由客户端兜底显示
 	Level         uint32                 `protobuf:"varint,3,opt,name=level,proto3" json:"level,omitempty"`                    // 尽力而为,0 = 未知
 	ClassId       uint32                 `protobuf:"varint,4,opt,name=class_id,json=classId,proto3" json:"class_id,omitempty"` // 尽力而为,0 = 未知
 	Gender        uint32                 `protobuf:"varint,5,opt,name=gender,proto3" json:"gender,omitempty"`                  // 从玩家存档资料读取；旧存档未补齐时为 0。
