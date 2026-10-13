@@ -5,6 +5,7 @@ import (
 	"errors"
 	"sort"
 	"strconv"
+	"time"
 
 	"match/generated/pb/game"
 	"match/internal/metrics"
@@ -381,13 +382,15 @@ func (s *Service) StartTeamMatch(ctx context.Context, caller uint64, in *teampb.
 		}
 
 		token := uuid.NewString()
-		expireAtMs := snap.NowMs + uint64(s.starter.MatchLockTTLSeconds(len(roster)))*1000
+		// 锁时长只算这一次:加锁用它,之后每条清锁路径的 EndMatch 兜底上限也由它推出(endMatchDeadline)。
+		lockTTL := time.Duration(s.starter.MatchLockTTLSeconds(len(roster))) * time.Second
+		expireAtMs := snap.NowMs + uint64(lockTTL.Milliseconds())
 		lock, err := s.store.CommitMatchLock(ctx, &snap, caller, token, roster, expireAtMs)
 		if err != nil {
 			log.Errorf("[team] StartTeamMatch 开战锁提交故障 player=%d team=%d: %v", caller, snap.TeamId, err)
 			// 结果未知:EVAL 可能已在 Redis 执行、只是回复超时 / 断连。按 token 后台清锁(锁没写入时只读不写不推),
 			// 否则锁白挂到自然过期,期间全队的名单操作都回 TeamInMatch(§E.3)。
-			s.releaseLockInBackground(snap.TeamId, token)
+			s.releaseLockInBackground(snap.TeamId, token, lockTTL)
 			return s.matchReject(ctx, caller, ErrInternal, 0, nil)
 		}
 		commits := repairCommits(lock.Repairs)
@@ -403,10 +406,10 @@ func (s *Service) StartTeamMatch(ctx context.Context, caller uint64, in *teampb.
 			metrics.ObserveTeamCommitRetry(methodStartTeamMatch)
 			// {0} 不等于没写入:go-redis 对断连 / 读超时会重发同一条 EVAL,第一次已落锁时第二次回 {0}。
 			// 重来之前按 token 确认一次,否则下一轮会被自己的锁挡成 TeamInMatch。
-			s.settleUnconfirmedLock(ctx, snap.TeamId, token)
+			s.settleUnconfirmedLock(ctx, snap.TeamId, token, lockTTL)
 			continue
 		}
-		return s.launchMatch(ctx, caller, configId, lock.Commit, token, zones)
+		return s.launchMatch(ctx, caller, configId, lock.Commit, token, lockTTL, zones)
 	}
 	return s.matchReject(ctx, caller, ErrStateChanged, 0, nil)
 }
@@ -463,8 +466,9 @@ func (s *Service) preflightMatch(ctx context.Context, roster []uint64) (map[uint
 }
 
 // launchMatch 开战锁已落盘之后(§E.1 第 7–9 步)。建票与 gather 只用锁内名单(与锁同一次提交落盘)。
+// lockTTL 是加锁时用的锁时长,交给 finishMatch 推出 EndMatch 的兜底上限。
 func (s *Service) launchMatch(ctx context.Context, caller uint64, configId uint32, lock *CommitResult,
-	token string, zones map[uint64]uint32,
+	token string, lockTTL time.Duration, zones map[uint64]uint32,
 ) *teampb.TeamResponse {
 	log := logx.WithContext(ctx)
 	teamId := lock.TeamId
@@ -476,7 +480,7 @@ func (s *Service) launchMatch(ctx context.Context, caller uint64, configId uint3
 		// 补偿不继承请求 ctx(§A.3 第 7 条):后台清锁,结果推全员(含发起人)。回包里的视图可能仍是 STARTING,
 		// 客户端按 (epoch, version) 排序,随后到达的 MATCH_FAILED 视图版本更新。
 		tip := tipOf(ErrMemberNotReady, failed) // 推给队员的 MATCH_FAILED 带同一个原因(§E.1 第 7 步、§H.2)
-		asyncFn("match.team.end_match", func() { s.finishMatch(teamId, token, false, roster, tip) })
+		asyncFn("match.team.end_match", func() { s.finishMatch(teamId, token, lockTTL, false, roster, tip) })
 		return s.respond(ctx, caller, ErrMemberNotReady, failed)
 	}
 	resp := s.commitResponse(ctx, caller, lock)
@@ -489,7 +493,7 @@ func (s *Service) launchMatch(ctx context.Context, caller uint64, configId uint3
 		}
 		metrics.ObserveTeamMatch(outcome)
 		// gather 失败拿不到具体原因:tip 留空(§E.1 第 8 步)。
-		s.finishMatch(teamId, token, ok, roster, nil)
+		s.finishMatch(teamId, token, lockTTL, ok, roster, nil)
 	})
 	return resp
 }
@@ -498,8 +502,11 @@ func (s *Service) launchMatch(ctx context.Context, caller uint64, configId uint3
 // 清锁提交成功 → 按提交推全员(含发起人)MATCH_ENDED / MATCH_FAILED;没有提交(锁已被清 / 重新加锁 /
 // 自然过期 / 截止)→ 仍尽力给队员推一次当前视图与结果原因,保证客户端不停在 STARTING。
 // tip 是结果推送的原因(TeamSnapshotS2C.tip,可为 nil),只随结果推送下发,不进存储。
-func (s *Service) finishMatch(teamId uint64, token string, ok bool, roster []uint64, tip *base.TipInfoMessage) {
-	res := s.store.EndMatch(teamId, token, ok)
+// lockTTL 是加锁时用的锁时长(见 endMatchDeadline)。
+func (s *Service) finishMatch(teamId uint64, token string, lockTTL time.Duration, ok bool, roster []uint64,
+	tip *base.TipInfoMessage,
+) {
+	res := s.store.EndMatch(teamId, token, ok, lockTTL)
 	commits := repairCommits(res.Repairs)
 	if res.Commit != nil {
 		res.Commit.PushTip = tip
@@ -525,9 +532,10 @@ func (s *Service) finishMatch(teamId uint64, token string, ok bool, roster []uin
 // releaseLockInBackground 开战锁提交结果未知时的后台补偿:按 token 清锁(EndMatch,ok=false)。
 // 与 finishMatch 不同,没有清锁提交就不推送 —— 锁可能根本没写入,给全队推 MATCH_FAILED 等于凭空多出
 // 一场从没开始过的开战。锁没写入时 EndMatch 读到 token 不符即停止,不写。
-func (s *Service) releaseLockInBackground(teamId uint64, token string) {
+// lockTTL 是这次加锁(可能已落盘)用的锁时长。
+func (s *Service) releaseLockInBackground(teamId uint64, token string, lockTTL time.Duration) {
 	asyncFn("match.team.end_match", func() {
-		res := s.store.EndMatch(teamId, token, false)
+		res := s.store.EndMatch(teamId, token, false, lockTTL)
 		commits := repairCommits(res.Repairs)
 		if res.Commit != nil {
 			logx.Infof("[team] 结果未知的开战锁已按 token 清除 team=%d", teamId)
@@ -544,11 +552,11 @@ func (s *Service) releaseLockInBackground(teamId uint64, token string) {
 // settleUnconfirmedLock 开战锁提交没拿到"已提交"(Retry)时,用请求 ctx 按 token 同步确认一轮:
 // 锁不在 / token 不符 / 已过期 → 只读不写(常见情形:预检期间真有别的提交);锁在(同一条 EVAL 被重发、
 // 第一次已落锁)→ 钉版本清掉并推送。同步确认不了(故障或清锁冲突)就交给后台补偿。
-func (s *Service) settleUnconfirmedLock(ctx context.Context, teamId uint64, token string) {
+func (s *Service) settleUnconfirmedLock(ctx context.Context, teamId uint64, token string, lockTTL time.Duration) {
 	stop, pinned, err := s.store.ReleaseMatchLockOnce(ctx, teamId, token)
 	if err != nil {
 		logx.WithContext(ctx).Errorf("[team] 确认未提交的开战锁失败,转后台清锁 team=%d: %v", teamId, err)
-		s.releaseLockInBackground(teamId, token)
+		s.releaseLockInBackground(teamId, token, lockTTL)
 		return
 	}
 	if stop != 0 {
@@ -561,7 +569,7 @@ func (s *Service) settleUnconfirmedLock(ctx context.Context, teamId uint64, toke
 	}
 	s.publish(0, commits, nil)
 	if pinned.Commit == nil {
-		s.releaseLockInBackground(teamId, token)
+		s.releaseLockInBackground(teamId, token, lockTTL)
 	}
 }
 

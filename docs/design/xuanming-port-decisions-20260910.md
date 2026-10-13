@@ -32,8 +32,13 @@
 | `friend` | `friend` / `friend_request` 表**无 `zone_id` 列**(`deploy/mysql-init/guild_friend_tables.sql:44-59`),好友关系本来就跨 zone | **`$true`** |
 | `guild` | `guild` 表虽有 `zone_id`(:14),但 `UNIQUE KEY uk_name (name)` 是**全局唯一**(:17)⇒ 是单张共享表,`zone_id` 是**数据维度不是部署维度** | **`$true`** |
 | `chat` | 频道跨 zone | **`$true`** |
-| `team` | 按 §D7 与 `match` 同进程,`match` 已是 `Global = $true` | **`$true`**(随 match) |
+| `team` | 权威数据在全服单实例 SharedRedis,`zone_id` 是记录里的**数据维度不是部署维度**(同 guild);`AllowCrossZone=true` 时同一队伍跨 zone。部署上寄宿在 `match` 进程([xuanming-port-feasibility-20260902.md](xuanming-port-feasibility-20260902.md) §8 D7,不是本文的 D-7),与本判据无关 | **`$true`**(部署随 match 镜像) |
 | `mail` | 收件人跨 zone | **`$true`** |
+
+> **2026-10-12 修订 team 行**:原文为「按 §D7 与 `match` 同进程,`match` 已是 `Global = $true` | **`$true`**(随 match)」。
+> 那是按进程归属推出的结论，没有走本节"按数据归属定、不按服务定"的判据;改为按数据论证后结论不变。
+> 这样 D-2 不再依赖 D7:将来 team 拆出独立服务，本行也不用改。复核依据见
+> [team-system.md](team-system.md)「定案理由复核与扩展路径(2026-10-12)」。
 
 ### ⚠ 两个轴不要混
 

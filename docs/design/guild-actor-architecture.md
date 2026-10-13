@@ -452,6 +452,12 @@ type Router struct {
 
 ### 5.3 决策(本轮不下)
 
+> **2026-10-12 定论:不引入框架。** 联网核实 ergo 与 protoactor-go 之后两个都不引入:
+> protoactor-go 的 Go 版自 2026-01-18 起没有新提交,grain 单激活所在的集群成员恢复有未修缺陷(#1133);
+> ergo 不按 key 放置,EDF 序列化与 proto 契约重复。本项目 actor 能替代的只有「进程内同 key 串行」,
+> 这部分已有现成机制;真正的缺口在存储侧 fencing,框架不提供。
+> 证据与对比表见 [db-task-pipeline-bottlenecks.md](db-task-pipeline-bottlenecks.md) §1。下文保留当时的推导。
+
 **这一轮先把对比留在文档里,下一轮再定**。
 
 倾向: **自己写 ~200 行**,理由:
@@ -986,7 +992,7 @@ if config.Actor.Enabled && req.GuildId % 100 < config.Actor.RolloutPercent {
 - ❌ friend / player_locator actor 化 —— 它们是否有热点需独立评估
 - ❌ scene_manager 改造 —— 它已经是 actor-like 模式(每个 scene 独立 goroutine)
 - ❌ 公会战 / 公会 BOSS 等大型业务 —— 等基础 actor 化稳定再评估
-- ❌ proto.actor / Ergo / 其他框架引入 —— 本轮决策推迟
+- ❌ proto.actor / Ergo / 其他框架引入 —— 2026-10-12 定论:不引入(§16 #2)
 
 ---
 
@@ -995,7 +1001,7 @@ if config.Actor.Enabled && req.GuildId % 100 < config.Actor.RolloutPercent {
 | # | 决策 | 状态 | 备注 |
 |---|------|------|------|
 | 1 | 单实例 actor 化(本次范围) | 已定 | 不做横向扩展,等 C++ 方案 |
-| 2 | actor 框架选型 | **未定** | 候选: 自己写 / protoactor-go,等下轮决定 |
+| 2 | actor 框架选型 | 已定(2026-10-12) | 不引入框架,需要时自己写。ergo、protoactor-go 联网核实后都不引入,依据见 [db-task-pipeline-bottlenecks.md](db-task-pipeline-bottlenecks.md) §1 |
 | 3 | flush 间隔默认 100ms | 已定 | 可配置, 关键操作单独同步写 |
 | 4 | 读路径走快照不进 actor | 已定 | 提升读吞吐, 100ms 滞后可接受 |
 | 5 | actor evict idle = 5min | 已定 | 平衡内存占用与重 load 成本 |
@@ -1007,7 +1013,7 @@ if config.Actor.Enabled && req.GuildId % 100 < config.Actor.RolloutPercent {
 
 ## 17. 后续动作
 
-1. 等下一轮评审决定**框架选型**(本文 §5)
+1. ~~等下一轮评审决定**框架选型**(本文 §5)~~ 2026-10-12 已定:不引入框架(§16 #2)。actor 化本身仍未落地(go/guild 里没有 ActorRouter / FlushScheduler),是否需要先看 guild 压测(见 db-task-pipeline-bottlenecks.md 的 guild 一节)
 2. 决定后启动**阶段 1-5 实施**
 3. 实施完成跑**对比压测**, 出复盘文档
 4. 稳定 1 周后删除 legacy 路径

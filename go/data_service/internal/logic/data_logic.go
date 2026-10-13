@@ -2,6 +2,7 @@ package logic
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"time"
@@ -385,7 +386,21 @@ type DeletePlayerDataResp struct {
 	KeysDeleted uint32
 }
 
+// ErrZoneMappingDeletionDisabled:DeletePlayerData 带 DeleteZoneMapping=true 的请求一律拒绝(W3,2026-10-12,
+// docs/design/player-route-mapping-durability-proposal.md §4.3)。拒绝发生在**任何副作用之前**:
+// 先删数据键、再拒删映射,会留下"数据没了、映射还在"的半截操作。
+// 为什么停用:锁 token 在 mapping Redis、映射真源要落到全局库 player_route,删映射与持锁校验无法原子;
+// 删号与落点的关系本来就待定(player-storage-placement.md)。仓库内没有生产调用方。
+// server 层把它翻成 gRPC FailedPrecondition(DeletePlayerData 唯一不走 in-band 码的失败)。
+var ErrZoneMappingDeletionDisabled = errors.New("DeletePlayerData: delete_zone_mapping is disabled (proposal §4.3, W3)")
+
 func DeletePlayerData(ctx context.Context, svcCtx *svc.ServiceContext, req *DeletePlayerDataReq) (*DeletePlayerDataResp, error) {
+	if req.DeleteZoneMapping {
+		logx.Errorf("[DeletePlayerData] player %d: refused before any side effect: delete_zone_mapping is disabled (proposal §4.3, W3)", req.PlayerID)
+		return &DeletePlayerDataResp{ErrorCode: constants.ErrCodeNotImplemented},
+			fmt.Errorf("%w: player %d", ErrZoneMappingDeletionDisabled, req.PlayerID)
+	}
+
 	client, token, errCode, err := acquirePlayerLock(ctx, svcCtx, req.PlayerID)
 	if errCode != 0 {
 		return &DeletePlayerDataResp{ErrorCode: errCode}, err
@@ -433,23 +448,8 @@ func DeletePlayerData(ctx context.Context, svcCtx *svc.ServiceContext, req *Dele
 
 	deleted := uint32(len(allKeys))
 
-	// Optionally remove zone mapping
-	if req.DeleteZoneMapping {
-		owned, deletedMapping, err := svcCtx.Router.DeletePlayerZoneIfLocked(ctx, req.PlayerID, token)
-		if err != nil {
-			logx.Errorf("[DeletePlayerData] player %d: failed to delete zone mapping: %v", req.PlayerID, err)
-			return &DeletePlayerDataResp{ErrorCode: constants.ErrCodeRedis, KeysDeleted: deleted}, err
-		}
-		if !owned {
-			logx.Errorf("[DeletePlayerData] player %d: mapping lock expired before delete; stale deleter fenced", req.PlayerID)
-			return &DeletePlayerDataResp{ErrorCode: constants.ErrCodeLockConflict, KeysDeleted: deleted}, nil
-		}
-		if deletedMapping {
-			deleted++
-		}
-	}
-
-	logx.Infof("[DeletePlayerData] player %d: deleted=%d zone=%v", req.PlayerID, deleted, req.DeleteZoneMapping)
+	// 映射删除分支已停用(入口处就拒绝了 DeleteZoneMapping=true,见 ErrZoneMappingDeletionDisabled),这里只删数据键。
+	logx.Infof("[DeletePlayerData] player %d: deleted=%d (zone mapping kept)", req.PlayerID, deleted)
 	return &DeletePlayerDataResp{KeysDeleted: deleted}, nil
 }
 

@@ -249,7 +249,7 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 	// Background context for the whole chain — independent of gRPC ctx (which
 	// is cancelled the instant we return below). chainCancel both stops the
 	// timeout and cancels manually from the lost-lock heartbeat path.
-	const chainBudget = 5 * time.Minute
+	const chainBudget = 2 * time.Minute
 	chainCtx, chainCancel := context.WithTimeout(context.Background(), chainBudget)
 
 	// chainStart is the t0 for the total / preload latency histograms.

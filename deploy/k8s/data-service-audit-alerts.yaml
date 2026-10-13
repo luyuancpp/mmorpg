@@ -1,0 +1,154 @@
+# Prometheus alert rules for data_service 的全球审计管道(player_snapshot / transaction_log 两条 Kafka 落库消费者)。
+#
+# 来源:G2a 快照审计管道扩容(go/data_service/internal/kafka;处置流程见 docs/ops/audit-topic-generation-bump-runbook.md)。
+#
+# Install as a PrometheusRule CR (kube-prometheus stack),与 owner-epoch-alerts.yaml 同法:
+#   kubectl apply -n observability -f deploy/k8s/data-service-audit-alerts.yaml
+#
+# Scrape prerequisites:
+#   - data_service 的 MetricsListenAddr 已配置(K8s ConfigMap 固定 ":9260",本地同)。
+#   - A ServiceMonitor or PodMonitor pointed at that port.
+#   - Kafka.LagProbeIntervalMs > 0(服务 yaml 默认 30000):不开探针,lag / retention_gap 两个 gauge 不出数,
+#     下面的积压与保留期告警全部是哑的(DataServiceAuditLagProbeBlind 也抓不到 —— 没有失败计数)。
+#
+# 所有实例消费同一个消费组,lag / retention_gap 是 broker 视角的组级数值,每个实例报同一个数,一律取 max。
+#
+# C++ 生产端的发送失败(快照超过约 1MB 在 produce() 本地被拒、broker 不可达)不在 Prometheus:scene 没有指标端点。
+# 值班固定查询(Loki):{app="scene"} |= "[SnapshotSystem] Kafka send failed"。
+#
+# Severity conventions(与 scene-manager-alerts.yaml 相同):
+#   critical = pager, someone wakes up
+#   warning  = next-business-hours channel
+#   info     = dashboard annotation / trend signal
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: data-service-audit-alerts
+  labels:
+    app: data-service
+    prometheus: kube-prometheus
+    role: alert-rules
+spec:
+  groups:
+    - name: data-service.audit-pipeline
+      interval: 30s
+      rules:
+        # 消费循环停了(DB 故障停机 / 从未起来)。用 10 分钟均值而不是 `== 0 for`:
+        # DB 持续故障时 up 每 ResumeAfter(60s)翻一次 0→1→0(supervisor 重建 → 再次停机),`for` 会被打断而永不触发。
+        - alert: DataServiceAuditConsumerStopped
+          expr: |
+            avg_over_time(data_service_kafka_consumer_up[10m]) < 0.5
+          for: 0m
+          labels:
+            severity: warning
+          annotations:
+            summary: "data_service 审计消费者 {{ $labels.consumer }} 大部分时间没在跑"
+            description: >-
+              {{ $labels.instance }} 上 {{ $labels.consumer }} 过去 10 分钟 up 均值 {{ $value | printf "%.2f" }}。
+              查 data_service 日志的 `STOPPED:` 行(点名了哪个 guid / 哪批、哪个 offset 没提交)与 `consumers not started`;
+              DB 故障先修库,消费者会在冷却后从断点自动续消费(宁可积压不丢)。积压期间盯住 DataServiceAuditRetentionGap。
+
+        # 保留期已经删掉了还没消费的审计消息:**数据已丢**。所有实例报同一个组的值,取 max。
+        # for: 2m —— 探针先读 committed 后读 start,保留期恰在两次读之间推进时会有一次瞬时假阳性;真缺口在消费者跳过之前持续存在。
+        # 注意:消费者跳过并提交后本 gauge 会自行归零,告警随之 resolve —— 「丢了多少」以日志为准,不以 gauge 为准。
+        - alert: DataServiceAuditRetentionGap
+          expr: |
+            max by (consumer) (data_service_kafka_consumer_retention_gap_messages) > 0
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "审计 topic 的保留期删掉了 {{ $labels.consumer }} 还没消费的消息(审计数据已丢)"
+            description: >-
+              约 {{ $value | printf "%.0f" }} 条未消费消息已被 broker 的 retention(retention.ms 或每分区 retention.bytes)删除。
+              确证与精确条数看 data_service 日志 `[kafka-go]` 的 out-of-range 跳转行与 `AUDIT DATA LOST` 行;
+              记录条数与时间段上报回档负责人。根因通常是积压超过了每分区 log.retention.bytes(prod 512MiB),
+              见 runbook「保留期与积压」一节;放宽保留策略是负责人拍板项(G2a 规格 Q-1)。
+
+        # 积压。阈值与 for 必须按「离删除线还有多少**时间**」定,不能按条数拍:
+        #   删除线(条)≈ 分区数 P × retention.bytes ÷ 平均快照字节;P=3、prod 512MiB、~300KB 时约 5300 条,
+        #   开服示例速率 R=128/s 下约 41 秒就到。取删除线的 30% ≈ 1600 条、for 2m(retention.check.interval 为 2 分钟)。
+        #   1600 只是 P=3、300KB 的占位值:换代扩分区后、或拿到实测快照大小(message_bytes)后按 runbook 的公式重算并在这里写明出处。
+        #   放宽 retention.bytes(Q-1)后同步放宽本阈值。
+        - alert: DataServiceAuditLagHigh
+          expr: |
+            max by (consumer) (data_service_kafka_consumer_lag_messages{consumer="player_snapshot"}) > 1600
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "player_snapshot 积压 {{ $value | printf \"%.0f\" }} 条,逼近保留期删除线"
+            description: >-
+              消费组积压已超过删除线估算值的 30%。先看 DataServiceAuditFlushSlow / ConsumerStopped 判断是库慢还是消费者停了;
+              库慢时按 runbook 调批量与并发(需负责人确认),积压不收敛时准备离线换代扩分区。
+              每多一分钟,保留期删掉未消费快照(审计数据丢失)的风险就更近一分。
+
+        - alert: DataServiceTxLogLagHigh
+          expr: |
+            max by (consumer) (data_service_kafka_consumer_lag_messages{consumer="transaction_log"}) > 100000
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "transaction_log 积压 {{ $value | printf \"%.0f\" }} 条且持续 15 分钟"
+            description: >-
+              流水消费者落后。流水单条很小,删除线远比快照远,但同样会被每分区 retention.bytes 删。
+              查 data_service 日志 `[transaction_log] STOPPED:` 与 flush_seconds{consumer="transaction_log"}。
+
+        # 探针失明:15 分钟内一次都没探成、且有失败。此时 lag / retention_gap 告警全部是哑的。
+        - alert: DataServiceAuditLagProbeBlind
+          expr: |
+            sum by (consumer) (increase(data_service_kafka_consumer_lag_probe_total{result="ok"}[15m])) == 0
+            and
+            sum by (consumer) (increase(data_service_kafka_consumer_lag_probe_total{result="error"}[15m])) > 0
+          for: 0m
+          labels:
+            severity: warning
+          annotations:
+            summary: "{{ $labels.consumer }} 的 lag 探针 15 分钟没有成功过"
+            description: >-
+              积压与保留期丢失告警此刻都不可信。查 data_service 日志 `lag probe failed` / `lag probe cannot connect`
+              (broker 不可达、消费组 offset 拉取失败、或 committed 越过 log end = topic 被删了重建)。
+
+        # 落库变慢:单次 DB 尝试 p99 > 2s 持续 15 分钟(全局库开始排队的早期信号)。
+        # flush_seconds 只计单次 DB 尝试,不含本实例的落库名额排队与重试退避,所以它慢 = 库慢。
+        - alert: DataServiceAuditFlushSlow
+          expr: |
+            histogram_quantile(0.99, sum by (le, consumer) (rate(data_service_kafka_consumer_flush_seconds_bucket{result="ok"}[5m]))) > 2
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "{{ $labels.consumer }} 单次落库 p99 {{ $value | printf \"%.2f\" }}s"
+            description: >-
+              全局库(SnapshotMySQL)开始排队:审计写与建角同步路径(名字登记、号段)共用这台实例的 CPU / IO。
+              先确认 Threads_running / fsync 速率;审计是唯一能慢下来而不伤玩家的一方,但只有在保留期足够长(Q-1)时才安全,
+              见 runbook「全局库成瓶颈时」一节。
+
+        # 被跳过的坏消息(解不出 / 主键为 0 / 超 MEDIUMBLOB):这些审计记录不会落库。序列由 PrimeKafkaConsumer 预置为 0。
+        - alert: DataServiceAuditMessagesSkipped
+          expr: |
+            sum by (consumer, outcome) (increase(data_service_kafka_consumer_messages_total{outcome=~"decode_error|invalid|oversize"}[15m])) > 0
+          for: 0m
+          labels:
+            severity: warning
+          annotations:
+            summary: "{{ $labels.consumer }} 跳过了 {{ $value | printf \"%.0f\" }} 条坏消息({{ $labels.outcome }})"
+            description: >-
+              这些消息已提交但没有落库。data_service 日志里有逐条的 `undecodable` / `invalid snapshot` / `oversize snapshot` 行(带 partition / offset)。
+              持续出现 = 生产端(C++ scene)的消息格式或大小出了问题。
+
+        # 批量失败、逐条兜底成功:批本身有问题(多半是包 / 事务大小),趋势信号。
+        - alert: DataServiceAuditBatchIsolated
+          expr: |
+            sum by (consumer) (increase(data_service_kafka_consumer_isolation_total{result="recovered"}[1h])) > 0
+          for: 0m
+          labels:
+            severity: info
+          annotations:
+            summary: "{{ $labels.consumer }} 的批量落库失败后逐条兜底成功"
+            description: >-
+              过去 1 小时批量语句失败、逐条重试全部成功(数据没丢,只是变慢)。看日志 `retrying row by row to isolate` 那行的错误:
+              包过大(1153)/ 事务过大(TiDB 8004)时调小 Kafka.SnapshotBatchMaxBytes 或 SnapshotBatchMaxRows。
+              兜底也失败时消费者会停机,走 DataServiceAuditConsumerStopped。

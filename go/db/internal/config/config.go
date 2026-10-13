@@ -41,8 +41,21 @@ type PlacementConfig struct {
 	// 打开前提(§13):全部 login 已 PinOnCreate=true,且各 zone 已 -mode pin-placement 钉完存量。
 	Required bool `json:"Required,optional"`
 
-	// ExtraStoreMaxOpenConn / ExtraStoreMaxIdleConn 是**每个**额外落点库的连接池(0 = 默认 8 / 2)。
-	// 本 zone 库仍用 ServerConfig.Database.MaxOpenConn / MaxIdleConn。
+	// 额外落点库按家族分两个池旋钮(G2b 批 C;本 zone 库仍用 ServerConfig.Database.MaxOpenConn / MaxIdleConn):
+	//   ZoneStore*    —— **每个**额外 zone 家族库 zone_{1..999999}_db(本 zone 库除外):冷缓存访客读、合服 pin 后的源区库;
+	//   NonZoneStore* —— **每个**非 zone 落点库 player_store_{>=1000000}_db(Phase 2)。
+	// 分开的原因:zone 家族池的预算随 zone 数平方增长,非 zone 池在 Phase 2 是瓶颈要单独调大,一个旋钮两头顾不上。
+	// 0 = 回落旧键 ExtraStore*,再回落默认 8 / 2(Normalize;优先级 新键 > 旧键 > 默认)。
+	ZoneStoreMaxOpenConn    int `json:"ZoneStoreMaxOpenConn,optional"`
+	ZoneStoreMaxIdleConn    int `json:"ZoneStoreMaxIdleConn,optional"`
+	NonZoneStoreMaxOpenConn int `json:"NonZoneStoreMaxOpenConn,optional"`
+	NonZoneStoreMaxIdleConn int `json:"NonZoneStoreMaxIdleConn,optional"`
+
+	// ExtraStoreConnMaxIdleSeconds 是额外落点库池的 SetConnMaxIdleTime(秒);≤0 视为没写,取默认 60。
+	ExtraStoreConnMaxIdleSeconds int `json:"ExtraStoreConnMaxIdleSeconds,optional"`
+
+	// ExtraStoreMaxOpenConn / ExtraStoreMaxIdleConn 是**旧键**:只作上面新键缺省时的回落(两类库都回落到它),
+	// 新配置不要再写。Normalize 仍回填它的默认值 8 / 2,让「只写旧键」的旧部署两类库维持原来的大小。
 	ExtraStoreMaxOpenConn int `json:"ExtraStoreMaxOpenConn,optional"`
 	ExtraStoreMaxIdleConn int `json:"ExtraStoreMaxIdleConn,optional"`
 
@@ -249,12 +262,18 @@ const (
 
 // 额外落点库连接池默认值(player-storage-placement.md §6.1)。
 //
-// 每个被按需打开的库各自一个池,库数不设上限,所以单库默认给小:合服 pin 之后一个 zone 的 go/db
-// 可能同时指向若干源区库,每库 8 条在 MySQL 默认 max_connections=151 下仍留得出余量。
-// Phase 2 大部分玩家搬进全局库后,全局库这一个池会成为瓶颈,届时按压测结论显式调大。
+// 每个被按需打开的库各自一个池,库数不设上限,所以单库默认给小。预算按「每个 go/db 实例的额外库数 × 池大小 × 副本数 × zone 数」
+// 计入同一台 MySQL 的总账(tools/scripts/k8s_deploy.ps1 Get-MysqlConnectionLedger;mysql.yaml 的 max_connections 按其规划峰值取值)。
+// 以前这里写的「MySQL 默认 max_connections=151 下仍留得出余量」不成立(2026-10-12 更正)。
+// 两类库各有旋钮(ZoneStore* / NonZoneStore*,缺省都回落到这两个默认值):Phase 2 大部分玩家搬进非 zone 落点库后,
+// 那一类池会成为瓶颈,届时按压测结论只调大 NonZoneStore*(先重做总账规划档),不连带放大 zone 家族的访客池。
+//
+// ExtraStoreConnMaxIdleSeconds 默认 60:冷库(偶发访客读)的池因此回到 0 条,不再按 MaxIdleConn 常驻。
+// ConnMaxLifetime 仍是 5 分钟,本值大于 300 等于不生效(空闲连接本来就会在 5 分钟寿命到期时被回收,本值只是让冷池更早归零)。
 const (
-	DefaultPlacementExtraStoreMaxOpenConn = 8
-	DefaultPlacementExtraStoreMaxIdleConn = 2
+	DefaultPlacementExtraStoreMaxOpenConn        = 8
+	DefaultPlacementExtraStoreMaxIdleConn        = 2
+	DefaultPlacementExtraStoreConnMaxIdleSeconds = 60
 )
 
 // Normalize 回填零值默认项。
@@ -289,11 +308,29 @@ func (c *Config) Normalize() {
 	}
 
 	p := &c.Placement
+	// 旧键先补默认:它是新键缺省时的回落值,也让「只写旧键」的旧部署两类库维持原来的大小。
 	if p.ExtraStoreMaxOpenConn <= 0 {
 		p.ExtraStoreMaxOpenConn = DefaultPlacementExtraStoreMaxOpenConn
 	}
 	if p.ExtraStoreMaxIdleConn <= 0 {
 		p.ExtraStoreMaxIdleConn = DefaultPlacementExtraStoreMaxIdleConn
+	}
+	// 新键缺省回落旧键(优先级 新键 > 旧键 > 默认)。不新增拒启校验:idle > open 由 database/sql 静默压到 open,
+	// 与旧键的行为相同,不为此引入新的启动失败。
+	if p.ZoneStoreMaxOpenConn <= 0 {
+		p.ZoneStoreMaxOpenConn = p.ExtraStoreMaxOpenConn
+	}
+	if p.ZoneStoreMaxIdleConn <= 0 {
+		p.ZoneStoreMaxIdleConn = p.ExtraStoreMaxIdleConn
+	}
+	if p.NonZoneStoreMaxOpenConn <= 0 {
+		p.NonZoneStoreMaxOpenConn = p.ExtraStoreMaxOpenConn
+	}
+	if p.NonZoneStoreMaxIdleConn <= 0 {
+		p.NonZoneStoreMaxIdleConn = p.ExtraStoreMaxIdleConn
+	}
+	if p.ExtraStoreConnMaxIdleSeconds <= 0 {
+		p.ExtraStoreConnMaxIdleSeconds = DefaultPlacementExtraStoreConnMaxIdleSeconds
 	}
 }
 

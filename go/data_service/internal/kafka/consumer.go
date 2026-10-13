@@ -1,7 +1,8 @@
 // Package kafka 是 data_service 的两条落库消费者:
 //
 //   - transaction_log_topic → transaction_log 表(攒批 INSERT IGNORE,tx_id 主键天然幂等);
-//   - player_snapshot_topic → player_snapshot 表(逐条、按 snapshot_guid 先查后插,source=1)。
+//   - player_snapshot_topic → player_snapshot 表(按分区并发、可配批量(默认逐条),按 snapshot_guid 去重,source=1;
+//     见 snapshot_worker.go)。
 //
 // 生产者是 C++ scene(全局单 topic、裸 proto、key = player_id)。形态照
 // go/match/internal/kafka/result_consumer.go:kafka-go reader、FirstOffset、同步提交。
@@ -23,6 +24,7 @@ import (
 	"data_service/internal/metrics"
 
 	kafkago "github.com/segmentio/kafka-go"
+	"github.com/zeromicro/go-zero/core/logx"
 )
 
 // MessageReader 是 *kafkago.Reader 的最小面,便于单测注入 fake。
@@ -120,6 +122,19 @@ func highestPerPartition(msgs []kafkago.Message) []kafkago.Message {
 	return out
 }
 
+// observeFlushAttempt 记一次 DB 尝试的耗时与结局(两条消费者共用)。ctx 已结束导致的失败不记:
+// 关停 / 兄弟分区停机不是库慢,记进去会让 flush_seconds{result="error"} 在每次发布时冒一下。
+func observeFlushAttempt(ctx context.Context, consumer string, start time.Time, err error) {
+	if err != nil && ctx.Err() != nil {
+		return
+	}
+	result := metrics.KafkaResultOK
+	if err != nil {
+		result = metrics.KafkaResultError
+	}
+	metrics.ObserveKafkaConsumerFlushAttempt(consumer, result, time.Since(start))
+}
+
 // newReader 建 kafka-go reader。NewReader 不拨号,连不上只会让 FetchMessage 报错并按
 // 退避重试,所以这里不是启动失败点。
 func newReader(brokers []string, topic, group string) *kafkago.Reader {
@@ -134,5 +149,12 @@ func newReader(brokers []string, topic, group string) *kafkago.Reader {
 		MaxWait:     500 * time.Millisecond,
 		// CommitInterval=0:同步提交,由消费循环自己决定何时提交(插库成功之后)。
 		CommitInterval: 0,
+		// kafka-go 在已提交位点早于日志起点(保留期已删掉未消费的消息)时会自动跳到起点,并只经 ErrorLogger 说一声。
+		// 那一句是「审计数据被保留期删了多少」的唯一精确记录:不配它,这一跳完全静默,
+		// 而 lag 探针的 retention_gap 也会在消费者跳过、提交之后自行归零。只加日志,不改消费行为。
+		// (措辞按 kafka-go v0.4.47 reader.go 的 out-of-range 分支,组模式是否同样经它待按源码核对。)
+		ErrorLogger: kafkago.LoggerFunc(func(format string, args ...interface{}) {
+			logx.Errorf("[kafka-go] topic=%s group=%s: "+format, append([]interface{}{topic, group}, args...)...)
+		}),
 	})
 }

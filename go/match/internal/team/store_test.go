@@ -391,7 +391,7 @@ func TestSelfHealing(t *testing.T) {
 		require.NotNil(t, lock.Commit)
 		mr.HSet(playerIndexKey(13), indexFieldTid, "557")
 		mr.HSet(playerIndexKey(14), indexFieldTid, "558")
-		end := s.EndMatch(endTid, "tok-end", false)
+		end := s.EndMatch(endTid, "tok-end", false, 60*time.Second)
 		require.Equal(t, EndMatchReleased, end.Stop)
 		require.Len(t, end.Repairs, 1)
 		require.Equal(t, []uint64{13, 14}, end.Repairs[0].Decision.Left)
@@ -426,6 +426,32 @@ func TestSelfHealing(t *testing.T) {
 		require.NoError(t, err)
 		require.False(t, ok, "记录还在时不写")
 	})
+}
+
+// ---- EndMatch 兜底上限跟随锁时长(§E.1 EndMatch 第 4 步) ----
+
+// 回归:兜底上限原先写死 110s,只靠注释与锁时长对齐;MatchedTicketTTLSeconds 配到 120 时 5 人锁时长
+// 120+25+10=155s,Redis 持续故障时循环会在锁截止前约 45s 就放弃。现在上限由锁时长推出,
+// 故障期间至少坚持到锁时长,上限之后不再重试。时钟用随退避推进的假时钟,不读墙钟、不真睡。
+func TestEndMatchDeadlineFollowsLockTTL(t *testing.T) {
+	var elapsed time.Duration
+	prevSleep, prevElapsed := endMatchSleepFn, endMatchElapsedFn
+	endMatchSleepFn = func(d time.Duration) { elapsed += d }
+	endMatchElapsedFn = func(time.Time) time.Duration { return elapsed }
+	t.Cleanup(func() { endMatchSleepFn, endMatchElapsedFn = prevSleep, prevElapsed })
+
+	for _, lockTTL := range []time.Duration{74 * time.Second, 101 * time.Second, 155 * time.Second} {
+		elapsed = 0
+		s, mr := newTestStore(t, nil, RuleConfig{})
+		mr.SetError("ERR injected failure")
+
+		res := s.EndMatch(4100, "tok", false, lockTTL)
+		require.Equal(t, EndMatchDeadline, res.Stop, "lockTTL=%v", lockTTL)
+		require.Error(t, res.LastErr)
+		require.Nil(t, res.Commit)
+		require.GreaterOrEqual(t, elapsed, lockTTL, "Redis 故障期间至少坚持到锁时长 lockTTL=%v", lockTTL)
+		require.Less(t, elapsed, endMatchDeadline(lockTTL)+2*endMatchBackoffMax, "上限之后不再重试 lockTTL=%v", lockTTL)
+	}
 }
 
 // ---- #10:S_TOUCH ----

@@ -76,6 +76,10 @@ func (f *fakeSnapshotStore) InsertSnapshotIfGuidAbsent(ctx context.Context, row 
 	id, err := f.InsertSnapshot(ctx, row)
 	return id, err == nil, err
 }
+func (f *fakeSnapshotStore) InsertSnapshotsIfGuidAbsent(context.Context, []*store.SnapshotRow) (int64, error) {
+	// Kafka 批量落库入口(G2a),回档用例不走这条路。返回错误而不是 (0, nil):将来误用时当场暴露,不静默。
+	return 0, errors.New("InsertSnapshotsIfGuidAbsent is not used by rollback tests")
+}
 func (f *fakeSnapshotStore) GetSnapshotByID(_ context.Context, id uint64) (*store.SnapshotRow, error) {
 	return f.snapshotByID[id], nil
 }

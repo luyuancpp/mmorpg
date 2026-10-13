@@ -11,6 +11,7 @@ import (
 
 	"db/internal/dbguard"
 	"db/internal/dbtest"
+	"db/internal/metrics"
 
 	dbpb "proto/common/database"
 
@@ -302,6 +303,111 @@ func TestStoreRegistryRejectsAnOpenerThatLandsOnAnotherDatabase(t *testing.T) {
 	}
 	if _, err := registry.Store(context.Background(), 102); !errors.Is(err, ErrStoreUnavailable) {
 		t.Fatalf("err = %v, want ErrStoreUnavailable", err)
+	}
+}
+
+// ---------------------------------------------------------------------------
+// 连接池:指标快照与按家族选池(G2b)
+// ---------------------------------------------------------------------------
+
+// storeWithPool 造一个带真连接池句柄的库(dbtest 假驱动;Stats() 不下发语句,nil handler 不会被调用)。
+func storeWithPool(t *testing.T, name string, maxOpen int) *GameDB {
+	t.Helper()
+	handle, _ := dbtest.Open(t, nil)
+	handle.SetMaxOpenConns(maxOpen)
+	store := storeNamed(name)
+	store.DB = handle
+	return store
+}
+
+// PoolSamples 按三类(本 zone 库 / 额外 zone 家族库 / 非 zone 落点库)报每个已打开库的池;没有连接的库跳过。
+func TestStoreRegistryPoolSamplesClassifiesByFamily(t *testing.T) {
+	opened := map[string]*GameDB{
+		"zone_2_db":               storeWithPool(t, "zone_2_db", 8),
+		"player_store_1000000_db": storeWithPool(t, "player_store_1000000_db", 16),
+		"zone_3_db":               storeNamed("zone_3_db"), // 无连接:PoolSamples 跳过
+	}
+	registry, err := NewStoreRegistry(StoreRegistryOptions{
+		HomeStorageID: 1,
+		Home:          storeWithPool(t, "zone_1_db", 60),
+		AllowFamilies: true,
+		Open: func(_ context.Context, name string) (*GameDB, error) {
+			store, ok := opened[name]
+			if !ok {
+				return nil, errors.New("unexpected open of " + name)
+			}
+			return store, nil
+		},
+	})
+	if err != nil {
+		t.Fatalf("NewStoreRegistry: %v", err)
+	}
+	for _, id := range []uint32{2, 1000000, 3} {
+		if _, err := registry.Store(context.Background(), id); err != nil {
+			t.Fatalf("open storage %d: %v", id, err)
+		}
+	}
+
+	got := map[string][]int{}
+	samples := registry.PoolSamples()
+	for _, s := range samples {
+		got[s.Pool] = append(got[s.Pool], s.Stats.MaxOpenConnections)
+	}
+	want := map[string]int{metrics.PoolHome: 60, metrics.PoolExtraZone: 8, metrics.PoolExtraNonZone: 16}
+	if len(samples) != len(want) {
+		t.Fatalf("samples = %v, want one pool per class %v (the connection-less zone_3_db must be skipped)", got, want)
+	}
+	for pool, maxOpen := range want {
+		if len(got[pool]) != 1 || got[pool][0] != maxOpen {
+			t.Fatalf("pool %q max open = %v, want [%d] (all: %v)", pool, got[pool], maxOpen, got)
+		}
+	}
+}
+
+// 按库名家族选池:zone 家族走 Zone,非 zone 落点库走 NonZone。
+func TestStorePoolForPicksPoolByFamily(t *testing.T) {
+	pools := extraStorePools{
+		Zone:    StorePoolOptions{MaxOpenConn: 4, MaxIdleConn: 1, ConnMaxIdleTime: time.Minute},
+		NonZone: StorePoolOptions{MaxOpenConn: 32, MaxIdleConn: 8, ConnMaxIdleTime: 2 * time.Minute},
+	}
+	cases := []struct {
+		db   string
+		want StorePoolOptions
+	}{
+		{db: "zone_2_db", want: pools.Zone},
+		{db: "zone_999999_db", want: pools.Zone},
+		{db: "player_store_1000000_db", want: pools.NonZone},
+		{db: "player_store_4000000000_db", want: pools.NonZone},
+	}
+	for _, tc := range cases {
+		got, err := pools.storePoolFor(tc.db)
+		if err != nil {
+			t.Fatalf("storePoolFor(%q): %v", tc.db, err)
+		}
+		if got != tc.want {
+			t.Fatalf("storePoolFor(%q) = %+v, want %+v", tc.db, got, tc.want)
+		}
+	}
+}
+
+// 库名不属于任何家族是编程错误:报错,不猜一个池(经 openOnce 包成 ErrStoreUnavailable)。
+func TestStorePoolForRejectsNonPlacementName(t *testing.T) {
+	pools := extraStorePools{
+		Zone:    StorePoolOptions{MaxOpenConn: 4},
+		NonZone: StorePoolOptions{MaxOpenConn: 32},
+	}
+	for _, name := range []string{"", "mmorpg_guild", "zone_1000000_db", "player_store_1_db", "zone_02_db"} {
+		if got, err := pools.storePoolFor(name); err == nil {
+			t.Fatalf("storePoolFor(%q) = %+v, want an error", name, got)
+		}
+	}
+}
+
+func TestApplyStorePoolSetsMaxOpen(t *testing.T) {
+	handle, _ := dbtest.Open(t, nil)
+	applyStorePool(handle, StorePoolOptions{MaxOpenConn: 7, MaxIdleConn: 2, ConnMaxIdleTime: time.Minute})
+	if got := handle.Stats().MaxOpenConnections; got != 7 {
+		t.Fatalf("MaxOpenConnections = %d, want 7", got)
 	}
 }
 

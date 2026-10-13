@@ -446,26 +446,12 @@ func (s *ServiceContext) initLoginQueue() {
 		s.QueueTokenSigningSecret(),
 	)
 
-	// activeZonesProvider: union of (zones we have gates for) ∪ (zones with
-	// non-empty queues). The latter handles the rare case of a zone whose
-	// gates all crashed mid-drain — we still need to walk it so admitted
-	// entries can clear via TTL even without dispatcher action.
-	activeZones := func(ctx context.Context) []uint32 {
-		seen := make(map[uint32]struct{})
-		nodes, _ := s.GateWatcher.FetchAllNodes()
-		for _, n := range nodes {
-			if n.ZoneId != 0 {
-				seen[n.ZoneId] = struct{}{}
-			}
-		}
-		out := make([]uint32, 0, len(seen))
-		for z := range seen {
-			out = append(out, z)
-		}
-		return out
-	}
-
-	s.QueueDispatcher = loginqueue.NewDispatcher(
+	// 出队只能覆盖本 zone:GateWatcher 的前缀带 Node.ZoneId(见 NewServiceContext 的 gatePrefix),
+	// FreeSlots 和挑 gate 都只看得见本 zone 的 gate。所以锁也只抢本 zone 那一把:同 zone 的副本
+	// 互为主备,不同 zone 各有 leader。zoneID 必须与 gatePrefix 用同一个值(G1b:锁键原来全服
+	// 一把,多 zone 共用 Redis 时只有 leader 所在 zone 出队)。
+	// 变量不叫 dispatcher:本文件 import 了 login/internal/dispatcher 包,同名会遮蔽它。
+	queueDispatcher, err := loginqueue.NewDispatcher(
 		s.LoginQueue,
 		s.queueCapProvider,
 		s.RedisClient,
@@ -477,8 +463,13 @@ func (s *ServiceContext) initLoginQueue() {
 		cfg.SoftCapMultiplier,
 		cfg.DispatcherLockTTL,
 		cfg.DispatcherLockKey,
-		activeZones,
+		config.AppConfig.Node.ZoneId,
 	)
+	if err != nil {
+		// 开了排队却造不出 dispatcher,本 zone 的队列就只进不出。起服即失败,不带病上线。
+		panic(fmt.Errorf("login queue dispatcher: %w", err))
+	}
+	s.QueueDispatcher = queueDispatcher
 	// Identify this pod in the dispatcher_is_leader gauge so Grafana can
 	// answer "which replica is leading right now". Hostname is the simplest
 	// stable identifier across both bare-metal and K8s deployments; falling

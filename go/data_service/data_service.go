@@ -40,9 +40,10 @@ import (
 
 var configFile = flag.String("f", "etc/data_service.yaml", "the config file")
 
-// migrateOnly 是生产用的显式建表入口:`data_service -f <yaml> -migrate` 对全局库五张表
-// 跑一次 store.MigrateSchema(与 Schema.AutoMigrate=true 的启动路径是同一段代码),
-// 跑完即退出,不起 gRPC、不连 Redis。生产把 AutoMigrate 设 false,部署阶段单进程跑这个。
+// migrateOnly 是生产用的显式建表入口:`data_service -f <yaml> -migrate` 对全局库跑一次
+// store.MigrateSchema(proto 驱动的五张 + 手写 DDL 的路由表,并种 route_meta / route_reconcile 行;与
+// Schema.AutoMigrate=true 的启动路径是同一段代码),跑完即退出,不起 gRPC、不连 Redis。
+// 生产把 AutoMigrate 设 false,部署阶段单进程跑这个。
 var migrateOnly = flag.Bool("migrate", false, "run the global-DB schema migration (proto2mysql) and exit")
 
 var showVersion = flag.Bool("version", false, "打印版本信息并退出")
@@ -87,6 +88,35 @@ func main() {
 		os.Exit(runMigration(c))
 	}
 
+	// RouteStore 段(映射提交点,docs/design/player-route-mapping-durability-proposal.md §4、§11.2):
+	// 任何一项非法都拒启,与 Mode 无关;拒绝而不纠正,理由同 PlayerNameConfig.Validate(Mode 拼错被悄悄当成
+	// redis,运维以为切了提交点而实际没切)。-migrate 不读它,所以放在那之后。
+	c.RouteStore = c.RouteStore.Normalize()
+	if err := c.RouteStore.Validate(); err != nil {
+		logx.Errorf("[startup] invalid RouteStore config; refusing to start: %v", err)
+		fmt.Fprintf(os.Stderr, "data_service refuses to start: invalid RouteStore config: %v\n", err)
+		logx.Close()
+		os.Exit(1)
+	}
+	if c.RouteStore.DBFirst() {
+		logx.Infof("[startup] RouteStore.Mode=db_first: fence_shards=%d max_open_conn=%d max_idle_conn=%d publish_attempts=%d "+
+			"waitaof_numlocal=%d waitaof_numreplicas=%d waitaof_timeout_ms=%d",
+			c.RouteStore.FenceShards, c.RouteStore.MaxOpenConn, c.RouteStore.MaxIdleConn, c.RouteStore.PublishAttempts,
+			c.RouteStore.NumLocal(), c.RouteStore.NumReplicas(), c.RouteStore.WaitAOFTimeoutMs)
+		// go-zero 的 logx 没有 WARN 级别(同 rollback_logic.go 的取舍),取 ERROR:这条是运维必须看见的前提,淹在 Info 里等于没有。
+		logx.Errorf("[startup] WARN %s", routeStoreDBFirstWarning)
+	}
+
+	// Kafka 段 player_snapshot 消费者的批量 / 并发旋钮与 lag 探针(G2a):越界一律拒启,拒绝而不纠正(同 RouteStore)。
+	// 与 Brokers 是否为空无关:一份"开 Kafka 才炸"的配置不该等到开的那一刻才被发现。-migrate 在它之前已返回,不受影响。
+	c.Kafka = c.Kafka.Normalize()
+	if err := c.Kafka.ValidateConsumers(c.SnapshotMySQL.MaxOpenConn); err != nil {
+		logx.Errorf("[startup] invalid Kafka consumer config; refusing to start: %v", err)
+		fmt.Fprintf(os.Stderr, "data_service refuses to start: invalid Kafka consumer config: %v\n", err)
+		logx.Close()
+		os.Exit(1)
+	}
+
 	svcCtx := svc.NewServiceContext(c)
 	// Store.Required(config.StoreConfig):store 没装配齐就不许进发现池。必须在下面任何一处 etcd 注册之前判,
 	// 否则一个每次调用都报错的实例会被 p2c / C++ 的随机挑选分到流量。os.Exit 不跑 defer,所以先手动收尾。
@@ -114,6 +144,11 @@ func main() {
 		}
 	}()
 
+	// 连接池指标(mmorpg_sql_pool_*{sql_client="data_service"},G2b):一个 store 一个独立池,只报装配成功的,
+	// 每次抓取时现取 sql.DBStats。player_route 只在 db_first 时声明(redis 模式不装配 route store)。
+	// 不能放进 NewServiceContext:单测会多次构造 ServiceContext,默认注册表重复注册会报错。注册失败只记日志。
+	metrics.RegisterSQLPools(svcCtx.SQLPoolSamples, c.RouteStore.DBFirst())
+
 	// Start Prometheus /metrics endpoint. Empty addr → no-op.
 	// Surfaces per-RPC outcome / latency, lock contention, version mismatch,
 	// rollback counts. See internal/metrics/metrics.go.
@@ -121,6 +156,10 @@ func main() {
 	// 回档帮会闸的 27 条告警序列启动即预置为 0(docs/design/guild-phase2/07-rollback-fail-closed.md §7.9.1):
 	// 放行回档 / 写后分歧一辈子可能只发生一次,序列不预先存在的话 `increase(...) > 0` 恰好漏掉那一次。
 	metrics.PrimeRollbackGuildCheck()
+	// 映射提交点的两组序列(route_register_total / route_publish_total)只在 db_first 时有数,同理预置为 0。
+	if c.RouteStore.DBFirst() {
+		metrics.PrimeRoute()
+	}
 
 	// ── 热关停(killswitch)────────────────────────────────────────────
 	// data_service 是玩家权威数据的读写入口,真出事时最缺的是"秒级止血阀":
@@ -191,6 +230,10 @@ func main() {
 	// RegisterPlayerZone 的响应体是 emptypb.Empty、RemapHomeZoneForMerge 的拒绝走 gRPC status,
 	// 都没有 in-band 的 error_code 字段可读。它们的可见性由 handler 里的 logx.Errorf 提供
 	// (每一条都带调用方身份),外加 grpcstats 那层按 gRPC code 统计的失败率。
+	// (24 ErrCodeMergeFenceMissing 自 2026-10-12 RemapHomeZoneForMerge 停用起不再产生,号不复用。)
+	// 映射持久化的 ErrCodeRouteStoreError(30)同理:只出现在 db_first 下 RegisterPlayerZone 的 gRPC status
+	// message 里(Unavailable),这层看不到;它的可见性来自 data_service_route_register_total{outcome="store_error"}
+	// 与 `[RegisterPlayerZone][db_first]` 的 ERROR 日志。
 	// 回档帮会闸三个码(27..29,docs/design/guild-phase2/07-rollback-fail-closed.md §7.3.3)里算故障的两个:
 	//   ErrCodeRollbackGuildCheckFailed(28)       —— 帮会检查没做成(guild 未配 / 不可达 / 超时 / 预算耗尽…),
 	//                                                此时**所有**回档都被拒,不告警就等于回档工具悄悄失灵
@@ -239,6 +282,10 @@ func main() {
 	fmt.Printf("  c++ node:    DataServiceNodeService.rpc/zone/%d/node_type/%d (lease_ttl=%ds, advertised %s:%d)\n",
 		c.ZoneId, uint32(base.ENodeType_DataServiceNodeService), c.LeaseTTL, registrar.host, registrar.port)
 	fmt.Printf("  redis:       %s\n", c.MappingRedis.Host)
+	fmt.Printf("  route:       RouteStore.Mode=%s\n", c.RouteStore.Mode)
+	if c.RouteStore.DBFirst() {
+		fmt.Printf("  WARN:        %s\n", routeStoreDBFirstWarning)
+	}
 	if c.MetricsListenAddr != "" {
 		fmt.Printf("  metrics:     %s/metrics\n", c.MetricsListenAddr)
 	}
@@ -265,9 +312,14 @@ func runMigration(c config.Config) int {
 		fmt.Fprintf(os.Stderr, "schema migration FAILED: %v\n", err)
 		return migrateExitCode(err)
 	}
-	fmt.Printf("schema migration OK: transaction_log, player_snapshot, rollback_audit_log synced from proto; id_segment bootstrapped for %v (existing rows untouched, player/guild floors checked)\n", tags)
+	fmt.Printf("schema migration OK: transaction_log, player_snapshot, rollback_audit_log synced from proto; id_segment bootstrapped for %v (existing rows untouched, player/guild floors checked); route tables player_route, zone_merge_fence, zone_merged_into, route_meta, route_reconcile in place (route_meta / route_reconcile row id=1 seeded if absent)\n", tags)
 	return 0
 }
+
+// routeStoreDBFirstWarning 是 RouteStore.Mode=db_first 时启动日志与横幅里的那条 WARN(规格 d 节,M4):
+// 第 1a 批里 merge_zone 仍只写 Redis、从不写 zone_merge_fence,db_first 的安全前提是冻结窗口。
+const routeStoreDBFirstWarning = "RouteStore.Mode=db_first: 第 2 批落地前,禁止 merge_zone 任何写模式(merge/unmerge/relocate/pin-placement/backfill);" +
+	"库内合服围栏在本批恒不生效,提交点复核靠发布脚本里的 merge:in_progress(proposal §11.2)"
 
 // migrateExitLockBusy 与 go/schemamigrate 的 ExitLockBusy 同值:迁移锁被另一个实例(另一个副本的启动路径,
 // 或上一次还没结束的迁移 Job)持有。K8s 的迁移 Job 按这个码重试,而不是当成迁移本身失败。
@@ -304,6 +356,10 @@ func startKafkaConsumers(ctx context.Context, kc config.KafkaConfig, svcCtx *svc
 	// 监控上和"服务没部署"长得一模一样。
 	metrics.SetKafkaConsumerUp(dskafka.ConsumerTxLog, false)
 	metrics.SetKafkaConsumerUp(dskafka.ConsumerSnapshot, false)
+	// 同理把 messages_total / lag_probe_total / isolation_total 的封闭集合预置为 0:坏消息跳过、批量兜底停机这类
+	// 一辈子可能只发生几次的结局,序列不预先存在的话 `increase(...) > 0` 恰好漏掉第一次(审计管道告警的前提)。
+	metrics.PrimeKafkaConsumer(dskafka.ConsumerTxLog)
+	metrics.PrimeKafkaConsumer(dskafka.ConsumerSnapshot)
 
 	txTopic := kc.EffectiveTransactionLogTopic()
 	snapshotTopic := kc.EffectiveSnapshotTopic()
@@ -322,6 +378,14 @@ func startKafkaConsumers(ctx context.Context, kc config.KafkaConfig, svcCtx *svc
 			SnapshotPartitions: kc.SnapshotPartitions,
 			SnapshotGroup:      kc.SnapshotConsumerGroup,
 			RetentionMs:        kc.RetentionMs,
+			// kc 已在 main 里 Normalize + ValidateConsumers 过(越界拒启),这里只做单位换算。
+			Snapshot: dskafka.SnapshotConsumerConfig{
+				BatchMaxRows:       kc.SnapshotBatchMaxRows,
+				BatchMaxBytes:      kc.SnapshotBatchMaxBytes,
+				FlushInterval:      time.Duration(kc.SnapshotFlushIntervalMs) * time.Millisecond,
+				MaxInflightFlushes: kc.SnapshotMaxInflightFlushes,
+			},
+			LagProbeInterval: time.Duration(kc.LagProbeIntervalMs) * time.Millisecond,
 		}, svcCtx.TxLogStore, svcCtx.SnapshotStore)
 		if err != nil {
 			return err

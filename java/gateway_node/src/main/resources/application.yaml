@@ -12,6 +12,15 @@ spring:
     username: appuser
     password: apppass123
     driver-class-name: com.mysql.cj.jdbc.Driver
+    # 连接池显式配置(2026-10-12 G2b;数值待压测确认)。不写时是 Hikari 默认:maximumPoolSize=10,minimumIdle 缺省
+    # 等于 maximumPoolSize —— 每个副本恒开 10 条,K8s 上每 zone 2 副本 = 20 条,计入所有 zone 共用的那台 MySQL 的总账。
+    # 用量:服务器列表与公告每次请求查一次(ServerListService / AnnouncementService,不缓存),准入状态按 zone 缓存 1s
+    # (AssignGateService),健康探测每 5s 一次 findAll(ZoneHealthProbeService),管理接口偶发;都是单表小查询。
+    # 5 条按每次 1–2ms 推算每副本约 2500–5000 QPS(推算,未实测)。minimum-idle 2:空闲时不白占 5 条。
+    # K8s ConfigMap(tools/scripts/k8s_deploy.ps1 New-JavaSvcConfigMapYaml)镜像这两个值,契约测试钉住两边一致。
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 2
   jpa:
     hibernate:
       ddl-auto: validate

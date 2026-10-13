@@ -10,7 +10,7 @@
 > - 可执行 SOP 以 [merge-zone-runbook.md](../ops/merge-zone-runbook.md) v3 为准。
 > - 本文正文不改写,作废处按此标注理解。
 >
-> **修订(2026-08-15)**: 全区全服数据层落地后(见 [global-data-layer-tidb-decision.md](./global-data-layer-tidb-decision.md) §D7),合服从"跨库搬数据"收敛为"`RemapHomeZoneForMerge` 改逻辑归属 + 业务数据合并",`tools/merge_zone` 职责相应收缩;Phase 2 之前本文流程仍是权威。
+> **修订(2026-08-15)**: 全区全服数据层落地后(见 [global-data-layer-tidb-decision.md](./global-data-layer-tidb-decision.md) §D7),合服从"跨库搬数据"收敛为"`RemapHomeZoneForMerge` 改逻辑归属 + 业务数据合并",`tools/merge_zone` 职责相应收缩;Phase 2 之前本文流程仍是权威。**2026-10-12 补注**:`RemapHomeZoneForMerge` 已停用(2026-10-12,[player-route-mapping-durability-proposal.md](./player-route-mapping-durability-proposal.md) §4.3),一律回 `FailedPrecondition` + `ErrCodeNotImplemented`;改逻辑归属只走 `tools/merge_zone`(映射持久化第 2 批起改为库先写)。
 
 ---
 
@@ -170,9 +170,16 @@ M   manifest    **在任何写之前**落盘清单(玩家 id / 公会 id / ZSET 
 - **谁写**:只有 `tools/merge_zone`(`SETNX`,src 与 dst 各一把),TTL = `-timeout + 30m`(下限 1h),后台每 `ttl/3` 续期
 - **谁清**:`tools/merge_zone` 退出时按 `run_id` 校验后 DEL;**TTL 只是进程被 kill 的兜底**
 - **谁看**:`data_service.RegisterPlayerZone`(被围栏 ⇒ 拒绝建映射)、`guild.CreateGuild`(被围栏 ⇒ 拒绝建帮;`MergeMarkerRedis` 整段缺失 = 闸门不生效)、
-  `data_service.RemapHomeZoneForMerge`(**反过来要求围栏必须在**,否则 `FailedPrecondition`)
+  `data_service.RemapHomeZoneForMerge`(**反过来要求围栏必须在**,否则 `FailedPrecondition`)。
+  **2026-10-12 起 `RemapHomeZoneForMerge` 已停用**(见 §3.3 开头),不再是围栏的消费者。
 
 ### 3.3 联机版 RPC:`DataService/RemapHomeZoneForMerge`
+
+> ⛔ **2026-10-12 修订:这个 RPC 已停用**([player-route-mapping-durability-proposal.md](./player-route-mapping-durability-proposal.md) §4.3 的 W2)。
+> 不论带不带 `x-admin-token`、源区有没有围栏,一律回 `FailedPrecondition` + `ErrCodeNotImplemented`(16),零变更;
+> `Router.RemapHomeZoneForMerge` 的实现已删除,`ErrCodeMergeFenceMissing`(24)不再产生、号不复用。
+> 停用理由:它对扫到的 `player:zone:*` 做无条件 SET,且只写 Redis、绕过映射真源 `player_route`。
+> 改映射只走 `tools/merge_zone`(映射持久化第 2 批起改为库先写)。下面 2026-09-08 的两道闸描述仅作历史保留。
 
 `proto/data_service/data_service.proto:25` 定义的 RPC,**只做步骤 5**(mapping 重映射)。Go 实现在 `dataserviceserver.go`。
 
@@ -534,6 +541,7 @@ go run -C robot/clients/cmd/login_smoke . -gate=<gate-addr> -accounts=<src-accou
 
 ## 9. Changelog
 
+- **2026-10-12(只加停用注,正文不改)**:`RemapHomeZoneForMerge` 停用(映射持久化第 1a 批,[player-route-mapping-durability-proposal.md](./player-route-mapping-durability-proposal.md) §4.3、§11.2)。文首 2026-08-15 修订提示、§3.5 围栏契约的「谁看」、§3.3 开头各加一条注;§5.5 与下面 v2 条目里的历史叙述保留原样。
 - **2026-09-08 v2**: 与 2026-09 的合服大修对齐。**历史叙述保留,作废段落就地标注而不是悄悄改写**:
   - §3.1 保留 v1 原文并标「已被 §3.1a 取代」,另列出其中三条已作废的说法(玩家主数据必须搬 /
     公会重名从「跳过」改「中止」/ ZSET 合并改 MULTI/EXEC + 维护锁)。

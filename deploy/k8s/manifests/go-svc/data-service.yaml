@@ -31,7 +31,8 @@ spec:
   # 多副本的两个前提在服务侧:启动期迁移由库级命名锁串行(store.acquireMigrateLock);store 装配不起来就拒启
   # (ConfigMap 的 Store.Required: true),不让一个每次调用都报错的实例进发现池、按比例吃掉请求。
   # 消费并行度的上限是分区数(transaction_log 6 / player_snapshot 3),副本超过它只是多一份 RPC 容量。
-  # MySQL 连接预算:每个实例最多 35 条(三个 store 各 5 + 名字注册表 20),按 zone 数 × 副本数算进 max_connections。
+  # MySQL 连接预算:每个实例最多 35 条(三个 store 各 5 + 名字注册表 20;RouteStore 切 db_first 后再 +20),
+  # 按 zone 数 × 副本数计入共用 MySQL 的总账,公式与规划见 tools/scripts/k8s_deploy.ps1 Get-MysqlConnectionLedger。
   replicas: 2
   # 先起新的、Ready 之后再停旧的:任何时刻至少有 2 个实例在发号。scene 启动要领的首个 GUID 号段、
   # login 建角要领的 PlayerId 号段都从这里来,发布期间不能出现"一个都没有"的窗口。

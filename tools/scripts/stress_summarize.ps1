@@ -482,25 +482,29 @@ if ($dbSnapshots.Count -gt 0) {
     foreach ($snap in $dbSnapshots) {
         $m = Read-PromSnapshot $snap.FullName
 
+        # Get-Metric 按 key 精确查找,label 必须写成 /metrics 实际输出的顺序。
+        # client_golang 输出时按 label 名字排序(op < stage),写成 {stage=..,op=..} 永远查不到,
+        # 历次 summary(如 prev-summary-round18.txt、prev-summary.txt)这几列全是 "-" 就是这个原因
+        # (go/db/internal/metrics/metrics.go 里声明的顺序是 stage, op,输出时会被重排)。
         $readTotalAvg = Format-Avg `
-            (Get-Metric $m 'db_task_stage_seconds_sum{stage="op_total",op="read"}') `
-            (Get-Metric $m 'db_task_stage_seconds_count{stage="op_total",op="read"}')
+            (Get-Metric $m 'db_task_stage_seconds_sum{op="read",stage="op_total"}') `
+            (Get-Metric $m 'db_task_stage_seconds_count{op="read",stage="op_total"}')
         $readHdlrAvg = Format-Avg `
-            (Get-Metric $m 'db_task_stage_seconds_sum{stage="op_handler",op="read"}') `
-            (Get-Metric $m 'db_task_stage_seconds_count{stage="op_handler",op="read"}')
+            (Get-Metric $m 'db_task_stage_seconds_sum{op="read",stage="op_handler"}') `
+            (Get-Metric $m 'db_task_stage_seconds_count{op="read",stage="op_handler"}')
         $readCacheAvg = Format-Avg `
-            (Get-Metric $m 'db_task_stage_seconds_sum{stage="cache_write",op="read"}') `
-            (Get-Metric $m 'db_task_stage_seconds_count{stage="cache_write",op="read"}')
+            (Get-Metric $m 'db_task_stage_seconds_sum{op="read",stage="cache_write"}') `
+            (Get-Metric $m 'db_task_stage_seconds_count{op="read",stage="cache_write"}')
         $publishAvg = Format-Avg `
-            (Get-Metric $m 'db_task_stage_seconds_sum{stage="result_publish",op="read"}') `
-            (Get-Metric $m 'db_task_stage_seconds_count{stage="result_publish",op="read"}')
+            (Get-Metric $m 'db_task_stage_seconds_sum{op="read",stage="result_publish"}') `
+            (Get-Metric $m 'db_task_stage_seconds_count{op="read",stage="result_publish"}')
 
         $writeTotalAvg = Format-Avg `
-            (Get-Metric $m 'db_task_stage_seconds_sum{stage="op_total",op="write"}') `
-            (Get-Metric $m 'db_task_stage_seconds_count{stage="op_total",op="write"}')
+            (Get-Metric $m 'db_task_stage_seconds_sum{op="write",stage="op_total"}') `
+            (Get-Metric $m 'db_task_stage_seconds_count{op="write",stage="op_total"}')
         $writeHdlrAvg = Format-Avg `
-            (Get-Metric $m 'db_task_stage_seconds_sum{stage="op_handler",op="write"}') `
-            (Get-Metric $m 'db_task_stage_seconds_count{stage="op_handler",op="write"}')
+            (Get-Metric $m 'db_task_stage_seconds_sum{op="write",stage="op_handler"}') `
+            (Get-Metric $m 'db_task_stage_seconds_count{op="write",stage="op_handler"}')
 
         $okCnt  = (Get-Metric $m 'db_task_result_total{op="read",result="ok"}') + (Get-Metric $m 'db_task_result_total{op="write",result="ok"}')
         $errCnt = (Get-Metric $m 'db_task_result_total{op="read",result="error"}') + (Get-Metric $m 'db_task_result_total{op="write",result="error"}')

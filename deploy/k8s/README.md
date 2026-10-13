@@ -671,9 +671,11 @@ topic 就被自动建成 1 分区,EnsureTopics 从此永远报 `partition contra
   不带 `-WaitReady` 时,`zone-up` 之前自己核对 `kubectl -n mmorpg-infra get job kafka-topic-init`(COMPLETIONS `1/1`)/
   `kubectl -n mmorpg-infra logs job/kafka-topic-init`;`infra-status` 现在会列 `job`。
 - **改分区数 = 代号 +1,绝不原地扩分区**:原地 `--alter --partitions` 会重映射 key=player_id 的哈希,同一玩家的流水顺序就断了,
-  而且 EnsureTopics 的 `__mmorpg_partition_contract_*` 标记 topic 也会与新值冲突。正确做法:`data_service.yaml` 里 `Kafka.TopicGeneration` +1、
-  新分区数写进 `Kafka.*Partitions`(C++ 生产者的有效名同步换代)→ `infra-up`(或 `infra-kafka-topics`)建出 `*_g2` → 滚 data-service 与 scene
-  → 老 topic 排空(消费者 lag 为 0)后再 `--delete`。data-service ConfigMap 里镜像了 `Kafka.TopicGeneration`,当前集群消费第几代一眼可见。
+  而且 EnsureTopics 的 `__mmorpg_partition_contract_*` 标记 topic 也会与新值冲突。正确做法是**离线换代:停写 → 排空 → 三方同改 → 消费者先起、生产者后起**,
+  完整步骤见 [`docs/ops/audit-topic-generation-bump-runbook.md`](../../docs/ops/audit-topic-generation-bump-runbook.md)。
+  **(2026-10-13 更正)** 这里以前写的是「建出 `*_g2` → 滚 data-service 与 scene → 老 topic 排空后再 `--delete`」:data-service 一切到 g2
+  就不再消费 g1,而 scene 没滚完之前仍在写 g1 —— g1 的尾部无人消费,保留期一到就丢。必须先停掉所有 scene、等 g1 的 lag 归零,再切。
+  data-service ConfigMap 里镜像了 `Kafka.TopicGeneration`,当前集群消费第几代一眼可见。
 - **什么时候必须重跑预建**:Kafka 已经是 StatefulSet + PVC(见下面「Kafka:StatefulSet + PVC」),**普通的 Pod 重启不再丢 topic**。
   仍然必须重跑的是这三种情况:① 第一次从旧的 `Deployment kafka`(emptyDir)切过来;② `infra-down` 删过 namespace(PVC 跟着删);
   ③ 有人手工删过 topic。这三种情况下 topic 是空的,任何在跑的 scene 一发消息就会把 `*_g1` 自动建成 1 分区。

@@ -152,6 +152,19 @@
   fail-closed 的(否则门禁会静默放行)。**本次没做,单列为后续项。**
 - 有效并行度上限 = 分区数(`Kafka.PartitionCnt`,现为 10);不要配 HPA(eager rebalance,成员变化全员暂停)。
 - 连接预算:每实例最多 60 条 MySQL 连接 + 每个额外落点库 8 条;2 副本 × 4 个 zone = 480,已贴近 `max_connections = 500`(见 §6)。
+  > **2026-10-12 更正(只读核算,未实测)**:480 = 2 × 4 × 60,只算了 go/db 主池。同一台 MySQL 上的全部客户端要加总:
+  > - go/db 每实例 60 + 8E(E 是该实例打开的额外落点库数);
+  > - data_service 每实例 35(§4 / :205);
+  > - java gateway 每实例约 10(未配 Hikari,按默认值推断,只在部署时计入);
+  > - friend、trade 全局各 20 × 2。
+  >
+  > 名义上限 T = Z·(210 + 16E) + 80(Z 为 zone 数,每 zone 2 副本)。Z=4、E=0 时为 920,是 500 的 1.84 倍;默认 2 个 zone(`deploy/k8s/zones.json`)时恰好 500,零余量;滚动发布(maxSurge 1)每个 zone 还会临时再多 (60+8E)+35。
+  >
+  > 超限的后果不只是变慢:go/db 不特判 1040(Too many connections),按普通错误处理、消耗重试预算(上限 3),用完进 `kafka:dead:queue:*`,而死信没有自动消费者,存盘不会自动落库。
+  >
+  > 现在 go/db、data_service 都没导出 `sql.DBStats`,实际峰值不知道。`go/db/etc/db.yaml` 与 `internal/config/config.go` 里「MySQL 默认 max_connections=151 留得出余量」的注释也已过时。
+  >
+  > 修正方向(未落码):先把总账算对,配 `max_connections` 并同步 MySQL Pod 内存(现为 limits 1Gi);给 gateway 显式配 Hikari 池;导出连接池指标;额外落点库池加 `ConnMaxIdleTime`,并把 zone 库池与全局库池的大小拆成两个旋钮。详见 PROGRESS.md 2026-10-12「落点多库连接拓扑」条目。
 - 读任务的缓存回写是无条件 `SET`,不持 ordering lock:在非属主实例上重试的读可能把旧值盖到新缓存上。这是既有问题
   (读与写本来就多半不在同一个分区),多实例只是多了一个入口。改成只补缺不覆盖(`SETNX`)要先确认 login 的缓存修复路径与回档工具不依赖覆盖,没在本次做。
 - 持锁实例若在拿锁与落库之间停顿超过锁 TTL 且续租失败,醒来仍会把旧版本写进库(随后复核失败,游标不回退)。既有设计,彻底封死需要 MySQL 侧的版本条件写。

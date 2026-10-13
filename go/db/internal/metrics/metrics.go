@@ -25,6 +25,7 @@ package metrics
 
 import (
 	"net/http"
+	"shared/sqlpoolstats"
 	"sync"
 	"time"
 
@@ -163,6 +164,29 @@ const (
 	StoreOpenError    = "error"
 	StoreOpenRejected = "rejected"
 )
+
+// 连接池类别(mmorpg_sql_pool_*{sql_client="db",pool=...},G2b);封闭集合,不含库名(落点库数不设上限)。
+// deploy/k8s/mysql-connection-alerts.yaml 的 DbExtraStorePoolsBeyondPlan 按 extra_zone / extra_non_zone 两个取值写死,
+// 改常量必须同改告警。
+const (
+	PoolHome         = "home"           // 本 zone 库(InitDB 打开,Database.MaxOpenConn)
+	PoolExtraZone    = "extra_zone"     // 额外 zone 家族库 zone_{1..999999}_db(本 zone 库除外)
+	PoolExtraNonZone = "extra_non_zone" // 非 zone 落点库 player_store_{>=1000000}_db
+)
+
+// NewSQLPoolCollector 只构造不注册(单测用自己的注册表)。sql_client 取本包的 subsystem("db")。
+func NewSQLPoolCollector(source sqlpoolstats.Source) prometheus.Collector {
+	return sqlpoolstats.NewCollector(subsystem, []string{PoolHome, PoolExtraZone, PoolExtraNonZone}, source)
+}
+
+// RegisterSQLPools 把连接池快照接到默认注册表(Start 暴露的那个)。进程内调一次;注册失败只记日志:
+// 指标是观测面,不能挡住落库(与 Start 同口径)。MetricsListenAddr 留空时调用也无害(没人抓)。
+func RegisterSQLPools(source sqlpoolstats.Source) {
+	register()
+	if err := prometheus.Register(NewSQLPoolCollector(source)); err != nil {
+		logx.Errorf("[metrics] register sql pool collector failed (pool metrics unavailable): %v", err)
+	}
+}
 
 // CountPlacementGuard 记一次选库 / 复核判定。op 为 "read" / "write",outcome 用上面的 Placement* 常量。
 func CountPlacementGuard(op, outcome string) {

@@ -1,7 +1,8 @@
 # 玩家存储落点(Placement):归属与存储拆分、单玩家搬库、Phase 2 全局库
 
-> **状态**: v2.3 — 2026-09-28(v2.3 只改 §4.3 / §9 / §10.1 的能力标记参数口径)。v1 经 5 视角对抗评审(42 条成立,含 2 条 blocker)后重写,见 §16;v2.1 按同批落码的实现汇报修订了与实现不符之处(各节标「实现口径」);v2.2 同步复核修复的行为变化(标「v2.2」)。汇总见 §16。
-> 代码与本文同批落码,**未编译、未跑测试**(AGENTS.md §10.1,交 Codex / 用户验证);落码清单与验证命令见 PROGRESS.md「2026-09-28 玩家存储落点」条目(§11.3)。
+> **状态**: v2.4 — 2026-10-12(v2.4 只做现状校准,设计不变:运行状态、启用状态、§8.2 / §10.4 / §11.4 与事实对齐,见 §16)。v1 经 5 视角对抗评审(42 条成立,含 2 条 blocker)后重写,见 §16;v2.1 按同批落码的实现汇报修订了与实现不符之处(各节标「实现口径」);v2.2 同步复核修复的行为变化(标「v2.2」);v2.3 只改 §4.3 / §9 / §10.1 的能力标记参数口径。汇总见 §16。
+> **运行状态(2026-10-12)**:代码随 `4493b3c9f`(2026-09-29)进 main;同日跑过一轮验证(Go 各模块 build / vet / test 全过、merge_zone 集成测试 83 条 PASS(67 个顶层 + 16 个子用例)、data_service Redis 集成 31 个 PASS、C++ `cross_zone_test` 105/105),由 Claude 按用户指示执行、不是 Codex(PROGRESS.md「2026-09-28 玩家存储落点」条目的「运行验证」)。`-race`、压测、真实集群演练从未做;C++ 整方案编译被与本方案无关的既有问题挡住。**之后 `be6b4ab1d`(10-08)改了 go/db 的重试队列认领与 `tools/merge_zone` 的预检 / 审计,均未编译,当前 HEAD 待按 [placement-reverify-checklist-20261012.md](../handoff/placement-reverify-checklist-20261012.md) 复验。**
+> **启用状态(2026-10-12)**:所有环境 `PinOnCreate=false`、`Required=false`,K8s ConfigMap 不写 `Placement` 段;没有执行过 pin 合服 / pin-placement / relocate 的记录;`player_store_1000000_db` 没有在任何部署里建过;玩家主库全部在 MySQL(dev `127.0.0.1:3306`,K8s `mysql:8.0`),TiDB 只有 dev 的 `deploy/docker-compose.tidb.yml`。所以现网的有效落点 = home_zone 对应的 `zone_{home}_db`,逻辑归属与物理库仍一一对应。
 > **范围**: 把「玩家属于哪个区」(home_zone,逻辑归属)与「玩家主数据存在哪个库」(placement,物理落点)拆开;
 > 合服只改归属、不再搬玩家行;新增冻结式单玩家 / 批量搬库;TiDB Phase 2 全局库落成「多一种落点库」,可逐玩家迁移、逐玩家回退。
 > 同批修补合服工具 `tools/merge_zone` 的已确认缺口(§12)。
@@ -24,6 +25,7 @@
 5. **Phase 2 = 新增一个非 zone 落点库**(默认 id `1000000`,库名 `player_store_1000000_db`):新号可直接钉到全局库,存量按 zone 分批搬,旧 zone 库无人指向后退役。
    **生产切换仍受 TiDB 决策 §D8 卡住**(应用级回档未通电,§11.4)。
 6. 顺手修掉两处老隐患:login 预加载按「login 所在 zone」读库(访客冷缓存会读空档、被当新号覆盖,§2.3);合服窗口里源区归属玩家仍能从别的区进场、往已排空的源 topic 写(§12 A16)。
+7. **落点记录只选「库名」,不选「机器」**(2026-10-12 补,澄清口径,设计未变):`storage_id` 只派生库名(§4.2);库在哪台机器、是 MySQL 还是 TiDB,由各 go/db 的 `ServerConfig.Database.Hosts` 决定,所有落点库与它同在一个 MySQL 实例 / TiDB 集群(§6.1 前提;`proto_sql.OpenPlacementStore` 只改 DSN 的库名)。所以「每个玩家有一个物理服字段」的说法不准确:玩家记录的是库编号,「换到 TiDB」是把整套 go/db 的 `Hosts` 指过去的集群级动作(TiDB 决策 Phase 1),不能按玩家分别切;`player_store_1000000_db` 只是那个集群里的另一个库名。TiDB 决策文档里的「物理 zone」指 gate / scene 的部署单位,也不是数据库。
 
 ## 1. 术语
 
@@ -112,6 +114,8 @@ TiDB 决策 D1 的「映射持久化兜底表」仍是遗留项(§11.4)。
 实现口径(v2.1):
 - 重放没有专用工具,步骤见 runbook「映射丢失的恢复」。合服清单的 `placement_existing` 记下合服前已有的记录,没有记录的人按模式补:pin 为 `"{src}:1"`,copy 为无记录。搬库清单逐人的 `final` 就是切换后的值。
 - **兜底有一个缺口**:`PinOnCreate` 且 `NewPlayerStorageId` 指向非本 zone 库(Phase 2 全局库)建出的新号,任何 zone 库里都没有行,也不在任何清单里,Redis 整体丢失后 home 与落点都无从恢复。打开这种配置之前,要么先落 D1 兜底表,要么明确接受这一风险(已列入 §11.4)。这一条是文档同步时发现的,不是实现偏差,设计本身未改。
+
+**映射持久化(D1)进展(2026-10-12 补)**:已拍板,方案是库为真源、Redis 为带版本与就绪标记的完整副本,分批落码,见 [player-route-mapping-durability-proposal.md](./player-route-mapping-durability-proposal.md)(拍板与进度在其 §11)。第 1a 批只落了存储底座(全局库四张路由表与 route store)、W1(`RegisterPlayerZone`)的 db_first 开关和 `route_tool` 导入 / 审计;`RouteStore.Mode` 所有档位默认仍是 `redis`,行为与之前逐字相同。**上面的兜底缺口在 db_first 打开、P1 导入完成之前依然存在**;Redis 丢失后的自动恢复(对账 leader、全量预热、就绪标记)要到第 1b 批,读方要求标记要到第 3 批。本节和 §11.4 的「D1 遗留」以提案 §11.2 的进度为准。
 
 ### 4.5 Redis 层不拆(CZ-2 保持)
 
@@ -242,7 +246,7 @@ TiDB 决策 D1 的「映射持久化兜底表」仍是遗留项(§11.4)。
 - **不覆盖的两种入口:**
   - 只送连接的跨区重定向(含 login 首登 `RedirectOnEnter`):不写 location / epoch,它的第二条腿会在目标 zone 的 3b 被拒。
   - 没有 GateId 的 EnterScene:不发路由事件,也不让节点加载玩家;但**照常**铸 epoch、CAS 写 location、扣旧场景人数,跨节点时还会派发 ReleasePlayer。它不查归属(`TestEnterScene_HomeZoneNotQueriedWithoutGateRoute` 钉住),所以也不过合服围栏。「拒绝先于任何写」只对带 GateId 的请求成立。
-- **前提**:没有 GateId 的入口不被合服围栏覆盖,靠的是「所有生产调用方都带 GateId」(login `entergamelogic.go`,以及 C++ 侧 4 处 `EnterSceneRequest` 构造点,如 `scene_manager_response_handler.cpp:142`)。以后新增不带 GateId 的调用方(疏散 / GM / 机器人)之前,必须先把 3b 的围栏检查从 GateId 条件里拆出来:不带 GateId 时也调 `resolveHomeZone`,只采用它的拒绝结果,放在同节点补种与第 5b 步之前,同时修改上述用例。`enterscenelogic.go` 第 3b 步的注释交叉引用了这条前提。
+- **前提**:没有 GateId 的入口不被合服围栏覆盖,靠的是「所有生产调用方都带 GateId」(login `entergamelogic.go`,以及 C++ 侧 `EnterSceneRequest` 构造点。2026-10-12 核对为 5 处,都 `set_gate_id`:`player_scene_handler.cpp`、`scene_manager_response_handler.cpp`、`player_lifecycle.cpp` 两处、`player_team.cpp`(组队那处,原文漏数,写成了 4 处))。以后新增不带 GateId 的调用方(疏散 / GM / 机器人)之前,必须先把 3b 的围栏检查从 GateId 条件里拆出来:不带 GateId 时也调 `resolveHomeZone`,只采用它的拒绝结果,放在同节点补种与第 5b 步之前,同时修改上述用例。`enterscenelogic.go` 第 3b 步的注释交叉引用了这条前提。
 - 指标:`scene_manager_enter_scene_rejected_total{reason="home_zone_merging"}`,zone_id 为 gate zone;`home_zone_lookup_total` 对这类请求仍记 `outcome=mapped`。
 - 21 在 C++ scene 和 login 都按通用失败处理:scene 解冻并回 tip;login 推 `kEnterSceneFailed`,保留会话。客户端没有专门文案。
 
@@ -330,7 +334,7 @@ TiDB 决策 D1 的「映射持久化兜底表」仍是遗留项(§11.4)。
 - 每人一次 CAS:期望无记录、home==src,写入 `"{src}:1"`。记录已是 `"{src}:1"` 或等于清单记下的原值,视为正常;其余情况中止并保留围栏。
 - 与 pin 矛盾的 `-skip-player-rows` 直接拒绝。
 
-**blob 与 data Redis(待拍板)**:data_service 按 home_zone 选 data Redis 集群。src 与 dst 不在同一集群时,pin 合服后 `player:{id}:*` 会读不到。所以工具在 pin 模式下拒绝 `-migrate-player-blobs`(除非同时给 `-skip-player-blob-migration`),提示改用 copy 模式。copy 模式仍为全部清单玩家拷 blob(blob 跟 home 走),拷行与删缓存只针对无记录者。§10.1 第 3 条「pin 不拷 blob」在多集群部署下是否保留,需要拍板(§11.4)。
+**blob 与 data Redis(已定,负责人 2026-09-28)**:data_service 按 home_zone 选 data Redis 集群。src 与 dst 不在同一集群时,pin 合服后 `player:{id}:*` 会读不到。所以工具在 pin 模式下拒绝 `-migrate-player-blobs`(除非同时给 `-skip-player-blob-migration`),提示改用 copy 模式。copy 模式仍为全部清单玩家拷 blob(blob 跟 home 走),拷行与删缓存只针对无记录者。§10.1 第 3 条「pin 不拷 blob」**保留**,这道拒绝也保留:现有 dev / K8s 部署都配了 DevRedis,Regions 分片从未生效,`player:{id}:*` 不在生产读写链上(决定原文见 PROGRESS.md「2026-09-28 玩家存储落点」条目的「剩余风险」;本段原写「待拍板」,2026-10-12 同步)。多集群部署的限制本身仍在,这类部署合服只能用 copy 模式。
 
 **设计没写、按正确性补上的五条**:
 1. copy 模式下,清单玩家里只要有人已有记录,同样要求能力标记:他们的行不动,dst 的 go/db 必须按记录选库。
@@ -365,17 +369,19 @@ TiDB 决策 D1 的「映射持久化兜底表」仍是遗留项(§11.4)。
 
 ### 11.3 本批落码
 
-见 PROGRESS.md 条目「2026-09-28 玩家存储落点(placement)+ 合服工具缺口修复 落码」(以实际提交为准)。该条目列出了各组件改动的文件、未验证项、交给 Codex 的验证清单(按依赖排序)与剩余风险。**全部未编译、未测试。**
+见 PROGRESS.md 条目「2026-09-28 玩家存储落点(placement)+ 合服工具缺口修复 落码」(以实际提交为准)。该条目列出了各组件改动的文件、未验证项、交给 Codex 的验证清单(按依赖排序)与剩余风险。落码时未编译、未测试;2026-09-29 按用户指示跑过一轮,结果见该条目「运行验证」。当前 HEAD 的复验清单(覆盖 09-29 之后 `be6b4ab1d` 等提交对 go/db、`tools/merge_zone` 的改动)见 [placement-reverify-checklist-20261012.md](../handoff/placement-reverify-checklist-20261012.md)。
 
 ### 11.4 仍卡住生产切换的前置(本批不做)
 
+> 2026-10-12 逐项核对:下列各项在 HEAD(`73b852f32`)上**都还没做或仍然成立**(只有 blob 处置那一条已定,见该条)。另外更上游的 TiDB Phase 1 本身也没上线:K8s 只有 `mysql:8.0`,「Phase 1 是否继续」仍待拍板(handoff-backlog D-02);TiDB 兼容遗留另见 PROGRESS.md 各条目(`player_snapshot` 的 `snapshot_guid_nz` 唯一键在 TiDB 上建不出、friend 推荐查询的 `INL_JOIN` 提示未加、`GET_LOCK` 未在 TiDB 实测)。落点告警规则(§14)也还没进 `deploy/k8s/*-alerts.yaml`。
+
 - **§D8 应用级回档**:`RollbackFence` 生产为 nil,且回档写的是无人读取的 `player:{id}:<field>` 键空间。混库后「只恢复 zone_N_db」不再等于「回档 zone N」。
-- 映射(`player:zone` + `player:placement`)持久化兜底表(D1)。
+- 映射(`player:zone` + `player:placement`)持久化兜底表(D1)。2026-10-12 起草方案,已拍板,分批落码中(第 1a 批:存储底座 + W1 开关,默认 redis):[player-route-mapping-durability-proposal.md](./player-route-mapping-durability-proposal.md),库为真源、Redis 为带就绪标记的完整副本,合服围栏与 `merged_into` 一并落库。
 - 真实集群演练:pin 合服 + relocate + 反向 relocate,各跑一次并记录耗时。
 - 压测:go/db 每条写多一次 MGET、落库后一次 GET,按 AGENTS.md §6 出对比表后再下性能结论。
 - data_service 号段水位地板在 `player_database` 与全局库同库时才生效(`store/schema.go`、`id_segment_store.go`),全局库落地后要复核。
 - 同表结构副本(`go/player_locator/mysql_database_table.sql`)与按 `zone_<N>_db` 清库的脚本(`stress_round19.ps1`、`currency_crash_window.ps1`)在混库后要改。
-- (v2.1 补)pin 合服在 src / dst 分属不同 data Redis 集群时的 blob 处置(§10.4),目前工具要求这类部署改用 copy 模式。
+- (v2.1 补)pin 合服在 src / dst 分属不同 data Redis 集群时的 blob 处置(§10.4),目前工具要求这类部署改用 copy 模式。**已定(负责人 2026-09-28,2026-10-12 同步)**:保留拒绝,不再是待拍板项;限制本身仍在,只要部署真的拆成多个 data Redis 集群,就得先回到这一条。
 - (v2.1 补)删号流程与 `player:placement` 的关系:`DeletePlayerZone*` 只删 `player:zone`,残留的落点记录会在同 id 重新登记时被保留(§8.1)。
 - (v2.1 补)钉到非 zone 库的新号在 Redis 整体丢失后无法恢复(§4.4),依赖 D1 兜底表。
 - (v2.1 补)跨 zone 读写共享缓存 `{MsgType}:{pid}` 的竞态:访客在 B 区预加载时,读 A 库并回写缓存,可能与 A 区 go/db 的写回交错,把缓存盖回旧版本。这是既有问题(以前 B 读的是错库),本批只是缩小了窗口。
@@ -439,7 +445,7 @@ TiDB 决策 D1 的「映射持久化兜底表」仍是遗留项(§11.4)。
 - 把 `NewPlayerStorageId` 改成没有 go/db 能打开的库;
 - 把 login 或 data_service 回退到不支持 storage_id 的旧版。
 
-违反时建角照常成功、login 零报错,但新号只有 `player:zone`、没有 `player:placement`,预加载秒级失败(§6.2 读任务 `Success=false`),存盘全部进死信(`missing_required`)。要回退这些组件,先关掉全部 go/db 的 `Required`。
+违反时建角照常成功、login 零报错,但新号只有 `player:zone`、没有 `player:placement`,预加载秒级失败(§6.2 读任务 `Success=false`),存盘全部进死信(`missing_required`)。要回退这些组件,先关掉全部 go/db 的 `Required`。开着 login 的 `NewPlayerSeed` 时,新号首次进场不再走预加载读,「预加载秒级失败」不会出现,症状只剩存盘这一半:死信(`missing_required`),或落点库打不开时的无限重试。所以打开种子前,`missing_required` 与 `db_placement_store_open_total{result=~"error|rejected"}` 两类告警必须就位([new-player-first-enter-no-cold-read.md](./new-player-first-enter-no-cold-read.md) §9)。
 
 **能力标记的部署纪律**(v2.2,§4.3 的两个管不住的窗口):
 - 第 4 步之前回退某个 zone 的 go/db 后,必须等满 90s,或在 mapping Redis DB 0 上 `DEL db:capability:zone:{Z}`,然后才能执行 pin 合服、relocate,或打开 `PinOnCreate`。
@@ -512,3 +518,10 @@ TiDB 决策 D1 的「映射持久化兜底表」仍是遗留项(§11.4)。
   - dev_tools:merge-zone 系列退出码透传(§12 A12)。
   - 文档同步时新发现:能力标记改成 TTL 之后,与 runbook T-0 先 zone-down 两区的流程冲突,pin 合服的默认 `-db-capability-zones src,dst` 在 T-0 必被拒(§4.3,runbook §5.1),工具默认值与检查口径待负责人决定。
 - v2.3(2026-09-28):负责人对 v2.2 遗留项的决定落码(未编译、未测试)。`-db-capability-zones` 去掉缺省值与 `src` / `dst` 记号,接受字面量 `none`(合服 / 撤销;搬库与 capability-check 不接受);新增只读 `-mode capability-check`(exit 0 / 1 / 2),runbook §8 Step 6 开服前必须 exit 0(§4.3、§9、§10.1)。
+- v2.4(2026-10-12):现状校准,设计与代码都不变。
+  - 文首补运行状态(09-29 跑过一轮,执行者是 Claude 而非 Codex;`be6b4ab1d` 之后 HEAD 待复验,清单见 [placement-reverify-checklist-20261012.md](../handoff/placement-reverify-checklist-20261012.md))与启用状态(开关全关、全局库没建、玩家主库在 MySQL)。
+  - §0 加第 7 条:落点记录只选库名、不选机器,「换到 TiDB」是集群级动作。
+  - §8.2 C++ `EnterSceneRequest` 构造点 4 处 → 5 处。
+  - §10.4 与 §11.4 的 blob 处置由「待拍板」改为「已定,保留拒绝」(负责人 09-28 的决定此前只记在 PROGRESS)。
+  - §11.3 不再写「全部未编译、未测试」;§11.4 加 10-12 逐项核对结论。
+- v2.4 补(2026-10-12,映射持久化第 1a 批落码同步,本设计不变):§4.4 末尾追加「映射持久化(D1)进展」一段;§11.4 的 D1 一行由「提案,待拍板」改为「已拍板,分批落码中」。进度与验证以 [player-route-mapping-durability-proposal.md](./player-route-mapping-durability-proposal.md) §11.2 为准。

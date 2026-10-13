@@ -50,7 +50,11 @@ import (
 // team:invite:* 四类 key。理由:C++ scene 只能用 hiredis 读 SharedRedis 上的 team:<id>
 // 投影,而权威记录、投影、玩家索引、邀请反查必须在同一条 Lua 里原子提交,四类 key
 // 只能同库(team-system.md §C.1 / §C.2)。写入范围只限这四类前缀;本包(logic)
-// 对 SharedRedis 仍只读,不写任何 team:* key。
+// 不写任何 team:* key,对上面三类契约 key 只读。
+//
+// 本包唯一的 SharedRedis 写:matcher.go 的 migrateLegacyQueues 在 SharedRedis 上 SCAN + RPOP
+// 改造前实例写下的旧格式队列 match:queue:*,搬进 MatchRedis。它只碰 match 自己的旧 key,
+// 不碰契约 key(cross-zone-matchmaking.md D2 的 2026-10-12 更正)。
 
 // matchQueueHashTag 队列相关 key 的 hash tag,三类 key 必须共用。
 const matchQueueHashTag = "{mq}"

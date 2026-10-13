@@ -119,7 +119,7 @@ Player belongs to zone A and previously had a location in zone C:
 
 ## Merge-Server (合服)
 `zone_id` is a **runtime routing identifier**, not a permanent identity:
-- **Home zone (authoritative for data routing)**: run `tools/merge_zone` (or `DataService/RemapHomeZoneForMerge`) to rewrite `player:zone:*` in mapping Redis; see `docs/design/guild_ranking_architecture_zh.md` §合服工具.
+- **Home zone (authoritative for data routing)**: run `tools/merge_zone` to rewrite `player:zone:*` in mapping Redis; see `docs/design/guild_ranking_architecture_zh.md` §合服工具. (2026-10-12: `DataService/RemapHomeZoneForMerge` is retired and always returns `FailedPrecondition` + `ErrCodeNotImplemented`; `tools/merge_zone` is the only remap path; see `docs/design/player-route-mapping-durability-proposal.md` §4.3.)
 - **Guild / 本服榜**: same tool updates MySQL `guild.zone_id` and merges `guild_rank:zone:{id}`.
 - **SceneManager hot state** (`scene:{id}:zone`, `player:{id}:location`, world channel sets): do **not** hand-delete it. Once every source-zone scene node has deregistered and `scene_nodes:zone:{src}:load` is empty, `EnterScene` ignores source-zone locations on its own; housekeeping goes through `tools/merge_zone -clear-source-hot-state` (`-MergeClearSourceHotState`), which refuses to run while that load set is non-empty. Preconditions, what the player gets and what must never be deleted: see "Stale source-zone `player:{id}:location` after a merge" below.
 
@@ -130,7 +130,7 @@ Three notions of "zone" coexist and only one is authoritative:
 | notion | where | who writes it | role after merge |
 |---|---|---|---|
 | physical zone | k8s namespace (gate/scene/login/scene_manager), picked by the client via server list + `/api/assign-gate` | deploy | may be decommissioned |
-| **home_zone** | data_service `player:zone:{player_id}` | `RegisterPlayerZone` at create; `tools/merge_zone` / `RemapHomeZoneForMerge` on merge | **single source of truth** for data routing, guild, leaderboard |
+| **home_zone** | data_service `player:zone:{player_id}` | `RegisterPlayerZone` at create; `tools/merge_zone` on merge (`RemapHomeZoneForMerge` retired 2026-10-12) | **single source of truth** for data routing, guild, leaderboard |
 | creation-time `zone_id` | account blob `AccountSimplePlayer.zone_id` (`proto/common/.../user_accounts.proto`) | `createplayerlogic.go`, once | hint only |
 
 Rules (implemented in `go/login/internal/logic/pkg/homezone`, wired via `ServiceContext.HomeZone`):

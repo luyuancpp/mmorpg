@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 	"unicode"
 
@@ -115,20 +116,57 @@ func QuoteIdentifier(name string) (string, error) {
 }
 
 // NewServiceContext builds a lightweight ServiceContext with Router (no snapshot store).
+//
+// RouteStore.Mode=db_first 时同时装上映射提交点的库(debug_import 的 RegisterPlayerZone 与 data_service 走同一条
+// db_first 路径,docs/design/player-route-mapping-durability-proposal.md §4.3 W1「含 debug_import」),cleanup 时关闭。
+// 装不起来就返回 error,不退化成 redis 模式:工具与服务对同一份 yaml 必须是同一个提交点。
 func NewServiceContext(configPath string) (*svc.ServiceContext, func(), error) {
 	var c config.Config
 	if err := MustLoadConfig(configPath, &c); err != nil {
 		return nil, nil, fmt.Errorf("load data_service config: %w", err)
 	}
+	// routing.NewRouter 对非法 RouteStore 段会 panic;工具这里先校验,给出可读的错误而不是 panic 栈。
+	c.RouteStore = c.RouteStore.Normalize()
+	if err := c.RouteStore.Validate(); err != nil {
+		return nil, nil, fmt.Errorf("invalid RouteStore config: %w", err)
+	}
+
+	var (
+		routerOpts []routing.RouterOption
+		routeStore *store.RouteStore
+	)
+	if c.RouteStore.DBFirst() {
+		routeCfg := svc.MySQLConfigOf(c)
+		routeCfg.MaxOpenConn = c.RouteStore.MaxOpenConn
+		routeCfg.MaxIdleConn = c.RouteStore.MaxIdleConn
+		host, _ := os.Hostname() // 取不到时 NewRouteWriterID 用 "unknown"
+		rs, err := store.NewRouteStore(routeCfg, store.RouteStoreOptions{
+			FenceShards: uint32(c.RouteStore.FenceShards),
+			Writer:      store.NewRouteWriterID("data_service_debug", host),
+		})
+		if err != nil {
+			return nil, nil, fmt.Errorf("RouteStore.Mode=db_first but the route store cannot be opened "+
+				"(run `data_service -f <yaml> -migrate` if route_meta is missing): %w", err)
+		}
+		routeStore = rs
+		routerOpts = append(routerOpts, routing.WithRouteStore(rs))
+	}
 
 	svcCtx := &svc.ServiceContext{
 		Config: c,
-		Router: routing.NewRouter(c),
+		Router: routing.NewRouter(c, routerOpts...),
+	}
+	if routeStore != nil {
+		// 只在非 nil 时赋给接口字段,免得包出「非 nil 接口包着 nil 指针」。
+		svcCtx.PlayerRouteStore = routeStore
 	}
 
 	cleanup := func() {
 		if svcCtx.Router != nil {
 			svcCtx.Router.Close()
+		}
+		if svcCtx.PlayerRouteStore != nil {
+			_ = svcCtx.PlayerRouteStore.Close()
 		}
 	}
 

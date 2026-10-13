@@ -69,14 +69,16 @@ ServerConfig:
                     # partition=10 + MaxOpenConn=10 meant every worker
                     # competed for exactly one MySQL connection; under
                     # ~90 task/s steady input the pool was always full
-                    # and Kafka backlog grew to 91k. 30 gives 3x
-                    # headroom; MySQL default max_connections=151 leaves
-                    # plenty for robot/admin/verifier processes.
+                    # and Kafka backlog grew to 91k. 30 gave 3x headroom.
                     # 2026-06-01 Round 14 §P5: 30→60 to match
                     # SubShardCount 4→8 (10 partitions × 8 sub-shards
                     # = 80 effective workers, 60 connections keeps the
-                    # pool the limiter without starving robot+admin
-                    # clients; still well under MySQL 151 default).
+                    # pool the limiter).
+                    # 2026-10-12 更正:以前这里写的「MySQL 默认 max_connections=151 留得出余量」不成立。
+                    # K8s 上所有 zone 的 go/db、data_service、gateway 与全局的 friend、trade 共用同一台 MySQL,
+                    # 本池 × 副本数(2)× zone 数是总账里最大的一项。改这个值必须重算总账:
+                    # tools/scripts/k8s_deploy.ps1 的 Get-MysqlConnectionLedger(部署时打印 "MySQL connection ledger"),
+                    # 契约测试钉住「规划峰值 ≤ deploy/k8s/manifests/infra/mysql.yaml 的 max_connections」。
     MaxIdleConn: 20 # raised from 3 to keep the warm-pool sized for the
                     # new MaxOpenConn — otherwise the pool churns
                     # connections under load. 2026-06-01 Round 14: 10→20
@@ -119,10 +121,19 @@ Placement:
   # 打开顺序(§13,反了会出事):全部 login 已 Placement.PinOnCreate=true,且各 zone 已
   # `merge_zone -mode pin-placement` 钉完存量之后才能开。
   Required: false
-  # **每个**额外落点库的连接池(本 zone 库仍用上面的 Database.MaxOpenConn / MaxIdleConn)。
-  # 库数不设上限;Phase 2 大部分玩家搬进全局库后,这个池会成为全局库的瓶颈,按压测结论调大。
-  ExtraStoreMaxOpenConn: 8
-  ExtraStoreMaxIdleConn: 2
+  # 额外落点库(本 zone 库之外)的连接池,**每个库一个池**,按库所属家族分两个旋钮(本 zone 库仍用上面的 Database.MaxOpenConn):
+  #   ZoneStore*    —— zone 家族库 zone_{1..999999}_db:冷缓存访客读、合服 pin 后的源区库。最坏情形每个实例会打开其余全部
+  #                    zone 的库,预算随 zone 数平方增长(总账见 tools/scripts/k8s_deploy.ps1 Get-MysqlConnectionLedger)。
+  #   NonZoneStore* —— 非 zone 落点库 player_store_{>=1000000}_db(Phase 2)。大部分玩家搬进来后它是瓶颈,按压测单独调大,
+  #                    不连带放大访客池;调大前先重做总账规划档。
+  # 旧键 ExtraStoreMaxOpenConn / ExtraStoreMaxIdleConn 仍认:新键没写时两类库都回落到它,新配置不要再写。
+  ZoneStoreMaxOpenConn: 8
+  ZoneStoreMaxIdleConn: 2
+  NonZoneStoreMaxOpenConn: 8
+  NonZoneStoreMaxIdleConn: 2
+  # 额外落点库池里空闲超过这么多秒的连接即关闭(SetConnMaxIdleTime):冷库的池回到 0 条,不按 MaxIdleConn 常驻。
+  # ConnMaxLifetime 仍是 5 分钟,本值大于 300 等于不生效。
+  ExtraStoreConnMaxIdleSeconds: 60
   # 落点记录所在的 Redis = data_service 的 MappingRedis(player:zone 所在实例,DB 0)。
   # 不写 = 复用上面的 RedisClient(本地与 K8s 两者同实例同 DB 0)。两者不同时**必须**显式填:
   # 读错 Redis = 读不到任何记录与 home_zone,全员按本 zone 选库,被钉到别处的玩家会写错库。

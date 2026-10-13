@@ -158,3 +158,53 @@ func TestTxLogConsumer_RealStore_ReplayAfterCommitIsNoop(t *testing.T) {
 	require.NoError(t, db.Raw.QueryRow(`SELECT timestamp_sec FROM transaction_log WHERE tx_id = 1`).Scan(&tsSec))
 	assert.Equal(t, uint64(1700000001), tsSec)
 }
+
+// TestSnapshotConsumer_RealStore_BatchModeDedupsAndCommits:批量模式(G2a)接真库。两个分区并发落库,
+// 批内重放与跨分区重复的 guid 都由库兜住去重:落库行数精确、两个分区都提交到末尾、GM 读路径仍看不到 source=1。
+// (生产上同一 guid 只会出现在一个分区 —— key=player_id;这里故意跨分区放一条,证明去重不依赖分区归属。)
+func TestSnapshotConsumer_RealStore_BatchModeDedupsAndCommits(t *testing.T) {
+	db := storetest.NewMigratedDB(t)
+	ss, err := store.NewSnapshotStore(db.Cfg)
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = ss.Close() })
+
+	reader := newFakeReader(nil)
+	c := NewSnapshotConsumer(SnapshotConsumerConfig{
+		DBRetryBackoff:     10 * time.Millisecond,
+		BatchMaxRows:       8,
+		FlushInterval:      50 * time.Millisecond,
+		MaxInflightFlushes: 2,
+	}, reader, ss)
+	stop := runConsumer(t, c)
+
+	// 分区 0:玩家 100 的 guid 1..10,再重放 3、5;分区 1:玩家 200 的 guid 101..110,再重放 101,外加分区 0 的 guid 7。
+	p0 := []uint64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 3, 5}
+	p1 := []uint64{101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 101, 7}
+	for i := range p0 {
+		reader.push(snapMsg(t, 0, int64(i), validSnap(p0[i])))
+		entry := validSnap(p1[i])
+		if p1[i] > 100 {
+			entry.PlayerId = 200
+		}
+		reader.push(snapMsg(t, 1, int64(i), entry))
+	}
+	waitCommitted(t, reader, 0, int64(len(p0)-1))
+	waitCommitted(t, reader, 1, int64(len(p1)-1))
+	stop()
+
+	assert.Equal(t, int64(20), db.Count(t, "player_snapshot", "source = ?", store.SnapshotSourceSceneKafka),
+		"20 个不同的 guid,重放与跨分区重复都只落一行")
+	for _, guid := range []uint64{3, 5, 7, 101} {
+		assert.Equalf(t, int64(1), db.Count(t, "player_snapshot", "snapshot_guid = ?", guid), "guid=%d 必须恰好一行", guid)
+	}
+
+	// GM 读路径看不到 source=1;scene 读路径按玩家各 10 行。
+	metas, err := ss.ListSnapshotsMeta(context.Background(), 100, 0, 10)
+	require.NoError(t, err)
+	assert.Empty(t, metas)
+	for _, playerID := range []uint64{100, 200} {
+		scene, err := ss.ListSceneSnapshotsByPlayer(context.Background(), playerID, 50)
+		require.NoError(t, err)
+		assert.Lenf(t, scene, 10, "player %d", playerID)
+	}
+}

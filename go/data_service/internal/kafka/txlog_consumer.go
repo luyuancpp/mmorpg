@@ -195,6 +195,8 @@ func (c *TxLogConsumer) flush(ctx context.Context, batch *txBatch) error {
 				ConsumerTxLog, len(batch.rows), c.cfg.DBMaxAttempts, err)
 			return fmt.Errorf("%w: %v", ErrConsumerStoppedOnDB, err)
 		}
+		// 只在有行且落成时记批大小:全是坏消息的批(rows=0)也走 flush,记进去会拉低均值。
+		metrics.ObserveKafkaConsumerBatchRows(ConsumerTxLog, len(batch.rows))
 		dup := len(batch.rows) - int(inserted)
 		metrics.ObserveKafkaConsumerMessages(ConsumerTxLog, "inserted", int(inserted))
 		metrics.ObserveKafkaConsumerMessages(ConsumerTxLog, "duplicate", dup)
@@ -207,7 +209,10 @@ func (c *TxLogConsumer) flush(ctx context.Context, batch *txBatch) error {
 func (c *TxLogConsumer) insertWithRetry(ctx context.Context, rows []*store.TransactionLogRow) (int64, error) {
 	var lastErr error
 	for attempt := 1; attempt <= c.cfg.DBMaxAttempts; attempt++ {
+		start := time.Now()
 		inserted, err := c.sink.InsertBatchIgnore(ctx, rows)
+		// 单次 DB 尝试的耗时(不含退避),口径同 player_snapshot,见 observeFlushAttempt。
+		observeFlushAttempt(ctx, ConsumerTxLog, start, err)
 		if err == nil {
 			return inserted, nil
 		}

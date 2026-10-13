@@ -53,6 +53,31 @@ $fakeStderr = @"
 "@
 Set-Content -Path (Join-Path $runDir "robot.stderr") -Value $fakeStderr -Encoding utf8
 
+# 1b. DB 分段快照(2026-10-12 回归):client_golang 输出时按 label 名排序,db_task_stage_seconds
+#     的实际序列是 {op=..,stage=..}。旧脚本按 {stage=..,op=..} 精确查找,这张表永远是 "-"。
+#     这里按真实的输出顺序造快照;db 快照只在存在 *_login.txt 时才被识别(多端点布局),所以补一个空的。
+$snapDirForTest = Join-Path $runDir "prom-snapshots"
+Set-Content -Path (Join-Path $snapDirForTest "t18m_login.txt") -Value "" -Encoding utf8
+$fakeDbSnapshot = @"
+# HELP db_task_stage_seconds Per-task sub-stage latency.
+# TYPE db_task_stage_seconds histogram
+db_task_stage_seconds_sum{op="read",stage="op_total"} 0.2
+db_task_stage_seconds_count{op="read",stage="op_total"} 50
+db_task_stage_seconds_sum{op="read",stage="op_handler"} 0.15
+db_task_stage_seconds_count{op="read",stage="op_handler"} 50
+db_task_stage_seconds_sum{op="read",stage="cache_write"} 0.025
+db_task_stage_seconds_count{op="read",stage="cache_write"} 50
+db_task_stage_seconds_sum{op="read",stage="result_publish"} 0.035
+db_task_stage_seconds_count{op="read",stage="result_publish"} 50
+db_task_stage_seconds_sum{op="write",stage="op_total"} 1.25
+db_task_stage_seconds_count{op="write",stage="op_total"} 100
+db_task_stage_seconds_sum{op="write",stage="op_handler"} 0.9
+db_task_stage_seconds_count{op="write",stage="op_handler"} 100
+db_task_result_total{op="read",result="ok"} 50
+db_task_result_total{op="write",result="ok"} 100
+"@
+Set-Content -Path (Join-Path $snapDirForTest "t18m_db.txt") -Value $fakeDbSnapshot -Encoding utf8
+
 # 2. The dirty-save scan walks run/logs/cpp_nodes under the *real*
 #    repo root (not RunDir) — that's the production layout. We back up
 #    any existing scene_*.log under that path, drop our fake in place,
@@ -159,6 +184,20 @@ Write-Host "  ok: parser kept last (monotonic) sample" -ForegroundColor DarkGree
 Assert-Contains -Haystack $outputLines `
     -Needle "5m0s" `
     -Reason "robot stats parser regressed — fake [stats 5m0s] line did not produce a row"
+
+# DB 分段:按真实 label 顺序造的快照必须算出平均值,而不是 "-"。
+# read: op_total 4.0 / handler 3.0 / cache_write 0.5 / publish 0.7;write: op_total 12.5 / handler 9.0(ms)。
+$dbRow = @($outputLines | Where-Object { $_ -match '^\s*t18m_db\s' })
+if ($dbRow.Count -ne 1) {
+    Write-Host "FAIL: expected exactly one t18m_db row in the DB task stages section, got $($dbRow.Count)" -ForegroundColor Red
+    $outputLines | ForEach-Object { Write-Host "  $_" -ForegroundColor DarkGray }
+    if (-not $KeepArtifacts) { Remove-Item -Recurse -Force $tmpRoot -ErrorAction SilentlyContinue }
+    exit 1
+}
+foreach ($expected in @('4.0ms', '3.0ms', '0.5ms', '0.7ms', '12.5ms', '9.0ms')) {
+    Assert-Contains -Haystack $dbRow -Needle $expected `
+        -Reason "DB task stages row must show $expected — label order {op,stage} not matched?"
+}
 
 # ── Cleanup ─────────────────────────────────────────────────────────────
 

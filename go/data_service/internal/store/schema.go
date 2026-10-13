@@ -26,8 +26,12 @@ import (
 // 各自手写 DDL,已经与 proto 漂移过三次(rollback_audit_log 多一列、transaction_log
 // 列名不同、player_snapshot 在 zone 库与全局库各有一份)。手写 DDL 的例外共三处,
 // 各自的理由写在对应的常量注释里:
-//   - bootstrapTables 清单里的两张表(id_segment、player_name):整表预建,之后不再交给
-//     proto2mysql 同步,只做列 / 唯一键的形状守卫。
+//   - bootstrapTables 清单里的表:整表预建,之后不再交给 proto2mysql 同步,只做形状守卫。
+//     其中 id_segment、player_name 在 TableMessages 里有 proto(守卫 = proto 字段都有同名列 + 单列唯一键);
+//     路由表 player_route / zone_merge_fence / zone_merged_into / route_meta / route_reconcile(2026-10-12 映射持久化
+//     第 1a 批,docs/design/player-route-mapping-durability-proposal.md §3.2;route_reconcile 是同日 G1a 热点修复
+//     从 route_meta 拆出的)**还没有** proto,
+//     守卫 = routeTableShapes 里登记的列名 + 主键列序。第 2 批补 proto 时改回按 proto 守卫,并删掉 routeTableShapes。
 //   - nullableUniqueKeys 清单里的可空唯一列(player_snapshot.snapshot_guid_nz +
 //     uk_snapshot_guid_nz):表仍全程由 proto 驱动,只在同步之后**追加**一列 + 一个键。
 
@@ -150,14 +154,253 @@ const playerNameBootstrapDDL = "CREATE TABLE IF NOT EXISTS `player_name` (\n" +
 	") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin" +
 	" /*T! SHARD_ROW_ID_BITS=4 PRE_SPLIT_REGIONS=4 */ COMMENT='player_name';"
 
+// ── 映射持久化的路由表(第 1a 批,docs/design/player-route-mapping-durability-proposal.md §3.2)──────
+//
+// 为什么也走手写 DDL:要 VARCHAR 的 run_id、可空列、二级索引与 CHECK,而 proto2mysql 把 string 渲染成
+// MEDIUMTEXT、标量一律 NOT NULL DEFAULT 0(见 idSegmentBootstrapDDL 的注释)。本批不新增 proto
+// (避免 proto 重生与 C++ 重编),所以它们不进 TableMessages,形状守卫走 routeTableShapes。
+// 列注释 pb:1..10 是给第 2 批补 proto 预留的字段号,补的时候必须沿用(route_shard 是 10,player_id 仍是 1)。
+//
+// 读写只在 route_store.go(RouteStore);表名常量也在那里。TiDB 上的预切与防合并在 route_tidb.go(PrepareTiDB)。
+//
+// TiDB 热点(登记在 docs/design/global-data-layer-tidb-decision.md §4 / §6,MySQL 上不存在),2026-10-12 G1a
+// (提案 §11.2「第 1a 批热点修复」)在建表前改形:
+//   - player_route 主键改为聚簇 (route_shard, player_id),route_shard = player_id % 16;三条二级索引都带片前缀。
+//     号段发的 player_id 在每个 login 段内严格递增,只按 player_id 排序的主键 / 索引在开服首日始终只写同一个尾部
+//     Region(首日数据量到不了按大小分裂的阈值);带片前缀之后每条索引是 16 条尾部(idx_route_home 每 zone 16 条)。
+//   - 只有片前缀、不预切,在 TiDB 上等于没做(空表只有 1 个 Region):预切由 `route_tool tidb-prepare` 显式执行,
+//     因为按 zone 预切需要真实 zone 清单,迁移拿不到;TRUNCATE / BR 恢复后也要重跑。
+//   - route_meta 拆成很少写的开关表 route_meta 与 1b leader 常写的对账表 route_reconcile:每次 W1 都普通读 writable,
+//     不能和每秒写一次的水位放在同一行上(TiDB 的读会被更早的未提交写锁拖住,且常写的表没法设成缓存表)。
+//   - zone_merge_fence 主键本来就是聚簇 (zone_id, shard),由 tidb-prepare 按 zone 预切。
+// 聚簇属性建表后不能再改(TiDB),所以这些都只能在任何环境建表之前定;MySQL 上 InnoDB 主键本来就聚簇,
+// /*T![clustered_index] CLUSTERED */ 只是注释,行为与容量都不变。
+//
+// 排序规则显式写出(COLLATE=utf8mb4_bin、ascii 列 COLLATE ascii_bin):只写 CHARSET 时 MySQL 默认
+// utf8mb4_0900_ai_ci / ascii_general_ci,TiDB 默认 utf8mb4_bin / ascii_bin,两种引擎的比较语义会不同;
+// 这些列都是标识符或排障 JSON,逐字节比较才是正确语义。
+
+// playerRouteBootstrapDDL 每个玩家一行:home 与落点同行,原 Redis 里「两键要么一起写、要么都不写」退化成单行原子。
+// 两列都是 NULL = 「真的没有记录」(提案 §3.2 末)。rev 本行任何列变化 +1,只供缓存排序(player:maprev)。
+// 时间戳一律取库时钟(route_store.go 的 dbNowMsSQL)。
+//
+// route_shard 由应用按 placement.RouteRowShard 算出并绑定(不用生成列:TiDB 不支持 ALTER 加 STORED 生成列,
+// 生成列进聚簇主键与 Dumpling / Lightning 的行为都未核实)。chk_route_shard 把它钉成 player_id % 16:
+// **player_id 的唯一性现在靠这条 CHECK**(主键 (route_shard, player_id) 只在 route_shard 由 player_id 唯一决定时
+// 才等价于「player_id 唯一」),所以 RouteStore 建池时实测它生效(probeRouteShardCheck),不生效就拒绝建 store。
+// 其中的 16 与 placement.RouteRowShards 必须一致(route_store_test.go 钉住);任何环境建过表之后都不可改。
+//
+// 三条二级索引显式写出尾部 player_id:InnoDB 本来就会追加主键列、TiDB 非唯一索引也带 handle,写出来是为了让
+// 键集翻页的游标 (route_shard, player_id) / (updated_at_ms, player_id) 在两种引擎上语义一致,不增加存储。
+// 聚簇表不能再用 SHARD_ROW_ID_BITS / PRE_SPLIT_REGIONS(那是 NONCLUSTERED 表打散 _tidb_rowid 用的)。
+const playerRouteBootstrapDDL = "CREATE TABLE IF NOT EXISTS `player_route` (\n" +
+	"  `route_shard` tinyint unsigned NOT NULL COMMENT 'pb:10',\n" +
+	"  `player_id` bigint unsigned NOT NULL COMMENT 'pb:1',\n" +
+	"  `home_zone` int unsigned NULL COMMENT 'pb:2',\n" +
+	"  `storage_id` int unsigned NULL COMMENT 'pb:3',\n" +
+	"  `placement_version` bigint unsigned NULL COMMENT 'pb:4',\n" +
+	"  `frozen_run_id` varchar(64) CHARACTER SET ascii COLLATE ascii_bin NULL COMMENT 'pb:5',\n" +
+	"  `rev` bigint unsigned NOT NULL COMMENT 'pb:6',\n" +
+	"  `updated_by` varchar(96) CHARACTER SET ascii COLLATE ascii_bin NOT NULL DEFAULT '' COMMENT 'pb:7',\n" +
+	"  `created_at_ms` bigint unsigned NOT NULL COMMENT 'pb:8',\n" +
+	"  `updated_at_ms` bigint unsigned NOT NULL COMMENT 'pb:9',\n" +
+	"  PRIMARY KEY (`route_shard`, `player_id`) /*T![clustered_index] CLUSTERED */,\n" +
+	"  KEY `idx_route_home` (`home_zone`, `route_shard`, `player_id`),\n" +
+	"  KEY `idx_route_storage` (`storage_id`, `route_shard`, `player_id`),\n" +
+	"  KEY `idx_route_updated` (`route_shard`, `updated_at_ms`, `player_id`),\n" +
+	"  CONSTRAINT `chk_route_shard` CHECK (`route_shard` = `player_id` % 16),\n" +
+	"  CONSTRAINT `chk_route_home` CHECK (`home_zone` IS NULL OR `home_zone` BETWEEN 1 AND 999999),\n" +
+	"  CONSTRAINT `chk_route_place` CHECK ((`storage_id` IS NULL) = (`placement_version` IS NULL)),\n" +
+	"  CONSTRAINT `chk_route_ver` CHECK (`placement_version` IS NULL OR `placement_version` >= 1),\n" +
+	"  CONSTRAINT `chk_route_frozen` CHECK (`frozen_run_id` IS NULL OR `storage_id` IS NOT NULL),\n" +
+	"  CONSTRAINT `chk_route_rev` CHECK (`rev` >= 1)\n" +
+	") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='player_route';"
+
+// zoneMergeFenceBootstrapDDL 是合服围栏的真源:按 (zone, shard) 存 N 份相同内容,建角只锁 player_id % N
+// 那一片,获取围栏的一方锁全部分片(placement.MaxRouteFenceShards 是持有者必须写满的上限)。
+// 生效判据:run_id 非空且 expires_at_ms 大于库时钟。分片行由 RouteStore 在第一次用到时懒建(R3)。
+//
+// 主键带 CLUSTERED(与提案 §3.2 唯一的不同,规格 g.2 第 16 条):TiDB 建表后不能再改聚簇属性,
+// 只有聚簇主键才能按 (zone_id, shard) 的值 SPLIT 出按 zone 分的 Region(route_tool tidb-prepare);MySQL 上没有影响。
+// 整表只有「zone 数 × N」行,不预切就必然落在一个 Region 上,每次 W1 的 FOR UPDATE 都压同一个 leader。
+const zoneMergeFenceBootstrapDDL = "CREATE TABLE IF NOT EXISTS `zone_merge_fence` (\n" +
+	"  `zone_id` int unsigned NOT NULL,\n" +
+	"  `shard` tinyint unsigned NOT NULL,\n" +
+	"  `run_id` varchar(64) CHARACTER SET ascii COLLATE ascii_bin NULL,\n" +
+	"  `purpose` varchar(16) CHARACTER SET ascii COLLATE ascii_bin NULL,\n" +
+	"  `src_zone` int unsigned NULL,\n" +
+	"  `dst_zone` int unsigned NULL,\n" +
+	"  `expires_at_ms` bigint unsigned NULL,\n" +
+	"  `holder_json` varchar(1024) NULL,\n" +
+	"  `fence_epoch` bigint unsigned NOT NULL DEFAULT 0,\n" +
+	"  PRIMARY KEY (`zone_id`, `shard`) /*T![clustered_index] CLUSTERED */,\n" +
+	"  CONSTRAINT `chk_fence_pair` CHECK ((`run_id` IS NULL) = (`expires_at_ms` IS NULL))\n" +
+	") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='zone_merge_fence';"
+
+// zoneMergedIntoBootstrapDDL 是「源区已合走」的永久标记,契约同 tools/merge_zone/merged_into.go。
+// 第 1a 批只由 route_tool 从 Redis 的 merge:merged_into:* 导入(merged_at_ms 取导入时刻的库时钟)。
+const zoneMergedIntoBootstrapDDL = "CREATE TABLE IF NOT EXISTS `zone_merged_into` (\n" +
+	"  `src_zone` int unsigned NOT NULL,\n" +
+	"  `dst_zone` int unsigned NOT NULL,\n" +
+	"  `run_id` varchar(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,\n" +
+	"  `merged_at_ms` bigint unsigned NOT NULL,\n" +
+	"  PRIMARY KEY (`src_zone`)\n" +
+	") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='zone_merged_into';"
+
+// routeMetaBootstrapDDL 是开关表,单行(id=1):库世代与可写开关。行由迁移种(bootstrapRouteMetaRow,ODKU no-op,
+// 已存在不改);writable=0 = 全体映射写者拒写。
+//
+// **很少写**(只有第 1b 批的冻结 / 回档恢复写它),而每次 W1 都普通读 writable(R1)—— 这正是它和 route_reconcile
+// 分开的原因(G1a):1b leader 每秒写的水位、每 3 秒续的租约如果还在这一行上,TiDB 的读会间歇地被更早的未提交写锁
+// 拖住(抖动直接进建角 p99),也没法把它设成缓存表(ALTER TABLE route_meta CACHE 要求表很少写)。
+const routeMetaBootstrapDDL = "CREATE TABLE IF NOT EXISTS `route_meta` (\n" +
+	"  `id` tinyint unsigned NOT NULL,\n" +
+	"  `generation` varchar(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,\n" +
+	"  `writable` tinyint unsigned NOT NULL DEFAULT 1,\n" +
+	"  PRIMARY KEY (`id`)\n" +
+	") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='route_meta';"
+
+// routeReconcileBootstrapDDL 是对账表,单行(id=1):第 1b 批对账 leader 的租约、水位与缓存校验时刻,每拍都写。
+// 第 1a 批不读不写,只由迁移种 id=1(bootstrapRouteReconcileRow,ODKU no-op)。
+//
+// leader 用 ascii(原 route_meta.leader 是 utf8mb4):leader 标识与写者标识同源(NewRouteWriterID 只产
+// [A-Za-z0-9._@:-]),第 1b 批的 leader 标识必须是同一形态的 ASCII,非 ASCII 字节在严格模式下会被库拒绝。
+const routeReconcileBootstrapDDL = "CREATE TABLE IF NOT EXISTS `route_reconcile` (\n" +
+	"  `id` tinyint unsigned NOT NULL,\n" +
+	"  `leader` varchar(96) CHARACTER SET ascii COLLATE ascii_bin NULL,\n" +
+	"  `lease_until_ms` bigint unsigned NULL,\n" +
+	"  `watermark_ms` bigint unsigned NOT NULL DEFAULT 0,\n" +
+	"  `cache_verified_ms` bigint unsigned NOT NULL DEFAULT 0,\n" +
+	"  PRIMARY KEY (`id`)\n" +
+	") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='route_reconcile';"
+
 // bootstrapTables 是走手写 DDL 预建、**不**交给 proto2mysql 同步的表:表名 → 建表语句。
 //
-// 迁移时先逐条执行(全部 CREATE TABLE IF NOT EXISTS,幂等),之后的同步循环遇到清单内的表
-// 只做列漂移检查。再加一张这类表 = 在这里加一行,不要回到 migrateSchemaOn 里加 if 分支;
-// 清单化是为了让"哪些表不由 proto 驱动建"这件事只有一处答案。
+// 迁移时先逐条执行(全部 CREATE TABLE IF NOT EXISTS,幂等),之后只做形状守卫:
+// 在 TableMessages 里的(id_segment、player_name)由同步循环查列漂移与唯一键;
+// 路由表不在 TableMessages 里,由 assertRouteTableShapes 按 routeTableShapes 查列名与主键。
+// 再加一张这类表 = 在这里加一行(没有 proto 的再在 routeTableShapes 登记形状),
+// 不要回到 migrateSchemaOn 里加 if 分支;清单化是为了让"哪些表不由 proto 驱动建"这件事只有一处答案。
 var bootstrapTables = map[string]string{
-	IdSegmentTableName:  idSegmentBootstrapDDL,
-	PlayerNameTableName: playerNameBootstrapDDL,
+	IdSegmentTableName:      idSegmentBootstrapDDL,
+	PlayerNameTableName:     playerNameBootstrapDDL,
+	PlayerRouteTableName:    playerRouteBootstrapDDL,
+	ZoneMergeFenceTableName: zoneMergeFenceBootstrapDDL,
+	ZoneMergedIntoTableName: zoneMergedIntoBootstrapDDL,
+	RouteMetaTableName:      routeMetaBootstrapDDL,
+	RouteReconcileTableName: routeReconcileBootstrapDDL,
+}
+
+// routeTableShape 是一张没有 proto 的 bootstrap 表的形状守卫:必须有的列(只比列名)与主键列序。
+// hint 非空时追加在这张表任一项守卫失败的错误后面(给人看的处理办法)。
+type routeTableShape struct {
+	columns    []string
+	primaryKey []string
+	hint       string
+}
+
+// playerRouteG1aShapeHint 是 player_route 形状守卫失败时的处理提示(G1a 改主键之后,本机跑过旧版第 1a 批迁移的库会撞上)。
+//
+// 挂在表级而不是只挂在主键分支:真实的旧表**没有 route_shard 列**,守卫先查列,会在列检查就返回,只挂主键分支的
+// 提示永远走不到。要求 DROP 全部路由表而不是只 DROP player_route:守卫只查列名是否存在、不查多余列与排序规则,
+// 旧形状的 route_meta(多出水位与租约四列)、未带 COLLATE 的旧 zone_merge_fence / zone_merged_into 都能静默通过,
+// 只 DROP 一张会留下一个「守卫全绿、形状却是混合态」的库。**代码绝不自动 DROP**:表里可能有人要保留的数据。
+// (文案里不能出现「改写 player_route」形状的 SQL 动词短语:TestNoPlayerRouteWritesOutsideRouteStore 按字面量匹配。)
+const playerRouteG1aShapeHint = "if this is the pre-G1a shape of the 1a batch (no route_shard column / primary key = player_id) " +
+	"and the route tables hold no data worth keeping, DROP TABLE player_route, zone_merge_fence, zone_merged_into, route_meta " +
+	"(and route_reconcile if it exists) by hand, then rerun `data_service -f <yaml> -migrate`; " +
+	"the migration never drops them itself (docs/design/player-route-mapping-durability-proposal.md §11.2 G1a)"
+
+// routeTableShapes 是路由表的形状(本批不建 proto 守卫,以此代替;规格 g.2 第 1 条)。
+//
+// 为什么只守列名与主键、不守类型:CREATE TABLE IF NOT EXISTS 在表已存在时整条跳过,一张被手工改过的
+// 存量表(丢了列、换了主键)会一路静默通过启动;而 RouteStore 的写法全部建在「主键 = (route_shard, player_id) /
+// (zone_id, shard) / src_zone / id」与这些列上,形状不对时 ODKU 撞不到键、判定就会安静地错。
+// 类型漂移这一层要等第 2 批补 proto 之后由 proto 守卫接管。
+var routeTableShapes = map[string]routeTableShape{
+	PlayerRouteTableName: {
+		columns: []string{"route_shard", "player_id", "home_zone", "storage_id", "placement_version", "frozen_run_id",
+			"rev", "updated_by", "created_at_ms", "updated_at_ms"},
+		primaryKey: []string{"route_shard", "player_id"},
+		hint:       playerRouteG1aShapeHint,
+	},
+	ZoneMergeFenceTableName: {
+		columns: []string{"zone_id", "shard", "run_id", "purpose", "src_zone", "dst_zone",
+			"expires_at_ms", "holder_json", "fence_epoch"},
+		primaryKey: []string{"zone_id", "shard"},
+	},
+	ZoneMergedIntoTableName: {
+		columns:    []string{"src_zone", "dst_zone", "run_id", "merged_at_ms"},
+		primaryKey: []string{"src_zone"},
+	},
+	RouteMetaTableName: {
+		columns:    []string{"id", "generation", "writable"},
+		primaryKey: []string{"id"},
+	},
+	RouteReconcileTableName: {
+		columns:    []string{"id", "leader", "lease_until_ms", "watermark_ms", "cache_verified_ms"},
+		primaryKey: []string{"id"},
+	},
+}
+
+// assertRouteTableShapes 对 routeTableShapes 里的每张表(按表名排序,日志与失败顺序稳定)查列名与主键列序。
+// 任一不符即 fail-closed:迁移失败,拒绝带着坏形状启动(与 assertColumnsPresent / assertUniqueColumns 同口径)。
+func assertRouteTableShapes(ctx context.Context, db *sql.DB, dbName string) error {
+	names := make([]string, 0, len(routeTableShapes))
+	for name := range routeTableShapes {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	for _, name := range names {
+		shape := routeTableShapes[name]
+		withHint := func(err error) error {
+			if shape.hint == "" {
+				return err
+			}
+			return fmt.Errorf("%w; %s", err, shape.hint)
+		}
+		if err := assertColumnNamesPresent(ctx, db, dbName, name, shape.columns); err != nil {
+			return withHint(err)
+		}
+		pk, err := primaryKeyColumns(ctx, db, dbName, name)
+		if err != nil {
+			return err
+		}
+		if !sameColumnSequence(pk, shape.primaryKey) {
+			return withHint(fmt.Errorf("table %s primary key is %v, want %v; it is pre-created by bootstrap DDL "+
+				"(schema.go bootstrapTables) and RouteStore's ON DUPLICATE KEY / FOR UPDATE logic is built on that key, "+
+				"refusing to start on a table whose key cannot enforce it", name, pk, shape.primaryKey))
+		}
+		logx.Infof("[schema] table %s pre-created by bootstrap DDL; columns and primary key verified", name)
+	}
+	return nil
+}
+
+// ensureRouteTables 在 bootstrapTables 全部执行之后调用(migrateSchemaOn 与 TiDB 用例的测试钩子共用):
+// 形状守卫 → 种 route_meta(id=1)→ 种 route_reconcile(id=1)。任一步失败整次迁移失败(redis 模式也受影响,
+// 1a 风险第 8 条:表形状不对时 RouteStore 的判定会安静地错,不能带着它启动)。
+// 种行放在形状守卫之后:列不齐时 INSERT 会以列错误失败,文案不如守卫清楚。
+func ensureRouteTables(ctx context.Context, db *sql.DB, dbName string) error {
+	if err := assertRouteTableShapes(ctx, db, dbName); err != nil {
+		return err
+	}
+	if err := bootstrapRouteMetaRow(ctx, db); err != nil {
+		return err
+	}
+	return bootstrapRouteReconcileRow(ctx, db)
+}
+
+// sameColumnSequence 判断两组列序逐个相等(大小写不敏感:MySQL 列名如此)。
+func sameColumnSequence(got, want []string) bool {
+	if len(got) != len(want) {
+		return false
+	}
+	for i := range want {
+		if !strings.EqualFold(got[i], want[i]) {
+			return false
+		}
+	}
+	return true
 }
 
 // isBootstrapTable 判断一张表是否由 bootstrapTables 预建。
@@ -1192,8 +1435,9 @@ func serverIsTiDB(ctx context.Context, db *sql.DB) (bool, string, error) {
 	return strings.Contains(strings.ToUpper(version), "TIDB"), version, nil
 }
 
-// TableMessages 返回全局库五张表的 proto 原型,顺序即迁移顺序。
+// TableMessages 返回全局库里**有 proto 的**五张表的原型,顺序即迁移顺序。
 // 末尾两张(id_segment、player_name)在 bootstrapTables 里,同步循环只对它们做列漂移检查。
+// 路由表(player_route 等)也在 bootstrapTables 里,但还没有 proto,不在这里(见 routeTableShapes)。
 func TableMessages() []proto.Message {
 	return []proto.Message{
 		&dbpb.TransactionLog{},
@@ -1414,10 +1658,15 @@ func acquireMigrateLock(ctx context.Context, db *sql.DB, dbName string, wait tim
 	}, nil
 }
 
-// migrateSchemaOn 注册五张表 → 表名守卫 → 预建 bootstrapTables(id_segment、player_name)
-// → bootstrap 表只做形状守卫(列齐 + 单列唯一键还在)、其余三张 CreateOrUpdateTable
+// migrateSchemaOn 注册 proto 驱动的五张表 → 表名守卫 → 预建 bootstrapTables(手写 DDL 的 id_segment、
+// player_name 与路由表)→ 路由表按 routeTableShapes 查列名与主键,并种 route_meta / route_reconcile(id=1)
+// (ensureRouteTables)
+// → 有 proto 的 bootstrap 表只做形状守卫(列齐 + 单列唯一键还在)、其余三张 CreateOrUpdateTable
 // → 补缺失索引 → 补 nullableUniqueKeys 的可空唯一列(player_snapshot.snapshot_guid_nz)
 // → 预建 id_segment 行(BootstrapTags)→ player / guild 水位地板校验。
+//
+// 路由表那一步失败同样让整次迁移失败(redis 模式也受影响:启动路径会因此不装配任何 store,
+// 规格 g.3 第 8 条)。这是刻意的:表形状不对时 RouteStore 的判定会安静地错,不能带着它启动。
 func migrateSchemaOn(ctx context.Context, db *sql.DB, dbName string, opts MigrateOptions) error {
 	model := proto2mysql.NewDB().WithContext(ctx)
 	if err := model.OpenDB(db, dbName); err != nil {
@@ -1432,8 +1681,8 @@ func migrateSchemaOn(ctx context.Context, db *sql.DB, dbName string, opts Migrat
 		}
 	}
 
-	// 手写 DDL 的两个例外,必须在 CreateOrUpdateTable 之前(见各自常量注释)。
-	// 按表名排序只为让日志与失败顺序稳定;两条建表语句互不依赖。
+	// 手写 DDL 的例外,必须在 CreateOrUpdateTable 之前(见各自常量注释)。
+	// 按表名排序只为让日志与失败顺序稳定;这几条建表语句互不依赖(路由表之间没有外键)。
 	bootstrapNames := make([]string, 0, len(bootstrapTables))
 	for name := range bootstrapTables {
 		bootstrapNames = append(bootstrapNames, name)
@@ -1443,6 +1692,11 @@ func migrateSchemaOn(ctx context.Context, db *sql.DB, dbName string, opts Migrat
 		if _, err := db.ExecContext(ctx, bootstrapTables[name]); err != nil {
 			return fmt.Errorf("bootstrap table %s: %w", name, err)
 		}
+	}
+
+	// 路由表没有 proto,不会出现在下面的 TableMessages 循环里:在这里单独守形状,再种两张单行表的行。
+	if err := ensureRouteTables(ctx, db, dbName); err != nil {
+		return err
 	}
 
 	for _, t := range tables {
@@ -1675,6 +1929,18 @@ func warnIfLegacyTable(ctx context.Context, db *sql.DB, dbName string, table pro
 // assertColumnsPresent 漂移检查:proto 的每个字段在线上表都得有同名列。
 // 只用于不走 CreateOrUpdateTable 的预建表,免得 proto 加了字段而 bootstrap DDL 忘了跟。
 func assertColumnsPresent(ctx context.Context, db *sql.DB, dbName string, table proto.Message, tableName string) error {
+	fields := table.ProtoReflect().Descriptor().Fields()
+	want := make([]string, 0, fields.Len())
+	for i := 0; i < fields.Len(); i++ {
+		want = append(want, string(fields.Get(i).Name()))
+	}
+	return assertColumnNamesPresent(ctx, db, dbName, tableName, want)
+}
+
+// assertColumnNamesPresent 按列名比对:want 里每一列在线上表都得有同名列(只比名字,不比类型)。
+// 两个调用方:assertColumnsPresent(列名由 proto 字段推出)与 assertRouteTableShapes(列名取自 routeTableShapes)。
+// "怎么查一张预建表的列齐不齐"是同一条知识,只写这一份。
+func assertColumnNamesPresent(ctx context.Context, db *sql.DB, dbName, tableName string, want []string) error {
 	rows, err := db.QueryContext(ctx,
 		`SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?`,
 		dbName, tableName)
@@ -1698,15 +1964,15 @@ func assertColumnsPresent(ctx context.Context, db *sql.DB, dbName string, table 
 		return fmt.Errorf("table %s is absent after bootstrap DDL", tableName)
 	}
 
-	fields := table.ProtoReflect().Descriptor().Fields()
 	var missing []string
-	for i := 0; i < fields.Len(); i++ {
-		if name := string(fields.Get(i).Name()); !have[name] {
+	for _, name := range want {
+		if !have[name] {
 			missing = append(missing, name)
 		}
 	}
 	if len(missing) > 0 {
-		return fmt.Errorf("table %s lacks proto-declared columns %v; it is pre-created by bootstrap DDL (schema.go bootstrapTables), update that DDL", tableName, missing)
+		return fmt.Errorf("table %s lacks required columns %v (declared by its proto message or routeTableShapes); "+
+			"it is pre-created by bootstrap DDL (schema.go bootstrapTables), update that DDL", tableName, missing)
 	}
 	return nil
 }

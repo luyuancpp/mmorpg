@@ -273,6 +273,17 @@ func (l *CreatePlayerLogic) CreatePlayer(in *login_proto.CreatePlayerRequest) (*
 		return resp, nil
 	}
 
+	// 6d'. 新号父键种子(NewPlayerSeed.Enabled,默认关;docs/design/new-player-first-enter-no-cold-read.md)。
+	// 排在 player:zone 登记之后:名字、归属两步 fail-closed,失败的建角不留种子。排在账号 blob 之前:
+	// EnterGame 只认账号 blob 或反查索引(7 / 7b 才写),所以种子落地之前没有任何人能拿这个 id 进场,
+	// 首次 EnterGame 看到的父键只可能是这份种子,或者缺席(缺席 = 走冷读老路,结果相同)。
+	// 尽力而为:种子没写成不影响建角,结论只进日志与计数(seedNewPlayer)。
+	if config.AppConfig.NewPlayerSeed.Enabled {
+		stageDone = observeStage(createPlayerStageSeconds, createStageSeed)
+		l.seedNewPlayer(account, newPlayerId)
+		stageDone()
+	}
+
 	// 6e. Name 是登记表的只读副本(真源 data_service player_name);读侧遇到空名会回源。
 	newPlayer := &login_proto_common.AccountSimplePlayer{
 		PlayerId:     newPlayerId,

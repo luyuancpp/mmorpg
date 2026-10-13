@@ -47,7 +47,7 @@ const (
 	// 与 InvalidRequest 分开:调用方 tag 拼错是"业务拒绝",而合法 tag 缺行是必须告警的故障。
 	ErrCodeIdSegmentUnknownTag uint32 = 20
 
-	// ── 合服(RegisterPlayerZone / RemapHomeZoneForMerge)────────────────────
+	// ── 合服(RegisterPlayerZone / RemapHomeZoneForMerge,remap 已停用)────────
 
 	// ErrCodeZoneMappingConflict:player:zone:{id} 已经存在**且值与请求不同**,
 	// RegisterPlayerZone 拒绝覆盖(SETNX 语义),不写任何键。
@@ -71,8 +71,14 @@ const (
 	// "整个 zone 现在不接受新映射",运维看到后者要去查合服跑完没有。
 	ErrCodeZoneMergeInProgress uint32 = 22
 
-	// ErrCodeAdminAuthRequired:RemapHomeZoneForMerge 这类**改写全服归属**的运维 RPC
-	// 缺少 / 带错 x-admin-token,或服务端根本没配 AdminToken(= 该 RPC 整体停用)。
+	// ErrCodeAdminAuthRequired:运维 RPC 缺少 / 带错 x-admin-token,或服务端根本没配 AdminToken
+	// (= 该 RPC 整体停用)。
+	//
+	// 现在守的是三个 Rollback* RPC 与 ReleasePlayerName 的运维路径(不限登记时间的释放)。
+	// 这个码最初是为 RemapHomeZoneForMerge 设的;remap 自 2026-10-12 起已停用
+	// (docs/design/player-route-mapping-durability-proposal.md §4.3:不论 token 一律回
+	// FailedPrecondition + ErrCodeNotImplemented,不再经过这道鉴权)。下面这段理由以 remap 为例写成,
+	// 对回档同样成立:
 	//
 	// 没配 = 停用 而不是 免鉴权:一个默认敞开的 remap 接口意味着任何能连到
 	// data_service 的进程都能把全服玩家的归属 zone 改掉,而 data_service 在集群内
@@ -86,6 +92,10 @@ const (
 	// RegisterPlayerZone(见 ErrCodeZoneMergeInProgress)。没有标记就改写,说明要么
 	// 有人拿着 admin token 手工调了这个接口,要么工具的步骤被跳过了 —— 两种情况下
 	// 源 zone 都还在线接受新映射,改写会与在线写入交错,产生一批指向源 zone 的漏网玩家。
+	//
+	// **已停用,号不复用**(2026-10-12,docs/design/player-route-mapping-durability-proposal.md §4.3):
+	// RemapHomeZoneForMerge 一律回 FailedPrecondition + ErrCodeNotImplemented,本码不再产生。
+	// 留着常量只为占住 24 这个号 —— 旧日志与告警规则里还可能出现它,换给别的语义会让它们对不上。
 	ErrCodeMergeFenceMissing uint32 = 24
 
 	// ── 玩家名字注册表(docs/design/guild-phase2/03-names.md §3.1)────────────
@@ -138,4 +148,15 @@ const (
 	//
 	// 算故障(进 FaultCodeSet):这是紧急告警口径。
 	ErrCodeRollbackGuildDivergedAfterWrite uint32 = 29
+
+	// ── 玩家归属映射持久化(docs/design/player-route-mapping-durability-proposal.md,第 1a 批)────────
+
+	// ErrCodeRouteStoreError:RouteStore.Mode=db_first 时 RegisterPlayerZone 的库这一段出了故障 ——
+	// route store 没装配起来、route_meta 缺行或 writable≠1、锁等待超时(1205)、1213/9007 重试用尽、
+	// 其它 SQL 错误,以及「mapping Redis 认得这名玩家、player_route 却没有行」(要先跑 route_tool import-from-redis)。
+	//
+	// 与 ErrCodeRedis(1)分开:告警要能一眼分清"全局库坏了"与"mapping Redis 坏了"—— 前者查全局库与迁移,
+	// 后者查 Redis;混成一个码,值班只能两边都翻。只出现在 gRPC status 的 message 里(`error_code=30`,
+	// RegisterPlayerZone 的响应体是 emptypb.Empty),gRPC code 仍是 Unavailable,码集合与 redis 模式相同。
+	ErrCodeRouteStoreError uint32 = 30
 )

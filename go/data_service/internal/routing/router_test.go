@@ -386,6 +386,52 @@ func TestBatchGetPlayerHomeZone(t *testing.T) {
 	assert.False(t, exists)
 }
 
+// 畸形值不再被当成缺席静默跳过:整批报错,与单查 GetPlayerHomeZone 同口径。
+func TestBatchGetPlayerHomeZone_MalformedValueFailsTheBatch(t *testing.T) {
+	r, mr := newTestRouter(t)
+	ctx := context.Background()
+
+	_ = r.RegisterPlayerZone(ctx, 1, 10, 0)
+	require.NoError(t, mr.Set(mappingKey(2), "not-a-zone"))
+
+	result, err := r.BatchGetPlayerHomeZone(ctx, []uint64{1, 2, 999})
+	require.Error(t, err)
+	assert.Nil(t, result)
+	assert.Contains(t, err.Error(), "invalid zone mapping for player 2")
+
+	_, singleErr := r.GetPlayerHomeZone(ctx, 2)
+	require.Error(t, singleErr)
+	assert.NotErrorIs(t, singleErr, ErrHomeZoneNotMapped, "畸形值不是缺席")
+}
+
+func TestGetAllPlayerIDsInZone(t *testing.T) {
+	r, _ := newTestRouter(t)
+	ctx := context.Background()
+
+	_ = r.RegisterPlayerZone(ctx, 11, 7, 0)
+	_ = r.RegisterPlayerZone(ctx, 12, 8, 0)
+	_ = r.RegisterPlayerZone(ctx, 13, 7, 0)
+
+	ids, err := r.GetAllPlayerIDsInZone(ctx, 7)
+	require.NoError(t, err)
+	assert.ElementsMatch(t, []uint64{11, 13}, ids)
+}
+
+// 单键 GET 失败时不能把那名玩家当成「不属于本区」漏掉。用一个类型错误的键制造 GET 失败
+// (SCAN 照常返回它,GET 报 WRONGTYPE)。
+func TestGetAllPlayerIDsInZone_GetErrorFailsTheScan(t *testing.T) {
+	r, mr := newTestRouter(t)
+	ctx := context.Background()
+
+	_ = r.RegisterPlayerZone(ctx, 21, 7, 0)
+	_, err := mr.Lpush(mappingKey(22), "wrong-type")
+	require.NoError(t, err)
+
+	ids, err := r.GetAllPlayerIDsInZone(ctx, 7)
+	require.Error(t, err)
+	assert.Nil(t, ids)
+}
+
 func TestDeletePlayerZone(t *testing.T) {
 	r, _ := newTestRouter(t)
 	ctx := context.Background()
@@ -420,66 +466,8 @@ func TestClientForZone_DevMode(t *testing.T) {
 	assert.NotNil(t, client) // dev mode returns devClient for any zone
 }
 
-func TestRemapHomeZoneForMerge_DryRun(t *testing.T) {
-	r, mr := newTestRouter(t)
-	ctx := context.Background()
-
-	_ = r.RegisterPlayerZone(ctx, 101, 10, 0)
-	_ = r.RegisterPlayerZone(ctx, 102, 10, 0)
-	_ = r.RegisterPlayerZone(ctx, 103, 20, 0)
-	// 闸门先立起来:remap(含 dry-run)要求源 zone 已被封锁,见下面的
-	// TestRemapHomeZoneForMerge_RefusedWithoutFence。
-	require.NoError(t, mr.Set(MergeFenceKey(10), `{"started_at":1757000000}`))
-
-	matched, updated, err := r.RemapHomeZoneForMerge(ctx, 10, 99, true)
-	assert.NoError(t, err)
-	assert.Equal(t, 2, matched)
-	assert.Equal(t, 0, updated)
-
-	z101, _ := r.GetPlayerHomeZone(ctx, 101)
-	assert.Equal(t, uint32(10), z101)
-}
-
-func TestRemapHomeZoneForMerge_Apply(t *testing.T) {
-	r, mr := newTestRouter(t)
-	ctx := context.Background()
-
-	_ = r.RegisterPlayerZone(ctx, 201, 7, 0)
-	_ = r.RegisterPlayerZone(ctx, 202, 8, 0)
-	require.NoError(t, mr.Set(MergeFenceKey(7), `{"started_at":1757000000}`))
-
-	matched, updated, err := r.RemapHomeZoneForMerge(ctx, 7, 11, false)
-	assert.NoError(t, err)
-	assert.Equal(t, 1, matched)
-	assert.Equal(t, 1, updated)
-
-	z201, _ := r.GetPlayerHomeZone(ctx, 201)
-	assert.Equal(t, uint32(11), z201)
-	z202, _ := r.GetPlayerHomeZone(ctx, 202)
-	assert.Equal(t, uint32(8), z202)
-}
-
-// TestRemapHomeZoneForMerge_RefusedWithoutFence:没立标记就改写 = 源 zone 仍在
-// 接受新映射,SCAN 游标之后写进来的玩家会漏网。必须拒绝且零变更。
-func TestRemapHomeZoneForMerge_RefusedWithoutFence(t *testing.T) {
-	r, _ := newTestRouter(t)
-	ctx := context.Background()
-
-	_ = r.RegisterPlayerZone(ctx, 301, 5, 0)
-
-	for _, dryRun := range []bool{true, false} {
-		matched, updated, err := r.RemapHomeZoneForMerge(ctx, 5, 6, dryRun)
-		require.Error(t, err, "dry_run=%t", dryRun)
-		assert.ErrorIs(t, err, ErrMergeFenceMissing)
-		assert.Contains(t, err.Error(), "merge:in_progress:5", "错误要告诉运维缺哪把键")
-		assert.Zero(t, matched)
-		assert.Zero(t, updated)
-	}
-
-	z301, err := r.GetPlayerHomeZone(ctx, 301)
-	require.NoError(t, err)
-	assert.Equal(t, uint32(5), z301, "被拒绝的 remap 必须零变更")
-}
+// RemapHomeZoneForMerge 的三个用例随函数一起删除(2026-10-12,proposal §4.3 的 W2);
+// gRPC 入口恒拒的契约由 server 包的 TestRemapHomeZoneForMerge_AlwaysFailedPrecondition 钉住。
 
 func TestAcquireAndReleasePlayerLock(t *testing.T) {
 	r, _ := newTestRouter(t)

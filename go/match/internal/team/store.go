@@ -451,27 +451,32 @@ func (s *Store) PruneInvite(ctx context.Context, playerId, teamId uint64, score 
 const (
 	// endMatchRoundTimeout EndMatch 每一轮(S_READ + 会话读 + S_COMMIT)的独立超时,不继承任何请求 ctx。
 	endMatchRoundTimeout = 2 * time.Second
-	// endMatchMaxDuration 进程内单调时钟兜底上限(§E.1 EndMatch 第 4 步),必须 ≥ 最长的开战锁时长,
-	// 否则 Redis 读写持续失败时循环先于锁截止放弃,全队停在 STARTING 直到锁自然过期。
-	// 依据:锁时长 = logic.TeamBattleStarter.MatchLockTTLSeconds,5 人(Capacity 上限)=
-	// matchedTicketTTLFor(5) 66 + compensationTicketTTLFor(5) 25 + teamMatchLockSlackSeconds 10 = 101s;
-	// EndMatch 在锁提交之后才启动,剩余锁时长不超过 101s。取 110s,再留出一轮 endMatchRoundTimeout(2s)
-	// 加最大退避(1s ±20%)的余量。team 不 import logic,这里只能写死数字:把 MatchedTicketTTLSeconds
-	// 配到 75 以上(锁 > 110s)或改 matched TTL 公式时,这个值要一并上调。
-	endMatchMaxDuration = 110 * time.Second
 	// 冲突 / 故障退避:50ms 起翻倍,上限 1s,±20% 抖动。
 	endMatchBackoffInitial = 50 * time.Millisecond
 	endMatchBackoffMax     = time.Second
 	endMatchBackoffJitter  = 0.2
 )
 
+// endMatchDeadline EndMatch 的进程内单调时钟兜底上限(§E.1 EndMatch 第 4 步)。lockTTL 是这把锁加锁时用的
+// 时长(BattleStarter.MatchLockTTLSeconds 的结果,由 StartTeamMatch 一路传下来);EndMatch 在锁提交之后才启动,
+// 剩余锁时长不超过 lockTTL。上限必须 ≥ 锁时长,否则 Redis 读写持续失败时循环先于锁截止放弃,
+// 全队停在 STARTING 直到锁自然过期;再加一轮 endMatchRoundTimeout 与最大退避(上限 + 抖动上沿)的余量。
+// 由锁时长推出而不是写死:锁时长随 MatchedTicketTTLSeconds 配置变化(5 人默认 101s,配 120 时 155s),
+// 写死的数字只能靠注释与之对齐,配置一调就失守。
+func endMatchDeadline(lockTTL time.Duration) time.Duration {
+	maxBackoff := time.Duration(float64(endMatchBackoffMax) * (1 + endMatchBackoffJitter))
+	return lockTTL + endMatchRoundTimeout + maxBackoff
+}
+
 // EndMatch 的测试缝(生产值不可在运行期修改):
 //
 //	afterMatchReadHook  每轮 S_READ 之后、判定之前调用,确定性地制造"锁期间别人提交"的 ver 冲突(§I.3 #30);
-//	endMatchSleepFn     退避等待,测试换成记录器不真睡。
+//	endMatchSleepFn     退避等待,测试换成记录器不真睡;
+//	endMatchElapsedFn   兜底上限用的单调时钟读数,测试换成随 endMatchSleepFn 推进的假时钟。
 var (
 	afterMatchReadHook func(teamId uint64)
 	endMatchSleepFn    = time.Sleep
+	endMatchElapsedFn  = time.Since
 )
 
 // PinnedResult 钉版本提交(开战锁 / EndMatch 清锁)的结果。
@@ -541,11 +546,13 @@ type EndMatchResult struct {
 //  2. 记录不存在 / token 不符 / nowMs ≥ 锁截止 → 停止,不写;
 //  3. 否则按 expectedVer=ver 提交清锁;{0} → 退避后回第 1 步;{-2} → 修复后立即回第 1 步。
 //
-// 截止:锁自己的截止时间(每轮用 nowMs 判)+ 进程内单调时钟 endMatchMaxDuration 兜底(§11.3)。
+// 截止:锁自己的截止时间(每轮用 nowMs 判)+ 进程内单调时钟 endMatchDeadline(lockTTL) 兜底(§11.3)。
+// lockTTL 必须是这把锁加锁时用的时长(见 endMatchDeadline)。
 // 同步阻塞直到结局,调用方放在后台 goroutine;不推送、不打指标(服务层按结果处理)。
-func (s *Store) EndMatch(teamId uint64, token string, ok bool) *EndMatchResult {
+func (s *Store) EndMatch(teamId uint64, token string, ok bool, lockTTL time.Duration) *EndMatchResult {
 	res := &EndMatchResult{}
 	start := time.Now()
+	deadline := endMatchDeadline(lockTTL)
 	backoff := endMatchBackoffInitial
 	wait := func() {
 		endMatchSleepFn(jittered(backoff))
@@ -554,7 +561,7 @@ func (s *Store) EndMatch(teamId uint64, token string, ok bool) *EndMatchResult {
 		}
 	}
 	for {
-		if time.Since(start) >= endMatchMaxDuration {
+		if endMatchElapsedFn(start) >= deadline {
 			res.Stop = EndMatchDeadline
 			return res
 		}

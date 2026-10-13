@@ -990,8 +990,8 @@ function Get-GlobalGoSvcNames {
 $SnowflakeCacheDir = "/tmp/snowflake"
 
 # data_service 全局库(SnapshotMySQL.DBName)。transaction_log / player_snapshot / rollback_audit_log /
-# id_segment 四张表由 data_service 启动期(或 -migrate)建在这里,所以库必须预先存在且账号有
-# CREATE 权限:infra-up 的 mysql-init-sql ConfigMap 会生成 02_k8s_global_db.sql 预建它并 GRANT 给
+# id_segment 等全局表(清单以 go/data_service/internal/store/schema.go 为准)由 data_service
+# 启动期(或 -migrate)建在这里,所以库必须预先存在且账号有 CREATE 权限:infra-up 的 mysql-init-sql ConfigMap 会生成 02_k8s_global_db.sql 预建它并 GRANT 给
 # appuser(New-MysqlInitConfigMapYaml)。它是**全集群一份**,不按 zone 拆;与
 # go/data_service/etc/data_service.yaml 本地用的 testdb 刻意不同名 —— 生产库不叫 testdb。
 $GlobalDbName = "mmorpg_global"
@@ -3098,6 +3098,14 @@ function New-GoSvcConfigMapYaml {
 	# 分区契约的代号,进有效 topic 名(<基名>_g<N>,config.go EffectiveTransactionLogTopic)。镜像进 ConfigMap 是为了
 	# 让「这个集群消费第几代 topic」一眼可见;Apply-KafkaTopicInitJob 用同一个键预建 topic,两边不会各说各话。
 	$dsKafkaTopicGeneration       = Get-AuthoritativeScalar -RelativePath $dsYaml -KeyPath 'Kafka.TopicGeneration'
+	# player_snapshot 消费者的批量 / 并发旋钮与 lag 探针(G2a,config.go KafkaConfig):同样从服务 yaml 镜像,生成器不自带常数。
+	# 越界由 data_service 启动时 ValidateConsumers 拒启;打开批量(SnapshotBatchMaxRows > 1)是负责人拍板的显式动作,
+	# 改服务 yaml 即可,见 docs/ops/audit-topic-generation-bump-runbook.md。
+	$dsKafkaSnapshotBatchMaxRows       = Get-AuthoritativeScalar -RelativePath $dsYaml -KeyPath 'Kafka.SnapshotBatchMaxRows'
+	$dsKafkaSnapshotBatchMaxBytes      = Get-AuthoritativeScalar -RelativePath $dsYaml -KeyPath 'Kafka.SnapshotBatchMaxBytes'
+	$dsKafkaSnapshotFlushIntervalMs    = Get-AuthoritativeScalar -RelativePath $dsYaml -KeyPath 'Kafka.SnapshotFlushIntervalMs'
+	$dsKafkaSnapshotMaxInflightFlushes = Get-AuthoritativeScalar -RelativePath $dsYaml -KeyPath 'Kafka.SnapshotMaxInflightFlushes'
+	$dsKafkaLagProbeIntervalMs         = Get-AuthoritativeScalar -RelativePath $dsYaml -KeyPath 'Kafka.LagProbeIntervalMs'
 	$dsMysqlMaxOpenConn           = Get-AuthoritativeScalar -RelativePath $dsYaml -KeyPath 'SnapshotMySQL.MaxOpenConn'
 	$dsMysqlMaxIdleConn           = Get-AuthoritativeScalar -RelativePath $dsYaml -KeyPath 'SnapshotMySQL.MaxIdleConn'
 	# C++ 约定注册(DataServiceNodeService.rpc)那把 etcd 租约的 TTL:Go config 顶层键、默认 60
@@ -3375,7 +3383,7 @@ function New-GoSvcConfigMapYaml {
 		$dbAutoMigrateSchema = Get-AuthoritativeScalar -RelativePath 'go/db/etc/db.yaml' -KeyPath 'ServerConfig.Database.AutoMigrateSchema'
 	}
 
-	# data_service 全局库四张表的建表策略(go/data_service/internal/config/config.go SchemaConfig),
+	# data_service 全局库各表的建表策略(go/data_service/internal/config/config.go SchemaConfig),
 	# 与上面 db 的 AutoMigrateSchema 同一条纪律:dev 档镜像服务 yaml 的值(AutoMigrate=true,
 	# 起了就能用);staging/prod 固定 false —— 多副本同时启动会对同一张表并发 ALTER 互相 MDL 阻塞,
 	# 生产改在部署阶段单进程跑一次 `data_service -f /app/etc/data_service.yaml -migrate`
@@ -3503,7 +3511,8 @@ PlayerLockTTLSec: 3
 ZoneId: ${CurrentZoneId}
 LeaseTTL: ${dsLeaseTTL}
 # 全局库(node-id-overhaul-plan §2.0c / §6.2):transaction_log / player_snapshot / rollback_audit_log /
-# id_segment 四张表都在这里,由 data_service 按 proto 建表。库名 ${GlobalDbName} 由 infra-up 的
+# id_segment / player_name 与映射持久化的路由表(player_route 等,第 1a 批)都在这里,由 data_service 迁移建表
+# (proto 驱动 + 手写 DDL,清单以 go/data_service/internal/store/schema.go 为准)。库名 ${GlobalDbName} 由 infra-up 的
 # mysql-init-sql(02_k8s_global_db.sql)预建并 GRANT 给 appuser;账号沿用 db 服务同一组注入值
 # (MMORPG_MYSQL_USER / MMORPG_MYSQL_PASSWORD,dev 回落 root),换成别的账号要自己补 GRANT。
 # 以前这份 ConfigMap 没有本段,Go 默认值是 127.0.0.1:3306/testdb —— K8s 上必然连不上:
@@ -3522,6 +3531,11 @@ Schema:
 # 所有档位都写 true;本地 yaml 不写(缺省 false,沿用降级运行)。
 Store:
   Required: true
+# 映射提交点(player-route-mapping-durability-proposal.md §4、§11.2,第 1a 批):所有档位固定 redis,不镜像服务 yaml ——
+# 切 db_first 是 P2 的显式运维动作:先进冻结窗口(第 2 批前禁 merge_zone 一切写模式)、P1 导入 + audit 为 0、建角压测;
+# 切换时还要按 redis 拓扑补 WaitAOF 两项(redis-ha:NumReplicas=1),并确认镜像里有 route_tool(第 1b 批补入口,proposal §11.2)。
+RouteStore:
+  Mode: redis
 # 与 manifest 的 9260 端口、prometheus 注解一致。多副本之后要能按 Pod 看消费者是否在跑。
 MetricsListenAddr: ":9260"
 # id_segment 行播种策略(见生成器注释):dev = 服务 yaml 的值;staging/prod = false,缺行不自动播种,
@@ -3547,6 +3561,12 @@ Kafka:
   SnapshotPartitions: ${dsKafkaSnapshotPartitions}
   SnapshotConsumerGroup: ${dsKafkaSnapshotConsumerGroup}
   RetentionMs: ${dsKafkaRetentionMs}
+  # player_snapshot 消费者的批量 / 并发旋钮与 lag 探针(G2a):值来自服务 yaml(默认 = 逐条串行 + lag 探针 30s)。
+  SnapshotBatchMaxRows: ${dsKafkaSnapshotBatchMaxRows}
+  SnapshotBatchMaxBytes: ${dsKafkaSnapshotBatchMaxBytes}
+  SnapshotFlushIntervalMs: ${dsKafkaSnapshotFlushIntervalMs}
+  SnapshotMaxInflightFlushes: ${dsKafkaSnapshotMaxInflightFlushes}
+  LagProbeIntervalMs: ${dsKafkaLagProbeIntervalMs}
 "@
 		}
 		"login" {
@@ -5478,7 +5498,7 @@ function Get-InfraZoneIds {
 	文件名顺序执行);CREATE DATABASE IF NOT EXISTS 与 00_ 里的 zone_1/2 重叠无害。
 
 	另生成 02_k8s_global_db.sql 预建 data_service 的全局库 $GlobalDbName(全集群一份,
-	不按 zone 拆):data_service 启动期 / -migrate 要在里面 CREATE TABLE 四张表,库不在或
+	不按 zone 拆):data_service 启动期 / -migrate 要在里面 CREATE TABLE 全局表,库不在或
 	账号无权就只剩 "schema auto-migrate failed",AllocateIdSegment 随之不可用。
 	仓库里 00_init_zone_dbs.sql 顺带建的 testdb 只服务本地 compose 的
 	go/data_service/etc/data_service.yaml,在 K8s 上是一个没人用的空库,无害。
@@ -5525,7 +5545,7 @@ function New-MysqlInitConfigMapYaml {
 	# 这条 GRANT 是给 staging/prod 把 MMORPG_MYSQL_USER 注成 appuser 的部署用的。
 	$globalSql = @(
 		"-- 由 k8s_deploy.ps1 Apply-Infra 生成,不要手改:data_service 全局库",
-		"-- (transaction_log / player_snapshot / rollback_audit_log / id_segment 四张表由 data_service 按 proto 建)。",
+		"-- (transaction_log / player_snapshot / rollback_audit_log / id_segment 等全局表由 data_service 迁移建,清单见其 internal/store/schema.go)。",
 		"-- 全集群一份,不按 zone 拆;go-svc-data-service-config 的 SnapshotMySQL.DBName 指向它。",
 		"",
 		('CREATE DATABASE IF NOT EXISTS `{0}`;' -f $GlobalDbName),

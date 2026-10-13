@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"shared/placement"
+	"shared/sqlpoolstats"
 	"strconv"
 	"sync"
 	"time"
@@ -92,6 +93,8 @@ type StoreRegistryOptions struct {
 
 // StoreRegistry 按落点编号给出已打开的库。并发安全:所有 worker 子分片共用一个实例。
 type StoreRegistry struct {
+	// home 是本 zone 的落点编号(= ZoneId),构造后只读;PoolSamples 据此把本 zone 库与额外 zone 家族库分开计。
+	home          uint32
 	allow         dbguard.Allowlist
 	allowFamilies bool
 	open          StoreOpener
@@ -149,6 +152,7 @@ func NewStoreRegistry(opts StoreRegistryOptions) (*StoreRegistry, error) {
 	}
 	metrics.SetPlacementOpenStores(1)
 	return &StoreRegistry{
+		home:          opts.HomeStorageID,
 		allow:         opts.Allow,
 		allowFamilies: opts.AllowFamilies,
 		open:          opts.Open,
@@ -168,22 +172,106 @@ func NewStoreRegistryFromConfig() (*StoreRegistry, error) {
 		return nil, fmt.Errorf("resolve database allow list: %w", err)
 	}
 	pc := config.AppConfig.Placement
-	maxOpen, maxIdle := pc.ExtraStoreMaxOpenConn, pc.ExtraStoreMaxIdleConn
+	idleTimeout := time.Duration(pc.ExtraStoreConnMaxIdleSeconds) * time.Second
+	pools := extraStorePools{
+		Zone:    StorePoolOptions{MaxOpenConn: pc.ZoneStoreMaxOpenConn, MaxIdleConn: pc.ZoneStoreMaxIdleConn, ConnMaxIdleTime: idleTimeout},
+		NonZone: StorePoolOptions{MaxOpenConn: pc.NonZoneStoreMaxOpenConn, MaxIdleConn: pc.NonZoneStoreMaxIdleConn, ConnMaxIdleTime: idleTimeout},
+	}
 	registry, err := NewStoreRegistry(StoreRegistryOptions{
 		HomeStorageID: config.AppConfig.ZoneId,
 		Home:          DB,
 		Allow:         allow,
 		AllowFamilies: pc.StoreFamiliesAllowed(),
 		Open: func(ctx context.Context, dbName string) (*GameDB, error) {
-			return OpenPlacementStore(ctx, dbName, maxOpen, maxIdle)
+			pool, err := pools.storePoolFor(dbName)
+			if err != nil {
+				return nil, err
+			}
+			return OpenPlacementStore(ctx, dbName, pool)
 		},
 	})
 	if err != nil {
 		return nil, err
 	}
-	logx.Infof("[placement] store registry ready: zone=%d allowlist=%s storeFamilies=%v required=%v extraPool=%d/%d",
-		config.AppConfig.ZoneId, allow.String(), pc.StoreFamiliesAllowed(), pc.Required, maxOpen, maxIdle)
+	logx.Infof("[placement] store registry ready: zone=%d allowlist=%s storeFamilies=%v required=%v zoneStorePool=%d/%d nonZoneStorePool=%d/%d extraStoreIdleTimeout=%v",
+		config.AppConfig.ZoneId, allow.String(), pc.StoreFamiliesAllowed(), pc.Required,
+		pools.Zone.MaxOpenConn, pools.Zone.MaxIdleConn, pools.NonZone.MaxOpenConn, pools.NonZone.MaxIdleConn, idleTimeout)
 	return registry, nil
+}
+
+// PoolSamples 返回此刻每个已打开库的连接池快照(shared/sqlpoolstats.Source,G2b)。
+// 类别只有三种(metrics.Pool*):本 zone 库、额外 zone 家族库、非 zone 落点库。读锁内只拷出 *sql.DB,
+// Stats() 在锁外取(它自己加 db.mu),不挡按需打开。没有连接的库(单测的 storeNamed)跳过。
+// 池常驻不删(见文件头),所以按类别求和的 counter 单调,满足 sqlpoolstats 的前提。
+func (r *StoreRegistry) PoolSamples() []sqlpoolstats.Sample {
+	type pooled struct {
+		pool string
+		db   *sql.DB
+	}
+	r.mu.RLock()
+	handles := make([]pooled, 0, len(r.stores))
+	for storageID, store := range r.stores {
+		if store == nil || store.DB == nil {
+			continue
+		}
+		handles = append(handles, pooled{pool: r.poolClassOf(storageID), db: store.DB})
+	}
+	r.mu.RUnlock()
+
+	samples := make([]sqlpoolstats.Sample, 0, len(handles))
+	for _, h := range handles {
+		samples = append(samples, sqlpoolstats.Sample{Pool: h.pool, Stats: h.db.Stats()})
+	}
+	return samples
+}
+
+// poolClassOf 给出落点编号的连接池类别。
+func (r *StoreRegistry) poolClassOf(storageID uint32) string {
+	switch {
+	case storageID == r.home:
+		return metrics.PoolHome
+	case placement.IsZoneStorage(storageID):
+		return metrics.PoolExtraZone
+	default:
+		return metrics.PoolExtraNonZone
+	}
+}
+
+// StorePoolOptions 是一个额外落点库连接池的参数(本 zone 库的池由 InitDB 按 Database.MaxOpenConn 设,不走这里)。
+type StorePoolOptions struct {
+	MaxOpenConn     int
+	MaxIdleConn     int
+	ConnMaxIdleTime time.Duration
+}
+
+// extraStorePools 是两类额外落点库各自的池参数(Placement.ZoneStore* / NonZoneStore*)。
+type extraStorePools struct {
+	Zone    StorePoolOptions
+	NonZone StorePoolOptions
+}
+
+// storePoolFor 按库名所属家族选池参数。库名由 placement.StoreDBName 派生(openOnce),只可能属于两个家族之一;
+// 解析不出来是编程错误,fail-closed 报错(经 openOnce 包成 ErrStoreUnavailable,写延后、不耗重试),不猜一个池。
+func (p extraStorePools) storePoolFor(dbName string) (StorePoolOptions, error) {
+	storageID, ok := placement.StorageIDFromDBName(dbName)
+	if !ok {
+		return StorePoolOptions{}, fmt.Errorf("database %q belongs to neither placement store family; cannot pick its connection pool", dbName)
+	}
+	if placement.IsZoneStorage(storageID) {
+		return p.Zone, nil
+	}
+	return p.NonZone, nil
+}
+
+// applyStorePool 把池参数设到 handle 上;ConnMaxLifetime 与本 zone 库同为 5 分钟(proto_sql/db.go InitDB)。
+// ConnMaxIdleTime ≤ 0 时不设(= database/sql 默认不按空闲时长回收)。
+func applyStorePool(handle *sql.DB, pool StorePoolOptions) {
+	handle.SetMaxOpenConns(pool.MaxOpenConn)
+	handle.SetMaxIdleConns(pool.MaxIdleConn)
+	handle.SetConnMaxLifetime(5 * time.Minute)
+	if pool.ConnMaxIdleTime > 0 {
+		handle.SetConnMaxIdleTime(pool.ConnMaxIdleTime)
+	}
 }
 
 // Store 返回落点 storageID 对应的库,必要时按需打开。
@@ -296,7 +384,8 @@ func (r *StoreRegistry) recordFailure(storageID uint32, err error) {
 // 仍落在 DSN 的默认库;proto2mysql main(83fed85 起)的 OpenDB 已改为不 USE、只校验 DSN 的库。
 // 两种实现下「库由 DSN 默认库决定」都成立,所以每个落点库一个连接池,DSN 的库名就是落点库名。
 // 多个库共用一个 *sql.DB 靠 USE 切换,写会随连接复用漂到别的库上。
-func OpenPlacementStore(ctx context.Context, dbName string, maxOpenConn, maxIdleConn int) (*GameDB, error) {
+// pool 由调用方按库所属家族选好(extraStorePools.storePoolFor)。
+func OpenPlacementStore(ctx context.Context, dbName string, pool StorePoolOptions) (*GameDB, error) {
 	if err := validateDatabaseIdentifier(dbName); err != nil {
 		return nil, err
 	}
@@ -311,9 +400,7 @@ func OpenPlacementStore(ctx context.Context, dbName string, maxOpenConn, maxIdle
 		return nil, fmt.Errorf("create MySQL connector for %s: %w", dbName, err)
 	}
 	handle := sql.OpenDB(connector)
-	handle.SetMaxOpenConns(maxOpenConn)
-	handle.SetMaxIdleConns(maxIdleConn)
-	handle.SetConnMaxLifetime(5 * time.Minute)
+	applyStorePool(handle, pool)
 	store, err := preparePlacementStore(ctx, handle, dbName, tables)
 	if err != nil {
 		_ = handle.Close()

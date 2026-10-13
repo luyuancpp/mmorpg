@@ -4,6 +4,7 @@
 > **代码**: `go/login/internal/logic/pkg/loginqueue/`, `java/gateway_node/.../service/AssignGateService.java`
 > **运维**: [docs/ops/login-queue-stress-runbook.md](../ops/login-queue-stress-runbook.md)
 > **关联**: 2026-05-08 [open-server-rate-limit-design.md](./open-server-rate-limit-design.md)(Bucket4j 限流);本文是其**互补层**,不是替代
+> **修订**: 2026-10-12 G1b — 出队 leader 锁改为每 zone 一把(§7.1)
 
 ---
 
@@ -60,8 +61,8 @@ Client ── POST ───►│ /api/assign-gate                             
                    │ QueryQueueStatus handler:                                │
                    │   验签 + Lookup → ADMITTED 或 QUEUEING                   │
                    │                                                          │
-                   │ Dispatcher goroutine(单 leader,1s 一拍):              │
-                   │   for zone:                                              │
+                   │ Dispatcher goroutine(每 zone 一个 leader,1s 一拍):       │
+                   │   只出本 zone(Node.ZoneId):                              │
                    │     free = capacity - online - admitted_inflight         │
                    │     ZPOPMIN free 个 → 签 gate token → SET admit:{queueId}│
                    └──────────────────────────────────────────────────────────┘
@@ -72,7 +73,7 @@ Client ── POST ───►│ /api/assign-gate                             
                    ─ admitted:zone:{zoneId}   SET of queueId, TTL=60s(滑动)
                    ─ queue:meta:{queueId}     HASH {account,device,zoneId,createdAt}, TTL=1h
                    ─ queue:token:{token}      STRING queueId, TTL=1h(token→queueId 反查)
-                   ─ dispatcher:lock:login_queue  STRING uuid, TTL=30s(leader 锁)
+                   ─ dispatcher:lock:login_queue:zone:{zoneId}  STRING uuid, TTL=30s(本 zone leader 锁)
 ```
 
 ---
@@ -167,17 +168,20 @@ free         = max(0, capacity - online - admitted_inflight)
 ### Dispatcher Loop
 
 ```
-for each zoneId in activeZones():
-    free = FreeSlots(zoneId)
-    if free <= 0 or ZCARD == 0: continue
-    batch = min(free, ZCARD)
-    members = ZPOPMIN queue:zone:{zoneId} batch
-    for each queueId in members:
-        admit = PickAndSignGateToken(zoneId)  // 选 gate + 签 HMAC
-        SET admit:{queueId} <admit JSON> EX AdmitTTL
-        SADD admitted:zone:{zoneId} queueId
-        EXPIRE admitted:zone:{zoneId} AdmitTTL  // 滑动 TTL
+zoneId = Node.ZoneId  // 只出本 zone;队列空直接跳过
+if ZCARD queue:zone:{zoneId} == 0: return   // 先判空,空闲 zone 不碰 gate 目录
+free = FreeSlots(zoneId)                    // 再算容量
+if free <= 0: return
+batch = min(free, ZCARD)
+members = ZPOPMIN queue:zone:{zoneId} batch
+for each queueId in members:
+    admit = PickAndSignGateToken(zoneId)  // 选 gate + 签 HMAC
+    SET admit:{queueId} <admit JSON> EX AdmitTTL
+    SADD admitted:zone:{zoneId} queueId
+    EXPIRE admitted:zone:{zoneId} AdmitTTL  // 滑动 TTL
 ```
+
+2026-10-12(G1b)以前是 `for each zoneId in activeZones()`,且先 FreeSlots 后 ZCARD。`activeZones` 实际只含本 zone(见 §7.1),所以改成单 zone 不丢功能。改成先判空的代价:队列非空、本 zone 却一台 gate 都没有时,每拍一条 `[loginqueue] freeSlots zone=… queueLen=… err=…` ERROR(以前被静默跳过)。
 
 **signFn 失败回滚**:如果选 gate 或签 token 失败(罕见,gate 全部下线),把 queueId 以 score=0 重新 ZADD,保证下一拍最优先重试,不丢人。见 `queue.go:PopAdmit`。
 
@@ -202,7 +206,8 @@ queue_token = base64url( JSON{kind:"queue", q:queueId, z:zoneId, e:expireTs} | "
 复用现有 `pkg/locker.RedisLocker`:
 
 ```go
-lock, _ := rl.TryLock(ctx, "dispatcher:lock:login_queue", 30*time.Second)
+// 锁键 = <Queue.DispatcherLockKey>:zone:<Node.ZoneId>,每个 zone 一把(§7.1)
+lock, _ := rl.TryLock(ctx, ZoneDispatcherLockKey(cfg.DispatcherLockKey, zoneID), 30*time.Second)
 if lock.IsLocked() {
     stopHeartbeat := lock.StartHeartbeat(10*time.Second, 30*time.Second, onLost)
     drainLoop(ctx)  // 1s 一拍出队
@@ -210,11 +215,42 @@ if lock.IsLocked() {
 }
 ```
 
-- 非 leader 副本每 10s `TryLock` 重试,被动备份
+- 同 zone 的非 leader 副本每 10s `TryLock` 重试,被动备份
 - Lost lease(Redis 抖动 / 手动 kill)→ heartbeat 触发 `drainCancel`,goroutine 退出
 - 新 leader 在 ≤ TTL(30s)内接管。期间 admit 暂停,客户端继续轮询不报错(只是 rank 不动)
 
 **为什么不用 etcd 选举**:RedisLocker 已在项目里跑了几个月没翻车,加 etcd lease 是重复造轮子。RedisLocker 唯一弱点是 Redis 主从切换时短暂双 leader,但本场景下双 leader 的最坏情况是 admit 多发一批(玩家更早进游戏),不是数据损坏。
+
+### 7.1 为什么按 zone 分锁(G1b,2026-10-12)
+
+**缺陷**:锁的范围和出队范围原来由两个独立的输入决定,两者对不上。
+
+- 锁键取配置 `Queue.DispatcherLockKey`,默认 `dispatcher:lock:login_queue`,全服只有一把。
+- 出队范围是 `activeZones`。它的注释说取「有 gate 的 zone ∪ 非空队列的 zone」,实现却只遍历 GateWatcher 的节点;而 GateWatcher 的 etcd 前缀带本进程 `Node.ZoneId`,所以结果只有本 zone。
+- 就算 leader 去遍历别的 zone 也出不了队:候选 gate 按 zone 过滤,本进程只看得见本 zone 的 gate,`FreeSlots` 对外 zone 报 `no gates for zone`。
+- 网关按 zone 把 AssignGate 路由到该 zone 的 login,`queue:zone:Z` 只会由 zone Z 的 login 写入。
+
+多个 zone 共用一个 Redis 时(K8s 下所有 zone 的 login 都连同一个 Redis),只有抢到锁的那个 zone 出队,其它 zone 的 login 每 10s 重试一次、永远不出队。快速通道要求队列为空,所以非 leader zone 只要有一个人入队,之后进来的人全部入队,而每次 ZADD 都刷新 ZSET 的 TTL,队列永不过期——整个 zone 被堵死。
+
+**修法**:`Dispatcher` 只认一个 `zoneID`(本 login 的 `Node.ZoneId`)。出队范围用它,锁键也从它派生:`<DispatcherLockKey>:zone:<zoneID>`(`loginqueue.ZoneDispatcherLockKey`)。每个 zone 一个 leader,两种范围在结构上不会再对不上。配置键名和默认值不变(`DispatcherLockKey` 的语义从「锁键」变为「锁键前缀」);`Queue.Enabled=true` 时 `Node.ZoneId` 为 0 或前缀为空,login 起服即失败(开了排队却出不了队 = 队列只进不出)。客户端契约不变。
+
+**为什么不选「全局 leader + activeZones 覆盖所有 zone」**:要让 leader 出得了别的 zone 的队,它得同时具备 (a) 跨 zone 的 gate 视图(另起一个不带 zone 的 etcd watch,并和 `buildGateCandidates` 的过滤、去重保持一致);(b) 所有 zone 的 `ZoneCapacityOverride`,而这个配置是按 zone 分开下发的;(c) 接受「一台 login 挂了,全服排队停摆约 30s」的跨 zone 耦合。按 zone 拆锁三样都不需要,改动也最小。Java 版的全局 leader 遍历全部 OPEN 区、gate 来自共享 Redis 目录,锁范围与出队范围本来一致,不受此缺陷影响。
+
+**同一 zone 的副本必须配同一个 `DispatcherLockKey`**:配得不一样就是两把互不相干的锁,该 zone 长期双 leader(修复前后都如此)。不同 zone 可以同值,也可以不同。
+
+**滚动升级(新旧锁键并存窗口)**:老版本 leader 持全服旧键、出它所在的 zone Zo;Zo 里已升级的新副本抢 `…:zone:Zo`。两把锁不互斥,Zo 会短暂出现两个 leader;其它 zone 的新副本从升级那一刻起就恢复出队。两个 leader 同时出同一个 zone:
+
+1. **不丢人、不重复放行**:`ZPOPMIN` 原子,每个 queueId 只会被一个 leader 弹出;挑 gate 失败时放回的只是自己弹出的那些。这里的「不丢人」是指双 leader 不比单 leader 多丢——`PopAdmit` 既有的几条丢条目路径(`pickFn` 返回 `(nil, nil)`、`json.Marshal` 或写 admit 的事务失败)单 leader 下同样存在。
+2. **超发有界**:每个 leader 都按自己读到的 `SCARD admitted` 算余量,自己上一拍的 SADD 在下一拍读数之前已完成,所以每个 leader 的在途数 ≤ cap − online,两个合计 ≤ 2×(cap − online)。与上文「双 leader 最坏是 admit 多发一批」的判断一致。
+3. **消除窗口的办法(推荐)**:当前所有环境的排队都是关的。**在 `Enabled=false` 下把本修复滚完,再打开排队**,根本不会出现并存窗口(此时也不构造 dispatcher,`login_queue_dispatcher_is_leader` 一条序列都没有,新旧标签集不会并存)。偏要在 `Enabled=true` 下滚动时,旧 pod 的序列在 `sum by (zone)` 里归到 `zone=""` 一组,这组触发告警属于预期。老版本不再续期后,全服旧键 30s 内自然过期,不需要人工清理。
+
+由 `TestIntegration_DualLeadersSameZone_NoLossBoundedOverAdmit` 钉住 1、2 两条。
+
+**前提:锁与它保护的队列在同一个 Redis 实例上**。以后按用途拆 Redis 时,leader 锁必须跟着排队键走;拆开后 Redis 抖动会出现「锁还在、队列读不到」或反过来的组合,上面的有界分析就不成立。按 zone 分锁本身与「每 zone 一个 Redis」「全服共享一个 Redis」两种拓扑都兼容。
+
+**zone-down 与合服后旧 zone 的队列**:本修复不产生新的残留。源 zone S 的 login 下线后不再有人 ZADD,`queue:zone:S` 在最后一次入队后 `QueueEntryTTL`(1h)内过期,`admit:*` 与 `admitted:zone:S` 在 `AdmitTTL`(60s)内过期,锁键 30s 内过期。目标 zone T 的 leader 只出 `queue:zone:T`;S 的排队玩家重新走 AssignGate 时按角色列表给出的归属 zone 进 T 的队,排队位次不迁移(§14 第 4 条)。合服回退把 S 拉起来后,S 的新 leader 自然接手。要立即清理见 §15。
+
+**停机空窗(未核实,既有行为)**:SIGTERM 路径能否走到 `Dispatcher.Stop()` 主动释放锁尚未核实(login 与 scene_manager 的注释说法冲突)。最坏情况是锁按 TTL 过期,滚动升级时该 zone 约 30s 没有 leader,期间不放行、不丢人。修复前(全服锁)也是这样,不是 G1b 引入的回归。
 
 ---
 
@@ -259,7 +295,7 @@ Queue:
   SoftCapMultiplier: 1.5            # 没配 ZoneCapacityOverride 时,用 max(online,1) * mult
   DefaultRetryAfterMs: 2000         # 客户端轮询间隔建议
   DispatcherLockTTL: 30s            # leader 锁 TTL
-  DispatcherLockKey: "dispatcher:lock:login_queue"
+  DispatcherLockKey: "dispatcher:lock:login_queue"  # 锁键前缀;实际 = <前缀>:zone:<Node.ZoneId>,每 zone 一个 leader
   ZoneCapacityOverride:             # 推荐生产配死,不靠 SoftCapMultiplier 估算
     "1": 5000
     "2": 5000
@@ -298,7 +334,7 @@ q_entered=4080 q_admitted=920 q_expired=3 q_avg_wait=28s q_max_rank=4078
 | `login_queue_wait_seconds` | Histogram | zone |
 | `login_queue_admit_total` | Counter | zone |
 | `login_queue_expired_total` | Counter | zone, reason |
-| `login_queue_dispatcher_is_leader` | Gauge | pod |
+| `login_queue_dispatcher_is_leader` | Gauge | pod, zone |
 
 ---
 
@@ -332,7 +368,7 @@ q_entered=4080 q_admitted=920 q_expired=3 q_avg_wait=28s q_max_rank=4078
 2. **Prometheus 接入**:列在 §11,本期未做,等首次生产灰度后再加。
 3. **进场景排队**:本期不做,等真有"攻城战"等玩法时按同一套 ZSET 模板升级。详见对话记录中 §"为什么本期不做"。
 4. **Queue token 转移**:玩家换设备重登拿到新 token,丢失原位置。目前可接受。
-5. **多 zone 公平性**:dispatcher 按 `activeZones` 顺序遍历,极端情况下前面 zone 抢光 admit 批次。实测不是问题(每 zone 独立 FreeSlots),边界条件待观察。
+5. ~~**多 zone 公平性**:dispatcher 按 `activeZones` 顺序遍历,极端情况下前面 zone 抢光 admit 批次。~~ 已由 §7.1 消解:每个 zone 有独立的 leader,不存在 zone 之间互相抢批次。
 
 ---
 
@@ -341,11 +377,18 @@ q_entered=4080 q_admitted=920 q_expired=3 q_avg_wait=28s q_max_rank=4078
 **关闭排队(秒级回滚)**:`login.yaml` 改 `Queue.Enabled: false`,所有玩家立刻走 fast path。
 
 **清空堆积**:
+
+> 多 zone 共用 Redis 时,下面后三行(`admit:*` / `queue:meta:*` / `queue:token:*`)不分 zone,会清掉**全部 zone** 的放行槽和排队条目;只想清一个 zone 时只执行第一行,其余键按 TTL(60s / 1h)自然过期。
+
 ```
 redis-cli DEL queue:zone:1 admitted:zone:1
 redis-cli --scan --pattern 'admit:*'        | xargs -r redis-cli DEL
 redis-cli --scan --pattern 'queue:meta:*'   | xargs -r redis-cli DEL
 redis-cli --scan --pattern 'queue:token:*'  | xargs -r redis-cli DEL
+# leader 锁一般不用删(30s 自然过期);确需强制换主:
+redis-cli DEL dispatcher:lock:login_queue:zone:1
+# 合服后源 zone S 的队列残留会在 QueueEntryTTL(1h)内自行过期;要立即清:
+redis-cli DEL queue:zone:<S> admitted:zone:<S> dispatcher:lock:login_queue:zone:<S>
 ```
 
 玩家自动重试 `/api/assign-gate` → 重新入队(若 Enabled=true)或直接进游戏(若 Enabled=false)。

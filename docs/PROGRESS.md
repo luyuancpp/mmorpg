@@ -7092,3 +7092,282 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
   代价与约定写在 `.gitattributes` 注释和 AGENTS §5:union 从不报冲突,补充旧条目要另起一条,不要回头改最后一条。
 - **仍未做**:robot 的 `go build -mod=vendor`;C++(引擎、battle 节点、单测)未编译;Unity 内测试与面板目视;联机验收。
 - **Java 版(AGENTS §12)**:不涉及(本条是运行证据与本仓库的 git 属性)。
+
+## 2026-10-12 玩家存储落点:现状核对、文档校准、当前 HEAD 复验清单(Claude,只读核对 + 文档,未编译、未测试)
+
+- **起因**:用户问「玩家的物理服务器(TiDB)和逻辑服务器(登录时的大区)数据存在哪、做完了没」。按 HEAD `73b852f32` 逐项只读核对(读代码、文档、git;没有连库,没有跑任何命令)。
+- **结论**:
+  - 两份数据都在 data_service 的 mapping Redis(DB 0):逻辑归属 `player:zone:{id}`,落点记录 `player:placement:{id}` = `"{storage_id}:{version}"`。没有 MySQL / TiDB 兜底表(TiDB 决策 D1 未做)。
+  - 落点记录只选**库名**(`zone_{N}_db` / `player_store_{N}_db`),不选机器;库在 MySQL 还是 TiDB,由各 go/db 的 `Database.Hosts` 决定。
+  - 代码在 main(`4493b3c9f`),但开关全关(`PinOnCreate=false`、`Required=false`,K8s ConfigMap 不写 `Placement` 段),全局库 `player_store_1000000_db` 没建过,玩家主库全在 MySQL。TiDB Phase 1 也没上线(K8s 为 `mysql:8.0`,D-02 待拍板)。Phase 2 卡在 D8 应用级回档与 D1 映射兜底表。
+  - 09-29 的运行验证(本文件 09-28 条目「运行验证」)由 Claude 按用户指示执行,不是 Codex;之后 `be6b4ab1d`(go/db 重试按实例认领、merge_zone P4 / 审计)、`160e7bf4f`(kafkautil 副本数契约)、`1bc9d4899`(data_service GET_LOCK)、`2a203a3a4`(scene_manager 切线 2b、merge_zone 热状态前缀)等改了落点的宿主与邻接代码,均无运行证据。
+- **文档校准(本条所在批次,只改文档)**:
+  - `docs/handoff/zone-home-and-physical-storage-conversation-20260924.md`:文首加「2026-10-12 现状校准」一节,列出原文过时的说法、两份数据存在哪、做到哪一步、同玩家顺序保证仍然需要;对话原文不动。
+  - `docs/design/player-storage-placement.md` → v2.4:文首补运行状态与启用状态;§0 加第 7 条「落点只选库名不选机器」;§8.2 C++ `EnterSceneRequest` 构造点 4 处 → 5 处;§10.4 / §11.4 的 blob 处置由「待拍板」改为「已定,保留拒绝」;§11.3 去掉「全部未编译」;§11.4 加逐项核对结论。
+  - `docs/design/global-data-layer-tidb-decision.md`:文首加 2026-10-12 状态说明(Phase 1 / 2 状态、TiDB 兼容遗留),更正 09-28 状态说明里的「未编译」。
+  - `docs/ops/merge-zone-runbook.md`:文首状态改为指向新复验清单。
+  - `docs/design/server-merge-gap-fixes.md`:C'3 标「已定」;C'4 补「回填对已合走 zone 的拒绝依据 `merge:merged_into` 与映射同在 Redis,整体丢失时工具拦不住误用回填」;表下加运行状态注。
+  - `AGENTS.md` §12:Java 版本机路径改为 `D:\luyuan\xuanming-server-mmo`,旧路径已不存在;此前几次提交照旧路径找不到仓库,误记为「本机无 Java 仓库」。
+  - `docs/README.md`:登记新清单,更新对话记录的说明。
+  - 仓外两处:`D:\luyuan\xuanming-server\docs\design\region-cell-routing-merge-conversation-20260924.md` 文首加补注(只涉及 mmorpg 的过时说法);Java 仓库 `PARITY.md` 追加「玩家存储落点」一行,状态为「不适用(Java 单库,将来分库另行设计)」。两个仓库都**未提交**;Java 仓库工作区另有别人的在途改动,本次没碰。
+- **交 Codex**:[docs/handoff/placement-reverify-checklist-20261012.md](handoff/placement-reverify-checklist-20261012.md),当前 HEAD 上落点链的复验清单。
+  - Go 侧 12 步,按依赖排序,带用例名、用例数(merge_zone 单测 158 / 集成顶层 67 + 子用例 16、go/db 落点 22、重试归属 16、data_service 路由 31、k8s 契约 87)、隔离要求与失败归因方法。
+  - C++(第 13 步)被装备线与内部 RPC 包装的生成物缺口挡住,09-29 的绕法已失效,作为门禁,需批准后才做。
+  - 本条的 L1 清单已含落点测试包,09-28 条目「剩余风险」里「L1 还没加」那条已过期。
+- **顺带发现**(存盘走 Kafka 是否过重的只读分析,两位评审结论一致:Kafka 不是瓶颈,不建议换掉):
+  - **正确性问题**:scene 发 DBTask 失败只打日志、`SavePlayerToRedis` 仍返回 true,投递回执失败也不重发,而脏比较快照在 Redis 写成功后照常更新。之后数据不变的玩家永远不会重发,MySQL 停在旧版本,Redis 丢键或合服以 MySQL 为真源时会回档(`player_lifecycle.cpp` 约 3731-3745、2266-2276、3633-3642;`kafka_producer.cpp` 约 300-331)。已另开任务跟进修复。
+  - 每次真写固定发 2 条 DBTask,其中 `player_database_1` 正常对局几乎为空;两边生产者都没开压缩;db_task 只设了 `retention.ms`,会先撞上 broker 级 `retention.bytes`(prod 每分区 512MiB),按设计估计载荷,24h 缓冲名不副实(推算,载荷从未实测);`PlayerAllData:{pid}` 首次存盘后不过期,背包与任务在 Redis 里各存两份。
+  - 历次压测瓶颈都在消费端(MySQL 连接池、单 worker 串行),但「Kafka 扛得住」的证据只覆盖约 43 条写 / 秒,而且早于背包与任务并入宽表(09-11),之后的落点 MGET、owner_epoch 守卫都没压测过。
+- **未验证**:本条全部是静态结论。命令一条没跑,数据库与 Redis 没连,载荷与性能数字除注明出处的压测外都是推算。
+- **Java 版(AGENTS §12)**:归属区以 `player.zone_id` 列实现(PARITY「归属区映射」行,Java 进行中);落点 / 多库 / TiDB 数据层有意不移植(单库),本次在 PARITY 单列一行登记。存盘失败作废比对基准这件事,Java 已经这样做(PARITY 第 58 行附近)。
+
+## 2026-10-12 补充:映射持久化提案、同玩家存储串行的决策考古、复验清单修订(Claude,只读核对 + 文档,未编译、未测试)
+
+- **复验清单修订**:[docs/handoff/placement-reverify-checklist-20261012.md](handoff/placement-reverify-checklist-20261012.md) 经一轮事实核查后修正:
+  - db.exe 构建的 `-dirty` 判据;
+  - gofmt 只覆盖 09-29 有基线的目录;
+  - 补 `k8s_migrate_gate`、data-service 多副本契约用例,`go_services_ports` 期望 18/18;
+  - scene_manager 补切线与合服围栏的组合回归;
+  - 双 db 实例改为先注入假收据,再用 `merge-zone-audit` / `capability-check` 端到端核对;
+  - C++ 补全依赖库编译顺序;
+  - 新增清理与结果回写两节。
+- **更正 09-28 条目**:「TestIT_* 83 个顶层用例」应为 83 条 PASS = 67 个顶层 + 16 个子用例。几份文档里的同一说法已同步改正。
+- **映射持久化(D1)提案**:[docs/design/player-route-mapping-durability-proposal.md](design/player-route-mapping-durability-proposal.md),**待拍板、未落码**。
+  - 做法:库为真源;Redis 键格式不变,是带 `player:maprev` 版本、`mapping:route:ready` 就绪标记的完整副本;合服围栏、`merged_into`、冻结态一并落库,能力标记仍只在 Redis。
+  - 落库位置:现在放 data_service 的 MySQL 全局库,不等 TiDB。
+  - 规模:四批、约 45–55 个文件,超过 §10.2 的 30 文件门槛,开工需授权。第 0 批(dev 的 mapping Redis 改 noeviction、zone 回档脚本 FLUSHDB 加防护等)可以独立先做。
+  - 怎么来的:三方案并行设计 + 双视角对抗评审;被否决的方案与理由见提案 §8。
+- **同玩家存储串行:决策考古结论**。决策做过,也落地了,没有被推翻;变的是实现方式与保证强度,另有一层兜底始终没做。
+  - 时间线:
+    - 2025-10-16 `3da96d058`:每分区单协程,同 key 有序;
+    - 2026-03-26:写进文档,「无论 A/B,必须坚持同 key 串行与幂等写」;
+    - 03-28:跨服三层防御,即交接串行、按玩家分布式锁、MySQL 版本列兜底;
+    - 04-24:已落库游标,保证从「执行串行」变为「落库只进不退」;
+    - 05-28:SubShard,`Key % SubShardCount` 固定子 goroutine;
+    - 08-04:跨实例排序锁、游标带分区号;
+    - 09-18:applied_epoch;
+    - 09-19:C++ 幂等投递;
+    - 10-08:go/db 两副本(未编译)。
+  - 单进程内仍是「同玩家同一时刻只有一个写在执行」;跨进程只靠「排序锁互斥 + 游标 / epoch 判新旧」。03-28 定的第三层「MySQL 版本条件写」从未落地。
+  - 缺口按严重度:
+    1. **锁租约失效后的旧写会落库**:续租失败一次即放弃;SQL 的 ctx 不受租约约束,MySQL 连接没设读写超时;缓存回写在 verify 之前;MySQL 是无条件整行覆盖。至少两个 go/db 进程并存时才会触发。
+    2. **读写不在同一分区**:新发现 login 那个一致性哈希环**从未生效**,db_task 主生产者没配 Partitioner,sarama 默认哈希分区器会覆盖它算出的分区;C++ 写用 librdkafka 默认分区器。所以 TC3 那道「读后写」屏障在生产上不起作用,I4 从来没有端到端验证过。ARCH.md「playerId 一致性哈希到同一分区」、db-task-kafka-partition-contract.md 第 9 行与 go/db 的几处注释都与实际不符,**尚未订正**。
+    3. **两副本时同 key 的重试跨实例并发**,正确性完全靠租约。
+    4. 游标 / applied_epoch 缺键时默认放行;两张子表之间不原子。
+  - 建议的补法(都不需要框架,都要先写设计、交 Codex 验证,未开工):
+    1. DBTask 与玩家表加 `(owner_epoch, save_seq)`,MySQL 改条件写;
+    2. login 读分区器对齐 C++,删掉不生效的环,并订正文档;
+    3. 两处无条件 SET 改 SETNX;
+    4. 重试只交给当前分区属主,租约丢失时取消 SQL。
+- **「版本号特别大」**:相关值(owner_epoch、placement version、Kafka offset)都是 64 位,按现实增速永远到不了上限。唯一的数值隐患是 Redis Lua 里的数字是 double:scene_manager `owner_epoch.go`、go/db `luaMarkAppliedEpoch`、data_service `data_logic.go`、match `scripts.go` 里有 `tonumber` 比较,要超过 2^53 才会触发。低优先级可统一改成「先比长度再比字典序」。真正挡旧写的几道比较本来就是字符串或 uint64 比较。
+- **ergo / protoactor-go**:两个都不建议引入。
+  - actor 解决的是进程内同 key 串行,SubShard 已经是按 key 分配的邮箱;剩下的缺口全在跨进程,框架的集群单激活同样需要存储侧 fencing,最终还是要回到 MySQL 条件写(Java 版就是 `WHERE owner_epoch=?`)。
+  - 与 Kafka 消费组的分区独占会形成两套归属;C++ scene 也接不进 Go 的 actor 体系;不满足 §11.2「说明现有能力为何不足」。
+  - 帮会 actor 草案(guild-actor-architecture.md)对这两个框架也是「本轮推迟」。
+  - 两者的 star 数、发版时间来自调研者查 GitHub,复核者没有联网复现,未核实。
+- **未验证**:全部静态结论。
+- **Java 版(AGENTS §12)**:映射持久化提案若采纳,Java 侧按单库做等价实现或登记「不适用」。Java 存盘已是 `WHERE owner_epoch=?` 条件写,不需要上面第 1 条补法。
+
+## 2026-10-12 落点多库连接拓扑核算:不是网状,但 MySQL 连接预算早已超限(Claude,只读核算,未实测)
+
+- **起因**:用户问「每个 db 是不是会连接不同 TiDB,造成网状」。
+- **不是跨集群网状**:每个 go/db 的落点库池都拨同一个 `ServerConfig.Database.Hosts`,按需开库只改 DSN 的库名(`proto_sql/store_registry.go` 约 307-308 行);K8s 上所有 zone 都连同一个单副本 MySQL。物理上是「Z×R 个 go/db → 1 个库服务」的星形,换 TiDB 后也一样(LB → 无状态 tidb-server,database 只是命名空间)。
+  - 多出来的只是同一台服务器上「一库一池」:proto2mysql 生成裸表名,池开了就常驻,不设库数上限。今天只有冷缓存的访客读会开别 zone 的库。
+  - **千万不要把不同 zone 拆到不同数据库集群**:go/db 没有按落点选主机的能力,库不在本机时 Ping 报 1049,写会无限延后;更糟的情况是本机恰好有同名旧库,`dbguard` 只校验库名,写会静默落进旧库。
+- **连接预算超限(既有问题,与落点开关无关)**:
+  - 名义上限 T = Z·(210 + 16E) + 80。构成是 go/db 2×(60+8E)、data_service 2×35、gateway 2×10(Hikari 默认,推断)每 zone,另加 friend、trade 全局各 2×20。
+  - Z=4、E=0 时为 920;默认 2 个 zone 时恰好 500,对应 `max_connections=500`,零余量。
+  - `no-single-node-horizontal-scaling-20261001.md` 第 154 行「480,已贴近 500」只算了 go/db 主池,已在原处加更正注。
+  - 超限后 go/db 按普通错误消耗重试预算(3 次),之后进没有消费者的死信,存盘不会自动落库。
+  - MySQL Pod limits 只有 1Gi;go/db 与 data_service 都没导出 `sql.DBStats`,实际峰值不知道。
+- **Phase 2 只改变分布,不减少连接数**:本 zone 库里还有账号表,`InitDB` 仍要求它存在,所以主池去不掉。设计 §11.1 第 5 步「下线 zone_N_db」与此冲突,是设计缺口(推断)。全局库池调大到 G 时,`ExtraStoreMaxOpenConn` 是全局单旋钮,会把所有访客池一起放大。
+- **建议(未落码)**:
+  - P0:修正总账,调 `max_connections` 并同步 Pod 内存;给 gateway 配 Hikari;更正 `db.yaml` / `config.go` 里过时的 151 注释。
+  - P1:导出连接池指标(label 只用池类别),并加 MySQL 侧告警。
+  - P2:额外池加 `ConnMaxIdleTime`;zone 库池与全局库池拆成两个旋钮。
+  - P3:「拿不到连接」改为写延后、不耗预算,需设计评审。
+  - 不建议:SQL 加库名前缀共用一个池;读任务改走 home topic;ProxySQL 切库;按 zone 拆集群。
+- **未核实**:staging / prod 实际 zone 数与是否部署 gateway;冷访客频率;Hikari 与 TiDB 连接参数的默认值来自外部文档;1040 → 死信链路是读代码推断的,没实测。
+- **Java 版(AGENTS §12)**:Java 单库,不涉及多库池扇出;连接预算各自核算,本条不改 Java。
+
+## 2026-10-12 补充:映射持久化第 1a 批落码(Claude,未编译、未测试)
+
+- **背景**:[映射持久化(D1)提案](design/player-route-mapping-durability-proposal.md) 已由负责人拍板(提案 §11.1,含「超过 30 个文件的改动面已授权」);第 0 批(dev Redis 改 noeviction、zone 回档 FLUSHDB 防护、BatchGet / 全区枚举不再吞错)记在提案 §11.2,本文件此前没有单独条目。本条是第 1a 批:存储底座 + W1 的 db_first 开关 + 导入 / 审计工具 + W2 / W3 停用。完整的改动清单、偏离表、风险、验证命令都在提案 §11.2「第 1a 批」,本条是摘要。
+- **行为**:所有档位 `RouteStore.Mode: redis`(本地 yaml 显式写、K8s ConfigMap 固定写),redis 模式下 `RegisterPlayerZone` 与之前逐字相同。例外:新表的 DDL / 形状守卫 / meta 种行进了 `MigrateSchema` 的关键路径,失败时 redis 模式同样四个 store 置 nil(提案 §11.2 风险第 8 条)。db_first 是 P2 的显式运维动作,有五条门禁(冻结窗口、P1 导入且 audit 为 0、Redis noeviction + AOF + ≥7.2、建角压测、切换后再导入审计一次)。
+- **改动清单**(代码与脚本 38 个:新增 15、修改 23;文档 10 个):
+  - `go/shared/placement/route.go`(+ 测试):`player:maprev:{id}`、`mapping:route:ready`(只定义)、围栏分片(默认 8、上限 64,上限是围栏持有者的契约)、rev 的格式 / 校验 / 比较、发布脚本 `PublishRouteScript`(set-if-newer + 可选围栏键 + 遗留值守卫 + touch)与回复分类。
+  - `go/data_service/internal/store`:新增 `route_store.go`(独立池,会话 RC + 锁等待 1s,建池探针;`RegisterHome` 七种结局;导入;只读接口)及单测、假驱动契约测试、真库集成测试;`schema.go` 加四张表 DDL(`player_route`、`zone_merge_fence`(CLUSTERED)、`zone_merged_into`、`route_meta`)、形状守卫、种 `route_meta(id=1)`;`mysql.go` 拆 `openMySQLWithDSN`、加 `buildRouteDSN`。
+  - `internal/routing`:新增 `route_publish.go`(db_first 编排 + 同连接 pipeline 发 EVAL 与 WAITAOF)及 28 个单测;`router.go` 按 Mode 分流、`NewRouter(c, opts...)` 先校验配置,删除 `RemapHomeZoneForMerge`;集成测试改名一个、新增 4 个。
+  - `internal/server`:W1 加两支错误映射(Unavailable + 14 / + 30),W2 在鉴权前恒回 FailedPrecondition + 16,W3 回 FailedPrecondition + 16;`internal/logic`:`DeletePlayerData` 带删映射时入口零副作用拒绝。
+  - `constants`(新码 30,24 停用不复用)、`config`(`RouteStoreConfig` 与校验)、`svc`(`PlayerRouteStore` 装配、`MissingStores`)、`metrics`(`route_register_total` 11 值、`route_publish_total` 8 值,db_first 时预置)、`data_service.go`(启动校验、WARN、横幅)、`cmd/debugutil`、`etc/data_service.yaml`。
+  - 新增 `internal/routetool`(导入 / 审计逻辑)与 `cmd/route_tool`(退出码 0 / 1 / 2 / 3),各带单测与集成测试。
+  - 脚本:`k8s_deploy.ps1` ConfigMap 加 `RouteStore: Mode: redis` 与注释;契约测试 +1 例(87 → 88);`stress_round19.ps1`、`currency_crash_window.ps1` 清库时清全局库三张路由表、`route_meta` 原地复位,SQL 失败即 throw。
+  - 文档:提案 §11.2;`docs/README.md`;`player-storage-placement.md` §4.4 / §11.4;`merge-zone-runbook.md` §3 / 新增 §9.3 / §12;`server_merge_design.md`、`enter-scene-zone-routing.md`、`ARCH.md` 的 remap 停用注;`global-data-layer-tidb-decision.md` D7、§4 风险 #11、§6 第 8 条;复验清单第 4 步附录。
+- **与提案 / 任务原文的偏离**(全表 18 行见提案 §11.2「相对本提案的偏离」,编号与代码注释里的「规格 g.2 第 N 条」一致;落码相对定稿规格的取舍另列在同一节):
+  - **用 EVAL,不用 EVALSHA(任务原文写的是 EVALSHA)**:pipeline 里遇到 NOSCRIPT 无法透明回退,与 router.go 现有脚本一致;代价是每次多发约 1.5KB,第 2 批 merge_zone 批量发布时再评估。**需要负责人知情。**
+  - 不新增 proto(只守列名与主键,第 2 批补);route_tool 是独立 cmd(K8s 镜像只有单一入口,生产上跑 P1 要等第 1b 批);db_first 保留 Redis 预检;会话锁等待 1s、1205 不重试(提案写的是 1213 / 1205 重试);参数非法回 Unavailable + 14 而不是 InvalidArgument(gRPC 码集合不变);`zone_merge_fence` 主键 CLUSTERED;导入写 `rev = maprev`、库 rev 落后记 rev_regression;`WaitAOFTimeoutMs` 默认 1500ms。
+- **交 Codex 的验证**:按提案 §11.2「第 1a 批交 Codex 的验证」执行。顺序:先跑 [复验清单](handoff/placement-reverify-checklist-20261012.md)(**以第 4 步之后的附录为准**:routing 单测 54、带 integration 共 63、shared/placement 15、k8s 契约 88、一次性 Redis 要 `--appendonly yes`),再跑第 0 批验证,最后跑第 1a 批第 1–9 步(gofmt / vet / build / 全量单测、MySQL 与 Redis 集成、route_tool 集成、PowerShell 契约、清库脚本语法与 plan、可选冒烟)。`TestPublishRoute_RealRedisSameConnection` 与 `TestPublishRoute_RealRedisWaitAOF` 必须 PASS 不能 SKIP;前者 FAIL 就按提案 Q3 改用独立 go-redis 客户端做发布。
+- **未验证**(全部):一条构建、测试、gofmt 都没跑。评审重点:
+  - 凭记忆使用、本机无法核实的 API:go-zero `redis.NewRedis`、`(*Redis).PingCtx`、`logx.SetWriter` / `NewWriter` / `SetLevel` / `DisableStat`、`PipelinedCtx` 的同连接语义与熔断计数;假驱动里照抄的 go-sql-driver v1.9 参数转换规则;miniredis v2.37 的 Lua `SET` 清 TTL、`redis.error_reply` 透传、`Restart` / `SetPreHook`。
+  - 时序敏感的集成用例:`TestRouteStore_LockWaitBoundedAfterClientCancel` 只有约 300ms 余量;32 协程同玩家并发要在 1s 锁等待内排完。
+  - `TestNoPlayerRouteWritesOutsideRouteStore` 扫整个 `go/data_service`,以后谁在字符串里写 `UPDATE player_route` 都会被它拦下(有意为之)。
+  - TiDB 上的 no-op upsert 受影响行数、会话变量探针都没在 TiDB 上核对。WAITAOF 在 `appendfsync everysec` 下的实际延迟没测,P2 前要压测。
+- **未做**:AGENTS.md §6.2 加「全局库路由表一并清」(提案 Q8,AGENTS.md 有别人未提交的改动,待负责人确认);规格里可选的 `wipe_global_route_tables.tests.ps1`;guild / login / match / trade / merge_zone 里提到 `RemapHomeZoneForMerge` 的注释;`tidb-phase1-and-launch-readiness.md` 未同步 SPLIT 项;对账 leader、预热、回档检测(第 1b 批)。
+- **Java 版(AGENTS §12)**:对应 Java 版本号:无;状态:**待做**。映射存储是服务端内部实现,不涉及客户端契约;Java `PARITY.md` 推迟到第 1 批(1a + 1b)全部完成时登记一行(提案 Q14)。
+
+## 2026-10-12 补充:映射持久化第 1a 批评审修复(Claude,未编译、未测试)
+
+- **背景**:上一条(第 1a 批落码)交评审后,按评审意见逐条核实并修复。按 AGENTS §5 另起一条,不回头改上一条;上一条里与本条冲突的说法以本条为准(`route_register_total` 改为 12 值;`LockWaitBoundedAfterClientCancel` 的余量见下)。完整说明在[提案](design/player-route-mapping-durability-proposal.md) §11.2「评审修复」与 runbook §9.3。
+- **行为变化**(都只在 db_first 或 route_tool 里生效,redis 模式的 W1 不变):
+  - import 开头 / 结尾各快照一次 `merge:merged_into:*`,有变化即退出码 3(导入窗口内跑完的合服 / 撤销合服也抓得到)。结尾退出码 3 之后不能原样重跑,恢复办法改为「P1 期间清空 `player_route` / `zone_merged_into`、`route_meta` 原地复位后从头导入」(runbook §9.3「重跑与恢复」)。
+  - yaml 是 db_first 时,`import-from-redis -dry-run=false` 默认拒绝(退出码 2),只有提案 §7 P3 那一次显式加 `-allow-db-first`。
+  - audit 方向 B 对方向 A 没比过的 id 都补比一次(含方向 A 之后才提交的行)。
+  - db_first 装配 route store 之前对 mapping Redis 发一次 WAITAOF 能力探针,不满足就不装配(K8s 拒启),把 AOF 配错挡在启动期,不让每次 W1 的确定性错误经 go-zero 熔断器拖累同一 Redis 上的登录读。
+  - `route_register_total` 新增 `precheck_error`(Redis 预检本身出错),共 12 值,合计 = db_first 的 W1 请求数;WAITAOF 回复形状错误计 `route_publish_total{result="error"}`,P2 门禁的「发布未确认率」要连 `error` 一起看。
+- **测试**:svc 补 `MissingStores` 的 db_first / redis / 空 Mode 表驱动用例与探针失败不装配用例;routetool 补 merged_into 变化三例、不变不误报一例、audit 补比一例;route_tool 补 `-allow-db-first` 用例;契约测试删掉「`sql.Null[uint32]` 必被驱动拒绝」的反向断言(Go 1.24 起 `Null[T].Value()` 先过 `DefaultParameterConverter`,在 go 1.26 上会红);发布失败重试用例改在新地址的 miniredis + 新 Router 上重试(去掉墙钟与平台依赖);真库锁等待用例 p 的客户端超时 300ms → 700ms(余量 ≈ p 的超时 − p 走到 R4 前的往返,超时越长余量越大),q 遇 1205 用例内重试一次。routing 单测数仍是 54。
+- **脚本与注释**:清库脚本 `Invoke-GlobalDbSql` 函数内局部 `$ErrorActionPreference='Continue'`,成败只看 `$LASTEXITCODE`;`k8s_zone_rollback.ps1` FLUSHDB 共享键清单补 `player:maprev:*`(测试期望同步);码 23、AdminToken 相关注释写明 remap 已停用;`mysqlLikeConvert` 注释写明只复刻子集。
+- **文档**:提案 H1 带上状态,与 `docs/README.md` 索引行逐字一致,`gen_docs_index.py` 补分类规则、索引行按字母序挪位;runbook §9.3 写清 maprev 不单独扫描、只有 maprev 的玩家不导入。
+- **未验证**:同上一条,一条构建、测试都没跑;另需 Codex 跑 `go test ./internal/svc/... ./internal/metrics/...` 与 `k8s_zone_rollback_flush_guard.tests.ps1`(命令见提案 §11.2 第 2、6 步)。
+- **Java 版(AGENTS §12)**:对应 Java 版本号:无;状态:**待做**(同上一条)。
+
+## 2026-10-12 补充:TiDB Phase 1 设计与开服准备文档、§D3 热点更正(Claude,只读核对 + 文档,未编译、未测试)
+
+- **负责人决定**:「两条都做,D1 先行」。即对 handoff-backlog D-02「Phase 1 是否继续」表态继续;D1 映射持久化先落码(第 0、1a 批见上面两条)。
+- **新文档**:[docs/design/tidb-phase1-and-launch-readiness.md](design/tidb-phase1-and-launch-readiness.md)(提案 v0.2,经运维、正确性两份对抗评审)。
+  - 结论:Phase 1 只消除「数据层是一台 1 CPU / 1Gi 单副本 MySQL」这一个单点。
+  - TiDB 能扩的:打散后的行数据、读、容量、连接入口。扩不了的:单调索引尾部、单行热点(号段行、D1 的围栏分片行与 `route_meta`)、大事务 / 大行、跨地域延迟。
+  - 推荐 TiDB Operator v1.6、v8.5.x 且 ≥ v8.5.5(PITR 按库表恢复);全部库同批迁到同一集群。
+  - 分 P1-0 到 P1-6 七批,约 45–60 个文件,日历时间约 4–5 周。§9.3 列了 20 项待负责人拍板。
+  - §7 是开服首日准备清单(削峰默认全关与排队 leader 锁缺陷、新号首次进场冷读、共享 Redis 单主、快照审计管道全球 3 分区串行、连接预算、db 消费组全局共享、号段 Step 等);§8 是全球同服的地理形态建议(区域集群 + 全球薄层,不跨洲拉伸单集群)。
+- **`global-data-layer-tidb-decision.md` §D3 更正**:发号已是号段(不是 Snowflake),结论仍是单调;`NONCLUSTERED` + `SHARD_ROW_ID_BITS` 只打散行数据,PK 唯一索引尾部未处理;Phase 2 会把 Z 条尾部合成 1 条;`AUTO_RANDOM` 不适用;可选解法与撞号风险。另更正 proto2mysql 版本(现为 v0.2.0)。
+- **登记的任务**(未开工,在任务卡片里):登录排队 leader 锁跨 zone 不出队(`go/login/internal/svc/servicecontext.go` 的 activeZones 只看本 zone gate,锁键全局)。
+- **docs/README.md**:按 `tools/scripts/gen_docs_index.py` 的输出格式登记新文档(标题取文档首行、按文件名排序);生成器「玩家数据与存储」分类补 `tidb-*` 规则。生成器没跑(本机无 Python),`--check` 待 Codex 跑一次确认无差异。
+- **Java 版(AGENTS §12)**:Phase 1 文档 §10 给了判断(Java 单库 MySQL,是否同步迁 TiDB 待负责人拍板,§9.3 第 20 条)。
+
+## 2026-10-12 组队"寄宿 match 进程"定案理由复核 + EndMatch 兜底上限改为跟随锁时长(Claude,未编译、未测试)
+
+- **起因**:用户问"CreateTeam 为什么属于 match、team 服务器干嘛用、这样做对不对"。做了一次只读架构评审(四路取证 + 三视角评审 + 逐条反驳核验),结论:**同进程、分协议、全局部署这个结论可以保留，但 D7 与 D-2 的定案理由都要改写**。team 属于社交/会话域，只是部署寄宿在 match 进程;D7 里唯一需要同进程才能成立的"原子事务"早被 DV-1/DV-3 推翻;D-2 的 team 行没走自己"按数据归属定"的判据。完整结论、扩展路径(计算层已水平扩展 / 同镜像分角色部署 / 存储才是上限)、拆分触发信号与预案见 `docs/design/team-system.md`「定案理由复核与扩展路径(2026-10-12)」。
+- **文档修订**(结论不变，只改理由与过期描述):
+  - `team-system.md`:文首口径;关系表 D-2 / D7 / DV-2 三行;§A.2 依赖方向按代码更正(原写 `logic → team`,实际互不 import);§E EndMatch 兜底说明;文末新增 W.1–W.7。
+  - `xuanming-port-decisions-20260910.md` D-2 team 行改为按数据论证(原文保留在修订注记里)。
+  - `xuanming-port-feasibility-20260902.md` 追加 §12.4。
+  - `cross-zone-matchmaking.md` D2:"match 原有代码对 SharedRedis 只读"补更正(matcher `migrateLegacyQueues` 会写旧格式队列)。
+  - `microservice-zone-contract-20260914.md`:更正"team 未部署"(随 match 部署)。
+  - `k8s-client-entry.md`:110s 口径更新。
+- **代码**(go/match,5 个文件):
+  - `internal/team/store.go`:删掉写死的 `endMatchMaxDuration = 110s`,改为 `endMatchDeadline(lockTTL)` = 锁时长 + 一轮超时 2s + 最大退避 1.2s;`EndMatch` 多一个 `lockTTL` 参数;新增测试缝 `endMatchElapsedFn`。原问题:锁时长随 `MatchedTicketTTLSeconds` 变化(5 人默认 101s,配 120 时 155s),配到 76 及以上时 Redis 持续故障会让 EndMatch 先于锁截止放弃(活性降级，不是数据不一致)。
+  - `internal/team/service.go`:`StartTeamMatch` 只算一次锁时长，加锁与 `launchMatch` / `finishMatch` / `releaseLockInBackground` / `settleUnconfirmedLock` 共用。
+  - `internal/logic/team_battle.go`:注释同步。
+  - 测试:`internal/team/store_test.go` 新增回归 `TestEndMatchDeadlineFollowsLockTTL`(假时钟，锁 74 / 101 / 155s,Redis 注入故障，断言至少坚持到锁时长、上限后不再重试);既有 4 处 `EndMatch` / `finishMatch` 调用补参数。新增 `go/match/team_logic_layering_test.go`:断言 `internal/team` 与 `internal/logic` 互不 import(含测试文件)。
+- **没改**:`tools/scripts/k8s_deploy.ps1:149` 注释里"guild / team 等没登记进 `$GoSvcCatalogue` 的服务,K8s 上本来就不部署"对 team 不准确，但该文件有他人未提交改动，本次不动，留待那批提交后顺手改。
+- **给 Codex 的验证**(工作目录 `go/match`,先确认 `git status` 里 go/match 只有本条的改动):
+  1. `gofmt -l .` 输出为空;
+  2. `go build ./...`、`go vet ./...` 退出码 0;
+  3. `go test ./... -count=1`:7 个有测试的包全部 ok,新增 `TestEndMatchDeadlineFollowsLockTTL`、`TestTeamAndLogicDoNotImportEachOther` 通过;
+  4. `go test ./internal/team/... -race -run 'TestEndMatchDeadlineFollowsLockTTL|TestConcurrentInvariantsFuzz' -count=1 -timeout 10m`。
+  失败时保留 `go test -v` 中失败用例的完整输出与前 20 行编译错误。
+- **Java 版(AGENTS §12)**:文档修订只涉及本仓库的定案理由，不需要跟进。EndMatch 兜底上限这一条:Java 版的开战锁时长由 game-match 在 `checkTeamMatch` 回包下发，其清锁兜底是否也写死，本次没有核实，待做。
+
+## 2026-10-12 补充:组队定案理由复核的复核修订 + Java 版核实结论(Claude,未编译、未测试)
+
+- **只读复核**(三路:Go 可编译性与测试 / 文档一致性 / Java 版同类问题):无阻断项;Go 侧无应修项。据此补修:
+  - `team-system.md`:R.3 / R.5 / C-7 / 未解决问题里 4 处"110s"按 09-29 先例原地加 2026-10-12 注记;§E.1 标题下注明编排实际在 team 包、`EndMatch` 多 `lockTTL` 参数;W 节引言改为"行为上只改了 EndMatch 兜底上限";W.1"锁最长 101s"限定为默认配置;W.2 交叉引用改正;W.3 分角色部署的依赖清单补 SharedRedis 与 BattleIDGen;W.4 写明两处已接受的行为边界(锁过期后不再为补推重试、3.2s 余量不覆盖 Redis 时钟跳变)与包边界测试只拦直接 import;W.7 改为"10-10 证据在 `21d5b25120` 之上、早于本次改动,当前 `go/match` 未编译";关系表 4 处裸行号刷新。
+  - `cross-zone-matchmaking.md` §4.2"唯一例外"补第二处写(`migrateLegacyQueues`);`xuanming-port-decisions` D-2 team 行的"§D7"改为指向 feasibility §8 D7 的链接(本文的 D-7 是 protoc);feasibility §12.4 同步 W.7 的证据口径。
+  - 代码注释:`go/match/internal/logic/keys.go`、`internal/team/keys.go` 里"match 其余代码对 SharedRedis 只读"补上 `migrateLegacyQueues` 例外;`team_logic_layering_test.go` 头注释写明只拦直接 import。
+- **更正上一条的文件清单**:`go/match` 共 8 个文件 —— `internal/logic/{team_battle,keys}.go`、`internal/team/{service,store,keys,store_test,team_battle_test}.go`、新文件 `team_logic_layering_test.go`;补参数的既有调用点是 5 处(`store_test.go` 1 处、`team_battle_test.go` 4 处)。上一条给 Codex 的验证命令不变。
+- **Java 版(AGENTS §12)核实结论**(替换上一条的"待做"):Java `game-team` 的清锁兜底也是固定 110s(`MatchBudgets.TEAM_END_MATCH_DEADLINE_SECONDS`),但**有机械守卫,不会静默提前放弃**:锁时长是不可配的代码常量;`TeamBudgetConstraintTest` 钉住"110 ≥ 101 + 2 + 1.2";game-match 启动门禁拒绝 5 人锁 > 110;game-team 对回包 `lock_ttl > 110` 回 4030 拒绝开战。所以本仓修掉的故障场景在 Java 走不到。差异:配置超限时 Java 拒绝开战，本仓自适应;这是服务端内部实现差异，不涉及客户端契约。
+  - **PARITY.md 需要更新(待用户决定)**:Java 仓 `PARITY.md` 组队行把"收尾清锁的 110 s 单调截止"列在**同基线**里，本次改动后不再成立。二选一:(a) Java 跟进为"锁时长 + 一轮 2s + 最大退避 1.2s"(复核给了方案:`TeamStore.endMatchDeadline(Duration)` + 沿 `TeamService` 传锁时长，复用 `Hooks.nanoTime` 测试缝);(b) 挪进"有意差异"并写明 Java 由三处守卫保证。PARITY 登记要带本仓 commit 号，本仓这批改动还没提交，所以现在没改 Java 仓。
+  - 顺带发现(Java 侧，建议级):`MatchTeamBattle.MAX_LOCK_TTL_SECONDS` 直接等于 110,比单测钉的不等式(锁 ≤ 106.8s)宽，版本不一致时锁落在 (106.8, 110] 会被接受;方案 (a) 可一并消掉。
+- **仍未改**:`tools/scripts/k8s_deploy.ps1:149` 注释(他人未提交改动在同文件)。
+
+## 2026-10-12 补充:Java 版同步改为"EndMatch 截止跟随锁时长"(Claude,Java 已编译并跑单测;mmorpg 侧仍未编译)
+
+- **用户要求按最标准的做法修 Java 版**(上一条的方案 (a)):Java 仓 `D:\luyuan\xuanming-server-mmo`(0.1.0-SNAPSHOT)与本仓同口径 —— EndMatch 的进程内单调截止由这把锁的时长推出，加锁与所有清锁路径共用同一个锁时长，不再有与锁时长靠不等式对齐的固定 110 s。
+  - game-team `TeamStore`:删 `END_MATCH_MAX_DURATION_MS`,新增 `endMatchDeadlineMs(lockTtlSeconds)` = 锁时长 + 2 s + 1.2 s 与 `END_MATCH_MAX_BACKOFF_MS`;`endMatch` 多一个 `lockTtlSeconds` 参数。`TeamService` 在 `startTeamMatch` 取一次 `check.lockTtlSeconds()`,传给 `launchMatch` / `finishMatch` / `releaseLockInBackground` / `settleUnconfirmedLock`。
+  - game-api `MatchBudgets.TEAM_END_MATCH_DEADLINE_SECONDS` 改名 `MAX_TEAM_LOCK_SECONDS`(值仍 110):只作 `lock_ttl_seconds` 的**契约上限**(限制一把锁占住收尾线程与 `runTeamGather` 长挂调用多久;game-match 启动门禁与 game-team 回包校验照旧用它),不再承担"EndMatch 截止"的含义。值不变，两边版本并存时可接受范围不变。顺带消掉了复核发现的 (106.8, 110] s 缺口。
+  - 测试:新增 `TeamStoreTest.EndMatch_单调截止跟随这把锁的时长_…`(假时钟，锁 1 / 65 / 101 / 110 s,Redis 持续故障时坚持过锁截止、过了截止不再重试);改写 `TeamBudgetConstraintTest`(对 1..110 每一把锁都成立)与截止相关的 3 个用例;其余调用点补参数。
+  - 文档:Java 仓 `docs/porting/team-spec.md`、`match-spec.md` 的现行口径加 2026-10-12 注记;`PARITY.md` 组队行把"收尾清锁的 110 s 单调截止"改为新基线(注明 mmorpg 侧尚未提交，提交后补 commit 号)。
+- **Java 运行证据**(JDK 21:`D:\luyuan\tools\jdk21`,本机 shell 未设 `JAVA_HOME`,需显式导出):`./mvnw -B -pl game-api,game-match,game-team -am test` → **BUILD SUCCESS**,10 个模块共 `Tests run: 1735, Failures: 0, Errors: 0, Skipped: 293`;其中 `TeamStoreTest` 23、`TeamServiceTest`(组队场景内存后端)22、`TeamBudgetConstraintTest` 4、`MatchTeamBattleTest` 12、`MatchBudgetsTest` 19、`MatchStartupChecksTest` 12 全过。**未跑**:`TeamStoreIntegrationTest`、`TeamMatchRedisIntegrationTest` 等连真 Redis 的用例(本机 6379 未监听，默认跳过;代码已随测试编译)。
+- **Java 仓未提交**:工作区里还有他人未提交的契约同步改动(含 `PARITY.md` 其他段落、`game-match/.../MatchMethodsTest.java`),本次只改了自己的文件，提交与推送待用户确认。
+- **mmorpg 侧**:Go 改动仍未编译，验证命令见本文件上两条。
+
+## 2026-10-12 补充:actor 框架定论、存盘管线瓶颈与不停服转移分析、第 0 批小修(Claude,未编译、未测试)
+
+- **新文档**:[docs/design/db-task-pipeline-bottlenecks.md](design/db-task-pipeline-bottlenecks.md)。四轮"多代理调研 + 对抗复核"的结论都在里面,本条只记要点。
+- **actor 框架定论:ergo、protoactor-go 都不引入**(文档 §1)。更正 10-12 早先条目里「star 数、发版时间未核实」:这次已联网核实。ergo 4676 star,v3.3.0(模块 tag v1.999.330)2026-09-04 发布,全部 MIT,但 v3.x 小版本里有破坏性改动;protoactor-go 5515 star,dev 自 2026-01-18 起零提交,#1133 与 grpc CVE 修复 PR 未合。[guild-actor-architecture.md](design/guild-actor-architecture.md) §5.3、§16 #2 已改为「已定:不引入」。
+- **效率**:瓶颈在 IO,不在派发(R19 t18m:派发 0.0ms、kafka_send 4.1ms、等 db 回调 31.8ms;go/db 一条写约 11 次 Redis + 1 次 MySQL)。R19 之后加的排序锁 / epoch / 落点 MGET 都没压测过。
+- **不停服滚动 go/db 的结论**(文档 §4):可以逐 Pod 滚,Kafka 侧不丢、重放不倒退,在线玩家无感;但 MySQL 写无条件整行覆盖,「go/db 执行实例换人」只剩 Redis 排序锁租约一层。进程假死 90–120 秒以上、或续租失败 + SQL 卡住时,旧写会把 MySQL 和子表缓存整行覆盖回旧版,静默、不自愈。根治仍是 `(owner_epoch, save_seq)` 条件写;只带 owner_epoch 挡不住同 epoch 的僵尸写,Java 版 `WHERE owner_epoch=?` 推断同样挡不住,待核实。缺口清单 G0–G9 与修好前的发版操作见文档 §4.4–4.5。
+- **修复计划**(文档 §5):⓪①②③④⑤ + 条件写分 6 批;②、③、⑤阶段 0、④ 两批合计都超过 30 个文件,**待负责人逐批授权**。
+- **第 0 批已落码**(文档 §7):
+  - go/db 子 shard 倾斜:`subShardIndex` 取模前用 splitmix64 打散(与 C++ `SpreadPlayerId` 同算法)。09-08 前的 bwmarrin PlayerId 低位大多为 0,原来几乎全挤进 0 号子 shard。新增 `subshard_route_test.go`。
+  - **login 生产者自锁(新发现)**:`SendTask` 失败分支持有 `p.mu` 时调 `markPartitionUnavailable` 再加同一把锁。sarama v1.46.2 的 `SendMessage` 返回底层错误,`ErrLeaderNotAvailable` 文案含 "partition" 与 "unavailable",所以 **Kafka 选主时 login 读档必然全部挂起**,只能重启 login。改为已持锁版本 `markPartitionUnavailableLocked`,新增 `key_ordered_producer_lock_test.go`(sarama/mocks 注入)。
+  - `kafka_offset_reset.ps1`:对仍有活跃成员的组重置位点时,Kafka 工具只打印 `Error:`,退出码可能是 0,共用消费组下单 zone 回档必然如此,脚本却打印 OK。改为输出里有 `Error:` 行即失败,新增 `tools/scripts/tests/kafka_offset_reset_output_guard.tests.ps1`。
+  - `stress_summarize.ps1`:db 分段一直显示 "-",原因是 client_golang 按 label 名排序输出 `{op=..,stage=..}`,脚本按 `{stage=..,op=..}` 精确查。已改。
+- **未验证**:一条构建、测试都没跑。Codex 命令见文档 §7:go/db `go test ./internal/kafka/...`、go/login `go test ./internal/kafka/...`、`pwsh -File tools/scripts/tests/kafka_offset_reset_output_guard.tests.ps1`。
+- **未做**:Kafka 镜像从 `apache/kafka:latest` 钉版本;回档 Step 2 只统计本 topic;写路径 Redis 往返优化方案(工作流进行中,完成后补到文档 §6)。
+- **Java 版(AGENTS §12)**:对应 Java 版本号:无。子 shard、login 自锁、位点重置三项 Java 没有对应的 Kafka 存盘链,**不适用**,PARITY.md 待登记;条件写的 `save_seq` **待核实**;② 连接总账、⑤ guild 指标与注册顺序**待做**。
+
+## 2026-10-12 补充:go/db 写路径 Redis 往返结论、汇总脚本 DB 段回归用例(Claude,未编译、未测试)
+
+- **补上一条的"未做"第三项**:写路径 Redis 往返的盘点、三方案设计与复核已完成,写进 [db-task-pipeline-bottlenecks.md](design/db-task-pipeline-bottlenecks.md) §6。
+  - 结论:同实例部署下每条写最多 11→2 次(落点 Redis 独立时 →4),但现在不改。go/db 分段耗时没有实测,R19 吞吐 55~62 task/s、lag 0;先补测量(§6.3 第 0 步),正确性先做条件写,往返合并等突发排空超 SLO 再做。
+  - 口径:11 = Kafka 来源且 owner_epoch>0 的写(main 9 + placement 2);重试来源 13;一次存盘两条 DBTask 合计 22。其中 7 次是 R19 之后加的。"1 次 MySQL"未核实(Save 可能 1~4 条语句)。
+  - 新发现:`kafka:expand:status` 读取是死代码,生产代码从不写入 expanding(只有测试),删除需单独决策。
+  - 条件写规模订正为 20–25 个文件、约 3~4 人周,proto2mysql 需外部发版(须授权)。
+- **测试**:`tools/scripts/test_stress_summarize.ps1` 补 DB 段用例,按 client_golang 真实输出顺序 `{op=..,stage=..}` 伪造 t18m_db 快照,断言 6 个平均值都算得出来(上一条脚本修复的回归用例)。
+- **未验证**:同上一条;另加 `pwsh -File tools/scripts/test_stress_summarize.ps1`。
+- **Java 版(AGENTS §12)**:对应 Java 版本号:无;本条只涉及 go/db 与脚本,**不适用**。
+
+## 2026-10-13 补充:proto2mysql 新增 SaveConditional(条件写的库原语),已推分支,未验证(Claude)
+
+- **授权**:负责人明确授权 clone proto2mysql、改完提交并 push(proto2mysql 是负责人自己的库;本仓库 AGENTS §9 的 push 禁令不涉及它)。为稳妥只推功能分支,不动 main、不打 tag。
+- **产物**:[luyuan-cpp/proto2mysql `feat/conditional-save`](https://github.com/luyuan-cpp/proto2mysql/tree/feat/conditional-save) commit `e81a1e7`,本机 checkout 在 `D:\luyuan\proto2mysql`。新增 `conditional_save.go`(DB 与 GormDB 的 `SaveConditional`)、离线单测与真库集成测试、审计假驱动的参数记录/排队/uint64 直通,文档与 v0.3.0 发布说明草稿。Save 与其它已有 API 不变。
+- **订正**:proto2mysql v0.2.0 的 Save 是「UPDATE → INSERT → 1062 重试 → FOR UPDATE 归类」,1~4 条语句,不是 REPLACE/ODKU;ctx 早已经 `WithContext` 支持,go/db 是自己忽略了 ctx。详见 [db-task-pipeline-bottlenecks.md](design/db-task-pipeline-bottlenecks.md) §6.6 与 §8。
+- **评审**:设计三视角对抗评审 + 实现两轮代码复核。主要修正:去掉任意上界 FenceBelow(会让栅栏倒退);先读状态再 INSERT;状态查询与整行比较一律 FOR UPDATE(防读写分离层把判定发到滞后从库,误报「已生效」);ErrSaveMatchMismatch 只在两轮都做过整行比较且状态相同时返回。
+- **未验证**:本机没有 Go 工具链,proto2mysql 未编译、未运行测试。Codex 命令见 bottlenecks §6.6;全绿且真库零 SKIP 后合入 main、打 v0.3.0(打 tag 需负责人确认),再改 go/db 的 go.mod 与 replace。
+- **未做**:go/db 侧接入(DBTask 加 save_seq、两张玩家表加 fence 列、C++ 发号、handleDBWriteOp 改用 SaveConditional 并接 ctx、off/dual/sql 模式)——超过 20 个文件且跨 C++,待详细设计与授权。
+- **Java 版(AGENTS §12)**:对应 Java 版本号:无。proto2mysql 是 Go 库,Java 版不适用;Java 侧 `WHERE owner_epoch=?` 能否挡住同 epoch 僵尸写仍**待核实**。
+
+## 2026-10-13 全局单点盘点、解法与 1000 万在线容量核算(Claude,只读调查 + 文档,未改代码、未编译、未测试)
+
+- **起因**:用户连续追问「自运营只有一个账号服会不会是瓶颈」「只有一份的组件是全游戏一份还是每区一份、怎么水平扩展」「加机器解决不了的几类情况怎么解决」,并给出目标规模:同时在线 1000 万、日活 1 亿(多 zone 合计,单 zone 10 万,约 100 个 zone)。
+- **交接文档**:[docs/handoff/handoff-global-singletons-10m-ccu-20261013.md](handoff/handoff-global-singletons-10m-ccu-20261013.md)。内容包括作用域总表、规模无关缺陷清单、五类「加机器解决不了」的解法、容量核算、架构结论、推荐顺序、待拍板项,§0 是给接手会话的开场指令。
+- **主要结论**:
+  - 共享 Redis、MySQL、`task:result:notify`、scene_manager 选主、player_locator 租约与对账、go/db 与审计消费组、etcd、Kafka 都是全游戏一份。login 等按 zone 部署的服务本身能多开。
+  - 按静态推算,共享 Redis 单实例在约 27 万在线(命令)、约 4 个满载 zone(player_locator 对账)、累计约 160~310 万玩家(常驻内存,父键无 TTL)时就会失效。D12 / CZ-2 的「物理全服单实例」契约在目标规模下不成立,建议改写为「逻辑单一、物理按 player_id 分片」,再叠加多 cell。
+- **新发现、与规模无关的缺陷**(已开三张任务卡片,都待 Codex 实测):
+  - C++ 节点连 Redis 不发 AUTH,而 release 档强制开 requirepass(已亲核);
+  - K8s 上 battle 的 Kafka 生产者因 GroupID 非空拿不到 broker(静态推断);
+  - etcd 无 MVCC 压缩;
+  - C++ etcd 双向流断开后不重建。
+  - 另见交接 §3:go/db 连接错误进无消费者的死信;每次存盘 5 条 SQL 里 4 条无效(未开 clientFoundRows);快照永久保留;refresh token 每账号最多 32 枚不作废;Kafka retention.bytes 封顶缓冲;db 消费组全 zone 共用;gate 未设 nofile;scene_manager `reassignSceneNode` 无 CAS。
+- **与早先建议冲突**:关掉旧 gate Login 路径之前,先核实新登录路径是否依赖它写 `login_session`(交接 §3 末尾)。
+- **未验证**:全部是静态读代码与推算。容量模型的终审代理第一次运行因额度中断,已重跑;修正写在交接 §10。没有任何压测对比,不宣称性能结论(AGENTS.md §6)。
+- **Java 版(AGENTS §12)**:对应 Java 版本号:无;状态:不涉及客户端契约,本条只是调查。Java 没有号段库、etcd、Redis 热缓存层,相关项按「不适用」登记;登录排队锁登记「已做,实现不同」;待接手会话在 PARITY.md 登记。
+
+## 2026-10-13 交接:存盘管线修复移交新账号(Claude,文档)
+
+- **交接文档**:[docs/handoff/godb-pipeline-handoff-20261013.md](handoff/godb-pipeline-handoff-20261013.md)(做到哪、剩什么、怎么验、待拍板),[附录](handoff/godb-pipeline-handoff-20261013-appendix.md)是 ①–⑤ 修复方案与条件写 go/db 侧方案的逐文件明细和复核阻断项(多代理工作流原始产出,原先只在会话临时目录里)。
+- **交接时发现的重叠**:
+  - 另一个会话的 G2b(MySQL 连接池指标 `go/shared/sqlpoolstats`、`k8s_deploy.ps1` 连接总账)已覆盖待办 ② 的大半,同样未提交;接手 ② 前先对齐。
+  - 上一条「全局单点盘点」交接([handoff-global-singletons-10m-ccu-20261013.md](handoff/handoff-global-singletons-10m-ccu-20261013.md))也列了 go/db 死信无消费者、db 消费组全 zone 共用、每次存盘多条无效 SQL 等,与本交接的 G2、G6、③ 是同一批问题,两边待办要合并排期,不要各做一份。
+- **工作区状态**:本会话的主仓库改动全部未提交,与其它会话的改动混在同一工作区;只属于本会话的文件清单见交接文档 §2。proto2mysql 分支 `feat/conditional-save` 已推送(e81a1e7)。
+- **Java 版(AGENTS §12)**:对应 Java 版本号:无;本条只是文档,**不适用**。
+
+## 2026-10-13 开服首日瓶颈修复(G1~G4)、S3 容量模型、交接新账号(Claude,未编译、未测试)
+
+- **起因**:用户问「全服唯一的归属库第一天会不会成瓶颈」,并要求修掉开服首日的几处瓶颈(四组全选:D1 热点 + 排队锁、快照管道 + 连接预算、新号免冷读、拆 Redis 只出设计 + 削峰只在 staging / prod 打开)。之后用户把目标规模定为 **S3:同时在线 1000 万、日活 1 亿**。
+- **交接文档**:[docs/handoff/handoff-launch-readiness-and-d1-20261013.md](handoff/handoff-launch-readiness-and-d1-20261013.md)。§4 是剩余工作,§5 是 Codex 验证顺序,§7 是与同日另两份交接(go/db 存盘管线、全局单点)的分工,§8 是给新账号的开场指令。各项规格复制在 `docs/handoff/launch-readiness-20261013/`。
+- **已落码(全部未编译、未测试)**:
+  - **G1a**:`player_route` 改为聚簇主键 `(route_shard, player_id)`,`route_shard = player_id % 16`;`route_meta` 拆出 `route_reconcile`;新增 `route_tidb.go` 与 `route_tool tidb-prepare`。容量模型要求在任何环境建表前改成 64 片(交接 §4 第 4 项)。
+  - **G1b**:登录排队出队锁从全局一把改为每 zone 一把(`<前缀>:zone:<zoneID>`),leader 指标 label 变成 `pod, zone`。
+  - **G2a**:审计快照按分区并发消费,批量落库旋钮默认等于现状;新增 lag 探针、8 条告警、topic 离线换代 runbook([audit-topic-generation-bump-runbook.md](ops/audit-topic-generation-bump-runbook.md))。
+  - **G3**:建角后写新号种子,首次进场免冷读,开关 `NewPlayerSeed.Enabled` 默认关([设计](design/new-player-first-enter-no-cold-read.md))。
+  - **G2b(半成品)**:mysql.yaml 的 max_connections 与内存、gateway Hikari、`go/shared/sqlpoolstats` 连接池指标、go/db 额外落点库按家族分池已写;`k8s_deploy.ps1` 总账、告警、契约测试、db ConfigMap 的 `MetricsListenAddr` 没写。manifest 已声明 9160 端口但 ConfigMap 没跟上,补齐前不要部署。
+  - **G4b**:没写。
+- **只出文档**:
+  - [shared-redis-split-by-purpose.md](design/shared-redis-split-by-purpose.md)(G4a,拆 Redis);
+  - [capacity-model-hok-scale.md](design/capacity-model-hok-scale.md)(S1 / S2 / S3 容量模型,负责人已确认 S3)。容量模型的结论:先撞墙的是 etcd 无压缩、nofile、单 MySQL、Kafka PVC / retention、共享 Redis 的全键 SCAN 与内存、审计快照量;按用途拆 Redis 只够到 S1。
+- **与并行会话的重叠**:容量模型 §1.3 的五件止血事项与全局单点交接 §3 / §7 重叠,归那份做;同玩家条件写、分区对齐归 go/db 交接。go/db 交接里说 `k8s_deploy.ps1` 已有连接总账函数,实际没有。
+- **未验证**:三视角评审因额度中断没做;全部代码待 Codex 按交接 §5 验证。没有压测对比,不宣称性能结论(AGENTS.md §6)。`docs/README.md` 是按生成器格式手工登记的,待 Codex 跑 `python tools/scripts/gen_docs_index.py --check`。
+- **Java 版(AGENTS §12)**:对应 Java 版本号:无。G1b 在 Java 侧「已做,实现不同」(全局一个 leader 遍历全部区);G3「不适用」(Java 建角同步插入玩家行);G1a / G2a / G2b / G4b 属于服务端内部实现,不涉及客户端契约,待接手会话按各规格判断后在 `PARITY.md` 登记(交接 §4 第 6 项)。

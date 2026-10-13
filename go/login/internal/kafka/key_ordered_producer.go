@@ -224,7 +224,7 @@ func (p *KeyOrderedKafkaProducer) SendTasks(ctx context.Context, tasks []*db_pro
 			logx.Errorf("batch send failed: partition=%d, err=%v", partition, err)
 
 			if isPartitionUnavailableErr(err) {
-				p.markPartitionUnavailable(partition)
+				p.markPartitionUnavailableLocked(partition) // 已持有 p.mu
 			}
 
 			if p.producer.IsTransactional() {
@@ -310,7 +310,7 @@ func (p *KeyOrderedKafkaProducer) SendTask(ctx context.Context, task *db_proto.D
 			logx.Errorf("send failed: task=%s, partition=%d, err=%v", task.TaskId, partition, err)
 
 			if isPartitionUnavailableErr(err) {
-				p.markPartitionUnavailable(partition)
+				p.markPartitionUnavailableLocked(partition) // 已持有 p.mu
 			}
 
 			if p.producer.IsTransactional() {
@@ -532,6 +532,15 @@ func (p *KeyOrderedKafkaProducer) recycleMessages(msgs []*sarama.ProducerMessage
 func (p *KeyOrderedKafkaProducer) markPartitionUnavailable(partition int32) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
+	p.markPartitionUnavailableLocked(partition)
+}
+
+// markPartitionUnavailableLocked 是调用方已持有 p.mu 时的版本。
+// SendTask / SendTasks 的发送失败分支本身就在 p.mu 里,以前在那里调 markPartitionUnavailable
+// 会对不可重入的 sync.Mutex 二次加锁:Kafka 选主期间 SendMessage 返回 ErrLeaderNotAvailable
+// (文案含 "partition" 与 "unavailable",命中 isPartitionUnavailableErr),发送 goroutine 当场卡死,
+// 之后本进程所有发送都排在这把锁后面,login 读档全部挂起,只能重启进程。
+func (p *KeyOrderedKafkaProducer) markPartitionUnavailableLocked(partition int32) {
 	p.unavailablePartitions[partition] = time.Now()
 	logx.Errorf("partition marked unavailable: topic=%s, partition=%d, retryInterval=%v",
 		p.topic, partition, p.retryInterval)

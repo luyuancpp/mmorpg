@@ -28,7 +28,9 @@ spec:
   # (分区在实例间独占分配),写任务靠跨实例的 ordering lock + applied 游标保证同一个 key 不乱序、不回退。
   # 有效并行度的上限是分区数(Kafka.PartitionCnt,现为 10),副本超过它没有意义。
   # 不要给它配 HPA:sarama 是 eager rebalance,每次成员变化全员暂停几秒。
-  # MySQL 连接预算:每个实例最多 MaxOpenConn(60)条,外加每个额外落点库 8 条;按 zone 数 × 副本数算进 max_connections。
+  # MySQL 连接预算:每个实例最多 MaxOpenConn(60)条,外加每个额外落点库 8 条(Placement.ZoneStore* / NonZoneStore*);
+  # 按 zone 数 × 副本数计入共用 MySQL 的总账,公式与规划见 tools/scripts/k8s_deploy.ps1 Get-MysqlConnectionLedger
+  # (滚动发布时每个 Deployment 按多 2 个实例计:maxSurge 的新 Pod + 仍在优雅退出、连接未释放的旧 Pod)。
   replicas: 2
   # 先起新的、Ready 之后再停旧的。以前没写 strategy,默认滚动策略在 1 副本时同样是先起后停 ——
   # 也就是说"单实例"在每次发布的重叠期本来就不成立;现在显式写出来,并且重叠是安全的。
@@ -45,6 +47,13 @@ spec:
       labels:
         app: db
         tier: go-svc
+      # /metrics(2026-10-12 G2b):以前 K8s 上 db 的 ConfigMap 不写 MetricsListenAddr(缺省空串 = 不起端口),
+      # 连接池指标 mmorpg_sql_pool_* 与 owner-epoch-alerts.yaml 的抓取前提在集群里都不成立。
+      # 端口与 ConfigMap 的 MetricsListenAddr ":9160" 一致(9160 与本地 go/db/etc/db.yaml 同值)。
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9160"
+        prometheus.io/path: "/metrics"
     spec:
       affinity:
         podAntiAffinity:
@@ -67,6 +76,9 @@ spec:
           ports:
             - containerPort: 6000
               name: grpc
+            # 与 ConfigMap 的 MetricsListenAddr ":9160" 及上面 prometheus.io/port 注解一致(9160 = db)。
+            - containerPort: 9160
+              name: metrics
           readinessProbe:
             grpc:
               port: 6000

@@ -90,3 +90,175 @@ func TestPrimeRollbackGuildCheckCreatesAllSeries(t *testing.T) {
 	}
 	t.Fatal("metric family data_service_rollback_guild_check_total is not registered")
 }
+
+// TestPrimeRouteCreatesAllSeries 锁死映射持久化第 1a 批的两组告警前提:PrimeRoute 之后,
+// route_register_total{outcome} 的 12 条与 route_publish_total{result} 的 8 条子序列**全部存在且为 0**。
+// fenced / refused_unknown_row / legacy_conflict 这类结局可能一辈子只发生几次,序列不预先存在,
+// `increase(...) > 0` 恰好漏掉第一次(同 TestPrimeRollbackGuildCheckCreatesAllSeries)。
+func TestPrimeRouteCreatesAllSeries(t *testing.T) {
+	PrimeRoute()
+
+	families, err := prometheus.DefaultGatherer.Gather()
+	if err != nil {
+		t.Fatalf("gather: %v", err)
+	}
+	want := map[string]struct {
+		label  string
+		values []string
+		count  int
+	}{
+		"data_service_route_register_total": {"outcome", routeRegisterOutcomes, 12},
+		"data_service_route_publish_total":  {"result", routePublishResults, 8},
+	}
+	found := map[string]bool{}
+	for _, mf := range families {
+		spec, ok := want[mf.GetName()]
+		if !ok {
+			continue
+		}
+		found[mf.GetName()] = true
+		seen := make(map[string]float64, len(mf.GetMetric()))
+		for _, m := range mf.GetMetric() {
+			for _, l := range m.GetLabel() {
+				if l.GetName() == spec.label {
+					seen[l.GetValue()] = m.GetCounter().GetValue()
+				}
+			}
+		}
+		if len(spec.values) != spec.count || len(seen) != spec.count {
+			t.Fatalf("%s has %d series after priming (closed set lists %d), want %d: %v",
+				mf.GetName(), len(seen), len(spec.values), spec.count, seen)
+		}
+		for _, v := range spec.values {
+			got, ok := seen[v]
+			if !ok {
+				t.Fatalf("%s{%s=%q} missing after priming", mf.GetName(), spec.label, v)
+			}
+			if got != 0 {
+				t.Fatalf("%s{%s=%q} = %v after priming, want 0", mf.GetName(), spec.label, v, got)
+			}
+		}
+	}
+	for name := range want {
+		if !found[name] {
+			t.Fatalf("metric family %s is not registered", name)
+		}
+	}
+}
+
+// TestPrimeKafkaConsumerCreatesAllSeries 锁死审计管道告警(deploy/k8s/data-service-audit-alerts.yaml)的前提:
+// PrimeKafkaConsumer 之后,这条消费者的 messages_total 6 个 outcome、lag_probe_total 2 个 result、
+// isolation_total 2 个 result **全部存在且为 0**。坏消息跳过 / 批量兜底停机这类结局可能一辈子只发生几次,
+// 序列不预先存在,`increase(...) > 0` 恰好漏掉第一次(同 TestPrimeRouteCreatesAllSeries)。
+// 用一个只属于本用例的 consumer 名,免得同包其它用例打过的点让"恰好为 0"失真。
+func TestPrimeKafkaConsumerCreatesAllSeries(t *testing.T) {
+	const consumer = "metrics_test_prime_consumer"
+	PrimeKafkaConsumer(consumer)
+
+	families, err := prometheus.DefaultGatherer.Gather()
+	if err != nil {
+		t.Fatalf("gather: %v", err)
+	}
+	want := map[string]struct {
+		label  string
+		values []string
+		count  int
+	}{
+		"data_service_kafka_consumer_messages_total":  {"outcome", kafkaConsumerOutcomes, 6},
+		"data_service_kafka_consumer_lag_probe_total": {"result", kafkaLagProbeResults, 2},
+		"data_service_kafka_consumer_isolation_total": {"result", kafkaIsolationResults, 2},
+	}
+	found := map[string]bool{}
+	for _, mf := range families {
+		spec, ok := want[mf.GetName()]
+		if !ok {
+			continue
+		}
+		found[mf.GetName()] = true
+		seen := map[string]float64{}
+		for _, m := range mf.GetMetric() {
+			var mine bool
+			var value string
+			for _, l := range m.GetLabel() {
+				switch l.GetName() {
+				case "consumer":
+					mine = l.GetValue() == consumer
+				case spec.label:
+					value = l.GetValue()
+				}
+			}
+			if mine {
+				seen[value] = m.GetCounter().GetValue()
+			}
+		}
+		if len(spec.values) != spec.count || len(seen) != spec.count {
+			t.Fatalf("%s{consumer=%q} has %d series after priming (closed set lists %d), want %d: %v",
+				mf.GetName(), consumer, len(seen), len(spec.values), spec.count, seen)
+		}
+		for _, v := range spec.values {
+			got, ok := seen[v]
+			if !ok {
+				t.Fatalf("%s{consumer=%q,%s=%q} missing after priming", mf.GetName(), consumer, spec.label, v)
+			}
+			if got != 0 {
+				t.Fatalf("%s{consumer=%q,%s=%q} = %v after priming, want 0", mf.GetName(), consumer, spec.label, v, got)
+			}
+		}
+	}
+	for name := range want {
+		if !found[name] {
+			t.Fatalf("metric family %s is not registered", name)
+		}
+	}
+}
+
+// TestSQLPoolCollectorDeclaresRouteOnlyUnderDBFirst 钉住 data_service 连接池类别的声明集合(G2b):
+// redis 模式(includeRoute=false)只声明四个 store 的池,db_first 才多出 player_route —— 理由同 PrimeRoute,
+// redis 模式下不装配 route store,不要一组恒为 0、看着像在跑的序列。常量 label sql_client="data_service"。
+func TestSQLPoolCollectorDeclaresRouteOnlyUnderDBFirst(t *testing.T) {
+	for _, tc := range []struct {
+		includeRoute bool
+		want         []string
+	}{
+		{includeRoute: false, want: []string{PoolSnapshot, PoolTransactionLog, PoolIdSegment, PoolPlayerName}},
+		{includeRoute: true, want: []string{PoolSnapshot, PoolTransactionLog, PoolIdSegment, PoolPlayerName, PoolPlayerRoute}},
+	} {
+		reg := prometheus.NewPedanticRegistry()
+		if err := reg.Register(NewSQLPoolCollector(nil, tc.includeRoute)); err != nil {
+			t.Fatalf("includeRoute=%v: register: %v", tc.includeRoute, err)
+		}
+		families, err := reg.Gather()
+		if err != nil {
+			t.Fatalf("includeRoute=%v: gather: %v", tc.includeRoute, err)
+		}
+		seen := map[string]bool{}
+		for _, mf := range families {
+			if mf.GetName() != "mmorpg_sql_pool_pools" {
+				continue
+			}
+			for _, m := range mf.GetMetric() {
+				var pool, client string
+				for _, l := range m.GetLabel() {
+					switch l.GetName() {
+					case "pool":
+						pool = l.GetValue()
+					case "sql_client":
+						client = l.GetValue()
+					}
+				}
+				if client != "data_service" {
+					t.Fatalf("includeRoute=%v: pool %q has sql_client=%q, want data_service", tc.includeRoute, pool, client)
+				}
+				seen[pool] = true
+			}
+		}
+		if len(seen) != len(tc.want) {
+			t.Fatalf("includeRoute=%v: declared pools = %v, want %v", tc.includeRoute, seen, tc.want)
+		}
+		for _, pool := range tc.want {
+			if !seen[pool] {
+				t.Fatalf("includeRoute=%v: pool %q not declared (got %v)", tc.includeRoute, pool, seen)
+			}
+		}
+	}
+}

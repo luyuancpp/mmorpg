@@ -47,28 +47,34 @@ func startIntegrationFixture(t *testing.T, prov *integrationProvider) (*Queue, *
 	secret := []byte("integration-test-secret")
 	q := New(rdb, time.Hour, 60*time.Second, secret)
 
-	activeZones := func(_ context.Context) []uint32 {
-		prov.mu.Lock()
-		defer prov.mu.Unlock()
-		out := make([]uint32, 0, len(prov.cands))
-		for z := range prov.cands {
-			out = append(out, z)
-		}
-		return out
-	}
-
-	d := NewDispatcher(
+	// 用它的两个用例都只有 zone 1:dispatcher 只出自己那一个 zone(G1b)。
+	d, err := NewDispatcher(
 		q, prov, rdb, secret,
-		300*time.Second, // gateTokenTTL
+		300*time.Second,     // gateTokenTTL
 		50*time.Millisecond, // dispatch interval — fast for tests
 		1.5,
-		2*time.Second,            // lock TTL
+		2*time.Second, // lock TTL
 		"dispatcher:lock:test",
-		activeZones,
+		1,
 	)
+	if err != nil {
+		t.Fatalf("NewDispatcher: %v", err)
+	}
 	d.Start()
 	cleanup := func() { d.Stop(); mr.Close(); _ = rdb.Close() }
 	return q, d, rdb, cleanup
+}
+
+// mustNewDispatcher 用测试节拍(30ms 一拍、2s 锁)构造一个只负责 zoneID 的 dispatcher。
+func mustNewDispatcher(t *testing.T, q *Queue, prov CapacityProvider, rdb *redis.Client,
+	secret []byte, lockKeyBase string, zoneID uint32) *Dispatcher {
+	t.Helper()
+	d, err := NewDispatcher(q, prov, rdb, secret, 300*time.Second, 30*time.Millisecond, 1.5,
+		2*time.Second, lockKeyBase, zoneID)
+	if err != nil {
+		t.Fatalf("NewDispatcher(zone=%d): %v", zoneID, err)
+	}
+	return d
 }
 
 // stubSignFn is the test-side gate-token signer. The Dispatcher (in the
@@ -233,14 +239,10 @@ func TestIntegration_LeaderElectionSerializesDispatch(t *testing.T) {
 	}
 	secret := []byte("test")
 	q := New(rdb, time.Hour, 60*time.Second, secret)
-	activeZones := func(_ context.Context) []uint32 { return []uint32{1} }
 
-	d1 := NewDispatcher(q, prov, rdb, secret, 300*time.Second,
-		30*time.Millisecond, 1.5, 2*time.Second,
-		"dispatcher:lock:dual", activeZones)
-	d2 := NewDispatcher(q, prov, rdb, secret, 300*time.Second,
-		30*time.Millisecond, 1.5, 2*time.Second,
-		"dispatcher:lock:dual", activeZones)
+	// 同一个 zone、同一个前缀 = 同一把 zone 锁,两个副本互为主备。
+	d1 := mustNewDispatcher(t, q, prov, rdb, secret, "dispatcher:lock:dual", 1)
+	d2 := mustNewDispatcher(t, q, prov, rdb, secret, "dispatcher:lock:dual", 1)
 
 	d1.Start()
 	d2.Start()
@@ -263,4 +265,223 @@ func TestIntegration_LeaderElectionSerializesDispatch(t *testing.T) {
 		_ = drained
 		return n == 0
 	})
+}
+
+// 锁键按 zone 拆:同一前缀下每个 zone 一把,互不相同,也都不等于前缀本身(旧的全服键)。
+func TestZoneDispatcherLockKey_IsPerZone(t *testing.T) {
+	const base = "dispatcher:lock:login_queue"
+	if got, want := ZoneDispatcherLockKey(base, 1), "dispatcher:lock:login_queue:zone:1"; got != want {
+		t.Fatalf("ZoneDispatcherLockKey(%q, 1) = %q, want %q", base, got, want)
+	}
+	seen := make(map[string]uint32)
+	for _, zone := range []uint32{1, 2, 10, 101} {
+		key := ZoneDispatcherLockKey(base, zone)
+		if key == base {
+			t.Fatalf("zone %d lock key must not equal the legacy global key %q", zone, base)
+		}
+		if prev, dup := seen[key]; dup {
+			t.Fatalf("zone %d and zone %d share lock key %q", prev, zone, key)
+		}
+		seen[key] = zone
+	}
+}
+
+// 构造期校验先于任何使用:zone 0 或空前缀直接报错,q / prov / rdb 传 nil 也不会被碰到。
+func TestNewDispatcher_RejectsZeroZoneOrEmptyLockKeyBase(t *testing.T) {
+	cases := []struct {
+		name        string
+		lockKeyBase string
+		zoneID      uint32
+	}{
+		{name: "zero zone", lockKeyBase: "dispatcher:lock:login_queue", zoneID: 0},
+		{name: "empty lock key base", lockKeyBase: "", zoneID: 1},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			d, err := NewDispatcher(nil, nil, nil, nil, 300*time.Second, 30*time.Millisecond, 1.5,
+				2*time.Second, tc.lockKeyBase, tc.zoneID)
+			if d != nil || err == nil {
+				t.Fatalf("NewDispatcher(lockKeyBase=%q, zone=%d) = (%v, %v), want (nil, error)",
+					tc.lockKeyBase, tc.zoneID, d, err)
+			}
+		})
+	}
+}
+
+// G1b 回归:两个 zone 的 login 共用一个 Redis,配置里的 DispatcherLockKey 一模一样(login.yaml 默认值),
+// 各自只看得见本 zone 的 gate。每个 zone 都要有自己的 leader,队列都要出空。
+// 旧实现锁键全服一把,只有抢到锁的 zone 出队,另一个 zone 一个人都放不进来。
+func TestIntegration_TwoZonesSharedRedis_BothQueuesDrain(t *testing.T) {
+	mr, err := miniredis.Run()
+	if err != nil {
+		t.Fatalf("miniredis: %v", err)
+	}
+	defer mr.Close()
+	rdb := redis.NewClient(&redis.Options{Addr: mr.Addr()})
+	defer rdb.Close()
+	secret := []byte("g1b")
+	q := New(rdb, time.Hour, 60*time.Second, secret)
+	ctx := context.Background()
+
+	const base = "dispatcher:lock:login_queue"
+	newZoneDispatcher := func(zone uint32) *Dispatcher {
+		// 照生产形状:每个 zone 的 provider 只认得本 zone 的 gate(GateWatcher 前缀带 ZoneId)。
+		prov := &integrationProvider{
+			caps:  map[uint32]uint32{zone: 100},
+			cands: map[uint32][]GateCandidate{zone: {{NodeID: zone, IP: "10.0.0.1", Port: 9000, ZoneID: zone}}},
+		}
+		return mustNewDispatcher(t, q, prov, rdb, secret, base, zone)
+	}
+	d1, d2 := newZoneDispatcher(1), newZoneDispatcher(2)
+	d1.Start()
+	defer d1.Stop()
+	d2.Start()
+	defer d2.Stop()
+
+	for range 5 {
+		if _, err := q.Enqueue(ctx, 1, "zone1-account", "dev"); err != nil {
+			t.Fatalf("enqueue zone 1: %v", err)
+		}
+		if _, err := q.Enqueue(ctx, 2, "zone2-account", "dev"); err != nil {
+			t.Fatalf("enqueue zone 2: %v", err)
+		}
+	}
+	waitFor(t, 3*time.Second, "zone 1 and zone 2 queues both drained", func() bool {
+		n1, err1 := q.QueueLen(ctx, 1)
+		n2, err2 := q.QueueLen(ctx, 2)
+		return err1 == nil && err2 == nil && n1 == 0 && n2 == 0
+	})
+
+	// 锁的形状:每个 zone 一把,全服旧键没人写。
+	n, err := rdb.Exists(ctx, ZoneDispatcherLockKey(base, 1), ZoneDispatcherLockKey(base, 2)).Result()
+	if err != nil || n != 2 {
+		t.Fatalf("each zone must hold its own leader lock: exists=%d err=%v", n, err)
+	}
+	if mr.Exists(base) {
+		t.Fatalf("legacy global lock key %q must not be written any more", base)
+	}
+}
+
+// 滚动升级窗口:老版本持全服旧键、新版本持 zone 键,两把锁不互斥,同一个 zone 出现两个 leader。
+// 两个 leader 同时出队同一个 zone 时:不丢人、不重复放行(ZPOPMIN 原子),超发有界(≤ 2×cap)。
+func TestIntegration_DualLeadersSameZone_NoLossBoundedOverAdmit(t *testing.T) {
+	mr, err := miniredis.Run()
+	if err != nil {
+		t.Fatalf("miniredis: %v", err)
+	}
+	defer mr.Close()
+	rdb := redis.NewClient(&redis.Options{Addr: mr.Addr()})
+	defer rdb.Close()
+	secret := []byte("g1b-dual")
+	q := New(rdb, time.Hour, 60*time.Second, secret)
+	ctx := context.Background()
+
+	const capacity, total = 4, 20
+	prov := &integrationProvider{
+		caps:  map[uint32]uint32{1: capacity},
+		cands: map[uint32][]GateCandidate{1: {{NodeID: 1, IP: "10.0.0.1", Port: 9000, ZoneID: 1}}},
+	}
+	want := make(map[string]bool, total)
+	for range total {
+		res, err := q.Enqueue(ctx, 1, "u", "d")
+		if err != nil {
+			t.Fatalf("enqueue: %v", err)
+		}
+		want[res.QueueID] = true
+	}
+	// 两个不同前缀 = 两把互不相干的锁 = 同一 zone 两个 leader(滚动升级窗口的形状)。
+	const newBase, oldBase = "dispatcher:lock:login_queue", "dispatcher:lock:legacy_window"
+	dNew := mustNewDispatcher(t, q, prov, rdb, secret, newBase, 1)
+	dOld := mustNewDispatcher(t, q, prov, rdb, secret, oldBase, 1)
+	dNew.Start()
+	defer dNew.Stop()
+	dOld.Start()
+	defer dOld.Stop()
+
+	// 两把锁都被持有 = 真的是双 leader;否则下面的断言在单 leader 下也会过,证明不了什么。
+	// 用 waitFor 而不是一次性检查:两个 goroutine 抢锁的先后不确定,先饱和的那一刻另一把可能还没拿到。
+	// 两把键互不竞争,拿到后由心跳续着(miniredis 不按墙钟过期),不会再丢。
+	waitFor(t, 3*time.Second, "dual-leader shape: both zone locks held", func() bool {
+		held, err := rdb.Exists(ctx, ZoneDispatcherLockKey(newBase, 1), ZoneDispatcherLockKey(oldBase, 1)).Result()
+		return err == nil && held == 2
+	})
+
+	snapshot := func() (queued, admitted []string) {
+		queued, _ = rdb.ZRange(ctx, zoneZSetKey(1), 0, -1).Result()
+		admitted, _ = rdb.SMembers(ctx, admittedSetKey(1)).Result()
+		return queued, admitted
+	}
+	waitFor(t, 3*time.Second, "both leaders saturated the zone", func() bool {
+		qd, ad := snapshot()
+		return len(ad) >= capacity && len(qd)+len(ad) == total
+	})
+	time.Sleep(300 * time.Millisecond) // 再给每个 leader 约十拍,确认余量为 0 后不再放行
+	queued, admitted := snapshot()
+	if len(admitted) > 2*capacity {
+		t.Fatalf("over-admission must be bounded by 2×cap=%d, got %d", 2*capacity, len(admitted))
+	}
+	seen := make(map[string]int, total)
+	for _, id := range append(queued, admitted...) {
+		seen[id]++
+	}
+	if len(seen) != total {
+		t.Fatalf("entries lost: tracked %d of %d", len(seen), total)
+	}
+	for id, c := range seen {
+		if c != 1 || !want[id] {
+			t.Fatalf("queueId %s appears %d times (known=%v)", id, c, want[id])
+		}
+	}
+}
+
+// countingProvider 包一层 CapacityProvider,数 CandidatesForZone 被调了几次,
+// 用来证明空队列那一拍没碰 gate 目录(生产实现每次都要取 etcd 快照、查排空标记)。
+type countingProvider struct {
+	CapacityProvider
+	candidateCalls atomic.Int32
+}
+
+func (p *countingProvider) CandidatesForZone(ctx context.Context, zoneID uint32) ([]GateCandidate, error) {
+	p.candidateCalls.Add(1)
+	return p.CapacityProvider.CandidatesForZone(ctx, zoneID)
+}
+
+// G1b 之后本 zone 每拍都在出队范围内(以前要本 zone 有 gate 才进 activeZones)。
+// 先判空再算容量:空闲的 zone 不碰 gate 目录,非空才走 FreeSlots。
+func TestDispatchOnce_EmptyQueueSkipsGateDirectory(t *testing.T) {
+	mr, err := miniredis.Run()
+	if err != nil {
+		t.Fatalf("miniredis: %v", err)
+	}
+	defer mr.Close()
+	rdb := redis.NewClient(&redis.Options{Addr: mr.Addr()})
+	defer rdb.Close()
+	secret := []byte("g1b-empty")
+	q := New(rdb, time.Hour, 60*time.Second, secret)
+	ctx := context.Background()
+
+	prov := &countingProvider{CapacityProvider: &integrationProvider{
+		caps:  map[uint32]uint32{1: 10},
+		cands: map[uint32][]GateCandidate{1: {{NodeID: 1, IP: "10.0.0.1", Port: 9000, ZoneID: 1}}},
+	}}
+	// 不 Start:直接调 dispatchOnce,没有 goroutine,结果确定。没 Start 过的 dispatcher 不能 Stop。
+	d := mustNewDispatcher(t, q, prov, rdb, secret, "dispatcher:lock:empty", 1)
+
+	for range 3 {
+		d.dispatchOnce(ctx)
+	}
+	if n := prov.candidateCalls.Load(); n != 0 {
+		t.Fatalf("empty queue must not touch the gate directory, CandidatesForZone called %d times", n)
+	}
+
+	if _, err := q.Enqueue(ctx, 1, "u", "d"); err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+	d.dispatchOnce(ctx)
+	if prov.candidateCalls.Load() == 0 {
+		t.Fatal("non-empty queue must compute capacity from the gate directory")
+	}
+	if n, err := q.QueueLen(ctx, 1); err != nil || n != 0 {
+		t.Fatalf("queue should be drained after one pass: len=%d err=%v", n, err)
+	}
 }

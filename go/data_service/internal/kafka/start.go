@@ -33,6 +33,11 @@ type StartConfig struct {
 	// 不能靠重启进程来恢复消费,所以由本包的 supervisor 在冷却后从断点续消费。
 	// 0 取默认 60s;负数 = 永不自动恢复(只能重启进程)。
 	ResumeAfter time.Duration
+
+	// Snapshot 是 player_snapshot 消费者的批量 / 并发参数(G2a);零值 = 逐条串行(2026-10-12 之前的行为)。
+	Snapshot SnapshotConsumerConfig
+	// LagProbeInterval 是消费组 lag / 保留期丢失量探针的周期;<= 0 = 不探。
+	LagProbeInterval time.Duration
 }
 
 const defaultResumeAfter = 60 * time.Second
@@ -134,15 +139,33 @@ func Start(ctx context.Context, cfg StartConfig, txSink TxLogSink, snapSink Snap
 		defer consumers.wg.Done()
 		supervise(ctx, ConsumerSnapshot, cfg.ResumeAfter, func() (runner, MessageReader) {
 			reader := newReader(cfg.Brokers, cfg.SnapshotTopic, cfg.SnapshotGroup)
-			c := NewSnapshotConsumer(SnapshotConsumerConfig{}, reader, snapSink)
+			c := NewSnapshotConsumer(cfg.Snapshot, reader, snapSink)
 			c.health = consumers.Snapshot
 			return c, reader
 		})
 	})
 
-	logx.Infof("[kafka] consumers started: %s(topic=%s group=%s p=%d) %s(topic=%s group=%s p=%d) brokers=%v",
+	if cfg.LagProbeInterval > 0 {
+		targets := []lagTarget{
+			{consumer: ConsumerTxLog, group: cfg.TxLogGroup, topic: cfg.TxLogTopic, partitions: cfg.TxLogPartitions},
+			{consumer: ConsumerSnapshot, group: cfg.SnapshotGroup, topic: cfg.SnapshotTopic, partitions: cfg.SnapshotPartitions},
+		}
+		// 刻意**不进** consumers.wg:Wait 存在的理由是「先等消费者、再关连接池」,探针不碰任何 store;
+		// 而 sarama 的调用不收 ctx,broker 半死时一轮探测能挂满拨号 / 读超时,进了 wg 就会让关停超过 kafkaShutdownGrace,
+		// 打出误导性的 "consumers did not stop"。探针在 ctx 结束后的下一个节拍退出并关连接。
+		safego.Go(lagProbePoint, func() {
+			runLagProbe(ctx, cfg.Brokers, cfg.LagProbeInterval, targets)
+		})
+	}
+
+	// 生效的批量参数打出来:排障时要先确认这个实例到底是逐条还是批量(零值已按 withDefaults 的口径解释)。
+	snap := cfg.Snapshot
+	snap.withDefaults()
+	logx.Infof("[kafka] consumers started: %s(topic=%s group=%s p=%d) %s(topic=%s group=%s p=%d batch_rows=%d batch_bytes=%d flush_interval=%s inflight=%d) lag_probe=%s brokers=%v",
 		ConsumerTxLog, cfg.TxLogTopic, cfg.TxLogGroup, cfg.TxLogPartitions,
-		ConsumerSnapshot, cfg.SnapshotTopic, cfg.SnapshotGroup, cfg.SnapshotPartitions, cfg.Brokers)
+		ConsumerSnapshot, cfg.SnapshotTopic, cfg.SnapshotGroup, cfg.SnapshotPartitions,
+		snap.BatchMaxRows, snap.BatchMaxBytes, snap.FlushInterval, snap.MaxInflightFlushes,
+		cfg.LagProbeInterval, cfg.Brokers)
 	return consumers, nil
 }
 

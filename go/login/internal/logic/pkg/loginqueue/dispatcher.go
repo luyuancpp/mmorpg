@@ -1,5 +1,5 @@
-// dispatcher.go — single-leader goroutine that drains zone queues into
-// admit:{queueId} entries.
+// dispatcher.go — 每个 zone 一个 leader 的出队 goroutine:把本 zone 队列里的条目
+// 放行成 admit:{queueId}。
 //
 // Why leader-elect (instead of every login replica draining):
 //
@@ -9,6 +9,15 @@
 //	Redis QPS for no benefit. A single leader is simpler, fairer, and
 //	cheap because the work itself is trivial (a few ZPOPMINs + SETs per
 //	tick).
+//
+// 选主范围是「一个 zone」,不是全服(G1b,2026-10-12):
+//
+//	login 按 zone 部署,GateWatcher 的 etcd 前缀带本进程的 Node.ZoneId,
+//	CapacityProvider 只看得见本 zone 的 gate。出队要先算 FreeSlots、再挑 gate,
+//	所以一个 dispatcher 只能出它看得见 gate 的那个 zone。旧实现的锁键全服一把、
+//	出队范围却只有本 zone:多个 zone 共用一个 Redis 时,只有抢到锁的那个 zone
+//	出队,其它 zone 一个人都放不进来。现在锁键 = ZoneDispatcherLockKey(配置前缀, zoneID),
+//	锁的范围与出队范围由同一个 zoneID 决定,不会再分家。
 //
 // Leader election uses pkg/locker.RedisLocker:
 //   - TryLock with TTL=DispatcherLockTTL (e.g. 30s)
@@ -26,14 +35,13 @@
 //	Stop()
 //	  └─ cancel ctx, wait for goroutine to exit, release lock if held.
 //
-// The drain loop walks every "active" zone — defined as any zone with a
-// non-empty queue (ZCARD > 0) or any admitted entries. Zones without
-// either are skipped without touching their gate watcher; this keeps the
-// hot path cheap when the system is idle.
+// 每拍只看本 zone:队列为空直接跳过(不碰 gate 目录);非空才算 FreeSlots 并出队。
 package loginqueue
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"sync"
 	"time"
 
@@ -45,7 +53,8 @@ import (
 	"shared/safego"
 )
 
-// Dispatcher coordinates queue draining across login replicas.
+// Dispatcher drains ONE zone's queue. Login replicas of the same zone compete
+// for the same zone-scoped lock; replicas of other zones never contend with it.
 type Dispatcher struct {
 	queue        *Queue
 	provider     CapacityProvider
@@ -56,7 +65,10 @@ type Dispatcher struct {
 	interval          time.Duration
 	softCapMultiplier float64
 	lockTTL           time.Duration
-	lockKey           string
+	// zoneID 是本 dispatcher 唯一负责出队的 zone(本 login 的 Node.ZoneId);
+	// lockKey 由它派生,锁的范围与出队范围不会分家。
+	zoneID  uint32
+	lockKey string
 
 	// podID is the metric label for login_queue_dispatcher_is_leader.
 	// Empty falls back to "unknown" so the gauge still publishes — used by
@@ -65,16 +77,18 @@ type Dispatcher struct {
 
 	cancel  context.CancelFunc
 	stopped chan struct{}
-
-	// activeZonesProvider returns the set of zone IDs that should be
-	// considered for draining each tick. Tests inject a static list; the
-	// production wiring derives this from the GateWatcher (zones we know
-	// about) plus any zone with a non-empty queue:zone:* key.
-	activeZonesProvider func(ctx context.Context) []uint32
-	mu                  sync.Mutex
+	mu      sync.Mutex
 }
 
-// NewDispatcher builds a Dispatcher. Callers must invoke Start exactly once.
+// NewDispatcher builds a Dispatcher that drains exactly one zone. Callers must
+// invoke Start exactly once.
+//
+// lockKeyBase 是配置里的 Queue.DispatcherLockKey,实际抢的锁键是
+// ZoneDispatcherLockKey(lockKeyBase, zoneID)。zoneID 必须是本 login 的 Node.ZoneId,
+// 也就是 provider 看得见 gate 的那个 zone;否则抢到了锁也出不了队。
+//
+// zoneID 为 0 或 lockKeyBase 为空时返回错误,并且不起任何 goroutine:zone 0 的队列条目
+// 在 Lookup 里被当成损坏数据(queue.go 的 Lookup),空前缀会让锁键和别的业务键挤在一起。
 func NewDispatcher(
 	queue *Queue,
 	provider CapacityProvider,
@@ -84,22 +98,35 @@ func NewDispatcher(
 	interval time.Duration,
 	softCapMultiplier float64,
 	lockTTL time.Duration,
-	lockKey string,
-	activeZones func(ctx context.Context) []uint32,
-) *Dispatcher {
-	return &Dispatcher{
-		queue:               queue,
-		provider:            provider,
-		rdb:                 rdb,
-		hmacSecret:          hmacSecret,
-		gateTokenTTL:        gateTokenTTL,
-		interval:            interval,
-		softCapMultiplier:   softCapMultiplier,
-		lockTTL:             lockTTL,
-		lockKey:             lockKey,
-		activeZonesProvider: activeZones,
-		stopped:             make(chan struct{}),
+	lockKeyBase string,
+	zoneID uint32,
+) (*Dispatcher, error) {
+	if zoneID == 0 {
+		return nil, errors.New("loginqueue: dispatcher zone id must be non-zero")
 	}
+	if lockKeyBase == "" {
+		return nil, errors.New("loginqueue: dispatcher lock key base must be non-empty")
+	}
+	return &Dispatcher{
+		queue:             queue,
+		provider:          provider,
+		rdb:               rdb,
+		hmacSecret:        hmacSecret,
+		gateTokenTTL:      gateTokenTTL,
+		interval:          interval,
+		softCapMultiplier: softCapMultiplier,
+		lockTTL:           lockTTL,
+		zoneID:            zoneID,
+		lockKey:           ZoneDispatcherLockKey(lockKeyBase, zoneID),
+		stopped:           make(chan struct{}),
+	}, nil
+}
+
+// ZoneDispatcherLockKey 返回 zone 级出队 leader 锁键 <base>:zone:<zoneID>。
+// 同一 zone 的 login 副本抢同一把锁,不同 zone 互不相干。
+// 排查时用:redis-cli GET dispatcher:lock:login_queue:zone:1
+func ZoneDispatcherLockKey(base string, zoneID uint32) string {
+	return fmt.Sprintf("%s:zone:%d", base, zoneID)
 }
 
 // Start launches the leader-election + drain goroutine. Returns immediately.
@@ -112,7 +139,7 @@ func (d *Dispatcher) Start() {
 	// Initialize the leader gauge to 0 so the metric appears on /metrics
 	// before the first election round completes. Without this, a fresh
 	// pod looks "missing" in Grafana for ~lockTTL/3 seconds.
-	dispatcherIsLeaderGauge.Set(0, d.podLabel())
+	d.setLeaderGauge(0)
 
 	// safego:选主循环 panic 会让这个副本永远不再参选,而队列没有 leader 时
 	// 所有排队玩家都晾在那里。裸 go func 的旧写法是"炸了就整进程死",
@@ -137,6 +164,12 @@ func (d *Dispatcher) podLabel() string {
 		return "unknown"
 	}
 	return id
+}
+
+// setLeaderGauge 发布本副本在本 zone 的 leader 状态。zone 是低基数标签(zone 数),
+// 让「每个 zone 恰好一个 leader」能直接写成 sum by (zone) (...) == 1。
+func (d *Dispatcher) setLeaderGauge(v float64) {
+	dispatcherIsLeaderGauge.Set(v, d.podLabel(), labelZone(d.zoneID))
 }
 
 // Stop signals the dispatcher to exit and waits for the goroutine to finish.
@@ -174,23 +207,23 @@ func (d *Dispatcher) electAndRun(ctx context.Context) {
 			}
 		}
 
-		logx.Infof("[loginqueue] elected dispatcher leader key=%s", d.lockKey)
-		dispatcherIsLeaderGauge.Set(1, d.podLabel())
+		logx.Infof("[loginqueue] elected dispatcher leader zone=%d key=%s", d.zoneID, d.lockKey)
+		d.setLeaderGauge(1)
 
 		// Cancel drain when we lose the lease (e.g. Redis flap → key
 		// expired and another replica took over). drainLoop respects this
 		// ctx on every tick.
 		drainCtx, drainCancel := context.WithCancel(ctx)
 		stopHB := lock.StartHeartbeat(d.lockTTL/3, d.lockTTL, func(err error) {
-			logx.Errorf("[loginqueue] dispatcher lost leadership: %v", err)
-			dispatcherIsLeaderGauge.Set(0, d.podLabel())
+			logx.Errorf("[loginqueue] dispatcher lost leadership zone=%d: %v", d.zoneID, err)
+			d.setLeaderGauge(0)
 			drainCancel()
 		})
 
 		d.drainLoop(drainCtx)
 
 		stopHB()
-		dispatcherIsLeaderGauge.Set(0, d.podLabel())
+		d.setLeaderGauge(0)
 		// Best-effort release; on ctx cancel or lost lease this may no-op,
 		// which is fine — the next replica's TryLock will succeed once the
 		// TTL expires.
@@ -220,66 +253,64 @@ func (d *Dispatcher) drainLoop(ctx context.Context) {
 	}
 }
 
-// dispatchOnce walks every active zone and admits as many entries as
-// freeSlots allows. Errors per zone are logged and skipped — one bad zone
-// (e.g. its gates went offline) shouldn't starve the others.
+// dispatchOnce runs one drain pass over this dispatcher's zone. 出错只记日志,
+// 条目留在队列里等下一拍,不丢人。
 func (d *Dispatcher) dispatchOnce(ctx context.Context) {
-	zones := d.activeZonesProvider(ctx)
-	for _, zoneID := range zones {
-		if ctx.Err() != nil {
-			return
-		}
-		// Publish gauge snapshot first so even zero-admit zones keep their
-		// gauges fresh — otherwise a zone that just finished draining
-		// would show stale "size=N" in Grafana until the next entry shows up.
-		publishGaugeSnapshot(ctx, d.queue, zoneID)
+	zoneID := d.zoneID
+	// Publish gauge snapshot first so even zero-admit zones keep their
+	// gauges fresh — otherwise a zone that just finished draining
+	// would show stale "size=N" in Grafana until the next entry shows up.
+	publishGaugeSnapshot(ctx, d.queue, zoneID)
 
-		free, _, _, _, err := FreeSlots(ctx, d.provider, d.queue, zoneID, d.softCapMultiplier)
+	// 先看队列再算容量。以前 activeZones 来自 GateWatcher,本 zone 一台 gate 都没有时
+	// 根本不会走到这里;现在本 zone 总在出队范围内,不先判空的话,空闲又没 gate 的 zone
+	// 会每拍刷一条 freeSlots ERROR。队列非空却没有 gate,说明有人在排而放不进去,
+	// 下面照常报 ERROR。
+	queueLen, err := d.queue.QueueLen(ctx, zoneID)
+	if err != nil || queueLen == 0 {
+		return
+	}
+	free, _, _, _, err := FreeSlots(ctx, d.provider, d.queue, zoneID, d.softCapMultiplier)
+	if err != nil {
+		logx.Errorf("[loginqueue] freeSlots zone=%d queueLen=%d err=%v", zoneID, queueLen, err)
+		return
+	}
+	if free == 0 {
+		return
+	}
+
+	batch := min(free, queueLen)
+
+	// Pick a gate per entry but DO NOT sign the token here — the HMAC
+	// + expire happen at consume time inside consumeAdmitAndSign so
+	// the 5-min TTL window starts when the client redeems the admit,
+	// not when we picked the gate (R17 R1 fix). The dispatcher's job
+	// reduces to "decide which gate is least loaded right now".
+	pickFn := func(zoneID uint32, _ string) (*AdmitSlot, error) {
+		candidates, err := d.provider.CandidatesForZone(ctx, zoneID)
 		if err != nil {
-			logx.Errorf("[loginqueue] freeSlots zone=%d err=%v", zoneID, err)
-			continue
+			return nil, err
 		}
-		if free == 0 {
-			continue
-		}
-		queueLen, err := d.queue.QueueLen(ctx, zoneID)
-		if err != nil || queueLen == 0 {
-			continue
-		}
-
-		batch := min(free, uint32(queueLen))
-
-		// Pick a gate per entry but DO NOT sign the token here — the HMAC
-		// + expire happen at consume time inside consumeAdmitAndSign so
-		// the 5-min TTL window starts when the client redeems the admit,
-		// not when we picked the gate (R17 R1 fix). The dispatcher's job
-		// reduces to "decide which gate is least loaded right now".
-		pickFn := func(zoneID uint32, _ string) (*AdmitSlot, error) {
-			candidates, err := d.provider.CandidatesForZone(ctx, zoneID)
-			if err != nil {
-				return nil, err
-			}
-			gate, err := PickGate(candidates)
-			if err != nil {
-				return nil, err
-			}
-			return &AdmitSlot{
-				NodeID: gate.NodeID,
-				IP:     gate.IP,
-				Port:   gate.Port,
-				ZoneID: gate.ZoneID,
-			}, nil
-		}
-
-		admitted, err := d.queue.PopAdmit(ctx, zoneID, int(batch), pickFn)
+		gate, err := PickGate(candidates)
 		if err != nil {
-			logx.Errorf("[loginqueue] PopAdmit zone=%d err=%v", zoneID, err)
-			continue
+			return nil, err
 		}
-		recordAdmit(zoneID, admitted)
-		if admitted > 0 {
-			logx.Infof("[loginqueue] zone=%d admitted=%d freeBefore=%d queueLen=%d",
-				zoneID, admitted, free, queueLen)
-		}
+		return &AdmitSlot{
+			NodeID: gate.NodeID,
+			IP:     gate.IP,
+			Port:   gate.Port,
+			ZoneID: gate.ZoneID,
+		}, nil
+	}
+
+	admitted, err := d.queue.PopAdmit(ctx, zoneID, int(batch), pickFn)
+	if err != nil {
+		logx.Errorf("[loginqueue] PopAdmit zone=%d err=%v", zoneID, err)
+		return
+	}
+	recordAdmit(zoneID, admitted)
+	if admitted > 0 {
+		logx.Infof("[loginqueue] zone=%d admitted=%d freeBefore=%d queueLen=%d",
+			zoneID, admitted, free, queueLen)
 	}
 }

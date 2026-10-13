@@ -88,10 +88,19 @@ func (s *DataServiceServer) SetPlayerField(ctx context.Context, req *data_servic
 //   - 映射不存在 / 已存在且相同 → OK(幂等)
 //   - 已存在且不同             → AlreadyExists + ErrCodeZoneMappingConflict,消息带既有 zone
 //   - 目标 zone 正在合服        → FailedPrecondition + ErrCodeZoneMergeInProgress
-//   - mapping Redis 故障        → Unavailable(闸门查询失败也走这里:fail-closed)
+//   - mapping Redis 故障        → Unavailable + ErrCodeRedis(闸门查询失败也走这里:fail-closed)
 //
 // storage_id != 0 时与映射同一段 Lua 原子钉落点记录(player-storage-placement.md §8.1);
 // 上面四种结果的语义不变 —— 只有映射这次真的写成才会写落点,幂等 / 冲突 / 被围栏拒绝都不碰它。
+//
+// RouteStore.Mode=db_first(docs/design/player-route-mapping-durability-proposal.md §4)时上面四条照旧
+// (合服围栏另有两条路径:库内分片、发布脚本的提交点复核,都是 FailedPrecondition + 22),另多两种 Unavailable,
+// **gRPC code 的集合不变**(OK / AlreadyExists / FailedPrecondition / Unavailable),新码只体现在 message 里:
+//   - 库这一段故障(store 没装配、SQL / 锁等待、route_meta 缺失或冻结、缓存认得玩家而库里没行)→ Unavailable + ErrCodeRouteStoreError
+//   - player_id 为 0 或 home_zone 越界 → Unavailable + ErrCodeInvalidRequest
+//
+// 已提交但发布失败 / 未确认落盘、发布脚本发现缓存里是另一份映射,都是 Unavailable + ErrCodeRedis:
+// login 照常 fail-closed 并释放名字,重试落到幂等分支补发。login 只看有没有 err。
 func (s *DataServiceServer) RegisterPlayerZone(ctx context.Context, req *data_service.RegisterPlayerZoneRequest) (*emptypb.Empty, error) {
 	err := s.svcCtx.Router.RegisterPlayerZone(ctx, req.GetPlayerId(), req.GetHomeZoneId(), req.GetStorageId())
 	if err == nil {
@@ -111,6 +120,13 @@ func (s *DataServiceServer) RegisterPlayerZone(ctx context.Context, req *data_se
 		logx.Errorf("[RegisterPlayerZone] refused by merge fence: player=%d zone=%d", req.PlayerId, req.HomeZoneId)
 		return nil, status.Errorf(codes.FailedPrecondition, "error_code=%d: %v",
 			constants.ErrCodeZoneMergeInProgress, err)
+	case errors.Is(err, routing.ErrInvalidRegistration):
+		// 只有 db_first 可达。刻意不用 InvalidArgument:gRPC code 集合保持与 redis 模式相同(规格 g.2 第 14 条),靠码 14 区分。
+		logx.Errorf("[RegisterPlayerZone] refused invalid registration: player=%d zone=%d: %v", req.PlayerId, req.HomeZoneId, err)
+		return nil, status.Errorf(codes.Unavailable, "error_code=%d: %v", constants.ErrCodeInvalidRequest, err)
+	case errors.Is(err, routing.ErrRouteStore):
+		logx.Errorf("[RegisterPlayerZone] route store failure: player=%d zone=%d: %v", req.PlayerId, req.HomeZoneId, err)
+		return nil, status.Errorf(codes.Unavailable, "error_code=%d: %v", constants.ErrCodeRouteStoreError, err)
 	default:
 		return nil, status.Errorf(codes.Unavailable, "error_code=%d: %v", constants.ErrCodeRedis, err)
 	}
@@ -150,6 +166,7 @@ func (s *DataServiceServer) GetPlayerHomeZone(ctx context.Context, req *data_ser
 // BatchGetPlayerHomeZone 与单查刻意不同:**缺席的 id 直接不出现在 map 里**,不是错误。
 // 批量查的调用方(login 的角色列表)天然要处理"部分有部分没有",给整批返回 NotFound
 // 会把一个正常状态升级成整批失败;单查只有一个 id,没有"部分"可言,所以那边用 NotFound。
+// 值畸形与单查同口径,整批回 Unavailable(2026-10-12 起;此前畸形值被当成缺席静默跳过)。
 func (s *DataServiceServer) BatchGetPlayerHomeZone(ctx context.Context, req *data_service.BatchGetPlayerHomeZoneRequest) (*data_service.BatchGetPlayerHomeZoneResponse, error) {
 	mapping, err := s.svcCtx.Router.BatchGetPlayerHomeZone(ctx, req.PlayerIds)
 	if err != nil {
@@ -211,62 +228,38 @@ func callerIdentity(ctx context.Context) string {
 	return fmt.Sprintf("peer=%s user-agent=%q operator=%q", addr, agent, operator)
 }
 
-// RemapHomeZoneForMerge 把所有 player:zone:*==source 的映射改写成 target(合服)。
+// RemapHomeZoneForMerge **已停用**(2026-10-12,docs/design/player-route-mapping-durability-proposal.md §4.3 的 W2):
+// 一律回 FailedPrecondition + ErrCodeNotImplemented,零变更。改映射只走 tools/merge_zone(按 CAS 改写、
+// 第 2 批起库先写);Router 上对应的实现已删除。
 //
-// 一次调用改写全服玩家的归属,而且**没有反向操作**(要改回去得先知道谁原本在哪个
-// zone,而那份信息刚被覆盖掉)。所以三道闸全部满足才执行:
+// 停用的理由:它对扫到的 player:zone:* 做无条件 SET(tools/merge_zone/merge_run.go 的 CAS 改写注释写了危害),
+// 且只写 Redis、绕过 player_route 真源 —— db_first 之后它改出来的值库里不知道,下一次发布会被判成冲突或被覆盖回去。
+// 仓库内没有调用方(规格 g.2 第 12 条)。
 //
-//  1. AdminToken 已配置,且 metadata 的 x-admin-token 与之相符 —— 否则
-//     PermissionDenied + ErrCodeAdminAuthRequired。没配 = 停用,不是免鉴权。
-//  2. 源 zone 已立 merge:in_progress:{source} 标记 —— 否则 FailedPrecondition +
-//     ErrCodeMergeFenceMissing。合服工具必须先立标记(那个标记同时在挡住
-//     RegisterPlayerZone),线上误调用因此被挡在门外。
-//  3. 参数合法(source/target 非零且不同)。
-//
-// 每一次调用(通过 / 拒绝 / 结果)都留日志并带上调用方身份与影响条数:这是事后
-// 唯一能回答"谁在什么时候把哪批玩家搬到了哪里"的记录。
+// 拒绝发生在**鉴权之前**:不再有"带对 token 就能执行"的路径,也就不该让调用方以为换个 token 能过。
+// 每次被调都留 ERROR 日志并带调用方身份:还在调它的只可能是忘了升级的运维脚本,必须让人看见。
 func (s *DataServiceServer) RemapHomeZoneForMerge(ctx context.Context, req *data_service.RemapHomeZoneForMergeRequest) (*data_service.RemapHomeZoneForMergeResponse, error) {
 	const rpcName = "RemapHomeZoneForMerge"
-	if err := s.authorizeAdmin(ctx, rpcName); err != nil {
-		return nil, err
-	}
-	if req.SourceZoneId == 0 || req.TargetZoneId == 0 || req.SourceZoneId == req.TargetZoneId {
-		logx.Errorf("[admin] %s refused: bad zones source=%d target=%d %s",
-			rpcName, req.SourceZoneId, req.TargetZoneId, callerIdentity(ctx))
-		return nil, status.Errorf(codes.InvalidArgument,
-			"error_code=%d: source_zone_id and target_zone_id must be non-zero and different", constants.ErrCodeInvalidRequest)
-	}
-
-	logx.Infof("[admin] %s authorized: source=%d target=%d dry_run=%t %s",
-		rpcName, req.SourceZoneId, req.TargetZoneId, req.DryRun, callerIdentity(ctx))
-
-	matched, updated, err := s.svcCtx.Router.RemapHomeZoneForMerge(ctx, req.SourceZoneId, req.TargetZoneId, req.DryRun)
-	if err != nil {
-		if errors.Is(err, routing.ErrMergeFenceMissing) {
-			logx.Errorf("[admin] %s refused: merge fence %s absent (source zone still accepts new mappings) %s",
-				rpcName, routing.MergeFenceKey(req.SourceZoneId), callerIdentity(ctx))
-			return nil, status.Errorf(codes.FailedPrecondition, "error_code=%d: %v", constants.ErrCodeMergeFenceMissing, err)
-		}
-		// 中途失败时 matched/updated 是**已经发生**的改写量,必须记下来:
-		// 重跑是幂等的(按值匹配),但运维需要知道这次跑到哪儿停的。
-		logx.Errorf("[admin] %s FAILED after matched=%d updated=%d: source=%d target=%d dry_run=%t %s: %v",
-			rpcName, matched, updated, req.SourceZoneId, req.TargetZoneId, req.DryRun, callerIdentity(ctx), err)
-		return nil, status.Errorf(codes.Unavailable, "error_code=%d: %v", constants.ErrCodeRedis, err)
-	}
-	logx.Infof("[admin] %s done: source=%d target=%d dry_run=%t matched=%d updated=%d %s",
-		rpcName, req.SourceZoneId, req.TargetZoneId, req.DryRun, matched, updated, callerIdentity(ctx))
-	return &data_service.RemapHomeZoneForMergeResponse{
-		ErrorCode:      constants.ErrCodeOK,
-		PlayersMatched: uint32(matched),
-		PlayersUpdated: uint32(updated),
-	}, nil
+	logx.Errorf("[admin] %s refused: the RPC is retired (proposal §4.3); remap mappings with tools/merge_zone. source=%d target=%d dry_run=%t %s",
+		rpcName, req.GetSourceZoneId(), req.GetTargetZoneId(), req.GetDryRun(), callerIdentity(ctx))
+	return nil, status.Errorf(codes.FailedPrecondition,
+		"error_code=%d: %s is retired since 2026-10-12 (player-route-mapping-durability-proposal.md §4.3); remap mappings with tools/merge_zone",
+		constants.ErrCodeNotImplemented, rpcName)
 }
 
+// DeletePlayerData 删玩家数据键。失败一律走响应体的 in-band error_code,**唯一的例外**是
+// delete_zone_mapping=true:映射删除分支已停用(logic.ErrZoneMappingDeletionDisabled,proposal §4.3 的 W3),
+// 回 gRPC FailedPrecondition + ErrCodeNotImplemented,且在任何副作用之前拒绝(数据键与映射都不动)。
+// 走 status 而不是 in-band 码,是为了让还带着这个开关的调用方当场失败,而不是看着一个"错误码非 0 的响应"继续往下走。
 func (s *DataServiceServer) DeletePlayerData(ctx context.Context, req *data_service.DeletePlayerDataRequest) (*data_service.DeletePlayerDataResponse, error) {
 	resp, err := logic.DeletePlayerData(ctx, s.svcCtx, &logic.DeletePlayerDataReq{
 		PlayerID:          req.PlayerId,
 		DeleteZoneMapping: req.DeleteZoneMapping,
 	})
+	if errors.Is(err, logic.ErrZoneMappingDeletionDisabled) {
+		logx.Errorf("[DeletePlayerData] refused delete_zone_mapping=true: player=%d %s", req.GetPlayerId(), callerIdentity(ctx))
+		return nil, status.Errorf(codes.FailedPrecondition, "error_code=%d: %v", constants.ErrCodeNotImplemented, err)
+	}
 	if err != nil {
 		return &data_service.DeletePlayerDataResponse{ErrorCode: resp.ErrorCode}, nil
 	}

@@ -465,3 +465,13 @@ cd /d/luyuan/mmorpg && git status --porcelain go/ && git log -1 --format='%h %ci
 2. **发布顺序是硬约束**:客户端组队功能必须等服务端 gate / 路由服 / match **全量**升级之后才能对玩家开放。否则旧 gate 不认识 201..215,会按非法包 `forceClose`,现象是玩家被踢下线。
 3. **客户端 UI 为零**。2026-09-18 只把协议管道接上(`mmorpg-client/tools/gen_proto.ps1` 收录 `proto/team/team.proto` 与 `generated/code/proto/tip/team_error_tip.proto`,生成 `Teampb.*` 与 15 条 `MessageIds`),`Assets/Scripts/Game/Team` 下的传输适配器、单飞守卫、按 `(membership_epoch, version)` 应用快照(DV-7)、错误码文案等**都还没做**。
 4. **D7 的估算与验收原文未改**(:167 的"14 个 RPC"、:250 的 45 人日等保留作历史),读到时以本节 12.2 为准。
+
+### 12.4 D7 定案理由复核(2026-10-12)
+
+> 追加节，不改本文其余段落。完整推导、扩展路径与拆分预案见 [team-system.md](team-system.md)「定案理由复核与扩展路径(2026-10-12)」。
+
+- **结论不变，理由改写**。翻案只证伪了"不能内嵌"(go-zero redis 无 WATCH),没有证明"应该内嵌";最终方案里唯一需要同进程才能成立的"原子事务"被 DV-1 / DV-3 推翻(12.2),`JoinQueueRequest` 加 `team_id` 与独立消息号段也未落地。
+- **同进程的现行理由**:① 少一条"结果未知"的跨进程边(gather 结果进程内直接清锁推送);② 少一个部署单元，共用发号器、会话拦截器、`playercontract`;③ 分协议保证将来可拆(客户端 / gate / 路由服不用改)。
+- **已知代价**:共用 zrpc Timeout、注册失败 / 雪花失租 / OOM 连带匹配、发版与扩缩容绑定、DV-2 写 SharedRedis 的例外。
+- **领域口径**:team 属于社交/会话域，只是部署寄宿在 match 进程;D-2 的 team 行已改为按数据归属论证，不再引用本条。
+- **12.3 第 1 条部分过期**:PROGRESS 2026-10-10 记录 `go/match`(含 team)在 `21d5b25120` 之上通过 build / vet / test;该证据早于 10-12 的 `go/match` 改动(EndMatch 兜底上限),当前工作区 `go/match` 未编译。C++ `player_team.cpp`、robot team-smoke、`-race` fuzz、K8s 可达性仍无运行证据。

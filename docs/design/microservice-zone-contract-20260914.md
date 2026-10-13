@@ -764,7 +764,8 @@ $env:GATE_CLIENT_RPC_ROUTER = '1'
   否则 gate 卡在依赖门,登录 / 匹配 / 聊天全部 `no_target`。脚本只有注释、**没有运行时拦截**;`k8s_image.ps1` 的发布路径从不部署 Go 服务,全新集群上同样会踩到。
   "infra-up 带 `-SkipGoSvc` 或缺 `-GoSvcRegistry` 时 fail-fast"已建议单独立项,待拍板。
 - **可达性口径更新**:K8s 默认部署下,chat / friend / trade 这些已登记进 `$GoSvcCatalogue` 且有 manifest 的全局服务,经 gate → `client-rpc-router` **按设计可达,待补验**;
-  guild / team / mail / rank 等没有 K8s manifest 的服务仍然不可达,原因是**未部署**,不是路由模式。集群外玩家另需 `-ClientEntryMode external`(集群外入口 D76–D93):
+  guild / team / mail / rank 等没有 K8s manifest 的服务仍然不可达,原因是**未部署**,不是路由模式。
+  (2026-10-12 更正:team 没有独立 manifest,但它寄宿在 match 进程,随 match 镜像与 ConfigMap 部署,`TeamNodeService` 由 match 进程注册,不属于"未部署";经路由服的可达性同样待补验。)集群外玩家另需 `-ClientEntryMode external`(集群外入口 D76–D93):
   podip 下 gate 与 battle 都通告 PodIP,只有集群内 robot 连得上;上线时 external 须与 `-GateRouterMode 1` 在同一窗口启用。
 - **§14.1 第 8 条已关闭**:`dev_tools.ps1` 与 `k8s_image.ps1` 都加了 `-GateRouterMode`(`[ValidateSet("", "0", "1")]`,留空 = 不覆盖、默认值只在 `k8s_deploy.ps1`,非空才透传);
   `k8s_zone_rollback.ps1` 与 `dev_tools.ps1 -Command k8s-zone-rollback` 也透传,并在 `-Apply` 且留空时由第 0 步预检核对集群现状(`docs/design/zone_data_rollback.md`「## 3. 整 Zone 灾难恢复级回档」下的「2026-09-29 修订」)。

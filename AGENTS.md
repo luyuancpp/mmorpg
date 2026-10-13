@@ -278,7 +278,7 @@
 ## 12. 双版本服务器（C++/Go 版 + Java 版，强制）
 
 2026-09-29 起服务器有两个版本并行演进：本仓库（C++ 节点 + Go 微服务）与 **Java 版**
-（`github.com/luyuan-java/xuanming-server-mmo`，本机 `D:\luyuan\wuxingqitan\xuanming-server-mmo-java`）。
+（`github.com/luyuan-java/xuanming-server-mmo`，本机 `D:\luyuan\xuanming-server-mmo`；2026-10-12 前此处写的 `D:\luyuan\wuxingqitan\xuanming-server-mmo-java` 已不存在，照旧路径找不到仓库不等于 Java 版没做，按新路径核对 `PARITY.md`）。
 
 - **以后所有功能两个版本都要做。** 一个功能只在一边落地不算完成；交付说明必须写明另一版的状态（已做 / 待做 + 原因）。
 - **对账本**：Java 仓库根目录 `PARITY.md` 记录「本仓库 commit ↔ Java 版本号」与逐功能对齐状态。任一边完成一个功能都要在 `PARITY.md` 登记一行；本仓库的 `docs/PROGRESS.md` 条目同时注明对应的 Java 版本号。

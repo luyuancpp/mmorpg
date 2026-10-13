@@ -4,8 +4,9 @@ import "fmt"
 
 // SharedRedis 上的组队 key 契约(设计文档 docs/design/team-system.md §C.1)。
 //
-// 这是 cross-zone-matchmaking.md D2"match 对 SharedRedis 只读"的唯一例外(DV-2):
-// 只允许本包经 Lua 写下面四类 key。match 其余代码仍然只读 SharedRedis。
+// 这是 cross-zone-matchmaking.md D2"match 对 SharedRedis 只读"的例外(DV-2):
+// 只允许本包经 Lua 写下面四类 key。match 其余代码对契约 key 只读;另一处 SharedRedis 写是
+// logic 包 matcher 的旧格式队列迁移(只碰 match 自己的旧 key,见 logic/keys.go)。
 // 四类 key 在同一条 S_COMMIT 里跨 key 原子写,依赖 SharedRedis 是单实例
 // (cross-zone-matchmaking.md §10.0 共享库禁止集群化清单)。
 //

@@ -68,6 +68,9 @@ Locker:
   #     + 名字登记 3s(建角侧总预算)+ player:zone 登记 3s(HomeZone.RegisterTimeout)= 9s;
   #   - 三次 Redis:读 blob、围栏写 blob、写未确认时的回读。常态是毫秒级;Redis 变慢但每次
   #     回包都还在 3s 以内时,三步合计 < 9s。
+  #   - 开 NewPlayerSeed 时多一次 Redis(新号种子;代码里的 1s ctx 预算只掐重发,单次最坏仍是 3s 读超时):
+  #     Redis 合计变成四步 < 12s,加上 gRPC 的 9s 最坏是 21s,**超过**下面的 20 —— 开着种子时「20 盖住」
+  #     不再成立,正确性照旧只靠围栏 + 回读;是否上调见 docs/design/new-player-first-enter-no-cold-read.md §10 P6。
   # 原值 10 是名字登记加入之前定的,已经盖不住;20 盖住「gRPC 三步全部拖满 + Redis 慢但还在回包」。
   # **20 不是硬上界**,不要把它读成「有余量的保证」:
   #   - Redis 那个 3s 是 go-redis 默认的**单次** socket 读超时。svc/servicecontext.go 构造客户端时
@@ -229,10 +232,27 @@ HomeZone:
 #   3) 关闭 / 回退顺序相反:go/db 任一 zone 已开 Required=true 时,禁止把 PinOnCreate 改回 false、
 #      禁止把 NewPlayerStorageId 改成没有 go/db 能打开的库、也禁止回退到不带 storage_id 的 login;
 #      否则建角照常成功、login 零报错,但新号进游戏预加载秒级失败、存盘全进死信。要关,先关全部 go/db 的 Required。
+#      开着 NewPlayerSeed 时新号不再走预加载读,违反本条的症状只剩存盘这一半(死信 / 无限重试),更隐蔽(见下方 NewPlayerSeed)。
 #   启动日志 "[placement] pin_on_create=..." 是核对依据。
 Placement:
   PinOnCreate: false
   NewPlayerStorageId: 0
+
+# ─────────────────────────────────────────────────────────────────────────
+# 新号首次入场免冷读(docs/design/new-player-first-enter-no-cold-read.md)
+#
+# Enabled:true = CreatePlayer 在落账号 blob 之前写一份 PlayerAllData:{id} 种子(两张子表只带 player_id,
+#   与「冷读读空后 login 组装出的父键」相同,TTL 24h),新号首次 EnterGame 命中缓存,不再发 Kafka 读任务、
+#   不再同步等 go/db(现状单任务最长 8s)。false(默认,整块不写也一样)= 与本功能之前完全一致。
+#   种子只是缓存:写失败 / 过期 / 被删时首次入场退回冷读,结果相同;它永不覆盖已有父键,
+#   也不会写给进过场景的玩家(player:{id}:owner_epoch 已存在)。
+#   前提(既有契约,不是新增):PlayerAllData 与 player:{id}:owner_epoch 在同一个 Redis 实例(CZ-2 / CZ-4)。
+#   打开前置:go/db 的 db_placement_guard_total{outcome="missing_required"} 与
+#   db_placement_store_open_total{result=~"error|rejected"} 两类告警已就位(见上方 Placement 第 3 条)。
+#   开着时新号的入场链在 PreloadPool 里跑完,池满回 kLoginInProgress;压测看 [preload-pool] 日志的 dropped_delta。
+#   启动日志 "[new-player-seed] enabled=..." 是核对依据。
+NewPlayerSeed:
+  Enabled: false
 
 # ─────────────────────────────────────────────────────────────────────────
 # HMAC 密钥治理(见 internal/config/secrets.go 包注释)
@@ -413,6 +433,9 @@ AuthProviders:
 #   - reconnect/replace callers (existing PlayerSession) bypass the queue.
 #
 # Roll-out checklist:
+#   0. 多个 zone 共用一个 Redis 时,先把所有 zone 的 login 升到 2026-10-12(G1b)之后的版本,
+#      再打开 Enabled。新旧版本混跑时,同一个 zone 可能短暂出现两个 leader:只会多放行一批,
+#      不丢人、不重复放行(docs/design/login-queue-2026-05.md §7.1)。
 #   1. Deploy with Enabled=false → verify no behavior change.
 #   2. Set ZoneCapacityOverride for each live zone (use observed peak * 0.9
 #      as the initial value; tune from there).
@@ -433,6 +456,9 @@ Queue:
   SoftCapMultiplier: 1.5
   DefaultRetryAfterMs: 2000
   DispatcherLockTTL: 30s
+  # 出队 leader 锁键的前缀:实际锁键 = <DispatcherLockKey>:zone:<Node.ZoneId>,每个 zone 一个 leader
+  # (2026-10-12 G1b;此前全服一把,多 zone 共用 Redis 时只有 leader 所在 zone 出队)。各 zone 照写这个默认值即可;
+  # 同一 zone 的副本必须同值,否则该 zone 会长期双 leader。
   DispatcherLockKey: "dispatcher:lock:login_queue"
   # ZoneCapacityOverride pins per-zone admission ceilings. Keys are zone IDs
   # as decimal strings; values are absolute concurrent online player ceilings.

@@ -209,12 +209,13 @@ Kafka:
 	}
 }
 
-// ── AdminToken(运维 RPC 鉴权,RemapHomeZoneForMerge)────────────
+// ── AdminToken(运维 RPC 鉴权:Rollback* 与 ReleasePlayerName;RemapHomeZoneForMerge 已停用)────────────
 
 // TestAdminTokenAbsentMeansDisabled 钉住默认形态:yaml 里没有 AdminToken 时它是空串,
 // 而空串在 server 侧的语义是**该 RPC 停用**(不是免鉴权)。
-// data_service 在集群内网无鉴权可达,一个默认敞开的 remap 接口等于把"改写全服玩家
-// 归属 zone"的能力交给任何能拨到它的进程,而这个操作没有反向操作。
+// data_service 在集群内网无鉴权可达,一个默认敞开的运维接口等于把"回档 / 强制释放名字"
+// 这类没有反向操作的能力交给任何能拨到它的进程。这条理由最初是为 remap 写的;remap 自 2026-10-12
+// 起不论 token 一律停用(proposal §4.3),token 现在只守三个 Rollback* 与 ReleasePlayerName 的运维路径。
 func TestAdminTokenAbsentMeansDisabled(t *testing.T) {
 	c := loadYaml(t, minimalYaml)
 	if c.AdminToken != "" {
@@ -236,7 +237,8 @@ AdminToken: merge-window-token
 //
 // 这条不是形式主义:MappingRedis 段刚删掉一个**被静默忽略**的 `DB: 15`
 // (go-zero 的 redis.RedisConf 没有 DB 字段,映射实际一直在 DB 0)。
-// 顺带钉住 AdminToken 在这份 dev 配置里保持关闭 —— 本地栈不该默认开着 remap。
+// 顺带钉住 AdminToken 在这份 dev 配置里保持关闭 —— 本地栈不该默认开着运维 RPC
+// (今天是 Rollback* 与 ReleasePlayerName 的运维路径;remap 已停用,与 token 无关)。
 func TestShippedYamlLoads(t *testing.T) {
 	var c Config
 	if err := conf.Load("../../etc/data_service.yaml", &c); err != nil {
@@ -246,7 +248,7 @@ func TestShippedYamlLoads(t *testing.T) {
 		t.Fatal("etc/data_service.yaml: MappingRedis.Host 不能为空")
 	}
 	if c.AdminToken != "" {
-		t.Fatalf("etc/data_service.yaml 不该内置 AdminToken(会让本地栈默认开着 remap),got %q", c.AdminToken)
+		t.Fatalf("etc/data_service.yaml 不该内置 AdminToken(会让本地栈默认开着运维 RPC),got %q", c.AdminToken)
 	}
 }
 
@@ -564,6 +566,169 @@ func TestShippedYamlGuildCheck(t *testing.T) {
 	}
 }
 
+// ── RouteStore(映射提交点,docs/design/player-route-mapping-durability-proposal.md §4、§11.2)──────────
+
+func intPtr(v int) *int { return &v }
+
+// assertRouteStoreDefaults 断言 got 是 Normalize 之后的默认形态(redis、8、20/5、3、1/0/1500)。
+func assertRouteStoreDefaults(t *testing.T, got RouteStoreConfig) {
+	t.Helper()
+	if got.Mode != RouteStoreModeRedis || got.FenceShards != 8 || got.MaxOpenConn != 20 || got.MaxIdleConn != 5 ||
+		got.PublishAttempts != 3 || got.NumLocal() != 1 || got.NumReplicas() != 0 || got.WaitAOFTimeoutMs != 1500 {
+		t.Fatalf("RouteStore = %+v (numlocal=%d numreplicas=%d), want redis / 8 / 20,5 / 3 / 1,0,1500",
+			got, got.NumLocal(), got.NumReplicas())
+	}
+	if got.WaitAOFNumLocal == nil || got.WaitAOFNumReplicas == nil {
+		t.Fatal("Normalize must fill both WaitAOF pointers")
+	}
+}
+
+// TestRouteStoreDefaultsWhenBlockAbsent:yaml 里没有 `RouteStore:` 段 = redis 模式,与 2026-10-12 之前逐字相同;
+// 规范化之后的默认值合法。go-zero 不下钻未出现的 optional 结构,所以默认值只能由 Normalize 给。
+func TestRouteStoreDefaultsWhenBlockAbsent(t *testing.T) {
+	c := loadYaml(t, minimalYaml)
+	if c.RouteStore.Mode != "" || c.RouteStore.WaitAOFNumLocal != nil || c.RouteStore.WaitAOFNumReplicas != nil {
+		t.Fatalf("an absent RouteStore block must stay zero-valued, got %+v", c.RouteStore)
+	}
+	rs := c.RouteStore.Normalize()
+	assertRouteStoreDefaults(t, rs)
+	if err := rs.Validate(); err != nil {
+		t.Fatalf("normalized defaults must validate: %v", err)
+	}
+	if rs.DBFirst() {
+		t.Fatal("the default mode must be redis, not db_first")
+	}
+	if !rs.WaitsForAOF() {
+		t.Fatal("the default must wait for local AOF (numlocal=1)")
+	}
+
+	// 只写 `RouteStore:` 不写键,语义与缺失一致。
+	c = loadYaml(t, minimalYaml+`
+RouteStore: {}
+`)
+	assertRouteStoreDefaults(t, c.RouteStore.Normalize())
+}
+
+// TestRouteStoreValidateRejects 覆盖规格 d 节的每一条拒绝规则:配错**拒绝**而不是纠正。
+// 最要紧的是 Mode 拼错:`DB_FIRST` / `db-first` 被悄悄当成 redis,运维以为切了提交点而实际没切。
+func TestRouteStoreValidateRejects(t *testing.T) {
+	base := RouteStoreConfig{}.Normalize()
+	if err := base.Validate(); err != nil {
+		t.Fatalf("defaults must validate: %v", err)
+	}
+	cases := []struct {
+		name   string
+		mutate func(r *RouteStoreConfig)
+	}{
+		{"Mode 大写", func(r *RouteStoreConfig) { r.Mode = "DB_FIRST" }},
+		{"Mode 连字符", func(r *RouteStoreConfig) { r.Mode = "db-first" }},
+		{"Mode 未知值", func(r *RouteStoreConfig) { r.Mode = "mysql" }},
+		{"Mode 首字母大写", func(r *RouteStoreConfig) { r.Mode = "Redis" }},
+		{"FenceShards 为负", func(r *RouteStoreConfig) { r.FenceShards = -1 }},
+		{"FenceShards 超过 64", func(r *RouteStoreConfig) { r.FenceShards = 65 }},
+		{"MaxOpenConn 为负", func(r *RouteStoreConfig) { r.MaxOpenConn = -1 }},
+		{"MaxIdleConn 为负", func(r *RouteStoreConfig) { r.MaxIdleConn = -1 }},
+		{"MaxIdleConn 超过 MaxOpenConn", func(r *RouteStoreConfig) { r.MaxIdleConn = r.MaxOpenConn + 1 }},
+		{"PublishAttempts 为负", func(r *RouteStoreConfig) { r.PublishAttempts = -1 }},
+		{"PublishAttempts 超过 5", func(r *RouteStoreConfig) { r.PublishAttempts = 6 }},
+		{"WaitAOFNumLocal 为 2", func(r *RouteStoreConfig) { r.WaitAOFNumLocal = intPtr(2) }},
+		{"WaitAOFNumLocal 为负", func(r *RouteStoreConfig) { r.WaitAOFNumLocal = intPtr(-1) }},
+		{"WaitAOFNumReplicas 为负", func(r *RouteStoreConfig) { r.WaitAOFNumReplicas = intPtr(-1) }},
+		{"WaitAOFNumReplicas 超过 16", func(r *RouteStoreConfig) { r.WaitAOFNumReplicas = intPtr(17) }},
+		{"WaitAOFTimeoutMs 为负", func(r *RouteStoreConfig) { r.WaitAOFTimeoutMs = -1 }},
+		{"WaitAOFTimeoutMs 超过 1500", func(r *RouteStoreConfig) { r.WaitAOFTimeoutMs = 1501 }},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			r := base
+			tc.mutate(&r)
+			if err := r.Validate(); err == nil {
+				t.Fatalf("%+v must be rejected", r)
+			}
+			// db_first 下同样拒绝:非法值与 Mode 无关。
+			if r.Mode == RouteStoreModeRedis {
+				r.Mode = RouteStoreModeDBFirst
+				if err := r.Validate(); err == nil {
+					t.Fatalf("%+v must be rejected under db_first too", r)
+				}
+			}
+		})
+	}
+
+	// 闭区间的边界本身是允许的,免得有人照着报错信息改成边界值却仍被拒。
+	accepted := []struct {
+		name   string
+		mutate func(r *RouteStoreConfig)
+	}{
+		{"db_first", func(r *RouteStoreConfig) { r.Mode = RouteStoreModeDBFirst }},
+		{"FenceShards=1", func(r *RouteStoreConfig) { r.FenceShards = 1 }},
+		{"FenceShards=64", func(r *RouteStoreConfig) { r.FenceShards = 64 }},
+		{"MaxIdleConn=MaxOpenConn", func(r *RouteStoreConfig) { r.MaxIdleConn = r.MaxOpenConn }},
+		{"PublishAttempts=1", func(r *RouteStoreConfig) { r.PublishAttempts = 1 }},
+		{"PublishAttempts=5", func(r *RouteStoreConfig) { r.PublishAttempts = 5 }},
+		{"WaitAOFNumReplicas=16", func(r *RouteStoreConfig) { r.WaitAOFNumReplicas = intPtr(16) }},
+		{"WaitAOFTimeoutMs=1", func(r *RouteStoreConfig) { r.WaitAOFTimeoutMs = 1 }},
+		{"WaitAOFTimeoutMs=1500", func(r *RouteStoreConfig) { r.WaitAOFTimeoutMs = 1500 }},
+	}
+	for _, tc := range accepted {
+		t.Run("accept/"+tc.name, func(t *testing.T) {
+			r := base
+			tc.mutate(&r)
+			if err := r.Validate(); err != nil {
+				t.Fatalf("%+v must be accepted: %v", r, err)
+			}
+		})
+	}
+}
+
+// TestRouteStoreExplicitZeroWaitDisables:两项都**显式**写 0 = 不发 WAITAOF(只给没开 AOF 的环境 / miniredis 单测),
+// 且 Normalize 不得把显式的 0 当成"没写"改回默认 1 —— 这正是两项用 *int 的原因。
+func TestRouteStoreExplicitZeroWaitDisables(t *testing.T) {
+	c := loadYaml(t, minimalYaml+`
+RouteStore:
+  WaitAOFNumLocal: 0
+  WaitAOFNumReplicas: 0
+`)
+	if c.RouteStore.WaitAOFNumLocal == nil || c.RouteStore.WaitAOFNumReplicas == nil {
+		t.Fatalf("explicit zeros must be loaded as non-nil pointers, got %+v", c.RouteStore)
+	}
+	rs := c.RouteStore.Normalize()
+	if rs.NumLocal() != 0 || rs.NumReplicas() != 0 {
+		t.Fatalf("Normalize must keep explicit zeros, got numlocal=%d numreplicas=%d", rs.NumLocal(), rs.NumReplicas())
+	}
+	if rs.WaitsForAOF() {
+		t.Fatal("WaitAOFNumLocal=0 + WaitAOFNumReplicas=0 must disable WAITAOF")
+	}
+	if err := rs.Validate(); err != nil {
+		t.Fatalf("explicit zeros must validate: %v", err)
+	}
+
+	// 只要求副本(redis-ha 档的写法)仍然要发 WAITAOF。
+	rs.WaitAOFNumReplicas = intPtr(1)
+	if !rs.WaitsForAOF() {
+		t.Fatal("WaitAOFNumReplicas=1 must still wait for AOF")
+	}
+}
+
+// TestShippedYamlRouteStoreIsRedisAndValid:仓库里那份 yaml **显式**写 Mode: redis(本地默认必须与今天逐字相同),
+// 其余键写的就是代码默认值,且合法。切 db_first 是 P2 的显式运维动作,不能出现在随仓库发的配置里。
+func TestShippedYamlRouteStoreIsRedisAndValid(t *testing.T) {
+	var c Config
+	if err := conf.Load("../../etc/data_service.yaml", &c); err != nil {
+		t.Fatalf("load etc/data_service.yaml: %v", err)
+	}
+	if c.RouteStore.Mode != RouteStoreModeRedis {
+		t.Fatalf("etc/data_service.yaml RouteStore.Mode = %q, want an explicit %q", c.RouteStore.Mode, RouteStoreModeRedis)
+	}
+	if c.RouteStore.WaitAOFNumLocal == nil || c.RouteStore.WaitAOFNumReplicas == nil {
+		t.Fatal("etc/data_service.yaml must spell out both WaitAOF keys (their safe default is not the zero value)")
+	}
+	assertRouteStoreDefaults(t, c.RouteStore)
+	if err := c.RouteStore.Validate(); err != nil {
+		t.Fatalf("shipped RouteStore block must validate: %v", err)
+	}
+}
+
 // Store.Required:本地 yaml 不写(整段缺失)必须保持旧的降级语义;K8s ConfigMap 显式写 true 必须生效。
 // 零值就是旧行为,所以这里用裸 bool 是安全的(对照 Schema.AutoMigrate 必须用 *bool 的理由)。
 func TestStoreRequiredDefaultsToFalseAndHonoursExplicitTrue(t *testing.T) {
@@ -580,5 +745,127 @@ Store:
   Required: true
 `); !c.Store.Required {
 		t.Fatal("Store.Required=true (the K8s ConfigMap form) must be honoured")
+	}
+}
+
+// ── Kafka 消费者旋钮(G2a 快照审计管道扩容)──────────────────────────────────
+
+// TestKafkaConsumerKnobsDefaultToRowByRow:yaml 不写五个新键(整段 Kafka 缺失、或段在而键不在)时,
+// Normalize 之后必须是 2026-10-12 之前的行为:逐条(1)、4MiB 软上限(逐条下不起作用)、不等待、并发 1、不探 lag。
+// 默认值一旦漂成"批量打开",一份旧 ConfigMap 就会在没人拍板的情况下把审计落库换成另一条路径。
+func TestKafkaConsumerKnobsDefaultToRowByRow(t *testing.T) {
+	want := KafkaConfig{
+		SnapshotBatchMaxRows:       1,
+		SnapshotBatchMaxBytes:      DefaultSnapshotBatchMaxBytes,
+		SnapshotFlushIntervalMs:    0,
+		SnapshotMaxInflightFlushes: 1,
+		LagProbeIntervalMs:         0,
+	}
+	for _, tc := range []struct {
+		name string
+		yaml string
+	}{
+		{"整段 Kafka 缺失", minimalYaml},
+		{"Kafka 段在、新键不在", minimalYaml + `
+Kafka:
+  Brokers:
+    - 127.0.0.1:9092
+`},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			got := loadYaml(t, tc.yaml).Kafka.Normalize()
+			if got.SnapshotBatchMaxRows != want.SnapshotBatchMaxRows ||
+				got.SnapshotBatchMaxBytes != want.SnapshotBatchMaxBytes ||
+				got.SnapshotFlushIntervalMs != want.SnapshotFlushIntervalMs ||
+				got.SnapshotMaxInflightFlushes != want.SnapshotMaxInflightFlushes ||
+				got.LagProbeIntervalMs != want.LagProbeIntervalMs {
+				t.Fatalf("defaults drifted: got rows=%d bytes=%d interval=%d inflight=%d lag=%d, want rows=1 bytes=%d interval=0 inflight=1 lag=0",
+					got.SnapshotBatchMaxRows, got.SnapshotBatchMaxBytes, got.SnapshotFlushIntervalMs,
+					got.SnapshotMaxInflightFlushes, got.LagProbeIntervalMs, DefaultSnapshotBatchMaxBytes)
+			}
+			// 快照池按 yaml 默认 5(缺段时 0 → 按 5 算)都必须合法。
+			for _, pool := range []int{0, 5} {
+				if err := got.ValidateConsumers(pool); err != nil {
+					t.Fatalf("normalized defaults must validate with pool=%d: %v", pool, err)
+				}
+			}
+		})
+	}
+}
+
+// TestKafkaConsumerKnobsValidate:越界一律拒绝(拒启)而不是纠正;闭区间的边界本身允许,
+// 免得有人照着报错信息改成边界值却仍被拒。并发上限跟着快照池走,池未配(0)按实际回落值 5 算。
+func TestKafkaConsumerKnobsValidate(t *testing.T) {
+	base := KafkaConfig{}.Normalize()
+	for _, tc := range []struct {
+		name   string
+		pool   int
+		mutate func(k *KafkaConfig)
+		ok     bool
+	}{
+		{"rows=-1", 5, func(k *KafkaConfig) { k.SnapshotBatchMaxRows = -1 }, false},
+		{"rows=257", 5, func(k *KafkaConfig) { k.SnapshotBatchMaxRows = 257 }, false},
+		{"rows=256", 5, func(k *KafkaConfig) { k.SnapshotBatchMaxRows = 256 }, true},
+		{"bytes=1", 5, func(k *KafkaConfig) { k.SnapshotBatchMaxBytes = 1 }, false},
+		{"bytes=64MiB", 5, func(k *KafkaConfig) { k.SnapshotBatchMaxBytes = 64 << 20 }, false},
+		{"bytes=64KiB", 5, func(k *KafkaConfig) { k.SnapshotBatchMaxBytes = 64 << 10 }, true},
+		{"bytes=32MiB", 5, func(k *KafkaConfig) { k.SnapshotBatchMaxBytes = 32 << 20 }, true},
+		{"interval=-1", 5, func(k *KafkaConfig) { k.SnapshotFlushIntervalMs = -1 }, false},
+		{"interval=5001", 5, func(k *KafkaConfig) { k.SnapshotFlushIntervalMs = 5001 }, false},
+		{"interval=5000", 5, func(k *KafkaConfig) { k.SnapshotFlushIntervalMs = 5000 }, true},
+		{"inflight=-1", 5, func(k *KafkaConfig) { k.SnapshotMaxInflightFlushes = -1 }, false},
+		{"inflight=5 @pool5", 5, func(k *KafkaConfig) { k.SnapshotMaxInflightFlushes = 5 }, false},
+		{"inflight=4 @pool5", 5, func(k *KafkaConfig) { k.SnapshotMaxInflightFlushes = 4 }, true},
+		{"inflight=1 @pool1", 1, func(k *KafkaConfig) { k.SnapshotMaxInflightFlushes = 1 }, true},
+		{"inflight=2 @pool1", 1, func(k *KafkaConfig) { k.SnapshotMaxInflightFlushes = 2 }, false},
+		{"inflight=4 @pool0(按 5)", 0, func(k *KafkaConfig) { k.SnapshotMaxInflightFlushes = 4 }, true},
+		{"inflight=5 @pool0(按 5)", 0, func(k *KafkaConfig) { k.SnapshotMaxInflightFlushes = 5 }, false},
+		{"lag=1", 5, func(k *KafkaConfig) { k.LagProbeIntervalMs = 1 }, false},
+		{"lag=4999", 5, func(k *KafkaConfig) { k.LagProbeIntervalMs = 4999 }, false},
+		{"lag=600001", 5, func(k *KafkaConfig) { k.LagProbeIntervalMs = 600001 }, false},
+		{"lag=-1", 5, func(k *KafkaConfig) { k.LagProbeIntervalMs = -1 }, false},
+		{"lag=0(关)", 5, func(k *KafkaConfig) { k.LagProbeIntervalMs = 0 }, true},
+		{"lag=30000", 5, func(k *KafkaConfig) { k.LagProbeIntervalMs = 30000 }, true},
+		{"lag=600000", 5, func(k *KafkaConfig) { k.LagProbeIntervalMs = 600000 }, true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			k := base
+			tc.mutate(&k)
+			err := k.ValidateConsumers(tc.pool)
+			if tc.ok && err != nil {
+				t.Fatalf("%+v must be accepted with pool=%d: %v", k, tc.pool, err)
+			}
+			if !tc.ok && err == nil {
+				t.Fatalf("%+v must be rejected with pool=%d", k, tc.pool)
+			}
+		})
+	}
+
+	// Normalize 不纠正负数:负数留给 ValidateConsumers 拒绝,而不是被悄悄改成默认值。
+	neg := KafkaConfig{SnapshotBatchMaxRows: -3, SnapshotMaxInflightFlushes: -1}.Normalize()
+	if neg.SnapshotBatchMaxRows != -3 || neg.SnapshotMaxInflightFlushes != -1 {
+		t.Fatalf("Normalize must not correct negative values, got %+v", neg)
+	}
+}
+
+// TestShippedYamlKafkaConsumerKnobsAreRowByRowAndValid:仓库里那份 yaml 显式写出五个键,值与代码默认一致(逐条、并发 1),
+// 只有 lag 探针打开(30000ms,规格 D-7:只读 broker 元数据,没有它积压 / 保留期告警全哑)。把批量打开是 Q-7 的显式决定,
+// 前置是压测对比表(AGENTS §6),不能随仓库配置悄悄带出去。
+func TestShippedYamlKafkaConsumerKnobsAreRowByRowAndValid(t *testing.T) {
+	var c Config
+	if err := conf.Load("../../etc/data_service.yaml", &c); err != nil {
+		t.Fatalf("load etc/data_service.yaml: %v", err)
+	}
+	k := c.Kafka
+	if k.SnapshotBatchMaxRows != 1 || k.SnapshotBatchMaxBytes != DefaultSnapshotBatchMaxBytes ||
+		k.SnapshotFlushIntervalMs != 0 || k.SnapshotMaxInflightFlushes != 1 {
+		t.Fatalf("etc/data_service.yaml must spell out the row-by-row defaults (1 / %d / 0 / 1), got %d / %d / %d / %d",
+			DefaultSnapshotBatchMaxBytes, k.SnapshotBatchMaxRows, k.SnapshotBatchMaxBytes, k.SnapshotFlushIntervalMs, k.SnapshotMaxInflightFlushes)
+	}
+	if k.LagProbeIntervalMs != 30000 {
+		t.Fatalf("etc/data_service.yaml LagProbeIntervalMs = %d, want 30000", k.LagProbeIntervalMs)
+	}
+	if err := k.Normalize().ValidateConsumers(c.SnapshotMySQL.MaxOpenConn); err != nil {
+		t.Fatalf("shipped Kafka consumer knobs must validate: %v", err)
 	}
 }

@@ -208,6 +208,12 @@ param(
     # Skip the manual MySQL prompt (use only when PITR was done OOB earlier).
     [switch]$SkipMySqlPause,
 
+    # Step 4 的 FLUSHDB 防护(2026-10-12):目标 Redis DB 里只要有全局共享键(player:zone / player:placement /
+    # player:maprev / merge:* / consumer:applied* / kafka:retry*),就在停服之前拒绝,因为 FLUSHDB 会连带清掉**所有 zone** 的
+    # 归属映射、落点记录、合服标记、存盘游标与重试收据。K8s 下这些键与各 zone 的玩家缓存同在一个实例的 DB 0。
+    # 只有确认目标 DB 里的这些键本来就该清(例如整套环境重建)时才传本开关。
+    [switch]$ConfirmFlushSharedRedis,
+
     # Drain budget for Kafka consumer LAG before restart.
     [int]$KafkaDrainTimeoutSec = 300,
 
@@ -618,6 +624,105 @@ function Invoke-ZoneUpStaticPreflight {
         "`n原因:$failure`n修正参数后重跑。")
 }
 
+<#
+.SYNOPSIS
+    Step 4 FLUSHDB 防护用到的全局共享键(2026-10-12,docs/design/player-route-mapping-durability-proposal.md §9 第 0 批)。
+    K8s 下 data_service 的 MappingRedis、go/db 的 RedisClient 与各 zone 的玩家缓存是同一实例的 DB 0
+    (k8s_deploy.ps1 生成的 ConfigMap),「zone 的 data Redis」并不是 zone 私有的。
+#>
+function Get-SharedRedisGuardPatterns {
+    return @(
+        'player:zone:*',        # 归属映射(全部 zone)
+        'player:placement:*',   # 落点记录
+        'player:maprev:*',      # 映射持久化 maprev(第 1a 批):发布脚本 set-if-newer 的排序依据
+        'merge:*',              # 合服围栏 merge:in_progress、防回填标记 merge:merged_into
+        'consumer:applied*',    # go/db 已落库游标 consumer:applied / consumer:applied_epoch
+        'kafka:retry*'          # go/db 重试收据与实例登记
+    )
+}
+
+<#
+.SYNOPSIS
+    逐个 pattern 调 $Probe 探测目标 Redis DB 里有没有全局共享键,返回命中描述列表。
+.PARAMETER Probe
+    收一个 pattern,返回至多一个命中的键名(没有命中返回 $null 或空串);查询失败必须抛异常。
+#>
+function Find-SharedRedisGuardHits {
+    param(
+        [Parameter(Mandatory = $true)][scriptblock]$Probe,
+        [string[]]$Patterns = (Get-SharedRedisGuardPatterns)
+    )
+    $hits = [System.Collections.Generic.List[string]]::new()
+    foreach ($pattern in $Patterns) {
+        $key = & $Probe $pattern
+        if (-not [string]::IsNullOrEmpty($key)) { $hits.Add("$pattern(例:$key)") }
+    }
+    return , $hits.ToArray()
+}
+
+<#
+.SYNOPSIS
+    FLUSHDB 之前的防护:目标 DB 里有全局共享键就拒绝;查询失败同样拒绝(fail-closed)。
+    -ConfirmFlushSharedRedis 时只告警、放行。
+#>
+function Assert-RedisFlushTargetIsZoneLocal {
+    param(
+        [Parameter(Mandatory = $true)][scriptblock]$Probe,
+        [Parameter(Mandatory = $true)][string]$Target,
+        [switch]$ConfirmFlushSharedRedis
+    )
+    $override = "只有确认这个 DB 里的全局键本来就该清(例如整套环境重建)时才传 -ConfirmFlushSharedRedis。"
+    try {
+        $hits = Find-SharedRedisGuardHits -Probe $Probe
+    }
+    catch {
+        if ($ConfirmFlushSharedRedis) {
+            Write-Warning "无法核对 $Target 里有没有全局共享键($($_.Exception.Message)),已按 -ConfirmFlushSharedRedis 放行。"
+            return
+        }
+        throw ("k8s-zone-rollback 拒绝 FLUSHDB:无法核对 $Target 里有没有全局共享键(查询失败按「有」处理)。" +
+            "`n原因:$($_.Exception.Message)`n$override")
+    }
+    if ($hits.Count -eq 0) {
+        Write-Host "  $Target 里没有全局共享键,FLUSHDB 只影响本 zone 缓存" -ForegroundColor Green
+        return
+    }
+    if ($ConfirmFlushSharedRedis) {
+        Write-Warning "$Target 里有全局共享键:$($hits -join ';')。已按 -ConfirmFlushSharedRedis 放行,FLUSHDB 会清掉所有 zone 的这些键。"
+        return
+    }
+    throw ("k8s-zone-rollback 拒绝 FLUSHDB:$Target 里有全局共享键 —— $($hits -join ';')。" +
+        "这个 DB 不是本 zone 私有的缓存,FLUSHDB 会清掉**所有 zone** 的归属映射、落点记录、合服标记、存盘游标与重试收据" +
+        "(K8s 下它们与玩家缓存同在共享实例的 DB 0)。映射丢失后的恢复见 docs/ops/merge-zone-runbook.md §9.2。" +
+        "`n请把 -RedisHost / -RedisDB 指向本 zone 私有的缓存实例,或不传 -RedisHost 跳过 Step 4。$override")
+}
+
+<#
+.SYNOPSIS
+    用 redis-cli 的 SCAN 逐页探测 pattern,找到第一个命中即返回,整库扫完没有命中返回 $null。
+    不用 --scan:它会把所有命中的键名全部打印出来(player:zone:* 在生产上是百万级)。
+#>
+function New-RedisCliScanProbe {
+    param([Parameter(Mandatory = $true)][string[]]$RedisArgs)
+    return {
+        param($pattern)
+        $cursor = '0'
+        do {
+            $lines = @(& redis-cli @RedisArgs SCAN $cursor MATCH $pattern COUNT 1000 2>$null)
+            if ($LASTEXITCODE -ne 0 -or $lines.Count -lt 1) {
+                throw "redis-cli SCAN $cursor MATCH $pattern 失败(退出码 $LASTEXITCODE)"
+            }
+            if ("$($lines[0])" -notmatch '^\d+$') {
+                throw "redis-cli SCAN $cursor MATCH $pattern 返回了非预期内容:$($lines[0])"
+            }
+            $cursor = "$($lines[0])"
+            $hit = @($lines | Select-Object -Skip 1 | Where-Object { -not [string]::IsNullOrEmpty("$_") }) | Select-Object -First 1
+            if ($hit) { return "$hit" }
+        } while ($cursor -ne '0')
+        return $null
+    }.GetNewClosure()
+}
+
 # 回滚目标必须是不可变 tag,否则"回到旧版本"根本没发生。
 $rollbackTag = Get-ImageTagFromRef -ImageRef $NodeImage
 $rollbackChk = Test-ImmutableImageTag -Tag $rollbackTag
@@ -735,6 +840,19 @@ if ($Apply) {
 } else {
     Write-Host "  (dry-run 不执行;-Apply 时非 0 即在停服前拒绝)" -ForegroundColor Yellow
 }
+# Step 4 的 FLUSHDB 目标核对也放在停服之前:拖到 Step 4 才拒,zone 已停服、MySQL 已回档。
+$redisArgs = @()
+if ($RedisHost -ne "") {
+    $redisArgs = @("-h", $RedisHost, "-p", $RedisPort, "-n", $RedisDB)
+    if ($RedisPassword -ne "") { $redisArgs += @("-a", $RedisPassword, "--no-auth-warning") }
+    $redisTarget = "${RedisHost}:${RedisPort}/db${RedisDB}"
+    Write-Host "  FLUSHDB 目标核对:$redisTarget 里不能有全局共享键($((Get-SharedRedisGuardPatterns) -join ' '))$(if ($ConfirmFlushSharedRedis) { ';已给 -ConfirmFlushSharedRedis,命中只告警' })"
+    if ($Apply) {
+        Assert-RedisFlushTargetIsZoneLocal -Probe (New-RedisCliScanProbe -RedisArgs $redisArgs) -Target $redisTarget -ConfirmFlushSharedRedis:$ConfirmFlushSharedRedis
+    } else {
+        Write-Host "  (dry-run 不读 Redis;-Apply 时命中或读不到即在停服前拒绝)" -ForegroundColor Yellow
+    }
+}
 Write-Host ""
 
 # ── Step 1: stop the zone ────────────────────────────────────────
@@ -805,10 +923,14 @@ Write-Host "── Step 4: Redis FLUSHDB (zone cache) ──" -ForegroundColor C
 if ($RedisHost -eq "") {
     Write-Host "  skipped — pass -RedisHost to enable" -ForegroundColor Yellow
 } else {
-    $redisArgs = @("-h", $RedisHost, "-p", $RedisPort, "-n", $RedisDB)
-    if ($RedisPassword -ne "") { $redisArgs += @("-a", $RedisPassword) }
-    Write-Host "  redis-cli $($redisArgs -join ' ') FLUSHDB"
+    # $redisArgs 已在预检段组装。打印时遮住口令,不进日志(AGENTS §9)。
+    $shownArgs = @($redisArgs | ForEach-Object -Begin { $maskNext = $false } -Process {
+        if ($maskNext) { $maskNext = $false; '***' } else { if ($_ -eq '-a') { $maskNext = $true }; $_ }
+    })
+    Write-Host "  redis-cli $($shownArgs -join ' ') FLUSHDB"
     if ($Apply) {
+        # 预检之后到这里隔着停服、排空与 MySQL PITR,再核对一次;此时拒绝虽然 zone 已停,也好过清掉所有 zone 的全局键。
+        Assert-RedisFlushTargetIsZoneLocal -Probe (New-RedisCliScanProbe -RedisArgs $redisArgs) -Target $redisTarget -ConfirmFlushSharedRedis:$ConfirmFlushSharedRedis
         & redis-cli @redisArgs FLUSHDB
         if ($LASTEXITCODE -ne 0) { throw "redis FLUSHDB failed" }
         Write-Host "  Redis db $RedisDB flushed" -ForegroundColor Green

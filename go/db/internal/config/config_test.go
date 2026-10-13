@@ -94,6 +94,15 @@ func TestEtcYamlPlacementBlockMatchesDefaults(t *testing.T) {
 	if err := conf.Load("../../etc/db.yaml", &c); err != nil {
 		t.Fatalf("load etc/db.yaml: %v", err)
 	}
+	// Normalize 之前:示例 yaml 必须把两类池的四个新键与空闲秒数都写出来(键名写错会静默保持零值,
+	// Normalize 之后又被回落值盖住,只看 Normalize 之后的值发现不了)。K8s ConfigMap 从这几个键镜像,总账也读它们。
+	raw := c.Placement
+	if raw.ZoneStoreMaxOpenConn <= 0 || raw.ZoneStoreMaxIdleConn <= 0 ||
+		raw.NonZoneStoreMaxOpenConn <= 0 || raw.NonZoneStoreMaxIdleConn <= 0 || raw.ExtraStoreConnMaxIdleSeconds <= 0 {
+		t.Fatalf("etc/db.yaml must spell out the split pool keys, got zone=%d/%d nonZone=%d/%d idleSeconds=%d",
+			raw.ZoneStoreMaxOpenConn, raw.ZoneStoreMaxIdleConn, raw.NonZoneStoreMaxOpenConn, raw.NonZoneStoreMaxIdleConn,
+			raw.ExtraStoreConnMaxIdleSeconds)
+	}
 	c.Normalize()
 	if c.Placement.AllowStoreFamilies == nil {
 		t.Fatal("etc/db.yaml must spell out AllowStoreFamilies so the example documents the key")
@@ -102,11 +111,98 @@ func TestEtcYamlPlacementBlockMatchesDefaults(t *testing.T) {
 		t.Fatalf("etc/db.yaml must ship the default semantics, got families=%v required=%v",
 			c.Placement.StoreFamiliesAllowed(), c.Placement.Required)
 	}
-	if c.Placement.ExtraStoreMaxOpenConn != DefaultPlacementExtraStoreMaxOpenConn ||
-		c.Placement.ExtraStoreMaxIdleConn != DefaultPlacementExtraStoreMaxIdleConn {
-		t.Fatalf("etc/db.yaml pool = %d/%d", c.Placement.ExtraStoreMaxOpenConn, c.Placement.ExtraStoreMaxIdleConn)
+	if c.Placement.ZoneStoreMaxOpenConn != DefaultPlacementExtraStoreMaxOpenConn ||
+		c.Placement.ZoneStoreMaxIdleConn != DefaultPlacementExtraStoreMaxIdleConn ||
+		c.Placement.NonZoneStoreMaxOpenConn != DefaultPlacementExtraStoreMaxOpenConn ||
+		c.Placement.NonZoneStoreMaxIdleConn != DefaultPlacementExtraStoreMaxIdleConn {
+		t.Fatalf("etc/db.yaml pools = zone %d/%d nonZone %d/%d, want both %d/%d",
+			c.Placement.ZoneStoreMaxOpenConn, c.Placement.ZoneStoreMaxIdleConn,
+			c.Placement.NonZoneStoreMaxOpenConn, c.Placement.NonZoneStoreMaxIdleConn,
+			DefaultPlacementExtraStoreMaxOpenConn, DefaultPlacementExtraStoreMaxIdleConn)
+	}
+	if c.Placement.ExtraStoreConnMaxIdleSeconds != DefaultPlacementExtraStoreConnMaxIdleSeconds {
+		t.Fatalf("etc/db.yaml ExtraStoreConnMaxIdleSeconds = %d, want %d",
+			c.Placement.ExtraStoreConnMaxIdleSeconds, DefaultPlacementExtraStoreConnMaxIdleSeconds)
 	}
 	if c.Placement.Redis != nil {
 		t.Fatal("etc/db.yaml must keep Placement.Redis commented out (reuse RedisClient) for local dev")
+	}
+}
+
+// 两类额外落点库池(G2b 批 C)整段缺省时:都取默认 8 / 2,空闲回收 60s。
+func TestPlacementSplitPoolsDefault(t *testing.T) {
+	var h placementHolder
+	if err := conf.LoadFromYamlBytes([]byte("Name: db.rpc\n"), &h); err != nil {
+		t.Fatalf("load: %v", err)
+	}
+	c := Config{Placement: h.Placement}
+	c.Normalize()
+	p := c.Placement
+	if p.ZoneStoreMaxOpenConn != DefaultPlacementExtraStoreMaxOpenConn || p.ZoneStoreMaxIdleConn != DefaultPlacementExtraStoreMaxIdleConn {
+		t.Fatalf("zone store pool = %d/%d, want %d/%d", p.ZoneStoreMaxOpenConn, p.ZoneStoreMaxIdleConn,
+			DefaultPlacementExtraStoreMaxOpenConn, DefaultPlacementExtraStoreMaxIdleConn)
+	}
+	if p.NonZoneStoreMaxOpenConn != DefaultPlacementExtraStoreMaxOpenConn || p.NonZoneStoreMaxIdleConn != DefaultPlacementExtraStoreMaxIdleConn {
+		t.Fatalf("non-zone store pool = %d/%d, want %d/%d", p.NonZoneStoreMaxOpenConn, p.NonZoneStoreMaxIdleConn,
+			DefaultPlacementExtraStoreMaxOpenConn, DefaultPlacementExtraStoreMaxIdleConn)
+	}
+	if p.ExtraStoreConnMaxIdleSeconds != DefaultPlacementExtraStoreConnMaxIdleSeconds {
+		t.Fatalf("idle seconds = %d, want %d", p.ExtraStoreConnMaxIdleSeconds, DefaultPlacementExtraStoreConnMaxIdleSeconds)
+	}
+
+	// 可重复调用(Normalize 的契约):第二次不得改变任何值。
+	before := c.Placement
+	c.Normalize()
+	if c.Placement.ZoneStoreMaxOpenConn != before.ZoneStoreMaxOpenConn || c.Placement.NonZoneStoreMaxOpenConn != before.NonZoneStoreMaxOpenConn ||
+		c.Placement.ExtraStoreConnMaxIdleSeconds != before.ExtraStoreConnMaxIdleSeconds {
+		t.Fatal("Normalize must be idempotent for the split pool keys")
+	}
+}
+
+// 只写旧键的旧部署:两类库都回落到旧键的值,维持原来的池大小。
+func TestPlacementSplitPoolsFallBackToLegacyKeys(t *testing.T) {
+	var h placementHolder
+	yaml := "Placement:\n" +
+		"  ExtraStoreMaxOpenConn: 16\n" +
+		"  ExtraStoreMaxIdleConn: 4\n"
+	if err := conf.LoadFromYamlBytes([]byte(yaml), &h); err != nil {
+		t.Fatalf("load: %v", err)
+	}
+	c := Config{Placement: h.Placement}
+	c.Normalize()
+	p := c.Placement
+	if p.ZoneStoreMaxOpenConn != 16 || p.ZoneStoreMaxIdleConn != 4 {
+		t.Fatalf("zone store pool = %d/%d, want legacy 16/4", p.ZoneStoreMaxOpenConn, p.ZoneStoreMaxIdleConn)
+	}
+	if p.NonZoneStoreMaxOpenConn != 16 || p.NonZoneStoreMaxIdleConn != 4 {
+		t.Fatalf("non-zone store pool = %d/%d, want legacy 16/4", p.NonZoneStoreMaxOpenConn, p.NonZoneStoreMaxIdleConn)
+	}
+}
+
+// 新键优先于旧键:只调大非 zone 池时,zone 家族池仍按旧键。
+func TestPlacementSplitPoolsNewKeysWin(t *testing.T) {
+	var h placementHolder
+	yaml := "Placement:\n" +
+		"  ExtraStoreMaxOpenConn: 16\n" +
+		"  NonZoneStoreMaxOpenConn: 32\n" +
+		"  ExtraStoreConnMaxIdleSeconds: 30\n"
+	if err := conf.LoadFromYamlBytes([]byte(yaml), &h); err != nil {
+		t.Fatalf("load: %v", err)
+	}
+	c := Config{Placement: h.Placement}
+	c.Normalize()
+	p := c.Placement
+	if p.ZoneStoreMaxOpenConn != 16 {
+		t.Fatalf("zone store max open = %d, want the legacy fallback 16", p.ZoneStoreMaxOpenConn)
+	}
+	if p.NonZoneStoreMaxOpenConn != 32 {
+		t.Fatalf("non-zone store max open = %d, want the explicit 32", p.NonZoneStoreMaxOpenConn)
+	}
+	if p.ZoneStoreMaxIdleConn != DefaultPlacementExtraStoreMaxIdleConn || p.NonZoneStoreMaxIdleConn != DefaultPlacementExtraStoreMaxIdleConn {
+		t.Fatalf("idle pools = %d/%d, want the default %d", p.ZoneStoreMaxIdleConn, p.NonZoneStoreMaxIdleConn,
+			DefaultPlacementExtraStoreMaxIdleConn)
+	}
+	if p.ExtraStoreConnMaxIdleSeconds != 30 {
+		t.Fatalf("idle seconds = %d, want the explicit 30", p.ExtraStoreConnMaxIdleSeconds)
 	}
 }

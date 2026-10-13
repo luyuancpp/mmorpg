@@ -148,10 +148,15 @@ IdSegment:
 #   3) 关闭 / 回退顺序相反:go/db 任一 zone 已开 Required=true 时,禁止把 PinOnCreate 改回 false、
 #      禁止把 NewPlayerStorageId 改成没有 go/db 能打开的库、也禁止回退到不带 storage_id 的 login;
 #      否则建角照常成功、login 零报错,但新号进游戏预加载秒级失败、存盘全进死信。要关,先关全部 go/db 的 Required。
+#      开着 NewPlayerSeed 时新号不再走预加载读,违反本条的症状只剩存盘这一半(死信 / 无限重试),更隐蔽(见下方 NewPlayerSeed)。
 #   启动日志 "[placement] pin_on_create=..." 是核对依据。
 Placement:
   PinOnCreate: false
   NewPlayerStorageId: 0
+
+# 新号首次入场免冷读(docs/design/new-player-first-enter-no-cold-read.md);默认关,打开前置见设计 §7。
+NewPlayerSeed:
+  Enabled: false
 
 GateTokenSecret: "change-me-in-production-use-a-strong-random-key"
 TableDir: "/app/data"

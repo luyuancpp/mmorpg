@@ -3,6 +3,8 @@ package store
 import (
 	"context"
 	"database/sql"
+	"fmt"
+	"sort"
 )
 
 // 仅供同目录 store_test 包(真库集成用例)使用的只读出口;_test.go 文件不进生产二进制。
@@ -27,7 +29,7 @@ const (
 // 让用例不必再抄一份占位符顺序(抄了就会在加列时与生产漂移)。
 func SnapshotInsertArgsForTest(row *SnapshotRow) []any { return snapshotInsertArgs(row) }
 
-// DeadlockRetriesForTest 返回本 store 因 1213 就地重跑 InsertSnapshotIfGuidAbsent 的累计次数。
+// DeadlockRetriesForTest 返回本 store 因 1213 就地重跑 InsertSnapshotIfGuidAbsent / InsertSnapshotsIfGuidAbsent 的累计次数。
 func (s *SnapshotStore) DeadlockRetriesForTest() uint64 { return s.deadlockRetries.Load() }
 
 // UniqueGuidKeyForTest 返回建 store 时探到的结构能力(uk_snapshot_guid_nz 在不在)。
@@ -98,3 +100,51 @@ const (
 
 // MigrateLockNameForTest 返回某个库的迁移锁名,让真库用例能扮演"另一个正在迁移的实例"占住同一把锁。
 func MigrateLockNameForTest(dbName string) string { return migrateLockName(dbName) }
+
+// 路由表(route_store.go)的 SQL:真库用例用与生产**同一段文本**扮演并发持锁者 / 造数据,
+// 免得用例里抄一份语句、改生产时两边漂移。编号同规格 b.4。
+const (
+	RouteReadWritableSQLForTest      = routeReadWritableSQL      // R1
+	RouteLockFenceShardSQLForTest    = routeLockFenceShardSQL    // R2
+	RouteEnsureFenceShardSQLForTest  = routeEnsureFenceShardSQL  // R3
+	RouteInsertNewSQLForTest         = routeInsertNewSQL         // R4
+	RouteLockRowSQLForTest           = routeLockRowSQL           // R5
+	RouteFillHomeSQLForTest          = routeFillHomeSQL          // R6a
+	RouteFillHomePlacementSQLForTest = routeFillHomePlacementSQL // R6b
+	RouteImportFillSQLForTest        = routeImportFillSQL        // R9
+	RouteScanSQLForTest              = routeScanSQL              // R12
+	RouteMetaSeedSQLForTest          = routeMetaSeedSQL          // R15
+	RouteReconcileSeedSQLForTest     = routeReconcileSeedSQL     // R16
+	RouteProbeShardCheckSQLForTest   = routeProbeShardCheckSQL   // P4
+	// RouteDBNowMsSQLForTest 是库时钟毫秒的表达式:用例按库时钟造围栏的过期时刻,不用本机时钟。
+	RouteDBNowMsSQLForTest = dbNowMsSQL
+)
+
+// RouteSelectRowsSQLForTest 返回 n 个 id 的批量读(R8 / R13;forUpdate 即 R8 的加锁形态),EXPLAIN 回归用。
+func RouteSelectRowsSQLForTest(n int, forUpdate bool) string { return routeSelectRowsSQL(n, forUpdate) }
+
+// BootstrapRouteTablesOnlyForTest 只建路由表(按表名排序执行 routeTableShapes 那几张的 bootstrap DDL),
+// 再跑 ensureRouteTables(形状守卫 + 种两张单行表的行)。给真 TiDB 用例用:全局库的整套迁移在 TiDB 上会因
+// player_snapshot 的可空唯一键失败,用不了 NewMigratedDB。
+func BootstrapRouteTablesOnlyForTest(ctx context.Context, db *sql.DB, dbName string) error {
+	names := make([]string, 0, len(routeTableShapes))
+	for name := range routeTableShapes {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	for _, name := range names {
+		if _, err := db.ExecContext(ctx, bootstrapTables[name]); err != nil {
+			return fmt.Errorf("bootstrap route table %s: %w", name, err)
+		}
+	}
+	return ensureRouteTables(ctx, db, dbName)
+}
+
+// LockRetriesForTest 返回本 store 因 1213 / 9007 重来的累计次数。
+func (s *RouteStore) LockRetriesForTest() uint64 { return s.lockRetries.Load() }
+
+// NewRouteStoreFromDBForTest 在调用方给的池上跑探针并装出 store(失败时关掉 db)。
+// 真库用例拿一个**没有**会话变量的池(storetest 的 Raw)来证明探针 fail-closed。
+func NewRouteStoreFromDBForTest(ctx context.Context, db *sql.DB, opts RouteStoreOptions) (*RouteStore, error) {
+	return newRouteStoreFromDB(ctx, db, opts)
+}

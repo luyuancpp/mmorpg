@@ -4,6 +4,7 @@
 > **2026-09-15 更新**:批 0–4 的手写部分已在隔离 worktree `feature/team-system` 落码(未生成、未编译、未合并回主工作区),实况、偏离与待办见文末「实现记录(2026-09-15,worktree feature/team-system,未编译)」;正文与该节冲突处以该节为准。
 > **2026-09-17 更新**:改动已移到 worktree `E:\work\xuanming-server-mmo-team2`(分支 `feature/team-system-v2`,基于 `4069f33b0`),并按文末「评审记录(2026-09-16,team-system-review)」修了 8 条确认缺陷;仍未生成、未编译。
 > **2026-09-18 更新**:组队代码**已合并并推送到 `origin/main`(`66c546e70`)**,文首「状态:设计稿，还没有实现」一行已过期,以本行与文末各记录节为准。同日的收口轮补完了 `robot go mod vendor`、C++ 工程登记、客户端协议管道与合并后语义复核,见文末「收口记录(2026-09-18,主工作区 `main`,未编译未测试)」。**仍然未编译、未测试** —— R.4 ⑦ 的 5 步验证一条都没跑。
+> **2026-10-12 口径修订**:标题里的"team-in-match"只指**部署寄宿**在 match 进程,不是领域归属 —— team 属于社交/会话域,与匹配平级,两者只经 `team.BattleStarter` 端口相接(§A.2 已按代码更正)。D7 的同进程理由与 D-2 的 team 行已复核修订,结论(同进程、分协议、全局部署)不变;理由、扩展路径与拆分条件见文末「定案理由复核与扩展路径(2026-10-12)」。
 >
 > **决策依据**:
 > - 用户已拍板的需求:全服服务，数据按 zone_id 区分，默认 `AllowCrossZone=false`，功能全做:组队、整队排战斗、场景跟随;本次不改客户端。
@@ -24,14 +25,14 @@
 
 | 条目 | 原文(出处) | 本设计 | 说明 |
 |---|---|---|---|
-| D-2 team 归属 | team 随 match 进程,`Global = $true`;`node_util.cpp` 的两个 switch 不改(port-decisions.md:35、:50) | **完全保留** | team 不新增进程、端口、镜像或 manifest(`tools/scripts/k8s_deploy.ps1:393` 的 match 条目已经是 `Global = $true`)。路由服的 `ZoneScopedNodeTypes` 不加 Team(默认只有 Login,见 `go/client_rpc_router/internal/config/config.go:44`),TeamNodeService 走全局随机选实例 |
-| D7 同进程、协议独立 | `go/match` 内 `internal/team`,独立 `proto/team/team.proto` + `NODE_TEAM` + 第二次节点注册(port-feasibility.md:233、:250) | **保留** | 第二次注册改用 `shared/noderegistry.RegisterAfterListening`,见 §A.3 |
+| D-2 team 归属 | team 随 match 进程,`Global = $true`;`node_util.cpp` 的两个 switch 不改(port-decisions.md:35、:55) | **完全保留** | team 不新增进程、端口、镜像或 manifest(`tools/scripts/k8s_deploy.ps1:944` 的 match 条目已经是 `Global = $true`)。路由服的 `ZoneScopedNodeTypes` 不加 Team(默认只有 Login,见 `go/client_rpc_router/internal/config/config.go:44`),TeamNodeService 走全局随机选实例。**2026-10-12 修订**:D-2 的 team 行原文只写"随 match",没有走 D-2 自己"按数据归属定"的判据,已改为按数据论证(权威数据在全服单实例 SharedRedis、`zone_id` 是数据维度、`AllowCrossZone` 可产生跨区队伍);D-2 的 team 行与 D7 同出一源,不是两条独立依据 |
+| D7 同进程、协议独立 | `go/match` 内 `internal/team`,独立 `proto/team/team.proto` + `NODE_TEAM` + 第二次节点注册(port-feasibility.md:235、:252) | **保留** | 第二次注册改用 `shared/noderegistry.RegisterAfterListening`,见 §A.3。**2026-10-12**:同进程的现行理由已改写(原"原子事务"一条被 DV-1/DV-3 推翻),见文末 W.2 |
 | D7 "独立 message_id 段" | 同上 | **修订**(DV-5) | 只能做到"独立 service、独立消息号"。数值由发号器从空闲号里挑(HEAD 最大号 195;工作区因 trade 未提交的生成已到 200),同一次生成里其他域也会抢号，**具体数值一律以重新生成后的 `message_id.txt` 为准** |
 | D7 `BeginTeamMatch` 不作 RPC | 同上 | **保留** | 由进程内的 `logic.TeamBattleStarter` 实现 |
 | D7 "覆盖 `team:{id}` + 每成员 `match:ticket` + `match:queue` 的原子事务" | 同上 | **修订**(DV-1、DV-3) | 物理上做不到，理由见 §0。改成两个原子域:队伍域在 SharedRedis 用一条 Lua;票据域做逐人 CAS 并带补偿。v1 整队开战不进队列 |
 | D7 "`JoinQueueRequest` 加 `team_id`,`party_member_ids` 标 deprecated" | 同上 | **修订**(DV-4) | 不加 `team_id`,只把 `party_member_ids` 标成 deprecated。整队开战的唯一入口是 `ClientPlayerTeam.StartTeamMatch` |
 | D7 验收"14 个 RPC 经 gate 可达""scene 读到 `team:<id>` 后 `aoi.cpp:27-28` 队伍跟随触发"(port-feasibility.md:167) | 同上 | **修订** | v1 是 12 个请求 RPC 加 3 个推送。`aoi.cpp:24-37` 是队友 AOI 优先级，真正的跟随逻辑在 `player_scene.cpp:265-279` |
-| cross-zone-matchmaking.md D2"match 对 SharedRedis 只读"(:89) | — | **加例外**(DV-2) | 只允许 match 进程内的 team 模块写 `team:*` 四类 key,match 原有代码仍然只读 |
+| cross-zone-matchmaking.md D2"match 对 SharedRedis 只读"(:91) | — | **加例外**(DV-2) | 只允许 match 进程内的 team 模块写 `team:*` 四类 key,match 原有代码仍然只读。**2026-10-12 更正**:"原有代码仍然只读"不完全准确 —— matcher 启动时与周期 sweep 的 `migrateLegacyQueues`(`go/match/internal/logic/matcher.go`)会在 SharedRedis 上 SCAN + RPOP 改造前实例写下的旧格式队列,搬进 MatchRedis;写的是 match 自己的旧 key,不碰跨运行时契约 key |
 
 ### 评委分歧的裁决
 
@@ -123,9 +124,9 @@ flowchart LR
 ### A.2 各组件职责
 
 - **team 模块**(`go/match/internal/team`)是队伍成员关系的唯一真值，负责规则判定、原子提交、视图构建、推送，并通知 scene 刷新。它不 import `logic` 包。
-- **`logic.TeamBattleStarter`**(`go/match/internal/logic/team_battle.go`)把"一个队伍"变成"一组 matched 票据 + 一次 gather"。它属于票据领域代码，所以放在 `logic` 包。依赖方向是 `logic → team`;team 这边只定义 `BattleStarter` 接口，由 `match_service.go` 注入实现。
+- **`logic.TeamBattleStarter`**(`go/match/internal/logic/team_battle.go`)把"一个队伍"变成"一组 matched 票据 + 一次 gather"。它属于票据领域代码，所以放在 `logic` 包。team 这边只定义 `BattleStarter` 接口,`logic.TeamBattleStarter` 实现它，由 `match_service.go` 注入;两个包互不 import(2026-10-12 按代码更正：原文写的"依赖方向是 `logic → team`"与落码不符，实际是 `team → 接口 ← logic`,R.3 已记;由 `go/match/team_logic_layering_test.go` 守住)。
 - **`playercontract` 叶子包**(`go/match/internal/playercontract`,批 1 新增)。team 需要读会话、位置、战斗锁并推送，而这些函数现在全在 `package logic` 里且未导出:`battleLockKey` / `getPlayerLocationKey` / `playerSessionKey`(`go/match/internal/logic/keys.go:134-150`)、`loadPlayerLocation`(`location.go:17`)、`loadPlayerSession` / `isSessionOnline` / `pushToPlayer`(`push.go:26-83`)。team 引用不到，反向 import 又会成环;在 team 里手抄 key 拼法则违反 §11.2 DRY(契约 key 出现第二份真相)。所以把这些"跨运行时契约 key 的拼法 + 读取 + 推送封装"迁进叶子包，导出为 `SessionKey` / `LocationKey` / `BattleLockKey` / `LoadSession` / `LoadLocation` / `IsSessionOnline` / `IsBattleLocked` / `PushToPlayer`。logic 里原函数保留为一行转调，行为不变，调用点不用改。
-- **依赖图**:`logic → team → playercontract → {svc, metrics, proto}`,另有 `logic → playercontract`。`playercontract` 不 import `logic` 和 `team`。
+- **依赖图**(2026-10-12 按代码更正):`team → {svc, metrics, playercontract, pkg/ctxkeys}`;`logic → playercontract`;`playercontract → {svc, proto, shared/kafkautil}`。team 与 logic 互不 import,只经 `team.BattleStarter` 相接，由 `main()` 装配。`playercontract` 不 import `logic` 和 `team`。
 - **scene** 只做消费方。它自己读 SharedRedis 来刷新 TeamId;Kafka 事件只是"去刷新一下"的信号，不带权威数据。
 - **gate / 路由服**:C++ 源码一行不改，只需重新生成并重编(gate 白名单 `client_message_processor.cpp:883`,路由表 `route_table.go`)。
 
@@ -820,6 +821,8 @@ gRPC 回包按 message_id 先进先出匹配(`E:\work\mmorpg-client\Assets\Scrip
 
 ### E.1 调用链(`go/match/internal/logic/team_battle.go`)
 
+> **2026-10-12 注**:下面是设计稿形态。落码后编排实际在 team 包(`team/service.go` 的 `StartTeamMatch` → `store.CommitMatchLock` → `launchMatch` → `finishMatch` / `store.EndMatch`),`logic.TeamBattleStarter` 只实现票据域端口(`BattleStarter`),见 R.3、§A.2。`store.EndMatch` 现签名多一个 `lockTTL` 参数(第 4 步)。以代码为准。
+
 ```
 ClientPlayerTeam.StartTeamMatch(battle_config_id, expected_team_id)
  └ team.server: callerOf → service.StartTeamMatch → starter.Start(ctx, caller, expectedTid, configId)
@@ -881,7 +884,7 @@ ClientPlayerTeam.StartTeamMatch(battle_config_id, expected_team_id)
 1. S_READ(bindTarget 本队)得到 ver、记录、nowMs。
 2. 记录不存在、`match_lock_token ≠ token`(已被清或已重新加锁)、或 `nowMs ≥ match_lock_expire_at_ms`(锁已自然过期)→ 停止，不写。
 3. 否则清空锁的三个字段，按 `expectedVer=ver` 提交。`{1}` → 推 `MATCH_ENDED` 或 `MATCH_FAILED`,结束;`{0}` → 退避(50ms 起翻倍，上限 1s,±20% 抖动)后回第 1 步。
-4. 截止时间就是锁的 `match_lock_expire_at_ms`(每轮用 S_READ 的 nowMs 比较);另设进程内单调时钟 110s(2026-09-29 更正,原 90s;须 ≥ 5 人锁 101s,`team/store.go:454-461` `endMatchMaxDuration`)上限兜底。Redis 调用用 `context.Background()` 加单次超时。
+4. 截止时间就是锁的 `match_lock_expire_at_ms`(每轮用 S_READ 的 nowMs 比较);另设进程内单调时钟上限兜底:2026-10-12 起由这把锁的锁时长推出(`team/store.go` `endMatchDeadline(lockTTL)` = 锁时长 + 一轮超时 2s + 最大退避 1.2s),`StartTeamMatch` 加锁时算一次锁时长，传给所有清锁路径。此前写死 110s(2026-09-29 由 90s 更正),只靠注释与 5 人锁 101s 对齐,`MatchedTicketTTLSeconds` 配到 76 及以上即失守。Redis 调用用 `context.Background()` 加单次超时。
 5. 因第 2 步或截止而没有提交时，仍尽力给 lockRoster 推一次当前视图(match_state 按锁是否有效算)和结果原因，保证客户端不停在 STARTING。
 
 没选"只 CAS 锁字段、不要求整条记录 ver 一致的专用 Lua":锁字段在 pb 里，Lua 解不了 pb,要把锁挪成 hash 字段，改动面更大。
@@ -1473,7 +1476,7 @@ cd robot && go mod vendor && go build ./...
 | C-4 | minor | expectedVer="0" 兼作"必须不存在",非建队重试会复活已解散队伍 | **采纳** | 原 Lua 在 `ARGV[1]=="0"` 且 cur 为 nil 时放行 | §C.5 哨兵改 `"new"`,非建队遇记录缺失一律 `{0}`;Mutate 第 1 步记录缺失不进 S_COMMIT;§D.5 CreateTeam 行(本轮顺手修掉残留的 `expectedVer=0`);§I.3 #19 |
 | C-5 | minor | S_COMMIT 先 ZADD 后 ZREM,过期后重邀同一人会丢反查索引 | **采纳** | 过期清理进 ID、重邀进 IA,两集合可重叠 | §C.5 Go 侧 `ID := ID \ IA`,Lua 先 ZREM 后 ZADD(双保险);§D.5 前言;§I.3 #20 |
 | C-6 | minor | ListMyInvites 读后删会误删新索引;ZCARD 上限预检非原子 | **采纳** | 两处都是 Lua 外"先读后写" | §C.5 新增 S_INVITE_LIST / S_INVITE_PRUNE(score 不变才删);上限移入 S_COMMIT(`{-3,i}`);§D.1;§D.5 InviteToTeam / ListMyInvites 行;§I.3 #21、#23 |
-| C-7 | minor | EndMatch 复用 3 次重试，锁期间申请/邀请持续 ver+1 会饿死 | **采纳** | 锁期间允许申请与邀请(§E.4) | §E.1 EndMatch 专用循环(token 不符 / 锁过期即停，退避+抖动，截止 = 锁过期时刻，另设 110s 单调上限(2026-09-29 更正,原 90s));§I.3 #30。未选"只 CAS 锁字段的 Lua":锁字段在 pb 里，Lua 解不了 pb,要改存储形态 |
+| C-7 | minor | EndMatch 复用 3 次重试，锁期间申请/邀请持续 ver+1 会饿死 | **采纳** | 锁期间允许申请与邀请(§E.4) | §E.1 EndMatch 专用循环(token 不符 / 锁过期即停，退避+抖动，截止 = 锁过期时刻，另设 110s 单调上限(2026-09-29 更正,原 90s;2026-10-12 起改为由锁时长推出:锁时长 + 2s + 1.2s,见 §E.1 EndMatch 第 4 步 / W.4));§I.3 #30。未选"只 CAS 锁字段的 Lua":锁字段在 pb 里，Lua 解不了 pb,要改存储形态 |
 | C-8 | minor | 过期时间用各实例 Go 墙钟，违背 §11.3 | **采纳** | match 全服多实例，偏快实例会提前放行名单变更 | §C.4 "唯一时钟源"= SharedRedis `TIME`;S_READ/S_COMMIT/S_INVITE_LIST 返回 nowMs;§B.1 字段注释;§I.3 #22 |
 | C-9 | minor | 建票报错(结果未知)的成员不回滚;补偿继承 RPC ctx 会失败 | **采纳** | `queue.go:246-263` 出错时是否已写入未知;`joinqueuelogic.go:238-239` matched 态不自愈 | §E.1 第 7 步回滚集合含"返回 err 的成员"、按本次 ticket id CAS 删，补偿用独立 ctx;§E.3 新行;§A.3 第 7 条;§I.3 #29 |
 | I-1 | major | team 不 import logic,却要用 logic 未导出的契约 key/读取/推送函数 | **采纳** | `logic/keys.go:134-150`、`location.go:17`、`push.go:26/42/51`、`queue.go:206` 全部小写未导出 | §A.2 新增叶子包 `go/match/internal/playercontract`(不叫 sharedkeys,因为除 key 外还有读取和推送封装)与依赖图;§F.3;§I.1 批 1 #16–21 |
@@ -1635,9 +1638,9 @@ cd robot && go mod vendor && go build ./...
 - **编排位置改到 team 包**:§A.2 / §E.1 原定 `logic/team_battle.go` 编排第 1–9 步和 EndMatch(`logic → team`)。实际 logic 不能 import team(team 依赖 proto/team 生成物,import 会让 logic 在 regen 前连带编不过),所以编排在 `team/service.go StartTeamMatch` + `store.go CommitMatchLock/EndMatch` + `rules.go LockMatch/ReleaseMatchLock`;`logic.TeamBattleStarter` 只实现 5 个方法的票据域端口 `team.BattleStarter`(签名只用内建类型)。依赖方向:`team → BattleStarter 接口 ← logic`,`match_service.go` 注入时编译期保证接口一致。
 - 清单外新增 `team/team_battle_test.go`(需要 team 包内未导出的测试缝)。`team.Capacity == kMaxBattleTeamSize` 改为两边测试各自钉住字面量 5。
 - 预检的会话 / 战斗锁 / 位置在 team 里经 playercontract 读,只有票据自愈经端口调 `logic.healOrphanTicket`;读会话 / 读位置出错回 Internal(设计未写)。
-- 建票失败时 EndMatch **异步**执行(设计写的是先 EndMatch 再回包;EndMatch 最长 110s(2026-09-29 更正,原 90s),同步会击穿 3500ms 预算)。回包视图可能仍是 STARTING,随后到达的 MATCH_FAILED 版本更高。
+- 建票失败时 EndMatch **异步**执行(设计写的是先 EndMatch 再回包;EndMatch 最长 110s(2026-09-29 更正,原 90s;2026-10-12 起最长为锁时长 + 3.2s,5 人默认 104.2s,见 W.4),同步会击穿 3500ms 预算)。回包视图可能仍是 STARTING,随后到达的 MATCH_FAILED 版本更高。
 - EndMatch 未提交时的兜底推送对象 = S_READ_MEMBERS 读到的 `tid==本队` 的成员(不是字面 lockRoster),保证 epoch 同源。
-- EndMatch 每轮一个 2s 独立 ctx;Redis 故障与版本冲突一样退避重试,直到 110s(2026-09-29 更正,原 90s)。
+- EndMatch 每轮一个 2s 独立 ctx;Redis 故障与版本冲突一样退避重试,直到 110s(2026-09-29 更正,原 90s;2026-10-12 起直到锁时长 + 3.2s,见 W.4)。
 - `RepairRemoveMember` 移除成员时同步从 `match_lock_roster` 去掉他,保持锁期间 roster == members。
 - `TicketBlocked` / `healOrphanTicket` 沿用 JoinQueue 的无 ctx Redis 调用,只在入口查 ctx(偏离 §A.3 第 7 条"一律 Ctx 版本");建票与回滚用 `EvalCtx`。
 - 只有整队票写 `team_id` 字段;单人票字段集不变。`TeamSizeFor` 复用 `matcher.requiredPlayers`。
@@ -1800,7 +1803,7 @@ cd robot && go mod vendor && go build ./...
 1. **全部未编译**。R.2 的生成物名字靠读生成器模板和同类生成物推断,生成后可能要改引用方;C++ 没有任何语法检查工具可用。
 2. **跨节点 / 登录时序的跟随正确性只能靠端到端验证**:队长换图时 `player:<id>:location` 是否已被 scene_manager 写成新场景,决定队员的 MGET 读到的是新 scene_id 还是旧的;`HasLiveSession` 新守卫是否会误伤正常在线队员。都要等 team_smoke S6 实测。
 3. **StartTeamMatch 的预检不是全 ctx 化**:`TicketBlocked` 的票据读取与自愈用无 ctx 的 MatchRedis 调用,Redis 卡顿时可能超出 3500ms 预算。改它会触及 JoinQueue 共用路径,本次没动。预检逐成员串行,5 人约 20 次 Redis 往返,未压测。
-4. **EndMatch 与进程退出**:match 退出(包括 snowflake 失租强退)时不等后台 EndMatch,开战锁只能靠自然过期(5 人 101s;2026-09-29 更正,原 83s);110s 截止(2026-09-29 更正,原 90s)或持续故障时同样如此。这期间队伍显示 STARTING、回 TeamInMatch。
+4. **EndMatch 与进程退出**:match 退出(包括 snowflake 失租强退)时不等后台 EndMatch,开战锁只能靠自然过期(5 人 101s;2026-09-29 更正,原 83s);110s 截止(2026-09-29 更正,原 90s;2026-10-12 起为锁时长 + 3.2s 截止,见 W.4)或持续故障时同样如此。这期间队伍显示 STARTING、回 TeamInMatch。
 5. **会话批量读失败时的错误码有误导性**:SessionLoader 整批失败时全员是 SessionUnknown,TransferLeader 回 TeamMemberOffline,实际是 Redis 故障。修正要在规则层区分 Unknown(核心层范围)。
 6. **展示信息的 SharedRedis 负载**:每次提交会批量 MGET 三组 key(会话、战斗锁、PlayerAllData blob);blob 体积(J-11)与 K8s 上是否同实例都未核实,不同实例时 level/class 恒为 0(不影响正确性)。GetMyTeam 每次都跑一轮 Refresh Mutate。
 7. **本地多 zone 的 data_service 配对**:`go_services.ps1` 把 `DataServiceRpc.Etcd.Key` 派生为 `dataservice.rpc.z<N>`,某个 zone 只起 match 不起 data_service 时,路由到该实例的组队请求一律 TeamInternal。
@@ -2334,3 +2337,73 @@ cd robot && .\robot.exe -c etc\team_smoke.yaml          # 形态一:expect_cross
    - A 走着的时候直接关掉 A 的客户端:B 屏幕上的 A 应在 1 秒内停下,不会一直跑。
    - 回归:`robot.exe -c etc\team_smoke.yaml`、`etc\battle_smoke.yaml`、`tools\run_move_test.ps1`(客户端仓,移动裁决没有被瞬移守卫误伤:合法道路 0 次回拉)。
 4. **失败时保留**:msbuild 输出里前 3 个 `C` / `LNK` 开头的 error 及文件行;scene 日志里含 `PlayerTeam`、`teleport`、`move corrected` 的行;两端客户端日志里含 `[move]`、`[scene]` 的行。
+
+---
+
+## 定案理由复核与扩展路径(2026-10-12)
+
+> 来源:2026-10-12 的一次只读架构评审(四路取证 + 三视角评审 + 逐条反驳核验)。本节修订定案理由，补扩展与拆分预案，**不改变 v1 的结论**;行为上只改了 EndMatch 的进程内兜底上限(故障路径的活性:默认配置下比原 110s 更早放弃，但始终 ≥ 锁时长),外加一条包边界测试，见 W.4。**未编译、未测试，待 Codex 验证**。
+
+### W.1 结论
+
+- **领域**:team 属于社交/会话域(组队/大厅),与匹配平级;match 只消费开战锁内的名单快照。这与业界一致：组队服务持有队伍状态，匹配器只收代表整队的票据快照，成员变化删票重建(Open Match、FlexMatch、PlayFab、Xbox SmartMatch、Nakama)。
+- **部署**:寄宿在 match 进程，属于"模块化单体"。当前规模下可接受(Nakama 是同进程先例);大平台多分进程,Java 版也已拆成独立 `game-team`(Java 仓 PARITY 有意差异 M1 / M20,按 AGENTS §12 属服务端内部实现差异)。
+- **与标准的差异**:v1 用"开战锁有效期内拒绝改名单"代替"撤票",前提是即时 gather、不进队列(默认配置下锁最长 101s)。v2 补位装箱让队伍进队列时，必须回到"整队一张票、成员一变即撤票"。
+
+### W.2 D7 / D-2 理由复核
+
+| D7 的理由 / 设计 | 复核结果 |
+|---|---|
+| 不能内嵌的硬理由"go-zero redis 无 WATCH"被证伪 | 成立，但只证明"能内嵌",不证明"该内嵌" |
+| 新 module 数 11 → ≤9 | 成立(运维收益) |
+| `BeginTeamMatch` 做成覆盖队伍 + 票据 + 队列的一个原子事务 | **不成立**(DV-1、DV-3):队伍 key 必须在 SharedRedis(C++ hiredis 只读非集群),票据在 MatchRedis 集群,v1 也不进队列。实际是"队伍域一条 Lua + 票据域逐人 CAS + 补偿",与独立服务所需的 saga 同形 |
+| `JoinQueueRequest` 加 `team_id`、独立消息号段、go-redis 直连 | 均未落地(DV-4、DV-5;team 用 go-zero redis + Lua) |
+
+同进程的**现行理由**(以此为准):
+
+1. 少一条"结果未知"的跨进程边：gather 结果在进程内直接交给 `finishMatch` 清锁并推送,team 与 match 同生共死。拆开后要补调用方生成票号、退票接口、逐跳预算、锁时长回传，仍会留下"先报失败、实际已开局"的窗口(Java 版 M20 残余风险)。
+2. 少一个部署单元;共用 BattleIDGen、会话拦截器、`playercontract`。
+3. 分协议(独立 `ClientPlayerTeam` service + `TeamNodeService` 注册)保证可撤回：将来拆分时客户端、gate、路由服都不用改。
+
+**已知代价**:共用 zrpc `Timeout=5000`(team 自设 3500ms 预算);TeamNodeService 注册失败、雪花失租、OOM(单 Pod 256Mi)会连带重启匹配与在途开局;发版、扩缩容绑定;改 `AllowCrossZone` 要重启全部 match;match"对 SharedRedis 只读"开了例外(DV-2;另见文首「与 D-2 / D7 的关系」表 cross-zone-matchmaking D2 一行的 2026-10-12 更正:matcher 旧队列迁移也写 SharedRedis)。
+
+**D-2**:team 行改为按数据归属论证(权威数据在全服单实例 SharedRedis、`zone_id` 是数据维度不是部署维度、`AllowCrossZone=true` 时同一队伍跨 zone),`Global=$true` 与"寄宿在 match"无关，将来拆出独立服务 D-2 也不用改。D-2 的 team 行与 D7 同出一源，本文开头的关系表不再把两者当作两条独立依据。
+
+### W.3 扩展路径
+
+1. **计算层已水平扩展**:team 没有进程内状态(权威数据在 Redis,`displayCache` 只活一次请求);路由服随机选 TeamNodeService 实例;match 本身无状态多实例(`deploy/k8s/manifests/go-svc/match.yaml` `replicas: 2`,matcher 每个队列一把 SETNX 锁、不选主)。加 match 副本就是加 team 实例。scene 读队伍数据是事件驱动(进场 / 刷新信号 / 战斗冻结解除),不是每帧读。
+2. **独立扩缩容**:同进程做不到(team 随在线人数、matcher 随排队人数)。先用"同镜像分角色部署":team 角色只注册 TeamNodeService、不起 matcher 与结果消费者;match 角色只注册 MatchNodeService。`BattleStarter` 依赖 MatchRedis(票据)、SharedRedis(玩家位置)、BattleIDGen(battle_id)与 scene / battle 节点发现，team 角色同一份 `ServiceContext` 本来就持有这些，整队开战仍是进程内调用，不引入跨进程"结果未知"。**未实现**,需 `main` 加角色开关 + 一份 manifest。
+3. **存储才是上限**:SharedRedis 单实例，提交 Lua 同时改队伍记录、投影、多名成员的玩家索引与邀请索引(J-25 禁止集群化),C++ scene 用 hiredis 直读。拆进程不改变这个上限。压测证明不够时要重设存储，候选方向:`AllowCrossZone=false` 时按 zone 分片;或队伍记录按 team_id 加 hash tag 作唯一权威、玩家索引降为可修复的派生索引(§C.6 已有雏形)并改 scene 的读取方式。两者都与拆不拆进程无关。
+4. **次序**:先压测(team QPS、SharedRedis ops / CPU、match Pod 内存与 GC,按 AGENTS §6 由 Codex 执行)→ 计算层瓶颈且与 match 扩容比例明显分化 → 分角色部署;存储瓶颈 → 存储分片设计;只有出现 W.5 的信号才拆独立服务。
+
+### W.4 本次加的护栏(未编译)
+
+- EndMatch 进程内兜底上限不再写死 110s,改为 `endMatchDeadline(lockTTL)`(`go/match/internal/team/store.go`):`StartTeamMatch` 加锁时算一次锁时长，加锁与所有清锁路径(`finishMatch` / `releaseLockInBackground` / `settleUnconfirmedLock`)共用。错配的后果是活性降级(锁多挂到自然过期),不是数据不一致;回归测试 `TestEndMatchDeadlineFollowsLockTTL`(锁 155s 时旧值会提前约 45s 放弃)。
+  - **行为变化(接受)**:小队伍的上限变短(2 人锁 74s → 上限 77.2s,原 110s)。锁过期后 EndMatch 本来就只会读到 `EndMatchLockExpired`、不写，清锁无损失;差别只在 `finishMatch` 没清成锁时那次 `pushMatchView` 补推 —— 旧版在锁过期后、110s 前 Redis 恢复还能推到非 STARTING 视图，新版锁过期后 3.2s 内没恢复就不再为补推重试，交给客户端拉取自愈(§G.3)。
+  - **不覆盖 Redis 时钟跳变**:锁是否过期按 Redis 时钟判，兜底上限按本地单调时钟计，3.2s 余量只覆盖一轮超时加最大退避。SharedRedis 若发生主从切换到时钟偏慢的节点、且回跳超过余量，EndMatch 可能在 Redis 认为锁仍有效时放弃 —— 仍只影响活性(锁按 Redis 时钟自然过期)。
+- `go/match/team_logic_layering_test.go`:断言 `internal/team` 与 `internal/logic` 互不 import(含测试文件)。只拦直接 import;目前没有经中间包的间接路径(两包依赖的 svc / metrics / playercontract 等都不反向引用它们)。
+- 仍靠两边测试各钉字面量对齐的隐式耦合:`team.Capacity == logic.kMaxBattleTeamSize == 5`;票据 `team_id` 字段的数据契约。
+
+### W.5 拆分触发信号与预案
+
+任一信号出现、且有指标或事故证据时立项(属架构决策，需用户拍板):
+
+- v2 补位装箱立项(队伍票长期排队、成员一变即撤票,team ↔ match 从一次性调用变成长期同步);
+- team 的资源占用、发版频率或扩缩容维度与 match 明显分化;
+- team 引发事故，连带匹配、观战或帮会活动开局不可用;
+- team 的消费方扩展到 chat / guild 等，成为社交枢纽;
+- 需要与 MatchService 不同的 zrpc Timeout / 限流 / 熔断;
+- SharedRedis 集群化(J-25)提上日程。
+
+预案要点:`BattleStarter` 改为 MatchInternal RPC,接口形状参照 Java 版 `MatchTeamService`(check / createTickets / releaseTickets / runGather);ticket id 由 team 生成作幂等键;开战锁时长与人数上限由 match 在 check 回包下发(单一事实源);gather 结果回传方式(Kafka 事件 vs 长挂 RPC)待决;team_id 的发号 kind 需拍板(倾向硬切新 kind,灰度期禁止两种进程同时发 team_id,AGENTS §7.1);发布顺序：先发带新内部方法、仍内嵌 team 的 match → 起独立 team → 发去掉 team 的 match;同步更新 Java 仓 `PARITY.md`。
+
+### W.6 跨区组队现状
+
+- `Team.AllowCrossZone` 默认 false(`go/match/etc/match_service.yaml`)。打开后(改 yaml + 重启全部 match):组队、视图、整队开战支持跨区(匹配池全局,gather 按成员位置定位 zone / node);场景跟随**不**支持(DV-6 只在同 zone、同 scene 节点);在线目录邀请只列同区玩家(PROGRESS 2026-09-28)。
+- 跨区形态的 robot team-smoke 至今没有运行证据。
+
+### W.7 验证现状
+
+- Go:PROGRESS 2026-10-10 记录 `go/match` 在 `21d5b25120` 之上 build / vet / test 通过(工作树 `E:\work\xuanming-server-mmo-wt-pvematch`,本机不存在该路径，该提交在本仓也不可达，未留日志),所以 xuanming-port-feasibility §12.3"全部未编译、未测试"对当时的 Go 部分已过期。**该证据早于 10-12 本次改动,当前工作区的 `go/match` 未编译**。
+- 没有运行证据:C++ `player_team.cpp`(10-10 主干 scene 因装备生成前置缺失报 110 errors)、robot team-smoke 两种形态、带 `-race` 的并发 fuzz、K8s 上 TeamNodeService 可达性。
+- 未核验的旁支风险:K8s MatchRedis 为 `volatile-lru`(`deploy/k8s/manifests/infra/redis-match-cluster.yaml`),内存紧张时可能淘汰带 TTL 的 matched 票。

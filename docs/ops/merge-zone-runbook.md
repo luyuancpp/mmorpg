@@ -1,6 +1,6 @@
 # Merge-Zone Runbook(合服操作手册)
 
-> **状态**: v3.2 — 2026-09-28(v3.2:`-MergeDbCapabilityZones` 去缺省 + `merge-zone-capability-check`,见修订历史)。按 [`player-storage-placement.md`](../design/player-storage-placement.md)(v2.2)同批落码的 `tools/merge_zone/` 与 `tools/scripts/dev_tools.ps1` 重写了步骤顺序、清单、验证与回滚,并新增落点运维(§14)。**这批代码全部未编译、未测试**(AGENTS.md §10.1),首次按本版执行前,先确认 PROGRESS.md「2026-09-28 玩家存储落点」条目里的验证清单已由 Codex 跑绿。
+> **状态**: v3.2 — 2026-09-28(v3.2:`-MergeDbCapabilityZones` 去缺省 + `merge-zone-capability-check`,见修订历史)。按 [`player-storage-placement.md`](../design/player-storage-placement.md)(v2.2)同批落码的 `tools/merge_zone/` 与 `tools/scripts/dev_tools.ps1` 重写了步骤顺序、清单、验证与回滚,并新增落点运维(§14)。**这批代码落码时未编译、未测试**(AGENTS.md §10.1);2026-09-29 按用户指示跑过一轮(merge_zone 集成测试 83 条 PASS(67 个顶层 + 16 个子用例)、dev_tools 契约 16/16,PROGRESS.md「2026-09-28 玩家存储落点」条目的「运行验证」),但 `be6b4ab1d`(10-08)之后 `tools/merge_zone` 的 P4 预检与 Kafka 队列审计又改过、未编译。**首次按本版执行前,先确认 [placement-reverify-checklist-20261012.md](../handoff/placement-reverify-checklist-20261012.md) 已由 Codex 在当前 HEAD 上跑绿**。截至 2026-10-12,真实集群上 pin 合服、copy 合服、搬库都没有演练过(§12)。
 > **范围**: K8s 部署形态下,把 source zone 合并进 target zone 的端到端 ops SOP,以及玩家存储落点的钉落点 / 搬库 / 退役审计。**逐字可执行**。
 > **关联**:
 > - 设计:[`player-storage-placement.md`](../design/player-storage-placement.md)(落点、pin / copy 模式、搬库;§12 为本批修的工具缺口)/ [`server_merge_design.md`](../design/server_merge_design.md)(历史设计,§5.5 回滚已作废)/ [`server-merge-gap-fixes.md`](../design/server-merge-gap-fixes.md)(还开着哪些口子)
@@ -127,13 +127,13 @@
 > - **撤销重跑**:立围栏后先看清单玩家里是否已有人 `player:zone == src`(上一次撤销在 5' 之后中止,半撤销)。是则 P、S 段的拒绝同样保留围栏;读映射失败也按半撤销处理。偏保守的副作用:合服当初带了 `-skip-player-mapping`,或合服在步骤 5 之前停下后改跑撤销,清单玩家都还是 src,撤销的门禁拒绝也会保留围栏,照 ③ 处理即可。
 > - 判断拿到的是哪一种:看最后几行有没有 `LEFT IN PLACE`。有 = 围栏还在,按 ③;没有、且有 `merge fence was released` = 按 ②。
 
-**谁在看这面旗**(四个消费者,契约必须字字一致):
+**谁在看这面旗**(四个消费者,契约必须字字一致;其中 remap 自 2026-10-12 起停用,见表中那一行):
 
 | 消费者 | 位置 | 行为 |
 |---|---|---|
-| data_service `RegisterPlayerZone` | `go/data_service/internal/routing/router.go` | 目标 zone 被围栏 ⇒ 拒绝建映射(`ErrZoneMergeInProgress`);查询报错也拒绝。写入脚本开头再原子复核一次围栏(提交点复核),命中时 `player:zone` 与 `player:placement` 都不写 |
+| data_service `RegisterPlayerZone` | `go/data_service/internal/routing/router.go` | 目标 zone 被围栏 ⇒ 拒绝建映射(`ErrZoneMergeInProgress`);查询报错也拒绝。写入脚本开头再原子复核一次围栏(提交点复核),命中时 `player:zone` 与 `player:placement` 都不写。`RouteStore.Mode=db_first` 时(映射持久化第 1a 批,`routing/route_publish.go`;所有档位默认仍是 redis),提交点复核由发布脚本的 `merge:in_progress:{home}`(KEYS[4])完成,命中时三键(`player:zone` / `player:placement` / `player:maprev`)零写入,但全局库 `player_route` 里已提交的行会留下(§9.3 的 `db_only_unpublished`) |
 | data_service `GetPlayerHomeZone` → scene_manager `EnterScene` | `router.go::GetPlayerHomeZoneAndMergeFence` + `go/scene_manager/internal/logic/home_zone.go` | 玩家 home 被围栏 ⇒ 响应 `home_zone_merging=true`,scene_manager 回 `ErrHomeZoneMerging = 21`(可重试),在写 location / owner_epoch 之前拒绝。围栏读失败也按「合服中」处理。指标 `scene_manager_enter_scene_rejected_total{reason="home_zone_merging"}`(A16) |
-| data_service `RemapHomeZoneForMerge` | 同上 + `internal/server/dataserviceserver.go` | **反过来要求围栏必须在**:source 没围栏 ⇒ `FailedPrecondition` + `ErrCodeMergeFenceMissing`,零变更。另需 `x-admin-token` 与配置的 `AdminToken` 相符(**没配 = 该 RPC 停用,不是免鉴权**) |
+| data_service `RemapHomeZoneForMerge` | `internal/server/dataserviceserver.go` | **已停用(2026-10-12,[提案](../design/player-route-mapping-durability-proposal.md) §4.3)**:不论 token、不论围栏,一律 `FailedPrecondition` + `ErrCodeNotImplemented`(16),零变更;Router 上的实现已删除,`ErrCodeMergeFenceMissing`(24)不再产生。改映射只走 `tools/merge_zone`。(停用前:要求 source 围栏必须在,另需 `x-admin-token`。) |
 | guild `CreateGuild` | `go/guild/internal/logic/merge_fence.go` + `guild_logic.go::checkMergeFence` | 被围栏 ⇒ 拒绝建帮(`FailedPrecondition`);读不到围栏也拒绝(fail-closed)。**但 `guild.yaml` 的 `MergeMarkerRedis` 整段缺失 = 闸门不生效**,启动时只打一条 Info |
 
 另外,搬库(§14.2)的冻结 CAS 与钉落点(§14.1)都会检查围栏,与合服互斥。
@@ -749,6 +749,113 @@ mapping Redis 整体丢失或被误删时(`player:zone:*`、`player:placement:*`
 
 **恢复不了的一类**:login `Placement.PinOnCreate=true` 且 `NewPlayerStorageId` 指向**非本 zone 库**(Phase 2 全局库)建出的新号。任何 zone 库里都没有他们的行,也不在任何清单里,上面的步骤覆盖不到。设计 §4.4 / §11.4 把它登记为 D1「映射持久化兜底表」的遗留项。
 
+### 9.3 映射落库:`route_tool` 导入与审计(映射持久化第 1a 批,2026-10-12)
+
+> **代码未编译、未测试**(AGENTS.md §10.1)。首次执行前,先确认 [player-route-mapping-durability-proposal.md](../design/player-route-mapping-durability-proposal.md) §11.2「第 1a 批交 Codex 的验证」已跑绿。设计与门禁的完整说明在提案 §11.2,这里只写操作。
+
+**是什么**:`go/data_service/cmd/route_tool`。它 SCAN mapping Redis 里的 `player:zone:*` / `player:placement:*`,对扫到的这些玩家用 MGET 一并读 `player:maprev`(作为导入行的 rev),再导入 `merge:merged_into:*`,写进全局库(`SnapshotMySQL.DBName`,dev 是 `testdb`)的 `player_route` 与 `zone_merged_into`,并审计两边是否一致。`player:maprev` 不是单独扫描的一族:**只有 maprev、没有 zone 也没有落点的玩家不会被导入**,两遍 SCAN 都看不到他(发布脚本写不出这种形状;若是 SCAN 之后、MGET 之前 zone 与落点被删、只剩 maprev,这名玩家计为 `MALFORMED`)。这类残留只有 audit 的方向 B(它也 SCAN `player:maprev:*`)会报成 `missing_in_db`。与 data_service 读同一份 yaml;mapping Redis 恒为 DB 0。输出只打 host 与库名,不打 DSN 与口令。
+
+**在哪跑**:本批只能在有 Go 工具链与仓库检出的机器上 `go run`(dev / 本机)。**K8s 镜像只构建单一入口**,生产上跑要等第 1b 批把它并进 data_service 主程序(提案 §11.2 偏离第 8 条)。
+
+**前置**:
+
+1. 全局库跑过迁移(`data_service -f <yaml> -migrate`,或 `Schema.AutoMigrate` 启动过),`route_meta(id=1)` 在。否则 route_tool 探针不过,退出码 2,提示先跑迁移。
+2. **冻结窗口已经开始**:不跑 merge / unmerge / relocate / pin-placement / backfill 任何写模式(提案 §7 P1)。工具只能检测 merge / unmerge 立的围栏(`merge:in_progress:*`);relocate、pin-placement、backfill 不立围栏,只能靠人保证。import 在 stderr 第一行打的 NOTE 就是提醒这一点。
+
+**P1 操作**(工作目录 `go/data_service`):
+
+```powershell
+# 1. dry-run(默认):只做 SELECT 判定,不写库,看统计
+go run ./cmd/route_tool -f etc/data_service.yaml import-from-redis
+# 2. 真导入。退出码 1 时先按 stderr 明细人工处理冲突 / 畸形 / rev 倒退,再重跑
+go run ./cmd/route_tool -f etc/data_service.yaml import-from-redis -dry-run=false
+# 3. 审计,期望退出码 0
+go run ./cmd/route_tool -f etc/data_service.yaml audit
+```
+
+可选参数:`-batch=500`(1..1000)、`-timeout=30m`、`-max-report=200`(stderr 明细行上限,计数始终精确);import 另有 `-allow-db-first`(见下面「db_first 之后」);audit 另有 `-recheck-delay=2s`、`-max-recheck=10000`。
+
+**重跑与恢复**(按退出码分两种,不能一概「原样重跑」):
+
+- **退出码 2(中断、超时、连接 / 查询 / 写入出错)、开头就退出码 3(一行没写)**:与合服无关,导入幂等,窗口内原样重跑即可。
+- **结尾退出码 3**(结尾还有围栏,或 `merge:merged_into` 与开头不同 = 导入窗口内有合服 / 撤销合服跑过):**不能原样重跑**。窗口内被合服改写的玩家,库里已导入的是旧 home(src)、缓存里是新 home(dst),而导入从不覆盖库里的非 NULL 值,重跑只会把他们判成 `conflict`(退出码 1)且永远收敛不了。恢复办法(只限 P1:全部 data_service 副本仍是 redis 模式,库还不是真源、没有任何读方):等合服窗口结束,在全局库上清空两张数据表、`route_meta` 原地复位(与两份清库脚本 `stress_round19.ps1` / `currency_crash_window.ps1` 的 `Clear-GlobalRouteTables` 同一口径),再从头 dry-run → 真导入 → audit:
+
+  ```sql
+  USE <SnapshotMySQL.DBName>;
+  TRUNCATE TABLE player_route;
+  TRUNCATE TABLE zone_merged_into;
+  UPDATE route_meta SET writable=1 WHERE id=1;
+  UPDATE route_reconcile SET leader=NULL, lease_until_ms=NULL, watermark_ms=0, cache_verified_ms=0 WHERE id=1;
+  ```
+
+  (2026-10-12 G1a:水位 / 租约从 `route_meta` 拆到了 `route_reconcile`,两张单行表都原地复位、不 TRUNCATE。)TiDB 上 TRUNCATE 会换表 ID、丢掉预切与 table attributes,清完要重跑下面的 `route_tool tidb-prepare`(或改用分批 `DELETE`)。
+
+  任一副本已经切到 db_first 之后,库就是真源,**不许**这样清;那时合服本来就被冻结窗口禁止(§12),出现结尾退出码 3 说明冻结纪律被打破,停下来找负责人。
+
+**import-from-redis 做什么**:
+
+1. 开头 SCAN `merge:in_progress:*`,有一把就退出码 3,一行都不写;没有就原样快照一次 `merge:merged_into:*`(键 → 值);
+2. A 遍:SCAN `player:zone:*`,每页一次 MGET 取这些玩家的 zone / placement / maprev。键名或任一值不规范(如 `007`、`0012`、`01:1`),整名玩家跳过并记 `MALFORMED`,不导半截;
+3. B 遍:SCAN `player:placement:*`,跳过 A 遍处理过的 id;
+4. `merge:merged_into:*` 导入 `zone_merged_into`。`merged_at_ms` 取导入时刻的库时钟,原始时刻已无从得知;同 src 而 dst 或 run_id 不同记冲突,不覆盖;
+5. 结尾再查一次围栏,并把 `merge:merged_into:*` 与开头的快照比对(新增 / 消失 / 改值任一项):命中任一项就退出码 3,stderr 打 `ABORT` 行列出看到的围栏与变化。比对抓的是「在两次围栏检查之间开始并跑完」的合服 / 撤销合服 —— 它们跑完就删了围栏,结尾的围栏 SCAN 看不到,但 merge 一定先写 merged_into 再改映射、unmerge 一定先改回映射再删它。已写入的部分保留(统计行照出),恢复见上面「重跑与恢复」。relocate / pin-placement / backfill 既不立围栏也不写 merged_into,工具检测不到,只能靠冻结窗口。
+
+**db_first 之后**:yaml 是 `RouteStore.Mode=db_first` 时,真导入(`-dry-run=false`)默认拒绝,退出码 2 —— 那时库是真源,「从缓存回填库」方向是反的(绕过发布脚本的写者留下的值可能被补进库),导入事务还会对一批玩家行持 `FOR UPDATE`、逐行 CAS 更新,并发的建角在同一玩家行上最多等满 1s 后以 1205 失败。唯一合法的用法是提案 §7 P3:全部副本切完之后,补一次滚动期间旧副本只写 Redis 的登记,这时显式加 `-allow-db-first`,并建议用小批量(如 `-batch=100`)缩短持锁时间;除此之外切 db_first 之后不再跑真导入。dry-run 与 audit 只读,不受影响。
+
+逐名玩家的判定:库里没有行就插入,`rev = maprev`(没有 maprev 取 1);库 rev < maprev 记 `rev_regression`,不写(疑似库被回档);两边都有值且不同记 `conflict`,**不覆盖**;库有值而 Redis 无键记 `db_ahead`,不写、不算冲突;库为 NULL 而 Redis 有值则补列(`filled`)。
+
+stdout 只有一行:`route_import dry_run=… players_scanned=… inserted=… matched=… filled=… db_ahead=… rev_regression=… conflicts=… malformed=… merged_into_inserted=… merged_into_matched=… merged_into_conflicts=… merged_into_malformed=…`。stderr 是 NOTE、连接目标,以及 `MALFORMED` / `CONFLICT` / `REV_REGRESSION` / `MERGED_INTO_CONFLICT` 明细。
+
+**audit 做什么**(只读):方向 A 是库对 Redis(按主键键集翻页),方向 B 是 Redis 对库(SCAN 三族键;方向 A 没比过的 id 都在这里补比一次 —— 既包括库里没有行的,也包括方向 A 翻页扫过之后才提交的行,例如 db_first 下审计期间新登记的玩家),再全量对比 merged_into。有差异的玩家不超过 `-max-recheck` 时,等 `-recheck-delay` 后重读一次,只计两次都在的差异,被清掉的计入 `transient_cleared`;超过上限就全部计入并打 WARN。有生效围栏时只提示(`redis_fences_active` + WARN)。墓碑行(home 与落点都是 NULL)视为没有记录;maprev 缺席不算差异(本批 redis 模式下没有人写它)。stdout 一行 `route_audit …`,stderr 是 `DIFF kind=… player=… db=… redis=…` 明细。
+
+| 计数 | 含义 |
+|---|---|
+| `db_only_unpublished` | 库里这行不是墓碑,三族键**全部**不在。可能是 db_first 下已提交未发布的孤儿行(发布失败、WAITAOF 超时、发布时撞上围栏),也可能是 Redis 丢了已确认的发布,本批分不开。**本批无法自动消除**,要等第 1b 批的全量预热推送;推送之前,先人工核对其中 home 指向已合走 zone 的行 |
+| `missing_in_redis` | 库里这一列有值,Redis 缺这把键(三族键不是全缺) |
+| `missing_in_db` | 库里这一列是 NULL 或根本没有这一行,Redis 有值 |
+| `value_mismatch` | 两边都有,值不同(落点按编码后的字符串比,冻结态与稳定态算不同) |
+| `redis_malformed` | Redis 的键名或值不规范(含 maprev、merged_into) |
+| `db_invalid` | 库里这一行的落点过不了校验 |
+| `redis_rev_ahead` | maprev 合法且大于库里的 rev:库被回档的信号,停下来找负责人 |
+| `merged_into_missing_in_redis` / `merged_into_missing_in_db` / `merged_into_mismatch` | 合走标记两边不一致 |
+
+**退出码**:
+
+| 码 | import-from-redis | audit |
+|---|---|---|
+| 0 | 完成,冲突、畸形、rev 倒退、merged_into 冲突与畸形都是 0 | 所有差异计数都是 0(`redis_fences_active`、`transient_cleared` 不算) |
+| 1 | 完成,但上面任一项非 0,需要人工处理 | 有差异,**`db_only_unpublished` 也算** |
+| 2 | 失败:参数、配置、连接、查询或写入出错(含锁等待超时 1205)、超时;探针不过(没跑迁移、会话变量不对、TiDB 不是悲观事务);yaml 是 db_first 而真导入没加 `-allow-db-first` | 同左(`-allow-db-first` 除外) |
+| 3 | 开头或结尾 SCAN 到生效的 `merge:in_progress:*`,或结尾的 `merge:merged_into:*` 与开头不同,已中止。结尾的 3 不能原样重跑,见「重跑与恢复」 | 不用 |
+
+**P2 切换门禁**(切 `RouteStore.Mode=db_first` 之前,缺一不可;完整说明见提案 §11.2):
+
+1. **冻结窗口**:从任一 data_service 副本切到 db_first 起,到映射持久化第 2 批落地为止,禁止 merge_zone 一切写模式(§12 同一条);
+2. 上面的 P1 做完:真导入退出码 0,audit 退出码 0;
+3. mapping Redis 是 `noeviction` + `appendonly yes`、版本 ≥ 7.2;按拓扑填 `RouteStore.WaitAOFNumLocal` / `WaitAOFNumReplicas`(redis-ha 档 NumReplicas 写 1)。db_first 装配 route store 之前,data_service 会按这两项发一次 `WAITAOF`(timeout = `WaitAOFTimeoutMs`)做能力探针:报错(appendonly 关着、Redis < 7.2)或确认份数不足(NumReplicas 写了 1 而没有副本)就不装配,日志里有 `route store not assembled ... cannot confirm AOF durability`,K8s(`Store.Required=true`)直接拒启 —— 不把配置错误留到每一次建角;
+4. 建角压测已出 W1 p99 与「发布未确认率」的对比表(AGENTS.md §6),负责人拍板。「发布未确认率」看 `data_service_route_publish_total` 的 `not_durable` **加上** `error`:WAITAOF 回复形状不对是确定性错误、不重试,计在 `error` 而不是 `not_durable`;
+5. 切换后看启动日志里那条 `WARN RouteStore.Mode=db_first: ...`;全部副本切完,再导入一次(`-dry-run=false -allow-db-first`,小批量)、再审计一次(提案 §7 P3)。db_first 下 audit 可能长期因 `db_only_unpublished` 非 0,P3 的「audit 为 0」要等第 1b 批。
+
+**db_first 下 Redis 整体丢失**:本批还没有把库推回 Redis 的工具(第 1b 批的预热),仍按 §9.2 手工重放。全局库的路由表这时是最完整的一份记录,重放之后可以用 audit 核对结果。
+
+**`tidb-prepare`(TiDB-only,2026-10-12 G1a,代码未编译、未测试)**:对全局库的路由表设防合并、按片 / 按 zone 预切 Region。`player_route` 改成聚簇 `(route_shard, player_id)` 之后,不预切的话 16 条写入尾部在开服首日仍压在同一个 Region 上(提案 §11.2「第 1a 批热点修复」)。
+
+```powershell
+# 默认 dry-run:判引擎、核对两张表是聚簇主键、列出将执行的语句(stderr 每条一行 PLAN)
+go run ./cmd/route_tool -f etc/data_service.yaml tidb-prepare -zones=1,2
+# 真执行(stderr 每条一行 DONE ... split_regions=N);-storages 只在 Phase 2 PinOnCreate 指向 1000000 时加
+go run ./cmd/route_tool -f etc/data_service.yaml tidb-prepare -zones=1,2 -storages=1000000 -dry-run=false
+```
+
+- **何时跑**:TiDB 上建表之后;**开新 zone 时,在该 zone 开放(第一次建角)之前、低峰**跑一次(带上全部 zone 也行,幂等);BR / PITR 恢复之后;TRUNCATE 之后。两条 `ALTER … ATTRIBUTES` 是 DDL,在线重跑可能让在途建角以 8028 失败一次(提案 G1a HR9,未核实),所以挑开放前、低峰。
+- **MySQL 上自动跳过**:stderr 打 `SKIP: … is not TiDB`,退出码 0。
+- **只碰全局库**,不连 mapping Redis。它照样经过 route store 的建池探针:没跑迁移、会话变量不对、TiDB 不是悲观事务、**`chk_route_shard` 不生效**(TiDB 建表前没 `SET GLOBAL tidb_enable_check_constraint=ON`)都直接退出码 2。
+- **前置核对**:`player_route`、`zone_merge_fence` 在 TiDB 上必须是 `CLUSTERED`(`information_schema.TABLES.TIDB_PK_TYPE`),不是就退出码 2、一条 ALTER / SPLIT 都不发 —— 只能趁表空 DROP 后用 `data_service -migrate` 重建。
+- **权限**:SPLIT / ATTRIBUTES 需要的权限【未核实】;应用账号不够时用运维账号的 yaml 副本跑(副本不进 git、口令不进日志)。另:建池探针 P4 是一次必然回滚的 `INSERT`,所以 route_tool 的任何子命令(含只读的 audit)都要 `player_route` 的 INSERT 权限。
+- **退出码**:0 完成或 MySQL 跳过;2 参数非法(`-zones` 必填,每项 1..999999;`-storages` 每项 ≥ 1)、连接 / 探针失败、核对失败、某条语句失败(stderr 的 `FAILED` 行带第几步与语句;已执行的保留,重跑即可)。stdout 一行 `route_tidb_prepare engine=… skipped=… dry_run=… zones=… storages=… statements=… executed=… split_regions=…`。
+- **不许**为了「清干净」去关 `chk_route_shard`(`ALTER … NOT ENFORCED`)或把 `tidb_enable_check_constraint` 改回 OFF:`player_id` 的唯一性靠它。改过 DDL 或全局变量之后必跑一次 audit(方向 A 是唯一看得见错片行的检测器)。
+- K8s 上同样要等第 1b 批把 route_tool 并进主程序入口。
+
 ---
 
 ## 10. 回滚
@@ -868,6 +975,7 @@ S   清单玩家不得有冻结的落点记录(与搬库互斥);有「落点记�
 | **合服公告 UI 靠客户端** | 服务端已把 `player_merge_notice:{pid}` 写进 login Redis(DB 0),login 首登时消费并下发 | 客户端接上即可生效 |
 | **player blob 跨集群拷贝是逐玩家流式** | 大 zone(>10w)分钟级 | source / target 同 Redis 后端时工具自动跳过这一步 |
 | **go/db 每条任务多两次 MGET** | 选库一次、落库后复核一次 | 未压测;按 AGENTS.md §6 出对比表之前不下性能结论 |
+| **映射持久化 db_first 与 merge_zone 不能共存**(2026-10-12,第 1a 批) | merge_zone 在映射持久化第 2 批之前仍只写 Redis、从不写全局库的 `zone_merge_fence` / `player_route`。db_first 下库内围栏恒不生效,merge / unmerge / relocate / pin-placement / backfill 改出的 Redis 值库里不知道,库与缓存长期分叉 | **任一 data_service 副本为 `RouteStore.Mode=db_first` 起,到第 2 批落地为止,禁止 merge_zone 任何写模式**(merge / unmerge / relocate / pin-placement / backfill)。所有档位默认 redis;切换门禁见 §9.3 |
 
 已闭合、从本表移除的旧项:
 - C++ 审计 topic 世代号改为配置(2026-09-09,`audit_topic.h`);
@@ -1122,6 +1230,8 @@ go run ./cmd/migrate -f <db.yaml 副本> -storage-id 1000000 -command up -create
 
 ## 修订历史
 
+- **2026-10-12(映射持久化第 1a 批热点修复 G1a 同步,代码未编译、未测试)**:§9.3「重跑与恢复」的恢复 SQL 改为 `route_meta` 只复位 `writable`、另复位 `route_reconcile`(水位 / 租约从 `route_meta` 拆出),并注明 TiDB 上 TRUNCATE 后要重跑 `tidb-prepare`;§9.3 末尾新增 `route_tool tidb-prepare`(TiDB-only 预切与防合并,MySQL 自动跳过;开新 zone 时在开放前、低峰跑)。设计见 [player-route-mapping-durability-proposal.md](../design/player-route-mapping-durability-proposal.md) §11.2「第 1a 批热点修复」。
+- **2026-10-12(映射持久化第 1a 批同步,代码未编译、未测试)**:§3 围栏消费者表:`RegisterPlayerZone` 补 db_first 下由发布脚本复核围栏、库里已提交的行会留下;`RemapHomeZoneForMerge` 改为「已停用」。新增 §9.3 `route_tool` 导入与审计(P1 步骤、退出码、只能检测合服围栏、`db_only_unpublished` 的含义、P2 切换门禁)。§12 加一行:db_first 与 merge_zone 写模式不能共存。设计见 [player-route-mapping-durability-proposal.md](../design/player-route-mapping-durability-proposal.md) §11.2。同日评审修复:§9.3 写清 maprev 不是单独扫描的一族;import 结尾加 `merge:merged_into` 快照比对(窗口内跑完的合服也退出码 3),「原样重跑」改为按退出码分的「重跑与恢复」(结尾退出码 3 要在 P1 清表后从头导入);db_first 下真导入要显式 `-allow-db-first`;audit 方向 B 补比方向 A 之后提交的行;P2 门禁补 WAITAOF 启动探针与「发布未确认率」要连 `error` 一起看。
 - **2026-09-28 v3.2(`-MergeDbCapabilityZones` 去缺省,负责人决定;代码未编译、未测试)**:
   - `-db-capability-zones` / `-MergeDbCapabilityZones` 不再有 `src,dst` 缺省值,`src` / `dst` 记号删除。pin 合服、pin 清单的撤销必填(可 `none`);copy 合服只在清单玩家已有落点记录时要求;搬库必填且不接受 `none`(§5、§5.1、§10.1、§13、§14.2)。
   - 新增只读命令 `merge-zone-capability-check`(exit 0 / 1 / 2)。§8 Step 6 zone-up dst 之后、Step 7 `/open` 之前必须 exit 0,否则不开服、先换 dst 的 go/db;撤销后两区开服前同样核对。

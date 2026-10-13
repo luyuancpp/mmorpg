@@ -18,7 +18,14 @@
 >   - 生产切换仍受 D8(应用级回档)卡住,D1 的映射持久化兜底表仍是遗留项。
 > - **§6「明确未做」里的「topic 按 home_zone 路由」已由 [cross-zone-scene-travel.md](./cross-zone-scene-travel.md) CZ-2 落码**:C++ 存盘按 `PlayerHomeZoneComp` 选 `db_task_zone_{home}`。2026-09-28 起 topic 世代号也进了 C++ 配置(`DbTaskTopicGeneration`)。
 > - **proto2mysql 核实结论**(2026-09-28,go/db 多库落码时):生成的 SQL 都是裸表名,库由连接池 DSN 的默认库决定。所以多库必须一库一池,不能靠 `USE` 切换。
-> - 上述代码同样**未编译、未跑测试**。
+> - 上述代码同样**未编译、未跑测试**。(2026-10-12 更正:落码时如此;2026-09-29 已按用户指示跑过一轮,`be6b4ab1d` 之后的 HEAD 待复验,见下一条状态说明。)
+
+> **⚠️ 状态说明(2026-10-12):Phase 1、Phase 2 都还没上线,现网玩家数据全部在 MySQL。**
+> - **数据存在哪**:逻辑归属 `player:zone:{id}` 与落点记录 `player:placement:{id}` 都在 data_service 的 mapping Redis(DB 0),没有 MySQL / TiDB 兜底表(D1 未做)。落点记录只选库名(`zone_{N}_db` / `player_store_{N}_db`),库所在的机器由各 go/db 的 `Database.Hosts` 决定,所以「上 TiDB」是集群级切换,不能按玩家切(详见 [player-storage-placement.md](./player-storage-placement.md) §0 第 7 条)。
+> - **Phase 1**:TiDB 只有 dev 的 `deploy/docker-compose.tidb.yml`;K8s 是单个 `mysql:8.0`,§6 第 4 条的 K8s prod 清单与 §7 的 TiDB 版 PITR runbook 都没做;「Phase 1 是否继续」仍待拍板(handoff-backlog D-02)。
+> - **Phase 2**:落点代码在 main(`4493b3c9f`),但开关全关(`PinOnCreate=false`、`Required=false`),`player_store_1000000_db` 没有在任何部署里建过,存量没搬。仍卡在 D8(`RollbackFence` 生产为 nil)与 D1(映射兜底表);真实集群演练、压测、落点告警规则也都没做。
+> - **TiDB 兼容遗留**(迁库前必须处理):`player_snapshot` 的 `snapshot_guid_nz` 唯一键在 TiDB 上建不出(`go/data_service/internal/store/schema.go`,当前 fail-closed);friend 推荐查询的 `INL_JOIN` 提示已实测可用但未加([friend-handoff-20260920.md](../handoff/friend-handoff-20260920.md) §9.5 第 12 条);data_service 迁移互斥的 `GET_LOCK` 与 `player_name` 改主键都没在 TiDB 上实测。
+> - **验证**:落点代码 2026-09-29 跑过一轮(Claude 按用户指示执行);之后 `be6b4ab1d` 改了 go/db 重试队列与 `tools/merge_zone`,当前 HEAD 的复验清单见 [placement-reverify-checklist-20261012.md](../handoff/placement-reverify-checklist-20261012.md)。
 
 ---
 
@@ -29,7 +36,7 @@
 3. **proto2mysql 直接接 TiDB: 可行**。go-sql-driver 官方 Full 支持;库生成的 DML(`INSERT`/`INSERT ... ON DUPLICATE KEY UPDATE`/`REPLACE INTO`/`SELECT ... FOR UPDATE`)、`STRICT_TRANS_TABLES` 会话参数、`CREATE DATABASE IF NOT EXISTS`、多子句 `ALTER TABLE`(v6.2+)在 TiDB v8.5 LTS 上全部兼容。但**必须落三件事**,缺一不可:
    - **建表方言**: snowflake 主键时间戳在高位、单调递增,在 TiDB 默认聚簇表下是官方点名的写热点场景。玩家表必须建成 `PRIMARY KEY ... /*T![clustered_index] NONCLUSTERED */` + `/*T! SHARD_ROW_ID_BITS=N PRE_SPLIT_REGIONS=N */`(TiDB 扩展注释语法,MySQL 视为注释忽略,**同一份 DDL 双方言可用**)。proto2mysql 需新增对应表选项(见 §D6)。
    - **集群配置**: TiDB `txn-entry-size-limit` 默认 6MB,而玩家存档列是 MEDIUMBLOB(上限 16MB)——**默认配置下大存档写入直接报 `entry too large`**。上线配置须调到 ≥33554432(32MB,留一倍余量),并压测验证 TiKV `raft-entry-max-size`(默认 8MB)是否需同步调整。
-   - **服务器升级 proto2mysql 新版**: go/db 现钉 `v0.0.18`,是旧世系;GitHub main 已重写(`NewPbMysqlDB`→`NewDB`、raw binary 存储、descriptor schema sync)。**迁移时必须逐表显式锁定表名**(新版默认表名 = proto 全名含点号,不锁表名 schema sync 会建出一套新表,旧表数据"消失")。
+   - **服务器升级 proto2mysql 新版**: go/db 现钉 `v0.0.18`(2026-10-12 更正:已升级,`go/db/go.mod` 与 `go/data_service/go.mod` 现钉 `v0.2.0`,本条保留作历史),是旧世系;GitHub main 已重写(`NewPbMysqlDB`→`NewDB`、raw binary 存储、descriptor schema sync)。**迁移时必须逐表显式锁定表名**(新版默认表名 = proto 全名含点号,不锁表名 schema sync 会建出一套新表,旧表数据"消失")。
 4. **分阶段实施,不一步到位**:
    - **Phase 1(纯搬迁)**: 单 TiDB 集群承载现有 `zone_{N}_db` 逻辑库。库名派生、Kafka topic、write-behind 管线、per-key LWW 不变量**全部不动**,只换存储后端 + 建表方言。用 L1-L4 一致性测试和压测基线验收。
    - **Phase 2(全局化)**: 玩家表收敛到单一全局库,DBTask 生产端从"按本 zone 选 topic"改为"按 home_zone 选 topic";跨区带状态游玩 = redirect 重连 + 全局数据层直读,**废弃 `player_migrate` 的数据搬运职责**(冻结/单写栅栏语义保留)。
@@ -102,6 +109,34 @@ CREATE TABLE IF NOT EXISTS `player_database` (
 - 自增主键表(`player_snapshot`/`rollback_audit_log`): 同样 `NONCLUSTERED` + shard;TiDB AUTO_INCREMENT 多节点按批缓存分配(默认 3 万/批),全局唯一但**非连续、重启跳号**——两表均无连续性依赖,可接受;若未来有依赖,建表加 `AUTO_ID_CACHE=1`(v6.4+ 集中分配)。
 - 落地方式: proto2mysql 新增 TiDB 表选项(§D6),不在业务代码里手写 DDL。
 
+> **2026-10-12 更正与补充(只读核对 + docs.pingcap.com v8.5 官方文档,未在 TiDB 上实测)**
+>
+> **1. 本节「snowflake 主键」的前提已过时,但「单调」的结论不变。**
+> - 现在新号由号段发号:`go/shared/idsegment`,从 1 开始,步长 100~1000 动态调整,login 配置 `FallbackToSnowflake:false`。
+> - 每个 login 在自己的段内严格递增,所有 login 的写入点挤在一小段连续 id 里。
+>
+> **2. 本节的处方只打散了行数据,没打散索引。**
+> - `NONCLUSTERED` + `SHARD_ROW_ID_BITS` 打散的是隐藏行 ID `_tidb_rowid`;「退化」出来的那条 `PRIMARY KEY(player_id)` 唯一索引仍按 player_id 有序存放,首日建角的写入集中在它最右的一个 Region。官方「高并发写入最佳实践」把单调递增的索引列为热点成因。
+> - `PRE_SPLIT_REGIONS` 只预切行数据,每条索引建表时只有 1 个 Region。
+> - Load Base Split 只按读流量触发,化解不了写热点。
+> - 仓库里没有任何 `SPLIT TABLE … INDEX`,也没有对 player_id 做打散。
+> - 同类单调索引还有:`player_name.uk_player_name_owner(player_id)`;`transaction_log`、`player_snapshot` 的时间类联合索引;以及 [player-route-mapping-durability-proposal.md](./player-route-mapping-durability-proposal.md) 里 `player_route` 的 PK / `idx_route_storage` / `idx_route_updated`。(2026-10-12 G1a:`player_route` 改为聚簇 `(route_shard, player_id)` + 16 片前缀索引,`route_meta` 拆出 `route_reconcile`,`player_route` 与 `zone_merge_fence` 的预切与防合并由 `route_tool tidb-prepare` 执行,见提案 §11.2「第 1a 批热点修复」。)
+>
+> **3. Phase 2 会把热点放大。** 原来每个 zone 各有一组玩家表,也就是 Z 条索引尾部;合进全局库后只剩 1 条。在 MySQL 上单调追加是 B+ 树最友好的写法,不构成热点,瓶颈是整台实例;在 TiDB 上这是真实的扩展瓶颈,加机器解决不了。
+>
+> **4. `AUTO_RANDOM` 用不了。** 官方要求它只能用于 BIGINT 聚簇主键,不支持 `NONCLUSTERED`;显式插入的值按原样存放。而 player_id 必须在落库之前由 login 铸出。
+>
+> **5. 可选解法(未拍板):**
+> - 发号时在 2^55 值域内做双射置换打散,再预切索引,写入真正散开;
+> - 或者加大每个 login 的号段、在段边界预切,写入点数等于 login 实例数。
+> - 两种都会让新号更早进入 [2^22, 2^55) 区间,可能与 2024-10-27 之前铸出的存量 Snowflake player_id 撞号。撞号不报错,会静默串档。所以先审计存量 id 或收紧号段上限,由负责人拍板。
+> - 只做预切、不做打散,对单调键无效。
+> - 选定前先在 TiDB staging 上按 AGENTS §6 压测「首日建角 + 存盘」,用 Key Visualizer 区分 index 与 record 流量。
+>
+> **6. 还有一项待核实。** proto2mysql v0.2.0 的 Save 生成的是 `REPLACE INTO` 还是 `INSERT … ON DUPLICATE KEY UPDATE`,仓库内说法矛盾、源码未核对。若是 REPLACE,非聚簇表每次存盘都会改写一次 PK 索引项,热点会从「首次插入」扩大到「所有首日玩家的存盘」。
+>
+> 开服首日的完整瓶颈排序与开服前清单见 [tidb-phase1-and-launch-readiness.md](./tidb-phase1-and-launch-readiness.md)。
+
 ### D4: 集群配置硬要求
 
 | 配置项 | 默认 | 要求 | 原因 |
@@ -143,7 +178,7 @@ TiDB 方言在 proto2mysql 侧新增表选项(生成 §D3 的 DDL 形态):
 ### D7: 合服语义(Phase 2 后)
 
 - 玩家主数据: **零迁移**(本就在全局层按 player_id 放着)。
-- 逻辑归属: `RemapHomeZoneForMerge` 批量改映射;榜单/市场/公会合并是纯业务操作。
+- 逻辑归属: `RemapHomeZoneForMerge` 批量改映射;榜单/市场/公会合并是纯业务操作。(**2026-10-12 注**:`RemapHomeZoneForMerge` 已停用,一律 `FailedPrecondition`;映射改写走 `tools/merge_zone`,映射持久化第 2 批起改为库先写,见 [player-route-mapping-durability-proposal.md](./player-route-mapping-durability-proposal.md) §4.3、§11.2。)
 - 物理层面: 两个逻辑区指向同一套物理 zone 集群,旧集群退役(scene 从全局层加载数据,集群近乎无状态)。
 - topic 路由随 home_zone 改变: 合服前必须 **drain 旧 topic**(合服本就停服操作,窗口天然存在);applied cursor 按 topic 隔离,新 topic 冷启动无冲突。
 - [server_merge_design.md](./server_merge_design.md) 的跨库搬数据工具(`tools/merge_zone`)在 Phase 2 后按此收缩职责。
@@ -172,6 +207,7 @@ TiDB 方言在 proto2mysql 侧新增表选项(生成 §D3 的 DDL 形态):
 | 8 | PITR 真空期(runbook 未改就迁移) | P0 | D8 前置条件卡死发布 |
 | 9 | 借迁移之机误动 topic/partition | P0 | D5 明令禁止;code review 检查项 |
 | 10 | 死信队列无消费者(既有问题) | P2 | 与本决策正交,单独立项,不因换 TiDB 消失 |
+| 11 | 映射持久化路由表的热点(2026-10-12 登记,[player-route-mapping-durability-proposal.md](./player-route-mapping-durability-proposal.md) §11.2 风险第 1 条):`zone_merge_fence` 只有「zone 数 × 分片数」行,必落同一个 Region,悲观事务的 `FOR UPDATE` 让全服每次建角都在同一个 Region Leader 上加锁 / 解锁;`player_route` 的主键唯一索引与 `idx_route_updated` 单调递增,`idx_route_home(home_zone, player_id)` 在单个 zone 内也是尾部热点(NONCLUSTERED + SHARD_ROW_ID_BITS 只打散行数据);`route_meta` 单行是读热点 | P1 | `zone_merge_fence` 已建成 `CLUSTERED`,上线前按 zone `SPLIT TABLE`(§6 Phase 1 第 8 条);`player_route` 的热点纳入 TiDB 压测,用 Key Visualizer 区分 index 与 record 流量。2026-10-12 G1a:`player_route` 改为聚簇 `(route_shard, player_id)` + 16 片前缀索引,`route_meta` 拆出 `route_reconcile`,`player_route` 与 `zone_merge_fence` 的预切与防合并由 `route_tool tidb-prepare` 执行,见提案 §11.2「第 1a 批热点修复」 |
 
 ## 5. 验收标准(Phase 1)
 
@@ -191,6 +227,7 @@ TiDB 方言在 proto2mysql 侧新增表选项(生成 §D3 的 DDL 形态):
 5. 迁移工具: 开发环境直接重建;有存量数据的环境用 Dumpling + Lightning(逻辑库对逻辑库)
 6. 验收: §5 全项
 7. 文档: 回档 runbook TiDB 版(§D8)
+8. 映射持久化路由表(2026-10-12 追加,风险 #11):data_service 全局库随 Phase 1 迁 TiDB 之前,`SPLIT TABLE zone_merge_fence BY (2,0),(3,0),…` 按 zone 预切(表已是 `CLUSTERED`,建表后不能再改聚簇属性);`player_route` 的主键 / `idx_route_home` / `idx_route_updated` 尾部热点与围栏表的加锁热点纳入 Phase 1 压测。TiDB 上还要确认 `tidb_txn_mode=pessimistic`(route store 建池时探针会拒绝 optimistic)与 `tidb_enable_check_constraint`(默认关,CHECK 不生效,应用层校验兜底)。2026-10-12 G1a:`player_route` 改为聚簇 `(route_shard, player_id)` + 16 片前缀索引,`route_meta` 拆出 `route_reconcile`,`player_route` 与 `zone_merge_fence` 的预切与防合并由 `route_tool tidb-prepare` 执行,见提案 §11.2「第 1a 批热点修复」;`tidb_enable_check_constraint` 从此是**必须**(`chk_route_shard` 关系到 `player_id` 唯一性,建池探针实测它生效,不生效就拒建 store),且要在建表前打开
 
 **明确未做(本次)**: Phase 2 全部(全局表收敛、home_zone 字段落表、topic 按 home_zone 路由、解除跨区 fail-closed)、应用级回档通电、死信队列消费者。
 

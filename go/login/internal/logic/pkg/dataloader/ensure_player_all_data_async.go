@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"login/internal/dispatcher"
 	"login/internal/kafka"
-	login_proto_database "proto/common/database"
 	db_proto "proto/db"
 	"strconv"
 	"sync"
@@ -46,10 +45,8 @@ func EnsurePlayerAllDataInRedisAsync(
 	perTaskTTL time.Duration,
 	onComplete func(error),
 ) {
-	parent := &login_proto_database.PlayerAllData{
-		PlayerDatabaseData:   &login_proto_database.PlayerDatabase{PlayerId: playerId},
-		PlayerDatabase_1Data: &login_proto_database.PlayerDatabase_1{PlayerId: playerId},
-	}
+	// 骨架与建角写的新号种子同源(newPlayerAllDataSkeleton):子表读空时父键就是它。
+	parent := newPlayerAllDataSkeleton(playerId)
 	parentKey := buildParentKey(parent, playerId)
 
 	// Stage 1: parent-key EXISTS check.

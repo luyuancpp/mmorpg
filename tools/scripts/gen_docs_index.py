@@ -26,6 +26,7 @@ DESIGN_RULES = [
     ("总览与入门", [
         "ARCH.md", "onboarding.md", "architecture-current-state-vs-gaps-*", "ecs*.md",
         "table-api-reference*", "script_directory_rules*", "root_level_cleanup_findings*",
+        "capacity-model-*",
     ]),
     ("构建、部署与发布", [
         "docker_k8s_build_deploy*", "cpp_image_optimization*", "release-packaging-standard-*",
@@ -37,8 +38,10 @@ DESIGN_RULES = [
     ]),
     ("玩家数据与存储", [
         "player-async-save-loss-windows.md", "player-storage-placement.md",
+        "player-route-mapping-*",
+        "new-player-*",
         "player_live_data_export_runbook.md", "data_service_role_and_scope.md", "db-*", "db_*",
-        "global-data-layer-tidb-decision.md", "proto-compare-dirty-save.md",
+        "global-data-layer-tidb-decision.md", "tidb-*", "proto-compare-dirty-save.md",
         "async-load-disconnect-reconnect-race.md", "redis-async-client-retry-fix.md",
     ]),
     ("协议与配表工具链", [
@@ -80,7 +83,7 @@ DESIGN_RULES = [
         "grpc-client-deadline-failure-callback.md", "muduo-timer-cancellation-hazards.md",
         "hashed-timing-wheel.md", "double-buffer-queue-optimizations.md",
         "distributed-tracing.md", "error-reporting.md", "traffic-statistics-design.md",
-        "thread-count-monitoring*", "no-single-node-*",
+        "thread-count-monitoring*", "no-single-node-*", "shared-redis-*",
     ]),
     ("移植记录", ["xuanming-port-*"]),
 ]

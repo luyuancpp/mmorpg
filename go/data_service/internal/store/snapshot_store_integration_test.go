@@ -1232,3 +1232,226 @@ func TestSnapshotStore_LookupMissIsAnError(t *testing.T) {
 	assert.Equal(t, wantID, gotID)
 	assert.False(t, inserted)
 }
+
+// ── G2a 批量落库(InsertSnapshotsIfGuidAbsent)的真库回归 ─────────────────────────────────────
+//
+// 这几条证的是「批量不改变去重语义」:批内重复、跨批重放、两个写者重叠写同一批,结局都与逐条消费相同 ——
+// 每个 guid 恰好一行、先到者赢、RowsAffected 恰好等于新插入行数。MySQL 上一律不许 Skip(只有 TiDB 建不出唯一键时
+// requireGuidUniqueKey 才会跳过,那不代表通过)。
+
+// snapshotDataOf 读某个 guid 那一行的 data 列。
+func snapshotDataOf(t *testing.T, ctx context.Context, db *storetest.DB, guid uint64) []byte {
+	t.Helper()
+	var data []byte
+	require.NoError(t, db.Raw.QueryRowContext(ctx,
+		fmt.Sprintf("SELECT data FROM `%s` WHERE snapshot_guid = ?", store.PlayerSnapshotTableName), guid).Scan(&data))
+	return data
+}
+
+// TestSnapshotStore_BatchDedupsAgainstStoredAndWithinBatch:库里已有的 guid 与同一批里重复出现的 guid 都只落一行,
+// 批内重复时先出现(offset 小)的那条赢 —— 与逐条消费「先到者赢」一致。返回值 = 真正新插入的行数。
+func TestSnapshotStore_BatchDedupsAgainstStoredAndWithinBatch(t *testing.T) {
+	db := storetest.NewMigratedDB(t)
+	ss := newSnapshotStore(t, db)
+	requireGuidUniqueKey(t, ss)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	const createdAt = uint64(1700000000)
+	_, inserted, err := ss.InsertSnapshotIfGuidAbsent(ctx, sceneRow(10, 81001, createdAt, []byte("g1-stored")))
+	require.NoError(t, err)
+	require.True(t, inserted)
+
+	batch := []*store.SnapshotRow{
+		sceneRow(10, 81001, createdAt, []byte("g1-replayed")), // 库里已有
+		sceneRow(10, 81002, createdAt, []byte("g2-first")),
+		sceneRow(10, 81002, createdAt, []byte("g2-second")), // 同 guid、不同 data:批内重复
+		sceneRow(10, 81003, createdAt, []byte("g3")),
+	}
+	n, err := ss.InsertSnapshotsIfGuidAbsent(ctx, batch)
+	require.NoError(t, err)
+	assert.Equal(t, int64(2), n, "只有 g2、g3 是新插入:库里已有的 g1 与批内第二条 g2 都不计")
+
+	for _, guid := range []uint64{81001, 81002, 81003} {
+		assert.Equalf(t, int64(1), db.Count(t, store.PlayerSnapshotTableName, "snapshot_guid = ?", guid), "guid=%d 必须恰好一行", guid)
+	}
+	assert.Equal(t, []byte("g1-stored"), snapshotDataOf(t, ctx, db, 81001), "已存在的行一列都不许改(快照是不可变记录)")
+	assert.Equal(t, []byte("g2-first"), snapshotDataOf(t, ctx, db, 81002), "批内重复时先出现的那条落库")
+}
+
+// TestSnapshotStore_BatchReplayIsNoop:同一批插两次(提交 offset 前崩溃后的重放形态),第二次 0 行新插入,
+// 行数与 id 都不变。返回值若在重放时不为 0,消费者的 inserted / duplicate 计数就会把重放算成新快照。
+func TestSnapshotStore_BatchReplayIsNoop(t *testing.T) {
+	db := storetest.NewMigratedDB(t)
+	ss := newSnapshotStore(t, db)
+	requireGuidUniqueKey(t, ss)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	batch := []*store.SnapshotRow{
+		sceneRow(20, 82001, 1700000000, []byte("a")),
+		sceneRow(21, 82002, 1700000001, []byte("b")),
+		sceneRow(22, 82003, 1700000002, []byte("c")),
+	}
+	n, err := ss.InsertSnapshotsIfGuidAbsent(ctx, batch)
+	require.NoError(t, err)
+	require.Equal(t, int64(3), n)
+	before := map[uint64][]uint64{}
+	for _, r := range batch {
+		before[r.SnapshotGuid] = snapshotIDsOfGuid(t, ctx, db, r.SnapshotGuid)
+	}
+
+	n, err = ss.InsertSnapshotsIfGuidAbsent(ctx, batch)
+	require.NoError(t, err)
+	assert.Equal(t, int64(0), n, "重放整批:0 行新插入")
+	assert.Equal(t, int64(3), db.Count(t, store.PlayerSnapshotTableName, "source = 1"))
+	for _, r := range batch {
+		assert.Equalf(t, before[r.SnapshotGuid], snapshotIDsOfGuid(t, ctx, db, r.SnapshotGuid), "guid=%d 的 id 在重放后变了", r.SnapshotGuid)
+	}
+}
+
+// TestSnapshotStore_BatchIdsFollowRowOrder:同一玩家一批 5 行,自增 id 严格按**行序**递增(不是按 guid 大小)。
+// 消费者按 offset 序拼批,所以 id 序 = 同一玩家的 offset 序;ListSceneSnapshotsByPlayer 在 created_at 同秒并列时
+// 按 id DESC 排,次序因此与逐条消费一致。guid 故意不单调,免得「按 guid 排了序」也能让断言通过。
+func TestSnapshotStore_BatchIdsFollowRowOrder(t *testing.T) {
+	db := storetest.NewMigratedDB(t)
+	ss := newSnapshotStore(t, db)
+	requireGuidUniqueKey(t, ss)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	guids := []uint64{83005, 83001, 83004, 83002, 83003}
+	batch := make([]*store.SnapshotRow, 0, len(guids))
+	for _, g := range guids {
+		batch = append(batch, sceneRow(30, g, 1700000000, []byte("same-second")))
+	}
+	n, err := ss.InsertSnapshotsIfGuidAbsent(ctx, batch)
+	require.NoError(t, err)
+	require.Equal(t, int64(len(guids)), n)
+
+	var prev uint64
+	for i, g := range guids {
+		ids := snapshotIDsOfGuid(t, ctx, db, g)
+		require.Lenf(t, ids, 1, "guid=%d", g)
+		if i > 0 {
+			assert.Greaterf(t, ids[0], prev, "第 %d 行(guid=%d)的 id 应大于上一行:id 序必须跟着行序走", i, g)
+		}
+		prev = ids[0]
+	}
+}
+
+// TestSnapshotStore_BatchFallsBackWhenUniqueKeyAbsent:唯一键不在(迁移未跑 / DDL 回滚 / TiDB)时,批量入口退回逐行
+// NOT EXISTS,去重与返回值照样正确 —— 而不是拿多行普通 INSERT 静默写出重复行(同 TestSnapshotStore_FallsBackWhenUniqueKeyAbsent)。
+func TestSnapshotStore_BatchFallsBackWhenUniqueKeyAbsent(t *testing.T) {
+	db := storetest.NewMigratedDB(t)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	if !newSnapshotStore(t, db).UniqueGuidKeyForTest() {
+		t.Skipf("迁移没有建出 %s(TiDB?):本用例要先有键再删掉,跳过(不代表通过)", store.SnapshotGuidUniqueKey)
+	}
+	dropGuidUniqueKey(t, ctx, db)
+
+	ss := newSnapshotStore(t, db)
+	require.False(t, ss.UniqueGuidKeyForTest(), "键已删掉,store 必须探出「不存在」")
+
+	batch := []*store.SnapshotRow{
+		sceneRow(40, 84001, 1700000000, []byte("a")),
+		sceneRow(40, 84002, 1700000000, []byte("b")),
+		sceneRow(40, 84001, 1700000000, []byte("a-dup")), // 批内重复
+	}
+	n, err := ss.InsertSnapshotsIfGuidAbsent(ctx, batch)
+	require.NoError(t, err)
+	assert.Equal(t, int64(2), n)
+
+	n, err = ss.InsertSnapshotsIfGuidAbsent(ctx, batch)
+	require.NoError(t, err)
+	assert.Equal(t, int64(0), n, "退路形态的重放也必须去重")
+	assert.Equal(t, int64(1), db.Count(t, store.PlayerSnapshotTableName, "snapshot_guid = ?", 84001))
+	assert.Equal(t, int64(1), db.Count(t, store.PlayerSnapshotTableName, "snapshot_guid = ?", 84002))
+	assert.Equal(t, []byte("a"), snapshotDataOf(t, ctx, db, 84001), "先出现的那条落库")
+}
+
+// TestSnapshotStore_OverlappingBatchesFromTwoWritersLandOneRowEach:两个写者(各自一个连接池 = 两个 data_service 实例)
+// 并发写**部分重叠**的批,模拟消费组 rebalance 重叠窗口里同一分区被两个实例同时处理。
+// 判据:无错误外泄(1213 由就地重试吸收)、每个 guid 恰好一行、两人回报的新插入数之和 = 并集大小(没有一行被算两次)。
+// 两人的批都按 guid 升序(= 同一分区的 offset 序)拼,与生产一致。就地重跑次数只记录不断言。
+func TestSnapshotStore_OverlappingBatchesFromTwoWritersLandOneRowEach(t *testing.T) {
+	db := storetest.NewMigratedDB(t)
+	ssA := newSnapshotStore(t, db)
+	requireGuidUniqueKey(t, ssA)
+	ssB := newSnapshotStore(t, db)
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
+
+	const (
+		rounds    = 20
+		batchRows = 8
+		overlap   = 4
+		baseGuid  = uint64(850_000)
+	)
+	makeBatch := func(first uint64) []*store.SnapshotRow {
+		rows := make([]*store.SnapshotRow, 0, batchRows)
+		for i := uint64(0); i < batchRows; i++ {
+			rows = append(rows, sceneRow(50, first+i, 1700000000, []byte("overlap")))
+		}
+		return rows
+	}
+	for r := 0; r < rounds; r++ {
+		first := baseGuid + uint64(r*100)
+		batchA := makeBatch(first)                             // [first, first+8)
+		batchB := makeBatch(first + uint64(batchRows-overlap)) // [first+4, first+12)
+		var (
+			wg         sync.WaitGroup
+			nA, nB     int64
+			errA, errB error
+		)
+		start := make(chan struct{})
+		wg.Add(2)
+		go func() { defer wg.Done(); <-start; nA, errA = ssA.InsertSnapshotsIfGuidAbsent(ctx, batchA) }()
+		go func() { defer wg.Done(); <-start; nB, errB = ssB.InsertSnapshotsIfGuidAbsent(ctx, batchB) }()
+		close(start)
+		wg.Wait()
+		require.NoErrorf(t, errA, "第 %d 轮写者 A", r)
+		require.NoErrorf(t, errB, "第 %d 轮写者 B", r)
+		union := int64(2*batchRows - overlap)
+		assert.Equalf(t, union, nA+nB, "第 %d 轮:两人的新插入数之和必须等于并集大小(重叠的 guid 只能算一次)", r)
+		for g := first; g < first+uint64(union); g++ {
+			assert.Equalf(t, int64(1), db.Count(t, store.PlayerSnapshotTableName, "snapshot_guid = ?", g), "guid=%d 必须恰好一行", g)
+		}
+	}
+	t.Logf("就地重跑 1213:写者 A %d 次,写者 B %d 次", ssA.DeadlockRetriesForTest(), ssB.DeadlockRetriesForTest())
+}
+
+// TestSnapshotStore_BatchOfLargeBlobsFitsPacket:8 行 × 512KiB(一条语句约 4MiB,= Kafka.SnapshotBatchMaxBytes 的默认软上限)
+// 一次落成,字节原样读回。证明默认批字节上限在 max_allowed_packet(MySQL 8.0 默认 64MiB)与 redo 10% 限制之内;
+// 将来调大批字节上限时,在目标库上重跑本用例。
+func TestSnapshotStore_BatchOfLargeBlobsFitsPacket(t *testing.T) {
+	db := storetest.NewMigratedDB(t)
+	ss := newSnapshotStore(t, db)
+	requireGuidUniqueKey(t, ss)
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
+
+	const (
+		rows     = 8
+		rowBytes = 512 << 10
+		baseGuid = uint64(86_000)
+	)
+	batch := make([]*store.SnapshotRow, 0, rows)
+	for i := 0; i < rows; i++ {
+		data := make([]byte, rowBytes)
+		for j := range data {
+			data[j] = byte((i*31 + j) % 251) // 每行内容不同、含 0x00,读回比对才有意义
+		}
+		batch = append(batch, sceneRow(60, baseGuid+uint64(i), 1700000000, data))
+	}
+	n, err := ss.InsertSnapshotsIfGuidAbsent(ctx, batch)
+	require.NoError(t, err)
+	require.Equal(t, int64(rows), n)
+	for _, r := range batch {
+		got := snapshotDataOf(t, ctx, db, r.SnapshotGuid)
+		require.Equalf(t, len(r.Data), len(got), "guid=%d 读回长度", r.SnapshotGuid)
+		assert.Truef(t, string(r.Data) == string(got), "guid=%d 读回字节与写入不一致", r.SnapshotGuid)
+	}
+}

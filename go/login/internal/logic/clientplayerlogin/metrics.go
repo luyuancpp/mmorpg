@@ -26,6 +26,7 @@ import (
 
 	"github.com/zeromicro/go-zero/core/metric"
 
+	"login/internal/logic/pkg/dataloader"
 	"login/internal/logic/pkg/sessionmanager"
 )
 
@@ -234,13 +235,14 @@ var createPlayerStageBuckets = []float64{
 	0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5,
 }
 
-// createPlayerStageSeconds 的 stage 取值。建角持着账号锁串行跑这四步,锁 TTL 是按它们的
-// 耗时之和估的(login.yaml Locker.AccountLockTTL;不是硬上界,理由见那边的注释),
+// createPlayerStageSeconds 的 stage 取值。建角持着账号锁串行跑这几步(开 NewPlayerSeed 时多一步 seed),
+// 锁 TTL 是按它们的耗时之和估的(login.yaml Locker.AccountLockTTL;不是硬上界,理由见那边的注释),
 // 哪一步拖长了要能直接看出来。
 const (
 	createStageMint         = "mint"          // 发号(号段 / snowflake)
 	createStageName         = "name"          // 名字登记(含同名重试、生成名换名重试)
 	createStageRegister     = "register"      // player:zone 归属登记
+	createStageSeed         = "seed"          // 新号父键种子(NewPlayerSeed.Enabled 时才有,一次 Redis)
 	createStageAccountWrite = "account_write" // 围栏写账号 blob(含写未确认后的回读)
 )
 
@@ -258,7 +260,7 @@ var (
 		Subsystem: createPlayerMetricSubsystem,
 		Name:      "stage_seconds",
 		Help: "CreatePlayer per-stage latency while holding the account lock. " +
-			"Stage: mint | name | register | account_write.",
+			"Stage: mint | name | register | seed | account_write.",
 		Labels:  []string{"stage"},
 		Buckets: createPlayerStageBuckets,
 	})
@@ -286,9 +288,23 @@ var (
 			"ReleasePlayerName with admin token; see the matching ERROR log).",
 		Labels: []string{},
 	})
+
+	// 新号种子的每一次写入记一条(只在 NewPlayerSeed.Enabled 时有)。result 取 dataloader.SeedResult.String()。
+	// parent_exists / owner_epoch_exists 对新铸 id 稳态恒为 0:每 +1 都对应一条带 player_id 的 ERROR 日志
+	// (`[new-player-seed] freshly minted ...`),意味着 id 复用,按 ID 安全事件处理。error 只表示种子没写成,
+	// 首次入场退回冷读,不影响正确性。
+	createPlayerSeedTotal = metric.NewCounterVec(&metric.CounterVecOpts{
+		Namespace: createPlayerMetricNamespace,
+		Subsystem: createPlayerMetricSubsystem,
+		Name:      "seed_total",
+		Help: "New-player PlayerAllData seed writes by CreatePlayer (NewPlayerSeed.Enabled). " +
+			"Result: written | idempotent | parent_exists | owner_epoch_exists | error. " +
+			"parent_exists / owner_epoch_exists on a freshly minted id mean id reuse (see the ERROR log).",
+		Labels: []string{"result"},
+	})
 )
 
-// PrimeCreatePlayerMetrics 把孤儿计数器预置成 0,让这条序列从起服起就存在。
+// PrimeCreatePlayerMetrics 把孤儿计数器、以及新号种子的两个 id 复用结局预置成 0,让这几条序列从起服起就存在。
 //
 // 为什么需要:无 label 的 CounterVec 在第一次 Inc 之前根本不输出序列(是 absent,不是 0)。
 // 孤儿稳态恒为 0,于是 `increase(login_create_player_name_orphan_total[..]) > 0` 这种告警
@@ -299,9 +315,13 @@ var (
 // 所以必须在 MustNewServer **之后**调(login.go startServer);放进 init() 或包变量初始化里
 // 会被开关直接丢弃,等于没写。Prometheus.Host 留空的环境里本函数是空操作,与其它指标同口径。
 //
-// 只预置孤儿这一条:name_release_total 带 label、且不用于"出现即告警",不值得为它预铺四条序列。
+// 只预置孤儿与种子的两个 id 复用结局:name_release_total 带 label、且不用于"出现即告警",不值得为它预铺四条序列。
+// 开关(NewPlayerSeed.Enabled)关着时种子的两条 0 序列照样预置:无害,`increase(...) > 0` 恒为假,不必按开关区分。
 func PrimeCreatePlayerMetrics() {
 	createPlayerNameOrphanTotal.Add(0)
+	// 种子的两个 id 复用结局同样用于「出现即告警」,理由同上。
+	createPlayerSeedTotal.Add(0, dataloader.SeedParentExists.String())
+	createPlayerSeedTotal.Add(0, dataloader.SeedOwnerEpochExists.String())
 }
 
 // decisionLabel converts a sessionmanager.EnterGameDecision into a stable

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"math/rand/v2"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -78,9 +79,18 @@ const (
 // 按 guid 去重的唯一键路径在它后面接一段 ODKU(insertSnapshotOnDuplicateKeepSQL)——
 // 两者插的是同一张表的同一组列,各写一份只会在加列时漏掉一处。
 // 抽成常量还让真库回归用例能用**同一段文本**扮演并发写者。
+// VALUES 后面那一组占位符单独成常量(snapshotValuesTupleSQL),批量语句按行数重复它;拼出来的文本与拆分前逐字相同。
 const insertSnapshotSQL = `INSERT INTO player_snapshot
 	 (player_id, zone_id, snapshot_type, created_at, reason, operator, data, snapshot_guid, source)
-	 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+	 VALUES ` + snapshotValuesTupleSQL
+
+// snapshotValuesTupleSQL 是一行的九个占位符,顺序 = snapshotInsertArgs。单行与多行(批量)语句共用这一段,
+// 列清单只在 insertSnapshotSQL 里写一次。
+const snapshotValuesTupleSQL = `(?, ?, ?, ?, ?, ?, ?, ?, ?)`
+
+// onDuplicateKeepIDSQL 是唯一键形态的 ODKU 尾巴:撞 uk_snapshot_guid_nz 时一列不改,只把已存在那行的 id 回带。
+// 单行(insertSnapshotOnDuplicateKeepSQL)与多行(insertSnapshotsOnDuplicateKeepSQL)共用,取舍见前者的注释。
+const onDuplicateKeepIDSQL = "\n\t ON DUPLICATE KEY UPDATE `id` = LAST_INSERT_ID(`id`)"
 
 // insertSnapshotOnDuplicateKeepSQL 是按 guid 去重的**唯一键**形态:撞 uk_snapshot_guid_nz 时一列都不改,
 // 只把已存在那行的 id 回带给调用方。
@@ -116,7 +126,25 @@ const insertSnapshotSQL = `INSERT INTO player_snapshot
 //   - 撞键时取的是唯一键上的 **next-key X**(手册:"An exclusive next-key lock is taken for a
 //     duplicate unique key value"),范围仅限同一个 guid。没撞键的常态路径与普通 INSERT 完全一样,
 //     只取插入意向锁,所以不同 guid 的写者仍然互不相干(回归 TestSnapshotStore_DistinctGuidsNeverDeadlock)。
-const insertSnapshotOnDuplicateKeepSQL = insertSnapshotSQL + "\n\t ON DUPLICATE KEY UPDATE `id` = LAST_INSERT_ID(`id`)"
+const insertSnapshotOnDuplicateKeepSQL = insertSnapshotSQL + onDuplicateKeepIDSQL
+
+// MaxSnapshotBatchRows 是一条多行快照语句的行数硬上限(InsertSnapshotsIfGuidAbsent 拒绝更多)。
+// 9×256 = 2304 个占位符,远低于预处理语句 65535 的上限;与 config.MaxSnapshotBatchMaxRows 相等,单测钉住。
+const MaxSnapshotBatchRows = 256
+
+// insertSnapshotsOnDuplicateKeepSQL 拼 n(>=1)行的 ODKU;n==1 时与 insertSnapshotOnDuplicateKeepSQL 逐字相同。
+// 每行一组 snapshotValuesTupleSQL,实参 = 各行 snapshotInsertArgs 依次拼接。
+func insertSnapshotsOnDuplicateKeepSQL(n int) string {
+	var b strings.Builder
+	b.Grow(len(insertSnapshotSQL) + (n-1)*(len(snapshotValuesTupleSQL)+4) + len(onDuplicateKeepIDSQL))
+	b.WriteString(insertSnapshotSQL)
+	for i := 1; i < n; i++ {
+		b.WriteString(",\n\t ")
+		b.WriteString(snapshotValuesTupleSQL)
+	}
+	b.WriteString(onDuplicateKeepIDSQL)
+	return b.String()
+}
 
 // insertSnapshotIfGuidAbsentLegacySQL 是唯一键**还不存在**时的去重写法(审计 #11 第二步之前的生产路径)。
 //
@@ -435,6 +463,102 @@ func (s *SnapshotStore) InsertSnapshotIfGuidAbsent(ctx context.Context, row *Sna
 		}
 	}
 	return s.lookupSnapshotIDByGuid(ctx, row.SnapshotGuid, "写入语句判定这个 guid 已存在")
+}
+
+// InsertSnapshotsIfGuidAbsent 按 snapshot_guid 去重批量落库,返回本次真正新插入的行数。
+// 调用方是 player_snapshot_topic 消费者的批量路径(G2a 快照审计管道扩容;批大小由 Kafka.SnapshotBatchMaxRows 控制,默认 1 = 不走这里)。
+//
+// 语义与逐行调用 InsertSnapshotIfGuidAbsent 相同,只是一次往返、一次提交:
+//   - 唯一键形态:一条多行 ODKU。每行独立判重:撞 uk_snapshot_guid_nz(库里已有,或同一语句里前面某行刚插)
+//     的行 affected 记 0、一列不改;新行记 1。所以 RowsAffected = 新插入行数。同一 guid 在批内出现两次时,
+//     先出现(offset 小)的那条落库 —— 与逐条消费「先到者赢」一致。
+//   - 退路形态(唯一键不在):逐行调 InsertSnapshotIfGuidAbsent。不把 NOT EXISTS 拼成多行:它的去重靠 RR 加锁读,
+//     拼成一条会把间隙锁范围扩到整批,成环更多;退路只在迁移未跑 / 回滚窗口出现,不值得为它做批量。
+//   - 不回带每行 id:消费者只拿 id 打 duplicate 日志,批量路径改为每批一条汇总日志。也因此没有单行路径
+//     「判定已存在 → 点查 id → 查不到」那个并发删除窗口(lookupSnapshotIDByGuid)。
+//
+// 不按 guid 排序再插:常态下不同 guid 只取插入意向锁、彼此相容,排序不减少锁冲突;rebalance 重叠时两个实例的批
+// 都按同一分区的 offset 序拼,天然同序。保持 offset 序还让 id 顺序 = 同一玩家的 offset 顺序,
+// ListSceneSnapshotsByPlayer 的 `ORDER BY created_at DESC, id DESC` 在同秒并列时的次序与逐条消费一致。
+//
+// 原子性:单条自动提交语句,要么整批落、要么整批不落(1213 被选为牺牲者时整条回滚),就地重跑安全。
+// 失败一律返回 error、不报部分成功(退路形态逐行时例外:已落的行留在库里,重放时被判重,结果不变)。
+// 「批太大」类错误(IsSnapshotBatchTooLarge)原样返回,由消费者降级为逐条落库,不会卡住分区。
+func (s *SnapshotStore) InsertSnapshotsIfGuidAbsent(ctx context.Context, rows []*SnapshotRow) (int64, error) {
+	if len(rows) == 0 {
+		return 0, nil
+	}
+	if len(rows) > MaxSnapshotBatchRows {
+		return 0, fmt.Errorf("snapshot batch of %d rows exceeds MaxSnapshotBatchRows=%d", len(rows), MaxSnapshotBatchRows)
+	}
+	for _, r := range rows {
+		if r.SnapshotGuid == 0 {
+			return 0, fmt.Errorf("snapshot_guid must be non-zero for check-then-insert")
+		}
+	}
+	if !s.uniqueGuidKey {
+		var inserted int64
+		for _, r := range rows {
+			_, ok, err := s.InsertSnapshotIfGuidAbsent(ctx, r)
+			if err != nil {
+				return inserted, err
+			}
+			if ok {
+				inserted++
+			}
+		}
+		return inserted, nil
+	}
+
+	query := insertSnapshotsOnDuplicateKeepSQL(len(rows))
+	args := make([]any, 0, len(rows)*9)
+	for _, r := range rows {
+		args = append(args, snapshotInsertArgs(r)...)
+	}
+	var res sql.Result
+	reruns, err := retryOnDeadlock(ctx, snapshotGuidInsertAttempts, snapshotGuidDeadlockBackoff, func() error {
+		var execErr error
+		res, execErr = s.db.ExecContext(ctx, query, args...)
+		return execErr
+	})
+	if reruns > 0 {
+		s.deadlockRetries.Add(uint64(reruns))
+		logx.Infof("[SnapshotStore] snapshot batch of %d (first guid=%d) 在唯一键路径上因 InnoDB 死锁(1213)就地重跑了 %d 次,结果 err=%v:"+
+			"偶发属 rebalance 重叠(同 InsertSnapshotIfGuidAbsent 的说明),持续高频要查消费组是不是在反复 rebalance",
+			len(rows), rows[0].SnapshotGuid, reruns, err)
+	}
+	if err != nil {
+		// 1062 在唯一键形态下不是去重结果(ODKU 已就地吸收 uk_snapshot_guid_nz),说明撞了别的唯一约束:按故障上报,
+		// 与单行路径同口径 —— 当成「已落过」会让消费者提交 offset 把整批快照丢掉。
+		return 0, fmt.Errorf("insert snapshot batch of %d (first guid %d): %w", len(rows), rows[0].SnapshotGuid, err)
+	}
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return 0, fmt.Errorf("insert snapshot batch of %d rows affected: %w", len(rows), err)
+	}
+	if affected < 0 || affected > int64(len(rows)) {
+		// ODKU 的 affected 只可能是 Σ{1 新插入, 0 原值不变};超出行数说明 CLIENT_FOUND_ROWS 被打开或语句被改坏
+		// (真改了已有行会记 2)。拿它当插入数会把重放算成新插入,fail-closed,不让消费者提交。
+		return 0, fmt.Errorf("insert snapshot batch of %d: rows affected %d outside [0, %d]", len(rows), affected, len(rows))
+	}
+	return affected, nil
+}
+
+// 「这一批本身太大」的确定性错误号(G2a 评审 I-15):同一批原样重试只会得到同一个错误。
+const (
+	mysqlErrNetPacketTooLarge = 1153 // ER_NET_PACKET_TOO_LARGE:语句超过服务端 max_allowed_packet
+	tidbErrTxnTooLarge        = 8004 // TiDB ErrTxnTooLarge:事务超过 txn-total-size-limit
+)
+
+// IsSnapshotBatchTooLarge 报告 err 是不是「这一批太大」的确定性错误(服务端 1153 / 驱动 ErrPktTooLarge / TiDB 8004)。
+// 消费者据此跳过批级的退避重试、直接逐条落库:等 DBMaxAttempts 秒再撞一次同样的墙没有意义。
+// 只认这几个号;其余错误(含 1205 / 断连)照常按通用重试处理,不在这里猜。
+func IsSnapshotBatchTooLarge(err error) bool {
+	if errors.Is(err, mysql.ErrPktTooLarge) {
+		return true
+	}
+	var me *mysql.MySQLError
+	return errors.As(err, &me) && (me.Number == mysqlErrNetPacketTooLarge || me.Number == tidbErrTxnTooLarge)
 }
 
 // lookupSnapshotIDByGuid 查这个 guid 已存在那行的自增 id(日志/审计要用)。reason 只进错误文案。

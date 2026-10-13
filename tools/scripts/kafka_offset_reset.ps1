@@ -98,6 +98,27 @@ function Resolve-KafkaTool {
     throw "Kafka tool '$Name' not found on PATH; pass -KafkaBin <dir> or install bin/ to PATH."
 }
 
+# kafka-consumer-groups.sh 有一类失败只打印 "Error: ..." 而退出码仍为 0。典型是对仍有活跃成员
+# (状态不是 Empty / Dead)的组执行 --reset-offsets:
+#   Error: Assignments can only be reset if the group 'g' is inactive, but the current state is Stable.
+# 位点根本没动(Kafka 3.x 的 ConsumerGroupCommand 打完这行就正常返回;在钉死的镜像版本上的退出码待实测,
+# 这里两种都按失败处理)。K8s 上所有 zone 共用 db_rpc_consumer_group,只回档一个 zone 时组里永远有别的 zone
+# 的成员,这就是常态;以前脚本照样打印 OK,回档后的 zone 带着旧位点继续消费。所以退出码之外还要看输出(fail-closed)。
+function Assert-KafkaToolOutputClean {
+    param(
+        [AllowEmptyCollection()][AllowNull()][string[]]$Lines,
+        [Parameter(Mandatory = $true)][int]$ExitCode,
+        [Parameter(Mandatory = $true)][string]$Tool
+    )
+    if ($ExitCode -ne 0) {
+        throw "$Tool failed with exit code $ExitCode"
+    }
+    $errorLines = @($Lines | Where-Object { $_ -match '^\s*Error:' })
+    if ($errorLines.Count -gt 0) {
+        throw "$Tool 退出码为 0 但输出了错误,位点没有重置: $($errorLines -join ' | ')"
+    }
+}
+
 # ── Validate exactly one mode ─────────────────────────────────────
 $modes = @()
 if ($ToDatetime -ne "")        { $modes += "ToDatetime" }
@@ -185,11 +206,18 @@ if ($Apply) {
 }
 
 Write-Host "Step: kafka-consumer-groups.sh $($cmdArgs -join ' ')" -ForegroundColor Yellow
-& $cgTool @cmdArgs
-$exitCode = $LASTEXITCODE
-if ($exitCode -ne 0) {
-    throw "kafka-consumer-groups failed with exit code $exitCode"
+# 输出要留下来交给 Assert-KafkaToolOutputClean;stderr 一并收进来("Error:" 行可能走 stderr)。
+# 局部放宽 ErrorActionPreference:成败只看退出码与输出,不让 stderr 行本身中断脚本。
+$prevErrorAction = $ErrorActionPreference
+$ErrorActionPreference = "Continue"
+try {
+    $cgOutput = @(& $cgTool @cmdArgs 2>&1 | ForEach-Object { "$_" })
+    $exitCode = $LASTEXITCODE
+} finally {
+    $ErrorActionPreference = $prevErrorAction
 }
+$cgOutput | ForEach-Object { Write-Host $_ }
+Assert-KafkaToolOutputClean -Lines $cgOutput -ExitCode $exitCode -Tool "kafka-consumer-groups"
 
 if ($Apply) {
     Write-Host "OK: offset reset applied" -ForegroundColor Green

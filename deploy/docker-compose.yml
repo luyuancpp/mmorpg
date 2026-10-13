@@ -221,14 +221,20 @@ services:
       - "6379:6379"
     # P0 OOM 防御(2026-06-03 docs/notes/redis-oom-data-safety-qa-record.md):
     #   - maxmemory 8gb         避免撑爆宿主机内存触发 OOM Killer 让所有容器一起死
-    #   - allkeys-lfu           满了按 LFU 淘汰冷 key,服务存活;LFU 比 LRU 对游戏 cache
-    #                           命中率更高 — 在线玩家高频访问自然保留,冷玩家 cache 优先淘汰
+    #   - noeviction            满了拒绝写入(OOM command not allowed),不淘汰任何键
     #   - notify-keyspace-events Eg  开启 evict/expire 事件通知,为后续应用层主动卸载预留
+    #
+    # 2026-10-12 由 allkeys-lfu 改为 noeviction,与 K8s(deploy/k8s/manifests/infra/redis.yaml)一致(负责人决定)。
+    # 这个实例同时是 mapping Redis:player:zone / player:placement / merge:* 映射、go/db 的 applied 游标、
+    # applied_epoch、排序锁、重试收据都在这里,都不带 TTL。allkeys-lfu 会把它们当冷键淘汰:
+    # 游标被淘汰时 orderingForTask 直接判 Apply,顺序守卫静默失效;映射被淘汰时缺键被当成「没有记录」,
+    # 写会落错库。这些都比「内存满了写入报错」危险。见 docs/design/player-route-mapping-durability-proposal.md §3.3。
+    # 代价:本机内存打满时写入报错(fail-closed),要清数据或调大 maxmemory,不会再静默腾空间。
     command: >
       redis-server
       --appendonly yes
       --maxmemory 8gb
-      --maxmemory-policy allkeys-lfu
+      --maxmemory-policy noeviction
       --notify-keyspace-events Eg
     volumes:
       - redis-data:/data

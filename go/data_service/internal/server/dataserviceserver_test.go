@@ -219,7 +219,7 @@ func TestRegisterPlayerZone_StorageIdPinsPlacementOnlyOnFirstWrite(t *testing.T)
 	assert.False(t, mr.Exists(placement.Key(3102)), "冲突的登记不得留下落点")
 }
 
-// ── RemapHomeZoneForMerge:鉴权 + 闸门 ──────────────────────────
+// ── RemapHomeZoneForMerge(已停用)与 admin token 的公共辅助 ──────────
 
 const testAdminToken = "s3cret-merge-token"
 
@@ -237,118 +237,253 @@ func newMergeAdminServer(t *testing.T) (*DataServiceServer, *miniredis.Miniredis
 	return newHomeZoneTestServerWithConfig(t, func(c *config.Config) { c.AdminToken = testAdminToken })
 }
 
-// TestRemapHomeZoneForMerge_DisabledWhenAdminTokenUnset:没配 token = 停用,
-// **不是**免鉴权。这是默认形态,所以必须是最显眼的一条测试。
-func TestRemapHomeZoneForMerge_DisabledWhenAdminTokenUnset(t *testing.T) {
-	s, mr := newHomeZoneTestServer(t) // AdminToken 留空
-	require.NoError(t, mr.Set(routing.MergeFenceKey(1), `{"started_at":1757000000}`))
-	require.NoError(t, mr.Set("player:zone:9001", "1"))
+// TestRemapHomeZoneForMerge_AlwaysFailedPrecondition:RemapHomeZoneForMerge 已停用(2026-10-12,
+// docs/design/player-route-mapping-durability-proposal.md §4.3 的 W2)。四种情况 —— 服务端没配 token、
+// 带错 token、带对 token、带对 token 且源 zone 已立合服标记 —— 一律 FailedPrecondition + ErrCodeNotImplemented,
+// mapping Redis 零变更。拒绝发生在鉴权之前,不再有"带对 token 就能执行"的路径。
+func TestRemapHomeZoneForMerge_AlwaysFailedPrecondition(t *testing.T) {
+	cases := []struct {
+		name  string
+		token string
+		ctx   context.Context
+		fence bool
+	}{
+		{"token 未配", "", adminCtx(testAdminToken), false},
+		{"token 错误", testAdminToken, adminCtx("wrong-token"), false},
+		{"token 正确", testAdminToken, adminCtx(testAdminToken), false},
+		{"token 正确且有围栏标记", testAdminToken, adminCtx(testAdminToken), true},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			s, mr := newHomeZoneTestServerWithConfig(t, func(c *config.Config) { c.AdminToken = tc.token })
+			require.NoError(t, mr.Set("player:zone:9001", "1"))
+			require.NoError(t, mr.Set("player:zone:9002", "3"))
+			if tc.fence {
+				require.NoError(t, mr.Set(routing.MergeFenceKey(1), `{"started_at":1757000000}`))
+			}
 
-	resp, err := s.RemapHomeZoneForMerge(adminCtx(""), &data_service.RemapHomeZoneForMergeRequest{
-		SourceZoneId: 1, TargetZoneId: 2,
+			for _, dryRun := range []bool{true, false} {
+				resp, err := s.RemapHomeZoneForMerge(tc.ctx, &data_service.RemapHomeZoneForMergeRequest{
+					SourceZoneId: 1, TargetZoneId: 2, DryRun: dryRun,
+				})
+				require.Error(t, err, "dry_run=%t", dryRun)
+				assert.Nil(t, resp)
+				assertStatusCode(t, err, codes.FailedPrecondition, constants.ErrCodeNotImplemented)
+				st, _ := status.FromError(err)
+				assert.Contains(t, st.Message(), "tools/merge_zone", "错误要告诉调用方改走哪条路")
+				assert.NotContains(t, st.Message(), testAdminToken, "错误消息不能回显 token")
+			}
+
+			for key, want := range map[string]string{"player:zone:9001": "1", "player:zone:9002": "3"} {
+				got, err := mr.Get(key)
+				require.NoError(t, err)
+				assert.Equal(t, want, got, "停用的 remap 必须零变更: %s", key)
+			}
+		})
+	}
+}
+
+// ── RegisterPlayerZone 的 db_first 错误映射(docs/design/player-route-mapping-durability-proposal.md §4,规格 c.3)──
+//
+// 这一组只测 server 这一层:routing 的错误怎么翻成 gRPC code + error_code。编排本身由 routing 的
+// route_publish_test.go 覆盖,库的行为由 store 的契约 / 真库用例覆盖,这里用假 store 挡在外面。
+
+// fakeRouteStore 按 routing.RouteStore 注入,记调用次数。
+type fakeRouteStore struct {
+	result store.RouteRegisterResult
+	err    error
+	calls  int
+	// onCall 在 RegisterHome 里执行(Redis 预检之后、发布之前),用来模拟这段时间里立起的合服围栏。
+	onCall func()
+}
+
+// 接口一变,编译期先炸。
+var _ routing.RouteStore = (*fakeRouteStore)(nil)
+
+func (f *fakeRouteStore) RegisterHome(_ context.Context, _ store.RouteRegisterRequest) (store.RouteRegisterResult, error) {
+	f.calls++
+	if f.onCall != nil {
+		f.onCall()
+	}
+	if f.err != nil {
+		return store.RouteRegisterResult{}, f.err
+	}
+	return f.result, nil
+}
+
+func intPtr(v int) *int { return &v }
+
+// newDBFirstTestServer 同 newHomeZoneTestServerWithConfig,但 RouteStore **显式**写 db_first 并注入假 store。
+// WAITAOF 两项显式写 0:miniredis 是否支持 WAITAOF 没有核实(规格 Q4),真实的 WAITAOF 只在 routing 的真 Redis 集成测试里验。
+func newDBFirstTestServer(t *testing.T, fake routing.RouteStore) (*DataServiceServer, *miniredis.Miniredis) {
+	t.Helper()
+	mr := miniredis.RunT(t)
+	c := config.Config{
+		MappingRedis:     redis.RedisConf{Host: mr.Addr(), Type: "node"},
+		DevRedis:         config.DevRedisConfig{Host: mr.Addr()},
+		PlayerLockTTLSec: 3,
+		RouteStore: config.RouteStoreConfig{
+			Mode:               config.RouteStoreModeDBFirst,
+			WaitAOFNumLocal:    intPtr(0),
+			WaitAOFNumReplicas: intPtr(0),
+		},
+	}
+	r := routing.NewRouter(c, routing.WithRouteStore(fake))
+	t.Cleanup(r.Close)
+	return NewDataServiceServer(&svc.ServiceContext{Config: c, Router: r}), mr
+}
+
+// assertStatusCode 断言 err 是 gRPC status、code 相符、message 以 "error_code=<n>:" 开头。
+// 按前缀加冒号比,免得 "error_code=1" 误配 "error_code=14"。
+func assertStatusCode(t *testing.T, err error, code codes.Code, errCode uint32) {
+	t.Helper()
+	st, ok := status.FromError(err)
+	require.True(t, ok, "not a gRPC status: %v", err)
+	assert.Equal(t, code, st.Code(), st.Message())
+	assert.True(t, strings.HasPrefix(st.Message(), errCodeTag(errCode)+":"),
+		"message %q must start with %q", st.Message(), errCodeTag(errCode)+":")
+}
+
+// TestDBFirstRegister_ErrorMapping:db_first 下 gRPC code 的集合与 redis 模式完全相同(OK / AlreadyExists /
+// FailedPrecondition / Unavailable),新增的码 30(库故障)与码 14(参数非法)只体现在 message 里。
+func TestDBFirstRegister_ErrorMapping(t *testing.T) {
+	const playerID, zone = uint64(5101), uint32(7)
+	committed := func(outcome store.RouteRegisterOutcome, row store.RouteRow) store.RouteRegisterResult {
+		row.PlayerID, row.HomeZone = playerID, zone
+		if row.Rev == 0 {
+			row.Rev = 1
+		}
+		return store.RouteRegisterResult{Outcome: outcome, Row: row}
+	}
+
+	cases := []struct {
+		name     string
+		playerID uint64
+		fake     *fakeRouteStore
+		setup    func(mr *miniredis.Miniredis, fake *fakeRouteStore)
+		code     codes.Code
+		errCode  uint32
+	}{
+		{
+			name: "新玩家:提交并发布", playerID: playerID,
+			fake: &fakeRouteStore{result: committed(store.RouteRegisterInserted, store.RouteRow{})},
+			code: codes.OK,
+		},
+		{
+			name: "库里是别的 home", playerID: playerID,
+			fake: &fakeRouteStore{result: store.RouteRegisterResult{Outcome: store.RouteRegisterConflict, ExistingHome: 3}},
+			code: codes.AlreadyExists, errCode: constants.ErrCodeZoneMappingConflict,
+		},
+		{
+			name: "库内围栏分片生效", playerID: playerID,
+			fake: &fakeRouteStore{result: store.RouteRegisterResult{Outcome: store.RouteRegisterFenced, FenceRunID: "3-7-20261012T000000Z-0a1b2c3d"}},
+			code: codes.FailedPrecondition, errCode: constants.ErrCodeZoneMergeInProgress,
+		},
+		{
+			name: "预检之后才立起合服围栏(发布脚本复核)", playerID: playerID,
+			fake: &fakeRouteStore{result: committed(store.RouteRegisterInserted, store.RouteRow{})},
+			setup: func(mr *miniredis.Miniredis, fake *fakeRouteStore) {
+				fake.onCall = func() { _ = mr.Set(routing.MergeFenceKey(zone), `{"started_at":1757000000}`) }
+			},
+			code: codes.FailedPrecondition, errCode: constants.ErrCodeZoneMergeInProgress,
+		},
+		{
+			name: "库故障(route_meta 冻结)", playerID: playerID,
+			fake: &fakeRouteStore{err: store.ErrRouteNotWritable},
+			code: codes.Unavailable, errCode: constants.ErrCodeRouteStoreError,
+		},
+		{
+			name: "缓存认得玩家而库里无行", playerID: playerID,
+			fake: &fakeRouteStore{result: store.RouteRegisterResult{Outcome: store.RouteRegisterRowMissing}},
+			setup: func(mr *miniredis.Miniredis, _ *fakeRouteStore) {
+				_ = mr.Set(placement.Key(playerID), placement.StableValue(placement.DefaultGlobalStorageID, 1))
+			},
+			code: codes.Unavailable, errCode: constants.ErrCodeRouteStoreError,
+		},
+		{
+			name: "发布失败(畸形 maprev,脚本拒绝)", playerID: playerID,
+			fake: &fakeRouteStore{result: committed(store.RouteRegisterAlreadySame, store.RouteRow{})},
+			setup: func(mr *miniredis.Miniredis, _ *fakeRouteStore) {
+				_ = mr.Set(placement.MapRevKey(playerID), "not-a-rev")
+			},
+			code: codes.Unavailable, errCode: constants.ErrCodeRedis,
+		},
+		{
+			name: "遗留值冲突(无 maprev,缓存落点与库不同)", playerID: playerID,
+			fake: &fakeRouteStore{result: committed(store.RouteRegisterAlreadySame,
+				store.RouteRow{StorageID: placement.DefaultGlobalStorageID, PlacementVersion: 1})},
+			setup: func(mr *miniredis.Miniredis, _ *fakeRouteStore) {
+				_ = mr.Set(placement.Key(playerID), "7:1")
+			},
+			code: codes.Unavailable, errCode: constants.ErrCodeRedis,
+		},
+		{
+			name: "参数非法(player_id=0)", playerID: 0,
+			fake: &fakeRouteStore{result: committed(store.RouteRegisterInserted, store.RouteRow{})},
+			code: codes.Unavailable, errCode: constants.ErrCodeInvalidRequest,
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			s, mr := newDBFirstTestServer(t, tc.fake)
+			if tc.setup != nil {
+				tc.setup(mr, tc.fake)
+			}
+			_, err := s.RegisterPlayerZone(context.Background(), &data_service.RegisterPlayerZoneRequest{
+				PlayerId: tc.playerID, HomeZoneId: zone,
+			})
+			if tc.code == codes.OK {
+				require.NoError(t, err)
+				got, err := mr.Get(placement.HomeZoneKey(playerID))
+				require.NoError(t, err)
+				assert.Equal(t, "7", got)
+				rev, err := mr.Get(placement.MapRevKey(playerID))
+				require.NoError(t, err)
+				assert.Equal(t, "1", rev)
+				return
+			}
+			require.Error(t, err)
+			assertStatusCode(t, err, tc.code, tc.errCode)
+			if tc.errCode == constants.ErrCodeInvalidRequest {
+				assert.Zero(t, tc.fake.calls, "参数非法不许碰库")
+			}
+		})
+	}
+}
+
+// TestDeletePlayerData_DeleteZoneMappingIsFailedPrecondition:delete_zone_mapping=true 一律 FailedPrecondition +
+// ErrCodeNotImplemented(W3,proposal §4.3),而且在任何副作用之前拒绝 —— 数据键与映射都还在。
+// 不带开关的删除照旧走 in-band 码,只删数据键。
+func TestDeletePlayerData_DeleteZoneMappingIsFailedPrecondition(t *testing.T) {
+	s, _ := newHomeZoneTestServer(t)
+	ctx := context.Background()
+	_, err := s.RegisterPlayerZone(ctx, &data_service.RegisterPlayerZoneRequest{PlayerId: 5201, HomeZoneId: 3})
+	require.NoError(t, err)
+	saved, err := s.SavePlayerData(ctx, &data_service.SavePlayerDataRequest{
+		PlayerId: 5201, Data: map[string][]byte{"x": []byte("y")},
 	})
+	require.NoError(t, err)
+	require.Equal(t, constants.ErrCodeOK, saved.GetErrorCode())
+
+	resp, err := s.DeletePlayerData(ctx, &data_service.DeletePlayerDataRequest{PlayerId: 5201, DeleteZoneMapping: true})
 	require.Error(t, err)
 	assert.Nil(t, resp)
-	st, _ := status.FromError(err)
-	assert.Equal(t, codes.PermissionDenied, st.Code())
-	assert.Contains(t, st.Message(), errCodeTag(constants.ErrCodeAdminAuthRequired))
+	assertStatusCode(t, err, codes.FailedPrecondition, constants.ErrCodeNotImplemented)
 
-	val, err := mr.Get("player:zone:9001")
+	field, err := s.GetPlayerField(ctx, &data_service.GetPlayerFieldRequest{PlayerId: 5201, Field: "x"})
 	require.NoError(t, err)
-	assert.Equal(t, "1", val, "被拒绝的 remap 必须零变更")
-}
+	assert.Equal(t, []byte("y"), field.GetValue(), "被拒绝的删除不得先删数据键")
+	home, err := s.GetPlayerHomeZone(ctx, &data_service.GetPlayerHomeZoneRequest{PlayerId: 5201})
+	require.NoError(t, err)
+	assert.Equal(t, uint32(3), home.GetHomeZoneId(), "映射不得被删")
 
-func TestRemapHomeZoneForMerge_RejectsMissingOrWrongToken(t *testing.T) {
-	s, mr := newMergeAdminServer(t)
-	require.NoError(t, mr.Set(routing.MergeFenceKey(1), `{"started_at":1757000000}`))
-
-	cases := map[string]context.Context{
-		"完全没有 metadata": context.Background(),
-		"metadata 里没有 token": peer.NewContext(
-			metadata.NewIncomingContext(context.Background(), metadata.Pairs("x-operator", "ops-bob")),
-			&peer.Peer{Addr: &net.TCPAddr{IP: net.IPv4(10, 0, 0, 9), Port: 1}}),
-		"token 不对": adminCtx("wrong-token"),
-		"token 为空": adminCtx(""),
-	}
-	for name, ctx := range cases {
-		t.Run(name, func(t *testing.T) {
-			_, err := s.RemapHomeZoneForMerge(ctx, &data_service.RemapHomeZoneForMergeRequest{
-				SourceZoneId: 1, TargetZoneId: 2,
-			})
-			require.Error(t, err)
-			st, _ := status.FromError(err)
-			assert.Equal(t, codes.PermissionDenied, st.Code())
-			assert.NotContains(t, st.Message(), testAdminToken, "错误消息不能回显正确 token")
-		})
-	}
-}
-
-// TestRemapHomeZoneForMerge_RefusedWithoutMergeMarker:带对了 token 也不够 ——
-// 没有 merge:in_progress:{src} 说明源 zone 仍在线接受新映射,这是"线上误调用"的样子。
-func TestRemapHomeZoneForMerge_RefusedWithoutMergeMarker(t *testing.T) {
-	s, mr := newMergeAdminServer(t)
-	require.NoError(t, mr.Set("player:zone:9002", "1"))
-
-	_, err := s.RemapHomeZoneForMerge(adminCtx(testAdminToken), &data_service.RemapHomeZoneForMergeRequest{
-		SourceZoneId: 1, TargetZoneId: 2,
-	})
-	require.Error(t, err)
-	st, _ := status.FromError(err)
-	assert.Equal(t, codes.FailedPrecondition, st.Code())
-	assert.Contains(t, st.Message(), errCodeTag(constants.ErrCodeMergeFenceMissing))
-	assert.Contains(t, st.Message(), "merge:in_progress:1")
-
-	val, _ := mr.Get("player:zone:9002")
-	assert.Equal(t, "1", val, "零变更")
-}
-
-func TestRemapHomeZoneForMerge_SucceedsWithTokenAndMarker(t *testing.T) {
-	s, mr := newMergeAdminServer(t)
-	require.NoError(t, mr.Set("player:zone:9003", "1"))
-	require.NoError(t, mr.Set("player:zone:9004", "1"))
-	require.NoError(t, mr.Set("player:zone:9005", "3"))
-	require.NoError(t, mr.Set(routing.MergeFenceKey(1), `{"started_at":1757000000}`))
-
-	// dry-run 先数一遍,零变更
-	resp, err := s.RemapHomeZoneForMerge(adminCtx(testAdminToken), &data_service.RemapHomeZoneForMergeRequest{
-		SourceZoneId: 1, TargetZoneId: 2, DryRun: true,
-	})
+	resp, err = s.DeletePlayerData(ctx, &data_service.DeletePlayerDataRequest{PlayerId: 5201})
 	require.NoError(t, err)
 	assert.Equal(t, constants.ErrCodeOK, resp.GetErrorCode())
-	assert.Equal(t, uint32(2), resp.GetPlayersMatched())
-	assert.Equal(t, uint32(0), resp.GetPlayersUpdated())
-	val, _ := mr.Get("player:zone:9003")
-	assert.Equal(t, "1", val)
-
-	// 再 apply
-	resp, err = s.RemapHomeZoneForMerge(adminCtx(testAdminToken), &data_service.RemapHomeZoneForMergeRequest{
-		SourceZoneId: 1, TargetZoneId: 2,
-	})
+	assert.NotZero(t, resp.GetKeysDeleted())
+	home, err = s.GetPlayerHomeZone(ctx, &data_service.GetPlayerHomeZoneRequest{PlayerId: 5201})
 	require.NoError(t, err)
-	assert.Equal(t, uint32(2), resp.GetPlayersMatched())
-	assert.Equal(t, uint32(2), resp.GetPlayersUpdated())
-
-	for _, key := range []string{"player:zone:9003", "player:zone:9004"} {
-		v, err := mr.Get(key)
-		require.NoError(t, err)
-		assert.Equal(t, "2", v, key)
-	}
-	v, _ := mr.Get("player:zone:9005")
-	assert.Equal(t, "3", v, "别的 zone 的玩家不许被动到")
-}
-
-func TestRemapHomeZoneForMerge_RejectsBadZonesAfterAuth(t *testing.T) {
-	s, _ := newMergeAdminServer(t)
-
-	for _, tc := range []struct{ src, dst uint32 }{{0, 2}, {1, 0}, {5, 5}} {
-		_, err := s.RemapHomeZoneForMerge(adminCtx(testAdminToken), &data_service.RemapHomeZoneForMergeRequest{
-			SourceZoneId: tc.src, TargetZoneId: tc.dst,
-		})
-		require.Error(t, err, "src=%d dst=%d", tc.src, tc.dst)
-		st, _ := status.FromError(err)
-		assert.Equal(t, codes.InvalidArgument, st.Code())
-		assert.Contains(t, st.Message(), errCodeTag(constants.ErrCodeInvalidRequest))
-	}
+	assert.Equal(t, uint32(3), home.GetHomeZoneId(), "只删数据键,映射留着")
 }
 
 // errCodeTag 拼 handler 塞进 gRPC message 的码标记。测试与实现共用同一份常量,

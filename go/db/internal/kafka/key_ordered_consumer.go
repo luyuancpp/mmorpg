@@ -1306,12 +1306,33 @@ func (w *worker) routeToSubShard(task *workerTask) {
 		}
 	}
 
-	shard := int(routingKey % uint64(w.subShardCount))
+	shard := subShardIndex(routingKey, w.subShardCount)
 	select {
 	case w.subShardChans[shard] <- task:
 	case <-w.ctx.Done():
 		// Don't deadlock on shutdown if a shard is already gone.
 	}
+}
+
+// subShardIndex 把路由 key 映射到子 shard,取模前先打散。
+//
+// 存量 PlayerId 是 bwmarrin 布局(41 位毫秒 | 13 位 node | 9 位 step),低 9 位是毫秒内序号、
+// 每个新毫秒归零,低频建角时几乎全为 0。直接 key % 8 会让这批玩家全挤进 0 号子 shard,
+// 分区内并行形同虚设(2026-09-08 改号段之后新建的角色不受影响)。
+//
+// 同一 key 恒落同一子 shard 的保证不变。子 shard 只是进程内划分,跨实例的同 key 串行靠
+// 分区独占 + 排序锁,所以滚动发布时新旧实例打散方式不同不影响正确性。
+func subShardIndex(routingKey uint64, shardCount int) int {
+	return int(spreadKey(routingKey) % uint64(shardCount))
+}
+
+// spreadKey 是 splitmix64 的终混步,算法与常量同 C++ 的 SpreadPlayerId
+// (cpp/libs/engine/core/network/node_utils.cpp),两边要改一起改。
+func spreadKey(key uint64) uint64 {
+	z := key + 0x9e3779b97f4a7c15
+	z = (z ^ (z >> 30)) * 0xbf58476d1ce4e5b9
+	z = (z ^ (z >> 27)) * 0x94d049bb133111eb
+	return z ^ (z >> 31)
 }
 
 // runSubShard is the per-sub-channel drain + batch-coalesce loop. This

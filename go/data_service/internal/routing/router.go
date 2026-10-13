@@ -27,13 +27,32 @@ type Router struct {
 	devClient    *goredis.Client                   // non-nil in dev mode (single Redis for all)
 	mu           sync.RWMutex
 	lockTTLSec   int
+
+	// routeMode 是 RegisterPlayerZone 的提交点(config.RouteStoreModeRedis | RouteStoreModeDBFirst),
+	// routeStore 与 publish 只在 db_first 下使用(见 route_publish.go)。routeStore 为 nil 时 db_first 一律 fail-closed。
+	routeMode  string
+	routeStore RouteStore
+	publish    publishConfig
 }
 
-func NewRouter(c config.Config) *Router {
+// NewRouter 建路由器。opts 目前只有 WithRouteStore(db_first 的库内提交点)。
+//
+// c.RouteStore 在这里再 Normalize + Validate 一次(main 启动时已校验过),非法就 panic,与 MustNewRedis 同口径:
+// 单测与 debug 工具也走这里,不能拿一份非法配置静默跑成 redis 模式。校验放在建任何连接之前。
+func NewRouter(c config.Config, opts ...RouterOption) *Router {
+	routeCfg := c.RouteStore.Normalize()
+	if err := routeCfg.Validate(); err != nil {
+		panic(fmt.Sprintf("data_service router: invalid RouteStore config: %v", err))
+	}
 	r := &Router{
 		mappingRedis: redis.MustNewRedis(c.MappingRedis),
 		zoneToClient: make(map[uint32]*goredis.ClusterClient),
 		lockTTLSec:   c.PlayerLockTTLSec,
+		routeMode:    routeCfg.Mode,
+		publish:      newPublishConfig(routeCfg),
+	}
+	for _, opt := range opts {
+		opt(r)
 	}
 
 	// Dev mode: single Redis for all zones
@@ -149,7 +168,15 @@ func (e *HomeZoneConflictError) Error() string {
 // 为什么不能覆盖:见 constants.ErrCodeZoneMappingConflict 的注释 —— 合服把映射
 // 改写到目标 zone 之后,任何一次"按建角 zone 重新登记"都会静默把玩家送回已下线
 // 的源区。原实现是无条件 SET,合服与一次 CreatePlayer 重试撞上就是这个后果。
+//
+// RouteStore.Mode=db_first 时整段换成 registerPlayerZoneDBFirst(route_publish.go):提交点改在全局库
+// player_route,Redis 只是发布出去的副本(docs/design/player-route-mapping-durability-proposal.md §4)。
+// 上面三种结果与合服闸门的语义不变,另有几种新的失败(库故障、发布未确认),见那个函数的注释。
+// 下面的 redis 分支与 2026-10-12 之前逐字相同。
 func (r *Router) RegisterPlayerZone(ctx context.Context, playerID uint64, homeZoneID, storageID uint32) error {
+	if r.routeMode == config.RouteStoreModeDBFirst {
+		return r.registerPlayerZoneDBFirst(ctx, playerID, homeZoneID, storageID)
+	}
 	// 先查闸门:合服窗口内连"新建"也不许,否则新写入的映射会跑在 remap 扫描
 	// 的游标后面,合服跑完它仍指向源 zone。查询失败按封锁处理。
 	merging, err := r.IsMergeInProgress(ctx, homeZoneID)
@@ -357,12 +384,22 @@ func decodeHomeZoneAndMergeFenceReply(playerID uint64, res any) (uint32, bool, e
 }
 
 // DeletePlayerZone removes the player → home_zone mapping.
+//
+// **生产路径已停用**(2026-10-12,docs/design/player-route-mapping-durability-proposal.md §4.3 的 W4):
+// 只剩单测与排障用。db_first 下真源在全局库 player_route,只删 Redis 副本等于造一个「库有、缓存无」的分叉
+// (下一次 W1 会把它重新发布回来);删号与落点的关系待删号设计定下来再处理(规格 Q6)。
 func (r *Router) DeletePlayerZone(ctx context.Context, playerID uint64) error {
 	_, err := r.mappingRedis.DelCtx(ctx, mappingKey(playerID))
 	return err
 }
 
 // BatchGetPlayerHomeZone returns home zone for multiple players.
+//
+// 缺席的 id 不出现在结果里(不是错误,见 dataserviceserver.go 的 BatchGetPlayerHomeZone 注释);
+// 值畸形时整批返回错误,与单查 parseHomeZoneValue 同一口径(2026-10-12,
+// player-route-mapping-durability-proposal.md §5.2 / §9 第 0 批)。此前畸形值被静默跳过,
+// 调用方会把一条坏数据当成「没有映射」,login 角色列表据此退回建角 zone、friend 显示 zone 0,
+// 坏数据本身无人发现。映射只由本仓库代码写入,畸形就是故障,fail-closed。
 func (r *Router) BatchGetPlayerHomeZone(ctx context.Context, playerIDs []uint64) (map[uint64]uint32, error) {
 	result := make(map[uint64]uint32, len(playerIDs))
 	// Use pipeline for efficiency
@@ -380,11 +417,11 @@ func (r *Router) BatchGetPlayerHomeZone(ctx context.Context, playerIDs []uint64)
 		if val == "" {
 			continue
 		}
-		zoneID, err := strconv.ParseUint(val, 10, 32)
+		zoneID, err := parseHomeZoneValue(playerIDs[i], val)
 		if err != nil {
-			continue
+			return nil, fmt.Errorf("batch mapping lookup: %w", err)
 		}
-		result[playerIDs[i]] = uint32(zoneID)
+		result[playerIDs[i]] = zoneID
 	}
 	return result, nil
 }
@@ -437,6 +474,10 @@ func (r *Router) AllZoneIDs() []uint32 {
 // GetAllPlayerIDsInZone scans the global mapping Redis to find all players
 // whose home zone matches the given zoneID. This is O(N) over all players
 // and should only be used for admin operations (e.g., zone rollback).
+//
+// 单键 GET 失败时整体返回错误(2026-10-12,player-route-mapping-durability-proposal.md §9 第 0 批)。
+// 此前错误被吞掉、那名玩家被当成「不属于本区」直接漏掉,调用方(回档的孤儿号报告、debug_fetch)
+// 拿到的是一份静默缺人的名单。枚举结果用于运维决策,宁可失败也不能少人。
 func (r *Router) GetAllPlayerIDsInZone(ctx context.Context, zoneID uint32) ([]uint64, error) {
 	target := strconv.FormatUint(uint64(zoneID), 10)
 	var playerIDs []uint64
@@ -450,7 +491,10 @@ func (r *Router) GetAllPlayerIDsInZone(ctx context.Context, zoneID uint32) ([]ui
 
 		for _, key := range keys {
 			val, err := r.mappingRedis.GetCtx(ctx, key)
-			if err != nil || val != target {
+			if err != nil {
+				return nil, fmt.Errorf("get mapping key %s: %w", key, err)
+			}
+			if val != target {
 				continue
 			}
 			// Extract player ID from key "player:zone:{ID}"
@@ -471,67 +515,10 @@ func (r *Router) GetAllPlayerIDsInZone(ctx context.Context, zoneID uint32) ([]ui
 	return playerIDs, nil
 }
 
-// ErrMergeFenceMissing 表示源 zone 没有 merge:in_progress:{source} 标记,
-// RemapHomeZoneForMerge 拒绝执行。用 errors.Is 判定。
-var ErrMergeFenceMissing = errors.New("merge fence marker absent for source zone")
-
-// RemapHomeZoneForMerge rewrites all player:zone:* keys whose value equals sourceZone
-// to targetZone. O(N) over all player mapping keys; use only during a maintenance window.
-// When dryRun is true, only counts matches (no SET); PlayersUpdated in response is 0 in that case.
-//
-// 前置条件:源 zone 必须已经立起 merge:in_progress:{source} 标记(见本文件顶部的
-// 闸门契约),否则返回 ErrMergeFenceMissing、零变更。这不是形式主义:
-// 那个标记同时在挡住 RegisterPlayerZone,没有它就意味着源 zone 仍在接受新映射,
-// 本函数的 SCAN 游标扫过之后新写进来的玩家会永远留在源 zone —— 合服跑完看起来
-// 成功,却有一批漏网玩家登进一个已经下线的区。dry-run 也要求标记:
-// dry-run 的数字要能作为 apply 的依据,在没有封锁的库上数出来的数就不作数。
-func (r *Router) RemapHomeZoneForMerge(ctx context.Context, sourceZone, targetZone uint32, dryRun bool) (matched int, updated int, err error) {
-	if sourceZone == 0 || targetZone == 0 {
-		return 0, 0, fmt.Errorf("source and target zone must be non-zero")
-	}
-	if sourceZone == targetZone {
-		return 0, 0, fmt.Errorf("source and target must differ")
-	}
-	fenced, err := r.IsMergeInProgress(ctx, sourceZone)
-	if err != nil {
-		return 0, 0, fmt.Errorf("merge fence check for source zone %d failed: %w", sourceZone, err)
-	}
-	if !fenced {
-		return 0, 0, fmt.Errorf("%w: set %s before remapping", ErrMergeFenceMissing, MergeFenceKey(sourceZone))
-	}
-	sourceVal := strconv.FormatUint(uint64(sourceZone), 10)
-	targetVal := strconv.FormatUint(uint64(targetZone), 10)
-
-	var cursor uint64
-	for {
-		keys, nextCursor, e := r.mappingRedis.ScanCtx(ctx, cursor, mappingKeyPrefix+"*", 500)
-		if e != nil {
-			return matched, updated, fmt.Errorf("scan mapping keys: %w", e)
-		}
-		for _, key := range keys {
-			val, e := r.mappingRedis.GetCtx(ctx, key)
-			if e != nil {
-				return matched, updated, fmt.Errorf("mapping get %q: %w", key, e)
-			}
-			if val == "" || val != sourceVal {
-				continue
-			}
-			matched++
-			if dryRun {
-				continue
-			}
-			if e := r.mappingRedis.SetCtx(ctx, key, targetVal); e != nil {
-				return matched, updated, fmt.Errorf("set %s: %w", key, e)
-			}
-			updated++
-		}
-		cursor = nextCursor
-		if cursor == 0 {
-			break
-		}
-	}
-	return matched, updated, nil
-}
+// 【RemapHomeZoneForMerge 已删除】(2026-10-12,docs/design/player-route-mapping-durability-proposal.md §4.3 的 W2)
+// 它对 SCAN 到的 player:zone:* 做无条件 SET(危害见 tools/merge_zone/merge_run.go 的 CAS 改写注释),
+// 且只写 Redis、绕过 player_route 真源。仓库内没有调用方;gRPC 入口一律回 FailedPrecondition +
+// ErrCodeNotImplemented(dataserviceserver.go),改映射只走 tools/merge_zone(第 2 批起库先写)。
 
 // ── Player lock (distributed) ──────────────────────────────────
 
@@ -613,6 +600,11 @@ return redis.call('DEL', KEYS[2])`
 // DeletePlayerZoneIfLocked 仅在 token 仍拥有 mapping 锁时删除玩家 zone 映射。
 // owned=false 表示锁已过期或已被后来者接管；deleted=false 且 owned=true 表示
 // 映射本来就不存在（幂等成功）。
+//
+// **生产路径已停用**(2026-10-12,docs/design/player-route-mapping-durability-proposal.md §4.3 的 W3):
+// 唯一的调用方 DeletePlayerData 的 DeleteZoneMapping 分支已在 logic 入口零副作用拒绝
+// (logic.ErrZoneMappingDeletionDisabled)—— 锁 token 在 Redis、真源删除在库里,两者无法原子。
+// 函数留着给锁语义的单测用,删号设计定下来之前不要接回任何生产路径。
 func (r *Router) DeletePlayerZoneIfLocked(ctx context.Context, playerID uint64, token string) (owned, deleted bool, err error) {
 	if token == "" {
 		return false, false, nil

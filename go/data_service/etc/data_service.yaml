@@ -125,16 +125,15 @@ LoginAdminRpc:
     Key: login.rpc
 
 # 运维 RPC 的共享口令。调用方放在 gRPC metadata 的 `x-admin-token` 里。
-# 目前只守着 RemapHomeZoneForMerge —— 一次调用改写全服玩家的归属 zone,而且没有
-# 反向操作(要改回去得先知道谁原本在哪个 zone,那份信息刚被覆盖掉)。
+# 2026-10-12 起 RemapHomeZoneForMerge 已停用(player-route-mapping-durability-proposal.md §4.3):
+# 不论 token 对不对一律 FailedPrecondition + ErrCodeNotImplemented,改映射只走 tools/merge_zone。
+# 这个 token 现在只守三个 Rollback* 与 ReleasePlayerName 的运维路径(不限登记时间的释放)。
 #
-# **不写这一行(或写空串)= 该 RPC 整体停用**,不是免鉴权。这是刻意的默认值:
-# data_service 在集群内网无鉴权可达,默认敞开意味着任何能拨到它的进程都能搬全服玩家。
-# 合服维护窗口里临时下发,窗口结束撤掉;生产建议由 k8s Secret 注入而不是明文写在这里。
+# **不写这一行(或写空串)= 这些 RPC 整体停用**,不是免鉴权。这是刻意的默认值:
+# data_service 在集群内网无鉴权可达,默认敞开意味着任何能拨到它的进程都能回档任意玩家。
+# 维护窗口里临时下发,窗口结束撤掉;生产建议由 k8s Secret 注入而不是明文写在这里。
 #
-# 光有 token 还不够:remap 还要求源 zone 已立 merge:in_progress:{source} 标记
-# (见 internal/routing/router.go 的合服闸门契约),两道闸都过才执行。
-# 三个 Rollback* 同样一律要求这个 token(docs/design/guild-phase2/07-rollback-fail-closed.md §7.6.3 Q2 = ②):
+# 三个 Rollback* 一律要求这个 token(docs/design/guild-phase2/07-rollback-fail-closed.md §7.6.3 Q2 = ②):
 # 不配 = 回档 RPC 整体停用。
 # AdminToken: ""
 
@@ -160,9 +159,32 @@ GuildClockSkewMarginMs: 300000
 # 检查阶段(沉降等待之后、第一笔写之前)总预算,秒;只罩检查阶段。限 [1, 3600]。
 GuildCheckBudgetSeconds: 120
 
-# 全局库五张表(transaction_log / player_snapshot / rollback_audit_log / id_segment / player_name)的建表策略。
+# 玩家归属 / 落点映射的提交点(docs/design/player-route-mapping-durability-proposal.md §4、§11.2)。
+# redis(默认):与 2026-10-12 之前逐字相同。db_first:先写全局库 player_route,再按 maprev set-if-newer 发布到 mapping Redis。
+# 切 db_first 的前提(缺一不可):
+#   1) 已在冻结窗口内:第 2 批落地前禁止 merge_zone 任何写模式(merge/unmerge/relocate/pin-placement/backfill);
+#   2) P1 导入完成且 audit 为 0:
+#        go run ./cmd/route_tool -f etc/data_service.yaml import-from-redis -dry-run=false
+#        go run ./cmd/route_tool -f etc/data_service.yaml audit
+#   3) mapping Redis 为 noeviction + appendonly yes、版本 ≥ 7.2(WAITAOF);
+#   4) 建角压测已出 W1 p99 与发布未确认率(AGENTS.md §6)。
+# 非法值 = 拒启。WAITAOF 两项都显式写 0 = 不等落盘(只给没有 AOF 的环境 / 单测用);redis-ha 档 NumReplicas 要写 1。
+RouteStore:
+  Mode: redis
+  FenceShards: 8
+  MaxOpenConn: 20
+  MaxIdleConn: 5
+  PublishAttempts: 3
+  WaitAOFNumLocal: 1        # 本机 compose redis 开着 --appendonly yes(deploy/docker-compose.yml)
+  WaitAOFNumReplicas: 0
+  WaitAOFTimeoutMs: 1500
+
+# 全局库的建表策略:proto 驱动的五张(transaction_log / player_snapshot / rollback_audit_log / id_segment / player_name)
+# + 还没有 proto 的路由表(player_route / zone_merge_fence / zone_merged_into / route_meta / route_reconcile,映射持久化第 1a 批)。
 # 其中 id_segment 与 player_name 走 schema.go 里手写的 bootstrap DDL(proto2mysql 把 string 渲染成
-# MEDIUMTEXT,而 player_name 的唯一键必须建在 VARCHAR 上),迁移对这两张只做列漂移校验。
+# MEDIUMTEXT,而 player_name 的唯一键必须建在 VARCHAR 上),迁移对这两张只做列漂移校验;
+# 路由表同样走手写 DDL,迁移只守列名与主键,并种 route_meta / route_reconcile(id=1)。redis 模式同样依赖它们建成。
+# TiDB 上建表之后另跑 `route_tool -f <yaml> tidb-prepare -zones=<全部 zone> -dry-run=false` 预切路由表(MySQL 自动跳过)。
 # AutoMigrate=true:启动时按 proto(rollback_database_table.proto)用 proto2mysql 建表/补列。
 # 生产必须**显式**设 false(多副本并发 ALTER 会互相 MDL 阻塞),改在部署阶段跑一次:
 #   data_service -f etc/data_service.yaml -migrate
@@ -219,3 +241,14 @@ Kafka:
   SnapshotPartitions: 3
   SnapshotConsumerGroup: data_service-player-snapshot
   RetentionMs: 2592000000   # 30 天:消费者因 DB 故障停下期间的积压必须在此窗口内补完
+  # ── player_snapshot 消费者的批量 / 并发旋钮与 lag 探针(G2a,internal/config KafkaConfig)──
+  # 下面四个 Snapshot* 键写的是代码默认值 = 2026-10-12 之前的逐条串行行为;不写(或整段 Kafka 缺失)效果相同。
+  # 越界 = data_service 拒启(exit 1)。改成建议开服值(16 / 4194304 / 200 / 2)要等压测对比表(AGENTS §6,
+  # stress_summarize 的审计段)与内存护栏(GOMEMLIMIT / limits)都拍板之后,见 docs/ops/audit-topic-generation-bump-runbook.md。
+  SnapshotBatchMaxRows: 1            # 每分区一批最多几条消息,[1,256];1 = 逐条落、逐条提交(现状)。建议开服值 16
+  SnapshotBatchMaxBytes: 4194304     # 一批 data 字节软上限,[65536,33554432];加入后检查,最多超出一条。建议开服值 4194304
+  SnapshotFlushIntervalMs: 0         # 批非空后最多再等多久凑批,[0,5000];0 = 不等,只拼已排队的。建议开服值 200
+  SnapshotMaxInflightFlushes: 1      # 本实例同时落库的分区数,[1, SnapshotMySQL.MaxOpenConn-1];不新增连接。建议开服值 2
+  # 消费组 lag / 保留期丢失量探针周期(ms),0 = 关,否则 [5000,600000]。只读 broker 元数据、不碰消费与落库,
+  # 刻意默认打开:没有它 data_service_kafka_consumer_lag_messages / retention_gap_messages 不出数,积压与保留期告警全哑。
+  LagProbeIntervalMs: 30000

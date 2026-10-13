@@ -3,8 +3,10 @@ package kafka
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
+	"data_service/internal/config"
 	"data_service/internal/metrics"
 	"data_service/internal/store"
 
@@ -23,17 +25,26 @@ const ConsumerSnapshot = "player_snapshot"
 // 只能当坏消息跳过(打 Error + 计数),否则会把分区卡死。
 const MaxSnapshotBlobBytes = 16*1024*1024 - 1
 
-// SnapshotSink 是消费者需要的唯一落库能力,由 *store.SnapshotStore 实现。
+// SnapshotSink 是消费者需要的落库能力,由 *store.SnapshotStore 实现。
 type SnapshotSink interface {
 	InsertSnapshotIfGuidAbsent(ctx context.Context, row *store.SnapshotRow) (id uint64, inserted bool, err error)
+	// InsertSnapshotsIfGuidAbsent 批量去重落库,返回新插入行数;批内与库内重复都不计。
+	// 只在一批有 >= 2 行时调用(BatchMaxRows > 1 才会出现),1 行一律走上面的单行接口。
+	InsertSnapshotsIfGuidAbsent(ctx context.Context, rows []*store.SnapshotRow) (int64, error)
 }
 
-// SnapshotConsumerConfig 重试参数;零值取默认。不攒批:单条几百 KB,逐条落、逐条提交。
+// SnapshotConsumerConfig 重试与批量参数;零值取默认。
 type SnapshotConsumerConfig struct {
 	DBMaxAttempts  int           // 默认 5
 	DBRetryBackoff time.Duration // 默认 1s
 	FetchBackoff   time.Duration // 默认 1s
 	MaxBlobBytes   int           // 默认 MaxSnapshotBlobBytes
+
+	// 以下四项零值 = 2026-10-12 之前的逐条串行行为(装配见 data_service.go,yaml 取值与校验见 config.KafkaConfig)。
+	BatchMaxRows       int           // <=1:逐条落、逐条提交;上限钳到 store.MaxSnapshotBatchRows
+	BatchMaxBytes      int           // <=0:config.DefaultSnapshotBatchMaxBytes(软上限:加入一条后检查)
+	FlushInterval      time.Duration // <=0:不等待,只把已排队的消息拼进来
+	MaxInflightFlushes int           // <=0:1(本实例同时落库的分区数)
 }
 
 func (c *SnapshotConsumerConfig) withDefaults() {
@@ -49,69 +60,56 @@ func (c *SnapshotConsumerConfig) withDefaults() {
 	if c.MaxBlobBytes <= 0 {
 		c.MaxBlobBytes = MaxSnapshotBlobBytes
 	}
+	if c.BatchMaxRows < 1 {
+		c.BatchMaxRows = 1
+	}
+	if c.BatchMaxRows > store.MaxSnapshotBatchRows {
+		// yaml 路径由 config.ValidateConsumers 拒启;这里兜的是直接构造配置的调用方(单测、将来的工具)。
+		// 不钳的话 store 每批都拒绝 → 每批都退回逐条兜底,静默变慢且只有 info 级告警。
+		logx.Errorf("[%s] BatchMaxRows=%d exceeds store.MaxSnapshotBatchRows=%d; clamped (a larger batch would be rejected by the store and every batch would fall back to row-by-row)",
+			ConsumerSnapshot, c.BatchMaxRows, store.MaxSnapshotBatchRows)
+		c.BatchMaxRows = store.MaxSnapshotBatchRows
+	}
+	if c.BatchMaxBytes <= 0 {
+		c.BatchMaxBytes = config.DefaultSnapshotBatchMaxBytes
+	}
+	if c.FlushInterval < 0 {
+		c.FlushInterval = 0
+	}
+	if c.MaxInflightFlushes <= 0 {
+		c.MaxInflightFlushes = 1
+	}
 }
 
-// SnapshotConsumer 逐条落 player_snapshot(source=1)。
+// SnapshotConsumer 落 player_snapshot(source=1):每个分区一个 worker(分区内 FIFO、先落库后提交),
+// 可配批量(默认逐条),实例级落库并发上限。结构见 snapshot_worker.go。
 type SnapshotConsumer struct {
 	cfg    SnapshotConsumerConfig
 	reader MessageReader
 	sink   SnapshotSink
 	health *Health
+
+	// sem 是实例级落库并发上限(容量 MaxInflightFlushes):每次 DB 尝试前取一个名额、尝试后归还,重试退避期间不占。
+	// 有它,「本实例同时写几个分区」才有界,快照池(SnapshotMySQL.MaxOpenConn)总留得出连接给 GM 快照 / 回档读。
+	sem chan struct{}
+	// commitMu 串行化 CommitMessages:各分区 worker 会并发提交,这里不依赖 kafka-go Reader 对并发提交的未写明承诺。
+	commitMu sync.Mutex
 }
 
 // NewSnapshotConsumer 组装消费者;Run 之前不做任何 IO。
 func NewSnapshotConsumer(cfg SnapshotConsumerConfig, reader MessageReader, sink SnapshotSink) *SnapshotConsumer {
 	cfg.withDefaults()
-	return &SnapshotConsumer{cfg: cfg, reader: reader, sink: sink, health: newHealth(ConsumerSnapshot)}
+	return &SnapshotConsumer{
+		cfg:    cfg,
+		reader: reader,
+		sink:   sink,
+		health: newHealth(ConsumerSnapshot),
+		sem:    make(chan struct{}, cfg.MaxInflightFlushes),
+	}
 }
 
 // Health 返回健康标志。
 func (c *SnapshotConsumer) Health() *Health { return c.health }
-
-// Run 阻塞消费直到 ctx 结束(返回 nil)或 DB 重试用尽(返回 ErrConsumerStoppedOnDB,
-// 当前消息 offset 未提交)。
-func (c *SnapshotConsumer) Run(ctx context.Context) error {
-	c.health.markRunning()
-	defer c.health.markStopped()
-
-	for {
-		msg, err := c.reader.FetchMessage(ctx)
-		if err != nil {
-			if ctx.Err() != nil {
-				logx.Infof("[%s] consumer exiting on shutdown", ConsumerSnapshot)
-				return nil
-			}
-			logx.Errorf("[%s] fetch failed, retry in %s: %v", ConsumerSnapshot, c.cfg.FetchBackoff, err)
-			if !sleepCtx(ctx, c.cfg.FetchBackoff) {
-				return nil
-			}
-			continue
-		}
-
-		row, ok := c.decode(msg)
-		if !ok {
-			c.commit(ctx, msg)
-			continue
-		}
-
-		id, inserted, err := c.insertWithRetry(ctx, row)
-		if err != nil {
-			metrics.ObserveKafkaConsumerMessages(ConsumerSnapshot, "db_error", 1)
-			c.health.markFailed(err)
-			logx.Errorf("[%s] STOPPED: snapshot guid=%d player=%d could not be inserted after %d attempts, offset NOT committed (lag is preferred over loss): %v",
-				ConsumerSnapshot, row.SnapshotGuid, row.PlayerID, c.cfg.DBMaxAttempts, err)
-			return fmt.Errorf("%w: %v", ErrConsumerStoppedOnDB, err)
-		}
-		if inserted {
-			metrics.ObserveKafkaConsumerMessages(ConsumerSnapshot, "inserted", 1)
-		} else {
-			metrics.ObserveKafkaConsumerMessages(ConsumerSnapshot, "duplicate", 1)
-			logx.Infof("[%s] duplicate snapshot guid=%d player=%d already stored as id=%d, skipped",
-				ConsumerSnapshot, row.SnapshotGuid, row.PlayerID, id)
-		}
-		c.commit(ctx, msg)
-	}
-}
 
 // decode 把一条消息解成 source=1 的行;坏消息返回 ok=false,调用方只提交不入库。
 // data 列存**收到的原始字节**(整条 PlayerSnapshotEntry,含两个 player_database blob 与
@@ -155,14 +153,47 @@ func (c *SnapshotConsumer) decode(msg kafkago.Message) (*store.SnapshotRow, bool
 	}, true
 }
 
+// runAttempt 跑一次 DB 尝试:取落库名额 → op → 归还(defer:sink panic 时也归还)→ 记单次尝试耗时。
+// 取名额期间 ctx 结束(关停 / 兄弟分区停机)直接返回 ctx 的原因,不碰库、不计耗时。
+// 耗时只算拿到名额之后这一段:名额排队与重试退避都不算,flush_seconds 慢才等于库慢。
+func (c *SnapshotConsumer) runAttempt(ctx context.Context, op func() error) error {
+	select {
+	case c.sem <- struct{}{}:
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+	defer func() { <-c.sem }()
+	if err := ctx.Err(); err != nil {
+		// 名额与 ctx.Done 同时就绪时 select 随机选,选中名额也不能再去碰库。
+		return err
+	}
+	start := time.Now()
+	err := op()
+	observeFlushAttempt(ctx, ConsumerSnapshot, start, err)
+	return err
+}
+
+// insertWithRetry 单行落库 + 有界重试(DBMaxAttempts 次、间隔 DBRetryBackoff),与 2026-10-12 之前逐条消费的容错逐字相同。
+// ctx 结束立即返回(不记 attempt 失败、不再重试),调用方据 ctx.Err() 判定为安静退出、不算停机。
 func (c *SnapshotConsumer) insertWithRetry(ctx context.Context, row *store.SnapshotRow) (uint64, bool, error) {
 	var lastErr error
 	for attempt := 1; attempt <= c.cfg.DBMaxAttempts; attempt++ {
-		id, inserted, err := c.sink.InsertSnapshotIfGuidAbsent(ctx, row)
+		var (
+			id       uint64
+			inserted bool
+		)
+		err := c.runAttempt(ctx, func() error {
+			var insertErr error
+			id, inserted, insertErr = c.sink.InsertSnapshotIfGuidAbsent(ctx, row)
+			return insertErr
+		})
 		if err == nil {
 			return id, inserted, nil
 		}
 		lastErr = err
+		if ctx.Err() != nil {
+			return 0, false, fmt.Errorf("interrupted during db retry: %w", lastErr)
+		}
 		logx.Errorf("[%s] insert snapshot guid=%d player=%d failed (attempt %d/%d): %v",
 			ConsumerSnapshot, row.SnapshotGuid, row.PlayerID, attempt, c.cfg.DBMaxAttempts, err)
 		if attempt < c.cfg.DBMaxAttempts && !sleepCtx(ctx, c.cfg.DBRetryBackoff) {
@@ -172,10 +203,60 @@ func (c *SnapshotConsumer) insertWithRetry(ctx context.Context, row *store.Snaps
 	return 0, false, lastErr
 }
 
-// commit 同步提交一条;失败只记日志(行已落库,重放会被 guid 去重)。
-func (c *SnapshotConsumer) commit(ctx context.Context, msg kafkago.Message) {
-	if err := c.reader.CommitMessages(ctx, msg); err != nil && ctx.Err() == nil {
-		logx.Errorf("[%s] commit offset failed partition=%d offset=%d (row is persisted; replay is deduped by guid): %v",
-			ConsumerSnapshot, msg.Partition, msg.Offset, err)
+// insertBatchWithRetry 批量落库 + 与单行同样的有界重试。「批本身太大」的确定性错误(store.IsSnapshotBatchTooLarge)
+// 不再退避重试、立即返回,由调用方逐条兜底 —— 同一批原样再试只会撞同一堵墙,每批白等约 DBMaxAttempts 秒。
+func (c *SnapshotConsumer) insertBatchWithRetry(ctx context.Context, rows []*store.SnapshotRow) (int64, error) {
+	var lastErr error
+	for attempt := 1; attempt <= c.cfg.DBMaxAttempts; attempt++ {
+		var inserted int64
+		err := c.runAttempt(ctx, func() error {
+			var insertErr error
+			inserted, insertErr = c.sink.InsertSnapshotsIfGuidAbsent(ctx, rows)
+			return insertErr
+		})
+		if err == nil {
+			return inserted, nil
+		}
+		lastErr = err
+		if ctx.Err() != nil {
+			return 0, fmt.Errorf("interrupted during db retry: %w", lastErr)
+		}
+		logx.Errorf("[%s] insert snapshot batch of %d (first guid=%d) failed (attempt %d/%d): %v",
+			ConsumerSnapshot, len(rows), rows[0].SnapshotGuid, attempt, c.cfg.DBMaxAttempts, err)
+		if store.IsSnapshotBatchTooLarge(err) {
+			return 0, lastErr
+		}
+		if attempt < c.cfg.DBMaxAttempts && !sleepCtx(ctx, c.cfg.DBRetryBackoff) {
+			return 0, fmt.Errorf("interrupted during db retry: %w", lastErr)
+		}
+	}
+	return 0, lastErr
+}
+
+// observeOne 记一行单行落库的结局(原 inserted / duplicate 计数与日志,逐条模式下与 2026-10-12 之前逐字相同)。
+func observeOne(id uint64, inserted bool, row *store.SnapshotRow) {
+	if inserted {
+		metrics.ObserveKafkaConsumerMessages(ConsumerSnapshot, "inserted", 1)
+		return
+	}
+	metrics.ObserveKafkaConsumerMessages(ConsumerSnapshot, "duplicate", 1)
+	logx.Infof("[%s] duplicate snapshot guid=%d player=%d already stored as id=%d, skipped",
+		ConsumerSnapshot, row.SnapshotGuid, row.PlayerID, id)
+}
+
+// commit 同步提交 msgs 里每个分区的最高 offset(本消费者每次只交一个分区的一段前缀);
+// 失败只记日志(行已落库,重放会被 guid 去重)。
+// 空切片不发提交:flush / isolate 在第一行就失败时会传 b.msgs[:0],白发一次空提交既浪费,也会让
+// "停机不提交"的断言失真(TxLogConsumer.commit 同一个守卫)。
+func (c *SnapshotConsumer) commit(ctx context.Context, msgs []kafkago.Message) {
+	top := highestPerPartition(msgs)
+	if len(top) == 0 {
+		return
+	}
+	c.commitMu.Lock()
+	defer c.commitMu.Unlock()
+	if err := c.reader.CommitMessages(ctx, top...); err != nil && ctx.Err() == nil {
+		logx.Errorf("[%s] commit offset failed partition=%d offset=%d (rows are persisted; replay is deduped by guid): %v",
+			ConsumerSnapshot, top[0].Partition, top[0].Offset, err)
 	}
 }

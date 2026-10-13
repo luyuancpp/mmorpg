@@ -1,0 +1,376 @@
+# 新号首次进场免冷读:建角时写入 PlayerAllData 种子
+
+> **状态**:提案(开服准备 L-05 / G3),2026-10-12 起草,等负责人按 §10 拍板。2026-10-13 已按 §10 的默认值落码(开关默认关,见 §13);没有编译、测试或压测,按 AGENTS.md §10.1 交 Codex 验证。
+> **依据**:只读核对代码、配置与文档,HEAD `73b852f32`。`go/db/internal/kafka/key_ordered_consumer.go`、`tools/scripts/k8s_deploy.ps1`、`docs/design/player-storage-placement.md`、`docs/design/zone_data_rollback.md` 有他人未提交的改动,按工作区行号引用;其余文件工作区与 HEAD 相同。
+> **起因**:[tidb-phase1-and-launch-readiness.md](./tidb-phase1-and-launch-readiness.md) §7 的 L-05(:816)。新号第一次 EnterGame 一定冷读数据库,玩家在加载屏上同步等待,每个读任务的等待上限是 8s。首日这是 Phase 2 全局玩家库唯一的同步路径,也是单 zone 预加载链的第一个瓶颈。
+> **关联**:[player-storage-placement.md](./player-storage-placement.md) §13、[player-route-mapping-durability-proposal.md](./player-route-mapping-durability-proposal.md) §12、[cross-zone-scene-travel.md](./cross-zone-scene-travel.md) CZ-2 / CZ-4、[scene-owner-reentry-barrier.md](./scene-owner-reentry-barrier.md)、[no-single-node-horizontal-scaling-20261001.md](./no-single-node-horizontal-scaling-20261001.md) §5。
+
+## 1. 结论
+
+- **做法(方案 A)**:CreatePlayer 在写账号 blob 之前,先往 `PlayerAllData:{id}` 写一份「种子」。
+  - 种子的内容和今天冷读读空后 login 组装出的父键完全一样:两张子表各只带 `player_id`。
+  - TTL 也一样,都是 24h。
+  - 新号第一次 EnterGame 时,预加载命中缓存快路径,不再发 Kafka 读任务,不碰 go/db,也不用等那 8s。
+- **为什么正确**:
+  1. 号段 id 不复用。刚铸出的 id 在任何库里都没有行,「读到空」本来就是真值,种子只是把这个结论提前写进缓存。
+  2. 种子和冷读结果出自同一个构造函数。之后的身份补齐、scene 的新号初始化、首次存盘都走今天的老路,C++ 和 go/db 一行不改。
+  3. 写入脚本只在「父键不存在,且 `player:{id}:owner_epoch` 也不存在」时才落地,覆盖不了任何真实存档。
+- **种子不是真源,只是缓存优化**。写失败、过期、被删、Redis 丢键,首次进场都会退回今天的冷读,结果相同。
+- **开关**:`NewPlayerSeed.Enabled`,默认关。关着时和今天逐字节相同。
+- **不选「新号标记」(方案 B)**。它有两种做法:要么退化成「推迟到首次进场才写」的 A;要么让 scene 凭一个可能已过期的标记把空档当真,出错时空档会覆盖真实进度。
+- **代价**:
+  - 建角时多一次 Redis 往返,落在账号锁内。
+  - 未进场角色的种子各占约百字节 Redis,24h 后自动过期。
+  - **少了一个早期信号**。`player-storage-placement.md` §13 第 3 条禁止的两种违规配置:go/db 开了 `Placement.Required=true` 而 login 没钉落点;`NewPlayerStorageId` 指向 go/db 打不开的库。今天两者都表现为「新号预加载失败、进不了游戏」;打开种子后变成「能进场,但存盘进死信或无限重试,进度只在 Redis、不进 MySQL」,更隐蔽。打开种子之前两类告警必须先就位(§9、§10)。
+  - **新号的入场链改在 PreloadPool 的 worker 上跑完**。快路径在池 worker 里同步跑完整段 apply;冷读路径发完 Kafka 就把 worker 还回去。开种子后,每个新号占用池 worker 的时间变长,池满回 `kLoginInProgress`(§6 第 21 行)。老玩家命中缓存时今天就是这样。
+- **Java 版不适用**:Java 建角时同步插入玩家行,进场按主键读本库,没有这条冷读链(§11)。
+
+## 2. 现状链路(逐步核对)
+
+### 2.1 建角:写名字、归属映射和账号目录,不写 PlayerAllData
+
+`go/login/internal/logic/clientplayerlogin/createplayerlogic.go`:
+
+| 步 | 做什么 | 出处 |
+|---|---|---|
+| 3 | 拿账号建角锁 `account_lock:create:{account}`,TTL 20s | :116-130;`login.yaml:83` |
+| 4 | 读账号 blob | :132-154 |
+| 6b | 号段铸 `player_id`,失败就整体拒绝 | :219-229 |
+| 6c | 名字登记到 data_service 全局库,fail-closed | :231-255 |
+| 6d | 登记 `player:zone`,fail-closed;`PinOnCreate` 时同一次 RPC 原子钉落点 | :257-274、:707-717 |
+| 7 | 以建角锁为围栏写账号 blob;结果不确定时回读 | :287-301、:54-73、:621-656 |
+| 7b | 写反查索引 `player_id → account` | :303-308 |
+
+- 没有任何一步写 `PlayerAllData:{id}`。
+- `player_class_backfill.go:18-20` 的注释原话就是:「PlayerAllData 在建角时还不存在,首次 EnterGame 才由预加载建出」。
+
+### 2.2 首次 EnterGame:异步链里的预加载
+
+`entergamelogic.go`:
+
+- **入口**:拿玩家锁(:97-114),校验归属(账号 blob,或反查索引 + self-heal,:139-219)。
+- **RPC 立即回「已受理」**,真正进场走异步链(:221-244)。
+- **预加载**:放进 PreloadPool 执行 `EnsurePlayerAllDataInRedisAsync`(:381-391)。
+  - 池容量 256,池满直接回 `kLoginInProgress`(:393-400;`login.yaml:332-334`)。
+  - 每个读任务等结果的上限是 `dispatcherTaskTTL = 8s`(:356-380)。
+  - **回调在哪个 goroutine 上跑**:
+    - 快路径命中时,`onComplete` 在池 worker 里同步执行(`ensure_player_all_data_async.go:65-67`)。于是整段 `applyLoadedPlayerSession`(GetSession、身份补齐、SetSession、BindSession、EnterScene,:333、:685 起)都占着这个 worker。
+    - 冷读路径的池 worker 发完 Kafka 就返回;apply 跑在 dispatcher 的 16 个 worker 或溢出 goroutine 上(`dispatcher/task_result_dispatcher.go:82`、:288-300)。
+
+`go/login/internal/logic/pkg/dataloader/ensure_player_all_data_async.go`:
+
+1. 先构造骨架 `{player_database{player_id}, player_database_1{player_id}}`(:49-52)。
+2. 父键 `EXISTS` 命中,直接 `onComplete(nil)`。这就是快路径(:55-68)。
+3. 父键不在,逐张子表 `GET` 子表缓存;全部命中就组装父键并写入(:80-109)。
+4. 缺哪张子表,就为它发一条 Kafka 读任务(:157-207;`sync_loader.go:81-110`,`Op=read`,`WhereCase player_id='…'`)。
+   - 回执经 `task:result` 的 Pub/Sub 送回。频道全局只有一个(`dispatcher/task_result_dispatcher.go:32`)。
+5. 回执 `Data` 为空表示没有这一行,子表保持骨架(:180-190)。
+6. 全部回齐后 `SET` 父键,TTL 24h(:128-155;`sync_loader.go:121-125`)。
+
+对新号来说:父键不在(建角没写),子表缓存也不在,所以**必然**发 2 条读任务,并同步等它们回来。
+
+### 2.3 go/db 的读任务
+
+- 按 `MsgType` 把请求体反序列化成 msg(`go/db/internal/kafka/key_ordered_consumer.go:1994-2001`,工作区行号)。
+- `handleDBReadOp` 在选中的落点库上执行 `FindOneByWhereClause`。查不到行(`ErrNoRowsFound`)不算错,msg 保持请求体原样(:339-348)。
+- **选库顺序**:落点记录 → home_zone → 本进程 zone(`placement_route.go:178-189`)。
+  - `Required=true` 且没有落点记录时,读回执直接失败(:297-305)。
+- **结果回写**:
+  - 写子表缓存 `{MsgType}:{id}`,TTL 取 `DefaultTTLSeconds`,K8s 上是 3600s(`key_ordered_consumer.go:54-64`、:360-373;`k8s_deploy.ps1:3458`)。
+  - 再 `LPUSH task:result:{taskID}` + `EXPIRE` + `PUBLISH task:result:notify`(:391-414)。
+- **新号冷读的最终产物就是「请求体原样」,也就是骨架**。
+- **资源共享**:
+  - 读任务和存盘写任务共用本 zone 10 分区 × 8 子分片的 worker(`go/db/etc/db.yaml:19`、:22),以及每实例 60 条的主池(:68)。
+  - Phase 2 打开 `PinOnCreate` 后,读的是全局落点库,走每实例 8 条的额外池(`db.yaml:122-124`。注释自己写了这个池「会成为全局库的瓶颈」)。
+
+### 2.4 身份补齐
+
+`player_class_backfill.go`:
+
+- `applyLoadedPlayerSession` 先 `GetSession`,再调 `backfillPlayerIdentity`(`entergamelogic.go:685-695`)。
+- 先读父键(:35-47)。读不到就报错,这条链失败,客户端重试。
+- 职业、名字、外观、性别,缺哪个补哪个(:57-83)。
+- 用 Lua 做整字节 CAS 写回(:88-106、:179-191):
+  - 校验玩家锁令牌;
+  - `player:session:{id}` 或 `player:{id}:location` 存在就跳过;
+  - `SET … KEEPTTL`,保留原有 TTL。
+
+### 2.5 scene 加载与新号初始化(C++)
+
+1. **铸 epoch**:scene_manager 的 EnterScene 用 INCR 铸 `owner_epoch`(`go/scene_manager/internal/logic/owner_epoch.go:55-119`),再把玩家路由到 scene。
+2. **登记与加载**:scene 的 `PlayerEnterGameNode` 先登记待入场,再清继承来的交接标记,最后对父键发 `AsyncLoad`(`cpp/nodes/scene/handler/rpc/scene_handler.cpp:229-277`)。
+3. **NIL 重试**:读到 NIL 时按 500ms / 1s / 2s / 4s / 8s / 16s 有界重试,合计约 31.5s(`redis_client.h:389-406`)。
+   - 同文件 :103-105 的注释写的是「2,4,…60s,约 2 分钟」,已经过时。
+   - 重试用完仍是 NIL,就按 `DataNotFound` 喂一份空 `PlayerAllData`,当新号处理(`player_lifecycle.cpp:1911-1930`)。
+   - 零长度值和解析失败一律按 `RedisError` 处理,fail-closed(`redis_client.h:846-862`)。
+4. **`HandlePlayerAsyncLoaded`**:`player_id==0` 时先补上 id(`player_lifecycle.cpp:2037-2052`),再进 `InitPlayerFromAllData`(:3495-3556)。
+5. **首次注册**:`registration_timestamp <= 0` 就算首次注册。写注册时间、等级置 1、触发 `RegisterPlayerEvent`(:3529-3537),然后进场景并发出 `SNAPSHOT_LOGIN` 快照(:3555)。
+6. **结论**:scene 判断「新号」看的是 `registration_timestamp`,不是父键在不在。冷读骨架、`DataNotFound` 兜底、种子,这三种输入走的是同一个分支。
+
+### 2.6 首次存盘
+
+- **写 Redis**:`SavePlayerToRedisImpl`(`player_lifecycle.cpp:3565` 起)。
+  - `owner_epoch≠0` 时走带守卫的 Lua。KEYS 是父键和 `player:{id}:owner_epoch`(`redis_client.h:42-52`)。
+  - 否则走 `SET` + `SADD dirty_keys_set`(:20-24)。
+  - 两条路都是不带 `KEEPTTL` 的 `SET`,父键从此不再过期。
+- **写库**:两张子表各发一条 DBTask(`op=write`,带 `owner_epoch`,topic 按 home_zone 选)(`player_lifecycle.cpp:3693-3737`)。go/db 按落点路由、比对 epoch 后落库。
+- **含义**:新号**第一次碰数据库**本来就可以是这条异步写。冷读给不了写路径任何它需要的东西。
+
+### 2.7 每个新号首次进场的代价(推算,未计数)
+
+- **login**:2 条 Kafka 读任务、dispatcher 两次登记、等回执(上限 8s)、一次父键 `SET`。
+- **go/db**,每条读任务:
+  - 选库和复核各一次落点 `MGET`(`placement_route.go:19-30`);
+  - 一次点查;
+  - 一次子表缓存回写;
+  - 一组 `LPUSH` / `EXPIRE` / `PUBLISH`。`PUBLISH` 走单频道,会扇出到所有 login 实例。
+- **两点后果**:
+  - 这些都发生在玩家的加载屏上,是同步等待。
+  - 它们和存盘写共用同一组 worker 和连接池。
+
+## 3. 方案比选
+
+| 方案 | 做法 | 改动面 | 出错时的形态 | 结论 |
+|---|---|---|---|---|
+| **A 建角写种子(只带 player_id)** | 写账号 blob 前用 Lua 写 `PlayerAllData:{id}` = 冷读骨架,`PX` 24h;只在父键和 owner_epoch 键都不存在时写 | login 3 个文件 + 配置;C++、go/db 零改动 | 种子缺席就走冷读老路,结果相同 | **选定** |
+| A1 种子带身份 | 种子里直接写职业 / 名字 / 外观 / 性别 | 同 A | 同 A | 不选。身份写法会有建角、backfill 两份(违反 DRY);能省的只是首次进场一次 Redis CAS |
+| A2 并进账号 blob 的围栏脚本 | 在 `writeAccountBlobScript` 里原子地顺手写种子 | 改围栏脚本,要两个版本 | 同 A | 不选。把缓存优化和账号目录这份权威写绑死;L-06 拆 Redis 后两把键不再同实例,原子性保不住 |
+| B1 新号标记,由 scene 按新号初始化 | 建角写 `player:{id}:new`(短 TTL);预加载看到标记就放行,不写父键 | login,加上 scene_manager 路由事件加字段,加上 C++ | scene 读父键得 NIL,要等约 31.5s 有界重试才判新号(`redis_client.h:389-406`)。想跳过,就得给 `RoutePlayerEvent` / `PlayerEnterGameNode` 加「新号」位,proto、Go、C++ 三处同改。标记过期前若已有存盘、父键又丢了(合服失效缓存、Redis 丢键),scene 会用空档覆盖真实进度 | 否决 |
+| B2 新号标记,login 看到标记就写空父键 | 首次进场时,login 原子地执行「标记在、父键不在 → 写骨架、删标记」 | login | 要安全,必须再加「owner_epoch 不存在」这个判据;加上之后标记本身就多余了 | 否决。等于把 A 推迟到首次进场,还多一个键、多一个状态源 |
+| C1 账号记录加 `first_enter_pending` | 在账号 blob 里标「未进场」 | login | 和 B 一样有「标记已过时却仍被当真」的问题;清标记要再拿一次账号锁写 blob | 否决 |
+| C2 建角后异步预热 | 建角后 fire-and-forget 发读任务(`TriggerPlayerDataPreload`,`sync_loader.go:35-78`,目前没有调用方) | login | 等待挪出了玩家路径,但每个新号的 2 次 DB 读一次不少,全局库首日的读负载不变;子表缓存 1h 过期后,首登仍要冷读 | 否决,解决不了负载 |
+| C3 go/db 负缓存 | 把「无行」结果缓存起来 | go/db | 第一次读仍然要打库 | 否决 |
+| C4 scene 读到 NIL 立刻当新号 | 去掉 NIL 重试 | C++ | scene 分不清「新号」和「缓存丢了的老号」,老号会被空档覆盖 | 否决 |
+
+## 4. 选定方案
+
+### 4.1 种子内容
+
+- 种子 = `newPlayerAllDataSkeleton(id)` = `{player_database{player_id}, player_database_1{player_id}}`。
+- **不带身份,也不带 `registration_timestamp`**。带了注册时间,scene 就会跳过首次注册(`player_lifecycle.cpp:3529`)。
+- 冷读骨架(`ensure_player_all_data_async.go:49-52`)也改成调用这同一个函数,两边始终同源。
+
+### 4.2 写入点和顺序
+
+写在 CreatePlayer 的 6d(归属登记)成功之后、6e/7(账号 blob)之前。
+
+- **为什么在 6d 之后**:6c、6d 都是 fail-closed。建角失败时,种子根本不会写。
+- **为什么在 7 之前**:
+  - EnterGame 的归属校验只认账号 blob 或反查索引(`entergamelogic.go:155-219`),这两样在 7 / 7b 才写。
+  - 所以种子落地之前,任何 EnterGame 都用不上这个 id。首次进场看到的父键只有两种可能:种子,或者缺席。
+- **崩溃恢复**:AOF 和复制都是按序的,恢复后的数据是一个前缀。账号 blob 还在,种子就一定也在(除非已过期)。
+- **代价**:多一次 Redis 往返,落在账号锁内(§9 第 1 条)。
+
+### 4.3 写入脚本的语义
+
+脚本是 Lua。`KEYS` = 父键、`player:{id}:owner_epoch`;`ARGV` = 种子字节、TTL 毫秒。按顺序判断:
+
+1. owner_epoch 键已存在:返回 -1,不写。
+2. 父键不存在:`SET … PX`,返回 1。
+3. 父键的值正好就是本次种子:返回 2,算成功。这是 go-redis 读超时后,把已经执行过的 EVAL 又重发了一次。
+4. 其余情况:返回 0,不写。
+
+**为什么要看 owner_epoch**:
+
+- scene_manager 每次把玩家派进场景都会 INCR 这个键,而且从不删除(`go/shared/ownerepoch/ownerepoch.go:16-22`;`redis_client.h:31-33`)。
+- 键存在,说明玩家进过场景。这时 scene 的存档才是真相,种子必须让路。
+- 它兜住的是一种极端交错:种子请求在网络里滞留,等它落地时,玩家已经进场、存过盘,父键又恰好被删了(§6 第 5 行)。
+
+### 4.4 读侧完全不改
+
+以下都不动:
+
+- `EnsurePlayerAllDataInRedisAsync` 的 `EXISTS` 快路径;
+- 身份补齐;
+- scene 加载;
+- 存盘;
+- go/db。
+
+### 4.5 开关、指标、日志
+
+| 项 | 内容 |
+|---|---|
+| 开关 | `login.yaml` 的 `NewPlayerSeed.Enabled`,bool,缺省 false;整块不写也是关 |
+| 指标 | `login_create_player_seed_total{result}`,result ∈ written / idempotent / parent_exists / owner_epoch_exists / error |
+| 指标 | `login_create_player_stage_seconds{stage="seed"}` |
+| 启动日志 | `[new-player-seed] enabled=… (pin_on_create=…)` |
+| 看效果 | `dataloader_preload_cache_check_seconds_count{hit="miss"}` 下降;go/db `db_task_result_total{op="read"}` 下降 |
+
+## 5. 不变量
+
+| # | 不变量 | 依据 |
+|---|---|---|
+| I1 | **新铸 id 从未被使用过** | 号段由 data_service 用 CAS 领段;客户端拒绝重叠或回退的范围(`go/shared/idsegment/client.go:26-34`)。默认不回退到 snowflake(`login.yaml:184-189`;`player_id_minter.go:22-29`);即使回退,snowflake 的值域 ≥2^55,和号段不相交(`client.go:36-51`)。全系统本来就依赖这一条:`player_database` 撞号不报错,而是静默串档(`createplayerlogic.go:219-222`) |
+| I2 | **种子 ≡ 冷读读空后的组装结果** | 两边用同一个构造函数;§8 有等价性用例 |
+| I3 | **种子永不覆盖已有数据** | 脚本只在父键和 owner_epoch 键都不存在时写 |
+| I4 | **种子先于 id 对外可见** | §4.2 |
+| I5 | **种子 TTL 24h,和冷读组装的父键相同;scene 首存后父键不再过期** | `sync_loader.go:121-125`;`redis_client.h:20-24`、:42-52 |
+| I6 | **父键和 owner_epoch 在同一个 Redis 实例** | 这是既有契约:C++ 守卫 Lua 在同一个脚本里访问这两把键(`redis_client.h:42-52`);CZ-2 写明「PlayerAllData Redis 物理共享」(`cross-zone-scene-travel.md:31`)。种子没有引入新的同址约束 |
+| I7 | **种子不是真源** | 任何失败都不改变建角结果,首次进场退回冷读 |
+
+## 6. 失败与并发分析
+
+| # | 场景 | 会发生什么 | 结论 |
+|---|---|---|---|
+| 1 | 号段 id 不复用(万一复用了) | 父键或 owner_epoch 已存在:不写,计 `parent_exists` / `owner_epoch_exists`,打 ERROR;首次进场读到的是已有缓存,和今天一样。都不存在、但库里有旧行(要求旧玩家的父键和 owner_epoch 在 Redis 里也都没了):种子让新角色从空档起步,首存**覆盖**旧行;今天则是冷读把旧行读给新角色,两个账号共用一份档。两者都是 ID 安全事故,但形态不同:今天是旧角色的资产串给新账号,旧行还在;开种子后资产不外泄,但旧玩家在库里的进度被覆盖,只能靠快照或备份找回 | 两种都不可接受,只能靠 I1 兜底。种子在 Redis 侧多给一个检测信号。是否升级为拒绝建角见 §10 P2 |
+| 2 | 建角在种子之前失败(发号 / 名字 / 归属) | 种子没写 | 无残留 |
+| 3 | 建角在种子之后失败:账号 blob 围栏写回 -1 或报错,回读确认不含新角色(`createplayerlogic.go:621-656`) | 留下一个只带 player_id、24h 后过期的孤儿种子。这个 id 已经烧掉,没人能用它进场。约百字节 | 无害 |
+| 3' | 回读本身失败(`accountBlobUnknown`) | 角色可能已经落盘,而种子恰好就是它正确的初始值 | 无害 |
+| 4 | login 在种子前后崩溃 | 和第 2、3 行相同。崩在 EVAL 执行中途:要么写了,要么没写 | 都安全 |
+| 5 | 种子写入结果未知,或请求滞留之后才落地 | 落地那一刻:父键 = 骨架(刚被冷读写入)→ 返回 2,不写;父键已被身份补齐改过 → 返回 0;玩家已经进场 → owner_epoch 存在,返回 -1 | 滞留的种子什么时候落地,都覆盖不了进度 |
+| 6 | 种子和首次存盘的竞态 | 首存是无条件 `SET`,会覆盖种子,这是应该的;种子是条件写,永远覆盖不了首存 | 无论谁先谁后,都收敛到 scene 的数据 |
+| 7 | 种子和冷读并发 | 只会在种子写失败或结果未知时出现。冷读写的也是骨架 | 结果一样 |
+| 8 | 跨 zone 首登 | 父键在共享 Redis 里。K8s 上相关组件全部同址:C++ zoneredis(`k8s_deploy.ps1:1866-1868`)、login RedisClient(:3583-3586)、go/db(:3456)、scene-manager(:3720 起)。所以任何 zone 的 login 都能命中。归属重定向和访客照今天的规则走(`entergamelogic.go:646-683`);存盘按 home_zone 选 topic(CZ-2)。zone_redis 物理分开的部署本来就不支持(`cross-zone-scene-travel.md:31`) | 不变 |
+| 9 | Phase 2 `PinOnCreate` | 种子和落点无关。打开 PinOnCreate 后,新号第一次碰全局落点库的是异步首存,不再有同步读 | 去掉了全局库首日唯一的同步读;误配置后的症状变化见 §9 第 2 条 |
+| 10 | owner_epoch | 种子不铸 epoch,也不读它的值,只看键在不在。scene 首存的守卫补种和 CAS 照旧(`redis_client.h:31-40`)。旧版 scene_manager 不铸 epoch 的兼容窗口里,第 5 行的「玩家已进场」判据退化为只看父键 | 兼容窗口内只剩第 5 行的极端交错,且需要父键被删才会触发 |
+| 11 | C++ 对空数据的处理 | 种子非空、`player_id≠0`、`registration_timestamp=0`,进首次注册分支,和冷读骨架同一路径(§2.5)。零长度和解析失败照旧 fail-closed | 不变 |
+| 12 | Redis 丢键(重启丢最后 1s 的 AOF、人工删、合服失效) | 首次进场冷读,读到空 | 结果相同 |
+| 13 | 合服 | copy 模式按清单删玩家缓存键,含 PlayerAllData(`tools/merge_zone/player_rows.go:676-723`;`unmerge.go:251-263`)。种子被删后在 dst 冷读,读到空。pin 模式保留缓存,种子仍是真值。合服在停服期间进行,窗口内没有在途建角。owner_epoch 不会被删,滞留的种子仍被挡住 | 安全 |
+| 14 | zone 回档 | 灾难回档要 FLUSHDB,带共享键防护(`zone_data_rollback.md:163-170`),种子随之消失,首次进场冷读。应用级回档不碰没有快照的玩家:快照要进场后才有(`player_lifecycle.cpp:3555`)。孤儿只报告、不删除(`go/data_service/internal/logic/rollback_logic.go:1050-1090`) | 安全 |
+| 15 | TTL 边界 | 种子恰好在「预加载 EXISTS 命中」和「scene GET」之间到期。① 到期发生在身份补齐之前:补齐读不到父键,链失败,客户端重试,改走冷读。② 发生在补齐之后、scene GET 之前:scene 先 NIL 重试约 31.5s,再按 DataNotFound 初始化空档;这一次会话里职业和名字为空,下一次干净登录时由身份补齐修正。窗口是一次进场链的耗时(百毫秒级)比上 24h。今天的首次进场碰不到这个窗口,因为冷读刚写的父键带满 24h;只有「预加载过、但还没被 scene 存过盘」的父键在下一次进场时会碰到。种子把它扩到「建角后约 24h 才首次进场」的新号 | 残余风险;可选加固见 §10 P4 |
+| 16 | `player-storage-placement.md` §13 第 3 条的违规配置:`Required` 开着而新号没落点;`NewPlayerStorageId` 指向打不开的库 | 见 §9 第 2 条 | 要求两类告警先就位 |
+| 17 | go/db 或 Kafka 不可用 | 新号仍能进场,存盘在 Kafka 里排队,和老玩家一样。今天新号会卡 8s 后失败 | 可用性变好 |
+| 18 | 滚动升级 / 新旧混跑 | 新旧 login 的读路径相同,旧 login 只是不写种子。开关随时可关;已写的种子 ≡ 冷读结果,24h 自然过期 | 无需清理 |
+| 19 | 展示类读者 | 种子不含身份,首次进场照旧由身份补齐写入。好友资料、外观回填读到种子时,按「缺字段」处理(`go/friend/internal/data/friend_profiles.go:44-62`;`role_appearance_backfill.go:50-52`),展示结果和读不到 blob 时一样 | 不变 |
+| 20 | 资产账本 | 对未进场的新号,data_service `GetPlayerAssetOpLedger` 的结果从 absent 变成 found + 空账本(`asset_op_ledger_logic.go:36-44`、:117-123)。guild / trade 两种情况都判 UNKNOWN,继续等(`go/shared/assetop/classify.go:144-162`) | 语义不变,只是计数 label 变了 |
+| 21 | 入场链占用哪个池(§2.2) | 开种子后,新号也走快路径:`applyLoadedPlayerSession` 整段在 PreloadPool 的 worker 里同步跑完,不再在 dispatcher worker 上跑。每个新号占用池 worker 的时间,从「发完 Kafka」变成「整段 apply」,其中含 player_locator、scene_manager 两次 gRPC 和一次 Kafka 同步发送。池是非阻塞提交,Size 256(`login.yaml:332-334`),池满回 `kLoginInProgress`,客户端重试。另一面,dispatcher 不再替新号跑 apply,`cb_wait` 的排队压力变小。老玩家命中缓存今天就是这条路 | 背压形态变了,不是正确性问题。L-14 开、关两轮都要看 `[preload-pool] dropped_delta` 日志和 `entergame_apply_*` 各阶段;出现掉单就调大 `PreloadPool.Size`(只改配置) |
+
+## 7. 上线与回退
+
+**上线步骤**
+
+1. 落码,默认关。Codex 跑单测(§8)和 §13 列的验证命令。
+2. 本地冒烟:临时打开 `login.yaml` 的开关,用 robot 建 N 个新号进场,核对指标。
+3. 告警先就位:
+   - go/db `db_placement_guard_total{op="write",outcome="missing_required"}`(违规配置一:Required 开着而新号没落点);
+   - go/db `db_placement_store_open_total{result=~"error|rejected"}`,以及 go/db 的 ERROR 日志 `retry task rescheduled`,其 cause 含 `placement store is unavailable`(违规配置二:`NewPlayerStorageId` 指向打不开的库。写任务按 `errPlacementStoreUnavailable` 延后、不耗重试预算,会一直在重试队列里转,`placement_route.go:36-37`、`key_ordered_consumer.go:2072-2107`);
+   - `login_create_player_seed_total{result=~"parent_exists|owner_epoch_exists"}`。
+4. 开服尖峰压测(L-14)里开、关各跑一轮,按 AGENTS §6 出对比表:首次进场 p99、db_task 读量、Redis ops,以及 PreloadPool 掉单(login 日志 `[preload-pool] dropped_delta`)、`kLoginInProgress` 次数、`entergame_apply_*` 各阶段(§6 第 21 行)。
+5. K8s 打开:login ConfigMap 生成器加上这一键。单独一批做,契约测试同步改。
+
+**回退**
+
+- 改回 false 并滚动重启 login(go-zero 配置不热加载),或回滚 login 镜像即可。
+- 已写的种子和冷读结果相同,24h 后过期;不需要任何数据迁移。
+- 打开和关闭都不要求和 C++ / go/db / scene_manager 同批发布。
+
+## 8. 测试
+
+| 层 | 用例(文件见 §13) | 外部依赖 |
+|---|---|---|
+| dataloader | 种子内容与 TTL;重发幂等;不覆盖已有父键;owner_epoch 存在就拒写;零 id / nil 客户端;Redis 不可用;**种子 ≡ 冷读骨架**(子表缓存给出「无行」时,`EnsurePlayerAllDataInRedisAsync` 写出的父键和种子 `proto.Equal`);种子命中后快路径不碰 Kafka 和 dispatcher | 无(miniredis) |
+| CreatePlayer | 开关关 → 不写;开关开 → 写骨架并带 TTL;归属登记失败 → 不写;账号 blob 围栏失败 → 只留会过期的种子;已有父键 → 不覆盖并计数;owner_epoch 已存在 → 不写并计数;种子脚本报错 → 建角照常成功并计 `error` | 无(miniredis + 假 data_service) |
+| EnterGame | 种子 → EnterGame:走快路径,身份补齐写进种子,TTL 保留,没有子表缓存键 | 无(miniredis + ants 池 + 假 player_locator) |
+| 配置 | 整块缺失 = 关;两份样例 yaml 显式写出且为关;探针拒绝拼写错误 | 无 |
+| C++ | 不改代码,不新增用例。scene 的新号初始化分支今天也被冷读路径走着,没有单测是既有缺口(§10 R7) | — |
+| 端到端 | 本地全栈冒烟(可选),开服尖峰压测(L-14) | 本地 MySQL / Redis / Kafka / etcd / C++ 节点 |
+
+## 9. 与现有设计的偏离与代价
+
+1. **建角持锁时间多一次 Redis 往返**。
+   - ctx 预算 1s,只能掐掉 go-redis 的重发;单次最坏仍是 3s 读超时。
+   - `login.yaml:65-82` 的锁 TTL 预算注释要同步更新,而且要写出真实的数:
+     - 原注释的最坏和是 gRPC 3×3s + Redis 3×3s(读 blob、围栏写、回读)= 18s,「20 盖住」成立;
+     - 开种子后 Redis 变成 4 次,最坏和是 21s,**超过** `AccountLockTTL: 20`。
+   - 原注释的口径本来就是「20 不是硬上界」,正确性靠围栏 + 回读(:78-81)。本批不改 TTL,只把注释改成如实的数;是否上调见 §10 P6。
+   - zrpc 服务端 `Timeout: 10000`(`login.yaml:7-13`)的注释按「常态 Redis 毫秒级」估算。种子在常态下也是毫秒级,所以不用改。Redis 变慢时今天的路径本来就可能超 10s,种子会再多占最多 3s。
+2. **失去一个早期信号:`player-storage-placement.md` §13 第 3 条的两种违规配置**。
+   - `login.yaml:229-231`、`deploy/login-stack.linux/login.yaml:150`、`config.go:163-166` 和 `player-storage-placement.md:448` 写的症状都是「新号进游戏预加载秒级失败、存盘全进死信」。
+   - 开种子后,新号不再走预加载读,症状只剩存盘这一半:
+     - Required 开着而新号没落点:存盘全进死信(`placement_route.go:297-303`)。
+     - `NewPlayerStorageId` 指向打不开的库:写任务按 `errPlacementStoreUnavailable` 延后,不耗重试预算,一直在重试队列里转(`placement_route.go:36-37`、`key_ordered_consumer.go:2072-2107`)。今天读任务会耗尽重试,新号进不去,所以很响亮。
+   - 两种情况下玩家都能进场。进度只在 Redis 父键里(首存后不过期),不进 MySQL;Redis 丢键或合服 copy 模式失效缓存时,进度就真的丢了。
+   - 所以要求:打开种子之前,§7 第 3 步的 `missing_required` 和 `db_placement_store_open_total{result=~"error|rejected"}` 两类告警必须到位;§13 第 2、3 条的打开顺序不变。上面四处症状描述都补一句「开着 NewPlayerSeed 时只剩存盘这一半」。
+3. **Redis 内存**。未进场角色的种子和孤儿种子各约百字节,24h 后过期。进过场的玩家,父键今天就常驻。
+4. **压测口径**。开关前后,dataloader 各阶段表和 entergame preload 分布都会变。压测对比时必须注明开关状态。
+5. **注释过时**。
+   - `player_class_backfill.go:18-20`:本批一起改。
+   - `player_lifecycle.cpp:1916-1922`「CreatePlayer only writes account meta」、`player_lifecycle.cpp:2037-2041`「CreatePlayer only creates an account entry」:C++ 注释,随下一个 C++ 批次改,不为一句注释单独跑 MSBuild。
+6. **和 L-05 原文一致**。L-05 写的是「建角时写一个空的 PlayerAllData」,本方案就是这个,不是「新号标记」。
+7. **新号入场链的背压形态变了**(§6 第 21 行)。
+   - 今天新号的 apply 跑在 dispatcher worker 上,开种子后跑在 PreloadPool worker 上。
+   - 后者容量有上限,而且是非阻塞提交,池满回 `kLoginInProgress`。
+   - 这条路老玩家命中缓存时今天就在走,不是新机制;但开服首日新号占大头,池的占用时长会明显变长。
+   - L-14 压测必须观察池掉单;出现掉单就调大 `PreloadPool.Size`。
+
+## 10. 风险与待负责人拍板
+
+### 风险
+
+| # | 风险 | 处置 |
+|---|---|---|
+| R1 | 整个方案建立在「号段 id 不复用」上,这也是全系统的前提。万一复用、而 Redis 侧旧状态也没了,串档形态会从「旧行被新账号继承」变成「旧行被新角色首存覆盖」(§6 第 1 行) | 种子顺带提供了检测信号:`parent_exists` / `owner_epoch_exists` 计数 + ERROR 日志 |
+| R2 | TTL 边界(§6 第 15 行) | 默认接受;可选加固见 P4 |
+| R3 | §13 第 3 条的两种违规配置变隐蔽(§9 第 2 条) | 两类告警作为打开前置 |
+| R4 | L-06 拆 Redis 时,父键、owner_epoch、身份补齐 Lua 里的会话 / 位置 / 玩家锁键必须仍在同一实例 | 这是既有约束,种子没有新增。拆分方案里要点名这一组 |
+| R5 | 账号锁内多一次 Redis;Redis 卡顿时最坏多 3s | 正确性靠围栏,不受影响;观察 `stage="seed"` |
+| R6 | 收益没有实测 | 走 L-14 对比表;拿不出表不下性能结论 |
+| R7 | C++ 新号初始化分支没有单测 | 既有缺口,种子没新增风险;可在后续 C++ 批次补 |
+| R8 | 新号入场链改占 PreloadPool,池满回 `kLoginInProgress`(§6 第 21 行、§9 第 7 条) | L-14 看池掉单;按需调大 `PreloadPool.Size` |
+
+### 待拍板
+
+| # | 事项 | 本稿默认 |
+|---|---|---|
+| P1 | 采用方案 A(种子只带 player_id,不带身份) | 采用 |
+| P2 | id 复用信号是否升级为拒绝建角 | **只告警**。走到种子这一步时 `player:zone` 已登记;此时拒绝,会留下永久的幽灵映射(`createplayerlogic.go:257-263`) |
+| P3 | 何时在 K8s / 开服档打开 | L-14 对比表出来、告警就位之后;另起一批改 `k8s_deploy.ps1` |
+| P4 | TTL 边界加固:快路径命中、且父键剩余 TTL 低于阈值时续期 | **不做**。窗口极小,且能自愈 |
+| P5 | `missing_required` 与 `db_placement_store_open_total{result=~"error|rejected"}` 两类告警是否作为硬门禁 | 是 |
+| P6 | 开种子后 `AccountLockTTL` 是否从 20 上调到 ≥22,让「gRPC 拖满 + Redis 慢但回包」的最坏和(21s)仍被盖住(§9 第 1 条) | **不调**。20 本来就不是硬上界,正确性靠围栏;上调的代价是 login 崩溃后同账号建角被挡得更久。`k8s_deploy.ps1` 从 `login.yaml` 读这个值,要调只改 `login.yaml` 一处,K8s 自动跟随 |
+
+## 11. Java 版(AGENTS §12)
+
+**状态:不适用**(服务端内部实现不同,客户端契约不变)。
+
+- Java 建角在事务里直接插入玩家行(`game-login/.../CreatePlayerHandler.java:222` `createPlayerWithinCap`)。
+- 进场时按主键读本库:`EnterGameHandler.java:273` `findPlayer`;scene 侧 `StoragePlayerRepository.java:183-195`。
+- 所以 Java 没有「读一行不存在的数据、还要经队列同步等待」这条链,也就没有要优化的冷读。
+- 本功能不改任何客户端可见的消息、tip 码或配表。按 §12,在 `PARITY.md` 登记一行「不适用」即可。
+
+## 12. 和「全服库成了瓶颈怎么办」的关系
+
+- **「全局库」有两个,要分开看**:
+  - data_service 全局库:放名字、号段、流水、快照,以及 D1 的 `player_route`;
+  - Phase 2 的玩家主数据全局落点库 `player_store_1000000_db`。
+- **G3 处理的是后者首日唯一的同步读路径**(tidb-phase1 L-05;`db.yaml:122-124`)。打开种子后:
+  - 新号首日对全局落点库只剩异步写。它有 Kafka 削峰,积压表现为 lag,不会让玩家卡在加载屏。
+  - 老玩家的父键常驻 Redis(scene 存盘会去掉 TTL),也不冷读。
+  - 于是全局落点库从「玩家同步等待的依赖」变成了「异步落库的下游」。
+- **写侧瓶颈仍在,不归 G3 解决**:单调主键的尾部 Region、每实例 8 条的额外池、每 zone 固定 10 分区。见 tidb-phase1 §5、L-08、L-13。
+- **归属目录(D1 `player_route`)**每个玩家一生只写一次,见提案 §12。
+
+## 13. 落码清单与验证(2026-10-13)
+
+按 §10 的默认值落码:采用 A;id 复用只告警;K8s 不打开;不做 TTL 续期;两类告警作为打开前置;`AccountLockTTL` 不调。**未编译、未测试**,待 Codex 验证。
+
+**新增**
+
+| 文件 | 内容 |
+|---|---|
+| `go/login/internal/logic/pkg/dataloader/new_player_seed.go` | `newPlayerAllDataSkeleton`(冷读与种子共用)、`SeedResult`、`seedNewPlayerScript`、`SeedNewPlayerAllData` |
+| `go/login/internal/logic/pkg/dataloader/new_player_seed_test.go` | 8 个 miniredis 用例,含「种子 ≡ 冷读骨架」等价性用例 |
+| `go/login/internal/logic/clientplayerlogin/createplayer_seed.go` | `newPlayerSeedTimeout`、`(*CreatePlayerLogic).seedNewPlayer`:尽力而为,只计数和打日志 |
+| `go/login/internal/logic/clientplayerlogin/createplayer_seed_test.go` | 7 个 CreatePlayer 用例 + 1 个 EnterGame 快路径用例 |
+| `go/login/internal/config/new_player_seed_conf_test.go` | 4 个配置用例 |
+
+**修改**:`ensure_player_all_data_async.go`(骨架改调共享构造,删掉不再使用的 import)、`createplayerlogic.go`(6d' 步)、`clientplayerlogin/metrics.go`(`createStageSeed`、`login_create_player_seed_total`、预置两个 id 复用结局)、`player_class_backfill.go`(只改注释)、`config/config.go`(`NewPlayerSeed` 字段与 `NewPlayerSeedConf`)、`svc/home_zone.go`(启动日志)、`go/login/etc/login.yaml` 与 `deploy/login-stack.linux/login.yaml`(显式关闭的块、锁预算注释、Placement 第 3 条补句)、`player-storage-placement.md:448`(补句)。
+
+**不改**:C++、go/db、scene_manager、data_service、proto、`tools/scripts/k8s_deploy.ps1`。
+
+**交 Codex 的验证**(工作目录 `go/login`,串行,不需要外部服务):
+
+```powershell
+gofmt -l internal/logic/pkg/dataloader/new_player_seed.go internal/logic/pkg/dataloader/new_player_seed_test.go internal/logic/clientplayerlogin/createplayer_seed.go internal/logic/clientplayerlogin/createplayer_seed_test.go internal/config/new_player_seed_conf_test.go
+gofmt -d internal/logic/pkg/dataloader/ensure_player_all_data_async.go internal/logic/clientplayerlogin/createplayerlogic.go internal/logic/clientplayerlogin/metrics.go internal/logic/clientplayerlogin/player_class_backfill.go internal/config/config.go internal/svc/home_zone.go
+go vet ./internal/logic/pkg/dataloader/... ./internal/logic/clientplayerlogin/... ./internal/config/... ./internal/svc/...
+go build ./...
+go test ./internal/logic/pkg/dataloader/... -run "Seed|Skeleton|SeededParent" -count=1 -v
+go test ./internal/config/... -run "NewPlayerSeed|Placement|EtcYaml|LoginYaml" -count=1 -v
+go test ./internal/logic/clientplayerlogin/... -run "Seed|CreatePlayer|RegisterHomeZone|EnterGame|BackfillPlayerIdentity" -count=1 -v
+go test ./... -count=1
+```
+
+通过标准:第一条 gofmt 零输出,第二条的 diff 里没有本批改动的行;vet / build 零报错;20 个新用例全部 PASS(不得 SKIP),已有用例全绿。`-race` 本机无 gcc 时跳过并如实报告。仓库根再跑 `python tools/scripts/gen_docs_index.py --check`,退出码 0。
+
+**后续批(不在本批)**:`k8s_deploy.ps1` 的 login ConfigMap 加这一键(待 P3);C++ 三处过时注释(`player_lifecycle.cpp:1916-1922`、`:2037-2041`,`redis_client.h:103-105`);`stress_summarize.ps1` 的 dataloader 表加 hit/miss 计数列(可选)。

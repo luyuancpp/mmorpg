@@ -53,9 +53,18 @@ Player → Gate → Scene Server (任意区)
 | 消费者 | topic → 表 | 落库方式 | 坏消息 | DB 故障 |
 |--------|-----------|---------|--------|---------|
 | `transaction_log` | `transaction_log_topic_g1` → `transaction_log` | 攒批(200 条 / 200ms)一条多行 `INSERT IGNORE`,**先插库后提交 offset** | 解不出 proto / `tx_id=0`:跳过并提交 | 有界重试后**停下不提交**(宁可积压不许丢),supervisor 60s 后从断点续消费 |
-| `player_snapshot` | `player_snapshot_topic_g1` → `player_snapshot` | 逐条、按 `snapshot_guid` 单语句 `INSERT ... SELECT ... WHERE NOT EXISTS`,落 `source=1` | 解不出 / `snapshot_id=0` / `player_id=0` / 超 MEDIUMBLOB:跳过并提交 | 同上 |
+| `player_snapshot` | `player_snapshot_topic_g1` → `player_snapshot` | 每分区一个 worker(分区内 FIFO、先落库后提交本分区最高 offset);默认逐条,`Kafka.SnapshotBatchMaxRows > 1` 时多行 ODKU 批量。按 `snapshot_guid` 去重(唯一键 `uk_snapshot_guid_nz` + `ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id)`;键不在时退回逐行 `NOT EXISTS`),落 `source=1` | 解不出 / `snapshot_id=0` / `player_id=0` / 超 MEDIUMBLOB:跳过并随本批提交 | 同上;批量失败先逐条兜底,兜底也插不进去的那一行让整个消费者停在那里(与逐条同结局) |
 
 生产者是 C++ scene(全局单 topic、裸 proto、key=player_id)。启动时 `kafkautil.EnsureTopics`(transaction_log 6 分区、snapshot 3 分区、保留 30 天;分区数是不可变契约)。Kafka 不可达**不拖死** data_service:第一次尝试就在后台 goroutine 里(EnsureTopics 对半死不活的 broker 要走完 sarama 30s 拨号 + 元数据重试,同步做会把 gRPC 启动和 Load/Save 一起按住),失败只记日志、每 30s 重试。指标:`kafka_consumer_up{consumer}`、`kafka_consumer_messages_total{consumer,outcome}`;两条 `kafka_consumer_up` 序列在第一次尝试**之前**就按 0 预注册,所以"消费者从来没起来"这个状态告警得到(不预注册的话那个 child series 根本不存在,`== 0` 的告警永远不触发,监控上和"服务没部署"长得一样)。
+
+**G2a 快照审计管道扩容(2026-10-13,未经运行验证)**:`player_snapshot` 消费者改为「每分区一个 worker + 可配批量 + 实例级落库并发上限」,
+旋钮是 `Kafka.SnapshotBatchMaxRows` / `SnapshotBatchMaxBytes` / `SnapshotFlushIntervalMs` / `SnapshotMaxInflightFlushes`,**默认值 = 之前的逐条串行**
+(批 1 条、并发 1、不等待),越界拒启;打开批量要等压测对比表与内存护栏拍板。新增 `Kafka.LagProbeIntervalMs`(yaml 默认 30000):
+sarama 只读探针按 broker 视角报消费组 lag 与「保留期已删掉的未消费条数」。新指标 `kafka_consumer_flush_seconds{consumer,result}`(单次 DB 尝试)、
+`kafka_consumer_batch_rows`、`kafka_consumer_message_bytes`、`kafka_consumer_lag_messages`、`kafka_consumer_retention_gap_messages`、
+`kafka_consumer_lag_probe_total`、`kafka_consumer_isolation_total`,告警规则在 `deploy/k8s/data-service-audit-alerts.yaml`。
+全球并行度上限仍是分区数(快照 3);要扩只能离线换代,保留期在开服速率下远比 30 天先到 —— 两件事的步骤与容量算式见
+[audit-topic-generation-bump-runbook.md](../ops/audit-topic-generation-bump-runbook.md)。
 
 关停顺序:`main` 先 cancel 消费者 ctx、有界等它们退出(8s,`kafkaShutdownGrace`),**之后**才 `svcCtx.Close()` 关连接池。反过来的话 txlog 的 `flushOnShutdown` 只会拿到一个已经关掉的池,那段"关停前尽力落最后一批"等于从来没写过。等超时就照常关池:未提交的 offset 会在下次启动时重放,`tx_id` 主键与 `snapshot_guid` 去重让重放幂等。
 

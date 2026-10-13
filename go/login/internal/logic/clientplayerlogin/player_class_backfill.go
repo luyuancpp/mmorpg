@@ -16,8 +16,9 @@ import (
 )
 
 // backfillPlayerIdentity 只在首次入场前补齐存档里缺失的角色身份:旧存档漏存的职业,
-// 以及角色名副本 PlayerProfileComp.name。PlayerAllData 在建角时还不存在,首次 EnterGame
-// 才由预加载建出,所以名字只能和职业走同一条路、同一次整字节 CAS 写进去。
+// 以及角色名副本 PlayerProfileComp.name。建角不写身份:PlayerAllData 要么由首次 EnterGame 的
+// 预加载建出,要么是建角写的种子(NewPlayerSeed,只带 player_id,与冷读读空的结果相同),
+// 两种情况下名字都只能和职业走同一条路、同一次整字节 CAS 写进去。
 // 热缓存、子表缓存、DB 加载都汇入 applyLoadedPlayerSession，所以不会漏掉缓存命中。
 // 已有会话的角色仍由 scene 持有权威数据；旧账号职业为零时也不猜测职业。
 // 名字只填空缺、不覆盖已有值:v1 无改名,存档里已有的名字与注册表一致,覆盖只会制造竞态。

@@ -11,7 +11,7 @@
 //   login_queue_wait_seconds      Histogram   per zone     time from Enqueue to Lookup-admit
 //   login_queue_admit_total       Counter     per zone     dispatcher PopAdmit results
 //   login_queue_expired_total     Counter     per zone+reason  EXPIRED responses (token invalid / meta gone / etc.)
-//   login_queue_dispatcher_is_leader  Gauge   per pod      1 = this pod is the leader, 0 = standby
+//   login_queue_dispatcher_is_leader  Gauge   per pod+zone  1 = this pod leads its zone, 0 = standby
 //
 // Why only these six (and not, say, "rank histogram" or "per-gate admit
 // distribution"):
@@ -113,19 +113,18 @@ var (
 		Labels: []string{"zone", "reason"},
 	})
 
-	// dispatcherIsLeaderGauge is 1 on the pod currently holding the
-	// dispatcher leader lock, 0 elsewhere. Sum across pods should be
-	// exactly 1 in steady state; transient 0 (no leader) or 2 (split-
-	// brain after Redis flap) is expected only briefly. The pod label
-	// disambiguates which replica is leading at any moment.
+	// dispatcherIsLeaderGauge:每个副本在自己所在 zone 发布 1 或 0。稳态下
+	// sum by (zone) 恰好为 1;短暂为 0 表示没有 leader,短暂为 2 表示 Redis 抖动
+	// 或滚动升级窗口里出现了双 leader(见 login-queue-2026-05.md §7.1)。
+	// pod 标签区分此刻是哪个副本在出队;zone 是低基数标签(zone 数),不含 player_id。
 	dispatcherIsLeaderGauge = metric.NewGaugeVec(&metric.GaugeVecOpts{
 		Namespace: metricNamespace,
 		Subsystem: "",
 		Name:      "dispatcher_is_leader",
-		Help: "Whether this login pod currently holds the dispatcher leader lock " +
-			"(1=leader, 0=standby). sum(login_queue_dispatcher_is_leader) should " +
-			"be 1 in steady state.",
-		Labels: []string{"pod"},
+		Help: "Whether this login pod currently holds its zone's dispatcher leader lock " +
+			"(1=leader, 0=standby). sum by (zone) (login_queue_dispatcher_is_leader) " +
+			"should be 1 in steady state.",
+		Labels: []string{"pod", "zone"},
 	})
 )
 

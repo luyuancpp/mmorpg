@@ -310,26 +310,36 @@ func TestDeletePlayerData(t *testing.T) {
 	assert.Equal(t, uint32(1), zone)
 }
 
-func TestDeletePlayerData_WithZoneMapping(t *testing.T) {
+// TestDeletePlayerData_ZoneMappingBranchDisabled:DeleteZoneMapping=true 一律拒绝(W3,
+// docs/design/player-route-mapping-durability-proposal.md §4.3),而且**零变更** —— 拒绝必须发生在删数据键之前,
+// 否则留下"数据没了、映射还在"的半截操作。
+func TestDeletePlayerData_ZoneMappingBranchDisabled(t *testing.T) {
 	svcCtx, _ := newTestSvcCtx(t)
 	ctx := context.Background()
 	setupPlayer(t, svcCtx, 70, 2)
 
-	SavePlayerData(ctx, svcCtx, &SavePlayerDataReq{
+	_, err := SavePlayerData(ctx, svcCtx, &SavePlayerDataReq{
 		PlayerID: 70,
 		Data:     map[string][]byte{"x": []byte("y")},
 	})
+	require.NoError(t, err)
 
 	delResp, err := DeletePlayerData(ctx, svcCtx, &DeletePlayerDataReq{
 		PlayerID:          70,
 		DeleteZoneMapping: true,
 	})
-	assert.NoError(t, err)
-	assert.Equal(t, constants.ErrCodeOK, delResp.ErrorCode)
+	require.Error(t, err)
+	assert.ErrorIs(t, err, ErrZoneMappingDeletionDisabled)
+	assert.Equal(t, constants.ErrCodeNotImplemented, delResp.ErrorCode)
+	assert.Zero(t, delResp.KeysDeleted)
 
-	// Zone mapping should be gone
-	_, err = svcCtx.Router.GetPlayerHomeZone(ctx, 70)
-	assert.Error(t, err)
+	// 数据键与映射都还在。
+	value, err := GetPlayerField(ctx, svcCtx, 70, "x")
+	require.NoError(t, err)
+	assert.Equal(t, []byte("y"), value, "被拒绝的删除不得先删掉数据键")
+	zone, err := svcCtx.Router.GetPlayerHomeZone(ctx, 70)
+	require.NoError(t, err)
+	assert.Equal(t, uint32(2), zone, "映射不得被删")
 }
 
 func TestDeletePlayerData_ExpiredOwnerCannotDeleteDataOrMapping(t *testing.T) {

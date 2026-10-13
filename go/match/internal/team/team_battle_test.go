@@ -645,7 +645,7 @@ func TestEndMatchStopsWithoutWriting(t *testing.T) {
 
 	// token 不符(锁已被清或重新加锁):停止、不写,仍给队员推一次当前视图(锁仍有效 → STARTING)。
 	before := b.mr.Dump()
-	b.service.finishMatch(b.teamId, "tok-B", true, roster, nil)
+	b.service.finishMatch(b.teamId, "tok-B", testLockSeconds*time.Second, true, roster, nil)
 	require.Equal(t, before, b.mr.Dump())
 	current := snapshotsByReason(t, b.takePushes(), teampb.TeamChangeReason_TEAM_CHANGE_REASON_MATCH_ENDED)
 	require.ElementsMatch(t, roster, pushedTo(current))
@@ -653,18 +653,18 @@ func TestEndMatchStopsWithoutWriting(t *testing.T) {
 		require.Equal(t, teampb.TeamMatchState_TEAM_MATCH_STATE_STARTING, s.GetTeam().GetMatchState())
 		require.Equal(t, lock.Commit.Version, s.GetTeam().GetVersion())
 	}
-	require.Equal(t, EndMatchTokenMismatch, store.EndMatch(b.teamId, "tok-B", true).Stop)
+	require.Equal(t, EndMatchTokenMismatch, store.EndMatch(b.teamId, "tok-B", true, testLockSeconds*time.Second).Stop)
 
 	// 锁已按 Redis 时钟过期:停止、不写。
 	setRedisMs(b.mr, snap.NowMs+testLockSeconds*1000)
 	before = b.mr.Dump()
-	res := store.EndMatch(b.teamId, "tok-A", false)
+	res := store.EndMatch(b.teamId, "tok-A", false, testLockSeconds*time.Second)
 	require.Equal(t, EndMatchLockExpired, res.Stop)
 	require.Nil(t, res.Commit)
 	require.Equal(t, before, b.mr.Dump())
 
 	// 记录不存在:停止、不写。
-	res = store.EndMatch(99_999, "tok-A", true)
+	res = store.EndMatch(99_999, "tok-A", true, testLockSeconds*time.Second)
 	require.Equal(t, EndMatchRecordMissing, res.Stop)
 	require.Equal(t, before, b.mr.Dump())
 	require.Empty(t, b.sleeps, "停止分支不退避")

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"shared/placement"
+
 	"github.com/zeromicro/go-zero/core/stores/redis"
 	"github.com/zeromicro/go-zero/zrpc"
 )
@@ -21,8 +23,12 @@ type Config struct {
 	// Login admin gRPC client (for orphan account cleanup during rollback)
 	LoginAdminRpc zrpc.RpcClientConf `json:",optional"`
 
-	// AdminToken 是运维专用 RPC(目前只有 RemapHomeZoneForMerge —— 一次调用能改写
-	// 全服玩家的归属 zone)的共享口令,调用方放在 gRPC metadata 的 `x-admin-token` 里。
+	// AdminToken 是运维专用 RPC 的共享口令,调用方放在 gRPC metadata 的 `x-admin-token` 里。
+	//
+	// **2026-10-12 起 RemapHomeZoneForMerge 已停用**(docs/design/player-route-mapping-durability-proposal.md §4.3):
+	// 不论带不带 token、token 对不对,一律回 FailedPrecondition + ErrCodeNotImplemented,改映射只走 tools/merge_zone。
+	// 所以这个 token 现在只守三个回档 RPC 与 ReleasePlayerName 的运维路径(不限登记时间的释放)。
+	// 下面关于 remap 的几段保留为历史理由 —— 它们同样适用于回档:
 	//
 	// **空 = 该 RPC 整体停用**(fail closed),不是"免鉴权"。理由:data_service 在集群
 	// 内网是无鉴权可达的,任何一个能拨到它的进程都能调 remap;默认敞开意味着一次误配
@@ -30,9 +36,7 @@ type Config struct {
 	// (改回去要先知道谁原本在哪个 zone,而那份信息刚被覆盖掉)。所以默认值只能是
 	// "不能用",启用是一次显式的运维动作:合服维护窗口里临时下发,窗口结束就撤掉。
 	//
-	// 不放进 yaml 明文的话可以用 k8s Secret 挂成环境变量再由 ConfigMap 引用;
-	// 无论哪种,它都只与 remap 这一个接口有关,泄露的后果止于"能在已封锁的 zone 上
-	// 跑一次 remap"——闸门标记仍是第二道锁(见 RemapHomeZoneForMerge 的前置条件)。
+	// 不放进 yaml 明文的话可以用 k8s Secret 挂成环境变量再由 ConfigMap 引用。
 	//
 	// 2026-09-28 起三个回档 RPC(RollbackPlayer / RollbackZone / RollbackAll)也一律要求它
 	// (docs/design/guild-phase2/07-rollback-fail-closed.md §7.6.3 Q2 = ②):没配 = 回档 RPC 同样整体停用。
@@ -45,12 +49,17 @@ type Config struct {
 	// See go/data_service/internal/metrics/metrics.go for the metric list.
 	MetricsListenAddr string `json:",optional"`
 
-	// Schema 控制全局库(SnapshotMySQL)五张表的建表/补列路径,见 internal/store/schema.go。
+	// Schema 控制全局库(SnapshotMySQL)各表的建表/补列路径:proto 驱动的五张(其中 id_segment、player_name
+	// 走手写 bootstrap DDL)+ 还没有 proto、同样走手写 DDL 的路由表(player_route 等),见 internal/store/schema.go。
 	// 整段可缺失,缺失语义见 SchemaConfig.AutoMigrate 与 ShouldAutoMigrate。
 	Schema SchemaConfig `json:",optional"`
 
 	// Store 见 StoreConfig。
 	Store StoreConfig `json:",optional"`
+
+	// RouteStore 是玩家归属 / 落点映射的提交点(redis | db_first),见 RouteStoreConfig。
+	// 整段可缺失:缺失 = redis 模式,与 2026-10-12 之前逐字相同。
+	RouteStore RouteStoreConfig `json:",optional"`
 
 	// Kafka 是 C++ scene 产出的 transaction_log_topic / player_snapshot_topic 的落库消费者
 	// 配置。Brokers 为空 = 不消费(本地无 Kafka 时的合法形态);消费者启动失败不会拖死
@@ -240,6 +249,159 @@ type StoreConfig struct {
 	Required bool `json:",optional"`
 }
 
+// ── 玩家归属 / 落点映射的提交点(docs/design/player-route-mapping-durability-proposal.md §4、§11.2,第 1a 批)──
+
+// RouteStoreModeRedis:与 2026-10-12 之前逐字相同,mapping Redis 里那段 SETNX Lua 就是提交点。缺省值。
+const RouteStoreModeRedis = "redis"
+
+// RouteStoreModeDBFirst:先在全局库 player_route 提交(store.RouteStore.RegisterHome),再按 maprev
+// set-if-newer 发布到 mapping Redis 并等 WAITAOF 确认落盘(routing/route_publish.go)。
+//
+// **第 1a 批只能在冻结窗口内打开**:merge_zone 在第 2 批之前仍只写 Redis、从不写 zone_merge_fence,
+// 库内合服围栏恒不生效;从任一副本切到 db_first 起到第 2 批落地为止,禁止 merge_zone 任何写模式
+// (merge / unmerge / relocate / pin-placement / backfill)。提交点的围栏复核靠发布脚本里的 merge:in_progress。
+const RouteStoreModeDBFirst = "db_first"
+
+// RouteStore 段各键的默认值(Normalize 照抄这一份;etc/data_service.yaml 写的就是它们)。
+// FenceShards 的默认值与上限在 shared/placement(DefaultRouteFenceShards / MaxRouteFenceShards),那里同时是围栏持有者的契约。
+const (
+	DefaultRouteStoreMaxOpenConn        = 20
+	DefaultRouteStoreMaxIdleConn        = 5
+	DefaultRouteStorePublishAttempts    = 3
+	DefaultRouteStoreWaitAOFNumLocal    = 1
+	DefaultRouteStoreWaitAOFNumReplicas = 0
+	DefaultRouteStoreWaitAOFTimeoutMs   = 1500
+)
+
+// RouteStore 段的上界(Validate 用)。WaitAOFTimeoutMs 的上界 = 服务端默认超时 2000ms 减去库这一段与回包的余量
+// (yaml 没配 Timeout,go-zero 默认 2000ms;go-redis 默认 ReadTimeout 3s,更大的值会先被客户端读超时截断)。
+const (
+	MaxRouteStorePublishAttempts    = 5
+	MaxRouteStoreWaitAOFNumReplicas = 16
+	MaxRouteStoreWaitAOFTimeoutMs   = 1500
+)
+
+// RouteStoreConfig 是映射提交点的运行参数。整段可缺失。
+//
+// 【为什么零值 = "没配"、默认值由 Normalize 填】理由同 PlayerNameConfig:go-zero 不下钻一个未出现的
+// optional 结构,default 标签一个都不会回填。WaitAOF 两项用 *int 而不是 int,理由同 SchemaConfig.AutoMigrate:
+// 它们的安全默认值(本地落盘 1)不是零值,而"显式写 0"又有合法语义(不发 WAITAOF,只给没开 AOF 的环境 / 单测),
+// 必须把"没写"与"写了 0"分开。
+//
+// 【为什么配错拒启而不是纠正】理由同 PlayerNameConfig.Validate:Mode 拼成 `DB_FIRST` / `db-first` 被悄悄当成
+// redis,运维以为切了提交点而实际没切,这种偏差不报错也没有日志。Mode 不论取哪个值,任何一项非法都拒启。
+type RouteStoreConfig struct {
+	// Mode:redis(缺省)| db_first,大小写敏感。
+	Mode string `json:",optional"`
+	// FenceShards:zone_merge_fence 每个 zone 的分片数,[1, placement.MaxRouteFenceShards];0 = 默认 8。
+	// 建角只锁 player_id % N 那一片;各副本取值可以不同(围栏持有者按上限写满全部分片)。
+	FenceShards int `json:",optional"`
+	// MaxOpenConn / MaxIdleConn:route store **独立**连接池(会话级 RC + 锁等待 1s,不能与别的 store 共用池)。
+	MaxOpenConn int `json:",optional"`
+	MaxIdleConn int `json:",optional"`
+	// PublishAttempts:一次发布(脚本 + WAITAOF)的尝试上限,[1, 5];只有网络错误与"落盘副本数不足"才重试。
+	PublishAttempts int `json:",optional"`
+	// WaitAOFNumLocal / WaitAOFNumReplicas:WAITAOF 的两个参数。nil = 默认 1 / 0;两者都显式写 0 = 不发 WAITAOF。
+	// redis-ha 档(有副本)NumReplicas 要写 1。
+	WaitAOFNumLocal    *int `json:",optional"`
+	WaitAOFNumReplicas *int `json:",optional"`
+	// WaitAOFTimeoutMs:WAITAOF 的等待上限(毫秒),[1, 1500];0 = 默认 1500。实际取 min(本值, ctx 剩余 − 100ms)。
+	// 默认不是 1000:appendfsync everysec 下本地确认最长要等到下一次 fsync(约 1s)再加事件循环延迟,
+	// 1000ms 正压在边界上,会系统性地抬高"已提交未确认"的比例(规格 d 节 M2)。
+	WaitAOFTimeoutMs int `json:",optional"`
+}
+
+// Normalize 返回一份把"没配"(零值 / nil)换成默认值的副本。负数不纠正,交给 Validate 拒绝。
+// 刻意返回值而不是原地改(同 PlayerNameConfig.Normalize);指针字段只在 nil 时换成新指针,不改调用方指向的值。
+func (r RouteStoreConfig) Normalize() RouteStoreConfig {
+	if r.Mode == "" {
+		r.Mode = RouteStoreModeRedis
+	}
+	if r.FenceShards == 0 {
+		r.FenceShards = int(placement.DefaultRouteFenceShards)
+	}
+	if r.MaxOpenConn == 0 {
+		r.MaxOpenConn = DefaultRouteStoreMaxOpenConn
+	}
+	if r.MaxIdleConn == 0 {
+		r.MaxIdleConn = DefaultRouteStoreMaxIdleConn
+	}
+	if r.PublishAttempts == 0 {
+		r.PublishAttempts = DefaultRouteStorePublishAttempts
+	}
+	if r.WaitAOFNumLocal == nil {
+		v := DefaultRouteStoreWaitAOFNumLocal
+		r.WaitAOFNumLocal = &v
+	}
+	if r.WaitAOFNumReplicas == nil {
+		v := DefaultRouteStoreWaitAOFNumReplicas
+		r.WaitAOFNumReplicas = &v
+	}
+	if r.WaitAOFTimeoutMs == 0 {
+		r.WaitAOFTimeoutMs = DefaultRouteStoreWaitAOFTimeoutMs
+	}
+	return r
+}
+
+// Validate 检查(通常是 Normalize 之后的)取值。任何一项非法都返回 error,与 Mode 无关:
+// redis 模式下这些键暂时不生效,但一份"切到 db_first 才会炸"的配置不该等到切换那一刻才被发现。
+func (r RouteStoreConfig) Validate() error {
+	if r.Mode != RouteStoreModeRedis && r.Mode != RouteStoreModeDBFirst {
+		return fmt.Errorf("RouteStore.Mode %q must be exactly %q or %q (case-sensitive; a typo must not silently fall back to redis)",
+			r.Mode, RouteStoreModeRedis, RouteStoreModeDBFirst)
+	}
+	if r.FenceShards < 1 || r.FenceShards > int(placement.MaxRouteFenceShards) {
+		return fmt.Errorf("RouteStore.FenceShards must be in [1, %d], got %d", placement.MaxRouteFenceShards, r.FenceShards)
+	}
+	if r.MaxOpenConn <= 0 {
+		return fmt.Errorf("RouteStore.MaxOpenConn must be positive, got %d", r.MaxOpenConn)
+	}
+	if r.MaxIdleConn < 0 || r.MaxIdleConn > r.MaxOpenConn {
+		// database/sql 会**静默**把 idle 压到 open,配置与实际行为从此对不上(同 PlayerNameConfig)。
+		return fmt.Errorf("RouteStore.MaxIdleConn must be in [0, MaxOpenConn=%d], got %d", r.MaxOpenConn, r.MaxIdleConn)
+	}
+	if r.PublishAttempts < 1 || r.PublishAttempts > MaxRouteStorePublishAttempts {
+		return fmt.Errorf("RouteStore.PublishAttempts must be in [1, %d], got %d", MaxRouteStorePublishAttempts, r.PublishAttempts)
+	}
+	if local := r.NumLocal(); local != 0 && local != 1 {
+		return fmt.Errorf("RouteStore.WaitAOFNumLocal must be 0 or 1, got %d", local)
+	}
+	if replicas := r.NumReplicas(); replicas < 0 || replicas > MaxRouteStoreWaitAOFNumReplicas {
+		return fmt.Errorf("RouteStore.WaitAOFNumReplicas must be in [0, %d], got %d", MaxRouteStoreWaitAOFNumReplicas, replicas)
+	}
+	if r.WaitAOFTimeoutMs < 1 || r.WaitAOFTimeoutMs > MaxRouteStoreWaitAOFTimeoutMs {
+		return fmt.Errorf("RouteStore.WaitAOFTimeoutMs must be in [1, %d] (WAITAOF timeout 0 blocks forever; the cap leaves room inside the 2000ms server budget), got %d",
+			MaxRouteStoreWaitAOFTimeoutMs, r.WaitAOFTimeoutMs)
+	}
+	return nil
+}
+
+// DBFirst 报告提交点是否在全局库(db_first)。
+func (r RouteStoreConfig) DBFirst() bool {
+	return r.Mode == RouteStoreModeDBFirst
+}
+
+// WaitsForAOF 报告发布之后要不要发 WAITAOF:两项都是 0(显式写的)才不发。
+func (r RouteStoreConfig) WaitsForAOF() bool {
+	return r.NumLocal() > 0 || r.NumReplicas() > 0
+}
+
+// NumLocal 是 WAITAOF 的 numlocal;没配(nil)= 默认 1。
+func (r RouteStoreConfig) NumLocal() int {
+	if r.WaitAOFNumLocal == nil {
+		return DefaultRouteStoreWaitAOFNumLocal
+	}
+	return *r.WaitAOFNumLocal
+}
+
+// NumReplicas 是 WAITAOF 的 numreplicas;没配(nil)= 默认 0。
+func (r RouteStoreConfig) NumReplicas() int {
+	if r.WaitAOFNumReplicas == nil {
+		return DefaultRouteStoreWaitAOFNumReplicas
+	}
+	return *r.WaitAOFNumReplicas
+}
+
 // SchemaConfig 建表策略。
 type SchemaConfig struct {
 	// AutoMigrate 缺省(nil)= true:启动时用 proto2mysql 按 proto 定义对五张表逐张
@@ -247,6 +409,9 @@ type SchemaConfig struct {
 	// 其中 id_segment 与 player_name 两张走 schema.go 的手写 bootstrap DDL
 	// (proto2mysql 把 string 渲染成 MEDIUMTEXT,TEXT 列上建不了唯一键),
 	// 迁移对它们只做列漂移校验。
+	// 另有还没有 proto 的路由表(player_route / zone_merge_fence / zone_merged_into / route_meta / route_reconcile,
+	// 2026-10-12 映射持久化第 1a 批与 G1a 热点修复)同样走手写 DDL,迁移只守列名与主键,并种 route_meta / route_reconcile(id=1)。
+	// **redis 模式也依赖它们**:这一步失败时快照 / 流水 / 号段 / 名字四个 store 一并不装配(规格 g.3 第 8 条)。
 	//
 	// 生产必须显式设 false:存量大表上的 ALTER 会持有 MDL,阻塞期间所有 GM 回滚/流水查询停摆,
 	// 这种事不该发生在某个副本的启动路径上;改为部署阶段显式跑一次 `data_service -f <yaml> -migrate`
@@ -274,7 +439,12 @@ func (c Config) ShouldAutoMigrate() bool {
 }
 
 // KafkaConfig 两条落库消费者的参数。分区数是不可变契约(kafkautil.EnsureTopics
-// 会拒绝与 broker 现状不一致的值),现在就定够:transaction_log 6、snapshot 3。
+// 会拒绝与 broker 现状不一致的值):transaction_log 6、snapshot 3。要改只能离线换代
+// (TopicGeneration +1,停写 → 排空 → 三方同改),步骤见 docs/ops/audit-topic-generation-bump-runbook.md。
+//
+// 末尾五个键(Snapshot* 与 LagProbeIntervalMs,G2a)是 player_snapshot 消费者的批量 / 并发旋钮与 lag 探针。
+// 它们没有 default 标签、零值 = "没配",由 Normalize 填默认、ValidateConsumers 拒绝越界值 ——
+// 理由同 RouteStoreConfig:go-zero 不下钻一个未出现的 optional 结构,default 标签在整段 Kafka 缺失时一个都不回填。
 type KafkaConfig struct {
 	Brokers []string `json:",optional"`
 
@@ -298,14 +468,99 @@ type KafkaConfig struct {
 	TransactionLogPartitions    int32  `json:",default=6"`
 	TransactionLogConsumerGroup string `json:",default=data_service-transaction-log"`
 
-	// SnapshotTopic 同上;单条消息几百 KB,消费者不攒批。
+	// SnapshotTopic 同上。单条消息(整份 PlayerAllData)代码注释估几百 KB、未实测;是否攒批由下面的
+	// SnapshotBatchMaxRows 决定,默认 1 = 逐条落、逐条提交(2026-10-12 之前的行为)。
 	SnapshotTopic         string `json:",default=player_snapshot_topic"`
 	SnapshotPartitions    int32  `json:",default=3"`
 	SnapshotConsumerGroup string `json:",default=data_service-player-snapshot"`
 
 	// RetentionMs 两个 topic 的保留期,默认 30 天。审计数据宁可积压不许丢:
 	// 消费者停下(DB 长时间不可用)期间的消息要在这个窗口内被补消费掉。
+	// 注意它不是先到的上限:broker 的每分区 log.retention.bytes(prod 512MiB)在开服速率下几十秒到几分钟就能到,
+	// 积压超过它的未消费快照会被删(本服务只检测,见 data_service_kafka_consumer_retention_gap_messages)。
 	RetentionMs int64 `json:",default=2592000000"`
+
+	// SnapshotBatchMaxRows:player_snapshot 每个分区一批最多多少条消息(含被跳过的坏消息),[1, MaxSnapshotBatchMaxRows]。
+	// 0 = 没配 = 1(逐条,现状)。>1 时多行 ODKU 一条语句落库、成功后提交本批最高 offset;批量失败自动逐条兜底。
+	SnapshotBatchMaxRows int `json:",optional"`
+	// SnapshotBatchMaxBytes:一批 data 字节的**软上限**,[MinSnapshotBatchMaxBytes, MaxSnapshotBatchMaxBytes];
+	// 0 = 没配 = DefaultSnapshotBatchMaxBytes。每加入一条后检查,累计 >= 它即落库,所以一批最多超出「一条消息」的大小。
+	SnapshotBatchMaxBytes int `json:",optional"`
+	// SnapshotFlushIntervalMs:批非空后最多再等多久凑批,[0, MaxSnapshotFlushIntervalMs];0 = 不等,只拼已排队的消息。
+	SnapshotFlushIntervalMs int `json:",optional"`
+	// SnapshotMaxInflightFlushes:本实例同时落库的分区数上限(信号量),[1, max(1, SnapshotMySQL.MaxOpenConn−1)];0 = 没配 = 1。
+	// 上限留一条连接:快照池同时服务 GM 快照 / 回档读,积压时不能被消费者占满;本旋钮也不新增任何 MySQL 连接。
+	SnapshotMaxInflightFlushes int `json:",optional"`
+	// LagProbeIntervalMs:消费组 lag / 保留期丢失量探针的周期,0 = 关,否则 [MinLagProbeIntervalMs, MaxLagProbeIntervalMs]。
+	// 只读 broker 元数据、不碰消费与落库;关掉时积压 / 保留期告警全部是哑的。
+	LagProbeIntervalMs int `json:",optional"`
+}
+
+// Kafka 段 G2a 五个键的默认值与边界(Normalize / ValidateConsumers 照抄这一份;etc/data_service.yaml 与 runbook 引用它)。
+const (
+	DefaultSnapshotBatchMaxBytes = 4 << 20
+	// MaxSnapshotBatchMaxRows 与 store.MaxSnapshotBatchRows 相等(单测钉住):超过它的批会被 store 拒绝,
+	// 每一批都退回逐条兜底,静默变慢。
+	MaxSnapshotBatchMaxRows  = 256
+	MinSnapshotBatchMaxBytes = 64 << 10
+	// MaxSnapshotBatchMaxBytes 远低于 MySQL 8.0 默认 max_allowed_packet 64MiB,也低于 TiDB txn-total-size-limit 100MB;
+	// 但**高于** TiKV raft-entry-max-size 默认 8MB —— 今天 TiDB 上建不出唯一键、批量不生效(退路逐行);将来 TiDB 形态的
+	// 去重让批量在 TiDB 上生效时,批字节须 <= 4MiB(超了由消费者的逐条兜底接住,不会卡死,只是变慢)。
+	// 调大前还要核对目标库的 innodb_redo_log_capacity:单事务 BLOB 不得超过其 10%(默认 100MB → 10MB)。
+	MaxSnapshotBatchMaxBytes   = 32 << 20
+	MaxSnapshotFlushIntervalMs = 5000
+	MinLagProbeIntervalMs      = 5000
+	MaxLagProbeIntervalMs      = 600000
+
+	// snapshotPoolFallbackMaxOpen 是 SnapshotMySQL.MaxOpenConn <= 0 时快照池的实际上限,
+	// 与 store/mysql.go openMySQLWithDSN 的回落值相同(那里写死 5)。
+	snapshotPoolFallbackMaxOpen = 5
+)
+
+// Normalize 返回一份把 G2a 五个键的"没配"(零值)换成默认值的副本;已有键(TopicGeneration 等)的语义不在这里动。
+// 负数不纠正,交给 ValidateConsumers 拒绝(同 RouteStoreConfig.Normalize)。
+func (k KafkaConfig) Normalize() KafkaConfig {
+	if k.SnapshotBatchMaxRows == 0 {
+		k.SnapshotBatchMaxRows = 1
+	}
+	if k.SnapshotBatchMaxBytes == 0 {
+		k.SnapshotBatchMaxBytes = DefaultSnapshotBatchMaxBytes
+	}
+	if k.SnapshotMaxInflightFlushes == 0 {
+		k.SnapshotMaxInflightFlushes = 1
+	}
+	// SnapshotFlushIntervalMs / LagProbeIntervalMs 的零值本身就是合法语义(不等待 / 不探),不改。
+	return k
+}
+
+// ValidateConsumers 检查(通常是 Normalize 之后的)G2a 五个键。snapshotPoolMaxOpen 传 SnapshotMySQL.MaxOpenConn
+// (<= 0 时按快照池的实际回落值 5 算)。任何一项越界都返回 error,与 Brokers 是否为空无关:
+// 一份"开 Kafka 才炸"的配置不该等到开的那一刻才被发现(同 RouteStoreConfig.Validate)。
+func (k KafkaConfig) ValidateConsumers(snapshotPoolMaxOpen int) error {
+	if k.SnapshotBatchMaxRows < 1 || k.SnapshotBatchMaxRows > MaxSnapshotBatchMaxRows {
+		return fmt.Errorf("Kafka.SnapshotBatchMaxRows must be in [1, %d], got %d", MaxSnapshotBatchMaxRows, k.SnapshotBatchMaxRows)
+	}
+	if k.SnapshotBatchMaxBytes < MinSnapshotBatchMaxBytes || k.SnapshotBatchMaxBytes > MaxSnapshotBatchMaxBytes {
+		return fmt.Errorf("Kafka.SnapshotBatchMaxBytes must be in [%d, %d], got %d",
+			MinSnapshotBatchMaxBytes, MaxSnapshotBatchMaxBytes, k.SnapshotBatchMaxBytes)
+	}
+	if k.SnapshotFlushIntervalMs < 0 || k.SnapshotFlushIntervalMs > MaxSnapshotFlushIntervalMs {
+		return fmt.Errorf("Kafka.SnapshotFlushIntervalMs must be in [0, %d], got %d", MaxSnapshotFlushIntervalMs, k.SnapshotFlushIntervalMs)
+	}
+	pool := snapshotPoolMaxOpen
+	if pool <= 0 {
+		pool = snapshotPoolFallbackMaxOpen
+	}
+	maxInflight := max(1, pool-1)
+	if k.SnapshotMaxInflightFlushes < 1 || k.SnapshotMaxInflightFlushes > maxInflight {
+		return fmt.Errorf("Kafka.SnapshotMaxInflightFlushes must be in [1, %d] (SnapshotMySQL pool %d minus one connection kept for GM snapshot / rollback reads), got %d",
+			maxInflight, pool, k.SnapshotMaxInflightFlushes)
+	}
+	if k.LagProbeIntervalMs != 0 && (k.LagProbeIntervalMs < MinLagProbeIntervalMs || k.LagProbeIntervalMs > MaxLagProbeIntervalMs) {
+		return fmt.Errorf("Kafka.LagProbeIntervalMs must be 0 (off) or in [%d, %d], got %d",
+			MinLagProbeIntervalMs, MaxLagProbeIntervalMs, k.LagProbeIntervalMs)
+	}
+	return nil
 }
 
 // EffectiveTransactionLogTopic 是消费者与 EnsureTopics 真正使用的 topic 名。

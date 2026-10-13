@@ -2,16 +2,20 @@ package svc
 
 import (
 	"context"
+	"database/sql"
 	"errors"
+	"os"
 	"time"
 
 	"data_service/internal/config"
 	"data_service/internal/guildcheck"
+	"data_service/internal/metrics"
 	"data_service/internal/routing"
 	"data_service/internal/store"
 
 	guildpb "proto/guild"
 	loginpb "proto/login"
+	"shared/sqlpoolstats"
 
 	"github.com/zeromicro/go-zero/core/logx"
 	"github.com/zeromicro/go-zero/zrpc"
@@ -24,6 +28,9 @@ type SnapshotStore interface {
 	InsertSnapshot(context.Context, *store.SnapshotRow) (uint64, error)
 	// InsertSnapshotIfGuidAbsent 是 player_snapshot_topic 消费者的落库入口(source=1,按 guid 去重)。
 	InsertSnapshotIfGuidAbsent(context.Context, *store.SnapshotRow) (uint64, bool, error)
+	// InsertSnapshotsIfGuidAbsent 是 player_snapshot_topic 消费者的批量入口(G2a;返回新插入行数,批内与库内重复都不计)。
+	// data_service.go 把本接口的值直接交给 kafka.Start 的 SnapshotSink,接口少了它就编译不过。
+	InsertSnapshotsIfGuidAbsent(context.Context, []*store.SnapshotRow) (int64, error)
 	GetSnapshotByID(context.Context, uint64) (*store.SnapshotRow, error)
 	GetLatestSnapshotBefore(context.Context, uint64, uint64) (*store.SnapshotRow, error)
 	ListSnapshotsMeta(context.Context, uint64, uint64, uint32) ([]*store.SnapshotMeta, error)
@@ -66,6 +73,18 @@ type PlayerNameStore interface {
 	BatchGet(ctx context.Context, playerIDs []uint64) (map[uint64]string, error)
 }
 
+// PlayerRouteStore 是玩家归属 / 落点映射的持久层(docs/design/player-route-mapping-durability-proposal.md,第 1a 批)。
+//
+// RegisterHome 那一半由消费方 routing 定义(routing.RouteStore:路由器只需要它),这里再加 Close 让
+// ServiceContext 能收尾;*store.RouteStore 逐字满足,装配处不需要任何适配。用接口而不是具体类型,
+// 理由同上面几个 store:单测可以注入假实现验证 db_first 的编排与 fail-closed 行为。
+//
+// 只在 RouteStore.Mode=db_first 时装配;redis 模式下恒为 nil,也没有任何代码读它。
+type PlayerRouteStore interface {
+	routing.RouteStore
+	Close() error
+}
+
 // ErrRollbackTargetOnline 由 RollbackFence 实现在目标仍在线、正在登录，或旧
 // epoch 写入尚未排空时返回。logic 层据此向调用方返回 ErrCodePlayerOnline。
 var ErrRollbackTargetOnline = errors.New("rollback target is online or has active writes")
@@ -91,6 +110,10 @@ type ServiceContext struct {
 	RollbackFence    RollbackFence
 	LoginAdminClient loginpb.LoginAdminClient // nil when not configured
 
+	// PlayerRouteStore 是 db_first 下 RegisterPlayerZone 的库内提交点(已经注入进 Router,这里只为 Close 与
+	// MissingStores 留一份引用)。nil = redis 模式,或 db_first 但没装配起来(此时 RegisterPlayerZone fail-closed)。
+	PlayerRouteStore PlayerRouteStore
+
 	// GuildDivergence 是回档闸问 guild 的接缝(docs/design/guild-phase2/07-rollback-fail-closed.md §7.5.1)。
 	//
 	// ⚠ **nil = 未配置 = 三个 Rollback* 一律拒绝**(ErrCodeRollbackGuildCheckFailed,零写入,放行无效)。
@@ -108,6 +131,10 @@ type ServiceContext struct {
 // 部署阶段跑 `data_service -migrate`,那条路不设时限)。
 const autoMigrateTimeout = 5 * time.Minute
 
+// routePublishProbeMargin 是 db_first 装配时 WAITAOF 能力探针在 WaitAOFTimeoutMs 之外多给的时间
+// (连 mapping Redis、PING、回包)。
+const routePublishProbeMargin = 3 * time.Second
+
 // MySQLConfigOf 把 yaml 的 SnapshotMySQL 段转成 store 的连接参数;main 的 -migrate 入口也用它。
 func MySQLConfigOf(c config.Config) store.MySQLConfig {
 	return store.MySQLConfig{
@@ -122,6 +149,7 @@ func MySQLConfigOf(c config.Config) store.MySQLConfig {
 
 // MissingStores 返回没装配起来的 MySQL store 的名字(固定顺序);全部就绪时返回 nil。
 // main 在 Store.Required=true 时据此拒绝启动(见 config.StoreConfig)。
+// player_route 只在 RouteStore.Mode=db_first 时才是必需的:redis 模式根本不装配它,不能算缺。
 func (s *ServiceContext) MissingStores() []string {
 	var missing []string
 	if s.SnapshotStore == nil {
@@ -136,6 +164,9 @@ func (s *ServiceContext) MissingStores() []string {
 	if s.PlayerNameStore == nil {
 		missing = append(missing, "player_name")
 	}
+	if s.Config.RouteStore.DBFirst() && s.PlayerRouteStore == nil {
+		missing = append(missing, "player_route")
+	}
 	return missing
 }
 
@@ -146,6 +177,8 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	// ServiceContext.Config 是 logic 层唯一的配置来源,规范化放在这里,读取点就不必
 	// 各自兜底(那种兜底迟早有人漏掉,而漏掉的症状是缓存静默失效,没人会注意到)。
 	c.PlayerName = c.PlayerName.Normalize()
+	// RouteStore 段同理(零值 = 没配);合法性 main 启动时已校验,routing.NewRouter 还会再校验一次(非法即 panic)。
+	c.RouteStore = c.RouteStore.Normalize()
 
 	mysqlCfg := MySQLConfigOf(c)
 
@@ -219,6 +252,11 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		}
 	}
 
+	// 映射提交点的库(docs/design/player-route-mapping-durability-proposal.md §4,第 1a 批):只在 db_first 时装配。
+	// 失败只记 ERROR、保持 nil:RegisterPlayerZone 届时 fail-closed(ErrRouteStore),Store.Required=true 时
+	// MissingStores 带上 "player_route",main 拒启。
+	playerRouteStore := newPlayerRouteStore(c, mysqlCfg, schemaReady)
+
 	// Optional: login admin gRPC client for orphan account cleanup during rollback
 	var loginClient loginpb.LoginAdminClient
 	if c.LoginAdminRpc.Etcd.Key != "" {
@@ -227,16 +265,74 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		logx.Info("[ServiceContext] login admin RPC client connected")
 	}
 
+	// 只有 store 非 nil 时才注入(规格 d 节「nil 接口陷阱」):newPlayerRouteStore 的失败分支返回字面量 nil,
+	// 这里的判空才可靠;若改成先赋给 *store.RouteStore 再转接口,就会得到「非 nil 接口包着 nil 指针」,
+	// 路由器的判空拦不住、调用即 panic。
+	var routerOpts []routing.RouterOption
+	if playerRouteStore != nil {
+		routerOpts = append(routerOpts, routing.WithRouteStore(playerRouteStore))
+	}
+
 	return &ServiceContext{
 		Config:           c,
-		Router:           routing.NewRouter(c),
+		Router:           routing.NewRouter(c, routerOpts...),
 		SnapshotStore:    snapshotStore,
 		TxLogStore:       transactionLogStore,
 		IdSegmentStore:   idSegmentStore,
 		PlayerNameStore:  playerNameStore,
+		PlayerRouteStore: playerRouteStore,
 		LoginAdminClient: loginClient,
 		GuildDivergence:  newGuildDivergenceChecker(c),
 	}
+}
+
+// newPlayerRouteStore 装配 db_first 的库内提交点。redis 模式、启动期迁移失败(schemaReady=false)、
+// 或 mapping Redis 过不了 WAITAOF 能力探针(routing.ProbeWaitAOF)时返回 nil。
+//
+// 连接参数用全局库(MySQLConfigOf),池大小覆盖为 RouteStore 段的值 —— route store 的会话变量(RC + 锁等待 1s)
+// 不能带给别的 store,所以它总是自己开池(store.NewRouteStore)。写者标识 "data_service@{hostname}" 写进
+// player_route.updated_by,排障时能看出是哪个副本写的;hostname 取不到时 NewRouteWriterID 用 "unknown"。
+// 返回值是接口:只在成功时把 *store.RouteStore 赋进去,失败分支一律返回字面量 nil(不会包出 nil 指针)。
+func newPlayerRouteStore(c config.Config, mysqlCfg store.MySQLConfig, schemaReady bool) PlayerRouteStore {
+	if !c.RouteStore.DBFirst() {
+		return nil
+	}
+	if !schemaReady {
+		logx.Errorf("[ServiceContext] RouteStore.Mode=db_first but the schema migration failed; route store not assembled (RegisterPlayerZone will fail closed)")
+		return nil
+	}
+	if err := c.RouteStore.Validate(); err != nil {
+		logx.Errorf("[ServiceContext] route store init failed (RegisterPlayerZone will fail closed): invalid RouteStore config: %v", err)
+		return nil
+	}
+	// WAITAOF 的能力探针放在开库之前:AOF 配错是确定性的,装配起来只会让每一次 W1 都失败、
+	// 再经 go-zero 熔断器把同一 mapping Redis 上的登录读也拖下水(routing.ProbeWaitAOF 的注释)。
+	probeCtx, cancel := context.WithTimeout(context.Background(), time.Duration(c.RouteStore.WaitAOFTimeoutMs)*time.Millisecond+routePublishProbeMargin)
+	probeErr := routing.ProbeWaitAOF(probeCtx, c.MappingRedis, c.RouteStore)
+	cancel()
+	if probeErr != nil {
+		logx.Errorf("[ServiceContext] route store not assembled (RegisterPlayerZone will fail closed): mapping redis cannot confirm AOF durability "+
+			"as RouteStore.WaitAOF* requires: %v", probeErr)
+		return nil
+	}
+	routeCfg := mysqlCfg
+	routeCfg.MaxOpenConn = c.RouteStore.MaxOpenConn
+	routeCfg.MaxIdleConn = c.RouteStore.MaxIdleConn
+	host, err := os.Hostname()
+	if err != nil {
+		logx.Errorf("[ServiceContext] os.Hostname failed, route writer id falls back to unknown: %v", err)
+	}
+	rs, err := store.NewRouteStore(routeCfg, store.RouteStoreOptions{
+		FenceShards: uint32(c.RouteStore.FenceShards),
+		Writer:      store.NewRouteWriterID("data_service", host),
+	})
+	if err != nil {
+		logx.Errorf("[ServiceContext] route store init failed (RegisterPlayerZone will fail closed; run `data_service -f <yaml> -migrate` if route_meta is missing): %v", err)
+		return nil
+	}
+	logx.Infof("[ServiceContext] route store ready (RouteStore.Mode=db_first): fence_shards=%d publish_attempts=%d waitaof_numlocal=%d waitaof_numreplicas=%d waitaof_timeout_ms=%d",
+		c.RouteStore.FenceShards, c.RouteStore.PublishAttempts, c.RouteStore.NumLocal(), c.RouteStore.NumReplicas(), c.RouteStore.WaitAOFTimeoutMs)
+	return rs
 }
 
 // newGuildDivergenceChecker 装配回档闸问 guild 的接缝(07 §7.5.1、§7.5.5)。
@@ -268,6 +364,47 @@ func newGuildDivergenceChecker(c config.Config) guildcheck.GuildDivergenceChecke
 	return guildcheck.New(guildpb.NewGuildInternalClient(cli.Conn()))
 }
 
+// SQLPoolSamples 是 /metrics 的连接池快照来源(shared/sqlpoolstats.Source,G2b):只报装配成功的 store,一个 store 一个池,
+// 类别即 store 名(metrics.Pool*)。字段在 NewServiceContext 之后不再写(cmd/debugutil 是另一个进程,不注册池指标),
+// 抓取时并发读是安全的;sql.DB.Stats 只取一把内存锁,不做 I/O。
+func (s *ServiceContext) SQLPoolSamples() []sqlpoolstats.Sample {
+	if s == nil {
+		return nil
+	}
+	return sqlPoolSamples(s.namedStores(), store.DBStatsOf)
+}
+
+// namedStores 列出五个 store 与各自的池类别(固定顺序)。单测据此核对「哪个字段报成哪个类别」。
+func (s *ServiceContext) namedStores() []namedStore {
+	return []namedStore{
+		{pool: metrics.PoolSnapshot, store: s.SnapshotStore},
+		{pool: metrics.PoolTransactionLog, store: s.TxLogStore},
+		{pool: metrics.PoolIdSegment, store: s.IdSegmentStore},
+		{pool: metrics.PoolPlayerName, store: s.PlayerNameStore},
+		{pool: metrics.PoolPlayerRoute, store: s.PlayerRouteStore},
+	}
+}
+
+// namedStore 是一个 store 与它的池类别。store 是接口字段转成的 any:接口为 nil 时 any 也是 nil,
+// DBStatsOf 返回 false;单测的假实现不命中 DBStatsOf 的类型分支,同样跳过。
+type namedStore struct {
+	pool  string
+	store any
+}
+
+// sqlPoolSamples 是 SQLPoolSamples 的纯逻辑部分;statsOf 显式传入,单测用假实现(真 store 的 db 字段在包外造不出来)。
+func sqlPoolSamples(stores []namedStore, statsOf func(any) (sql.DBStats, bool)) []sqlpoolstats.Sample {
+	samples := make([]sqlpoolstats.Sample, 0, len(stores))
+	for _, ns := range stores {
+		stats, ok := statsOf(ns.store)
+		if !ok {
+			continue
+		}
+		samples = append(samples, sqlpoolstats.Sample{Pool: ns.pool, Stats: stats})
+	}
+	return samples
+}
+
 // Close releases every store and the router. nil-safe on each member.
 func (s *ServiceContext) Close() {
 	if s == nil {
@@ -287,5 +424,8 @@ func (s *ServiceContext) Close() {
 	}
 	if s.PlayerNameStore != nil {
 		_ = s.PlayerNameStore.Close()
+	}
+	if s.PlayerRouteStore != nil {
+		_ = s.PlayerRouteStore.Close()
 	}
 }

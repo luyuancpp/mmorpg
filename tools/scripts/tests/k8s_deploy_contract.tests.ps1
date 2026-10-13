@@ -97,6 +97,24 @@ Test-Case "db ConfigMap 的 Kafka/Database 关键值 == go/db/etc/db.yaml" {
     }
 }
 
+Test-Case "data-service ConfigMap 的 Kafka 关键值 == go/data_service/etc/data_service.yaml" {
+    # 审计 topic 的世代 / 分区数是不可变契约,player_snapshot 消费者的批量 / 并发旋钮与 lag 探针(G2a)决定落库路径:
+    # 生成器一旦自带常数,集群跑的就不是仓库里评审过的那份(比如服务 yaml 仍是逐条,ConfigMap 却悄悄开了批量)。
+    $block = Select-ManifestByName -Output $devOut -Name "go-svc-data-service-config"
+    Assert-True -Condition ($null -ne $block) -Because "DryRun 输出里应当有 go-svc-data-service-config"
+    $flat = ConvertTo-FlatManifest -Block $block
+
+    $keys = @(
+        'TopicGeneration', 'TransactionLogPartitions', 'SnapshotPartitions', 'RetentionMs',
+        'SnapshotBatchMaxRows', 'SnapshotBatchMaxBytes', 'SnapshotFlushIntervalMs', 'SnapshotMaxInflightFlushes', 'LagProbeIntervalMs'
+    )
+    foreach ($k in $keys) {
+        $expected = Get-EtcValue -RelativePath 'go/data_service/etc/data_service.yaml' -KeyPath "Kafka.$k"
+        $actual = Get-FlatValue -Flat $flat -KeyPath "data.data_service.yaml.Kafka.$k"
+        Assert-Equal -Expected $expected -Actual $actual -Because "Kafka.$k 必须与 go/data_service/etc/data_service.yaml 一致(生成器不得自带常数)"
+    }
+}
+
 Test-Case "login ConfigMap 的 Timeout/Node/Locker/Kafka 关键值 == go/login/etc/login.yaml" {
     $block = Select-ManifestByName -Output $devOut -Name "go-svc-login-config"
     Assert-True -Condition ($null -ne $block) -Because "DryRun 输出里应当有 go-svc-login-config"
@@ -927,6 +945,18 @@ $prodRun = Invoke-DeployDryRun -Arguments $ProdArgs -Env $ProdEnv
 
 Test-Case "prod 档位 + 注入环境变量时生成器可以正常出产物" {
     Assert-Equal -Expected 0 -Actual $prodRun.ExitCode -Because "注入齐全时不该失败。输出: $($prodRun.Output)"
+}
+
+Test-Case "data-service ConfigMap 显式写 RouteStore.Mode: redis(dev / prod 两档),服务 yaml 也是 redis" {
+    # 映射持久化第 1a 批(docs/design/player-route-mapping-durability-proposal.md §11.2):ConfigMap 不镜像服务 yaml,
+    # 所有档位固定 redis。切 db_first 是 P2 的显式运维动作,不能因为谁改了本地 yaml 就被带进集群。
+    foreach ($case in @(@{ Label = 'dev'; Output = $devOut }, @{ Label = 'prod'; Output = $prodRun.Output })) {
+        $flat = ConvertTo-FlatManifest -Block (Select-ManifestByName -Output $case.Output -Name 'go-svc-data-service-config')
+        Assert-Equal -Expected 'redis' -Actual (Get-FlatValue -Flat $flat -KeyPath 'data.data_service.yaml.RouteStore.Mode') `
+            -Because "$($case.Label):第 1a 批所有档位固定 redis;切 db_first 是 P2 的显式动作(冻结窗口 + 导入 + audit 为 0)"
+    }
+    Assert-Equal -Expected 'redis' -Actual (Get-EtcValue -RelativePath 'go/data_service/etc/data_service.yaml' -KeyPath 'RouteStore.Mode') `
+        -Because '本地默认必须与今天逐字相同'
 }
 
 Test-Case "prod 档位下 db 段不得出现 root/root 或空密码" {

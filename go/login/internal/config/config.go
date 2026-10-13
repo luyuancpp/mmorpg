@@ -102,6 +102,10 @@ type Config struct {
 	// (Required 开着时不钉 = 新号不可用,见 PlacementConf)。
 	Placement PlacementConf `json:"Placement,optional"`
 
+	// NewPlayerSeed 控制建角时是否写「新号父键种子」,让新号首次 EnterGame 不再冷读数据库
+	// (docs/design/new-player-first-enter-no-cold-read.md)。整块可缺省,缺省 = 关 = 与本功能之前逐字节相同。
+	NewPlayerSeed NewPlayerSeedConf `json:"NewPlayerSeed,optional"`
+
 	// RequireClientEndpoint 控制下发 gate 地址时是否**必须**用 gate 自报的客户端可达地址
 	// (NodeInfo.client_endpoint,集群外入口 D78/D79,规则见 shared/clientendpoint.Select)。
 	//
@@ -164,6 +168,8 @@ type GateDrainConf struct {
 // 违反时建角照常成功、login 侧零报错,但新号只有 player:zone 没有 player:placement:
 // 进游戏时预加载秒级失败(§6.2 读任务 Success=false),存盘全部进死信(missing_required)。
 // 要关这些,先把全部 go/db 的 Required 关掉。
+// 开着 NewPlayerSeed 时新号首次入场不走预加载读,「预加载秒级失败」不会出现,只剩存盘这一半
+// (死信 / 无限重试),更隐蔽(docs/design/new-player-first-enter-no-cold-read.md §9 第 2 条)。
 type PlacementConf struct {
 	// PinOnCreate=true:建角时在同一次 RegisterPlayerZone 里原子钉 player:placement = "{storage}:1"。
 	PinOnCreate bool `json:"PinOnCreate,optional"`
@@ -185,6 +191,18 @@ func (c PlacementConf) StorageIDForNewPlayer(loginZone uint32) uint32 {
 		return c.NewPlayerStorageId
 	}
 	return loginZone
+}
+
+// NewPlayerSeedConf 是「新号首次入场免冷读」的开关(docs/design/new-player-first-enter-no-cold-read.md)。
+//
+// 正向命名,零值 = 关:go-zero 不给整块缺失的 optional 结构体递归填内层 default(见 HomeZoneConf 的说明),
+// 所以默认值只能靠零值表达。
+type NewPlayerSeedConf struct {
+	// Enabled=true:CreatePlayer 在落账号 blob 之前写 PlayerAllData:{id} 种子(两张子表只带 player_id,
+	// TTL 与冷读组装的父键相同),新号首次 EnterGame 命中缓存直接进场。种子没写成不影响建角(退回冷读)。
+	// 打开前置:go/db 的 db_placement_guard_total{outcome="missing_required"} 与
+	// db_placement_store_open_total{result=~"error|rejected"} 两类告警已就位(设计 §9 第 2 条)。
+	Enabled bool `json:"Enabled,optional"`
 }
 
 // HomeZoneConf 是合服后 zone 归属修正的开关。
@@ -242,6 +260,13 @@ type HomeZoneConf struct {
 //   - SoftCapMultiplier (e.g. 1.5) is the headroom factor applied to the
 //     largest observed PlayerCount when no explicit ZoneCapacityOverride is
 //     set, so freshly-deployed zones aren't capped at "current load".
+//   - DispatcherLockKey 是出队 leader 锁键的**前缀**,实际锁键是
+//     <DispatcherLockKey>:zone:<Node.ZoneId>(loginqueue.ZoneDispatcherLockKey),
+//     每个 zone 一个 leader。dispatcher 只看得见本 zone 的 gate,锁的范围必须与之相同。
+//     2026-10-12 以前它就是锁键本身、全服一把,多 zone 共用 Redis 时只有 leader 所在
+//     zone 出队(G1b)。默认值没变,旧配置无需改动;Queue.Enabled=true 时它不能为空、
+//     Node.ZoneId 不能为 0,否则起服失败。同一 zone 的所有 login 副本必须配同一个值,
+//     配得不一样就是两把互不相干的锁,该 zone 长期双 leader。
 type QueueConf struct {
 	Enabled             bool          `json:"Enabled,default=false"`
 	DispatchInterval    time.Duration `json:"DispatchInterval,default=1s"`

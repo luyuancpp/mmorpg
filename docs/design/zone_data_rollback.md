@@ -164,6 +164,11 @@ mysqlbinlog --stop-datetime="2026-03-26 10:00:00" binlog.000xxx | mysql -h shado
 ──────────────────
 # Redis 是缓存层，C++ 节点启动时会从 MySQL 重建，直接清空即可
 redis-cli -h <redis-host> FLUSHDB
+# ⚠ 2026-10-12 补:K8s 下各 zone 的玩家缓存与 mapping Redis(player:zone / player:placement / merge:*)、
+#   go/db 的游标与重试收据同在共享实例的 DB 0,这里的 FLUSHDB 会清掉**所有 zone** 的这些全局键,
+#   不只是本 zone 缓存。k8s_zone_rollback.ps1 已加防护:目标 DB 里有这些键就在停服之前拒绝,
+#   除非显式传 -ConfirmFlushSharedRedis(dev_tools 为 -RollbackConfirmFlushSharedRedis)。
+#   映射丢失后的恢复见 docs/ops/merge-zone-runbook.md §9.2。
 
 # 或从 AOF/RDB 备份恢复到对应时间点（如果有归档的话）
 

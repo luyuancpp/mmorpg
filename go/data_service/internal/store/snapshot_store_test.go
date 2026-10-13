@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"data_service/internal/config"
+
 	dbpb "proto/common/database"
 
 	"github.com/go-sql-driver/mysql"
@@ -457,6 +459,93 @@ func TestIsDupEntryMySQL(t *testing.T) {
 	} {
 		if got := isDupEntryMySQL(tc.err); got != tc.want {
 			t.Errorf("isDupEntryMySQL(%s)=%v,want %v", tc.name, got, tc.want)
+		}
+	}
+}
+
+// ── G2a 批量落库(InsertSnapshotsIfGuidAbsent)的纯逻辑部分;真库行为见 snapshot_store_integration_test.go ──
+
+// TestInsertSnapshotsOnDuplicateKeepSQLShape 钉住多行 ODKU 的三件事:
+//   - n=1 与单行 ODKU **逐字相同**:默认配置(批 1 条)下消费者走的是单行接口,但两条路径对同一行必须是同一条语句,
+//     否则「批量开关打开前后语义等价」这句话没有依据;
+//   - n 行就有 9n 个占位符、恰一个 ON DUPLICATE KEY UPDATE、以 insertSnapshotSQL 开头(列清单只定义一次);
+//   - 行数上限的占位符总数低于预处理语句 65535 的硬上限 —— 越过它是运行期的 Prepared statement 错误,且只在大批时出现。
+func TestInsertSnapshotsOnDuplicateKeepSQLShape(t *testing.T) {
+	if got := insertSnapshotsOnDuplicateKeepSQL(1); got != insertSnapshotOnDuplicateKeepSQL {
+		t.Fatalf("n=1 的批量语句必须与单行 ODKU 逐字相同:\n%s\n---\n%s", got, insertSnapshotOnDuplicateKeepSQL)
+	}
+	stmt := insertSnapshotsOnDuplicateKeepSQL(3)
+	if !strings.HasPrefix(stmt, insertSnapshotSQL) {
+		t.Fatalf("批量语句必须由 insertSnapshotSQL 接出来(列清单只定义一次):\n%s", stmt)
+	}
+	if got := strings.Count(stmt, "?"); got != 27 {
+		t.Fatalf("3 行应有 27 个占位符,got %d:\n%s", got, stmt)
+	}
+	if got := strings.Count(stmt, "ON DUPLICATE KEY UPDATE"); got != 1 {
+		t.Fatalf("多行 ODKU 只能有一个 ON DUPLICATE KEY UPDATE 尾巴,got %d:\n%s", got, stmt)
+	}
+	if !strings.HasSuffix(stmt, onDuplicateKeepIDSQL) {
+		t.Fatalf("尾巴必须是 `id` = LAST_INSERT_ID(`id`)(值不变,快照保持不可变):\n%s", stmt)
+	}
+	if MaxSnapshotBatchRows*9 >= 65535 {
+		t.Fatalf("MaxSnapshotBatchRows=%d 时占位符 %d 个,超过预处理语句 65535 的上限", MaxSnapshotBatchRows, MaxSnapshotBatchRows*9)
+	}
+}
+
+// TestInsertSnapshotsRejectsZeroGuidAndOversizeBatchBeforeTouchingDB:非法批在碰库之前就被拒(db=nil 也不 panic)。
+// guid=0 的行没有去重依据;超过行数上限的批会撞占位符 / 包大小上限 —— 两者都要在这里明确报错,而不是在库里炸。
+func TestInsertSnapshotsRejectsZeroGuidAndOversizeBatchBeforeTouchingDB(t *testing.T) {
+	s := &SnapshotStore{uniqueGuidKey: true} // db 为 nil:任何一次真正的 Exec 都会 panic
+	ctx := context.Background()
+
+	if n, err := s.InsertSnapshotsIfGuidAbsent(ctx, nil); err != nil || n != 0 {
+		t.Fatalf("空批应返回 (0, nil),got (%d, %v)", n, err)
+	}
+
+	withZero := []*SnapshotRow{{SnapshotGuid: 1}, {SnapshotGuid: 0}}
+	if _, err := s.InsertSnapshotsIfGuidAbsent(ctx, withZero); err == nil {
+		t.Fatal("含 guid=0 的批必须被拒")
+	}
+
+	oversize := make([]*SnapshotRow, MaxSnapshotBatchRows+1)
+	for i := range oversize {
+		oversize[i] = &SnapshotRow{SnapshotGuid: uint64(i + 1)}
+	}
+	if _, err := s.InsertSnapshotsIfGuidAbsent(ctx, oversize); err == nil {
+		t.Fatalf("超过 MaxSnapshotBatchRows=%d 的批必须被拒", MaxSnapshotBatchRows)
+	}
+}
+
+// TestMaxSnapshotBatchRowsMatchesConfigCap:yaml 能配的批行数上限(config 校验)必须等于 store 能接的上限。
+// 前者大于后者时,每一批都会被 store 拒绝 → 消费者每批都退回逐条兜底,静默变慢且只有 info 级告警。
+func TestMaxSnapshotBatchRowsMatchesConfigCap(t *testing.T) {
+	if MaxSnapshotBatchRows != config.MaxSnapshotBatchMaxRows {
+		t.Fatalf("store.MaxSnapshotBatchRows=%d 与 config.MaxSnapshotBatchMaxRows=%d 不一致",
+			MaxSnapshotBatchRows, config.MaxSnapshotBatchMaxRows)
+	}
+}
+
+// TestIsSnapshotBatchTooLarge:只有「批本身太大」的确定性错误才让消费者跳过批级重试、直接逐条落库。
+// 把 1205 / 1213 / 断连误判进来,症状是一次瞬时抖动就把整批拆成逐条(变慢,不丢);漏判则每个超大批白等约 4s。
+func TestIsSnapshotBatchTooLarge(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		err  error
+		want bool
+	}{
+		{"1153 包过大", mysqlErrNo(mysqlErrNetPacketTooLarge), true},
+		{"包了一层的 1153", fmt.Errorf("insert snapshot batch: %w", mysqlErrNo(mysqlErrNetPacketTooLarge)), true},
+		{"TiDB 8004 事务过大", mysqlErrNo(tidbErrTxnTooLarge), true},
+		{"驱动 ErrPktTooLarge", fmt.Errorf("exec: %w", mysql.ErrPktTooLarge), true},
+		{"1213", mysqlErrNo(mysqlErrDeadlock), false},
+		{"1205", mysqlErrNo(mysqlErrLockWaitTimeout), false},
+		{"1062", mysqlErrNo(mysqlErrDupEntry), false},
+		{"断连", mysql.ErrInvalidConn, false},
+		{"非 MySQL 错误", errors.New("boom"), false},
+		{"nil", nil, false},
+	} {
+		if got := IsSnapshotBatchTooLarge(tc.err); got != tc.want {
+			t.Errorf("IsSnapshotBatchTooLarge(%s)=%v,want %v", tc.name, got, tc.want)
 		}
 	}
 }

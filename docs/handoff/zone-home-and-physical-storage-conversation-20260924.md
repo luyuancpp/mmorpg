@@ -4,6 +4,52 @@
 > 类型：解释性会话记录，不是新的架构决策、合服 SOP 或运行验收。  
 > 本仓权威：[合服设计](../design/server_merge_design.md)、[全区全服数据层与 TiDB 决策](../design/global-data-layer-tidb-decision.md)、[跨 zone 与数据归属说明](../design/microservice-zone-contract-20260914.md)、[可执行合服 SOP](../ops/merge-zone-runbook.md)。本记录与这些文档有出入时，以其中对应当前阶段且未作废的内容及代码为准。  
 > 目的：用户先在 `F:\Pandora-Moba` 讨论 `player_id % 4096`、逻辑合服、物理搬库，再要求在 `xuanming-server` 和本仓留存“所有对话细节”。保留原始讨论及后续复核、提交状态和服务数据库问答，截止 2026-09-28 用户要求记录到三个服务器文档，共 45 条对外可见消息；本页先校准本仓现状，避免把别仓或未来阶段的例子当成现行能力。
+>
+> **⚠️ 2026-10-12：本页 2026-09-24 / 09-28 写下的「本仓现状」已被 `4493b3c9f`(2026-09-29)改变，先读下一节。** 对话原文与当时的校准段保持原样，供追溯，不再代表现状。
+
+## 2026-10-12 现状校准：逻辑归属与物理落点已经拆开(代码在、开关全关)
+
+本节回应用户 2026-10-12 的提问「玩家的物理服务器(TiDB)和逻辑服务器(登录时的大区)这些数据应该存在哪里，现在做完了吗」。权威设计是 [player-storage-placement.md](../design/player-storage-placement.md)(v2.4)；下文是 HEAD `73b852f32` 上逐项核对的结论，只读核对，未编译、未测试、未连库。
+
+### 本页哪些说法已过时
+
+| 本页原说法(行文位置) | 2026-10-12 的事实 |
+|---|---|
+| 「本仓**没有已核实的两列独立字段**」(「直接回答」一节) | 已有两把键：逻辑归属 `player:zone:{id}`，物理落点 `player:placement:{id}`(`go/shared/placement/placement.go`) |
+| 「本仓当前合服先搬主数据、再改 `home_zone`」「不能只改映射」(多处) | `tools/merge_zone` 默认改为 **pin 模式**(`-player-rows-mode` 默认 `pin`)：清单玩家里没有落点记录的先钉 `"{src}:1"`(数据仍在源库、仍是真源)，然后只改 `home_zone`，不拷玩家行；旧的拷行做法保留为 copy 模式，用于 go/db 未升级的环境 |
+| 「目前没有独立‘每玩家物理数据库字段 + 登录查它’的完整二元路由」 | 落点记录已有，但**登录不查它**：只有 go/db 处理每条存盘 / 读档任务时按「落点记录 ?? home_zone ?? 本进程 zone」选库 |
+| 「全局玩家表 Phase 2 完成后才能合服零迁移」 | 合服零迁移已由 pin 模式提前兑现；Phase 2 改为「新增一种非 zone 落点库 `player_store_1000000_db`，逐玩家冻结式搬库」 |
+
+### 两份数据存在哪
+
+| | 逻辑服(登录时的大区) | 物理落点(数据在哪个库) |
+|---|---|---|
+| 键 | `player:zone:{player_id}` | `player:placement:{player_id}` |
+| 值 | zone 号 | `"{storage_id}:{version}"`，搬库中带 `:frozen:{run_id}` |
+| 存放 | data_service 的 mapping Redis，固定 DB 0，无 TTL | 同一个 Redis、同一个 DB 0 |
+| 写入 | 建角时 login 写自己的 `Node.ZoneId`(客户端经 AssignGate 选区后连的就是那个区的 login；自动选区时由分配结果决定)；之后只有合服工具改 | 建角顺带写(需 `PinOnCreate=true`)、合服 pin、`pin-placement`、`relocate` |
+| 读取 | data_service、scene_manager、go/db、login 角色列表等 | 只有 go/db 选库时读 |
+
+- `storage_id` 只决定**库名**：`1..999999` 对应 `zone_{id}_db`，`≥1000000` 对应 `player_store_{id}_db`。库在哪台机器、是 MySQL 还是 TiDB，由各 go/db 的 `Database.Hosts` 决定，所有库须在同一个 MySQL 实例 / TiDB 集群里。所以本页对话里「每个玩家一个物理服字段」的理解模型，在本仓对应的是「库编号」；「换到 TiDB」是集群级切换，不按玩家切。
+- 两把键都只在 Redis 里，没有 MySQL / TiDB 兜底表(TiDB 决策 D1 未做)。Redis 整体丢失时按合服 / 搬库清单手工重放(runbook §9.2)。
+- 账号数据 `account:{account}` 里的 `zone_id` 只是建角时盖的章，登录时用 `player:zone` 覆盖、不回写。
+
+### 做到哪一步
+
+- **代码**：在 main(`4493b3c9f`)。2026-09-29 按用户指示跑过一轮(Go 全过、merge_zone 集成测试 83 条 PASS(67 个顶层 + 16 个子用例)、`cross_zone_test` 105/105)；`be6b4ab1d`(10-08)之后 go/db 重试队列与 merge_zone 预检又改过，当前 HEAD 待按 [placement-reverify-checklist-20261012.md](placement-reverify-checklist-20261012.md) 复验。
+- **启用**：没有。`PinOnCreate=false`、`Required=false`，没有执行过 pin 合服 / 搬库的记录，所以现网仍是「有效落点 = home_zone 的 zone 库」，逻辑服与物理库一一对应。
+- **TiDB**：Phase 1(把集群换成 TiDB)都没上线，K8s 是 `mysql:8.0`，是否继续待拍板(handoff-backlog D-02)；Phase 2 的全局库没建过，仍卡在 D8 应用级回档与 D1 映射兜底表。完整清单见 [TiDB 决策](../design/global-data-layer-tidb-decision.md) 文首 2026-10-12 状态说明。
+- **Java 版**：归属区用 `player.zone_id` 列实现(PARITY「归属区映射」行，Java 进行中)；落点 / 多库 / TiDB 数据层因 Java 单库有意不移植，2026-10-12 起在 Java 仓库 `PARITY.md` 单独登记一行。
+
+### 同玩家顺序保证仍然需要
+
+拆开逻辑归属与物理落点之后，go/db「同一玩家的存盘按顺序落库」的机制不能去掉，落点方案本身就建在它上面(设计 P-4、§6.3)：
+
+1. Kafka 消息 key = `player_id`，同一玩家进同一分区；
+2. go/db 分区内按 `Key % SubShardCount` 固定到同一个子 goroutine(`key_ordered_consumer.go` `routeToSubShard`)；
+3. Redis 排序锁 `distributed:lock:kafka:ordering:{topic}:{key}:{msgType}` 与已落库游标 `consumer:applied:{topic}:{key}:{msgType}`、`consumer:applied_epoch:…`，兜住重试、再均衡、多副本时「固定线程」失效的情况。
+
+存盘是整行覆盖(last-writer-wins)，库本身(MySQL 或 TiDB)只保证单条写原子，判断不了两条消息谁更新；没有这层顺序，同一玩家先后两次存盘可能倒序落库而回档。搬库切换后的迟到写、冻结期间延后的写，也都靠游标判新旧。
 
 ## 2026-09-28 续录：合服后哪些服务和数据库会变
 

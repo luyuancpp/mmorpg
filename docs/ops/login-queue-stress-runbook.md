@@ -65,9 +65,10 @@ Queue:
 ```
 **排查**:
 - `redis-cli ZCARD queue:zone:1` → 应该单调下降。不降 = ZPOPMIN 没在跑
-- 查 login 日志 `[loginqueue] elected dispatcher leader` 是否存在 + `[loginqueue] zone=1 admitted=N` 是否持续
-- 无 leader 日志 = `dispatcher:lock:login_queue` 抢锁失败,看 Redis 连接
+- 查 login 日志 `[loginqueue] elected dispatcher leader zone=<id>` 是否存在 + `[loginqueue] zone=1 admitted=N` 是否持续
+- 无 leader 日志 = `dispatcher:lock:login_queue:zone:<id>` 抢锁失败,看 Redis 连接。多 zone 共用 Redis 时每个 zone 各有一把锁(2026-10-12 G1b 起),某个 zone 没有锁键 = 该 zone 没有打开 Queue 的 login 副本
 - 有 leader 但无 admitted 日志 = `FreeSlots` 永远返回 0,查 `GateWatcher.FetchAllNodes()` 和 ZoneCapacityOverride
+- 有 leader、日志里持续出现 `[loginqueue] freeSlots zone=<id> queueLen=<n> err=no gates for zone` = 有人在排,但本 zone 一台可用 gate 都没有(G1b 之前这种情况是静默跳过的)
 
 ### 模式 2:over-issue(超发 gate token)
 ```
@@ -79,13 +80,16 @@ gate 日志:VerifyGateToken 突然出现大量 token 过期 / 玩家被踢
 - `redis-cli SCARD admitted:zone:1` → 应等于"已收 admit 但还没 connect 的玩家数",通常 < 50
 - 持续 > 200 = `consumeAdmit` 的 SREM 路径有 bug,或者客户端拿了 admit 没去连 gate
 
-### 模式 3:dispatcher 双 leader(双副本同时出队)
+### 模式 3:dispatcher 双 leader(同一 zone 的双副本同时出队)
 ```
-两台 login 都打印 [loginqueue] elected dispatcher leader
+同一 zone 的两台 login 都打印 [loginqueue] elected dispatcher leader zone=<同一个 id>
 admitted 短时间内突增超过 freeSlots 上限
 ```
+G1b(2026-10-12)之后每个 zone 各有一个 leader,**不同 zone 各打印一次是正常的**,只有同一个 zone id 出现两次才是双 leader。
+
 **排查**:
-- `redis-cli GET dispatcher:lock:login_queue` 应该只有一个 owner UUID
+- `redis-cli GET dispatcher:lock:login_queue:zone:1` 应该只有一个 owner UUID。新旧版本混跑窗口里 zone 键和全服旧键 `dispatcher:lock:login_queue` 可能同时存在,属于预期(设计稿 §7.1)
+- 同一 zone 的副本配了不同的 `DispatcherLockKey` 也会长期双 leader:`redis-cli --scan --pattern "*:zone:1"` 能看到两把锁
 - 看 heartbeat 日志:lost leadership 后是不是没有真停掉 drainLoop
 
 ### 模式 4:queue token 过期风暴
@@ -147,8 +151,9 @@ cd go/login && go test ./internal/logic/pkg/loginqueue/... -count=1
 
 ### 4. dispatcher 杀掉再起(故障演练)
 ```bash
-# 跑 5000 robot,排队中途 kill -9 当前 leader login pod
-# 期望:30s 内备份接管,q_admitted 短暂停顿后继续上涨,q_avg_wait 略升但无饿死
+# 跑 5000 robot,排队中途 kill -9 该 zone 当前的 leader login pod
+# 期望:30s 内同 zone 的备份接管,q_admitted 短暂停顿后继续上涨,q_avg_wait 略升但无饿死;
+#       只有这个 zone 的放行暂停(≤ TTL),其它 zone 不受影响
 ```
 
 ### 5. Redis 重启(灾难演练)
@@ -173,13 +178,13 @@ login 进程通过 go-zero 内置 `/metrics` endpoint(`login.yaml` 第 119 行 `
 | `login_queue_wait_seconds` | Histogram | zone | 入队到 admit 的端到端等待(buckets: 0.5/1/2/5/10/20/30/60/120/300/600s)|
 | `login_queue_admit_total` | Counter | zone | dispatcher 累计 admit 数,`rate(...[1m])` = drain QPS |
 | `login_queue_expired_total` | Counter | zone, reason | reason ∈ `bad_signature` / `ttl` / `meta_gone` / `queue_disabled` |
-| `login_queue_dispatcher_is_leader` | Gauge | pod | 1=leader,0=standby;`sum(...) == 1` 是稳态不变量 |
+| `login_queue_dispatcher_is_leader` | Gauge | pod, zone | 1=leader,0=standby;`sum by (zone) (...) == 1` 是稳态不变量(每 zone 一个 leader) |
 
 ### 推荐告警(PromQL)
 
 ```promql
-# dispatcher 没有 leader (Redis flap / 全副本挂)
-sum(login_queue_dispatcher_is_leader) != 1
+# 某个 zone 没有 leader 或双 leader (Redis flap / 该 zone 全副本挂 / 同 zone 锁键配得不一样)
+sum by (zone) (login_queue_dispatcher_is_leader) != 1
 
 # 队列在涨但 admit 不涨(dispatcher 卡死)
 deriv(login_queue_size[5m]) > 0 and rate(login_queue_admit_total[5m]) == 0
@@ -193,7 +198,7 @@ rate(login_queue_expired_total{reason="bad_signature"}[5m]) > 10
 
 ### Grafana 看板布局建议
 
-- **Top row** — `login_queue_size` 按 zone 折线 + `login_queue_dispatcher_is_leader` 按 pod stat panel
+- **Top row** — `login_queue_size` 按 zone 折线 + `login_queue_dispatcher_is_leader` 按 zone、pod 的 stat panel
 - **Mid row** — `rate(login_queue_admit_total[1m])` 按 zone + `login_queue_admitted_inflight` 按 zone
 - **Bottom row** — `histogram_quantile(p50/p95/p99, login_queue_wait_seconds_bucket)` 按 zone + `rate(login_queue_expired_total[5m])` 按 reason 堆叠
 
@@ -204,7 +209,7 @@ rate(login_queue_expired_total{reason="bad_signature"}[5m]) > 10
 ## 已知不足(本期不修)
 
 1. **排队 token 不能转移**:玩家换设备重登会拿到新 queueToken,丢掉位置。生产可接受,因为玩家通常不会排队中换设备。
-2. **多 zone 公平性**:dispatcher 按 `activeZones` 顺序遍历,理论上前面的 zone 抢先用完 admit 批次。实际不是问题(每个 zone 独立的 FreeSlots),但极端边界条件待观察。
+2. ~~**多 zone 公平性**:dispatcher 按 `activeZones` 顺序遍历,理论上前面的 zone 抢先用完 admit 批次。~~ 2026-10-12 G1b 起每 zone 一个 leader,不存在 zone 之间抢批次(设计稿 §7.1、§14 第 5 条)。
 3. **客户端没有显示 ETA**:只有 `queue_rank` + `queue_total`,前端可以用 `rank / (capacity/sec)` 自己算 ETA。
 
 ---
@@ -213,12 +218,14 @@ rate(login_queue_expired_total{reason="bad_signature"}[5m]) > 10
 
 **立即关闭排队**:`login.yaml` 改 `Queue.Enabled: false`,重启 login pod(或者 hot-reload 如果 go-zero config watcher 已接好)。**所有玩家立刻走 fast path,等同于排队没存在过。**
 
-**清空堆积**:`redis-cli`
+**清空堆积**(与设计稿 §15 一致):
+
+> 不要用 `KEYS`:它会阻塞全服共用的那个 Redis 主。多 zone 共用 Redis 时,下面后三行(`admit:*` / `queue:meta:*` / `queue:token:*`)不分 zone,会清掉**全部 zone** 的放行槽和排队条目;只想清一个 zone 时只执行第一行,其余键按 TTL(60s / 1h)自然过期。
+
 ```
-DEL queue:zone:1
-DEL admitted:zone:1
-KEYS admit:* | xargs DEL
-KEYS queue:meta:* | xargs DEL
-KEYS queue:token:* | xargs DEL
+redis-cli DEL queue:zone:1 admitted:zone:1
+redis-cli --scan --pattern 'admit:*'        | xargs -r redis-cli DEL
+redis-cli --scan --pattern 'queue:meta:*'   | xargs -r redis-cli DEL
+redis-cli --scan --pattern 'queue:token:*'  | xargs -r redis-cli DEL
 ```
 玩家会自己重试 `/api/assign-gate` 重新入队(如果排队还开着)或直接进游戏(如果 Enabled=false)。

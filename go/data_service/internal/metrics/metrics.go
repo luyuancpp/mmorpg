@@ -14,6 +14,8 @@ import (
 	"sync"
 	"time"
 
+	"shared/sqlpoolstats"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/zeromicro/go-zero/core/logx"
@@ -104,6 +106,63 @@ var (
 		Help:      "Consumed messages by consumer (transaction_log|player_snapshot) and outcome (inserted|duplicate|decode_error|invalid|oversize|db_error).",
 	}, []string{"consumer", "outcome"})
 
+	// ── 审计管道观测(G2a)────────────────────────────────────────
+	// label 只有 consumer / result,全部是封闭集合;**不要**按分区或 player_id 出序列(AGENTS.md §9)。
+	// 告警规则见 deploy/k8s/data-service-audit-alerts.yaml。
+
+	// 单次 DB 尝试的耗时:拿到落库名额之后到 sink 返回,不含名额排队与重试退避;ctx 取消导致的失败不计。
+	// 所以它慢 = 库慢(全局库开始排队),不会被本实例自己的并发上限或一次重试带偏。
+	kafkaConsumerFlushSeconds = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Subsystem: subsystem,
+		Name:      "kafka_consumer_flush_seconds",
+		Help:      "Latency of one database attempt of a consumer flush (after acquiring the flush slot; excludes slot wait and retry backoff), by consumer and result (ok|error).",
+		Buckets:   []float64{0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10, 30},
+	}, []string{"consumer", "result"})
+
+	// 每次 flush 的有效行数(纯坏消息的批不计,免得 0 拉低均值)。
+	kafkaConsumerBatchRows = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Subsystem: subsystem,
+		Name:      "kafka_consumer_batch_rows",
+		Help:      "Rows written per consumer flush (flushes carrying only skipped messages are not observed).",
+		Buckets:   []float64{1, 2, 4, 8, 16, 32, 64, 128, 256},
+	}, []string{"consumer"})
+
+	// 每条消息 value 的字节数(含坏消息)。1000000 那一档对着 C++ 生产者 librdkafka 默认的 message.max.bytes:
+	// 超过它的快照在生产端就被拒了,这里看不到 —— 所以 p99 贴近这一档就该查 scene 日志的 "Kafka send failed"。
+	kafkaConsumerMessageBytes = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Subsystem: subsystem,
+		Name:      "kafka_consumer_message_bytes",
+		Help:      "Size of each consumed message value in bytes (bad messages included).",
+		Buckets:   []float64{1 << 10, 16 << 10, 64 << 10, 128 << 10, 256 << 10, 512 << 10, 768 << 10, 1000000, 2 << 20, 4 << 20, 8 << 20, 16 << 20},
+	}, []string{"consumer"})
+
+	// broker 上这个消费组在这个 topic 上还差多少条(全部分区求和)。每个实例报同一个数,告警取 max。
+	kafkaConsumerLagMessages = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Subsystem: subsystem,
+		Name:      "kafka_consumer_lag_messages",
+		Help:      "Consumer group lag summed over all partitions, as seen by the broker (every replica reports the same group value; alert on max).",
+	}, []string{"consumer"})
+
+	// 保留期已经删掉、而这个组还没消费到的消息条数:> 0 = 审计数据已经丢了。
+	// 消费者跳过并提交之后它会自行归零 —— 「丢了多少」以 [kafka-go] 的 out of range / skipping 日志为准。
+	kafkaConsumerRetentionGapMessages = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Subsystem: subsystem,
+		Name:      "kafka_consumer_retention_gap_messages",
+		Help:      "Messages deleted by topic retention before this consumer group consumed them (sum over partitions of log-start minus committed). > 0 means audit data is lost.",
+	}, []string{"consumer"})
+
+	kafkaConsumerLagProbeTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Subsystem: subsystem,
+		Name:      "kafka_consumer_lag_probe_total",
+		Help:      "Consumer group lag probe outcomes by consumer and result (ok|error).",
+	}, []string{"consumer", "result"})
+
+	kafkaConsumerIsolationTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Subsystem: subsystem,
+		Name:      "kafka_consumer_isolation_total",
+		Help:      "Row-by-row fallback after a failed batch insert, by consumer and result (recovered: every row landed | stopped: a row could not be inserted and the consumer stopped).",
+	}, []string{"consumer", "result"})
+
 	// ── AllocateIdSegment(号段发号)───────────────────────────────
 	idSegmentAllocateTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Subsystem: subsystem,
@@ -185,7 +244,93 @@ var (
 		Buckets:   []float64{0.01, 0.05, 0.1, 0.5, 1, 5, 15, 30, 60, 120},
 	}, []string{"scope"})
 
+	// ── 玩家归属映射的提交点(docs/design/player-route-mapping-durability-proposal.md §4,第 1a 批)──
+	//
+	// 只在 RouteStore.Mode=db_first 时有数(redis 模式的 RegisterPlayerZone 不计)。两个 label 都是封闭集合,
+	// db_first 启动时由 PrimeRoute 全部预置为 0。**不要**把 player_id / rev 加成 label(AGENTS.md §9),
+	// 逐条明细在 `[RegisterPlayerZone][db_first]` 的 ERROR 日志里。
+	//
+	// 每一次 db_first 的 W1 恰好计一次,合计 = db_first 下 W1 的请求数。Redis 预检本身出错(围栏 EXISTS / 三键 MGET
+	// 失败、MGET 长度不对、缓存里的 zone 解析不了)单独计 precheck_error:RegisterPlayerZone 的 error_code 只在 gRPC
+	// status 的 message 里,grpcstats 只分得出 Unavailable、分不出码 1 与码 30,不计的话这类拒绝在指标上就看不见。
+	routeRegisterTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Subsystem: subsystem,
+		Name:      "route_register_total",
+		Help: "db_first RegisterPlayerZone outcomes, exactly one per request: inserted|filled_home|filled_home_placement_kept|already_same " +
+			"(committed in player_route, published separately, see route_publish_total) | conflict|fenced|refused_unknown_row " +
+			"(decided by player_route) | precheck_conflict|precheck_fenced (decided by the mapping Redis precheck, store not called) | " +
+			"precheck_error (the mapping Redis precheck itself failed: EXISTS/MGET error or an unparsable cached zone; store not called) | " +
+			"store_error|invalid.",
+	}, []string{"outcome"})
+
+	// 发布(set-if-newer 脚本 + WAITAOF)每次 publishRoute 调用的最终结果。not_durable 持续非零 = WAITAOF 预算不够
+	// (appendfsync everysec 下本地确认最长约 1s),每一次都在库里留下一行已提交未确认的映射,见提案 §11.2 的 P2 门禁。
+	// WAITAOF 回复形状不对(不是两个非负整数)是确定性错误、不重试,计在 error 而不是 not_durable:
+	// P2 门禁量「发布未确认率」时要把 error 一并看(提案 §11.2)。
+	routePublishTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Subsystem: subsystem,
+		Name:      "route_publish_total",
+		Help: "db_first route publish results per publishRoute call: applied|confirmed|superseded (success) | " +
+			"conflict|legacy_conflict|fenced|not_durable|error (failure; the player_route row stays committed but unpublished).",
+	}, []string{"result"})
+
 	registerOnce sync.Once
+)
+
+// route_register_total{outcome} 的取值(封闭集合,PrimeRoute 逐个预置;新增取值必须同时加进 routeRegisterOutcomes)。
+const (
+	RouteRegisterInserted                = "inserted"
+	RouteRegisterFilledHome              = "filled_home"
+	RouteRegisterFilledHomePlacementKept = "filled_home_placement_kept"
+	RouteRegisterAlreadySame             = "already_same"
+	RouteRegisterConflict                = "conflict"
+	RouteRegisterFenced                  = "fenced"
+	RouteRegisterRefusedUnknownRow       = "refused_unknown_row"
+	RouteRegisterPrecheckConflict        = "precheck_conflict"
+	RouteRegisterPrecheckFenced          = "precheck_fenced"
+	RouteRegisterPrecheckError           = "precheck_error"
+	RouteRegisterStoreError              = "store_error"
+	RouteRegisterInvalid                 = "invalid"
+)
+
+// route_publish_total{result} 的取值(封闭集合,同上)。
+const (
+	RoutePublishApplied        = "applied"
+	RoutePublishConfirmed      = "confirmed"
+	RoutePublishSuperseded     = "superseded"
+	RoutePublishConflict       = "conflict"
+	RoutePublishLegacyConflict = "legacy_conflict"
+	RoutePublishFenced         = "fenced"
+	RoutePublishNotDurable     = "not_durable"
+	RoutePublishError          = "error"
+)
+
+var (
+	routeRegisterOutcomes = []string{
+		RouteRegisterInserted,
+		RouteRegisterFilledHome,
+		RouteRegisterFilledHomePlacementKept,
+		RouteRegisterAlreadySame,
+		RouteRegisterConflict,
+		RouteRegisterFenced,
+		RouteRegisterRefusedUnknownRow,
+		RouteRegisterPrecheckConflict,
+		RouteRegisterPrecheckFenced,
+		RouteRegisterPrecheckError,
+		RouteRegisterStoreError,
+		RouteRegisterInvalid,
+	}
+
+	routePublishResults = []string{
+		RoutePublishApplied,
+		RoutePublishConfirmed,
+		RoutePublishSuperseded,
+		RoutePublishConflict,
+		RoutePublishLegacyConflict,
+		RoutePublishFenced,
+		RoutePublishNotDurable,
+		RoutePublishError,
+	}
 )
 
 // 回档帮会闸指标的 label 取值(封闭集合,PrimeRollbackGuildCheck 逐个预置;新增取值必须同时加进下面两个切片)。
@@ -230,12 +375,42 @@ func register() {
 			crossSceneTransitionLatency, crossSceneTransitionTotal,
 			rollbackTotal, rollbackPlayersAffectedTotal, rollbackOrphansCleanedTotal,
 			kafkaConsumerUp, kafkaConsumerMessagesTotal,
+			kafkaConsumerFlushSeconds, kafkaConsumerBatchRows, kafkaConsumerMessageBytes,
+			kafkaConsumerLagMessages, kafkaConsumerRetentionGapMessages,
+			kafkaConsumerLagProbeTotal, kafkaConsumerIsolationTotal,
 			idSegmentAllocateTotal,
 			playerNameOpsTotal, playerNameOpSeconds, playerNameCacheTotal,
 			assetOpLedgerReadTotal,
 			rollbackGuildCheckTotal, rollbackGuildDivergenceRows, rollbackGuildCheckSeconds,
+			routeRegisterTotal, routePublishTotal,
 		)
 	})
+}
+
+// PrimeRoute 把 route_register_total(11 条)与 route_publish_total(8 条)的封闭集合逐个预置为 0。
+// 只在 RouteStore.Mode=db_first 时调(data_service.go 启动路径):理由同 PrimeRollbackGuildCheck ——
+// fenced / refused_unknown_row / legacy_conflict 这类一辈子可能只发生几次的结局,序列不预先存在的话
+// `increase(...) > 0` 恰好漏掉第一次。redis 模式不调,免得面板上多出一组恒为 0、看着像"在跑"的序列。
+func PrimeRoute() {
+	register()
+	for _, outcome := range routeRegisterOutcomes {
+		routeRegisterTotal.WithLabelValues(outcome).Add(0)
+	}
+	for _, result := range routePublishResults {
+		routePublishTotal.WithLabelValues(result).Add(0)
+	}
+}
+
+// ObserveRouteRegister 记一次 db_first RegisterPlayerZone 的结局。outcome 取 RouteRegister* 常量(封闭集合),本函数不校验。
+func ObserveRouteRegister(outcome string) {
+	register()
+	routeRegisterTotal.WithLabelValues(outcome).Inc()
+}
+
+// ObserveRoutePublish 记一次发布(publishRoute 一次调用,含其内部重试)的最终结果。result 取 RoutePublish* 常量。
+func ObserveRoutePublish(result string) {
+	register()
+	routePublishTotal.WithLabelValues(result).Inc()
 }
 
 // PrimeRollbackGuildCheck 把 rollback_guild_check_total 的 scope × result 封闭集合(3 × 9 = 27 条)
@@ -277,6 +452,37 @@ func ObserveRollbackGuildCheckSeconds(scope string, d time.Duration) {
 	rollbackGuildCheckSeconds.WithLabelValues(scope).Observe(d.Seconds())
 }
 
+// 连接池类别(mmorpg_sql_pool_*{sql_client="data_service",pool=...},G2b):一个 store 一个独立连接池,类别即 store 名。
+// 封闭集合;svc.ServiceContext.SQLPoolSamples 按这些常量报样本。
+const (
+	PoolSnapshot       = "snapshot"        // player_snapshot / rollback_audit_log(SnapshotMySQL.MaxOpenConn)
+	PoolTransactionLog = "transaction_log" // transaction_log(SnapshotMySQL.MaxOpenConn)
+	PoolIdSegment      = "id_segment"      // id_segment(SnapshotMySQL.MaxOpenConn)
+	PoolPlayerName     = "player_name"     // player_name(PlayerName.MaxOpenConn)
+	PoolPlayerRoute    = "player_route"    // 路由表(RouteStore.MaxOpenConn),只在 RouteStore.Mode=db_first 时装配
+)
+
+// NewSQLPoolCollector 只构造不注册(单测用自己的注册表)。sql_client 取本包的 subsystem("data_service")。
+// includeRoute 为 false 时不声明 player_route:理由同 PrimeRoute —— redis 模式下不装配 route store,
+// 不要一组恒为 0、看着像在跑的序列。
+func NewSQLPoolCollector(source sqlpoolstats.Source, includeRoute bool) prometheus.Collector {
+	pools := []string{PoolSnapshot, PoolTransactionLog, PoolIdSegment, PoolPlayerName}
+	if includeRoute {
+		pools = append(pools, PoolPlayerRoute)
+	}
+	return sqlpoolstats.NewCollector(subsystem, pools, source)
+}
+
+// RegisterSQLPools 把连接池快照接到默认注册表(Start 暴露的那个)。进程内调一次(data_service.go 启动路径;
+// 不能放进 svc.NewServiceContext:单测会多次构造 ServiceContext,默认注册表重复注册会报错)。
+// 注册失败只记日志:指标是观测面,不能挡住 Load/Save。
+func RegisterSQLPools(source sqlpoolstats.Source, includeRoute bool) {
+	register()
+	if err := prometheus.Register(NewSQLPoolCollector(source, includeRoute)); err != nil {
+		logx.Errorf("[metrics] register sql pool collector failed (pool metrics unavailable): %v", err)
+	}
+}
+
 // SetKafkaConsumerUp flips the up gauge for one consumer ("transaction_log" | "player_snapshot").
 func SetKafkaConsumerUp(consumer string, up bool) {
 	register()
@@ -294,6 +500,80 @@ func ObserveKafkaConsumerMessages(consumer, outcome string, n int) {
 	}
 	register()
 	kafkaConsumerMessagesTotal.WithLabelValues(consumer, outcome).Add(float64(n))
+}
+
+// kafka_consumer_* 审计管道指标(G2a)的封闭取值集合,PrimeKafkaConsumer 逐个预置;新增取值必须同时加进下面的切片。
+const (
+	KafkaResultOK    = "ok"
+	KafkaResultError = "error"
+
+	KafkaIsolationRecovered = "recovered"
+	KafkaIsolationStopped   = "stopped"
+)
+
+var (
+	// kafkaConsumerOutcomes 是 kafka_consumer_messages_total{outcome} 的全集(与它的 Help 一致)。
+	kafkaConsumerOutcomes = []string{"inserted", "duplicate", "decode_error", "invalid", "oversize", "db_error"}
+	kafkaLagProbeResults  = []string{KafkaResultOK, KafkaResultError}
+	kafkaIsolationResults = []string{KafkaIsolationRecovered, KafkaIsolationStopped}
+)
+
+// PrimeKafkaConsumer 把一条消费者的 messages_total(6 个 outcome)、lag_probe_total(ok / error)、
+// isolation_total(recovered / stopped)逐个预置为 0。理由同 PrimeRollbackGuildCheck:坏消息跳过、保留期丢失、
+// 批量兜底停机这类一辈子可能只发生几次的结局,序列不预先存在的话 `increase(...) > 0` 恰好漏掉第一次。
+// 启动路径(data_service.go startKafkaConsumers)对两条消费者各调一次;txlog 没有逐条兜底,它的 isolation 序列恒为 0,无害。
+func PrimeKafkaConsumer(consumer string) {
+	register()
+	for _, outcome := range kafkaConsumerOutcomes {
+		kafkaConsumerMessagesTotal.WithLabelValues(consumer, outcome).Add(0)
+	}
+	for _, result := range kafkaLagProbeResults {
+		kafkaConsumerLagProbeTotal.WithLabelValues(consumer, result).Add(0)
+	}
+	for _, result := range kafkaIsolationResults {
+		kafkaConsumerIsolationTotal.WithLabelValues(consumer, result).Add(0)
+	}
+}
+
+// ObserveKafkaConsumerFlushAttempt 记一次 DB 尝试的耗时;result 取 KafkaResultOK / KafkaResultError。
+// 调用方只计"拿到落库名额之后到 sink 返回"这一段,ctx 取消导致的失败不要调(关停 / 兄弟分区停机不是 DB 慢)。
+func ObserveKafkaConsumerFlushAttempt(consumer, result string, d time.Duration) {
+	register()
+	kafkaConsumerFlushSeconds.WithLabelValues(consumer, result).Observe(d.Seconds())
+}
+
+// ObserveKafkaConsumerBatchRows 记一次 flush 写了几行。rows <= 0(纯坏消息的批)直接返回。
+func ObserveKafkaConsumerBatchRows(consumer string, rows int) {
+	if rows <= 0 {
+		return
+	}
+	register()
+	kafkaConsumerBatchRows.WithLabelValues(consumer).Observe(float64(rows))
+}
+
+// ObserveKafkaConsumerMessageBytes 记一条消息 value 的字节数。
+func ObserveKafkaConsumerMessageBytes(consumer string, n int) {
+	register()
+	kafkaConsumerMessageBytes.WithLabelValues(consumer).Observe(float64(n))
+}
+
+// SetKafkaConsumerLag 写 lag 探针的结果:积压条数与保留期已删掉的未消费条数。
+func SetKafkaConsumerLag(consumer string, lag, gap int64) {
+	register()
+	kafkaConsumerLagMessages.WithLabelValues(consumer).Set(float64(lag))
+	kafkaConsumerRetentionGapMessages.WithLabelValues(consumer).Set(float64(gap))
+}
+
+// ObserveKafkaConsumerLagProbe 记一次 lag 探测的结局(KafkaResultOK / KafkaResultError)。
+func ObserveKafkaConsumerLagProbe(consumer, result string) {
+	register()
+	kafkaConsumerLagProbeTotal.WithLabelValues(consumer, result).Inc()
+}
+
+// ObserveKafkaConsumerIsolation 记一次批量失败后逐条兜底的结局(KafkaIsolationRecovered / KafkaIsolationStopped)。
+func ObserveKafkaConsumerIsolation(consumer, result string) {
+	register()
+	kafkaConsumerIsolationTotal.WithLabelValues(consumer, result).Inc()
 }
 
 // ObserveIdSegmentAllocate records one AllocateIdSegment outcome. biz_tag cardinality is

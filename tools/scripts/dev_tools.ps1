@@ -323,6 +323,9 @@
     # 转给 k8s_zone_rollback.ps1 -ConfirmNoGatewayIngress:显式声明回滚后该 zone 不要 Ingress gateway(Ingress 核对的显式决定,
     # 与 -GatewayIngressHost 互斥)。switch 不占位置参数,插在这里不影响后面参数的位置绑定。
     [switch]$RollbackConfirmNoGatewayIngress,
+    # 转给 k8s_zone_rollback.ps1 -ConfirmFlushSharedRedis:Step 4 FLUSHDB 的目标 DB 里有全局共享键
+    # (player:zone / player:placement / player:maprev / merge:* / consumer:applied* / kafka:retry*)时仍然放行。默认拒绝。
+    [switch]$RollbackConfirmFlushSharedRedis,
     [int]$RollbackKafkaDrainTimeoutSec = 300,
     [switch]$RollbackApply
 )
@@ -1588,6 +1591,7 @@ switch ($Command) {
         if ($RollbackRedisPassword -ne "") { $rbArgs.RedisPassword = $RollbackRedisPassword }
         if ($RollbackRedisDB -ne 0)        { $rbArgs.RedisDB = $RollbackRedisDB }
         if ($RollbackSkipMySqlPause)       { $rbArgs.SkipMySqlPause = $true }
+        if ($RollbackConfirmFlushSharedRedis) { $rbArgs.ConfirmFlushSharedRedis = $true }
         if ($RollbackApply)                { $rbArgs.Apply = $true }
         # 留空不传,由下游默认值接管(k8s_zone_rollback.ps1 的 Step 6 再原样转给 k8s-zone-up);默认值只在 k8s_deploy.ps1 一处。
         # 这组参数不粘滞:以 external / "0" 回退 / 经 Ingress 对外 / staging、prod 档 / 开发口令登录运行的 zone 回滚时,
