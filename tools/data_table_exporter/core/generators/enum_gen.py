@@ -682,7 +682,7 @@ def _generate_tip_faults(cfg: ExporterConfig, env: Environment, groups: dict[str
     if not rows:
         # 合法但极可疑:一整张码表里没有一个服务端故障,多半是列被清空了。
         # 表头还在所以不中止,但要让跑导表的人看见。
-        logger.warning("Tip.xlsx 的 fault 列没有标出任何故障码,serverbase 将不会判出任何 in-band 故障")
+        logger.warning("The fault column in Tip.xlsx marks no fault codes; serverbase will not detect any in-band faults")
 
 
 def _generate_tip_text(cfg: ExporterConfig, groups: dict[str, dict]) -> None:
@@ -707,11 +707,11 @@ def _generate_tip_text(cfg: ExporterConfig, groups: dict[str, dict]) -> None:
     logger.info("Generated tip text table: %d/%d codes have text",
                 len(payload), len(payload) + len(missing))
     if missing:
-        logger.warning("以下 tip 码没有中文文案(客户端只能按既有 fallback 处理): %d 个", len(missing))
+        logger.warning("The following tip codes have no Chinese text (the client can only use its existing fallback): %d codes", len(missing))
         for m in missing[:20]:
-            logger.warning("  缺文案: %s", m)
+            logger.warning("  Missing text: %s", m)
         if len(missing) > 20:
-            logger.warning("  ...另有 %d 个", len(missing) - 20)
+            logger.warning("  ...and %d more", len(missing) - 20)
 
 
 # ===================================================================

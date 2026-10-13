@@ -105,7 +105,7 @@ final class InnoDbDeadlockRetry {
                 if (attempt >= MAX_ATTEMPTS || !isDeadlockVictim(e)) {
                     throw e;
                 }
-                log.warn("{} 被 InnoDB 选为死锁牺牲者(1213),第 {}/{} 次尝试失败,退避后整事务重试 zone_id={}",
+                log.warn("{} was selected as an InnoDB deadlock victim (1213); attempt {}/{} failed, retrying the entire transaction after backoff zone_id={}",
                         opName, attempt, MAX_ATTEMPTS, zoneId);
                 if (!sleepBeforeRetry(attempt)) {
                     throw e;

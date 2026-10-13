@@ -101,7 +101,7 @@ func SetTargets(nodeType string, count int) {
 // Start 启动 Prometheus /metrics 端点;addr 为空则关闭(与 match 同模式)。
 func Start(addr string) {
 	if addr == "" {
-		logx.Info("[metrics] MetricsListenAddr 为空,不开 Prometheus /metrics")
+		logx.Info("[metrics] MetricsListenAddr empty; Prometheus /metrics disabled")
 		return
 	}
 	register()
@@ -113,9 +113,9 @@ func Start(addr string) {
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 	go func() {
-		logx.Infof("[metrics] Prometheus /metrics 监听 %s", addr)
+		logx.Infof("[metrics] Prometheus /metrics listening on %s", addr)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			logx.Errorf("[metrics] HTTP 服务退出: %v", err)
+			logx.Errorf("[metrics] HTTP server exited: %v", err)
 		}
 	}()
 }

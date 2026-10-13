@@ -131,9 +131,9 @@ function Resolve-CMake {
 }
 
 if ($DryRun) {
-    Write-Host "官方开发包: $downloadUrl"
+    Write-Host "Official development package: $downloadUrl"
     Write-Host "SHA256: $archiveSha256"
-    Write-Host "开发库目录: $sdkRoot"
+    Write-Host "Development library directory: $sdkRoot"
     if (-not $DownloadOnly) { Write-Host "Release x64 串行构建: $buildRoot\Release\no_raw_ptr_check.exe" }
     return
 }
@@ -145,7 +145,7 @@ $cmake = if (-not $DownloadOnly) { Resolve-CMake } else { $null }
 
 if ($LlvmRoot) {
     if (-not (Test-LlvmSdk $sdkRoot)) { throw "指定目录不是完整 LLVM/Clang 开发库: $sdkRoot" }
-    Write-Host "复用已有 LLVM/Clang 开发库: $sdkRoot"
+    Write-Host "Reusing existing LLVM/Clang development libraries: $sdkRoot"
 } else {
     $stampPath = Join-Path $sdkRoot '.archive-sha256'
     $ready = (Test-LlvmSdk $sdkRoot) -and (Test-Path -LiteralPath $stampPath) -and
@@ -155,11 +155,11 @@ if ($LlvmRoot) {
         if (Test-Path -LiteralPath $sdkRoot) { throw "开发库目录不完整或版本标记不符，请检查后移走再运行: $sdkRoot" }
         $tar = (Get-Command tar.exe -ErrorAction Stop).Source
         New-Item -ItemType Directory -Path $cacheRoot -Force | Out-Null
-        Write-Host "准备 LLVM $version 开发包(约 860 MiB)，存在则复用，缺少则下载。"
+        Write-Host "Preparing LLVM $version development package (about 860 MiB); reuse if present, download if missing."
         Get-VerifiedArchive $downloadUrl $archivePath $archiveSha256
         $stage = Join-Path $cacheRoot ("llvm-$version.extract-" + [guid]::NewGuid().ToString('N'))
         New-Item -ItemType Directory -Path $stage | Out-Null
-        Write-Host "校验通过，解压到 $stage"
+        Write-Host "Verification passed; extracting to $stage"
         Invoke-Checked $tar @('-xf', $archivePath, '-C', $stage, '--strip-components=1')
         if (-not (Test-LlvmSdk $stage)) { throw "归档缺少 LLVM/Clang 开发库，解压内容保留在: $stage" }
         [IO.File]::WriteAllText((Join-Path $stage '.archive-sha256'), $archiveSha256)
@@ -188,5 +188,5 @@ $checker = Join-Path $buildRoot 'Release\no_raw_ptr_check.exe'
 if (-not (Test-Path -LiteralPath $checker)) { throw "构建结束但没有生成检查器: $checker" }
 Invoke-Checked $checker @('--help')
 & (Join-Path $PSScriptRoot '../tests/no_raw_pointer_check.tests.ps1') -CheckerPath $checker
-Write-Host "检查器已生成: $checker"
-Write-Host '现有 MSBuild 检查脚本会自动发现此文件。'
+Write-Host "Checker generated: $checker"
+Write-Host 'Existing MSBuild check scripts will discover this file automatically.'

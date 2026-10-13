@@ -257,9 +257,9 @@ func (b *CommandPartitionBalancer) Balance(msg kafkago.Message, partitions ...in
 		// 1 分区,topic 预建 Job 没跑过)。这条消息无论落到哪个分区都不会被目标节点
 		// 读到,但沉默是最坏的结果 —— 至少留一行能直接定位的 ERROR。
 		logx.Errorf("kafkacmd: command topic %s partition %d not in broker partition set %v; "+
-			"分区契约不符,目标节点不会收到这条命令。先跑 topic 预建"+
+			"Partition contract mismatch; target node will not receive this command. Run topic precreation first "+
 			"(deploy/docker-compose.yml kafka-topic-init / k8s_deploy.ps1 -Command infra-kafka-topics),"+
-			"若是有意改分区数请换 %s 代号。",
+			" if changing the partition count intentionally, use a new %s generation.",
 			msg.Topic, msg.Partition, partitions, EnvCommandTopicGeneration)
 	}
 	fallback := b.Fallback

@@ -134,7 +134,7 @@ func writeSpectateRecord(svcCtx *svc.ServiceContext, record *matchpb.SpectateBat
 		if lastErr == nil {
 			return nil
 		}
-		logx.Errorf("[spectate] 写观战记录失败 battle=%d node=%d attempt=%d/%d: %v",
+		logx.Errorf("[spectate] Failed to write spectator record battle=%d node=%d attempt=%d/%d: %v",
 			battleId, record.GetBattleNodeId(), attempt, spectateRecordWriteAttempts, lastErr)
 		if attempt < spectateRecordWriteAttempts {
 			spectateRecordRetrySleepFn(backoff)
@@ -163,13 +163,13 @@ func writeSpectateRecord(svcCtx *svc.ServiceContext, record *matchpb.SpectateBat
 func publishSpectateBattle(svcCtx *svc.ServiceContext, record *matchpb.SpectateBattleRecord) {
 	battleId := record.GetSummary().GetBattleId()
 	if raw, err := proto.Marshal(record); err != nil {
-		logx.Errorf("[spectate] 补写观战记录时序列化失败(预写记录仍在) battle=%d: %v", battleId, err)
+		logx.Errorf("[spectate] Failed to serialize spectator record update (prewritten record remains) battle=%d: %v", battleId, err)
 	} else {
 		ctx, cancel := context.WithTimeout(context.Background(), spectateRedisOpTimeout)
 		err = svcCtx.MatchRedis.SetexCtx(ctx, spectateBattleKey(battleId), string(raw), spectateTTLSeconds(svcCtx))
 		cancel()
 		if err != nil {
-			logx.Errorf("[spectate] 补写观战记录失败(预写记录通常仍在) battle=%d: %v", battleId, err)
+			logx.Errorf("[spectate] Failed to update spectator record (prewritten record usually remains) battle=%d: %v", battleId, err)
 		}
 	}
 	addSpectateActive(svcCtx, record)
@@ -182,11 +182,11 @@ func addSpectateActive(svcCtx *svc.ServiceContext, record *matchpb.SpectateBattl
 	defer cancel()
 	if _, err := svcCtx.MatchRedis.ZaddCtx(ctx, spectateBattlesActiveKey, int64(summary.GetCreatedAtMs()),
 		strconv.FormatUint(summary.GetBattleId(), 10)); err != nil {
-		logx.Errorf("[spectate] 观战索引 ZADD 失败(不影响补签,该场不进观战列表) battle=%d: %v",
+		logx.Errorf("[spectate] Spectator index ZADD failed (replacement tickets unaffected; battle excluded from spectator list) battle=%d: %v",
 			summary.GetBattleId(), err)
 		return
 	}
-	logx.Infof("[spectate] 战斗已登记可观战 battle=%d node=%d mode=%s players=%d",
+	logx.Infof("[spectate] Battle registered for spectating battle=%d node=%d mode=%s players=%d",
 		summary.GetBattleId(), record.GetBattleNodeId(), summary.GetMode().String(), len(summary.GetPlayerNames()))
 }
 
@@ -197,7 +197,7 @@ func dropSpectateRecord(svcCtx *svc.ServiceContext, battleId uint64) {
 	ctx, cancel := context.WithTimeout(context.Background(), spectateRedisOpTimeout)
 	defer cancel()
 	if _, err := svcCtx.MatchRedis.DelCtx(ctx, spectateBattleKey(battleId)); err != nil {
-		logx.Errorf("[spectate] 删预写观战记录失败(随 TTL 自清) battle=%d: %v", battleId, err)
+		logx.Errorf("[spectate] Failed to delete prewritten spectator record (TTL will clear it) battle=%d: %v", battleId, err)
 	}
 }
 
@@ -220,10 +220,10 @@ func loadSpectateBattle(svcCtx *svc.ServiceContext, battleId uint64) (*matchpb.S
 // removeSpectateBattle 懒剔除:battle 报房间不存在 / 记录缺失或损坏时清索引。
 func removeSpectateBattle(svcCtx *svc.ServiceContext, battleId uint64) {
 	if _, err := svcCtx.MatchRedis.Del(spectateBattleKey(battleId)); err != nil {
-		logx.Errorf("[spectate] 删观战记录失败 battle=%d: %v", battleId, err)
+		logx.Errorf("[spectate] Failed to delete spectator record battle=%d: %v", battleId, err)
 	}
 	if _, err := svcCtx.MatchRedis.Zrem(spectateBattlesActiveKey, strconv.FormatUint(battleId, 10)); err != nil {
-		logx.Errorf("[spectate] 观战索引 ZREM 失败 battle=%d: %v", battleId, err)
+		logx.Errorf("[spectate] Spectator index ZREM failed battle=%d: %v", battleId, err)
 	}
 }
 
@@ -258,9 +258,9 @@ func pickRandomBattle(svcCtx *svc.ServiceContext) (uint64, error) {
 		}
 		battleId, err := strconv.ParseUint(pairs[0].Key, 10, 64)
 		if err != nil {
-			logx.Errorf("[spectate] 观战索引出现非法成员 %q,剔除", pairs[0].Key)
+			logx.Errorf("[spectate] Invalid member %q in spectator index; removing", pairs[0].Key)
 			if _, err := svcCtx.MatchRedis.Zrem(spectateBattlesActiveKey, pairs[0].Key); err != nil {
-				logx.Errorf("[spectate] 剔除非法成员失败: %v", err)
+				logx.Errorf("[spectate] Failed to remove invalid member: %v", err)
 			}
 			continue
 		}
@@ -282,7 +282,7 @@ func pickRandomBattle(svcCtx *svc.ServiceContext) (uint64, error) {
 func stopWatchingIfAny(svcCtx *svc.ServiceContext, playerId uint64, reason string) {
 	raw, err := svcCtx.MatchRedis.Get(spectateWatchingKey(playerId))
 	if err != nil {
-		logx.Errorf("[spectate] 读观战标记失败 player=%d: %v", playerId, err)
+		logx.Errorf("[spectate] Failed to read spectator marker player=%d: %v", playerId, err)
 		return
 	}
 	if raw == "" {
@@ -290,27 +290,27 @@ func stopWatchingIfAny(svcCtx *svc.ServiceContext, playerId uint64, reason strin
 	}
 	battleId, err := strconv.ParseUint(raw, 10, 64)
 	if err != nil {
-		logx.Errorf("[spectate] 观战标记值非法 player=%d value=%q,直接清除", playerId, raw)
+		logx.Errorf("[spectate] Invalid spectator marker value player=%d value=%q; clearing directly", playerId, raw)
 		deleteSpectateWatching(svcCtx, playerId)
 		return
 	}
 	record, err := loadSpectateBattle(svcCtx, battleId)
 	switch {
 	case err != nil:
-		logx.Errorf("[spectate] 清退时读观战记录失败 player=%d battle=%d: %v", playerId, battleId, err)
+		logx.Errorf("[spectate] Failed to read spectator record during removal player=%d battle=%d: %v", playerId, battleId, err)
 	case record == nil:
 		// 战斗已收尾,标记是残留,删标记即可。
 	default:
 		removeObserver(svcCtx, record.GetBattleNodeId(), battleId, playerId, reason)
 	}
 	deleteSpectateWatching(svcCtx, playerId)
-	logx.Infof("[spectate] 已清退观战 player=%d battle=%d reason=%s", playerId, battleId, reason)
+	logx.Infof("[spectate] Spectator removed player=%d battle=%d reason=%s", playerId, battleId, reason)
 }
 
 // deleteSpectateWatching 删观战互斥标记(WatchBattle 失败回滚 / 清退共用)。
 func deleteSpectateWatching(svcCtx *svc.ServiceContext, playerId uint64) {
 	if _, err := svcCtx.MatchRedis.Del(spectateWatchingKey(playerId)); err != nil {
-		logx.Errorf("[spectate] 删观战标记失败 player=%d: %v", playerId, err)
+		logx.Errorf("[spectate] Failed to delete spectator marker player=%d: %v", playerId, err)
 	}
 }
 
@@ -375,7 +375,7 @@ func addObserver(svcCtx *svc.ServiceContext, battleNodeId uint32, battleId, obse
 func removeObserver(svcCtx *svc.ServiceContext, battleNodeId uint32, battleId, observerId uint64, reason string) {
 	endpoint, err := svcCtx.BattleNodes.EndpointOfNode(battleNodeId)
 	if err != nil {
-		logx.Errorf("[spectate] 清退时定位 battle 节点失败 battle=%d node=%d player=%d: %v",
+		logx.Errorf("[spectate] Failed to locate battle node during removal battle=%d node=%d player=%d: %v",
 			battleId, battleNodeId, observerId, err)
 		return
 	}
@@ -384,7 +384,7 @@ func removeObserver(svcCtx *svc.ServiceContext, battleNodeId uint32, battleId, o
 		ObserverPlayerId: observerId,
 		Reason:           reason,
 	}); err != nil {
-		logx.Errorf("[spectate] RemoveObserver 失败 battle=%d player=%d reason=%s: %v",
+		logx.Errorf("[spectate] RemoveObserver failed battle=%d player=%d reason=%s: %v",
 			battleId, observerId, reason, err)
 	}
 }
@@ -399,10 +399,10 @@ func cleanupExpiredSpectateIndex(svcCtx *svc.ServiceContext) {
 	}
 	removed, err := svcCtx.MatchRedis.Zremrangebyscore(spectateBattlesActiveKey, 0, staleBefore)
 	if err != nil {
-		logx.Errorf("[matcher] 清理过期观战索引失败: %v", err)
+		logx.Errorf("[matcher] Failed to clean expired spectator index entries: %v", err)
 		return
 	}
 	if removed > 0 {
-		logx.Infof("[matcher] 清理过期观战索引 %d 条", removed)
+		logx.Infof("[matcher] Cleaned %d expired spectator index entries", removed)
 	}
 }

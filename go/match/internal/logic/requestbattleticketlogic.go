@@ -70,7 +70,7 @@ func NewRequestBattleTicketLogic(ctx context.Context, svcCtx *svc.ServiceContext
 func (l *RequestBattleTicketLogic) RequestBattleTicket(in *battlepb.RequestBattleTicketRequest) (*battlepb.RequestBattleTicketResponse, error) {
 	detail, ok := ctxkeys.GetSessionDetails(l.ctx)
 	if !ok || detail.GetPlayerId() == 0 {
-		l.Errorf("[ticket] RequestBattleTicket 缺少会话身份 battle=%d", in.GetBattleId())
+		l.Errorf("[ticket] RequestBattleTicket missing session identity battle=%d", in.GetBattleId())
 		metrics.ObserveRequestBattleTicket("no_session")
 		return &battlepb.RequestBattleTicketResponse{
 			ErrorMessage: tipErr(constants.ErrInternal, "缺少玩家身份"),
@@ -80,7 +80,7 @@ func (l *RequestBattleTicketLogic) RequestBattleTicket(in *battlepb.RequestBattl
 
 	record, err := loadSpectateBattle(l.svcCtx, in.GetBattleId())
 	if err != nil {
-		l.Errorf("[ticket] RequestBattleTicket 读观战索引失败 player=%d battle=%d: %v",
+		l.Errorf("[ticket] RequestBattleTicket failed to read spectator index player=%d battle=%d: %v",
 			playerId, in.GetBattleId(), err)
 		metrics.ObserveRequestBattleTicket("internal")
 		return &battlepb.RequestBattleTicketResponse{
@@ -88,7 +88,7 @@ func (l *RequestBattleTicketLogic) RequestBattleTicket(in *battlepb.RequestBattl
 		}, nil
 	}
 	if record == nil {
-		l.Infof("[ticket] RequestBattleTicket 房间已不存在 player=%d battle=%d", playerId, in.GetBattleId())
+		l.Infof("[ticket] RequestBattleTicket room no longer exists player=%d battle=%d", playerId, in.GetBattleId())
 		metrics.ObserveRequestBattleTicket("not_found")
 		return &battlepb.RequestBattleTicketResponse{
 			ErrorMessage: tipErr(uint32(table.CommonError_kInvalidParameter), "该战斗不存在或已结束"),
@@ -104,7 +104,7 @@ func (l *RequestBattleTicketLogic) RequestBattleTicket(in *battlepb.RequestBattl
 	// 才判 BattleGone(需给 SpectateBattleRecord 加字段并按 AGENTS §4 重生)。
 	endpoint, err := l.svcCtx.BattleNodes.EndpointOfNode(record.GetBattleNodeId())
 	if err != nil {
-		l.Errorf("[ticket] RequestBattleTicket 定位 battle 节点失败 player=%d battle=%d node=%d: %v",
+		l.Errorf("[ticket] RequestBattleTicket failed to locate battle node player=%d battle=%d node=%d: %v",
 			playerId, in.GetBattleId(), record.GetBattleNodeId(), err)
 		metrics.ObserveRequestBattleTicket("no_node")
 		return &battlepb.RequestBattleTicketResponse{
@@ -117,7 +117,7 @@ func (l *RequestBattleTicketLogic) RequestBattleTicket(in *battlepb.RequestBattl
 		PlayerId: playerId,
 	})
 	if err != nil {
-		l.Errorf("[ticket] IssueBattleTicket RPC 失败 player=%d battle=%d node=%d(%s): %v",
+		l.Errorf("[ticket] IssueBattleTicket RPC failed player=%d battle=%d node=%d(%s): %v",
 			playerId, in.GetBattleId(), record.GetBattleNodeId(), endpoint, err)
 		metrics.ObserveRequestBattleTicket("rpc_error")
 		return &battlepb.RequestBattleTicketResponse{
@@ -126,11 +126,11 @@ func (l *RequestBattleTicketLogic) RequestBattleTicket(in *battlepb.RequestBattl
 	}
 
 	if tipId := resp.GetErrorMessage().GetId(); tipId != 0 {
-		l.Infof("[ticket] battle 节点拒签 player=%d battle=%d node=%d tip_id=%d",
+		l.Infof("[ticket] Battle node refused ticket issuance player=%d battle=%d node=%d tip_id=%d",
 			playerId, in.GetBattleId(), record.GetBattleNodeId(), tipId)
 		metrics.ObserveRequestBattleTicket("rejected")
 	} else {
-		l.Infof("[ticket] 补签成功 player=%d battle=%d node=%d role=%s",
+		l.Infof("[ticket] Replacement ticket issued successfully player=%d battle=%d node=%d role=%s",
 			playerId, in.GetBattleId(), record.GetBattleNodeId(), resp.GetAssignment().GetRole().String())
 		metrics.ObserveRequestBattleTicket("ok")
 	}

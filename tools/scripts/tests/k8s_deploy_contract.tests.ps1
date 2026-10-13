@@ -27,7 +27,7 @@ $ErrorActionPreference = "Stop"
 . "$PSScriptRoot/lib/deploy_capture.ps1"
 
 Write-Host ""
-Write-Host "=== k8s_deploy.ps1 部署生成器契约测试 ==="
+Write-Host "=== k8s_deploy.ps1 deployment generator contract tests ==="
 
 # 一次 DryRun 供多个用例复用(子进程启动比断言贵得多)
 $BaseArgs = @(
@@ -1523,9 +1523,9 @@ Test-Case 'dev 档未设 MMORPG_GATEWAY_ADMIN_API_KEY:回落占位值并打警�
     # 只断警告里不含空格的一段:Write-Warning 若被 ConsoleHost 按窗口宽度折行(重定向下是否折行未实测),折点在空格处;这一段连同前缀
     # "WARNING: gateway " 止于第 64 显示列(中文按 2 列),≥ 约 65 列的控制台不会把它拆开。旧写法连到"未设置或仍是占位串",
     # 而其后直到 "/admin/**" 是一整段无空格 token(止于约第 113 列),窗口不足约 114 列就会在"未设置"前折断。
-    Assert-Match -Text $run.Output -Pattern '管理面口令是占位值\(MMORPG_GATEWAY_ADMIN_API_KEY' -Because '回落占位值必须明说:此时 /admin/** 用公开常量鉴权,只允许本地 dev'
+    Assert-Match -Text $run.Output -Pattern 'admin password is a placeholder \(MMORPG_GATEWAY_ADMIN_API_KEY' -Because '回落占位值必须明说:此时 /admin/** 用公开常量鉴权,只允许本地 dev'
     # DryRun 下 Apply-InjectedSecret 只打一行隐去值的意图,不走会把整份 YAML(含明文 stringData)打出来的 Invoke-KubectlWithInputFile。
-    Assert-Match -Text $run.Output -Pattern '(?m)^\[dry-run\] kubectl apply -n \S+ -f -\s+# Secret gateway-admin-api-key\(key api-key,值已隐去\)\s*$' -Because 'Secret 的 dry-run 行要点名 Secret 名与 key,且声明值已隐去'
+    Assert-Match -Text $run.Output -Pattern '(?m)^\[dry-run\] kubectl apply -n \S+ -f -\s+# Secret gateway-admin-api-key \(key api-key; value hidden\)\s*$' -Because 'Secret 的 dry-run 行要点名 Secret 名与 key,且声明值已隐去'
 
     $gateway = Select-ManifestByName -Output $run.Output -Name 'gateway'
     Assert-True -Condition ($null -ne $gateway) -Because 'DryRun 输出里应当有 gateway 的 manifest'
@@ -1565,7 +1565,7 @@ Test-Case 'gateway Pod 模板带口令指纹注解(加引号的 12 位十六进�
     Assert-Equal -Expected $prodHash -Actual $devHash -Because '同一口令的指纹必须稳定'
     # secretKeyRef 只在容器启动时读:只改 Secret 时 Pod 模板逐字节不变,apply 是 no-op,旧口令一直有效、新口令被拒。
     Assert-True -Condition ($placeholderHash -ne $devHash) -Because "换口令指纹必须变,否则轮换不会触发滚动(两者都是 $devHash)"
-    Assert-NotMatch -Text $adminDevSameKeyRun.Output -Pattern '管理面口令是占位值' -Because '对照:非占位口令不该打占位警告'
+    Assert-NotMatch -Text $adminDevSameKeyRun.Output -Pattern 'admin password is a placeholder' -Because '对照:非占位口令不该打占位警告'
 }
 
 Test-Case 'gateway 写入顺序 ConfigMap → Secret → Deployment,Secret 与 Deployment 同 namespace(secretKeyRef 非 optional,Secret 必须先落地)' {

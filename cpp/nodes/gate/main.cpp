@@ -232,12 +232,12 @@ int main(int argc, char *argv[])
             // 连的是路由服还是业务服务",不能靠翻容器的环境变量。
             {
                 const std::vector<uint32_t> whitelistForLog(connectTo.begin(), connectTo.end());
-                LOG_INFO << "gate 客户端消息出口模式=" << gate_router_mode::RouterModeName(routerMode)
-                         << "(" << gate_router_mode::kRouterModeEnv << "=1|true|on 为 router,其它为 direct)"
-                         << ", 出站白名单=" << Node::FormatNodeTypeNames(whitelistForLog)
+                LOG_INFO << "gate client message outbound mode=" << gate_router_mode::RouterModeName(routerMode)
+                         << "(" << gate_router_mode::kRouterModeEnv << "=1|true|on selects router;other values select direct)"
+                         << ", outbound allowlist=" << Node::FormatNodeTypeNames(whitelistForLog)
                          << (routerMode
-                                 ? ", 路由模式:gate 对 Go 业务服务零 stub,gRPC 连接数=路由服副本数,战斗消息一律拒绝(只走直连)"
-                                 : ", 直连模式:除战斗外行为与引入路由服之前一致,战斗消息一律拒绝(只走直连)");
+                                 ? ", router mode:gate has no stubs for Go business services;gRPC connection count equals router replica count;all battle messages rejected(direct connections only)"
+                                 : ", direct mode:non-battle behavior matches behavior before router introduction;all battle messages rejected(direct connections only)");
             }
 
             // Override the default Kafka dispatch with GateCommand-specific routing

@@ -114,7 +114,7 @@ func (l *GuildLogic) StartTrialBackground(c TrialBackgroundConf) (stop func(), e
 		defer wg.Done()
 		runTrialLoop(ctx, trialSweeperPoint, c.SweepInterval, func(ctx context.Context) { l.trialSweepRound(ctx, d, c) })
 	})
-	logx.Infof("[GuildTrial] 后台循环已启动: goroutine %s interval=%v;%s interval=%v overdue=%v abandon=%v lease_owner=%s",
+	logx.Infof("[GuildTrial] Background loops started: goroutine %s interval=%v; %s interval=%v overdue=%v abandon=%v lease_owner=%s",
 		trialOwedLoopPoint, c.OwedInterval, trialSweeperPoint, c.SweepInterval, c.ResultOverdue, c.Abandon, c.Owner)
 	return func() {
 		cancel()

@@ -583,11 +583,11 @@ func ensurePlayerNameKeyedByName(ctx context.Context, db *sql.DB, dbName, tableN
 		// 与 TiDB 那一支同口径:打 Error 说明失效范围,然后放行,好让其余四张表的迁移照常完成。
 		// 位置要紧:它排在"认不出的主键形状"那一支**之后** —— 这个开关只免掉"迁不迁",
 		// 不免"看不懂的形状要 fail-closed",后者与表大小、维护窗口都无关。
-		logx.Errorf("[schema] table %s: 跳过「主键改 name_norm」—— MigrateOptions.AllowLegacyPlayerNamePrimaryKey 已显式打开。"+
-			"**本实例仍是旧形态** PRIMARY KEY(player_id) + UNIQUE(name_norm):功能完全正确(名字仍全服唯一),"+
-			"但名字抢注在生产常态那一路(新号段 id 抢存量角色释放的名字)仍会成环 —— 真库实测 5/5,"+
-			"只能靠有界 1213 重试吸收。NewPlayerNameStore 会探到旧形态并自动改用带 FORCE INDEX (%s) 的旧 Release 语句,"+
-			"锁序仍然一致。这是一次有意的推迟:窗口合适时关掉这个开关重跑一次 -migrate 即可根治",
+		logx.Errorf("[schema] table %s: skipping primary key change to name_norm -- MigrateOptions.AllowLegacyPlayerNamePrimaryKey explicitly enabled. "+
+			"This instance still uses legacy PRIMARY KEY(player_id) + UNIQUE(name_norm): functionality remains correct (names globally unique), "+
+			"but production name reservation (new segment ids claiming names released by existing characters) still forms a lock cycle -- observed in 5/5 real-database runs, "+
+			"handled only by bounded 1213 retries. NewPlayerNameStore detects the legacy shape and automatically uses the legacy Release statement with FORCE INDEX (%s), "+
+			"maintaining consistent lock order. This is a deliberate deferral: disable the option and rerun -migrate during a suitable window to eliminate the cause",
 			tableName, PlayerNameLegacyNormUniqueKey)
 		return nil
 	}
@@ -602,11 +602,11 @@ func ensurePlayerNameKeyedByName(ctx context.Context, db *sql.DB, dbName, tableN
 		// 按官方文档本来就不存在(**未在 TiDB 上实测**)。在这里报错只会让整条 MigrateSchema 失败、
 		// 三个 store 全置 nil,拿一次确定的业务中断去换一个在本引擎上并不存在的收益。
 		// 另外 TiDB 对"一条 ALTER 里同时增删主键"的支持随版本而异,盲目下发反而可能留下中间态。
-		logx.Errorf("[schema] table %s: 跳过「主键改 name_norm」—— 服务端是 TiDB(%s)。"+
-			"本表保持旧形态 PRIMARY KEY(player_id) + UNIQUE(name_norm),功能正确(名字仍全服唯一);"+
-			"NewPlayerNameStore 会探到旧形态并自动改用带 FORCE INDEX 的旧 Release 语句。"+
-			"要在 TiDB 上也拿到根治,需要先定下 TiDB 形态的建表方案(候选:建表时就把主键写成 name_norm,"+
-			"并放弃与之冲突的 SHARD_ROW_ID_BITS),这是待决项",
+		logx.Errorf("[schema] table %s: skipping primary key change to name_norm -- server is TiDB(%s). "+
+			"Table retains legacy PRIMARY KEY(player_id) + UNIQUE(name_norm); functionality correct (names globally unique); "+
+			"NewPlayerNameStore detects the legacy shape and automatically uses the legacy Release statement with FORCE INDEX. "+
+			"Eliminating the cause on TiDB requires deciding the TiDB table schema (candidate: define name_norm as primary key at creation "+
+			"and remove conflicting SHARD_ROW_ID_BITS); decision pending",
 			tableName, version)
 		return nil
 	}
@@ -643,10 +643,10 @@ func ensurePlayerNameKeyedByName(ctx context.Context, db *sql.DB, dbName, tableN
 	}
 	alter := "ALTER TABLE `" + tableName + "` " + strings.Join(clauses, ", ")
 
-	logx.Infof("[schema] table %s: 把主键从 player_id 换成 name_norm(根治审计 #12 的名字抢注死锁)。"+
-		"这条 ALTER 会**重建整张表**,按手册 Table 17.17 可以在线做(并发 DML 允许),"+
-		"退回 ALGORITHM=COPY 时写入会被阻塞但不会丢;表大时请用部署阶段的 `data_service -f <yaml> -migrate`,"+
-		"不要指望启动期 AutoMigrate 的 5 分钟。语句: %s", tableName, alter)
+	logx.Infof("[schema] table %s: changing primary key from player_id to name_norm (eliminates name reservation deadlock from audit #12). "+
+		"This ALTER rebuilds the entire table; manual Table 17.17 permits online execution (concurrent DML allowed), "+
+		"fallback to ALGORITHM=COPY blocks writes without loss; large tables should use data_service -f <yaml> -migrate during deployment, "+
+		"rather than startup AutoMigrate's 5-minute budget. Statement: %s", tableName, alter)
 	if _, err := db.ExecContext(ctx, alter); err != nil {
 		return fmt.Errorf("table %s: 换主键失败(表未被改动,MySQL 8.0 的 DDL 是原子的,修好原因后重跑 -migrate 即可): %w",
 			tableName, err)
@@ -657,7 +657,7 @@ func ensurePlayerNameKeyedByName(ctx context.Context, db *sql.DB, dbName, tableN
 	if err := assertPlayerNameTargetShape(ctx, db, dbName, tableName, "换主键的 ALTER"); err != nil {
 		return err
 	}
-	logx.Infof("[schema] table %s: 主键已是 name_norm,%s 已就位,name_norm 上没有多余的二级唯一索引",
+	logx.Infof("[schema] table %s: primary key already name_norm, %s in place, no redundant secondary unique index on name_norm",
 		tableName, PlayerNameOwnerUniqueKey)
 	return nil
 }
@@ -706,9 +706,9 @@ func convergePlayerNameKeyShape(ctx context.Context, db *sql.DB, dbName, tableNa
 
 	// 打 Error 而不是 Info:主键已经换过、却还留着这种形状,只可能来自"回滚做了一半"或人工改表,
 	// 运维应当知道自己的库经历过什么,而不是让它在 Info 里划过去。
-	logx.Errorf("[schema] table %s: 主键已是 name_norm,但键的形状没收敛(多余的 name_norm 唯一索引 %v;"+
-		"%s 在不在 = %v)—— 典型来源是按注释里的反向 ALTER 只回滚了一半,或有人手工只执行了 ADD PRIMARY KEY。"+
-		"多余的那条会把名字抢注的死锁悄悄带回来,缺 %s 则让 Reserve 的 ID 复用检测静默失效。现在收敛: %s",
+	logx.Errorf("[schema] table %s: primary key already name_norm but index shape has not converged (redundant name_norm unique indexes %v; "+
+		"%s present = %v) -- typically caused by partial rollback using the reverse ALTER from comments or manually running only ADD PRIMARY KEY. "+
+		"Redundant index silently restores name reservation deadlocks; missing %s silently disables Reserve's id reuse detection. Converging now: %s",
 		tableName, strays, PlayerNameOwnerUniqueKey, hasOwnerKey, PlayerNameOwnerUniqueKey, alter)
 	if _, err := db.ExecContext(ctx, alter); err != nil {
 		return fmt.Errorf("table %s: 收敛键形状失败(DDL 原子,修好原因后重跑 -migrate 即可)。"+
@@ -719,7 +719,7 @@ func convergePlayerNameKeyShape(ctx context.Context, db *sql.DB, dbName, tableNa
 	if err := assertPlayerNameTargetShape(ctx, db, dbName, tableName, "收敛键形状的 ALTER"); err != nil {
 		return err
 	}
-	logx.Infof("[schema] table %s: 键形状已收敛到目标形态(PRIMARY(name_norm) + UNIQUE %s(player_id))",
+	logx.Infof("[schema] table %s: index shape converged to target (PRIMARY(name_norm) + UNIQUE %s(player_id))",
 		tableName, PlayerNameOwnerUniqueKey)
 	return nil
 }
@@ -1068,9 +1068,9 @@ func ensureNullableUniqueKey(ctx context.Context, db *sql.DB, dbName string, k n
 				"(2) 明确接受「本实例的快照 guid 去重失效」,由配置显式打开 MigrateOptions.AllowMissingGuidUniqueKey 放行",
 				k.table, version, k.indexName, k.sourceColumn)
 		}
-		logx.Errorf("[schema] table %s: 跳过 %s —— 服务端是 TiDB(%s),且 AllowMissingGuidUniqueKey 已显式打开。"+
-			"**本实例的快照 guid 去重已失效**:同一个 %s 可以落成多行,且不会有任何报错。"+
-			"这是一次有意的放行,不是可忽略的告警 —— TiDB 形态的可空唯一约束仍是待决项",
+		logx.Errorf("[schema] table %s: skipping %s -- server is TiDB(%s) and AllowMissingGuidUniqueKey explicitly enabled. "+
+			"Snapshot guid deduplication is disabled on this instance: the same %s can produce multiple rows without any error. "+
+			"This is deliberate bypass, not an ignorable warning -- nullable unique constraints for TiDB remain undecided",
 			k.table, k.indexName, version, k.sourceColumn)
 		return nil
 	}
@@ -1164,9 +1164,9 @@ func dedupeBySourceColumn(ctx context.Context, db *sql.DB, k nullableUniqueKey, 
 		logx.Infof("[schema] table %s: no duplicate %s to clean up before creating %s", k.table, k.sourceColumn, k.indexName)
 		return nil
 	}
-	logx.Errorf("[schema] table %s: %d 个 %s 有重复行,合计多余 %d 行,建 %s 之前按「每组留最小 id」清理。"+
-		"重复行在设计上不该存在(部署不变量是 data-service 单实例),出现它说明曾有多个写者并发写这张表 —— "+
-		"清完之后请顺带核对是不是有两套环境指到了同一个库",
+	logx.Errorf("[schema] table %s: %d %s values have duplicate rows, %d extra rows total; keeping the smallest id per group before creating %s. "+
+		"Duplicate rows should not exist by design (deployment invariant: single data-service instance); they indicate multiple writers previously wrote this table concurrently -- "+
+		"after cleanup, also check whether two environments point to the same database",
 		k.table, dupGroups, k.sourceColumn, extraRows, k.indexName)
 
 	// 每组多余行数 >= 1,所以 extraRows 就是本次要删的总数;超上限直接停手,不删一行。

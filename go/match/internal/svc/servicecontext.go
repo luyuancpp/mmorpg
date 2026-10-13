@@ -183,11 +183,11 @@ func NewServiceContext(c config.Config) *ServiceContext {
 // 拆成独立函数是为了不起 etcd 也能测试。
 func NewDataServiceClient(c zrpc.RpcClientConf) dspb.DataServiceClient {
 	if c.Etcd.Key == "" && len(c.Endpoints) == 0 && c.Target == "" {
-		logx.Error("[match] DataServiceRpc 未配置:无法查询玩家 home zone,组队需要 home zone 的请求将一律失败")
+		logx.Error("[match] DataServiceRpc not configured: cannot query player home zone; team requests requiring home zone will all fail")
 		return nil
 	}
 	if !c.NonBlock {
-		logx.Error("[match] DataServiceRpc.NonBlock=false 不被允许,已强制改为 true(阻塞建连会让 data_service 不可用时整个 match 起不来)")
+		logx.Error("[match] DataServiceRpc.NonBlock=false is not allowed; forced to true (blocking connection would prevent match startup when data_service is unavailable)")
 		c.NonBlock = true
 	}
 	conn := zrpc.MustNewClient(c)
@@ -204,7 +204,7 @@ func NewRedisHandles(c config.Config) (matchRds, sharedRds *redis.Redis) {
 		return sharedRds, sharedRds
 	}
 	matchRds = redis.MustNewRedis(c.MatchRedis)
-	logx.Infof("[match] MatchRedis 独立配置生效 host=%s type=%s(契约 key 仍走 Redis host=%s)",
+	logx.Infof("[match] Separate MatchRedis configuration active host=%s type=%s (contract keys still use Redis host=%s)",
 		c.MatchRedis.Host, c.MatchRedis.Type, c.Redis.Host)
 	return matchRds, sharedRds
 }

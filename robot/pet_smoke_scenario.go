@@ -149,7 +149,7 @@ func RunPetSmoke(cfg *config.Config) {
 	// 已有 1 只宝宝就永远走「复用」分支,GmGrantPet 那条断言被静默跳过、冒烟照样打 OK。
 	// 这里显式拦一道,让"表没跑导出"变成红,而不是变成一条更弱的绿。
 	if list.MaxPets == 0 {
-		fail("prep-max-pets", "服务端下发 max_pets=0,PetRule 表多半没导出(先跑 dev.bat gen)")
+		fail("prep-max-pets", "Server returned max_pets=0; the PetRule table was probably not exported (run dev.bat gen first)")
 	}
 	// 核心线没有"放生",反复跑会一直加宝宝;槽位满了就复用既有的那只,
 	// 让脚本在同一账号上永远可重复(设计文档 §8 缺口 4)。
@@ -164,19 +164,19 @@ func RunPetSmoke(cfg *config.Config) {
 			list = granted
 			target = player.GetPetGranted()
 			if target == 0 {
-				fail("prep-grant-id", "GmGrantPet 成功但没回 pet_id")
+				fail("prep-grant-id", "GmGrantPet succeeded but returned no pet_id")
 			}
 			if findPet(list, target) == nil {
-				fail("prep-grant-list", "新发的 pet_id=%d 不在返回的列表里", target)
+				fail("prep-grant-list", "Newly granted pet_id=%d is missing from the returned list", target)
 			}
 		}
 	}
 	if target == 0 {
 		if len(list.Pets) == 0 {
-			fail("prep-no-pet", "槽位满但列表为空(max_pets=%d),服务端状态不自洽", list.MaxPets)
+			fail("prep-no-pet", "Pet slots are full but the list is empty (max_pets=%d); server state is inconsistent", list.MaxPets)
 		}
 		target = list.Pets[0].PetId
-		zap.L().Warn("[pet-smoke] 槽位已满,复用既有宝宝(该账号已跑过多次)",
+		zap.L().Warn("[pet-smoke] Pet slots are full; reusing an existing pet (this account has been used in multiple runs)",
 			zap.Uint64("pet_id", target), zap.Int("pets", len(list.Pets)))
 	}
 	zap.L().Info("[pet-smoke] step 0: prepared", zap.Uint64("pet_id", target),
@@ -189,24 +189,24 @@ func RunPetSmoke(cfg *config.Config) {
 	}
 	pet := findPet(list, target)
 	if pet == nil {
-		fail("list-shape", "列表里找不到 pet_id=%d", target)
+		fail("list-shape", "List contains no pet_id=%d", target)
 	}
 	if len(pet.Dimensions) == 0 {
-		fail("list-dimensions", "宝宝没有任何维度(表 AttributeDimension 缺 owner_type=1 的行?)")
+		fail("list-dimensions", "Pet has no dimensions (is AttributeDimension missing rows with owner_type=1?)")
 	}
 	if pet.Derived == nil || pet.Derived.MaxHealth == 0 {
-		fail("list-derived", "二级属性缺失或气血上限为 0:%v", pet.Derived)
+		fail("list-derived", "Derived attributes are missing or max health is 0: %v", pet.Derived)
 	}
 	if pet.Growth == 0 {
-		fail("list-growth", "成长率为 0(应为四维资质均值,万分比)")
+		fail("list-growth", "Growth rate is 0 (expected the mean aptitude of the four dimensions, in basis points)")
 	}
 	for _, dimension := range pet.Dimensions {
 		if dimension.PoolId != petPoolId {
-			fail("pool-isolation-pet", "宝宝维度 %d 属于池 %d,应全部属于宝宝池 %d",
+			fail("pool-isolation-pet", "Pet dimension %d belongs to pool %d; all should belong to pet pool %d",
 				dimension.DimensionId, dimension.PoolId, petPoolId)
 		}
 		if dimension.Aptitude == 0 {
-			fail("list-aptitude", "维度 %d 资质为 0(缺省应为 10000)", dimension.DimensionId)
+			fail("list-aptitude", "Dimension %d aptitude is 0 (default should be 10000)", dimension.DimensionId)
 		}
 	}
 	// 反向:角色面板里绝不能出现宝宝池 —— 这是 owner_type 分流的核心断言
@@ -217,12 +217,12 @@ func RunPetSmoke(cfg *config.Config) {
 	}
 	for _, pool := range charPanel.Pools {
 		if pool.PoolId == petPoolId {
-			fail("pool-isolation-char", "角色面板里出现了宝宝池 %d(owner_type 分流失效)", petPoolId)
+			fail("pool-isolation-char", "Character panel contains pet pool %d (owner_type separation failed)", petPoolId)
 		}
 	}
 	for _, dimension := range charPanel.Dimensions {
 		if dimension.PoolId == petPoolId {
-			fail("pool-isolation-char-dim", "角色面板里出现了宝宝维度 %d", dimension.DimensionId)
+			fail("pool-isolation-char-dim", "Character panel contains pet dimension %d", dimension.DimensionId)
 		}
 	}
 	zap.L().Info("[pet-smoke] step 2: list + pool isolation ok",
@@ -243,14 +243,14 @@ func RunPetSmoke(cfg *config.Config) {
 	}
 	pet = findPet(list, target)
 	if pet == nil {
-		fail("list-after-level", "升级后列表里找不到 pet_id=%d", target)
+		fail("list-after-level", "After leveling up, list contains no pet_id=%d", target)
 	}
 	if pet.Level != targetLevel {
-		fail("pet-level", "主人 %d 级时宝宝应同为 %d 级(等级派生),实际 %d",
+		fail("pet-level", "When owner level is %d, pet level should also be %d (derived level), got %d",
 			targetLevel, targetLevel, pet.Level)
 	}
 	if want := petPointsPerLevel * (targetLevel - beforeLevel); pet.TotalPoints-beforeTotal != want {
-		fail("pet-points", "宝宝 %d→%d 级点数应 +%d,实际 %d→%d",
+		fail("pet-points", "Pet points from level %d to %d should increase by %d, got %d -> %d",
 			beforeLevel, targetLevel, want, beforeTotal, pet.TotalPoints)
 	}
 	zap.L().Info("[pet-smoke] step 3: level follows owner",
@@ -265,11 +265,11 @@ func RunPetSmoke(cfg *config.Config) {
 	}
 	pet = mustPet(list, target, fail, "reset")
 	if pet.RemainingPoints != pet.TotalPoints {
-		fail("reset-clean", "洗点后应全额可用:total=%d remaining=%d", pet.TotalPoints, pet.RemainingPoints)
+		fail("reset-clean", "All points should be available after reset: total=%d remaining=%d", pet.TotalPoints, pet.RemainingPoints)
 	}
 	for _, dimension := range pet.Dimensions {
 		if dimension.Allocated != 0 {
-			fail("reset-allocated", "洗点后维度 %d 仍有 %d 点", dimension.DimensionId, dimension.Allocated)
+			fail("reset-allocated", "After reset dimension %d still has %d points", dimension.DimensionId, dimension.Allocated)
 		}
 	}
 	healthBefore := pet.Derived.MaxHealth
@@ -289,7 +289,7 @@ func RunPetSmoke(cfg *config.Config) {
 		suggestedSum += value
 	}
 	if suggestedSum != pet.TotalPoints {
-		fail("auto-sum", "建议总和应等于总点数(洗点后已分配为 0):suggested=%d total=%d",
+		fail("auto-sum", "Suggested sum should equal total points (allocated points are 0 after reset): suggested=%d total=%d",
 			suggestedSum, pet.TotalPoints)
 	}
 	after, err := session.call(game.ScenePetClientPlayerGetPetListMessageId, &scene.GetPetListRequest{})
@@ -297,7 +297,7 @@ func RunPetSmoke(cfg *config.Config) {
 		fail("auto-recheck", "%v", err)
 	}
 	if p := mustPet(after, target, fail, "auto-recheck"); p.RemainingPoints != pet.TotalPoints {
-		fail("auto-not-applied", "自动加点只算不落,剩余点不该变:%d → %d",
+		fail("auto-not-applied", "Automatic allocation only calculates without committing; remaining points should not change: %d -> %d",
 			pet.TotalPoints, p.RemainingPoints)
 	}
 	zap.L().Info("[pet-smoke] step 5: auto suggestion computed only",
@@ -311,10 +311,10 @@ func RunPetSmoke(cfg *config.Config) {
 	}
 	pet = mustPet(list, target, fail, "allocate")
 	if pet.RemainingPoints != 0 {
-		fail("allocate-remaining", "按建议全额提交后剩余点应为 0,实际 %d", pet.RemainingPoints)
+		fail("allocate-remaining", "After submitting the full suggested allocation, remaining points should be 0, got %d", pet.RemainingPoints)
 	}
 	if pet.Derived.MaxHealth <= healthBefore && pet.Derived.PhysicalAttack <= attackBefore {
-		fail("allocate-derived", "加点后二级属性没有变大:health %d→%d attack %d→%d",
+		fail("allocate-derived", "Derived attributes did not increase after allocation: health %d -> %d attack %d -> %d",
 			healthBefore, pet.Derived.MaxHealth, attackBefore, pet.Derived.PhysicalAttack)
 	}
 	zap.L().Info("[pet-smoke] step 6: allocated",
@@ -324,7 +324,7 @@ func RunPetSmoke(cfg *config.Config) {
 	// ---- 步骤 7:幂等 —— 重发同一份目标值被判"无变化" ----
 	if tip := session.callExpectTip(game.ScenePetClientPlayerAllocatePetPointsMessageId,
 		&scene.AllocatePetPointsRequest{PetId: target, Allocated: suggested}); tip != tipPetNothingToChange {
-		fail("allocate-idempotent", "重发同一份目标值应回 kPetNothingToChange(%d),实际 tip=%d",
+		fail("allocate-idempotent", "Resending the same target values should return kPetNothingToChange(%d), got tip=%d",
 			tipPetNothingToChange, tip)
 	}
 
@@ -337,18 +337,18 @@ func RunPetSmoke(cfg *config.Config) {
 		}
 	}
 	if len(lower) == 0 {
-		fail("decrease-setup", "建议里没有任何一个大于 0 的维度,无法构造更小的目标值")
+		fail("decrease-setup", "No suggested dimension is greater than 0; cannot construct a smaller target value")
 	}
 	if tip := session.callExpectTip(game.ScenePetClientPlayerAllocatePetPointsMessageId,
 		&scene.AllocatePetPointsRequest{PetId: target, Allocated: lower}); tip != tipPetPointsCannotDecrease {
-		fail("allocate-decrease", "提交更小的值应回 kPetPointsCannotDecrease(%d),实际 tip=%d",
+		fail("allocate-decrease", "Submitting smaller values should return kPetPointsCannotDecrease(%d), got tip=%d",
 			tipPetPointsCannotDecrease, tip)
 	}
 
 	// ---- 步骤 9:不存在的 pet_id ----
 	if tip := session.callExpectTip(game.ScenePetClientPlayerAllocatePetPointsMessageId,
 		&scene.AllocatePetPointsRequest{PetId: target + 999999, Allocated: suggested}); tip != tipPetNotFound {
-		fail("unknown-pet", "不存在的 pet_id 应回 kPetNotFound(%d),实际 tip=%d", tipPetNotFound, tip)
+		fail("unknown-pet", "A nonexistent pet_id should return kPetNotFound(%d), got tip=%d", tipPetNotFound, tip)
 	}
 	zap.L().Info("[pet-smoke] steps 7-9: idempotent / no-decrease / unknown-pet rejections ok")
 
@@ -359,14 +359,14 @@ func RunPetSmoke(cfg *config.Config) {
 		fail("summon", "%v", err)
 	}
 	if list.ActivePetId != target {
-		fail("summon-active", "出战后 active_pet_id 应为 %d,实际 %d", target, list.ActivePetId)
+		fail("summon-active", "After deploying the pet, active_pet_id should be %d, got %d", target, list.ActivePetId)
 	}
 	if p := mustPet(list, target, fail, "summon"); !p.IsActive {
-		fail("summon-flag", "出战后 is_active 应为 true")
+		fail("summon-flag", "After deploying the pet, is_active should be true")
 	}
 	if tip := session.callExpectTip(game.ScenePetClientPlayerSummonPetMessageId,
 		&scene.SummonPetRequest{PetId: target}); tip != tipPetAlreadyActive {
-		fail("summon-twice", "重复召唤应回 kPetAlreadyActive(%d),实际 tip=%d", tipPetAlreadyActive, tip)
+		fail("summon-twice", "Repeated summoning should return kPetAlreadyActive(%d), got tip=%d", tipPetAlreadyActive, tip)
 	}
 
 	// ---- 步骤 11:下线重登,数据往返 ----
@@ -381,7 +381,7 @@ func RunPetSmoke(cfg *config.Config) {
 		fail("list-after-relogin", "%v", err)
 	}
 	if list.ActivePetId != target {
-		fail("relogin-active", "重登后出战状态丢失:active_pet_id=%d", list.ActivePetId)
+		fail("relogin-active", "Active pet state was lost after relogin: active_pet_id=%d", list.ActivePetId)
 	}
 	restored := mustPet(list, target, fail, "after-relogin")
 	if restored.Level != snapshotBefore.Level ||
@@ -390,7 +390,7 @@ func RunPetSmoke(cfg *config.Config) {
 		restored.Derived.MaxHealth != snapshotBefore.Derived.MaxHealth ||
 		restored.Derived.PhysicalAttack != snapshotBefore.Derived.PhysicalAttack {
 		fail("relogin-mismatch",
-			"重登前后不一致: level %d/%d remaining %d/%d growth %d/%d health %d/%d attack %d/%d",
+			"State differs before and after relogin: level %d/%d remaining %d/%d growth %d/%d health %d/%d attack %d/%d",
 			snapshotBefore.Level, restored.Level,
 			snapshotBefore.RemainingPoints, restored.RemainingPoints,
 			snapshotBefore.Growth, restored.Growth,
@@ -400,11 +400,11 @@ func RunPetSmoke(cfg *config.Config) {
 	for _, dimension := range restored.Dimensions {
 		before := allocatedOfPet(snapshotBefore, dimension.DimensionId)
 		if dimension.Allocated != before {
-			fail("relogin-allocated", "维度 %d 已分配点重登后 %d != %d",
+			fail("relogin-allocated", "Dimension %d allocated points after relogin %d != %d",
 				dimension.DimensionId, dimension.Allocated, before)
 		}
 		if dimension.Aptitude != aptitudeOfPet(snapshotBefore, dimension.DimensionId) {
-			fail("relogin-aptitude", "维度 %d 资质重登后变了(资质出生即定终身)", dimension.DimensionId)
+			fail("relogin-aptitude", "Dimension %d aptitude changed after relogin (aptitude is fixed at birth)", dimension.DimensionId)
 		}
 	}
 	zap.L().Info("[pet-smoke] step 11: persisted across relogin",
@@ -416,11 +416,11 @@ func RunPetSmoke(cfg *config.Config) {
 		fail("recall", "%v", err)
 	}
 	if list.ActivePetId != 0 {
-		fail("recall-active", "收回后 active_pet_id 应为 0,实际 %d", list.ActivePetId)
+		fail("recall-active", "After recalling the pet, active_pet_id should be 0, got %d", list.ActivePetId)
 	}
 	if tip := session.callExpectTip(game.ScenePetClientPlayerRecallPetMessageId,
 		&scene.RecallPetRequest{}); tip != tipPetNotActive {
-		fail("recall-twice", "无出战宝宝时再收回应回 kPetNotActive(%d),实际 tip=%d", tipPetNotActive, tip)
+		fail("recall-twice", "Recalling with no active pet should return kPetNotActive(%d), got tip=%d", tipPetNotActive, tip)
 	}
 
 	zap.L().Info(fmt.Sprintf(
@@ -571,7 +571,7 @@ func findPet(list *scene.PetListInfo, petId uint64) *scene.PetInfo {
 func mustPet(list *scene.PetListInfo, petId uint64, fail func(string, string, ...any), step string) *scene.PetInfo {
 	pet := findPet(list, petId)
 	if pet == nil {
-		fail(step, "列表里找不到 pet_id=%d", petId)
+		fail(step, "List contains no pet_id=%d", petId)
 	}
 	return pet
 }

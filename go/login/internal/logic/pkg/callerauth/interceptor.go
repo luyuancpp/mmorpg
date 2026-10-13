@@ -81,14 +81,14 @@ func UnaryServerInterceptor(v *Verifier) grpc.UnaryServerInterceptor {
 							logx.Field("detail", err.Error()),
 						)
 						return nil, status.Errorf(codes.Unauthenticated,
-							"内部调用方身份声明验签失败(%s):调用方必须按 callerauth 规范附 %s/%s/%s/%s",
+							"Internal caller identity signature verification failed (%s): caller must include %s/%s/%s/%s per callerauth contract",
 							reason, MetaCaller, MetaTimestamp, MetaNonce, MetaSignature)
 					}
 					logx.Errorw(EventBypassed,
 						logx.Field("method", info.FullMethod),
 						logx.Field("reason", reason),
 						logx.Field("detail", err.Error()),
-						logx.Field("hint", "dev/test 宽松档放行;生产模式下这条请求会被拒绝"),
+						logx.Field("hint", "Allowed in dev/test relaxed mode; this request would be rejected in production"),
 					)
 					// 宽松档:仍然把声明写进 ctx,保持本地链路可用。
 					if detail != nil {
@@ -112,10 +112,10 @@ func UnaryServerInterceptor(v *Verifier) grpc.UnaryServerInterceptor {
 			if bin, merr := proto.Marshal(detail); merr == nil {
 				header := metadata.Pairs(MetaSessionDetail, base64.StdEncoding.EncodeToString(bin))
 				if serr := grpc.SendHeader(ctx, header); serr != nil {
-					logx.Errorf("回写 %s 响应头失败: %v", MetaSessionDetail, serr)
+					logx.Errorf("Failed to write %s response header: %v", MetaSessionDetail, serr)
 				}
 			} else {
-				logx.Errorf("序列化 SessionDetails 失败: %v", merr)
+				logx.Errorf("Failed to serialize SessionDetails: %v", merr)
 			}
 		}
 

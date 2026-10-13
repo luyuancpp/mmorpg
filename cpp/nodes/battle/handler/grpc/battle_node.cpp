@@ -29,7 +29,7 @@ BattleNodeImpl::BattleNodeImpl(muduo::net::EventLoop& loop)
 bool BattleNodeImpl::OpenAdmission()
 {
     const bool opened = admission_.Open();
-    LOG_INFO << "battle 建房准入闸: " << (opened ? "已打开" : "未打开(停机已开始或重复调用)")
+    LOG_INFO << "battle room admission gate: " << (opened ? "opened" : "not opened(shutdown started or repeated call)")
              << " phase=" << battle_admission::ToString(admission_.Phase());
     return opened;
 }
@@ -37,7 +37,7 @@ bool BattleNodeImpl::OpenAdmission()
 void BattleNodeImpl::CloseAdmission()
 {
     admission_.Close();
-    LOG_INFO << "battle 建房准入闸已关闭: 此后的 CreateBattle 一律回 UNAVAILABLE " << kBattleNotAllocatableMessage;
+    LOG_INFO << "battle room admission gate closed: subsequent CreateBattle calls return UNAVAILABLE " << kBattleNotAllocatableMessage;
 }
 
 void BattleNodeImpl::HandleCreateBattle(const ::CreateBattleRequest* request,
@@ -67,9 +67,9 @@ grpc::Status BattleNodeImpl::CreateBattle(grpc::ServerContext* /*context*/,
     //    不经 allocate 放行许可)与停机开始之后都不接新房间。闸没开就连许可都不取。
     if (const auto phase = admission_.Phase(); phase != battle_admission::AdmissionPhase::kOpen)
     {
-        LOG_WARN << "CreateBattle 拒绝: 本节点不接新房间, battle_id=" << request->battle_id()
+        LOG_WARN << "CreateBattle rejected: this node is not accepting new rooms, battle_id=" << request->battle_id()
                  << " admission=" << battle_admission::ToString(phase)
-                 << ",回 UNAVAILABLE " << kBattleNotAllocatableMessage;
+                 << ",returning UNAVAILABLE " << kBattleNotAllocatableMessage;
         return NotAllocatable();
     }
 
@@ -83,10 +83,10 @@ grpc::Status BattleNodeImpl::CreateBattle(grpc::ServerContext* /*context*/,
     auto permit = lifecycle.AcquireAllocationPermitBlocking();
     if (!permit)
     {
-        LOG_WARN << "CreateBattle 拒绝: 本实例不可分配, battle_id=" << request->battle_id()
+        LOG_WARN << "CreateBattle rejected: this instance is not allocatable, battle_id=" << request->battle_id()
                  << " agones_state=" << agones::ToString(lifecycle.State())
                  << " draining=" << (lifecycle.IsDraining() ? 1 : 0)
-                 << ",回 UNAVAILABLE " << kBattleNotAllocatableMessage;
+                 << ",returning UNAVAILABLE " << kBattleNotAllocatableMessage;
         return NotAllocatable();
     }
     // permit 活到本函数返回(覆盖 future.get()):在途创建计入 lifecycle,
@@ -117,8 +117,8 @@ grpc::Status BattleNodeImpl::CreateBattle(grpc::ServerContext* /*context*/,
     future.get();
     if (closedInLoop)
     {
-        LOG_WARN << "CreateBattle 拒绝: 投递期间停机已开始(loop 内复核), battle_id=" << request->battle_id()
-                 << ",回 UNAVAILABLE " << kBattleNotAllocatableMessage;
+        LOG_WARN << "CreateBattle rejected: shutdown started during dispatch(rechecked in loop), battle_id=" << request->battle_id()
+                 << ",returning UNAVAILABLE " << kBattleNotAllocatableMessage;
         return NotAllocatable();
     }
     return grpc::Status::OK;

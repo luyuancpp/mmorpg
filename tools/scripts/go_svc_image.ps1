@@ -294,7 +294,7 @@ function Invoke-PushAll {
         if ($DryRun) {
             Write-Host "  [dry-run] $DockerCommand push $fullImage" -ForegroundColor DarkGray
             if (-not [string]::IsNullOrWhiteSpace($DigestsOut)) {
-                Write-Host "  [dry-run] 回读 digest 并记录到 $DigestsOut" -ForegroundColor DarkGray
+                Write-Host "  [dry-run] Read back digest and record it in $DigestsOut" -ForegroundColor DarkGray
             }
         } else {
             & $DockerCommand push $fullImage

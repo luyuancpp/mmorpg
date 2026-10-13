@@ -84,7 +84,7 @@ jobs:
           # ubuntu-latest runner 预装 PowerShell 7；万一镜像调整导致缺失，
           # 要明确报出来，而不是让整个 job 变成"没测试可跑"的假绿。
           if ! command -v pwsh >/dev/null 2>&1; then
-            echo "::error::runner 上没有 pwsh，无法执行契约测试"
+            echo "::error::Runner does not have pwsh; contract tests cannot run"
             exit 1
           fi
           pwsh -NoProfile -Command '$PSVersionTable.PSVersion.ToString()'
@@ -100,7 +100,7 @@ jobs:
             # 可能还不存在——此时给 warning 并放行，而不是判红：一个必然红的
             # job 会立刻被所有人加进忽略名单，之后真回归也没人看。
             # 脚本出现后本 job 自动开始真正判红，不需要再改这个文件。
-            echo "::warning::$DIR 尚不存在，本次跳过（契约测试随另一条改动落地后自动生效）"
+            echo "::warning::$DIR does not exist yet; skipping this run (contract tests will start automatically once the separate change lands)"
             echo "- tools/scripts/tests 尚不存在，跳过" >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
@@ -110,7 +110,7 @@ jobs:
           # （harness 单跑会报 0 个用例通过）。
           mapfile -t ALL < <(find "$DIR" -maxdepth 1 -type f -name '*.ps1' | sort)
           if [ "${#ALL[@]}" -eq 0 ]; then
-            echo "::warning::$DIR 一级目录下还没有 .ps1 测试脚本，本次跳过"
+            echo "::warning::$DIR has no .ps1 test scripts in its top-level directory yet; skipping this run"
             echo "- tools/scripts/tests 一级目录暂无测试脚本，跳过" >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
@@ -122,7 +122,7 @@ jobs:
           PLAIN=()
           for f in "${ALL[@]}"; do
             case "$(basename "$f")" in
-              _*) echo "跳过辅助脚本 $f" ;;
+              _*) echo "Skipping helper script $f" ;;
               *)  PLAIN+=("$f") ;;
             esac
           done
@@ -133,7 +133,7 @@ jobs:
             if pwsh -NoProfile -File "$t"; then
               echo "PASS $t"
             else
-              echo "::error file=$t::契约测试失败（退出码 $?）"
+              echo "::error file=$t::Contract test failed (exit code $?)"
               FAILED+=("$t")
             fi
           done
@@ -151,12 +151,12 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
           if [ "${#FAILED[@]}" -gt 0 ]; then
-            echo "::error::${#FAILED[@]} 个契约测试失败"
+            echo "::error::${#FAILED[@]} contract tests failed"
             exit 1
           fi
           if [ "$RAN" -eq 0 ]; then
             # 全是下划线辅助脚本 = 一个测试都没跑，不能算绿。
-            echo "::error::$DIR 下没有可执行的测试脚本（全部被当成辅助跳过）"
+            echo "::error::$DIR contains no runnable test scripts (all were skipped as helpers)"
             exit 1
           fi
-          echo "全部 $RAN 个契约测试通过"
+          echo "All $RAN contract tests passed"

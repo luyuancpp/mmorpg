@@ -84,7 +84,7 @@ public class AdminZoneController {
         }
         long zoneId = zone.getZoneId();
         LocalDateTime at = now.get();
-        ZoneConfig stored = InnoDbDeadlockRetry.execute(tx, "区服 create", zoneId, () -> {
+        ZoneConfig stored = InnoDbDeadlockRetry.execute(tx, "zone create", zoneId, () -> {
             zoneConfigRepo.upsert(zone, at);
             return zoneConfigRepo.findById(zoneId)
                     .orElseThrow(() -> new IllegalStateException(

@@ -23,7 +23,7 @@ $ErrorActionPreference = 'Stop'
 . (Join-Path (Get-ToolsScriptsDir) 'lib' 'artifacts_lib.ps1')
 
 Write-Host ""
-Write-Host "=== make_release.ps1 契约测试 ==="
+Write-Host "=== make_release.ps1 contract tests ==="
 
 $script:TestRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("make-release-tests-" + [guid]::NewGuid().ToString('N'))
 [System.IO.Directory]::CreateDirectory($script:TestRoot) | Out-Null

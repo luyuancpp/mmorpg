@@ -33,7 +33,7 @@ $ErrorActionPreference = 'Stop'
 . (Join-Path (Get-ToolsScriptsDir) 'lib' 'artifacts_lib.ps1')
 
 Write-Host ''
-Write-Host '=== fetch_images / import_images / artifacts_retention 契约测试 ==='
+Write-Host '=== fetch_images / import_images / artifacts_retention contract tests ==='
 
 $script:TempRoot = Join-Path ([System.IO.Path]::GetTempPath()) ('mmorpg-artifacts-scripts-tests-' + [guid]::NewGuid().ToString('N'))
 [System.IO.Directory]::CreateDirectory($script:TempRoot) | Out-Null
@@ -270,7 +270,7 @@ try {
         $out = Join-Path $outParent 'landed'
         $r = Invoke-Tool -ScriptName 'fetch_images.ps1' -Arguments @('-ArtifactRoot', $root, '-OutDir', $out)
         Assert-ToolSucceeded -Result $r -Because 'latest 指向的快照应当拉取成功'
-        Assert-Match -Text $r.Output -Pattern 'latest\.json 指向快照 g0123456789ab' -Because '应当说明读的是 latest 指针'
+        Assert-Match -Text $r.Output -Pattern 'latest\.json points to snapshot g0123456789ab' -Because '应当说明读的是 latest 指针'
 
         $msg = ''
         try { Test-Sha256Sums -Dir $out } catch { $msg = $_.Exception.Message }
@@ -425,7 +425,7 @@ try {
 
         $r = Invoke-Tool -ScriptName 'import_images.ps1' -Arguments @('-Dir', $fx.VersionDir, '-DockerCommand', $stub.Path)
         Assert-ToolFailed -Result $r -Pattern ('镜像 ID 不符[\s\S]*' + [regex]::Escape($badRef)) -Because '本机 tag 指向的不是清单里的镜像时必须失败并指出是哪个 ref'
-        Assert-NotMatch -Text $r.Output -Pattern '导入完成' -Because 'ID 不符时不得打印成功汇总'
+        Assert-NotMatch -Text $r.Output -Pattern 'Import complete' -Because 'ID 不符时不得打印成功汇总'
     }
 
     Test-Case 'import:目录被篡改 -> 先报"哈希不符",docker 一次都不调用' {
@@ -499,7 +499,7 @@ try {
 
         $r = Invoke-Tool -ScriptName 'import_images.ps1' -Arguments @('-Dir', $fx.VersionDir, '-DockerCommand', $stub.Path)
         Assert-ToolSucceeded -Result $r -Because '.Id 口径不同但都指向归档里同一个镜像时不能误报 ID 不符'
-        Assert-Match -Text $r.Output -Pattern '镜像存储口径不同' -Because '应当说明是按归档内 digest 复核通过的'
+        Assert-Match -Text $r.Output -Pattern 'release and local image stores use different ID representations' -Because '应当说明是按归档内 digest 复核通过的'
     }
 
     Test-Case 'import:本机 .Id 不在归档内镜像身份里(真 tar)-> 失败并报出 ref' {
@@ -511,7 +511,7 @@ try {
         $r = Invoke-Tool -ScriptName 'import_images.ps1' -Arguments @('-Dir', $fx.VersionDir, '-DockerCommand', $stub.Path)
         Assert-ToolFailed -Result $r -Pattern ('镜像 ID 不符[\s\S]*' + [regex]::Escape($archive.Ref)) -Because '本机 tag 指向的镜像不在归档身份里,复核后仍必须判不符'
         Assert-Match -Text $r.Output -Pattern ('归档内镜像身份[\s\S]*' + [regex]::Escape($archive.TargetId)) -Because '复核失败时应列出归档里的身份,便于排查'
-        Assert-NotMatch -Text $r.Output -Pattern '导入完成' -Because 'ID 不符时不得打印成功汇总'
+        Assert-NotMatch -Text $r.Output -Pattern 'Import complete' -Because 'ID 不符时不得打印成功汇总'
     }
 
     # ─────────────────────────────────────────────────────────────
@@ -542,9 +542,9 @@ try {
         $r = Invoke-Tool -ScriptName 'artifacts_retention.ps1' -Arguments @('-ArtifactRoot', $fx.Root, '-KeepLast', '2')
         Assert-ToolSucceeded -Result $r -Because 'dry-run 应当成功'
         foreach ($i in 1..3) {
-            Assert-Match -Text $r.Output -Pattern ('\[DRY \] 将删除:snapshots/images/' + (New-SnapshotName $i)) -Because "最旧的 3 个应列入计划($(New-SnapshotName $i))"
+            Assert-Match -Text $r.Output -Pattern ('\[DRY \] Would delete: snapshots/images/' + (New-SnapshotName $i)) -Because "最旧的 3 个应列入计划($(New-SnapshotName $i))"
         }
-        Assert-NotMatch -Text $r.Output -Pattern ('将删除:snapshots/images/(' + (New-SnapshotName 4) + '|' + (New-SnapshotName 5) + ')') -Because '最新的 2 个不得列入计划'
+        Assert-NotMatch -Text $r.Output -Pattern ('Would delete: snapshots/images/(' + (New-SnapshotName 4) + '|' + (New-SnapshotName 5) + ')') -Because '最新的 2 个不得列入计划'
         Assert-Equal -Expected ((1..5 | ForEach-Object { New-SnapshotName $_ }) -join ',') -Actual (Get-SnapshotNames $fx.SnapImages) -Because 'dry-run 不得删除任何目录'
     }
 
@@ -564,7 +564,7 @@ try {
 
         $r = Invoke-Tool -ScriptName 'artifacts_retention.ps1' -Arguments @('-ArtifactRoot', $fx.Root, '-KeepLast', '2', '-Force')
         Assert-ToolSucceeded -Result $r -Because '清理应当成功'
-        Assert-Match -Text $r.Output -Pattern ([regex]::Escape($oldest) + ' 是 latest\.json 指向的版本') -Because '应当说明为何保留'
+        Assert-Match -Text $r.Output -Pattern ([regex]::Escape($oldest) + ' is the version referenced by latest\.json') -Because '应当说明为何保留'
         Assert-Equal -Expected (@($oldest, (New-SnapshotName 4), (New-SnapshotName 5)) -join ',') -Actual (Get-SnapshotNames $fx.SnapImages) -Because 'latest 指向的版本 + 最新 2 个保留,其余删除'
     }
 
@@ -575,8 +575,8 @@ try {
 
         $r = Invoke-Tool -ScriptName 'artifacts_retention.ps1' -Arguments @('-ArtifactRoot', $fx.Root, '-KeepLast', '1', '-Force')
         Assert-ToolSucceeded -Result $r -Because '清理应当成功(遗留 staging 只提示,不算失败)'
-        Assert-Match -Text $r.Output -Pattern '\[WARN\] 疑似被中断发布遗留的 staging.*snapshots/images/\.tmp-g000000000009-4242' -Because '被中断发布遗留的 staging 不删,但必须看得见,否则排期清理一直假绿'
-        Assert-Match -Text $r.Output -Pattern '1 个疑似遗留 staging 待人工确认' -Because '汇总行应写出遗留 staging 数量'
+        Assert-Match -Text $r.Output -Pattern '\[WARN\] Possible staging directory left by an interrupted release.*snapshots/images/\.tmp-g000000000009-4242' -Because '被中断发布遗留的 staging 不删,但必须看得见,否则排期清理一直假绿'
+        Assert-Match -Text $r.Output -Pattern '1 possible leftover staging directories require manual review' -Because '汇总行应写出遗留 staging 数量'
         $left = Get-SnapshotNames $fx.SnapImages
         Assert-Match -Text $left -Pattern '\.tmp-g000000000009-4242' -Because '发布中的 staging 目录不得被删'
         Assert-Match -Text $left -Pattern 'manual-backup' -Because '不是快照版本名的目录不得被删'
@@ -600,8 +600,8 @@ try {
 
         $dry = Invoke-Tool -ScriptName 'artifacts_retention.ps1' -Arguments @('-ArtifactRoot', $fx.Root, '-KeepLast', '3')
         Assert-ToolSucceeded -Result $dry -Because 'dry-run 应当成功'
-        Assert-Match -Text $dry.Output -Pattern '将清理上次未删完的残留' -Because 'dry-run 应列出 .deleting-* 残留'
-        Assert-NotMatch -Text $dry.Output -Pattern '疑似被中断发布遗留的 staging' -Because '刚创建的 .tmp-*(可能正在发布)不得报成遗留'
+        Assert-Match -Text $dry.Output -Pattern 'Would remove leftovers from the previous incomplete deletion' -Because 'dry-run 应列出 .deleting-* 残留'
+        Assert-NotMatch -Text $dry.Output -Pattern 'Possible staging directory left by an interrupted release' -Because '刚创建的 .tmp-*(可能正在发布)不得报成遗留'
         Assert-True -Condition ([System.IO.Directory]::Exists($residue)) -Because 'dry-run 不得删除残留'
 
         $r = Invoke-Tool -ScriptName 'artifacts_retention.ps1' -Arguments @('-ArtifactRoot', $fx.Root, '-KeepLast', '3', '-Force')

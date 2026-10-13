@@ -391,7 +391,7 @@ func (l *Loop) Tick(ctx context.Context) int {
 	ids, err := l.store.ListDue(ctx, l.nowMs(), l.cfg.Batch)
 	if err != nil {
 		l.metrics.incStoreError("list")
-		logx.Errorf("[AssetOp] 列出到期行失败: %v", err)
+		logx.Errorf("[AssetOp] Failed to list due rows: %v", err)
 		return 0
 	}
 	if len(ids) == 0 {
@@ -435,7 +435,7 @@ func (l *Loop) drain(ctx context.Context, queue <-chan uint64, processed *atomic
 		}
 		if _, err := l.ProcessOne(ctx, op); err != nil {
 			// 单行失败只记不抛:下一行照常处理,这一行靠 next_attempt_ms 再来。
-			logx.Errorf("[AssetOp] 处理待办行失败 op_id=%d stream=%d seq=%d: %v",
+			logx.Errorf("[AssetOp] Failed to process pending row op_id=%d stream=%d seq=%d: %v",
 				op.OpID, op.Stream, op.Seq, err)
 		}
 		processed.Add(1)
@@ -447,7 +447,7 @@ func (l *Loop) claim(ctx context.Context, opID uint64) (Op, bool) {
 	token, err := newLeaseToken()
 	if err != nil {
 		l.metrics.incStoreError("claim")
-		logx.Errorf("[AssetOp] 生成租约令牌失败 op_id=%d: %v", opID, err)
+		logx.Errorf("[AssetOp] Failed to generate lease token op_id=%d: %v", opID, err)
 		return Op{}, false
 	}
 	nowMs := l.nowMs()
@@ -461,11 +461,11 @@ func (l *Loop) claim(ctx context.Context, opID uint64) (Op, bool) {
 		// 毒行:Store 已经把它推远了。这里只计数 + 报位置,人工去看。
 		l.metrics.incClaim("poison")
 		l.metrics.incStoreError("decode")
-		logx.Errorf("[AssetOp] 待办行 payload 解不开,已推迟待人工处理 op_id=%d", opID)
+		logx.Errorf("[AssetOp] Could not decode pending row payload; postponed for manual handling op_id=%d", opID)
 		return Op{}, false
 	case err != nil:
 		l.metrics.incStoreError("claim")
-		logx.Errorf("[AssetOp] 领取待办行失败 op_id=%d: %v", opID, err)
+		logx.Errorf("[AssetOp] Failed to claim pending row op_id=%d: %v", opID, err)
 		return Op{}, false
 	case !claimed:
 		l.metrics.incClaim("lost")
@@ -487,7 +487,7 @@ func (l *Loop) ProcessOne(ctx context.Context, op Op) (Processed, error) {
 	if !ok {
 		// 流号非法 = 坏行。绝不猜方向:猜错就是把扣钱发成发钱。
 		l.metrics.incUnknown(op.Stream)
-		logx.Errorf("[AssetOp] 待办行的流号非法,无法决定投递方向 op_id=%d stream=%d seq=%d",
+		logx.Errorf("[AssetOp] Invalid stream id in pending row; cannot determine delivery direction op_id=%d stream=%d seq=%d",
 			op.OpID, op.Stream, op.Seq)
 		return l.reschedule(ctx, op, l.alertNextMs(nowMs), Result{}, nowMs, "alert")
 	}
@@ -516,11 +516,11 @@ func (l *Loop) ProcessOne(ctx context.Context, op Op) (Processed, error) {
 	default: // ActionAlert
 		if errors.Is(err, ErrOutcomeFlip) {
 			// 翻转已由 Caller 计过 assetop_outcome_flip_total,这里只留日志证据。
-			logx.Errorf("[AssetOp] 结局翻转,不终结 op_id=%d stream=%d seq=%d: %v",
+			logx.Errorf("[AssetOp] Outcome changed; not finalizing op_id=%d stream=%d seq=%d: %v",
 				op.OpID, op.Stream, op.Seq, err)
 		} else {
 			l.metrics.incUnknown(op.Stream)
-			logx.Errorf("[AssetOp] scene 回 UNKNOWN,不终结 op_id=%d stream=%d seq=%d epoch=%d reason=%d",
+			logx.Errorf("[AssetOp] Scene returned UNKNOWN; not finalizing op_id=%d stream=%d seq=%d epoch=%d reason=%d",
 				op.OpID, op.Stream, op.Seq, op.StreamEpoch, res.Reason)
 		}
 		return l.reschedule(ctx, op, l.alertNextMs(nowMs), res, nowMs, "alert")
@@ -559,7 +559,7 @@ func (l *Loop) finalize(ctx context.Context, op Op, rpc RPC, res Result, nowMs u
 	status := FinalStatus(rpc, res, op)
 	if status == StatusPending {
 		l.metrics.incUnknown(op.Stream)
-		logx.Errorf("[AssetOp] 终结分支算不出最终状态(bug)op_id=%d stream=%d seq=%d outcome=%d",
+		logx.Errorf("[AssetOp] Finalization branch could not determine final state (bug) op_id=%d stream=%d seq=%d outcome=%d",
 			op.OpID, op.Stream, op.Seq, res.Outcome)
 		return l.reschedule(ctx, op, l.alertNextMs(nowMs), res, nowMs, "alert")
 	}
@@ -575,7 +575,7 @@ func (l *Loop) finalize(ctx context.Context, op Op, rpc RPC, res Result, nowMs u
 		l.metrics.incFinalize(op.Stream, status)
 		if status == StatusAppliedPartial {
 			// 部分发放不做对侧账,必须留下人工补偿线索(规格 §4.33)。
-			logx.Errorf("[AssetOp] 部分发放,已终结但不入对侧账,需人工补偿 op_id=%d stream=%d seq=%d corr=%d",
+			logx.Errorf("[AssetOp] Partial grant finalized without updating counterpart ledger; manual compensation required op_id=%d stream=%d seq=%d corr=%d",
 				op.OpID, op.Stream, op.Seq, op.CorrelationID)
 		}
 	}
@@ -599,7 +599,7 @@ func (l *Loop) reschedule(ctx context.Context, op Op, nextAttemptMs uint64, res 
 			// 租约被别的副本接管:本次结果没写进去,但那一行已经有人管,既不是故障也无需重试。
 			// 只有计数看得见它,所以一定要计(AGENTS §11.3 不许静默降级)。
 			l.metrics.incRescheduleLost(op.Stream)
-			logx.Infof("[AssetOp] 租约已被接管,本次重排落空 op_id=%d stream=%d seq=%d: %v",
+			logx.Infof("[AssetOp] Lease taken over; reschedule not applied op_id=%d stream=%d seq=%d: %v",
 				op.OpID, op.Stream, op.Seq, err)
 			return Processed{Result: res}, nil
 		}
@@ -647,7 +647,7 @@ func (l *Loop) tryPersistedLedger(ctx context.Context, op Op, res Result) Result
 	if err != nil {
 		l.metrics.incLedgerRead("error")
 		l.metrics.incStoreError("ledger_read")
-		logx.Errorf("[AssetOp] 读已落盘账本失败 op_id=%d: %v", op.OpID, err)
+		logx.Errorf("[AssetOp] Failed to read persisted ledger op_id=%d: %v", op.OpID, err)
 		return res
 	}
 	if ledger == nil {
@@ -661,7 +661,7 @@ func (l *Loop) tryPersistedLedger(ctx context.Context, op Op, res Result) Result
 		return res
 	}
 	l.metrics.incLedgerRead("finalized")
-	logx.Infof("[AssetOp] 离线读到已落盘结局,可终结 op_id=%d stream=%d seq=%d outcome=%s partial=%t",
+	logx.Infof("[AssetOp] Persisted outcome read offline; finalization possible op_id=%d stream=%d seq=%d outcome=%s partial=%t",
 		op.OpID, op.Stream, op.Seq, outcomeLabel(outcome), partial)
 	return Result{Outcome: outcome, Reason: reason, Durable: true, Partial: partial}
 }
@@ -678,7 +678,7 @@ func (l *Loop) refreshPendingAge(ctx context.Context) {
 		createdMs, found, err := reader.OldestPendingCreatedMs(ctx, stream)
 		if err != nil {
 			l.metrics.incStoreError("pending_age")
-			logx.Errorf("[AssetOp] 读最老未决行失败 stream=%d: %v", stream, err)
+			logx.Errorf("[AssetOp] Failed to read oldest unresolved row stream=%d: %v", stream, err)
 			continue
 		}
 		if !found {

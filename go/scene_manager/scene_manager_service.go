@@ -67,7 +67,7 @@ func main() {
 	// 比让进程起不来更合适(屏障调高永远是安全的,进程停摆不是)。
 	reentryBarrier, barrierErr := constants.ResolveSceneReentryBarrier(c.SceneReentryBarrierSeconds)
 	if barrierErr != nil {
-		logx.Errorf("[ReentryBarrier] 配置不合理: %v", barrierErr)
+		logx.Errorf("[ReentryBarrier] Invalid configuration: %v", barrierErr)
 	}
 
 	svcCtx := svc.NewServiceContext(c)

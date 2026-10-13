@@ -435,7 +435,7 @@ func rollbackPlacementAfterPushFailure(svcCtx *svc.ServiceContext, log logx.Logg
 	plan, err := planRouteRollback(old, oldRaw, oldZoneID, placed, requiredMarker, keepMintedEpoch)
 	if err != nil {
 		metrics.ObserveEnterSceneRollback(rollbackOutcomePlanError)
-		log.Errorf("[RouteRollback] outcome=%s 回滚计划构造失败(按构造不可达),不回滚、不退人数,本次落点留在 Redis: player=%d epoch=%d minted=%v required_marker=%q err=%v",
+		log.Errorf("[RouteRollback] outcome=%s rollback plan construction failed (unreachable by construction); no rollback or player-count decrement, arrival remains in Redis: player=%d epoch=%d minted=%v required_marker=%q err=%v",
 			rollbackOutcomePlanError, playerID, placed.epoch, placed.minted, requiredMarker, err)
 		return false, 0
 	}
@@ -483,21 +483,21 @@ func rollbackPlayerPlacement(svcCtx *svc.ServiceContext, log logx.Logger, player
 		plan.requiredMarker, plan.forwardMarker, strconv.FormatInt(int64(ownerepoch.HandoffTTL.Seconds()), 10))
 	if err != nil {
 		metrics.ObserveEnterSceneRollback(rollbackOutcomeRedisError)
-		log.Errorf("[RouteRollback] outcome=%s 回滚玩家位置/epoch 时 Redis 出错,不确定是否已执行,本次落点可能仍在: player=%d mode=%s epoch=%d epoch_after=%d required_marker=%q err=%v",
+		log.Errorf("[RouteRollback] outcome=%s Redis error rolling back player location/epoch; execution uncertain, arrival may remain: player=%d mode=%s epoch=%d epoch_after=%d required_marker=%q err=%v",
 			rollbackOutcomeRedisError, playerID, plan.mode, placed.epoch, plan.epochAfter, plan.requiredMarker, err)
 		return false, 0
 	}
 	signed, parseErr := strconv.ParseInt(fmt.Sprint(result), 10, 64)
 	if parseErr != nil {
 		metrics.ObserveEnterSceneRollback(rollbackOutcomeRedisError)
-		log.Errorf("[RouteRollback] outcome=%s 回滚 Lua 返回值不是整数,按结果未知处理: player=%d mode=%s epoch=%d reply=%v",
+		log.Errorf("[RouteRollback] outcome=%s rollback Lua result not an integer; treating outcome as unknown: player=%d mode=%s epoch=%d reply=%v",
 			rollbackOutcomeRedisError, playerID, plan.mode, placed.epoch, result)
 		return false, 0
 	}
 	verdict := classifyRollbackReply(signed, plan)
 	metrics.ObserveEnterSceneRollback(verdict.outcome)
 	if verdict.drift {
-		log.Errorf("[RouteRollback] 回滚 Lua 的返回值与计划对不上(Lua 与 Go 的约定被改岔了),按已回滚处理、不回显 epoch: player=%d mode=%s epoch=%d epoch_after=%d reply=%d",
+		log.Errorf("[RouteRollback] Rollback Lua result differs from plan (Lua and Go contract diverged); treating as rolled back without returning epoch: player=%d mode=%s epoch=%d epoch_after=%d reply=%d",
 			playerID, plan.mode, placed.epoch, plan.epochAfter, signed)
 	}
 	switch verdict.outcome {
@@ -507,17 +507,17 @@ func rollbackPlayerPlacement(svcCtx *svc.ServiceContext, log logx.Logger, player
 				rollbackOutcomeRolledBack, plan.mode, playerID, placed.epoch, plan.epochAfter, plan.requiredMarker, plan.forwardMarker)
 		}
 	case rollbackOutcomeAlreadyRolledBack:
-		log.Infof("[RouteRollback] outcome=%s 首发回滚已生效(go-redis 重发),按已回滚处理: player=%d mode=%s epoch=%d->%d",
+		log.Infof("[RouteRollback] outcome=%s first rollback already applied (go-redis resent); treating as rolled back: player=%d mode=%s epoch=%d->%d",
 			rollbackOutcomeAlreadyRolledBack, playerID, plan.mode, placed.epoch, plan.epochAfter)
 	case rollbackOutcomeMarkerGone:
 		// go-zero logx 没有 WARN 级,用 Error 级让它在日志台上与 Kafka 失败那一行排在一起。
-		log.Errorf("[RouteRollback] outcome=%s 所凭交接标记已不在(目标节点已消费令牌,或源 scene 已取证 / 撤回),保留本次落点、不退人数: player=%d epoch=%d required_marker=%q",
+		log.Errorf("[RouteRollback] outcome=%s required handoff marker gone (target consumed token, or source scene confirmed / withdrew it); retaining arrival without player-count decrement: player=%d epoch=%d required_marker=%q",
 			rollbackOutcomeMarkerGone, playerID, placed.epoch, plan.requiredMarker)
 	case rollbackOutcomeSuperseded:
-		log.Errorf("[RouteRollback] outcome=%s 玩家位置或 epoch 已被并发请求推进,跳过旧状态覆盖与人数回滚: player=%d mode=%s epoch=%d",
+		log.Errorf("[RouteRollback] outcome=%s concurrent request advanced player location or epoch; skipping stale-state overwrite and player-count rollback: player=%d mode=%s epoch=%d",
 			rollbackOutcomeSuperseded, playerID, plan.mode, placed.epoch)
 	default:
-		log.Errorf("[RouteRollback] outcome=%s 回滚 Lua 返回了约定之外的值,按结果未知处理: player=%d mode=%s epoch=%d reply=%d",
+		log.Errorf("[RouteRollback] outcome=%s rollback Lua returned value outside contract; treating outcome as unknown: player=%d mode=%s epoch=%d reply=%d",
 			verdict.outcome, playerID, plan.mode, placed.epoch, signed)
 	}
 	return verdict.restored, verdict.echo
@@ -565,7 +565,7 @@ func checkHandoffCommitted(svcCtx *svc.ServiceContext, playerID uint64, observed
 		if !errors.Is(parseErr, ownerepoch.ErrNoHandoff) {
 			// 标记被写坏了:没有可信证据,不放行。它会随 TTL 消失,或被源 scene
 			// 下一次落盘覆盖;这里只能大声报,不能猜。
-			logx.Errorf("[Handoff] 标记格式非法,按未落盘处理: player=%d raw=%q err=%v", playerID, markerRaw, parseErr)
+			logx.Errorf("[Handoff] Invalid marker format; treating as not persisted: player=%d raw=%q err=%v", playerID, markerRaw, parseErr)
 		}
 		return verdict, nil
 	}

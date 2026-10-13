@@ -4200,8 +4200,8 @@ void PlayerLifecycleSystem::DispatchEnterSceneReply(const ::scene_manager::Enter
 		if (!tlsWarnedUncorrelatedReply)
 		{
 			tlsWarnedUncorrelatedReply = true;
-			LOG_WARN << "[EnterSceneReply] scene_manager 未回显 correlation_id,退回按 player_id 对应答(首见 player="
-					 << playerId << ");此后同类应答只计 reply_uncorrelated,不再逐条告警";
+			LOG_WARN << "[EnterSceneReply] scene_manager did not echo correlation_id;falling back to matching replies by player_id(first seen player="
+					 << playerId << ");subsequent replies of this kind only increment reply_uncorrelated without per-reply warnings";
 		}
 	}
 

@@ -171,21 +171,21 @@ func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (respo
 		// 完整 protobuf 响应。唯一 owner 防止旧请求超过 TTL 后误删/覆盖后来者。
 		if returnErr != nil || response == nil || response.ErrorCode != 0 {
 			if err := l.deleteEnterSceneDedupeIfValue(dedupeKey, dedupeOwner); err != nil {
-				l.Logger.Errorf("释放失败请求的 EnterScene 去重占位失败: key=%s err=%v", dedupeKey, err)
+				l.Logger.Errorf("Failed to release EnterScene deduplication reservation for failed request: key=%s err=%v", dedupeKey, err)
 			}
 			return
 		}
 
 		payload, err := proto.Marshal(response)
 		if err != nil {
-			l.Logger.Errorf("序列化 EnterScene 成功响应失败: key=%s err=%v", dedupeKey, err)
+			l.Logger.Errorf("Failed to serialize EnterScene success response: key=%s err=%v", dedupeKey, err)
 			_ = l.deleteEnterSceneDedupeIfValue(dedupeKey, dedupeOwner)
 			return
 		}
 		cached := enterSceneDedupeDonePrefix + dedupeFingerprint + ":" + base64.StdEncoding.EncodeToString(payload)
 		if _, err := l.svcCtx.Redis.Eval(luaCompleteEnterSceneDedupe, []string{dedupeKey},
 			dedupeOwner, cached, enterSceneDedupeTTLSeconds); err != nil {
-			l.Logger.Errorf("缓存 EnterScene 完整成功响应失败: key=%s err=%v", dedupeKey, err)
+			l.Logger.Errorf("Failed to cache complete EnterScene success response: key=%s err=%v", dedupeKey, err)
 		}
 	}()
 
@@ -250,10 +250,10 @@ func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (respo
 				}
 				if decodeErr == nil && cached.ErrorCode == 0 {
 					metrics.ObserveEnterSceneStage(in.GateZoneId, metrics.EnterSceneStageDedup, time.Since(dedupStart))
-					l.Logger.Infof("重放 EnterScene 完整成功响应: request_id=%s player=%d corr=%d", in.RequestId, in.PlayerId, in.CorrelationId)
+					l.Logger.Infof("Replaying complete EnterScene success response: request_id=%s player=%d corr=%d", in.RequestId, in.PlayerId, in.CorrelationId)
 					return cached, nil
 				}
-				l.Logger.Errorf("EnterScene 去重缓存损坏，将清理后重新执行: key=%s err=%v", dedupeKey, decodeErr)
+				l.Logger.Errorf("EnterScene deduplication cache corrupted; clearing before reexecution: key=%s err=%v", dedupeKey, decodeErr)
 			}
 
 			// 未知旧格式或损坏的 done 只能按“读到的精确值”删除，不能 DEL
@@ -304,7 +304,7 @@ func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (respo
 	// 源永远写不出落盘标记)永久挡在门外。判定规则见 playerLocationOwnerGone;
 	// 拿不准一律沿用原拒绝。
 	if currentLoc != nil && l.playerLocationOwnerGone(currentLoc, currentZoneID) {
-		l.Logger.Infof("忽略已下线 zone 的陈旧玩家位置: player=%d stale_zone=%d stale_node=%s stale_scene=%d gate_zone=%d target_zone=%d",
+		l.Logger.Infof("Ignoring stale player location in offline zone: player=%d stale_zone=%d stale_node=%s stale_scene=%d gate_zone=%d target_zone=%d",
 			in.PlayerId, currentZoneID, currentLoc.GetNodeId(), currentLoc.GetSceneId(), in.GateZoneId, targetZoneId)
 		// raw 一并清空:route 失败回滚时 CAS 会把 key DEL 掉而不是把陈旧值写回去;
 		// 正常落点则由第 6 步的 SET 直接覆盖。
@@ -322,7 +322,7 @@ func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (respo
 		// 计数不在这里记:这之后还有若干**可重试**的拒绝(home_zone 不可用、epoch 冲突、
 		// 目标 zone 无可用节点),上游退避重试时同一名玩家会把它刷成实际接管数的好几倍,
 		// 而这条指标的判据正是「和当时在线数对得上」。落点确认成功后再记,见函数末尾。
-		l.Logger.Infof("位置记录的属主节点已确认死亡且再入屏障已过,按无持有者处理: player=%d dead_zone=%d dead_node=%s dead_scene=%d owner_epoch=%d gate_zone=%d target_zone=%d",
+		l.Logger.Infof("Location owner node confirmed dead and reentry barrier elapsed; treating as unowned: player=%d dead_zone=%d dead_node=%s dead_scene=%d owner_epoch=%d gate_zone=%d target_zone=%d",
 			in.PlayerId, currentZoneID, currentLoc.GetNodeId(), currentLoc.GetSceneId(), observedEpoch, in.GateZoneId, targetZoneId)
 		// 与上面同理把 raw 清空。旧场景的人数留到本次落点**成功之后**再还(见函数末尾的
 		// releaseTakenOverSceneCount):拒绝 / 回滚路径上不能动它。
@@ -475,7 +475,7 @@ func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (respo
 		// 那种请求的发起方还持有玩家,能把失败告诉他。
 		// 第一次解析失败时 reserved 必为 false,没有需要成对释放的预占。
 		metrics.ObserveEnterSceneRejected(targetZoneId, rejectReasonPendingMapFallback)
-		l.Logger.Errorf("[Travel] 等待落点记下的目标地图不可用,回落默认大世界: player=%d target_zone=%d pending_scene_conf_id=%d err=%v",
+		l.Logger.Errorf("[Travel] Pending destination map unavailable; falling back to default world: player=%d target_zone=%d pending_scene_conf_id=%d err=%v",
 			in.PlayerId, targetZoneId, sceneConfID, err)
 		sceneId, nodeId, reserved, err = l.resolveSceneForEnter(0, 0, targetZoneId)
 	}
@@ -620,7 +620,7 @@ func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (respo
 			if reserved {
 				DecrInstancePlayerCount(l.svcCtx, targetZoneId, sceneId)
 			}
-			l.Logger.Errorf("[OwnerEpoch] owner_epoch 键缺失、补种失败,拒绝本次同节点落点: player=%d location_epoch=%d err=%v",
+			l.Logger.Errorf("[OwnerEpoch] owner_epoch key missing and backfill failed; rejecting same-node arrival: player=%d location_epoch=%d err=%v",
 				in.PlayerId, recordedEpoch, reseedErr)
 			return errResp(constants.ErrRedis, "owner epoch reseed failed; retry"), nil
 		}
@@ -629,12 +629,12 @@ func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (respo
 				DecrInstancePlayerCount(l.svcCtx, targetZoneId, sceneId)
 			}
 			metrics.ObserveEnterSceneRejected(targetZoneId, "epoch_conflict")
-			l.Logger.Errorf("[OwnerEpoch] 观察到 owner_epoch 为 0 而 location 记着 %d,补种时键已存在,拒绝本次同节点落点: player=%d node=%s",
+			l.Logger.Errorf("[OwnerEpoch] Observed owner_epoch=0 while location records %d; key already exists during backfill, rejecting same-node arrival: player=%d node=%s",
 				recordedEpoch, in.PlayerId, nodeId)
 			return errResp(constants.ErrOwnerEpochConflict,
 				"owner epoch changed while reseeding; retry"), nil
 		}
-		l.Logger.Errorf("[OwnerEpoch] owner_epoch 键缺失而 location 记着 %d:按 location 补种,同节点落点不铸造: player=%d node=%s",
+		l.Logger.Errorf("[OwnerEpoch] owner_epoch key missing while location records %d: backfilling from location without minting epoch for same-node arrival: player=%d node=%s",
 			recordedEpoch, in.PlayerId, nodeId)
 		observedEpoch = recordedEpoch
 	}
@@ -730,13 +730,13 @@ func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (respo
 		DecrInstancePlayerCount(l.svcCtx, targetZoneId, sceneId)
 		if errors.Is(updateErr, errHandoffWithdrawn) {
 			metrics.ObserveEnterSceneRejected(targetZoneId, rejectReasonHandoffWithdrawn)
-			l.Logger.Errorf("[Handoff] 落点时交接标记已被源 scene 撤回,本次不发路由: player=%d target_scene=%d target_node=%s",
+			l.Logger.Errorf("[Handoff] Source scene withdrew handoff marker during arrival; no route sent for this request: player=%d target_scene=%d target_node=%s",
 				in.PlayerId, sceneId, nodeId)
 			return errResp(constants.ErrHandoffPending, "源场景已撤回交接，请稍后重试；未修改玩家状态"), nil
 		}
 		if errors.Is(updateErr, errOwnerEpochConflict) {
 			metrics.ObserveEnterSceneRejected(targetZoneId, "epoch_conflict")
-			l.Logger.Errorf("归属 epoch 被并发 EnterScene 抢先推进,本次不发路由: player=%d target_scene=%d target_node=%s",
+			l.Logger.Errorf("Concurrent EnterScene advanced ownership epoch first; no route sent for this request: player=%d target_scene=%d target_node=%s",
 				in.PlayerId, sceneId, nodeId)
 			return errResp(constants.ErrOwnerEpochConflict,
 				"concurrent EnterScene advanced the owner epoch; retry"), nil
@@ -809,14 +809,14 @@ func (l *EnterSceneLogic) requireHandoffCommitted(in *scene_manager.EnterSceneRe
 	currentZoneID, targetZoneId uint32, observedEpoch uint64, site string) (*scene_manager.EnterSceneResponse, handoffVerdict) {
 	verdict, err := checkHandoffCommitted(l.svcCtx, in.PlayerId, observedEpoch)
 	if err != nil {
-		l.Logger.Errorf("[Handoff] %s 读交接状态失败,fail-closed 拒绝: player=%d err=%v", site, in.PlayerId, err)
+		l.Logger.Errorf("[Handoff] %s failed to read handoff state; rejecting fail-closed: player=%d err=%v", site, in.PlayerId, err)
 		return errResp(constants.ErrRedis, fmt.Sprintf("读取玩家交接状态失败，已拒绝: %v", err)), handoffVerdict{}
 	}
 	if verdict.committed {
 		return nil, verdict
 	}
 	if l.svcCtx.Config.AllowUnsafeCrossNodeHandoff {
-		l.Logger.Infof("[Handoff] dev 旁路 AllowUnsafeCrossNodeHandoff=true,无落盘标记放行且不铸造 epoch(%s): player=%d owner_epoch=%d old_scene=%d old_node=%s old_zone=%d target_zone=%d",
+		l.Logger.Infof("[Handoff] Dev bypass AllowUnsafeCrossNodeHandoff=true; allowing without persisted marker or minting epoch (%s): player=%d owner_epoch=%d old_scene=%d old_node=%s old_zone=%d target_zone=%d",
 			site, in.PlayerId, observedEpoch, currentLoc.GetSceneId(), currentLoc.GetNodeId(), currentZoneID, targetZoneId)
 		return nil, handoffVerdict{epoch: observedEpoch}
 	}
@@ -831,7 +831,7 @@ func (l *EnterSceneLogic) requireHandoffCommitted(in *scene_manager.EnterSceneRe
 	// 第一次请求注定拿到 18,它据此「冻结 → 存盘 → 写标记 → 重发」(player_lifecycle.cpp 的
 	// StartTravelHandoff)。真正的异常是重发之后仍被 18 拒,看 handoff_pending_stale_marker 的速率;
 	// scene 侧对应的是 [TravelHandoff] 汇总行里的 aborted。
-	l.Logger.Infof("[Handoff] %s 暂拒:源 scene 尚未为当前归属代际写出落盘标记(可重试): player=%d owner_epoch=%d handoff=%q old_scene=%d old_node=%s old_zone=%d gate_zone=%d target_zone=%d",
+	l.Logger.Infof("[Handoff] %s temporarily rejected: source scene has not persisted marker for current ownership generation (retryable): player=%d owner_epoch=%d handoff=%q old_scene=%d old_node=%s old_zone=%d gate_zone=%d target_zone=%d",
 		site, in.PlayerId, verdict.epoch, verdict.marker, currentLoc.GetSceneId(), currentLoc.GetNodeId(),
 		currentZoneID, in.GateZoneId, targetZoneId)
 	return errResp(constants.ErrHandoffPending,
@@ -945,7 +945,7 @@ func (l *EnterSceneLogic) playerLocationOwnerGone(loc *scene_manager.PlayerLocat
 	}
 	liveNodes, err := l.svcCtx.Redis.Zcard(nodeLoadKey(zoneID))
 	if err != nil {
-		l.Logger.Errorf("读取 zone 节点负载集失败,陈旧位置判定 fail-closed 沿用拒绝: zone=%d node=%s err=%v",
+		l.Logger.Errorf("Failed to read zone node load set; stale-location check remains fail-closed: zone=%d node=%s err=%v",
 			zoneID, loc.GetNodeId(), err)
 		return false
 	}
@@ -993,7 +993,7 @@ func (l *EnterSceneLogic) rejectTravelToUnopenedMap(in *scene_manager.EnterScene
 		var ok bool
 		if confID, ok = defaultWorldConfID(); !ok {
 			metrics.ObserveEnterSceneRejected(targetZoneId, rejectReasonTravelMapUnavailable)
-			l.Logger.Errorf("[Travel] 跨 zone 传送被拒:请求未指定地图,而默认大世界未配置(World 表为空),未改任何状态: player=%d gate_zone=%d target_zone=%d",
+			l.Logger.Errorf("[Travel] Cross-zone travel rejected: request did not specify map and default world not configured (World table empty); no state changed: player=%d gate_zone=%d target_zone=%d",
 				in.PlayerId, in.GateZoneId, targetZoneId)
 			return errResp(constants.ErrNoAvailableNode,
 				fmt.Sprintf("no default world scene configured for target zone %d; player state untouched", targetZoneId))
@@ -1001,7 +1001,7 @@ func (l *EnterSceneLogic) rejectTravelToUnopenedMap(in *scene_manager.EnterScene
 	}
 	channels, err := l.svcCtx.Redis.Scard(worldChannelsKey(targetZoneId, confID))
 	if err != nil {
-		l.Logger.Errorf("[Travel] 读目标 zone 的世界频道集合失败,跳过地图预检(由第二条腿自己解析): player=%d target_zone=%d map=%s scene_conf_id=%d err=%v",
+		l.Logger.Errorf("[Travel] Failed to read target zone world channel set; skipping map precheck (second leg resolves destination): player=%d target_zone=%d map=%s scene_conf_id=%d err=%v",
 			in.PlayerId, targetZoneId, mapKind, confID, err)
 		return nil
 	}
@@ -1009,7 +1009,7 @@ func (l *EnterSceneLogic) rejectTravelToUnopenedMap(in *scene_manager.EnterScene
 		return nil
 	}
 	metrics.ObserveEnterSceneRejected(targetZoneId, rejectReasonTravelMapUnavailable)
-	l.Logger.Errorf("[Travel] 跨 zone 传送被拒:目标 zone 没有这张图的世界频道,未改任何状态: player=%d gate_zone=%d target_zone=%d map=%s scene_conf_id=%d",
+	l.Logger.Errorf("[Travel] Cross-zone travel rejected: target zone has no world channel for this map; no state changed: player=%d gate_zone=%d target_zone=%d map=%s scene_conf_id=%d",
 		in.PlayerId, in.GateZoneId, targetZoneId, mapKind, confID)
 	return errResp(constants.ErrNoAvailableNode,
 		fmt.Sprintf("no world channel for conf %d in target zone %d; player state untouched", confID, targetZoneId))
@@ -1056,18 +1056,18 @@ func (l *EnterSceneLogic) handleCrossZoneRedirect(in *scene_manager.EnterSceneRe
 		if placeErr != nil {
 			if errors.Is(placeErr, errHandoffWithdrawn) {
 				metrics.ObserveEnterSceneRejected(targetZoneId, rejectReasonHandoffWithdrawn)
-				l.Logger.Errorf("[Handoff] 跨区放行时交接标记已被源 scene 撤回,本次不发重定向: player=%d target_zone=%d",
+				l.Logger.Errorf("[Handoff] Source scene withdrew handoff marker during cross-zone admission; no redirect sent for this request: player=%d target_zone=%d",
 					in.PlayerId, targetZoneId)
 				return errResp(constants.ErrHandoffPending, "源场景已撤回交接，请稍后重试；未修改玩家状态"), nil
 			}
 			if errors.Is(placeErr, errOwnerEpochConflict) {
 				metrics.ObserveEnterSceneRejected(targetZoneId, "epoch_conflict")
-				l.Logger.Errorf("跨区放行时归属 epoch 被并发 EnterScene 抢先推进,本次不发重定向: player=%d target_zone=%d",
+				l.Logger.Errorf("Concurrent EnterScene advanced ownership epoch during cross-zone admission; no redirect sent for this request: player=%d target_zone=%d",
 					in.PlayerId, targetZoneId)
 				return errResp(constants.ErrOwnerEpochConflict,
 					"concurrent EnterScene advanced the owner epoch; retry"), nil
 			}
-			l.Logger.Errorf("跨区放行写入等待落点位置失败: player=%d target_zone=%d err=%v", in.PlayerId, targetZoneId, placeErr)
+			l.Logger.Errorf("Failed to write pending arrival location during cross-zone admission: player=%d target_zone=%d err=%v", in.PlayerId, targetZoneId, placeErr)
 			return errResp(constants.ErrUpdateLocation, "Failed to update location"), nil
 		}
 		if currentLoc != nil && currentLoc.SceneId != 0 {

@@ -103,19 +103,19 @@ jobs:
             | sort -u > /tmp/projects.txt
 
           COUNT=$(wc -l < /tmp/projects.txt)
-          echo "工程清单共 $COUNT 项"
+          echo "Project list contains $COUNT entries"
           # 2026-08-10 实测是 16 项（14 个 LIB_PROJECTS + 2 个 EXE_PROJECTS）。
           # 这里只做"非空"下限校验，不钉死数量——加子工程是正常演进，
           # 钉死数字只会制造无意义的红。
           if [ "$COUNT" -lt 10 ]; then
-            echo "::error::只解析出 $COUNT 个工程，--dry-run 的输出格式可能变了，本检查已失效"
+            echo "::error::Only $COUNT projects were parsed; the --dry-run output format may have changed and invalidated this check"
             exit 1
           fi
 
           MISSING=0
           while read -r d; do
             if [ ! -f "$d/CMakeLists.txt" ]; then
-              echo "::error file=tools/scripts/build_linux.sh::$d/CMakeLists.txt 不存在——build_linux.sh 的工程清单与仓库结构已漂移"
+              echo "::error file=tools/scripts/build_linux.sh::$d/CMakeLists.txt does not exist; the build_linux.sh project list has drifted from the repository structure"
               MISSING=1
             fi
           done < /tmp/projects.txt
@@ -138,7 +138,7 @@ jobs:
           rc=$?
           set -e
           if [ "$rc" -ne 2 ]; then
-            echo "::error::未知参数应返回 2，实际返回 $rc"
+            echo "::error::Unknown arguments should return 2, actually returned $rc"
             exit 1
           fi
 
@@ -204,7 +204,7 @@ jobs:
           # 报 "fatal: reference is not a tree"。所以浅拉失败就退回全深度，
           # 而不是让整个 job 红在一个纯优化项上。
           if ! git submodule update --init --depth 1 --recursive -- "${SUBMODULES[@]}"; then
-            echo "::warning::浅克隆子模块失败，退回全深度拉取"
+            echo "::warning::Shallow submodule clone failed; falling back to a full-depth fetch"
             git submodule update --init --recursive -- "${SUBMODULES[@]}" || exit 1
           fi
           df -h /

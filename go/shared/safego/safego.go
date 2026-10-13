@@ -73,7 +73,7 @@ func register() {
 		if err := prometheus.Register(panicTotal); err != nil {
 			var already prometheus.AlreadyRegisteredError
 			if !errors.As(err, &already) {
-				logx.Errorf("[safego] 指标注册失败: %v", err)
+				logx.Errorf("[safego] Failed to register metrics: %v", err)
 			}
 		}
 	})
@@ -121,7 +121,7 @@ func Go(point string, fn func()) {
 // 比什么都不做更糟。
 func Loop(ctx context.Context, point string, interval time.Duration, round func(ctx context.Context)) {
 	if interval <= 0 {
-		logx.Errorf("[safego] 循环 %s 的 interval=%v 非法,不启动", point, interval)
+		logx.Errorf("[safego] Loop %s has invalid interval=%v; not starting", point, interval)
 		return
 	}
 

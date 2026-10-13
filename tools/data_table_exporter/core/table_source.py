@@ -100,7 +100,7 @@ def read_all_tables(cfg: ExporterConfig) -> list[TableSchema]:
             except SchemaProtoError as exc:
                 raise TableSourceError("[%s] 权威 schema 与源表不符:%s" % (sheet, exc)) from None
             via_schema += 1
-            logger.debug("%s <- %s(权威 schema)", sheet, proto.name)
+            logger.debug("%s <- %s (authoritative schema)", sheet, proto.name)
             continue
         schema = read_table(xlsx, cfg)
         if schema is None:
@@ -108,14 +108,14 @@ def read_all_tables(cfg: ExporterConfig) -> list[TableSchema]:
                 "%s 读不出 schema。它既没有权威 schema(%s),旧的 5 行表头也解析失败。"
                 % (xlsx.name, cfg.schema_dir / ("%s_table.proto" % sheet.lower())))
         tables.append(schema)
-        logger.debug("%s <- %s(旧表头)", schema.name, xlsx.name)
+        logger.debug("%s <- %s (legacy headers)", schema.name, xlsx.name)
 
     unused = sorted(set(index) - {t.name for t in tables})
     if unused:
         raise TableSourceError("这些权威 schema 没有对应的源表:%s"
                                % ", ".join("%s(%s)" % (s, index[s].name) for s in unused))
 
-    logger.info("读到 %d 张表:%d 张走权威 schema,%d 张走旧表头",
+    logger.info("Read %d tables: %d use authoritative schemas, %d use legacy headers",
                 len(tables), via_schema, len(tables) - via_schema)
     return tables
 

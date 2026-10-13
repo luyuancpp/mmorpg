@@ -55,7 +55,7 @@ func (l *AdminLogic) SeedListing(in *tradepb.SeedListingRequest) (*tradepb.SeedL
 	mode := l.deps.Config.Mode
 	if !config.IsRelaxedMode(mode) {
 		svc.ObserveSeedListing(svc.ResultRejected)
-		l.Errorf("[trade] 拒绝 SeedListing:Mode=%q 不是 dev/test", mode)
+		l.Errorf("[trade] Rejecting SeedListing: Mode=%q is not dev/test", mode)
 		return nil, status.Errorf(codes.PermissionDenied, "SeedListing is only available in Mode=dev|test (current %q)", mode)
 	}
 	reject := func(code uint32, result string) (*tradepb.SeedListingResponse, error) {
@@ -78,17 +78,17 @@ func (l *AdminLogic) SeedListing(in *tradepb.SeedListingRequest) (*tradepb.SeedL
 	}
 
 	if l.deps.ListingIDs == nil {
-		l.Errorf("[trade] %s: listing_id 号段未接线 seller=%d", method, seller)
+		l.Errorf("[trade] %s: listing_id segment not wired seller=%d", method, seller)
 		return reject(constants.ErrServiceUnavailable, svc.ResultError)
 	}
 	listingID, err := l.deps.ListingIDs.Next(l.ctx)
 	if err != nil {
-		l.Errorf("[trade] %s: 领 listing_id 失败 seller=%d: %v", method, seller, err)
+		l.Errorf("[trade] %s: failed to allocate listing_id seller=%d: %v", method, seller, err)
 		return reject(constants.ErrServiceUnavailable, svc.ResultError)
 	}
 	if listingID == 0 {
 		// idsegment 保证不返回 0;真出现就是发号源 bug,绝不能写进主键。
-		l.Errorf("[trade] %s: 号段返回了 listing_id=0 seller=%d", method, seller)
+		l.Errorf("[trade] %s: segment returned listing_id=0 seller=%d", method, seller)
 		return reject(constants.ErrServiceUnavailable, svc.ResultError)
 	}
 
@@ -116,12 +116,12 @@ func (l *AdminLogic) SeedListing(in *tradepb.SeedListingRequest) (*tradepb.SeedL
 		Version:             0,
 	}
 	if err := l.deps.Store.InsertListing(l.ctx, rec); err != nil {
-		l.Errorf("[trade] %s: InsertListing 失败 listing_id=%d seller=%d: %v", method, listingID, seller, err)
+		l.Errorf("[trade] %s: InsertListing failed listing_id=%d seller=%d: %v", method, listingID, seller, err)
 		return reject(constants.ErrServiceUnavailable, svc.ResultError)
 	}
 
 	svc.ObserveSeedListing(svc.ResultOK)
-	l.Infof("[trade] %s 成功 listing_id=%d seller=%d market_zone=%d category=%d notice_end_ms=%d sale_end_ms=%d",
+	l.Infof("[trade] %s succeeded listing_id=%d seller=%d market_zone=%d category=%d notice_end_ms=%d sale_end_ms=%d",
 		method, listingID, seller, homeZone, int32(rec.GetCategory()), rec.GetNoticeEndMs(), rec.GetSaleEndMs())
 	return &tradepb.SeedListingResponse{ListingId: listingID, MarketZone: homeZone}, nil
 }

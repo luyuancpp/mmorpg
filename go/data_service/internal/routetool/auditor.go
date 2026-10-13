@@ -320,7 +320,7 @@ func (a *auditor) checkFences(ctx context.Context) error {
 	}
 	a.report.RedisFencesActive = len(fences)
 	if len(fences) > 0 {
-		fmt.Fprintf(a.opts.Stderr, "WARN: %d active merge fence(s) %v: 合服窗口内审计结果可能包含瞬时差异\n", len(fences), fences)
+		fmt.Fprintf(a.opts.Stderr, "WARN: %d active merge fence(s) %v: audit results may include transient differences during merge window\n", len(fences), fences)
 	}
 	return nil
 }

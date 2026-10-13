@@ -216,8 +216,8 @@ func RunTravelSmoke(cfg *config.Config) {
 	}
 	homeGate := bot.gateAddr()
 	if bot.countSince(0, game.SceneClientPlayerCommonRedirectToGateMessageId) > 0 {
-		fail("login-redirected", "在 zone %d 登录途中就收到 msg 124(现在连着 %s):账号的位置记录还指着别的 zone,"+
-			"多半是上一轮死在访客区的残留。等票据 / 等待落点过期(300s)或清掉 player:{id}:location 后再跑",
+		fail("login-redirected", "Received msg 124 while logging into zone %d (currently connected to %s): the account location still points to another zone, "+
+			"probably left over from the previous run dying in a visitor zone. Wait for the ticket / pending landing to expire (300s), or clear player:{id}:location before rerunning",
 			sc.HomeZone, homeGate)
 	}
 	goldLogin, err := bot.readGold()
@@ -231,17 +231,17 @@ func RunTravelSmoke(cfg *config.Config) {
 	if err != nil {
 		// 这是全程第一条 GM 指令,环境没放行 GM 时就死在这里。gate 的 GM 闸拒绝时**不回包**、只推一条 SendTipToClient,
 		// 所以表现是等回包超时,而不是带 tip 的拒绝。
-		fail("home-gold-seed", "%v(若是等回包超时,先查 home 区 gate 的 GATE_RUN_MODE 是不是 dev:gate 的 GM 闸拒绝时不回包)", err)
+		fail("home-gold-seed", "%v (if waiting for a response timed out, first check that the home-zone gate GATE_RUN_MODE is dev: its GM guard sends no response on rejection)", err)
 	}
 	if gold != goldHome {
-		fail("home-gold-seed", "home 区 GmAddCurrency 回的 balance_after=%d,期望 %d(登录余额 %d + %d)",
+		fail("home-gold-seed", "Home-zone GmAddCurrency returned balance_after=%d, expected %d (login balance %d + %d)",
 			gold, goldHome, goldLogin, travelSmokeHomeGoldDelta)
 	}
 	if gold, err = bot.readGold(); err != nil {
 		fail("home-gold-seed-readback", "%v", err)
 	}
 	if gold != goldHome {
-		fail("home-gold-seed-readback", "home 区加完再读金币=%d,期望 %d", gold, goldHome)
+		fail("home-gold-seed-readback", "After the home-zone addition, read gold=%d, expected %d", gold, goldHome)
 	}
 	zap.L().Info("[travel-smoke] at home",
 		zap.Uint64("player_id", bot.homePlayer), zap.Uint32("home_zone", sc.HomeZone),
@@ -269,10 +269,10 @@ func RunTravelSmoke(cfg *config.Config) {
 	// (残留 PlayerFrozenComp / PlayerTravelHandoffComp 时 T3 会被同步拒绝)。
 	// 读到的值也要比:丢掉返回值的读是空断言(会话活着但读到别的东西也算过)。
 	if gold, err = bot.readGold(); err != nil {
-		fail("reject-session-alive", "非法目标被拒之后会话不可用: %v", err)
+		fail("reject-session-alive", "Session is unusable after rejecting an invalid target: %v", err)
 	}
 	if gold != goldHome {
-		fail("reject-session-alive", "非法目标被拒之后金币=%d,期望仍是出发值 %d(拒绝不该改动任何状态)", gold, goldHome)
+		fail("reject-session-alive", "After rejecting an invalid target gold=%d, expected the departure value %d (rejection should not modify any state)", gold, goldHome)
 	}
 
 	// ---- T3:去访客区 ----
@@ -298,8 +298,8 @@ func RunTravelSmoke(cfg *config.Config) {
 		fail("visit-gold-read", "%v", err)
 	}
 	if gold != goldHome {
-		fail("visit-gold", "访客区金币=%d,期望出发值 %d(= 登录余额 %d + 出发前在 home 区加的 %d)。"+
-			"读到 0 = 没读到档、被当成新号建了空实体(它一存盘就会覆盖原档);读到 %d = 读到的是旧档,传送前的存盘没落地就放行了",
+		fail("visit-gold", "Visitor-zone gold=%d, expected departure value %d (= login balance %d + %d added in the home zone before departure). "+
+			"Reading 0 = the save was not loaded and an empty entity was created as a new account (saving it will overwrite the original save); reading %d = an old save was loaded because travel was allowed before the pre-travel save persisted",
 			gold, goldHome, goldLogin, travelSmokeHomeGoldDelta, goldLogin)
 	}
 	// scene(B) 可写:用请求 / 响应型 RPC 当硬断言(移动类 RPC 的返回是 Empty,见 probeMove)。
@@ -308,20 +308,20 @@ func RunTravelSmoke(cfg *config.Config) {
 		fail("visit-gold-add", "%v", err)
 	}
 	if gold != goldVisit {
-		fail("visit-gold-add", "访客区 GmAddCurrency 回的 balance_after=%d,期望 %d(出发值 %d + %d)", gold, goldVisit, goldHome, travelSmokeGoldDelta)
+		fail("visit-gold-add", "Visitor-zone GmAddCurrency returned balance_after=%d, expected %d (departure value %d + %d)", gold, goldVisit, goldHome, travelSmokeGoldDelta)
 	}
 	if gold, err = bot.readGold(); err != nil {
 		fail("visit-gold-readback", "%v", err)
 	}
 	if gold != goldVisit {
-		fail("visit-gold-readback", "加完再读金币=%d,期望 %d", gold, goldVisit)
+		fail("visit-gold-readback", "After the addition, read gold=%d, expected %d", gold, goldVisit)
 	}
 	moveAck, err := bot.probeMove()
 	if err != nil {
 		fail("visit-move", "%v", err)
 	}
 	if sc.RequireMoveAck && !moveAck {
-		fail("visit-move", "%s 内没收到 MoveAck(require_move_ack=true;场景没有导航网格时 fail-open 不回 ack)", travelSmokeMoveAckTimeout)
+		fail("visit-move", "No MoveAck received within %s (require_move_ack=true; a scene without a navigation mesh fails open without sending an ack)", travelSmokeMoveAckTimeout)
 	}
 	// 停留:home 区的 gate 发现旧 TCP 断开后会通知 login(A) 进入 30s 断线租约。租约到期的清理如果误伤了
 	// 已经指向访客区的 location / 会话,访客会在这之后被踢或读写失败 —— 所以缺省停留 35s 再验一次。
@@ -333,10 +333,10 @@ func RunTravelSmoke(cfg *config.Config) {
 		fail("visit-dwell", "%v", err)
 	}
 	if gold, err = bot.readGold(); err != nil {
-		fail("visit-dwell", "停留 %ds 之后访客会话不可用(home 区断线租约到期的清理误伤了访客?): %v", sc.DwellSeconds, err)
+		fail("visit-dwell", "Visitor session is unusable after staying %ds (did expired home-zone disconnect-lease cleanup incorrectly affect the visitor?): %v", sc.DwellSeconds, err)
 	}
 	if gold != goldVisit {
-		fail("visit-dwell", "停留 %ds 之后金币=%d,期望 %d", sc.DwellSeconds, gold, goldVisit)
+		fail("visit-dwell", "After staying %ds gold=%d, expected %d", sc.DwellSeconds, gold, goldVisit)
 	}
 
 	// ---- T5:回家(同一条链反向,CZ-9) ----
@@ -358,7 +358,7 @@ func RunTravelSmoke(cfg *config.Config) {
 		fail("home-gold-read", "%v", err)
 	}
 	if goldBack != goldVisit {
-		fail("home-gold", "回家后金币=%d,期望 %d(出发值 %d + 访客区加的 %d):回档了,或访客区的存盘落到了别的库",
+		fail("home-gold", "After returning home gold=%d, expected %d (departure value %d + %d added in the visitor zone): state rolled back, or the visitor-zone save went to another database",
 			goldBack, goldVisit, goldHome, travelSmokeGoldDelta)
 	}
 	if err := bot.verifyUndisturbed(backMark, backGate); err != nil {
@@ -366,7 +366,7 @@ func RunTravelSmoke(cfg *config.Config) {
 	}
 	// 全程恰好两次重定向(去一次、回一次)。多出来的就是被弹来弹去(pkg.MaxRedirectHops=3 按会话计,往返用掉 2 次)。
 	if n := bot.countSince(0, game.SceneClientPlayerCommonRedirectToGateMessageId); n != 2 {
-		fail("hop-count", "全程收到 %d 条 msg 124,期望恰好 2 条", n)
+		fail("hop-count", "Received %d msg 124 packets in total, expected exactly 2", n)
 	}
 
 	// 去程 / 回程两跳都跑完了 verifyArrival,CZ-8 的两条票据断言必然已经执行过(它没有

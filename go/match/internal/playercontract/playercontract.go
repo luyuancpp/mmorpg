@@ -153,7 +153,7 @@ func PushToPlayer(ctx context.Context, svcCtx *svc.ServiceContext, playerId uint
 		GateInstanceID: session.GateInstanceId,
 	}, messageId, body)
 	if err != nil {
-		logx.Errorf("[match] 推送失败 player=%d message_id=%d: %v", playerId, messageId, err)
+		logx.Errorf("[match] Push failed player=%d message_id=%d: %v", playerId, messageId, err)
 		return err
 	}
 	return nil

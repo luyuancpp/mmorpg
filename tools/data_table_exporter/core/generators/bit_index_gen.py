@@ -133,8 +133,7 @@ def _load_mapping(path: Path, table_name: str, bootstrap: bool) -> dict[int, int
 
     if bootstrap:
         logger.warning(
-            "[%s] 位序状态文件不存在,按 --bitindex-bootstrap 从空初始化:%s。"
-            "只有确认该表从未发布过才允许这么做,否则存量玩家位图会整体错位。",
+            "[%s] Bit-index state file is missing; initializing from empty with --bitindex-bootstrap: %s. This is allowed only if the table has never been released; otherwise all existing player bitmaps will be misaligned.",
             table_name, path,
         )
         return {}
@@ -178,14 +177,14 @@ def _update_mapping(table_name: str, ids: list[int], existing: dict[int, int]) -
         next_idx += 1
 
     if added:
-        logger.info("[%s] 新增 %d 个位序:%s", table_name, len(added),
+        logger.info("[%s] Added %d bit indices: %s", table_name, len(added),
                     ", ".join(f"{i}->{existing[i]}" for i in added))
 
     # 退休 ID:表里已经没有这一行,但它的位序**永久保留**当占位,不回收也不复用。
     retired = sorted(set(existing) - set(ids))
     if retired:
         logger.warning(
-            "[%s] %d 个 ID 已从表中删除,其位序永久保留占位(绝不回收):%s",
+            "[%s] %d IDs have been removed from the table; their bit indices remain permanently reserved and will never be reclaimed: %s",
             table_name, len(retired),
             ", ".join(f"{i}(bit {existing[i]})" for i in retired),
         )
@@ -221,8 +220,7 @@ def _resolve_max_bit(schema: TableSchema, cfg: ExporterConfig, mapping: dict[int
     required = max(mapping.values(), default=-1) + 1
     if required > data_max:
         logger.warning(
-            "[%s] 位图容量按已分配位数取 %d(表数据算出的是 %d)——"
-            "通常意味着最大 ID 已被删除但其位序仍占位。",
+            "[%s] Bitmap capacity is set to the allocated bit count %d (table data gives %d); this usually means the largest ID was removed while its bit index remains reserved.",
             schema.name, required, data_max,
         )
         return required

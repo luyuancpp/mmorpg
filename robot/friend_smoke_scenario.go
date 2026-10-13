@@ -230,12 +230,12 @@ func RunFriendSmoke(cfg *config.Config) {
 	if sc.CrossZone {
 		// 配置校验已拦,这里兜底:zone 相同的话"跨区推送"这个结论根本不成立。
 		if sc.ZoneA == sc.ZoneB {
-			fail("zone-placement", "cross_zone=true 但 zone_a=zone_b=%d", sc.ZoneA)
+			fail("zone-placement", "cross_zone=true but zone_a=zone_b=%d", sc.ZoneA)
 		}
 		// 本地各 zone 的 gate 端口不同;地址相同说明 B 其实进了 zone_a,
 		// 第 1 / 3 步的推送就只是同一个 gate 内部的巧合,证明不了跨区可达。
 		if a.gate == b.gate {
-			fail("zone-placement", "A 与 B 分到同一个 gate %s(zone_a=%d zone_b=%d),不是跨 zone 运行",
+			fail("zone-placement", "A and B were assigned the same gate %s (zone_a=%d zone_b=%d); this is not a cross-zone run",
 				a.gate, sc.ZoneA, sc.ZoneB)
 		}
 	}
@@ -264,13 +264,13 @@ func RunFriendSmoke(cfg *config.Config) {
 	}
 	evt, err := b.waitPush(friendpb.FriendEventReason_FRIEND_EVENT_REASON_REQUEST_RECEIVED, a.gc.PlayerId)
 	if err != nil {
-		fail("push-request-received", "%v(这一步验跨区推送三步:friend 读 B 的 player:session:%d → "+
-			"gate-cmd_g<N> → zone %d 的 gate。查 friend 日志的 push 指标与该 zone 的 gate 是否在消费命令 topic;"+
-			"KAFKA_COMMAND_TOPIC_PARTITIONS / _GENERATION 与 match 不一致会让推送静默丢失)",
+		fail("push-request-received", "%v (this step verifies three cross-zone push stages: friend reads B player:session:%d -> "+
+			"gate-cmd_g<N> -> gate in zone %d. Check friend push metrics in its logs and whether this zone gate consumes the command topic; "+
+			"KAFKA_COMMAND_TOPIC_PARTITIONS / _GENERATION mismatches with match will silently lose pushes)",
 			err, b.gc.PlayerId, b.zone)
 	}
 	if evt.GetTsMs() == 0 {
-		fail("push-request-received", "推送 ts_ms=0(服务端没填事件时刻)")
+		fail("push-request-received", "Push ts_ms=0 (the server did not set the event timestamp)")
 	}
 	zap.L().Info("[friend-smoke] step 1: request sent and pushed cross-zone",
 		zap.Uint64("by", evt.GetByPlayerId()), zap.Int64("ts_ms", evt.GetTsMs()))
@@ -285,7 +285,7 @@ func RunFriendSmoke(cfg *config.Config) {
 	for _, req := range pending.GetRequests() {
 		if req.GetFromPlayerId() == a.gc.PlayerId {
 			if req.GetStatus() != friendpb.FriendRequestStatus_FRIEND_REQUEST_PENDING {
-				fail("pending-list", "B 的待处理列表里 A(%d)的申请 status=%s,期望 PENDING",
+				fail("pending-list", "A(%d) request in B pending list has status=%s, expected PENDING",
 					a.gc.PlayerId, req.GetStatus())
 			}
 			found = true
@@ -293,8 +293,8 @@ func RunFriendSmoke(cfg *config.Config) {
 		}
 	}
 	if !found {
-		fail("pending-list", "B(%d)的待处理申请里没有 A(%d):推送到了但权威拉取路径没有 —— "+
-			"推送只是红点触发,真相以这条为准", b.gc.PlayerId, a.gc.PlayerId)
+		fail("pending-list", "B(%d) pending requests contain no A(%d): the push arrived but the authoritative fetch path has no entry; "+
+			"the push only triggers a notification badge; this fetch is authoritative", b.gc.PlayerId, a.gc.PlayerId)
 	}
 	// 重发同一条申请:必须被业务层挡住,而不是刷新时间或插第二行。
 	if err := a.expect(game.ClientPlayerFriendAddFriendMessageId,
@@ -312,7 +312,7 @@ func RunFriendSmoke(cfg *config.Config) {
 		fail("accept-friend", "%v", err)
 	}
 	if _, err := a.waitPush(friendpb.FriendEventReason_FRIEND_EVENT_REASON_REQUEST_ACCEPTED, b.gc.PlayerId); err != nil {
-		fail("push-request-accepted", "%v(方向与第 1 步相反:zone %d 的 friend 推给 zone %d 的 A)", err, b.zone, a.zone)
+		fail("push-request-accepted", "%v (the direction is opposite to step 1: friend in zone %d pushes to A in zone %d)", err, b.zone, a.zone)
 	}
 
 	aList := &friendpb.GetFriendListResponse{}
@@ -322,18 +322,18 @@ func RunFriendSmoke(cfg *config.Config) {
 	}
 	entryB := friendSmokeFindFriend(aList.GetFriends(), b.gc.PlayerId)
 	if entryB == nil {
-		fail("friend-list-a", "A 的好友列表里没有 B(%d):AcceptFriend 受理了但双向 INSERT 没落库", b.gc.PlayerId)
+		fail("friend-list-a", "A friend list contains no B(%d): AcceptFriend was accepted but the bidirectional INSERT was not persisted", b.gc.PlayerId)
 	}
 	// 在线状态与活跃时刻都读共享库的 player:session:{id}(契约 §4)。B 此刻确实在线,
 	// 所以 is_online=false 只有两种可能:friend 连错了 Redis(私有库而不是共享库),
 	// 或者会话读失败被降级成"全部离线"(F2 的 fail-open)。两种都要人看,不能放过。
 	if !entryB.GetIsOnline() {
-		fail("friend-online", "A 看到 B(%d)是离线的,但 B 正登录在 zone %d —— "+
-			"friend 的 SharedRedis 是否指向写 player:session 的那个库?读失败会 fail-open 成全部离线,查 friend 错误日志",
+		fail("friend-online", "A sees B(%d) as offline, but B is logged into zone %d; "+
+			"does friend SharedRedis point to the database that stores player:session? Read failures fail open to all offline; check friend error logs",
 			b.gc.PlayerId, b.zone)
 	}
 	if entryB.GetLastActiveMs() == 0 {
-		fail("friend-online", "A 看到 B(%d)的 last_active_ms=0:会话里没有活跃时刻,或没被投影到列表里", b.gc.PlayerId)
+		fail("friend-online", "A sees B(%d) with last_active_ms=0: the session has no activity timestamp, or it was not projected into the list", b.gc.PlayerId)
 	}
 	bList := &friendpb.GetFriendListResponse{}
 	if err := b.expect(game.ClientPlayerFriendGetFriendListMessageId,
@@ -341,7 +341,7 @@ func RunFriendSmoke(cfg *config.Config) {
 		fail("friend-list-b", "%v", err)
 	}
 	if friendSmokeFindFriend(bList.GetFriends(), a.gc.PlayerId) == nil {
-		fail("friend-list-b", "B 的好友列表里没有 A(%d):好友关系只落了单向", a.gc.PlayerId)
+		fail("friend-list-b", "B friend list contains no A(%d): the friendship was persisted in only one direction", a.gc.PlayerId)
 	}
 	zap.L().Info("[friend-smoke] step 3: accepted, pushed back, both lists agree",
 		zap.Bool("b_online_seen_by_a", entryB.GetIsOnline()), zap.Int64("b_last_active_ms", entryB.GetLastActiveMs()))
@@ -357,19 +357,19 @@ func RunFriendSmoke(cfg *config.Config) {
 		fail("list-blocks", "%v", err)
 	}
 	if !friendSmokeHasBlock(blocks.GetBlocks(), a.gc.PlayerId) {
-		fail("list-blocks", "C 的黑名单里没有 A(%d):Block 受理了但没落 friend_block 表", a.gc.PlayerId)
+		fail("list-blocks", "C blocklist contains no A(%d): Block was accepted but not persisted in friend_block", a.gc.PlayerId)
 	}
 	// **两个方向都要拦**,而且回的是同一个中性码:回"对方把你拉黑了"等于把别人的黑名单
 	// 状态变成一个可探测的接口(挨个发申请就能反查谁拉黑了自己)。
 	if err := a.expect(game.ClientPlayerFriendAddFriendMessageId,
 		&friendpb.AddFriendRequest{TargetPlayerId: c.gc.PlayerId}, &friendpb.AddFriendResponse{},
 		tipFriendBlocked); err != nil {
-		fail("blocked-forward", "被拉黑方 A→C 的申请没被拦:%v", err)
+		fail("blocked-forward", "The blocked party A->C request was not rejected: %v", err)
 	}
 	if err := c.expect(game.ClientPlayerFriendAddFriendMessageId,
 		&friendpb.AddFriendRequest{TargetPlayerId: a.gc.PlayerId}, &friendpb.AddFriendResponse{},
 		tipFriendBlocked); err != nil {
-		fail("blocked-reverse", "拉黑方 C→A 的申请没被拦(只拦一个方向等于黑名单可被绕开):%v", err)
+		fail("blocked-reverse", "The blocking party C->A request was not rejected (blocking only one direction allows bypassing the blocklist): %v", err)
 	}
 	zap.L().Info("[friend-smoke] step 4: block list enforced in both directions")
 
@@ -393,17 +393,17 @@ func RunFriendSmoke(cfg *config.Config) {
 		fail("recommend", "%v", err)
 	}
 	if n := len(rec.GetCandidates()); n > friendSmokeServerMaxRecommend {
-		fail("recommend", "limit=%d 请求拿回 %d 条,超过服务端上限 %d(RecommendMaxLimit 没有截断)",
+		fail("recommend", "A limit=%d request returned %d entries, exceeding the server limit %d (RecommendMaxLimit did not clamp it)",
 			friendSmokeRecommendLimit, n, friendSmokeServerMaxRecommend)
 	}
 	for _, cand := range rec.GetCandidates() {
 		switch cand.GetCandidatePlayerId() {
 		case a.gc.PlayerId:
-			fail("recommend", "推荐里出现了 A 自己(%d)", a.gc.PlayerId)
+			fail("recommend", "Recommendations include A itself (%d)", a.gc.PlayerId)
 		case b.gc.PlayerId:
-			fail("recommend", "推荐里出现了已是好友的 B(%d)", b.gc.PlayerId)
+			fail("recommend", "Recommendations include existing friend B(%d)", b.gc.PlayerId)
 		case c.gc.PlayerId:
-			fail("recommend", "推荐里出现了与 A 存在拉黑关系的 C(%d)", c.gc.PlayerId)
+			fail("recommend", "Recommendations include C(%d), which has a blocking relationship with A", c.gc.PlayerId)
 		}
 	}
 	zap.L().Info("[friend-smoke] step 5: recommendations clamped and filtered",
@@ -423,8 +423,8 @@ func RunFriendSmoke(cfg *config.Config) {
 		}, &base.Empty{})
 	switch {
 	case errors.Is(err, errFriendSmokeTimeout):
-		fail("notify-via-gate", "期望信封 tip=%d,实得超时:gate 把 NotifyFriendEvent 的消息号丢了(白名单没收它),"+
-			"或请求根本没到路由服。本断言要验的是 friend 会话层的拒绝,链路不通时它证明不了任何事",
+		fail("notify-via-gate", "Expected envelope tip=%d, but timed out: gate dropped the NotifyFriendEvent message ID (not included in the allowlist), "+
+			"or the request never reached the routing service. This assertion checks rejection by the friend session layer and proves nothing when the transport path is broken",
 			tipFriendServiceUnavailable)
 	case err != nil:
 		fail("notify-via-gate", "%v", err)
@@ -433,14 +433,14 @@ func RunFriendSmoke(cfg *config.Config) {
 		// 同时去 friend 日志里核对一行"拒绝客户端调用非客户端方法 /friendpb.ClientPlayerFriend/NotifyFriendEvent"
 		// —— 信封码是被各种上游错误共用的,只有那行日志能证明拒绝来自会话层的白名单。
 	case envelopeTip != 0:
-		fail("notify-via-gate", "信封 tip=%d,期望 %d(kServiceUnavailable)", envelopeTip, tipFriendServiceUnavailable)
+		fail("notify-via-gate", "Envelope tip=%d, expected %d (kServiceUnavailable)", envelopeTip, tipFriendServiceUnavailable)
 	default:
-		fail("notify-via-gate", "客户端经 gate 调 NotifyFriendEvent 拿到了业务回包:"+
-			"S2C 推送方法对客户端开放了,任何人都能伪造一条好友事件(D-9)")
+		fail("notify-via-gate", "A client calling NotifyFriendEvent through gate received a business response: "+
+			"the S2C push method is exposed to clients, allowing anyone to forge a friend event (D-9)")
 	}
 	zap.L().Info("[friend-smoke] step 6: NotifyFriendEvent refused for client callers",
 		zap.Uint32("envelope_tip", envelopeTip),
-		zap.String("expect_friend_log", "拒绝客户端调用非客户端方法 .../NotifyFriendEvent"))
+		zap.String("expect_friend_log", "Reject client calls to the non-client method .../NotifyFriendEvent"))
 
 	// ---- 步骤 7:清理 ----
 	// 这里**断言**结果码(与步骤 0b 的预清理不同):清理失败说明 RemoveFriend / Unblock

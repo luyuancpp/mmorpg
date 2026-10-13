@@ -93,7 +93,7 @@ func markNodeDeath(svcCtx *svc.ServiceContext, zoneID uint32, nodeID string) err
 	if err := svcCtx.Redis.Setex(key, strconv.FormatInt(time.Now().UnixMilli(), 10), ttl); err != nil {
 		return fmt.Errorf("写 death_at 失败: zone=%d node=%s: %w", zoneID, nodeID, err)
 	}
-	logx.Infof("[ReentryBarrier] 记录节点死亡时刻: zone=%d node=%s barrier=%v",
+	logx.Infof("[ReentryBarrier] Recording node death time: zone=%d node=%s barrier=%v",
 		zoneID, nodeID, sceneReentryBarrier(svcCtx))
 	return nil
 }
@@ -108,7 +108,7 @@ func clearNodeDeath(svcCtx *svc.ServiceContext, zoneID uint32, nodeID string) {
 		return
 	}
 	if _, err := svcCtx.Redis.Del(nodeDeathAtKey(zoneID, nodeID)); err != nil {
-		logx.Errorf("[ReentryBarrier] 清除 death_at 失败: zone=%d node=%s err=%v", zoneID, nodeID, err)
+		logx.Errorf("[ReentryBarrier] Failed to clear death_at: zone=%d node=%s err=%v", zoneID, nodeID, err)
 	}
 }
 
@@ -142,7 +142,7 @@ func CanReclaimDeadNode(svcCtx *svc.ServiceContext, zoneID uint32, nodeID string
 
 	raw, err := svcCtx.Redis.Get(nodeDeathAtKey(zoneID, nodeID))
 	if err != nil {
-		logx.Errorf("[ReentryBarrier] 读 death_at 失败,按屏障未到处理: zone=%d node=%s err=%v",
+		logx.Errorf("[ReentryBarrier] Failed to read death_at; treating barrier as not elapsed: zone=%d node=%s err=%v",
 			zoneID, nodeID, err)
 		return false, barrier
 	}
@@ -155,7 +155,7 @@ func CanReclaimDeadNode(svcCtx *svc.ServiceContext, zoneID uint32, nodeID string
 	if parseErr != nil || deathMs <= 0 {
 		// 标记被写坏了,读不出死亡时刻就等于没有证据。按屏障未到处理,
 		// 最坏情况是这个节点的场景要等到标记 TTL 过期才会被自愈 —— 有界。
-		logx.Errorf("[ReentryBarrier] death_at 值非法,按屏障未到处理: zone=%d node=%s raw=%q err=%v",
+		logx.Errorf("[ReentryBarrier] Invalid death_at value; treating barrier as not elapsed: zone=%d node=%s raw=%q err=%v",
 			zoneID, nodeID, raw, parseErr)
 		return false, barrier
 	}
@@ -164,7 +164,7 @@ func CanReclaimDeadNode(svcCtx *svc.ServiceContext, zoneID uint32, nodeID string
 	if elapsed < 0 {
 		// death_at 在未来:写标记的进程与本进程墙钟劈叉。按「屏障刚开始」处理,
 		// 绝不能因为算出负数就当作已过。
-		logx.Errorf("[ReentryBarrier] death_at 在未来(墙钟劈叉),按屏障刚开始处理: zone=%d node=%s skew=%v",
+		logx.Errorf("[ReentryBarrier] death_at in future (wall-clock divergence); treating barrier as just started: zone=%d node=%s skew=%v",
 			zoneID, nodeID, -elapsed)
 		return false, barrier
 	}
@@ -184,7 +184,7 @@ func reentryBarrierBlocks(svcCtx *svc.ServiceContext, zoneID uint32, nodeID, sit
 		return false
 	}
 	metrics.ObserveReentryBarrierBlocked(zoneID, site)
-	logx.Errorf("[ReentryBarrier] %s: 老属主刚判死,再入屏障还差 %v,本轮不改写 scene ownership: zone=%d node=%s",
+	logx.Errorf("[ReentryBarrier] %s: previous owner just declared dead, reentry barrier needs %v more; scene ownership unchanged this round: zone=%d node=%s",
 		site, remaining, zoneID, nodeID)
 	return true
 }
@@ -226,7 +226,7 @@ func enqueueDeadNodeReconcile(svcCtx *svc.ServiceContext, entry nodeEntry) {
 		// 快照读不到就别猜:留着反向索引,等下一次机会(fullSync 的陈旧清理或
 		// 节点再次死亡)重新抄。这里若退化成「收尾时现读」,就把上面说的
 		// 「误杀新场景」风险放了回来。
-		logx.Errorf("[ReentryBarrier] 抄死节点场景快照失败,跳过本次收尾: zone=%d node=%s err=%v",
+		logx.Errorf("[ReentryBarrier] Failed to capture dead node scene snapshot; skipping cleanup: zone=%d node=%s err=%v",
 			entry.reg.ZoneId, entry.nodeID, err)
 		return
 	}
@@ -245,7 +245,7 @@ func enqueueDeadNodeReconcileSnapshot(entry nodeEntry, scenes []string) {
 	pending := len(pendingDeadNodes)
 	pendingDeadNodesMu.Unlock()
 
-	logx.Infof("[ReentryBarrier] 死节点收尾入队(等屏障): zone=%d node=%s scenes=%d pending=%d",
+	logx.Infof("[ReentryBarrier] Dead node cleanup queued (awaiting barrier): zone=%d node=%s scenes=%d pending=%d",
 		entry.reg.ZoneId, entry.nodeID, len(scenes), pending)
 	publishDeadNodeReconcilePending()
 }
@@ -384,7 +384,7 @@ var (
 func deferNodeDetach(svcCtx *svc.ServiceContext, entry nodeEntry, cause error) {
 	zoneID, nodeID := entry.reg.ZoneId, entry.nodeID
 	if existing, ok := lookupDeferredNodeDetach(zoneID, nodeID); ok {
-		logx.Errorf("[ReentryBarrier][DeferDetach] 仍未摘出负载集,沿用首次推迟的时刻与快照(已等 %v): zone=%d node=%s err=%v",
+		logx.Errorf("[ReentryBarrier][DeferDetach] Still not removed from load set; retaining initial deferral time and snapshot (waited %v): zone=%d node=%s err=%v",
 			time.Since(existing.firstObservedAt), zoneID, nodeID, cause)
 		return
 	}
@@ -393,7 +393,7 @@ func deferNodeDetach(svcCtx *svc.ServiceContext, entry nodeEntry, cause error) {
 	scenes, snapErr := svcCtx.Redis.Smembers(nodeScenesKey(zoneID, nodeID))
 	if snapErr != nil {
 		// 快照没抄到不影响推迟本身;摘除时退回 enqueueDeadNodeReconcile 现读(那边读失败同样跳过收尾)。
-		logx.Errorf("[ReentryBarrier][DeferDetach] 抄死节点场景快照失败,摘除时再现读: zone=%d node=%s err=%v",
+		logx.Errorf("[ReentryBarrier][DeferDetach] Failed to capture dead node scene snapshot; will reread at removal: zone=%d node=%s err=%v",
 			zoneID, nodeID, snapErr)
 	} else {
 		task.scenes = scenes
@@ -412,7 +412,7 @@ func deferNodeDetach(svcCtx *svc.ServiceContext, entry nodeEntry, cause error) {
 	deferredNodeDetachMu.Unlock()
 
 	metrics.ObserveNodeDetachDeferred(zoneID, metrics.NodeDetachOutcomeDeferred)
-	logx.Errorf("[ReentryBarrier][DeferDetach] 已判死但 death_at 未落地或摘负载集失败,节点暂留负载集(按存活处理),每拍重试: zone=%d node=%s scenes=%d captured=%v pending=%d err=%v",
+	logx.Errorf("[ReentryBarrier][DeferDetach] Node declared dead but death_at not persisted or load-set removal failed; retaining in load set (treated as alive), retrying each tick: zone=%d node=%s scenes=%d captured=%v pending=%d err=%v",
 		zoneID, nodeID, len(task.scenes), task.scenesCaptured, pending, cause)
 }
 
@@ -460,12 +460,12 @@ func cancelDeferredNodeDetachOnReregister(zoneID uint32, nodeID string) {
 
 	metrics.ObserveNodeDetachDeferred(zoneID, metrics.NodeDetachOutcomeDropped)
 	if task.scenesCaptured {
-		logx.Infof("[ReentryBarrier][DeferDetach] 节点在推迟摘除期间重新注册,放弃推迟的摘除;判死时刻快照交给收尾队列: zone=%d node=%s scenes=%d",
+		logx.Infof("[ReentryBarrier][DeferDetach] Node registered again during deferred removal; abandoning removal, passing death-time snapshot to cleanup queue: zone=%d node=%s scenes=%d",
 			zoneID, nodeID, len(task.scenes))
 		enqueueDeadNodeReconcileSnapshot(task.entry, task.scenes)
 		return
 	}
-	logx.Errorf("[ReentryBarrier][DeferDetach] 节点在推迟摘除期间重新注册,放弃推迟的摘除;判死时刻快照没抄到,旧化身的孤儿实例与计数留到该节点下一次死亡时收: zone=%d node=%s",
+	logx.Errorf("[ReentryBarrier][DeferDetach] Node registered again during deferred removal; abandoning removal, death-time snapshot unavailable, old incarnation orphan instances and counts retained until next node death: zone=%d node=%s",
 		zoneID, nodeID)
 }
 
@@ -494,7 +494,7 @@ func retryDeferredNodeDetaches(svcCtx *svc.ServiceContext) int {
 			// 用它自己的(更晚的)首次观察时刻重新推迟,方向保守。
 			if forgetDeferredNodeDetach(z, n) {
 				metrics.ObserveNodeDetachDeferred(z, metrics.NodeDetachOutcomeDropped)
-				logx.Infof("[ReentryBarrier][DeferDetach] 本副本已不是领导者,放弃推迟的摘除(不碰 Redis,节点留在负载集由新领导者重扫): zone=%d node=%s",
+				logx.Infof("[ReentryBarrier][DeferDetach] Replica no longer leader; abandoning deferred removal (Redis untouched, new leader will rescan node in load set): zone=%d node=%s",
 					z, n)
 			}
 			continue
@@ -509,7 +509,7 @@ func retryDeferredNodeDetaches(svcCtx *svc.ServiceContext) int {
 		// ZREM 一直失败时每拍都会重写 death_at:屏障只会往后推(保守),不会提前失效。
 		markErr := markNodeDeath(svcCtx, z, n)
 		if markErr != nil && waited < barrier {
-			logx.Errorf("[ReentryBarrier][DeferDetach] 仍写不进 death_at,已等 %v / 屏障 %v,下一拍再试: zone=%d node=%s err=%v",
+			logx.Errorf("[ReentryBarrier][DeferDetach] Still unable to write death_at, waited %v / barrier %v; retrying next tick: zone=%d node=%s err=%v",
 				waited, barrier, z, n, markErr)
 			continue
 		}
@@ -518,11 +518,11 @@ func retryDeferredNodeDetaches(svcCtx *svc.ServiceContext) int {
 				if forgetDeferredNodeDetach(z, n) {
 					metrics.ObserveNodeDetachDeferred(z, metrics.NodeDetachOutcomeAbandoned)
 				}
-				logx.Errorf("[ReentryBarrier][DeferDetach] 自首次尝试已 %v 仍摘不出负载集,放弃;节点留在负载集按存活处理,由下一次 fullSync 重扫: zone=%d node=%s err=%v",
+				logx.Errorf("[ReentryBarrier][DeferDetach] Still unable to remove from load set after %v since first attempt; abandoning, node retained as alive for next fullSync rescan: zone=%d node=%s err=%v",
 					waited, z, n, err)
 				continue
 			}
-			logx.Errorf("[ReentryBarrier][DeferDetach] 摘负载集失败,下一拍再试(已等 %v / 放弃期限 %v): zone=%d node=%s err=%v",
+			logx.Errorf("[ReentryBarrier][DeferDetach] Failed to remove from load set; retrying next tick (waited %v / abandonment deadline %v): zone=%d node=%s err=%v",
 				waited, deferredNodeDetachGiveUpAfter, z, n, err)
 			continue
 		}
@@ -530,11 +530,11 @@ func retryDeferredNodeDetaches(svcCtx *svc.ServiceContext) int {
 		forgetDeferredNodeDetach(z, n)
 		if markErr == nil {
 			metrics.ObserveNodeDetachDeferred(z, metrics.NodeDetachOutcomeRecovered)
-			logx.Infof("[ReentryBarrier][DeferDetach] 补写 death_at 成功,已摘出负载集(已等 %v): zone=%d node=%s",
+			logx.Infof("[ReentryBarrier][DeferDetach] death_at backfill succeeded; removed from load set (waited %v): zone=%d node=%s",
 				waited, z, n)
 		} else {
 			metrics.ObserveNodeDetachDeferred(z, metrics.NodeDetachOutcomeExpired)
-			logx.Errorf("[ReentryBarrier][DeferDetach] 自首次尝试已 %v ≥ 屏障 %v 仍写不进 death_at,不带标记摘除(推迟期间 IsNodeAlive 为真、本 leader 的 CanReclaimDeadNode 恒拒,屏障已兜满): zone=%d node=%s err=%v",
+			logx.Errorf("[ReentryBarrier][DeferDetach] Still unable to write death_at after %v since first attempt >= barrier %v; removing without marker (IsNodeAlive true during deferral, this leader's CanReclaimDeadNode always rejects, full barrier covered): zone=%d node=%s err=%v",
 				waited, barrier, z, n, markErr)
 		}
 		done++

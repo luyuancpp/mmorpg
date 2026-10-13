@@ -343,7 +343,7 @@ if (-not [string]::IsNullOrWhiteSpace($Version)) {
 }
 elseif (-not [string]::IsNullOrWhiteSpace($env:MMORPG_RELEASE_VERSION)) {
     $script:ReleaseVersion = $env:MMORPG_RELEASE_VERSION.Trim()
-    Write-PublishInfo "发布版本号取自环境变量 MMORPG_RELEASE_VERSION=$($script:ReleaseVersion)"
+    Write-PublishInfo "Release version from environment variable MMORPG_RELEASE_VERSION=$($script:ReleaseVersion)"
 }
 
 $channel = 'snapshot'
@@ -382,7 +382,7 @@ if ($stamp.Dirty) {
     if (-not $AllowDirty) {
         throw "工作树有未提交改动(commit $($stamp.Commit)),快照镜像无法追溯到确定提交。先提交,或本机联调显式加 -AllowDirty(版本目录带 -dirty-时间戳)。"
     }
-    Write-PublishWarn "工作树是脏的,按 -AllowDirty 发布快照;该版本无法从 commit 还原,只能本机联调用。"
+    Write-PublishWarn "Working tree is dirty; publishing a snapshot via -AllowDirty. This version cannot be reproduced from the commit; local integration use only."
 }
 
 $tagArgs = @{ Commit = $stamp.Commit }
@@ -425,7 +425,7 @@ if ([System.IO.Directory]::Exists($finalDir)) {
     if ($existingCommit -cne $stamp.Commit) {
         throw "版本 $versionDirName 已由其他提交发布(已发布 commit='$existingCommit',当前 commit=$($stamp.Commit)),-SkipIfExists 不能掩盖这种冲突:$finalDir。新提交请用新版本号。"
     }
-    Write-PublishOk "版本已发布,跳过(制品不可变):$finalDir"
+    Write-PublishOk "Version already published; skipping (artifacts are immutable): $finalDir"
     exit 0
 }
 
@@ -494,7 +494,7 @@ function Assert-SourceUnchanged {
 # ─────────────────────────────────────────────────────────────────
 
 if ($SkipBuild) {
-    Write-PublishInfo "-SkipBuild:不构建,只收集已有镜像(revision label 必须等于 $($stamp.Commit))"
+    Write-PublishInfo "-SkipBuild: skip builds and collect existing images only (revision label must equal $($stamp.Commit))"
 }
 else {
     foreach ($family in $families) {
@@ -502,21 +502,21 @@ else {
         $familyArgs = Get-ImageScriptArgs -Family $family
 
         if ($family -eq 'cpp') {
-            Write-PublishStep "C++ 运行镜像:检查 Linux 运行时 staging"
+            Write-PublishStep "C++ runtime image: check Linux runtime staging"
             $pre = Invoke-ImageScript -Family $family -ScriptCommand 'preflight' -Arguments $familyArgs
             if ($pre.ExitCode -ne 0) {
                 throw "C++ 运行镜像的 Linux 运行时 staging 不完整($($spec.Script) -Command preflight exit=$($pre.ExitCode),缺失项见上方 missing=)。先在 Linux 上跑 tools/scripts/build_linux.sh,再用 tools/scripts/k8s_stage_runtime.ps1 -BinarySourceRoot <Linux 产物目录> 填充 deploy/k8s/runtime/linux;这次不发 C++ 镜像就加 -Families go,java。"
             }
         }
 
-        Write-PublishStep "构建 $family 镜像($($spec.Script) -Command $($spec.BuildCommand))"
+        Write-PublishStep "Build $family images ($($spec.Script) -Command $($spec.BuildCommand))"
         $build = Invoke-ImageScript -Family $family -ScriptCommand $spec.BuildCommand -Arguments $familyArgs
         if ($build.ExitCode -ne 0) {
             throw "$family 镜像构建失败($($spec.Script) -Command $($spec.BuildCommand) exit=$($build.ExitCode)),不发布。"
         }
     }
 
-    Write-PublishStep "复查源码版本戳(构建期间 HEAD 与工作树不得变动)"
+    Write-PublishStep "Recheck source revision stamp (HEAD and working tree must remain unchanged during builds)"
     Assert-SourceUnchanged -Baseline $stamp -Stage '构建结束后'
 }
 
@@ -524,7 +524,7 @@ else {
 # 5. 期望镜像清单 + 本地镜像身份核对
 # ─────────────────────────────────────────────────────────────────
 
-Write-PublishStep "收集镜像清单(list-refs)"
+Write-PublishStep "Collect image manifest (list-refs)"
 $expected = New-Object System.Collections.Generic.List[hashtable]
 $seenRefs = New-Object 'System.Collections.Generic.HashSet[string]' ([System.StringComparer]::Ordinal)
 foreach ($family in $families) {
@@ -544,7 +544,7 @@ foreach ($family in $families) {
 # k8s_image.ps1 里 BUILD_VERSION 的取值规则同一口径,接口 C/D)。
 $expectedImageVersion = if ($script:ReleaseVersion) { $script:ReleaseVersion } else { $script:ImageTag }
 
-Write-PublishStep "核对本地镜像(必须存在,revision label == $($stamp.Commit),version label == $expectedImageVersion)"
+Write-PublishStep "Check local images (must exist, revision label == $($stamp.Commit), version label == $expectedImageVersion)"
 $missing = New-Object System.Collections.Generic.List[string]
 $wrongRevision = New-Object System.Collections.Generic.List[string]
 $wrongVersion = New-Object System.Collections.Generic.List[string]
@@ -584,7 +584,7 @@ if ($missing.Count -gt 0 -or $wrongRevision.Count -gt 0 -or $wrongVersion.Count 
 # 6. staging:逐个导出 + 清单 + 校验和,rename 上线
 # ─────────────────────────────────────────────────────────────────
 
-Write-PublishStep "导出 $($expected.Count) 个镜像 → $finalDir"
+Write-PublishStep "Export $($expected.Count) images -> $finalDir"
 $staging = New-AtomicStaging -FinalDir $finalDir
 try {
     $imagesOut = Join-Path $staging 'images'
@@ -630,7 +630,7 @@ try {
         foreach ($f in $symbolFiles) {
             Copy-Item -LiteralPath $f.FullName -Destination (Join-Path $symbolsOut $f.Name)
         }
-        Write-PublishInfo "归档 C++ 分离符号 $($symbolFiles.Count) 个(来自 $symbolsDir)"
+        Write-PublishInfo "Archive $($symbolFiles.Count) C++ split symbols (from $symbolsDir)"
     }
 
     Write-Utf8NoBomFile -Path (Join-Path $staging 'images-manifest.json') `
@@ -674,8 +674,8 @@ catch {
 # latest.json 是唯一可变文件;版本目录上线之后再动指针,指针永远不会指向不存在的版本
 Set-LatestPointer -ChannelRoot $channelRoot -Kind images -Version $versionDirName | Out-Null
 
-Write-PublishOk "镜像离线包已发布 [$channel] ${versionDirName}:$finalDir($($expected.Count) 个镜像,符号 $($symbolFiles.Count) 个)"
+Write-PublishOk "Offline image bundle published [$channel] ${versionDirName}:$finalDir ($($expected.Count) images, $($symbolFiles.Count) symbols)"
 if ($channel -eq 'release') {
-    Write-PublishInfo "下一步:在 CHANGELOG.md 写好 [$($versionCheck.Normalized)] 段后跑 make_release.ps1 -Version $($script:ReleaseVersion)"
+    Write-PublishInfo "Next step: write the [$($versionCheck.Normalized)] section in CHANGELOG.md, then run make_release.ps1 -Version $($script:ReleaseVersion)"
 }
 exit 0

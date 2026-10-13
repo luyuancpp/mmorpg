@@ -705,7 +705,7 @@ void SkillSystem::HandleSkillSpell(const entt::entity casterEntity, const uint64
 	// 那段只是 return 让伤害留 0,后面 DealDamage 照跑,NextBasicAttack 的加成伤害仍会落血。
 	if (tlsEcs.actorRegistry.any_of<InBattleComp>(targetEntity))
 	{
-		LOG_INFO << "[TurnBattle] 落点期目标已进入回合制战斗,技能整体丢弃. caster="
+		LOG_INFO << "[TurnBattle] Target entered turn-based battle before impact;entire skill discarded. caster="
 				 << entt::to_integral(casterEntity) << " target=" << entt::to_integral(targetEntity)
 				 << " skill_id=" << skillId;
 		return;

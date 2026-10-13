@@ -163,21 +163,21 @@ func RunAttributeSmoke(cfg *config.Config) {
 		fail("get-panel", "%v", err)
 	}
 	if len(panel.Pools) == 0 || len(panel.Dimensions) == 0 || len(panel.Schemes) == 0 {
-		fail("panel-shape", "pools=%d dimensions=%d schemes=%d(三者都必须非空)",
+		fail("panel-shape", "pools=%d dimensions=%d schemes=%d (all three must be nonempty)",
 			len(panel.Pools), len(panel.Dimensions), len(panel.Schemes))
 	}
 	if panel.Derived == nil || panel.Derived.MaxHealth == 0 {
-		fail("panel-derived", "二级属性缺失或气血上限为 0:%v", panel.Derived)
+		fail("panel-derived", "Derived attributes are missing or max health is 0: %v", panel.Derived)
 	}
 	if panel.Level != 1 {
-		fail("panel-level", "预备后应为 1 级,面板 level=%d", panel.Level)
+		fail("panel-level", "Expected level 1 after setup; panel level=%d", panel.Level)
 	}
 	before := findPool(panel, attrPoolPrimary)
 	if before == nil {
-		fail("pool-missing", "面板里没有 pool_id=%d", attrPoolPrimary)
+		fail("pool-missing", "Panel has no pool_id=%d", attrPoolPrimary)
 	}
 	if before.Remaining != before.Total {
-		fail("panel-clean", "预备后属性点应全额可用:total=%d remaining=%d", before.Total, before.Remaining)
+		fail("panel-clean", "All attribute points should be available after setup: total=%d remaining=%d", before.Total, before.Remaining)
 	}
 	zap.L().Info("[attribute-smoke] step 2: panel ok",
 		zap.Int("pools", len(panel.Pools)), zap.Int("dimensions", len(panel.Dimensions)),
@@ -191,12 +191,12 @@ func RunAttributeSmoke(cfg *config.Config) {
 		fail("gm-set-level", "%v", err)
 	}
 	if panel.Level != targetLevel {
-		fail("level-mismatch", "设 %d 级后面板 level=%d", targetLevel, panel.Level)
+		fail("level-mismatch", "After setting level %d, panel level=%d", targetLevel, panel.Level)
 	}
 	primary := findPool(panel, attrPoolPrimary)
 	wantGain := attrPrimaryPointsPerLevel * (targetLevel - 1)
 	if primary == nil || primary.Total-before.Total != wantGain {
-		fail("points-growth", "1→%d 级属性点应恰好 +%d:%d -> %v", targetLevel, wantGain, before.Total, primary)
+		fail("points-growth", "Attribute points from level 1 to %d should increase by exactly %d: %d -> %v", targetLevel, wantGain, before.Total, primary)
 	}
 	zap.L().Info("[attribute-smoke] step 3: level up grants points",
 		zap.Uint32("level", panel.Level), zap.Uint32("total", primary.Total),
@@ -216,7 +216,7 @@ func RunAttributeSmoke(cfg *config.Config) {
 		delta += want - allocatedOf(panel, dimensionId)
 	}
 	if delta != primary.Remaining {
-		fail("auto-delta", "建议增量 %d != 剩余点 %d(自动加点应把剩余点分完)", delta, primary.Remaining)
+		fail("auto-delta", "Suggested delta %d != remaining points %d (automatic allocation should spend all remaining points)", delta, primary.Remaining)
 	}
 	fresh, err := session.call(game.SceneAttributeClientPlayerGetAttributePanelMessageId,
 		&scene.GetAttributePanelRequest{})
@@ -224,7 +224,7 @@ func RunAttributeSmoke(cfg *config.Config) {
 		fail("panel-after-auto", "%v", err)
 	}
 	if findPool(fresh, attrPoolPrimary).Remaining != primary.Remaining {
-		fail("auto-mutated", "自动加点动了服务器状态:剩余点 %d -> %d",
+		fail("auto-mutated", "Automatic allocation changed server state: remaining points %d -> %d",
 			primary.Remaining, findPool(fresh, attrPoolPrimary).Remaining)
 	}
 	zap.L().Info("[attribute-smoke] step 4: auto suggestion is preview-only",
@@ -239,12 +239,12 @@ func RunAttributeSmoke(cfg *config.Config) {
 	}
 	primary = findPool(panel, attrPoolPrimary)
 	if primary.Remaining != 0 {
-		fail("allocate-remaining", "分完后剩余点应为 0,实为 %d", primary.Remaining)
+		fail("allocate-remaining", "Remaining points should be 0 after allocation, got %d", primary.Remaining)
 	}
 	// 只断言"六项二级属性上限总和变大",不绑定哪一项:自动加点方案是表驱动的(2026-09-13 起全投本职业主属性,
 	// 通用档全投力量 → 只涨物伤),原先写死"气血上限变大"会随方案调整误报
 	if derivedSum(panel.Derived) <= derivedBefore {
-		fail("derived-not-growing", "加点后二级属性没变大:总和 %d -> %d", derivedBefore, derivedSum(panel.Derived))
+		fail("derived-not-growing", "Derived attributes did not increase after allocation: sum %d -> %d", derivedBefore, derivedSum(panel.Derived))
 	}
 	zap.L().Info("[attribute-smoke] step 5: allocate applied",
 		zap.Uint64("max_health", panel.Derived.MaxHealth),
@@ -256,7 +256,7 @@ func RunAttributeSmoke(cfg *config.Config) {
 	// ---- 步骤 6:幂等 —— 重发同一份目标值被判"无变化" ----
 	if tip := session.callExpectTip(game.SceneAttributeClientPlayerAllocateAttributePointsMessageId,
 		&scene.AllocateAttributePointsRequest{PoolId: attrPoolPrimary, Allocated: suggested}); tip != tipAttributeNothingToChange {
-		fail("idempotent", "重发同一份目标值应回 tip=%d(无变化),实得 %d", tipAttributeNothingToChange, tip)
+		fail("idempotent", "Resending the same target values should return tip=%d (unchanged), got %d", tipAttributeNothingToChange, tip)
 	}
 
 	// ---- 步骤 7:只增不减 ----
@@ -270,12 +270,12 @@ func RunAttributeSmoke(cfg *config.Config) {
 	lower := map[uint32]uint32{anyDim: allocatedOf(panel, anyDim) - 1}
 	if tip := session.callExpectTip(game.SceneAttributeClientPlayerAllocateAttributePointsMessageId,
 		&scene.AllocateAttributePointsRequest{PoolId: attrPoolPrimary, Allocated: lower}); tip != tipAttributePointsCannotDecrease {
-		fail("decrease-guard", "减点应回 tip=%d,实得 %d", tipAttributePointsCannotDecrease, tip)
+		fail("decrease-guard", "Decreasing points should return tip=%d, got %d", tipAttributePointsCannotDecrease, tip)
 	}
 
 	// 原步骤 8(相性池单项上限)/ 步骤 9(仙魔池未解锁)随两池删除一并移除(2026-09-14);
 	// "单项上限"与"未解锁"两条规则宝宝池仍在用,由纯规则单测 attribute_allocation_rules_test 覆盖。
-	zap.L().Info("[attribute-smoke] steps 6-7: guards ok(幂等 / 只增不减)")
+	zap.L().Info("[attribute-smoke] steps 6-7: guards ok (idempotent / increases only)")
 
 	// ---- 步骤 10:方案:开新方案精确扣金币、新方案干净、切回后不串档 ----
 	allocatedInScheme1 := allocatedOf(panel, anyDim)
@@ -314,22 +314,22 @@ func RunAttributeSmoke(cfg *config.Config) {
 			fail("gold-read", "%v", err)
 		}
 		if goldBeforeCreate-goldAfterCreate != createCost {
-			fail("create-cost", "开新方案应扣 %d 金(面板 create_scheme_cost_gold),实扣 %d",
+			fail("create-cost", "Creating a scheme should deduct %d gold (panel create_scheme_cost_gold), actually deducted %d",
 				createCost, goldBeforeCreate-goldAfterCreate)
 		}
 	}
 	if otherSchemeId == 0 {
-		fail("scheme-pick", "没有可切换的第二个方案:%v", panel.Schemes)
+		fail("scheme-pick", "No second scheme is available to switch to: %v", panel.Schemes)
 	}
 	if panel, err = session.switchSchemeWaitingCooldown(panel, otherSchemeId); err != nil {
 		fail("switch-scheme", "%v", err)
 	}
 	if created {
 		if allocatedOf(panel, anyDim) != 0 {
-			fail("scheme-not-clean", "新方案应是干净的,dimension=%d 已分配 %d", anyDim, allocatedOf(panel, anyDim))
+			fail("scheme-not-clean", "A new scheme should be clean; dimension=%d already has %d allocated", anyDim, allocatedOf(panel, anyDim))
 		}
 		if pp := findPool(panel, attrPoolPrimary); pp.Remaining != pp.Total {
-			fail("scheme-points", "新方案的点数应全额可用:total=%d remaining=%d", pp.Total, pp.Remaining)
+			fail("scheme-points", "All points in a new scheme should be available: total=%d remaining=%d", pp.Total, pp.Remaining)
 		}
 	}
 	// 切回原方案(要等切换冷却):原方案的加点必须原样还在
@@ -337,7 +337,7 @@ func RunAttributeSmoke(cfg *config.Config) {
 		fail("switch-back", "%v", err)
 	}
 	if got := allocatedOf(panel, anyDim); got != allocatedInScheme1 {
-		fail("scheme-isolation", "切回原方案后加点串档:期望 %d,实得 %d", allocatedInScheme1, got)
+		fail("scheme-isolation", "Allocation leaked across schemes after switching back: expected %d, got %d", allocatedInScheme1, got)
 	}
 	zap.L().Info("[attribute-smoke] step 10: scheme cost / isolation ok",
 		zap.Uint32("scheme_a", activeSchemeId), zap.Uint32("scheme_b", otherSchemeId), zap.Bool("created", created))
@@ -361,17 +361,17 @@ func RunAttributeSmoke(cfg *config.Config) {
 		fail("relogin-panel", "%v", err)
 	}
 	if panel.Level != targetLevel {
-		fail("persist-level", "重登后 level=%d,期望 %d", panel.Level, targetLevel)
+		fail("persist-level", "After relogin level=%d, expected %d", panel.Level, targetLevel)
 	}
 	if len(panel.Schemes) != persistSchemes || panel.ActiveSchemeId != persistActive {
-		fail("persist-schemes", "重登后 schemes=%d active=%d,期望 %d/%d",
+		fail("persist-schemes", "After relogin schemes=%d active=%d, expected %d/%d",
 			len(panel.Schemes), panel.ActiveSchemeId, persistSchemes, persistActive)
 	}
 	if got := allocatedOf(panel, anyDim); got != persistAlloc {
-		fail("persist-alloc", "重登后 dimension=%d 已分配 %d,期望 %d", anyDim, got, persistAlloc)
+		fail("persist-alloc", "After relogin dimension=%d has %d allocated, expected %d", anyDim, got, persistAlloc)
 	}
 	if panel.Derived.MaxHealth != persistMaxHealth || derivedSum(panel.Derived) != persistDerived {
-		fail("persist-derived", "重登后气血上限 %d / 二级属性总和 %d,期望 %d / %d(二级属性应由持久化的分配重算出同样的值)",
+		fail("persist-derived", "After relogin max health %d / derived attribute sum %d, expected %d / %d (derived attributes should recompute to the same values from persisted allocations)",
 			panel.Derived.MaxHealth, derivedSum(panel.Derived), persistMaxHealth, persistDerived)
 	}
 	zap.L().Info("[attribute-smoke] step 12: relogin restored persisted state",
@@ -382,7 +382,7 @@ func RunAttributeSmoke(cfg *config.Config) {
 	primary = findPool(panel, attrPoolPrimary)
 	resetCost := primary.ResetCostGold
 	if resetCost == 0 {
-		fail("reset-cost-table", "30 级洗点应收费(reset_free_below_level=30),面板 reset_cost_gold=0")
+		fail("reset-cost-table", "Resetting points at level 30 should cost gold (reset_free_below_level=30), but panel reset_cost_gold=0")
 	}
 	goldBeforeReset, err := readGoldBalance(gc, player, stats, attributeSmokeRpcTimeout)
 	if err != nil {
@@ -396,17 +396,17 @@ func RunAttributeSmoke(cfg *config.Config) {
 	}
 	primary = findPool(panel, attrPoolPrimary)
 	if primary.Remaining != totalBefore {
-		fail("reset-refund", "洗点后应全额返还:total=%d remaining=%d", totalBefore, primary.Remaining)
+		fail("reset-refund", "All points should be refunded after reset: total=%d remaining=%d", totalBefore, primary.Remaining)
 	}
 	if allocatedOf(panel, anyDim) != 0 {
-		fail("reset-clear", "洗点后 dimension=%d 仍有 %d 点", anyDim, allocatedOf(panel, anyDim))
+		fail("reset-clear", "After reset dimension=%d still has %d points", anyDim, allocatedOf(panel, anyDim))
 	}
 	goldAfterReset, err := readGoldBalance(gc, player, stats, attributeSmokeRpcTimeout)
 	if err != nil {
 		fail("gold-read", "%v", err)
 	}
 	if goldBeforeReset-goldAfterReset != resetCost {
-		fail("reset-cost", "洗点应扣 %d 金(面板 reset_cost_gold),实扣 %d", resetCost, goldBeforeReset-goldAfterReset)
+		fail("reset-cost", "Reset should deduct %d gold (panel reset_cost_gold), actually deducted %d", resetCost, goldBeforeReset-goldAfterReset)
 	}
 	zap.L().Info("[attribute-smoke] step 11: reset refunded all points, gold charged",
 		zap.Uint32("remaining", primary.Remaining), zap.Uint64("cost", resetCost))

@@ -199,7 +199,7 @@ var (
 func authoritativePlayerID(ctx context.Context, reqPlayerId uint64) uint64 {
 	if detail, ok := ctxkeys.GetSessionDetails(ctx); ok && detail.GetPlayerId() != 0 {
 		if reqPlayerId != 0 && reqPlayerId != detail.GetPlayerId() {
-			logx.Errorf("[match] 请求体 player_id=%d 与 session 权威身份 %d 不一致,以 session 为准",
+			logx.Errorf("[match] Request player_id=%d differs from authoritative session identity %d; using session identity",
 				reqPlayerId, detail.GetPlayerId())
 		}
 		return detail.GetPlayerId()
@@ -398,11 +398,11 @@ func extendMatchedTickets(svcCtx *svc.ServiceContext, members []uint64, tickets 
 		}
 		written, err := casTicketFields(svcCtx, playerId, expected, ttl, ticketFieldState, ticketStateMatched)
 		if err != nil {
-			logx.Errorf("[match] 补偿前续期 ticket 失败 player=%d: %v", playerId, err)
+			logx.Errorf("[match] Failed to renew ticket before compensation player=%d: %v", playerId, err)
 			continue
 		}
 		if !written {
-			logx.Infof("[match] ticket 已被替换或过期,跳过补偿续期 player=%d expected=%s", playerId, expected)
+			logx.Infof("[match] Ticket replaced or expired; skipping compensation renewal player=%d expected=%s", playerId, expected)
 			continue
 		}
 		extended++
@@ -520,11 +520,11 @@ func markTicketReady(svcCtx *svc.ServiceContext, playerId uint64, expectedTicket
 		ticketFieldState, ticketStateReady,
 		ticketFieldBattleId, strconv.FormatUint(battleId, 10))
 	if err != nil {
-		logx.Errorf("[match] 更新 ticket ready 失败 player=%d battle=%d: %v", playerId, battleId, err)
+		logx.Errorf("[match] Failed to update ticket to ready player=%d battle=%d: %v", playerId, battleId, err)
 		return
 	}
 	if !written {
-		logx.Infof("[match] ticket 已被替换或过期,跳过 ready 写入 player=%d battle=%d expected=%s",
+		logx.Infof("[match] Ticket replaced or expired; skipping ready update player=%d battle=%d expected=%s",
 			playerId, battleId, expectedTicket)
 	}
 }
@@ -532,7 +532,7 @@ func markTicketReady(svcCtx *svc.ServiceContext, playerId uint64, expectedTicket
 // deleteTicket 删除 ticket(取消 / matcher 弹出时发现已在战斗中的出局者)。
 func deleteTicket(svcCtx *svc.ServiceContext, playerId uint64) {
 	if _, err := svcCtx.MatchRedis.Del(matchTicketKey(playerId)); err != nil {
-		logx.Errorf("[match] 删除 ticket 失败 player=%d: %v", playerId, err)
+		logx.Errorf("[match] Failed to delete ticket player=%d: %v", playerId, err)
 	}
 }
 
@@ -541,11 +541,11 @@ func deleteTicket(svcCtx *svc.ServiceContext, playerId uint64) {
 func deleteTicketIfOwned(svcCtx *svc.ServiceContext, playerId uint64, expectedTicket string) {
 	deleted, err := deleteTicketIfOwnedCtx(context.Background(), svcCtx, playerId, expectedTicket)
 	if err != nil {
-		logx.Errorf("[match] CAS 删除 ticket 失败 player=%d: %v", playerId, err)
+		logx.Errorf("[match] Failed to CAS-delete ticket player=%d: %v", playerId, err)
 		return
 	}
 	if !deleted {
-		logx.Infof("[match] ticket 已被替换或过期,跳过删票 player=%d expected=%s", playerId, expectedTicket)
+		logx.Infof("[match] Ticket replaced or expired; skipping ticket deletion player=%d expected=%s", playerId, expectedTicket)
 	}
 }
 
@@ -580,16 +580,16 @@ func requeueFront(svcCtx *svc.ServiceContext, fallbackQueueKey string, members [
 		playerId := members[i]
 		expected, known := tickets[playerId]
 		if !known {
-			logx.Errorf("[match] 回队首缺少弹组时的 ticket id,跳过 player=%d", playerId)
+			logx.Errorf("[match] Missing ticket id captured when group was popped; skipping return to queue front player=%d", playerId)
 			continue
 		}
 		ticket, err := loadTicket(svcCtx, playerId)
 		if err != nil {
-			logx.Errorf("[match] 回队首前读 ticket 失败,跳过 player=%d: %v", playerId, err)
+			logx.Errorf("[match] Failed to read ticket before return to queue front; skipping player=%d: %v", playerId, err)
 			continue
 		}
 		if ticket == nil || ticket.Ticket != expected {
-			logx.Infof("[match] ticket 已被替换或过期,不回队首 player=%d expected=%s", playerId, expected)
+			logx.Infof("[match] Ticket replaced or expired; not returning to queue front player=%d expected=%s", playerId, expected)
 			continue
 		}
 		queueKey := fallbackQueueKey
@@ -599,12 +599,12 @@ func requeueFront(svcCtx *svc.ServiceContext, fallbackQueueKey string, members [
 		written, err := casTicketFields(svcCtx, playerId, expected, ticketTTLSeconds(svcCtx),
 			ticketFieldState, ticketStateQueued)
 		if err != nil {
-			logx.Errorf("[match] 回队首前恢复 ticket 状态失败,跳过 player=%d: %v", playerId, err)
+			logx.Errorf("[match] Failed to restore ticket state before return to queue front; skipping player=%d: %v", playerId, err)
 			continue
 		}
 		if !written {
 			// 读票与 CAS 之间被替换的极窄窗口:不入队,新票据自己已在队列里。
-			logx.Infof("[match] 回队首前 ticket 已被替换,不入队 player=%d expected=%s", playerId, expected)
+			logx.Infof("[match] Ticket replaced before return to queue front; not enqueueing player=%d expected=%s", playerId, expected)
 			continue
 		}
 		if requeueFrontHook != nil {
@@ -612,13 +612,13 @@ func requeueFront(svcCtx *svc.ServiceContext, fallbackQueueKey string, members [
 		}
 		if err := pushFrontRegistered(svcCtx, queueKey, strconv.FormatUint(playerId, 10), ticket.Rating); err != nil {
 			// 票据已是 queued 但人不在队列:删票让玩家可立即重排,不留孤儿。
-			logx.Errorf("[match] 回队首失败,删票放玩家重排 player=%d queue=%s: %v", playerId, queueKey, err)
+			logx.Errorf("[match] Failed to return to queue front; deleting ticket to allow requeue player=%d queue=%s: %v", playerId, queueKey, err)
 			deleteTicketIfOwned(svcCtx, playerId, expected)
 			continue
 		}
 		requeued++
 	}
-	logx.Infof("[match] %d/%d 名成员已回队首 queue=%s", requeued, len(members), fallbackQueueKey)
+	logx.Infof("[match] %d/%d members returned to queue front queue=%s", requeued, len(members), fallbackQueueKey)
 }
 
 // nowMs 返回当前 Unix 毫秒。

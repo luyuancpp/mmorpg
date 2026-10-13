@@ -69,7 +69,7 @@ $projects = [ordered]@{
 
 if ($Filter) {
     $keys = @($projects.Keys | Where-Object { $_ -like "*$Filter*" })
-    if (-not $keys) { Write-Error "没有匹配 '$Filter' 的测试工程"; exit 2 }
+    if (-not $keys) { Write-Error "No test projects match '$Filter'"; exit 2 }
     $filtered = [ordered]@{}
     foreach ($k in $keys) { $filtered[$k] = $projects[$k] }
     $projects = $filtered
@@ -193,8 +193,8 @@ foreach ($name in $projects.Keys) {
 
 $results | Format-Table -AutoSize
 if ($failed -gt 0) {
-    Write-Host "有 $failed 个测试工程未通过" -ForegroundColor Red
+    Write-Host "$failed test projects failed" -ForegroundColor Red
     exit 1
 }
-Write-Host "全部通过($($projects.Count) 个工程)" -ForegroundColor Green
+Write-Host "All passed ($($projects.Count) projects)" -ForegroundColor Green
 exit 0

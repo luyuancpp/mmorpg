@@ -136,7 +136,7 @@ void PlayerTeamSystem::OnRefreshEvent(const PlayerTeamRefreshEvent& event)
 	if (player == entt::null || !tlsEcs.actorRegistry.valid(player))
 	{
 		// 玩家不在本节点(已下线 / 已被改派):下次进场会自己拉取,丢弃信号即可
-		LOG_DEBUG << "[PlayerTeam] 刷新信号丢弃: 玩家不在本节点, player_id=" << playerId;
+		LOG_DEBUG << "[PlayerTeam] Refresh signal discarded: player is not on this node, player_id=" << playerId;
 		return;
 	}
 	// 入队即跟随(J-12 修订):信号只发给 TeamId 变了的人,被移出者刷新后 TeamId 为 0、
@@ -167,7 +167,7 @@ void PlayerTeamSystem::RefreshMembership(entt::entity player, FollowMode mode)
 	}
 	if (!RedisReady())
 	{
-		LOG_WARN << "[PlayerTeam] 刷新成员关系跳过(Redis 未连接), player_id=" << playerId;
+		LOG_WARN << "[PlayerTeam] Membership refresh skipped(Redis disconnected), player_id=" << playerId;
 		return;
 	}
 
@@ -181,7 +181,7 @@ void PlayerTeamSystem::RefreshMembership(entt::entity player, FollowMode mode)
 			if (parsed.kind == TeamIndexReplyKind::kUnknown)
 			{
 				LOG_WARN << "[PlayerTeam] metric=team_index_read_unknown player_id=" << playerId
-						 << ",HMGET 回复错误或形状非法,保持现有 TeamId 不变";
+						 << ",HMGET reply error or invalid shape;current TeamId retained";
 				return;
 			}
 			const bool keyMissing = parsed.kind == TeamIndexReplyKind::kKeyMissing;
@@ -229,7 +229,7 @@ void PlayerTeamSystem::ApplyMembership(entt::entity player, uint64_t teamId, uin
 
 	if (oldTeamId != newTeamId)
 	{
-		LOG_INFO << "[PlayerTeam] TeamId 变更: player_id=" << GuidOf(player) << " old_team_id=" << oldTeamId
+		LOG_INFO << "[PlayerTeam] TeamId changed: player_id=" << GuidOf(player) << " old_team_id=" << oldTeamId
 				 << " new_team_id=" << newTeamId << " epoch=" << epoch << " key_missing=" << keyMissing;
 		RefreshTeammateAoi(player);
 	}
@@ -240,7 +240,7 @@ void PlayerTeamSystem::LoadTeamInfo(entt::entity player, uint64_t teamId, Follow
 	const uint64_t playerId = GuidOf(player);
 	if (!RedisReady())
 	{
-		LOG_WARN << "[PlayerTeam] 读队伍投影跳过(Redis 未连接), player_id=" << playerId << " team_id=" << teamId;
+		LOG_WARN << "[PlayerTeam] Team projection read skipped(Redis disconnected), player_id=" << playerId << " team_id=" << teamId;
 		return;
 	}
 
@@ -253,7 +253,7 @@ void PlayerTeamSystem::LoadTeamInfo(entt::entity player, uint64_t teamId, Follow
 			if (reply == nullptr || reply->type == REDIS_REPLY_ERROR)
 			{
 				LOG_WARN << "[PlayerTeam] metric=team_projection_read_unknown player_id=" << playerId
-						 << " team_id=" << teamId << ",GET 投影失败";
+						 << " team_id=" << teamId << ",GET projection failed";
 				return;
 			}
 
@@ -278,7 +278,7 @@ void PlayerTeamSystem::LoadTeamInfo(entt::entity player, uint64_t teamId, Follow
 						{
 							// 记录还在,投影只是丢了:未知,不清组件也不跟随,等 team 下一次提交/触碰重写投影
 							LOG_WARN << "[PlayerTeam] metric=team_projection_missing player_id=" << playerId
-									 << " team_id=" << teamId << ",记录仍在,本次不跟随";
+									 << " team_id=" << teamId << ",record still exists;follow skipped this time";
 							return;
 						}
 						// 记录也不在:与 Go 侧口径一致,按无队处理
@@ -300,7 +300,7 @@ void PlayerTeamSystem::LoadTeamInfo(entt::entity player, uint64_t teamId, Follow
 			TeamInfo teamInfo;
 			if (!teamInfo.ParseFromArray(reply->str, static_cast<int>(reply->len)))
 			{
-				LOG_ERROR << "[PlayerTeam] 队伍投影解析失败, player_id=" << playerId << " team_id=" << teamId;
+				LOG_ERROR << "[PlayerTeam] Team projection parse failed, player_id=" << playerId << " team_id=" << teamId;
 				return;
 			}
 			if (teamInfo.team_id() != teamId)
@@ -380,7 +380,7 @@ void PlayerTeamSystem::CheckFollowLeader(entt::entity player, uint64_t leaderId)
 	}
 	if (!RedisReady())
 	{
-		LOG_WARN << "[PlayerTeam] 读队长位置跳过(Redis 未连接), player_id=" << playerId << " leader_id=" << leaderId;
+		LOG_WARN << "[PlayerTeam] Leader location read skipped(Redis disconnected), player_id=" << playerId << " leader_id=" << leaderId;
 		return;
 	}
 
@@ -481,7 +481,7 @@ void PlayerTeamSystem::CheckFollowLeader(entt::entity player, uint64_t leaderId)
 			const auto smEntity = GetSceneManagerEntity(playerId);
 			if (smEntity == entt::null)
 			{
-				LOG_WARN << "[PlayerTeam] 无可用 SceneManager 节点,跟随放弃, player_id=" << playerId
+				LOG_WARN << "[PlayerTeam] No available SceneManager node;follow abandoned, player_id=" << playerId
 						 << " leader_scene_id=" << leaderSceneId;
 				return;
 			}
@@ -505,7 +505,7 @@ void PlayerTeamSystem::CheckFollowLeader(entt::entity player, uint64_t leaderId)
 																					 /*playerRequested=*/false);
 
 			// SceneManager 拒绝时只在其回包处理里记日志,队员留在原场景
-			LOG_INFO << "[PlayerTeam] 请求跟随队长切场景: player_id=" << playerId << " leader_id=" << leaderId
+			LOG_INFO << "[PlayerTeam] Requesting scene change to follow leader: player_id=" << playerId << " leader_id=" << leaderId
 					 << " leader_scene_id=" << leaderSceneId << " corr=" << correlationId;
 		},
 		(std::string("MGET %s ") + kBattleLockKeyFmt).c_str(), leaderLocationKey.c_str(), playerId);

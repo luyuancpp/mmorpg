@@ -147,7 +147,7 @@ func deleteOrphanChannel(ctx context.Context, svcCtx *svc.ServiceContext, zone u
 		nodeId, _ := svcCtx.Redis.Get(fmt.Sprintf("scene:%d:node", sceneId))
 		if nodeId != "" && (!IsNodeAlive(svcCtx, zone, nodeId) || isNodeDetachDeferred(zone, nodeId)) &&
 			reentryBarrierBlocks(svcCtx, zone, nodeId, barrierSiteOrphanCleanup) {
-			logx.Infof("[OrphanCleanup] zone=%d conf=%d: 场景 %d 的属主节点 %s 刚判死,整组推迟到下一次 fullSync",
+			logx.Infof("[OrphanCleanup] zone=%d conf=%d: scene %d owner node %s just declared dead; deferring entire group until next fullSync",
 				zone, confId, sceneId, nodeId)
 			return false
 		}

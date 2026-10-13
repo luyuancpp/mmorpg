@@ -162,7 +162,7 @@ func runFriend(c config.Config) (runErr error) {
 		stopSignals() // 启动失败时也从这里触发同一个 24s 硬截止
 		shutdown.Server = serverSlot.TakeForShutdown()
 		if err := shutdown.Stop(); err != nil {
-			logx.Errorf("[friend] 停机收尾未按预算完成: %v", err)
+			logx.Errorf("[friend] Shutdown cleanup exceeded its budget: %v", err)
 			runErr = errors.Join(runErr, err)
 		}
 		_ = logx.Close()
@@ -260,7 +260,7 @@ func runFriend(c config.Config) (runErr error) {
 			// 失租后换 id 继续服务即可(D-11)。
 			OnReclaimFailed: noderegistry.ReallocateNewID,
 			OnNodeIDChanged: func(oldID, newID uint32) {
-				logx.Errorf("[friend] etcd 失租后原 node_id=%d 未能重夺,已换新 node_id=%d 继续服务", oldID, newID)
+				logx.Errorf("[friend] Could not reclaim original node_id=%d after etcd lease loss; continuing with new node_id=%d", oldID, newID)
 			},
 			LogPrefix: "[friend]",
 		})
@@ -285,7 +285,7 @@ func runFriend(c config.Config) (runErr error) {
 	fmt.Printf("  etcd:          %v\n", c.Etcd.Hosts)
 	fmt.Printf("  node_id:       %d (etcd CAS)\n", nr.NodeID())
 	fmt.Printf("  node_uuid:     %s\n", nr.NodeUUID)
-	fmt.Printf("  zone:          %d (只影响注册路径)\n", c.ZoneId)
+	fmt.Printf("  zone:          %d (affects registration path only)\n", c.ZoneId)
 	// MySQLTarget 只含 host / 库名 / 用户名,绝不含密码。
 	fmt.Printf("  mysql:         %s\n", svc.MySQLTarget(c.MySQL))
 	fmt.Printf("  schema:        %s\n", schemaModeLabel(c))
@@ -303,7 +303,7 @@ func runFriend(c config.Config) (runErr error) {
 
 	select {
 	case <-ctx.Done():
-		logx.Info("[friend] 收到退出信号,先注销再排空 RPC")
+		logx.Info("[friend] Received shutdown signal; deregistering before draining RPCs")
 	case err := <-serveErr:
 		return fmt.Errorf("friend gRPC 服务提前退出: %v", err)
 	}
@@ -328,7 +328,7 @@ func watchHardDeadline(ctx context.Context, stopSignals context.CancelFunc, fini
 	select {
 	case <-finished:
 	case <-timer.C:
-		fmt.Fprintf(os.Stderr, "[friend] 已到 %v 停机硬截止,强制退出;不能确认在途请求已完成\n", lifecycle.HardTimeout)
+		fmt.Fprintf(os.Stderr, "[friend] Shutdown hard deadline of %v reached; forcing exit, completion of in-flight requests cannot be confirmed\n", lifecycle.HardTimeout)
 		os.Exit(1)
 	}
 }

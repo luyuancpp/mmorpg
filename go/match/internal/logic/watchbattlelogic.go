@@ -59,7 +59,7 @@ func (l *WatchBattleLogic) WatchBattle(in *matchpb.WatchBattleRequest) (*matchpb
 	}
 
 	internalErr := func(stage string, err error) (*matchpb.WatchBattleResponse, error) {
-		l.Errorf("[spectate] WatchBattle %s失败 player=%d: %v", stage, playerId, err)
+		l.Errorf("[spectate] WatchBattle %s failed player=%d: %v", stage, playerId, err)
 		metrics.ObserveWatchBattle("internal")
 		return &matchpb.WatchBattleResponse{
 			ErrorMessage: tipErr(constants.ErrInternal, "服务器繁忙,请稍后再试"),
@@ -213,23 +213,23 @@ func (l *WatchBattleLogic) WatchBattle(in *matchpb.WatchBattleRequest) (*matchpb
 			recheckTicket, terr := loadTicket(l.svcCtx, playerId)
 			if terr != nil {
 				// 复查读 Redis 失败不阻断成功返回:双检是尽力收窄,不引入新失败面。
-				l.Errorf("[spectate] double-check 读 ticket 失败 player=%d: %v", playerId, terr)
+				l.Errorf("[spectate] Double-check failed to read ticket player=%d: %v", playerId, terr)
 			}
 			recheckLocked, lerr := isPlayerBattleLocked(l.svcCtx, playerId)
 			if lerr != nil {
-				l.Errorf("[spectate] double-check 查战斗锁失败 player=%d: %v", playerId, lerr)
+				l.Errorf("[spectate] Double-check failed to check battle lock player=%d: %v", playerId, lerr)
 			}
 			if recheckTicket != nil || recheckLocked {
 				removeObserver(l.svcCtx, record.GetBattleNodeId(), battleId, playerId, "concurrent_queue")
 				deleteSpectateWatching(l.svcCtx, playerId)
-				l.Infof("[spectate] 观战与并发排队冲突,自我清退 player=%d battle=%d ticket=%t locked=%t",
+				l.Infof("[spectate] Spectating conflicts with concurrent queue join; removing self player=%d battle=%d ticket=%t locked=%t",
 					playerId, battleId, recheckTicket != nil, recheckLocked)
 				metrics.ObserveWatchBattle("queued")
 				return &matchpb.WatchBattleResponse{
 					ErrorMessage: tipErr(constants.ErrSpectateWhileQueued, "匹配中无法观战"),
 				}, nil
 			}
-			l.Infof("[spectate] 观战接入成功 player=%d battle=%d node=%d random=%t",
+			l.Infof("[spectate] Spectator joined successfully player=%d battle=%d node=%d random=%t",
 				playerId, battleId, record.GetBattleNodeId(), randomMode)
 			metrics.ObserveWatchBattle("ok")
 			return &matchpb.WatchBattleResponse{BattleId: battleId}, nil
@@ -238,10 +238,10 @@ func (l *WatchBattleLogic) WatchBattle(in *matchpb.WatchBattleRequest) (*matchpb
 		if roomMissing {
 			if roomMayBeCreating(record, published, checkedAtMs) {
 				// 房间可能还在建:只回未找到,记录与活跃集合都不动。
-				l.Infof("[spectate] 指定场报房间不存在但记录仍在建房窗口内,不剔除索引 player=%d battle=%d created_at_ms=%d: %v",
+				l.Infof("[spectate] Specified room reported missing but record remains within room creation window; retaining index player=%d battle=%d created_at_ms=%d: %v",
 					playerId, battleId, record.GetSummary().GetCreatedAtMs(), err)
 			} else {
-				l.Infof("[spectate] 观战目标已收尾,懒剔除 player=%d battle=%d: %v", playerId, battleId, err)
+				l.Infof("[spectate] Spectator target has ended; removing lazily player=%d battle=%d: %v", playerId, battleId, err)
 				removeSpectateBattle(l.svcCtx, battleId)
 				if randomMode {
 					continue
@@ -252,7 +252,7 @@ func (l *WatchBattleLogic) WatchBattle(in *matchpb.WatchBattleRequest) (*matchpb
 				ErrorMessage: tipErr(constants.ErrBattleNotWatchable, "该战斗不存在或已结束"),
 			}, nil
 		}
-		l.Errorf("[spectate] AddObserver 失败 player=%d battle=%d node=%d: %v",
+		l.Errorf("[spectate] AddObserver failed player=%d battle=%d node=%d: %v",
 			playerId, battleId, record.GetBattleNodeId(), err)
 		metrics.ObserveWatchBattle("rejected")
 		return &matchpb.WatchBattleResponse{
@@ -271,7 +271,7 @@ func (l *WatchBattleLogic) WatchBattle(in *matchpb.WatchBattleRequest) (*matchpb
 func (l *WatchBattleLogic) observerZoneId(playerId uint64) uint32 {
 	loc, err := loadPlayerLocation(l.svcCtx, playerId)
 	if err != nil {
-		l.Errorf("[spectate] 读观众位置失败 player=%d: %v", playerId, err)
+		l.Errorf("[spectate] Failed to read spectator location player=%d: %v", playerId, err)
 		return 0
 	}
 	if loc == nil {
@@ -325,7 +325,7 @@ func (l *WatchBattleLogic) spectateBattlePublished(battleId uint64) bool {
 		return true
 	}
 	if !errors.Is(err, redis.Nil) {
-		l.Errorf("[spectate] 查活跃集合失败,按未公开处理 battle=%d: %v", battleId, err)
+		l.Errorf("[spectate] Failed to check active set; treating battle as private battle=%d: %v", battleId, err)
 	}
 	return false
 }
@@ -333,6 +333,6 @@ func (l *WatchBattleLogic) spectateBattlePublished(battleId uint64) bool {
 // removeActiveMember 只从活跃集合摘掉一个残留成员(记录已不在时用),不碰记录键。
 func (l *WatchBattleLogic) removeActiveMember(battleId uint64) {
 	if _, err := l.svcCtx.MatchRedis.Zrem(spectateBattlesActiveKey, strconv.FormatUint(battleId, 10)); err != nil {
-		l.Errorf("[spectate] 观战索引 ZREM 失败 battle=%d: %v", battleId, err)
+		l.Errorf("[spectate] Spectator index ZREM failed battle=%d: %v", battleId, err)
 	}
 }

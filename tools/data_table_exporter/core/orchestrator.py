@@ -69,7 +69,7 @@ def run(cfg: ExporterConfig) -> None:
     if not report.ok:
         for msg in report.errors:
             logger.error("FK: %s", msg)
-        logger.error("外键校验失败:%d 条错误,导表中止,产出未落盘", len(report.errors))
+        logger.error("Foreign-key validation failed: %d errors; export aborted and outputs were not written", len(report.errors))
         sys.exit(1)
 
     # 普通表里也可能直接存 Tip ID（状态许可矩阵就是实消费点）。旧轴重排后若
@@ -82,8 +82,8 @@ def run(cfg: ExporterConfig) -> None:
     pk: PrimaryKeyReport = validate_primary_keys(tables, cfg)
     if not pk.ok:
         for msg in pk.errors:
-            logger.error("主键: %s", msg)
-        logger.error("主键校验失败:%d 条错误,导表中止,产出未落盘", len(pk.errors))
+            logger.error("Primary key: %s", msg)
+        logger.error("Primary-key validation failed: %d errors; export aborted and outputs were not written", len(pk.errors))
         sys.exit(1)
 
     # Generate
@@ -219,12 +219,11 @@ def _deploy(cfg: ExporterConfig) -> None:
     # 否则消费工程会继续编译旧类。审计并删除报告的生成文件后重跑。
     if orphans:
         logger.error(
-            "发现 %d 个疑似陈旧产物(源树已无、目标树仍在)，拒绝报告导表完成。"
-            "确认无用请删除；若是手写文件请登记到 core/file_utils.py 的 _DEPLOY_KEEP:",
+            "Found %d suspected stale outputs (absent from the source tree but still present in the destination tree); refusing to report export completion. Delete them after confirming they are unused; register handwritten files in _DEPLOY_KEEP in core/file_utils.py:",
             len(orphans),
         )
         for path in orphans:
-            logger.error("  陈旧产物? %s", path)
+            logger.error("  Stale output? %s", path)
         raise DeployError(f"发现 {len(orphans)} 个陈旧部署产物，拒绝混合世代输出")
 
 
@@ -267,20 +266,20 @@ def main() -> None:
     try:
         run(cfg)
     except TableSourceError as exc:
-        logger.error("配表来源层校验失败,导表中止:%s", exc)
+        logger.error("Table-source validation failed; export aborted: %s", exc)
         sys.exit(1)
     except BitIndexStateError as exc:
         # 位序状态不可用是"必须人工处理"的错,给一句能照着做的话,不要甩一整屏 traceback。
-        logger.error("位序状态校验失败,导表中止:%s", exc)
+        logger.error("Bit-index state validation failed; export aborted: %s", exc)
         sys.exit(1)
     except ProtoCompileError as exc:
-        logger.error("Proto 编译失败,导表中止:%s", exc)
+        logger.error("Proto compilation failed; export aborted: %s", exc)
         sys.exit(1)
     except DeployError as exc:
-        logger.error("部署失败,导表中止:%s", exc)
+        logger.error("Deployment failed; export aborted: %s", exc)
         sys.exit(1)
     except GeneratedOutputError as exc:
-        logger.error("生成产物校验失败,导表中止:%s", exc)
+        logger.error("Generated-output validation failed; export aborted: %s", exc)
         sys.exit(1)
 
 

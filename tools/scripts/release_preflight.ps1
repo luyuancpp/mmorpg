@@ -643,8 +643,8 @@ if (-not $Quiet) {
 
 if ($failCount -gt 0) {
     Write-Host ""
-    Write-Host "release preflight FAILED: $failCount 项不达标,发布被阻断。" -ForegroundColor Red
-    Write-Host "密钥类问题请注入环境变量后重跑(见 tools/scripts/lib/release_common.ps1 Resolve-InjectedSecret)。" -ForegroundColor Red
+    Write-Host "release preflight FAILED: $failCount checks failed; release blocked." -ForegroundColor Red
+    Write-Host "For secret-related failures, inject environment variables and rerun (see Resolve-InjectedSecret in tools/scripts/lib/release_common.ps1)." -ForegroundColor Red
     if (-not $NoFailExit) {
         exit 1
     }

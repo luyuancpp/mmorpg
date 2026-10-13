@@ -54,7 +54,7 @@ void SceneSceneClientPlayerHandler::EnterScene(entt::entity player,const ::Enter
 	// 结算落地摘除 InBattleComp 前,玩家必须留在当前场景节点接收结算事件。
 	if (PlayerBattleSystem::IsInBattle(player))
 	{
-		LOG_WARN << "[PlayerBattle] EnterSceneC2S 被拒: 玩家战斗在途, player_id=" << (g ? *g : 0);
+		LOG_WARN << "[PlayerBattle] EnterSceneC2S rejected: player battle in progress, player_id=" << (g ? *g : 0);
 		SetTip(kEnterSceneFailed);
 		return;
 	}

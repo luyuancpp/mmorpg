@@ -129,7 +129,7 @@ func main() {
 	if verErr != nil {
 		logx.Must(fmt.Errorf("guild database version check: %w", verErr))
 	}
-	logx.Infof("[guild] 数据库版本 %s 满足下限(TiDB 或 MySQL 8.0.29+)", dbVersion)
+	logx.Infof("[guild] Database version %s meets minimum requirement (TiDB or MySQL 8.0.29+)", dbVersion)
 
 	// 全局插入守卫哨兵行(guild_player_state.player_id = 0;data/guild_manage_repo.go 文件头 (d)):
 	// 建帮、审批通过、首次建状态行都在事务内锁它,缺了一律 fail-closed。所以放在建表之后、创建 repo 之后、
@@ -282,8 +282,8 @@ func main() {
 		svcCtx.WarmAssetOpIDSegment()
 	} else {
 		// go-zero logx 没有 WARN 级;沿用本文件"降级形态打一条 ERROR"的写法(同 DataServiceRpc 未配置)。
-		logx.Error("Guild: AssetOp.Enabled=false,资产通道关闭:帮会捐献 / 商店兑换一律回 kGuildAssetPending," +
-			"升级与读接口照常(共享 / 预发环境开启前须满足 08-save-owner-fence.md §8.3 门禁)")
+		logx.Error("Guild: AssetOp.Enabled=false; asset channel disabled: guild donations / shop exchanges all return kGuildAssetPending, " +
+			"upgrades and read APIs remain available (08-save-owner-fence.md section 8.3 gates must pass before enabling in shared / staging environments)")
 	}
 	economy := logic.EconomyDeps{
 		Repo:       economyRepo,
@@ -350,7 +350,7 @@ func main() {
 		// 没配 MatchRpc 时 Timeout 是 0,logic 取自己的默认值(1500ms),但那时也不会调 match。
 		MatchBudget: time.Duration(config.AppConfig.MatchRpc.Timeout) * time.Millisecond,
 	}
-	logx.Infof("[guild] 帮会活动已装配(元宵灯会 / 中秋团圆 / 同道历练): 物品奖励通道=%t 历练开放=%t(MatchRpc 已配置=%t 结果消费=%t)",
+	logx.Infof("[guild] Guild activities wired (Lantern Festival / Mid-Autumn Reunion / Guild Trial): item_reward_channel=%t trial_enabled=%t (MatchRpc_configured=%t result_consumer=%t)",
 		activities.Loop != nil, trialMatch != nil, matchConfigured, trialResultActive)
 	logTrialClosedReason(config.AppConfig, matchConfigured)
 
@@ -374,7 +374,7 @@ func main() {
 		homeZones = logic.NewDataServiceHomeZone(svcCtx.DataServiceClient, logic.DefaultHomeZoneLookupTimeout)
 		playerNames = logic.NewDataServicePlayerNames(svcCtx.DataServiceClient, logic.DefaultPlayerNameLookupTimeout)
 	} else {
-		logx.Error("Guild: DataServiceRpc 未配置,无法判定玩家归属 zone,所有客户端帮会请求将被拒绝;成员与帮主名字一律为空")
+		logx.Error("Guild: DataServiceRpc not configured; cannot determine player home zone, all client guild requests will be rejected; member and leader names will be empty")
 	}
 	// 推送出口与"申请推送冷却"在这里一次装配(设计 §13.7 / §10.1)。
 	//
@@ -512,7 +512,7 @@ func startAssetOpCleanup(store *data.GuildAssetStore, c data.CleanupConf) (stop 
 		defer close(done)
 		store.RunCleanup(ctx, c)
 	})
-	logx.Infof("[guild] 资产清理已启动: goroutine guild.asset_op_cleanup interval=%v terminal_retention=%v counter_retention=%v",
+	logx.Infof("[guild] Asset cleanup started: goroutine guild.asset_op_cleanup interval=%v terminal_retention=%v counter_retention=%v",
 		c.Interval, c.TerminalRetention, c.CounterRetention)
 	return func() {
 		cancel()
@@ -559,7 +559,7 @@ func startTrialResultConsumer(c config.Config, guildLogic *logic.GuildLogic) (st
 		defer close(done)
 		consumer.Run(ctx)
 	})
-	logx.Infof("[guild] 历练结果消费已安排: goroutine %s topic=%s group=%s partitions=%d(连上 Kafka 后另有一行启动日志)",
+	logx.Infof("[guild] Trial result consumption scheduled: goroutine %s topic=%s group=%s partitions=%d (a separate startup log follows Kafka connection)",
 		trialResultsPoint, resultConf.Topic, resultConf.GroupID, resultConf.Partitions)
 	return func() {
 		cancel()
@@ -577,15 +577,15 @@ func logTrialClosedReason(c config.Config, matchConfigured bool) {
 	case c.Activity.TrialResult.Enabled && !resultActive:
 		// 06 §6.22:Enabled 而没有 Brokers 不拒启(本地不起 Kafka 是正常形态),但必须出声。
 		// go-zero logx 没有 WARN 级,沿用本文件"降级形态打一条 ERROR"的写法。
-		logx.Error("Guild: Activity.TrialResult.Enabled=true 但 Kafka.Brokers 为空,历练结果消费未启用,同道历练关闭" +
-			"(没有结算就不许开战);已在途的对局只能靠巡检器从结果记录兜底")
+		logx.Error("Guild: Activity.TrialResult.Enabled=true but Kafka.Brokers empty; trial result consumption disabled, guild trial closed " +
+			"(battles cannot start without settlement); existing in-flight battles rely on the inspector recovering result records")
 	case !resultActive && matchConfigured:
-		logx.Error("Guild: 已配置 MatchRpc 但 Activity.TrialResult.Enabled 未显式打开,历练结果消费未启用,同道历练关闭" +
-			"(没有结算就不许开战);要开放历练请在 Activity.TrialResult 下写 Enabled: true")
+		logx.Error("Guild: MatchRpc configured but Activity.TrialResult.Enabled not explicitly enabled; trial result consumption disabled, guild trial closed " +
+			"(battles cannot start without settlement); set Enabled: true under Activity.TrialResult to enable trials")
 	case !resultActive:
-		logx.Info("[guild] 同道历练未开放: 未配置 MatchRpc,Activity.TrialResult.Enabled 也未打开")
+		logx.Info("[guild] Guild trial closed: MatchRpc not configured and Activity.TrialResult.Enabled not enabled")
 	case !matchConfigured:
-		logx.Info("[guild] 同道历练未开放: 未配置 MatchRpc(结果消费照常运行,关之前开打的对局仍会结算)")
+		logx.Info("[guild] Guild trial closed: MatchRpc not configured (result consumption continues; battles started before closure will still settle)")
 	}
 }
 
@@ -668,7 +668,7 @@ func runWithLockRetry(ctx context.Context, runner schemaRunner, db *sql.DB, opts
 		if !errors.Is(err, schemamigrate.ErrLockBusy) || attempt == lockBusyAttempts {
 			return report, err
 		}
-		logx.Infof("[guild] 迁移锁忙,%v 后重试(%d/%d)", lockBusyRetryDelay, attempt, lockBusyAttempts)
+		logx.Infof("[guild] Migration lock busy; retrying after %v (%d/%d)", lockBusyRetryDelay, attempt, lockBusyAttempts)
 		select {
 		case <-time.After(lockBusyRetryDelay):
 		case <-ctx.Done():

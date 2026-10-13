@@ -1363,7 +1363,7 @@ function Test-ClientEntryPreflight {
 		}
 	}
 	if (-not $external -and (-not [string]::IsNullOrEmpty($ClientPublicHost) -or -not [string]::IsNullOrEmpty($GateClientHostTemplate))) {
-		$warnings.Add("-ClientEntryMode podip 下 -ClientPublicHost / -GateClientHostTemplate 不生效(客户端直接拿 PodIP);要对集群外开放请加 -ClientEntryMode external。")
+		$warnings.Add("-ClientEntryMode podip ignores -ClientPublicHost / -GateClientHostTemplate (clients receive PodIP directly); use -ClientEntryMode external for external access.")
 	}
 
 	# zone 记录可以是 hashtable 或 pscustomobject;经 Get-ClientEntryMember 读,缺成员按 $null(约定 6)。
@@ -1420,7 +1420,7 @@ function Test-ClientEntryPreflight {
 					$errors.Add("zone $($zone.Name):gate nodePort 段 [$low-$high] 越界:gateNodePortBase 必须 ≥$($contract.NodePortMin) 且 gateNodePortBase + 副本数 - 1 ≤$($contract.NodePortMax)。")
 				}
 				elseif ($high -gt $contract.RecommendedNodePortMax) {
-					$warnings.Add("zone $($zone.Name):gate nodePort 段 [$low-$high] 超出推荐静态子段 $($contract.NodePortMin)-$($contract.RecommendedNodePortMax),可能与集群动态分配的 nodePort 冲突(D88)。")
+					$warnings.Add("zone $($zone.Name): gate nodePort range [$low-$high] exceeds recommended static subrange $($contract.NodePortMin)-$($contract.RecommendedNodePortMax) and may conflict with dynamically allocated nodePorts (D88).")
 				}
 			}
 			for ($i = 0; $i -lt $ranges.Count; $i++) {
@@ -1435,14 +1435,14 @@ function Test-ClientEntryPreflight {
 		}
 
 		if ($GateExternalTrafficPolicy -eq 'Cluster') {
-			$warnings.Add("-GateExternalTrafficPolicy Cluster 会对入站连接做 SNAT:gate 看到的是节点 IP 而不是玩家真实 IP,G9 按源 IP 限流不可用(D89)。")
+			$warnings.Add("-GateExternalTrafficPolicy Cluster SNATs incoming connections: gate sees node IPs rather than real player IPs; G9 source-IP rate limiting is unavailable (D89).")
 		}
 	}
 
 	# ── battle(只在本次部署 battle 池时校验)。
 	if ($DeploysBattle) {
 		if ($external -and $BattleOrchestrator -eq 'deployment') {
-			$warnings.Add("-ClientEntryMode external 配 -BattleOrchestrator deployment:battle 以 hostPort 运行,每个节点只能跑 1 个副本且没有忙碌保护,滚动时在打的局作废;只用于验证与回退,生产请用 -BattleOrchestrator agones(D86)。")
+			$warnings.Add("-ClientEntryMode external with -BattleOrchestrator deployment: battle runs with hostPort, limited to one replica per node without busy-instance protection; rolling updates invalidate active battles. For validation and rollback only; use -BattleOrchestrator agones in production (D86).")
 		}
 		if ($BattleOrchestrator -eq 'agones' -and $AgonesFleetCrdPresent -eq $false) {
 			$errors.Add("-BattleOrchestrator agones 需要集群已安装 Agones:找不到 CRD $($contract.AgonesFleetResource)。")
@@ -1465,17 +1465,17 @@ function Test-ClientEntryPreflight {
 			$errors.Add("-GatewayIngressHost 必须是 DNS 名(可含 {zone}),不能是 IP、不能带 scheme / 端口 / 路径(当前 '$GatewayIngressHost')。")
 		}
 		if (-not $DeploysGateway) {
-			$warnings.Add("给了 -GatewayIngressHost,但本次不部署 gateway(Ingress 只随 zone-up 的 Java 服务生成,需要 -JavaSvcRegistry 且不带 -SkipJavaSvc),本次不会生成 Ingress。")
+			$warnings.Add("-GatewayIngressHost supplied but gateway is not deployed this run (Ingress is generated only with zone-up Java services, requiring -JavaSvcRegistry without -SkipJavaSvc); no Ingress will be generated.")
 		}
 		elseif ($zoneList.Count -gt 1 -and -not $GatewayIngressHost.Contains('{zone}')) {
-			$warnings.Add("多个 zone 会各生成一个 host 相同的 gateway Ingress,ingress-nginx 准入会拒绝后到者;请在 -GatewayIngressHost 里用 {zone} 区分。")
+			$warnings.Add("Multiple zones will generate gateway Ingresses with the same host; ingress-nginx admission will reject later ones. Use {zone} in -GatewayIngressHost to distinguish them.")
 		}
 	}
 	elseif ($external -and $DeploysGateway) {
-		$warnings.Add("-ClientEntryMode external 但未配置 -GatewayIngressHost:gateway 的 HTTP 入口(/api/assign-gate 等)没有集群外入口(D91)。")
+		$warnings.Add("-ClientEntryMode external without -GatewayIngressHost: gateway HTTP endpoints (/api/assign-gate, etc.) have no external entry point (D91).")
 	}
 	if (-not [string]::IsNullOrWhiteSpace($GatewayIngressTlsSecret) -and [string]::IsNullOrWhiteSpace($GatewayIngressHost)) {
-		$warnings.Add("给了 -GatewayIngressTlsSecret 但没有 -GatewayIngressHost,不会生成 Ingress,TLS 设置被忽略。")
+		$warnings.Add("-GatewayIngressTlsSecret supplied without -GatewayIngressHost; no Ingress will be generated and TLS settings are ignored.")
 	}
 
 	# ── login 开发口令认证(2b §7;与 release_preflight.ps1 的 debug.login.devpassword 同一门禁)。
@@ -1892,7 +1892,7 @@ function Get-GateObsoleteResources {
 			-CurrentShape 'deployment gate' -KeepHint '-ClientEntryMode podip' `
 			-Reason 'gate 从 Deployment 切到 StatefulSet(-ClientEntryMode external):旧 Deployment 上的玩家全部断线,需要重新登录。'
 		$items += New-ClientEntryObsoleteItem -Kind 'service' -Name $contract.GateEntryServiceName `
-			-Reason 'external 模式由每序号 Service 取代单一 gate-entry(D90),删除残留。'
+			-Reason 'In external mode, per-ordinal Services replace the single gate-entry (D90); removing leftovers.'
 		return ,$items
 	}
 
@@ -1900,14 +1900,14 @@ function Get-GateObsoleteResources {
 		-CurrentShape 'statefulset gate' -KeepHint '-ClientEntryMode external' `
 		-Reason 'gate 从 StatefulSet 切回 Deployment(-ClientEntryMode podip):StatefulSet 上的玩家全部断线,需要重新登录。'
 	$items += New-ClientEntryObsoleteItem -Kind 'service' -Selector $contract.GateOrdinalLabelKey `
-		-Reason 'podip 模式没有每序号 Service,删除残留(否则继续占着 nodePort)。'
+		-Reason 'podip mode has no per-ordinal Services; removing leftovers to release nodePorts.'
 	$items += New-ClientEntryObsoleteItem -Kind 'service' -Name $contract.GateHeadlessServiceName `
-		-Reason 'podip 模式没有 gate StatefulSet,删除它的 headless Service。'
+		-Reason 'podip mode has no gate StatefulSet; removing its headless Service.'
 	$items += New-ClientEntryObsoleteItem -Kind 'poddisruptionbudget' -Name $contract.GatePdbName `
-		-Reason 'maxUnavailable: 0 的 gate PDB 会挡住 Deployment 版 gate 的驱逐与节点维护,podip 模式删除。'
+		-Reason 'gate PDB with maxUnavailable: 0 blocks Deployment gate eviction and node maintenance; removing in podip mode.'
 	if (-not (Test-GateEntryServiceWanted -ClientEntryMode $ClientEntryMode -GateReplicas $GateReplicas)) {
 		$items += New-ClientEntryObsoleteItem -Kind 'service' -Name $contract.GateEntryServiceName `
-			-Reason "gate 副本数为 $GateReplicas(≠1):单一 gate-entry 会把约一半票据分到别的 gate 被 token_gate_node_mismatch 拒绝(D90),删除残留。"
+			-Reason "gate replica count is $GateReplicas (not 1): a single gate-entry routes about half the tickets to a different gate, rejected as token_gate_node_mismatch (D90); removing leftovers."
 	}
 	return ,$items
 }
@@ -2015,7 +2015,7 @@ function Remove-ClientEntryObsoleteResources {
 	if ($DryRun) {
 		foreach ($resource in $Resources) {
 			$target = Get-ClientEntryObsoleteTarget -Resource $resource
-			$guard = if ($resource.KicksPlayers -and -not $AllowDisruptiveSwitch) { '   [若集群里存在:未给 -AllowDisruptiveSwitch,真实执行会拒绝并中止]' } else { '' }
+			$guard = if ($resource.KicksPlayers -and -not $AllowDisruptiveSwitch) { '   [if present in cluster: missing -AllowDisruptiveSwitch; real execution will refuse and abort]' } else { '' }
 			Write-Host "[dry-run] kubectl delete $($target -join ' ') -n $Namespace --ignore-not-found   # $($resource.Reason)$guard"
 		}
 		return
@@ -2031,7 +2031,7 @@ function Remove-ClientEntryObsoleteResources {
 
 	# 第二趟:删。
 	foreach ($entry in @($probe.Present)) {
-		Write-Warning "[client-entry] $($entry.Resource.Reason) 删除:$($entry.Names -join ', ')(namespace=$Namespace)"
+		Write-Warning "[client-entry] $($entry.Resource.Reason) deleted: $($entry.Names -join ', ') (namespace=$Namespace)"
 		Invoke-ClientEntryKubectl -KubectlArgs (@('delete') + $entry.Names + @('-n', $Namespace, '--ignore-not-found')) `
 			-KubeContext $KubeContext -KubeConfig $KubeConfig
 	}
@@ -2058,7 +2058,7 @@ function Remove-StaleGateOrdinalServices {
 	$contract = Get-ClientEntryContract
 	$labelKey = $contract.GateOrdinalLabelKey
 	if ($DryRun) {
-		Write-Host "[dry-run] kubectl delete service -l $labelKey -n $Namespace   # 只删序号 >= $Replicas 的每序号 Service"
+		Write-Host "[dry-run] kubectl delete service -l $labelKey -n $Namespace   # Delete only per-ordinal Services with ordinal >= $Replicas"
 		return
 	}
 
@@ -2071,7 +2071,7 @@ function Remove-StaleGateOrdinalServices {
 		$rawOrdinal = [string](Get-ClientEntryMember -Object $item -Path 'metadata', 'labels', $labelKey)
 		$ordinal = 0
 		if (-not [int]::TryParse($rawOrdinal, [ref]$ordinal)) {
-			Write-Warning "[client-entry] service/$serviceName 的 $labelKey 标签值 '$rawOrdinal' 不是整数,不删除,请人工确认。"
+			Write-Warning "[client-entry] service/$serviceName has non-integer $labelKey label '$rawOrdinal'; skipping deletion. Manual review required."
 			continue
 		}
 		if ($ordinal -ge $Replicas) {
@@ -2080,7 +2080,7 @@ function Remove-StaleGateOrdinalServices {
 	}
 	if ($stale.Count -eq 0) { return }
 
-	Write-Warning "[client-entry] gate 副本数为 $Replicas,删除多余的每序号 Service:$($stale -join ', ')(namespace=$Namespace)"
+	Write-Warning "[client-entry] gate replicas=$Replicas; deleting excess per-ordinal Services: $($stale -join ', ') (namespace=$Namespace)"
 	Invoke-ClientEntryKubectl -KubectlArgs (@('delete') + $stale + @('-n', $Namespace, '--ignore-not-found')) `
 		-KubeContext $KubeContext -KubeConfig $KubeConfig
 }

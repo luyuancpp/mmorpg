@@ -116,9 +116,9 @@ func (l *EnterSceneLogic) resolveHomeZone(in *scene_manager.EnterSceneRequest, u
 		// (AllowGateZoneAsHomeZone)才退回 gate zone。
 		if !l.svcCtx.Config.AllowGateZoneAsHomeZone {
 			homeZoneUnconfiguredWarnOnce.Do(func() {
-				l.Logger.Errorf("[home-zone] DataServiceRpc 未配置且 AllowGateZoneAsHomeZone=false:拒绝所有进场景请求。"+
-					"多 zone 部署必须给 scene_manager 配 DataServiceRpc(etcd Key=dataservice.rpc);"+
-					"单 zone 联调可显式置 AllowGateZoneAsHomeZone: true。player=%d gate_zone=%d",
+				l.Logger.Errorf("[home-zone] DataServiceRpc not configured and AllowGateZoneAsHomeZone=false: rejecting all EnterScene requests. "+
+					"Multi-zone deployments must configure DataServiceRpc for scene_manager (etcd Key=dataservice.rpc); "+
+					"single-zone development can explicitly set AllowGateZoneAsHomeZone: true. player=%d gate_zone=%d",
 					in.PlayerId, in.GateZoneId)
 			})
 			metrics.ObserveEnterSceneRejected(in.GateZoneId, "home_zone_unavailable")
@@ -126,8 +126,8 @@ func (l *EnterSceneLogic) resolveHomeZone(in *scene_manager.EnterSceneRequest, u
 				"scene_manager 未配置 DataServiceRpc,无法确定玩家归属 zone;已拒绝且未修改玩家状态")
 		}
 		homeZoneUnconfiguredWarnOnce.Do(func() {
-			l.Logger.Errorf("[home-zone] WARN: DataServiceRpc 未配置,按 AllowGateZoneAsHomeZone=true 把 gate zone 当归属 zone "+
-				"(只对单 zone 部署正确): player=%d gate_zone=%d", in.PlayerId, in.GateZoneId)
+			l.Logger.Errorf("[home-zone] WARN: DataServiceRpc not configured; using gate zone as home zone under AllowGateZoneAsHomeZone=true "+
+				"(valid only for single-zone deployments): player=%d gate_zone=%d", in.PlayerId, in.GateZoneId)
 		})
 		return in.GateZoneId, nil
 	}
@@ -146,11 +146,11 @@ func (l *EnterSceneLogic) resolveHomeZone(in *scene_manager.EnterSceneRequest, u
 			if unmapped == homeZoneUnmappedRejectsTravel {
 				return 0, l.rejectUnmappedTravel(in)
 			}
-			l.Logger.Infof("[home-zone] player=%d 尚无 player:zone 映射(首登 / 未回填的存量号),归属按 gate zone=%d",
+			l.Logger.Infof("[home-zone] player=%d has no player:zone mapping yet (first login / legacy account not backfilled); using gate zone=%d as home zone",
 				in.PlayerId, in.GateZoneId)
 			return in.GateZoneId, nil
 		}
-		l.Logger.Errorf("[home-zone] GetPlayerHomeZone 失败,拒绝进场景让上游重试(归属未知不得落进程 zone 库): player=%d gate_zone=%d err=%v",
+		l.Logger.Errorf("[home-zone] GetPlayerHomeZone failed; rejecting EnterScene for upstream retry (unknown ownership must not write to process zone database): player=%d gate_zone=%d err=%v",
 			in.PlayerId, in.GateZoneId, err)
 		metrics.ObserveHomeZoneLookup(in.GateZoneId, metrics.HomeZoneLookupError)
 		metrics.ObserveEnterSceneRejected(in.GateZoneId, "home_zone_unavailable")
@@ -165,7 +165,7 @@ func (l *EnterSceneLogic) resolveHomeZone(in *scene_manager.EnterSceneRequest, u
 		if unmapped == homeZoneUnmappedRejectsTravel {
 			return 0, l.rejectUnmappedTravel(in)
 		}
-		l.Logger.Infof("[home-zone] player=%d 映射为 0(视作首登),归属按 gate zone=%d", in.PlayerId, in.GateZoneId)
+		l.Logger.Infof("[home-zone] player=%d mapping is 0 (treated as first login); using gate zone=%d as home zone", in.PlayerId, in.GateZoneId)
 		return in.GateZoneId, nil
 	}
 	metrics.ObserveHomeZoneLookup(in.GateZoneId, metrics.HomeZoneLookupMapped)
@@ -193,7 +193,7 @@ func (l *EnterSceneLogic) resolveHomeZone(in *scene_manager.EnterSceneRequest, u
 // 看量与「窗口外是否残留」用 enter_scene_rejected_total{reason="home_zone_merging"}。
 func (l *EnterSceneLogic) rejectHomeZoneMerging(in *scene_manager.EnterSceneRequest, home uint32) *scene_manager.EnterSceneResponse {
 	metrics.ObserveEnterSceneRejected(in.GateZoneId, rejectReasonHomeZoneMerging)
-	l.Logger.Infof("[home-zone] 归属 zone 正处于合服围栏内,拒绝进场景(可重试,未修改玩家状态): player=%d home_zone=%d gate_zone=%d req_zone=%d",
+	l.Logger.Infof("[home-zone] Home zone inside merge fence; rejecting EnterScene (retryable, player state unchanged): player=%d home_zone=%d gate_zone=%d req_zone=%d",
 		in.PlayerId, home, in.GateZoneId, in.ZoneId)
 	return errResp(constants.ErrHomeZoneMerging,
 		fmt.Sprintf("home zone %d of player %d is being merged; retry after the merge window, player state untouched", home, in.PlayerId))
@@ -208,8 +208,8 @@ func (l *EnterSceneLogic) rejectHomeZoneMerging(in *scene_manager.EnterSceneRequ
 // 跨 zone 传送对存量号开放之前应先跑完回填。
 func (l *EnterSceneLogic) rejectUnmappedTravel(in *scene_manager.EnterSceneRequest) *scene_manager.EnterSceneResponse {
 	metrics.ObserveEnterSceneRejected(in.GateZoneId, rejectReasonHomeZoneUnmappedTravel)
-	l.Logger.Errorf("[home-zone] 跨 zone 传送被拒:玩家没有 player:zone 映射,gate zone 不能代表归属"+
-		"(回落过去会把访客存盘写进目标 zone 的库)。需先回填映射(merge_zone -backfill-home-zone): player=%d gate_zone=%d req_zone=%d",
+	l.Logger.Errorf("[home-zone] Cross-zone travel rejected: player has no player:zone mapping; gate zone cannot represent ownership "+
+		"(fallback would persist visitor data to target zone database). Backfill mapping first (merge_zone -backfill-home-zone): player=%d gate_zone=%d req_zone=%d",
 		in.PlayerId, in.GateZoneId, in.ZoneId)
 	return errResp(constants.ErrHomeZoneUnavailable,
 		fmt.Sprintf("player %d has no home zone mapping; cross-zone travel rejected, player state untouched", in.PlayerId))

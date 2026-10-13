@@ -51,7 +51,7 @@ try {
     $snapRoot = Get-ChannelRoot -Channel 'snapshot' -Override $ArtifactRoot -MustExist
     $imagesRoot = Join-Path $snapRoot 'images'
     if (-not [System.IO.Directory]::Exists($imagesRoot)) {
-        Write-Host "[ OK ] $imagesRoot 不存在,无快照需要清理(releases/ 永不触碰)。" -ForegroundColor Green
+        Write-Host "[ OK ] $imagesRoot does not exist; no snapshots to clean up (releases/ is never touched)." -ForegroundColor Green
         exit 0
     }
 
@@ -73,11 +73,11 @@ try {
     foreach ($d in Get-ChildItem -LiteralPath $imagesRoot -Directory -Force) {
         if ($d.Name.StartsWith('.')) { continue }   # .tmp-* staging 等
         if (($d.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
-            Write-Host "[SKIP] 符号链接/联接点不处理:$($d.Name)" -ForegroundColor Yellow
+            Write-Host "[SKIP] Symbolic link / junction skipped: $($d.Name)" -ForegroundColor Yellow
             continue
         }
         if (-not (Test-SnapshotVersionName -Version $d.Name)) {
-            Write-Host "[SKIP] 不是快照版本目录名,不处理:$($d.Name)" -ForegroundColor Yellow
+            Write-Host "[SKIP] Directory name is not a snapshot version; skipped: $($d.Name)" -ForegroundColor Yellow
             continue
         }
         $candidates.Add($d)
@@ -92,7 +92,7 @@ try {
     for ($i = $KeepLast; $i -lt $sorted.Count; $i++) {
         $d = $sorted[$i]
         if ($protectedVersion -and $d.Name -ceq $protectedVersion) {
-            Write-Host "[KEEP] $($d.Name) 是 latest.json 指向的版本,保留" -ForegroundColor Cyan
+            Write-Host "[KEEP] $($d.Name) is the version referenced by latest.json; keeping it" -ForegroundColor Cyan
             continue
         }
         $toDelete.Add($d)
@@ -114,12 +114,12 @@ try {
         })
     foreach ($d in $staleStagings) {
         $mtime = $d.LastWriteTimeUtc.ToString("yyyy-MM-dd'T'HH':'mm':'ss'Z'", [System.Globalization.CultureInfo]::InvariantCulture)
-        Write-Host "[WARN] 疑似被中断发布遗留的 staging(最后修改 $mtime,不自动删除;确认没有发布在进行后手工删除):snapshots/images/$($d.Name)" -ForegroundColor Yellow
+        Write-Host "[WARN] Possible staging directory left by an interrupted release (last modified $mtime; not deleted automatically; remove manually after confirming no release is running): snapshots/images/$($d.Name)" -ForegroundColor Yellow
     }
-    $stagingNote = if ($staleStagings.Count -gt 0) { ";另有 $($staleStagings.Count) 个疑似遗留 staging 待人工确认(见上方 WARN)" } else { '' }
+    $stagingNote = if ($staleStagings.Count -gt 0) { "; $($staleStagings.Count) possible leftover staging directories require manual review (see WARN above)" } else { '' }
 
     if ($toDelete.Count -eq 0 -and $residues.Count -eq 0) {
-        Write-Host "[ OK ] 快照共 $($sorted.Count) 个,保留最近 $KeepLast 个,无需清理(releases/ 永不触碰)$stagingNote。" -ForegroundColor Green
+        Write-Host "[ OK ] $($sorted.Count) snapshots; keeping the latest $KeepLast; no cleanup needed (releases/ is never touched)$stagingNote." -ForegroundColor Green
         exit 0
     }
 
@@ -127,23 +127,23 @@ try {
     foreach ($d in $residues) {
         $rel = "snapshots/images/$($d.Name)"
         if (-not $Force) {
-            Write-Host "[DRY ] 将清理上次未删完的残留:$rel(加 -Force 执行)" -ForegroundColor Cyan
+            Write-Host "[DRY ] Would remove leftovers from the previous incomplete deletion: $rel (pass -Force to execute)" -ForegroundColor Cyan
             continue
         }
         try {
             Remove-Item -LiteralPath $d.FullName -Recurse -Force
-            Write-Host "[DEL ] 残留 $rel" -ForegroundColor Red
+            Write-Host "[DEL ] Leftover $rel" -ForegroundColor Red
         }
         catch {
             $failures.Add("残留 $rel 删除失败:$($_.Exception.Message)")
-            Write-Host "[WARN] 残留 $rel 删除失败,继续处理其它目录" -ForegroundColor Yellow
+            Write-Host "[WARN] Failed to delete leftover $rel; continuing with other directories" -ForegroundColor Yellow
         }
     }
 
     foreach ($d in $toDelete) {
         $rel = "snapshots/images/$($d.Name)"
         if (-not $Force) {
-            Write-Host "[DRY ] 将删除:$rel(加 -Force 执行)" -ForegroundColor Cyan
+            Write-Host "[DRY ] Would delete: $rel (pass -Force to execute)" -ForegroundColor Cyan
             continue
         }
         $trash = Join-Path $imagesRoot (".deleting-" + $d.Name + "-" + [guid]::NewGuid().ToString('N'))
@@ -152,7 +152,7 @@ try {
         }
         catch {
             $failures.Add("$rel 下线失败(可能有文件正被占用),本次未删:$($_.Exception.Message)")
-            Write-Host "[WARN] $rel 下线失败,跳过" -ForegroundColor Yellow
+            Write-Host "[WARN] Failed to move $rel offline; skipped" -ForegroundColor Yellow
             continue
         }
         try {
@@ -161,16 +161,16 @@ try {
         }
         catch {
             $failures.Add("$rel 已下线但删除未完成,下次 -Force 运行会继续清理 $(Split-Path -Leaf $trash):$($_.Exception.Message)")
-            Write-Host "[WARN] $rel 已下线但删除未完成" -ForegroundColor Yellow
+            Write-Host "[WARN] $rel moved offline but deletion is incomplete" -ForegroundColor Yellow
         }
     }
 
     if ($failures.Count -gt 0) {
         throw "快照清理未全部完成($($failures.Count) 项):`n$($failures -join "`n")"
     }
-    $verb = if ($Force) { '已删除' } else { '待删除(dry-run,未改动任何文件)' }
-    $residueNote = if ($residues.Count -gt 0) { "(另有上次未删完的残留 $($residues.Count) 个)" } else { '' }
-    Write-Host "[ OK ] $($toDelete.Count) 个过期快照$verb$residueNote;保留最近 $KeepLast 个;releases/ 未触碰$stagingNote。" -ForegroundColor Green
+    $verb = if ($Force) { ' deleted' } else { ' pending deletion (dry-run; no files changed)' }
+    $residueNote = if ($residues.Count -gt 0) { " ($($residues.Count) leftovers from previous incomplete deletions)" } else { '' }
+    Write-Host "[ OK ] $($toDelete.Count) expired snapshots$verb$residueNote; keeping the latest $KeepLast; releases/ untouched$stagingNote." -ForegroundColor Green
     exit 0
 }
 catch {

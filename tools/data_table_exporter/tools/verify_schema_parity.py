@@ -49,16 +49,16 @@ def lint_with_protoc(schema_dir: Path, protoc: Path) -> bool:
     """
     protos = sorted(p.name for p in schema_dir.glob("*.proto"))
     if not protos:
-        logger.error("protoc lint:%s 下一个 .proto 都没有", schema_dir)
+        logger.error("protoc lint: no .proto files found under %s", schema_dir)
         return False
     cmd = [str(protoc), "--proto_path=.", "--proto_path=%s" % _PROTOBUF_SRC,
            "--descriptor_set_out=%s" % (schema_dir / ".lint.desc")] + protos
     proc = subprocess.run(cmd, cwd=str(schema_dir), capture_output=True, text=True)
     (schema_dir / ".lint.desc").unlink(missing_ok=True)
     if proc.returncode != 0:
-        logger.error("protoc lint 失败:\n%s", (proc.stderr or proc.stdout).strip())
+        logger.error("protoc lint failed:\n%s", (proc.stderr or proc.stdout).strip())
         return False
-    logger.info("protoc lint:%d 份 schema 语法通过", len(protos))
+    logger.info("protoc lint: syntax passed for %d schemas", len(protos))
     return True
 
 
@@ -107,7 +107,7 @@ def main(argv: list[str] | None = None) -> int:
         if protoc.exists():
             lint_ok = lint_with_protoc(schema_dir, protoc)
         else:
-            logger.warning("找不到 protoc(%s),跳过语法校验", protoc)
+            logger.warning("protoc not found (%s); skipping syntax validation", protoc)
 
     seen: set[str] = set()
     checked = passed = 0
@@ -141,7 +141,7 @@ def main(argv: list[str] | None = None) -> int:
             failures[old.name] = d
         else:
             passed += 1
-            logger.info("OK   %-24s %d 个物理列", old.name, len(old.columns))
+            logger.info("OK   %-24s %d physical columns", old.name, len(old.columns))
 
     for name in sorted(set(args.only or []) - seen):
         failures[name] = ["--only 指定的表不存在"]
@@ -151,25 +151,24 @@ def main(argv: list[str] | None = None) -> int:
         for m in msgs[:40]:
             logger.error("       %s", m)
         if len(msgs) > 40:
-            logger.error("       ...(还有 %d 条)", len(msgs) - 40)
+            logger.error("       ...(%d more)", len(msgs) - 40)
 
     if missing:
         level = logger.error if args.require_all else logger.info
-        level("尚无权威 schema:%s", ", ".join(sorted(missing)))
+        level("No authoritative schema yet: %s", ", ".join(sorted(missing)))
 
     if migrated:
-        logger.info("已迁移(旧表头已清空,对拍不适用):%d 张 —— %s",
+        logger.info("Already migrated (legacy headers cleared; parity comparison does not apply): %d tables - %s",
                     len(migrated), ", ".join(sorted(migrated)))
 
-    logger.info("对拍完成:%d 张一致 / %d 张有差异 / %d 张尚无权威 schema",
+    logger.info("Parity comparison complete: %d tables match / %d differ / %d have no authoritative schema yet",
                 passed, len(failures), len(missing))
 
     if checked == 0 and not migrated:
-        logger.error("一张表都没检查到 —— 按失败处理(检查 --only 与 --schema-dir)")
+        logger.error("No tables were checked; treating this as a failure (check --only and --schema-dir)")
         return 1
     if checked == 0 and migrated and not args.only:
-        logger.info("全部表都已迁移,这道闸已经完成使命;"
-                    "后续护栏是 schema_proto 自身的 fail-closed 校验 + sandbox_export 产物对拍")
+        logger.info("All tables have been migrated; this gate has served its purpose. Subsequent safeguards are fail-closed validation in schema_proto and output parity checks in sandbox_export")
     if failures or not lint_ok:
         return 1
     if missing and args.require_all:

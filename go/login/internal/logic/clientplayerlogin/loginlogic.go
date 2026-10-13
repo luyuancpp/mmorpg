@@ -296,7 +296,7 @@ func fillMissingRoleNames(ctx context.Context, names roleNameLookup,
 	found, err := names.Lookup(lookupCtx, ids)
 	if err != nil {
 		// 每个请求最多一条:这里不会循环打日志。
-		logx.WithContext(ctx).Infof("[role-name] 角色列表有 %d 个角色缺名且本次未补上: 回源名字注册表失败: %v",
+		logx.WithContext(ctx).Infof("[role-name] Character list has %d unnamed characters not backfilled this time: failed to query name registry: %v",
 			len(ids), err)
 		return
 	}
@@ -336,7 +336,7 @@ func GetOrInitUserAccount(ctx context.Context, rdb *redis.Client, account string
 	}
 	value, err := getOrInitUserAccountScript.Run(ctx, rdb, []string{constants.GetAccountDataKey(account)}, empty).Text()
 	if err != nil {
-		logx.Errorf("读取或保留账号角色目录失败: account=%s err=%v", account, err)
+		logx.Errorf("Failed to read or preserve account character directory: account=%s err=%v", account, err)
 		return nil, err
 	}
 

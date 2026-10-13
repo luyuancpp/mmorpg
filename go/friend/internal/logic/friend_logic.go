@@ -206,7 +206,7 @@ func NewFriendLogic(deps *Deps) *FriendLogic {
 func (l *FriendLogic) withRequestBudget(ctx context.Context) (context.Context, context.CancelFunc) {
 	budget := l.deps.SvcCtx.Config.RequestBudget()
 	if budget <= 0 {
-		logx.WithContext(ctx).Errorf("[friend] RequestBudget=%v 非正,本次请求不设预算(检查 Timeout 配置)", budget)
+		logx.WithContext(ctx).Errorf("[friend] Non-positive RequestBudget=%v; no budget for this request (check Timeout configuration)", budget)
 		return ctx, func() {}
 	}
 	return context.WithTimeout(ctx, budget)
@@ -221,7 +221,7 @@ func (l *FriendLogic) withRequestBudget(ctx context.Context) (context.Context, c
 func (l *FriendLogic) requireCaller(ctx context.Context, method string) (uint64, bool) {
 	me, ok := session.ClientPlayerID(ctx)
 	if !ok {
-		logx.WithContext(ctx).Errorf("[friend] %s 取不到会话身份:该方法只接受经 gate → 路由服转发的客户端请求(D-9)", method)
+		logx.WithContext(ctx).Errorf("[friend] %s missing session identity: method accepts only client requests forwarded through gate -> router (D-9)", method)
 	}
 	return me, ok
 }
@@ -231,7 +231,7 @@ func (l *FriendLogic) requireCaller(ctx context.Context, method string) (uint64,
 // 日志是**唯一**能看到原始 err 的地方:回给客户端的只有 tip 码与一句固定文案 ——
 // 库名、SQL、连接串都不能出信封(AGENTS.md §11.3 敏感信息最少暴露)。
 func (l *FriendLogic) storageFailure(ctx context.Context, method string, err error) *base.TipInfoMessage {
-	logx.WithContext(ctx).Errorf("[friend] %s 依赖故障: %v", method, err)
+	logx.WithContext(ctx).Errorf("[friend] %s dependency failure: %v", method, err)
 	return tipErr(constants.ErrStorage, "storage unavailable")
 }
 
@@ -311,7 +311,7 @@ func (l *FriendLogic) AddFriend(ctx context.Context, req *pb.AddFriendRequest) (
 	// 推送在提交之后、事务之外(§3.5),失败只打日志计指标,不影响本次 RPC 的结果:
 	// 好友申请已经落库了,客户端拉 GetPendingRequests 一定能看到它。
 	l.pushFriendEvent(ctx, target, pb.FriendEventReason_FRIEND_EVENT_REASON_REQUEST_RECEIVED, me)
-	logx.WithContext(ctx).Infof("[friend] player %d 向 %d 发出好友申请", me, target)
+	logx.WithContext(ctx).Infof("[friend] player %d sent friend request to %d", me, target)
 	return &pb.AddFriendResponse{}, nil
 }
 
@@ -358,7 +358,7 @@ func (l *FriendLogic) AcceptFriend(ctx context.Context, req *pb.AcceptFriendRequ
 
 	// 推给**原申请人**(from),不推给操作者本人:他自己刚点的按钮,响应里已经有结果了。
 	l.pushFriendEvent(ctx, from, pb.FriendEventReason_FRIEND_EVENT_REASON_REQUEST_ACCEPTED, me)
-	logx.WithContext(ctx).Infof("[friend] player %d 同意了 %d 的好友申请", me, from)
+	logx.WithContext(ctx).Infof("[friend] player %d accepted friend request from %d", me, from)
 	return &pb.AcceptFriendResponse{}, nil
 }
 
@@ -395,7 +395,7 @@ func (l *FriendLogic) RejectFriend(ctx context.Context, req *pb.RejectFriendRequ
 	}
 	// 刻意**不推送**(照 A 仓):把"你被拒绝了"实时弹到申请人脸上只会制造社交尴尬,
 	// 而且拒绝方会因此暴露自己"刚刚在线并处理了申请"。客户端下次拉列表自然发现申请没了。
-	logx.WithContext(ctx).Infof("[friend] player %d 拒绝了 %d 的好友申请", me, from)
+	logx.WithContext(ctx).Infof("[friend] player %d rejected friend request from %d", me, from)
 	return &pb.RejectFriendResponse{}, nil
 }
 
@@ -422,7 +422,7 @@ func (l *FriendLogic) RemoveFriend(ctx context.Context, req *pb.RemoveFriendRequ
 		return reject(l.storageFailure(ctx, method, err))
 	}
 	// 不推送:删好友是单方面动作,通知对方等于把"我把你删了"送到他屏幕上。
-	logx.WithContext(ctx).Infof("[friend] player %d 删除好友 %d", me, target)
+	logx.WithContext(ctx).Infof("[friend] player %d removed friend %d", me, target)
 	return &pb.RemoveFriendResponse{}, nil
 }
 
@@ -471,7 +471,7 @@ func (l *FriendLogic) GetFriendList(ctx context.Context, req *pb.GetFriendListRe
 	// 展示补全失败不隐藏真实好友关系；返回可用字段并记录故障。
 	directory := data.OnlineDirectory{Redis: l.deps.SvcCtx.SharedRedis, DataService: l.deps.SvcCtx.DataService}
 	if err := directory.FillFriendProfiles(ctx, pbFriends); err != nil {
-		logx.WithContext(ctx).Errorf("[friend] 好友展示资料补全失败: %v", err)
+		logx.WithContext(ctx).Errorf("[friend] Failed to complete friend display profiles: %v", err)
 	}
 	return &pb.GetFriendListResponse{Friends: pbFriends}, nil
 }
@@ -536,7 +536,7 @@ func (l *FriendLogic) Block(ctx context.Context, req *pb.BlockRequest) (*pb.Bloc
 	default:
 		return reject(l.storageFailure(ctx, method, err))
 	}
-	logx.WithContext(ctx).Infof("[friend] player %d 拉黑 %d", me, target)
+	logx.WithContext(ctx).Infof("[friend] player %d blocked %d", me, target)
 	return &pb.BlockResponse{}, nil
 }
 
@@ -565,7 +565,7 @@ func (l *FriendLogic) Unblock(ctx context.Context, req *pb.UnblockRequest) (*pb.
 		return reject(l.storageFailure(ctx, method, err))
 	}
 	// 解除拉黑**不会**自动恢复好友关系:拉黑时那条边已经删了,想加回来要重新走 AddFriend。
-	logx.WithContext(ctx).Infof("[friend] player %d 解除拉黑 %d", me, target)
+	logx.WithContext(ctx).Infof("[friend] player %d unblocked %d", me, target)
 	return &pb.UnblockResponse{}, nil
 }
 

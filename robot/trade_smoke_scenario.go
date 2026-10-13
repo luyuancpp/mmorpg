@@ -183,7 +183,7 @@ func RunTradeSmoke(cfg *config.Config) {
 	wantScope, ok := tradeSmokeScopeOf(sc.ExpectScope)
 	if !ok {
 		// config.validate 已拦;这里兜底,避免拿 UNSPECIFIED 去断言
-		fail("config", "trade_smoke.expect_scope=%q,期望 zone 或 global", sc.ExpectScope)
+		fail("config", "trade_smoke.expect_scope=%q, expected zone or global", sc.ExpectScope)
 	}
 	zoneScope := wantScope == tradepb.MarketScope_MARKET_SCOPE_ZONE
 	spacing := time.Duration(sc.RequestIntervalMs) * time.Millisecond
@@ -225,7 +225,7 @@ func RunTradeSmoke(cfg *config.Config) {
 	a, b, c := loggedIn[0], loggedIn[1], loggedIn[2]
 	if sc.CrossZone && c.gate == a.gate {
 		// 本地各 zone 的 gate 端口不同;地址相同说明 C 其实进了 zone_a,后面"别区不可见"的结论就不成立。
-		fail("zone-placement", "C 与 A 分到同一个 gate %s(zone_a=%d zone_b=%d),不是跨 zone 运行", a.gate, sc.ZoneA, sc.ZoneB)
+		fail("zone-placement", "C and A were assigned the same gate %s (zone_a=%d zone_b=%d); this is not a cross-zone run", a.gate, sc.ZoneA, sc.ZoneB)
 	}
 	zap.L().Info("[trade-smoke] robots in scene",
 		zap.Uint64("a", a.gc.PlayerId), zap.Uint64("b", b.gc.PlayerId), zap.Uint64("c", c.gc.PlayerId),
@@ -251,7 +251,7 @@ func RunTradeSmoke(cfg *config.Config) {
 		fail("seed-a", "%v", err)
 	}
 	if seededA.GetMarketZone() != sc.ZoneA {
-		fail("seed-a-zone", "A 的商品 market_zone=%d,期望 A 的归属区 %d(market_zone 必须来自卖家 home_zone)",
+		fail("seed-a-zone", "A listing market_zone=%d, expected A home zone %d (market_zone must come from the seller home_zone)",
 			seededA.GetMarketZone(), sc.ZoneA)
 	}
 	seededC, err := tradeSmokeSeed(admin, seedC)
@@ -260,18 +260,18 @@ func RunTradeSmoke(cfg *config.Config) {
 	}
 	// cross_zone=false 时 C 的归属区取决于账号历史(可能曾在 zone_b 建角),只要求非 0,不断言具体值。
 	if sc.CrossZone && seededC.GetMarketZone() != sc.ZoneB {
-		fail("seed-c-zone", "C 的商品 market_zone=%d,期望 C 的归属区 zone_b=%d(market_zone 必须来自卖家 home_zone)",
+		fail("seed-c-zone", "C listing market_zone=%d, expected C home zone zone_b=%d (market_zone must come from the seller home_zone)",
 			seededC.GetMarketZone(), sc.ZoneB)
 	}
 	if !sc.CrossZone && seededC.GetMarketZone() == 0 {
-		fail("seed-c-zone", "C 的商品 market_zone=0(cross_zone=false 时不断言具体值,但受理的商品必须带非 0 分区)")
+		fail("seed-c-zone", "C listing market_zone=0 (cross_zone=false does not assert the exact value, but accepted listings must have a nonzero partition)")
 	}
 	seededNotice, err := tradeSmokeSeed(admin, seedNotice)
 	if err != nil {
 		fail("seed-notice", "%v", err)
 	}
 	if seededNotice.GetMarketZone() != sc.ZoneA {
-		fail("seed-notice-zone", "A 的公示商品 market_zone=%d,期望 %d", seededNotice.GetMarketZone(), sc.ZoneA)
+		fail("seed-notice-zone", "A publicity listing market_zone=%d, expected %d", seededNotice.GetMarketZone(), sc.ZoneA)
 	}
 	listingA, listingC, listingNotice := seededA.GetListingId(), seededC.GetListingId(), seededNotice.GetListingId()
 	zap.L().Info("[trade-smoke] step 1: seeded listings via TradeAdmin",
@@ -290,9 +290,9 @@ func RunTradeSmoke(cfg *config.Config) {
 	case err != nil:
 		fail("admin-via-gate", "%v", err)
 	case envelopeTip != 0:
-		fail("admin-via-gate", "期望 gate 丢弃(超时),实得信封 tip=%d:gate 客户端白名单收了 TradeAdmin 消息号", envelopeTip)
+		fail("admin-via-gate", "Expected gate to drop the request (timeout), got envelope tip=%d: the gate client allowlist includes TradeAdmin message IDs", envelopeTip)
 	default:
-		fail("admin-via-gate", "客户端经 gate 调 TradeAdmin.SeedListing 拿到了业务回包")
+		fail("admin-via-gate", "A client calling TradeAdmin.SeedListing through gate received a business response")
 	}
 	zap.L().Info("[trade-smoke] step 2: TradeAdmin.SeedListing via gate timed out (dropped)",
 		zap.String("method", tradepb.TradeAdmin_SeedListing_FullMethodName))
@@ -317,42 +317,42 @@ func RunTradeSmoke(cfg *config.Config) {
 		fail("scope-b", "%v", err)
 	}
 	if s := tradeSmokeFind(bOnSale.GetListings(), listingA); s == nil {
-		fail("scope-b-sees-a", "B 浏览(scope=%s)没看到同区 A 的商品 %d", sc.ExpectScope, listingA)
+		fail("scope-b-sees-a", "B browsing (scope=%s) did not see A same-zone listing %d", sc.ExpectScope, listingA)
 	} else if err := tradeSmokeCheckSummary(s, seedA, tradepb.ListingPhase_LISTING_PHASE_ON_SALE, false, sc.ZoneA); err != nil {
 		fail("scope-b-sees-a", "%v", err)
 	}
 	if tradeSmokeHasTitle(bOnSale.GetListings(), gateTitle) {
-		fail("admin-via-gate-verify", "浏览结果里出现了经 gate 发出的种子 %q:TradeAdmin 对客户端可达", gateTitle)
+		fail("admin-via-gate-verify", "Browse results include seed %q sent through gate: TradeAdmin is reachable by clients", gateTitle)
 	}
 	if zoneScope {
 		if sc.CrossZone {
 			if tradeSmokeFind(bOnSale.GetListings(), listingC) != nil {
-				fail("scope-zone-b-hides-c", "zone scope 下 B(zone %d)看到了 zone %d 的商品 %d", sc.ZoneA, sc.ZoneB, listingC)
+				fail("scope-zone-b-hides-c", "Under zone scope B (zone %d) saw a listing from zone %d with id %d", sc.ZoneA, sc.ZoneB, listingC)
 			}
 			bFiltered, err := b.browse(onSale(sc.ZoneB, false), wantScope)
 			if err != nil {
 				fail("scope-zone-filter", "%v", err)
 			}
 			if tradeSmokeFind(bFiltered.GetListings(), listingC) != nil {
-				fail("scope-zone-filter", "zone scope 下 B 传 zone_filter=%d 看到了别区商品 %d:客户端参数扩大了市场范围", sc.ZoneB, listingC)
+				fail("scope-zone-filter", "Under zone scope B passed zone_filter=%d and saw other-zone listing %d: the client parameter expanded the market scope", sc.ZoneB, listingC)
 			}
 			if tradeSmokeFind(bFiltered.GetListings(), listingA) == nil {
-				fail("scope-zone-filter", "zone scope 下 zone_filter 必须被忽略,B 传 zone_filter=%d 后却看不到本区商品 %d", sc.ZoneB, listingA)
+				fail("scope-zone-filter", "Under zone scope zone_filter must be ignored, but B passed zone_filter=%d and could no longer see local listing %d", sc.ZoneB, listingA)
 			}
 			cOnSale, err := c.browse(onSale(0, false), wantScope)
 			if err != nil {
 				fail("scope-zone-c", "%v", err)
 			}
 			if tradeSmokeFind(cOnSale.GetListings(), listingC) == nil {
-				fail("scope-zone-c", "C 没看到自己区的商品 %d", listingC)
+				fail("scope-zone-c", "C did not see listing %d from its own zone", listingC)
 			}
 			if tradeSmokeFind(cOnSale.GetListings(), listingA) != nil {
-				fail("scope-zone-c", "zone scope 下 C(zone %d)看到了 zone %d 的商品 %d", sc.ZoneB, sc.ZoneA, listingA)
+				fail("scope-zone-c", "Under zone scope C (zone %d) saw a listing from zone %d with id %d", sc.ZoneB, sc.ZoneA, listingA)
 			}
 		}
 	} else {
 		if tradeSmokeFind(bOnSale.GetListings(), listingC) == nil {
-			fail("scope-global-b-sees-c", "global scope 下 B 没看到 C 的商品 %d", listingC)
+			fail("scope-global-b-sees-c", "Under global scope B did not see C listing %d", listingC)
 		}
 		if sc.CrossZone {
 			bFiltered, err := b.browse(onSale(sc.ZoneB, false), wantScope)
@@ -360,10 +360,10 @@ func RunTradeSmoke(cfg *config.Config) {
 				fail("scope-global-filter", "%v", err)
 			}
 			if tradeSmokeFind(bFiltered.GetListings(), listingC) == nil {
-				fail("scope-global-filter", "global scope 下 zone_filter=%d 没返回该区商品 %d", sc.ZoneB, listingC)
+				fail("scope-global-filter", "Under global scope zone_filter=%d did not return that zone listing %d", sc.ZoneB, listingC)
 			}
 			if tradeSmokeFind(bFiltered.GetListings(), listingA) != nil {
-				fail("scope-global-filter", "global scope 下 zone_filter=%d 仍返回了 zone %d 的商品 %d", sc.ZoneB, sc.ZoneA, listingA)
+				fail("scope-global-filter", "Under global scope zone_filter=%d still returned a listing from zone %d with id %d", sc.ZoneB, sc.ZoneA, listingA)
 			}
 		}
 	}
@@ -371,7 +371,7 @@ func RunTradeSmoke(cfg *config.Config) {
 
 	// ---- 步骤 4:公示列表 ----
 	if tradeSmokeFind(bOnSale.GetListings(), listingNotice) != nil {
-		fail("notice-not-on-sale", "公示中的商品 %d 出现在寄售列表里", listingNotice)
+		fail("notice-not-on-sale", "Publicity listing %d appeared in the consignment list", listingNotice)
 	}
 	noticeReq := onSale(0, false)
 	noticeReq.Tab = tradepb.ListingTab_LISTING_TAB_PUBLIC_NOTICE
@@ -380,12 +380,12 @@ func RunTradeSmoke(cfg *config.Config) {
 		fail("notice", "%v", err)
 	}
 	if s := tradeSmokeFind(bNotice.GetListings(), listingNotice); s == nil {
-		fail("notice", "B 在公示列表里没看到 A 的公示商品 %d", listingNotice)
+		fail("notice", "B did not see A publicity listing %d in the publicity list", listingNotice)
 	} else if err := tradeSmokeCheckSummary(s, seedNotice, tradepb.ListingPhase_LISTING_PHASE_PUBLIC_NOTICE, false, sc.ZoneA); err != nil {
 		fail("notice", "%v", err)
 	}
 	if tradeSmokeFind(bNotice.GetListings(), listingA) != nil {
-		fail("notice", "已进入寄售的商品 %d 出现在公示列表里", listingA)
+		fail("notice", "Listing %d already in consignment appeared in the publicity list", listingA)
 	}
 	zap.L().Info("[trade-smoke] step 4: public-notice tab separated from on-sale tab")
 
@@ -397,7 +397,7 @@ func RunTradeSmoke(cfg *config.Config) {
 		fail("page-size-clamp", "%v", err)
 	}
 	if oversize.GetPageSize() != tradeSmokeServerMaxPageSize || uint32(len(oversize.GetListings())) > tradeSmokeServerMaxPageSize {
-		fail("page-size-clamp", "page_size=%d 的响应 page_size=%d 条数=%d,期望被钳到 %d",
+		fail("page-size-clamp", "Request page_size=%d returned page_size=%d entry count=%d, expected clamped to %d",
 			tradeSmokeOversizePageSize, oversize.GetPageSize(), len(oversize.GetListings()), tradeSmokeServerMaxPageSize)
 	}
 	// 页长 1:本轮 nonce 下可见商品 ≥2 条时(global,或同区跑)末页不是第 1 页,钳制才有区分度。
@@ -409,7 +409,7 @@ func RunTradeSmoke(cfg *config.Config) {
 		fail("page-clamp", "%v", err)
 	}
 	if beyond.GetPage() != beyond.GetPageCount() || len(beyond.GetListings()) > 1 {
-		fail("page-clamp", "page=%d page_size=1 的响应 page=%d page_count=%d 条数=%d,期望钳到末页且至多 1 条",
+		fail("page-clamp", "Request page=%d page_size=1 returned page=%d page_count=%d entry count=%d, expected clamped to the last page with at most 1 entry",
 			tradeSmokeBeyondLastPage, beyond.GetPage(), beyond.GetPageCount(), len(beyond.GetListings()))
 	}
 	zap.L().Info("[trade-smoke] step 5: page and page_size clamped",
@@ -470,14 +470,14 @@ func RunTradeSmoke(cfg *config.Config) {
 		fail("favorite-on", "%v", err)
 	}
 	if favOn.GetListingId() != listingA || !favOn.GetFavorite() {
-		fail("favorite-on", "收藏响应 listing_id=%d favorite=%v,期望 %d / true", favOn.GetListingId(), favOn.GetFavorite(), listingA)
+		fail("favorite-on", "Favorite response listing_id=%d favorite=%v, expected %d / true", favOn.GetListingId(), favOn.GetFavorite(), listingA)
 	}
 	favView, err := b.browse(onSale(0, true), wantScope)
 	if err != nil {
 		fail("favorite-browse", "%v", err)
 	}
 	if s := tradeSmokeFind(favView.GetListings(), listingA); s == nil || !s.GetIsFavorite() {
-		fail("favorite-browse", "favorites_only 浏览没看到已收藏的商品 %d(或 is_favorite=false)", listingA)
+		fail("favorite-browse", "favorites_only browse did not return favorited listing %d (or is_favorite=false)", listingA)
 	}
 	favOff := &tradepb.SetFavoriteResponse{}
 	if err := b.expect(game.ClientPlayerJubaozhaiSetFavoriteMessageId,
@@ -485,14 +485,14 @@ func RunTradeSmoke(cfg *config.Config) {
 		fail("favorite-off", "%v", err)
 	}
 	if favOff.GetListingId() != listingA || favOff.GetFavorite() {
-		fail("favorite-off", "取消收藏响应 listing_id=%d favorite=%v,期望 %d / false", favOff.GetListingId(), favOff.GetFavorite(), listingA)
+		fail("favorite-off", "Unfavorite response listing_id=%d favorite=%v, expected %d / false", favOff.GetListingId(), favOff.GetFavorite(), listingA)
 	}
 	unfavView, err := b.browse(onSale(0, true), wantScope)
 	if err != nil {
 		fail("favorite-off-browse", "%v", err)
 	}
 	if tradeSmokeFind(unfavView.GetListings(), listingA) != nil {
-		fail("favorite-off-browse", "取消收藏后 favorites_only 浏览仍返回商品 %d", listingA)
+		fail("favorite-off-browse", "favorites_only browse still returned listing %d after removing the favorite", listingA)
 	}
 	zap.L().Info("[trade-smoke] step 8: favorite set / browse / unset round trip")
 
@@ -503,15 +503,15 @@ func RunTradeSmoke(cfg *config.Config) {
 		fail("shelf-a", "%v", err)
 	}
 	if aShelf.GetServerNowMs() == 0 {
-		fail("shelf-a", "货架响应 server_now_ms=0")
+		fail("shelf-a", "Shelf response server_now_ms=0")
 	}
 	for _, id := range []uint64{listingA, listingNotice} {
 		s := tradeSmokeFind(aShelf.GetListings(), id)
 		if s == nil {
-			fail("shelf-a", "A 的货架第 1 页(共 %d 条)没有本轮种子商品 %d", aShelf.GetTotalCount(), id)
+			fail("shelf-a", "A shelf page 1 (%d entries total) contains no seed listing %d from this run", aShelf.GetTotalCount(), id)
 		}
 		if !s.GetIsMine() {
-			fail("shelf-a", "A 货架里的商品 %d is_mine=false", id)
+			fail("shelf-a", "A shelf listing %d has is_mine=false", id)
 		}
 	}
 	bShelf := &tradepb.GetMyShelfResponse{}
@@ -520,7 +520,7 @@ func RunTradeSmoke(cfg *config.Config) {
 	}
 	for _, id := range []uint64{listingA, listingNotice} {
 		if tradeSmokeFind(bShelf.GetListings(), id) != nil {
-			fail("shelf-b", "B 的货架里出现了 A 的商品 %d:货架没按会话身份过滤", id)
+			fail("shelf-b", "B shelf contains A listing %d: shelf was not filtered by session identity", id)
 		}
 	}
 	zap.L().Info("[trade-smoke] step 9: shelf scoped to caller")

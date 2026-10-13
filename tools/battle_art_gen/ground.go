@@ -158,7 +158,7 @@ func genGroundBands(outRoot string) ([]ArtEntry, error) {
 			Desc: fmt.Sprintf("%s;倾角 %.2f°(按 %.0f×%.0f 设计像素拉伸后 = BattleStage.RowStep 斜率 -0.15,免旋转);"+
 				"Image.Type=Simple 拉伸,勿九宫", s.Desc, groundTiltDeg, groundFitW, groundFitH),
 		})
-		fmt.Printf("  地台 %-18s %4d×%d  倾角 %.2f°\n", s.File, groundW, groundH, groundTiltDeg)
+		fmt.Printf("  Ground %-18s %4dx%d  tilt %.2f degrees\n", s.File, groundW, groundH, groundTiltDeg)
 	}
 	return out, nil
 }

@@ -133,8 +133,8 @@ case "$STAMP_BUILD" in
             fi
         fi
         if ! printf '%s' "$STAMP_SHA" | grep -Eq '^[0-9a-f]{12}(-dirty)?$'; then
-            echo "build_linux.sh: MMORPG_STAMP_BUILD=1 但拿不到合法的 12 位小写 commit(得到 '$STAMP_SHA')。" >&2
-            echo "  没有 .git 的环境(如 Docker builder 阶段)必须同时传 MMORPG_BUILD_COMMIT=<12 位 sha>。" >&2
+            echo "build_linux.sh: MMORPG_STAMP_BUILD=1 but no valid 12-character lowercase commit was found (got '$STAMP_SHA')." >&2
+            echo "  Environments without .git (such as a Docker builder stage) must also pass MMORPG_BUILD_COMMIT=<12-character sha>." >&2
             exit 2
         fi
         # 值里的 \" 是给 make 调起的 /bin/sh 看的:CMake 把 CMAKE_CXX_FLAGS 原样拼进编译命令,
@@ -142,7 +142,7 @@ case "$STAMP_BUILD" in
         STAMP_FLAG="-DBUILD_GIT_SHA=\\\"${STAMP_SHA}\\\""
         ;;
     *)
-        echo "build_linux.sh: MMORPG_STAMP_BUILD 只接受 0 或 1,得到 '$STAMP_BUILD'" >&2
+        echo "build_linux.sh: MMORPG_STAMP_BUILD only accepts 0 or 1; got '$STAMP_BUILD'" >&2
         exit 2
         ;;
 esac
@@ -154,7 +154,7 @@ echo "  jobs       : $JOBS"
 echo "  skip deps  : $SKIP_DEPS"
 echo "  generate   : $([ "$SKIP_GENERATE" -eq 1 ] && echo no || echo yes)"
 echo "  split debug: $SPLIT_DEBUG"
-echo "  stamp sha  : $([ -n "$STAMP_SHA" ] && echo "$STAMP_SHA" || echo "off(MMORPG_STAMP_BUILD 未开)")"
+echo "  stamp sha  : $([ -n "$STAMP_SHA" ] && echo "$STAMP_SHA" || echo "off(MMORPG_STAMP_BUILD disabled)")"
 echo ""
 
 run() {

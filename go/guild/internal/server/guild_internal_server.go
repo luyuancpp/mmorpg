@@ -169,12 +169,12 @@ func (s *GuildInternalServer) ListAppliedAssetOpsSince(ctx context.Context, req 
 	if err != nil {
 		s.observe(listAppliedResultInvalid, 0)
 		// 调用方(data_service)的编程错误,不是运行期常态:ERROR 级,便于第一时间发现契约漂移。
-		logx.WithContext(ctx).Errorf("[GuildInternal] ListAppliedAssetOpsSince 入参非法: %v", err)
+		logx.WithContext(ctx).Errorf("[GuildInternal] ListAppliedAssetOpsSince invalid input: %v", err)
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 	if s.ops == nil || s.terminalRetention <= 0 {
 		s.observe(listAppliedResultUnavailable, 0)
-		logx.WithContext(ctx).Errorf("[GuildInternal] ListAppliedAssetOpsSince 不可用:资产 Store 已装配=%t 终态保留期=%v",
+		logx.WithContext(ctx).Errorf("[GuildInternal] ListAppliedAssetOpsSince unavailable: asset Store wired=%t terminal_retention=%v",
 			s.ops != nil, s.terminalRetention)
 		return nil, status.Error(codes.Unavailable, "guild asset op store is not available")
 	}
@@ -183,14 +183,14 @@ func (s *GuildInternalServer) ListAppliedAssetOpsSince(ctx context.Context, req 
 	watermark, err := s.ops.TerminalCleanupWatermarkMs(ctx)
 	if err != nil {
 		s.observe(listAppliedResultUnavailable, 0)
-		logx.WithContext(ctx).Errorf("[GuildInternal] ListAppliedAssetOpsSince 不可用:读不到终态指令清理水位,无法判断哪段流水还能证明: %v", err)
+		logx.WithContext(ctx).Errorf("[GuildInternal] ListAppliedAssetOpsSince unavailable: cannot read terminal command cleanup watermark to determine verifiable ledger range: %v", err)
 		return nil, status.Error(codes.Unavailable, "guild asset op cleanup watermark is not available")
 	}
 	cutoff := provableCutoffMs(uint64(s.now().UnixMilli()), s.terminalRetention, watermark)
 	if req.GetSinceMs() < cutoff {
 		// 预期内的答复:快照早于终态流水保留期,这段已无法证明。data_service 据 cutoff_ms 钳位重查,不打 ERROR。
 		s.observe(listAppliedResultRetention, 0)
-		logx.WithContext(ctx).Infof("[GuildInternal] ListAppliedAssetOpsSince since_ms=%d 早于可证明下界 cutoff_ms=%d(清理水位 %d)",
+		logx.WithContext(ctx).Infof("[GuildInternal] ListAppliedAssetOpsSince since_ms=%d precedes verifiable lower bound cutoff_ms=%d (cleanup watermark %d)",
 			req.GetSinceMs(), cutoff, watermark)
 		return nil, status.Error(codes.FailedPrecondition, RetentionRejectedMessage(cutoff))
 	}
@@ -205,7 +205,7 @@ func (s *GuildInternalServer) ListAppliedAssetOpsSince(ctx context.Context, req 
 	if err != nil {
 		s.observe(listAppliedResultError, 0)
 		// 详情(含库错误)只进日志,不回给调用方;player_id 不进日志,只记规模。
-		logx.WithContext(ctx).Errorf("[GuildInternal] ListAppliedAssetOpsSince 查询失败 players=%d zone_id=%d: %v",
+		logx.WithContext(ctx).Errorf("[GuildInternal] ListAppliedAssetOpsSince query failed players=%d zone_id=%d: %v",
 			len(req.GetPlayerIds()), req.GetZoneId(), err)
 		return nil, storeErrorStatus(err)
 	}

@@ -69,7 +69,7 @@ func (p presenceReader) loadSessions(ctx context.Context, playerIds []uint64) Se
 		}
 		session, err := playercontract.ParseSession(raw)
 		if err != nil {
-			logx.WithContext(ctx).Errorf("[team] 会话解析失败 player=%d: %v", ids[i], err)
+			logx.WithContext(ctx).Errorf("[team] Failed to parse session player=%d: %v", ids[i], err)
 			continue
 		}
 		if playercontract.IsSessionOnline(session) {
@@ -115,11 +115,11 @@ func (p presenceReader) mget(ctx context.Context, ids []uint64, keyOf func(uint6
 	}
 	values, err := p.rds.MgetCtx(ctx, keys...)
 	if err != nil {
-		logx.WithContext(ctx).Errorf("[team] 批量读 %s 失败(按缺失处理) n=%d: %v", what, len(ids), err)
+		logx.WithContext(ctx).Errorf("[team] Failed to batch-read %s (treating as missing) n=%d: %v", what, len(ids), err)
 		return nil
 	}
 	if len(values) != len(ids) {
-		logx.WithContext(ctx).Errorf("[team] 批量读 %s 返回长度 %d,期望 %d(按缺失处理)", what, len(values), len(ids))
+		logx.WithContext(ctx).Errorf("[team] Batch-read %s returned length %d, expected %d (treating as missing)", what, len(values), len(ids))
 		return nil
 	}
 	return values
@@ -134,7 +134,7 @@ func parsePlayerBrief(ctx context.Context, playerId uint64, raw string) (level, 
 	}
 	data := &dbpb.PlayerAllData{}
 	if err := proto.Unmarshal([]byte(raw), data); err != nil {
-		logx.WithContext(ctx).Infof("[team] PlayerAllData 解析失败,展示字段填 0 player=%d: %v", playerId, err)
+		logx.WithContext(ctx).Infof("[team] Failed to parse PlayerAllData; display fields set to 0 player=%d: %v", playerId, err)
 		return 0, 0, "", "", 0
 	}
 	player := data.GetPlayerDatabaseData()

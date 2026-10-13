@@ -163,7 +163,7 @@ function Get-ThrownMessage {
     return ''
 }
 
-Write-Host '=== 迁移 Job 门禁回归（完全模拟 kubectl） ==='
+Write-Host '=== Migration Job admission regression tests (fully mocked kubectl) ==='
 
 foreach ($profile in @('staging', 'prod')) {
     Test-Case "$profile 不带 WaitReady，失败 Job 仍阻止 Deployment" {

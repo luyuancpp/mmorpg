@@ -139,7 +139,7 @@ func verifySilhouettes(outRoot string, roster []monsterSpec) (map[string]any, er
 	if len(bad) > 0 {
 		return nil, fmt.Errorf("怪物剪影过于相似(归一化 %d×%d 剪影 IoU > %.2f):%v", monSilW, monSilH, monMaxSilhouetteIoU, bad)
 	}
-	fmt.Printf("  剪影自检:%d 对两两 IoU 全部 ≤ %.2f,最相似 %s = %.3f\n", len(pairs), monMaxSilhouetteIoU, worstPair, worst)
+	fmt.Printf("  Silhouette check: all %d pairwise IoUs <= %.2f, most similar %s = %.3f\n", len(pairs), monMaxSilhouetteIoU, worstPair, worst)
 	return map[string]any{
 		"grid":       fmt.Sprintf("%dx%d", monSilW, monSilH),
 		"alpha_min":  128,
@@ -425,7 +425,7 @@ func verifyMonsterOutput(outRoot string, roster []monsterSpec) (map[string]any, 
 		}
 		bottoms[filepath.ToSlash(s.File)] = s.BottomRow0
 	}
-	fmt.Printf("  自检:%d 张帧条(全部 %d×%d / 8 帧 / 真 alpha)、%d 组镜像逐像素一致(只在含 W 时比)、%d 条地台;告警 %d 条\n",
+	fmt.Printf("  Validation: %d frame strips (all %dx%d / 8 frames / true alpha), %d mirror groups pixel-identical (compared only when W present), %d ground images; %d warnings\n",
 		strips, monFrameSize*monFrames, monFrameSize, mirrors, len(grounds), maxEdgeWarn)
 
 	return map[string]any{

@@ -86,7 +86,7 @@ jobs:
           set -euo pipefail
           for cmd in pwsh docker git; do
             if ! command -v "$cmd" >/dev/null 2>&1; then
-              echo "::error::runner 上没有 $cmd,无法发布"
+              echo "::error::Runner does not have $cmd; release cannot proceed"
               exit 1
             fi
           done
@@ -156,7 +156,7 @@ jobs:
           # 统一 `pwsh -NoProfile -File`、不走 Pester。改那边的口径时同步这里。
           # 与那边的区别:发布流程里"目录不存在 / 一个测试都没有"一律判红 —— 门禁没跑不能当成门禁过了。
           if [ ! -d "$DIR" ]; then
-            echo "::error::$DIR 不存在,发布前的契约测试无从执行"
+            echo "::error::$DIR does not exist; pre-release contract tests cannot run"
             exit 1
           fi
 
@@ -164,12 +164,12 @@ jobs:
           PLAIN=()
           for f in ${ALL[@]+"${ALL[@]}"}; do
             case "$(basename "$f")" in
-              _*) echo "跳过辅助脚本 $f" ;;
+              _*) echo "Skipping helper script $f" ;;
               *)  PLAIN+=("$f") ;;
             esac
           done
           if [ "${#PLAIN[@]}" -eq 0 ]; then
-            echo "::error::$DIR 下没有可执行的契约测试"
+            echo "::error::$DIR contains no runnable contract tests"
             exit 1
           fi
 
@@ -179,7 +179,7 @@ jobs:
             if pwsh -NoProfile -File "$t"; then
               echo "PASS $t"
             else
-              echo "::error file=$t::契约测试失败(退出码 $?)"
+              echo "::error file=$t::Contract test failed (exit code $?)"
               FAILED+=("$t")
             fi
           done
@@ -194,7 +194,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
           if [ "${#FAILED[@]}" -gt 0 ]; then
-            echo "::error::${#FAILED[@]} 个契约测试失败,不发布"
+            echo "::error::${#FAILED[@]} contract tests failed; release aborted"
             exit 1
           fi
 
@@ -363,7 +363,7 @@ jobs:
           # 常见来源:契约测试往仓库里写了临时文件、仓库外模块没移干净。
           status="$(git status --porcelain=v1 --untracked-files=all)"
           if [ -n "$status" ]; then
-            echo "::error::工作树不干净,release 轨拒绝发布"
+            echo "::error::Worktree is not clean; the release track refuses publication"
             echo "$status"
             {
               echo "### 发布被拒绝:工作树不干净"

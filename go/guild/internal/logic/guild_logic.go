@@ -142,7 +142,7 @@ func callerOf(ctx context.Context, bodyPlayerID uint64) caller {
 		return caller{playerID: bodyPlayerID}
 	}
 	if bodyPlayerID != 0 && bodyPlayerID != playerID {
-		logx.Errorf("[guild] 请求体 player_id=%d 与会话身份 %d 不一致,以会话为准", bodyPlayerID, playerID)
+		logx.Errorf("[guild] Request player_id=%d differs from session identity %d; using session identity", bodyPlayerID, playerID)
 	}
 	return caller{playerID: playerID, fromClient: true}
 }

@@ -760,7 +760,7 @@ func (r *FriendRepo) runGuardedWrite(ctx context.Context, playerA, playerB uint6
 			// 让"回收竞态"可观测:正常情况下这条日志应当极少出现,持续出现说明回收的保留期
 			// 配得太短,或者有回收之外的东西在删 friend_capacity。玩家 id 只进日志、不进指标 label。
 			// 按仓内先例用 Errorf 打 "WARN " 前缀。
-			logx.WithContext(ctx).Errorf("[friend] WARN 容量守卫缺行(多半是 sweep 回收竞态),重新 ensure 后重试 "+
+			logx.WithContext(ctx).Errorf("[friend] WARN Capacity guard row missing (likely a sweep reclamation race); ensuring again before retry "+
 				"players=(%d,%d) attempt=%d/%d: %v", playerA, playerB, attempt, capacityGuardMaxAttempts, err)
 		}
 	}
@@ -958,8 +958,8 @@ func deleteFriendEdges(ctx context.Context, tx *sql.Tx, a, b uint64, nowMs int64
 				return err
 			}
 			if n == 0 {
-				logx.WithContext(ctx).Errorf("[friend] friend_count 下溢被拦截:player=%d 已删掉一条边但计数已经是 0,"+
-					"说明 friend_capacity 与 friend 表的权威边数脱节(排查:SELECT COUNT(*) FROM friend WHERE player_id=%d)",
+				logx.WithContext(ctx).Errorf("[friend] friend_count underflow prevented: player=%d edge deleted but count already 0, "+
+					"friend_capacity differs from authoritative edge count in friend table (check: SELECT COUNT(*) FROM friend WHERE player_id=%d)",
 					edge[0], edge[0])
 			}
 		}
@@ -1016,7 +1016,7 @@ func (r *FriendRepo) invalidateCaches(ctx context.Context, keys ...string) error
 // 这条降级按 AGENTS §11.3 是"记录并可观测"而不是静默:日志带上失败的键名。
 func (r *FriendRepo) invalidateCachesAfterCommit(ctx context.Context, keys ...string) {
 	if err := r.invalidateCaches(ctx, keys...); err != nil {
-		logx.WithContext(ctx).Errorf("[friend] 写已提交但缓存失效失败(该键最多陈旧一个 CacheTTL)keys=%v: %v", keys, err)
+		logx.WithContext(ctx).Errorf("[friend] Write committed but cache invalidation failed (key stale for at most one CacheTTL) keys=%v: %v", keys, err)
 	}
 }
 
@@ -1070,8 +1070,8 @@ func (r *FriendRepo) ensureFriendCapacityRows(ctx context.Context, playerIDs ...
 				// 2026-09-21 起 ensure 改用 ODKU + 连接级 RC,已知会走到这里的形态(回收后并发补行的
 				// S→X 升级)已从根上消掉;这条重试只剩纵深防御的意义。**正常运行时应当永远看不到它** ——
 				// 看到了就说明出现了新的成环形态,要按事故报告的方法抓 LATEST DETECTED DEADLOCK 查清。
-				logx.WithContext(ctx).Errorf("[friend] WARN ensure 容量行撞上 1213(预期不应再发生,请抓 INNODB STATUS 排查),"+
-					"重跑 COUNT+INSERT player=%d attempt=%d/%d: %v", playerID, attempt, ensureDeadlockMaxAttempts, err)
+				logx.WithContext(ctx).Errorf("[friend] WARN Capacity row ensure hit 1213 (no longer expected; capture INNODB STATUS for diagnosis), "+
+					"retrying COUNT+INSERT player=%d attempt=%d/%d: %v", playerID, attempt, ensureDeadlockMaxAttempts, err)
 			}
 		}
 		if err != nil {
@@ -1210,7 +1210,7 @@ func loadVersionedFriendCache[T any](
 		// fault 码 ErrStorage(本域唯一的 fault),表现成"好友系统挂了"——
 		// 而真正挂的只是一个纯加速用的私有缓存。代价:下一次读仍是 miss,再打一次 MySQL。
 		// 与 session_reader.go 顶部的降级口径一致:展示路径上的 Redis 故障不得让列表整体失败。
-		logx.WithContext(ctx).Errorf("[friend] 回填缓存失败,本次直接返回 MySQL 权威结果 key=%s: %v", cacheKey, err)
+		logx.WithContext(ctx).Errorf("[friend] Failed to backfill cache; returning authoritative MySQL result directly key=%s: %v", cacheKey, err)
 	}
 	return value, nil
 }

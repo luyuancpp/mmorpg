@@ -96,19 +96,19 @@ bool ParseChannelDirectoryReply(const redisReply* reply, uint32_t sceneConfigId,
 {
 	if (reply == nullptr)
 	{
-		LOG_WARN << "SendSceneInfo: 读分线目录无应答(Redis 连接断开), 本次不带目录, player_id=" << playerId
+		LOG_WARN << "SendSceneInfo: channel directory read got no reply(Redis disconnected);directory omitted this time, player_id=" << playerId
 				 << " scene_config_id=" << sceneConfigId;
 		return false;
 	}
 	if (reply->type == REDIS_REPLY_NIL)
 	{
-		LOG_DEBUG << "SendSceneInfo: 分线目录尚未发布或已过期, 本次不带目录, player_id=" << playerId
+		LOG_DEBUG << "SendSceneInfo: channel directory not published or expired;directory omitted this time, player_id=" << playerId
 				  << " scene_config_id=" << sceneConfigId;
 		return false;
 	}
 	if (reply->type == REDIS_REPLY_ERROR)
 	{
-		LOG_WARN << "SendSceneInfo: 读分线目录被 Redis 拒绝, 本次不带目录, player_id=" << playerId
+		LOG_WARN << "SendSceneInfo: channel directory read rejected by Redis;directory omitted this time, player_id=" << playerId
 				 << " scene_config_id=" << sceneConfigId << " err=" << (reply->str != nullptr ? reply->str : "");
 		return false;
 	}
@@ -116,19 +116,19 @@ bool ParseChannelDirectoryReply(const redisReply* reply, uint32_t sceneConfigId,
 	if (reply->type != REDIS_REPLY_STRING || reply->str == nullptr ||
 		reply->len > static_cast<size_t>(std::numeric_limits<int>::max()))
 	{
-		LOG_ERROR << "SendSceneInfo: 分线目录应答形状非法, 本次不带目录, player_id=" << playerId
+		LOG_ERROR << "SendSceneInfo: invalid channel directory reply shape;directory omitted this time, player_id=" << playerId
 				  << " scene_config_id=" << sceneConfigId << " reply_type=" << reply->type;
 		return false;
 	}
 	if (!out.ParseFromArray(reply->str, static_cast<int>(reply->len)))
 	{
-		LOG_ERROR << "SendSceneInfo: 分线目录解析失败, 本次不带目录, player_id=" << playerId
+		LOG_ERROR << "SendSceneInfo: channel directory parse failed;directory omitted this time, player_id=" << playerId
 				  << " scene_config_id=" << sceneConfigId << " bytes=" << reply->len;
 		return false;
 	}
 	if (out.scene_config_id() != sceneConfigId)
 	{
-		LOG_ERROR << "SendSceneInfo: 分线目录写的不是当前地图, 本次不带目录, player_id=" << playerId
+		LOG_ERROR << "SendSceneInfo: channel directory does not match current map;directory omitted this time, player_id=" << playerId
 				  << " scene_config_id=" << sceneConfigId << " directory_scene_config_id=" << out.scene_config_id();
 		return false;
 	}
@@ -240,7 +240,7 @@ bool PlayerSceneSystem::RequestEnterMirrorScene(entt::entity player, uint32_t mi
 	// 回合制战斗冻结拦截:战斗在途拒绝进镜像副本(设计文档 §5.3 冻结清单)
 	if (PlayerBattleSystem::IsInBattle(player))
 	{
-		LOG_WARN << "[PlayerBattle] RequestEnterMirrorScene 被拒: 玩家战斗在途, player_id="
+		LOG_WARN << "[PlayerBattle] RequestEnterMirrorScene rejected: player battle in progress, player_id="
 				 << GuidForLog(player);
 		return false;
 	}
@@ -309,7 +309,7 @@ void PlayerSceneSystem::SendSceneInfo(entt::entity player, bool withChannelDirec
 {
 	if (!tlsEcs.actorRegistry.valid(player))
 	{
-		LOG_WARN << "SendSceneInfo: 玩家实体无效, 不推送, entity=" << entt::to_integral(player);
+		LOG_WARN << "SendSceneInfo: invalid player entity;push skipped, entity=" << entt::to_integral(player);
 		return;
 	}
 	const uint64_t playerId = GuidForLog(player);
@@ -317,7 +317,7 @@ void PlayerSceneSystem::SendSceneInfo(entt::entity player, bool withChannelDirec
 	const auto* sceneInfo = CurrentSceneInfo(player);
 	if (sceneInfo == nullptr)
 	{
-		LOG_WARN << "SendSceneInfo: 玩家不在任何场景或场景实体缺少 SceneInfoComp, 不推送, player_id=" << playerId;
+		LOG_WARN << "SendSceneInfo: player has no scene or scene entity lacks SceneInfoComp;push skipped, player_id=" << playerId;
 		return;
 	}
 
@@ -348,7 +348,7 @@ void PlayerSceneSystem::SendSceneInfo(entt::entity player, bool withChannelDirec
 			const auto* currentInfo = CurrentSceneInfo(player);
 			if (currentInfo == nullptr || currentInfo->scene_id() != sceneId)
 			{
-				LOG_DEBUG << "SendSceneInfo: 应答回来时玩家已不在发起时的场景, 丢弃, player_id=" << playerId
+				LOG_DEBUG << "SendSceneInfo: player left the original scene before reply;discarded, player_id=" << playerId
 						  << " scene_id=" << sceneId;
 				return;
 			}
@@ -363,7 +363,7 @@ void PlayerSceneSystem::SendSceneInfo(entt::entity player, bool withChannelDirec
 		// 命令没被 hiredis 收下(连接正在断开 / 释放,或格式化失败)时回调永远不会被调用,
 		// 必须在这里补推,否则客户端等不到任何应答。sceneInfo 此刻仍有效:command 不会同步执行回调,
 		// 也不碰 ECS。
-		LOG_WARN << "SendSceneInfo: 读分线目录的命令未发出, 本次不带目录, player_id=" << playerId
+		LOG_WARN << "SendSceneInfo: channel directory read command not sent;directory omitted this time, player_id=" << playerId
 				 << " scene_config_id=" << sceneConfigId << " ret=" << ret;
 		PushSceneInfo(player, *sceneInfo, nullptr);
 	}

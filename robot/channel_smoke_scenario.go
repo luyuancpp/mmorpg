@@ -175,7 +175,7 @@ func RunChannelSmoke(cfg *config.Config) {
 	originScene := bot.player.GetSceneID()
 	sceneConfigId := bot.player.GetSceneConfigID()
 	if originScene == 0 || sceneConfigId == 0 {
-		fail("C1-login", "进场后 scene_id=%d scene_config_id=%d,两者都必须非 0", originScene, sceneConfigId)
+		fail("C1-login", "After entering scene_id=%d scene_config_id=%d; both must be nonzero", originScene, sceneConfigId)
 	}
 	pass("C1-login", "player_id=%d gate=%s scene_config_id=%d scene_id=%d",
 		bot.gc.PlayerId, bot.gate, sceneConfigId, originScene)
@@ -197,7 +197,7 @@ func RunChannelSmoke(cfg *config.Config) {
 	// ---- C3:选目标线 ----
 	if len(firstDir.GetChannels()) == 1 {
 		zap.L().Warn(fmt.Sprintf("CHANNEL_SMOKE_SKIP reason=single_channel player_id=%d zone=%d scene_config_id=%d scene_id=%d "+
-			"该地图只有 1 条线,无法验证切线;把 scene_manager 的 WorldChannelCountByConfId 里这张图配成 ≥2 再跑(列线已验证通过)",
+			"This map has only 1 channel, so channel switching cannot be verified; configure this map with >=2 in scene_manager WorldChannelCountByConfId and rerun (channel listing passed)",
 			bot.gc.PlayerId, firstDir.GetZoneId(), sceneConfigId, originScene))
 		cleanup()
 		_ = zap.L().Sync()
@@ -207,9 +207,9 @@ func RunChannelSmoke(cfg *config.Config) {
 	if target == nil {
 		// 不按 SKIP 处理:单机器人的环境里别的线全都不可选,要么环境坏了(节点判死 / 人数计数没对账),
 		// 要么目录的状态判定有缺陷 —— 后者正是本冒烟要抓的。
-		fail("C3-pick", "该地图有 %d 条线,但除当前线外没有 SMOOTH / BUSY 的线可选:%s。"+
-			"UNAVAILABLE = 线所在的 scene 节点不存活或 scene:{id}:node 映射缺失;FULL = instance:{id}:player_count 达到每线上限 %d"+
-			"(节点死亡后旧计数不清零是已知问题,设计文档 §9 第 3 条);CLOSING = 线在回收中",
+		fail("C3-pick", "This map has %d channels, but no SMOOTH / BUSY channel other than the current one is selectable: %s. "+
+			"UNAVAILABLE = the channel scene node is not alive or the scene:{id}:node mapping is missing; FULL = instance:{id}:player_count reached the per-channel limit %d"+
+			" (stale counts not being cleared after node death is a known issue, design document section 9 item 3); CLOSING = the channel is being reclaimed",
 			len(firstDir.GetChannels()), channelSmokeDescribe(firstDir), firstDir.GetMaxPlayersPerChannel())
 	}
 	targetScene, targetNo := target.GetSceneId(), target.GetChannelNo()
@@ -232,14 +232,14 @@ func RunChannelSmoke(cfg *config.Config) {
 		leftoverCooldown := !retriedAfterCooldown && rejectTip == tipChannelEnterSceneFailed &&
 			cooldown > 0 && cooldown+channelSmokeCooldownMargin <= maxCooldownWait
 		if !leftoverCooldown {
-			fail("C4-switch", "切到目标线 scene_id=%d(%d线)受理后被拒 tip=%d%s retried_after_cooldown=%t。"+
-				"scene_manager 的拒绝原因看它的日志(channel_closing / channel_conf_mismatch / channel_switch_disabled / "+
+			fail("C4-switch", "Switching to target channel scene_id=%d (channel %d) was accepted, then rejected with tip=%d%s retried_after_cooldown=%t. "+
+				"See scene_manager logs for the rejection reason (channel_closing / channel_conf_mismatch / channel_switch_disabled / "+
 				"channel_full / channel_switch_cooldown)",
 				targetScene, targetNo, rejectTip, channelSmokeTipHint(rejectTip), retriedAfterCooldown)
 		}
 		retriedAfterCooldown = true
 		wait := cooldown + channelSmokeCooldownMargin
-		zap.L().Warn("[channel-smoke] C4 受理后被拒,按「上一轮留下的切线冷却未过」等它过期后重试一次",
+		zap.L().Warn("[channel-smoke] C4 was accepted then rejected; assuming a channel-switch cooldown from the previous run, wait for expiry and retry once",
 			zap.Uint32("tip", rejectTip), zap.Duration("wait", wait))
 		time.Sleep(wait)
 	}
@@ -255,12 +255,12 @@ func RunChannelSmoke(cfg *config.Config) {
 		fail("C5-list", "%v", err)
 	}
 	if err := channelSmokeCheckDirectory(secondPush, cfg.ZoneID, sceneConfigId, targetScene); err != nil {
-		fail("C5-directory", "切线后:%v", err)
+		fail("C5-directory", "After channel switch: %v", err)
 	}
 	secondDir := secondPush.GetChannelDirectory()
 	shared, err := channelSmokeCheckChannelNosStable(firstDir, secondDir)
 	if err != nil {
-		fail("C5-channel-no", "%v;第一次:%s;第二次:%s", err, channelSmokeDescribe(firstDir), channelSmokeDescribe(secondDir))
+		fail("C5-channel-no", "%v; first: %s; second: %s", err, channelSmokeDescribe(firstDir), channelSmokeDescribe(secondDir))
 	}
 	pass("C5-list", "current_scene=%d current_channel=%d channels=%d 线号与第一次一致的线=%d",
 		targetScene, targetNo, len(secondDir.GetChannels()), shared)
@@ -275,8 +275,8 @@ func RunChannelSmoke(cfg *config.Config) {
 	} else {
 		origin := channelSmokeFindChannel(secondDir, originScene)
 		if origin == nil || !channelSmokeSelectable(origin.GetState()) {
-			fail("C6-origin", "原线 scene_id=%d(%d线)在第二次目录里已不可选(%s),切回它被拒就分不清是不是冷却;"+
-				"自动伸缩在回收这条线?稍后重跑", originScene, originNo, channelSmokeDescribe(secondDir))
+			fail("C6-origin", "Original channel scene_id=%d (channel %d) is no longer selectable in the second directory (%s); rejection of switching back cannot distinguish a cooldown; "+
+				"is autoscaling reclaiming this channel? Rerun later", originScene, originNo, channelSmokeDescribe(secondDir))
 		}
 
 		// 6a:冷却期内立刻切回原线,必须"已受理 → 随后失败 tip"。
@@ -291,24 +291,24 @@ func RunChannelSmoke(cfg *config.Config) {
 				fail("C6-cooldown-reject", "%v", err)
 			}
 			if syncTip != 0 {
-				fail("C6-cooldown-reject", "冷却期内切回原线 scene_id=%d,同步应答 tip=%d%s;期望无错(已受理),冷却的拒绝应走随后的 SendTipToClient",
+				fail("C6-cooldown-reject", "Switching back to original channel scene_id=%d during cooldown returned synchronous tip=%d%s; expected success (accepted), with cooldown rejection sent by the subsequent SendTipToClient",
 					originScene, syncTip, channelSmokeTipHint(syncTip))
 			}
 			arrived, asyncTip, err := bot.waitSwitchOutcome(since, originScene, channelSmokeRejectTimeout)
 			if errors.Is(err, errChannelSmokeNoOutcome) {
-				fail("C6-cooldown-reject", "冷却期内切回原线 scene_id=%d 已受理,但 %s 内既没有失败 tip 也没有到达。"+
-					"冷却的拒绝发生在 scene_manager 的预检(不走交接),不该这么慢;原线在别的 scene 节点时,"+
-					"没被拒的请求要走交接、到达会晚于这个窗口 —— 那同样说明冷却没生效", originScene, channelSmokeRejectTimeout)
+				fail("C6-cooldown-reject", "Switching back to original channel scene_id=%d during cooldown was accepted, but neither a failure tip nor arrival was received within %s. "+
+					"Cooldown rejection occurs in scene_manager preflight (without handoff) and should not take this long; when the original channel is on another scene node, "+
+					"an accepted request requires handoff and may arrive after this window, which also indicates the cooldown was ineffective", originScene, channelSmokeRejectTimeout)
 			}
 			if err != nil {
-				fail("C6-cooldown-reject", "冷却期内切回原线 scene_id=%d 已受理,等结局时出错:%v", originScene, err)
+				fail("C6-cooldown-reject", "Switching back to original channel scene_id=%d during cooldown was accepted, but waiting for its outcome failed: %v", originScene, err)
 			}
 			if arrived {
-				fail("C6-cooldown-reject", "冷却没生效:切线 %s 后立刻切回原线 scene_id=%d 成功了(目录 switch_cooldown_seconds=%d,期望被拒)",
+				fail("C6-cooldown-reject", "Cooldown was ineffective: immediately switching back after %s to original channel scene_id=%d succeeded (directory switch_cooldown_seconds=%d, expected rejection)",
 					time.Since(switchedAt).Round(time.Millisecond), originScene, secondDir.GetSwitchCooldownSeconds())
 			}
 			if asyncTip != tipChannelEnterSceneFailed {
-				fail("C6-cooldown-reject", "冷却期内切回原线,受理后收到 tip=%d%s,期望 kEnterSceneFailed(%d)",
+				fail("C6-cooldown-reject", "Switching back during cooldown was accepted, then returned tip=%d%s; expected kEnterSceneFailed(%d)",
 					asyncTip, channelSmokeTipHint(asyncTip), tipChannelEnterSceneFailed)
 			}
 			rejectMark = since
@@ -324,20 +324,20 @@ func RunChannelSmoke(cfg *config.Config) {
 			// 起点仍是 C4 的到达时刻而不是 6a 被拒的时刻:预检只读、被拒不该续冷却(设计文档 §4.4)。
 			// 若实现在被拒时也写了冷却键,这里的切回会被拒 —— 正是要抓的缺陷。
 			if wait := time.Until(switchedAt.Add(cooldown + channelSmokeCooldownMargin)); wait > 0 {
-				zap.L().Info("[channel-smoke] C6 等切线冷却过期", zap.Duration("wait", wait.Round(time.Millisecond)))
+				zap.L().Info("[channel-smoke] C6 waiting for channel-switch cooldown expiry", zap.Duration("wait", wait.Round(time.Millisecond)))
 				time.Sleep(wait)
 			}
 			// 6a 的"没有切回成功"要覆盖整个等待期:被拒之后迟到的 NotifyEnterScene 同样说明冷却没拦住。
 			if rejectMark >= 0 && bot.enteredSince(rejectMark, originScene) {
-				fail("C6-cooldown-reject", "冷却期内那次切回先收到了失败 tip,之后又收到 scene_id=%d 的 NotifyEnterScene:拒绝与放行同时发生", originScene)
+				fail("C6-cooldown-reject", "Switching back during cooldown first received a failure tip, then NotifyEnterScene for scene_id=%d: rejection and admission both occurred", originScene)
 			}
 			rejectTip, err := bot.switchTo(sceneConfigId, originScene, arriveTimeout)
 			if err != nil {
 				fail("C6-cooldown-switch-back", "%v", err)
 			}
 			if rejectTip != 0 {
-				fail("C6-cooldown-switch-back", "冷却过期后切回原线 scene_id=%d 仍被拒 tip=%d%s:距 C4 到达已过 %s(冷却 %s)。"+
-					"冷却键 TTL 不对,或 6a 被拒的那次预检续了冷却(设计文档 §4.4:预检只读,不占冷却)",
+				fail("C6-cooldown-switch-back", "Switching back to original channel scene_id=%d was still rejected after cooldown expiry with tip=%d%s: %s since C4 arrival (cooldown %s). "+
+					"The cooldown key TTL is incorrect, or the rejected 6a preflight renewed the cooldown (design document section 4.4: preflight is read-only and does not acquire cooldown)",
 					originScene, rejectTip, channelSmokeTipHint(rejectTip), time.Since(switchedAt).Round(time.Millisecond), cooldown)
 			}
 			currentScene = originScene
@@ -353,7 +353,7 @@ func RunChannelSmoke(cfg *config.Config) {
 		fail("C7-same-channel", "%v", err)
 	}
 	if syncTip != tipChannelYouInCurrentScene {
-		fail("C7-same-channel", "请求切到当前所在的线 scene_id=%d,同步应答 tip=%d%s,期望 kEnterSceneYouInCurrentScene(%d)",
+		fail("C7-same-channel", "Requesting the current channel scene_id=%d returned synchronous tip=%d%s; expected kEnterSceneYouInCurrentScene(%d)",
 			currentScene, syncTip, channelSmokeTipHint(syncTip), tipChannelYouInCurrentScene)
 	}
 	pass("C7-same-channel", "current_scene=%d tip=%d(kEnterSceneYouInCurrentScene)", currentScene, syncTip)
@@ -547,7 +547,7 @@ func (b *channelSmokeBot) fetchDirectory() (*scene.SceneInfoS2C, error) {
 				"scene_manager 与 scene 节点是否都换上了带切线的新二进制;scene 节点的 zone Redis 是否已连接"+
 				"(与 scene_manager 是否同一个 Redis)", attempt, elapsed.Round(time.Millisecond))
 		}
-		zap.L().Info("[channel-smoke] NotifySceneInfo 不带 channel_directory,稍后重试",
+		zap.L().Info("[channel-smoke] NotifySceneInfo has no channel_directory; retrying later",
 			zap.Int("attempt", attempt), zap.Duration("retry_in", channelSmokeDirectoryRetryInterval))
 		time.Sleep(channelSmokeDirectoryRetryInterval)
 	}

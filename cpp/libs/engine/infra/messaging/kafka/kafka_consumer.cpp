@@ -218,11 +218,11 @@ bool KafkaConsumer::init(const std::string &brokers, const std::string &groupId,
 				LOG_ERROR << "KafkaConsumer: Kafka partition contract mismatch. topic=" << topics[0]
 						  << ", broker=" << actual
 						  << ", contract=" << assignPolicy.expectedTopicPartitions
-						  << ". 分区数是寻址协议的一部分(partition = node_id % P),不可原地扩缩:"
-						  << "如果 topic 是被生产者 auto-create 成 1 分区的,删掉它再跑 topic 预建"
+						  << ". The partition count is part of the addressing protocol(partition = node_id % P) and cannot be resized in place:"
+						  << "if a producer auto-created the topic with 1 partition, delete it and rerun topic provisioning"
 						  << "(deploy/docker-compose.yml kafka-topic-init / k8s_deploy.ps1 "
-						  << "-Command infra-kafka-topics);如果是有意改分区数,"
-						  << "请 +1 Kafka.CommandTopicGeneration 换一批新 topic。";
+						  << "-Command infra-kafka-topics);if the partition count change is intentional,"
+						  << "increment Kafka.CommandTopicGeneration to use a new set of topics.";
 				consumer_->close();
 				consumer_.reset();
 				return false;
@@ -236,8 +236,8 @@ bool KafkaConsumer::init(const std::string &brokers, const std::string &groupId,
 				// 真正危险的那一种(broker 答了 1 分区)已经在上面挡掉了。
 				LOG_ERROR << "KafkaConsumer: cannot verify partition contract, broker metadata unavailable. topic="
 						  << topics[0] << ", contract=" << assignPolicy.expectedTopicPartitions
-						  << "。继续按契约 assign;若 broker 起来后该 topic 实际不是这个分区数,"
-						  << "本进程会收不到任何命令 —— 请先确认 topic 预建已跑过。";
+						  << ". Continuing to assign according to the contract;if this topic has a different partition count when the broker starts,"
+						  << "this process will receive no commands -- confirm that topic provisioning has been run.";
 			}
 			else
 			{

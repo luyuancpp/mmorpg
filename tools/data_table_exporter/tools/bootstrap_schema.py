@@ -308,7 +308,7 @@ def main(argv: list[str] | None = None) -> int:
     out_dir = Path(args.out) if args.out else default_dir
     vocab_src = default_dir / "cfg_options.proto"
     if not vocab_src.exists():
-        logger.error("找不到 option 词表 %s", vocab_src)
+        logger.error("Option vocabulary not found: %s", vocab_src)
         return 1
 
     scratch = out_dir / ".selfcheck"
@@ -317,7 +317,7 @@ def main(argv: list[str] | None = None) -> int:
     for xlsx in list_xlsx(cfg.data_dir):
         old = read_table(xlsx, cfg)
         if old is None:
-            logger.error("%s 读不出 schema", xlsx.name)
+            logger.error("Cannot read schema from %s", xlsx.name)
             fail += 1
             continue
         if args.only and old.name not in args.only:
@@ -325,7 +325,7 @@ def main(argv: list[str] | None = None) -> int:
         seen.add(old.name)
         target = out_dir / ("%s_table.proto" % old.name.lower())
         if target.exists() and not args.force and not args.dry_run:
-            logger.info("跳过 %s:已存在(要重播请加 --force)", target.name)
+            logger.info("Skipping %s: already exists (use --force to regenerate)", target.name)
             skipped += 1
             continue
         try:
@@ -336,7 +336,7 @@ def main(argv: list[str] | None = None) -> int:
             fail += 1
             continue
         if args.dry_run:
-            logger.info("[dry-run] 将写 %s(%d 行,自检通过)", target, text.count("\n"))
+            logger.info("[dry-run] Would write %s (%d lines, self-check passed)", target, text.count("\n"))
         else:
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_text(text, encoding="utf-8", newline="\n")
@@ -344,7 +344,7 @@ def main(argv: list[str] | None = None) -> int:
             dst_vocab = out_dir / "cfg_options.proto"
             if not dst_vocab.exists() or not dst_vocab.samefile(vocab_src):
                 dst_vocab.write_bytes(vocab_src.read_bytes())
-            logger.info("写出 %s", target)
+            logger.info("Wrote %s", target)
         ok += 1
 
     if scratch.exists():
@@ -352,10 +352,10 @@ def main(argv: list[str] | None = None) -> int:
 
     missing = sorted(set(args.only or []) - seen)
     if missing:
-        logger.error("--only 指定的表不存在:%s", ", ".join(missing))
+        logger.error("Tables specified by --only do not exist: %s", ", ".join(missing))
         fail += 1
 
-    logger.info("完成:%d 张写出,%d 张跳过,%d 张失败", ok, skipped, fail)
+    logger.info("Done: %d tables written, %d skipped, %d failed", ok, skipped, fail)
     return 1 if fail else 0
 
 

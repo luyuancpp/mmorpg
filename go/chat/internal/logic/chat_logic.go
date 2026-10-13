@@ -208,7 +208,7 @@ func (l *ChatLogic) SendChat(in *chatpb.SendChatRequest) (*chatpb.SendChatRespon
 		SendTimeMs:     l.now().UnixMilli(),
 	})
 	if err != nil {
-		l.Errorf("[chat] ChatMessage 序列化失败 sender=%d: %v", senderId, err)
+		l.Errorf("[chat] Failed to serialize ChatMessage sender=%d: %v", senderId, err)
 		return reject(rejectStorage)
 	}
 
@@ -219,7 +219,7 @@ func (l *ChatLogic) SendChat(in *chatpb.SendChatRequest) (*chatpb.SendChatRespon
 		claimValue = claimPending + ":" + rand.Text()
 		claimed, err := rds.SetnxExCtx(l.ctx, claimKey, claimValue, cfg.RequestIdTTLSeconds)
 		if err != nil {
-			l.Errorf("[chat] 幂等键 SET NX 失败 sender=%d: %v", senderId, err)
+			l.Errorf("[chat] Idempotency key SET NX failed sender=%d: %v", senderId, err)
 			return reject(rejectStorage)
 		}
 		if !claimed {
@@ -231,13 +231,13 @@ func (l *ChatLogic) SendChat(in *chatpb.SendChatRequest) (*chatpb.SendChatRespon
 	res, err := rds.EvalCtx(l.ctx, rateLimitScript, []string{rateLimitKey(senderId)}, strconv.Itoa(rateLimitWindowSeconds))
 	if err != nil {
 		l.releaseClaim(claimKey, claimValue)
-		l.Errorf("[chat] 限速脚本失败 sender=%d: %v", senderId, err)
+		l.Errorf("[chat] Rate limit script failed sender=%d: %v", senderId, err)
 		return reject(rejectStorage)
 	}
 	count, isInt := res.(int64)
 	if !isInt {
 		l.releaseClaim(claimKey, claimValue)
-		l.Errorf("[chat] 限速脚本返回形态异常 sender=%d: %T %v", senderId, res, res)
+		l.Errorf("[chat] Unexpected rate limit script response sender=%d: %T %v", senderId, res, res)
 		return reject(rejectStorage)
 	}
 	if count > int64(cfg.RateLimitPerSecond) {
@@ -249,7 +249,7 @@ func (l *ChatLogic) SendChat(in *chatpb.SendChatRequest) (*chatpb.SendChatRespon
 	if _, err := rds.EvalCtx(l.ctx, appendLogScript, []string{logKey}, string(stored),
 		strconv.Itoa(cfg.HistoryMaxEntries), strconv.Itoa(cfg.HistoryTTLSeconds)); err != nil {
 		l.releaseClaim(claimKey, claimValue)
-		l.Errorf("[chat] 写历史失败 sender=%d key=%s: %v", senderId, logKey, err)
+		l.Errorf("[chat] Failed to write history sender=%d key=%s: %v", senderId, logKey, err)
 		return reject(rejectStorage)
 	}
 
@@ -285,7 +285,7 @@ func (l *ChatLogic) PullChatHistory(in *chatpb.PullChatHistoryRequest) (*chatpb.
 	limit := clampHistoryLimit(in.GetLimit(), cfg.HistoryDefaultLimit, cfg.HistoryMaxLimit)
 	raws, err := l.svcCtx.ChatRedis.LrangeCtx(l.ctx, logKey, 0, limit-1)
 	if err != nil {
-		l.Errorf("[chat] 读历史失败 player=%d key=%s: %v", selfId, logKey, err)
+		l.Errorf("[chat] Failed to read history player=%d key=%s: %v", selfId, logKey, err)
 		return reject(rejectStorage)
 	}
 
@@ -294,7 +294,7 @@ func (l *ChatLogic) PullChatHistory(in *chatpb.PullChatHistoryRequest) (*chatpb.
 		m := &chatpb.ChatMessage{}
 		if err := proto.Unmarshal([]byte(raw), m); err != nil {
 			// 单条坏数据跳过而不是整体失败:一条损坏记录不该让整个频道对所有人不可读。
-			l.Errorf("[chat] 历史条目反序列化失败,已跳过 key=%s: %v", logKey, err)
+			l.Errorf("[chat] Failed to deserialize history entry; skipped key=%s: %v", logKey, err)
 			continue
 		}
 		messages = append(messages, m)
@@ -351,7 +351,7 @@ func (l *ChatLogic) releaseClaim(claimKey, claimValue string) {
 	ctx, cancel := context.WithTimeout(context.WithoutCancel(l.ctx), claimReleaseTimeout)
 	defer cancel()
 	if _, err := l.svcCtx.ChatRedis.EvalCtx(ctx, releaseClaimScript, []string{claimKey}, claimValue); err != nil {
-		l.Errorf("[chat] 释放幂等键失败 key=%s: %v(TTL 内同 request_id 重发会回 kRateLimitExceeded,过期后可重试)", claimKey, err)
+		l.Errorf("[chat] Failed to release idempotency key key=%s: %v (same request_id retries return kRateLimitExceeded within TTL; retry after expiry)", claimKey, err)
 	}
 }
 
@@ -368,7 +368,7 @@ func (l *ChatLogic) markClaimDone(claimKey, claimValue string, senderId uint64) 
 	defer cancel()
 	if _, err := l.svcCtx.ChatRedis.EvalCtx(ctx, markClaimDoneScript, []string{claimKey},
 		claimValue, claimDone, strconv.Itoa(l.svcCtx.Config.RequestIdTTLSeconds)); err != nil {
-		l.Errorf("[chat] 幂等键置 done 失败 sender=%d key=%s: %v(消息已写入;TTL 内同 request_id 重发会回限速码)",
+		l.Errorf("[chat] Failed to mark idempotency key done sender=%d key=%s: %v (message written; same request_id retries return rate limit code within TTL)",
 			senderId, claimKey, err)
 	}
 }
@@ -384,7 +384,7 @@ func (l *ChatLogic) markClaimDone(claimKey, claimValue string, senderId uint64) 
 func (l *ChatLogic) duplicateResponse(claimKey string, senderId uint64, channelLabel string) (*chatpb.SendChatResponse, error) {
 	state, err := l.svcCtx.ChatRedis.GetCtx(l.ctx, claimKey)
 	if err != nil {
-		l.Errorf("[chat] 读幂等键状态失败 sender=%d: %v", senderId, err)
+		l.Errorf("[chat] Failed to read idempotency key state sender=%d: %v", senderId, err)
 		svc.ObserveSend(channelLabel, rejectStorage.outcome)
 		return &chatpb.SendChatResponse{ErrorMessage: &base.TipInfoMessage{Id: rejectStorage.code}}, nil
 	}

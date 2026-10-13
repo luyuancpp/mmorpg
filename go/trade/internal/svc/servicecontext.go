@@ -126,9 +126,9 @@ func NewServiceContext(c config.Config) *ServiceContext {
 			panic(fmt.Errorf("trade: 资产通道装配失败: %w", err))
 		}
 	} else {
-		logx.Infof("[trade] 资产通道已关闭(AssetOp.Enabled=false,默认值):不拨共享 Redis、"+
-			"不建 scene 节点镜像、不起 outbox 重投循环。浏览 / 详情 / 收藏不受影响,"+
-			"上架托管与交付一律以错误返回。要打开:配置 AssetOp.Enabled=true 且由部署侧注入 %s(≥%d 字节)",
+		logx.Infof("[trade] Asset channel disabled (AssetOp.Enabled=false, default): no shared Redis dial, "+
+			"scene node mirror, or outbox redelivery loop. Browse / detail / favorites unaffected; "+
+			"listing escrow and delivery all return errors. Enable with AssetOp.Enabled=true and deployment-injected %s (at least %d bytes)",
 			AssetOpSecretEnv, assetop.MinSecretLen)
 	}
 
@@ -186,28 +186,28 @@ func (sc *ServiceContext) bootstrapAssetOpSeqGuardRow(ctx context.Context) {
 	if nowMs <= 0 {
 		// 纪元必须为正(assetop 的硬前置)。系统时钟早于 1970 只会出现在配置坏掉的机器上。
 		data.ObserveSeqGuardBootstrapFailure()
-		logx.Errorf("[trade] 系统时钟异常(UnixMilli=%d),不补 trade_player_op_seq 的哨兵守卫行:"+
-			"首次上架会以 seq 守卫行缺失失败。先校准机器时钟再重启本服务", nowMs)
+		logx.Errorf("[trade] Invalid system clock (UnixMilli=%d); not backfilling trade_player_op_seq sentinel guard row: "+
+			"first listing will fail due to missing seq guard row. Synchronize machine clock, then restart this service", nowMs)
 		return
 	}
 	if err := sc.Assets.Ops.EnsureSeqGuardRow(bootCtx, uint64(nowMs)); err != nil {
 		data.ObserveSeqGuardBootstrapFailure()
 		if isLockContentionErr(err) {
-			logx.Errorf("[trade] 在 %v 内没能确认 trade_player_op_seq 的哨兵守卫行(锁冲突 / 预算用尽): %v —— "+
-				"**这不代表行不存在**:很可能它已经在库里,只是被在途事务(别的副本正在首次建行)锁住,"+
-				"本次没能确认。不要照着'去跑 -migrate'排查。先看 mmorpg_trade 上 %s 的锁等待"+
-				"(performance_schema.data_lock_waits),压力过去后重启本服务即可;在确认之前,"+
-				"本副本上每个玩家**首次**上架托管都会以 seq 守卫行缺失失败",
+			logx.Errorf("[trade] Could not confirm trade_player_op_seq sentinel guard row within %v (lock contention / budget exhausted): %v -- "+
+				"this does not mean the row is absent: it may exist but be locked by an in-flight transaction (another replica creating it for the first time), "+
+				"so confirmation failed. Do not investigate by running -migrate. First inspect lock waits for %s on mmorpg_trade "+
+				"(performance_schema.data_lock_waits), then restart after load subsides; until confirmed, "+
+				"every player's first listing escrow on this replica will fail due to missing seq guard row",
 				seqGuardBootstrapTimeout, err, "trade_player_op_seq")
 			return
 		}
-		logx.Errorf("[trade] 补 trade_player_op_seq 的哨兵守卫行失败: %v —— "+
-			"在补上之前,每个玩家**首次**上架托管都会以 seq 守卫行缺失失败(已建过 seq 行的玩家不受影响);"+
-			"浏览 / 详情 / 收藏不受影响。先确认 mmorpg_trade 可写且 trade_player_op_seq 已建表"+
-			"(trade -f etc/trade.yaml -migrate),再重启本服务", err)
+		logx.Errorf("[trade] Failed to backfill trade_player_op_seq sentinel guard row: %v -- "+
+			"until backfilled, every player's first listing escrow will fail due to missing seq guard row (players with existing seq rows unaffected); "+
+			"browse / detail / favorites unaffected. Confirm mmorpg_trade is writable and trade_player_op_seq exists "+
+			"(trade -f etc/trade.yaml -migrate), then restart this service", err)
 		return
 	}
-	logx.Info("[trade] trade_player_op_seq 的哨兵守卫行已就绪(首次建 seq 行的串行化载体)")
+	logx.Info("[trade] trade_player_op_seq sentinel guard row ready (serializes first seq row creation)")
 }
 
 // isLockContentionErr 判断 bootstrap 的失败是不是"锁冲突 / 等不到"这一类 —— 那一类的事实是

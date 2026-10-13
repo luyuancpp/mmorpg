@@ -56,7 +56,7 @@ namespace
                 ConfigSystem::OnConfigLoadSuccessful();
                 // 战斗配表指纹:表加载完成后算一次并缓存(PrepareBattle 每次备战直接读缓存),
                 // 也让指纹出现在启动日志里便于跨 zone 比对排障
-                LOG_INFO << "scene 战斗配表指纹: table_fingerprint="
+                LOG_INFO << "scene combat table fingerprint: table_fingerprint="
                          << turnbattle::BattleTableFingerprint::Refresh();
                 // 装备掷属性的挂点 + 装备表校验(docs/design/equipment-attributes.md §4.3)。
                 // 放在配表加载完成回调里:此时表已就绪,而 Node 还在构造、没有监听任何端口,

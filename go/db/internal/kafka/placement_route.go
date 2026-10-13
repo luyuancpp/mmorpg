@@ -415,7 +415,7 @@ func KeepPlacementCapability(ctx context.Context, rc redis.Cmdable, zone uint32)
 	runPlacementCapabilityHeartbeat(ctx, rc, zone, ticker.C, func(err error) {
 		if err != nil {
 			failing = true
-			logx.Errorf("[placement] 能力标记续写失败(标记过期后合服 pin / 搬库工具会拒绝对本 zone 动手,Redis 恢复后自动补写): key=%s err=%v",
+			logx.Errorf("[placement] Failed to renew capability marker (merge pin / database move tools reject this zone after marker expires; automatic backfill when Redis recovers): key=%s err=%v",
 				placement.CapabilityKey(zone), err)
 			return
 		}

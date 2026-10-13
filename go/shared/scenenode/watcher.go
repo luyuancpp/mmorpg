@@ -104,13 +104,13 @@ func NewWatcher(name, prefix string, onCount func(string, int), onRemove func(No
 // 当成"没有节点",让服务起得来但资产调用明确失败,便于运维定位。
 func (w *Watcher) Run(ctx context.Context, etcd *clientv3.Client) {
 	if etcd == nil {
-		logx.Errorf("[scenenode:%s] 未配置 etcd 客户端,节点镜像将始终为空,定位一律失败", w.name)
+		logx.Errorf("[scenenode:%s] No etcd client configured; node mirror will remain empty and all lookups will fail", w.name)
 		return
 	}
 	for {
 		rev, err := w.fullSync(ctx, etcd)
 		if err != nil {
-			logx.Errorf("[scenenode:%s] 全量同步失败: %v,3s 后重试", w.name, err)
+			logx.Errorf("[scenenode:%s] Full synchronization failed: %v; retrying after 3s", w.name, err)
 			select {
 			case <-ctx.Done():
 				return
@@ -122,7 +122,7 @@ func (w *Watcher) Run(ctx context.Context, etcd *clientv3.Client) {
 		if ctx.Err() != nil {
 			return
 		}
-		logx.Infof("[scenenode:%s] watch 中断,重新同步", w.name)
+		logx.Infof("[scenenode:%s] Watch interrupted; synchronizing again", w.name)
 	}
 }
 
@@ -167,7 +167,7 @@ func (w *Watcher) fullSync(ctx context.Context, etcd *clientv3.Client) (int64, e
 	}
 	w.synced.Store(true)
 	w.reportCount(count)
-	logx.Infof("[scenenode:%s] 全量同步完成: %d 节点, rev=%d", w.name, count, resp.Header.Revision)
+	logx.Infof("[scenenode:%s] Full synchronization complete: %d nodes, rev=%d", w.name, count, resp.Header.Revision)
 	return resp.Header.Revision, nil
 }
 
@@ -182,11 +182,11 @@ func (w *Watcher) watch(ctx context.Context, etcd *clientv3.Client, rev int64) {
 			return
 		case watchResp, ok := <-watchCh:
 			if !ok {
-				logx.Infof("[scenenode:%s] watch channel 关闭", w.name)
+				logx.Infof("[scenenode:%s] Watch channel closed", w.name)
 				return
 			}
 			if watchResp.Err() != nil {
-				logx.Errorf("[scenenode:%s] watch 出错: %v", w.name, watchResp.Err())
+				logx.Errorf("[scenenode:%s] Watch error: %v", w.name, watchResp.Err())
 				return
 			}
 			for _, ev := range watchResp.Events {
@@ -219,7 +219,7 @@ func (w *Watcher) handleEvent(ev *clientv3.Event) {
 		if w.onRemove != nil {
 			w.onRemove(entry)
 		}
-		logx.Infof("[scenenode:%s] 节点下线: zone=%d node=%d endpoint=%s",
+		logx.Infof("[scenenode:%s] Node offline: zone=%d node=%d endpoint=%s",
 			w.name, entry.ZoneId, entry.NodeId, entry.Endpoint)
 		w.reportCount(count)
 	}
@@ -239,7 +239,7 @@ func (w *Watcher) Upsert(key string, entry NodeEntry) {
 		w.onRemove(prev)
 	}
 	if !existed {
-		logx.Infof("[scenenode:%s] 节点上线: zone=%d node=%d endpoint=%s",
+		logx.Infof("[scenenode:%s] Node online: zone=%d node=%d endpoint=%s",
 			w.name, entry.ZoneId, entry.NodeId, entry.Endpoint)
 	}
 	w.reportCount(count)
@@ -252,12 +252,12 @@ func (w *Watcher) parse(key string, value []byte) (NodeEntry, bool) {
 	}
 	var reg nodeRegistrationJSON
 	if err := json.Unmarshal(value, &reg); err != nil {
-		logx.Errorf("[scenenode:%s] 解析注册值失败 key=%s: %v", w.name, key, err)
+		logx.Errorf("[scenenode:%s] Failed to parse registration value key=%s: %v", w.name, key, err)
 		return NodeEntry{}, false
 	}
 	if reg.GrpcEndpoint.Port == 0 {
 		// 没有 gRPC endpoint 的节点无法作为资产调用对端,记日志后忽略。
-		logx.Errorf("[scenenode:%s] 节点缺少 grpcEndpoint,忽略: key=%s zone=%d node=%d",
+		logx.Errorf("[scenenode:%s] Node missing grpcEndpoint; ignoring: key=%s zone=%d node=%d",
 			w.name, key, reg.ZoneId, reg.NodeId)
 		return NodeEntry{}, false
 	}
@@ -300,14 +300,14 @@ func (w *Watcher) EntryOf(zoneId uint32, nodeId string) (NodeEntry, error) {
 			// 资产链路对本错误只会静默退避(assetop Caller 经 IsNoHolder 折成本地
 			// NOT_HERE 且 err=nil,reconcile 走 ActionRetry 分支不打日志),日志是
 			// 唯一能让人看见脑裂的信号。频率由调用方的指数退避约束。
-			logx.Errorf("[scenenode] 节点身份歧义 zone=%d node=%s: endpoint %s 与 %s 同时注册,拒绝选中",
+			logx.Errorf("[scenenode] Ambiguous node identity zone=%d node=%s: endpoints %s and %s both registered; refusing selection",
 				zoneId, nodeId, found.Endpoint, entry.Endpoint)
 			return NodeEntry{}, fmt.Errorf("%w zone=%d node=%s: 多个 endpoint 注册", ErrNodeAmbiguous, zoneId, nodeId)
 		}
 		found = entry
 	}
 	if matches > 1 {
-		logx.Errorf("[scenenode] 节点身份歧义 zone=%d node=%s: %d 条注册指向同一 endpoint %s,拒绝选中",
+		logx.Errorf("[scenenode] Ambiguous node identity zone=%d node=%s: %d registrations point to the same endpoint %s; refusing selection",
 			zoneId, nodeId, matches, found.Endpoint)
 		return NodeEntry{}, fmt.Errorf("%w zone=%d node=%s: %d 条注册", ErrNodeAmbiguous, zoneId, nodeId, matches)
 	}

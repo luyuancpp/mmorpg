@@ -27,7 +27,7 @@ $ErrorActionPreference = 'Stop'
 . "$PSScriptRoot/lib/deploy_capture.ps1"
 
 Write-Host ''
-Write-Host '=== release_common.ps1 发布版本函数 / release_preflight.ps1 制品检查 契约测试 ==='
+Write-Host '=== release_common.ps1 release version functions / release_preflight.ps1 artifact validation contract tests ==='
 
 $script:TempRoot = Join-Path ([System.IO.Path]::GetTempPath()) ('mmorpg-release-version-tests-' + [guid]::NewGuid().ToString('N'))
 [System.IO.Directory]::CreateDirectory($script:TempRoot) | Out-Null

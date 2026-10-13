@@ -212,10 +212,10 @@ func RunEquipSmoke(cfg *config.Config) {
 		case 0, tipEquipNotEquipped:
 			// 卸下了,或者它已经不在装备栏里 —— 两种都是目标状态
 		case tipEquipBagFull:
-			fail("prep-bag-full", "人物背包已满,卸不下上一轮留在身上的装备 item_id=%d。请清号后重跑:"+
-				"清掉 %s 的背包存档,或把 equipSmokeAccount 换成一个新账号", worn.GetItemId(), equipSmokeAccount)
+			fail("prep-bag-full", "Player bag is full; cannot unequip item_id=%d left equipped by the previous run. Clean the account and rerun: "+
+				"clear the bag save for %s, or set equipSmokeAccount to a new account", worn.GetItemId(), equipSmokeAccount)
 		default:
-			fail("prep-unequip", "卸下 item_id=%d 被拒: tip=%s", worn.GetItemId(), equipTipText(change.tip))
+			fail("prep-unequip", "Unequipping item_id=%d was rejected: tip=%s", worn.GetItemId(), equipTipText(change.tip))
 		}
 	}
 	equipment, err = session.getBag(equipSmokeBagEquipment)
@@ -223,7 +223,7 @@ func RunEquipSmoke(cfg *config.Config) {
 		fail("prep-equipment", "%v", err)
 	}
 	if len(equipment.GetItems()) != 0 {
-		fail("prep-equipment-not-empty", "全部卸下之后装备栏仍有 %d 件", len(equipment.GetItems()))
+		fail("prep-equipment-not-empty", "Equipment still contains %d items after unequipping everything", len(equipment.GetItems()))
 	}
 	inventory, err := session.getBag(equipSmokeBagInventory)
 	if err != nil {
@@ -242,8 +242,8 @@ func RunEquipSmoke(cfg *config.Config) {
 		}
 	}
 	if free := equipBagFreeSlots(inventory); free < missing {
-		fail("prep-bag-space", "人物背包空位不足:还要发 %d 件装备,只剩 %d 格(容量 %d)。请清号后重跑:"+
-			"清掉 %s 的背包存档,或把 equipSmokeAccount 换成一个新账号",
+		fail("prep-bag-space", "Player bag has insufficient free space: %d equipment items still need to be granted, but only %d slots remain (capacity %d). Clean the account and rerun: "+
+			"clear the bag save for %s, or set equipSmokeAccount to a new account",
 			missing, free, inventory.GetLayout().GetCapacity(), equipSmokeAccount)
 	}
 	granted := 0
@@ -257,15 +257,15 @@ func RunEquipSmoke(cfg *config.Config) {
 			fail("prep-grant", "config_id=%d %v", kit.configId, err)
 		}
 		if tip == tipEquipGrantInvalid {
-			fail("prep-grant-table", "GmGrantItem(config_id=%d) 回 kEquipGrantInvalid:Item 表里没有这一行,"+
-				"需先导表(tools/scripts/equip_xlsx_patch.py + 导表器)并重启 scene", kit.configId)
+			fail("prep-grant-table", "GmGrantItem(config_id=%d) returned kEquipGrantInvalid: this row is missing from the Item table; "+
+				"export tables first (tools/scripts/equip_xlsx_patch.py + table exporter), then restart scene", kit.configId)
 		}
 		if tip != 0 {
-			fail("prep-grant", "GmGrantItem(config_id=%d, count=%d) 被拒: tip=%s",
+			fail("prep-grant", "GmGrantItem(config_id=%d, count=%d) was rejected: tip=%s",
 				kit.configId, kit.count-have, equipTipText(tip))
 		}
 		if got := len(equipBagItemsOfConfig(bag, kit.configId)); got != kit.count {
-			fail("prep-grant-count", "GmGrantItem(config_id=%d, count=%d) 之后人物背包里应有 %d 件,实际 %d 件",
+			fail("prep-grant-count", "After GmGrantItem(config_id=%d, count=%d), the player bag should contain %d items, got %d",
 				kit.configId, kit.count-have, kit.count, got)
 		}
 		inventory = bag
@@ -278,7 +278,7 @@ func RunEquipSmoke(cfg *config.Config) {
 			fail("prep-inventory", "%v", err)
 		}
 		if !featureBagsEqual(inventory, fresh) {
-			fail("prep-grant-snapshot", "GmGrantItem 响应里的人物背包与随后 GetBag 读到的不一致(响应应是全量快照)")
+			fail("prep-grant-snapshot", "The player bag in the GmGrantItem response differs from the subsequent GetBag result (the response should be a full snapshot)")
 		}
 		inventory = fresh
 	}
@@ -286,7 +286,7 @@ func RunEquipSmoke(cfg *config.Config) {
 	bigWeapons := equipBagItemsOfConfig(inventory, equipSmokeWeaponL80)
 	shoesList := equipBagItemsOfConfig(inventory, equipSmokeShoesL1)
 	if len(weapons) < 2 || len(bigWeapons) < 1 || len(shoesList) < 1 {
-		fail("prep-pick", "预备后人物背包里的装备不齐: %d 把 %d / %d 把 %d / %d 件 %d",
+		fail("prep-pick", "Equipment in the player bag is incomplete after setup: %d of %d / %d of %d / %d of %d",
 			len(weapons), equipSmokeWeaponL1, len(bigWeapons), equipSmokeWeaponL80, len(shoesList), equipSmokeShoesL1)
 	}
 	// 「第一把 / 第二把」按 item_id 升序定:BagInfo.items 的顺序没有语义
@@ -330,7 +330,7 @@ func RunEquipSmoke(cfg *config.Config) {
 	// 槽位的部位必须与样例装备的部位对得上,否则后面「武器进 3 号槽、鞋进 6 号槽」不成立
 	if slotDefs[equipSmokeSlotWeapon].GetEquipKind() != weaponA.GetEquipKind() ||
 		slotDefs[equipSmokeSlotShoes].GetEquipKind() != shoes.GetEquipKind() {
-		fail("equip-slot-kinds", "槽位部位与装备部位对不上: %d 号槽 kind=%d / 武器 kind=%d,%d 号槽 kind=%d / 鞋 kind=%d",
+		fail("equip-slot-kinds", "Slot kinds do not match equipment kinds: slot %d kind=%d / weapon kind=%d, slot %d kind=%d / shoes kind=%d",
 			equipSmokeSlotWeapon, slotDefs[equipSmokeSlotWeapon].GetEquipKind(), weaponA.GetEquipKind(),
 			equipSmokeSlotShoes, slotDefs[equipSmokeSlotShoes].GetEquipKind(), shoes.GetEquipKind())
 	}
@@ -343,7 +343,7 @@ func RunEquipSmoke(cfg *config.Config) {
 		fail("level-gate", "%v", err)
 	}
 	if change.tip != tipEquipLevelNotEnough {
-		fail("level-gate", "1 级角色穿 80 级武器应回 kEquipLevelNotEnough(%d),实际 tip=%s",
+		fail("level-gate", "A level 1 character equipping a level 80 weapon should return kEquipLevelNotEnough(%d), got tip=%s",
 			tipEquipLevelNotEnough, equipTipText(change.tip))
 	}
 	if err := session.expectBagsUnchanged(inventory, equipment); err != nil {
@@ -361,14 +361,14 @@ func RunEquipSmoke(cfg *config.Config) {
 		fail("panel-shape", "%v", err)
 	}
 	if bare.GetLevel() != 1 {
-		fail("panel-level", "预备后应为 1 级,面板 level=%d", bare.GetLevel())
+		fail("panel-level", "Expected level 1 after setup; panel level=%d", bare.GetLevel())
 	}
 	change, err = session.equip(weaponA.GetItemId())
 	if err != nil {
 		fail("equip-a", "%v", err)
 	}
 	if change.tip != 0 {
-		fail("equip-a", "穿 1 级武器被拒: tip=%s", equipTipText(change.tip))
+		fail("equip-a", "Equipping a level 1 weapon was rejected: tip=%s", equipTipText(change.tip))
 	}
 	if err := checkEquipLayout(change.bag, change.equipment, totalItems,
 		map[uint32]*scene.BagItemInfo{equipSmokeSlotWeapon: weaponA}, weaponB, bigWeapon, shoes); err != nil {
@@ -392,7 +392,7 @@ func RunEquipSmoke(cfg *config.Config) {
 		fail("equip-b", "%v", err)
 	}
 	if change.tip != 0 {
-		fail("equip-b", "穿第二把武器(替换)被拒: tip=%s", equipTipText(change.tip))
+		fail("equip-b", "Equipping the second weapon (replacement) was rejected: tip=%s", equipTipText(change.tip))
 	}
 	if err := checkEquipLayout(change.bag, change.equipment, totalItems,
 		map[uint32]*scene.BagItemInfo{equipSmokeSlotWeapon: weaponB}, weaponA, bigWeapon, shoes); err != nil {
@@ -415,7 +415,7 @@ func RunEquipSmoke(cfg *config.Config) {
 		fail("equip-shoes", "%v", err)
 	}
 	if change.tip != 0 {
-		fail("equip-shoes", "穿 1 级鞋被拒: tip=%s", equipTipText(change.tip))
+		fail("equip-shoes", "Equipping level 1 shoes was rejected: tip=%s", equipTipText(change.tip))
 	}
 	dressed := map[uint32]*scene.BagItemInfo{equipSmokeSlotWeapon: weaponB, equipSmokeSlotShoes: shoes}
 	if err := checkEquipLayout(change.bag, change.equipment, totalItems, dressed, weaponA, bigWeapon); err != nil {
@@ -460,7 +460,7 @@ func RunEquipSmoke(cfg *config.Config) {
 		fail("relogin-panel", "%v", err)
 	}
 	if diff := equipPanelDiff(withBoth, restored); len(diff) != 0 {
-		fail("relogin-panel-mismatch", "重登后面板与下线前不一致(装备加成应在加载时重算出同样的值): %s",
+		fail("relogin-panel-mismatch", "Panel after relogin differs from before logout (equipment bonuses should recompute to the same values during loading): %s",
 			strings.Join(diff, "; "))
 	}
 	zap.L().Info("[equip-smoke] step 7: equipment and bonuses survived relogin",
@@ -474,7 +474,7 @@ func RunEquipSmoke(cfg *config.Config) {
 		fail("unequip-b", "%v", err)
 	}
 	if change.tip != 0 {
-		fail("unequip-b", "卸下武器被拒: tip=%s", equipTipText(change.tip))
+		fail("unequip-b", "Unequipping the weapon was rejected: tip=%s", equipTipText(change.tip))
 	}
 	if err := checkEquipLayout(change.bag, change.equipment, totalItems,
 		map[uint32]*scene.BagItemInfo{equipSmokeSlotShoes: shoes}, weaponA, weaponB, bigWeapon); err != nil {
@@ -493,7 +493,7 @@ func RunEquipSmoke(cfg *config.Config) {
 		fail("unequip-shoes", "%v", err)
 	}
 	if change.tip != 0 {
-		fail("unequip-shoes", "卸下鞋被拒: tip=%s", equipTipText(change.tip))
+		fail("unequip-shoes", "Unequipping the shoes was rejected: tip=%s", equipTipText(change.tip))
 	}
 	if err := checkEquipLayout(change.bag, change.equipment, totalItems,
 		map[uint32]*scene.BagItemInfo{}, weaponA, weaponB, bigWeapon, shoes); err != nil {
@@ -504,7 +504,7 @@ func RunEquipSmoke(cfg *config.Config) {
 		fail("unequip-shoes-panel", "%v", err)
 	}
 	if diff := equipPanelDiff(bare, bareAgain); len(diff) != 0 {
-		fail("unequip-not-reversible", "全部卸下后面板应恰好回到穿之前(穿脱可逆): %s", strings.Join(diff, "; "))
+		fail("unequip-not-reversible", "After unequipping everything, the panel should exactly match its pre-equipment state (equip and unequip are reversible): %s", strings.Join(diff, "; "))
 	}
 	finalInventory, finalEquipment := change.bag, change.equipment
 
@@ -513,7 +513,7 @@ func RunEquipSmoke(cfg *config.Config) {
 		fail("unequip-twice", "%v", err)
 	}
 	if change.tip != tipEquipNotEquipped {
-		fail("unequip-twice", "卸一件不在装备栏里的装备应回 kEquipNotEquipped(%d),实际 tip=%s",
+		fail("unequip-twice", "Unequipping an item that is not equipped should return kEquipNotEquipped(%d), got tip=%s",
 			tipEquipNotEquipped, equipTipText(change.tip))
 	}
 	change, err = session.equip(0)
@@ -525,7 +525,7 @@ func RunEquipSmoke(cfg *config.Config) {
 	// 这两个都是对的拒绝,认其一;其余一律判红(含 tip = 0,即根本没被拒)—— 只告警的话,真回归会混在
 	// 每次全绿运行都有的那条 Warn 里看不出来。
 	if change.tip != tipInvalidParameter && change.tip != tipEquipItemNotFound {
-		fail("equip-zero", "EquipItem(item_id=0) 应回 kInvalidParameter(%d)或 kEquipItemNotFound(%d),实际 tip=%s(0 = 没有被拒)",
+		fail("equip-zero", "EquipItem(item_id=0) should return kInvalidParameter(%d) or kEquipItemNotFound(%d), got tip=%s (0 = not rejected)",
 			tipInvalidParameter, tipEquipItemNotFound, equipTipText(change.tip))
 	}
 	zeroTip := change.tip
@@ -544,7 +544,7 @@ func RunEquipSmoke(cfg *config.Config) {
 		fail("equip-unknown", "%v", err)
 	}
 	if change.tip != tipEquipItemNotFound {
-		fail("equip-unknown", "穿一个不存在的 guid 应回 kEquipItemNotFound(%d),实际 tip=%s",
+		fail("equip-unknown", "Equipping a nonexistent GUID should return kEquipItemNotFound(%d), got tip=%s",
 			tipEquipItemNotFound, equipTipText(change.tip))
 	}
 	// 同时核对「卸下响应里的两个包」就是 GetBag 读到的全量(客户端拿响应直接覆盖缓存)

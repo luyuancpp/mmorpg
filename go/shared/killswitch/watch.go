@@ -23,7 +23,7 @@ const watchPoint = "killswitch.watch"
 // 再从该 revision 起 Watch;watch 断了就回去重新全量同步。
 func (s *Switch) Start(ctx context.Context, cli *clientv3.Client) {
 	if cli == nil {
-		logx.Infof("[killswitch] 未配置 etcd 客户端,全部方法放行(prefix=%s)", s.cfg.prefix())
+		logx.Infof("[killswitch] No etcd client configured; allowing all methods (prefix=%s)", s.cfg.prefix())
 		return
 	}
 	safego.Go(watchPoint, func() { s.run(ctx, cli) })
@@ -32,13 +32,13 @@ func (s *Switch) Start(ctx context.Context, cli *clientv3.Client) {
 // run 是 list-watch 主循环,直到 ctx 结束才返回。
 func (s *Switch) run(ctx context.Context, cli *clientv3.Client) {
 	prefix := s.cfg.prefix()
-	logx.Infof("[killswitch] 开始 watch prefix=%s", prefix)
+	logx.Infof("[killswitch] Starting watch prefix=%s", prefix)
 
 	for {
 		rules, rev, err := s.fullSync(ctx, cli)
 		if err != nil {
 			incSyncFail()
-			logx.Errorf("[killswitch] 全量同步失败(不影响放行): %v", err)
+			logx.Errorf("[killswitch] Full synchronization failed (requests remain allowed): %v", err)
 			// 失联期间快照按 StaleAfter 自然过期,这里不主动清 ——
 			// 网络抖一下不该把正在生效的止血阀松开。
 			select {
@@ -50,14 +50,14 @@ func (s *Switch) run(ctx context.Context, cli *clientv3.Client) {
 		}
 
 		s.setRules(rules, s.now())
-		logx.Infof("[killswitch] 全量同步完成: %d 条规则, rev=%d", len(rules), rev)
+		logx.Infof("[killswitch] Full synchronization complete: %d rules, rev=%d", len(rules), rev)
 
 		s.watch(ctx, cli, rules, rev)
 
 		if ctx.Err() != nil {
 			return
 		}
-		logx.Info("[killswitch] watch 中断,重新全量同步")
+		logx.Info("[killswitch] Watch interrupted; repeating full synchronization")
 	}
 }
 
@@ -102,12 +102,12 @@ func (s *Switch) watch(ctx context.Context, cli *clientv3.Client, rules map[stri
 
 		case resp, ok := <-ch:
 			if !ok {
-				logx.Info("[killswitch] watch 通道已关闭")
+				logx.Info("[killswitch] Watch channel closed")
 				return
 			}
 			if err := resp.Err(); err != nil {
 				incSyncFail()
-				logx.Errorf("[killswitch] watch 出错(不影响放行): %v", err)
+				logx.Errorf("[killswitch] Watch error (requests remain allowed): %v", err)
 				return
 			}
 
@@ -142,7 +142,7 @@ func (s *Switch) applyEvents(rules map[string]Rule, events []*clientv3.Event) bo
 			}
 			rules[pattern] = rule
 			changed = true
-			logx.Infof("[killswitch] 规则更新: %s deny=%v reason=%q",
+			logx.Infof("[killswitch] Rule updated: %s deny=%v reason=%q",
 				pattern, rule.Deny, rule.Reason)
 
 		case clientv3.EventTypeDelete:
@@ -153,7 +153,7 @@ func (s *Switch) applyEvents(rules map[string]Rule, events []*clientv3.Event) bo
 			if _, exists := rules[pattern]; exists {
 				delete(rules, pattern)
 				changed = true
-				logx.Infof("[killswitch] 规则移除: %s", pattern)
+				logx.Infof("[killswitch] Rule removed: %s", pattern)
 			}
 		}
 	}
@@ -169,7 +169,7 @@ func (s *Switch) parseKV(key string, value []byte) (string, Rule, bool) {
 	}
 	rule, ok := ParseRule(value)
 	if !ok {
-		logx.Errorf("[killswitch] 规则值无法解析,已忽略: key=%s value=%q", key, string(value))
+		logx.Errorf("[killswitch] Could not parse rule value; ignored: key=%s value=%q", key, string(value))
 		return "", Rule{}, false
 	}
 	return pattern, rule, true

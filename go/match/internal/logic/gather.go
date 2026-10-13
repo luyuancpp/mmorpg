@@ -206,7 +206,7 @@ func runGatherWithOptions(svcCtx *svc.ServiceContext, mode matchpb.MatchMode, ba
 		var err error
 		battleId, err = svcCtx.BattleIDGen.Generate()
 		if err != nil {
-			logx.Errorf("[gather] battle_id 生成失败 mode=%s members=%v: %v", modeName, members, err)
+			logx.Errorf("[gather] Failed to generate battle_id mode=%s members=%v: %v", modeName, members, err)
 			return fail("internal", 0, nil, 0)
 		}
 	}
@@ -214,7 +214,7 @@ func runGatherWithOptions(svcCtx *svc.ServiceContext, mode matchpb.MatchMode, ba
 	// 2. 选 battle 节点(全局池,v1 随机;负载上报二期)。
 	battleNode, ok := svcCtx.BattleNodes.PickRandom()
 	if !ok {
-		logx.Errorf("[gather] 无可用 battle 节点 battle=%d mode=%s members=%v", battleId, modeName, members)
+		logx.Errorf("[gather] No available battle node battle=%d mode=%s members=%v", battleId, modeName, members)
 		return fail("no_battle_node", 0, nil, 0)
 	}
 
@@ -243,7 +243,7 @@ func runGatherWithOptions(svcCtx *svc.ServiceContext, mode matchpb.MatchMode, ba
 	for i, playerId := range members {
 		endpoint, resp, err := preparePlayer(svcCtx, playerId, battleId, battleNode.NodeId, deadlineMs, prepareDeadlineMs)
 		if err != nil {
-			logx.Errorf("[gather] PrepareBattle 失败 battle=%d player=%d(第 %d/%d 人): %v",
+			logx.Errorf("[gather] PrepareBattle failed battle=%d player=%d (member %d/%d): %v",
 				battleId, playerId, i+1, len(members), err)
 			outcome := "prepare_failed"
 			if endpoint == "" {
@@ -276,7 +276,7 @@ func runGatherWithOptions(svcCtx *svc.ServiceContext, mode matchpb.MatchMode, ba
 	// 4. CreateBattle。seed 用 crypto/rand 生成 uint64(引擎确定性 RNG 的种子)。
 	seed, err := randomSeed()
 	if err != nil {
-		logx.Errorf("[gather] 生成随机种子失败 battle=%d: %v", battleId, err)
+		logx.Errorf("[gather] Failed to generate random seed battle=%d: %v", battleId, err)
 		return fail("internal", 0, prepared, battleId)
 	}
 	snapshots := make([]*battlepb.BattlePlayerSnapshot, 0, len(prepared))
@@ -317,7 +317,7 @@ func runGatherWithOptions(svcCtx *svc.ServiceContext, mode matchpb.MatchMode, ba
 	//     调用方知道;窗口里被按 battle_id 观战懒剔除的记录由第 6 步补写。
 	record := newSpectateRecord(battleId, battleNode.NodeId, mode, battleConfigId, playerNames, createdAtMs)
 	if err := writeSpectateRecord(svcCtx, record); err != nil {
-		logx.Errorf("[gather] 观战记录写不进去,不建房 battle=%d node=%d(%s) members=%v: %v",
+		logx.Errorf("[gather] Failed to write spectator record; not creating room battle=%d node=%d(%s) members=%v: %v",
 			battleId, battleNode.NodeId, battleNode.Endpoint, members, err)
 		return failDropRecord("index_failed")
 	}
@@ -335,23 +335,23 @@ func runGatherWithOptions(svcCtx *svc.ServiceContext, mode matchpb.MatchMode, ba
 		//     排障(turn-based §22 D72),换节点不影响路由;观战记录指的是实际建房的节点。
 		next, found := svcCtx.BattleNodes.PickRandomExcept(map[string]bool{battleNode.Endpoint: true})
 		if found {
-			logx.Infof("[gather] battle 节点暂不可分配,换节点重试一次 battle=%d from=%d(%s) to=%d(%s)",
+			logx.Infof("[gather] Battle node temporarily unavailable for allocation; retrying once on another node battle=%d from=%d(%s) to=%d(%s)",
 				battleId, battleNode.NodeId, battleNode.Endpoint, next.NodeId, next.Endpoint)
 			record.BattleNodeId = next.NodeId
 			if werr := writeSpectateRecord(svcCtx, record); werr != nil {
-				logx.Errorf("[gather] 换节点前改写观战记录失败,不再重试建房 battle=%d to=%d(%s) members=%v: %v",
+				logx.Errorf("[gather] Failed to rewrite spectator record before switching nodes; no room creation retry battle=%d to=%d(%s) members=%v: %v",
 					battleId, next.NodeId, next.Endpoint, members, werr)
 				return failDropRecord("index_failed")
 			}
 			battleNode = next
 			err = createBattle(battleNode, createReq)
 		} else {
-			logx.Errorf("[gather] battle 节点暂不可分配且没有其他可选节点 battle=%d node=%d(%s)",
+			logx.Errorf("[gather] Battle node temporarily unavailable for allocation and no alternative node available battle=%d node=%d(%s)",
 				battleId, battleNode.NodeId, battleNode.Endpoint)
 		}
 	}
 	if err != nil {
-		logx.Errorf("[gather] CreateBattle 失败 battle=%d node=%d(%s): %v",
+		logx.Errorf("[gather] CreateBattle failed battle=%d node=%d(%s): %v",
 			battleId, battleNode.NodeId, battleNode.Endpoint, err)
 		if errors.Is(err, errBattleNotAllocatable) {
 			// 最后一次尝试仍是准入拒绝:房间必未建成,跳过 DestroyBattle,直接补偿。
@@ -370,7 +370,7 @@ func runGatherWithOptions(svcCtx *svc.ServiceContext, mode matchpb.MatchMode, ba
 			// 房间按 deadline_ms 强制结束并回流结算;票据留 matched 由 TTL 自愈。
 			// 预写的观战记录保留:房间若真活着,丢票补签靠它回到本局;若没活着,补签拿到
 			// "房间不存在",语义正确,随 TTL 自清(它不在活跃集合里,不进观战列表)。
-			logx.Errorf("[gather] CreateBattle 失败且 DestroyBattle 失败,房间可能仍活着,放弃解冻交给 scene/battle 期限收尾 battle=%d members=%v",
+			logx.Errorf("[gather] CreateBattle and DestroyBattle both failed; room may still be alive, leaving unfreeze to scene/battle deadline cleanup battle=%d members=%v",
 				battleId, members)
 			metrics.ObserveGather(modeName, "create_failed_room_alive", time.Since(start))
 			return false
@@ -389,7 +389,7 @@ func runGatherWithOptions(svcCtx *svc.ServiceContext, mode matchpb.MatchMode, ba
 	// 6. 公开这场战斗:同值补写记录 + 入活跃集合(best-effort,见 publishSpectateBattle)。
 	//    放在推进 ready 之后,不占 matched 票据的关键路径。
 	publishSpectateBattle(svcCtx, record)
-	logx.Infof("[gather] 开局成功 battle=%d mode=%s config=%d node=%d members=%v 耗时=%s",
+	logx.Infof("[gather] Battle started successfully battle=%d mode=%s config=%d node=%d members=%v elapsed=%s",
 		battleId, modeName, battleConfigId, battleNode.NodeId, members, time.Since(start))
 	metrics.ObserveGather(modeName, "success", time.Since(start))
 	return true
@@ -499,11 +499,11 @@ func checkTableFingerprints(svcCtx *svc.ServiceContext, modeName string, battleI
 
 	metrics.ObserveTableFingerprintMismatch(fpMode)
 	if fpMode == tableFingerprintEnforce {
-		logx.Errorf("[gather] 配表指纹不一致,拒绝开局(enforce) battle=%d mode=%s majority=%q offender=%d members=%v",
+		logx.Errorf("[gather] Configuration fingerprints differ; rejecting battle start (enforce) battle=%d mode=%s majority=%q offender=%d members=%v",
 			battleId, modeName, majority, offender, perMember)
 		return "", offender, false
 	}
-	logx.Errorf("[gather] 配表指纹不一致,照常开局(warn;不透传指纹) battle=%d mode=%s majority=%q offender=%d members=%v",
+	logx.Errorf("[gather] Configuration fingerprints differ; starting battle normally (warn; fingerprint not forwarded) battle=%d mode=%s majority=%q offender=%d members=%v",
 		battleId, modeName, majority, offender, perMember)
 	return "", 0, true
 }
@@ -524,7 +524,7 @@ func observeZoneMix(modeName string, battleId uint64, prepared []preparedMember)
 	if len(zones) > 1 {
 		mix = "cross"
 	}
-	logx.Infof("[gather] 组内 zone 组成 battle=%d mode=%s zone_mix=%s zones=%d members=%v",
+	logx.Infof("[gather] Group zone composition battle=%d mode=%s zone_mix=%s zones=%d members=%v",
 		battleId, modeName, mix, len(zones), perMember)
 	metrics.ObserveGatherZoneMix(modeName, mix)
 }
@@ -538,11 +538,11 @@ func cancelPrepared(svcCtx *svc.ServiceContext, prepared []preparedMember, battl
 			BattleId: battleId,
 		})
 		if err != nil {
-			logx.Errorf("[gather] CancelBattlePrepare 失败(scene reaper 会按 deadline 兜底解冻) battle=%d player=%d endpoint=%s: %v",
+			logx.Errorf("[gather] CancelBattlePrepare failed (scene reaper will unfreeze at deadline) battle=%d player=%d endpoint=%s: %v",
 				battleId, p.playerId, p.sceneEndpoint, err)
 			continue
 		}
-		logx.Infof("[gather] 已解冻 battle=%d player=%d", battleId, p.playerId)
+		logx.Infof("[gather] Player unfrozen battle=%d player=%d", battleId, p.playerId)
 	}
 }
 
@@ -605,7 +605,7 @@ func destroyBattle(node discovery.NodeEntry, battleId uint64, reason string) boo
 		Reason:   reason,
 	}); err != nil {
 		// 销毁失败不致命:battle 房间收不到指令会按 deadline_ms 强制收尾。
-		logx.Errorf("[gather] DestroyBattle 失败 battle=%d reason=%s: %v", battleId, reason, err)
+		logx.Errorf("[gather] DestroyBattle failed battle=%d reason=%s: %v", battleId, reason, err)
 		return false
 	}
 	return true
@@ -634,7 +634,7 @@ func teamAssignment(svcCtx *svc.ServiceContext, mode matchpb.MatchMode, battleId
 		for i, pid := range members {
 			perMember = append(perMember, fmt.Sprintf("%d=%s@t%d", pid, formatRating(ratings[pid]), teams[i]))
 		}
-		logx.Infof("[gather] 5v5 按评分蛇形分队 battle=%d members=%v", battleId, perMember)
+		logx.Infof("[gather] 5v5 teams assigned by rating in snake order battle=%d members=%v", battleId, perMember)
 		return teams
 	}
 	teams := make([]uint32, len(members))

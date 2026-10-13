@@ -139,7 +139,7 @@ func run(args []string, stdout, stderr io.Writer) int {
 			return runResolve(ctx, store, opts, stdout, stderr)
 		})
 	default:
-		fmt.Fprintf(stderr, "未知子命令 %q\n\n", rest[0])
+		fmt.Fprintf(stderr, "Unknown subcommand %q\n\n", rest[0])
 		global.Usage()
 		return exitRejected
 	}
@@ -150,14 +150,14 @@ func withStore(configPath string, stderr io.Writer, fn func(ctx context.Context,
 	var c config.Config
 	// conf.Load 会跑 config.Validate(与服务进程同一套校验);其错误文案不含 DSN 原文。
 	if err := conf.Load(configPath, &c); err != nil {
-		fmt.Fprintf(stderr, "加载配置 %s 失败: %v\n", configPath, err)
+		fmt.Fprintf(stderr, "Failed to load configuration %s: %v\n", configPath, err)
 		return exitError
 	}
 	// 按服务 yaml 的 Log 段初始化:部署环境若把日志落文件供采集,审计行也跟着进同一条管道。
 	logConf := c.Log
 	logConf.ServiceName = logServiceName
 	if err := logx.SetUp(logConf); err != nil {
-		fmt.Fprintf(stderr, "初始化日志失败: %v\n", err)
+		fmt.Fprintf(stderr, "Failed to initialize logging: %v\n", err)
 		return exitError
 	}
 	defer func() { _ = logx.Close() }()
@@ -236,15 +236,15 @@ func parseList(args []string, stderr io.Writer) (listOptions, bool) {
 		return listOptions{}, false
 	}
 	if fs.NArg() != 0 {
-		fmt.Fprintf(stderr, "list 不接受位置参数: %v\n", fs.Args())
+		fmt.Fprintf(stderr, "list does not accept positional arguments: %v\n", fs.Args())
 		return listOptions{}, false
 	}
 	if *minAge < 0 {
-		fmt.Fprintf(stderr, "-min-age-min 不能为负(得到 %d)\n", *minAge)
+		fmt.Fprintf(stderr, "-min-age-min must not be negative (got %d)\n", *minAge)
 		return listOptions{}, false
 	}
 	if *limit < 1 || *limit > listMaxLimit {
-		fmt.Fprintf(stderr, "-limit 必须在 [1, %d] 内(得到 %d)\n", listMaxLimit, *limit)
+		fmt.Fprintf(stderr, "-limit must be within [1, %d] (got %d)\n", listMaxLimit, *limit)
 		return listOptions{}, false
 	}
 	return listOptions{minAgeMin: *minAge, limit: *limit}, true
@@ -256,11 +256,11 @@ func runList(ctx context.Context, store *data.GuildAssetStore, o listOptions, st
 	createdBeforeMs := uint64(now.Add(-time.Duration(o.minAgeMin) * time.Minute).UnixMilli())
 	rows, err := store.ListStuck(ctx, createdBeforeMs, o.limit)
 	if err != nil {
-		fmt.Fprintf(stderr, "列出未决行失败: %v\n", err)
+		fmt.Fprintf(stderr, "Failed to list unresolved rows: %v\n", err)
 		return exitError
 	}
 	if len(rows) == 0 {
-		fmt.Fprintf(stdout, "没有创建早于 %d 分钟前的 PENDING 行\n", o.minAgeMin)
+		fmt.Fprintf(stdout, "No PENDING rows created more than %d minutes ago\n", o.minAgeMin)
 		return exitOK
 	}
 
@@ -273,14 +273,14 @@ func runList(ctx context.Context, store *data.GuildAssetStore, o listOptions, st
 			r.Attempts, r.LastOutcome, r.LastReason, ageMinutes(r.CreatedMs, nowMs), resolvableLabel(r, nowMs))
 	}
 	if err := tw.Flush(); err != nil {
-		fmt.Fprintf(stderr, "输出失败: %v\n", err)
+		fmt.Fprintf(stderr, "Output failed: %v\n", err)
 		return exitError
 	}
-	fmt.Fprintf(stdout, "\n共 %d 行。resolvable: yes = 满足 resolve 在列上的全部前置;force = 只差"+
-		"\"反复 UNKNOWN\"一条,确需人工介入时加 -force;no = 不能人工终结。\n", len(rows))
+	fmt.Fprintf(stdout, "\n%d rows total. resolvable: yes = all row-level resolve preconditions met; force = only missing "+
+		"the repeated UNKNOWN condition, add -force when manual intervention is required; no = cannot finalize manually.\n", len(rows))
 	// last_outcome=0 同时记录"scene 回 UNKNOWN"与"传输失败 / 超时",列上分不出来(见 resolveMinAttempts 注释)。
-	fmt.Fprintln(stdout, "注意:last_outcome=0 也包括传输失败 / 超时(scene 可能已应用、只是回包丢了,scene 恢复后循环会自己终结)。"+
-		"yes 不等于该人工终结:先确认对应 scene 节点可达、Loki 里循环仍在报 \"scene 回 UNKNOWN,不终结 ... op_id=<id>\"。")
+	fmt.Fprintln(stdout, "Note: last_outcome=0 includes transport failure / timeout (scene may have applied the command but response was lost; loop will finalize after scene recovers)."+
+		"yes does not mean manual finalization is appropriate: first confirm the scene node is reachable and Loki still reports \"Scene returned UNKNOWN; not finalizing ... op_id=<id>\".")
 	return exitOK
 }
 
@@ -321,7 +321,7 @@ func parseResolve(args []string, stderr io.Writer) (resolveOptions, bool) {
 		return resolveOptions{}, false
 	}
 	if fs.NArg() != 0 {
-		fmt.Fprintf(stderr, "resolve 不接受位置参数: %v\n", fs.Args())
+		fmt.Fprintf(stderr, "resolve does not accept positional arguments: %v\n", fs.Args())
 		return resolveOptions{}, false
 	}
 
@@ -334,31 +334,31 @@ func parseResolve(args []string, stderr io.Writer) (resolveOptions, bool) {
 		force:        *force,
 	}
 	if o.opID == 0 {
-		fmt.Fprintln(stderr, "缺 -op")
+		fmt.Fprintln(stderr, "Missing -op")
 		return resolveOptions{}, false
 	}
 	final, ok := finalStatusOf(o.as)
 	if !ok {
-		fmt.Fprintf(stderr, "-as 只能是 applied 或 aborted(得到 %q)\n", o.as)
+		fmt.Fprintf(stderr, "-as must be applied or aborted (got %q)\n", o.as)
 		return resolveOptions{}, false
 	}
 	o.final = final
 	if strings.TrimSpace(o.operator) == "" {
-		fmt.Fprintln(stderr, "缺 -operator:人工终结必须留下操作人")
+		fmt.Fprintln(stderr, "Missing -operator: manual finalization must record the operator")
 		return resolveOptions{}, false
 	}
 	// 操作人按 %s 进审计行:带换行 / 控制字符就能伪造出第二条 [AssetOpManual],所以直接拒绝。
 	// 长度上限(64 / 191)由 assetop.ResolveManually 统一校验,这里不再抄一份。
 	if hasControl(o.operator) {
-		fmt.Fprintln(stderr, "-operator 不能含换行或控制字符")
+		fmt.Fprintln(stderr, "-operator must not contain newlines or control characters")
 		return resolveOptions{}, false
 	}
 	if strings.TrimSpace(o.reason) == "" {
-		fmt.Fprintln(stderr, "缺 -reason:人工终结必须写明判定依据")
+		fmt.Fprintln(stderr, "Missing -reason: manual finalization must state its evidence")
 		return resolveOptions{}, false
 	}
 	if *confirm != o.opID {
-		fmt.Fprintf(stderr, "二次确认失败:-confirm(%d)必须与 -op(%d)相同\n", *confirm, o.opID)
+		fmt.Fprintf(stderr, "Confirmation failed: -confirm(%d) must equal -op(%d)\n", *confirm, o.opID)
 		return resolveOptions{}, false
 	}
 	return o, true
@@ -380,15 +380,15 @@ func finalStatusOf(as string) (assetop.Status, bool) {
 func runResolve(ctx context.Context, store *data.GuildAssetStore, o resolveOptions, stdout, stderr io.Writer) int {
 	row, found, err := store.GetOp(ctx, o.opID)
 	if err != nil {
-		fmt.Fprintf(stderr, "读取 op_id=%d 失败: %v\n", o.opID, err)
+		fmt.Fprintf(stderr, "Failed to read op_id=%d: %v\n", o.opID, err)
 		return exitError
 	}
 	if !found {
-		fmt.Fprintf(stderr, "op_id=%d 不存在\n", o.opID)
+		fmt.Fprintf(stderr, "op_id=%d does not exist\n", o.opID)
 		return exitRejected
 	}
 	if err := checkResolvable(row, uint64(time.Now().UnixMilli()), o.force); err != nil {
-		fmt.Fprintf(stderr, "拒绝终结 op_id=%d: %v\n", o.opID, err)
+		fmt.Fprintf(stderr, "Refusing to finalize op_id=%d: %v\n", o.opID, err)
 		return exitRejected
 	}
 	if !o.txlogChecked {
@@ -413,15 +413,15 @@ func runResolve(ctx context.Context, store *data.GuildAssetStore, o resolveOptio
 	fmt.Fprintln(stdout, audit)
 
 	if err != nil {
-		logx.Errorf("[AssetOpManual] op_id=%d 人工终结失败: %v", o.opID, err)
-		fmt.Fprintf(stderr, "人工终结失败 op_id=%d: %v\n", o.opID, err)
+		logx.Errorf("[AssetOpManual] op_id=%d manual finalization failed: %v", o.opID, err)
+		fmt.Fprintf(stderr, "Manual finalization failed op_id=%d: %v\n", o.opID, err)
 		return exitError
 	}
 	if !finalized {
-		fmt.Fprintf(stdout, "op_id=%d 已被自动终结 / 已非 PENDING,本次未做任何改动(不要再手工补账)\n", o.opID)
+		fmt.Fprintf(stdout, "op_id=%d already automatically finalized / no longer PENDING; no changes made (do not adjust the ledger manually)\n", o.opID)
 		return exitNotPending
 	}
-	fmt.Fprintf(stdout, "op_id=%d 已人工终结为 %s。请把上面的 [AssetOpManual] 审计行贴到运维工单。\n", o.opID, o.as)
+	fmt.Fprintf(stdout, "op_id=%d manually finalized as %s. Attach the [AssetOpManual] audit line above to the operations ticket.\n", o.opID, o.as)
 	return exitOK
 }
 
@@ -448,27 +448,27 @@ func checkResolvable(r data.AssetOpRow, nowMs uint64, force bool) error {
 
 // printChecklist 打印核对清单。它只读这一行已有的列,不查任何别的系统:结论必须由人给出。
 func printChecklist(w io.Writer, r data.AssetOpRow) {
-	fmt.Fprintln(w, "未带 -txlog-checked,本次不做任何改动。请先完成核对:")
-	fmt.Fprintf(w, "  行:op_id=%d player_id=%d guild_id=%d stream=%d(%s) epoch=%d seq=%d kind=%s attempts=%d last_outcome=%d last_reason=%d\n",
+	fmt.Fprintln(w, "-txlog-checked missing; no changes made. Complete these checks first:")
+	fmt.Fprintf(w, "  Row: op_id=%d player_id=%d guild_id=%d stream=%d(%s) epoch=%d seq=%d kind=%s attempts=%d last_outcome=%d last_reason=%d\n",
 		r.OpID, r.PlayerID, r.GuildID, r.Stream, r.Stream, r.StreamEpoch, r.Seq, r.Kind, r.Attempts, r.LastOutcome, r.LastReason)
 	// 第 0 步必须排在查流水之前:last_outcome=0 分不出"scene 回 UNKNOWN"与"传输失败 / 超时"(见 resolveMinAttempts 注释)。
-	fmt.Fprintf(w, "  0. 先确认这是 scene 真回了 UNKNOWN:该玩家所在 scene 节点可达,且 Loki 里循环最近仍在报"+
-		" \"[AssetOp] scene 回 UNKNOWN,不终结 op_id=%d\"。last_outcome=0 也包括传输失败 / 超时 ——"+
-		"那种行 scene 可能已应用、只是回包丢了,恢复 scene 后循环会自己终结,不要人工终结\n", r.OpID)
-	fmt.Fprintf(w, "  1. Loki 查 guild 的 [AssetOp] 日志:op_id=%d / corr=%d(每次投递、重排、告警都带它)\n", r.OpID, r.OpID)
-	fmt.Fprintf(w, "  2. 交易流水查 correlation_id=%d:有记录 = scene 已应用过这条指令\n", r.OpID)
-	fmt.Fprintln(w, "  3. 结论:查到已应用 → -as applied;确认从未应用 → -as aborted")
+	fmt.Fprintf(w, "  0. Confirm scene actually returned UNKNOWN: the player's scene node is reachable and recent loop logs in Loki still report "+
+		"\"[AssetOp] Scene returned UNKNOWN; not finalizing op_id=%d\". last_outcome=0 also includes transport failure / timeout -- "+
+		"scene may have applied such rows but response was lost; the loop will finalize after scene recovery, do not finalize manually\n", r.OpID)
+	fmt.Fprintf(w, "  1. Check guild [AssetOp] logs in Loki: op_id=%d / corr=%d (included in every delivery, reschedule, and warning)\n", r.OpID, r.OpID)
+	fmt.Fprintf(w, "  2. Check transaction ledger for correlation_id=%d: record present = scene applied this command\n", r.OpID)
+	fmt.Fprintln(w, "  3. Conclusion: applied record found -> -as applied; confirmed never applied -> -as aborted")
 	switch r.Kind {
 	case pb.GuildAssetOpKind_GUILD_ASSET_OP_KIND_DONATE:
-		fmt.Fprintf(w, "  本行是捐献:applied = 帮会资金 +%d、捐献者帮贡 +%d(帮会已解散则只记孤儿计数);aborted = 退回今日捐献次数\n",
+		fmt.Fprintf(w, "  This row is a donation: applied = guild funds +%d, donor contribution +%d (only orphan count if guild dissolved); aborted = refund today's donation count\n",
 			r.FundsDelta, r.ContributionDelta)
 	case pb.GuildAssetOpKind_GUILD_ASSET_OP_KIND_SHOP:
-		fmt.Fprintf(w, "  本行是商店兑换:applied = 不动帮贡(下单时已扣);aborted = 退回帮贡 %d 与限购次数\n",
+		fmt.Fprintf(w, "  This row is a shop exchange: applied = contribution unchanged (deducted on order); aborted = refund contribution %d and purchase-limit count\n",
 			r.ContributionDelta)
 	default:
-		fmt.Fprintf(w, "  本行 kind=%s:只改状态,不做对侧账\n", r.Kind)
+		fmt.Fprintf(w, "  This row kind=%s: state only, no counterpart ledger update\n", r.Kind)
 	}
-	fmt.Fprintln(w, "核对完毕后带上 -txlog-checked 重跑同一条命令。")
+	fmt.Fprintln(w, "After checking, rerun the same command with -txlog-checked.")
 }
 
 func ageMinutes(createdMs, nowMs uint64) uint64 {

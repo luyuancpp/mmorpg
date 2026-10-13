@@ -192,11 +192,11 @@ func New(d Deps) (*Pipeline, error) {
 // 空接收者直接返回:密钥缺失时 svc 把 Pipeline 留成 nil,启动路径照常调到这里。
 func (p *Pipeline) Start(ctx context.Context) {
 	if p == nil {
-		logx.Error("[trade] 资产通道未启用(密钥缺失),不起重投循环")
+		logx.Error("[trade] Asset channel disabled (missing key); redelivery loop not started")
 		return
 	}
 	safego.Go("trade.assetop.loop", func() { p.loop.Run(ctx) })
-	logx.Infof("[trade] 资产重投循环已启动: interval=%v batch=%d workers=%d lease=%v",
+	logx.Infof("[trade] Asset redelivery loop started: interval=%v batch=%d workers=%d lease=%v",
 		loopInterval, loopBatch, loopWorkers, loopLease)
 }
 
@@ -298,7 +298,7 @@ func (p *Pipeline) EnqueueEscrowDebit(ctx context.Context, req EscrowRequest) (E
 	processed, err := p.loop.ProcessOne(ctx, op)
 	if err != nil {
 		// 不算失败:行在 outbox 里,循环会接着投。只记日志,让调用方按"处理中"回给玩家。
-		logx.Errorf("[trade] 托管首次投递未完成,交给重投循环: op_id=%d listing=%d player=%d seq=%d: %v",
+		logx.Errorf("[trade] Initial escrow delivery incomplete; delegating to redelivery loop: op_id=%d listing=%d player=%d seq=%d: %v",
 			opID, req.ListingID, req.SellerPlayerID, alloc.Seq, err)
 		return out, nil
 	}

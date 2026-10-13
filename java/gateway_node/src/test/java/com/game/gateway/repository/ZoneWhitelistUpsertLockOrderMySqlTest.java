@@ -192,9 +192,9 @@ class ZoneWhitelistUpsertLockOrderMySqlTest {
         }
 
         // 记录而非判据(理由见类注释):下次 MySQL 版本变动时拿这行与 2026-09-29 的探针表对照。
-        System.out.println("[锁序记录] zone_whitelist 旧 add(普通 INSERT)压在未提交删除后面:成环 "
-                + deadlockRounds + "/" + LEGACY_ROUNDS + " 轮;MySQL 版本 " + serverVersion()
-                + "(2026-09-29 探针在同形状上测得普通 INSERT 2/5、ODKU 0/5,随时序波动)");
+        System.out.println("[Lock order record] zone_whitelist legacy add (plain INSERT) queued behind an uncommitted delete: deadlocks in "
+                + deadlockRounds + "/" + LEGACY_ROUNDS + " rounds; MySQL version " + serverVersion()
+                + "(the 2026-09-29 probe observed plain INSERT 2/5 and ODKU 0/5 in the same scenario; results vary with timing)");
     }
 
     private static List<Optional<SQLException>> runScenario(long account, WriterWork writer) throws Exception {

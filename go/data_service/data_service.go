@@ -440,7 +440,7 @@ func startKafkaConsumers(ctx context.Context, kc config.KafkaConfig, svcCtx *svc
 // 连不通的后果只是 killswitch 的全量同步失败并按 ResyncBackoff 重试(期间放行)。
 func newKillSwitchEtcdClient(cfg discov.EtcdConf) *clientv3.Client {
 	if len(cfg.Hosts) == 0 {
-		logx.Info("[killswitch] data_service 未配置 etcd Hosts,热关停不生效(全部放行)")
+		logx.Info("[killswitch] data_service etcd Hosts not configured; kill switch inactive (all requests allowed)")
 		return nil
 	}
 
@@ -455,7 +455,7 @@ func newKillSwitchEtcdClient(cfg discov.EtcdConf) *clientv3.Client {
 
 	cli, err := clientv3.New(c)
 	if err != nil {
-		logx.Errorf("[killswitch] data_service 建 etcd 客户端失败,热关停不生效(全部放行): %v", err)
+		logx.Errorf("[killswitch] data_service failed to create etcd client; kill switch inactive (all requests allowed): %v", err)
 		return nil
 	}
 	return cli

@@ -100,7 +100,7 @@ jobs:
           )
 
           if [ "${#FOUND[@]}" -eq 0 ]; then
-            echo "::error::没有发现任何 go.mod，find 的路径假设已经失效"
+            echo "::error::No go.mod files were found; the find path assumptions no longer hold"
             exit 1
           fi
 
@@ -109,7 +109,7 @@ jobs:
           for m in "${FOUND[@]}"; do
             case "$m" in
               *[!A-Za-z0-9_/.-]*)
-                echo "::error::模块路径含意外字符，拒绝进入门禁：$m"
+                echo "::error::Module path contains unexpected characters; refusing to run checks: $m"
                 exit 1 ;;
             esac
           done
@@ -118,7 +118,7 @@ jobs:
           # 逼着人清理陈旧条目——否则排除清单会变成永远没人看的坟场。
           for e in ${EXCLUDED[@]+"${EXCLUDED[@]}"}; do
             if [ ! -f "$e/go.mod" ]; then
-              echo "::error::排除清单里的 $e 已不存在，请从 EXCLUDED 中删掉"
+              echo "::error::Excluded module $e no longer exists; remove it from EXCLUDED"
               exit 1
             fi
           done
@@ -133,7 +133,7 @@ jobs:
           done
 
           if [ "${#KEPT[@]}" -eq 0 ]; then
-            echo "::error::排除清单把所有模块都排掉了，门禁形同虚设"
+            echo "::error::The exclusion list removed all modules; the checks would be ineffective"
             exit 1
           fi
 
@@ -256,7 +256,7 @@ jobs:
           b='${{ needs.build-test.result }}'
           echo "discover=$d build-test=$b"
           if [ "$d" != "success" ] || [ "$b" != "success" ]; then
-            echo "::error::Go 全模块门禁未通过（discover=$d build-test=$b）"
+            echo "::error::Go module checks failed (discover=$d build-test=$b)"
             exit 1
           fi
-          echo "全部 ${{ needs.discover.outputs.count }} 个 Go 模块 build + test 通过"
+          echo "All ${{ needs.discover.outputs.count }} Go modules passed build + test"

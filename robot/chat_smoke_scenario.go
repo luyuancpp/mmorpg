@@ -206,7 +206,7 @@ func RunChatSmoke(cfg *config.Config) {
 		fail("world-send", "%v", err)
 	}
 	if tip != 0 {
-		fail("world-send-tip", "A 发 WORLD 应受理(tip=0),实得 tip=%d", tip)
+		fail("world-send-tip", "A sending WORLD should be accepted (tip=0), got tip=%d", tip)
 	}
 	zap.L().Info("[chat-smoke] step 2: A world message accepted",
 		zap.String("content", worldContent), zap.String("request_id", worldRequestId))
@@ -218,14 +218,14 @@ func RunChatSmoke(cfg *config.Config) {
 	}
 	hits := chatSmokeFindContent(messages, worldContent)
 	if len(hits) == 0 {
-		fail("world-visible", "B 拉 WORLD 最近 %d 条里没有 %q(共返回 %d 条)", chatSmokeHistoryLimit, worldContent, len(messages))
+		fail("world-visible", "B fetched the latest %d WORLD messages without %q (%d messages returned)", chatSmokeHistoryLimit, worldContent, len(messages))
 	}
 	if len(hits) != 1 {
 		// 首发就出现多次说明写入路径本身重复落库;不在这里拦,第 6 步的幂等断言就分不清是谁重复的
-		fail("world-duplicate", "A 只发了一次,B 的 WORLD 历史里 %q 却出现 %d 次", worldContent, len(hits))
+		fail("world-duplicate", "A sent only once, but %q appears %d times in B WORLD history", worldContent, len(hits))
 	}
 	if got := hits[0].GetSenderPlayerId(); got != botA.gc.PlayerId {
-		fail("world-sender", "WORLD 消息 sender_player_id=%d,期望 A=%d(服务端应以会话身份覆盖 sender)", got, botA.gc.PlayerId)
+		fail("world-sender", "WORLD message sender_player_id=%d, expected A=%d (the server should replace sender with the session identity)", got, botA.gc.PlayerId)
 	}
 	zap.L().Info("[chat-smoke] step 3: B sees A's world message",
 		zap.Int("history_size", len(messages)), zap.Int64("send_time_ms", hits[0].GetSendTimeMs()))
@@ -241,7 +241,7 @@ func RunChatSmoke(cfg *config.Config) {
 		fail("private-send", "%v", err)
 	}
 	if tip != 0 {
-		fail("private-send-tip", "A 私聊 B 应受理(tip=0),实得 tip=%d", tip)
+		fail("private-send-tip", "A sending a private message to B should be accepted (tip=0), got tip=%d", tip)
 	}
 	messages, err = botB.pullHistory(chat.ChatChannelType_CHAT_CHANNEL_TYPE_PRIVATE, botA.gc.PlayerId, chatSmokeHistoryLimit)
 	if err != nil {
@@ -249,11 +249,11 @@ func RunChatSmoke(cfg *config.Config) {
 	}
 	hits = chatSmokeFindContent(messages, privateContent)
 	if len(hits) == 0 {
-		fail("private-visible", "B 拉 PRIVATE(peer=A=%d)最近 %d 条里没有 %q(共返回 %d 条)",
+		fail("private-visible", "B fetched PRIVATE(peer=A=%d), but the latest %d messages contain no %q (%d messages returned)",
 			botA.gc.PlayerId, chatSmokeHistoryLimit, privateContent, len(messages))
 	}
 	if got := hits[0].GetSenderPlayerId(); got != botA.gc.PlayerId {
-		fail("private-sender", "PRIVATE 消息 sender_player_id=%d,期望 A=%d", got, botA.gc.PlayerId)
+		fail("private-sender", "PRIVATE message sender_player_id=%d, expected A=%d", got, botA.gc.PlayerId)
 	}
 	zap.L().Info("[chat-smoke] step 4: B sees A's private message", zap.Int("history_size", len(messages)))
 
@@ -267,7 +267,7 @@ func RunChatSmoke(cfg *config.Config) {
 		fail("oversize-send", "%v", err)
 	}
 	if tip != tipChatMessageSizeExceeded {
-		fail("oversize-tip", "%d 字节 WORLD 应被 chat 以 tip=%d(kMessageSizeExceeded)拒绝,实得 tip=%d",
+		fail("oversize-tip", "A %d-byte WORLD message should be rejected by chat with tip=%d (kMessageSizeExceeded), got tip=%d",
 			chatSmokeOversizeBytes, tipChatMessageSizeExceeded, tip)
 	}
 	zap.L().Info("[chat-smoke] step 5: oversize content rejected by chat", zap.Uint32("tip", tip))
@@ -279,14 +279,14 @@ func RunChatSmoke(cfg *config.Config) {
 	}
 	if tip != 0 {
 		// 必须确认重发真的到达 chat 且被受理:被限流 / 拒绝的重发也会让"只出现一次"成立,那是假绿
-		fail("dedup-resend-tip", "同 request_id 重发应按幂等回成功(tip=0),实得 tip=%d", tip)
+		fail("dedup-resend-tip", "Resending the same request_id should succeed idempotently (tip=0), got tip=%d", tip)
 	}
 	messages, err = botB.pullHistory(chat.ChatChannelType_CHAT_CHANNEL_TYPE_WORLD, 0, chatSmokeHistoryLimit)
 	if err != nil {
 		fail("dedup-pull", "%v", err)
 	}
 	if n := len(chatSmokeFindContent(messages, worldContent)); n != 1 {
-		fail("dedup", "同 request_id=%s 重发后 WORLD 历史里 %q 出现 %d 次,应恰好 1 次", worldRequestId, worldContent, n)
+		fail("dedup", "After resending request_id=%s, %q appears %d times in WORLD history; expected exactly 1", worldRequestId, worldContent, n)
 	}
 	zap.L().Info("[chat-smoke] step 6: resend with same request_id deduplicated", zap.String("request_id", worldRequestId))
 

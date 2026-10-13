@@ -184,7 +184,7 @@ jobs:
             ../../generated/code/proto/tip \
             ../../generated/tables/tip_text.json)"
           if [ -n "$dirty" ]; then
-            echo "Tip.xlsx/state 与提交的受控产物不一致："
+            echo "Tip.xlsx/state differs from the committed controlled outputs:"
             echo "$dirty"
             exit 1
           fi
@@ -218,7 +218,7 @@ jobs:
           dirty="$(git status --porcelain --untracked-files=all -- \
             ../../generated/tables)"
           if [ -n "$dirty" ]; then
-            echo "业务表 xlsx 与提交的 JSON/PB/manifest 不一致："
+            echo "Business-table xlsx files differ from the committed JSON/PB/manifest:"
             echo "$dirty"
             exit 1
           fi
@@ -350,7 +350,7 @@ jobs:
 
           dirty="$(git status --porcelain --untracked-files=all --             ../../generated/code/cpp ../../generated/code/go             ../../generated/code/java ../../generated/code/csharp             ../../generated/code/python ../../generated/code/ue)"
           if [ -n "$dirty" ]; then
-            echo "模板/schema 与提交的语言产物不一致（改了模板忘记重生？）："
+            echo "Templates/schemas differ from the committed language outputs (did you change a template without regenerating?):"
             echo "$dirty"
             exit 1
           fi

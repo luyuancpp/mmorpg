@@ -229,16 +229,16 @@ func (p *AssetPipeline) AttachPersistedLedger(client dspb.DataServiceClient) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	if p.started || p.stopped {
-		logx.Error("[guild] AttachPersistedLedger 在资产通道 Start / Stop 之后调用,已忽略:Loop.Ledger 只能在 Start 之前设置")
+		logx.Error("[guild] AttachPersistedLedger called after asset channel Start / Stop; ignored: Loop.Ledger can only be set before Start")
 		return
 	}
 	if client == nil {
-		logx.Info("[guild] 未配置 DataServiceRpc:资产重投循环不读已落盘账本(Loop.Ledger=nil)," +
-			"长期离线玩家的行照常退避重投,待玩家上线后终结")
+		logx.Info("[guild] DataServiceRpc not configured: asset redelivery loop will not read persisted ledger (Loop.Ledger=nil), " +
+			"rows for long-offline players continue redelivery with backoff and finalize after players reconnect")
 		return
 	}
 	p.Loop.Ledger = &assetop.DataServiceLedger{Client: client, Timeout: persistedLedgerReadTimeout}
-	logx.Infof("[guild] 资产重投循环已接离线读账本:data_service.GetPlayerAssetOpLedger(单次上限 %v)", persistedLedgerReadTimeout)
+	logx.Infof("[guild] Asset redelivery loop wired to offline ledger reads: data_service.GetPlayerAssetOpLedger (per-call limit %v)", persistedLedgerReadTimeout)
 }
 
 // Start 起 scene 节点镜像与重投循环两个后台 goroutine。ctx 取消或 Stop 都会让两者退出;
@@ -270,7 +270,7 @@ func (p *AssetPipeline) Start(ctx context.Context, etcdCli *clientv3.Client) {
 		defer p.wg.Done()
 		p.Loop.Run(runCtx)
 	})
-	logx.Infof("[guild] 资产通道已启动: goroutine guild.scene_node_watch + guild.asset_op_reconcile(caller=%s)", AssetOpCaller)
+	logx.Infof("[guild] Asset channel started: goroutine guild.scene_node_watch + guild.asset_op_reconcile(caller=%s)", AssetOpCaller)
 }
 
 // Stop 取消两个后台 goroutine、**等它们退出**,再关到各 scene 节点的连接。幂等;nil 接收者安全;
@@ -302,7 +302,7 @@ func (p *AssetPipeline) Stop() {
 	if p.conns != nil {
 		p.conns.Close()
 	}
-	logx.Info("[guild] 资产通道已停止:重投循环与 scene 节点镜像均已退出")
+	logx.Info("[guild] Asset channel stopped: redelivery loop and scene node mirror exited")
 }
 
 // initAssetOpIDSegment 按 IdSegment 配置建 op_id 号段客户端(biz_tag = guild_asset_op),写法同

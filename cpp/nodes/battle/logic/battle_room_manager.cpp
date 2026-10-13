@@ -73,7 +73,7 @@ namespace
         // 不变量 2 fail-closed:空 instance id 会关闭 gate 侧防僵尸过滤,宁可丢弃并报错。
         if (routing.gate_instance_id().empty())
         {
-            LOG_ERROR << "battle 出站 GateCommand 被拒: gate_instance_id 为空, player_id=" << playerId
+            LOG_ERROR << "battle outbound GateCommand rejected: gate_instance_id is empty, player_id=" << playerId
                       << " event_id=" << eventId << " gate_node_id=" << routing.gate_node_id();
             return;
         }
@@ -94,7 +94,7 @@ namespace
                                                         std::to_string(playerId), route.partition);
         if (err != RdKafka::ERR_NO_ERROR)
         {
-            LOG_ERROR << "battle 出站 GateCommand 发送失败: topic=" << route.topic
+            LOG_ERROR << "battle outbound GateCommand send failed: topic=" << route.topic
                       << " partition=" << route.partition
                       << " player_id=" << playerId << " event_id=" << eventId << " err=" << err;
         }
@@ -131,7 +131,7 @@ namespace
             LOG_INFO << "metric=battle_frame_dropped_no_direct message_id=" << messageId
                      << " dropped_total=" << count
                      << " latest_battle_id=" << battleId << " latest_player_id=" << playerId
-                     << ",玩家无活直连,战斗帧不回落 gate(客户端直连就绪后 GetBattleState 补拉)";
+                     << ",player has no live direct connection;battle frames do not fall back to gate(client requests GetBattleState after direct connection is ready)";
         }
     }
 
@@ -153,7 +153,7 @@ namespace
     {
         if (sceneNodeId == 0)
         {
-            LOG_ERROR << "battle 出站 scene 事件被拒: scene_node_id 为 0, player_id=" << playerId
+            LOG_ERROR << "battle outbound scene event rejected: scene_node_id is 0, player_id=" << playerId
                       << " battle_id=" << battleIdForLog << " event_id=" << eventId;
             return;
         }
@@ -171,7 +171,7 @@ namespace
                                                         std::to_string(playerId), route.partition);
         if (err != RdKafka::ERR_NO_ERROR)
         {
-            LOG_ERROR << "battle 出站 scene 事件发送失败: topic=" << route.topic
+            LOG_ERROR << "battle outbound scene event send failed: topic=" << route.topic
                       << " partition=" << route.partition
                       << " player_id=" << playerId << " battle_id=" << battleIdForLog
                       << " event_id=" << eventId << " err=" << err;
@@ -187,7 +187,7 @@ namespace
     {
         if (routing.scene_instance_id().empty())
         {
-            LOG_ERROR << "battle 出站 scene 事件被拒: scene_instance_id 为空, player_id=" << playerId
+            LOG_ERROR << "battle outbound scene event rejected: scene_instance_id is empty, player_id=" << playerId
                       << " battle_id=" << battleIdForLog << " event_id=" << eventId;
             return;
         }
@@ -293,7 +293,7 @@ namespace
                                                         std::to_string(battleId));
         if (err != RdKafka::ERR_NO_ERROR)
         {
-            LOG_ERROR << "battle 对局结果发送失败: topic=" << kMatchResultsTopic
+            LOG_ERROR << "battle result send failed: topic=" << kMatchResultsTopic
                       << " battle_id=" << battleId << " err=" << err;
         }
     }
@@ -368,14 +368,14 @@ namespace
                 const auto text = root["battle_table_fingerprint_mode"].as<std::string>();
                 if (!ParseFingerprintMode(text, mode))
                 {
-                    LOG_WARN << "battle_table_fingerprint_mode 取值非法,回默认 warn: value=" << text
+                    LOG_WARN << "Invalid battle_table_fingerprint_mode;using default warn: value=" << text
                              << " path=" << configPath;
                 }
             }
         }
         catch (const std::exception &ex)
         {
-            LOG_WARN << "读取 battle_table_fingerprint_mode 失败,回默认 warn: path=" << configPath
+            LOG_WARN << "Failed to read battle_table_fingerprint_mode;using default warn: path=" << configPath
                      << " err=" << ex.what();
         }
 
@@ -388,11 +388,11 @@ namespace
             }
             else
             {
-                LOG_WARN << "BATTLE_TABLE_FINGERPRINT_MODE 取值非法,忽略: value=" << envMode;
+                LOG_WARN << "Invalid BATTLE_TABLE_FINGERPRINT_MODE;ignored: value=" << envMode;
             }
         }
 
-        LOG_INFO << "battle 配表指纹校验模式: mode=" << FingerprintModeName(mode);
+        LOG_INFO << "battle table fingerprint validation mode: mode=" << FingerprintModeName(mode);
         return mode;
     }
 
@@ -440,13 +440,13 @@ namespace
             LOG_ERROR << "metric=battle_table_fingerprint_reject battle_id=" << request.battle_id()
                       << " match_mode=" << request.match_mode()
                       << " self=" << self << " mismatch:" << mismatches
-                      << ",配表指纹不一致,拒绝开局(mode=enforce)";
+                      << ",table fingerprint mismatch;battle creation rejected(mode=enforce)";
             return false;
         }
         LOG_WARN << "metric=battle_table_fingerprint_mismatch battle_id=" << request.battle_id()
                  << " match_mode=" << request.match_mode()
                  << " self=" << self << " mismatch:" << mismatches
-                 << ",配表指纹不一致,照常开局(mode=warn)";
+                 << ",table fingerprint mismatch;battle creation continues(mode=warn)";
         return true;
     }
 
@@ -472,7 +472,7 @@ BattleRoomManager::BattleRoom *BattleRoomManager::EmplaceRoom(std::unique_ptr<Ba
     if (inserted == nullptr)
     {
         // 表里那间保持原样;按值接管的新房间随形参销毁(插表前没有任何副作用)
-        LOG_ERROR << "EmplaceRoom 重复插表(调用方幂等判定失效),新建的房间对象随之丢弃: battle_id=" << battleId;
+        LOG_ERROR << "EmplaceRoom duplicate insertion(caller idempotency check failed);new room object discarded: battle_id=" << battleId;
     }
     return inserted;
 }
@@ -492,13 +492,13 @@ void BattleRoomManager::HandleCreateBattle(const ::CreateBattleRequest &request,
     // 幂等:match 补偿路径可能重试 CreateBattle
     if (FindRoom(battleId) != nullptr)
     {
-        LOG_INFO << "CreateBattle 幂等命中: battle_id=" << battleId;
+        LOG_INFO << "CreateBattle idempotent hit: battle_id=" << battleId;
         return;
     }
 
     if (battleId == 0 || request.players_size() == 0)
     {
-        LOG_ERROR << "CreateBattle 参数非法: battle_id=" << battleId
+        LOG_ERROR << "CreateBattle invalid arguments: battle_id=" << battleId
                   << " players=" << request.players_size();
         response.mutable_error_message()->set_id(kInvalidParameter);
         return;
@@ -511,7 +511,7 @@ void BattleRoomManager::HandleCreateBattle(const ::CreateBattleRequest &request,
         const auto &routing = snapshot.routing();
         if (routing.gate_instance_id().empty() || routing.scene_instance_id().empty())
         {
-            LOG_ERROR << "CreateBattle 路由信息不完整: battle_id=" << battleId
+            LOG_ERROR << "CreateBattle incomplete routing information: battle_id=" << battleId
                       << " player_id=" << snapshot.player_id()
                       << " gate_instance_id=" << routing.gate_instance_id()
                       << " scene_instance_id=" << routing.scene_instance_id();
@@ -541,7 +541,7 @@ void BattleRoomManager::HandleCreateBattle(const ::CreateBattleRequest &request,
     room->activityContext = request.activity_context();
     if (!room->engine.Initialize(request))
     {
-        LOG_ERROR << "CreateBattle 引擎初始化失败(快照/表数据非法): battle_id=" << battleId
+        LOG_ERROR << "CreateBattle engine initialization failed(invalid snapshot/table data): battle_id=" << battleId
                   << " battle_config_id=" << request.battle_config_id();
         response.mutable_error_message()->set_id(kInvalidTableData);
         return;
@@ -578,7 +578,7 @@ void BattleRoomManager::HandleCreateBattle(const ::CreateBattleRequest &request,
         {
             LOG_ERROR << "metric=battle_ticket_issue_failed battle_id=" << battleId
                       << " player_id=" << playerId << " role=participant"
-                      << ",参战票据签不出,拒绝开局(kServiceUnavailable)";
+                      << ",participant ticket signing failed;battle creation rejected(kServiceUnavailable)";
             response.mutable_error_message()->set_id(kServiceUnavailable);
             return;
         }
@@ -631,7 +631,7 @@ void BattleRoomManager::HandleCreateBattle(const ::CreateBattleRequest &request,
                                          [this, battleId]
                                          { ResendBattleConfirmed(battleId); });
 
-    LOG_INFO << "CreateBattle 成功: battle_id=" << battleId
+    LOG_INFO << "CreateBattle succeeded: battle_id=" << battleId
              << " players=" << request.players_size()
              << " battle_config_id=" << request.battle_config_id()
              << " match_mode=" << request.match_mode()
@@ -648,7 +648,7 @@ void BattleRoomManager::HandleDestroyBattle(const ::DestroyBattleRequest &reques
     if (room == nullptr)
     {
         // 幂等:已销毁/从未建成都视为成功
-        LOG_INFO << "DestroyBattle 幂等命中: battle_id=" << battleId
+        LOG_INFO << "DestroyBattle idempotent hit: battle_id=" << battleId
                  << " reason=" << request.reason();
         return;
     }
@@ -666,7 +666,7 @@ void BattleRoomManager::HandleDestroyBattle(const ::DestroyBattleRequest &reques
     CloseDirectConnections(*room, "destroyed");
     EraseRoom(battleId);
 
-    LOG_INFO << "DestroyBattle 完成: battle_id=" << battleId << " reason=" << request.reason();
+    LOG_INFO << "DestroyBattle completed: battle_id=" << battleId << " reason=" << request.reason();
 }
 
 void BattleRoomManager::HandleSubmitBattleAction(const ::SessionDetails &sessionDetails,
@@ -678,7 +678,7 @@ void BattleRoomManager::HandleSubmitBattleAction(const ::SessionDetails &session
     const auto playerId = sessionDetails.player_id();
     if (playerId == 0)
     {
-        LOG_WARN << "SubmitBattleAction 会话无玩家身份: session_id=" << sessionDetails.session_id();
+        LOG_WARN << "SubmitBattleAction session has no player identity: session_id=" << sessionDetails.session_id();
         response.mutable_error_message()->set_id(kPlayerNotFoundInSession);
         return;
     }
@@ -687,7 +687,7 @@ void BattleRoomManager::HandleSubmitBattleAction(const ::SessionDetails &session
     if (room == nullptr)
     {
         // 常见竞态:战斗刚结束,客户端的行动包晚到
-        LOG_DEBUG << "SubmitBattleAction 房间不存在: battle_id=" << request.battle_id()
+        LOG_DEBUG << "SubmitBattleAction room does not exist: battle_id=" << request.battle_id()
                   << " player_id=" << playerId;
         response.mutable_error_message()->set_id(kInvalidParameter);
         return;
@@ -696,7 +696,7 @@ void BattleRoomManager::HandleSubmitBattleAction(const ::SessionDetails &session
     // 防串房:battle_id 可被客户端伪造,必须校验参战名单
     if (room->routingByPlayer.find(playerId) == room->routingByPlayer.end())
     {
-        LOG_WARN << "SubmitBattleAction 玩家不在此战斗: battle_id=" << request.battle_id()
+        LOG_WARN << "SubmitBattleAction player is not in this battle: battle_id=" << request.battle_id()
                  << " player_id=" << playerId;
         response.mutable_error_message()->set_id(kInvalidParameter);
         return;
@@ -709,14 +709,14 @@ void BattleRoomManager::HandleSubmitBattleAction(const ::SessionDetails &session
     const uint32_t validation = room->engine.ValidateAction(playerId, request.action());
     if (validation != kSuccess)
     {
-        LOG_DEBUG << "SubmitBattleAction 校验不过: battle_id=" << request.battle_id()
+        LOG_DEBUG << "SubmitBattleAction validation failed: battle_id=" << request.battle_id()
                   << " player_id=" << playerId << " action=" << request.action().action_type()
                   << " code=" << validation;
         // 0 不是任何一个 tip 码(kCommon_errorOK=0),写进去客户端会读成"成功"却没落账。
         // 引擎已把坏表格子转成 kInvalidTableData,这里是最后一道兜底。
         if (validation == 0)
         {
-            LOG_ERROR << "SubmitBattleAction 校验返回 0(坏表或引擎契约破坏): battle_id="
+            LOG_ERROR << "SubmitBattleAction validation returned 0(invalid table or engine contract violation): battle_id="
                       << request.battle_id() << " player_id=" << playerId;
         }
         response.mutable_error_message()->set_id(validation != 0 ? validation : kInvalidParameter);
@@ -751,7 +751,7 @@ void BattleRoomManager::HandleGetBattleState(const ::SessionDetails &sessionDeta
     {
         // 战斗已不存在(结束/作废)或既非参战者也非观众:回默认状态,battle_id 置 0,
         // 客户端据此丢弃本地战斗 UI(重连补拉的失败分支)
-        LOG_DEBUG << "GetBattleState 房间不存在或无关玩家: battle_id=" << request.battle_id()
+        LOG_DEBUG << "GetBattleState room missing or player unrelated: battle_id=" << request.battle_id()
                   << " player_id=" << playerId;
         response.Clear();
         return;
@@ -781,7 +781,7 @@ void BattleRoomManager::HandleAddObserver(const ::AddObserverRequest &request,
     if (room == nullptr)
     {
         // kEntityIsNull 是 match 懒剔除 Redis 观战索引的信号(§10.2),别换 tip
-        LOG_INFO << "AddObserver 房间不存在: battle_id=" << battleId
+        LOG_INFO << "AddObserver room does not exist: battle_id=" << battleId
                  << " observer=" << observerId;
         response.mutable_error_message()->set_id(kEntityIsNull);
         return;
@@ -792,7 +792,7 @@ void BattleRoomManager::HandleAddObserver(const ::AddObserverRequest &request,
     // 登记进来也是聋子观众,直接拒绝让 match 重组路由
     if (observerId == 0 || request.routing().gate_instance_id().empty())
     {
-        LOG_ERROR << "AddObserver 参数非法: battle_id=" << battleId
+        LOG_ERROR << "AddObserver invalid arguments: battle_id=" << battleId
                   << " observer=" << observerId
                   << " gate_instance_id=" << request.routing().gate_instance_id();
         response.mutable_error_message()->set_id(kInvalidParameter);
@@ -803,7 +803,7 @@ void BattleRoomManager::HandleAddObserver(const ::AddObserverRequest &request,
     // 参战和观战共用,放行会让观战直连顶掉参战直连(D11 互斥的房间侧兜底)
     if (room->routingByPlayer.find(observerId) != room->routingByPlayer.end())
     {
-        LOG_WARN << "AddObserver 观众是参战者: battle_id=" << battleId
+        LOG_WARN << "AddObserver observer is a participant: battle_id=" << battleId
                  << " observer=" << observerId;
         response.mutable_error_message()->set_id(kInvalidParameter);
         return;
@@ -829,7 +829,7 @@ void BattleRoomManager::HandleAddObserver(const ::AddObserverRequest &request,
             LOG_ERROR << "metric=battle_ticket_issue_failed battle_id=" << battleId
                       << " player_id=" << observerId << " role=observer"
                       << " path=" << (sameSession ? "idempotent_same_session" : "idempotent_session_changed")
-                      << ",观战票据签不出,摘除观众并拒绝(kServiceUnavailable)";
+                      << ",spectator ticket signing failed;observer removed and request rejected(kServiceUnavailable)";
             room->routingByObserver.erase(it);
             room->observerNames.erase(observerId);
             CloseDirectConnectionOf(*room, observerId, "observer_ticket_issue_failed");
@@ -841,13 +841,13 @@ void BattleRoomManager::HandleAddObserver(const ::AddObserverRequest &request,
         {
             // 同会话重试:重推落点分配;观战快照是战斗帧,已有活直连时照常直发,
             // 否则丢弃,由客户端建直连时握手快照补上(§22 D69)
-            LOG_INFO << "AddObserver 幂等命中,重推落点分配: battle_id=" << battleId
+            LOG_INFO << "AddObserver idempotent hit;assignment pushed again: battle_id=" << battleId
                      << " observer=" << observerId;
             PushAssignment(*room, observerId, it->second, assigned);
             PushSpectateState(*room, observerId);
             return;
         }
-        LOG_INFO << "AddObserver 幂等命中但会话已变,刷新路由: battle_id=" << battleId
+        LOG_INFO << "AddObserver idempotent hit but session changed;route refreshed: battle_id=" << battleId
                  << " observer=" << observerId
                  << " old_session_id=" << it->second.session_id()
                  << " new_session_id=" << request.routing().session_id();
@@ -864,7 +864,7 @@ void BattleRoomManager::HandleAddObserver(const ::AddObserverRequest &request,
 
     if (room->routingByObserver.size() >= kMaxObserversPerRoom)
     {
-        LOG_INFO << "AddObserver 观众已满: battle_id=" << battleId
+        LOG_INFO << "AddObserver spectator capacity reached: battle_id=" << battleId
                  << " observer=" << observerId << " cap=" << kMaxObserversPerRoom;
         response.mutable_error_message()->set_id(kRateLimitExceeded);
         return;
@@ -877,7 +877,7 @@ void BattleRoomManager::HandleAddObserver(const ::AddObserverRequest &request,
     {
         LOG_ERROR << "metric=battle_ticket_issue_failed battle_id=" << battleId
                   << " player_id=" << observerId << " role=observer path=new"
-                  << ",观战票据签不出,拒绝观战(kServiceUnavailable)";
+                  << ",spectator ticket signing failed;spectating rejected(kServiceUnavailable)";
         response.mutable_error_message()->set_id(kServiceUnavailable);
         return;
     }
@@ -889,7 +889,7 @@ void BattleRoomManager::HandleAddObserver(const ::AddObserverRequest &request,
     // 此刻观众一定还没有直连,在这里推首帧只会被战斗帧出口丢弃
     PushAssignment(*room, observerId, request.routing(), assigned);
 
-    LOG_INFO << "AddObserver 成功: battle_id=" << battleId
+    LOG_INFO << "AddObserver succeeded: battle_id=" << battleId
              << " observer=" << observerId << " name=" << request.observer_name()
              << " observers=" << room->routingByObserver.size();
 }
@@ -924,7 +924,7 @@ void BattleRoomManager::HandleRemoveObserver(const ::RemoveObserverRequest &requ
     // 观众已不在名单,直连没有存在意义;SpectateEnd 已排队,shutdown 让它先 flush
     CloseDirectConnectionOf(*room, observerId, "observer_removed");
 
-    LOG_INFO << "RemoveObserver 完成: battle_id=" << battleId
+    LOG_INFO << "RemoveObserver completed: battle_id=" << battleId
              << " observer=" << observerId << " reason=" << request.reason();
 }
 
@@ -937,7 +937,7 @@ void BattleRoomManager::HandleStopWatchBattle(const ::SessionDetails &sessionDet
     const auto playerId = sessionDetails.player_id();
     if (playerId == 0)
     {
-        LOG_WARN << "StopWatchBattle 会话无玩家身份: session_id=" << sessionDetails.session_id();
+        LOG_WARN << "StopWatchBattle session has no player identity: session_id=" << sessionDetails.session_id();
         response.mutable_error_message()->set_id(kPlayerNotFoundInSession);
         return;
     }
@@ -962,7 +962,7 @@ void BattleRoomManager::HandleStopWatchBattle(const ::SessionDetails &sessionDet
     // loop 之后(CloseDirectConnectionOf 内部 queueInLoop),应答不会被丢
     CloseDirectConnectionOf(*room, playerId, "stop_watch");
 
-    LOG_INFO << "StopWatchBattle 完成: battle_id=" << room->battleId
+    LOG_INFO << "StopWatchBattle completed: battle_id=" << room->battleId
              << " observer=" << playerId;
 }
 
@@ -973,7 +973,7 @@ void BattleRoomManager::HandleSetAutoBattle(const ::SessionDetails &sessionDetai
     const auto playerId = sessionDetails.player_id();
     if (playerId == 0)
     {
-        LOG_WARN << "SetAutoBattle 会话无玩家身份: session_id=" << sessionDetails.session_id();
+        LOG_WARN << "SetAutoBattle session has no player identity: session_id=" << sessionDetails.session_id();
         response.mutable_error_message()->set_id(kPlayerNotFoundInSession);
         return;
     }
@@ -981,7 +981,7 @@ void BattleRoomManager::HandleSetAutoBattle(const ::SessionDetails &sessionDetai
     auto *room = FindRoom(request.battle_id());
     if (room == nullptr)
     {
-        LOG_DEBUG << "SetAutoBattle 房间不存在: battle_id=" << request.battle_id()
+        LOG_DEBUG << "SetAutoBattle room does not exist: battle_id=" << request.battle_id()
                   << " player_id=" << playerId;
         response.mutable_error_message()->set_id(kInvalidParameter);
         return;
@@ -990,7 +990,7 @@ void BattleRoomManager::HandleSetAutoBattle(const ::SessionDetails &sessionDetai
     // 防串房/防观众冒充:只有参战者能切自动
     if (room->routingByPlayer.find(playerId) == room->routingByPlayer.end())
     {
-        LOG_WARN << "SetAutoBattle 玩家不在此战斗: battle_id=" << request.battle_id()
+        LOG_WARN << "SetAutoBattle player is not in this battle: battle_id=" << request.battle_id()
                  << " player_id=" << playerId;
         response.mutable_error_message()->set_id(kInvalidParameter);
         return;
@@ -1097,7 +1097,7 @@ void BattleRoomManager::OnBattleDeadline(const uint64_t battleId)
     {
         outcome = ::BATTLE_OUTCOME_DRAW;
     }
-    LOG_WARN << "战斗整场超时强制收尾: battle_id=" << battleId
+    LOG_WARN << "Battle duration limit reached;forcing completion: battle_id=" << battleId
              << " outcome=" << ::eBattleOutcome_Name(outcome);
 
     room->roundTimer.Cancel();
@@ -1125,7 +1125,7 @@ void BattleRoomManager::ResendBattleConfirmed(const uint64_t battleId)
     {
         SendBattleConfirmedEvent(routing, playerId, battleId, room->deadlineMs);
     }
-    LOG_INFO << "BattleConfirmedEvent 周期补发: battle_id=" << battleId
+    LOG_INFO << "BattleConfirmedEvent periodic resend: battle_id=" << battleId
              << " players=" << room->routingByPlayer.size()
              << " remain_ms=" << (room->confirmResendUntilMs - nowMs);
 }
@@ -1213,7 +1213,7 @@ void BattleRoomManager::FinishBattle(BattleRoom &room, const ::eBattleOutcome ou
         SendBattleResultEvent(result);
     }
 
-    LOG_INFO << "战斗结束: battle_id=" << room.battleId
+    LOG_INFO << "Battle ended: battle_id=" << room.battleId
              << " outcome=" << ::eBattleOutcome_Name(outcome)
              << " players=" << room.routingByPlayer.size()
              << " teams=" << playersByTeam.size()
@@ -1323,7 +1323,7 @@ void BattleRoomManager::NotifySpectateEndAndClose(BattleRoom &room,
         CloseDirectConnectionOf(room, observerId, "spectate_end");
     }
 
-    LOG_INFO << "观战清退: battle_id=" << room.battleId
+    LOG_INFO << "Spectators removed: battle_id=" << room.battleId
              << " observers=" << room.routingByObserver.size()
              << " reason=" << ::eSpectateEndReason_Name(reason);
 
@@ -1338,7 +1338,7 @@ void BattleRoomManager::AbortAllRooms(const std::string &reason)
         return;
     }
 
-    LOG_INFO << "作废全部战斗房间: rooms=" << rooms_.Size() << " reason=" << reason;
+    LOG_INFO << "Invalidating all battle rooms: rooms=" << rooms_.Size() << " reason=" << reason;
     // 先抄 battle_id 再逐个 EraseRoom:移除走唯一删除口,每个房间都触发一次 onRemoved
     // (Agones 单元计数归零);不能边遍历房间表边删。
     for (const auto battleId : rooms_.Ids())
@@ -1430,7 +1430,7 @@ void BattleRoomManager::PushLobbyAnnouncement(const BattleRoom &room, const uint
         return;
     case battle_push_policy::PushRoute::kDrop:
         // 大厅公告的判定不会产出 kDrop(单测钉住);真出现说明判定契约被改坏了,必须响
-        LOG_ERROR << "battle 大厅公告被判定丢弃(battle_push_policy 契约破坏): battle_id=" << room.battleId
+        LOG_ERROR << "battle lobby announcement marked for discard(battle_push_policy contract violation): battle_id=" << room.battleId
                   << " player_id=" << playerId << " message_id=" << messageId;
         return;
     }
@@ -1445,7 +1445,7 @@ bool BattleRoomManager::BuildAssignment(const BattleRoom &room, const uint64_t p
     if (verdict == battle_security::TokenSecretVerdict::kRefuse)
     {
         // 启动门禁已拒过一次;这里是纵深防御,不签空签名的票
-        LOG_ERROR << "battle 票据签发被拒: battle_token_secret 为空且 run_mode=prod, battle_id="
+        LOG_ERROR << "battle ticket issuance rejected: battle_token_secret is empty and run_mode=prod, battle_id="
                   << room.battleId << " player_id=" << playerId;
         return false;
     }
@@ -1463,7 +1463,7 @@ bool BattleRoomManager::BuildAssignment(const BattleRoom &room, const uint64_t p
     const auto clientFacing = client_endpoint::ClientFacing(self, required);
     if (!clientFacing)
     {
-        LOG_ERROR << "battle 票据签发被拒: 本节点没有客户端可达地址, battle_id=" << room.battleId
+        LOG_ERROR << "battle ticket issuance rejected: this node has no client-reachable address, battle_id=" << room.battleId
                   << " player_id=" << playerId
                   << " endpoint=" << self.endpoint().ip() << ":" << self.endpoint().port()
                   << " client_endpoint=" << self.client_endpoint().ip() << ":" << self.client_endpoint().port()
@@ -1486,7 +1486,7 @@ bool BattleRoomManager::BuildAssignment(const BattleRoom &room, const uint64_t p
         signature = battle_security::SignTicket(secret, payloadBytes);
         if (signature.empty())
         {
-            LOG_ERROR << "battle 票据签名失败(OpenSSL), battle_id=" << room.battleId
+            LOG_ERROR << "battle ticket signing failed(OpenSSL), battle_id=" << room.battleId
                       << " player_id=" << playerId;
             return false;
         }
@@ -1542,7 +1542,7 @@ bool BattleRoomManager::AttachDirectConnection(const uint64_t battleId, const ui
     }
     if (routing == nullptr)
     {
-        LOG_WARN << "battle 直连挂接被拒: 玩家不在名单, battle_id=" << battleId
+        LOG_WARN << "battle direct connection attachment rejected: player not in roster, battle_id=" << battleId
                  << " player_id=" << playerId << " role=" << ::eBattleTicketRole_Name(role);
         return false;
     }
@@ -1552,7 +1552,7 @@ bool BattleRoomManager::AttachDirectConnection(const uint64_t battleId, const ui
     {
         // 重连:先关旧的。forceClose 是 queueInLoop 异步的,旧连接的断开回调在本函数
         // 返回后才跑,那时 slot 已指向新连接,DetachDirectConnection 按身份比对不会误摘。
-        LOG_INFO << "battle 直连重连,替换旧连接: battle_id=" << battleId << " player_id=" << playerId
+        LOG_INFO << "battle direct connection reconnected;replacing old connection: battle_id=" << battleId << " player_id=" << playerId
                  << " old_peer=" << old->peerAddress().toIpPort()
                  << " new_peer=" << conn->peerAddress().toIpPort();
         old->forceClose();
@@ -1632,7 +1632,7 @@ void BattleRoomManager::CloseDirectConnectionOf(BattleRoom &room, const uint64_t
     }
     if (const auto conn = it->second.lock(); conn && conn->connected())
     {
-        LOG_INFO << "battle 关闭玩家直连: battle_id=" << room.battleId << " player_id=" << playerId
+        LOG_INFO << "battle closing player direct connection: battle_id=" << room.battleId << " player_id=" << playerId
                  << " reason=" << reason;
         ShutdownDirectConnAfterThisLoop(conn);
     }
@@ -1647,7 +1647,7 @@ void BattleRoomManager::CloseDirectConnections(BattleRoom &room, const char *rea
     {
         return;
     }
-    LOG_INFO << "battle 关闭房间全部直连: battle_id=" << room.battleId
+    LOG_INFO << "battle closing all room direct connections: battle_id=" << room.battleId
              << " count=" << room.directConnByPlayer.size() << " reason=" << reason;
     for (auto &[playerId, weakConn] : room.directConnByPlayer)
     {
@@ -1672,7 +1672,7 @@ void BattleRoomManager::DispatchSettlementDurably(const ::BattleRouting &routing
     std::string payload;
     if (!event.SerializeToString(&payload))
     {
-        LOG_ERROR << "battle 结算序列化失败: battle_id=" << battleId << " player_id=" << playerId;
+        LOG_ERROR << "battle settlement serialization failed: battle_id=" << battleId << " player_id=" << playerId;
         return;
     }
 
@@ -1685,7 +1685,7 @@ void BattleRoomManager::DispatchSettlementDurably(const ::BattleRouting &routing
         // (奖励确实会丢)—— 这与改造前的行为一致,不是新增的退化,但必须响一声。
         LOG_ERROR << "metric=battle_settlement_not_durable battle_id=" << battleId
                   << " player_id=" << playerId
-                  << ",Redis 不可用,结算未落库直接投递(投递丢失即奖励丢失)";
+                  << ",Redis unavailable;delivering settlement without persistence(lost delivery means lost rewards)";
         SendSettlementCommand(sceneNodeId, sceneInstanceId, playerId, battleId, payload);
         return;
     }
@@ -1700,7 +1700,7 @@ void BattleRoomManager::DispatchSettlementDurably(const ::BattleRouting &routing
             {
                 LOG_ERROR << "metric=battle_settlement_not_durable battle_id=" << battleId
                           << " player_id=" << playerId
-                          << ",待结算记录落库失败,仍尝试投递一次(投递丢失即奖励丢失)";
+                          << ",pending settlement persistence failed;attempting one delivery(lost delivery means lost rewards)";
                 SendSettlementCommand(sceneNodeId, sceneInstanceId, playerId, battleId, payload);
                 return;
             }
@@ -1752,7 +1752,7 @@ void BattleRoomManager::RetryPendingSettlements()
     {
         // 探测不了销账就不能判定,更不能盲目重投:等下一轮。次数也不消耗 ——
         // Redis 抖动不该把重投窗口白白烧掉。
-        LOG_WARN << "battle 结算重投本轮跳过(Redis 未连接), pending=" << settlementOutbox_.size();
+        LOG_WARN << "battle settlement redelivery skipped this round(Redis disconnected), pending=" << settlementOutbox_.size();
         return;
     }
 
@@ -1784,7 +1784,7 @@ void BattleRoomManager::ProbeAndRetryOne(const uint64_t battleId, const uint64_t
                                    std::string(reply->str, reply->len) == std::to_string(battleId);
             if (!stillOurs)
             {
-                LOG_INFO << "battle 结算已销账: battle_id=" << battleId << " player_id=" << playerId
+                LOG_INFO << "battle settlement acknowledged: battle_id=" << battleId << " player_id=" << playerId
                          << " attempts=" << it->second.attempts;
                 settlementOutbox_.erase(it);
                 StopSettlementRetryTimerIfIdle();
@@ -1825,22 +1825,22 @@ void BattleRoomManager::ProbeAndRetryOne(const uint64_t battleId, const uint64_t
                                  << " original_scene_node_id=" << entry.originalSceneNodeId
                                  << " resolved_scene_node_id=" << resolvedNodeId
                                  << " attempt=" << entry.attempts
-                                 << ",结算未销账,按重新解析出的 scene 重投";
+                                 << ",settlement unacknowledged;redelivering to newly resolved scene";
                         // instance uuid 留空 = "谁现在持有这个 node_id 就谁执行"。
                         SendSettlementCommand(resolvedNodeId, std::string{}, playerId, battleId,
                                               entry.payload);
                         return;
                     case battle_settlement::RetryAction::kSkipNoTarget:
-                        LOG_INFO << "battle 结算重投本轮无目标(玩家不在任何场景): battle_id=" << battleId
+                        LOG_INFO << "battle settlement redelivery has no target this round(player has no scene): battle_id=" << battleId
                                  << " player_id=" << playerId << " attempt=" << entry.attempts
-                                 << ",持久记录仍在,等玩家进场景时由登录钩子补应用";
+                                 << ",persistent record retained;login hook will apply when player enters a scene";
                         return;
                     case battle_settlement::RetryAction::kExhausted:
                         // 响亮但不致命:记录仍在 Redis 里(TTL 7 天),玩家下次进场景补应用。
                         LOG_ERROR << "metric=battle_settlement_undelivered battle_id=" << battleId
                                   << " player_id=" << playerId << " attempts=" << entry.attempts
-                                  << ",结算重投次数用尽仍未销账;待结算记录保留,"
-                                  << "由 scene 的 OnPlayerEnterScene 登录钩子兜底应用";
+                                  << ",settlement redelivery retries exhausted without acknowledgment;pending settlement retained,"
+                                  << "scene OnPlayerEnterScene login hook will apply it as a fallback";
                         settlementOutbox_.erase(entryIt);
                         StopSettlementRetryTimerIfIdle();
                         return;
@@ -1874,7 +1874,7 @@ void BattleRoomManager::DispatchActivityResultDurably(const contracts::kafka::Ba
     {
         // 不可恢复:没有字节可落库也没有字节可发。guild 巡检器会把该局判 EXPIRED 并告警。
         LOG_ERROR << "metric=battle_activity_result_serialize_failed battle_id=" << battleId
-                  << ",活动局结果序列化失败,既不落库也不投递";
+                  << ",activity battle result serialization failed;neither persisted nor delivered";
         return;
     }
 
@@ -1882,7 +1882,7 @@ void BattleRoomManager::DispatchActivityResultDurably(const contracts::kafka::Ba
     {
         // R6:落不了库就只发一次 —— 与改造前的行为一致,不是新增的退化,但必须响一声。
         LOG_ERROR << "metric=battle_activity_result_not_durable battle_id=" << battleId
-                  << ",Redis 不可用,活动局结果未落库直接投递一次(投递丢失即该局帮会奖励丢失)";
+                  << ",Redis unavailable;delivering activity battle result once without persistence(lost delivery means lost guild rewards for this battle)";
         SendMatchResultPayload(battleId, payload);
         return;
     }
@@ -1901,7 +1901,7 @@ void BattleRoomManager::DispatchActivityResultDurably(const contracts::kafka::Ba
                           << " redis_error="
                           << (reply != nullptr && reply->str != nullptr ? std::string(reply->str, reply->len)
                                                                         : std::string("null reply"))
-                          << ",活动局结果落库失败,仍投递一次(投递丢失即该局帮会奖励丢失)";
+                          << ",activity battle result persistence failed;delivering once(lost delivery means lost guild rewards for this battle)";
                 SendMatchResultPayload(battleId, payload);
                 return;
             }
@@ -1918,7 +1918,7 @@ void BattleRoomManager::DispatchActivityResultDurably(const contracts::kafka::Ba
         // 命令没发出去(连接恰在断开 / 释放中,Hiredis::command 在登记回调前就返回):回调永远不会来,
         // 不在这里补发这局结果就静默丢了。按 R6 降级只发一次。
         LOG_ERROR << "metric=battle_activity_result_not_durable battle_id=" << battleId
-                  << ",活动局结果 SET 未能发出,未落库直接投递一次(投递丢失即该局帮会奖励丢失)";
+                  << ",activity battle result SET could not be sent;delivering once without persistence(lost delivery means lost guild rewards for this battle)";
         SendMatchResultPayload(battleId, payload);
     }
 }
@@ -1961,7 +1961,7 @@ void BattleRoomManager::RetryPendingActivityResults()
     if (!RedisReady())
     {
         // 探测不了销账就不能判定,更不能盲目重发:等下一轮,次数也不消耗(与 R07 同一取舍)。
-        LOG_WARN << "battle 活动局结果重发本轮跳过(Redis 未连接), pending=" << activityResultOutbox_.size();
+        LOG_WARN << "battle activity battle result resend skipped this round(Redis disconnected), pending=" << activityResultOutbox_.size();
         return;
     }
 
@@ -2001,7 +2001,7 @@ void BattleRoomManager::ProbeActivityResultOne(const uint64_t battleId)
             {
                 // 空回复 = 连接断开 / 停机释放,什么也没问到:本轮不判定、不重发、不消耗次数,
                 // 下一轮再探(与 RetryPendingActivityResults 里 Redis 未连接时的取舍一致)。
-                LOG_WARN << "battle 活动局结果探测无回复(Redis 连接断开),本轮跳过: battle_id=" << battleId;
+                LOG_WARN << "battle activity battle result probe got no reply(Redis disconnected);skipping this round: battle_id=" << battleId;
                 return;
             }
             // 只有明确读到 0 才算已销账;回复出错(或类型不对)一律按"仍在"处理 —— 宁可多发一次
@@ -2013,7 +2013,7 @@ void BattleRoomManager::ProbeActivityResultOne(const uint64_t battleId)
             switch (action)
             {
             case turnbattle::ActivityResultRetryAction::kDone:
-                LOG_INFO << "battle 活动局结果已销账: battle_id=" << battleId << " resends=" << entry.attempts;
+                LOG_INFO << "battle activity battle result acknowledged: battle_id=" << battleId << " resends=" << entry.attempts;
                 outbox.erase(it);
                 self->StopActivityResultRetryTimerIfIdle();
                 return;
@@ -2021,14 +2021,14 @@ void BattleRoomManager::ProbeActivityResultOne(const uint64_t battleId)
                 ++entry.attempts;
                 LOG_WARN << "metric=battle_activity_result_resend battle_id=" << battleId
                          << " attempt=" << entry.attempts
-                         << ",活动局结果未被 guild 销账,按原字节重发";
+                         << ",activity battle result unacknowledged by guild;resending original bytes";
                 SendMatchResultPayload(battleId, entry.payload);
                 return;
             case turnbattle::ActivityResultRetryAction::kExhausted:
                 // 响亮但不致命:记录仍在 Redis(TTL 7 天),guild 巡检器超期扫描时从记录直接结算。
                 LOG_ERROR << "metric=battle_activity_result_undelivered battle_id=" << battleId
                           << " resends=" << entry.attempts
-                          << ",活动局结果重发次数用尽仍未销账;持久记录保留,由 guild 巡检器兜底结算";
+                          << ",activity battle result resend retries exhausted without acknowledgment;persistent record retained for guild reconciler settlement";
                 outbox.erase(it);
                 self->StopActivityResultRetryTimerIfIdle();
                 return;
@@ -2045,7 +2045,7 @@ void BattleRoomManager::HandleIssueBattleTicket(const ::IssueBattleTicketRequest
     const auto playerId = request.player_id();
     if (playerId == 0)
     {
-        LOG_WARN << "IssueBattleTicket 请求缺少 player_id: battle_id=" << request.battle_id();
+        LOG_WARN << "IssueBattleTicket request lacks player_id: battle_id=" << request.battle_id();
         response.mutable_error_message()->set_id(kInvalidParameter);
         return;
     }
@@ -2054,7 +2054,7 @@ void BattleRoomManager::HandleIssueBattleTicket(const ::IssueBattleTicketRequest
     if (room == nullptr)
     {
         // 房间已结束/作废:match 原样透传,客户端据此丢弃本地战斗 UI(与 GetBattleState 空响应同语义)
-        LOG_DEBUG << "IssueBattleTicket 房间不存在: battle_id=" << request.battle_id()
+        LOG_DEBUG << "IssueBattleTicket room does not exist: battle_id=" << request.battle_id()
                   << " player_id=" << playerId;
         response.mutable_error_message()->set_id(kInvalidParameter);
         return;
@@ -2071,7 +2071,7 @@ void BattleRoomManager::HandleIssueBattleTicket(const ::IssueBattleTicketRequest
     }
     else
     {
-        LOG_WARN << "IssueBattleTicket 玩家不在此战斗: battle_id=" << request.battle_id()
+        LOG_WARN << "IssueBattleTicket player is not in this battle: battle_id=" << request.battle_id()
                  << " player_id=" << playerId;
         response.mutable_error_message()->set_id(kInvalidParameter);
         return;
@@ -2083,6 +2083,6 @@ void BattleRoomManager::HandleIssueBattleTicket(const ::IssueBattleTicketRequest
         response.mutable_error_message()->set_id(kServiceUnavailable);
         return;
     }
-    LOG_INFO << "IssueBattleTicket 补签成功: battle_id=" << request.battle_id()
+    LOG_INFO << "IssueBattleTicket reissuance succeeded: battle_id=" << request.battle_id()
              << " player_id=" << playerId << " role=" << ::eBattleTicketRole_Name(role);
 }

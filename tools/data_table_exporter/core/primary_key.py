@@ -49,7 +49,7 @@ def validate_primary_keys(tables: list[TableSchema], cfg: ExporterConfig) -> Pri
             continue
 
         if table.multi_primary_key:
-            logger.info("[%s] 主键可重复((cfg_multi)):%d 个 id 有多行,共 %d 行",
+            logger.info("[%s] Duplicate primary keys are allowed ((cfg_multi)): %d IDs have multiple rows, %d rows in total",
                         table.name, len(dupes), len(ids))
             continue
 

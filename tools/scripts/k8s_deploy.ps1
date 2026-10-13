@@ -394,7 +394,7 @@ function Assert-ImmutableReleaseImages {
 function Invoke-ReleasePreflight {
 	if ($ReleaseProfile -eq 'dev') { return }
 	if ($SkipPreflight) {
-		Write-Warning "已通过 -SkipPreflight 跳过发布预检(ReleaseProfile=$ReleaseProfile)。真实发布不应该走到这里。"
+		Write-Warning "Release preflight skipped via -SkipPreflight (ReleaseProfile=$ReleaseProfile). This path should not be used for actual releases."
 		return
 	}
 
@@ -480,7 +480,7 @@ function Initialize-InjectedSecrets {
 		$script:GatewayAdminApiKey = Resolve-InjectedSecret -EnvName "MMORPG_GATEWAY_ADMIN_API_KEY" `
 			-DevFallback "change-me-in-production" -ReleaseProfile $ReleaseProfile -Purpose "Java Gateway 管理面口令(X-Admin-Key / admin.api-key)" -MinLength 32
 		if (Test-PlaceholderSecret -Value $script:GatewayAdminApiKey) {
-			Write-Warning "gateway 管理面口令是占位值(MMORPG_GATEWAY_ADMIN_API_KEY 未设置或仍是占位串,ReleaseProfile=$ReleaseProfile):/admin/** 用公开常量鉴权,只允许本地 dev;非 dev 档会拒绝部署。"
+			Write-Warning "gateway admin password is a placeholder (MMORPG_GATEWAY_ADMIN_API_KEY unset or still a placeholder, ReleaseProfile=$ReleaseProfile): /admin/** authenticates with a public constant; allowed only for local dev. Non-dev profiles reject deployment."
 		}
 	}
 }
@@ -1134,7 +1134,7 @@ function Assert-KafkaTopologyChangeIsSafe {
 	$verdict = Get-KafkaTopologyChangeVerdict -LiveReplicas $live -DesiredBrokers $Topology.Brokers
 	if ($verdict -eq 'absent' -or $verdict -eq 'unchanged') { return }
 	if ($verdict -eq 'scale-up') {
-		Write-Host "Kafka broker 扩容:$live → $($Topology.Brokers)。新 broker 起来后**不会**自动接手已有 topic 的分区,需要用 kafka-reassign-partitions.sh 把副本挪过去(README「Kafka:多 broker」)。"
+		Write-Host "Kafka broker expansion: $live -> $($Topology.Brokers). New brokers do not automatically take over existing topic partitions; move replicas with kafka-reassign-partitions.sh (README section Kafka: multiple brokers)."
 		return
 	}
 	throw @"
@@ -1216,7 +1216,7 @@ function Show-ExposureProfileWarning {
 		# podip:暴露 Service 只是一半。客户端的 gate 地址不是从 Service 拿的,而是 login 从 etcd 读到 endpoint 后
 		# 下发的(go/login internal/svc/servicecontext.go CandidatesForZone),podip 下那就是 POD_IP —— 集群内地址,
 		# 只有 in-cluster 的 robot 连得上。集群外客户端要走 -ClientEntryMode external(D76–D93)。
-		Write-Warning "GateServiceType=$GateServiceType 只是把 Service 暴露了出去:-ClientEntryMode podip 下 login 下发的是 gate 在 etcd 里注册的集群内 POD_IP,集群外客户端仍然连不上。对外开放请用 -ClientEntryMode external(gate StatefulSet + 每序号 Service,见 docs/design/k8s-client-entry.md);单一 gate-entry 只在 gate 副本数为 1 时生成(D90)。"
+		Write-Warning "GateServiceType=$GateServiceType only exposes the Service: with -ClientEntryMode podip, login returns the in-cluster POD_IP registered by gate in etcd, so external clients still cannot connect. For external access, use -ClientEntryMode external (gate StatefulSet + per-ordinal Service; see docs/design/k8s-client-entry.md). A single gate-entry is generated only when gate replicas=1 (D90)."
 	}
 }
 
@@ -1298,7 +1298,7 @@ function Assert-ClientEntryDeployPreflight {
 	})
 
 	if ($LoginDevPasswordAuth -and -not $deploysLogin) {
-		Write-Warning "[client-entry] 给了 -LoginDevPasswordAuth,但本次不部署 login(它只随 zone-up / all-up 的 Go 服务生成,需要 -GoSvcRegistry 且不带 -SkipGoSvc),开关不生效。"
+		Write-Warning "[client-entry] -LoginDevPasswordAuth supplied, but login is not deployed in this run (only generated with Go services during zone-up / all-up; requires -GoSvcRegistry without -SkipGoSvc); flag has no effect."
 	}
 
 	# battle 工作负载在这里渲染(Apply-Infra 开头"battle 配置在任何基础设施写操作之前生成并校验"的同一约定):
@@ -1309,7 +1309,7 @@ function Assert-ClientEntryDeployPreflight {
 	}
 
 	if ($DryRun) {
-		Write-Host "[dry-run] 跳过集群现状预检(gate / battle 的形态与地址来源、gateway Ingress):真实执行时在任何写操作之前判定。"
+		Write-Host "[dry-run] Skipping current cluster-state preflight (gate / battle modes and address sources, gateway Ingress); actual execution checks before any writes."
 	}
 	else {
 		Assert-ClientEntryClusterState -Zones $zones -DeploysBattle $deploysBattle -DeploysGateway $deploysGateway `
@@ -1397,7 +1397,7 @@ function Assert-ClientEntryClusterState {
 
 	if ($AllowDisruptiveSwitch) {
 		foreach ($drift in $drifts) {
-			Write-Warning "[client-entry] 已给 -AllowDisruptiveSwitch,放行:$drift"
+			Write-Warning "[client-entry] -AllowDisruptiveSwitch supplied; allowed: $drift"
 		}
 	}
 	else {
@@ -2412,7 +2412,7 @@ function Write-CppLogSidecarNotice {
 	Write-Host "C++ log sidecar: enabled (namespace=$Namespace image=$CppLogSidecarImage push=$script:CppLogSidecarPushUrl)"
 	# 说清真实症状:sidecar 是原生 sidecar(initContainers),拉不到镜像时业务容器**一次都不会启动**,
 	# Pod 卡在 Init:ErrImagePull / Init:ImagePullBackOff,报错在 describe 的 Init Containers 一节。
-	Write-Host "  kind 集群需先把 $CppLogSidecarImage 载入节点:拉不到镜像时 gate/scene/battle 会卡在 Init:ErrImagePull,业务容器根本不启动(预载命令见 deploy/k8s/README.md)。不想要就加 -NoCppLogSidecar。"
+	Write-Host "  Load $CppLogSidecarImage into kind nodes first: if the image cannot be pulled, gate/scene/battle remain in Init:ErrImagePull and the application container never starts (preload command in deploy/k8s/README.md). Pass -NoCppLogSidecar to disable it."
 
 	if ($DryRun) { return }
 	# 只有用集群内默认 Loki 时才探测得了;-LokiPushUrl 指向外部时这里无从判断。
@@ -2423,11 +2423,11 @@ function Write-CppLogSidecarNotice {
 	$probeArgs += @("-n", $InfraNamespace, "get", "svc", "loki", "--ignore-not-found", "-o", "name")
 	$found = & kubectl @probeArgs 2>$null
 	if ($LASTEXITCODE -ne 0) {
-		Write-Warning "没能确认 $InfraNamespace 里是否有 Loki Service(kubectl get svc loki 执行失败),C++ 日志可能推不出去。"
+		Write-Warning "Could not confirm whether $InfraNamespace contains a Loki Service (kubectl get svc loki failed); C++ log delivery may fail."
 		return
 	}
 	if ([string]::IsNullOrWhiteSpace(($found -join ''))) {
-		Write-Warning "sidecar 会把 C++ 日志推向 $script:CppLogSidecarPushUrl,但 $InfraNamespace 里没有 loki Service。先跑一次 -Command infra-up(别带 -SkipInfra),或用 -LokiPushUrl 指向已有的 Loki,或 -NoCppLogSidecar 关掉 —— 否则部署会成功,日志一条也查不到。"
+		Write-Warning "The sidecar sends C++ logs to $script:CppLogSidecarPushUrl, but $InfraNamespace has no loki Service. Run -Command infra-up without -SkipInfra, set -LokiPushUrl to an existing Loki, or disable it with -NoCppLogSidecar; otherwise deployment succeeds but no logs can be queried."
 	}
 }
 
@@ -3034,7 +3034,7 @@ function Wait-ForZoneReady {
 			# manifests/java-svc/auth.yaml 也不存在)在 Apply-JavaSvcManifests 里只告警不 apply,
 			# 这里若照等就会在 `rollout status deploy/auth` 上白白超时,拖垮整条 -WaitReady。
 			if (-not (Test-Path (Join-Path $JavaSvcManifestsDir $JavaSvcCatalogue[$svcName].Manifest))) {
-				Write-Host "  [skip-wait] ${svcName}: manifest 不存在,未部署,不等待"
+				Write-Host "  [skip-wait] ${svcName}: manifest missing; not deployed; skipping wait"
 				continue
 			}
 			Wait-ForDeploymentReady -Namespace $Namespace -DeploymentName $svcName
@@ -4236,13 +4236,13 @@ function Apply-GoSvcMigrateJob {
 	# Job 名固定,重跑必须先删:template 不可变,apply 同名 Job 会被拒。--ignore-not-found:首次是 no-op。
 	Invoke-Kubectl -Args @("delete", "job", $jobName, "-n", $Namespace, "--ignore-not-found")
 	Invoke-KubectlWithInputFile -Args @("apply", "-n", $Namespace) -InputContent $content
-	Write-Host "  [applied] $jobName -> $SvcImage (D-14 建表 Job,先于 $SvcName Deployment)"
+	Write-Host "  [applied] $jobName -> $SvcImage (D-14 schema Job, before $SvcName Deployment)"
 
 	if ($gateOnJob) {
 		Wait-ForGoSvcMigrateJob -Namespace $Namespace -JobName $jobName -SvcName $SvcName
 		return
 	}
-	Write-Warning ("dev 档未带 -WaitReady:不等 {0} 结束就 apply {1} Deployment(staging/prod 恒等,不走这里)。核对 'kubectl -n {2} get job {0}'(COMPLETIONS 1/1)与 'kubectl -n {2} logs job/{0}'。" -f $jobName, $SvcName, $Namespace)
+	Write-Warning ("Dev profile without -WaitReady: apply {1} Deployment without waiting for {0} (staging/prod always wait). Check 'kubectl -n {2} get job {0}' (COMPLETIONS 1/1) and 'kubectl -n {2} logs job/{0}'." -f $jobName, $SvcName, $Namespace)
 }
 
 # 迁移查询/诊断专用:HTTP 请求与整个 kubectl 进程都有截止。仅加 --request-timeout 仍不能
@@ -4369,9 +4369,9 @@ function Write-GoSvcMigrateJobDiagnostics {
 		try {
 			$result = Invoke-GoSvcMigrateKubectl -Args $commandArgs -TimeoutSeconds ([Math]::Min([double]3, $remaining))
 			if ($result.Output) { Write-Host $result.Output }
-			if ($result.ExitCode -ne 0) { Write-Warning "迁移诊断不可用: $($result.ErrorOutput)" -WarningAction Continue }
+			if ($result.ExitCode -ne 0) { Write-Warning "Migration diagnostics unavailable: $($result.ErrorOutput)" -WarningAction Continue }
 		} catch {
-			Write-Warning "迁移诊断不可用: $($_.Exception.Message)" -WarningAction Continue
+			Write-Warning "Migration diagnostics unavailable: $($_.Exception.Message)" -WarningAction Continue
 		}
 	}
 }
@@ -4393,11 +4393,11 @@ function Assert-GoSvcMigrateJobNotInFlight {
 
 	$state = Wait-GoSvcMigrateJobSettled -Namespace $Namespace -JobName $JobName -RequirePodsTerminal
 	if ($state -ne 'running' -and $state -ne 'unknown') {
-		Write-Host "上一次 $JobName 可安全替换(state=$state,UID 所属 Pod 均已终止),继续先删再建。"
+		Write-Host "Previous $JobName can be replaced safely (state=$state; all Pods owned by its UID have terminated); proceeding with delete then create."
 		return
 	}
 
-	try { Write-GoSvcMigrateJobDiagnostics -Namespace $Namespace -JobName $JobName } catch { Write-Warning "迁移诊断失败: $($_.Exception.Message)" -WarningAction Continue }
+	try { Write-GoSvcMigrateJobDiagnostics -Namespace $Namespace -JobName $JobName } catch { Write-Warning "Migration diagnostics failed: $($_.Exception.Message)" -WarningAction Continue }
 	throw ("上一次迁移 Job {0} 在 {1}s 内仍未结束(namespace={2} state={3}),发布中断,未删除它,也未 apply 新 Job 与服务 Deployment。" +
 		"等 Job 及其 UID 所属 Pod 均进入终态后再重跑同一条发布命令(ACTIVE 为 0 本身不代表安全);" +
 		"**不要手工 delete 在途 Job**:打断 DDL 会把 schema_migrations 台账留在 dirty,之后每次迁移都会以 1 失败。") -f $JobName, $budgetSeconds, $Namespace, $state
@@ -4435,7 +4435,7 @@ function Wait-ForGoSvcMigrateJob {
 		default { 'timeout' }
 	}
 	Write-Host "Migrate Job not complete: namespace=$Namespace job=$JobName verdict=$verdict"
-	try { Write-GoSvcMigrateJobDiagnostics -Namespace $Namespace -JobName $JobName } catch { Write-Warning "迁移诊断失败: $($_.Exception.Message)" -WarningAction Continue }
+	try { Write-GoSvcMigrateJobDiagnostics -Namespace $Namespace -JobName $JobName } catch { Write-Warning "Migration diagnostics failed: $($_.Exception.Message)" -WarningAction Continue }
 	throw ("迁移 Job {0} 未成功(namespace={1} 结果={2}),发布中断,{3} Deployment 未 apply。看报告:kubectl -n {1} logs job/{0}。" +
 		"退出码(go/schemamigrate):1 失败(库不存在 / 连不上 / dirty 台账 / DDL 报错,库名见日志)、4 需人工(类型漂移 / 缺主键 / 表清单异常)、" +
 		"3 锁忙(timeout 时可能仍在 backoff 重试)。" +
@@ -4758,7 +4758,7 @@ function Apply-InjectedSecret {
 		throw "内部错误:Secret $Name 的值未解析(Initialize-InjectedSecrets 未在写路径入口调用?),拒绝部署 $AppLabel。"
 	}
 	if ($DryRun) {
-		Write-Host "[dry-run] kubectl apply -n $Namespace -f -   # Secret $Name(key $Key,值已隐去)"
+		Write-Host "[dry-run] kubectl apply -n $Namespace -f -   # Secret $Name (key $Key; value hidden)"
 		return
 	}
 
@@ -4880,7 +4880,7 @@ function Apply-GlobalGoSvcManifests {
 			# 与 Apply-OneGoSvc 同一判据:manifest 缺席 = 没部署,等它只会在 rollout status 上白白超时,
 			# 拖垮整条 -WaitReady(Java 服务那段 skip-wait 同一理由)。
 			if (-not (Test-Path (Join-Path $GoSvcManifestsDir $GoSvcCatalogue[$svcName].Manifest))) {
-				Write-Host "  [skip-wait] ${svcName}: manifest 不存在,未部署,不等待"
+				Write-Host "  [skip-wait] ${svcName}: manifest missing; not deployed; skipping wait"
 				continue
 			}
 			Wait-ForDeploymentReady -Namespace $InfraNamespace -DeploymentName $svcName
@@ -5258,13 +5258,13 @@ function Resolve-SceneDeploymentPlan {
 	$instance = if ($InstanceReplicas -ge 0) { $InstanceReplicas } else { 0 }
 
 	if ($LegacyExplicit) {
-		Write-Warning "zone ${ZoneLabel}: replicas.scene 与 scene_world/scene_instance 同时存在,拆分模式生效,legacy scene=$LegacySceneReplicas 被忽略。请从 zones 配置里删掉 scene 键。"
+		Write-Warning "zone ${ZoneLabel}: replicas.scene and scene_world/scene_instance coexist; split mode is active and legacy scene=$LegacySceneReplicas is ignored. Remove the scene key from the zones configuration."
 	}
 	if ($world -le 0) {
-		Write-Warning "zone ${ZoneLabel}: scene_world=0 —— 该 zone 没有主世界承载节点。StrictNodeTypeSeparation=true 时主世界场景创建会返回 ErrNoNodeForPurpose。"
+		Write-Warning "zone ${ZoneLabel}: scene_world=0; this zone has no world-scene nodes. With StrictNodeTypeSeparation=true, world-scene creation returns ErrNoNodeForPurpose."
 	}
 	if ($instance -le 0) {
-		Write-Warning "zone ${ZoneLabel}: scene_instance=0 —— 该 zone 没有副本承载节点。StrictNodeTypeSeparation=true 时副本/战场创建会返回 ErrNoNodeForPurpose。"
+		Write-Warning "zone ${ZoneLabel}: scene_instance=0; this zone has no instance-scene nodes. With StrictNodeTypeSeparation=true, instance/battleground creation returns ErrNoNodeForPurpose."
 	}
 
 	return ,@(
@@ -5424,12 +5424,12 @@ function Apply-Zone {
 	Wait-ForZoneReady -Namespace $namespace -SceneDeploymentNames $sceneDeploymentNames -GateReplicas $CurrentGateReplicas
 
 	if ($scenePlan.Count -gt 1) {
-		Write-Host "NOTE: 从 legacy 单池切到拆分模式时,旧的 'scene' 工作负载不会被 apply 自动删除。确认新池 Ready 后手动执行: kubectl -n $namespace delete deployment scene"
+		Write-Host "NOTE: Switching from a legacy single pool to split mode does not automatically remove the old 'scene' workload during apply. After the new pools are Ready, run manually: kubectl -n $namespace delete deployment scene"
 	}
 	if ($SceneOrchestrator -eq "agones") {
 		# 换编排方式会换 kind:apply 只会新建 Fleet,不会回收同名 Deployment,
 		# 两者同时在线 = 同一个 zone 里有两套 scene 进程、两套容量语义。
-		Write-Host "NOTE: 切到 Agones 编排后,同名的旧 Deployment 不会被自动删除。确认 Fleet 就绪后手动执行:"
+		Write-Host "NOTE: Switching to Agones orchestration does not automatically remove an existing Deployment with the same name. After the Fleet is ready, run manually:"
 		foreach ($scenePool in $scenePlan) {
 			Write-Host "        kubectl -n $namespace delete deployment $($scenePool.Name) --ignore-not-found"
 		}
@@ -5476,7 +5476,7 @@ function Get-InfraZoneIds {
 		}
 	}
 	else {
-		Write-Warning "zones 配置不存在($zonesPath),mysql-init-sql 只预建 -ZoneId=$ZoneId 的 zone_${ZoneId}_db。其余 zone 的库要么补进 zones 配置后重建 mysql PVC,要么由 db 服务在 dev 档自建。"
+		Write-Warning "Zones configuration missing ($zonesPath); mysql-init-sql only creates zone_${ZoneId}_db for -ZoneId=$ZoneId. For other zones, add them to the zones configuration and recreate the MySQL PVC, or let db create their databases under the dev profile."
 	}
 
 	return @($ids | Sort-Object)
@@ -5724,7 +5724,7 @@ function Apply-BattlePool {
 		# agones-sdk 的 SA + RoleBinding 必须先于 Fleet(理由同 scene Fleet,见 New-AgonesSdkRbacYaml)。
 		Invoke-KubectlWithInputFile -Args @('apply', '-n', $InfraNamespace) -InputContent (New-AgonesSdkRbacYaml -Namespace $InfraNamespace)
 		if ($battleHealth.Raised) {
-			Write-Host "NOTE: battle Fleet health.initialDelaySeconds 由 -AgonesHealthInitialDelaySeconds=$($battleHealth.RequestedInitialDelaySeconds) 抬到 $($battleHealth.InitialDelaySeconds):battle 启动到首次 /health 的最坏耗时约 $($battleHealth.StartupWorstSeconds)s(推导见 lib/k8s_client_entry.ps1 Resolve-BattleFleetHealth);scene Fleet 仍用原值。"
+			Write-Host "NOTE: battle Fleet health.initialDelaySeconds raised from -AgonesHealthInitialDelaySeconds=$($battleHealth.RequestedInitialDelaySeconds) to $($battleHealth.InitialDelaySeconds): worst-case battle startup to first /health is about $($battleHealth.StartupWorstSeconds)s (see Resolve-BattleFleetHealth in lib/k8s_client_entry.ps1); scene Fleet keeps the original value."
 		}
 		Invoke-KubectlWithInputFile -Args @('apply', '-n', $InfraNamespace) -InputContent $battleYaml
 		if ($WaitReady) {
@@ -5941,7 +5941,7 @@ Show-ExposureProfileWarning
 
 Write-Host "Release: profile=$ReleaseProfile image=$NodeImage pullPolicy=$ImagePullPolicy go_tag=$GoSvcTag java_tag=$JavaSvcTag cluster_id=$ClusterId"
 if ($script:ReleaseStamp.Ok -and $script:ReleaseStamp.Dirty) {
-	Write-Warning "工作树是脏的(git status 非空),镜像 tag 带 -dirty 后缀。生产发布(-ReleaseProfile prod)会拒绝这种 tag。"
+	Write-Warning "Working tree is dirty (git status is nonempty); image tag has the -dirty suffix. Production releases (-ReleaseProfile prod) reject this tag."
 }
 
 # 写操作才需要门禁;*-down / *-status 是止血和排查路径,不能被预检或密钥缺失挡住。

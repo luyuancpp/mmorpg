@@ -173,7 +173,7 @@ if (-not [System.IO.Directory]::Exists($imagesDir)) {
     throw "release 轨镜像版本不存在:$imagesDir(先跑 publish_images.ps1 -Version $Version)"
 }
 
-Write-ReleaseInfo "校验镜像制品:$imagesDir"
+Write-ReleaseInfo "Checking image artifacts: $imagesDir"
 try {
     Test-Sha256Sums -Dir $imagesDir
 }
@@ -342,9 +342,9 @@ finally {
     }
 }
 
-Write-ReleaseOk "release $Version 已生成"
+Write-ReleaseOk "release $Version generated"
 Write-Host "  manifest: $manifestPath"
 Write-Host "  notes   : $notesPath"
-Write-ReleaseInfo "离线交付:按 manifest 的 images.path 从制品根拷整个版本目录到目标机(自带 sha256sums.txt)。"
-Write-ReleaseInfo "打 tag 由人执行:git tag $Version $sourceCommit"
+Write-ReleaseInfo "Offline delivery: copy the entire version directory from the artifact root to the target host using manifest images.path (includes sha256sums.txt)."
+Write-ReleaseInfo "Create the tag manually: git tag $Version $sourceCommit"
 exit 0

@@ -37,4 +37,4 @@ with zipfile.ZipFile(io.BytesIO(archive)) as source:
         raise ValueError('ZIP 完整性检查失败')
     output.mkdir(parents=True, exist_ok=False)
     source.extractall(output)
-print('源码已恢复至: ' + str(output))
+print('Source restored to: ' + str(output))

@@ -240,22 +240,22 @@ namespace
 		if (!RedisReady())
 		{
 			// 非致命:锁带 EX,最迟随 TTL 过期;记日志说明串行化窗口靠 TTL 兜底
-			LOG_WARN << "[PlayerBattle] 条件删锁跳过(Redis 未连接), player_id=" << playerId
-					 << " battle_id=" << battleId << ", 锁将随 TTL 自然过期";
+			LOG_WARN << "[PlayerBattle] Conditional lock deletion skipped(Redis disconnected), player_id=" << playerId
+					 << " battle_id=" << battleId << ", lock will expire with its TTL";
 			return;
 		}
 		tlsRedis.GetZoneRedis()->command(
 			[playerId, battleId](hiredis::Hiredis*, redisReply* reply) {
 				if (reply == nullptr || reply->type == REDIS_REPLY_ERROR)
 				{
-					LOG_ERROR << "[PlayerBattle] 条件删锁 EVAL 失败, player_id=" << playerId
+					LOG_ERROR << "[PlayerBattle] Conditional lock deletion EVAL failed, player_id=" << playerId
 							  << " battle_id=" << battleId;
 					return;
 				}
 				if (reply->type == REDIS_REPLY_INTEGER && reply->integer == 0)
 				{
 					// 锁不存在(已过期/已删)或已易主(玩家进了下一场):都不是错误
-					LOG_INFO << "[PlayerBattle] 条件删锁未命中(锁不存在或值不匹配), player_id="
+					LOG_INFO << "[PlayerBattle] Conditional lock deletion did not match(lock missing or value mismatch), player_id="
 							 << playerId << " battle_id=" << battleId;
 				}
 			},
@@ -277,15 +277,15 @@ namespace
 	{
 		if (!RedisReady())
 		{
-			LOG_WARN << "[PlayerBattle] 结算销账跳过(Redis 未连接), player_id=" << playerId
-					 << " battle_id=" << battleId << ",battle 侧会重投到次数用尽(结算本身幂等)";
+			LOG_WARN << "[PlayerBattle] Settlement acknowledgment skipped(Redis disconnected), player_id=" << playerId
+					 << " battle_id=" << battleId << ",battle will redeliver until retries are exhausted(settlement itself is idempotent)";
 			return;
 		}
 		tlsRedis.GetZoneRedis()->command(
 			[playerId, battleId](hiredis::Hiredis*, redisReply* reply) {
 				if (reply == nullptr || reply->type == REDIS_REPLY_ERROR)
 				{
-					LOG_ERROR << "[PlayerBattle] 结算销账 EVAL 失败, player_id=" << playerId
+					LOG_ERROR << "[PlayerBattle] Settlement acknowledgment EVAL failed, player_id=" << playerId
 							  << " battle_id=" << battleId;
 					return;  // 账本条目保留:下一轮重投/reaper 会再来一次
 				}
@@ -298,7 +298,7 @@ namespace
 				if (auto* ledger = tlsEcs.actorRegistry.try_get<BattleSettlementLedgerComp>(owner);
 					ledger != nullptr && battle_settlement::ForgetApplied(*ledger, battleId))
 				{
-					LOG_DEBUG << "[PlayerBattle] 结算账本条目已摘(销账已落地), player_id=" << playerId
+					LOG_DEBUG << "[PlayerBattle] Settlement ledger entry removed(acknowledgment persisted), player_id=" << playerId
 							  << " battle_id=" << battleId;
 				}
 				// 解冻时(RemoveInBattleComp)组队跟随链读到锁还在会 fail-closed 跳过;锁此刻才真正放掉,
@@ -370,7 +370,7 @@ namespace
 		// 跳过不影响正确性:durable 仍为假 -> 不销账 -> pending 保留 -> 重投或目的地补应用。
 		if (!IsSettlementApplicable(player))
 		{
-			LOG_DEBUG << "[PlayerBattle] 跳过结算存盘(实体此刻不可改), player_id=" << playerId
+			LOG_DEBUG << "[PlayerBattle] Settlement save skipped(entity cannot currently be modified), player_id=" << playerId
 					  << " battle_id=" << battleId;
 			return;
 		}
@@ -378,7 +378,7 @@ namespace
 		{
 			// false 有两种来源:脏比较判定「盘上已是这一份」,或交接/退出在途跳过写盘。
 			// 两者都不能当成「已落盘」—— 是否 durable 一律由 IsSettlementDurable 按字节判。
-			LOG_DEBUG << "[PlayerBattle] 结算存盘未产生写入(脏比较相等或写盘被跳过), player_id="
+			LOG_DEBUG << "[PlayerBattle] Settlement save produced no write(unchanged data or save skipped), player_id="
 					  << playerId << " battle_id=" << battleId;
 			return;
 		}
@@ -424,7 +424,7 @@ namespace
 				ClearPendingSettlementIfMatch(playerId, battleId);
 				return;
 			}
-			LOG_INFO << "[PlayerBattle] 本节点无该玩家活实体,保留待结算记录给登录钩子: player_id=" << playerId
+			LOG_INFO << "[PlayerBattle] No live player entity on this node;pending settlement retained for the login hook: player_id=" << playerId
 					 << " battle_id=" << battleId;
 			return;
 		}
@@ -446,8 +446,8 @@ namespace
 		{
 			RequestSettlementPersist(player, playerId, battleId);
 		}
-		LOG_INFO << "[PlayerBattle] 结算已应用但尚未落盘,销账延后: player_id=" << playerId
-				 << " battle_id=" << battleId << ",等落盘后由快路径/重投/reaper/登录补销账";
+		LOG_INFO << "[PlayerBattle] Settlement applied but not persisted;acknowledgment deferred: player_id=" << playerId
+				 << " battle_id=" << battleId << ",acknowledgment will complete after persistence via fast path/redelivery/reaper/login";
 	}
 
 	// 离线暂存待结算记录(两键同 TTL),只在锁仍属于本局时写。battle 已经写过同一份,这里是
@@ -458,8 +458,8 @@ namespace
 	{
 		if (!RedisReady())
 		{
-			LOG_ERROR << "[PlayerBattle] 离线结算暂存失败(Redis 未连接), player_id=" << playerId
-					  << " battle_id=" << battleId << ",保留待重投";
+			LOG_ERROR << "[PlayerBattle] Offline settlement staging failed(Redis disconnected), player_id=" << playerId
+					  << " battle_id=" << battleId << ",retained for redelivery";
 			return;
 		}
 		tlsRedis.GetZoneRedis()->command(
@@ -467,7 +467,7 @@ namespace
 				// 无回复 / Redis 错误不是锁不存在,不能销账丢掉可恢复的奖励。
 				if (reply == nullptr || reply->type != REDIS_REPLY_INTEGER)
 				{
-					LOG_WARN << "[PlayerBattle] 离线结算暂存 EVAL 失败,保留待重投: player_id=" << playerId
+					LOG_WARN << "[PlayerBattle] Offline settlement staging EVAL failed;retained for redelivery: player_id=" << playerId
 							 << " battle_id=" << battleId;
 					return;
 				}
@@ -479,7 +479,7 @@ namespace
 					//  - 也可能这一局刚在别处落盘销账(销账同一条 Lua 删 pending 与锁)。
 					// 所以这里什么都不删、什么都不写,已有的 pending 留给登录钩子(它不看锁,按账本裁决)。
 					// 代价:发件箱会重投到次数用尽再打一条 undelivered,这正是它设计上的兜底。
-					LOG_WARN << "[PlayerBattle] 离线结算: 战斗锁不存在,不暂存、保留已有待结算记录给登录钩子, player_id="
+					LOG_WARN << "[PlayerBattle] Offline settlement: battle lock missing;not staged,existing pending settlement retained for the login hook, player_id="
 							 << playerId << " battle_id=" << battleId;
 					return;
 				}
@@ -487,12 +487,12 @@ namespace
 				{
 					// 锁被另一局正面持有 = 这一局已被取代:本局锁只会在落盘销账时才删,
 					// 另一局能拿到锁,说明这一局要么已落盘销账,要么已被判废。可以销账。
-					LOG_WARN << "[PlayerBattle] 离线结算丢弃: 战斗锁值不匹配, player_id=" << playerId
+					LOG_WARN << "[PlayerBattle] Offline settlement discarded: battle lock value mismatch, player_id=" << playerId
 							 << " battle_id=" << battleId;
 					AckSettlementPending(playerId, battleId, /*supersededWithoutEntity=*/true);
 					return;
 				}
-				LOG_INFO << "[PlayerBattle] 结算已暂存(玩家离线), player_id=" << playerId
+				LOG_INFO << "[PlayerBattle] Settlement staged(player offline), player_id=" << playerId
 						 << " battle_id=" << battleId;
 			},
 			(std::string("EVAL %s 3 ") + kBattleLockKeyFmt + " " + kPendingSettlementKeyFmt + " " +
@@ -514,21 +514,21 @@ namespace
 	{
 		if (!RedisReady())
 		{
-			LOG_WARN << "[PlayerBattle] 条件续期跳过(Redis 未连接), player_id=" << playerId
-					 << " battle_id=" << battleId << "(锁可能早于战斗结束过期,match 咨询性检查短暂失明)";
+			LOG_WARN << "[PlayerBattle] Conditional renewal skipped(Redis disconnected), player_id=" << playerId
+					 << " battle_id=" << battleId << "(lock may expire before battle ends;match advisory checks are temporarily blind)";
 			return;
 		}
 		tlsRedis.GetZoneRedis()->command(
 			[playerId, battleId, ttlSec](hiredis::Hiredis*, redisReply* reply) {
 				if (reply == nullptr || reply->type == REDIS_REPLY_ERROR)
 				{
-					LOG_ERROR << "[PlayerBattle] 条件续期 EVAL 失败, player_id=" << playerId
+					LOG_ERROR << "[PlayerBattle] Conditional renewal EVAL failed, player_id=" << playerId
 							  << " battle_id=" << battleId;
 					return;
 				}
 				if (reply->type == REDIS_REPLY_INTEGER && reply->integer == 0)
 				{
-					LOG_WARN << "[PlayerBattle] 条件续期未命中(锁不存在或值不匹配), player_id="
+					LOG_WARN << "[PlayerBattle] Conditional renewal did not match(lock missing or value mismatch), player_id="
 							 << playerId << " battle_id=" << battleId << " ttl_sec=" << ttlSec;
 				}
 			},
@@ -545,15 +545,15 @@ namespace
 	{
 		if (!RedisReady())
 		{
-			LOG_WARN << "[PlayerBattle] 重建复核跳过(Redis 未连接), player_id=" << playerId
-					 << " battle_id=" << battleId << "(冻结按 deadline 由 reaper 兜底)";
+			LOG_WARN << "[PlayerBattle] Reconstruction recheck skipped(Redis disconnected), player_id=" << playerId
+					 << " battle_id=" << battleId << "(reaper will release the freeze at the deadline)";
 			return;
 		}
 		tlsRedis.GetZoneRedis()->command(
 			[player, playerId, battleId, ttlSec](hiredis::Hiredis*, redisReply* reply) {
 				if (reply == nullptr || reply->type == REDIS_REPLY_ERROR)
 				{
-					LOG_ERROR << "[PlayerBattle] 重建复核 EVAL 失败, player_id=" << playerId
+					LOG_ERROR << "[PlayerBattle] Reconstruction recheck EVAL failed, player_id=" << playerId
 							  << " battle_id=" << battleId;
 					return;
 				}
@@ -570,7 +570,7 @@ namespace
 				{
 					RemoveInBattleComp(player);
 					LOG_WARN << "[PlayerBattle] metric=battle_freeze_rebuild_reverted player_id=" << playerId
-							 << " battle_id=" << battleId << ",重建期间锁已被删(结算/取消已收尾),撤销重建";
+							 << " battle_id=" << battleId << ",lock was deleted during reconstruction(settlement/cancellation completed);reconstruction canceled";
 				}
 			},
 			(std::string("EVAL %s 2 ") + kBattleLockKeyFmt + " " + kBattleCtxKeyFmt + " %llu %llu %b").c_str(),
@@ -654,8 +654,8 @@ namespace
 			[playerId, battleId](hiredis::Hiredis*, redisReply* reply) {
 				if (reply == nullptr || reply->type == REDIS_REPLY_ERROR)
 				{
-					LOG_ERROR << "[PlayerBattle] 结算后续锁 EVAL 失败, player_id=" << playerId
-							  << " battle_id=" << battleId << ",锁按原 TTL 过期";
+					LOG_ERROR << "[PlayerBattle] Post-settlement lock renewal EVAL failed, player_id=" << playerId
+							  << " battle_id=" << battleId << ",lock will expire with its original TTL";
 				}
 			},
 			(std::string("EVAL %s 2 ") + kBattleLockKeyFmt + " " + kBattleCtxKeyFmt + " %llu %u").c_str(),
@@ -697,7 +697,7 @@ namespace
 		if (bags == nullptr)
 		{
 			// 玩家实体没经过背包还原(理论上登录链一定挂了,这里是防御)
-			LOG_ERROR << "[PlayerBattle] 道具结算跳过: 玩家无背包组件, player_id=" << playerId
+			LOG_ERROR << "[PlayerBattle] Item settlement skipped: player lacks bag component, player_id=" << playerId
 					  << " battle_id=" << settlement.battle_id();
 			return;
 		}
@@ -723,7 +723,7 @@ namespace
 				// 点名销毁玩家的任意物品(装备/任务道具),必须挡住并告警。
 				if (!IsBattleUsableItem(item.item_table_id()))
 				{
-					LOG_ERROR << "[PlayerBattle] 结算消耗含非战斗道具,已拒绝: player_id=" << playerId
+					LOG_ERROR << "[PlayerBattle] Settlement consumption rejected: contains non-battle items, player_id=" << playerId
 							  << " battle_id=" << battleId << " item=" << item.item_table_id();
 					continue;
 				}
@@ -746,7 +746,7 @@ namespace
 				}
 				if (result != kSuccess)
 				{
-					LOG_ERROR << "[PlayerBattle] 道具消耗扣除被拒: player_id=" << playerId
+					LOG_ERROR << "[PlayerBattle] Item consumption deduction rejected: player_id=" << playerId
 							  << " battle_id=" << battleId << " err=" << result;
 				}
 				else if (drainedTotal < requestedTotal)
@@ -755,7 +755,7 @@ namespace
 					// 触发的背包扣减入口(背包 RPC 只有 GetBag/SortBag,Sort 已加 InBattle 闸),
 					// 所以正常玩法下不该出现。日后新增扣减入口(交易/寄售/使用物品)必须各自
 					// 加 InBattle 闸(D48:闸只放入口层),否则这条 WARN 会变成常态。
-					LOG_WARN << "[PlayerBattle] 道具消耗按实际持有夹紧: player_id=" << playerId
+					LOG_WARN << "[PlayerBattle] Item consumption clamped to actual holdings: player_id=" << playerId
 							 << " battle_id=" << battleId << " requested=" << requestedTotal
 							 << " drained=" << drainedTotal;
 				}
@@ -813,7 +813,7 @@ namespace
 						}
 						remainder[configId] = count - static_cast<uint32_t>(landed);
 					}
-					LOG_WARN << "[PlayerBattle] 掉落入主背包失败,剩余改投临时格: player_id=" << playerId
+					LOG_WARN << "[PlayerBattle] Drop insertion into main bag failed;remaining drops redirected to temporary slots: player_id=" << playerId
 							 << " battle_id=" << battleId << " err=" << result
 							 << " remainder_configs=" << remainder.size();
 					if (!remainder.empty())
@@ -829,7 +829,7 @@ namespace
 				}
 				if (result != kSuccess)
 				{
-					LOG_ERROR << "[PlayerBattle] 掉落发放失败(主背包与临时格都放不下): player_id="
+					LOG_ERROR << "[PlayerBattle] Drop grant failed(main bag and temporary slots both lack space): player_id="
 							  << playerId << " battle_id=" << battleId << " err=" << result;
 				}
 			}
@@ -890,7 +890,7 @@ bool PlayerBattleSystem::BuildBattleSnapshot(entt::entity player, ::BattlePlayer
 	const auto* baseAttributes = tlsEcs.actorRegistry.try_get<BaseAttributesComp>(player);
 	if (baseAttributes == nullptr)
 	{
-		LOG_ERROR << "[PlayerBattle] 组快照失败: 缺 BaseAttributesComp, player_id=" << playerId;
+		LOG_ERROR << "[PlayerBattle] Snapshot creation failed: missing BaseAttributesComp, player_id=" << playerId;
 		errorTipId = kEntityIsNull;
 		return false;
 	}
@@ -899,7 +899,7 @@ bool PlayerBattleSystem::BuildBattleSnapshot(entt::entity player, ::BattlePlayer
 	GateRoute gateRoute;
 	if (!ResolveGateRoute(player, gateRoute))
 	{
-		LOG_ERROR << "[PlayerBattle] 组快照失败: 缺会话快照(玩家不在线?), player_id=" << playerId;
+		LOG_ERROR << "[PlayerBattle] Snapshot creation failed: missing session snapshot(player offline?), player_id=" << playerId;
 		errorTipId = kSessionNotFound;
 		return false;
 	}
@@ -923,7 +923,7 @@ bool PlayerBattleSystem::BuildBattleSnapshot(entt::entity player, ::BattlePlayer
 	{
 		// speed 缺配(存量数据/表未填):给默认值保证出手序可结算,缺配现状见 open_issues
 		snapshot.mutable_base_attributes()->set_speed(kFallbackBattleSpeed);
-		LOG_WARN << "[PlayerBattle] speed=0, 使用默认出手速度 " << kFallbackBattleSpeed
+		LOG_WARN << "[PlayerBattle] speed=0, using default action speed " << kFallbackBattleSpeed
 				 << ", player_id=" << playerId;
 	}
 
@@ -1088,7 +1088,7 @@ bool PlayerBattleSystem::BuildBattleSnapshot(entt::entity player, ::BattlePlayer
 	{
 		// 不 fail-closed 拒绝备战:battle 节点出站时会按不变量 2 拒发并报错,
 		// 这里先告警便于定位 gate 发现异常
-		LOG_WARN << "[PlayerBattle] gate_instance_id 为空(本地未发现该 gate 节点), player_id="
+		LOG_WARN << "[PlayerBattle] gate_instance_id is empty(gate node not discovered locally), player_id="
 				 << playerId << " session_id=" << gateRoute.sessionId;
 	}
 	const auto& selfNode = GetNodeInfo();
@@ -1112,7 +1112,7 @@ void PlayerBattleSystem::PrepareBattle(const ::PrepareBattleRequest& request, ::
 
 	if (playerId == 0 || battleId == 0 || request.deadline_ms() == 0)
 	{
-		LOG_ERROR << "[PlayerBattle] PrepareBattle 参数非法: player_id=" << playerId
+		LOG_ERROR << "[PlayerBattle] PrepareBattle invalid arguments: player_id=" << playerId
 				  << " battle_id=" << battleId << " deadline_ms=" << request.deadline_ms();
 		response.mutable_error_message()->set_id(kInvalidParameter);
 		return;
@@ -1122,7 +1122,7 @@ void PlayerBattleSystem::PrepareBattle(const ::PrepareBattleRequest& request, ::
 	if (!tlsEcs.actorRegistry.valid(player))
 	{
 		// 玩家不在本节点(已下线或被改派):match 按补偿矩阵处理
-		LOG_WARN << "[PlayerBattle] PrepareBattle 拒绝: 玩家不在线, player_id=" << playerId
+		LOG_WARN << "[PlayerBattle] PrepareBattle rejected: player offline, player_id=" << playerId
 				 << " battle_id=" << battleId;
 		response.mutable_error_message()->set_id(kEntityIsNull);
 		return;
@@ -1131,7 +1131,7 @@ void PlayerBattleSystem::PrepareBattle(const ::PrepareBattleRequest& request, ::
 	// 跨 zone 迁移在途:实体只读,不接受新战斗
 	if (tlsEcs.actorRegistry.any_of<PlayerFrozenComp>(player))
 	{
-		LOG_WARN << "[PlayerBattle] PrepareBattle 拒绝: 玩家处于跨 zone 冻结, player_id=" << playerId
+		LOG_WARN << "[PlayerBattle] PrepareBattle rejected: player frozen for cross-zone travel, player_id=" << playerId
 				 << " battle_id=" << battleId;
 		response.mutable_error_message()->set_id(kFeatureUnavailable);
 		return;
@@ -1140,7 +1140,7 @@ void PlayerBattleSystem::PrepareBattle(const ::PrepareBattleRequest& request, ::
 	// 结算串行化(D4):上一场结算未落地前拒绝二次备战 —— 冻结拦截点之一
 	if (const auto* existing = tlsEcs.actorRegistry.try_get<InBattleComp>(player))
 	{
-		LOG_WARN << "[PlayerBattle] PrepareBattle 拒绝: 已有战斗在途, player_id=" << playerId
+		LOG_WARN << "[PlayerBattle] PrepareBattle rejected: battle already in progress, player_id=" << playerId
 				 << " existing_battle_id=" << existing->battle_id()
 				 << " new_battle_id=" << battleId;
 		response.mutable_error_message()->set_id(kFeatureUnavailable);
@@ -1152,7 +1152,7 @@ void PlayerBattleSystem::PrepareBattle(const ::PrepareBattleRequest& request, ::
 	if (const auto* attrs = tlsEcs.actorRegistry.try_get<BaseAttributesComp>(player);
 		attrs != nullptr && attrs->health() == 0)
 	{
-		LOG_WARN << "[PlayerBattle] PrepareBattle 拒绝: 玩家 0 血(阵亡未复活), player_id=" << playerId
+		LOG_WARN << "[PlayerBattle] PrepareBattle rejected: player has 0 health(dead and not revived), player_id=" << playerId
 				 << " battle_id=" << battleId;
 		response.mutable_error_message()->set_id(kFeatureUnavailable);
 		return;
@@ -1199,7 +1199,7 @@ void PlayerBattleSystem::PrepareBattle(const ::PrepareBattleRequest& request, ::
 			[playerId](hiredis::Hiredis*, redisReply* reply) {
 				if (reply == nullptr || reply->type == REDIS_REPLY_ERROR)
 				{
-					LOG_ERROR << "[PlayerBattle] SET battle:lock 失败, player_id=" << playerId;
+					LOG_ERROR << "[PlayerBattle] SET battle:lock failed, player_id=" << playerId;
 				}
 			},
 			(std::string("SET ") + kBattleLockKeyFmt + " %llu EX %llu").c_str(),
@@ -1211,8 +1211,8 @@ void PlayerBattleSystem::PrepareBattle(const ::PrepareBattleRequest& request, ::
 			[playerId](hiredis::Hiredis*, redisReply* reply) {
 				if (reply == nullptr || reply->type == REDIS_REPLY_ERROR)
 				{
-					LOG_ERROR << "[PlayerBattle] SET battle:ctx 失败, player_id=" << playerId
-							  << "(登录重建将退化为无 battle_node_id 的保守冻结)";
+					LOG_ERROR << "[PlayerBattle] SET battle:ctx failed, player_id=" << playerId
+							  << "(login reconstruction will fall back to a conservative freeze without battle_node_id)";
 				}
 			},
 			(std::string("SET ") + kBattleCtxKeyFmt + " %b EX %llu").c_str(),
@@ -1220,11 +1220,11 @@ void PlayerBattleSystem::PrepareBattle(const ::PrepareBattleRequest& request, ::
 	}
 	else
 	{
-		LOG_WARN << "[PlayerBattle] SET battle:lock 跳过(Redis 未连接), player_id=" << playerId
-				 << " battle_id=" << battleId << "(match 咨询性检查短暂失明,权威仍在 InBattleComp)";
+		LOG_WARN << "[PlayerBattle] SET battle:lock skipped(Redis disconnected), player_id=" << playerId
+				 << " battle_id=" << battleId << "(match advisory checks are temporarily blind;InBattleComp remains authoritative)";
 	}
 
-	LOG_INFO << "[PlayerBattle] 备战冻结完成: player_id=" << playerId
+	LOG_INFO << "[PlayerBattle] Battle preparation freeze completed: player_id=" << playerId
 			 << " battle_id=" << battleId
 			 << " battle_node_id=" << request.battle_node_id()
 			 << " deadline_ms=" << request.deadline_ms()
@@ -1245,21 +1245,21 @@ void PlayerBattleSystem::CancelBattlePrepare(const ::CancelBattlePrepareRequest&
 		// ctx 已是 FIGHTING(确认早于取消到达)同样拒绝 —— 与在线路径同一条规则
 		if (!RedisReady())
 		{
-			LOG_WARN << "[PlayerBattle] CancelBattlePrepare: 玩家不在线且 Redis 未连接,跳过, player_id="
-					 << playerId << " battle_id=" << battleId << "(锁随 TTL 过期)";
+			LOG_WARN << "[PlayerBattle] CancelBattlePrepare: player offline and Redis disconnected;skipped, player_id="
+					 << playerId << " battle_id=" << battleId << "(lock will expire with its TTL)";
 			return;
 		}
 		tlsRedis.GetZoneRedis()->command(
 			[playerId, battleId](hiredis::Hiredis*, redisReply* reply) {
 				if (reply == nullptr || reply->type == REDIS_REPLY_ERROR)
 				{
-					LOG_ERROR << "[PlayerBattle] CancelBattlePrepare 读锁/ctx EVAL 失败, player_id="
+					LOG_ERROR << "[PlayerBattle] CancelBattlePrepare lock/ctx read EVAL failed, player_id="
 							  << playerId << " battle_id=" << battleId;
 					return;
 				}
 				if (reply->type != REDIS_REPLY_ARRAY)
 				{
-					LOG_INFO << "[PlayerBattle] CancelBattlePrepare: 玩家不在线且锁不在/已易主,幂等忽略, player_id="
+					LOG_INFO << "[PlayerBattle] CancelBattlePrepare: player offline and lock missing/ownership changed;idempotently ignored, player_id="
 							 << playerId << " battle_id=" << battleId;
 					return;
 				}
@@ -1270,10 +1270,10 @@ void PlayerBattleSystem::CancelBattlePrepare(const ::CancelBattlePrepareRequest&
 				{
 					LOG_WARN << "[PlayerBattle] metric=battle_cancel_rejected_fighting player_id=" << playerId
 							 << " battle_id=" << battleId
-							 << ",玩家不在线但 ctx 已 FIGHTING(确认早于取消),拒绝清锁";
+							 << ",player offline but ctx already FIGHTING(confirmation preceded cancellation);lock deletion rejected";
 					return;
 				}
-				LOG_INFO << "[PlayerBattle] CancelBattlePrepare: 玩家不在线,按锁值条件清锁, player_id="
+				LOG_INFO << "[PlayerBattle] CancelBattlePrepare: player offline;delete lock conditionally by value, player_id="
 						 << playerId << " battle_id=" << battleId;
 				DeleteBattleLockIfMatch(playerId, battleId);
 			},
@@ -1286,14 +1286,14 @@ void PlayerBattleSystem::CancelBattlePrepare(const ::CancelBattlePrepareRequest&
 	if (inBattle == nullptr)
 	{
 		// 已被结算/作废收尾,幂等 OK
-		LOG_INFO << "[PlayerBattle] CancelBattlePrepare: 无战斗在途,幂等忽略, player_id="
+		LOG_INFO << "[PlayerBattle] CancelBattlePrepare: no battle in progress;idempotently ignored, player_id="
 				 << playerId << " battle_id=" << battleId;
 		return;
 	}
 	if (inBattle->battle_id() != battleId)
 	{
 		// 迟到的取消(玩家已进入下一场):必须忽略,否则会解冻新战斗
-		LOG_WARN << "[PlayerBattle] CancelBattlePrepare: battle_id 不匹配,忽略, player_id=" << playerId
+		LOG_WARN << "[PlayerBattle] CancelBattlePrepare: battle_id mismatch;ignored, player_id=" << playerId
 				 << " in_battle_id=" << inBattle->battle_id() << " cancel_battle_id=" << battleId;
 		return;
 	}
@@ -1304,12 +1304,12 @@ void PlayerBattleSystem::CancelBattlePrepare(const ::CancelBattlePrepareRequest&
 		// 拒绝之,由结算 / 房间强制收尾 / reaper 按 deadline_ms 兜底。
 		LOG_WARN << "[PlayerBattle] metric=battle_cancel_rejected_fighting player_id=" << playerId
 				 << " battle_id=" << battleId << " deadline_ms=" << inBattle->deadline_ms()
-				 << ",已 FIGHTING 拒绝取消解冻(过期回滚)";
+				 << ",already FIGHTING;cancellation and unfreeze rejected(stale rollback)";
 		return;
 	}
 
 	ClearBattleFreeze(player, playerId, battleId);
-	LOG_INFO << "[PlayerBattle] 备战取消解冻: player_id=" << playerId << " battle_id=" << battleId;
+	LOG_INFO << "[PlayerBattle] Battle preparation canceled and freeze released: player_id=" << playerId << " battle_id=" << battleId;
 }
 
 void PlayerBattleSystem::ConfirmBattle(const ::BattleConfirmedEvent& event)
@@ -1318,7 +1318,7 @@ void PlayerBattleSystem::ConfirmBattle(const ::BattleConfirmedEvent& event)
 	const uint64_t battleId = event.battle_id();
 	if (playerId == 0 || battleId == 0)
 	{
-		LOG_ERROR << "[PlayerBattle] BattleConfirmedEvent 非法: player_id=" << playerId
+		LOG_ERROR << "[PlayerBattle] Invalid BattleConfirmedEvent: player_id=" << playerId
 				  << " battle_id=" << battleId << " deadline_ms=" << event.deadline_ms();
 		return;
 	}
@@ -1333,13 +1333,13 @@ void PlayerBattleSystem::ConfirmBattle(const ::BattleConfirmedEvent& event)
 		// event.deadline_ms 为 0 时无从计算 TTL,保持备战期 TTL 不动(最迟随 TTL 过期)
 		if (event.deadline_ms() == 0)
 		{
-			LOG_WARN << "[PlayerBattle] ConfirmBattle: 玩家不在线且 deadline_ms=0,跳过续期, player_id="
+			LOG_WARN << "[PlayerBattle] ConfirmBattle: player offline and deadline_ms=0;renewal skipped, player_id="
 					 << playerId << " battle_id=" << battleId;
 			return;
 		}
 		if (!RedisReady())
 		{
-			LOG_WARN << "[PlayerBattle] ConfirmBattle: 玩家不在线且 Redis 未连接,跳过续期, player_id="
+			LOG_WARN << "[PlayerBattle] ConfirmBattle: player offline and Redis disconnected;renewal skipped, player_id="
 					 << playerId << " battle_id=" << battleId;
 			return;
 		}
@@ -1348,13 +1348,13 @@ void PlayerBattleSystem::ConfirmBattle(const ::BattleConfirmedEvent& event)
 			[playerId, battleId, deadlineMs](hiredis::Hiredis*, redisReply* reply) {
 				if (reply == nullptr || reply->type == REDIS_REPLY_ERROR)
 				{
-					LOG_ERROR << "[PlayerBattle] ConfirmBattle 读锁/ctx EVAL 失败, player_id=" << playerId
+					LOG_ERROR << "[PlayerBattle] ConfirmBattle lock/ctx read EVAL failed, player_id=" << playerId
 							  << " battle_id=" << battleId;
 					return;
 				}
 				if (reply->type != REDIS_REPLY_ARRAY)
 				{
-					LOG_WARN << "[PlayerBattle] ConfirmBattle: 玩家不在线且锁不在/已易主,忽略, player_id="
+					LOG_WARN << "[PlayerBattle] ConfirmBattle: player offline and lock missing/ownership changed;ignored, player_id="
 							 << playerId << " battle_id=" << battleId;
 					return;
 				}
@@ -1368,7 +1368,7 @@ void PlayerBattleSystem::ConfirmBattle(const ::BattleConfirmedEvent& event)
 				ctx.set_deadline_ms(deadlineMs);
 				const uint64_t ttlSec = LockTtlSecFor(deadlineMs, callbackNowMs);
 				ConfirmBattleLockIfMatch(playerId, battleId, ttlSec, SerializeBattleCtx(ctx));
-				LOG_INFO << "[PlayerBattle] ConfirmBattle: 玩家不在线,按锁值条件续期并落 ctx, player_id="
+				LOG_INFO << "[PlayerBattle] ConfirmBattle: player offline;renew conditionally by lock value and persist ctx, player_id="
 						 << playerId << " battle_id=" << battleId << " deadline_ms=" << deadlineMs
 						 << " battle_node_id=" << ctx.battle_node_id() << " lock_ttl_sec=" << ttlSec;
 			},
@@ -1390,15 +1390,15 @@ void PlayerBattleSystem::ConfirmBattle(const ::BattleConfirmedEvent& event)
 	if (inBattle->battle_id() != battleId)
 	{
 		// 玩家已进下一场:迟到的确认必须忽略,否则会把新战斗的期限改坏
-		LOG_INFO << "[PlayerBattle] ConfirmBattle: battle_id 不匹配,幂等忽略, player_id=" << playerId
+		LOG_INFO << "[PlayerBattle] ConfirmBattle: battle_id mismatch;idempotently ignored, player_id=" << playerId
 				 << " event_battle_id=" << battleId << " in_battle_id=" << inBattle->battle_id();
 		return;
 	}
 	if (inBattle->state() != IN_BATTLE_STATE_PREPARING)
 	{
 		// Kafka at-least-once 重投 / battle 侧周期补发:已 FIGHTING,幂等忽略
-		LOG_INFO << "[PlayerBattle] ConfirmBattle: 已处于 " << eInBattleState_Name(inBattle->state())
-				 << ",幂等忽略, player_id=" << playerId << " battle_id=" << battleId;
+		LOG_INFO << "[PlayerBattle] ConfirmBattle: already in " << eInBattleState_Name(inBattle->state())
+				 << ",idempotently ignored, player_id=" << playerId << " battle_id=" << battleId;
 		return;
 	}
 
@@ -1410,7 +1410,7 @@ void PlayerBattleSystem::ConfirmBattle(const ::BattleConfirmedEvent& event)
 	const uint64_t ttlSec = LockTtlSecFor(deadlineMs, nowMs);
 	ConfirmBattleLockIfMatch(playerId, battleId, ttlSec, SerializeBattleCtx(*inBattle));
 
-	LOG_INFO << "[PlayerBattle] 战斗确认 PREPARING->FIGHTING: player_id=" << playerId
+	LOG_INFO << "[PlayerBattle] Battle confirmed PREPARING->FIGHTING: player_id=" << playerId
 			 << " battle_id=" << battleId
 			 << " deadline_ms=" << deadlineMs
 			 << " prepare_deadline_ms=" << inBattle->prepare_deadline_ms()
@@ -1430,7 +1430,7 @@ void PlayerBattleSystem::ConfirmBattle(const ::BattleConfirmedEvent& event)
 		prepareSession == nullptr || prepareSession->gateSessionId != currentSessionId;
 	if (sessionChanged && currentSessionId != 0)
 	{
-		LOG_INFO << "[PlayerBattle] 备战期间换过会话,确认后补推重连提示: player_id=" << playerId
+		LOG_INFO << "[PlayerBattle] Session changed during preparation;send reconnect notification after confirmation: player_id=" << playerId
 				 << " battle_id=" << battleId
 				 << " prepare_session_id=" << (prepareSession != nullptr ? prepareSession->gateSessionId : 0u)
 				 << " current_session_id=" << currentSessionId;
@@ -1446,7 +1446,7 @@ void PlayerBattleSystem::RebuildBattleFreezeFromLock(entt::entity player, const 
 {
 	if (!RedisReady())
 	{
-		LOG_WARN << "[PlayerBattle] 冻结重建跳过(Redis 未连接), player_id=" << playerId
+		LOG_WARN << "[PlayerBattle] Freeze reconstruction skipped(Redis disconnected), player_id=" << playerId
 				 << " battle_id=" << battleId << " reason=" << reason;
 		return;
 	}
@@ -1455,27 +1455,27 @@ void PlayerBattleSystem::RebuildBattleFreezeFromLock(entt::entity player, const 
 		[player, playerId, battleId, deadlineMsHint, reasonCopy](hiredis::Hiredis*, redisReply* reply) {
 			if (reply == nullptr || reply->type == REDIS_REPLY_ERROR)
 			{
-				LOG_ERROR << "[PlayerBattle] 冻结重建读锁/ctx EVAL 失败, player_id=" << playerId
+				LOG_ERROR << "[PlayerBattle] Freeze reconstruction lock/ctx read EVAL failed, player_id=" << playerId
 						  << " battle_id=" << battleId << " reason=" << reasonCopy;
 				return;
 			}
 			if (reply->type != REDIS_REPLY_ARRAY)
 			{
 				// 锁不在或已易主:确认已过期(取消/结算/TTL 过期),没有重建资格
-				LOG_INFO << "[PlayerBattle] 冻结重建未命中: 锁不在或值不匹配, player_id=" << playerId
+				LOG_INFO << "[PlayerBattle] Freeze reconstruction did not match: lock missing or value mismatch, player_id=" << playerId
 						 << " battle_id=" << battleId << " reason=" << reasonCopy;
 				return;
 			}
 			// 回调期间实体可能已销毁/复用,或已被新的 PrepareBattle 挂上组件
 			if (!tlsEcs.actorRegistry.valid(player) || GuidForLog(player) != playerId)
 			{
-				LOG_INFO << "[PlayerBattle] 冻结重建放弃: 实体已不在, player_id=" << playerId
+				LOG_INFO << "[PlayerBattle] Freeze reconstruction abandoned: entity no longer exists, player_id=" << playerId
 						 << " battle_id=" << battleId << " reason=" << reasonCopy;
 				return;
 			}
 			if (const auto* existing = tlsEcs.actorRegistry.try_get<InBattleComp>(player))
 			{
-				LOG_INFO << "[PlayerBattle] 冻结重建放弃: 已有 InBattleComp, player_id=" << playerId
+				LOG_INFO << "[PlayerBattle] Freeze reconstruction abandoned: InBattleComp already exists, player_id=" << playerId
 						 << " battle_id=" << battleId << " in_battle_id=" << existing->battle_id()
 						 << " reason=" << reasonCopy;
 				return;
@@ -1485,7 +1485,7 @@ void PlayerBattleSystem::RebuildBattleFreezeFromLock(entt::entity player, const 
 			// 改为推进销账(已落盘就连锁一起放掉)。
 			if (battle_settlement::HasApplied(SettlementLedgerOf(player), battleId))
 			{
-				LOG_INFO << "[PlayerBattle] 冻结重建跳过: 锁指向的战斗已结算待落盘, player_id=" << playerId
+				LOG_INFO << "[PlayerBattle] Freeze reconstruction skipped: locked battle settled and awaiting persistence, player_id=" << playerId
 						 << " battle_id=" << battleId << " reason=" << reasonCopy;
 				AckSettlementPending(playerId, battleId);
 				return;
@@ -1559,7 +1559,7 @@ void PlayerBattleSystem::RestoreBattleFreezeOnLogin(entt::entity player, const u
 			}
 			catch (const std::exception&)
 			{
-				LOG_ERROR << "[PlayerBattle] 登录重建: 锁值非法, player_id=" << playerId
+				LOG_ERROR << "[PlayerBattle] Login reconstruction: invalid lock value, player_id=" << playerId
 						  << " lock_value=" << lockValue;
 				return;
 			}
@@ -1572,7 +1572,7 @@ void PlayerBattleSystem::RestoreBattleFreezeOnLogin(entt::entity player, const u
 			// 改为推进销账(已落盘就连锁一起放掉)。
 			if (battle_settlement::HasApplied(SettlementLedgerOf(player), battleId))
 			{
-				LOG_INFO << "[PlayerBattle] 冻结重建跳过: 锁指向的战斗已结算待落盘, player_id=" << playerId
+				LOG_INFO << "[PlayerBattle] Freeze reconstruction skipped: locked battle settled and awaiting persistence, player_id=" << playerId
 						 << " battle_id=" << battleId << " reason=login";
 				AckSettlementPending(playerId, battleId);
 				return;
@@ -1622,7 +1622,7 @@ bool PlayerBattleSystem::ApplySettlementToEntity(entt::entity player, const ::Ba
     const uint64_t battleId = settlement.battle_id();
     if (playerId == 0 || playerId != settlement.player_id() || battleId == 0)
     {
-        LOG_ERROR << "[PlayerBattle] 应用结算失败: 实体或结算归属非法, player_id=" << playerId
+        LOG_ERROR << "[PlayerBattle] Settlement application failed: invalid entity or settlement ownership, player_id=" << playerId
                   << " battle_id=" << battleId;
         return false;
     }
@@ -1633,7 +1633,7 @@ bool PlayerBattleSystem::ApplySettlementToEntity(entt::entity player, const ::Ba
     // 调用方经 AckSettlementPending 决定。两条判据分开是本次改造的核心。
     if (battle_settlement::HasApplied(SettlementLedgerOf(player), battleId))
     {
-        LOG_INFO << "[PlayerBattle] 结算已在持久账本中,跳过重复应用: player_id=" << playerId
+        LOG_INFO << "[PlayerBattle] Settlement already in persistent ledger;duplicate application skipped: player_id=" << playerId
                  << " battle_id=" << battleId;
         if (alreadyAppliedOut != nullptr) *alreadyAppliedOut = true;
         return true;
@@ -1645,8 +1645,8 @@ bool PlayerBattleSystem::ApplySettlementToEntity(entt::entity player, const ::Ba
     // 销毁一起没,账本却已记成已应用。
     if (!IsSettlementApplicable(player))
     {
-        LOG_WARN << "[PlayerBattle] 玩家此刻不可改(跨 zone 冻结 / 交接在途 / 退出中),"
-                    "保留结算待重投: player_id=" << playerId << " battle_id=" << battleId;
+        LOG_WARN << "[PlayerBattle] Player cannot currently be modified(cross-zone freeze / handoff in progress / exiting),"
+                    "settlement retained for redelivery: player_id=" << playerId << " battle_id=" << battleId;
         return false;
     }
 
@@ -1658,7 +1658,7 @@ bool PlayerBattleSystem::ApplySettlementToEntity(entt::entity player, const ::Ba
     if (gSettlementApplications.Forget(playerId, battleId))
     {
         LOG_ERROR << "[PlayerBattle] metric=battle_settlement_cache_ledger_mismatch player_id=" << playerId
-                  << " battle_id=" << battleId << ",缓存判已应用但持久账本无记录,按账本重新应用";
+                  << " battle_id=" << battleId << ",cache reports applied but persistent ledger has no record;reapply according to ledger";
     }
 
     using ApplicationCache = battle_settlement::SettlementApplicationCache;
@@ -1667,7 +1667,7 @@ bool PlayerBattleSystem::ApplySettlementToEntity(entt::entity player, const ::Ba
 		auto* baseAttributes = tlsEcs.actorRegistry.try_get<BaseAttributesComp>(player);
 		if (baseAttributes == nullptr)
 		{
-			LOG_ERROR << "[PlayerBattle] 应用结算失败: 缺 BaseAttributesComp, player_id=" << playerId
+			LOG_ERROR << "[PlayerBattle] Settlement application failed: missing BaseAttributesComp, player_id=" << playerId
 					  << " battle_id=" << settlement.battle_id();
 			return false;
 		}
@@ -1678,7 +1678,7 @@ bool PlayerBattleSystem::ApplySettlementToEntity(entt::entity player, const ::Ba
 	    {
 	        if (settlement.gold_gain() > static_cast<uint64_t>(std::numeric_limits<int64_t>::max()))
 	        {
-	            LOG_ERROR << "[PlayerBattle] 金钱结算超出入账范围: player_id=" << playerId
+	            LOG_ERROR << "[PlayerBattle] Currency settlement exceeds credit range: player_id=" << playerId
 	                      << " battle_id=" << battleId;
 	            return false;
 	        }
@@ -1686,7 +1686,7 @@ bool PlayerBattleSystem::ApplySettlementToEntity(entt::entity player, const ::Ba
 	            player, kCurrencyGold, static_cast<int64_t>(settlement.gold_gain()));
 	        if (err != kSuccess)
 	        {
-	            LOG_WARN << "[PlayerBattle] 金钱入账失败，保留结算待重投: player_id=" << playerId
+	            LOG_WARN << "[PlayerBattle] Currency credit failed;settlement retained for redelivery: player_id=" << playerId
 	                     << " battle_id=" << battleId << " err=" << err;
 	            return false;
 	        }
@@ -1717,7 +1717,7 @@ bool PlayerBattleSystem::ApplySettlementToEntity(entt::entity player, const ::Ba
 			ReviveBaseAttributesIfDead(*baseAttributes,
 				derivedForRevive != nullptr ? derivedForRevive->max_health() : 0,
 				derivedForRevive != nullptr ? derivedForRevive->max_mana() : 0);
-			LOG_INFO << "[PlayerBattle] 结算阵亡基础复活: player_id=" << playerId
+			LOG_INFO << "[PlayerBattle] Basic revival after death in settlement: player_id=" << playerId
 					 << " battle_id=" << settlement.battle_id()
 					 << " health=" << baseAttributes->health() << " mana=" << baseAttributes->mana();
 		}
@@ -1740,7 +1740,7 @@ bool PlayerBattleSystem::ApplySettlementToEntity(entt::entity player, const ::Ba
 		// 一期仅记日志留痕,接入后在此入账(见 open_issues)
 		if (settlement.exp_gain() > 0)
 		{
-			LOG_INFO << "[PlayerBattle] 经验结算暂缓(经验系统未接入): player_id=" << playerId
+			LOG_INFO << "[PlayerBattle] Experience settlement deferred(experience system not integrated): player_id=" << playerId
 					 << " battle_id=" << settlement.battle_id() << " exp=" << settlement.exp_gain();
 		}
 
@@ -1775,12 +1775,12 @@ bool PlayerBattleSystem::ApplySettlementToEntity(entt::entity player, const ::Ba
 											 TimeSystem::NowMillisecondsUTC()))
 		{
 			LOG_ERROR << "[PlayerBattle] metric=battle_settlement_ledger_evicted player_id=" << playerId
-					  << " battle_id=" << battleId << ",账本满(连续 "
+					  << " battle_id=" << battleId << ",ledger full(consecutive "
 					  << battle_settlement::kMaxAppliedRecords
-					  << " 局销账未确认,说明 Redis 条件删长期失败)已淘汰最旧项;"
-						 "被淘汰的那一局若再被重投会重复发奖";
+					  << " battle acknowledgments unconfirmed,indicating prolonged Redis conditional deletion failure);oldest entry evicted;"
+						 "redelivery of the evicted battle will grant rewards again";
 		}
-		LOG_INFO << "[PlayerBattle] 结算已应用: player_id=" << playerId
+		LOG_INFO << "[PlayerBattle] Settlement applied: player_id=" << playerId
 				 << " battle_id=" << settlement.battle_id()
 				 << " outcome=" << settlement.outcome()
 				 << " health=" << health << " mana=" << settlement.mana()
@@ -1801,12 +1801,12 @@ bool PlayerBattleSystem::ApplySettlementToEntity(entt::entity player, const ::Ba
     {
         // 防御分支:应用前已按账本清掉陈旧的已完成项,正常走不到。真走到了说明缓存与账本的约定被破坏,
         // 不应用、不销账,保留 pending 等重投,并告警。
-        LOG_ERROR << "[PlayerBattle] 结算缓存意外判重复(应用前已清陈旧项), player_id=" << playerId
-                  << " battle_id=" << battleId << ",保留待重投";
+        LOG_ERROR << "[PlayerBattle] Settlement cache unexpectedly reported duplicate(stale entry cleared before application), player_id=" << playerId
+                  << " battle_id=" << battleId << ",retained for redelivery";
         return false;
     }
     // InFlight 不能提前 ACK；Failed/Full 保留记录供重投，避免永久吞掉合法结算。
-    LOG_WARN << "[PlayerBattle] 结算本次未应用，保留待重投: player_id=" << playerId
+    LOG_WARN << "[PlayerBattle] Settlement not applied this time;retained for redelivery: player_id=" << playerId
              << " battle_id=" << battleId << " status=" << static_cast<int>(status);
     return false;
 }
@@ -1818,7 +1818,7 @@ void PlayerBattleSystem::ApplySettlement(const ::BattleSettlementEvent& event)
 	const uint64_t battleId = settlement.battle_id();
 	if (playerId == 0 || battleId == 0)
 	{
-		LOG_ERROR << "[PlayerBattle] 结算事件非法: player_id=" << playerId << " battle_id=" << battleId;
+		LOG_ERROR << "[PlayerBattle] Invalid settlement event: player_id=" << playerId << " battle_id=" << battleId;
 		return;
 	}
 
@@ -1834,14 +1834,14 @@ void PlayerBattleSystem::ApplySettlement(const ::BattleSettlementEvent& event)
 		// 锁不在则什么都不动,留给登录钩子按账本裁决(StorePendingSettlementIfLockMatch 的说明)。
 		if (!RedisReady())
 		{
-			LOG_ERROR << "[PlayerBattle] 离线结算暂存失败(Redis 未连接), player_id=" << playerId
-					  << " battle_id=" << battleId << ",本条结算丢失(Kafka 重投可补)";
+			LOG_ERROR << "[PlayerBattle] Offline settlement staging failed(Redis disconnected), player_id=" << playerId
+					  << " battle_id=" << battleId << ",this settlement is lost(Kafka redelivery can recover it)";
 			return;
 		}
 		std::string payload;
 		if (!event.SerializeToString(&payload))
 		{
-			LOG_ERROR << "[PlayerBattle] 结算事件序列化失败, player_id=" << playerId
+			LOG_ERROR << "[PlayerBattle] Settlement event serialization failed, player_id=" << playerId
 					  << " battle_id=" << battleId;
 			return;
 		}
@@ -1853,7 +1853,7 @@ void PlayerBattleSystem::ApplySettlement(const ::BattleSettlementEvent& event)
 	const auto* inBattle = tlsEcs.actorRegistry.try_get<InBattleComp>(player);
 	if (inBattle != nullptr && inBattle->battle_id() != battleId)
 	{
-		LOG_WARN << "[PlayerBattle] 结算丢弃: battle_id 不匹配(重复投递或已作废), player_id=" << playerId
+		LOG_WARN << "[PlayerBattle] Settlement discarded: battle_id mismatch(duplicate delivery or invalidated), player_id=" << playerId
 				 << " event_battle_id=" << battleId << " in_battle_id=" << inBattle->battle_id();
 		// 条件销账:只删仍指向本局的记录。玩家已经在打下一场时,记录早被那一局覆盖,
 		// 这里是无害的空操作;而真的是"重复投递"时,它让 battle 停止重投。
@@ -1867,8 +1867,8 @@ void PlayerBattleSystem::ApplySettlement(const ::BattleSettlementEvent& event)
 		// 当前战斗(期间没有进第二场),结算必须应用而不是丢弃;锁不在才是真正的重复投递/已作废。
 		if (!RedisReady())
 		{
-			LOG_ERROR << "[PlayerBattle] 结算丢弃: 无 InBattleComp 且 Redis 未连接无法核对锁, player_id="
-					  << playerId << " battle_id=" << battleId << "(Kafka 重投可补)";
+			LOG_ERROR << "[PlayerBattle] Settlement discarded: no InBattleComp and Redis disconnected;cannot verify lock, player_id="
+					  << playerId << " battle_id=" << battleId << "(Kafka redelivery can recover it)";
 			return;
 		}
 		tlsRedis.GetZoneRedis()->command(
@@ -1877,14 +1877,14 @@ void PlayerBattleSystem::ApplySettlement(const ::BattleSettlementEvent& event)
                 if (reply == nullptr ||
                     (reply->type != REDIS_REPLY_STRING && reply->type != REDIS_REPLY_NIL))
                 {
-                    LOG_WARN << "[PlayerBattle] 结算查锁失败，保留待重投: player_id=" << playerId
+                    LOG_WARN << "[PlayerBattle] Settlement lock lookup failed;retained for redelivery: player_id=" << playerId
                              << " battle_id=" << battleId;
                     return;
                 }
 				if (reply == nullptr || reply->type != REDIS_REPLY_STRING ||
 					std::string(reply->str, reply->len) != std::to_string(battleId))
 				{
-					LOG_WARN << "[PlayerBattle] 结算丢弃: 无 InBattleComp 且锁不在/值不匹配(重复投递或已作废), player_id="
+					LOG_WARN << "[PlayerBattle] Settlement discarded: no InBattleComp and lock missing/value mismatch(duplicate delivery or invalidated), player_id="
 							 << playerId << " battle_id=" << battleId;
 					AckSettlementPending(playerId, battleId);
 					return;
@@ -1894,19 +1894,19 @@ void PlayerBattleSystem::ApplySettlement(const ::BattleSettlementEvent& event)
 				{
 					// 回调期间玩家又下线了 / 进入了退出流程(视同离线,理由见本函数开头):
 					// 锁还在,交给 Kafka 重投走离线暂存路径
-					LOG_WARN << "[PlayerBattle] 结算按锁应用放弃: 实体已不在, player_id=" << playerId
-							 << " battle_id=" << battleId << "(Kafka 重投可补)";
+					LOG_WARN << "[PlayerBattle] Settlement application by lock abandoned: entity no longer exists, player_id=" << playerId
+							 << " battle_id=" << battleId << "(Kafka redelivery can recover it)";
 					return;
 				}
 				if (const auto* current = tlsEcs.actorRegistry.try_get<InBattleComp>(player);
 					current != nullptr && current->battle_id() != battleId)
 				{
-					LOG_WARN << "[PlayerBattle] 结算丢弃: 回调期间玩家已进下一场, player_id=" << playerId
+					LOG_WARN << "[PlayerBattle] Settlement discarded: player entered another battle during callback, player_id=" << playerId
 							 << " battle_id=" << battleId << " in_battle_id=" << current->battle_id();
 					return;
 				}
 				LOG_WARN << "[PlayerBattle] metric=battle_settlement_applied_by_lock player_id=" << playerId
-						 << " battle_id=" << battleId << ",无 InBattleComp,按锁值匹配应用结算";
+						 << " battle_id=" << battleId << ",no InBattleComp;apply settlement after matching lock value";
 				bool alreadyApplied = false;
 				if (!ApplySettlementToEntity(player, event.settlement(), &alreadyApplied)) return;
 				// 组件可能在回调期间被登录重建/迟到确认挂回来(同 battle_id):一并摘除;
@@ -1973,7 +1973,7 @@ void PlayerBattleSystem::ApplyPendingSettlement(entt::entity player, const ::Bat
 	{
 		RestoreBattleFreezeOnLogin(player, playerId);
 	}
-	LOG_INFO << "[PlayerBattle] 离线挂起结算已补应用: player_id=" << playerId
+	LOG_INFO << "[PlayerBattle] Pending offline settlement applied: player_id=" << playerId
 			 << " battle_id=" << settlement.battle_id();
 }
 
@@ -1993,7 +1993,7 @@ void PlayerBattleSystem::NotifyBattleReconnectToClient(entt::entity player)
 	message.set_battle_id(inBattle->battle_id());
 	SendMessageToClientViaGate(BattleClientPlayerNotifyBattleReconnectMessageId, message, player);
 
-	LOG_INFO << "[PlayerBattle] 战斗中换会话,已推重连提示: player_id=" << GuidForLog(player)
+	LOG_INFO << "[PlayerBattle] Session changed during battle;reconnect notification sent: player_id=" << GuidForLog(player)
 			 << " battle_id=" << inBattle->battle_id()
 			 << " state=" << eInBattleState_Name(inBattle->state())
 			 << " battle_node_id=" << inBattle->battle_node_id();
@@ -2038,13 +2038,13 @@ void PlayerBattleSystem::OnPlayerEnterScene(entt::entity player, uint32_t enterG
 				}
 				if (reply->len > static_cast<size_t>(std::numeric_limits<int>::max()))
 				{
-					LOG_ERROR << "[PlayerBattle] 挂起结算 payload 超长, player_id=" << playerId;
+					LOG_ERROR << "[PlayerBattle] Pending settlement payload too large, player_id=" << playerId;
 					return;
 				}
 				::BattleSettlementEvent event;
 				if (!event.ParseFromArray(reply->str, static_cast<int>(reply->len)))
 				{
-					LOG_ERROR << "[PlayerBattle] 挂起结算解析失败,清理脏数据, player_id=" << playerId;
+					LOG_ERROR << "[PlayerBattle] Pending settlement parse failed;invalid data removed, player_id=" << playerId;
 					if (RedisReady())
 					{
 						// 脏数据解不出 battle_id,无从条件删;两键一起无条件删。
@@ -2066,8 +2066,8 @@ void PlayerBattleSystem::OnPlayerEnterScene(entt::entity player, uint32_t enterG
 	}
 	else
 	{
-		LOG_WARN << "[PlayerBattle] 挂起结算检查跳过(Redis 未连接), player_id=" << playerId
-				 << "(battle:lock 未解,排队仍被挡,下次登录再补)";
+		LOG_WARN << "[PlayerBattle] Pending settlement check skipped(Redis disconnected), player_id=" << playerId
+				 << "(battle:lock remains;queueing is still blocked;retry on next login)";
 	}
 
 	// 2) 战斗中换了会话:实体仍存活且 InBattleComp 为 FIGHTING -> 提示客户端补签重连(turn-based §22 D72)
@@ -2094,7 +2094,7 @@ void PlayerBattleSystem::StartReaper(muduo::net::EventLoop* loop)
 {
 	if (loop == nullptr)
 	{
-		LOG_ERROR << "[PlayerBattle] StartReaper: loop 为空";
+		LOG_ERROR << "[PlayerBattle] StartReaper: loop is null";
 		return;
 	}
 	if (gReaperActive)
@@ -2148,7 +2148,7 @@ void PlayerBattleSystem::StartReaper(muduo::net::EventLoop* loop)
 						 << " battle_id=" << entry.battleId
 						 << " prepare_deadline_ms=" << entry.deadlineMs
 						 << " now_ms=" << nowMs
-						 << ",备战作废摘组件(CreateBattle 未确认,match 断链或 gather 失败未取消);锁保留至 TTL 过期供迟到确认重建";
+						 << ",preparation invalidated and component removed(CreateBattle unconfirmed;match disconnected or gather failed without cancellation);lock retained until TTL expiry for reconstruction by late confirmation";
 				// 锁刻意保留:组队跟随链读到锁会 fail-closed 跳过,玩家下次进场再补
 				RemoveInBattleComp(entry.entity);
 				continue;
@@ -2156,7 +2156,7 @@ void PlayerBattleSystem::StartReaper(muduo::net::EventLoop* loop)
 			LOG_WARN << "[PlayerBattle] metric=battle_freeze_expired player_id=" << playerId
 					 << " battle_id=" << entry.battleId
 					 << " deadline_ms=" << entry.deadlineMs
-					 << " now_ms=" << nowMs << ",战斗作废解冻(battle 节点崩溃或结算事件丢失)";
+					 << " now_ms=" << nowMs << ",battle invalidated and freeze released(battle node crashed or settlement event lost)";
 			// 按 battle_id 条件删锁:作废判定与锁值同源,不会误删别的战斗
 			ClearBattleFreeze(entry.entity, playerId, entry.battleId);
 		}
@@ -2194,7 +2194,7 @@ void PlayerBattleSystem::StartReaper(muduo::net::EventLoop* loop)
 	});
 	gReaperActive = true;
 
-	LOG_INFO << "[PlayerBattle] 战斗冻结 reaper 已启动, interval=" << kReaperIntervalSec << "s";
+	LOG_INFO << "[PlayerBattle] Battle freeze reaper started, interval=" << kReaperIntervalSec << "s";
 }
 
 void PlayerBattleSystem::SetPersistFnForTest(PersistFn fn)
@@ -2210,5 +2210,5 @@ void PlayerBattleSystem::StopReaper()
 	}
 	gReaperLoop->cancel(gReaperTimerId);
 	gReaperActive = false;
-	LOG_INFO << "[PlayerBattle] 战斗冻结 reaper 已停止";
+	LOG_INFO << "[PlayerBattle] Battle freeze reaper stopped";
 }

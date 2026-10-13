@@ -177,21 +177,21 @@ def compare(sandbox_gen: Path, repo_gen: Path, limit: int = 30) -> int:
         if repo[k] == sb[k]:
             continue
         if Path(k).name == "manifest.json" and _manifest_equivalent(repo_gen / k, sandbox_gen / k):
-            print("  manifest.json:仅 %s 不同(设计如此),content_digest 与 tables 段相同"
+            print("  manifest.json:only %s differs (by design); content_digest and tables match"
                   % "/".join(_MANIFEST_VOLATILE))
             continue
         diff.append(k)
 
-    print("\n=== 产物对拍 ===")
-    print("  纳入比对 %d 个文件(已按沙盒目录范围过滤,忽略 __pycache__)"
+    print("\n=== Artifact comparison ===")
+    print("  Comparing %d files (filtered to the sandbox directory scope; __pycache__ ignored)"
           % len(set(repo) | set(sb)))
-    print("  相同 %d / 仅仓内(疑似陈旧残留) %d / 仅沙盒(新增) %d / 内容不同 %d"
+    print("  Identical %d / repository only (possibly stale) %d / sandbox only (new) %d / different contents %d"
           % (len(set(repo) & set(sb)) - len(diff), len(only_repo), len(only_sb), len(diff)))
-    for tag, items in (("陈旧残留?", only_repo), ("新增", only_sb), ("内容不同", diff)):
+    for tag, items in (("possibly stale", only_repo), ("new", only_sb), ("different contents", diff)):
         for k in items[:limit]:
             print("    [%s] %s" % (tag, k))
         if len(items) > limit:
-            print("    [%s] ...(还有 %d 个)" % (tag, len(items) - limit))
+            print("    [%s] ...(%d more)" % (tag, len(items) - limit))
     return len(only_repo) + len(only_sb) + len(diff)
 
 
@@ -214,18 +214,18 @@ def main(argv: list[str] | None = None) -> int:
     protoc = Path(args.protoc) if args.protoc else None
     if not args.skip_run:
         cfg = build_sandbox_config(out_dir, protoc)
-        print("沙盒配置:", cfg)
+        print("Sandbox configuration:", cfg)
         print("protoc  :", protoc or _REPO_PROTOC)
         rc = subprocess.run([sys.executable, str(_ROOT / "run.py"), str(cfg)]).returncode
         if rc != 0:
-            print("导表失败,退出码 %d" % rc)
+            print("Table export failed; exit code %d" % rc)
             return rc
 
     if args.compare or args.against:
         base = (Path(args.against).resolve() / "generated") if args.against \
             else (_REPO / "generated")
         n = compare(out_dir / "generated", base)
-        print("\n差异合计:%d" % n)
+        print("\nTotal differences:%d" % n)
         return 1 if n else 0
     return 0
 

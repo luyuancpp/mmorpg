@@ -69,7 +69,7 @@ func (l *ChallengeLogic) ChallengePlayer(in *matchpb.ChallengePlayerRequest) (*m
 	// 咨询性检查双方 battle:lock(权威性复查在应战时刻做)。
 	if locked, err := isPlayerBattleLocked(l.svcCtx, challengerId); err != nil || locked {
 		if err != nil {
-			l.Errorf("[challenge] 查发起者战斗锁失败 player=%d: %v", challengerId, err)
+			l.Errorf("[challenge] Failed to check challenger's battle lock player=%d: %v", challengerId, err)
 		}
 		metrics.ObserveChallenge("invite", "self_busy")
 		return &matchpb.ChallengePlayerResponse{
@@ -78,7 +78,7 @@ func (l *ChallengeLogic) ChallengePlayer(in *matchpb.ChallengePlayerRequest) (*m
 	}
 	if locked, err := isPlayerBattleLocked(l.svcCtx, in.TargetPlayerId); err != nil || locked {
 		if err != nil {
-			l.Errorf("[challenge] 查目标战斗锁失败 target=%d: %v", in.TargetPlayerId, err)
+			l.Errorf("[challenge] Failed to check target's battle lock target=%d: %v", in.TargetPlayerId, err)
 		}
 		metrics.ObserveChallenge("invite", "target_busy")
 		return &matchpb.ChallengePlayerResponse{
@@ -89,7 +89,7 @@ func (l *ChallengeLogic) ChallengePlayer(in *matchpb.ChallengePlayerRequest) (*m
 	// 目标在线校验(挑战弹窗要经 gate 推到目标客户端)。
 	targetSession, err := loadPlayerSession(l.svcCtx, in.TargetPlayerId)
 	if err != nil {
-		l.Errorf("[challenge] 读目标会话失败 target=%d: %v", in.TargetPlayerId, err)
+		l.Errorf("[challenge] Failed to read target session target=%d: %v", in.TargetPlayerId, err)
 		metrics.ObserveChallenge("invite", "internal")
 		return &matchpb.ChallengePlayerResponse{
 			ErrorMessage: tipErr(constants.ErrInternal, "服务器繁忙,请稍后再试"),
@@ -105,7 +105,7 @@ func (l *ChallengeLogic) ChallengePlayer(in *matchpb.ChallengePlayerRequest) (*m
 	// challenge_id 与 battle_id 同源(match 节点 snowflake)。
 	challengeId, err := l.svcCtx.BattleIDGen.Generate()
 	if err != nil {
-		l.Errorf("[challenge] challenge_id 生成失败 challenger=%d: %v", challengerId, err)
+		l.Errorf("[challenge] Failed to generate challenge_id challenger=%d: %v", challengerId, err)
 		metrics.ObserveChallenge("invite", "internal")
 		return &matchpb.ChallengePlayerResponse{
 			ErrorMessage: tipErr(constants.ErrInternal, "服务器繁忙,请稍后再试"),
@@ -119,7 +119,7 @@ func (l *ChallengeLogic) ChallengePlayer(in *matchpb.ChallengePlayerRequest) (*m
 	acquired, err := l.svcCtx.MatchRedis.SetnxEx(challengeTargetKey(in.TargetPlayerId),
 		strconv.FormatUint(challengeId, 10), ttl)
 	if err != nil {
-		l.Errorf("[challenge] 目标占坑失败 target=%d: %v", in.TargetPlayerId, err)
+		l.Errorf("[challenge] Failed to reserve target slot target=%d: %v", in.TargetPlayerId, err)
 		metrics.ObserveChallenge("invite", "internal")
 		return &matchpb.ChallengePlayerResponse{
 			ErrorMessage: tipErr(constants.ErrInternal, "服务器繁忙,请稍后再试"),
@@ -143,7 +143,7 @@ func (l *ChallengeLogic) ChallengePlayer(in *matchpb.ChallengePlayerRequest) (*m
 		challengeFieldConfig:     strconv.FormatUint(uint64(in.BattleConfigId), 10),
 		challengeFieldExpiresAt:  strconv.FormatUint(expiresAtMs, 10),
 	}); err != nil {
-		l.Errorf("[challenge] 写挑战记录失败 challenge=%d: %v", challengeId, err)
+		l.Errorf("[challenge] Failed to write challenge record challenge=%d: %v", challengeId, err)
 		cleanup()
 		metrics.ObserveChallenge("invite", "internal")
 		return &matchpb.ChallengePlayerResponse{
@@ -151,7 +151,7 @@ func (l *ChallengeLogic) ChallengePlayer(in *matchpb.ChallengePlayerRequest) (*m
 		}, nil
 	}
 	if err := l.svcCtx.MatchRedis.Expire(recordKey, ttl); err != nil {
-		l.Errorf("[challenge] 挑战记录挂 TTL 失败 challenge=%d: %v", challengeId, err)
+		l.Errorf("[challenge] Failed to set challenge record TTL challenge=%d: %v", challengeId, err)
 	}
 
 	// 发起者名字:一期用账号名占位(PlayerSession 无角色昵称,待接玩家昵称数据源)。
@@ -170,7 +170,7 @@ func (l *ChallengeLogic) ChallengePlayer(in *matchpb.ChallengePlayerRequest) (*m
 	}
 	if err := pushToPlayer(l.svcCtx, in.TargetPlayerId,
 		uint32(game.MatchServiceNotifyChallengeInviteMessageId), invite); err != nil {
-		l.Errorf("[challenge] 推挑战弹窗失败 challenge=%d target=%d: %v", challengeId, in.TargetPlayerId, err)
+		l.Errorf("[challenge] Failed to push challenge prompt challenge=%d target=%d: %v", challengeId, in.TargetPlayerId, err)
 		cleanup()
 		metrics.ObserveChallenge("invite", "push_failed")
 		return &matchpb.ChallengePlayerResponse{
@@ -178,7 +178,7 @@ func (l *ChallengeLogic) ChallengePlayer(in *matchpb.ChallengePlayerRequest) (*m
 		}, nil
 	}
 
-	l.Infof("[challenge] 挑战已发起 challenge=%d challenger=%d target=%d config=%d",
+	l.Infof("[challenge] Challenge initiated challenge=%d challenger=%d target=%d config=%d",
 		challengeId, challengerId, in.TargetPlayerId, in.BattleConfigId)
 	metrics.ObserveChallenge("invite", "ok")
 	return &matchpb.ChallengePlayerResponse{ChallengeId: challengeId}, nil
@@ -198,7 +198,7 @@ func (l *ChallengeLogic) RespondChallenge(in *matchpb.RespondChallengeRequest) (
 
 	fields, err := l.svcCtx.MatchRedis.Hgetall(challengeKey(in.ChallengeId))
 	if err != nil {
-		l.Errorf("[challenge] 读挑战记录失败 challenge=%d: %v", in.ChallengeId, err)
+		l.Errorf("[challenge] Failed to read challenge record challenge=%d: %v", in.ChallengeId, err)
 		metrics.ObserveChallenge("respond", "internal")
 		return &matchpb.RespondChallengeResponse{
 			ErrorMessage: tipErr(constants.ErrInternal, "服务器繁忙,请稍后再试"),
@@ -236,7 +236,7 @@ func (l *ChallengeLogic) RespondChallenge(in *matchpb.RespondChallengeRequest) (
 	// 拒战:通知发起者,收场。
 	if !in.Accept {
 		l.pushResult(challengerId, in.ChallengeId, false, responderId)
-		l.Infof("[challenge] 已拒绝 challenge=%d challenger=%d responder=%d",
+		l.Infof("[challenge] Challenge rejected challenge=%d challenger=%d responder=%d",
 			in.ChallengeId, challengerId, responderId)
 		metrics.ObserveChallenge("respond", "declined")
 		return &matchpb.RespondChallengeResponse{}, nil
@@ -246,7 +246,7 @@ func (l *ChallengeLogic) RespondChallenge(in *matchpb.RespondChallengeRequest) (
 	// (先到先得,后到的 gather 拒绝;这里提前挡住明确的冲突)。
 	if locked, err := isPlayerBattleLocked(l.svcCtx, challengerId); err != nil || locked {
 		if err != nil {
-			l.Errorf("[challenge] 复查发起者战斗锁失败 challenger=%d: %v", challengerId, err)
+			l.Errorf("[challenge] Failed to recheck challenger's battle lock challenger=%d: %v", challengerId, err)
 		}
 		l.pushResult(challengerId, in.ChallengeId, false, responderId)
 		metrics.ObserveChallenge("respond", "challenger_busy")
@@ -256,7 +256,7 @@ func (l *ChallengeLogic) RespondChallenge(in *matchpb.RespondChallengeRequest) (
 	}
 	if locked, err := isPlayerBattleLocked(l.svcCtx, responderId); err != nil || locked {
 		if err != nil {
-			l.Errorf("[challenge] 复查应战者战斗锁失败 responder=%d: %v", responderId, err)
+			l.Errorf("[challenge] Failed to recheck responder's battle lock responder=%d: %v", responderId, err)
 		}
 		l.pushResult(challengerId, in.ChallengeId, false, responderId)
 		metrics.ObserveChallenge("respond", "responder_busy")
@@ -275,14 +275,14 @@ func (l *ChallengeLogic) RespondChallenge(in *matchpb.RespondChallengeRequest) (
 		if !RunChallengeGather(svcCtx, uint32(configId), challengerId, responderId) {
 			// gather 失败:已冻结者已被解冻(补偿矩阵),这里只能事后周知。
 			// 一期用 accepted=false 的结果消息兜底提示双方,产品化提示二期。
-			logx.Errorf("[challenge] 应战后开局失败 challenge=%d challenger=%d responder=%d",
+			logx.Errorf("[challenge] Failed to start battle after challenge acceptance challenge=%d challenger=%d responder=%d",
 				challengeId, challengerId, responderId)
 			pushChallengeResult(svcCtx, challengerId, challengeId, false, responderId)
 			pushChallengeResult(svcCtx, responderId, challengeId, false, responderId)
 		}
 	})
 
-	l.Infof("[challenge] 已应战,进入开局管线 challenge=%d challenger=%d responder=%d config=%d",
+	l.Infof("[challenge] Challenge accepted; entering battle start pipeline challenge=%d challenger=%d responder=%d config=%d",
 		in.ChallengeId, challengerId, responderId, configId)
 	metrics.ObserveChallenge("respond", "accepted")
 	return &matchpb.RespondChallengeResponse{}, nil
@@ -294,10 +294,10 @@ func (l *ChallengeLogic) RespondChallenge(in *matchpb.RespondChallengeRequest) (
 // 残留只影响 60s 内对同一目标重复发起。
 func deleteChallengeRecord(svcCtx *svc.ServiceContext, challengeId uint64, targetPlayerId uint64) {
 	if _, err := svcCtx.MatchRedis.Del(challengeKey(challengeId)); err != nil {
-		logx.Errorf("[challenge] 删除挑战记录失败 challenge=%d: %v", challengeId, err)
+		logx.Errorf("[challenge] Failed to delete challenge record challenge=%d: %v", challengeId, err)
 	}
 	if _, err := svcCtx.MatchRedis.Del(challengeTargetKey(targetPlayerId)); err != nil {
-		logx.Errorf("[challenge] 删除目标占坑失败 challenge=%d target=%d: %v", challengeId, targetPlayerId, err)
+		logx.Errorf("[challenge] Failed to release target slot challenge=%d target=%d: %v", challengeId, targetPlayerId, err)
 	}
 }
 
@@ -315,10 +315,10 @@ func pushChallengeResult(svcCtx *svc.ServiceContext, toPlayerId, challengeId uin
 	if err := pushToPlayer(svcCtx, toPlayerId,
 		uint32(game.MatchServiceNotifyChallengeResultMessageId), result); err != nil {
 		if errors.Is(err, errPlayerOffline) {
-			logx.Infof("[challenge] 结果通知目标不在线,放弃 player=%d challenge=%d", toPlayerId, challengeId)
+			logx.Infof("[challenge] Result notification target offline; abandoning player=%d challenge=%d", toPlayerId, challengeId)
 			return
 		}
-		logx.Errorf("[challenge] 推挑战结果失败 player=%d challenge=%d: %v", toPlayerId, challengeId, err)
+		logx.Errorf("[challenge] Failed to push challenge result player=%d challenge=%d: %v", toPlayerId, challengeId, err)
 	}
 }
 

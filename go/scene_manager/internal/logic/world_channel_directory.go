@@ -451,7 +451,7 @@ func PublishWorldChannelDirectoriesForZone(ctx context.Context, svcCtx *svc.Serv
 		outcome, err := publishWorldChannelDirectory(svcCtx, zoneID, confID, now)
 		metrics.ObserveWorldChannelDirectoryPublish(zoneID, outcome)
 		if err != nil {
-			logx.Errorf("[ChannelDirectory] zone=%d conf=%d: 本轮不发布分线目录: %v", zoneID, confID, err)
+			logx.Errorf("[ChannelDirectory] zone=%d conf=%d: channel directory not published this round: %v", zoneID, confID, err)
 			continue
 		}
 		if outcome == metrics.ChannelDirectoryPublishOK {
@@ -468,11 +468,11 @@ func PublishWorldChannelDirectoriesForZone(ctx context.Context, svcCtx *svc.Serv
 func StartWorldChannelDirectoryPublisher(ctx context.Context, svcCtx *svc.ServiceContext) {
 	refreshSeconds := svcCtx.Config.ChannelSwitch.EffectiveDirectoryRefreshSeconds()
 	if refreshSeconds <= 0 {
-		logx.Info("[ChannelDirectory] 未启动:ChannelSwitch.DirectoryRefreshSeconds < 0,不发布分线目录(客户端拿不到线路列表)")
+		logx.Info("[ChannelDirectory] Not started: ChannelSwitch.DirectoryRefreshSeconds < 0, channel directory unpublished (clients cannot obtain channel list)")
 		return
 	}
 
-	logx.Infof("[ChannelDirectory] 已启动: interval=%ds ttl=%ds max_players_per_channel=%d busy_percent=%d switch_cooldown=%ds switch_enabled=%v",
+	logx.Infof("[ChannelDirectory] Started: interval=%ds ttl=%ds max_players_per_channel=%d busy_percent=%d switch_cooldown=%ds switch_enabled=%v",
 		refreshSeconds, worldChannelDirectoryTTLSeconds(refreshSeconds, svcCtx.Config.EffectiveLeaderLockTTLSeconds()),
 		svcCtx.Config.ChannelMaxPlayers(),
 		svcCtx.Config.ChannelSwitch.EffectiveBusyPercent(), svcCtx.Config.ChannelSwitch.EffectiveCooldownSeconds(),

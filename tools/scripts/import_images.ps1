@@ -158,10 +158,10 @@ try {
     if (-not [System.IO.Directory]::Exists($dirFull)) { throw "镜像版本目录不存在:$dirFull" }
 
     if ([System.IO.File]::Exists((Join-Path $dirFull 'sha256sums.txt'))) {
-        Write-Host "[INFO] 校验完整性:$dirFull" -ForegroundColor Cyan
+        Write-Host "[INFO] Checking integrity: $dirFull" -ForegroundColor Cyan
         Test-Sha256Sums -Dir $dirFull
     } elseif ($AllowMissingChecksums) {
-        Write-Host "[WARN] $dirFull 没有 sha256sums.txt,按 -AllowMissingChecksums 跳过完整性校验(仍会逐个核对镜像 ID)" -ForegroundColor Yellow
+        Write-Host "[WARN] $dirFull has no sha256sums.txt; skipping integrity checks via -AllowMissingChecksums (image IDs are still checked individually)" -ForegroundColor Yellow
     } else {
         throw "缺少 sha256sums.txt,拒绝导入:$dirFull(publish / fetch 产出的目录必定带它;确认来源可信的手工拷贝目录可加 -AllowMissingChecksums)"
     }
@@ -194,7 +194,7 @@ try {
         $plan.Add([pscustomobject]@{ Ref = $ref; ImageId = $imageId; TarPath = $tarPath })
     }
 
-    Write-Host "[INFO] 待导入 $($plan.Count) 个镜像" -ForegroundColor Cyan
+    Write-Host "[INFO] $($plan.Count) images to import" -ForegroundColor Cyan
     $mismatches = New-Object System.Collections.Generic.List[string]
     foreach ($item in $plan) {
         Write-Host "[INFO] docker load -i $($item.TarPath)" -ForegroundColor Cyan
@@ -218,18 +218,18 @@ try {
         # 本机 .Id 落在集合里即证明该 tag 指向的正是 tar 里的镜像;任一不在集合里就判不符
         $archive = Get-ArchiveImageDigests -ArchivePath $item.TarPath
         if ($archive.Digests.Contains($item.ImageId) -and $archive.Digests.Contains($actualId)) {
-            Write-Host "[ OK ] $($item.Ref) = $actualId(清单记录 $($item.ImageId):发布机与本机镜像存储口径不同,已按归档内 digest 核对一致)" -ForegroundColor Green
+            Write-Host "[ OK ] $($item.Ref) = $actualId (manifest records $($item.ImageId): release and local image stores use different ID representations; archive digest verified)" -ForegroundColor Green
             continue
         }
         $archiveNote = if ($archive.Reason) { "归档复核失败:$($archive.Reason)" } else { "归档内镜像身份 [$(@($archive.Digests) -join ', ')]" }
         $mismatches.Add("$($item.Ref) 期望 $($item.ImageId) 实际 $actualId($archiveNote)")
-        Write-Host "[ERR ] 镜像 ID 不符:$($item.Ref)" -ForegroundColor Red
+        Write-Host "[ERR ] Image ID mismatch: $($item.Ref)" -ForegroundColor Red
     }
 
     if ($mismatches.Count -gt 0) {
         throw "镜像 ID 不符($($mismatches.Count) 个,本机该 tag 指向的不是清单里的镜像,已按归档内 config / manifest digest 复核仍不符,禁止继续部署):`n$($mismatches -join "`n")"
     }
-    Write-Host "[ OK ] 导入完成:$($plan.Count) 个镜像,ID 与清单一致" -ForegroundColor Green
+    Write-Host "[ OK ] Import complete: $($plan.Count) images; IDs match the manifest" -ForegroundColor Green
     exit 0
 }
 catch {

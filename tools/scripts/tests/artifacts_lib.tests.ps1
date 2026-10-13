@@ -28,7 +28,7 @@ $script:RepoRoot = Split-Path -Parent (Split-Path -Parent $script:ToolsScriptsDi
 . (Join-Path $script:ToolsScriptsDir 'lib' 'artifacts_lib.ps1')
 
 Write-Host ''
-Write-Host '=== artifacts_lib.ps1 制品目录公共库契约测试 ==='
+Write-Host '=== artifacts_lib.ps1 artifact directory library contract tests ==='
 
 $script:TempRoot = Join-Path ([System.IO.Path]::GetTempPath()) ('mmorpg-artifacts-lib-tests-' + [guid]::NewGuid().ToString('N'))
 [System.IO.Directory]::CreateDirectory($script:TempRoot) | Out-Null

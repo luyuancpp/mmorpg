@@ -248,8 +248,8 @@ AssetOpAuthVerdict VerifyAssetOpAuth(std::string_view rpc, const ::AssetOpReques
 		{
 			g_secretMissingReported[ruleIndex] = true;
 			// 只写变量**名**与长度下限,绝不写密钥值、也不写实际长度(AGENTS §11.3)。
-			LOG_ERROR << "[AssetOpAuth] 调用方密钥未配置或去空白后不足 " << kAssetOpAuthMinSecretBytes
-					  << " 字节,该调用方的资产 RPC 将全部被拒 caller=" << rule->caller
+			LOG_ERROR << "[AssetOpAuth] Caller secret is not configured or shorter than " << kAssetOpAuthMinSecretBytes
+					  << " bytes after trimming;all asset RPCs from this caller will be rejected caller=" << rule->caller
 					  << " env=" << rule->secretEnv;
 		}
 		return AssetOpAuthVerdict::kSecretMissing;

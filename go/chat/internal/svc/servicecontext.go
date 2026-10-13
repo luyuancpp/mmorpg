@@ -76,13 +76,13 @@ func NewRedisHandles(c config.Config) (chatRds, sharedRds *redis.Redis, target s
 		// go-zero logx 没有 Warn 级别;用 Error 级打出来,保证在默认日志级别下一定可见。
 		// 回落本身不是故障(本地单库形态就是这样),但在 staging/prod 出现就是部署缺陷:
 		// 共享库是 allkeys-lfu,聊天历史会被当缓存淘汰,且与契约 key 抢内存。
-		logx.Errorf("[chat] WARN ChatRedis 未配置,chat:* 私有 key 回落到共享库 host=%s type=%s —— "+
-			"仅限本地单库形态;staging/prod 必须配置独立且 maxmemory-policy=noeviction 的 ChatRedis(契约 §4)",
+		logx.Errorf("[chat] WARN ChatRedis not configured; chat:* private keys falling back to shared database host=%s type=%s -- "+
+			"local single-database deployments only; staging/prod require separate ChatRedis with maxmemory-policy=noeviction (contract section 4)",
 			c.Redis.Host, c.Redis.Type)
 		return sharedRds, sharedRds, fmt.Sprintf("shared-fallback host=%s type=%s", c.Redis.Host, c.Redis.Type)
 	}
 	chatRds = redis.MustNewRedis(c.ChatRedis)
-	logx.Infof("[chat] ChatRedis 独立配置生效 host=%s type=%s(共享库 host=%s 仅作契约 key 句柄)",
+	logx.Infof("[chat] Separate ChatRedis configuration active host=%s type=%s (shared database host=%s used only for contract key access)",
 		c.ChatRedis.Host, c.ChatRedis.Type, c.Redis.Host)
 	return chatRds, sharedRds, fmt.Sprintf("ChatRedis host=%s type=%s", c.ChatRedis.Host, c.ChatRedis.Type)
 }
@@ -196,7 +196,7 @@ func StartMetrics(addr string) func() {
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 			defer cancel()
 			if err := srv.Shutdown(ctx); err != nil {
-				logx.Errorf("[chat] metrics排空超时,关闭连接: %v", err)
+				logx.Errorf("[chat] Metrics drain timed out; closing connection: %v", err)
 				_ = srv.Close()
 			}
 		})

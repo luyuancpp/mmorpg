@@ -149,7 +149,7 @@ func selectGateTargets(nodes []*commonpb.NodeInfo, requireClientEndpoint bool) [
 		// 启动,D79;require=false:endpoint 不可用的注册值),必须可见。
 		// 只在出错时出现,且跨 zone 重定向远比登录稀疏,所以每次调用合并成一行、
 		// 不另做节流。mmorpg_client_endpoint_select_total 由 shared/clientendpoint 统一计数,这里不另记指标。
-		logx.Errorf("selectGateTargets: %d 台 gate 没有可下发给客户端的地址,已跳过(require_client_endpoint=%v): %v",
+		logx.Errorf("selectGateTargets: %d gates lack client-advertisable addresses; skipped (require_client_endpoint=%v): %v",
 			len(skipped), requireClientEndpoint, skipped)
 	}
 	return clientendpoint.DedupeNewest(targets, gateTargetAddr, gateTargetLaunchTime)

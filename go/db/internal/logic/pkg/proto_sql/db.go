@@ -163,7 +163,7 @@ func CreateDatabase() error {
 			return fmt.Errorf("%w: refusing to CREATE DATABASE %q without an injected allow list (set %s)",
 				dbguard.ErrAllowlistMissing, target, dbguard.AllowedDatabasesEnv)
 		}
-		logx.Errorf("DB-ALLOWLIST: 白名单为空,按 AllowlistEnforcement=warn 放行 CREATE DATABASE %q。生产必须注入 %s",
+		logx.Errorf("DB-ALLOWLIST: Allowlist empty; allowing CREATE DATABASE %q under AllowlistEnforcement=warn. Production must inject %s",
 			target, dbguard.AllowedDatabasesEnv)
 	} else if !allow.Contains(target) {
 		return fmt.Errorf("%w: refusing to CREATE DATABASE %q; allowed=%s",
@@ -352,7 +352,7 @@ func assertSchemaUpToDate(ctx context.Context, q migrate.Queryer, model *proto2m
 				database, len(missingTables), migrate.SchemaMigrationsTable, migrateRemedyCommand, strings.Join(missingTables, ", "))
 		}
 		for _, name := range missingTables {
-			logx.Errorf("SCHEMA-DRIFT: 库 %s 缺表 %s,但基线已应用、`cmd/migrate -command up` 不会重建它(不阻断启动);该表的每条 db_task 会以 Error 1146 进死信,需人工建表",
+			logx.Errorf("SCHEMA-DRIFT: database %s missing table %s, but baseline already applied and cmd/migrate -command up will not recreate it (startup allowed); each db_task for this table will enter dead-letter with Error 1146, manual table creation required",
 				database, name)
 		}
 	}
@@ -364,11 +364,11 @@ func assertSchemaUpToDate(ctx context.Context, q migrate.Queryer, model *proto2m
 		return schemaCheckFailed(database, err)
 	}
 	for _, w := range warnings {
-		logx.Errorf("SCHEMA-DRIFT: 库 %s 需人工过目(不阻断启动): %s", database, w)
+		logx.Errorf("SCHEMA-DRIFT: database %s requires manual review (startup allowed): %s", database, w)
 	}
 	if drift.Empty() {
 		if len(missingTables) > 0 {
-			logx.Errorf("schema drift check NOT clean: database=%s tables=%d missing_tables=%s review_warnings=%d(缺表未阻断启动,见上)",
+			logx.Errorf("schema drift check NOT clean: database=%s tables=%d missing_tables=%s review_warnings=%d (missing tables do not block startup; see above)",
 				database, len(tables), strings.Join(missingTables, ","), len(warnings))
 			return nil
 		}
@@ -476,7 +476,7 @@ func InitDB() error {
 		defer cancel()
 		return assertSchemaUpToDate(ctx, DB.DB, DB.SqlModel, config.AppConfig.ServerConfig.Database.DBName, tables)
 	}
-	logx.Errorf("STARTUP-DDL: 启动路径正在跑建表/补列(policy=%s)。这是 dev/兼容开关,生产应改用 cmd/migrate",
+	logx.Errorf("STARTUP-DDL: Startup path executing table creation / column additions (policy=%s). This is a dev / compatibility option; production should use cmd/migrate",
 		policy.Source)
 	return CreateOrUpdateTables(tables)
 }
