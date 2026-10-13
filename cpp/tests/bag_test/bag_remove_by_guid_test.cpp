@@ -7,16 +7,19 @@
 // 两者最容易被后来者"顺手合并",合并的代价是玩家挂出去卖的那件装备会被悄悄夹掉,
 // 或者留下 size=0 的空壳与交易库快照同 guid 双存在(过户回来 = 复制)。
 //
-// 本文件的公共夹具(配置表、item 号段)由 bag_test.cpp 的 main() 统一装好。
+// 配置表由 bag_test.cpp 的 main() 统一装好;item 号段由本文件的夹具每条用例自己投(见 BagRemoveByGuidTest)。
 
 #include <gtest/gtest.h>
 
+#include <functional>
+#include <string>
 #include <vector>
 
 #include "engine/core/type_define/type_define.h"
 
 #include "modules/bag/bag_service.h"
 #include "modules/bag/bag_system.h"
+#include "modules/id_segment/guid_segment_registry.h"
 #include "player/comp/player_frozen_comp.h"
 #include "table/code/item_table.h"
 #include "table/proto/tip/asset_error_tip.pb.h"
@@ -70,9 +73,39 @@ void RequireNonStackableFixtureData()
 	ASSERT_GT(rowStackable->max_stack_size(), 1u);
 }
 
+// 与 bag_instance_data_test.cpp 的 ArmItemSegment 同一个做法:无 I/O 的假传输 + 直接投一段号。
+bool ArmItemSegment(uint64_t lo, uint64_t hi)
+{
+	auto &client = tlsGuidSegmentRegistry.Get(GuidKind::kItem);
+	client.Reset();
+	GuidSegmentClient::Options options;
+	options.kindName = "item";
+	options.initialStep = 100000;
+	if (!client.Enable(options, [](const std::string &, uint32_t) { return true; },
+					   [](GuidSegmentClient::TimerKind, double, std::function<void()>) {},
+					   [] { return 0.0; }))
+	{
+		return false;
+	}
+	client.Warm();
+	client.OnResponse(0, lo, hi);
+	return client.IsReady();
+}
+
+// 本组用例都要往包里铸不可叠加实例,靠 item 号段发 guid。bag_test.exe 里排在本文件前面的
+// BagSegmentNotReadyTest(bag_test.cpp 的最后一组)按设计把 item 号段留在「永远领不到段」的状态且不恢复 ——
+// 它假定自己是进程里最后一组,而别的 .cpp 里的用例其实排在它后面。本组以前靠 main() 装的那一段,
+// 于是整份跑时 7 条里红 6 条(日志是 item guid source unavailable),单独按过滤器跑又全绿。
+// 所以每条用例自己投一段(范围与 main() 的基线相同),不依赖排在前面的套件留下什么。
+class BagRemoveByGuidTest : public ::testing::Test
+{
+protected:
+	void SetUp() override { ASSERT_TRUE(ArmItemSegment(1, uint64_t{1} << 54)); }
+};
+
 } // namespace
 
-TEST(BagRemoveByGuidTest, RemovesEveryRequestedInstanceAndFreesItsSlot)
+TEST_F(BagRemoveByGuidTest, RemovesEveryRequestedInstanceAndFreesItsSlot)
 {
 	ASSERT_NO_FATAL_FAILURE(RequireNonStackableFixtureData());
 
@@ -105,7 +138,7 @@ TEST(BagRemoveByGuidTest, RemovesEveryRequestedInstanceAndFreesItsSlot)
 	EXPECT_EQ(kNonStackB, removed[1].configId);
 }
 
-TEST(BagRemoveByGuidTest, MissingGuidRejectsWholeBatchWithoutRemovingAnything)
+TEST_F(BagRemoveByGuidTest, MissingGuidRejectsWholeBatchWithoutRemovingAnything)
 {
 	ASSERT_NO_FATAL_FAILURE(RequireNonStackableFixtureData());
 
@@ -129,7 +162,7 @@ TEST(BagRemoveByGuidTest, MissingGuidRejectsWholeBatchWithoutRemovingAnything)
 	EXPECT_TRUE(bag.IsLayerConsistent());
 }
 
-TEST(BagRemoveByGuidTest, DuplicateGuidRejectsWholeBatch)
+TEST_F(BagRemoveByGuidTest, DuplicateGuidRejectsWholeBatch)
 {
 	ASSERT_NO_FATAL_FAILURE(RequireNonStackableFixtureData());
 
@@ -144,7 +177,7 @@ TEST(BagRemoveByGuidTest, DuplicateGuidRejectsWholeBatch)
 	EXPECT_EQ(1u, bag.OccupiedGridCount());
 }
 
-TEST(BagRemoveByGuidTest, StackableItemRejected)
+TEST_F(BagRemoveByGuidTest, StackableItemRejected)
 {
 	ASSERT_NO_FATAL_FAILURE(RequireNonStackableFixtureData());
 
@@ -161,7 +194,7 @@ TEST(BagRemoveByGuidTest, StackableItemRejected)
 	EXPECT_EQ(3u, bag.GetTotalItemCount(kStackable));
 }
 
-TEST(BagRemoveByGuidTest, EmptyRequestRejected)
+TEST_F(BagRemoveByGuidTest, EmptyRequestRejected)
 {
 	Bag bag;
 	bool mutated = true;
@@ -170,7 +203,7 @@ TEST(BagRemoveByGuidTest, EmptyRequestRejected)
 	EXPECT_FALSE(mutated);
 }
 
-TEST(BagRemoveByGuidTest, ReserveIsSideEffectFree)
+TEST_F(BagRemoveByGuidTest, ReserveIsSideEffectFree)
 {
 	ASSERT_NO_FATAL_FAILURE(RequireNonStackableFixtureData());
 
@@ -190,7 +223,7 @@ TEST(BagRemoveByGuidTest, ReserveIsSideEffectFree)
 	EXPECT_TRUE(bag.IsLayerConsistent());
 }
 
-TEST(BagRemoveByGuidTest, FrozenPlayerKeepsEverythingAndReportsRetryClassCode)
+TEST_F(BagRemoveByGuidTest, FrozenPlayerKeepsEverythingAndReportsRetryClassCode)
 {
 	ASSERT_NO_FATAL_FAILURE(RequireNonStackableFixtureData());
 
