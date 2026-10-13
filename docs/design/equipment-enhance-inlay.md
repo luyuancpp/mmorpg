@@ -1,9 +1,11 @@
 # 装备强化与镶嵌(装备属性系统二期)
 
-> 落地日期:2026-10-09 / 10(**未编译、未导表、未 proto-gen、未运行,待 Codex 验证**,见 §9)。
+> 落地日期:2026-10-09 / 10。**2026-10-13 起已在 main**:正式导表与发号、C++ 编译、C++ / Go 单测、起栈冒烟(一期 + 二期两遍)都有运行证据,
+> 见 **§11(现状以 §11 为准)**;客户端界面入口仍未做。
+> §9 是当时写给 Codex 的清单、§10.8 是当时的验证记录,两处「未编译 / 未生成」的说法是历史原文,没有回头改。
 > 前置:[equipment-attributes.md](equipment-attributes.md)(一期:随机属性 + 穿脱 + 战斗类属性)。本文只写二期新增的部分,
 > 一期的表、协议、函数沿用不重复;两份文档冲突时,二期范围内以本文为准。
-> 服务器落点(隔离工作树 `E:\work\xuanming-server-mmo-equip`,分支 `feat/equip-enhance-inlay`):
+> 服务器落点(开发时在隔离工作树 `E:\work\xuanming-server-mmo-equip` 的 `feat/equip-enhance-inlay`;**该分支停在历史改写前的旧历史上,已作废,不要再合**,代码以 main 为准):
 > 配表 `data/EquipEnhance.xlsx` / `data/EquipGem.xlsx` / `data/EquipGemSocket.xlsx` + `data/Item.xlsx` 新行 + `data/tip/Tip.xlsx` 新码;
 > 协议 `proto/common/component/item_base_comp.proto`、`proto/scene/player_bag.proto`、`proto/common/rollback/transaction_log.proto`;
 > 纯规则 `cpp/libs/services/scene/player/system/equip_attribute_rules.h`;编排 `cpp/libs/services/scene/player/system/player_equip.{h,cpp}`;
@@ -680,7 +682,10 @@ public void RemoveGem(ulong itemId, uint socket);
 
 ## 9. 交接给 Codex 的验证清单(AGENTS §10.1)
 
-**现状:服务器侧全部未编译、未正式导表、未 proto-gen、未运行**(Claude 只做过一次写到临时目录的沙盒导表与静态自查,见 §10.8)。
+> **2026-10-13 更新:本节的步骤已在 main 上实际执行,结果与偏差见 §11。** 下面保留的是落码当天(10-10)的原文,
+> 其中的工作树路径、基线提交号、「谁后进 main 谁重发号」等前置都已成为历史(三个新消息号最终是 250 / 251 / 252,见 §11.1)。
+
+**(10-10 原文)现状:服务器侧全部未编译、未正式导表、未 proto-gen、未运行**(Claude 只做过一次写到临时目录的沙盒导表与静态自查,见 §10.8)。
 本节是一期文档 §9 的**增量与覆盖**:两期的表与协议要在**同一次**正式导表 / 全量 proto-gen 里首次产出,顺序仍按一期 §9 的 0–11 步;
 一期 §9 里的数字(子命令个数、表行数、tip 号范围、用例条数、客户端路径)凡与本节不同的,以本节为准。
 
@@ -905,3 +910,111 @@ public void RemoveGem(ulong itemId, uint socket);
 - **实际跑过的**:补丁脚本八个子命令(真跑三个新的,`--dry-run` 全部八个);沙盒导表一次;robot 的 `gofmt -l -e`;
   客户端离线编译 + NUnit 244 / 244 + 变异测试;若干只读的静态自查脚本(括号配平、用例重名)。
   **没有跑过的**:服务器任何编译、任何 C++ / Go 测试、正式导表、proto-gen、起栈冒烟、Unity。
+  (以上是 10-10 的状态;10-13 之后见 §11。)
+
+## 11. 主干验证记录(2026-10-13)
+
+用户 10-13 当面授权 Claude 在**装备这条线**上做「生成 → 并入 main → 串行编译 → 改编译错误 → 跑单测与 robot 冒烟」,
+这是 AGENTS §10.1 的一次性例外,范围只到装备线。本节只写**实际跑出来的结果**;没跑的在 §11.6 逐条列出。
+证据目录:`E:\work\output\equip-forge-20261013\`(Claude 跑的 C++ / robot 测试日志)、
+`E:\work\output\team-follow-20261010\claude-build\run1`、`run2`(C++ 编译,每个工程一份日志 + `results.json`)。
+
+### 11.1 并入与正式生成(Codex 做的,Claude 核对)
+
+- 仓库历史在 10-12 前后被整体改写(提交号全变,另有一次把约 200 个文件的日志字符串英文化)。Codex 把二期的提交重放进 main:
+  `6e212616bf`。Claude 把它与原提交逐文件比过:除日志字符串外的行一致,逻辑没有被改动。
+- 正式导表(两遍)+ 全量 proto-gen:`0b40715d06`。Claude 在 main 上核对到的结果 ——
+  消息号 `SceneBagClientPlayerInlayGem = 250`、`EnhanceEquip = 251`、`RemoveGem = 252`(一期的 246 / 247 / 249 不变);
+  tip `kEquipEnhanceUnavailable = 28011` … `kEquipGemBagFull = 28021`,共 11 个,紧跟 `kEquipInternalError = 28010`;
+  `equipenhance.json` 12 行、`equipgem.json` 12 行、`equipgemsocket.json` 6 行、`item.json` 61 行;限流表已含三个新方法(10 / 5 / 5)。
+- robot 的 vendor 落后于生成物、按默认的 `-mod=vendor` 编不过:`1e3f9e1f68` 只做了 `go mod vendor` 同步。
+- 作废的东西:Claude 在隔离工作树里另跑过一次导表与 proto-gen(那一次的号序是 250 = Enhance、251 = Inlay,与 main 不同),
+  没有也不会进 main。隔离工作树 `xuanming-server-mmo-equip` 的分支停在旧历史上,**不要合并**。
+- 客户端 main `ba60401f` 已合入数据层分支并带上正式的 C# 协议(`MessageIds.cs` 的三个号与上面一致、`EquipErrorTip.cs` 有 11 个新枚举名),
+  §6.5 / §9.5 说的 19 处预期 CS0117 已经消失。Claude 在客户端 main `ba60401f` 上做了离线验证(不是 Unity):
+  `tools/client_compile_check.ps1` 运行时程序集 429 个文件 0 error;同一套 Roslyn 口径下 Battle 测试程序集 32 个文件 0 error;
+  用 Unity 自带的 NUnit 跑装备相关五个用例类 **244 / 244**(`EquipForgeClientTests` 95、`EquipForgeModelTests` 35、`EquipClientTests` 70、
+  `EquipBagModelTests` 13、`PlayerFeaturesClientTests` 31)—— 这一次用的是正式生成的消息号与 tip 枚举,不再是占位。
+  证据 `E:\work\output\equip-forge-20261013\client-offline\`。
+
+### 11.2 C++ 编译
+
+Debug x64、`VCToolsVersion=14.51.36231`、MSBuild `/m:1 /nr:false`。主仓同一时间只能有一条编译链,所以由「组队跟随」那个会话统一执行
+(两条线要的是同一批节点),Claude 只单独重编过 `bag_test.vcxproj`。
+
+| 轮次 | 工程 | 结果 |
+|---|---|---|
+| run1 | table → proto → core → rpc → grpc_client → modules → battle 库 → scene 库 → gate 节点 | 全部 Exit 0;`modules` / `battle` / `scene` 库在警告即错误下 0 warning |
+| run1 | scene 节点 | **链接失败**:21 个 `agones::*` 的 LNK 错误。原因是 `lib\infra.lib` 还是 10-01 的旧产物,编译链里漏了 `infra.vcxproj`;与装备无关 |
+| run2 | third_party、muduo、proto_helpers、config、infra、thread_context、session、gate 库、gate / scene / battle 三个节点、`aoi_test` / `bag_test` / `turn_battle_engine_test` / `currency_test` / `cross_zone_test` | 16 个工程全部 Exit 0 |
+
+§9.3 列的「最可能先出错的位置」一条都没有发生:装备的产品代码(`player_equip.cpp`、`equip_attribute_rules.h`、`bag_service.cpp`、
+`player_bag_handler.cpp`)与三个大测试文件都是**首次编译即 0 error**,没有为了编过而改任何一行;6 条 `static_assert` 全部成立。
+
+### 11.3 C++ 单测(Claude 跑的,二进制是 run2 的产物)
+
+| exe | 过滤器 | 结果 |
+|---|---|---|
+| `bag_test.exe` | `PlayerEquipTest.*` | 151 / 151 |
+| 同上 | `PlayerEquipAttributeTest.*` | 37 / 37 |
+| 同上 | `BagInstanceDataTest.*` | 31 / 31 |
+| 同上 | `BagRemoveExactTest.*` | 10 / 10 |
+| 同上 | `PlayerFeaturePersistenceTest.EquipInstanceDataRoundTripsThroughDatabaseRecord` | 1 / 1 |
+| 同上 | 不带过滤 | 第一次 482 / 488,修了一处测试夹具后 **488 / 488**(见 §11.5) |
+| `turn_battle_engine_test.exe` | 不带过滤 | 232 / 232(其中 `Equip*` 56、`TurnBattleEngineTest` 103) |
+| `currency_test.exe` | `ClientGmGateTest.*` | 6 / 6 |
+| 同上 | 不带过滤 | 144 条里 140 过、3 跳过(要真 Redis / 既有跳过)、**1 失败**:`AssetOpSystemTest.DebitBundleInvalidRecorded`,不属于装备,见 §11.6 |
+| `cross_zone_test.exe` | 不带过滤 | 166 / 166(其中 `CrossZoneBagMarshal.*` 6 / 6) |
+
+### 11.4 Go / robot(Claude 跑的)
+
+工作目录 `robot\`,Go 1.26.5,`-mod=vendor`:`go build` 与 `go vet . ./logic/handler` 退出码 0;
+`go test -run "TestEquip|TestFeature" . ./logic/handler ./logic/gameobject` 三个包全是 `ok`;`-v` 口径下 253 条 `RUN`、253 条 `PASS`、0 条 `FAIL`
+(顶层 `TestEquip*` 32 个,其余是子用例与 `TestFeature*`)。`robot\robot.exe` 是这一批源码编出来的。
+Codex 在 `0b40715d06` 上独立跑过同一组,也是 253 通过(见 `docs/PROGRESS.md` 10-13 Codex 那一条)。
+
+### 11.5 顺手修掉的一处测试顺序依赖(`697f5295b1`)
+
+`bag_test.cpp` 里的 `BagSegmentNotReadyTest` 会把物品号段置成「未就绪」,并假定自己最后执行;gtest 按翻译单元排,
+`bag_remove_by_guid_test.cpp` 的 7 条用例排在它后面,6 条因为拿不到号段而失败(单独跑是 7 / 7)。
+修法只动这一个测试文件:7 个 `TEST` 改 `TEST_F`,夹具 `SetUp` 里重置并投一段物品号段。产品代码没动。
+同类的顺序依赖在别的用例组里还有(带 `--gtest_shuffle` 时,种子 7919 / 15838 / 4242 下分别失败 37 / 8 / 7 条,
+落在 `BagTest`、`GainBlockServiceTest`、`CompactPolicyTest`、`BagServiceSortTest`、`BagLayoutSwapTest`、`BagPlacementFailureTest`),
+**没有处理**;装备相关的用例组在这三个种子下都没有失败。
+
+### 11.6 还没验证的 / 不归本线的
+
+- 三条新日志(`[PlayerEquip] 强化:` / `镶嵌:` / `取下:`)在 main 上仍是中文,而仓库其余日志已在 10-13 统一成英文;不影响功能,
+  下次动 `player_equip.cpp` 时顺手改(改了要重编 scene,所以这次没有为它单独动)。
+- **客户端**:没有在 Unity 里编过、跑过(EditMode 用例、窗口级用例、实机都没有);证据只有 §11.1 那次离线的 Roslyn + NUnit。
+  强化 / 镶嵌的**界面入口没有做**(按分工是 Codex 的文件,接线说明在客户端 `Docs/EquipmentForge-20261009.md`)——
+  所以现在进游戏点不到强化与镶嵌,只能靠 robot 冒烟走通这三条协议。
+- `AssetOpSystemTest.DebitBundleInvalidRecorded`:期望 `REJECTED` + `kAssetInvalidBundle`,实际 `RETRY` + 27006 ——
+  `asset_op_system.cpp` 在校验 bundle 之前先查了 `PlayerBagsComp`。单独跑也失败,属于通用资产通道(帮会 / 聚宝斋)那条线,本线只登记、没有改。
+- §8 的已知缺口不变:强化石、宝石、装备本身都没有产出途径(只能 GM 发);洗练、宝石合成、强化保护没做。
+- **Java 版(AGENTS §12)**:待做。
+
+### 11.7 起栈冒烟(Claude 跑的,全部通过)
+
+栈由「组队跟随」会话用正式启动器 `tools/scripts/start_game.ps1` 从主仓起(一区;启动器 11:22:42 报 Server started,
+日志 `run/logs/game-launcher/20261013-111614-565/launcher.log`):`bin\gate.exe / scene.exe / battle.exe` 是 run2 的产物(源码 `07f9ec3ca9`),
+`bin\go_services` 的 11 个 Go 服务与 Java 网关同日重编。它自己的基线先过了:login-test 23 / 23、`TEAM_SMOKE_OK`。
+scene 启动日志:`equipment table validation issues=0`;scene 与 battle 的战斗配表指纹相同(`34a72b7b…`)。
+
+在同一套栈上(工作目录 `robot\`,`robot.exe` 是 §11.4 那一份),三次运行退出码都是 0,日志在 `E:\work\output\equip-forge-20261013\smoke\`:
+
+| 运行 | 结果行 |
+|---|---|
+| `etc/equip_smoke.yaml`(`robot_9103`) | `EQUIP_SMOKE_OK player=2608 steps=9 … affixes=3/3/1 granted=4 physical_attack=50->201 defense=60->72 speed=276->288` |
+| `etc/equip_forge_smoke.yaml` 第 1 遍(`robot_9104`,全新账号) | `EQUIP_FORGE_SMOKE_OK player=2615 steps=6 … granted_weapon=true enhance_level=0->1->2 enhance_in_bag=success enhance_worn=success gem=2101 value=30 physical_attack=102->132->102` |
+| 同上第 2 遍 | `EQUIP_FORGE_SMOKE_OK … granted_weapon=false enhance_level=2->3->4 enhance_in_bag=success enhance_worn=success gem=2101 value=30 physical_attack=106->136->106` |
+
+与 §9.4 的通过标准逐项对上:第 1 遍 `granted_weapon=true`、`0->1->2`、两次必成;第 2 遍复用同一把(`target` 相同)、`2->3->4`
+(第 4 级成功率 9000,这次掷成了);两遍的 `physical_attack` 第一段与第三段相等(取下宝石后回到镶嵌前)。
+第 1 遍的分步日志还给出了:7 条拒绝用例全中、强化后基础物攻 40 → 42、穿着时强化面板 100 → 102、嵌入攻击宝石(+30)后 102 → 132、
+**重登之后强化等级 2 与宝石仍在**(面板仍是 132)。
+scene 侧同时段的 `[PlayerEquip]` 日志与之吻合:4 次强化(扣金币 1000 / 2000 / 3000 / 5000,强化石 1 / 1 / 2 / 2)、2 次镶嵌、2 次取下;
+没有 `[ENHANCE_PARTIAL]` / `[INSTANCE_LOST]` / `[GEM_LOST]` / `Table validation` 的 ERROR(同时段仅有的 ERROR 是别的机器人放技能的
+`kSkillUnInterruptible`,与装备无关);gate 与 battle 日志 0 条 ERROR。
+
+没有覆盖到的:概率失败那条分支(4 级以后才可能失败,这两遍都掷成了,失败分支只有单测覆盖);真实客户端(界面入口没做,见 §11.6)。
