@@ -205,6 +205,14 @@ func main() {
 		return
 	}
 
+	// Team-follow-smoke 模式:两个机器人做「组队跟随 v1.1」服务端部分的端到端冒烟
+	// (队长走开 → 入队即被瞬移到队长身边 → 可见性重建 → 双向移动广播 → 解散)。
+	// 见 team_follow_smoke_scenario.go 与 docs/design/team-system.md「组队跟随 v1.1」;前置条件写在 etc/team_follow_smoke.yaml 文件头。
+	if cfg.Mode == "team-follow-smoke" {
+		RunTeamFollowSmoke(cfg)
+		return
+	}
+
 	// Travel-smoke 模式:单机器人做「跨 zone 场景传送」往返端到端冒烟
 	// (登 home_zone → 非法目标被拒 → TravelToZone{visit_zone} → 跟随 msg 124 严格重登 → 访客区断言 → TravelToZone{home_zone} → 回家不回档)。
 	// 本模式会用「按 player_id 选角、绝不自动建角」的严格重登覆盖上面注册的通用重登(本模式独占进程,覆盖是安全的)。

@@ -2230,7 +2230,7 @@ cd robot && .\robot.exe -c etc\team_smoke.yaml          # 形态一:expect_cross
 
 ---
 
-## 组队跟随 v1.1:入队即跟随、归队、走路跟随(2026-10-09,工作树 `feat/team-follow`,未编译)
+## 组队跟随 v1.1:入队即跟随、归队、走路跟随(2026-10-09 落码;2026-10-13 已编译并联机验证,见 V.7)
 
 > 用户要求(附问道手游录像):「进队伍应该跟随到队长场景;移动的时候跟随队长」。
 > 录像里是 5 人队:队长点地走,4 名队员在身后排成一路纵队,沿队长走过的路一个跟一个,队长停队员也停。
@@ -2337,6 +2337,43 @@ cd robot && .\robot.exe -c etc\team_smoke.yaml          # 形态一:expect_cross
    - A 走着的时候直接关掉 A 的客户端:B 屏幕上的 A 应在 1 秒内停下,不会一直跑。
    - 回归:`robot.exe -c etc\team_smoke.yaml`、`etc\battle_smoke.yaml`、`tools\run_move_test.ps1`(客户端仓,移动裁决没有被瞬移守卫误伤:合法道路 0 次回拉)。
 4. **失败时保留**:msbuild 输出里前 3 个 `C` / `LNK` 开头的 error 及文件行;scene 日志里含 `PlayerTeam`、`teleport`、`move corrected` 的行;两端客户端日志里含 `[move]`、`[scene]` 的行。
+
+### V.7 2026-10-13 编译、单测与联机验证(Claude 执行;用户当面授权「编译并修到能跑」,AGENTS §10.1 的例外)
+
+证据目录:`E:\work\output\team-follow-20261010\claude-build\`(逐工程 msbuild 日志、robot 日志、播放器日志与截图)。
+
+1. **编译**(主仓,源码 `07f9ec3ca9`,Debug|x64,串行 `/m:1`,`/p:PostBuildEventUseInBuild=false`):两批共 25 个工程全部 exit 0、0 error
+   (`run1` 第 0–8 个;`run2` 16 个:third_party、muduo、proto_helpers、config、infra、thread_context、session、libs/services/gate、三个节点、五个测试工程)。
+   - 第一批链 `nodes/scene` 时报 14 个 `agones::*` 未解析:工程清单只列了节点和业务库,`infra.lib` 等引擎库还是旧产物。补上库工程重编即过,**不是代码问题**;
+     以后照 V.6 编时把 `libs/engine/*` 一并列进去。
+   - V.6 第 1 步点名的三处都没出问题:新增 include 全部解析;`emplace_or_replace<TeleportSettleComp>(entity)` 无参形式能编;
+     `cross_zone_test` / `bag_test` / `currency_test` 链接正常。
+2. **单测**:`aoi_test` 62 / 62,其中新增的 10 条(`ResetEntityVisibility*` 4、`TeamRegroupRuleTest` 3、`TeleportReportVerdictTest` 3)逐条确认在通过之列。
+3. **起栈**(一区,正式启动器 `tools/scripts/start_game.ps1`;Go 11 个服务、Java 网关同批重编):robot `login-test` 23 / 23;
+   `team_smoke`(`cross_zone: false`)`TEAM_SMOKE_OK`。scene 日志里入队当刻即有 `Requesting scene change to follow leader`(V.2 第 1 条生效)。
+4. **新增 robot 模式 `team-follow-smoke`**(`robot/team_follow_smoke_scenario.go`、`robot/etc/team_follow_smoke.yaml`,`main.go` / `config/config.go` 各加一个分支;
+   修订 V.3「robot 不改」—— 既有模式没有动)。账号 `robot_9305` / `robot_9306`。两种形态:
+   - **服务端形态**(缺省):队长走开 16 → 队员入队 → 断言队员收到 `TeleportS2C(reason=5)` 且落点在队长 1 以内 → 双方互相收到对方的 `ActorCreate`
+     → 双向 `ActorMoveS2C`(起步 `move_state=1`、停步 `0`)。连跑 5 遍全过,每遍都是两人不同线(先换线再瞬移)。
+     scene 日志对应 `metric=team_regroup … distance=16 mutually_visible=1 visibility_evaluated=0`。
+   - **真实客户端形态**(`team_follow_smoke.client_follower: true`):机器人 B 入队后下线(离线队员留在队里),真实播放器用 `DevAutoPilot`
+     (`-zone 1 -account robot_9306`,参数经环境变量 `MMORPG_AUTOPILOT_ARGS` 传)登录同一账号;机器人 A 当队长,按客户端的节拍
+     (移速 9、每 250ms 一条 MoveSync、停步时立刻 MoveStop)走 6 段,从客户端的移动广播里断言它每段都跟着走、队长停下后它也停下、
+     停在队长**身后** 0.5~3.0 处。外层编排脚本在证据目录的会话 scratchpad 里(未入库),做法已写进 yaml 文件头。
+     - 客户端登录后先进自己的线、被带到队长的线、再被归队瞬移到 16 之外的队长脚下,播放器日志有 `[move] teleport … reason=5`:V.2 第 2、3 条在真实客户端上成立。
+     - 直线、拐弯、停步:队员稳定停在队长身后 1.2~1.7(设计值 1.4)。
+     - **抓到一个客户端缺陷**:队长沿原路折返(向北走一段、原路走回、再拐弯)时,队员约一半的概率在原地来回踱步、再也跟不上
+       (连跑 6 遍 3 遍;机器人记下的上报是 `v=-9.9` / `+9.9` 交替)。根因在客户端 `TeamFollowTrail.DistanceBehindHead`:每帧在整条轨迹上找最近的一段,
+       去程与回程在几何上重叠、显示位置又有厘米级摆动,选中的段在两趟之间来回跳,两趟行进方向相反。服务端无关。
+       修复在客户端仓(队员带「游标」记住自己走到轨迹的哪儿,只在附近往前找;见客户端 `Docs/team-ui.md` 2026-10-13 一节),
+       修复后的出包与复验结果另起一条记在 `docs/PROGRESS.md`。
+     - 机器人队长第一版在停步前空了 0.8 秒不上报,观察者把它外推成「冲过头再拉回」,队员因此停在队长前面 —— 那是测试脚本不像真实客户端,已改;
+       顺带说明 V.4「停步回拉」那一支确实在起作用(回拉量超过 1.5 的上限时就会留下折返)。
+5. **观感,待用户定**:当前镜头下 1 个世界单位约 12 像素,人物贴图约 40 × 75 像素;槽位间距 1.4 只有 17 像素,队员与队长的贴图会叠住一半以上。
+   要像问道那样拉开一个身位需要约 3.3,4 名队员时队尾离队长 13.2,超过 `kMaxViewRadius`(10)和 `kTeamRegroupDistance`(8)——
+   不是只改客户端一个常量的事,需要一并决定视野半径 / 归队阈值,或让后排队员跟前一名队员而不是跟队长。
+6. **仍然没有运行证据**:3 人以上的纵队;跨节点;战斗冻结解除后的归队;走着掉线后 1 秒内停下;`cross_zone: true` 的 team_smoke 两种形态;带 `--gtest_shuffle` 的 aoi_test。
+7. **Java 版(AGENTS §12)**:待做。本机 `D:\luyuan\xuanming-server-mmo` 不存在,`PARITY.md` 未登记;需要对齐的客户端可见行为仍是 V.5 末条列的三项。
 
 ---
 

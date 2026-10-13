@@ -60,6 +60,9 @@ type Config struct {
 	// TeamSmoke 是 "team-smoke" 模式的子开关(见 TeamSmokeConfig / team_smoke_scenario.go)。
 	TeamSmoke TeamSmokeConfig `yaml:"team_smoke"`
 
+	// TeamFollowSmoke 是 "team-follow-smoke" 模式的子开关(见 TeamFollowSmokeConfig / team_follow_smoke_scenario.go)。
+	TeamFollowSmoke TeamFollowSmokeConfig `yaml:"team_follow_smoke"`
+
 	// TravelSmoke 是 "travel-smoke" 模式的子开关(见 TravelSmokeConfig / travel_smoke_scenario.go)。
 	TravelSmoke TravelSmokeConfig `yaml:"travel_smoke"`
 
@@ -452,6 +455,17 @@ func (c *TeamSmokeConfig) validate() error {
 	return nil
 }
 
+// TeamFollowSmokeConfig 配置 "team-follow-smoke" 模式(docs/design/team-system.md「组队跟随 v1.1」)。
+//
+// 缺省(client_follower=false)两个机器人验服务端:入队即归队、可见性重建、双向移动广播。
+// client_follower=true 改跑「真实客户端跟随」验收:机器人 B 入队后下线、把账号让给真实客户端(DevAutoPilot 登录同一账号),
+// 机器人 A 当队长按脚本走路,从 B 的移动广播里量出它有没有跟在身后。
+type TeamFollowSmokeConfig struct {
+	ClientFollower bool `yaml:"client_follower"`
+	// ClientWaitSeconds 是等真实客户端登录并出现在队长视野里的预算(秒);0 = 240(播放器冷启动较慢)。
+	ClientWaitSeconds int `yaml:"client_wait_seconds"`
+}
+
 // TravelSmokeConfig 配置 "travel-smoke" 模式(docs/design/cross-zone-scene-travel.md §5 阶段 3)。
 //
 // 单机器人登 home_zone → TravelToZone{visit_zone} → 跟随 msg 124 落到访客区 → 停留 → TravelToZone{home_zone} 回家。
@@ -592,10 +606,10 @@ func (c *Config) validate() error {
 		return fmt.Errorf("account_fmt must be set")
 	}
 	switch c.Mode {
-	case "", "stress", "login-test", "data-stress", "currency-crash-snapshot", "battle-smoke", "attribute-smoke", "pet-smoke", "equip-smoke", "equip-forge-smoke", "chat-smoke", "guild-smoke", "trade-smoke", "team-smoke", "travel-smoke", "friend-smoke", "channel-smoke":
+	case "", "stress", "login-test", "data-stress", "currency-crash-snapshot", "battle-smoke", "attribute-smoke", "pet-smoke", "equip-smoke", "equip-forge-smoke", "chat-smoke", "guild-smoke", "trade-smoke", "team-smoke", "team-follow-smoke", "travel-smoke", "friend-smoke", "channel-smoke":
 		// valid
 	default:
-		return fmt.Errorf("unknown mode %q (expected stress, login-test, data-stress, currency-crash-snapshot, battle-smoke, attribute-smoke, pet-smoke, equip-smoke, equip-forge-smoke, chat-smoke, guild-smoke, trade-smoke, team-smoke, travel-smoke, friend-smoke, or channel-smoke)", c.Mode)
+		return fmt.Errorf("unknown mode %q (expected stress, login-test, data-stress, currency-crash-snapshot, battle-smoke, attribute-smoke, pet-smoke, equip-smoke, equip-forge-smoke, chat-smoke, guild-smoke, trade-smoke, team-smoke, team-follow-smoke, travel-smoke, friend-smoke, or channel-smoke)", c.Mode)
 	}
 	if c.AuthType == "satoken" && c.SaTokenAddr == "" {
 		return fmt.Errorf("satoken_addr must be set when auth_type is satoken")
