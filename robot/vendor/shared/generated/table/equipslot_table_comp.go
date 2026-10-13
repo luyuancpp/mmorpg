@@ -21,6 +21,10 @@ type EquipSlotEquip_kindComp struct {
     Value uint32
 }
 
+type EquipSlotNameComp struct {
+    Value string
+}
+
 
 // ============================================================
 // Factory helpers — build component from a proto row
@@ -32,5 +36,9 @@ func MakeEquipSlotIdComp(row *pb.EquipSlotTable) EquipSlotIdComp {
 
 func MakeEquipSlotEquip_kindComp(row *pb.EquipSlotTable) EquipSlotEquip_kindComp {
     return EquipSlotEquip_kindComp{Value: row.EquipKind}
+}
+
+func MakeEquipSlotNameComp(row *pb.EquipSlotTable) EquipSlotNameComp {
+    return EquipSlotNameComp{Value: row.Name}
 }
 

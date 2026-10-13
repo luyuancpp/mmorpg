@@ -1,0 +1,20 @@
+
+syntax = "proto3";
+
+option go_package = "generated/pb/table";
+
+option java_package = "com.game.table";
+option java_outer_classname = "EquipGemTableOuterClass";
+option java_multiple_files = true;
+
+
+message EquipGemTable {
+	uint32 id = 1;
+	uint32 gem_type = 2;
+	uint32 attr_id = 3;
+	uint32 value = 4;
+}
+
+message EquipGemTableData {
+	repeated EquipGemTable data = 1;
+}

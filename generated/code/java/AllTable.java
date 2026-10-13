@@ -53,6 +53,12 @@ public class AllTable {
 
         EquipAttributeCapTableManager.getInstance().load(configDir, useBinary);
 
+        EquipEnhanceTableManager.getInstance().load(configDir, useBinary);
+
+        EquipGemTableManager.getInstance().load(configDir, useBinary);
+
+        EquipGemSocketTableManager.getInstance().load(configDir, useBinary);
+
         EquipSlotTableManager.getInstance().load(configDir, useBinary);
 
         GlobalVariableTableManager.getInstance().load(configDir, useBinary);
@@ -110,7 +116,7 @@ public class AllTable {
      * @param useBinary true to load .pb (proto binary), false to load .json.
      */
     public static void loadTablesAsync(String configDir, boolean useBinary) throws Exception {
-        CountDownLatch latch = new CountDownLatch(39);
+        CountDownLatch latch = new CountDownLatch(42);
 
         new Thread(() -> {
             try {
@@ -287,6 +293,36 @@ public class AllTable {
                 EquipAttributeCapTableManager.getInstance().load(configDir, useBinary);
             } catch (Exception e) {
                 throw new RuntimeException("Failed to load EquipAttributeCap table", e);
+            } finally {
+                latch.countDown();
+            }
+        }).start();
+
+        new Thread(() -> {
+            try {
+                EquipEnhanceTableManager.getInstance().load(configDir, useBinary);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to load EquipEnhance table", e);
+            } finally {
+                latch.countDown();
+            }
+        }).start();
+
+        new Thread(() -> {
+            try {
+                EquipGemTableManager.getInstance().load(configDir, useBinary);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to load EquipGem table", e);
+            } finally {
+                latch.countDown();
+            }
+        }).start();
+
+        new Thread(() -> {
+            try {
+                EquipGemSocketTableManager.getInstance().load(configDir, useBinary);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to load EquipGemSocket table", e);
             } finally {
                 latch.countDown();
             }
@@ -557,6 +593,12 @@ public class AllTable {
         EquipAttributeTableManager.getInstance().load(configDir, useBinary);
 
         EquipAttributeCapTableManager.getInstance().load(configDir, useBinary);
+
+        EquipEnhanceTableManager.getInstance().load(configDir, useBinary);
+
+        EquipGemTableManager.getInstance().load(configDir, useBinary);
+
+        EquipGemSocketTableManager.getInstance().load(configDir, useBinary);
 
         EquipSlotTableManager.getInstance().load(configDir, useBinary);
 

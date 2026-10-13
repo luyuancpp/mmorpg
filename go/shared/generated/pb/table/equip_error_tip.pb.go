@@ -24,18 +24,29 @@ const (
 type EquipError int32
 
 const (
-	EquipError_kEquip_errorOK       EquipError = 0
-	EquipError_kEquipItemNotFound   EquipError = 28000
-	EquipError_kEquipNotEquipment   EquipError = 28001
-	EquipError_kEquipLevelNotEnough EquipError = 28002
-	EquipError_kEquipClassMismatch  EquipError = 28003
-	EquipError_kEquipNoSlot         EquipError = 28004
-	EquipError_kEquipNotEquipped    EquipError = 28005
-	EquipError_kEquipBagFull        EquipError = 28006
-	EquipError_kEquipInBattle       EquipError = 28007
-	EquipError_kEquipFrozen         EquipError = 28008
-	EquipError_kEquipGrantInvalid   EquipError = 28009
-	EquipError_kEquipInternalError  EquipError = 28010
+	EquipError_kEquip_errorOK                 EquipError = 0
+	EquipError_kEquipItemNotFound             EquipError = 28000
+	EquipError_kEquipNotEquipment             EquipError = 28001
+	EquipError_kEquipLevelNotEnough           EquipError = 28002
+	EquipError_kEquipClassMismatch            EquipError = 28003
+	EquipError_kEquipNoSlot                   EquipError = 28004
+	EquipError_kEquipNotEquipped              EquipError = 28005
+	EquipError_kEquipBagFull                  EquipError = 28006
+	EquipError_kEquipInBattle                 EquipError = 28007
+	EquipError_kEquipFrozen                   EquipError = 28008
+	EquipError_kEquipGrantInvalid             EquipError = 28009
+	EquipError_kEquipInternalError            EquipError = 28010
+	EquipError_kEquipEnhanceUnavailable       EquipError = 28011
+	EquipError_kEquipEnhanceMaxLevel          EquipError = 28012
+	EquipError_kEquipEnhanceMaterialNotEnough EquipError = 28013
+	EquipError_kEquipEnhanceGoldNotEnough     EquipError = 28014
+	EquipError_kEquipGemNotGem                EquipError = 28015
+	EquipError_kEquipGemNotOwned              EquipError = 28016
+	EquipError_kEquipGemSocketInvalid         EquipError = 28017
+	EquipError_kEquipGemSocketOccupied        EquipError = 28018
+	EquipError_kEquipGemSocketEmpty           EquipError = 28019
+	EquipError_kEquipGemTypeMismatch          EquipError = 28020
+	EquipError_kEquipGemBagFull               EquipError = 28021
 )
 
 // Enum value maps for EquipError.
@@ -53,20 +64,42 @@ var (
 		28008: "kEquipFrozen",
 		28009: "kEquipGrantInvalid",
 		28010: "kEquipInternalError",
+		28011: "kEquipEnhanceUnavailable",
+		28012: "kEquipEnhanceMaxLevel",
+		28013: "kEquipEnhanceMaterialNotEnough",
+		28014: "kEquipEnhanceGoldNotEnough",
+		28015: "kEquipGemNotGem",
+		28016: "kEquipGemNotOwned",
+		28017: "kEquipGemSocketInvalid",
+		28018: "kEquipGemSocketOccupied",
+		28019: "kEquipGemSocketEmpty",
+		28020: "kEquipGemTypeMismatch",
+		28021: "kEquipGemBagFull",
 	}
 	EquipError_value = map[string]int32{
-		"kEquip_errorOK":       0,
-		"kEquipItemNotFound":   28000,
-		"kEquipNotEquipment":   28001,
-		"kEquipLevelNotEnough": 28002,
-		"kEquipClassMismatch":  28003,
-		"kEquipNoSlot":         28004,
-		"kEquipNotEquipped":    28005,
-		"kEquipBagFull":        28006,
-		"kEquipInBattle":       28007,
-		"kEquipFrozen":         28008,
-		"kEquipGrantInvalid":   28009,
-		"kEquipInternalError":  28010,
+		"kEquip_errorOK":                 0,
+		"kEquipItemNotFound":             28000,
+		"kEquipNotEquipment":             28001,
+		"kEquipLevelNotEnough":           28002,
+		"kEquipClassMismatch":            28003,
+		"kEquipNoSlot":                   28004,
+		"kEquipNotEquipped":              28005,
+		"kEquipBagFull":                  28006,
+		"kEquipInBattle":                 28007,
+		"kEquipFrozen":                   28008,
+		"kEquipGrantInvalid":             28009,
+		"kEquipInternalError":            28010,
+		"kEquipEnhanceUnavailable":       28011,
+		"kEquipEnhanceMaxLevel":          28012,
+		"kEquipEnhanceMaterialNotEnough": 28013,
+		"kEquipEnhanceGoldNotEnough":     28014,
+		"kEquipGemNotGem":                28015,
+		"kEquipGemNotOwned":              28016,
+		"kEquipGemSocketInvalid":         28017,
+		"kEquipGemSocketOccupied":        28018,
+		"kEquipGemSocketEmpty":           28019,
+		"kEquipGemTypeMismatch":          28020,
+		"kEquipGemBagFull":               28021,
 	}
 )
 
@@ -101,7 +134,7 @@ var File_equip_error_tip_proto protoreflect.FileDescriptor
 
 const file_equip_error_tip_proto_rawDesc = "" +
 	"\n" +
-	"\x15equip_error_tip.proto*\xad\x02\n" +
+	"\x15equip_error_tip.proto*\xf0\x04\n" +
 	"\vequip_error\x12\x12\n" +
 	"\x0ekEquip_errorOK\x10\x00\x12\x18\n" +
 	"\x12kEquipItemNotFound\x10\xe0\xda\x01\x12\x18\n" +
@@ -114,7 +147,18 @@ const file_equip_error_tip_proto_rawDesc = "" +
 	"\x0ekEquipInBattle\x10\xe7\xda\x01\x12\x12\n" +
 	"\fkEquipFrozen\x10\xe8\xda\x01\x12\x18\n" +
 	"\x12kEquipGrantInvalid\x10\xe9\xda\x01\x12\x19\n" +
-	"\x13kEquipInternalError\x10\xea\xda\x01B$\n" +
+	"\x13kEquipInternalError\x10\xea\xda\x01\x12\x1e\n" +
+	"\x18kEquipEnhanceUnavailable\x10\xeb\xda\x01\x12\x1b\n" +
+	"\x15kEquipEnhanceMaxLevel\x10\xec\xda\x01\x12$\n" +
+	"\x1ekEquipEnhanceMaterialNotEnough\x10\xed\xda\x01\x12 \n" +
+	"\x1akEquipEnhanceGoldNotEnough\x10\xee\xda\x01\x12\x15\n" +
+	"\x0fkEquipGemNotGem\x10\xef\xda\x01\x12\x17\n" +
+	"\x11kEquipGemNotOwned\x10\xf0\xda\x01\x12\x1c\n" +
+	"\x16kEquipGemSocketInvalid\x10\xf1\xda\x01\x12\x1d\n" +
+	"\x17kEquipGemSocketOccupied\x10\xf2\xda\x01\x12\x1a\n" +
+	"\x14kEquipGemSocketEmpty\x10\xf3\xda\x01\x12\x1b\n" +
+	"\x15kEquipGemTypeMismatch\x10\xf4\xda\x01\x12\x16\n" +
+	"\x10kEquipGemBagFull\x10\xf5\xda\x01B$\n" +
 	"\x0ecom.game.tableZ\x12generated/pb/tableb\x06proto3"
 
 var (

@@ -51,6 +51,9 @@ void UConfigSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	EquipAffixRuleTable = NewObject<UEquipAffixRuleTable>(this);
 	EquipAttributeTable = NewObject<UEquipAttributeTable>(this);
 	EquipAttributeCapTable = NewObject<UEquipAttributeCapTable>(this);
+	EquipEnhanceTable = NewObject<UEquipEnhanceTable>(this);
+	EquipGemTable = NewObject<UEquipGemTable>(this);
+	EquipGemSocketTable = NewObject<UEquipGemSocketTable>(this);
 	EquipSlotTable = NewObject<UEquipSlotTable>(this);
 	GlobalVariableTable = NewObject<UGlobalVariableTable>(this);
 	GuildActivityTable = NewObject<UGuildActivityTable>(this);
@@ -94,6 +97,9 @@ void UConfigSubsystem::Deinitialize()
 	EquipAffixRuleTable = nullptr;
 	EquipAttributeTable = nullptr;
 	EquipAttributeCapTable = nullptr;
+	EquipEnhanceTable = nullptr;
+	EquipGemTable = nullptr;
+	EquipGemSocketTable = nullptr;
 	EquipSlotTable = nullptr;
 	GlobalVariableTable = nullptr;
 	GuildActivityTable = nullptr;
@@ -142,6 +148,9 @@ TArray<FString> UConfigSubsystem::TableFileNames()
 		UEquipAffixRuleTable::FileName(),
 		UEquipAttributeTable::FileName(),
 		UEquipAttributeCapTable::FileName(),
+		UEquipEnhanceTable::FileName(),
+		UEquipGemTable::FileName(),
+		UEquipGemSocketTable::FileName(),
 		UEquipSlotTable::FileName(),
 		UGlobalVariableTable::FileName(),
 		UGuildActivityTable::FileName(),
@@ -418,6 +427,48 @@ bool UConfigSubsystem::LoadAll(const FString& InConfigDir)
 		bAllOk = false;
 	}
 	else if (!EquipAttributeCapTable->LoadFromDir(InConfigDir, Error))
+	{
+		UE_LOG(LogConfigTable, Error, TEXT("%s"), *Error);
+		bAllOk = false;
+	}
+	else
+	{
+		bAnySwapped = true;
+	}
+	if (EquipEnhanceTable == nullptr)
+	{
+		UE_LOG(LogConfigTable, Error, TEXT("[EquipEnhance] 管理器未创建"));
+		bAllOk = false;
+	}
+	else if (!EquipEnhanceTable->LoadFromDir(InConfigDir, Error))
+	{
+		UE_LOG(LogConfigTable, Error, TEXT("%s"), *Error);
+		bAllOk = false;
+	}
+	else
+	{
+		bAnySwapped = true;
+	}
+	if (EquipGemTable == nullptr)
+	{
+		UE_LOG(LogConfigTable, Error, TEXT("[EquipGem] 管理器未创建"));
+		bAllOk = false;
+	}
+	else if (!EquipGemTable->LoadFromDir(InConfigDir, Error))
+	{
+		UE_LOG(LogConfigTable, Error, TEXT("%s"), *Error);
+		bAllOk = false;
+	}
+	else
+	{
+		bAnySwapped = true;
+	}
+	if (EquipGemSocketTable == nullptr)
+	{
+		UE_LOG(LogConfigTable, Error, TEXT("[EquipGemSocket] 管理器未创建"));
+		bAllOk = false;
+	}
+	else if (!EquipGemSocketTable->LoadFromDir(InConfigDir, Error))
 	{
 		UE_LOG(LogConfigTable, Error, TEXT("%s"), *Error);
 		bAllOk = false;
@@ -1105,6 +1156,66 @@ bool UConfigSubsystem::LoadAllWithProvider(TFunctionRef<bool(const TCHAR*, FStri
 		bAllOk = false;
 	}
 	else if (!EquipAttributeCapTable->LoadFromJson(JsonText, Error))
+	{
+		UE_LOG(LogConfigTable, Error, TEXT("%s"), *Error);
+		bAllOk = false;
+	}
+	else
+	{
+		bAnySwapped = true;
+	}
+	JsonText.Reset();
+	if (EquipEnhanceTable == nullptr)
+	{
+		UE_LOG(LogConfigTable, Error, TEXT("[EquipEnhance] 管理器未创建"));
+		bAllOk = false;
+	}
+	else if (!TextProvider(UEquipEnhanceTable::FileName(), JsonText))
+	{
+		UE_LOG(LogConfigTable, Error, TEXT("[EquipEnhance] 取不到 %s"), UEquipEnhanceTable::FileName());
+		bAllOk = false;
+	}
+	else if (!EquipEnhanceTable->LoadFromJson(JsonText, Error))
+	{
+		UE_LOG(LogConfigTable, Error, TEXT("%s"), *Error);
+		bAllOk = false;
+	}
+	else
+	{
+		bAnySwapped = true;
+	}
+	JsonText.Reset();
+	if (EquipGemTable == nullptr)
+	{
+		UE_LOG(LogConfigTable, Error, TEXT("[EquipGem] 管理器未创建"));
+		bAllOk = false;
+	}
+	else if (!TextProvider(UEquipGemTable::FileName(), JsonText))
+	{
+		UE_LOG(LogConfigTable, Error, TEXT("[EquipGem] 取不到 %s"), UEquipGemTable::FileName());
+		bAllOk = false;
+	}
+	else if (!EquipGemTable->LoadFromJson(JsonText, Error))
+	{
+		UE_LOG(LogConfigTable, Error, TEXT("%s"), *Error);
+		bAllOk = false;
+	}
+	else
+	{
+		bAnySwapped = true;
+	}
+	JsonText.Reset();
+	if (EquipGemSocketTable == nullptr)
+	{
+		UE_LOG(LogConfigTable, Error, TEXT("[EquipGemSocket] 管理器未创建"));
+		bAllOk = false;
+	}
+	else if (!TextProvider(UEquipGemSocketTable::FileName(), JsonText))
+	{
+		UE_LOG(LogConfigTable, Error, TEXT("[EquipGemSocket] 取不到 %s"), UEquipGemSocketTable::FileName());
+		bAllOk = false;
+	}
+	else if (!EquipGemSocketTable->LoadFromJson(JsonText, Error))
 	{
 		UE_LOG(LogConfigTable, Error, TEXT("%s"), *Error);
 		bAllOk = false;

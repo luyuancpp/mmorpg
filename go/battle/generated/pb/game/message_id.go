@@ -250,3 +250,6 @@ const SceneBagClientPlayerUnequipItemMessageId = 246
 const SceneBagClientPlayerGmGrantItemMessageId = 247
 const DataServiceGetPlayerAssetOpLedgerMessageId = 248
 const SceneBagClientPlayerEquipItemMessageId = 249
+const SceneBagClientPlayerEnhanceEquipMessageId = 250
+const SceneBagClientPlayerInlayGemMessageId = 251
+const SceneBagClientPlayerRemoveGemMessageId = 252

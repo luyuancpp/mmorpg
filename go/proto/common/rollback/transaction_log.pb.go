@@ -68,6 +68,9 @@ const (
 	TransactionType_TX_GUILD_DONATE          TransactionType = 24 // 帮会捐献扣货币(ASSET_OP_STREAM_GUILD_DEBIT)
 	TransactionType_TX_GUILD_SHOP            TransactionType = 25 // 帮会商店发物(ASSET_OP_STREAM_GUILD_CREDIT)
 	TransactionType_TX_GUILD_ACTIVITY_REWARD TransactionType = 26 // 帮会活动发奖(ASSET_OP_STREAM_GUILD_CREDIT)
+	TransactionType_TX_EQUIP_ENHANCE         TransactionType = 27 // 装备强化:扣金币 + 销毁材料(成败都扣)。correlation_id = 装备 item guid
+	TransactionType_TX_EQUIP_INLAY           TransactionType = 28 // 宝石镶嵌:销毁 1 颗宝石物品。correlation_id = 装备 item guid
+	TransactionType_TX_EQUIP_GEM_REMOVE      TransactionType = 29 // 取下宝石:发回 1 颗宝石物品。correlation_id = 装备 item guid
 )
 
 // Enum value maps for TransactionType.
@@ -100,6 +103,9 @@ var (
 		24: "TX_GUILD_DONATE",
 		25: "TX_GUILD_SHOP",
 		26: "TX_GUILD_ACTIVITY_REWARD",
+		27: "TX_EQUIP_ENHANCE",
+		28: "TX_EQUIP_INLAY",
+		29: "TX_EQUIP_GEM_REMOVE",
 	}
 	TransactionType_value = map[string]int32{
 		"TX_UNKNOWN":               0,
@@ -129,6 +135,9 @@ var (
 		"TX_GUILD_DONATE":          24,
 		"TX_GUILD_SHOP":            25,
 		"TX_GUILD_ACTIVITY_REWARD": 26,
+		"TX_EQUIP_ENHANCE":         27,
+		"TX_EQUIP_INLAY":           28,
+		"TX_EQUIP_GEM_REMOVE":      29,
 	}
 )
 
@@ -396,7 +405,7 @@ const file_proto_common_rollback_transaction_log_proto_rawDesc = "" +
 	"\x05extra\x18\x0e \x01(\tR\x05extra\x12\x17\n" +
 	"\azone_id\x18\x0f \x01(\rR\x06zoneId\"E\n" +
 	"\x13TransactionLogBatch\x12.\n" +
-	"\aentries\x18\x01 \x03(\v2\x14.TransactionLogEntryR\aentries*\xc5\x04\n" +
+	"\aentries\x18\x01 \x03(\v2\x14.TransactionLogEntryR\aentries*\x88\x05\n" +
 	"\x0fTransactionType\x12\x0e\n" +
 	"\n" +
 	"TX_UNKNOWN\x10\x00\x12\f\n" +
@@ -426,7 +435,10 @@ const file_proto_common_rollback_transaction_log_proto_rawDesc = "" +
 	"\fTX_BUFF_GAIN\x10\x17\x12\x13\n" +
 	"\x0fTX_GUILD_DONATE\x10\x18\x12\x11\n" +
 	"\rTX_GUILD_SHOP\x10\x19\x12\x1c\n" +
-	"\x18TX_GUILD_ACTIVITY_REWARD\x10\x1aB\x17Z\x15proto/common/rollbackb\x06proto3"
+	"\x18TX_GUILD_ACTIVITY_REWARD\x10\x1a\x12\x14\n" +
+	"\x10TX_EQUIP_ENHANCE\x10\x1b\x12\x12\n" +
+	"\x0eTX_EQUIP_INLAY\x10\x1c\x12\x17\n" +
+	"\x13TX_EQUIP_GEM_REMOVE\x10\x1dB\x17Z\x15proto/common/rollbackb\x06proto3"
 
 var (
 	file_proto_common_rollback_transaction_log_proto_rawDescOnce sync.Once

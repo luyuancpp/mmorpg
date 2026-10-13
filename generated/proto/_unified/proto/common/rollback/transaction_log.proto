@@ -76,6 +76,18 @@ enum TransactionType
   TX_GUILD_DONATE = 24;           // 帮会捐献扣货币(ASSET_OP_STREAM_GUILD_DEBIT)
   TX_GUILD_SHOP = 25;             // 帮会商店发物(ASSET_OP_STREAM_GUILD_CREDIT)
   TX_GUILD_ACTIVITY_REWARD = 26;  // 帮会活动发奖(ASSET_OP_STREAM_GUILD_CREDIT)
+
+  // ── 装备强化与镶嵌(docs/design/equipment-enhance-inlay.md §3.2)──────────────
+  //
+  // 三种流水的 correlation_id 都填**装备**的 item guid:宝石是可叠加物品,镶嵌销毁一颗、
+  // 取下另铸一颗,item_uuid 的血缘在镶嵌处断开,两条流水靠「装备 guid + 宝石 config +
+  // extra 里的 socket」配对。物品流水的 extra(紧凑 JSON):
+  //   强化扣材料 {"from":<强化前等级>,"success":true|false};镶嵌 / 取下 {"socket":<孔位号>}。
+  // 货币流水不带 extra。流水不带实例数据:强化等级与宝石无法从流水还原。只追加,不复用旧编号。
+
+  TX_EQUIP_ENHANCE = 27;     // 装备强化:扣金币 + 销毁材料(成败都扣)。correlation_id = 装备 item guid
+  TX_EQUIP_INLAY = 28;       // 宝石镶嵌:销毁 1 颗宝石物品。correlation_id = 装备 item guid
+  TX_EQUIP_GEM_REMOVE = 29;  // 取下宝石:发回 1 颗宝石物品。correlation_id = 装备 item guid
 }
 
 // A single transaction log entry.  Written to Kafka → Go DB → MySQL.

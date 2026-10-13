@@ -148,6 +148,9 @@ cd tools/data_table_exporter && py -m pytest -q
 | **EquipAffixRule** | `EquipAffixRule.xlsx` | `equipaffixrule_table.proto` | 5 | 5 | 1 | — | — | — | — | — | — | — |
 | **EquipAttribute** | `EquipAttribute.xlsx` | `equipattribute_table.proto` | 6 | 6 | 26 | — | — | — | — | — | — | — |
 | **EquipAttributeCap** | `EquipAttributeCap.xlsx` | `equipattributecap_table.proto` | 5 | 5 | 125 | — | — | `attr_id` | `attr_id→EquipAttribute.id` | — | — | — |
+| **EquipEnhance** | `EquipEnhance.xlsx` | `equipenhance_table.proto` | 7 | 7 | 12 | — | — | `material_id` | `material_id→Item.id` | — | — | — |
+| **EquipGem** | `EquipGem.xlsx` | `equipgem_table.proto` | 4 | 4 | 12 | — | — | `id` `attr_id` | `id→Item.id` `attr_id→EquipAttribute.id` | — | — | — |
+| **EquipGemSocket** | `EquipGemSocket.xlsx` | `equipgemsocket_table.proto` | 5 | 5 | 6 | — | — | `equip_kind` | — | — | — | — |
 | **EquipSlot** | `EquipSlot.xlsx` | `equipslot_table.proto` | 3 | 3 | 7 | — | — | — | — | — | — | — |
 | **GlobalVariable** | `GlobalVariable.xlsx` | `globalvariable_table.proto` | 8 | 1 | 16 | — | — | — | — | — | — | — |
 | **GuildActivity** | `GuildActivity.xlsx` | `guildactivity_table.proto` | 15 | 15 | 3 | — | — | `reward_id` `dungeon_id` | `reward_id→Reward.id` `dungeon_id→Dungeon.id` | — | — | — |
@@ -155,8 +158,8 @@ cd tools/data_table_exporter && py -m pytest -q
 | **GuildLevel** | `GuildLevel.xlsx` | `guildlevel_table.proto` | 4 | 4 | 10 | — | — | — | — | — | — | — |
 | **GuildRule** | `GuildRule.xlsx` | `guildrule_table.proto` | 10 | 10 | 1 | — | — | — | — | — | — | — |
 | **GuildShop** | `GuildShop.xlsx` | `guildshop_table.proto` | 9 | 9 | 11 | — | — | `item_id` | `item_id→Item.id` | — | — | — |
-| **Item** | `Item.xlsx` | `item_table.proto` | 19 | 14 | 48 | — | — | `affix_rule` | `affix_rule→EquipAffixRule.id` | — | — | `base_attr` |
-| **MessageLimiter** | `MessageLimiter.xlsx` | `messagelimiter_table.proto` | 4 | 4 | 78 | — | — | — | — | — | — | — |
+| **Item** | `Item.xlsx` | `item_table.proto` | 19 | 14 | 61 | — | — | `affix_rule` | `affix_rule→EquipAffixRule.id` | — | — | `base_attr` |
+| **MessageLimiter** | `MessageLimiter.xlsx` | `messagelimiter_table.proto` | 4 | 4 | 81 | — | — | — | — | — | — | — |
 | **Mirror** | `Mirror.xlsx` | `mirror_table.proto` | 3 | 3 | 2 | — | — | `scene_id` `main_scene_id` | `scene_id→BaseScene.id` `main_scene_id→World.id` | — | — | — |
 | **Mission** | `Mission.xlsx` | `mission_table.proto` | 15 | 9 | 17 | — | — | `reward_id` | `reward_id→Reward.id` `condition_id→Condition.id(组)` | `id` | — | — |
 | **Monster** | `Monster.xlsx` | `monster_table.proto` | 16 | 10 | 16 | — | — | — | — | — | — | `drop` |
@@ -170,6 +173,6 @@ cd tools/data_table_exporter && py -m pytest -q
 | **TestMultiKey** | `TestMultiKey.xlsx` | `testmultikey_table.proto` | 33 | 14 | 6 | `string_key` `uint32_key` `int32_key` | `m_string_key` `m_uint32_key` `m_int32_key` | `level` `test_ref` | `test_ref→Test.id` `test_refs→Test.id(组)` | — | — | `testobj1` |
 | **World** | `World.xlsx` | `world_table.proto` | 2 | 2 | 16 | — | — | `scene_id` | `scene_id→BaseScene.id` | — | — | — |
 
-合计 **39** 张表、**437** 个物理列、**293** 个进产物的字段。
+合计 **42** 张表、**453** 个物理列、**309** 个进产物的字段。
 
 <!-- END GENERATED -->
