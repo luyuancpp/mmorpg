@@ -37,6 +37,34 @@ type ItemBattle_heal_mpComp struct {
     Value uint64
 }
 
+type ItemNameComp struct {
+    Value string
+}
+
+type ItemDescriptionComp struct {
+    Value string
+}
+
+type ItemIcon_keyComp struct {
+    Value string
+}
+
+type ItemEquip_levelComp struct {
+    Value uint32
+}
+
+type ItemEquip_classComp struct {
+    Value uint32
+}
+
+type ItemAffix_poolComp struct {
+    Value uint32
+}
+
+type ItemAffix_ruleComp struct {
+    Value uint32
+}
+
 
 // ============================================================
 // Factory helpers — build component from a proto row
@@ -64,5 +92,33 @@ func MakeItemBattle_heal_hpComp(row *pb.ItemTable) ItemBattle_heal_hpComp {
 
 func MakeItemBattle_heal_mpComp(row *pb.ItemTable) ItemBattle_heal_mpComp {
     return ItemBattle_heal_mpComp{Value: row.BattleHealMp}
+}
+
+func MakeItemNameComp(row *pb.ItemTable) ItemNameComp {
+    return ItemNameComp{Value: row.Name}
+}
+
+func MakeItemDescriptionComp(row *pb.ItemTable) ItemDescriptionComp {
+    return ItemDescriptionComp{Value: row.Description}
+}
+
+func MakeItemIcon_keyComp(row *pb.ItemTable) ItemIcon_keyComp {
+    return ItemIcon_keyComp{Value: row.IconKey}
+}
+
+func MakeItemEquip_levelComp(row *pb.ItemTable) ItemEquip_levelComp {
+    return ItemEquip_levelComp{Value: row.EquipLevel}
+}
+
+func MakeItemEquip_classComp(row *pb.ItemTable) ItemEquip_classComp {
+    return ItemEquip_classComp{Value: row.EquipClass}
+}
+
+func MakeItemAffix_poolComp(row *pb.ItemTable) ItemAffix_poolComp {
+    return ItemAffix_poolComp{Value: row.AffixPool}
+}
+
+func MakeItemAffix_ruleComp(row *pb.ItemTable) ItemAffix_ruleComp {
+    return ItemAffix_ruleComp{Value: row.AffixRule}
 }
 

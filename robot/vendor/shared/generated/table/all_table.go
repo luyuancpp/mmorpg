@@ -54,11 +54,35 @@ func LoadTables(configDir string, useBinary bool) {
     if err := DungeonTableManagerInstance.Load(configDir, useBinary); err != nil {
         log.Fatalf("failed to load Dungeon table: %v", err)
     }
+    if err := EquipAffixPoolTableManagerInstance.Load(configDir, useBinary); err != nil {
+        log.Fatalf("failed to load EquipAffixPool table: %v", err)
+    }
+    if err := EquipAffixRuleTableManagerInstance.Load(configDir, useBinary); err != nil {
+        log.Fatalf("failed to load EquipAffixRule table: %v", err)
+    }
+    if err := EquipAttributeTableManagerInstance.Load(configDir, useBinary); err != nil {
+        log.Fatalf("failed to load EquipAttribute table: %v", err)
+    }
+    if err := EquipAttributeCapTableManagerInstance.Load(configDir, useBinary); err != nil {
+        log.Fatalf("failed to load EquipAttributeCap table: %v", err)
+    }
+    if err := EquipEnhanceTableManagerInstance.Load(configDir, useBinary); err != nil {
+        log.Fatalf("failed to load EquipEnhance table: %v", err)
+    }
+    if err := EquipGemTableManagerInstance.Load(configDir, useBinary); err != nil {
+        log.Fatalf("failed to load EquipGem table: %v", err)
+    }
+    if err := EquipGemSocketTableManagerInstance.Load(configDir, useBinary); err != nil {
+        log.Fatalf("failed to load EquipGemSocket table: %v", err)
+    }
     if err := EquipSlotTableManagerInstance.Load(configDir, useBinary); err != nil {
         log.Fatalf("failed to load EquipSlot table: %v", err)
     }
     if err := GlobalVariableTableManagerInstance.Load(configDir, useBinary); err != nil {
         log.Fatalf("failed to load GlobalVariable table: %v", err)
+    }
+    if err := GuildActivityTableManagerInstance.Load(configDir, useBinary); err != nil {
+        log.Fatalf("failed to load GuildActivity table: %v", err)
     }
     if err := GuildDonateTableManagerInstance.Load(configDir, useBinary); err != nil {
         log.Fatalf("failed to load GuildDonate table: %v", err)
@@ -124,7 +148,7 @@ func LoadTables(configDir string, useBinary bool) {
 // useBinary: true loads .pb (proto binary), false loads .json.
 func LoadTablesAsync(configDir string, useBinary bool) {
     var wg sync.WaitGroup
-    wg.Add(34)
+    wg.Add(42)
     go func() {
         defer wg.Done()
         if err := ActivityScheduleTableManagerInstance.Load(configDir, useBinary); err != nil {
@@ -211,6 +235,48 @@ func LoadTablesAsync(configDir string, useBinary bool) {
     }()
     go func() {
         defer wg.Done()
+        if err := EquipAffixPoolTableManagerInstance.Load(configDir, useBinary); err != nil {
+            log.Fatalf("failed to load EquipAffixPool table: %v", err)
+        }
+    }()
+    go func() {
+        defer wg.Done()
+        if err := EquipAffixRuleTableManagerInstance.Load(configDir, useBinary); err != nil {
+            log.Fatalf("failed to load EquipAffixRule table: %v", err)
+        }
+    }()
+    go func() {
+        defer wg.Done()
+        if err := EquipAttributeTableManagerInstance.Load(configDir, useBinary); err != nil {
+            log.Fatalf("failed to load EquipAttribute table: %v", err)
+        }
+    }()
+    go func() {
+        defer wg.Done()
+        if err := EquipAttributeCapTableManagerInstance.Load(configDir, useBinary); err != nil {
+            log.Fatalf("failed to load EquipAttributeCap table: %v", err)
+        }
+    }()
+    go func() {
+        defer wg.Done()
+        if err := EquipEnhanceTableManagerInstance.Load(configDir, useBinary); err != nil {
+            log.Fatalf("failed to load EquipEnhance table: %v", err)
+        }
+    }()
+    go func() {
+        defer wg.Done()
+        if err := EquipGemTableManagerInstance.Load(configDir, useBinary); err != nil {
+            log.Fatalf("failed to load EquipGem table: %v", err)
+        }
+    }()
+    go func() {
+        defer wg.Done()
+        if err := EquipGemSocketTableManagerInstance.Load(configDir, useBinary); err != nil {
+            log.Fatalf("failed to load EquipGemSocket table: %v", err)
+        }
+    }()
+    go func() {
+        defer wg.Done()
         if err := EquipSlotTableManagerInstance.Load(configDir, useBinary); err != nil {
             log.Fatalf("failed to load EquipSlot table: %v", err)
         }
@@ -219,6 +285,12 @@ func LoadTablesAsync(configDir string, useBinary bool) {
         defer wg.Done()
         if err := GlobalVariableTableManagerInstance.Load(configDir, useBinary); err != nil {
             log.Fatalf("failed to load GlobalVariable table: %v", err)
+        }
+    }()
+    go func() {
+        defer wg.Done()
+        if err := GuildActivityTableManagerInstance.Load(configDir, useBinary); err != nil {
+            log.Fatalf("failed to load GuildActivity table: %v", err)
         }
     }()
     go func() {
@@ -401,6 +473,34 @@ func ReloadTables(configDir string, useBinary bool) error {
     if err := newDungeon.Load(configDir, useBinary); err != nil {
         return fmt.Errorf("reload Dungeon failed: %w", err)
     }
+    newEquipAffixPool := NewEquipAffixPoolTableManager()
+    if err := newEquipAffixPool.Load(configDir, useBinary); err != nil {
+        return fmt.Errorf("reload EquipAffixPool failed: %w", err)
+    }
+    newEquipAffixRule := NewEquipAffixRuleTableManager()
+    if err := newEquipAffixRule.Load(configDir, useBinary); err != nil {
+        return fmt.Errorf("reload EquipAffixRule failed: %w", err)
+    }
+    newEquipAttribute := NewEquipAttributeTableManager()
+    if err := newEquipAttribute.Load(configDir, useBinary); err != nil {
+        return fmt.Errorf("reload EquipAttribute failed: %w", err)
+    }
+    newEquipAttributeCap := NewEquipAttributeCapTableManager()
+    if err := newEquipAttributeCap.Load(configDir, useBinary); err != nil {
+        return fmt.Errorf("reload EquipAttributeCap failed: %w", err)
+    }
+    newEquipEnhance := NewEquipEnhanceTableManager()
+    if err := newEquipEnhance.Load(configDir, useBinary); err != nil {
+        return fmt.Errorf("reload EquipEnhance failed: %w", err)
+    }
+    newEquipGem := NewEquipGemTableManager()
+    if err := newEquipGem.Load(configDir, useBinary); err != nil {
+        return fmt.Errorf("reload EquipGem failed: %w", err)
+    }
+    newEquipGemSocket := NewEquipGemSocketTableManager()
+    if err := newEquipGemSocket.Load(configDir, useBinary); err != nil {
+        return fmt.Errorf("reload EquipGemSocket failed: %w", err)
+    }
     newEquipSlot := NewEquipSlotTableManager()
     if err := newEquipSlot.Load(configDir, useBinary); err != nil {
         return fmt.Errorf("reload EquipSlot failed: %w", err)
@@ -408,6 +508,10 @@ func ReloadTables(configDir string, useBinary bool) error {
     newGlobalVariable := NewGlobalVariableTableManager()
     if err := newGlobalVariable.Load(configDir, useBinary); err != nil {
         return fmt.Errorf("reload GlobalVariable failed: %w", err)
+    }
+    newGuildActivity := NewGuildActivityTableManager()
+    if err := newGuildActivity.Load(configDir, useBinary); err != nil {
+        return fmt.Errorf("reload GuildActivity failed: %w", err)
     }
     newGuildDonate := NewGuildDonateTableManager()
     if err := newGuildDonate.Load(configDir, useBinary); err != nil {
@@ -497,8 +601,16 @@ func ReloadTables(configDir string, useBinary bool) error {
     ConditionTableManagerInstance = newCondition
     CooldownTableManagerInstance = newCooldown
     DungeonTableManagerInstance = newDungeon
+    EquipAffixPoolTableManagerInstance = newEquipAffixPool
+    EquipAffixRuleTableManagerInstance = newEquipAffixRule
+    EquipAttributeTableManagerInstance = newEquipAttribute
+    EquipAttributeCapTableManagerInstance = newEquipAttributeCap
+    EquipEnhanceTableManagerInstance = newEquipEnhance
+    EquipGemTableManagerInstance = newEquipGem
+    EquipGemSocketTableManagerInstance = newEquipGemSocket
     EquipSlotTableManagerInstance = newEquipSlot
     GlobalVariableTableManagerInstance = newGlobalVariable
+    GuildActivityTableManagerInstance = newGuildActivity
     GuildDonateTableManagerInstance = newGuildDonate
     GuildLevelTableManagerInstance = newGuildLevel
     GuildRuleTableManagerInstance = newGuildRule
