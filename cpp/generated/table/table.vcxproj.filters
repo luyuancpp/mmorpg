@@ -447,6 +447,30 @@
     <ClInclude Include="code\equipaffixrule_table_comp.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="code\equipenhance_table.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="code\equipenhance_table_comp.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="code\equipenhance_table_fk.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="code\equipgem_table.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="code\equipgem_table_comp.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="code\equipgem_table_fk.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="code\equipgemsocket_table.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="code\equipgemsocket_table_comp.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
     <ClInclude Include="code\item_table_fk.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -460,6 +484,15 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="proto\equipaffixrule_table.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="proto\equipenhance_table.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="proto\equipgem_table.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="proto\equipgemsocket_table.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="proto\tip\equip_error_tip.pb.h">
@@ -776,6 +809,21 @@
     <ClCompile Include="code\equipaffixrule_table.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="code\equipenhance_table.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="code\equipenhance_table_fk.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="code\equipgem_table.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="code\equipgem_table_fk.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="code\equipgemsocket_table.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
     <ClCompile Include="code\item_table_fk.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -789,6 +837,15 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="proto\equipaffixrule_table.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="proto\equipenhance_table.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="proto\equipgem_table.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="proto\equipgemsocket_table.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="proto\tip\equip_error_tip.pb.cc">

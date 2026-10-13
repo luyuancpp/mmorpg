@@ -1,5 +1,6 @@
 // 装备加成接进角色属性计算与属性面板(PlayerAttributeSystem::Recalculate / BuildPanel)。
-// 契约见 docs/design/equipment-attributes.md §3.2 / §3.3 / §4.4 / §5(不变量 2 / 3 / 4)。
+// 契约见 docs/design/equipment-attributes.md §3.2 / §3.3 / §4.4 / §5(不变量 2 / 3 / 4);
+// 强化与镶嵌(二期)见 docs/design/equipment-enhance-inlay.md §4.3(消费侧)/ §5(不变量 2 / 3 / 4)。
 //
 // 这里钉的是「装备栏里有什么 -> 二级属性 / 面板是多少」,不是穿脱流程:用例用搬运原语
 // Bag::PutInstance / TakeInstance 直接把手工构造的装备实例放进 / 拿出 bags[kEquipment],再显式调
@@ -7,27 +8,48 @@
 // 汇总装备加成的 PlayerEquipSystem::CollectBonus 与反查显示信息的 DescribeCombatStat 是真实现,
 // 所以用的是真实表行:样例装备 1105 / 1205 / 1305 / 1405(80 级档)与 EquipAttribute 1-26。
 //
+// 二期的用例有两种写法:
+//   * 「实例上写着 +N / 嵌着哪颗宝石 -> 属性是多少」仍旧手工构造实例(SetEnhanceLevel / AddGemRecord)再穿上;
+//   * 「穿着时强化 / 镶嵌 / 取下,属性立刻跟上」直接调 PlayerEquipSystem::Enhance / InlayGem / RemoveGem ——
+//     重算与推面板是这三个入口自己做的,用例不替它们调 Recalculate。扣费对账、拒绝码、流水、tooltip 在
+//     player_equip_test.cpp,这里只看属性侧。
+//
 // 手算口径:装备的基础属性值、每点固定系数都现读配表(策划调数值不必改用例);
 // 属性 id 的含义(伤害 = 物伤法伤各加、准确只加物伤 ...)按设计文档 §2.1 写死,并在夹具里逐行核对。
+// 强化每一级的万分比、强化消耗、宝石的属性值同样现读表(EquipEnhance / EquipGem);
+// 「哪种宝石给哪条属性、哪个孔收哪种」按二期设计文档 §2.2 / §2.3 写死,由 RequireForgeRows 核对。
 //
 // 夹具自带:SetUp 自己加载用到的全部表并核对夹具行(缺行 = 还没导表,失败信息里写明),
-// 不依赖别的文件的用例先跑或后跑;不经 BagService,所以不需要号段、也不碰掷属性回调。
+// 不依赖别的文件的用例先跑或后跑。进程级状态各自归位:item 号段(取下宝石退回的那一颗要铸号)在 SetUp
+// 投一段、TearDown 恢复基线;强化掷骰的脚本随机源在 TearDown 复原;内存里改过的表行在 TearDown 重新加载。
+// 不碰掷属性回调(用例不铸装备:装备实例都是手工构造后走搬运原语进包的)。
 
 #include <gtest/gtest.h>
 
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
+#include <cstdio>
+#include <functional>
+#include <limits>
 #include <map>
 #include <set>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "engine/core/type_define/type_define.h"
 
 #include "modules/bag/bag_system.h"
 #include "modules/bag/comp/player_bags_comp.h"
+#include "modules/currency/comp/player_currency_comp.h"
+#include "modules/currency/constants/currency.h"
+#include "modules/currency/system/currency_system.h"
+#include "modules/id_segment/guid_segment_registry.h"
+#include "muduo/base/Logging.h" // Logger::setOutput:数「推面板」留下的那条 WARN(见 PanelPushProbe)
 #include "proto/common/component/actor_attribute_state_comp.pb.h"
 #include "proto/common/component/actor_comp.pb.h"
+#include "proto/common/component/currency_comp.pb.h"
 #include "proto/common/component/item_base_comp.pb.h"
 #include "proto/common/component/player_attribute_comp.pb.h"
 #include "proto/scene/player_attribute.pb.h"
@@ -45,6 +67,9 @@
 #include "table/code/equipaffixrule_table.h"
 #include "table/code/equipattribute_table.h"
 #include "table/code/equipattributecap_table.h"
+#include "table/code/equipenhance_table.h"
+#include "table/code/equipgem_table.h"
+#include "table/code/equipgemsocket_table.h"
 #include "table/code/equipslot_table.h"
 #include "table/code/item_table.h"
 #include "table/code/mission_table.h"
@@ -126,6 +151,42 @@ constexpr uint64_t kPlayerIdBase = (uint64_t{1} << 58) + 9300;
 // 「气血 / 法力」平加用例里的数值(都在 80 级档上限之内)。
 constexpr uint32_t kHealthAffix = 300;
 constexpr uint32_t kManaAffix = 200;
+
+// ── 强化 / 镶嵌的夹具数据(docs/design/equipment-enhance-inlay.md §2)────────
+const char *const kForgeExportHint =
+	"run the data table exporter first (docs/design/equipment-enhance-inlay.md 2.1-2.4)";
+
+// 部位(Item.equip_kind;孔位表按它分组)。
+constexpr uint32_t kWeaponKind = 11;
+constexpr uint32_t kHatKind = 12;
+constexpr uint32_t kClothesKind = 13;
+constexpr uint32_t kShoesKind = 14;
+
+// 一级宝石(Item.id = EquipGem 表主键,§2.2)。属性值现读表;「哪种宝石给哪条属性」是契约,夹具逐行核对。
+constexpr uint32_t kGemAttack = 2101;    // 伤害:物伤与法伤各加
+constexpr uint32_t kGemDefense = 2201;   // 防御
+constexpr uint32_t kGemHealth = 2301;    // 气血
+constexpr uint32_t kGemSpeed = 2401;     // 速度
+constexpr uint32_t kUnknownGem = 987654; // EquipGem 表里没有这一行
+
+// 孔位号(§2.3):武器 0 号只收攻击宝石、1 号通用;帽子 0 号气血;衣服 0 号防御;鞋子 0 号迅捷。
+constexpr uint32_t kSocketFirst = 0;
+constexpr uint32_t kSocketSecond = 1;
+
+// 人物背包里的夹具堆(强化材料、宝石):预设 guid + 固定槽位,走还原入口放进去,不铸号。
+// 槽位避开背包前部 —— 放进背包的装备走自动找位,从 0 号槽起占。一个用例要几堆时在基数上加下标。
+constexpr Guid kGuidMaterialStack = (uint64_t{1} << 60) + 9311;
+constexpr Guid kGuidGemStack = (uint64_t{1} << 60) + 9321;
+constexpr uint32_t kMaterialPos = 40;
+constexpr uint32_t kGemPos = 60;
+
+// 取下宝石退回的那一颗是新堆,要铸号(BagService::AddItems):夹具自己投一段 item 号段。
+constexpr uint64_t kItemSegmentLo = 1400000;
+constexpr uint64_t kItemSegmentHi = 1500000;
+
+// 强化掷骰的脚本值:equiprules::RollEnhanceSuccess 掷一个 [0, 10000) 的数,小于成功率即成功。
+constexpr uint64_t kRollAlwaysSucceeds = 0;                                  // 成功率 > 0 就成
+constexpr uint64_t kRollFailsUnlessCertain = equiprules::kPermyriadBase - 1; // 成功率 < 10000 就败
 
 // 设计文档 §2.1 的属性清单:夹具逐行核对,表一漂就在 SetUp 里说清楚。
 struct AttrRowExpectation
@@ -309,6 +370,77 @@ uint64_t BaseAttrValue(uint32_t configId, uint32_t attrId)
 	return total;
 }
 
+// ── 强化 / 镶嵌:现读配表 ─────────────────────────────────────────────────
+
+// EquipEnhance 第 level 行 = 「强化到 +level」的规则与 +level 的总加成;没有返回 nullptr。
+const EquipEnhanceTable *EnhanceRowOrNull(uint32_t level)
+{
+	return EquipEnhanceTableManager::Instance().FindByIdSilent(level).first;
+}
+
+// +level 时基础属性的总加成(万分比)。0 级 = 0(未强化)。
+uint32_t EnhancePermyriad(uint32_t level)
+{
+	if (level == 0)
+	{
+		return 0;
+	}
+	const auto *row = EnhanceRowOrNull(level);
+	if (row == nullptr)
+	{
+		ADD_FAILURE() << "EquipEnhance row " << level << " is missing: " << kForgeExportHint;
+		return 0;
+	}
+	return row->bonus_permyriad();
+}
+
+// 样例装备某条基础属性在 +level 时的值:表值按该级的万分比放大。
+// 放大算法只有规则层那一份(equiprules::ScaleByPermyriad;取整与饱和由 equip_attribute_rules_test.cpp 钉住),
+// 这里对的是「编排层把哪个表值、哪一级的万分比喂给了它」。夹具核对过样例装备的每条基础属性 id 只出现一次,
+// 所以「先合计再放大」与「逐条放大再合计」是同一个数。
+uint64_t EnhancedBaseAttr(uint32_t configId, uint32_t attrId, uint32_t level)
+{
+	return equiprules::ScaleByPermyriad(BaseAttrValue(configId, attrId), EnhancePermyriad(level));
+}
+
+const EquipGemTable *GemRowOrNull(uint32_t gemConfigId)
+{
+	return EquipGemTableManager::Instance().FindByIdSilent(gemConfigId).first;
+}
+
+// 一颗宝石提供的属性值(取自 EquipGem 表;行与属性 id 已由 RequireForgeRows 核对)。
+uint64_t GemValue(uint32_t gemConfigId)
+{
+	const auto *row = GemRowOrNull(gemConfigId);
+	if (row == nullptr)
+	{
+		ADD_FAILURE() << "EquipGem row " << gemConfigId << " is missing: " << kForgeExportHint;
+		return 0;
+	}
+	return row->value();
+}
+
+// 某部位的 socket 号孔的定义行(EquipGemSocket 表);没有返回 nullptr。
+const EquipGemSocketTable *SocketRowOrNull(uint32_t equipKind, uint32_t socket)
+{
+	for (const auto *row : EquipGemSocketTableManager::Instance().GetByEquipKind(equipKind))
+	{
+		if (row->socket() == socket)
+		{
+			return row;
+		}
+	}
+	return nullptr;
+}
+
+// 内存里改一行表(照 player_equip_test.cpp 的做法)。夹具的 TearDown 会把改过的表重新加载,
+// 所以改动不会漏进后面的用例。
+template <typename Row>
+Row &Editable(const Row *row)
+{
+	return *const_cast<Row *>(row);
+}
+
 // ── 战斗类属性 ───────────────────────────────────────────────────────────
 struct CombatValues
 {
@@ -479,6 +611,22 @@ void AddAffix(ItemComp &item, uint32_t attrId, uint32_t tier, uint32_t value, ui
 	affix->set_seq(seq);
 }
 
+// 把实例的强化等级写成 +level。直接写实例、不核对表上限:
+// 「存档里的等级比表上限还高」正是其中一条用例要造的形状。
+void SetEnhanceLevel(ItemComp &item, uint32_t level)
+{
+	item.mutable_equip()->set_enhance_level(level);
+}
+
+// 往实例上追加一条宝石记录(socket 号孔里嵌着 gemConfigId)。原始记录:不核对孔位与宝石是否存在、
+// 也不去重 —— 入包边界整份信任 equip 段,脏记录的几条用例靠它造数据。
+void AddGemRecord(ItemComp &item, uint32_t socket, uint32_t gemConfigId)
+{
+	auto *gem = item.mutable_equip()->add_gems();
+	gem->set_socket(socket);
+	gem->set_gem_config_id(gemConfigId);
+}
+
 // 衣服:气血 +300、法力 +200(当前气血 / 法力跟随上限的几条用例共用)。
 ItemComp MakeVitalityClothes(Guid guid)
 {
@@ -487,6 +635,68 @@ ItemComp MakeVitalityClothes(Guid guid)
 	AddAffix(clothes, kAttrMana, kBlue, kManaAffix, 1);
 	return clothes;
 }
+
+// ── 进程级状态:item 号段、面板推送的探针 ─────────────────────────────────
+
+// 与 player_equip_test.cpp / bag_instance_data_test.cpp 同一个做法:无 I/O 的假传输 + 直接投一段号。
+bool ArmItemSegment(uint64_t lo, uint64_t hi)
+{
+	auto &client = tlsGuidSegmentRegistry.Get(GuidKind::kItem);
+	client.Reset();
+	GuidSegmentClient::Options options;
+	options.kindName = "item";
+	options.initialStep = 100000;
+	if (!client.Enable(options, [](const std::string &, uint32_t) { return true; },
+					   [](GuidSegmentClient::TimerKind, double, std::function<void()>) {},
+					   [] { return 0.0; }))
+	{
+		return false;
+	}
+	client.Warm();
+	client.OnResponse(0, lo, hi);
+	return client.IsReady();
+}
+
+// 夹具里的玩家没有会话组件(PlayerSessionSnapshotComp),PlayerAttributeSystem::PushPanel 走到
+// SendMessageToClientViaGate 时留下一条 WARN 就返回 —— 本测试进程里没有 gate 连接可以收包,这条 WARN
+// 是「推过一次面板」唯一看得见的痕迹。照 cross_zone_test.cpp 数 WARN 条数的做法:临时接管 muduo 的
+// 日志出口,数这句原文出现了几次(muduo 的 WARN 不受日志级别开关影响)。原文在
+// engine/core/network/player_message_utils.cpp;那边改了措辞,用到探针的用例会红在各自开头的校准断言上
+// (直接推一次必须恰好数到 1),而不是把「没推」和「数不到」混为一谈。
+const char *const kPanelPushTrace = "Player node info not found for player entity";
+int gPanelPushTraces = 0;
+
+void WriteLogToStdout(const char *msg, int len)
+{
+	std::fwrite(msg, 1, static_cast<std::size_t>(len), stdout);
+}
+
+void CountPanelPushTrace(const char *msg, int len)
+{
+	if (std::string_view(msg, static_cast<std::size_t>(len)).find(kPanelPushTrace) != std::string_view::npos)
+	{
+		++gPanelPushTraces;
+	}
+	WriteLogToStdout(msg, len);
+}
+
+// 作用域守卫:构造时接管日志出口并清零,析构时还给 stdout(用例中途 ASSERT 退出也会还)。
+// muduo 不提供「取当前出口」的接口,它的默认出口同样是写 stdout,所以还成等价的这一个。
+class PanelPushProbe
+{
+public:
+	PanelPushProbe()
+	{
+		gPanelPushTraces = 0;
+		muduo::Logger::setOutput(CountPanelPushTrace);
+	}
+	~PanelPushProbe() { muduo::Logger::setOutput(WriteLogToStdout); }
+	PanelPushProbe(const PanelPushProbe &) = delete;
+	PanelPushProbe &operator=(const PanelPushProbe &) = delete;
+
+	int Count() const { return gPanelPushTraces; }
+	void Reset() { gPanelPushTraces = 0; }
+};
 
 class PlayerEquipAttributeTest : public testing::Test
 {
@@ -504,15 +714,25 @@ protected:
 		EquipAttributeCapTableManager::Instance().Load();
 		EquipAffixPoolTableManager::Instance().Load();
 		EquipAffixRuleTableManager::Instance().Load();
+		// 二期(强化 / 镶嵌)的三张表:不加载 = 空表 = 强化未开放、没有宝石、没有孔。
+		EquipEnhanceTableManager::Instance().Load();
+		EquipGemTableManager::Instance().Load();
+		EquipGemSocketTableManager::Instance().Load();
 		// 存档往返那条用例走整条 PlayerAllData 装卸入口,任务还原要这两张表。
 		MissionTableManager::Instance().Load();
 		ConditionTableManager::Instance().Load();
+		// 取下宝石走 BagService::AddItems 退回一颗,新堆要铸号。
+		ASSERT_TRUE(ArmItemSegment(kItemSegmentLo, kItemSegmentHi));
+		// 进程级状态:先复原一次,别的文件的用例若忘了复原也不会漏进来。
+		PlayerEquipSystem::SetRandomSourceForTest({});
 		ASSERT_NO_FATAL_FAILURE(RequireFixtureRows());
 		player = NewPlayer();
 	}
 
 	void TearDown() override
 	{
+		// 进程级状态:强化掷骰的脚本随机源必须复原,否则后面所有掷属性 / 强化的用例都在吃这份脚本。
+		PlayerEquipSystem::SetRandomSourceForTest({});
 		for (const auto entity : players)
 		{
 			if (tlsEcs.actorRegistry.valid(entity))
@@ -520,6 +740,12 @@ protected:
 				tlsEcs.actorRegistry.destroy(entity);
 			}
 		}
+		// 个别用例在内存里改过表行(样例衣服的基础属性、EquipEnhance 的成功率与失败掉级):
+		// 重新加载,别把改动留给后面的用例。
+		ItemTableManager::Instance().Load();
+		EquipEnhanceTableManager::Instance().Load();
+		// 恢复其它背包用例使用的无 I/O 号段基线(与 bag_test.cpp 的 main() 同一段范围)。
+		EXPECT_TRUE(ArmItemSegment(1, uint64_t{1} << 54));
 	}
 
 	// 前置条件:下面每条用例都建立在这些表行上。先断言行指针非空再解引用。
@@ -586,6 +812,58 @@ protected:
 		ASSERT_NO_FATAL_FAILURE(RequireSlotRow(6, 14));
 	}
 
+	// ── 强化 / 镶嵌的前置条件 ────────────────────────────────────────────
+	// 只由二期的用例调(各自的第一行),不放进 SetUp:一期的 20 条不依赖这三张表里有什么。
+
+	// 宝石行:提供的是 attrId 这条属性、数值非 0,并且编排层认它是宝石(Item 行存在、可叠加、不是装备)。
+	static void RequireGemRow(uint32_t gemConfigId, uint32_t attrId)
+	{
+		const auto *gem = GemRowOrNull(gemConfigId);
+		ASSERT_NE(nullptr, gem) << "EquipGem row " << gemConfigId << " is missing: " << kForgeExportHint;
+		ASSERT_EQ(attrId, gem->attr_id()) << "EquipGem row " << gemConfigId;
+		ASSERT_GT(gem->gem_type(), 0u) << "EquipGem row " << gemConfigId;
+		ASSERT_GT(gem->value(), 0u) << "EquipGem row " << gemConfigId;
+		const auto *item = ItemTableManager::Instance().FindByIdSilent(gemConfigId).first;
+		ASSERT_NE(nullptr, item) << "Item row " << gemConfigId << " is missing: " << kForgeExportHint;
+		ASSERT_EQ(0u, item->equip_kind()) << "Item row " << gemConfigId;
+		ASSERT_GT(item->max_stack_size(), 1u) << "Item row " << gemConfigId;
+		ASSERT_TRUE(PlayerEquipSystem::IsGem(gemConfigId)) << "config " << gemConfigId;
+	}
+
+	// 该部位有 socket 号孔,且它收得下 gemConfigId 这种宝石(孔位类型 0 = 任意)。
+	static void RequireSocketAccepting(uint32_t equipKind, uint32_t socket, uint32_t gemConfigId)
+	{
+		const auto *gem = GemRowOrNull(gemConfigId);
+		ASSERT_NE(nullptr, gem) << "EquipGem row " << gemConfigId << " is missing: " << kForgeExportHint;
+		const auto *socketRow = SocketRowOrNull(equipKind, socket);
+		ASSERT_NE(nullptr, socketRow) << "EquipGemSocket has no socket " << socket << " for equip_kind " << equipKind
+									  << ": " << kForgeExportHint;
+		ASSERT_TRUE(socketRow->gem_type() == 0 || socketRow->gem_type() == gem->gem_type())
+			<< "socket " << socket << " of equip_kind " << equipKind << " no longer accepts gem " << gemConfigId;
+	}
+
+	static void RequireForgeRows()
+	{
+		ASSERT_GT(PlayerEquipSystem::MaxEnhanceLevel(), 0u)
+			<< "EquipEnhance has no level 1 row (enhancement is closed): " << kForgeExportHint;
+		const auto *firstLevel = EnhanceRowOrNull(1);
+		ASSERT_NE(nullptr, firstLevel);
+		// 用例靠脚本随机源掷 0 来「必成」;成功率为 0 的行会被强化入口直接拒掉。
+		ASSERT_GT(firstLevel->success_rate(), 0u) << "EquipEnhance row 1";
+
+		ASSERT_NO_FATAL_FAILURE(RequireGemRow(kGemAttack, kAttrDamage));
+		ASSERT_NO_FATAL_FAILURE(RequireGemRow(kGemDefense, kAttrDefense));
+		ASSERT_NO_FATAL_FAILURE(RequireGemRow(kGemHealth, kAttrHealth));
+		ASSERT_NO_FATAL_FAILURE(RequireGemRow(kGemSpeed, kAttrSpeed));
+		ASSERT_EQ(nullptr, GemRowOrNull(kUnknownGem));
+
+		ASSERT_NO_FATAL_FAILURE(RequireSocketAccepting(kWeaponKind, kSocketFirst, kGemAttack));
+		ASSERT_NO_FATAL_FAILURE(RequireSocketAccepting(kWeaponKind, kSocketSecond, kGemAttack));
+		ASSERT_NO_FATAL_FAILURE(RequireSocketAccepting(kHatKind, kSocketFirst, kGemHealth));
+		ASSERT_NO_FATAL_FAILURE(RequireSocketAccepting(kClothesKind, kSocketFirst, kGemDefense));
+		ASSERT_NO_FATAL_FAILURE(RequireSocketAccepting(kShoesKind, kSocketFirst, kGemSpeed));
+	}
+
 	// 最小可重算玩家:基础属性 + 等级 +(可选)背包,走一遍加载期的初始化。满血满蓝。
 	entt::entity NewPlayer(bool withBags = true)
 	{
@@ -602,6 +880,10 @@ protected:
 		{
 			tlsEcs.actorRegistry.emplace<PlayerBagsComp>(entity);
 		}
+		// 强化要问余额、扣金币:余额在 CurrencyComp,欠款与脏标记在 PlayerCurrencyComp
+		// (做法同 player_battle_settlement_test.cpp)。余额从 0 起,要强化的用例自己 FundEnhance。
+		tlsEcs.actorRegistry.emplace<CurrencyComp>(entity);
+		tlsEcs.actorRegistry.emplace<PlayerCurrencyComp>(entity);
 		PlayerAttributeSystem::InitializeOnLoad(entity);
 		return entity;
 	}
@@ -609,6 +891,10 @@ protected:
 	static Bag &Equipment(entt::entity entity)
 	{
 		return tlsEcs.actorRegistry.get<PlayerBagsComp>(entity).bags[kEquipment];
+	}
+	static Bag &Inventory(entt::entity entity)
+	{
+		return tlsEcs.actorRegistry.get<PlayerBagsComp>(entity).bags[kInventory];
 	}
 	static BaseAttributesComp &Base(entt::entity entity)
 	{
@@ -689,6 +975,112 @@ protected:
 	{
 		const auto *row = AttributeDimensionTableManager::Instance().FindByIdSilent(kDimStrength).first;
 		return row != nullptr ? row->pool_id() : 0;
+	}
+
+	// ── 强化 / 镶嵌的帮手 ────────────────────────────────────────────────
+
+	// 穿着的那件实例;找不到返回 nullptr。指针只在装备栏下一次增删之前有效:现取现用。
+	static const ItemComp *Worn(entt::entity entity, Guid guid)
+	{
+		return Equipment(entity).GetItemCompByGuid(guid);
+	}
+
+	// 穿上 -> 读六项 -> 脱下:给「同一名玩家轮着穿几件手工构造的实例」的用例用。
+	static void WearReadTakeOff(entt::entity entity, const ItemComp &item, Six &out)
+	{
+		ASSERT_NO_FATAL_FAILURE(Wear(entity, item));
+		out = ReadSix(Derived(entity));
+		ASSERT_NO_FATAL_FAILURE(TakeOff(entity, item.item_id()));
+	}
+
+	// 把金币余额直接摆成 amount(做法同 player_equip_test.cpp / player_feature_snapshot_test.cpp:写组件)。
+	// 刻意不走 CurrencySystem::AddCurrency:那条路要过欠款抵扣、封禁闸与异常获得统计,而夹具要的只是
+	// 「此刻恰好有这么多金币」;扣金币走不走正式入口是被测代码的事。
+	static void SetGold(entt::entity entity, uint64_t amount)
+	{
+		auto &currency = tlsEcs.actorRegistry.get<CurrencyComp>(entity);
+		currency.clear_values();
+		for (uint32_t type = 0; type < kCurrencyMax; ++type)
+		{
+			currency.add_values(type == kCurrencyGold ? amount : 0);
+		}
+	}
+
+	// 备齐「强化到 +targetLevel」这一次要的金币与材料,恰好够;数量现读 EquipEnhance 表(策划改消耗不必改用例)。
+	// 材料按预设 guid 走还原入口放进人物背包(不经 BagService、不铸号)。这里只读消耗那几列,所以与
+	// RigEnhanceRowToFail 谁先谁后都行。同一用例要强化多次时,每次给不同的 stackIndex(各占一堆)。
+	static void FundEnhance(entt::entity entity, uint32_t targetLevel, uint32_t stackIndex = 0)
+	{
+		const auto *row = EnhanceRowOrNull(targetLevel);
+		ASSERT_NE(nullptr, row) << "EquipEnhance row " << targetLevel << " is missing: " << kForgeExportHint;
+		SetGold(entity, CurrencySystem::GetBalance(entity, kCurrencyGold) + row->cost_gold());
+		if (row->material_id() == 0 || row->material_count() == 0)
+		{
+			return; // 这一级不要材料
+		}
+		const auto *material = ItemTableManager::Instance().FindByIdSilent(row->material_id()).first;
+		ASSERT_NE(nullptr, material) << "EquipEnhance row " << targetLevel << " points at a missing material "
+									 << row->material_id();
+		ASSERT_GE(material->max_stack_size(), row->material_count())
+			<< "one fixture stack must hold the materials of enhance level " << targetLevel;
+		Inventory(entity).InsertItemForRestore(kGuidMaterialStack + stackIndex, row->material_id(),
+											   row->material_count(), kMaterialPos + stackIndex);
+		ASSERT_NE(nullptr, Inventory(entity).GetItemCompByGuid(kGuidMaterialStack + stackIndex))
+			<< "the material stack for enhance level " << targetLevel << " did not land in the inventory";
+	}
+
+	// 往人物背包放一颗宝石(同上:预设 guid + 还原入口)。一个用例里放几种宝石时各给一个 stackIndex。
+	static void StockGem(entt::entity entity, uint32_t gemConfigId, uint32_t stackIndex = 0)
+	{
+		Inventory(entity).InsertItemForRestore(kGuidGemStack + stackIndex, gemConfigId, 1, kGemPos + stackIndex);
+		ASSERT_NE(nullptr, Inventory(entity).GetItemCompByGuid(kGuidGemStack + stackIndex))
+			<< "gem " << gemConfigId << " did not land in the inventory";
+	}
+
+	// 把被测文件的掷骰换成「恒掷出 roll」(夹进 rand(n) 约定的 [0, n));TearDown 复原生产随机源。
+	// 传 kRollAlwaysSucceeds / kRollFailsUnlessCertain。
+	static void ScriptEnhanceRolls(uint64_t roll)
+	{
+		PlayerEquipSystem::SetRandomSourceForTest([roll](uint64_t n) { return roll < n ? roll : n - 1; });
+	}
+
+	// 把样例衣服的基础属性在内存里换成「气血 + 法力」,数值沿用它原来那条防御的表值。
+	// 样例装备的基础属性只有伤害 / 防御 / 速度,强化放大不到气血上限;要验「强化加血装不回血」,
+	// 得有一件基础属性是气血的装备。TearDown 会重新加载 Item 表。
+	static void GiveClothesVitalityBaseAttributes()
+	{
+		const auto *row = ItemTableManager::Instance().FindByIdSilent(kClothes).first;
+		ASSERT_NE(nullptr, row) << "Item row " << kClothes << " is missing: " << kExportHint;
+		ASSERT_EQ(1, row->base_attr_size()) << "Item row " << kClothes;
+		const auto value = row->base_attr(0).base_attr_value();
+		auto &editable = Editable(row);
+		editable.mutable_base_attr(0)->set_base_attr_id(kAttrHealth);
+		auto *mana = editable.add_base_attr();
+		mana->set_base_attr_id(kAttrMana);
+		mana->set_base_attr_value(value);
+	}
+
+	// 在内存里把「强化到 +targetLevel」这一行改成万分之一的成功率(配合 kRollFailsUnlessCertain 就是确定的失败;
+	// 不能填 0:必败的行会被强化入口直接拒掉、不收费),并指定失败掉几级。出厂表全是不掉级
+	// (设计 §1.4 E3),掉级分支只有改表才走得到。TearDown 会重新加载 EquipEnhance 表。
+	static void RigEnhanceRowToFail(uint32_t targetLevel, uint32_t failLevelLoss)
+	{
+		const auto *row = EnhanceRowOrNull(targetLevel);
+		ASSERT_NE(nullptr, row) << "EquipEnhance row " << targetLevel << " is missing: " << kForgeExportHint;
+		auto &editable = Editable(row);
+		editable.set_success_rate(1);
+		editable.set_fail_level_loss(failLevelLoss);
+	}
+
+	// 探针校准:直接推一次面板必须恰好数到 1(见 PanelPushProbe 的说明),然后清零。
+	static void CalibrateProbe(PanelPushProbe &probe, entt::entity entity)
+	{
+		probe.Reset();
+		PlayerAttributeSystem::PushPanel(entity);
+		ASSERT_EQ(1, probe.Count())
+			<< "a direct PushPanel did not leave exactly one countable trace: the WARN text in "
+			   "player_message_utils.cpp changed, or the fixture player gained a session component";
+		probe.Reset();
 	}
 
 	std::vector<entt::entity> players;
@@ -1313,6 +1705,794 @@ TEST_F(PlayerEquipAttributeTest, IsPlayerDimensionFollowsThePoolOwnerType)
 	constexpr uint32_t kUnknownDimension = 987654;
 	ASSERT_EQ(nullptr, AttributeDimensionTableManager::Instance().FindByIdSilent(kUnknownDimension).first);
 	EXPECT_FALSE(PlayerAttributeSystem::IsPlayerDimension(kUnknownDimension));
+}
+
+// ═════════════════════════════════════════════════════════════════════════
+// 二期:强化与镶嵌接进属性(docs/design/equipment-enhance-inlay.md §4.3 消费侧 / §5)
+// ═════════════════════════════════════════════════════════════════════════
+
+// ── 强化:实例上写着 +N,基础属性按该级的万分比放大 ───────────────────────
+
+// 武器的每一级:物伤 / 法伤的增量 = 表里的伤害按该级总加成放大后的值。+0 就是表值(与一期逐位一致)。
+TEST_F(PlayerEquipAttributeTest, EnhancedWeaponAddsItsScaledBaseDamageAtEveryLevel)
+{
+	ASSERT_NO_FATAL_FAILURE(RequireForgeRows());
+	const Six before = ReadSix(Derived(player));
+	const uint64_t tableDamage = BaseAttrValue(kWeapon, kAttrDamage);
+	const uint32_t maxLevel = PlayerEquipSystem::MaxEnhanceLevel();
+
+	uint64_t previousDamage = 0;
+	for (uint32_t level = 0; level <= maxLevel; ++level)
+	{
+		SCOPED_TRACE("enhance level " + std::to_string(level));
+		ItemComp weapon = MakeEquip(kGuidWeapon, kWeapon);
+		SetEnhanceLevel(weapon, level);
+		ASSERT_NO_FATAL_FAILURE(Wear(player, weapon));
+
+		const uint64_t damage = EnhancedBaseAttr(kWeapon, kAttrDamage, level);
+		Six expected = before;
+		expected.physicalAttack += damage;
+		expected.magicAttack += damage;
+		ExpectSix(expected, ReadSix(Derived(player)));
+
+		// 同一个数再手算一遍:表值 + floor(表值 x 万分比 / 10000)(样例数值离溢出线很远,直接乘)。
+		EXPECT_EQ(tableDamage + tableDamage * EnhancePermyriad(level) / equiprules::kPermyriadBase, damage);
+		if (level == 0)
+		{
+			EXPECT_EQ(tableDamage, damage) << "+0 must be exactly the table value";
+		}
+		EXPECT_GE(damage, previousDamage) << "a higher enhance level never gives less";
+		previousDamage = damage;
+
+		ASSERT_NO_FATAL_FAILURE(TakeOff(player, kGuidWeapon));
+	}
+	EXPECT_GT(previousDamage, tableDamage)
+		<< "the top level adds nothing to this weapon; every equality above would hold without enhancement";
+	ExpectSix(before, ReadSix(Derived(player)));
+}
+
+// 防具:每件按自己的等级放大自己的每一条基础属性(鞋子的防御与速度各放大各的),三件互不串级。
+TEST_F(PlayerEquipAttributeTest, EnhancedArmorScalesEachBaseAttributeAtItsOwnLevel)
+{
+	ASSERT_NO_FATAL_FAILURE(RequireForgeRows());
+	const Six before = ReadSix(Derived(player));
+	const uint64_t armorBefore = Base(player).armor();
+	const uint32_t maxLevel = PlayerEquipSystem::MaxEnhanceLevel();
+	// 三件取三个等级(表只有一级时退化成同一级,等式仍成立):哪一件的等级被套到了别的件上,和就对不上。
+	const uint32_t hatLevel = maxLevel;
+	const uint32_t clothesLevel = (maxLevel + 1) / 2;
+	const uint32_t shoesLevel = 1;
+
+	ItemComp hat = MakeEquip(kGuidHat, kHat);
+	SetEnhanceLevel(hat, hatLevel);
+	ItemComp clothes = MakeEquip(kGuidClothes, kClothes);
+	SetEnhanceLevel(clothes, clothesLevel);
+	ItemComp shoes = MakeEquip(kGuidShoes, kShoes);
+	SetEnhanceLevel(shoes, shoesLevel);
+	ASSERT_NO_FATAL_FAILURE(Wear(player, hat));
+	ASSERT_NO_FATAL_FAILURE(Wear(player, clothes));
+	ASSERT_NO_FATAL_FAILURE(Wear(player, shoes));
+
+	Six expected = before;
+	expected.defense += EnhancedBaseAttr(kHat, kAttrDefense, hatLevel) +
+						EnhancedBaseAttr(kClothes, kAttrDefense, clothesLevel) +
+						EnhancedBaseAttr(kShoes, kAttrDefense, shoesLevel);
+	expected.speed += EnhancedBaseAttr(kShoes, kAttrSpeed, shoesLevel);
+	ExpectSix(expected, ReadSix(Derived(player)));
+	EXPECT_EQ(expected.speed, Base(player).speed()) << "the enhanced speed must reach turn order as well";
+	EXPECT_EQ(armorBefore, Base(player).armor()) << "enhanced defense still is not armor";
+
+	// 确实放大了:三件未强化时的防御合计比这个数小。
+	const uint64_t unenhancedDefense = BaseAttrValue(kHat, kAttrDefense) + BaseAttrValue(kClothes, kAttrDefense) +
+									   BaseAttrValue(kShoes, kAttrDefense);
+	EXPECT_GT(expected.defense, before.defense + unenhancedDefense)
+		<< "no armor piece gained anything from its enhance level; the equality above is vacuous";
+}
+
+// 存档里的等级超过表上限(策划下调了上限):按上限计,存档原值不动 —— 表补回来即恢复(§5 不变量 2)。
+TEST_F(PlayerEquipAttributeTest, EnhanceLevelBeyondTheTableCountsAsTheTopLevelWithoutRewritingTheInstance)
+{
+	ASSERT_NO_FATAL_FAILURE(RequireForgeRows());
+	const Six before = ReadSix(Derived(player));
+	const uint32_t maxLevel = PlayerEquipSystem::MaxEnhanceLevel();
+	const uint64_t topDamage = EnhancedBaseAttr(kWeapon, kAttrDamage, maxLevel);
+	Six expected = before;
+	expected.physicalAttack += topDamage;
+	expected.magicAttack += topDamage;
+
+	for (const uint32_t storedLevel : {maxLevel + 1u, (std::numeric_limits<uint32_t>::max)()})
+	{
+		SCOPED_TRACE("stored enhance level " + std::to_string(storedLevel));
+		ItemComp weapon = MakeEquip(kGuidWeapon, kWeapon);
+		SetEnhanceLevel(weapon, storedLevel);
+		ASSERT_NO_FATAL_FAILURE(Wear(player, weapon));
+
+		ExpectSix(expected, ReadSix(Derived(player)));
+		const ItemComp *worn = Worn(player, kGuidWeapon);
+		ASSERT_NE(nullptr, worn);
+		EXPECT_EQ(storedLevel, worn->equip().enhance_level())
+			<< "recalculating clamps the level it reads; it must not rewrite the stored one";
+
+		ASSERT_NO_FATAL_FAILURE(TakeOff(player, kGuidWeapon));
+	}
+}
+
+// 强化只放大基础属性(设计 §1.4 E1):同一件上的随机属性与宝石按原值计。
+TEST_F(PlayerEquipAttributeTest, EnhancementScalesBaseAttributesOnlyNotAffixesOrGems)
+{
+	constexpr uint32_t kAccuracy = 500;
+	constexpr uint32_t kDamageAffix = 400;
+	ASSERT_NO_FATAL_FAILURE(RequireForgeRows());
+	const Six before = ReadSix(Derived(player));
+	const uint32_t maxLevel = PlayerEquipSystem::MaxEnhanceLevel();
+	const uint64_t enhancedBase = EnhancedBaseAttr(kWeapon, kAttrDamage, maxLevel);
+	ASSERT_GT(enhancedBase, BaseAttrValue(kWeapon, kAttrDamage))
+		<< "the top level adds nothing to this weapon; nothing here could tell scaled from unscaled";
+	const uint64_t gemValue = GemValue(kGemAttack);
+
+	ItemComp weapon = MakeEquip(kGuidWeapon, kWeapon);
+	AddAffix(weapon, kAttrAccuracy, kBlue, kAccuracy, 0);
+	AddAffix(weapon, kAttrDamage, kBlue, kDamageAffix, 1);
+	AddGemRecord(weapon, kSocketFirst, kGemAttack);
+	SetEnhanceLevel(weapon, maxLevel);
+	ASSERT_NO_FATAL_FAILURE(Wear(player, weapon));
+
+	// 放大的只有 enhancedBase 这一项;「伤害」随机属性与伤害宝石和它是同一条属性 id,也不跟着放大。
+	Six expected = before;
+	expected.physicalAttack += enhancedBase + kDamageAffix + kAccuracy + gemValue;
+	expected.magicAttack += enhancedBase + kDamageAffix + gemValue;
+	ExpectSix(expected, ReadSix(Derived(player)));
+}
+
+// ── 强化:穿着 / 在背包里时调 PlayerEquipSystem::Enhance ───────────────────
+
+// 穿着的武器强化成功:不必有人再调重算,六项当场就是 +1 的值,并且推了一次面板。
+TEST_F(PlayerEquipAttributeTest, EnhancingWornGearUpdatesTheSixAtOnceAndPushesThePanel)
+{
+	ASSERT_NO_FATAL_FAILURE(RequireForgeRows());
+	const uint64_t plain = BaseAttrValue(kWeapon, kAttrDamage);
+	const uint64_t enhanced = EnhancedBaseAttr(kWeapon, kAttrDamage, 1);
+	ASSERT_GT(enhanced, plain) << "enhance level 1 adds nothing to this weapon; pick a sample that moves";
+
+	ASSERT_NO_FATAL_FAILURE(Wear(player, MakeEquip(kGuidWeapon, kWeapon)));
+	const Six wornPlain = ReadSix(Derived(player));
+	const uint64_t healthBefore = Base(player).health();
+	const uint64_t manaBefore = Base(player).mana();
+	ASSERT_NO_FATAL_FAILURE(FundEnhance(player, 1));
+	ScriptEnhanceRolls(kRollAlwaysSucceeds);
+	PanelPushProbe probe;
+	ASSERT_NO_FATAL_FAILURE(CalibrateProbe(probe, player));
+
+	PlayerEquipSystem::EnhanceOutcome outcome;
+	ASSERT_EQ(kSuccess, PlayerEquipSystem::Enhance(player, kGuidWeapon, outcome));
+	EXPECT_TRUE(outcome.success);
+	EXPECT_EQ(1u, outcome.level);
+
+	Six expected = wornPlain;
+	expected.physicalAttack += enhanced - plain;
+	expected.magicAttack += enhanced - plain;
+	ExpectSix(expected, ReadSix(Derived(player)));
+	EXPECT_EQ(1, probe.Count()) << "enhancing worn gear pushes the attribute panel exactly once";
+
+	// 推出去的面板(同一个 BuildPanel)带的就是新值。
+	AttributePanelInfo panel;
+	PlayerAttributeSystem::BuildPanel(player, panel);
+	EXPECT_EQ(expected.physicalAttack, panel.derived().physical_attack());
+	EXPECT_EQ(expected.magicAttack, panel.derived().magic_attack());
+
+	// 加成来自实例上的等级,不是别处记的一笔:实例此刻写着 +1。武器不动气血 / 法力上限,当前值原样。
+	const ItemComp *worn = Worn(player, kGuidWeapon);
+	ASSERT_NE(nullptr, worn);
+	EXPECT_EQ(1u, worn->equip().enhance_level());
+	EXPECT_EQ(healthBefore, Base(player).health());
+	EXPECT_EQ(manaBefore, Base(player).mana());
+}
+
+// 强化一件加气血 / 法力的装备:上限涨了,当前值按比例跟(hp = floor(hp x newMax / oldMax)),
+// 不是「上限涨多少、当前值补多少」—— 强化不能当治疗(与穿脱同走 kEquipmentChanged)。
+TEST_F(PlayerEquipAttributeTest, EnhancingHealthGearKeepsTheHealthAndManaRatioInsteadOfHealing)
+{
+	ASSERT_NO_FATAL_FAILURE(RequireForgeRows());
+	const Six bare = ReadSix(Derived(player));
+	ASSERT_NO_FATAL_FAILURE(GiveClothesVitalityBaseAttributes());
+	const uint64_t plain = BaseAttrValue(kClothes, kAttrHealth);
+	ASSERT_EQ(plain, BaseAttrValue(kClothes, kAttrMana));
+	const uint64_t enhanced = EnhancedBaseAttr(kClothes, kAttrHealth, 1);
+	ASSERT_GT(enhanced, plain) << "enhance level 1 adds nothing to a base value of " << plain;
+	const uint64_t gain = enhanced - plain;
+
+	ASSERT_NO_FATAL_FAILURE(Wear(player, MakeEquip(kGuidClothes, kClothes)));
+	const uint64_t oldMaxHealth = Derived(player).max_health();
+	const uint64_t oldMaxMana = Derived(player).max_mana();
+	ASSERT_EQ(bare.maxHealth + plain, oldMaxHealth);
+	ASSERT_EQ(bare.maxMana + plain, oldMaxMana);
+	const uint64_t health = oldMaxHealth / 2;
+	const uint64_t mana = oldMaxMana / 4;
+	ASSERT_GT(health, 0u);
+	ASSERT_GT(mana, 0u);
+	Base(player).set_health(health);
+	Base(player).set_mana(mana);
+
+	ASSERT_NO_FATAL_FAILURE(FundEnhance(player, 1));
+	ScriptEnhanceRolls(kRollAlwaysSucceeds);
+	PlayerEquipSystem::EnhanceOutcome outcome;
+	ASSERT_EQ(kSuccess, PlayerEquipSystem::Enhance(player, kGuidClothes, outcome));
+	ASSERT_TRUE(outcome.success);
+
+	const uint64_t newMaxHealth = Derived(player).max_health();
+	const uint64_t newMaxMana = Derived(player).max_mana();
+	ASSERT_EQ(oldMaxHealth + gain, newMaxHealth);
+	ASSERT_EQ(oldMaxMana + gain, newMaxMana);
+
+	EXPECT_EQ(health * newMaxHealth / oldMaxHealth, Base(player).health());
+	EXPECT_EQ(mana * newMaxMana / oldMaxMana, Base(player).mana());
+	EXPECT_GE(Base(player).health(), health);
+	EXPECT_GE(Base(player).mana(), mana);
+	// 不是「上限涨多少、当前值补多少」:那条分支只属于升级。
+	EXPECT_LT(Base(player).health(), health + gain);
+	EXPECT_LT(Base(player).mana(), mana + gain);
+	EXPECT_LT(Base(player).health(), newMaxHealth);
+}
+
+// 强化 / 镶嵌的是背包里的装备:实例变了,属性与面板不动(没穿着);穿上之后才计入。
+TEST_F(PlayerEquipAttributeTest, ForgingGearInTheInventoryChangesNothingUntilItIsWorn)
+{
+	ASSERT_NO_FATAL_FAILURE(RequireForgeRows());
+	ASSERT_EQ(kSuccess, Inventory(player).PutInstance(MakeEquip(kGuidWeapon, kWeapon)));
+	const Six before = ReadSix(Derived(player));
+	const uint64_t health = before.maxHealth / 2;
+	ASSERT_GT(health, 0u);
+	Base(player).set_health(health);
+	ASSERT_NO_FATAL_FAILURE(FundEnhance(player, 1));
+	ASSERT_NO_FATAL_FAILURE(StockGem(player, kGemAttack));
+	ScriptEnhanceRolls(kRollAlwaysSucceeds);
+	PanelPushProbe probe;
+	ASSERT_NO_FATAL_FAILURE(CalibrateProbe(probe, player));
+
+	PlayerEquipSystem::EnhanceOutcome outcome;
+	ASSERT_EQ(kSuccess, PlayerEquipSystem::Enhance(player, kGuidWeapon, outcome));
+	ASSERT_TRUE(outcome.success);
+	ASSERT_EQ(kSuccess, PlayerEquipSystem::InlayGem(player, kGuidWeapon, kSocketFirst, kGemAttack));
+
+	ExpectSix(before, ReadSix(Derived(player)));
+	EXPECT_EQ(health, Base(player).health());
+	EXPECT_EQ(0, probe.Count()) << "nothing worn changed: no recalculation to announce, no panel push";
+
+	// 改的是实例:+1、0 号孔里一颗伤害宝石。
+	const ItemComp *stored = Inventory(player).GetItemCompByGuid(kGuidWeapon);
+	ASSERT_NE(nullptr, stored);
+	EXPECT_EQ(1u, stored->equip().enhance_level());
+	ASSERT_EQ(1, stored->equip().gems_size());
+	EXPECT_EQ(kGemAttack, stored->equip().gems(0).gem_config_id());
+
+	// 穿上(同一 guid 换包):强化后的基础伤害与宝石一起计入。
+	ItemComp carried;
+	ASSERT_EQ(kSuccess, Inventory(player).TakeInstance(kGuidWeapon, carried));
+	ASSERT_NO_FATAL_FAILURE(Wear(player, carried));
+	Six expected = before;
+	expected.physicalAttack += EnhancedBaseAttr(kWeapon, kAttrDamage, 1) + GemValue(kGemAttack);
+	expected.magicAttack += EnhancedBaseAttr(kWeapon, kAttrDamage, 1) + GemValue(kGemAttack);
+	ExpectSix(expected, ReadSix(Derived(player)));
+	EXPECT_EQ(health, Base(player).health()) << "a weapon does not move the health maximum";
+}
+
+// 穿着时强化失败且不掉级:等级没变,六项、当前气血都不动,也不推面板(金币与材料照扣是另一回事)。
+TEST_F(PlayerEquipAttributeTest, FailedEnhanceWithoutLevelLossLeavesTheSixHealthAndPanelAlone)
+{
+	ASSERT_NO_FATAL_FAILURE(RequireForgeRows());
+	ASSERT_GE(PlayerEquipSystem::MaxEnhanceLevel(), 2u) << "this case enhances a +1 weapon towards +2";
+	ASSERT_NO_FATAL_FAILURE(RigEnhanceRowToFail(2, /*failLevelLoss=*/0));
+	const Six before = ReadSix(Derived(player));
+
+	ItemComp weapon = MakeEquip(kGuidWeapon, kWeapon);
+	SetEnhanceLevel(weapon, 1);
+	ASSERT_NO_FATAL_FAILURE(Wear(player, weapon));
+	const uint64_t health = Derived(player).max_health() / 2;
+	ASSERT_GT(health, 0u);
+	Base(player).set_health(health);
+	ASSERT_NO_FATAL_FAILURE(FundEnhance(player, 2));
+	ScriptEnhanceRolls(kRollFailsUnlessCertain);
+	PanelPushProbe probe;
+	ASSERT_NO_FATAL_FAILURE(CalibrateProbe(probe, player));
+
+	PlayerEquipSystem::EnhanceOutcome outcome;
+	ASSERT_EQ(kSuccess, PlayerEquipSystem::Enhance(player, kGuidWeapon, outcome))
+		<< "a failed roll is still a successful call";
+	EXPECT_FALSE(outcome.success);
+	EXPECT_EQ(1u, outcome.level);
+
+	// 还是 +1 的数值:没涨到 +2,也没被打回 +0。
+	Six expected = before;
+	expected.physicalAttack += EnhancedBaseAttr(kWeapon, kAttrDamage, 1);
+	expected.magicAttack += EnhancedBaseAttr(kWeapon, kAttrDamage, 1);
+	ExpectSix(expected, ReadSix(Derived(player)));
+	EXPECT_EQ(health, Base(player).health());
+	EXPECT_EQ(0, probe.Count()) << "the level did not change: nothing to recalculate, nothing to push";
+	const ItemComp *worn = Worn(player, kGuidWeapon);
+	ASSERT_NE(nullptr, worn);
+	EXPECT_EQ(1u, worn->equip().enhance_level());
+}
+
+// 穿着时强化失败并掉级(表配了 fail_level_loss):六项当场回落到掉级后的值,并推一次面板。
+TEST_F(PlayerEquipAttributeTest, FailedEnhanceThatDropsALevelLowersTheSixAndPushesThePanel)
+{
+	ASSERT_NO_FATAL_FAILURE(RequireForgeRows());
+	ASSERT_GE(PlayerEquipSystem::MaxEnhanceLevel(), 2u) << "this case enhances a +1 weapon towards +2";
+	const uint64_t plain = BaseAttrValue(kWeapon, kAttrDamage);
+	ASSERT_GT(EnhancedBaseAttr(kWeapon, kAttrDamage, 1), plain)
+		<< "enhance level 1 adds nothing to this weapon; falling back to +0 would be invisible";
+	ASSERT_NO_FATAL_FAILURE(RigEnhanceRowToFail(2, /*failLevelLoss=*/1));
+	const Six before = ReadSix(Derived(player));
+
+	ItemComp weapon = MakeEquip(kGuidWeapon, kWeapon);
+	SetEnhanceLevel(weapon, 1);
+	ASSERT_NO_FATAL_FAILURE(Wear(player, weapon));
+	ASSERT_NO_FATAL_FAILURE(FundEnhance(player, 2));
+	ScriptEnhanceRolls(kRollFailsUnlessCertain);
+	PanelPushProbe probe;
+	ASSERT_NO_FATAL_FAILURE(CalibrateProbe(probe, player));
+
+	PlayerEquipSystem::EnhanceOutcome outcome;
+	ASSERT_EQ(kSuccess, PlayerEquipSystem::Enhance(player, kGuidWeapon, outcome));
+	EXPECT_FALSE(outcome.success);
+	EXPECT_EQ(0u, outcome.level);
+
+	// 掉回 +0:基础伤害回到表值。
+	Six expected = before;
+	expected.physicalAttack += plain;
+	expected.magicAttack += plain;
+	ExpectSix(expected, ReadSix(Derived(player)));
+	EXPECT_EQ(1, probe.Count()) << "a level drop on worn gear changes the panel and must be pushed";
+	const ItemComp *worn = Worn(player, kGuidWeapon);
+	ASSERT_NE(nullptr, worn);
+	EXPECT_EQ(0u, worn->equip().enhance_level());
+}
+
+// ── 镶嵌 / 取下:穿着时调 PlayerEquipSystem::InlayGem / RemoveGem ───────────
+
+// 伤害宝石(effect = 4):嵌上物伤与法伤各加一份宝石值,取下各减回去;每次各推一次面板。
+TEST_F(PlayerEquipAttributeTest, InlayingAndRemovingADamageGemMovesBothAttacksByItsValue)
+{
+	ASSERT_NO_FATAL_FAILURE(RequireForgeRows());
+	const uint64_t gemValue = GemValue(kGemAttack);
+	ASSERT_NO_FATAL_FAILURE(Wear(player, MakeEquip(kGuidWeapon, kWeapon)));
+	const Six wornPlain = ReadSix(Derived(player));
+	ASSERT_NO_FATAL_FAILURE(StockGem(player, kGemAttack));
+	PanelPushProbe probe;
+	ASSERT_NO_FATAL_FAILURE(CalibrateProbe(probe, player));
+
+	ASSERT_EQ(kSuccess, PlayerEquipSystem::InlayGem(player, kGuidWeapon, kSocketFirst, kGemAttack));
+	Six inlaid = wornPlain;
+	inlaid.physicalAttack += gemValue;
+	inlaid.magicAttack += gemValue;
+	ExpectSix(inlaid, ReadSix(Derived(player)));
+	EXPECT_EQ(1, probe.Count()) << "inlaying into worn gear pushes the attribute panel once";
+	const ItemComp *worn = Worn(player, kGuidWeapon);
+	ASSERT_NE(nullptr, worn);
+	ASSERT_EQ(1, worn->equip().gems_size());
+	EXPECT_EQ(kSocketFirst, worn->equip().gems(0).socket());
+	EXPECT_EQ(kGemAttack, worn->equip().gems(0).gem_config_id());
+	EXPECT_EQ(0u, Inventory(player).GetTotalItemCount(kGemAttack)) << "the gem left the inventory";
+
+	ASSERT_EQ(kSuccess, PlayerEquipSystem::RemoveGem(player, kGuidWeapon, kSocketFirst));
+	ExpectSix(wornPlain, ReadSix(Derived(player)));
+	EXPECT_EQ(2, probe.Count()) << "removing it pushes the panel once more";
+	worn = Worn(player, kGuidWeapon);
+	ASSERT_NE(nullptr, worn);
+	EXPECT_EQ(0, worn->equip().gems_size());
+	EXPECT_EQ(1u, Inventory(player).GetTotalItemCount(kGemAttack)) << "and it came back";
+}
+
+// 四种宝石各落在自己的属性上(效果走 EquipAttribute 的 effect,与随机属性同一套,C++ 不按宝石类型分支):
+// 伤害宝石物伤法伤各加,防御 / 气血 / 速度宝石只加各自那一项。
+TEST_F(PlayerEquipAttributeTest, EachGemKindAddsToItsOwnAttributeWhenInlaidIntoWornGear)
+{
+	ASSERT_NO_FATAL_FAILURE(RequireForgeRows());
+	ASSERT_NO_FATAL_FAILURE(Wear(player, MakeEquip(kGuidWeapon, kWeapon)));
+	ASSERT_NO_FATAL_FAILURE(Wear(player, MakeEquip(kGuidHat, kHat)));
+	ASSERT_NO_FATAL_FAILURE(Wear(player, MakeEquip(kGuidClothes, kClothes)));
+	ASSERT_NO_FATAL_FAILURE(Wear(player, MakeEquip(kGuidShoes, kShoes)));
+	ASSERT_NO_FATAL_FAILURE(StockGem(player, kGemAttack, 0));
+	ASSERT_NO_FATAL_FAILURE(StockGem(player, kGemDefense, 1));
+	ASSERT_NO_FATAL_FAILURE(StockGem(player, kGemHealth, 2));
+	ASSERT_NO_FATAL_FAILURE(StockGem(player, kGemSpeed, 3));
+	Six expected = ReadSix(Derived(player));
+
+	{
+		SCOPED_TRACE("damage gem into the weapon's any-type socket");
+		ASSERT_EQ(kSuccess, PlayerEquipSystem::InlayGem(player, kGuidWeapon, kSocketSecond, kGemAttack));
+		expected.physicalAttack += GemValue(kGemAttack);
+		expected.magicAttack += GemValue(kGemAttack);
+		ExpectSix(expected, ReadSix(Derived(player)));
+	}
+	{
+		SCOPED_TRACE("defense gem into the clothes");
+		ASSERT_EQ(kSuccess, PlayerEquipSystem::InlayGem(player, kGuidClothes, kSocketFirst, kGemDefense));
+		expected.defense += GemValue(kGemDefense);
+		ExpectSix(expected, ReadSix(Derived(player)));
+	}
+	{
+		SCOPED_TRACE("health gem into the hat");
+		ASSERT_EQ(kSuccess, PlayerEquipSystem::InlayGem(player, kGuidHat, kSocketFirst, kGemHealth));
+		expected.maxHealth += GemValue(kGemHealth);
+		ExpectSix(expected, ReadSix(Derived(player)));
+		EXPECT_EQ(expected.maxHealth, Base(player).health()) << "full stays full";
+	}
+	{
+		SCOPED_TRACE("speed gem into the shoes");
+		ASSERT_EQ(kSuccess, PlayerEquipSystem::InlayGem(player, kGuidShoes, kSocketFirst, kGemSpeed));
+		expected.speed += GemValue(kGemSpeed);
+		ExpectSix(expected, ReadSix(Derived(player)));
+		EXPECT_EQ(expected.speed, Base(player).speed()) << "gem speed must reach turn order as well";
+	}
+}
+
+// 「嵌 -> 取」往返:六项逐位回到原值;当前气血嵌上时按比例涨、取下时按比例降,一个来回绝不净得
+// (两次向下取整最多让它少 1 点)。满血时两头都贴着上限走,取下后恰好回到原值。
+TEST_F(PlayerEquipAttributeTest, GemRoundTripsReturnTheSixAndNeverGainHealth)
+{
+	ASSERT_NO_FATAL_FAILURE(RequireForgeRows());
+	const uint64_t gemValue = GemValue(kGemHealth);
+	ASSERT_NO_FATAL_FAILURE(Wear(player, MakeEquip(kGuidHat, kHat)));
+	const Six worn = ReadSix(Derived(player));
+	const uint64_t manaBefore = Base(player).mana();
+	const uint64_t startHealth = worn.maxHealth / 2;
+	ASSERT_GT(startHealth, 10u) << "leave room for a few one-point floor losses";
+	Base(player).set_health(startHealth);
+	ASSERT_NO_FATAL_FAILURE(StockGem(player, kGemHealth));
+	Six inlaid = worn;
+	inlaid.maxHealth += gemValue;
+
+	for (int round = 0; round < 3; ++round)
+	{
+		SCOPED_TRACE("round " + std::to_string(round));
+		const uint64_t healthBefore = Base(player).health();
+
+		ASSERT_EQ(kSuccess, PlayerEquipSystem::InlayGem(player, kGuidHat, kSocketFirst, kGemHealth));
+		ExpectSix(inlaid, ReadSix(Derived(player)));
+		// hp = floor(hp x newMax / oldMax):跟着上限按比例涨,不是「上限涨多少补多少」。
+		EXPECT_EQ(healthBefore * inlaid.maxHealth / worn.maxHealth, Base(player).health());
+		EXPECT_LT(Base(player).health(), healthBefore + gemValue);
+
+		ASSERT_EQ(kSuccess, PlayerEquipSystem::RemoveGem(player, kGuidHat, kSocketFirst));
+		ExpectSix(worn, ReadSix(Derived(player)));
+		EXPECT_LE(Base(player).health(), healthBefore) << "a round trip must never be a heal";
+		EXPECT_GE(Base(player).health() + 1, healthBefore) << "and costs at most the one point lost to flooring";
+		EXPECT_EQ(manaBefore, Base(player).mana()) << "a health gem does not touch mana";
+	}
+	EXPECT_LE(Base(player).health(), startHealth);
+	EXPECT_EQ(1u, Inventory(player).GetTotalItemCount(kGemHealth)) << "the one gem came back every time";
+
+	// 满血:嵌上跟着上限涨满,取下恰好回到原上限 —— 当前气血逐位回到原值。
+	Base(player).set_health(worn.maxHealth);
+	ASSERT_EQ(kSuccess, PlayerEquipSystem::InlayGem(player, kGuidHat, kSocketFirst, kGemHealth));
+	EXPECT_EQ(inlaid.maxHealth, Base(player).health()) << "full stays full";
+	ASSERT_EQ(kSuccess, PlayerEquipSystem::RemoveGem(player, kGuidHat, kSocketFirst));
+	EXPECT_EQ(worn.maxHealth, Base(player).health()) << "and comes back down with the maximum";
+	ExpectSix(worn, ReadSix(Derived(player)));
+}
+
+// ── 镶嵌:实例上的宝石记录怎么读(入包边界整份信任 equip 段,消费侧每次现查)──
+
+// 不合格的记录不计入:宝石行不存在、孔位不在这件装备部位的定义里。合格的记录不受旁边脏记录的影响。
+TEST_F(PlayerEquipAttributeTest, GemRecordsWithoutAGemRowOrADefinedSocketAreNotCounted)
+{
+	// 武器只有 0 / 1 两个孔;拿规则允许的最大孔位号当「这件装备没有的孔」。
+	constexpr uint32_t kUndefinedSocket = equiprules::kMaxGemSockets - 1;
+	ASSERT_NO_FATAL_FAILURE(RequireForgeRows());
+	ASSERT_EQ(nullptr, SocketRowOrNull(kWeaponKind, kUndefinedSocket));
+	const Six before = ReadSix(Derived(player));
+	Six baseOnly = before;
+	baseOnly.physicalAttack += BaseAttrValue(kWeapon, kAttrDamage);
+	baseOnly.magicAttack += BaseAttrValue(kWeapon, kAttrDamage);
+	Six actual;
+
+	ItemComp junkOnly = MakeEquip(kGuidWeapon, kWeapon);
+	AddGemRecord(junkOnly, kSocketFirst, kUnknownGem);    // 宝石行不存在
+	AddGemRecord(junkOnly, kUndefinedSocket, kGemAttack); // 孔位不存在
+	ASSERT_NO_FATAL_FAILURE(WearReadTakeOff(player, junkOnly, actual));
+	ExpectSix(baseOnly, actual);
+
+	// 同一件再多一条合格的(1 号通用孔嵌伤害宝石):只多出这一颗。
+	ItemComp mixed = junkOnly;
+	AddGemRecord(mixed, kSocketSecond, kGemAttack);
+	ASSERT_NO_FATAL_FAILURE(WearReadTakeOff(player, mixed, actual));
+	Six withOneGem = baseOnly;
+	withOneGem.physicalAttack += GemValue(kGemAttack);
+	withOneGem.magicAttack += GemValue(kGemAttack);
+	ExpectSix(withOneGem, actual);
+}
+
+// 读法(设计 §4.3 ResolveGemsNow):同一个孔只认第一条,第一条不合格就整个孔不计(不回退到后一条);
+// 重复记录不重复计;不复核宝石类型与孔位类型(类型是嵌入时的规则);只读实例上前 kMaxGemSockets 条。
+TEST_F(PlayerEquipAttributeTest, GemRecordsCountOncePerSocketWithoutTypeRecheckWithinTheFirstEight)
+{
+	ASSERT_NO_FATAL_FAILURE(RequireForgeRows());
+	const Six before = ReadSix(Derived(player));
+	Six baseOnly = before;
+	baseOnly.physicalAttack += BaseAttrValue(kWeapon, kAttrDamage);
+	baseOnly.magicAttack += BaseAttrValue(kWeapon, kAttrDamage);
+	Six withAttackGem = baseOnly;
+	withAttackGem.physicalAttack += GemValue(kGemAttack);
+	withAttackGem.magicAttack += GemValue(kGemAttack);
+	Six actual;
+
+	{
+		SCOPED_TRACE("an unqualified first record shadows a qualified later one on the same socket");
+		ItemComp shadowed = MakeEquip(kGuidWeapon, kWeapon);
+		AddGemRecord(shadowed, kSocketFirst, kUnknownGem);
+		AddGemRecord(shadowed, kSocketFirst, kGemAttack);
+		ASSERT_NO_FATAL_FAILURE(WearReadTakeOff(player, shadowed, actual));
+		ExpectSix(baseOnly, actual);
+	}
+	{
+		SCOPED_TRACE("two qualified records on one socket count once");
+		ItemComp duplicated = MakeEquip(kGuidWeapon, kWeapon);
+		AddGemRecord(duplicated, kSocketFirst, kGemAttack);
+		AddGemRecord(duplicated, kSocketFirst, kGemAttack);
+		ASSERT_NO_FATAL_FAILURE(WearReadTakeOff(player, duplicated, actual));
+		ExpectSix(withAttackGem, actual);
+	}
+	{
+		SCOPED_TRACE("a gem whose type the socket would refuse today still counts once it is recorded");
+		// 武器 0 号孔只收攻击宝石,记录里却是一颗防御宝石:照样计入,加的是防御。
+		const auto *attackSocket = SocketRowOrNull(kWeaponKind, kSocketFirst);
+		const auto *defenseGem = GemRowOrNull(kGemDefense);
+		ASSERT_NE(nullptr, attackSocket);
+		ASSERT_NE(nullptr, defenseGem);
+		ASSERT_NE(0u, attackSocket->gem_type()) << "socket 0 of the weapon became an any-type socket";
+		ASSERT_NE(attackSocket->gem_type(), defenseGem->gem_type());
+		ItemComp mismatched = MakeEquip(kGuidWeapon, kWeapon);
+		AddGemRecord(mismatched, kSocketFirst, kGemDefense);
+		ASSERT_NO_FATAL_FAILURE(WearReadTakeOff(player, mismatched, actual));
+		Six withDefenseGem = baseOnly;
+		withDefenseGem.defense += GemValue(kGemDefense);
+		ExpectSix(withDefenseGem, actual);
+	}
+	{
+		SCOPED_TRACE("the eighth record is still read");
+		// 前 7 条占着表里不可能有的孔位号(>= kMaxGemSockets),第 8 条才是合格的那一颗。
+		ItemComp eighth = MakeEquip(kGuidWeapon, kWeapon);
+		for (uint32_t i = 0; i + 1 < equiprules::kMaxGemSockets; ++i)
+		{
+			ASSERT_EQ(nullptr, SocketRowOrNull(kWeaponKind, equiprules::kMaxGemSockets + i));
+			AddGemRecord(eighth, equiprules::kMaxGemSockets + i, kGemAttack);
+		}
+		AddGemRecord(eighth, kSocketFirst, kGemAttack);
+		ASSERT_NO_FATAL_FAILURE(WearReadTakeOff(player, eighth, actual));
+		ExpectSix(withAttackGem, actual);
+	}
+	{
+		SCOPED_TRACE("the ninth record is not");
+		ItemComp ninth = MakeEquip(kGuidWeapon, kWeapon);
+		for (uint32_t i = 0; i < equiprules::kMaxGemSockets; ++i)
+		{
+			ASSERT_EQ(nullptr, SocketRowOrNull(kWeaponKind, equiprules::kMaxGemSockets + i));
+			AddGemRecord(ninth, equiprules::kMaxGemSockets + i, kGemAttack);
+		}
+		AddGemRecord(ninth, kSocketFirst, kGemAttack);
+		ASSERT_NO_FATAL_FAILURE(WearReadTakeOff(player, ninth, actual));
+		ExpectSix(baseOnly, actual);
+	}
+}
+
+// ── 不落库、存档往返、面板 ───────────────────────────────────────────────
+
+// 强化与宝石的数值同样不进属性组件:入库的只有实例上的「+几」和「哪个孔嵌了哪种宝石」(§5 不变量 2),
+// PlayerAttributeComp 的序列化字节前后相同,BaseAttributesComp 的成长字段不带这些数值。
+TEST_F(PlayerEquipAttributeTest, EnhancementAndGemsAreNeverWrittenToPersistedAttributeComponents)
+{
+	constexpr uint32_t kStoredBonus = 5;
+	constexpr uint32_t kAllocated = 20;
+	ASSERT_NO_FATAL_FAILURE(RequireForgeRows());
+	(*AttributeComp(player).mutable_bonus_values())[kDimStrength] = kStoredBonus;
+	ASSERT_EQ(kSuccess, PlayerAttributeSystem::Allocate(player, PlayerPoolId(), std::map<uint32_t, uint32_t>{{kDimStrength, kAllocated}}));
+
+	// 同一个对象、期间不改它:map 字段的迭代序不变,字节可以直接比。
+	const std::string attributeBefore = AttributeComp(player).SerializeAsString();
+	const BaseAttributesComp baseBefore = Base(player);
+	const Six sixBefore = ReadSix(Derived(player));
+
+	// 三件是手工构造的 +N 带宝石(从存档读出来就是这个形状)……
+	const uint32_t maxLevel = PlayerEquipSystem::MaxEnhanceLevel();
+	ItemComp weapon = MakeEquip(kGuidWeapon, kWeapon);
+	SetEnhanceLevel(weapon, maxLevel);
+	AddGemRecord(weapon, kSocketFirst, kGemAttack);
+	ItemComp hat = MakeEquip(kGuidHat, kHat);
+	SetEnhanceLevel(hat, maxLevel);
+	AddGemRecord(hat, kSocketFirst, kGemHealth);
+	ItemComp shoes = MakeEquip(kGuidShoes, kShoes);
+	SetEnhanceLevel(shoes, maxLevel);
+	AddGemRecord(shoes, kSocketFirst, kGemSpeed);
+	ASSERT_NO_FATAL_FAILURE(Wear(player, weapon));
+	ASSERT_NO_FATAL_FAILURE(Wear(player, hat));
+	ASSERT_NO_FATAL_FAILURE(Wear(player, shoes));
+	// ……衣服则穿着经写入口强化、镶嵌(这两个入口自己触发重算)。
+	ASSERT_NO_FATAL_FAILURE(Wear(player, MakeEquip(kGuidClothes, kClothes)));
+	ASSERT_NO_FATAL_FAILURE(FundEnhance(player, 1));
+	ASSERT_NO_FATAL_FAILURE(StockGem(player, kGemDefense));
+	ScriptEnhanceRolls(kRollAlwaysSucceeds);
+	PlayerEquipSystem::EnhanceOutcome outcome;
+	ASSERT_EQ(kSuccess, PlayerEquipSystem::Enhance(player, kGuidClothes, outcome));
+	ASSERT_TRUE(outcome.success);
+	ASSERT_EQ(kSuccess, PlayerEquipSystem::InlayGem(player, kGuidClothes, kSocketFirst, kGemDefense));
+
+	// 强化与四种宝石此刻都在算(否则下面的「没写进去」是空转)。
+	const Six forged = ReadSix(Derived(player));
+	EXPECT_GT(forged.physicalAttack, sixBefore.physicalAttack);
+	EXPECT_GT(forged.magicAttack, sixBefore.magicAttack);
+	EXPECT_GT(forged.maxHealth, sixBefore.maxHealth);
+	EXPECT_GT(forged.speed, sixBefore.speed);
+	EXPECT_GT(forged.defense, sixBefore.defense);
+
+	EXPECT_EQ(attributeBefore, AttributeComp(player).SerializeAsString())
+		<< "enhance levels and gems must not leak into PlayerAttributeComp (bonus_values is persisted)";
+	ASSERT_EQ(1, AttributeComp(player).bonus_values_size());
+	EXPECT_EQ(kStoredBonus, AttributeComp(player).bonus_values().at(kDimStrength));
+	EXPECT_EQ(0, AttributeComp(player).bonus_points_size());
+
+	// BaseAttributesComp 的成长字段不带这些数值;speed 仍是重算结果的镜像(含强化后的鞋与速度宝石)。
+	EXPECT_EQ(baseBefore.strength(), Base(player).strength());
+	EXPECT_EQ(baseBefore.stamina(), Base(player).stamina());
+	EXPECT_EQ(baseBefore.critchance(), Base(player).critchance());
+	EXPECT_EQ(baseBefore.armor(), Base(player).armor());
+	EXPECT_EQ(baseBefore.resistance(), Base(player).resistance());
+	EXPECT_EQ(Derived(player).speed(), Base(player).speed());
+
+	// 取下宝石、脱光之后什么都不剩。
+	ASSERT_EQ(kSuccess, PlayerEquipSystem::RemoveGem(player, kGuidClothes, kSocketFirst));
+	ASSERT_NO_FATAL_FAILURE(TakeOff(player, kGuidWeapon));
+	ASSERT_NO_FATAL_FAILURE(TakeOff(player, kGuidHat));
+	ASSERT_NO_FATAL_FAILURE(TakeOff(player, kGuidClothes));
+	ASSERT_NO_FATAL_FAILURE(TakeOff(player, kGuidShoes));
+	EXPECT_EQ(attributeBefore, AttributeComp(player).SerializeAsString());
+	ExpectSix(sixBefore, ReadSix(Derived(player)));
+	EXPECT_EQ(baseBefore.speed(), Base(player).speed()) << "nothing of the forged gear is left behind once it is off";
+	EXPECT_EQ(baseBefore.health(), Base(player).health()) << "full health before, full health after";
+}
+
+// 存档往返:强化等级与宝石记录随装备实例整份落库、整份回来,重登时按还原出的装备栏重新算出同样的加成。
+// 气血宝石抬高的上限也在 —— 满血带着它下线的玩家重登后仍是那个血量。
+TEST_F(PlayerEquipAttributeTest, ReloadFromTheDatabaseRecordRecomputesEnhanceAndGemBonuses)
+{
+	ASSERT_NO_FATAL_FAILURE(RequireForgeRows());
+	const uint32_t maxLevel = PlayerEquipSystem::MaxEnhanceLevel();
+	ItemComp weapon = MakeEquip(kGuidWeapon, kWeapon);
+	SetEnhanceLevel(weapon, maxLevel);
+	AddGemRecord(weapon, kSocketFirst, kGemAttack);
+	ItemComp hat = MakeEquip(kGuidHat, kHat);
+	SetEnhanceLevel(hat, 1);
+	AddGemRecord(hat, kSocketFirst, kGemHealth);
+	ASSERT_NO_FATAL_FAILURE(Wear(player, weapon));
+	ASSERT_NO_FATAL_FAILURE(Wear(player, hat));
+
+	// 出发点先对一遍:无装备基线 + 强化后的基础属性 + 两颗宝石。
+	Six expected = NoGearBaseline();
+	expected.physicalAttack += EnhancedBaseAttr(kWeapon, kAttrDamage, maxLevel) + GemValue(kGemAttack);
+	expected.magicAttack += EnhancedBaseAttr(kWeapon, kAttrDamage, maxLevel) + GemValue(kGemAttack);
+	expected.defense += EnhancedBaseAttr(kHat, kAttrDefense, 1);
+	expected.maxHealth += GemValue(kGemHealth);
+	ExpectSix(expected, ReadSix(Derived(player)));
+	ASSERT_EQ(expected.maxHealth, Base(player).health());
+
+	PlayerAllData saved;
+	PlayerAllDataMessageFieldsMarshal(player, saved);
+	std::string bytes;
+	ASSERT_TRUE(saved.player_database_data().SerializeToString(&bytes));
+	PlayerAllData coldSnapshot;
+	ASSERT_TRUE(coldSnapshot.mutable_player_database_data()->ParseFromString(bytes));
+
+	const auto restored = tlsEcs.actorRegistry.create();
+	players.push_back(restored);
+	tlsEcs.actorRegistry.emplace<Guid>(restored, kPlayerIdBase + players.size());
+	PlayerAllDataMessageFieldsUnMarshal(restored, coldSnapshot);
+
+	const auto *bags = tlsEcs.actorRegistry.try_get<PlayerBagsComp>(restored);
+	ASSERT_NE(nullptr, bags);
+	ASSERT_EQ(2u, bags->bags[kEquipment].OccupiedGridCount());
+
+	// 入库的只有实例上这两样,原样回来;数值是下面重算出来的。
+	const ItemComp *restoredWeapon = Worn(restored, kGuidWeapon);
+	ASSERT_NE(nullptr, restoredWeapon);
+	ASSERT_TRUE(restoredWeapon->has_equip());
+	EXPECT_EQ(maxLevel, restoredWeapon->equip().enhance_level());
+	ASSERT_EQ(1, restoredWeapon->equip().gems_size());
+	EXPECT_EQ(kSocketFirst, restoredWeapon->equip().gems(0).socket());
+	EXPECT_EQ(kGemAttack, restoredWeapon->equip().gems(0).gem_config_id());
+	const ItemComp *restoredHat = Worn(restored, kGuidHat);
+	ASSERT_NE(nullptr, restoredHat);
+	ASSERT_TRUE(restoredHat->has_equip());
+	EXPECT_EQ(1u, restoredHat->equip().enhance_level());
+	ASSERT_EQ(1, restoredHat->equip().gems_size());
+	EXPECT_EQ(kSocketFirst, restoredHat->equip().gems(0).socket());
+	EXPECT_EQ(kGemHealth, restoredHat->equip().gems(0).gem_config_id());
+
+	const auto *derived = tlsEcs.actorRegistry.try_get<DerivedAttributesComp>(restored);
+	const auto *base = tlsEcs.actorRegistry.try_get<BaseAttributesComp>(restored);
+	ASSERT_NE(nullptr, derived);
+	ASSERT_NE(nullptr, base);
+	ExpectSix(expected, ReadSix(*derived));
+	EXPECT_EQ(expected.maxHealth, base->health())
+		<< "the gem's health must survive the reload: bags are restored before attributes are initialised";
+	EXPECT_EQ(Base(player).mana(), base->mana());
+}
+
+// 面板口径不变:强化放大的是基础属性,不是随机属性 —— 一级属性的 bonus(装备给的点)与 15 行战斗类属性
+// 在强化 / 镶嵌前后逐项相同;变的只有六项里强化的增量与宝石值,面板的二级属性仍是同一次重算的产出。
+TEST_F(PlayerEquipAttributeTest, PanelBonusAndCombatLinesStayTheSameAfterEnhanceAndInlay)
+{
+	constexpr uint32_t kStrengthAffix = 10;
+	constexpr uint32_t kAllAffix = 8;
+	ASSERT_NO_FATAL_FAILURE(RequireForgeRows());
+	const uint32_t poolId = PlayerPoolId();
+	const uint64_t enhanceGain = EnhancedBaseAttr(kWeapon, kAttrDamage, 1) - BaseAttrValue(kWeapon, kAttrDamage);
+	ASSERT_GT(enhanceGain, 0u) << "enhance level 1 adds nothing to this weapon; pick a sample that moves";
+
+	ItemComp weapon = MakeEquip(kGuidWeapon, kWeapon);
+	AddAffix(weapon, kAttrStrength, kBlue, kStrengthAffix, 0);
+	AddAffix(weapon, kAttrPhysicalCrit, kBlue, kCombatSet.physicalCritRate, 1);
+	ItemComp hat = MakeEquip(kGuidHat, kHat);
+	AddAffix(hat, kAttrAllPrimary, kBlue, kAllAffix, 0);
+	ASSERT_NO_FATAL_FAILURE(Wear(player, weapon));
+	ASSERT_NO_FATAL_FAILURE(Wear(player, hat));
+	AttributePanelInfo plain;
+	PlayerAttributeSystem::BuildPanel(player, plain);
+	const Six plainSix = ReadSix(Derived(player));
+
+	// 武器强化一级并在 0 号孔嵌伤害宝石;帽子 0 号孔嵌气血宝石。
+	ASSERT_NO_FATAL_FAILURE(FundEnhance(player, 1));
+	ASSERT_NO_FATAL_FAILURE(StockGem(player, kGemAttack, 0));
+	ASSERT_NO_FATAL_FAILURE(StockGem(player, kGemHealth, 1));
+	ScriptEnhanceRolls(kRollAlwaysSucceeds);
+	PlayerEquipSystem::EnhanceOutcome outcome;
+	ASSERT_EQ(kSuccess, PlayerEquipSystem::Enhance(player, kGuidWeapon, outcome));
+	ASSERT_TRUE(outcome.success);
+	ASSERT_EQ(kSuccess, PlayerEquipSystem::InlayGem(player, kGuidWeapon, kSocketFirst, kGemAttack));
+	ASSERT_EQ(kSuccess, PlayerEquipSystem::InlayGem(player, kGuidHat, kSocketFirst, kGemHealth));
+	AttributePanelInfo forged;
+	PlayerAttributeSystem::BuildPanel(player, forged);
+
+	// 一级属性:装备给的点还是随机属性写的那几点 —— 没被强化放大,宝石也没往里加;点池同样不动。
+	for (const AttributePanelInfo *panel : {&plain, &forged})
+	{
+		SCOPED_TRACE(panel == &plain ? "before enhancing and inlaying" : "after enhancing and inlaying");
+		ASSERT_NO_FATAL_FAILURE(ExpectDimension(*panel, kDimStrength, 0, kStrengthAffix + kAllAffix));
+		ASSERT_NO_FATAL_FAILURE(ExpectDimension(*panel, kDimConstitution, 0, kAllAffix));
+		ASSERT_NO_FATAL_FAILURE(ExpectDimension(*panel, kDimSpirit, 0, kAllAffix));
+		ASSERT_NO_FATAL_FAILURE(ExpectDimension(*panel, kDimAgility, 0, kAllAffix));
+	}
+	const auto *plainPool = FindPool(plain, poolId);
+	const auto *forgedPool = FindPool(forged, poolId);
+	ASSERT_NE(nullptr, plainPool);
+	ASSERT_NE(nullptr, forgedPool);
+	EXPECT_EQ(plainPool->total(), forgedPool->total());
+	EXPECT_EQ(plainPool->remaining(), forgedPool->remaining());
+
+	// 战斗类属性:15 行逐项相同(强化不放大「物理必杀率」这条随机属性;出厂的宝石也不给战斗类属性)。
+	ASSERT_NO_FATAL_FAILURE(ExpectCombatListWellFormed(forged));
+	for (uint32_t raw = equiprules::ToRaw(CombatStat::kNone) + 1; raw < equiprules::ToRaw(CombatStat::kCount); ++raw)
+	{
+		const auto *before = FindCombat(plain, equiprules::ToCombatStat(raw));
+		const auto *after = FindCombat(forged, equiprules::ToCombatStat(raw));
+		ASSERT_NE(nullptr, before) << "combat_id " << raw;
+		ASSERT_NE(nullptr, after) << "combat_id " << raw;
+		EXPECT_EQ(before->value(), after->value()) << "combat_id " << raw;
+	}
+	ASSERT_NO_FATAL_FAILURE(
+		ExpectCombatLine(forged, CombatStat::kPhysicalCritRate, kBaseCritChance + kCombatSet.physicalCritRate));
+	CombatValues expectedCombat;
+	expectedCombat.physicalCritRate = kCombatSet.physicalCritRate;
+	ExpectCombat(expectedCombat, Derived(player).combat());
+
+	// 六项:只多出强化的增量与两颗宝石;面板上的二级属性就是这一份。
+	Six expected = plainSix;
+	expected.physicalAttack += enhanceGain + GemValue(kGemAttack);
+	expected.magicAttack += enhanceGain + GemValue(kGemAttack);
+	expected.maxHealth += GemValue(kGemHealth);
+	ExpectSix(expected, ReadSix(Derived(player)));
+	EXPECT_EQ(expected.physicalAttack, forged.derived().physical_attack());
+	EXPECT_EQ(expected.magicAttack, forged.derived().magic_attack());
+	EXPECT_EQ(expected.maxHealth, forged.derived().max_health());
 }
 
 } // namespace

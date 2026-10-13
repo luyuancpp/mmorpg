@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+// EquipGemSocket 表的权威 schema。源表 data/EquipGemSocket.xlsx。
+// 设计:docs/design/equipment-enhance-inlay.md §2.3。
+//
+// 本文件不参与 protoc 编译,也不进任何语言的构建;导表器直接文本解析它。
+// 字段号只增不改、删字段用 reserved(data/AGENTS.md)。
+//
+// 装备宝石孔位:一行 = 某个部位的一个孔。同一 equip_kind 的全部行 = 该部位装备的孔位。
+// 孔位是数据(AGENTS §11.6「槽位由配置表枚举」):加孔只加行,不在 C++ 里写 if 部位 == 武器;
+// 以后要按装备档次区分孔数时给本表加列,不要挪到 Item 表。
+// equip_kind 是 Item.equip_kind 的取值(部位编号),不是任何表的主键,所以那一列只设索引、不设外键。
+// 源表由 tools/scripts/equip_xlsx_patch.py forge-tables 生成;schema 与 xlsx 必须成对提交。
+
+package mmorpg.cfgtable.v1;
+
+import "cfg_options.proto";
+
+message EquipGemSocketTable {
+  option (cfg_sheet)       = "EquipGemSocket";
+  option (cfg_source_file) = "EquipGemSocket.xlsx";
+  option (cfg_primary_key) = "id";
+
+  // 行号 = equip_kind * 100 + socket
+  uint32 id = 1;
+  // 部位(Item.equip_kind 的取值);同一部位的全部行 = 该部位装备的孔位
+  uint32 equip_kind = 2 [(cfg_index) = true];
+  // 孔位号(0 起,同部位内连续、不重复,< 8)
+  uint32 socket = 3;
+  // 该孔接纳的宝石类型(EquipGem.gem_type);0 = 任意类型
+  uint32 gem_type = 4;
+  // 孔位显示名(下发客户端);可留空,客户端空名时显示「孔位 N」
+  string name = 5;
+}

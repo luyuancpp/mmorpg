@@ -49,7 +49,9 @@ public:
 	// 装备数值不写 PlayerAttributeComp(bonus_values 是落库字段,留给丹药等),也不写 BaseAttributesComp 的
 	// 成长字段。唯一的例外是既有的 speed 镜像:BaseAttributesComp.speed = 重算出的速度(含装备),它每次加载
 	// 都被这里覆盖、从不作为输入,落库的那份只是缓存。
-	// 调用约定:装备栏的内容一变就必须调一次(reason = kEquipmentChanged),否则二级属性停在换装之前。
+	// 调用约定:装备栏的内容一变,**或穿着的装备的实例数据一变**(强化等级、镶嵌 / 取下宝石,见
+	// docs/design/equipment-enhance-inlay.md §4.3),就必须调一次(reason = kEquipmentChanged),否则二级属性
+	// 停在变化之前。
 	static void Recalculate(entt::entity player, RecalcReason reason = RecalcReason::kLoad);
 
 	// 面板全量(客户端零配表,维度名/说明/上限/剩余点都在这里)。

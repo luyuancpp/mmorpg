@@ -24,6 +24,7 @@ cd robot && go run . -c etc/robot.yaml     # 直接运行
 | `data-stress` | 反复登录、游玩、下线,配合 `go/db` 的校验器验证数据一致性 |
 | `battle-smoke` | 两个机器人匹配并打完一场回合制战斗 |
 | `attribute-smoke`、`pet-smoke` | 属性加点、宠物 |
+| `equip-smoke`、`equip-forge-smoke` | 装备随机属性与穿脱;装备强化、宝石镶嵌与取下(两条冒烟各用各的账号,强化不可逆) |
 | `chat-smoke`、`friend-smoke`、`guild-smoke`、`team-smoke`、`trade-smoke` | 聊天、好友、帮会、组队、交易 |
 | `travel-smoke` | 跨区场景传送往返 |
 | `channel-smoke` | 玩家主动切线:列出分线、切到同图另一条线、冷却与拒绝(地图只有 1 条线时打印 SKIP,不算失败) |

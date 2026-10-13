@@ -16,16 +16,24 @@
 //
 //   Schema (2026-10-07): item_uuid / config_id / stack_size / pos /
 //   bag_type / acquire_seq, plus `equip` (ItemEntry field 14) — the
-//   equipment instance data (random attribute rows), mirrored 1:1 from
-//   ItemComp.equip. Its PRESENCE is part of the data: has_equip() means
+//   equipment instance data (random attribute rows and, since the
+//   enhance / inlay phase, the enhance level and the inlaid gems),
+//   mirrored 1:1 from ItemComp.equip.
+//   Its PRESENCE is part of the data: has_equip() means
 //   "this instance has already been rolled" (even with zero rows), so both
 //   directions copy it only when present. See
 //   docs/design/equipment-attributes.md §3.1 / §5 invariant 1.
 //   The ItemComp <-> ItemEntry mapping lives in ONE pair of file-local
 //   functions in bag_marshal.cpp shared by fixed and dynamic bags; a new
 //   instance field is added there and nowhere else.
-//   Remaining game-design extensions (enchant level, gem inlay, bound
-//   state) are still TODO at known field numbers in
+//   Enhance level and gem inlay are NOT separate ItemEntry fields: they
+//   live inside `equip` (EquipInstanceData.enhance_level / .gems, see
+//   docs/design/equipment-enhance-inlay.md §3.1), so the whole-section
+//   copy carries them and the conversion pair needs no change. ItemEntry's
+//   old TODO slots 6 (enchant_level) and 8 (gem_uuids) are retired — do
+//   not reuse them.
+//   Remaining game-design extensions (bound state, trade count, expiry)
+//   are still TODO at known field numbers in
 //   proto/common/database/bag_quest_mail_data.proto; proto field numbers
 //   are reserved so the migration path stays forward-compatible.
 //

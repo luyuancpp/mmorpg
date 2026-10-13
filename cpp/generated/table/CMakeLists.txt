@@ -92,6 +92,11 @@ set(SOURCE_FILES
     code/equipaffixpool_table.cpp
     code/equipaffixpool_table_fk.cpp
     code/equipaffixrule_table.cpp
+    code/equipenhance_table.cpp
+    code/equipenhance_table_fk.cpp
+    code/equipgem_table.cpp
+    code/equipgem_table_fk.cpp
+    code/equipgemsocket_table.cpp
     code/item_table_fk.cpp
     proto/activityschedule_table.pb.cc
     proto/actoractioncombatstate_table.pb.cc
@@ -155,6 +160,9 @@ set(SOURCE_FILES
     proto/equipattributecap_table.pb.cc
     proto/equipaffixpool_table.pb.cc
     proto/equipaffixrule_table.pb.cc
+    proto/equipenhance_table.pb.cc
+    proto/equipgem_table.pb.cc
+    proto/equipgemsocket_table.pb.cc
     proto/tip/equip_error_tip.pb.cc
 )
 

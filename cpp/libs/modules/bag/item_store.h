@@ -14,7 +14,8 @@
 //
 // 物品实例是**领域实体**:有自己的身份(item_uuid,全局唯一、跨堆叠拆合稳定)、
 // 自己的生命期(铸号 -> 存在 -> 销毁),以及自己的状态(config_id + size,
-// 2026-10-07 起装备实例还带一段 equip —— 随机属性行;强化等级 / 镶嵌 / 绑定态 /
+// 2026-10-07 起装备实例还带一段 equip —— 随机属性行,二期起强化等级与已镶宝石也在
+// 这一段里(EquipInstanceData,docs/design/equipment-enhance-inlay.md §3.1);绑定态 /
 // 限时等仍是预留)。本层把 ItemComp 当**整份**搬运与存放,不解释 equip 的内容,
 // 只在堆叠判定上认它的 presence(见 CanStack)。
 //

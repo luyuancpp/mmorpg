@@ -6890,3 +6890,37 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
 - **没有顺带解决**:K8s 的 data-service ConfigMap 仍不镜像 `MethodTimeouts`(集群里回档 RPC 取 go-zero 默认 2000ms),属帮会线「接上 guild 时一并处理」;`k8s_client_entry_contract` 的 9 条既有失败;把登记表守护拆成只因 C++ 改动触发的独立 CI job。
 - **同批**:合入 origin/main 的 11 个提交(`ed40df6a4d`)与本机 main 的装备、切线(`d55437fc21`);`third_party/librdkafka`、`third_party/ue5navmesh` 的指针取远端 `d1705175dd` 同步的值 —— 本机 10-08 的每小时自动保存(`a9569db98a`)曾把它们写回本机检出,不是有意回退。
 - **Java 版(AGENTS §12)**:不涉及。本条只动本仓库的 k8s 部署脚本与 go-zero 服务配置的核对,没有改客户端契约。
+
+## 2026-10-10 装备强化与镶嵌(装备属性系统二期)(Claude,服务器未编译;客户端离线用例已跑)
+
+- **起因**:10-09 用户贴了一段代码核查(「穿戴 / 卸下 / 换装后属性生效,以及强化、镶嵌还不能测」)并要求「做完逻辑代码」。先做了只读调研:
+  穿脱两端的**代码**是完整的(「客户端缺少操作入口」那半句已过时,入口在 `GameplayWindow → EquipTooltip → PlayerFeaturesClient`),
+  卡的是导表 / proto-gen / 编译 / 重启这些 Codex 的步骤;真正没写的是强化与镶嵌。本条做的就是这两样的逻辑代码(洗练不在这次范围内)。
+- **做了什么**(契约、默认决定、实现偏离都在 `docs/design/equipment-enhance-inlay.md`):
+  - 数据落点:强化等级与已镶宝石放进 `EquipInstanceData`(`enhance_level = 2`、`repeated EquipGem gems = 3`),随 `ItemComp.equip` / `ItemEntry.equip`
+    整份搬运,容器层与存档层零改动;`ItemEntry` 预留的 6 号 `enchant_level` / 8 号 `gem_uuids` 不再启用。
+  - 配表:三张只在 scene 读的新表 `EquipEnhance`(12 级)/ `EquipGem`(12 种宝石)/ `EquipGemSocket`(6 个孔),Item 加 13 行(2001 强化石、21xx–24xx 宝石),
+    **不给 Item 加列**;`equip_error` 追加 11 个码。补丁脚本 `equip_xlsx_patch.py` 新增 `forge-tables` / `forge-item-rows` / `forge-tip-codes`。
+  - 协议:`SceneBagClientPlayer` 末尾追加 `EnhanceEquip / InlayGem / RemoveGem`(method index 5 / 6 / 7);`BagItemInfo` 14–20 号、`EquipAttrLineInfo` 8 / 9 号
+    下发强化与孔位的全部显示数据(客户端零配表);流水类型 `TX_EQUIP_ENHANCE / INLAY / GEM_REMOVE = 27 / 28 / 29`。
+  - 服务器:`BagService::RemoveItemsExact`(按 config 全或无扣除 + 流水);`equiprules` 的 `ScaleByPermyriad / RollEnhanceSuccess / LevelAfterFailure / CheckGemFit`;
+    `PlayerEquipSystem::Enhance / InlayGem / RemoveGem`(先校验后提交、成败都扣、先发物后抹宝石、读路径静默);加成与 tooltip 同口径;三张表的启动校验;
+    三个 handler。强化的概率失败是成功的响应(`success = false`),不是 tip。
+  - robot:新 mode `equip-forge-smoke`(账号 `robot_9104`):显示 → 拒绝码 → 强化(按强化前的预览对账)→ 镶嵌 → 重登 → 取下。
+  - 客户端(隔离工作树 `mmorpg-client-forge`,只做数据层与纯逻辑):`PlayerFeaturesClient` 三个新请求、`EquipDisplay` 排版、`EquipBagModel` 模型;
+    界面入口没有做(界面文件归 Codex),接线说明在客户端 `Docs/EquipmentForge-20261009.md`。
+- **做法**:调研(8 个只读视角)→ 契约 → 设计评审(3 个视角,30 条发现,采纳的并入契约)→ 分块实现(8 块,文件归属互不重叠)→
+  代码评审(8 个视角:编译可行性视角对产品代码零发现,其余 14 条全部 minor,已逐条处置,见设计文档 §10.8)。
+- **验证现状**:服务器侧**未编译、未正式导表、未 proto-gen、未跑任何 C++ / Go 测试、未起栈**。Claude 实际跑过的只有:补丁脚本(八个子命令 `--dry-run`
+  都报「已是目标状态」)、一次写到临时目录的沙盒导表(12 / 12 / 6 行,`item.json` 61 行,`equip_error` 28000–28021)、robot 的 `gofmt`、
+  以及客户端在临时目录的离线编译 + NUnit(占位 3 个消息号与 11 个 tip 枚举名,244 / 244,另有 44 个变异体全部被抓到;不是 Unity)。
+- **代码在哪**:服务器在隔离工作树 `E:\work\xuanming-server-mmo-equip`(分支 `feat/equip-enhance-inlay`,基线 `b3889a7c11`);客户端在
+  `E:\work\mmorpg-client-forge`(同名分支)。客户端在 `MessageIds.cs` / `EquipErrorTip.cs` 生成到位前有预期的 19 处 CS0117,不要合进客户端 main。
+- **给 Codex**:`docs/design/equipment-enhance-inlay.md` §9(是一期 §9 的增量与覆盖:两期要在同一次正式导表 / 全量 proto-gen 里首次产出;
+  发号只能在已含 244–249 的树上做;`message-limiter` 执行之前不要拿真实客户端连点强化)。新增用例:C++ `PlayerEquipTest` 47 → 151、
+  `PlayerEquipAttributeTest` 20 → 37、`BagInstanceDataTest` 27 → 31、`BagRemoveExactTest` 10、`Equip*` 33 → 56;Go `TestEquip*` 14 → 32;
+  客户端 `EquipForgeClientTests` 95、`EquipForgeModelTests` 35。
+- **已知缺口**(设计文档 §8):强化石、宝石与装备本身都没有产出途径(只能 GM 发物);洗练 / 宝石合成 / 强化保护未做;流水不带实例数据;
+  强化不是幂等操作(超时后手动再点会再扣一次);取下免费,同种宝石 10 分钟内取下超过 50 次会触发异常获得告警;重登窗口内战斗闸不生效(一期遗留)。
+- **Java 版(AGENTS §12)**:待做。本机没有 Java 仓库,`PARITY.md` 未登记;装备系统在 Java 版整体未做。客户端可见契约(`player_bag.proto` 新字段与 3 个 RPC、
+  `equip_error` 11 个新码、3 张新表与 Item 新行)以设计文档 §2 / §3 为准。

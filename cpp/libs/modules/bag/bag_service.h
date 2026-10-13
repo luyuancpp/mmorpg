@@ -106,6 +106,8 @@ public:
 	//   这道校验不该长在这里。本重载今天没有生产调用方(只有单测);接上任何「外来的 equip 段」
 	//   之前(邮件附件、寄售 / 交易回流、Go 侧携带实例),调用方必须先在玩法层把实例校验 / 规范化,
 	//   否则这里就是属性注入口(一件帽子带 50 条「所有属性」,每条都按上限计)。
+	//   二期起同一段里还有强化等级与已镶宝石,同样原样入库、不校验(消费侧的夹取 / 现查口径见
+	//   docs/design/equipment-enhance-inlay.md §4.3)。
 	static uint32_t AddItems(
 		entt::entity playerEntity,
 		Bag &bag,
@@ -139,6 +141,54 @@ public:
 		Bag &bag,
 		const ItemCountMap &itemsToRemove,
 		std::vector<DrainedInstance> *drainedOut = nullptr,
+		uint64_t correlationId = 0,
+		const std::string &extra = {});
+
+	// Orchestrated 按数量扣除(config_id → count),**全或无**:
+	//   参数检查 → frozen check → Bag::RemoveItems → 逐条回执落销毁流水(类型由调用方给)。
+	//
+	// 与上面的 RemoveItemsClamped 是一对,语义相反,不要互相替代。那条是"账已经在别处
+	// 记好、不足按 0 处理"(战斗结算);这条是"玩家此刻要付出这么多,付不起就什么都别动":
+	// 任何一种持有量不够就一件不扣,返回 kBagInsufficientItems。装备强化扣材料、宝石镶嵌
+	// 扣宝石走这条(docs/design/equipment-enhance-inlay.md §4.1)—— 材料只扣到一半的强化
+	// 没有正确的含义,不是白送就是白扣。
+	//
+	// 调用方必须知道的约束:
+	//   * itemsToRemove 为空,或任一条目 count == 0 -> 打 ERROR,返回 kInvalidParameter,
+	//     一件不扣、不落流水。这是编程错误:底层对 0 数量的结果取决于玩家是否**恰好持有**
+	//     该物品(持有就放行,一个都没有就报不足),同一个调用在不同玩家身上结果不同,
+	//     所以在入口判掉;调用方自己跳过不需要扣的项。
+	//     这一步排在冻结闸之前:写错的调用不该因为玩家恰好在过图,就只留下一条"冻结"的
+	//     WARN 而看不出是调用方的错。
+	//   * 跨 zone 冻结期返回 kInvalidParameter(一件不扣),理由同 RemoveItem。
+	//   * **不判战斗**(D48 红线):局中拦一切背包写的闸只许放在玩法入口层(scene 是
+	//     PlayerEquipSystem 的写入口),不许下沉到这里。
+	//   * 扣到 0 的堆会以 size == 0 **留在包里**(实例与槽位都还在)。本函数不整理背包:
+	//     调用方随后调 MergeAndCompact(kMergeOnly) 回收(同战斗结算)。整理会销毁实例、
+	//     让手里的实例指针失效,放在提交段的哪一步只有调用方排得对,所以不替它做。
+	//   * 常规的"不够"请调用方先用静默的 Bag::GetTotalItemCount 预检。本函数内部的不足
+	//     分支会打 ERROR 与调用栈 —— 那是给"预检过了却还是不够"这种不该发生的情形留的,
+	//     不该被玩家随手点出来。
+	//   * 按 config 抽数量**不看是不是装备**(不查表,也不看 has_equip()):调用方必须保证
+	//     被扣的 config 不是装备。否则被抽成 0 的可能是一件带属性的装备实例(甚至就是正在
+	//     被强化的那一件),下一次整理它就没了。
+	//   * 抽哪一堆由实例层的遍历序决定,不保证是玩家点的那一堆。
+	//
+	// txType 进流水,**刻意没有默认值**:加这条入口就是因为"销毁的原因"要在流水里分得开
+	// (强化传 TX_EQUIP_ENHANCE、镶嵌传 TX_EQUIP_INLAY),默认成 TX_ITEM_DESTROY 等于白加。
+	// correlationId / extra 同 RemoveItemsClamped(强化 / 镶嵌传装备的 item guid 与来源 JSON)。
+	// 一条回执(一个被抽到的实例)落一条流水,理由同 RemoveItemsClamped。
+	//
+	// 返回:
+	//   * 空表 / 含 0 数量的条目    -> kInvalidParameter(一件不扣)
+	//   * 跨 zone 冻结期            -> kInvalidParameter(一件不扣)
+	//   * 任何一种持有量不够        -> kBagInsufficientItems(一件不扣)
+	//   * 其余                      -> kSuccess(每种恰好扣掉请求的数量)
+	static uint32_t RemoveItemsExact(
+		entt::entity playerEntity,
+		Bag &bag,
+		const ItemCountMap &itemsToRemove,
+		TransactionType txType,
 		uint64_t correlationId = 0,
 		const std::string &extra = {});
 

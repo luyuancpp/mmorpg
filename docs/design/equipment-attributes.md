@@ -1,6 +1,9 @@
 # 装备属性系统(问道式:基础属性 + 蓝/粉/黄随机属性)
 
-> 落地日期:2026-10-07 / 08(**未编译、未导表、未 proto-gen,待 Codex 验证**,见 §9)。2026-10-09 已并入本机 main(功能提交 `d69d50be7d`,未推送);客户端改动仍在隔离工作树 `mmorpg-client-equip`,未提交。
+> 落地日期:2026-10-07 / 08(**未编译、未导表、未 proto-gen,待 Codex 验证**,见 §9)。2026-10-09 已并入 main(功能提交 `d69d50be7d`),并随 `b3889a7c11` 到了 origin/main。
+> 客户端:数据层与界面已随客户端提交 `0eadd618` 进了客户端 main(消息号 249 / 246 也已写入 `MessageIds.cs`,它们目前只存在于服务器主仓工作区**未提交**的 `proto/message_id.txt` 里);
+> 但 `Docs/EquipmentUI-20261007.md`、`EquipCombatEventsPlanTests.cs`、`BattleData.cs` 的重生成、两个截图夹具的装备部分仍只在隔离工作树 `mmorpg-client-equip` 里(未提交,别清理)。
+> **二期(强化 + 镶嵌)见 [equipment-enhance-inlay.md](equipment-enhance-inlay.md)**;两期的表与协议要在同一次正式导表 / 全量 proto-gen 里首次产出(二期 §9)。
 > 实现分布:配表 `data/EquipAttribute*.xlsx` / `data/EquipAffix*.xlsx` + `data/Item.xlsx` 新列;
 > 协议 `proto/common/component/item_base_comp.proto`、`proto/scene/player_bag.proto`、
 > `proto/scene/player_attribute.proto`、`proto/battle/battle_data.proto`;
@@ -39,7 +42,7 @@
 | 不做 | 说明 |
 |---|---|
 | 炼化(重掷蓝 / 粉 / 黄) | 掷值函数 `equiprules::RollAffixes` 已是独立纯函数,炼化时直接复用 |
-| 改造(改 N、百分比加成) | `ItemEntry` 6 号 `enchant_level` 仍预留 |
+| 改造(改 N、百分比加成) | 二期已做,即「强化」:见 [equipment-enhance-inlay.md](equipment-enhance-inlay.md)。强化等级放在 `EquipInstanceData` 里,`ItemEntry` 6 号 `enchant_level` 不再启用 |
 | 进化星级、套装 / 绿色属性、共鸣 | 颜色档枚举预留 `4 = 绿`,本次不掷、不显示 |
 | 限制交易 / 绑定 | `ItemEntry` 9–11 号仍预留 |
 | 聚宝斋寄售带属性的装备 | `AssetItemInstance` 未扩;P3 寄售前必须在销毁前抓整份实例(见 §8) |
@@ -516,7 +519,7 @@ static CombatStatDisplay DescribeCombatStat(equiprules::CombatStat stat);     //
 
 ## 8. 已知缺口
 
-- 炼化 / 改造 / 进化 / 套装 / 限制交易未做(§1.3)。
+- 炼化 / 进化 / 套装 / 限制交易未做(§1.3);改造(强化)与镶嵌在二期做了,见 [equipment-enhance-inlay.md](equipment-enhance-inlay.md)。
 - 现网 Buff / Skill 表没有任何异常状态,怪物只会普攻:抗异常与忽视抗异常的掷骰点已落码并有单测,但实战要等策划配出带异常状态的技能才有触发机会;抗混乱在引擎里没有消费点。
 - 抗物理 / 抗法术与防御共用 60% 封顶:防御已堆满的角色这两条无效(D7)。
 - 聚宝斋寄售、流水、回滚 diff 都不带属性:`DestroyedInstance` / `LogItemDestroy` 只有 guid / config / size;临时格先进先出挤掉带属性装备时无法从流水还原属性。
@@ -538,6 +541,12 @@ static CombatStatDisplay DescribeCombatStat(equiprules::CombatStat stat);     //
 
 **现状:全部未编译、未导表(只做过沙盒导表)、未 proto-gen、未运行。** 下面的顺序经整体审查的生成器视角核对过;
 任何一步的通过标准不满足就停,保留该步写明的日志。
+
+> **二期(强化 + 镶嵌)并入之后,本节的数字与路径以 [equipment-enhance-inlay.md](equipment-enhance-inlay.md) §9 为准**:
+> 补丁子命令 5 个 → 8 个;`item.json` 48 → 61 行;新表 4 张 → 7 张;tip 号 28000–28010 → 28000–28021;
+> `message_id.txt` 的基线是并入时本机 main 的版本(已含 244–249);handler 的 case 2–4 → 2–7;用例条数
+> (`PlayerEquipTest` 47 → 151、`PlayerEquipAttributeTest` 20 → 37、`BagInstanceDataTest` 27 → 31、`Equip*` 33 → 56、robot `TestEquip*` 14 → 32);
+> 客户端工作树 `mmorpg-client-equip` → `mmorpg-client-forge`。步骤顺序(0–11)不变。
 
 **总原则**
 - **生成与 C++ 编译都在主仓 `E:\work\xuanming-server-mmo` 做**,且主仓必须先带上 origin/main 与本功能的改动。

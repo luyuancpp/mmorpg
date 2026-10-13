@@ -411,6 +411,76 @@ uint32_t BagService::RemoveItemsClamped(
 	return result;
 }
 
+uint32_t BagService::RemoveItemsExact(
+	entt::entity playerEntity,
+	Bag &bag,
+	const ItemCountMap &itemsToRemove,
+	TransactionType txType,
+	uint64_t correlationId,
+	const std::string &extra)
+{
+	// ── 参数检查:排在冻结闸之前 ─────────────────────────────────────────
+	// 空表在底层是"什么都不用扣 = 成功",调用方会把一次什么都没扣的调用当成扣过了。
+	if (itemsToRemove.empty())
+	{
+		LOG_ERROR << "BagService::RemoveItemsExact: empty request (programming error); "
+				  << "nothing removed. player=" << bag.PlayerGuid()
+				  << " tx_type=" << static_cast<int>(txType)
+				  << " correlation_id=" << correlationId;
+		return PrintStackAndReturnError(kInvalidParameter);
+	}
+	// 0 数量的条目:底层的全或无预检(ItemStore::HasAll)只在遍历到同 config 的实例时才把
+	// 需求项划掉,于是 {X: 0} 在玩家持有 X 时放行、一个 X 都没有时报不足 —— 结果取决于
+	// 玩家恰好有什么,而不是取决于请求本身。入包侧为同一类问题加过前置拒绝
+	// (Bag::ReserveForBatchAdd 的零数量预检),这里同理:整批拒,不替调用方猜它想扣什么。
+	for (const auto &[configId, count] : itemsToRemove)
+	{
+		if (count == 0)
+		{
+			LOG_ERROR << "BagService::RemoveItemsExact: zero count for config " << configId
+					  << " (programming error: skip the entry instead); nothing removed. player="
+					  << bag.PlayerGuid() << " tx_type=" << static_cast<int>(txType)
+					  << " correlation_id=" << correlationId;
+			return PrintStackAndReturnError(kInvalidParameter);
+		}
+	}
+
+	// ── Cross-zone Frozen check (Single Writer guarantee) ────────────────
+	// 冻结期一件都不扣,理由同 RemoveItem:归属交接在途时源端扣数,目标节点从盘上加载到的
+	// 快照里那笔数量还在,等于凭空多出来。玩法入口(PlayerEquipSystem 的写入口)会先挡掉
+	// 冻结,正常走不到这里;留着它是因为本函数不能假设每个调用方都记得挡。
+	if (PlayerLifecycleSystem::IsCrossZoneFrozen(playerEntity))
+	{
+		LOG_WARN << "BagService::RemoveItemsExact rejected: player frozen for cross-zone "
+				 << "migration. player=" << bag.PlayerGuid()
+				 << " configs=" << itemsToRemove.size();
+		return PrintStackAndReturnError(kInvalidParameter);
+	}
+
+	// ⚠ 这里**刻意不判 InBattleComp**(D48 红线),理由同 RemoveItemsByGuid:"局中挡一切背包写"
+	// 的闸只许放在玩法入口层。强化 / 镶嵌的入口自己判
+	// (docs/design/equipment-enhance-inlay.md §5 不变量 5)。
+
+	// ── 全或无扣除:任何一种不够就整体失败,一件不扣 ─────────────────────
+	// 不够时 Bag 层已经打过 ERROR 与调用栈;drained 此时保持为空,下面不会落任何流水。
+	std::vector<DrainedInstance> drained;
+	RETURN_ON_ERROR(bag.RemoveItems(itemsToRemove, &drained));
+
+	// 逐条落流水,理由同 RemoveItemsClamped:一笔消耗可能横跨好几堆,少记一条就是少一条
+	// 追溯线索。注意 LogItemDestroy 的 txType 在**最后**(与 LogItemCreate 的顺序不同),
+	// 按 (correlationId, extra, txType) 传,别照着入包那边的顺序抄。
+	//
+	// 被抽光的堆以 size == 0 留在包里,**这里不整理**:整理会销毁实例、让调用方手里的
+	// 实例指针失效,放在提交段的哪一步由调用方决定(见头文件)。
+	for (const auto &entry : drained)
+	{
+		TransactionLogSystem::LogItemDestroy(
+			playerEntity, entry.guid, entry.configId, entry.amount, correlationId, extra, txType);
+	}
+
+	return kSuccess;
+}
+
 uint32_t BagService::RemoveItemsByGuid(
 	entt::entity playerEntity,
 	Bag &bag,

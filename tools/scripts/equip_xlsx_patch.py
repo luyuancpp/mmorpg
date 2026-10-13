@@ -1,21 +1,25 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""装备属性系统(docs/design/equipment-attributes.md §2)要对 xlsx 做的全部改动,写成可重复执行的脚本。
+"""装备属性系统(docs/design/equipment-attributes.md §2)与它的二期「强化与镶嵌」
+(docs/design/equipment-enhance-inlay.md §2)要对 xlsx 做的全部改动,写成可重复执行的脚本。
 
 为什么是脚本而不是手改:
   - data/Item.xlsx、data/EquipSlot.xlsx、data/tip/Tip.xlsx、data/MessageLimiter.xlsx 同时有多个会话在写,
     它们是二进制、不能 3-way 合并,整表写回会**静默**删掉别人的行(导表器照常跑通,只是少几行 / 少发几个号)。
     唯一安全的写法是 openpyxl 从磁盘重新载入 → 只往**空格子**里写自己那几列 / 那几行 → save → 读回来逐格核对。
     本脚本对既有表的每一次写入都先断言目标格为空,所以「别人的格子一格不动」是构造保证,不是约定。
-  - 导表器要求 schema 与 xlsx **成对**:data/schema/ 下已经有 4 张新表的 schema,并且给 Item / EquipSlot 加了字段。
+    (唯一要挪动别人格子的情形:⑨ 发现 //equip_error 后面已有别的组时必须插入行,其后各行整体下移 ——
+    内容不变,保存后逐格、逐组核对。)
+  - 导表器要求 schema 与 xlsx **成对**:data/schema/ 下已经有 4 张新表(一期)与 3 张新表(二期)的 schema,
+    并且给 Item / EquipSlot 加了字段。
     只有 schema 没有对应的 xlsx(或列)时,任何人跑 `dev.bat gen` 都会整批失败、产物一个字节不落盘。
-    所以 new-tables / item-columns / equip-slots 必须先于下一次导表执行,并与 schema 同批提交。
+    所以 new-tables / item-columns / equip-slots / forge-tables 必须先于下一次导表执行,并与 schema 同批提交。
     新建的 xlsx 只在一台机器上生成并提交(openpyxl 每次写出的字节都不同,两台机器各生成一份会在 git 里
     撞成二进制 add/add 冲突),其它机器等 pull。
   - MessageLimiter 按**消息号**登记档位,而新方法落到哪个号要等全量 proto-gen 之后才定,
     所以 message-limiter 按方法名去 proto/message_id.txt 查号,不把号写死。
 
-六个子命令都**幂等**:已经是目标状态就只报告、不改文件;发现与预期不符的现状就中止,绝不覆盖。
+九个子命令都**幂等**:已经是目标状态就只报告、不改文件;发现与预期不符的现状就中止,绝不覆盖。
 
 用法(仓库根目录执行;需要 Python 3 + openpyxl + pyyaml,与导表器同一套依赖):
 
@@ -24,8 +28,16 @@
     python tools/scripts/equip_xlsx_patch.py item-rows         # ③ Item.xlsx 追加 20 件样例装备(依赖 ① ②)
     python tools/scripts/equip_xlsx_patch.py equip-slots       # ④ EquipSlot.xlsx 加 name 列 + 槽 3–6
     python tools/scripts/equip_xlsx_patch.py tip-codes         # ⑤ Tip.xlsx 新开 //equip_error 段 + 11 个码
+    #   —— 二期「强化与镶嵌」:编号接在一期之后,但同样要在第一次导表之前执行 ——
+    python tools/scripts/equip_xlsx_patch.py forge-tables      # ⑦ 建 EquipEnhance / EquipGem / EquipGemSocket
+    python tools/scripts/equip_xlsx_patch.py forge-item-rows   # ⑧ Item.xlsx 追加强化石 + 12 颗宝石,共 13 行(依赖 ②)
+    python tools/scripts/equip_xlsx_patch.py forge-tip-codes   # ⑨ //equip_error 段紧跟一期的码再追加 11 个码(依赖 ⑤)
     #   —— 第一次导表(dev.bat gen)→ 全量 proto-gen ——
     python tools/scripts/equip_xlsx_patch.py message-limiter   # ⑥ 全量 proto-gen 之后、第二次导表之前
+
+  ⑦ 与 ⑧ 谁先谁后都行,但**必须都执行完再导表**:EquipGem.id 与 EquipEnhance.material_id 是指向 Item 的外键,
+  只跑其中一个,导表会因外键失配整批不产出。⑨ 的新码紧跟一期 11 个码(行序就是号序);它后面若已有别的组
+  (别的分支先进了 main),⑨ 会改用「在组尾插入行」并逐组核对其它组不变。
 
 在哪棵树上跑导表 / proto-gen(2026-10-08 整体审查补记,顺序不对会留下查不出来的错):
   - 「第一次导表 → 全量 proto-gen」**不要在没并入 origin/main 的隔离工作树上原样跑**:
@@ -40,14 +52,17 @@
   - ⑥ message-limiter 按**数字消息号**往二进制的 MessageLimiter.xlsx 里写行:只在「最终要进 main 的那棵树」上、
     消息号已经定死之后跑。号一旦重发,先前写下的行会留在旧号上,变成给别的 RPC 限流(脚本只认得出
     「那个号上已有一行不同的档位」,认不出「这一行原本是我写的」)。
-  完整的先后顺序、命令与通过标准见 docs/design/equipment-attributes.md §9。
+    二期的 EnhanceEquip / InlayGem / RemoveGem 也登记在这一步:三个方法发号之前,⑥ 会因查不到号而中止
+    (什么都不写),这是预期行为,不要为了让它通过去手填消息号。
+  完整的先后顺序、命令与通过标准见 docs/design/equipment-attributes.md §9 与 equipment-enhance-inlay.md §9。
 
 加 --dry-run 只打印将要做什么,不写文件。执行前先确认
 `git status --short data/Item.xlsx data/EquipSlot.xlsx data/tip/Tip.xlsx data/MessageLimiter.xlsx`
 没有别人的未提交改动(任一时刻只允许一方有未提交修改)。
 
-数值出处:docs/design/equipment-attributes.md §2.1–§2.7(全部是占位建议,D9)。改数值 = 改本文件顶部的常量表
-再重新生成;表一旦被策划手调过,new-tables 会拒绝覆盖,此后直接改 xlsx。
+数值出处:docs/design/equipment-attributes.md §2.1–§2.7(全部是占位建议,D9);二期见
+docs/design/equipment-enhance-inlay.md §2.1–§2.5(同样是占位建议,E10)。改数值 = 改本文件顶部的常量表
+再重新生成;表一旦被策划手调过,new-tables / forge-tables 会拒绝覆盖,此后直接改 xlsx。
 """
 
 from __future__ import annotations
@@ -229,13 +244,95 @@ TIP_EQUIP_CODES = [
     ("EquipInternalError",    "装备操作失败,请稍后再试",        True),
 ]
 
+# ── 二期:强化与镶嵌(docs/design/equipment-enhance-inlay.md §2;同样全部是占位建议,E10)──────────────
+
+# §2.4 物品 id 段:2000–2999 = 装备养成材料(2001 强化石;21xx–24xx 宝石,百位 = 宝石类型,个位 = 等级)。
+# 对 Item 表只**加行**不加列:Item 在战斗配表指纹内,且被所有 Go 进程严格加载;「是不是宝石」「有几个孔」
+# 「强化规则」都放在只有 scene 读的三张新表里。
+FORGE_ITEM_ID_MIN = 2000
+FORGE_ITEM_ID_MAX = 2999
+FORGE_ITEM_MAX_STACK = 999
+ENHANCE_MATERIAL_ID = 2001
+ENHANCE_MATERIAL_NAME = "强化石"
+ENHANCE_MATERIAL_DESCRIPTION = "强化装备时消耗的材料。"
+
+# §2.1 强化等级(EquipEnhance)。id = **目标**强化等级,必须从 1 起连续(强化上限 = 连续前缀的最大 id);
+# bonus_permyriad 是强化到本级后基础属性的**总**加成,不是相对上一级的增量。材料统一用强化石,成败都扣。
+PERMYRIAD_BASE = 10000
+INT64_MAX = 2 ** 63 - 1          # 金币在货币系统里按 int64 扣,超过它的 cost_gold 等于永远付不起
+EQUIP_ENHANCE_LEVELS = [
+    # id  bonus_permyriad  success_rate  fail_level_loss  cost_gold  material_count
+    (1,   500,             10000,        0,               1000,      1),
+    (2,   1000,            10000,        0,               2000,      1),
+    (3,   1500,            10000,        0,               3000,      2),
+    (4,   2000,            9000,         0,               5000,      2),
+    (5,   2600,            8000,         0,               8000,      3),
+    (6,   3200,            7000,         0,               12000,     3),
+    (7,   3800,            6000,         0,               18000,     4),
+    (8,   4500,            5000,         0,               26000,     4),
+    (9,   5200,            4000,         0,               36000,     5),
+    (10,  6000,            3000,         0,               50000,     6),
+    (11,  7000,            2500,         0,               70000,     8),
+    (12,  8000,            2000,         0,               100000,    10),
+]
+
+# §2.2 宝石(EquipGem 表 + 对应的 Item 行)。一行一个宝石类型,每个类型三个等级。
+#   物品 id = 2000 + 宝石类型 * 100 + 等级(1 起);名称 = "<类型名>宝石·<等级名>";
+#   描述 = "可镶嵌在装备的<类型名>孔或通用孔,提升<属性>。"
+GEM_GRADE_NAMES = ("一级", "二级", "三级")
+EQUIP_GEM_TYPES = [
+    # gem_type  类型名    属性(§2.1 属性清单里的显示名)  各等级的属性值
+    (1,         "攻击",   "伤害",                         (30, 60, 100)),
+    (2,         "防御",   "防御",                         (12, 24, 40)),
+    (3,         "气血",   "气血",                         (60, 120, 200)),
+    (4,         "迅捷",   "速度",                         (12, 24, 40)),
+]
+
+# §2.3 孔位(EquipGemSocket)。行 id = equip_kind * 100 + socket;gem_type = 0 表示任意类型的宝石都能嵌。
+# 孔位号在同一部位内必须是 0..n-1;每个部位最多 MAX_GEM_SOCKETS 个孔
+# (与 C++ 的 equiprules::kMaxGemSockets 是同一个数,改一边必须同改另一边)。
+GEM_TYPE_ANY = 0
+MAX_GEM_SOCKETS = 8
+EQUIP_GEM_SOCKETS = [
+    # equip_kind  socket  gem_type  name
+    (11,          0,      1,        "攻击孔"),
+    (11,          1,      0,        "通用孔"),
+    (12,          0,      3,        "气血孔"),
+    (13,          0,      2,        "防御孔"),
+    (13,          1,      3,        "气血孔"),
+    (14,          0,      4,        "迅捷孔"),
+]
+
+# §2.5 tip 码:追加在 //equip_error 组内,**紧跟**上面一期的 11 个码(行序就是号序)。
+# 全部是业务拒绝,没有服务端故障;强化的概率失败不是错误、不走 tip,所以这里没有「强化失败」。
+TIP_FORGE_CODES = [
+    # 码名                             文案                              fault
+    ("EquipEnhanceUnavailable",        "该装备无法强化",                 False),
+    ("EquipEnhanceMaxLevel",           "已强化到最高等级",               False),
+    ("EquipEnhanceMaterialNotEnough",  "强化材料不足",                   False),
+    ("EquipEnhanceGoldNotEnough",      "金币不足,无法强化",              False),
+    ("EquipGemNotGem",                 "该物品不是宝石",                 False),
+    ("EquipGemNotOwned",               "背包里没有这颗宝石",             False),
+    ("EquipGemSocketInvalid",          "该装备没有这个宝石孔",           False),
+    ("EquipGemSocketOccupied",         "该孔位已镶有宝石,请先取下",      False),
+    ("EquipGemSocketEmpty",            "该孔位没有宝石",                 False),
+    ("EquipGemTypeMismatch",           "宝石类型与孔位不符",             False),
+    ("EquipGemBagFull",                "背包已满,无法取下宝石",          False),
+]
+
 # MessageLimiter:读 10 次/秒、写 5 次/秒,与表内既有行同档;time_window / tip_message 照抄既有行
 # (1 秒 / 1000 = kRateLimitExceeded)。
+# 档位的实际含义:限流器按秒级时间戳、差值 >= 2 才出窗,所以档位 N 是「相邻两秒合计 N 个」。
+# 强化是唯一会被长时间连点的装备操作,给 10(约 5 次 / 秒);没进本表的方法吃默认档 3,
+# 超限按非法包累计、到 50 次被 gate 断线 —— 所以三个新方法发号后必须跑 message-limiter。
 LIMITER_SERVICE = "SceneBagClientPlayer"
 LIMITER_NEW_METHODS = {          # 本批新增的方法:号必须查得到;表里已有该号时档位必须一致
     "EquipItem": 5,
     "UnequipItem": 5,
     "GmGrantItem": 5,
+    "EnhanceEquip": 10,
+    "InlayGem": 5,
+    "RemoveGem": 5,
 }
 LIMITER_BACKFILL_METHODS = {     # 早就有的方法:不在表里才补;已在表里就尊重现有档位
     "GetBag": 10,
@@ -449,6 +546,64 @@ def self_check() -> None:
     if len(set(tip_names)) != len(tip_names) or len(tip_names) > TIP_EQUIP_WIDTH:
         fail("TIP_EQUIP_CODES 码名重复或超过段宽")
 
+    # ── 二期:强化与镶嵌 ──
+    enhance_levels = [row[0] for row in EQUIP_ENHANCE_LEVELS]
+    if enhance_levels != list(range(1, len(enhance_levels) + 1)):
+        fail(f"EQUIP_ENHANCE_LEVELS 的 id 必须从 1 起连续(强化上限 = 连续前缀的最大 id),实际 {enhance_levels}")
+    previous_bonus = 0
+    for level, bonus, rate, loss, gold, count in EQUIP_ENHANCE_LEVELS:
+        if bonus < previous_bonus:
+            fail(f"强化 +{level} 的总加成 {bonus} 小于上一级的 {previous_bonus}(加成是总量,必须随等级不减)")
+        previous_bonus = bonus
+        if not 1 <= rate <= PERMYRIAD_BASE:
+            fail(f"强化 +{level} 的成功率 {rate} 不在 1..{PERMYRIAD_BASE}(0 = 必败的行,服务器会当成不可强化)")
+        if loss < 0 or not 0 <= gold <= INT64_MAX:
+            fail(f"强化 +{level} 的掉级数 / 金币消耗越界:{loss} / {gold}")
+        if count <= 0:
+            # 材料固定是强化石(material_id != 0),此时数量为 0 会被服务器的表校验判为坏行。
+            fail(f"强化 +{level} 的材料数量必须 > 0(想不收材料要把 material_id 一并改成 0,先同步 equip_enhance_rows)")
+
+    gem_types = [gem_type for gem_type, _label, _attr, _values in EQUIP_GEM_TYPES]
+    gem_labels = [label for _type, label, _attr, _values in EQUIP_GEM_TYPES]
+    # 物品 id = 2000 + 类型 * 100 + 等级:类型占百位、等级占个位,所以两者都只能是 1..9。
+    if len(set(gem_types)) != len(gem_types) or len(set(gem_labels)) != len(gem_labels) \
+            or any(not 1 <= t <= 9 for t in gem_types) or not 1 <= len(GEM_GRADE_NAMES) <= 9:
+        fail("EQUIP_GEM_TYPES 的宝石类型 / 类型名必须互不重复,类型与等级数都在 1..9(物品 id 的百位与个位)")
+    for gem_type, label, attr_name, values in EQUIP_GEM_TYPES:
+        attr_id(attr_name)          # 宝石引用的属性必须在 §2.1 属性清单里(EquipGem.attr_id 是外键)
+        if len(values) != len(GEM_GRADE_NAMES) or any(v <= 0 for v in values) or list(values) != sorted(set(values)):
+            fail(f"{label}宝石应有 {len(GEM_GRADE_NAMES)} 个逐级递增的正数属性值,实际 {values}")
+
+    forge_item_ids = [row["id"] for row in forge_item_rows()]
+    gem_ids = [row["id"] for row in equip_gem_rows()]
+    sample_ids = {row["id"] for row in sample_equip_rows()}
+    if len(set(forge_item_ids)) != len(forge_item_ids) \
+            or any(not FORGE_ITEM_ID_MIN <= i <= FORGE_ITEM_ID_MAX for i in forge_item_ids) \
+            or sample_ids & set(forge_item_ids):
+        fail(f"强化材料与宝石的物品 id 必须互不重复、落在 {FORGE_ITEM_ID_MIN}–{FORGE_ITEM_ID_MAX} 段内,"
+             f"且不与样例装备重号,实际 {forge_item_ids}")
+    # EquipGem 的主键与 EquipEnhance.material_id 都是指向 Item 的外键:每一个都必须有同 id 的物品行,
+    # 而且强化石不能同时是宝石(否则「按 config 扣材料」与「按 config 扣宝石」会抢同一堆物品)。
+    if ENHANCE_MATERIAL_ID in gem_ids or sorted(gem_ids + [ENHANCE_MATERIAL_ID]) != sorted(forge_item_ids):
+        fail(f"物品行与强化材料 / 宝石表对不上:物品行 {sorted(forge_item_ids)},强化石 {ENHANCE_MATERIAL_ID},宝石 {sorted(gem_ids)}")
+
+    sockets_by_kind: dict[int, list[int]] = {}
+    for kind, socket, gem_type, _name in EQUIP_GEM_SOCKETS:
+        if kind not in slot_kinds:
+            fail(f"孔位表的部位 {kind} 没有任何槽位接受(这件装备穿不上,孔是死数据)")
+        if gem_type != GEM_TYPE_ANY and gem_type not in gem_types:
+            fail(f"部位 {kind} 的 {socket} 号孔接纳的宝石类型 {gem_type} 不在 EQUIP_GEM_TYPES 里")
+        sockets_by_kind.setdefault(kind, []).append(socket)
+    for kind, sockets in sockets_by_kind.items():
+        # 0..n-1 连续同时保证了不重复;n <= MAX_GEM_SOCKETS 同时保证了行号公式 equip_kind * 100 + socket 不进位。
+        if sockets != list(range(len(sockets))) or len(sockets) > MAX_GEM_SOCKETS:
+            fail(f"部位 {kind} 的孔位号应按 0..n-1 连续填写且不超过 {MAX_GEM_SOCKETS} 个,实际 {sockets}")
+
+    forge_tip_names = [name for name, _t, _f in TIP_FORGE_CODES]
+    if len(set(tip_names + forge_tip_names)) != len(tip_names) + len(forge_tip_names) \
+            or len(tip_names) + len(forge_tip_names) > TIP_EQUIP_WIDTH:
+        fail("TIP_FORGE_CODES 码名重复(含与一期 TIP_EQUIP_CODES 重名),或两期合计超过段宽")
+
 
 # ════════════════════════════════════════════════════════════════════════════
 # ① new-tables
@@ -488,8 +643,12 @@ def new_tables() -> dict[str, list[dict]]:
     }
 
 
-def cmd_new_tables(dry_run: bool) -> None:
-    for sheet, rows in new_tables().items():
+def create_scalar_tables(tables: dict[str, list[dict]], dry_run: bool) -> None:
+    """新建全标量表(new-tables 与 forge-tables 共用,写入纪律只有这一份)。
+
+    文件不存在才新建;已存在且内容一致 = 已是目标状态;已存在但不同 = 中止,绝不覆盖。
+    """
+    for sheet, rows in tables.items():
         xlsx_path = DATA_DIR / f"{sheet}.xlsx"
         layout = schema_layout(sheet)
         if any(f.width != 1 for f in layout):
@@ -538,6 +697,10 @@ def cmd_new_tables(dry_run: bool) -> None:
         print(f"[完成] {rel(xlsx_path)}")
     if dry_run:
         print("[dry-run] 未写文件。")
+
+
+def cmd_new_tables(dry_run: bool) -> None:
+    create_scalar_tables(new_tables(), dry_run)
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -820,7 +983,8 @@ def parse_group_header(name: str, row_idx: int) -> tuple[str, int, int]:
 
 
 def tip_parse(matrix: list[list], fault_col: int):
-    """返回 (组列表, 说明行列表)。组 = dict(name, base, width, row, codes=[(码名, 文案, fault 原值)])。"""
+    """返回 (组列表, 说明行列表)。组 = dict(name, base, width, row, codes=[(码名, 文案, fault 原值)],
+    code_rows=[与 codes 逐项对应的行号])。"""
     groups: list[dict] = []
     notes: list[tuple[int, str]] = []
     for row_idx in range(TIP_DATA_BEGIN_ROW, len(matrix) + 1):
@@ -834,12 +998,13 @@ def tip_parse(matrix: list[list], fault_col: int):
                 notes.append((row_idx, name))
                 continue
             group, base, width = parse_group_header(name, row_idx)
-            groups.append(dict(name=group, base=base, width=width, row=row_idx, codes=[]))
+            groups.append(dict(name=group, base=base, width=width, row=row_idx, codes=[], code_rows=[]))
             continue
         if not groups:
             fail(f"{TIP_XLSX.name} 第 {row_idx} 行的码 {name!r} 出现在第一个组头之前")
         fault = row[fault_col - 1] if fault_col <= len(row) else None
         groups[-1]["codes"].append((name, row[1] if len(row) > 1 else None, fault))
+        groups[-1]["code_rows"].append(row_idx)
     return groups, notes
 
 
@@ -1003,12 +1168,247 @@ def cmd_message_limiter(dry_run: bool) -> None:
           f"通过标准:generated/tables/messagelimiter.json 里能查到上面这些 id。部署时 gate 要重载 MessageLimiter。")
 
 
+# ════════════════════════════════════════════════════════════════════════════
+# ⑦ forge-tables
+# ════════════════════════════════════════════════════════════════════════════
+
+def gem_item_id(gem_type: int, grade: int) -> int:
+    return FORGE_ITEM_ID_MIN + gem_type * 100 + grade
+
+
+def equip_enhance_rows() -> list[dict]:
+    return [dict(id=level, bonus_permyriad=bonus, success_rate=rate, fail_level_loss=loss, cost_gold=gold,
+                 material_id=ENHANCE_MATERIAL_ID, material_count=count)
+            for level, bonus, rate, loss, gold, count in EQUIP_ENHANCE_LEVELS]
+
+
+def equip_gem_rows() -> list[dict]:
+    rows = [dict(id=gem_item_id(gem_type, grade), gem_type=gem_type, attr_id=attr_id(attr_name), value=value)
+            for gem_type, _label, attr_name, values in EQUIP_GEM_TYPES
+            for grade, value in enumerate(values, start=1)]
+    return sorted(rows, key=lambda r: r["id"])
+
+
+def equip_gem_socket_rows() -> list[dict]:
+    rows = [dict(id=kind * 100 + socket, equip_kind=kind, socket=socket, gem_type=gem_type, name=name)
+            for kind, socket, gem_type, name in EQUIP_GEM_SOCKETS]
+    return sorted(rows, key=lambda r: r["id"])
+
+
+def forge_tables() -> dict[str, list[dict]]:
+    return {
+        "EquipEnhance": equip_enhance_rows(),
+        "EquipGem": equip_gem_rows(),
+        "EquipGemSocket": equip_gem_socket_rows(),
+    }
+
+
+def cmd_forge_tables(dry_run: bool) -> None:
+    create_scalar_tables(forge_tables(), dry_run)
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# ⑧ forge-item-rows
+# ════════════════════════════════════════════════════════════════════════════
+
+def forge_item_rows() -> list[dict]:
+    """§2.4 的 13 行:强化石 + 每种宝石的三个等级。字典里只有要写的列,其余列留空。
+
+    equip_kind / battle_usable 显式写 0(与表内 15–28 号行同一种填法):这两列是「它不是装备、不是战斗道具」的
+    声明 —— 强化与镶嵌按 config 扣物,不看实例是不是装备;战斗结算同样按 config 扣战斗道具。
+    两者任何一个非 0,服务器的启动表校验都会报。
+    """
+    rows = [dict(id=ENHANCE_MATERIAL_ID, max_stack_size=FORGE_ITEM_MAX_STACK, equip_kind=0, battle_usable=0,
+                 name=ENHANCE_MATERIAL_NAME, description=ENHANCE_MATERIAL_DESCRIPTION)]
+    for gem_type, label, attr_name, _values in EQUIP_GEM_TYPES:
+        for grade, grade_name in enumerate(GEM_GRADE_NAMES, start=1):
+            rows.append(dict(id=gem_item_id(gem_type, grade), max_stack_size=FORGE_ITEM_MAX_STACK,
+                             equip_kind=0, battle_usable=0,
+                             name=f"{label}宝石·{grade_name}",
+                             description=f"可镶嵌在装备的{label}孔或通用孔,提升{attr_name}。"))
+    return rows
+
+
+def cmd_forge_item_rows(dry_run: bool) -> None:
+    layout = {f.name: f for f in schema_layout(ITEM_SHEET)}
+    rows = forge_item_rows()
+    columns = list(rows[0])
+    not_scalar = [n for n in columns if n not in layout or layout[n].width != 1]
+    if not_scalar:
+        fail(f"{schema_path(ITEM_SHEET).name} 里 {not_scalar} 不是标量字段(或不存在)—— schema 改过列,先同步本脚本")
+
+    wb = openpyxl.load_workbook(ITEM_XLSX)
+    ws = only_sheet(wb, ITEM_XLSX, ITEM_SHEET)
+    before = sheet_matrix(ws)
+    header = header_cells(ws)
+    if any(n not in header for n in columns):
+        fail(f"{rel(ITEM_XLSX)} 还没有列 {[n for n in columns if n not in header]} —— 先执行 item-columns")
+    bind(ITEM_SHEET, ITEM_XLSX)
+
+    id_col = header["id"]
+    existing: dict[int, int] = {}       # id -> 行号
+    last_data_row = DATA_BEGIN_ROW - 1
+    for row_idx in range(DATA_BEGIN_ROW, ws.max_row + 1):
+        value = ws.cell(row=row_idx, column=id_col).value
+        if value is None or value == "":
+            if any(v is not None for v in before[row_idx - 1]):
+                fail(f"{rel(ITEM_XLSX)} 第 {row_idx} 行没有 id 却有数据 —— 先修表")
+            continue
+        if not isinstance(value, (int, float)) or int(value) != value:
+            fail(f"{rel(ITEM_XLSX)} 第 {row_idx} 行的 id 不是整数:{value!r}")
+        if int(value) in existing:
+            fail(f"{rel(ITEM_XLSX)} 里 id {int(value)} 出现了两次(第 {row_idx} 行)—— 先修表")
+        existing[int(value)] = row_idx
+        last_data_row = row_idx
+
+    wanted_cells = {row["id"]: {header[name]: row[name] for name in columns} for row in rows}
+    taken = [row["id"] for row in rows if row["id"] in existing]
+    if taken:
+        if len(taken) == len(rows):
+            for row in rows:
+                row_idx = existing[row["id"]]
+                actual = {c: v for c, v in enumerate(before[row_idx - 1], start=1) if v is not None}
+                if actual != wanted_cells[row["id"]]:
+                    fail(f"{rel(ITEM_XLSX)} 第 {row_idx} 行(id {row['id']})已存在,但内容与本脚本不同"
+                         f"(可能策划已调过数值)—— 本脚本不覆盖。")
+            print(f"[已是目标状态] {rel(ITEM_XLSX)} 已有这 {len(rows)} 行强化材料 / 宝石且内容一致,不改文件。")
+            return
+        fail(f"{rel(ITEM_XLSX)} 里这些 id 已被占用:{taken} —— 与装备养成材料的 id 段冲突(或只写进了一部分),先查清。")
+
+    patches: list[Patch] = []
+    print(f"{rel(ITEM_XLSX)}:现有 {len(existing)} 行数据,末行是第 {last_data_row} 行;将追加 {len(rows)} 行"
+          f"(id {rows[0]['id']}..{rows[-1]['id']},与现有 id 无冲突;只写 {' / '.join(columns)},其余列留空):")
+    for offset, row in enumerate(rows, start=1):
+        row_idx = last_data_row + offset
+        patches.extend((row_idx, col, value) for col, value in sorted(wanted_cells[row["id"]].items()))
+        print(f"  第 {row_idx} 行: id={row['id']} {row['name']} max_stack={row['max_stack_size']} "
+              f"kind={row['equip_kind']} battle_usable={row['battle_usable']} | {row['description']}")
+    if dry_run:
+        print("[dry-run] 未写文件。")
+        return
+    apply_patches_and_verify(ITEM_XLSX, ITEM_SHEET, wb, ws, before, patches, bind_schema=True)
+    print(f"[完成] {rel(ITEM_XLSX)} 数据行 {len(existing)} -> {len(existing) + len(rows)},原有行逐格一致。"
+          f"Item 表在战斗配表指纹内:导表后 scene 与 battle 必须用同一批产物重启。")
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# ⑨ forge-tip-codes
+# ════════════════════════════════════════════════════════════════════════════
+
+def predict_tip_ids(names: list[str], base: int, known: dict[str, int]) -> list[int]:
+    """发号规则的只读镜像(导表器 enum_gen._assign_tip_ids):已发的号按名保留,新名字按表内出现顺序取本段最小空位。"""
+    ids = {name: int(value) for name, value in known.items()}
+    used = set(ids.values())
+    cursor = base
+    for name in names:
+        if name in ids:
+            continue
+        while cursor in used:
+            cursor += 1
+        ids[name] = cursor
+        used.add(cursor)
+        cursor += 1
+    return [ids[name] for name in names]
+
+
+def cmd_forge_tip_codes(dry_run: bool) -> None:
+    wb = openpyxl.load_workbook(TIP_XLSX)
+    ws = only_sheet(wb, TIP_XLSX)
+    before = sheet_matrix(ws)
+    header = [str(v).strip().lower() if v is not None else "" for v in before[HEADER_ROW - 1]]
+    if header[:2] != ["name", "commen"] or header.count("fault") != 1:
+        fail(f"{TIP_XLSX.name} 第 1 行应为 name / commen / … / fault(fault 恰好一列),实际 {before[HEADER_ROW - 1]}")
+    fault_col = header.index("fault") + 1
+
+    groups, notes = tip_parse(before, fault_col)
+    group_text = f"//{TIP_EQUIP_GROUP}"
+    phase1 = [(name, text, 1 if fault else None) for name, text, fault in TIP_EQUIP_CODES]
+    wanted = [(name, text, 1 if fault else None) for name, text, fault in TIP_FORGE_CODES]
+    new_names = [name for name, _t, _f in TIP_FORGE_CODES]
+
+    mine = next((g for g in groups if g["name"] == TIP_EQUIP_GROUP), None)
+    if mine is None:
+        fail(f"{TIP_XLSX.name} 里还没有 {group_text} 组 —— 先执行 tip-codes")
+    if (mine["base"], mine["width"]) != (TIP_EQUIP_BASE, TIP_EQUIP_WIDTH) or mine["codes"][:len(phase1)] != phase1:
+        fail(f"{TIP_XLSX.name} 第 {mine['row']} 行的 {group_text} 组,段声明或开头 {len(phase1)} 个一期码与本脚本不同 —— 先查清是谁改的。")
+    # 已是目标状态 = 这 11 个码紧跟在一期 11 个码之后,且逐项一致。不要求恰好在组尾:以后还会往组尾追加。
+    tail = mine["codes"][len(phase1):]
+    if tail[:len(wanted)] == wanted:
+        print(f"[已是目标状态] {group_text}(第 {mine['row']} 行)下,一期 {len(phase1)} 个码之后紧跟着这 {len(wanted)} 个"
+              f"强化 / 镶嵌码(码名 / 文案 / fault 一致),不改文件。")
+        return
+
+    # 以下三项都是「先核对再动手」:码名全表唯一、一期的码后面没有别人的码、发号 state 不会让新码错位。
+    owner = {code: g["name"] for g in groups for code, _t, _f in g["codes"]}
+    clash = [f"{n}(在 {owner[n]})" for n in new_names if n in owner]
+    if clash:
+        fail(f"这些码名已在表里,但不是「紧跟一期 {len(phase1)} 个码、逐项一致」的状态:{clash} —— "
+             f"码名全局唯一;可能只写进了一部分,或文案被改过,先查清。")
+    if tail:
+        # 新码按行序取号。插到别人的码前面,会改掉它们将要拿到的号;排到它们后面,自己又不再紧跟一期。
+        fail(f"{group_text} 组在一期 {len(phase1)} 个码之后已经有别的码 {[n for n, _t, _f in tail]} —— "
+             f"本脚本不猜谁该排在前面,先与加这些码的一方对齐。")
+    lo = TIP_EQUIP_BASE + len(phase1)
+    if TIP_STATE.exists():
+        # 只读核对,不写 state。state 里没有本组 = 两期的码都还没发过号,按行序发,自然紧跟。
+        state_ids = json.loads(TIP_STATE.read_text(encoding="utf-8")).get("groups", {}) \
+            .get(TIP_EQUIP_GROUP, {}).get("ids", {})
+        predicted = predict_tip_ids([n for n, _t, _f in phase1] + new_names, TIP_EQUIP_BASE, state_ids)
+        if predicted != list(range(TIP_EQUIP_BASE, lo + len(wanted))):
+            fail(f"按发号 state({rel(TIP_STATE)})推算,{group_text} 组这 {len(predicted)} 个码拿到的号是 {predicted},"
+                 f"不是从 {TIP_EQUIP_BASE} 起连续 —— state 里本段已有别的已发号。不要手改 state,先查清。")
+
+    # 一期的最后一个码也是本组的最后一个码(上面已确认 tail 为空)。它之后到表尾全空就只写空格;
+    # 后面还有别的组(别的分支先进了 main)就在组尾下一行插入,其后各行整体下移。
+    last_code_row = mine["code_rows"][len(phase1) - 1]
+    insert_at = last_code_row + 1
+    trailing = [r for r in range(insert_at, len(before) + 1) if any(v is not None for v in before[r - 1])]
+    if trailing:
+        how = f"其后第 {trailing[0]} 行起还有内容,将在第 {insert_at} 行前插入 {len(wanted)} 行(其后各行整体下移、内容不变)"
+    else:
+        how = f"其后到表尾全空,将直接写入第 {insert_at}..{insert_at + len(wanted) - 1} 行"
+    print(f"{TIP_XLSX.name}:{group_text} 组现有 {len(mine['codes'])} 个码,组尾是第 {last_code_row} 行 {phase1[-1][0]!r};{how}:")
+    patches: list[Patch] = []
+    for offset, (name, text, fault) in enumerate(wanted):
+        row_idx = insert_at + offset
+        patches += [(row_idx, 1, name), (row_idx, 2, text)]
+        if fault is not None:
+            patches.append((row_idx, fault_col, fault))
+        print(f"  第 {row_idx} 行: {name} | {text}" + (" | fault=1" if fault else ""))
+    if dry_run:
+        print("[dry-run] 未写文件。")
+        return
+
+    shifted = before
+    if trailing:
+        ws.insert_rows(insert_at, amount=len(wanted))
+        # 预期矩阵由原矩阵纯列表运算得到,不取自 insert_rows 之后的工作表 —— 这样读回核对同时验证了
+        # 「插入点之后的每一格都原样下移」,而不是拿 openpyxl 的结果去核 openpyxl。
+        blank = [None] * max(len(r) for r in before)
+        shifted = before[:insert_at - 1] + [list(blank) for _ in wanted] + before[insert_at - 1:]
+    apply_patches_and_verify(TIP_XLSX, None, wb, ws, shifted, patches, bind_schema=False)
+
+    # 再按导表器的口径(组 / 码 / fault)核一遍:fault 标记若与码名错了行,落到相邻的码上就是静默改了故障分类。
+    check_ws = only_sheet(openpyxl.load_workbook(TIP_XLSX), TIP_XLSX)
+    groups_after, notes_after = tip_parse(sheet_matrix(check_ws), fault_col)
+    expected_groups = [(g["name"], g["base"], g["width"], phase1 + wanted if g is mine else g["codes"]) for g in groups]
+    if [(g["name"], g["base"], g["width"], g["codes"]) for g in groups_after] != expected_groups \
+            or [text for _row, text in notes_after] != [text for _row, text in notes]:
+        fail(f"保存后各组的码与预期不符 —— 立刻 git checkout -- {rel(TIP_XLSX)} 还原")
+    print(f"[完成] {group_text} {len(phase1)} -> {len(phase1) + len(wanted)} 个码,其余 {len(groups) - 1} 个组的"
+          f"(码名, 文案, fault)逐项一致。导表后核对:这 {len(wanted)} 个码的 id 应为 {lo}..{lo + len(wanted) - 1}"
+          f"(紧跟一期的码),tip_enum_ids.json 只增不改;同一个域不用再登记工程文件。")
+
+
 COMMANDS = {
     "new-tables": cmd_new_tables,
     "item-columns": cmd_item_columns,
     "item-rows": cmd_item_rows,
     "equip-slots": cmd_equip_slots,
     "tip-codes": cmd_tip_codes,
+    "forge-tables": cmd_forge_tables,
+    "forge-item-rows": cmd_forge_item_rows,
+    "forge-tip-codes": cmd_forge_tip_codes,
     "message-limiter": cmd_message_limiter,
 }
 

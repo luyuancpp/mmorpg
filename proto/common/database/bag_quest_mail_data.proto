@@ -23,10 +23,15 @@ import "proto/common/component/mission_comp.proto";
 //   The proto + Marshal/Unmarshal land in code; the field set is the
 //   conservative-default the project's design docs imply (item_uuid +
 //   config_id + stack_size + position + bag_type). Game-design fields
-//   like enchant level, sockets, gem inlay, bound state are explicitly
-//   left as TODO placeholders below — adding them is a schema-extension
-//   task that doesn't break the wire format (proto field numbers are
+//   like bound state / trade count / expiry are explicitly left as TODO
+//   placeholders below — adding them is a schema-extension task that
+//   doesn't break the wire format (proto field numbers are
 //   forward-compatible).
+//
+// Update (2026-10): random affixes, enhance level and inlaid gems are no
+//   longer placeholders — they live in field 14 `equip`
+//   (EquipInstanceData, shared with ItemComp.equip). Placeholder numbers
+//   6 / 7 / 8 below stay unused on purpose; do not reuse them.
 //
 //   So the schema can ship as-is for cross-zone correctness on the
 //   conservative subset, and gain richer item state incrementally as
@@ -75,11 +80,12 @@ message ItemEntry {
   // documented here so future schema additions land at well-known
   // field numbers and don't break wire compatibility.
   //
-  // 6:  uint32 enchant_level    — refinement / +X grade. Common in MMOs.
+  // 6:  (不再启用)强化等级已由字段 14 `equip` 承载(EquipInstanceData.enhance_level)
+  //     —— 它随装备实例数据整份搬运,不单独占 ItemEntry 的字段。6 号保持空置,别复用。
   // 7:  (不再启用)随机词条已由字段 14 `equip` 承载 —— 一条词条要带
   //     属性 id + 颜色档 + 数值,repeated uint32 装不下。7 号保持空置,别复用。
-  // 8:  repeated uint64 gem_uuids — sockets. Each gem is itself an item
-  //                                  that may need its own ItemEntry.
+  // 8:  (不再启用)已镶嵌的宝石已由字段 14 `equip` 承载(EquipInstanceData.gems)—— 记的是
+  //     宝石的 config id 而不是 guid(宝石可叠加,guid 不是稳定身份)。8 号保持空置,别复用。
   // 9:  uint32 bound_state      — 0 unbound / 1 soul-bound / 2 account-bound
   // 10: uint32 trade_count_left — for tradeable-N-times items
   // 11: uint64 expire_at_ms     — for time-limited items
