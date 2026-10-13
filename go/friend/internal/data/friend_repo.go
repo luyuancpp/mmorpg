@@ -18,6 +18,8 @@ import (
 	// Redis 句柄统一用 go-zero 的封装(契约 §4):同进程混用 go-zero 与裸 go-redis
 	// 会出现两套连接池、两套超时与熔断语义,排障时指标和日志对不上账。
 	"github.com/zeromicro/go-zero/core/stores/redis"
+
+	"friend/internal/sqldialect"
 )
 
 // ── 哨兵错误与它们在 logic 层的映射(改这里必须同步 logic 的 switch)──────────────
@@ -261,18 +263,33 @@ type FriendRepo struct {
 	// 千万别退回成一把进程级 sync.Mutex:那会把全进程所有玩家、两条最高频读路径的回填
 	// 串行成一条队列,缓存冷时每个请求都要排在一次完整 MySQL 往返后面。
 	cacheLoadMu sync.Map
+	// recommend 是好友推荐两条查询按方言渲染好的 SQL 主体(recommend_sql.go),构造后只读。
+	recommend recommendStatements
 }
 
-// NewFriendRepo 构造。
-//
-// ⚠ 签名比 F1 多了 listReadHardLimit(F2 §4 的列表读硬上限):调用方是
-// logic.NewDeps,值取 svcCtx.Config.Friend.ListReadHardLimit(config.Validate 已拒 0)。
-func NewFriendRepo(rdb *redis.Redis, db *sql.DB, defaultTTL time.Duration, listReadHardLimit uint32) *FriendRepo {
+// FriendRepoOptions 是 NewFriendRepo 的装配参数。用结构体而不是继续加位置参数:四个值里有两个 time.Duration,
+// 按位置传很容易对调而编译器不报。调用方是 logic.NewDeps。
+type FriendRepoOptions struct {
+	// DefaultTTL 是好友列表等缓存的默认存活时间(Friend.CacheTTL)。
+	DefaultTTL time.Duration
+	// ListReadHardLimit 是列表类读的 SQL LIMIT(Friend.ListReadHardLimit,config.Validate 已拒 0)。
+	ListReadHardLimit uint32
+	// SQLDialect 是 db 背后那台服务器的方言,启动期由 sqldialect.Detect 探测一次(svc.NewServiceContext)。
+	// 目前只有好友推荐两条查询的优化器提示按它分写(recommend_sql.go)。零值是 MySQL。
+	SQLDialect sqldialect.Dialect
+	// RecommendStatementTimeout 是好友推荐查询在**服务端**的执行上限(渲染成 MAX_EXECUTION_TIME),
+	// 取整请求预算 config.RequestBudget();≤ 0 表示不带上限。语义与取值的理由见 newRecommendStatements。
+	RecommendStatementTimeout time.Duration
+}
+
+// NewFriendRepo 构造。推荐查询的 SQL 文本在这里按方言渲染一次(方言未知会 panic:启动致命),之后只读。
+func NewFriendRepo(rdb *redis.Redis, db *sql.DB, opts FriendRepoOptions) *FriendRepo {
 	return &FriendRepo{
 		rdb:               rdb,
 		db:                db,
-		defaultTTL:        defaultTTL,
-		listReadHardLimit: listReadHardLimit,
+		defaultTTL:        opts.DefaultTTL,
+		listReadHardLimit: opts.ListReadHardLimit,
+		recommend:         newRecommendStatements(opts.SQLDialect, opts.RecommendStatementTimeout),
 	}
 }
 

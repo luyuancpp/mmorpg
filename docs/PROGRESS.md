@@ -7456,3 +7456,60 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
   - 跨 zone 这条线的代码本轮一行没动;§13 八项(含 GO-2 根治、CPP-3 待确认表)仍是**未编译、未测试,待 Codex 验证**,验证清单在设计文档 §13.7 / §13.8 与 runbook(B3a–B3d、H、SE、V1–V5)。GO-3 仍待拍板(§13.9)。
 - **提醒**:改写之后,凡是还停在旧历史上的本地目录,要先对齐到 `origin/main`(并把本地独有的提交带过去)再编译,否则编的不是最新代码。
 - **Java 版(AGENTS §12)**:对应 Java 版本号:无;本条只是文档,不涉及客户端契约,**不适用**。跨 zone 传送这条线的 Java 版仍是未做。
+
+## 2026-10-13 friend 推荐:SQL 按方言渲染(MySQL / TiDB 各一份提示)+ 服务端语句超时 + TiDB 计划回归(Claude,未编译)
+
+- **背景**:2026-10-09「friend 推荐:随机兜底的候选带真实的共同好友数 + TiDB 计划核对」那一条把「TiDB 上两条推荐查询有界只靠代价估算、统计低估时整表扫描」
+  登记成 handoff §9.5 第 12 条、没有改 SQL。用户要求按规范做完,本条把它处理掉。数据层迁 TiDB 是既定方向(AGENTS §1),friend 是全服服务,迟早跑在 TiDB 上。
+  代码 10-10 写完,评审做到一半时会话中断;10-13 评审收口后落库,标题用落库日期。
+- **做法**(`go/friend/internal`):
+  - `sqldialect/`(新,叶子包,只依赖标准库):启动期发一条 `SELECT VERSION(), @@version_comment` 判方言,两个串任一个含 TiDB 字样即 TiDB;
+    MariaDB 明确拒绝启动;其余按 MySQL。探测失败算启动致命;方言与两个原始串打进启动日志。
+    单独成包是为了让装配层 svc 不必为一个枚举去直接 import 数据层(svc 经 config 本来就间接依赖 data 与 metrics,那条链本条没有动)。
+  - `data/recommend_sql.go`(新):`recommendByMutualBaseSQL` / `recommendAnchorBaseSQL` 变成带提示占位符的模板,业务 SQL 仍只有一份,提示按方言填。
+    MySQL:五条排除各带 `SEMIJOIN(FIRSTMATCH)` —— 渲染结果与此前**逐字节相同**。
+    TiDB:五条排除各起查询块名、外层 `INL_JOIN(别名@块名, …)`,mutual 的派生表起名 `qb_fof`、外层 `INL_JOIN(@qb_fof f2)`;不带 `SEMIJOIN`。
+  - 两种方言的最外层都另带 `MAX_EXECUTION_TIME(毫秒)`,取整请求预算 `config.RequestBudget()`:请求预算到期时驱动只是关连接,
+    退化的 SELECT 会在服务器上继续跑完;现在最迟在这个时限被服务器自己掐掉。这是 handoff §9.5 第 9 条(MySQL 统计退化)此前没有的运行期兜底。
+  - `NewFriendRepo` 改收 `FriendRepoOptions`(多了方言与语句超时两项,不再继续加位置参数);`svc.ServiceContext` 多一个 `SQLDialect` 字段。
+    协议、配置项、`FriendStore` 接口都没动。
+- **为什么不是「一份文本写两套提示」或全局绑定**:前者两边每次调用都带对方的警告(MySQL 1064 / TiDB 8061),语句级警告会进各自的语句摘要;
+  后者存在集群里,漏建一次就悄悄退回代价估算。按方言各写一份,文本上就能看出每条提示归谁。
+- **SQL 级实测**(本机 TiDB v8.5.2 与 MySQL 26.7.0):
+  - TiDB 文本:13 种库 / 统计状态下(10-09 那 12 种 —— 其中 11 个 10-10 重建,聚簇主键那一个 10-13 补建 —— 再加一个按 Go 用例灌数顺序造的库)
+    两条查询都没有整表 / 全索引扫描;文本协议零警告;预处理协议下 mutual 零警告,兜底查询只有一条 1105
+    (子查询被做成 Apply,TiDB 不缓存这类计划 —— 每次执行重新优化,可以接受);结果与 MySQL 文本在同一库上逐行相同。
+  - 同一批库上 MySQL 文本的对照:b_in 全扫 50,000 行(总读 71,855 对 21,824)、r_in 全扫 50,000 行、mutual 85,276 对 10,256、f2 全扫等。
+  - MySQL:带与不带 `MAX_EXECUTION_TIME` 的计划、Handler 读数、结果相同(四个库,10-13 复测三档超时各两次);上限确实会触发(3024)。
+  - TiDB 上语句超时同样生效,但错误码两种都会出:1105 `context canceled` 或 3024(10-13 用真实兜底语句实测 35 次超时,1105 共 28 次、3024 共 7 次)。
+    logic 不区分错误码,行为不受影响;以后按错误码认「语句超时」时两种都得认。
+  - `server-version` 的影响(10-13,一次性起了一个改过该配置的 v8.5.2 单机实例,测完已删):配成 `"8.0.36"` 后 `VERSION()` 里没有 TiDB 字样,
+    `@@version_comment` 不受影响 —— 所以方言探测看两个串。
+  - TiDB 提示的三种写法是逐个试出来的(派生表里直接写 `INL_JOIN(f2)` 预处理时报 1815;`f2@qb_fof` 不生效;现写法无警告),细节在 `recommend_sql.go`。
+- **测试**:
+  - `sqldialect/dialect_test.go`(新,纯单测 4 条):方言名;两个版本串 → 方言的判定(含 `server-version` 被改写的 TiDB);MariaDB 拒绝。
+  - `data/recommend_sql_test.go`(新,纯单测 6 条):四份 golden 文本(MySQL 两份 = 改动前的原文,TiDB 两份 = 在 TiDB 上实测过的那一份);
+    两种方言去掉提示后是同一条 SQL;超时提示的位置与开关;占位符与参数个数。
+  - `data/recommend_repo_tidb_test.go`(新,门控 `FRIEND_TEST_TIDB_DSN`,验收开关 `FRIEND_REQUIRE_TIDB_TESTS`):三种统计状态下 EXPLAIN 无 FullScan、
+    五条排除与 f2 / m2 按连接键定位、无警告;结果与 MySQL 那组同夹具同期望。三种状态的断言已按用例的灌数顺序在 TiDB 上重放过。
+  - MySQL 真库用例:新增 `TestSQLDialectDetect_OnRealMySQL`(探测语句在真服务器上能跑);入口 `openFriendTestDB` 在每条用例动表之前判一次方言
+    (DSN 误指到 TiDB 即点名失败,不会在 TiDB 上重建表);其余只改了调用点
+    (拼装函数成了 `recommendStatements` 的方法、测试 repo 用 `FriendRepoOptions`),断言没有动。
+- **评审**(10-13 两轮:第一轮三个视角并行 + 逐条反驳式复验,共 14 个只读子任务;修完后第二轮两个视角复核改动;全部跑完):没有 P0 / P1。成立并已修的:
+  方言探测只看 `VERSION()`(加第二判据、实测复现);TiDB 用例门控在子用例里导致没连库时顶层显示 PASS(上提到顶层、加验收开关);
+  TiDB 超时错误码写成只有 1105;svc 为取方言类型新增了对 data 的直接 import(方言挪到只依赖标准库的叶子包);文档里「12 个库」实际只重测了 11 个(补建补测聚簇主键那个);
+  若干注释 / 文档措辞(运行期兜底、「唯一门控」、读数 1,083 应为 1,063、PREPARE 的 1815 条数、gofmt 范围)。驳回 1 条(一次性库评审期间有意保留)。
+- **证据边界**:Go 只过了 gofmt,**没有编译、没有跑 `go test`**(AGENTS §10.1)。SQL 文本的每一份都在对应的库上实测过;Go 侧的渲染代码是否产出这四份文本,
+  由 golden 单测在 Codex 那里验证 —— golden 是用与 Go 规则逐条对应的脚本从模板生成、并核对过「MySQL 渲染 == 10-09 已推送的原文」。
+  方言探测那条 SQL 在两种库上用命令行客户端跑过,没有经过 Go 驱动。MariaDB 对提示的支持来自其文档,本机没有 MariaDB、未实测。
+  一次性库(TiDB 的 `friend_tidb_chk_*`、MySQL 的 `friend_explain_tc_*`)已删、统计锁已解。
+- **给 Codex**:`docs/handoff/friend-handoff-20260920.md` §9.5 表后「第 12 条的 Codex 命令(2026-10-10)」;上一小节的 MySQL 命令照跑。
+  整包跑时没设 `FRIEND_TEST_TIDB_DSN` 的话 TiDB 两条顶层用例 SKIP;要分清「跑了」与「跳过」,把 `FRIEND_REQUIRE_TIDB_TESTS=1` 也设上。
+- **没有做**:MySQL 上 `recommendAnchor` 的统计退化本身(只加了超时兜底,没有让它不退化);TiDB 上兜底查询的计划缓存(1105);
+  其它服务的 SQL 没有按 TiDB 核对过(guild / trade / data_service 各自的事);`sqldialect` 目前只在 friend 里,等第二个服务需要时整包上提到 `go/shared`。
+- **Java 版(AGENTS §12)**:对应 Java 版本号:无;状态:**待做**。纯服务端内部实现,不改客户端契约。按 09-29 的记录 Java 版还没有 friend ——
+  本机没有 Java 仓(`D:\luyuan\xuanming-server-mmo` 不存在),这一点没有重新核对;做到好友推荐且目标库是 TiDB 时按同一口径处理
+  (每种库各自钉计划、各自有计划回归)。`PARITY.md` 由 Java 仓会话登记,本条没有改它。
+- **与历史重写的关系**:10-13 回来时远端 main 的历史已被整体重写过(去掉了 13 个 boost 源码压缩包分片,提交号全变,文件内容其余不变),
+  本条的改动是以补丁形式搬到重写后的主干上提交的。按提交 946ffd216d(日志文案统一为英文)的做法,本批新增的启动日志与 panic 文案写英文
+  (`[friend] SQL dialect = …`);注释、测试断言文案与文档仍是中文。10-09 那一条在重写后的历史里是 `ef14c98e68`。

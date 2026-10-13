@@ -32,6 +32,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/zeromicro/go-zero/core/stores/redis"
+
+	"friend/internal/sqldialect"
 )
 
 // ⚠ 本包的测试**不能** import friend/internal/config:config 包 import data 取
@@ -99,9 +101,13 @@ func callSweep(ctx context.Context, repo *FriendRepo, mode string, retentionDays
 
 // ── 公共夹具 ────────────────────────────────────────────────────
 
-// friendTestDSNEnv 是本包所有集成用例的唯一门控开关。
-// 名字与 F1 已有用例一致,别再引入第二个门控:两个门控必然有一个长期没人设,
+// friendTestDSNEnv 是本包所有 **MySQL** 集成用例的唯一门控开关。
+// 名字与 F1 已有用例一致,别给 MySQL 这组再引入第二个门控:两个门控必然有一个长期没人设,
 // 那条路径就会长期"SKIP 当绿"(A 仓 2026-08-11 的 1213 正是这样被盖住一个多月的)。
+//
+// 2026-10-10 起本包另有一组连真 TiDB 的用例(recommend_repo_tidb_test.go),门控是 FRIEND_TEST_TIDB_DSN。
+// 它必须是另一个开关:两组用例要的是两台不同的服务器,断言的是两种库各自的执行计划,同一个 DSN 喂不了两边。
+// "SKIP 当绿"的风险因此多了一处,对应的守卫是那一组自己的 FRIEND_REQUIRE_TIDB_TESTS(见该文件的 friendTiDBTestDSN)。
 const friendTestDSNEnv = "FRIEND_TEST_MYSQL_DSN"
 
 // friendRequireMySQLEnv:验收时打开它,就能把"跑了并且 PASS"与"跳过了"在报告里分开,
@@ -112,8 +118,9 @@ const friendRequireMySQLEnv = "FRIEND_REQUIRE_MYSQL_TESTS"
 
 // TestFriendIntegrationGateIsHonored 是"全体 Skip 不算通过"的机械保障。
 //
-// 本包的集成用例(含 friend_guard_lock_order_mysql_test.go 的 8 个并发锁序场景、sweep 两类清理、
-// 推荐三段 SQL)全部挂在 openFriendTestDB 的 Skip 上;不走 MySQL 的只有缓存与 session_reader 那几条。
+// 本包的 MySQL 集成用例(含 friend_guard_lock_order_mysql_test.go 的 8 个并发锁序场景、sweep 两类清理、
+// 推荐三段 SQL)全部挂在 openFriendTestDB 的 Skip 上;不走 MySQL 的是缓存、session_reader、在线目录、推荐 SQL 渲染
+// 这类纯单测,以及 TiDB 那一组(它有自己的门控与自己的"跳过算失败"开关,不归本用例管)。
 // 没有这条标记用例时,"DSN 忘了设"与"锁序全对"在 CI 报告里是同一个绿。
 // (这里刻意不写用例总数:收尾批把它从 19 条加到了 50 多条,写死的数字只会再过期一次。)
 func TestFriendIntegrationGateIsHonored(t *testing.T) {
@@ -154,6 +161,14 @@ func openFriendTestDB(t *testing.T) (*sql.DB, context.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	t.Cleanup(cancel)
 	require.NoError(t, db.PingContext(ctx))
+
+	// 这组用例断言的是 InnoDB 的锁语义与 MySQL 的执行计划,而且下一步就要 DROP / 重建表:
+	// DSN 误指到 TiDB 时在动表之前就点名失败,不让它在别的库上重建一遍表、再报一堆看不懂的断言。
+	// TiDB 那一组的入口(openFriendTiDBTestDB)做对称的检查。
+	dialect, info, err := sqldialect.Detect(ctx, db)
+	require.NoError(t, err)
+	require.Equal(t, sqldialect.MySQL, dialect,
+		"%s 指向的不是 MySQL(%s):本组用例只在真 MySQL 上有意义", friendTestDSNEnv, info)
 
 	resetFriendIntegrationSchema(t, ctx, db)
 	t.Cleanup(func() { truncateFriendIntegrationTables(t, db) })
@@ -196,7 +211,43 @@ func newFriendTestRepoWithLimit(t *testing.T, db *sql.DB, listReadHardLimit uint
 	t.Helper()
 	mr := miniredis.RunT(t)
 	rdb := redis.MustNewRedis(redis.RedisConf{Host: mr.Addr(), Type: "node"})
-	return NewFriendRepo(rdb, db, time.Minute, listReadHardLimit), mr
+	return NewFriendRepo(rdb, db, testFriendRepoOptions(listReadHardLimit)), mr
+}
+
+// testRecommendStatementTimeout 是测试 repo 的推荐语句服务端上限。给一个真实的正值而不是 0:这样用例跑的、
+// 计划守卫 EXPLAIN 的 SQL 与生产同形(最外层带 MAX_EXECUTION_TIME);取 30 秒是让它在任何用例里都不会真的触发。
+const testRecommendStatementTimeout = 30 * time.Second
+
+// testFriendRepoOptions 是本包集成用例统一的 repo 装配参数。方言固定 MySQL:FRIEND_TEST_MYSQL_DSN 门控的用例
+// 只在真 MySQL 上有意义(TiDB 没有间隙锁,也不认 MySQL 的计划断言);TiDB 那一组用例另有自己的门控与装配,
+// 见 recommend_repo_tidb_test.go。
+func testFriendRepoOptions(listReadHardLimit uint32) FriendRepoOptions {
+	return FriendRepoOptions{
+		DefaultTTL:                time.Minute,
+		ListReadHardLimit:         listReadHardLimit,
+		SQLDialect:                sqldialect.MySQL,
+		RecommendStatementTimeout: testRecommendStatementTimeout,
+	}
+}
+
+// testMySQLRecommendStatements 返回与 newFriendTestRepo 造出的 repo 逐字相同的推荐 SQL(同一个渲染函数、同一组参数),
+// 给手里没有 repo 的计划守卫用例做 EXPLAIN 用。
+func testMySQLRecommendStatements() recommendStatements {
+	opts := testFriendRepoOptions(testListReadHardLimit)
+	return newRecommendStatements(opts.SQLDialect, opts.RecommendStatementTimeout)
+}
+
+// TestSQLDialectDetect_OnRealMySQL 把启动期的方言探测在真 MySQL 上跑一遍。
+//
+// sqldialect 包自己的单测不连库,只验"两个版本串 → 方言"的判定;这里补的是另一半:探测发出去的那条
+// `SELECT VERSION(), @@version_comment` 在真服务器上能执行、两列都扫得出来,判出来是 MySQL、版本串非空。
+// ("DSN 误指到 TiDB"不靠这一条拦:openFriendTestDB 在每条用例动表之前都会判一次方言。)
+func TestSQLDialectDetect_OnRealMySQL(t *testing.T) {
+	db, ctx := openFriendTestDB(t)
+	dialect, info, err := sqldialect.Detect(ctx, db)
+	require.NoError(t, err)
+	assert.Equal(t, sqldialect.MySQL, dialect, "%s 指向的不是 MySQL(%s)", friendTestDSNEnv, info)
+	assert.NotEmpty(t, info.Version, "VERSION() 不该是空串")
 }
 
 // newCacheOnlyRepo 给一个**没有 DB**的 repo,只用来验缓存键与失效脚本。
@@ -206,7 +257,7 @@ func newCacheOnlyRepo(t *testing.T) (*FriendRepo, *miniredis.Miniredis) {
 	t.Helper()
 	mr := miniredis.RunT(t)
 	rdb := redis.MustNewRedis(redis.RedisConf{Host: mr.Addr(), Type: "node"})
-	return NewFriendRepo(rdb, nil, time.Minute, testListReadHardLimit), mr
+	return NewFriendRepo(rdb, nil, testFriendRepoOptions(testListReadHardLimit)), mr
 }
 
 // ── 不变量断言(所有并发用例共用) ──────────────────────────────
