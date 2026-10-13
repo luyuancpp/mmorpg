@@ -31,4 +31,26 @@ enum equip_error {
 
   kEquipInternalError = 28010;
 
+  kEquipEnhanceUnavailable = 28011;
+
+  kEquipEnhanceMaxLevel = 28012;
+
+  kEquipEnhanceMaterialNotEnough = 28013;
+
+  kEquipEnhanceGoldNotEnough = 28014;
+
+  kEquipGemNotGem = 28015;
+
+  kEquipGemNotOwned = 28016;
+
+  kEquipGemSocketInvalid = 28017;
+
+  kEquipGemSocketOccupied = 28018;
+
+  kEquipGemSocketEmpty = 28019;
+
+  kEquipGemTypeMismatch = 28020;
+
+  kEquipGemBagFull = 28021;
+
 };

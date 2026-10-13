@@ -22,6 +22,9 @@
 #include "equipaffixrule_table.h"
 #include "equipattribute_table.h"
 #include "equipattributecap_table.h"
+#include "equipenhance_table.h"
+#include "equipgem_table.h"
+#include "equipgemsocket_table.h"
 #include "equipslot_table.h"
 #include "globalvariable_table.h"
 #include "guildactivity_table.h"
@@ -84,6 +87,12 @@ void LoadTables() {
     EquipAttributeTableManager::Instance().Load();
 
     EquipAttributeCapTableManager::Instance().Load();
+
+    EquipEnhanceTableManager::Instance().Load();
+
+    EquipGemTableManager::Instance().Load();
+
+    EquipGemSocketTableManager::Instance().Load();
 
     EquipSlotTableManager::Instance().Load();
 
@@ -165,6 +174,12 @@ void LoadTables() {
 
     EquipAttributeCapTableManager::Instance().LoadSuccess();
 
+    EquipEnhanceTableManager::Instance().LoadSuccess();
+
+    EquipGemTableManager::Instance().LoadSuccess();
+
+    EquipGemSocketTableManager::Instance().LoadSuccess();
+
     EquipSlotTableManager::Instance().LoadSuccess();
 
     GlobalVariableTableManager::Instance().LoadSuccess();
@@ -214,7 +229,7 @@ void LoadTables() {
 }
 
 void LoadTablesAsync() {
-    static muduo::CountDownLatch latch(39);
+    static muduo::CountDownLatch latch(42);
 
     std::thread ActivityScheduleLoadThread([]() {
         void InitThreadLocalConfig();
@@ -359,6 +374,30 @@ void LoadTablesAsync() {
         latch.countDown();
     });
     EquipAttributeCapLoadThread.detach();
+
+    std::thread EquipEnhanceLoadThread([]() {
+        void InitThreadLocalConfig();
+        InitThreadLocalConfig();
+        EquipEnhanceTableManager::Instance().Load();
+        latch.countDown();
+    });
+    EquipEnhanceLoadThread.detach();
+
+    std::thread EquipGemLoadThread([]() {
+        void InitThreadLocalConfig();
+        InitThreadLocalConfig();
+        EquipGemTableManager::Instance().Load();
+        latch.countDown();
+    });
+    EquipGemLoadThread.detach();
+
+    std::thread EquipGemSocketLoadThread([]() {
+        void InitThreadLocalConfig();
+        InitThreadLocalConfig();
+        EquipGemSocketTableManager::Instance().Load();
+        latch.countDown();
+    });
+    EquipGemSocketLoadThread.detach();
 
     std::thread EquipSlotLoadThread([]() {
         void InitThreadLocalConfig();
@@ -566,6 +605,12 @@ void LoadTablesAsync() {
     EquipAttributeTableManager::Instance().LoadSuccess();
 
     EquipAttributeCapTableManager::Instance().LoadSuccess();
+
+    EquipEnhanceTableManager::Instance().LoadSuccess();
+
+    EquipGemTableManager::Instance().LoadSuccess();
+
+    EquipGemSocketTableManager::Instance().LoadSuccess();
 
     EquipSlotTableManager::Instance().LoadSuccess();
 

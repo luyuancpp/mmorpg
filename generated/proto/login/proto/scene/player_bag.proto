@@ -18,6 +18,9 @@ message EquipAttrLineInfo {
   uint64 cap = 5;       // 上限;基础属性行为 0,客户端不显示「/上限」
   bool percent = 6;     // true = 显示成 N%
   uint32 seq = 7;       // 档内序号;显示顺序 = (tier, seq)
+  // ── 以下两项只在装备的基础属性行(BagItemInfo.base_attrs)上有意义(docs/design/equipment-enhance-inlay.md §3.3)──
+  uint64 enhance_bonus = 8;       // 强化带来的增量,**已含在 value 内**(value − enhance_bonus = 表值);未强化为 0
+  uint64 enhance_next_value = 9;  // 仅该装备带 enhance_next 时:强化到下一级后这一行的 value(预览);否则为 0
 }
 
 // 装备栏的一个槽位定义(含空槽),客户端据此画出全部栏位。
@@ -25,6 +28,34 @@ message EquipSlotInfo {
   uint32 slot = 1;
   uint32 equip_kind = 2;
   string name = 3;      // 部位名(武器 / 帽子 …);只有「没配名字却被占着」的槽才会为空
+}
+
+// 装备上的一个宝石孔(设计文档 docs/design/equipment-enhance-inlay.md §3.3)。
+// 「占用」与「生效」是两件事:占用只看 gem_config_id(与服务器判「该孔已镶」同口径),
+// 生效看带不带 attr(与属性加成同口径)。
+message EquipGemSocketInfo {
+  uint32 socket = 1;           // 孔位号(0 起)
+  uint32 gem_type = 2;         // 该孔接纳的宝石类型,0 = 任意
+  uint32 gem_config_id = 3;    // 占着这个孔的宝石 config;0 = 空孔。**「是否占用」只看它**
+  string gem_name = 4;         // 宝石名(空孔为空;宝石的 Item 行查不到时也为空)
+  string gem_icon_key = 5;     // 宝石图标(规则同 gem_name)
+  // 宝石**当前生效**的属性。gem_config_id != 0 却不带 attr = 已镶但当前不生效(仍可取下)。
+  // tier 恒 0、cap 恒 0、seq 恒 0。
+  EquipAttrLineInfo attr = 6;
+  string name = 7;             // 孔位显示名(可为空,客户端空名时显示「孔位 N」)
+}
+
+// 下一次强化的预览(客户端零配表)。金币 / 材料成败都扣。
+message EquipEnhancePreview {
+  uint32 next_level = 1;          // 强化成功后的等级(= 当前等级 + 1)
+  uint32 success_rate = 2;        // 万分比
+  uint64 cost_gold = 3;
+  uint32 material_config_id = 4;  // 0 = 不要材料
+  string material_name = 5;       // 材料的 Item 行查不到时为空
+  uint32 material_count = 6;
+  uint32 bonus_permyriad = 7;     // 升到 next_level 后基础属性的总加成(万分比)
+  uint32 fail_level_loss = 8;     // 失败时掉几级,0 = 不掉
+  string material_icon_key = 9;
 }
 
 // 实例与布局分离；显示信息不写入玩家持久化记录。
@@ -43,6 +74,14 @@ message BagItemInfo {
   string equip_class_name = 11;                 // 职业名;职业表无名称列时为空
   repeated EquipAttrLineInfo base_attrs = 12;   // 基础属性,seq 升序
   repeated EquipAttrLineInfo affixes = 13;      // 随机属性,已按 (tier, seq) 排好
+  // ── 强化与镶嵌(docs/design/equipment-enhance-inlay.md §3.3)。14–17、20 仅装备;18、19 仅宝石物品 ──
+  uint32 enhance_level = 14;                     // 装备:当前强化等级(已按表上限夹取)
+  uint32 enhance_max_level = 15;                 // 装备:强化上限;0 = 强化未开放
+  EquipEnhancePreview enhance_next = 16;         // 装备:下一级预览;已满级 / 未开放 / 实例未初始化 / 下一级的行不可用时不带
+  repeated EquipGemSocketInfo gem_sockets = 17;  // 装备:该部位的全部孔位(含空孔),按 socket 升序;实例未初始化时不带
+  uint32 gem_type = 18;                          // 宝石物品:宝石类型(≥ 1);不是宝石 = 0
+  EquipAttrLineInfo gem_attr = 19;               // 宝石物品:这颗宝石提供的属性(不是宝石、或属性行不可用时不带)。tier / cap / seq 恒 0
+  uint32 enhance_bonus_permyriad = 20;           // 装备:当前有效等级的基础属性总加成(万分比);0 级为 0,满级也写
 }
 
 message BagSlotInfo {
@@ -107,6 +146,43 @@ message GmGrantItemResponse {
   BagInfo bag = 2;        // 人物背包
 }
 
+// 强化:装备可以在人物背包里,也可以穿在身上(仓库 / 临时格里的不行)。消耗金币与材料,**成败都扣**。
+// 只要请求被受理(error_message 为空)就回两个包的全量,客户端整体覆盖 —— 掷骰没过的那一次也一样。
+message EnhanceEquipRequest { uint64 item_id = 1; }
+message EnhanceEquipResponse {
+  TipInfoMessage error_message = 1;
+  BagInfo bag = 2;           // 人物背包全量(金币、材料变化)
+  BagInfo equipment = 3;     // 装备栏全量
+  // 本次强化是否成功。**失败不是错误**:掷骰没过时 error_message 为空、两份快照照常带回
+  // (金币与材料已扣,客户端有 tip 就会保留旧快照,所以不能走 tip)。
+  bool success = 4;
+  uint32 enhance_level = 5;  // 操作后的强化等级
+}
+
+// 镶嵌:把人物背包里的一颗宝石嵌进装备的指定孔位。按宝石的 config 消耗 1 颗(不指定哪一堆);
+// 孔里已有宝石要先取下。
+message InlayGemRequest {
+  uint64 item_id = 1;        // 装备
+  uint32 socket = 2;         // 孔位号(0 起,0 是合法值)
+  uint32 gem_config_id = 3;  // 宝石的 Item 表 id
+}
+message InlayGemResponse {
+  TipInfoMessage error_message = 1;
+  BagInfo bag = 2;        // 人物背包
+  BagInfo equipment = 3;  // 装备栏
+}
+
+// 取下:孔里的宝石原样退回 1 颗到人物背包(背包放不下则拒绝),免费。
+message RemoveGemRequest {
+  uint64 item_id = 1;     // 装备
+  uint32 socket = 2;      // 孔位号
+}
+message RemoveGemResponse {
+  TipInfoMessage error_message = 1;
+  BagInfo bag = 2;        // 人物背包
+  BagInfo equipment = 3;  // 装备栏
+}
+
 service SceneBagClientPlayer {
   option (OptionIsPlayerService) = true;
   option (OptionIsClientProtocolService) = true;
@@ -120,4 +196,9 @@ service SceneBagClientPlayer {
   rpc UnequipItem (UnequipItemRequest) returns (UnequipItemResponse);
   // 名字必须是 Gm + 大写字母开头:gate / scene 的 GM 闸按这个前缀识别。
   rpc GmGrantItem (GmGrantItemRequest) returns (GmGrantItemResponse);
+  // 强化 / 镶嵌 / 取下:战斗中、跨区冻结中拒绝;改的是穿着的那件时服务器重算属性并推属性面板。
+  // 三个方法的顺序不可变(method index 5 / 6 / 7);名字不许以 Gm 开头(那是 GM 闸的前缀)。
+  rpc EnhanceEquip (EnhanceEquipRequest) returns (EnhanceEquipResponse);
+  rpc InlayGem (InlayGemRequest) returns (InlayGemResponse);
+  rpc RemoveGem (RemoveGemRequest) returns (RemoveGemResponse);
 }

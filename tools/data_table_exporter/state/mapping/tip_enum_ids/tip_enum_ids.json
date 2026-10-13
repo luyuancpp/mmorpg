@@ -404,7 +404,18 @@
         "EquipInBattle": 28007,
         "EquipFrozen": 28008,
         "EquipGrantInvalid": 28009,
-        "EquipInternalError": 28010
+        "EquipInternalError": 28010,
+        "EquipEnhanceUnavailable": 28011,
+        "EquipEnhanceMaxLevel": 28012,
+        "EquipEnhanceMaterialNotEnough": 28013,
+        "EquipEnhanceGoldNotEnough": 28014,
+        "EquipGemNotGem": 28015,
+        "EquipGemNotOwned": 28016,
+        "EquipGemSocketInvalid": 28017,
+        "EquipGemSocketOccupied": 28018,
+        "EquipGemSocketEmpty": 28019,
+        "EquipGemTypeMismatch": 28020,
+        "EquipGemBagFull": 28021
       }
     }
   },

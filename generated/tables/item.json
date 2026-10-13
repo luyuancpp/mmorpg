@@ -648,6 +648,110 @@
    "id": 1405,
    "max_stack_size": 1,
    "name": "惊雷靴"
+  },
+  {
+   "battle_usable": 0,
+   "description": "强化装备时消耗的材料。",
+   "equip_kind": 0,
+   "id": 2001,
+   "max_stack_size": 999,
+   "name": "强化石"
+  },
+  {
+   "battle_usable": 0,
+   "description": "可镶嵌在装备的攻击孔或通用孔,提升伤害。",
+   "equip_kind": 0,
+   "id": 2101,
+   "max_stack_size": 999,
+   "name": "攻击宝石·一级"
+  },
+  {
+   "battle_usable": 0,
+   "description": "可镶嵌在装备的攻击孔或通用孔,提升伤害。",
+   "equip_kind": 0,
+   "id": 2102,
+   "max_stack_size": 999,
+   "name": "攻击宝石·二级"
+  },
+  {
+   "battle_usable": 0,
+   "description": "可镶嵌在装备的攻击孔或通用孔,提升伤害。",
+   "equip_kind": 0,
+   "id": 2103,
+   "max_stack_size": 999,
+   "name": "攻击宝石·三级"
+  },
+  {
+   "battle_usable": 0,
+   "description": "可镶嵌在装备的防御孔或通用孔,提升防御。",
+   "equip_kind": 0,
+   "id": 2201,
+   "max_stack_size": 999,
+   "name": "防御宝石·一级"
+  },
+  {
+   "battle_usable": 0,
+   "description": "可镶嵌在装备的防御孔或通用孔,提升防御。",
+   "equip_kind": 0,
+   "id": 2202,
+   "max_stack_size": 999,
+   "name": "防御宝石·二级"
+  },
+  {
+   "battle_usable": 0,
+   "description": "可镶嵌在装备的防御孔或通用孔,提升防御。",
+   "equip_kind": 0,
+   "id": 2203,
+   "max_stack_size": 999,
+   "name": "防御宝石·三级"
+  },
+  {
+   "battle_usable": 0,
+   "description": "可镶嵌在装备的气血孔或通用孔,提升气血。",
+   "equip_kind": 0,
+   "id": 2301,
+   "max_stack_size": 999,
+   "name": "气血宝石·一级"
+  },
+  {
+   "battle_usable": 0,
+   "description": "可镶嵌在装备的气血孔或通用孔,提升气血。",
+   "equip_kind": 0,
+   "id": 2302,
+   "max_stack_size": 999,
+   "name": "气血宝石·二级"
+  },
+  {
+   "battle_usable": 0,
+   "description": "可镶嵌在装备的气血孔或通用孔,提升气血。",
+   "equip_kind": 0,
+   "id": 2303,
+   "max_stack_size": 999,
+   "name": "气血宝石·三级"
+  },
+  {
+   "battle_usable": 0,
+   "description": "可镶嵌在装备的迅捷孔或通用孔,提升速度。",
+   "equip_kind": 0,
+   "id": 2401,
+   "max_stack_size": 999,
+   "name": "迅捷宝石·一级"
+  },
+  {
+   "battle_usable": 0,
+   "description": "可镶嵌在装备的迅捷孔或通用孔,提升速度。",
+   "equip_kind": 0,
+   "id": 2402,
+   "max_stack_size": 999,
+   "name": "迅捷宝石·二级"
+  },
+  {
+   "battle_usable": 0,
+   "description": "可镶嵌在装备的迅捷孔或通用孔,提升速度。",
+   "equip_kind": 0,
+   "id": 2403,
+   "max_stack_size": 999,
+   "name": "迅捷宝石·三级"
   }
  ]
 }

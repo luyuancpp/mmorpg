@@ -467,6 +467,24 @@
    "max_requests": 5,
    "time_window": 1,
    "tip_message": 1000
+  },
+  {
+   "id": 251,
+   "max_requests": 10,
+   "time_window": 1,
+   "tip_message": 1000
+  },
+  {
+   "id": 250,
+   "max_requests": 5,
+   "time_window": 1,
+   "tip_message": 1000
+  },
+  {
+   "id": 252,
+   "max_requests": 5,
+   "time_window": 1,
+   "tip_message": 1000
   }
  ]
 }

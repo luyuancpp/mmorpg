@@ -47,6 +47,9 @@
 #include "EquipAffixRuleTable.h"
 #include "EquipAttributeTable.h"
 #include "EquipAttributeCapTable.h"
+#include "EquipEnhanceTable.h"
+#include "EquipGemTable.h"
+#include "EquipGemSocketTable.h"
 #include "EquipSlotTable.h"
 #include "GlobalVariableTable.h"
 #include "GuildActivityTable.h"
@@ -106,7 +109,7 @@ class MMORPGCONFIG_API UConfigSubsystem : public UGameInstanceSubsystem
 
 public:
 	/// 本产物覆盖的表数量。
-	static constexpr int32 TableCount = 39;
+	static constexpr int32 TableCount = 42;
 
 	UFUNCTION(BlueprintPure, Category = "Config", meta = (WorldContext = "WorldContextObject"))
 	static UConfigSubsystem* Get(const UObject* WorldContextObject);
@@ -212,6 +215,15 @@ public:
 	UEquipAttributeCapTable* GetEquipAttributeCapTable() const { return EquipAttributeCapTable; }
 
 	UFUNCTION(BlueprintPure, Category = "Config|Tables")
+	UEquipEnhanceTable* GetEquipEnhanceTable() const { return EquipEnhanceTable; }
+
+	UFUNCTION(BlueprintPure, Category = "Config|Tables")
+	UEquipGemTable* GetEquipGemTable() const { return EquipGemTable; }
+
+	UFUNCTION(BlueprintPure, Category = "Config|Tables")
+	UEquipGemSocketTable* GetEquipGemSocketTable() const { return EquipGemSocketTable; }
+
+	UFUNCTION(BlueprintPure, Category = "Config|Tables")
 	UEquipSlotTable* GetEquipSlotTable() const { return EquipSlotTable; }
 
 	UFUNCTION(BlueprintPure, Category = "Config|Tables")
@@ -311,6 +323,12 @@ private:
 	TObjectPtr<UEquipAttributeTable> EquipAttributeTable;
 	UPROPERTY(Transient)
 	TObjectPtr<UEquipAttributeCapTable> EquipAttributeCapTable;
+	UPROPERTY(Transient)
+	TObjectPtr<UEquipEnhanceTable> EquipEnhanceTable;
+	UPROPERTY(Transient)
+	TObjectPtr<UEquipGemTable> EquipGemTable;
+	UPROPERTY(Transient)
+	TObjectPtr<UEquipGemSocketTable> EquipGemSocketTable;
 	UPROPERTY(Transient)
 	TObjectPtr<UEquipSlotTable> EquipSlotTable;
 	UPROPERTY(Transient)

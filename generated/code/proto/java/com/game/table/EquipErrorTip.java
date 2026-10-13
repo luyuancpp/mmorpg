@@ -79,6 +79,50 @@ public final class EquipErrorTip extends com.google.protobuf.GeneratedFile {
      * <code>kEquipInternalError = 28010;</code>
      */
     kEquipInternalError(28010),
+    /**
+     * <code>kEquipEnhanceUnavailable = 28011;</code>
+     */
+    kEquipEnhanceUnavailable(28011),
+    /**
+     * <code>kEquipEnhanceMaxLevel = 28012;</code>
+     */
+    kEquipEnhanceMaxLevel(28012),
+    /**
+     * <code>kEquipEnhanceMaterialNotEnough = 28013;</code>
+     */
+    kEquipEnhanceMaterialNotEnough(28013),
+    /**
+     * <code>kEquipEnhanceGoldNotEnough = 28014;</code>
+     */
+    kEquipEnhanceGoldNotEnough(28014),
+    /**
+     * <code>kEquipGemNotGem = 28015;</code>
+     */
+    kEquipGemNotGem(28015),
+    /**
+     * <code>kEquipGemNotOwned = 28016;</code>
+     */
+    kEquipGemNotOwned(28016),
+    /**
+     * <code>kEquipGemSocketInvalid = 28017;</code>
+     */
+    kEquipGemSocketInvalid(28017),
+    /**
+     * <code>kEquipGemSocketOccupied = 28018;</code>
+     */
+    kEquipGemSocketOccupied(28018),
+    /**
+     * <code>kEquipGemSocketEmpty = 28019;</code>
+     */
+    kEquipGemSocketEmpty(28019),
+    /**
+     * <code>kEquipGemTypeMismatch = 28020;</code>
+     */
+    kEquipGemTypeMismatch(28020),
+    /**
+     * <code>kEquipGemBagFull = 28021;</code>
+     */
+    kEquipGemBagFull(28021),
     UNRECOGNIZED(-1),
     ;
 
@@ -139,6 +183,50 @@ public final class EquipErrorTip extends com.google.protobuf.GeneratedFile {
      * <code>kEquipInternalError = 28010;</code>
      */
     public static final int kEquipInternalError_VALUE = 28010;
+    /**
+     * <code>kEquipEnhanceUnavailable = 28011;</code>
+     */
+    public static final int kEquipEnhanceUnavailable_VALUE = 28011;
+    /**
+     * <code>kEquipEnhanceMaxLevel = 28012;</code>
+     */
+    public static final int kEquipEnhanceMaxLevel_VALUE = 28012;
+    /**
+     * <code>kEquipEnhanceMaterialNotEnough = 28013;</code>
+     */
+    public static final int kEquipEnhanceMaterialNotEnough_VALUE = 28013;
+    /**
+     * <code>kEquipEnhanceGoldNotEnough = 28014;</code>
+     */
+    public static final int kEquipEnhanceGoldNotEnough_VALUE = 28014;
+    /**
+     * <code>kEquipGemNotGem = 28015;</code>
+     */
+    public static final int kEquipGemNotGem_VALUE = 28015;
+    /**
+     * <code>kEquipGemNotOwned = 28016;</code>
+     */
+    public static final int kEquipGemNotOwned_VALUE = 28016;
+    /**
+     * <code>kEquipGemSocketInvalid = 28017;</code>
+     */
+    public static final int kEquipGemSocketInvalid_VALUE = 28017;
+    /**
+     * <code>kEquipGemSocketOccupied = 28018;</code>
+     */
+    public static final int kEquipGemSocketOccupied_VALUE = 28018;
+    /**
+     * <code>kEquipGemSocketEmpty = 28019;</code>
+     */
+    public static final int kEquipGemSocketEmpty_VALUE = 28019;
+    /**
+     * <code>kEquipGemTypeMismatch = 28020;</code>
+     */
+    public static final int kEquipGemTypeMismatch_VALUE = 28020;
+    /**
+     * <code>kEquipGemBagFull = 28021;</code>
+     */
+    public static final int kEquipGemBagFull_VALUE = 28021;
 
 
     public final int getNumber() {
@@ -177,6 +265,17 @@ public final class EquipErrorTip extends com.google.protobuf.GeneratedFile {
         case 28008: return kEquipFrozen;
         case 28009: return kEquipGrantInvalid;
         case 28010: return kEquipInternalError;
+        case 28011: return kEquipEnhanceUnavailable;
+        case 28012: return kEquipEnhanceMaxLevel;
+        case 28013: return kEquipEnhanceMaterialNotEnough;
+        case 28014: return kEquipEnhanceGoldNotEnough;
+        case 28015: return kEquipGemNotGem;
+        case 28016: return kEquipGemNotOwned;
+        case 28017: return kEquipGemSocketInvalid;
+        case 28018: return kEquipGemSocketOccupied;
+        case 28019: return kEquipGemSocketEmpty;
+        case 28020: return kEquipGemTypeMismatch;
+        case 28021: return kEquipGemBagFull;
         default: return null;
       }
     }
@@ -242,7 +341,7 @@ public final class EquipErrorTip extends com.google.protobuf.GeneratedFile {
       descriptor;
   static {
     java.lang.String[] descriptorData = {
-      "\n\025equip_error_tip.proto*\255\002\n\013equip_error\022" +
+      "\n\025equip_error_tip.proto*\360\004\n\013equip_error\022" +
       "\022\n\016kEquip_errorOK\020\000\022\030\n\022kEquipItemNotFoun" +
       "d\020\340\332\001\022\030\n\022kEquipNotEquipment\020\341\332\001\022\032\n\024kEqui" +
       "pLevelNotEnough\020\342\332\001\022\031\n\023kEquipClassMismat" +
@@ -250,8 +349,16 @@ public final class EquipErrorTip extends com.google.protobuf.GeneratedFile {
       "quipped\020\345\332\001\022\023\n\rkEquipBagFull\020\346\332\001\022\024\n\016kEqu" +
       "ipInBattle\020\347\332\001\022\022\n\014kEquipFrozen\020\350\332\001\022\030\n\022kE" +
       "quipGrantInvalid\020\351\332\001\022\031\n\023kEquipInternalEr" +
-      "ror\020\352\332\001B$\n\016com.game.tableZ\022generated/pb/" +
-      "tableb\006proto3"
+      "ror\020\352\332\001\022\036\n\030kEquipEnhanceUnavailable\020\353\332\001\022" +
+      "\033\n\025kEquipEnhanceMaxLevel\020\354\332\001\022$\n\036kEquipEn" +
+      "hanceMaterialNotEnough\020\355\332\001\022 \n\032kEquipEnha" +
+      "nceGoldNotEnough\020\356\332\001\022\025\n\017kEquipGemNotGem\020" +
+      "\357\332\001\022\027\n\021kEquipGemNotOwned\020\360\332\001\022\034\n\026kEquipGe" +
+      "mSocketInvalid\020\361\332\001\022\035\n\027kEquipGemSocketOcc" +
+      "upied\020\362\332\001\022\032\n\024kEquipGemSocketEmpty\020\363\332\001\022\033\n" +
+      "\025kEquipGemTypeMismatch\020\364\332\001\022\026\n\020kEquipGemB" +
+      "agFull\020\365\332\001B$\n\016com.game.tableZ\022generated/" +
+      "pb/tableb\006proto3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,

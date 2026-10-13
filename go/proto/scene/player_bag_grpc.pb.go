@@ -19,11 +19,14 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	SceneBagClientPlayer_GetBag_FullMethodName      = "/SceneBagClientPlayer/GetBag"
-	SceneBagClientPlayer_SortBag_FullMethodName     = "/SceneBagClientPlayer/SortBag"
-	SceneBagClientPlayer_EquipItem_FullMethodName   = "/SceneBagClientPlayer/EquipItem"
-	SceneBagClientPlayer_UnequipItem_FullMethodName = "/SceneBagClientPlayer/UnequipItem"
-	SceneBagClientPlayer_GmGrantItem_FullMethodName = "/SceneBagClientPlayer/GmGrantItem"
+	SceneBagClientPlayer_GetBag_FullMethodName       = "/SceneBagClientPlayer/GetBag"
+	SceneBagClientPlayer_SortBag_FullMethodName      = "/SceneBagClientPlayer/SortBag"
+	SceneBagClientPlayer_EquipItem_FullMethodName    = "/SceneBagClientPlayer/EquipItem"
+	SceneBagClientPlayer_UnequipItem_FullMethodName  = "/SceneBagClientPlayer/UnequipItem"
+	SceneBagClientPlayer_GmGrantItem_FullMethodName  = "/SceneBagClientPlayer/GmGrantItem"
+	SceneBagClientPlayer_EnhanceEquip_FullMethodName = "/SceneBagClientPlayer/EnhanceEquip"
+	SceneBagClientPlayer_InlayGem_FullMethodName     = "/SceneBagClientPlayer/InlayGem"
+	SceneBagClientPlayer_RemoveGem_FullMethodName    = "/SceneBagClientPlayer/RemoveGem"
 )
 
 // SceneBagClientPlayerClient is the client API for SceneBagClientPlayer service.
@@ -40,6 +43,11 @@ type SceneBagClientPlayerClient interface {
 	UnequipItem(ctx context.Context, in *UnequipItemRequest, opts ...grpc.CallOption) (*UnequipItemResponse, error)
 	// 名字必须是 Gm + 大写字母开头:gate / scene 的 GM 闸按这个前缀识别。
 	GmGrantItem(ctx context.Context, in *GmGrantItemRequest, opts ...grpc.CallOption) (*GmGrantItemResponse, error)
+	// 强化 / 镶嵌 / 取下:战斗中、跨区冻结中拒绝;改的是穿着的那件时服务器重算属性并推属性面板。
+	// 三个方法的顺序不可变(method index 5 / 6 / 7);名字不许以 Gm 开头(那是 GM 闸的前缀)。
+	EnhanceEquip(ctx context.Context, in *EnhanceEquipRequest, opts ...grpc.CallOption) (*EnhanceEquipResponse, error)
+	InlayGem(ctx context.Context, in *InlayGemRequest, opts ...grpc.CallOption) (*InlayGemResponse, error)
+	RemoveGem(ctx context.Context, in *RemoveGemRequest, opts ...grpc.CallOption) (*RemoveGemResponse, error)
 }
 
 type sceneBagClientPlayerClient struct {
@@ -100,6 +108,36 @@ func (c *sceneBagClientPlayerClient) GmGrantItem(ctx context.Context, in *GmGran
 	return out, nil
 }
 
+func (c *sceneBagClientPlayerClient) EnhanceEquip(ctx context.Context, in *EnhanceEquipRequest, opts ...grpc.CallOption) (*EnhanceEquipResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EnhanceEquipResponse)
+	err := c.cc.Invoke(ctx, SceneBagClientPlayer_EnhanceEquip_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *sceneBagClientPlayerClient) InlayGem(ctx context.Context, in *InlayGemRequest, opts ...grpc.CallOption) (*InlayGemResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(InlayGemResponse)
+	err := c.cc.Invoke(ctx, SceneBagClientPlayer_InlayGem_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *sceneBagClientPlayerClient) RemoveGem(ctx context.Context, in *RemoveGemRequest, opts ...grpc.CallOption) (*RemoveGemResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RemoveGemResponse)
+	err := c.cc.Invoke(ctx, SceneBagClientPlayer_RemoveGem_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // SceneBagClientPlayerServer is the server API for SceneBagClientPlayer service.
 // All implementations must embed UnimplementedSceneBagClientPlayerServer
 // for forward compatibility.
@@ -114,6 +152,11 @@ type SceneBagClientPlayerServer interface {
 	UnequipItem(context.Context, *UnequipItemRequest) (*UnequipItemResponse, error)
 	// 名字必须是 Gm + 大写字母开头:gate / scene 的 GM 闸按这个前缀识别。
 	GmGrantItem(context.Context, *GmGrantItemRequest) (*GmGrantItemResponse, error)
+	// 强化 / 镶嵌 / 取下:战斗中、跨区冻结中拒绝;改的是穿着的那件时服务器重算属性并推属性面板。
+	// 三个方法的顺序不可变(method index 5 / 6 / 7);名字不许以 Gm 开头(那是 GM 闸的前缀)。
+	EnhanceEquip(context.Context, *EnhanceEquipRequest) (*EnhanceEquipResponse, error)
+	InlayGem(context.Context, *InlayGemRequest) (*InlayGemResponse, error)
+	RemoveGem(context.Context, *RemoveGemRequest) (*RemoveGemResponse, error)
 	mustEmbedUnimplementedSceneBagClientPlayerServer()
 }
 
@@ -138,6 +181,15 @@ func (UnimplementedSceneBagClientPlayerServer) UnequipItem(context.Context, *Une
 }
 func (UnimplementedSceneBagClientPlayerServer) GmGrantItem(context.Context, *GmGrantItemRequest) (*GmGrantItemResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GmGrantItem not implemented")
+}
+func (UnimplementedSceneBagClientPlayerServer) EnhanceEquip(context.Context, *EnhanceEquipRequest) (*EnhanceEquipResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method EnhanceEquip not implemented")
+}
+func (UnimplementedSceneBagClientPlayerServer) InlayGem(context.Context, *InlayGemRequest) (*InlayGemResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method InlayGem not implemented")
+}
+func (UnimplementedSceneBagClientPlayerServer) RemoveGem(context.Context, *RemoveGemRequest) (*RemoveGemResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RemoveGem not implemented")
 }
 func (UnimplementedSceneBagClientPlayerServer) mustEmbedUnimplementedSceneBagClientPlayerServer() {}
 func (UnimplementedSceneBagClientPlayerServer) testEmbeddedByValue()                              {}
@@ -250,6 +302,60 @@ func _SceneBagClientPlayer_GmGrantItem_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _SceneBagClientPlayer_EnhanceEquip_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EnhanceEquipRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SceneBagClientPlayerServer).EnhanceEquip(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SceneBagClientPlayer_EnhanceEquip_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SceneBagClientPlayerServer).EnhanceEquip(ctx, req.(*EnhanceEquipRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SceneBagClientPlayer_InlayGem_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(InlayGemRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SceneBagClientPlayerServer).InlayGem(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SceneBagClientPlayer_InlayGem_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SceneBagClientPlayerServer).InlayGem(ctx, req.(*InlayGemRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SceneBagClientPlayer_RemoveGem_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RemoveGemRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SceneBagClientPlayerServer).RemoveGem(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SceneBagClientPlayer_RemoveGem_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SceneBagClientPlayerServer).RemoveGem(ctx, req.(*RemoveGemRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // SceneBagClientPlayer_ServiceDesc is the grpc.ServiceDesc for SceneBagClientPlayer service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -276,6 +382,18 @@ var SceneBagClientPlayer_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GmGrantItem",
 			Handler:    _SceneBagClientPlayer_GmGrantItem_Handler,
+		},
+		{
+			MethodName: "EnhanceEquip",
+			Handler:    _SceneBagClientPlayer_EnhanceEquip_Handler,
+		},
+		{
+			MethodName: "InlayGem",
+			Handler:    _SceneBagClientPlayer_InlayGem_Handler,
+		},
+		{
+			MethodName: "RemoveGem",
+			Handler:    _SceneBagClientPlayer_RemoveGem_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

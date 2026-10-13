@@ -276,7 +276,7 @@ namespace trade{void SendTradeAdminSeedListing(entt::registry& , entt::entity , 
 // 容量以 rpc_event_registry.h 的 kMaxRpcMethodCount 为准;static_assert 把
 // "半途 regen 导致头文件容量落后于本轮 message id 数"的事故(2026-09-01,
 // InitMessageInfo 越界写导致节点启动断言)变成编译错误而不是运行期崩溃。
-static_assert(kMaxRpcMethodCount == 250,
+static_assert(kMaxRpcMethodCount == 253,
     "kMaxRpcMethodCount out of sync with this generation run - rerun the full proto generator");
 std::array<RpcMethodMeta, kMaxRpcMethodCount> gRpcMethodRegistry;
 
@@ -1033,6 +1033,21 @@ void InitMessageInfo()
         std::make_unique<::GmGrantItemRequest>(),
         std::make_unique<::GmGrantItemResponse>(),
         std::make_unique<SceneBagClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+    gRpcMethodRegistry[SceneBagClientPlayerEnhanceEquipMessageId] = RpcMethodMeta{
+        "SceneBagClientPlayer", "EnhanceEquip",
+        std::make_unique<::EnhanceEquipRequest>(),
+        std::make_unique<::EnhanceEquipResponse>(),
+        std::make_unique<SceneBagClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+    gRpcMethodRegistry[SceneBagClientPlayerInlayGemMessageId] = RpcMethodMeta{
+        "SceneBagClientPlayer", "InlayGem",
+        std::make_unique<::InlayGemRequest>(),
+        std::make_unique<::InlayGemResponse>(),
+        std::make_unique<SceneBagClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+    gRpcMethodRegistry[SceneBagClientPlayerRemoveGemMessageId] = RpcMethodMeta{
+        "SceneBagClientPlayer", "RemoveGem",
+        std::make_unique<::RemoveGemRequest>(),
+        std::make_unique<::RemoveGemResponse>(),
+        std::make_unique<SceneBagClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
 
     // --- SceneCurrencyClientPlayer ---
     gRpcMethodRegistry[SceneCurrencyClientPlayerGmAddCurrencyMessageId] = RpcMethodMeta{
@@ -1694,6 +1709,9 @@ bool IsClientMessageId(uint32_t messageId)
 	case SceneBagClientPlayerEquipItemMessageId:
 	case SceneBagClientPlayerUnequipItemMessageId:
 	case SceneBagClientPlayerGmGrantItemMessageId:
+	case SceneBagClientPlayerEnhanceEquipMessageId:
+	case SceneBagClientPlayerInlayGemMessageId:
+	case SceneBagClientPlayerRemoveGemMessageId:
 	case SceneCurrencyClientPlayerGmAddCurrencyMessageId:
 	case SceneCurrencyClientPlayerGmDeductCurrencyMessageId:
 	case SceneCurrencyClientPlayerGetCurrencyListMessageId:

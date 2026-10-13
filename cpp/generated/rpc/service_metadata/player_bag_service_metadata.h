@@ -22,3 +22,15 @@ constexpr uint32_t SceneBagClientPlayerUnequipItemIndex = 3;
 constexpr uint32_t SceneBagClientPlayerGmGrantItemMessageId = 247;
 constexpr uint32_t SceneBagClientPlayerGmGrantItemIndex = 4;
 #define SceneBagClientPlayerGmGrantItemMethod  ::SceneBagClientPlayer_Stub::descriptor()->method(4)
+
+constexpr uint32_t SceneBagClientPlayerEnhanceEquipMessageId = 251;
+constexpr uint32_t SceneBagClientPlayerEnhanceEquipIndex = 5;
+#define SceneBagClientPlayerEnhanceEquipMethod  ::SceneBagClientPlayer_Stub::descriptor()->method(5)
+
+constexpr uint32_t SceneBagClientPlayerInlayGemMessageId = 250;
+constexpr uint32_t SceneBagClientPlayerInlayGemIndex = 6;
+#define SceneBagClientPlayerInlayGemMethod  ::SceneBagClientPlayer_Stub::descriptor()->method(6)
+
+constexpr uint32_t SceneBagClientPlayerRemoveGemMessageId = 252;
+constexpr uint32_t SceneBagClientPlayerRemoveGemIndex = 7;
+#define SceneBagClientPlayerRemoveGemMethod  ::SceneBagClientPlayer_Stub::descriptor()->method(7)

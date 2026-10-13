@@ -1,0 +1,23 @@
+
+syntax = "proto3";
+
+option go_package = "generated/pb/table";
+
+option java_package = "com.game.table";
+option java_outer_classname = "EquipEnhanceTableOuterClass";
+option java_multiple_files = true;
+
+
+message EquipEnhanceTable {
+	uint32 id = 1;
+	uint32 bonus_permyriad = 2;
+	uint32 success_rate = 3;
+	uint32 fail_level_loss = 4;
+	uint64 cost_gold = 5;
+	uint32 material_id = 6;
+	uint32 material_count = 7;
+}
+
+message EquipEnhanceTableData {
+	repeated EquipEnhanceTable data = 1;
+}

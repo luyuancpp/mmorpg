@@ -1,0 +1,76 @@
+{
+ "data": [
+  {
+   "attr_id": 1,
+   "gem_type": 1,
+   "id": 2101,
+   "value": 30
+  },
+  {
+   "attr_id": 1,
+   "gem_type": 1,
+   "id": 2102,
+   "value": 60
+  },
+  {
+   "attr_id": 1,
+   "gem_type": 1,
+   "id": 2103,
+   "value": 100
+  },
+  {
+   "attr_id": 8,
+   "gem_type": 2,
+   "id": 2201,
+   "value": 12
+  },
+  {
+   "attr_id": 8,
+   "gem_type": 2,
+   "id": 2202,
+   "value": 24
+  },
+  {
+   "attr_id": 8,
+   "gem_type": 2,
+   "id": 2203,
+   "value": 40
+  },
+  {
+   "attr_id": 9,
+   "gem_type": 3,
+   "id": 2301,
+   "value": 60
+  },
+  {
+   "attr_id": 9,
+   "gem_type": 3,
+   "id": 2302,
+   "value": 120
+  },
+  {
+   "attr_id": 9,
+   "gem_type": 3,
+   "id": 2303,
+   "value": 200
+  },
+  {
+   "attr_id": 11,
+   "gem_type": 4,
+   "id": 2401,
+   "value": 12
+  },
+  {
+   "attr_id": 11,
+   "gem_type": 4,
+   "id": 2402,
+   "value": 24
+  },
+  {
+   "attr_id": 11,
+   "gem_type": 4,
+   "id": 2403,
+   "value": 40
+  }
+ ]
+}

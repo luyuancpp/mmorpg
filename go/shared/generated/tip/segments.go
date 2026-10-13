@@ -47,7 +47,7 @@ var Segments = []Segment{
 	{Domain: "attribute", Group: "attribute_error", Base: 25000, Width: 1000, Lo: 25000, Hi: 25014, Count: 15},
 	{Domain: "pet", Group: "pet_error", Base: 26000, Width: 1000, Lo: 26000, Hi: 26016, Count: 17},
 	{Domain: "asset", Group: "asset_error", Base: 27000, Width: 1000, Lo: 27000, Hi: 27008, Count: 9},
-	{Domain: "equip", Group: "equip_error", Base: 28000, Width: 1000, Lo: 28000, Hi: 28010, Count: 11},
+	{Domain: "equip", Group: "equip_error", Base: 28000, Width: 1000, Lo: 28000, Hi: 28021, Count: 22},
 }
 
 // DomainOf 返回码所属的域名。不属于任何已声明段时返回空串。
