@@ -3,6 +3,7 @@
 > 配套 [godb-pipeline-handoff-20261013.md](godb-pipeline-handoff-20261013.md)。本文由 2026-10-12/13 的多代理设计 + 对抗复核工作流产出原样整理，**未经人工逐条核对**。
 > 行号以当时工作区为准：`go/db/internal/kafka/key_ordered_consumer.go` 在 1306 行之后已比 HEAD 73b852f32 多 21 行（subShardIndex）；之后其它会话又改过的文件，行号可能继续漂移，动手前重新 grep。
 > 复核结论为 sound-with-fixes 的方案，**复核里的 blocking_issues / required_fixes 必须并入实现**。
+> **先读交接文档 §4.0 的阅读须知**：B 节「mysql-fencing」里要求 proto2mysql 新增 UpdateByPrimaryKeyContext / InsertContext、手写 fenced_save.go 的条目已作废（改用 SaveConditional）；A 节「mysql-connection-budget」批 B 与 G2b 已落的路线冲突，作废待定；G2b 的真实进度以 handoff-launch-readiness-and-d1-20261013.md §4 第 1 项为准。
 
 ## A. 短板修复方案 ①–⑤
 
