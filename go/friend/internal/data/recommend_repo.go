@@ -26,6 +26,8 @@ import (
 //     它们不持任何锁,拿它当判定就是把权威事务降级成 check-then-act。
 //
 //  2. **每条候选查询都要有与玩家总数无关的扫描上界,而且上界必须由 SQL 结构给出,不能指望优化器"会提前停"**。
+//     (本条里的提示名、EXPLAIN 的 type 与读数说的都是 **MySQL 那份文本**。2026-10-10 起两条查询按方言渲染:
+//     TiDB 上同样的上界靠另一套提示钉住,写法、理由与实测见 recommend_sql.go 和 recommend_repo_tidb_test.go。)
 //     - random(recommendAnchor):只看 pivot 起按 player_id 升序的前 RecommendAnchorWindow(W=1024)个去重 id
 //       (派生表里的 LIMIT 给出),每个候选的排除判定是 ≤5 次完整主键单行点查(FORCE INDEX (PRIMARY) +
 //       SEMIJOIN(FIRSTMATCH) 钉死)。单次调用 Handler 读 ≤ 窗口生产 + (W+1) + 5×W + limit×(2F+1),与 friend /
@@ -40,7 +42,9 @@ import (
 //       pivot 之前的行数增长(84 万边 / 30 万人的库上 643,575 次;16×W 单边夹具、pivot 居中时 10,343 次);
 //       统计声称 ≥2 行时即回到 range。复现到这个状态的做法都是:该表关掉 STATS_AUTO_RECALC 后批量灌数,
 //       再 FLUSH TABLE 让 ≤1 行的旧持久统计被重新读回。
-//       **这是登记在案的剩余风险,没有测试或运行期兜底**:TestRecommendAnchor_ReadsBoundedByWindowNotPoolSize 的
+//       **这是登记在案的剩余风险,没有测试兜底;运行期只有语句超时这一道**(2026-10-10 起最外层带 MAX_EXECUTION_TIME,
+//       见 newRecommendStatements —— 它只是让退化的查询在整请求预算之后被服务器掐掉,不会让它变快):
+//       TestRecommendAnchor_ReadsBoundedByWindowNotPoolSize 的
 //       读数断言和 TestRecommendAnchor_PlanIsPerRowPrimaryKeyLookups 的 type=range 断言都在夹具 ANALYZE 之后才测,
 //       守的只是"统计新鲜时,SQL 或提示的改动让窗口退化成 type=index"(例如给派生表加 GROUP_INDEX 提示,见下);
 //       统计退化本身在用例里复现不了,生产上只靠 InnoDB auto_recalc(默认开启,约 10% 的行变化后后台重算)。
@@ -224,28 +228,31 @@ func recommendExcludeClause(col string, exclude []uint64) (string, []any) {
 //     (窗口饱和时返回空、打散键内外一致、同数换序);计划与读数要在迁移时按它自己的重新核对。
 //     2026-10-09 核对了计划:统计新鲜时内层只读 friend 的 F+R 行,五条排除只对窗口内 ≤ W 人做(排除表很小时会直接
 //     扫整张小表);但 STRAIGHT_JOIN 在 TiDB 上只定连接顺序、不定连接算法 —— 统计低估表规模时 b_in / r_in / f2 会变成
-//     对大表的整表扫描。迁移到 TiDB 之前要先加
-//     它自己的提示,做法与实测数字登记在 docs/handoff/friend-handoff-20260920.md §9.5 第 12 条。
+//     对大表的整表扫描。2026-10-10 起本条查询按方言渲染:连到 TiDB 时用它自己的 INL_JOIN 提示把五条排除与 f2 钉成
+//     索引连接(recommend_sql.go;实测数字在 docs/handoff/friend-handoff-20260920.md §9.5 第 12 条),上面那种退化不再出现。
+//     本注释其余部分(第 1–6 条、上界、实测表)说的都是 MySQL 那份文本。
 //
 // 沿革:2026-09-28 评审在对抗库上实测最初的写法(两条 OR 形 NOT EXISTS + 好友 NOT IN):friend_request 那条被做成
 // "每个 FOF 行按 status=1 扫一遍全服 pending",9,215,314 次读、4.6–5.1 s,超过 RPC 超时(测试夹具上约 930 万次)。
 // 09-29 改成"每个 FOF 行五次主键点查",读数 ≤ 8R + 2F + 2 + limit,不再随全服集合增长,但点查次数随 R 增长、
 // 冷缓存下守不住预算(见上表第一行)。2026-10-08 改成现在的写法。
 func (r *FriendRepo) RecommendByMutual(ctx context.Context, playerID uint64, exclude []uint64, limit uint32) ([]RecommendCandidate, error) {
-	query, args := recommendByMutualStatement(playerID, exclude, limit)
+	query, args := r.recommend.byMutual(playerID, exclude, limit)
 	return r.scanRecommendCandidates(ctx, "mutual", playerID, query, args)
 }
 
-// recommendByMutualBaseSQL 是 RecommendByMutual 的主体(内层派生表:连接、分组、排名、截窗口;外层:五条排除);
-// 调用方 exclude 与外层的 ORDER BY / LIMIT 由 recommendByMutualStatement 拼在后面。每一处写法为什么不能动,
+// recommendByMutualBaseSQL 是 RecommendByMutual 主体的**模板**(内层派生表:连接、分组、排名、截窗口;外层:五条排除)。
+// `{{hint.*}}` 是优化器提示的位置,由 recommend_sql.go 按方言填:MySQL 填进去就是五处 `/*+ SEMIJOIN(FIRSTMATCH) */`
+// (RecommendByMutual 注释里说的那份文本),TiDB 填的是 QB_NAME / INL_JOIN;两边都另带语句超时。
+// 调用方 exclude 与外层的 ORDER BY / LIMIT 由 recommendStatements.byMutual 拼在后面。每一处写法为什么不能动,
 // 见 RecommendByMutual 的注释。
 //
 // friend_request 的 status=1 是 pending(取值见 proto/friend/friend_table.proto)。这里把 1 直接写进 SQL 文本,
 // 而 friend_repo.go 的查询(loadPendingRequestsFromMySQL 等)是把 requestStatusPending 当参数传 —— 两种写法指的是
 // 同一个值。本文件四处字面量(本常量与 recommendAnchorBaseSQL 的 r_out / r_in 各一处)没有改成参数,是因为占位符里
 // 已经有一串同值的 playerID,再插一个不同含义的参数最容易数错位;改 pending 的编号时必须连这四处一起改。
-const recommendByMutualBaseSQL = `SELECT c.candidate_id, c.mutual
-FROM (SELECT f2.friend_player_id AS candidate_id, COUNT(*) AS mutual, RAND() AS shuffle
+const recommendByMutualBaseSQL = `SELECT {{hint.outer}}c.candidate_id, c.mutual
+FROM (SELECT {{hint.derived}}f2.friend_player_id AS candidate_id, COUNT(*) AS mutual, RAND() AS shuffle
       FROM friend f1 FORCE INDEX (PRIMARY)
       STRAIGHT_JOIN friend f2 FORCE INDEX (PRIMARY) ON f2.player_id = f1.friend_player_id
       WHERE f1.player_id = ?
@@ -253,25 +260,27 @@ FROM (SELECT f2.friend_player_id AS candidate_id, COUNT(*) AS mutual, RAND() AS 
       GROUP BY f2.friend_player_id
       ORDER BY mutual DESC, shuffle
       LIMIT ?) AS c
-WHERE NOT EXISTS (SELECT /*+ SEMIJOIN(FIRSTMATCH) */ 1 FROM friend f FORCE INDEX (PRIMARY)
+WHERE NOT EXISTS (SELECT {{hint.f}}1 FROM friend f FORCE INDEX (PRIMARY)
         WHERE f.player_id = ? AND f.friend_player_id = c.candidate_id)
-  AND NOT EXISTS (SELECT /*+ SEMIJOIN(FIRSTMATCH) */ 1 FROM friend_block b_out FORCE INDEX (PRIMARY)
+  AND NOT EXISTS (SELECT {{hint.b_out}}1 FROM friend_block b_out FORCE INDEX (PRIMARY)
         WHERE b_out.player_id = ? AND b_out.blocked_player_id = c.candidate_id)
-  AND NOT EXISTS (SELECT /*+ SEMIJOIN(FIRSTMATCH) */ 1 FROM friend_block b_in FORCE INDEX (PRIMARY)
+  AND NOT EXISTS (SELECT {{hint.b_in}}1 FROM friend_block b_in FORCE INDEX (PRIMARY)
         WHERE b_in.player_id = c.candidate_id AND b_in.blocked_player_id = ?)
-  AND NOT EXISTS (SELECT /*+ SEMIJOIN(FIRSTMATCH) */ 1 FROM friend_request r_out FORCE INDEX (PRIMARY)
+  AND NOT EXISTS (SELECT {{hint.r_out}}1 FROM friend_request r_out FORCE INDEX (PRIMARY)
         WHERE r_out.from_player_id = ? AND r_out.to_player_id = c.candidate_id AND r_out.status = 1)
-  AND NOT EXISTS (SELECT /*+ SEMIJOIN(FIRSTMATCH) */ 1 FROM friend_request r_in FORCE INDEX (PRIMARY)
+  AND NOT EXISTS (SELECT {{hint.r_in}}1 FROM friend_request r_in FORCE INDEX (PRIMARY)
         WHERE r_in.from_player_id = c.candidate_id AND r_in.to_player_id = ? AND r_in.status = 1)`
 
-// recommendByMutualStatement 拼出 RecommendByMutual 的 SQL 与参数。纯函数、不碰库:
-// TestRecommendByMutual_PlanIsPerRowPrimaryKeyLookups 对它的产物做 EXPLAIN,保证计划守卫测的与生产跑的是同一份文本。
+// byMutual 拼出 RecommendByMutual 的 SQL 与参数。不碰库:计划守卫用例(MySQL 的
+// TestRecommendByMutual_PlanIsPerRowPrimaryKeyLookups、TiDB 的 TestTiDBRecommend_PlanStaysIndexJoin)拿它的产物做 EXPLAIN。
+// 守卫测的与生产跑的出自同一个渲染函数、同一套方言规则(TiDB 用例直接取 repo 上那一份;MySQL 用例经
+// testMySQLRecommendStatements 另渲染一份),文本只差 MAX_EXECUTION_TIME 的毫秒数 —— 测试装配给 30 秒,生产是整请求预算。
 //
 // 参数顺序与 ? 的出现顺序一一对应:
 // playerID ×2(f1 前缀、<> 自排除)→ 窗口 W → playerID ×5(f、b_out、b_in、r_out、r_in)→ exclude... → limit。
-func recommendByMutualStatement(playerID uint64, exclude []uint64, limit uint32) (string, []any) {
+func (s recommendStatements) byMutual(playerID uint64, exclude []uint64, limit uint32) (string, []any) {
 	excludeClause, excludeArgs := recommendExcludeClause("c.candidate_id", exclude)
-	query := recommendByMutualBaseSQL + excludeClause + "\nORDER BY c.mutual DESC, c.shuffle\nLIMIT ?"
+	query := s.mutualBase + excludeClause + "\nORDER BY c.mutual DESC, c.shuffle\nLIMIT ?"
 	args := make([]any, 0, 8+len(excludeArgs)+1)
 	// 两个 LIMIT 都显式转 int64:database/sql 的默认参数转换器对 uint32 是走 reflect 的,
 	// 显式给它一个 driver 原生支持的类型,少一层依赖驱动实现细节的地方。
@@ -407,8 +416,9 @@ func (r *FriendRepo) RecommendRandom(ctx context.Context, playerID uint64, exclu
 //     TiDB 不认 SEMIJOIN 提示(警告 8061 后忽略)。2026-10-09 在 v8.5.2 上重新核对:统计新鲜、排除表明显大于窗口时,
 //     b_in / r_in 是按候选的主键批量点查(≤ W 次);排除表小(实测 1 万行的 friend_block)时统计新鲜也会直接扫整张表。
 //     两者都是代价估算的结果、不是 SQL 结构保证的 —— 统计低估表规模时,大表上的 b_in / r_in 同样会变成整表扫描。
-//     TiDB 也没有跳跃扫描,窗口生产比 MySQL 贵。迁移到 TiDB 之前要先加它自己的提示,做法与实测数字登记在
-//     docs/handoff/friend-handoff-20260920.md §9.5 第 12 条。
+//     TiDB 也没有跳跃扫描,窗口生产比 MySQL 贵。2026-10-10 起本条查询按方言渲染:连到 TiDB 时用它自己的 INL_JOIN 提示
+//     把五条排除钉成索引连接(recommend_sql.go;实测数字在 docs/handoff/friend-handoff-20260920.md §9.5 第 12 条),
+//     上面那种退化不再出现。本注释其余部分说的都是 MySQL 那份文本。
 //  6. **共同好友数是选择列表里的相关标量子查询,只对返回的行求值**(2026-10-09 加;此前恒填 0,见 RecommendCandidate)。
 //     m1 是 `player_id = me` 的主键前缀 ref(我的 F 个好友 x),m2 按 (c.player_id, x) 做完整主键单行点查:数的是
 //     "我的好友列表与候选的好友列表的交集"。好友边双向成对时,它与 RecommendByMutual 数的 (我, x)、(x, 候选) 是同一个数
@@ -435,7 +445,7 @@ func (r *FriendRepo) RecommendRandom(ctx context.Context, playerID uint64, exclu
 //     状态 1,831 次;保留时 1,932 / 2,951 次;n_diff = 0 的状态下去不去计划都一样)。STRAIGHT_JOIN 与两处
 //     FORCE INDEX (PRIMARY) 留着,是为了让代价只取决于我自己的好友数、计划不随统计摆动;计划守卫用例断言 m1 / m2 的
 //     访问方式,并断言 m2 的 ref 以 c.player_id 开头(防有人把连接条件改回上面那种)。
-//     另外留意占位符:m1 的 `player_id = ?` 是整条语句的第一个(选择列表在 FROM 之前),见 recommendAnchorStatement。
+//     另外留意占位符:m1 的 `player_id = ?` 是整条语句的第一个(选择列表在 FROM 之前),见 recommendStatements.anchor。
 //     页读:m1 读我自己的主键前缀(几页),m2 的点查落在**候选自己**的主键前缀上 —— 正是本条查询生产窗口时刚读过的
 //     叶子页,所以子查询不带来新的冷页。2026-10-09 实测(MySQL 26.7.0,innodb_buffer_pool_size = 128 MB;F=300、每个好友
 //     300 条边,limit=20,每次测量前把整个库挤出 buffer pool,测了两轮;耗时是本机数字):单独冷跑 14,171 次读、
@@ -460,13 +470,14 @@ func (r *FriendRepo) RecommendRandom(ctx context.Context, playerID uint64, exclu
 //
 // 窗口里合格者不足 limit 时返回偏少(可能为空),见 RecommendRandom 的"代价"。
 func (r *FriendRepo) recommendAnchor(ctx context.Context, playerID uint64, exclude []uint64, pivot uint64, limit uint32) ([]RecommendCandidate, error) {
-	query, args := recommendAnchorStatement(playerID, exclude, pivot, limit)
+	query, args := r.recommend.anchor(playerID, exclude, pivot, limit)
 	return r.scanRecommendCandidates(ctx, "random", playerID, query, args)
 }
 
-// recommendAnchorBaseSQL 是 recommendAnchor 的主体;调用方 exclude 与 ORDER BY / LIMIT 由
-// recommendAnchorStatement 拼在后面。每一处写法为什么不能动,见 recommendAnchor 的注释。
-const recommendAnchorBaseSQL = `SELECT c.player_id,
+// recommendAnchorBaseSQL 是 recommendAnchor 主体的**模板**(`{{hint.*}}` 的含义同 recommendByMutualBaseSQL);
+// 调用方 exclude 与 ORDER BY / LIMIT 由 recommendStatements.anchor 拼在后面。每一处写法为什么不能动,
+// 见 recommendAnchor 的注释。
+const recommendAnchorBaseSQL = `SELECT {{hint.outer}}c.player_id,
        (SELECT COUNT(*) FROM friend m1 FORCE INDEX (PRIMARY)
         STRAIGHT_JOIN friend m2 FORCE INDEX (PRIMARY)
                 ON m2.player_id = c.player_id AND m2.friend_player_id = m1.friend_player_id
@@ -476,19 +487,18 @@ FROM (SELECT DISTINCT player_id FROM friend FORCE INDEX (PRIMARY)
       ORDER BY player_id
       LIMIT ?) AS c
 WHERE c.player_id <> ?
-  AND NOT EXISTS (SELECT /*+ SEMIJOIN(FIRSTMATCH) */ 1 FROM friend f FORCE INDEX (PRIMARY)
+  AND NOT EXISTS (SELECT {{hint.f}}1 FROM friend f FORCE INDEX (PRIMARY)
         WHERE f.player_id = ? AND f.friend_player_id = c.player_id)
-  AND NOT EXISTS (SELECT /*+ SEMIJOIN(FIRSTMATCH) */ 1 FROM friend_block b_out FORCE INDEX (PRIMARY)
+  AND NOT EXISTS (SELECT {{hint.b_out}}1 FROM friend_block b_out FORCE INDEX (PRIMARY)
         WHERE b_out.player_id = ? AND b_out.blocked_player_id = c.player_id)
-  AND NOT EXISTS (SELECT /*+ SEMIJOIN(FIRSTMATCH) */ 1 FROM friend_block b_in FORCE INDEX (PRIMARY)
+  AND NOT EXISTS (SELECT {{hint.b_in}}1 FROM friend_block b_in FORCE INDEX (PRIMARY)
         WHERE b_in.player_id = c.player_id AND b_in.blocked_player_id = ?)
-  AND NOT EXISTS (SELECT /*+ SEMIJOIN(FIRSTMATCH) */ 1 FROM friend_request r_out FORCE INDEX (PRIMARY)
+  AND NOT EXISTS (SELECT {{hint.r_out}}1 FROM friend_request r_out FORCE INDEX (PRIMARY)
         WHERE r_out.from_player_id = ? AND r_out.to_player_id = c.player_id AND r_out.status = 1)
-  AND NOT EXISTS (SELECT /*+ SEMIJOIN(FIRSTMATCH) */ 1 FROM friend_request r_in FORCE INDEX (PRIMARY)
+  AND NOT EXISTS (SELECT {{hint.r_in}}1 FROM friend_request r_in FORCE INDEX (PRIMARY)
         WHERE r_in.from_player_id = c.player_id AND r_in.to_player_id = ? AND r_in.status = 1)`
 
-// recommendAnchorStatement 拼出 recommendAnchor 的 SQL 与参数。纯函数、不碰库:
-// TestRecommendAnchor_PlanIsPerRowPrimaryKeyLookups 对它的产物做 EXPLAIN,保证计划守卫测的与生产跑的是同一份文本。
+// anchor 拼出 recommendAnchor 的 SQL 与参数。不碰库:计划守卫用例拿它的产物做 EXPLAIN,与生产文本的关系见 byMutual 的注释。
 //
 // 参数顺序与 ? 的出现顺序一一对应:
 // playerID(选择列表里数共同好友的 m1 前缀)→ pivot → 窗口 W
@@ -496,9 +506,9 @@ WHERE c.player_id <> ?
 // 第一个 playerID 排在 pivot 之前,是因为选择列表在 SQL 文本里先于 FROM 出现。它与 pivot 对调不会报错(都是 BIGINT):
 // m1 拿 pivot 当 me 去数、窗口改从 me 的 id 起扫 —— 返回的 id 可能照样对,数字是错的
 // (TestRecommendAnchor_HonorsPivotExcludeAndLimit 里有这个反例)。
-func recommendAnchorStatement(playerID uint64, exclude []uint64, pivot uint64, limit uint32) (string, []any) {
+func (s recommendStatements) anchor(playerID uint64, exclude []uint64, pivot uint64, limit uint32) (string, []any) {
 	excludeClause, excludeArgs := recommendExcludeClause("c.player_id", exclude)
-	query := recommendAnchorBaseSQL + excludeClause + "\nORDER BY c.player_id\nLIMIT ?"
+	query := s.anchorBase + excludeClause + "\nORDER BY c.player_id\nLIMIT ?"
 	args := make([]any, 0, 9+len(excludeArgs)+1)
 	// 两个 LIMIT 都显式转 int64,理由同 RecommendByMutual:给驱动一个原生支持的类型。
 	args = append(args, playerID, pivot, int64(RecommendAnchorWindow),

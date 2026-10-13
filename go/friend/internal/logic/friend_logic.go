@@ -163,8 +163,14 @@ func NewDeps(svcCtx *svc.ServiceContext) *Deps {
 	// 共享库是 allkeys-lfu,而且那里只放跨运行时契约 key(契约 §4)。
 	// 列表读的硬上限交给 repo 保管(F2 §4):缓存里存的是**已经截断过**的列表,
 	// 逐调用传上限会让"缓存里那份按谁的上限截的"取决于谁先回填。
-	repo := data.NewFriendRepo(svcCtx.FriendRedis, svcCtx.DB,
-		svcCtx.Config.Friend.CacheTTL, svcCtx.Config.Friend.ListReadHardLimit)
+	// 推荐查询的服务端语句上限取整请求预算:正常路径上 context 先到期,这条上限只负责掐掉
+	// "客户端已经放弃、服务器还在扫"的那一段(见 data.FriendRepoOptions)。
+	repo := data.NewFriendRepo(svcCtx.FriendRedis, svcCtx.DB, data.FriendRepoOptions{
+		DefaultTTL:                svcCtx.Config.Friend.CacheTTL,
+		ListReadHardLimit:         svcCtx.Config.Friend.ListReadHardLimit,
+		SQLDialect:                svcCtx.SQLDialect,
+		RecommendStatementTimeout: svcCtx.Config.RequestBudget(),
+	})
 	return &Deps{
 		SvcCtx: svcCtx,
 		Repo:   repo,

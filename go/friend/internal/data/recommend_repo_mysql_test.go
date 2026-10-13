@@ -833,7 +833,7 @@ func TestRecommendAnchor_PlanIsPerRowPrimaryKeyLookups(t *testing.T) {
 	seedRecommendUnrelatedExclusionRows(t, ctx, db)
 	analyzeRecommendTables(t, ctx, db)
 
-	query, args := recommendAnchorStatement(me, []uint64{me}, pivot, 20)
+	query, args := testMySQLRecommendStatements().anchor(me, []uint64{me}, pivot, 20)
 	plan := explainTraditionalRows(t, ctx, db, inlineNumericArgs(t, query, args...))
 	seen := map[string]bool{"f": false, "b_out": false, "b_in": false, "r_out": false, "r_in": false}
 	for _, row := range plan {
@@ -1133,7 +1133,7 @@ func assertMutualReadsAndResult(t *testing.T, ctx context.Context, db *sql.DB, r
 	g.assertCandidates(t, got, false)
 }
 
-// assertMutualPlanIsPerRowPrimaryKeyLookups 对生产 SQL 原文(recommendByMutualStatement 的产物)做 EXPLAIN,
+// assertMutualPlanIsPerRowPrimaryKeyLookups 对生产 SQL 原文(MySQL 方言下 recommendStatements.byMutual 的产物)做 EXPLAIN,
 // 断言上界所依赖的计划形状(2026-10-08 在 MySQL 26.7.0 上核对的原样):
 //   - 外层恰好六行:驱动行是物化的派生表 <derivedN>(窗口),其余五行是 f / b_out / b_in / r_out / r_in,
 //     每行都是 eq_ref / PRIMARY / key_len=16(每个窗口内候选一次单行点查;五行的先后由优化器按统计排,不断言);
@@ -1141,7 +1141,7 @@ func assertMutualReadsAndResult(t *testing.T, ctx context.Context, db *sql.DB, r
 //   - 七张真实表的 possible_keys 都只有 PRIMARY;没有 MATERIALIZED、没有 <subqueryN>、没有 hash join。
 func assertMutualPlanIsPerRowPrimaryKeyLookups(t *testing.T, ctx context.Context, db *sql.DB, g mutualAdversarialGraph) {
 	t.Helper()
-	query, args := recommendByMutualStatement(g.me, g.callerExclude, mutualAdvProductionLimit)
+	query, args := testMySQLRecommendStatements().byMutual(g.me, g.callerExclude, mutualAdvProductionLimit)
 	plan := explainTraditionalRows(t, ctx, db, inlineNumericArgs(t, query, args...))
 
 	var outer, derived []map[string]string
@@ -1294,7 +1294,7 @@ func TestRecommendByMutual_JoinOrderSurvivesStaleStatistics(t *testing.T) {
 	g := seedMutualAdversarialGraph(t, ctx, db)
 	// 刻意不 ANALYZE。
 
-	query, args := recommendByMutualStatement(g.me, g.callerExclude, mutualAdvProductionLimit)
+	query, args := testMySQLRecommendStatements().byMutual(g.me, g.callerExclude, mutualAdvProductionLimit)
 	probe := strings.Replace(query, "STRAIGHT_JOIN", "JOIN", 1)
 	probePlan := explainTraditionalRows(t, ctx, db, inlineNumericArgs(t, probe, args...))
 	var probeDerived []string
