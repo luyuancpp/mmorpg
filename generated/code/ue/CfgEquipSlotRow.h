@@ -62,4 +62,8 @@ struct FCfgEquipSlotRow : public FTableRowBase
 	/** 该槽位接受的装备部位;没在本表里出现的槽位不接受任何东西 */
 	UPROPERTY(BlueprintReadOnly, Category = "Config|EquipSlot")
 	int32 equip_kind = 0;
+
+	/** 槽位显示名(下发客户端,空槽显示它);可留空 */
+	UPROPERTY(BlueprintReadOnly, Category = "Config|EquipSlot")
+	FString name;
 };

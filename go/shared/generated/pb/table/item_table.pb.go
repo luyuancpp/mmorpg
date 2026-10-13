@@ -21,6 +21,58 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type ItembaseAttr struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	BaseAttrId    uint32                 `protobuf:"varint,1,opt,name=base_attr_id,json=baseAttrId,proto3" json:"base_attr_id,omitempty"`
+	BaseAttrValue uint32                 `protobuf:"varint,2,opt,name=base_attr_value,json=baseAttrValue,proto3" json:"base_attr_value,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ItembaseAttr) Reset() {
+	*x = ItembaseAttr{}
+	mi := &file_item_table_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ItembaseAttr) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ItembaseAttr) ProtoMessage() {}
+
+func (x *ItembaseAttr) ProtoReflect() protoreflect.Message {
+	mi := &file_item_table_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ItembaseAttr.ProtoReflect.Descriptor instead.
+func (*ItembaseAttr) Descriptor() ([]byte, []int) {
+	return file_item_table_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *ItembaseAttr) GetBaseAttrId() uint32 {
+	if x != nil {
+		return x.BaseAttrId
+	}
+	return 0
+}
+
+func (x *ItembaseAttr) GetBaseAttrValue() uint32 {
+	if x != nil {
+		return x.BaseAttrValue
+	}
+	return 0
+}
+
 type ItemTable struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            uint32                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -29,13 +81,21 @@ type ItemTable struct {
 	BattleUsable  uint32                 `protobuf:"varint,4,opt,name=battle_usable,json=battleUsable,proto3" json:"battle_usable,omitempty"`
 	BattleHealHp  uint64                 `protobuf:"varint,5,opt,name=battle_heal_hp,json=battleHealHp,proto3" json:"battle_heal_hp,omitempty"`
 	BattleHealMp  uint64                 `protobuf:"varint,6,opt,name=battle_heal_mp,json=battleHealMp,proto3" json:"battle_heal_mp,omitempty"`
+	Name          string                 `protobuf:"bytes,7,opt,name=name,proto3" json:"name,omitempty"`
+	Description   string                 `protobuf:"bytes,8,opt,name=description,proto3" json:"description,omitempty"`
+	IconKey       string                 `protobuf:"bytes,9,opt,name=icon_key,json=iconKey,proto3" json:"icon_key,omitempty"`
+	EquipLevel    uint32                 `protobuf:"varint,10,opt,name=equip_level,json=equipLevel,proto3" json:"equip_level,omitempty"`
+	EquipClass    uint32                 `protobuf:"varint,11,opt,name=equip_class,json=equipClass,proto3" json:"equip_class,omitempty"`
+	AffixPool     uint32                 `protobuf:"varint,12,opt,name=affix_pool,json=affixPool,proto3" json:"affix_pool,omitempty"`
+	AffixRule     uint32                 `protobuf:"varint,13,opt,name=affix_rule,json=affixRule,proto3" json:"affix_rule,omitempty"`
+	BaseAttr      []*ItembaseAttr        `protobuf:"bytes,14,rep,name=base_attr,json=baseAttr,proto3" json:"base_attr,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ItemTable) Reset() {
 	*x = ItemTable{}
-	mi := &file_item_table_proto_msgTypes[0]
+	mi := &file_item_table_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -47,7 +107,7 @@ func (x *ItemTable) String() string {
 func (*ItemTable) ProtoMessage() {}
 
 func (x *ItemTable) ProtoReflect() protoreflect.Message {
-	mi := &file_item_table_proto_msgTypes[0]
+	mi := &file_item_table_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -60,7 +120,7 @@ func (x *ItemTable) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ItemTable.ProtoReflect.Descriptor instead.
 func (*ItemTable) Descriptor() ([]byte, []int) {
-	return file_item_table_proto_rawDescGZIP(), []int{0}
+	return file_item_table_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *ItemTable) GetId() uint32 {
@@ -105,6 +165,62 @@ func (x *ItemTable) GetBattleHealMp() uint64 {
 	return 0
 }
 
+func (x *ItemTable) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *ItemTable) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *ItemTable) GetIconKey() string {
+	if x != nil {
+		return x.IconKey
+	}
+	return ""
+}
+
+func (x *ItemTable) GetEquipLevel() uint32 {
+	if x != nil {
+		return x.EquipLevel
+	}
+	return 0
+}
+
+func (x *ItemTable) GetEquipClass() uint32 {
+	if x != nil {
+		return x.EquipClass
+	}
+	return 0
+}
+
+func (x *ItemTable) GetAffixPool() uint32 {
+	if x != nil {
+		return x.AffixPool
+	}
+	return 0
+}
+
+func (x *ItemTable) GetAffixRule() uint32 {
+	if x != nil {
+		return x.AffixRule
+	}
+	return 0
+}
+
+func (x *ItemTable) GetBaseAttr() []*ItembaseAttr {
+	if x != nil {
+		return x.BaseAttr
+	}
+	return nil
+}
+
 type ItemTableData struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Data          []*ItemTable           `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty"`
@@ -114,7 +230,7 @@ type ItemTableData struct {
 
 func (x *ItemTableData) Reset() {
 	*x = ItemTableData{}
-	mi := &file_item_table_proto_msgTypes[1]
+	mi := &file_item_table_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -126,7 +242,7 @@ func (x *ItemTableData) String() string {
 func (*ItemTableData) ProtoMessage() {}
 
 func (x *ItemTableData) ProtoReflect() protoreflect.Message {
-	mi := &file_item_table_proto_msgTypes[1]
+	mi := &file_item_table_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -139,7 +255,7 @@ func (x *ItemTableData) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ItemTableData.ProtoReflect.Descriptor instead.
 func (*ItemTableData) Descriptor() ([]byte, []int) {
-	return file_item_table_proto_rawDescGZIP(), []int{1}
+	return file_item_table_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *ItemTableData) GetData() []*ItemTable {
@@ -153,7 +269,11 @@ var File_item_table_proto protoreflect.FileDescriptor
 
 const file_item_table_proto_rawDesc = "" +
 	"\n" +
-	"\x10item_table.proto\"\xd1\x01\n" +
+	"\x10item_table.proto\"Y\n" +
+	"\rItembase_attr\x12 \n" +
+	"\fbase_attr_id\x18\x01 \x01(\rR\n" +
+	"baseAttrId\x12&\n" +
+	"\x0fbase_attr_value\x18\x02 \x01(\rR\rbaseAttrValue\"\xcf\x03\n" +
 	"\tItemTable\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\rR\x02id\x12$\n" +
 	"\x0emax_stack_size\x18\x02 \x01(\rR\fmaxStackSize\x12\x1d\n" +
@@ -161,7 +281,20 @@ const file_item_table_proto_rawDesc = "" +
 	"equip_kind\x18\x03 \x01(\rR\tequipKind\x12#\n" +
 	"\rbattle_usable\x18\x04 \x01(\rR\fbattleUsable\x12$\n" +
 	"\x0ebattle_heal_hp\x18\x05 \x01(\x04R\fbattleHealHp\x12$\n" +
-	"\x0ebattle_heal_mp\x18\x06 \x01(\x04R\fbattleHealMp\"/\n" +
+	"\x0ebattle_heal_mp\x18\x06 \x01(\x04R\fbattleHealMp\x12\x12\n" +
+	"\x04name\x18\a \x01(\tR\x04name\x12 \n" +
+	"\vdescription\x18\b \x01(\tR\vdescription\x12\x19\n" +
+	"\bicon_key\x18\t \x01(\tR\aiconKey\x12\x1f\n" +
+	"\vequip_level\x18\n" +
+	" \x01(\rR\n" +
+	"equipLevel\x12\x1f\n" +
+	"\vequip_class\x18\v \x01(\rR\n" +
+	"equipClass\x12\x1d\n" +
+	"\n" +
+	"affix_pool\x18\f \x01(\rR\taffixPool\x12\x1d\n" +
+	"\n" +
+	"affix_rule\x18\r \x01(\rR\taffixRule\x12+\n" +
+	"\tbase_attr\x18\x0e \x03(\v2\x0e.Itembase_attrR\bbaseAttr\"/\n" +
 	"\rItemTableData\x12\x1e\n" +
 	"\x04data\x18\x01 \x03(\v2\n" +
 	".ItemTableR\x04dataB;\n" +
@@ -179,18 +312,20 @@ func file_item_table_proto_rawDescGZIP() []byte {
 	return file_item_table_proto_rawDescData
 }
 
-var file_item_table_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_item_table_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_item_table_proto_goTypes = []any{
-	(*ItemTable)(nil),     // 0: ItemTable
-	(*ItemTableData)(nil), // 1: ItemTableData
+	(*ItembaseAttr)(nil),  // 0: Itembase_attr
+	(*ItemTable)(nil),     // 1: ItemTable
+	(*ItemTableData)(nil), // 2: ItemTableData
 }
 var file_item_table_proto_depIdxs = []int32{
-	0, // 0: ItemTableData.data:type_name -> ItemTable
-	1, // [1:1] is the sub-list for method output_type
-	1, // [1:1] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	0, // 0: ItemTable.base_attr:type_name -> Itembase_attr
+	1, // 1: ItemTableData.data:type_name -> ItemTable
+	2, // [2:2] is the sub-list for method output_type
+	2, // [2:2] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_item_table_proto_init() }
@@ -204,7 +339,7 @@ func file_item_table_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_item_table_proto_rawDesc), len(file_item_table_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

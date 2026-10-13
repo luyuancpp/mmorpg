@@ -65,6 +65,14 @@ extern const ::google::protobuf::internal::ClassDataFull CalculatedAttributesCom
 #else
 extern const CalculatedAttributesCompGlobalsTypeInternal CalculatedAttributesComp_globals_;
 #endif  // PROTOBUF_MESSAGE_GLOBALS
+class CombatAttributes;
+struct CombatAttributesGlobalsTypeInternal;
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+extern CombatAttributesGlobalsTypeInternal CombatAttributes_globals_;
+extern const ::google::protobuf::internal::ClassDataFull CombatAttributes_class_data_;
+#else
+extern const CombatAttributesGlobalsTypeInternal CombatAttributes_globals_;
+#endif  // PROTOBUF_MESSAGE_GLOBALS
 class CombatStateFlagsComp;
 struct CombatStateFlagsCompGlobalsTypeInternal;
 #ifndef PROTOBUF_MESSAGE_GLOBALS
@@ -98,267 +106,6 @@ namespace protobuf {
 // ===================================================================
 
 
-// -------------------------------------------------------------------
-
-class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED DerivedAttributesComp final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:DerivedAttributesComp) */ {
- public:
-  inline DerivedAttributesComp() : DerivedAttributesComp(nullptr) {}
-  ~DerivedAttributesComp() PROTOBUF_FINAL;
-
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(DerivedAttributesComp* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
-    SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(DerivedAttributesComp));
-  }
-#endif
-
-  template <typename = void>
-  explicit constexpr DerivedAttributesComp(::google::protobuf::internal::ConstantInitialized,
-                           const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-                               class_data);
-
-  inline DerivedAttributesComp(const DerivedAttributesComp& from) : DerivedAttributesComp(nullptr, from) {}
-  inline DerivedAttributesComp(DerivedAttributesComp&& from) noexcept : DerivedAttributesComp(nullptr, ::std::move(from)) {}
-  inline DerivedAttributesComp& operator=(const DerivedAttributesComp& from) {
-    CopyFrom(from);
-    return *this;
-  }
-  inline DerivedAttributesComp& operator=(DerivedAttributesComp&& from) noexcept {
-    if (this == &from) return *this;
-    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
-      InternalSwap(&from);
-    } else {
-      CopyFrom(from);
-    }
-    return *this;
-  }
-
-  [[nodiscard]] inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
-  }
-  [[nodiscard]] inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL
-  mutable_unknown_fields() ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
-  }
-
-  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
-    return GetDescriptor();
-  }
-  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL
-  GetDescriptor() {
-    return default_instance().GetMetadata().descriptor;
-  }
-  [[nodiscard]] static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
-    return default_instance().GetMetadata().reflection;
-  }
-  [[nodiscard]] static const DerivedAttributesComp& default_instance() {
-    return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<DerivedAttributesComp>(&DerivedAttributesComp_globals_);
-  }
-  static constexpr int kIndexInFileMessages = 3;
-  friend void swap(DerivedAttributesComp& a, DerivedAttributesComp& b) { a.Swap(&b); }
-  inline void Swap(DerivedAttributesComp* PROTOBUF_NONNULL other) {
-    if (other == this) return;
-    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
-      InternalSwap(other);
-    } else {
-      ::google::protobuf::internal::GenericSwap(this, other);
-    }
-  }
-  void UnsafeArenaSwap(DerivedAttributesComp* PROTOBUF_NONNULL other) {
-    if (other == this) return;
-    ABSL_DCHECK(GetArena() == other->GetArena());
-    InternalSwap(other);
-  }
-
-  // implements Message ----------------------------------------------
-
-  [[nodiscard]] DerivedAttributesComp* PROTOBUF_NONNULL
-  New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<DerivedAttributesComp>(arena);
-  }
-  using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const DerivedAttributesComp& from);
-  using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const DerivedAttributesComp& from) { DerivedAttributesComp::MergeImpl(*this, from); }
-
-  private:
-  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
-                        const ::google::protobuf::MessageLite& from_msg);
-
-  public:
-  [[nodiscard]] bool IsInitialized() const {
-    return true;
-  }
-  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
-  #if defined(PROTOBUF_CUSTOM_VTABLE)
-  private:
-  [[nodiscard]] static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
-  [[nodiscard]] static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
-      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
-      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
-
-  public:
-  [[nodiscard]] ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
-  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
-      ::uint8_t* PROTOBUF_NONNULL target,
-      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-    return _InternalSerialize(*this, target, stream);
-  }
-  #else   // PROTOBUF_CUSTOM_VTABLE
-  [[nodiscard]] ::size_t ByteSizeLong() const final;
-  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
-      ::uint8_t* PROTOBUF_NONNULL target,
-      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
-  #endif  // PROTOBUF_CUSTOM_VTABLE
-  [[nodiscard]] int GetCachedSize() const {
-    return _impl_._cached_size_.Get();
-  }
-
-  private:
-  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  static void SharedDtor(MessageLite& self);
-  void InternalSwap(DerivedAttributesComp* PROTOBUF_NONNULL other);
- private:
-  template <typename T>
-  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "DerivedAttributesComp"; }
-
-  explicit DerivedAttributesComp(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  DerivedAttributesComp(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const DerivedAttributesComp& from);
-  DerivedAttributesComp(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, DerivedAttributesComp&& from) noexcept
-      : DerivedAttributesComp(arena) {
-    *this = ::std::move(from);
-  }
-  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
-  static void* PROTOBUF_NONNULL PlacementNew_(
-      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  static constexpr auto InternalNewImpl_();
-
- public:
-  static constexpr auto InternalGenerateClassData_(
-      const MessageLite& prototype,
-      const ::google::protobuf::internal::TcParseTableBase* PROTOBUF_NULLABLE tc_table = nullptr);
-
-  [[nodiscard]] ::google::protobuf::Metadata GetMetadata() const;
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-  enum : int {
-    kMaxHealthFieldNumber = 1,
-    kMaxManaFieldNumber = 2,
-    kPhysicalAttackFieldNumber = 3,
-    kMagicAttackFieldNumber = 4,
-    kDefenseFieldNumber = 5,
-    kSpeedFieldNumber = 6,
-  };
-  // uint64 max_health = 1;
-  void clear_max_health() ;
-  [[nodiscard]] ::uint64_t max_health() const;
-  void set_max_health(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_max_health() const;
-  void _internal_set_max_health(::uint64_t value);
-
-  public:
-  // uint64 max_mana = 2;
-  void clear_max_mana() ;
-  [[nodiscard]] ::uint64_t max_mana() const;
-  void set_max_mana(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_max_mana() const;
-  void _internal_set_max_mana(::uint64_t value);
-
-  public:
-  // uint64 physical_attack = 3;
-  void clear_physical_attack() ;
-  [[nodiscard]] ::uint64_t physical_attack() const;
-  void set_physical_attack(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_physical_attack() const;
-  void _internal_set_physical_attack(::uint64_t value);
-
-  public:
-  // uint64 magic_attack = 4;
-  void clear_magic_attack() ;
-  [[nodiscard]] ::uint64_t magic_attack() const;
-  void set_magic_attack(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_magic_attack() const;
-  void _internal_set_magic_attack(::uint64_t value);
-
-  public:
-  // uint64 defense = 5;
-  void clear_defense() ;
-  [[nodiscard]] ::uint64_t defense() const;
-  void set_defense(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_defense() const;
-  void _internal_set_defense(::uint64_t value);
-
-  public:
-  // uint64 speed = 6;
-  void clear_speed() ;
-  [[nodiscard]] ::uint64_t speed() const;
-  void set_speed(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_speed() const;
-  void _internal_set_speed(::uint64_t value);
-
-  public:
-  // @@protoc_insertion_point(class_scope:DerivedAttributesComp)
- private:
-  class _Internal;
-  using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<3, 6,
-                          0, 0,
-                          2>;
-  static constexpr ParseTableT_ InternalGenerateParseTable_(
-      const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
-  friend class ::google::protobuf::internal::TcParser;
-  #ifndef PROTOBUF_MESSAGE_GLOBALS
-  static const ParseTableT_ _table_;
-  #endif
-
-  friend class ::google::protobuf::MessageLite;
-  friend class ::google::protobuf::Arena;
-  friend ::google::protobuf::internal::PrivateAccess;
-  template <typename T>
-  friend class ::google::protobuf::Arena::InternalHelper;
-  using InternalArenaConstructable_ = void;
-  using DestructorSkippable_ = void;
-  struct Impl_ {
-    inline explicit constexpr Impl_(::google::protobuf::internal::InternalVisibility visibility,
-                                    ::google::protobuf::internal::ConstantInitialized) noexcept;
-    inline explicit Impl_(
-        ::google::protobuf::internal::InternalVisibility visibility,
-        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-    inline explicit Impl_(
-        ::google::protobuf::internal::InternalVisibility visibility,
-        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-        const DerivedAttributesComp& from_msg);
-    ::google::protobuf::internal::HasBits<1> _has_bits_;
-    ::google::protobuf::internal::CachedSize _cached_size_;
-    ::uint64_t max_health_;
-    ::uint64_t max_mana_;
-    ::uint64_t physical_attack_;
-    ::uint64_t magic_attack_;
-    ::uint64_t defense_;
-    ::uint64_t speed_;
-    PROTOBUF_TSAN_DECLARE_MEMBER
-  };
-  union { Impl_ _impl_; };
-  friend struct ::TableStruct_proto_2fcommon_2fcomponent_2factor_5fattribute_5fstate_5fcomp_2eproto;
-};
 // -------------------------------------------------------------------
 
 class PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED CombatStateFlagsComp_StateFlagsEntry_DoNotUse final
@@ -407,6 +154,375 @@ class PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED CombatStateFlagsComp_StateFlagsEntry
       const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
       ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
   static constexpr auto InternalNewImpl_();
+};
+// -------------------------------------------------------------------
+
+class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED CombatAttributes final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:CombatAttributes) */ {
+ public:
+  inline CombatAttributes() : CombatAttributes(nullptr) {}
+  ~CombatAttributes() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(CombatAttributes* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(CombatAttributes));
+  }
+#endif
+
+  template <typename = void>
+  explicit constexpr CombatAttributes(::google::protobuf::internal::ConstantInitialized,
+                           const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+                               class_data);
+
+  inline CombatAttributes(const CombatAttributes& from) : CombatAttributes(nullptr, from) {}
+  inline CombatAttributes(CombatAttributes&& from) noexcept : CombatAttributes(nullptr, ::std::move(from)) {}
+  inline CombatAttributes& operator=(const CombatAttributes& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline CombatAttributes& operator=(CombatAttributes&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  [[nodiscard]] inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  [[nodiscard]] inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL
+  mutable_unknown_fields() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL
+  GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  [[nodiscard]] static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  [[nodiscard]] static const CombatAttributes& default_instance() {
+    return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<CombatAttributes>(&CombatAttributes_globals_);
+  }
+  static constexpr int kIndexInFileMessages = 3;
+  friend void swap(CombatAttributes& a, CombatAttributes& b) { a.Swap(&b); }
+  inline void Swap(CombatAttributes* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(CombatAttributes* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  [[nodiscard]] CombatAttributes* PROTOBUF_NONNULL
+  New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<CombatAttributes>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const CombatAttributes& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const CombatAttributes& from) { CombatAttributes::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  [[nodiscard]] bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  [[nodiscard]] static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  [[nodiscard]] static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  [[nodiscard]] ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] ::size_t ByteSizeLong() const final;
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] int GetCachedSize() const {
+    return _impl_._cached_size_.Get();
+  }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(CombatAttributes* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "CombatAttributes"; }
+
+  explicit CombatAttributes(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  CombatAttributes(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const CombatAttributes& from);
+  CombatAttributes(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, CombatAttributes&& from) noexcept
+      : CombatAttributes(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_(
+      const MessageLite& prototype,
+      const ::google::protobuf::internal::TcParseTableBase* PROTOBUF_NULLABLE tc_table = nullptr);
+
+  [[nodiscard]] ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kPhysicalCritRateFieldNumber = 1,
+    kMagicCritRateFieldNumber = 2,
+    kComboRateFieldNumber = 3,
+    kCounterRateFieldNumber = 4,
+    kReflectRateFieldNumber = 5,
+    kSkillLevelBonusFieldNumber = 6,
+    kIgnoreAilmentResistFieldNumber = 7,
+    kResistPoisonFieldNumber = 8,
+    kResistFreezeFieldNumber = 9,
+    kResistSleepFieldNumber = 10,
+    kResistForgetFieldNumber = 11,
+    kResistConfusionFieldNumber = 12,
+    kResistAllAilmentFieldNumber = 13,
+    kMagicResistFieldNumber = 14,
+    kPhysicalResistFieldNumber = 15,
+  };
+  // uint64 physical_crit_rate = 1;
+  void clear_physical_crit_rate() ;
+  [[nodiscard]] ::uint64_t physical_crit_rate() const;
+  void set_physical_crit_rate(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_physical_crit_rate() const;
+  void _internal_set_physical_crit_rate(::uint64_t value);
+
+  public:
+  // uint64 magic_crit_rate = 2;
+  void clear_magic_crit_rate() ;
+  [[nodiscard]] ::uint64_t magic_crit_rate() const;
+  void set_magic_crit_rate(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_magic_crit_rate() const;
+  void _internal_set_magic_crit_rate(::uint64_t value);
+
+  public:
+  // uint64 combo_rate = 3;
+  void clear_combo_rate() ;
+  [[nodiscard]] ::uint64_t combo_rate() const;
+  void set_combo_rate(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_combo_rate() const;
+  void _internal_set_combo_rate(::uint64_t value);
+
+  public:
+  // uint64 counter_rate = 4;
+  void clear_counter_rate() ;
+  [[nodiscard]] ::uint64_t counter_rate() const;
+  void set_counter_rate(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_counter_rate() const;
+  void _internal_set_counter_rate(::uint64_t value);
+
+  public:
+  // uint64 reflect_rate = 5;
+  void clear_reflect_rate() ;
+  [[nodiscard]] ::uint64_t reflect_rate() const;
+  void set_reflect_rate(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_reflect_rate() const;
+  void _internal_set_reflect_rate(::uint64_t value);
+
+  public:
+  // uint64 skill_level_bonus = 6;
+  void clear_skill_level_bonus() ;
+  [[nodiscard]] ::uint64_t skill_level_bonus() const;
+  void set_skill_level_bonus(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_skill_level_bonus() const;
+  void _internal_set_skill_level_bonus(::uint64_t value);
+
+  public:
+  // uint64 ignore_ailment_resist = 7;
+  void clear_ignore_ailment_resist() ;
+  [[nodiscard]] ::uint64_t ignore_ailment_resist() const;
+  void set_ignore_ailment_resist(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_ignore_ailment_resist() const;
+  void _internal_set_ignore_ailment_resist(::uint64_t value);
+
+  public:
+  // uint64 resist_poison = 8;
+  void clear_resist_poison() ;
+  [[nodiscard]] ::uint64_t resist_poison() const;
+  void set_resist_poison(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_resist_poison() const;
+  void _internal_set_resist_poison(::uint64_t value);
+
+  public:
+  // uint64 resist_freeze = 9;
+  void clear_resist_freeze() ;
+  [[nodiscard]] ::uint64_t resist_freeze() const;
+  void set_resist_freeze(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_resist_freeze() const;
+  void _internal_set_resist_freeze(::uint64_t value);
+
+  public:
+  // uint64 resist_sleep = 10;
+  void clear_resist_sleep() ;
+  [[nodiscard]] ::uint64_t resist_sleep() const;
+  void set_resist_sleep(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_resist_sleep() const;
+  void _internal_set_resist_sleep(::uint64_t value);
+
+  public:
+  // uint64 resist_forget = 11;
+  void clear_resist_forget() ;
+  [[nodiscard]] ::uint64_t resist_forget() const;
+  void set_resist_forget(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_resist_forget() const;
+  void _internal_set_resist_forget(::uint64_t value);
+
+  public:
+  // uint64 resist_confusion = 12;
+  void clear_resist_confusion() ;
+  [[nodiscard]] ::uint64_t resist_confusion() const;
+  void set_resist_confusion(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_resist_confusion() const;
+  void _internal_set_resist_confusion(::uint64_t value);
+
+  public:
+  // uint64 resist_all_ailment = 13;
+  void clear_resist_all_ailment() ;
+  [[nodiscard]] ::uint64_t resist_all_ailment() const;
+  void set_resist_all_ailment(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_resist_all_ailment() const;
+  void _internal_set_resist_all_ailment(::uint64_t value);
+
+  public:
+  // uint64 magic_resist = 14;
+  void clear_magic_resist() ;
+  [[nodiscard]] ::uint64_t magic_resist() const;
+  void set_magic_resist(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_magic_resist() const;
+  void _internal_set_magic_resist(::uint64_t value);
+
+  public:
+  // uint64 physical_resist = 15;
+  void clear_physical_resist() ;
+  [[nodiscard]] ::uint64_t physical_resist() const;
+  void set_physical_resist(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_physical_resist() const;
+  void _internal_set_physical_resist(::uint64_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:CombatAttributes)
+ private:
+  class _Internal;
+  using ParseTableT_ =
+      ::google::protobuf::internal::TcParseTable<4, 15,
+                          0, 0,
+                          2>;
+  static constexpr ParseTableT_ InternalGenerateParseTable_(
+      const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
+  friend class ::google::protobuf::internal::TcParser;
+  #ifndef PROTOBUF_MESSAGE_GLOBALS
+  static const ParseTableT_ _table_;
+  #endif
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  friend ::google::protobuf::internal::PrivateAccess;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                                    ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const CombatAttributes& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::uint64_t physical_crit_rate_;
+    ::uint64_t magic_crit_rate_;
+    ::uint64_t combo_rate_;
+    ::uint64_t counter_rate_;
+    ::uint64_t reflect_rate_;
+    ::uint64_t skill_level_bonus_;
+    ::uint64_t ignore_ailment_resist_;
+    ::uint64_t resist_poison_;
+    ::uint64_t resist_freeze_;
+    ::uint64_t resist_sleep_;
+    ::uint64_t resist_forget_;
+    ::uint64_t resist_confusion_;
+    ::uint64_t resist_all_ailment_;
+    ::uint64_t magic_resist_;
+    ::uint64_t physical_resist_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fcommon_2fcomponent_2factor_5fattribute_5fstate_5fcomp_2eproto;
 };
 // -------------------------------------------------------------------
 
@@ -628,6 +744,285 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED CalculatedAttributesComp final : pu
     ::uint32_t attack_power_;
     ::uint32_t defense_power_;
     bool isdead_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fcommon_2fcomponent_2factor_5fattribute_5fstate_5fcomp_2eproto;
+};
+// -------------------------------------------------------------------
+
+class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED DerivedAttributesComp final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:DerivedAttributesComp) */ {
+ public:
+  inline DerivedAttributesComp() : DerivedAttributesComp(nullptr) {}
+  ~DerivedAttributesComp() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(DerivedAttributesComp* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(DerivedAttributesComp));
+  }
+#endif
+
+  template <typename = void>
+  explicit constexpr DerivedAttributesComp(::google::protobuf::internal::ConstantInitialized,
+                           const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+                               class_data);
+
+  inline DerivedAttributesComp(const DerivedAttributesComp& from) : DerivedAttributesComp(nullptr, from) {}
+  inline DerivedAttributesComp(DerivedAttributesComp&& from) noexcept : DerivedAttributesComp(nullptr, ::std::move(from)) {}
+  inline DerivedAttributesComp& operator=(const DerivedAttributesComp& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline DerivedAttributesComp& operator=(DerivedAttributesComp&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  [[nodiscard]] inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  [[nodiscard]] inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL
+  mutable_unknown_fields() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL
+  GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  [[nodiscard]] static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  [[nodiscard]] static const DerivedAttributesComp& default_instance() {
+    return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<DerivedAttributesComp>(&DerivedAttributesComp_globals_);
+  }
+  static constexpr int kIndexInFileMessages = 4;
+  friend void swap(DerivedAttributesComp& a, DerivedAttributesComp& b) { a.Swap(&b); }
+  inline void Swap(DerivedAttributesComp* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(DerivedAttributesComp* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  [[nodiscard]] DerivedAttributesComp* PROTOBUF_NONNULL
+  New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<DerivedAttributesComp>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const DerivedAttributesComp& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const DerivedAttributesComp& from) { DerivedAttributesComp::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  [[nodiscard]] bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  [[nodiscard]] static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  [[nodiscard]] static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  [[nodiscard]] ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] ::size_t ByteSizeLong() const final;
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] int GetCachedSize() const {
+    return _impl_._cached_size_.Get();
+  }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(DerivedAttributesComp* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "DerivedAttributesComp"; }
+
+  explicit DerivedAttributesComp(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  DerivedAttributesComp(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const DerivedAttributesComp& from);
+  DerivedAttributesComp(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, DerivedAttributesComp&& from) noexcept
+      : DerivedAttributesComp(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_(
+      const MessageLite& prototype,
+      const ::google::protobuf::internal::TcParseTableBase* PROTOBUF_NULLABLE tc_table = nullptr);
+
+  [[nodiscard]] ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kCombatFieldNumber = 7,
+    kMaxHealthFieldNumber = 1,
+    kMaxManaFieldNumber = 2,
+    kPhysicalAttackFieldNumber = 3,
+    kMagicAttackFieldNumber = 4,
+    kDefenseFieldNumber = 5,
+    kSpeedFieldNumber = 6,
+  };
+  // .CombatAttributes combat = 7;
+  [[nodiscard]] bool has_combat()
+      const;
+  void clear_combat() ;
+  [[nodiscard]] const ::CombatAttributes& combat() const;
+  [[nodiscard]] ::CombatAttributes* PROTOBUF_NULLABLE release_combat();
+  ::CombatAttributes* PROTOBUF_NONNULL mutable_combat();
+  void set_allocated_combat(::CombatAttributes* PROTOBUF_NULLABLE value);
+  void unsafe_arena_set_allocated_combat(::CombatAttributes* PROTOBUF_NULLABLE value);
+  ::CombatAttributes* PROTOBUF_NULLABLE unsafe_arena_release_combat();
+
+  private:
+  const ::CombatAttributes& _internal_combat() const;
+  ::CombatAttributes* PROTOBUF_NONNULL _internal_mutable_combat();
+
+  public:
+  // uint64 max_health = 1;
+  void clear_max_health() ;
+  [[nodiscard]] ::uint64_t max_health() const;
+  void set_max_health(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_max_health() const;
+  void _internal_set_max_health(::uint64_t value);
+
+  public:
+  // uint64 max_mana = 2;
+  void clear_max_mana() ;
+  [[nodiscard]] ::uint64_t max_mana() const;
+  void set_max_mana(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_max_mana() const;
+  void _internal_set_max_mana(::uint64_t value);
+
+  public:
+  // uint64 physical_attack = 3;
+  void clear_physical_attack() ;
+  [[nodiscard]] ::uint64_t physical_attack() const;
+  void set_physical_attack(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_physical_attack() const;
+  void _internal_set_physical_attack(::uint64_t value);
+
+  public:
+  // uint64 magic_attack = 4;
+  void clear_magic_attack() ;
+  [[nodiscard]] ::uint64_t magic_attack() const;
+  void set_magic_attack(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_magic_attack() const;
+  void _internal_set_magic_attack(::uint64_t value);
+
+  public:
+  // uint64 defense = 5;
+  void clear_defense() ;
+  [[nodiscard]] ::uint64_t defense() const;
+  void set_defense(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_defense() const;
+  void _internal_set_defense(::uint64_t value);
+
+  public:
+  // uint64 speed = 6;
+  void clear_speed() ;
+  [[nodiscard]] ::uint64_t speed() const;
+  void set_speed(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_speed() const;
+  void _internal_set_speed(::uint64_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:DerivedAttributesComp)
+ private:
+  class _Internal;
+  using ParseTableT_ =
+      ::google::protobuf::internal::TcParseTable<3, 7,
+                          1, 0,
+                          2>;
+  static constexpr ParseTableT_ InternalGenerateParseTable_(
+      const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
+  friend class ::google::protobuf::internal::TcParser;
+  #ifndef PROTOBUF_MESSAGE_GLOBALS
+  static const ParseTableT_ _table_;
+  #endif
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  friend ::google::protobuf::internal::PrivateAccess;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                                    ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const DerivedAttributesComp& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::CombatAttributes* PROTOBUF_NULLABLE combat_;
+    ::uint64_t max_health_;
+    ::uint64_t max_mana_;
+    ::uint64_t physical_attack_;
+    ::uint64_t magic_attack_;
+    ::uint64_t defense_;
+    ::uint64_t speed_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -968,13 +1363,377 @@ inline void CalculatedAttributesComp::_internal_set_isdead(bool value) {
 
 // -------------------------------------------------------------------
 
+// CombatAttributes
+
+// uint64 physical_crit_rate = 1;
+inline void CombatAttributes::clear_physical_crit_rate() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.physical_crit_rate_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+}
+inline ::uint64_t CombatAttributes::physical_crit_rate() const {
+  // @@protoc_insertion_point(field_get:CombatAttributes.physical_crit_rate)
+  return _internal_physical_crit_rate();
+}
+inline void CombatAttributes::set_physical_crit_rate(::uint64_t value) {
+  _internal_set_physical_crit_rate(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  // @@protoc_insertion_point(field_set:CombatAttributes.physical_crit_rate)
+}
+inline ::uint64_t CombatAttributes::_internal_physical_crit_rate() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.physical_crit_rate_;
+}
+inline void CombatAttributes::_internal_set_physical_crit_rate(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.physical_crit_rate_ = value;
+}
+
+// uint64 magic_crit_rate = 2;
+inline void CombatAttributes::clear_magic_crit_rate() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.magic_crit_rate_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+}
+inline ::uint64_t CombatAttributes::magic_crit_rate() const {
+  // @@protoc_insertion_point(field_get:CombatAttributes.magic_crit_rate)
+  return _internal_magic_crit_rate();
+}
+inline void CombatAttributes::set_magic_crit_rate(::uint64_t value) {
+  _internal_set_magic_crit_rate(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  // @@protoc_insertion_point(field_set:CombatAttributes.magic_crit_rate)
+}
+inline ::uint64_t CombatAttributes::_internal_magic_crit_rate() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.magic_crit_rate_;
+}
+inline void CombatAttributes::_internal_set_magic_crit_rate(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.magic_crit_rate_ = value;
+}
+
+// uint64 combo_rate = 3;
+inline void CombatAttributes::clear_combo_rate() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.combo_rate_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+}
+inline ::uint64_t CombatAttributes::combo_rate() const {
+  // @@protoc_insertion_point(field_get:CombatAttributes.combo_rate)
+  return _internal_combo_rate();
+}
+inline void CombatAttributes::set_combo_rate(::uint64_t value) {
+  _internal_set_combo_rate(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  // @@protoc_insertion_point(field_set:CombatAttributes.combo_rate)
+}
+inline ::uint64_t CombatAttributes::_internal_combo_rate() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.combo_rate_;
+}
+inline void CombatAttributes::_internal_set_combo_rate(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.combo_rate_ = value;
+}
+
+// uint64 counter_rate = 4;
+inline void CombatAttributes::clear_counter_rate() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.counter_rate_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+}
+inline ::uint64_t CombatAttributes::counter_rate() const {
+  // @@protoc_insertion_point(field_get:CombatAttributes.counter_rate)
+  return _internal_counter_rate();
+}
+inline void CombatAttributes::set_counter_rate(::uint64_t value) {
+  _internal_set_counter_rate(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  // @@protoc_insertion_point(field_set:CombatAttributes.counter_rate)
+}
+inline ::uint64_t CombatAttributes::_internal_counter_rate() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.counter_rate_;
+}
+inline void CombatAttributes::_internal_set_counter_rate(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.counter_rate_ = value;
+}
+
+// uint64 reflect_rate = 5;
+inline void CombatAttributes::clear_reflect_rate() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.reflect_rate_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+}
+inline ::uint64_t CombatAttributes::reflect_rate() const {
+  // @@protoc_insertion_point(field_get:CombatAttributes.reflect_rate)
+  return _internal_reflect_rate();
+}
+inline void CombatAttributes::set_reflect_rate(::uint64_t value) {
+  _internal_set_reflect_rate(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  // @@protoc_insertion_point(field_set:CombatAttributes.reflect_rate)
+}
+inline ::uint64_t CombatAttributes::_internal_reflect_rate() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.reflect_rate_;
+}
+inline void CombatAttributes::_internal_set_reflect_rate(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.reflect_rate_ = value;
+}
+
+// uint64 skill_level_bonus = 6;
+inline void CombatAttributes::clear_skill_level_bonus() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.skill_level_bonus_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
+}
+inline ::uint64_t CombatAttributes::skill_level_bonus() const {
+  // @@protoc_insertion_point(field_get:CombatAttributes.skill_level_bonus)
+  return _internal_skill_level_bonus();
+}
+inline void CombatAttributes::set_skill_level_bonus(::uint64_t value) {
+  _internal_set_skill_level_bonus(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  // @@protoc_insertion_point(field_set:CombatAttributes.skill_level_bonus)
+}
+inline ::uint64_t CombatAttributes::_internal_skill_level_bonus() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.skill_level_bonus_;
+}
+inline void CombatAttributes::_internal_set_skill_level_bonus(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.skill_level_bonus_ = value;
+}
+
+// uint64 ignore_ailment_resist = 7;
+inline void CombatAttributes::clear_ignore_ailment_resist() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.ignore_ailment_resist_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000040U);
+}
+inline ::uint64_t CombatAttributes::ignore_ailment_resist() const {
+  // @@protoc_insertion_point(field_get:CombatAttributes.ignore_ailment_resist)
+  return _internal_ignore_ailment_resist();
+}
+inline void CombatAttributes::set_ignore_ailment_resist(::uint64_t value) {
+  _internal_set_ignore_ailment_resist(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
+  // @@protoc_insertion_point(field_set:CombatAttributes.ignore_ailment_resist)
+}
+inline ::uint64_t CombatAttributes::_internal_ignore_ailment_resist() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.ignore_ailment_resist_;
+}
+inline void CombatAttributes::_internal_set_ignore_ailment_resist(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.ignore_ailment_resist_ = value;
+}
+
+// uint64 resist_poison = 8;
+inline void CombatAttributes::clear_resist_poison() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.resist_poison_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000080U);
+}
+inline ::uint64_t CombatAttributes::resist_poison() const {
+  // @@protoc_insertion_point(field_get:CombatAttributes.resist_poison)
+  return _internal_resist_poison();
+}
+inline void CombatAttributes::set_resist_poison(::uint64_t value) {
+  _internal_set_resist_poison(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000080U);
+  // @@protoc_insertion_point(field_set:CombatAttributes.resist_poison)
+}
+inline ::uint64_t CombatAttributes::_internal_resist_poison() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.resist_poison_;
+}
+inline void CombatAttributes::_internal_set_resist_poison(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.resist_poison_ = value;
+}
+
+// uint64 resist_freeze = 9;
+inline void CombatAttributes::clear_resist_freeze() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.resist_freeze_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000100U);
+}
+inline ::uint64_t CombatAttributes::resist_freeze() const {
+  // @@protoc_insertion_point(field_get:CombatAttributes.resist_freeze)
+  return _internal_resist_freeze();
+}
+inline void CombatAttributes::set_resist_freeze(::uint64_t value) {
+  _internal_set_resist_freeze(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000100U);
+  // @@protoc_insertion_point(field_set:CombatAttributes.resist_freeze)
+}
+inline ::uint64_t CombatAttributes::_internal_resist_freeze() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.resist_freeze_;
+}
+inline void CombatAttributes::_internal_set_resist_freeze(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.resist_freeze_ = value;
+}
+
+// uint64 resist_sleep = 10;
+inline void CombatAttributes::clear_resist_sleep() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.resist_sleep_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000200U);
+}
+inline ::uint64_t CombatAttributes::resist_sleep() const {
+  // @@protoc_insertion_point(field_get:CombatAttributes.resist_sleep)
+  return _internal_resist_sleep();
+}
+inline void CombatAttributes::set_resist_sleep(::uint64_t value) {
+  _internal_set_resist_sleep(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000200U);
+  // @@protoc_insertion_point(field_set:CombatAttributes.resist_sleep)
+}
+inline ::uint64_t CombatAttributes::_internal_resist_sleep() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.resist_sleep_;
+}
+inline void CombatAttributes::_internal_set_resist_sleep(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.resist_sleep_ = value;
+}
+
+// uint64 resist_forget = 11;
+inline void CombatAttributes::clear_resist_forget() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.resist_forget_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000400U);
+}
+inline ::uint64_t CombatAttributes::resist_forget() const {
+  // @@protoc_insertion_point(field_get:CombatAttributes.resist_forget)
+  return _internal_resist_forget();
+}
+inline void CombatAttributes::set_resist_forget(::uint64_t value) {
+  _internal_set_resist_forget(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000400U);
+  // @@protoc_insertion_point(field_set:CombatAttributes.resist_forget)
+}
+inline ::uint64_t CombatAttributes::_internal_resist_forget() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.resist_forget_;
+}
+inline void CombatAttributes::_internal_set_resist_forget(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.resist_forget_ = value;
+}
+
+// uint64 resist_confusion = 12;
+inline void CombatAttributes::clear_resist_confusion() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.resist_confusion_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000800U);
+}
+inline ::uint64_t CombatAttributes::resist_confusion() const {
+  // @@protoc_insertion_point(field_get:CombatAttributes.resist_confusion)
+  return _internal_resist_confusion();
+}
+inline void CombatAttributes::set_resist_confusion(::uint64_t value) {
+  _internal_set_resist_confusion(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000800U);
+  // @@protoc_insertion_point(field_set:CombatAttributes.resist_confusion)
+}
+inline ::uint64_t CombatAttributes::_internal_resist_confusion() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.resist_confusion_;
+}
+inline void CombatAttributes::_internal_set_resist_confusion(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.resist_confusion_ = value;
+}
+
+// uint64 resist_all_ailment = 13;
+inline void CombatAttributes::clear_resist_all_ailment() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.resist_all_ailment_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00001000U);
+}
+inline ::uint64_t CombatAttributes::resist_all_ailment() const {
+  // @@protoc_insertion_point(field_get:CombatAttributes.resist_all_ailment)
+  return _internal_resist_all_ailment();
+}
+inline void CombatAttributes::set_resist_all_ailment(::uint64_t value) {
+  _internal_set_resist_all_ailment(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00001000U);
+  // @@protoc_insertion_point(field_set:CombatAttributes.resist_all_ailment)
+}
+inline ::uint64_t CombatAttributes::_internal_resist_all_ailment() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.resist_all_ailment_;
+}
+inline void CombatAttributes::_internal_set_resist_all_ailment(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.resist_all_ailment_ = value;
+}
+
+// uint64 magic_resist = 14;
+inline void CombatAttributes::clear_magic_resist() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.magic_resist_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00002000U);
+}
+inline ::uint64_t CombatAttributes::magic_resist() const {
+  // @@protoc_insertion_point(field_get:CombatAttributes.magic_resist)
+  return _internal_magic_resist();
+}
+inline void CombatAttributes::set_magic_resist(::uint64_t value) {
+  _internal_set_magic_resist(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00002000U);
+  // @@protoc_insertion_point(field_set:CombatAttributes.magic_resist)
+}
+inline ::uint64_t CombatAttributes::_internal_magic_resist() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.magic_resist_;
+}
+inline void CombatAttributes::_internal_set_magic_resist(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.magic_resist_ = value;
+}
+
+// uint64 physical_resist = 15;
+inline void CombatAttributes::clear_physical_resist() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.physical_resist_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00004000U);
+}
+inline ::uint64_t CombatAttributes::physical_resist() const {
+  // @@protoc_insertion_point(field_get:CombatAttributes.physical_resist)
+  return _internal_physical_resist();
+}
+inline void CombatAttributes::set_physical_resist(::uint64_t value) {
+  _internal_set_physical_resist(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00004000U);
+  // @@protoc_insertion_point(field_set:CombatAttributes.physical_resist)
+}
+inline ::uint64_t CombatAttributes::_internal_physical_resist() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.physical_resist_;
+}
+inline void CombatAttributes::_internal_set_physical_resist(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.physical_resist_ = value;
+}
+
+// -------------------------------------------------------------------
+
 // DerivedAttributesComp
 
 // uint64 max_health = 1;
 inline void DerivedAttributesComp::clear_max_health() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.max_health_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
 }
 inline ::uint64_t DerivedAttributesComp::max_health() const {
   // @@protoc_insertion_point(field_get:DerivedAttributesComp.max_health)
@@ -982,7 +1741,7 @@ inline ::uint64_t DerivedAttributesComp::max_health() const {
 }
 inline void DerivedAttributesComp::set_max_health(::uint64_t value) {
   _internal_set_max_health(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
   // @@protoc_insertion_point(field_set:DerivedAttributesComp.max_health)
 }
 inline ::uint64_t DerivedAttributesComp::_internal_max_health() const {
@@ -998,7 +1757,7 @@ inline void DerivedAttributesComp::_internal_set_max_health(::uint64_t value) {
 inline void DerivedAttributesComp::clear_max_mana() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.max_mana_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
 }
 inline ::uint64_t DerivedAttributesComp::max_mana() const {
   // @@protoc_insertion_point(field_get:DerivedAttributesComp.max_mana)
@@ -1006,7 +1765,7 @@ inline ::uint64_t DerivedAttributesComp::max_mana() const {
 }
 inline void DerivedAttributesComp::set_max_mana(::uint64_t value) {
   _internal_set_max_mana(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
   // @@protoc_insertion_point(field_set:DerivedAttributesComp.max_mana)
 }
 inline ::uint64_t DerivedAttributesComp::_internal_max_mana() const {
@@ -1022,7 +1781,7 @@ inline void DerivedAttributesComp::_internal_set_max_mana(::uint64_t value) {
 inline void DerivedAttributesComp::clear_physical_attack() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.physical_attack_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
 }
 inline ::uint64_t DerivedAttributesComp::physical_attack() const {
   // @@protoc_insertion_point(field_get:DerivedAttributesComp.physical_attack)
@@ -1030,7 +1789,7 @@ inline ::uint64_t DerivedAttributesComp::physical_attack() const {
 }
 inline void DerivedAttributesComp::set_physical_attack(::uint64_t value) {
   _internal_set_physical_attack(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
   // @@protoc_insertion_point(field_set:DerivedAttributesComp.physical_attack)
 }
 inline ::uint64_t DerivedAttributesComp::_internal_physical_attack() const {
@@ -1046,7 +1805,7 @@ inline void DerivedAttributesComp::_internal_set_physical_attack(::uint64_t valu
 inline void DerivedAttributesComp::clear_magic_attack() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.magic_attack_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
 }
 inline ::uint64_t DerivedAttributesComp::magic_attack() const {
   // @@protoc_insertion_point(field_get:DerivedAttributesComp.magic_attack)
@@ -1054,7 +1813,7 @@ inline ::uint64_t DerivedAttributesComp::magic_attack() const {
 }
 inline void DerivedAttributesComp::set_magic_attack(::uint64_t value) {
   _internal_set_magic_attack(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
   // @@protoc_insertion_point(field_set:DerivedAttributesComp.magic_attack)
 }
 inline ::uint64_t DerivedAttributesComp::_internal_magic_attack() const {
@@ -1070,7 +1829,7 @@ inline void DerivedAttributesComp::_internal_set_magic_attack(::uint64_t value) 
 inline void DerivedAttributesComp::clear_defense() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.defense_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
 }
 inline ::uint64_t DerivedAttributesComp::defense() const {
   // @@protoc_insertion_point(field_get:DerivedAttributesComp.defense)
@@ -1078,7 +1837,7 @@ inline ::uint64_t DerivedAttributesComp::defense() const {
 }
 inline void DerivedAttributesComp::set_defense(::uint64_t value) {
   _internal_set_defense(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
   // @@protoc_insertion_point(field_set:DerivedAttributesComp.defense)
 }
 inline ::uint64_t DerivedAttributesComp::_internal_defense() const {
@@ -1094,7 +1853,7 @@ inline void DerivedAttributesComp::_internal_set_defense(::uint64_t value) {
 inline void DerivedAttributesComp::clear_speed() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.speed_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000040U);
 }
 inline ::uint64_t DerivedAttributesComp::speed() const {
   // @@protoc_insertion_point(field_get:DerivedAttributesComp.speed)
@@ -1102,7 +1861,7 @@ inline ::uint64_t DerivedAttributesComp::speed() const {
 }
 inline void DerivedAttributesComp::set_speed(::uint64_t value) {
   _internal_set_speed(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
   // @@protoc_insertion_point(field_set:DerivedAttributesComp.speed)
 }
 inline ::uint64_t DerivedAttributesComp::_internal_speed() const {
@@ -1112,6 +1871,104 @@ inline ::uint64_t DerivedAttributesComp::_internal_speed() const {
 inline void DerivedAttributesComp::_internal_set_speed(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.speed_ = value;
+}
+
+// .CombatAttributes combat = 7;
+inline bool DerivedAttributesComp::has_combat() const {
+  bool value = CheckHasBit(_impl_._has_bits_[0], 0x00000001U);
+  PROTOBUF_ASSUME(!value || _impl_.combat_ != nullptr);
+  return value;
+}
+inline void DerivedAttributesComp::clear_combat() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.combat_ != nullptr) _impl_.combat_->Clear();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+}
+inline const ::CombatAttributes& DerivedAttributesComp::_internal_combat() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  const ::CombatAttributes* p = _impl_.combat_;
+  return p != nullptr ? *p : *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<::CombatAttributes>(&::CombatAttributes_globals_);
+}
+inline const ::CombatAttributes& DerivedAttributesComp::combat() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:DerivedAttributesComp.combat)
+  return _internal_combat();
+}
+inline void DerivedAttributesComp::unsafe_arena_set_allocated_combat(
+    ::CombatAttributes* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.combat_);
+  }
+  _impl_.combat_ = reinterpret_cast<::CombatAttributes*>(value);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:DerivedAttributesComp.combat)
+}
+inline ::CombatAttributes* PROTOBUF_NULLABLE DerivedAttributesComp::release_combat() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::CombatAttributes* released = _impl_.combat_;
+  _impl_.combat_ = nullptr;
+  if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
+    auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    if (GetArena() == nullptr) {
+      delete old;
+    }
+  } else {
+    if (GetArena() != nullptr) {
+      released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    }
+  }
+  return released;
+}
+inline ::CombatAttributes* PROTOBUF_NULLABLE DerivedAttributesComp::unsafe_arena_release_combat() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:DerivedAttributesComp.combat)
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::CombatAttributes* temp = _impl_.combat_;
+  _impl_.combat_ = nullptr;
+  return temp;
+}
+inline ::CombatAttributes* PROTOBUF_NONNULL DerivedAttributesComp::_internal_mutable_combat() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.combat_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::CombatAttributes>(GetArena());
+    _impl_.combat_ = reinterpret_cast<::CombatAttributes*>(p);
+  }
+  return _impl_.combat_;
+}
+inline ::CombatAttributes* PROTOBUF_NONNULL DerivedAttributesComp::mutable_combat()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::CombatAttributes* _msg = _internal_mutable_combat();
+  // @@protoc_insertion_point(field_mutable:DerivedAttributesComp.combat)
+  return _msg;
+}
+inline void DerivedAttributesComp::set_allocated_combat(::CombatAttributes* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (message_arena == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.combat_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = value->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+
+  _impl_.combat_ = reinterpret_cast<::CombatAttributes*>(value);
+  // @@protoc_insertion_point(field_set_allocated:DerivedAttributesComp.combat)
 }
 
 #ifdef __GNUC__

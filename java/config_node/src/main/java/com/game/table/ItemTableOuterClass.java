@@ -27,6 +27,11 @@ public final class ItemTableOuterClass extends com.google.protobuf.GeneratedFile
         (com.google.protobuf.ExtensionRegistryLite) registry);
   }
   static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_Itembase_attr_descriptor;
+  static final 
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_Itembase_attr_fieldAccessorTable;
+  static final com.google.protobuf.Descriptors.Descriptor
     internal_static_ItemTable_descriptor;
   static final 
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
@@ -45,26 +50,38 @@ public final class ItemTableOuterClass extends com.google.protobuf.GeneratedFile
       descriptor;
   static {
     java.lang.String[] descriptorData = {
-      "\n\020item_table.proto\"\212\001\n\tItemTable\022\n\n\002id\030\001" +
-      " \001(\r\022\026\n\016max_stack_size\030\002 \001(\r\022\022\n\nequip_ki" +
-      "nd\030\003 \001(\r\022\025\n\rbattle_usable\030\004 \001(\r\022\026\n\016battl" +
-      "e_heal_hp\030\005 \001(\004\022\026\n\016battle_heal_mp\030\006 \001(\004\"" +
-      ")\n\rItemTableData\022\030\n\004data\030\001 \003(\0132\n.ItemTab" +
-      "leB;\n\016com.game.tableB\023ItemTableOuterClas" +
-      "sP\001Z\022generated/pb/tableb\006proto3"
+      "\n\020item_table.proto\">\n\rItembase_attr\022\024\n\014b" +
+      "ase_attr_id\030\001 \001(\r\022\027\n\017base_attr_value\030\002 \001" +
+      "(\r\"\264\002\n\tItemTable\022\n\n\002id\030\001 \001(\r\022\026\n\016max_stac" +
+      "k_size\030\002 \001(\r\022\022\n\nequip_kind\030\003 \001(\r\022\025\n\rbatt" +
+      "le_usable\030\004 \001(\r\022\026\n\016battle_heal_hp\030\005 \001(\004\022" +
+      "\026\n\016battle_heal_mp\030\006 \001(\004\022\014\n\004name\030\007 \001(\t\022\023\n" +
+      "\013description\030\010 \001(\t\022\020\n\010icon_key\030\t \001(\t\022\023\n\013" +
+      "equip_level\030\n \001(\r\022\023\n\013equip_class\030\013 \001(\r\022\022" +
+      "\n\naffix_pool\030\014 \001(\r\022\022\n\naffix_rule\030\r \001(\r\022!" +
+      "\n\tbase_attr\030\016 \003(\0132\016.Itembase_attr\")\n\rIte" +
+      "mTableData\022\030\n\004data\030\001 \003(\0132\n.ItemTableB;\n\016" +
+      "com.game.tableB\023ItemTableOuterClassP\001Z\022g" +
+      "enerated/pb/tableb\006proto3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
         new com.google.protobuf.Descriptors.FileDescriptor[] {
         });
-    internal_static_ItemTable_descriptor =
+    internal_static_Itembase_attr_descriptor =
       getDescriptor().getMessageType(0);
+    internal_static_Itembase_attr_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_Itembase_attr_descriptor,
+        new java.lang.String[] { "BaseAttrId", "BaseAttrValue", });
+    internal_static_ItemTable_descriptor =
+      getDescriptor().getMessageType(1);
     internal_static_ItemTable_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_ItemTable_descriptor,
-        new java.lang.String[] { "Id", "MaxStackSize", "EquipKind", "BattleUsable", "BattleHealHp", "BattleHealMp", });
+        new java.lang.String[] { "Id", "MaxStackSize", "EquipKind", "BattleUsable", "BattleHealHp", "BattleHealMp", "Name", "Description", "IconKey", "EquipLevel", "EquipClass", "AffixPool", "AffixRule", "BaseAttr", });
     internal_static_ItemTableData_descriptor =
-      getDescriptor().getMessageType(1);
+      getDescriptor().getMessageType(2);
     internal_static_ItemTableData_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_ItemTableData_descriptor,

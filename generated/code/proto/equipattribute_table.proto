@@ -1,0 +1,22 @@
+
+syntax = "proto3";
+
+option go_package = "generated/pb/table";
+
+option java_package = "com.game.table";
+option java_outer_classname = "EquipAttributeTableOuterClass";
+option java_multiple_files = true;
+
+
+message EquipAttributeTable {
+	uint32 id = 1;
+	string name = 2;
+	uint32 effect = 3;
+	uint32 effect_param = 4;
+	uint32 percent = 5;
+	uint32 sort = 6;
+}
+
+message EquipAttributeTableData {
+	repeated EquipAttributeTable data = 1;
+}

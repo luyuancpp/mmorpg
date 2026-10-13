@@ -6891,6 +6891,208 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
 - **同批**:合入 origin/main 的 11 个提交(`ed40df6a4d`)与本机 main 的装备、切线(`d55437fc21`);`third_party/librdkafka`、`third_party/ue5navmesh` 的指针取远端 `d1705175dd` 同步的值 —— 本机 10-08 的每小时自动保存(`a9569db98a`)曾把它们写回本机检出,不是有意回退。
 - **Java 版(AGENTS §12)**:不涉及。本条只动本仓库的 k8s 部署脚本与 go-zero 服务配置的核对,没有改客户端契约。
 
+## 2026-10-09 帮会二期收口:B5c / B5d / B6 全部批次落码进主干(Claude,自己未编译;运行证据引自 Codex 10-08 各条)
+
+- **范围**:帮会二期剩余批次全部落码并推到主干。服务端 `origin/main` 含 `7708581eeb`、`64f0e3301c`、`4f1b6b2544`、`43e5a9953e`;
+  客户端 `origin/main` 含 `98cd0d9`(B5c)、`de41479f`(B6 活动页与历练)。
+  - B5d 回档前检查帮会资产分歧:三子批 + 两轮评审修复(保留期钳位重查余量、清理水位、写后复查范围与预算、AssetOp 段缺失时的保留期回落)。
+  - B6b-srv2 同道历练的 guild 侧:邀请房间(Redis Lua)、开战(调 `MatchInternal.StartActivityBattle`)、`match-results` 消费、结算发奖、
+    待入队循环、巡检器;表间全序接 `T(guild_trial_battle) < W(guild_trial_reward_owed)`。
+  - robot 历练冒烟 S9–S15;`match_internal` 的 C++ 工程登记(8 处)。
+- **做法**:隔离工作树落码(服务端 `guild/phase2-finish`、客户端 `guild-b6-client`,已并入主干),每批"多视角查找 → 三票核验 → 修复";
+  确认的全部是 P2(B5d 第 2 轮 3 条、B6 客户端 5 条 3 个根因、B6b-srv2 3 条),没有 P0 / P1;修复之后没有再跑下一轮评审。
+- **运行证据**:本会话没有跑任何构建、测试、生成命令(AGENTS §10.1)。Codex 在 2026-10-08 各条记录的实跑结果覆盖到:
+  guild.exe 在 `43e5a9953e` 上构建成功、五包 164 个顶层 / 226 个子用例通过(miniredis 与进程内替身,没连真库 / Kafka / match);
+  data_service 构建与 config、ledger / recall 定向回归通过;match 活动用例通过。**没有证据的部分**:真库集成用例、robot、
+  C++ 三个节点整体构建、客户端编译与 EditMode、任何联机冒烟。
+- **待办与边界**:见 `docs/design/guild-phase2/92-handoff.md` §13(2026-10-09 重写)。最要紧的三件:
+  ① 客户端主干在跑完 `gen_proto.ps1` + `gen_messageids.ps1`(都带 `-ProtoRoot`)之前编不过;
+  ② `guild_internal` / `match_internal` 的 C++ RPC 包装与三个内部 RPC 的消息号还没生成(包装生成器被本机应用控制策略拦截),节点编不过;
+  ③ `MessageLimiter.xlsx` 的活动 5 行、`robot` 的 `go mod vendor`、配表索引重生成都还没做。
+- **已知边界**:历练结果消费是单协程,一条结果持续失败时本副本名下全部分区都停(不丢奖,巡检器兜底);人工补发 / 重放工具未做。
+- **Java 版(AGENTS §12)**:帮会二期整体**待做**。原因:Java 版(`0.1.0-SNAPSHOT`,截至 09-29 的记录)只有「登录 → 进场景」竖切,没有帮会;
+  Java 仓不在机器 A,`PARITY.md` 未登记,由 Java 仓会话补。客户端可见契约(guild.proto 活动消息、消息号 239–243、tip 14032–14041、
+  GuildActivity 表)已在本仓主干,对齐时以这些为准。
+
+## 2026-10-09 跨 zone 传送收尾第二轮收口:GO-2 根治 + CPP-3 改派待确认表(Claude,未编译、未测试)
+
+- **范围**:设计文档 `docs/design/cross-zone-scene-travel.md` §13 列的八项全部进了 main(§13.1 关联号、§13.2 冻结上限、§13.3 CPP-2、§13.4 P3 收尾、§13.5 Hiredis / Timeout、§13.6 客户端 CL-6 / CL-8、§13.7 GO-2、§13.8 CPP-3)。本条补记最后两项的落定;前六项见本文件 09-28 / 09-29 的条目。**GO-3 仍不落**(理由与根治方向见 §13.9,需用户拍板)。
+- **GO-2 根治(owner_epoch 严格单调)**:scene_manager 推路由失败后的回滚不再把 epoch 退回旧值,而是再前进一格(E → E+1 铸造 → E+2 回滚),并在 location 里留下回滚回执、把所凭标记转写到新代际;源 scene 用一段原子脚本取证(删本族标记 + 读 epoch / location),凭回执采纳新 epoch 后解冻。落点 `ccafe300c` / `907a6b752` / `80a1b0823` / `a8c2d44a8` / `6b7a59287` / `567333aaf`,文档 `b820a0c37a`;三视角审查无必须改项。
+- **CPP-3(疏散 / 排空的改派从"发完即忘"改成"登记 → 确认 → 收口")**:新纯头文件 `relocate_confirm.h` + `player_lifecycle.{h,cpp}` 粘合 + 三处外围挂点 + `cross_zone_test` 第 14 节 47 个用例。改派没生效的玩家(被拒 / 没发出去 / 落回本节点后载入被放弃)核实后按票据里的会话推 tip 3023 + 踢线 34,生效的不受打扰。落码 `a9569db98a`(每小时自动保存),审查修正见同日提交"跨 zone 传送:CPP-3 待确认表的对抗审查修正"。
+  - 落码前把规格按当时的 main 重定基了一遍(19 条设计修订);落码后做了规格一致性 + 五视角对抗审查,又对修正做了一轮四视角复审,代码都没有必须改项;两轮建议里值得做的已落(传输失败不再记成"完成通知已到"、`MarkCompletion` 幂等、"更早请求"补第三个来源、疏散中进场不删票据、重试日志降级、`evidence=none`、`(std::max)`、两处注释更正、补 4 个 ECS 用例与 1 个纯函数用例)。
+  - 十个取舍按保守默认落码(少踢、少写、不动别人代码),列在 §13.8 的表里;要改须另行决定。
+- **文档**:设计文档 §13.7 / §13.8 改成落码实情;runbook `docs/ops/cross-zone-failure-test-runbook.md` 升到 v2.7(GO-2 的 B3a–B3d 与专属验收点、CPP-3 的场景 V、`[RelocateConfirm]` 日志表与汇总行读法、缺口 RC-1 – RC-16);交接说明 `docs/handoff/handoff-crosszone-20260920.md` 同步。
+- **证据边界**:Claude 没有运行任何构建、测试或 regen(AGENTS §10.1)。C++(scene 库、scene 节点、`cross_zone_test`)与 Go(`go/scene_manager`、`go/shared`)都没有编译证据;gofmt 没跑;runbook 的场景全部是静态编写、未实跑。
+- **给 Codex**(按序,任何一步失败就停下并保留输出):
+  1. `gofmt -l go/scene_manager go/shared`(期望无输出)→ `go/scene_manager` 的 vet 与单测,命令与通过标准见设计文档 §13.7 的验证清单(其中 `owner_epoch_crosslang_test` 读 C++ 头文件里的 Lua 字面量与 Go 副本逐字节比)。
+  2. 仓库根 `msbuild game.sln /m:1 /nr:false /p:Configuration=Debug /p:Platform=x64`(必须串行)。报错先按文件归因;若 `relocate_confirm.h` 之外的地方报 `max` 宏错误,给 `cross_zone_test.vcxproj` 加 `NOMINMAX`。
+  3. `cross_zone_test.exe --gtest_filter=RelocateConfirm*`(期望 47 个通过)→ 回归过滤器与 `--gtest_shuffle` 见设计文档 §13.8 的验证清单;GO-2 的用例名见 §13.7。
+  4. 实跑 runbook:B1 / B2 / B3a–B3d(GO-2)、H(冻结上限)、SE(CPP-2)、V1–V5(CPP-3)与 §5 全局不变量。
+- **已知残余**:都只伤活性(不丢数据、不出双主),逐条列在设计文档 §13.7 / §13.8 的"残余"与 runbook §6(GR-* / RC-*)。
+- **Java 版(AGENTS §12)**:未做。本条全部是本仓库服务端内部的归属交接与改派收口(C++ scene / Go scene_manager 之间的 Redis 键、内部 RPC 字段与日志),**没有改客户端契约**:没有新增客户端可见的消息、字段或 tip 码(踢线复用既有的 `kEnterSceneFailed` = 3023 与 `kZoneTravelTargetBusy` = 3027,34 号踢线消息不变)。Java 版是否存在同类问题(路由失败回滚让归属代际回退、排空改派发完即忘)取决于它自己的实现,需在 Java 仓库另查并登记 `PARITY.md`。
+- **更正(同日)**:上面"范围"一条说"前六项见本文件 09-28 / 09-29 的条目",不对 —— §13.1–§13.6 此前没有在本文件单独立条(09-28 / 09-29 只有相邻的 gRPC 失败回调与 C++↔Go 边界加固几条)。它们的落点与提交号见设计文档 §13.0 的总览表(`9da27f9a4` / `4e409c5c3` / `935ec83b1`、`09f71f9d5`、`24dd3e6c5` / `6941e7344`,客户端 `54034fe`)与交接说明 `docs/handoff/handoff-crosszone-20260920.md` §0 / §4。
+- **补充(同日第二个提交)**:`4bd096d1ab` 之后又做了一次收尾核查(只审复审之后才追加的那一小批改动),代码与用例仍无必须改项;改掉了 runbook / 设计文档里几处与代码不符的描述(排空生效判据两行日志的先后、手工排空过的频道会被 rebalance 补回映射、"GO-2 专属验收点"第 6 条按落点分两种),并落了两条小的保守加固:疏散中保留票据再加"被打断的那次退出没记过客户端断线"的条件、保留时打一行 `ticket kept on reentry`。注释更正的完整清单见设计文档 §13.8「审查与修正」第 8 条。给 Codex 的第 2 步补一句:`relocate_confirm.h` 与 `cross_zone_test.cpp` 里的 `max` 都已加括号写。
+
+## 2026-10-09 friend 推荐:随机兜底的候选带真实的共同好友数 + TiDB 计划核对(Claude,未编译)
+
+- **问题**:`RecommendFriends` 两级策略里,random 兜底(`recommendAnchor`)的共同好友数恒填 0。通常没错(有共同好友的人大多已被 mutual 召回),
+  但 mutual 的排名窗口(前 1024 名)被排除者占满时,兜底会挑到窗口之外、实际有共同好友的人,客户端把他们显示成「没有共同好友」。
+  10-08 的评审把它登记成显示副作用,当时只写了注释。`recommend_repo_mysql_test.go` 里原有一条断言「兜底候选恒为 0」,
+  而它的夹具里 hub 与查询者其实有 1 个共同好友 —— 断言钉住的正是这个错。
+- **改法**(`go/friend/internal/data/recommend_repo.go`):`recommendAnchorBaseSQL` 的选择列表把 `0 AS mutual` 换成一条相关标量子查询
+  (m1 查询者的好友前缀 → m2 按「候选, 我的好友」做完整主键点查,`STRAIGHT_JOIN` + 两处 `FORCE INDEX (PRIMARY)`),
+  数的是两个好友列表的交集;好友边双向成对时与 `RecommendByMutual` 数出的是同一个数。`recommendAnchorStatement` 的参数最前面多一个 playerID。
+  不多打一次库;`FriendStore` 接口、logic 层、协议、配置值都没动(`internal/config/config.go` 只改了三处注释:limit 现在进兜底的读数上界)。
+- **代价**:子查询只对**返回的**行求值,每行多 2F+1 次读(F = 查询者的好友数)。limit=20 时 F=16 / 20 / 30 / 300 实测多 660 / 820 / 1,220 / 12,020 次;
+  默认上限(MaxFriends 200)下最多 8,020 次。点查落在候选自己的主键前缀上,是同一条查询生产窗口时刚读过的页,不带来新的冷页:
+  F=300、整库先挤出 128 MB 的 buffer pool,单独冷跑 186 次页读、约 0.11–0.12 s,页读与旧写法相同;全热 23–40 ms(旧写法 11–20 ms)。
+  (该库窗口里的候选每人 42–57 条边、主键前缀不跨页;候选好友多到前缀跨页时每返回一行至多再读一两页,这是推算、没有实测。)
+- **两条不能动的写法**(写在 `recommendAnchor` 注释第 6 条,各有用例守):
+  - 外层 `ORDER BY` 不能依赖 mutual(比如想把兜底结果按共同好友数降序排):子查询就得对窗口里 1024 个人全部求值才能排序,同一份夹具 2,811 → 40,963 次读;
+  - m2 的主键前缀必须是候选(`m2.player_id = c.player_id`),不能照 `RecommendByMutual` 写成按我的好友去连。两种写法在 MySQL 上计划同形、读数与结果都相同,
+    但在 TiDB v8.5.2 上后一种会让 m2 每返回一行全扫一遍 friend:88 万条边、每人 200 好友的库 17,600,000 行、首次执行 13.6 s;
+    前一种是 m1 / m2 各读 4,000 行、约 0.1 s。**本批第一稿就是后一种写法**,TiDB 核对时发现后改掉(MySQL 上计划、读数、结果都相同,回归测不出来)。
+- **TiDB 计划核对**(本机 v8.5.2 单节点;没有给既有的窗口 / 排除部分加 TiDB 提示,新子查询的连接方向已按 TiDB 可用的写法落地,见上一条):
+  两条推荐查询在统计新鲜时读数不随玩家总数增长(排除表很小时会直接扫整张小表)、结果与 MySQL 逐行相同;
+  但 TiDB 忽略 `SEMIJOIN` 提示,有界靠的是代价估算 —— 用 `LOCK STATS` 模拟「统计低估表规模」后,两条查询的 b_in / r_in(mutual 还有 f2)会变成整表扫描。
+  加 TiDB 的 `INL_JOIN` 提示可以钉住(TiDB 上 12 个库与统计状态实测无全扫,MySQL 上计划、读数、结果不变,只多 1–2 条 1064 警告),
+  **本批没有加**:friend 现在只跑 MySQL。登记为 handoff §9.5 第 12 条,迁移 TiDB 前必须处理,做法与数字都在那里。
+- **测试**(`recommend_repo_mysql_test.go`,真库用例,需 `FRIEND_TEST_MYSQL_DSN`):新增 `TestRecommendAnchor_CountsRealMutualFriendsForOutputRowsOnly`
+  (mutual 窗口饱和后兜底返回的候选共同好友数为 1、对照为 2;读数 ≤ 8,852,预期 2,811);`_AppliesAllFourExclusions` 改成逐人断言真实数;
+  `_HonorsPivotExcludeAndLimit` 加占位符顺序的反例;计划守卫用例加 m1 / m2 的断言(含「m2 的主键前缀是候选」)。T1 的预期读数 2,150 → 2,170,上界不变。
+- **证据边界**:Go 只过了 gofmt,**没有编译、没有跑 `go test`**(AGENTS §10.1)。新增 / 改动的每条断言,都已用工作树里的 SQL 原文、按 Go 的参数顺序,
+  在按夹具逐行重建的 MySQL 26.7.0 库上重放过(结果、读数、EXPLAIN);最终 SQL 另在 TiDB 上按三种统计状态对照过。一次性库(MySQL 的 `friend_explain_*`、
+  TiDB 的 `friend_tidb_chk_*`)已删。做过两轮只读评审:第一轮三视角(SQL 语义与代价 / Go 测试 / 注释与文档),修了 1 条 P2(handoff 一句旧说法漏旁注)与几条措辞;
+  随后因 TiDB 的发现把 m2 的连接条件换了方向,第二轮两视角专门复核换向之后的 SQL、计划守卫断言、注释与文档一致性,
+  无 P0 / P1,修了几条措辞(含本句的旧版本)。两轮都是阅读加 SQL 级重放;TiDB 的数字第二轮无法重测(库已删),只核了跨文档一致性。Go 仍未编译。
+  编译证据的现状:本文件 2026-10-08「补齐帮会表生成物、Java 网关与客户端本机环境」条记录 Codex 以 `c14ddf7` 为基线构建了 friend,
+  10-08 的 `dcd735b4d7`(mutual 排名窗口)是它的祖先,即那一版的非测试代码编得过;10-08 窗口版及之后的代码没有 `go vet` / 单测 / 真库用例的执行记录
+  (09-29 版的真库运行记录见上文 2026-09-29「数据层死锁审计收口」条,不覆盖现在的 SQL)。
+- **给 Codex**:命令与 10-08 相同,见 `docs/handoff/friend-handoff-20260920.md` §9.5 表后的「第 8 条的 Codex 命令」小节;
+  第一条真库命令现在匹配 20 条用例,新用例的读数上界与 T1 的新预期已旁注在该小节。通过后重编 `friend.exe`、重跑 `friend-smoke`。
+- **没有做**:TiDB 提示(见上);`recommendAnchor` 在 friend 表持久统计退化时窗口退回全索引扫(handoff §9.5 第 9 条,仍是登记在案的剩余风险);
+  兜底结果仍按 player_id 升序返回,没有按共同好友数重排(理由见上面第一条约束;客户端按 `mutual_friends` 自己排)。
+- **Java 版(AGENTS §12)**:待做。不改客户端契约(`RecommendEntry.mutual_friends` 字段早就有,变的只是兜底路径填的值);
+  Java 版还没有 friend,做到好友推荐时一并对齐,已旁注在 handoff §9.5 第 11 条。`PARITY.md` 由 Java 仓会话登记,本条没有改它。
+
+## 2026-10-09 组队跟随 v1.1:入队即跟随、归队、走路跟随(Claude,服务端未编译;客户端离线编译 + 纯逻辑单测已实跑)
+
+- **起因**:用户给了一段问道手游录像(5 人队排成一路纵队跟着队长走),要求「进队伍跟随到队长场景;移动的时候跟随队长」。修订 J-12(原结论:入队不拉人、跟随走位放 v1.1)。设计与证据见 `docs/design/team-system.md` 文末「组队跟随 v1.1」。
+- **动手前核实到的既有缺口**(不是本轮引入):
+  1. 别的玩家在客户端上根本不会动 —— 服务端从不发 `ActorMoveS2C`(133),移动只置 `ActorBaseAttributesS2C`(66)的脏位且不带 `entity_id`,客户端只认 133;
+  2. 可见性只在跨六边形格时重新评估,同格内相距 10 以上的两个人走到脸贴脸也互相看不见;
+  3. 同图换线保留坐标,既有的跟随换线之后队员并不在队长身边。
+- **服务端(scene 节点,9 个文件,无 proto / 消息号 / tip / 新 .cpp)**:
+  - `spatial/system/movement.{h,cpp}`:移动广播 `MovementSystem::BroadcastMove`(发给互相可见且有会话的玩家);同场景瞬移原语 `TeleportWithinScene`(写 Transform、清零速度、发 `TeleportS2C` reason = 5、重建可见性);瞬移后丢弃过期移动上报的 `TeleportSettleComp`(新增 `spatial/comp/teleport_settle_comp.h`,单调时钟、只对当时的场景有效);
+  - `player_movement_handler.cpp`:MoveStart / MoveSync / MoveStop 裁决后广播;战斗 / 冻结中的 MoveStop 也广播。另两处服务器自己清速的地方同样补了广播:`MovementSystem::Update` 撞墙、`PlayerLifecycleSystem::StopMotionForExit`(`player_lifecycle.cpp` +3 行);
+  - `spatial/system/aoi.{h,cpp}`:`AoiSystem::ResetEntityVisibility`(同场景瞬移 = 离开旧位置 + 重新进场,保留 kPinned);
+  - `player/system/player_team.{h,cpp}`:`OnRefreshEvent` 由只刷新改为刷新并跟随(入队即跟随);与队长已在同一场景实例时 `RegroupToLeader`(已评估过可见性且互相不可见,或相距 > 8 → 瞬移到队长脚下);
+  - `cpp/tests/aoi_test/aoi_system_test.cpp`:新增 10 条。
+- **客户端(`mmorpg-client` 分支 `feat/team-follow`)**:走路跟随放在队员自己的客户端 —— `TeamFollowTrail`(队长轨迹)/ `TeamFollowPlanner`(槽位与每帧指令)/ `TeamFollowDriver`(驱动)+ `TianyongPlayerController` 的跟随接管 + 独立宿主 `TeamFollowUiRoot`(「暂离 / 归队」按钮)。另有四处让远端角色看起来对的修正(此前这些路径从未真正跑过):`ActorWorld.Tick` 的插值两端随权威速度一起外推(旧实现行走中恒定落后 1.35)、1 秒外推上限、角色碰撞体禁用、控制器转向超过约 20° 时立即补一条 MoveSync(额度内,约 8 条 / 秒封顶)。
+- **证据边界**:
+  - 服务端:静态核对 + 一轮独立的「人肉编译」评审(未发现编译错误;指出的 3 个逻辑问题与 6 处注释不实已改),**未编译、未跑测试**;
+  - 客户端:离线 Roslyn 编译运行时程序集与 `Tests.EditMode.Tianyong` 均 0 error;`TeamFollowTrailTests` + `TeamFollowPlannerTests` 36/36 在离线运行器里通过(另有八个故意改坏的版本各被抓到);一轮独立评审指出的「队长原路掉头时队员被赶到前面」等问题已改并补了用例;`TeamFollowDriver`、控制器的跟随分支、界面按钮、`ActorWorld` 的五条新用例**没有在 Unity 里跑过**(本机 Unity 许可证离线有效期仍是过期状态);
+  - 联机:没有做。旧的 `scene.exe` 上本功能不生效(没有移动广播,也不会入队拉人)。
+- **已知边界**:跨节点 / 跨 zone 仍不跟;可见性缺口 2 没有根治,只对归队瞬移这条路径做了重建;暂离是客户端本地状态,服务端不知道;走散到视野外之后没有自动归队(没有「召集」协议);兴趣表不对称(人多到装不下)时对方收不到我的移动;移动广播量约为每个移动中的玩家每秒 4~8 条 × 互相可见的人数,压测前要评估。
+- **给 Codex**:按设计文档 V.6 的 1→4 执行(scene 库 → scene 节点 → aoi_test,串行 `/m:1`,**Debug** 配置;然后 `run_cpp_tests.ps1 -Build -Filter aoi_test`)。
+- **Java 版(AGENTS §12)**:未做(本机没有 Java 仓库)。需同步三条客户端可见行为:移动后(及服务器让玩家停下时)广播 133;入队后把队员带到队长场景并以 130(reason = 5)落到队长身边;瞬移后丢弃过期移动上报。协议本身没有变化。登记 `PARITY.md` 待做。
+
+## 2026-10-10 组队跟随主干复核与实际验证(Codex，服务端生成前置仍阻塞)
+
+- **主干与收尾**:本次重新 fetch 两仓 origin，过夜后远端主干没有新提交。服务端功能提交 `c7dbc0c98f` 已包含在本机 main `f142f0b8ed`，对 origin/main `4bd096d1ab` 领先 2、不落后；客户端功能与独立宿主 `TeamFollowUiRoot` 已在 main `40e6fdd4`，对 origin/main `de41479f` 领先 2、落后 1(帮会 B6)。本条记录前没有新增功能提交，不重复合并，不推送。两个跟随工作树此前已清理；本次确认服务端 `feat/team-follow` 与 main 完全相同且无工作树占用后删除残留分支。
+- **在途保护**:服务端原有 5 项状态保持，两个普通文件 SHA256 未变；客户端原有 175 个已修改/未跟踪文件 SHA256 与完整 Git 状态保持。没有合并与在途 `GuildUiRoot.cs` 重叠的帮会 B6，也没有采用沙盒生成物或修改消息号、源表、生成状态。两仓 GitHub 当前无开放 PR/Issue。
+- **客户端实跑**:`tools/client_compile_check.ps1` 编译 404 个运行时文件，0 error、exit 0；项目原有 `TeamFollowTrailTests` 16 项与 `TeamFollowPlannerTests` 20 项使用真实 NUnit `NUnitTestAssemblyRunner`、已安装 Unity 6000.6.0f1 托管库执行，36/36 通过、0 失败/跳过。没有使用 NUnit 替身。独立宿主生命周期及与当前 `TeamUiRoot` 在途改动的兼容性静态复核未发现确定缺陷，但不是 Unity 生命周期实测。
+- **服务端实跑**:按 V.6 从 `cpp/libs/services/scene/scene.vcxproj` 开始，Debug|x64、`/m:1`。沙箱 FileTracker 权限错误经同命令正常权限执行后消除；实际编译 exit 1、110 errors。首三条为 `bag_marshal.cpp:58` 的 `ItemComp.has_equip`、`:60` 的 `ItemEntry.mutable_equip` 与 `ItemComp.equip` 缺失；另缺 `table/code/equipaffixpool_table.h` 与 `CombatAttributes`。这是已合入的装备源契约尚未完成配套生成，符合 `equipment-attributes.md` §9 列出的前置失败形态。未继续 scene 节点、aoi_test 或运行旧测试 EXE。构建内置原始指针检查因本机缺检查工具自动报告 SKIP，不能声称静态检查通过。
+- **生成预检**:使用当前主仓输入与当前发号状态，正式 `sandbox_export.py` 在独立目录完成导表，39 张表；与仓内产物比较发现 205 项差异(比较非零不等于导表失败)。输出在 `E:/work/output/team-follow-20261010/server-table-sandbox-v2`，未部署到真实仓库。完整恢复还需 `equipment-attributes.md` §9 的协议生成、限流表、工程登记与配套重编，尤其 modules/scene 必须同批重编以匹配 ItemComp/Bag 布局；不能只替换 scene.lib。范围已超出跟随的提交收尾，按 AGENTS §10.2 已请求是否纳入本次，未擅自覆盖并行生成工作。旧记录中的 proto-gen CodeIntegrity 拦截没有在本次重现，不把历史记录写成今日拦截；其 `-h` 不是只读帮助，未冒险执行。
+- **真实环境**:今日 07:12(纽约时间)许可客户端仍报 `LicenseGroupOfflineValidityPeriodIsExpired`、`Unable to find valid licenses`，用户需在 Unity Hub 登录刷新。Unity 测试、出包、双号联机均未执行。本机固件虚拟化/Hypervisor 与 Docker Linux Engine 已可用，不再沿用 10-08 的 SVM 阻塞结论；MySQL/Redis/etcd 等已有容器运行，但 Kafka 为 Exited(255)、9092 未监听，游戏原生服务和 Java 网关未启动。没有改动容器、清理业务数据或启动旧版游戏二进制；本次 Unity 探针进程已清理。
+- **证据与续跑**:编译日志、真实 NUnit XML、可复跑脚本 `client-pure-tests/run.ps1`、首批 C++ 错误、Unity 当前许可证据及在途文件基线均在 `E:/work/output/team-follow-20261010/`。待生成前置修复获准并完成后，从 V.6 的 Debug scene 库构建重新开始；许可刷新后再用 Unity 6000.6.0f1 做 EditMode、出包及组队跟随双号验收。这里没有任何联机通过结论。
+- **Java 版(AGENTS §12)**:仍待做；规范指定的另一 Java 仓库本机不存在，本次未修改客户端契约或另一版 `PARITY.md`。
+
+## 2026-10-10 PVE 人数档匹配:1~5 人任选一档,人越多怪越多(Claude,服务端未编译)
+
+- **需求**:PVE 不能只有「单人」和「必须凑满 5 人」两档;怪物数量要跟队伍人数走。
+  设计与验证清单:[`docs/design/pve-team-size-matching.md`](design/pve-team-size-matching.md)(§7 是给 Codex 的清单)。
+  分支 `feat/pve-team-size-match`,单个提交,接在本机 main 之后。
+- **引擎(battle)**:`InitMonsters` 数进攻方玩家数 N(宝宝不算),怪物只数 = N × 每人只数,种类按副本怪物组循环取,上限 10 只;不消耗随机数。
+  「每人几只」走新接口 `BattleDataProvider::GetDungeonMonstersPerPlayer`:生产实现返回该副本怪物组的只数,即**每人一整组**
+  (副本 1:1 人 2 只、2 人 4 只、5 人 10 只);单测替身缺省 0(怪物组原样),既有用例的只数不变。Dungeon 表没有加列。
+  单人打到的与改动前逐只相同;整队开战按人数成倍增加;**活动对局(帮会同道历练)不放大**,行为与改动前相同。
+  每人的经验、金币、掉落、任务击杀计数都随怪物只数累加(组队各得全额的既有口径),N 人队每人单场产出是单人的 N 倍 —— 没有动分配规则。
+- **全自动回合间隔**:`ArmRoundTimer` 的全自动间隔从固定 2000ms 改为 `AutoRoundIntervalMsFor(N) = max(2000, N × 250)`,
+  N 是刚结算那一回合的出手单位数。8 个单位以内不变;不放宽的话 4~5 人档全自动时客户端 6 倍速也演不完、每回合都跳过演出。
+  5v5 PVP 全自动(10 个单位)因此从 2.0 秒变 2.5 秒。D13 与表现规格 §6.1 已加更正。
+- **match**:`JoinQueueRequest.team_size = 7`(只有 `PVE_TEAM` 读):0 = 副本上限(老行为),1 = 即时开战,2..上限 = 进该人数档队列,
+  超上限回 `kMatchModeNotOpen`。人数档队列 key `match:{mq}:size{N}:queue:{mode}:{config}`,rank / lock key 同样带人数段、仍同 slot;
+  凑满人数从 key 读回,配置 `PveTeamSizeByConfigId` 的含义变成「人数上限」。没有新消息号、没有新 tip 码。
+  成员校验新增核对票据的 `queue_key`(别的队列的残留项只摘不弹,堵住把人拉进没选的档)。
+  上限被调低后残留的人数档不弹组、告警限频,成员都取消后离开注册集并把 `queue_depth` 归零。
+  指标 `match_queue_depth` / `match_starved_anchor_wait_seconds` 增加标签 `team_size`。
+- **发布顺序**:match 必须整批替换(K8s 先缩到 0 再发,见设计文档 §3.2);服务端先于或同批于客户端 ——
+  服务端没带本改动时,新客户端的 2~4 人档会静默排进「凑满 5 人」的旧队列。
+- **协议生成物**:`match_service.pb.{go,h,cc}` 与客户端 `MatchService.cs` 用 protoc 窄面重生成 —— 先用改动前的 proto 生成,
+  产物与入库版本逐字节一致,再生成新的;三份暂存副本与 `robot/vendor` 同步;`_grpc.pb.go`、`message_id.txt` 未变。
+  另补生成了一份既有欠账:`cpp/generated/proto/battle/battle_node.pb.{h,cc}`(入库产物停在 09-06,缺 09-29 加的
+  `CreateBattleRequest.activity_context = 9`;引擎现在要读它)。同样先做了基线逐字节比对。
+- **客户端**:排队面板把「单人 / 组队5人」换成 1~5 人档(选中档古铜色底 + 「√」)+ 一个匹配按钮(文案「N人 · 怪物×N」);
+  `BattleClient.JoinQueue` 多一个可选的人数参数,连续战斗重排会带回人数档;已组好的队仍由队长在队伍面板开战。
+  主体已随每小时自动保存 `537c2bad` 进入客户端**本机** main(未推 origin),其后的小改在工作区等下一次自动保存
+  (当时客户端仓正卡着别的会话的一次合并,没有单独提交)。
+- **三轮只读复核**(都不编译、不运行):第一轮否掉了「N 人 N 只、从组头取」(单人永远遇不到怪 2,它是物品 11 的唯一掉落来源与任务击杀目标),
+  改成每人一整组;第二轮 6 个方向找问题、每条发现由两名反驳者核实、再查漏(22 条里确认 18 条、反驳 4 条,无编译类问题),
+  据此改了活动对局不放大(否则 guild-smoke 历练段的「三人自动必胜」不再成立)、全自动回合间隔、成员校验核对 `queue_key`、客户端选中态与一批文档;
+  第三轮只审第二轮之后新写的代码(5 条里确认 4 条),据此补生成 `battle_node.pb.*`、把面板字体里没有字形的「✓」换成「√」、
+  调了选中底色与一处注释。第三轮之后的这四处改动没有再复核。
+- **测试**:Go 新增 `pve_team_size_test.go` 10 条,改 3 处既有测试(1 处队列 key、2 处指标桩签名);C++ 引擎新增 8 条 + 真表契约 1 条;
+  客户端 EditMode 新增 1 条。
+- **证据边界**:Go 只过了 gofmt;C++ 只做了静态核对;客户端离线 Roslyn 编译运行时与 `EditMode.Battle` 测试程序集 0 error
+  (不是 Unity 内编译;最后一次改动后客户端仓有别人的冲突标记,运行时程序集只确认了报错全部在别人的文件里)。
+  **Go / C++ 均未编译,所有新测试未跑,Unity 内测试与面板目视未做(许可证离线过期),没有联机验收**。
+- **验收分两步**:只重编并替换 match 就能验人数档匹配(老 gate / battle 不用动,怪物仍是固定一组);
+  怪物随人数成倍与全自动间隔要等 C++ 重编 —— 而主干的 C++ 目前本来就编不过(战斗引擎早已依赖装备属性系统的协议,
+  其 C++ 生成物尚未产出),要先做 equipment-attributes.md §9 的导表与全量 proto-gen。
+- **顺带**:本机 main 上每小时自动保存拉取远端时两次留下未完成的合并(都只冲突 `docs/PROGRESS.md`,两边纯追加),由本会话收掉,
+  提交 `07c7e238ff`(远端 `3220afa2b9`)与 `84d5a3d903`(远端 `f478fa9c43`);其余文件与 git 自动三方合并的结果逐文件一致。
+  其中 `player_lifecycle.cpp` 是跨区传送与组队跟随两边都改过、由 git 自动合并的,能否编译需要那两条线确认。
+  只要本机与远端都往本文件末尾追加,自动保存的拉取就会再卡一次。
+- **没做**:已组好的队伍进队列补位(team-system.md 推迟的 v2);按副本配置每人只数(副本 3 首领本开放组队之前必须先做);
+  组队奖励 / 掉落分配;不能凑单的队列里死成员的清扫;robot 自动化冒烟场景。
+- **Java 版(AGENTS §12)**:未做(本机没有 Java 仓库)。要同步的客户端契约只有 `JoinQueueRequest.team_size = 7`;
+  需在 `PARITY.md` 登记待做。
+
+## 2026-10-10 帮会二期收尾补充:客户端生成物补齐并实跑、限流表源行、配表索引(Claude)
+
+- **客户端主干恢复可编译**(客户端仓 `f5370798`):补齐帮会活动 / 历练的三份生成物 —— `Guild.cs`、`GuildErrorTip.cs`(protoc 35.1 窄面生成,
+  源取本仓 `origin/main` `f478fa9c43`)与 `MessageIds.cs` 的 239–243 五行。没有整份跑 `gen_proto.ps1` / `gen_messageids.ps1`:前者的文件表里有
+  本仓主干还没有的 `equip_error_tip.proto`,后者整份输出会删掉装备的两个消息号;装备批次的服务端生成进主干后再整份重跑。
+- **客户端运行证据(本机实跑,客户端仓不在 §10.1 范围内)**:`client_compile_check.ps1` 生成前 31 个错误、生成后 393 个文件 0 错误;
+  帮会测试程序集与帮会编辑器脚本单独编译各 0 错误;`GuildClientTests` 139 条在 Unity 自带的 Mono 6.13 上用真实 NUnit 断言执行,
+  138 条通过、1 条(B6 之前就有)要调引擎原生接口跑不了;改坏一句文案的对照跑报 2 条断言失败。`GuildWindowTests` 54 条与截图验收没跑(要编辑器)。
+- **本仓**:`data/MessageLimiter.xlsx` 追加活动五行(239 / 240 / 242 / 243 各 5/1s,241 为 10/1s),**产物未重导**(主干叠着装备批次未导出的表与 tip,
+  且当时本机内存见底 protoc 起不来);`data/AGENTS.md` 配表索引已重生成;`92-handoff.md` §13 相应更新。本仓没有跑任何构建或测试。
+- **仍未做**(细节见 `92-handoff.md` §13.2):`guild_internal` / `match_internal` 的 C++ RPC 包装与三个内部 RPC 的消息号(包装生成器被本机应用控制策略拦截,
+  且全量 proto-gen 会给别的会话在途的 RPC 一并发号,不该由帮会这边单独跑);`robot` 的 `go mod vendor`(vendor 落后于 `go/proto` 多个会话的改动,
+  同步后必须紧跟一次 robot 构建才知道有没有连带问题,交 Codex 一步做完);真库集成用例、robot 冒烟、联机验证;guild 的 K8s 清单(不在二期范围,归消除单节点专项)。
+- **Java 版(AGENTS §12)**:本条没有新增或改动客户端契约(限流表是服务端内部配置);帮会二期的 Java 版状态不变,仍是**待做**。
+
+## 2026-10-10 PVE 人数档匹配:match 首次实跑(用户授权 Claude 执行)+ 进度文件改 union 合并
+
+- **授权**:用户当面选择「授权 Claude 编译匹配服务并跑它的单元测试,通过后替换程序」(AGENTS §10.1 的例外,只限 `go\match`);
+  C++ 仍等装备线的导表与全量 proto-gen,没有授权、没有做。
+- **运行结果**(Go 1.26.5,`GOTOOLCHAIN=local`,工作目录 `go\match`,代码为 `21d5b25120` 之上):
+  `go build ./...` 退出码 0;`go vet ./...` 退出码 0;`go test ./... -count=1` 7 个有测试的包全部 ok
+  (match / constants / discovery / logic / playercontract / svc / team),`pve_team_size_test.go` 的 10 条新用例全过。
+  这是人数档匹配(以及此前从未编译过的 match 侧组队、观战索引等代码)第一次真正通过编译与测试。
+- **顺手修的一条既有红用例**:`TestGatherCreateFailureWithDestroyFailureKeepsRecord`(09-29 入库)断言「票据留 matched」,
+  但它的铺数据 `popMatchedPair` 只弹组、没有像生产的 `matchQueueOnce` 那样先把票据推进 matched,所以一直是红的
+  (在人数档改动之前的提交 `84d5a3d903` 上单独跑同样失败)。只在该用例里补了推进 matched 的一步,没有改被测代码。
+- **产物**:`bin\go_services\match.exe` 已用 `go_services.ps1 -Command build -Services match` 重编(bin 不入库)。
+  只换 match 就能验人数档匹配:两个客户端都选「2人」应进同一场战斗;此时怪物仍是固定一组(battle 未重编)。
+- **进度文件改 union 合并**:`.gitattributes` 给 `docs/PROGRESS.md` 配了 `merge=union`。起因是每小时自动保存的 `git pull`
+  在本机与远端都往本文件末尾追加时每次都卡成未完成的合并,当天三次(`07c7e238ff`、`84d5a3d903`、`7897e0a146` 都是本会话手工收的)。
+  代价与约定写在 `.gitattributes` 注释和 AGENTS §5:union 从不报冲突,补充旧条目要另起一条,不要回头改最后一条。
+- **仍未做**:robot 的 `go build -mod=vendor`;C++(引擎、battle 节点、单测)未编译;Unity 内测试与面板目视;联机验收。
+- **Java 版(AGENTS §12)**:不涉及(本条是运行证据与本仓库的 git 属性)。
+
 ## 2026-10-10 装备强化与镶嵌(装备属性系统二期)(Claude,服务器未编译;客户端离线用例已跑)
 
 - **起因**:10-09 用户贴了一段代码核查(「穿戴 / 卸下 / 换装后属性生效,以及强化、镶嵌还不能测」)并要求「做完逻辑代码」。先做了只读调研:

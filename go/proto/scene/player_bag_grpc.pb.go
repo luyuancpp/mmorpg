@@ -19,8 +19,11 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	SceneBagClientPlayer_GetBag_FullMethodName  = "/SceneBagClientPlayer/GetBag"
-	SceneBagClientPlayer_SortBag_FullMethodName = "/SceneBagClientPlayer/SortBag"
+	SceneBagClientPlayer_GetBag_FullMethodName      = "/SceneBagClientPlayer/GetBag"
+	SceneBagClientPlayer_SortBag_FullMethodName     = "/SceneBagClientPlayer/SortBag"
+	SceneBagClientPlayer_EquipItem_FullMethodName   = "/SceneBagClientPlayer/EquipItem"
+	SceneBagClientPlayer_UnequipItem_FullMethodName = "/SceneBagClientPlayer/UnequipItem"
+	SceneBagClientPlayer_GmGrantItem_FullMethodName = "/SceneBagClientPlayer/GmGrantItem"
 )
 
 // SceneBagClientPlayerClient is the client API for SceneBagClientPlayer service.
@@ -31,6 +34,12 @@ type SceneBagClientPlayerClient interface {
 	GetBag(ctx context.Context, in *GetBagRequest, opts ...grpc.CallOption) (*GetBagResponse, error)
 	// 仅支持人物背包和仓库，玩家显式点击后走 BagService 审计入口。
 	SortBag(ctx context.Context, in *SortBagRequest, opts ...grpc.CallOption) (*SortBagResponse, error)
+	// ── 以下只许在末尾追加:生成的 CallMethod 按 method index 分发 ──
+	// 穿上 / 卸下:战斗中、跨区冻结中拒绝;成功后服务器重算属性并推属性面板。
+	EquipItem(ctx context.Context, in *EquipItemRequest, opts ...grpc.CallOption) (*EquipItemResponse, error)
+	UnequipItem(ctx context.Context, in *UnequipItemRequest, opts ...grpc.CallOption) (*UnequipItemResponse, error)
+	// 名字必须是 Gm + 大写字母开头:gate / scene 的 GM 闸按这个前缀识别。
+	GmGrantItem(ctx context.Context, in *GmGrantItemRequest, opts ...grpc.CallOption) (*GmGrantItemResponse, error)
 }
 
 type sceneBagClientPlayerClient struct {
@@ -61,6 +70,36 @@ func (c *sceneBagClientPlayerClient) SortBag(ctx context.Context, in *SortBagReq
 	return out, nil
 }
 
+func (c *sceneBagClientPlayerClient) EquipItem(ctx context.Context, in *EquipItemRequest, opts ...grpc.CallOption) (*EquipItemResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EquipItemResponse)
+	err := c.cc.Invoke(ctx, SceneBagClientPlayer_EquipItem_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *sceneBagClientPlayerClient) UnequipItem(ctx context.Context, in *UnequipItemRequest, opts ...grpc.CallOption) (*UnequipItemResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UnequipItemResponse)
+	err := c.cc.Invoke(ctx, SceneBagClientPlayer_UnequipItem_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *sceneBagClientPlayerClient) GmGrantItem(ctx context.Context, in *GmGrantItemRequest, opts ...grpc.CallOption) (*GmGrantItemResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GmGrantItemResponse)
+	err := c.cc.Invoke(ctx, SceneBagClientPlayer_GmGrantItem_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // SceneBagClientPlayerServer is the server API for SceneBagClientPlayer service.
 // All implementations must embed UnimplementedSceneBagClientPlayerServer
 // for forward compatibility.
@@ -69,6 +108,12 @@ type SceneBagClientPlayerServer interface {
 	GetBag(context.Context, *GetBagRequest) (*GetBagResponse, error)
 	// 仅支持人物背包和仓库，玩家显式点击后走 BagService 审计入口。
 	SortBag(context.Context, *SortBagRequest) (*SortBagResponse, error)
+	// ── 以下只许在末尾追加:生成的 CallMethod 按 method index 分发 ──
+	// 穿上 / 卸下:战斗中、跨区冻结中拒绝;成功后服务器重算属性并推属性面板。
+	EquipItem(context.Context, *EquipItemRequest) (*EquipItemResponse, error)
+	UnequipItem(context.Context, *UnequipItemRequest) (*UnequipItemResponse, error)
+	// 名字必须是 Gm + 大写字母开头:gate / scene 的 GM 闸按这个前缀识别。
+	GmGrantItem(context.Context, *GmGrantItemRequest) (*GmGrantItemResponse, error)
 	mustEmbedUnimplementedSceneBagClientPlayerServer()
 }
 
@@ -84,6 +129,15 @@ func (UnimplementedSceneBagClientPlayerServer) GetBag(context.Context, *GetBagRe
 }
 func (UnimplementedSceneBagClientPlayerServer) SortBag(context.Context, *SortBagRequest) (*SortBagResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method SortBag not implemented")
+}
+func (UnimplementedSceneBagClientPlayerServer) EquipItem(context.Context, *EquipItemRequest) (*EquipItemResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method EquipItem not implemented")
+}
+func (UnimplementedSceneBagClientPlayerServer) UnequipItem(context.Context, *UnequipItemRequest) (*UnequipItemResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UnequipItem not implemented")
+}
+func (UnimplementedSceneBagClientPlayerServer) GmGrantItem(context.Context, *GmGrantItemRequest) (*GmGrantItemResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GmGrantItem not implemented")
 }
 func (UnimplementedSceneBagClientPlayerServer) mustEmbedUnimplementedSceneBagClientPlayerServer() {}
 func (UnimplementedSceneBagClientPlayerServer) testEmbeddedByValue()                              {}
@@ -142,6 +196,60 @@ func _SceneBagClientPlayer_SortBag_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _SceneBagClientPlayer_EquipItem_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EquipItemRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SceneBagClientPlayerServer).EquipItem(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SceneBagClientPlayer_EquipItem_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SceneBagClientPlayerServer).EquipItem(ctx, req.(*EquipItemRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SceneBagClientPlayer_UnequipItem_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UnequipItemRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SceneBagClientPlayerServer).UnequipItem(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SceneBagClientPlayer_UnequipItem_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SceneBagClientPlayerServer).UnequipItem(ctx, req.(*UnequipItemRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SceneBagClientPlayer_GmGrantItem_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GmGrantItemRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SceneBagClientPlayerServer).GmGrantItem(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SceneBagClientPlayer_GmGrantItem_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SceneBagClientPlayerServer).GmGrantItem(ctx, req.(*GmGrantItemRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // SceneBagClientPlayer_ServiceDesc is the grpc.ServiceDesc for SceneBagClientPlayer service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -156,6 +264,18 @@ var SceneBagClientPlayer_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SortBag",
 			Handler:    _SceneBagClientPlayer_SortBag_Handler,
+		},
+		{
+			MethodName: "EquipItem",
+			Handler:    _SceneBagClientPlayer_EquipItem_Handler,
+		},
+		{
+			MethodName: "UnequipItem",
+			Handler:    _SceneBagClientPlayer_UnequipItem_Handler,
+		},
+		{
+			MethodName: "GmGrantItem",
+			Handler:    _SceneBagClientPlayer_GmGrantItem_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -407,6 +407,66 @@
    "max_requests": 1,
    "time_window": 1,
    "tip_message": 1000
+  },
+  {
+   "id": 239,
+   "max_requests": 5,
+   "time_window": 1,
+   "tip_message": 1000
+  },
+  {
+   "id": 240,
+   "max_requests": 5,
+   "time_window": 1,
+   "tip_message": 1000
+  },
+  {
+   "id": 241,
+   "max_requests": 10,
+   "time_window": 1,
+   "tip_message": 1000
+  },
+  {
+   "id": 242,
+   "max_requests": 5,
+   "time_window": 1,
+   "tip_message": 1000
+  },
+  {
+   "id": 243,
+   "max_requests": 5,
+   "time_window": 1,
+   "tip_message": 1000
+  },
+  {
+   "id": 249,
+   "max_requests": 5,
+   "time_window": 1,
+   "tip_message": 1000
+  },
+  {
+   "id": 246,
+   "max_requests": 5,
+   "time_window": 1,
+   "tip_message": 1000
+  },
+  {
+   "id": 247,
+   "max_requests": 5,
+   "time_window": 1,
+   "tip_message": 1000
+  },
+  {
+   "id": 191,
+   "max_requests": 10,
+   "time_window": 1,
+   "tip_message": 1000
+  },
+  {
+   "id": 192,
+   "max_requests": 5,
+   "time_window": 1,
+   "tip_message": 1000
   }
  ]
 }

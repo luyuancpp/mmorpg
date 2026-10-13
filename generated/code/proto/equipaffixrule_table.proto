@@ -1,0 +1,21 @@
+
+syntax = "proto3";
+
+option go_package = "generated/pb/table";
+
+option java_package = "com.game.table";
+option java_outer_classname = "EquipAffixRuleTableOuterClass";
+option java_multiple_files = true;
+
+
+message EquipAffixRuleTable {
+	uint32 id = 1;
+	uint32 blue_min = 2;
+	uint32 blue_max = 3;
+	uint32 pink_rate = 4;
+	uint32 yellow_rate = 5;
+}
+
+message EquipAffixRuleTableData {
+	repeated EquipAffixRuleTable data = 1;
+}

@@ -22,6 +22,10 @@ struct EquipSlotEquip_kindComp {
     uint32_t value;
 };
 
+struct EquipSlotNameComp {
+    std::string_view value;
+};
+
 
 // ============================================================
 // Factory helpers — build component from a proto row
@@ -32,4 +36,7 @@ inline EquipSlotIdComp MakeEquipSlotIdComp(const EquipSlotTable& row) {
 }
 inline EquipSlotEquip_kindComp MakeEquipSlotEquip_kindComp(const EquipSlotTable& row) {
     return { row.equip_kind() };
+}
+inline EquipSlotNameComp MakeEquipSlotNameComp(const EquipSlotTable& row) {
+    return { std::string_view(row.name()) };
 }

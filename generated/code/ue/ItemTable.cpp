@@ -113,6 +113,27 @@ static void ItemTableCheckNarrowedRow(const TSharedPtr<FJsonObject>& RowObject, 
 	ItemTableCheckNarrowedField(RowObject, TEXT("battle_usable"), TEXT("battle_usable"), RowIndex, 2147483647.0, TEXT("uint32"));
 	ItemTableCheckNarrowedField(RowObject, TEXT("battle_heal_hp"), TEXT("battle_heal_hp"), RowIndex, 9223372036854775807.0, TEXT("uint64"));
 	ItemTableCheckNarrowedField(RowObject, TEXT("battle_heal_mp"), TEXT("battle_heal_mp"), RowIndex, 9223372036854775807.0, TEXT("uint64"));
+	ItemTableCheckNarrowedField(RowObject, TEXT("equip_level"), TEXT("equip_level"), RowIndex, 2147483647.0, TEXT("uint32"));
+	ItemTableCheckNarrowedField(RowObject, TEXT("equip_class"), TEXT("equip_class"), RowIndex, 2147483647.0, TEXT("uint32"));
+	ItemTableCheckNarrowedField(RowObject, TEXT("affix_pool"), TEXT("affix_pool"), RowIndex, 2147483647.0, TEXT("uint32"));
+	ItemTableCheckNarrowedField(RowObject, TEXT("affix_rule"), TEXT("affix_rule"), RowIndex, 2147483647.0, TEXT("uint32"));
+	// 子消息 base_attr[]:每个元素是一个对象,逐个元素查它的收窄列。
+	if (const TSharedPtr<FJsonValue>* BaseAttrField = RowObject->Values.Find(TEXT("base_attr")))
+	{
+		if (BaseAttrField->IsValid() && (*BaseAttrField)->Type == EJson::Array)
+		{
+			for (const TSharedPtr<FJsonValue>& Element : (*BaseAttrField)->AsArray())
+			{
+				if (!Element.IsValid() || Element->Type != EJson::Object)
+				{
+					continue;
+				}
+				const TSharedPtr<FJsonObject>& ElementObject = Element->AsObject();
+				ItemTableCheckNarrowedField(ElementObject, TEXT("base_attr_id"), TEXT("base_attr[].base_attr_id"), RowIndex, 2147483647.0, TEXT("uint32"));
+				ItemTableCheckNarrowedField(ElementObject, TEXT("base_attr_value"), TEXT("base_attr[].base_attr_value"), RowIndex, 2147483647.0, TEXT("uint32"));
+			}
+		}
+	}
 }
 
 bool UItemTable::LoadFromJson(const FString& JsonText, FString& OutError)
@@ -203,6 +224,7 @@ void UItemTable::BuildIndices(FSnapshot& Snap)
 				*LexToString(Row.id), *Existing, RowIndex);
 		}
 		Snap.IdIndex.Add(Row.id, RowIndex);
+		Snap.AffixRuleIndex.FindOrAdd(Row.affix_rule).Add(RowIndex);
 	}
 }
 
@@ -255,6 +277,29 @@ const FCfgItemRow* UItemTable::RandOne() const
 		return nullptr;
 	}
 	return &Snapshot->Rows[FMath::RandRange(0, Snapshot->Rows.Num() - 1)];
+}
+
+TArray<const FCfgItemRow*> UItemTable::GetByAffixRule(int32 Key) const
+{
+	TArray<const FCfgItemRow*> Result;
+	const TArray<int32>& Indices = GetAffixRuleIndices(Key);
+	Result.Reserve(Indices.Num());
+	for (const int32 RowIndex : Indices)
+	{
+		Result.Add(&Snapshot->Rows[RowIndex]);
+	}
+	return Result;
+}
+
+const TArray<int32>& UItemTable::GetAffixRuleIndices(int32 Key) const
+{
+	const TArray<int32>* Found = Snapshot->AffixRuleIndex.Find(Key);
+	return Found != nullptr ? *Found : GItemEmptyIndices;
+}
+
+int32 UItemTable::CountByAffixRuleIndex(int32 Key) const
+{
+	return GetAffixRuleIndices(Key).Num();
 }
 
 TArray<const FCfgItemRow*> UItemTable::Where(TFunctionRef<bool(const FCfgItemRow&)> Pred) const

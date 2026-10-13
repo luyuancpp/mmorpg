@@ -1542,6 +1542,75 @@ void SendDataServiceBatchGetPlayerName(entt::registry& registry, entt::entity no
     SendDataServiceBatchGetPlayerName(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
+#pragma region DataServiceGetPlayerAssetOpLedger
+boost::object_pool<AsyncDataServiceGetPlayerAssetOpLedgerGrpcClient> DataServiceGetPlayerAssetOpLedgerPool;
+using AsyncDataServiceGetPlayerAssetOpLedgerHandlerFunctionType =
+    std::function<void(const ClientContext&, const ::data_service::GetPlayerAssetOpLedgerResponse&)>;
+AsyncDataServiceGetPlayerAssetOpLedgerHandlerFunctionType AsyncDataServiceGetPlayerAssetOpLedgerHandler;
+AsyncDataServiceGetPlayerAssetOpLedgerFailedHandlerFunctionType AsyncDataServiceGetPlayerAssetOpLedgerFailedHandler;
+
+void AsyncCompleteGrpcDataServiceGetPlayerAssetOpLedger(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
+    auto call(
+        static_cast<AsyncDataServiceGetPlayerAssetOpLedgerGrpcClient*>(got_tag));
+    if (call->status.ok()) {
+        if (AsyncDataServiceGetPlayerAssetOpLedgerHandler) {
+            AsyncDataServiceGetPlayerAssetOpLedgerHandler(call->context, call->reply);
+        } else {
+            // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
+            // 确实不需要应答的调用方显式装一个空处理器。
+            thread_local bool reportedMissingHandler = false;
+            if (!reportedMissingHandler) {
+                reportedMissingHandler = true;
+                LOG_ERROR << "gRPC DataService.GetPlayerAssetOpLedger reply dropped: AsyncDataServiceGetPlayerAssetOpLedgerHandler is not installed"
+                          << " (install one, or an empty one if the reply is intentionally ignored)";
+            }
+        }
+    } else if (AsyncDataServiceGetPlayerAssetOpLedgerFailedHandler) {
+        const GrpcCallFailure failure{call->messageId, "DataService.GetPlayerAssetOpLedger", call->context, call->status, call->sentMetadata};
+        AsyncDataServiceGetPlayerAssetOpLedgerFailedHandler(failure, call->request);
+    } else {
+        LOG_ERROR << "gRPC DataService.GetPlayerAssetOpLedger failed: code=" << static_cast<int>(call->status.error_code())
+                  << " msg=" << call->status.error_message();
+    }
+
+	DataServiceGetPlayerAssetOpLedgerPool.destroy(call);
+}
+
+void SendDataServiceGetPlayerAssetOpLedger(entt::registry& registry, entt::entity nodeEntity, const ::data_service::GetPlayerAssetOpLedgerRequest& request) {
+
+    SendDataServiceGetPlayerAssetOpLedger(registry, nodeEntity, request, {}, {});
+
+}
+
+void SendDataServiceGetPlayerAssetOpLedger(entt::registry& registry, entt::entity nodeEntity, const ::data_service::GetPlayerAssetOpLedgerRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+
+    auto call(DataServiceGetPlayerAssetOpLedgerPool.construct());
+    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
+
+    const size_t count = std::min(metaKeys.size(), metaValues.size());
+    call->sentMetadata.reserve(count);
+    for (size_t i = 0; i < count; ++i) {
+        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
+        call->sentMetadata.emplace_back(metaKeys[i], metaValues[i]);
+    }
+    call->request = request;
+    call->context.set_deadline(NextCallDeadline());
+
+    call->response_reader = registry
+        .get<DataServiceStubPtr>(nodeEntity)
+        ->PrepareAsyncGetPlayerAssetOpLedger(&call->context, call->request,
+                                           &cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(DataServiceGetPlayerAssetOpLedgerMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+
+}
+
+void SendDataServiceGetPlayerAssetOpLedger(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+    const ::data_service::GetPlayerAssetOpLedgerRequest& derived = static_cast<const ::data_service::GetPlayerAssetOpLedgerRequest&>(message);
+    SendDataServiceGetPlayerAssetOpLedger(registry, nodeEntity, derived, metaKeys, metaValues);
+}
+#pragma endregion
 
 void HandleDataServiceCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, GrpcTag* grpcTag) {
         switch (grpcTag->messageId) {
@@ -1633,6 +1702,10 @@ void HandleDataServiceCompletedQueueMessage(entt::registry& registry, entt::enti
             AsyncCompleteGrpcDataServiceBatchGetPlayerName(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
 			tagPool.destroy(grpcTag);
             break;
+        case DataServiceGetPlayerAssetOpLedgerMessageId:
+            AsyncCompleteGrpcDataServiceGetPlayerAssetOpLedger(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
+			tagPool.destroy(grpcTag);
+            break;
         default:
             break;
         }
@@ -1662,6 +1735,7 @@ void SetDataServiceHandler(const std::function<void(const ClientContext&, const 
     AsyncDataServiceReservePlayerNameHandler = handler;
     AsyncDataServiceReleasePlayerNameHandler = handler;
     AsyncDataServiceBatchGetPlayerNameHandler = handler;
+    AsyncDataServiceGetPlayerAssetOpLedgerHandler = handler;
 }
 
 void SetDataServiceIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler) {
@@ -1732,6 +1806,9 @@ void SetDataServiceIfEmptyHandler(const std::function<void(const ClientContext&,
     if (!AsyncDataServiceBatchGetPlayerNameHandler) {
         AsyncDataServiceBatchGetPlayerNameHandler = handler;
     }
+    if (!AsyncDataServiceGetPlayerAssetOpLedgerHandler) {
+        AsyncDataServiceGetPlayerAssetOpLedgerHandler = handler;
+    }
 }
 
 void SetDataServiceFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler) {
@@ -1757,6 +1834,7 @@ void SetDataServiceFailedHandler(const std::function<void(const GrpcCallFailure&
     AsyncDataServiceReservePlayerNameFailedHandler = handler;
     AsyncDataServiceReleasePlayerNameFailedHandler = handler;
     AsyncDataServiceBatchGetPlayerNameFailedHandler = handler;
+    AsyncDataServiceGetPlayerAssetOpLedgerFailedHandler = handler;
 }
 
 void SetDataServiceIfEmptyFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler) {
@@ -1825,6 +1903,9 @@ void SetDataServiceIfEmptyFailedHandler(const std::function<void(const GrpcCallF
     }
     if (!AsyncDataServiceBatchGetPlayerNameFailedHandler) {
         AsyncDataServiceBatchGetPlayerNameFailedHandler = handler;
+    }
+    if (!AsyncDataServiceGetPlayerAssetOpLedgerFailedHandler) {
+        AsyncDataServiceGetPlayerAssetOpLedgerFailedHandler = handler;
     }
 }
 

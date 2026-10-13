@@ -45,6 +45,7 @@ static const char* DataService_method_names[] = {
   "/data_service.DataService/ReservePlayerName",
   "/data_service.DataService/ReleasePlayerName",
   "/data_service.DataService/BatchGetPlayerName",
+  "/data_service.DataService/GetPlayerAssetOpLedger",
 };
 
 std::unique_ptr< DataService::Stub> DataService::NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options) {
@@ -76,6 +77,7 @@ DataService::Stub::Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channe
   , rpcmethod_ReservePlayerName_(DataService_method_names[19], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   , rpcmethod_ReleasePlayerName_(DataService_method_names[20], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   , rpcmethod_BatchGetPlayerName_(DataService_method_names[21], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_GetPlayerAssetOpLedger_(DataService_method_names[22], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   {}
 
 ::grpc::Status DataService::Stub::LoadPlayerData(::grpc::ClientContext* context, const ::data_service::LoadPlayerDataRequest& request, ::data_service::LoadPlayerDataResponse* response) {
@@ -584,6 +586,29 @@ void DataService::Stub::async::BatchGetPlayerName(::grpc::ClientContext* context
   return result;
 }
 
+::grpc::Status DataService::Stub::GetPlayerAssetOpLedger(::grpc::ClientContext* context, const ::data_service::GetPlayerAssetOpLedgerRequest& request, ::data_service::GetPlayerAssetOpLedgerResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::data_service::GetPlayerAssetOpLedgerRequest, ::data_service::GetPlayerAssetOpLedgerResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_GetPlayerAssetOpLedger_, context, request, response);
+}
+
+void DataService::Stub::async::GetPlayerAssetOpLedger(::grpc::ClientContext* context, const ::data_service::GetPlayerAssetOpLedgerRequest* request, ::data_service::GetPlayerAssetOpLedgerResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::data_service::GetPlayerAssetOpLedgerRequest, ::data_service::GetPlayerAssetOpLedgerResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_GetPlayerAssetOpLedger_, context, request, response, std::move(f));
+}
+
+void DataService::Stub::async::GetPlayerAssetOpLedger(::grpc::ClientContext* context, const ::data_service::GetPlayerAssetOpLedgerRequest* request, ::data_service::GetPlayerAssetOpLedgerResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_GetPlayerAssetOpLedger_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::data_service::GetPlayerAssetOpLedgerResponse>* DataService::Stub::PrepareAsyncGetPlayerAssetOpLedgerRaw(::grpc::ClientContext* context, const ::data_service::GetPlayerAssetOpLedgerRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::data_service::GetPlayerAssetOpLedgerResponse, ::data_service::GetPlayerAssetOpLedgerRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_GetPlayerAssetOpLedger_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::data_service::GetPlayerAssetOpLedgerResponse>* DataService::Stub::AsyncGetPlayerAssetOpLedgerRaw(::grpc::ClientContext* context, const ::data_service::GetPlayerAssetOpLedgerRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncGetPlayerAssetOpLedgerRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
 DataService::Service::Service() {
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       DataService_method_names[0],
@@ -805,6 +830,16 @@ DataService::Service::Service() {
              ::data_service::BatchGetPlayerNameResponse* resp) {
                return service->BatchGetPlayerName(ctx, req, resp);
              }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      DataService_method_names[22],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< DataService::Service, ::data_service::GetPlayerAssetOpLedgerRequest, ::data_service::GetPlayerAssetOpLedgerResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](DataService::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::data_service::GetPlayerAssetOpLedgerRequest* req,
+             ::data_service::GetPlayerAssetOpLedgerResponse* resp) {
+               return service->GetPlayerAssetOpLedger(ctx, req, resp);
+             }, this)));
 }
 
 DataService::Service::~Service() {
@@ -958,6 +993,13 @@ DataService::Service::~Service() {
 }
 
 ::grpc::Status DataService::Service::BatchGetPlayerName(::grpc::ServerContext* context, const ::data_service::BatchGetPlayerNameRequest* request, ::data_service::BatchGetPlayerNameResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status DataService::Service::GetPlayerAssetOpLedger(::grpc::ServerContext* context, const ::data_service::GetPlayerAssetOpLedgerRequest* request, ::data_service::GetPlayerAssetOpLedgerResponse* response) {
   (void) context;
   (void) request;
   (void) response;

@@ -138,7 +138,7 @@ scene 的节点号即可。
 | 94 / 95 | `SceneCurrencyClientPlayer.GmBlock/UnblockCurrency` | 自己解除货币封禁 |
 | 175 | `SceneAttributeClientPlayer.GmSetPlayerLevel` | 一秒满级(上限 85) |
 | 187 | `ScenePetClientPlayer.GmGrantPet` | 自己发任意宝宝 |
-| 待 proto-gen 发号(见 `proto/message_id.txt` 的 `SceneBagClientPlayerGmGrantItem`) | `SceneBagClientPlayer.GmGrantItem` | 自己发任意物品 / 装备(单次至多 99 个;装备照常掷随机属性) |
+| 247 | `SceneBagClientPlayer.GmGrantItem` | 自己发任意物品 / 装备(单次至多 99 个;装备照常掷随机属性) |
 
 前六条在 2026-09-18 收口之前**没有任何鉴权** —— 会话过了令牌校验之后,普通玩家发一个包就能
 执行。聚宝斋要用人民币寄售(`docs/design/jubaozhai-market.md` §12 P0-a),这条口子

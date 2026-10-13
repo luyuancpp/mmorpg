@@ -45,4 +45,88 @@ public interface ItemTableOrBuilder extends
    * @return The battleHealMp.
    */
   long getBattleHealMp();
+
+  /**
+   * <code>string name = 7;</code>
+   * @return The name.
+   */
+  java.lang.String getName();
+  /**
+   * <code>string name = 7;</code>
+   * @return The bytes for name.
+   */
+  com.google.protobuf.ByteString
+      getNameBytes();
+
+  /**
+   * <code>string description = 8;</code>
+   * @return The description.
+   */
+  java.lang.String getDescription();
+  /**
+   * <code>string description = 8;</code>
+   * @return The bytes for description.
+   */
+  com.google.protobuf.ByteString
+      getDescriptionBytes();
+
+  /**
+   * <code>string icon_key = 9;</code>
+   * @return The iconKey.
+   */
+  java.lang.String getIconKey();
+  /**
+   * <code>string icon_key = 9;</code>
+   * @return The bytes for iconKey.
+   */
+  com.google.protobuf.ByteString
+      getIconKeyBytes();
+
+  /**
+   * <code>uint32 equip_level = 10;</code>
+   * @return The equipLevel.
+   */
+  int getEquipLevel();
+
+  /**
+   * <code>uint32 equip_class = 11;</code>
+   * @return The equipClass.
+   */
+  int getEquipClass();
+
+  /**
+   * <code>uint32 affix_pool = 12;</code>
+   * @return The affixPool.
+   */
+  int getAffixPool();
+
+  /**
+   * <code>uint32 affix_rule = 13;</code>
+   * @return The affixRule.
+   */
+  int getAffixRule();
+
+  /**
+   * <code>repeated .Itembase_attr base_attr = 14;</code>
+   */
+  java.util.List<com.game.table.Itembase_attr> 
+      getBaseAttrList();
+  /**
+   * <code>repeated .Itembase_attr base_attr = 14;</code>
+   */
+  com.game.table.Itembase_attr getBaseAttr(int index);
+  /**
+   * <code>repeated .Itembase_attr base_attr = 14;</code>
+   */
+  int getBaseAttrCount();
+  /**
+   * <code>repeated .Itembase_attr base_attr = 14;</code>
+   */
+  java.util.List<? extends com.game.table.Itembase_attrOrBuilder> 
+      getBaseAttrOrBuilderList();
+  /**
+   * <code>repeated .Itembase_attr base_attr = 14;</code>
+   */
+  com.game.table.Itembase_attrOrBuilder getBaseAttrOrBuilder(
+      int index);
 }
