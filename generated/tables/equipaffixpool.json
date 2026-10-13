@@ -1,0 +1,178 @@
+{
+ "data": [
+  {
+   "attr_id": 1,
+   "id": 1001,
+   "pool_id": 1,
+   "weight": 100
+  },
+  {
+   "attr_id": 2,
+   "id": 1002,
+   "pool_id": 1,
+   "weight": 100
+  },
+  {
+   "attr_id": 3,
+   "id": 1003,
+   "pool_id": 1,
+   "weight": 100
+  },
+  {
+   "attr_id": 4,
+   "id": 1004,
+   "pool_id": 1,
+   "weight": 100
+  },
+  {
+   "attr_id": 5,
+   "id": 1005,
+   "pool_id": 1,
+   "weight": 100
+  },
+  {
+   "attr_id": 6,
+   "id": 1006,
+   "pool_id": 1,
+   "weight": 100
+  },
+  {
+   "attr_id": 12,
+   "id": 1012,
+   "pool_id": 1,
+   "weight": 100
+  },
+  {
+   "attr_id": 13,
+   "id": 1013,
+   "pool_id": 1,
+   "weight": 100
+  },
+  {
+   "attr_id": 14,
+   "id": 1014,
+   "pool_id": 1,
+   "weight": 100
+  },
+  {
+   "attr_id": 15,
+   "id": 1015,
+   "pool_id": 1,
+   "weight": 100
+  },
+  {
+   "attr_id": 17,
+   "id": 1017,
+   "pool_id": 1,
+   "weight": 100
+  },
+  {
+   "attr_id": 18,
+   "id": 1018,
+   "pool_id": 1,
+   "weight": 100
+  },
+  {
+   "attr_id": 3,
+   "id": 2003,
+   "pool_id": 2,
+   "weight": 100
+  },
+  {
+   "attr_id": 4,
+   "id": 2004,
+   "pool_id": 2,
+   "weight": 100
+  },
+  {
+   "attr_id": 5,
+   "id": 2005,
+   "pool_id": 2,
+   "weight": 100
+  },
+  {
+   "attr_id": 6,
+   "id": 2006,
+   "pool_id": 2,
+   "weight": 100
+  },
+  {
+   "attr_id": 7,
+   "id": 2007,
+   "pool_id": 2,
+   "weight": 100
+  },
+  {
+   "attr_id": 8,
+   "id": 2008,
+   "pool_id": 2,
+   "weight": 100
+  },
+  {
+   "attr_id": 9,
+   "id": 2009,
+   "pool_id": 2,
+   "weight": 100
+  },
+  {
+   "attr_id": 10,
+   "id": 2010,
+   "pool_id": 2,
+   "weight": 100
+  },
+  {
+   "attr_id": 16,
+   "id": 2016,
+   "pool_id": 2,
+   "weight": 100
+  },
+  {
+   "attr_id": 19,
+   "id": 2019,
+   "pool_id": 2,
+   "weight": 100
+  },
+  {
+   "attr_id": 20,
+   "id": 2020,
+   "pool_id": 2,
+   "weight": 100
+  },
+  {
+   "attr_id": 21,
+   "id": 2021,
+   "pool_id": 2,
+   "weight": 100
+  },
+  {
+   "attr_id": 22,
+   "id": 2022,
+   "pool_id": 2,
+   "weight": 100
+  },
+  {
+   "attr_id": 23,
+   "id": 2023,
+   "pool_id": 2,
+   "weight": 100
+  },
+  {
+   "attr_id": 24,
+   "id": 2024,
+   "pool_id": 2,
+   "weight": 100
+  },
+  {
+   "attr_id": 25,
+   "id": 2025,
+   "pool_id": 2,
+   "weight": 100
+  },
+  {
+   "attr_id": 26,
+   "id": 2026,
+   "pool_id": 2,
+   "weight": 100
+  }
+ ]
+}

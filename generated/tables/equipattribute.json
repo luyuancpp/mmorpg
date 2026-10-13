@@ -1,0 +1,212 @@
+{
+ "data": [
+  {
+   "effect": 4,
+   "effect_param": 0,
+   "id": 1,
+   "name": "伤害",
+   "percent": 0,
+   "sort": 10
+  },
+  {
+   "effect": 3,
+   "effect_param": 3,
+   "id": 2,
+   "name": "准确",
+   "percent": 0,
+   "sort": 20
+  },
+  {
+   "effect": 1,
+   "effect_param": 103,
+   "id": 3,
+   "name": "力量",
+   "percent": 0,
+   "sort": 30
+  },
+  {
+   "effect": 1,
+   "effect_param": 101,
+   "id": 4,
+   "name": "体质",
+   "percent": 0,
+   "sort": 40
+  },
+  {
+   "effect": 1,
+   "effect_param": 102,
+   "id": 5,
+   "name": "灵力",
+   "percent": 0,
+   "sort": 50
+  },
+  {
+   "effect": 1,
+   "effect_param": 104,
+   "id": 6,
+   "name": "敏捷",
+   "percent": 0,
+   "sort": 60
+  },
+  {
+   "effect": 2,
+   "effect_param": 0,
+   "id": 7,
+   "name": "所有属性",
+   "percent": 0,
+   "sort": 70
+  },
+  {
+   "effect": 3,
+   "effect_param": 6,
+   "id": 8,
+   "name": "防御",
+   "percent": 0,
+   "sort": 80
+  },
+  {
+   "effect": 3,
+   "effect_param": 1,
+   "id": 9,
+   "name": "气血",
+   "percent": 0,
+   "sort": 90
+  },
+  {
+   "effect": 3,
+   "effect_param": 2,
+   "id": 10,
+   "name": "法力",
+   "percent": 0,
+   "sort": 100
+  },
+  {
+   "effect": 3,
+   "effect_param": 5,
+   "id": 11,
+   "name": "速度",
+   "percent": 0,
+   "sort": 110
+  },
+  {
+   "effect": 5,
+   "effect_param": 1,
+   "id": 12,
+   "name": "物理必杀率",
+   "percent": 1,
+   "sort": 120
+  },
+  {
+   "effect": 5,
+   "effect_param": 2,
+   "id": 13,
+   "name": "法术必杀率",
+   "percent": 1,
+   "sort": 130
+  },
+  {
+   "effect": 5,
+   "effect_param": 3,
+   "id": 14,
+   "name": "物理连击率",
+   "percent": 1,
+   "sort": 140
+  },
+  {
+   "effect": 5,
+   "effect_param": 4,
+   "id": 15,
+   "name": "反击率",
+   "percent": 1,
+   "sort": 150
+  },
+  {
+   "effect": 5,
+   "effect_param": 5,
+   "id": 16,
+   "name": "反震率",
+   "percent": 1,
+   "sort": 160
+  },
+  {
+   "effect": 5,
+   "effect_param": 6,
+   "id": 17,
+   "name": "所有技能上升",
+   "percent": 0,
+   "sort": 170
+  },
+  {
+   "effect": 5,
+   "effect_param": 7,
+   "id": 18,
+   "name": "忽视所有抗异常",
+   "percent": 1,
+   "sort": 180
+  },
+  {
+   "effect": 5,
+   "effect_param": 8,
+   "id": 19,
+   "name": "抗中毒",
+   "percent": 1,
+   "sort": 190
+  },
+  {
+   "effect": 5,
+   "effect_param": 9,
+   "id": 20,
+   "name": "抗冰冻",
+   "percent": 1,
+   "sort": 200
+  },
+  {
+   "effect": 5,
+   "effect_param": 10,
+   "id": 21,
+   "name": "抗昏睡",
+   "percent": 1,
+   "sort": 210
+  },
+  {
+   "effect": 5,
+   "effect_param": 11,
+   "id": 22,
+   "name": "抗遗忘",
+   "percent": 1,
+   "sort": 220
+  },
+  {
+   "effect": 5,
+   "effect_param": 12,
+   "id": 23,
+   "name": "抗混乱",
+   "percent": 1,
+   "sort": 230
+  },
+  {
+   "effect": 5,
+   "effect_param": 13,
+   "id": 24,
+   "name": "所有抗异常",
+   "percent": 1,
+   "sort": 240
+  },
+  {
+   "effect": 5,
+   "effect_param": 14,
+   "id": 25,
+   "name": "抗法术",
+   "percent": 1,
+   "sort": 250
+  },
+  {
+   "effect": 5,
+   "effect_param": 15,
+   "id": 26,
+   "name": "抗物理",
+   "percent": 1,
+   "sort": 260
+  }
+ ]
+}

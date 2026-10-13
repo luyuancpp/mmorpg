@@ -95,7 +95,7 @@ private:
     bool InitPlayers(const CreateBattleRequest& request);
     bool InitMonsters(const CreateBattleRequest& request);
     // 出战宝宝:与主人同队的独立行动单位(player-pet.md §5)。
-    // 无客户端行动权(SubmitAction 只收 PLAYER),每回合由 FillDefaultActions 代打普攻,
+    // 无客户端行动权(SubmitAction 只收 PLAYER),每回合由 FillDefaultActions 选可用技能或普攻,
     // 因此不进 AllPlayersReady 的就绪判定 —— 带宝宝不会拖慢任何一个回合。
     bool InitPets(const CreateBattleRequest& request);
     void AppendMonsterActor(uint32_t monsterTableId, uint32_t monsterIndex, uint32_t referenceLevel);

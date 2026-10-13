@@ -31,16 +31,21 @@ public class ItemTableManager {
 
 
 
+        final Map<Integer, List<ItemTable>> idxAffixRule;
+
 
         Snapshot(ItemTableData data,
-                 Map<Integer, ItemTable> kvData) {
+                 Map<Integer, ItemTable> kvData,
+                 Map<Integer, List<ItemTable>> idxAffixRule) {
             this.data = data;
             this.kvData = kvData;
+            this.idxAffixRule = idxAffixRule;
         }
     }
 
     private Snapshot snapshot = new Snapshot(
             ItemTableData.getDefaultInstance(),
+            Collections.emptyMap(),
             Collections.emptyMap()
     );
 
@@ -60,12 +65,14 @@ public class ItemTableManager {
         ItemTableData data = builder.build();
 
         Map<Integer, ItemTable> kvData = new HashMap<>(data.getDataCount());
+        Map<Integer, List<ItemTable>> idxAffixRule = new HashMap<>();
 
         for (ItemTable row : data.getDataList()) {
             kvData.put(row.getId(), row);
+            idxAffixRule.computeIfAbsent(row.getAffixRule(), k -> new ArrayList<>()).add(row);
         }
 
-        this.snapshot = new Snapshot(data, kvData);
+        this.snapshot = new Snapshot(data, kvData, idxAffixRule);
     }
 
     public ItemTableData findAll() {
@@ -87,7 +94,13 @@ public class ItemTableManager {
 
 
 
+    public List<ItemTable> getByAffixRule(int key) {
+        return snapshot.idxAffixRule.getOrDefault(key, Collections.emptyList());
+    }
 
+
+
+    // FK: affix_rule → EquipAffixRule.id
 
 
     // ---- Exists ----
@@ -106,6 +119,10 @@ public class ItemTableManager {
 
 
 
+
+    public int countByAffixRuleIndex(int key) {
+        return snapshot.idxAffixRule.getOrDefault(key, Collections.emptyList()).size();
+    }
 
 
     // ---- FindByIds (IN) ----

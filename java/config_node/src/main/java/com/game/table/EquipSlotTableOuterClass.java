@@ -45,11 +45,12 @@ public final class EquipSlotTableOuterClass extends com.google.protobuf.Generate
       descriptor;
   static {
     java.lang.String[] descriptorData = {
-      "\n\025equipslot_table.proto\"0\n\016EquipSlotTabl" +
-      "e\022\n\n\002id\030\001 \001(\r\022\022\n\nequip_kind\030\002 \001(\r\"3\n\022Equ" +
-      "ipSlotTableData\022\035\n\004data\030\001 \003(\0132\017.EquipSlo" +
-      "tTableB@\n\016com.game.tableB\030EquipSlotTable" +
-      "OuterClassP\001Z\022generated/pb/tableb\006proto3"
+      "\n\025equipslot_table.proto\">\n\016EquipSlotTabl" +
+      "e\022\n\n\002id\030\001 \001(\r\022\022\n\nequip_kind\030\002 \001(\r\022\014\n\004nam" +
+      "e\030\003 \001(\t\"3\n\022EquipSlotTableData\022\035\n\004data\030\001 " +
+      "\003(\0132\017.EquipSlotTableB@\n\016com.game.tableB\030" +
+      "EquipSlotTableOuterClassP\001Z\022generated/pb" +
+      "/tableb\006proto3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
@@ -60,7 +61,7 @@ public final class EquipSlotTableOuterClass extends com.google.protobuf.Generate
     internal_static_EquipSlotTable_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_EquipSlotTable_descriptor,
-        new java.lang.String[] { "Id", "EquipKind", });
+        new java.lang.String[] { "Id", "EquipKind", "Name", });
     internal_static_EquipSlotTableData_descriptor =
       getDescriptor().getMessageType(1);
     internal_static_EquipSlotTableData_fieldAccessorTable = new

@@ -283,10 +283,14 @@ bool TurnBattleEngine::InitPets(const CreateBattleRequest& request) {
             actor.set_magic_attack(pet.magic_attack());
             actor.set_defense(pet.defense());
             actor.set_formation_slot(NextFormationSlot(snapshot.team_index()));
-            // 宝宝没有客户端行动权:标 auto,让默认行动路径(零随机分支之外的普攻)代打。
+            // 宝宝没有客户端行动权:标 auto,由默认行动路径选择可用技能,否则普攻。
             // 这同时保证 AllPlayersReady 不会因为宝宝没提交行动而卡住整个回合。
             actor.set_is_auto(true);
             for (const auto skillTableId : pet.skill_table_ids()) {
+                const auto* skillRow = dataProvider->FindSkill(skillTableId);
+                if (skillRow == nullptr || !IsTurnBattleCastableSkill(*skillRow)) {
+                    continue;
+                }
                 actor.add_skill_table_ids(skillTableId);
             }
             actors.emplace_back(std::move(actor));
@@ -695,7 +699,7 @@ TurnResultS2C TurnBattleEngine::ResolveCurrentRound() {
         return result;
     }
 
-    // 1. 未提交者(含掉线/超时玩家与全部怪物)填默认普攻
+    // 1. 未提交者填默认行动(宝宝可选技能,玩家与怪物仍普攻)
     FillDefaultActions();
 
     // 事件组编号每回合从 1 起(表现规格 D2);出手序在回合开始时一次排定并保留下来
@@ -758,6 +762,24 @@ void TurnBattleEngine::FillDefaultActions() {
         BattleAction defaultAction;
         defaultAction.set_action_type(BATTLE_ACTION_ATTACK);
         defaultAction.set_target_id(0);
+        // 只有宝宝自动选技能;玩家超时/挂机及怪物仍沿用原普攻路径。
+        // 技能按快照顺序、目标按单位插入序选择,选招不消费 RNG。
+        // 共用完整校验链,冷却/法力/沉默不满足时回落普攻,出手时还会再校验。
+        if (actor.actor_type() == BATTLE_ACTOR_TYPE_PET && !actor.skill_table_ids().empty()) {
+            const auto enemies = CollectAliveEnemyIds(actor);
+            if (!enemies.empty()) {
+                for (const auto skillId : actor.skill_table_ids()) {
+                    BattleAction skillAction;
+                    skillAction.set_action_type(BATTLE_ACTION_SKILL);
+                    skillAction.set_skill_table_id(skillId);
+                    skillAction.set_target_id(enemies.front());
+                    if (CheckActionPrerequisites(actor, skillAction) == kSuccess) {
+                        defaultAction = std::move(skillAction);
+                        break;
+                    }
+                }
+            }
+        }
         pendingActions[actor.actor_id()] = defaultAction;
     }
 }

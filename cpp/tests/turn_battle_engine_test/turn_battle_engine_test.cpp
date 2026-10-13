@@ -1829,10 +1829,11 @@ TEST(TurnBattleEngineTest, PetIsNotControllableByClient) {
     TurnBattleEngine engine(MakeProvider());
     auto request = MakeRequest(9402, turnbattle::kMatchModePveSolo, 4242);
     auto* owner = AddPlayer(request, kPlayerA, 0, 1000, 1000, 5, 0, 0, 120);
-    AddPet(owner, kPetA, 400, 400, 4, 360);
+    AddPet(owner, kPetA, 400, 400, 4, 360)->add_skill_table_ids(kSkillDamage);
     ASSERT_TRUE(engine.Initialize(request));
 
-    const auto* petBefore = FindPetActor(engine.BuildStateSnapshot(), kPetA);
+    const auto before = engine.BuildStateSnapshot();
+    const auto* petBefore = FindPetActor(before, kPetA);
     ASSERT_NE(petBefore, nullptr);
     const uint64_t petActorId = petBefore->actor_id();
 
@@ -1844,6 +1845,180 @@ TEST(TurnBattleEngineTest, PetIsNotControllableByClient) {
     const auto* petActor = FindPetActor(state, kPetA);
     ASSERT_NE(petActor, nullptr);
     EXPECT_TRUE(petActor->is_auto());
+}
+
+TEST(TurnBattleEngineTest, PetAutomaticallyCastsPaysManaAndAttacksDuringCooldown) {
+    auto provider = MakeProvider();
+    auto* cost = provider->AddSkill(kSkillDamage).add_cost_resource();
+    cost->set_cost_resource_id(turnbattle::kSkillCostResourceMana);
+    cost->set_cost_resource_cost(40);
+    TurnBattleEngine engine(provider);
+    auto request = MakeRequest(9410, 1 /* 1v1 */, 42);
+    auto* owner = AddPlayer(request, kPlayerA, 0, 10000, 10000, 0, 0, 0, 120);
+    auto* pet = AddPet(owner, kPetA, 10000, 10000, 0, 360);
+    pet->set_max_mana(120);
+    pet->mutable_base_attributes()->set_mana(120);
+    pet->add_skill_table_ids(kSkillDamage);
+    AddPlayer(request, kPlayerB, 1, 10000, 10000, 0, 0, 0, 120);
+    ASSERT_TRUE(engine.Initialize(request));
+
+    for (int round = 0; round < 3; ++round) {
+        engine.SubmitAction(kPlayerA, MakeAction(BATTLE_ACTION_DEFEND));
+        ASSERT_TRUE(engine.SubmitAction(kPlayerB, MakeAction(BATTLE_ACTION_DEFEND)));
+        const auto result = engine.ResolveCurrentRound();
+        const bool shouldCast = round != 1;
+        int casts = 0;
+        int attacks = 0;
+        int manaEvents = 0;
+        for (const auto& event : result.events()) {
+            if (event.source_id() != turnbattle::kPetActorIdBase) continue;
+            if (event.event_type() == BATTLE_EVENT_SKILL) {
+                ++casts;
+                EXPECT_EQ(event.skill_table_id(), kSkillDamage);
+                EXPECT_EQ(event.target_id(), kPlayerB);
+            }
+            if (event.event_type() == BATTLE_EVENT_ATTACK) ++attacks;
+            if (event.event_type() == BATTLE_EVENT_MANA) {
+                ++manaEvents;
+                EXPECT_EQ(event.value(), 40u);
+            }
+            if (event.event_type() == BATTLE_EVENT_DAMAGE) EXPECT_GT(event.value(), 0u);
+        }
+        EXPECT_EQ(casts, shouldCast ? 1 : 0);
+        EXPECT_EQ(attacks, shouldCast ? 0 : 1);
+        EXPECT_EQ(manaEvents, shouldCast ? 1 : 0);
+        const auto state = engine.BuildStateSnapshot();
+        const auto* activePet = FindPetActor(state, kPetA);
+        ASSERT_NE(activePet, nullptr);
+        EXPECT_EQ(activePet->attributes().mana(), round < 2 ? 80u : 40u);
+    }
+    ASSERT_EQ(engine.BuildSettlement(kPlayerA).pets_size(), 1);
+    EXPECT_EQ(engine.BuildSettlement(kPlayerA).pets(0).mana(), 40u);
+}
+
+TEST(TurnBattleEngineTest, PetInsufficientManaFallsBackWithoutSpendingMana) {
+    auto provider = MakeProvider();
+    auto* cost = provider->AddSkill(kSkillDamage).add_cost_resource();
+    cost->set_cost_resource_id(turnbattle::kSkillCostResourceMana);
+    cost->set_cost_resource_cost(40);
+    TurnBattleEngine engine(provider);
+    auto request = MakeRequest(9411, turnbattle::kMatchModePveSolo, 42);
+    auto* owner = AddPlayer(request, kPlayerA, 0, 1000, 1000, 0, 0, 0, 120);
+    auto* pet = AddPet(owner, kPetA, 1000, 1000, 0, 360);
+    pet->set_max_mana(30);
+    pet->mutable_base_attributes()->set_mana(30);
+    pet->add_skill_table_ids(kSkillDamage);
+    ASSERT_TRUE(engine.Initialize(request));
+    ASSERT_TRUE(engine.SubmitAction(kPlayerA, MakeAction(BATTLE_ACTION_DEFEND)));
+    const auto result = engine.ResolveCurrentRound();
+    EXPECT_EQ(CountEvents(result, BATTLE_EVENT_SKILL), 0);
+    EXPECT_EQ(CountEvents(result, BATTLE_EVENT_MANA), 0);
+    const auto* attack = FindFirstEvent(result, BATTLE_EVENT_ATTACK);
+    ASSERT_NE(attack, nullptr);
+    EXPECT_EQ(attack->source_id(), turnbattle::kPetActorIdBase);
+    const auto state = engine.BuildStateSnapshot();
+    ASSERT_NE(FindPetActor(state, kPetA), nullptr);
+    EXPECT_EQ(FindPetActor(state, kPetA)->attributes().mana(), 30u);
+}
+
+TEST(TurnBattleEngineTest, PetSkipsUnavailableSkillAndUsesFirstAvailableSkill) {
+    auto provider = MakeProvider();
+    auto* cost = provider->AddSkill(kSkillDamage).add_cost_resource();
+    cost->set_cost_resource_id(turnbattle::kSkillCostResourceMana);
+    cost->set_cost_resource_cost(40);
+    TurnBattleEngine engine(provider);
+    auto request = MakeRequest(9412, turnbattle::kMatchModePveSolo, 42);
+    auto* owner = AddPlayer(request, kPlayerA, 0, 1000, 1000, 0, 0, 0, 120);
+    auto* pet = AddPet(owner, kPetA, 1000, 1000, 0, 360);
+    pet->add_skill_table_ids(kSkillDamage);  // 零法力,不可用
+    pet->add_skill_table_ids(kSkillPoison);
+    pet->add_skill_table_ids(kSkillNuke);
+    ASSERT_TRUE(engine.Initialize(request));
+    ASSERT_TRUE(engine.SubmitAction(kPlayerA, MakeAction(BATTLE_ACTION_DEFEND)));
+    const auto result = engine.ResolveCurrentRound();
+    const auto* skill = FindFirstEvent(result, BATTLE_EVENT_SKILL);
+    ASSERT_NE(skill, nullptr);
+    EXPECT_EQ(skill->source_id(), turnbattle::kPetActorIdBase);
+    EXPECT_EQ(skill->skill_table_id(), kSkillPoison);
+}
+
+TEST(TurnBattleEngineTest, PetRejectsMissingAndNonCastableSkillsWithoutChangingDefaultRandomness) {
+    const auto run = [](bool hasInvalidSkills) {
+        auto provider = MakeProvider();
+        for (uint32_t bit : {turnbattle::kSkillTypeBitPassive, turnbattle::kSkillTypeBitToggle,
+                             turnbattle::kSkillTypeBitChannel}) {
+            auto& skill = provider->AddSkill(600 + bit);
+            skill.add_skill_type(bit);
+            provider->SetSkillDamage(600 + bit, 1000000);
+        }
+        TurnBattleEngine engine(provider);
+        auto request = MakeRequest(9413, turnbattle::kMatchModePveSolo, 314159);
+        auto* owner = AddPlayer(request, kPlayerA, 0, 1000, 1000, 0, 0, 0, 120);
+        auto* pet = AddPet(owner, kPetA, 1000, 1000, 0, 360);
+        if (hasInvalidSkills) {
+            pet->add_skill_table_ids(999999);
+            pet->add_skill_table_ids(600 + turnbattle::kSkillTypeBitPassive);
+            pet->add_skill_table_ids(600 + turnbattle::kSkillTypeBitToggle);
+            pet->add_skill_table_ids(600 + turnbattle::kSkillTypeBitChannel);
+        }
+        EXPECT_TRUE(engine.Initialize(request));
+        const auto state = engine.BuildStateSnapshot();
+        EXPECT_EQ(FindPetActor(state, kPetA)->skill_table_ids_size(), 0);
+        EXPECT_TRUE(engine.SubmitAction(kPlayerA, MakeAction(BATTLE_ACTION_DEFEND)));
+        const auto result = engine.ResolveCurrentRound();
+        EXPECT_EQ(CountEvents(result, BATTLE_EVENT_SKILL), 0);
+        std::string events;
+        for (const auto& event : result.events()) events += event.SerializeAsString();
+        return std::make_pair(events, turnbattle::TurnBattleEngineDeathTestAccess::PeekNextRandom(engine));
+    };
+    EXPECT_EQ(run(true), run(false));
+}
+
+TEST(TurnBattleEngineTest, PetSilencedFallsBackToAttack) {
+    TurnBattleEngine engine(MakeProvider());
+    auto request = MakeRequest(9414, turnbattle::kMatchModePveSolo, 42);
+    auto* owner = AddPlayer(request, kPlayerA, 0, 1000, 1000, 0, 0, 0, 120);
+    AddPet(owner, kPetA, 1000, 1000, 0, 360)->add_skill_table_ids(kSkillDamage);
+    ASSERT_TRUE(engine.Initialize(request));
+    ASSERT_TRUE(turnbattle::TurnBattleEngineDeathTestAccess::AddBuff(
+        engine, turnbattle::kPetActorIdBase, kBuffSilence, kPlayerA));
+    ASSERT_TRUE(engine.SubmitAction(kPlayerA, MakeAction(BATTLE_ACTION_DEFEND)));
+    const auto result = engine.ResolveCurrentRound();
+    EXPECT_EQ(CountEvents(result, BATTLE_EVENT_SKILL), 0);
+    const auto* attack = FindFirstEvent(result, BATTLE_EVENT_ATTACK);
+    ASSERT_NE(attack, nullptr);
+    EXPECT_EQ(attack->source_id(), turnbattle::kPetActorIdBase);
+}
+
+TEST(TurnBattleEngineTest, OnlyPetChoosesAutomaticSkillAndSelectionIsDeterministic) {
+    const auto run = [] {
+        TurnBattleEngine engine(MakeProvider());
+        auto request = MakeRequest(9415, turnbattle::kMatchModePveSolo, 12345);
+        auto* owner = AddPlayer(request, kPlayerA, 0, 1000, 1000, 0, 0, 0, 120);
+        AddPet(owner, kPetA, 1000, 1000, 0, 360)->add_skill_table_ids(kSkillDamage);
+        EXPECT_TRUE(engine.Initialize(request));
+        // 主人没有提交行动,虽拥有技能仍普攻;怪物也是普攻。
+        const auto result = engine.ResolveCurrentRound();
+        bool playerAttacked = false;
+        bool monsterAttacked = false;
+        std::string events;
+        for (const auto& event : result.events()) {
+            events += event.SerializeAsString();
+            if (event.event_type() == BATTLE_EVENT_SKILL) {
+                EXPECT_EQ(event.source_id(), turnbattle::kPetActorIdBase);
+                EXPECT_EQ(event.target_id(), kMonsterId);
+            }
+            if (event.event_type() == BATTLE_EVENT_ATTACK) {
+                playerAttacked |= event.source_id() == kPlayerA;
+                monsterAttacked |= event.source_id() == kMonsterId;
+            }
+        }
+        EXPECT_EQ(CountEvents(result, BATTLE_EVENT_SKILL), 1);
+        EXPECT_TRUE(playerAttacked);
+        EXPECT_TRUE(monsterAttacked);
+        return events;
+    };
+    EXPECT_EQ(run(), run());
 }
 
 TEST(TurnBattleEngineTest, PetFinalStateGoesIntoOwnerSettlement) {

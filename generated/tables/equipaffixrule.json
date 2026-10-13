@@ -1,0 +1,11 @@
+{
+ "data": [
+  {
+   "blue_max": 3,
+   "blue_min": 1,
+   "id": 1,
+   "pink_rate": 3000,
+   "yellow_rate": 1500
+  }
+ ]
+}

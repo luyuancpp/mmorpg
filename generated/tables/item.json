@@ -223,6 +223,431 @@
    "equip_kind": 0,
    "id": 28,
    "max_stack_size": 999
+  },
+  {
+   "affix_pool": 1,
+   "affix_rule": 1,
+   "base_attr": [
+    {
+     "base_attr_id": 1,
+     "base_attr_value": 40
+    }
+   ],
+   "battle_heal_hp": 0,
+   "battle_heal_mp": 0,
+   "battle_usable": 0,
+   "description": "1级武器,提供伤害。",
+   "equip_class": 0,
+   "equip_kind": 11,
+   "equip_level": 1,
+   "icon_key": "UI/qdao_v3/icons_weapon/012_peachwood_sword",
+   "id": 1101,
+   "max_stack_size": 1,
+   "name": "新手木剑"
+  },
+  {
+   "affix_pool": 1,
+   "affix_rule": 1,
+   "base_attr": [
+    {
+     "base_attr_id": 1,
+     "base_attr_value": 420
+    }
+   ],
+   "battle_heal_hp": 0,
+   "battle_heal_mp": 0,
+   "battle_usable": 0,
+   "description": "20级武器,提供伤害。",
+   "equip_class": 0,
+   "equip_kind": 11,
+   "equip_level": 20,
+   "icon_key": "UI/qdao_v3/icons_weapon/007_flying_sword",
+   "id": 1102,
+   "max_stack_size": 1,
+   "name": "青锋剑"
+  },
+  {
+   "affix_pool": 1,
+   "affix_rule": 1,
+   "base_attr": [
+    {
+     "base_attr_id": 1,
+     "base_attr_value": 820
+    }
+   ],
+   "battle_heal_hp": 0,
+   "battle_heal_mp": 0,
+   "battle_usable": 0,
+   "description": "40级武器,提供伤害。",
+   "equip_class": 0,
+   "equip_kind": 11,
+   "equip_level": 40,
+   "icon_key": "UI/qdao_v3/icons_weapon/001_daoist_saber",
+   "id": 1103,
+   "max_stack_size": 1,
+   "name": "寒铁剑"
+  },
+  {
+   "affix_pool": 1,
+   "affix_rule": 1,
+   "base_attr": [
+    {
+     "base_attr_id": 1,
+     "base_attr_value": 1220
+    }
+   ],
+   "battle_heal_hp": 0,
+   "battle_heal_mp": 0,
+   "battle_usable": 0,
+   "description": "60级武器,提供伤害。",
+   "equip_class": 0,
+   "equip_kind": 11,
+   "equip_level": 60,
+   "icon_key": "UI/qdao_v3/icons_weapon/074_lu_dongbin_immortal_sword",
+   "id": 1104,
+   "max_stack_size": 1,
+   "name": "流云剑"
+  },
+  {
+   "affix_pool": 1,
+   "affix_rule": 1,
+   "base_attr": [
+    {
+     "base_attr_id": 1,
+     "base_attr_value": 1620
+    }
+   ],
+   "battle_heal_hp": 0,
+   "battle_heal_mp": 0,
+   "battle_usable": 0,
+   "description": "80级武器,提供伤害。",
+   "equip_class": 0,
+   "equip_kind": 11,
+   "equip_level": 80,
+   "icon_key": "UI/qdao_v3/icons_weapon/19_lu_dongbin_immortal_sword",
+   "id": 1105,
+   "max_stack_size": 1,
+   "name": "惊雷剑"
+  },
+  {
+   "affix_pool": 2,
+   "affix_rule": 1,
+   "base_attr": [
+    {
+     "base_attr_id": 8,
+     "base_attr_value": 12
+    }
+   ],
+   "battle_heal_hp": 0,
+   "battle_heal_mp": 0,
+   "battle_usable": 0,
+   "description": "1级帽子,提供防御。",
+   "equip_class": 0,
+   "equip_kind": 12,
+   "equip_level": 1,
+   "id": 1201,
+   "max_stack_size": 1,
+   "name": "布头巾"
+  },
+  {
+   "affix_pool": 2,
+   "affix_rule": 1,
+   "base_attr": [
+    {
+     "base_attr_id": 8,
+     "base_attr_value": 126
+    }
+   ],
+   "battle_heal_hp": 0,
+   "battle_heal_mp": 0,
+   "battle_usable": 0,
+   "description": "20级帽子,提供防御。",
+   "equip_class": 0,
+   "equip_kind": 12,
+   "equip_level": 20,
+   "id": 1202,
+   "max_stack_size": 1,
+   "name": "青纱冠"
+  },
+  {
+   "affix_pool": 2,
+   "affix_rule": 1,
+   "base_attr": [
+    {
+     "base_attr_id": 8,
+     "base_attr_value": 246
+    }
+   ],
+   "battle_heal_hp": 0,
+   "battle_heal_mp": 0,
+   "battle_usable": 0,
+   "description": "40级帽子,提供防御。",
+   "equip_class": 0,
+   "equip_kind": 12,
+   "equip_level": 40,
+   "id": 1203,
+   "max_stack_size": 1,
+   "name": "寒铁盔"
+  },
+  {
+   "affix_pool": 2,
+   "affix_rule": 1,
+   "base_attr": [
+    {
+     "base_attr_id": 8,
+     "base_attr_value": 366
+    }
+   ],
+   "battle_heal_hp": 0,
+   "battle_heal_mp": 0,
+   "battle_usable": 0,
+   "description": "60级帽子,提供防御。",
+   "equip_class": 0,
+   "equip_kind": 12,
+   "equip_level": 60,
+   "id": 1204,
+   "max_stack_size": 1,
+   "name": "流云冠"
+  },
+  {
+   "affix_pool": 2,
+   "affix_rule": 1,
+   "base_attr": [
+    {
+     "base_attr_id": 8,
+     "base_attr_value": 486
+    }
+   ],
+   "battle_heal_hp": 0,
+   "battle_heal_mp": 0,
+   "battle_usable": 0,
+   "description": "80级帽子,提供防御。",
+   "equip_class": 0,
+   "equip_kind": 12,
+   "equip_level": 80,
+   "id": 1205,
+   "max_stack_size": 1,
+   "name": "惊雷冠"
+  },
+  {
+   "affix_pool": 2,
+   "affix_rule": 1,
+   "base_attr": [
+    {
+     "base_attr_id": 8,
+     "base_attr_value": 24
+    }
+   ],
+   "battle_heal_hp": 0,
+   "battle_heal_mp": 0,
+   "battle_usable": 0,
+   "description": "1级衣服,提供防御。",
+   "equip_class": 0,
+   "equip_kind": 13,
+   "equip_level": 1,
+   "id": 1301,
+   "max_stack_size": 1,
+   "name": "粗布衣"
+  },
+  {
+   "affix_pool": 2,
+   "affix_rule": 1,
+   "base_attr": [
+    {
+     "base_attr_id": 8,
+     "base_attr_value": 252
+    }
+   ],
+   "battle_heal_hp": 0,
+   "battle_heal_mp": 0,
+   "battle_usable": 0,
+   "description": "20级衣服,提供防御。",
+   "equip_class": 0,
+   "equip_kind": 13,
+   "equip_level": 20,
+   "id": 1302,
+   "max_stack_size": 1,
+   "name": "青纱袍"
+  },
+  {
+   "affix_pool": 2,
+   "affix_rule": 1,
+   "base_attr": [
+    {
+     "base_attr_id": 8,
+     "base_attr_value": 492
+    }
+   ],
+   "battle_heal_hp": 0,
+   "battle_heal_mp": 0,
+   "battle_usable": 0,
+   "description": "40级衣服,提供防御。",
+   "equip_class": 0,
+   "equip_kind": 13,
+   "equip_level": 40,
+   "id": 1303,
+   "max_stack_size": 1,
+   "name": "寒铁甲"
+  },
+  {
+   "affix_pool": 2,
+   "affix_rule": 1,
+   "base_attr": [
+    {
+     "base_attr_id": 8,
+     "base_attr_value": 732
+    }
+   ],
+   "battle_heal_hp": 0,
+   "battle_heal_mp": 0,
+   "battle_usable": 0,
+   "description": "60级衣服,提供防御。",
+   "equip_class": 0,
+   "equip_kind": 13,
+   "equip_level": 60,
+   "id": 1304,
+   "max_stack_size": 1,
+   "name": "流云袍"
+  },
+  {
+   "affix_pool": 2,
+   "affix_rule": 1,
+   "base_attr": [
+    {
+     "base_attr_id": 8,
+     "base_attr_value": 972
+    }
+   ],
+   "battle_heal_hp": 0,
+   "battle_heal_mp": 0,
+   "battle_usable": 0,
+   "description": "80级衣服,提供防御。",
+   "equip_class": 0,
+   "equip_kind": 13,
+   "equip_level": 80,
+   "id": 1305,
+   "max_stack_size": 1,
+   "name": "惊雷甲"
+  },
+  {
+   "affix_pool": 2,
+   "affix_rule": 1,
+   "base_attr": [
+    {
+     "base_attr_id": 8,
+     "base_attr_value": 12
+    },
+    {
+     "base_attr_id": 11,
+     "base_attr_value": 12
+    }
+   ],
+   "battle_heal_hp": 0,
+   "battle_heal_mp": 0,
+   "battle_usable": 0,
+   "description": "1级鞋子,提供防御与速度。",
+   "equip_class": 0,
+   "equip_kind": 14,
+   "equip_level": 1,
+   "id": 1401,
+   "max_stack_size": 1,
+   "name": "草鞋"
+  },
+  {
+   "affix_pool": 2,
+   "affix_rule": 1,
+   "base_attr": [
+    {
+     "base_attr_id": 8,
+     "base_attr_value": 126
+    },
+    {
+     "base_attr_id": 11,
+     "base_attr_value": 88
+    }
+   ],
+   "battle_heal_hp": 0,
+   "battle_heal_mp": 0,
+   "battle_usable": 0,
+   "description": "20级鞋子,提供防御与速度。",
+   "equip_class": 0,
+   "equip_kind": 14,
+   "equip_level": 20,
+   "id": 1402,
+   "max_stack_size": 1,
+   "name": "青纱履"
+  },
+  {
+   "affix_pool": 2,
+   "affix_rule": 1,
+   "base_attr": [
+    {
+     "base_attr_id": 8,
+     "base_attr_value": 246
+    },
+    {
+     "base_attr_id": 11,
+     "base_attr_value": 168
+    }
+   ],
+   "battle_heal_hp": 0,
+   "battle_heal_mp": 0,
+   "battle_usable": 0,
+   "description": "40级鞋子,提供防御与速度。",
+   "equip_class": 0,
+   "equip_kind": 14,
+   "equip_level": 40,
+   "id": 1403,
+   "max_stack_size": 1,
+   "name": "寒铁靴"
+  },
+  {
+   "affix_pool": 2,
+   "affix_rule": 1,
+   "base_attr": [
+    {
+     "base_attr_id": 8,
+     "base_attr_value": 366
+    },
+    {
+     "base_attr_id": 11,
+     "base_attr_value": 248
+    }
+   ],
+   "battle_heal_hp": 0,
+   "battle_heal_mp": 0,
+   "battle_usable": 0,
+   "description": "60级鞋子,提供防御与速度。",
+   "equip_class": 0,
+   "equip_kind": 14,
+   "equip_level": 60,
+   "id": 1404,
+   "max_stack_size": 1,
+   "name": "流云履"
+  },
+  {
+   "affix_pool": 2,
+   "affix_rule": 1,
+   "base_attr": [
+    {
+     "base_attr_id": 8,
+     "base_attr_value": 486
+    },
+    {
+     "base_attr_id": 11,
+     "base_attr_value": 328
+    }
+   ],
+   "battle_heal_hp": 0,
+   "battle_heal_mp": 0,
+   "battle_usable": 0,
+   "description": "80级鞋子,提供防御与速度。",
+   "equip_class": 0,
+   "equip_kind": 14,
+   "equip_level": 80,
+   "id": 1405,
+   "max_stack_size": 1,
+   "name": "惊雷靴"
   }
  ]
 }

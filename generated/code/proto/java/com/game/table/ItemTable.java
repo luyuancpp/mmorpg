@@ -28,6 +28,10 @@ private static final long serialVersionUID = 0L;
     super(builder);
   }
   private ItemTable() {
+    name_ = "";
+    description_ = "";
+    iconKey_ = "";
+    baseAttr_ = java.util.Collections.emptyList();
   }
 
   public static final com.google.protobuf.Descriptors.Descriptor
@@ -114,6 +118,208 @@ private static final long serialVersionUID = 0L;
     return battleHealMp_;
   }
 
+  public static final int NAME_FIELD_NUMBER = 7;
+  @SuppressWarnings("serial")
+  private volatile java.lang.Object name_ = "";
+  /**
+   * <code>string name = 7;</code>
+   * @return The name.
+   */
+  @java.lang.Override
+  public java.lang.String getName() {
+    java.lang.Object ref = name_;
+    if (ref instanceof java.lang.String) {
+      return (java.lang.String) ref;
+    } else {
+      com.google.protobuf.ByteString bs = 
+          (com.google.protobuf.ByteString) ref;
+      java.lang.String s = bs.toStringUtf8();
+      name_ = s;
+      return s;
+    }
+  }
+  /**
+   * <code>string name = 7;</code>
+   * @return The bytes for name.
+   */
+  @java.lang.Override
+  public com.google.protobuf.ByteString
+      getNameBytes() {
+    java.lang.Object ref = name_;
+    if (ref instanceof java.lang.String) {
+      com.google.protobuf.ByteString b = 
+          com.google.protobuf.ByteString.copyFromUtf8(
+              (java.lang.String) ref);
+      name_ = b;
+      return b;
+    } else {
+      return (com.google.protobuf.ByteString) ref;
+    }
+  }
+
+  public static final int DESCRIPTION_FIELD_NUMBER = 8;
+  @SuppressWarnings("serial")
+  private volatile java.lang.Object description_ = "";
+  /**
+   * <code>string description = 8;</code>
+   * @return The description.
+   */
+  @java.lang.Override
+  public java.lang.String getDescription() {
+    java.lang.Object ref = description_;
+    if (ref instanceof java.lang.String) {
+      return (java.lang.String) ref;
+    } else {
+      com.google.protobuf.ByteString bs = 
+          (com.google.protobuf.ByteString) ref;
+      java.lang.String s = bs.toStringUtf8();
+      description_ = s;
+      return s;
+    }
+  }
+  /**
+   * <code>string description = 8;</code>
+   * @return The bytes for description.
+   */
+  @java.lang.Override
+  public com.google.protobuf.ByteString
+      getDescriptionBytes() {
+    java.lang.Object ref = description_;
+    if (ref instanceof java.lang.String) {
+      com.google.protobuf.ByteString b = 
+          com.google.protobuf.ByteString.copyFromUtf8(
+              (java.lang.String) ref);
+      description_ = b;
+      return b;
+    } else {
+      return (com.google.protobuf.ByteString) ref;
+    }
+  }
+
+  public static final int ICON_KEY_FIELD_NUMBER = 9;
+  @SuppressWarnings("serial")
+  private volatile java.lang.Object iconKey_ = "";
+  /**
+   * <code>string icon_key = 9;</code>
+   * @return The iconKey.
+   */
+  @java.lang.Override
+  public java.lang.String getIconKey() {
+    java.lang.Object ref = iconKey_;
+    if (ref instanceof java.lang.String) {
+      return (java.lang.String) ref;
+    } else {
+      com.google.protobuf.ByteString bs = 
+          (com.google.protobuf.ByteString) ref;
+      java.lang.String s = bs.toStringUtf8();
+      iconKey_ = s;
+      return s;
+    }
+  }
+  /**
+   * <code>string icon_key = 9;</code>
+   * @return The bytes for iconKey.
+   */
+  @java.lang.Override
+  public com.google.protobuf.ByteString
+      getIconKeyBytes() {
+    java.lang.Object ref = iconKey_;
+    if (ref instanceof java.lang.String) {
+      com.google.protobuf.ByteString b = 
+          com.google.protobuf.ByteString.copyFromUtf8(
+              (java.lang.String) ref);
+      iconKey_ = b;
+      return b;
+    } else {
+      return (com.google.protobuf.ByteString) ref;
+    }
+  }
+
+  public static final int EQUIP_LEVEL_FIELD_NUMBER = 10;
+  private int equipLevel_ = 0;
+  /**
+   * <code>uint32 equip_level = 10;</code>
+   * @return The equipLevel.
+   */
+  @java.lang.Override
+  public int getEquipLevel() {
+    return equipLevel_;
+  }
+
+  public static final int EQUIP_CLASS_FIELD_NUMBER = 11;
+  private int equipClass_ = 0;
+  /**
+   * <code>uint32 equip_class = 11;</code>
+   * @return The equipClass.
+   */
+  @java.lang.Override
+  public int getEquipClass() {
+    return equipClass_;
+  }
+
+  public static final int AFFIX_POOL_FIELD_NUMBER = 12;
+  private int affixPool_ = 0;
+  /**
+   * <code>uint32 affix_pool = 12;</code>
+   * @return The affixPool.
+   */
+  @java.lang.Override
+  public int getAffixPool() {
+    return affixPool_;
+  }
+
+  public static final int AFFIX_RULE_FIELD_NUMBER = 13;
+  private int affixRule_ = 0;
+  /**
+   * <code>uint32 affix_rule = 13;</code>
+   * @return The affixRule.
+   */
+  @java.lang.Override
+  public int getAffixRule() {
+    return affixRule_;
+  }
+
+  public static final int BASE_ATTR_FIELD_NUMBER = 14;
+  @SuppressWarnings("serial")
+  private java.util.List<com.game.table.Itembase_attr> baseAttr_;
+  /**
+   * <code>repeated .Itembase_attr base_attr = 14;</code>
+   */
+  @java.lang.Override
+  public java.util.List<com.game.table.Itembase_attr> getBaseAttrList() {
+    return baseAttr_;
+  }
+  /**
+   * <code>repeated .Itembase_attr base_attr = 14;</code>
+   */
+  @java.lang.Override
+  public java.util.List<? extends com.game.table.Itembase_attrOrBuilder> 
+      getBaseAttrOrBuilderList() {
+    return baseAttr_;
+  }
+  /**
+   * <code>repeated .Itembase_attr base_attr = 14;</code>
+   */
+  @java.lang.Override
+  public int getBaseAttrCount() {
+    return baseAttr_.size();
+  }
+  /**
+   * <code>repeated .Itembase_attr base_attr = 14;</code>
+   */
+  @java.lang.Override
+  public com.game.table.Itembase_attr getBaseAttr(int index) {
+    return baseAttr_.get(index);
+  }
+  /**
+   * <code>repeated .Itembase_attr base_attr = 14;</code>
+   */
+  @java.lang.Override
+  public com.game.table.Itembase_attrOrBuilder getBaseAttrOrBuilder(
+      int index) {
+    return baseAttr_.get(index);
+  }
+
   private byte memoizedIsInitialized = -1;
   @java.lang.Override
   public final boolean isInitialized() {
@@ -146,6 +352,30 @@ private static final long serialVersionUID = 0L;
     if (battleHealMp_ != 0L) {
       output.writeUInt64(6, battleHealMp_);
     }
+    if (!com.google.protobuf.GeneratedMessage.isStringEmpty(name_)) {
+      com.google.protobuf.GeneratedMessage.writeString(output, 7, name_);
+    }
+    if (!com.google.protobuf.GeneratedMessage.isStringEmpty(description_)) {
+      com.google.protobuf.GeneratedMessage.writeString(output, 8, description_);
+    }
+    if (!com.google.protobuf.GeneratedMessage.isStringEmpty(iconKey_)) {
+      com.google.protobuf.GeneratedMessage.writeString(output, 9, iconKey_);
+    }
+    if (equipLevel_ != 0) {
+      output.writeUInt32(10, equipLevel_);
+    }
+    if (equipClass_ != 0) {
+      output.writeUInt32(11, equipClass_);
+    }
+    if (affixPool_ != 0) {
+      output.writeUInt32(12, affixPool_);
+    }
+    if (affixRule_ != 0) {
+      output.writeUInt32(13, affixRule_);
+    }
+    for (int i = 0; i < baseAttr_.size(); i++) {
+      output.writeMessage(14, baseAttr_.get(i));
+    }
     getUnknownFields().writeTo(output);
   }
   private int computeSerializedSize_0() {
@@ -174,6 +404,40 @@ private static final long serialVersionUID = 0L;
       size += com.google.protobuf.CodedOutputStream
         .computeUInt64Size(6, battleHealMp_);
     }
+    if (!com.google.protobuf.GeneratedMessage.isStringEmpty(name_)) {
+      size += com.google.protobuf.GeneratedMessage.computeStringSize(7, name_);
+    }
+    if (!com.google.protobuf.GeneratedMessage.isStringEmpty(description_)) {
+      size += com.google.protobuf.GeneratedMessage.computeStringSize(8, description_);
+    }
+    if (!com.google.protobuf.GeneratedMessage.isStringEmpty(iconKey_)) {
+      size += com.google.protobuf.GeneratedMessage.computeStringSize(9, iconKey_);
+    }
+    if (equipLevel_ != 0) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeUInt32Size(10, equipLevel_);
+    }
+    if (equipClass_ != 0) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeUInt32Size(11, equipClass_);
+    }
+    if (affixPool_ != 0) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeUInt32Size(12, affixPool_);
+    }
+    if (affixRule_ != 0) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeUInt32Size(13, affixRule_);
+    }
+
+        {
+          final int count = baseAttr_.size();
+          for (int i = 0; i < count; i++) {
+            size += com.google.protobuf.CodedOutputStream
+              .computeMessageSizeNoTag(baseAttr_.get(i));
+          }
+          size += 1 * count;
+        }
     return size;
   }
   @java.lang.Override
@@ -210,6 +474,22 @@ private static final long serialVersionUID = 0L;
         != other.getBattleHealHp()) return false;
     if (getBattleHealMp()
         != other.getBattleHealMp()) return false;
+    if (!getName()
+        .equals(other.getName())) return false;
+    if (!getDescription()
+        .equals(other.getDescription())) return false;
+    if (!getIconKey()
+        .equals(other.getIconKey())) return false;
+    if (getEquipLevel()
+        != other.getEquipLevel()) return false;
+    if (getEquipClass()
+        != other.getEquipClass()) return false;
+    if (getAffixPool()
+        != other.getAffixPool()) return false;
+    if (getAffixRule()
+        != other.getAffixRule()) return false;
+    if (!getBaseAttrList()
+        .equals(other.getBaseAttrList())) return false;
     if (!getUnknownFields().equals(other.getUnknownFields())) return false;
     return true;
   }
@@ -235,6 +515,24 @@ private static final long serialVersionUID = 0L;
     hash = (37 * hash) + BATTLE_HEAL_MP_FIELD_NUMBER;
     hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
         getBattleHealMp());
+    hash = (37 * hash) + NAME_FIELD_NUMBER;
+    hash = (53 * hash) + getName().hashCode();
+    hash = (37 * hash) + DESCRIPTION_FIELD_NUMBER;
+    hash = (53 * hash) + getDescription().hashCode();
+    hash = (37 * hash) + ICON_KEY_FIELD_NUMBER;
+    hash = (53 * hash) + getIconKey().hashCode();
+    hash = (37 * hash) + EQUIP_LEVEL_FIELD_NUMBER;
+    hash = (53 * hash) + getEquipLevel();
+    hash = (37 * hash) + EQUIP_CLASS_FIELD_NUMBER;
+    hash = (53 * hash) + getEquipClass();
+    hash = (37 * hash) + AFFIX_POOL_FIELD_NUMBER;
+    hash = (53 * hash) + getAffixPool();
+    hash = (37 * hash) + AFFIX_RULE_FIELD_NUMBER;
+    hash = (53 * hash) + getAffixRule();
+    if (getBaseAttrCount() > 0) {
+      hash = (37 * hash) + BASE_ATTR_FIELD_NUMBER;
+      hash = (53 * hash) + getBaseAttrList().hashCode();
+    }
     hash = (29 * hash) + getUnknownFields().hashCode();
     memoizedHashCode = hash;
     return hash;
@@ -372,6 +670,20 @@ private static final long serialVersionUID = 0L;
       battleUsable_ = 0;
       battleHealHp_ = 0L;
       battleHealMp_ = 0L;
+      name_ = "";
+      description_ = "";
+      iconKey_ = "";
+      equipLevel_ = 0;
+      equipClass_ = 0;
+      affixPool_ = 0;
+      affixRule_ = 0;
+      if (baseAttrBuilder_ == null) {
+        baseAttr_ = java.util.Collections.emptyList();
+      } else {
+        baseAttr_ = null;
+        baseAttrBuilder_.clear();
+      }
+      bitField0_ = (bitField0_ & ~0x00002000);
       return this;
     }
 
@@ -398,9 +710,22 @@ private static final long serialVersionUID = 0L;
     @java.lang.Override
     public com.game.table.ItemTable buildPartial() {
       com.game.table.ItemTable result = new com.game.table.ItemTable(this);
+      buildPartialRepeatedFields(result);
       if (bitField0_ != 0) { buildPartial0(result); }
       onBuilt();
       return result;
+    }
+
+    private void buildPartialRepeatedFields(com.game.table.ItemTable result) {
+      if (baseAttrBuilder_ == null) {
+        if (((bitField0_ & 0x00002000) != 0)) {
+          baseAttr_ = java.util.Collections.unmodifiableList(baseAttr_);
+          bitField0_ = (bitField0_ & ~0x00002000);
+        }
+        result.baseAttr_ = baseAttr_;
+      } else {
+        result.baseAttr_ = baseAttrBuilder_.build();
+      }
     }
 
     private void buildPartial0(com.game.table.ItemTable result) {
@@ -422,6 +747,27 @@ private static final long serialVersionUID = 0L;
       }
       if (((from_bitField0_ & 0x00000020) != 0)) {
         result.battleHealMp_ = battleHealMp_;
+      }
+      if (((from_bitField0_ & 0x00000040) != 0)) {
+        result.name_ = name_;
+      }
+      if (((from_bitField0_ & 0x00000080) != 0)) {
+        result.description_ = description_;
+      }
+      if (((from_bitField0_ & 0x00000100) != 0)) {
+        result.iconKey_ = iconKey_;
+      }
+      if (((from_bitField0_ & 0x00000200) != 0)) {
+        result.equipLevel_ = equipLevel_;
+      }
+      if (((from_bitField0_ & 0x00000400) != 0)) {
+        result.equipClass_ = equipClass_;
+      }
+      if (((from_bitField0_ & 0x00000800) != 0)) {
+        result.affixPool_ = affixPool_;
+      }
+      if (((from_bitField0_ & 0x00001000) != 0)) {
+        result.affixRule_ = affixRule_;
       }
     }
 
@@ -454,6 +800,59 @@ private static final long serialVersionUID = 0L;
       }
       if (other.getBattleHealMp() != 0L) {
         setBattleHealMp(other.getBattleHealMp());
+      }
+      if (!other.getName().isEmpty()) {
+        name_ = other.name_;
+        bitField0_ |= 0x00000040;
+        onChanged();
+      }
+      if (!other.getDescription().isEmpty()) {
+        description_ = other.description_;
+        bitField0_ |= 0x00000080;
+        onChanged();
+      }
+      if (!other.getIconKey().isEmpty()) {
+        iconKey_ = other.iconKey_;
+        bitField0_ |= 0x00000100;
+        onChanged();
+      }
+      if (other.getEquipLevel() != 0) {
+        setEquipLevel(other.getEquipLevel());
+      }
+      if (other.getEquipClass() != 0) {
+        setEquipClass(other.getEquipClass());
+      }
+      if (other.getAffixPool() != 0) {
+        setAffixPool(other.getAffixPool());
+      }
+      if (other.getAffixRule() != 0) {
+        setAffixRule(other.getAffixRule());
+      }
+      if (baseAttrBuilder_ == null) {
+        if (!other.baseAttr_.isEmpty()) {
+          if (baseAttr_.isEmpty()) {
+            baseAttr_ = other.baseAttr_;
+            bitField0_ = (bitField0_ & ~0x00002000);
+          } else {
+            ensureBaseAttrIsMutable();
+            baseAttr_.addAll(other.baseAttr_);
+          }
+          onChanged();
+        }
+      } else {
+        if (!other.baseAttr_.isEmpty()) {
+          if (baseAttrBuilder_.isEmpty()) {
+            baseAttrBuilder_.dispose();
+            baseAttrBuilder_ = null;
+            baseAttr_ = other.baseAttr_;
+            bitField0_ = (bitField0_ & ~0x00002000);
+            baseAttrBuilder_ = 
+              com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders ?
+                 internalGetBaseAttrFieldBuilder() : null;
+          } else {
+            baseAttrBuilder_.addAllMessages(other.baseAttr_);
+          }
+        }
       }
       this.mergeUnknownFields(other.getUnknownFields());
       onChanged();
@@ -511,6 +910,54 @@ private static final long serialVersionUID = 0L;
               bitField0_ |= 0x00000020;
               break;
             } // case 48
+            case 58: {
+              name_ = input.readStringRequireUtf8();
+              bitField0_ |= 0x00000040;
+              break;
+            } // case 58
+            case 66: {
+              description_ = input.readStringRequireUtf8();
+              bitField0_ |= 0x00000080;
+              break;
+            } // case 66
+            case 74: {
+              iconKey_ = input.readStringRequireUtf8();
+              bitField0_ |= 0x00000100;
+              break;
+            } // case 74
+            case 80: {
+              equipLevel_ = input.readUInt32();
+              bitField0_ |= 0x00000200;
+              break;
+            } // case 80
+            case 88: {
+              equipClass_ = input.readUInt32();
+              bitField0_ |= 0x00000400;
+              break;
+            } // case 88
+            case 96: {
+              affixPool_ = input.readUInt32();
+              bitField0_ |= 0x00000800;
+              break;
+            } // case 96
+            case 104: {
+              affixRule_ = input.readUInt32();
+              bitField0_ |= 0x00001000;
+              break;
+            } // case 104
+            case 114: {
+              com.game.table.Itembase_attr m =
+                  input.readMessage(
+                      com.game.table.Itembase_attr.parser(),
+                      extensionRegistry);
+              if (baseAttrBuilder_ == null) {
+                ensureBaseAttrIsMutable();
+                baseAttr_.add(m);
+              } else {
+                baseAttrBuilder_.addMessage(m);
+              }
+              break;
+            } // case 114
             default: {
               if (!super.parseUnknownField(input, extensionRegistry, tag)) {
                 done = true; // was an endgroup tag
@@ -718,6 +1165,590 @@ private static final long serialVersionUID = 0L;
       battleHealMp_ = 0L;
       onChanged();
       return this;
+    }
+
+    private java.lang.Object name_ = "";
+    /**
+     * <code>string name = 7;</code>
+     * @return The name.
+     */
+    public java.lang.String getName() {
+      java.lang.Object ref = name_;
+      if (!(ref instanceof java.lang.String)) {
+        com.google.protobuf.ByteString bs =
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        name_ = s;
+        return s;
+      } else {
+        return (java.lang.String) ref;
+      }
+    }
+    /**
+     * <code>string name = 7;</code>
+     * @return The bytes for name.
+     */
+    public com.google.protobuf.ByteString
+        getNameBytes() {
+      java.lang.Object ref = name_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        name_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+    /**
+     * <code>string name = 7;</code>
+     * @param value The name to set.
+     * @return This builder for chaining.
+     */
+    public Builder setName(
+        java.lang.String value) {
+      if (value == null) { throw new NullPointerException(); }
+      name_ = value;
+      bitField0_ |= 0x00000040;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>string name = 7;</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearName() {
+      name_ = getDefaultInstance().getName();
+      bitField0_ = (bitField0_ & ~0x00000040);
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>string name = 7;</code>
+     * @param value The bytes for name to set.
+     * @return This builder for chaining.
+     */
+    public Builder setNameBytes(
+        com.google.protobuf.ByteString value) {
+      if (value == null) { throw new NullPointerException(); }
+      checkByteStringIsUtf8(value);
+      name_ = value;
+      bitField0_ |= 0x00000040;
+      onChanged();
+      return this;
+    }
+
+    private java.lang.Object description_ = "";
+    /**
+     * <code>string description = 8;</code>
+     * @return The description.
+     */
+    public java.lang.String getDescription() {
+      java.lang.Object ref = description_;
+      if (!(ref instanceof java.lang.String)) {
+        com.google.protobuf.ByteString bs =
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        description_ = s;
+        return s;
+      } else {
+        return (java.lang.String) ref;
+      }
+    }
+    /**
+     * <code>string description = 8;</code>
+     * @return The bytes for description.
+     */
+    public com.google.protobuf.ByteString
+        getDescriptionBytes() {
+      java.lang.Object ref = description_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        description_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+    /**
+     * <code>string description = 8;</code>
+     * @param value The description to set.
+     * @return This builder for chaining.
+     */
+    public Builder setDescription(
+        java.lang.String value) {
+      if (value == null) { throw new NullPointerException(); }
+      description_ = value;
+      bitField0_ |= 0x00000080;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>string description = 8;</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearDescription() {
+      description_ = getDefaultInstance().getDescription();
+      bitField0_ = (bitField0_ & ~0x00000080);
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>string description = 8;</code>
+     * @param value The bytes for description to set.
+     * @return This builder for chaining.
+     */
+    public Builder setDescriptionBytes(
+        com.google.protobuf.ByteString value) {
+      if (value == null) { throw new NullPointerException(); }
+      checkByteStringIsUtf8(value);
+      description_ = value;
+      bitField0_ |= 0x00000080;
+      onChanged();
+      return this;
+    }
+
+    private java.lang.Object iconKey_ = "";
+    /**
+     * <code>string icon_key = 9;</code>
+     * @return The iconKey.
+     */
+    public java.lang.String getIconKey() {
+      java.lang.Object ref = iconKey_;
+      if (!(ref instanceof java.lang.String)) {
+        com.google.protobuf.ByteString bs =
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        iconKey_ = s;
+        return s;
+      } else {
+        return (java.lang.String) ref;
+      }
+    }
+    /**
+     * <code>string icon_key = 9;</code>
+     * @return The bytes for iconKey.
+     */
+    public com.google.protobuf.ByteString
+        getIconKeyBytes() {
+      java.lang.Object ref = iconKey_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        iconKey_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+    /**
+     * <code>string icon_key = 9;</code>
+     * @param value The iconKey to set.
+     * @return This builder for chaining.
+     */
+    public Builder setIconKey(
+        java.lang.String value) {
+      if (value == null) { throw new NullPointerException(); }
+      iconKey_ = value;
+      bitField0_ |= 0x00000100;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>string icon_key = 9;</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearIconKey() {
+      iconKey_ = getDefaultInstance().getIconKey();
+      bitField0_ = (bitField0_ & ~0x00000100);
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>string icon_key = 9;</code>
+     * @param value The bytes for iconKey to set.
+     * @return This builder for chaining.
+     */
+    public Builder setIconKeyBytes(
+        com.google.protobuf.ByteString value) {
+      if (value == null) { throw new NullPointerException(); }
+      checkByteStringIsUtf8(value);
+      iconKey_ = value;
+      bitField0_ |= 0x00000100;
+      onChanged();
+      return this;
+    }
+
+    private int equipLevel_ ;
+    /**
+     * <code>uint32 equip_level = 10;</code>
+     * @return The equipLevel.
+     */
+    @java.lang.Override
+    public int getEquipLevel() {
+      return equipLevel_;
+    }
+    /**
+     * <code>uint32 equip_level = 10;</code>
+     * @param value The equipLevel to set.
+     * @return This builder for chaining.
+     */
+    public Builder setEquipLevel(int value) {
+
+      equipLevel_ = value;
+      bitField0_ |= 0x00000200;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>uint32 equip_level = 10;</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearEquipLevel() {
+      bitField0_ = (bitField0_ & ~0x00000200);
+      equipLevel_ = 0;
+      onChanged();
+      return this;
+    }
+
+    private int equipClass_ ;
+    /**
+     * <code>uint32 equip_class = 11;</code>
+     * @return The equipClass.
+     */
+    @java.lang.Override
+    public int getEquipClass() {
+      return equipClass_;
+    }
+    /**
+     * <code>uint32 equip_class = 11;</code>
+     * @param value The equipClass to set.
+     * @return This builder for chaining.
+     */
+    public Builder setEquipClass(int value) {
+
+      equipClass_ = value;
+      bitField0_ |= 0x00000400;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>uint32 equip_class = 11;</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearEquipClass() {
+      bitField0_ = (bitField0_ & ~0x00000400);
+      equipClass_ = 0;
+      onChanged();
+      return this;
+    }
+
+    private int affixPool_ ;
+    /**
+     * <code>uint32 affix_pool = 12;</code>
+     * @return The affixPool.
+     */
+    @java.lang.Override
+    public int getAffixPool() {
+      return affixPool_;
+    }
+    /**
+     * <code>uint32 affix_pool = 12;</code>
+     * @param value The affixPool to set.
+     * @return This builder for chaining.
+     */
+    public Builder setAffixPool(int value) {
+
+      affixPool_ = value;
+      bitField0_ |= 0x00000800;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>uint32 affix_pool = 12;</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearAffixPool() {
+      bitField0_ = (bitField0_ & ~0x00000800);
+      affixPool_ = 0;
+      onChanged();
+      return this;
+    }
+
+    private int affixRule_ ;
+    /**
+     * <code>uint32 affix_rule = 13;</code>
+     * @return The affixRule.
+     */
+    @java.lang.Override
+    public int getAffixRule() {
+      return affixRule_;
+    }
+    /**
+     * <code>uint32 affix_rule = 13;</code>
+     * @param value The affixRule to set.
+     * @return This builder for chaining.
+     */
+    public Builder setAffixRule(int value) {
+
+      affixRule_ = value;
+      bitField0_ |= 0x00001000;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>uint32 affix_rule = 13;</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearAffixRule() {
+      bitField0_ = (bitField0_ & ~0x00001000);
+      affixRule_ = 0;
+      onChanged();
+      return this;
+    }
+
+    private java.util.List<com.game.table.Itembase_attr> baseAttr_ =
+      java.util.Collections.emptyList();
+    private void ensureBaseAttrIsMutable() {
+      if (!((bitField0_ & 0x00002000) != 0)) {
+        baseAttr_ = new java.util.ArrayList<com.game.table.Itembase_attr>(baseAttr_);
+        bitField0_ |= 0x00002000;
+       }
+    }
+
+    private com.google.protobuf.RepeatedFieldBuilder<
+        com.game.table.Itembase_attr, com.game.table.Itembase_attr.Builder, com.game.table.Itembase_attrOrBuilder> baseAttrBuilder_;
+
+    /**
+     * <code>repeated .Itembase_attr base_attr = 14;</code>
+     */
+    public java.util.List<com.game.table.Itembase_attr> getBaseAttrList() {
+      if (baseAttrBuilder_ == null) {
+        return java.util.Collections.unmodifiableList(baseAttr_);
+      } else {
+        return baseAttrBuilder_.getMessageList();
+      }
+    }
+    /**
+     * <code>repeated .Itembase_attr base_attr = 14;</code>
+     */
+    public int getBaseAttrCount() {
+      if (baseAttrBuilder_ == null) {
+        return baseAttr_.size();
+      } else {
+        return baseAttrBuilder_.getCount();
+      }
+    }
+    /**
+     * <code>repeated .Itembase_attr base_attr = 14;</code>
+     */
+    public com.game.table.Itembase_attr getBaseAttr(int index) {
+      if (baseAttrBuilder_ == null) {
+        return baseAttr_.get(index);
+      } else {
+        return baseAttrBuilder_.getMessage(index);
+      }
+    }
+    /**
+     * <code>repeated .Itembase_attr base_attr = 14;</code>
+     */
+    public Builder setBaseAttr(
+        int index, com.game.table.Itembase_attr value) {
+      if (baseAttrBuilder_ == null) {
+        if (value == null) {
+          throw new NullPointerException();
+        }
+        ensureBaseAttrIsMutable();
+        baseAttr_.set(index, value);
+        onChanged();
+      } else {
+        baseAttrBuilder_.setMessage(index, value);
+      }
+      return this;
+    }
+    /**
+     * <code>repeated .Itembase_attr base_attr = 14;</code>
+     */
+    public Builder setBaseAttr(
+        int index, com.game.table.Itembase_attr.Builder builderForValue) {
+      if (baseAttrBuilder_ == null) {
+        ensureBaseAttrIsMutable();
+        baseAttr_.set(index, builderForValue.build());
+        onChanged();
+      } else {
+        baseAttrBuilder_.setMessage(index, builderForValue.build());
+      }
+      return this;
+    }
+    /**
+     * <code>repeated .Itembase_attr base_attr = 14;</code>
+     */
+    public Builder addBaseAttr(com.game.table.Itembase_attr value) {
+      if (baseAttrBuilder_ == null) {
+        if (value == null) {
+          throw new NullPointerException();
+        }
+        ensureBaseAttrIsMutable();
+        baseAttr_.add(value);
+        onChanged();
+      } else {
+        baseAttrBuilder_.addMessage(value);
+      }
+      return this;
+    }
+    /**
+     * <code>repeated .Itembase_attr base_attr = 14;</code>
+     */
+    public Builder addBaseAttr(
+        int index, com.game.table.Itembase_attr value) {
+      if (baseAttrBuilder_ == null) {
+        if (value == null) {
+          throw new NullPointerException();
+        }
+        ensureBaseAttrIsMutable();
+        baseAttr_.add(index, value);
+        onChanged();
+      } else {
+        baseAttrBuilder_.addMessage(index, value);
+      }
+      return this;
+    }
+    /**
+     * <code>repeated .Itembase_attr base_attr = 14;</code>
+     */
+    public Builder addBaseAttr(
+        com.game.table.Itembase_attr.Builder builderForValue) {
+      if (baseAttrBuilder_ == null) {
+        ensureBaseAttrIsMutable();
+        baseAttr_.add(builderForValue.build());
+        onChanged();
+      } else {
+        baseAttrBuilder_.addMessage(builderForValue.build());
+      }
+      return this;
+    }
+    /**
+     * <code>repeated .Itembase_attr base_attr = 14;</code>
+     */
+    public Builder addBaseAttr(
+        int index, com.game.table.Itembase_attr.Builder builderForValue) {
+      if (baseAttrBuilder_ == null) {
+        ensureBaseAttrIsMutable();
+        baseAttr_.add(index, builderForValue.build());
+        onChanged();
+      } else {
+        baseAttrBuilder_.addMessage(index, builderForValue.build());
+      }
+      return this;
+    }
+    /**
+     * <code>repeated .Itembase_attr base_attr = 14;</code>
+     */
+    public Builder addAllBaseAttr(
+        java.lang.Iterable<? extends com.game.table.Itembase_attr> values) {
+      if (baseAttrBuilder_ == null) {
+        ensureBaseAttrIsMutable();
+        com.google.protobuf.AbstractMessageLite.Builder.addAll(
+            values, baseAttr_);
+        onChanged();
+      } else {
+        baseAttrBuilder_.addAllMessages(values);
+      }
+      return this;
+    }
+    /**
+     * <code>repeated .Itembase_attr base_attr = 14;</code>
+     */
+    public Builder clearBaseAttr() {
+      if (baseAttrBuilder_ == null) {
+        baseAttr_ = java.util.Collections.emptyList();
+        bitField0_ = (bitField0_ & ~0x00002000);
+        onChanged();
+      } else {
+        baseAttrBuilder_.clear();
+      }
+      return this;
+    }
+    /**
+     * <code>repeated .Itembase_attr base_attr = 14;</code>
+     */
+    public Builder removeBaseAttr(int index) {
+      if (baseAttrBuilder_ == null) {
+        ensureBaseAttrIsMutable();
+        baseAttr_.remove(index);
+        onChanged();
+      } else {
+        baseAttrBuilder_.remove(index);
+      }
+      return this;
+    }
+    /**
+     * <code>repeated .Itembase_attr base_attr = 14;</code>
+     */
+    public com.game.table.Itembase_attr.Builder getBaseAttrBuilder(
+        int index) {
+      return internalGetBaseAttrFieldBuilder().getBuilder(index);
+    }
+    /**
+     * <code>repeated .Itembase_attr base_attr = 14;</code>
+     */
+    public com.game.table.Itembase_attrOrBuilder getBaseAttrOrBuilder(
+        int index) {
+      if (baseAttrBuilder_ == null) {
+        return baseAttr_.get(index);  } else {
+        return baseAttrBuilder_.getMessageOrBuilder(index);
+      }
+    }
+    /**
+     * <code>repeated .Itembase_attr base_attr = 14;</code>
+     */
+    public java.util.List<? extends com.game.table.Itembase_attrOrBuilder> 
+         getBaseAttrOrBuilderList() {
+      if (baseAttrBuilder_ != null) {
+        return baseAttrBuilder_.getMessageOrBuilderList();
+      } else {
+        return java.util.Collections.unmodifiableList(baseAttr_);
+      }
+    }
+    /**
+     * <code>repeated .Itembase_attr base_attr = 14;</code>
+     */
+    public com.game.table.Itembase_attr.Builder addBaseAttrBuilder() {
+      return internalGetBaseAttrFieldBuilder().addBuilder(
+          com.game.table.Itembase_attr.getDefaultInstance());
+    }
+    /**
+     * <code>repeated .Itembase_attr base_attr = 14;</code>
+     */
+    public com.game.table.Itembase_attr.Builder addBaseAttrBuilder(
+        int index) {
+      return internalGetBaseAttrFieldBuilder().addBuilder(
+          index, com.game.table.Itembase_attr.getDefaultInstance());
+    }
+    /**
+     * <code>repeated .Itembase_attr base_attr = 14;</code>
+     */
+    public java.util.List<com.game.table.Itembase_attr.Builder> 
+         getBaseAttrBuilderList() {
+      return internalGetBaseAttrFieldBuilder().getBuilderList();
+    }
+    private com.google.protobuf.RepeatedFieldBuilder<
+        com.game.table.Itembase_attr, com.game.table.Itembase_attr.Builder, com.game.table.Itembase_attrOrBuilder> 
+        internalGetBaseAttrFieldBuilder() {
+      if (baseAttrBuilder_ == null) {
+        baseAttrBuilder_ = new com.google.protobuf.RepeatedFieldBuilder<
+            com.game.table.Itembase_attr, com.game.table.Itembase_attr.Builder, com.game.table.Itembase_attrOrBuilder>(
+                baseAttr_,
+                ((bitField0_ & 0x00002000) != 0),
+                getParentForChildren(),
+                isClean());
+        baseAttr_ = null;
+      }
+      return baseAttrBuilder_;
     }
 
     // @@protoc_insertion_point(builder_scope:ItemTable)
