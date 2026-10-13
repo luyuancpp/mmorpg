@@ -44,6 +44,10 @@ const (
 	// ticketFieldTeamId 整队开战(team-system.md §E.1 第 7 步)建票时写入的 team_id,
 	// 只用于观测;非组队票据不写该字段(读回为 0)。
 	ticketFieldTeamId = "team_id"
+	// ticketFieldPartyId / ticketFieldPartyMembers 队伍补位票(team-backfill-matching.md §3.1)才写:
+	// 同一单的 uuid,以及这一单的名单(逗号分隔的十进制 player_id,队长在前,即进战斗的站位顺序)。
+	ticketFieldPartyId      = "party_id"
+	ticketFieldPartyMembers = "party_members"
 )
 
 // queueTicket 是 match:ticket:{player_id} 的内存镜像。
@@ -64,7 +68,13 @@ type queueTicket struct {
 	Rating float64
 	// TeamId 整队开战(ClientPlayerTeam.StartTeamMatch)建票时的队伍 id,只用于观测
 	// (team-system.md §C.1 / §E.5);单人排队 / PVE_SOLO 为 0,且不落盘该字段。
+	// 队伍补位票也写它:撤单 / 弹组前复核时拿它去问 team 域。
 	TeamId uint64
+	// PartyId 非空 = 队伍补位票(team-backfill-matching.md):同一单的全部成员相同,matcher 据此把他们
+	// 当成一个不可拆的单位。PartyMembers 是这一单的名单(队长在前、其余按 join_seq),含本人。
+	// 单人排队 / 整队直接开战 / 活动票都不写这两个字段。
+	PartyId      string
+	PartyMembers []uint64
 }
 
 // enqueueScript / requeueScript:注册集 SADD、队列 push 与评分镜像 ZADD 一条 Lua
@@ -218,7 +228,12 @@ func isPlayerBattleLocked(svcCtx *svc.ServiceContext, playerId uint64) (bool, er
 
 // loadTicket 读取玩家 ticket;不存在返回 (nil, nil)。
 func loadTicket(svcCtx *svc.ServiceContext, playerId uint64) (*queueTicket, error) {
-	fields, err := svcCtx.MatchRedis.Hgetall(matchTicketKey(playerId))
+	return loadTicketCtx(context.Background(), svcCtx, playerId)
+}
+
+// loadTicketCtx 同 loadTicket,Redis 往返受调用方 ctx 约束(组队 RPC 的请求预算内读票)。
+func loadTicketCtx(ctx context.Context, svcCtx *svc.ServiceContext, playerId uint64) (*queueTicket, error) {
+	fields, err := svcCtx.MatchRedis.HgetallCtx(ctx, matchTicketKey(playerId))
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
 			return nil, nil
@@ -243,6 +258,8 @@ func loadTicket(svcCtx *svc.ServiceContext, playerId uint64) (*queueTicket, erro
 		QueueKey:     fields[ticketFieldQueueKey],
 		Rating:       parseRating(fields[ticketFieldRating]),
 		TeamId:       teamId,
+		PartyId:      fields[ticketFieldPartyId],
+		PartyMembers: parsePartyMembers(fields[ticketFieldPartyMembers]),
 	}, nil
 }
 
@@ -256,7 +273,8 @@ func createTicketIfAbsent(svcCtx *svc.ServiceContext, playerId uint64, t *queueT
 
 // createTicketIfAbsentCtx 同 createTicketIfAbsent,Redis 往返受调用方 ctx 约束
 // (整队开战在请求预算内建票,team-system.md §A.3 第 7 条)。无 ctx 版本传 Background,
-// 与 go-zero Eval 行为完全一致。t.TeamId 非 0 才多写 team_id 字段,其余票据的字段集不变。
+// 与 go-zero Eval 行为完全一致。t.TeamId 非 0 才多写 team_id 字段,t.PartyId 非空才多写补位单的两个字段,
+// 其余票据的字段集不变。
 // 出错时服务端是否已写入未知(超时 / 断连 / 集群重试),调用方回滚时要把它算进去。
 func createTicketIfAbsentCtx(ctx context.Context, svcCtx *svc.ServiceContext, playerId uint64, t *queueTicket, ttl int) (bool, error) {
 	args := []any{
@@ -272,6 +290,9 @@ func createTicketIfAbsentCtx(ctx context.Context, svcCtx *svc.ServiceContext, pl
 	}
 	if t.TeamId != 0 {
 		args = append(args, ticketFieldTeamId, strconv.FormatUint(t.TeamId, 10))
+	}
+	if t.PartyId != "" {
+		args = append(args, ticketFieldPartyId, t.PartyId, ticketFieldPartyMembers, formatPartyMembers(t.PartyMembers))
 	}
 	res, err := svcCtx.MatchRedis.EvalCtx(ctx, ticketCreateScript, []string{matchTicketKey(playerId)}, args...)
 	if err != nil {

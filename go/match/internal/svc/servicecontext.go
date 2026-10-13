@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"match/internal/config"
@@ -84,7 +85,44 @@ type ServiceContext struct {
 	// 不阻塞 match 起服,调用时才返回 Unavailable。
 	DataServiceClient dspb.DataServiceClient
 
+	// partyTeam 队伍补位匹配里 logic 反过来问 / 通知 team 域的端口(见 PartyTeamPort),
+	// 装配时由 SetPartyTeam 注入。用 atomic:matcher 循环比组队服务先启动。
+	partyTeam atomic.Pointer[partyTeamHolder]
+
 	stopOnce sync.Once
+}
+
+// PartyTeamPort 队伍补位匹配(docs/design/team-backfill-matching.md)里 logic 需要 team 域回答 / 接收的两件事,
+// 由 team.Service 实现、match_service.go 装配时注入。接口定义在 svc:logic 与 team 互不 import
+// (team 依赖 proto/team 生成物),方法签名只用内建类型;原因码见 constants.PartyEnd*。
+type PartyTeamPort interface {
+	// CheckParty 补位单弹组前 / 自愈时的复核:队伍记录还在、成员集合与 members 相等、全员在线。
+	// 返回 (constants.PartyEndNone, 0, nil) 表示仍然有效;否则是失效原因与相关成员(可为 0)。
+	// err 非 nil = 读不到(Redis 抖动),调用方不做失效判定。
+	CheckParty(ctx context.Context, teamId uint64, members []uint64) (reason uint32, culprit uint64, err error)
+	// PartyEnded 一支补位单已被撤出队列(不是成功开战)之后的通知:team 给 members 推当前视图与原因。
+	// 实现方自己异步执行,不阻塞调用方(调用方可能持有凑单锁);members 是这一单的名单。
+	PartyEnded(teamId uint64, members []uint64, reason uint32, culprit uint64)
+}
+
+type partyTeamHolder struct{ port PartyTeamPort }
+
+// SetPartyTeam 注入补位端口(match_service.go 装配、测试);传 nil 清空。
+func (s *ServiceContext) SetPartyTeam(port PartyTeamPort) {
+	if port == nil {
+		s.partyTeam.Store(nil)
+		return
+	}
+	s.partyTeam.Store(&partyTeamHolder{port: port})
+}
+
+// PartyTeam 取补位端口;未注入返回 nil(调用方按「不复核、不通知」处理 ——
+// 没有组队服务的进程里也不会有人写出补位票)。
+func (s *ServiceContext) PartyTeam() PartyTeamPort {
+	if h := s.partyTeam.Load(); h != nil {
+		return h.port
+	}
+	return nil
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
