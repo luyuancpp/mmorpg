@@ -1,13 +1,15 @@
 #pragma once
 
 // 装备属性纯规则(零 ECS / 零表 / 零 proto 依赖,可单测),设计文档
-// docs/design/equipment-attributes.md §4.2。
+// docs/design/equipment-attributes.md §4.2;强化与镶嵌(二期)见 docs/design/equipment-enhance-inlay.md §4.2。
 //
-// PlayerEquipSystem 负责把表行 / 实例翻译成这里的输入,这里只回答四个问题:
+// PlayerEquipSystem 负责把表行 / 实例翻译成这里的输入,这里只回答六个问题:
 //   1) 一条属性(EquipAttribute 表的 effect / effect_param + 数值)怎么累加进一份装备加成;
 //   2) 某个一级属性维度一共从装备拿到多少点(单项 + 所有属性);
 //   3) 一件新装备掷出哪几条随机属性、各是多少(蓝 / 粉 / 黄);
-//   4) 一件装备的等级落在上限表的哪一档。
+//   4) 一件装备的等级落在上限表的哪一档;
+//   5) 强化:基础值按万分比放大成多少、这一次掷骰成没成、失败后落到几级;
+//   6) 镶嵌:一颗宝石能不能嵌进某个孔。
 //
 // 随机源与取值区间都由调用方显式传入(AGENTS §11.2 显式依赖):生产传 tlsRandom 与表查询,
 // 单测传脚本化序列。炼化(重掷)以后直接复用 RollAffixes,不需要再认识一遍表。
@@ -142,7 +144,8 @@ constexpr std::size_t Index(CombatStat stat) { return static_cast<std::size_t>(s
 // 装备加成的累加
 // ---------------------------------------------------------------------------
 
-// 一个角色身上全部装备的加成汇总(基础属性 + 随机属性)。运行时现算,不落库(设计文档 §5 不变量 3)。
+// 一个角色身上全部装备的加成汇总(基础属性 + 随机属性;二期起基础属性先经强化放大,另加已镶宝石)。
+// 运行时现算,不落库(设计文档 §5 不变量 3)。
 // 两个数组的第 0 格(kNone)永远是 0:ApplyEffect 不会写它。
 struct EquipBonus {
     std::map<uint32_t, uint64_t> primaryPoints;   // dimension id -> 点数
@@ -156,6 +159,11 @@ namespace detail {
 // 加法饱和到 uint64 上限。装备数值远到不了这里,但回绕会把一个巨大的加成变成接近 0 的数且零报错。
 constexpr uint64_t SaturatingAdd(uint64_t a, uint64_t b) {
     return b > UINT64_MAX - a ? UINT64_MAX : a + b;
+}
+
+// 乘法饱和到 uint64 上限(强化的万分比放大用)。理由同上:回绕会把一个巨大的基础值放大成一个很小的数且零报错。
+constexpr uint64_t SaturatingMul(uint64_t a, uint64_t b) {
+    return a != 0 && b > UINT64_MAX / a ? UINT64_MAX : a * b;
 }
 
 }  // namespace detail
@@ -435,6 +443,114 @@ inline int PickLevelTier(const std::vector<uint32_t>& levels, uint32_t equipLeve
         }
     }
     return best;
+}
+
+// ---------------------------------------------------------------------------
+// 强化(二期,设计文档 equipment-enhance-inlay.md §4.2)
+// ---------------------------------------------------------------------------
+
+// 基础值按万分比放大:baseValue + floor(baseValue × bonusPermyriad / 10000)。
+// bonusPermyriad 是「总加成」(500 = +5%),不是倍率,也不是相对上一级的增量。
+// 全整数、向下取整;bonus == 0 严格恒等(未强化的装备与一期逐位一致);饱和不回绕。
+// 算法写死 —— 加成、tooltip、robot 冒烟都按这个数对账,换一种取整 = 改掉所有存量强化装备的面板:
+//   inc    = SaturatingMul(base / 10000, bonus) + (base % 10000) * bonus / 10000
+//   result = SaturatingAdd(base, inc)
+// 拆成「整万部分」和「余数部分」是为了不先算 base × bonus(base 一大就溢出);整万部分乘出来是整数、
+// 不参与取整,所以结果仍是精确的向下取整。第二项最大 9999 × (2^32 - 1),不溢出;两项相加用饱和加。
+constexpr uint64_t ScaleByPermyriad(uint64_t baseValue, uint32_t bonusPermyriad) {
+    const uint64_t wholePart = detail::SaturatingMul(baseValue / kPermyriadBase, bonusPermyriad);
+    const uint64_t remainderPart = (baseValue % kPermyriadBase) * bonusPermyriad / kPermyriadBase;
+    return detail::SaturatingAdd(baseValue, detail::SaturatingAdd(wholePart, remainderPart));
+}
+
+// 契约里写死的五个锚点。放在头里而不只放在单测里:算法一变,所有包含本头的工程(scene 在内)直接编不过,
+// 不必等到有人跑规则单测。
+static_assert(ScaleByPermyriad(40, 500) == 42, "ScaleByPermyriad anchor: 40 at +5% is 42");
+static_assert(ScaleByPermyriad(12, 500) == 12, "ScaleByPermyriad anchor: an increment below 1 rounds down to 0");
+static_assert(ScaleByPermyriad(19999, 5000) == 29998, "ScaleByPermyriad anchor: whole and remainder parts add up");
+static_assert(ScaleByPermyriad(UINT64_MAX, 1) == UINT64_MAX, "ScaleByPermyriad anchor: saturates instead of wrapping");
+static_assert(ScaleByPermyriad(0, 0) == 0 && ScaleByPermyriad(40, 0) == 40 &&
+                  ScaleByPermyriad(UINT64_MAX, 0) == UINT64_MAX,
+              "ScaleByPermyriad anchor: zero bonus is the identity");
+
+// 强化判定:这一次强化成没成。ratePermyriad 是 EquipEnhance.success_rate(万分比)。
+//
+// rand(n):同 RollAffixes —— 返回 [0, n) 的均匀整数;越出区间的返回值被夹回区间内(夹成 9999,
+//          只有 rate >= 10000 才算成功:随机源坏了不会让人白捡一次成功)。
+// 随机数消费(单测逐次钉住):
+//   ratePermyriad == 0 → 必败,**不消耗随机数**;
+//   其余              → 恰好掷一次 rand(kPermyriadBase),结果 < ratePermyriad 即成功。
+//   ratePermyriad >= kPermyriadBase 必成,但**照样消耗这一次** —— 与 RollAffixes 的粉 / 黄同一口径
+//   (走到的掷骰步骤恰好消耗一次,不为必成另开分支)。
+template <class RandFn>
+bool RollEnhanceSuccess(uint32_t ratePermyriad, RandFn&& rand) {
+    if (ratePermyriad == 0) {
+        return false;
+    }
+    return detail::RollBelow(rand, kPermyriadBase) < ratePermyriad;
+}
+
+// 强化失败后的等级:掉 failLevelLoss 级,最多掉到 0(直接相减会回绕成一个巨大的等级)。
+// failLevelLoss == 0 = 不掉级。
+constexpr uint32_t LevelAfterFailure(uint32_t level, uint32_t failLevelLoss) {
+    return level > failLevelLoss ? level - failLevelLoss : 0;
+}
+
+// ---------------------------------------------------------------------------
+// 镶嵌(二期,设计文档 equipment-enhance-inlay.md §4.2)
+// ---------------------------------------------------------------------------
+
+// 单件装备孔位数上限。表校验用(EquipGemSocket.socket 必须小于它);消费侧也只看实例上前这么多条宝石记录 ——
+// 入包边界整份信任实例数据,遍历条数不设上限的话,一件脏装备就能让每次属性重算多走任意多步。
+inline constexpr uint32_t kMaxGemSockets = 8;
+
+// 一个孔位的定义(EquipGemSocket 表的一行)。gemType == 0 = 接纳任意类型的宝石。
+struct GemSocketRule { uint32_t socket{0}; uint32_t gemType{0}; };
+
+// 孔位校验的结果。只在进程内传递(调用方映射成 tip 码),不入表、不入存档。
+enum class GemFit : uint8_t {
+    kOk = 0,
+    kSocketInvalid = 1,   // 这件装备没有这个孔
+    kSocketOccupied = 2,  // 孔里已有宝石(要先取下)
+    kTypeMismatch = 3,    // 宝石类型与孔位不符
+    kCount
+};
+
+// 加一种结果时,调用方(PlayerEquipSystem::InlayGem)把结果映射成 tip 码的分支要同步加。
+static_assert(static_cast<uint32_t>(GemFit::kCount) == 4,
+              "GemFit results are mapped one-to-one to tip codes by the caller");
+
+// 孔位校验:类型为 gemType 的宝石能不能嵌进 socket 号孔。
+// sockets: 该部位的孔位定义(表行的自然顺序,不要求有序);同一 socket 有多条定义(坏表)时取第一条。
+// occupied:实例上已占用的孔位号 —— 原始记录,不要求有序,可含重复,也可含表里已经不存在的孔。
+// 判定顺序写死(同时不满足多条时回哪一个由它决定;客户端按 tip 码决定要不要重拉快照):
+//   ① socket 不在 sockets 里                          → kSocketInvalid
+//   ② socket 在 occupied 里                            → kSocketOccupied
+//   ③ gemType == 0,或该孔限定了类型且与 gemType 不同   → kTypeMismatch
+//   ④ 其余                                             → kOk
+// gemType == 0 不是合法的宝石类型(EquipGem.gem_type >= 1;0 只在孔位定义里表示「任意」):传进来说明宝石行
+// 是坏的,哪怕孔位是「任意」也拒绝 —— 但它排在 ①② 之后,不抢「没有这个孔」「已占用」这两个结果。
+inline GemFit CheckGemFit(const std::vector<GemSocketRule>& sockets, const std::vector<uint32_t>& occupied,
+                          uint32_t socket, uint32_t gemType) {
+    const GemSocketRule* rule = nullptr;
+    for (const GemSocketRule& candidate : sockets) {
+        if (candidate.socket == socket) {
+            rule = &candidate;
+            break;
+        }
+    }
+    if (rule == nullptr) {
+        return GemFit::kSocketInvalid;
+    }
+    for (const uint32_t taken : occupied) {
+        if (taken == socket) {
+            return GemFit::kSocketOccupied;
+        }
+    }
+    if (gemType == 0 || (rule->gemType != 0 && rule->gemType != gemType)) {
+        return GemFit::kTypeMismatch;
+    }
+    return GemFit::kOk;
 }
 
 }  // namespace equiprules

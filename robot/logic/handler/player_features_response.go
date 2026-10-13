@@ -30,6 +30,14 @@ func HandleFeatureMessage(player *gameobject.Player, message *base.MessageConten
 		response = &scene.UnequipItemResponse{}
 	case game.SceneBagClientPlayerGmGrantItemMessageId:
 		response = &scene.GmGrantItemResponse{}
+	case game.SceneBagClientPlayerEnhanceEquipMessageId:
+		// 强化 / 镶嵌 / 取下(equipment-enhance-inlay.md §3.3):与上面穿 / 脱那三条同理 —— 留给 features-smoke 这条
+		// 收包路径,equip-forge-smoke 走的是通用分发 → stub → RecordFeatureBody。
+		response = &scene.EnhanceEquipResponse{}
+	case game.SceneBagClientPlayerInlayGemMessageId:
+		response = &scene.InlayGemResponse{}
+	case game.SceneBagClientPlayerRemoveGemMessageId:
+		response = &scene.RemoveGemResponse{}
 	case game.SceneActivityClientPlayerGetActivityListMessageId:
 		response = &scene.GetActivityListResponse{}
 	case game.SceneMissionClientPlayerGetMissionListMessageId,
@@ -87,6 +95,23 @@ func RecordFeatureBody(player *gameobject.Player, messageID uint32, response pro
 		tip = body.GetErrorMessage().GetId()
 		if body.GetBag().GetLayout() == nil {
 			failure = "gm grant item response has no layout"
+		}
+	case *scene.EnhanceEquipResponse:
+		// 判据与穿 / 脱相同:被受理就必须带回两份全量。注意**不看 success**:掷骰失败是成功的响应
+		// (材料已扣,客户端要拿新快照覆盖缓存),把 success == false 判成 failure 会让每次概率失败都变成「残缺的响应」。
+		tip = body.GetErrorMessage().GetId()
+		if body.GetBag().GetLayout() == nil || body.GetEquipment().GetLayout() == nil {
+			failure = "enhance response has no bag or equipment layout"
+		}
+	case *scene.InlayGemResponse:
+		tip = body.GetErrorMessage().GetId()
+		if body.GetBag().GetLayout() == nil || body.GetEquipment().GetLayout() == nil {
+			failure = "inlay gem response has no bag or equipment layout"
+		}
+	case *scene.RemoveGemResponse:
+		tip = body.GetErrorMessage().GetId()
+		if body.GetBag().GetLayout() == nil || body.GetEquipment().GetLayout() == nil {
+			failure = "remove gem response has no bag or equipment layout"
 		}
 	case *scene.GetMissionListResponse:
 		tip = body.GetErrorMessage().GetId()

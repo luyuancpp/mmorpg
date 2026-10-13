@@ -1,0 +1,61 @@
+# equip-forge-smoke 配置:单机器人「装备强化 + 宝石镶嵌 / 取下」端到端冒烟
+#
+# 用法(robot/ 目录下):
+#   .\robot.exe -c etc/equip_forge_smoke.yaml
+# 退出码 0 = 全部断言通过(日志有 EQUIP_FORGE_SMOKE_OK 一行);
+# 退出码 1 = 任一步失败(日志有 EQUIP_FORGE_SMOKE_FAIL step=… reason=…)。
+#
+# 固定账号 robot_9104(前缀必须 robot_ 才走 login 侧 DevPasswordAuth,改名会直接登录失败;
+# 账号没有角色时自动建角)。**不与 equip-smoke 的 robot_9103 共用**:强化不可逆,而 equip-smoke 按表值断言
+# 1101 的基础属性,包里留一把 +N 的 1101 会让它变红。断言逐条对应 docs/design/equipment-enhance-inlay.md §7
+# (协议 §3.3 / 编排 §4.3 / 不变量 §5),步骤清单见 equip_forge_smoke_scenario.go 文件头。
+#
+# 可重复跑:预备段会卸下身上全部装备、取下目标孔里的宝石、挑同一把还没强化到上限的 1101
+# (item_id 最小的那把;没有才发新的);金币与强化石按当时那一级的预览「缺多少补多少」,所以账号上不会越攒越多。
+# 每跑一轮目标最多升 2 级(4 级以后按概率,失败不掉级);到 +12 之后下一轮自动换一把新的 1101,
+# 旧的删不掉(机器人没有删物手段),背包因此每十几轮多一件。
+# 若报 step=prep-bag-space / prep-bag-full / prep-unexpected-gem(背包被占满,或包里有本冒烟从不发放的 2103):
+# 清掉该账号的背包存档,或把 equip_forge_smoke_scenario.go 里的 equipForgeAccount 换成一个新账号。
+# 若报 step=display-target 且失败信息提到「实例未初始化」:那把装备是在一期掷值挂点没生效的 scene 上铸的,
+# 修好服务端之后同样要换号或清档(预备段是「已有就复用」,坏实例不会自己变好)。
+#
+# 4 级以后的强化按概率成败,两种结果冒烟都接受(失败不是错误:金币与材料照扣、等级不变、响应照常带回快照);
+# 只有预览里 success_rate = 10000 的那几级要求必须成功。所以同一个账号两轮的日志不会逐字相同,
+# 看 EQUIP_FORGE_SMOKE_OK 那一行的 enhance_in_bag / enhance_worn 就知道这一轮掷出了什么。
+#
+# 前置(按顺序做;缺哪条、红在哪一步写在括号里。一期的前置见 etc/equip_smoke.yaml,这里只写二期多出来的):
+#   1. 导表:tools/scripts/equip_xlsx_patch.py 的 forge-tables / forge-item-rows / forge-tip-codes(⑦–⑨)+ 导表器
+#      (EquipEnhance / EquipGem / EquipGemSocket 三张新表、Item 表 2000 段的强化石与 12 颗宝石、equip_error 段新增 11 个码)。
+#      (没导:prep-grant-* 报「需先导表」、prep-target 报 enhance_max_level = 0、display-target 缺孔位 / 缺 enhance_next)
+#   2. 全量 proto-gen(在 proto/message_id.txt 已含一期三个背包消息号的那棵树上跑,见设计文档 §9「发号前置」),
+#      并把 go/proto、go/shared 的变化同步进 robot/vendor(robot 走 -mod=vendor),再重编 robot.exe:
+#      新消息号 SceneBagClientPlayerEnhanceEquip / InlayGem / RemoveGem、player_bag 的新字段、equip_error 的新枚举都在生成物里。
+#      (没做:robot 编不过。本文件与 robot 源码里都**不写**这三个消息号的数字,只引用生成常量)
+#   3. 用同一批生成物与配表重编并重启 scene / gate / battle,以及所有读配表的 Go 服务(login / scene_manager /
+#      player_locator / guild):Item 表加了行,战斗配表指纹会变,scene 与 battle 必须同批换表;Go 侧读表是严格 JSON,
+#      旧 exe 读新表直接退出(细节见 etc/equip_smoke.yaml 前置 3)。先跑一遍既有的 login-test 基线,再跑本冒烟。
+#      (scene 是旧的:第一个新请求起「等响应超时」)
+#   4. MessageLimiter:proto-gen 之后跑 equip_xlsx_patch.py message-limiter(⑥)、再导一次表、重启 gate
+#      (EnhanceEquip 10 档、InlayGem / RemoveGem 5 档)。本冒烟自己按 gate 的默认档节流(同一消息号间隔 700ms),
+#      **不加行也能跑完**;但真实客户端连点强化会被默认档限流并累计非法包(50 次断线),所以它仍是上线前置。
+#   5. GM 指令闸处于 dev / test(本机启动器默认兜底成 dev):预备段要用 GmGrantItem 发装备 / 宝石 / 强化石、
+#      GmAddCurrency 补金币。(闸关着:prep-grant-* 报「回了全零 / 残缺的响应」;补金币那一步报「GM 指令没生效」)
+#   6. 第 5 步(重登)若报强化等级 / 宝石丢失:它们都在 EquipInstanceData 里,随 ItemEntry.equip 整份落库 ——
+#      先确认落库链路上的进程(scene / db / data_service)都是本批重编的,再查 bag_marshal 的往返。
+#
+# gate 级拒绝(限流 / GM 闸)的表现:日志里先有一条 `gate envelope error message_id=… tip=…`,
+# 随后本冒烟在该步报「回了全零 / 残缺的响应」—— 背包这几条消息的信封错误目前不会被翻译成 tip。
+
+gateway_addr: "http://127.0.0.1:8081" # Gateway HTTP endpoint(/api/assign-gate)
+zone_id: 1 # 目标 zone(0 = 从 /api/server-list 自动选推荐 zone)
+robot_count: 1 # 语义占位:本模式固定单机器人
+account_fmt: "robot_%04d" # 保留骨架字段;本模式用固定账号 robot_9104
+password: "123456"
+skill_ids: []
+table_dir: "../generated/tables"
+action_interval: 3 # 本模式不跑场景 AI 循环
+report_interval: 5
+
+mode: "equip-forge-smoke"
+
+auth_type: "password"

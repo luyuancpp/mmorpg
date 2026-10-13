@@ -160,6 +160,7 @@
   <ItemGroup>
     <ClCompile Include="bag_test.cpp" />
     <ClCompile Include="bag_remove_by_guid_test.cpp" />
+    <ClCompile Include="bag_remove_exact_test.cpp" />
     <ClCompile Include="bag_instance_data_test.cpp" />
     <ClCompile Include="player_equip_test.cpp" />
     <ClCompile Include="player_equip_attribute_test.cpp" />

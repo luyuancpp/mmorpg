@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+// EquipGem 表的权威 schema。源表 data/EquipGem.xlsx。
+// 设计:docs/design/equipment-enhance-inlay.md §2.2。
+//
+// 本文件不参与 protoc 编译,也不进任何语言的构建;导表器直接文本解析它。
+// 字段号只增不改、删字段用 reserved(data/AGENTS.md)。
+//
+// 宝石定义:一行 = 一种宝石。主键直接等于宝石物品的 Item.id ——「是不是宝石」= 本表有这一行
+// (且对应的 Item 行存在、不是装备)。所以不给 Item 表加列:Item 在战斗配表指纹内,且被所有 Go 进程严格加载。
+// 宝石嵌进装备后,装备实例上只记宝石的 config id;属性值不入库,按本表现查,改表立即对已镶嵌的宝石生效。
+// 效果走 EquipAttribute 的 effect(与随机属性同一套),C++ 不按宝石 id / 类型分支(AGENTS §11.6)。
+// 源表由 tools/scripts/equip_xlsx_patch.py forge-tables 生成,对应的物品行由 forge-item-rows 追加;
+// schema 与 xlsx 必须成对提交。
+
+package mmorpg.cfgtable.v1;
+
+import "cfg_options.proto";
+
+message EquipGemTable {
+  option (cfg_sheet)       = "EquipGem";
+  option (cfg_source_file) = "EquipGem.xlsx";
+  option (cfg_primary_key) = "id";
+
+  // 宝石物品 id。FK -> Item.id;本表有这一行 = 该物品是宝石
+  uint32 id = 1 [(cfg_fk) = "Item"];
+  // 宝石类型(>= 1);孔位按类型接纳
+  uint32 gem_type = 2;
+  // 提供的属性。FK -> EquipAttribute.id
+  uint32 attr_id = 3 [(cfg_fk) = "EquipAttribute"];
+  // 属性值(> 0);百分比属性为整数百分点
+  uint32 value = 4;
+}

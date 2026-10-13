@@ -164,6 +164,15 @@ func main() {
 		return
 	}
 
+	// Equip-forge-smoke 模式:单机器人做「装备强化 + 宝石镶嵌 / 取下」端到端冒烟
+	// (预备一把还能强化的武器 → 强化预览 / 孔位 / 宝石的显示字段 → 各类拒绝守卫 → 背包里强化 → 穿上后再强化
+	//  → 镶嵌 + 面板加成 → 重登往返 → 取下后面板恰好还原)。用独立账号,不与 equip-smoke 共用(强化不可逆)。
+	// 见 equip_forge_smoke_scenario.go 与 docs/design/equipment-enhance-inlay.md §7;前置条件写在 etc/equip_forge_smoke.yaml 文件头。
+	if cfg.Mode == "equip-forge-smoke" {
+		RunEquipForgeSmoke(cfg)
+		return
+	}
+
 	// Chat-smoke 模式:两个机器人做「全局聊天 go/chat v1」端到端冒烟
 	// (A/B 分登两个 zone → WORLD 发 + 拉 → PRIVATE 发 + 拉 → chat 侧超长拒绝 → 同 request_id 幂等)。
 	// 见 chat_smoke_scenario.go 与 zone 接入契约 v1 §9 冒烟段;前置条件写在 etc/chat_smoke.yaml 文件头。
