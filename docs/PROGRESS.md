@@ -7456,3 +7456,9 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
   - 跨 zone 这条线的代码本轮一行没动;§13 八项(含 GO-2 根治、CPP-3 待确认表)仍是**未编译、未测试,待 Codex 验证**,验证清单在设计文档 §13.7 / §13.8 与 runbook(B3a–B3d、H、SE、V1–V5)。GO-3 仍待拍板(§13.9)。
 - **提醒**:改写之后,凡是还停在旧历史上的本地目录,要先对齐到 `origin/main`(并把本地独有的提交带过去)再编译,否则编的不是最新代码。
 - **Java 版(AGENTS §12)**:对应 Java 版本号:无;本条只是文档,不涉及客户端契约,**不适用**。跨 zone 传送这条线的 Java 版仍是未做。
+
+## 2026-10-13 配表冒烟测试适配正式生成接口
+
+- 组队跟随重编前置复验发现手写 `go/shared/generated/table/table_test.go` 仍调用旧下划线接口和单值 `FindById`。按生成器保留的手写测试边界适配正式 CamelCase 与 `FindAllById`；原组件、索引及热重载断言保留，另验证重复主键返回全部行及缺失主键返回空结果，没有手改生成管理器。
+- Codex 在固定运行源 `898c803ea0`、以及包含新强化/镶嵌配表的主干 `1e3f9e1f68` 上分别执行 `go test -count=1 -json ./generated/table/...`，两次均 13 通过、0 失败、0 跳过。证据：`E:/work/output/team-follow-20261013/go-gateway-logs/shared-tables-test-fixed-result.json`、`main-shared-tables-test-result.json`。
+- 本条仅是配表测试适配与复验，不代表强化/镶嵌或组队跟随已经联机验收。Java 平行版新路径 `D:/luyuan/xuanming-server-mmo` 本机不存在，无法核对 `PARITY.md`；本修改不改变客户端契约。
