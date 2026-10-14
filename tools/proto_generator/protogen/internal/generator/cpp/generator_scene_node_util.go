@@ -105,3 +105,22 @@ func IsSceneNodeGrpcHandler(methods *internal.RPCMethods) bool {
 		},
 	)
 }
+
+// Battle 的控制面才提供 gRPC handler；客户端战斗协议经 BattleClientEdge 分派，不能复活旧的 gRPC 客户端入口。
+func IsBattleNodeGrpcHandler(methods *internal.RPCMethods) bool {
+	if methods == nil || len(*methods) == 0 {
+		return false
+	}
+	return checkFirstMethod(methods,
+		func(m *internal.MethodInfo) bool {
+			domain, ok := utils.GetDomainByProtoPath(m.Path())
+			return ok && domain == "battle" && !m.CcGenericServices() && utils.HasGrpcService(m.Path())
+		},
+		func(m *internal.MethodInfo) bool {
+			return m.FileBaseNameNoEx() == "battle_node" && m.Service() == "BattleNode"
+		},
+		func(m *internal.MethodInfo) bool {
+			return !internal.IsClientProtocolService(m.ServiceDescriptorProto) && !internal.IsPlayerService(m.ServiceDescriptorProto)
+		},
+	)
+}

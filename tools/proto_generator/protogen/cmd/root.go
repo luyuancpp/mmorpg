@@ -1,12 +1,14 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
 	"os/signal"
 	_config "protogen/internal/config"
+	cppGen "protogen/internal/generator/cpp"
 	"protogen/logger"
 	"strings"
 	"syscall"
@@ -60,11 +62,21 @@ func isEnabledEnv(key string) bool {
 
 func main() {
 	defer logger.Sync()
+	grpcHandler := flag.String("grpc-handler", "", "仅从指定源 proto 重生成内部 C++ gRPC handler，不执行全量或客户端生成")
+	flag.Parse()
+	flag.Visit(func(option *flag.Flag) {
+		if option.Name == "grpc-handler" && strings.TrimSpace(*grpcHandler) == "" {
+			logger.Global.Fatal("--grpc-handler 必须指定源 proto，空值不能进入全量生成")
+		}
+	})
+	if flag.NArg() != 0 {
+		logger.Global.Fatal("不支持的命令参数", zap.Strings("arguments", flag.Args()))
+	}
 
 	start := time.Now()
 	logger.Global.Info("Program started", zap.Duration("elapsed", time.Since(start)))
 	enablePprof := isEnabledEnv("PROTOGEN_ENABLE_PPROF") || isEnabledEnv("PBGEN_ENABLE_PPROF")
-	if enablePprof {
+	if enablePprof && *grpcHandler == "" {
 		startPprofServer()
 	}
 
@@ -73,6 +85,13 @@ func main() {
 	}
 
 	logger.Global.Info("Config loaded", zap.String("output_root", _config.Global.Paths.OutputRoot))
+	if *grpcHandler != "" {
+		if err := cppGen.GenerateGrpcHandler(*grpcHandler); err != nil {
+			logger.Global.Fatal("定向生成 gRPC handler 失败", zap.Error(err))
+		}
+		logger.Global.Info("定向生成 gRPC handler 完成", zap.String("proto", *grpcHandler))
+		return
+	}
 
 	dir, err := os.Getwd()
 	if err != nil {

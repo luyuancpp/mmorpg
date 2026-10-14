@@ -233,6 +233,7 @@ type MethodHandlerDirs struct {
 	SceneNodeReplied       string `yaml:"scene_node_replied"`
 	SceneNodePlayerReplied string `yaml:"scene_node_player_replied"`
 	SceneNodeGrpc          string `yaml:"scene_node_grpc"`
+	BattleNodeGrpc         string `yaml:"battle_node_grpc"`
 	GateNode               string `yaml:"gate_node"`
 	GateNodeReplied        string `yaml:"gate_node_replied"`
 	GateNodePlayer         string `yaml:"gate_node_player"`

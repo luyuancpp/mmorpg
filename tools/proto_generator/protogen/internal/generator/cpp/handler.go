@@ -12,15 +12,16 @@ import (
 )
 
 type HandlerConfig struct {
-	IsValidFunc         func(*internal.RPCMethods) bool
-	GenerateDataFunc    func(internal.RPCMethods) (string, error)
-	GenerateCppDataFunc func(string, internal.RPCMethods, string, string) string
-	Dir                 string
-	CppDir              string
-	HeaderExt           string
-	CppExt              string
-	IsRepliedHandler    bool
-	IsGrpcHandler       bool
+	IsValidFunc              func(*internal.RPCMethods) bool
+	GenerateDataFunc         func(internal.RPCMethods) (string, error)
+	GenerateHeadFromFileFunc func(string, internal.RPCMethods) (string, error)
+	GenerateCppDataFunc      func(string, internal.RPCMethods, string, string) string
+	Dir                      string
+	CppDir                   string
+	HeaderExt                string
+	CppExt                   string
+	IsRepliedHandler         bool
+	IsGrpcHandler            bool
 }
 
 func writeHandlerHeadFile(wg *sync.WaitGroup, methodList internal.RPCMethods, cfg HandlerConfig) {
@@ -36,7 +37,13 @@ func writeHandlerHeadFile(wg *sync.WaitGroup, methodList internal.RPCMethods, cf
 	fileName := first.FileBaseNameNoEx() + cfg.HeaderExt
 	fullPath := cfg.Dir + fileName
 
-	data, err := cfg.GenerateDataFunc(methodList)
+	var data string
+	var err error
+	if cfg.GenerateHeadFromFileFunc != nil {
+		data, err = cfg.GenerateHeadFromFileFunc(fullPath, methodList)
+	} else {
+		data, err = cfg.GenerateDataFunc(methodList)
+	}
 	if err != nil {
 		logger.Global.Fatal("Failed to generate handler header file",
 			zap.String("file_path", fullPath),
@@ -44,7 +51,9 @@ func writeHandlerHeadFile(wg *sync.WaitGroup, methodList internal.RPCMethods, cf
 		)
 	}
 
-	utils2.WriteFileIfChanged(fullPath, []byte(data))
+	if err := utils2.WriteFileIfChanged(fullPath, []byte(data)); err != nil {
+		logger.Global.Fatal("Failed to write handler header file", zap.String("file_path", fullPath), zap.Error(err))
+	}
 }
 
 func writeHandlerCppFile(wg *sync.WaitGroup, methodList internal.RPCMethods, cfg HandlerConfig) {
@@ -64,7 +73,9 @@ func writeHandlerCppFile(wg *sync.WaitGroup, methodList internal.RPCMethods, cfg
 		getCppClassName(*first, cfg),
 		getCppIncludeName(*first, cfg))
 
-	utils2.WriteFileIfChanged(fullPath, []byte(data))
+	if err := utils2.WriteFileIfChanged(fullPath, []byte(data)); err != nil {
+		logger.Global.Fatal("Failed to write handler implementation file", zap.String("file_path", fullPath), zap.Error(err))
+	}
 }
 
 func getCppClassName(info internal.MethodInfo, cfg HandlerConfig) string {

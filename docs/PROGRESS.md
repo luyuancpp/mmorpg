@@ -7626,3 +7626,21 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
 - 补官方来源并订正 Telegram random_id 的去重期限、Iris 历史保留参数、Kafka 事务生产者的身份前提；区分 Akka 路由内存缓冲与可选持久队列。旧跨场景投递三份文档增加本记录入口，索引按生成器刷新。
 - Java 版（AGENTS §12）：同步记录到 Java 仓库同名设计文档，单列其已有 MySQL/进场 epoch 围栏；本次是文档记录，无功能版本号、不新增 PARITY 功能完成项。独立 Go 主服亦单列邮件、推送续传与 resync 现状，未套用本仓缺口。
 - 验证边界：文档索引与链接、空白检查；未编译、未运行功能测试或联机验收。
+
+## 2026-10-14 battle 控制面 handler 接入生成器（Codex，完整节点编译受既有依赖阻塞）
+
+- 将 `BattleNodeImpl` 的五个内部控制面 RPC 接入正式 handler 路由与默认配置；客户端 `BattleClientPlayer` 仍不生成 gRPC handler。新增 `--grpc-handler=proto/battle/battle_node.proto` 定向入口，从源契约用本机 protoc 生成临时描述，再复用全量 handler 路由；不执行发号、其他语言或客户端生成。
+- 头文件 include / 公开接口 / 私有状态增加命名守护段；CPP 保留全局、业务委托与投递前段，增加 loop 内复核与完成后段。Agones 许可仍在 gRPC 线程取得并存活到请求返回，loop 内关闸即跳过业务委托，通过 promise/future 原样传回 `UNAVAILABLE battle_not_allocatable`，日志和业务 tip 语义不变。
+- 重复、嵌套、未闭合及未知命名段拒绝生成；定向入口在写入前预检两文件。严格回归额外发现并修正旧模板新建空 handler 时结束标记与右括号粘连的问题；首次空骨架也能立即稳定重生成。
+- 正式生成两次均成功；12 个非空自定义段与迁移后的输入逐段一致，第二次两文件 SHA256 与第一次一致。消息号、事件号与 scene gRPC 两文件的原始 SHA256 均保持不变；未改协议、配表、业务管理器、客户端或既有第三方工作区改动。
+- Go 1.27.2、`GOTOOLCHAIN=local`、`-mod=readonly`：受影响 `internal` / `internal/generator/cpp` / `internal/config` / `cmd` 编译测试成功，其中两个有测试的包共 39 个顶层用例全部通过；相关 `go vet` 与生成器二进制构建通过。路由回归先因 battle 输出缺失失败，补齐后通过。独立 C++ `BattleAdmissionGate` 用现成 VS / GTest 构建运行，7/7 通过；首次独立链接命令漏 Console 子系统，定位后仅修正链接参数完成，保留首轮失败日志。
+- 实际串行 `/m:1` 编译 `cpp/nodes/battle/battle.vcxproj` Debug|x64 失败：生成后的 `handler/grpc/battle_node.cpp` 引入 muduo 时，在 `third_party/muduo/muduo/net/EventLoop.h:18` 报 C1083，找不到 `boost/any.hpp`。当前 Boost 是模块 include 布局而工程仅包含根目录；没有修改构建环境或盲目重试。完整节点未编译通过、未链接、未执行真实 gRPC / Agones 联机验证；内置裸指针静态检查也因缺少检查工具显示 SKIP，不能算静态检查通过。
+- 证据目录：`C:/Users/luyua/AppData/Local/Temp/codex-battle-handler-20261014`，含路由红测/最终 JSON、vet / build、两次生成、独立 C++ XML 及节点 MSBuild 日志；失败与最终验证记录均保留。
+- Java 版（AGENTS §12）：对应新增 Java 版本号无，现有基线仍为 `0.1.0-SNAPSHOT`；本次仅 C++ 骨架生成和自定义段保护，无客户端契约或业务功能变化，Java 不适用。独立 Java 仓库 `PARITY.md` 登记该差异；未修改 Java 代码或版本基线。本次未提交。
+
+## 2026-10-14 battle handler 独立 tmpl 模板收口（Codex）
+
+- 将头文件与 CPP 骨架抽到 `tools/proto_generator/protogen/internal/template/grpc_service_handler.{h,cpp}.tmpl`，Go 不再内嵌 C++ 多行模板；通过标准库 `go:embed` 同批装入生成工具，守护段读取、数据准备与现有渲染引擎保持不变。设计文档 §13 记录模板事实源及“改模板后重编工具”的流程。
+- 抽取后再次完成受影响包 39 个顶层测试、`go vet`、生成器编译；用新二进制定向生成两次，两个 handler 与抽取前的正式输出逐字节一致，消息号、事件号与 scene gRPC 原始哈希保持不变。证据为同目录 `generator-*-tmpl.*`、`regen-tmpl-1.log` / `regen-tmpl-2.log`。
+- C++ 完整节点此前的 `boost/any.hpp` 编译阻塞仍未解决；本次生成文件字节未变，不重复该失败构建，也不提升为节点编译或联机验证通过。独立准入闸 7/7 的证据仍按上一条记录。
+- Java 版（AGENTS §12）：无新增版本号，仅 C++ 生成器模板整理，不适用；已登记的 PARITY 差异保持，Java 代码与客户端契约未变。未提交。

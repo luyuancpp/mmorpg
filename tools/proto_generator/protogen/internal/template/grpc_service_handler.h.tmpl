@@ -1,0 +1,30 @@
+#pragma once
+
+#include <grpcpp/grpcpp.h>
+#include <muduo/net/EventLoop.h>
+{{.GrpcInclude}}
+{{.IncludesCode}}
+
+// 由 proto 工具生成 {{.Service}} 的 gRPC 骨架；自定义代码只写在守护段内。
+// gRPC 线程通过 runInLoop + promise/future 等待事件循环完成请求。
+// Handle* 在事件循环执行，不做阻塞 I/O；业务错误经响应字段返回。
+// 投递前段在 gRPC 线程运行，可取得准入许可并提前返回非 OK。
+// loop 内段在 Handle* 前复核状态：将 dispatchStatus 设为非 OK 即跳过业务委托。
+// 完成后段在 gRPC 线程运行；许可与捕获的栈引用存活到 future.get() 完成。
+class {{.Service}}Impl final : public {{.Package}}{{.Service}}::Service
+{
+public:
+    explicit {{.Service}}Impl(muduo::net::EventLoop& loop);
+{{.PublicCode}}
+{{range .Methods}}
+    grpc::Status {{.Method}}(grpc::ServerContext* context,
+        const {{.CppRequest}}* request,
+        {{.CppResponse}}* response) override;
+{{end}}
+private:
+    // 业务委托在事件循环线程执行，gRPC 线程同步等待完成。{{range .Methods}}
+    static void Handle{{.Method}}(const {{.CppRequest}}* request{{handleResponseParam .}});{{end}}
+
+    muduo::net::EventLoop& loop_;
+{{.PrivateCode}}
+};

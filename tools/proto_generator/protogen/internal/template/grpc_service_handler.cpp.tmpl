@@ -1,0 +1,42 @@
+{{ .IncludeName }}
+
+{{- if .FirstCode }}
+{{ .FirstCode }}
+{{- end }}
+
+{{ .Service }}Impl::{{ .Service }}Impl(muduo::net::EventLoop& loop)
+    : loop_(loop)
+{
+}
+{{ range .Methods }}
+void {{ $.Service }}Impl::Handle{{ .HandlerName }}(const {{ .CppRequest }}* request{{ if not .IsVoidResponse }},
+    {{ .CppResponse }}* response{{ end }})
+{
+{{ if .HasCode }}{{ .Code }}{{ else }}{{ $.YourCodePair }}{{ end }}
+}
+{{ end }}
+{{- range .Methods }}
+grpc::Status {{ $.Service }}Impl::{{ .HandlerName }}(grpc::ServerContext* /*context*/,
+    const {{ .CppRequest }}* request,
+    {{ .CppResponse }}*{{ if .IsVoidResponse }} /*response*/{{ else }} response{{ end }})
+{
+{{ .PreDispatchCode }}
+    std::promise<grpc::Status> promise;
+    auto future = promise.get_future();
+
+    // future.get() 覆盖整个任务寿命；自定义段需要的成员引用应在投递前绑定，避免捕获 this。
+    loop_.runInLoop([&]
+                    {
+        grpc::Status dispatchStatus = grpc::Status::OK;
+{{ .InLoopCode }}
+        if (dispatchStatus.ok())
+        {
+            Handle{{ .HandlerName }}(request{{ if not .IsVoidResponse }}, response{{ end }});
+        }
+        promise.set_value(dispatchStatus); });
+
+    auto status = future.get();
+{{ .PostDispatchCode }}
+    return status;
+}
+{{ end }}

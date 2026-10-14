@@ -430,16 +430,22 @@ etcdctl 验 `BattleNodeService.rpc` 记录 `protocolType=PROTOCOL_GRPC` → 登�
 重生成出骨架后,把下列代码贴进对应文件的 `///<<< BEGIN/END WRITING YOUR CODE` 守护段。
 全部为一行委托,业务在手写类中。
 
-**A. `cpp/nodes/battle/handler/grpc/battle_node.cpp`**(骨架若未生成,照 `scene_node_service.h/.cpp` 形态手建,类 `BattleNodeImpl : public BattleNode::Service`,runInLoop+promise 投递):
+**A. `cpp/nodes/battle/handler/grpc/battle_node.{h,cpp}`**(2026-10-14 起已接入正式生成器，不再手建骨架；类 `BattleNodeImpl : public BattleNode::Service`，runInLoop + promise 投递):
+- 骨架事实源是 `tools/proto_generator/protogen/internal/template/grpc_service_handler.h.tmpl` 与 `grpc_service_handler.cpp.tmpl`；Go 通过标准库 `go:embed` 将模板同批编入工具，只负责守护段读取、数据准备与渲染。模板改动后先重编生成器，再执行生成。
 - 文件头守护段:`#include "logic/battle_room_manager.h"` 与 `#include "muduo/base/Logging.h"`
 - `HandleCreateBattle` 守护段:`BattleRoomManager::Instance().HandleCreateBattle(*request, *response);`
 - `HandleDestroyBattle` 守护段(响应 Empty 无形参):`BattleRoomManager::Instance().HandleDestroyBattle(*request);`
+- 头文件命名守护段 `grpc.header.includes/public/private` 保存准入闸头文件、`OpenAdmission/CloseAdmission` 声明与 `admission_` 状态；定义放 CPP 文件头守护段。
+- `CreateBattle` 投递前守护段保留准入闸检查、Agones 阻塞取许可与栈引用绑定；`grpc.CreateBattle.in_loop` 复核关闸并设置 `dispatchStatus`，非 OK 时生成包装不调用 `HandleCreateBattle`；`grpc.CreateBattle.post_dispatch` 保留完成后的拒绝日志。
+- 许可仍覆盖 `future.get()`；promise 传递 `grpc::Status`，停机复核拒绝仍回 `UNAVAILABLE battle_not_allocatable`。业务错误仍经 response tip 返回，顺序与 §22 D70 不变。
+- 定向生成：工作目录 `tools/proto_generator/protogen`，运行 `go run ./cmd --grpc-handler=proto/battle/battle_node.proto`。先用本机 protoc 从源契约生成临时描述，再走与全量相同的 handler 路由，仅写这两个文件，不发号、不生成客户端协议。普通全量 proto-gen 同样覆盖 battle 控制面，客户端 `BattleClientPlayer` 不生成 gRPC handler。
+- 命名守护段未知、重复、嵌套或未闭合时拒绝生成；重命名 RPC 后须显式迁移对应守护段，不能让生成器静默删除准入代码。
 
 **B. `cpp/nodes/scene/handler/grpc/scene_node_service.cpp`**(gRPC 面,match 走这条):
 - 文件头守护段加:`#include "battle/system/player_battle.h"`
 - `HandlePrepareBattle` 守护段:`PlayerBattleSystem::PrepareBattle(*request, *response);`
 - `HandleCancelBattlePrepare` 守护段:`PlayerBattleSystem::CancelBattlePrepare(*request);`
-- ⚠️ 同文件守护段外的 Agones 前置检查重生成会丢,先 git diff 恢复再继续。
+- Agones 前置检查必须写在 gRPC 包装函数的投递前守护段内，生成器会保留；不要写在守护段外。
 
 **C. `cpp/nodes/scene/handler/rpc/scene_handler.cpp`**(muduo 面,C++ 节点间备用,同款两行委托,
 方法签名以生成器输出为准):`PrepareBattle`/`CancelBattlePrepare` 守护段同 B 的两行。
