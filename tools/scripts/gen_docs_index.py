@@ -37,6 +37,7 @@ DESIGN_RULES = [
         "robot-*", "login-test-anti-stuck-system.md", "data-consistency-stress-testing.md",
     ]),
     ("玩家数据与存储", [
+        "reliable-player-inbox-*",
         "player-async-save-loss-windows.md", "player-storage-placement.md",
         "player-route-mapping-*",
         "new-player-*",

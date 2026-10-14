@@ -1,5 +1,7 @@
 # Cross-Scene Player Messaging
 
+> 2026-10-14 补充：[重要玩家消息与持久收件箱](reliable-player-inbox-20261014.md) 记录最新的可靠性方向。下文的查位置转投和场景内队列属于早期方案；重要业务以已有持久待办与接管后恢复为准，`IMPORTANT` 标签本身不提供至少一次投递保证，不再另建通用投递器。
+
 ## Problem
 Scene A wants to send a message to a player, but the player may not be on Scene A. A unified message delivery mechanism is needed.
 

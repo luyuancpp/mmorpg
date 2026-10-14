@@ -149,6 +149,7 @@ python tools/scripts/gen_docs_index.py
 - [player_live_data_export_runbook.md](design/player_live_data_export_runbook.md) — 玩家线上数据下线导出操作记录
 - [proto-compare-dirty-save.md](design/proto-compare-dirty-save.md) — Proto-Compare-Driven Dirty Save — Design (todo.md #204 + #226)
 - [redis-async-client-retry-fix.md](design/redis-async-client-retry-fix.md) — Redis Async Client Retry Fix
+- [reliable-player-inbox-20261014.md](design/reliable-player-inbox-20261014.md) — 重要玩家消息：持久收件箱、拉取恢复与迁移围栏（2026-10-14）
 - [tidb-phase1-and-launch-readiness.md](design/tidb-phase1-and-launch-readiness.md) — TiDB Phase 1 设计与实施清单（含开服准备）
 
 #### 跨服、合服与回档
@@ -294,8 +295,8 @@ python tools/scripts/gen_docs_index.py
 
 - [friend-handoff-20260920.md](handoff/friend-handoff-20260920.md) — friend 服务移植 —— 交接文档(2026-09-20)
 - [godb-pipeline-codex-tasksheet-20261013.md](handoff/godb-pipeline-codex-tasksheet-20261013.md) — Codex 任务单：存盘管线第 0 批与 proto2mysql 条件写原语的验证（2026-10-13）
-- [godb-pipeline-handoff-20261013-appendix.md](handoff/godb-pipeline-handoff-20261013-appendix.md) — 附录：存盘管线修复方案明细（工作流原始产出）
 - [godb-pipeline-handoff-20261013.md](handoff/godb-pipeline-handoff-20261013.md) — 交接：玩家存盘管线（go/db）瓶颈修复与条件写（2026-10-13）
+- [godb-pipeline-handoff-20261013-appendix.md](handoff/godb-pipeline-handoff-20261013-appendix.md) — 附录：存盘管线修复方案明细（工作流原始产出）
 - [handoff-backlog-2026-09-05.md](handoff/handoff-backlog-2026-09-05.md) — 交接清单:2026-09-02 ~ 09-05 三天工作的留档待办(经代码核实)
 - [handoff-crosszone-20260920.md](handoff/handoff-crosszone-20260920.md) — 跨 zone 场景传送:交接说明(2026-09-20)
 - [handoff-gate-dtor-fix-verify-and-stress-20260914.md](handoff/handoff-gate-dtor-fix-verify-and-stress-20260914.md) — 交接:gate `~TcpConnection` 事故第二批修复 —— 构建 / 验证 / 压测(执行方:ChatGPT;方案方:Claude Code)
