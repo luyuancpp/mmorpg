@@ -125,5 +125,5 @@ foreach ($case in $boundaryCases) {
     if ($outputText -match "raw pointer member 'library_member'") { throw "$($case.Name): 第三方内部成员被误报；$output" }
     Write-Host "PASS: $($case.Name)"
 }
-Write-Host "PASS: $($cases.Count + $boundaryCases.Count) 个 MSBuild 实际输入检查用例；证据 $fixture"
+Write-Host "PASS: $($cases.Count + $boundaryCases.Count) MSBuild input validation cases; evidence $fixture"
 exit 0

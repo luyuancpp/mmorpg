@@ -502,7 +502,8 @@ pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-all-down -ZonesConfigPath de
   - **建表 / 种号段行改由 `data-service-migrate` Job 做**(`manifests/go-svc/data-service-migrate.yaml`,目录条目 `MigrateJob`):
     `Apply-OneGoSvc` 在 ConfigMap 之后、Deployment 之前 apply 它,staging / prod 恒等它 Complete(与 trade / friend 同一条门禁)。
     每个 zone 各跑一份,迁的是同一个全局库,由 `GET_LOCK` 串行;锁忙以退出码 3 重试。以前这一步靠人手工跑 `-migrate`,全新集群上没人跑。
-  - 连接预算:每个 data-service 实例最多 35 条 MySQL 连接(三个 store 各 5 + 名字注册表 20),按「zone 数 × 2 副本 × 35」算进 `max_connections`。
+  - 连接预算:每个 data-service 实例最多 35 条 MySQL 连接(三个 store 各 5 + 名字注册表 20;`RouteStore` 切 db_first 后再 +20),
+    按 zone 数 × 副本数计入共用 MySQL 的总账。怎么加总、`max_connections` 怎么取,见下面「MySQL 连接总账」一节,不要在这里手算。
 - **全局库预建**:`infra-up` 的 `mysql-init-sql` ConfigMap 现在多生成一份 `02_k8s_global_db.sql`
   (`CREATE DATABASE IF NOT EXISTS mmorpg_global` + `GRANT ALL ... TO 'appuser'@'%'`),data-service 启动期 / `-migrate` 在里面按 proto 建
   `transaction_log` / `player_snapshot` / `rollback_audit_log` / `id_segment` 四张表。全集群一份,不按 zone 拆。
@@ -593,7 +594,8 @@ trade 是全局池服务(`$GoSvcCatalogue.trade`,`Global = $true`):`infra-up` / 
 - **号段**:listing_id 走 data-service 号段(`biz_tag = trade_listing`),data-service ConfigMap 的 `IdSegment.BootstrapTags` 已加。
   staging / prod 的 `AllowAutoSeed` 固定 `false`:**存量集群要先让 data-service 跑一次 `-migrate`**(INSERT IGNORE,幂等)把 `trade_listing` 行建出来,
   否则 trade 领段拿到 `ErrCodeIdSegmentUnknownTag`,SeedListing 回 `kServiceUnavailable`。恢复 `mmorpg_global` 时的水位核对见上一节。
-- **连接数**:`MySQL.MaxOpenConn` × 2 个副本(外加 Job 的连接)要算进 MySQL 的 `max_connections`。
+- **连接数**:`MySQL.MaxOpenConn`(20)× 2 个副本计入共用 MySQL 的总账(「全局」一项),`trade-migrate` Job 的连接算在运维余量里;
+  总账与 `max_connections` 的取值见下面「MySQL 连接总账」一节。
 - **上线前未做(P3)**:`mmorpg_trade` 的 audit auditor / data_consistency_check、TiDB BR 按库恢复清单;
   `trade_listing.market_zone` 带 home_zone 语义,合服改写步骤在 `tools/merge_zone`。
 
@@ -633,7 +635,8 @@ friend 与 trade 同形:全局池服务(`$GoSvcCatalogue.friend`,`Global = $true
   (`manifests/infra/mysql-backup-cronjob.yaml`)天然覆盖它,**备份侧不用改**;要改的是**恢复侧的清单** ——
   按库恢复时必须把 `mmorpg_friend` 一起列上,否则恢复完 friend 是空库,玩家的好友关系凭空消失且没有任何报错。
   恢复顺序上它没有 `id_segment` 那种水位约束,但见上面「恢复全局库」一条的孤儿边提醒。
-- **连接数**:`MySQL.MaxOpenConn`(20)× 2 个副本(外加 Job 的连接)要算进 MySQL 的 `max_connections`。
+- **连接数**:`MySQL.MaxOpenConn`(20)× 2 个副本计入共用 MySQL 的总账(「全局」一项),`friend-migrate` Job 的连接算在运维余量里;
+  总账与 `max_connections` 的取值见下面「MySQL 连接总账」一节。
 - **Kafka 命令 topic 代号不一致(存量全仓缺口,2026-09-28 已修,下面保留原记录)**:friend 的 S2C 推送经 `gate-cmd_g<N>` 到目标 zone 的 gate。
   `bin/etc/base_deploy_config.yaml` 当前是 `CommandTopicGeneration: 2`,`kafka-topic-init` 预建 `gate-cmd_g2`、C++ gate 也消费 g2;
   而 **没有任何 go-svc manifest 注入 `KAFKA_COMMAND_TOPIC_PARTITIONS` / `KAFKA_COMMAND_TOPIC_GENERATION`**,
@@ -649,6 +652,100 @@ friend 与 trade 同形:全局池服务(`$GoSvcCatalogue.friend`,`Global = $true
   合服后行自动存活,`tools/merge_zone` 只需把审计连到 `mmorpg_friend`,不需要改写数据。
   **(2026-09-29 更正)** 上面两条关于 `-GateRouterMode` 的缺口已关闭:默认值已翻为 `"1"`(D75,K8s 路由模式 battle-smoke 为事后补验项);
   `dev_tools.ps1` 与 `k8s_image.ps1` 都已加"留空不覆盖、非空透传"的 `-GateRouterMode`(见 Optional Flags「包装入口的透传口径」)。audit auditor 缺口不变。
+
+## MySQL 连接总账(2026-10-13,G2b:docs/handoff/launch-readiness-20261013/spec_G2b.md)
+
+> 状态:已落码,**未编译、未测试**,待 Codex 验证。本节所有数值(1800、5Gi、各池大小、余量、告警阈值)都是按公式推算或凭经验取的,**待压测确认**,不能据此下容量结论(AGENTS §6)。
+
+所有 zone 的 go/db、data-service、Java gateway 与全局的 friend、trade **共用 infra namespace 里那一台 MySQL**(`manifests/infra/mysql.yaml`,单副本)。
+以前每个服务各自写一句「要算进 `max_connections`」,没有任何地方把它们加起来:`max_connections` 曾是 500,2 个 zone 的稳态恰好 500、零余量,4 个 zone 的稳态就要 920。
+超限的后果不只是变慢:go/db 把 1040(Too many connections)当普通错误,耗尽 3 次重试后进没有消费者的死信,存盘不会自动落库(读代码推断,未实测)。
+现在这笔账是部署脚本里的可执行函数,文档里不再手算。
+
+- **总账在哪**:`tools/scripts/k8s_deploy.ps1`。
+  - `Get-MysqlConnectionPlan`:规划档(见下),`max_connections` 按它的峰值取值。
+  - `Get-MysqlConnectionLedgerInputs`:输入全部从权威文件读 —— 各服务 yaml 的池上限、各 manifest 的 `replicas`(`Get-ManifestDeploymentReplicas`)、
+    `mysql.yaml` 的 `max_connections`(`Get-MysqlMaxConnectionsFromManifest`)。缺键、或 `max_connections` / `replicas` 不是恰好一处即 throw(fail-closed)。
+  - `Get-MysqlConnectionLedger`:纯函数,算出每实例 / 每 zone / 稳态 / 滚动余量 / 峰值 / 余量。
+  - 同一批池参数也镜像进 ConfigMap(db 的 `Placement` 池键、data-service 的 `PlayerName.*` 与 `RouteStore.MaxOpenConn` / `MaxIdleConn`、
+    gateway 的 `spring.datasource.hikari.maximum-pool-size` / `minimum-idle`),让总账的输入等于集群实际值。清单与核对规则在 `Get-MysqlPoolMirror`:
+    池上限必须是正整数,空闲数必须是不超过上限的整数(Go 服务下限 1 —— 0 在 Go 侧等于没配、取默认;gateway 的 `minimum-idle` 允许 0),
+    db 的 `Placement.ExtraStoreConnMaxIdleSeconds` 必须是正整数。写路径入口的 `Assert-MysqlPoolMirror` 先于任何集群写操作把三个目标都核一遍
+    (不看 `-SkipGoSvc` / `-SkipJavaSvc`,`infra-up` 也核),不合格即 throw;生成 ConfigMap 取值时再核一次。
+- **公式**(Z = zone 数;E_z = 每个 go/db 实例打开的额外 zone 家族库数;E_n = 非 zone 落点库数;F = route store 是否 db_first,取 0 / 1;R = 滚动期间每个 Deployment 多出的实例数):
+  ```text
+  db 每实例 = 60 + 8·E_z + 8·E_n       # Database.MaxOpenConn + Placement.ZoneStoreMaxOpenConn / NonZoneStoreMaxOpenConn(每个额外库一个池)
+  ds 每实例 = 3·5 + 20 + 20·F          # snapshot / transaction_log / id_segment 各一个池 + 名字注册表 + route store(只在 db_first 时)
+  gw 每实例 = 5                        # Java gateway 的 Hikari maximum-pool-size
+  每 zone   = 2·db + 2·ds + 2·gw       # 各 2 副本
+  全局      = 2·20(friend) + 2·20(trade)
+  steady    = Z·每 zone + 全局
+  surge     = R·(db + ds + gw + 20 + 20)
+  peak      = steady + surge + 运维余量
+  ```
+- **规划档**:Z=4、E_z=3(最坏情形:每个 go/db 实例都打开了其余全部 zone 的库,打开后常驻)、E_n=0(Phase 2 未开)、F=1(D1 第 2 阶段会切 db_first,提前计入)、R=2、
+  运维余量 20(迁移 Job、备份、探针、merge_zone / route_tool、人工会话,估计值)。**峰值 1620,`max_connections = 1800`,余量 180(约 10%)**。
+  上限刻意不抬到「不可能触发」:它要保留保护作用。
+  - R=2 的含义:滚动发布时每个 Deployment 按多 2 个实例算 —— maxSurge 的 1 个新 Pod,加 1 个仍在优雅退出、连接还没释放的旧 Pod
+    (Deployment 控制器算 surge 时不计退出中的 Pod;K8s 行为,未在本机核实)。
+  - 余量只覆盖「同一时刻一个 zone 在滚」。`all-up` 不带 `-WaitReady` 时各 zone 的滚动会重叠;带了,上一个 zone 仍在退出的旧 Pod 也可能与下一个 zone 重叠一个 grace 窗口(go/db 45s)。
+    发布时用 `-WaitReady` 或逐 zone `zone-up`。
+  - 不在规划档里:合服留下、已不在 zones 配置里的源区库(合服后按实际库数重算);login 的 `PasswordAuth`(K8s ConfigMap 不写该段,一旦启用每 zone 再 +2×20)。
+  - `zones.10zones.yaml` 那种 10 个 zone 的配置按同一公式(Z=10、E_z=9)峰值是 4404,在单台 MySQL 上无解,与池怎么调无关(E_z=0 时稳态也有 2480):
+    要上 10 个 zone 先完成 TiDB Phase 1。
+  - 改规划档 = 重算 `max_connections` 与 MySQL Pod 内存,`mysql.yaml` 的两处注释、告警文件里额外库数的两个阈值一起改。
+    Phase 2 打开 `PinOnCreate`(E_n ≥ 1,且非 zone 池要调大)之前必须重做规划档。
+- **部署时怎么看**:`zone-up` / `all-up` / `infra-up` 的写路径打印一行(`*-down` / `*-status` 不打):
+  ```text
+  MySQL connection ledger: zones=<Z> steady=<稳态> peak=<峰值> max_connections=<上限> headroom=<余量>; plan zones=4 peak=<规划峰值> headroom=<规划余量>
+  ```
+  分号前是**本次 zones 配置**的账(Z = zones 配置 ∪ `-ZoneId`,E_z 取 Z−1,其余取规划档),分号后是规划档。`headroom` 为负就是超限。
+  按仓库当前值手算(未运行):`zones.json` 两个 zone 时是 `zones=2 steady=592 peak=948 max_connections=1800 headroom=852; plan zones=4 peak=1620 headroom=180`。
+  zones 配置文件缺席时 Z 取 1,行尾多一个 `zones_config=missing`。
+- **超限**:任一份峰值大于 `max_connections` 时打一条 WARNING,文本以 `MySQL连接总账超限:` 开头(这一段刻意不留空格:控制台会按窗口宽度在空格处折行,留了就 grep 不到)。**只警告、不阻断部署**(是否升级为门禁待拍板)。两条出路:
+  1. 先完成 TiDB Phase 1(`docs/design/tidb-phase1-and-launch-readiness.md`);
+  2. 重做 `Get-MysqlConnectionPlan`,并同步 `mysql.yaml` 的 `max_connections` 与内存 limits。不要只把 `max_connections` 调大:
+     内存按每条连接约 1MiB 常驻估算(待实测),limits 不跟上就是把 1040 换成 OOMKill,整台 MySQL 重启。
+- **改 `mysql.yaml` 的两个坑**:
+  - **只改 my.cnf 不会重启 mysqld。** `max_connections` 在 ConfigMap `mysql-config` 里,Deployment 模板不引用它的内容:只改这一行时运行中的实例仍是旧值,
+    而总账与契约测试已经按新值算了,没有任何报错。两条路:维护窗口内 `kubectl -n <infra> rollout restart deploy/mysql`;或 `SET GLOBAL max_connections = <新值>`
+    (只改运行值,立即生效,内存 limits 必须先到位;重启后仍读 `mysql.yaml`,所以文件里必须已经是新值)。
+    **不要用 `SET PERSIST`**:它把值写进 datadir(在 PVC 上)的 `mysqld-auto.cnf`,启动时优先于 my.cnf(MySQL 8.0 行为,凭记忆,未在本机核实),
+    用过之后再改 `mysql.yaml` + 重启都不生效,而总账与契约测试照样按文件里的值通过;已经用过的,先 `RESET PERSIST max_connections` 再改。
+    改完用 `SHOW VARIABLES LIKE 'max_connections'` 核对实际值:容器 open files 上限过低时 MySQL 会自己把它压低,
+    只在启动日志里留一条警告(MySQL 行为,未在本机核实)。
+  - **改 Deployment 模板(例如内存)会触发 `Recreate`,全服唯一的 MySQL 停一次**,所有 zone 的数据层一起停。G2b 把内存 requests / limits 从 512Mi / 1Gi 改成 1Gi / 5Gi,
+    所以**第一次 apply 这份 `mysql.yaml` 就属于这种**,只能在维护窗口做。停机期间 go/db 的写任务连不上库,走的还是「耗尽重试 → 死信」那条链。
+    **L-04(连接错误时写延后、不耗重试预算)落地并部署之前,不要在有真实存档的环境 apply**;确需先 apply,就在维护窗口内先停写,
+    确认 db_task lag、重试队列、死信都为 0 再动。见 `docs/handoff/godb-pipeline-handoff-20261013.md` §2.4。
+- **观测**:
+  - 指标 `mmorpg_sql_pool_*{sql_client,pool}`(`go/shared/sqlpoolstats`):把 `sql.DBStats` 按**池类别**聚合,label 里没有库名。
+    共 10 个:`pools`、`max_open_connections`、`open_connections`、`in_use_connections`、`idle_connections`、`wait_count_total`、`wait_duration_seconds_total`、
+    `max_idle_closed_total`、`max_idle_time_closed_total`、`max_lifetime_closed_total`。
+    - go/db:`sql_client="db"`,端口 **:9160**,`pool` = `home`(本 zone 库)/ `extra_zone` / `extra_non_zone`。
+      K8s 上 go/db 的 `/metrics` 以前是关的(ConfigMap 不写 `MetricsListenAddr` = 不起端口);现在 db ConfigMap 写 `MetricsListenAddr: ":9160"`,
+      与 `manifests/go-svc/db.yaml` 的 `metrics` 端口、`prometheus.io/port` 注解三处必须一致(契约测试钉住)。
+      只部署 manifest 而 ConfigMap 没写这一行时抓取会失败,`owner-epoch-alerts.yaml` 的抓取前提也不成立。
+    - data-service:`sql_client="data_service"`,端口 :9260,`pool` = `snapshot` / `transaction_log` / `id_segment` / `player_name`;`player_route` 只在 `RouteStore.Mode=db_first` 时出现。
+    - friend / trade / Java gateway 没有导出池指标。
+  - 告警 `deploy/k8s/mysql-connection-alerts.yaml`(PrometheusRule,与 `owner-epoch-alerts.yaml` 同法安装):
+    ```bash
+    kubectl apply -n observability -f deploy/k8s/mysql-connection-alerts.yaml
+    ```
+    两组 5 条。`sql-pool.client` 组 3 条用上面的池指标,现在就有数据:`SqlPoolSlowAcquire`(取连接排队慢)、`SqlPoolSaturated`(池长期用满,只作趋势)、
+    `DbExtraStorePoolsBeyondPlan`(额外库数超过规划档;两个阈值与 `Get-MysqlConnectionPlan` 的 `ExtraZoneStores` / `NonZoneStores` 同源,契约测试核对)。
+    `mysql.connection-budget` 组 2 条(`MysqlConnectionsRefused` / `MysqlConnectionsNearMax`)需要 mysqld_exporter:仓库里还没有部署它(待拍板),
+    在那之前这一组没有数据、不会触发也不会误报,也就是说 **MySQL 服务端的连接数现在仍然看不到**。
+- **额外落点库池的旋钮与回退口径(批 C)**:go/db 原来的一个旋钮 `Placement.ExtraStoreMaxOpenConn` 拆成 `ZoneStoreMaxOpenConn` / `ZoneStoreMaxIdleConn`(每个额外 zone 家族库)
+  与 `NonZoneStoreMaxOpenConn` / `NonZoneStoreMaxIdleConn`(每个非 zone 落点库),另加 `ExtraStoreConnMaxIdleSeconds`(默认 60,冷库的池回到 0 条);
+  旧键只作回落(`docs/design/player-storage-placement.md` §6.1)。db ConfigMap 写的是这五个新键。
+  **回退批 C 必须用旧 commit 重跑 `k8s_deploy.ps1 zone-up` 重新生成 ConfigMap,不能只 `kubectl rollout undo deploy/db`**:
+  undo 只换回旧镜像,ConfigMap 里仍只有新键,旧二进制不认它们、按默认 8 / 2 开池(go-zero 对未知配置键静默忽略,凭记忆,未核实)。
+  新键若已被调到 8 以下,回退后的实际池就比总账大。
+- **验证(交 Codex,未运行)**:`pwsh -NoProfile -File tools/scripts/tests/k8s_deploy_contract.tests.ps1`。本项新增 9 例(批 A 7、批 B 2),当前文件 89 → 98:
+  规划档与 `zones.json` 的峰值 ≤ `max_connections`;公式自检(复现 2026-10-12 核算的 Z=4 → 920、Z=2 → 500);ConfigMap 镜像值 == 服务 yaml;
+  连 MySQL 的 ConfigMap 只有总账认识的那几个;写路径打印那一行;10 个 zone 打超限警告且不阻断;db 指标端口三处一致;告警阈值与规划档同源。
+  `.github/workflows/deploy-config-tests.yml` 的触发路径已加上 gateway 的 `application.yaml` 与 `deploy/k8s/*.yaml` / `*.json`,改这些输入也会跑契约测试。
 
 ## Kafka 审计 topic 预建(kafka-topic-init,2026-09-08,node-id-overhaul-plan §2.0c)
 

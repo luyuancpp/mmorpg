@@ -330,10 +330,10 @@ func newSessionInterceptor(cfg config.Config) grpc.UnaryServerInterceptor {
 	}
 
 	if enforce {
-		logx.Info("内部调用方验签:强制档(验不过的身份声明一律拒绝)")
+		logx.Info("Internal caller signature verification: enforced mode (all identity claims failing verification are rejected)")
 	} else {
-		logx.Errorf("SECURITY WARNING: 内部调用方验签处于宽松档(Mode=%s),"+
-			"验不过的身份声明只告警不拦截;生产模式无法进入这一档", cfg.Mode)
+		logx.Errorf("SECURITY WARNING: Internal caller signature verification in relaxed mode (Mode=%s), "+
+			"identity claims failing verification are logged but allowed; production mode cannot enter this mode", cfg.Mode)
 	}
 
 	return callerauth.UnaryServerInterceptor(callerauth.NewVerifier(callerauth.Options{
@@ -344,7 +344,7 @@ func newSessionInterceptor(cfg config.Config) grpc.UnaryServerInterceptor {
 		AllowedCallers:  cfg.InternalAuth.AllowedCallers,
 		OnNonceOverflow: func() {
 			callerauth.RecordNonceOverflow()
-			logx.Error("callerauth nonce 表超过 MaxNonceEntries 被迫提前翻代,重放窗口临时缩短;请调大 InternalAuth.MaxNonceEntries")
+			logx.Error("callerauth nonce table exceeded MaxNonceEntries and rotated early; replay window temporarily shortened, increase InternalAuth.MaxNonceEntries")
 		},
 	}))
 }
@@ -363,8 +363,8 @@ func newSessionInterceptor(cfg config.Config) grpc.UnaryServerInterceptor {
 // "拿不到 etcd 就报错返回"只会把 fail-open 改成 fail-closed。
 func newKillSwitch(watchCtx context.Context, cfg config.Config, cli *clientv3.Client) *killswitch.Switch {
 	if cfg.KillSwitch.Disabled {
-		logx.Error("SECURITY/OPS WARNING: RPC 热关停闸门被配置显式关闭(KillSwitch.Disabled=true)," +
-			"线上出事时无法用 etcd 秒级关停单个方法,只能走发布流程")
+		logx.Error("SECURITY/OPS WARNING: RPC kill switch explicitly disabled by configuration (KillSwitch.Disabled=true), " +
+			"individual methods cannot be disabled through etcd within seconds during incidents; deployment required")
 		return nil
 	}
 
@@ -393,6 +393,7 @@ func startServer(watchCtx context.Context, cfg config.Config, ctx *svc.ServiceCo
 	// 必须在 MustNewServer 之后:它内部的 SetUp → prometheus.StartAgent 才打开 go-zero 指标的
 	// 全局开关,在那之前写的样本会被直接丢弃(理由与告警口径见 PrimeCreatePlayerMetrics)。
 	loginlogic.PrimeCreatePlayerMetrics()
+	loginlogic.PrimeEnterGameMetrics()
 
 	// 拦截器顺序有讲究(go-zero 把它们交给 grpc.ChainUnaryInterceptor,
 	// **排在前面的在外层、先执行**;注意 recover/timeout/stat 等 go-zero

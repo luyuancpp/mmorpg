@@ -167,6 +167,13 @@
 
 - 名义值 T = Z·(210+16E) + 80，不含新增两项。Z=2、E=0 时 T=500；Z=4 时 T=920。
 - T_peak = T + D1 池 + PasswordAuth + 滚动余量 + 工具。
+- **（2026-10-13 G2b 状态注，已落码，未编译、未测试；数值均待压测确认）** 上表是 2026-10-12 的核算口径，原表不改。MySQL 档的现行口径以可执行总账为准：`tools/scripts/k8s_deploy.ps1` 的 `Get-MysqlConnectionPlan` / `Get-MysqlConnectionLedger`，说明见 `deploy/k8s/README.md`「MySQL 连接总账」，规格见 `docs/handoff/launch-readiness-20261013/spec_G2b.md`。与上表不同的地方：
+  - **Java gateway 行**：现为显式 2×5。`java/gateway_node/src/main/resources/application.yaml` 配了 Hikari `maximum-pool-size: 5`、`minimum-idle: 2`，K8s ConfigMap 镜像这两个值，不再是按默认值推断的 2×10。
+  - **滚动余量行**：按 R=2 计，即滚动期间每个 Deployment 多 2 个实例（maxSurge 的 1 个新 Pod，加 1 个仍在优雅退出、连接还没释放的旧 Pod）。范围是一个 zone 的 db / data-service / gateway 三个 Deployment，加全局的 friend、trade；不是上表的「每 zone 临时多出 (60+8E)+35」。这里的 R 是多出的实例数，与「D1 route store」行里表示池大小的 R 不是同一个量。
+  - **D1 route store 行**：池大小已定为 20（`go/data_service/etc/data_service.yaml` 的 `RouteStore.MaxOpenConn`）。K8s 上 `RouteStore.Mode` 现在固定 `redis`、不装配这个池，规划档按 db_first 提前计入。
+  - **取值**：规划档（4 个 zone、每个 go/db 实例打开其余 3 个 zone 的库、Phase 2 未开、运维余量 20）峰值 1620；`deploy/k8s/manifests/infra/mysql.yaml` 的 `max_connections` 已从 500 改为 1800，内存 limits 从 1Gi 改为 5Gi。login PasswordAuth 仍不计入（K8s ConfigMap 不写该段）。
+  - 下面「两种后端都要做的」三条里，后两条已由 G2b 落码：池指标见 §7 L-08 的状态注；旋钮拆成 `Placement.ZoneStore*` / `NonZoneStore*`，`ExtraStoreMaxOpenConn` 只作回落。第一条（L-04）没有做。
+  - 换成 TiDB 后，总账里各项客户端连接数不变，变的只是上限参数，取值口径见下面「TiDB 侧」。
 
 **TiDB 侧：**
 - 单实例上限是 `instance.max_connections`，默认 0（不限），范围 0–100000；同时设了 `max-server-connections` 时以前者为准。并发执行的会话数由 `token-limit` 控制，默认 1000【文 tidb-configuration-file】。
@@ -833,7 +840,7 @@ Phase 1 的逻辑库仍按 zone 分开，用按库过滤恢复就能表达「只
 | L-05 | P0 | 设计评审「新号首次进场免 DB 读」：建角时写一个空的 `PlayerAllData`，或打新号标记。号段 id 不复用，读到空就是真值。现状是新号首读一定冷读：每张子表一条 Kafka 读任务，玩家同步等待 8s（`entergamelogic.go:380`） | login、go/db | 否 | 负责人 | 压测首次进场 p99 与 db_task 读量 |
 | L-06 | P0/P1 | 共享 Redis 按用途拆实例：排队与限流 / 会话与锁 / PlayerAllData / mapping。`task:result` 改为按 login 实例分频道。压测后再定 `maxmemory` 和 limits，保持 noeviction（`redis.yaml:137-143` 现在只设了 requests；`redis-ha.yaml:9-13` 说明为什么上不了 Cluster）。注意：`redis-ha.yaml` 的 apply 路径在部署脚本里不存在（§6.1） | deploy、go/login | 否 | 负责人 | 压测出 Redis 主的 CPU / ops / 内存曲线 |
 | L-07 | P1 | 全球审计管道：消息上限、积压保留、容量预算，见表后展开 | data_service、C++ snapshot、Kafka 部署 | 部分：落库耗时要在 TiDB 上重测 | 回档负责人 | consumer lag 指标；`snapshot_system` 发送失败计数 |
-| L-08 | P1 | 连接预算：<br>• 导出 `sql.DBStats`，label 只用池类别；<br>• TiDB 每实例 `max_connections` 按 §2.4 取值（TiDB 默认不限，1040 只在设了上限时出现）；<br>• 拆开全局库池与访客池两个旋钮 | go/db、data_service | 是，上限参数随后端变 | — | DBStats 指标 |
+| L-08 | P1 | 连接预算：<br>• 导出 `sql.DBStats`，label 只用池类别；<br>• TiDB 每实例 `max_connections` 按 §2.4 取值（TiDB 默认不限，1040 只在设了上限时出现）；<br>• 拆开全局库池与访客池两个旋钮<br>**（2026-10-13 G2b，已落码，未编译、未测试）** 第 1、3 条已落码，第 2 条随 Phase 1：<br>• 池指标 `mmorpg_sql_pool_*{sql_client,pool}`（`go/shared/sqlpoolstats`，label 只有池类别）：go/db 在 K8s 上打开 `:9160`，data_service 在 `:9260`；告警文件 `deploy/k8s/mysql-connection-alerts.yaml`；friend / trade / Java gateway 没有导出；<br>• 额外落点库池拆成 `Placement.ZoneStore*` / `NonZoneStore*` 两组旋钮，另加 `ExtraStoreConnMaxIdleSeconds`（默认 60），旧键 `ExtraStore*` 只作回落；<br>• MySQL 档的 `max_connections` 500 → 1800，滚动余量按 R=2，总账写成部署脚本里的可执行函数并有契约测试（§2.4 状态注）；数值均待压测确认 | go/db、data_service | 是，上限参数随后端变 | — | DBStats 指标 |
 | L-09 | P1 | go/db 消费组按 zone 命名。K8s 上全部 zone 共用 `db_rpc_consumer_group`（`k8s_deploy.ps1:3437`），任何一个 db Pod 变动，全球存盘一起停几秒；它还让单 zone 的 offset reset 变成全服操作（§6.3 第 7 步）。要同步改 merge_zone 等依赖方（no-single-node §3.4）。go/db 不配 HPA；首日冻结 db 和 data_service 的发布与扩缩容 | go/db、脚本 | 否 | 负责人 | kind 上删一个 Pod，只影响本 zone |
 | L-10 | P1 | 号段开服档 Step=1000（§5.2 第 4 条） | login 配置 | 否 | 只改配置 | `login_create_player_stage_seconds` |
 | L-11 | P1 | 名字表：<br>• `PRIMARY(name_norm)` 预切并设 `merge_option=deny`；<br>• `uk_player_name_owner` 的单调尾部与 §5.3 联动；<br>• 名字池 Z×2×20（`data_service.yaml:109-110`）计入连接总账；<br>• ODKU 行数语义在 TiDB 上回归（§4 #12） | data_service、runbook | 是 | — | PD 热点数据；`name` 阶段耗时 |
@@ -925,7 +932,7 @@ Phase 1 的逻辑库仍按 zone 分开，用按库过滤恢复就能表达「只
 | 批 | 内容 | 主要文件 | 估计文件数 | 依赖 |
 |---|---|---|---|---|
 | P1-0 核实与拍板 | 第一项先验证 `lock_wait_timeout` 与 GET_LOCK 的行为（§4 #2）。<br>其余：Codex 读 proto2mysql Go 源码，确认 Save 与 DDL；导出 `GetCreateTableSQL`；在各环境审计 `player_id < 2^55` 的存量；量出各环境数据量，确认哪些环境要保留数据；核对 `tidb_txn_mode`；核对 MySQL 只写 CHARSET 的表实际用的排序规则；完成 §9.3 拍板 | — | 0 | — |
-| P1-1 代码兼容 | 快照去重的 TiDB 形态（§4 #1），并让 `NewSnapshotStore` 在 TiDB 上缺键时拒绝装配；如果拍板，去掉主表的 AUTO_INCREMENT 并配 MySQL 迁移；friend 查询钉住计划；data_service、friend、trade、guild、login PasswordAuth 补 `ConnMaxLifetime`；更正 `store_registry.go:294` 的注释；导出 `sql.DBStats`（与 L-08 合并）；gateway 表补 COLLATE | `go/data_service/internal/store/*`、`proto/common/database/*.proto`、`go/friend/...`、各服务 `svc`、`deploy/mysql-init/gateway_tables.sql` | 13–19 | **D1 第 1 批合入之后** |
+| P1-1 代码兼容 | 快照去重的 TiDB 形态（§4 #1），并让 `NewSnapshotStore` 在 TiDB 上缺键时拒绝装配；如果拍板，去掉主表的 AUTO_INCREMENT 并配 MySQL 迁移；friend 查询钉住计划；data_service、friend、trade、guild、login PasswordAuth 补 `ConnMaxLifetime`；更正 `store_registry.go:294` 的注释；导出 `sql.DBStats`（与 L-08 合并）**（2026-10-13 G2b：这一子项由 G2b 批 B 承担（`go/shared/sqlpoolstats`，已落码，未编译、未测试），P1-1 不再另注册收集器；本行其余子项不变，新增的池接指标时复用这个包）**；gateway 表补 COLLATE | `go/data_service/internal/store/*`、`proto/common/database/*.proto`、`go/friend/...`、各服务 `svc`、`deploy/mysql-init/gateway_tables.sql` | 13–19 | **D1 第 1 批合入之后** |
 | P1-2 部署 | Operator 安装说明，以及 dev / staging / 压测 / prod 四档的 TidbCluster CR（放在 `mmorpg-tidb`）；TidbInitializer + 幂等初始化 Job；`k8s_deploy.ps1 -Database`（必填、带预检、生成集群标记）；三个 migrate Job 参数化；`Wait mysql` 门禁参数化；db-migrate Job（如果拍板）；infra-down 保护；`dev_tools.ps1` / `k8s_image.ps1` 透传参数；`k8s_zone_rollback.ps1` 第 0 步核对；契约测试；告警 | `deploy/k8s/manifests/tidb/*`、`deploy/k8s/manifests/go-svc/*-migrate.yaml`、`deploy/tidb-config/*`、`tools/scripts/{k8s_deploy,dev_tools,k8s_image,k8s_zone_rollback}.ps1`、`tools/scripts/tests/*`、`deploy/k8s/*-alerts.yaml` | 14–20 | P1-0；D1 第 1 批之后（同改 `k8s_deploy.ps1`） |
 | P1-3 迁移与预切工具 | `tidb_migrate.ps1`：Dumpling `--no-schemas` 并排除台账 → 导入前断言 → Lightning → sync-diff → ANALYZE；`tidb_presplit.ps1`；TiCDC 反向 changefeed；清库脚本支持 TiDB；`stress_snap` / `stress_summarize` 增加 TiDB 与 PD 段 | `tools/scripts/*` | 6–8 | P1-2 |
 | P1-4 备份恢复 | `docs/ops/tidb-br-pitr-runbook.md`；Backup / BackupSchedule / 日志备份 CR，**并在目标环境运行**；`zone_data_rollback.md` §3；`k8s_zone_rollback.ps1` Step 2/3/4/5 的 TiDB 版，包括 Redis 按 zone 范围清理 | — | 5–7 | P1-2 |

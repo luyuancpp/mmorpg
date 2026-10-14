@@ -12,7 +12,9 @@
 //
 //	queue:zone:{zoneId}        ZSET   member=queueId, score=enqueue unix ms
 //	admit:{queueId}            STRING JSON{ip, port, payload, signature, deadline}
-//	admitted:zone:{zoneId}     SET    queueId  (sliding TTL, drives in-flight count)
+//	admitted:zset:zone:{zoneId} ZSET member=queueId | fast:<uuid>, score=占位到期 unix ms
+//	                           (在途占位:成员逐个到期,计数前清掉。G4b-G 之前是
+//	                           SET admitted:zone:{zoneId} + 整键滑动 TTL,新版本不再读写旧键)
 //	queue:meta:{queueId}       HASH   {account, device, zoneId, createdAt}
 //	queue:token:{queueToken}   STRING queueId  (token → queueId reverse index)
 //
@@ -20,8 +22,9 @@
 //
 //	Enqueue   → ZADD + meta + token mapping (one Redis round-trip via pipeline)
 //	Rank      → ZRANK + ZCARD               (cheap, hot path for QueryQueueStatus)
-//	Admit     → ZPOPMIN N → write admit:{queueId} + SADD admitted (dispatcher)
-//	Consume   → GET admit:{queueId}, DEL it, SREM admitted, return gate token
+//	Admit     → ZPOPMIN N → write admit:{queueId} + 占位(到期 = 现在 + AdmitTTL) (dispatcher)
+//	Consume   → GETDEL admit:{queueId}, 签 gate 票, 占位改为「现在 + handoffGrace」到期(不撤)
+//	FastPath  → 一段 Lua:清过期 + 计数 < budget + 占位(到期 = 现在 + handoffGrace)
 //
 // All operations are designed so a missing intermediate state is recoverable:
 // dropped admit:{queueId} just means the client re-enqueues (small UX hiccup,
@@ -37,6 +40,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
+	"github.com/zeromicro/go-zero/core/logx"
 )
 
 // Status mirrors AssignGateResponse.status / QueryQueueStatusResponse.status.
@@ -110,6 +114,24 @@ type QueueState struct {
 	Total  uint32      // populated when Status == StatusQueueing
 }
 
+// defaultHandoffGrace:gate 票交到客户端之后,在途占位再保留多久。
+//
+// 票一交出去(排队路径:客户端轮询取走放行槽;快速通道:assign-gate 当场回票),这个人还要
+// 「连上 gate → gate 把人数报进 etcd」才出现在 online 里,这段时间只有占位替他占着名额。
+// C++ gate 每 10 秒上报一次 player_count(cpp/nodes/gate/main.cpp 的 playerCountReportTimer),
+// login 每次算容量都直接读 etcd(pkg/node/watcher.go FetchAllNodes,无缓存),最坏滞后 =
+// 建连耗时 + 10s。15s = 一个上报周期 + 5s 建连与传播余量。改 gate 的上报周期必须同步改这里。
+//
+// 取小了:占位先于人数到期,空档里多放人(旧实现取走即撤占位,相当于 0s,开区时每拍都按
+// 「在线 0」再放一满批)。取大了:人已进 online、占位还在,同一个人算两遍,少放人。
+// 与 Java 版 LoginQueue.TAKEN_GRACE 同值(Java gate 每 5s 发布,余量更宽)。待压测确认(L-14)。
+const defaultHandoffGrace = 15 * time.Second
+
+// admittedKeyGCSlack:在途占位 ZSET 的整键 TTL 比最长成员寿命多留的时间。
+// 成员是否有效只看分数;整键 TTL 只负责在本 zone 没有任何 login 再来清理时(下线 / 合服)
+// 把键收走。多留一分钟,免得 login 时钟(分数)与 Redis 时钟(TTL)的偏差让整键先于成员消失。
+const admittedKeyGCSlack = time.Minute
+
 // Queue wraps Redis ZSET operations behind a small typed surface. The zero
 // value is unusable; construct via New.
 type Queue struct {
@@ -117,6 +139,13 @@ type Queue struct {
 	entryTTL   time.Duration
 	admitTTL   time.Duration
 	hmacSecret []byte // signs queue tokens; same secret as gate tokens is fine
+
+	// handoffGrace:gate 票交到客户端之后占位再留多久。生产恒为 defaultHandoffGrace;
+	// 只有同包测试会改它(New 不收这个参数)。
+	handoffGrace time.Duration
+	// now 是在途占位记账用的时钟:占位的到期分数、清过期成员时的「现在」都读它。
+	// 生产是 time.Now;同包测试换成可拨的假时钟。排队令牌、入队分数等其它时间不走它。
+	now func() time.Time
 }
 
 // New constructs a Queue. hmacSecret is used to sign opaque queue tokens —
@@ -126,20 +155,22 @@ type Queue struct {
 // which HMAC over (queueId|expire) defeats.
 func New(rdb *redis.Client, entryTTL, admitTTL time.Duration, hmacSecret []byte) *Queue {
 	return &Queue{
-		rdb:        rdb,
-		entryTTL:   entryTTL,
-		admitTTL:   admitTTL,
-		hmacSecret: hmacSecret,
+		rdb:          rdb,
+		entryTTL:     entryTTL,
+		admitTTL:     admitTTL,
+		hmacSecret:   hmacSecret,
+		handoffGrace: defaultHandoffGrace,
+		now:          time.Now,
 	}
 }
 
 // ── Key helpers ────────────────────────────────────────────────────────
 
-func zoneZSetKey(zoneID uint32) string    { return fmt.Sprintf("queue:zone:%d", zoneID) }
-func admittedSetKey(zoneID uint32) string { return fmt.Sprintf("admitted:zone:%d", zoneID) }
-func admitKey(queueID string) string      { return "admit:" + queueID }
-func metaKey(queueID string) string       { return "queue:meta:" + queueID }
-func tokenIndexKey(token string) string   { return "queue:token:" + token }
+func zoneZSetKey(zoneID uint32) string     { return fmt.Sprintf("queue:zone:%d", zoneID) }
+func admittedZSetKey(zoneID uint32) string { return fmt.Sprintf("admitted:zset:zone:%d", zoneID) }
+func admitKey(queueID string) string       { return "admit:" + queueID }
+func metaKey(queueID string) string        { return "queue:meta:" + queueID }
+func tokenIndexKey(token string) string    { return "queue:token:" + token }
 
 // ── Enqueue ────────────────────────────────────────────────────────────
 
@@ -244,10 +275,8 @@ func (q *Queue) Lookup(ctx context.Context, token string, signFn SignAdmitFn) (*
 		return nil, err
 	}
 	if admit != nil {
-		// Clean up the meta + token index + admitted set entry — the entry's
-		// life ends here. We DO NOT remove the queueId from admitted:{zoneId}
-		// because dispatcher SREM is the source of truth for "in-flight
-		// admitted but not yet consumed"; consumeAdmit handles that.
+		// 条目的生命到此为止。meta 与 token 索引留到 TTL(见 consumeAdmitAndSign 末尾);
+		// 在途占位不撤,consumeAdmitAndSign 把它改成再留 handoffGrace。
 		return &QueueState{Status: StatusAdmitted, Admit: admit}, nil
 	}
 
@@ -329,9 +358,7 @@ func (q *Queue) consumeAdmitAndSign(ctx context.Context, queueID string, signFn 
 		return nil, fmt.Errorf("sign admit token: %w", err)
 	}
 
-	// Best-effort cleanup of capacity accounting + token index. Failures are
-	// non-fatal: SREM no-ops if the entry was already evicted, DEL is
-	// idempotent, and the meta TTL guarantees eventual cleanup.
+	// 在途占位与等待时长:best-effort,失败不让这次取走作废(票已经签好)。
 	//
 	// We do HMGET (not HGET) to grab createdAt and zone_id in one RTT so the
 	// wait-time histogram observation below pays no extra Redis cost. Missing
@@ -352,7 +379,17 @@ func (q *Queue) consumeAdmitAndSign(ctx context.Context, queueID string, signFn 
 		}
 	}
 	if zoneID != 0 {
-		q.rdb.SRem(ctx, admittedSetKey(zoneID), queueID)
+		// 不撤占位,改成再留 handoffGrace(G4b-G):票已交给客户端,但他连上 gate、gate 把人数
+		// 报进 etcd 之前不在任何 gate 的 online 里。此刻撤掉,下一拍会按「在线没变、在途为 0」
+		// 再放一批(旧实现在这里 SREM,开区时能放进几倍容量)。
+		// 用普通 ZADD 而不是 XX:占位若已按分数清掉(login 与 Redis 的时钟差),这个人照样要占名额。
+		// zone 读不到(meta 被淘汰)时走不到这里:占位保持放行时的分数,最迟 AdmitTTL 到期。
+		pipe := q.rdb.TxPipeline()
+		q.holdAdmitted(ctx, pipe, zoneID, queueID, q.handoffGrace)
+		if _, err := pipe.Exec(ctx); err != nil {
+			logx.Errorf("[loginqueue] hold admitted placeholder after consume zone=%d queueId=%s err=%v",
+				zoneID, queueID, err)
+		}
 		if createdAt > 0 {
 			waitMs := time.Now().UnixMilli() - createdAt
 			recordWait(zoneID, time.Duration(waitMs)*time.Millisecond)
@@ -427,8 +464,8 @@ func (q *Queue) PopAdmit(
 
 		pipe := q.rdb.TxPipeline()
 		pipe.Set(ctx, admitKey(queueID), blob, q.admitTTL)
-		pipe.SAdd(ctx, admittedSetKey(zoneID), queueID)
-		pipe.Expire(ctx, admittedSetKey(zoneID), q.admitTTL)
+		// 在途占位:没人来取时与放行槽同寿(AdmitTTL),按自己的分数到期;取走时改成再留 handoffGrace。
+		q.holdAdmitted(ctx, pipe, zoneID, queueID, q.admitTTL)
 		if _, err := pipe.Exec(ctx); err != nil {
 			continue
 		}
@@ -437,43 +474,73 @@ func (q *Queue) PopAdmit(
 	return admitted, nil
 }
 
-// AdmittedCount returns the in-flight admitted but not-yet-consumed count for
-// a zone. Used by capacity calculation so we don't over-issue gate tokens
-// while the previous batch is still walking from the client to the gate.
+// admittedKeyTTL 是在途占位 ZSET 的整键 TTL。只做垃圾回收,见 admittedKeyGCSlack。
+func (q *Queue) admittedKeyTTL() time.Duration {
+	return max(q.admitTTL, q.handoffGrace) + admittedKeyGCSlack
+}
+
+// holdAdmitted 把 member 在 zoneID 的在途占位记到「现在 + hold」到期(成员已在则覆盖分数),
+// 并续上整键的垃圾回收 TTL。两条命令排进调用方的 pipeline,由调用方 Exec。
+func (q *Queue) holdAdmitted(ctx context.Context, pipe redis.Pipeliner, zoneID uint32, member string, hold time.Duration) {
+	key := admittedZSetKey(zoneID)
+	pipe.ZAdd(ctx, key, redis.Z{Score: float64(q.now().Add(hold).UnixMilli()), Member: member})
+	pipe.PExpire(ctx, key, q.admittedKeyTTL())
+}
+
+// admittedCountScript 清掉已到期的占位再计数,两步在同一段脚本里。
+//
+//	KEYS[1] = admitted:zset:zone:{zone}
+//	ARGV[1] = now_ms
+//	返回未到期的成员数
+var admittedCountScript = redis.NewScript(`
+redis.call('ZREMRANGEBYSCORE', KEYS[1], '-inf', ARGV[1])
+return redis.call('ZCARD', KEYS[1])
+`)
+
+// AdmittedCount 返回 zone 当前的在途占位数:已放行还没来取的,加上票已交出去、还在
+// handoffGrace 之内的(排队取走与快速通道)。FreeSlots 用它扣容量,避免上一批还没出现在
+// gate 的人数里就再放一批。先清过期成员再数,所以它是一条**写命令**。
 func (q *Queue) AdmittedCount(ctx context.Context, zoneID uint32) (uint32, error) {
-	n, err := q.rdb.SCard(ctx, admittedSetKey(zoneID)).Result()
+	n, err := admittedCountScript.Run(ctx, q.rdb,
+		[]string{admittedZSetKey(zoneID)}, q.now().UnixMilli()).Int64()
 	if err != nil {
 		return 0, err
 	}
 	return uint32(n), nil
 }
 
-// reserveFastPathSlotScript 原子占位:仅当 admitted 计数 < budget 时,把一枚
-// 一次性占位成员塞进 admitted 集合并刷新 TTL。budget = cap - online,即"在当前
-// 在线数之上还允许多少在途准入"。这让并发的快速通道调用彼此可见 —— check(SCARD)
-// 与 act(SADD)在同一脚本里原子完成,堵住"N 个并发各读同一 free>0 快照、全部
-// 旁路队列签发 gate token"的超发窗口。
+// reserveFastPathSlotScript 原子占位:先清掉已到期的占位,未到期的不足 budget 才记一枚
+// 一次性占位成员。budget = cap - online,即「在当前在线数之上还允许多少在途准入」。
+// 清理、判定、占位在同一段脚本里,并发的快速通道调用彼此可见,不会各读同一个 free>0
+// 快照后全部旁路队列签票。
+//
+//	KEYS[1] = admitted:zset:zone:{zone}
+//	ARGV[1] = now_ms   ARGV[2] = budget   ARGV[3] = member(fast:<uuid>)
+//	ARGV[4] = 占位到期毫秒   ARGV[5] = 整键 TTL 毫秒(只做垃圾回收)
+//	返回 1 = 占到,0 = 已满
 var reserveFastPathSlotScript = redis.NewScript(`
-local admitted = tonumber(redis.call('SCARD', KEYS[1]))
-if admitted >= tonumber(ARGV[1]) then return 0 end
-redis.call('SADD', KEYS[1], ARGV[2])
-redis.call('EXPIRE', KEYS[1], ARGV[3])
+redis.call('ZREMRANGEBYSCORE', KEYS[1], '-inf', ARGV[1])
+if redis.call('ZCARD', KEYS[1]) >= tonumber(ARGV[2]) then return 0 end
+redis.call('ZADD', KEYS[1], ARGV[4], ARGV[3])
+redis.call('PEXPIRE', KEYS[1], ARGV[5])
 return 1
 `)
 
 // TryReserveFastPathSlot 尝试为快速通道原子占用一个准入名额。budget 传 cap-online。
 // 返回 true 表示占用成功(调用方可直接签发 gate token);false 表示已满(应入队)。
-// 占位成员按 admitTTL 过期,与 dispatcher 准入的在途语义一致(快速通道无 consume
-// 回收步骤,靠 TTL 自然回收)。
+// 快速通道当场交票,等同排队路径的「已取走」,所以占位只留 handoffGrace,不是 AdmitTTL;
+// 之后它按自己的分数到期,不需要、也没有回收步骤。
 func (q *Queue) TryReserveFastPathSlot(ctx context.Context, zoneID uint32, budget uint32) (bool, error) {
 	if budget == 0 {
 		return false, nil
 	}
+	now := q.now()
 	member := "fast:" + uuid.NewString()
 	res, err := reserveFastPathSlotScript.Run(
 		ctx, q.rdb,
-		[]string{admittedSetKey(zoneID)},
-		budget, member, int64(q.admitTTL.Seconds()),
+		[]string{admittedZSetKey(zoneID)},
+		now.UnixMilli(), budget, member,
+		now.Add(q.handoffGrace).UnixMilli(), q.admittedKeyTTL().Milliseconds(),
 	).Int()
 	if err != nil {
 		return false, err

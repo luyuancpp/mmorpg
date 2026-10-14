@@ -113,7 +113,7 @@ func sweepCutoffMs(ctx context.Context, retentionDays, batchLimit int, nowMs int
 		// **绝不能**把负数截止点传给 SQL:updated_ms 是 bigint unsigned,MySQL 在
 		// 无符号列与负值比较时会把负值按无符号解释成一个天文数字,
 		// `updated_ms < <天文数字>` 就是"匹配所有行" —— delete 模式下等于清空整张表。
-		logx.WithContext(ctx).Errorf("[friend] sweep 截止点非正(nowMs=%d retention_days=%d),本轮不做任何事:检查进程时钟",
+		logx.WithContext(ctx).Errorf("[friend] Non-positive sweep cutoff (nowMs=%d retention_days=%d); no action this round, check process clock",
 			nowMs, retentionDays)
 		return 0, false, nil
 	}
@@ -169,9 +169,9 @@ func (r *FriendRepo) SweepTerminalRequests(ctx context.Context, mode string,
 		return pending, 0, err
 	}
 	if missing > 0 {
-		logx.WithContext(ctx).Errorf("[friend] sweep(delete)拒绝删除:发现 %d 行终态好友申请的 updated_ms=0,"+
-			"说明有写路径没写 updated_ms(F2-14)或旧数据搬迁时漏了这一列。"+
-			"在修好写入方之前继续按观察模式运行;存量修法:UPDATE friend_request SET updated_ms=request_time_ms "+
+		logx.WithContext(ctx).Errorf("[friend] sweep(delete) refusing deletion: %d terminal friend request rows have updated_ms=0, "+
+			"indicating a write path omits updated_ms (F2-14) or legacy migration omitted this column. "+
+			"Continue in observation mode until the writer is fixed; repair existing data: UPDATE friend_request SET updated_ms=request_time_ms "+
 			"WHERE status IN (%d, %d) AND updated_ms=0", missing, requestStatusAccepted, requestStatusRejected)
 		return pending, 0, nil
 	}

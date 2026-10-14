@@ -64,7 +64,7 @@ func sampledErrorf(key, format string, args ...any) {
 	if (n-1)%logSampleEvery != 0 {
 		return
 	}
-	logx.Errorf(format+" (采样 1/%d, %s 累计=%d)", append(append([]any{}, args...), logSampleEvery, key, n)...)
+	logx.Errorf(format+" (sampled 1/%d, %s total=%d)", append(append([]any{}, args...), logSampleEvery, key, n)...)
 }
 
 // logSampleEvery 与 gate 的拒绝日志采样同口径(每 1024 条一行)。
@@ -98,7 +98,7 @@ func (l *ForwardLogic) Forward(in *pb.ForwardRequest) (*base.MessageContent, err
 	if len(sessionValues) == 0 {
 		metrics.ObserveForward(metrics.MessageIdLabel(in.GetRequest().GetMessageId(), false),
 			metrics.OutcomeMissingSession, time.Since(start))
-		return nil, status.Error(codes.Unauthenticated, "缺少 "+SessionMetaKey+" 会话元数据")
+		return nil, status.Error(codes.Unauthenticated, "Missing "+SessionMetaKey+" session metadata")
 	}
 	// 6) 响应头回写:无论后面成败都要有,gate 靠它找回会话。SetHeader 只是登记,
 	//    随首个响应帧一起发出,所以放在最前面一次登记即可。
@@ -141,7 +141,7 @@ func (l *ForwardLogic) Forward(in *pb.ForwardRequest) (*base.MessageContent, err
 	watcher := l.svcCtx.Targets[route.NodeType]
 	if watcher == nil {
 		finish(metrics.OutcomeNoTarget)
-		logx.Errorf("[forward] 目标类型 %s 没有发现镜像(路由表与 svc.TargetNodeTypes 不一致) message_id=%d",
+		logx.Errorf("[forward] No discovery mirror for target type %s (routing table differs from svc.TargetNodeTypes) message_id=%d",
 			nodeTypeName, request.MessageId)
 		return rejected(request, constants.ErrServiceUnavailable), nil
 	}
@@ -158,7 +158,7 @@ func (l *ForwardLogic) Forward(in *pb.ForwardRequest) (*base.MessageContent, err
 	conn, err := l.svcCtx.Dial(target.Endpoint)
 	if err != nil {
 		finish(metrics.OutcomeDialError)
-		logx.Errorf("[forward] 拨号目标失败 %s(%s) message_id=%d: %v",
+		logx.Errorf("[forward] Failed to dial target %s(%s) message_id=%d: %v",
 			nodeTypeName, target.Endpoint, request.MessageId, err)
 		return rejected(request, constants.ErrServiceUnavailable), nil
 	}
@@ -207,7 +207,7 @@ func (l *ForwardLogic) echoSessionHeader(values []string) {
 		return
 	}
 	if err := grpc.SetHeader(l.ctx, metadata.MD{SessionMetaKey: values}); err != nil {
-		logx.Errorf("[forward] 回写 %s 响应头失败(gate 将无法把回包送回会话): %v", SessionMetaKey, err)
+		logx.Errorf("[forward] Failed to write %s response header (gate will be unable to route response to session): %v", SessionMetaKey, err)
 	}
 }
 

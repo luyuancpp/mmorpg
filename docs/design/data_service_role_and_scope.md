@@ -60,8 +60,10 @@ Player → Gate → Scene Server (任意区)
 **G2a 快照审计管道扩容(2026-10-13,未经运行验证)**:`player_snapshot` 消费者改为「每分区一个 worker + 可配批量 + 实例级落库并发上限」,
 旋钮是 `Kafka.SnapshotBatchMaxRows` / `SnapshotBatchMaxBytes` / `SnapshotFlushIntervalMs` / `SnapshotMaxInflightFlushes`,**默认值 = 之前的逐条串行**
 (批 1 条、并发 1、不等待),越界拒启;打开批量要等压测对比表与内存护栏拍板。新增 `Kafka.LagProbeIntervalMs`(yaml 默认 30000):
-sarama 只读探针按 broker 视角报消费组 lag 与「保留期已删掉的未消费条数」。新指标 `kafka_consumer_flush_seconds{consumer,result}`(单次 DB 尝试)、
-`kafka_consumer_batch_rows`、`kafka_consumer_message_bytes`、`kafka_consumer_lag_messages`、`kafka_consumer_retention_gap_messages`、
+sarama 只读探针按 broker 视角报消费组 lag(全部分区合计与单分区最大值)与「保留期已删掉的未消费条数」。新指标 `kafka_consumer_flush_seconds{consumer,result}`(单次 DB 尝试)、
+`kafka_consumer_batch_rows`、`kafka_consumer_message_bytes`、`kafka_consumer_lag_messages`、
+`kafka_consumer_lag_max_partition_messages`(单分区最大积压:broker 的 retention.bytes 按分区执行,快照积压告警比的是它;每个 consumer 一条序列,不按分区出指标)、
+`kafka_consumer_retention_gap_messages`、
 `kafka_consumer_lag_probe_total`、`kafka_consumer_isolation_total`,告警规则在 `deploy/k8s/data-service-audit-alerts.yaml`。
 全球并行度上限仍是分区数(快照 3);要扩只能离线换代,保留期在开服速率下远比 30 天先到 —— 两件事的步骤与容量算式见
 [audit-topic-generation-bump-runbook.md](../ops/audit-topic-generation-bump-runbook.md)。

@@ -15,7 +15,7 @@ const ::google::protobuf::ServiceDescriptor *BattleHandler::GetDescriptor()
         ::google::protobuf::DescriptorPool::generated_pool()->FindServiceByName("BattleNode");
     if (descriptor == nullptr)
     {
-        LOG_FATAL << "battle 占位 handler 找不到 BattleNode 服务描述符,battle_node.proto 生成产物缺失";
+        LOG_FATAL << "battle placeholder handler cannot find BattleNode service descriptor;generated battle_node.proto artifacts missing";
     }
     return descriptor;
 }
@@ -30,7 +30,7 @@ void BattleHandler::CallMethod(const ::google::protobuf::MethodDescriptor *metho
     // (IsTcpNodeType 不含 BattleNodeService,无节点会向 battle 发 TCP RPC)。
     // full_name() 在 protobuf 35.x 返回 absl::string_view,muduo LogStream 无对应
     // operator<<,须显式转 std::string
-    LOG_ERROR << "battle 节点收到意外的 TCP RPC 调用: "
+    LOG_ERROR << "battle node received unexpected TCP RPC call: "
               << (method != nullptr ? std::string(method->full_name()) : std::string("<null>"));
     if (controller != nullptr)
     {

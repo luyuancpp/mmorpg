@@ -1,6 +1,6 @@
 module match
 
-go 1.24.5
+go 1.27.2
 
 replace proto => ../proto
 

@@ -1263,7 +1263,7 @@ func runMonsterStage(outRoot string) (done bool, err error) {
 				// 默认不落盘 W(客户端运行时镜像);清掉旧产物残留的 W 及其 .meta,避免客户端优先命中陈旧 W
 				for _, stale := range []string{filepath.Join(dir, wf), filepath.Join(dir, wf+".meta")} {
 					if err := os.Remove(stale); err == nil {
-						fmt.Printf("    已删除陈旧的 %s\n", filepath.ToSlash(stale))
+						fmt.Printf("    Removed stale %s\n", filepath.ToSlash(stale))
 					}
 				}
 			}
@@ -1277,7 +1277,7 @@ func runMonsterStage(outRoot string) (done bool, err error) {
 			return false, err
 		}
 		mm.Monsters = append(mm.Monsters, meta)
-		fmt.Printf("  怪物 %2d %-6s %-9s %d 动作 × %d 向 × %d 帧(%d×%d)\n",
+		fmt.Printf("  Monster %2d %-6s %-9s %d actions x %d directions x %d frames (%dx%d)\n",
 			sp.ID, sp.Name, sp.Template, len(monActions), len(monsterDirs), monFrames, stripW, monFrameSize)
 	}
 
@@ -1321,7 +1321,7 @@ func runMonsterStage(outRoot string) (done bool, err error) {
 		return false, err
 	}
 
-	fmt.Printf("完成:怪物 %d 只 × %d 动作 × %d 向 = %d 张帧条,地台 %d 张,清单 %s\n",
+	fmt.Printf("Complete: %d monsters x %d actions x %d directions = %d frame strips, %d ground images, manifest %s\n",
 		n, len(monActions), len(monsterDirs), files, len(ground), mpath)
 	return genMode == "monsters", nil
 }

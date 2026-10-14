@@ -516,7 +516,7 @@ function Assert-ZoneEntryKeptOnRollback {
     if ($CheckRouterMode) {
         $deployDefault = $DeployDefaults['GateRouterMode']
         if ($null -ne $deployDefault -and $State.RouterMode -eq $deployDefault) {
-            Write-Host "  gate 当前模式 `"$($State.RouterMode)`"($($State.RouterDetail))= k8s_deploy.ps1 默认值,留空不会翻转" -ForegroundColor Green
+            Write-Host "  Current gate mode `"$($State.RouterMode)`" ($($State.RouterDetail)) matches the k8s_deploy.ps1 default; leaving it unset will preserve the mode" -ForegroundColor Green
         }
         else {
             $defaultText = if ($null -ne $deployDefault) { "`"$deployDefault`"" } else { "(读不到:$DeployScriptPath 的 -GateRouterMode 默认值不是字面常量或文件无法解析)" }
@@ -530,7 +530,7 @@ function Assert-ZoneEntryKeptOnRollback {
     if ($CheckEntryMode) {
         $deployDefault = $DeployDefaults['ClientEntryMode']
         if ($null -ne $deployDefault -and $State.EntryMode -eq $deployDefault) {
-            Write-Host "  gate 当前入口形态 `"$($State.EntryMode)`"($($State.EntryDetail))= k8s_deploy.ps1 默认值,留空不会翻转" -ForegroundColor Green
+            Write-Host "  Current gate entry mode `"$($State.EntryMode)`" ($($State.EntryDetail)) matches the k8s_deploy.ps1 default; leaving it unset will preserve the mode" -ForegroundColor Green
         }
         else {
             $defaultText = if ($null -ne $deployDefault) { "`"$deployDefault`"" } else { "(读不到:$DeployScriptPath 的 -ClientEntryMode 默认值不是字面常量或文件无法解析)" }
@@ -556,7 +556,7 @@ function Assert-ZoneEntryKeptOnRollback {
                 "集群外玩家拿不到 gate 分配。请照传 $keep;确要撤掉 Ingress,加 -ConfirmNoGatewayIngress。")
         }
         else {
-            Write-Host "  $($State.IngressDetail),留空不会丢 Ingress" -ForegroundColor Green
+            Write-Host "  $($State.IngressDetail); leaving it unset will preserve Ingress" -ForegroundColor Green
         }
     }
     if ($problems.Count -eq 0) { return }
@@ -607,16 +607,16 @@ function Invoke-ZoneUpStaticPreflight {
 
     if ($null -eq $failure) {
         foreach ($record in @($captured | Where-Object { $_ -is [System.Management.Automation.WarningRecord] })) {
-            Write-Host "  告警(k8s-zone-up -DryRun):$($record.Message)" -ForegroundColor Yellow
+            Write-Host "  Warning (k8s-zone-up -DryRun): $($record.Message)" -ForegroundColor Yellow
         }
-        Write-Host "  k8s-zone-up -DryRun 通过:Step 6 的参数过了 k8s_deploy.ps1 的静态预检,清单渲染无误" -ForegroundColor Green
+        Write-Host "  k8s-zone-up -DryRun passed: Step 6 arguments passed static preflight in k8s_deploy.ps1; manifests rendered successfully" -ForegroundColor Green
         return
     }
 
     $lines = @($captured | ForEach-Object { "$_" })
     if ($lines.Count -gt 0) {
         $shown = [Math]::Min($TailLines, $lines.Count)
-        Write-Host "  k8s-zone-up -DryRun 输出末尾 $shown 行:" -ForegroundColor DarkGray
+        Write-Host "  Last $shown lines of k8s-zone-up -DryRun output:" -ForegroundColor DarkGray
         $lines | Select-Object -Last $TailLines | ForEach-Object { Write-Host "    $_" -ForegroundColor DarkGray }
     }
     throw ("k8s-zone-rollback 在停服之前拒绝执行,尚未产生任何改动:Step 6 将要执行的 dev_tools.ps1 k8s-zone-up 没通过 -DryRun 静态预检" +
@@ -677,18 +677,18 @@ function Assert-RedisFlushTargetIsZoneLocal {
     }
     catch {
         if ($ConfirmFlushSharedRedis) {
-            Write-Warning "无法核对 $Target 里有没有全局共享键($($_.Exception.Message)),已按 -ConfirmFlushSharedRedis 放行。"
+            Write-Warning "Could not check $Target for globally shared keys ($($_.Exception.Message)); allowed by -ConfirmFlushSharedRedis."
             return
         }
         throw ("k8s-zone-rollback 拒绝 FLUSHDB:无法核对 $Target 里有没有全局共享键(查询失败按「有」处理)。" +
             "`n原因:$($_.Exception.Message)`n$override")
     }
     if ($hits.Count -eq 0) {
-        Write-Host "  $Target 里没有全局共享键,FLUSHDB 只影响本 zone 缓存" -ForegroundColor Green
+        Write-Host "  No globally shared keys in $Target; FLUSHDB affects only this zone's cache" -ForegroundColor Green
         return
     }
     if ($ConfirmFlushSharedRedis) {
-        Write-Warning "$Target 里有全局共享键:$($hits -join ';')。已按 -ConfirmFlushSharedRedis 放行,FLUSHDB 会清掉所有 zone 的这些键。"
+        Write-Warning "$Target contains globally shared keys: $($hits -join ';'). Allowed by -ConfirmFlushSharedRedis; FLUSHDB will delete these keys for all zones."
         return
     }
     throw ("k8s-zone-rollback 拒绝 FLUSHDB:$Target 里有全局共享键 —— $($hits -join ';')。" +
@@ -750,14 +750,14 @@ Write-Host "  target time : $TargetTime"
 Write-Host "  redis       : $(if ($RedisHost) { "$RedisHost`:$RedisPort/db$RedisDB" } else { '(skipped — no -RedisHost)' })"
 Write-Host "  kafka       : $KafkaBootstrap topic=$KafkaTopic group=$KafkaGroup"
 # 回退态不粘滞,留空时在摘要里就提醒:操作者在 dry-run 阶段就能看出 Step 6 会以哪种路由模式拉起 gate。
-Write-Host "  gate router : $(if ($GateRouterMode) { "-GateRouterMode $GateRouterMode" } else { '(未传,沿用 k8s_deploy.ps1 默认值;该 zone 若以 "0" 回退运行,必须传 -GateRouterMode 0;-Apply 时先预检,不一致或读不到即在停服前拒绝)' })"
+Write-Host "  gate router : $(if ($GateRouterMode) { "-GateRouterMode $GateRouterMode" } else { '(unset; using the k8s_deploy.ps1 default. A zone running in fallback mode "0" must pass -GateRouterMode 0; -Apply checks before shutdown and rejects mismatches or unavailable state)' })"
 # 集群外入口参数同样不粘滞,同样在摘要里提醒;地址参数的实际透传值见 Step 6 那一行。
-Write-Host "  client entry: $(if ($ClientEntryMode) { "-ClientEntryMode $ClientEntryMode" } else { '(未传,沿用 k8s_deploy.ps1 默认值;以 external 运行的 zone 必须照传 -ClientEntryMode external 及地址参数;-Apply 时先预检)' })"
-Write-Host "  ingress     : $(if ($GatewayIngressHost) { "-GatewayIngressHost $GatewayIngressHost" } elseif ($ConfirmNoGatewayIngress) { '-ConfirmNoGatewayIngress(Step 6 不生成 Ingress,namespace 里现有的 Ingress gateway 随 Step 1 删除,不核对)' } else { '(未传,Step 6 不生成 Ingress;namespace 里现有的 Ingress gateway 会随 Step 1 删除;-Apply 时先预检)' })"
-Write-Host "  release     : $(if ($ReleaseProfile) { "-ReleaseProfile $ReleaseProfile" } else { '(未传,Step 6 按 dev_tools.ps1 默认 dev 档部署;staging / prod zone 必须显式传 -ReleaseProfile)' })"
-Write-Host "  login auth  : $(if ($LoginDevPasswordAuth) { '-LoginDevPasswordAuth(共享口令取自环境变量 MMORPG_LOGIN_DEV_PASSWORD_SHARED_SECRET)' } else { '(未传 -LoginDevPasswordAuth;dev zone 依赖开发口令登录时须照传,否则 Step 6 生成的 login 没有任何认证配置)' })"
-Write-Host "  switch gate : $(if ($AllowDisruptiveSwitch) { '-AllowDisruptiveSwitch(只转给 Step 6,namespace 没删净时放行换形态 / 改地址;不豁免第 0 步核对)' } else { '(未传;Step 6 通常面对空 namespace,namespace 没删净时由 k8s_deploy.ps1 按集群现状把关)' })"
-Write-Host "  kube target : $(if ($KubeContext -or $KubeConfig) { "context='$KubeContext' kubeconfig='$KubeConfig'" } else { '(未指定,用 kubectl 当前 context;预检、Step 1、Step 6 同一集群)' })"
+Write-Host "  client entry: $(if ($ClientEntryMode) { "-ClientEntryMode $ClientEntryMode" } else { '(unset; using the k8s_deploy.ps1 default. Zones running in external mode must pass -ClientEntryMode external and address arguments; -Apply checks first)' })"
+Write-Host "  ingress     : $(if ($GatewayIngressHost) { "-GatewayIngressHost $GatewayIngressHost" } elseif ($ConfirmNoGatewayIngress) { '-ConfirmNoGatewayIngress (Step 6 does not create Ingress; existing Ingress gateway in the namespace is removed in Step 1 without checking)' } else { '(unset; Step 6 does not create Ingress; existing Ingress gateway in the namespace is removed in Step 1; -Apply checks first)' })"
+Write-Host "  release     : $(if ($ReleaseProfile) { "-ReleaseProfile $ReleaseProfile" } else { '(unset; Step 6 uses the dev_tools.ps1 default dev profile; staging / prod zones must explicitly pass -ReleaseProfile)' })"
+Write-Host "  login auth  : $(if ($LoginDevPasswordAuth) { '-LoginDevPasswordAuth (shared password comes from environment variable MMORPG_LOGIN_DEV_PASSWORD_SHARED_SECRET)' } else { '(no -LoginDevPasswordAuth; pass it when a dev zone requires development-password login, otherwise login generated in Step 6 has no authentication configuration)' })"
+Write-Host "  switch gate : $(if ($AllowDisruptiveSwitch) { '-AllowDisruptiveSwitch (forwarded only to Step 6; permits mode / address changes if the namespace was not fully removed; does not bypass Step 0 checks)' } else { '(unset; Step 6 normally starts with an empty namespace; k8s_deploy.ps1 checks existing cluster state if cleanup was incomplete)' })"
+Write-Host "  kube target : $(if ($KubeContext -or $KubeConfig) { "context='$KubeContext' kubeconfig='$KubeConfig'" } else { '(unset; using the current kubectl context; preflight, Step 1 and Step 6 target the same cluster)' })"
 Write-Host ""
 
 if (-not $Apply) {
@@ -802,15 +802,15 @@ if (-not [string]::IsNullOrWhiteSpace($KubeConfig)) { $upArgs.KubeConfig = $Kube
 # k8s_deploy.ps1 自己的集群现状预检在 Step 6 已无从判断。集群现状只核对留空的项,一次 kubectl 读完(Assert-ZoneEntryKeptOnRollback);
 # 静态预检让 k8s_deploy.ps1 对 Step 6 的同一份参数 -DryRun 一遍(Invoke-ZoneUpStaticPreflight)。
 # dry-run 两者都不执行(整个 dry-run 只打印命令、不调任何外部工具),只预告 -Apply 时会做什么。
-Write-Host "── 预检: gate 路由模式 / 客户端入口形态 / gateway Ingress / Step 6 静态预检(只读,先于 Step 1 停服) ──" -ForegroundColor Cyan
+Write-Host "-- Preflight: gate routing mode / client entry mode / gateway Ingress / Step 6 static preflight (read-only, before Step 1 shutdown) --" -ForegroundColor Cyan
 $zoneNamespace = "${NamespacePrefix}-${ZoneName}"
 $checkRouterMode = [string]::IsNullOrWhiteSpace($GateRouterMode)
 $checkEntryMode = [string]::IsNullOrWhiteSpace($ClientEntryMode)
 $checkIngress = [string]::IsNullOrWhiteSpace($GatewayIngressHost) -and -not $ConfirmNoGatewayIngress
-if (-not $checkRouterMode) { Write-Host "  显式 -GateRouterMode ${GateRouterMode}:Step 6 以它拉起 gate,不核对集群当前值" }
-if (-not $checkEntryMode) { Write-Host "  显式 -ClientEntryMode ${ClientEntryMode}:Step 6 以它重建 gate,不核对集群当前形态,地址参数以本次所传为准" }
-if ($ConfirmNoGatewayIngress) { Write-Host "  显式 -ConfirmNoGatewayIngress:Step 6 不生成 Ingress,不核对集群里有没有 Ingress gateway" }
-elseif (-not $checkIngress) { Write-Host "  显式 -GatewayIngressHost ${GatewayIngressHost}:Step 6 随 gateway 重建 Ingress gateway" }
+if (-not $checkRouterMode) { Write-Host "  Explicit -GateRouterMode ${GateRouterMode}: Step 6 starts gate with this value without checking the current cluster value" }
+if (-not $checkEntryMode) { Write-Host "  Explicit -ClientEntryMode ${ClientEntryMode}: Step 6 rebuilds gate with this mode without checking the current cluster mode; uses the supplied address arguments" }
+if ($ConfirmNoGatewayIngress) { Write-Host "  Explicit -ConfirmNoGatewayIngress: Step 6 does not create Ingress or check for Ingress gateway in the cluster" }
+elseif (-not $checkIngress) { Write-Host "  Explicit -GatewayIngressHost ${GatewayIngressHost}: Step 6 rebuilds Ingress gateway with gateway" }
 if ($checkRouterMode -or $checkEntryMode -or $checkIngress) {
     $checkNames = @()
     if ($checkRouterMode) { $checkNames += 'GATE_CLIENT_RPC_ROUTER 须与 k8s_deploy.ps1 -GateRouterMode 默认值一致' }
@@ -822,23 +822,23 @@ if ($checkRouterMode -or $checkEntryMode -or $checkIngress) {
         $deployScriptPath = Join-Path $ScriptDir "k8s_deploy.ps1"
         $zoneEntryState = Get-ClusterZoneEntryState -KubectlArgs $preflightKubectlArgs -Namespace $zoneNamespace
         # 显式给了 -ClientEntryMode 时不核对,但把集群现状打出来,供操作者核对照传的地址参数。
-        if (-not $checkEntryMode) { Write-Host "  集群现状(仅供核对):$($zoneEntryState.EntryDetail)" }
+        if (-not $checkEntryMode) { Write-Host "  Current cluster state (for comparison only): $($zoneEntryState.EntryDetail)" }
         Assert-ZoneEntryKeptOnRollback -State $zoneEntryState `
             -DeployDefaults (Get-DeployParamDefaults -DeployScriptPath $deployScriptPath -Names @('GateRouterMode', 'ClientEntryMode')) `
             -Namespace $zoneNamespace -DeployScriptPath $deployScriptPath `
             -CheckRouterMode:$checkRouterMode -CheckEntryMode:$checkEntryMode -CheckIngress:$checkIngress
     } else {
-        Write-Host "  (dry-run 不读集群;-Apply 时不一致或读不到即在停服前拒绝,须显式传对应参数)" -ForegroundColor Yellow
+        Write-Host "  (dry-run does not read the cluster; -Apply rejects mismatches or unavailable state before shutdown; explicitly pass the corresponding arguments)" -ForegroundColor Yellow
     }
 } else {
-    Write-Host "  三项均已显式给值,不读集群"
+    Write-Host "  All three values were supplied explicitly; skipping cluster reads"
 }
 # 集群现状过了再做静态预检:前者只读一次 kubectl,后者要完整渲染一遍 zone-up,便宜的先拒。
-Write-Host "  静态预检:以 Step 6 同一组参数(见下方 Step 6 那一行)加 -DryRun 执行 dev_tools.ps1 k8s-zone-up,由 k8s_deploy.ps1 判定参数组合、档位与密钥、发布门禁(不调 kubectl)"
+Write-Host "  Static preflight: run dev_tools.ps1 k8s-zone-up with the same arguments as Step 6 (see the Step 6 command below) plus -DryRun; k8s_deploy.ps1 checks argument combinations, profile and secrets, and release gates (without calling kubectl)"
 if ($Apply) {
     Invoke-ZoneUpStaticPreflight -DevToolsPath (Join-Path $ScriptDir "dev_tools.ps1") -UpArgs $upArgs
 } else {
-    Write-Host "  (dry-run 不执行;-Apply 时非 0 即在停服前拒绝)" -ForegroundColor Yellow
+    Write-Host "  (not executed during dry-run; -Apply rejects a nonzero exit code before shutdown)" -ForegroundColor Yellow
 }
 # Step 4 的 FLUSHDB 目标核对也放在停服之前:拖到 Step 4 才拒,zone 已停服、MySQL 已回档。
 $redisArgs = @()
@@ -846,11 +846,11 @@ if ($RedisHost -ne "") {
     $redisArgs = @("-h", $RedisHost, "-p", $RedisPort, "-n", $RedisDB)
     if ($RedisPassword -ne "") { $redisArgs += @("-a", $RedisPassword, "--no-auth-warning") }
     $redisTarget = "${RedisHost}:${RedisPort}/db${RedisDB}"
-    Write-Host "  FLUSHDB 目标核对:$redisTarget 里不能有全局共享键($((Get-SharedRedisGuardPatterns) -join ' '))$(if ($ConfirmFlushSharedRedis) { ';已给 -ConfirmFlushSharedRedis,命中只告警' })"
+    Write-Host "  FLUSHDB target check: $redisTarget must not contain globally shared keys ($((Get-SharedRedisGuardPatterns) -join ' '))$(if ($ConfirmFlushSharedRedis) { '; -ConfirmFlushSharedRedis supplied; matches only produce warnings' })"
     if ($Apply) {
         Assert-RedisFlushTargetIsZoneLocal -Probe (New-RedisCliScanProbe -RedisArgs $redisArgs) -Target $redisTarget -ConfirmFlushSharedRedis:$ConfirmFlushSharedRedis
     } else {
-        Write-Host "  (dry-run 不读 Redis;-Apply 时命中或读不到即在停服前拒绝)" -ForegroundColor Yellow
+        Write-Host "  (dry-run does not read Redis; -Apply rejects shared-key matches or unavailable state before shutdown)" -ForegroundColor Yellow
     }
 }
 Write-Host ""
@@ -973,7 +973,7 @@ Write-Host ""
 Write-Host "── Step 7: post-rollback verification ──" -ForegroundColor Cyan
 Write-Host "  Run these manually:"
 $verifyKubeArgs = "$(if ($KubeContext) { " --context $KubeContext" })$(if ($KubeConfig) { " --kubeconfig $KubeConfig" })"
-Write-Host "    1. kubectl get pods,sts,svc,ingress -n ${NamespacePrefix}-${ZoneName}$verifyKubeArgs(external zone 核对 gate-<i> 的 nodePort / Ingress host 与回滚前一致)"
+Write-Host "    1. kubectl get pods,sts,svc,ingress -n ${NamespacePrefix}-${ZoneName}$verifyKubeArgs (for external zones, confirm gate-<i> nodePort / Ingress host match their values before rollback)"
 Write-Host "    2. Robot smoke login: pwsh -File tools/scripts/dev_tools.ps1 -Command dev-robot-zones -Zones $ZoneId"
 Write-Host "    3. Spot-check player data:"
 Write-Host "       redis-cli -h $RedisHost -p $RedisPort -n $RedisDB GET 'player:{<known-pid>}:player_database'"

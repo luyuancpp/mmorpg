@@ -46,7 +46,7 @@ func (l *ListWatchableBattlesLogic) ListWatchableBattles(in *matchpb.ListWatchab
 
 	pairs, err := l.svcCtx.MatchRedis.ZrevrangeWithScores(spectateBattlesActiveKey, 0, int64(limit)-1)
 	if err != nil {
-		l.Errorf("[spectate] 读观战索引失败: %v", err)
+		l.Errorf("[spectate] Failed to read spectator index: %v", err)
 		return nil, err
 	}
 
@@ -55,9 +55,9 @@ func (l *ListWatchableBattlesLogic) ListWatchableBattles(in *matchpb.ListWatchab
 	for _, pair := range pairs {
 		battleId, err := strconv.ParseUint(pair.Key, 10, 64)
 		if err != nil {
-			l.Errorf("[spectate] 观战索引出现非法成员 %q,剔除", pair.Key)
+			l.Errorf("[spectate] Invalid member %q in spectator index; removing", pair.Key)
 			if _, err := l.svcCtx.MatchRedis.Zrem(spectateBattlesActiveKey, pair.Key); err != nil {
-				l.Errorf("[spectate] 剔除非法成员失败: %v", err)
+				l.Errorf("[spectate] Failed to remove invalid member: %v", err)
 			}
 			continue
 		}
@@ -68,7 +68,7 @@ func (l *ListWatchableBattlesLogic) ListWatchableBattles(in *matchpb.ListWatchab
 		record, err := loadSpectateBattle(l.svcCtx, battleId)
 		if err != nil {
 			// Redis 抖动/记录损坏:跳过本条,不剔除(下次可能恢复)。
-			l.Errorf("[spectate] 读观战记录失败 battle=%d: %v", battleId, err)
+			l.Errorf("[spectate] Failed to read spectator record battle=%d: %v", battleId, err)
 			continue
 		}
 		if record == nil || record.GetSummary() == nil {

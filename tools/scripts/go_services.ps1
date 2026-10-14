@@ -323,7 +323,7 @@ function Resolve-BindablePort {
         }
         $ReservedPorts[$p] = $Label
         if ($p -ne $Port) {
-            Write-Warning "[port] $Label : $Port 落在 Windows 保留端口区间,改用 $p(派生 yaml;对等方经 etcd 发现,不受影响)"
+            Write-Warning "[port] $Label : $Port is in a Windows reserved port range; using $p (derived yaml; peers discover via etcd and are unaffected)"
         }
         return $p
     }

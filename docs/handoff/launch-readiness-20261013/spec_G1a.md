@@ -1,5 +1,7 @@
 # G1a 实现规格:D1 路由表 TiDB 热点修复(第 1a 批 DDL 定稿前的最后一次改形)
 
+> **注记(2026-10-13)**:行片模数 `RouteRowShards` 自 2026-10-13 起是 **64**,正文里的 16(`% 16`、16 条尾部、`s = 0..15`、测试向量与预切语句)是写规格当时的值,正文不回改。现状以代码与提案 `docs/design/player-route-mapping-durability-proposal.md` §11.2「行片 16 → 64」为准。
+
 > 状态:**规格稿,只读代码与文档得出,未编译、未测试**(AGENTS.md §10.1)。行号以工作区当前内容为准(第 0、1a 批未提交改动在内);HEAD = `73b852f32`。
 > 范围:只改映射持久化第 1a 批新建的路由表与其读写代码、route_tool、两份清库脚本和相关文档。**不改 proto、不重编 C++、不改 AGENTS.md、本阶段不写 docs/PROGRESS.md**(最后由 Docs 阶段统一追加)。
 > 为什么现在做:四张表还没部署,第 1a 批代码未编译(提案 `player-route-mapping-durability-proposal.md:417-418`);TiDB 建表后不能改聚簇属性(`go/data_service/internal/store/schema.go:198-199`)。现在改 DDL 只是改常量,上线后再改等于整表重写 + 双写迁移。

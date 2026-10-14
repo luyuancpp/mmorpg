@@ -142,11 +142,11 @@ type Config struct {
 	// 一律 roundIndex >= maxRounds → SIDE_B_WIN(PVE"进攻方判负"规则泄漏到 PVP),
 	// 而 team 0 不是随机的(1v1 是锚点、5v5 是评分最高者所在队),照胜负结算会
 	// 让锚点 / 高分方系统性扣分。BattleResultEvent.total_rounds ≥ 该值的胜负结果
-	// 一律按平局(0.5)结算。默认 30 = C++ kDefaultMaxRounds;0 关闭该判定。
-	RatingDrawRoundCap uint32 `json:",default=30"`
+	// 一律按平局(0.5)结算。默认 300 = C++ kDefaultMaxRounds;0 关闭该判定。
+	RatingDrawRoundCap uint32 `json:",default=300"`
 
 	// RatingDrawRoundCapByConfigId:按 battle_config_id 覆盖回合上限(引擎按
-	// DungeonTable.time_limit 换算,配了 time_limit 的配置上限不是 30)。
+	// DungeonTable.time_limit 换算,配了 time_limit 的配置上限可能不是 300)。
 	// yaml map 键是字符串(与 PveTeamSizeByConfigId 同 workaround);0 视为未配置。
 	RatingDrawRoundCapByConfigId map[string]uint32 `json:",optional"`
 

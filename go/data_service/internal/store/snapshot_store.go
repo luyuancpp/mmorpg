@@ -235,22 +235,22 @@ func NewSnapshotStore(cfg MySQLConfig) (*SnapshotStore, error) {
 		}
 	}
 	if err != nil {
-		logx.Errorf("[SnapshotStore] 探测 %s.%s 失败(%v):按「唯一键不存在」处理,快照去重退回 "+
-			"INSERT...SELECT...NOT EXISTS(功能正确,但并发写者会在 idx(snapshot_guid) 间隙上成环、靠有界 1213 重试吸收)。"+
-			"确认迁移已跑过(`data_service -f <yaml> -migrate`)后重启本服务即可恢复",
+		logx.Errorf("[SnapshotStore] Failed to inspect %s.%s (%v): treating unique key as absent; snapshot deduplication falling back to "+
+			"INSERT...SELECT...NOT EXISTS (functionally correct, but concurrent writers form gap-lock cycles on idx(snapshot_guid), handled by bounded 1213 retries). "+
+			"After confirming migration ran (data_service -f <yaml> -migrate), restart this service to restore the unique-key path",
 			PlayerSnapshotTableName, SnapshotGuidUniqueKey, err)
 	}
 	s.uniqueGuidKey = hasKey
 	if hasKey {
-		logx.Infof("[SnapshotStore] %s.%s 在:快照按 guid 去重走 INSERT ... ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id)"+
-			"(撞键取 X 而不是 S,同 guid 的排队者不再成环)",
+		logx.Infof("[SnapshotStore] %s.%s present: snapshot guid deduplication uses INSERT ... ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id) "+
+			"(key conflicts acquire X rather than S locks, eliminating cycles among waiters for the same guid)",
 			PlayerSnapshotTableName, SnapshotGuidUniqueKey)
 	} else if err == nil {
-		logx.Errorf("[SnapshotStore] %s.%s 不存在:快照去重退回 INSERT...SELECT...NOT EXISTS。"+
-			"MySQL 上跑一次 `data_service -f <yaml> -migrate` 即可建出(纯加法),建出后重启本服务即切到 ODKU 形态、"+
-			"并消掉退路那条语句在 idx(snapshot_guid) 上的间隙环;"+
-			"若对端是 TiDB 而迁移仍然成功了,说明有人打开了 MigrateOptions.AllowMissingGuidUniqueKey —— "+
-			"**本实例的快照 guid 去重已失效**(TiDB 没有间隙锁,NOT EXISTS 去重不成立),见 schema.go 的 ensureNullableUniqueKey",
+		logx.Errorf("[SnapshotStore] %s.%s absent: snapshot deduplication falls back to INSERT...SELECT...NOT EXISTS. "+
+			"On MySQL, run data_service -f <yaml> -migrate to create the key (additive only), then restart this service to switch to ODKU "+
+			"and eliminate the fallback statement's gap-lock cycle on idx(snapshot_guid); "+
+			"if the server is TiDB and migration still succeeded, someone enabled MigrateOptions.AllowMissingGuidUniqueKey -- "+
+			"snapshot guid deduplication is disabled on this instance (TiDB has no gap locks, so NOT EXISTS deduplication is invalid); see ensureNullableUniqueKey in schema.go",
 			PlayerSnapshotTableName, SnapshotGuidUniqueKey)
 	}
 	return s, nil
@@ -412,17 +412,17 @@ func (s *SnapshotStore) InsertSnapshotIfGuidAbsent(ctx context.Context, row *Sna
 		// 两条路的 1213 成因完全不同,给运维的动作也不同 —— 日志必须分开说,
 		// 否则退路上那个**可以修掉**的环会被照着"InnoDB 固有、忍了"的结论放过。
 		if s.uniqueGuidKey {
-			logx.Infof("[SnapshotStore] snapshot guid=%d 在**唯一键路径**上因 InnoDB 死锁(1213)就地重跑了 %d 次,结果 err=%v:"+
-				"预期内的固有情形 —— 同一个 guid 有两个写者排在第三个未提交写者后面、而后者回滚时,"+
-				"等待锁被继承成间隙锁再互等插入意向锁(实测与写法无关,ODKU 也拆不掉,见 InsertSnapshotIfGuidAbsent)。"+
-				"结局由重试保证正确。本服务是多副本部署,同一个 guid 只会在消费组 rebalance 的重叠瞬间被两个实例同时写,"+
-				"所以这条日志偶发属正常;**持续高频**出现才要查:消费组是不是在反复 rebalance(成员进进出出 / DB 故障后 reader 重建)",
+			logx.Infof("[SnapshotStore] snapshot guid=%d retried %d times on the unique-key path after InnoDB deadlock (1213), result err=%v: "+
+				"an expected inherent case -- two writers for the same guid queue behind a third uncommitted writer that then rolls back, "+
+				"causing waiting locks to be inherited as gap locks that mutually wait on insert intention locks (observed regardless of statement form; ODKU cannot eliminate it, see InsertSnapshotIfGuidAbsent). "+
+				"Retries preserve correctness. This service has multiple replicas; two instances only write the same guid simultaneously during consumer-group rebalance overlap, "+
+				"so occasional occurrences are normal; persistent high frequency warrants checking for repeated consumer-group rebalance (membership churn / reader recreation after DB failures)",
 				row.SnapshotGuid, reruns, err)
 		} else {
-			logx.Errorf("[SnapshotStore] snapshot guid=%d 在**退路**(INSERT...SELECT...NOT EXISTS)上因 InnoDB 死锁(1213)"+
-				"就地重跑了 %d 次,结果 err=%v:这是 idx(snapshot_guid) 的间隙环 —— 子查询在 RR 下是加锁读,"+
-				"**连不同 guid 的写者也会互杀**,并不是同一条快照的竞争。它可以彻底消掉:"+
-				"跑一次 `data_service -f <yaml> -migrate` 建出 %s 后重启本服务,写路径即切到 ODKU 形态",
+			logx.Errorf("[SnapshotStore] snapshot guid=%d encountered InnoDB deadlock (1213) on the fallback path (INSERT...SELECT...NOT EXISTS), "+
+				"retried %d times, result err=%v: this is an idx(snapshot_guid) gap-lock cycle -- the subquery is a locking read under RR, "+
+				"even writers with different guids can deadlock; this is not contention for the same snapshot. It can be eliminated entirely: "+
+				"run data_service -f <yaml> -migrate to create %s, then restart this service to switch writes to ODKU",
 				row.SnapshotGuid, reruns, err, SnapshotGuidUniqueKey)
 		}
 	}
@@ -523,8 +523,8 @@ func (s *SnapshotStore) InsertSnapshotsIfGuidAbsent(ctx context.Context, rows []
 	})
 	if reruns > 0 {
 		s.deadlockRetries.Add(uint64(reruns))
-		logx.Infof("[SnapshotStore] snapshot batch of %d (first guid=%d) 在唯一键路径上因 InnoDB 死锁(1213)就地重跑了 %d 次,结果 err=%v:"+
-			"偶发属 rebalance 重叠(同 InsertSnapshotIfGuidAbsent 的说明),持续高频要查消费组是不是在反复 rebalance",
+		logx.Infof("[SnapshotStore] snapshot batch of %d (first guid=%d) retried %d times on the unique-key path after InnoDB deadlock (1213), result err=%v: "+
+			"occasional occurrences indicate rebalance overlap (see InsertSnapshotIfGuidAbsent); persistent high frequency warrants checking for repeated consumer-group rebalance",
 			len(rows), rows[0].SnapshotGuid, reruns, err)
 	}
 	if err != nil {

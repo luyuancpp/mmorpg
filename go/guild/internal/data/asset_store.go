@@ -513,7 +513,7 @@ func (s *GuildAssetStore) markPoison(ctx context.Context, opID, token, nowMs, po
 		return err
 	})
 	if err != nil {
-		logx.Errorf("[GuildAsset] 推迟毒行失败 op_id=%d: %v", opID, err)
+		logx.Errorf("[GuildAsset] Failed to postpone poison row op_id=%d: %v", opID, err)
 	}
 }
 
@@ -666,7 +666,7 @@ func (s *GuildAssetStore) terminate(ctx context.Context, opID uint64, status ass
 	}
 	if !found {
 		// 行不存在:清理只删终态行,所以这里是数据被人工删了或 op_id 传错。不终结、不报错,让调用方继续下一行。
-		logx.Errorf("[GuildAsset] %s: op_id=%d 不存在,跳过", what, opID)
+		logx.Errorf("[GuildAsset] %s: op_id=%d does not exist; skipping", what, opID)
 		return false, nil
 	}
 
@@ -721,10 +721,10 @@ func (s *GuildAssetStore) terminate(ctx context.Context, opID uint64, status ass
 	switch {
 	case outcome.orphanKind != "":
 		recordAssetOrphan(outcome.orphanKind, outcome.orphanWhat)
-		logx.Infof("[GuildAsset] 对侧账无处可记 kind=%s what=%s op_id=%d player_id=%d guild_id=%d funds=%d contribution=%d status=%s",
+		logx.Infof("[GuildAsset] No counterpart ledger destination kind=%s what=%s op_id=%d player_id=%d guild_id=%d funds=%d contribution=%d status=%s",
 			outcome.orphanKind, outcome.orphanWhat, opID, row.PlayerID, row.GuildID, row.FundsDelta, row.ContributionDelta, status)
 	case outcome.unknownKind:
-		logx.Errorf("[GuildAsset] 未知 kind=%d,只终结不做对侧账 op_id=%d status=%s", int32(row.Kind), opID, status)
+		logx.Errorf("[GuildAsset] Unknown kind=%d; finalizing without counterpart ledger update op_id=%d status=%s", int32(row.Kind), opID, status)
 	}
 	if outcome.touched {
 		s.guilds.invalidateAfterCommit(ctx, opAssetFinalize, row.GuildID, row.PlayerID)
@@ -986,7 +986,7 @@ type CleanupConf struct {
 // 每一轮各自 recover:单轮 panic 只丢那一轮,清理不会从此静默停摆。
 func (s *GuildAssetStore) RunCleanup(ctx context.Context, c CleanupConf) {
 	if c.Interval <= 0 {
-		logx.Errorf("[GuildAsset] 清理间隔非法(%v),清理任务不启动", c.Interval)
+		logx.Errorf("[GuildAsset] Invalid cleanup interval (%v); cleanup task not started", c.Interval)
 		return
 	}
 	timer := time.NewTimer(time.Duration(rand.Int64N(int64(c.Interval))))
@@ -999,7 +999,7 @@ func (s *GuildAssetStore) RunCleanup(ctx context.Context, c CleanupConf) {
 		}
 		safego.Run("guild.asset_op_cleanup", func() {
 			if err := s.CleanupOnce(ctx, time.Now(), c); err != nil && ctx.Err() == nil {
-				logx.Errorf("[GuildAsset] 清理失败: %v", err)
+				logx.Errorf("[GuildAsset] Cleanup failed: %v", err)
 			}
 		})
 		timer.Reset(c.Interval)

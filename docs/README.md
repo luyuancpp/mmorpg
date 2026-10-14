@@ -136,6 +136,8 @@ python tools/scripts/gen_docs_index.py
 - [db-service-root-credentials.md](design/db-service-root-credentials.md) — DB Service: Root Credentials for MySQL
 - [db-task-kafka-partition-contract.md](design/db-task-kafka-partition-contract.md) — DB Task Kafka 分区不可变契约
 - [db-task-pipeline-bottlenecks.md](design/db-task-pipeline-bottlenecks.md) — 玩家存盘管线(go/db)的瓶颈、不停服转移与修复计划
+- [db-task-store-unavailable-deferral.md](design/db-task-store-unavailable-deferral.md) — go/db 存盘任务：存储不可用时延后、不进死信（L-04）设计评审稿
+- [db-write-fencing-mysql.md](design/db-write-fencing-mysql.md) — 玩家存盘 MySQL 条件写（围栏）：go/db、C++、proto、schema 详细设计
 - [db_write_behind_dirty_flag_race.md](design/db_write_behind_dirty_flag_race.md) — DB Write-Behind 脏标记方案竞态分析 · [EN](design/db_write_behind_dirty_flag_race_en.md) · [中文](design/db_write_behind_dirty_flag_race_zh.md)
 - [db_zone_isolation.md](design/db_zone_isolation.md) — DB Zone Isolation (2026-04-11)
 - [global-data-layer-tidb-decision.md](design/global-data-layer-tidb-decision.md) — 全区全服数据层 + TiDB 架构决策
@@ -290,6 +292,7 @@ python tools/scripts/gen_docs_index.py
 ### 交接说明(`handoff/`)
 
 - [friend-handoff-20260920.md](handoff/friend-handoff-20260920.md) — friend 服务移植 —— 交接文档(2026-09-20)
+- [godb-pipeline-codex-tasksheet-20261013.md](handoff/godb-pipeline-codex-tasksheet-20261013.md) — Codex 任务单：存盘管线第 0 批与 proto2mysql 条件写原语的验证（2026-10-13）
 - [godb-pipeline-handoff-20261013-appendix.md](handoff/godb-pipeline-handoff-20261013-appendix.md) — 附录：存盘管线修复方案明细（工作流原始产出）
 - [godb-pipeline-handoff-20261013.md](handoff/godb-pipeline-handoff-20261013.md) — 交接：玩家存盘管线（go/db）瓶颈修复与条件写（2026-10-13）
 - [handoff-backlog-2026-09-05.md](handoff/handoff-backlog-2026-09-05.md) — 交接清单:2026-09-02 ~ 09-05 三天工作的留档待办(经代码核实)

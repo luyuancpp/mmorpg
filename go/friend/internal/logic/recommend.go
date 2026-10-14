@@ -84,7 +84,7 @@ func (l *FriendLogic) RecommendFriends(ctx context.Context, req *pb.RecommendFri
 	if limit == 0 {
 		// 只有"两个阈值都被配成 0"才会走到这里(config.Validate 会先拒掉)。
 		// 回空候选而不是报错:这是配置问题,不是玩家或存储的问题。
-		logx.WithContext(ctx).Errorf("[friend] RecommendFriends 有效 limit 为 0(RecommendDefaultLimit=%d RecommendMaxLimit=%d):配置漏配,推荐恒空",
+		logx.WithContext(ctx).Errorf("[friend] RecommendFriends effective limit is 0 (RecommendDefaultLimit=%d RecommendMaxLimit=%d): configuration missing, recommendations always empty",
 			cfg.RecommendDefaultLimit, cfg.RecommendMaxLimit)
 		return &pb.RecommendFriendsResponse{}, nil
 	}
@@ -127,7 +127,7 @@ func (l *FriendLogic) RecommendFriends(ctx context.Context, req *pb.RecommendFri
 			// 由 serverbase 记成 rpc_inband_fault。**不做部分降级**:第一级失败时不带着
 			// 空结果继续跑第二级 —— MySQL 出问题时第二级几乎必然同样失败,继续只是把一次
 			// 故障变成两次超时,还会把真实原因(第一条查询的报错)藏在第二条的报错后面。
-			logx.WithContext(ctx).Errorf("[friend] RecommendFriends 策略 %s 查询失败 player=%d: %v", step.name, me, err)
+			logx.WithContext(ctx).Errorf("[friend] RecommendFriends strategy %s query failed player=%d: %v", step.name, me, err)
 			return reject(constants.ErrStorage, "recommend candidates unavailable")
 		}
 		for _, c := range picked {

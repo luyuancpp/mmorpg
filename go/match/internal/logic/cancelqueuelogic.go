@@ -43,7 +43,7 @@ func (l *CancelQueueLogic) CancelQueue(in *matchpb.CancelQueueRequest) (*base.Em
 
 	ticket, err := loadTicket(l.svcCtx, playerId)
 	if err != nil {
-		l.Errorf("[match] CancelQueue 读 ticket 失败 player=%d: %v", playerId, err)
+		l.Errorf("[match] CancelQueue failed to read ticket player=%d: %v", playerId, err)
 		return nil, err
 	}
 	if ticket == nil {
@@ -51,24 +51,24 @@ func (l *CancelQueueLogic) CancelQueue(in *matchpb.CancelQueueRequest) (*base.Em
 		return &base.Empty{}, nil
 	}
 	if in.QueueTicket != "" && in.QueueTicket != ticket.Ticket {
-		l.Infof("[match] CancelQueue 票据不匹配,忽略 player=%d req=%s cur=%s",
+		l.Infof("[match] CancelQueue ticket mismatch; ignoring player=%d req=%s cur=%s",
 			playerId, in.QueueTicket, ticket.Ticket)
 		return &base.Empty{}, nil
 	}
 	if ticket.State != ticketStateQueued {
 		// matched/ready:凑单或开局已在途,取消太迟。开局失败自有补偿路径。
-		l.Infof("[match] CancelQueue 太迟,状态=%s player=%d", ticket.State, playerId)
+		l.Infof("[match] CancelQueue too late, state=%s player=%d", ticket.State, playerId)
 		return &base.Empty{}, nil
 	}
 
 	deleted, err := cancelTicketIfQueued(l.svcCtx, playerId, ticket.Ticket)
 	if err != nil {
-		l.Errorf("[match] CancelQueue 删 ticket 失败 player=%d: %v", playerId, err)
+		l.Errorf("[match] CancelQueue failed to delete ticket player=%d: %v", playerId, err)
 		return nil, err
 	}
 	if !deleted {
 		// 读票之后被 matcher 弹出(matched)或已被替换:取消太迟,凑单在途。
-		l.Infof("[match] CancelQueue 太迟,票据已在读后被弹出或替换 player=%d ticket=%s", playerId, ticket.Ticket)
+		l.Infof("[match] CancelQueue too late; ticket was popped or replaced after read player=%d ticket=%s", playerId, ticket.Ticket)
 		return &base.Empty{}, nil
 	}
 	// 出队用票据里记录的 QueueKey(决策 D4);改 key 格式前写的旧票据没有
@@ -79,11 +79,11 @@ func (l *CancelQueueLogic) CancelQueue(in *matchpb.CancelQueueRequest) (*base.Em
 	for _, queueKey := range queueKeys {
 		if err := dequeueMember(l.svcCtx, queueKey, playerId); err != nil {
 			// 出队失败留下的残留队列项会被 matcher 的票据校验丢弃,只记日志。
-			l.Errorf("[match] CancelQueue 出队失败(残留由 matcher 票据校验兜底) player=%d queue=%s: %v",
+			l.Errorf("[match] CancelQueue failed to dequeue (matcher ticket validation will handle remnants) player=%d queue=%s: %v",
 				playerId, queueKey, err)
 		}
 	}
-	l.Infof("[match] 取消排队成功 player=%d mode=%d config=%d queue=%v",
+	l.Infof("[match] Queue cancellation succeeded player=%d mode=%d config=%d queue=%v",
 		playerId, ticket.Mode, ticket.Config, queueKeys)
 	return &base.Empty{}, nil
 }

@@ -142,8 +142,8 @@ spec:
                 got=$(echo "$_desc" | sed -n 's/.*PartitionCount: *\([0-9]*\).*/\1/p' | head -n 1)
                 if [ "$got" != "$2" ]; then
                   echo "ERROR: topic $1 has PartitionCount=${got:-?} but the contract is $2." >&2
-                  echo "       审计 topic 的契约在 go/data_service/etc/data_service.yaml;" >&2
-                  echo "       命令 topic 的契约在 bin/etc/base_deploy_config.yaml Kafka.CommandTopicPartitions。" >&2
+                  echo "       Audit-topic contracts are defined in go/data_service/etc/data_service.yaml;" >&2
+                  echo "       Command-topic contracts are defined by Kafka.CommandTopicPartitions in bin/etc/base_deploy_config.yaml." >&2
                   echo "       Partition counts are immutable: bump the topic generation (new *_gN topic); never expand in place." >&2
                   echo "       If a producer auto-created this topic before this Job ran, delete the topic and re-run: k8s_deploy.ps1 -Command infra-kafka-topics" >&2
                   exit 1
@@ -154,7 +154,7 @@ spec:
                 gotrf=$(echo "$_desc" | sed -n 's/.*ReplicationFactor: *\([0-9]*\).*/\1/p' | head -n 1)
                 if [ -z "$gotrf" ] || [ "$gotrf" -lt "$REPLICATION_FACTOR" ]; then
                   echo "ERROR: topic $1 has ReplicationFactor=${gotrf:-?} but the deployment requires $REPLICATION_FACTOR." >&2
-                  echo "       这个 topic 比部署要求的副本少:唯一持有它的 broker 一倒,这条通道就断。" >&2
+                  echo "       This topic has fewer replicas than deployment requires: if its only broker fails, this channel is lost." >&2
                   echo "       Fix: if the topic is empty, delete it and re-run this Job; otherwise add replicas with kafka-reassign-partitions.sh." >&2
                   exit 1
                 fi
@@ -168,7 +168,7 @@ spec:
                   --describe | sed -n 's/^[[:space:]]*retention\.ms=\([0-9][0-9]*\).*/\1/p' | head -n 1)
                 if [ "$gotret" != "$_ret" ]; then
                   echo "ERROR: topic $1 retention.ms=${gotret:-<inherited>} but it must be explicitly $_ret." >&2
-                  echo "       保留期必须 > 消费者可能落后的最长时间(C++ 消费者 max.poll.interval.ms=900000)。" >&2
+                  echo "       Retention must exceed the maximum possible consumer lag (C++ consumers max.poll.interval.ms=900000)." >&2
                   echo "       Retention must be declared per topic, never inherited from the broker default." >&2
                   exit 1
                 fi

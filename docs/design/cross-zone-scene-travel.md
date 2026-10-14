@@ -3,6 +3,8 @@
 **状态:** 阶段 1、2、3 的代码**全部已落码并进入 main**(2026-09-18),另打通了生产配置下客户端发起的跨节点换图。**全程未编译、未跑测试**(用户明确要求);导表与 proto 生成**已完成**(§11.4)。落码记录:阶段 1 见 §10,阶段 2/3 见 §11。§8 三个默认值按「不确认即按此执行」生效。收尾两轮见 §12(2026-09-20/21)与 §13(2026-09-28,同样未编译、未测试)。
 **关联:** [global-data-layer-tidb-decision.md](./global-data-layer-tidb-decision.md) D1/D2(跨区 = 客户端重连,数据不搬家)、[enter-scene-zone-routing.md](./enter-scene-zone-routing.md)(Cross-Zone Flow / Offline-Return / Login-side)、[scene-owner-reentry-barrier.md](./scene-owner-reentry-barrier.md) §3.3(owner_epoch)、[scene-switch-release-design.md](./scene-switch-release-design.md)、[cross-zone-readiness-audit.md](./cross-zone-readiness-audit.md)、[team-system.md](./team-system.md) DV-6 / D.3、[turn-based-battle-server.md](./turn-based-battle-server.md) §19。
 
+**2026-10-13 补充:** §14 记录其他玩家 / 服务器向玩家发消息、目标连续换场景时的寻址与可靠投递设计参考；该节尚未实施，不属于上文“代码全部已落码”的范围。
+
 > 用户 2026-09-16 拍板:客户端直连 battle 与跨 zone 场景传送"两个都做",先直连。本文只管传送。
 > 一句话:**玩家仍归属 home_zone,只是人换到目标 zone 的 gate/scene 上玩;数据不搬家,存盘按 home_zone 路由;换手必须过"源已落盘 + epoch"两道门。**
 
@@ -1904,3 +1906,137 @@ C++(`cpp/libs/services/scene/player/` 下,另有两个 handler 文件):
 - `SendTipAndKickToClient`(按实体)收敛到 CPP-3 的按会话推送,属于 DRY 重构,本轮不做。
 - `handleWatchEvent` 在同一个 etcd 键换了 zone 时,直接 Zrem 旧 zone、不写 death_at,本轮只登记。
 - Battle 另有一个与跨区无关的问题:结算应用后当场销账 pending,崩溃会丢奖励,需要持久幂等(port-feasibility §8.1 D1),由 Battle 会话报用户。
+
+## 14. 连续换场景期间的玩家消息寻址与可靠投递(2026-10-13，设计参考)
+
+**范围与状态:** 本节记录用户明确提出的场景：其他玩家或服务器发来一条需要目标玩家处理的消息，但目标恰好从 A 连续迁移到 B、C。讨论的是尚未完成投递的玩家消息，不是把正在执行的函数或 RPC 回调搬到新进程。本节依据公开一手资料归纳机制，**尚未实施统一可靠投递，也不表示已选用 Orleans / Akka 或某种中间件**；既有业务的具体保证仍须按各自实现核对。
+
+### 14.1 两件事：稳定身份寻址与未完成消息的保管
+
+公开的成熟实现通常把它拆成两件事：**按固定的 `player_id` 寻址，以及保管尚未处理完成的重要消息。** 场景节点只是玩家当前的位置。Orleans、Akka 的位置透明路由都体现了这个思路。[Orleans 目录机制](https://dotnet.github.io/orleans/docs/implementation/grain-directory/)、[Akka 按实体身份路由](https://doc.akka.io/libraries/akka-core/current/typed/cluster-sharding.html#introduction)。
+
+这里的“通常”是对公开机制的设计归纳，不是所有大型游戏采用同一实现的证明。尤其要区分：Orleans 的目录与 Akka 的分片路由用于找到当前实例，**位置透明本身不等于持久可靠投递**。
+
+| 职责 | 要回答的问题 | 连续换场景时的要求 |
+|---|---|---|
+| 玩家寻址 | 玩家 P 当前由哪个节点 / 实例、哪一代归属持有 | 位置可变，玩家身份不变；旧地址失效后重新定位 |
+| 消息保管 | 事件 E 是否仍待处理、已完成还是结果未知 | 待办不能因玩家离开某个 scene 或保管进程重启而消失 |
+| 业务提交 | E 是否已经生效，谁有权修改玩家状态 | 当前属主校验、持久去重、提交结果与完成确认必须衔接 |
+
+“按玩家保存的逻辑信箱”可以由按 `player_id` 分片的一组服务和共享存储承载。消息的保管责任不依附于 A、B、C 中某个临时场景节点。负责保管的可以是业务服务的 outbox，也可以是独立投递模块；具体接缝与存储选型留待实施设计。
+
+```mermaid
+flowchart LR
+    S[其他玩家或服务器] --> Q[按玩家保存的持久待办]
+    Q --> D[投递器]
+    R[玩家当前位置与归属代际] --> D
+    D --> C[玩家当前场景]
+    C -->|业务提交成功后确认| Q
+```
+
+### 14.2 A → B → C 时的重要消息投递过程
+
+以“给玩家 P 发一份奖励，事件唯一编号为 E”为例，下面是结合公开机制提出的本项目设计参考，不是当前代码运行流程：
+
+1. **先保存待办。** 记录玩家 P、事件 E、载荷及待处理状态。若消息由一笔数据库业务变更产生，可将业务变更与 outbox 记录放在同一事务，避免业务成功而通知未发出。事务 outbox 仍可能重复投递，接收端需要幂等处理。[AWS 事务 Outbox 模式](https://docs.aws.amazon.com/prescriptive-guidance/latest/cloud-design-patterns/transactional-outbox.html)。
+2. **查当前位置再投递。** 定位到 A，但 A 收到时玩家已经离开或进入冻结交接，则返回“非当前属主 / 迁移中”，不能确认业务完成。投递器保留 E，刷新位置并退避重试。
+3. **迁移期间继续保管。** B 尚未准备好，或玩家又从 B 去 C，E 仍是同一条待办。一次投递中的旧地址转发须有次数与截止时间预算；失败后重新查当前位置，不能依赖无限延长的 A → B → C 转发链。
+4. **由当前属主提交。** C 准备好后校验归属与事件 E。首次处理时，在同一原子范围持久提交“奖励变更 + E 的处理结果”，随后才发业务完成确认；已处理过 E 则返回原结果。
+5. **确认丢失也能重投。** C 已提交但确认包丢失时，投递器仍可能重投 E。C 或后续新属主根据持久去重记录答复，不能再次发奖。Akka 官方明确说明，消费者重启或分片重平衡后会重投未确认消息，而它们可能已被旧消费者处理。[Akka 分片可靠投递语义](https://doc.akka.io/libraries/akka-core/current/typed/reliable-delivery.html#sharding-delivery-semantics)。
+
+连续迁移会增加处理延迟，但不应使待办随场景消失。最终完成仍以节点恢复、玩家可处理以及业务条件满足为前提；持续故障或持续迁移不能保证在固定时间内完成。超过业务期限时进入告警、查询、补偿或人工处置，重要资产操作不能因 TTL 到期就删除唯一凭据，也不能把“结果未知”当作“未执行”。
+
+### 14.3 实施时需要明确的契约
+
+- **事件身份与协议消息号分开。** `event_id` / `operation_id` 表示一笔业务事件，跨节点、重试与恢复时保持不变。本仓库的 `message_id` 是协议消息类型号；`ClientRequest.id` 当前用于请求 / 响应关联，均不能自动替代业务去重键。上述概念字段不是本次新增的 proto 契约。
+- **收到与完成是两个确认。** “待办已被持久接收”可以给发送方受理确认；“业务已持久提交”才是完成确认。收到网络包、进入内存邮箱或仅修改内存，都不能冒充重要业务完成。Akka 将何时确认处理完成明确列为业务职责；发送方也需要持久队列才能覆盖其自身进程崩溃。[Akka 可靠投递](https://doc.akka.io/libraries/akka-core/current/typed/reliable-delivery.html#introduction)、[持久发送队列](https://doc.akka.io/libraries/akka-core/current/typed/reliable-delivery.html#durable-producer)。
+- **去重与副作用共同提交。** 资产变更和已处理记录必须在同一原子范围内持久化；分开提交会留下重复发奖或漏发窗口。若副作用跨库、跨服务或涉及外部系统，必须另定义事务 outbox、幂等调用及补偿流程，不能宣称一次本地事务覆盖全部副作用。
+- **归属围栏约束提交。** 定位结果包含当前节点 / 实例与归属代际，业务提交通过同一并发控制机制复核当前修改权，避免旧节点上的迟到消息继续写玩家数据。收到消息时做一次位置预检不能代替提交校验。归属围栏不替代事件去重。
+- **顺序按业务声明。** 有严格先后关系的消息，需要明确同一玩家消息流的序号分配、缺口处理与消费进度；多个发送方不会天然形成全局顺序。同一分区或串行邮箱只是基础，重试与换手仍须保持顺序契约。
+- **投递必须有界且可观测。** 单次投递设超时，重试采用退避并受流控约束；待办记录尝试、结果和下一次调度时间，监控积压与超期。暂时无属主时保留待办，不能忙循环，也不能因一个玩家在迁移而阻塞全部玩家。
+
+### 14.4 消息类型与本仓库的边界
+
+| 消息类型 | 处理口径 |
+|---|---|
+| 奖励、扣款、结算等持久业务指令 | 持久待办 + 固定事件身份 + 当前属主定位 + 业务去重 + 提交后完成确认 |
+| 邮件、好友邀请等可离线业务 | 由对应业务服务保存权威状态；若无需修改 scene 状态，可在业务服务完成，通知当前连接并在落地 / 打开面板时查询 |
+| A 地图的一次攻击、AOI 等场景时效消息 | 携带场景与有效性约束；玩家已到 C 时按契约拒绝或过期，不能盲目追到新场景执行 |
+
+本仓库的 `client_rpc_router` 主要解决客户端消息号到 Go 业务服务的转发，本身不是上述玩家重要消息的持久信箱。现有 `player:{id}:location`、`owner_epoch` 与实例身份机制可作为定位 / 围栏的接入基础；资产通道等已有业务也有各自的待办和重投机制，但不能由此推定所有玩家消息都具备端到端可靠交付。
+
+本节**不改变 §7 记录的跨 zone 窗口 S2C 可能丢失且不补发的现行限制**，也不把 `IMPORTANT` 标记、进场通知补发或临时内存缓冲解释为统一可靠投递。后续实施须另行定义业务范围、原子提交点、存储、保留期限与恢复策略，并核对 C++/Go 版与 Java 版；本次仅记录讨论，没有功能或客户端契约变更。
+
+### 14.5 Orleans 目录文章的中文机制释义
+
+[Grain directory architecture](https://dotnet.github.io/orleans/docs/implementation/grain-directory/) 可译为“Grain 目录架构”。以下是中文释义；涉及身份、生命周期和投递保证的细节同时引用关联官方文档。它主要解释稳定身份到当前实例的定位，不为 §14.1 的重要消息保管自动提供实现。
+
+**身份、实例、承载进程分开。** Grain 是有稳定身份的逻辑业务实体，身份由“类型 + 键”组成；Activation 是它当前在内存中的实例，Silo 是承载实例的服务器进程。例如 `Player/42` 与 `Guild/42` 是两个不同实体。实例停用或换节点后，逻辑引用仍指向同一实体。[Grain 身份](https://dotnet.github.io/orleans/docs/grains/grain-identity/)、[激活生命周期](https://dotnet.github.io/orleans/docs/implementation/activation-lifecycle/)。
+
+**放置策略与目录职责分开。** Placement 决定在哪个 Silo 创建实例，Directory 协调哪个激活地址具有权威性。默认 `LocalGrainDirectory` 按集群成员的一致性哈希环分配目录记录，各节点另有可失效的地址缓存；缓存不可用时查目录负责人，再联系实际实例。[目录架构原文](https://dotnet.github.io/orleans/docs/implementation/grain-directory/)。
+
+下面是帮助理解的例子，不是本仓库现有节点分工：
+
+```text
+逻辑身份：Player/42
+目录记录负责人：节点 A
+激活实例承载者：节点 B
+
+实例迁到 C 后：
+身份仍是 Player/42，目录中的目标地址更新为 C
+```
+
+管理位置记录与运行实体可以由不同节点承担；哈希分配目录记录不等于把该玩家实例固定在哈希对应节点。
+
+**缓存与默认一致性边界。** 实例停用、迁移或节点故障会使缓存过期，运行时通过失效和有限转发修复地址。默认目录虽然名为 Local，实际分布在集群中；成员变化期间最终一致，故障时可能短暂重复激活，之后解决冲突并停用重复实例。不能把它解释为故障瞬间也无条件保证单实例。[目录架构](https://dotnet.github.io/orleans/docs/implementation/grain-directory/)、[目录配置与一致性](https://dotnet.github.io/orleans/docs/host/grain-directory/)。
+
+**实验目录的交接机制。** `DistributedGrainDirectory` 需要显式启用，标记为 `ORLEANSEXP003`，不是默认实现。它用成员视图编号协调范围：旧负责人封闭范围，新负责人取得并安装注册快照后开放服务；无法正常移交时，向活跃 Silo 查询注册重建目录。当前默认每个 Silo 一个分区；这是实验实现的行为，不能套到默认目录。[目录架构原文](https://dotnet.github.io/orleans/docs/implementation/grain-directory/)。
+
+目录可按 Grain 类型替换为 Redis、关系数据库等实现；替换会增加外部服务依赖，具体一致性、清理和可用性由所选实现承担。目录的持久保存不等于业务状态或未完成请求也已保存。[目录配置](https://dotnet.github.io/orleans/docs/host/grain-directory/)。
+
+**找到地址与准备好处理请求分开。** 激活是异步过程，初始化期间请求排队，成功后开始调度。闲置实例回收只是释放内存，业务状态能否恢复取决于完成的持久化写入。突然退出可能跳过停用回调，不能把重要保存工作全部留到对象销毁时；活迁移携带的内存状态也不能替代抗进程故障的持久化。[激活与迁移](https://dotnet.github.io/orleans/docs/implementation/activation-lifecycle/)。
+
+**地址修复与业务重试分开。** Orleans 不会仅因调用超时就自动重新提交业务调用。超时可能表示未到达、还在排队、正在执行，或者已成功但回复丢失，结果是未知。应用自行重试可能让两次调用都执行，应使用幂等操作，或将操作 ID 与业务修改一起原子记录；目录不提供持久化的恰好一次业务执行。[调用与投递语义](https://dotnet.github.io/orleans/docs/implementation/messaging-delivery-guarantees/)。
+
+### 14.6 Akka 集群分片文章的中文机制释义
+
+[Cluster Sharding](https://doc.akka.io/libraries/akka-core/current/typed/cluster-sharding.html#introduction) 可译为“集群分片”。Entity 是由分片系统管理的 Actor，逻辑引用按“实体类型 + 实体 ID”寻址，实体通常按需启动；Shard 把一组实体作为共同分配和交接的单位。**Shard 不是游戏地图或 scene 的同义词。**
+
+**路由角色与首次查询。** ShardRegion 是分片路由入口，ShardCoordinator 是统一决定分片归属的集群单例。消息路径是：
+
+```text
+调用方
+  → 本地 ShardRegion
+  → 目标节点的 ShardRegion
+  → Shard
+  → Entity
+```
+
+首次遇到位置未知的分片时，本地入口向协调器查询，并暂存该分片消息；拿到位置后直接发往该位置，后续消息无需每条经过协调器。[分片工作原理](https://doc.akka.io/libraries/akka-core/current/typed/cluster-sharding-concepts.html)。
+
+**再平衡的交接顺序。** 协调器通知各入口暂存消息，停止旧节点上该分片的实体，待旧实体全部结束后确定新位置，再释放暂存消息。它不会搬运实体的内存状态；新实例需从持久存储恢复重要状态。协调器故障接管期间，已知位置仍可路由，未知位置需等待。[再平衡](https://doc.akka.io/libraries/akka-core/current/typed/cluster-sharding-concepts.html#shard-rebalancing)。
+
+**停用与缓冲。** 直接停止实体可能丢弃邮箱中的未处理消息。`Passivate` 让实体先请求停用；分片收到请求到旧实体终止期间，后来消息由分片暂存，再交给新实例。自动停用可释放闲置实体内存；这些缓冲不构成持久消息存储。[停用机制](https://doc.akka.io/libraries/akka-core/current/typed/cluster-sharding.html#passivation)。
+
+**三类状态分开。** 分片当前位置的 State Store 默认用 `ddata` 在集群内复制、不落盘，全部节点停止后可以丢弃。Remember Entities 默认关闭，它另存需要重建的实体身份集合，开启后可用 `ddata` 落盘或 `eventsourced` 保存清单，同时关闭自动停用；业务状态仍需单独持久化，它不保存未处理命令。[分片状态](https://doc.akka.io/libraries/akka-core/current/typed/cluster-sharding.html#sharding-state)、[默认协调器状态](https://doc.akka.io/libraries/akka-core/current/typed/cluster-sharding.html#distributed-data-mode)、[记住实体](https://doc.akka.io/libraries/akka-core/current/typed/cluster-sharding.html#remembering-entities)。
+
+**单实例与顺序的边界。** 错误的故障摘除策略可能在网络分区后形成多个集群，各自启动相同实体。[原文故障警告](https://doc.akka.io/libraries/akka-core/current/typed/cluster-sharding.html#introduction)。同一发送者经同一 ShardRegion 发给同一实体的消息保持发送顺序，但默认仍是尽力而为、至多一次，并受缓冲容量限制；多个发送者不因此获得全局顺序。[分片消息顺序](https://doc.akka.io/libraries/akka-core/current/typed/cluster-sharding-concepts.html#message-ordering)、[普通消息投递保证](https://doc.akka.io/libraries/akka-core/current/general/message-delivery-reliability.html#the-general-rules)。
+
+### 14.7 可靠投递与业务持久化的区别
+
+Akka 的 Reliable Delivery 是另加的处理确认协议：业务处理完才确认，不能只确认网络收到或进入邮箱。控制器协作完成重发、去重和流量控制；未确认消息默认只在生产者内存，生产者崩溃仍会丢失。`DurableProducerQueue` 能让已持久保存的未确认消息在恢复时重投，但可能重复执行业务，仍须幂等。**当前官方页将该模块标为 `may change`，并说明暂不推荐生产使用；这里记录机制，不把它当作已选定的生产方案。** [可靠投递](https://doc.akka.io/libraries/akka-core/current/typed/reliable-delivery.html#introduction)、[持久生产者](https://doc.akka.io/libraries/akka-core/current/typed/reliable-delivery.html#durable-producer)。
+
+业务状态持久化也不能自动保证后续消息送达。Akka Event Sourcing 可以恢复已保存事件对应的业务状态，但保存成功后通过 `thenRun` 执行的副作用不会仅因事件恢复而重跑；保存成功与通知发出之间仍可能发生崩溃。[持久化与副作用保证](https://doc.akka.io/libraries/akka-core/current/typed/persistence.html#side-effects-ordering-and-guarantees)。
+
+结合上述机制，§14 的职责划分是本项目设计推导：
+
+| 要回答的问题 | 对应职责 |
+|---|---|
+| 消息属于哪个玩家 | 稳定的 `player_id` |
+| 玩家现在由谁执行 | 当前实例位置与路由 |
+| 哪些重要命令还没有完成 | 持久待办记录与恢复调度 |
+| 重发后如何避免重复发奖 | 固定业务操作 ID、幂等与原子提交 |
+
+例如，给玩家 42 发奖励，操作 ID 为 R123。玩家从 B 换到 C，只影响投递位置；R123 是否待处理、是否已发过奖励，由独立持久记录判定。完成确认应表示奖励已按业务契约提交。此处 R123 对应 §14.3 的业务 `operation_id`，不是协议消息类型号。
+
+两篇路由文章支持“按稳定身份定位当前实例”；重要消息保存到业务完成还需要独立的持久保管、确认、重试和幂等机制。本文记录的是职责与保证边界，不意味着当前 C++/Go 版或 Java 版已实现统一可靠消息投递。

@@ -9,7 +9,7 @@
 // 逻辑全在 internal/routetool。退出码:0 干净 / 1 需要人工处理 / 2 失败 / 3 有生效的合服围栏或窗口内跑过合服(仅 import)。
 //
 // tidb-prepare(2026-10-12 G1a,TiDB-only):对路由表设 merge_option=deny 并按片 / 按 zone 预切 Region
-// (player_route 改成聚簇 (route_shard, player_id) 之后,不预切的话 16 条写入尾部在首日仍压在同一个 Region 上)。
+// (player_route 改成聚簇 (route_shard, player_id) 之后,不预切的话 64 条写入尾部在首日仍压在同一个 Region 上)。
 // 放在 route_tool 而不是迁移里:按 zone 预切要真实 zone 清单,data_service 的 yaml 里没有。只碰全局库,不连
 // mapping Redis;MySQL 上自动跳过(退出码 0)。何时要跑:TiDB 上建表之后、开新 zone 时(该 zone 开放前、低峰)、
 // BR / PITR 恢复之后、TRUNCATE 之后。它同样经过建池探针(含 chk_route_shard 实测),CHECK 不生效的库直接退出码 2。

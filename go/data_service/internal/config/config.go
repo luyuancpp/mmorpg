@@ -263,7 +263,8 @@ const RouteStoreModeRedis = "redis"
 const RouteStoreModeDBFirst = "db_first"
 
 // RouteStore 段各键的默认值(Normalize 照抄这一份;etc/data_service.yaml 写的就是它们)。
-// FenceShards 的默认值与上限在 shared/placement(DefaultRouteFenceShards / MaxRouteFenceShards),那里同时是围栏持有者的契约。
+// FenceShards 的默认值与上限在 shared/placement(DefaultRouteFenceShards / MaxRouteFenceShards),那里同时是围栏持有者的契约;
+// 它是唯一的例外:etc/data_service.yaml 写的是 MySQL 档的 16,不是默认值 8(2026-10-13,见该文件的注释)。
 const (
 	DefaultRouteStoreMaxOpenConn        = 20
 	DefaultRouteStoreMaxIdleConn        = 5

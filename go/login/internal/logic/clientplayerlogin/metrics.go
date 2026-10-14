@@ -144,12 +144,17 @@ var (
 	// to alert on (`rate(entergame_total[1m])`) than parsing histogram
 	// metadata. Cheap to maintain; pays for itself the first time you
 	// write a Grafana panel.
+	//
+	// 例外:result="pool_saturated" 只在这个计数器里有,totalSeconds 里没有 —— PreloadPool 满时链根本
+	// 没启动,没有耗时可记(ResultPoolSaturated)。按「链的终态」算成功率时要把它排除在分母之外。
+	// 这一个取值起服时由 PrimeEnterGameMetrics 预置成 0。
 	totalCounter = metric.NewCounterVec(&metric.CounterVecOpts{
 		Namespace: metricNamespace,
 		Subsystem: "",
 		Name:      "total",
 		Help: "EnterGame async chain terminal-state count. " +
-			"sum by (result) gives the success/failure split.",
+			"sum by (result) gives the success/failure split. " +
+			"pool_saturated = chain never started (PreloadPool full).",
 		Labels: []string{"result"},
 	})
 
@@ -184,6 +189,7 @@ const (
 	ResultPreloadTimeout = "preload_timeout"
 	ResultApplyFailed    = "apply_failed"
 	ResultLockLost       = "lock_lost"
+	ResultPoolSaturated  = "pool_saturated" // PreloadPool 满,链未启动(只计数,不进 total_seconds)
 )
 
 // observeTotal records both the histogram observation and the counter
@@ -291,8 +297,9 @@ var (
 
 	// 新号种子的每一次写入记一条(只在 NewPlayerSeed.Enabled 时有)。result 取 dataloader.SeedResult.String()。
 	// parent_exists / owner_epoch_exists 对新铸 id 稳态恒为 0:每 +1 都对应一条带 player_id 的 ERROR 日志
-	// (`[new-player-seed] freshly minted ...`),意味着 id 复用,按 ID 安全事件处理。error 只表示种子没写成,
-	// 首次入场退回冷读,不影响正确性。
+	// (`[new-player-seed] freshly minted ...`),意味着 id 复用,按 ID 安全事件处理。error 表示种子写入未确认
+	// (可能已落地,也可能没有):首次入场命中则走快路径,否则退回冷读,结果相同,不影响正确性。
+	// idempotent 在建角侧稳态应接近 0(成因见 seedNewPlayer),每 +1 对应一条带 player_id 的 INFO 日志。
 	createPlayerSeedTotal = metric.NewCounterVec(&metric.CounterVecOpts{
 		Namespace: createPlayerMetricNamespace,
 		Subsystem: createPlayerMetricSubsystem,
@@ -322,6 +329,18 @@ func PrimeCreatePlayerMetrics() {
 	// 种子的两个 id 复用结局同样用于「出现即告警」,理由同上。
 	createPlayerSeedTotal.Add(0, dataloader.SeedParentExists.String())
 	createPlayerSeedTotal.Add(0, dataloader.SeedOwnerEpochExists.String())
+}
+
+// PrimeEnterGameMetrics 把 entergame_total{result="pool_saturated"} 预置成 0,让这条序列从起服起就存在。
+//
+// 理由与 PrimeCreatePlayerMetrics 相同:带 label 的 CounterVec 在某个 label 组合第一次写入之前同样不输出序列。
+// 池掉单稳态恒为 0,是「出现就要处置」(调大 PreloadPool.Size)的信号,不预置的话 `increase(...) > 0` 漏掉第一次;
+// tools/scripts/stress_summarize.ps1 的 pool_saturated 列也靠这条序列区分「测到 0」与「这个 login 不导出该取值」
+// (序列缺失时打印 n/a)。其余 result 不预置:它们不用于出现即告警。
+//
+// 调用时机同 PrimeCreatePlayerMetrics:必须在 zrpc.MustNewServer 之后(login.go startServer)。
+func PrimeEnterGameMetrics() {
+	totalCounter.Add(0, ResultPoolSaturated)
 }
 
 // decisionLabel converts a sessionmanager.EnterGameDecision into a stable

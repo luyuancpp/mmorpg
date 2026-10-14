@@ -87,8 +87,9 @@ func TestRouteBootstrapDDLContract(t *testing.T) {
 		t.Fatalf("bootstrapTables 有 %d 项,want 7(id_segment、player_name + 五张路由表)", got)
 	}
 
-	// player_route 的聚簇主键 (route_shard, player_id) 与 16 片(G1a)。chk_route_shard 里的模数与
-	// placement.RouteRowShards 必须一致:不一致时一半写入撞 3819,或 CHECK 根本钉不住应用算出的片。
+	// player_route 的聚簇主键 (route_shard, player_id) 与 64 片(G1a;模数 2026-10-13 由 16 改为 64,数值由
+	// placement 的 TestRouteRowShard 钉住)。chk_route_shard 里的模数与 placement.RouteRowShards 必须一致:
+	// 不一致时一部分写入撞 3819,或 CHECK 根本钉不住应用算出的片。
 	shards := strconv.FormatUint(uint64(placement.RouteRowShards), 10)
 	for _, want := range []string{
 		"`route_shard` tinyint unsigned NOT NULL COMMENT 'pb:10'",
@@ -602,16 +603,17 @@ func TestRouteScanCursorOrder(t *testing.T) {
 		a, b RouteScanCursor
 		less bool
 	}{
-		{RouteScanCursor{Shard: 1, PlayerID: 33}, RouteScanCursor{Shard: 2, PlayerID: 2}, true}, // 片小者在前,不看 id
-		{RouteScanCursor{Shard: 2, PlayerID: 2}, RouteScanCursor{Shard: 1, PlayerID: 33}, false},
-		{RouteScanCursor{Shard: 1, PlayerID: 1}, RouteScanCursor{Shard: 1, PlayerID: 17}, true}, // 同片按 id
-		{RouteScanCursor{Shard: 1, PlayerID: 17}, RouteScanCursor{Shard: 1, PlayerID: 17}, false},
+		// 字面量取 64 片下真实存在的键:1 与 129(= 2×64 + 1)在片 1,2 在片 2。
+		{RouteScanCursor{Shard: 1, PlayerID: 129}, RouteScanCursor{Shard: 2, PlayerID: 2}, true}, // 片小者在前,不看 id
+		{RouteScanCursor{Shard: 2, PlayerID: 2}, RouteScanCursor{Shard: 1, PlayerID: 129}, false},
+		{RouteScanCursor{Shard: 1, PlayerID: 1}, RouteScanCursor{Shard: 1, PlayerID: 129}, true}, // 同片按 id
+		{RouteScanCursor{Shard: 1, PlayerID: 129}, RouteScanCursor{Shard: 1, PlayerID: 129}, false},
 	} {
 		if got := tc.a.Less(tc.b); got != tc.less {
 			t.Fatalf("%+v.Less(%+v) = %t, want %t", tc.a, tc.b, got, tc.less)
 		}
 	}
-	for _, id := range []uint64{1, 15, 16, 17, 4242, 1<<55 - 1} {
+	for _, id := range []uint64{1, 15, 16, 17, 63, 64, 65, 4242, 1<<55 - 1} {
 		key := RouteScanCursorAt(RouteRow{PlayerID: id})
 		if key != (RouteScanCursor{Shard: placement.RouteRowShard(id), PlayerID: id}) {
 			t.Fatalf("RouteScanCursorAt(%d) = %+v:片必须经 placement.RouteRowShard 算", id, key)
@@ -621,9 +623,11 @@ func TestRouteScanCursorOrder(t *testing.T) {
 		}
 	}
 
-	ids := []uint64{2, 17, 33, 1, 18, 16}
+	// 64 片下:64 在片 0;1、65(64 + 1)、129(2×64 + 1)在片 1;2、66(64 + 2)在片 2。
+	// 相差 64 才落同一片 —— 换成相差 16 的 id(17、33、18)在 64 片下各占一片,这条就只剩「按 id 排」了。
+	ids := []uint64{2, 65, 129, 1, 66, 64}
 	sortRouteIDsByKey(ids)
-	if want := []uint64{16, 1, 17, 33, 2, 18}; !slices.Equal(ids, want) {
+	if want := []uint64{64, 1, 65, 129, 2, 66}; !slices.Equal(ids, want) {
 		t.Fatalf("sortRouteIDsByKey = %v, want %v(先片后 id)", ids, want)
 	}
 }
@@ -631,24 +635,37 @@ func TestRouteScanCursorOrder(t *testing.T) {
 // TestRouteTiDBPrepareStatements:tidb-prepare 的语句逐字钉住(TiDB 上的写法未核实,改它要先在真 TiDB 上取证,
 // 见 route_tidb.go 文件头),以及入参规范化(去重升序、越界拒绝)。
 func TestRouteTiDBPrepareStatements(t *testing.T) {
+	// 行数据与 idx_route_updated 每片一个切点:片 1..63(片 0 的起点就是表 / 索引的起点,不用切),共 63 个、64 段。
+	// 63 写成字面量(= 64 − 1),故意不引用 placement.RouteRowShards:被测函数用的就是那个常量,期望再引用它等于自己证自己。
+	perShard := func(suffix string) string {
+		parts := make([]string, 0, 63)
+		for sh := 1; sh <= 63; sh++ {
+			parts = append(parts, "("+strconv.Itoa(sh)+suffix+")")
+		}
+		return strings.Join(parts, ", ")
+	}
+	// idx_route_home / idx_route_storage 每个 zone / 落点值 8 个切点:片 0、8、…、56(每段 8 片),逐字写出。
 	want := []string{
 		"ALTER TABLE `player_route` ATTRIBUTES 'merge_option=deny'",
 		"ALTER TABLE `zone_merge_fence` ATTRIBUTES 'merge_option=deny'",
-		"SPLIT TABLE `player_route` BY (1, 0), (2, 0), (3, 0), (4, 0), (5, 0), (6, 0), (7, 0), (8, 0), (9, 0), (10, 0), " +
-			"(11, 0), (12, 0), (13, 0), (14, 0), (15, 0)",
-		"SPLIT TABLE `player_route` INDEX `idx_route_updated` BY (1, 0, 0), (2, 0, 0), (3, 0, 0), (4, 0, 0), (5, 0, 0), " +
-			"(6, 0, 0), (7, 0, 0), (8, 0, 0), (9, 0, 0), (10, 0, 0), (11, 0, 0), (12, 0, 0), (13, 0, 0), (14, 0, 0), (15, 0, 0)",
-		"SPLIT TABLE `player_route` INDEX `idx_route_home` BY (1, 0, 0), (1, 1, 0), (1, 2, 0), (1, 3, 0), (1, 4, 0), " +
-			"(1, 5, 0), (1, 6, 0), (1, 7, 0), (1, 8, 0), (1, 9, 0), (1, 10, 0), (1, 11, 0), (1, 12, 0), (1, 13, 0), " +
-			"(1, 14, 0), (1, 15, 0)",
-		"SPLIT TABLE `player_route` INDEX `idx_route_home` BY (2, 0, 0), (2, 1, 0), (2, 2, 0), (2, 3, 0), (2, 4, 0), " +
-			"(2, 5, 0), (2, 6, 0), (2, 7, 0), (2, 8, 0), (2, 9, 0), (2, 10, 0), (2, 11, 0), (2, 12, 0), (2, 13, 0), " +
-			"(2, 14, 0), (2, 15, 0)",
-		"SPLIT TABLE `player_route` INDEX `idx_route_storage` BY (1000000, 0, 0), (1000000, 1, 0), (1000000, 2, 0), " +
-			"(1000000, 3, 0), (1000000, 4, 0), (1000000, 5, 0), (1000000, 6, 0), (1000000, 7, 0), (1000000, 8, 0), " +
-			"(1000000, 9, 0), (1000000, 10, 0), (1000000, 11, 0), (1000000, 12, 0), (1000000, 13, 0), (1000000, 14, 0), " +
-			"(1000000, 15, 0)",
+		"SPLIT TABLE `player_route` BY " + perShard(", 0"),
+		"SPLIT TABLE `player_route` INDEX `idx_route_updated` BY " + perShard(", 0, 0"),
+		"SPLIT TABLE `player_route` INDEX `idx_route_home` BY (1, 0, 0), (1, 8, 0), (1, 16, 0), (1, 24, 0), " +
+			"(1, 32, 0), (1, 40, 0), (1, 48, 0), (1, 56, 0)",
+		"SPLIT TABLE `player_route` INDEX `idx_route_home` BY (2, 0, 0), (2, 8, 0), (2, 16, 0), (2, 24, 0), " +
+			"(2, 32, 0), (2, 40, 0), (2, 48, 0), (2, 56, 0)",
+		"SPLIT TABLE `player_route` INDEX `idx_route_storage` BY (1000000, 0, 0), (1000000, 8, 0), (1000000, 16, 0), " +
+			"(1000000, 24, 0), (1000000, 32, 0), (1000000, 40, 0), (1000000, 48, 0), (1000000, 56, 0)",
 		"SPLIT TABLE `zone_merge_fence` BY (1, 0), (2, 0)",
+	}
+	// 期望自检:perShard 拼出来的头尾与个数(免得上面的循环自己写错了还和被测函数错到一处去)。
+	if !strings.HasPrefix(want[2], "SPLIT TABLE `player_route` BY (1, 0), (2, 0), (3, 0), ") ||
+		!strings.HasSuffix(want[2], ", (62, 0), (63, 0)") || strings.Count(want[2], "(") != 63 {
+		t.Fatalf("用例自己的期望拼错了(行数据):%q", want[2])
+	}
+	if !strings.HasPrefix(want[3], "SPLIT TABLE `player_route` INDEX `idx_route_updated` BY (1, 0, 0), (2, 0, 0), ") ||
+		!strings.HasSuffix(want[3], ", (62, 0, 0), (63, 0, 0)") || strings.Count(want[3], "(") != 63 {
+		t.Fatalf("用例自己的期望拼错了(idx_route_updated):%q", want[3])
 	}
 	got := routeTiDBPrepareStatements([]uint32{1, 2}, []uint32{1000000})
 	if len(got) != len(want) {
@@ -661,6 +678,11 @@ func TestRouteTiDBPrepareStatements(t *testing.T) {
 	}
 	if n := len(routeTiDBPrepareStatements([]uint32{7}, nil)); n != 2+2+1+0+1 {
 		t.Fatalf("1 个 zone、0 个 storage 应生成 6 条语句,got %d", n)
+	}
+	// 切点密度的两个常量:8 个点、间隔 8 片(64 / 8);间隔必须整除行片数(route_tidb.go 另有编译期断言)。
+	if routeTiDBPrefixSplitPoints != 8 || routeTiDBPrefixSplitStride != 8 || placement.RouteRowShards%routeTiDBPrefixSplitStride != 0 {
+		t.Fatalf("切点数 / 间隔 = %d / %d(行片 %d),want 8 / 8 且间隔整除行片数:改密度要同步容量模型 §4.1 与提案 H8",
+			routeTiDBPrefixSplitPoints, routeTiDBPrefixSplitStride, placement.RouteRowShards)
 	}
 
 	zones, storages, err := normalizeRouteTiDBPrepareIDs([]uint32{3, 1, 3}, []uint32{1000000, 1000000})

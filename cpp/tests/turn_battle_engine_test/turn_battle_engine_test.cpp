@@ -1597,10 +1597,11 @@ TEST(TurnBattleEngineTest, MaxRoundsFallsBackToDefaultAndAttackerLosesOnTimeout)
                                   uint64_t battleId) {
         TurnBattleEngine engine(provider);
         auto request = MakeRequest(battleId, turnbattle::kMatchModePveSolo, 7);
-        AddPlayer(request, kPlayerA, 0, 1000, 1000, /*strength*/0, /*armor*/10, /*crit*/0, /*speed*/240);
+        AddPlayer(request, kPlayerA, 0, 100000, 100000, /*strength*/0, /*armor*/10, /*crit*/0, /*speed*/240);
         EXPECT_TRUE(engine.Initialize(request));
         int rounds = 0;
-        while (engine.Outcome() == BATTLE_OUTCOME_ONGOING && rounds < 60) {
+        while (engine.Outcome() == BATTLE_OUTCOME_ONGOING &&
+               rounds < static_cast<int>(turnbattle::kDefaultMaxRounds) + 1) {
             engine.SubmitAction(kPlayerA, MakeAction(BATTLE_ACTION_DEFEND));
             engine.ResolveCurrentRound();
             ++rounds;
@@ -1617,7 +1618,7 @@ TEST(TurnBattleEngineTest, MaxRoundsFallsBackToDefaultAndAttackerLosesOnTimeout)
         return provider;
     };
 
-    {  // 副本缺行 → 默认 30 回合
+    {  // 副本缺行 → 默认 300 回合
         const auto [rounds, outcome] = playStalemate(makeTankProvider(kTankMonster), 9060);
         EXPECT_EQ(rounds, static_cast<int>(turnbattle::kDefaultMaxRounds));
         EXPECT_EQ(outcome, BATTLE_OUTCOME_SIDE_B_WIN);

@@ -34,7 +34,7 @@ type SeedResult uint8
 const (
 	SeedError            SeedResult = iota // Redis 出错 / 回复不认识:种子是否落地未知
 	SeedWritten                            // 父键原本不存在,已写入种子
-	SeedIdempotent                         // 父键已是这份种子:go-redis 读超时后重发了已在服务端执行过的 EVAL
+	SeedIdempotent                         // 父键已是这份种子:同一条 EVAL 被 go-redis 重发,或这个 id 以前写过种子(成因见 seedNewPlayerScript)
 	SeedParentExists                       // 父键已存在且不是这份种子:未写
 	SeedOwnerEpochExists                   // player:{id}:owner_epoch 已存在(玩家被派入过场景):未写
 )
@@ -62,7 +62,10 @@ func (r SeedResult) String() string {
 //   - owner_epoch 键不存在。scene_manager 每次把玩家派入场景都会 INCR 它、从不删除(shared/ownerepoch 包注释;C++ redis_client.h kSaveIfGuardLuaScript 的注释)。
 //     它在 = 这名玩家进过场景,scene 的存档才是真相,种子绝不能落。这一条兜住「种子请求在网络里滞留,
 //     落地时玩家早已入场并存过盘、父键又恰好被删(合服失效缓存)」这类交错;
-//   - 父键不存在。存在就不覆盖;若它恰好就是这份种子(go-redis 读超时后重发了已执行过的 EVAL),回 2 算成功。
+//   - 父键不存在。存在就不覆盖;若它恰好就是这份种子,回 2 算成功。回 2 有两种成因:go-redis 把已在服务端执行过的
+//     EVAL 又重发了一次;或者这个 id 以前铸出过、当时写的种子还在(id 复用)。建角调用点套了 1s 的 ctx 预算,
+//     读超时(3s)之后的重发到不了,只剩连接层快速失败(EOF / 连接被重置)后的重发,所以 idempotent 稳态
+//     应接近 0,持续出现要按 id 复用排查。
 //
 // 写入带 PX,与冷读组装的父键同一 TTL(playerAllDataParentTTL);scene 首次存盘的裸 SET 会去掉 TTL。
 // 两把键必须在同一实例:C++ 存盘的 owner_epoch 守卫脚本本来就同时访问它们(redis_client.h kSaveIfGuardLuaScript)。

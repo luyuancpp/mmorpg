@@ -41,6 +41,7 @@
    - **Phase 1(纯搬迁)**: 单 TiDB 集群承载现有 `zone_{N}_db` 逻辑库。库名派生、Kafka topic、write-behind 管线、per-key LWW 不变量**全部不动**,只换存储后端 + 建表方言。用 L1-L4 一致性测试和压测基线验收。
    - **Phase 2(全局化)**: 玩家表收敛到单一全局库,DBTask 生产端从"按本 zone 选 topic"改为"按 home_zone 选 topic";跨区带状态游玩 = redirect 重连 + 全局数据层直读,**废弃 `player_migrate` 的数据搬运职责**(冻结/单写栅栏语义保留)。
    - 每阶段是独立可回退的发布单元。
+5. **玩家数据仍可按职责纵向分表、分 PB**。TiDB 的 Region 拆分解决行之间的数据分布,不会替应用拆开一行中的玩家数据。拆分先确定原子保存范围,再看访问方式、大小与增长;容量预算、当前实现和公开实践见 §8。
 
 ## 1. 背景与问题
 
@@ -134,6 +135,8 @@ CREATE TABLE IF NOT EXISTS `player_database` (
 > - 选定前先在 TiDB staging 上按 AGENTS §6 压测「首日建角 + 存盘」,用 Key Visualizer 区分 index 与 record 流量。
 >
 > **6. 还有一项待核实。** proto2mysql v0.2.0 的 Save 生成的是 `REPLACE INTO` 还是 `INSERT … ON DUPLICATE KEY UPDATE`,仓库内说法矛盾、源码未核对。若是 REPLACE,非聚簇表每次存盘都会改写一次 PK 索引项,热点会从「首次插入」扩大到「所有首日玩家的存盘」。
+>
+> **2026-10-13 更正**:已核对 proto2mysql v0.2.0 源码,`Save` 按主键先 UPDATE,未命中再 INSERT,重复键再 UPDATE 并核对,既不是 REPLACE 也不是普通 ODKU。上段的 REPLACE 风险是假设,不能作为当前实现事实;具体 SQL 往返与条件写遗留见 [db-task-pipeline-bottlenecks.md](./db-task-pipeline-bottlenecks.md) §6.6 / §8。本次未编译或运行真库测试。
 >
 > 开服首日的完整瓶颈排序与开服前清单见 [tidb-phase1-and-launch-readiness.md](./tidb-phase1-and-launch-readiness.md)。
 
@@ -240,3 +243,89 @@ TiDB 方言在 proto2mysql 侧新增表选项(生成 §D3 的 DDL 形态):
 - [x] PROGRESS.md 当日条目
 - [ ] docs/ops/mysql-backup-pitr-runbook.md 的 TiDB 版(Phase 1 第 7 步,迁生产前必须完成)
 - [ ] data_service_role_and_scope.md(Phase 2 动 home_zone 持久化时再改)
+
+## 8. 玩家数据分 PB / 分表原则(2026-10-13 补充)
+
+> **范围与状态**:补充玩家数据模型的设计原则及当前源码事实,没有修改 proto、表结构或存盘管线,也没有新增压测结论。本文的 TiDB 迁移不自动触发玩家表重构。下述职责分组是后续设计参考,不表示对应的新表或按需加载能力已经实现。
+
+### 8.1 三种拆分分别解决什么问题
+
+| 概念 | 含义 | 是否缩小单行存档 |
+|---|---|---|
+| 业务 PB 拆分 | 背包、技能、属性等规则分别由子 message 表达 | 不一定;子 message 仍可落在同一 SQL 行的不同 BLOB 列 |
+| 玩家数据纵向分表 | 同一玩家的不同职责分别落入不同表、独立记录 | 是,但要处理读取范围、原子提交和恢复 |
+| 集合拆成多行 | 道具、邮件、历史等按实例或记录保存 | 是;同时支持局部更新、分页与生命周期管理 |
+
+TiDB 将一条 SQL 行编码成一个 KV 记录,再按 Key 范围管理 Region。增加 TiKV 节点不会把一行中的背包、技能等字段自动拆开。把 PB 拆成多个子 message 也不会自动获得跨表事务或局部保存能力。依据:[TiDB 数据映射](https://docs.pingcap.com/tidb/stable/tidb-computing/)、[单行大小配置](https://docs.pingcap.com/tidb/stable/tidb-configuration-file/#txn-entry-size-limit-new-in-v4010-and-v500)。
+
+采用固定、职责明确的存储模型。所有玩家按同一套契约保存数据;数据增长时评估该职责的表或集合模型,不为个别大玩家临时创建新表。新设计的 PB / 表名表达业务职责,不继续用 `_1`、`_2` 编号代替职责。存量编号与字段在完成兼容迁移之前保留。
+
+### 8.2 当前实现与分表方案的关系
+
+当前已具备「不同持久化 PB 对应不同表」的框架,但第二张玩家表尚未承载独立业务:
+
+| 当前入口 | 源码事实 | 对设计的含义 |
+|---|---|---|
+| [玩家表契约](../../proto/common/database/mysql_database_table.proto) | `player_database` 包含核心状态、货币、背包、任务和账本;`player_database_1` 只有 `player_id` 与压测探针 | 业务数据仍主要集中在一张表,不能把空的第二张表视为已经完成冷热拆分 |
+| [新号骨架](../../go/login/internal/logic/pkg/dataloader/new_player_seed.go) | `newPlayerAllDataSkeleton` 初始化两份子 message | 只构造当前读取契约的空数据,不负责选择分表策略 |
+| [登录聚合加载](../../go/login/internal/logic/pkg/dataloader/ensure_player_all_data_async.go) | 父键未命中时遍历两份子 message,读子缓存,缺失的各自发 DBTask,全部完成后写父键 | 当前没有按重要 / 次要数据延迟加载的实现 |
+| [玩家保存](../../cpp/libs/services/scene/player/system/player_lifecycle.cpp) | `SavePlayerToRedisImpl` 分别为两份子表发送写 DBTask | 每条任务独立保存一条记录,两张表之间没有共同原子提交 |
+| [装卸代码生成](../../tools/proto_generator/protogen/internal/generator/cpp/player_data.go) | 根据 `OptionIsPlayerDatabase` 为已声明的持久化消息生成装卸代码 | 字段归属由 proto 源契约决定,生成器不会自动按大小拆 PB |
+
+`player_database` 内的业务子 message 分别映射到 BLOB 列,不是把整份 `PlayerDatabase` 作为单个 BLOB。列分开仍属于同一 SQL 行,TiDB 单行预算须考虑整行大小。
+
+因此现有思路可以沿用,后续新增分块需说明它的职责、读写者、增长上限和原子保存范围。是否退役空的 `player_database_1` 是独立迁移事项,不能只删除骨架中的一行:旧 DBTask、子缓存、父键、快照、装卸代码及迁移工具都引用它。
+
+### 8.3 多大需要拆:区分数据库限制与项目预算
+
+没有统一的行业标准规定「单玩家达到 N KiB 必须分表」。应量测每个持久化单元,不能只看玩家全部数据的合计。小而频繁更新的状态和大量低频数据放在一起,也可能需要拆;低频、有界的大记录则须结合延迟与成本判断。
+
+| 约束 | 当前口径 | 用途 |
+|---|---|---|
+| TiDB 默认单行 KV 上限 | `6291456` 字节,即 6 MiB;可以配置 | 数据库保护限制,不是普通玩家存档的大小目标 |
+| 本仓 dev TiDB 配置 | [tidb.toml](../../deploy/tidb-config/tidb.toml) 为 32 MiB;[tikv.toml](../../deploy/tidb-config/tikv.toml) 同步放宽写请求限制 | 迁库及大记录的容量兜底,不能据此宣称普通玩家写 32 MiB 有可接受性能;目标集群仍须核实有效配置 |
+| 普通玩家单个 BLOB 列 | [db.yaml](../../go/db/etc/db.yaml) 的 `MaxColumnBytes=262144`,即 256 KiB | 业务组件的项目容量预算 |
+| 普通玩家单行 BLOB 估算合计 | 同配置的 `MaxRowBytes=1048576`,即 1 MiB | BlobGuard 所量 BLOB 列估算合计的项目容量预算,不包含标量及 SQL / KV 编码开销 |
+| 容量预警 / 拒写 | `WarnRatio=0.8`;`ReportOnly=false` | 达到预算 80% 预警,超过上限拒写;表级覆盖按实际配置生效 |
+
+**计量口径必须标明**:[BlobGuard](../../go/db/internal/dbguard/blob.go) 当前量顶层 message / bytes 字段,跳过顶层 repeated / map;先取子 message 的 `proto.Size` 或 bytes 长度,再用 Base64 编码长度估算,各列累加。已核对 proto2mysql v0.2.0 的 `pbconv/convert.go`:嵌套 message / bytes 写裸二进制,不做 Base64;闸门仍保留旧估算,通常约为 raw payload 的 4/3。因此不能把这个估算值当作实测 SQL / TiKV 行大小,也不能直接把 `proto.Size(PlayerAllData)` 当作它。迁库或调整预算前应核对实际依赖的编码、存量格式与统计口径;本次只记录差异,不修改闸门或放宽上限。
+
+容量预警触发调查,不自动移动字段或裁剪玩家资产。判定顺序:
+
+1. 明确增长来源及业务上限:道具数量、历史保留期、任务集合与账本窗口等。无限增长的历史优先拆成记录并设置归档 / 保留策略。
+2. 看列与行的大小分布(p95 / p99)、最大合法存档及增长趋势。分位数用于容量判断,最大合法数据用于验证不会拒写;不能只看平均值。
+3. 对照每类数据的加载范围、修改频率和实际重写量,以及序列化耗时、存盘 p99、Kafka lag / 消息限制与登录耗时。必须一起检查 PB、Kafka、Redis 和数据库的整条路径。
+4. 只有测量支持时才决定拆表、集合多行化或调整预算。声称收益须按 `AGENTS.md §6` 保存压测基线与对比,不以本节的预算代替性能证据。
+
+观测沿用 `db_blob_bytes{table,column}`、`db_blob_row_bytes{table}` 与 `db_blob_guard_total{table,column,level}`;禁止以 `player_id` 作指标 label。超限任务进入失败处理并可能最终进入死信,不等于成功保存。应在到达拒写上限前处理增长来源。
+
+### 8.4 合理的职责分组与原子保存范围
+
+| 职责分组(设计参考) | 数据示例 | 保存与拆分要求 |
+|---|---|---|
+| 玩家核心状态 | 等级、属性、技能等有界状态 | 按实际共同加载、共同更新的范围分组;不是每个组件都必须一张表 |
+| 玩家资产状态 | 货币、背包、奖励领取标记、资产通道账本、战斗结算幂等账本 | 相关资产与处理标记共同提交、共同恢复;当前保留同记录同 DBTask |
+| 普通成长进度 | 任务、成就、剧情进度 | 独立更新才有独立保存价值;改变资产的领取标记不能未经原子提交设计单独移出 |
+| 邮件与历史记录 | 邮件、战斗记录、操作历史 | 按独立记录保存,支持分页、期限与归档;不持续塞进登录必读的大存档 |
+
+例如,背包从玩家主表移到背包表只能缩小主表,背包本身仍会增长。若规模与访问方式确实需要多行模型,可按 `(player_id, item_id)` 保存道具实例,布局独立表达槽位、占位与排列,遵循 [实例 / 布局分层设计](./bag-instance-layout-split.md) 与 `AGENTS.md §11.6`。这是建模层次的分离,不要求实例与布局一定分成两张 SQL 表或两条 DBTask;两份子 message 可以同记录共同保存。布局源码不反查道具配置;由桥接层传入所需信息。旧持久化字段按兼容迁移方案处理,不能据规范推断当前 wire 结构已完全分离。该例是设计参考,没有授权或实现新的背包存储模型。
+
+**同一玩家、同一个 Kafka key、按顺序执行,均不等于跨表原子提交。** 购买、交易、领奖涉及的资产增减与幂等 / 领取标记必须要么共同生效,要么共同不生效。当前契约已在 [玩家表 proto](../../proto/common/database/mysql_database_table.proto) 明确要求 currency、bag、资产账本及结算账本同记录同 DBTask;本节不放宽该不变量。
+
+以后若因数据规模必须拆开这一原子单元,需要先设计完整的多表保存契约:同一数据库事务中复核所有权 / 版本并提交相关变更,明确重试幂等、故障回滚、Redis 发布与加载、回档恢复的一致性。现有每表独立 DBTask 不能直接提供这一能力。独立保存的分组也须明确一致性读取要求,不能把不同版本拼成一个假定为同版本的快照。相关同 epoch 旧写防护的遗留事项仍见 [存盘管线瓶颈](./db-task-pipeline-bottlenecks.md),本次没有实现条件写。
+
+### 8.5 与公开游戏存储实践的对照
+
+以下资料核对日期为 2026-10-13。它们展示不同存储产品中的设计取舍,不能解释为所有大厂都采用相同表结构、相同 PB 或统一大小阈值:
+
+- [AWS 公布的 EA 等游戏案例](https://aws.amazon.com/blogs/database/amazon-dynamodb-gaming-use-cases-and-design-patterns/)(2019):EA 将游戏状态、用户与道具数据放在多张表中;文章同时说明,需要细粒度访问时可读取 / 更新玩家数据的子集,并用事务处理关联记录。与本仓「持久化 PB 分组、分别落表」属于同一类建模思路,不证明 EA 使用本仓的 PB、DBTask 或缓存实现。
+- [AWS 官方垂直拆分建议](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/data-modeling-blocks.html#data-modeling-blocks-vertical-partitioning):按逻辑实体拆成可独立访问的小记录。DynamoDB 的 400 KB item 限制是该产品的约束,不能作为 TiDB 分表阈值;同一物理表的多条 item 也不等于本仓多张 SQL 表。
+- [Roblox 官方玩家数据建议](https://create.roblox.com/docs/cloud-services/data-stores/player-data-purchasing):相关会话数据放在同一存储单元可以减少请求、保证多值原子更新并简化回滚;购买验证、发放、处理标记须原子完成。其示例明确尚未经过热门游戏长期验证,本文引用的是官方设计建议,不称其为 Roblox 内部生产模型。
+
+本仓已有分表框架和资产共同保存的契约;实质业务分组、按需加载与保存仍须按真实需求设计和验证。当前空的第二张表不能作为这些能力已经完成的证据。
+
+### 8.6 后续落地的兼容与验证要求
+
+本次只补文档。实际拆分属于独立变更,须先明确字段真源、读写所有者、原子范围、数据量上限与验收标准,再决定表 / PB 形状。迁移设计覆盖 proto 源与生成器、建表、装卸、DBTask、缓存、快照 / 回档、合服与落点迁移工具、新旧版本并存和回退。上线字段不复用编号,删除使用 `reserved`;不得手改生成产物。验证按风险覆盖冷 / 热加载、失败、重放、幂等、并发旧写、原子恢复与兼容。
+
+Java 版:本节只记录共享设计原则及 C++/Go 当前源码,对应 Java 版本号为无,没有功能或客户端契约变更。不能推断 Java 当前已有相同表或 PB;以后实施业务拆分时按 `AGENTS.md §12` 核对另一版、同步客户端可见契约并登记 `PARITY.md`,内部存储按各自实现设计。

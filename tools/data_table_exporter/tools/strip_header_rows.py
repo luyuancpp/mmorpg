@@ -112,7 +112,7 @@ def main(argv: list[str] | None = None) -> int:
     cfg = load_config(args.config)
     index = index_schema_protos(cfg.schema_dir)
     if not index:
-        logger.error("%s 下没有任何权威 schema,没有可清的表", cfg.schema_dir)
+        logger.error("No authoritative schemas found under %s; no tables can be cleared", cfg.schema_dir)
         return 1
 
     backup_dir = Path(args.backup_dir) if args.backup_dir else _DEFAULT_BACKUP
@@ -126,23 +126,23 @@ def main(argv: list[str] | None = None) -> int:
             continue
         proto = index.get(sheet)
         if proto is None:
-            logger.info("跳过 %s:还没有权威 schema", xlsx.name)
+            logger.info("Skipping %s: no authoritative schema yet", xlsx.name)
             skipped += 1
             continue
         if _lock_file(xlsx).exists():
-            logger.error("跳过 %s:正被 Excel 打开(%s),关掉再跑",
+            logger.error("Skipping %s: currently open in Excel (%s); close it and rerun",
                          xlsx.name, _lock_file(xlsx).name)
             fail += 1
             continue
         try:
             schema = build_table_schema(proto, xlsx)
         except SchemaProtoError as exc:
-            logger.error("跳过 %s:权威 schema 现在就读不通 —— %s", xlsx.name, exc)
+            logger.error("Skipping %s: cannot read its authoritative schema: %s", xlsx.name, exc)
             fail += 1
             continue
 
         if args.dry_run:
-            logger.info("[dry-run] 将清 %s 的第 %s 行",
+            logger.info("[dry-run] Would clear rows in %s: %s",
                         xlsx.name,
                         "/".join(str(r) for r in sorted(
                             {v for k, v in cfg.metadata_rows.items()
@@ -154,13 +154,13 @@ def main(argv: list[str] | None = None) -> int:
         backup_dir.mkdir(parents=True, exist_ok=True)
         shutil.copy2(xlsx, backup_dir / xlsx.name)
         cleared, written = strip_one(xlsx, sheet, schema, cfg, not args.no_decorate)
-        logger.info("%-26s 清掉 %3d 个元数据格,写回 %2d 条中文说明",
+        logger.info("%-26s cleared %3d metadata cells, wrote back %2d Chinese descriptions",
                     xlsx.name, cleared, written)
         done += 1
 
-    logger.info("完成:%d 张处理,%d 张跳过(无 schema),%d 张失败", done, skipped, fail)
+    logger.info("Done: %d tables processed, %d skipped (no schema), %d failed", done, skipped, fail)
     if not args.dry_run and done:
-        logger.info("原文件备份在 %s;也可以 git checkout -- data/ 还原", backup_dir)
+        logger.info("Original files are backed up in %s; git checkout -- data/ can also restore them", backup_dir)
     return 1 if fail else 0
 
 

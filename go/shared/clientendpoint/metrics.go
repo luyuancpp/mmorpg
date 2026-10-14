@@ -48,7 +48,7 @@ func register() {
 		if err := prometheus.Register(selectTotal); err != nil {
 			var already prometheus.AlreadyRegisteredError
 			if !errors.As(err, &already) {
-				logx.Errorf("[clientendpoint] 指标注册失败: %v", err)
+				logx.Errorf("[clientendpoint] Failed to register metrics: %v", err)
 			}
 		}
 	})

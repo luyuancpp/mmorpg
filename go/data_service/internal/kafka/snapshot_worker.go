@@ -203,6 +203,9 @@ func (w *snapshotPartitionWorker) add(b *snapshotBatch, msg kafkago.Message) {
 	// 含坏消息:单条大小分布是核对生产端约 1MB 消息上限要的数据。
 	metrics.ObserveKafkaConsumerMessageBytes(ConsumerSnapshot, len(msg.Value))
 	// 坏消息在 decode 里记日志 + outcome 计数;好消息的 Value 已拷进 row.Data。
+	// 计数与日志在进批时记,不等提交:批量模式下同批前面有行失败时这条坏消息不会被提交,重建重放会重复记
+	// (与 TxLogConsumer 同口径,见告警 DataServiceAuditMessagesSkipped 的说明)。默认配置(批 1 条)下坏消息
+	// 独占一批并立即提交,排在失败行后面的消息留在通道里不会被 decode,不受影响。
 	row, ok := w.c.decode(msg)
 	// 批里留着的 msgs 只用于提交与日志:kafka-go 提交只读 Topic / Partition / Offset(Topic 必须保留)。
 	// 不剥掉 Value,每条快照在批里就有两份(msg.Value + row.Data),内存翻倍。

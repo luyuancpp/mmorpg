@@ -201,7 +201,7 @@ func TestRouteSchema_CheckConstraintsEnforced(t *testing.T) {
 	db := storetest.NewMigratedDB(t)
 	skipUnlessMySQLEnforcesCheck(t, db)
 
-	// 每条违例 INSERT 都带**正确的** route_shard(这些 id < 16,片 = id):否则先撞 1364 或 chk_route_shard,
+	// 每条违例 INSERT 都带**正确的** route_shard(这些 id < 64,片 = id):否则先撞 1364 或 chk_route_shard,
 	// 用例就不再证它想证的那一条约束。
 	for _, tc := range []struct {
 		name string
@@ -215,7 +215,7 @@ func TestRouteSchema_CheckConstraintsEnforced(t *testing.T) {
 		{"version为0", "INSERT INTO player_route (route_shard, player_id, storage_id, placement_version, rev, created_at_ms, updated_at_ms) VALUES (4, 4, 7, 0, 1, 1, 1)", ""},
 		{"冻结却没有storage", "INSERT INTO player_route (route_shard, player_id, frozen_run_id, rev, created_at_ms, updated_at_ms) VALUES (5, 5, 'run', 1, 1, 1)", ""},
 		{"rev为0", "INSERT INTO player_route (route_shard, player_id, home_zone, rev, created_at_ms, updated_at_ms) VALUES (6, 6, 7, 0, 1, 1)", ""},
-		// G1a:player_id 的唯一性靠它(主键是 (route_shard, player_id)),1 % 16 = 1 ≠ 2。
+		// G1a:player_id 的唯一性靠它(主键是 (route_shard, player_id)),1 % 64 = 1 ≠ 2。
 		{"route_shard与player_id不符", "INSERT INTO player_route (route_shard, player_id, home_zone, rev, created_at_ms, updated_at_ms) VALUES (2, 1, 7, 1, 1, 1)", "chk_route_shard"},
 		{"围栏run_id与过期时间不成对", "INSERT INTO zone_merge_fence (zone_id, shard, run_id) VALUES (7, 0, 'run')", ""},
 	} {
@@ -537,7 +537,7 @@ func TestRouteStore_LockWaitBoundedAfterClientCancel(t *testing.T) {
 
 	const zone uint32 = 7
 	// 同一**围栏**分片:4001 % 8 == 4009 % 8 == 1(用例要的是围栏分片锁的关系);
-	// 两者的**行**分片(player_id % 16)分别是 1 与 9,与本用例无关。
+	// 两者的**行**分片(player_id % 64)分别是 33 与 41(4001 = 62×64 + 33),与本用例无关。
 	const p, q uint64 = 4001, 4009
 	require.Equal(t, p%uint64(placement.DefaultRouteFenceShards), q%uint64(placement.DefaultRouteFenceShards))
 
@@ -833,7 +833,7 @@ func TestRouteStore_ScanRoutesKeysetCoversAll(t *testing.T) {
 	assert.Len(t, ordered, total, "翻页漏了行")
 	assert.True(t, sort.SliceIsSorted(ordered, func(i, j int) bool { return ordered[i].Less(ordered[j]) }),
 		"必须按聚簇键 (route_shard, player_id) 升序")
-	assert.Len(t, shardsSeen, int(placement.RouteRowShards), "2500 个连续 id 必然覆盖全部 16 个行片")
+	assert.Len(t, shardsSeen, int(placement.RouteRowShards), "2500 个连续 id 必然覆盖全部 64 个行片")
 }
 
 // ── G1a:建池探针、错片行、按键读的执行计划、真 TiDB ───────────────────────────────
@@ -857,10 +857,11 @@ func TestRouteStore_ProbeRejectsUnenforcedShardCheck(t *testing.T) {
 }
 
 // TestRouteStore_ShardMismatchRowFailsClosed(评审 M1):CHECK 关掉期间被写进来的错片行 (3, 6) ——
-//  ① 全表键集扫描 ScanRoutes 看得见它,报 ErrRouteShardMismatch;
-//  ② 按 id 点读 GetRoutes([6]) 按正确片 (6, 6) 查,**看不见它、表现为缺席**(结构性局限,不是 bug);
-//  ③ 于是导入会把 6 当新行再插一条 (6, 6):同一个 player_id 两行 —— 这就是 P4 必须在建池时 fail-closed 的理由;
-//  ④ 之后 ScanRoutes 仍报错((3, 6) 排在 (6, 6) 之前)。
+//
+//	① 全表键集扫描 ScanRoutes 看得见它,报 ErrRouteShardMismatch;
+//	② 按 id 点读 GetRoutes([6]) 按正确片 (6, 6) 查,**看不见它、表现为缺席**(结构性局限,不是 bug);
+//	③ 于是导入会把 6 当新行再插一条 (6, 6):同一个 player_id 两行 —— 这就是 P4 必须在建池时 fail-closed 的理由;
+//	④ 之后 ScanRoutes 仍报错((3, 6) 排在 (6, 6) 之前)。
 func TestRouteStore_ShardMismatchRowFailsClosed(t *testing.T) {
 	db := storetest.NewMigratedDB(t)
 	skipUnlessMySQLEnforcesCheck(t, db)
@@ -940,6 +941,11 @@ func routeKeyArgs(ids []uint64) []uint64 {
 // 覆盖面:单个行构造器(MySQL 的行构造器 range 优化写明要求「多于一个」,单个时是否被改写成等值未核实)、3 个、
 // 1000 个 + FOR UPDATE(eq_range_index_dive_limit=200 之后改用统计估算;range_optimizer_max_mem_size 超限会静默退回
 // 全表并只给 3170 警告)、R12 的中段游标与零游标(覆盖全表,最容易退化成 ALL + filesort)。
+//
+// 夹具取 20 批而不是刚够两批,原因见函数体。同一条成本规律对生产也成立(推算,未实跑):表还不到批量的几倍时,
+// 真实导入的 R8 同样会走全表 / 全索引扫描 + FOR UPDATE。P1 导入时全部副本是 redis 模式、库上没有并发 W1,无害;
+// P3 的 -allow-db-first 导入发生在表远大于批量之后。放大夹具后若仍是 index / ALL,连同 SELECT VERSION() 与五份计划
+// 原样回报,不改 SQL、不改断言。
 func TestRouteStore_KeyedReadsUsePrimaryRange(t *testing.T) {
 	db := storetest.NewMigratedDB(t)
 	var version string
@@ -950,9 +956,11 @@ func TestRouteStore_KeyedReadsUsePrimaryRange(t *testing.T) {
 	st := newRouteStore(t, db)
 	ctx := context.Background()
 
-	// 先导入 2000 行,让优化器有统计可依,不因为表小而选全表扫描。
+	// 先导入 2 万行:1000 对的 IN 只占全表 5%。表太小时(行数不到批量的约 3.4 到 10 倍)全表扫描本来就比 1000 次
+	// 点查便宜,会掩盖要测的事 —— range 优化是否被 eq_range_index_dive_limit / range_optimizer_max_mem_size 打回。
+	// 倍数按 MySQL 8.0.36 的成本公式推算(未实跑):1000 个唯一区间约 1000×(0.25~1.0)+100,全表基线约 0.1×行数。
 	const first uint64 = 100001
-	const total = 2 * store.RouteBatchLimit
+	const total = 20 * store.RouteBatchLimit
 	for lo := 0; lo < total; lo += store.RouteBatchLimit {
 		batch := make([]store.RouteImportRow, 0, store.RouteBatchLimit)
 		for i := lo; i < lo+store.RouteBatchLimit; i++ {
@@ -980,6 +988,10 @@ func TestRouteStore_KeyedReadsUsePrimaryRange(t *testing.T) {
 		return ids
 	}
 
+	// R12 的中段游标落在正中间那一片(由 placement.RouteRowShards 算,不写片号字面量):游标之后约剩半张表。
+	// 16 片时这里写的是片 5;照抄到 64 片下,游标只跳过表头不到一成,算不上「中段」。
+	midShard := uint64(placement.RouteRowShards / 2)
+
 	for _, tc := range []struct {
 		name   string
 		stmt   string
@@ -989,7 +1001,7 @@ func TestRouteStore_KeyedReadsUsePrimaryRange(t *testing.T) {
 		{name: "R13_3个行构造器", stmt: inlineRouteArgs(t, store.RouteSelectRowsSQLForTest(3, false), routeKeyArgs(sortedIDs(3)))},
 		{name: "R8_1000个行构造器_FOR_UPDATE",
 			stmt: inlineRouteArgs(t, store.RouteSelectRowsSQLForTest(store.RouteBatchLimit, true), routeKeyArgs(sortedIDs(store.RouteBatchLimit)))},
-		{name: "R12_中段游标", stmt: inlineRouteArgs(t, store.RouteScanSQLForTest, []uint64{5, 5, first, 100}), noSort: true},
+		{name: "R12_中段游标", stmt: inlineRouteArgs(t, store.RouteScanSQLForTest, []uint64{midShard, midShard, first, 100}), noSort: true},
 		{name: "R12_零游标", stmt: inlineRouteArgs(t, store.RouteScanSQLForTest, []uint64{0, 0, 0, 100}), noSort: true},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -1008,6 +1020,10 @@ func TestRouteStore_KeyedReadsUsePrimaryRange(t *testing.T) {
 // TestRouteStore_TiDBClusteredShardsAndPresplit 只在真 TiDB 上跑(本机 deploy/docker-compose.tidb.yml,且建表前
 // `SET GLOBAL tidb_enable_check_constraint=ON`):两张表是聚簇主键;P4 在 TiDB 上拿到 3819 + 约束名;注册后全表扫描覆盖;
 // tidb-prepare 预切出 Region、再跑一次不报错(幂等)。二次预切期间并发建角的结果(是否出现 8028)只记录不断言(HR9 取证)。
+//
+// 末尾给按键读取证:R13(行构造器 IN)与 R12(键集翻页的中段游标 / 零游标)的 EXPLAIN 原样留档,R13 与 R12 中段游标
+// 不许全表扫描。MySQL 的 EXPLAIN 用例在 TiDB 上整体 Skip,这里是 TiDB 一侧唯一的取证。全表扫描的算子名凭记忆
+// 【未核实】,所以先用一条必然全表扫描的对照语句校准:对照里认不出它时用例报红,不让「不含」空过。
 //
 // 不能用 NewMigratedDB:全局库的整套迁移在 TiDB 上会因 player_snapshot 的可空唯一键失败,只建路由表。
 func TestRouteStore_TiDBClusteredShardsAndPresplit(t *testing.T) {
@@ -1081,8 +1097,10 @@ func TestRouteStore_TiDBClusteredShardsAndPresplit(t *testing.T) {
 		t.Logf("%s → %d regions", stmt, n)
 		return n
 	}
-	assert.GreaterOrEqual(t, countRegions("SHOW TABLE player_route REGIONS"), 16)
-	assert.GreaterOrEqual(t, countRegions("SHOW TABLE player_route INDEX idx_route_home REGIONS"), 16)
+	// 行数据每片一段(placement.RouteRowShards 段);idx_route_home 每个 zone 的切点数见 route_tidb.go
+	// (这里只有 1 个 zone)。两个下限都不写字面量。
+	assert.GreaterOrEqual(t, countRegions("SHOW TABLE player_route REGIONS"), int(placement.RouteRowShards))
+	assert.GreaterOrEqual(t, countRegions("SHOW TABLE player_route INDEX idx_route_home REGIONS"), int(store.RouteTiDBPrefixSplitPointsForTest))
 	assert.GreaterOrEqual(t, countRegions("SHOW TABLE zone_merge_fence REGIONS"), 2)
 
 	// 再跑一次必须不报错(幂等)。期间并发建角:ALTER … ATTRIBUTES 是 DDL,可能让在途悲观事务以 8028 失败(HR9),
@@ -1114,26 +1132,54 @@ func TestRouteStore_TiDBClusteredShardsAndPresplit(t *testing.T) {
 		return store.RouteScanCursorAt(store.RouteRow{PlayerID: ids[i]}).Less(store.RouteScanCursorAt(store.RouteRow{PlayerID: ids[j]}))
 	})
 	stmt := inlineRouteArgs(t, store.RouteSelectRowsSQLForTest(len(ids), false), routeKeyArgs(ids))
-	planRows, err := db.Raw.QueryContext(ctx, "EXPLAIN "+stmt)
-	require.NoError(t, err)
-	var plan strings.Builder
-	cols, err := planRows.Columns()
-	require.NoError(t, err)
-	for planRows.Next() {
-		vals := make([]sql.NullString, len(cols))
-		ptrs := make([]any, len(cols))
-		for i := range vals {
-			ptrs[i] = &vals[i]
+
+	// explainTiDB 跑一次 EXPLAIN,把整份计划(每行的各列用 " | " 连起来)原样留档并返回。
+	// 不假设列名、列数与算子所在的列:判据只在整份文本上找子串。
+	explainTiDB := func(name, query string) string {
+		t.Helper()
+		planRows, err := db.Raw.QueryContext(ctx, "EXPLAIN "+query)
+		require.NoError(t, err, name)
+		defer planRows.Close()
+		cols, err := planRows.Columns()
+		require.NoError(t, err, name)
+		var plan strings.Builder
+		for planRows.Next() {
+			vals := make([]sql.NullString, len(cols))
+			ptrs := make([]any, len(cols))
+			for i := range vals {
+				ptrs[i] = &vals[i]
+			}
+			require.NoError(t, planRows.Scan(ptrs...), name)
+			for _, v := range vals {
+				plan.WriteString(v.String)
+				plan.WriteString(" | ")
+			}
+			plan.WriteString("\n")
 		}
-		require.NoError(t, planRows.Scan(ptrs...))
-		for _, v := range vals {
-			plan.WriteString(v.String)
-			plan.WriteString(" | ")
-		}
-		plan.WriteString("\n")
+		require.NoError(t, planRows.Err(), name)
+		t.Logf("%s 在 TiDB 上的计划:\n%s", name, plan.String())
+		return plan.String()
 	}
-	require.NoError(t, planRows.Err())
-	planRows.Close()
-	t.Logf("R13 在 TiDB 上的计划:\n%s", plan.String())
-	assert.NotContains(t, plan.String(), "TableFullScan", "R13 不许全表扫描")
+
+	// TiDB 把全表 / 全索引扫描的算子叫 TableFullScan / IndexFullScan(凭记忆,【未核实】),判据取两者共有的子串。
+	// 先拿一条必然全表扫描的语句校准:它的计划里认得出这个子串,下面的「不含」才构成证据;认不出就报红,由人按留档的
+	// 计划判读,不让否定式断言在不认识的格式上空过。
+	const tidbFullScanOp = "FullScan"
+	assert.Containsf(t, explainTiDB("对照(无条件读全表)", "SELECT * FROM player_route"), tidbFullScanOp,
+		"对照语句必然全表扫描,计划里却没有 %q:这一版 TiDB 的 EXPLAIN 格式与用例的假设不同,"+
+			"下面两条「不含」不构成证据,请按留档的计划人工判读", tidbFullScanOp)
+	assert.NotContains(t, explainTiDB("R13", stmt), tidbFullScanOp, "R13 不许全表扫描")
+
+	// R12(键集翻页)。中段游标取真实翻页会用到的那一个:从头翻 20 行(此时至少已有 40 行)的最后一行,
+	// 片由 RouteScanCursorAt(即 placement.RouteRowShard)算,不写片号字面量。实参顺序同 R12:游标片、游标片、
+	// 游标 player_id、limit。零游标本来就覆盖全表,只留档不断言。
+	firstHalf, err := st.ScanRoutes(ctx, store.RouteScanCursor{}, 20)
+	require.NoError(t, err)
+	require.Len(t, firstHalf, 20)
+	scanStmt := func(cursor store.RouteScanCursor) string {
+		return inlineRouteArgs(t, store.RouteScanSQLForTest, []uint64{uint64(cursor.Shard), uint64(cursor.Shard), cursor.PlayerID, 7})
+	}
+	assert.NotContains(t, explainTiDB("R12 中段游标", scanStmt(store.RouteScanCursorAt(firstHalf[len(firstHalf)-1]))), tidbFullScanOp,
+		"R12 中段游标不许全表扫描(否则键集翻页每页都从表头扫起,audit 方向 A 与全量预热是 O(N²/页大小))")
+	explainTiDB("R12 零游标", scanStmt(store.RouteScanCursor{}))
 }

@@ -62,7 +62,7 @@ func (c *ConnCache) Dial(endpoint string) (*grpc.ClientConn, error) {
 	c.conns[endpoint] = conn
 	c.mu.Unlock()
 
-	logx.Infof("[scenenode] 已连接节点 %s", endpoint)
+	logx.Infof("[scenenode] Connected to node %s", endpoint)
 	return conn, nil
 }
 
@@ -74,7 +74,7 @@ func (c *ConnCache) Remove(endpoint string) {
 	if conn, ok := c.conns[endpoint]; ok {
 		_ = conn.Close()
 		delete(c.conns, endpoint)
-		logx.Infof("[scenenode] 已移除节点连接 %s", endpoint)
+		logx.Infof("[scenenode] Removed node connection %s", endpoint)
 	}
 }
 

@@ -347,7 +347,7 @@ func runBattleSmokeFighter(cfg *config.Config, bot *battleSmokeBot, stats *metri
 	select {
 	case <-spectateReady:
 	case <-time.After(30 * time.Second):
-		zap.L().Warn("[battle-smoke] A 等观战就绪超时,仍开自动战斗以推进")
+		zap.L().Warn("[battle-smoke] A timed out waiting for spectating readiness; starting automatic battle to continue")
 	}
 
 	zap.L().Info("[battle-smoke] A battle started, enabling auto battle",

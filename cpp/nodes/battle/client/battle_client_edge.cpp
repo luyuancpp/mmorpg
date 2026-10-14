@@ -24,7 +24,7 @@ namespace
 
     void OnDirectConnHighWaterMark(const muduo::net::TcpConnectionPtr &conn, size_t oldLen)
     {
-        LOG_WARN << "battle 直连输出缓冲超高水位,断连: peer=" << conn->peerAddress().toIpPort()
+        LOG_WARN << "battle direct connection output buffer exceeded high water mark;disconnecting: peer=" << conn->peerAddress().toIpPort()
                  << " pending=" << oldLen << " threshold=" << kDirectConnHighWaterMark;
         conn->forceClose();
     }
@@ -42,7 +42,7 @@ namespace
         uint64_t &count = countsByReason[reason];
         if ((count++ & 0x3FF) == 0)
         {
-            LOG_WARN << "battle 直连拒绝(采样): reason=" << reason
+            LOG_WARN << "battle direct connection rejected(sampled): reason=" << reason
                      << " latest_peer=" << (conn ? conn->peerAddress().toIpPort() : std::string("<null>"))
                      << " reason_total=" << count;
         }
@@ -94,7 +94,7 @@ void BattleClientEdge::DisconnectAll(const char *reason)
     {
         return;
     }
-    LOG_INFO << "battle 直连全部断开: count=" << sessions_.size() << " reason=" << reason;
+    LOG_INFO << "battle all direct connections disconnected: count=" << sessions_.size() << " reason=" << reason;
     for (auto &[connId, session] : sessions_)
     {
         session.handshakeTimer.Cancel();
@@ -202,7 +202,7 @@ void BattleClientEdge::HandleEstablished(const muduo::net::TcpConnectionPtr &con
     static uint64_t acceptedCount = 0;
     if ((acceptedCount++ & 0x3FF) == 0)
     {
-        LOG_INFO << "battle 直连接入(采样): latest_conn_id=" << connId
+        LOG_INFO << "battle direct connection accepted(sampled): latest_conn_id=" << connId
                  << " latest_peer=" << conn->peerAddress().toIpPort()
                  << " accepted_total=" << acceptedCount
                  << " current=" << sessions_.size();
@@ -228,7 +228,7 @@ void BattleClientEdge::HandleClosed(const muduo::net::TcpConnectionPtr &conn)
     {
         // 只解绑"仍指向本连接"的直连,晚到的旧连接 FIN 不能把重连后的新连接摘掉
         BattleRoomManager::Instance().DetachDirectConnection(session.battleId, session.playerId, conn);
-        LOG_INFO << "battle 直连断开: battle_id=" << session.battleId
+        LOG_INFO << "battle direct connection disconnected: battle_id=" << session.battleId
                  << " player_id=" << session.playerId
                  << " role=" << ::eBattleTicketRole_Name(session.role)
                  << " peer=" << conn->peerAddress().toIpPort()
@@ -349,7 +349,7 @@ void BattleClientEdge::OnTokenVerify(const muduo::net::TcpConnectionPtr &conn,
     session->handshakeTimer.Cancel();
 
     SendVerifyReply(conn, true, "", payload.battle_id());
-    LOG_INFO << "battle 直连握手成功: battle_id=" << payload.battle_id()
+    LOG_INFO << "battle direct connection handshake succeeded: battle_id=" << payload.battle_id()
              << " player_id=" << payload.player_id()
              << " role=" << ::eBattleTicketRole_Name(payload.role())
              << " peer=" << conn->peerAddress().toIpPort()
@@ -370,7 +370,7 @@ bool BattleClientEdge::RegisterIllegalPacket(DirectSession &session, const muduo
     // 压测刻意发坏包时对两个客户端面一起生效,不再各自硬编码。
     if (IllegalPacketCounter::RegisterAndShouldKill(session.illegalPacketCount))
     {
-        LOG_WARN << "battle 直连非法包达阈值,断连: reason=" << reason
+        LOG_WARN << "battle direct connection invalid packet threshold reached;disconnecting: reason=" << reason
                  << " battle_id=" << session.battleId << " player_id=" << session.playerId
                  << " count=" << session.illegalPacketCount;
         conn->forceClose();

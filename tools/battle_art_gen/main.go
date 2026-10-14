@@ -136,7 +136,7 @@ func main() {
 		err = fmt.Errorf("未知 -mode %q(可选 battle / characters / monsters)", *mode)
 	}
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "错误:", err)
+		fmt.Fprintln(os.Stderr, "Error:", err)
 		os.Exit(1)
 	}
 }
@@ -212,9 +212,9 @@ func run(outRoot, buffTablePath, fontPath string, seed uint64, buffCount int) er
 		return err
 	}
 
-	fmt.Printf("完成:Fx %d 条 / UI %d 张 / 数字字集 %d 套 / buff 图标 %d 个,清单 %s\n",
+	fmt.Printf("Complete: %d Fx entries / %d UI images / %d digit atlases / %d buff icons, manifest %s\n",
 		fxCount, uiCount, digitCount, buffN, mpath)
-	fmt.Printf("总文件数(含 digits_meta.json 与 ART_MANIFEST.json):%d\n", mf.FileCount)
+	fmt.Printf("Total files (including digits_meta.json and ART_MANIFEST.json): %d\n", mf.FileCount)
 	return nil
 }
 
@@ -244,7 +244,7 @@ func genFx(outRoot string, seed uint64, mf *Manifest) (int, error) {
 			FPSHint: d.FPS, Pivot: []float64{d.Pivot[0], d.Pivot[1]}, Desc: d.Desc,
 		})
 		n++
-		fmt.Printf("  Fx  %-18s %4d×%d  %d 帧 @%d FPS\n", d.ID, stripW, fxSize, d.Frames, d.FPS)
+		fmt.Printf("  Fx  %-18s %4dx%d  %d frames @%d FPS\n", d.ID, stripW, fxSize, d.Frames, d.FPS)
 	}
 	return n, nil
 }
@@ -319,13 +319,13 @@ func genDigits(outRoot, fontPath string, mf *Manifest) (int, error) {
 			CellWidth: digitCellW, CellHeight: digitCellH, Desc: v.Note,
 		})
 		n++
-		fmt.Printf("  字集 %-17s %4d×%d  %d 格\n", v.Name, b.Dx(), b.Dy(), len(digitChars))
+		fmt.Printf("  Atlas %-17s %4dx%d  %d cells\n", v.Name, b.Dx(), b.Dy(), len(digitChars))
 	}
 	mf.Digits = meta
 	if err := writeJSON(filepath.Join(outRoot, "UI", "digits_meta.json"), meta); err != nil {
 		return n, err
 	}
-	fmt.Printf("  字集字体:%s\n", usedPath)
+	fmt.Printf("  Atlas font: %s\n", usedPath)
 	return n, nil
 }
 
@@ -365,7 +365,7 @@ func genBuffs(outRoot, tablePath string, want int, mf *Manifest) (int, string, s
 		})
 		n++
 	}
-	fmt.Printf("  Buff %d 个图标 %d×%d(%s)\n", n, buffIconSize, buffIconSize, tableNote)
+	fmt.Printf("  Buff %d icons %dx%d(%s)\n", n, buffIconSize, buffIconSize, tableNote)
 	return n, tableNote, catNote, nil
 }
 

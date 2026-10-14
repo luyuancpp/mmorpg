@@ -197,8 +197,8 @@ func (a *AssetChannel) Start(ctx context.Context, etcd *clientv3.Client) {
 			// 装配层已保证:AssetOp.Enabled=true 走到这里 Pipeline 必非 nil(密钥不可用会在
 			// NewServiceContext 就拒启),Enabled=false 则整个 AssetChannel 是 nil、上面就返回了。
 			// 留这条分支只为"将来有人绕开装配层直接构造"时不静默起半个循环。
-			logx.Error("[trade] 资产通道装配不完整(Pipeline 为空):只起 scene 节点镜像,不起重投循环 —— " +
-				"这不该发生,说明有人绕开了 NewServiceContext 的开关与密钥校验")
+			logx.Error("[trade] Asset channel wiring incomplete (Pipeline nil): starting only scene node mirror, no redelivery loop -- " +
+				"this should not happen; NewServiceContext switch and key validation were bypassed")
 			return
 		}
 		a.Pipeline.Start(loopCtx)
@@ -225,7 +225,7 @@ func (a *AssetChannel) Close() {
 		}
 		if a.Redis != nil {
 			if err := a.Redis.Close(); err != nil {
-				logx.Errorf("[trade] 共享 Redis 关闭失败: %v", err)
+				logx.Errorf("[trade] Failed to close shared Redis: %v", err)
 			}
 		}
 	})
@@ -240,9 +240,9 @@ func (a *AssetChannel) WarmAssetOpIDSegment() {
 	ctx, cancel := context.WithTimeout(context.Background(), assetOpIDWarmTimeout)
 	defer cancel()
 	if err := a.OpIDs.Warm(ctx); err != nil {
-		logx.Errorf("[trade] op_id 号段暂不可用(data_service.AllocateIdSegment biz_tag=%s): %v "+
-			"—— 在 data_service 答复之前,上架托管会以 kServiceUnavailable 失败;"+
-			"生产环境还要确认 %s 已在 data_service 的 BootstrapTags 里", AssetOpIDBizTag, err, AssetOpIDBizTag)
+		logx.Errorf("[trade] op_id segment temporarily unavailable (data_service.AllocateIdSegment biz_tag=%s): %v "+
+			"-- listing escrow will fail with kServiceUnavailable until data_service responds; "+
+			"in production also confirm %s is in data_service BootstrapTags", AssetOpIDBizTag, err, AssetOpIDBizTag)
 	}
 }
 

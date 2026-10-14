@@ -266,7 +266,7 @@ function Get-FixtureContext {
 
 # ─── 用例 ───
 
-Write-Host '=== gate 排空脚本:契约与入口校验 ==='
+Write-Host '=== gate drain script: contract and entry validation ==='
 
 Test-Case '参数块:必备参数齐全,TTL 与等待预算默认 1800' {
     $params = @{}
@@ -428,7 +428,7 @@ Test-Case '入口校验:TTL 与等待预算必须大于 Deadline 并留出 drain
 
 # ─── 定位 ───
 
-Write-Host '=== gate 排空脚本:login 配置、Pod 与 etcd 定位 ==='
+Write-Host '=== gate drain script: login configuration, Pod and etcd lookup ==='
 
 Test-Case 'login 配置:缺 GateDrain 块取结构体默认值,etcd 取 Registry.Etcd.Hosts' {
     Reset-DrainFixture
@@ -564,7 +564,7 @@ Test-Case '同 zone 候选:按 login 口径选地址、去重;一台别的候选
 
 # ─── 标记与等待 ───
 
-Write-Host '=== gate 排空脚本:draining 标记与 drained 轮询 ==='
+Write-Host '=== gate drain script: draining marks and drained polling ==='
 
 Test-Case '新标记:取服务器时间,一次 EVAL 里判定其它候选、清残留 drained、SET NX EX' {
     Reset-DrainFixture
@@ -762,7 +762,7 @@ Test-Case 'redis-cli --no-raw 回复解析:nil / 字符串 / 整数 / 状态可�
 
 # ─── 删 Pod ───
 
-Write-Host '=== gate 排空脚本:删 Pod、清标记、等重建 ==='
+Write-Host '=== gate drain script: Pod deletion, mark cleanup and replacement wait ==='
 
 function Set-ReplacementScenario {
     param([string]$AssertPod, [string]$AssertEtcd, [string[]]$AfterPods, [string[]]$AfterEtcd)
@@ -843,7 +843,7 @@ Test-Case '删 Pod:清标记抛错只记 MarksCleared=false;就绪超时带在 R
     $result = Invoke-GatePodReplacement -Login $context.Login -Pod $context.Pod -Record $context.Record -ReadyTimeoutSeconds 30 `
         -WarningVariable warned -WarningAction SilentlyContinue 6>$null
     Assert-True -Condition (-not $result.MarksCleared) -Because '清除失败不能报成已清'
-    Assert-Match -Text ($warned -join ' ') -Pattern '清除排空标记失败.*Could not connect' -Because '失败原因要可见'
+    Assert-Match -Text ($warned -join ' ') -Pattern 'Failed to clear drain marks.*Could not connect' -Because '失败原因要可见'
     Assert-Equal -Expected '1790000000' -Actual $script:Redis['gate:3:draining'] -Because '标记仍在'
     Assert-True -Condition ($null -eq $result.ReadyError -and $script:Events -contains 'get:sts') -Because '清除失败不影响等重建'
 
@@ -898,17 +898,17 @@ Test-Case '等重建:旧 Pod 仍在或 STS 未满都要等到超时报错,不当
 
 # ─── 告警与演练 ───
 
-Write-Host '=== gate 排空脚本:deadline 告警、DryRun 与进程截止 ==='
+Write-Host '=== gate drain script: deadline warnings, DryRun and process deadlines ==='
 
 Test-Case 'reason=deadline:醒目告警带上剩余在线数;读不到在线数也照样告警' {
     Reset-DrainFixture
     $context = Get-FixtureContext
     Write-GateDeadlineWarning -Login $context.Login -Pod $context.Pod -Record $context.Record -WarningVariable warned -WarningAction SilentlyContinue 6>$null
-    Assert-Match -Text ($warned -join ' ') -Pattern 'drained=deadline.*仍有玩家在线\(5\).*断线' -Because '运维必须看到删 Pod 会断掉多少人'
+    Assert-Match -Text ($warned -join ' ') -Pattern 'drained=deadline.*players remain online \(5\).*disconnect' -Because '运维必须看到删 Pod 会断掉多少人'
     $script:EtcdResponses.Clear()
     $script:EtcdResponses.Enqueue('not json')
     Write-GateDeadlineWarning -Login $context.Login -Pod $context.Pod -Record $context.Record -WarningVariable warnedAgain -WarningAction SilentlyContinue 6>$null
-    Assert-Match -Text ($warnedAgain -join ' ') -Pattern 'drained=deadline.*未知' -Because '在线数只是补充信息,读取失败不能吞掉告警'
+    Assert-Match -Text ($warnedAgain -join ' ') -Pattern 'drained=deadline.*unknown' -Because '在线数只是补充信息,读取失败不能吞掉告警'
 }
 
 Test-Case 'DryRun 计划:只打印写操作,不碰 Redis、不删 Pod' {
@@ -916,14 +916,14 @@ Test-Case 'DryRun 计划:只打印写操作,不碰 Redis、不删 Pod' {
     $context = Get-FixtureContext
     $script:Events.Clear()
     $text = (Write-GateDrainDryRunPlan -Login $context.Login -Pod $context.Pod -Record $context.Record -PeerNodeIds @(4) -DrainTtlSeconds 1800 -WaitTimeoutSeconds 1800 -WillDeletePod 6>&1) -join "`n"
-    Assert-Match -Text $text -Pattern 'SET gate:3:draining <Redis TIME 秒> NX EX 1800' -Because '计划里要写清标记的形状'
+    Assert-Match -Text $text -Pattern 'SET gate:3:draining <Redis TIME seconds> NX EX 1800' -Because '计划里要写清标记的形状'
     Assert-Match -Text $text -Pattern 'kubectl delete pod gate-1 -n mmorpg-zone-e2e' -Because '带 -DeletePod 时计划里要有删除'
     Assert-Equal -Expected 0 -Actual $script:Events.Count -Because 'DryRun 计划不发出任何调用'
 }
 
 # ─── 主流程(Invoke-GateDrain,脚本入口只调用它)───
 
-Write-Host '=== gate 排空脚本:主流程顺序与退出码 ==='
+Write-Host '=== gate drain script: main flow order and exit codes ==='
 
 # 完整流程的场景:定位、标记后复核、删前复核都看到同一进程;第一次 MGET 就等到 drained;
 # 删 Pod 后 node_id 3 换成新进程(旧 uuid 消失),新 Pod 就绪。
@@ -1037,7 +1037,7 @@ Test-Case '主流程:复核不通过而标记是沿用的,不删它,返回 3 并
         -NamespacePrefix 'mmorpg-zone' -DeletePod -WarningVariable warned -WarningAction SilentlyContinue 6>$null
     Assert-Equal -Expected 3 -Actual $code -Because '留下了需要人工清理的标记'
     Assert-Equal -Expected '1789999000' -Actual $script:Redis['gate:3:draining'] -Because '不是本次写入的不删'
-    Assert-Match -Text ($warned -join ' ') -Pattern '手工 DEL gate:3:draining gate:3:drained' -Because '要给出人工清理方法'
+    Assert-Match -Text ($warned -join ' ') -Pattern 'manually DEL gate:3:draining gate:3:drained' -Because '要给出人工清理方法'
 }
 
 Test-Case '主流程:等 drained 期间进程没了,撤回标记并中止(不空等到超时)' {
@@ -1102,8 +1102,8 @@ Test-Case '主流程:删 Pod 后标记没清,先报残留指引;新 Pod 就绪�
         -NamespacePrefix 'mmorpg-zone' -DeletePod -WarningVariable warned -WarningAction SilentlyContinue 6>$null
     Assert-Equal -Expected 3 -Actual $code -Because '标记没清优先于就绪超时'
     $text = $warned -join ' | '
-    $guidance = $text.IndexOf('手工 DEL gate:3:draining gate:3:drained')
-    Assert-True -Condition ($guidance -ge 0 -and $guidance -lt $text.IndexOf('新 Pod 未就绪')) -Because "先报残留指引再报就绪超时:$text"
+    $guidance = $text.IndexOf('manually DEL gate:3:draining gate:3:drained')
+    Assert-True -Condition ($guidance -ge 0 -and $guidance -lt $text.IndexOf('The new Pod is also not ready')) -Because "先报残留指引再报就绪超时:$text"
     Assert-Equal -Expected '1790000000' -Actual $script:Redis['gate:3:draining'] -Because '标记仍在'
 
     Reset-DrainFixture

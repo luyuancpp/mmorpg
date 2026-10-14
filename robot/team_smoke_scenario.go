@@ -219,7 +219,7 @@ func RunTeamSmoke(cfg *config.Config) {
 		c = loggedIn[3]
 		// 本地各 zone 的 gate 端口不同;地址相同说明 C 其实进了 zone_a,跨区结论不成立。
 		if c.gate == a.gate {
-			fail("zone-placement", "C 与 A 分到同一个 gate %s(zone_a=%d zone_b=%d),不是跨 zone 运行", a.gate, sc.ZoneA, sc.ZoneB)
+			fail("zone-placement", "C and A were assigned the same gate %s (zone_a=%d zone_b=%d); this is not a cross-zone run", a.gate, sc.ZoneA, sc.ZoneB)
 		}
 	}
 	botByPlayer := make(map[uint64]*teamSmokeBot, len(bots))
@@ -245,13 +245,13 @@ func RunTeamSmoke(cfg *config.Config) {
 	created := createResp.GetTeam()
 	tid := created.GetTeamId()
 	if tid == 0 {
-		fail("S1-create", "建队受理但视图 team_id=0")
+		fail("S1-create", "Team creation was accepted but the view has team_id=0")
 	}
 	if created.GetLeaderId() != a.gc.PlayerId || len(created.GetMembers()) != 1 {
-		fail("S1-create", "leader_id=%d 成员数=%d,期望 A=%d 是唯一成员且为队长", created.GetLeaderId(), len(created.GetMembers()), a.gc.PlayerId)
+		fail("S1-create", "leader_id=%d member count=%d, expected A=%d as the sole member and leader", created.GetLeaderId(), len(created.GetMembers()), a.gc.PlayerId)
 	}
 	if created.GetZoneId() != sc.ZoneA {
-		fail("S1-create-zone", "队伍 zone_id=%d,期望建队者 A 的 home zone %d(账号须首次在 zone_a 建角)", created.GetZoneId(), sc.ZoneA)
+		fail("S1-create-zone", "Team zone_id=%d, expected creator A home zone %d (the account must first create its character in zone_a)", created.GetZoneId(), sc.ZoneA)
 	}
 
 	if err := b.expect(game.ClientPlayerTeamApplyJoinTeamMessageId,
@@ -264,10 +264,10 @@ func RunTeamSmoke(cfg *config.Config) {
 		fail("S1-apply-verify", "%v", err)
 	}
 	if !teamSmokeHasApplication(afterApply, b.gc.PlayerId) {
-		fail("S1-apply-verify", "A 的视图里没有 B=%d 的申请(applications=%d)", b.gc.PlayerId, len(afterApply.GetApplications()))
+		fail("S1-apply-verify", "A view contains no application from B=%d (applications=%d)", b.gc.PlayerId, len(afterApply.GetApplications()))
 	}
 	if afterApply.GetVersion() <= created.GetVersion() {
-		fail("S1-apply-version", "申请后 version=%d,期望大于建队时的 %d", afterApply.GetVersion(), created.GetVersion())
+		fail("S1-apply-version", "After applying version=%d, expected greater than creation version %d", afterApply.GetVersion(), created.GetVersion())
 	}
 
 	bMark := b.mark()
@@ -279,10 +279,10 @@ func RunTeamSmoke(cfg *config.Config) {
 	approved := approveResp.GetTeam()
 	bMember, bCount := teamSmokeMemberOf(approved, b.gc.PlayerId)
 	if bCount != 1 || len(approved.GetMembers()) != 2 {
-		fail("S1-approve", "同意后成员数=%d、B 出现 %d 次,期望 2 人且 B 恰好一次", len(approved.GetMembers()), bCount)
+		fail("S1-approve", "After approval member count=%d and B appears %d times; expected 2 members with B exactly once", len(approved.GetMembers()), bCount)
 	}
 	if approved.GetVersion() <= afterApply.GetVersion() {
-		fail("S1-approve-version", "同意后 version=%d,期望大于申请后的 %d", approved.GetVersion(), afterApply.GetVersion())
+		fail("S1-approve-version", "After approval version=%d, expected greater than application version %d", approved.GetVersion(), afterApply.GetVersion())
 	}
 	joined, err := b.waitSnapshot(bMark, teamSmokePushTimeout, "B MEMBER_JOINED", func(s *teampb.TeamSnapshotS2C) bool {
 		return s.GetReason() == teampb.TeamChangeReason_TEAM_CHANGE_REASON_MEMBER_JOINED && s.GetTeam().GetTeamId() == tid
@@ -291,10 +291,10 @@ func RunTeamSmoke(cfg *config.Config) {
 		fail("S1-joined-push", "%v", err)
 	}
 	if joined.GetTeam().GetVersion() < approved.GetVersion() {
-		fail("S1-joined-push", "B 收到的视图 version=%d,低于 A 同意回包的 %d", joined.GetTeam().GetVersion(), approved.GetVersion())
+		fail("S1-joined-push", "B received view version=%d, lower than A approval response version %d", joined.GetTeam().GetVersion(), approved.GetVersion())
 	}
 	if _, n := teamSmokeMemberOf(joined.GetTeam(), b.gc.PlayerId); n != 1 {
-		fail("S1-joined-push", "B 收到的 MEMBER_JOINED 视图里自己出现 %d 次", n)
+		fail("S1-joined-push", "B appears %d times in its received MEMBER_JOINED view", n)
 	}
 	zap.L().Info("[team-smoke] S1: team created and B joined",
 		zap.Uint64("team_id", tid), zap.Uint64("version", approved.GetVersion()),
@@ -308,7 +308,7 @@ func RunTeamSmoke(cfg *config.Config) {
 	replayed := replayResp.GetTeam()
 	replayMember, replayCount := teamSmokeMemberOf(replayed, b.gc.PlayerId)
 	if replayCount != 1 || len(replayed.GetMembers()) != 2 || replayMember.GetJoinSeq() != bMember.GetJoinSeq() {
-		fail("S2-replay", "重放后成员数=%d、B 出现 %d 次、B join_seq=%d(首次 %d),期望与首次同意完全一致",
+		fail("S2-replay", "After replay member count=%d, B appears %d times, B join_seq=%d (first %d); expected exactly the same as the first approval",
 			len(replayed.GetMembers()), replayCount, replayMember.GetJoinSeq(), bMember.GetJoinSeq())
 	}
 	// version 只记日志:无变化的幂等成功是否仍产生一次提交由实现决定,"状态只变化一次"以成员集合与 join_seq 为准。
@@ -322,14 +322,14 @@ func RunTeamSmoke(cfg *config.Config) {
 		fail("S3-invite", "%v", err)
 	}
 	if !teamSmokeHasPendingInvite(inviteResp.GetTeam(), d.gc.PlayerId) {
-		fail("S3-invite", "A 的回包视图里没有发给 D=%d 的待处理邀请", d.gc.PlayerId)
+		fail("S3-invite", "A response view contains no pending invitation sent to D=%d", d.gc.PlayerId)
 	}
 	invites := &teampb.ListMyInvitesResponse{}
 	if err := d.expect(game.ClientPlayerTeamListMyInvitesMessageId, &teampb.ListMyInvitesRequest{}, invites, 0); err != nil {
 		fail("S3-list-invites", "%v", err)
 	}
 	if !teamSmokeHasIncomingInvite(invites, tid) {
-		fail("S3-list-invites", "D 的邀请列表(%d 条)里没有队伍 %d", len(invites.GetInvites()), tid)
+		fail("S3-list-invites", "D invitation list (%d entries) contains no team %d", len(invites.GetInvites()), tid)
 	}
 	aMark := a.mark()
 	if err := d.expect(game.ClientPlayerTeamRespondInviteMessageId,
@@ -352,7 +352,7 @@ func RunTeamSmoke(cfg *config.Config) {
 	}
 	accepted := acceptResp.GetTeam()
 	if _, n := teamSmokeMemberOf(accepted, d.gc.PlayerId); accepted.GetTeamId() != tid || n != 1 || len(accepted.GetMembers()) != 3 {
-		fail("S3-accept", "D 接受后视图 team_id=%d 成员数=%d D 出现 %d 次,期望在队伍 %d 且共 3 人",
+		fail("S3-accept", "After D accepts, view team_id=%d member count=%d D appears %d times; expected team %d with 3 members",
 			accepted.GetTeamId(), len(accepted.GetMembers()), n, tid)
 	}
 	dEpochInTeam := accepted.GetMembershipEpoch()
@@ -366,7 +366,7 @@ func RunTeamSmoke(cfg *config.Config) {
 		fail("S4-kick", "%v", err)
 	}
 	if _, n := teamSmokeMemberOf(kickResp.GetTeam(), d.gc.PlayerId); n != 0 {
-		fail("S4-kick", "踢人受理但 A 的视图里仍有 D")
+		fail("S4-kick", "Kick was accepted but A view still contains D")
 	}
 	kicked, err := d.waitSnapshot(dMark, teamSmokePushTimeout, "D MEMBER_KICKED", func(s *teampb.TeamSnapshotS2C) bool {
 		return s.GetReason() == teampb.TeamChangeReason_TEAM_CHANGE_REASON_MEMBER_KICKED && s.GetTeam().GetTeamId() == 0
@@ -375,7 +375,7 @@ func RunTeamSmoke(cfg *config.Config) {
 		fail("S4-kick-push", "%v", err)
 	}
 	if kicked.GetTeam().GetMembershipEpoch() <= dEpochInTeam {
-		fail("S4-kick-epoch", "D 被踢后的空视图 membership_epoch=%d,期望大于在队时的 %d(§C.4)",
+		fail("S4-kick-epoch", "D empty view after being kicked has membership_epoch=%d, expected greater than its epoch while in the team %d (section C.4)",
 			kicked.GetTeam().GetMembershipEpoch(), dEpochInTeam)
 	}
 	toB := &teampb.TeamResponse{}
@@ -384,7 +384,7 @@ func RunTeamSmoke(cfg *config.Config) {
 		fail("S4-transfer-to-b", "%v", err)
 	}
 	if toB.GetTeam().GetLeaderId() != b.gc.PlayerId {
-		fail("S4-transfer-to-b", "转让后 leader_id=%d,期望 B=%d", toB.GetTeam().GetLeaderId(), b.gc.PlayerId)
+		fail("S4-transfer-to-b", "After transfer leader_id=%d, expected B=%d", toB.GetTeam().GetLeaderId(), b.gc.PlayerId)
 	}
 	toA := &teampb.TeamResponse{}
 	if err := b.expect(game.ClientPlayerTeamTransferLeaderMessageId,
@@ -392,7 +392,7 @@ func RunTeamSmoke(cfg *config.Config) {
 		fail("S4-transfer-to-a", "%v", err)
 	}
 	if toA.GetTeam().GetLeaderId() != a.gc.PlayerId {
-		fail("S4-transfer-to-a", "转回后 leader_id=%d,期望 A=%d", toA.GetTeam().GetLeaderId(), a.gc.PlayerId)
+		fail("S4-transfer-to-a", "After transfer back leader_id=%d, expected A=%d", toA.GetTeam().GetLeaderId(), a.gc.PlayerId)
 	}
 	zap.L().Info("[team-smoke] S4: D kicked (epoch advanced), leadership A→B→A",
 		zap.Uint64("d_epoch_after_kick", kicked.GetTeam().GetMembershipEpoch()))
@@ -409,7 +409,7 @@ func RunTeamSmoke(cfg *config.Config) {
 		fail("S5-reject", "%v", err)
 	}
 	if teamSmokeHasApplication(rejectResp.GetTeam(), d.gc.PlayerId) {
-		fail("S5-reject", "拒绝受理但 A 的视图里仍有 D 的申请")
+		fail("S5-reject", "Rejection was accepted but A view still contains D application")
 	}
 	if _, err := d.waitTeamEvent(dMark, "D APPLICATION_REJECTED", func(e *teampb.TeamEventS2C) bool {
 		return e.GetType() == teampb.TeamEventType_TEAM_EVENT_TYPE_APPLICATION_REJECTED && e.GetTeamId() == tid
@@ -421,7 +421,7 @@ func RunTeamSmoke(cfg *config.Config) {
 	// ---- S6:A 换图,B 跟随 ----
 	followTarget := teamSmokePickSceneConfig(sc.FollowSceneConfigIds, a.player.GetSceneConfigID(), b.player.GetSceneConfigID())
 	if followTarget == 0 {
-		fail("S6-config", "follow_scene_config_ids=%v 里没有与 A(%d)、B(%d) 当前地图都不同的配置",
+		fail("S6-config", "follow_scene_config_ids=%v has no configuration different from both A(%d) and B(%d) current maps",
 			sc.FollowSceneConfigIds, a.player.GetSceneConfigID(), b.player.GetSceneConfigID())
 	}
 	bMark = b.mark()
@@ -432,7 +432,7 @@ func RunTeamSmoke(cfg *config.Config) {
 	if _, err := b.waitEnterScene(bMark, teamSmokeFollowTimeout, func(s *scene.EnterSceneS2C) bool {
 		return s.GetSceneInfo().GetSceneId() == leaderScene
 	}); err != nil {
-		fail("S6-follow", "B 在 %s 内没有进入 A 的新场景 scene_id=%d(前置:A、B 须在同一 scene 节点,DV-6):%v",
+		fail("S6-follow", "Within %s B did not enter A new scene_id=%d (prerequisite: A and B must be on the same scene node, DV-6): %v",
 			teamSmokeFollowTimeout, leaderScene, err)
 	}
 	zap.L().Info("[team-smoke] S6: B followed A to the new scene",
@@ -493,23 +493,23 @@ func RunTeamSmoke(cfg *config.Config) {
 		}
 		cMember, n := teamSmokeMemberOf(approveC.GetTeam(), c.gc.PlayerId)
 		if n != 1 {
-			fail("X2-approve", "同意后 C 在视图里出现 %d 次", n)
+			fail("X2-approve", "After approval C appears %d times in the view", n)
 		}
 		if cMember.GetZoneId() != sc.ZoneB {
-			fail("X2-member-zone", "视图里 C 的 zone_id=%d,期望 zone_b=%d(账号须首次在 zone_b 建角)", cMember.GetZoneId(), sc.ZoneB)
+			fail("X2-member-zone", "C has zone_id=%d in the view, expected zone_b=%d (the account must first create its character in zone_b)", cMember.GetZoneId(), sc.ZoneB)
 		}
 
 		// A 换图:C 在别的 zone,不得跟随(§F.1 第 4 条)。
 		noFollowTarget := teamSmokePickSceneConfig(sc.FollowSceneConfigIds, a.player.GetSceneConfigID())
 		if noFollowTarget == 0 {
-			fail("X2-config", "follow_scene_config_ids=%v 里没有与 A 当前地图(%d)不同的配置", sc.FollowSceneConfigIds, a.player.GetSceneConfigID())
+			fail("X2-config", "follow_scene_config_ids=%v has no configuration different from A current map (%d)", sc.FollowSceneConfigIds, a.player.GetSceneConfigID())
 		}
 		cMark := c.mark()
 		if _, err := a.switchScene(noFollowTarget); err != nil {
 			fail("X2-leader-switch", "%v", err)
 		}
 		if s, err := c.waitEnterScene(cMark, teamSmokeNoFollowWindow, nil); err == nil {
-			fail("X2-no-follow", "A 换图后别区的 C 收到了 EnterSceneS2C scene_id=%d scene_config_id=%d,跨 zone 不应跟随",
+			fail("X2-no-follow", "After A changes maps, C in another zone received EnterSceneS2C scene_id=%d scene_config_id=%d; cross-zone following should not occur",
 				s.GetSceneInfo().GetSceneId(), s.GetSceneInfo().GetSceneConfigId())
 		} else if !errors.Is(err, errTeamSmokeTimeout) {
 			fail("X2-no-follow", "%v", err)
@@ -521,7 +521,7 @@ func RunTeamSmoke(cfg *config.Config) {
 			fail("X2-b-leave", "%v", err)
 		}
 		if leaveB.GetTeam().GetTeamId() != 0 {
-			fail("X2-b-leave", "B 离队受理但视图 team_id=%d", leaveB.GetTeam().GetTeamId())
+			fail("X2-b-leave", "B leaving was accepted but view team_id=%d", leaveB.GetTeam().GetTeamId())
 		}
 		crossBattle, err := teamSmokeTeamBattle(a, tid, sc.BattleConfigId, []*teamSmokeBot{a, c})
 		if err != nil {
@@ -547,7 +547,7 @@ func RunTeamSmoke(cfg *config.Config) {
 		}
 		bot, ok := botByPlayer[member.GetPlayerId()]
 		if !ok {
-			fail("S9-read", "队伍 %d 里有非本冒烟账号的成员 %d", tid, member.GetPlayerId())
+			fail("S9-read", "Team %d contains member %d who is not one of these smoke-test accounts", tid, member.GetPlayerId())
 		}
 		waiters = append(waiters, disbandWaiter{bot: bot, mark: bot.mark()})
 	}
@@ -556,7 +556,7 @@ func RunTeamSmoke(cfg *config.Config) {
 		fail("S9-disband", "%v", err)
 	}
 	if disbandResp.GetTeam().GetTeamId() != 0 {
-		fail("S9-disband", "解散受理但 A 的视图 team_id=%d", disbandResp.GetTeam().GetTeamId())
+		fail("S9-disband", "Disband was accepted but A view team_id=%d", disbandResp.GetTeam().GetTeamId())
 	}
 	for _, w := range waiters {
 		if _, err := w.bot.waitSnapshot(w.mark, teamSmokePushTimeout, w.bot.name+" DISBANDED", func(s *teampb.TeamSnapshotS2C) bool {

@@ -180,7 +180,7 @@ function Invoke-ReleaseGate {
     }
 
     if ($SkipPreflight) {
-        Write-Warning "已通过 -SkipPreflight 跳过发布预检。真实发布不应该走到这里。"
+        Write-Warning "Release preflight skipped via -SkipPreflight. This path should not be used for actual releases."
         return
     }
 
@@ -440,7 +440,7 @@ function Invoke-K8sDeploy {
 # 不让操作者等几分钟进了 Invoke-K8sDeploy 才发现它不生效。只有 release-zone / release-all 会把它传下去,只对这两个命令告警。
 # 若 k8s_deploy.ps1 日后按 Test-ZoneLoginDeployed 自己告警"本次不部署 login,该值不生效",删掉这里,保持单一来源。
 if ($Command -in @("release-zone", "release-all") -and -not [string]::IsNullOrWhiteSpace($RequireClientEndpoint)) {
-    Write-Warning "-RequireClientEndpoint $RequireClientEndpoint 经 k8s_image.ps1 只参与 k8s_deploy.ps1 的组合预检:本脚本不部署 login / scene_manager(不传 -GoSvcRegistry),它们 ConfigMap 里的 RequireClientEndpoint 不会被改写。要改写请用 dev_tools.ps1 k8s-zone-up / k8s-all-up 或直接调 k8s_deploy.ps1。"
+    Write-Warning "-RequireClientEndpoint $RequireClientEndpoint only participates in combined preflight in k8s_deploy.ps1 when called through k8s_image.ps1. This script does not deploy login / scene_manager (no -GoSvcRegistry), so it does not update RequireClientEndpoint in their ConfigMaps. To update it, use dev_tools.ps1 k8s-zone-up / k8s-all-up or call k8s_deploy.ps1 directly."
 }
 
 switch ($Command) {

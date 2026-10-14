@@ -14,13 +14,13 @@
 #     -t mmorpg-sandbox-mock:<tag>  go/
 #   deploy/docker-compose.login-stack.yml 的 sandbox-mock 服务不传 BUILD_*,镜像内版本信息为 unknown。
 #
-# 基础镜像钉 digest(2026-09-16 查询,均为多平台 index digest):
-#   docker buildx imagetools inspect golang:1.24.5-alpine3.22   → 取顶部 Digest
+# 基础镜像钉 digest(Go 2026-10-13、运行层 2026-09-16 查询,均为多平台 index digest):
+#   docker buildx imagetools inspect golang:1.27.2-alpine3.24   → 取顶部 Digest
 #   docker buildx imagetools inspect alpine:3.20.10             → 同上
 #   升级时 tag 与 digest 同批改;Go 版本跟随 go/login/go.mod 的 go 指令,并同步下方 GOVERSION 断言。
 # ────────────────────────────────────────────────────────────────
 
-FROM golang:1.24.5-alpine3.22@sha256:daae04ebad0c21149979cd8e9db38f565ecefd8547cf4a591240dc1972cf1399 AS builder
+FROM golang:1.27.2-alpine3.24@sha256:f92b6ef800e499660581efdabdf25d9d817a9d124eaf900924f0504e7e27e12d AS builder
 
 # 默认官方代理;国内构建用 --build-arg GOPROXY=<宿主 $env:GOPROXY> 透传(compose 目前不传,走默认)。
 # 分隔符用 `|`:任何错误都回退到下一个源;`,` 只在代理返回 404/410 时回退,代理抖动会直接失败
@@ -29,7 +29,7 @@ ARG GOPROXY=https://proxy.golang.org|direct
 
 # local:禁止按 go.mod 自动下载别的工具链(国内网络下常超时,且会让编译器版本脱离基础镜像)。
 ENV GOTOOLCHAIN=local GOPROXY=${GOPROXY}
-RUN test "$(go env GOVERSION)" = "go1.24.5"
+RUN test "$(go env GOVERSION)" = "go1.27.2"
 
 # git 只给 GOPROXY 的 direct 回退用(按 VCS 直接拉模块);代理正常时用不到。
 RUN apk add --no-cache git

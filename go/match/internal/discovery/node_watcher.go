@@ -75,7 +75,7 @@ func (w *NodeWatcher) Run(ctx context.Context, etcd *clientv3.Client) {
 	for {
 		rev, err := w.fullSync(ctx, etcd)
 		if err != nil {
-			logx.Errorf("[NodeWatcher:%s] 全量同步失败: %v,3s 后重试", w.name, err)
+			logx.Errorf("[NodeWatcher:%s] Full synchronization failed: %v; retrying after 3s", w.name, err)
 			select {
 			case <-ctx.Done():
 				return
@@ -87,7 +87,7 @@ func (w *NodeWatcher) Run(ctx context.Context, etcd *clientv3.Client) {
 		if ctx.Err() != nil {
 			return
 		}
-		logx.Infof("[NodeWatcher:%s] watch 中断,重新同步", w.name)
+		logx.Infof("[NodeWatcher:%s] Watch interrupted; synchronizing again", w.name)
 	}
 }
 
@@ -125,7 +125,7 @@ func (w *NodeWatcher) fullSync(ctx context.Context, etcd *clientv3.Client) (int6
 		}
 	}
 	w.reportCount(count)
-	logx.Infof("[NodeWatcher:%s] 全量同步完成: %d 节点, rev=%d", w.name, count, resp.Header.Revision)
+	logx.Infof("[NodeWatcher:%s] Full synchronization complete: %d nodes, rev=%d", w.name, count, resp.Header.Revision)
 	return resp.Header.Revision, nil
 }
 
@@ -140,11 +140,11 @@ func (w *NodeWatcher) watch(ctx context.Context, etcd *clientv3.Client, rev int6
 			return
 		case watchResp, ok := <-watchCh:
 			if !ok {
-				logx.Infof("[NodeWatcher:%s] watch channel 关闭", w.name)
+				logx.Infof("[NodeWatcher:%s] Watch channel closed", w.name)
 				return
 			}
 			if watchResp.Err() != nil {
-				logx.Errorf("[NodeWatcher:%s] watch 出错: %v", w.name, watchResp.Err())
+				logx.Errorf("[NodeWatcher:%s] Watch error: %v", w.name, watchResp.Err())
 				return
 			}
 			for _, ev := range watchResp.Events {
@@ -177,7 +177,7 @@ func (w *NodeWatcher) handleEvent(ev *clientv3.Event) {
 		if w.onRemove != nil {
 			w.onRemove(entry)
 		}
-		logx.Infof("[NodeWatcher:%s] 节点下线: zone=%d node=%d endpoint=%s",
+		logx.Infof("[NodeWatcher:%s] Node offline: zone=%d node=%d endpoint=%s",
 			w.name, entry.ZoneId, entry.NodeId, entry.Endpoint)
 		w.reportCount(count)
 	}
@@ -197,7 +197,7 @@ func (w *NodeWatcher) Upsert(key string, entry NodeEntry) {
 		w.onRemove(prev)
 	}
 	if !existed {
-		logx.Infof("[NodeWatcher:%s] 节点上线: zone=%d node=%d endpoint=%s",
+		logx.Infof("[NodeWatcher:%s] Node online: zone=%d node=%d endpoint=%s",
 			w.name, entry.ZoneId, entry.NodeId, entry.Endpoint)
 	}
 	w.reportCount(count)
@@ -210,12 +210,12 @@ func (w *NodeWatcher) parse(key string, value []byte) (NodeEntry, bool) {
 	}
 	var reg nodeRegistrationJSON
 	if err := json.Unmarshal(value, &reg); err != nil {
-		logx.Errorf("[NodeWatcher:%s] 解析注册值失败 key=%s: %v", w.name, key, err)
+		logx.Errorf("[NodeWatcher:%s] Failed to parse registration value key=%s: %v", w.name, key, err)
 		return NodeEntry{}, false
 	}
 	if reg.GrpcEndpoint.Port == 0 {
 		// 没有 gRPC endpoint 的节点无法作为 gather 对端,记日志后忽略。
-		logx.Errorf("[NodeWatcher:%s] 节点缺少 grpcEndpoint,忽略: key=%s zone=%d node=%d",
+		logx.Errorf("[NodeWatcher:%s] Node missing grpcEndpoint; ignoring: key=%s zone=%d node=%d",
 			w.name, key, reg.ZoneId, reg.NodeId)
 		return NodeEntry{}, false
 	}
@@ -370,7 +370,7 @@ func DialEndpoint(endpoint string) (*grpc.ClientConn, error) {
 	connCache[endpoint] = conn
 	connMu.Unlock()
 
-	logx.Infof("[discovery] 已连接节点 %s", endpoint)
+	logx.Infof("[discovery] Connected to node %s", endpoint)
 	return conn, nil
 }
 
@@ -381,6 +381,6 @@ func RemoveEndpointConn(endpoint string) {
 	if conn, ok := connCache[endpoint]; ok {
 		_ = conn.Close()
 		delete(connCache, endpoint)
-		logx.Infof("[discovery] 已移除节点连接 %s", endpoint)
+		logx.Infof("[discovery] Removed node connection %s", endpoint)
 	}
 }

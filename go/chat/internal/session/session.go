@@ -76,12 +76,12 @@ func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 		}
 		bin, err := base64.StdEncoding.DecodeString(values[0])
 		if err != nil {
-			logx.WithContext(ctx).Errorf("[chat] %s base64 解码失败 method=%s: %v", MetadataKey, info.FullMethod, err)
+			logx.WithContext(ctx).Errorf("[chat] Failed to decode %s base64 method=%s: %v", MetadataKey, info.FullMethod, err)
 			return handler(ctx, req)
 		}
 		detail := &base.SessionDetails{}
 		if err := proto.Unmarshal(bin, detail); err != nil {
-			logx.WithContext(ctx).Errorf("[chat] SessionDetails 反序列化失败 method=%s: %v", info.FullMethod, err)
+			logx.WithContext(ctx).Errorf("[chat] Failed to deserialize SessionDetails method=%s: %v", info.FullMethod, err)
 			return handler(ctx, req)
 		}
 		return handler(WithSessionDetails(ctx, detail), req)

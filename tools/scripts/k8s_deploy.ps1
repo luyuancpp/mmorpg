@@ -232,6 +232,19 @@ param(
 	# LOGIN_DEV_PASSWORD_SHARED_SECRET,绝不进 ConfigMap。**只允许 -ReleaseProfile dev**(与 release_preflight.ps1 的
 	# debug.login.devpassword 同一门禁),其它档位传它在任何写操作之前报错。不传 = login 没有任何口令认证配置(fail-closed)。
 	[switch]$LoginDevPasswordAuth,
+	# 削峰(G4b,docs/design/open-server-rate-limit-design.md §十一):gateway Bucket4j 限流 / login 登录排队。
+	# auto(缺省)= 跟随 -ReleaseProfile:dev 关(ConfigMap 与 G4b 之前逐字相同);staging / prod 开,阈值见 $script:PeakShavingLaunchTier。
+	# off 只用于事故止血与基线压测(AGENTS §6 对比的「关削峰」那一轮);on 只用于 dev 档联调。
+	# 不粘滞:以 off 运行的环境,下一次部署(含 k8s_zone_rollback.ps1 Step 6、dev_tools.ps1 包装入口)不传就按档位恢复为开。
+	# 包装入口(dev_tools.ps1 / k8s_image.ps1 / k8s_zone_rollback.ps1)不透传这两个参数,off 止血要直接调本脚本。
+	# 切换会改 Pod 模板上的 mmorpg.io/peak-shaving-hash 注解,gateway / login 自动滚动,不需要手工 rollout restart。
+	[ValidateSet("auto", "on", "off")]
+	[string]$GatewayRateLimit = "auto",
+	# login 排队开时 staging / prod 必须注入 MMORPG_LOGIN_QUEUE_TOKEN_SECRET(≥32,与 GATE / INTERNAL_AUTH 两把不同)。
+	# 排队的出队 leader 锁按 zone 拆(G1b,login 把 Queue.DispatcherLockKey 当前缀再拼本 zone);本脚本另在 ConfigMap 里显式写
+	# 带本 zone 的 DispatcherLockKey 作纵深防御(见 New-LoginQueueYaml)。
+	[ValidateSet("auto", "on", "off")]
+	[string]$LoginQueue = "auto",
 	# 确认本次就是要切换形态(-ClientEntryMode / -BattleOrchestrator 换了取值)或改 gate / battle 的客户端地址来源,
 	# 接受整台 gate 踢人、在打的战斗作废、改地址后须逐个排空重建 gate。
 	# 不给时,只要"另一种形态"里会踢人的工作负载在集群里确实存在,或现有 gate / battle 的入口形态与地址来源会被改写,
@@ -311,6 +324,43 @@ $script:GatewayAdminApiKeyHashAnnotation = "mmorpg.io/gateway-admin-api-key-hash
 $script:GatewayAdminApiKey = ""
 # battle 全局池的工作负载,由写路径入口 Assert-ClientEntryDeployPreflight 渲染(New-BattleWorkloadManifest),Apply-BattlePool 只 apply。
 $script:BattleWorkload = $null
+
+# 削峰(G4b)开服档起步值。单一来源:ConfigMap 生成、Pod 指纹、部署打印都只读这里。全部「待压测确认」(L-14)。
+#   ZoneDefaultRps/Burst   docs/design/open-server-rate-limit-design.md「Layer 1 配额参考」的「开服日 / 大版本回归」档
+#                          (负责人 2026-10-13 拍板按该档起步)
+#   IpRps/IpBurst          java/gateway_node jar 内 application.yaml 的 gate.rate-limit.ip-rps / ip-burst(设计稿 §5.2 示例为 2/10;
+#                          取宽者:网吧 / 运营商 NAT 下一次登录要扣 2 个 IP 令牌,/api/login 与 /api/assign-gate 共用 rl:ip:*)
+#   AccountCooldownMs      设计稿 §5.2 与 jar 内 application.yaml 的 account-cooldown-ms 一致
+#   LoginQueueZoneCapacity docs/design/login-queue-2026-05.md §10 与 go/login/etc/login.yaml Queue 段注释里的示例值。
+#                          注意它是**本 zone 同时在线上限**,不是速率。
+$script:PeakShavingLaunchTier = [ordered]@{
+	ZoneDefaultRps         = 2000
+	ZoneDefaultBurst       = 5000
+	IpRps                  = 5
+	IpBurst                = 20
+	AccountCooldownMs      = 5000
+	LoginQueueZoneCapacity = 5000
+}
+$script:PeakShavingHashAnnotation = 'mmorpg.io/peak-shaving-hash'
+# 由 Initialize-InjectedSecrets 解析(只在本次部署 login 且排队开时)。
+$script:LoginQueueTokenSecret = ""
+
+# -GatewayRateLimit / -LoginQueue 的取值规则:on / off 为显式覆盖,auto 跟随发布档位(dev 关,其余开)。
+function Resolve-PeakShavingSwitch {
+	param(
+		[Parameter(Mandatory = $true)][string]$Value,
+		# 参数名不要用 $Profile:它会遮住 PowerShell 自动变量 $PROFILE。
+		[Parameter(Mandatory = $true)][string]$ReleaseProfileName
+	)
+	switch ($Value) {
+		'on'  { return $true }
+		'off' { return $false }
+		default { return ($ReleaseProfileName -ne 'dev') }
+	}
+}
+# 两个开关的解析结果。脚本级、参数绑定后算一次:生成器、指纹与部署打印读的是同一个布尔值。
+$script:GatewayRateLimitOn = Resolve-PeakShavingSwitch -Value $GatewayRateLimit -ReleaseProfileName $ReleaseProfile
+$script:LoginQueueOn = Resolve-PeakShavingSwitch -Value $LoginQueue -ReleaseProfileName $ReleaseProfile
 
 . (Join-Path $ScriptDir "lib\release_common.ps1")
 # 集群外客户端入口(D76–D93)的生成器、preflight、就绪等待与模式切换清理。库函数不读本脚本的任何变量,
@@ -394,7 +444,7 @@ function Assert-ImmutableReleaseImages {
 function Invoke-ReleasePreflight {
 	if ($ReleaseProfile -eq 'dev') { return }
 	if ($SkipPreflight) {
-		Write-Warning "已通过 -SkipPreflight 跳过发布预检(ReleaseProfile=$ReleaseProfile)。真实发布不应该走到这里。"
+		Write-Warning "Release preflight skipped via -SkipPreflight (ReleaseProfile=$ReleaseProfile). This path should not be used for actual releases."
 		return
 	}
 
@@ -472,6 +522,26 @@ function Initialize-InjectedSecrets {
 		}
 	}
 
+	# 登录排队令牌的 HMAC 密钥(login Secrets.QueueToken,G4b)。生产模式开了排队就必需,且不得与 GateToken / InternalAuth 复用
+	# (go/login/internal/config/secrets.go ResolveSecrets 的必填与复用检查;不满足 login 拒启 → CrashLoopBackOff)。
+	# 只在本次部署 login 且排队开时解析:关排队 / infra-up / -SkipGoSvc 都不因它被阻断。dev 档回落空串
+	# (不写 Secrets.QueueToken → login 宽松档回落 GateToken 密钥并告警)。
+	# 与另两把用 -ceq 原样比较(不 trim、区分大小写,同 Go 侧按字节比);报错只点环境变量名,不回显值。
+	# 任何档位只要非空就比:Go 宽松档(Mode dev / test)对复用只打 WARN,部署侧统一从严,不让 dev 上的复用配置被带进 staging。
+	$script:LoginQueueTokenSecret = ""
+	if ($script:LoginQueueOn -and (Test-ZoneLoginDeployed)) {
+		$script:LoginQueueTokenSecret = Resolve-InjectedSecret -EnvName "MMORPG_LOGIN_QUEUE_TOKEN_SECRET" `
+			-DevFallback "" -ReleaseProfile $ReleaseProfile -Purpose "login 登录排队令牌 HMAC 密钥(Secrets.QueueToken)" -MinLength 32
+		if (-not [string]::IsNullOrEmpty($script:LoginQueueTokenSecret)) {
+			if ($script:LoginQueueTokenSecret -ceq $script:GateTokenSecret) {
+				throw "MMORPG_LOGIN_QUEUE_TOKEN_SECRET 必须与 MMORPG_GATE_TOKEN_SECRET 不同:login 拒绝跨用途复用主密钥(go/login/internal/config/secrets.go 的复用检查),部署出来只会 CrashLoopBackOff。"
+			}
+			if ($script:LoginQueueTokenSecret -ceq $script:InternalAuthSecret) {
+				throw "MMORPG_LOGIN_QUEUE_TOKEN_SECRET 必须与 MMORPG_INTERNAL_AUTH_SECRET 不同:login 拒绝跨用途复用主密钥(go/login/internal/config/secrets.go 的复用检查),部署出来只会 CrashLoopBackOff。"
+			}
+		}
+	}
+
 	# gateway 管理面口令(见 $script:GatewayAdminApiKeyEnv 处的说明)。只在本次部署 gateway 时解析:infra-up 与不带 Java 服务的
 	# zone-up 不因它被阻断。非 dev 档缺失 / 占位 / 过短由 Resolve-InjectedSecret throw;dev 档回落占位值,照样经 Secret 注入
 	# (注入路径各档一致),但打警告 —— 管理面只在集群内可达(Ingress 只路由 /api),占位口令仍等于对集群内任何 Pod 开放。
@@ -480,7 +550,7 @@ function Initialize-InjectedSecrets {
 		$script:GatewayAdminApiKey = Resolve-InjectedSecret -EnvName "MMORPG_GATEWAY_ADMIN_API_KEY" `
 			-DevFallback "change-me-in-production" -ReleaseProfile $ReleaseProfile -Purpose "Java Gateway 管理面口令(X-Admin-Key / admin.api-key)" -MinLength 32
 		if (Test-PlaceholderSecret -Value $script:GatewayAdminApiKey) {
-			Write-Warning "gateway 管理面口令是占位值(MMORPG_GATEWAY_ADMIN_API_KEY 未设置或仍是占位串,ReleaseProfile=$ReleaseProfile):/admin/** 用公开常量鉴权,只允许本地 dev;非 dev 档会拒绝部署。"
+			Write-Warning "gateway admin password is a placeholder (MMORPG_GATEWAY_ADMIN_API_KEY unset or still a placeholder, ReleaseProfile=$ReleaseProfile): /admin/** authenticates with a public constant; allowed only for local dev. Non-dev profiles reject deployment."
 		}
 	}
 }
@@ -930,6 +1000,348 @@ function Assert-GrpcClientDeadlineBudget {
 	Write-Host ("GrpcClient deadline budget OK (C++ deadline >= Go zrpc Timeout + 2000): {0}{1}" -f ($targetSources.Keys -join ', '), $exemptedNote)
 }
 
+# ─────────────────────────────────────────────────────────────────
+# MySQL 连接总账(G2b;docs/PROGRESS.md 2026-10-12「落点多库连接拓扑核算」)
+# ─────────────────────────────────────────────────────────────────
+# 所有 zone 的 go/db、data_service、Java gateway 与全局的 friend、trade 共用 infra namespace 里同一台 MySQL。
+# 以前每个服务各写一句「要算进 max_connections」,没有任何地方把它们加起来。这里把这笔账写成可执行的函数:
+# 输入全部来自权威文件,写路径打印一行,契约测试钉住「规划峰值 ≤ max_connections」。
+# Get-MysqlConnectionPlan / Get-MysqlMaxConnectionsFromManifest / Get-ManifestDeploymentReplicas /
+# Get-MysqlConnectionLedgerInputs / Get-MysqlConnectionLedger 这五个只能依赖 $RepoRoot 与 Get-AuthoritativeScalar:
+# 契约测试按 AST 把它们抽出来单独调用(与上面 deadline 守卫同一做法),引用 $InfraManifestsDir 等脚本级变量
+# 或名单外的函数,在测试里就是「变量为空 / 命令未找到」。
+
+<#
+.SYNOPSIS
+	MySQL 连接总账的规划档:deploy/k8s/manifests/infra/mysql.yaml 的 max_connections 按它的峰值取值。
+
+.DESCRIPTION
+	改这里 = 重算 max_connections 与 MySQL Pod 内存(mysql.yaml 里两处注释同步改)。
+	契约测试钉住「规划峰值 ≤ max_connections」。
+	deploy/k8s/mysql-connection-alerts.yaml 的额外库数阈值与这里同源,契约测试核对。
+	纯函数,契约测试按 AST 抽出直接调用。
+#>
+function Get-MysqlConnectionPlan {
+	$zoneCount = 4
+	return [ordered]@{
+		ZoneCount         = $zoneCount
+		# 最坏情形:每个 go/db 实例都打开了其余全部 zone 的库(冷缓存访客读、合服 pin 后的源区库),打开后常驻。
+		# 合服留下、已不在 zones 配置里的源区库不在其中 —— 合服后按实际库数重算。
+		ExtraZoneStores   = $zoneCount - 1
+		# Phase 2 的非 zone 落点库(player_store_*)未开;打开 PinOnCreate 前必须重做这份规划(launch L-16)。
+		NonZoneStores     = 0
+		# D1 第 2 阶段会把 RouteStore 切到 db_first(player-route-mapping-durability-proposal.md §7 P2),提前计入它的独立池。
+		RouteStoreDbFirst = $true
+		# 滚动发布时每个 Deployment 多出的实例数:maxSurge 1 的新 Pod + 1 个仍在优雅退出、连接还没释放的旧 Pod。
+		# Deployment 控制器算 surge 时不计正在退出的 Pod,2 副本时同一刻最多 replicas + 2 个 Pod 持有连接
+		# (K8s Deployment 文档滚动更新一节,外部事实;go/db 的 preStop + 排空约 20s、grace 45s)。
+		RolloutExtraPodsPerDeployment = 2
+		# 迁移 Job、备份、探针、merge_zone / route_tool、人工会话(估计值,待实测)。
+		OpsReserve        = 20
+	}
+}
+
+<#
+.SYNOPSIS
+	读 deploy/k8s/manifests/infra/mysql.yaml 里 my.cnf 的 max_connections。文件缺席、或不是恰好出现一次即 throw。
+
+.DESCRIPTION
+	只认整行(允许缩进)就是 `max_connections = <数字>` 的行;注释行以 # 开头,不会命中。
+	出现 0 次时 mysqld 用它自己的默认值(MySQL 文档写 151,外部事实,未核实),出现多次时以哪一行为准不该靠猜:
+	两种都拒绝(fail-closed)。
+#>
+function Get-MysqlMaxConnectionsFromManifest {
+	$manifestPath = 'deploy/k8s/manifests/infra/mysql.yaml'
+	$full = Join-Path $RepoRoot ($manifestPath -replace '/', [System.IO.Path]::DirectorySeparatorChar)
+	if (-not (Test-Path -LiteralPath $full)) {
+		throw "MySQL 连接总账:找不到 $manifestPath(fail-closed:不替你猜一个 max_connections)"
+	}
+	$found = [regex]::Matches([string](Get-Content -LiteralPath $full -Raw), '(?m)^\s*max_connections\s*=\s*(\d+)\s*$')
+	if ($found.Count -ne 1) {
+		throw "MySQL 连接总账:$manifestPath 里 max_connections 应恰好出现 1 次,实际 $($found.Count) 次(fail-closed)"
+	}
+	return [int]$found[0].Groups[1].Value
+}
+
+<#
+.SYNOPSIS
+	读一份 manifest 里 Deployment 的副本数。文件缺席、或两格缩进的 replicas: 不是恰好出现一次即 throw。
+
+.DESCRIPTION
+	两格缩进 = Deployment 顶层 spec 下的那一行。总账用到的五份 manifest(go-svc 的 db / data-service / friend / trade、
+	java-svc 的 gateway)各只有一个 Deployment;以后某份里多出第二个带 replicas 的工作负载,这里会拒绝而不是随便取一个。
+#>
+function Get-ManifestDeploymentReplicas {
+	param([Parameter(Mandatory = $true)][string]$RelativePath)
+
+	$full = Join-Path $RepoRoot ($RelativePath -replace '/', [System.IO.Path]::DirectorySeparatorChar)
+	if (-not (Test-Path -LiteralPath $full)) {
+		throw "MySQL 连接总账:找不到 $RelativePath(fail-closed:不替你猜一个副本数)"
+	}
+	$found = [regex]::Matches([string](Get-Content -LiteralPath $full -Raw), '(?m)^  replicas:\s*(\d+)\s*$')
+	if ($found.Count -ne 1) {
+		throw "MySQL 连接总账:$RelativePath 里两格缩进的 replicas 行(Deployment 顶层 spec)应恰好出现 1 次,实际 $($found.Count) 次(fail-closed)"
+	}
+	return [int]$found[0].Groups[1].Value
+}
+
+<#
+.SYNOPSIS
+	MySQL 连接总账的输入:每个连 MySQL 的客户端的池上限与副本数,全部从权威文件读,查不到即 throw。
+
+.DESCRIPTION
+	池上限读各服务自己的配置(ConfigMap 生成器从同一批键镜像,所以这里读到的就是集群里生效的值,见 Get-MysqlPoolMirror);
+	副本数读 manifest;max_connections 读 mysql.yaml。
+	Java gateway 无论本次是否部署(没给 -JavaSvcRegistry 时跳过)都计入:总账按「可能同时存在」保守算。
+	login 的 PasswordAuth(池 20)不计入:K8s 的 login ConfigMap 不写该段、默认不启用;一旦启用,每 zone 要再加 2 × 20。
+	新增一个连这台 MySQL 的服务 = 这里加一组键,Get-MysqlConnectionLedger 的公式加一项。
+#>
+function Get-MysqlConnectionLedgerInputs {
+	$dbYaml = 'go/db/etc/db.yaml'
+	$dsYaml = 'go/data_service/etc/data_service.yaml'
+	return [ordered]@{
+		MaxConnections        = Get-MysqlMaxConnectionsFromManifest
+		DbReplicas            = Get-ManifestDeploymentReplicas -RelativePath 'deploy/k8s/manifests/go-svc/db.yaml'
+		DbHomeMaxOpen         = Get-AuthoritativeScalar -RelativePath $dbYaml -KeyPath 'ServerConfig.Database.MaxOpenConn'
+		# 每个额外落点库各自一个池,按库所属家族分两个旋钮(go/db config.go PlacementConfig)。
+		DbZoneStoreMaxOpen    = Get-AuthoritativeScalar -RelativePath $dbYaml -KeyPath 'Placement.ZoneStoreMaxOpenConn'
+		DbNonZoneStoreMaxOpen = Get-AuthoritativeScalar -RelativePath $dbYaml -KeyPath 'Placement.NonZoneStoreMaxOpenConn'
+		DsReplicas            = Get-ManifestDeploymentReplicas -RelativePath 'deploy/k8s/manifests/go-svc/data-service.yaml'
+		# snapshot / transaction_log / id_segment 各开一个池,共用 SnapshotMySQL.MaxOpenConn
+		# (go/data_service/internal/svc/servicecontext.go NewServiceContext)。Go 侧没有可读的配置项,所以这里是常数:
+		# 那边增减一个共用这组参数的 store,这个数要跟着改。
+		DsAuditStorePools     = 3
+		DsAuditMaxOpen        = Get-AuthoritativeScalar -RelativePath $dsYaml -KeyPath 'SnapshotMySQL.MaxOpenConn'
+		DsPlayerNameMaxOpen   = Get-AuthoritativeScalar -RelativePath $dsYaml -KeyPath 'PlayerName.MaxOpenConn'
+		# route store 的独立池只在 RouteStore.Mode=db_first 时装配;是否计入由 Get-MysqlConnectionLedger 的 -RouteStoreDbFirst 决定。
+		DsRouteMaxOpen        = Get-AuthoritativeScalar -RelativePath $dsYaml -KeyPath 'RouteStore.MaxOpenConn'
+		GatewayReplicas       = Get-ManifestDeploymentReplicas -RelativePath 'deploy/k8s/manifests/java-svc/gateway.yaml'
+		GatewayMaxPool        = Get-AuthoritativeScalar -RelativePath 'java/gateway_node/src/main/resources/application.yaml' -KeyPath 'spring.datasource.hikari.maximum-pool-size'
+		FriendReplicas        = Get-ManifestDeploymentReplicas -RelativePath 'deploy/k8s/manifests/go-svc/friend.yaml'
+		FriendMaxOpen         = Get-AuthoritativeScalar -RelativePath 'go/friend/etc/friend.yaml' -KeyPath 'MySQL.MaxOpenConn'
+		TradeReplicas         = Get-ManifestDeploymentReplicas -RelativePath 'deploy/k8s/manifests/go-svc/trade.yaml'
+		TradeMaxOpen          = Get-AuthoritativeScalar -RelativePath 'go/trade/etc/trade.yaml' -KeyPath 'MySQL.MaxOpenConn'
+	}
+}
+
+<#
+.SYNOPSIS
+	MySQL 连接总账:由输入与部署形态算出每实例 / 每 zone / 稳态 / 滚动余量 / 峰值 / 对 max_connections 的余量。
+
+.DESCRIPTION
+	记号:Z = zone 数;E_z = 每个 go/db 实例打开的额外 zone 家族库数;E_n = 非 zone 落点库数;
+	F = route store 是否 db_first;R = 滚动期间每个 Deployment 多出的实例数。
+	  db 每实例 = DbHomeMaxOpen + E_z × DbZoneStoreMaxOpen + E_n × DbNonZoneStoreMaxOpen
+	  ds 每实例 = DsAuditStorePools × DsAuditMaxOpen + DsPlayerNameMaxOpen (+ DsRouteMaxOpen,F 为真时)
+	  每 zone   = 各自副本数 × (db、ds、gateway 每实例)之和
+	  全局      = friend 与 trade 的副本数 × 池上限
+	  稳态      = Z × 每 zone + 全局
+	  滚动余量  = R × (db + ds + gateway + friend + trade 每实例)
+	  峰值      = 稳态 + 滚动余量 + 运维余量
+	纯函数,不读文件;输入不是正整数、形态参数越界即 throw(fail-closed:不替你猜一个连接数)。
+#>
+function Get-MysqlConnectionLedger {
+	param(
+		[Parameter(Mandatory = $true)][System.Collections.IDictionary]$Inputs,
+		[Parameter(Mandatory = $true)][int]$ZoneCount,
+		[Parameter(Mandatory = $true)][int]$ExtraZoneStores,
+		[Parameter(Mandatory = $true)][int]$NonZoneStores,
+		[Parameter(Mandatory = $true)][bool]$RouteStoreDbFirst,
+		# 规划档与写路径传 Get-MysqlConnectionPlan 的值(2);自检复现 2026-10-12 的名义值时传 0(那份核算不含滚动余量)。
+		[Parameter(Mandatory = $true)][int]$RolloutExtraPodsPerDeployment,
+		[Parameter(Mandatory = $true)][int]$OpsReserve
+	)
+	$required = @('MaxConnections', 'DbReplicas', 'DbHomeMaxOpen', 'DbZoneStoreMaxOpen', 'DbNonZoneStoreMaxOpen',
+		'DsReplicas', 'DsAuditStorePools', 'DsAuditMaxOpen', 'DsPlayerNameMaxOpen', 'DsRouteMaxOpen',
+		'GatewayReplicas', 'GatewayMaxPool', 'FriendReplicas', 'FriendMaxOpen', 'TradeReplicas', 'TradeMaxOpen')
+	$v = @{}
+	foreach ($key in $required) {
+		$n = 0
+		if (-not $Inputs.Contains($key) -or -not [int]::TryParse([string]$Inputs[$key], [ref]$n) -or $n -le 0) {
+			throw "MySQL 连接总账:输入 $key='$($Inputs[$key])' 必须是正整数(fail-closed:不替你猜一个连接数)"
+		}
+		$v[$key] = $n
+	}
+	if ($ZoneCount -le 0 -or $ExtraZoneStores -lt 0 -or $NonZoneStores -lt 0 -or $RolloutExtraPodsPerDeployment -lt 0 -or $OpsReserve -lt 0) {
+		throw "MySQL 连接总账:ZoneCount=$ZoneCount 必须为正,ExtraZoneStores=$ExtraZoneStores / NonZoneStores=$NonZoneStores / RolloutExtraPodsPerDeployment=$RolloutExtraPodsPerDeployment / OpsReserve=$OpsReserve 不能为负"
+	}
+	$dbPerInstance = $v.DbHomeMaxOpen + $ExtraZoneStores * $v.DbZoneStoreMaxOpen + $NonZoneStores * $v.DbNonZoneStoreMaxOpen
+	$dsPerInstance = $v.DsAuditStorePools * $v.DsAuditMaxOpen + $v.DsPlayerNameMaxOpen
+	if ($RouteStoreDbFirst) { $dsPerInstance += $v.DsRouteMaxOpen }
+	$gatewayPerInstance = $v.GatewayMaxPool
+	$perZone = $v.DbReplicas * $dbPerInstance + $v.DsReplicas * $dsPerInstance + $v.GatewayReplicas * $gatewayPerInstance
+	# 变量名不用 $global:它是作用域修饰符的名字,读的人会以为在写全局作用域。
+	$globalPools = $v.FriendReplicas * $v.FriendMaxOpen + $v.TradeReplicas * $v.TradeMaxOpen
+	$steady = $ZoneCount * $perZone + $globalPools
+	# 一个 zone 的三个 Deployment 与两个全局 Deployment 各多 RolloutExtraPodsPerDeployment 个实例
+	# (maxSurge 1 的新 Pod + 仍在优雅退出的旧 Pod;K8s 默认 25% 在 2 副本时 maxSurge 也是 1)。
+	# all-up 不带 -WaitReady 时各 zone 的滚动会重叠,不在这个余量里。
+	$surge = $RolloutExtraPodsPerDeployment * ($dbPerInstance + $dsPerInstance + $gatewayPerInstance + $v.FriendMaxOpen + $v.TradeMaxOpen)
+	$peak = $steady + $surge + $OpsReserve
+	return [ordered]@{
+		DbPerInstance = $dbPerInstance; DsPerInstance = $dsPerInstance; GatewayPerInstance = $gatewayPerInstance
+		PerZone = $perZone; Global = $globalPools; Steady = $steady; RolloutSurge = $surge; OpsReserve = $OpsReserve
+		Peak = $peak; MaxConnections = $v.MaxConnections; Headroom = $v.MaxConnections - $peak
+	}
+}
+
+<#
+.SYNOPSIS
+	写路径打印 MySQL 连接总账一行:本次部署一份、规划档一份;任一份峰值超过 max_connections 时告警,不阻断。
+
+.DESCRIPTION
+	只在写路径(zone-up / infra-up / all-up)的入口调用;*-down / *-status 不经过这里。
+	本次部署那一份:Z = zones 配置里的全部 zone ∪ 本次 -ZoneId(与 Get-InfraZoneIds 同一口径;-ZoneId 不在 zones 配置里时
+	Z 多 1,偏保守),E_z 取 max(0, Z−1),其余参数取规划档。
+	zones 配置文件缺席时不调 Get-InfraZoneIds:它那条 WARNING 讲的是「mysql-init-sql 只预建 -ZoneId 的库」,出现在
+	zone-up 的输出里是误导。此时 Z 取 1(只有 -ZoneId),并在行尾标 zones_config=missing。
+	超限只打 WARN 不 throw(是否升级为部署门禁待拍板)。输入文件缺键、max_connections / replicas 不是恰好一处、
+	zones 配置在却解析不了,照常 throw —— 与 ConfigMap 生成器同一纪律(zone-up 以前不读 zones 配置,现在为了数 zone 会读)。
+#>
+function Write-MysqlConnectionLedger {
+	$ledgerPlan = Get-MysqlConnectionPlan
+	$ledgerInputs = Get-MysqlConnectionLedgerInputs
+
+	$deployZoneCount = 1
+	$zonesConfigTail = ' zones_config=missing'
+	# 与 Get-InfraZoneIds 用同一个判据(Test-Path 不带 -LiteralPath):两边对「文件在不在」不会各说各话。
+	if (Test-Path (Resolve-ZonesConfigPath)) {
+		$deployZoneCount = @(Get-InfraZoneIds).Count
+		$zonesConfigTail = ''
+	}
+	$deployExtraZoneStores = [Math]::Max(0, $deployZoneCount - 1)
+
+	$deployLedger = Get-MysqlConnectionLedger -Inputs $ledgerInputs -ZoneCount $deployZoneCount `
+		-ExtraZoneStores $deployExtraZoneStores -NonZoneStores $ledgerPlan.NonZoneStores `
+		-RouteStoreDbFirst $ledgerPlan.RouteStoreDbFirst `
+		-RolloutExtraPodsPerDeployment $ledgerPlan.RolloutExtraPodsPerDeployment -OpsReserve $ledgerPlan.OpsReserve
+	$planLedger = Get-MysqlConnectionLedger -Inputs $ledgerInputs -ZoneCount $ledgerPlan.ZoneCount `
+		-ExtraZoneStores $ledgerPlan.ExtraZoneStores -NonZoneStores $ledgerPlan.NonZoneStores `
+		-RouteStoreDbFirst $ledgerPlan.RouteStoreDbFirst `
+		-RolloutExtraPodsPerDeployment $ledgerPlan.RolloutExtraPodsPerDeployment -OpsReserve $ledgerPlan.OpsReserve
+
+	$ledgerLineFormat = "MySQL connection ledger: zones={0} steady={1} peak={2} max_connections={3} headroom={4}; plan zones={5} peak={6} headroom={7}{8}"
+	Write-Host ($ledgerLineFormat -f $deployZoneCount, $deployLedger.Steady, $deployLedger.Peak, $deployLedger.MaxConnections, $deployLedger.Headroom,
+		$ledgerPlan.ZoneCount, $planLedger.Peak, $planLedger.Headroom, $zonesConfigTail)
+
+	$overLimit = New-Object System.Collections.Generic.List[string]
+	if ($deployLedger.Peak -gt $deployLedger.MaxConnections) {
+		$overLimit.Add(("this deploy zones={0} (each go/db instance counted as opening the databases of the other {1} zones) peak {2}" -f $deployZoneCount, $deployExtraZoneStores, $deployLedger.Peak))
+	}
+	if ($planLedger.Peak -gt $planLedger.MaxConnections) {
+		$overLimit.Add(("plan zones={0} (Get-MysqlConnectionPlan) peak {1}" -f $ledgerPlan.ZoneCount, $planLedger.Peak))
+	}
+	if ($overLimit.Count -gt 0) {
+		# 开头「[MySQLConnectionLedger]OverLimit:」那一段刻意不留空格:ConsoleHost 可能按窗口宽度在空格处折行,契约测试只断这一段。
+		# 控制台输出用英文,与本脚本其余 Write-Host / Write-Warning 一致;改措辞要同步改契约测试与 deploy/k8s/README.md「MySQL 连接总账」一节。
+		# 格式串先拼好再 -f:-f 的优先级高于 +,写成一个表达式的话只有最后一段会被格式化。
+		$overLimitFormat = ("[MySQLConnectionLedger]OverLimit:{0}; limit max_connections={1} (deploy/k8s/manifests/infra/mysql.yaml). Deployment continues: warning only, not blocking. Two ways out, pick one: " +
+			"(1) finish TiDB Phase 1 first (docs/design/tidb-phase1-and-launch-readiness.md); " +
+			"(2) redo Get-MysqlConnectionPlan and update both max_connections and the memory limits in mysql.yaml (raising the limit without raising memory trades error 1040 for OOMKill).")
+		Write-Warning ($overLimitFormat -f ($overLimit -join '; '), $deployLedger.MaxConnections)
+	}
+}
+
+# ConfigMap 里镜像的 MySQL 连接池参数:让上面总账的输入等于集群里真正生效的值。
+
+<#
+.SYNOPSIS
+	ConfigMap 要镜像的 MySQL 连接池参数:按目标从服务自己的配置读出,核过才返回,不合格即 throw。
+
+.DESCRIPTION
+	以前这几组池参数不进 ConfigMap:go/db 的额外落点库池、data-service 的名字注册表池与 route store 池靠
+	「Go 默认值恰好等于服务 yaml」,gateway 的 Hikari 靠 jar 内那份。总账读的是服务配置,两边一漂移,账就不是集群的账。
+
+	核对规则:上限是正整数;空闲数是整数,不低于下限、不超过上限。Go 服务的下限是 1 —— 0 在 Go 侧是「没配,取默认」
+	(go/db、go/data_service 的 Normalize),镜像一个 0 进 ConfigMap,集群里生效的就不是写出来的值。
+	为什么在部署侧就拒:镜像之后,服务 yaml 里一个非法的池值会原样进集群。data-service 不分 Mode 校验 RouteStore
+	(go/data_service/data_service.go),K8s 上固定 Mode: redis 也会拒启;PlayerName 非法则名字 store 不装配,
+	Store.Required: true 下同样拒启。宁可在 apply 之前失败,也不要 CrashLoopBackOff。
+
+	两处调用、同一份清单:写路径入口的 Assert-MysqlPoolMirror(先于任何集群写操作把三个目标都读一遍),以及
+	ConfigMap 生成器取值(New-GoSvcConfigMapYaml 的 db / data-service、New-JavaSvcConfigMapYaml 的 gateway)。
+	新增一个要镜像的池 = 在这里加一行,再在模板里写出来;Get-MysqlConnectionLedgerInputs 读的是同一批键。
+
+.OUTPUTS
+	[ordered] 键 = 服务配置里的键路径,值 = [int]。
+#>
+function Get-MysqlPoolMirror {
+	param([Parameter(Mandatory = $true)][ValidateSet('db', 'data-service', 'gateway')][string]$Target)
+
+	$source = ''
+	$idleFloor = 1
+	$pools = @()
+	$positiveScalars = @()
+	switch ($Target) {
+		'db' {
+			$source = 'go/db/etc/db.yaml'
+			$pools = @(
+				@{ MaxOpen = 'Placement.ZoneStoreMaxOpenConn'; MaxIdle = 'Placement.ZoneStoreMaxIdleConn' }
+				@{ MaxOpen = 'Placement.NonZoneStoreMaxOpenConn'; MaxIdle = 'Placement.NonZoneStoreMaxIdleConn' }
+			)
+			# 额外落点库池的空闲连接回收秒数:Go 侧 ≤0 视为没写、取默认 60,同样不镜像一个「等于没写」的值。
+			$positiveScalars = @('Placement.ExtraStoreConnMaxIdleSeconds')
+		}
+		'data-service' {
+			$source = 'go/data_service/etc/data_service.yaml'
+			$pools = @(
+				@{ MaxOpen = 'PlayerName.MaxOpenConn'; MaxIdle = 'PlayerName.MaxIdleConn' }
+				@{ MaxOpen = 'RouteStore.MaxOpenConn'; MaxIdle = 'RouteStore.MaxIdleConn' }
+			)
+		}
+		'gateway' {
+			$source = 'java/gateway_node/src/main/resources/application.yaml'
+			# Hikari 的 minimum-idle 写 0 是一个显式的合法值(不保留空闲连接;Hikari 行为凭记忆,未核实),所以下限是 0。
+			$idleFloor = 0
+			$pools = @(
+				@{ MaxOpen = 'spring.datasource.hikari.maximum-pool-size'; MaxIdle = 'spring.datasource.hikari.minimum-idle' }
+			)
+		}
+	}
+
+	$values = [ordered]@{}
+	foreach ($pool in $pools) {
+		$maxOpenRaw = Get-AuthoritativeScalar -RelativePath $source -KeyPath $pool.MaxOpen
+		$maxIdleRaw = Get-AuthoritativeScalar -RelativePath $source -KeyPath $pool.MaxIdle
+		$maxOpen = 0
+		$maxIdle = 0
+		if (-not [int]::TryParse([string]$maxOpenRaw, [ref]$maxOpen) -or $maxOpen -le 0) {
+			throw "MySQL 连接池镜像:$source 的 $($pool.MaxOpen)='$maxOpenRaw' 必须是正整数(fail-closed:不把一个非法的池上限写进 ConfigMap)"
+		}
+		if (-not [int]::TryParse([string]$maxIdleRaw, [ref]$maxIdle) -or $maxIdle -lt $idleFloor -or $maxIdle -gt $maxOpen) {
+			throw "MySQL 连接池镜像:$source 的 $($pool.MaxIdle)='$maxIdleRaw' 必须是不小于 ${idleFloor}、不超过 $($pool.MaxOpen)=$maxOpen 的整数(fail-closed:服务端会拒启或静默改写它)"
+		}
+		$values[$pool.MaxOpen] = $maxOpen
+		$values[$pool.MaxIdle] = $maxIdle
+	}
+	foreach ($keyPath in $positiveScalars) {
+		$raw = Get-AuthoritativeScalar -RelativePath $source -KeyPath $keyPath
+		$parsed = 0
+		if (-not [int]::TryParse([string]$raw, [ref]$parsed) -or $parsed -le 0) {
+			throw "MySQL 连接池镜像:$source 的 $keyPath='$raw' 必须是正整数(fail-closed:Go 侧把 ≤0 当成没写)"
+		}
+		$values[$keyPath] = $parsed
+	}
+	return $values
+}
+
+<#
+.SYNOPSIS
+	部署门禁:ConfigMap 要镜像的 MySQL 连接池参数先全部读一遍,任何一项不合格即 throw(清单与规则见 Get-MysqlPoolMirror)。
+
+.DESCRIPTION
+	只在写路径(zone-up / infra-up / all-up)的入口调用、先于任何集群写操作;*-down / *-status 不经过这里。
+	生成器取值时会再核一次,但那已经在 Apply-Zone 中途:node-config / gate / scene 都 apply 完了,才在生成 go-svc ConfigMap
+	时失败,留下半截部署。
+	三个目标都核,不看本次带没带 -SkipGoSvc / -SkipJavaSvc、是不是 infra-up:与 Get-MysqlConnectionLedgerInputs 同一口径 ——
+	总账本来就要读这些文件,仓库里的服务配置不合格,就不该从这棵工作树发布。
+#>
+function Assert-MysqlPoolMirror {
+	foreach ($mirrorTarget in @('db', 'data-service', 'gateway')) {
+		[void](Get-MysqlPoolMirror -Target $mirrorTarget)
+	}
+}
+
 # Go micro-service catalogue: name → { configMapName, manifestFile, port, configFlag, configFileName }
 #   Global = $true 的条目是**全局池**服务:只在 infra-up / all-up 的基础设施阶段部署到
 #   $InfraNamespace 一次,zone-up 跳过(见 Apply-GlobalGoSvcManifests)。
@@ -1134,7 +1546,7 @@ function Assert-KafkaTopologyChangeIsSafe {
 	$verdict = Get-KafkaTopologyChangeVerdict -LiveReplicas $live -DesiredBrokers $Topology.Brokers
 	if ($verdict -eq 'absent' -or $verdict -eq 'unchanged') { return }
 	if ($verdict -eq 'scale-up') {
-		Write-Host "Kafka broker 扩容:$live → $($Topology.Brokers)。新 broker 起来后**不会**自动接手已有 topic 的分区,需要用 kafka-reassign-partitions.sh 把副本挪过去(README「Kafka:多 broker」)。"
+		Write-Host "Kafka broker expansion: $live -> $($Topology.Brokers). New brokers do not automatically take over existing topic partitions; move replicas with kafka-reassign-partitions.sh (README section Kafka: multiple brokers)."
 		return
 	}
 	throw @"
@@ -1216,7 +1628,7 @@ function Show-ExposureProfileWarning {
 		# podip:暴露 Service 只是一半。客户端的 gate 地址不是从 Service 拿的,而是 login 从 etcd 读到 endpoint 后
 		# 下发的(go/login internal/svc/servicecontext.go CandidatesForZone),podip 下那就是 POD_IP —— 集群内地址,
 		# 只有 in-cluster 的 robot 连得上。集群外客户端要走 -ClientEntryMode external(D76–D93)。
-		Write-Warning "GateServiceType=$GateServiceType 只是把 Service 暴露了出去:-ClientEntryMode podip 下 login 下发的是 gate 在 etcd 里注册的集群内 POD_IP,集群外客户端仍然连不上。对外开放请用 -ClientEntryMode external(gate StatefulSet + 每序号 Service,见 docs/design/k8s-client-entry.md);单一 gate-entry 只在 gate 副本数为 1 时生成(D90)。"
+		Write-Warning "GateServiceType=$GateServiceType only exposes the Service: with -ClientEntryMode podip, login returns the in-cluster POD_IP registered by gate in etcd, so external clients still cannot connect. For external access, use -ClientEntryMode external (gate StatefulSet + per-ordinal Service; see docs/design/k8s-client-entry.md). A single gate-entry is generated only when gate replicas=1 (D90)."
 	}
 }
 
@@ -1229,6 +1641,26 @@ function Test-ZoneLoginDeployed {
 # 本次是否部署 gateway(Apply-Zone → Apply-JavaSvcManifests 的同一组开关)。集群外入口预检与管理面口令解析共用这一处判定。
 function Test-ZoneGatewayDeployed {
 	return (($Command -in @("zone-up", "all-up")) -and -not $SkipJavaSvc -and -not [string]::IsNullOrWhiteSpace($JavaSvcRegistry))
+}
+
+# 削峰(G4b)的部署计划:写路径入口打一行「两个开关的解析结果 + 起步值」,并对三种容易被忽略的状态告警(都不阻断)。
+# 警告只在本次确实部署对应服务时打(infra-up 不部署 gateway / login)。警告文本以不含空格、三条互不相同的「[PeakShaving]Xxx=yyy」开头:
+# Write-Warning 可能在空格处折行,契约测试只匹配这个开头,改措辞要同步改测试。控制台输出用英文,与本脚本其余 Write-Host / Write-Warning 一致。
+# 已有 Ingress 却不给 -GatewayTrustedProxies 的情形由入口预检直接拒绝(Assert-ClientEntryDeployPreflight),这里不重复。
+function Show-PeakShavingPlan {
+	$t = $script:PeakShavingLaunchTier
+	$gw = if ($script:GatewayRateLimitOn) { 'on' } else { 'off' }
+	$lq = if ($script:LoginQueueOn) { 'on' } else { 'off' }
+	Write-Host "PeakShaving: gateway_rate_limit=${gw}(-GatewayRateLimit $GatewayRateLimit) login_queue=${lq}(-LoginQueue $LoginQueue) profile=$ReleaseProfile initial values (pending stress-test validation) zone=$($t.ZoneDefaultRps)/s burst=$($t.ZoneDefaultBurst) ip=$($t.IpRps)/s burst=$($t.IpBurst) cooldown=$($t.AccountCooldownMs)ms queue_capacity=$($t.LoginQueueZoneCapacity)/zone"
+	if ($ReleaseProfile -ne 'dev' -and -not $script:GatewayRateLimitOn -and (Test-ZoneGatewayDeployed)) {
+		Write-Warning "[PeakShaving]GatewayRateLimit=off(ReleaseProfile=${ReleaseProfile}):gateway rate limiting disabled. Use only for incident mitigation or baseline stress tests; this flag is not persistent and the next deployment enables it unless overridden."
+	}
+	if ($ReleaseProfile -ne 'dev' -and -not $script:LoginQueueOn -and (Test-ZoneLoginDeployed)) {
+		Write-Warning "[PeakShaving]LoginQueue=off(ReleaseProfile=${ReleaseProfile}):login queue disabled; queued players retry the fast path after their queue_token becomes EXPIRED. This flag is not persistent."
+	}
+	if ($script:GatewayRateLimitOn -and (Test-ZoneGatewayDeployed) -and (ConvertTo-ClientEntryCidrList -CommaSeparated $GatewayTrustedProxies).Count -eq 0) {
+		Write-Warning "[PeakShaving]GatewayTrustedProxies=unset(GatewayRateLimit=on):gateway rate limiting is enabled without trusted proxies (-GatewayTrustedProxies). IP buckets use the socket peer; robots connecting directly inside the cluster share a bucket per Pod IP ($($t.IpRps)/s, burst $($t.IpBurst)). An unregistered L7 proxy makes all players share one bucket."
+	}
 }
 
 <#
@@ -1298,7 +1730,7 @@ function Assert-ClientEntryDeployPreflight {
 	})
 
 	if ($LoginDevPasswordAuth -and -not $deploysLogin) {
-		Write-Warning "[client-entry] 给了 -LoginDevPasswordAuth,但本次不部署 login(它只随 zone-up / all-up 的 Go 服务生成,需要 -GoSvcRegistry 且不带 -SkipGoSvc),开关不生效。"
+		Write-Warning "[client-entry] -LoginDevPasswordAuth supplied, but login is not deployed in this run (only generated with Go services during zone-up / all-up; requires -GoSvcRegistry without -SkipGoSvc); flag has no effect."
 	}
 
 	# battle 工作负载在这里渲染(Apply-Infra 开头"battle 配置在任何基础设施写操作之前生成并校验"的同一约定):
@@ -1309,7 +1741,7 @@ function Assert-ClientEntryDeployPreflight {
 	}
 
 	if ($DryRun) {
-		Write-Host "[dry-run] 跳过集群现状预检(gate / battle 的形态与地址来源、gateway Ingress):真实执行时在任何写操作之前判定。"
+		Write-Host "[dry-run] Skipping current cluster-state preflight (gate / battle modes and address sources, gateway Ingress); actual execution checks before any writes."
 	}
 	else {
 		Assert-ClientEntryClusterState -Zones $zones -DeploysBattle $deploysBattle -DeploysGateway $deploysGateway `
@@ -1372,7 +1804,7 @@ function Assert-ClientEntryClusterState {
 		$drifts += @(Get-BattleEntryDrift -AgonesFleetCrdPresent $AgonesFleetCrdPresent)
 	}
 
-	# New-GatewayRateLimitYaml 为空 = 本次 gateway ConfigMap 不含 trusted-proxies(与 New-JavaSvcConfigMapYaml 同一判定)。
+	# 不传 -Settings 的 New-GatewayRateLimitYaml 为空 = 本次 gateway ConfigMap 不含 trusted-proxies。只看 trusted-proxies 是否为空;削峰阈值(G4b)另由 -Settings 写,不参与本判定。
 	# 非法 CIDR 已被静态 preflight 拒绝,这里不会 throw。
 	$gatewayLosesTrustedProxies = $DeploysGateway -and [string]::IsNullOrEmpty((New-GatewayRateLimitYaml -TrustedProxies $GatewayTrustedProxies))
 	foreach ($zone in $Zones) {
@@ -1397,7 +1829,7 @@ function Assert-ClientEntryClusterState {
 
 	if ($AllowDisruptiveSwitch) {
 		foreach ($drift in $drifts) {
-			Write-Warning "[client-entry] 已给 -AllowDisruptiveSwitch,放行:$drift"
+			Write-Warning "[client-entry] -AllowDisruptiveSwitch supplied; allowed: $drift"
 		}
 	}
 	else {
@@ -2412,7 +2844,7 @@ function Write-CppLogSidecarNotice {
 	Write-Host "C++ log sidecar: enabled (namespace=$Namespace image=$CppLogSidecarImage push=$script:CppLogSidecarPushUrl)"
 	# 说清真实症状:sidecar 是原生 sidecar(initContainers),拉不到镜像时业务容器**一次都不会启动**,
 	# Pod 卡在 Init:ErrImagePull / Init:ImagePullBackOff,报错在 describe 的 Init Containers 一节。
-	Write-Host "  kind 集群需先把 $CppLogSidecarImage 载入节点:拉不到镜像时 gate/scene/battle 会卡在 Init:ErrImagePull,业务容器根本不启动(预载命令见 deploy/k8s/README.md)。不想要就加 -NoCppLogSidecar。"
+	Write-Host "  Load $CppLogSidecarImage into kind nodes first: if the image cannot be pulled, gate/scene/battle remain in Init:ErrImagePull and the application container never starts (preload command in deploy/k8s/README.md). Pass -NoCppLogSidecar to disable it."
 
 	if ($DryRun) { return }
 	# 只有用集群内默认 Loki 时才探测得了;-LokiPushUrl 指向外部时这里无从判断。
@@ -2423,11 +2855,11 @@ function Write-CppLogSidecarNotice {
 	$probeArgs += @("-n", $InfraNamespace, "get", "svc", "loki", "--ignore-not-found", "-o", "name")
 	$found = & kubectl @probeArgs 2>$null
 	if ($LASTEXITCODE -ne 0) {
-		Write-Warning "没能确认 $InfraNamespace 里是否有 Loki Service(kubectl get svc loki 执行失败),C++ 日志可能推不出去。"
+		Write-Warning "Could not confirm whether $InfraNamespace contains a Loki Service (kubectl get svc loki failed); C++ log delivery may fail."
 		return
 	}
 	if ([string]::IsNullOrWhiteSpace(($found -join ''))) {
-		Write-Warning "sidecar 会把 C++ 日志推向 $script:CppLogSidecarPushUrl,但 $InfraNamespace 里没有 loki Service。先跑一次 -Command infra-up(别带 -SkipInfra),或用 -LokiPushUrl 指向已有的 Loki,或 -NoCppLogSidecar 关掉 —— 否则部署会成功,日志一条也查不到。"
+		Write-Warning "The sidecar sends C++ logs to $script:CppLogSidecarPushUrl, but $InfraNamespace has no loki Service. Run -Command infra-up without -SkipInfra, set -LokiPushUrl to an existing Loki, or disable it with -NoCppLogSidecar; otherwise deployment succeeds but no logs can be queried."
 	}
 }
 
@@ -3034,13 +3466,66 @@ function Wait-ForZoneReady {
 			# manifests/java-svc/auth.yaml 也不存在)在 Apply-JavaSvcManifests 里只告警不 apply,
 			# 这里若照等就会在 `rollout status deploy/auth` 上白白超时,拖垮整条 -WaitReady。
 			if (-not (Test-Path (Join-Path $JavaSvcManifestsDir $JavaSvcCatalogue[$svcName].Manifest))) {
-				Write-Host "  [skip-wait] ${svcName}: manifest 不存在,未部署,不等待"
+				Write-Host "  [skip-wait] ${svcName}: manifest missing; not deployed; skipping wait"
 				continue
 			}
 			Wait-ForDeploymentReady -Namespace $Namespace -DeploymentName $svcName
 		}
 	}
 	Write-Host "Zone workloads are ready: namespace=$Namespace"
+}
+
+<#
+.SYNOPSIS
+	login.yaml 顶层的 Queue 段(G4b)。关 = 空串(不写 → go-zero 零值 Enabled=false,产物与 G4b 之前逐字相同)。
+.DESCRIPTION
+	- 除 Enabled / DispatcherLockKey / ZoneCapacityOverride 外,全部从 go/login/etc/login.yaml 镜像(契约值单一来源)。
+	- DispatcherLockKey = <login.yaml 的基名>:zone:<本 zone>。login 把这个配置值当**前缀**、自己再拼一次 :zone:<Node.ZoneId>
+	  (G1b,loginqueue.ZoneDispatcherLockKey),所以实际锁键是 <基名>:zone:<id>:zone:<id>:每个 zone 仍恰有一个 leader,只是排查时
+	  键名要按它查。这里显式带 zone 防的是另一种情形:kubectl rollout undo 把 login 退回 G1b 之前的镜像,而 ConfigMap 不随之回退、
+	  仍是开排队的这一份。旧镜像原样使用配置值,写全局基名就会退回「全集群一个 leader、其它 zone 的队列不出队」。同一 zone
+	  新旧镜像混跑的窗口里两把键不互斥,短暂双 leader,最多多放行一批(docs/design/login-queue-2026-05.md §7.1)。
+	  这一行依赖「配置值是前缀、锁按 zone 拆」:login 若改成「一个 leader 覆盖全部 zone」,必须删掉显式的 zone 后缀,
+	  否则 N 个 leader 同时出队所有 zone、超发准入(契约测试钉住 ZoneDispatcherLockKey 的前缀语义)。
+	- ZoneCapacityOverride 只写本 zone:每个 zone 的 login 只出队本 zone。不配会落到 loginqueue.FreeSlots 的回落公式
+	  (max(在线, 1) × SoftCapMultiplier 向下取整,在线 0 / 1 人时容量为 1),队列非空时可能永远放不出人。
+	- 调用方只在生成 login 的 ConfigMap / Pod 指纹时调用(New-GoSvcConfigMapYaml、Apply-OneGoSvc),两处拿到的是同一段文本。
+#>
+function New-LoginQueueYaml {
+	param([Parameter(Mandatory = $true)][int]$CurrentZoneId)
+
+	if (-not $script:LoginQueueOn) { return '' }
+	$y = 'go/login/etc/login.yaml'
+	$dispatchInterval = Get-AuthoritativeScalar -RelativePath $y -KeyPath 'Queue.DispatchInterval'
+	$admitTtl         = Get-AuthoritativeScalar -RelativePath $y -KeyPath 'Queue.AdmitTTL'
+	$entryTtl         = Get-AuthoritativeScalar -RelativePath $y -KeyPath 'Queue.QueueEntryTTL'
+	$softCap          = Get-AuthoritativeScalar -RelativePath $y -KeyPath 'Queue.SoftCapMultiplier'
+	$retryAfterMs     = Get-AuthoritativeScalar -RelativePath $y -KeyPath 'Queue.DefaultRetryAfterMs'
+	$lockTtl          = Get-AuthoritativeScalar -RelativePath $y -KeyPath 'Queue.DispatcherLockTTL'
+	$lockKeyBase      = Get-AuthoritativeScalar -RelativePath $y -KeyPath 'Queue.DispatcherLockKey'
+	$capacity = [long]$script:PeakShavingLaunchTier.LoginQueueZoneCapacity
+	if ($capacity -lt 1 -or $capacity -gt [uint32]::MaxValue) {
+		throw "内部错误:LoginQueueZoneCapacity=$capacity 不在 1..$([uint32]::MaxValue)(Go 侧是 uint32)。"
+	}
+	if ($CurrentZoneId -lt 1) { throw "生成 login Queue 段失败:ZoneId=$CurrentZoneId 必须为正。" }
+
+	return @"
+# 登录排队(G4b,按 -LoginQueue / -ReleaseProfile 生成)。除 Enabled / DispatcherLockKey / ZoneCapacityOverride 三项外全部镜像 go/login/etc/login.yaml。
+# DispatcherLockKey 带本 zone:新镜像把它当前缀再拼一次 zone(实际锁键 ...:zone:N:zone:N),G1b 之前的旧镜像原样用,两种都按 zone 隔离
+# (见 k8s_deploy.ps1 New-LoginQueueYaml)。
+# ZoneCapacityOverride 是本 zone 同时在线上限(不是速率),开服档起步值,待压测确认。
+Queue:
+  Enabled: true
+  DispatchInterval: $dispatchInterval
+  AdmitTTL: $admitTtl
+  QueueEntryTTL: $entryTtl
+  SoftCapMultiplier: $softCap
+  DefaultRetryAfterMs: $retryAfterMs
+  DispatcherLockTTL: $lockTtl
+  DispatcherLockKey: "${lockKeyBase}:zone:${CurrentZoneId}"
+  ZoneCapacityOverride:
+    "${CurrentZoneId}": $capacity
+"@
 }
 
 function New-GoSvcConfigMapYaml {
@@ -3061,6 +3546,23 @@ function New-GoSvcConfigMapYaml {
 	$dbSubShardCount   = Get-AuthoritativeScalar -RelativePath 'go/db/etc/db.yaml' -KeyPath 'ServerConfig.Kafka.SubShardCount'
 	$dbMaxOpenConn     = Get-AuthoritativeScalar -RelativePath 'go/db/etc/db.yaml' -KeyPath 'ServerConfig.Database.MaxOpenConn'
 	$dbMaxIdleConn     = Get-AuthoritativeScalar -RelativePath 'go/db/etc/db.yaml' -KeyPath 'ServerConfig.Database.MaxIdleConn'
+	# 额外落点库(本 zone 库之外)的连接池:每个库一个池,按库所属家族分两个旋钮,外加空闲连接的回收秒数(G2b)。
+	# 从 go/db/etc/db.yaml 的 Placement 段镜像,并核过「正整数且 idle ≤ open」(Get-MysqlPoolMirror);MySQL 连接总账读的是同一批键。
+	# 只在生成 db 自己的 ConfigMap 时求值:别的服务不该因为 db 的池参数不合格而生成失败(写路径入口的
+	# Assert-MysqlPoolMirror 已经先于任何集群写操作把它们核过一遍)。
+	$dbZoneStoreMaxOpenConn         = ''
+	$dbZoneStoreMaxIdleConn         = ''
+	$dbNonZoneStoreMaxOpenConn      = ''
+	$dbNonZoneStoreMaxIdleConn      = ''
+	$dbExtraStoreConnMaxIdleSeconds = ''
+	if ($SvcName -eq 'db') {
+		$dbPoolMirror = Get-MysqlPoolMirror -Target 'db'
+		$dbZoneStoreMaxOpenConn         = $dbPoolMirror['Placement.ZoneStoreMaxOpenConn']
+		$dbZoneStoreMaxIdleConn         = $dbPoolMirror['Placement.ZoneStoreMaxIdleConn']
+		$dbNonZoneStoreMaxOpenConn      = $dbPoolMirror['Placement.NonZoneStoreMaxOpenConn']
+		$dbNonZoneStoreMaxIdleConn      = $dbPoolMirror['Placement.NonZoneStoreMaxIdleConn']
+		$dbExtraStoreConnMaxIdleSeconds = $dbPoolMirror['Placement.ExtraStoreConnMaxIdleSeconds']
+	}
 
 	$loginPartitionCnt      = Get-AuthoritativeScalar -RelativePath 'go/login/etc/login.yaml' -KeyPath 'Kafka.PartitionCnt'
 	$loginInitialPartition  = Get-AuthoritativeScalar -RelativePath 'go/login/etc/login.yaml' -KeyPath 'Kafka.InitialPartition'
@@ -3108,6 +3610,20 @@ function New-GoSvcConfigMapYaml {
 	$dsKafkaLagProbeIntervalMs         = Get-AuthoritativeScalar -RelativePath $dsYaml -KeyPath 'Kafka.LagProbeIntervalMs'
 	$dsMysqlMaxOpenConn           = Get-AuthoritativeScalar -RelativePath $dsYaml -KeyPath 'SnapshotMySQL.MaxOpenConn'
 	$dsMysqlMaxIdleConn           = Get-AuthoritativeScalar -RelativePath $dsYaml -KeyPath 'SnapshotMySQL.MaxIdleConn'
+	# 名字注册表与 route store 各自的独立连接池(G2b):从服务 yaml 的 PlayerName / RouteStore 段镜像池大小两项,
+	# 并核过「正整数且 idle ≤ open」(Get-MysqlPoolMirror);MySQL 连接总账读的是同一批键。以前 ConfigMap 不写这两组,
+	# 池大小靠「Go 默认值恰好等于服务 yaml」。与上面 db 的池参数同理,只在生成 data-service 自己的 ConfigMap 时求值。
+	$dsPlayerNameMaxOpenConn      = ''
+	$dsPlayerNameMaxIdleConn      = ''
+	$dsRouteStoreMaxOpenConn      = ''
+	$dsRouteStoreMaxIdleConn      = ''
+	if ($SvcName -eq 'data-service') {
+		$dsPoolMirror = Get-MysqlPoolMirror -Target 'data-service'
+		$dsPlayerNameMaxOpenConn = $dsPoolMirror['PlayerName.MaxOpenConn']
+		$dsPlayerNameMaxIdleConn = $dsPoolMirror['PlayerName.MaxIdleConn']
+		$dsRouteStoreMaxOpenConn = $dsPoolMirror['RouteStore.MaxOpenConn']
+		$dsRouteStoreMaxIdleConn = $dsPoolMirror['RouteStore.MaxIdleConn']
+	}
 	# C++ 约定注册(DataServiceNodeService.rpc)那把 etcd 租约的 TTL:Go config 顶层键、默认 60
 	# (go/data_service/internal/config/config.go LeaseTTL),与 scene-manager / match 同形,同样从服务自己的 yaml 取。
 	$dsLeaseTTL                   = Get-AuthoritativeScalar -RelativePath $dsYaml -KeyPath 'LeaseTTL'
@@ -3427,6 +3943,24 @@ function New-GoSvcConfigMapYaml {
 		$loginDevPasswordAuthBlock = "`n" + (New-LoginDevPasswordAuthYaml)
 	}
 
+	# login 的登录排队段与排队令牌密钥(G4b,-LoginQueue / -ReleaseProfile)。只在生成 login 自己的 ConfigMap 时求值:
+	# 别的服务不读这两项,也不该因为 login.yaml 的 Queue 段缺键而生成失败(New-LoginQueueYaml 查不到即 throw)。
+	# 关 = 两个片段都是空串,login 模板的产物与 G4b 之前逐字相同。
+	$loginQueueBlock = ''
+	$loginQueueTokenSecretBlock = ''
+	if ($SvcName -eq 'login') {
+		$queueYaml = New-LoginQueueYaml -CurrentZoneId $CurrentZoneId
+		if (-not [string]::IsNullOrEmpty($queueYaml)) {
+			$loginQueueBlock = "`n" + $queueYaml
+			# Secrets.QueueToken 与 InternalAuth 同处一个 Secrets: 键(不能另起一个 Secrets:,重复键后者覆盖前者)。与兄弟项 InternalAuth
+			# 一样写明文 Value(暴露面相同)。dev 档允许为空:不写 → login 宽松档回落 GateToken 密钥并打 WARN(secrets.go ResolveSecrets);
+			# staging / prod 由 Initialize-InjectedSecrets 保证非空、≥32、与另两把不同。
+			if (-not [string]::IsNullOrEmpty($script:LoginQueueTokenSecret)) {
+				$loginQueueTokenSecretBlock = "`n  QueueToken:`n    Value: `"$($script:LoginQueueTokenSecret)`""
+			}
+		}
+	}
+
 	$svcConfig = switch ($SvcName) {
 		"db" {
 @"
@@ -3466,10 +4000,25 @@ ${dbAllowedDatabasesYaml}
     DefaultTTLSeconds: 3600
     Password: "${redisPassword}"
     # 这个 RedisClient 同时是按落点选库读 player:placement / player:zone 的句柄(player-storage-placement.md §6.2):
-    # 顶层 Placement 段不写 = 整段取缺省(AllowStoreFamilies=true、Required=false、Redis 复用本段)。
+    # 顶层 Placement 只写连接池,Redis 不写 = Placement.Redis 取缺省(复用本段)。
     # 所以它必须与 data-service ConfigMap 的 MappingRedis 同实例、DB 0 —— 读错库 = 读不到任何记录与 home_zone,
     # 全员按本 zone 选库,被钉到别处的玩家会写错库。契约测试钉住两者同址。
     DB: 0
+# 与 manifests/go-svc/db.yaml 的 metrics 容器端口 / prometheus.io/port 注解一致(9160 = db,与本地 go/db/etc/db.yaml 同值)。
+# 不写 = 缺省空串 = 不起 /metrics 端口:manifest 已声明 9160 并打了抓取注解,不写的话抓取恒失败,
+# 连接池指标 mmorpg_sql_pool_* 与 owner-epoch-alerts.yaml 的抓取前提在集群里都不成立。
+MetricsListenAddr: ":9160"
+# 额外落点库连接池(镜像 go/db/etc/db.yaml;计入 MySQL 连接总账 Get-MysqlConnectionLedger)。每个额外落点库一个池,
+# 按库所属家族分两个旋钮:ZoneStore* = zone 家族库(冷缓存访客读、合服 pin 后的源区库),NonZoneStore* = 非 zone 落点库(Phase 2);
+# ExtraStoreConnMaxIdleSeconds = 这些池里空闲连接的回收秒数。本 zone 库的池仍是上面的 Database.MaxOpenConn / MaxIdleConn。
+# 只写连接池这几项:AllowStoreFamilies / Required / Redis 仍不写 = 取缺省(true / false / 复用上面的 RedisClient),
+# 语义与以前整段不写相同(go/db config.go PlacementConfig 的缺省规则)。
+Placement:
+  ZoneStoreMaxOpenConn: ${dbZoneStoreMaxOpenConn}
+  ZoneStoreMaxIdleConn: ${dbZoneStoreMaxIdleConn}
+  NonZoneStoreMaxOpenConn: ${dbNonZoneStoreMaxOpenConn}
+  NonZoneStoreMaxIdleConn: ${dbNonZoneStoreMaxIdleConn}
+  ExtraStoreConnMaxIdleSeconds: ${dbExtraStoreConnMaxIdleSeconds}
 "@
 		}
 		"data-service" {
@@ -3484,7 +4033,7 @@ Etcd:
 # 映射一直落在 DB 0(与 go/data_service/etc/data_service.yaml 的注释同一结论)。留着它只会误导运维按 15 去查 /
 # 给 merge_zone 填 -mapping-redis-db 15,让合服围栏与改映射打进 data_service 从不读的库。
 # player:zone / player:placement / merge:in_progress / db:capability:zone 都在这个实例的 DB 0;
-# go/db 的 Placement.Redis 缺省复用它自己的 RedisClient(同一实例、DB 0),所以 go-svc-db ConfigMap 不写 Placement 段。
+# go/db 的 Placement.Redis 缺省复用它自己的 RedisClient(同一实例、DB 0),所以 go-svc-db ConfigMap 不写 Placement.Redis。
 MappingRedis:
   Host: redis.${InfraNamespace}:6379
   Type: node
@@ -3524,6 +4073,14 @@ SnapshotMySQL:
   DBName: "${GlobalDbName}"
   MaxOpenConn: ${dsMysqlMaxOpenConn}
   MaxIdleConn: ${dsMysqlMaxIdleConn}
+# 名字注册表的独立连接池(镜像 go/data_service/etc/data_service.yaml;计入 MySQL 连接总账 Get-MysqlConnectionLedger)。
+# 只写池大小两项:其余键不写 = 零值,由 PlayerNameConfig.Normalize 补默认(go/data_service/internal/config/config.go)。
+# 以前整段不写,池大小靠 Go 默认值恰好等于服务 yaml;现在集群值与总账输入同源。
+# 副作用:这里的值非法(非正整数 / MaxIdleConn > MaxOpenConn)时名字 store 不装配,下面 Store.Required: true 会让服务拒启 ——
+# 所以生成器取值时先核一遍(Get-MysqlPoolMirror),不合格在 apply 之前失败,而不是进集群 CrashLoopBackOff。
+PlayerName:
+  MaxOpenConn: ${dsPlayerNameMaxOpenConn}
+  MaxIdleConn: ${dsPlayerNameMaxIdleConn}
 # 建表策略(见生成器注释):dev = 服务 yaml 的值;staging/prod = false,由 data-service-migrate Job 在 Deployment 之前跑 -migrate。
 Schema:
   AutoMigrate: ${dataServiceAutoMigrate}
@@ -3534,8 +4091,16 @@ Store:
 # 映射提交点(player-route-mapping-durability-proposal.md §4、§11.2,第 1a 批):所有档位固定 redis,不镜像服务 yaml ——
 # 切 db_first 是 P2 的显式运维动作:先进冻结窗口(第 2 批前禁 merge_zone 一切写模式)、P1 导入 + audit 为 0、建角压测;
 # 切换时还要按 redis 拓扑补 WaitAOF 两项(redis-ha:NumReplicas=1),并确认镜像里有 route_tool(第 1b 批补入口,proposal §11.2)。
+# 连接池大小两项例外(G2b):Mode 仍固定 redis 不镜像,只镜像 MaxOpenConn / MaxIdleConn。route store 的独立池只在 db_first 下
+# 装配,redis 模式下不开连接;但 MySQL 连接总账的规划档已按 db_first 计入它(Get-MysqlConnectionPlan),切 db_first 时池大小
+# 与总账同源,不用再补这两行。D1 第 2 阶段改本段时保留这两行。
+# 副作用:以前这里只写 Mode、池大小取代码默认;镜像之后,服务 yaml 里一个非法的池值(如 MaxIdleConn > MaxOpenConn)会让
+# K8s 上的 data-service 在 redis 模式下也拒启(data_service.go 不分 Mode 校验 RouteStore)—— 所以生成器取值时先核
+# 「正整数且 idle ≤ open」(Get-MysqlPoolMirror),不合格在 apply 之前失败。
 RouteStore:
   Mode: redis
+  MaxOpenConn: ${dsRouteStoreMaxOpenConn}
+  MaxIdleConn: ${dsRouteStoreMaxIdleConn}
 # 与 manifest 的 9260 端口、prometheus 注解一致。多副本之后要能按 Pod 看消费者是否在跑。
 MetricsListenAddr: ":9260"
 # id_segment 行播种策略(见生成器注释):dev = 服务 yaml 的值;staging/prod = false,缺行不自动播种,
@@ -3676,10 +4241,10 @@ GateTokenSecret: "${gateTokenSecret}"
 # 生产复用会直接拒绝启动(一处泄露不该牵连另一处)。
 Secrets:
   InternalAuth:
-    Value: "${internalAuthSecret}"
+    Value: "${internalAuthSecret}"${loginQueueTokenSecretBlock}
 # 下发 gate 地址时是否必须用 gate 自报的客户端可达地址(NodeInfo.client_endpoint,D78):
 # true = 缺地址的 gate 不下发;false = 回落 endpoint(PodIP)。取值见 k8s_deploy.ps1 -RequireClientEndpoint(默认跟随 -ClientEntryMode)。
-RequireClientEndpoint: ${requireClientEndpointValue}${loginDevPasswordAuthBlock}
+RequireClientEndpoint: ${requireClientEndpointValue}${loginDevPasswordAuthBlock}${loginQueueBlock}
 Kafka:
   Brokers:
     - "kafka.${InfraNamespace}:9092"
@@ -3973,7 +4538,7 @@ MetricsListenAddr: ":9230"
 KillSwitchPrefix: ""
 # 独占库(port-decisions D-14):库 ${tradeMysqlDBName} 由 infra-up 的 mysql-init-sql(原样带入 deploy/mysql-init/00_init_zone_dbs.sql)
 # 预建并 GRANT 给 appuser;账号沿用 db / data-service 同一组注入值(MMORPG_MYSQL_USER / MMORPG_MYSQL_PASSWORD,dev 回落 root),
-# 换成别的账号要自己补 GRANT。MaxOpenConn × Deployment 副本数(2)要算进 MySQL 的 max_connections。
+# 换成别的账号要自己补 GRANT。MaxOpenConn × Deployment 副本数(2)要算进 MySQL 的 max_connections(总账见 Get-MysqlConnectionLedger)。
 MySQL:
   Host: "mysql.${InfraNamespace}:3306"
   User: "${mysqlUser}"
@@ -4088,7 +4653,7 @@ MetricsListenAddr: ":9180"
 KillSwitchPrefix: ""
 # 独占库(port-decisions D-14):库 ${friendMysqlDBName} 由 infra-up 的 mysql-init-sql(原样带入 deploy/mysql-init/00_init_zone_dbs.sql)
 # 预建并 GRANT 给 appuser;账号沿用 db / data-service 同一组注入值(MMORPG_MYSQL_USER / MMORPG_MYSQL_PASSWORD,dev 回落 root),
-# 换成别的账号要自己补 GRANT。MaxOpenConn × Deployment 副本数(2)要算进 MySQL 的 max_connections。
+# 换成别的账号要自己补 GRANT。MaxOpenConn × Deployment 副本数(2)要算进 MySQL 的 max_connections(总账见 Get-MysqlConnectionLedger)。
 MySQL:
   Host: "mysql.${InfraNamespace}:3306"
   User: "${mysqlUser}"
@@ -4236,13 +4801,13 @@ function Apply-GoSvcMigrateJob {
 	# Job 名固定,重跑必须先删:template 不可变,apply 同名 Job 会被拒。--ignore-not-found:首次是 no-op。
 	Invoke-Kubectl -Args @("delete", "job", $jobName, "-n", $Namespace, "--ignore-not-found")
 	Invoke-KubectlWithInputFile -Args @("apply", "-n", $Namespace) -InputContent $content
-	Write-Host "  [applied] $jobName -> $SvcImage (D-14 建表 Job,先于 $SvcName Deployment)"
+	Write-Host "  [applied] $jobName -> $SvcImage (D-14 schema Job, before $SvcName Deployment)"
 
 	if ($gateOnJob) {
 		Wait-ForGoSvcMigrateJob -Namespace $Namespace -JobName $jobName -SvcName $SvcName
 		return
 	}
-	Write-Warning ("dev 档未带 -WaitReady:不等 {0} 结束就 apply {1} Deployment(staging/prod 恒等,不走这里)。核对 'kubectl -n {2} get job {0}'(COMPLETIONS 1/1)与 'kubectl -n {2} logs job/{0}'。" -f $jobName, $SvcName, $Namespace)
+	Write-Warning ("Dev profile without -WaitReady: apply {1} Deployment without waiting for {0} (staging/prod always wait). Check 'kubectl -n {2} get job {0}' (COMPLETIONS 1/1) and 'kubectl -n {2} logs job/{0}'." -f $jobName, $SvcName, $Namespace)
 }
 
 # 迁移查询/诊断专用:HTTP 请求与整个 kubectl 进程都有截止。仅加 --request-timeout 仍不能
@@ -4369,9 +4934,9 @@ function Write-GoSvcMigrateJobDiagnostics {
 		try {
 			$result = Invoke-GoSvcMigrateKubectl -Args $commandArgs -TimeoutSeconds ([Math]::Min([double]3, $remaining))
 			if ($result.Output) { Write-Host $result.Output }
-			if ($result.ExitCode -ne 0) { Write-Warning "迁移诊断不可用: $($result.ErrorOutput)" -WarningAction Continue }
+			if ($result.ExitCode -ne 0) { Write-Warning "Migration diagnostics unavailable: $($result.ErrorOutput)" -WarningAction Continue }
 		} catch {
-			Write-Warning "迁移诊断不可用: $($_.Exception.Message)" -WarningAction Continue
+			Write-Warning "Migration diagnostics unavailable: $($_.Exception.Message)" -WarningAction Continue
 		}
 	}
 }
@@ -4393,11 +4958,11 @@ function Assert-GoSvcMigrateJobNotInFlight {
 
 	$state = Wait-GoSvcMigrateJobSettled -Namespace $Namespace -JobName $JobName -RequirePodsTerminal
 	if ($state -ne 'running' -and $state -ne 'unknown') {
-		Write-Host "上一次 $JobName 可安全替换(state=$state,UID 所属 Pod 均已终止),继续先删再建。"
+		Write-Host "Previous $JobName can be replaced safely (state=$state; all Pods owned by its UID have terminated); proceeding with delete then create."
 		return
 	}
 
-	try { Write-GoSvcMigrateJobDiagnostics -Namespace $Namespace -JobName $JobName } catch { Write-Warning "迁移诊断失败: $($_.Exception.Message)" -WarningAction Continue }
+	try { Write-GoSvcMigrateJobDiagnostics -Namespace $Namespace -JobName $JobName } catch { Write-Warning "Migration diagnostics failed: $($_.Exception.Message)" -WarningAction Continue }
 	throw ("上一次迁移 Job {0} 在 {1}s 内仍未结束(namespace={2} state={3}),发布中断,未删除它,也未 apply 新 Job 与服务 Deployment。" +
 		"等 Job 及其 UID 所属 Pod 均进入终态后再重跑同一条发布命令(ACTIVE 为 0 本身不代表安全);" +
 		"**不要手工 delete 在途 Job**:打断 DDL 会把 schema_migrations 台账留在 dirty,之后每次迁移都会以 1 失败。") -f $JobName, $budgetSeconds, $Namespace, $state
@@ -4435,7 +5000,7 @@ function Wait-ForGoSvcMigrateJob {
 		default { 'timeout' }
 	}
 	Write-Host "Migrate Job not complete: namespace=$Namespace job=$JobName verdict=$verdict"
-	try { Write-GoSvcMigrateJobDiagnostics -Namespace $Namespace -JobName $JobName } catch { Write-Warning "迁移诊断失败: $($_.Exception.Message)" -WarningAction Continue }
+	try { Write-GoSvcMigrateJobDiagnostics -Namespace $Namespace -JobName $JobName } catch { Write-Warning "Migration diagnostics failed: $($_.Exception.Message)" -WarningAction Continue }
 	throw ("迁移 Job {0} 未成功(namespace={1} 结果={2}),发布中断,{3} Deployment 未 apply。看报告:kubectl -n {1} logs job/{0}。" +
 		"退出码(go/schemamigrate):1 失败(库不存在 / 连不上 / dirty 台账 / DDL 报错,库名见日志)、4 需人工(类型漂移 / 缺主键 / 表清单异常)、" +
 		"3 锁忙(timeout 时可能仍在 backoff 重试)。" +
@@ -4644,24 +5209,51 @@ function Add-GoSvcSecretEnv {
 
 <#
 .SYNOPSIS
-	往服务 manifest 唯一的 Pod 模板(template: 紧跟 metadata:)新增 annotations: 段,写一条注解。
+	往服务 manifest 唯一的 Pod 模板(template: 紧跟 metadata:)新增 annotations: 段,写一条注解(-Key / -Value),
+	可再带若干条附加注解(-AdditionalAnnotations)。
 	用于让"只改 Secret"这类 Pod 模板本身看不见的变更也能触发滚动(见 Get-InjectedSecretFingerprint)。
 
 .DESCRIPTION
 	形状要求:恰好一处 template: 下一行是 metadata:,且该 metadata 下还没有 annotations: —— 已有就 throw,
 	不猜怎么合并(重复键的 YAML 各解析器行为不一)。与 Add-GoSvcSecretEnv 一样在本服务任何集群写操作之前调用。
 	值一律写成双引号标量:12 位十六进制可能全是数字或形如 1e5…,不加引号会被 YAML 解析成数字,注解值必须是字符串。
+	同一个 Pod 模板只能调用本函数一次(第二次会撞上「已有 annotations:」而 throw),所以多条注解必须经
+	-AdditionalAnnotations 一次写入。-Key 那一条恒排在 annotations: 的下一行(契约测试按这个位置取 gateway 口令指纹),
+	附加项按字典的迭代顺序跟在后面 —— 要稳定顺序就传 [ordered]。不传附加项时输出与只写一条时逐字相同。
+	每一条都做同样的校验:键必须是「小写 DNS 前缀/名字」形状且互不重复,值非空且不含引号、反斜杠、换行。
 #>
 function Add-PodTemplateAnnotation {
 	param(
 		[Parameter(Mandatory = $true)][string]$SvcName,
 		[Parameter(Mandatory = $true)][string]$ManifestContent,
 		[Parameter(Mandatory = $true)][string]$Key,
-		[Parameter(Mandatory = $true)][string]$Value
+		[Parameter(Mandatory = $true)][string]$Value,
+		# 附加注解(按迭代顺序写在 -Key 之后)。同一 Pod 模板只能有一个 annotations: 段,多条注解必须一次写入。
+		[AllowNull()][System.Collections.IDictionary]$AdditionalAnnotations = $null
 	)
 
-	if ($Value -match '["\\\r\n]') {
-		throw "内部错误:服务 $SvcName 的注解 $Key 的值含引号、反斜杠或换行,拒绝渲染。"
+	# 主注解排第一,附加项跟在后面;下面逐条校验、逐条渲染,两处走同一个列表。
+	$annotationItems = @([pscustomobject]@{ Key = $Key; Value = $Value })
+	if ($null -ne $AdditionalAnnotations) {
+		foreach ($extraKey in $AdditionalAnnotations.Keys) {
+			$annotationItems += [pscustomobject]@{ Key = [string]$extraKey; Value = [string]$AdditionalAnnotations[$extraKey] }
+		}
+	}
+	$seenAnnotationKeys = @()
+	foreach ($item in $annotationItems) {
+		if ($item.Key -cnotmatch '^[a-z0-9]([a-z0-9.-]*[a-z0-9])?/[a-z0-9]([a-z0-9._-]*[a-z0-9])?$') {
+			throw "内部错误:服务 $SvcName 的注解键 '$($item.Key)' 不是「小写 DNS 前缀/名字」形状,拒绝渲染。"
+		}
+		if ($seenAnnotationKeys -ccontains $item.Key) {
+			throw "内部错误:服务 $SvcName 的注解 $($item.Key) 重复出现,拒绝渲染(重复键的 YAML 各解析器行为不一)。"
+		}
+		$seenAnnotationKeys += $item.Key
+		if ([string]::IsNullOrEmpty($item.Value)) {
+			throw "内部错误:服务 $SvcName 的注解 $($item.Key) 的值为空,拒绝渲染。"
+		}
+		if ($item.Value -match '["\\\r\n]') {
+			throw "内部错误:服务 $SvcName 的注解 $($item.Key) 的值含引号、反斜杠或换行,拒绝渲染。"
+		}
 	}
 	$templateMatches = [regex]::Matches($ManifestContent, '(?m)^(?<tindent>[ ]*)template:[ \t]*\r?\n(?<mindent>[ ]*)metadata:[ \t]*\r?$')
 	if ($templateMatches.Count -ne 1) {
@@ -4695,11 +5287,14 @@ function Add-PodTemplateAnnotation {
 	}
 
 	$newline = if ($ManifestContent.Contains("`r`n")) { "`r`n" } else { "`n" }
-	$injected = @(
+	$injectedLines = @(
 		"${childIndent}# 由 k8s_deploy.ps1 生成(Add-PodTemplateAnnotation),manifest 里不要手写",
-		"${childIndent}annotations:",
-		('{0}  {1}: "{2}"' -f $childIndent, $Key, $Value)
-	) -join $newline
+		"${childIndent}annotations:"
+	)
+	foreach ($item in $annotationItems) {
+		$injectedLines += ('{0}  {1}: "{2}"' -f $childIndent, $item.Key, $item.Value)
+	}
+	$injected = $injectedLines -join $newline
 	return $ManifestContent.Substring(0, $insertAt) + $injected + $newline + $ManifestContent.Substring($insertAt)
 }
 
@@ -4714,6 +5309,8 @@ function Add-PodTemplateAnnotation {
 	- 只截 48 位,是变更探测器而不是校验值;非 dev 档口令 ≥32 位(Resolve-InjectedSecret),无法由指纹反推;
 	- 能读 Deployment 的人本就能读同 namespace 的 ConfigMap,而 gateway ConfigMap 里有明文的 gate.token-secret 与数据源密码,
 	  指纹不扩大暴露面;但它也不能把弱口令变强 —— 口令强度仍由运维负责。
+	削峰指纹(G4b,$script:PeakShavingHashAnnotation)复用本函数:-SecretName 传用途串(peak-shaving/gateway、peak-shaving/login)
+	作域分隔,-Value 传「写进 ConfigMap 的那段配置文本 + 相关密钥」,输入不是单个密钥,其余同上。
 	纯本地计算、不读集群,DryRun 与真跑结果一致。
 #>
 function Get-InjectedSecretFingerprint {
@@ -4758,7 +5355,7 @@ function Apply-InjectedSecret {
 		throw "内部错误:Secret $Name 的值未解析(Initialize-InjectedSecrets 未在写路径入口调用?),拒绝部署 $AppLabel。"
 	}
 	if ($DryRun) {
-		Write-Host "[dry-run] kubectl apply -n $Namespace -f -   # Secret $Name(key $Key,值已隐去)"
+		Write-Host "[dry-run] kubectl apply -n $Namespace -f -   # Secret $Name (key $Key; value hidden)"
 		return
 	}
 
@@ -4821,6 +5418,20 @@ function Apply-OneGoSvc {
 	$manifestContent = Add-GoSvcTopicReplicationEnv -SvcName $SvcName -ManifestContent $manifestContent `
 		-ReplicationFactor (Get-KafkaTopology).ReplicationFactor
 
+	# login 的削峰指纹(G4b,$script:PeakShavingHashAnnotation):排队开时给 Pod 模板写一条注解,关时不写。Queue 段与排队密钥都只在
+	# ConfigMap 里,而 ConfigMap 只在进程启动时读:只改 ConfigMap 时 Pod 模板不变、apply 是 no-op,login 一直按旧配置跑 ——
+	# -LoginQueue off 止血、轮换排队密钥都不生效。指纹输入 = Queue 段文本 + 排队密钥:任一变化 → 模板变 → 滚动;
+	# 开 → 关时注解消失,同样滚动。只改 Redis 口令时 login 不滚动是既有缺口(go-svc 的 ConfigMap 都没有内容指纹),不在这里修。
+	# 条件里服务名判断必须留在 -and 左边:本函数会被 k8s_migrate_gate.tests.ps1 按 AST 单独抽出来跑非 login 服务,那里
+	# 右边的变量未定义、New-LoginQueueYaml 也没有加载,靠短路才不会求值。不要调换两边顺序。
+	# login 的 manifest 在 Pod 模板里没有 annotations: 段(已有的话 Add-PodTemplateAnnotation 会 throw,要并进这一次调用)。
+	if ($SvcName -eq 'login' -and $script:LoginQueueOn) {
+		$loginPeakShavingInput = (New-LoginQueueYaml -CurrentZoneId $CurrentZoneId) + "`n" + $script:LoginQueueTokenSecret
+		$manifestContent = Add-PodTemplateAnnotation -SvcName $SvcName -ManifestContent $manifestContent `
+			-Key $script:PeakShavingHashAnnotation `
+			-Value (Get-InjectedSecretFingerprint -SecretName 'peak-shaving/login' -Value $loginPeakShavingInput)
+	}
+
 	# -LoginDevPasswordAuth:先本地渲染(形状不对就在写操作之前 throw),再建 Secret —— secretKeyRef 不是 optional,
 	# Secret 必须先于引用它的 Deployment 落地。
 	$isLoginDevPassword = ($SvcName -eq 'login' -and $LoginDevPasswordAuth)
@@ -4880,12 +5491,47 @@ function Apply-GlobalGoSvcManifests {
 			# 与 Apply-OneGoSvc 同一判据:manifest 缺席 = 没部署,等它只会在 rollout status 上白白超时,
 			# 拖垮整条 -WaitReady(Java 服务那段 skip-wait 同一理由)。
 			if (-not (Test-Path (Join-Path $GoSvcManifestsDir $GoSvcCatalogue[$svcName].Manifest))) {
-				Write-Host "  [skip-wait] ${svcName}: manifest 不存在,未部署,不等待"
+				Write-Host "  [skip-wait] ${svcName}: manifest missing; not deployed; skipping wait"
 				continue
 			}
 			Wait-ForDeploymentReady -Namespace $InfraNamespace -DeploymentName $svcName
 		}
 	}
+}
+
+# gate.rate-limit 下要写的削峰阈值(G4b)。关 = $null(什么都不写,落回 jar 内的 enabled: false)。键是 Spring 属性名(kebab-case),
+# 必须与 jar 内 application.yaml 的 gate.rate-limit.* 同名 —— 拼错的键不报错、只是不生效(契约测试逐键核对)。
+# 只写这六项:不写 wave.*(开服波次要一个开服时刻,属于运营决策)、zone-overrides,也不写没有消费方的 queue-timeout-ms。
+# 只依赖 $script:GatewayRateLimitOn 与 $script:PeakShavingLaunchTier:契约测试按 AST 把本函数抽出来单独调用。
+function Get-GatewayRateLimitSettings {
+	if (-not $script:GatewayRateLimitOn) { return $null }
+	$t = $script:PeakShavingLaunchTier
+	# release_preflight.ps1 的「rps ≥ 1、burst ≥ rps」只查 jar 内 application.yaml;K8s 上真正生效的是这里写进
+	# ConfigMap 的值,同一条规则必须在这里再守一次,否则改坏常量表会把闸门焊死(rps 0 = 全量排队)或自相矛盾。
+	foreach ($pair in @(@('ZoneDefaultRps', 'ZoneDefaultBurst'), @('IpRps', 'IpBurst'))) {
+		$rps = [long]$t[$pair[0]]
+		$burst = [long]$t[$pair[1]]
+		if ($rps -lt 1 -or $burst -lt $rps) {
+			throw "内部错误:PeakShavingLaunchTier.$($pair[0])=$rps / $($pair[1])=$burst 不满足 rps ≥ 1 且 burst ≥ rps。"
+		}
+	}
+	if ([long]$t.AccountCooldownMs -lt 0) {
+		throw "内部错误:PeakShavingLaunchTier.AccountCooldownMs=$($t.AccountCooldownMs) 不能为负。"
+	}
+	return [ordered]@{
+		'enabled'             = $true
+		'zone-default-rps'    = [long]$t.ZoneDefaultRps
+		'zone-default-burst'  = [long]$t.ZoneDefaultBurst
+		'ip-rps'              = [long]$t.IpRps
+		'ip-burst'            = [long]$t.IpBurst
+		'account-cooldown-ms' = [long]$t.AccountCooldownMs
+	}
+}
+
+# gateway application.yaml 里挂在 gate: 下的整段 rate-limit 文本(削峰阈值在前、trusted-proxies 在后;两者都没有 = 空串)。
+# ConfigMap 与 Pod 指纹共用这一处(New-JavaSvcConfigMapYaml、Apply-JavaSvcManifests):两处算出来不一致,指纹就失去意义。
+function New-GatewayRateLimitBlockText {
+	return New-GatewayRateLimitYaml -TrustedProxies $GatewayTrustedProxies -Indent '  ' -Settings (Get-GatewayRateLimitSettings)
 }
 
 function New-JavaSvcConfigMapYaml {
@@ -4900,19 +5546,43 @@ function New-JavaSvcConfigMapYaml {
 	$gatewayDbUser = $script:GatewayDbUser
 	$gatewayDbPassword = $script:GatewayDbPassword
 
-	# gate.rate-limit.trusted-proxies(D91):gateway 只采信这些网段转发来的 X-Forwarded-For。片段接在下面已有的 gate: 键下
-	# (不能另起一个 gate:),只写 application.yaml 这一处、不另设 env(ingress_final §3 二选一)。列表为空 = 不写 = 只信
-	# socket 对端(fail-closed);非法 CIDR 由 New-GatewayRateLimitYaml throw(preflight 已先拒)。
+	# gate.rate-limit(D91 的 trusted-proxies + G4b 的削峰阈值):片段接在下面已有的 gate: 键下(不能另起一个 gate:),
+	# 两者共用同一个 rate-limit: 键,只写 application.yaml 这一处、不另设 env(ingress_final §3 二选一)。
+	#   - trusted-proxies:gateway 只采信这些网段转发来的 X-Forwarded-For。列表为空 = 不写 = 只信 socket 对端(fail-closed);
+	#     非法 CIDR 由 New-GatewayRateLimitYaml throw(preflight 已先拒)。
+	#   - 削峰阈值:按 -GatewayRateLimit / -ReleaseProfile 决定写不写(Get-GatewayRateLimitSettings);关 = 不写,落回 jar 内的 enabled: false。
+	# 限流关且没给可信代理时整段为空,gateway 模板的产物与 G4b 之前逐字相同。
 	$gatewayRateLimitBlock = ''
+	# spring.data.redis.password 那一行(G4b)。Bucket4j 的 Lettuce 客户端只从这个属性取口令(RateLimitConfig.java 的
+	# bucket4jRedisClient,空串不设)。release 档的 Redis 带 --requirepass(manifests/infra/redis.yaml),不写口令时限流的
+	# Redis 调用过不了认证:要么每次调用都落进 AssignGateRateLimiter 的 catch 一律放行(fail-open),限流开了等于没开,
+	# 要么 gateway 在建连接时就起不来(哪一种取决于 Lettuce 的握手行为,未实测)。写口令把两种都修掉。
+	# 与 go-svc ConfigMap、本 ConfigMap 的数据源口令同为明文:同 namespace 的 go-svc-login-config 已经带同一个值,
+	# 改走 Secret 不缩小暴露面。只看口令是否非空、与限流开关无关;空口令不写:dev 档(口令回落空串)的产物逐字不变。
+	$gatewayRedisPasswordLine = ''
 	if ($SvcName -eq 'gateway') {
-		$gatewayRateLimitBlock = New-GatewayRateLimitYaml -TrustedProxies $GatewayTrustedProxies -Indent '  '
+		$gatewayRateLimitBlock = New-GatewayRateLimitBlockText
 		if (-not [string]::IsNullOrEmpty($gatewayRateLimitBlock)) { $gatewayRateLimitBlock = "`n" + $gatewayRateLimitBlock }
+		if (-not [string]::IsNullOrEmpty($script:RedisPassword)) {
+			$gatewayRedisPasswordLine = "`n      password: `"$($script:RedisPassword)`""
+		}
 	}
 	# admin.api-key 只写成对容器环境变量的引用(值经 Secret 注入,见 $script:GatewayAdminApiKeyEnv 处)。挂载的
 	# /app/config/application.yaml 优先于 jar 内那份,所以公开的 change-me-in-production 被这行盖掉;env 缺失时
 	# @Value("${admin.api-key}") 解析不了嵌套占位符,gateway 拒启(fail-closed)。拼成 PowerShell 变量再嵌进下面的
 	# 双引号 here-string,既不用转义 $,env 名也只有一处真相。
 	$gatewayAdminApiKeyRef = '${' + $script:GatewayAdminApiKeyEnv + '}'
+	# gateway 的 Hikari 连接池大小(G2b):从 java/gateway_node/src/main/resources/application.yaml 镜像并核过
+	# (Get-MysqlPoolMirror);MySQL 连接总账读的是同一个 maximum-pool-size。挂载的 /app/config/application.yaml 与 jar 内那份
+	# 按属性合并(Spring Boot 默认加载 ./config/,外部事实,未核实),不镜像时 jar 内的值也生效 —— 镜像是为了让集群值
+	# 与总账输入同源、契约测试可钉。只在生成 gateway 自己的 ConfigMap 时读:auth 不连 MySQL,不该因为 gateway 的配置缺键而失败。
+	$gatewayHikariMaxPool = ''
+	$gatewayHikariMinIdle = ''
+	if ($SvcName -eq 'gateway') {
+		$gatewayPoolMirror = Get-MysqlPoolMirror -Target 'gateway'
+		$gatewayHikariMaxPool = $gatewayPoolMirror['spring.datasource.hikari.maximum-pool-size']
+		$gatewayHikariMinIdle = $gatewayPoolMirror['spring.datasource.hikari.minimum-idle']
+	}
 
 	$svcConfig = switch ($SvcName) {
 		"auth" {
@@ -4946,10 +5616,14 @@ spring:
     url: jdbc:mysql://mysql.${InfraNamespace}:3306/mmorpg?useSSL=false&allowPublicKeyRetrieval=true
     username: "${gatewayDbUser}"
     password: "${gatewayDbPassword}"
+    # 连接池大小镜像 java/gateway_node/src/main/resources/application.yaml(单一真相),计入 MySQL 连接总账。
+    hikari:
+      maximum-pool-size: ${gatewayHikariMaxPool}
+      minimum-idle: ${gatewayHikariMinIdle}
   data:
     redis:
       host: redis.${InfraNamespace}
-      port: 6379
+      port: 6379${gatewayRedisPasswordLine}
 etcd:
   endpoints: http://etcd.${InfraNamespace}:2379
 gate:
@@ -5020,9 +5694,23 @@ function Apply-JavaSvcManifests {
 		if ($isGateway) {
 			$manifestContent = Add-GoSvcSecretEnv -SvcName $svcName -ManifestContent $manifestContent `
 				-EnvName $script:GatewayAdminApiKeyEnv -SecretName $script:GatewayAdminApiKeySecretName -SecretKey $script:GatewayAdminApiKeySecretKey
+			# 削峰指纹(G4b,$script:PeakShavingHashAnnotation):限流开时再带一条注解,关时不带。ConfigMap 只在 gateway 启动时读,
+			# 只改 ConfigMap 时 Pod 模板不变、apply 是 no-op,旧 Pod 一直按旧配置跑 —— -GatewayRateLimit off 止血也就不生效。
+			# 指纹输入 = 写进 ConfigMap 的整段 rate-limit 文本(阈值 + trusted-proxies)+ Redis 口令:开关 / 阈值 / 代理网段 / 口令
+			# 任一变化 → 模板变 → 滚动;开 → 关时注解消失,同样滚动。口令必须在内:Bucket4j 的 Lettuce 客户端只在启动时读
+			# spring.data.redis.password,轮换 MMORPG_REDIS_PASSWORD 而 gateway 不滚动,旧口令被 Redis 拒绝后限流一律 fail-open。
+			# Get-InjectedSecretFingerprint 是通用的「域分隔串 + 值」SHA-256 截断(48 位,不可反推),域分隔串写用途。
+			# 与口令指纹必须一次写入(同一个 Pod 模板只能有一个 annotations: 段),口令指纹恒排第一行。
+			$peakShavingAnnotations = $null
+			if ($script:GatewayRateLimitOn) {
+				$peakShavingAnnotations = [ordered]@{}
+				$peakShavingAnnotations[$script:PeakShavingHashAnnotation] = Get-InjectedSecretFingerprint -SecretName 'peak-shaving/gateway' `
+					-Value ((New-GatewayRateLimitBlockText) + "`n" + $script:RedisPassword)
+			}
 			$manifestContent = Add-PodTemplateAnnotation -SvcName $svcName -ManifestContent $manifestContent `
 				-Key $script:GatewayAdminApiKeyHashAnnotation `
-				-Value (Get-InjectedSecretFingerprint -SecretName $script:GatewayAdminApiKeySecretName -Value $script:GatewayAdminApiKey)
+				-Value (Get-InjectedSecretFingerprint -SecretName $script:GatewayAdminApiKeySecretName -Value $script:GatewayAdminApiKey) `
+				-AdditionalAnnotations $peakShavingAnnotations
 			if (-not [string]::IsNullOrWhiteSpace($GatewayIngressHost)) {
 				$ingressYaml = New-GatewayIngressYaml -IngressHost $GatewayIngressHost -ZoneName $CurrentZoneName `
 					-IngressClassName $GatewayIngressClassName -TlsSecret $GatewayIngressTlsSecret -ServicePort $info.HttpPort
@@ -5258,13 +5946,13 @@ function Resolve-SceneDeploymentPlan {
 	$instance = if ($InstanceReplicas -ge 0) { $InstanceReplicas } else { 0 }
 
 	if ($LegacyExplicit) {
-		Write-Warning "zone ${ZoneLabel}: replicas.scene 与 scene_world/scene_instance 同时存在,拆分模式生效,legacy scene=$LegacySceneReplicas 被忽略。请从 zones 配置里删掉 scene 键。"
+		Write-Warning "zone ${ZoneLabel}: replicas.scene and scene_world/scene_instance coexist; split mode is active and legacy scene=$LegacySceneReplicas is ignored. Remove the scene key from the zones configuration."
 	}
 	if ($world -le 0) {
-		Write-Warning "zone ${ZoneLabel}: scene_world=0 —— 该 zone 没有主世界承载节点。StrictNodeTypeSeparation=true 时主世界场景创建会返回 ErrNoNodeForPurpose。"
+		Write-Warning "zone ${ZoneLabel}: scene_world=0; this zone has no world-scene nodes. With StrictNodeTypeSeparation=true, world-scene creation returns ErrNoNodeForPurpose."
 	}
 	if ($instance -le 0) {
-		Write-Warning "zone ${ZoneLabel}: scene_instance=0 —— 该 zone 没有副本承载节点。StrictNodeTypeSeparation=true 时副本/战场创建会返回 ErrNoNodeForPurpose。"
+		Write-Warning "zone ${ZoneLabel}: scene_instance=0; this zone has no instance-scene nodes. With StrictNodeTypeSeparation=true, instance/battleground creation returns ErrNoNodeForPurpose."
 	}
 
 	return ,@(
@@ -5424,12 +6112,12 @@ function Apply-Zone {
 	Wait-ForZoneReady -Namespace $namespace -SceneDeploymentNames $sceneDeploymentNames -GateReplicas $CurrentGateReplicas
 
 	if ($scenePlan.Count -gt 1) {
-		Write-Host "NOTE: 从 legacy 单池切到拆分模式时,旧的 'scene' 工作负载不会被 apply 自动删除。确认新池 Ready 后手动执行: kubectl -n $namespace delete deployment scene"
+		Write-Host "NOTE: Switching from a legacy single pool to split mode does not automatically remove the old 'scene' workload during apply. After the new pools are Ready, run manually: kubectl -n $namespace delete deployment scene"
 	}
 	if ($SceneOrchestrator -eq "agones") {
 		# 换编排方式会换 kind:apply 只会新建 Fleet,不会回收同名 Deployment,
 		# 两者同时在线 = 同一个 zone 里有两套 scene 进程、两套容量语义。
-		Write-Host "NOTE: 切到 Agones 编排后,同名的旧 Deployment 不会被自动删除。确认 Fleet 就绪后手动执行:"
+		Write-Host "NOTE: Switching to Agones orchestration does not automatically remove an existing Deployment with the same name. After the Fleet is ready, run manually:"
 		foreach ($scenePool in $scenePlan) {
 			Write-Host "        kubectl -n $namespace delete deployment $($scenePool.Name) --ignore-not-found"
 		}
@@ -5476,7 +6164,7 @@ function Get-InfraZoneIds {
 		}
 	}
 	else {
-		Write-Warning "zones 配置不存在($zonesPath),mysql-init-sql 只预建 -ZoneId=$ZoneId 的 zone_${ZoneId}_db。其余 zone 的库要么补进 zones 配置后重建 mysql PVC,要么由 db 服务在 dev 档自建。"
+		Write-Warning "Zones configuration missing ($zonesPath); mysql-init-sql only creates zone_${ZoneId}_db for -ZoneId=$ZoneId. For other zones, add them to the zones configuration and recreate the MySQL PVC, or let db create their databases under the dev profile."
 	}
 
 	return @($ids | Sort-Object)
@@ -5724,7 +6412,7 @@ function Apply-BattlePool {
 		# agones-sdk 的 SA + RoleBinding 必须先于 Fleet(理由同 scene Fleet,见 New-AgonesSdkRbacYaml)。
 		Invoke-KubectlWithInputFile -Args @('apply', '-n', $InfraNamespace) -InputContent (New-AgonesSdkRbacYaml -Namespace $InfraNamespace)
 		if ($battleHealth.Raised) {
-			Write-Host "NOTE: battle Fleet health.initialDelaySeconds 由 -AgonesHealthInitialDelaySeconds=$($battleHealth.RequestedInitialDelaySeconds) 抬到 $($battleHealth.InitialDelaySeconds):battle 启动到首次 /health 的最坏耗时约 $($battleHealth.StartupWorstSeconds)s(推导见 lib/k8s_client_entry.ps1 Resolve-BattleFleetHealth);scene Fleet 仍用原值。"
+			Write-Host "NOTE: battle Fleet health.initialDelaySeconds raised from -AgonesHealthInitialDelaySeconds=$($battleHealth.RequestedInitialDelaySeconds) to $($battleHealth.InitialDelaySeconds): worst-case battle startup to first /health is about $($battleHealth.StartupWorstSeconds)s (see Resolve-BattleFleetHealth in lib/k8s_client_entry.ps1); scene Fleet keeps the original value."
 		}
 		Invoke-KubectlWithInputFile -Args @('apply', '-n', $InfraNamespace) -InputContent $battleYaml
 		if ($WaitReady) {
@@ -5941,7 +6629,7 @@ Show-ExposureProfileWarning
 
 Write-Host "Release: profile=$ReleaseProfile image=$NodeImage pullPolicy=$ImagePullPolicy go_tag=$GoSvcTag java_tag=$JavaSvcTag cluster_id=$ClusterId"
 if ($script:ReleaseStamp.Ok -and $script:ReleaseStamp.Dirty) {
-	Write-Warning "工作树是脏的(git status 非空),镜像 tag 带 -dirty 后缀。生产发布(-ReleaseProfile prod)会拒绝这种 tag。"
+	Write-Warning "Working tree is dirty (git status is nonempty); image tag has the -dirty suffix. Production releases (-ReleaseProfile prod) reject this tag."
 }
 
 # 写操作才需要门禁;*-down / *-status 是止血和排查路径,不能被预检或密钥缺失挡住。
@@ -5951,10 +6639,18 @@ if ($Command -in @("zone-up", "all-up", "infra-up")) {
 	# 集群外入口的组合校验(含 -LoginDevPasswordAuth 只许 dev 档)排在密钥解析之前:非 dev 档传该开关时,
 	# 报的是门禁原因,而不是"缺环境变量"。battle 工作负载渲染与集群现状预检(只读 kubectl)也在这里,早于任何写操作。
 	Assert-ClientEntryDeployPreflight
+	# 削峰(G4b)的开关与起步值打一行,关着 / 没配可信代理时告警;只打印、不阻断。排在密钥解析之前:
+	# 缺 MMORPG_LOGIN_QUEUE_TOKEN_SECRET 被拒时,输出里已经有「login_queue=on」这一行可对照。
+	Show-PeakShavingPlan
 	Initialize-InjectedSecrets
 	# C++ gRPC deadline ≥ 目标 Go 服务 zrpc Timeout + 2000(上游比下游宽)。放在任何集群写操作之前:
 	# 不成立就整条拒绝,不留半截部署(见 Assert-GrpcClientDeadlineBudget)。
 	Assert-GrpcClientDeadlineBudget
+	# MySQL 连接池(G2b),同样放在任何集群写操作之前:
+	#   - Assert-MysqlPoolMirror:ConfigMap 要镜像的池参数不合格(非正整数 / idle > open)就整条拒绝,不留半截部署;
+	#   - Write-MysqlConnectionLedger:打印 "MySQL connection ledger" 一行;峰值超过 max_connections 只告警、不阻断。
+	Assert-MysqlPoolMirror
+	Write-MysqlConnectionLedger
 }
 
 switch ($Command) {

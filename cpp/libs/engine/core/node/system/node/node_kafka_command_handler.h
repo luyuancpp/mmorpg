@@ -130,8 +130,8 @@ bool RegisterKafkaCommandHandler(Node& node,
 
     LOG_INFO << "Registering legacy per-node Kafka command handler (migration window). topic="
              << legacyTopic << ", group_id=" << legacyGroupId
-             << ". 生产者全部切到 " << commandTopic
-             << " 之后把 Kafka.DisableLegacyPerNodeTopic 置 true 关掉本路径。";
+             << ". After all producers switch to " << commandTopic
+             << ", set Kafka.DisableLegacyPerNodeTopic to true to disable this path.";
 
     return node.RegisterKafkaMessageHandler({ legacyTopic }, legacyGroupId, makeCallback());
 }

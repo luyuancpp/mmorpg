@@ -2,6 +2,7 @@
 
 > **交出方**：Claude（会话 2026-10-12 ~ 10-13）。**接手方**：新账号的 Claude。编译 / 测试 / 压测仍由 Codex 执行（AGENTS.md §10.1），新账号自己不跑。
 > **状态**：本会话主仓库的改动已随本地提交 `d5cbb8a8e`（作者 luyuan-cpp，2026-10-13 03:25，「Record existing changes… No build or tests were run」，**未 push**）与其它会话的改动一起入库；proto2mysql 的改动在已推送的功能分支上。**全部未编译、未测试**。
+> **接手核对（2026-10-13）**：本行以上的「未 push」与 §2.1、§3.1 的提交状态已过时，§3 的命令有订正，见文末 §9。
 > **本文是第 2 版**：第 1 版经两路核对（事实 / 接手者视角）后按 40 余条意见重写。推导与证据在 [db-task-pipeline-bottlenecks.md](../design/db-task-pipeline-bottlenecks.md)（下称「瓶颈文档」），逐文件方案与复核意见在[附录](godb-pipeline-handoff-20261013-appendix.md)。
 
 ---
@@ -279,3 +280,54 @@ go test -race -count=1 -run SaveConditional .
 
 约束：你不编译、不测试、不压测；不动其它会话的改动；不 commit / push / tag，除非我在对话里明确说；授权只认我在当前对话里的答复。全部用中文。
 ```
+
+---
+
+## 9. 接手核对订正（2026-10-13，接手会话）
+
+接手后对 §2、§3、§6 做了一轮只读核对（没有 fetch、没有编译、没有运行）。上文保持原样，与事实不符的地方以本节为准。
+
+### 9.1 提交状态（§2.1）
+
+| 上文说法 | 核对结果 |
+|---|---|
+| 本地 `main` 在 `d5cbb8a8e` | 在 `0aa1027bc`。它只改了 4 个文档（本文第 2 版、附录的阅读须知、瓶颈文档两处订正、PROGRESS 一条），代码与 `d5cbb8a8e` 逐字节相同 |
+| `origin/main` 仍在 `73b852f32`，未 push | 按本地跟踪引用，两个提交都已推送：`d5cbb8a8e` 于 03:30:54，`0aa1027bc` 于 03:34:20。文首状态行、§2.1 第一条、§3.1 标题、§5 第 8 项都已过时 |
+| 本会话的全部改动都在 `d5cbb8a8e` 里 | 8 个代码与脚本文件、文档初版在 `d5cbb8a8e`；本文第 2 版等文档订正在 `0aa1027bc` |
+
+- §2.1 表格的 14 个文件都在 `d5cbb8a8e` 的改动里，描述的符号都在；`key_ordered_consumer.go`、`key_ordered_producer.go`、两个脚本、`guild-actor-architecture.md` 没有表格之外的改动。
+- go/db、go/login 的 `internal/kafka` 包里没有其它会话的文件；全仓 `go.mod` / `go.sum` 没变。但这两个包的编译闭包会带上其它会话改过的包（`db/internal/config`、`db/internal/metrics`、`proto_sql`、`shared/sqlpoolstats`、`shared/kafkautil`、`shared/placement`、`login/internal/config`）。
+- **主工作区从 04:00 起有另一个会话在写未提交的改动**（G2b 的后半：`k8s_deploy.ps1` 与契约测试、`mysql.yaml`、`mysql-connection-alerts.yaml`、`sqlpoolstats`、几份设计文档等）。§2.3 第一行的「已落 / 未落」清单会随之变化，用之前重新 `git status`。
+- 本机另有一个 Codex 的 worktree 停在 `73b852f32`，不含待验证的代码。
+
+### 9.2 G2b 与重叠项（§2.3、§2.4）
+
+- G2b 在 HEAD 上的状态与开服交接 §4 第 1 项的 40 项判定全部一致。措辞上要留意：`Assert-MySqlConnectionBudget` 这个门禁名出自本文附录，G2b 的规格只打 WARN；friend / trade 不接连接池指标是 G2b 的范围外事项，不是「未落」。
+- 「重试 / 死信入队补 WAITAOF」那一项有三个写入点，只有重试与死信入队在 go/db；owner_epoch 铸造在 scene_manager，账号目录在 login。
+- 「db_task topic 的 retention.bytes 与 PVC」按开服交接原文归全局单点交接，不是开服交接。
+- 开服交接说的「Lua `tonumber`」是四个服务里 double 精度的隐患，与附录处理的 nil 判断不是同一处；四处里只有 `luaMarkAppliedEpoch` 在 go/db。
+- §2.4「停机期间耗尽 3 次重试」只对连接池已打开的在跑实例成立；重试循环同一拍内可以反复认领，耗尽可以远快于 3 秒。
+- 另两份交接仍按本文第 1 版的编号引用本文，也仍写着「工作区未提交」。L-04 的归属三份说法不一（§5 第 4 项）。
+
+### 9.3 Codex 验证（§3）
+
+§3.1 的六条命令不能照抄顺序执行（每行都以相对路径 `cd` 开头）；`test_stress_summarize.ps1` 没有 `#requires -Version 7`；两个 Go 包此前没有任何运行记录，基线对比要列为必做。订正后的版本是 [godb-pipeline-codex-tasksheet-20261013.md](godb-pipeline-codex-tasksheet-20261013.md)，以它为准。
+
+### 9.4 条件写的两处前提（§4.1）
+
+- B1：`redis-cli FLUSHALL` 会同时清掉账号目录，旧 player_id 不会再被用到，所以它不是 B1 的主要触发场景；真正会触发的是 Redis 从旧备份恢复、AOF 丢尾、手工删键。上文点名的「Redis HA 故障 runbook」在仓库里不存在，`dev_tools.ps1` 也没有清 Redis 的命令。D1 提案里没有「epoch 下限落库」的条目。
+- B2：父键存在时 login 不读子表，C++ 拿不到 MySQL 行里的围栏值；Redis 父键也不是「已发出 DBTask」的上界。播种方案因此改了。
+
+两处的处理见 [db-write-fencing-mysql.md](../design/db-write-fencing-mysql.md) §0.1、§7、§9.1。
+
+### 9.5 关键事实（§6）
+
+- 压测基线：`prev-summary.txt` 的 DB 段是 6 个阶段耗时列为 "-"，ok / err 计数有值。
+- C++ 侧 db_task 只有一个生产点，不传 partition，这一点已静态确认；没确认的只剩线上实际的消息分布。
+- 排序锁在 Redis 里的键名带前缀：`distributed:lock:kafka:ordering:{topic}:{key}:{msgType}`。
+
+### 9.6 本轮新增的文档
+
+- [db-write-fencing-mysql.md](../design/db-write-fencing-mysql.md)：条件写设计稿（§4.1 第 3 项）。
+- [db-task-store-unavailable-deferral.md](../design/db-task-store-unavailable-deferral.md)：L-04 设计评审稿（§4.1 第 1 项）。
+- [godb-pipeline-codex-tasksheet-20261013.md](godb-pipeline-codex-tasksheet-20261013.md)：Codex 任务单。

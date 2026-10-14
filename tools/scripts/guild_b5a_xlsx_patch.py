@@ -167,12 +167,12 @@ def cmd_new_tables(dry_run: bool) -> None:
             current = sheet_matrix(ws, max(ws.max_column, len(names)))
             padded = [r + [None] * (len(current[0]) - len(r)) for r in wanted] if current else wanted
             if ws.title == sheet_name and current == padded:
-                print(f"[已是目标状态] {xlsx_path.relative_to(REPO_ROOT)} 已存在且内容一致,不改文件。")
+                print(f"[ALREADY CURRENT] {xlsx_path.relative_to(REPO_ROOT)} exists with identical contents; file unchanged.")
                 continue
             fail(f"{xlsx_path.relative_to(REPO_ROOT)} 已存在但内容与本脚本不同(可能策划已调过数值)—— 本脚本不覆盖。")
 
-        print(f"将新建 {xlsx_path.relative_to(REPO_ROOT)}:sheet={sheet_name!r},{len(names)} 列 × {len(spec['rows'])} 行数据")
-        print(f"  列:{names}")
+        print(f"Will create {xlsx_path.relative_to(REPO_ROOT)}:sheet={sheet_name!r},{len(names)} columns x {len(spec['rows'])} data rows")
+        print(f"  Columns: {names}")
         if dry_run:
             continue
         wb = openpyxl.Workbook()
@@ -188,9 +188,9 @@ def cmd_new_tables(dry_run: bool) -> None:
         check_ws = only_sheet(openpyxl.load_workbook(xlsx_path), xlsx_path)
         if check_ws.title != sheet_name or sheet_matrix(check_ws, len(names)) != wanted:
             fail(f"保存后读回的 {xlsx_path.name} 与写入内容不一致 —— 删除该文件后重试")
-        print(f"[完成] {xlsx_path.relative_to(REPO_ROOT)}")
+        print(f"[DONE] {xlsx_path.relative_to(REPO_ROOT)}")
     if dry_run:
-        print("[dry-run] 未写文件。")
+        print("[dry-run] No files written.")
 
 
 # ── tip-codes ────────────────────────────────────────────────────────────────
@@ -268,7 +268,7 @@ def cmd_tip_codes(dry_run: bool) -> None:
         if new_names[0] in guild_codes:
             start = guild_codes.index(new_names[0])
             if guild_codes[start:start + len(new_names)] == new_names:
-                print(f"[已是目标状态] {TIP_GUILD_GROUP} 组内已有这 {len(new_names)} 个码(连续、顺序一致),不改文件。")
+                print(f"[ALREADY CURRENT] {TIP_GUILD_GROUP} contains these {len(new_names)} codes consecutively and in the same order; file unchanged.")
                 return
         fail(f"这些码已在表里,但不是连续、按序位于 {TIP_GUILD_GROUP} 组内:{present} —— 码名全局唯一,先查清是谁加的。")
 
@@ -283,12 +283,12 @@ def cmd_tip_codes(dry_run: bool) -> None:
     insert_at = last_code_row + 1
     tail_name = ws.cell(row=last_code_row, column=1).value
 
-    print(f"{TIP_GUILD_GROUP}:现有 {len(groups_before[TIP_GUILD_GROUP])} 个码,组尾是第 {last_code_row} 行 {tail_name!r};"
-          f"将在第 {insert_at} 行前插入 {len(TIP_NEW_CODES)} 行:")
+    print(f"{TIP_GUILD_GROUP}: existing {len(groups_before[TIP_GUILD_GROUP])} codes; group ends at row {last_code_row} {tail_name!r};"
+          f" will insert before row {insert_at}: {len(TIP_NEW_CODES)} rows:")
     for offset, (name, text) in enumerate(TIP_NEW_CODES):
-        print(f"  第 {insert_at + offset} 行: {name} | {text}")
+        print(f"  Row {insert_at + offset}: {name} | {text}")
     if dry_run:
-        print("[dry-run] 未写文件。")
+        print("[dry-run] No files written.")
         return
 
     ws.insert_rows(insert_at, amount=len(TIP_NEW_CODES))
@@ -310,9 +310,9 @@ def cmd_tip_codes(dry_run: bool) -> None:
         fail(f"保存后读回的内容与预期不符(第一处差异在第 {first_diff + 1} 个非空行;读回 {len(rows_after)} 行,预期 {len(expected)} 行)"
              f" —— 立刻 git checkout -- {TIP_XLSX.relative_to(REPO_ROOT).as_posix()} 还原")
     groups_after = tip_groups(tip_rows(check_ws))
-    print(f"[完成] {TIP_GUILD_GROUP} 段 {len(groups_before[TIP_GUILD_GROUP])} -> {len(groups_after[TIP_GUILD_GROUP])} 个码,"
-          f"其余 {len(groups_after) - 1} 个段与原有 {len(rows_before)} 行逐格一致。"
-          f"导表后核对:这 10 个码的 id 应为 14022..14031,tip_enum_ids.json 只增不改。")
+    print(f"[DONE] {TIP_GUILD_GROUP} range {len(groups_before[TIP_GUILD_GROUP])} -> {len(groups_after[TIP_GUILD_GROUP])} codes;"
+          f" other {len(groups_after) - 1} ranges and existing {len(rows_before)} rows unchanged."
+          f" After export, confirm these 10 codes have IDs 14022..14031; tip_enum_ids.json contains additions only.")
 
 
 # ── message-limiter ──────────────────────────────────────────────────────────
@@ -389,15 +389,15 @@ def cmd_message_limiter(dry_run: bool) -> None:
         to_append.append((message_id, method, wanted))
 
     if not to_append:
-        print(f"[已是目标状态] {len(LIMITER_TIERS)} 个帮会经济消息号都已在表里,不改文件。")
+        print(f"[ALREADY CURRENT] All {len(LIMITER_TIERS)} guild economy message IDs exist in the table; file unchanged.")
         return
 
-    print(f"现有数据行 {len(existing)} 条,末行是第 {last_data_row} 行;将追加 {len(to_append)} 行:")
+    print(f"Existing data: {len(existing)} rows; last row={last_data_row}; will append {len(to_append)} rows:")
     for offset, (message_id, method, wanted) in enumerate(to_append, start=1):
-        print(f"  第 {last_data_row + offset} 行: id={message_id:<4} {GUILD_SERVICE}{method:<24} "
+        print(f"  Row {last_data_row + offset}: id={message_id:<4} {GUILD_SERVICE}{method:<24} "
               f"max_requests={wanted[0]} time_window={wanted[1]} tip_message={wanted[2]}")
     if dry_run:
-        print("[dry-run] 未写文件。")
+        print("[dry-run] No files written.")
         return
 
     for offset, (message_id, _method, wanted) in enumerate(to_append, start=1):
@@ -419,9 +419,9 @@ def cmd_message_limiter(dry_run: bool) -> None:
     if after != expected:
         fail(f"保存后的数据行与预期不符(应为原有 {len(existing)} 行原样 + 新增 {len(to_append)} 行)—— "
              f"立刻 git checkout -- {LIMITER_XLSX.relative_to(REPO_ROOT).as_posix()} 还原")
-    print(f"[完成] 数据行 {len(existing)} -> {len(after)}。接着再跑一次导表器;"
-          f"通过标准:generated/tables/messagelimiter.json 里能查到上面这些 id。"
-          f"部署时按 路由服 → gate(重载 MessageLimiter)→ guild 的顺序重启(90-consistency.md Y-12)。")
+    print(f"[DONE] Data rows {len(existing)} -> {len(after)}. Rerun the table exporter;"
+          f" acceptance: the IDs above appear in generated/tables/messagelimiter.json."
+          f" During deployment, restart router -> gate (reload MessageLimiter) -> guild in that order (90-consistency.md Y-12).")
 
 
 def main() -> None:

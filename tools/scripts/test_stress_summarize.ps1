@@ -53,11 +53,57 @@ $fakeStderr = @"
 "@
 Set-Content -Path (Join-Path $runDir "robot.stderr") -Value $fakeStderr -Encoding utf8
 
+$snapDirForTest = Join-Path $runDir "prom-snapshots"
+
+# 1a. login 快照(2026-10-13,G3 评审修复):两列后加的指标各造「有序列」与「缺序列」两种快照。
+#     - entergame_total{result="pool_saturated"}:PreloadPool 满、入场链没启动的次数。它不是链的终态,
+#       不计入 fail% 的分母;序列缺失(不导出该取值的旧 login)必须打印 n/a,不能折成 0。
+#     - login_create_player_stage_seconds{stage="seed"}:建角锁内的新号种子那一步,只在
+#       NewPlayerSeed.Enabled 打开时有序列;关着时打印 n/a。
+#     t18m = 新版 login、开着种子;t5m = 不导出 pool_saturated 的旧 login、关着种子。
+#     数值都取小于 1000 的整数:Format-Number 用 N0,千分位分隔符随区域设置变。
+$fakeLoginSeedOn = @"
+# HELP entergame_total EnterGame async chain terminal-state count.
+# TYPE entergame_total counter
+entergame_total{result="success"} 900
+entergame_total{result="preload_failed"} 60
+entergame_total{result="apply_failed"} 30
+entergame_total{result="lock_lost"} 10
+entergame_total{result="pool_saturated"} 7
+# TYPE login_create_player_stage_seconds histogram
+login_create_player_stage_seconds_sum{stage="mint"} 0.1
+login_create_player_stage_seconds_count{stage="mint"} 100
+login_create_player_stage_seconds_sum{stage="name"} 0.2
+login_create_player_stage_seconds_count{stage="name"} 100
+login_create_player_stage_seconds_sum{stage="register"} 0.3
+login_create_player_stage_seconds_count{stage="register"} 100
+login_create_player_stage_seconds_sum{stage="seed"} 0.06
+login_create_player_stage_seconds_count{stage="seed"} 100
+login_create_player_stage_seconds_sum{stage="account_write"} 0.5
+login_create_player_stage_seconds_count{stage="account_write"} 100
+# TYPE login_create_player_name_orphan_total counter
+login_create_player_name_orphan_total 0
+"@
+Set-Content -Path (Join-Path $snapDirForTest "t18m_login.txt") -Value $fakeLoginSeedOn -Encoding utf8
+$fakeLoginSeedOff = @"
+# TYPE entergame_total counter
+entergame_total{result="success"} 500
+# TYPE login_create_player_stage_seconds histogram
+login_create_player_stage_seconds_sum{stage="mint"} 0.05
+login_create_player_stage_seconds_count{stage="mint"} 50
+login_create_player_stage_seconds_sum{stage="name"} 0.1
+login_create_player_stage_seconds_count{stage="name"} 50
+login_create_player_stage_seconds_sum{stage="register"} 0.15
+login_create_player_stage_seconds_count{stage="register"} 50
+login_create_player_stage_seconds_sum{stage="account_write"} 0.25
+login_create_player_stage_seconds_count{stage="account_write"} 50
+"@
+Set-Content -Path (Join-Path $snapDirForTest "t5m_login.txt") -Value $fakeLoginSeedOff -Encoding utf8
+
 # 1b. DB 分段快照(2026-10-12 回归):client_golang 输出时按 label 名排序,db_task_stage_seconds
 #     的实际序列是 {op=..,stage=..}。旧脚本按 {stage=..,op=..} 精确查找,这张表永远是 "-"。
-#     这里按真实的输出顺序造快照;db 快照只在存在 *_login.txt 时才被识别(多端点布局),所以补一个空的。
-$snapDirForTest = Join-Path $runDir "prom-snapshots"
-Set-Content -Path (Join-Path $snapDirForTest "t18m_login.txt") -Value "" -Encoding utf8
+#     这里按真实的输出顺序造快照;db 快照只在存在 *_login.txt 时才被识别(多端点布局),
+#     上面 1a 的 login 快照同时满足这一条(原先这里补的是一个空的 t18m_login.txt)。
 $fakeDbSnapshot = @"
 # HELP db_task_stage_seconds Per-task sub-stage latency.
 # TYPE db_task_stage_seconds histogram
@@ -198,6 +244,88 @@ foreach ($expected in @('4.0ms', '3.0ms', '0.5ms', '0.7ms', '12.5ms', '9.0ms')) 
     Assert-Contains -Haystack $dbRow -Needle $expected `
         -Reason "DB task stages row must show $expected — label order {op,stage} not matched?"
 }
+
+# login 三个段(EnterGame / Dataloader / CreatePlayer)的行都以同一个快照名开头,只按行首匹配分不清是哪一段,
+# 所以先按段标题定位,再取该段里指定快照的那一行。段标题只做子串匹配,不锚行首。
+function Get-SectionRow {
+    param(
+        [string[]]$Lines,
+        [string]$SectionMarker,
+        [string]$SnapshotName
+    )
+    $inSection = $false
+    foreach ($l in $Lines) {
+        if ($l.Contains('=== ')) {
+            $inSection = $l.Contains($SectionMarker)
+            continue
+        }
+        if ($inSection -and $l -match ('^\s*' + [regex]::Escape($SnapshotName) + '\s')) {
+            return $l
+        }
+    }
+    return $null
+}
+
+function Assert-SectionRow {
+    param(
+        [string[]]$Lines,
+        [string]$SectionMarker,
+        [string]$SnapshotName,
+        [string]$Pattern,
+        [string]$Reason
+    )
+    $row = Get-SectionRow -Lines $Lines -SectionMarker $SectionMarker -SnapshotName $SnapshotName
+    if (-not $row -or $row -notmatch $Pattern) {
+        Write-Host "FAIL: $SectionMarker row for $SnapshotName does not match $Pattern ($Reason)" -ForegroundColor Red
+        Write-Host "  got: $row" -ForegroundColor Red
+        Write-Host "── stress_summarize output ──" -ForegroundColor DarkGray
+        $Lines | ForEach-Object { Write-Host "  $_" -ForegroundColor DarkGray }
+        if (-not $KeepArtifacts) { Remove-Item -Recurse -Force $tmpRoot -ErrorAction SilentlyContinue }
+        exit 1
+    }
+    Write-Host "  ok: $SectionMarker / $SnapshotName" -ForegroundColor DarkGreen
+}
+
+function Assert-HeaderMatches {
+    param(
+        [string[]]$Lines,
+        [string]$Pattern,
+        [string]$Reason
+    )
+    if (-not ($Lines -match $Pattern)) {
+        Write-Host "FAIL: no header line matches $Pattern ($Reason)" -ForegroundColor Red
+        Write-Host "── stress_summarize output ──" -ForegroundColor DarkGray
+        $Lines | ForEach-Object { Write-Host "  $_" -ForegroundColor DarkGray }
+        if (-not $KeepArtifacts) { Remove-Item -Recurse -Force $tmpRoot -ErrorAction SilentlyContinue }
+        exit 1
+    }
+    Write-Host "  ok: header $Pattern" -ForegroundColor DarkGreen
+}
+
+# EnterGame 表:pool_saturated 是最后一列。原有各列的位置不变。
+Assert-HeaderMatches -Lines $outputLines -Pattern 'apply avg\s+pool_saturated\s*$' `
+    -Reason "EnterGame table must end with the pool_saturated column"
+# t18m:success 900 / preload_failed 60 / apply_failed 30,另有 lock_lost 10 → fail% = 100/1000 = 10.0%。
+# pool_saturated 的 7 不进分母:进了分母就不是 10.0%(100/1007 = 9.9%,算成失败则是 107/1007 = 10.6%)。
+Assert-SectionRow -Lines $outputLines -SectionMarker 'EnterGame end-to-end' -SnapshotName 't18m_login' `
+    -Pattern '^\s*t18m_login\s+900\s+60\s+30\s+10\.0%\s.*\s7\s*$' `
+    -Reason "pool_saturated must print the counter value as the last column and stay out of fail%"
+# t5m:不导出 pool_saturated 的 login → n/a,不能折成 0。
+Assert-SectionRow -Lines $outputLines -SectionMarker 'EnterGame end-to-end' -SnapshotName 't5m_login' `
+    -Pattern '^\s*t5m_login\s+500\s+0\s+0\s+0\.0%\s.*\sn/a\s*$' `
+    -Reason "a login snapshot without the pool_saturated series must print n/a, not 0"
+
+# CreatePlayer 表:seed 列在 register 与 account_write 之间。
+Assert-HeaderMatches -Lines $outputLines -Pattern 'mint\s+name\s+register\s+seed\s+account_write\s+name_orphan\s*$' `
+    -Reason "CreatePlayer stages table must list the five stages in lock order"
+# t18m(开着种子):五个阶段均值依次 1.0 / 2.0 / 3.0 / 0.6 / 5.0 ms,孤儿 0。五个数互不相同,列串位即红。
+Assert-SectionRow -Lines $outputLines -SectionMarker 'CreatePlayer stages' -SnapshotName 't18m_login' `
+    -Pattern '^\s*t18m_login\s+1\.0ms\s+2\.0ms\s+3\.0ms\s+0\.6ms\s+5\.0ms\s+0\s*$' `
+    -Reason "seed stage avg must sit between register and account_write"
+# t5m(关着种子):seed 没有序列 → n/a;其余四列照常;孤儿序列缺失但有 stage 序列 → 0(既有规则)。
+Assert-SectionRow -Lines $outputLines -SectionMarker 'CreatePlayer stages' -SnapshotName 't5m_login' `
+    -Pattern '^\s*t5m_login\s+1\.0ms\s+2\.0ms\s+3\.0ms\s+n/a\s+5\.0ms\s+0\s*$' `
+    -Reason "with NewPlayerSeed off the seed column must print n/a and the other columns must not shift"
 
 # ── Cleanup ─────────────────────────────────────────────────────────────
 

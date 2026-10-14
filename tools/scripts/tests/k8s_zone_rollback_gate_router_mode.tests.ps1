@@ -55,7 +55,7 @@ $ErrorActionPreference = "Stop"
 . "$PSScriptRoot/lib/deploy_capture.ps1"
 
 Write-Host ""
-Write-Host "=== k8s_zone_rollback.ps1 -GateRouterMode / 集群外入口参数 透传与预检契约测试 ==="
+Write-Host "=== k8s_zone_rollback.ps1 -GateRouterMode / external entry argument forwarding and preflight contract tests ==="
 
 # 不可变 tag 才能过脚本入口的回滚目标校验(见 k8s_deploy_contract.tests.ps1 第 5 节)。
 $RollbackBaseArgs = @(
@@ -522,7 +522,7 @@ Test-Case '-Apply 三项(-GateRouterMode / -ClientEntryMode / -GatewayIngressHos
     $run = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs $extra
     Assert-True -Condition ($null -eq $run.Error) -Because "三项都显式时不该被预检拦。错误: $($run.Error)"
     Assert-Equal -Expected 0 -Actual $run.KubectlCalls.Count -Because '三项都显式 = 操作者已决定,不核对集群'
-    Assert-Match -Text $run.Output -Pattern '三项均已显式给值,不读集群' -Because '输出要写明本次没有核对集群'
+    Assert-Match -Text $run.Output -Pattern 'All three values were supplied explicitly; skipping cluster reads' -Because '输出要写明本次没有核对集群'
 }
 
 Test-Case 'dry-run 留空:不读集群、不执行任何步骤,只预告 -Apply 时的预检' {
@@ -564,7 +564,7 @@ Test-Case '-Apply 路由模式核对认 StatefulSet 版 gate:模板为 "0" 且�
 
     $passed = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -ExtraArgs $external -KubectlReply (New-KubectlReply -GateKind StatefulSet -GateEnv (New-ExternalGateEnv -RouterValue '1'))
     Assert-True -Condition ($null -eq $passed.Error) -Because "模板路由模式与默认一致、入口参数显式照传,不该被拦。错误: $($passed.Error)"
-    Assert-Match -Text $passed.Output -Pattern "集群现状\(仅供核对\):gate 为 StatefulSet;模板地址 env:[^\r\n]*GATE_NODE_PORT_BASE='30100'" -Because '显式给了 -ClientEntryMode 时也要把集群现状打出来,供操作者核对照传的地址参数'
+    Assert-Match -Text $passed.Output -Pattern "Current cluster state \(for comparison only\): gate 为 StatefulSet;模板地址 env:[^\r\n]*GATE_NODE_PORT_BASE='30100'" -Because '显式给了 -ClientEntryMode 时也要把集群现状打出来,供操作者核对照传的地址参数'
     $up = Get-BoundLine -Run $passed -Command 'k8s-zone-up'
     foreach ($pair in @('ClientEntryMode=external', 'GateServiceType=NodePort', 'GateNodePortBase=30100', 'ClientPublicHost=203.0.113.10')) {
         Assert-Match -Text $up -Pattern "(^| |;)$([regex]::Escape($pair))(;|$)" -Because "-Apply 时 Step 6 必须真正把 $pair 传给 dev_tools.ps1,不只是打印出来"
@@ -587,7 +587,7 @@ Test-Case '-Apply namespace 已不存在:Ingress 判为读不到(不当成"确�
     $refused = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs @{ ClientEntryMode = 'podip' } -KubectlReply $gone
     Assert-RefusedBeforeStop -Run $refused -Label 'namespace 已删 + Ingress 未表态' -HintPattern '-ConfirmNoGatewayIngress'
     Assert-Match -Text $refused.Error -Pattern '无从判断回滚前有没有 Ingress gateway' -Because '错误文本要写明判不出的原因,与路由模式、入口形态"读不到即拒"同一口径'
-    Assert-NotMatch -Text $refused.Output -Pattern '留空不会丢 Ingress' -Because '判不出时不得打印放行口径的绿字,误导操作者'
+    Assert-NotMatch -Text $refused.Output -Pattern 'leaving it unset will preserve Ingress' -Because '判不出时不得打印放行口径的绿字,误导操作者'
     Assert-NotMatch -Text $refused.Error -Pattern 'gate 路由模式:|客户端入口形态:' -Because '路由模式与入口形态已显式给值,不核对'
 
     $confirmed = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs @{ ClientEntryMode = 'podip'; ConfirmNoGatewayIngress = $true } -KubectlReply $gone
@@ -608,7 +608,7 @@ Test-Case '-Apply namespace 里有 Ingress gateway + -ConfirmNoGatewayIngress:�
     Assert-True -Condition ($null -eq $run.Error) -Because "-ConfirmNoGatewayIngress 是 Ingress 这一项的显式决定,不该再因现有 Ingress 被拦。错误: $($run.Error)"
     Assert-Equal -Expected 1 -Actual $run.KubectlCalls.Count -Because '路由模式与入口形态仍留空,仍要读一次集群'
     Assert-NotMatch -Text $run.Output -Pattern 'kubectl get statefulset/gate[^\r\n]*不能有 Ingress gateway' -Because '显式表态后,预检那一行不再列 Ingress 核对项'
-    Assert-Match -Text $run.Output -Pattern '显式 -ConfirmNoGatewayIngress' -Because '输出要写明 Ingress 这一项没有核对、是操作者的决定'
+    Assert-Match -Text $run.Output -Pattern 'Explicit -ConfirmNoGatewayIngress' -Because '输出要写明 Ingress 这一项没有核对、是操作者的决定'
     Assert-NotMatch -Text (Get-BoundLine -Run $run -Command 'k8s-zone-up') -Pattern 'Gateway|Confirm' -Because 'Step 6 不生成 Ingress,豁免开关也不下传'
 }
 
@@ -668,7 +668,7 @@ Test-Case '-Apply 静态预检:先于 Step 1 执行 k8s-zone-up -DryRun,参数�
     Assert-Equal -Expected $upArgsLine -Actual $dryRunArgs -Because '静态预检必须用 Step 6 的同一份参数(只多 -DryRun),否则预检过了的组合不等于 Step 6 真正执行的组合'
     Assert-Match -Text $upArgsLine -Pattern '(^|;)ReleaseProfile=prod(;|$)' -Because '-ReleaseProfile 必须真正传到 Step 6,否则 prod zone 回滚按 dev 档部署(占位密钥回落)'
     Assert-NotMatch -Text (Get-BoundLine -Run $run -Command 'k8s-zone-down') -Pattern 'ReleaseProfile' -Because 'zone-down 与档位无关,不传'
-    Assert-Match -Text $run.Output -Pattern 'k8s-zone-up -DryRun 通过' -Because '放行时写明静态预检的结论'
+    Assert-Match -Text $run.Output -Pattern 'k8s-zone-up -DryRun passed' -Because '放行时写明静态预检的结论'
 }
 
 Test-Case '-Apply 静态预检失败(throw / 非 0 退出码):停服之前拒绝,错误或输出带上 k8s_deploy.ps1 的原因' {
@@ -689,7 +689,7 @@ Test-Case 'dry-run:只预告静态预检,不执行' {
     $run = Invoke-RollbackInSandbox -DeployDefault '1' -GateRouterMode '1' -ExtraArgs @{ ClientEntryMode = 'podip'; ConfirmNoGatewayIngress = $true }
     Assert-True -Condition ($null -eq $run.Error) -Because "dry-run 不该失败。错误: $($run.Error)"
     Assert-Equal -Expected 0 -Actual $run.DevToolsCalls.Count -Because 'dry-run 只打印命令,连 k8s-zone-up -DryRun 也不执行'
-    Assert-Match -Text $run.Output -Pattern '静态预检:以 Step 6 同一组参数[^\r\n]*-DryRun' -Because 'dry-run 要预告 -Apply 时会先 -DryRun 一遍 Step 6'
+    Assert-Match -Text $run.Output -Pattern 'Static preflight: run dev_tools.ps1 k8s-zone-up with the same arguments as Step 6[^\r\n]*-DryRun' -Because 'dry-run 要预告 -Apply 时会先 -DryRun 一遍 Step 6'
 }
 
 # ─────────────────────────────────────────────────────────────────
@@ -709,7 +709,7 @@ Test-Case '-ReleaseProfile / -LoginDevPasswordAuth:给了只透传到 Step 6,不
 
     $unset = Invoke-RollbackDryRun
     Assert-NotMatch -Text (Get-ZoneUpArgsLine -Output $unset.Output) -Pattern 'ReleaseProfile|LoginDevPasswordAuth' -Because '留空不透传:档位默认值只在 dev_tools.ps1 一处'
-    Assert-Match -Text $unset.Output -Pattern 'release\s*:[^\r\n]*staging / prod zone 必须显式传 -ReleaseProfile' -Because '留空时摘要区要提醒 staging / prod 必须显式传'
+    Assert-Match -Text $unset.Output -Pattern 'release\s*:[^\r\n]*staging / prod zones must explicitly pass -ReleaseProfile' -Because '留空时摘要区要提醒 staging / prod 必须显式传'
 
     $bad = Invoke-RollbackDryRun -ExtraArguments @('-ReleaseProfile', 'production')
     Assert-True -Condition ($bad.ExitCode -ne 0) -Because "档位拼错必须在入口被拒。输出: $($bad.Output)"

@@ -52,7 +52,7 @@ public class AdminWhitelistController {
         long zoneId = entry.getZoneId();
         long accountId = entry.getAccountId();
         String note = entry.getNote();
-        ZoneWhitelist stored = InnoDbDeadlockRetry.execute(tx, "白名单 add", zoneId, () -> {
+        ZoneWhitelist stored = InnoDbDeadlockRetry.execute(tx, "whitelist add", zoneId, () -> {
             whitelistRepo.upsert(zoneId, accountId, note);
             return whitelistRepo.findByZoneIdAndAccountId(zoneId, accountId)
                     .orElseThrow(() -> new IllegalStateException(

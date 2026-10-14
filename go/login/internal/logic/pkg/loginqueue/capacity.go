@@ -11,14 +11,14 @@
 // deployed zone (PlayerCount=0 across all gates) doesn't permanently lock
 // new players out of the queue.
 //
-// Free-slots calculation deliberately includes admitted-but-not-connected
-// players (the dispatcher's `admitted:zone:{zoneId}` set):
+// Free-slots calculation deliberately includes in-flight placeholders
+// (`admitted:zset:zone:{zoneId}`, see Queue.AdmittedCount):
 //
 //	freeSlots = capacity - online - admitted
 //
 // Without the `admitted` term, a single dispatcher tick would over-issue
-// gate tokens by a factor of (admitted / dispatch_interval) until the next
-// PlayerCount refresh propagates from gate → etcd → GateWatcher.
+// gate tokens until the next PlayerCount refresh propagates from
+// gate → etcd → GateWatcher (the C++ gate reports every 10s).
 package loginqueue
 
 import (
@@ -29,7 +29,7 @@ import (
 
 // CapacityProvider exposes the inputs capacity calculation needs. The
 // concrete implementation in svc wires GateWatcher + ZoneCapacityOverride
-// + the queue's admittedSetKey count.
+// + the queue's in-flight placeholder count.
 type CapacityProvider interface {
 	// CandidatesForZone returns all healthy gates serving zoneID, in
 	// arbitrary order. PickAndSignGateToken sorts by load.
@@ -46,7 +46,7 @@ type CapacityProvider interface {
 //
 //	online    = sum(candidate.PlayerCount for candidate in zone)
 //	cap       = ZoneCapacity(zone) || ceil(max(online, 1) * softCapMultiplier)
-//	admitted  = SCARD admitted:zone:{zone}
+//	admitted  = live members of admitted:zset:zone:{zone} (expired ones dropped first)
 //	free      = max(0, cap - online - admitted)
 //
 // We use max(online, 1) in the fallback so a brand-new zone (online=0)

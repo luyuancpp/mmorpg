@@ -8,11 +8,16 @@ import (
 	"github.com/IBM/sarama"
 )
 
-// GroupLag 是一个消费组在一个 topic 上的积压(全部分区求和;调用方不按分区出指标,基数恒定)。
+// GroupLag 是一个消费组在一个 topic 上的积压(Lag / RetentionGap 是全部分区求和,MaxPartitionLag 是单分区最大值;
+// 调用方不按分区出指标,基数恒定)。
 type GroupLag struct {
 	// Lag = Σ max(0, end − max(committed, start)):end = 下一条要写的 offset(OffsetNewest),start = 日志起点(OffsetOldest)。
 	// 没提交过的分区按「从 start 开始」算(消费者都是 StartOffset=FirstOffset)。
 	Lag int64
+	// MaxPartitionLag 是上式里单个分区那一项的最大值(没提交过的分区同样计入)。
+	// broker 的 retention.bytes 按**分区**执行:积压集中在少数分区时(持有它的实例卡住、毒丸行卡住所在分区),
+	// 合计 Lag 还远没到线,那个分区已经开始被删 —— 「离删除线还有多远」只能拿它比,不能拿合计比。
+	MaxPartitionLag int64
 	// RetentionGap = Σ max(0, start − committed),只算提交过的分区:保留期(retention.ms 或 retention.bytes)
 	// 已经删掉、而这个组还没消费到的消息条数 —— 这些数据已经丢了。
 	RetentionGap int64
@@ -85,6 +90,7 @@ func computeGroupLag(r groupOffsetReader, group, topic string, partitions int32)
 			out.Uncommitted++
 			if end > start {
 				out.Lag += end - start
+				out.MaxPartitionLag = max(out.MaxPartitionLag, end-start)
 			}
 			continue
 		}
@@ -99,6 +105,7 @@ func computeGroupLag(r groupOffsetReader, group, topic string, partitions int32)
 		}
 		if from := max(c, start); end > from {
 			out.Lag += end - from
+			out.MaxPartitionLag = max(out.MaxPartitionLag, end-from)
 		}
 	}
 	return out, mismatch

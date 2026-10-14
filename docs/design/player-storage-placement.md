@@ -139,7 +139,16 @@ TiDB 决策 D1 的「映射持久化兜底表」仍是遗留项(§11.4)。
 - 可打开 = 名字在 `dbguard` 白名单里,**或** `Placement.AllowStoreFamilies=true`(默认)且名字属于 `zone_{1..999999}_db` / `player_store_{≥1000000}_db` 两个家族。
   按需打开**从不建库**,只 Ping + 只读 schema 闸;白名单防「ZoneId 填错静默建新库」的原有语义不变。
 - 前提:所有落点库与 go/db 的 `Database.Hosts` 在同一 MySQL 实例 / TiDB 集群(与合服工具同一前提)。
-- 每库独立 `*sql.DB` + proto2mysql 模型(proto2mysql 靠 DSN 默认库选库);额外库连接池 `Placement.ExtraStoreMaxOpenConn`(默认 8)、`ExtraStoreMaxIdleConn`(默认 2)。不设库数上限。
+- 每库独立 `*sql.DB` + proto2mysql 模型(proto2mysql 靠 DSN 默认库选库)。不设库数上限。
+  额外库(本 zone 库之外)的连接池按库所属家族分两组旋钮(2026-10-13 G2b 批 C:已落码,未编译、未测试;本 zone 库仍用 `ServerConfig.Database.MaxOpenConn` / `MaxIdleConn`):
+  - `Placement.ZoneStoreMaxOpenConn` / `ZoneStoreMaxIdleConn`:**每个**额外 zone 家族库 `zone_{1..999999}_db` 的池(冷缓存访客读、合服 pin 后的源区库);
+  - `Placement.NonZoneStoreMaxOpenConn` / `NonZoneStoreMaxIdleConn`:**每个**非 zone 落点库 `player_store_{≥1000000}_db` 的池(Phase 2);
+  - `Placement.ExtraStoreConnMaxIdleSeconds`(默认 60):两类额外库池共用的 `SetConnMaxIdleTime`,空闲超过这么多秒的连接即关闭,冷库的池回到 0 条,不再按 MaxIdleConn 常驻。
+    `ConnMaxLifetime` 仍是 5 分钟,所以本值大于 300 等于不生效;
+  - 旧键 `Placement.ExtraStoreMaxOpenConn` / `ExtraStoreMaxIdleConn` 仍认,但只作回落:新键没写(≤ 0)时两类库都取旧键的值,旧键也没写再取默认 8 / 2
+    (`go/db/internal/config/config.go` 的 `Normalize`,优先级 新键 > 旧键 > 默认;「只写旧键」的旧部署两类库维持原来的大小)。新配置不要再写旧键。
+  - 拆开的原因:zone 家族池的名义预算随 zone 数平方增长(最坏每个实例打开其余全部 zone 的库),非 zone 池在 Phase 2 是瓶颈、要单独调大,一个旋钮两头顾不上。
+    两组都计入共用 MySQL 的连接总账(`tools/scripts/k8s_deploy.ps1` 的 `Get-MysqlConnectionLedger`,说明见 `deploy/k8s/README.md`「MySQL 连接总账」),调任一旋钮前先重算;数值待压测确认。
 - 按需打开失败 = **延后重试且不耗重试次数**(与排序锁忙同口径),ERROR 日志 + `db_placement_store_open_total{result="error"}`;不进死信(死信无消费者)。
 
 实现口径(v2.1):

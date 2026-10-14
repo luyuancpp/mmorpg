@@ -212,13 +212,13 @@ data:
     done
     if [ -z "$MASTER" ] && [ -n "$best" ]; then
       MASTER="$best"
-      echo "[redis-start] 15 秒内没有凑出多数哨兵的一致意见,采用得票最多的: $MASTER"
+      echo "[redis-start] No consensus from a majority of sentinels within 15 seconds; using the candidate with the most votes: $MASTER"
     fi
 
     if [ -z "$MASTER" ]; then
       # 一个哨兵都答不出:只应出现在哨兵全部起不来的时候。按约定以 redis-0 为主。
       MASTER="$(node_fqdn 0)"
-      echo "[redis-start] 没有哨兵答得出当前的主,按约定以 redis-0 为主"
+      echo "[redis-start] No sentinel can identify the current primary; using redis-0 as primary by convention"
     elif [ "$MASTER" = "$SELF" ]; then
       # 哨兵认为主是我。两种情况要分开:
       #   a) 只有我崩了 / 被杀了 / 被重建了,别的节点一直在跑。这时不能直接以主身份回来:重放 AOF 的整段时间里
@@ -228,7 +228,7 @@ data:
       #      (我倒下还不到 5 秒、哨兵还没来得及判的时候靠这一条)。
       #   b) 整个集群一起重启(断电、整体停机后拉起),或全新部署。这时我的数据是最新的,直接以主启动。
       if sentinels_see_master_down || long_running_replica_exists; then
-        echo "[redis-start] 哨兵说主还是我,而别的节点一直在运行(或哨兵已判我下线):先等它们切主,最多 20 秒"
+        echo "[redis-start] Sentinels still identify this node as primary while other nodes have been running (or sentinels marked this node down); waiting up to 20 seconds for failover"
         n=0
         while [ "$n" -lt 20 ]; do
           sleep 1
@@ -240,7 +240,7 @@ data:
           n=$((n + 1))
         done
       else
-        echo "[redis-start] 哨兵说主是我,别的节点也都刚启动(或还没起来):直接以主启动"
+        echo "[redis-start] Sentinels identify this node as primary and other nodes just started (or are not up yet); starting directly as primary"
       fi
     fi
 
@@ -259,9 +259,9 @@ data:
       set -- "$@" --requirepass "$REDIS_PASSWORD" --masterauth "$REDIS_PASSWORD"
     fi
     if [ "$MASTER" = "$SELF" ]; then
-      echo "[redis-start] 以主身份启动: $SELF"
+      echo "[redis-start] Starting as primary: $SELF"
     else
-      echo "[redis-start] 以从身份启动: $SELF 跟随 $MASTER"
+      echo "[redis-start] Starting as replica: $SELF following $MASTER"
       set -- "$@" --replicaof "$MASTER" 6379
     fi
     exec "$@"
@@ -312,7 +312,7 @@ data:
     # 只在主身边**确实有同步中的从**时才交接:让哨兵去提升一个还在做首次同步的从,等于把数据清空。
     online="$(rc info replication | grep -c 'state=online' || true)"
     if [ "${online:-0}" -lt 1 ]; then
-      echo "[redis-prestop] 我是主,但没有在线的从,不交接"
+      echo "[redis-prestop] This node is primary but has no online replicas; skipping handoff"
       exit 0
     fi
 
@@ -325,7 +325,7 @@ data:
       # 等的过程中从都走了(整体停机:它们没有主可交,比我先退出)就不用交接了。
       online="$(rc info replication | grep -c 'state=online' || true)"
       if [ "${online:-0}" -lt 1 ]; then
-        echo "[redis-prestop] 在线的从都没了(整体停机?),不交接"
+        echo "[redis-prestop] All online replicas are gone (cluster-wide shutdown?); skipping handoff"
         exit 0
       fi
       i=0
@@ -347,7 +347,7 @@ data:
       fi
     done
     if [ -z "$PEER" ]; then
-      echo "[redis-prestop] 25 秒内没有哨兵把从都看清楚,照常尝试交接"
+      echo "[redis-prestop] No sentinel discovered all replicas within 25 seconds; attempting handoff as usual"
     fi
 
     # 1) 暂停写入。20 秒后自动解除,是脚本中途被杀时的保险。
@@ -378,7 +378,7 @@ data:
       fi
     done
     if [ "$asked" != "1" ]; then
-      echo "[redis-prestop] 没有哨兵接受切换请求,解除暂停后直接停(哨兵会在判下线后自行切主)"
+      echo "[redis-prestop] No sentinel accepted the failover request; resuming and stopping directly (sentinels will fail over after marking this node down)"
       rc client unpause >/dev/null
       exit 0
     fi
@@ -411,7 +411,7 @@ data:
       n=$((n + 1))
     done
     if [ -z "$NEW" ]; then
-      echo "[redis-prestop] 20 秒内哨兵没有切到新主,解除暂停后直接停"
+      echo "[redis-prestop] Sentinels did not switch to a new primary within 20 seconds; resuming and stopping directly"
       rc client unpause >/dev/null
       exit 0
     fi
@@ -423,7 +423,7 @@ data:
     rc client kill type pubsub >/dev/null
     rc replicaof "$NEW" 6379 >/dev/null
     rc client unpause >/dev/null
-    echo "[redis-prestop] 主已交给 $NEW"
+    echo "[redis-prestop] Primary role handed over to $NEW"
     exit 0
 
   sentinel-start.sh: |
@@ -439,7 +439,7 @@ data:
     # 所以宁可现在就拒启、把话说清楚。k8s_deploy.ps1 在部署入口有同一条检查。
     case "${REDIS_PASSWORD:-}" in
       *[[:space:]\"\'\\]*)
-        echo "[sentinel-start] 拒绝启动:Redis 口令里含有空白、引号或反斜杠。哨兵无法把这样的口令存回配置文件,请换一个只含字母、数字和 ._~@%+=:,^- 的口令。" >&2
+        echo "[sentinel-start] Refusing startup: Redis password contains whitespace, quotes, or backslashes. Sentinels cannot save such a password back to the configuration file; use a password containing only letters, digits, and ._~@%+=:,^-." >&2
         exit 1
         ;;
     esac
@@ -455,7 +455,7 @@ data:
         MASTER="$(node_fqdn 0)"
       fi
       QUORUM=$((NODES / 2 + 1))
-      echo "[sentinel-start] 首次启动:监视的主 = $MASTER,判定下线需要 $QUORUM 票"
+      echo "[sentinel-start] First startup: monitored primary = $MASTER; declaring it down requires $QUORUM votes"
       {
         echo "port 26379"
         echo "dir /data/sentinel"

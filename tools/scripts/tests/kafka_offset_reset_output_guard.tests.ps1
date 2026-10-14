@@ -27,7 +27,7 @@ $ErrorActionPreference = "Stop"
 . "$PSScriptRoot/lib/test_harness.ps1"
 
 Write-Host ""
-Write-Host "=== kafka_offset_reset.ps1 位点重置结果判定契约测试 ==="
+Write-Host "=== kafka_offset_reset.ps1 offset reset result contract tests ==="
 
 $scriptPath = Join-Path (Split-Path $PSScriptRoot -Parent) 'kafka_offset_reset.ps1'
 $parseErrors = $null

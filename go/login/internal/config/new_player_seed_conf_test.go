@@ -33,8 +33,9 @@ type newPlayerSeedKeysProbe struct {
 	} `json:"NewPlayerSeed"`
 }
 
-// 两份样例 yaml(仓内 etc 与 deploy/login-stack.linux)必须显式写出 NewPlayerSeed.Enabled,
-// 键名拼写由 newPlayerSeedKeysProbe 的必填字段保证。
+// 两份样例 yaml(仓内 etc 与 deploy/login-stack.linux)必须显式写出 NewPlayerSeed.Enabled 且为关
+// (设计 §8;打开前置见设计 §7:L-14 对比表、两类 go/db 告警)。
+// 键名拼写由 newPlayerSeedKeysProbe 的必填字段保证;「为关」直接读探针的值,不必再加载完整 Config。
 func TestLoginYamlSpellsOutNewPlayerSeedKeys(t *testing.T) {
 	for _, path := range []string{
 		"../../etc/login.yaml",
@@ -45,6 +46,9 @@ func TestLoginYamlSpellsOutNewPlayerSeedKeys(t *testing.T) {
 			if err := conf.Load(path, &p); err != nil {
 				t.Fatalf("%s must spell out NewPlayerSeed.Enabled explicitly "+
 					"(a typo is silently ignored by go-zero): %v", path, err)
+			}
+			if p.NewPlayerSeed.Enabled {
+				t.Fatalf("%s must keep NewPlayerSeed.Enabled=false until the launch gates are met (design §7)", path)
 			}
 		})
 	}

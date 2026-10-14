@@ -161,7 +161,7 @@ func (l *EnterSceneLogic) checkClientChannelPick(in *scene_manager.EnterSceneReq
 	targetZoneId uint32) (*scene_manager.EnterSceneResponse, bool) {
 	ownerConfID, membership, err := locateWorldChannel(l.svcCtx, targetZoneId, in.SceneId, in.SceneConfId)
 	if err != nil {
-		l.Logger.Errorf("[ChannelSwitch] 判定目标是否分线失败,fail-closed 拒绝: player=%d zone=%d scene=%d scene_conf_id=%d err=%v",
+		l.Logger.Errorf("[ChannelSwitch] Failed to determine whether target is a channel; rejecting fail-closed: player=%d zone=%d scene=%d scene_conf_id=%d err=%v",
 			in.PlayerId, targetZoneId, in.SceneId, in.SceneConfId, err)
 		return errResp(constants.ErrRedis, fmt.Sprintf("读取分线集合失败，已拒绝切线: %v", err)), false
 	}
@@ -187,7 +187,7 @@ func (l *EnterSceneLogic) checkClientChannelPick(in *scene_manager.EnterSceneReq
 	maxPlayers := l.svcCtx.Config.ChannelMaxPlayers()
 	players, err := readScenePlayerCountChecked(l.svcCtx, in.SceneId)
 	if err != nil {
-		l.Logger.Errorf("[ChannelSwitch] 读目标线人数失败,fail-closed 拒绝: player=%d zone=%d scene=%d err=%v",
+		l.Logger.Errorf("[ChannelSwitch] Failed to read target channel player count; rejecting fail-closed: player=%d zone=%d scene=%d err=%v",
 			in.PlayerId, targetZoneId, in.SceneId, err)
 		return errResp(constants.ErrRedis, fmt.Sprintf("读取线路人数失败，已拒绝切线: %v", err)), false
 	}
@@ -205,7 +205,7 @@ func (l *EnterSceneLogic) checkClientChannelPick(in *scene_manager.EnterSceneReq
 	}
 	cooling, err := l.svcCtx.Redis.Exists(channelSwitchCooldownKey(in.PlayerId))
 	if err != nil {
-		l.Logger.Errorf("[ChannelSwitch] 读切线冷却失败,fail-closed 拒绝: player=%d err=%v", in.PlayerId, err)
+		l.Logger.Errorf("[ChannelSwitch] Failed to read channel switch cooldown; rejecting fail-closed: player=%d err=%v", in.PlayerId, err)
 		return errResp(constants.ErrRedis, fmt.Sprintf("读取切线冷却失败，已拒绝切线: %v", err)), false
 	}
 	if cooling {
@@ -221,7 +221,7 @@ func (l *EnterSceneLogic) checkClientChannelPick(in *scene_manager.EnterSceneReq
 func (l *EnterSceneLogic) rejectChannelPick(in *scene_manager.EnterSceneRequest, targetZoneId uint32,
 	code uint32, reason, message string) *scene_manager.EnterSceneResponse {
 	metrics.ObserveEnterSceneRejected(targetZoneId, reason)
-	l.Logger.Infof("[ChannelSwitch] 选线被拒: reason=%s player=%d zone=%d scene=%d scene_conf_id=%d",
+	l.Logger.Infof("[ChannelSwitch] Channel selection rejected: reason=%s player=%d zone=%d scene=%d scene_conf_id=%d",
 		reason, in.PlayerId, targetZoneId, in.SceneId, in.SceneConfId)
 	return errResp(code, message)
 }
@@ -254,7 +254,7 @@ func (l *EnterSceneLogic) startChannelSwitchCooldown(playerID uint64) {
 		return
 	}
 	if err := l.svcCtx.Redis.Setex(channelSwitchCooldownKey(playerID), "1", int(cooldownSeconds)); err != nil {
-		l.Logger.Errorf("[ChannelSwitch] 写切线冷却失败,本次切线不计冷却: player=%d cooldown=%ds err=%v",
+		l.Logger.Errorf("[ChannelSwitch] Failed to write channel switch cooldown; this switch will not count toward cooldown: player=%d cooldown=%ds err=%v",
 			playerID, cooldownSeconds, err)
 	}
 }

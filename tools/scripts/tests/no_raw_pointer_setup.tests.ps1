@@ -56,4 +56,4 @@ try {
     & $entry -DownloadOnly
     $passed++
 } finally { $env:LLVM_ROOT = $previousLlvmRoot }
-Write-Host "PASS: $passed 个下载入口用例。测试目录: $fixtureRoot"
+Write-Host "PASS: $passed download entry cases. Test directory: $fixtureRoot"

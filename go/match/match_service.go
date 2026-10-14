@@ -115,7 +115,7 @@ func main() {
 		// (复审:RatingEnabled=true 让 match 启动硬依赖 Kafka)。降级为告警 + 30s 后台重试,
 		// 期间排队/凑单照常、评分停在当前值;重试成功后从最早 offset 补消费,不丢结果。
 		if err := startResults(); err != nil {
-			logx.Errorf("[rating] 对局结果消费者启动失败,评分暂停更新、30s 后后台重试: %v", err)
+			logx.Errorf("[rating] Failed to start battle result consumer; rating updates paused, retrying in the background after 30s: %v", err)
 			safego.Go("match.kafka.results.retry", func() {
 				for {
 					select {
@@ -124,10 +124,10 @@ func main() {
 					case <-time.After(30 * time.Second):
 					}
 					if err := startResults(); err != nil {
-						logx.Errorf("[rating] 对局结果消费者重试启动失败,30s 后再试: %v", err)
+						logx.Errorf("[rating] Failed to restart battle result consumer; retrying after 30s: %v", err)
 						continue
 					}
-					logx.Info("[rating] 对局结果消费者重试启动成功")
+					logx.Info("[rating] Battle result consumer restarted successfully")
 					return
 				}
 			})
@@ -181,7 +181,7 @@ func main() {
 	if err != nil {
 		// §A.3 第 4 条:不用 logx.Must(直接 os.Exit,defer 不执行)。registerNodes 已把成功的那一次
 		// 注册 Close(发现 key 立刻消失),这里再释放 snowflake 租约、刷 Kafka、刷日志后退出。
-		logx.Errorf("[match] 节点注册 etcd 失败,进程退出: %v", err)
+		logx.Errorf("[match] Failed to register node in etcd; exiting: %v", err)
 		cancel()
 		svcCtx.Stop()
 		s.Stop() // go-zero RpcServer.Stop 只做 logx.Close
@@ -224,9 +224,9 @@ func main() {
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
 	select {
 	case sig := <-sigCh:
-		logx.Infof("[match] 收到信号 %v,开始退出", sig)
+		logx.Infof("[match] Received signal %v; shutting down", sig)
 	case <-serveDone:
-		logx.Error("[match] gRPC 服务意外退出,开始退出")
+		logx.Error("[match] gRPC server exited unexpectedly; shutting down")
 	}
 
 	// 退出顺序(§A.3 第 3 条、shared/noderegistry 包注释「使用顺序」):
@@ -241,7 +241,7 @@ func main() {
 	select {
 	case <-serveDone:
 	case <-time.After(shutdownDrainTimeout):
-		logx.Infof("[match] gRPC 服务 %v 内未退出(非 Linux 平台 go-zero 不接管信号),直接退出", shutdownDrainTimeout)
+		logx.Infof("[match] gRPC server did not exit within %v (go-zero does not handle signals on non-Linux platforms); exiting directly", shutdownDrainTimeout)
 	}
 	cancel()
 	svcCtx.Stop()
@@ -292,7 +292,7 @@ func registerNodes(etcd *clientv3.Client, c config.Config, advertiseHost string,
 			BuildValue:      nodeInfoValueBuilder(teamNodeType, c.ZoneId, advertiseHost, port, uint64(time.Now().Unix())),
 			OnReclaimFailed: sharedregistry.ReallocateNewID,
 			OnNodeIDChanged: func(oldID, newID uint32) {
-				logx.Errorf("[match.team] etcd 失租后原 TeamNodeService node_id=%d 未能重夺,已换新 node_id=%d 继续服务", oldID, newID)
+				logx.Errorf("[match.team] Could not reclaim original TeamNodeService node_id=%d after etcd lease loss; continuing with new node_id=%d", oldID, newID)
 			},
 			LogPrefix: "[match.team]",
 		})
@@ -360,18 +360,18 @@ func sessionInterceptor(
 ) (any, error) {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if ok && strings.HasPrefix(info.FullMethod, matchInternalMethodPrefix) && len(md.Get(sessionMetadataKey)) > 0 {
-		logx.WithContext(ctx).Errorf("[match] 拒绝带会话调用内部方法 %s", info.FullMethod)
+		logx.WithContext(ctx).Errorf("[match] Rejecting internal method %s invoked with a session", info.FullMethod)
 		return nil, status.Errorf(codes.PermissionDenied, "%s is not callable by clients", info.FullMethod)
 	}
 	if ok {
 		if vals, exists := md[sessionMetadataKey]; exists && len(vals) > 0 {
 			bin, err := base64.StdEncoding.DecodeString(vals[0])
 			if err != nil {
-				logx.Errorf("[match] session metadata base64 解码失败: %v", err)
+				logx.Errorf("[match] Failed to decode session metadata base64: %v", err)
 			} else {
 				var detail base.SessionDetails
 				if err := proto.Unmarshal(bin, &detail); err != nil {
-					logx.Errorf("[match] SessionDetails 反序列化失败: %v", err)
+					logx.Errorf("[match] Failed to deserialize SessionDetails: %v", err)
 				} else {
 					ctx = ctxkeys.WithSessionDetails(ctx, &detail)
 				}

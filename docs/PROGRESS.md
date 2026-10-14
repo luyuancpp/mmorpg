@@ -7383,3 +7383,109 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
   - 补全拍板项(17 条)、授权口径、Codex 任务单写法与结果写回位置、proto2mysql 真库用例改用 `PROTO2MYSQL_TEST_DSN`(不改已入库的 testdata/db.json)、附录阅读须知与已作废条目、给新账号的开场提示词。
 - 瓶颈文档 §5.1 ② 行、§7 标题同步订正;附录头部加阅读须知指引。
 - **Java 版(AGENTS §12)**:对应 Java 版本号:无;本条只是文档,**不适用**。
+
+## 2026-10-13 补充:TiDB 下玩家数据分 PB / 分表原则(Codex,文档)
+
+- 用户要求将本次关于玩家数据大小、分 PB、分表及公开游戏存储实践的讨论补入现有文档。已在 [global-data-layer-tidb-decision.md](design/global-data-layer-tidb-decision.md) 新增 §8,结论区增加入口;没有新增文档,原索引条目继续有效。
+- 明确三类拆分:业务子 message、同玩家纵向分表、集合多行化;先定义原子保存范围,再按共同读写、容量增长和测量决定拆分。资产、领取标记与账本当前继续同记录同 DBTask,分表任务有序不等于跨表原子提交。
+- 记录当前事实:业务集中在 player_database,player_database_1 仅 ID / 压测探针;登录聚合两份、保存分别发任务。列 256 KiB / BLOB 合计行 1 MiB / 80% 预警属于当前项目预算,不是 TiDB 或统一大厂分表阈值。
+- 新核对:BlobGuard 仍按旧 Base64 编码长度估算,proto2mysql v0.2.0 实际写 raw binary,不能把闸门指标称为实际 SQL 行大小;本次未改闸门。文档 D3 补充 Save 的源码更正:UPDATE → INSERT,重复键再 UPDATE / 核对,不是 REPLACE / 普通 ODKU。
+- 附 AWS 公开 EA 案例、垂直拆分建议与 Roblox 原子保存建议的来源和适用边界;注明职责表、多行背包等是设计参考,未实现。实例 / 布局分离不自动要求分开事务。
+- 验证范围:文档差异、源码与来源核对,未编译、未跑服务测试或压测;未修改代码、proto、配置或数据库,未提交。文档索引检查结果另见本次交付。
+- Java 版(AGENTS.md §12):对应 Java 版本号为无;本次只是设计文档,无功能或客户端契约变更,未修改 Java 仓库。以后实施拆分时需核对两版并登记 PARITY.md。
+
+## 2026-10-13 补充:玩家分表文档验证结果(Codex)
+
+- 文档新增内容经独立代理只读核对;git diff --check 通过,改动仅涉及 TiDB 设计文档与本进度文件。
+- python tools/scripts/gen_docs_index.py --check 尝试失败:本机 python 命中 Microsoft Store 占位入口,没有可执行的 Python 解释器。未重试、未安装工具;本次没有新增文档或改标题,既有 docs/README.md 索引条目仍对应同一文件,完整生成器校验未执行。
+- Java 版:对应版本号为无;本次仍仅文档,无功能或客户端契约变更。
+
+## 2026-10-13 补充:G2b 连接预算补完(Claude,未编译、未测试,待 Codex 验证)
+
+- **来由**:接手 [handoff-launch-readiness-and-d1-20261013.md](handoff/handoff-launch-readiness-and-d1-20261013.md) §4 第 1 项。规格 [spec_G2b.md](handoff/launch-readiness-20261013/spec_G2b.md)。
+- **接手时与交接不符的两点**:
+  - 交接写「三个会话的改动都在工作区、没有提交」。实际 `d5cbb8a8e`、`0aa1027bc` 已把它们提交并推到 origin/main,接手时工作区是干净的。
+  - 本条落码期间,工作区里又出现了**别的会话**的未提交改动(全部 go.mod 改为 `go 1.27.2`、几份 Dockerfile、根 README、go/db 交接的几份新文档、本文件上面两条 Codex 条目)。本会话没有碰它们;提交时本条的文件清单见下面「文件」一行。
+- **负责人当日授权**(对话里的选择,原话):文件数「授权,按项推进」——每项各自控制在 30 个文件以内,累计可以超过 30,单项要超再问。
+- **先评审已落的一半**(四组,每组按规格符合度 / 编译正确性 / 一致性与并发三个视角看,发现逐条对抗核实):提出 7 条,确认 6 条,修 5 条,1 条是对未落部分的实现约束(已照做)。
+  - `go/shared/sqlpoolstats/collector.go`:`wait_duration_seconds_total` 原来按浮点秒逐样本累加。go/db 的样本顺序随 map 遍历变化,同类别 3 个以上的池时两次抓取的和可以差 1 ULP,变小的那次会被 Prometheus 当成 counter 重置(Prometheus 语义,凭记忆,未核实)。改为按纳秒整数累加、输出时再换算成秒。规划档 4 个 zone 时 `extra_zone` 恰好 3 个池,`SqlPoolSlowAcquire` 的分子就是这条序列。
+  - `collector_test.go`:两处断言原来恒真。「两次抓取一致」改为对同一个收集器实例抓两次;label 名改用字面量 `pool` / `sql_client`(它们是告警表达式的契约,不能跟着实现常量走)。并进一条加法顺序的回归断言,用例数仍是 7。
+  - `deploy/k8s/manifests/infra/mysql.yaml` 注释:在线改上限的做法由 `SET PERSIST` 改为 `SET GLOBAL`。`SET PERSIST` 会把值写进 PVC 上的 `mysqld-auto.cnf`,启动时优先于 my.cnf(MySQL 8.0 行为,凭记忆,未核实),用过之后改文件加重启都不生效,而总账与契约测试照样按文件里的值通过。`deploy/k8s/README.md` 与告警文件里的同一说法已同步。**这改变了 go/db 交接 §5 第 12 项「`SET PERSIST` 是否允许」的前提**:现在仓库里三处都写的是不要用。
+  - `go/db/internal/config/config_test.go`:幂等断言原来只比 3 个字段,改为整个 `Placement` 结构比较,并补「旧键 + 新键混写」的起点。
+  - data_service 那一组(B8~B14)没有发现。
+- **补完未落的一半**(A3、A6、A7、A10~A13、B15、B17、B18、C7~C9;完整性核对:规格 §3 的 40 项现在全部有对应落点):
+  - `tools/scripts/k8s_deploy.ps1`(+427 行):
+    - 总账六个函数 `Get-MysqlConnectionPlan` / `Get-MysqlMaxConnectionsFromManifest` / `Get-ManifestDeploymentReplicas` / `Get-MysqlConnectionLedgerInputs` / `Get-MysqlConnectionLedger` / `Write-MysqlConnectionLedger`,写路径(zone-up / all-up / infra-up)打印一行 `MySQL connection ledger: …`,超限只告警(`MySQL连接总账超限:` 开头)不阻断。
+    - db ConfigMap 写 `MetricsListenAddr: ":9160"`。**交接点名的 B16 / B17 不一致到此消除**(manifest 的 9160 端口与注解此前无人监听)。
+    - ConfigMap 镜像池参数:db 的 `Placement` 五个新键(直接写批 C 的终态)、data-service 的 `PlayerName.*` 与 `RouteStore.MaxOpenConn` / `MaxIdleConn`(`Mode` 仍固定 redis)、gateway 的 Hikari 两项。
+  - `tools/scripts/tests/k8s_deploy_contract.tests.ps1`:新增 9 例,**89 → 98**(规格写的 88 → 95 → 97 已过时,以 98 为准)。
+  - 新文件 `deploy/k8s/mysql-connection-alerts.yaml`(PrometheusRule,两组 5 条,阈值全部待压测确认)、`java/gateway_node/src/test/java/com/game/gateway/repository/GatewayDataSourcePoolConfigTest.java`(H2 上钉 Hikari 5 / 2)。
+  - 文档:`deploy/k8s/README.md` 新增「MySQL 连接总账」一节并把原三处预算说明指向它;`no-single-node-horizontal-scaling-20261001.md` §3.4、`tidb-phase1-and-launch-readiness.md` §2.4 / L-08 / P1-1 各追加状态注(原文不改);`player-storage-placement.md` §6.1 换成新键并写明旧键只作回落;`.github/workflows/deploy-config-tests.yml` 两份 `paths` 各加三条(只加路径)。
+- **与规格的偏离**:
+  - 多了两个函数 `Get-MysqlPoolMirror` / `Assert-MysqlPoolMirror`。规格 §4.1.4 说「生成器读值时顺手核」,但 `Apply-Zone` 先 apply node-config / gate / scene 才生成 go-svc ConfigMap,只在生成器里核做不到 §5 要求的「任何 apply 之前 throw」。现在入口门禁与生成器共用一份键清单。
+  - gateway 的 `minimum-idle` 下限是 0(Hikari 的合法值,凭记忆,未核实),不是规格统一写的「正整数」;另外多核了 `Placement.ExtraStoreConnMaxIdleSeconds` 必须为正(Go 侧把 ≤ 0 当成没写)。
+  - 没有先写批 A 的旧键再换:`go/db/etc/db.yaml` 里旧键 `ExtraStore*` 已经只剩注释,按规格批 A 的字面去读会直接 throw。
+- **行为变化与风险**:
+  - zone-up 以前不读 zones 配置,现在为了数 zone 会读;文件存在但解析不了时在入口 throw(缺席则 Z 取 1,行尾标 `zones_config=missing`)。
+  - 入口门禁在 zone-up / all-up / infra-up 上都核 db、data-service、gateway 三份配置的池值,不看 `-SkipGoSvc` / `-SkipJavaSvc`。
+  - apply 这份 `mysql.yaml` 会触发 Recreate,全服唯一的 MySQL 停一次。L-04(连接错误不耗重试预算)落地前不要在有真实存档的环境 apply(go/db 交接 §2.4)。
+  - mysqld_exporter 没有部署,`mysql.connection-budget` 组两条告警没有数据,三个指标名凭记忆。
+  - `Get-MysqlPoolMirror` 的拒绝路径、`zones_config=missing` 分支没有契约用例(规格 §6.1 没列)。
+- **文件**(13 个;提交时只 add 这些,加本文件):
+  - `tools/scripts/k8s_deploy.ps1`、`tools/scripts/tests/k8s_deploy_contract.tests.ps1`;
+  - `deploy/k8s/mysql-connection-alerts.yaml`(新)、`deploy/k8s/manifests/infra/mysql.yaml`、`deploy/k8s/README.md`;
+  - `go/shared/sqlpoolstats/collector.go`、`collector_test.go`、`go/db/internal/config/config_test.go`;
+  - `java/gateway_node/src/test/java/com/game/gateway/repository/GatewayDataSourcePoolConfigTest.java`(新);
+  - `docs/design/no-single-node-horizontal-scaling-20261001.md`、`docs/design/tidb-phase1-and-launch-readiness.md`、`docs/design/player-storage-placement.md`;
+  - `.github/workflows/deploy-config-tests.yml`。
+- **交 Codex**(工作目录 `D:\luyuan\xuanming-server-mmo-cpp`;pwsh 7;Go 版本按各模块 go.mod——另一个会话正把它们改成 1.27.2,以执行时的工作区为准;不改 go.mod / go.sum;串行执行,前一步红了就停下归因,不连续重试):
+  0. 前置清理:`Get-ChildItem Env:MMORPG_* | Remove-Item`(免得 dev 基线被本机变量污染)。
+  1. 语法(这两个脚本的新代码没经过 PowerShell 解析器):
+     `pwsh -NoProfile -Command "foreach ($f in 'tools/scripts/k8s_deploy.ps1','tools/scripts/tests/k8s_deploy_contract.tests.ps1') { $e=$null; [void][System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $f), [ref]$null, [ref]$e); if ($e.Count) { $f; $e | Format-List; exit 1 } }"`。通过标准:无输出,退出码 0。
+  2. `pwsh -NoProfile -File tools/scripts/tests/k8s_deploy_contract.tests.ps1`。通过标准:汇总 98 通过、0 失败,退出码 0。最需要实跑确认的是「连 MySQL 的 ConfigMap 只有总账认识的那些」:它里面那次不带 `-SkipGoSvc` 的 infra-up DryRun 在本文件没有先例。
+  3. 回归,各自 0 失败:`k8s_migrate_gate.tests.ps1`、`k8s_client_entry_contract.tests.ps1`、`k8s_gate_drain.tests.ps1`、`k8s_zone_rollback_gate_router_mode.tests.ps1`(都在 `tools/scripts/tests/`,`pwsh -NoProfile -File`)。
+  4. `cd go/shared`:`gofmt -l ./sqlpoolstats`(无输出)、`go vet ./sqlpoolstats/...`(无告警)、`go test -count=1 ./sqlpoolstats/...`(7 个用例 PASS)。
+  5. `cd go/db`:`gofmt -l .`、`go build ./...`、`go vet ./...`、`go test -count=1 ./internal/metrics/... ./internal/logic/pkg/proto_sql/... ./internal/config/... ./internal/kafka/...`。
+  6. `cd go/data_service`:`gofmt -l .`、`go build ./...`、`go vet ./...`、`go test -count=1 ./internal/store/ ./internal/svc/... ./internal/metrics/...`(store 只跑默认 tag)。
+  7. `cd java/gateway_node`:`./mvnw.cmd -q "-Dtest=GatewayDataSourcePoolConfigTest" test`。通过标准:Tests run: 1,Failures 0,Errors 0,Skipped 0。**本机 `~/.m2` 里没有 Spring Boot 3.4.3 的依赖,第一次跑会联网下载,属于下载,先征得负责人同意。**
+  8. 手算值核对:第 2 步的 dev DryRun 输出里应有 `MySQL connection ledger: zones=2 steady=592 peak=948 max_connections=1800 headroom=852; plan zones=4 peak=1620 headroom=180`。数字不同就回报,由 Claude 对公式与文档。
+  9. 可选,没有工具就记「未校验」:`promtool check rules`(先把 `deploy/k8s/mysql-connection-alerts.yaml` 的 `spec` 段取成 `groups:` 顶层的单独文件);`actionlint .github/workflows/deploy-config-tests.yml`;`python tools/scripts/gen_docs_index.py --check`(本条没有新增文档)。
+  - 第 5、6 步的 `gofmt -l .` / `go vet ./...` 是整个模块,会带上 `d5cbb8a8e` 里其它工作项的代码;报出问题时按文件归因,分开回报。
+  - 失败时保留:解析错误列表;失败用例的 `[FAIL]` 行与断言文本、对应 DryRun 子进程的整段输出;`go test -v` 的失败段与编译错误前 20 行;surefire 报告。
+- **未验证**:以上全部。没有任何压测,所有数值(1800、5Gi、池大小、R=2、告警阈值)都是待压测确认,不构成容量结论(AGENTS.md §6)。
+- **Java 版(AGENTS.md §12)**:对应 Java 版本号:无。本项是服务端内部的部署与观测,不涉及客户端契约。Java 版**待做**:它上多副本或 K8s 之前需要同样的总账(显式 Hikari、池指标、按副本数核 `max_connections`)。`PARITY.md` 留到交接 §4 第 6 项(文档收尾)统一登记。`java/gateway_node` 是本仓库自己的网关,不是 Java 版。
+
+### 2026-10-13: 默认战斗回合上限改为 300
+
+- `cpp/libs/services/battle/constants/turn_battle_constants.h` 的 `kDefaultMaxRounds` 从 30 改为 300；同步 Go match 的 `RatingDrawRoundCap` 缺省值与 YAML 配置，避免 30～299 回合的真实胜负被当成打满平局。副本 `time_limit` 的覆盖规则照旧。
+- 调整现有 C++ 缺省回合僵局测试的循环上界及玩家血量，支持持续到 300 回合；同步当前设计中的默认值。
+- 验证：`TestApplyBattleResultRoundCapSettlesAsDraw` 定向 Go 测试通过，改动文件 `git diff --check` 通过。C++ `battle.vcxproj` Debug/x64 编译因本机缺少 `google/protobuf/io/coded_stream.h`、`google/protobuf/runtime_version.h` 失败，未运行 C++ 回归测试。
+- Java 版（现有版本 `0.1.0-SNAPSHOT`，本次未提交）：已同步默认回合、房间兜底期限、评分阈值及相关既有测试；Java 定向验证通过，明细登记在 Java 仓库 `PARITY.md`。
+- 独立整场时限仍由 `BattleMaxDurationSeconds` 控制，当前为 300 秒；实际对局可能在 300 回合之前被截止时间收场。本次未调整整场时限策略，未提交或推送。
+
+## 2026-10-13 Go 工具链统一 1.27.2 与 VS Code 定义跳转修复（Codex）
+
+- **授权与范围**：用户明确授权安装 Go/gopls、配置 VS Code 并验证跳转，随后要求所有 Go 模块统一为 1.27.2。19 个跟踪的 `go.mod`（14 个服务/公共模块、robot、4 个工具）全部更新；未改 require/replace 或 go.sum。
+- **构建入口**：4 个 Go Docker builder 统一为 `golang:1.27.2-alpine3.24@sha256:f92b6ef800e499660581efdabdf25d9d817a9d124eaf900924f0504e7e27e12d`，同步 GOVERSION 断言与两份根 README 的基线。CI 从 go-version-file 读取版本，无需重复写版本。
+- **vendor 元数据**：在外部目录执行标准 `go mod vendor -o`，仅将生成的 `modules.txt` 同步回 robot；差异只有本地 proto/shared 的两行 Go 版本，保留现有 vendor 源快照，未夹带生成器输出的其他源码差异。
+- **本机环境**：安装 Go 1.27.2 到 `D:/luyuan/tools/go1.27.2/go`，官方 Windows 安装包 SHA256 校验通过；gopls v0.23.0 在 `C:/Users/luyua/go/bin/gopls.exe`。VS Code 用户 settings.json 用 go.alternateTools 明确指定两者，并配置用户 PATH。默认官方模块代理连接被重置，使用项目已有的 `https://goproxy.cn,direct` 下载，保留 `sum.golang.org` 校验。
+- **跳转运行证据**：VS Code 1.141.0 + Go 扩展 0.56.1，在沿用现有工作区信任的临时开发窗口调用真实 `vscode.executeDefinitionProvider`；4/4 通过：login splitHostPort → login.go:474、killswitch.New → shared/killswitch/killswitch.go:118、fmt.Println → Go 1.27.2 src/fmt/print.go:306、UserAccounts → go/proto/common/database/mysql_database_table.pb.go:295。证据 `D:/luyuan/tools/vscode-go-validation-20261013/fixed-results.json`。原来的 VS Code 窗口需执行 Developer: Reload Window 清除此前 Go 扩展启动失败状态。
+- **Go 验证**：19 个模块版本指令用 Go 自身 mod edit -json 核对全部为 1.27.2；14 个 go/ 模块编译通过；login 全量 go test ./... 与 shared/buildinfo、snowflake、killswitch 三包测试通过；git diff --check 通过。未运行完整 Docker 镜像构建、其余模块全量测试或真实环境/压测。
+- **阻塞与停止**：robot 的 readonly 与规定的 Windows vendor 构建都失败：`scene.EquipItemResponse/GmGrantItemResponse/UnequipItemResponse` 及对应 `game.SceneBagClientPlayer...MessageId` 未定义（robot/logic/handler）；保留 `build-robot.log`、`build-robot-windows-vendor.log` 与 JSON 汇总，均在上述外部验证目录。按 AGENTS.md §10.2 停止，未修改协议或生成代码；robot Linux vendor 与 4 个 tools 模块未编译，待决定是否另修该协议编译问题。
+- **Java 版（AGENTS.md §12）**：不适用；本次为 Go 编译器/本机编辑器配置升级，未修改业务功能或客户端契约。未提交、未 push。
+
+## 2026-10-13 连续换场景期间的玩家消息寻址与可靠投递（Codex，文档）
+
+- 用户要求记录本次讨论；已在 [cross-zone-scene-travel.md](design/cross-zone-scene-travel.md) 新增 §14，并在文首标明该节为尚未实施的设计参考。保留“按固定 player_id 寻址，以及保管尚未处理完成的重要消息”的表述和 Orleans / Akka 官方链接。
+- 记录目标玩家 A → B → C 时的持久待办、当前位置重解析、固定事件身份、归属围栏、提交与去重原子化、完成确认，以及顺序、超期和恢复边界；补充 AWS Outbox 与 Akka 可靠投递来源。位置透明不等于持久可靠投递，场景时效消息不应盲目追随玩家。
+- 本次只修改现有设计文档并追加本条进度，没有新增文档，既有 docs/README.md 索引继续有效；未修改代码、proto、配置或生成产物，未执行服务构建、测试或压测，未提交或推送。文档校验结果见本次交付。
+- Java 版（AGENTS.md §12）：对应版本号为无；本次仅记录设计讨论，无功能或客户端契约变更，未修改 Java 仓库。后续实施须核对两版并登记 PARITY.md，不能据本条宣称已对齐实现。
+
+## 2026-10-13 Orleans 与 Akka 玩家寻址文章中文释义（Codex，文档）
+
+- 用户要求把两篇官方文章的中文说明继续记录到文档；在 [cross-zone-scene-travel.md](design/cross-zone-scene-travel.md) 现有 §14 后追加 §14.5–14.7，保留 §14.1–14.4 与其他会话的既有内容，没有新增文档。
+- Orleans：记录身份 / 激活 / Silo、目录负责人和实例承载者、Placement 与 Directory 职责、缓存失效、默认最终一致与短暂重复激活、实验目录交接、生命周期及调用超时结果未知的边界。
+- Akka：记录实体 / 分片 / 路由入口 / 协调器、首次定位与再平衡、停用缓冲、分片位置 / Remember Entities / 业务状态分层；明确协调器默认 ddata 在集群内复制但不落盘，顺序保证限定同一发送者经同一 Region 发往同一实体。
+- 保留 Reliable Delivery 的处理确认、持久生产者、重复投递与幂等要求，以及当前官方页的 may change / 暂不推荐生产提示；区分业务状态保存与通知副作用，所有机制附一手来源，不把中文释义或本项目推导写成已实施的统一可靠投递。
+- 验证：独立代理只读核对 Akka 机制，已收紧发送顺序与内存状态迁移的措辞；设计文档 git diff --check 通过。追加前后的原有字节保持不变，最终完整性检查见交付。使用内置 Python 执行文档索引 --check 未通过；只读定位为两条既有 go/db 交接索引的排序差异，本次目标文档条目与标题一致，未改写无关索引。
+- 本次仅文档，未运行服务构建、测试或压测，未提交或推送。Java 版（AGENTS.md §12）：对应版本号为无，无功能或客户端契约变更，未修改 Java 仓库；后续实施仍须核对两版并登记 PARITY.md。

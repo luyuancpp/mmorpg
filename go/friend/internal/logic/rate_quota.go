@@ -73,7 +73,7 @@ func (l *FriendLogic) allowFriendRequest(ctx context.Context, playerID uint64) b
 	if rds == nil {
 		// FriendRedis 未配时 svc 层会回落到共享库,所以正常不为 nil;
 		// 为 nil 只可能是单测手工构造 ServiceContext。按 fail-open 处理并计 error。
-		logx.WithContext(ctx).Errorf("[friend] WARN FriendRedis 句柄为 nil,申请频控放行 player=%d", playerID)
+		logx.WithContext(ctx).Errorf("[friend] WARN FriendRedis handle nil; friend request rate limit bypassed player=%d", playerID)
 		metrics.ObserveRateQuota(metrics.OutcomeError)
 		return true
 	}
@@ -81,7 +81,7 @@ func (l *FriendLogic) allowFriendRequest(ctx context.Context, playerID uint64) b
 	res, err := rds.EvalCtx(ctx, requestQuotaScript,
 		[]string{requestQuotaKey(playerID)}, strconv.Itoa(requestQuotaWindowSeconds))
 	if err != nil {
-		logx.WithContext(ctx).Errorf("[friend] 申请频控脚本失败,按 fail-open 放行 player=%d: %v", playerID, err)
+		logx.WithContext(ctx).Errorf("[friend] Friend request rate limit script failed; allowing under fail-open policy player=%d: %v", playerID, err)
 		metrics.ObserveRateQuota(metrics.OutcomeError)
 		return true
 	}
@@ -89,7 +89,7 @@ func (l *FriendLogic) allowFriendRequest(ctx context.Context, playerID uint64) b
 	if !isInt {
 		// 返回形态异常同样 fail-open:它是我们自己的脚本写错了 / go-zero 改了返回类型,
 		// 属于代码缺陷而不是玩家行为,不该由玩家承担"加不了好友"的后果。
-		logx.WithContext(ctx).Errorf("[friend] 申请频控脚本返回形态异常,按 fail-open 放行 player=%d: %T %v",
+		logx.WithContext(ctx).Errorf("[friend] Unexpected friend request rate limit script response; allowing under fail-open policy player=%d: %T %v",
 			playerID, res, res)
 		metrics.ObserveRateQuota(metrics.OutcomeError)
 		return true
@@ -98,7 +98,7 @@ func (l *FriendLogic) allowFriendRequest(ctx context.Context, playerID uint64) b
 	// 用 > 而不是 >=:本次 INCR 已经把自己算进去了,count == limit 时这是第 limit 次,
 	// 恰好用完配额、应当放行。写成 >= 会让实际配额少一次。
 	if count > int64(limit) {
-		logx.WithContext(ctx).Infof("[friend] 申请频控命中 player=%d count=%d limit=%d", playerID, count, limit)
+		logx.WithContext(ctx).Infof("[friend] Friend request rate limit reached player=%d count=%d limit=%d", playerID, count, limit)
 		metrics.ObserveRateQuota(metrics.OutcomeRejected)
 		return false
 	}

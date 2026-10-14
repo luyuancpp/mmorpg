@@ -173,7 +173,7 @@ void GiveUpSceneEntry(const SessionId sessionId, SessionInfo &session, const Clo
               << " first_failure=" << SceneForwardResultName(entry.firstFailure)
               << " last_failure=" << SceneForwardResultName(entry.lastFailure)
               << " elapsed_ms=" << ElapsedMs(entry.routedAt, now)
-              << ",推送 kEnterSceneFailed 并踢线、关闭会话";
+              << ",push kEnterSceneFailed and disconnect;close session";
 
     const auto conn = session.conn.lock();
     if (!conn || !conn->connected())

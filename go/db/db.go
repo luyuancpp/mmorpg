@@ -145,7 +145,7 @@ func main() {
 	// 失败只打 ERROR 不拒启:缺标记的后果是工具拒绝动手(安全方向),为它拒启等于停掉整个 zone 的存盘。
 	capabilityCtx, capabilityCancel := context.WithTimeout(context.Background(), placementCapabilityTimeout)
 	if err := kafka.MarkPlacementCapability(capabilityCtx, ctx.PlacementRedis, config.AppConfig.ZoneId); err != nil {
-		logx.Errorf("[placement] 能力标记写入失败(不拒启;心跳会在 Redis 恢复后自动补写,补写前合服 pin / 搬库工具会因缺标记拒绝对本 zone 动手): key=%s err=%v",
+		logx.Errorf("[placement] Failed to write capability marker (startup allowed; heartbeat will backfill when Redis recovers, merge pin / database move tools will reject this zone until then): key=%s err=%v",
 			placement.CapabilityKey(config.AppConfig.ZoneId), err)
 	} else {
 		logx.Infof("[placement] capability marked: %s=%s ttl=%s refresh=%s",
@@ -259,7 +259,7 @@ func main() {
 // 连不通的后果只是 killswitch 的全量同步失败并按 ResyncBackoff 重试(期间放行)。
 func newKillSwitchEtcdClient(cfg discov.EtcdConf) *clientv3.Client {
 	if len(cfg.Hosts) == 0 {
-		logx.Info("[killswitch] db 未配置 etcd Hosts,热关停不生效(全部放行)")
+		logx.Info("[killswitch] db etcd Hosts not configured; kill switch inactive (all requests allowed)")
 		return nil
 	}
 
@@ -274,7 +274,7 @@ func newKillSwitchEtcdClient(cfg discov.EtcdConf) *clientv3.Client {
 
 	cli, err := clientv3.New(c)
 	if err != nil {
-		logx.Errorf("[killswitch] db 建 etcd 客户端失败,热关停不生效(全部放行): %v", err)
+		logx.Errorf("[killswitch] db failed to create etcd client; kill switch inactive (all requests allowed): %v", err)
 		return nil
 	}
 	return cli

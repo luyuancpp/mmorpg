@@ -170,7 +170,7 @@ Ports are the local defaults from each service's `etc/*.yaml`.
 ### Prerequisites
 
 - **C++**: Visual Studio 2026 (toolset v145) on Windows, or a C++23 compiler with CMake on Linux
-- **Go**: 1.26.5 or newer
+- **Go**: 1.27.2 或更新
 - **Java**: JDK 23 and Maven
 - **Tools**: PowerShell 7, Python 3 (table exporter), Docker Desktop
 - **Submodules**: `git submodule update --init --recursive`

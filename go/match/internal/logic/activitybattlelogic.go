@@ -86,7 +86,7 @@ func NewStartActivityBattleLogic(ctx context.Context, svcCtx *svc.ServiceContext
 func (l *StartActivityBattleLogic) StartActivityBattle(in *matchpb.StartActivityBattleRequest) (*matchpb.StartActivityBattleResponse, error) {
 	// 1. 防御:带会话 = 客户端来源,一律拒绝。
 	if detail, ok := ctxkeys.GetSessionDetails(l.ctx); ok && detail != nil {
-		l.Errorf("[match] 拒绝客户端来源调用 MatchInternal.StartActivityBattle session_id=%d player=%d",
+		l.Errorf("[match] Rejecting client-originated MatchInternal.StartActivityBattle call session_id=%d player=%d",
 			detail.GetSessionId(), detail.GetPlayerId())
 		return nil, status.Error(codes.PermissionDenied, "MatchInternal is not callable by clients")
 	}
@@ -98,7 +98,7 @@ func (l *StartActivityBattleLogic) StartActivityBattle(in *matchpb.StartActivity
 
 	// 2. 参数校验。
 	if reason := validateStartActivityBattle(in); reason != "" {
-		l.Errorf("[match] 活动开局参数非法:%s config=%d members=%v ctx={%s}", reason, configId, members, formatActivityContext(actx))
+		l.Errorf("[match] Invalid activity battle start parameters: %s config=%d members=%v ctx={%s}", reason, configId, members, formatActivityContext(actx))
 		return l.reject(kind, matchpb.ActivityBattleReject_ACTIVITY_BATTLE_REJECT_INVALID_ARGUMENT, 0), nil
 	}
 
@@ -119,7 +119,7 @@ func (l *StartActivityBattleLogic) StartActivityBattle(in *matchpb.StartActivity
 	// 4. battle_id:只能由 match 节点生产(宪法 §7 SnowFlake 节点隔离);失败 fail-closed,不得用 0 顶替。
 	battleID, err := l.svcCtx.BattleIDGen.Generate()
 	if err != nil {
-		l.Errorf("[match] 活动开局 battle_id 生成失败 members=%v ctx={%s}: %v", members, formatActivityContext(actx), err)
+		l.Errorf("[match] Failed to generate activity battle_id members=%v ctx={%s}: %v", members, formatActivityContext(actx), err)
 		return l.reject(kind, matchpb.ActivityBattleReject_ACTIVITY_BATTLE_REJECT_INTERNAL, 0), nil
 	}
 
@@ -133,7 +133,7 @@ func (l *StartActivityBattleLogic) StartActivityBattle(in *matchpb.StartActivity
 	//     此时开局等于把玩家拉进一场 guild 以为没开的战斗。回滚票据后按 INTERNAL 收场。
 	//     本检查之后到响应送达之间仍有极窄窗口,由 guild 结算的"补登记"兜住(§6.29)。
 	if err := l.ctx.Err(); err != nil {
-		l.Errorf("[match] 活动开局前调用方已放弃,回滚票据 battle=%d members=%v: %v", battleID, members, err)
+		l.Errorf("[match] Caller abandoned request before activity battle start; rolling back tickets battle=%d members=%v: %v", battleID, members, err)
 		l.rollbackTickets(battleID, members, tickets)
 		return l.reject(kind, matchpb.ActivityBattleReject_ACTIVITY_BATTLE_REJECT_INTERNAL, 0), nil
 	}
@@ -152,7 +152,7 @@ func (l *StartActivityBattleLogic) StartActivityBattle(in *matchpb.StartActivity
 	})
 
 	// 7. 同步返回 battle_id。
-	l.Infof("[match] 活动开局已受理 battle=%d config=%d members=%v zones=%v ctx={%s}",
+	l.Infof("[match] Activity battle start accepted battle=%d config=%d members=%v zones=%v ctx={%s}",
 		battleID, configId, members, zones, formatActivityContext(actx))
 	metrics.ObserveActivityBattle(kind, activityResultStarted)
 	return &matchpb.StartActivityBattleResponse{BattleId: battleID}, nil
@@ -209,52 +209,52 @@ func validateStartActivityBattle(in *matchpb.StartActivityBattleRequest) string 
 func (l *StartActivityBattleLogic) precheckMember(pid uint64) (matchpb.ActivityBattleReject, uint32) {
 	session, err := playercontract.LoadSession(l.ctx, l.svcCtx, pid)
 	if err != nil {
-		l.Errorf("[match] 活动开局预检读会话失败 player=%d: %v", pid, err)
+		l.Errorf("[match] Activity battle precheck failed to read session player=%d: %v", pid, err)
 		return matchpb.ActivityBattleReject_ACTIVITY_BATTLE_REJECT_INTERNAL, 0
 	}
 	if !playercontract.IsSessionOnline(session) {
-		l.Infof("[match] 活动开局预检:成员不在线 player=%d", pid)
+		l.Infof("[match] Activity battle precheck: member offline player=%d", pid)
 		return matchpb.ActivityBattleReject_ACTIVITY_BATTLE_REJECT_MEMBER_OFFLINE, 0
 	}
 
 	locked, err := playercontract.IsBattleLocked(l.ctx, l.svcCtx, pid)
 	if err != nil {
-		l.Errorf("[match] 活动开局预检查战斗锁失败 player=%d: %v", pid, err)
+		l.Errorf("[match] Activity battle precheck failed to check battle lock player=%d: %v", pid, err)
 		return matchpb.ActivityBattleReject_ACTIVITY_BATTLE_REJECT_INTERNAL, 0
 	}
 	if locked {
-		l.Infof("[match] 活动开局预检:成员在战斗中 player=%d", pid)
+		l.Infof("[match] Activity battle precheck: member in battle player=%d", pid)
 		return matchpb.ActivityBattleReject_ACTIVITY_BATTLE_REJECT_MEMBER_IN_BATTLE, 0
 	}
 
 	loc, err := playercontract.LoadLocation(l.ctx, l.svcCtx, pid)
 	if err != nil {
-		l.Errorf("[match] 活动开局预检读位置失败 player=%d: %v", pid, err)
+		l.Errorf("[match] Activity battle precheck failed to read location player=%d: %v", pid, err)
 		return matchpb.ActivityBattleReject_ACTIVITY_BATTLE_REJECT_INTERNAL, 0
 	}
 	if loc == nil {
-		l.Infof("[match] 活动开局预检:成员不在场景 player=%d", pid)
+		l.Infof("[match] Activity battle precheck: member not in scene player=%d", pid)
 		return matchpb.ActivityBattleReject_ACTIVITY_BATTLE_REJECT_MEMBER_NOT_READY, 0
 	}
 
 	// 票据读与自愈沿用既有无 ctx 的 Redis 调用(与 JoinQueue / 整队开战共用、不改其行为),先检查 ctx。
 	if err := l.ctx.Err(); err != nil {
-		l.Errorf("[match] 活动开局预检时请求已结束 player=%d: %v", pid, err)
+		l.Errorf("[match] Request ended during activity battle precheck player=%d: %v", pid, err)
 		return matchpb.ActivityBattleReject_ACTIVITY_BATTLE_REJECT_INTERNAL, 0
 	}
 	existing, err := loadTicket(l.svcCtx, pid)
 	if err != nil {
-		l.Errorf("[match] 活动开局预检读票据失败 player=%d: %v", pid, err)
+		l.Errorf("[match] Activity battle precheck failed to read ticket player=%d: %v", pid, err)
 		return matchpb.ActivityBattleReject_ACTIVITY_BATTLE_REJECT_INTERNAL, 0
 	}
 	if existing != nil {
 		healed, err := healOrphanTicket(l.svcCtx, l.Logger, pid, existing)
 		if err != nil {
-			l.Errorf("[match] 活动开局预检校验既有票据失败 player=%d: %v", pid, err)
+			l.Errorf("[match] Activity battle precheck failed to validate existing ticket player=%d: %v", pid, err)
 			return matchpb.ActivityBattleReject_ACTIVITY_BATTLE_REJECT_INTERNAL, 0
 		}
 		if !healed {
-			l.Infof("[match] 活动开局预检:成员有在途票据 player=%d ticket=%s state=%s",
+			l.Infof("[match] Activity battle precheck: member has an in-flight ticket player=%d ticket=%s state=%s",
 				pid, existing.Ticket, existing.State)
 			return matchpb.ActivityBattleReject_ACTIVITY_BATTLE_REJECT_MEMBER_NOT_READY, 0
 		}
@@ -289,13 +289,13 @@ func (l *StartActivityBattleLogic) createMatchedTickets(configId uint32, battleI
 			ZoneId:       zones[pid],
 		}, ttl)
 		if err != nil {
-			l.Errorf("[match] 活动开局建票失败(结果未知,按已写入回滚) battle=%d player=%d: %v", battleID, pid, err)
+			l.Errorf("[match] Failed to create activity battle ticket (unknown outcome; rolling back as written) battle=%d player=%d: %v", battleID, pid, err)
 			owned = append(owned, pid)
 			l.rollbackTickets(battleID, owned, tickets)
 			return nil, matchpb.ActivityBattleReject_ACTIVITY_BATTLE_REJECT_INTERNAL, 0
 		}
 		if !created {
-			l.Infof("[match] 活动开局建票冲突:成员已有票据 battle=%d player=%d", battleID, pid)
+			l.Infof("[match] Activity battle ticket creation conflict: member already has a ticket battle=%d player=%d", battleID, pid)
 			l.rollbackTickets(battleID, owned, tickets)
 			return nil, matchpb.ActivityBattleReject_ACTIVITY_BATTLE_REJECT_MEMBER_NOT_READY, pid
 		}
@@ -312,11 +312,11 @@ func (l *StartActivityBattleLogic) rollbackTickets(battleID uint64, owned []uint
 	for _, pid := range owned {
 		deleted, err := deleteTicketIfOwnedCtx(ctx, l.svcCtx, pid, tickets[pid])
 		if err != nil {
-			logx.Errorf("[match] 活动开局回滚删票失败(靠 matched TTL 自愈) battle=%d player=%d: %v", battleID, pid, err)
+			logx.Errorf("[match] Activity battle rollback failed to delete ticket (matched TTL will recover) battle=%d player=%d: %v", battleID, pid, err)
 			continue
 		}
 		if !deleted {
-			logx.Infof("[match] 活动开局回滚:票据不是本次写入或已不存在 battle=%d player=%d", battleID, pid)
+			logx.Infof("[match] Activity battle rollback: ticket was not written by this request or no longer exists battle=%d player=%d", battleID, pid)
 		}
 	}
 }

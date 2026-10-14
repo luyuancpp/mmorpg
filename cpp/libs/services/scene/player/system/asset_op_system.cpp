@@ -206,7 +206,7 @@ bool IsAssetOpDurable(entt::entity player, AssetOpStream stream, uint64_t epoch,
 		{
 			// 盘上的结局与内存里的结局不同:结局固定(I2)被破坏,只可能是 bug。
 			// 不敢报 durable,让 Go 继续重查并告警。
-			LOG_ERROR << "[AssetOp] 快照结局与内存结局不一致 stream=" << static_cast<int>(stream)
+			LOG_ERROR << "[AssetOp] Snapshot outcome differs from in-memory outcome stream=" << static_cast<int>(stream)
 					  << " epoch=" << epoch << " seq=" << seq
 					  << " on_disk=" << AssetOpSeqStateName(state)
 					  << " expect_applied=" << expectApplied;
@@ -239,7 +239,7 @@ bool PersistAndProbeDurable(entt::entity player, const ::AssetOpRequest& request
 	{
 		// 没写盘 = 内存与上次落盘快照逐字段相等;结局既然已在内存里,就必然也在快照里。
 		// 走到这里说明脏比较或快照维护有 bug,如实报 durable=false 让 Go 继续重查。
-		LOG_ERROR << "[AssetOp] 存盘被脏比较跳过,但结局不在落盘快照里 player_id=" << request.player_id()
+		LOG_ERROR << "[AssetOp] Save skipped by dirty comparison but outcome is absent from persisted snapshot player_id=" << request.player_id()
 				  << " stream=" << static_cast<int>(request.stream()) << " epoch=" << request.stream_epoch()
 				  << " seq=" << request.seq();
 	}
@@ -314,7 +314,7 @@ void RejectAndRecord(entt::entity player, PlayerAssetOpLedgerComp& ledgerComp,
 {
 	if (!RecordOutcome(ledgerComp, request, AssetOpRecordKind::kRejected, reasonTipId))
 	{
-		LOG_ERROR << "[AssetOp] 记账前置被破坏(拒绝) player_id=" << request.player_id()
+		LOG_ERROR << "[AssetOp] Ledger precondition violated(rejected) player_id=" << request.player_id()
 				  << " stream=" << static_cast<int>(request.stream()) << " epoch=" << request.stream_epoch()
 				  << " seq=" << request.seq();
 		Answer(response, ASSET_OP_OUTCOME_UNKNOWN, 0);
@@ -358,17 +358,17 @@ bool ValidateDebitBundle(const ::AssetBundle& bundle, std::string& why)
 {
 	if (HasUnsupportedP2Fields(bundle))
 	{
-		why = "debit v1 不支持按 guid 扣物 / 扣宝宝(item_uuids / pet_id)";
+		why = "debit v1 does not support item/pet deductions by guid(item_uuids / pet_id)";
 		return false;
 	}
 	if (bundle.currencies_size() != 1 || bundle.items_size() != 0)
 	{
-		why = "debit v1 只收恰好 1 条货币、0 件物品";
+		why = "debit v1 requires exactly 1 currency entry and 0 items";
 		return false;
 	}
 	if (!IsCurrencyAmountValid(bundle.currencies(0)))
 	{
-		why = "debit 货币类型或数额越界";
+		why = "debit currency type or amount out of range";
 		return false;
 	}
 	return true;
@@ -378,17 +378,17 @@ bool ValidateCreditBundle(const ::AssetBundle& bundle, std::string& why)
 {
 	if (HasUnsupportedP2Fields(bundle))
 	{
-		why = "credit v1 不支持按 guid 发物 / 发宝宝(item_uuids / pet_id)";
+		why = "credit v1 does not support item/pet grants by guid(item_uuids / pet_id)";
 		return false;
 	}
 	if (bundle.currencies_size() + bundle.items_size() < 1)
 	{
-		why = "credit 包为空";
+		why = "credit bundle is empty";
 		return false;
 	}
 	if (bundle.currencies_size() > 4 || bundle.items_size() > 16)
 	{
-		why = "credit 条目超上限(货币 4 / 物品 16)";
+		why = "credit entry limit exceeded(4 currencies / 16 items)";
 		return false;
 	}
 
@@ -397,12 +397,12 @@ bool ValidateCreditBundle(const ::AssetBundle& bundle, std::string& why)
 	{
 		if (!IsCurrencyAmountValid(currency))
 		{
-			why = "credit 货币类型或数额越界";
+			why = "credit currency type or amount out of range";
 			return false;
 		}
 		if (!seenCurrencyTypes.insert(currency.currency_type()).second)
 		{
-			why = "credit 同一货币类型重复";
+			why = "credit contains duplicate currency type";
 			return false;
 		}
 	}
@@ -412,17 +412,17 @@ bool ValidateCreditBundle(const ::AssetBundle& bundle, std::string& why)
 	{
 		if (item.count() < 1)
 		{
-			why = "credit 物品数量为 0";
+			why = "credit item count is 0";
 			return false;
 		}
 		if (!seenConfigIds.insert(item.config_id()).second)
 		{
-			why = "credit 同一物品 config_id 重复";
+			why = "credit contains duplicate item config_id";
 			return false;
 		}
 		if (ItemTableManager::Instance().FindByIdSilent(item.config_id()).first == nullptr)
 		{
-			why = "credit 物品 config_id 不存在于 Item 表";
+			why = "credit item config_id is absent from Item table";
 			return false;
 		}
 	}
@@ -451,7 +451,7 @@ void ApplyDebit(entt::entity player, PlayerAssetOpLedgerComp& ledgerComp, const 
 	{
 		// 前面的闸门(冻结 / 组件齐备 / 余额)都已通过,这里不该失败。不记账、回 RETRY:
 		// 记成 REJECTED 会把一个我们没看懂的失败变成终局,玩家钱没扣、帮会却按拒绝退款。
-		LOG_ERROR << "[AssetOp] DeductCurrency 在闸门之后仍失败 player_id=" << request.player_id()
+		LOG_ERROR << "[AssetOp] DeductCurrency still failed after admission check player_id=" << request.player_id()
 				  << " seq=" << request.seq() << " currency_type=" << currency.currency_type()
 				  << " amount=" << currency.amount() << " err=" << error;
 		Answer(response, ASSET_OP_OUTCOME_RETRY, error);
@@ -462,7 +462,7 @@ void ApplyDebit(entt::entity player, PlayerAssetOpLedgerComp& ledgerComp, const 
 	{
 		// 钱已经扣了却记不上账:重投会再扣一次。只能大声报错,交人工按流水
 		// (correlation_id)对账补偿。正常路径不可达。
-		LOG_ERROR << "[AssetOp] 扣款已生效但记账前置被破坏 player_id=" << request.player_id()
+		LOG_ERROR << "[AssetOp] Deduction applied but ledger precondition violated player_id=" << request.player_id()
 				  << " stream=" << static_cast<int>(request.stream()) << " epoch=" << request.stream_epoch()
 				  << " seq=" << request.seq() << " corr=" << request.correlation_id();
 		Answer(response, ASSET_OP_OUTCOME_UNKNOWN, 0);
@@ -508,7 +508,7 @@ void ApplyCredit(entt::entity player, PlayerAssetOpLedgerComp& ledgerComp, const
 		const uint64_t available = tlsGuidSegmentRegistry.Get(GuidKind::kItem).Available();
 		if (available < guidsNeeded)
 		{
-			LOG_WARN << "[AssetOp] item guid 号段余量不足,暂不发放 player_id=" << request.player_id()
+			LOG_WARN << "[AssetOp] Insufficient item guid segment capacity;grant deferred player_id=" << request.player_id()
 					 << " seq=" << request.seq() << " needed=" << guidsNeeded << " available=" << available;
 			Answer(response, ASSET_OP_OUTCOME_RETRY, 0);
 			return;
@@ -598,7 +598,7 @@ void ApplyCredit(entt::entity player, PlayerAssetOpLedgerComp& ledgerComp, const
 	const auto kind = partial ? AssetOpRecordKind::kAppliedPartial : AssetOpRecordKind::kApplied;
 	if (!RecordOutcome(ledgerComp, request, kind, 0))
 	{
-		LOG_ERROR << "[AssetOp] 发放已生效但记账前置被破坏 player_id=" << request.player_id()
+		LOG_ERROR << "[AssetOp] Grant applied but ledger precondition violated player_id=" << request.player_id()
 				  << " stream=" << static_cast<int>(request.stream()) << " epoch=" << request.stream_epoch()
 				  << " seq=" << request.seq() << " corr=" << request.correlation_id();
 		Answer(response, ASSET_OP_OUTCOME_UNKNOWN, 0);
@@ -633,7 +633,7 @@ void Decide(AssetOpRpc rpc, const ::AssetOpRequest& request, ::AssetOpResponse& 
 	// 1. 信封校验(不记账)
 	if (request.player_id() == 0 || request.seq() == 0 || request.stream_epoch() == 0)
 	{
-		LOG_WARN << "[AssetOp] 信封非法 rpc=" << RpcName(rpc) << " player_id=" << request.player_id()
+		LOG_WARN << "[AssetOp] Invalid envelope rpc=" << RpcName(rpc) << " player_id=" << request.player_id()
 				 << " seq=" << request.seq() << " epoch=" << request.stream_epoch();
 		Answer(response, ASSET_OP_OUTCOME_UNKNOWN, kAssetInvalidBundle);
 		return;
@@ -641,7 +641,7 @@ void Decide(AssetOpRpc rpc, const ::AssetOpRequest& request, ::AssetOpResponse& 
 	const auto* rule = FindStreamRule(request.stream());
 	if (rule == nullptr)
 	{
-		LOG_WARN << "[AssetOp] 未知流 rpc=" << RpcName(rpc) << " stream=" << static_cast<int>(request.stream());
+		LOG_WARN << "[AssetOp] Unknown stream rpc=" << RpcName(rpc) << " stream=" << static_cast<int>(request.stream());
 		Answer(response, ASSET_OP_OUTCOME_UNKNOWN, kAssetInvalidBundle);
 		return;
 	}
@@ -652,7 +652,7 @@ void Decide(AssetOpRpc rpc, const ::AssetOpRequest& request, ::AssetOpResponse& 
 			(rpc == AssetOpRpc::kDebit) ? AssetOpDirection::kDebit : AssetOpDirection::kCredit;
 		if (rule->direction != wanted || !IsTxAllowed(*rule, request.tx_type()))
 		{
-			LOG_WARN << "[AssetOp] 流方向或 tx 白名单不符 rpc=" << RpcName(rpc)
+			LOG_WARN << "[AssetOp] Stream direction or tx allowlist mismatch rpc=" << RpcName(rpc)
 					 << " stream=" << static_cast<int>(request.stream()) << " tx_type=" << request.tx_type();
 			Answer(response, ASSET_OP_OUTCOME_UNKNOWN, kAssetInvalidBundle);
 			return;
@@ -665,7 +665,7 @@ void Decide(AssetOpRpc rpc, const ::AssetOpRequest& request, ::AssetOpResponse& 
 	if (const auto verdict = VerifyAssetOpAuth(RpcName(rpc), request, nowMs, g_secretLookup);
 		verdict != AssetOpAuthVerdict::kOk)
 	{
-		LOG_WARN << "[AssetOp] 验签失败 rpc=" << RpcName(rpc)
+		LOG_WARN << "[AssetOp] Signature verification failed rpc=" << RpcName(rpc)
 				 << " verdict=" << AssetOpAuthVerdictName(verdict) << " caller=" << request.auth().caller()
 				 << " stream=" << static_cast<int>(request.stream()) << " seq=" << request.seq();
 		Answer(response, ASSET_OP_OUTCOME_UNKNOWN, kAssetAuthFailed);
@@ -684,7 +684,7 @@ void Decide(AssetOpRpc rpc, const ::AssetOpRequest& request, ::AssetOpResponse& 
 	// 3. 账本损坏(加载时 Validate 判的,fail-closed 关闭该玩家的资产通道)
 	if (tlsEcs.actorRegistry.any_of<PlayerAssetOpLedgerInvalidComp>(player))
 	{
-		LOG_ERROR << "[AssetOp] 账本损坏,拒绝一切资产操作 player_id=" << request.player_id()
+		LOG_ERROR << "[AssetOp] Ledger corrupted;all asset operations rejected player_id=" << request.player_id()
 				  << " rpc=" << RpcName(rpc) << " seq=" << request.seq();
 		Answer(response, ASSET_OP_OUTCOME_RETRY, kAssetBlocked);
 		return;
@@ -695,7 +695,7 @@ void Decide(AssetOpRpc rpc, const ::AssetOpRequest& request, ::AssetOpResponse& 
 	auto* ledgerComp = tlsEcs.actorRegistry.try_get<PlayerAssetOpLedgerComp>(player);
 	if (ledgerComp == nullptr)
 	{
-		LOG_ERROR << "[AssetOp] 实体上没有账本组件(加载未完成或接线缺失) player_id="
+		LOG_ERROR << "[AssetOp] Entity lacks ledger component(load incomplete or missing wiring) player_id="
 				  << request.player_id() << " rpc=" << RpcName(rpc) << " seq=" << request.seq();
 		Answer(response, ASSET_OP_OUTCOME_RETRY, kAssetPlayerNotHere);
 		return;
@@ -714,7 +714,7 @@ void Decide(AssetOpRpc rpc, const ::AssetOpRequest& request, ::AssetOpResponse& 
 	case AssetOpSeqState::kJumpTooFar:
 		// 三者都说明 Go 侧守卫失效、帮会库被重置/恢复,或 Redis 回退过。
 		// 不记账、不猜结局,reason 留 0,Go 计 assetop_unknown_total 并转人工(§4.38)。
-		LOG_ERROR << "[AssetOp] seq 不可采信 state=" << AssetOpSeqStateName(state)
+		LOG_ERROR << "[AssetOp] Untrusted seq state=" << AssetOpSeqStateName(state)
 				  << " player_id=" << request.player_id() << " rpc=" << RpcName(rpc)
 				  << " stream=" << static_cast<int>(request.stream())
 				  << " req_epoch=" << request.stream_epoch()
@@ -730,7 +730,7 @@ void Decide(AssetOpRpc rpc, const ::AssetOpRequest& request, ::AssetOpResponse& 
 		// 但"已见结局"是资产正确性的地基,不拿一次解引用去赌分类实现。
 		if (ledger == nullptr)
 		{
-			LOG_ERROR << "[AssetOp] 分类为已见但流不存在 player_id=" << request.player_id()
+			LOG_ERROR << "[AssetOp] Classified as seen but stream does not exist player_id=" << request.player_id()
 					  << " stream=" << static_cast<int>(request.stream()) << " seq=" << request.seq();
 			Answer(response, ASSET_OP_OUTCOME_UNKNOWN, 0);
 			return;
@@ -742,7 +742,7 @@ void Decide(AssetOpRpc rpc, const ::AssetOpRequest& request, ::AssetOpResponse& 
 		break; // 继续走闸门
 	case AssetOpSeqState::kCount:
 	default:
-		LOG_ERROR << "[AssetOp] 未知 seq 状态 state=" << static_cast<int>(state);
+		LOG_ERROR << "[AssetOp] Unknown seq state state=" << static_cast<int>(state);
 		Answer(response, ASSET_OP_OUTCOME_UNKNOWN, 0);
 		return;
 	}
@@ -796,13 +796,13 @@ void Decide(AssetOpRpc rpc, const ::AssetOpRequest& request, ::AssetOpResponse& 
 	}
 	if (tlsEcs.actorRegistry.try_get<CurrencyComp>(player) == nullptr)
 	{
-		LOG_WARN << "[AssetOp] 玩家缺 CurrencyComp(仍在加载) player_id=" << request.player_id();
+		LOG_WARN << "[AssetOp] Player lacks CurrencyComp(still loading) player_id=" << request.player_id();
 		Answer(response, ASSET_OP_OUTCOME_RETRY, kAssetPlayerNotHere);
 		return;
 	}
 	if (request.bundle().items_size() > 0 && tlsEcs.actorRegistry.try_get<PlayerBagsComp>(player) == nullptr)
 	{
-		LOG_WARN << "[AssetOp] 玩家缺 PlayerBagsComp(仍在加载) player_id=" << request.player_id();
+		LOG_WARN << "[AssetOp] Player lacks PlayerBagsComp(still loading) player_id=" << request.player_id();
 		Answer(response, ASSET_OP_OUTCOME_RETRY, kAssetPlayerNotHere);
 		return;
 	}
@@ -813,7 +813,7 @@ void Decide(AssetOpRpc rpc, const ::AssetOpRequest& request, ::AssetOpResponse& 
 													  : ValidateCreditBundle(request.bundle(), why);
 	if (!bundleOk)
 	{
-		LOG_WARN << "[AssetOp] 包内容非法 rpc=" << RpcName(rpc) << " player_id=" << request.player_id()
+		LOG_WARN << "[AssetOp] Invalid payload rpc=" << RpcName(rpc) << " player_id=" << request.player_id()
 				 << " seq=" << request.seq() << " why=" << why;
 		RejectAndRecord(player, *ledgerComp, request, kAssetInvalidBundle, nowMs, response);
 		return;

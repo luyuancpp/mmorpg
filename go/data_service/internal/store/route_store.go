@@ -35,9 +35,10 @@ import (
 // 用 AST 机械守住 player_route)。Redis 一侧的发布(set-if-newer)在 routing 包,不在这里:
 // 事务里绝不做 Redis 读写 —— 预检在开事务之前,发布在提交之后(规格 c.2 第 3 条)。
 //
-// 「行片」与「围栏片」是两回事,同一函数里不得同名:行片 rowShard = player_id % 16(聚簇主键首列,常量,建表后不可改);
-// 围栏片 fenceShard = player_id % FenceShards(可配,只决定 W1 锁哪一个围栏行)。绑错的后果:把围栏片绑进 R4,
-// 一半新号撞 chk_route_shard(3819)建角失败;绑进 R5 / R6,按错片点查读不到行 → ErrRouteRowVanished。
+// 「行片」与「围栏片」是两回事,同一函数里不得同名:行片 rowShard = player_id % placement.RouteRowShards
+// (聚簇主键首列,常量 64,建表后不可改);围栏片 fenceShard = player_id % FenceShards(可配,只决定 W1 锁哪一个
+// 围栏行)。绑错的后果:把围栏片绑进 R4,两种片不相等的新号(FenceShards=8 时占 7/8)撞 chk_route_shard(3819)
+// 建角失败;绑进 R5 / R6,按错片点查读不到行 → ErrRouteRowVanished。
 //
 // 不变量,按重要性排序:
 //  1. **判定只认加锁读**(R5 / R8 / R11 的 FOR UPDATE)。新行一律 ODKU no-op 插入、撞键 = 受影响 0 行,
@@ -130,7 +131,7 @@ var (
 	// ErrRouteShardMismatch 库里某一行存的 route_shard 不等于 placement.RouteRowShard(player_id):只有 CHECK 曾经
 	// 不生效时被绕过 store 的写者写进来。fail-closed,整页 / 整批作废。只有全表键集扫描(ScanRoutes)在真库上
 	// 看得见这种行;按 id 的点读(R5 / R8 / R13)按正确片查,错片行对它们表现为缺席。
-	ErrRouteShardMismatch = errors.New("player_route: stored route_shard does not match player_id % 16")
+	ErrRouteShardMismatch = errors.New("player_route: stored route_shard does not match placement.RouteRowShard(player_id)")
 	// ErrRouteTiDBNotClustered tidb-prepare 的前置核对失败:player_route / zone_merge_fence 在 TiDB 上不是聚簇主键。
 	// 非聚簇的表按 (route_shard, player_id) 切毫无意义,而且建表后改不了,只能趁表空 DROP 后用 -migrate 重建。
 	ErrRouteTiDBNotClustered = errors.New("route tables are not CLUSTERED on TiDB; while they are still empty, " +
@@ -430,7 +431,8 @@ func newRouteStoreFromDB(ctx context.Context, db *sql.DB, opts RouteStoreOptions
 // 插入成功或被别的约束拒绝都说明我们证不了它,拒建 store(fail-closed,AGENTS.md §11.3)。
 //
 // 为什么实测而不是查元数据:MySQL 的 information_schema.TABLE_CONSTRAINTS.ENFORCED 与 TiDB 的全局变量口径不一,
-// 实测在两种引擎上是同一个判据。它只证明「CHECK 生效」,不证明模数是 16(模数由 DDL 契约测试钉住,且表只由迁移建)。
+// 实测在两种引擎上是同一个判据。它只证明「CHECK 生效」,不证明模数是 64(模数由 DDL 契约测试钉住,且表只由迁移建;
+// 探针行 (片 1, player_id 0) 对 % 16 与 % 64 同样违例,所以按旧模数 16 建的表也过得了这一步)。
 //
 // 无论哪种结果事务都回滚,CHECK 没生效时那行也不会留下。CHECK 生效时语句在写索引前就被拒、不取锁;
 // 不生效时多副本同时探针,后到的最多等 1s 行锁(会话锁等待封顶)后同样回滚。
@@ -787,7 +789,7 @@ type RouteRegisterResult struct {
 //	R2 锁围栏分片 (home, player_id % N)      缺行 → 回滚、事务外 R3 补行、重开(不耗重试预算;再缺 → ErrRouteFenceShardVanished)
 //	                                          生效或 NULL → 回滚,Fenced
 //	R4 ODKU 插新行(仅 !ExistingRowOnly)     1 行 → COMMIT,Inserted;0 行 → 往下;其它 → fail-closed
-//	R5 加锁读玩家行 (player_id % 16, id)      缺行 → RowMissing(ExistingRowOnly)/ ErrRouteRowVanished
+//	R5 加锁读玩家行 (player_id % 64, id)      缺行 → RowMissing(ExistingRowOnly)/ ErrRouteRowVanished
 //	   home == 请求 → 回滚,AlreadySame;home 是别的值 → 回滚,Conflict
 //	   home 为 NULL → R6b(请求带 storage 且行里没落点)或 R6a → COMMIT,Filled*
 //
@@ -1529,7 +1531,7 @@ func validateMergedIntoRows(rows []MergedIntoRow) error {
 // limit 必须在 [1, RouteBatchLimit];after.Shard 必须 < placement.RouteRowShards(否则查询静默回空页,
 // 调用方会当作扫完)。下一页从 RouteScanCursorAt(最后一行) 接着翻,不漏不重。
 //
-// 任一行库里存的 route_shard ≠ player_id % 16 → ErrRouteShardMismatch(整页作废,fail-closed)。
+// 任一行库里存的 route_shard ≠ player_id % 64 → ErrRouteShardMismatch(整页作废,fail-closed)。
 // 这是真库上唯一看得见错片行的地方(audit 方向 A / 第 1b 批全量预热就是检测器),点读看不见。
 func (s *RouteStore) ScanRoutes(ctx context.Context, after RouteScanCursor, limit int) ([]RouteRow, error) {
 	if limit < 1 || limit > RouteBatchLimit {

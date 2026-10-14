@@ -21,7 +21,7 @@
 | 补丁 | 目标子模块 | 上游 | 内容 |
 |---|---|---|---|
 | `librdkafka-utf8.patch` | `third_party/librdkafka` | `confluentinc/librdkafka`（**上游，无法推送**） | 9 个 `win32/*.vcxproj` 加 `/utf-8` 编译选项 + BOM |
-| `ue5navmesh-utf8.patch` | `third_party/ue5navmesh` | `luyuancpp/ue5navmesh`（自有 fork） | `Navmesh.vcxproj` 加 `/utf-8`；`DetourNavMeshBuilder.cpp` 补 `#include <cassert>` |
+| `ue5navmesh-utf8.patch` | `third_party/ue5navmesh` | `lhl-cpp/ue5navmesh`（自有 fork） | `Navmesh.vcxproj` 加 `/utf-8`；`DetourNavMeshBuilder.cpp` 补 `#include <cassert>` |
 
 `/utf-8` 是必需的：这两个工程里有中文注释，MSVC 默认按本地代码页解析会报错或乱码。
 

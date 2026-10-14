@@ -68,9 +68,13 @@ Locker:
   #     + 名字登记 3s(建角侧总预算)+ player:zone 登记 3s(HomeZone.RegisterTimeout)= 9s;
   #   - 三次 Redis:读 blob、围栏写 blob、写未确认时的回读。常态是毫秒级;Redis 变慢但每次
   #     回包都还在 3s 以内时,三步合计 < 9s。
-  #   - 开 NewPlayerSeed 时多一次 Redis(新号种子;代码里的 1s ctx 预算只掐重发,单次最坏仍是 3s 读超时):
-  #     Redis 合计变成四步 < 12s,加上 gRPC 的 9s 最坏是 21s,**超过**下面的 20 —— 开着种子时「20 盖住」
-  #     不再成立,正确性照旧只靠围栏 + 回读;是否上调见 docs/design/new-player-first-enter-no-cold-read.md §10 P6。
+  #   - 开 NewPlayerSeed 时多一次 Redis(新号种子;代码里的 1s ctx 预算只掐重发,单次最坏仍是 3s 读超时)。
+  #     各步预算直接相加是 gRPC 9s + Redis 4×3s = 21s,但在现行 zrpc Timeout(本文件顶部,10s)下到不了:
+  #     除回读、名字补偿释放与建角锁释放外,每一步的 ctx 都派生自 handler ctx,10s 一到 gRPC 立即失败、
+  #     go-redis 不再发新命令,围栏写最晚在 handler 起算 10s 内发出,Redis 还在 3s 内回包时约 13s 前执行,
+  #     下面的 20 仍盖得住。种子在慢 Redis 下的真实代价:多吃最多 3s 的 handler 预算,围栏写可能来不及发出,
+  #     本次建角失败(名字释放,player:zone 映射与孤儿种子留下)。把 Timeout 调到约 17s 以上时 21s 才可达,
+  #     届时重算(docs/design/new-player-first-enter-no-cold-read.md §10 P6)。
   # 原值 10 是名字登记加入之前定的,已经盖不住;20 盖住「gRPC 三步全部拖满 + Redis 慢但还在回包」。
   # **20 不是硬上界**,不要把它读成「有余量的保证」:
   #   - Redis 那个 3s 是 go-redis 默认的**单次** socket 读超时。svc/servicecontext.go 构造客户端时
@@ -249,7 +253,8 @@ Placement:
 #   前提(既有契约,不是新增):PlayerAllData 与 player:{id}:owner_epoch 在同一个 Redis 实例(CZ-2 / CZ-4)。
 #   打开前置:go/db 的 db_placement_guard_total{outcome="missing_required"} 与
 #   db_placement_store_open_total{result=~"error|rejected"} 两类告警已就位(见上方 Placement 第 3 条)。
-#   开着时新号的入场链在 PreloadPool 里跑完,池满回 kLoginInProgress;压测看 [preload-pool] 日志的 dropped_delta。
+#   开着时新号的入场链在 PreloadPool 里跑完,池满回 kLoginInProgress;压测看指标 entergame_total{result="pool_saturated"}
+#   (tools/scripts/stress_summarize.ps1 的 pool_saturated 列),[preload-pool] 日志的 dropped_delta 作辅证。
 #   启动日志 "[new-player-seed] enabled=..." 是核对依据。
 NewPlayerSeed:
   Enabled: false
@@ -344,9 +349,13 @@ Prometheus:
   Path: /metrics
 
 # Background goroutine pool for player data preload (Kafka fan-out).
-# Size: max concurrent in-flight preload tasks. Submit is non-blocking; if the
-#       pool is saturated, the task is dropped with a log and the Scene-side
-#       Redis NIL retry compensates (extra latency only, no data loss).
+# Size: max concurrent in-flight EnterGame preload tasks. Submit is non-blocking;
+#       when the pool is saturated the chain is NOT started and EnterGame returns
+#       kLoginInProgress (the client retries); nothing downstream compensates.
+#       Cache-hit chains run the whole apply phase on a pool worker; with
+#       NewPlayerSeed on that includes every new player.
+#       Watch entergame_total{result="pool_saturated"}; dropped_delta in the
+#       [preload-pool] log is the secondary signal.
 # StatsInterval: periodic pool snapshot log (running/free/cap, drop counter).
 #       Set to 0 to disable.
 PreloadPool:
@@ -433,9 +442,9 @@ AuthProviders:
 #   - reconnect/replace callers (existing PlayerSession) bypass the queue.
 #
 # Roll-out checklist:
-#   0. 多个 zone 共用一个 Redis 时,先把所有 zone 的 login 升到 2026-10-12(G1b)之后的版本,
-#      再打开 Enabled。新旧版本混跑时,同一个 zone 可能短暂出现两个 leader:只会多放行一批,
-#      不丢人、不重复放行(docs/design/login-queue-2026-05.md §7.1)。
+#   0. 先在 Enabled=false 下把所有 zone 的 login 升到 2026-10-13(G4b-G,含 G1b)之后的版本,再打开 Enabled。
+#      排队开着混跑时:同一个 zone 可能短暂两个 leader(G1b);新旧两种在途占位键互不可见,旧版副本放行 / 取走的
+#      部分仍按旧版超发(G4b-G)。不丢人、不重复放行(docs/design/login-queue-2026-05.md §7.1 与「在途占位的生命周期」)。
 #   1. Deploy with Enabled=false → verify no behavior change.
 #   2. Set ZoneCapacityOverride for each live zone (use observed peak * 0.9
 #      as the initial value; tune from there).
@@ -443,11 +452,11 @@ AuthProviders:
 #   4. Roll out fleet-wide.
 #
 # DispatchInterval too low burns Redis QPS without improving fairness;
-# 1s is the sweet spot since gate PlayerCount only refreshes every few
-# seconds via etcd.
+# 1s is the sweet spot since gate PlayerCount only refreshes every 10s
+# via etcd (cpp/nodes/gate/main.cpp playerCountReportTimer).
 #
-# AdmitTTL must outlive the worst-case "client reads admit token →
-# connects to gate" round-trip across mobile networks. 60s is generous.
+# AdmitTTL:放行槽等客户端来取的时限,也是没人来取时在途占位的寿命。取走之后(以及快速通道当场
+# 交票之后)占位只再留 15s —— 代码常量 loginqueue.defaultHandoffGrace,不是配置(G4b-G,2026-10-13)。
 Queue:
   Enabled: false
   DispatchInterval: 1s

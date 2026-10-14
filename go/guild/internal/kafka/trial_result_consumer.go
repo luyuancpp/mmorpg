@@ -217,14 +217,14 @@ func (c *TrialResultConsumer) Run(ctx context.Context) {
 	reader := c.openReader(c.cfg)
 	defer func() {
 		if err := reader.Close(); err != nil {
-			logx.Errorf("[GuildTrial] 关闭历练结果 reader 失败: %v", err)
+			logx.Errorf("[GuildTrial] Failed to close trial result reader: %v", err)
 		}
 	}()
 	// 这一行是部署验收的判据(06 §6.46 B6b-srv2):topic 与 group 都**不带** _zN 后缀。改文案要同步改文档。
-	logx.Infof("[GuildTrial] 历练结果消费者启动 topic=%s group=%s partitions=%d brokers=%v",
+	logx.Infof("[GuildTrial] Trial result consumer started topic=%s group=%s partitions=%d brokers=%v",
 		c.cfg.Topic, c.cfg.GroupID, c.cfg.Partitions, c.cfg.Brokers)
 	c.consume(ctx, reader)
-	logx.Info("[GuildTrial] 历练结果消费者退出")
+	logx.Info("[GuildTrial] Trial result consumer stopped")
 }
 
 // waitForTopic 确保 topic 存在且分区数与配置一致,失败就每 trialResultStartRetryInterval 重试。
@@ -234,7 +234,7 @@ func (c *TrialResultConsumer) waitForTopic(ctx context.Context) bool {
 		err := c.ensureTopicWithin(ctx)
 		if err == nil {
 			if attempt > 1 {
-				logx.Infof("[GuildTrial] 历练结果 topic %s 已就绪(第 %d 次尝试)", c.cfg.Topic, attempt)
+				logx.Infof("[GuildTrial] Trial result topic %s ready (attempt %d)", c.cfg.Topic, attempt)
 			}
 			return true
 		}
@@ -242,7 +242,7 @@ func (c *TrialResultConsumer) waitForTopic(ctx context.Context) bool {
 			return false
 		}
 		// 这段时间里历练照常能开战,结果先落在 topic 与 battle 的结果记录里,消费者起来后从最早位点补上。
-		logx.Errorf("[GuildTrial] 确保历练结果 topic %s(partitions=%d)失败,结果消费未启动,%v 后重试(第 %d 次): %v",
+		logx.Errorf("[GuildTrial] Failed to ensure trial result topic %s(partitions=%d); result consumption not started, retrying after %v (attempt %d): %v",
 			c.cfg.Topic, c.cfg.Partitions, trialResultStartRetryInterval, attempt, err)
 		if !c.sleep(ctx, trialResultStartRetryInterval) {
 			return false
@@ -289,10 +289,10 @@ func (c *TrialResultConsumer) consume(ctx context.Context, reader trialReader) {
 			}
 			if errors.Is(err, io.EOF) {
 				// reader 已被关闭(只可能是别处误关):继续拉只会空转,退出并留下一条 ERROR。
-				logx.Error("[GuildTrial] 历练结果 reader 已关闭,消费循环退出(本进程不再消费历练结果,需重启)")
+				logx.Error("[GuildTrial] Trial result reader closed; consumer loop exiting (this process no longer consumes trial results, restart required)")
 				return
 			}
-			logx.Errorf("[GuildTrial] 拉取历练结果失败,%v 后重试: %v", trialResultFetchBackoff, err)
+			logx.Errorf("[GuildTrial] Failed to fetch trial result; retrying after %v: %v", trialResultFetchBackoff, err)
 			if !c.sleep(ctx, trialResultFetchBackoff) {
 				return
 			}
@@ -310,7 +310,7 @@ func (c *TrialResultConsumer) process(ctx context.Context, reader trialReader, m
 	if err := proto.Unmarshal(msg.Value, ev); err != nil {
 		// 坏消息跳过并提交:留在 topic 里只会每次重启都撞一遍(match 的消费者对同一条消息也是这样处理)。
 		// 它若真是一局历练,battle 落在 Redis 的结果记录还在,巡检器会在结果超时后从那里取回来处理。
-		logx.Errorf("[GuildTrial] 对局结果反序列化失败,跳过 partition=%d offset=%d key=%s: %v",
+		logx.Errorf("[GuildTrial] Failed to deserialize battle result; skipping partition=%d offset=%d key=%s: %v",
 			msg.Partition, msg.Offset, string(msg.Key), err)
 		countIfSet(c.counters.DecodeError)
 		c.commit(ctx, reader, msg)
@@ -322,7 +322,7 @@ func (c *TrialResultConsumer) process(ctx context.Context, reader trialReader, m
 	}
 	if key := string(msg.Key); key != "" && key != strconv.FormatUint(ev.GetBattleId(), 10) {
 		// key 契约是 battle_id(同一局的重发落在同一分区、保持有序)。不一致只记日志,以 payload 里的 battle_id 为准。
-		logx.Errorf("[GuildTrial] 历练结果 key=%s 与 battle_id=%d 不一致 partition=%d offset=%d",
+		logx.Errorf("[GuildTrial] Trial result key=%s differs from battle_id=%d partition=%d offset=%d",
 			key, ev.GetBattleId(), msg.Partition, msg.Offset)
 	}
 	if !c.settle(ctx, msg, ev) {
@@ -346,7 +346,7 @@ func (c *TrialResultConsumer) settle(ctx context.Context, msg kafkago.Message, e
 		err := c.attempt(ctx, ev)
 		if err == nil {
 			if attempt > 1 {
-				logx.Infof("[GuildTrial] 历练结果在第 %d 次处理成功 battle=%d partition=%d offset=%d",
+				logx.Infof("[GuildTrial] Trial result processed successfully on attempt %d battle=%d partition=%d offset=%d",
 					attempt, ev.GetBattleId(), msg.Partition, msg.Offset)
 			}
 			return true
@@ -355,7 +355,7 @@ func (c *TrialResultConsumer) settle(ctx context.Context, msg kafkago.Message, e
 			return false
 		}
 		countIfSet(c.counters.HandlerRetry)
-		logx.Errorf("[GuildTrial] 历练结果处理失败(第 %d 次),位点不提交,%v 后重调;本进程的历练结果消费(它分到的全部分区)在这一条成功之前不前进 battle=%d guild=%d partition=%d offset=%d: %v",
+		logx.Errorf("[GuildTrial] Trial result processing failed (attempt %d); offset not committed, retrying after %v; trial result consumption in this process (all assigned partitions) paused until this record succeeds battle=%d guild=%d partition=%d offset=%d: %v",
 			attempt, backoff, ev.GetBattleId(), ev.GetActivityContext().GetGuildId(), msg.Partition, msg.Offset, err)
 		if !c.sleep(ctx, backoff) {
 			return false
@@ -379,7 +379,7 @@ func (c *TrialResultConsumer) attempt(ctx context.Context, ev *kafkapb.BattleRes
 // 由幂等闸门兜住。ctx 已结束时的失败不记(进程正在退出,重启后重放一条)。
 func (c *TrialResultConsumer) commit(ctx context.Context, reader trialReader, msg kafkago.Message) {
 	if err := reader.CommitMessages(ctx, msg); err != nil && ctx.Err() == nil {
-		logx.Errorf("[GuildTrial] 提交历练结果位点失败 partition=%d offset=%d: %v", msg.Partition, msg.Offset, err)
+		logx.Errorf("[GuildTrial] Failed to commit trial result offset partition=%d offset=%d: %v", msg.Partition, msg.Offset, err)
 	}
 }
 

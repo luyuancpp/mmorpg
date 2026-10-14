@@ -42,7 +42,7 @@ func (l *GetQueueStatusLogic) GetQueueStatus(in *matchpb.GetQueueStatusRequest) 
 
 	ticket, err := loadTicket(l.svcCtx, playerId)
 	if err != nil {
-		l.Errorf("[match] GetQueueStatus 读 ticket 失败 player=%d: %v", playerId, err)
+		l.Errorf("[match] GetQueueStatus failed to read ticket player=%d: %v", playerId, err)
 		return nil, err
 	}
 	if ticket == nil {
@@ -60,7 +60,7 @@ func (l *GetQueueStatusLogic) GetQueueStatus(in *matchpb.GetQueueStatusRequest) 
 	case ticketStateReady:
 		state = matchpb.QueueState_QUEUE_STATE_READY
 	default:
-		l.Errorf("[match] 未知 ticket 状态 %q player=%d,按 NOT_QUEUED 返回", ticket.State, playerId)
+		l.Errorf("[match] Unknown ticket state %q player=%d; returning NOT_QUEUED", ticket.State, playerId)
 		state = matchpb.QueueState_QUEUE_STATE_NOT_QUEUED
 	}
 

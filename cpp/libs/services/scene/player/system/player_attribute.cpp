@@ -498,7 +498,7 @@ uint32_t CheckWritable(entt::entity player) {
 		return kEntityIsNull;
 	}
 	if (tlsEcs.actorRegistry.any_of<PlayerFrozenComp>(player)) {
-		LOG_WARN << "[PlayerAttribute] 拒绝: 跨 zone 冻结中 player_id=" << GuidForLog(player);
+		LOG_WARN << "[PlayerAttribute] Rejected: cross-zone freeze in progress player_id=" << GuidForLog(player);
 		return kInvalidParameter;
 	}
 	if (PlayerBattleSystem::IsInBattle(player)) {
@@ -639,7 +639,7 @@ void ConvergeOverAllocation(entt::entity player, PlayerAttributeComp& comp) {
 			for (const auto* dim : AttributeDimensionTableManager::Instance().GetByPoolId(pool.id())) {
 				scheme.mutable_allocated()->erase(dim->id());
 			}
-			LOG_WARN << "[PlayerAttribute] 已分配超总量,整池清零返还: player_id=" << GuidForLog(player)
+			LOG_WARN << "[PlayerAttribute] Allocation exceeds total;entire pool reset and refunded: player_id=" << GuidForLog(player)
 					 << " pool=" << pool.id() << " scheme=" << scheme.scheme_id() << " total=" << total;
 		}
 	}
@@ -877,7 +877,7 @@ uint32_t PlayerAttributeSystem::Allocate(entt::entity player, uint32_t poolId,
 		(*scheme->mutable_allocated())[dimensionId] = want;
 	}
 	Recalculate(player, RecalcReason::kAllocate);
-	LOG_INFO << "[PlayerAttribute] 加点: player_id=" << GuidForLog(player) << " pool=" << poolId
+	LOG_INFO << "[PlayerAttribute] Points allocated: player_id=" << GuidForLog(player) << " pool=" << poolId
 			 << " scheme=" << scheme->scheme_id() << " delta=" << delta
 			 << " remaining=" << (remaining - delta);
 	return kSuccess;
@@ -914,7 +914,7 @@ uint32_t PlayerAttributeSystem::Reset(entt::entity player, uint32_t poolId) {
 		scheme->mutable_allocated()->erase(dim->id());
 	}
 	Recalculate(player, RecalcReason::kReset);
-	LOG_INFO << "[PlayerAttribute] 洗点: player_id=" << GuidForLog(player) << " pool=" << poolId
+	LOG_INFO << "[PlayerAttribute] Points reset: player_id=" << GuidForLog(player) << " pool=" << poolId
 			 << " scheme=" << scheme->scheme_id() << " cost_gold=" << cost;
 	return kSuccess;
 }
@@ -1007,7 +1007,7 @@ uint32_t PlayerAttributeSystem::CreateScheme(entt::entity player, const std::str
 	scheme->set_scheme_id(schemeId);
 	scheme->set_name(finalName);
 	comp.set_next_scheme_id(schemeId + 1);
-	LOG_INFO << "[PlayerAttribute] 开新方案: player_id=" << GuidForLog(player) << " scheme=" << schemeId
+	LOG_INFO << "[PlayerAttribute] New scheme created: player_id=" << GuidForLog(player) << " scheme=" << schemeId
 			 << " cost_gold=" << cost;
 	return kSuccess;
 }
@@ -1031,7 +1031,7 @@ uint32_t PlayerAttributeSystem::SwitchScheme(entt::entity player, uint32_t schem
 	comp.set_active_scheme_id(schemeId);
 	comp.set_last_switch_time(now);
 	Recalculate(player, RecalcReason::kSchemeSwitch);
-	LOG_INFO << "[PlayerAttribute] 切换方案: player_id=" << GuidForLog(player) << " scheme=" << schemeId;
+	LOG_INFO << "[PlayerAttribute] Scheme switched: player_id=" << GuidForLog(player) << " scheme=" << schemeId;
 	return kSuccess;
 }
 
@@ -1063,7 +1063,7 @@ uint32_t PlayerAttributeSystem::GmSetLevel(entt::entity player, uint32_t level) 
 	auto& levelComp = tlsEcs.actorRegistry.get_or_emplace<LevelComp>(player);
 	const auto oldLevel = levelComp.level();
 	levelComp.set_level(level);
-	LOG_INFO << "[PlayerAttribute] GM 设等级: player_id=" << GuidForLog(player) << " " << oldLevel << " -> " << level;
+	LOG_INFO << "[PlayerAttribute] GM level set: player_id=" << GuidForLog(player) << " " << oldLevel << " -> " << level;
 
 	// 走升级事件(其他系统按同一事件接经验/技能解锁),事件处理里会 Recalculate + PushPanel
 	PlayerUpgradeEvent upgrade;

@@ -58,6 +58,7 @@ func (f *groupOffsetFake) GetOffset(_ string, partition int32, at int64) (int64,
 
 // TestComputeGroupLag 覆盖 lag 探针的算法与 fail-closed 口径:
 //   - 正常 / 没提交过(-1,从日志起点算)/ 已提交位点早于日志起点(保留期删掉了未消费的消息 = RetentionGap);
+//   - MaxPartitionLag 是单分区最大值而不是合计(broker 的 retention.bytes 按分区执行,积压告警比的是它);
 //   - committed > end(topic 被删了重建)、某分区 block 带错 / 缺失、响应顶层 Err、调用本身失败 —— 一律报错,不静默当 0;
 //   - 调用顺序:先读组的已提交 offset,再读任何分区的 end / start。反过来时消费者在两次读之间提交一次
 //     就会得到 committed > end,繁忙 topic 上探针会周期性误报。
@@ -74,8 +75,8 @@ func TestComputeGroupLag(t *testing.T) {
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
-		if got != (GroupLag{Lag: 15}) {
-			t.Fatalf("got %+v, want Lag=15 (5+0+10), RetentionGap=0, Uncommitted=0", got)
+		if got != (GroupLag{Lag: 15, MaxPartitionLag: 10}) {
+			t.Fatalf("got %+v, want Lag=15 (5+0+10), MaxPartitionLag=10, RetentionGap=0, Uncommitted=0", got)
 		}
 		if len(f.calls) == 0 || f.calls[0] != "list" {
 			t.Fatalf("committed offsets must be read before any partition offset, calls=%v", f.calls)
@@ -97,8 +98,23 @@ func TestComputeGroupLag(t *testing.T) {
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
-		if got != (GroupLag{Lag: 7 + 2, Uncommitted: 1}) {
-			t.Fatalf("got %+v, want Lag=9 Uncommitted=1 RetentionGap=0", got)
+		if got != (GroupLag{Lag: 7 + 2, MaxPartitionLag: 7, Uncommitted: 1}) {
+			t.Fatalf("got %+v, want Lag=9 MaxPartitionLag=7 (the uncommitted partition counts too) Uncommitted=1 RetentionGap=0", got)
+		}
+	})
+
+	t.Run("积压集中在一个分区时 MaxPartitionLag 取单分区最大值", func(t *testing.T) {
+		f := &groupOffsetFake{
+			committed: map[int32]int64{0: 100, 1: 100, 2: 0},
+			start:     map[int32]int64{0: 0, 1: 0, 2: 0},
+			end:       map[int32]int64{0: 100, 1: 101, 2: 1750},
+		}
+		got, err := computeGroupLag(f, group, topic, 3)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if got != (GroupLag{Lag: 1751, MaxPartitionLag: 1750}) {
+			t.Fatalf("got %+v, want Lag=1751 (0+1+1750) MaxPartitionLag=1750 (retention is enforced per partition)", got)
 		}
 	})
 
@@ -112,8 +128,8 @@ func TestComputeGroupLag(t *testing.T) {
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
-		if got != (GroupLag{Lag: 15, RetentionGap: 7}) {
-			t.Fatalf("got %+v, want Lag=15 (end-start) RetentionGap=7 (start-committed)", got)
+		if got != (GroupLag{Lag: 15, MaxPartitionLag: 15, RetentionGap: 7}) {
+			t.Fatalf("got %+v, want Lag=15 MaxPartitionLag=15 (end-start) RetentionGap=7 (start-committed)", got)
 		}
 	})
 
@@ -127,7 +143,7 @@ func TestComputeGroupLag(t *testing.T) {
 		if err == nil || !strings.Contains(err.Error(), "beyond the log end") {
 			t.Fatalf("committed > end must be reported, got err=%v", err)
 		}
-		if got.Lag != 4 {
+		if got.Lag != 4 || got.MaxPartitionLag != 4 {
 			t.Fatalf("the recreated partition counts 0 lag, the healthy one still counts: got %+v", got)
 		}
 	})

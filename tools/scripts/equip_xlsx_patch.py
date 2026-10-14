@@ -511,13 +511,13 @@ def cmd_new_tables(dry_run: bool) -> None:
         if xlsx_path.exists():
             ws = only_sheet(openpyxl.load_workbook(xlsx_path), xlsx_path)
             if ws.title == sheet and first_difference(sheet_matrix(ws), wanted) is None:
-                print(f"[已是目标状态] {rel(xlsx_path)} 已存在且内容一致({len(rows)} 行),不改文件。")
+                print(f"[ALREADY CURRENT] {rel(xlsx_path)} exists with identical contents ({len(rows)} rows); file unchanged.")
                 continue
             fail(f"{rel(xlsx_path)} 已存在但内容与本脚本不同(可能策划已调过数值)—— 本脚本不覆盖。")
 
-        print(f"将新建 {rel(xlsx_path)}:sheet={sheet!r},{len(names)} 列 × {len(rows)} 行数据")
-        print(f"  列:{names}")
-        print(f"  首行:{[rows[0][n] for n in names]}  末行:{[rows[-1][n] for n in names]}")
+        print(f"Will create {rel(xlsx_path)}:sheet={sheet!r},{len(names)} columns x {len(rows)} data rows")
+        print(f"  Columns: {names}")
+        print(f"  First row: {[rows[0][n] for n in names]}  Last row: {[rows[-1][n] for n in names]}")
         if dry_run:
             continue
         wb = openpyxl.Workbook()
@@ -535,9 +535,9 @@ def cmd_new_tables(dry_run: bool) -> None:
         if diff:
             fail(f"保存后读回的 {xlsx_path.name} 与写入内容不一致({diff})—— 删除该文件后重试")
         bind(sheet, xlsx_path)
-        print(f"[完成] {rel(xlsx_path)}")
+        print(f"[DONE] {rel(xlsx_path)}")
     if dry_run:
-        print("[dry-run] 未写文件。")
+        print("[dry-run] No files written.")
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -564,7 +564,7 @@ def cmd_item_columns(dry_run: bool) -> None:
     present = [n for n in ITEM_NEW_COLUMNS if n in header]
     if len(present) == len(ITEM_NEW_COLUMNS):
         bind(ITEM_SHEET, ITEM_XLSX)
-        print(f"[已是目标状态] {rel(ITEM_XLSX)} 已有 {list(ITEM_NEW_COLUMNS)} 且与 schema 绑定通过,不改文件。")
+        print(f"[ALREADY CURRENT] {rel(ITEM_XLSX)} already contains {list(ITEM_NEW_COLUMNS)} and passed schema binding; file unchanged.")
         return
     if present:
         fail(f"{rel(ITEM_XLSX)} 只有一部分新列 {present}(缺 {[n for n in ITEM_NEW_COLUMNS if n not in header]})"
@@ -590,14 +590,14 @@ def cmd_item_columns(dry_run: bool) -> None:
                                              if field.sub_names else ""))
         col += field.width
 
-    print(f"{rel(ITEM_XLSX)}:现有 {ws.max_column} 列、数据到第 {ws.max_row} 行;将在最右追加 {col - 1 - ws.max_column} 个物理列"
-          f"(既有列与既有行一格不动,既有行的新列留空 = 默认值):")
+    print(f"{rel(ITEM_XLSX)}: existing {ws.max_column} columns; data ends at row {ws.max_row}; will append {col - 1 - ws.max_column} physical columns on the right"
+          f" (existing cells unchanged; new columns in existing rows remain empty = default values):")
     print("\n".join(plan))
     if dry_run:
-        print("[dry-run] 未写文件。")
+        print("[dry-run] No files written.")
         return
     apply_patches_and_verify(ITEM_XLSX, ITEM_SHEET, wb, ws, before, patches, bind_schema=True)
-    print(f"[完成] {rel(ITEM_XLSX)} 共 {col - 1} 列,与 schema 绑定通过。")
+    print(f"[DONE] {rel(ITEM_XLSX)} has {col - 1} columns; schema binding passed.")
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -694,24 +694,24 @@ def cmd_item_rows(dry_run: bool) -> None:
                 if actual != wanted_cells[row["id"]]:
                     fail(f"{rel(ITEM_XLSX)} 第 {row_idx} 行(id {row['id']})已存在,但内容与本脚本不同"
                          f"(可能策划已调过数值)—— 本脚本不覆盖。")
-            print(f"[已是目标状态] {rel(ITEM_XLSX)} 已有这 {len(rows)} 件样例装备且内容一致,不改文件。")
+            print(f"[ALREADY CURRENT] {rel(ITEM_XLSX)} already contains these {len(rows)} sample equipment items with identical contents; file unchanged.")
             return
         fail(f"{rel(ITEM_XLSX)} 里这些 id 已被占用:{taken} —— 与样例装备的 id 段冲突(或只写进了一部分),先查清。")
 
     patches: list[Patch] = []
-    print(f"{rel(ITEM_XLSX)}:现有 {len(existing)} 行数据,末行是第 {last_data_row} 行;将追加 {len(rows)} 行"
-          f"(id {rows[0]['id']}..{rows[-1]['id']},与现有 id 无冲突):")
+    print(f"{rel(ITEM_XLSX)}: existing {len(existing)} data rows; last row={last_data_row}; will append {len(rows)} rows"
+          f" (id {rows[0]['id']}..{rows[-1]['id']}, no conflicts with existing IDs):")
     for offset, row in enumerate(rows, start=1):
         row_idx = last_data_row + offset
         patches.extend((row_idx, col, value) for col, value in sorted(wanted_cells[row["id"]].items()))
-        print(f"  第 {row_idx} 行: id={row['id']} {row['name']} kind={row['equip_kind']} Lv{row['equip_level']} "
+        print(f"  Row {row_idx}: id={row['id']} {row['name']} kind={row['equip_kind']} Lv{row['equip_level']} "
               f"pool={row['affix_pool']} rule={row['affix_rule']} base_attr={row['base_attr']} "
-              f"icon={row['icon_key'] or '(空)'}")
+              f"icon={row['icon_key'] or '(empty)'}")
     if dry_run:
-        print("[dry-run] 未写文件。")
+        print("[dry-run] No files written.")
         return
     apply_patches_and_verify(ITEM_XLSX, ITEM_SHEET, wb, ws, before, patches, bind_schema=True)
-    print(f"[完成] {rel(ITEM_XLSX)} 数据行 {len(existing)} -> {len(existing) + len(rows)},原有行逐格一致。")
+    print(f"[DONE] {rel(ITEM_XLSX)} data rows {len(existing)} -> {len(existing) + len(rows)}; existing cells unchanged.")
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -783,15 +783,15 @@ def cmd_equip_slots(dry_run: bool) -> None:
 
     if not patches:
         bind(SLOT_SHEET, SLOT_XLSX)
-        print(f"[已是目标状态] {rel(SLOT_XLSX)} 已有 name 列与槽 {[s for s, _k, _n in EQUIP_SLOTS]},不改文件。")
+        print(f"[ALREADY CURRENT] {rel(SLOT_XLSX)} already contains the name column and slots {[s for s, _k, _n in EQUIP_SLOTS]}; file unchanged.")
         return
-    print(f"{rel(SLOT_XLSX)}:现有槽 {sorted(existing)}(一格不动);将:")
+    print(f"{rel(SLOT_XLSX)}: existing slots {sorted(existing)} (cells unchanged); planned changes:")
     print("\n".join(plan))
     if dry_run:
-        print("[dry-run] 未写文件。")
+        print("[dry-run] No files written.")
         return
     apply_patches_and_verify(SLOT_XLSX, SLOT_SHEET, wb, ws, before, patches, bind_schema=True)
-    print(f"[完成] {rel(SLOT_XLSX)} 槽位 {len(existing)} -> {len(existing) + (0 if taken else len(EQUIP_SLOTS))},原有行逐格一致。")
+    print(f"[DONE] {rel(SLOT_XLSX)} slots {len(existing)} -> {len(existing) + (0 if taken else len(EQUIP_SLOTS))}; existing cells unchanged.")
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -861,7 +861,7 @@ def cmd_tip_codes(dry_run: bool) -> None:
     if mine is not None:
         # 已是目标状态 = 段声明一致,且这 11 个码是本组开头的连续一段。不要求恰好在组尾:以后还会往组尾追加。
         if (mine["base"], mine["width"]) == (TIP_EQUIP_BASE, TIP_EQUIP_WIDTH) and mine["codes"][:len(wanted)] == wanted:
-            print(f"[已是目标状态] {header_text}(第 {mine['row']} 行)下已有这 {len(wanted)} 个码(码名 / 文案 / fault 一致),不改文件。")
+            print(f"[ALREADY CURRENT] {header_text} (row {mine['row']}) already contains these {len(wanted)} codes (matching names / messages / fault); file unchanged.")
             return
         fail(f"{TIP_XLSX.name} 第 {mine['row']} 行已有 //{TIP_EQUIP_GROUP} 组,但段声明或开头 {len(wanted)} 个码与本脚本不同 —— 先查清是谁加的。")
 
@@ -890,17 +890,17 @@ def cmd_tip_codes(dry_run: bool) -> None:
     last_row = max((r for r, row in enumerate(before, start=1) if any(v is not None for v in row)), default=0)
     header_row = last_row + 2          # 与既有组一样,组头前留一个空行
     patches: list[Patch] = [(header_row, 1, header_text)]
-    print(f"{TIP_XLSX.name}:现有 {len(groups)} 个组、{len(owner)} 个码,末行是第 {last_row} 行;"
-          f"段 [{lo},{hi}) 空闲、{len(new_names)} 个码名全表唯一。将追加:")
-    print(f"  第 {header_row} 行: {header_text}")
+    print(f"{TIP_XLSX.name}: existing {len(groups)} groups, {len(owner)} codes; last row={last_row};"
+          f" range [{lo},{hi}) available; {len(new_names)} code names globally unique. Will append:")
+    print(f"  Row {header_row}: {header_text}")
     for offset, (name, text, fault) in enumerate(wanted, start=1):
         row_idx = header_row + offset
         patches += [(row_idx, 1, name), (row_idx, 2, text)]
         if fault is not None:
             patches.append((row_idx, fault_col, fault))
-        print(f"  第 {row_idx} 行: {name} | {text}" + (" | fault=1" if fault else ""))
+        print(f"  Row {row_idx}: {name} | {text}" + (" | fault=1" if fault else ""))
     if dry_run:
-        print("[dry-run] 未写文件。")
+        print("[dry-run] No files written.")
         return
     apply_patches_and_verify(TIP_XLSX, None, wb, ws, before, patches, bind_schema=False)
 
@@ -909,9 +909,9 @@ def cmd_tip_codes(dry_run: bool) -> None:
     if [(g["name"], g["codes"]) for g in groups_after[:-1]] != [(g["name"], g["codes"]) for g in groups] \
             or groups_after[-1]["name"] != TIP_EQUIP_GROUP or groups_after[-1]["codes"] != wanted:
         fail(f"保存后各组的码与预期不符 —— 立刻 git checkout -- {rel(TIP_XLSX)} 还原")
-    print(f"[完成] 组 {len(groups)} -> {len(groups_after)},原有 {len(owner)} 个码逐格一致。"
-          f"导表后核对:这 {len(wanted)} 个码的 id 应为 {lo}..{lo + len(wanted) - 1},tip_enum_ids.json 只增不改;"
-          f"新域的 proto/tip/{TIP_EQUIP_GROUP}_tip.pb.{{h,cc}} 要登记进 cpp/generated/table 的 CMakeLists.txt 与 table.vcxproj。")
+    print(f"[DONE] Groups {len(groups)} -> {len(groups_after)}; existing {len(owner)} codes unchanged."
+          f" After export, confirm these {len(wanted)} codes have IDs {lo}..{lo + len(wanted) - 1}; tip_enum_ids.json contains additions only;"
+          f" register the new domain's proto/tip/{TIP_EQUIP_GROUP}_tip.pb.{{h,cc}} in cpp/generated/table CMakeLists.txt and table.vcxproj.")
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -977,30 +977,30 @@ def cmd_message_limiter(dry_run: bool) -> None:
             to_append.append((message_id, method, wanted))
         elif method in LIMITER_BACKFILL_METHODS:
             if existing[message_id] != wanted:
-                print(f"  [保留] 消息号 {message_id}({LIMITER_SERVICE}{method})已在表里,档位 {existing[message_id]},不改。")
+                print(f"  [KEEP] Message ID {message_id} ({LIMITER_SERVICE}{method}) exists in the table with tier {existing[message_id]}; unchanged.")
         elif existing[message_id] != wanted:
             # 最可能的原因:这个号以前属于别的方法(被释放的旧号易主),表里留着旧方法的档位。
             fail(f"消息号 {message_id}({LIMITER_SERVICE}{method})在表里已有一行 {existing[message_id]},"
                  f"与要写的 {wanted} 不同 —— 先确认那一行是谁的,本脚本不覆盖。")
 
     if not to_append:
-        print(f"[已是目标状态] {len(message_ids)} 个背包 / 装备消息号都已在表里,不改文件。")
+        print(f"[ALREADY CURRENT] All {len(message_ids)} bag / equipment message IDs exist in the table; file unchanged.")
         return
 
     patches: list[Patch] = []
-    print(f"现有数据行 {len(existing)} 条,末行是第 {last_data_row} 行;将追加 {len(to_append)} 行:")
+    print(f"Existing data: {len(existing)} rows; last row={last_data_row}; will append {len(to_append)} rows:")
     for offset, (message_id, method, wanted) in enumerate(to_append, start=1):
         row_idx = last_data_row + offset
         patches.append((row_idx, header["id"], message_id))
         patches += [(row_idx, header[name], value) for name, value in zip(LIMITER_COLUMNS[1:], wanted)]
-        print(f"  第 {row_idx} 行: id={message_id:<4} {LIMITER_SERVICE}{method:<12} "
+        print(f"  Row {row_idx}: id={message_id:<4} {LIMITER_SERVICE}{method:<12} "
               f"max_requests={wanted[0]} time_window={wanted[1]} tip_message={wanted[2]}")
     if dry_run:
-        print("[dry-run] 未写文件。")
+        print("[dry-run] No files written.")
         return
     apply_patches_and_verify(LIMITER_XLSX, LIMITER_SHEET, wb, ws, before, patches, bind_schema=True)
-    print(f"[完成] 数据行 {len(existing)} -> {len(existing) + len(to_append)},原有行逐格一致。接着再跑一次导表器;"
-          f"通过标准:generated/tables/messagelimiter.json 里能查到上面这些 id。部署时 gate 要重载 MessageLimiter。")
+    print(f"[DONE] Data rows {len(existing)} -> {len(existing) + len(to_append)}; existing cells unchanged. Rerun the table exporter;"
+          f" acceptance: the IDs above appear in generated/tables/messagelimiter.json. Reload gate MessageLimiter during deployment.")
 
 
 COMMANDS = {

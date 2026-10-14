@@ -253,10 +253,10 @@ type HomeZoneConf struct {
 //
 // Knobs are deliberately conservative:
 //   - DispatchInterval too low burns Redis QPS for no benefit (gate
-//     PlayerCount only refreshes every few seconds via etcd anyway).
-//   - AdmitTTL must outlive the worst-case "client received admit token →
-//     reconnects to /assign-gate → connects to gate" round-trip; 60s covers
-//     mobile-network jitter and short backoffs comfortably.
+//     PlayerCount only refreshes every 10s via etcd anyway).
+//   - AdmitTTL 是放行槽等客户端来取的时限,也是没人来取时在途占位的寿命(默认 60s)。
+//     取走之后、以及快速通道当场交票之后,占位只再留 15s:那是代码常量
+//     loginqueue.defaultHandoffGrace,不是配置,依据见该常量的注释(G4b-G)。
 //   - SoftCapMultiplier (e.g. 1.5) is the headroom factor applied to the
 //     largest observed PlayerCount when no explicit ZoneCapacityOverride is
 //     set, so freshly-deployed zones aren't capped at "current load".

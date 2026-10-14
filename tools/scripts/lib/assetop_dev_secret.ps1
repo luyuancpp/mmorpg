@@ -240,7 +240,7 @@ function Initialize-AssetOpDevSecrets {
     if (-not $script:AssetOpDevSecretsAnnounced) {
         $script:AssetOpDevSecretsAnnounced = $true
         # 只说数量与出处,**不回显值**;相对路径让人知道去哪删,不至于以为它进了仓库。
-        Write-Host "[asset] 已注入 $($missing.Count) 把本机资产通道开发密钥(值不回显,来自 run/secrets/assetop-dev.env;仅限本机 dev)" -ForegroundColor DarkGray
+        Write-Host "[asset] Injected $($missing.Count) local asset-channel development secrets (values hidden; loaded from run/secrets/assetop-dev.env; local dev only)" -ForegroundColor DarkGray
     }
     return $missing.Count
 }

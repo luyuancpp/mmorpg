@@ -125,7 +125,7 @@ def cmd_tip_text(dry_run: bool) -> None:
     current = cell.value.strip() if isinstance(cell.value, str) else cell.value
 
     if current == TIP_NEW_TEXT:
-        print(f"[已是目标状态] B{row_idx} = {TIP_NEW_TEXT!r},不改文件。")
+        print(f"[ALREADY CURRENT] B{row_idx} = {TIP_NEW_TEXT!r}; file unchanged.")
         return
     if current != TIP_OLD_TEXT:
         fail(f"B{row_idx} 现值是 {current!r},既不是旧文案 {TIP_OLD_TEXT!r} 也不是新文案 —— "
@@ -133,7 +133,7 @@ def cmd_tip_text(dry_run: bool) -> None:
 
     print(f"B{row_idx}: {TIP_OLD_TEXT!r} -> {TIP_NEW_TEXT!r}")
     if dry_run:
-        print("[dry-run] 未写文件。")
+        print("[dry-run] No files written.")
         return
 
     cell.value = TIP_NEW_TEXT
@@ -149,8 +149,8 @@ def cmd_tip_text(dry_run: bool) -> None:
         fail(f"保存后各段码数变了:{before_counts} -> {after_counts} —— 立刻还原该文件")
     if check_ws.cell(row=row_idx, column=2).value != TIP_NEW_TEXT:
         fail("保存后读回的文案不是新文案 —— 立刻还原该文件")
-    print(f"[完成] 共 {sum(after_counts.values())} 个码、{len(after_counts)} 个段,段计数与改动前一致;"
-          f"{TIP_FRIEND_GROUP} 段 {after_counts.get(TIP_FRIEND_GROUP)} 个码。")
+    print(f"[DONE] {sum(after_counts.values())} codes, {len(after_counts)} ranges; range counts unchanged;"
+          f"{TIP_FRIEND_GROUP} range has {after_counts.get(TIP_FRIEND_GROUP)} codes.")
 
 
 # ── message-limiter ──────────────────────────────────────────────────────────
@@ -234,15 +234,15 @@ def cmd_message_limiter(dry_run: bool) -> None:
         to_append.append((message_id, method, wanted))
 
     if not to_append:
-        print(f"[已是目标状态] {len(LIMITER_TIERS)} 个 friend C2S 消息号都已在表里,不改文件。")
+        print(f"[ALREADY CURRENT] All {len(LIMITER_TIERS)} friend C2S message IDs exist in the table; file unchanged.")
         return
 
-    print(f"现有数据行 {len(existing)} 条,末行是第 {last_data_row} 行;将追加 {len(to_append)} 行:")
+    print(f"Existing data: {len(existing)} rows; last row={last_data_row}; will append {len(to_append)} rows:")
     for offset, (message_id, method, wanted) in enumerate(to_append, start=1):
-        print(f"  第 {last_data_row + offset} 行: id={message_id:<4} {FRIEND_SERVICE}{method:<20} "
+        print(f"  Row {last_data_row + offset}: id={message_id:<4} {FRIEND_SERVICE}{method:<20} "
               f"max_requests={wanted[0]} time_window={wanted[1]} tip_message={wanted[2]}")
     if dry_run:
-        print("[dry-run] 未写文件。")
+        print("[dry-run] No files written.")
         return
 
     for offset, (message_id, _method, wanted) in enumerate(to_append, start=1):
@@ -262,8 +262,8 @@ def cmd_message_limiter(dry_run: bool) -> None:
     expected = len(existing) + len(to_append)
     if len(check_ids) != expected or len(set(check_ids)) != expected:
         fail(f"保存后数据行应为 {expected} 条且 id 唯一,实际 {len(check_ids)} 条 / {len(set(check_ids))} 个不同 id —— 立刻还原该文件")
-    print(f"[完成] 数据行 {len(existing)} -> {expected}。接着再跑一次导表器;"
-          f"通过标准:generated/tables/messagelimiter.json 里能查到上面这些 id,manifest 的 MessageLimiter rows = {expected}。")
+    print(f"[DONE] Data rows {len(existing)} -> {expected}. Rerun the table exporter;"
+          f"acceptance: the IDs above appear in generated/tables/messagelimiter.json, and manifest MessageLimiter rows = {expected}.")
 
 
 def main() -> None:

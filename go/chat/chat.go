@@ -99,7 +99,7 @@ func runChat(c config.Config) (runErr error) {
 		select {
 		case <-finished:
 		case <-timer.C:
-			fmt.Fprintln(os.Stderr, "[chat] 已到24s停机硬截止,强制退出;不能确认在途请求已完成")
+			fmt.Fprintln(os.Stderr, "[chat] Shutdown hard deadline of 24s reached; forcing exit, completion of in-flight requests cannot be confirmed")
 			os.Exit(1)
 		}
 	}()
@@ -192,7 +192,7 @@ func runChat(c config.Config) (runErr error) {
 			// chat 不以 node_id 派生任何持久身份 / per-node topic,失租后换 id 继续服务即可。
 			OnReclaimFailed: noderegistry.ReallocateNewID,
 			OnNodeIDChanged: func(oldID, newID uint32) {
-				logx.Errorf("[chat] etcd 失租后原 node_id=%d 未能重夺,已换新 node_id=%d 继续服务", oldID, newID)
+				logx.Errorf("[chat] Could not reclaim original node_id=%d after etcd lease loss; continuing with new node_id=%d", oldID, newID)
 			},
 			LogPrefix: "[chat]",
 		})
@@ -215,7 +215,7 @@ func runChat(c config.Config) (runErr error) {
 	fmt.Printf("  etcd:        %v\n", c.Etcd.Hosts)
 	fmt.Printf("  node_id:     %d (etcd CAS)\n", nr.NodeID())
 	fmt.Printf("  node_uuid:   %s\n", nr.NodeUUID)
-	fmt.Printf("  zone:        %d (只影响注册路径)\n", c.ZoneId)
+	fmt.Printf("  zone:        %d (affects registration path only)\n", c.ZoneId)
 	fmt.Printf("  chat_redis:  %s\n", svcCtx.ChatRedisTarget)
 	if c.MetricsListenAddr != "" {
 		fmt.Printf("  metrics:     %s\n", c.MetricsListenAddr)
@@ -224,7 +224,7 @@ func runChat(c config.Config) (runErr error) {
 
 	select {
 	case <-ctx.Done():
-		logx.Info("[chat] 收到退出信号,先注销再排空RPC")
+		logx.Info("[chat] Received shutdown signal; deregistering before draining RPCs")
 	case err := <-serveErr:
 		return fmt.Errorf("chat gRPC服务提前退出: %v", err)
 	}

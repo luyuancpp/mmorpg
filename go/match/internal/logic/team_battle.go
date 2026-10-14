@@ -121,13 +121,13 @@ func (s *TeamBattleStarter) CreateMatchedTickets(ctx context.Context, battleConf
 			TeamId:       teamId,
 		}, ttl)
 		if err != nil {
-			log.Errorf("[match] 整队开战建票失败(结果未知,按已写入回滚) team=%d player=%d: %v", teamId, pid, err)
+			log.Errorf("[match] Failed to create team battle ticket (unknown outcome; rolling back as written) team=%d player=%d: %v", teamId, pid, err)
 			owned = append(owned, pid)
 			failed = pid
 			break
 		}
 		if !created {
-			log.Infof("[match] 整队开战建票冲突:成员已有票据 team=%d player=%d", teamId, pid)
+			log.Infof("[match] Team battle ticket creation conflict: member already has a ticket team=%d player=%d", teamId, pid)
 			failed = pid
 			break
 		}
@@ -148,11 +148,11 @@ func (s *TeamBattleStarter) rollbackTickets(teamId uint64, owned []uint64, ticke
 		deleted, err := deleteTicketIfOwnedCtx(ctx, s.svcCtx, pid, tickets[pid])
 		if err != nil {
 			// 删不掉的票靠 matched TTL 过期(§E.3),期间该成员单排回 AlreadyQueued。
-			logx.Errorf("[match] 整队开战回滚删票失败(靠 matched TTL 自愈) team=%d player=%d: %v", teamId, pid, err)
+			logx.Errorf("[match] Team battle rollback failed to delete ticket (matched TTL will recover) team=%d player=%d: %v", teamId, pid, err)
 			continue
 		}
 		if !deleted {
-			logx.Infof("[match] 整队开战回滚:票据不是本次写入或已不存在 team=%d player=%d", teamId, pid)
+			logx.Infof("[match] Team battle rollback: ticket was not written by this request or no longer exists team=%d player=%d", teamId, pid)
 		}
 	}
 }

@@ -164,7 +164,7 @@ func runGuildEconomySmoke(cfg *config.Config, stats *metrics.Stats) {
 	guild := created.GetGuild()
 	guildID := guild.GetGuildId()
 	if guildID == 0 || guild.GetLevel() != 1 || guild.GetFunds() != 0 || guild.GetMaxMembers() != econLevel1MaxMembers {
-		fail("1-create", "新帮会 id=%d level=%d funds=%d max_members=%d,期望 Lv.1 / 0 / %d",
+		fail("1-create", "New guild id=%d level=%d funds=%d max_members=%d, expected Lv.1 / 0 / %d",
 			guildID, guild.GetLevel(), guild.GetFunds(), guild.GetMaxMembers(), econLevel1MaxMembers)
 	}
 	if err := b.expect(game.GuildServiceApplyJoinGuildMessageId,
@@ -177,18 +177,18 @@ func runGuildEconomySmoke(cfg *config.Config, stats *metrics.Stats) {
 		fail("1-review", "%v", err)
 	}
 	if _, ok := guildSmokeRoleOf(mustMyGuild(b, fail, "1-joined"), b.gc.PlayerId); !ok {
-		fail("1-joined", "审批通过后 B(%d) 不在帮会 %d 的成员表里", b.gc.PlayerId, guildID)
+		fail("1-joined", "After approval B(%d) is missing from guild %d member list", b.gc.PlayerId, guildID)
 	}
 
 	// ---- 步骤 2:读两页,判模式 ----
 	options := econDonateOptions(a, fail, "2-options")
 	if len(options.GetOptions()) != econDonateOptionCount || len(options.GetPendingDonations()) != 0 {
-		fail("2-options", "捐献选项 %d 个、结算中 %d 笔,期望 %d 个、0 笔(新帮会不该有结算中的单)",
+		fail("2-options", "Donation options=%d, settling operations=%d, expected %d options and 0 operations (a new guild should have no settling operations)",
 			len(options.GetOptions()), len(options.GetPendingDonations()), econDonateOptionCount)
 	}
 	shop := econShop(a, fail, "2-shop")
 	if len(shop.GetGoods()) != econShopGoodsCount {
-		fail("2-shop", "商品 %d 件,期望 %d 件(GuildShop 默认行)", len(shop.GetGoods()), econShopGoodsCount)
+		fail("2-shop", "Shop has %d products, expected %d (default GuildShop rows)", len(shop.GetGoods()), econShopGoodsCount)
 	}
 	bigUsed := econOption(options, econDonateBigID).GetUsedToday()
 	spiritUsed := econOption(options, econDonateSpiritID).GetUsedToday()
@@ -236,7 +236,7 @@ func runGuildEconomyFull(a, b *guildSmokeBot, guildID uint64, fail econFail) {
 	econDonateApplied(a, econDonateBigID, fail, "6-donate")
 	econCheckGuild(a, fail, "6-funds", 1, 2*econDonateBigFunds, 2*econDonateBigGain, 2*econDonateBigGain)
 	if tip, _ := econDonate(a, econDonateBigID, fail, "6-limit"); tip != tipGuildDonateLimit {
-		fail("6-limit", "第 %d 次大捐 tip=%d,期望 kGuildDonateLimit(%d)", econDonateBigDailyLimit+1, tip, tipGuildDonateLimit)
+		fail("6-limit", "Large donation number %d returned tip=%d, expected kGuildDonateLimit(%d)", econDonateBigDailyLimit+1, tip, tipGuildDonateLimit)
 	}
 	econCheckGuild(a, fail, "6-limit-funds", 1, 2*econDonateBigFunds, 2*econDonateBigGain, 2*econDonateBigGain)
 
@@ -249,10 +249,10 @@ func runGuildEconomyFull(a, b *guildSmokeBot, guildID uint64, fail econFail) {
 	wantSilver := silver0 + econGmSilver - 2*econDonateBigCost
 	wantSpirit := spirit0 + econGmSpirit - econDonateSpiritCost
 	if got := econCurrency(after, econCurrencySilver); got != wantSilver {
-		fail("7-silver", "A 的银两=%d,期望 初值 %d + %d − %d = %d", got, silver0, econGmSilver, 2*econDonateBigCost, wantSilver)
+		fail("7-silver", "A silver=%d, expected initial %d + %d - %d = %d", got, silver0, econGmSilver, 2*econDonateBigCost, wantSilver)
 	}
 	if got := econCurrency(after, econCurrencySpirit); got != wantSpirit {
-		fail("7-spirit", "A 的灵石=%d,期望 初值 %d + %d − %d = %d", got, spirit0, econGmSpirit, econDonateSpiritCost, wantSpirit)
+		fail("7-spirit", "A spirit stones=%d, expected initial %d + %d - %d = %d", got, spirit0, econGmSpirit, econDonateSpiritCost, wantSpirit)
 	}
 
 	// ---- 步骤 8:B 余额不足 ----
@@ -266,7 +266,7 @@ func runGuildEconomyFull(a, b *guildSmokeBot, guildID uint64, fail econFail) {
 	}
 	funds -= econLevel1UpgradeCost // 24,000
 	if g := upgraded.GetGuild(); g.GetLevel() != 2 || g.GetFunds() != funds || g.GetMaxMembers() != econLevel2MaxMembers {
-		fail("9-upgrade", "升级后 level=%d funds=%d max_members=%d,期望 2 / %d / %d",
+		fail("9-upgrade", "After upgrade level=%d funds=%d max_members=%d, expected 2 / %d / %d",
 			g.GetLevel(), g.GetFunds(), g.GetMaxMembers(), funds, econLevel2MaxMembers)
 	}
 	// 带着旧等级再点一次:服务端认作"已被升过",受理但不再扣钱(重复点击不会连升两级)。
@@ -275,20 +275,20 @@ func runGuildEconomyFull(a, b *guildSmokeBot, guildID uint64, fail econFail) {
 		fail("9-upgrade-again", "%v", err)
 	}
 	if g := again.GetGuild(); g.GetLevel() != 2 || g.GetFunds() != funds {
-		fail("9-upgrade-again", "重复升级后 level=%d funds=%d,期望仍是 2 / %d", g.GetLevel(), g.GetFunds(), funds)
+		fail("9-upgrade-again", "After repeated upgrade level=%d funds=%d, expected still 2 / %d", g.GetLevel(), g.GetFunds(), funds)
 	}
 
 	// ---- 步骤 10:商店随等级解锁 ----
 	shop := econShop(a, fail, "10-shop")
 	if !econGoods(shop, econGoodsLevel2).GetUnlocked() || econGoods(shop, econGoodsLevel3).GetUnlocked() {
-		fail("10-shop", "Lv.2 帮会:%d unlocked=%v、%d unlocked=%v,期望 true / false", econGoodsLevel2,
+		fail("10-shop", "Lv.2 guild: %d unlocked=%v, %d unlocked=%v, expected true / false", econGoodsLevel2,
 			econGoods(shop, econGoodsLevel2).GetUnlocked(), econGoodsLevel3, econGoods(shop, econGoodsLevel3).GetUnlocked())
 	}
 	if shop.GetContributionBalance() != balance {
-		fail("10-shop", "商店可用帮贡=%d,期望 %d", shop.GetContributionBalance(), balance)
+		fail("10-shop", "Available shop contribution=%d, expected %d", shop.GetContributionBalance(), balance)
 	}
 	if got := econGoods(shop, econGoodsAmulet).GetMaxBuyCount(); got != 1 {
-		fail("10-shop", "商品 %d(堆叠 1 的物品)max_buy_count=%d,期望 1", econGoodsAmulet, got)
+		fail("10-shop", "Product %d (item stack size 1) max_buy_count=%d, expected 1", econGoodsAmulet, got)
 	}
 
 	// ---- 步骤 11:兑换一份,背包到货 ----
@@ -296,7 +296,7 @@ func runGuildEconomyFull(a, b *guildSmokeBot, guildID uint64, fail econFail) {
 	balance -= econGoodsPillCost // 410
 	econBuyApplied(a, econGoodsPill, balance, fail, "11-buy")
 	if got := econItemCount(econBag(a, fail, "11-bag-after"), econGoodsPillItem); got != pill0+econGoodsPillCount {
-		fail("11-item", "物品 %d 数量=%d,期望 %d + %d", econGoodsPillItem, got, pill0, econGoodsPillCount)
+		fail("11-item", "Item %d count=%d, expected %d + %d", econGoodsPillItem, got, pill0, econGoodsPillCount)
 	}
 
 	// ---- 步骤 12:三种拒绝 ----
@@ -311,7 +311,7 @@ func runGuildEconomyFull(a, b *guildSmokeBot, guildID uint64, fail econFail) {
 	}
 	time.Sleep(guildSmokeSameIdCooldown)
 	if tip, _ := econBuy(a, econGoodsLantern, 1, fail, "13-limit"); tip != tipGuildShopLimit {
-		fail("13-limit", "第 %d 份花灯 tip=%d,期望 kGuildShopLimit(%d)", econGoodsLanternLimit+1, tip, tipGuildShopLimit)
+		fail("13-limit", "Lantern purchase number %d returned tip=%d, expected kGuildShopLimit(%d)", econGoodsLanternLimit+1, tip, tipGuildShopLimit)
 	}
 
 	zap.L().Info(fmt.Sprintf("GUILD_ECONOMY_SMOKE_OK mode=full guild_id=%d funds=%d level=2 balance=%d", guildID, funds, balance))
@@ -321,7 +321,7 @@ func runGuildEconomyDegraded(a, b *guildSmokeBot, guildID uint64, bigUsed uint32
 	// ---- 步骤 4':只有今日大捐已用满时才断言上限;否则一捐就会给帮会加钱,打乱第 6' 步 ----
 	if bigUsed == econDonateBigDailyLimit {
 		if tip, _ := econDonate(a, econDonateBigID, fail, "4'-limit"); tip != tipGuildDonateLimit {
-			fail("4'-limit", "今日大捐已用 %d 次,再捐 tip=%d,期望 kGuildDonateLimit(%d)", bigUsed, tip, tipGuildDonateLimit)
+			fail("4'-limit", "Large donations used today=%d; another donation returned tip=%d, expected kGuildDonateLimit(%d)", bigUsed, tip, tipGuildDonateLimit)
 		}
 	} else {
 		zap.L().Info(fmt.Sprintf("[guild-smoke] SKIP step4' used_today=%d", bigUsed))
@@ -337,12 +337,12 @@ func runGuildEconomyDegraded(a, b *guildSmokeBot, guildID uint64, bigUsed uint32
 		fail("6'-upgrade", "%v", err)
 	}
 	if g := poor.GetGuild(); g == nil || g.GetFunds() != 0 {
-		fail("6'-upgrade", "资金不足的回包应带帮会且资金为 0,实得 guild=%v funds=%d", g != nil, g.GetFunds())
+		fail("6'-upgrade", "Insufficient-funds response should contain the guild with funds 0, got guild=%v funds=%d", g != nil, g.GetFunds())
 	}
 
 	// ---- 步骤 7':商店 ----
 	if shop := econShop(a, fail, "7'-shop"); shop.GetContributionBalance() != 0 {
-		fail("7'-shop", "新帮会里 A 的可用帮贡=%d,期望 0", shop.GetContributionBalance())
+		fail("7'-shop", "A available contribution in the new guild=%d, expected 0", shop.GetContributionBalance())
 	}
 	econShopRejections(a, b, fail, "7'")
 
@@ -358,20 +358,20 @@ func econMemberCannotAfford(b *guildSmokeBot, fail econFail, step string) {
 		// scene 已判拒但还没落盘(未 durable):视图是结算中,等它落定。
 		settled := econAwaitDonation(b, donation.GetOpId(), fail, step+"-settle")
 		if settled.GetStatus() != guildpb.GuildAssetOrderStatus_GUILD_ASSET_ORDER_STATUS_REJECTED {
-			fail(step+"-donate", "B 灵石捐献最终状态=%s,期望 REJECTED", settled.GetStatus())
+			fail(step+"-donate", "B spirit-stone donation final status=%s, expected REJECTED", settled.GetStatus())
 		}
 	default:
-		fail(step+"-donate", "B 灵石捐献 tip=%d status=%s,期望 kGuildCurrencyInsufficient(%d) + REJECTED",
+		fail(step+"-donate", "B spirit-stone donation tip=%d status=%s, expected kGuildCurrencyInsufficient(%d) + REJECTED",
 			tip, donation.GetStatus(), tipGuildCurrencyInsufficient)
 	}
 	options := econDonateOptions(b, fail, step+"-options")
 	if used := econOption(options, econDonateSpiritID).GetUsedToday(); used != 0 {
-		fail(step+"-options", "被拒之后 B 的灵石捐献今日用量=%d,期望 0(REJECTED 要退回次数)", used)
+		fail(step+"-options", "After rejection B spirit-stone donation usage today=%d, expected 0 (REJECTED must refund the usage count)", used)
 	}
 	recent := options.GetRecentResults()
 	if len(recent) == 0 || recent[0].GetStatus() != guildpb.GuildAssetOrderStatus_GUILD_ASSET_ORDER_STATUS_REJECTED ||
 		recent[0].GetReasonTipId() != reasonAssetCurrencyInsufficient {
-		fail(step+"-options", "B 的最近结果=%v,期望第一条 REJECTED、原因 kAssetCurrencyInsufficient(%d)", recent, reasonAssetCurrencyInsufficient)
+		fail(step+"-options", "B recent results=%v, expected first entry REJECTED with reason kAssetCurrencyInsufficient(%d)", recent, reasonAssetCurrencyInsufficient)
 	}
 }
 
@@ -382,20 +382,20 @@ func econUpgradeRankTooLow(b *guildSmokeBot, fail econFail, step string) {
 	}
 	// 业务拒绝也带最新快照(05 §5.26):客户端据此刷新资金显示。
 	if resp.GetGuild().GetGuildId() == 0 {
-		fail(step, "成员升级被拒的回包没有带帮会快照")
+		fail(step, "Rejected member-upgrade response contains no guild snapshot")
 	}
 }
 
 // econShopRejections:等级不够 / 帮贡不够 / 超过单次份数,三种都在发号之前拒绝,不会留下指令行。
 func econShopRejections(a, b *guildSmokeBot, fail econFail, step string) {
 	if tip, _ := econBuy(a, econGoodsLevel3, 1, fail, step+"-level"); tip != tipGuildShopLevelTooLow {
-		fail(step+"-level", "兑换 %d tip=%d,期望 kGuildShopLevelTooLow(%d)", econGoodsLevel3, tip, tipGuildShopLevelTooLow)
+		fail(step+"-level", "Redeeming %d returned tip=%d, expected kGuildShopLevelTooLow(%d)", econGoodsLevel3, tip, tipGuildShopLevelTooLow)
 	}
 	if tip, _ := econBuy(b, econGoodsPill, 1, fail, step+"-contribution"); tip != tipGuildContributionInsufficient {
-		fail(step+"-contribution", "B 兑换 %d tip=%d,期望 kGuildContributionInsufficient(%d)", econGoodsPill, tip, tipGuildContributionInsufficient)
+		fail(step+"-contribution", "B redeeming %d returned tip=%d, expected kGuildContributionInsufficient(%d)", econGoodsPill, tip, tipGuildContributionInsufficient)
 	}
 	if tip, _ := econBuy(a, econGoodsAmulet, 2, fail, step+"-count"); tip != tipGuildShopLimit {
-		fail(step+"-count", "一次兑 2 份 %d tip=%d,期望 kGuildShopLimit(%d)", econGoodsAmulet, tip, tipGuildShopLimit)
+		fail(step+"-count", "Redeeming 2 of %d at once returned tip=%d, expected kGuildShopLimit(%d)", econGoodsAmulet, tip, tipGuildShopLimit)
 	}
 }
 
@@ -416,17 +416,17 @@ func econDonate(bot *guildSmokeBot, donateID uint32, fail econFail, step string)
 func econDonateApplied(bot *guildSmokeBot, donateID uint32, fail econFail, step string) {
 	tip, donation := econDonate(bot, donateID, fail, step)
 	if tip != 0 {
-		fail(step, "捐献 %d tip=%d(%s)", donateID, tip, econTipHint(tip))
+		fail(step, "Donation %d tip=%d (%s)", donateID, tip, econTipHint(tip))
 	}
 	switch donation.GetStatus() {
 	case guildpb.GuildAssetOrderStatus_GUILD_ASSET_ORDER_STATUS_APPLIED:
 		return
 	case guildpb.GuildAssetOrderStatus_GUILD_ASSET_ORDER_STATUS_PENDING:
 		if settled := econAwaitDonation(bot, donation.GetOpId(), fail, step+"-settle"); settled.GetStatus() != guildpb.GuildAssetOrderStatus_GUILD_ASSET_ORDER_STATUS_APPLIED {
-			fail(step, "捐献 %d(op %d)最终状态=%s reason=%d,期望 APPLIED", donateID, donation.GetOpId(), settled.GetStatus(), settled.GetReasonTipId())
+			fail(step, "Donation %d (op %d) final status=%s reason=%d, expected APPLIED", donateID, donation.GetOpId(), settled.GetStatus(), settled.GetReasonTipId())
 		}
 	default:
-		fail(step, "捐献 %d 视图状态=%s reason=%d,期望 APPLIED 或结算中", donateID, donation.GetStatus(), donation.GetReasonTipId())
+		fail(step, "Donation %d view status=%s reason=%d, expected APPLIED or settling", donateID, donation.GetStatus(), donation.GetReasonTipId())
 	}
 }
 
@@ -445,10 +445,10 @@ func econAwaitDonation(bot *guildSmokeBot, opID uint64, fail econFail, step stri
 					return result
 				}
 			}
-			fail(step, "op %d 已不在结算中,但最近结果里也没有它", opID)
+			fail(step, "op %d is no longer settling, but is also missing from recent results", opID)
 		}
 		if !time.Now().Before(deadline) {
-			fail(step, "op %d 结算超时(%s)。看 guild 日志 [GuildEconomy] 与 scene 日志 [AssetOp] 的该 op", opID, econSettleTimeout)
+			fail(step, "op %d settlement timed out (%s). Check this op in guild [GuildEconomy] and scene [AssetOp] logs", opID, econSettleTimeout)
 		}
 		time.Sleep(econSettlePoll)
 	}
@@ -467,10 +467,10 @@ func econBuy(bot *guildSmokeBot, goodsID, count uint32, fail econFail, step stri
 func econBuyApplied(bot *guildSmokeBot, goodsID uint32, wantBalance uint64, fail econFail, step string) {
 	tip, resp := econBuy(bot, goodsID, 1, fail, step)
 	if tip != 0 {
-		fail(step, "兑换 %d tip=%d(%s)", goodsID, tip, econTipHint(tip))
+		fail(step, "Redemption %d tip=%d (%s)", goodsID, tip, econTipHint(tip))
 	}
 	if resp.GetContributionBalance() != wantBalance {
-		fail(step, "兑换 %d 后可用帮贡=%d,期望 %d", goodsID, resp.GetContributionBalance(), wantBalance)
+		fail(step, "After redeeming %d, available contribution=%d, expected %d", goodsID, resp.GetContributionBalance(), wantBalance)
 	}
 	order := resp.GetOrder()
 	switch order.GetStatus() {
@@ -491,14 +491,14 @@ func econBuyApplied(bot *guildSmokeBot, goodsID uint32, wantBalance uint64, fail
 						return
 					}
 				}
-				fail(step, "兑换 %d(op %d)已结算但不是 APPLIED:%v", goodsID, order.GetOpId(), shop.GetRecentOrders())
+				fail(step, "Redemption %d (op %d) settled but is not APPLIED: %v", goodsID, order.GetOpId(), shop.GetRecentOrders())
 			}
 			if !time.Now().Before(deadline) {
-				fail(step, "兑换 %d(op %d)待发放超时(%s),最近原因 %d(27001 = 背包满)", goodsID, order.GetOpId(), econSettleTimeout, order.GetReasonTipId())
+				fail(step, "Redemption %d (op %d) delivery timed out (%s), latest reason %d (27001 = bag full)", goodsID, order.GetOpId(), econSettleTimeout, order.GetReasonTipId())
 			}
 		}
 	default:
-		fail(step, "兑换 %d 视图状态=%s reason=%d,期望 APPLIED 或待发放", goodsID, order.GetStatus(), order.GetReasonTipId())
+		fail(step, "Redemption %d view status=%s reason=%d, expected APPLIED or pending delivery", goodsID, order.GetStatus(), order.GetReasonTipId())
 	}
 }
 
@@ -528,7 +528,7 @@ func econCheckGuild(bot *guildSmokeBot, fail econFail, step string, level uint32
 		}
 	}
 	if g.GetLevel() != level || g.GetFunds() != funds || me.GetContributionTotal() != total || me.GetContributionBalance() != balance {
-		fail(step, "level=%d funds=%d 本人帮贡 累计 %d / 可用 %d,期望 %d / %d / %d / %d",
+		fail(step, "level=%d funds=%d personal contribution total=%d / available=%d, expected %d / %d / %d / %d",
 			g.GetLevel(), g.GetFunds(), me.GetContributionTotal(), me.GetContributionBalance(), level, funds, total, balance)
 	}
 }
@@ -545,10 +545,10 @@ func mustMyGuild(bot *guildSmokeBot, fail econFail, step string) *guildpb.GuildI
 func econBag(bot *guildSmokeBot, fail econFail, step string) *scene.BagInfo {
 	resp := &scene.GetBagResponse{}
 	if err := bot.expect(game.SceneBagClientPlayerGetBagMessageId, &scene.GetBagRequest{BagType: 0}, resp, 0); err != nil {
-		fail(step, "读背包: %v", err)
+		fail(step, "Reading bag: %v", err)
 	}
 	if resp.GetBag() == nil {
-		fail(step, "背包回包为空")
+		fail(step, "Bag response is empty")
 	}
 	return resp.GetBag()
 }
@@ -576,14 +576,14 @@ func econItemCount(bag *scene.BagInfo, configID uint32) uint64 {
 func econGmAdd(bot *guildSmokeBot, fail econFail, step string, currencyType uint32, amount uint64) {
 	if err := bot.expect(game.SceneCurrencyClientPlayerGmAddCurrencyMessageId,
 		&scene.GmAddCurrencyRequest{CurrencyType: currencyType, Amount: int64(amount)}, &scene.GmAddCurrencyResponse{}, 0); err != nil {
-		fail(step, "GM 加货币(需 dev 运行模式放行 GM 消息): %v", err)
+		fail(step, "GM adding currency (dev run mode is required to allow GM messages): %v", err)
 	}
 }
 
 func econGmDeduct(bot *guildSmokeBot, fail econFail, step string, currencyType uint32, amount uint64) {
 	if err := bot.expect(game.SceneCurrencyClientPlayerGmDeductCurrencyMessageId,
 		&scene.GmDeductCurrencyRequest{CurrencyType: currencyType, Amount: int64(amount)}, &scene.GmDeductCurrencyResponse{}, 0); err != nil {
-		fail(step, "GM 扣货币(需 dev 运行模式放行 GM 消息): %v", err)
+		fail(step, "GM deducting currency (dev run mode is required to allow GM messages): %v", err)
 	}
 }
 

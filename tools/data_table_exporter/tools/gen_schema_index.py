@@ -107,12 +107,12 @@ def main(argv: list[str] | None = None) -> int:
     cfg = load_config(args.config)
     target = Path(args.target) if args.target else (cfg.data_dir / "AGENTS.md")
     if not target.exists():
-        logger.error("%s 不存在;索引块要嵌在手写知识库里,先建那份文件", target)
+        logger.error("%s does not exist; the index block must be embedded in a handwritten knowledge-base file, so create that file first", target)
         return 1
 
     text = target.read_text(encoding="utf-8")
     if BEGIN not in text or END not in text:
-        logger.error("%s 里找不到 %s / %s 标记", target.name, BEGIN, END)
+        logger.error("%s is missing markers %s / %s", target.name, BEGIN, END)
         return 1
 
     head, rest = text.split(BEGIN, 1)
@@ -122,16 +122,16 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.check:
         if new != text:
-            logger.error("%s 的索引块已腐坏,跑一次 gen_schema_index.py 重生", target.name)
+            logger.error("The index block in %s is corrupted; run gen_schema_index.py to regenerate it", target.name)
             return 1
-        logger.info("%s 的索引块是最新的", target.name)
+        logger.info("The index block in %s is up to date", target.name)
         return 0
 
     if new == text:
-        logger.info("%s 无变化", target.name)
+        logger.info("%s unchanged", target.name)
         return 0
     target.write_text(new, encoding="utf-8", newline="\n")
-    logger.info("已更新 %s", target)
+    logger.info("Updated %s", target)
     return 0
 
 

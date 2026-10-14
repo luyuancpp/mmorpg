@@ -58,10 +58,10 @@ FROM scratch AS proto2mysql
 FROM scratch AS tables
 
 # ── Build stage ──────────────────────────────────────────────────
-# 精确到补丁版本并断言,与 go/db/go.mod、go/data_service/go.mod、go/trade/go.mod 的 `go 1.26.5` 对齐。
-# 以前是 golang:1.26-alpine:1.26.x 的补丁升级会在无人察觉时换掉编译器,"同一 commit 两次构建
-# 二进制不同"。其余服务(go 1.24.5)向后兼容。升级 Go 时 FROM 的 tag/digest 与下方断言一起改。
-FROM golang:1.26.5-alpine@sha256:0178a641fbb4858c5f1b48e34bdaabe0350a330a1b1149aabd498d0699ff5fb2 AS builder
+# 精确到补丁版本并断言,与仓库所有模块的 `go 1.27.2` 对齐。
+# 只钉大版本会在无人察觉时换掉编译器,导致同一 commit 两次构建的二进制不同。
+# 升级 Go 时 FROM 的 tag/digest 与下方断言一起改(2026-10-13 核对多平台 index digest)。
+FROM golang:1.27.2-alpine3.24@sha256:f92b6ef800e499660581efdabdf25d9d817a9d124eaf900924f0504e7e27e12d AS builder
 
 # SERVICE / ENTRY 不在阶段开头声明:ARG 一旦声明,其后每个 RUN 都隐式带着它参与缓存计算,
 # 放这里会让下面与服务无关的 GOVERSION 断言、apk add git 两层按服务各缓存一份(N 个服务首次构建各联网装一遍)。
@@ -80,8 +80,8 @@ ARG GOPROXY=https://proxy.golang.org|direct
 ENV CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOTOOLCHAIN=local GOPROXY=${GOPROXY}
 
 RUN actual="$(go env GOVERSION)" \
-    && test "$actual" = "go1.26.5" \
-    || (echo "ERROR: Dockerfile.go-svc 要求 go1.26.5,实际 ${actual}" && exit 1)
+    && test "$actual" = "go1.27.2" \
+    || (echo "ERROR: Dockerfile.go-svc 要求 go1.27.2,实际 ${actual}" && exit 1)
 
 # git 只给 GOPROXY 的 direct 回退用(按 VCS 直接拉模块)。
 RUN apk add --no-cache git

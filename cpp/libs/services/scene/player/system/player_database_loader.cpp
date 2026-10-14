@@ -37,7 +37,7 @@ PlayerReviveOutcome ApplyClassInitialAttributesOrReviveFromTable(
 	BaseAttributesComp& attrs, uint64_t maxHealth = 0, uint64_t maxMana = 0) {
 	const auto& classRows = ClassTableManager::Instance().FindAll().data();
 	if (classRows.size() == 0) {
-		LOG_ERROR << "[PlayerInit] ClassTable 为空,无法初始化/复活玩家基础属性";
+		LOG_ERROR << "[PlayerInit] ClassTable is empty;cannot initialize/revive player base attributes";
 		return PlayerReviveOutcome::kUntouched;
 	}
 	const auto outcome =
@@ -46,7 +46,7 @@ PlayerReviveOutcome ApplyClassInitialAttributesOrReviveFromTable(
 		return outcome;
 	}
 	LOG_INFO << "[PlayerInit] "
-			 << (outcome == PlayerReviveOutcome::kInitialized ? "新号初始化属性" : "阵亡复活回满")
+			 << (outcome == PlayerReviveOutcome::kInitialized ? "New player attribute initialization" : "Full recovery after revival")
 			 << ": health=" << attrs.health() << " strength=" << attrs.strength()
 			 << " speed=" << attrs.speed();
 	return outcome;
@@ -69,7 +69,7 @@ void TopUpToDerivedMax(entt::entity player, BaseAttributesComp& attrs) {
 	}
 	ActorAttributeCalculatorSystem::MarkAttributeForUpdate(player, kHealth);
 	ActorAttributeCalculatorSystem::MarkAttributeForUpdate(player, kEnergy);
-	LOG_INFO << "[PlayerInit] 按二级属性上限回满: health=" << attrs.health()
+	LOG_INFO << "[PlayerInit] Restored to secondary attribute limits: health=" << attrs.health()
 			 << " mana=" << attrs.mana();
 }
 }  // namespace
@@ -96,7 +96,7 @@ void PlayerDatabaseMessageFieldsUnmarshal(entt::entity player, const player_data
 	// 不压的话总点数 / 面板 / 战斗快照 / 怪物参考等级都按超限等级算;压完后下面 InitializeOnLoad 的
 	// "已分配 > 总量"收敛会整池返还多出的点,宝宝等级(跟随主人)也随之回到上限内。
 	if (const auto clamped = playerlevel::ClampToMaxLevel(levelComp.level()); clamped != levelComp.level()) {
-		LOG_WARN << "[PlayerInit] 存档等级超上限,压回上限: player_id=" << message.player_id()
+		LOG_WARN << "[PlayerInit] Saved level exceeds limit;clamped to limit: player_id=" << message.player_id()
 				 << " level=" << levelComp.level() << " -> " << clamped;
 		levelComp.set_level(clamped);
 	}
@@ -113,7 +113,7 @@ void PlayerDatabaseMessageFieldsUnmarshal(entt::entity player, const player_data
 	// 不阻断登录 —— 账本坏掉不该让玩家进不去游戏,但绝不能拿坏账本继续记账。
 	auto& ledger = tlsEcs.actorRegistry.emplace<PlayerAssetOpLedgerComp>(player, message.asset_op_ledger());
 	if (auto err = ValidateAssetOpLedger(ledger); !err.empty()) {
-		LOG_ERROR << "[AssetOp] 账本损坏,资产通道对该玩家关闭 player_id=" << message.player_id()
+		LOG_ERROR << "[AssetOp] Ledger corrupted;asset operations disabled for player player_id=" << message.player_id()
 				  << " reason=" << err;
 		tlsEcs.actorRegistry.emplace_or_replace<PlayerAssetOpLedgerInvalidComp>(player);
 	}

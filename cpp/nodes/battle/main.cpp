@@ -194,7 +194,7 @@ namespace
                 const auto monsterRows = MonsterTableManager::Instance().FindAll().data_size();
                 const auto itemRows = ItemTableManager::Instance().FindAll().data_size();
 
-                LOG_INFO << "battle 战斗表加载完成: skill=" << skillRows
+                LOG_INFO << "battle combat tables loaded: skill=" << skillRows
                          << " buff=" << buffRows
                          << " cooldown=" << cooldownRows
                          << " skill_permission=" << permissionRows
@@ -205,17 +205,17 @@ namespace
                 // Item 空表只影响"战斗内用药",不影响开局,单独告警不混进致命项
                 if (itemRows == 0)
                 {
-                    LOG_WARN << "battle Item 表为空:战斗内道具一律不可用(ITEM 行动会被拒)";
+                    LOG_WARN << "battle Item table is empty:all battle items unavailable(ITEM actions will be rejected)";
                 }
 
                 if (skillRows == 0 || buffRows == 0 || dungeonRows == 0 || monsterRows == 0)
                 {
-                    LOG_ERROR << "battle 关键战斗表为空,回合引擎将无法开局,请检查表数据目录";
+                    LOG_ERROR << "battle critical combat tables are empty;turn engine cannot create battles;check table data directory";
                 }
 
                 // 战斗配表指纹:表加载完成后算一次并缓存,CreateBattle 与 match/scene 带来的
                 // 指纹比对(设计文档 cross-zone-matchmaking.md §10);启动日志里打出来便于跨节点排障
-                LOG_INFO << "battle 战斗配表指纹: table_fingerprint="
+                LOG_INFO << "battle combat table fingerprint: table_fingerprint="
                          << turnbattle::BattleTableFingerprint::Refresh();
             }
         };
@@ -296,7 +296,7 @@ int main(int argc, char *argv[])
                 const auto &info = n.GetNodeInfo();
                 const bool required = n.ClientEndpointRequired();
                 const auto clientFacing = client_endpoint::ClientFacing(info, required);
-                LOG_INFO << "battle 客户端直连面已就绪: endpoint=" << EndpointForLog(info.endpoint())
+                LOG_INFO << "battle client direct connection endpoint ready: endpoint=" << EndpointForLog(info.endpoint())
                          << " client_endpoint=" << EndpointForLog(info.client_endpoint())
                          << " client_facing=" << (clientFacing ? EndpointForLog(*clientFacing) : std::string("(none)"))
                          << " client_endpoint_required=" << (required ? 1 : 0)
@@ -306,7 +306,7 @@ int main(int argc, char *argv[])
                 {
                     // Node 构造期已校验过 CLIENT_ENDPOINT_*,正常走不到;真走到了每张票都会签发失败
                     // (CreateBattle / AddObserver / IssueBattleTicket 一律 kServiceUnavailable),必须响。
-                    LOG_ERROR << "battle 没有客户端可达地址:所有票据签发都会被拒(fail-closed)";
+                    LOG_ERROR << "battle has no client-reachable address:all ticket issuance will be rejected(fail-closed)";
                 }
 
                 // 直连面装好之后才起 Agones lifecycle:POST /ready 意味着可分配,分配出去的房间
@@ -323,7 +323,7 @@ int main(int argc, char *argv[])
                 // 由闸拒绝(UNAVAILABLE battle_not_allocatable,match 换节点)。开闸之后才走正常的许可判定。
                 if (!context.battleNodeService->OpenAdmission())
                 {
-                    LOG_WARN << "battle 启动完成时停机已开始,建房准入闸保持关闭";
+                    LOG_WARN << "battle shutdown started before startup completed;room admission gate remains closed";
                 } });
 
             // 停机收尾,顺序固定:

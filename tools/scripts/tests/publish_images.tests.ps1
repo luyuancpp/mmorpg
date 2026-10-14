@@ -27,7 +27,7 @@ $ErrorActionPreference = 'Stop'
 . (Join-Path (Get-ToolsScriptsDir) 'lib' 'artifacts_lib.ps1')
 
 Write-Host ""
-Write-Host "=== publish_images.ps1 契约测试 ==="
+Write-Host "=== publish_images.ps1 contract tests ==="
 
 $PublishScript = Join-Path (Get-ToolsScriptsDir) 'publish_images.ps1'
 $script:TestRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("publish-images-tests-" + [guid]::NewGuid().ToString('N'))
@@ -510,7 +510,7 @@ try {
 
         $run = Invoke-Publish -Fixture $fx -Params @{ SkipBuild = $true; SkipIfExists = $true }
         Assert-Equal -Expected 0 -Actual $run.ExitCode -Because "CI 幂等重跑必须静默成功。输出: $($run.Output)"
-        Assert-Match -Text $run.Output -Pattern '版本已发布,跳过' -Because "要打印跳过原因"
+        Assert-Match -Text $run.Output -Pattern 'Version already published; skipping' -Because "要打印跳过原因"
         Assert-Equal -Expected $callsBefore -Actual @(Get-CallSequence -Fixture $fx).Count -Because "已发布时先查先退,不白跑 list-refs / 构建"
     }
 

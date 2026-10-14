@@ -1065,7 +1065,7 @@ func IsNodeAlive(svcCtx *svc.ServiceContext, zoneId uint32, nodeId string) bool 
 		return false
 	}
 	// 状态未知:绝不能据此触发改派 / 销毁 / 清理。
-	logx.Errorf("[LoadReporter] IsNodeAlive 状态未知,按存活处理以免误改派: zone=%d node=%s err=%v",
+	logx.Errorf("[LoadReporter] IsNodeAlive state unknown; treating as alive to avoid incorrect reassignment: zone=%d node=%s err=%v",
 		zoneId, nodeId, err)
 	return true
 }

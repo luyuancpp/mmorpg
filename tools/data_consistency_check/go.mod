@@ -1,6 +1,6 @@
 module data_consistency_check
 
-go 1.24.5
+go 1.27.2
 
 require (
 	github.com/go-sql-driver/mysql v1.9.2

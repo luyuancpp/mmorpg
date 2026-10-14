@@ -180,7 +180,7 @@ func (s *Service) pushOnlineRefresh(ctx context.Context, caller, teamId uint64, 
 		return
 	}
 	if err != nil {
-		logx.WithContext(ctx).Errorf("[team] 在线态刷新读成员失败 team=%d: %v", teamId, err)
+		logx.WithContext(ctx).Errorf("[team] Online state refresh failed to read members team=%d: %v", teamId, err)
 		metrics.ObserveTeamPush(pushKindSnapshot, pushOutcomeError)
 		return
 	}
@@ -215,7 +215,7 @@ func (s *Service) push(ctx context.Context, playerId uint64, messageId uint32, k
 		metrics.ObserveTeamPush(kind, pushOutcomeOffline)
 	default:
 		metrics.ObserveTeamPush(kind, pushOutcomeError)
-		logx.WithContext(ctx).Errorf("[team] 推送失败 kind=%s player=%d message_id=%d: %v", kind, playerId, messageId, err)
+		logx.WithContext(ctx).Errorf("[team] Push failed kind=%s player=%d message_id=%d: %v", kind, playerId, messageId, err)
 	}
 }
 
@@ -226,7 +226,7 @@ func (s *Service) refreshScene(ctx context.Context, playerId uint64) {
 	loc, err := playercontract.LoadLocation(ctx, s.svcCtx, playerId)
 	if err != nil {
 		metrics.ObserveTeamSceneRefresh(sceneOutcomeError)
-		log.Errorf("[team] scene 刷新读位置失败 player=%d: %v", playerId, err)
+		log.Errorf("[team] Scene refresh failed to read location player=%d: %v", playerId, err)
 		return
 	}
 	if loc == nil {
@@ -235,25 +235,25 @@ func (s *Service) refreshScene(ctx context.Context, playerId uint64) {
 	}
 	if s.svcCtx.SceneNodes == nil {
 		metrics.ObserveTeamSceneRefresh(sceneOutcomeNoNode)
-		log.Errorf("[team] scene 节点发现未初始化,放弃刷新 player=%d", playerId)
+		log.Errorf("[team] Scene node discovery uninitialized; abandoning refresh player=%d", playerId)
 		return
 	}
 	entry, err := s.svcCtx.SceneNodes.EntryOf(loc.GetZoneId(), loc.GetNodeId())
 	if err != nil {
 		metrics.ObserveTeamSceneRefresh(sceneOutcomeNoNode)
-		log.Infof("[team] scene 节点不可定位,放弃刷新 player=%d: %v", playerId, err)
+		log.Infof("[team] Could not locate scene node; abandoning refresh player=%d: %v", playerId, err)
 		return
 	}
 	if entry.NodeUuid == "" {
 		metrics.ObserveTeamSceneRefresh(sceneOutcomeEmptyUuid)
-		log.Errorf("[team] scene 节点 uuid 为空,按防僵尸约束不发 player=%d zone=%d node=%d",
+		log.Errorf("[team] Scene node uuid empty; skipping send under zombie-prevention contract player=%d zone=%d node=%d",
 			playerId, entry.ZoneId, entry.NodeId)
 		return
 	}
 	payload, err := proto.Marshal(&event.PlayerTeamRefreshEvent{PlayerId: playerId})
 	if err != nil {
 		metrics.ObserveTeamSceneRefresh(sceneOutcomeError)
-		log.Errorf("[team] 序列化 PlayerTeamRefreshEvent 失败 player=%d: %v", playerId, err)
+		log.Errorf("[team] Failed to serialize PlayerTeamRefreshEvent player=%d: %v", playerId, err)
 		return
 	}
 	cmd := &kafkapb.SceneCommand{
@@ -266,7 +266,7 @@ func (s *Service) refreshScene(ctx context.Context, playerId uint64) {
 	}
 	if err := sceneRefreshFn(ctx, s.svcCtx, cmd); err != nil {
 		metrics.ObserveTeamSceneRefresh(sceneOutcomeError)
-		log.Errorf("[team] scene 刷新信号写 Kafka 失败 player=%d node=%d: %v", playerId, entry.NodeId, err)
+		log.Errorf("[team] Failed to write scene refresh signal to Kafka player=%d node=%d: %v", playerId, entry.NodeId, err)
 		return
 	}
 	metrics.ObserveTeamSceneRefresh(sceneOutcomeOK)

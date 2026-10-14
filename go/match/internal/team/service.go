@@ -126,7 +126,7 @@ func (s *Service) CreateTeam(ctx context.Context, caller uint64, _ *teampb.Creat
 	}
 	teamId, err := s.newTeamId()
 	if err != nil {
-		logx.WithContext(ctx).Errorf("[team] CreateTeam 发号失败 player=%d: %v", caller, err)
+		logx.WithContext(ctx).Errorf("[team] CreateTeam failed to allocate id player=%d: %v", caller, err)
 		return s.snapshotResponse(ctx, caller, ErrInternal, 0, self)
 	}
 	resp, _ := s.runMutate(ctx, caller, BindCreate(caller, teamId), CreateOp(caller, teamId, zone),
@@ -148,7 +148,7 @@ func (s *Service) GetMyTeam(ctx context.Context, caller uint64, in *teampb.GetMy
 		mutateSpec{method: methodGetMyTeam, unboundIsSuccess: true})
 	if res != nil && res.Outcome == OutcomeUnchanged && NeedsTouch(&res.Snapshot) {
 		if _, err := s.store.Touch(ctx, &res.Snapshot); err != nil {
-			logx.WithContext(ctx).Errorf("[team] 续期失败 team=%d: %v", res.Snapshot.TeamId, err)
+			logx.WithContext(ctx).Errorf("[team] Renewal failed team=%d: %v", res.Snapshot.TeamId, err)
 		}
 	}
 	if in.GetNotifyOnline() {
@@ -209,7 +209,7 @@ func (s *Service) InviteToTeam(ctx context.Context, caller uint64, in *teampb.In
 	}
 	session, err := playercontract.LoadSession(ctx, s.svcCtx, target)
 	if err != nil {
-		logx.WithContext(ctx).Errorf("[team] InviteToTeam 读目标会话失败 target=%d: %v", target, err)
+		logx.WithContext(ctx).Errorf("[team] InviteToTeam failed to read target session target=%d: %v", target, err)
 		return s.respond(ctx, caller, ErrInternal, 0)
 	}
 	if !playercontract.IsSessionOnline(session) {
@@ -256,7 +256,7 @@ func (s *Service) ListMyInvites(ctx context.Context, caller uint64, _ *teampb.Li
 	log := logx.WithContext(ctx)
 	nowMs, entries, err := s.store.ListInvites(ctx, caller)
 	if err != nil {
-		log.Errorf("[team] ListMyInvites 读反查索引失败 player=%d: %v", caller, err)
+		log.Errorf("[team] ListMyInvites failed to read reverse index player=%d: %v", caller, err)
 		return &teampb.ListMyInvitesResponse{ErrorMessage: tipOf(ErrInternal, 0)}
 	}
 	type liveInvite struct {
@@ -268,7 +268,7 @@ func (s *Service) ListMyInvites(ctx context.Context, caller uint64, _ *teampb.Li
 	for _, entry := range entries {
 		snap, err := s.store.read(ctx, caller, entry.TeamId)
 		if err != nil {
-			log.Errorf("[team] ListMyInvites 读队伍失败 player=%d team=%d: %v", caller, entry.TeamId, err)
+			log.Errorf("[team] ListMyInvites failed to read team player=%d team=%d: %v", caller, entry.TeamId, err)
 			return &teampb.ListMyInvitesResponse{ErrorMessage: tipOf(ErrInternal, 0)}
 		}
 		if inv := findInvite(PruneExpired(snap.Record, snap.NowMs), caller); inv != nil {
@@ -281,7 +281,7 @@ func (s *Service) ListMyInvites(ctx context.Context, caller uint64, _ *teampb.Li
 			hook(caller, entry.TeamId)
 		}
 		if _, err := s.store.PruneInvite(ctx, caller, entry.TeamId, entry.Score); err != nil {
-			log.Errorf("[team] ListMyInvites 清理失效索引失败 player=%d team=%d: %v", caller, entry.TeamId, err)
+			log.Errorf("[team] ListMyInvites failed to clean stale index entry player=%d team=%d: %v", caller, entry.TeamId, err)
 		}
 	}
 	dc := s.presence.loadDisplay(ctx, roster)
@@ -343,7 +343,7 @@ func (s *Service) DisbandTeam(ctx context.Context, caller uint64, in *teampb.Dis
 func (s *Service) StartTeamMatch(ctx context.Context, caller uint64, in *teampb.StartTeamMatchRequest) *teampb.TeamResponse {
 	log := logx.WithContext(ctx)
 	if s.starter == nil {
-		log.Errorf("[team] StartTeamMatch 未接线(BattleStarter 为 nil) player=%d", caller)
+		log.Errorf("[team] StartTeamMatch not wired (BattleStarter is nil) player=%d", caller)
 		return s.matchReject(ctx, caller, ErrInternal, 0, nil)
 	}
 	configId := in.GetBattleConfigId()
@@ -351,7 +351,7 @@ func (s *Service) StartTeamMatch(ctx context.Context, caller uint64, in *teampb.
 	for round := 0; round < matchStartRounds && ctx.Err() == nil; round++ {
 		res, err := s.store.Mutate(ctx, bind, RefreshOp(caller))
 		if err != nil {
-			log.Errorf("[team] StartTeamMatch 存储故障 player=%d team=%d: %v", caller, bind.TeamId(), err)
+			log.Errorf("[team] StartTeamMatch storage failure player=%d team=%d: %v", caller, bind.TeamId(), err)
 			return s.matchReject(ctx, caller, ErrInternal, 0, nil)
 		}
 		s.mutateEffects(caller, methodStartTeamMatch, res)
@@ -387,7 +387,7 @@ func (s *Service) StartTeamMatch(ctx context.Context, caller uint64, in *teampb.
 		expireAtMs := snap.NowMs + uint64(lockTTL.Milliseconds())
 		lock, err := s.store.CommitMatchLock(ctx, &snap, caller, token, roster, expireAtMs)
 		if err != nil {
-			log.Errorf("[team] StartTeamMatch 开战锁提交故障 player=%d team=%d: %v", caller, snap.TeamId, err)
+			log.Errorf("[team] StartTeamMatch battle start lock commit failure player=%d team=%d: %v", caller, snap.TeamId, err)
 			// 结果未知:EVAL 可能已在 Redis 执行、只是回复超时 / 断连。按 token 后台清锁(锁没写入时只读不写不推),
 			// 否则锁白挂到自然过期,期间全队的名单操作都回 TeamInMatch(§E.3)。
 			s.releaseLockInBackground(snap.TeamId, token, lockTTL)
@@ -423,7 +423,7 @@ func (s *Service) preflightMatch(ctx context.Context, roster []uint64) (map[uint
 	for _, pid := range roster {
 		session, err := playercontract.LoadSession(ctx, s.svcCtx, pid)
 		if err != nil {
-			log.Errorf("[team] 开战预检读会话失败 player=%d: %v", pid, err)
+			log.Errorf("[team] Battle start precheck failed to read session player=%d: %v", pid, err)
 			return nil, ErrInternal, 0
 		}
 		if !playercontract.IsSessionOnline(session) {
@@ -431,14 +431,14 @@ func (s *Service) preflightMatch(ctx context.Context, roster []uint64) (map[uint
 		}
 		locked, err := playercontract.IsBattleLocked(ctx, s.svcCtx, pid)
 		if err != nil {
-			log.Errorf("[team] 开战预检查战斗锁失败,按战斗中处理 player=%d: %v", pid, err)
+			log.Errorf("[team] Battle start precheck failed to check battle lock; treating player as in battle player=%d: %v", pid, err)
 		}
 		if locked {
 			return nil, ErrMemberInBattle, pid
 		}
 		loc, err := playercontract.LoadLocation(ctx, s.svcCtx, pid)
 		if err != nil {
-			log.Errorf("[team] 开战预检读位置失败 player=%d: %v", pid, err)
+			log.Errorf("[team] Battle start precheck failed to read location player=%d: %v", pid, err)
 			return nil, ErrInternal, 0
 		}
 		if loc == nil {
@@ -449,12 +449,12 @@ func (s *Service) preflightMatch(ctx context.Context, roster []uint64) (map[uint
 		// 持有该玩家,gather 的 preparePlayer 必定定位不到对端(EndpointOf 查不到空 node)。
 		// 在这里按"没准备好"拒绝,别让整队走完建锁 / 建票再死在 gather 上。
 		if loc.GetNodeId() == "" {
-			log.Infof("[team] 开战预检:成员正在跨 zone 交接(等待落点),按未准备好拒绝 player=%d zone=%d", pid, loc.GetZoneId())
+			log.Infof("[team] Battle start precheck: member undergoing cross-zone handoff (awaiting destination); rejecting as not ready player=%d zone=%d", pid, loc.GetZoneId())
 			return nil, ErrMemberNotReady, pid
 		}
 		blocked, err := s.starter.TicketBlocked(ctx, pid)
 		if err != nil {
-			log.Errorf("[team] 开战预检读票据失败 player=%d: %v", pid, err)
+			log.Errorf("[team] Battle start precheck failed to read ticket player=%d: %v", pid, err)
 			return nil, ErrInternal, 0
 		}
 		if blocked {
@@ -476,7 +476,7 @@ func (s *Service) launchMatch(ctx context.Context, caller uint64, configId uint3
 	tickets, failed := s.starter.CreateMatchedTickets(ctx, configId, teamId, roster, zones)
 	if failed != 0 {
 		metrics.ObserveTeamMatch(matchOutcomeTicketFailed)
-		log.Infof("[team] 整队开战建票失败,释放开战锁 team=%d player=%d", teamId, failed)
+		log.Infof("[team] Team battle ticket creation failed; releasing battle start lock team=%d player=%d", teamId, failed)
 		// 补偿不继承请求 ctx(§A.3 第 7 条):后台清锁,结果推全员(含发起人)。回包里的视图可能仍是 STARTING,
 		// 客户端按 (epoch, version) 排序,随后到达的 MATCH_FAILED 视图版本更新。
 		tip := tipOf(ErrMemberNotReady, failed) // 推给队员的 MATCH_FAILED 带同一个原因(§E.1 第 7 步、§H.2)
@@ -484,7 +484,7 @@ func (s *Service) launchMatch(ctx context.Context, caller uint64, configId uint3
 		return s.respond(ctx, caller, ErrMemberNotReady, failed)
 	}
 	resp := s.commitResponse(ctx, caller, lock)
-	log.Infof("[team] 整队开战已受理 team=%d config=%d roster=%v", teamId, configId, roster)
+	log.Infof("[team] Team battle start accepted team=%d config=%d roster=%v", teamId, configId, roster)
 	asyncFn("match.gather.pve_team", func() {
 		ok := s.starter.RunGather(configId, roster, tickets)
 		outcome := matchOutcomeGatherFailed
@@ -517,10 +517,10 @@ func (s *Service) finishMatch(teamId uint64, token string, lockTTL time.Duration
 		return
 	}
 	if res.Stop == EndMatchDeadline {
-		logx.Errorf("[team] EndMatch 截止仍未清锁(靠锁自然过期) team=%d conflicts=%d last_err=%v",
+		logx.Errorf("[team] EndMatch deadline reached with lock uncleared (lock will expire naturally) team=%d conflicts=%d last_err=%v",
 			teamId, res.Conflicts, res.LastErr)
 	} else {
-		logx.Infof("[team] EndMatch 未写入 team=%d stop=%d conflicts=%d", teamId, res.Stop, res.Conflicts)
+		logx.Infof("[team] EndMatch not written team=%d stop=%d conflicts=%d", teamId, res.Stop, res.Conflicts)
 	}
 	reason := teampb.TeamChangeReason_TEAM_CHANGE_REASON_MATCH_FAILED
 	if ok {
@@ -538,12 +538,12 @@ func (s *Service) releaseLockInBackground(teamId uint64, token string, lockTTL t
 		res := s.store.EndMatch(teamId, token, false, lockTTL)
 		commits := repairCommits(res.Repairs)
 		if res.Commit != nil {
-			logx.Infof("[team] 结果未知的开战锁已按 token 清除 team=%d", teamId)
+			logx.Infof("[team] Battle start lock with unknown outcome cleared by token team=%d", teamId)
 			commits = append(commits, res.Commit)
 		}
 		s.publish(0, commits, nil)
 		if res.Stop == EndMatchDeadline {
-			logx.Errorf("[team] 开战锁补偿截止仍未清锁(靠锁自然过期) team=%d conflicts=%d last_err=%v",
+			logx.Errorf("[team] Battle start lock compensation deadline reached with lock uncleared (lock will expire naturally) team=%d conflicts=%d last_err=%v",
 				teamId, res.Conflicts, res.LastErr)
 		}
 	})
@@ -555,7 +555,7 @@ func (s *Service) releaseLockInBackground(teamId uint64, token string, lockTTL t
 func (s *Service) settleUnconfirmedLock(ctx context.Context, teamId uint64, token string, lockTTL time.Duration) {
 	stop, pinned, err := s.store.ReleaseMatchLockOnce(ctx, teamId, token)
 	if err != nil {
-		logx.WithContext(ctx).Errorf("[team] 确认未提交的开战锁失败,转后台清锁 team=%d: %v", teamId, err)
+		logx.WithContext(ctx).Errorf("[team] Failed to confirm battle start lock was not committed; clearing lock in background team=%d: %v", teamId, err)
 		s.releaseLockInBackground(teamId, token, lockTTL)
 		return
 	}
@@ -564,7 +564,7 @@ func (s *Service) settleUnconfirmedLock(ctx context.Context, teamId uint64, toke
 	}
 	commits := repairCommits(pinned.Repairs)
 	if pinned.Commit != nil {
-		logx.WithContext(ctx).Infof("[team] 开战锁 EVAL 被重发且已落锁,已按 token 清除 team=%d", teamId)
+		logx.WithContext(ctx).Infof("[team] Battle start lock EVAL resent and lock committed; cleared by token team=%d", teamId)
 		commits = append(commits, pinned.Commit)
 	}
 	s.publish(0, commits, nil)
@@ -584,7 +584,7 @@ func (s *Service) pushMatchView(teamId uint64, roster []uint64, reason teampb.Te
 		return
 	}
 	if err != nil {
-		logx.WithContext(ctx).Errorf("[team] 开战结果推送读成员失败 team=%d: %v", teamId, err)
+		logx.WithContext(ctx).Errorf("[team] Battle start result push failed to read members team=%d: %v", teamId, err)
 		metrics.ObserveTeamPush(pushKindSnapshot, pushOutcomeError)
 		return
 	}
@@ -625,7 +625,7 @@ type mutateSpec struct {
 func (s *Service) runMutate(ctx context.Context, caller uint64, bind Binding, op Op, spec mutateSpec) (*teampb.TeamResponse, *MutateResult) {
 	res, err := s.store.Mutate(ctx, bind, op)
 	if err != nil {
-		logx.WithContext(ctx).Errorf("[team] %s 存储故障 player=%d team=%d: %v", spec.method, caller, bind.TeamId(), err)
+		logx.WithContext(ctx).Errorf("[team] %s storage failure player=%d team=%d: %v", spec.method, caller, bind.TeamId(), err)
 		return s.respond(ctx, caller, ErrInternal, 0), nil
 	}
 	// 副作用先于回包派发:修复提交无论最终结局如何都已落盘,必须照常推送、通知 scene。
@@ -758,7 +758,7 @@ func (s *Service) readFree(ctx context.Context, method string, playerId uint64) 
 		s.publish(0, nil, []uint64{playerId})
 	}
 	if err != nil {
-		logx.WithContext(ctx).Errorf("[team] %s 自由读失败 player=%d: %v", method, playerId, err)
+		logx.WithContext(ctx).Errorf("[team] %s unlocked read failed player=%d: %v", method, playerId, err)
 	}
 	return snap, err
 }
@@ -774,17 +774,17 @@ func readFailureCode(err error) uint32 {
 // homeZoneOf 查单个玩家 home zone,返回 (zone, tip);tip≠0 时 zone 无意义(§D.3 fail-closed)。
 func (s *Service) homeZoneOf(ctx context.Context, playerId uint64) (uint32, uint32) {
 	if s.homeZones == nil {
-		logx.WithContext(ctx).Errorf("[team] HomeZoneLookup 未注入,无法查询 player=%d", playerId)
+		logx.WithContext(ctx).Errorf("[team] HomeZoneLookup not injected; cannot query player=%d", playerId)
 		return 0, ErrInternal
 	}
 	zones, err := s.homeZones.HomeZones(ctx, []uint64{playerId})
 	if err != nil {
-		logx.WithContext(ctx).Errorf("[team] 查询 home zone 失败 player=%d: %v", playerId, err)
+		logx.WithContext(ctx).Errorf("[team] Failed to query home zone player=%d: %v", playerId, err)
 		return 0, ErrInternal
 	}
 	zone := zones[playerId]
 	if zone == 0 {
-		logx.WithContext(ctx).Infof("[team] 玩家没有 home zone 映射 player=%d", playerId)
+		logx.WithContext(ctx).Infof("[team] Player has no home zone mapping player=%d", playerId)
 		return 0, ErrHomeZoneUnknown
 	}
 	return zone, 0
@@ -808,7 +808,7 @@ func (s *Service) newTeamId() (uint64, error) {
 func (s *Service) pruneOwnInvite(ctx context.Context, caller, teamId uint64) {
 	_, entries, err := s.store.ListInvites(ctx, caller)
 	if err != nil {
-		logx.WithContext(ctx).Errorf("[team] 清理邀请反查项时读索引失败 player=%d team=%d: %v", caller, teamId, err)
+		logx.WithContext(ctx).Errorf("[team] Failed to read index while cleaning invitation reverse entry player=%d team=%d: %v", caller, teamId, err)
 		return
 	}
 	for _, entry := range entries {
@@ -816,7 +816,7 @@ func (s *Service) pruneOwnInvite(ctx context.Context, caller, teamId uint64) {
 			continue
 		}
 		if _, err := s.store.PruneInvite(ctx, caller, teamId, entry.Score); err != nil {
-			logx.WithContext(ctx).Errorf("[team] 清理邀请反查项失败 player=%d team=%d: %v", caller, teamId, err)
+			logx.WithContext(ctx).Errorf("[team] Failed to clean invitation reverse entry player=%d team=%d: %v", caller, teamId, err)
 		}
 	}
 }

@@ -189,7 +189,7 @@ function Initialize-LocalKafkaTopics($Contract, [string[]]$ComposeArguments) {
         if ($spec.Name -cin $existing) { Assert-LocalKafkaTopic $spec } else { $missing += $spec.Name }
     }
     if ($missing.Count -gt 0) {
-        Write-Host "  预建缺失 Kafka 主题：$($missing -join ', ')"
+        Write-Host "  Create missing Kafka topics: $($missing -join ', ')"
         $init = Invoke-Docker ($ComposeArguments + @(
             'run','--rm','--no-deps','--pull','never',
             '-e',"KAFKA_INIT_COMMAND_PARTITIONS=$($Contract.Partitions)",
@@ -201,12 +201,12 @@ function Initialize-LocalKafkaTopics($Contract, [string[]]$ComposeArguments) {
         if ($init.Code -ne 0) { throw "Kafka 正式主题预建失败，查看 $logDir/kafka-topic-init.log。" }
         foreach ($spec in $Contract.Topics) { Assert-LocalKafkaTopic $spec }
     }
-    Write-Host "  Kafka 契约已核对：命令 g$($Contract.Generation)、$($Contract.Partitions) 分区；审计 g$($Contract.AuditGeneration)。" -ForegroundColor Green
+    Write-Host "  Kafka contract verified: commands g$($Contract.Generation), $($Contract.Partitions) partitions; audit g$($Contract.AuditGeneration)." -ForegroundColor Green
 }
 function Wait-Ready([string]$Label, [scriptblock]$Probe, [int]$Seconds = 120) {
     $timer = [Diagnostics.Stopwatch]::StartNew()
     while ($true) {
-        if (& $Probe) { Write-Host "  已就绪：$Label" -ForegroundColor Green; return }
+        if (& $Probe) { Write-Host "  Ready: $Label" -ForegroundColor Green; return }
         if ($timer.Elapsed.TotalSeconds -ge $Seconds) { throw "$Label 在 ${Seconds} 秒内未就绪。日志：$logDir" }
         Start-Sleep -Seconds 2
     }
@@ -229,7 +229,7 @@ function Save-GatewayPid([string]$JarPath) {
         return
     }
     Remove-Item -LiteralPath $pidPath -ErrorAction SilentlyContinue
-    Write-Warning '未能确认监听 8081 的是本仓网关 JVM，本次没有写入 run/pids/gateway_node.pid。'
+    Write-Warning 'Could not confirm that port 8081 belongs to this repository''s gateway JVM; run/pids/gateway_node.pid was not written.'
 }
 function Get-MatchingProcess([int]$ProcessId, [string[]]$Paths) {
     $candidate = Get-Process -Id $ProcessId -ErrorAction SilentlyContinue
@@ -358,7 +358,7 @@ try {
     New-Item -ItemType Directory -Force -Path $logDir,(Join-Path $serverRoot 'run/pids') | Out-Null
     Start-Transcript -LiteralPath (Join-Path $logDir 'launcher.log') | Out-Null
     $transcribing = $true
-    Write-Step '1/6 检查本机游戏运行环境'
+    Write-Step '1/6 Check the local game runtime environment'
     . (Join-Path $PSScriptRoot 'lib/release_common.ps1')
     $kafkaContract = Get-LocalKafkaContract
     $script:docker = Find-Program 'docker.exe' @((Join-Path $env:LOCALAPPDATA 'Programs/DockerDesktop/resources/bin/docker.exe'),(Join-Path $env:ProgramFiles 'Docker/Docker/resources/bin/docker.exe'))
@@ -372,7 +372,7 @@ try {
     foreach ($service in $services) {
         if (-not (Test-Path -LiteralPath (Join-Path $serverRoot "bin/go_services/$service.exe")) -and -not (Test-Path -LiteralPath (Join-Path $serverRoot "go/$service/$service.exe"))) {
             if ($service -in $optionalServices) {
-                Write-Warning "缺少 $service.exe，本次跳过 $service（对应请求会回「服务不可用」），其余服务照常启动；构建后重新运行即可。"
+                Write-Warning "Missing $service.exe; skipping $service (its requests will return service unavailable). Other services will start normally; build it and rerun this script."
                 $skippedServices += $service
                 continue
             }
@@ -395,9 +395,9 @@ try {
         $passwordMatch = $null
     }
     if ($CheckOnly) {
-        Write-Host '启动文件与运行环境检查通过；未启动服务。' -ForegroundColor Green
+        Write-Host 'Startup files and runtime environment checks passed; no services started.' -ForegroundColor Green
     } else {
-        Write-Step '2/6 启动 Docker 和数据库依赖（保留已有数据）'
+        Write-Step '2/6 Start Docker and database dependencies (preserve existing data)'
         try { $engine = Invoke-Docker @('info','--format','{{.OSType}}') 15 } catch { $engine = @{ Code = -1 } }
         if ($engine.Code -ne 0) {
             if (-not (Get-Process -Name 'Docker Desktop','com.docker.backend' -ErrorAction SilentlyContinue)) {
@@ -409,7 +409,7 @@ try {
                     $staleSockets = @(Get-ChildItem -LiteralPath $runPath -Force | Where-Object { $_.Name -in @('dockerInference','dockerEthernetVfkit','userAnalyticsOtlpHttp.sock') })
                     if ($staleSockets.Count -gt 0) {
                         Rename-Item -LiteralPath $runPath -NewName "run-before-game-$stamp"
-                        Write-Host '  已备份 Docker 遗留通信目录。'
+                        Write-Host '  Backed up the legacy Docker communication directory.'
                     }
                 }
                 # 失效的 socket 重解析点可能无法直接重命名；只备份其独立通信目录。
@@ -435,12 +435,12 @@ try {
                             throw 'Docker 已在运行，已中止通信目录备份，请勿并行启动。'
                         }
                         Rename-Item -LiteralPath $socketRoot -NewName $socketBackupName
-                        Write-Host '  已备份 Docker 遗留 socket 通信目录。'
+                        Write-Host '  Backed up the legacy Docker socket communication directory.'
                     }
                 }
                 Start-Process -FilePath $desktop -WindowStyle Hidden
             }
-            Wait-Ready 'Docker Linux 引擎' { try { (Invoke-Docker @('info','--format','{{.OSType}}') 15).Code -eq 0 } catch { $false } } 300
+            Wait-Ready 'Docker Linux engine' { try { (Invoke-Docker @('info','--format','{{.OSType}}') 15).Code -eq 0 } catch { $false } } 300
         }
         $compose = @('compose','-f',(Join-Path $serverRoot 'deploy/docker-compose.yml'),'--profile','redis-cluster')
         $infra = Invoke-Docker ($compose + @('up','-d','--no-recreate','--pull','never','etcd','redis','mysql','kafka','redis-cluster-0','redis-cluster-1','redis-cluster-2','redis-cluster-3','redis-cluster-4','redis-cluster-5','redis-cluster-init')) 180
@@ -460,12 +460,12 @@ try {
             try {
                 $tradeDbProbe = Invoke-Docker @('exec','mysql','sh','-c','mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" -N -B -e "SELECT SCHEMA_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = ''mmorpg_trade''"')
                 if ($tradeDbProbe.Code -ne 0) {
-                    $tradeDbProblem = "查询失败（docker exec 退出码 $($tradeDbProbe.Code)）"
+                    $tradeDbProblem = "Query failed (docker exec exit code $($tradeDbProbe.Code))"
                 } elseif ($tradeDbProbe.Out.Trim() -cne 'mmorpg_trade') {
-                    $tradeDbProblem = '库不存在，或 appuser 对它没有权限'
+                    $tradeDbProblem = 'Database missing or appuser lacks permission'
                 }
             } catch {
-                $tradeDbProblem = "查询异常：$($_.Exception.Message)"
+                $tradeDbProblem = "Query exception: $($_.Exception.Message)"
             }
             if ($tradeDbProblem) {
                 $skippedServices += 'trade'
@@ -473,10 +473,10 @@ try {
                 $tradeDbFixCommand = @'
   docker --context desktop-linux exec mysql sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" -e "CREATE DATABASE IF NOT EXISTS mmorpg_trade DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; GRANT ALL PRIVILEGES ON mmorpg_trade.* TO appuser@''%''; FLUSH PRIVILEGES;"'
 '@
-                Write-Warning "聚宝斋库 mmorpg_trade 未就绪（$tradeDbProblem），本次跳过 trade（聚宝斋请求会回「服务不可用」），其余服务照常启动。"
-                Write-Host '  已有数据的 MySQL 卷不会重跑 deploy/mysql-init，需要用 root 补建库并授权一次（在 PowerShell 7 中执行下面这行）：' -ForegroundColor Yellow
+                Write-Warning "Jubaozhai database mmorpg_trade is not ready ($tradeDbProblem); skipping trade (Jubaozhai requests will return service unavailable). Other services will start normally."
+                Write-Host '  Existing MySQL volumes do not rerun deploy/mysql-init. Use root to create the missing database and grant access once (run the following command in PowerShell 7):' -ForegroundColor Yellow
                 Write-Host $tradeDbFixCommand -ForegroundColor Yellow
-                Write-Host '  补建后重新运行本启动脚本即可。'
+                Write-Host '  Rerun this startup script after creating the database.'
             }
         }
         if ('guild' -notin $skippedServices) {
@@ -486,22 +486,22 @@ try {
             try {
                 $guildDbProbe = Invoke-Docker @('exec','mysql','sh','-c','mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" -N -B -e "SELECT SCHEMA_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = ''mmorpg_guild''"')
                 if ($guildDbProbe.Code -ne 0) {
-                    $guildDbProblem = "查询失败（docker exec 退出码 $($guildDbProbe.Code)）"
+                    $guildDbProblem = "Query failed (docker exec exit code $($guildDbProbe.Code))"
                 } elseif ($guildDbProbe.Out.Trim() -cne 'mmorpg_guild') {
-                    $guildDbProblem = '库不存在，或 appuser 对它没有权限'
+                    $guildDbProblem = 'Database missing or appuser lacks permission'
                 }
             } catch {
-                $guildDbProblem = "查询异常：$($_.Exception.Message)"
+                $guildDbProblem = "Query exception: $($_.Exception.Message)"
             }
             if ($guildDbProblem) {
                 $skippedServices += 'guild'
                 $guildDbFixCommand = @'
   docker --context desktop-linux exec mysql sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" -e "CREATE DATABASE IF NOT EXISTS mmorpg_guild DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; GRANT ALL PRIVILEGES ON mmorpg_guild.* TO appuser@''%''; FLUSH PRIVILEGES;"'
 '@
-                Write-Warning "帮会库 mmorpg_guild 未就绪（$guildDbProblem），本次跳过 guild（帮会请求会回「服务不可用」），其余服务照常启动。"
-                Write-Host '  已有数据的 MySQL 卷不会重跑 deploy/mysql-init，需要用 root 补建库并授权一次（在 PowerShell 7 中执行下面这行）：' -ForegroundColor Yellow
+                Write-Warning "Guild database mmorpg_guild is not ready ($guildDbProblem); skipping guild (guild requests will return service unavailable). Other services will start normally."
+                Write-Host '  Existing MySQL volumes do not rerun deploy/mysql-init. Use root to create the missing database and grant access once (run the following command in PowerShell 7):' -ForegroundColor Yellow
                 Write-Host $guildDbFixCommand -ForegroundColor Yellow
-                Write-Host '  补建后重新运行本启动脚本即可。'
+                Write-Host '  Rerun this startup script after creating the database.'
             }
         }
 
@@ -513,12 +513,12 @@ try {
             try {
                 $friendDbProbe = Invoke-Docker @('exec','mysql','sh','-c','mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" -N -B -e "SELECT SCHEMA_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = ''mmorpg_friend''"')
                 if ($friendDbProbe.Code -ne 0) {
-                    $friendDbProblem = "查询失败（docker exec 退出码 $($friendDbProbe.Code)）"
+                    $friendDbProblem = "Query failed (docker exec exit code $($friendDbProbe.Code))"
                 } elseif ($friendDbProbe.Out.Trim() -cne 'mmorpg_friend') {
-                    $friendDbProblem = '库不存在，或 appuser 对它没有权限'
+                    $friendDbProblem = 'Database missing or appuser lacks permission'
                 }
             } catch {
-                $friendDbProblem = "查询异常：$($_.Exception.Message)"
+                $friendDbProblem = "Query exception: $($_.Exception.Message)"
             }
             if ($friendDbProblem) {
                 $skippedServices += 'friend'
@@ -526,13 +526,13 @@ try {
                 $friendDbFixCommand = @'
   docker --context desktop-linux exec mysql sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" -e "CREATE DATABASE IF NOT EXISTS mmorpg_friend DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; GRANT ALL PRIVILEGES ON mmorpg_friend.* TO appuser@''%''; FLUSH PRIVILEGES;"'
 '@
-                Write-Warning "好友库 mmorpg_friend 未就绪（$friendDbProblem），本次跳过 friend（好友请求会回「服务不可用」），其余服务照常启动。"
-                Write-Host '  已有数据的 MySQL 卷不会重跑 deploy/mysql-init，需要用 root 补建库并授权一次（在 PowerShell 7 中执行下面这行）：' -ForegroundColor Yellow
+                Write-Warning "Friend database mmorpg_friend is not ready ($friendDbProblem); skipping friend (friend requests will return service unavailable). Other services will start normally."
+                Write-Host '  Existing MySQL volumes do not rerun deploy/mysql-init. Use root to create the missing database and grant access once (run the following command in PowerShell 7):' -ForegroundColor Yellow
                 Write-Host $friendDbFixCommand -ForegroundColor Yellow
-                Write-Host '  补建后重新运行本启动脚本即可。'
+                Write-Host '  Rerun this startup script after creating the database.'
             }
         }
-        Write-Step '3/6 启动存档服务'
+        Write-Step '3/6 Start persistence services'
         # 命令生产者(含 friend / guild 推送)由 dev_tools 子进程继承与 C++ 消费者相同的契约。
         $env:KAFKA_COMMAND_TOPIC_PARTITIONS = [string]$kafkaContract.Partitions
         $env:KAFKA_COMMAND_TOPIC_GENERATION = [string]$kafkaContract.Generation
@@ -547,7 +547,7 @@ try {
         }
         Initialize-LocalKafkaTopics $kafkaContract $compose
         Start-LocalGoServices @('db','data_service')
-        Write-Step '4/6 启动一区 Kafka 消费者和战斗服'
+        Write-Step '4/6 Start zone 1 Kafka consumers and battle server'
         $env:PATH = (Join-Path $serverRoot 'third_party/grpc/install_vs2026_dbg/bin') + ';' + $oldPath
         $env:RPC_PORT = $null
         # 路由模式翻转落在部署层（C++ 默认值不改）：gate 启动时读一次 GATE_CLIENT_RPC_ROUTER 并缓存，
@@ -571,11 +571,11 @@ try {
         # Resolve-InjectedSecret -MinLength 32，§4.43 第 29 项），部署链从不调用这里。
         # trade 侧另有开关：go/trade/etc/trade.yaml 的 AssetOp.Enabled 默认 false，注入了密钥也不会自动开。
         Initialize-AssetOpDevSecrets -RepoRoot $serverRoot | Out-Null
-        Write-Host "  GM 指令通道：GATE_RUN_MODE=$($env:GATE_RUN_MODE) / SCENE_RUN_MODE=$($env:SCENE_RUN_MODE)（非 dev/test 即关闭；生产默认 prod）"
+        Write-Host "  GM command channel: GATE_RUN_MODE=$($env:GATE_RUN_MODE) / SCENE_RUN_MODE=$($env:SCENE_RUN_MODE) (disabled outside dev/test; production defaults to prod)"
         if ($GateRouterMode -eq '1') {
-            Write-Host '  gate 路由模式：GATE_CLIENT_RPC_ROUTER=1（经 client_rpc_router 转发；战斗只走 battle 直连）'
+            Write-Host '  gate routing mode: GATE_CLIENT_RPC_ROUTER=1 (forward through client_rpc_router; battle uses direct battle connections only)'
         } else {
-            Write-Host '  gate 路由模式：GATE_CLIENT_RPC_ROUTER=0（直连模式：chat / guild / friend / trade 不可达；战斗仍走 battle 直连）' -ForegroundColor Yellow
+            Write-Host '  gate routing mode: GATE_CLIENT_RPC_ROUTER=0 (direct mode: chat / guild / friend / trade are unreachable; battle still uses direct battle connections)' -ForegroundColor Yellow
         }
         Invoke-Dev 'gate' @('-Command','cpp-node-start','-CppNodes','gate','-GateCount','1','-SceneCount','0','-BattleCount','0','-Zone','1','-NodeIp','loopback')
         Assert-NodeStartup 'gate'
@@ -588,7 +588,7 @@ try {
         Invoke-Dev 'battle' @('-Command','cpp-node-start','-CppNodes','battle','-GateCount','0','-SceneCount','0','-BattleCount','1','-Zone','1','-NodeIp','loopback')
         Assert-NodeStartup 'battle'
         Wait-LocalNode 'battle'
-        Write-Step '5/6 启动登录、匹配、聊天、帮会服务和游戏网关'
+        Write-Step '5/6 Start login, match, chat, guild services and game gateway'
         # chat / guild 与路由服同为 Tier 1（chat 只依赖 etcd + Redis；guild 另依赖 MySQL 与 data_service）；
         # 直连模式下它们也照样起，只是玩家不可达（见 -GateRouterMode）。
         # 第 1 步因缺 exe 跳过的可选服务不在这里启动，否则 Start-LocalGoServices 会因“没有启动记录”抛错。
@@ -605,24 +605,24 @@ try {
             New-Item -ItemType Directory -Path $javaTmp | Out-Null
             $gatewayProcess = Start-Process -FilePath $java -WorkingDirectory (Join-Path $serverRoot 'java/gateway_node') -ArgumentList @("`"-Djdk.net.unixdomain.tmpdir=$javaTmp`"",'-jar',"`"$($jar.FullName)`"") -WindowStyle Hidden -RedirectStandardOutput (Join-Path $logDir 'gateway.stdout.log') -RedirectStandardError (Join-Path $logDir 'gateway.stderr.log') -PassThru
         }
-        Wait-Ready '网关健康检查' { try { (Invoke-RestMethod "$gatewayUrl/actuator/health" -TimeoutSec 5).status -eq 'UP' } catch { $false } }
+        Wait-Ready 'Gateway health check' { try { (Invoke-RestMethod "$gatewayUrl/actuator/health" -TimeoutSec 5).status -eq 'UP' } catch { $false } }
         Save-GatewayPid $jar.FullName
-        Write-Step '6/6 检查区服入口'
-        Wait-Ready '一区开放' { try { @((Invoke-RestMethod "$gatewayUrl/api/server-list" -TimeoutSec 5).zones | Where-Object { $_.zone_id -eq 1 -and $_.status -eq 'OPEN' }).Count -gt 0 } catch { $false } }
-        Write-Host "`n服务器已启动。网关：$gatewayUrl，选择一区。" -ForegroundColor Green
+        Write-Step '6/6 Check zone entry'
+        Wait-Ready 'Zone 1 open' { try { @((Invoke-RestMethod "$gatewayUrl/api/server-list" -TimeoutSec 5).zones | Where-Object { $_.zone_id -eq 1 -and $_.status -eq 'OPEN' }).Count -gt 0 } catch { $false } }
+        Write-Host "`nServer started. Gateway: $gatewayUrl; select zone 1." -ForegroundColor Green
         if ($OpenClient) {
             $existingClient = Get-Process -Name 'mmorpg' -ErrorAction SilentlyContinue | Where-Object { $_.Path -eq $ClientPath }
             if (-not $existingClient) {
                 Start-Process -FilePath $ClientPath -WorkingDirectory (Split-Path -Parent $ClientPath) -ArgumentList @('-screen-fullscreen','0','-screen-width','1600','-screen-height','900','-gateway',$gatewayUrl) -WindowStyle Normal
             }
-            Write-Host '游戏窗口已打开。' -ForegroundColor Green
+            Write-Host 'Game window opened.' -ForegroundColor Green
         }
-        Write-Host '现在可以关闭启动窗口，服务器会继续在后台运行。'
+        Write-Host 'You can close the startup window now; the servers will keep running in the background.'
     }
 } catch {
     $resultCode = 1
-    Write-Host "`n启动未完成：$($_.Exception.Message)" -ForegroundColor Red
-    if (Test-Path -LiteralPath $logDir) { Write-Host "日志目录：$logDir" }
+    Write-Host "`nStartup incomplete: $($_.Exception.Message)" -ForegroundColor Red
+    if (Test-Path -LiteralPath $logDir) { Write-Host "Log directory: $logDir" }
 } finally {
     $env:PATH = $oldPath
     $env:LOGIN_DEV_PASSWORD_SHARED_SECRET = $oldPassword

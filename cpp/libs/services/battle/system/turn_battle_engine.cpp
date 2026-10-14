@@ -111,7 +111,7 @@ bool TurnBattleEngine::Initialize(const CreateBattleRequest& request) {
     }
     for (uint32_t teamIndex = 0; teamIndex < 2; ++teamIndex) {
         if (teamPlayerCounts[teamIndex] > kMaxBattleTeamSize) {
-            LOG_ERROR << "CreateBattle 队伍人数超限: battle_id=" << request.battle_id()
+            LOG_ERROR << "CreateBattle team size exceeds limit: battle_id=" << request.battle_id()
                       << " team_index=" << teamIndex
                       << " players=" << teamPlayerCounts[teamIndex]
                       << " limit=" << kMaxBattleTeamSize;
@@ -124,7 +124,7 @@ bool TurnBattleEngine::Initialize(const CreateBattleRequest& request) {
     roundIndex = 1;
     outcome = BATTLE_OUTCOME_ONGOING;
 
-    // 回合上限:DungeonTable.time_limit(秒)换算,缺省 30 回合
+    // 回合上限:DungeonTable.time_limit(秒)换算,缺省 300 回合
     maxRounds = kDefaultMaxRounds;
     if (const auto* dungeonRow = dataProvider->FindDungeon(request.battle_config_id());
         dungeonRow != nullptr && dungeonRow->time_limit() > 0) {
@@ -175,7 +175,7 @@ bool TurnBattleEngine::InitPlayers(const CreateBattleRequest& request) {
         // bit63 是引擎局内号(怪物 / 宝宝)的保留段:真实 player_id 不可能落进来,
         // 落进来就是编排层把别的东西当成了 player_id,放进来会与局内单位撞号
         if ((snapshot.player_id() & kEngineLocalActorIdFlag) != 0) {
-            LOG_ERROR << "CreateBattle player_id 落在引擎局内号保留段: battle_id="
+            LOG_ERROR << "CreateBattle player_id is in the reserved range for engine-local IDs: battle_id="
                       << request.battle_id() << " player_id=" << snapshot.player_id();
             return false;
         }
@@ -248,7 +248,7 @@ bool TurnBattleEngine::InitPets(const CreateBattleRequest& request) {
             }
             // 同一只宝宝出现在两份快照里 = 编排层错误,拒绝开局
             if (petAlreadyJoined(pet.pet_id())) {
-                LOG_ERROR << "CreateBattle 同一只宝宝重复参战: battle_id="
+                LOG_ERROR << "CreateBattle pet participates more than once: battle_id="
                           << request.battle_id() << " pet_id=" << pet.pet_id();
                 return false;
             }
@@ -267,7 +267,7 @@ bool TurnBattleEngine::InitPets(const CreateBattleRequest& request) {
             // 只用来对账,不当权威 —— 让它改写归属的话,一份被改过的快照就能把宝宝的战后结算
             // 记到别人名下。对不上直接拒绝开局。
             if (pet.owner_player_id() != 0 && pet.owner_player_id() != snapshot.player_id()) {
-                LOG_ERROR << "CreateBattle 宝宝归属与所在快照不一致: battle_id=" << request.battle_id()
+                LOG_ERROR << "CreateBattle pet ownership does not match its containing snapshot: battle_id=" << request.battle_id()
                           << " pet_id=" << pet.pet_id() << " owner=" << pet.owner_player_id()
                           << " snapshot_player=" << snapshot.player_id();
                 return false;

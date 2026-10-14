@@ -53,7 +53,7 @@ func runMerge(o options) {
 		o.sceneAddr, o.sceneDB)
 	log.Printf("    trade: schema=%s skip=%v", o.tradeSchema, o.skipTrade)
 	log.Printf("    guild: schema=%s skip_mysql=%v skip_rank=%v", o.guildSchema, o.skipGuild, o.skipRank)
-	log.Printf("    friend: schema=%s (审计只读;合服不改写 friend 的行)", o.friendSchema)
+	log.Printf("    friend: schema=%s (read-only audit; merge does not rewrite friend rows)", o.friendSchema)
 
 	// ── 句柄 ────────────────────────────────────────────────
 	db := mustOpenMySQL(ctx, o.mysqlDSN)
@@ -1027,11 +1027,11 @@ func readCommittedDSN(dsn string) (string, error) {
 		cfg.Params = map[string]string{}
 	}
 	if v, ok := cfg.Params[mysqlIsolationParam]; ok && v != mysqlReadCommitted {
-		log.Printf("-mysql-dsn 里的 %s=%s 被改成 %s:合服的锁序推演只对 READ COMMITTED 成立",
+		log.Printf("Changed %s=%s in -mysql-dsn to %s: merge lock ordering is valid only under READ COMMITTED",
 			mysqlIsolationParam, v, mysqlReadCommitted)
 	}
 	if v, ok := cfg.Params[mysqlLegacyIsolationParam]; ok {
-		log.Printf("-mysql-dsn 里的旧参数 %s=%s 已删除,改用 %s=%s", mysqlLegacyIsolationParam, v,
+		log.Printf("Removed legacy parameter %s=%s from -mysql-dsn; using %s=%s instead", mysqlLegacyIsolationParam, v,
 			mysqlIsolationParam, mysqlReadCommitted)
 		delete(cfg.Params, mysqlLegacyIsolationParam)
 	}
@@ -1115,7 +1115,7 @@ func (p lockRetryPolicy) do(ctx context.Context, what string, op func() error) e
 			break // 最后一次失败后不必再睡
 		}
 		wait := p.backoff(attempt - 1)
-		log.Printf("WARN: %s 锁冲突(第 %d/%d 次):%v —— %s 后重试", what, attempt, attempts, err, wait)
+		log.Printf("WARN: %s lock conflict (attempt %d/%d): %v -- retrying after %s", what, attempt, attempts, err, wait)
 		if serr := sleep(ctx, wait); serr != nil {
 			return errors.Join(lastErr, serr)
 		}

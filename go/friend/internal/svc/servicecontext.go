@@ -156,13 +156,13 @@ func NewRedisHandles(c config.Config) (friendRds, sharedRds *redis.Redis, target
 		// 回落本身不是故障(本地单库形态就是这样),但在 staging/prod 出现就是部署缺陷:
 		// 共享库是 allkeys-lfu,好友缓存会被当缓存淘汰,还要和契约 key 抢内存 ——
 		// 而契约 key 被淘汰的后果是"玩家明明在线却判成离线",推送静默丢。
-		logx.Errorf("[friend] WARN FriendRedis 未配置,friend 私有 key 回落到共享库 host=%s type=%s —— "+
-			"仅限本地单库形态;staging/prod 必须配置独立且 maxmemory-policy=noeviction 的 FriendRedis(契约 §4)",
+		logx.Errorf("[friend] WARN FriendRedis not configured; friend private keys falling back to shared database host=%s type=%s -- "+
+			"local single-database deployments only; staging/prod require separate FriendRedis with maxmemory-policy=noeviction (contract section 4)",
 			c.Redis.Host, c.Redis.Type)
 		return sharedRds, sharedRds, fmt.Sprintf("shared-fallback host=%s type=%s", c.Redis.Host, c.Redis.Type)
 	}
 	friendRds = redis.MustNewRedis(c.FriendRedis)
-	logx.Infof("[friend] FriendRedis 独立配置生效 host=%s type=%s(共享库 host=%s 仅作契约 key 句柄)",
+	logx.Infof("[friend] Separate FriendRedis configuration active host=%s type=%s (shared database host=%s used only for contract key access)",
 		c.FriendRedis.Host, c.FriendRedis.Type, c.Redis.Host)
 	return friendRds, sharedRds, fmt.Sprintf("FriendRedis host=%s type=%s", c.FriendRedis.Host, c.FriendRedis.Type)
 }
@@ -229,7 +229,7 @@ func OpenMySQL(c config.MySQLConf) (*sql.DB, error) {
 // 若 config 包最终没有这个字段,改这一处即可。
 func newKafkaWriter(c config.Config) *kafkago.Writer {
 	if len(c.Kafka.Brokers) == 0 {
-		logx.Info("[friend] Kafka.Brokers 为空:S2C 推送出口关闭(好友申请/同意只落库,不通知在线对端)")
+		logx.Info("[friend] Kafka.Brokers empty: S2C push disabled (friend requests / acceptance only persisted, online peer not notified)")
 		return nil
 	}
 	return &kafkago.Writer{
@@ -272,7 +272,7 @@ func (sc *ServiceContext) Stop() {
 	sc.stopOnce.Do(func() {
 		if sc.directoryConn != nil {
 			if err := sc.directoryConn.Close(); err != nil {
-				logx.Errorf("[friend] 在线目录 data_service 连接关闭失败: %v", err)
+				logx.Errorf("[friend] Failed to close online directory data_service connection: %v", err)
 			}
 		}
 		if sc.KafkaWriter != nil {

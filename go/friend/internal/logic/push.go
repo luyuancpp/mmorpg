@@ -81,12 +81,12 @@ func pushReasonLabel(reason pb.FriendEventReason) (string, bool) {
 func (l *FriendLogic) pushFriendEvent(ctx context.Context, toPlayerID uint64, reason pb.FriendEventReason, byPlayerID uint64) {
 	label, known := pushReasonLabel(reason)
 	if !known {
-		logx.WithContext(ctx).Errorf("[friend] 拒绝推送未知事件类型 reason=%d to=%d:新增枚举要同时加 metrics reason 常量与预建序列",
+		logx.WithContext(ctx).Errorf("[friend] Rejecting push for unknown event type reason=%d to=%d: new enums must also add metrics reason constants and prebuilt series",
 			int32(reason), toPlayerID)
 		return
 	}
 	if toPlayerID == 0 {
-		logx.WithContext(ctx).Errorf("[friend] 拒绝推送 reason=%s:收件人为 0", label)
+		logx.WithContext(ctx).Errorf("[friend] Rejecting push reason=%s: recipient is 0", label)
 		metrics.ObservePush(label, metrics.OutcomeError)
 		return
 	}
@@ -96,7 +96,7 @@ func (l *FriendLogic) pushFriendEvent(ctx context.Context, toPlayerID uint64, re
 	// 不 panic(推送是弱依赖,不该让好友服起不来),但也不记 ok —— "推送整个关着"必须在
 	// 指标上看得见,否则线上漏配 Brokers 会表现为"功能正常但红点从不亮",没有任何告警。
 	if svcCtx.KafkaWriter == nil || svcCtx.GateCommandBuilder == nil {
-		logx.WithContext(ctx).Errorf("[friend] WARN 推送通道未配置(KafkaWriter/GateCommandBuilder 为 nil),丢弃 reason=%s to=%d",
+		logx.WithContext(ctx).Errorf("[friend] WARN Push channel not configured (KafkaWriter/GateCommandBuilder nil); dropping reason=%s to=%d",
 			label, toPlayerID)
 		metrics.ObservePush(label, metrics.OutcomeError)
 		return
@@ -105,7 +105,7 @@ func (l *FriendLogic) pushFriendEvent(ctx context.Context, toPlayerID uint64, re
 	// ① 读会话。
 	sess, err := l.loadPlayerSession(ctx, toPlayerID)
 	if err != nil {
-		logx.WithContext(ctx).Errorf("[friend] 读会话失败,丢弃推送 reason=%s to=%d: %v", label, toPlayerID, err)
+		logx.WithContext(ctx).Errorf("[friend] Failed to read session; dropping push reason=%s to=%d: %v", label, toPlayerID, err)
 		metrics.ObservePush(label, metrics.OutcomeError)
 		return
 	}
@@ -123,7 +123,7 @@ func (l *FriendLogic) pushFriendEvent(ctx context.Context, toPlayerID uint64, re
 		TsMs: l.deps.now().UnixMilli(),
 	})
 	if err != nil {
-		logx.WithContext(ctx).Errorf("[friend] 序列化 FriendEventS2C 失败 reason=%s to=%d: %v", label, toPlayerID, err)
+		logx.WithContext(ctx).Errorf("[friend] Failed to serialize FriendEventS2C reason=%s to=%d: %v", label, toPlayerID, err)
 		metrics.ObservePush(label, metrics.OutcomeError)
 		return
 	}
@@ -151,7 +151,7 @@ func (l *FriendLogic) pushFriendEvent(ctx context.Context, toPlayerID uint64, re
 		// go/friend/generated/pb/game/message_id.go 里的实际名字再改这一行。
 		uint32(game.ClientPlayerFriendNotifyFriendEventMessageId), body)
 	if err != nil {
-		logx.WithContext(ctx).Errorf("[friend] 推送失败 reason=%s to=%d gate=%s: %v",
+		logx.WithContext(ctx).Errorf("[friend] Push failed reason=%s to=%d gate=%s: %v",
 			label, toPlayerID, sess.GetGateId(), err)
 		metrics.ObservePush(label, metrics.OutcomeError)
 		return

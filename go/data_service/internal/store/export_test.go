@@ -123,6 +123,10 @@ const (
 // RouteSelectRowsSQLForTest 返回 n 个 id 的批量读(R8 / R13;forUpdate 即 R8 的加锁形态),EXPLAIN 回归用。
 func RouteSelectRowsSQLForTest(n int, forUpdate bool) string { return routeSelectRowsSQL(n, forUpdate) }
 
+// RouteTiDBPrefixSplitPointsForTest 是 tidb-prepare 在 idx_route_home / idx_route_storage 上每个前缀值的切点数
+// (真 TiDB 用例按它断言预切后的 Region 数,不写字面量)。
+const RouteTiDBPrefixSplitPointsForTest = routeTiDBPrefixSplitPoints
+
 // BootstrapRouteTablesOnlyForTest 只建路由表(按表名排序执行 routeTableShapes 那几张的 bootstrap DDL),
 // 再跑 ensureRouteTables(形状守卫 + 种两张单行表的行)。给真 TiDB 用例用:全局库的整套迁移在 TiDB 上会因
 // player_snapshot 的可空唯一键失败,用不了 NewMigratedDB。

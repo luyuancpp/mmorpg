@@ -259,7 +259,7 @@ func RunGuildSmoke(cfg *config.Config) {
 		c = loggedIn[guildSmokeCrossZoneIndex]
 		// 本地各 zone 的 gate 端口不同;地址相同说明 C 其实进了 zone_a,后面"别区不可见"的结论就不成立。
 		if c.gate == a.gate {
-			fail("zone-placement", "C 与 A 分到同一个 gate %s(zone_a=%d zone_b=%d),不是跨 zone 运行", a.gate, sc.ZoneA, sc.ZoneB)
+			fail("zone-placement", "C and A were assigned the same gate %s (zone_a=%d zone_b=%d); this is not a cross-zone run", a.gate, sc.ZoneA, sc.ZoneB)
 		}
 	}
 	zap.L().Info("[guild-smoke] robots in scene",
@@ -291,14 +291,14 @@ func RunGuildSmoke(cfg *config.Config) {
 	guild := created.GetGuild()
 	guildID := guild.GetGuildId()
 	if guildID == 0 {
-		fail("create", "建帮受理但响应里没有帮会")
+		fail("create", "Guild creation was accepted but the response contains no guild")
 	}
 	if guild.GetZoneId() != sc.ZoneA {
-		fail("create-zone", "帮会 zone_id=%d,期望 A 的归属区 %d(服务端必须忽略请求体 zone_id=%d)",
+		fail("create-zone", "Guild zone_id=%d, expected A home zone %d (the server must ignore request-body zone_id=%d)",
 			guild.GetZoneId(), sc.ZoneA, spoofedZone)
 	}
 	if role, ok := guildSmokeRoleOf(guild, a.gc.PlayerId); guild.GetLeaderId() != a.gc.PlayerId || !ok || role != guildSmokeRoleLeader {
-		fail("create-leader", "leader_id=%d A=%d A 的 role=%d(在册=%v),期望 A 是帮主", guild.GetLeaderId(), a.gc.PlayerId, role, ok)
+		fail("create-leader", "leader_id=%d A=%d A role=%d (member=%v), expected A to be guild leader", guild.GetLeaderId(), a.gc.PlayerId, role, ok)
 	}
 	zap.L().Info("[guild-smoke] step 1: guild created in home zone",
 		zap.Uint64("guild_id", guildID), zap.String("name", guildName), zap.Uint32("zone", guild.GetZoneId()))
@@ -316,7 +316,7 @@ func RunGuildSmoke(cfg *config.Config) {
 		fail("rank-same-zone", "%v", err)
 	}
 	if sameZoneRank.GetEntry().GetRank() == 0 || sameZoneRank.GetEntry().GetName() != guildName {
-		fail("rank-same-zone", "本区榜条目 rank=%d name=%q,期望上榜且名为 %q",
+		fail("rank-same-zone", "Local-zone ranking entry rank=%d name=%q, expected ranked with name %q",
 			sameZoneRank.GetEntry().GetRank(), sameZoneRank.GetEntry().GetName(), guildName)
 	}
 	zap.L().Info("[guild-smoke] step 3: same-zone player sees the guild on zone rank", zap.Uint32("rank", sameZoneRank.GetEntry().GetRank()))
@@ -338,7 +338,7 @@ func RunGuildSmoke(cfg *config.Config) {
 		}
 		for _, entry := range page.GetEntries() {
 			if entry.GetGuildId() == guildID {
-				fail("other-zone-rank-page", "zone %d 的玩家在榜单里看到了 zone %d 的帮会 %d", sc.ZoneB, sc.ZoneA, guildID)
+				fail("other-zone-rank-page", "A player in zone %d saw a guild from zone %d with id %d in the ranking", sc.ZoneB, sc.ZoneA, guildID)
 			}
 		}
 		if err := c.expect(game.GuildServiceApplyJoinGuildMessageId,
@@ -371,7 +371,7 @@ func RunGuildSmoke(cfg *config.Config) {
 		fail("apply-list-mine", "%v", err)
 	}
 	if !guildSmokeHasApplication(myApplications.GetApplications(), guildID) {
-		fail("apply-list-mine", "B 的待审申请里没有帮会 %d(共 %d 条)", guildID, len(myApplications.GetApplications()))
+		fail("apply-list-mine", "B pending applications contain no guild %d (%d entries total)", guildID, len(myApplications.GetApplications()))
 	}
 	applicants := &guildpb.ListGuildApplicationsResponse{}
 	if err := a.expect(game.GuildServiceListGuildApplicationsMessageId,
@@ -379,7 +379,7 @@ func RunGuildSmoke(cfg *config.Config) {
 		fail("apply-list-applicants", "%v", err)
 	}
 	if !guildSmokeHasApplicant(applicants.GetApplicants(), b.gc.PlayerId) {
-		fail("apply-list-applicants", "A 的待审名单里没有 B=%d(共 %d 条)", b.gc.PlayerId, len(applicants.GetApplicants()))
+		fail("apply-list-applicants", "A pending applicant list contains no B=%d (%d entries total)", b.gc.PlayerId, len(applicants.GetApplicants()))
 	}
 	reviewed := &guildpb.ReviewGuildApplicationResponse{}
 	// 清空留底必须在 A 发审批之前:审批一提交服务端就推,晚清一步会把这条推送一起丢掉。
@@ -389,18 +389,18 @@ func RunGuildSmoke(cfg *config.Config) {
 		fail("review", "%v", err)
 	}
 	if role, ok := guildSmokeRoleOf(reviewed.GetGuild(), b.gc.PlayerId); !ok || role != guildSmokeRoleMember {
-		fail("review", "审批响应的快照里 B=%d role=%d(在册=%v),期望已是普通成员", b.gc.PlayerId, role, ok)
+		fail("review", "In approval-response snapshot B=%d role=%d (member=%v), expected an ordinary member", b.gc.PlayerId, role, ok)
 	}
 	// 新成员自己必须收到 MEMBER_JOINED:客户端靠它把"申请中"翻成"已入帮",没有推送就只能等玩家手动刷新。
 	if err := b.waitPush(guildpb.GuildChangeKind_GUILD_CHANGE_KIND_MEMBER_JOINED, guildID, guildSmokePushTimeout); err != nil {
-		fail("review-push", "B 没等到入帮推送:%v", err)
+		fail("review-push", "B did not receive the guild-join push: %v", err)
 	}
 	bGuild, err := b.myGuild()
 	if err != nil {
 		fail("join-verify", "%v", err)
 	}
 	if role, ok := guildSmokeRoleOf(bGuild, b.gc.PlayerId); bGuild.GetGuildId() != guildID || !ok || role != guildSmokeRoleMember {
-		fail("join-verify", "B 的帮会=%d role=%d(在册=%v),期望在帮会 %d 且为成员", bGuild.GetGuildId(), role, ok, guildID)
+		fail("join-verify", "B guild=%d role=%d (member=%v), expected membership in guild %d as an ordinary member", bGuild.GetGuildId(), role, ok, guildID)
 	}
 	// member-names(B3b,设计 docs/design/guild-phase2/03-names.md §3.21):成员名与帮主名由 guild 向
 	// data_service 批量取,是展示字段、服务端 fail-open —— 取不到时 RPC 照样成功、名字留空,
@@ -434,7 +434,7 @@ func RunGuildSmoke(cfg *config.Config) {
 		fail("announcement-read", "%v", err)
 	}
 	if bGuild.GetAnnouncement() != announcement {
-		fail("announcement-read", "B 读到公告 %q,期望 %q", bGuild.GetAnnouncement(), announcement)
+		fail("announcement-read", "B read announcement %q, expected %q", bGuild.GetAnnouncement(), announcement)
 	}
 	if err := a.expect(game.GuildServiceSetAnnouncementMessageId,
 		&guildpb.SetAnnouncementRequest{GuildId: guildID, Announcement: strings.Repeat("x", guildSmokeOversizeAnnouncementBytes)},
@@ -450,10 +450,10 @@ func RunGuildSmoke(cfg *config.Config) {
 		fail("spoof-leave", "%v", err)
 	}
 	if leaveTip == tipGuildLeaderCantLeave {
-		fail("spoof-leave", "服务端按请求体里伪造的 player_id=%d(帮主 A)处理了 B 的退帮请求:身份没有取会话", a.gc.PlayerId)
+		fail("spoof-leave", "The server processed B leave request as forged player_id=%d (leader A) from the request body; identity was not taken from the session", a.gc.PlayerId)
 	}
 	if leaveTip != 0 {
-		fail("spoof-leave", "B 退帮应受理(tip=0),实得 tip=%d", leaveTip)
+		fail("spoof-leave", "B leaving the guild should be accepted (tip=0), got tip=%d", leaveTip)
 	}
 	if err := b.expect(game.GuildServiceGetPlayerGuildMessageId,
 		&guildpb.GetPlayerGuildRequest{}, &guildpb.GetPlayerGuildResponse{}, tipGuildNotInGuild); err != nil {
@@ -464,7 +464,7 @@ func RunGuildSmoke(cfg *config.Config) {
 		fail("spoof-leave-verify-a", "%v", err)
 	}
 	if aGuild.GetLeaderId() != a.gc.PlayerId || len(aGuild.GetMembers()) != 1 {
-		fail("spoof-leave-verify-a", "A 的帮会 leader=%d 成员数=%d,期望 A 仍是帮主且只剩 1 人", aGuild.GetLeaderId(), len(aGuild.GetMembers()))
+		fail("spoof-leave-verify-a", "A guild leader=%d member count=%d, expected A still as leader with only 1 member", aGuild.GetLeaderId(), len(aGuild.GetMembers()))
 	}
 	zap.L().Info("[guild-smoke] step 8: spoofed player_id ignored, session identity used")
 
@@ -477,7 +477,7 @@ func RunGuildSmoke(cfg *config.Config) {
 	// 路由服将上游 PermissionDenied 映射为 kServiceUnavailable。超时、成功业务回包、
 	// 其它信封码(如路由表未更新)都不能当作方法白名单生效的证据。
 	if scoreEnvelopeTip != tipGuildServiceUnavailable {
-		fail("internal-method", "UpdateGuildScore 期望信封 tip=%d,实得 tip=%d(0 表示拿到了业务回包)",
+		fail("internal-method", "UpdateGuildScore expected envelope tip=%d, got tip=%d (0 means a business response was received)",
 			tipGuildServiceUnavailable, scoreEnvelopeTip)
 	}
 	scoreAfter := &guildpb.GetGuildRankByGuildResponse{}
@@ -486,11 +486,11 @@ func RunGuildSmoke(cfg *config.Config) {
 		fail("internal-method-verify", "%v", err)
 	}
 	if scoreAfter.GetEntry().GetScore() != 0 {
-		fail("internal-method-verify", "客户端改动了帮会积分:score=%d,期望 0", scoreAfter.GetEntry().GetScore())
+		fail("internal-method-verify", "The client changed guild score: score=%d, expected 0", scoreAfter.GetEntry().GetScore())
 	}
 	// 不扩展线协议就不能区分 PermissionDenied 与其它上游故障:这里只声明已观察到的拒绝
 	// 与积分不变,验收时还须核对路由服该方法的 code=PermissionDenied 日志与 session 单测。
-	zap.L().Info("[guild-smoke] step 9: 收到信封拒绝,随后查榜成功且积分未变;白名单拒绝原因需核对路由服 code=PermissionDenied 日志与 session 单测",
+	zap.L().Info("[guild-smoke] step 9: received envelope rejection, then successfully queried the ranking with unchanged score; verify allowlist rejection through routing-service code=PermissionDenied logs and session unit tests",
 		zap.Uint32("envelope_tip", scoreEnvelopeTip),
 		zap.String("method", guildpb.GuildService_UpdateGuildScore_FullMethodName))
 
@@ -502,27 +502,27 @@ func RunGuildSmoke(cfg *config.Config) {
 	for _, applicant := range []*guildSmokeBot{d, e, f} {
 		if err := applicant.expect(game.GuildServiceApplyJoinGuildMessageId,
 			&guildpb.ApplyJoinGuildRequest{GuildId: guildID}, &guildpb.ApplyJoinGuildResponse{}, 0); err != nil {
-			fail("mgmt-M1", "%s 申请入帮:%v", applicant.account, err)
+			fail("mgmt-M1", "%s applying to join the guild: %v", applicant.account, err)
 		}
 	}
 	if err := f.expect(game.GuildServiceApplyJoinGuildMessageId,
 		&guildpb.ApplyJoinGuildRequest{GuildId: guildID}, &guildpb.ApplyJoinGuildResponse{}, 0); err != nil {
-		fail("mgmt-M1", "F 重复申请同一个帮会应当受理(刷新有效期):%v", err)
+		fail("mgmt-M1", "F reapplying to the same guild should be accepted (refreshing expiry): %v", err)
 	}
 	fApplications := &guildpb.ListMyGuildApplicationsResponse{}
 	if err := f.expect(game.GuildServiceListMyGuildApplicationsMessageId,
 		&guildpb.ListMyGuildApplicationsRequest{}, fApplications, 0); err != nil {
-		fail("mgmt-M1", "F 列本人申请:%v", err)
+		fail("mgmt-M1", "F listing personal applications: %v", err)
 	}
 	if len(fApplications.GetApplications()) != 1 || !guildSmokeHasApplication(fApplications.GetApplications(), guildID) {
-		fail("mgmt-M1", "F 连申请两次后待审 %d 条(期望恰好 1 条且指向帮会 %d):重复申请被当成了新行",
+		fail("mgmt-M1", "F has %d pending applications after applying twice (expected exactly 1 pointing to guild %d); the duplicate application was treated as a new row",
 			len(fApplications.GetApplications()), guildID)
 	}
 
 	// M2:待审名单是管理侧信息,不在帮里的人连"谁在申请这个帮"都不该看到。
 	if err := e.expect(game.GuildServiceListGuildApplicationsMessageId,
 		&guildpb.ListGuildApplicationsRequest{}, &guildpb.ListGuildApplicationsResponse{}, tipGuildNotInGuild); err != nil {
-		fail("mgmt-M2", "未入帮者列帮会待审名单:%v", err)
+		fail("mgmt-M2", "A nonmember listing guild pending applicants: %v", err)
 	}
 
 	// M3:A 审批 D、E 通过。推送的收件人是"快照里的全体成员除审批人",新成员自己也在里面。
@@ -530,18 +530,18 @@ func RunGuildSmoke(cfg *config.Config) {
 	if err := a.expect(game.GuildServiceReviewGuildApplicationMessageId,
 		&guildpb.ReviewGuildApplicationRequest{ApplicantPlayerId: d.gc.PlayerId, Approve: true},
 		&guildpb.ReviewGuildApplicationResponse{}, 0); err != nil {
-		fail("mgmt-M3", "审批 D 通过:%v", err)
+		fail("mgmt-M3", "Approving D: %v", err)
 	}
 	if err := d.waitPush(guildpb.GuildChangeKind_GUILD_CHANGE_KIND_MEMBER_JOINED, guildID, guildSmokePushTimeout); err != nil {
-		fail("mgmt-M3", "D 没等到入帮推送:%v", err)
+		fail("mgmt-M3", "D did not receive the guild-join push: %v", err)
 	}
 	approvedE := &guildpb.ReviewGuildApplicationResponse{}
 	if err := a.expect(game.GuildServiceReviewGuildApplicationMessageId,
 		&guildpb.ReviewGuildApplicationRequest{ApplicantPlayerId: e.gc.PlayerId, Approve: true}, approvedE, 0); err != nil {
-		fail("mgmt-M3", "审批 E 通过:%v", err)
+		fail("mgmt-M3", "Approving E: %v", err)
 	}
 	if role, ok := guildSmokeRoleOf(approvedE.GetGuild(), e.gc.PlayerId); !ok || role != guildSmokeRoleMember {
-		fail("mgmt-M3", "审批响应的快照里 E=%d role=%d(在册=%v),期望已是普通成员", e.gc.PlayerId, role, ok)
+		fail("mgmt-M3", "In approval-response snapshot E=%d role=%d (member=%v), expected an ordinary member", e.gc.PlayerId, role, ok)
 	}
 
 	// M4:拒绝只推给申请人本人(告诉全帮"谁被拒了"只有社交伤害)。拒绝会删掉申请行,
@@ -550,18 +550,18 @@ func RunGuildSmoke(cfg *config.Config) {
 	if err := a.expect(game.GuildServiceReviewGuildApplicationMessageId,
 		&guildpb.ReviewGuildApplicationRequest{ApplicantPlayerId: f.gc.PlayerId, Approve: false},
 		&guildpb.ReviewGuildApplicationResponse{}, 0); err != nil {
-		fail("mgmt-M4", "拒绝 F:%v", err)
+		fail("mgmt-M4", "Rejecting F: %v", err)
 	}
 	if err := f.waitPush(guildpb.GuildChangeKind_GUILD_CHANGE_KIND_APPLICATION_REJECTED, guildID, guildSmokePushTimeout); err != nil {
-		fail("mgmt-M4", "F 没等到被拒推送:%v", err)
+		fail("mgmt-M4", "F did not receive the rejection push: %v", err)
 	}
 	fApplications = &guildpb.ListMyGuildApplicationsResponse{}
 	if err := f.expect(game.GuildServiceListMyGuildApplicationsMessageId,
 		&guildpb.ListMyGuildApplicationsRequest{}, fApplications, 0); err != nil {
-		fail("mgmt-M4", "F 列本人申请:%v", err)
+		fail("mgmt-M4", "F listing personal applications: %v", err)
 	}
 	if len(fApplications.GetApplications()) != 0 {
-		fail("mgmt-M4", "F 被拒后待审还剩 %d 条,期望 0 条(拒绝必须把申请行删掉)", len(fApplications.GetApplications()))
+		fail("mgmt-M4", "F still has %d pending applications after rejection, expected 0 (rejection must delete the application row)", len(fApplications.GetApplications()))
 	}
 	// 这是 A 的第 4 次 ReviewGuildApplication,先退火再发(见 guildSmokeSameIdCooldown)。
 	// 重复审批用"再拒一次"而不是"改判通过":通过分支会多走一次申请人归属 zone 查询,
@@ -570,7 +570,7 @@ func RunGuildSmoke(cfg *config.Config) {
 	if err := a.expect(game.GuildServiceReviewGuildApplicationMessageId,
 		&guildpb.ReviewGuildApplicationRequest{ApplicantPlayerId: f.gc.PlayerId, Approve: false},
 		&guildpb.ReviewGuildApplicationResponse{}, tipGuildApplicationNotFound); err != nil {
-		fail("mgmt-M4", "重复审批同一条申请:%v", err)
+		fail("mgmt-M4", "Approving the same application again: %v", err)
 	}
 
 	// M5:任命 D 为长老。第二次是同职位任免,服务端判"一个字节都没变"→ 幂等受理且**不推送**,
@@ -579,21 +579,21 @@ func RunGuildSmoke(cfg *config.Config) {
 	promoted := &guildpb.SetGuildMemberRoleResponse{}
 	if err := a.expect(game.GuildServiceSetGuildMemberRoleMessageId,
 		&guildpb.SetGuildMemberRoleRequest{TargetPlayerId: d.gc.PlayerId, Role: guildSmokeRoleOfficer}, promoted, 0); err != nil {
-		fail("mgmt-M5", "任命 D 为长老:%v", err)
+		fail("mgmt-M5", "Appointing D as elder: %v", err)
 	}
 	if err := guildSmokeCheckOfficer(promoted.GetGuild(), d.gc.PlayerId); err != nil {
-		fail("mgmt-M5", "首次任命:%v", err)
+		fail("mgmt-M5", "First appointment: %v", err)
 	}
 	if err := d.waitPush(guildpb.GuildChangeKind_GUILD_CHANGE_KIND_ROLE_CHANGED, guildID, guildSmokePushTimeout); err != nil {
-		fail("mgmt-M5", "D 没等到任免推送:%v", err)
+		fail("mgmt-M5", "D did not receive the role-change push: %v", err)
 	}
 	promotedAgain := &guildpb.SetGuildMemberRoleResponse{}
 	if err := a.expect(game.GuildServiceSetGuildMemberRoleMessageId,
 		&guildpb.SetGuildMemberRoleRequest{TargetPlayerId: d.gc.PlayerId, Role: guildSmokeRoleOfficer}, promotedAgain, 0); err != nil {
-		fail("mgmt-M5", "重复任命同一职位应当幂等受理:%v", err)
+		fail("mgmt-M5", "Repeating the same appointment should be accepted idempotently: %v", err)
 	}
 	if err := guildSmokeCheckOfficer(promotedAgain.GetGuild(), d.gc.PlayerId); err != nil {
-		fail("mgmt-M5", "幂等任命:%v", err)
+		fail("mgmt-M5", "Idempotent appointment: %v", err)
 	}
 
 	// M6:长老的权限边界。D 在这一段里连发 4 次 KickGuildMember,最后一次前退火。
@@ -601,36 +601,36 @@ func RunGuildSmoke(cfg *config.Config) {
 	kicked := &guildpb.KickGuildMemberResponse{}
 	if err := d.expect(game.GuildServiceKickGuildMemberMessageId,
 		&guildpb.KickGuildMemberRequest{TargetPlayerId: e.gc.PlayerId}, kicked, 0); err != nil {
-		fail("mgmt-M6", "长老踢普通成员:%v", err)
+		fail("mgmt-M6", "Elder kicking an ordinary member: %v", err)
 	}
 	if _, stillIn := guildSmokeRoleOf(kicked.GetGuild(), e.gc.PlayerId); stillIn {
-		fail("mgmt-M6", "踢人响应的快照里 E=%d 还在册", e.gc.PlayerId)
+		fail("mgmt-M6", "E=%d is still a member in the kick-response snapshot", e.gc.PlayerId)
 	}
 	// 被踢的人必须自己收到推送,否则他的界面会一直停在"我还在帮里",直到下次手动刷新。
 	if err := e.waitPush(guildpb.GuildChangeKind_GUILD_CHANGE_KIND_MEMBER_KICKED, guildID, guildSmokePushTimeout); err != nil {
-		fail("mgmt-M6", "E 没等到被请离推送:%v", err)
+		fail("mgmt-M6", "E did not receive the removal push: %v", err)
 	}
 	if err := e.expect(game.GuildServiceGetPlayerGuildMessageId,
 		&guildpb.GetPlayerGuildRequest{}, &guildpb.GetPlayerGuildResponse{}, tipGuildNotInGuild); err != nil {
-		fail("mgmt-M6", "E 被踢后仍查得到自己的帮会:%v", err)
+		fail("mgmt-M6", "E can still query its guild after being kicked: %v", err)
 	}
 	if err := d.expect(game.GuildServiceKickGuildMemberMessageId,
 		&guildpb.KickGuildMemberRequest{TargetPlayerId: a.gc.PlayerId}, &guildpb.KickGuildMemberResponse{}, tipGuildRankTooLow); err != nil {
-		fail("mgmt-M6", "长老踢帮主:%v", err)
+		fail("mgmt-M6", "Elder kicking the leader: %v", err)
 	}
 	if err := d.expect(game.GuildServiceKickGuildMemberMessageId,
 		&guildpb.KickGuildMemberRequest{TargetPlayerId: d.gc.PlayerId}, &guildpb.KickGuildMemberResponse{}, tipGuildCannotTargetSelf); err != nil {
-		fail("mgmt-M6", "长老踢自己:%v", err)
+		fail("mgmt-M6", "Elder kicking itself: %v", err)
 	}
 	if err := d.expect(game.GuildServiceSetGuildMemberRoleMessageId,
 		&guildpb.SetGuildMemberRoleRequest{TargetPlayerId: a.gc.PlayerId, Role: guildSmokeRoleOfficer},
 		&guildpb.SetGuildMemberRoleResponse{}, tipGuildRankTooLow); err != nil {
-		fail("mgmt-M6", "长老任免帮主:%v", err)
+		fail("mgmt-M6", "Elder changing the leader role: %v", err)
 	}
 	time.Sleep(guildSmokeSameIdCooldown)
 	if err := d.expect(game.GuildServiceKickGuildMemberMessageId,
 		&guildpb.KickGuildMemberRequest{TargetPlayerId: e.gc.PlayerId}, &guildpb.KickGuildMemberResponse{}, tipGuildTargetNotMember); err != nil {
-		fail("mgmt-M6", "重复踢已离帮的 E:%v", err)
+		fail("mgmt-M6", "Kicking E again after it left the guild: %v", err)
 	}
 
 	// M7:转让帮主给 D。D 让出长老位后长老只剩 0 人,所以原帮主 A 降为长老而不是成员。
@@ -638,20 +638,20 @@ func RunGuildSmoke(cfg *config.Config) {
 	transferred := &guildpb.TransferGuildLeaderResponse{}
 	if err := a.expect(game.GuildServiceTransferGuildLeaderMessageId,
 		&guildpb.TransferGuildLeaderRequest{TargetPlayerId: d.gc.PlayerId}, transferred, 0); err != nil {
-		fail("mgmt-M7", "A 转让帮主给 D:%v", err)
+		fail("mgmt-M7", "A transferring guild leadership to D: %v", err)
 	}
 	if err := guildSmokeCheckLeadership(transferred.GetGuild(), d.gc.PlayerId, a.gc.PlayerId); err != nil {
 		fail("mgmt-M7", "%v", err)
 	}
 	if err := d.waitPush(guildpb.GuildChangeKind_GUILD_CHANGE_KIND_LEADER_TRANSFERRED, guildID, guildSmokePushTimeout); err != nil {
-		fail("mgmt-M7", "D 没等到转让推送:%v", err)
+		fail("mgmt-M7", "D did not receive the leadership-transfer push: %v", err)
 	}
 
 	// M8:再转回 A。这一步既验"新帮主转得动",也把帮会恢复成"A 是帮主",后面第 10 步才解散得了。
 	backToA := &guildpb.TransferGuildLeaderResponse{}
 	if err := d.expect(game.GuildServiceTransferGuildLeaderMessageId,
 		&guildpb.TransferGuildLeaderRequest{TargetPlayerId: a.gc.PlayerId}, backToA, 0); err != nil {
-		fail("mgmt-M8", "D 转让帮主回 A:%v", err)
+		fail("mgmt-M8", "D transferring guild leadership back to A: %v", err)
 	}
 	if err := guildSmokeCheckLeadership(backToA.GetGuild(), a.gc.PlayerId, d.gc.PlayerId); err != nil {
 		fail("mgmt-M8", "%v", err)
@@ -661,10 +661,10 @@ func RunGuildSmoke(cfg *config.Config) {
 	a.clearPushes()
 	if err := d.expect(game.GuildServiceLeaveGuildMessageId,
 		&guildpb.LeaveGuildRequest{}, &guildpb.LeaveGuildResponse{}, 0); err != nil {
-		fail("mgmt-M9", "D 退帮:%v", err)
+		fail("mgmt-M9", "D leaving the guild: %v", err)
 	}
 	if err := a.waitPush(guildpb.GuildChangeKind_GUILD_CHANGE_KIND_MEMBER_LEFT, guildID, guildSmokePushTimeout); err != nil {
-		fail("mgmt-M9", "A 没等到退帮推送:%v", err)
+		fail("mgmt-M9", "A did not receive the guild-leave push: %v", err)
 	}
 
 	// M10 前半:F 重新申请,给第 10 步的解散留一条待审行去清理。
@@ -672,7 +672,7 @@ func RunGuildSmoke(cfg *config.Config) {
 	// 这次多半被冷却闸门挡下;断言它会让冒烟随运行快慢随机红,那是最难排查的一类不稳定。
 	if err := f.expect(game.GuildServiceApplyJoinGuildMessageId,
 		&guildpb.ApplyJoinGuildRequest{GuildId: guildID}, &guildpb.ApplyJoinGuildResponse{}, 0); err != nil {
-		fail("mgmt-M10", "F 重新申请:%v", err)
+		fail("mgmt-M10", "F applying again: %v", err)
 	}
 
 	// ---- 步骤 10:解散 ----
@@ -694,10 +694,10 @@ func RunGuildSmoke(cfg *config.Config) {
 	fApplications = &guildpb.ListMyGuildApplicationsResponse{}
 	if err := f.expect(game.GuildServiceListMyGuildApplicationsMessageId,
 		&guildpb.ListMyGuildApplicationsRequest{}, fApplications, 0); err != nil {
-		fail("mgmt-M10", "解散后 F 列本人申请:%v", err)
+		fail("mgmt-M10", "F listing personal applications after disbanding: %v", err)
 	}
 	if len(fApplications.GetApplications()) != 0 {
-		fail("mgmt-M10", "帮会解散后 F 的待审还剩 %d 条,期望 0 条", len(fApplications.GetApplications()))
+		fail("mgmt-M10", "F still has %d pending applications after guild disbanding, expected 0", len(fApplications.GetApplications()))
 	}
 	zap.L().Info(fmt.Sprintf("GUILD_MGMT_OK guild_id=%d leader=%d officer=%d kicked=%d rejected=%d",
 		guildID, a.gc.PlayerId, d.gc.PlayerId, e.gc.PlayerId, f.gc.PlayerId))
@@ -778,7 +778,7 @@ func (b *guildSmokeBot) onMessage(client *pkg.GameClient, msg *base.MessageConte
 		if err := proto.Unmarshal(msg.GetSerializedMessage(), change); err != nil {
 			// 解不开不能当"没收到":那会让后面的 waitPush 超时,报成"推送没到",
 			// 把一个协议不一致的问题伪装成投递问题。记下来让日志里有据可查。
-			zap.L().Error("[guild-smoke] 无法解码 NotifyGuildChanged",
+			zap.L().Error("[guild-smoke] Cannot decode NotifyGuildChanged",
 				zap.String("account", b.account), zap.Error(err))
 			return
 		}

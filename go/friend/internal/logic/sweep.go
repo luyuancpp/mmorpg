@@ -107,17 +107,17 @@ type SweepStore interface {
 func StartSweep(ctx context.Context, deps *Deps) {
 	cfg := deps.SvcCtx.Config.Friend.Sweep
 	if deps.Sweeps == nil {
-		logx.Errorf("[friend] sweep 未装配 SweepStore,清理不启动(终态好友申请与零好友容量行都不会被回收)")
+		logx.Errorf("[friend] SweepStore not wired; sweep not started (terminal friend requests and zero-friend capacity rows will not be reclaimed)")
 		return
 	}
 	// Interval <= 0 在生产不可能出现(config.Validate 拒收),这里不启动而不是用 0 间隔 ——
 	// 0 间隔的 ticker 会 panic,safego.Loop 也会拒绝启动,拒绝得越早越好排查。
 	if cfg.Interval <= 0 {
-		logx.Errorf("[friend] sweep Interval=%v 非法,清理不启动", cfg.Interval)
+		logx.Errorf("[friend] Invalid sweep Interval=%v; cleanup not started", cfg.Interval)
 		return
 	}
 
-	logx.Infof("[friend] sweep 启动 mode=%s interval=%v retention_days=%d batch=%d(清理对象:friend_request 终态行 + friend_capacity 零好友行,共用这一份参数)",
+	logx.Infof("[friend] Sweep started mode=%s interval=%v retention_days=%d batch=%d (cleanup targets: terminal friend_request rows + zero-friend friend_capacity rows, sharing these parameters)",
 		cfg.Mode, cfg.Interval, cfg.RetentionDays, cfg.BatchLimit)
 
 	safego.Go(sweepPoint+".start", func() {
@@ -156,7 +156,7 @@ func (d *Deps) runSweepRound(ctx context.Context) {
 	// 在这里统一打**一次**,而不是两段各打一遍:同一个配置错误一轮两条一模一样的日志,
 	// 只会让人以为是两个问题。两段照常调用 SQL 侧(它对未知模式只数不删),行为与引入第二段之前一致。
 	if !isKnownSweepMode(cfg.Mode) {
-		logx.WithContext(ctx).Errorf("[friend] sweep 模式 %q 不是 %q / %q,本轮未清理任何行",
+		logx.WithContext(ctx).Errorf("[friend] Sweep mode %q is neither %q nor %q; no rows cleaned this round",
 			cfg.Mode, config.SweepModeReportOnly, config.SweepModeDelete)
 	}
 
@@ -177,7 +177,7 @@ func (d *Deps) sweepTerminalRequests(ctx context.Context, cfg config.SweepConf) 
 		ctx, cfg.Mode, cfg.RetentionDays, cfg.BatchLimit, d.now().UnixMilli())
 	if err != nil {
 		// data 层逐行按主键删,出错时已删的行是真删了:行数要进日志(与容量行回收那一支同口径)。
-		logx.WithContext(ctx).Errorf("[friend] sweep 清理终态申请失败 mode=%s(中止前看到 %d 行、已删 %d 行): %v",
+		logx.WithContext(ctx).Errorf("[friend] Sweep failed to clean terminal requests mode=%s (%d rows observed, %d deleted before abort): %v",
 			cfg.Mode, pending, deleted, err)
 		return
 	}
@@ -192,7 +192,7 @@ func (d *Deps) sweepTerminalRequests(ctx context.Context, cfg config.SweepConf) 
 	case config.SweepModeDelete:
 		metrics.SetSweepPendingRows(cfg.Mode, float64(pending))
 		if deleted > 0 {
-			logx.WithContext(ctx).Infof("[friend] sweep 删除 %d 行终态好友申请(retention_days=%d,batch=%d)",
+			logx.WithContext(ctx).Infof("[friend] Sweep deleted %d terminal friend request rows (retention_days=%d,batch=%d)",
 				deleted, cfg.RetentionDays, cfg.BatchLimit)
 			return
 		}
@@ -201,7 +201,7 @@ func (d *Deps) sweepTerminalRequests(ctx context.Context, cfg config.SweepConf) 
 			// (发现终态行的 updated_ms 恒为 0 ⇒ 某条写路径漏写 updated_ms,F2-14),
 			// 也可能是并发的另一个副本刚把这一批删掉了。两种都要看得见:
 			// 前者是必须修的缺陷,后者是无害的空批,分辨靠 data 层那条拒绝日志。
-			logx.WithContext(ctx).Errorf("[friend] WARN sweep(delete)有 %d 行待清理却一行未删:检查 data 层是否触发了「待删行数异常」保险(updated_ms 写入方缺失),或只是被另一个副本抢先删了",
+			logx.WithContext(ctx).Errorf("[friend] WARN sweep(delete) found %d rows to clean but deleted none: check data-layer anomalous deletion-count guard (updated_ms writer missing), or another replica may have deleted them first",
 				pending)
 		}
 	case config.SweepModeReportOnly:
@@ -209,7 +209,7 @@ func (d *Deps) sweepTerminalRequests(ctx context.Context, cfg config.SweepConf) 
 		// 默认模式:只观察,不动数据。go-zero 的 logx 没有 Warn 级,
 		// 按仓内先例用 Errorf 打 "WARN " 前缀。
 		if pending > 0 {
-			logx.WithContext(ctx).Errorf("[friend] WARN sweep(report_only)发现 %d 行终态好友申请已过保留期(retention_days=%d,统计上限 %d);切 delete 前先确认这个数字合理",
+			logx.WithContext(ctx).Errorf("[friend] WARN sweep(report_only) found %d terminal friend request rows beyond retention (retention_days=%d, count limit %d); confirm count is reasonable before switching to delete",
 				pending, cfg.RetentionDays, cfg.BatchLimit)
 		}
 	}
@@ -227,7 +227,7 @@ func (d *Deps) sweepIdleCapacityRows(ctx context.Context, cfg config.SweepConf) 
 	if err != nil {
 		// data 层出错时仍返回已删行数(逐行独立提交),这里必须带进日志,否则已删的行无处可查。
 		// Gauge 在失败分支**不刷**:候选读失败时 idle = 0,刷了会把"失败"伪装成"无积压"。
-		logx.WithContext(ctx).Errorf("[friend] sweep 回收零好友容量行失败 mode=%s(中止前看到 %d 行、已删 %d 行): %v",
+		logx.WithContext(ctx).Errorf("[friend] Sweep failed to reclaim zero-friend capacity rows mode=%s (%d rows observed, %d deleted before abort): %v",
 			cfg.Mode, idle, deleted, err)
 		return
 	}
@@ -238,13 +238,13 @@ func (d *Deps) sweepIdleCapacityRows(ctx context.Context, cfg config.SweepConf) 
 	case config.SweepModeDelete:
 		metrics.SetSweepIdleCapacityRows(cfg.Mode, float64(idle))
 		if deleted > 0 {
-			logx.WithContext(ctx).Infof("[friend] sweep 回收 %d 行零好友容量行(本轮看到 %d 行,retention_days=%d,batch=%d)",
+			logx.WithContext(ctx).Infof("[friend] Sweep reclaimed %d zero-friend capacity rows (%d observed this round,retention_days=%d,batch=%d)",
 				deleted, idle, cfg.RetentionDays, cfg.BatchLimit)
 		}
 	case config.SweepModeReportOnly:
 		metrics.SetSweepIdleCapacityRows(cfg.Mode, float64(idle))
 		if idle > 0 {
-			logx.WithContext(ctx).Errorf("[friend] WARN sweep(report_only)发现 %d 行零好友容量行已过保留期(retention_days=%d,统计上限 %d);这个数字持续上涨说明有人在对大量不同目标发申请 / 反复拉黑换目标",
+			logx.WithContext(ctx).Errorf("[friend] WARN sweep(report_only) found %d zero-friend capacity rows beyond retention (retention_days=%d, count limit %d); persistent growth indicates requests to many targets / repeated blocking of different targets",
 				idle, cfg.RetentionDays, cfg.BatchLimit)
 		}
 	}

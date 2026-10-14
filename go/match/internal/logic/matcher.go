@@ -89,7 +89,7 @@ func warnUnmatchableQueue(queueKey string) {
 		return
 	}
 	lastUnmatchableQueueWarnNs.Store(queueKey, now)
-	logx.Errorf("[matcher] 队列 %s 无凑满人数配置或人数档超出副本上限,不凑单(排队保留,等配置恢复或玩家取消)", queueKey)
+	logx.Errorf("[matcher] Queue %s has no required-player-count configuration or the player count exceeds instance capacity; skipping matching (queue retained until configuration recovers or players cancel)", queueKey)
 }
 
 // warnStarvedAnchor 对"容差曲线已饱和仍凑不到候选"的锚点记一条限频(每队列 10s)
@@ -101,7 +101,7 @@ func warnStarvedAnchor(queueKey string, anchor uint64, waitSeconds int64, tol fl
 		return
 	}
 	lastStarvedAnchorWarnNs.Store(queueKey, now)
-	logx.Errorf("[matcher] 锚点已等 %ds(容差 %.0f 已饱和)仍凑不到候选,队列在饥饿 queue=%s anchor=%d",
+	logx.Errorf("[matcher] Anchor has waited %ds (tolerance %.0f saturated) without candidates; queue starving queue=%s anchor=%d",
 		waitSeconds, tol, queueKey, anchor)
 }
 
@@ -150,7 +150,7 @@ func migrateLegacyQueues(svcCtx *svc.ServiceContext) {
 	for {
 		keys, next, err := svcCtx.SharedRedis.Scan(cursor, legacyMatchQueueScanPattern, 256)
 		if err != nil {
-			logx.Errorf("[matcher] 扫描旧格式队列失败: %v", err)
+			logx.Errorf("[matcher] Failed to scan legacy queues: %v", err)
 			return
 		}
 		for _, legacyKey := range keys {
@@ -162,7 +162,7 @@ func migrateLegacyQueues(svcCtx *svc.ServiceContext) {
 		cursor = next
 	}
 	if moved > 0 {
-		logx.Infof("[matcher] 已把 %d 名旧格式队列成员搬进新队列", moved)
+		logx.Infof("[matcher] Moved %d legacy queue members to new queues", moved)
 	}
 }
 
@@ -170,7 +170,7 @@ func migrateLegacyQueues(svcCtx *svc.ServiceContext) {
 func migrateLegacyQueue(svcCtx *svc.ServiceContext, legacyKey string) int {
 	mode, config, err := parseQueueKey(legacyKey)
 	if err != nil {
-		logx.Errorf("[matcher] 旧格式队列 key %q 无法解析,跳过: %v", legacyKey, err)
+		logx.Errorf("[matcher] Could not parse legacy queue key %q; skipping: %v", legacyKey, err)
 		return 0
 	}
 	queueKey := matchQueueKey(mode, config)
@@ -179,7 +179,7 @@ func migrateLegacyQueue(svcCtx *svc.ServiceContext, legacyKey string) int {
 		raw, err := svcCtx.SharedRedis.Rpop(legacyKey)
 		if err != nil {
 			if !errors.Is(err, redis.Nil) {
-				logx.Errorf("[matcher] Rpop 旧格式队列 %s 失败: %v", legacyKey, err)
+				logx.Errorf("[matcher] Failed to Rpop legacy queue %s: %v", legacyKey, err)
 			}
 			break
 		}
@@ -195,7 +195,7 @@ func migrateLegacyQueue(svcCtx *svc.ServiceContext, legacyKey string) int {
 			rating = loadRatingOrDefault(svcCtx, playerId)
 		}
 		if err := pushFrontRegistered(svcCtx, queueKey, raw, rating); err != nil {
-			logx.Errorf("[matcher] 旧队列成员 %s 搬进 %s 失败(票据残留由 JoinQueue 自愈): %v", raw, queueKey, err)
+			logx.Errorf("[matcher] Failed to move legacy queue member %s into %s (JoinQueue will recover ticket remnants): %v", raw, queueKey, err)
 			continue
 		}
 		moved++
@@ -203,11 +203,11 @@ func migrateLegacyQueue(svcCtx *svc.ServiceContext, legacyKey string) int {
 			continue
 		}
 		if _, err := svcCtx.MatchRedis.Eval(ticketSetQueueKeyScript, []string{matchTicketKey(playerId)}, queueKey); err != nil {
-			logx.Errorf("[matcher] 旧票据补 queue_key 失败 player=%d: %v", playerId, err)
+			logx.Errorf("[matcher] Failed to backfill queue_key in legacy ticket player=%d: %v", playerId, err)
 		}
 	}
 	if moved > 0 {
-		logx.Infof("[matcher] 旧格式队列 %s 已搬进 %s,共 %d 人", legacyKey, queueKey, moved)
+		logx.Infof("[matcher] Legacy queue %s moved into %s, %d players total", legacyKey, queueKey, moved)
 	}
 	return moved
 }
@@ -222,7 +222,7 @@ func runMatcherRound(ctx context.Context, svcCtx *svc.ServiceContext) {
 
 	keys, err := svcCtx.MatchRedis.Smembers(matchQueueIndexKey)
 	if err != nil {
-		logx.Errorf("[matcher] 读队列注册集 %s 失败: %v", matchQueueIndexKey, err)
+		logx.Errorf("[matcher] Failed to read queue registry set %s: %v", matchQueueIndexKey, err)
 		return
 	}
 	for _, key := range keys {
@@ -238,7 +238,7 @@ func matchQueueOnce(svcCtx *svc.ServiceContext, queueKey string) {
 	mode, config, err := parseQueueKey(queueKey)
 	if err != nil {
 		// 注册集混入异物:不是本服务写的,不动它,只告警。
-		logx.Errorf("[matcher] 无法解析队列 key %q: %v", queueKey, err)
+		logx.Errorf("[matcher] Could not parse queue key %q: %v", queueKey, err)
 		return
 	}
 
@@ -254,7 +254,7 @@ func matchQueueOnce(svcCtx *svc.ServiceContext, queueKey string) {
 		warnUnmatchableQueue(queueKey)
 		depth, err := svcCtx.MatchRedis.Llen(queueKey)
 		if err != nil {
-			logx.Errorf("[matcher] Llen %s 失败: %v", queueKey, err)
+			logx.Errorf("[matcher] Llen %s failed: %v", queueKey, err)
 			return
 		}
 		if depth == 0 {
@@ -270,7 +270,7 @@ func matchQueueOnce(svcCtx *svc.ServiceContext, queueKey string) {
 	if svcCtx.BattleNodes != nil && svcCtx.BattleNodes.Count() == 0 {
 		if now := time.Now().UnixNano(); now-lastNoBattleNodeWarnNs.Load() >= int64(noBattleNodeWarnInterval) {
 			lastNoBattleNodeWarnNs.Store(now)
-			logx.Errorf("[matcher] battle 池为空,暂停凑单 queue=%s(排队保留,等待 battle 节点注册)", queueKey)
+			logx.Errorf("[matcher] Battle pool empty; matching paused queue=%s (queue retained until battle nodes register)", queueKey)
 		}
 		return
 	}
@@ -281,7 +281,7 @@ func matchQueueOnce(svcCtx *svc.ServiceContext, queueKey string) {
 	// 锁 key 由队列 key 推出:普通队列仍是 matcherLockKey(mode, config),人数档队列各有各的锁。
 	lockKey, err := lockKeyForQueue(queueKey)
 	if err != nil {
-		logx.Errorf("[matcher] 无法推出凑单锁 key %q: %v", queueKey, err)
+		logx.Errorf("[matcher] Could not derive matching lock key %q: %v", queueKey, err)
 		return
 	}
 	lockTTL := int(svcCtx.Config.MatcherLockTTLSeconds)
@@ -290,7 +290,7 @@ func matchQueueOnce(svcCtx *svc.ServiceContext, queueKey string) {
 	}
 	acquired, err := svcCtx.MatchRedis.SetnxEx(lockKey, svcCtx.InstanceID, lockTTL)
 	if err != nil {
-		logx.Errorf("[matcher] 抢锁失败 %s: %v", lockKey, err)
+		logx.Errorf("[matcher] Failed to acquire lock %s: %v", lockKey, err)
 		return
 	}
 	if !acquired {
@@ -298,7 +298,7 @@ func matchQueueOnce(svcCtx *svc.ServiceContext, queueKey string) {
 	}
 	defer func() {
 		if _, err := svcCtx.MatchRedis.Eval(releaseLockScript, []string{lockKey}, svcCtx.InstanceID); err != nil {
-			logx.Errorf("[matcher] 释放锁失败 %s: %v", lockKey, err)
+			logx.Errorf("[matcher] Failed to release lock %s: %v", lockKey, err)
 		}
 	}()
 
@@ -307,7 +307,7 @@ func matchQueueOnce(svcCtx *svc.ServiceContext, queueKey string) {
 	sizeName := queueTeamSizeLabel(queueKey)
 	depth, err := svcCtx.MatchRedis.Llen(queueKey)
 	if err != nil {
-		logx.Errorf("[matcher] Llen %s 失败: %v", queueKey, err)
+		logx.Errorf("[matcher] Llen %s failed: %v", queueKey, err)
 		return
 	}
 	setQueueDepthFn(modeName, configName, sizeName, depth)
@@ -343,13 +343,13 @@ func matchQueueOnce(svcCtx *svc.ServiceContext, queueKey string) {
 		for _, playerId := range members {
 			written, err := setTicketMatched(svcCtx, playerId, tickets[playerId], matchedTTL)
 			if err != nil {
-				logx.Errorf("[matcher] 推进 ticket matched 失败 player=%d: %v", playerId, err)
+				logx.Errorf("[matcher] Failed to advance ticket to matched player=%d: %v", playerId, err)
 				redisErr = true
 				keep = append(keep, playerId)
 				continue
 			}
 			if !written {
-				logx.Infof("[matcher] ticket 已被取消、替换或过期,该成员出局 player=%d expected=%s",
+				logx.Infof("[matcher] Ticket cancelled, replaced, or expired; member removed player=%d expected=%s",
 					playerId, tickets[playerId])
 				continue
 			}
@@ -357,7 +357,7 @@ func matchQueueOnce(svcCtx *svc.ServiceContext, queueKey string) {
 			keep = append(keep, playerId)
 		}
 		if uint32(len(matched)) < required {
-			logx.Infof("[matcher] 弹出后仅 %d/%d 人票据有效,其余回队首 queue=%s", len(matched), required, queueKey)
+			logx.Infof("[matcher] Only %d/%d players have valid tickets after pop; returning remaining players to queue front queue=%s", len(matched), required, queueKey)
 			requeueFront(svcCtx, queueKey, keep, tickets)
 			if redisErr {
 				// Redis 抖动:结束本轮,不在同一轮反复弹出同一批人。
@@ -365,7 +365,7 @@ func matchQueueOnce(svcCtx *svc.ServiceContext, queueKey string) {
 			}
 			continue
 		}
-		logx.Infof("[matcher] 凑单成功 queue=%s members=%v matched_ttl=%ds", queueKey, members, matchedTTL)
+		logx.Infof("[matcher] Match formed successfully queue=%s members=%v matched_ttl=%ds", queueKey, members, matchedTTL)
 		group := members
 		safego.Go("match.gather.queue", func() {
 			runGatherFn(svcCtx, matchpb.MatchMode(mode), config, group, true, tickets)
@@ -379,17 +379,17 @@ func matchQueueOnce(svcCtx *svc.ServiceContext, queueKey string) {
 func pruneEmptyQueue(svcCtx *svc.ServiceContext, queueKey string, modeName string, configName string) {
 	rankKey, err := rankKeyForQueue(queueKey)
 	if err != nil {
-		logx.Errorf("[matcher] 剔除空队列 %s 失败: %v", queueKey, err)
+		logx.Errorf("[matcher] Failed to remove empty queue %s: %v", queueKey, err)
 		return
 	}
 	removed, err := svcCtx.MatchRedis.Eval(pruneQueueScript, []string{matchQueueIndexKey, queueKey, rankKey}, queueKey)
 	if err != nil {
-		logx.Errorf("[matcher] 剔除空队列 %s 失败: %v", queueKey, err)
+		logx.Errorf("[matcher] Failed to remove empty queue %s: %v", queueKey, err)
 		return
 	}
 	if n, ok := removed.(int64); ok && n > 0 {
 		setQueueDepthFn(modeName, configName, queueTeamSizeLabel(queueKey), 0)
-		logx.Infof("[matcher] 空队列已从注册集剔除 queue=%s", queueKey)
+		logx.Infof("[matcher] Empty queue removed from registry set queue=%s", queueKey)
 	}
 }
 
@@ -507,7 +507,7 @@ func (p *groupPicker) validate(idx int) (bool, error) {
 		return false, nil
 	}
 	if e.playerId == 0 {
-		logx.Errorf("[matcher] 队列 %s 出现非法成员 %q,丢弃", p.queueKey, e.raw)
+		logx.Errorf("[matcher] Queue %s contains invalid member %q; discarding", p.queueKey, e.raw)
 		p.drop(idx)
 		return false, nil
 	}
@@ -520,7 +520,7 @@ func (p *groupPicker) validate(idx int) (bool, error) {
 	}
 	if ticket == nil || ticket.State != ticketStateQueued {
 		// 已取消 / 状态异常:摘掉队列项(取消路径已删票)。
-		logx.Infof("[matcher] 丢弃无效队列成员 player=%d(ticket 缺失或状态异常)", e.playerId)
+		logx.Infof("[matcher] Discarding invalid queue member player=%d (ticket missing or invalid state)", e.playerId)
 		p.drop(idx)
 		return false, nil
 	}
@@ -529,7 +529,7 @@ func (p *groupPicker) validate(idx int) (bool, error) {
 		// list 项 —— 没取消就离开、票据过期后重排,或取消时出队失败。票据是 queued 不代表他在排**这条**
 		// 队列,带进组就是把人拉进他没选的对局。只摘本队列的残留,不动票据(票据属于他正在排的那条队列);
 		// 这一步必须在下面的战斗锁判定之前,那里会无条件删票。queue_key 为空的旧票据不做这项核对。
-		logx.Infof("[matcher] 丢弃别的队列的残留成员 player=%d queue=%s ticket_queue=%s",
+		logx.Infof("[matcher] Discarding stale member from another queue player=%d queue=%s ticket_queue=%s",
 			e.playerId, p.queueKey, ticket.QueueKey)
 		p.drop(idx)
 		return false, nil
@@ -539,7 +539,7 @@ func (p *groupPicker) validate(idx int) (bool, error) {
 		return false, fmt.Errorf("查战斗锁失败 player=%d: %w", e.playerId, err)
 	}
 	if locked {
-		logx.Infof("[matcher] 队列成员已在战斗中,出局删票 player=%d", e.playerId)
+		logx.Infof("[matcher] Queue member already in battle; removing member and ticket player=%d", e.playerId)
 		deleteTicket(p.svcCtx, e.playerId)
 		p.drop(idx)
 		return false, nil
@@ -548,7 +548,7 @@ func (p *groupPicker) validate(idx int) (bool, error) {
 		if _, err := p.svcCtx.MatchRedis.ZaddFloat(p.rankKey, ticket.Rating, e.raw); err != nil {
 			return false, fmt.Errorf("补写评分镜像失败 player=%d: %w", e.playerId, err)
 		}
-		logx.Infof("[matcher] 队列成员缺评分镜像,按票据评分补写 player=%d rating=%s queue=%s",
+		logx.Infof("[matcher] Queue member missing rating mirror; backfilling from ticket rating player=%d rating=%s queue=%s",
 			e.playerId, formatRating(ticket.Rating), p.queueKey)
 		e.rating, e.hasScore = ticket.Rating, true
 	}
@@ -563,12 +563,12 @@ func (p *groupPicker) drop(idx int) {
 	if e.playerId == 0 {
 		// 非法成员:ZSET 里不会有它,单独 LREM。
 		if _, err := p.svcCtx.MatchRedis.Lrem(p.queueKey, 0, e.raw); err != nil {
-			logx.Errorf("[matcher] 剔除非法成员 %q 失败: %v", e.raw, err)
+			logx.Errorf("[matcher] Failed to remove invalid member %q: %v", e.raw, err)
 		}
 		return
 	}
 	if _, err := removeQueueMembers(p.svcCtx, p.queueKey, []uint64{e.playerId}); err != nil {
-		logx.Errorf("[matcher] 剔除无效成员失败 player=%d: %v", e.playerId, err)
+		logx.Errorf("[matcher] Failed to remove invalid member player=%d: %v", e.playerId, err)
 	}
 }
 
@@ -590,18 +590,18 @@ func (p *groupPicker) drop(idx int) {
 func popGroup(svcCtx *svc.ServiceContext, queueKey string, required uint32) ([]uint64, map[uint64]string, bool) {
 	mode, config, err := parseQueueKey(queueKey)
 	if err != nil {
-		logx.Errorf("[matcher] 无法解析队列 key %q: %v", queueKey, err)
+		logx.Errorf("[matcher] Could not parse queue key %q: %v", queueKey, err)
 		return nil, nil, false
 	}
 	configName := strconv.FormatUint(uint64(config), 10)
 	rankKey, err := rankKeyForQueue(queueKey)
 	if err != nil {
-		logx.Errorf("[matcher] 无法推出评分镜像 key %q: %v", queueKey, err)
+		logx.Errorf("[matcher] Could not derive rating mirror key %q: %v", queueKey, err)
 		return nil, nil, false
 	}
 	entries, err := loadQueueSnapshot(svcCtx, queueKey, rankKey, queueScanLimit)
 	if err != nil {
-		logx.Errorf("[matcher] 读队列快照 %s 失败: %v", queueKey, err)
+		logx.Errorf("[matcher] Failed to read queue snapshot %s: %v", queueKey, err)
 		return nil, nil, false
 	}
 	p := &groupPicker{
@@ -629,7 +629,7 @@ func popGroup(svcCtx *svc.ServiceContext, queueKey string, required uint32) ([]u
 		}
 		valid, err := p.validate(ai)
 		if err != nil {
-			logx.Errorf("[matcher] 校验锚点失败,结束本轮 queue=%s: %v", queueKey, err)
+			logx.Errorf("[matcher] Failed to validate anchor; ending current round queue=%s: %v", queueKey, err)
 			return nil, nil, false
 		}
 		if !valid {
@@ -664,17 +664,17 @@ func popGroup(svcCtx *svc.ServiceContext, queueKey string, required uint32) ([]u
 		}
 		removed, err := removeQueueMembers(svcCtx, queueKey, members)
 		if err != nil {
-			logx.Errorf("[matcher] 摘出成组失败 queue=%s members=%v: %v", queueKey, members, err)
+			logx.Errorf("[matcher] Failed to remove matched group queue=%s members=%v: %v", queueKey, members, err)
 			return nil, nil, false
 		}
 		if uint32(len(removed)) < required {
 			// 校验与摘出之间有人被 CancelQueue 摘走:已摘出者按原相对顺序放回队首,
 			// 下一轮再凑。
-			logx.Infof("[matcher] 摘出时仅 %d/%d 人仍在队列,放回队首 queue=%s", len(removed), required, queueKey)
+			logx.Infof("[matcher] Only %d/%d players still queued when removed; returning to queue front queue=%s", len(removed), required, queueKey)
 			for i := len(removed) - 1; i >= 0; i-- {
 				pid := removed[i]
 				if err := pushFrontRegistered(svcCtx, queueKey, strconv.FormatUint(pid, 10), p.tickets[pid].Rating); err != nil {
-					logx.Errorf("[matcher] 放回队首失败 player=%d: %v", pid, err)
+					logx.Errorf("[matcher] Failed to return player to queue front player=%d: %v", pid, err)
 				}
 			}
 			return nil, nil, false
@@ -691,7 +691,7 @@ func popGroup(svcCtx *svc.ServiceContext, queueKey string, required uint32) ([]u
 		if p.rated {
 			metrics.ObserveGroupRatingSpread(p.modeName, hi-lo)
 		}
-		logx.Infof("[matcher] 成组 queue=%s anchor=%d wait=%ds tol=%.0f spread=%.0f members=%v ratings=%v",
+		logx.Infof("[matcher] Group formed queue=%s anchor=%d wait=%ds tol=%.0f spread=%.0f members=%v ratings=%v",
 			queueKey, anchor.playerId, waitSeconds, tol, hi-lo, members, ratings)
 		return members, tickets, true
 	}
@@ -747,7 +747,7 @@ func (p *groupPicker) pickGroup(anchorIdx int, required uint32, tol float64) ([]
 		}
 		valid, err := p.validate(ci)
 		if err != nil {
-			logx.Errorf("[matcher] 校验候选失败,结束本轮 queue=%s: %v", p.queueKey, err)
+			logx.Errorf("[matcher] Failed to validate candidates; ending current round queue=%s: %v", p.queueKey, err)
 			return nil, nil, false
 		}
 		if !valid {

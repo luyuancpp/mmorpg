@@ -77,7 +77,7 @@ func register() {
 			if err := prometheus.Register(c); err != nil {
 				var already prometheus.AlreadyRegisteredError
 				if !errors.As(err, &already) {
-					logx.Errorf("[serverbase] 指标注册失败: %v", err)
+					logx.Errorf("[serverbase] Failed to register metrics: %v", err)
 				}
 			}
 		}

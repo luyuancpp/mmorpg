@@ -1,0 +1,199 @@
+# Prometheus alert rules for the MySQL connection budget(共用 MySQL 的连接上限 + 各服务的 database/sql 连接池)。
+#
+# 来源:G2b「MySQL 连接预算与连接池可观测性」(docs/handoff/launch-readiness-20261013/spec_G2b.md §4.2.4);
+#       起因见 docs/PROGRESS.md 2026-10-12「落点多库连接拓扑核算」。
+#       总账公式与规划档在 tools/scripts/k8s_deploy.ps1(Get-MysqlConnectionPlan / Get-MysqlConnectionLedger),
+#       上限取值的依据写在 deploy/k8s/manifests/infra/mysql.yaml 的「连接上限」注释里。
+#
+# Install as a PrometheusRule CR (kube-prometheus stack),与 owner-epoch-alerts.yaml 同法:
+#   kubectl apply -n observability -f deploy/k8s/mysql-connection-alerts.yaml
+#
+# Scrape prerequisites:
+#   - sql-pool.client 组(客户端侧,指标由 go/db 与 data_service 导出):
+#       go/db 的 MetricsListenAddr 已配置(本地惯例 ":9160",AGENTS.md §6.1)。K8s 上 db 的 ConfigMap 必须写出同一端口,
+#       与 manifests/go-svc/db.yaml 的 metrics 端口 / prometheus.io/port 注解一致;留空时 go/db 不起 /metrics,
+#       sql_client="db" 的序列全无,下面涉及 db 的规则全部是哑的(空表达式不报错,和「一切正常」长得一样)。
+#       data_service 的 MetricsListenAddr 已配置(K8s ConfigMap 固定 ":9260",本地同)。
+#       A ServiceMonitor or PodMonitor pointed at those two ports.
+#   - mysql.connection-budget 组(MySQL 服务端侧,**现在没有数据**):需要 mysqld_exporter。
+#       仓库里还没有部署它(是否部署、怎么部署待拍板,G2b 规格 §10 第 6 条);落地前这一组没有序列,不会触发,也不会误报。
+#       用到的三个指标名凭记忆写成,未在本机核实:
+#         mysql_global_status_connection_errors_total{error="max_connections"}
+#         mysql_global_status_threads_connected
+#         mysql_global_variables_max_connections
+#       部署 exporter 时逐个对着它的 /metrics 核对,对不上就改这里 —— 指标名写错的规则不报错,只是永远不响。
+#
+# 池指标 mmorpg_sql_pool_*{sql_client,pool} 由 go/shared/sqlpoolstats 导出,按池类别聚合,不含库名:
+#   sql_client="db"            pool = home | extra_zone | extra_non_zone(go/db/internal/metrics 的 Pool* 常量)
+#   sql_client="data_service"  pool = snapshot | transaction_log | id_segment | player_name,
+#                              以及只在 RouteStore.Mode=db_first 时才声明的 player_route(go/data_service/internal/metrics 的 Pool* 常量)
+# friend / trade / Java gateway 没有导出池指标,不在 sql-pool.client 组的覆盖范围内;它们占的连接只能从 MySQL 服务端那一组看到。
+#
+# 表达式按 namespace 分组(zone 级服务每个 zone 一个 namespace)。namespace 是抓取配置附加的目标 label:
+# 抓取配置没有附加它时各 zone 会被并成一组 —— 不报错,但分不清 zone,求和类的比值也会被摊平。
+#
+# 阈值:本文件每一条的阈值与 for 时长都是按总账规划档推算或凭经验取的占位值,**待压测确认**
+# (各条规则上方另有标注;AGENTS.md §6:没有压测对比不下容量结论)。
+#
+# Severity conventions(与 scene-manager-alerts.yaml 相同):
+#   critical = pager, someone wakes up
+#   warning  = next-business-hours channel
+#   info     = dashboard annotation / trend signal
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: mysql-connection-alerts
+  labels:
+    app: mysql
+    prometheus: kube-prometheus
+    role: alert-rules
+spec:
+  groups:
+    # ── MySQL 服务端侧 ────────────────────────────────────────────────────
+    # 需要 mysqld_exporter(仓库里还没有,部署方式待拍板)。没有它时这一组没有数据、不会触发,也不会误报;
+    # 刻意不写 absent(mysql_up):exporter 落地前它会恒响。「exporter 掉线」的规则等 exporter 落地时再补。
+    # 指标名凭记忆,待核对(见文件头)。
+    - name: mysql.connection-budget
+      interval: 30s
+      rules:
+        # 已经有连接因为 max_connections 被 MySQL 拒绝(客户端看到 1040 Too many connections):上限被击穿,不是「快满了」。
+        # 后果不只是变慢。下面这条链是读代码推断的,未实测:
+        #   go/db 不特判 1040,取连接失败按普通落库失败处理 → 任务进重试队列,每轮重试耗一次预算
+        #   (retryMaxTimes = 3,重试循环 1 秒一轮)→ 上限持续被顶住时几秒内耗尽 → 进 kafka:dead:queue:{topic},
+        #   那个队列全仓没有消费者 → 这笔存盘不会自动落库。
+        #   代码位置:go/db/internal/kafka/key_ordered_consumer.go 的 deferFailedTask / consumeOneRetryTask;
+        #   不耗预算的豁免只有 placement_route.go retryBudgetExempt 列的几种。与连接有关的只有一种:按需**打开**额外落点库
+        #   失败(包成 ErrStoreUnavailable,写延后);已经打开的池(含本 zone 主池)取连接时遇到 1040 不在豁免内。
+        #   改成「拿不到连接时延后、不耗预算」并给死信加消费者是 L-04(docs/design/tidb-phase1-and-launch-readiness.md),
+        #   写本文件时 go/db 里还没有;它落地后这段注释与下面的 description 要同步改。
+        # for: 0m —— 一次被拒就可能已有存盘在耗预算,不等。
+        # Connection_errors_max_connections 是 SHOW GLOBAL STATUS 的固定行,exporter 起来就应以 0 值导出,increase 抓得到第一次
+        # (凭记忆,部署 exporter 时一并核对;若它其实是「首次发生才出现」的序列,照 owner-epoch-alerts.yaml 的 legacy_zero 改用绝对值)。
+        # 阈值(> 0、5 分钟窗口)待压测确认。
+        - alert: MysqlConnectionsRefused
+          expr: |
+            sum(increase(mysql_global_status_connection_errors_total{error="max_connections"}[5m])) > 0
+          for: 0m
+          labels:
+            severity: critical
+          annotations:
+            summary: "MySQL 因 max_connections 拒绝了连接(1040),存盘可能正在进死信"
+            description: >-
+              过去 5 分钟约 {{ $value | printf "%.0f" }} 次连接因达到 max_connections 被 MySQL 拒绝(客户端报 1040)。
+              这不只是变慢:go/db 把 1040 当普通落库失败,任务进重试队列、每轮耗一次重试预算(上限 3 次,1 秒一轮),
+              耗尽后进 `kafka:dead:queue:<db_task topic>`;死信没有消费者,这些存盘不会自动落库(读代码推断,未实测)。
+              处置:
+              ① 止血 —— 在 MySQL 上按 user / host 统计 `SHOW PROCESSLIST`,看是谁占着连接;停掉正在跑的迁移 / 备份 / 人工会话,
+              暂停进行中的滚动发布。上限确实不够时按 deploy/k8s/manifests/infra/mysql.yaml「连接上限」注释调
+              (`SET GLOBAL max_connections` 可在线改运行值,先确认 MySQL Pod 的内存 limits 跟得上,并把 mysql.yaml 同步成新值;
+              不要用 SET PERSIST,原因见那段注释)。
+              ② 查有没有丢 —— 各 zone 的 go/db 所用 Redis 上 `LLEN kafka:dead:queue:db_task_zone_<zone>`(topic 换代后带 `_g<N>` 后缀)。
+              非 0 即已有任务进了死信:它不会自己变空,保留列表内容(不要清),上报负责人处理。
+              ③ 找根因 —— 对照部署日志的 `MySQL connection ledger` 一行与 tools/scripts/k8s_deploy.ps1 的 Get-MysqlConnectionLedger,
+              看是 zone 数 / 额外落点库数超了规划档(DbExtraStorePoolsBeyondPlan),还是多个 zone 同时在滚动发布。
+
+        # 连接数逼近上限:过去 5 分钟的 Threads_connected 峰值超过 max_connections 的 80%,并持续 5 分钟。Refused 之前的预警。
+        # 用 max_over_time 而不是瞬时值:连接数在滚动发布 / 登录潮时是尖峰,瞬时值一回落 for 就被打断,攒不满 5 分钟。
+        # 副作用:max_over_time[5m] 会把一次越线保持 5 分钟,与 for 5m 叠加后,单个越线样本基本就会触发 —— 有意如此
+        # (尖峰本身就说明余量不足)。两次抓取之间的尖峰仍然看不到。
+        # 注意规划档峰值对上限只留约 10% 余量(mysql.yaml「连接上限」注释),也就是规划规模下各池打满时,一次滚动发布
+        # 本身就会越过 80%。总账按池上限算,实际连接数通常低于名义值,所以 0.8 与 for 5m 只是占位值,**待压测确认**:
+        # 拿到实际稳态连接数后按「稳态 + 滚动余量」重定。
+        # 两个指标来自同一个 exporter 实例,label 集相同,一对一匹配;有多个 MySQL 实例时各算各的。
+        - alert: MysqlConnectionsNearMax
+          expr: |
+            max_over_time(mysql_global_status_threads_connected[5m]) / mysql_global_variables_max_connections > 0.8
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "MySQL 连接数逼近 max_connections(峰值占比 {{ $value | printf \"%.2f\" }})"
+            description: >-
+              {{ $labels.instance }} 过去 5 分钟的连接数峰值已占 max_connections 的 {{ $value | printf "%.2f" }}(1 = 满)。
+              再涨就是 1040,go/db 的存盘会耗尽重试进死信(见 MysqlConnectionsRefused)。
+              先看是不是正在滚动发布、迁移或备份(这些是临时的);不是的话对照部署日志的 `MySQL connection ledger` 一行,
+              结合 SqlPoolSaturated / DbExtraStorePoolsBeyondPlan 判断是 zone 数、额外落点库数还是某个池涨了。
+              调上限的做法与内存约束见 deploy/k8s/manifests/infra/mysql.yaml 的「连接上限」注释。
+
+    # ── 客户端侧(连接池)──────────────────────────────────────────────────
+    # go/db(:9160)与 data-service(:9260)的 /metrics。friend / trade / Java gateway 没导出池指标,不在覆盖范围内。
+    - name: sql-pool.client
+      interval: 30s
+      rules:
+        # 取连接在排队而且排得久:过去 5 分钟平均每次等待 > 100ms,并且每秒排队超过 1 次,持续 10 分钟。
+        # 两个条件都要:只看平均值会被偶尔一次慢等待触发;只看次数会被 go/db home 池的正常限流触发(见下一条)。
+        # 没人排队时分母为 0,商是 NaN,比较为假,不触发。
+        # wait_* 是类别内求和的 counter,靠「池常驻不删」保持单调(go/shared/sqlpoolstats/collector.go 包注释);
+        # 以后给池加回收,求和回退会被当成 counter reset,这条要跟着改口径。
+        # 0.1 秒 / 每秒 1 次 / for 10m 都是占位值,待压测确认。
+        - alert: SqlPoolSlowAcquire
+          expr: |
+            (
+              sum by (namespace, sql_client, pool) (rate(mmorpg_sql_pool_wait_duration_seconds_total[5m]))
+                /
+              sum by (namespace, sql_client, pool) (rate(mmorpg_sql_pool_wait_count_total[5m]))
+            ) > 0.1
+            and
+            sum by (namespace, sql_client, pool) (rate(mmorpg_sql_pool_wait_count_total[5m])) > 1
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "{{ $labels.sql_client }} 的 {{ $labels.pool }} 连接池取连接平均要等 {{ $value | printf \"%.3f\" }}s"
+            description: >-
+              {{ $labels.namespace }} 里 {{ $labels.sql_client }} 的 {{ $labels.pool }} 池过去 5 分钟平均每次排队 {{ $value | printf "%.3f" }}s,
+              且每秒排队超过 1 次,已持续 10 分钟:池上限不够用,或库慢导致连接还得慢。
+              先看同一个池的 mmorpg_sql_pool_in_use_connections / mmorpg_sql_pool_max_open_connections 与库侧慢查询。
+              **调大池之前先重算 MySQL 连接总账**(tools/scripts/k8s_deploy.ps1 的 Get-MysqlConnectionLedger):
+              每个池 × 副本数 × zone 数都压在同一台 MySQL 的 max_connections 上。
+
+        # 池长期用满:in_use / max_open > 0.9 持续 15 分钟。只作趋势信号。
+        # go/db 的 home 池按设计就是限流点(go/db/etc/db.yaml 的 SubShardCount / MaxOpenConn 注释:worker 数多于连接数,
+        # 让池当限流器),高负载下常满属预期;真正要动手的信号是上一条 SqlPoolSlowAcquire。
+        # 任一池不限(MaxOpenConn = 0)时 max_open 导出为 +Inf,商为 0;类别里没有池时是 0 / 0 = NaN:两种都不触发。
+        # 这里按 (namespace, sql_client, pool) 对各副本求和后再比:一个副本满、另一个闲时会被摊平,
+        # 要看单副本,去掉 sum 按 instance 查。
+        # 0.9 / for 15m 是占位值,待压测确认。
+        - alert: SqlPoolSaturated
+          expr: |
+            sum by (namespace, sql_client, pool) (mmorpg_sql_pool_in_use_connections)
+              / sum by (namespace, sql_client, pool) (mmorpg_sql_pool_max_open_connections) > 0.9
+          for: 15m
+          labels:
+            severity: info
+          annotations:
+            summary: "{{ $labels.sql_client }} 的 {{ $labels.pool }} 连接池长期用满(占比 {{ $value | printf \"%.2f\" }})"
+            description: >-
+              {{ $labels.namespace }} 里 {{ $labels.sql_client }} 的 {{ $labels.pool }} 池在用连接占上限的 {{ $value | printf "%.2f" }}(1 = 满),已持续 15 分钟。
+              go/db 的 home 池按设计就是限流点,高负载下常满属预期;其它池长期用满、或同时出现 SqlPoolSlowAcquire 时才需要处理。
+              要调池先重算 MySQL 连接总账(tools/scripts/k8s_deploy.ps1 的 Get-MysqlConnectionLedger)。
+
+        # 某个 go/db 实例打开的额外落点库数超过了总账规划档:max_connections 是按规划档算的,超出后可能已经不够。
+        #   extra_zone     —— 本 zone 库之外的 zone 家族库(zone_*_db):冷缓存访客读、合服 pin 后的源区库。
+        #                     每个库一个常驻池;最坏情形每个实例打开其余全部 zone 的库,名义预算随 zone 数平方增长。
+        #   extra_non_zone —— 非 zone 落点库(player_store_*_db,Phase 2):规划档按「未开」计,
+        #                     出现一个就说明 Phase 2 的库在没有重做规划的情况下被打开了。
+        # 两个阈值与 tools/scripts/k8s_deploy.ps1 Get-MysqlConnectionPlan 的 ExtraZoneStores / NonZoneStores 同源,
+        # 契约测试(tools/scripts/tests/k8s_deploy_contract.tests.ps1)按行用正则提取后与规划档核对:
+        # **每个阈值必须单独占一行,不要合并或改写成别的形状**;改规划档必须同改这两行(反之亦然),并重算 max_connections。
+        # pool 的两个取值写死为 go/db/internal/metrics 的 PoolExtraZone / PoolExtraNonZone,改常量必须同改这里。
+        # mmorpg_sql_pool_pools 对声明的类别每次抓取都输出(没有池时为 0),不存在序列从无到有的漏报。
+        # 这是事后信号:库已经打开、池已经建好才会响。阈值来自规划档,规划档本身待压测确认。
+        - alert: DbExtraStorePoolsBeyondPlan
+          expr: |
+            max by (namespace, instance) (mmorpg_sql_pool_pools{sql_client="db", pool="extra_zone"}) > 3
+            or
+            max by (namespace, instance) (mmorpg_sql_pool_pools{sql_client="db", pool="extra_non_zone"}) > 0
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "go/db 打开的额外落点库数超过了 MySQL 连接总账的规划档"
+            description: >-
+              {{ $labels.namespace }} / {{ $labels.instance }} 的 go/db 有一类额外落点库已打开 {{ $value | printf "%.0f" }} 个(每个库一个常驻连接池),
+              超过规划档(tools/scripts/k8s_deploy.ps1 Get-MysqlConnectionPlan 的 ExtraZoneStores / NonZoneStores)。
+              max_connections 是按规划档算的,可能已经不够,盯住 MysqlConnectionsNearMax / MysqlConnectionsRefused。
+              是哪一类,按 pool 查 mmorpg_sql_pool_pools{sql_client="db"}:extra_zone 超了多半是 zone 数增加或合服留下了源区库;
+              extra_non_zone 非 0 说明 Phase 2 的落点库已被打开。
+              两种都要先重做规划档、重算 max_connections 与 MySQL Pod 内存,再继续扩。

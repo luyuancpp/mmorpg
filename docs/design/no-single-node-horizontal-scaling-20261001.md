@@ -165,6 +165,19 @@
   > 现在 go/db、data_service 都没导出 `sql.DBStats`,实际峰值不知道。`go/db/etc/db.yaml` 与 `internal/config/config.go` 里「MySQL 默认 max_connections=151 留得出余量」的注释也已过时。
   >
   > 修正方向(未落码):先把总账算对,配 `max_connections` 并同步 MySQL Pod 内存(现为 limits 1Gi);给 gateway 显式配 Hikari 池;导出连接池指标;额外落点库池加 `ConnMaxIdleTime`,并把 zone 库池与全局库池的大小拆成两个旋钮。详见 PROGRESS.md 2026-10-12「落点多库连接拓扑」条目。
+  >
+  > **2026-10-13 落码说明(G2b;已落码,未编译、未测试,待 Codex 验证;数值均待压测确认)**:上一条的修正方向已按 `docs/handoff/launch-readiness-20261013/spec_G2b.md` 落到代码与部署清单。原文与上面的更正注都不改,口径不一致处以本条为准:
+  > - `max_connections` 500 → **1800**,MySQL Pod 内存 requests 512Mi → 1Gi、limits 1Gi → 5Gi(`deploy/k8s/manifests/infra/mysql.yaml`);
+  > - Java gateway 显式配 Hikari 池 `maximum-pool-size: 5` / `minimum-idle: 2`(以前没配,按默认值推断每实例恒开约 10 条),K8s ConfigMap 镜像这两个值;
+  > - 滚动余量按**每个 Deployment 多 2 个实例**计(maxSurge 的 1 个新 Pod + 1 个仍在优雅退出、连接还没释放的旧 Pod),范围是一个 zone 的 db / data-service / gateway 加全局的 friend、trade。上面写的「每个 zone 还会临时再多 (60+8E)+35」少算了退出中的旧 Pod,也漏了 gateway 与两个全局服务;
+  > - 总账写成可执行函数 `Get-MysqlConnectionPlan` / `Get-MysqlConnectionLedger`(`tools/scripts/k8s_deploy.ps1`),输入从服务 yaml 与 manifest 读,部署写路径打印一行 `MySQL connection ledger: …`,超限打 `MySQL连接总账超限:` 开头的警告(只警告、不阻断)。
+  >   规划档(4 个 zone、每个 go/db 实例打开其余 3 个 zone 的库、Phase 2 未开、route store 按 db_first 计入、运维余量 20)峰值 1620,对 1800 留 180;
+  > - 契约测试 `tools/scripts/tests/k8s_deploy_contract.tests.ps1` 新增 9 例(批 A 7、批 B 2),当前文件 89 → 98:钉住「规划峰值 ≤ `max_connections`」、公式自检(复现上面的 920 / 500)、ConfigMap 镜像值与服务 yaml 一致等;
+  > - 池指标 `mmorpg_sql_pool_*{sql_client,pool}`(`go/shared/sqlpoolstats`,label 只有池类别):go/db 在 K8s 上打开 `:9160`,data_service 在 `:9260`;告警文件 `deploy/k8s/mysql-connection-alerts.yaml`;
+  > - 额外落点库池拆成 `Placement.ZoneStore*` / `NonZoneStore*` 两组旋钮,加 `ExtraStoreConnMaxIdleSeconds`(默认 60),旧键 `ExtraStore*` 只作回落;`db.yaml` / `config.go` 里「151」的过时注释已更正。
+  >
+  > 没有做的:go/db 遇 1040 仍按普通错误消耗重试预算、进死信(tidb-phase1 文档的 L-04);MySQL 服务端连接数仍无从观测(仓库里没有 mysqld_exporter,部署方式待拍板)。
+  > 运维口径(那一行怎么看、超限的两条出路、只改 my.cnf 不会重启 mysqld、apply `mysql.yaml` 会重启唯一的 MySQL)见 `deploy/k8s/README.md`「MySQL 连接总账」。§4.4 那条「现为 500」同样以本条为准。
 - 读任务的缓存回写是无条件 `SET`,不持 ordering lock:在非属主实例上重试的读可能把旧值盖到新缓存上。这是既有问题
   (读与写本来就多半不在同一个分区),多实例只是多了一个入口。改成只补缺不覆盖(`SETNX`)要先确认 login 的缓存修复路径与回档工具不依赖覆盖,没在本次做。
 - 持锁实例若在拿锁与落库之间停顿超过锁 TTL 且续租失败,醒来仍会把旧版本写进库(随后复核失败,游标不回退)。既有设计,彻底封死需要 MySQL 侧的版本条件写。

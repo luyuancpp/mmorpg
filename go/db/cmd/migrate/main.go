@@ -97,7 +97,7 @@ func main() {
 
 	if *createDatabase {
 		if *command != "up" {
-			log.Fatalf("-create-database 只能配合 -command up 使用")
+			log.Fatalf("-create-database can only be used with -command up")
 		}
 		if err := proto_sql.CreateDatabase(); err != nil {
 			log.Fatalf("create database: %v", err)

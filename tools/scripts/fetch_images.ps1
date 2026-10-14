@@ -123,7 +123,7 @@ try {
             throw "latest.json 无法解析:$latest($($_.Exception.Message))"
         }
         if ([string]::IsNullOrWhiteSpace($Version)) { throw "latest.json 缺少 version 字段:$latest" }
-        Write-Host "[INFO] latest.json 指向快照 $Version" -ForegroundColor Cyan
+        Write-Host "[INFO] latest.json points to snapshot $Version" -ForegroundColor Cyan
     }
 
     # 版本号同时是目录名:先按轨道校验形状,杜绝 "../" 之类穿越出制品根
@@ -166,7 +166,7 @@ try {
         }
     }
 
-    Write-Host "[INFO] 校验源制品完整性:$verDir" -ForegroundColor Cyan
+    Write-Host "[INFO] Checking source artifact integrity: $verDir" -ForegroundColor Cyan
     Test-Sha256Sums -Dir $verDir
 
     # 校验和证明"目录内容没被改",证明不了"目录名对得上内容";与 make_release.ps1 同一口径核对身份
@@ -190,10 +190,10 @@ try {
     $tmpSuffix = "$PID-" + [guid]::NewGuid().ToString('N')
     $tmpDir = Join-Path $outParent (".fetching-" + $outLeaf + "-" + $tmpSuffix)
 
-    Write-Host "[INFO] 复制到临时目录:$tmpDir" -ForegroundColor Cyan
+    Write-Host "[INFO] Copying to temporary directory: $tmpDir" -ForegroundColor Cyan
     Copy-ArtifactTree -Source (Resolve-ArtifactFullPath -Path $verDir) -Destination $tmpDir
 
-    Write-Host '[INFO] 复制完成,重新校验临时目录' -ForegroundColor Cyan
+    Write-Host '[INFO] Copy complete; rechecking temporary directory' -ForegroundColor Cyan
     Test-Sha256Sums -Dir $tmpDir
 
     if ($outExists) {
@@ -217,9 +217,9 @@ try {
             Remove-Item -LiteralPath $backup -Recurse -Force
         }
         catch {
-            Write-Host "[WARN] 旧目录已挪开但删除失败,请手工清理:$backup($($_.Exception.Message))" -ForegroundColor Yellow
+            Write-Host "[WARN] Old directory moved aside but deletion failed; remove it manually: $backup ($($_.Exception.Message))" -ForegroundColor Yellow
         }
-        Write-Host "[INFO] 已替换旧目录:$outFull" -ForegroundColor Yellow
+        Write-Host "[INFO] Replaced old directory: $outFull" -ForegroundColor Yellow
     } else {
         [System.IO.Directory]::Move($tmpDir, $outFull)
     }
@@ -227,8 +227,8 @@ try {
 
     $files = @(Get-ChildItem -LiteralPath $outFull -Recurse -File -Force)
     $sizeMB = [math]::Round((($files | Measure-Object -Property Length -Sum).Sum) / 1MB, 1)
-    Write-Host "[ OK ] 已拉取 $Channel/$Version -> $outFull($($files.Count) 个文件,$sizeMB MB)" -ForegroundColor Green
-    Write-Host "[INFO] 下一步:pwsh -File tools/scripts/import_images.ps1 -Dir `"$outFull`"" -ForegroundColor Cyan
+    Write-Host "[ OK ] Fetched $Channel/$Version -> $outFull ($($files.Count) files, $sizeMB MB)" -ForegroundColor Green
+    Write-Host "[INFO] Next step: pwsh -File tools/scripts/import_images.ps1 -Dir `"$outFull`"" -ForegroundColor Cyan
     exit 0
 }
 catch {

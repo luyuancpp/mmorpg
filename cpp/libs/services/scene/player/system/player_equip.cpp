@@ -98,7 +98,7 @@ AffixNow ResolveAffixNow(const EquipAffix& affix, const ItemComp& item, uint32_t
 	AffixNow now;
 	const auto range = RangeFor(affix.attr_id(), equipLevel);
 	if (range.cap == 0) {
-		LOG_WARN << "[PlayerEquip] 随机属性在本装备等级没有上限档,按 0 计: item_guid=" << item.item_id()
+		LOG_WARN << "[PlayerEquip] No random attribute cap tier for this equipment level;using 0: item_guid=" << item.item_id()
 				 << " config=" << item.config_id() << " attr_id=" << affix.attr_id()
 				 << " equip_level=" << equipLevel << " stored_value=" << affix.value();
 		return now;
@@ -136,7 +136,7 @@ uint32_t CheckWritable(entt::entity player) {
 		return kEntityIsNull;
 	}
 	if (tlsEcs.actorRegistry.any_of<PlayerFrozenComp>(player)) {
-		LOG_WARN << "[PlayerEquip] 拒绝: 跨 zone 冻结中 player_id=" << GuidForLog(player);
+		LOG_WARN << "[PlayerEquip] Rejected: cross-zone freeze in progress player_id=" << GuidForLog(player);
 		return kEquipFrozen;
 	}
 	if (PlayerBattleSystem::IsInBattle(player)) {
@@ -151,7 +151,7 @@ uint32_t CheckWritable(entt::entity player) {
 // 刻意用 LOG_ERROR 而不是 LOG_FATAL:muduo 的 FATAL 会 abort 整个 scene 进程,连带所有在线玩家
 // 尚未落盘的状态 —— 为一件装备拖垮整台节点,损失只会更大。
 void ReportLostInstance(const ItemComp& item, const char* where, entt::entity player) {
-	LOG_ERROR << "[PlayerEquip][INSTANCE_LOST] 回滚失败,实例已不在任何背包里,需人工补偿: player_id="
+	LOG_ERROR << "[PlayerEquip][INSTANCE_LOST] Rollback failed;instance is absent from all bags;manual compensation required: player_id="
 			  << GuidForLog(player) << " where=" << where << " guid=" << item.item_id()
 			  << " config=" << item.config_id() << " instance={ " << item.ShortDebugString() << " }";
 }
@@ -164,7 +164,7 @@ bool PutBack(Bag& bag, const ItemComp& item, uint32_t preferredSlot, const char*
 		return true;
 	}
 	if (bag.PutInstance(item) == kSuccess) {
-		LOG_ERROR << "[PlayerEquip] 回滚时原槽放不回,已改放到自动找到的位置: player_id=" << GuidForLog(player)
+		LOG_ERROR << "[PlayerEquip] Original slot unavailable during rollback;placed at automatically selected location: player_id=" << GuidForLog(player)
 				  << " bag=" << bagName << " guid=" << item.item_id() << " config=" << item.config_id()
 				  << " preferred_slot=" << preferredSlot;
 		return true;
@@ -184,7 +184,7 @@ void OnEquipmentChanged(entt::entity player) {
 void AccumulateWornItem(const ItemComp& item, uint64_t playerIdForLog, equiprules::EquipBonus& out) {
 	const ItemTable* row = ItemRow(item.config_id());
 	if (row == nullptr) {
-		LOG_ERROR << "[PlayerEquip] 穿着的装备查不到 Item 行,本件不计加成: player_id=" << playerIdForLog
+		LOG_ERROR << "[PlayerEquip] Equipped item has no Item row;bonus ignored: player_id=" << playerIdForLog
 				  << " item_guid=" << item.item_id() << " config=" << item.config_id();
 		return;
 	}
@@ -192,7 +192,7 @@ void AccumulateWornItem(const ItemComp& item, uint64_t playerIdForLog, equiprule
 		// 装备栏里躺着一件表里已不是装备的东西:策划把这一行从装备改成了非装备,老存档经还原兜底
 		// (Bag::InsertItemForRestore 的落位规则 ②)仍落回装备栏。FillItemDisplay 对非装备一行属性
 		// 都不出,这里也整件不计 —— 加成与 tooltip 同口径,不会出现「面板有数、tooltip 没字」。
-		LOG_ERROR << "[PlayerEquip] 穿着的物品在 Item 表里不是装备(equip_kind=0),本件不计加成: player_id="
+		LOG_ERROR << "[PlayerEquip] Equipped item is not equipment in Item table(equip_kind=0);bonus ignored: player_id="
 				  << playerIdForLog << " item_guid=" << item.item_id() << " config=" << item.config_id();
 		return;
 	}
@@ -200,12 +200,12 @@ void AccumulateWornItem(const ItemComp& item, uint64_t playerIdForLog, equiprule
 	for (const auto& base : row->base_attr()) {
 		const EquipAttributeTable* attr = AttributeRow(base.base_attr_id());
 		if (attr == nullptr) {
-			LOG_ERROR << "[PlayerEquip] 基础属性指向不存在的 EquipAttribute,跳过: config=" << item.config_id()
+			LOG_ERROR << "[PlayerEquip] Base attribute references missing EquipAttribute;skipped: config=" << item.config_id()
 					  << " attr_id=" << base.base_attr_id();
 			continue;
 		}
 		if (!equiprules::ApplyEffect(out, attr->effect(), attr->effect_param(), base.base_attr_value())) {
-			LOG_ERROR << "[PlayerEquip] 基础属性的 effect 不被规则层接受,跳过: config=" << item.config_id()
+			LOG_ERROR << "[PlayerEquip] Base attribute effect rejected by rules;skipped: config=" << item.config_id()
 					  << " attr_id=" << attr->id() << " effect=" << attr->effect()
 					  << " effect_param=" << attr->effect_param();
 		}
@@ -214,20 +214,20 @@ void AccumulateWornItem(const ItemComp& item, uint64_t playerIdForLog, equiprule
 	// has_equip() 为假时 equip() 返回默认实例(0 条),不必单独分支。
 	for (const auto& affix : item.equip().affixes()) {
 		if (!equiprules::IsRandomAffixTier(affix.tier())) {
-			LOG_ERROR << "[PlayerEquip] 随机属性的颜色档非法,跳过: player_id=" << playerIdForLog
+			LOG_ERROR << "[PlayerEquip] Invalid random attribute color tier;skipped: player_id=" << playerIdForLog
 					  << " item_guid=" << item.item_id() << " attr_id=" << affix.attr_id()
 					  << " tier=" << affix.tier();
 			continue;
 		}
 		const EquipAttributeTable* attr = AttributeRow(affix.attr_id());
 		if (attr == nullptr) {
-			LOG_ERROR << "[PlayerEquip] 随机属性指向不存在的 EquipAttribute,跳过: player_id=" << playerIdForLog
+			LOG_ERROR << "[PlayerEquip] Random attribute references missing EquipAttribute;skipped: player_id=" << playerIdForLog
 					  << " item_guid=" << item.item_id() << " attr_id=" << affix.attr_id();
 			continue;
 		}
 		const AffixNow now = ResolveAffixNow(affix, item, row->equip_level());
 		if (!equiprules::ApplyEffect(out, attr->effect(), attr->effect_param(), now.value)) {
-			LOG_ERROR << "[PlayerEquip] 随机属性的 effect 不被规则层接受,跳过: item_guid=" << item.item_id()
+			LOG_ERROR << "[PlayerEquip] Random attribute effect rejected by rules;skipped: item_guid=" << item.item_id()
 					  << " attr_id=" << attr->id() << " effect=" << attr->effect()
 					  << " effect_param=" << attr->effect_param();
 		}
@@ -244,7 +244,7 @@ void PlayerEquipSystem::InstallItemInitializer() {
 	// 每次调用都真的重装,不要加「已安装」静态标志:回调会被别处卸掉(单测夹具),有标志就再也装不回去。
 	BagService::SetItemInstanceInitializer([](ItemComp& item) { PlayerEquipSystem::RollNewInstance(item); });
 	const uint32_t problems = ValidateTables();
-	LOG_INFO << "[PlayerEquip] 新铸实例初始化回调已安装; 装备表校验问题数=" << problems;
+	LOG_INFO << "[PlayerEquip] New instance initialization callback installed; equipment table validation issues=" << problems;
 }
 
 uint32_t PlayerEquipSystem::ValidateTables() {
@@ -260,8 +260,8 @@ uint32_t PlayerEquipSystem::ValidateTables() {
 			if (row.effect() == equiprules::ToRaw(EffectKind::kCombat)) {
 				++rejectedCombatRows;
 			}
-			LOG_ERROR << "[PlayerEquip] 表校验: EquipAttribute id=" << row.id() << " 的 effect=" << row.effect()
-					  << " effect_param=" << row.effect_param() << " 不被规则层接受,这条属性不会生效";
+			LOG_ERROR << "[PlayerEquip] Table validation: EquipAttribute id=" << row.id() << " effect=" << row.effect()
+					  << " effect_param=" << row.effect_param() << " is rejected by rules;this attribute will not take effect";
 			continue;
 		}
 		if (row.effect() != equiprules::ToRaw(EffectKind::kPrimaryPoint)) {
@@ -271,17 +271,17 @@ uint32_t PlayerEquipSystem::ValidateTables() {
 			AttributeDimensionTableManager::Instance().FindByIdSilent(row.effect_param()).first;
 		if (dimension == nullptr) {
 			++problems;
-			LOG_ERROR << "[PlayerEquip] 表校验: EquipAttribute id=" << row.id()
-					  << " 是一级属性点,但 effect_param=" << row.effect_param()
-					  << " 不是 AttributeDimension 里的维度,加的点不会进任何属性";
+			LOG_ERROR << "[PlayerEquip] Table validation: EquipAttribute id=" << row.id()
+					  << " grants primary attribute points,but effect_param=" << row.effect_param()
+					  << " is not an AttributeDimension dimension;allocated points will not affect any attribute";
 		} else if (!PlayerAttributeSystem::IsPlayerDimension(row.effect_param())) {
 			// 维度存在但属于宝宝池(或它的池查不到):规则层照收、点数照记,只是角色的属性重算
 			// 只读角色池维度 —— 后果与「维度不存在」完全相同,却不会有任何别的报错。
 			// 「是不是角色池维度」问的就是属性重算自己用的那个判定,这里不另抄一份 owner_type 口径。
 			++problems;
-			LOG_ERROR << "[PlayerEquip] 表校验: EquipAttribute id=" << row.id()
-					  << " 是一级属性点,但 effect_param=" << row.effect_param() << " 这个维度(pool_id="
-					  << dimension->pool_id() << ")不属于角色池,加的点不会进任何属性";
+			LOG_ERROR << "[PlayerEquip] Table validation: EquipAttribute id=" << row.id()
+					  << " grants primary attribute points,but effect_param=" << row.effect_param() << " dimension(pool_id="
+					  << dimension->pool_id() << ")does not belong to a character pool;allocated points will not affect any attribute";
 		}
 	}
 
@@ -303,17 +303,17 @@ uint32_t PlayerEquipSystem::ValidateTables() {
 			continue;
 		}
 		++problems;
-		LOG_ERROR << "[PlayerEquip] 表校验: 战斗属性 " << raw << " 在 EquipAttribute 里没有显示行(需要一行 effect="
+		LOG_ERROR << "[PlayerEquip] Table validation: battle attribute " << raw << " has no display row in EquipAttribute(requires a row with effect="
 				  << equiprules::ToRaw(EffectKind::kCombat) << "、effect_param=" << raw
-				  << " 且 name 非空),属性面板的战斗属性区会少这一项";
+				  << " and nonempty name);this attribute will be missing from the battle attribute panel";
 	}
 
 	// EquipAttributeCap:区间必须满足 1 <= min_value <= cap(规则层会夹取,但那已经不是策划填的数了)。
 	for (const auto& row : EquipAttributeCapTableManager::Instance().FindAll().data()) {
 		if (row.cap() == 0 || row.min_value() == 0 || row.min_value() > row.cap()) {
 			++problems;
-			LOG_ERROR << "[PlayerEquip] 表校验: EquipAttributeCap id=" << row.id() << " 的区间非法: min_value="
-					  << row.min_value() << " cap=" << row.cap() << "(应满足 1 <= min_value <= cap)";
+			LOG_ERROR << "[PlayerEquip] Table validation: EquipAttributeCap id=" << row.id() << " has invalid range: min_value="
+					  << row.min_value() << " cap=" << row.cap() << "(must satisfy 1 <= min_value <= cap)";
 		}
 	}
 
@@ -322,19 +322,19 @@ uint32_t PlayerEquipSystem::ValidateTables() {
 		const bool attrExists = AttributeRow(row.attr_id()) != nullptr;
 		if (!attrExists) {
 			++problems;
-			LOG_ERROR << "[PlayerEquip] 表校验: EquipAffixPool id=" << row.id() << " 的 attr_id=" << row.attr_id()
-					  << " 不在 EquipAttribute 里";
+			LOG_ERROR << "[PlayerEquip] Table validation: EquipAffixPool id=" << row.id() << " attr_id=" << row.attr_id()
+					  << " is absent from EquipAttribute";
 		}
 		if (row.weight() == 0) {
 			++problems;
-			LOG_ERROR << "[PlayerEquip] 表校验: EquipAffixPool id=" << row.id() << " 权重为 0,永远掷不出";
+			LOG_ERROR << "[PlayerEquip] Table validation: EquipAffixPool id=" << row.id() << " has zero weight and can never be rolled";
 		}
 		// 属性行都不存在时,它在上限表里必然也一档都没有(EquipAttributeCap.attr_id 有导表期外键):
 		// 那是同一个根因,上面已经报过,不再多计一条。
 		if (attrExists && EquipAttributeCapTableManager::Instance().GetByAttrId(row.attr_id()).empty()) {
 			++problems;
-			LOG_ERROR << "[PlayerEquip] 表校验: EquipAffixPool id=" << row.id() << " 的 attr_id=" << row.attr_id()
-					  << " 在 EquipAttributeCap 里一档上限都没有,永远掷不出";
+			LOG_ERROR << "[PlayerEquip] Table validation: EquipAffixPool id=" << row.id() << " attr_id=" << row.attr_id()
+					  << " has no cap tier in EquipAttributeCap and can never be rolled";
 		}
 	}
 
@@ -342,14 +342,14 @@ uint32_t PlayerEquipSystem::ValidateTables() {
 	for (const auto& row : EquipAffixRuleTableManager::Instance().FindAll().data()) {
 		if (row.blue_min() > row.blue_max()) {
 			++problems;
-			LOG_ERROR << "[PlayerEquip] 表校验: EquipAffixRule id=" << row.id() << " 的蓝属性条数倒挂: blue_min="
-					  << row.blue_min() << " blue_max=" << row.blue_max() << "(规则层会按 blue_min 掷)";
+			LOG_ERROR << "[PlayerEquip] Table validation: EquipAffixRule id=" << row.id() << " has inverted blue attribute count bounds: blue_min="
+					  << row.blue_min() << " blue_max=" << row.blue_max() << "(rules will roll using blue_min)";
 		}
 		if (row.pink_rate() > equiprules::kPermyriadBase || row.yellow_rate() > equiprules::kPermyriadBase) {
 			++problems;
-			LOG_ERROR << "[PlayerEquip] 表校验: EquipAffixRule id=" << row.id() << " 的概率超过 "
+			LOG_ERROR << "[PlayerEquip] Table validation: EquipAffixRule id=" << row.id() << " has probability exceeding "
 					  << equiprules::kPermyriadBase << ": pink_rate=" << row.pink_rate()
-					  << " yellow_rate=" << row.yellow_rate() << "(万分比,超过即必出)";
+					  << " yellow_rate=" << row.yellow_rate() << "(per ten thousand;exceeding this guarantees a roll)";
 		}
 	}
 
@@ -360,27 +360,27 @@ uint32_t PlayerEquipSystem::ValidateTables() {
 		}
 		if (row.max_stack_size() != 1) {
 			++problems;
-			LOG_ERROR << "[PlayerEquip] 表校验: Item id=" << row.id() << " 是装备(equip_kind=" << row.equip_kind()
-					  << ")但 max_stack_size=" << row.max_stack_size()
-					  << ";可堆叠会把不同属性的实例并成一堆,这一行不会掷属性也穿不上";
+			LOG_ERROR << "[PlayerEquip] Table validation: Item id=" << row.id() << " is equipment(equip_kind=" << row.equip_kind()
+					  << ")but max_stack_size=" << row.max_stack_size()
+					  << ";stacking would merge instances with different attributes;this row will not roll attributes and cannot be equipped";
 		}
 		if (row.affix_pool() != 0 &&
 			EquipAffixPoolTableManager::Instance().GetByPoolId(row.affix_pool()).empty()) {
 			++problems;
-			LOG_ERROR << "[PlayerEquip] 表校验: Item id=" << row.id() << " 的 affix_pool=" << row.affix_pool()
-					  << " 在 EquipAffixPool 里没有任何行,这件装备掷不出随机属性";
+			LOG_ERROR << "[PlayerEquip] Table validation: Item id=" << row.id() << " affix_pool=" << row.affix_pool()
+					  << " has no rows in EquipAffixPool;this equipment cannot roll random attributes";
 		}
 		if (row.affix_rule() != 0 && !EquipAffixRuleTableManager::Instance().Exists(row.affix_rule())) {
 			++problems;
-			LOG_ERROR << "[PlayerEquip] 表校验: Item id=" << row.id() << " 的 affix_rule=" << row.affix_rule()
-					  << " 不在 EquipAffixRule 里,这件装备掷不出随机属性";
+			LOG_ERROR << "[PlayerEquip] Table validation: Item id=" << row.id() << " affix_rule=" << row.affix_rule()
+					  << " is absent from EquipAffixRule;this equipment cannot roll random attributes";
 		}
 		for (const auto& base : row.base_attr()) {
 			// 属性行自身 effect 是否合法已在上面的 EquipAttribute 段报过,这里只查引用是否存在。
 			if (AttributeRow(base.base_attr_id()) == nullptr) {
 				++problems;
-				LOG_ERROR << "[PlayerEquip] 表校验: Item id=" << row.id() << " 的基础属性 base_attr_id="
-						  << base.base_attr_id() << " 不在 EquipAttribute 里(用不到的槽要留空,不能填 0)";
+				LOG_ERROR << "[PlayerEquip] Table validation: Item id=" << row.id() << " base attribute base_attr_id="
+						  << base.base_attr_id() << " is absent from EquipAttribute(unused slots must be empty,not 0)";
 			}
 		}
 	}
@@ -415,7 +415,7 @@ void PlayerEquipSystem::RollNewInstance(ItemComp& item) {
 	const auto [ruleRow, ruleErr] = EquipAffixRuleTableManager::Instance().FindByIdSilent(row->affix_rule());
 	const auto& poolRows = EquipAffixPoolTableManager::Instance().GetByPoolId(row->affix_pool());
 	if (ruleRow == nullptr || poolRows.empty()) {
-		LOG_ERROR << "[PlayerEquip] 掷属性所需的表行缺失,本件不带随机属性: item_guid=" << item.item_id()
+		LOG_ERROR << "[PlayerEquip] Required table row for attribute rolls is missing;item has no random attributes: item_guid=" << item.item_id()
 				  << " config=" << item.config_id() << " affix_pool=" << row->affix_pool()
 				  << " pool_rows=" << poolRows.size() << " affix_rule=" << row->affix_rule()
 				  << " rule_found=" << (ruleRow != nullptr);
@@ -427,7 +427,7 @@ void PlayerEquipSystem::RollNewInstance(ItemComp& item) {
 	for (const auto* poolRow : poolRows) {
 		if (AttributeRow(poolRow->attr_id()) == nullptr) {
 			// 掷出一条查不到定义的属性 = 一条既不生效也显示不出来的死数据,宁可不让它进池。
-			LOG_ERROR << "[PlayerEquip] 属性池里有不存在的属性,已排除: pool=" << row->affix_pool()
+			LOG_ERROR << "[PlayerEquip] Nonexistent attribute excluded from pool: pool=" << row->affix_pool()
 					  << " attr_id=" << poolRow->attr_id();
 			continue;
 		}
@@ -512,7 +512,7 @@ uint32_t PlayerEquipSystem::Equip(entt::entity player, Guid itemId) {
 		const ItemComp* occupant = equipment.GetItemCompByGuid(replacedGuid);
 		const ItemTable* occupantRow = occupant != nullptr ? ItemRow(occupant->config_id()) : nullptr;
 		if (occupant == nullptr || occupantRow == nullptr || !IsCarriable(*occupant, *occupantRow)) {
-			LOG_ERROR << "[PlayerEquip] 目标槽的占用者无法搬运,拒绝替换: player_id=" << GuidForLog(player)
+			LOG_ERROR << "[PlayerEquip] Target slot occupant cannot be moved;replacement rejected: player_id=" << GuidForLog(player)
 					  << " slot=" << targetSlot << " occupant_guid=" << replacedGuid
 					  << " occupant_in_store=" << (occupant != nullptr)
 					  << " occupant_row_found=" << (occupantRow != nullptr);
@@ -525,7 +525,7 @@ uint32_t PlayerEquipSystem::Equip(entt::entity player, Guid itemId) {
 	//      走进任何一个失败分支都是两层状态不自洽的编程错误 ----
 	ItemComp incoming;
 	if (const auto err = inventory.TakeInstance(itemId, incoming); err != kSuccess) {
-		LOG_ERROR << "[PlayerEquip] 穿上失败(从背包取出): player_id=" << GuidForLog(player) << " guid=" << itemId
+		LOG_ERROR << "[PlayerEquip] Equip failed(removing from bag): player_id=" << GuidForLog(player) << " guid=" << itemId
 				  << " config=" << configId << " err=" << err;
 		return kEquipInternalError;  // TakeInstance 失败零副作用,无需回滚
 	}
@@ -533,7 +533,7 @@ uint32_t PlayerEquipSystem::Equip(entt::entity player, Guid itemId) {
 	ItemComp replaced;
 	if (replacing) {
 		if (const auto err = equipment.TakeInstance(replacedGuid, replaced); err != kSuccess) {
-			LOG_ERROR << "[PlayerEquip] 穿上失败(取下旧装备): player_id=" << GuidForLog(player)
+			LOG_ERROR << "[PlayerEquip] Equip failed(removing previous equipment): player_id=" << GuidForLog(player)
 					  << " guid=" << itemId << " config=" << configId << " replaced_guid=" << replacedGuid
 					  << " slot=" << targetSlot << " err=" << err;
 			PutBack(inventory, incoming, inventorySlot, "inventory", player);
@@ -542,7 +542,7 @@ uint32_t PlayerEquipSystem::Equip(entt::entity player, Guid itemId) {
 	}
 
 	if (const auto err = equipment.PutInstance(incoming, targetSlot); err != kSuccess) {
-		LOG_ERROR << "[PlayerEquip] 穿上失败(放进装备栏): player_id=" << GuidForLog(player) << " guid=" << itemId
+		LOG_ERROR << "[PlayerEquip] Equip failed(inserting into equipment bag): player_id=" << GuidForLog(player) << " guid=" << itemId
 				  << " config=" << configId << " slot=" << targetSlot << " err=" << err;
 		// 回滚时只有「装备栏一侧放不回去」才改变了穿戴:那件旧装备已不在装备栏(丢失由 PutBack 报告),
 		// 面板必须跟上,否则数值里还留着它的加成。放回成功哪怕换了槽,加成都不变,不必重算;
@@ -561,7 +561,7 @@ uint32_t PlayerEquipSystem::Equip(entt::entity player, Guid itemId) {
 	if (replacing) {
 		// 新装备刚从背包腾出一格,旧装备必然放得下;不指定槽,让背包自己找位。
 		if (const auto err = inventory.PutInstance(replaced); err != kSuccess) {
-			LOG_ERROR << "[PlayerEquip] 穿上失败(旧装备回背包): player_id=" << GuidForLog(player)
+			LOG_ERROR << "[PlayerEquip] Equip failed(returning previous equipment to bag): player_id=" << GuidForLog(player)
 					  << " guid=" << itemId << " config=" << configId << " replaced_guid=" << replacedGuid
 					  << " replaced_config=" << replaced.config_id() << " err=" << err;
 			ItemComp undo;
@@ -582,7 +582,7 @@ uint32_t PlayerEquipSystem::Equip(entt::entity player, Guid itemId) {
 	}
 
 	OnEquipmentChanged(player);
-	LOG_INFO << "[PlayerEquip] 穿上: player_id=" << GuidForLog(player) << " guid=" << itemId
+	LOG_INFO << "[PlayerEquip] Equipped: player_id=" << GuidForLog(player) << " guid=" << itemId
 			 << " config=" << configId << " slot=" << targetSlot << " replaced_guid="
 			 << (replacing ? replacedGuid : 0);
 	return kSuccess;
@@ -608,7 +608,7 @@ uint32_t PlayerEquipSystem::Unequip(entt::entity player, Guid itemId) {
 	const ItemTable* row = ItemRow(configId);
 	if (row == nullptr || !IsCarriable(*item, *row)) {
 		// 穿着的东西查不到表 / 变成了可堆叠 / size 不是 1:数据或表坏了,搬运原语会拒,这里先说清楚。
-		LOG_ERROR << "[PlayerEquip] 穿着的装备无法搬运,拒绝卸下: player_id=" << GuidForLog(player)
+		LOG_ERROR << "[PlayerEquip] Equipped item cannot be moved;unequip rejected: player_id=" << GuidForLog(player)
 				  << " guid=" << itemId << " config=" << configId << " row_found=" << (row != nullptr)
 				  << " size=" << item->size();
 		return kEquipInternalError;
@@ -622,7 +622,7 @@ uint32_t PlayerEquipSystem::Unequip(entt::entity player, Guid itemId) {
 	ItemCountMap needed;
 	needed[configId] = 1;
 	if (const auto err = inventory.CheckSpaceFor(needed); err != kSuccess) {
-		LOG_ERROR << "[PlayerEquip] 人物背包有空格却不收这件装备,拒绝卸下: player_id=" << GuidForLog(player)
+		LOG_ERROR << "[PlayerEquip] Character bag has free space but rejects this equipment;unequip rejected: player_id=" << GuidForLog(player)
 				  << " guid=" << itemId << " config=" << configId << " err=" << err;
 		return kEquipInternalError;
 	}
@@ -631,12 +631,12 @@ uint32_t PlayerEquipSystem::Unequip(entt::entity player, Guid itemId) {
 	// ---- 搬运 ----
 	ItemComp carried;
 	if (const auto err = equipment.TakeInstance(itemId, carried); err != kSuccess) {
-		LOG_ERROR << "[PlayerEquip] 卸下失败(从装备栏取出): player_id=" << GuidForLog(player) << " guid=" << itemId
+		LOG_ERROR << "[PlayerEquip] Unequip failed(removing from equipment bag): player_id=" << GuidForLog(player) << " guid=" << itemId
 				  << " config=" << configId << " err=" << err;
 		return kEquipInternalError;  // 零副作用,无需回滚
 	}
 	if (const auto err = inventory.PutInstance(carried); err != kSuccess) {
-		LOG_ERROR << "[PlayerEquip] 卸下失败(放回背包): player_id=" << GuidForLog(player) << " guid=" << itemId
+		LOG_ERROR << "[PlayerEquip] Unequip failed(returning to bag): player_id=" << GuidForLog(player) << " guid=" << itemId
 				  << " config=" << configId << " err=" << err;
 		if (!PutBack(equipment, carried, wornSlot, "equipment", player)) {
 			// 没能放回装备栏:这件装备已不在身上(丢失由 PutBack 报告),面板必须跟上。
@@ -646,7 +646,7 @@ uint32_t PlayerEquipSystem::Unequip(entt::entity player, Guid itemId) {
 	}
 
 	OnEquipmentChanged(player);
-	LOG_INFO << "[PlayerEquip] 卸下: player_id=" << GuidForLog(player) << " guid=" << itemId
+	LOG_INFO << "[PlayerEquip] Unequipped: player_id=" << GuidForLog(player) << " guid=" << itemId
 			 << " config=" << configId << " slot=" << wornSlot;
 	return kSuccess;
 }
@@ -671,7 +671,7 @@ uint32_t PlayerEquipSystem::GmGrantItem(entt::entity player, uint32_t configId, 
 	// 新装备的掷属性挂在这条路上,不需要在这里再调 RollNewInstance。
 	const auto err = BagService::AddItems(player, bags->bags[kInventory],
 										  blockList == nullptr ? emptyBlockList : *blockList, items, TX_GM_GRANT);
-	LOG_INFO << "[PlayerEquip] GM 发物: player_id=" << GuidForLog(player) << " config=" << configId
+	LOG_INFO << "[PlayerEquip] GM item grant: player_id=" << GuidForLog(player) << " config=" << configId
 			 << " count=" << count << " err=" << err;
 	return err;
 }
@@ -716,13 +716,13 @@ void PlayerEquipSystem::FillItemDisplay(const ItemComp& item, ::BagItemInfo& inf
 	for (const auto& base : row->base_attr()) {
 		const EquipAttributeTable* attr = AttributeRow(base.base_attr_id());
 		if (attr == nullptr) {
-			LOG_ERROR << "[PlayerEquip] 基础属性指向不存在的 EquipAttribute,不显示: config=" << item.config_id()
+			LOG_ERROR << "[PlayerEquip] Base attribute references missing EquipAttribute;not displayed: config=" << item.config_id()
 					  << " attr_id=" << base.base_attr_id();
 			continue;
 		}
 		if (!IsEffectAccepted(*attr)) {
 			// CollectBonus 不会把这一条计入加成(ApplyEffect 拒绝),tooltip 上也就不能出现它的数值。
-			LOG_ERROR << "[PlayerEquip] 基础属性的 effect 不被规则层接受,不显示: config=" << item.config_id()
+			LOG_ERROR << "[PlayerEquip] Base attribute effect rejected by rules;not displayed: config=" << item.config_id()
 					  << " attr_id=" << attr->id() << " effect=" << attr->effect()
 					  << " effect_param=" << attr->effect_param();
 			continue;
@@ -743,7 +743,7 @@ void PlayerEquipSystem::FillItemDisplay(const ItemComp& item, ::BagItemInfo& inf
 	order.reserve(static_cast<std::size_t>(affixes.size()));
 	for (int i = 0; i < affixes.size(); ++i) {
 		if (!equiprules::IsRandomAffixTier(affixes.Get(i).tier())) {
-			LOG_ERROR << "[PlayerEquip] 随机属性的颜色档非法,不显示: item_guid=" << item.item_id()
+			LOG_ERROR << "[PlayerEquip] Invalid random attribute color tier;not displayed: item_guid=" << item.item_id()
 					  << " attr_id=" << affixes.Get(i).attr_id() << " tier=" << affixes.Get(i).tier();
 			continue;
 		}
@@ -761,13 +761,13 @@ void PlayerEquipSystem::FillItemDisplay(const ItemComp& item, ::BagItemInfo& inf
 		const auto& affix = affixes.Get(index);
 		const EquipAttributeTable* attr = AttributeRow(affix.attr_id());
 		if (attr == nullptr) {
-			LOG_ERROR << "[PlayerEquip] 随机属性指向不存在的 EquipAttribute,不显示: item_guid=" << item.item_id()
+			LOG_ERROR << "[PlayerEquip] Random attribute references missing EquipAttribute;not displayed: item_guid=" << item.item_id()
 					  << " attr_id=" << affix.attr_id();
 			continue;
 		}
 		if (!IsEffectAccepted(*attr)) {
 			// 同基础属性:不计入加成的行不显示。
-			LOG_ERROR << "[PlayerEquip] 随机属性的 effect 不被规则层接受,不显示: item_guid=" << item.item_id()
+			LOG_ERROR << "[PlayerEquip] Random attribute effect rejected by rules;not displayed: item_guid=" << item.item_id()
 					  << " attr_id=" << attr->id() << " effect=" << attr->effect()
 					  << " effect_param=" << attr->effect_param();
 			continue;

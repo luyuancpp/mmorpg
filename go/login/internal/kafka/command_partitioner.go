@@ -45,9 +45,9 @@ func (p *commandPartitioner) Partition(msg *sarama.ProducerMessage, numPartition
 		// 目标节点读到,所以**不降级、直接报错**:静默丢控制面命令的表现是"登录卡在
 		// 分配场景"这类最难查的故障,宁可让调用方拿到错误。
 		logx.Errorf("kafka: command topic %s partition %d out of broker range [0,%d); "+
-			"分区契约不符,目标节点不会收到这条命令。先跑 topic 预建"+
+			"Partition contract mismatch; target node will not receive this command. Run topic precreation first "+
 			"(deploy/docker-compose.yml kafka-topic-init / k8s_deploy.ps1 -Command infra-kafka-topics),"+
-			"若是有意改分区数请换 %s 代号。",
+			" if changing the partition count intentionally, use a new %s generation.",
 			p.topic, msg.Partition, numPartitions, kafkacmd.EnvCommandTopicGeneration)
 		return 0, fmt.Errorf("command topic %s: partition %d out of broker range [0,%d)",
 			p.topic, msg.Partition, numPartitions)

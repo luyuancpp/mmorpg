@@ -58,7 +58,7 @@ func (l *JoinQueueLogic) JoinQueue(in *matchpb.JoinQueueRequest) (*matchpb.JoinQ
 
 	// 一期只做单人入队 FIFO 凑单,预组队(party_member_ids)二期接入。
 	if len(in.PartyMemberIds) > 1 {
-		l.Infof("[match] JoinQueue 携带预组队成员 %d 人,一期忽略,仅本人入队 player=%d",
+		l.Infof("[match] JoinQueue includes %d preformed party members; ignored in phase one, only caller queued player=%d",
 			len(in.PartyMemberIds), playerId)
 	}
 
@@ -105,7 +105,7 @@ func (l *JoinQueueLogic) JoinQueue(in *matchpb.JoinQueueRequest) (*matchpb.JoinQ
 	// 咨询性检查战斗锁。
 	locked, err := isPlayerBattleLocked(l.svcCtx, playerId)
 	if err != nil {
-		l.Errorf("[match] JoinQueue 查战斗锁失败 player=%d: %v", playerId, err)
+		l.Errorf("[match] JoinQueue failed to check battle lock player=%d: %v", playerId, err)
 		metrics.ObserveJoinQueue(modeName, "internal")
 		return &matchpb.JoinQueueResponse{
 			ErrorCode:    constants.ErrInternal,
@@ -123,7 +123,7 @@ func (l *JoinQueueLogic) JoinQueue(in *matchpb.JoinQueueRequest) (*matchpb.JoinQ
 	// 每玩家最多一单在途(设计决策 D4)。
 	existing, err := loadTicket(l.svcCtx, playerId)
 	if err != nil {
-		l.Errorf("[match] JoinQueue 读 ticket 失败 player=%d: %v", playerId, err)
+		l.Errorf("[match] JoinQueue failed to read ticket player=%d: %v", playerId, err)
 		metrics.ObserveJoinQueue(modeName, "internal")
 		return &matchpb.JoinQueueResponse{
 			ErrorCode:    constants.ErrInternal,
@@ -133,7 +133,7 @@ func (l *JoinQueueLogic) JoinQueue(in *matchpb.JoinQueueRequest) (*matchpb.JoinQ
 	if existing != nil {
 		healed, err := l.healOrphanQueuedTicket(playerId, existing)
 		if err != nil {
-			l.Errorf("[match] JoinQueue 校验既有票据失败 player=%d: %v", playerId, err)
+			l.Errorf("[match] JoinQueue failed to validate existing ticket player=%d: %v", playerId, err)
 			metrics.ObserveJoinQueue(modeName, "internal")
 			return &matchpb.JoinQueueResponse{
 				ErrorCode:    constants.ErrInternal,
@@ -153,7 +153,7 @@ func (l *JoinQueueLogic) JoinQueue(in *matchpb.JoinQueueRequest) (*matchpb.JoinQ
 	// 位置 → zone。契约 key 只读 SharedRedis;缺失即玩家不在任何场景。
 	loc, err := loadPlayerLocation(l.svcCtx, playerId)
 	if err != nil {
-		l.Errorf("[match] JoinQueue 读玩家位置失败 player=%d: %v", playerId, err)
+		l.Errorf("[match] JoinQueue failed to read player location player=%d: %v", playerId, err)
 		metrics.ObserveJoinQueue(modeName, "internal")
 		return &matchpb.JoinQueueResponse{
 			ErrorCode:    constants.ErrInternal,
@@ -192,7 +192,7 @@ func (l *JoinQueueLogic) JoinQueue(in *matchpb.JoinQueueRequest) (*matchpb.JoinQ
 		safego.Go("match.gather.pve_solo", func() {
 			runGatherFn(svcCtx, mode, config, []uint64{playerId}, false, tickets)
 		})
-		l.Infof("[match] PVE 单人即时开战 player=%d zone=%d mode=%s config=%d ticket=%s",
+		l.Infof("[match] Starting single-player PVE battle immediately player=%d zone=%d mode=%s config=%d ticket=%s",
 			playerId, loc.ZoneId, modeName, config, ticket.Ticket)
 		metrics.ObserveJoinQueue(modeName, "ok")
 		return &matchpb.JoinQueueResponse{QueueTicket: ticket.Ticket}, nil
@@ -209,7 +209,7 @@ func (l *JoinQueueLogic) JoinQueue(in *matchpb.JoinQueueRequest) (*matchpb.JoinQ
 		return resp, nil
 	}
 	if err := enqueueAtomic(l.svcCtx, ticket.QueueKey, playerId, ticket.Rating); err != nil {
-		l.Errorf("[match] JoinQueue 入队失败 player=%d queue=%s: %v", playerId, ticket.QueueKey, err)
+		l.Errorf("[match] JoinQueue failed to enqueue player=%d queue=%s: %v", playerId, ticket.QueueKey, err)
 		deleteTicket(l.svcCtx, playerId)
 		metrics.ObserveJoinQueue(modeName, "internal")
 		return &matchpb.JoinQueueResponse{
@@ -218,7 +218,7 @@ func (l *JoinQueueLogic) JoinQueue(in *matchpb.JoinQueueRequest) (*matchpb.JoinQ
 		}, nil
 	}
 
-	l.Infof("[match] 入队成功 player=%d zone=%d mode=%s config=%d required=%d rating=%s ticket=%s",
+	l.Infof("[match] Enqueued successfully player=%d zone=%d mode=%s config=%d required=%d rating=%s ticket=%s",
 		playerId, loc.ZoneId, modeName, in.BattleConfigId, required, formatRating(ticket.Rating), ticket.Ticket)
 	metrics.ObserveJoinQueue(modeName, "ok")
 	return &matchpb.JoinQueueResponse{QueueTicket: ticket.Ticket}, nil
@@ -252,7 +252,7 @@ func healOrphanTicket(svcCtx *svc.ServiceContext, log logx.Logger, playerId uint
 		// ready 票据 TTL 60s 未到,JoinQueue 一直 ErrAlreadyQueued)。CAS 按 ticket id
 		// 删,避免误删并发新建的票据。matched 态不在此列:gather 在途,靠 matched TTL 自愈。
 		deleteTicketIfOwned(svcCtx, playerId, existing.Ticket)
-		log.Infof("[match] 清掉已结束战斗残留的 ready 票据 player=%d ticket=%s queue=%q",
+		log.Infof("[match] Removed ready ticket left by an ended battle player=%d ticket=%s queue=%q",
 			playerId, existing.Ticket, existing.QueueKey)
 		return true, nil
 	}
@@ -272,10 +272,10 @@ func healOrphanTicket(svcCtx *svc.ServiceContext, log logx.Logger, playerId uint
 	}
 	if !deleted {
 		// 探测与删票之间被 matcher 推进了 matched(队列里没人是因为刚被弹出)。
-		log.Infof("[match] 票据在自愈前已被弹出 player=%d ticket=%s", playerId, existing.Ticket)
+		log.Infof("[match] Ticket popped before recovery player=%d ticket=%s", playerId, existing.Ticket)
 		return false, nil
 	}
-	log.Errorf("[match] 清掉崩溃残留的孤儿票据(queued 但不在队列)player=%d ticket=%s queue=%q enqueued_at_ms=%d",
+	log.Errorf("[match] Removed orphan ticket left by a crash (queued but absent from queue) player=%d ticket=%s queue=%q enqueued_at_ms=%d",
 		playerId, existing.Ticket, existing.QueueKey, existing.EnqueuedAtMs)
 	return true, nil
 }
@@ -285,7 +285,7 @@ func healOrphanTicket(svcCtx *svc.ServiceContext, log logx.Logger, playerId uint
 func (l *JoinQueueLogic) createTicket(playerId uint64, ticket *queueTicket, ttl int, modeName string) *matchpb.JoinQueueResponse {
 	created, err := createTicketIfAbsent(l.svcCtx, playerId, ticket, ttl)
 	if err != nil {
-		l.Errorf("[match] JoinQueue 写 ticket 失败 player=%d: %v", playerId, err)
+		l.Errorf("[match] JoinQueue failed to write ticket player=%d: %v", playerId, err)
 		metrics.ObserveJoinQueue(modeName, "internal")
 		return &matchpb.JoinQueueResponse{
 			ErrorCode:    constants.ErrInternal,
@@ -297,13 +297,13 @@ func (l *JoinQueueLogic) createTicket(playerId uint64, ticket *queueTicket, ttl 
 	}
 	winner, err := loadTicket(l.svcCtx, playerId)
 	if err != nil {
-		l.Errorf("[match] JoinQueue 读并发票据失败 player=%d: %v", playerId, err)
+		l.Errorf("[match] JoinQueue failed to read concurrent ticket player=%d: %v", playerId, err)
 	}
 	existingId := ""
 	if winner != nil {
 		existingId = winner.Ticket
 	}
-	l.Infof("[match] JoinQueue 并发重复入队,后来者拒绝 player=%d existing=%s", playerId, existingId)
+	l.Infof("[match] JoinQueue concurrent duplicate enqueue; rejecting later request player=%d existing=%s", playerId, existingId)
 	metrics.ObserveJoinQueue(modeName, "already_queued")
 	return &matchpb.JoinQueueResponse{
 		ErrorCode:    constants.ErrAlreadyQueued,

@@ -159,7 +159,7 @@ session_id / 各类 table_id / 回合数 `uint32`;时间戳 `uint64` 毫秒;属�
 - 技能只收回合制可施放的类型(剔除被动 / 开关 / 持续施法);快照带来的 buff 进引擎前先清洗
   (剔除控制类与瞬时类、`caster_id` 域改写)—— D49/D50,见 §20;
 - 超时/掉线默认行动:普攻(随机存活敌方目标,用引擎 RNG 保确定性);
-- 胜负:一方全灭;`max_rounds`(DungeonTable.time_limit 换算或默认 30 回合)打满 → 进攻方判负;
+- 胜负:一方全灭;`max_rounds`(DungeonTable.time_limit 换算或默认 300 回合)打满 → 进攻方判负;
 - RNG:`std::mt19937_64(seed)`,所有随机(暴击/默认目标/逃跑)只走引擎 RNG,禁 `tlsRandom`/`rand()`。
 
 **引擎 API**(battle 节点按此对接):

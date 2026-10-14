@@ -15,18 +15,18 @@
 # 只能走 vendor:go.mod 的 replace 指向 ../go/proto、../go/shared,不在本 context 内;
 # robot/vendor/ 已包含它们。go/ 下这两个模块改动后要重跑 `go mod vendor` 并提交。
 #
-# 基础镜像钉 digest(2026-09-16 查询,均为多平台 index digest):
-#   docker buildx imagetools inspect golang:1.24.5-alpine3.22   → 取顶部 Digest
+# 基础镜像钉 digest(Go 2026-10-13、运行层 2026-09-16 查询,均为多平台 index digest):
+#   docker buildx imagetools inspect golang:1.27.2-alpine3.24   → 取顶部 Digest
 #   docker buildx imagetools inspect alpine:3.20.10             → 同上
 #   升级时 tag 与 digest 同批改,并与 deploy/k8s/Dockerfile.robot、robot/go.mod 的 go 指令保持一致。
 # ────────────────────────────────────────────────────────────────
 
 # ── Build stage ──────────────────────────────────────────────────
-FROM golang:1.24.5-alpine3.22@sha256:daae04ebad0c21149979cd8e9db38f565ecefd8547cf4a591240dc1972cf1399 AS builder
+FROM golang:1.27.2-alpine3.24@sha256:f92b6ef800e499660581efdabdf25d9d817a9d124eaf900924f0504e7e27e12d AS builder
 
 # local:禁止按 go.mod 自动下载别的工具链,编译器版本只由上面的基础镜像决定。
 ENV GOTOOLCHAIN=local
-RUN test "$(go env GOVERSION)" = "go1.24.5"
+RUN test "$(go env GOVERSION)" = "go1.27.2"
 
 WORKDIR /src
 COPY . .

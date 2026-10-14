@@ -147,7 +147,7 @@ static bool SendViaRouter(const ClientRequest &request, const SessionDetails &se
 		static uint64_t unavailableCount = 0;
 		if ((unavailableCount++ & 0x3FF) == 0)
 		{
-			LOG_WARN << "路由服无可用实例,消息未转发(采样), latest_message_id=" << request.message_id()
+			LOG_WARN << "No available router instance;message not forwarded(sampled), latest_message_id=" << request.message_id()
 					 << ", latest_session_id=" << sessionDetails.session_id()
 					 << ", unavailable_total=" << unavailableCount;
 		}
@@ -943,7 +943,7 @@ void RpcClientSessionHandler::DispatchClientRpcMessage(const muduo::net::TcpConn
 	// 踢线会把大厅连接一起拆掉。逐条只打 DEBUG,与上面几道闸的明细日志同一口径。
 	if (messageInfo.targetNodeType == eNodeType::BattleNodeService)
 	{
-		LOG_DEBUG << "拒绝经 gate 的战斗消息(战斗只走客户端直连), session_id=" << sessionId
+		LOG_DEBUG << "Battle message through gate rejected(battle uses client direct connections only), session_id=" << sessionId
 				  << ", message_id=" << request->message_id();
 		SendTipToClient(conn, kServiceUnavailable);
 		return;

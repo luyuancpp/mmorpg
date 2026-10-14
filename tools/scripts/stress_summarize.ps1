@@ -13,14 +13,15 @@
 
       [entergame_total snapshot at each prom-snapshot point]
           when | success | preload_failed | apply_failed | fail %
-                 | preload{ok} avg | preload{fail} avg | apply avg
+                 | preload{ok} avg | preload{fail} avg | apply avg | pool_saturated
+          (pool_saturated = PreloadPool 满、入场链没启动的次数;不计入 fail %;缺序列打印 n/a)
 
       [dataloader per-stage avg at each prom-snapshot point]
           when | cache_check{hit} | sub_cache_check | kafka_send | callback_wait{ok} | callback_wait{fail}
 
       [CreatePlayer stages:每个快照点的建角分阶段均值 + 名字孤儿计数;缺指标打印 n/a,
        name_orphan 在「有 stage 序列但无孤儿序列」时打印 0(规则见该段注释)]
-          when | mint | name | register | account_write | name_orphan
+          when | mint | name | register | seed | account_write | name_orphan
 
       [optional: Kafka consumer lag (final)]
           partition | current | log_end | lag
@@ -228,8 +229,8 @@ if ($snapshots.Count -eq 0) {
     Write-Host ""
     Write-Host "=== EnterGame end-to-end (entergame_*) =================================" -ForegroundColor Yellow
     Write-Host ""
-    "  snapshot                       success  preload_failed  apply_failed  fail%   preload{ok}avg  preload{fail}avg  apply avg" | Write-Host
-    "  --------                       -------  --------------  ------------  -----   --------------  ----------------  ---------" | Write-Host
+    "  snapshot                       success  preload_failed  apply_failed  fail%   preload{ok}avg  preload{fail}avg  apply avg  pool_saturated" | Write-Host
+    "  --------                       -------  --------------  ------------  -----   --------------  ----------------  ---------  --------------" | Write-Host
 
     foreach ($snap in $snapshots) {
         $m = Read-PromSnapshot $snap.FullName
@@ -240,12 +241,23 @@ if ($snapshots.Count -eq 0) {
         $total = $success + $preloadFail + $applyFail + $lockLost
         $failPct = if ($total -gt 0) { [math]::Round(($preloadFail + $applyFail + $lockLost) / $total * 100, 1) } else { 0.0 }
 
+        # pool_saturated = PreloadPool 满、入场链根本没启动(EnterGame 当场回 kLoginInProgress)的次数。
+        # 它**不是**链的终态:只在 entergame_total 里计数,不进任何耗时直方图,所以不计入上面的
+        # $total 与 fail%,单列一列放在最后(原有各列的位置不变,新旧 summary 仍能逐列对比)。
+        # 开 NewPlayerSeed 后新号的入场链整段跑在 PreloadPool 的 worker 上,这一列有数就该调大
+        # login 的 PreloadPool.Size(docs/design/new-player-first-enter-no-cold-read.md §6 第 21 行)。
+        # 缺序列打印 n/a 而不是 0:login 起服时由 PrimeEnterGameMetrics(clientplayerlogin/metrics.go)
+        # 把这条序列预置成 0,所以带这个取值的 login 的快照里它恒存在,健康压测读到的就是 0;
+        # 读到 n/a = 这个 login 不导出该取值(2026-10-13 之前的版本 / 预置没跑 / 采集没开),不是「测到 0」。
+        $poolSatV = Get-MetricSumOrNull $m '^entergame_total\{.*result="pool_saturated"'
+        $poolSatCell = if ($null -ne $poolSatV) { "{0:N0}" -f $poolSatV } else { "n/a" }
+
         $preloadOkAvg   = Format-Avg (Get-Metric $m 'entergame_preload_seconds_sum{result="success"}')        (Get-Metric $m 'entergame_preload_seconds_count{result="success"}')
         $preloadFailAvg = Format-Avg (Get-Metric $m 'entergame_preload_seconds_sum{result="preload_failed"}') (Get-Metric $m 'entergame_preload_seconds_count{result="preload_failed"}')
         $applyAvg       = Format-Avg (Get-Metric $m 'entergame_apply_seconds_sum{result="success"}')          (Get-Metric $m 'entergame_apply_seconds_count{result="success"}')
 
         $name = $snap.BaseName
-        $line = "  {0,-30} {1,-8} {2,-15} {3,-13} {4,-7} {5,-15} {6,-17} {7}" -f `
+        $line = "  {0,-30} {1,-8} {2,-15} {3,-13} {4,-7} {5,-15} {6,-17} {7,-10} {8}" -f `
             $name, `
             (Format-Number $success 8), `
             (Format-Number $preloadFail 15), `
@@ -253,7 +265,8 @@ if ($snapshots.Count -eq 0) {
             ("{0:N1}%" -f $failPct), `
             $preloadOkAvg, `
             $preloadFailAvg, `
-            $applyAvg
+            $applyAvg, `
+            $poolSatCell
         Write-Host $line
     }
 
@@ -303,11 +316,15 @@ if ($snapshots.Count -eq 0) {
     }
 
     # 建角分阶段耗时(帮会二期 B3a-2,docs/design/guild-phase2/03-names.md §3.11 / §3.20)。
-    # 指标在 login(:9101)上,所以与上面两段共用 login 快照。stage 的四个取值由
-    # 设计 §3.11 钉死,落码在 go/login/internal/logic/clientplayerlogin/metrics.go
-    # —— 那边改名这里必须跟着改,否则整列静默变成 n/a:
+    # 指标在 login(:9101)上,所以与上面两段共用 login 快照。stage 的五个取值落码在
+    # go/login/internal/logic/clientplayerlogin/metrics.go(mint / name / register / account_write
+    # 由设计 §3.11 钉死,seed 由 docs/design/new-player-first-enter-no-cold-read.md §4.5 加入)
+    # —— 那边改名或加取值这里必须跟着改,否则整列静默变成 n/a,或者新取值根本没有列:
     #   mint = 发 player_id,name = 名字占用(ReservePlayerName,含重试),
-    #   register = RegisterPlayerZone,account_write = 围栏写账号 blob。
+    #   register = RegisterPlayerZone,account_write = 围栏写账号 blob,
+    #   seed = 新号父键种子(账号锁内多出的一次 Redis,排在 register 与 account_write 之间)。
+    #          只在 login 的 NewPlayerSeed.Enabled 打开时有序列,关着时按下面的既有规则打印 n/a
+    #          —— 所以这一列同时能核对本轮压测的开关状态。
     # 验收口径(§3.20)看 name 段均值与 name_orphan(建角失败后名字仍被占住的次数,应为 0)。
     # 各 stage 列缺指标一律打印 n/a,不折成 0:B3a-2 之前的 login 没有这些序列;histogram 的
     # 某个 stage 在第一次观测前也不会出现 —— 两种都不是「测到 0」。
@@ -328,10 +345,10 @@ if ($snapshots.Count -eq 0) {
     Write-Host ""
     Write-Host "=== CreatePlayer stages (login_create_player_stage_seconds) ============" -ForegroundColor Yellow
     Write-Host ""
-    "  snapshot                       mint       name       register   account_write  name_orphan" | Write-Host
-    "  --------                       ----       ----       --------   -------------  -----------" | Write-Host
+    "  snapshot                       mint       name       register   seed       account_write  name_orphan" | Write-Host
+    "  --------                       ----       ----       --------   ----       -------------  -----------" | Write-Host
 
-    $createStages = @('mint','name','register','account_write')
+    $createStages = @('mint','name','register','seed','account_write')
     foreach ($snap in $snapshots) {
         $m = Read-PromSnapshot $snap.FullName
         $cells = @()
@@ -347,8 +364,8 @@ if ($snapshots.Count -eq 0) {
         $orphanCell = if ($null -ne $orphanV) { "{0:N0}" -f $orphanV } elseif ($stageSeen) { "0" } else { "n/a" }
 
         $name = $snap.BaseName
-        $line = "  {0,-30} {1,-10} {2,-10} {3,-10} {4,-14} {5}" -f `
-            $name, $cells[0], $cells[1], $cells[2], $cells[3], $orphanCell
+        $line = "  {0,-30} {1,-10} {2,-10} {3,-10} {4,-10} {5,-14} {6}" -f `
+            $name, $cells[0], $cells[1], $cells[2], $cells[3], $cells[4], $orphanCell
         Write-Host $line
     }
 }

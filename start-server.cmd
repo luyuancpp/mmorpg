@@ -7,7 +7,7 @@ if exist "%GAME_PWSH%" goto launch
 set "GAME_PWSH=pwsh.exe"
 where pwsh.exe >nul 2>nul
 if errorlevel 1 (
-  echo 未找到 PowerShell 7，请先恢复本机的 PowerShell 7。
+  echo PowerShell 7 not found. Restore the existing local PowerShell 7 installation first.
   pause
   exit /b 1
 )

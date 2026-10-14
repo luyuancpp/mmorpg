@@ -46,7 +46,7 @@ foreach ($case in $cases) {
         Write-Host "PASS: clang-query $($case.Name)"
     }
 }
-Write-Host "PASS: $($cases.Count) 个检查器行为用例。"
+Write-Host "PASS: $($cases.Count) checker behavior cases."
 
 # 通过真实构建钩子验证发现、响应文件引用(含空格路径)和成功缓存。
 $hookRoot = Join-Path ([IO.Path]::GetTempPath()) ('mmorpg checker smoke-' + [guid]::NewGuid().ToString('N'))
@@ -56,11 +56,11 @@ $hookSource = Join-Path $hookRoot 'main.cpp'
 & "$PSScriptRoot/../check_no_raw_pointer_member.ps1" -ProjectDir $hookRoot -ProjectName setup_smoke
 $marker = Join-Path $hookRoot '.no_raw_ptr_check_ok'
 if (-not (Test-Path -LiteralPath $marker)) { throw '合法代码的构建钩子未生成成功缓存。' }
-Write-Host 'PASS: 构建钩子通过并缓存(含空格路径)。'
+Write-Host 'PASS: Build hook passed and cached (including paths with spaces).'
 [IO.File]::WriteAllText($hookSource, 'struct Bad { int* pointer; };')
 [IO.File]::SetLastWriteTimeUtc($hookSource, [DateTime]::UtcNow.AddSeconds(1))
 & "$PSScriptRoot/../check_no_raw_pointer_member.ps1" -ProjectDir $hookRoot -ProjectName setup_smoke
 if ($LASTEXITCODE -ne 1 -or (Test-Path -LiteralPath $marker)) { throw '裸指针成员必须被钩子拒绝并移除旧成功缓存。' }
-Write-Host 'PASS: 构建钩子拒绝裸指针成员并清除旧缓存。'
+Write-Host 'PASS: Build hook rejected raw pointer members and cleared stale cache.'
 # 上面的非零退出码是预期断言，不向调用准备脚本泄漏为失败状态。
 $global:LASTEXITCODE = 0

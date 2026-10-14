@@ -48,15 +48,12 @@ public class AssignGateController {
     @PostMapping("/assign-gate")
     public AssignGateResponse assignGate(@RequestBody AssignGateRequest req, HttpServletRequest http) {
         String ip = ipResolver.resolve(http);
-        // Re-entry path (queue_token present) skips the limiter — the caller
-        // is already in the queue and is just polling. Throttling them would
-        // surface as a UX bug ("rank stops decreasing"). The queue itself
-        // is the throttle for repeated re-entries.
-        if (req.getQueueToken() != null && !req.getQueueToken().isBlank()) {
-            return assignGateService.assignGate(req);
-        }
-
-        RateLimitDecision decision = limiter.check(req.getZoneId(), ip, req.getAccount());
+        // 带 queue_token 的重入照样过 zone 桶与 IP 桶,只跳过账号冷却。gateway 验不了 token(密钥在 login),
+        // 也不知道 login 排队开没开 —— 排队关着时 login 对带 token 的请求直接走快速通道签票,无条件放行 =
+        // 任意伪造一个字段就绕过整个限流。正常轮询走 /api/queue-status(不限流);带 token 重调 assign-gate
+        // 只发生在网络抖动后的重试,偶尔多扣一个令牌可以接受。冷却要跳过:重试常在 5s 窗口内,会被自己挡住。
+        boolean reentry = req.getQueueToken() != null && !req.getQueueToken().isBlank();
+        RateLimitDecision decision = limiter.check(req.getZoneId(), ip, reentry ? null : req.getAccount());
         if (decision.isQueue()) {
             return AssignGateResponse.queueing(decision.getRetryAfterMs(), decision.getQueuePosEstimate());
         }

@@ -252,7 +252,7 @@ func migrateWorldChannel(ctx context.Context, svcCtx *svc.ServiceContext, zoneId
 	// Redis。reassignSceneNode 里的第二道屏障判定挡住这个竞态:返回 false 时
 	// 归属一个字节没改,本次迁移作废(newNode 上那个幂等的实体留到下一拍复用)。
 	if !reassignSceneNode(svcCtx, zoneId, sceneId, oldNode, newNode) {
-		logx.Infof("[Rebalance] zone=%d conf=%d scene=%d: 归属未改写(再入屏障或 Redis 写失败),本次迁移作废",
+		logx.Infof("[Rebalance] zone=%d conf=%d scene=%d: ownership not updated (reentry barrier or Redis write failure); migration invalidated",
 			zoneId, confId, sceneId)
 		return false
 	}

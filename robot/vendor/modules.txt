@@ -176,7 +176,7 @@ google.golang.org/protobuf/types/known/timestamppb
 ## explicit
 gopkg.in/yaml.v3
 # proto v0.0.0 => ../go/proto
-## explicit; go 1.24.5
+## explicit; go 1.27.2
 proto/battle
 proto/chat
 proto/common/asset
@@ -193,7 +193,7 @@ proto/scene
 proto/team
 proto/trade
 # shared v0.0.0 => ../go/shared
-## explicit; go 1.24.5
+## explicit; go 1.27.2
 shared/generated/pb/table
 shared/generated/table
 # proto => ../go/proto

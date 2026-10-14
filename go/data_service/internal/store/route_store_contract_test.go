@@ -434,8 +434,9 @@ func replyErr(err error) fakeRouteReply { return fakeRouteReply{err: err} }
 // ── W1:RegisterHome 的终局契约 ─────────────────────────────────────────────────
 
 const (
-	// contractPlayer:4242 % 8 = 4242 % 16 = 2 —— 本常量**区分不了**围栏片与行片(两者恰好相等),
-	// 绑错片的实现在用它的用例里照样全绿;区分两者的是 TestRegisterHomeBindsRowShardNotFenceShard(4250)。
+	// contractPlayer:围栏片 4242 % 8 = 2,行片 4242 % 64 = 18(4242 = 66×64 + 18)—— 两者不相等,绑错片的实现
+	// 在用它的用例里会被 assertRegisterArgs 拦下(行片还是 16 片时两者恰好都是 2,区分不了)。把两个片号按字面量、
+	// 逐下标钉死的仍是 TestRegisterHomeBindsRowShardNotFenceShard(4250)。
 	contractPlayer  uint64 = 4242
 	contractHome    uint32 = 7
 	contractStorage uint32 = 1000000
@@ -444,7 +445,7 @@ const (
 // wantRegisterArgs 是每条 W1 语句应有的实参(经 mysqlLikeConvert:无符号整数一律 uint64,NULL 为 nil)。
 // rowRev 是 R5 读到的 rev(R6 的 CAS 条件)。
 // 两个「片」分开算:fenceShard 是围栏片(player_id % FenceShards,只进 R2 / R3),
-// rowShard 是 player_route 的行片(player_id % 16,进 R4 / R5 / R6)。
+// rowShard 是 player_route 的行片(placement.RouteRowShard,即 player_id % 64,进 R4 / R5 / R6)。
 func wantRegisterArgs(t *testing.T, label string, req RouteRegisterRequest, rowRev uint64) []driver.Value {
 	t.Helper()
 	fenceShard := req.PlayerID % uint64(fakeRouteShards)
@@ -821,11 +822,12 @@ func TestRegisterHomeBindsNullForAbsentPlacement(t *testing.T) {
 }
 
 // TestRegisterHomeBindsRowShardNotFenceShard:R2 / R3 绑围栏片(player_id % FenceShards),R4 / R5 / R6 绑行片
-// (player_id % 16)。两者绑反了的后果:R4 对一半新号撞 chk_route_shard(3819)建角失败;R5 / R6 按错片点查读不到行
-// → ErrRouteRowVanished。contractPlayer=4242 的两种片恰好相等,区分不了,这里用 4250(围栏片 2、行片 10)。
+// (player_id % 64)。两者绑反了的后果:R4 对两种片不相等的新号(FenceShards=8 时占 7/8)撞 chk_route_shard(3819)
+// 建角失败;R5 / R6 按错片点查读不到行 → ErrRouteRowVanished。这里用 4250,两个片号按字面量钉死:
+// 围栏片 4250 % 8 = 2,行片 4250 % 64 = 26(4250 = 66×64 + 26)。
 func TestRegisterHomeBindsRowShardNotFenceShard(t *testing.T) {
 	const player uint64 = 4250
-	const wantFence, wantRow = uint64(2), uint64(10)
+	const wantFence, wantRow = uint64(2), uint64(26)
 	// 先确认用例本身没有退化:两种片必须不同,否则下面的断言什么也证明不了。
 	probe := RouteRegisterRequest{PlayerID: player, HomeZone: contractHome}
 	fenceArg := wantRegisterArgs(t, "R2", probe, 0)[1]
@@ -1025,37 +1027,46 @@ func TestRegisterHomeRetryStopsOnCanceledContext(t *testing.T) {
 // ── 导入 ─────────────────────────────────────────────────────────────────────────
 
 // importContractRows 一批覆盖五种判定的导入行(player_id 升序)。
+// id 取 100..300(步长 50):64 片下行片依次是 36 / 22 / 8 / 58 / 44,聚簇键序与 id 序不同,行片也都不等于 id ——
+// 「按聚簇键排」与「行片在 player_id 之前」才测得出来(原先的 10..50 在 64 片下行片就是 id 本身,两件事都测不到)。
 func importContractRows() []RouteImportRow {
 	stable := func(s uint32, v uint64) *placement.Record { return &placement.Record{StorageID: s, Version: v} }
 	return []RouteImportRow{
-		{PlayerID: 10, HomeZone: 7, Placement: stable(1000000, 1), MapRev: 5}, // 库无行 → 插入,rev=5
-		{PlayerID: 20, HomeZone: 7, Placement: stable(7, 1)},                  // 库 home 为 NULL → 补列
-		{PlayerID: 30, HomeZone: 7},                                           // 相同 → match
-		{PlayerID: 40, HomeZone: 7},                                           // 库 home=8 → conflict,不写
-		{PlayerID: 50, HomeZone: 7, MapRev: 9},                                // 库 rev=2 < maprev → rev_regression,不写
+		{PlayerID: 100, HomeZone: 7, Placement: stable(1000000, 1), MapRev: 5}, // 库无行 → 插入,rev=5
+		{PlayerID: 150, HomeZone: 7, Placement: stable(7, 1)},                  // 库 home 为 NULL → 补列
+		{PlayerID: 200, HomeZone: 7},                                           // 相同 → match
+		{PlayerID: 250, HomeZone: 7},                                           // 库 home=8 → conflict,不写
+		{PlayerID: 300, HomeZone: 7, MapRev: 9},                                // 库 rev=2 < maprev → rev_regression,不写
 	}
 }
 
-// importContractExisting 是 R8 读到的已有行(对应 importContractRows 的 20..50)。
+// importContractExisting 是 R8 读到的已有行(对应 importContractRows 的 150..300)。
 func importContractExisting() [][]driver.Value {
 	return [][]driver.Value{
-		routeRowValues(20, 0, 7, 1, "", 2),
-		routeRowValues(30, 7, 0, 0, "", 3),
-		routeRowValues(40, 8, 0, 0, "", 1),
-		routeRowValues(50, 7, 0, 0, "", 2),
+		routeRowValues(150, 0, 7, 1, "", 2),
+		routeRowValues(200, 7, 0, 0, "", 3),
+		routeRowValues(250, 8, 0, 0, "", 1),
+		routeRowValues(300, 7, 0, 0, "", 2),
 	}
 }
 
 // TestImportRoutesStatementOrderAndAffectedMismatchRetries:R1 → R8(加锁)→ R7 → R9 → COMMIT,
 // 冲突与 rev 倒退的行一字不写;R7 行数对不上(R8 之后有并发插入)时整批回滚重来,不计锁冲突。
-// R8 的实参是按聚簇键 (route_shard, player_id) 升序交错的对:10..50 的行片是 10 / 4 / 14 / 8 / 2。
+// R8 的实参是按聚簇键 (route_shard, player_id) 升序交错的对。行片 = id % 64:
+// 100 → 36(100 − 64)、150 → 22(150 − 128)、200 → 8(200 − 192)、250 → 58(250 − 192)、300 → 44(300 − 256)。
 func TestImportRoutesStatementOrderAndAffectedMismatchRetries(t *testing.T) {
 	ids := []driver.Value{
-		uint64(2), uint64(50),
-		uint64(4), uint64(20),
-		uint64(8), uint64(40),
-		uint64(10), uint64(10),
-		uint64(14), uint64(30),
+		uint64(8), uint64(200),
+		uint64(22), uint64(150),
+		uint64(36), uint64(100),
+		uint64(44), uint64(300),
+		uint64(58), uint64(250),
+	}
+	// 夹具自检:上面的片号是手算的字面量,这里用 placement.RouteRowShard 对一遍(模数若再变,先红在这里)。
+	for i := 0; i < len(ids); i += 2 {
+		if id := ids[i+1].(uint64); ids[i] != uint64(placement.RouteRowShard(id)) {
+			t.Fatalf("夹具的行片写错了:id %d 的行片是 %d,用例里写的是 %v", id, placement.RouteRowShard(id), ids[i])
+		}
 	}
 
 	t.Run("语句顺序与实参", func(t *testing.T) {
@@ -1073,7 +1084,7 @@ func TestImportRoutesStatementOrderAndAffectedMismatchRetries(t *testing.T) {
 			len(stats.Conflicts) != 1 || len(stats.RevRegressions) != 1 {
 			t.Fatalf("stats = %+v, want inserted=1 filled=1 matched=1 conflicts=1 rev_regressions=1", stats)
 		}
-		if stats.Conflicts[0].PlayerID != 40 || stats.RevRegressions[0].PlayerID != 50 {
+		if stats.Conflicts[0].PlayerID != 250 || stats.RevRegressions[0].PlayerID != 300 {
 			t.Fatalf("冲突 / 倒退归错了人:%+v", stats)
 		}
 		want := []string{"BEGIN", "R1", "R8", "R7", "R9", "COMMIT"}
@@ -1086,21 +1097,21 @@ func TestImportRoutesStatementOrderAndAffectedMismatchRetries(t *testing.T) {
 			t.Fatalf("R8 = %q %#v, want %q %#v", r8.sql, r8.args, routeSelectRowsSQL(5, true), ids)
 		}
 		r7 := fake.callsWithLabel("R7")[0]
-		wantR7 := []driver.Value{uint64(10), uint64(10), uint64(7), uint64(1000000), uint64(1), nil, uint64(5), fakeRouteWriter}
+		wantR7 := []driver.Value{uint64(36), uint64(100), uint64(7), uint64(1000000), uint64(1), nil, uint64(5), fakeRouteWriter}
 		if r7.sql != routeImportInsertSQL(1) || !reflect.DeepEqual(r7.args, wantR7) {
-			t.Fatalf("R7 = %q %#v, want %q %#v(行片在最前;rev 必须是 maprev)", r7.sql, r7.args, routeImportInsertSQL(1), wantR7)
+			t.Fatalf("R7 = %q %#v, want %q %#v(行片 36 在最前、id 100 其次;rev 必须是 maprev)", r7.sql, r7.args, routeImportInsertSQL(1), wantR7)
 		}
 		r9 := fake.callsWithLabel("R9")[0]
-		wantR9 := []driver.Value{uint64(7), uint64(7), uint64(1), nil, fakeRouteWriter, uint64(4), uint64(20), uint64(2)}
+		wantR9 := []driver.Value{uint64(7), uint64(7), uint64(1), nil, fakeRouteWriter, uint64(22), uint64(150), uint64(2)}
 		if !reflect.DeepEqual(r9.args, wantR9) {
-			t.Fatalf("R9 实参 = %#v, want %#v(按聚簇键 (4, 20) 定位、按读到的 rev=2 做 CAS)", r9.args, wantR9)
+			t.Fatalf("R9 实参 = %#v, want %#v(按聚簇键 (22, 150) 定位、按读到的 rev=2 做 CAS)", r9.args, wantR9)
 		}
 	})
 
 	t.Run("R7行数不等_回滚后重来", func(t *testing.T) {
 		rows := importContractRows()
 		rows[0].MapRev = 0 // 重来时那一行已被并发的 W1 以 rev=1 插入,maprev 为 0 才是 match
-		reread := append([][]driver.Value{routeRowValues(10, 7, 1000000, 1, "", 1)}, importContractExisting()...)
+		reread := append([][]driver.Value{routeRowValues(100, 7, 1000000, 1, "", 1)}, importContractExisting()...)
 		st, fake := newFakeRouteStore(t, fakeRouteScript{replies: map[string][]fakeRouteReply{
 			"R1": {replyWritable, replyWritable},
 			"R8": {{rows: importContractExisting()}, {rows: reread}},
@@ -1145,11 +1156,11 @@ func TestImportRoutesStatementOrderAndAffectedMismatchRetries(t *testing.T) {
 	})
 }
 
-// TestImportRoutesInsertsAndFillsInRouteKeyOrder:入参按 player_id 升序({2, 17}),写入按聚簇键升序 ——
-// 17 的行片是 1、2 的行片是 2,所以 R7 的 VALUES 与 R9 的发出顺序都是 17 在前。任何一次锁多行的语句都按聚簇键
-// 升序取锁(与 R8 同序),两个并发导入之间才不成环。
+// TestImportRoutesInsertsAndFillsInRouteKeyOrder:入参按 player_id 升序({2, 65}),写入按聚簇键升序 ——
+// 65 的行片是 1(65 = 64 + 1)、2 的行片是 2,所以 R7 的 VALUES 与 R9 的发出顺序都是 65 在前。任何一次锁多行的
+// 语句都按聚簇键升序取锁(与 R8 同序),两个并发导入之间才不成环。
 func TestImportRoutesInsertsAndFillsInRouteKeyOrder(t *testing.T) {
-	rows := []RouteImportRow{{PlayerID: 2, HomeZone: 7}, {PlayerID: 17, HomeZone: 7}}
+	rows := []RouteImportRow{{PlayerID: 2, HomeZone: 7}, {PlayerID: 65, HomeZone: 7}}
 
 	t.Run("两行都新插_R7按聚簇键排", func(t *testing.T) {
 		st, fake := newFakeRouteStore(t, fakeRouteScript{replies: map[string][]fakeRouteReply{
@@ -1160,16 +1171,16 @@ func TestImportRoutesInsertsAndFillsInRouteKeyOrder(t *testing.T) {
 			t.Fatalf("ImportRoutes = (%+v, %v), want inserted=2", stats, err)
 		}
 		r8 := fake.callsWithLabel("R8")[0]
-		if want := []driver.Value{uint64(1), uint64(17), uint64(2), uint64(2)}; !reflect.DeepEqual(r8.args, want) {
+		if want := []driver.Value{uint64(1), uint64(65), uint64(2), uint64(2)}; !reflect.DeepEqual(r8.args, want) {
 			t.Fatalf("R8 实参 = %#v, want %#v(按聚簇键升序)", r8.args, want)
 		}
 		r7 := fake.callsWithLabel("R7")[0]
 		want := []driver.Value{
-			uint64(1), uint64(17), uint64(7), nil, nil, nil, uint64(1), fakeRouteWriter,
+			uint64(1), uint64(65), uint64(7), nil, nil, nil, uint64(1), fakeRouteWriter,
 			uint64(2), uint64(2), uint64(7), nil, nil, nil, uint64(1), fakeRouteWriter,
 		}
 		if r7.sql != routeImportInsertSQL(2) || !reflect.DeepEqual(r7.args, want) {
-			t.Fatalf("R7 = %q %#v\nwant %q %#v(17 的行片 1 < 2 的行片 2,必须排在前面)", r7.sql, r7.args, routeImportInsertSQL(2), want)
+			t.Fatalf("R7 = %q %#v\nwant %q %#v(65 的行片 1 < 2 的行片 2,必须排在前面)", r7.sql, r7.args, routeImportInsertSQL(2), want)
 		}
 	})
 
@@ -1177,7 +1188,7 @@ func TestImportRoutesInsertsAndFillsInRouteKeyOrder(t *testing.T) {
 		st, fake := newFakeRouteStore(t, fakeRouteScript{replies: map[string][]fakeRouteReply{
 			"R1": {replyWritable},
 			// 库里两行都是 home 为 NULL 的墓碑(应答顺序随意,判定按 player_id 取)。
-			"R8": {{rows: [][]driver.Value{routeRowValues(2, 0, 0, 0, "", 3), routeRowValues(17, 0, 0, 0, "", 5)}}},
+			"R8": {{rows: [][]driver.Value{routeRowValues(2, 0, 0, 0, "", 3), routeRowValues(65, 0, 0, 0, "", 5)}}},
 			"R9": {replyAffected(1), replyAffected(1)},
 		}})
 		stats, err := st.ImportRoutes(context.Background(), rows, false)
@@ -1189,12 +1200,12 @@ func TestImportRoutesInsertsAndFillsInRouteKeyOrder(t *testing.T) {
 		}
 		r9 := fake.callsWithLabel("R9")
 		want := [][]driver.Value{
-			{uint64(7), nil, nil, nil, fakeRouteWriter, uint64(1), uint64(17), uint64(5)},
+			{uint64(7), nil, nil, nil, fakeRouteWriter, uint64(1), uint64(65), uint64(5)},
 			{uint64(7), nil, nil, nil, fakeRouteWriter, uint64(2), uint64(2), uint64(3)},
 		}
 		for i := range want {
 			if !reflect.DeepEqual(r9[i].args, want[i]) {
-				t.Fatalf("第 %d 次 R9 实参 = %#v, want %#v(补列按聚簇键升序:17 在前)", i, r9[i].args, want[i])
+				t.Fatalf("第 %d 次 R9 实参 = %#v, want %#v(补列按聚簇键升序:65 在前)", i, r9[i].args, want[i])
 			}
 		}
 	})
@@ -1354,7 +1365,7 @@ func TestRouteReadQueriesShapes(t *testing.T) {
 	}
 }
 
-// TestRouteReadsRejectShardMismatchRows:库里存的 route_shard 与 player_id % 16 不符的行(只有 CHECK 曾经不生效时
+// TestRouteReadsRejectShardMismatchRows:库里存的 route_shard 与 player_id % 64 不符的行(只有 CHECK 曾经不生效时
 // 被绕过 store 的写者写进来),读到就 ErrRouteShardMismatch、整页作废,不能当成正常行交给 audit / 发布。
 func TestRouteReadsRejectShardMismatchRows(t *testing.T) {
 	ctx := context.Background()
@@ -1363,7 +1374,7 @@ func TestRouteReadsRejectShardMismatchRows(t *testing.T) {
 		st, _ := newFakeRouteStore(t, fakeRouteScript{replies: map[string][]fakeRouteReply{
 			"R12": {{rows: [][]driver.Value{
 				routeRowValues(1, 7, 0, 0, "", 1),
-				routeRowValuesWithShard(3, 6, 7, 0, 0, "", 1), // 6 % 16 = 6 ≠ 3
+				routeRowValuesWithShard(3, 6, 7, 0, 0, "", 1), // 6 % 64 = 6 ≠ 3
 			}}},
 		}})
 		rows, err := st.ScanRoutes(ctx, RouteScanCursor{}, 10)
@@ -1685,6 +1696,49 @@ func TestPrepareTiDBContract(t *testing.T) {
 			t.Fatalf("失败之后还在发:SPLIT 发了 %d 次,want 4", got)
 		}
 	})
+
+	// SPLIT 的结果读不出「切了几个 Region」的三种形状(规格 §4.8):没有列、没有行、首列不是整数,一律 fail-closed ——
+	// 看不到结果就不能声称切过了。都放在第一条 SPLIT(8 条里的第 3 步)上:那一步不记 Executed,之后一条都不再发。
+	// 这三条错误不是 MySQLError,只能按文案认(文案出自 execRouteTiDBPrepareStep)。
+	for _, tc := range []struct {
+		name    string
+		reply   fakeRouteReply
+		wantErr string
+	}{
+		// 一行零列:假驱动按首行的列数报列,于是 Columns() 为空。go-sql-driver/mysql v1.9.3 对「没有结果集」的应答
+		// 交回的也是这个形状(connection.go 的 query 在 resLen == 0 时返回不带列的 rows)。
+		{name: "零列", reply: fakeRouteReply{rows: [][]driver.Value{{}}}, wantErr: "SPLIT returned no columns"},
+		{name: "零行", reply: replyNoRows, wantErr: "SPLIT returned no rows"},
+		{name: "首列不是整数", reply: fakeRouteReply{rows: [][]driver.Value{{"n/a", float64(1)}}}, wantErr: "is not an integer"},
+	} {
+		t.Run("SPLIT结果"+tc.name+"_报第3步且不再发", func(t *testing.T) {
+			splits := sixSplits()
+			splits[0] = tc.reply
+			st, fake := newFakeRouteStore(t, fakeRouteScript{replies: map[string][]fakeRouteReply{
+				"VERSION": {tidbVersion}, "PK_TYPE": {clustered},
+				"ALTER_ATTR": {replyAffected(0), replyAffected(0)}, "SPLIT": splits,
+			}})
+			rep, err := st.PrepareTiDB(ctx, req)
+			if err == nil || !strings.Contains(err.Error(), "step 3/8") || !strings.Contains(err.Error(), tc.wantErr) {
+				t.Fatalf("err = %v, want 带 step 3/8 与 %q(读不到结果不许当成切了 0 个)", err, tc.wantErr)
+			}
+			if len(rep.Steps) != len(wantSQL) {
+				t.Fatalf("失败时 Steps 仍应是完整清单:%+v", rep.Steps)
+			}
+			for i, step := range rep.Steps {
+				if want := i < 2; step.Executed != want {
+					t.Fatalf("第 %d 步 Executed = %t, want %t(读不到结果的那条 SPLIT 不算执行过)", i+1, step.Executed, want)
+				}
+			}
+			if got := rep.SplitRegions(); got != 0 {
+				t.Fatalf("SplitRegions() = %d, want 0", got)
+			}
+			wantLabels := []string{"VERSION", "PK_TYPE", "ALTER_ATTR", "ALTER_ATTR", "SPLIT"}
+			if got := fake.labels(); !reflect.DeepEqual(got, wantLabels) {
+				t.Fatalf("失败之后还在发:\n got=%v\nwant=%v", got, wantLabels)
+			}
+		})
+	}
 
 	t.Run("入参非法_一条语句都不发", func(t *testing.T) {
 		st, fake := newFakeRouteStore(t, fakeRouteScript{})

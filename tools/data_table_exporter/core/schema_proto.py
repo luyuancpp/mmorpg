@@ -729,8 +729,7 @@ def build_table_schema(proto_path: Path, xlsx_path: Path,
                                       "/".join(sorted(o for o in _KNOWN_OWNERS if o))))
         if owner == _MISSING_OWNER:
             logger.warning(
-                "[%s] 字段 %s 的 owner 是空的 -> 整列被丢弃,不进 proto/JSON。"
-                "源表里如果这一列有数据,那些数据现在就在丢。", sheet, f.name)
+                "[%s] Field %s has an empty owner; the entire column is dropped from proto/JSON. Any data in this source-table column is being discarded.", sheet, f.name)
         toks = _tokens(f)
         cmt = f.comment
         slots = f.opts.get("cfg_slots")

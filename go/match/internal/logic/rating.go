@@ -134,7 +134,7 @@ func loadRating(svcCtx *svc.ServiceContext, playerId uint64) (float64, error) {
 func loadRatingOrDefault(svcCtx *svc.ServiceContext, playerId uint64) float64 {
 	rating, err := loadRating(svcCtx, playerId)
 	if err != nil {
-		logx.Errorf("[match] 读评分失败,按默认 %d 处理 player=%d: %v", defaultRating, playerId, err)
+		logx.Errorf("[match] Failed to read rating; using default %d player=%d: %v", defaultRating, playerId, err)
 		return defaultRating
 	}
 	return rating
@@ -407,19 +407,19 @@ func ApplyBattleResult(svcCtx *svc.ServiceContext, event *kafkapb.BattleResultEv
 	case battlepb.EBattleOutcome_BATTLE_OUTCOME_DRAW:
 		scoreA = 0.5
 	default:
-		logx.Infof("[rating] 对局结果不计分 battle=%d mode=%s outcome=%s", battleId, modeName, event.GetOutcome())
+		logx.Infof("[rating] Battle result does not affect rating battle=%d mode=%s outcome=%s", battleId, modeName, event.GetOutcome())
 		return finish(ratingOutcomeIgnored), nil
 	}
 	teamA, teamB, ok := splitResultTeams(event)
 	if !ok {
-		logx.Errorf("[rating] 对局结果队伍形态异常,不计分 battle=%d mode=%s teams=%d", battleId, modeName, len(event.GetTeams()))
+		logx.Errorf("[rating] Invalid team structure in battle result; rating unchanged battle=%d mode=%s teams=%d", battleId, modeName, len(event.GetTeams()))
 		return finish(ratingOutcomeIgnored), nil
 	}
 	if scoreA != 0.5 {
 		if roundCap := svcCtx.Config.RatingDrawRoundCapFor(event.GetBattleConfigId()); roundCap > 0 && event.GetTotalRounds() >= roundCap {
 			// 回合打满:引擎判的 SIDE_B_WIN 是 PVE 规则,PVP 按平局。最后一回合真打死
 			// 也落在这里(total_rounds == 上限,与打满不可区分),保守按平局。
-			logx.Infof("[rating] 回合打满按平局结算 battle=%d mode=%s outcome=%s rounds=%d cap=%d config=%d",
+			logx.Infof("[rating] Round limit reached; settling as draw battle=%d mode=%s outcome=%s rounds=%d cap=%d config=%d",
 				battleId, modeName, event.GetOutcome(), event.GetTotalRounds(), roundCap, event.GetBattleConfigId())
 			metrics.ObserveRatingRoundCapDraw(modeName)
 			scoreA = 0.5
@@ -450,13 +450,13 @@ func ApplyBattleResult(svcCtx *svc.ServiceContext, event *kafkapb.BattleResultEv
 		}
 		state, storedDelta, ok := decodeRatingAppliedMarker(raw)
 		if !ok || state == ratingAppliedStateDone {
-			logx.Infof("[rating] 对局结果已入账,跳过重复投递 battle=%d marker=%q", battleId, raw)
+			logx.Infof("[rating] Battle result already applied; skipping duplicate delivery battle=%d marker=%q", battleId, raw)
 			return finish(ratingOutcomeDuplicate), nil
 		}
 		// applying:上次(本实例或别的实例)写到一半 —— 按标记里的 Δ_A 续写,逐人幂等。
 		deltaA = storedDelta
 		resumed = true
-		logx.Infof("[rating] 对局结果续写未落账成员 battle=%d mode=%s deltaA=%+.2f", battleId, modeName, deltaA)
+		logx.Infof("[rating] Resuming battle result updates for unapplied members battle=%d mode=%s deltaA=%+.2f", battleId, modeName, deltaA)
 	}
 	deltaB := -deltaA
 	now := nowMs()
@@ -476,11 +476,11 @@ func ApplyBattleResult(svcCtx *svc.ServiceContext, event *kafkapb.BattleResultEv
 				continue
 			}
 			if !ok {
-				logx.Infof("[rating] 玩家本局已入账,跳过 battle=%d player=%d rating=%s", battleId, pid, rating)
+				logx.Infof("[rating] Player's battle result already applied; skipping battle=%d player=%d rating=%s", battleId, pid, rating)
 				continue
 			}
 			written++
-			logx.Infof("[rating] 评分更新 battle=%d mode=%s player=%d %s -> %s (delta=%+.2f)",
+			logx.Infof("[rating] Rating updated battle=%d mode=%s player=%d %s -> %s (delta=%+.2f)",
 				battleId, modeName, pid, formatRating(ratings[pid]), rating, delta)
 		}
 	}
@@ -491,16 +491,16 @@ func ApplyBattleResult(svcCtx *svc.ServiceContext, event *kafkapb.BattleResultEv
 		if written > 0 || resumed {
 			outcome = ratingOutcomePartial
 		}
-		logx.Errorf("[rating] 对局写分未完成,标记留 applying 等重试续写 battle=%d mode=%s 未落账=%v 本次已写=%d: %v",
+		logx.Errorf("[rating] Battle rating updates incomplete; marker remains applying for retry battle=%d mode=%s pending=%v written=%d: %v",
 			battleId, modeName, missing, written, firstErr)
 		finish(outcome)
 		return outcome, fmt.Errorf("写评分失败 battle=%d 未落账玩家=%v: %w", battleId, missing, firstErr)
 	}
 	if err := svcCtx.MatchRedis.Setex(appliedKey, encodeRatingAppliedMarker(ratingAppliedStateDone, 0), ratingAppliedTTLSeconds); err != nil {
 		// 全员已落账;标记没改成 done 只影响重投的路径 —— 会走续写并被逐人幂等全部跳过,不会算两次。
-		logx.Errorf("[rating] 入账标记改 done 失败(全员已落账,重投会被逐人幂等跳过) battle=%d: %v", battleId, err)
+		logx.Errorf("[rating] Failed to mark result done (all members applied; redelivery will skip each member idempotently) battle=%d: %v", battleId, err)
 	}
-	logx.Infof("[rating] 对局入账 battle=%d mode=%s outcome=%s rounds=%d avgA=%.2f avgB=%.2f deltaA=%+.2f resumed=%t teamA=%v teamB=%v",
+	logx.Infof("[rating] Battle result applied battle=%d mode=%s outcome=%s rounds=%d avgA=%.2f avgB=%.2f deltaA=%+.2f resumed=%t teamA=%v teamB=%v",
 		battleId, modeName, event.GetOutcome(), event.GetTotalRounds(), avgA, avgB, deltaA, resumed, teamA, teamB)
 	return finish(ratingOutcomeApplied), nil
 }

@@ -51,7 +51,7 @@ def generate_manifest(cfg: ExporterConfig, tables: list[TableSchema]) -> Path:
 
     if previous is not None and previous.get("content_digest") == content_digest:
         logger.info(
-            "产物清单未变(version=%s, digest=%s),跳过重写",
+            "Output manifest unchanged (version=%s, digest=%s); skipping rewrite",
             previous.get("version"), content_digest[:12],
         )
         return manifest_path
@@ -118,7 +118,7 @@ def _row_count(json_path: Path) -> int:
         with open(json_path, "r", encoding="utf-8") as f:
             data = json.load(f)
     except Exception as exc:
-        logger.warning("清单统计行数失败 %s: %s", json_path.name, exc)
+        logger.warning("Failed to count rows for manifest entry %s: %s", json_path.name, exc)
         return 0
     rows = data.get("data") if isinstance(data, dict) else None
     return len(rows) if isinstance(rows, list) else 0
@@ -162,7 +162,7 @@ def _load_previous(path: Path) -> dict[str, Any] | None:
     except Exception as exc:
         # 清单读坏了不该阻断导表:它是"这批产物是谁"的元数据,不是位序那种权威状态,
         # 重新从 1 开始最坏是让加载端多报一次不一致,不会损坏任何存量数据。
-        logger.warning("旧产物清单无法解析,版本号将从头开始:%s(%s)", path, exc)
+        logger.warning("Cannot parse the previous output manifest; version numbering will restart from the beginning: %s (%s)", path, exc)
         return None
     return data if isinstance(data, dict) else None
 
@@ -191,7 +191,7 @@ def _source_rev(data_dir: Path) -> dict[str, Any]:
             capture_output=True, text=True, timeout=20, check=True,
         ).stdout.strip()
     except Exception as exc:
-        logger.warning("清单取 git rev 失败,记为 unknown:%s", exc)
+        logger.warning("Failed to get git revision for manifest; recording unknown: %s", exc)
         return unknown
     try:
         status = subprocess.run(

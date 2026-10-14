@@ -1231,14 +1231,14 @@ func runCharacters(opt charOptions) error {
 	}
 	opt.FittedHeight = fitted
 	if fitted < opt.MaxHeight {
-		fmt.Printf("统一身高 %dpx(上限 %d;受 %s 约束,留出 attack/hit 的位移余量)\n",
+		fmt.Printf("Uniform height %dpx (limit %d; constrained by %s, reserving movement margin for attack/hit)\n",
 			fitted, opt.MaxHeight, tightest)
 	} else {
-		fmt.Printf("统一身高 %dpx(上限内所有动作均不出画布)\n", fitted)
+		fmt.Printf("Uniform height %dpx (all actions fit within canvas at this limit)\n", fitted)
 	}
 	for i, pr := range probes {
 		if pr.err == nil {
-			fmt.Printf("    单张可放下的最大身高 %3dpx  bbox %4d×%-4d  %s\n",
+			fmt.Printf("    Maximum height fitting a single image %3dpx  bbox %4dx%-4d  %s\n",
 				perFit[i], pr.sh.CW, pr.sh.CH, filepath.Base(files[i]))
 		}
 	}
@@ -1300,7 +1300,7 @@ func runCharacters(opt charOptions) error {
 			mf.Skipped = append(mf.Skipped, CharSkipEntry{
 				File: filepath.ToSlash(r.SrcFile), Reason: r.Err.Error(),
 			})
-			fmt.Printf("  跳过 %-42s %v\n", filepath.Base(r.SrcFile), r.Err)
+			fmt.Printf("  Skipping %-42s %v\n", filepath.Base(r.SrcFile), r.Err)
 			continue
 		}
 		okCount++
@@ -1314,7 +1314,7 @@ func runCharacters(opt charOptions) error {
 		if r.IdleTop > topMax {
 			topMax = r.IdleTop
 		}
-		fmt.Printf("  角色 %-30s bbox=%v scale=%.4f placed=%v 头顶行=%d 主色=%v 文件 %d\n",
+		fmt.Printf("  Character %-30s bbox=%v scale=%.4f placed=%v top_row=%d main_color=%v files=%d\n",
 			r.Entry.CharacterID, r.Entry.BBoxXYWH, r.Entry.Scale, r.Entry.PlacedSize,
 			r.IdleTop, r.Entry.DominantRGB, r.Files)
 		for _, c := range r.Checks {
@@ -1364,10 +1364,10 @@ func runCharacters(opt charOptions) error {
 	}
 	mf.FileCount++
 
-	fmt.Printf("\n完成:角色 %d/%d,strip %d 张(%d 动作 × %d 向),清单 %s\n",
+	fmt.Printf("\nComplete: characters %d/%d, %d strips (%d actions x %d directions), manifest %s\n",
 		okCount, len(files), mf.FileCount-okCount-1, len(order), len(opt.Dirs), mpath)
-	fmt.Printf("统一身高自检:idle 首帧头顶行 %d..%d(离差 %dpx,容差 %d)\n", topMin, topMax, spread, charTopRowTolerance)
-	fmt.Printf("产物总字节:%d(%.1f MB)\n", mf.TotalBytes, float64(mf.TotalBytes)/1024/1024)
+	fmt.Printf("Uniform height check: idle first-frame top rows %d..%d (spread %dpx, tolerance %d)\n", topMin, topMax, spread, charTopRowTolerance)
+	fmt.Printf("Total output bytes: %d (%.1f MB)\n", mf.TotalBytes, float64(mf.TotalBytes)/1024/1024)
 	if len(mf.Skipped) > 0 {
 		return fmt.Errorf("有 %d 项未通过,详见 CHARACTER_MANIFEST.json 的 skipped", len(mf.Skipped))
 	}

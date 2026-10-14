@@ -105,11 +105,11 @@ func UnaryServerInterceptor(clientMethods map[string]struct{}) grpc.UnaryServerI
 
 		detail, err := decode(values[0])
 		if err != nil {
-			logx.Errorf("[guild] 拒绝 %s:会话元数据无法解码: %v", info.FullMethod, err)
+			logx.Errorf("[guild] Rejecting %s: cannot decode session metadata: %v", info.FullMethod, err)
 			return nil, status.Error(codes.Unauthenticated, "invalid session metadata")
 		}
 		if _, allowed := clientMethods[info.FullMethod]; !allowed {
-			logx.Errorf("[guild] 拒绝客户端调用内部方法 %s(session_id=%d)", info.FullMethod, detail.GetSessionId())
+			logx.Errorf("[guild] Rejecting client call to internal method %s(session_id=%d)", info.FullMethod, detail.GetSessionId())
 			return nil, status.Errorf(codes.PermissionDenied, "%s is not callable by clients", info.FullMethod)
 		}
 		return handler(WithDetails(ctx, detail), req)

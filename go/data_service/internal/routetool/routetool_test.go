@@ -702,13 +702,19 @@ func TestRouteAuditExitCodes(t *testing.T) {
 }
 
 // TestRouteAuditPagesAcrossShards:方向 A 沿聚簇键翻页(G1a),游标是 (route_shard, player_id) 而不是 player_id。
-// id {1, 17, 33, 2, 18, 15, 31} 的行片是 1,1,1,2,2,15,15,Batch=2 时页边界落在片中间、也落在片之间:
-// 按 player_id 当游标会漏掉 2 / 15 之后的行,按片当游标会漏掉同片的后续行。两边一致时差异为 0;
+// id {1, 65, 129, 2, 66, 63, 127} 的行片是 1,1,1,2,2,63,63(64 片:相差 64 才落同一片),Batch=2 时页边界落在片中间、
+// 也落在片之间:按 player_id 当游标会漏掉 2 / 63 之后的行,按片当游标会漏掉同片的后续行。两边一致时差异为 0;
 // 删掉其中一名玩家的 Redis 键,恰好多出 1 个差异 —— 证明每一行都被比到了一次,不漏不重。
 func TestRouteAuditPagesAcrossShards(t *testing.T) {
 	mr, rd := newMappingRedis(t)
 	db := newFakeRouteDB()
-	ids := []uint64{1, 17, 33, 2, 18, 15, 31}
+	// 65 = 64 + 1、129 = 2×64 + 1(片 1);66 = 64 + 2(片 2);63 与 127 = 64 + 63(片 63,最后一片)。
+	ids := []uint64{1, 65, 129, 2, 66, 63, 127}
+	// 夹具自检:上面的 id 若不再「三个同片、两个同片、两个同片」(模数变了),用例会悄悄退化成每片一行。
+	wantShards := []uint32{1, 1, 1, 2, 2, 63, 63}
+	for i, id := range ids {
+		require.Equalf(t, wantShards[i], placement.RouteRowShard(id), "id %d 的行片", id)
+	}
 	for _, id := range ids {
 		db.rows[id] = store.RouteRow{PlayerID: id, HomeZone: 1, Rev: 1}
 		require.NoError(t, mr.Set(placement.HomeZoneKey(id), "1"))
@@ -719,13 +725,13 @@ func TestRouteAuditPagesAcrossShards(t *testing.T) {
 	assert.Equal(t, len(ids), rep.DBRows)
 	assert.Equal(t, 0, rep.Differences())
 
-	mr.Del(placement.HomeZoneKey(18))
+	mr.Del(placement.HomeZoneKey(66))
 	rep, run = runAudit(t, rd, db, 100, noSleep)
 	assert.Equal(t, ExitAttention, run.code)
 	assert.Equal(t, len(ids), rep.DBRows)
 	assert.Equal(t, 1, rep.Differences())
 	assert.Equal(t, 1, rep.DBOnlyUnpublished)
-	assert.Contains(t, run.stderr, "DIFF kind=db_only_unpublished player=18 ")
+	assert.Contains(t, run.stderr, "DIFF kind=db_only_unpublished player=66 ")
 }
 
 // ── tidb-prepare ──────────────────────────────────────────────────────────────

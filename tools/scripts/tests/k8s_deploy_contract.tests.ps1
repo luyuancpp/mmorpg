@@ -27,7 +27,7 @@ $ErrorActionPreference = "Stop"
 . "$PSScriptRoot/lib/deploy_capture.ps1"
 
 Write-Host ""
-Write-Host "=== k8s_deploy.ps1 部署生成器契约测试 ==="
+Write-Host "=== k8s_deploy.ps1 deployment generator contract tests ==="
 
 # 一次 DryRun 供多个用例复用(子进程启动比断言贵得多)
 $BaseArgs = @(
@@ -113,6 +113,40 @@ Test-Case "data-service ConfigMap 的 Kafka 关键值 == go/data_service/etc/dat
         $actual = Get-FlatValue -Flat $flat -KeyPath "data.data_service.yaml.Kafka.$k"
         Assert-Equal -Expected $expected -Actual $actual -Because "Kafka.$k 必须与 go/data_service/etc/data_service.yaml 一致(生成器不得自带常数)"
     }
+}
+
+Test-Case "ConfigMap 镜像 MySQL 池参数 == 服务 yaml(db Placement、data-service PlayerName / RouteStore、gateway Hikari),login 不写 PasswordAuth" {
+    # 背景(G2b,docs/handoff/launch-readiness-20261013/spec_G2b.md §4.1.4):所有 zone 的 go/db、data_service、Java gateway 共用同一台
+    # MySQL,连接总账(k8s_deploy.ps1 的 Get-MysqlConnectionLedgerInputs)读的是服务自己的配置。这几组池参数以前不进 ConfigMap,
+    # 集群里生效的是「Go 默认值 / jar 内那份恰好等于服务 yaml」:两边一漂移,总账算的就不是集群的账,而且不会有任何报错。
+    # db 的额外落点库池按库所属家族分两个旋钮(ZoneStore* / NonZoneStore*),外加池内空闲连接的回收秒数,五个键都镜像。
+    # 字段名用 PoolKeys 而不是 Keys:哈希表自带 Keys 属性,同名字段读起来有歧义。
+    $mirrors = @(
+        @{ ConfigMap = 'go-svc-db-config'; Prefix = 'data.db.yaml.'; Source = 'go/db/etc/db.yaml'
+           PoolKeys = @('Placement.ZoneStoreMaxOpenConn', 'Placement.ZoneStoreMaxIdleConn', 'Placement.NonZoneStoreMaxOpenConn', 'Placement.NonZoneStoreMaxIdleConn', 'Placement.ExtraStoreConnMaxIdleSeconds') }
+        @{ ConfigMap = 'go-svc-data-service-config'; Prefix = 'data.data_service.yaml.'; Source = 'go/data_service/etc/data_service.yaml'
+           PoolKeys = @('PlayerName.MaxOpenConn', 'PlayerName.MaxIdleConn', 'RouteStore.MaxOpenConn', 'RouteStore.MaxIdleConn') }
+        @{ ConfigMap = 'java-svc-gateway-config'; Prefix = 'data.application.yaml.'; Source = 'java/gateway_node/src/main/resources/application.yaml'
+           PoolKeys = @('spring.datasource.hikari.maximum-pool-size', 'spring.datasource.hikari.minimum-idle') }
+    )
+    foreach ($mirror in $mirrors) {
+        $block = Select-ManifestByName -Output $devOut -Name $mirror.ConfigMap
+        Assert-True -Condition ($null -ne $block) -Because "DryRun 输出里应当有 $($mirror.ConfigMap)"
+        $flat = ConvertTo-FlatManifest -Block $block
+        foreach ($key in $mirror.PoolKeys) {
+            $expected = Get-EtcValue -RelativePath $mirror.Source -KeyPath $key
+            $actual = Get-FlatValue -Flat $flat -KeyPath ($mirror.Prefix + $key)
+            Assert-Equal -Expected $expected -Actual $actual -Because "$($mirror.ConfigMap) 的 $key 必须与 $($mirror.Source) 一致(生成器不得自带常数;MySQL 连接总账读的是同一个键)"
+        }
+    }
+
+    # login 的 PasswordAuth 自带一个 MySQL 连接池(go/login/etc/login.yaml 里 MaxOpenConns 20),总账没有登记它:前提是 K8s 的
+    # login ConfigMap 不写这一段、默认不启用。一旦写出来,每个 login 实例就多一组不在账上的连接 —— 要启用,先在
+    # Get-MysqlConnectionLedgerInputs / Get-MysqlConnectionLedger 里登记,再改这里。
+    # DevPasswordAuth 是另一个顶层键(拍平后是 data.login.yaml.DevPasswordAuth...),不会被这条判据误中。
+    $loginFlat = ConvertTo-FlatManifest -Block (Select-ManifestByName -Output $devOut -Name 'go-svc-login-config')
+    $passwordAuthKeys = @($loginFlat.Scalars.Keys | Where-Object { $_ -eq 'data.login.yaml.PasswordAuth' -or $_ -like 'data.login.yaml.PasswordAuth.*' })
+    Assert-True -Condition ($passwordAuthKeys.Count -eq 0) -Because "login ConfigMap 不得写 PasswordAuth 段(实际出现:$($passwordAuthKeys -join ', ')):它的 MySQL 连接池不在连接总账里"
 }
 
 Test-Case "login ConfigMap 的 Timeout/Node/Locker/Kafka 关键值 == go/login/etc/login.yaml" {
@@ -216,6 +250,25 @@ Test-Case "db 是多副本形态:2 副本滚动更新 + PDB + 反亲和" {
     Assert-Match -Text $block -Pattern 'podAntiAffinity' -Because '两个副本不该落在同一个节点上'
     Assert-Match -Text $block -Pattern '(?s)kind: PodDisruptionBudget.*?name: db-pdb.*?minAvailable: 1' -Because 'PDB 必须写在主 manifest 里,独立文件不会被 apply'
     Assert-Match -Text $block -Pattern 'terminationGracePeriodSeconds: 45' -Because '停机要留出把重试收据还回 ready 的时间'
+}
+
+Test-Case 'db 指标端口:ConfigMap MetricsListenAddr ":9160" 与 manifest 9160 metrics 端口 + prometheus 注解一致' {
+    # 背景(G2b):以前 K8s 上 db 的 ConfigMap 不写 MetricsListenAddr(缺省空串 = go/db 不起 /metrics 端口),manifest 也没有这个端口,
+    # 连接池指标 mmorpg_sql_pool_*{sql_client="db"} 与 deploy/k8s/owner-epoch-alerts.yaml 的抓取前提在集群里都不成立。
+    # 三处要一起对上:ConfigMap 让进程监听,容器端口声明它,注解让 Prometheus 来抓。只对上一部分时没有任何报错 ——
+    # 没有序列的告警规则不触发,和「一切正常」长得一样(deploy/k8s/mysql-connection-alerts.yaml 文件头的抓取前提)。
+    $block = @(Get-ManifestBlocks -Output $devOut | Where-Object {
+        $_ -cmatch '(?m)^kind: Deployment\s*$' -and $_ -cmatch '(?m)^  name: db\s*$'
+    }) | Select-Object -First 1
+    Assert-True -Condition ($null -ne $block) -Because 'DryRun 输出里应当有 db 的 Deployment'
+    # 按行首锚定:manifest 的注释里也提到 9160 与 prometheus.io/port,不能让注释把断言喂饱。
+    Assert-Match -Text $block -Pattern '(?m)^[ ]+- containerPort: 9160\s+name: metrics\s*$' -Because '容器必须声明名为 metrics 的 9160 端口(与 data-service 的 9260 同形)'
+    Assert-Match -Text $block -Pattern '(?m)^[ ]+prometheus\.io/scrape: "true"\s*$' -Because 'Pod 模板必须带抓取注解,否则指标端口开了也没人抓'
+    Assert-Match -Text $block -Pattern '(?m)^[ ]+prometheus\.io/port: "9160"\s*$' -Because '抓取端口注解必须与容器的 metrics 端口一致'
+    Assert-Match -Text $block -Pattern '(?m)^[ ]+prometheus\.io/path: "/metrics"\s*$' -Because '抓取路径注解必须是 /metrics'
+
+    $flat = ConvertTo-FlatManifest -Block (Select-ManifestByName -Output $devOut -Name 'go-svc-db-config')
+    Assert-Equal -Expected ':9160' -Actual (Get-FlatValue -Flat $flat -KeyPath 'data.db.yaml.MetricsListenAddr') -Because 'ConfigMap 不写(或写别的端口)时,manifest 声明的 9160 上没有监听,抓取恒失败'
 }
 
 
@@ -1391,6 +1444,254 @@ Test-Case '负向:-KafkaBrokers 2 在任何清单生成之前被拒' {
     Assert-NotMatch -Text $run.Output -Pattern 'BEGIN MANIFEST' -Because '参数非法时不能已经开始输出清单'
 }
 
+# ─────────────────────────────────────────────────────────────────
+# MySQL 连接总账(G2b:docs/handoff/launch-readiness-20261013/spec_G2b.md §2、§6.1)
+# ─────────────────────────────────────────────────────────────────
+# 所有 zone 的 go/db、data_service、Java gateway 与全局的 friend、trade 共用同一台 MySQL(deploy/k8s/manifests/infra/mysql.yaml)。
+# 这笔账只有一份,在 k8s_deploy.ps1:Get-MysqlConnectionPlan(规划档)、Get-MysqlConnectionLedgerInputs(从权威文件读池上限 /
+# 副本数 / max_connections)、Get-MysqlConnectionLedger(纯函数:稳态 / 滚动余量 / 峰值 / 余量)。这里按 AST 把它们连同依赖抽出来
+# 直接调用(与上面 deadline 守卫、Kafka 拓扑同一做法),不另抄一份公式。读文件的那几个经 $RepoRoot 定位仓库,由调用方设好。
+# 写路径入口的 Write-MysqlConnectionLedger 不在名单里:它依赖脚本参数(-ZoneId / -ZonesConfigPath),用 DryRun 输出核对。
+$mysqlLedgerFunctionNames = @(
+    'Get-AuthoritativeScalar', 'Get-MysqlConnectionPlan', 'Get-MysqlMaxConnectionsFromManifest',
+    'Get-ManifestDeploymentReplicas', 'Get-MysqlConnectionLedgerInputs', 'Get-MysqlConnectionLedger'
+)
+foreach ($mysqlLedgerFnAst in $deadlineDeployAst.FindAll({ param($a) $a -is [System.Management.Automation.Language.FunctionDefinitionAst] }, $false)) {
+    if ($mysqlLedgerFunctionNames -contains $mysqlLedgerFnAst.Name) {
+        Set-Item -Path "Function:script:$($mysqlLedgerFnAst.Name)" -Value $mysqlLedgerFnAst.Body.GetScriptBlock()
+    }
+}
+foreach ($mysqlLedgerFnName in $mysqlLedgerFunctionNames) {
+    if (-not (Test-Path "Function:$mysqlLedgerFnName")) { throw "k8s_deploy.ps1 缺少函数 $mysqlLedgerFnName(MySQL 连接总账被删了?后续断言无意义)" }
+}
+
+# 用仓库权威文件的输入算一份总账。Z / E_z 由调用方给,其余形态参数(E_n / route store 是否 db_first / 滚动余量 / 运维余量)取规划档。
+function Get-RepoMysqlConnectionLedger {
+    param(
+        [Parameter(Mandatory = $true)][System.Collections.IDictionary]$Plan,
+        [Parameter(Mandatory = $true)][int]$ZoneCount,
+        [Parameter(Mandatory = $true)][int]$ExtraZoneStores
+    )
+    # Get-MysqlConnectionLedgerInputs 及其依赖按动态作用域读这个变量(在 k8s_deploy.ps1 里它是脚本级变量)。
+    $RepoRoot = Get-RepoRoot
+    return Get-MysqlConnectionLedger -Inputs (Get-MysqlConnectionLedgerInputs) -ZoneCount $ZoneCount -ExtraZoneStores $ExtraZoneStores `
+        -NonZoneStores $Plan.NonZoneStores -RouteStoreDbFirst $Plan.RouteStoreDbFirst `
+        -RolloutExtraPodsPerDeployment $Plan.RolloutExtraPodsPerDeployment -OpsReserve $Plan.OpsReserve
+}
+
+# 把一份总账拍成一行 "键=值 键=值 …",断言失败时看分项用。
+function Format-MysqlConnectionLedger {
+    param([Parameter(Mandatory = $true)][System.Collections.IDictionary]$Ledger)
+    return (@($Ledger.Keys | ForEach-Object { "$_=$($Ledger[$_])" }) -join ' ')
+}
+
+# DryRun 输出里「连这台 MySQL 的 ConfigMap」的名字(去重、排序)。一个 manifest 块可能是多文档(--- 分隔),逐文档看;
+# 只看非注释行:模板注释里提到 MySQL 地址不算连它。地址认两种形状:Go 服务的 Host / Hosts "mysql.<ns>:3306"(与 MySQL 同
+# namespace 时可以省掉 .<ns>,一并认)与 JDBC url。命中的文档读不出 metadata.name 就 throw(fail-closed:不能因为名字没读到而漏算一个)。
+function Get-MysqlClientConfigMapNames {
+    param([Parameter(Mandatory = $true)][string]$Output)
+
+    $names = New-Object System.Collections.Generic.List[string]
+    foreach ($block in (Get-ManifestBlocks -Output $Output)) {
+        foreach ($doc in ($block -split '(?m)^---[ \t]*\r?$')) {
+            if ($doc -notmatch '(?m)^kind:[ \t]*ConfigMap\s*$') { continue }
+            $effective = @($doc -split "`n" | Where-Object { $_ -notmatch '^\s*#' }) -join "`n"
+            if ($effective -notmatch 'mysql(?:\.[^\s:/]+)?:3306|jdbc:mysql://') { continue }
+            # name 紧跟在 metadata: 之下(中间只允许注释行);生成器的 ConfigMap 都是这个形状。
+            $name = [regex]::Match($doc, '(?m)^metadata:[ \t]*\r?\n(?:[ \t]*#[^\n]*\n)*[ ]{2}name:[ \t]*"?(?<name>[^\s"]+)"?\s*$')
+            if (-not $name.Success) { throw "DryRun 输出里有一份连 MySQL 的 ConfigMap 读不出 metadata.name(形状变了?),无法核对它是否在连接总账里" }
+            $names.Add($name.Groups['name'].Value)
+        }
+    }
+    return @($names | Sort-Object -Unique)
+}
+
+Test-Case 'MySQL 连接总账:规划档峰值 ≤ mysql.yaml 的 max_connections' {
+    # max_connections 是按规划档的峰值取的(mysql.yaml「连接上限」注释)。调大任何一个池、加副本、改规划档而不同步上限,
+    # 都在这里点名失败,而不是等集群里出 1040。
+    $plan = Get-MysqlConnectionPlan
+    $ledger = Get-RepoMysqlConnectionLedger -Plan $plan -ZoneCount $plan.ZoneCount -ExtraZoneStores $plan.ExtraZoneStores
+    Assert-True -Condition ($ledger.Peak -le $ledger.MaxConnections) -Because ("规划档(zones={0},每个 go/db 实例打开 {1} 个额外 zone 库)的峰值 {2} 超过 max_connections={3}:要么收紧池 / 规划档,要么同步抬高 deploy/k8s/manifests/infra/mysql.yaml 的 max_connections 与内存 limits。分项:{4}" -f $plan.ZoneCount, $plan.ExtraZoneStores, $ledger.Peak, $ledger.MaxConnections, (Format-MysqlConnectionLedger -Ledger $ledger))
+}
+
+Test-Case 'MySQL 连接总账:deploy/k8s/zones.json 的 zone 数(E_z=Z−1)峰值 ≤ max_connections' {
+    # 仓库自带的 zones 配置(all-up 的默认输入)也必须装得下:Z 取 zones.json 的 zone 数,每个 go/db 实例按最坏情形打开其余
+    # 全部 zone 的库(E_z = Z − 1),其余形态参数取规划档。往 zones.json 加 zone 加到超限时,这里先于部署失败。
+    $zoneCount = @((Get-Content -LiteralPath (Join-Path (Get-RepoRoot) 'deploy/k8s/zones.json') -Raw | ConvertFrom-Json).zones).Count
+    Assert-True -Condition ($zoneCount -gt 0) -Because "deploy/k8s/zones.json 里应当至少有一个 zone(本断言的前提),实际 $zoneCount 个"
+    $plan = Get-MysqlConnectionPlan
+    $ledger = Get-RepoMysqlConnectionLedger -Plan $plan -ZoneCount $zoneCount -ExtraZoneStores ($zoneCount - 1)
+    Assert-True -Condition ($ledger.Peak -le $ledger.MaxConnections) -Because ("deploy/k8s/zones.json 的 {0} 个 zone(每个 go/db 实例打开其余 {1} 个 zone 的库)峰值 {2} 超过 max_connections={3}。分项:{4}" -f $zoneCount, ($zoneCount - 1), $ledger.Peak, $ledger.MaxConnections, (Format-MysqlConnectionLedger -Ledger $ledger))
+}
+
+Test-Case '自检:总账公式复现 2026-10-12 核算(Z=4 → 920、Z=2 → 500),对旧 max_connections=500 判超限,输入非法即 throw' {
+    # 合成输入 = 2026-10-12 手算那一版的口径(docs/PROGRESS.md「落点多库连接拓扑核算」):gateway 还是每副本 10 条,
+    # max_connections 还是 500。不读仓库文件:本用例验的是公式本身,不该随服务配置的调整变红。每次取一份新的,下面有几处会改它。
+    $newLegacyInputs = {
+        [ordered]@{
+            MaxConnections = 500
+            DbReplicas = 2; DbHomeMaxOpen = 60; DbZoneStoreMaxOpen = 8; DbNonZoneStoreMaxOpen = 8
+            DsReplicas = 2; DsAuditStorePools = 3; DsAuditMaxOpen = 5; DsPlayerNameMaxOpen = 20; DsRouteMaxOpen = 20
+            GatewayReplicas = 2; GatewayMaxPool = 10
+            FriendReplicas = 2; FriendMaxOpen = 20; TradeReplicas = 2; TradeMaxOpen = 20
+        }
+    }
+
+    # 当时的名义值:不算额外落点库(E_z = E_n = 0)、route store 不计(F = 0)、不含滚动余量与运维余量。
+    # 每 zone = 2 × (db 60 + ds 35 + gateway 10) = 210;全局 = friend 2 × 20 + trade 2 × 20 = 80。
+    $nominalShape = @{ ExtraZoneStores = 0; NonZoneStores = 0; RouteStoreDbFirst = $false; RolloutExtraPodsPerDeployment = 0; OpsReserve = 0 }
+    foreach ($case in @(@{ Zones = 4; Steady = 920 }, @{ Zones = 2; Steady = 500 })) {
+        $ledger = Get-MysqlConnectionLedger -Inputs (& $newLegacyInputs) -ZoneCount $case.Zones @nominalShape
+        Assert-Equal -Expected '60/35/10/210/80' -Actual ('{0}/{1}/{2}/{3}/{4}' -f $ledger.DbPerInstance, $ledger.DsPerInstance, $ledger.GatewayPerInstance, $ledger.PerZone, $ledger.Global) -Because "Z=$($case.Zones):db / ds / gateway 每实例、每 zone、全局 五项"
+        Assert-Equal -Expected $case.Steady -Actual $ledger.Steady -Because "Z=$($case.Zones) 的稳态必须复现 2026-10-12 的核算"
+        Assert-Equal -Expected $case.Steady -Actual $ledger.Peak -Because '不含滚动余量与运维余量时,峰值 = 稳态'
+        Assert-Equal -Expected (500 - $case.Steady) -Actual $ledger.Headroom -Because '余量 = max_connections − 峰值(Z=2 恰好为 0,Z=4 为负)'
+    }
+
+    # 旧上限 500 对规划档必须判超限(峰值 > max_connections,余量为负)—— 这就是上限要跟着规划档走的原因。
+    $plan = Get-MysqlConnectionPlan
+    $planShape = @{
+        ZoneCount = $plan.ZoneCount; ExtraZoneStores = $plan.ExtraZoneStores; NonZoneStores = $plan.NonZoneStores
+        RouteStoreDbFirst = $plan.RouteStoreDbFirst; RolloutExtraPodsPerDeployment = $plan.RolloutExtraPodsPerDeployment; OpsReserve = $plan.OpsReserve
+    }
+    $overLimit = Get-MysqlConnectionLedger -Inputs (& $newLegacyInputs) @planShape
+    Assert-True -Condition ($overLimit.Peak -gt 500 -and $overLimit.Headroom -lt 0) -Because ("规划档对旧上限 500 必须判超限,实际:{0}" -f (Format-MysqlConnectionLedger -Ledger $overLimit))
+
+    # 滚动口径:同一份输入,R=2 比 R=0 恰好多出 2 × 每实例之和(db 60 + ds 35 + gateway 10 + friend 20 + trade 20 = 145)。
+    # 多出来的是「实例」(maxSurge 的新 Pod + 仍在优雅退出、连接还没释放的旧 Pod),不乘副本数,也不乘 zone 数。
+    $rolloutShape = @{ ZoneCount = 4; ExtraZoneStores = 0; NonZoneStores = 0; RouteStoreDbFirst = $false; OpsReserve = 0 }
+    $withoutRollout = Get-MysqlConnectionLedger -Inputs (& $newLegacyInputs) -RolloutExtraPodsPerDeployment 0 @rolloutShape
+    $withRollout = Get-MysqlConnectionLedger -Inputs (& $newLegacyInputs) -RolloutExtraPodsPerDeployment 2 @rolloutShape
+    Assert-Equal -Expected (2 * 145) -Actual ($withRollout.Peak - $withoutRollout.Peak) -Because 'R=2 与 R=0 的峰值之差必须是 2 × (db + ds + gateway + friend + trade 每实例之和)'
+    Assert-Equal -Expected (2 * 145) -Actual $withRollout.RolloutSurge -Because '这个差值就是分项里的 RolloutSurge'
+    Assert-Equal -Expected $withoutRollout.Steady -Actual $withRollout.Steady -Because '滚动余量不进稳态'
+
+    # 逐项钉公式:副本数、池上限、形态参数各取互不相同的值,任何一项漏算、两个额外库旋钮接反、副本数错配,结果都对不上。
+    #   db 每实例 = 60 + 2 × 7(zone 家族额外库)+ 1 × 11(非 zone 落点库)= 85
+    #   ds 每实例 = 3 × 5 + 20 + 30(route store 按 db_first 计入)= 65
+    #   每 zone   = 2 × 85 + 3 × 65 + 4 × 10 = 405;全局 = 5 × 20 + 6 × 40 = 340;稳态 = 3 × 405 + 340 = 1555
+    #   滚动余量  = 1 × (85 + 65 + 10 + 20 + 40) = 220;峰值 = 1555 + 220 + 7 = 1782;余量 = 5000 − 1782 = 3218
+    $distinctInputs = [ordered]@{
+        MaxConnections = 5000
+        DbReplicas = 2; DbHomeMaxOpen = 60; DbZoneStoreMaxOpen = 7; DbNonZoneStoreMaxOpen = 11
+        DsReplicas = 3; DsAuditStorePools = 3; DsAuditMaxOpen = 5; DsPlayerNameMaxOpen = 20; DsRouteMaxOpen = 30
+        GatewayReplicas = 4; GatewayMaxPool = 10
+        FriendReplicas = 5; FriendMaxOpen = 20; TradeReplicas = 6; TradeMaxOpen = 40
+    }
+    $distinct = Get-MysqlConnectionLedger -Inputs $distinctInputs -ZoneCount 3 -ExtraZoneStores 2 -NonZoneStores 1 -RouteStoreDbFirst $true -RolloutExtraPodsPerDeployment 1 -OpsReserve 7
+    Assert-Equal -Expected '85/65/10/405/340/1555/220/7/1782/5000/3218' -Actual ('{0}/{1}/{2}/{3}/{4}/{5}/{6}/{7}/{8}/{9}/{10}' -f $distinct.DbPerInstance, $distinct.DsPerInstance, $distinct.GatewayPerInstance, $distinct.PerZone, $distinct.Global, $distinct.Steady, $distinct.RolloutSurge, $distinct.OpsReserve, $distinct.Peak, $distinct.MaxConnections, $distinct.Headroom) -Because '分项依次是 db / ds / gateway 每实例、每 zone、全局、稳态、滚动余量、运维余量、峰值、上限、余量'
+
+    # 输入非法一律 throw 并点名是哪个键(fail-closed:不能拿一个猜出来的连接数去和上限比)。
+    $missingKey = & $newLegacyInputs
+    $missingKey.Remove('GatewayMaxPool')
+    $zeroValue = & $newLegacyInputs
+    $zeroValue['DbHomeMaxOpen'] = 0
+    $notNumber = & $newLegacyInputs
+    $notNumber['DsAuditMaxOpen'] = '5x'
+    foreach ($bad in @(
+        @{ Why = '缺键'; Key = 'GatewayMaxPool'; Inputs = $missingKey }
+        @{ Why = '值为 0'; Key = 'DbHomeMaxOpen'; Inputs = $zeroValue }
+        @{ Why = '值不是数字'; Key = 'DsAuditMaxOpen'; Inputs = $notNumber }
+    )) {
+        $message = ''
+        try { Get-MysqlConnectionLedger -Inputs $bad.Inputs -ZoneCount 4 @nominalShape | Out-Null } catch { $message = $_.Exception.Message }
+        Assert-Match -Text $message -Pattern ('MySQL 连接总账.*输入 {0}=' -f $bad.Key) -Because "$($bad.Why) 必须 throw 并点名 $($bad.Key),不能当成 0 条或某个默认值算下去"
+    }
+
+    # 形态参数越界同样 throw:滚动期间多出来的实例数不能是负数。
+    $negativeRollout = @{} + $nominalShape
+    $negativeRollout['RolloutExtraPodsPerDeployment'] = -1
+    $message = ''
+    try { Get-MysqlConnectionLedger -Inputs (& $newLegacyInputs) -ZoneCount 4 @negativeRollout | Out-Null } catch { $message = $_.Exception.Message }
+    Assert-Match -Text $message -Pattern 'RolloutExtraPodsPerDeployment=-1\b.*不能为负' -Because 'R 传 -1 必须 throw 并点名参数与值,不能把滚动余量算成负数去抵稳态'
+}
+
+Test-Case '连 MySQL 的 ConfigMap 只有总账认识的那些(zone-up 三个、infra-up 两个)' {
+    # 总账(Get-MysqlConnectionLedgerInputs)按服务逐个登记池上限。新增一个连这台 MySQL 的服务而不登记,它占的连接就不在账上,
+    # 上面「峰值 ≤ max_connections」照样通过。这里把「谁在连」钉成名单:名单变了,先去总账加一项,再来改这里。
+    $zoneExpected = @('go-svc-db-config', 'go-svc-data-service-config', 'java-svc-gateway-config' | Sort-Object) -join ','
+    Assert-Equal -Expected $zoneExpected -Actual (@(Get-MysqlClientConfigMapNames -Output $devOut) -join ',') -Because 'zone-up 产物里连 MySQL 的 ConfigMap 必须恰好是 db / data-service / gateway 三个(总账的每 zone 部分只算了它们)'
+
+    # 全局服务(friend / trade)只在 infra-up / all-up 的基础设施阶段生成(Apply-GlobalGoSvcManifests),zone-up 的产物里没有:
+    # 只扫 zone-up 的话,新增一个连 MySQL 的全局服务能绕过总账而无人察觉。本文件其余 infra-up DryRun 都带 -SkipGoSvc,所以单独起一次:
+    # 去掉 -SkipGoSvc、补上 -GoSvcRegistry;同时去掉 -WaitReady,免得 dev 档在 DryRun 里去走「等 trade-migrate / friend-migrate」那一段。
+    $infraArgs = @($BattleInfraArgs | Where-Object { $_ -notin @('-SkipGoSvc', '-WaitReady') }) + @('-GoSvcRegistry', 'registry.invalid/test')
+    Assert-True -Condition (($infraArgs -contains '-DryRun') -and -not ($infraArgs -contains '-SkipGoSvc')) -Because '夹具前提:这次 infra-up 必须仍是 DryRun(不碰任何集群),且不再跳过 Go 服务'
+    $infraRun = Invoke-DeployDryRun -Arguments $infraArgs -Env $BattleTestEnv
+    Assert-Equal -Expected 0 -Actual $infraRun.ExitCode -Because "带全局 Go 服务的 infra-up DryRun 必须成功。输出: $($infraRun.Output)"
+    $infraExpected = @('go-svc-friend-config', 'go-svc-trade-config' | Sort-Object) -join ','
+    Assert-Equal -Expected $infraExpected -Actual (@(Get-MysqlClientConfigMapNames -Output $infraRun.Output) -join ',') -Because 'infra-up 产物里连 MySQL 的 ConfigMap 必须恰好是 friend / trade 两个(总账的全局部分只算了它们)'
+}
+
+Test-Case '部署写路径打印 MySQL connection ledger(zone-up DryRun)' {
+    # 部署的人靠这一行看「这次部署之后连接预算还剩多少」。行里的数字用 AST 抽出的同一组函数重算后比对,不抄数字:
+    # 调池 / 调规划档不需要来改本用例;打印的那份与契约测试钉住的那份分了家,才会在这里失败。
+    $plan = Get-MysqlConnectionPlan
+    $planLedger = Get-RepoMysqlConnectionLedger -Plan $plan -ZoneCount $plan.ZoneCount -ExtraZoneStores $plan.ExtraZoneStores
+    # 基线 DryRun($BaseArgs)不带 -ZonesConfigPath,读的是 deploy/k8s/zones.json;Z = 其中的全部 zone ∪ 本次 -ZoneId(基线是 101)。
+    # 现状:zones.json 是 101、102 两个 zone,101 已在其中,所以 Z = 2。E_z 取 Z − 1,其余形态参数取规划档。
+    $zoneIds = @(@((Get-Content -LiteralPath (Join-Path (Get-RepoRoot) 'deploy/k8s/zones.json') -Raw | ConvertFrom-Json).zones | ForEach-Object { [int]$_.zoneId }) + @(101) | Sort-Object -Unique)
+    $deployLedger = Get-RepoMysqlConnectionLedger -Plan $plan -ZoneCount $zoneIds.Count -ExtraZoneStores ($zoneIds.Count - 1)
+
+    $ledgerLines = @($devOut -split "`r?`n" | Where-Object { $_ -match '^\s*MySQL connection ledger: zones=' })
+    Assert-Equal -Expected 1 -Actual $ledgerLines.Count -Because 'zone-up 写路径入口必须恰好打印一行 MySQL connection ledger(Write-MysqlConnectionLedger)'
+    $ledgerLine = [string]$ledgerLines[0]
+    $deployPart = 'MySQL connection ledger: zones={0} steady={1} peak={2} max_connections={3} headroom={4};' -f $zoneIds.Count, $deployLedger.Steady, $deployLedger.Peak, $deployLedger.MaxConnections, $deployLedger.Headroom
+    $planPart = '; plan zones={0} peak={1} headroom={2}' -f $plan.ZoneCount, $planLedger.Peak, $planLedger.Headroom
+    Assert-Match -Text $ledgerLine -Pattern ('^\s*' + [regex]::Escape($deployPart)) -Because '本次部署那一份(zone 数 / 稳态 / 峰值 / 上限 / 余量)必须与总账函数按同一组输入算出的值一致'
+    # 行尾锚定:zones 配置在场时不该带 zones_config=missing 的尾巴。
+    Assert-Match -Text $ledgerLine -Pattern ([regex]::Escape($planPart) + '\s*$') -Because '规划档那一份(zone 数 / 峰值 / 余量)必须与 Get-MysqlConnectionPlan 算出的值一致,且行尾没有 zones_config=missing'
+
+    $firstKubectlAt = $devOut.IndexOf('[dry-run] kubectl')
+    Assert-True -Condition ($firstKubectlAt -lt 0 -or $devOut.IndexOf('MySQL connection ledger:') -lt $firstKubectlAt) -Because '总账在写路径入口打印,先于任何 kubectl 写操作'
+}
+
+Test-Case '负向:zones.10zones.yaml 时打 MySQL连接总账超限 警告且不阻断' {
+    # 10 个 zone 的样例配置在单台 MySQL 上装不下(额外 zone 库的池随 zone 数平方增长)。超限只告警、不拒绝部署
+    # (是否升级为部署门禁待拍板,见 Write-MysqlConnectionLedger 注释)。
+    # -ZonesConfigPath 给绝对路径:子进程的工作目录不保证是仓库根(与上面 all-up 用例同一写法)。
+    $run = Invoke-DeployDryRun -Arguments ($BaseArgs + @('-ZonesConfigPath', (Join-Path (Get-RepoRoot) 'deploy/k8s/zones.10zones.yaml'), '-SkipGoSvc', '-SkipJavaSvc'))
+    Assert-Equal -Expected 0 -Actual $run.ExitCode -Because "连接总账超限只告警、不阻断部署。输出: $($run.Output)"
+    # 只断警告开头不含空格的那一段:Write-Warning 若被 ConsoleHost 按窗口宽度折行,折点在空格处(先例见下面 gateway 管理面口令的占位警告)。
+    Assert-Match -Text $run.Output -Pattern 'MySQL连接总账超限' -Because '峰值超过 max_connections 时必须明说,不能只留一个负的 headroom 让人自己看'
+    # Z = 配置里的 10 个 zone ∪ 本次 -ZoneId 101(不在配置里,多算一个,偏保守)= 11。
+    Assert-Match -Text $run.Output -Pattern 'MySQL connection ledger: zones=11 steady=\d+ peak=\d+ max_connections=\d+ headroom=-\d+;' -Because '本次部署那一份按 11 个 zone 算,余量为负'
+    Assert-Match -Text $run.Output -Pattern '--- BEGIN MANIFEST ---' -Because '不阻断:告警之后清单照常生成'
+    Assert-NotMatch -Text $devOut -Pattern 'MySQL连接总账超限' -Because '对照:仓库 zones.json 与规划档都在上限内,基线 DryRun 不该打这条警告(否则本条区分不出「超限才告警」)'
+}
+
+Test-Case 'mysql-connection-alerts.yaml:PrometheusRule 形状,额外库数阈值与 Get-MysqlConnectionPlan 同源' {
+    $alertsRelativePath = 'deploy/k8s/mysql-connection-alerts.yaml'
+    $alertsPath = Join-Path (Get-RepoRoot) $alertsRelativePath
+    Assert-True -Condition (Test-Path -LiteralPath $alertsPath) -Because "$alertsRelativePath 应当存在(MySQL 连接预算与连接池的告警规则)"
+    # 只看非注释行,统一成 LF 后按行锚定:文件头与各条规则上方的注释里也会提到规则名、severity 与阈值,不能让注释把断言喂饱。
+    $effective = @((Get-Content -LiteralPath $alertsPath -Raw) -split "`r?`n" | Where-Object { $_ -notmatch '^\s*#' }) -join "`n"
+    Assert-Match -Text $effective -Pattern '(?m)^kind:[ ]*PrometheusRule[ ]*$' -Because '必须是 PrometheusRule(与 owner-epoch-alerts.yaml 同一安装方式)'
+    Assert-Match -Text $effective -Pattern '(?m)^metadata:[ ]*\n[ ]+name:[ ]*mysql-connection-alerts[ ]*$' -Because 'metadata.name 必须是 mysql-connection-alerts'
+
+    $alerts = [regex]::Matches($effective, '(?m)^[ ]*- alert:[ ]*(?<name>\S+)')
+    Assert-Equal -Expected 5 -Actual $alerts.Count -Because ("应当恰好 5 条规则(MySQL 服务端侧 2 条 + 客户端连接池侧 3 条),实际:{0}" -f (@($alerts | ForEach-Object { $_.Groups['name'].Value }) -join ', '))
+    for ($i = 0; $i -lt $alerts.Count; $i++) {
+        $bodyEnd = if ($i + 1 -lt $alerts.Count) { $alerts[$i + 1].Index } else { $effective.Length }
+        $body = $effective.Substring($alerts[$i].Index, $bodyEnd - $alerts[$i].Index)
+        Assert-Match -Text $body -Pattern '(?m)^[ ]+severity:[ ]*\S+' -Because "规则 $($alerts[$i].Groups['name'].Value) 必须带 labels.severity(严重级约定见文件头)"
+    }
+
+    # DbExtraStorePoolsBeyondPlan 的两个阈值就是规划档的额外库数:规划档改了而阈值没跟(或反过来),这条告警要么恒响、要么该响不响。
+    # 提取依赖告警文件「每个阈值单独占一行,形如 pool="extra_zone"}) > 3」的写法(文件里该规则上方的注释写明了这条约定)。
+    # 把表达式改写成别的形状会让本条变红 —— 有意为之:要么保持这个形状,要么同步改这里的提取方式。
+    $plan = Get-MysqlConnectionPlan
+    foreach ($threshold in @(
+        @{ Pool = 'extra_zone'; PlanKey = 'ExtraZoneStores' }
+        @{ Pool = 'extra_non_zone'; PlanKey = 'NonZoneStores' }
+    )) {
+        $thresholdPattern = 'pool="' + [regex]::Escape($threshold.Pool) + '"\}\) > (?<n>\d+)'
+        $found = [regex]::Matches($effective, $thresholdPattern)
+        Assert-Equal -Expected 1 -Actual $found.Count -Because "$alertsRelativePath 里 pool=`"$($threshold.Pool)`" 的阈值应当恰好出现 1 处(形如 pool=`"$($threshold.Pool)`"}) > N,单独占一行),实际 $($found.Count) 处"
+        Assert-Equal -Expected $plan[$threshold.PlanKey] -Actual $found[0].Groups['n'].Value -Because "pool=`"$($threshold.Pool)`" 的阈值必须等于 Get-MysqlConnectionPlan 的 $($threshold.PlanKey):改规划档必须同改告警阈值(反之亦然),并重算 max_connections"
+    }
+}
+
 Test-Case '普通 gate/scene Deployment 必须先创建被 emptyDir 遮蔽的日志父目录' {
     foreach ($name in @('gate','scene')) {
         $block = Select-ManifestByName -Output $devOut -Name $name
@@ -1523,9 +1824,9 @@ Test-Case 'dev 档未设 MMORPG_GATEWAY_ADMIN_API_KEY:回落占位值并打警�
     # 只断警告里不含空格的一段:Write-Warning 若被 ConsoleHost 按窗口宽度折行(重定向下是否折行未实测),折点在空格处;这一段连同前缀
     # "WARNING: gateway " 止于第 64 显示列(中文按 2 列),≥ 约 65 列的控制台不会把它拆开。旧写法连到"未设置或仍是占位串",
     # 而其后直到 "/admin/**" 是一整段无空格 token(止于约第 113 列),窗口不足约 114 列就会在"未设置"前折断。
-    Assert-Match -Text $run.Output -Pattern '管理面口令是占位值\(MMORPG_GATEWAY_ADMIN_API_KEY' -Because '回落占位值必须明说:此时 /admin/** 用公开常量鉴权,只允许本地 dev'
+    Assert-Match -Text $run.Output -Pattern 'admin password is a placeholder \(MMORPG_GATEWAY_ADMIN_API_KEY' -Because '回落占位值必须明说:此时 /admin/** 用公开常量鉴权,只允许本地 dev'
     # DryRun 下 Apply-InjectedSecret 只打一行隐去值的意图,不走会把整份 YAML(含明文 stringData)打出来的 Invoke-KubectlWithInputFile。
-    Assert-Match -Text $run.Output -Pattern '(?m)^\[dry-run\] kubectl apply -n \S+ -f -\s+# Secret gateway-admin-api-key\(key api-key,值已隐去\)\s*$' -Because 'Secret 的 dry-run 行要点名 Secret 名与 key,且声明值已隐去'
+    Assert-Match -Text $run.Output -Pattern '(?m)^\[dry-run\] kubectl apply -n \S+ -f -\s+# Secret gateway-admin-api-key \(key api-key; value hidden\)\s*$' -Because 'Secret 的 dry-run 行要点名 Secret 名与 key,且声明值已隐去'
 
     $gateway = Select-ManifestByName -Output $run.Output -Name 'gateway'
     Assert-True -Condition ($null -ne $gateway) -Because 'DryRun 输出里应当有 gateway 的 manifest'
@@ -1565,7 +1866,7 @@ Test-Case 'gateway Pod 模板带口令指纹注解(加引号的 12 位十六进�
     Assert-Equal -Expected $prodHash -Actual $devHash -Because '同一口令的指纹必须稳定'
     # secretKeyRef 只在容器启动时读:只改 Secret 时 Pod 模板逐字节不变,apply 是 no-op,旧口令一直有效、新口令被拒。
     Assert-True -Condition ($placeholderHash -ne $devHash) -Because "换口令指纹必须变,否则轮换不会触发滚动(两者都是 $devHash)"
-    Assert-NotMatch -Text $adminDevSameKeyRun.Output -Pattern '管理面口令是占位值' -Because '对照:非占位口令不该打占位警告'
+    Assert-NotMatch -Text $adminDevSameKeyRun.Output -Pattern 'admin password is a placeholder' -Because '对照:非占位口令不该打占位警告'
 }
 
 Test-Case 'gateway 写入顺序 ConfigMap → Secret → Deployment,Secret 与 Deployment 同 namespace(secretKeyRef 非 optional,Secret 必须先落地)' {

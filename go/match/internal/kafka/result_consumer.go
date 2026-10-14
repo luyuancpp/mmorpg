@@ -87,11 +87,11 @@ func StartResultConsumer(ctx context.Context, cfg ResultConsumerConfig, handle R
 		// CommitInterval=0:每条处理完同步提交,崩溃最多重放一条(幂等兜底)。
 		CommitInterval: 0,
 	})
-	logx.Infof("[rating] 对局结果消费者启动 topic=%s group=%s brokers=%v", cfg.Topic, cfg.GroupID, cfg.Brokers)
+	logx.Infof("[rating] Battle result consumer started topic=%s group=%s brokers=%v", cfg.Topic, cfg.GroupID, cfg.Brokers)
 	safego.Go("match.kafka.results", func() {
 		defer func() {
 			if err := reader.Close(); err != nil {
-				logx.Errorf("[rating] 关闭对局结果 reader 失败: %v", err)
+				logx.Errorf("[rating] Failed to close battle result reader: %v", err)
 			}
 		}()
 		runResultConsumer(ctx, reader, handle)
@@ -105,10 +105,10 @@ func runResultConsumer(ctx context.Context, reader *kafkago.Reader, handle Resul
 		msg, err := reader.FetchMessage(ctx)
 		if err != nil {
 			if ctx.Err() != nil || errors.Is(err, context.Canceled) {
-				logx.Info("[rating] 对局结果消费者退出")
+				logx.Info("[rating] Battle result consumer stopped")
 				return
 			}
-			logx.Errorf("[rating] 拉取对局结果失败,%s 后重试: %v", resultFetchBackoff, err)
+			logx.Errorf("[rating] Failed to fetch battle result; retrying after %s: %v", resultFetchBackoff, err)
 			if !sleepCtx(ctx, resultFetchBackoff) {
 				return
 			}
@@ -118,7 +118,7 @@ func runResultConsumer(ctx context.Context, reader *kafkago.Reader, handle Resul
 		event := &kafkapb.BattleResultEvent{}
 		if err := proto.Unmarshal(msg.Value, event); err != nil {
 			// 坏消息跳过并提交:留在 topic 里只会每次重启都撞一遍。
-			logx.Errorf("[rating] 对局结果反序列化失败,跳过 partition=%d offset=%d key=%s: %v",
+			logx.Errorf("[rating] Failed to deserialize battle result; skipping partition=%d offset=%d key=%s: %v",
 				msg.Partition, msg.Offset, string(msg.Key), err)
 			metrics.ObserveRatingUpdate("unknown", "decode_error")
 			commitResult(ctx, reader, msg)
@@ -126,7 +126,7 @@ func runResultConsumer(ctx context.Context, reader *kafkago.Reader, handle Resul
 		}
 		if key := string(msg.Key); key != "" && key != strconv.FormatUint(event.GetBattleId(), 10) {
 			// key 契约是 battle_id;不一致只是日志,payload 里的 battle_id 为准。
-			logx.Errorf("[rating] 对局结果 key=%s 与 battle_id=%d 不一致", key, event.GetBattleId())
+			logx.Errorf("[rating] Battle result key=%s does not match battle_id=%d", key, event.GetBattleId())
 		}
 
 		handled := false
@@ -135,7 +135,7 @@ func runResultConsumer(ctx context.Context, reader *kafkago.Reader, handle Resul
 				handled = true
 				break
 			} else {
-				logx.Errorf("[rating] 对局结果处理失败(第 %d/%d 次) battle=%d mode=%s: %v",
+				logx.Errorf("[rating] Failed to process battle result (attempt %d/%d) battle=%d mode=%s: %v",
 					attempt, resultHandleMaxAttempts, event.GetBattleId(),
 					matchpb.MatchMode(event.GetMatchMode()).String(), err)
 			}
@@ -145,7 +145,7 @@ func runResultConsumer(ctx context.Context, reader *kafkago.Reader, handle Resul
 		}
 		if !handled {
 			// 重试用尽:跳过这一局(评分是软数据,不能让一条坏结果卡住整个分区)。
-			logx.Errorf("[rating] 对局结果重试用尽,跳过 battle=%d", event.GetBattleId())
+			logx.Errorf("[rating] Battle result retries exhausted; skipping battle=%d", event.GetBattleId())
 		}
 		commitResult(ctx, reader, msg)
 	}
@@ -155,7 +155,7 @@ func runResultConsumer(ctx context.Context, reader *kafkago.Reader, handle Resul
 // 崩溃最多重放到上次成功提交处,幂等标记兜底)。
 func commitResult(ctx context.Context, reader *kafkago.Reader, msg kafkago.Message) {
 	if err := reader.CommitMessages(ctx, msg); err != nil && ctx.Err() == nil {
-		logx.Errorf("[rating] 提交对局结果 offset 失败 partition=%d offset=%d: %v", msg.Partition, msg.Offset, err)
+		logx.Errorf("[rating] Failed to commit battle result offset partition=%d offset=%d: %v", msg.Partition, msg.Offset, err)
 	}
 }
 

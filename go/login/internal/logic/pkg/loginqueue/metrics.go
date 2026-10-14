@@ -7,7 +7,7 @@
 // Six metrics, mapping 1:1 onto the runbook's "待补 Prometheus 指标" table:
 //
 //   login_queue_size              Gauge       per zone     ZCARD snapshot
-//   login_queue_admitted_inflight Gauge       per zone     SCARD snapshot
+//   login_queue_admitted_inflight Gauge       per zone     in-flight placeholders (ZCARD after dropping expired)
 //   login_queue_wait_seconds      Histogram   per zone     time from Enqueue to Lookup-admit
 //   login_queue_admit_total       Counter     per zone     dispatcher PopAdmit results
 //   login_queue_expired_total     Counter     per zone+reason  EXPIRED responses (token invalid / meta gone / etc.)
@@ -59,16 +59,18 @@ var (
 		Labels: []string{"zone"},
 	})
 
-	// admittedInflightGauge mirrors SCARD admitted:zone:{zone} — players
-	// holding an admit token but not yet connected to gate. Critical for
-	// capacity accounting (FreeSlots subtracts this).
+	// admittedInflightGauge 是清掉过期成员之后 admitted:zset:zone:{zone} 的成员数:
+	// 已放行还没来取的,加上票已交出去、还在交票后宽限(15s)之内的(排队取走与快速通道)。
+	// 容量记账用它(FreeSlots 减去这一项)。
 	admittedInflightGauge = metric.NewGaugeVec(&metric.GaugeVecOpts{
 		Namespace: metricNamespace,
 		Subsystem: "",
 		Name:      "admitted_inflight",
-		Help: "Players who have an admit token but haven't connected to gate yet " +
-			"(SCARD admitted:zone:{zone}). Sustained > 100 per zone suggests clients " +
-			"are dropping admit tokens; check AdmitTTL and client poll cadence.",
+		Help: "In-flight admission placeholders per zone: admits not yet picked up, plus gate " +
+			"tokens handed out within the last 15s handoff grace (queue consume and fast path). " +
+			"ZCARD admitted:zset:zone:{zone} after dropping expired members. Sitting at " +
+			"(capacity - online) while login_queue_size > 0 is normal back-pressure; if gate " +
+			"PlayerCount does not grow at the same time, clients are not redeeming their admits.",
 		Labels: []string{"zone"},
 	})
 
@@ -193,7 +195,7 @@ func recordWait(zoneID uint32, d time.Duration) {
 // for the given zone by reading Redis directly. Called by the dispatcher
 // once per drain tick — that cadence (1s) is the right granularity for
 // these metrics; doing it inline on every Enqueue/Lookup would drown
-// Redis in extra ZCARD/SCARD calls for marginal accuracy gain.
+// Redis in extra ZCARD / EVAL calls for marginal accuracy gain.
 //
 // The dispatcher invokes this even for zones where it admits nothing,
 // so the gauges stay fresh during periods of capacity exhaustion.

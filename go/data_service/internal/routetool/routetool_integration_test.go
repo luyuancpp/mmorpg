@@ -108,7 +108,7 @@ func TestRouteToolImportThenAuditOnRealStore(t *testing.T) {
 	require.NoError(t, mr.Set("player:zone:9002", "2"))
 
 	// 3. 库里有行、缓存三键全无 → db_only_unpublished(W1 已提交未发布的孤儿行就是这个形状)。
-	// route_shard = 9005 % 16 = 13(聚簇主键首列,chk_route_shard 钉住)。
+	// route_shard = 9005 % 64 = 45(9005 = 140×64 + 45;聚簇主键首列,chk_route_shard 钉住)。
 	_, err = db.Raw.Exec("INSERT INTO player_route (route_shard, player_id, home_zone, storage_id, placement_version, frozen_run_id,"+
 		" rev, updated_by, created_at_ms, updated_at_ms) VALUES (?, 9005, 1, NULL, NULL, NULL, 1, 'it-orphan', 1, 1)",
 		uint64(placement.RouteRowShard(9005)))

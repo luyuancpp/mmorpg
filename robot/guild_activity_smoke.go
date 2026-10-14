@@ -192,7 +192,7 @@ func runGuildActivitySmoke(cfg *config.Config, stats *metrics.Stats) {
 
 	// config 的校验已保证恰好四个互不相同的账号;这里再挡一次,免得有人绕开校验直接调用时按下标越界。
 	if len(sc.ActivityAccounts) != actSlotCount {
-		fail("S0-config", "activity_accounts 有 %d 个,期望 %d 个(帮主 A、成员 B / C / D)", len(sc.ActivityAccounts), actSlotCount)
+		fail("S0-config", "activity_accounts has %d entries, expected %d (leader A, members B / C / D)", len(sc.ActivityAccounts), actSlotCount)
 	}
 
 	// ---- S0:登录(顺序登录即可,不值得为省几秒写并发) ----
@@ -222,7 +222,7 @@ func runGuildActivitySmoke(cfg *config.Config, stats *metrics.Stats) {
 	}
 	guildID := created.GetGuild().GetGuildId()
 	if guildID == 0 {
-		fail("S0-create", "建帮受理但响应里没有帮会")
+		fail("S0-create", "Guild creation was accepted but the response contains no guild")
 	}
 	for _, member := range []*guildSmokeBot{b, c, d} {
 		if err := member.expect(game.GuildServiceApplyJoinGuildMessageId,
@@ -232,21 +232,21 @@ func runGuildActivitySmoke(cfg *config.Config, stats *metrics.Stats) {
 		if err := a.expect(game.GuildServiceReviewGuildApplicationMessageId,
 			&guildpb.ReviewGuildApplicationRequest{ApplicantPlayerId: member.gc.PlayerId, Approve: true},
 			&guildpb.ReviewGuildApplicationResponse{}, 0); err != nil {
-			fail("S0-review", "审批 %s: %v", member.account, err)
+			fail("S0-review", "Reviewing %s: %v", member.account, err)
 		}
 	}
 
 	// ---- S0:基线。新帮会理应资金 0、帮贡 0,但断言一律写成"基线 + 增量",不把这个巧合当前提 ----
 	baseline := mustMyGuild(a, fail, "S0-baseline")
 	if len(baseline.GetMembers()) != actSlotCount {
-		fail("S0-baseline", "帮会 %d 有 %d 名成员,期望 %d 名", guildID, len(baseline.GetMembers()), actSlotCount)
+		fail("S0-baseline", "Guild %d has %d members, expected %d", guildID, len(baseline.GetMembers()), actSlotCount)
 	}
 	funds := baseline.GetFunds()
 	var total, balance [actSlotCount]uint64
 	for slot, bot := range bots {
 		member := actMemberOf(baseline, bot.gc.PlayerId)
 		if member == nil {
-			fail("S0-baseline", "审批通过后 %s(%d) 不在帮会 %d 的成员表里", bot.account, bot.gc.PlayerId, guildID)
+			fail("S0-baseline", "After approval %s(%d) is missing from guild %d member list", bot.account, bot.gc.PlayerId, guildID)
 		}
 		total[slot], balance[slot] = member.GetContributionTotal(), member.GetContributionBalance()
 	}
@@ -257,11 +257,11 @@ func runGuildActivitySmoke(cfg *config.Config, stats *metrics.Stats) {
 	// ---- S1:活动页 ----
 	views := actViews(a, fail, "S1")
 	if len(views) != 3 {
-		fail("S1", "活动页有 %d 条,期望 3 条(灯会 / 团圆 / 历练;GuildActivity 默认行)", len(views))
+		fail("S1", "Activity page has %d entries, expected 3 (lantern / reunion / trial; default GuildActivity rows)", len(views))
 	}
 	for i, view := range views {
 		if want := guildpb.GuildActivityType(i + 1); view.GetType() != want {
-			fail("S1", "第 %d 条 type=%s,期望 %s(每种类型至多一条、按 type 升序)", i+1, view.GetType(), want)
+			fail("S1", "Entry %d type=%s, expected %s (at most one per type, sorted by type ascending)", i+1, view.GetType(), want)
 		}
 	}
 	lantern, reunion, trial := views[0], views[1], views[2]
@@ -284,7 +284,7 @@ func runGuildActivitySmoke(cfg *config.Config, stats *metrics.Stats) {
 		}
 		for _, typ := range rerunTypes {
 			if used := actOfType(mine, typ).GetMyUsedCount(); used != 0 {
-				fail("S1", "same-game-day-rerun account=%s 的 %s 今日已用 %d 次(个人次数按游戏日记、解散清不掉)。重跑前执行:%s",
+				fail("S1", "same-game-day-rerun account=%s has used %s %d times today (personal counts use game days and survive guild disbanding). Run before retrying: %s",
 					bot.account, typ, used, cleanupSQL)
 			}
 		}
@@ -295,43 +295,43 @@ func runGuildActivitySmoke(cfg *config.Config, stats *metrics.Stats) {
 		wantTrial = open
 	}
 	if lantern.GetState() != open || reunion.GetState() != open || trial.GetState() != wantTrial {
-		fail("S1", "灯会=%s 团圆=%s 历练=%s,期望 %s / %s / %s(trial=%v;配表行启用之外,历练还要 guild 的部署配齐才开放:"+
-			"配了 MatchRpc 且 Activity.TrialResult.Enabled=true、Kafka.Brokers 非空,缺哪样启动日志里有一行原因。"+
-			"guild_smoke.yaml 的 trial 要与它一致)",
+		fail("S1", "lantern=%s reunion=%s trial=%s, expected %s / %s / %s (trial=%v; besides enabled table rows, trial requires complete guild deployment configuration: "+
+			"MatchRpc configured, Activity.TrialResult.Enabled=true, and nonempty Kafka.Brokers; startup logs explain any missing requirement. "+
+			"The trial setting in guild_smoke.yaml must match)",
 			lantern.GetState(), reunion.GetState(), trial.GetState(), open, open, wantTrial, sc.Trial)
 	}
 	if blocked := lantern.GetBlockedTipId(); blocked != 0 {
-		fail("S1", "灯会 blocked_tip_id=%d,期望 0(%s)", blocked, actTipHint(blocked))
+		fail("S1", "Lantern blocked_tip_id=%d, expected 0 (%s)", blocked, actTipHint(blocked))
 	}
 	if lantern.GetPersonalContribution() != actLanternContribution || lantern.GetGuildFunds() != actLanternFunds ||
 		lantern.GetGuildThreshold() != actLanternThreshold || lantern.GetDailyLimit() != actLanternDailyLimit {
-		fail("S1", "灯会卡片 帮贡=%d 资金=%d 阈值=%d 每日=%d,期望 %d / %d / %d / %d(GuildActivity 默认行)",
+		fail("S1", "Lantern card contribution=%d funds=%d threshold=%d daily=%d, expected %d / %d / %d / %d (default GuildActivity row)",
 			lantern.GetPersonalContribution(), lantern.GetGuildFunds(), lantern.GetGuildThreshold(), lantern.GetDailyLimit(),
 			actLanternContribution, actLanternFunds, actLanternThreshold, actLanternDailyLimit)
 	}
 	if reunion.GetPersonalContribution() != actReunionContribution || reunion.GetGuildThreshold() != actReunionThreshold ||
 		reunion.GetDailyLimit() != actReunionDailyLimit {
-		fail("S1", "团圆卡片 帮贡=%d 阈值=%d 每日=%d,期望 %d / %d / %d(GuildActivity 默认行)",
+		fail("S1", "Reunion card contribution=%d threshold=%d daily=%d, expected %d / %d / %d (default GuildActivity row)",
 			reunion.GetPersonalContribution(), reunion.GetGuildThreshold(), reunion.GetDailyLimit(),
 			actReunionContribution, actReunionThreshold, actReunionDailyLimit)
 	}
 	if items := reunion.GetRewardItems(); len(items) != 1 || items[0].GetItemId() != actReunionItem || items[0].GetCount() != actReunionItemCount {
-		fail("S1", "团圆奖励物品=%v,期望只有一项:物品 %d ×%d(Reward[1] 两个槽按 item_id 合并)", items, actReunionItem, actReunionItemCount)
+		fail("S1", "Reunion reward items=%v, expected one entry: item %d x%d (the two Reward[1] slots merge by item_id)", items, actReunionItem, actReunionItemCount)
 	}
 	if sc.Trial {
 		if blocked := trial.GetBlockedTipId(); blocked != 0 {
-			fail("S1-trial", "历练 blocked_tip_id=%d,期望 0(%s)", blocked, actTrialTipHint(blocked))
+			fail("S1-trial", "Trial blocked_tip_id=%d, expected 0 (%s)", blocked, actTrialTipHint(blocked))
 		}
 		if trial.GetPersonalContribution() != actTrialContribution || trial.GetGuildFunds() != actTrialFunds ||
 			trial.GetGuildThreshold() != actTrialFundedWins || trial.GetDailyLimit() != actTrialDailyLimit ||
 			trial.GetTeamSizeMin() != actTrialTeamMin || trial.GetTeamSizeMax() != actTrialTeamMax {
-			fail("S1-trial", "历练卡片 帮贡=%d 资金=%d 每日计资金胜场=%d 每日=%d 人数=%d–%d,期望 %d / %d / %d / %d / %d–%d(GuildActivity 默认行)",
+			fail("S1-trial", "Trial card contribution=%d funds=%d daily fund-eligible wins=%d daily=%d participants=%d-%d, expected %d / %d / %d / %d / %d-%d (default GuildActivity row)",
 				trial.GetPersonalContribution(), trial.GetGuildFunds(), trial.GetGuildThreshold(), trial.GetDailyLimit(),
 				trial.GetTeamSizeMin(), trial.GetTeamSizeMax(),
 				actTrialContribution, actTrialFunds, actTrialFundedWins, actTrialDailyLimit, actTrialTeamMin, actTrialTeamMax)
 		}
 		if items := trial.GetRewardItems(); len(items) != 1 || items[0].GetItemId() != actTrialItem || items[0].GetCount() != actTrialItemCount {
-			fail("S1-trial", "历练奖励物品=%v,期望只有一项:物品 %d ×%d(Reward[2] 两个槽按 item_id 合并)", items, actTrialItem, actTrialItemCount)
+			fail("S1-trial", "Trial reward items=%v, expected one entry: item %d x%d (the two Reward[2] slots merge by item_id)", items, actTrialItem, actTrialItemCount)
 		}
 	}
 	// 团圆未锁存时 progress 是此刻的合格在线人数。这里只留底不断言:它在 S6 才是判据,届时不足会带着人数失败。
@@ -342,10 +342,10 @@ func runGuildActivitySmoke(cfg *config.Config, stats *metrics.Stats) {
 	// ---- S2:A 点灯 ----
 	tip, view := actLight(a, lantern.GetActivityId(), fail, "S2")
 	if tip != 0 {
-		fail("S2", "A 点灯 tip=%d(%s)", tip, actTipHint(tip))
+		fail("S2", "A lighting a lantern tip=%d (%s)", tip, actTipHint(tip))
 	}
 	if view.GetMyUsedCount() != 1 || view.GetProgress() != 1 || view.GetThresholdReached() || view.GetFundsGranted() {
-		fail("S2", "A 点灯后视图(有=%v) 今日 %d 次、进度 %d、达阈值=%v、资金已发=%v,期望 1 / 1 / false / false",
+		fail("S2", "After A lights a lantern, view (present=%v) today count=%d progress=%d threshold_reached=%v funds_issued=%v, expected 1 / 1 / false / false",
 			view != nil, view.GetMyUsedCount(), view.GetProgress(), view.GetThresholdReached(), view.GetFundsGranted())
 	}
 	total[actSlotA] += actLanternContribution
@@ -354,16 +354,16 @@ func runGuildActivitySmoke(cfg *config.Config, stats *metrics.Stats) {
 
 	// ---- S3:每日一次 ----
 	if tip, _ := actLight(a, lantern.GetActivityId(), fail, "S3"); tip != tipGuildActivityAlreadyClaimed {
-		fail("S3", "A 第二次点灯 tip=%d,期望 kGuildActivityAlreadyClaimed(%d)", tip, tipGuildActivityAlreadyClaimed)
+		fail("S3", "A lighting a second lantern tip=%d, expected kGuildActivityAlreadyClaimed(%d)", tip, tipGuildActivityAlreadyClaimed)
 	}
 
 	// ---- S4:B、C 点灯,第三盏达到阈值 ----
 	tip, view = actLight(b, lantern.GetActivityId(), fail, "S4-b")
 	if tip != 0 {
-		fail("S4-b", "B 点灯 tip=%d(%s)", tip, actTipHint(tip))
+		fail("S4-b", "B lighting a lantern tip=%d (%s)", tip, actTipHint(tip))
 	}
 	if view.GetProgress() != 2 || view.GetThresholdReached() || view.GetFundsGranted() {
-		fail("S4-b", "B 点灯后视图(有=%v) 进度 %d、达阈值=%v、资金已发=%v,期望 2 / false / false",
+		fail("S4-b", "After B lights a lantern, view (present=%v) progress=%d threshold_reached=%v funds_issued=%v, expected 2 / false / false",
 			view != nil, view.GetProgress(), view.GetThresholdReached(), view.GetFundsGranted())
 	}
 	total[actSlotB] += actLanternContribution
@@ -372,10 +372,10 @@ func runGuildActivitySmoke(cfg *config.Config, stats *metrics.Stats) {
 	a.clearPushes()
 	tip, view = actLight(c, lantern.GetActivityId(), fail, "S4-c")
 	if tip != 0 {
-		fail("S4-c", "C 点灯 tip=%d(%s)", tip, actTipHint(tip))
+		fail("S4-c", "C lighting a lantern tip=%d (%s)", tip, actTipHint(tip))
 	}
 	if view.GetProgress() != actLanternThreshold || !view.GetThresholdReached() || !view.GetFundsGranted() {
-		fail("S4-c", "C 点灯后视图(有=%v) 进度 %d、达阈值=%v、资金已发=%v,期望 %d / true / true",
+		fail("S4-c", "After C lights a lantern, view (present=%v) progress=%d threshold_reached=%v funds_issued=%v, expected %d / true / true",
 			view != nil, view.GetProgress(), view.GetThresholdReached(), view.GetFundsGranted(), actLanternThreshold)
 	}
 	total[actSlotC] += actLanternContribution
@@ -386,16 +386,16 @@ func runGuildActivitySmoke(cfg *config.Config, stats *metrics.Stats) {
 	actCheckSelf(c, fail, "S4-c", funds, total[actSlotC], balance[actSlotC])
 	// 推送至多一次(guild → Kafka → gate),设计只要求告警:活动页打开时客户端本来就会自己拉。
 	if err := a.waitPush(guildpb.GuildChangeKind_GUILD_CHANGE_KIND_ACTIVITY_CHANGED, guildID, guildSmokePushTimeout); err != nil {
-		zap.L().Warn("[guild-smoke] activities S4: A 没等到 ACTIVITY_CHANGED 推送(只告警,不判失败)", zap.Error(err))
+		zap.L().Warn("[guild-smoke] activities S4: A did not receive ACTIVITY_CHANGED push (warning only, not a failure)", zap.Error(err))
 	}
 
 	// ---- S5:第四盏照常受理,资金不再发 ----
 	tip, view = actLight(d, lantern.GetActivityId(), fail, "S5")
 	if tip != 0 {
-		fail("S5", "D 点灯 tip=%d(%s)", tip, actTipHint(tip))
+		fail("S5", "D lighting a lantern tip=%d (%s)", tip, actTipHint(tip))
 	}
 	if view.GetProgress() != actLanternThreshold+1 || !view.GetThresholdReached() || !view.GetFundsGranted() {
-		fail("S5", "D 点灯后视图(有=%v) 进度 %d、达阈值=%v、资金已发=%v,期望 %d / true / true",
+		fail("S5", "After D lights a lantern, view (present=%v) progress=%d threshold_reached=%v funds_issued=%v, expected %d / true / true",
 			view != nil, view.GetProgress(), view.GetThresholdReached(), view.GetFundsGranted(), actLanternThreshold+1)
 	}
 	total[actSlotD] += actLanternContribution
@@ -422,10 +422,10 @@ func runGuildActivitySmoke(cfg *config.Config, stats *metrics.Stats) {
 	}
 	bots[actSlotD] = d
 	if g := mustMyGuild(d, fail, "S8-relogin"); g.GetGuildId() != guildID {
-		fail("S8-relogin", "D 重登后所在帮会=%d,期望 %d", g.GetGuildId(), guildID)
+		fail("S8-relogin", "After D relogins, guild=%d, expected %d", g.GetGuildId(), guildID)
 	}
 	if tip, _ := actClaim(a, reunion.GetActivityId(), fail, "S8"); tip != tipGuildActivityAlreadyClaimed {
-		fail("S8", "A 第二次领团圆 tip=%d,期望 kGuildActivityAlreadyClaimed(%d)", tip, tipGuildActivityAlreadyClaimed)
+		fail("S8", "A claiming reunion a second time tip=%d, expected kGuildActivityAlreadyClaimed(%d)", tip, tipGuildActivityAlreadyClaimed)
 	}
 	actCheckSelf(a, fail, "S8", funds, total[actSlotA], balance[actSlotA])
 
@@ -457,19 +457,19 @@ func actClaimDelivered(bot *guildSmokeBot, activityID uint32, wantFunds, wantTot
 	before := econItemCount(econBag(bot, fail, step+"-bag"), actReunionItem)
 	tip, resp := actClaim(bot, activityID, fail, step)
 	if tip != 0 {
-		fail(step, "%s 领团圆 tip=%d parameters=%v(%s)", bot.account, tip, resp.GetErrorMessage().GetParameters(), actTipHint(tip))
+		fail(step, "%s claiming reunion tip=%d parameters=%v (%s)", bot.account, tip, resp.GetErrorMessage().GetParameters(), actTipHint(tip))
 	}
 	// 一经达成即锁存,锁存后 progress 固定填 0(guild.proto 的 progress 注释):这两项就是"之后不必再凑人"的可观察证据。
 	view := resp.GetActivity()
 	if view.GetMyUsedCount() != 1 || !view.GetThresholdReached() || view.GetProgress() != 0 {
-		fail(step, "%s 领团圆后视图(有=%v) 今日 %d 次、已锁存=%v、进度 %d,期望 1 / true / 0",
+		fail(step, "After %s claims reunion, view (present=%v) today count=%d latched=%v progress=%d, expected 1 / true / 0",
 			bot.account, view != nil, view.GetMyUsedCount(), view.GetThresholdReached(), view.GetProgress())
 	}
 	actCheckSelf(bot, fail, step, wantFunds, wantTotal, wantBalance)
 	actAwaitReward(bot, guildpb.GuildActivityType_GUILD_ACTIVITY_TYPE_REUNION, fail, step+"-reward")
 	want := before + uint64(actReunionItemCount)
 	if got := econItemCount(econBag(bot, fail, step+"-bag-after"), actReunionItem); got != want {
-		fail(step+"-item", "%s 的物品 %d 数量=%d,期望 %d + %d(待发放数已归 0 而物品没到 = 指令被永久拒绝,看活动页的 my_last_reward_reject_tip_id 与 scene 日志 [AssetOp])",
+		fail(step+"-item", "%s item %d count=%d, expected %d + %d (owed count is 0 but the item is missing = command permanently rejected; check activity-page my_last_reward_reject_tip_id and scene [AssetOp] logs)",
 			bot.account, actReunionItem, got, before, actReunionItemCount)
 	}
 }
@@ -481,13 +481,13 @@ func actAwaitReward(bot *guildSmokeBot, typ guildpb.GuildActivityType, fail econ
 	for {
 		view := actOfType(actViews(bot, fail, step), typ)
 		if view == nil {
-			fail(step, "活动页里没有 %s", typ)
+			fail(step, "Activity page has no %s", typ)
 		}
 		if view.GetMyPendingRewardCount() == 0 {
 			return
 		}
 		if !time.Now().Before(deadline) {
-			fail(step, "%s 的物品奖励 %s 后仍有 %d 件待发放,最近原因 tip=%d(27001 = 背包满)。看 guild 日志 [GuildActivity] 与 scene 日志 [AssetOp]",
+			fail(step, "%s item reward remains pending after %s with %d items owed, latest reason tip=%d (27001 = bag full). Check guild [GuildActivity] and scene [AssetOp] logs",
 				bot.account, actRewardTimeout, view.GetMyPendingRewardCount(), view.GetMyPendingReasonTipId())
 		}
 		// 500ms 一次:读类消息号 10 次 / 秒;即使限流行还没回填、吃默认 3 次 / 窗口,这个节奏也不会被 gate 丢包。
@@ -538,21 +538,21 @@ func runGuildTrialSmoke(in actTrialInput, fail econFail) uint64 {
 	// 建房冷却从服务端受理的那一刻起算,比这里记下的时刻略早;S12 等的时候另加了余量。
 	firstLobbyAt := time.Now()
 	if tip != 0 {
-		fail("S9", "A 发起历练 tip=%d parameters=%v(%s)", tip, started.GetErrorMessage().GetParameters(), actTrialTipHint(tip))
+		fail("S9", "A starting trial tip=%d parameters=%v (%s)", tip, started.GetErrorMessage().GetParameters(), actTrialTipHint(tip))
 	}
 	view := started.GetActivity()
 	lobby := view.GetTrialLobby()
 	if lobby.GetLobbyId() == 0 || lobby.GetInitiatorPlayerId() != a.gc.PlayerId || lobby.GetState() != pending ||
 		!slices.Equal(lobby.GetMemberPlayerIds(), roster) || !slices.Equal(lobby.GetAcceptedPlayerIds(), roster[:1]) {
-		fail("S9", "建房回包里的房间(视图有=%v、房间有=%v) lobby_id=%d 发起人=%d state=%s 名单=%v 已同意=%v,"+
-			"期望 非 0 / %d / %s / %v / %v(回包没带视图 = 服务端建房后回读失败,看 guild 日志 [GuildTrial] rebuild trial view failed)",
+		fail("S9", "Room in creation response (view present=%v, room present=%v) lobby_id=%d initiator=%d state=%s roster=%v accepted=%v, "+
+			"expected nonzero / %d / %s / %v / %v (missing response view = server readback failed after room creation; check guild [GuildTrial] rebuild trial view failed logs)",
 			view != nil, lobby != nil, lobby.GetLobbyId(), lobby.GetInitiatorPlayerId(), lobby.GetState(),
 			lobby.GetMemberPlayerIds(), lobby.GetAcceptedPlayerIds(), a.gc.PlayerId, pending, roster, roster[:1])
 	}
 	// 有效期用服务端自己的两个时刻相减,不拿本机时钟比(客户端同理:倒计时以 server_time_ms 为基准)。
 	remain := time.Duration(int64(lobby.GetExpireAtMs())-int64(view.GetServerTimeMs())) * time.Millisecond
 	if remain <= actTrialInviteTTL-actTrialTTLSlack || remain > actTrialInviteTTL {
-		fail("S9", "房间有效期还剩 %s(expire_at_ms=%d server_time_ms=%d),期望 %s(GuildRule.trial_invite_ttl_seconds 默认 30)",
+		fail("S9", "Room lifetime remaining %s (expire_at_ms=%d server_time_ms=%d), expected %s (GuildRule.trial_invite_ttl_seconds defaults to 30)",
 			remain, lobby.GetExpireAtMs(), view.GetServerTimeMs(), actTrialInviteTTL)
 	}
 	lobbyID := lobby.GetLobbyId()
@@ -561,7 +561,7 @@ func runGuildTrialSmoke(in actTrialInput, fail econFail) uint64 {
 	for _, invitee := range []*guildSmokeBot{b, c} {
 		if err := invitee.waitPushTo(guildpb.GuildChangeKind_GUILD_CHANGE_KIND_ACTIVITY_CHANGED,
 			in.guildID, invitee.gc.PlayerId, guildSmokePushTimeout); err != nil {
-			zap.L().Warn("[guild-smoke] activities S9: 被邀请人没等到 target=自己 的 ACTIVITY_CHANGED 推送(只告警,不判失败)",
+			zap.L().Warn("[guild-smoke] activities S9: invitee did not receive ACTIVITY_CHANGED push targeted at itself (warning only, not a failure)",
 				zap.String("account", invitee.account), zap.Error(err))
 		}
 	}
@@ -572,24 +572,24 @@ func runGuildTrialSmoke(in actTrialInput, fail econFail) uint64 {
 	actExpectInvite(b, lobbyID, fail, "S10-b")
 	tip, responded := actRespondTrial(b, lobbyID, true, fail, "S10-b")
 	if tip != 0 {
-		fail("S10-b", "B 同意邀请 tip=%d parameters=%v(%s)", tip, responded.GetErrorMessage().GetParameters(), actTrialTipHint(tip))
+		fail("S10-b", "B accepting invitation tip=%d parameters=%v (%s)", tip, responded.GetErrorMessage().GetParameters(), actTrialTipHint(tip))
 	}
 	lobby = responded.GetActivity().GetTrialLobby()
 	if lobby.GetState() != pending || !slices.Equal(lobby.GetAcceptedPlayerIds(), roster[:2]) {
-		fail("S10-b", "B 同意后房间(有=%v) state=%s 已同意=%v,期望 %s / %v(还差 C,不该开战)",
+		fail("S10-b", "After B accepts, room (present=%v) state=%s accepted=%v, expected %s / %v (C is still missing; battle should not start)",
 			lobby != nil, lobby.GetState(), lobby.GetAcceptedPlayerIds(), pending, roster[:2])
 	}
 	actExpectInvite(c, lobbyID, fail, "S10-c")
 	tip, responded = actRespondTrial(c, lobbyID, true, fail, "S10-c")
 	if tip != 0 {
 		// 开战失败时回包同时带原因与已经 ENDED 的房间;原因的参数(如 [in_battle, 某人])在 error_message 里。
-		fail("S10-c", "C 同意邀请(凑齐全员,由这次调用开战)tip=%d parameters=%v(%s)",
+		fail("S10-c", "C accepting invitation (completes the roster and starts battle through this call) tip=%d parameters=%v (%s)",
 			tip, responded.GetErrorMessage().GetParameters(), actTrialTipHint(tip))
 	}
 	lobby = responded.GetActivity().GetTrialLobby()
 	battleID := lobby.GetBattleId()
 	if lobby.GetState() != guildpb.GuildTrialLobbyState_GUILD_TRIAL_LOBBY_STATE_LAUNCHED || battleID == 0 {
-		fail("S10-c", "C 同意后房间(有=%v) state=%s battle_id=%d,期望 %s 且 battle_id 非 0",
+		fail("S10-c", "After C accepts, room (present=%v) state=%s battle_id=%d, expected %s and nonzero battle_id",
 			lobby != nil, lobby.GetState(), battleID, guildpb.GuildTrialLobbyState_GUILD_TRIAL_LOBBY_STATE_LAUNCHED)
 	}
 	actFightTrial(fighters, battleID, fail, "S10")
@@ -597,7 +597,7 @@ func runGuildTrialSmoke(in actTrialInput, fail econFail) uint64 {
 	// ---- S11:结算 —— 帮贡、资金、今日胜场、物品 ----
 	settled := actAwaitTrialSettled(a, battleID, fail, "S11")
 	if settled.GetProgress() != 1 || settled.GetMyUsedCount() != 1 || settled.GetMyTrialBattleId() != 0 {
-		fail("S11", "结算后 A 的历练卡片 今日计资金胜场=%d、本人今日 %d 次、进行中的对局=%d,期望 1 / 1 / 0(battle_id=%d)",
+		fail("S11", "After settlement A trial card daily fund-eligible wins=%d personal today count=%d active battle=%d, expected 1 / 1 / 0 (battle_id=%d)",
 			settled.GetProgress(), settled.GetMyUsedCount(), settled.GetMyTrialBattleId(), battleID)
 	}
 	// 三人各读各的帮会:资金是全帮一个数,帮贡是各人自己的。用户决策 U2:阵亡也得奖,所以不区分谁在战斗里倒下 ——
@@ -614,7 +614,7 @@ func runGuildTrialSmoke(in actTrialInput, fail econFail) uint64 {
 	for _, bot := range []*guildSmokeBot{b, c} {
 		mine := actTrialView(bot, fail, "S11")
 		if mine.GetProgress() != 1 || mine.GetMyUsedCount() != 1 || mine.GetMyTrialBattleId() != 0 {
-			fail("S11", "结算后 %s 的历练卡片 今日计资金胜场=%d、本人今日 %d 次、进行中的对局=%d,期望 1 / 1 / 0",
+			fail("S11", "After settlement %s trial card daily fund-eligible wins=%d personal today count=%d active battle=%d, expected 1 / 1 / 0",
 				bot.account, mine.GetProgress(), mine.GetMyUsedCount(), mine.GetMyTrialBattleId())
 		}
 	}
@@ -623,7 +623,7 @@ func runGuildTrialSmoke(in actTrialInput, fail econFail) uint64 {
 		actAwaitReward(bot, trialType, fail, "S11-reward")
 		want := itemsBefore[i] + uint64(actTrialItemCount)
 		if got := econItemCount(econBag(bot, fail, "S11-bag"), actTrialItem); got != want {
-			fail("S11-item", "%s 的物品 %d 数量=%d,期望 %d + %d(待发放数已归 0 而物品没到 = 指令被永久拒绝,看活动页的 my_last_reward_reject_tip_id 与 scene 日志 [AssetOp])",
+			fail("S11-item", "%s item %d count=%d, expected %d + %d (owed count is 0 but the item is missing = command permanently rejected; check activity-page my_last_reward_reject_tip_id and scene [AssetOp] logs)",
 				bot.account, actTrialItem, got, itemsBefore[i], actTrialItemCount)
 		}
 	}
@@ -639,25 +639,25 @@ func runGuildTrialSmoke(in actTrialInput, fail econFail) uint64 {
 	withD := []uint64{a.gc.PlayerId, dID}
 	tip, started = actStartTrial(a, in.activityID, withD, fail, "S12")
 	if tip != 0 {
-		fail("S12", "A 发起历练 [A, D] tip=%d parameters=%v(%s)", tip, started.GetErrorMessage().GetParameters(), actTrialTipHint(tip))
+		fail("S12", "A starting trial [A, D] tip=%d parameters=%v (%s)", tip, started.GetErrorMessage().GetParameters(), actTrialTipHint(tip))
 	}
 	lobby = started.GetActivity().GetTrialLobby()
 	declinedID := lobby.GetLobbyId()
 	if declinedID == 0 || declinedID == lobbyID || lobby.GetState() != pending || !slices.Equal(lobby.GetMemberPlayerIds(), withD) {
-		fail("S12", "第二个房间(有=%v) lobby_id=%d state=%s 名单=%v,期望 一个不同于 %d 的新 id / %s / %v",
+		fail("S12", "Second room (present=%v) lobby_id=%d state=%s roster=%v, expected a new ID different from %d / %s / %v",
 			lobby != nil, declinedID, lobby.GetState(), lobby.GetMemberPlayerIds(), lobbyID, pending, withD)
 	}
 	actExpectInvite(d, declinedID, fail, "S12-d")
 	tip, responded = actRespondTrial(d, declinedID, false, fail, "S12-d")
 	if tip != 0 {
-		fail("S12-d", "D 拒绝邀请 tip=%d parameters=%v,期望受理(%s)", tip, responded.GetErrorMessage().GetParameters(), actTrialTipHint(tip))
+		fail("S12-d", "D declining invitation tip=%d parameters=%v, expected acceptance (%s)", tip, responded.GetErrorMessage().GetParameters(), actTrialTipHint(tip))
 	}
 	// 从发起人 A 的活动页读:A 不是这次的操作者,他要靠这一页知道"谁拒绝了"。
 	lobby = actTrialView(a, fail, "S12").GetTrialLobby()
 	wantDecliner := []string{strconv.FormatUint(dID, 10)}
 	if lobby.GetLobbyId() != declinedID || lobby.GetState() != guildpb.GuildTrialLobbyState_GUILD_TRIAL_LOBBY_STATE_ENDED ||
 		lobby.GetEndTipId() != tipGuildTrialInviteDeclined || !slices.Equal(lobby.GetEndParameters(), wantDecliner) {
-		fail("S12", "D 拒绝后 A 看到的房间(有=%v) lobby_id=%d state=%s end_tip_id=%d end_parameters=%v,期望 %d / %s / kGuildTrialInviteDeclined(%d) / %v",
+		fail("S12", "After D declines, A room view (present=%v) lobby_id=%d state=%s end_tip_id=%d end_parameters=%v, expected %d / %s / kGuildTrialInviteDeclined(%d) / %v",
 			lobby != nil, lobby.GetLobbyId(), lobby.GetState(), lobby.GetEndTipId(), lobby.GetEndParameters(),
 			declinedID, guildpb.GuildTrialLobbyState_GUILD_TRIAL_LOBBY_STATE_ENDED, tipGuildTrialInviteDeclined, wantDecliner)
 	}
@@ -678,8 +678,8 @@ func runGuildTrialSmoke(in actTrialInput, fail econFail) uint64 {
 		// (下线还没传到)。只有这一种答复值得再等;别的一律直接失败。
 		// 必须在 S12 的冷却用完之前放弃(actTrialOfflineRetry):冷却一过,同一个请求会真的把房间建出来。
 		if tip != tipGuildTrialInviteCooldown || !time.Now().Before(retryUntil) {
-			fail("S13", "A 邀请已下线的 D tip=%d parameters=%v,期望 kGuildTrialTeamInvalid(%d) %v"+
-				"(tip=kGuildTrialInviteCooldown(%d) 或 0 表示名单校验放行了:D 下线 %s 之后 player_locator 的会话仍是在线)",
+			fail("S13", "A inviting offline D tip=%d parameters=%v, expected kGuildTrialTeamInvalid(%d) %v"+
+				" (tip=kGuildTrialInviteCooldown(%d) or 0 means roster validation passed: player_locator still reports an online session %s after D logged out)",
 				tip, params, tipGuildTrialTeamInvalid, wantOffline, tipGuildTrialInviteCooldown, actLogoutSettle+actTrialOfflineRetry)
 		}
 		time.Sleep(guildSmokeSameIdCooldown)
@@ -727,15 +727,15 @@ func actFightTrial(fighters []*guildSmokeBot, battleID uint64, fail econFail, st
 	for _, err := range errs {
 		if err != nil {
 			closeDirects()
-			fail(step+"-start", "%v(若是没收到开战包:房间已 LAUNCHED,说明 match 受理了,多半是它的 gather 在冻结场景 / 建局时失败,"+
-				"看 match 日志 battle=%d;那一局不会有结果,guild 的登记行由巡检器判过期)", err, battleID)
+			fail(step+"-start", "%v (if the battle-start packet is missing: room is LAUNCHED, so match accepted it; its gather likely failed during scene freeze / battle creation; "+
+				"check match logs battle=%d; this battle will produce no result, and the guild registration expires through the background checker)", err, battleID)
 		}
 	}
 	for i, bot := range fighters {
 		if err := directs[i].Send(game.BattleClientPlayerSetAutoBattleMessageId,
 			&battle.SetAutoBattleRequest{BattleId: battleID, Enabled: true}); err != nil {
 			closeDirects()
-			fail(step+"-auto", "%s 经直连发 SetAutoBattle(battle_id=%d): %v", bot.account, battleID, err)
+			fail(step+"-auto", "%s sending SetAutoBattle(battle_id=%d) over the direct connection: %v", bot.account, battleID, err)
 		}
 		bot.stats.MsgSent()
 	}
@@ -747,12 +747,12 @@ func actFightTrial(fighters []*guildSmokeBot, battleID uint64, fail econFail, st
 		if err != nil {
 			delivery := directs[i].summary()
 			closeDirects()
-			fail(step+"-end", "%s 在 %s 内没收到 battle_id=%d 的 NotifyBattleEnd(直连收包 %s): %v",
+			fail(step+"-end", "%s did not receive NotifyBattleEnd within %s for battle_id=%d (direct-connection packets %s): %v",
 				bot.account, actTrialEndTimeout, battleID, delivery, err)
 		}
 		if got := battle.EBattleOutcome(outcome); got != battle.EBattleOutcome_BATTLE_OUTCOME_SIDE_A_WIN {
 			closeDirects()
-			fail(step+"-end", "%s 收到的战斗结果=%s,期望 %s(历练只有胜利才结算奖励;默认配表下三人自动战斗打 Dungeon[1] 应当获胜)",
+			fail(step+"-end", "%s received battle result=%s, expected %s (trial rewards settle only on victory; with default tables, three players fighting Dungeon[1] automatically should win)",
 				bot.account, got, battle.EBattleOutcome_BATTLE_OUTCOME_SIDE_A_WIN)
 		}
 	}
@@ -801,9 +801,9 @@ func actAwaitTrialSettled(bot *guildSmokeBot, battleID uint64, fail econFail, st
 			return view
 		}
 		if !time.Now().Before(deadline) {
-			fail(step, "战斗结束 %s 后历练仍未结算(battle_id=%d):今日计资金胜场=%d、本人今日 %d 次、进行中的对局=%d。"+
-				"结算链路 = battle 落 SharedRedis battle:activity_result:{battle_id} → Kafka match-results → guild 消费组 guild-trial;"+
-				"看 guild 日志 [GuildTrial] 与指标 guild_trial_result_total,并确认 guild 的 Activity.TrialResult.Enabled=true",
+			fail(step, "Trial remains unsettled %s after battle end (battle_id=%d): daily fund-eligible wins=%d personal today count=%d active battle=%d. "+
+				"Settlement path = battle writes SharedRedis battle:activity_result:{battle_id} -> Kafka match-results -> guild consumer group guild-trial; "+
+				"check guild [GuildTrial] logs and guild_trial_result_total metrics, and confirm Activity.TrialResult.Enabled=true in guild",
 				actTrialSettleTimeout, battleID, view.GetProgress(), view.GetMyUsedCount(), view.GetMyTrialBattleId())
 		}
 		time.Sleep(econSettlePoll)
@@ -816,7 +816,7 @@ func actExpectInvite(bot *guildSmokeBot, lobbyID uint64, fail econFail, step str
 	lobby := actTrialView(bot, fail, step).GetTrialLobby()
 	pending := guildpb.GuildTrialLobbyState_GUILD_TRIAL_LOBBY_STATE_PENDING
 	if lobby.GetLobbyId() != lobbyID || lobby.GetState() != pending {
-		fail(step, "%s 的活动页里的邀请房间(有=%v) lobby_id=%d state=%s end_tip_id=%d,期望 %d / %s",
+		fail(step, "%s invitation room on activity page (present=%v) lobby_id=%d state=%s end_tip_id=%d, expected %d / %s",
 			bot.account, lobby != nil, lobby.GetLobbyId(), lobby.GetState(), lobby.GetEndTipId(), lobbyID, pending)
 	}
 }
@@ -826,7 +826,7 @@ func actExpectTeamInvalid(bot *guildSmokeBot, activityID uint32, members []uint6
 	tip, resp := actStartTrial(bot, activityID, members, fail, step)
 	want := []string{reason, strconv.FormatUint(offender, 10)}
 	if got := resp.GetErrorMessage().GetParameters(); tip != tipGuildTrialTeamInvalid || !slices.Equal(got, want) {
-		fail(step, "%s 发起历练(名单 %v)tip=%d parameters=%v,期望 kGuildTrialTeamInvalid(%d) %v",
+		fail(step, "%s starting trial (roster %v) tip=%d parameters=%v, expected kGuildTrialTeamInvalid(%d) %v",
 			bot.account, members, tip, got, tipGuildTrialTeamInvalid, want)
 	}
 }
@@ -838,7 +838,7 @@ func actExpectTeamInvalid(bot *guildSmokeBot, activityID uint32, members []uint6
 func actViews(bot *guildSmokeBot, fail econFail, step string) []*guildpb.GuildActivityView {
 	resp := &guildpb.GetGuildActivitiesResponse{}
 	if err := bot.expect(game.GuildServiceGetGuildActivitiesMessageId, &guildpb.GetGuildActivitiesRequest{}, resp, 0); err != nil {
-		fail(step, "%s 读活动页: %v", bot.account, err)
+		fail(step, "%s reading activity page: %v", bot.account, err)
 	}
 	return resp.GetActivities()
 }
@@ -867,7 +867,7 @@ func actClaim(bot *guildSmokeBot, activityID uint32, fail econFail, step string)
 func actTrialView(bot *guildSmokeBot, fail econFail, step string) *guildpb.GuildActivityView {
 	view := actOfType(actViews(bot, fail, step), guildpb.GuildActivityType_GUILD_ACTIVITY_TYPE_TRIAL)
 	if view == nil {
-		fail(step, "%s 的活动页里没有同道历练", bot.account)
+		fail(step, "%s activity page has no companion trial", bot.account)
 	}
 	return view
 }
@@ -900,10 +900,10 @@ func actCheckSelf(bot *guildSmokeBot, fail econFail, step string, funds, total, 
 	g := mustMyGuild(bot, fail, step)
 	me := actMemberOf(g, bot.gc.PlayerId)
 	if me == nil {
-		fail(step, "%s(%d) 不在自己帮会 %d 的成员表里", bot.account, bot.gc.PlayerId, g.GetGuildId())
+		fail(step, "%s(%d) is missing from its own guild %d member list", bot.account, bot.gc.PlayerId, g.GetGuildId())
 	}
 	if g.GetFunds() != funds || me.GetContributionTotal() != total || me.GetContributionBalance() != balance {
-		fail(step, "%s 看到帮会资金=%d、本人帮贡 累计 %d / 可用 %d,期望 %d / %d / %d",
+		fail(step, "%s sees guild funds=%d, personal contribution total=%d / available=%d, expected %d / %d / %d",
 			bot.account, g.GetFunds(), me.GetContributionTotal(), me.GetContributionBalance(), funds, total, balance)
 	}
 }

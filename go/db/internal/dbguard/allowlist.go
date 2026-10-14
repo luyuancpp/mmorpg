@@ -168,7 +168,7 @@ func AssertDatabase(ctx context.Context, q RowQuerier, opts AssertOptions) (stri
 				ErrAllowlistMissing, AllowedDatabasesEnv, name)
 		}
 		if opts.Warnf != nil {
-			opts.Warnf("DB-ALLOWLIST: 白名单为空,dev/test 模式下放行 connected=%q。生产必须注入 %s,否则 ZoneId 填错会静默写进新库",
+			opts.Warnf("DB-ALLOWLIST: Allowlist empty; permitting connected=%q in dev/test mode. Production must inject %s, otherwise incorrect ZoneId silently writes to a new database",
 				name, AllowedDatabasesEnv)
 		}
 		return name, nil

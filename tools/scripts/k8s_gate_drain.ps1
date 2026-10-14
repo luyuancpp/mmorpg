@@ -411,7 +411,7 @@ function Assert-DrainBudget {
     )
     if ($MonitorIntervalSeconds -le 0) { throw "login GateDrain.Interval<=0:排空判定循环关闭,drained 永远不会出现" }
     if ($DeadlineSeconds -le 0) {
-        Write-Warning "login GateDrain.Deadline=0:只认在线降到阈值以下;还有人就一直等到 draining 的 TTL 到期、gate 重新接客,不会按期限放行。"
+        Write-Warning "login GateDrain.Deadline=0: drain completes only when online players fall below the threshold; otherwise it waits until the draining TTL expires and gate resumes admission. The deadline does not allow completion."
         return
     }
     $window = Get-RequiredDrainedWindowSeconds -MonitorIntervalSeconds $MonitorIntervalSeconds
@@ -760,7 +760,7 @@ function Set-GateDrainingMark {
             "再标这台也挡不住新玩家。未做任何写入;等其它排空结束(或取消其中一台)后重跑")
     }
     if ($reply -is [string] -and $reply -eq 'OK') {
-        Write-Host "[gate-drain] 已标记 $($keys.Draining)=$now(TTL ${TtlSeconds}s):同 zone 还有未排空的 gate,login 不再把新玩家分到这台"
+        Write-Host "[gate-drain] Marked $($keys.Draining)=$now (TTL ${TtlSeconds}s): another gate in this zone is still accepting players; login will stop assigning new players to this gate"
         return [pscustomobject]@{ MarkedAt = [long]$now; Value = $now; Created = $true }
     }
     if ($null -ne $reply) { throw "写入 $($keys.Draining) 得到意外回复 '$reply'" }
@@ -779,7 +779,7 @@ function Set-GateDrainingMark {
             "login 会立刻按 deadline 放行,带 -DeletePod 时就是直接断线。本脚本写的标记 TTL 不超过 $($contract.MaxDrainTtlSeconds)s," +
             "这样的值不是本脚本写的,不沿用。先人工 DEL $($keys.Draining) $($keys.Drained) 再重跑")
     }
-    Write-Warning "已有排空标记 $($keys.Draining)=$existing(已过 $([long]$now - [long]$existing)s,剩余 TTL ${ttl}s),沿用,不重置期限"
+    Write-Warning "Existing drain mark $($keys.Draining)=$existing (elapsed $([long]$now - [long]$existing)s, remaining TTL ${ttl}s); reusing it without resetting the deadline"
     return [pscustomobject]@{ MarkedAt = [long]$existing; Value = [string]$existing; Created = $false }
 }
 
@@ -842,7 +842,7 @@ function Wait-GateDrained {
         }
         if ($null -eq $values) {
             $failures++
-            Write-Warning "查询 $($keys.Drained) 失败(第 $failures 次,继续等,不当成已排空):$problem"
+            Write-Warning "Failed to query $($keys.Drained) (failure $failures; continuing to wait without treating it as drained): $problem"
         } else {
             if ($null -eq $values[0]) {
                 throw "$($keys.Draining) 已不存在(被取消或 TTL 到期):这台 gate 已重新参与分配,中止,不删 Pod"
@@ -867,7 +867,7 @@ function Wait-GateDrained {
             }
         }
         if ($budget.Elapsed.TotalSeconds -ge $nextProgress) {
-            Write-Host ("[gate-drain] 等待 {0}:已等 {1:N0}s / {2}s" -f $keys.Drained, $budget.Elapsed.TotalSeconds, $TimeoutSeconds)
+            Write-Host ("[gate-drain] Waiting for {0}: elapsed {1:N0}s / {2}s" -f $keys.Drained, $budget.Elapsed.TotalSeconds, $TimeoutSeconds)
             $nextProgress += $contract.ProgressIntervalSeconds
         }
         $remaining = $TimeoutSeconds - $budget.Elapsed.TotalSeconds
@@ -887,21 +887,21 @@ function Write-GateDeadlineWarning {
         [Parameter(Mandatory = $true)]$Pod,
         [Parameter(Mandatory = $true)]$Record
     )
-    $online = '未知'
+    $online = 'unknown'
     try {
         $current = @((Get-GateEtcdRecords -Login $Login) | Where-Object { $_.NodeId -eq $Record.NodeId -and $_.Uuid -eq $Record.Uuid })
         if ($current.Count -eq 1) { $online = [string]$current[0].PlayerCount }
     } catch {
         # 在线数只是告警里的补充信息,读取失败不能吞掉告警本身。
-        $online = "未知(读取失败:$($_.Exception.Message))"
+        $online = "unknown(read failed: $($_.Exception.Message))"
     }
     $banner = '!' * 78
     Write-Host $banner -ForegroundColor Red
-    Write-Host "!! gate $($Pod.Name)(node_id=$($Record.NodeId))是按 DEADLINE 判定排空的:期限到了仍有玩家在线(etcd 自报 $online)。" -ForegroundColor Red
-    Write-Host "!! 删除这个 Pod 会让这些玩家断线,客户端需重连 login 改派到其它 gate。" -ForegroundColor Red
-    Write-Host "!! 何时牺牲这批连接是运营决策:不带 -DeletePod 时脚本到此为止;带了就会继续删。" -ForegroundColor Red
+    Write-Host "!! gate $($Pod.Name) (node_id=$($Record.NodeId)) was marked drained by DEADLINE: players remain online after the deadline (etcd reports $online)." -ForegroundColor Red
+    Write-Host "!! Deleting this Pod will disconnect those players; clients must reconnect to login for assignment to another gate." -ForegroundColor Red
+    Write-Host "!! Disconnect timing is an operations decision: without -DeletePod the script stops here; with it, deletion continues." -ForegroundColor Red
     Write-Host $banner -ForegroundColor Red
-    Write-Warning "gate:$($Record.NodeId):drained=deadline,仍有玩家在线($online),删 Pod 会断线"
+    Write-Warning "gate:$($Record.NodeId):drained=deadline; players remain online ($online); deleting the Pod will disconnect them"
 }
 
 # 复核 Pod 还是定位时那一个(UID),etcd 里该 podIP 还是同一进程(node_id + uuid)。标记写完立即复核一次
@@ -968,7 +968,7 @@ function Clear-GateDrainMarks {
     $keys = Get-GateDrainKeys -NodeId $NodeId
     $deleted = ConvertFrom-RedisCliSingle -Text (Invoke-GateDrainRedisChecked -Login $Login -Command @('DEL', $keys.Draining, $keys.Drained) -What "清除 $($keys.Draining) / $($keys.Drained)")
     if ($deleted -isnot [long]) { throw "清除排空标记得到意外回复 '$deleted'" }
-    Write-Host "[gate-drain] 已清除 $($keys.Draining) / $($keys.Drained)"
+    Write-Host "[gate-drain] Removed $($keys.Draining) / $($keys.Drained)"
 }
 
 # 等新 Pod(UID 与旧的不同、未在终止、Ready)与 StatefulSet(readyReplicas >= replicas)就绪。
@@ -1008,7 +1008,7 @@ function Wait-GateStatefulSetReady {
                 $ready = [int]$sts.status.readyReplicas
                 $wanted = [int]$sts.spec.replicas
                 if ($ready -ge $wanted) {
-                    Write-Host "[gate-drain] 新 Pod $($Pod.Name) 已就绪,StatefulSet/$($contract.GateStatefulSet) readyReplicas=$ready/$wanted"
+                    Write-Host "[gate-drain] New Pod $($Pod.Name) is ready; StatefulSet/$($contract.GateStatefulSet) readyReplicas=$ready/$wanted"
                     return
                 }
                 $last = "StatefulSet readyReplicas=$ready/$wanted"
@@ -1040,7 +1040,7 @@ function Invoke-GatePodReplacement {
     Assert-GateUnchanged -Login $Login -Pod $Pod -Record $Record
 
     $deleteTimeout = $Pod.GraceSeconds + $contract.DeleteGraceMarginSeconds
-    Write-Host "[gate-drain] 删除 Pod $($Pod.Namespace)/$($Pod.Name)(等待至多 ${deleteTimeout}s)"
+    Write-Host "[gate-drain] Deleting Pod $($Pod.Namespace)/$($Pod.Name) (waiting up to ${deleteTimeout}s)"
     $null = Invoke-GateDrainKubectlChecked -Arguments @('delete', 'pod', $Pod.Name, '-n', $Pod.Namespace, '--wait=true', "--timeout=${deleteTimeout}s") `
         -TimeoutSeconds ($deleteTimeout + 15) -What "删除 Pod $($Pod.Namespace)/$($Pod.Name)"
 
@@ -1050,10 +1050,10 @@ function Invoke-GatePodReplacement {
             Clear-GateDrainMarks -Login $Login -NodeId $Record.NodeId
             $marksCleared = $true
         } catch {
-            Write-Warning "清除排空标记失败:$($_.Exception.Message)"
+            Write-Warning "Failed to clear drain marks: $($_.Exception.Message)"
         }
     } else {
-        Write-Warning ("旧 gate(node_id={0})的 etcd 记录 {1}s 内没有消失,不清排空标记:清早了 login 会把玩家分到已删 Pod 的陈旧记录上" -f `
+        Write-Warning ("Old gate (node_id={0}) etcd record did not disappear within {1}s; preserving drain marks. Clearing them early would let login assign players to the deleted Pod's stale record" -f `
                 $Record.NodeId, $contract.StaleRecordWaitSeconds)
     }
 
@@ -1076,8 +1076,8 @@ function Write-GateLeftoverMarkGuidance {
     )
     $keys = Get-GateDrainKeys -NodeId $NodeId
     # -f 的优先级高于 +,拼接必须先括起来,否则只有后半句被格式化。
-    Write-Warning (("{0}:排空标记 {1} / {2} 仍在,之后拿到 node_id={3} 的 gate(任意 zone)在 TTL 到期前分不到新玩家。" +
-            "确认 node_id={3} 的旧进程已从 etcd 消失后,在 login 的 Redis({4} DB {5})上手工 DEL {1} {2}") -f `
+    Write-Warning (("{0}: drain marks {1} / {2} remain; any gate that later receives node_id={3} (in any zone) cannot receive new players until the TTL expires." +
+            "After confirming the old node_id={3} process has disappeared from etcd, manually DEL {1} {2} in login Redis ({4} DB {5})") -f `
             $Situation, $keys.Draining, $keys.Drained, $NodeId, $Login.Redis.Endpoint, $Login.RedisDb)
 }
 
@@ -1092,17 +1092,17 @@ function Undo-GateDrainMark {
     if ($Mark.Created) {
         try {
             if (Remove-OwnGateDrainMark -Login $Login -NodeId $NodeId -MarkValue $Mark.Value) {
-                Write-Host "[gate-drain] 已撤回本次写入的 gate:${NodeId}:draining"
+                Write-Host "[gate-drain] Reverted gate:${NodeId}:draining written by this run"
                 return $true
             }
-            Write-Warning "gate:${NodeId}:draining 的值已不是本次写入的 $($Mark.Value)(被别的运行或运维改写),不删"
+            Write-Warning "gate:${NodeId}:draining no longer equals $($Mark.Value) written by this run (changed by another run or operator); skipping deletion"
         } catch {
-            Write-Warning "撤回本次写入的 gate:${NodeId}:draining 失败:$($_.Exception.Message)"
+            Write-Warning "Failed to revert gate:${NodeId}:draining written by this run: $($_.Exception.Message)"
         }
     } else {
-        Write-Warning "gate:${NodeId}:draining 是沿用的已有标记,不是本次写入的,不删"
+        Write-Warning "gate:${NodeId}:draining is a reused mark from an earlier run; skipping deletion"
     }
-    Write-GateLeftoverMarkGuidance -Login $Login -NodeId $NodeId -Situation '排空已中止'
+    Write-GateLeftoverMarkGuidance -Login $Login -NodeId $NodeId -Situation 'Drain aborted'
     return $false
 }
 
@@ -1120,17 +1120,17 @@ function Write-GateDrainDryRunPlan {
     $contract = Get-GateDrainContract
     $keys = Get-GateDrainKeys -NodeId $Record.NodeId
     $peerKeys = @($PeerNodeIds | ForEach-Object { (Get-GateDrainKeys -NodeId $_).Draining }) -join ' '
-    Write-Host "[dry-run] 以下 Redis 操作不会执行(Redis $($Login.Redis.Endpoint) DB $($Login.RedisDb),经 svc/$($Login.Redis.Service) exec):"
-    Write-Host "[dry-run]   TIME;EVAL(原子):$peerKeys 里至少一个不存在时才 DEL $($keys.Drained),"
-    Write-Host "[dry-run]     SET $($keys.Draining) <Redis TIME 秒> NX EX $DrainTtlSeconds;否则什么都不写并拒绝"
-    Write-Host "[dry-run]   复核 Pod uid=$($Pod.Uid) 与 etcd 进程 node_id/uuid=$($Record.NodeId)/$($Record.Uuid) 未变,变了就撤回本次标记"
-    Write-Host "[dry-run]   每 $($contract.PollIntervalSeconds)s MGET $($keys.Draining) $($keys.Drained),至多 ${WaitTimeoutSeconds}s;每 $($contract.IdentityRecheckEveryRounds) 轮复核进程仍在 etcd"
+    Write-Host "[dry-run] The following Redis operations will not execute (Redis $($Login.Redis.Endpoint) DB $($Login.RedisDb), via svc/$($Login.Redis.Service) exec):"
+    Write-Host "[dry-run]   TIME; EVAL (atomic): DEL $($keys.Drained) only if at least one key in $peerKeys is absent,"
+    Write-Host "[dry-run]     SET $($keys.Draining) <Redis TIME seconds> NX EX $DrainTtlSeconds; otherwise write nothing and reject"
+    Write-Host "[dry-run]   Recheck Pod uid=$($Pod.Uid) and etcd process node_id/uuid=$($Record.NodeId)/$($Record.Uuid); revert this run's mark if either changed"
+    Write-Host "[dry-run]   MGET $($keys.Draining) $($keys.Drained) every $($contract.PollIntervalSeconds)s, up to ${WaitTimeoutSeconds}s; recheck the etcd process every $($contract.IdentityRecheckEveryRounds) rounds"
     if ($WillDeletePod) {
-        Write-Host "[dry-run]   复核 Pod uid=$($Pod.Uid) 与 etcd 进程 uuid=$($Record.Uuid) 未变后,kubectl delete pod $($Pod.Name) -n $($Pod.Namespace)"
-        Write-Host "[dry-run]   等旧进程的 etcd 记录消失(至多 $($contract.StaleRecordWaitSeconds)s)后 DEL $($keys.Draining) $($keys.Drained)"
-        Write-Host "[dry-run]   等新 Pod 与 StatefulSet/$($contract.GateStatefulSet) 就绪"
+        Write-Host "[dry-run]   Recheck Pod uid=$($Pod.Uid) and etcd process uuid=$($Record.Uuid), then kubectl delete pod $($Pod.Name) -n $($Pod.Namespace)"
+        Write-Host "[dry-run]   Wait for the old process's etcd record to disappear (up to $($contract.StaleRecordWaitSeconds)s), then DEL $($keys.Draining) $($keys.Drained)"
+        Write-Host "[dry-run]   Wait for the new Pod and StatefulSet/$($contract.GateStatefulSet) to become ready"
     } else {
-        Write-Host "[dry-run]   (未带 -DeletePod:drained 出现后到此为止)"
+        Write-Host "[dry-run]   (no -DeletePod: stop when drained appears)"
     }
 }
 
@@ -1171,7 +1171,7 @@ function Invoke-GateDrain {
     $record = Select-GateNodeRecord -Records $records -PodIp $pod.PodIp -Prefix $prefix
     $peers = Select-GateDrainPeers -Records $records -Target $record -Login $login -Prefix $prefix
     $peerIds = [uint32[]]@($peers | ForEach-Object { $_.NodeId })
-    Write-Host ("[gate-drain] {0} podIP={1} uid={2} → node_id={3} uuid={4} 在线(etcd 自报)={5};同 zone 其它候选 node_id={6}" -f `
+    Write-Host ("[gate-drain] {0} podIP={1} uid={2} -> node_id={3} uuid={4} online(etcd-reported)={5}; other candidate node_id values in this zone={6}" -f `
             $pod.Name, $pod.PodIp, $pod.Uid, $record.NodeId, $record.Uuid, $record.PlayerCount, ($peerIds -join ','))
 
     if ($DryRun) {
@@ -1204,26 +1204,26 @@ function Invoke-GateDrain {
     if ($drained.Reason -eq $contract.DrainedReasonDeadline) {
         Write-GateDeadlineWarning -Login $login -Pod $pod -Record $record
     } else {
-        Write-Host ("[gate-drain] gate:{0}:drained={1}(等了 {2:N0}s):在线已降到阈值以下,可以安全删 Pod" -f `
+        Write-Host ("[gate-drain] gate:{0}:drained={1} (waited {2:N0}s): online players are below the threshold; the Pod can be deleted safely" -f `
                 $record.NodeId, $drained.Reason, $drained.WaitedSeconds)
     }
 
     if (-not $DeletePod) {
-        Write-Host ("[gate-drain] 未带 -DeletePod,到此为止。draining 标记保留到 TTL 到期;确认后用同样参数加 -DeletePod 重跑" +
-            "(沿用已有标记、不重置期限),脚本会删 Pod、清标记并等重建。不要改用 scale StatefulSet 缩容:本脚本不清缩容后的标记," +
-            "残留会让之后复用该 node_id 的 gate 在 TTL 内分不到玩家(见运维手册)。")
+        Write-Host ("[gate-drain] No -DeletePod; stopping here. The draining mark remains until its TTL expires; rerun with the same arguments plus -DeletePod after confirmation" +
+            "(reuses the existing mark without resetting the deadline). The script deletes the Pod, clears marks, and waits for replacement. Do not scale down the StatefulSet instead: this script does not clear marks after scale-down," +
+            "and leftover marks prevent gates that later reuse this node_id from receiving players until the TTL expires (see the operations guide).")
         return 0
     }
 
     # 6. 删 Pod、清标记、等重建。标记没清时先报残留与人工指引(退出码 3 优先),再报就绪超时。
     $replacement = Invoke-GatePodReplacement -Login $login -Pod $pod -Record $record -ReadyTimeoutSeconds $ReadyTimeoutSeconds
     if (-not $replacement.MarksCleared) {
-        Write-GateLeftoverMarkGuidance -Login $login -NodeId $record.NodeId -Situation "Pod $($pod.Name) 已删除,但排空标记没清掉"
-        if ($null -ne $replacement.ReadyError) { Write-Warning "另外,新 Pod 未就绪:$($replacement.ReadyError)" }
+        Write-GateLeftoverMarkGuidance -Login $login -NodeId $record.NodeId -Situation "Pod $($pod.Name) deleted, but drain marks remain"
+        if ($null -ne $replacement.ReadyError) { Write-Warning "The new Pod is also not ready: $($replacement.ReadyError)" }
         return $contract.ExitCodeLeftoverMarks
     }
     if ($null -ne $replacement.ReadyError) { throw "排空标记已清除,但$($replacement.ReadyError)" }
-    Write-Host "[gate-drain] 完成:$($pod.Name) 已重建并就绪,排空标记已清除"
+    Write-Host "[gate-drain] Complete: $($pod.Name) was replaced and is ready; drain marks cleared"
     return 0
 }
 

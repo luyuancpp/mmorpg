@@ -170,56 +170,56 @@ std::string StreamPrefix(const AssetOpStreamLedger& ledger, int index) {
 // 单条流的自洽校验;返回空串 = 通过。
 std::string ValidateStreamLedger(const AssetOpStreamLedger& ledger, int index) {
     const std::string prefix = StreamPrefix(ledger, index);
-    if (!IsAssetOpStreamValid(ledger.stream())) return prefix + "不是合法 AssetOpStream";
+    if (!IsAssetOpStreamValid(ledger.stream())) return prefix + "invalid AssetOpStream";
     if (ledger.stream_epoch() == 0) return prefix + "stream_epoch = 0";
     if (ledger.seen_bits_size() != kAssetOpWindowWords) {
-        return prefix + "seen_bits 数量=" + std::to_string(ledger.seen_bits_size()) + " 应为 16";
+        return prefix + "seen_bits count=" + std::to_string(ledger.seen_bits_size()) + " expected 16";
     }
     if (ledger.applied_bits_size() != kAssetOpWindowWords) {
-        return prefix + "applied_bits 数量=" + std::to_string(ledger.applied_bits_size()) + " 应为 16";
+        return prefix + "applied_bits count=" + std::to_string(ledger.applied_bits_size()) + " expected 16";
     }
     for (int word = 0; word < kAssetOpWindowWords; ++word) {
         if ((ledger.applied_bits(word) & ~ledger.seen_bits(word)) != 0ULL) {
-            return prefix + "applied 不是 seen 的子集,word=" + std::to_string(word);
+            return prefix + "applied is not a subset of seen,word=" + std::to_string(word);
         }
     }
 
     const uint64_t watermark = ledger.watermark();
-    if (watermark > kUint64Max - kAssetOpWindowBits) return prefix + "watermark 接近溢出";
+    if (watermark > kUint64Max - kAssetOpWindowBits) return prefix + "watermark near overflow";
     if (ledger.max_seq() < watermark) {
         return prefix + "max_seq=" + std::to_string(ledger.max_seq()) + " < watermark=" + std::to_string(watermark);
     }
 
     if (ledger.rejections_size() > kAssetOpMaxRejections) {
-        return prefix + "rejections 数量=" + std::to_string(ledger.rejections_size()) + " 超过 64";
+        return prefix + "rejections count=" + std::to_string(ledger.rejections_size()) + " exceeds 64";
     }
     uint64_t previous = 0;
     for (int i = 0; i < ledger.rejections_size(); ++i) {
         const uint64_t seq = ledger.rejections(i).seq();
-        if (i > 0 && seq <= previous) return prefix + "rejections 未严格升序,seq=" + std::to_string(seq);
+        if (i > 0 && seq <= previous) return prefix + "rejections not strictly ascending,seq=" + std::to_string(seq);
         previous = seq;
         if (seq <= watermark || seq > watermark + kAssetOpWindowBits) {
-            return prefix + "rejections 越窗,seq=" + std::to_string(seq);
+            return prefix + "rejections outside window,seq=" + std::to_string(seq);
         }
         const uint32_t bit = static_cast<uint32_t>(seq - watermark - 1);
         if (!TestBit(ledger, BitGroup::kSeen, bit) || TestBit(ledger, BitGroup::kApplied, bit)) {
-            return prefix + "rejections 对应位不是'已见且未应用',seq=" + std::to_string(seq);
+            return prefix + "rejections bit is not seen and unapplied,seq=" + std::to_string(seq);
         }
     }
 
     if (ledger.partial_seqs_size() > kAssetOpMaxPartialSeqs) {
-        return prefix + "partial_seqs 数量=" + std::to_string(ledger.partial_seqs_size()) + " 超过 64";
+        return prefix + "partial_seqs count=" + std::to_string(ledger.partial_seqs_size()) + " exceeds 64";
     }
     previous = 0;
     for (int i = 0; i < ledger.partial_seqs_size(); ++i) {
         const uint64_t seq = ledger.partial_seqs(i);
-        if (i > 0 && seq <= previous) return prefix + "partial_seqs 未严格升序,seq=" + std::to_string(seq);
+        if (i > 0 && seq <= previous) return prefix + "partial_seqs not strictly ascending,seq=" + std::to_string(seq);
         previous = seq;
         if (seq <= watermark || seq > watermark + kAssetOpWindowBits) {
-            return prefix + "partial_seqs 越窗,seq=" + std::to_string(seq);
+            return prefix + "partial_seqs outside window,seq=" + std::to_string(seq);
         }
         if (!TestBit(ledger, BitGroup::kApplied, static_cast<uint32_t>(seq - watermark - 1))) {
-            return prefix + "partial_seqs 对应位不是 applied,seq=" + std::to_string(seq);
+            return prefix + "partial_seqs bit is not applied,seq=" + std::to_string(seq);
         }
     }
     return std::string();
@@ -357,7 +357,7 @@ std::string ValidateAssetOpLedger(const PlayerAssetOpLedgerComp& comp) {
         const auto& ledger = comp.streams(i);
         const uint64_t stream = static_cast<uint64_t>(ledger.stream());
         if (i > 0 && stream <= previousStream) {
-            return StreamPrefix(ledger, i) + "流未严格升序(重复或乱序)";
+            return StreamPrefix(ledger, i) + "streams not strictly ascending(duplicate or unordered)";
         }
         previousStream = stream;
         if (auto reason = ValidateStreamLedger(ledger, i); !reason.empty()) return reason;

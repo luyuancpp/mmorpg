@@ -245,6 +245,6 @@ func (s *SessionReader) logLookupFailure(ctx context.Context, affected int, err 
 	if !s.lastLogUnixNano.CompareAndSwap(last, now) {
 		return
 	}
-	logx.WithContext(ctx).Errorf("[friend] 读 player:session 失败,%d 名玩家本次按离线返回(日志每 %v 最多一条,"+
-		"完整次数看指标 friend_online_lookup_total{outcome=\"error\"}): %v", affected, onlineLookupLogInterval, err)
+	logx.WithContext(ctx).Errorf("[friend] Failed to read player:session; returning %d players as offline (at most one log per %v, "+
+		"full count in metric friend_online_lookup_total{outcome=\"error\"}): %v", affected, onlineLookupLogInterval, err)
 }

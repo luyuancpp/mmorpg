@@ -66,7 +66,7 @@
 - match 的评分链(`go/match/internal/logic/rating.go`):
   - 输入:topic `match-results`(全局、无 zone 段、key=battle_id、payload 直接是 `BattleResultEvent` 不套信封),消费组 `match-rating`(`go/match/etc/match_service.yaml` 的 `ResultConsumerGroup`),3 分区,保留 7 天。
   - `ApplyBattleResult(svcCtx, *kafkapb.BattleResultEvent) (outcome string, err error)`,outcome ∈ applied / duplicate / ignored / partial / error;`match_service.go` 注入的回调**丢弃 outcome**,只返回 err。
-  - 只有 1V1 / 5V5、outcome 为胜/负/平、恰好两支非空队伍才计分(`isRatedMode`、`splitResultTeams`);回合打满(`total_rounds >= RatingDrawRoundCapFor(battle_config_id)`,yaml `RatingDrawRoundCap: 30`)按平局。
+  - 只有 1V1 / 5V5、outcome 为胜/负/平、恰好两支非空队伍才计分(`isRatedMode`、`splitResultTeams`);回合打满(`total_rounds >= RatingDrawRoundCapFor(battle_config_id)`,yaml `RatingDrawRoundCap: 300`)按平局。
   - Δ 是**队伍级**:`deltaA = 32 × (scoreA − eloExpected(avgA, avgB))`,`deltaB = −deltaA`;赛前分由 `loadRatings` 读取,读失败按 1500。`now := nowMs()` 在每次 `ApplyBattleResult` 调用时重新取(续写时比真实写分时间晚)。
   - 逐人写:Lua `ratingApplyScript`,KEYS=[`match:rating:{pid}`]:
     - `recent_battles`(窗口 8)已含本局 → 返回 `{0, HGET rating, HGET games or 0}`。**这里的 games 是 HGET 的 bulk string**,Go 侧拿到的是 `string`("5");不存在时是整数 0。

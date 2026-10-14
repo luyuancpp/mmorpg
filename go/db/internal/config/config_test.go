@@ -153,9 +153,8 @@ func TestPlacementSplitPoolsDefault(t *testing.T) {
 	// 可重复调用(Normalize 的契约):第二次不得改变任何值。
 	before := c.Placement
 	c.Normalize()
-	if c.Placement.ZoneStoreMaxOpenConn != before.ZoneStoreMaxOpenConn || c.Placement.NonZoneStoreMaxOpenConn != before.NonZoneStoreMaxOpenConn ||
-		c.Placement.ExtraStoreConnMaxIdleSeconds != before.ExtraStoreConnMaxIdleSeconds {
-		t.Fatal("Normalize must be idempotent for the split pool keys")
+	if c.Placement != before {
+		t.Fatalf("Normalize must be idempotent, Placement changed from %+v to %+v", before, c.Placement)
 	}
 }
 
@@ -204,5 +203,12 @@ func TestPlacementSplitPoolsNewKeysWin(t *testing.T) {
 	}
 	if p.ExtraStoreConnMaxIdleSeconds != 30 {
 		t.Fatalf("idle seconds = %d, want the explicit 30", p.ExtraStoreConnMaxIdleSeconds)
+	}
+
+	// 新旧键混写的起点上同样可重复调用。
+	before := c.Placement
+	c.Normalize()
+	if c.Placement != before {
+		t.Fatal("Normalize must be idempotent when legacy and new keys are mixed")
 	}
 }

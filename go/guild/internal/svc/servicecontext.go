@@ -153,17 +153,17 @@ func NewServiceContext(c config.Config) *ServiceContext {
 // logic 把调用失败映射成 tip kGuildTrialServiceBusy(不是 gRPC 错误)。
 func (s *ServiceContext) initMatchInternalClient() {
 	if !s.Config.MatchRpcConfigured() {
-		logx.Info("[ServiceContext] MatchRpc 未配置:同道历练未开放(视图显示未开放,两个历练写 RPC 回 kGuildActivityNotOpen);灯会 / 团圆不受影响")
+		logx.Info("[ServiceContext] MatchRpc not configured: guild trial closed (view shows closed, both trial write RPCs return kGuildActivityNotOpen); Lantern Festival / Reunion unaffected")
 		return
 	}
 	rpcConf := s.Config.MatchRpc
 	if !rpcConf.NonBlock {
-		logx.Info("[ServiceContext] MatchRpc.NonBlock 未开启,已强制按非阻塞拨号(match 是弱依赖,不能卡住 guild 起服)")
+		logx.Info("[ServiceContext] MatchRpc.NonBlock disabled; forced nonblocking dial (match is an optional dependency and must not block guild startup)")
 		rpcConf.NonBlock = true
 	}
 	conn := zrpc.MustNewClient(rpcConf)
 	s.MatchInternal = matchpb.NewMatchInternalClient(conn.Conn())
-	logx.Infof("[ServiceContext] MatchInternal 客户端已建立(非阻塞拨号): timeout=%dms", rpcConf.Timeout)
+	logx.Infof("[ServiceContext] MatchInternal client created (nonblocking dial): timeout=%dms", rpcConf.Timeout)
 }
 
 // newMergeMarkerRedis 建合服闸门用的只读 Redis 客户端;没配 = nil = 闸门不生效。
@@ -174,7 +174,7 @@ func (s *ServiceContext) initMatchInternalClient() {
 // 瞬时不可达而拒启,等于把"合服期多一道锁"换成"平时多一个启动失败点"。
 func newMergeMarkerRedis(c config.Config) *redis.Client {
 	if !c.MergeMarkerRedis.Enabled() {
-		logx.Info("[ServiceContext] MergeMarkerRedis 未配置:合服闸门不生效,CreateGuild 不检查 merge:in_progress:{zone}(合服维护窗口内仍可在源 zone 建帮)")
+		logx.Info("[ServiceContext] MergeMarkerRedis not configured: merge gate inactive, CreateGuild does not check merge:in_progress:{zone} (guilds can still be created in source zone during merge maintenance)")
 		return nil
 	}
 	cli := redis.NewClient(&redis.Options{
@@ -183,11 +183,11 @@ func newMergeMarkerRedis(c config.Config) *redis.Client {
 		DB:       c.MergeMarkerRedis.DB,
 	})
 	if err := cli.Ping(context.Background()).Err(); err != nil {
-		logx.Errorf("[ServiceContext] 合服闸门 Redis %s DB=%d 暂不可达(客户端保留,会自动重连);在它恢复之前 CreateGuild 会 fail-closed 拒绝: %v",
+		logx.Errorf("[ServiceContext] Merge gate Redis %s DB=%d temporarily unreachable (client retained, automatic reconnect); CreateGuild will reject fail-closed until recovery: %v",
 			c.MergeMarkerRedis.Host, c.MergeMarkerRedis.DB, err)
 		return cli
 	}
-	logx.Infof("[ServiceContext] 合服闸门已启用:%s DB=%d,键 merge:in_progress:{zone}", c.MergeMarkerRedis.Host, c.MergeMarkerRedis.DB)
+	logx.Infof("[ServiceContext] Merge gate enabled: %s DB=%d, key merge:in_progress:{zone}", c.MergeMarkerRedis.Host, c.MergeMarkerRedis.DB)
 	return cli
 }
 

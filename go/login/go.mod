@@ -1,6 +1,6 @@
 module login
 
-go 1.24.5
+go 1.27.2
 
 require (
 	github.com/IBM/sarama v1.46.2

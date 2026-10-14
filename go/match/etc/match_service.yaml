@@ -120,9 +120,9 @@ RatingToleranceMax: 1000
 # RatingToleranceMax 的两人不会永久饥饿。0 / 漏配按默认 90。
 RatingToleranceMaxWaitSeconds: 90
 # 回合打满按平局:C++ 引擎回合打满一律判 SIDE_B_WIN(PVE 规则),PVP 照胜负结算会让
-# 锚点 / 高分方系统性扣分;total_rounds ≥ 该值的胜负结果按 0.5 结算。默认 30 =
+# 锚点 / 高分方系统性扣分;total_rounds ≥ 该值的胜负结果按 0.5 结算。默认 300 =
 # C++ kDefaultMaxRounds;0 关闭。配了 DungeonTable.time_limit 的配置按下面的 map 覆盖。
-RatingDrawRoundCap: 30
+RatingDrawRoundCap: 300
 # RatingDrawRoundCapByConfigId:
 #   "1": 300
 

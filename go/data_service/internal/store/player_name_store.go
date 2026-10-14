@@ -299,19 +299,19 @@ func NewPlayerNameStore(cfg MySQLConfig) (*PlayerNameStore, error) {
 		// (schema.go 的 convergePlayerNameKeyShape 会把它 DROP 掉,幂等)。
 		// 探测本身失败也只打日志:releaseSQL 的选择不依赖它,fail-closed 在这里没有收益。
 		if strays, strayErr := playerNameStrayNormUniqueIndexes(ctx, db, cfg.DBName); strayErr != nil {
-			logx.Errorf("[PlayerNameStore] 探测 %s 上 name_norm 的多余二级唯一索引失败(不影响本进程的语句选择,"+
-				"但也就无从确认形状是否收敛,跑一次 `data_service -f <yaml> -migrate` 会顺带收敛): %v",
+			logx.Errorf("[PlayerNameStore] Failed to inspect redundant name_norm secondary unique indexes on %s (statement selection unaffected, "+
+				"but index convergence cannot be confirmed; running data_service -f <yaml> -migrate will converge them): %v",
 				PlayerNameTableName, strayErr)
 		} else if len(strays) > 0 {
-			logx.Errorf("[PlayerNameStore] %s 的主键已是 name_norm,但 name_norm 上还残留着二级唯一索引 %v。"+
-				"名字仍然全服唯一、对外语义不变,但 Reserve 插入新名字时会多走一次二级唯一索引的插入路径,"+
-				"把改主键消掉的死锁形状带回来(症状是 1213 重试次数重新上涨,功能全对)。"+
-				"处置:跑一次 `data_service -f <yaml> -migrate`(会自动 DROP 掉,幂等),"+
-				"或人工 `ALTER TABLE %s DROP INDEX <名字>`",
+			logx.Errorf("[PlayerNameStore] %s primary key is name_norm, but redundant secondary unique indexes %v remain on name_norm. "+
+				"Names remain globally unique and external semantics unchanged, but Reserve inserts new names through an extra secondary unique index path, "+
+				"restoring the deadlock pattern eliminated by changing the primary key (1213 retries increase again, functionality remains correct). "+
+				"Remedy: run data_service -f <yaml> -migrate (automatic idempotent DROP), "+
+				"or manually run ALTER TABLE %s DROP INDEX <index_name>",
 				PlayerNameTableName, strays, PlayerNameTableName)
 		}
 		logx.Infof("[PlayerNameStore] connected to %s/%s max_open_conn=%d max_idle_conn=%d "+
-			"(%s 的主键是 name_norm:名字抢注的死锁已在结构上根治,Release 钉 %s)",
+			"(%s primary key is name_norm: name reservation deadlocks structurally eliminated, Release uses %s)",
 			cfg.Host, cfg.DBName, cfg.MaxOpenConn, cfg.MaxIdleConn, PlayerNameTableName, playerNameReleaseForcedIndex)
 	case playerNamePKByPlayerID:
 		hasKey, keyErr := hasUniqueIndex(ctx, db, cfg.DBName, PlayerNameTableName, PlayerNameLegacyNormUniqueKey)
@@ -332,10 +332,10 @@ func NewPlayerNameStore(cfg MySQLConfig) (*PlayerNameStore, error) {
 		}
 		st.releaseSQL = playerNameReleaseLegacySQL
 		st.legacyKeyedByPlayerID = true
-		logx.Errorf("[PlayerNameStore] connected to %s/%s:%s 还是**旧主键形态** PRIMARY KEY(player_id)。"+
-			"功能正确(名字仍全服唯一),但名字抢注在生产常态那一路(新号段 id 抢存量角色释放的名字)必然成环 —— "+
-			"实测 5/5,只能靠有界 1213 重试吸收。跑一次 `data_service -f <yaml> -migrate` 把主键换成 name_norm 即可根治;"+
-			"本进程这期间用带 FORCE INDEX (%s) 的旧 Release 语句保持锁序一致",
+		logx.Errorf("[PlayerNameStore] connected to %s/%s:%s still uses the legacy PRIMARY KEY(player_id). "+
+			"Functionality is correct (names remain globally unique), but production name reservation (new segment ids claiming names released by existing characters) forms a lock cycle -- "+
+			"observed in 5/5 real-database runs, handled only by bounded 1213 retries. Run data_service -f <yaml> -migrate to change the primary key to name_norm and eliminate the cause; "+
+			"meanwhile this process uses the legacy Release statement with FORCE INDEX (%s) to maintain consistent lock order",
 			cfg.Host, cfg.DBName, PlayerNameTableName, PlayerNameLegacyNormUniqueKey)
 	default:
 		_ = db.Close()

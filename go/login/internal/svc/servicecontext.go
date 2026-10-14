@@ -654,8 +654,12 @@ func (s *ServiceContext) Stop() {
 }
 
 // SubmitPreload submits a background task to the preload pool and updates
-// throughput counters. Returns false if the pool is saturated (task dropped);
-// callers should treat that as a soft failure (Scene-side retry compensates).
+// throughput counters. Returns false if the pool is saturated: the task is
+// NOT queued and never runs, and nothing downstream compensates for it. The
+// only caller (EnterGame) then does not start the chain, answers
+// kLoginInProgress so the client retries, and counts
+// entergame_total{result="pool_saturated"}. The drop counter kept here only
+// feeds the periodic [preload-pool] log.
 func (s *ServiceContext) SubmitPreload(task func()) bool {
 	if err := s.PreloadPool.Submit(task); err != nil {
 		s.preloadDropped.Add(1)

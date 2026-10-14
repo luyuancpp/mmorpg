@@ -29,7 +29,7 @@ $ErrorActionPreference = "Stop"
 . "$PSScriptRoot/lib/deploy_capture.ps1"
 
 Write-Host ""
-Write-Host "=== k8s_zone_rollback.ps1 Step 4 FLUSHDB 防护契约测试 ==="
+Write-Host "=== k8s_zone_rollback.ps1 Step 4 FLUSHDB guard contract tests ==="
 
 $rollbackPath = Join-Path (Get-ToolsScriptsDir) 'k8s_zone_rollback.ps1'
 $parseErrors = $null
@@ -101,8 +101,8 @@ $RollbackBaseArgs = @(
 Test-Case 'dry-run:给了 -RedisHost 时预告 FLUSHDB 目标核对,不读 Redis;Step 4 的命令行遮住口令' {
     $run = Invoke-ToolScript -ScriptName 'k8s_zone_rollback.ps1' -Arguments ($RollbackBaseArgs + @('-RedisHost', 'redis.infra', '-RedisPassword', 'Sup3rSecret'))
     Assert-Equal -Expected 0 -Actual $run.ExitCode -Because "dry-run 不该失败。输出: $($run.Output)"
-    Assert-Match -Text $run.Output -Pattern 'FLUSHDB 目标核对' -Because '预检段要预告 Step 4 的目标核对'
-    Assert-Match -Text $run.Output -Pattern 'dry-run 不读 Redis' -Because 'dry-run 不调 redis-cli'
+    Assert-Match -Text $run.Output -Pattern 'FLUSHDB target check' -Because '预检段要预告 Step 4 的目标核对'
+    Assert-Match -Text $run.Output -Pattern 'dry-run does not read Redis' -Because 'dry-run 不调 redis-cli'
     Assert-NotMatch -Text $run.Output -Pattern 'Sup3rSecret' -Because '口令不得进日志(AGENTS §9)'
     Assert-Match -Text $run.Output -Pattern 'redis-cli [^\r\n]*-a \*\*\*[^\r\n]*FLUSHDB' -Because 'Step 4 打印的命令行要遮住 -a 后面的口令'
 }
@@ -110,7 +110,7 @@ Test-Case 'dry-run:给了 -RedisHost 时预告 FLUSHDB 目标核对,不读 Redis
 Test-Case 'dry-run:不给 -RedisHost 时不预告核对,Step 4 照旧跳过' {
     $run = Invoke-ToolScript -ScriptName 'k8s_zone_rollback.ps1' -Arguments $RollbackBaseArgs
     Assert-Equal -Expected 0 -Actual $run.ExitCode -Because "dry-run 不该失败。输出: $($run.Output)"
-    Assert-NotMatch -Text $run.Output -Pattern 'FLUSHDB 目标核对' -Because '没有 FLUSHDB 目标就没有核对'
+    Assert-NotMatch -Text $run.Output -Pattern 'FLUSHDB target check' -Because '没有 FLUSHDB 目标就没有核对'
     Assert-Match -Text $run.Output -Pattern 'skipped — pass -RedisHost to enable' -Because 'Step 4 照旧跳过'
 }
 
@@ -126,11 +126,11 @@ Test-Case 'dev_tools k8s-zone-rollback:-RollbackConfirmFlushSharedRedis 转给�
     )
     $run = Invoke-ToolScript -ScriptName 'dev_tools.ps1' -Arguments $devArgs
     Assert-Equal -Expected 0 -Actual $run.ExitCode -Because "经 dev_tools.ps1 的回滚 dry-run 不该失败。输出: $($run.Output)"
-    Assert-Match -Text $run.Output -Pattern '已给 -ConfirmFlushSharedRedis' -Because 'dev_tools.ps1 必须把开关真正转给回滚脚本,不能静默吞掉'
+    Assert-Match -Text $run.Output -Pattern '-ConfirmFlushSharedRedis supplied' -Because 'dev_tools.ps1 必须把开关真正转给回滚脚本,不能静默吞掉'
 
     $plain = Invoke-ToolScript -ScriptName 'dev_tools.ps1' -Arguments ($devArgs | Where-Object { $_ -ne '-RollbackConfirmFlushSharedRedis' })
     Assert-Equal -Expected 0 -Actual $plain.ExitCode -Because "不带开关的 dry-run 不该失败。输出: $($plain.Output)"
-    Assert-NotMatch -Text $plain.Output -Pattern '已给 -ConfirmFlushSharedRedis' -Because '没给就不能出现'
+    Assert-NotMatch -Text $plain.Output -Pattern '-ConfirmFlushSharedRedis supplied' -Because '没给就不能出现'
 }
 
 exit (Complete-TestRun -SuiteName 'k8s_zone_rollback FLUSHDB 防护')

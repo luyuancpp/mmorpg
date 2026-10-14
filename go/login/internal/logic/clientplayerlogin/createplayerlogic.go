@@ -49,6 +49,10 @@ const (
 	// 仍会等满约 3s。这 1s 真正限制的是 go-redis 的内部重发(默认 MaxRetries=3):截止时间
 	// 一过,重发前的退避等待就会失败,不再有第 2 次尝试。
 	accountBlobReadBackTimeout = time.Second
+	// createLockReleaseTimeout:释放建角锁的预算。释放不跟请求 ctx 走(见 CreatePlayer 第 3 步的 defer),
+	// 所以自带上界。含义同 accountBlobReadBackTimeout:掐掉的是 go-redis 的内部重发,
+	// 单次 EVAL 最长仍会等满约 3s 的 socket 读超时。
+	createLockReleaseTimeout = time.Second
 )
 
 // writeAccountBlobScript 以建角锁为围栏写账号 blob:只有锁里仍是**本次**建角的令牌才写。
@@ -124,7 +128,13 @@ func (l *CreatePlayerLogic) CreatePlayer(in *login_proto.CreatePlayerRequest) (*
 		return resp, nil
 	}
 	defer func() {
-		if _, err := createLock.Release(l.ctx); err != nil {
+		// 释放用 WithoutCancel:走到这里时请求 ctx 可能已经超时(zrpc 服务端 Timeout)或被客户端取消。
+		// go-redis 在取连接之前先看 ctx,拿请求 ctx 去释放只会原地失败、命令根本不发出,锁要等
+		// AccountLockTTL 自然过期,期间同账号重试建角一律 kLoginInProgress。
+		// 释放是按令牌比对的 Lua 删除:锁若已过期并被另一次建角拿走,这里删不到别人的锁。
+		releaseCtx, cancel := context.WithTimeout(context.WithoutCancel(l.ctx), createLockReleaseTimeout)
+		defer cancel()
+		if _, err := createLock.Release(releaseCtx); err != nil {
 			logx.Errorf("CreatePlayer lock release failed for account=%s: %v", account, err)
 		}
 	}()

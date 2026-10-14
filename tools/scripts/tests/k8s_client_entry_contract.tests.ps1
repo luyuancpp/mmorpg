@@ -36,7 +36,7 @@ $ErrorActionPreference = "Stop"
 . (Join-Path (Get-ToolsScriptsDir) "lib" "k8s_client_entry.ps1")
 
 Write-Host ""
-Write-Host "=== 集群外客户端入口(k8s_client_entry)部署生成器契约测试 ==="
+Write-Host "=== External client entry (k8s_client_entry) deployment generator contract tests ==="
 
 $NodeImageRef = 'registry.invalid/test/mmorpg-node:0123456789ab'
 $TestZone = 'ce'
@@ -596,27 +596,27 @@ $PreflightCases = @(
     @{ Label = 'GateServiceType 大小写不标准(两种模式都拦)'; Args = @{ ClientEntryMode = 'podip'; GateServiceType = 'nodeport'; Zones = @(New-PreflightZone) }; Errors = @('必须按 K8s 的大小写写成 NodePort') },
     @{ Label = 'nodePort 段低于 30000'; Args = @{ ClientEntryMode = 'external'; GateServiceType = 'NodePort'; Zones = @(New-PreflightZone -Base 29999) }; Errors = @('\[29999-30000\] 越界') },
     @{ Label = 'nodePort 段高于 32767'; Args = @{ ClientEntryMode = 'external'; GateServiceType = 'NodePort'; Zones = @(New-PreflightZone -Base 32767) }; Errors = @('\[32767-32768\] 越界') },
-    @{ Label = 'nodePort 段顶到 32767(合法但出推荐子段)'; Args = @{ ClientEntryMode = 'external'; GateServiceType = 'NodePort'; Zones = @(New-PreflightZone -Base 32766) }; Warnings = @('\[32766-32767\] 超出推荐静态子段 30000-30085') },
+    @{ Label = 'nodePort 段顶到 32767(合法但出推荐子段)'; Args = @{ ClientEntryMode = 'external'; GateServiceType = 'NodePort'; Zones = @(New-PreflightZone -Base 32766) }; Warnings = @('\[32766-32767\] exceeds recommended static subrange 30000-30085') },
     @{ Label = 'nodePort 段恰好收在 30085'; Args = @{ ClientEntryMode = 'external'; GateServiceType = 'NodePort'; Zones = @(New-PreflightZone -Base 30084) } },
-    @{ Label = 'nodePort 段越过 30085'; Args = @{ ClientEntryMode = 'external'; GateServiceType = 'NodePort'; Zones = @(New-PreflightZone -Base 30085) }; Warnings = @('\[30085-30086\] 超出推荐静态子段') },
+    @{ Label = 'nodePort 段越过 30085'; Args = @{ ClientEntryMode = 'external'; GateServiceType = 'NodePort'; Zones = @(New-PreflightZone -Base 30085) }; Warnings = @('\[30085-30086\] exceeds recommended static subrange') },
     @{ Label = '两个 zone 的 nodePort 段重叠'; Args = @{ ClientEntryMode = 'external'; GateServiceType = 'NodePort'; Zones = @((New-PreflightZone -Name 'a' -Base 30000), (New-PreflightZone -Name 'b' -Base 30001)) }; Errors = @('zone a 与 zone b 的 gate nodePort 段重叠:\[30000-30001\] 与 \[30001-30002\]') },
     @{ Label = '两个 zone 的 nodePort 段相邻不重叠'; Args = @{ ClientEntryMode = 'external'; GateServiceType = 'NodePort'; Zones = @((New-PreflightZone -Name 'a' -Base 30000), (New-PreflightZone -Name 'b' -Base 30002)) } },
     @{ Label = '多 zone 有 zone 没显式写 base'; Args = @{ ClientEntryMode = 'external'; GateServiceType = 'NodePort'; Zones = @((New-PreflightZone -Name 'a' -Base 30000), (New-PreflightZone -Name 'b' -Base 30010 -Explicit $false)) }; Errors = @('每个 zone 必须在 zones 配置里显式写 gateNodePortBase\(缺:b\)') },
     @{ Label = '单 zone 不要求显式 base'; Args = @{ ClientEntryMode = 'external'; GateServiceType = 'NodePort'; Zones = @(New-PreflightZone -Explicit $false) } },
-    @{ Label = 'externalTrafficPolicy Cluster'; Args = @{ ClientEntryMode = 'external'; GateServiceType = 'NodePort'; Zones = @(New-PreflightZone); GateExternalTrafficPolicy = 'Cluster' }; Warnings = @('Cluster 会对入站连接做 SNAT') },
+    @{ Label = 'externalTrafficPolicy Cluster'; Args = @{ ClientEntryMode = 'external'; GateServiceType = 'NodePort'; Zones = @(New-PreflightZone); GateExternalTrafficPolicy = 'Cluster' }; Warnings = @('Cluster SNATs incoming connections') },
     @{ Label = 'agones 但集群没装 Agones'; Args = @{ ClientEntryMode = 'podip'; GateServiceType = 'NodePort'; DeploysBattle = $true; BattleOrchestrator = 'agones'; AgonesFleetCrdPresent = $false }; Errors = @('需要集群已安装 Agones:找不到 CRD fleets\.agones\.dev') },
     @{ Label = 'agones 未探测(DryRun 跳过)'; Args = @{ ClientEntryMode = 'podip'; GateServiceType = 'NodePort'; DeploysBattle = $true; BattleOrchestrator = 'agones' } },
-    @{ Label = 'external 配 deployment 形态的 battle'; Args = @{ ClientEntryMode = 'external'; GateServiceType = 'NodePort'; DeploysBattle = $true }; Warnings = @('battle 以 hostPort 运行') },
+    @{ Label = 'external 配 deployment 形态的 battle'; Args = @{ ClientEntryMode = 'external'; GateServiceType = 'NodePort'; DeploysBattle = $true }; Warnings = @('battle runs with hostPort') },
     @{ Label = '配了 Ingress 却没配 trusted proxies'; Args = @{ ClientEntryMode = 'external'; GateServiceType = 'NodePort'; DeploysGateway = $true; GatewayIngressHost = 'play.example.com' }; Errors = @('配置了 -GatewayIngressHost 却没有 -GatewayTrustedProxies') },
     @{ Label = 'trusted proxies 含非法 CIDR'; Args = @{ ClientEntryMode = 'podip'; GateServiceType = 'NodePort'; GatewayTrustedProxies = '10.0.0.0/8,bogus' }; Errors = @('-GatewayTrustedProxies 含非法 CIDR:bogus') },
     @{ Label = 'Ingress host 是 IP'; Args = @{ ClientEntryMode = 'external'; GateServiceType = 'NodePort'; DeploysGateway = $true; GatewayIngressHost = '10.0.0.1'; GatewayTrustedProxies = '10.0.0.0/8' }; Errors = @('-GatewayIngressHost 必须是 DNS 名') },
-    @{ Label = 'Ingress host 给了但本次不部署 gateway'; Args = @{ ClientEntryMode = 'podip'; GateServiceType = 'NodePort'; GatewayIngressHost = 'play.example.com'; GatewayTrustedProxies = '10.0.0.0/8' }; Warnings = @('本次不部署 gateway') },
-    @{ Label = '多 zone 共用一个不带 {zone} 的 Ingress host'; Args = @{ ClientEntryMode = 'podip'; GateServiceType = 'NodePort'; Zones = @((New-PreflightZone -Name 'a'), (New-PreflightZone -Name 'b')); DeploysGateway = $true; GatewayIngressHost = 'play.example.com'; GatewayTrustedProxies = '10.0.0.0/8' }; Warnings = @('host 相同的 gateway Ingress') },
-    @{ Label = 'external 部署 gateway 却没有 Ingress'; Args = @{ ClientEntryMode = 'external'; GateServiceType = 'NodePort'; Zones = @(New-PreflightZone); DeploysGateway = $true }; Warnings = @('external 但未配置 -GatewayIngressHost') },
-    @{ Label = 'TLS Secret 没有 Ingress host'; Args = @{ ClientEntryMode = 'podip'; GateServiceType = 'NodePort'; GatewayIngressTlsSecret = 'gw-tls' }; Warnings = @('TLS 设置被忽略') },
+    @{ Label = 'Ingress host 给了但本次不部署 gateway'; Args = @{ ClientEntryMode = 'podip'; GateServiceType = 'NodePort'; GatewayIngressHost = 'play.example.com'; GatewayTrustedProxies = '10.0.0.0/8' }; Warnings = @('gateway is not deployed this run') },
+    @{ Label = '多 zone 共用一个不带 {zone} 的 Ingress host'; Args = @{ ClientEntryMode = 'podip'; GateServiceType = 'NodePort'; Zones = @((New-PreflightZone -Name 'a'), (New-PreflightZone -Name 'b')); DeploysGateway = $true; GatewayIngressHost = 'play.example.com'; GatewayTrustedProxies = '10.0.0.0/8' }; Warnings = @('gateway Ingresses with the same host') },
+    @{ Label = 'external 部署 gateway 却没有 Ingress'; Args = @{ ClientEntryMode = 'external'; GateServiceType = 'NodePort'; Zones = @(New-PreflightZone); DeploysGateway = $true }; Warnings = @('external without -GatewayIngressHost') },
+    @{ Label = 'TLS Secret 没有 Ingress host'; Args = @{ ClientEntryMode = 'podip'; GateServiceType = 'NodePort'; GatewayIngressTlsSecret = 'gw-tls' }; Warnings = @('TLS settings are ignored') },
     @{ Label = 'ClientPublicHost 带 scheme'; Args = @{ ClientEntryMode = 'external'; GateServiceType = 'NodePort'; ClientPublicHost = 'http://1.2.3.4' }; Errors = @('-ClientPublicHost 只能是裸主机名或 IPv4 字面量') },
     @{ Label = 'ClientPublicHost 带端口'; Args = @{ ClientEntryMode = 'external'; GateServiceType = 'NodePort'; ClientPublicHost = '1.2.3.4:30000' }; Errors = @('-ClientPublicHost 只能是裸主机名或 IPv4 字面量') },
-    @{ Label = 'podip 下给了 ClientPublicHost'; Args = @{ ClientEntryMode = 'podip'; GateServiceType = 'NodePort'; ClientPublicHost = '127.0.0.1' }; Warnings = @('podip 下 -ClientPublicHost / -GateClientHostTemplate 不生效') },
+    @{ Label = 'podip 下给了 ClientPublicHost'; Args = @{ ClientEntryMode = 'podip'; GateServiceType = 'NodePort'; ClientPublicHost = '127.0.0.1' }; Warnings = @('podip ignores -ClientPublicHost / -GateClientHostTemplate') },
     @{ Label = '非 dev 档开 -LoginDevPasswordAuth'; Args = @{ ClientEntryMode = 'podip'; GateServiceType = 'NodePort'; LoginDevPasswordAuth = $true; ReleaseProfile = 'staging' }; Errors = @('-LoginDevPasswordAuth 只允许 -ReleaseProfile dev\(当前 staging\)') },
     @{ Label = 'dev 档开 -LoginDevPasswordAuth'; Args = @{ ClientEntryMode = 'podip'; GateServiceType = 'NodePort'; LoginDevPasswordAuth = $true; ReleaseProfile = 'dev' } }
 )
@@ -724,7 +724,7 @@ Test-Case '库:删除另一种形态 —— 会踢人的条目存在且未确认
     $calls.Clear()
     $dry = Remove-ClientEntryObsoleteResources -Namespace 'ns1' -Resources $items -KubeContext '' -KubeConfig '' -DryRun 6>&1 | Out-String
     Assert-Equal -Expected 0 -Actual $calls.Count -Because 'DryRun 不探测集群'
-    Assert-Match -Text $dry -Pattern '\[dry-run\] kubectl delete deployment gate -n ns1 --ignore-not-found .*未给 -AllowDisruptiveSwitch,真实执行会拒绝并中止' -Because 'DryRun 要注明会踢人的删除在真实执行时需要确认'
+    Assert-Match -Text $dry -Pattern '\[dry-run\] kubectl delete deployment gate -n ns1 --ignore-not-found .*missing -AllowDisruptiveSwitch; real execution will refuse and abort' -Because 'DryRun 要注明会踢人的删除在真实执行时需要确认'
     Assert-Match -Text $dry -Pattern '\[dry-run\] kubectl delete service gate-entry -n ns1 --ignore-not-found' -Because '不踢人的残留清理同样打出意图'
 }
 
@@ -909,7 +909,7 @@ Test-Case '端到端 infra-up 默认(podip + deployment):battle 仍是现状 Dep
     }
     Assert-NotMatch -Text $battle -Pattern 'hostPort' -Because 'podip 的 battle 客户端拿 POD_IP:20000'
     Assert-True -Condition ((Find-ManifestDocs -Output $PodipInfraRun.Output -Kind 'Fleet').Count -eq 0) -Because 'deployment 编排不生成 Fleet'
-    Assert-Match -Text $PodipInfraRun.Output -Pattern "\[dry-run\] kubectl delete fleets\.agones\.dev battle -n $TestInfraNs --ignore-not-found .*未给 -AllowDisruptiveSwitch" -Because '另一种形态的 Fleet 在删除前要过会踢人的闸(真实执行时集群没装 Agones 会按 ApiGroup 跳过)'
+    Assert-Match -Text $PodipInfraRun.Output -Pattern "\[dry-run\] kubectl delete fleets\.agones\.dev battle -n $TestInfraNs --ignore-not-found .*missing -AllowDisruptiveSwitch" -Because '另一种形态的 Fleet 在删除前要过会踢人的闸(真实执行时集群没装 Agones 会按 ApiGroup 跳过)'
 }
 
 $ExternalArgs = @('-ClientEntryMode', 'external', '-GateServiceType', 'NodePort', '-GateNodePortBase', '30000', '-ClientPublicHost', '127.0.0.1')
@@ -948,7 +948,7 @@ Test-Case '端到端 external + NodePort 2 副本:gate StatefulSet + gate-0 / ga
 
 Test-Case '端到端 external:先删 Deployment 形态(带确认提示)与 gate-entry,再按 headless → 每序号 Service → StatefulSet → PDB 的顺序 apply,就绪等 StatefulSet' {
     $out = $ExternalRun.Output
-    Assert-Match -Text $out -Pattern "\[dry-run\] kubectl delete deployment gate -n $TestZoneNs --ignore-not-found .*未给 -AllowDisruptiveSwitch,真实执行会拒绝并中止" -Because '删 Deployment gate 会整台踢人,真实执行要显式确认'
+    Assert-Match -Text $out -Pattern "\[dry-run\] kubectl delete deployment gate -n $TestZoneNs --ignore-not-found .*missing -AllowDisruptiveSwitch; real execution will refuse and abort" -Because '删 Deployment gate 会整台踢人,真实执行要显式确认'
     Assert-Match -Text $out -Pattern "\[dry-run\] kubectl delete service gate-entry -n $TestZoneNs --ignore-not-found" -Because 'external 删掉单一 gate-entry 残留(D90)'
     $deleteAt = $out.IndexOf('kubectl delete deployment gate')
     $stsAt = $out.IndexOf('kind: StatefulSet')
@@ -960,7 +960,7 @@ Test-Case '端到端 external:先删 Deployment 形态(带确认提示)与 gate-
         (Get-ManifestDocIndex -Output $out -Kind 'StatefulSet' -Name 'gate'),
         (Get-ManifestDocIndex -Output $out -Kind 'PodDisruptionBudget' -Name 'gate'))
     Assert-True -Condition (($order -notcontains -1) -and (($order | Sort-Object) -join ',') -eq ($order -join ',')) -Because "Service 先于 StatefulSet:Service 被集群拒绝时 gate 还没按冲突端口发布进 etcd(实际顺序 $($order -join ','))"
-    Assert-Match -Text $out -Pattern "\[dry-run\] kubectl delete service -l mmorpg\.io/gate-ordinal -n $TestZoneNs .*序号 >= 2" -Because '缩容后多出来的每序号 Service 要回收(否则继续占着 nodePort)'
+    Assert-Match -Text $out -Pattern "\[dry-run\] kubectl delete service -l mmorpg\.io/gate-ordinal -n $TestZoneNs .*ordinal >= 2" -Because '缩容后多出来的每序号 Service 要回收(否则继续占着 nodePort)'
     Assert-Match -Text $out -Pattern "\[dry-run\] wait statefulset/gate -n ${TestZoneNs}: poll \.status\.readyReplicas >= 2" -Because 'OnDelete 的 StatefulSet 不能用 rollout status 等'
     Assert-NotMatch -Text $out -Pattern 'rollout status deployment/gate' -Because 'external 下没有 gate Deployment'
     Assert-Match -Text $out -Pattern 'Gate \(external\): StatefulSet replicas=2 service_type=NodePort etp=Local host=127\.0\.0\.1 nodePort=30000\+ordinal' -Because '写路径要打出 gate 地址来源摘要'
@@ -1000,16 +1000,16 @@ Test-Case '端到端:枚举参数在入口规范成 K8s 大小写(nodeport → N
         Assert-Match -Text $svc -Pattern '(?m)^  type: NodePort$' -Because 'Service.spec.type 区分大小写'
         Assert-Match -Text $svc -Pattern '(?m)^  externalTrafficPolicy: Cluster$' -Because 'externalTrafficPolicy 区分大小写'
     }
-    Assert-Match -Text $ExternalLowerRun.Output -Pattern 'Cluster 会对入站连接做 SNAT' -Because 'ETP=Cluster 要警告(D89)'
+    Assert-Match -Text $ExternalLowerRun.Output -Pattern 'Cluster SNATs incoming connections' -Because 'ETP=Cluster 要警告(D89)'
     Assert-Match -Text $ExternalLowerRun.Output -Pattern "\[dry-run\] kubectl delete deployment gate -n $TestZoneNs --ignore-not-found" -Because '切换仍要删旧形态'
-    Assert-NotMatch -Text $ExternalLowerRun.Output -Pattern '真实执行会拒绝并中止' -Because '已确认切换,不该再提示需要 -AllowDisruptiveSwitch'
+    Assert-NotMatch -Text $ExternalLowerRun.Output -Pattern 'real execution will refuse and abort' -Because '已确认切换,不该再提示需要 -AllowDisruptiveSwitch'
     Assert-Match -Text $ExternalLowerRun.Output -Pattern 'allow_disruptive_switch=True' -Because '摘要要写明本次确认了会踢人的切换'
 }
 
 Test-Case '端到端 external 警告:nodePort 段出推荐子段、部署 gateway 却没有 Ingress —— 只警告不拒绝,且端口原样生效' {
     Assert-Equal -Expected 0 -Actual $ExternalWarnRun.ExitCode -Because "警告不阻断部署。输出: $($ExternalWarnRun.Output)"
-    Assert-Match -Text $ExternalWarnRun.Output -Pattern "zone ${TestZone}:gate nodePort 段 \[30100-30101\] 超出推荐静态子段 30000-30085" -Because 'D88 推荐静态子段'
-    Assert-Match -Text $ExternalWarnRun.Output -Pattern 'external 但未配置 -GatewayIngressHost' -Because 'gateway 的 HTTP 入口没有集群外入口(D91)'
+    Assert-Match -Text $ExternalWarnRun.Output -Pattern "zone ${TestZone}: gate nodePort range \[30100-30101\] exceeds recommended static subrange 30000-30085" -Because 'D88 推荐静态子段'
+    Assert-Match -Text $ExternalWarnRun.Output -Pattern 'external without -GatewayIngressHost' -Because 'gateway 的 HTTP 入口没有集群外入口(D91)'
     Assert-Match -Text (Select-ManifestDoc -Output $ExternalWarnRun.Output -Kind 'Service' -Name 'gate-1') -Pattern 'nodePort: 30101' -Because '-GateNodePortBase 原样生效'
     Assert-Equal -Expected '30100' -Actual (Get-EnvLiteral -Text (Get-MainContainerSection -Doc (Select-ManifestDoc -Output $ExternalWarnRun.Output -Kind 'StatefulSet' -Name 'gate')) -Name 'GATE_NODE_PORT_BASE') -Because 'gate 自报端口与 Service 同源'
     Assert-True -Condition ($null -eq (Select-ManifestDoc -Output $ExternalWarnRun.Output -Kind 'Ingress' -Name 'gateway')) -Because '没给 -GatewayIngressHost 不生成 Ingress'
@@ -1061,7 +1061,7 @@ foreach ($sampleName in @('zones.sample.yaml', 'zones.ops-recommended.yaml', 'zo
         $run = Invoke-EntryDryRun -Arguments @('-Command', 'all-up', '-SkipInfra', '-SkipGoSvc', '-SkipJavaSvc', '-ZonesConfigPath', $samplePath,
             '-NodeImage', $NodeImageRef, '-ClientEntryMode', 'external', '-ClientPublicHost', '127.0.0.1')
         Assert-Equal -Expected 0 -Actual $run.ExitCode -Because "样例 all-up external 必须通过预检(显式、不重叠、不越界)并能生成。输出: $($run.Output)"
-        Assert-NotMatch -Text $run.Output -Pattern '超出推荐静态子段' -Because '样例各段都应收在推荐静态子段 30000-30085 内(D88)'
+        Assert-NotMatch -Text $run.Output -Pattern 'exceeds recommended static subrange' -Because '样例各段都应收在推荐静态子段 30000-30085 内(D88)'
         $gateSets = @(Find-ManifestDocs -Output $run.Output -Kind 'StatefulSet' -Name 'gate')
         Assert-Equal -Expected $zoneCount -Actual $gateSets.Count -Because '每个 zone 一个 gate StatefulSet'
         $gateTotal = 0
@@ -1083,7 +1083,7 @@ Test-Case '端到端 infra-up agones + external:battle 是 Fleet(client 端口 D
     Assert-True -Condition ($null -ne $fleet) -Because '-BattleOrchestrator agones 生成 battle Fleet'
     Assert-Match -Text (Get-FleetGameServerPorts -Doc $fleet) -Pattern '^\s*- name: client\s+portPolicy: Dynamic\s+containerPort: 20000\s+protocol: TCP\s*$' -Because 'Agones ports 只有 client 一项(D81)'
     Assert-Match -Text $fleet -Pattern 'initialDelaySeconds: 105\s+periodSeconds: 10\s+failureThreshold: 3' -Because '复用 -AgonesHealth* 默认 30 / 10 / 3,initialDelaySeconds 按推导抬到 105'
-    Assert-Match -Text $out -Pattern 'initialDelaySeconds 由 -AgonesHealthInitialDelaySeconds=30 抬到 105' -Because '改写运维给的值必须打出来'
+    Assert-Match -Text $out -Pattern 'initialDelaySeconds raised from -AgonesHealthInitialDelaySeconds=30 to 105' -Because '改写运维给的值必须打出来'
     Assert-Match -Text $fleet -Pattern 'allocationOverflow:\s+labels:\s+mmorpg\.io/drain: "true"' -Because '排空标签(D83)'
     $main = Get-MainContainerSection -Doc $fleet
     foreach ($pair in @(@('CLIENT_ENDPOINT_SOURCE', 'agones'), @('CLIENT_ENDPOINT_HOST', '127.0.0.1'), @('CLIENT_ENDPOINT_REQUIRED', '1'), @('AGONES_ENABLED', '1'))) {
@@ -1095,7 +1095,7 @@ Test-Case '端到端 infra-up agones + external:battle 是 Fleet(client 端口 D
     Assert-True -Condition ($saAt -ge 0 -and $saAt -lt (Get-ManifestDocIndex -Output $out -Kind 'Fleet' -Name 'battle')) -Because 'RBAC 必须先于 Fleet,否则第一批 GameServer 建 Pod 被拒'
     Assert-Match -Text (Select-ManifestDoc -Output $out -Kind 'ServiceAccount' -Name 'agones-sdk') -Pattern "namespace: $TestInfraNs" -Because 'battle 在 infra namespace,RBAC 建在同一个 namespace'
     Assert-True -Condition ($null -eq (Select-ManifestDoc -Output $out -Kind 'Deployment' -Name 'battle')) -Because 'Fleet 与 Deployment 同名同时在线 = 两套 battle 同时注册'
-    Assert-Match -Text $out -Pattern "\[dry-run\] kubectl delete deployment battle -n $TestInfraNs --ignore-not-found .*未给 -AllowDisruptiveSwitch" -Because '删 Deployment 形态会作废在打的局,真实执行要显式确认'
+    Assert-Match -Text $out -Pattern "\[dry-run\] kubectl delete deployment battle -n $TestInfraNs --ignore-not-found .*missing -AllowDisruptiveSwitch" -Because '删 Deployment 形态会作废在打的局,真实执行要显式确认'
     Assert-Match -Text $out -Pattern "\[dry-run\] wait fleet/battle -n ${TestInfraNs}: .* >= 1, timeout 300s" -Because 'Fleet 就绪等待截止至少 300s(ingress_final WP9)'
     Assert-NotMatch -Text $out -Pattern 'rollout status deployment/battle' -Because 'Fleet 不是 Deployment'
 }
@@ -1120,7 +1120,7 @@ Test-Case '端到端 infra-up external + deployment:battle 是 hostPort Deployme
     foreach ($pair in @(@('CLIENT_ENDPOINT_SOURCE', 'static'), @('CLIENT_ENDPOINT_HOST', '$(HOST_IP)'), @('CLIENT_ENDPOINT_PORT', '20000'), @('CLIENT_ENDPOINT_REQUIRED', '1'))) {
         Assert-Equal -Expected $pair[1] -Actual (Get-EnvLiteral -Text $main -Name $pair[0]) -Because "battle hostPort env $($pair[0])"
     }
-    Assert-Match -Text $out -Pattern 'battle 以 hostPort 运行,每个节点只能跑 1 个副本' -Because 'external + deployment 只用于验证与回退,要警告(D86)'
+    Assert-Match -Text $out -Pattern 'battle runs with hostPort, limited to one replica per node' -Because 'external + deployment 只用于验证与回退,要警告(D86)'
     Assert-Match -Text $out -Pattern "\[dry-run\] kubectl delete fleets\.agones\.dev battle -n $TestInfraNs --ignore-not-found" -Because '切回 Deployment 要删 Fleet 形态'
     Assert-Match -Text $out -Pattern "rollout status deployment/battle -n $TestInfraNs" -Because 'Deployment 形态照常等 rollout'
     Assert-NotMatch -Text $battle -Pattern $D92Pattern -Because 'D92:新生成器只写 RPC_PORT'
@@ -1201,7 +1201,7 @@ Test-Case '端到端 -LoginDevPasswordAuth(dev):login.yaml 写 DevPasswordAuth,�
     $login = Select-ManifestDoc -Output $out -Kind 'Deployment' -Name 'login'
     Assert-Match -Text $login -Pattern '- name: LOGIN_DEV_PASSWORD_SHARED_SECRET\s+valueFrom:\s+secretKeyRef:\s+name: login-dev-password\s+key: shared-secret\s' -Because '口令只经 Secret 进容器'
     Assert-NotMatch -Text $login -Pattern 'optional:\s*true' -Because 'Secret 缺失时要卡在 CreateContainerConfigError,不能带着空口令起来'
-    $secretLine = "[dry-run] kubectl apply -n $TestZoneNs -f -   # Secret login-dev-password(key shared-secret,值已隐去)"
+    $secretLine = "[dry-run] kubectl apply -n $TestZoneNs -f -   # Secret login-dev-password (key shared-secret; value hidden)"
     $secretAt = $out.IndexOf($secretLine)
     Assert-True -Condition ($secretAt -ge 0) -Because "DryRun 只打一行隐去值的 Secret 意图。输出: $out"
     Assert-True -Condition ($secretAt -lt $out.IndexOf('name: go-svc-login-config')) -Because 'Secret 必须先于引用它的 login 落地'

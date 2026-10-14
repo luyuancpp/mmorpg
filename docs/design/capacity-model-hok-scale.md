@@ -625,6 +625,12 @@
 - `go/shared/placement/route.go`、`route_store*.go` 在工作区是未跟踪文件（本次 `git status` 抽查）。第 1a 批没提交、没编译（`PROGRESS.md` 2026-10-12「第 1a 批落码」条）。
 - 改之前必须确认：没有任何环境（包括 Codex 本机、kind、staging）用工作区代码跑过 data_service 的 `-migrate`。原因是 MigrateSchema 在 redis 模式下也会建表，一旦建出 player_route 就改不了了。
 
+> **状态注（2026-10-13）**：已按 64 落码，**未编译、未测试**（AGENTS.md §10.1，待 Codex 验证）。
+> - 上面「工作区未跟踪、没提交」的说法已过时：R=16 的版本已随提交 `d5cbb8a8e` 提交并推送。所以任何跑过那一版迁移、或用那一版启动过 data_service 的库，都可能已经按 `% 16` 建了 player_route。这种表迁移和建池探针都不会报错（形状守卫只查列名与主键；探针行对 `% 16` 与 `% 64` 同样违例），要人工 `SHOW CREATE TABLE player_route` 核对，是 `% 16` 就确认无数据后 DROP 全部五张路由表再迁移。
+> - 落码内容：`RouteRowShards` 与 `chk_route_shard` 改为 64；`route_tidb.go` 里 idx_route_home / idx_route_storage 每个 zone / 落点值切 8 个点（片 0、8、…、56），行数据与 idx_route_updated 仍是每片一段（各 63 个切点）；服务 yaml 的 `RouteStore.FenceShards` 改为 16（MySQL 档）。
+> - 下面「连带修正」里只做了 FenceShards 的 MySQL 档，以及把 `route_meta CACHE`、EVALSHA 两条写进提案；zone_merge_fence 细切、WAITAOF 两条没动。
+> - 细节、前置步骤与验证命令见 [player-route-mapping-durability-proposal.md](./player-route-mapping-durability-proposal.md) §11.2「行片 16 → 64」。本节正文与 §1.1、§2.6、§2.9、附录里的 R=16 是当时的抽查结果，不回改。
+
 **要改的地方**：
 
 - `route.go:60`；

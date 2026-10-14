@@ -15,9 +15,10 @@ import (
 // TiDB-only 的路由表预切与防合并(2026-10-12 G1a,docs/design/player-route-mapping-durability-proposal.md
 // §11.2「第 1a 批热点修复」;由 `route_tool tidb-prepare` 调用)。
 //
-// 为什么需要:player_route 改成聚簇 (route_shard, player_id) 之后,每条单调索引从 1 条写入尾部变成 16 条;
-// 但空表只有 1 个 Region,开服首日数据量到不了按大小分裂的阈值,16 条尾部仍压在同一个 Region leader 上 ——
-// **只建片前缀、不预切,在 TiDB 上等于没做**。zone_merge_fence 整表只有「zone 数 × N」行,同理。
+// 为什么需要:player_route 改成聚簇 (route_shard, player_id) 之后,每条单调索引从 1 条写入尾部变成 64 条
+// (placement.RouteRowShards,2026-10-13 由 16 改为 64);但空表只有 1 个 Region,开服首日数据量到不了按大小分裂的
+// 阈值,64 条尾部仍压在同一个 Region leader 上 —— **只建片前缀、不预切,在 TiDB 上等于没做**。
+// zone_merge_fence 整表只有「zone 数 × N」行,同理。
 //
 // 为什么是显式运维命令而不是迁移里自动做:按 zone 预切要真实 zone 清单,data_service 的 yaml 里没有;
 // 开新 zone、BR / PITR 恢复之后、TRUNCATE 之后(换表 ID,预切与 table attributes 都不跟过去)都要重放,
@@ -145,18 +146,39 @@ func sortedUniqueU32(in []uint32) []uint32 {
 	return slices.Compact(out)
 }
 
+// tidb-prepare 在 idx_route_home / idx_route_storage 上的切点密度(2026-10-13,行片 16 → 64 时一并定)。
+//
+// 这两条索引是「每个 zone / 每个落点值」各切一遍,Region 数随 zone 数成倍涨:每片一段的话是 64·Z + 64·S,
+// 上百个 zone 就是数千到上万个靠 merge_option=deny 永久留住的空 Region。所以每个前缀值只切 routeTiDBPrefixSplitPoints
+// 个点,每段装 routeTiDBPrefixSplitStride 片的写入尾部(容量模型 docs/design/capacity-model-hok-scale.md §4.1
+// 理由 3:「把每 zone 预切改成 8 个点」;提案 §11.2 偏离 H8 预留的改法)。只改这里,不需要动 DDL。
+const (
+	// routeTiDBPrefixSplitPoints 是每个前缀值(一个 zone 或一个落点值)上的切点数,也就是它被切成的段数。
+	routeTiDBPrefixSplitPoints uint32 = 8
+	// routeTiDBPrefixSplitStride 是相邻两个切点隔的片数:切点落在片 0、stride、2·stride、…(64 片时是 0、8、…、56)。
+	routeTiDBPrefixSplitStride = placement.RouteRowShards / routeTiDBPrefixSplitPoints
+)
+
+// 编译期断言:行片数必须能被切点间隔整除,否则最后一段比别的段窄、切点数也不再是 routeTiDBPrefixSplitPoints。
+// 不整除时下标不是 0,是「常量下标越界」的编译错误;切点数比行片数还多时间隔为 0,是「除以零」的编译错误。
+var _ = [1]struct{}{}[placement.RouteRowShards%routeTiDBPrefixSplitStride]
+
 // routeTiDBPrepareStatements 是纯函数:zones / storages 已规范化(去重升序、范围合法)。顺序即执行顺序:
 //
 //	ATTRIBUTES player_route / zone_merge_fence(先防合并再切)
-//	player_route 行数据:(s, 0),s = 1..15                         → 16 段
-//	idx_route_updated:(s, 0, 0),s = 1..15                         → 16 段
-//	idx_route_home:每个 zone 一条 (z, s, 0),s = 0..15             → 每 zone 16 段(s=0 那个点同时隔开相邻 zone)
-//	idx_route_storage:每个 storage 一条 (sid, s, 0),s = 0..15     → 每个落点值 16 段
-//	zone_merge_fence:(z, 0),每个 zone 一个点                       → 每 zone 一个 Region
+//	player_route 行数据:(s, 0),s = 1..63                               → 64 段,每片一段
+//	idx_route_updated:(s, 0, 0),s = 1..63                               → 64 段,每片一段
+//	idx_route_home:每个 zone 一条 (z, s, 0),s = 0、8、…、56            → 每 zone 8 段、每段 8 片(s=0 那个点同时隔开相邻 zone)
+//	idx_route_storage:每个 storage 一条 (sid, s, 0),s = 0、8、…、56    → 每个落点值 8 段、每段 8 片
+//	zone_merge_fence:(z, 0),每个 zone 一个点                             → 每 zone 一个 Region
+//
+// 行数据与 idx_route_updated 为什么仍然每片一段:这两条的切点数是常数(各 63 个),不乘 zone 数;容量模型 §4.1
+// 点名要降密度的只有「每 zone 预切」,提案 H8 担心的也只是 Z 上百时 idx_route_home 的空 Region 数。对这两条没有
+// 现成的结论,取「每条写入尾部独占一个 Region」这一档(与 16 片时相同)。Region 总数 ≈ 63 + 63 + 8·Z + 8·S + Z。
 //
 // 不切 idx_route_storage 的 NULL 前缀段(PinOnCreate=false 时新号 storage 为 NULL):`SPLIT … BY (NULL, …)` 的写法
 // 未核实,且这一段要等 Phase 2 打开 PinOnCreate 后才有写入尾部,届时按 -storages 1000000 切。
-// 片的上界只用 placement.RouteRowShards,不写字面量。
+// 片的上界只用 placement.RouteRowShards、间隔只用 routeTiDBPrefixSplitStride,不写字面量。
 func routeTiDBPrepareStatements(zones, storages []uint32) []string {
 	const (
 		route = "`" + PlayerRouteTableName + "`"
@@ -180,8 +202,8 @@ func routeTiDBPrepareStatements(zones, storages []uint32) []string {
 	stmts = append(stmts, "SPLIT TABLE "+route+" INDEX `idx_route_updated` BY "+strings.Join(tuples, ", "))
 
 	prefixed := func(index string, lead uint32) string {
-		parts := make([]string, 0, placement.RouteRowShards)
-		for sh := uint32(0); sh < placement.RouteRowShards; sh++ {
+		parts := make([]string, 0, routeTiDBPrefixSplitPoints)
+		for sh := uint32(0); sh < placement.RouteRowShards; sh += routeTiDBPrefixSplitStride {
 			parts = append(parts, "("+u32(lead)+", "+u32(sh)+", 0)")
 		}
 		return "SPLIT TABLE " + route + " INDEX `" + index + "` BY " + strings.Join(parts, ", ")

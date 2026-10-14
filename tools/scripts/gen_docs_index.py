@@ -232,13 +232,13 @@ def main():
     _, tail = rest.split(END, 1)
     new_text = f"{head}{BEGIN}\n\n{build()}\n{END}{tail}"
     if new_text == text:
-        print("docs/README.md 索引已是最新")
+        print("docs/README.md index is up to date")
         return
     if check:
         sys.exit("docs/README.md 索引已过期: 请运行 python tools/scripts/gen_docs_index.py")
     with open(README, "w", encoding="utf-8", newline="") as f:
         f.write(new_text)
-    print("已更新 docs/README.md 索引")
+    print("Updated docs/README.md index")
 
 
 if __name__ == "__main__":

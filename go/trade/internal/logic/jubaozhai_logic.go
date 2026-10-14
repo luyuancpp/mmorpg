@@ -139,7 +139,7 @@ func (l *JubaozhaiLogic) BrowseListings(in *tradepb.BrowseListingsRequest) (*tra
 		q.MarketZone = in.GetZoneFilter() // 0 = 全部区
 	default:
 		// config.Validate 已保证不会走到这里;万一走到,按故障拒绝而不是退化成全服可见。
-		l.Errorf("[trade] %s: Market.Scope=%q 非法,拒绝请求 player=%d", method, market.Scope, caller)
+		l.Errorf("[trade] %s: invalid Market.Scope=%q; rejecting request player=%d", method, market.Scope, caller)
 		return reject(constants.ErrServiceUnavailable)
 	}
 	if search != "" {
@@ -353,7 +353,7 @@ func (l *JubaozhaiLogic) loadVisibleListing(method string, caller, listingID, no
 
 // storeFault 记一条存储故障日志并返回 fault 码。player_id 只进日志,不进指标(AGENTS.md §9)。
 func (l *JubaozhaiLogic) storeFault(method, op string, caller uint64, err error) uint32 {
-	l.Errorf("[trade] %s: %s 失败 player=%d: %v", method, op, caller, err)
+	l.Errorf("[trade] %s: %s failed player=%d: %v", method, op, caller, err)
 	return constants.ErrServiceUnavailable
 }
 
@@ -361,16 +361,16 @@ func (l *JubaozhaiLogic) storeFault(method, op string, caller uint64, err error)
 // 未映射 → TradeHomeZoneUnknown(业务拒绝);查询失败 / 未接线 → kServiceUnavailable(故障,打错误日志)。
 func resolveHomeZone(ctx context.Context, logger logx.Logger, lookup HomeZoneLookup, playerID uint64, method string) (uint32, uint32) {
 	if lookup == nil {
-		logger.Errorf("[trade] %s: home_zone 查询未接线 player=%d", method, playerID)
+		logger.Errorf("[trade] %s: home_zone query not wired player=%d", method, playerID)
 		return 0, constants.ErrServiceUnavailable
 	}
 	zone, err := lookup.HomeZone(ctx, playerID)
 	if err != nil {
-		logger.Errorf("[trade] %s: 查询 home_zone 失败 player=%d: %v", method, playerID, err)
+		logger.Errorf("[trade] %s: failed to query home_zone player=%d: %v", method, playerID, err)
 		return 0, constants.ErrServiceUnavailable
 	}
 	if zone == 0 {
-		logger.Infof("[trade] %s: player=%d 没有 home_zone 映射", method, playerID)
+		logger.Infof("[trade] %s: player=%d has no home_zone mapping", method, playerID)
 		return 0, constants.ErrHomeZoneUnknown
 	}
 	return zone, 0

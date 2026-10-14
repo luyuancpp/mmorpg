@@ -91,7 +91,7 @@ type KafkaGuildNotifier struct {
 // 不该表现为运行期崩溃。打 Info 而不是 Error:本地开发不配 Kafka 是正常形态。
 func NewGuildNotifier(w *kafkago.Writer, b kafkautil.GateCommandBuilder, sessions *redis.Client) GuildNotifier {
 	if w == nil || b == nil || sessions == nil {
-		logx.Info("[guild] Kafka writer / gate builder / session Redis 未配置:帮会推送关闭,客户端靠拉取刷新")
+		logx.Info("[guild] Kafka writer / gate builder / session Redis not configured: guild push disabled, client refreshes by polling")
 		return NoopNotifier{}
 	}
 	return &KafkaGuildNotifier{
@@ -280,7 +280,7 @@ func (l *GuildLogic) notify(kind pb.GuildChangeKind, guildID, actor, target uint
 		// 正常路径不会发生(NewGuildLogic 的默认值是 NoopNotifier{})。
 		// 这里宁可记一条 Error 也不让它 panic:notify 跑在提交**之后**,
 		// 在这里 panic 等于把一次已经写成功的操作报成 RPC 失败。
-		logx.Errorf("[guild] notifier 未接线,kind=%s guild=%d 的推送被丢弃", changeKindLabel(kind), guildID)
+		logx.Errorf("[guild] Notifier not wired; push dropped kind=%s guild=%d", changeKindLabel(kind), guildID)
 		return
 	}
 	l.notifier.Notify(&pb.GuildChangedS2C{

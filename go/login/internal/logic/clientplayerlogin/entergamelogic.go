@@ -80,7 +80,7 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 	//     加锁 / 写任何会话状态的最早时刻,在此拒绝不留残留。0 = 普通 AssignGate 票据(签票时
 	//     还没登录)/ dev 旁路 / 旧版 gate,一律放行。
 	if holder := sessionDetails.GetTicketPlayerId(); holder != 0 && holder != in.PlayerId {
-		logx.Errorf("EnterGame rejected: 重定向票据持票者不符 ticket_player=%d request_player=%d session=%d",
+		logx.Errorf("EnterGame rejected: redirect ticket holder mismatch ticket_player=%d request_player=%d session=%d",
 			holder, in.PlayerId, sessionDetails.SessionId)
 		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginEnterGameGuid)}
 		return resp, nil
@@ -249,7 +249,7 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 	// Background context for the whole chain — independent of gRPC ctx (which
 	// is cancelled the instant we return below). chainCancel both stops the
 	// timeout and cancels manually from the lost-lock heartbeat path.
-	const chainBudget = 2 * time.Minute
+	const chainBudget = 5 * time.Minute
 	chainCtx, chainCancel := context.WithTimeout(context.Background(), chainBudget)
 
 	// chainStart is the t0 for the total / preload latency histograms.
@@ -393,6 +393,9 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 	if !ok {
 		// Pool saturated — outer defer will release the lock since the
 		// goroutine never ran. Surface back-pressure to the client.
+		// 只记计数、不进 total_seconds 直方图:链没有启动,没有耗时可记(见 metrics.go 的 ResultPoolSaturated)。
+		// 这是池掉单唯一进 Prometheus 的信号;svc.SubmitPreload 的进程内计数只进 [preload-pool] 日志。
+		totalCounter.Inc(ResultPoolSaturated)
 		chainCancel()
 		stopHeartbeat()
 		resp.ErrorMessage.Id = uint32(table.LoginError_kLoginInProgress)
@@ -581,7 +584,7 @@ func resolveEnterName(ctx context.Context, accountName string, names roleNameLoo
 	defer cancel()
 	found, err := names.Lookup(lookupCtx, []uint64{id})
 	if err != nil {
-		logx.WithContext(ctx).Infof("[role-name] EnterGame 本次不补名字: player=%d 回源名字注册表失败: %v", id, err)
+		logx.WithContext(ctx).Infof("[role-name] EnterGame name backfill skipped: player=%d failed to query name registry: %v", id, err)
 		return ""
 	}
 	return found[id]
@@ -657,12 +660,12 @@ func resolveEnterSceneRoute(
 		// 否则打开 RedirectOnEnter 的目标 zone 会把访客再送回家,与客户端 RedirectFlow 的
 		// 3 跳熔断互撞。existing.SceneID 若有也属于源 zone,清零让 scene_manager 在本 zone
 		// 落点(它会读「等待落点」里记的目标地图;resolveScene 对跨 zone 的 scene 会直接拒)。
-		logx.Infof("[travel] EnterGame player=%d 持重定向票据落地 zone=%d,跳过 home_zone 弹回", state.playerID, ownZone)
+		logx.Infof("[travel] EnterGame player=%d arrived in zone=%d with redirect ticket; skipping home_zone redirect", state.playerID, ownZone)
 		return enterSceneRoute{zoneID: ownZone, sceneID: 0}
 	}
 
 	if decision == sessionmanager.ShortReconnect || decision == sessionmanager.ReplaceLogin {
-		logx.Infof("[travel] EnterGame player=%d decision=%s 不指定去向(ZoneId=0),由 scene_manager 按 location 决定 gate_zone=%d",
+		logx.Infof("[travel] EnterGame player=%d decision=%s does not specify destination (ZoneId=0); scene_manager decides from location gate_zone=%d",
 			state.playerID, decisionLabel(decision), ownZone)
 		return enterSceneRoute{zoneID: 0, sceneID: 0}
 	}
