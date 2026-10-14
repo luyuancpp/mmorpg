@@ -2329,7 +2329,7 @@ cd robot && .\robot.exe -c etc\team_smoke.yaml          # 形态一:expect_cross
    通过标准:全部通过,其中新增 `AoiVisibilityTest.ResetEntityVisibility*`(4)、`TeamRegroupRuleTest.*`(3)、`TeleportReportVerdictTest.*`(3)。
 3. **联机**(需要重编后的 `scene.exe` 与主干客户端合入 `feat/team-follow` 后重新出包):
    - 两个号 A、B 进主城(通常会分到不同的线)。A 建队邀请 B,B 接受。
-     期望:B 立刻换到 A 所在的线并出现在 A 脚下,随后自己走到 A 身后。scene 日志有 `请求跟随队长切场景` 与 `metric=team_regroup`。
+     期望:B 立刻换到 A 所在的线并出现在 A 脚下,随后自己走到 A 身后。scene 日志有 `Requesting scene change to follow leader` 与 `metric=team_regroup`。
    - A 点地走一段、拐弯、停下。期望:两端都能看到对方在走(此前远端角色不会动);B 在 A 身后约 1.4 处沿 A 的路跟着,A 停 B 停。
    - A 走出去再原路走回来:B 应当先继续走到折返点附近再掉头跟上,不应跑到 A 的前面。
    - B 点「暂离」后自己走,再点「归队」回到队列。

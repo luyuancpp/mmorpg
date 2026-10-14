@@ -366,6 +366,11 @@ TEST_F(PlayerFeaturePersistenceTest, EquipInstanceDataRoundTripsThroughDatabaseR
         yellow->set_tier(3);
         yellow->set_value(4);
         yellow->set_seq(1);
+        // 二期(强化 + 镶嵌):强化等级与一颗宝石,孔位号故意不等于下标。
+        rolled.mutable_equip()->set_enhance_level(5);
+        auto* gem = rolled.mutable_equip()->add_gems();
+        gem->set_socket(1);
+        gem->set_gem_config_id(2201);
         bags.bags[kInventory].InsertItemForRestore(rolled, 5);
 
         // 已初始化但一条都没掷出:只有 presence。
@@ -420,11 +425,17 @@ TEST_F(PlayerFeaturePersistenceTest, EquipInstanceDataRoundTripsThroughDatabaseR
     EXPECT_EQ(3u, rolled->equip().affixes(1).tier());
     EXPECT_EQ(4u, rolled->equip().affixes(1).value());
     EXPECT_EQ(1u, rolled->equip().affixes(1).seq());
+    EXPECT_EQ(5u, rolled->equip().enhance_level());
+    ASSERT_EQ(1, rolled->equip().gems_size());
+    EXPECT_EQ(1u, rolled->equip().gems(0).socket());
+    EXPECT_EQ(2201u, rolled->equip().gems(0).gem_config_id());
     EXPECT_EQ(1u, rolled->config_id());
     EXPECT_EQ(5u, bags->bags[kInventory].GetItemPosByGuid(kRolledItemId));
 
     EXPECT_TRUE(emptyRolled->has_equip());
     EXPECT_EQ(0, emptyRolled->equip().affixes_size());
+    EXPECT_EQ(0u, emptyRolled->equip().enhance_level());
+    EXPECT_EQ(0, emptyRolled->equip().gems_size());
     EXPECT_EQ(9u, bags->bags[kWarehouse].GetItemPosByGuid(kEmptyRolledItemId));
 
     EXPECT_FALSE(plain->has_equip());

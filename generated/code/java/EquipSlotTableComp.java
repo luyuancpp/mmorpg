@@ -29,4 +29,10 @@ public final class EquipSlotTableComp {
         }
     }
 
+    public record Name(String value) {
+        public static Name from(EquipSlotTable row) {
+            return new Name(row.getName());
+        }
+    }
+
 }

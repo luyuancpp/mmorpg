@@ -389,6 +389,34 @@
         "AssetPartialApplied": 27007,
         "AssetAuthFailed": 27008
       }
+    },
+    "equip_error": {
+      "base": 28000,
+      "width": 1000,
+      "ids": {
+        "EquipItemNotFound": 28000,
+        "EquipNotEquipment": 28001,
+        "EquipLevelNotEnough": 28002,
+        "EquipClassMismatch": 28003,
+        "EquipNoSlot": 28004,
+        "EquipNotEquipped": 28005,
+        "EquipBagFull": 28006,
+        "EquipInBattle": 28007,
+        "EquipFrozen": 28008,
+        "EquipGrantInvalid": 28009,
+        "EquipInternalError": 28010,
+        "EquipEnhanceUnavailable": 28011,
+        "EquipEnhanceMaxLevel": 28012,
+        "EquipEnhanceMaterialNotEnough": 28013,
+        "EquipEnhanceGoldNotEnough": 28014,
+        "EquipGemNotGem": 28015,
+        "EquipGemNotOwned": 28016,
+        "EquipGemSocketInvalid": 28017,
+        "EquipGemSocketOccupied": 28018,
+        "EquipGemSocketEmpty": 28019,
+        "EquipGemTypeMismatch": 28020,
+        "EquipGemBagFull": 28021
+      }
     }
   },
   "legacy_ids": {

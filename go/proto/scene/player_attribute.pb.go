@@ -34,6 +34,7 @@ type AttributeDimensionInfo struct {
 	Value         uint64                 `protobuf:"varint,6,opt,name=value,proto3" json:"value,omitempty"`         // 面板显示值 = 自然成长 + 已分配 + 外部加成。只是**点数**,不能反推收益:
 	Cap           uint32                 `protobuf:"varint,7,opt,name=cap,proto3" json:"cap,omitempty"`             // 可分配上限(0 = 不限)
 	Sort          uint32                 `protobuf:"varint,8,opt,name=sort,proto3" json:"sort,omitempty"`
+	Bonus         uint32                 `protobuf:"varint,9,opt,name=bonus,proto3" json:"bonus,omitempty"` // 外部加成点数(装备等),**已含在 value 内**;客户端显示成「170(+15)」
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -120,6 +121,13 @@ func (x *AttributeDimensionInfo) GetCap() uint32 {
 func (x *AttributeDimensionInfo) GetSort() uint32 {
 	if x != nil {
 		return x.Sort
+	}
+	return 0
+}
+
+func (x *AttributeDimensionInfo) GetBonus() uint32 {
+	if x != nil {
+		return x.Bonus
 	}
 	return 0
 }
@@ -378,6 +386,84 @@ func (x *DerivedAttributeInfo) GetMana() uint64 {
 	return 0
 }
 
+// 战斗类属性的一行(必杀率 / 连击率 / 抗性 …,equipment-attributes.md §3.2)。
+// 服务器下发终值:必杀率含角色基础暴击率,抗物理 / 抗法术含基础抗性。
+type CombatAttributeInfo struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CombatId      uint32                 `protobuf:"varint,1,opt,name=combat_id,json=combatId,proto3" json:"combat_id,omitempty"` // 与 CombatAttributes 的字段号一致
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Value         uint64                 `protobuf:"varint,3,opt,name=value,proto3" json:"value,omitempty"`
+	Percent       bool                   `protobuf:"varint,4,opt,name=percent,proto3" json:"percent,omitempty"` // true = 显示成 N%
+	Sort          uint32                 `protobuf:"varint,5,opt,name=sort,proto3" json:"sort,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CombatAttributeInfo) Reset() {
+	*x = CombatAttributeInfo{}
+	mi := &file_proto_scene_player_attribute_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CombatAttributeInfo) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CombatAttributeInfo) ProtoMessage() {}
+
+func (x *CombatAttributeInfo) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_scene_player_attribute_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CombatAttributeInfo.ProtoReflect.Descriptor instead.
+func (*CombatAttributeInfo) Descriptor() ([]byte, []int) {
+	return file_proto_scene_player_attribute_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *CombatAttributeInfo) GetCombatId() uint32 {
+	if x != nil {
+		return x.CombatId
+	}
+	return 0
+}
+
+func (x *CombatAttributeInfo) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *CombatAttributeInfo) GetValue() uint64 {
+	if x != nil {
+		return x.Value
+	}
+	return 0
+}
+
+func (x *CombatAttributeInfo) GetPercent() bool {
+	if x != nil {
+		return x.Percent
+	}
+	return false
+}
+
+func (x *CombatAttributeInfo) GetSort() uint32 {
+	if x != nil {
+		return x.Sort
+	}
+	return 0
+}
+
 type AttributePanelInfo struct {
 	state                protoimpl.MessageState    `protogen:"open.v1"`
 	Pools                []*AttributePoolInfo      `protobuf:"bytes,1,rep,name=pools,proto3" json:"pools,omitempty"`
@@ -389,13 +475,14 @@ type AttributePanelInfo struct {
 	Level                uint32                    `protobuf:"varint,7,opt,name=level,proto3" json:"level,omitempty"`
 	SwitchCooldownUntil  uint64                    `protobuf:"varint,8,opt,name=switch_cooldown_until,json=switchCooldownUntil,proto3" json:"switch_cooldown_until,omitempty"`      // Unix 秒;<= now 表示可切换
 	CreateSchemeCostGold uint64                    `protobuf:"varint,9,opt,name=create_scheme_cost_gold,json=createSchemeCostGold,proto3" json:"create_scheme_cost_gold,omitempty"` // 再开一个方案要花的金币(0 = 免费)
+	Combat               []*CombatAttributeInfo    `protobuf:"bytes,10,rep,name=combat,proto3" json:"combat,omitempty"`                                                             // 战斗类属性全量,sort 升序
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
 }
 
 func (x *AttributePanelInfo) Reset() {
 	*x = AttributePanelInfo{}
-	mi := &file_proto_scene_player_attribute_proto_msgTypes[4]
+	mi := &file_proto_scene_player_attribute_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -407,7 +494,7 @@ func (x *AttributePanelInfo) String() string {
 func (*AttributePanelInfo) ProtoMessage() {}
 
 func (x *AttributePanelInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_player_attribute_proto_msgTypes[4]
+	mi := &file_proto_scene_player_attribute_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -420,7 +507,7 @@ func (x *AttributePanelInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AttributePanelInfo.ProtoReflect.Descriptor instead.
 func (*AttributePanelInfo) Descriptor() ([]byte, []int) {
-	return file_proto_scene_player_attribute_proto_rawDescGZIP(), []int{4}
+	return file_proto_scene_player_attribute_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *AttributePanelInfo) GetPools() []*AttributePoolInfo {
@@ -486,6 +573,13 @@ func (x *AttributePanelInfo) GetCreateSchemeCostGold() uint64 {
 	return 0
 }
 
+func (x *AttributePanelInfo) GetCombat() []*CombatAttributeInfo {
+	if x != nil {
+		return x.Combat
+	}
+	return nil
+}
+
 type GetAttributePanelRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -494,7 +588,7 @@ type GetAttributePanelRequest struct {
 
 func (x *GetAttributePanelRequest) Reset() {
 	*x = GetAttributePanelRequest{}
-	mi := &file_proto_scene_player_attribute_proto_msgTypes[5]
+	mi := &file_proto_scene_player_attribute_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -506,7 +600,7 @@ func (x *GetAttributePanelRequest) String() string {
 func (*GetAttributePanelRequest) ProtoMessage() {}
 
 func (x *GetAttributePanelRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_player_attribute_proto_msgTypes[5]
+	mi := &file_proto_scene_player_attribute_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -519,7 +613,7 @@ func (x *GetAttributePanelRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetAttributePanelRequest.ProtoReflect.Descriptor instead.
 func (*GetAttributePanelRequest) Descriptor() ([]byte, []int) {
-	return file_proto_scene_player_attribute_proto_rawDescGZIP(), []int{5}
+	return file_proto_scene_player_attribute_proto_rawDescGZIP(), []int{6}
 }
 
 type GetAttributePanelResponse struct {
@@ -532,7 +626,7 @@ type GetAttributePanelResponse struct {
 
 func (x *GetAttributePanelResponse) Reset() {
 	*x = GetAttributePanelResponse{}
-	mi := &file_proto_scene_player_attribute_proto_msgTypes[6]
+	mi := &file_proto_scene_player_attribute_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -544,7 +638,7 @@ func (x *GetAttributePanelResponse) String() string {
 func (*GetAttributePanelResponse) ProtoMessage() {}
 
 func (x *GetAttributePanelResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_player_attribute_proto_msgTypes[6]
+	mi := &file_proto_scene_player_attribute_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -557,7 +651,7 @@ func (x *GetAttributePanelResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetAttributePanelResponse.ProtoReflect.Descriptor instead.
 func (*GetAttributePanelResponse) Descriptor() ([]byte, []int) {
-	return file_proto_scene_player_attribute_proto_rawDescGZIP(), []int{6}
+	return file_proto_scene_player_attribute_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *GetAttributePanelResponse) GetErrorMessage() *base.TipInfoMessage {
@@ -586,7 +680,7 @@ type AllocateAttributePointsRequest struct {
 
 func (x *AllocateAttributePointsRequest) Reset() {
 	*x = AllocateAttributePointsRequest{}
-	mi := &file_proto_scene_player_attribute_proto_msgTypes[7]
+	mi := &file_proto_scene_player_attribute_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -598,7 +692,7 @@ func (x *AllocateAttributePointsRequest) String() string {
 func (*AllocateAttributePointsRequest) ProtoMessage() {}
 
 func (x *AllocateAttributePointsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_player_attribute_proto_msgTypes[7]
+	mi := &file_proto_scene_player_attribute_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -611,7 +705,7 @@ func (x *AllocateAttributePointsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AllocateAttributePointsRequest.ProtoReflect.Descriptor instead.
 func (*AllocateAttributePointsRequest) Descriptor() ([]byte, []int) {
-	return file_proto_scene_player_attribute_proto_rawDescGZIP(), []int{7}
+	return file_proto_scene_player_attribute_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *AllocateAttributePointsRequest) GetPoolId() uint32 {
@@ -638,7 +732,7 @@ type AllocateAttributePointsResponse struct {
 
 func (x *AllocateAttributePointsResponse) Reset() {
 	*x = AllocateAttributePointsResponse{}
-	mi := &file_proto_scene_player_attribute_proto_msgTypes[8]
+	mi := &file_proto_scene_player_attribute_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -650,7 +744,7 @@ func (x *AllocateAttributePointsResponse) String() string {
 func (*AllocateAttributePointsResponse) ProtoMessage() {}
 
 func (x *AllocateAttributePointsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_player_attribute_proto_msgTypes[8]
+	mi := &file_proto_scene_player_attribute_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -663,7 +757,7 @@ func (x *AllocateAttributePointsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AllocateAttributePointsResponse.ProtoReflect.Descriptor instead.
 func (*AllocateAttributePointsResponse) Descriptor() ([]byte, []int) {
-	return file_proto_scene_player_attribute_proto_rawDescGZIP(), []int{8}
+	return file_proto_scene_player_attribute_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *AllocateAttributePointsResponse) GetErrorMessage() *base.TipInfoMessage {
@@ -690,7 +784,7 @@ type ResetAttributePointsRequest struct {
 
 func (x *ResetAttributePointsRequest) Reset() {
 	*x = ResetAttributePointsRequest{}
-	mi := &file_proto_scene_player_attribute_proto_msgTypes[9]
+	mi := &file_proto_scene_player_attribute_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -702,7 +796,7 @@ func (x *ResetAttributePointsRequest) String() string {
 func (*ResetAttributePointsRequest) ProtoMessage() {}
 
 func (x *ResetAttributePointsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_player_attribute_proto_msgTypes[9]
+	mi := &file_proto_scene_player_attribute_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -715,7 +809,7 @@ func (x *ResetAttributePointsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ResetAttributePointsRequest.ProtoReflect.Descriptor instead.
 func (*ResetAttributePointsRequest) Descriptor() ([]byte, []int) {
-	return file_proto_scene_player_attribute_proto_rawDescGZIP(), []int{9}
+	return file_proto_scene_player_attribute_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *ResetAttributePointsRequest) GetPoolId() uint32 {
@@ -735,7 +829,7 @@ type ResetAttributePointsResponse struct {
 
 func (x *ResetAttributePointsResponse) Reset() {
 	*x = ResetAttributePointsResponse{}
-	mi := &file_proto_scene_player_attribute_proto_msgTypes[10]
+	mi := &file_proto_scene_player_attribute_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -747,7 +841,7 @@ func (x *ResetAttributePointsResponse) String() string {
 func (*ResetAttributePointsResponse) ProtoMessage() {}
 
 func (x *ResetAttributePointsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_player_attribute_proto_msgTypes[10]
+	mi := &file_proto_scene_player_attribute_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -760,7 +854,7 @@ func (x *ResetAttributePointsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ResetAttributePointsResponse.ProtoReflect.Descriptor instead.
 func (*ResetAttributePointsResponse) Descriptor() ([]byte, []int) {
-	return file_proto_scene_player_attribute_proto_rawDescGZIP(), []int{10}
+	return file_proto_scene_player_attribute_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *ResetAttributePointsResponse) GetErrorMessage() *base.TipInfoMessage {
@@ -788,7 +882,7 @@ type AutoAllocateAttributePointsRequest struct {
 
 func (x *AutoAllocateAttributePointsRequest) Reset() {
 	*x = AutoAllocateAttributePointsRequest{}
-	mi := &file_proto_scene_player_attribute_proto_msgTypes[11]
+	mi := &file_proto_scene_player_attribute_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -800,7 +894,7 @@ func (x *AutoAllocateAttributePointsRequest) String() string {
 func (*AutoAllocateAttributePointsRequest) ProtoMessage() {}
 
 func (x *AutoAllocateAttributePointsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_player_attribute_proto_msgTypes[11]
+	mi := &file_proto_scene_player_attribute_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -813,7 +907,7 @@ func (x *AutoAllocateAttributePointsRequest) ProtoReflect() protoreflect.Message
 
 // Deprecated: Use AutoAllocateAttributePointsRequest.ProtoReflect.Descriptor instead.
 func (*AutoAllocateAttributePointsRequest) Descriptor() ([]byte, []int) {
-	return file_proto_scene_player_attribute_proto_rawDescGZIP(), []int{11}
+	return file_proto_scene_player_attribute_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *AutoAllocateAttributePointsRequest) GetPoolId() uint32 {
@@ -834,7 +928,7 @@ type AutoAllocateAttributePointsResponse struct {
 
 func (x *AutoAllocateAttributePointsResponse) Reset() {
 	*x = AutoAllocateAttributePointsResponse{}
-	mi := &file_proto_scene_player_attribute_proto_msgTypes[12]
+	mi := &file_proto_scene_player_attribute_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -846,7 +940,7 @@ func (x *AutoAllocateAttributePointsResponse) String() string {
 func (*AutoAllocateAttributePointsResponse) ProtoMessage() {}
 
 func (x *AutoAllocateAttributePointsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_player_attribute_proto_msgTypes[12]
+	mi := &file_proto_scene_player_attribute_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -859,7 +953,7 @@ func (x *AutoAllocateAttributePointsResponse) ProtoReflect() protoreflect.Messag
 
 // Deprecated: Use AutoAllocateAttributePointsResponse.ProtoReflect.Descriptor instead.
 func (*AutoAllocateAttributePointsResponse) Descriptor() ([]byte, []int) {
-	return file_proto_scene_player_attribute_proto_rawDescGZIP(), []int{12}
+	return file_proto_scene_player_attribute_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *AutoAllocateAttributePointsResponse) GetErrorMessage() *base.TipInfoMessage {
@@ -892,7 +986,7 @@ type CreateAttributeSchemeRequest struct {
 
 func (x *CreateAttributeSchemeRequest) Reset() {
 	*x = CreateAttributeSchemeRequest{}
-	mi := &file_proto_scene_player_attribute_proto_msgTypes[13]
+	mi := &file_proto_scene_player_attribute_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -904,7 +998,7 @@ func (x *CreateAttributeSchemeRequest) String() string {
 func (*CreateAttributeSchemeRequest) ProtoMessage() {}
 
 func (x *CreateAttributeSchemeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_player_attribute_proto_msgTypes[13]
+	mi := &file_proto_scene_player_attribute_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -917,7 +1011,7 @@ func (x *CreateAttributeSchemeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateAttributeSchemeRequest.ProtoReflect.Descriptor instead.
 func (*CreateAttributeSchemeRequest) Descriptor() ([]byte, []int) {
-	return file_proto_scene_player_attribute_proto_rawDescGZIP(), []int{13}
+	return file_proto_scene_player_attribute_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *CreateAttributeSchemeRequest) GetName() string {
@@ -938,7 +1032,7 @@ type CreateAttributeSchemeResponse struct {
 
 func (x *CreateAttributeSchemeResponse) Reset() {
 	*x = CreateAttributeSchemeResponse{}
-	mi := &file_proto_scene_player_attribute_proto_msgTypes[14]
+	mi := &file_proto_scene_player_attribute_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -950,7 +1044,7 @@ func (x *CreateAttributeSchemeResponse) String() string {
 func (*CreateAttributeSchemeResponse) ProtoMessage() {}
 
 func (x *CreateAttributeSchemeResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_player_attribute_proto_msgTypes[14]
+	mi := &file_proto_scene_player_attribute_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -963,7 +1057,7 @@ func (x *CreateAttributeSchemeResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateAttributeSchemeResponse.ProtoReflect.Descriptor instead.
 func (*CreateAttributeSchemeResponse) Descriptor() ([]byte, []int) {
-	return file_proto_scene_player_attribute_proto_rawDescGZIP(), []int{14}
+	return file_proto_scene_player_attribute_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *CreateAttributeSchemeResponse) GetErrorMessage() *base.TipInfoMessage {
@@ -997,7 +1091,7 @@ type SwitchAttributeSchemeRequest struct {
 
 func (x *SwitchAttributeSchemeRequest) Reset() {
 	*x = SwitchAttributeSchemeRequest{}
-	mi := &file_proto_scene_player_attribute_proto_msgTypes[15]
+	mi := &file_proto_scene_player_attribute_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1009,7 +1103,7 @@ func (x *SwitchAttributeSchemeRequest) String() string {
 func (*SwitchAttributeSchemeRequest) ProtoMessage() {}
 
 func (x *SwitchAttributeSchemeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_player_attribute_proto_msgTypes[15]
+	mi := &file_proto_scene_player_attribute_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1022,7 +1116,7 @@ func (x *SwitchAttributeSchemeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SwitchAttributeSchemeRequest.ProtoReflect.Descriptor instead.
 func (*SwitchAttributeSchemeRequest) Descriptor() ([]byte, []int) {
-	return file_proto_scene_player_attribute_proto_rawDescGZIP(), []int{15}
+	return file_proto_scene_player_attribute_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *SwitchAttributeSchemeRequest) GetSchemeId() uint32 {
@@ -1042,7 +1136,7 @@ type SwitchAttributeSchemeResponse struct {
 
 func (x *SwitchAttributeSchemeResponse) Reset() {
 	*x = SwitchAttributeSchemeResponse{}
-	mi := &file_proto_scene_player_attribute_proto_msgTypes[16]
+	mi := &file_proto_scene_player_attribute_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1054,7 +1148,7 @@ func (x *SwitchAttributeSchemeResponse) String() string {
 func (*SwitchAttributeSchemeResponse) ProtoMessage() {}
 
 func (x *SwitchAttributeSchemeResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_player_attribute_proto_msgTypes[16]
+	mi := &file_proto_scene_player_attribute_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1067,7 +1161,7 @@ func (x *SwitchAttributeSchemeResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SwitchAttributeSchemeResponse.ProtoReflect.Descriptor instead.
 func (*SwitchAttributeSchemeResponse) Descriptor() ([]byte, []int) {
-	return file_proto_scene_player_attribute_proto_rawDescGZIP(), []int{16}
+	return file_proto_scene_player_attribute_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *SwitchAttributeSchemeResponse) GetErrorMessage() *base.TipInfoMessage {
@@ -1094,7 +1188,7 @@ type RenameAttributeSchemeRequest struct {
 
 func (x *RenameAttributeSchemeRequest) Reset() {
 	*x = RenameAttributeSchemeRequest{}
-	mi := &file_proto_scene_player_attribute_proto_msgTypes[17]
+	mi := &file_proto_scene_player_attribute_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1106,7 +1200,7 @@ func (x *RenameAttributeSchemeRequest) String() string {
 func (*RenameAttributeSchemeRequest) ProtoMessage() {}
 
 func (x *RenameAttributeSchemeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_player_attribute_proto_msgTypes[17]
+	mi := &file_proto_scene_player_attribute_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1119,7 +1213,7 @@ func (x *RenameAttributeSchemeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RenameAttributeSchemeRequest.ProtoReflect.Descriptor instead.
 func (*RenameAttributeSchemeRequest) Descriptor() ([]byte, []int) {
-	return file_proto_scene_player_attribute_proto_rawDescGZIP(), []int{17}
+	return file_proto_scene_player_attribute_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *RenameAttributeSchemeRequest) GetSchemeId() uint32 {
@@ -1146,7 +1240,7 @@ type RenameAttributeSchemeResponse struct {
 
 func (x *RenameAttributeSchemeResponse) Reset() {
 	*x = RenameAttributeSchemeResponse{}
-	mi := &file_proto_scene_player_attribute_proto_msgTypes[18]
+	mi := &file_proto_scene_player_attribute_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1158,7 +1252,7 @@ func (x *RenameAttributeSchemeResponse) String() string {
 func (*RenameAttributeSchemeResponse) ProtoMessage() {}
 
 func (x *RenameAttributeSchemeResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_player_attribute_proto_msgTypes[18]
+	mi := &file_proto_scene_player_attribute_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1171,7 +1265,7 @@ func (x *RenameAttributeSchemeResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RenameAttributeSchemeResponse.ProtoReflect.Descriptor instead.
 func (*RenameAttributeSchemeResponse) Descriptor() ([]byte, []int) {
-	return file_proto_scene_player_attribute_proto_rawDescGZIP(), []int{18}
+	return file_proto_scene_player_attribute_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *RenameAttributeSchemeResponse) GetErrorMessage() *base.TipInfoMessage {
@@ -1198,7 +1292,7 @@ type AttributePanelChangedS2C struct {
 
 func (x *AttributePanelChangedS2C) Reset() {
 	*x = AttributePanelChangedS2C{}
-	mi := &file_proto_scene_player_attribute_proto_msgTypes[19]
+	mi := &file_proto_scene_player_attribute_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1210,7 +1304,7 @@ func (x *AttributePanelChangedS2C) String() string {
 func (*AttributePanelChangedS2C) ProtoMessage() {}
 
 func (x *AttributePanelChangedS2C) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_player_attribute_proto_msgTypes[19]
+	mi := &file_proto_scene_player_attribute_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1223,7 +1317,7 @@ func (x *AttributePanelChangedS2C) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AttributePanelChangedS2C.ProtoReflect.Descriptor instead.
 func (*AttributePanelChangedS2C) Descriptor() ([]byte, []int) {
-	return file_proto_scene_player_attribute_proto_rawDescGZIP(), []int{19}
+	return file_proto_scene_player_attribute_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *AttributePanelChangedS2C) GetPanel() *AttributePanelInfo {
@@ -1243,7 +1337,7 @@ type GmSetPlayerLevelRequest struct {
 
 func (x *GmSetPlayerLevelRequest) Reset() {
 	*x = GmSetPlayerLevelRequest{}
-	mi := &file_proto_scene_player_attribute_proto_msgTypes[20]
+	mi := &file_proto_scene_player_attribute_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1255,7 +1349,7 @@ func (x *GmSetPlayerLevelRequest) String() string {
 func (*GmSetPlayerLevelRequest) ProtoMessage() {}
 
 func (x *GmSetPlayerLevelRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_player_attribute_proto_msgTypes[20]
+	mi := &file_proto_scene_player_attribute_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1268,7 +1362,7 @@ func (x *GmSetPlayerLevelRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GmSetPlayerLevelRequest.ProtoReflect.Descriptor instead.
 func (*GmSetPlayerLevelRequest) Descriptor() ([]byte, []int) {
-	return file_proto_scene_player_attribute_proto_rawDescGZIP(), []int{20}
+	return file_proto_scene_player_attribute_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *GmSetPlayerLevelRequest) GetLevel() uint32 {
@@ -1288,7 +1382,7 @@ type GmSetPlayerLevelResponse struct {
 
 func (x *GmSetPlayerLevelResponse) Reset() {
 	*x = GmSetPlayerLevelResponse{}
-	mi := &file_proto_scene_player_attribute_proto_msgTypes[21]
+	mi := &file_proto_scene_player_attribute_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1300,7 +1394,7 @@ func (x *GmSetPlayerLevelResponse) String() string {
 func (*GmSetPlayerLevelResponse) ProtoMessage() {}
 
 func (x *GmSetPlayerLevelResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_player_attribute_proto_msgTypes[21]
+	mi := &file_proto_scene_player_attribute_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1313,7 +1407,7 @@ func (x *GmSetPlayerLevelResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GmSetPlayerLevelResponse.ProtoReflect.Descriptor instead.
 func (*GmSetPlayerLevelResponse) Descriptor() ([]byte, []int) {
-	return file_proto_scene_player_attribute_proto_rawDescGZIP(), []int{21}
+	return file_proto_scene_player_attribute_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *GmSetPlayerLevelResponse) GetErrorMessage() *base.TipInfoMessage {
@@ -1334,7 +1428,7 @@ var File_proto_scene_player_attribute_proto protoreflect.FileDescriptor
 
 const file_proto_scene_player_attribute_proto_rawDesc = "" +
 	"\n" +
-	"\"proto/scene/player_attribute.proto\x1a\x1bproto/db/proto_option.proto\x1a\x1bproto/common/base/tip.proto\x1a\x1dproto/common/base/empty.proto\"\xd6\x01\n" +
+	"\"proto/scene/player_attribute.proto\x1a\x1bproto/db/proto_option.proto\x1a\x1bproto/common/base/tip.proto\x1a\x1dproto/common/base/empty.proto\"\xec\x01\n" +
 	"\x16AttributeDimensionInfo\x12!\n" +
 	"\fdimension_id\x18\x01 \x01(\rR\vdimensionId\x12\x17\n" +
 	"\apool_id\x18\x02 \x01(\rR\x06poolId\x12\x12\n" +
@@ -1343,7 +1437,8 @@ const file_proto_scene_player_attribute_proto_rawDesc = "" +
 	"\tallocated\x18\x05 \x01(\rR\tallocated\x12\x14\n" +
 	"\x05value\x18\x06 \x01(\x04R\x05value\x12\x10\n" +
 	"\x03cap\x18\a \x01(\rR\x03cap\x12\x12\n" +
-	"\x04sort\x18\b \x01(\rR\x04sort\"\x80\x02\n" +
+	"\x04sort\x18\b \x01(\rR\x04sort\x12\x14\n" +
+	"\x05bonus\x18\t \x01(\rR\x05bonus\"\x80\x02\n" +
 	"\x11AttributePoolInfo\x12\x17\n" +
 	"\apool_id\x18\x01 \x01(\rR\x06poolId\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x14\n" +
@@ -1365,7 +1460,13 @@ const file_proto_scene_player_attribute_proto_rawDesc = "" +
 	"\x05speed\x18\x05 \x01(\x04R\x05speed\x12\x18\n" +
 	"\adefense\x18\x06 \x01(\x04R\adefense\x12\x16\n" +
 	"\x06health\x18\a \x01(\x04R\x06health\x12\x12\n" +
-	"\x04mana\x18\b \x01(\x04R\x04mana\"\xa4\x03\n" +
+	"\x04mana\x18\b \x01(\x04R\x04mana\"\x8a\x01\n" +
+	"\x13CombatAttributeInfo\x12\x1b\n" +
+	"\tcombat_id\x18\x01 \x01(\rR\bcombatId\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x14\n" +
+	"\x05value\x18\x03 \x01(\x04R\x05value\x12\x18\n" +
+	"\apercent\x18\x04 \x01(\bR\apercent\x12\x12\n" +
+	"\x04sort\x18\x05 \x01(\rR\x04sort\"\xd2\x03\n" +
 	"\x12AttributePanelInfo\x12(\n" +
 	"\x05pools\x18\x01 \x03(\v2\x12.AttributePoolInfoR\x05pools\x127\n" +
 	"\n" +
@@ -1378,7 +1479,9 @@ const file_proto_scene_player_attribute_proto_rawDesc = "" +
 	"\aderived\x18\x06 \x01(\v2\x15.DerivedAttributeInfoR\aderived\x12\x14\n" +
 	"\x05level\x18\a \x01(\rR\x05level\x122\n" +
 	"\x15switch_cooldown_until\x18\b \x01(\x04R\x13switchCooldownUntil\x125\n" +
-	"\x17create_scheme_cost_gold\x18\t \x01(\x04R\x14createSchemeCostGold\"\x1a\n" +
+	"\x17create_scheme_cost_gold\x18\t \x01(\x04R\x14createSchemeCostGold\x12,\n" +
+	"\x06combat\x18\n" +
+	" \x03(\v2\x14.CombatAttributeInfoR\x06combat\"\x1a\n" +
 	"\x18GetAttributePanelRequest\"|\n" +
 	"\x19GetAttributePanelResponse\x124\n" +
 	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\x12)\n" +
@@ -1454,81 +1557,83 @@ func file_proto_scene_player_attribute_proto_rawDescGZIP() []byte {
 	return file_proto_scene_player_attribute_proto_rawDescData
 }
 
-var file_proto_scene_player_attribute_proto_msgTypes = make([]protoimpl.MessageInfo, 24)
+var file_proto_scene_player_attribute_proto_msgTypes = make([]protoimpl.MessageInfo, 25)
 var file_proto_scene_player_attribute_proto_goTypes = []any{
 	(*AttributeDimensionInfo)(nil),              // 0: AttributeDimensionInfo
 	(*AttributePoolInfo)(nil),                   // 1: AttributePoolInfo
 	(*AttributeSchemeInfo)(nil),                 // 2: AttributeSchemeInfo
 	(*DerivedAttributeInfo)(nil),                // 3: DerivedAttributeInfo
-	(*AttributePanelInfo)(nil),                  // 4: AttributePanelInfo
-	(*GetAttributePanelRequest)(nil),            // 5: GetAttributePanelRequest
-	(*GetAttributePanelResponse)(nil),           // 6: GetAttributePanelResponse
-	(*AllocateAttributePointsRequest)(nil),      // 7: AllocateAttributePointsRequest
-	(*AllocateAttributePointsResponse)(nil),     // 8: AllocateAttributePointsResponse
-	(*ResetAttributePointsRequest)(nil),         // 9: ResetAttributePointsRequest
-	(*ResetAttributePointsResponse)(nil),        // 10: ResetAttributePointsResponse
-	(*AutoAllocateAttributePointsRequest)(nil),  // 11: AutoAllocateAttributePointsRequest
-	(*AutoAllocateAttributePointsResponse)(nil), // 12: AutoAllocateAttributePointsResponse
-	(*CreateAttributeSchemeRequest)(nil),        // 13: CreateAttributeSchemeRequest
-	(*CreateAttributeSchemeResponse)(nil),       // 14: CreateAttributeSchemeResponse
-	(*SwitchAttributeSchemeRequest)(nil),        // 15: SwitchAttributeSchemeRequest
-	(*SwitchAttributeSchemeResponse)(nil),       // 16: SwitchAttributeSchemeResponse
-	(*RenameAttributeSchemeRequest)(nil),        // 17: RenameAttributeSchemeRequest
-	(*RenameAttributeSchemeResponse)(nil),       // 18: RenameAttributeSchemeResponse
-	(*AttributePanelChangedS2C)(nil),            // 19: AttributePanelChangedS2C
-	(*GmSetPlayerLevelRequest)(nil),             // 20: GmSetPlayerLevelRequest
-	(*GmSetPlayerLevelResponse)(nil),            // 21: GmSetPlayerLevelResponse
-	nil,                                         // 22: AllocateAttributePointsRequest.AllocatedEntry
-	nil,                                         // 23: AutoAllocateAttributePointsResponse.SuggestedEntry
-	(*base.TipInfoMessage)(nil),                 // 24: TipInfoMessage
-	(*base.Empty)(nil),                          // 25: Empty
+	(*CombatAttributeInfo)(nil),                 // 4: CombatAttributeInfo
+	(*AttributePanelInfo)(nil),                  // 5: AttributePanelInfo
+	(*GetAttributePanelRequest)(nil),            // 6: GetAttributePanelRequest
+	(*GetAttributePanelResponse)(nil),           // 7: GetAttributePanelResponse
+	(*AllocateAttributePointsRequest)(nil),      // 8: AllocateAttributePointsRequest
+	(*AllocateAttributePointsResponse)(nil),     // 9: AllocateAttributePointsResponse
+	(*ResetAttributePointsRequest)(nil),         // 10: ResetAttributePointsRequest
+	(*ResetAttributePointsResponse)(nil),        // 11: ResetAttributePointsResponse
+	(*AutoAllocateAttributePointsRequest)(nil),  // 12: AutoAllocateAttributePointsRequest
+	(*AutoAllocateAttributePointsResponse)(nil), // 13: AutoAllocateAttributePointsResponse
+	(*CreateAttributeSchemeRequest)(nil),        // 14: CreateAttributeSchemeRequest
+	(*CreateAttributeSchemeResponse)(nil),       // 15: CreateAttributeSchemeResponse
+	(*SwitchAttributeSchemeRequest)(nil),        // 16: SwitchAttributeSchemeRequest
+	(*SwitchAttributeSchemeResponse)(nil),       // 17: SwitchAttributeSchemeResponse
+	(*RenameAttributeSchemeRequest)(nil),        // 18: RenameAttributeSchemeRequest
+	(*RenameAttributeSchemeResponse)(nil),       // 19: RenameAttributeSchemeResponse
+	(*AttributePanelChangedS2C)(nil),            // 20: AttributePanelChangedS2C
+	(*GmSetPlayerLevelRequest)(nil),             // 21: GmSetPlayerLevelRequest
+	(*GmSetPlayerLevelResponse)(nil),            // 22: GmSetPlayerLevelResponse
+	nil,                                         // 23: AllocateAttributePointsRequest.AllocatedEntry
+	nil,                                         // 24: AutoAllocateAttributePointsResponse.SuggestedEntry
+	(*base.TipInfoMessage)(nil),                 // 25: TipInfoMessage
+	(*base.Empty)(nil),                          // 26: Empty
 }
 var file_proto_scene_player_attribute_proto_depIdxs = []int32{
 	1,  // 0: AttributePanelInfo.pools:type_name -> AttributePoolInfo
 	0,  // 1: AttributePanelInfo.dimensions:type_name -> AttributeDimensionInfo
 	2,  // 2: AttributePanelInfo.schemes:type_name -> AttributeSchemeInfo
 	3,  // 3: AttributePanelInfo.derived:type_name -> DerivedAttributeInfo
-	24, // 4: GetAttributePanelResponse.error_message:type_name -> TipInfoMessage
-	4,  // 5: GetAttributePanelResponse.panel:type_name -> AttributePanelInfo
-	22, // 6: AllocateAttributePointsRequest.allocated:type_name -> AllocateAttributePointsRequest.AllocatedEntry
-	24, // 7: AllocateAttributePointsResponse.error_message:type_name -> TipInfoMessage
-	4,  // 8: AllocateAttributePointsResponse.panel:type_name -> AttributePanelInfo
-	24, // 9: ResetAttributePointsResponse.error_message:type_name -> TipInfoMessage
-	4,  // 10: ResetAttributePointsResponse.panel:type_name -> AttributePanelInfo
-	24, // 11: AutoAllocateAttributePointsResponse.error_message:type_name -> TipInfoMessage
-	23, // 12: AutoAllocateAttributePointsResponse.suggested:type_name -> AutoAllocateAttributePointsResponse.SuggestedEntry
-	24, // 13: CreateAttributeSchemeResponse.error_message:type_name -> TipInfoMessage
-	4,  // 14: CreateAttributeSchemeResponse.panel:type_name -> AttributePanelInfo
-	24, // 15: SwitchAttributeSchemeResponse.error_message:type_name -> TipInfoMessage
-	4,  // 16: SwitchAttributeSchemeResponse.panel:type_name -> AttributePanelInfo
-	24, // 17: RenameAttributeSchemeResponse.error_message:type_name -> TipInfoMessage
-	4,  // 18: RenameAttributeSchemeResponse.panel:type_name -> AttributePanelInfo
-	4,  // 19: AttributePanelChangedS2C.panel:type_name -> AttributePanelInfo
-	24, // 20: GmSetPlayerLevelResponse.error_message:type_name -> TipInfoMessage
-	4,  // 21: GmSetPlayerLevelResponse.panel:type_name -> AttributePanelInfo
-	5,  // 22: SceneAttributeClientPlayer.GetAttributePanel:input_type -> GetAttributePanelRequest
-	7,  // 23: SceneAttributeClientPlayer.AllocateAttributePoints:input_type -> AllocateAttributePointsRequest
-	9,  // 24: SceneAttributeClientPlayer.ResetAttributePoints:input_type -> ResetAttributePointsRequest
-	11, // 25: SceneAttributeClientPlayer.AutoAllocateAttributePoints:input_type -> AutoAllocateAttributePointsRequest
-	13, // 26: SceneAttributeClientPlayer.CreateAttributeScheme:input_type -> CreateAttributeSchemeRequest
-	15, // 27: SceneAttributeClientPlayer.SwitchAttributeScheme:input_type -> SwitchAttributeSchemeRequest
-	17, // 28: SceneAttributeClientPlayer.RenameAttributeScheme:input_type -> RenameAttributeSchemeRequest
-	19, // 29: SceneAttributeClientPlayer.NotifyAttributePanelChanged:input_type -> AttributePanelChangedS2C
-	20, // 30: SceneAttributeClientPlayer.GmSetPlayerLevel:input_type -> GmSetPlayerLevelRequest
-	6,  // 31: SceneAttributeClientPlayer.GetAttributePanel:output_type -> GetAttributePanelResponse
-	8,  // 32: SceneAttributeClientPlayer.AllocateAttributePoints:output_type -> AllocateAttributePointsResponse
-	10, // 33: SceneAttributeClientPlayer.ResetAttributePoints:output_type -> ResetAttributePointsResponse
-	12, // 34: SceneAttributeClientPlayer.AutoAllocateAttributePoints:output_type -> AutoAllocateAttributePointsResponse
-	14, // 35: SceneAttributeClientPlayer.CreateAttributeScheme:output_type -> CreateAttributeSchemeResponse
-	16, // 36: SceneAttributeClientPlayer.SwitchAttributeScheme:output_type -> SwitchAttributeSchemeResponse
-	18, // 37: SceneAttributeClientPlayer.RenameAttributeScheme:output_type -> RenameAttributeSchemeResponse
-	25, // 38: SceneAttributeClientPlayer.NotifyAttributePanelChanged:output_type -> Empty
-	21, // 39: SceneAttributeClientPlayer.GmSetPlayerLevel:output_type -> GmSetPlayerLevelResponse
-	31, // [31:40] is the sub-list for method output_type
-	22, // [22:31] is the sub-list for method input_type
-	22, // [22:22] is the sub-list for extension type_name
-	22, // [22:22] is the sub-list for extension extendee
-	0,  // [0:22] is the sub-list for field type_name
+	4,  // 4: AttributePanelInfo.combat:type_name -> CombatAttributeInfo
+	25, // 5: GetAttributePanelResponse.error_message:type_name -> TipInfoMessage
+	5,  // 6: GetAttributePanelResponse.panel:type_name -> AttributePanelInfo
+	23, // 7: AllocateAttributePointsRequest.allocated:type_name -> AllocateAttributePointsRequest.AllocatedEntry
+	25, // 8: AllocateAttributePointsResponse.error_message:type_name -> TipInfoMessage
+	5,  // 9: AllocateAttributePointsResponse.panel:type_name -> AttributePanelInfo
+	25, // 10: ResetAttributePointsResponse.error_message:type_name -> TipInfoMessage
+	5,  // 11: ResetAttributePointsResponse.panel:type_name -> AttributePanelInfo
+	25, // 12: AutoAllocateAttributePointsResponse.error_message:type_name -> TipInfoMessage
+	24, // 13: AutoAllocateAttributePointsResponse.suggested:type_name -> AutoAllocateAttributePointsResponse.SuggestedEntry
+	25, // 14: CreateAttributeSchemeResponse.error_message:type_name -> TipInfoMessage
+	5,  // 15: CreateAttributeSchemeResponse.panel:type_name -> AttributePanelInfo
+	25, // 16: SwitchAttributeSchemeResponse.error_message:type_name -> TipInfoMessage
+	5,  // 17: SwitchAttributeSchemeResponse.panel:type_name -> AttributePanelInfo
+	25, // 18: RenameAttributeSchemeResponse.error_message:type_name -> TipInfoMessage
+	5,  // 19: RenameAttributeSchemeResponse.panel:type_name -> AttributePanelInfo
+	5,  // 20: AttributePanelChangedS2C.panel:type_name -> AttributePanelInfo
+	25, // 21: GmSetPlayerLevelResponse.error_message:type_name -> TipInfoMessage
+	5,  // 22: GmSetPlayerLevelResponse.panel:type_name -> AttributePanelInfo
+	6,  // 23: SceneAttributeClientPlayer.GetAttributePanel:input_type -> GetAttributePanelRequest
+	8,  // 24: SceneAttributeClientPlayer.AllocateAttributePoints:input_type -> AllocateAttributePointsRequest
+	10, // 25: SceneAttributeClientPlayer.ResetAttributePoints:input_type -> ResetAttributePointsRequest
+	12, // 26: SceneAttributeClientPlayer.AutoAllocateAttributePoints:input_type -> AutoAllocateAttributePointsRequest
+	14, // 27: SceneAttributeClientPlayer.CreateAttributeScheme:input_type -> CreateAttributeSchemeRequest
+	16, // 28: SceneAttributeClientPlayer.SwitchAttributeScheme:input_type -> SwitchAttributeSchemeRequest
+	18, // 29: SceneAttributeClientPlayer.RenameAttributeScheme:input_type -> RenameAttributeSchemeRequest
+	20, // 30: SceneAttributeClientPlayer.NotifyAttributePanelChanged:input_type -> AttributePanelChangedS2C
+	21, // 31: SceneAttributeClientPlayer.GmSetPlayerLevel:input_type -> GmSetPlayerLevelRequest
+	7,  // 32: SceneAttributeClientPlayer.GetAttributePanel:output_type -> GetAttributePanelResponse
+	9,  // 33: SceneAttributeClientPlayer.AllocateAttributePoints:output_type -> AllocateAttributePointsResponse
+	11, // 34: SceneAttributeClientPlayer.ResetAttributePoints:output_type -> ResetAttributePointsResponse
+	13, // 35: SceneAttributeClientPlayer.AutoAllocateAttributePoints:output_type -> AutoAllocateAttributePointsResponse
+	15, // 36: SceneAttributeClientPlayer.CreateAttributeScheme:output_type -> CreateAttributeSchemeResponse
+	17, // 37: SceneAttributeClientPlayer.SwitchAttributeScheme:output_type -> SwitchAttributeSchemeResponse
+	19, // 38: SceneAttributeClientPlayer.RenameAttributeScheme:output_type -> RenameAttributeSchemeResponse
+	26, // 39: SceneAttributeClientPlayer.NotifyAttributePanelChanged:output_type -> Empty
+	22, // 40: SceneAttributeClientPlayer.GmSetPlayerLevel:output_type -> GmSetPlayerLevelResponse
+	32, // [32:41] is the sub-list for method output_type
+	23, // [23:32] is the sub-list for method input_type
+	23, // [23:23] is the sub-list for extension type_name
+	23, // [23:23] is the sub-list for extension extendee
+	0,  // [0:23] is the sub-list for field type_name
 }
 
 func init() { file_proto_scene_player_attribute_proto_init() }
@@ -1542,7 +1647,7 @@ func file_proto_scene_player_attribute_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_scene_player_attribute_proto_rawDesc), len(file_proto_scene_player_attribute_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   24,
+			NumMessages:   25,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

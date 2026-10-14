@@ -609,6 +609,33 @@ void SendDataServiceBatchGetPlayerName(entt::registry& registry, entt::entity no
 void SendDataServiceBatchGetPlayerName(entt::registry& registry, entt::entity nodeEntity, const ::data_service::BatchGetPlayerNameRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendDataServiceBatchGetPlayerName(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 #pragma endregion
+#pragma region DataServiceGetPlayerAssetOpLedger
+
+struct AsyncDataServiceGetPlayerAssetOpLedgerGrpcClient {
+    uint32_t messageId{ DataServiceGetPlayerAssetOpLedgerMessageId };
+    ClientContext context;
+    Status status;
+    ::data_service::GetPlayerAssetOpLedgerResponse reply;
+    std::unique_ptr<ClientAsyncResponseReader<::data_service::GetPlayerAssetOpLedgerResponse>> response_reader;
+    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
+    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+    ::data_service::GetPlayerAssetOpLedgerRequest request;
+    GrpcSentMetadata sentMetadata;
+};
+
+using AsyncDataServiceGetPlayerAssetOpLedgerHandlerFunctionType =
+    std::function<void(const ClientContext&, const ::data_service::GetPlayerAssetOpLedgerResponse&)>;
+extern AsyncDataServiceGetPlayerAssetOpLedgerHandlerFunctionType AsyncDataServiceGetPlayerAssetOpLedgerHandler;
+// 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
+// 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
+using AsyncDataServiceGetPlayerAssetOpLedgerFailedHandlerFunctionType =
+    std::function<void(const GrpcCallFailure&, const ::data_service::GetPlayerAssetOpLedgerRequest&)>;
+extern AsyncDataServiceGetPlayerAssetOpLedgerFailedHandlerFunctionType AsyncDataServiceGetPlayerAssetOpLedgerFailedHandler;
+
+void SendDataServiceGetPlayerAssetOpLedger(entt::registry& registry, entt::entity nodeEntity, const ::data_service::GetPlayerAssetOpLedgerRequest& request);
+void SendDataServiceGetPlayerAssetOpLedger(entt::registry& registry, entt::entity nodeEntity, const ::data_service::GetPlayerAssetOpLedgerRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+void SendDataServiceGetPlayerAssetOpLedger(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+#pragma endregion
 void SetDataServiceHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
 void SetDataServiceIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
 void SetDataServiceFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler);

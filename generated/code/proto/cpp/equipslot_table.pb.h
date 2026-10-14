@@ -228,9 +228,25 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED EquipSlotTable final : public ::goo
 
   // accessors -------------------------------------------------------
   enum : int {
+    kNameFieldNumber = 3,
     kIdFieldNumber = 1,
     kEquipKindFieldNumber = 2,
   };
+  // string name = 3;
+  void clear_name() ;
+  [[nodiscard]] const ::std::string& name() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_name(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_name();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_name();
+  void set_allocated_name(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_name() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_name(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_name();
+
+  public:
   // uint32 id = 1;
   void clear_id() ;
   [[nodiscard]] ::uint32_t id() const;
@@ -255,8 +271,8 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED EquipSlotTable final : public ::goo
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<1, 2,
-                          0, 0,
+      ::google::protobuf::internal::TcParseTable<2, 3,
+                          0, 27,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
       const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
@@ -284,6 +300,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED EquipSlotTable final : public ::goo
         const EquipSlotTable& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::ArenaStringPtr name_;
     ::uint32_t id_;
     ::uint32_t equip_kind_;
     PROTOBUF_TSAN_DECLARE_MEMBER
@@ -524,7 +541,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED EquipSlotTableData final : public :
 inline void EquipSlotTable::clear_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.id_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
 }
 inline ::uint32_t EquipSlotTable::id() const {
   // @@protoc_insertion_point(field_get:EquipSlotTable.id)
@@ -532,7 +549,7 @@ inline ::uint32_t EquipSlotTable::id() const {
 }
 inline void EquipSlotTable::set_id(::uint32_t value) {
   _internal_set_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
   // @@protoc_insertion_point(field_set:EquipSlotTable.id)
 }
 inline ::uint32_t EquipSlotTable::_internal_id() const {
@@ -548,7 +565,7 @@ inline void EquipSlotTable::_internal_set_id(::uint32_t value) {
 inline void EquipSlotTable::clear_equip_kind() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.equip_kind_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
 }
 inline ::uint32_t EquipSlotTable::equip_kind() const {
   // @@protoc_insertion_point(field_get:EquipSlotTable.equip_kind)
@@ -556,7 +573,7 @@ inline ::uint32_t EquipSlotTable::equip_kind() const {
 }
 inline void EquipSlotTable::set_equip_kind(::uint32_t value) {
   _internal_set_equip_kind(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
   // @@protoc_insertion_point(field_set:EquipSlotTable.equip_kind)
 }
 inline ::uint32_t EquipSlotTable::_internal_equip_kind() const {
@@ -566,6 +583,70 @@ inline ::uint32_t EquipSlotTable::_internal_equip_kind() const {
 inline void EquipSlotTable::_internal_set_equip_kind(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.equip_kind_ = value;
+}
+
+// string name = 3;
+inline void EquipSlotTable::clear_name() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.name_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+}
+inline const ::std::string& EquipSlotTable::name() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:EquipSlotTable.name)
+  return _internal_name();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void EquipSlotTable::set_name(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  _impl_.name_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:EquipSlotTable.name)
+}
+inline ::std::string* PROTOBUF_NONNULL EquipSlotTable::mutable_name()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::std::string* _s = _internal_mutable_name();
+  // @@protoc_insertion_point(field_mutable:EquipSlotTable.name)
+  return _s;
+}
+inline const ::std::string& EquipSlotTable::_internal_name() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.name_.Get();
+}
+inline void EquipSlotTable::_internal_set_name(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.name_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL EquipSlotTable::_internal_mutable_name() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.name_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE EquipSlotTable::release_name() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:EquipSlotTable.name)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000001U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  auto* released = _impl_.name_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.name_.Set("", GetArena());
+  }
+  return released;
+}
+inline void EquipSlotTable::set_allocated_name(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+  _impl_.name_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.name_.IsDefault()) {
+    _impl_.name_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:EquipSlotTable.name)
 }
 
 // -------------------------------------------------------------------

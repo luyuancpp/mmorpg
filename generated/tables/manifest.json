@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
-  "version": 20,
-  "content_digest": "044b40040b3c08e7bafe1a56990f4b5e71f14264115cc0e97e6e6290a2431620",
-  "generated_at": "2026-10-08T11:08:08Z",
+  "version": 25,
+  "content_digest": "35871b3ef881057588085eb675908d575f2ed5fd872dc85e485287d7c587be60",
+  "generated_at": "2026-10-13T14:07:53Z",
   "source_rev": {
-    "commit": "699c836d7c01084dc50df6f558b7157f3f21cf79",
-    "data_dirty": false
+    "commit": "6e212616bfbf337ef0c179cd4553cf9325da883d",
+    "data_dirty": true
   },
-  "table_count": 35,
+  "table_count": 42,
   "tables": [
     {
       "name": "ActivitySchedule",
@@ -332,25 +332,186 @@
       ]
     },
     {
+      "name": "EquipAffixPool",
+      "rows": 29,
+      "source": {
+        "file": "EquipAffixPool.xlsx",
+        "size": 5566,
+        "sha256": "f708613a57113defbdefafd2eb90b34b8b711302f7e6f07b695fb011079d1585"
+      },
+      "artifacts": [
+        {
+          "kind": "json",
+          "file": "equipaffixpool.json",
+          "size": 2207,
+          "sha256": "7a0d87e840504d772a68bc74424fbe695e5b0f63afdf07899957ed85d451a72d"
+        },
+        {
+          "kind": "binary",
+          "file": "equipaffixpool.pb",
+          "size": 319,
+          "sha256": "124f1680f09058126d4efa83b328b20f69237ff8aed028bb35d03098bee11d58"
+        }
+      ]
+    },
+    {
+      "name": "EquipAffixRule",
+      "rows": 1,
+      "source": {
+        "file": "EquipAffixRule.xlsx",
+        "size": 5119,
+        "sha256": "c0872cc2dfbdcdacf39e7e1181c65affdf6d7869a61787457fe25c57422d1b2a"
+      },
+      "artifacts": [
+        {
+          "kind": "json",
+          "file": "equipaffixrule.json",
+          "size": 118,
+          "sha256": "129e75dc5a5a031cc0d29f1199530dfb6f68b71ae14bca33f84da3236fd915c6"
+        },
+        {
+          "kind": "binary",
+          "file": "equipaffixrule.pb",
+          "size": 14,
+          "sha256": "4d27688b600a96b059dff1dedb887c546c3df60c7a37cda0949f7e060c0ff2f3"
+        }
+      ]
+    },
+    {
+      "name": "EquipAttribute",
+      "rows": 26,
+      "source": {
+        "file": "EquipAttribute.xlsx",
+        "size": 6202,
+        "sha256": "e38560c9ea9363de0728f1f92a33686e8e5cb542c5b3b3bd98e5e7446532eb9c"
+      },
+      "artifacts": [
+        {
+          "kind": "json",
+          "file": "equipattribute.json",
+          "size": 3046,
+          "sha256": "ee309d68de67ed428bc25d5278ae6e99567660d317c6aaedba19fd636558a93b"
+        },
+        {
+          "kind": "binary",
+          "file": "equipattribute.pb",
+          "size": 602,
+          "sha256": "fc8c481e720c8fd7d9593b1cb7e5945fc806948aa9b485b880f075ae543db2a8"
+        }
+      ]
+    },
+    {
+      "name": "EquipAttributeCap",
+      "rows": 125,
+      "source": {
+        "file": "EquipAttributeCap.xlsx",
+        "size": 7760,
+        "sha256": "477dc8ea805db3affe6a596aa981f861d75a2cf4b1b6110fc80b8954a714d24d"
+      },
+      "artifacts": [
+        {
+          "kind": "json",
+          "file": "equipattributecap.json",
+          "size": 11266,
+          "sha256": "115f0ea3a1a5ca11c7f4edbfdda46eb892322908d718e2e4f7c746eb894ed989"
+        },
+        {
+          "kind": "binary",
+          "file": "equipattributecap.pb",
+          "size": 1702,
+          "sha256": "fa824fd6be55727f4d0764a0561727f499a93269d543a5304d2ce5cf7b1cfa50"
+        }
+      ]
+    },
+    {
+      "name": "EquipEnhance",
+      "rows": 12,
+      "source": {
+        "file": "EquipEnhance.xlsx",
+        "size": 5732,
+        "sha256": "ce004f47a0eb848b359dd6b80818b7cb45bc338561f92455bb671bd8f4d83fc3"
+      },
+      "artifacts": [
+        {
+          "kind": "json",
+          "file": "equipenhance.json",
+          "size": 2046,
+          "sha256": "18d80c980eed7d3564b558a7c29ea20545bc4604bccffbf95201524084efd77d"
+        },
+        {
+          "kind": "binary",
+          "file": "equipenhance.pb",
+          "size": 222,
+          "sha256": "2943562bd154b698912917b44fd430ecbe978d52890e89c5f0807e0c37f4d797"
+        }
+      ]
+    },
+    {
+      "name": "EquipGem",
+      "rows": 12,
+      "source": {
+        "file": "EquipGem.xlsx",
+        "size": 5345,
+        "sha256": "d898635b0082794443170d1a43eac85d5a679cba9dd5b71003fd17cc4e24eea4"
+      },
+      "artifacts": [
+        {
+          "kind": "json",
+          "file": "equipgem.json",
+          "size": 910,
+          "sha256": "8a0d29602745d98608f7a70c31b36d998f288de37b4ee136ff8f1a548de73220"
+        },
+        {
+          "kind": "binary",
+          "file": "equipgem.pb",
+          "size": 133,
+          "sha256": "7eb2456f35f78d0ff9d2673873ac72532fc10759fc3eb567311a79fec3ec81fe"
+        }
+      ]
+    },
+    {
+      "name": "EquipGemSocket",
+      "rows": 6,
+      "source": {
+        "file": "EquipGemSocket.xlsx",
+        "size": 5369,
+        "sha256": "3bd0ec6672e6de74d175e86844bf492ca2382344524b75bb5b36bea8593c3a80"
+      },
+      "artifacts": [
+        {
+          "kind": "json",
+          "file": "equipgemsocket.json",
+          "size": 628,
+          "sha256": "abe27e6f58517f0671005a985bf652cfb5b2b28397816e3d3d5bd5cdf8a72f7f"
+        },
+        {
+          "kind": "binary",
+          "file": "equipgemsocket.pb",
+          "size": 122,
+          "sha256": "d186753ba374d02be907176f3137749ed591729863aaf872da55fe3a2edfb186"
+        }
+      ]
+    },
+    {
       "name": "EquipSlot",
-      "rows": 3,
+      "rows": 7,
       "source": {
         "file": "EquipSlot.xlsx",
-        "size": 5078,
-        "sha256": "a16c5c9b1d75d754980e5c49c0c4c0dc3d98c685fdb7afbc36ed310e095c1e2e"
+        "size": 5229,
+        "sha256": "c0b56e38ba8dddfe6ae1d2d75d1ab288c6af03763cb6833e47a00583ce51c328"
       },
       "artifacts": [
         {
           "kind": "json",
           "file": "equipslot.json",
-          "size": 136,
-          "sha256": "a6eac451eaf12c30880f3e71ee2619c82b4250f950e853badec086824e3f3400"
+          "size": 384,
+          "sha256": "6caf2da681dc7b3a13ee305caaf6173222ff642c35f29eee182cab3b4f0669ae"
         },
         {
           "kind": "binary",
           "file": "equipslot.pb",
-          "size": 16,
-          "sha256": "c15d86f1992a9735210ea17b18b73065577b7569c0a486b8e02a0a1436c545a9"
+          "size": 72,
+          "sha256": "f29c2bd81b384f32bf1eb391078eb3e29b40e88ed0e172fcce0926351c04308d"
         }
       ]
     },
@@ -494,47 +655,47 @@
     },
     {
       "name": "Item",
-      "rows": 28,
+      "rows": 61,
       "source": {
         "file": "Item.xlsx",
-        "size": 5906,
-        "sha256": "08018854efc296863340ab0ce062839d5430a6ae60cea42ce5125668880a8f57"
+        "size": 8401,
+        "sha256": "98d447813ba27cd7cd1cc754eb355b902bc33de6b2ce3cbff99fe913da9d6288"
       },
       "artifacts": [
         {
           "kind": "json",
           "file": "item.json",
-          "size": 3851,
-          "sha256": "d29360fb61c399a41e6fa62e7b4cd898123bf19c986027d4d5086726ea467253"
+          "size": 14852,
+          "sha256": "00c007823c3515c1cd1f80b9cde03b8582e7cc5d70939c58d94782f1788950e8"
         },
         {
           "kind": "binary",
           "file": "item.pb",
-          "size": 197,
-          "sha256": "db4e26fe7e32e7d817e1c41774261557247060499b6462b72a8df4838f69bb45"
+          "size": 2877,
+          "sha256": "c5d45448e4f0b8cdd81e3ebd6545fa28597dd0a82a4a48a558d9ef605ca8aa80"
         }
       ]
     },
     {
       "name": "MessageLimiter",
-      "rows": 68,
+      "rows": 81,
       "source": {
         "file": "MessageLimiter.xlsx",
-        "size": 6089,
-        "sha256": "fd09937210d93b0fea86a772a44d5cd2f59db414b54571d1123d4b3eab68f818"
+        "size": 6290,
+        "sha256": "0512a4c10f77e8fbf1d2bd25c9903f0a03cd8e5f548416f53d48183ddfcf26cc"
       },
       "artifacts": [
         {
           "kind": "json",
           "file": "messagelimiter.json",
-          "size": 6074,
-          "sha256": "4e6defeab3cd36008e11ee2834c82b3b093ac8f0338ddbd0672a9a5f8540e4cd"
+          "size": 7234,
+          "sha256": "6730b0e189b4239858ebe59e34a4e851653f686712c7fe75dda92c2edcdbc660"
         },
         {
           "kind": "binary",
           "file": "messagelimiter.pb",
-          "size": 797,
-          "sha256": "830b4713fbffce1fa296264dd6660bde6be1412123a3c33662216e606066bc31"
+          "size": 953,
+          "sha256": "b23550b73676d1c9197614bf08adc9a6251530717ea9582c7b7c58319265acdc"
         }
       ]
     },
@@ -609,24 +770,24 @@
     },
     {
       "name": "Pet",
-      "rows": 4,
+      "rows": 22,
       "source": {
         "file": "Pet.xlsx",
-        "size": 5891,
-        "sha256": "e0e49576afe8c78932e1ccd0286d24906f21cfe86292368a6778ba4a926c6b5f"
+        "size": 6991,
+        "sha256": "70cc943ae15f89cb12511e666d56b8202cbdadf682d5195ab9302f6640afbba6"
       },
       "artifacts": [
         {
           "kind": "json",
           "file": "pet.json",
-          "size": 1549,
-          "sha256": "cdb3896bf12ea1a8b58edfcc0b224cd8a1483ba106bf4a5c2adf4bf01ad1cd66"
+          "size": 8870,
+          "sha256": "6f45465b2d61fc9c396cfa593d0acb75318e3faca28777e17307b2f4b3749e26"
         },
         {
           "kind": "binary",
           "file": "pet.pb",
-          "size": 375,
-          "sha256": "c2dc23b2bb9e2cf753650d74a81abe4b0cfc035dec90f33723527b2bb9d05898"
+          "size": 2001,
+          "sha256": "3e7ff3df38bf0c4e617a67b004025293a1b9b1ea8f591fd63f17c3e58341e6f1"
         }
       ]
     },
@@ -635,21 +796,21 @@
       "rows": 1,
       "source": {
         "file": "PetRule.xlsx",
-        "size": 5162,
-        "sha256": "2d5b5a030ce7bf92be2fb4726d964e03edee1046af9fdf2d05f6c879a700aeaf"
+        "size": 4551,
+        "sha256": "612fcfe6d7b4918b38c063744121e6085cf0d4d38206ee9d1d1a373cd0defaba"
       },
       "artifacts": [
         {
           "kind": "json",
           "file": "petrule.json",
           "size": 185,
-          "sha256": "cca0eefca75c04f35878cca16d94005c464df58095c7e5cf9ca6b043abaf1281"
+          "sha256": "2e79b6c9941e3801d9f3610ac71792c1e39359bd4303b211cd7aa444c8bb1f33"
         },
         {
           "kind": "binary",
           "file": "petrule.pb",
           "size": 47,
-          "sha256": "f1e156f394e2cf101c40d60d9084bc4b91aae22ed195ab8b617fe3091125b944"
+          "sha256": "374815d77fbd54146b043dafc9d34de36d33ba631587f8d34996ef683276c917"
         }
       ]
     },
@@ -701,24 +862,24 @@
     },
     {
       "name": "Skill",
-      "rows": 13,
+      "rows": 14,
       "source": {
         "file": "Skill.xlsx",
-        "size": 7458,
-        "sha256": "775dce91f2d7ff0f1377b854940f74ad816168c1dde1144409fc7d24d2c39ec3"
+        "size": 7252,
+        "sha256": "ae1d30be590db0070eeff558c850c42d72d03c4f3754f30c8db7d9a7637d7830"
       },
       "artifacts": [
         {
           "kind": "json",
           "file": "skill.json",
-          "size": 16209,
-          "sha256": "5b46a000f194d956347f6199f306d3311fd977a9917cdf6eb15c8d2abf64ac4a"
+          "size": 17377,
+          "sha256": "8432a78a34e5c9fb5e0e0c22e94d4ae3c58a28865cf9821a9c35fb8c45927853"
         },
         {
           "kind": "binary",
           "file": "skill.pb",
-          "size": 1179,
-          "sha256": "f31f73605463eee28752a8261ba3d20f325f2d706bc0009281c39763bd9e6dc5"
+          "size": 1241,
+          "sha256": "4f8e7b5a83e5876d7232a14f61cac736921b8e4c1f0be56c727f525da3320d19"
         }
       ]
     },

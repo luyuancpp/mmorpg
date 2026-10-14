@@ -4438,6 +4438,14 @@ TEST(CrossZoneBagMarshal, EquipInstanceDataSurvivesThePlayerAllDataHop)
         pink->set_tier(2);
         pink->set_value(6);
         pink->set_seq(1);
+        // 二期(强化 + 镶嵌):强化等级与两颗宝石。孔位号故意不等于下标 —— 位置是字段,不是 repeated 的顺序。
+        worn.mutable_equip()->set_enhance_level(7);
+        auto* gemInSocket1 = worn.mutable_equip()->add_gems();
+        gemInSocket1->set_socket(1);
+        gemInSocket1->set_gem_config_id(2101);
+        auto* gemInSocket0 = worn.mutable_equip()->add_gems();
+        gemInSocket0->set_socket(0);
+        gemInSocket0->set_gem_config_id(2302);
         bags.bags[kEquipment].InsertItemForRestore(worn, 5);
 
         // 背包里的一件:已初始化但一条都没掷出,只有 presence。
@@ -4481,11 +4489,19 @@ TEST(CrossZoneBagMarshal, EquipInstanceDataSurvivesThePlayerAllDataHop)
                 EXPECT_EQ(entry.equip().affixes(1).tier(), 2u) << which;
                 EXPECT_EQ(entry.equip().affixes(1).value(), 6u) << which;
                 EXPECT_EQ(entry.equip().affixes(1).seq(), 1u) << which;
+                EXPECT_EQ(entry.equip().enhance_level(), 7u) << which;
+                ASSERT_EQ(entry.equip().gems_size(), 2) << which;
+                EXPECT_EQ(entry.equip().gems(0).socket(), 1u) << which;
+                EXPECT_EQ(entry.equip().gems(0).gem_config_id(), 2101u) << which;
+                EXPECT_EQ(entry.equip().gems(1).socket(), 0u) << which;
+                EXPECT_EQ(entry.equip().gems(1).gem_config_id(), 2302u) << which;
             }
             else if (entry.item_uuid() == kSpareGuid)
             {
                 EXPECT_TRUE(entry.has_equip()) << which << ": zero rows is still 'already rolled'";
                 EXPECT_EQ(entry.equip().affixes_size(), 0) << which;
+                EXPECT_EQ(entry.equip().enhance_level(), 0u) << which;
+                EXPECT_EQ(entry.equip().gems_size(), 0) << which;
             }
             else
             {
@@ -4522,6 +4538,12 @@ TEST(CrossZoneBagMarshal, EquipInstanceDataSurvivesThePlayerAllDataHop)
     EXPECT_EQ(worn->equip().affixes(1).tier(), 2u);
     EXPECT_EQ(worn->equip().affixes(1).value(), 6u);
     EXPECT_EQ(worn->equip().affixes(1).seq(), 1u);
+    EXPECT_EQ(worn->equip().enhance_level(), 7u) << "enhance level must survive the hop";
+    ASSERT_EQ(worn->equip().gems_size(), 2) << "inlaid gems must survive the hop";
+    EXPECT_EQ(worn->equip().gems(0).socket(), 1u);
+    EXPECT_EQ(worn->equip().gems(0).gem_config_id(), 2101u);
+    EXPECT_EQ(worn->equip().gems(1).socket(), 0u);
+    EXPECT_EQ(worn->equip().gems(1).gem_config_id(), 2302u);
     EXPECT_EQ(bags->bags[kEquipment].GetItemPosByGuid(kWornGuid), 5u) << "worn gear keeps its slot";
 
     EXPECT_TRUE(spare->has_equip());

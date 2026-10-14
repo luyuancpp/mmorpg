@@ -26,6 +26,15 @@ public:
     static void GmGrantItem(entt::entity player,
         const ::GmGrantItemRequest* request,
         ::GmGrantItemResponse* response);
+    static void EnhanceEquip(entt::entity player,
+        const ::EnhanceEquipRequest* request,
+        ::EnhanceEquipResponse* response);
+    static void InlayGem(entt::entity player,
+        const ::InlayGemRequest* request,
+        ::InlayGemResponse* response);
+    static void RemoveGem(entt::entity player,
+        const ::RemoveGemRequest* request,
+        ::RemoveGemResponse* response);
 
     void CallMethod(const ::google::protobuf::MethodDescriptor* method,
         entt::entity player,
@@ -72,6 +81,30 @@ public:
                 static_cast<const ::GmGrantItemRequest*>(request),
                 static_cast<::GmGrantItemResponse*>(response));
             TRANSFER_ERROR_MESSAGE(static_cast<::GmGrantItemResponse*>(response));
+			}
+            break;
+        case 5:
+			{
+            EnhanceEquip(player,
+                static_cast<const ::EnhanceEquipRequest*>(request),
+                static_cast<::EnhanceEquipResponse*>(response));
+            TRANSFER_ERROR_MESSAGE(static_cast<::EnhanceEquipResponse*>(response));
+			}
+            break;
+        case 6:
+			{
+            InlayGem(player,
+                static_cast<const ::InlayGemRequest*>(request),
+                static_cast<::InlayGemResponse*>(response));
+            TRANSFER_ERROR_MESSAGE(static_cast<::InlayGemResponse*>(response));
+			}
+            break;
+        case 7:
+			{
+            RemoveGem(player,
+                static_cast<const ::RemoveGemRequest*>(request),
+                static_cast<::RemoveGemResponse*>(response));
+            TRANSFER_ERROR_MESSAGE(static_cast<::RemoveGemResponse*>(response));
 			}
             break;
         default:

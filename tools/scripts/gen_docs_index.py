@@ -76,7 +76,7 @@ DESIGN_RULES = [
         "leaderboard-system.md", "jubaozhai-market.md", "chat-sensitive-word-filter.md",
         "character-appearance-identity.md", "activity_maintenance_auto_shift.md",
         "exploit_loss_prevention*", "player-attribute-allocation.md", "player-pet.md",
-        "player-features-ui.md", "equipment-attributes.md",
+        "player-features-ui.md", "equipment-*",
     ]),
     ("基础设施与中间件", [
         "kafka-*", "infra-reconnect-overview.md", "go-zero-rpc-timeout-fix.md",

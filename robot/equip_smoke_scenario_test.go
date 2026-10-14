@@ -568,6 +568,23 @@ func TestEquipFeatureBodiesRejectZeroResponsesAndSurfaceBodyTips(t *testing.T) {
 			&scene.GmGrantItemResponse{Bag: &scene.BagInfo{}},
 			&scene.GmGrantItemResponse{ErrorMessage: rejected},
 			&scene.GmGrantItemResponse{Bag: inventory}},
+		// 强化 / 镶嵌 / 取下(equipment-enhance-inlay.md §3.3)。强化的「完整响应」特意取掷骰失败的形状:
+		// success = false 不是错误,两份快照齐全就必须算成功并原样保留(含 enhance_level)。
+		{"enhance", game.SceneBagClientPlayerEnhanceEquipMessageId,
+			&scene.EnhanceEquipResponse{},
+			&scene.EnhanceEquipResponse{Bag: inventory, Success: true, EnhanceLevel: 3},
+			&scene.EnhanceEquipResponse{ErrorMessage: rejected},
+			&scene.EnhanceEquipResponse{Bag: inventory, Equipment: equipment, EnhanceLevel: 2}},
+		{"inlay gem", game.SceneBagClientPlayerInlayGemMessageId,
+			&scene.InlayGemResponse{},
+			&scene.InlayGemResponse{Equipment: equipment},
+			&scene.InlayGemResponse{ErrorMessage: rejected},
+			&scene.InlayGemResponse{Bag: inventory, Equipment: equipment}},
+		{"remove gem", game.SceneBagClientPlayerRemoveGemMessageId,
+			&scene.RemoveGemResponse{},
+			&scene.RemoveGemResponse{Bag: inventory},
+			&scene.RemoveGemResponse{ErrorMessage: rejected},
+			&scene.RemoveGemResponse{Bag: inventory, Equipment: equipment}},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			player := gameobject.NewPlayer(1)
@@ -612,6 +629,12 @@ func TestEquipFeatureMessagesHonorEnvelopeErrorsAndKeepTheirSource(t *testing.T)
 			&scene.UnequipItemResponse{Bag: inventory, Equipment: equipment}},
 		{"gm grant", game.SceneBagClientPlayerGmGrantItemMessageId,
 			&scene.GmGrantItemResponse{Bag: inventory}},
+		{"enhance", game.SceneBagClientPlayerEnhanceEquipMessageId,
+			&scene.EnhanceEquipResponse{Bag: inventory, Equipment: equipment, Success: true, EnhanceLevel: 3}},
+		{"inlay gem", game.SceneBagClientPlayerInlayGemMessageId,
+			&scene.InlayGemResponse{Bag: inventory, Equipment: equipment}},
+		{"remove gem", game.SceneBagClientPlayerRemoveGemMessageId,
+			&scene.RemoveGemResponse{Bag: inventory, Equipment: equipment}},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			body, err := proto.Marshal(test.complete)

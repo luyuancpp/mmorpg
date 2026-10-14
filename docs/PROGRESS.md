@@ -7489,3 +7489,132 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
 - 保留 Reliable Delivery 的处理确认、持久生产者、重复投递与幂等要求，以及当前官方页的 may change / 暂不推荐生产提示；区分业务状态保存与通知副作用，所有机制附一手来源，不把中文释义或本项目推导写成已实施的统一可靠投递。
 - 验证：独立代理只读核对 Akka 机制，已收紧发送顺序与内存状态迁移的措辞；设计文档 git diff --check 通过。追加前后的原有字节保持不变，最终完整性检查见交付。使用内置 Python 执行文档索引 --check 未通过；只读定位为两条既有 go/db 交接索引的排序差异，本次目标文档条目与标题一致，未改写无关索引。
 - 本次仅文档，未运行服务构建、测试或压测，未提交或推送。Java 版（AGENTS.md §12）：对应版本号为无，无功能或客户端契约变更，未修改 Java 仓库；后续实施仍须核对两版并登记 PARITY.md。
+## 2026-10-13 归档宠物正式身份与自动施法接入（Codex）
+
+- **实际宠物身份**：保留原 Pet 1–4，新增5–22 / 模型1005–1022，使20只归档形象全部能经现有发放、出战、快照与结算链路消费。新增18行先沿用原灵狐基础数值；原石灵、金猊保持原行为。PetRule携带上限改为22。
+- **战斗行为**：20只归档宠物配置正式Skill 14（单体、40法力、冷却组3、无附加buff）；C++与Java按相同顺序选择可用技能，冷却/蓝不足/沉默时回落普攻，不开放客户端宠物行动权限。客户端开发测试图鉴经既有GM接口领取，服务器成功回包后选中，玩家手动出战；正式包隐藏领取入口。
+- **生成闭包**：修改Pet/PetRule/Skill源xlsx后运行正规导表器。上游装备schema与源表已有、生成产物尚未同步，本次同时补齐4张Equip表、Item/EquipSlot、MessageLimiter及equip_error生成闭包，manifest升为21、共39表；4份过期C++战斗/属性protobuf输出由protoc35.1正规重生成，源协议未改。没有手改生成物。
+- **已验证**：39表源文件与清单产物SHA/尺寸全部一致；20个美术ID与22个种类配置逐一匹配；Pet/PetRule/Skill二进制行数正确。导表清单/外键/tip轴74项测试通过，Go表与tip代码build通过。C++原battle检查门禁及turn_battle_engine.cpp实际MSVC编译通过。客户端冻结美术导入16项Python测试通过；Java自动施法7项回归首轮通过。
+- **验证边界**：Go旧table_test.go引用已废弃生成API，测试编译失败；C++测试工程旧裸指针成员违反原检查门禁，新增用例未运行。Unity没有可用许可证，未运行EditMode/联机验收；固件虚拟化未开启，Docker服务仍不能启动。本条不宣称已生成可玩客户端或完成进游戏测试。
+- **Java对应版本**：0.1.0-SNAPSHOT，本轮已实现同口径自动技能与22种正式配置回归，正规ContractSync同步39表；最终来源commit、全量构建结果与对账状态登记在Java仓库PARITY.md。
+## 2026-10-10 装备强化与镶嵌(装备属性系统二期)(Claude,服务器未编译;客户端离线用例已跑)
+
+- **起因**:10-09 用户贴了一段代码核查(「穿戴 / 卸下 / 换装后属性生效,以及强化、镶嵌还不能测」)并要求「做完逻辑代码」。先做了只读调研:
+  穿脱两端的**代码**是完整的(「客户端缺少操作入口」那半句已过时,入口在 `GameplayWindow → EquipTooltip → PlayerFeaturesClient`),
+  卡的是导表 / proto-gen / 编译 / 重启这些 Codex 的步骤;真正没写的是强化与镶嵌。本条做的就是这两样的逻辑代码(洗练不在这次范围内)。
+- **做了什么**(契约、默认决定、实现偏离都在 `docs/design/equipment-enhance-inlay.md`):
+  - 数据落点:强化等级与已镶宝石放进 `EquipInstanceData`(`enhance_level = 2`、`repeated EquipGem gems = 3`),随 `ItemComp.equip` / `ItemEntry.equip`
+    整份搬运,容器层与存档层零改动;`ItemEntry` 预留的 6 号 `enchant_level` / 8 号 `gem_uuids` 不再启用。
+  - 配表:三张只在 scene 读的新表 `EquipEnhance`(12 级)/ `EquipGem`(12 种宝石)/ `EquipGemSocket`(6 个孔),Item 加 13 行(2001 强化石、21xx–24xx 宝石),
+    **不给 Item 加列**;`equip_error` 追加 11 个码。补丁脚本 `equip_xlsx_patch.py` 新增 `forge-tables` / `forge-item-rows` / `forge-tip-codes`。
+  - 协议:`SceneBagClientPlayer` 末尾追加 `EnhanceEquip / InlayGem / RemoveGem`(method index 5 / 6 / 7);`BagItemInfo` 14–20 号、`EquipAttrLineInfo` 8 / 9 号
+    下发强化与孔位的全部显示数据(客户端零配表);流水类型 `TX_EQUIP_ENHANCE / INLAY / GEM_REMOVE = 27 / 28 / 29`。
+  - 服务器:`BagService::RemoveItemsExact`(按 config 全或无扣除 + 流水);`equiprules` 的 `ScaleByPermyriad / RollEnhanceSuccess / LevelAfterFailure / CheckGemFit`;
+    `PlayerEquipSystem::Enhance / InlayGem / RemoveGem`(先校验后提交、成败都扣、先发物后抹宝石、读路径静默);加成与 tooltip 同口径;三张表的启动校验;
+    三个 handler。强化的概率失败是成功的响应(`success = false`),不是 tip。
+  - robot:新 mode `equip-forge-smoke`(账号 `robot_9104`):显示 → 拒绝码 → 强化(按强化前的预览对账)→ 镶嵌 → 重登 → 取下。
+  - 客户端(隔离工作树 `mmorpg-client-forge`,只做数据层与纯逻辑):`PlayerFeaturesClient` 三个新请求、`EquipDisplay` 排版、`EquipBagModel` 模型;
+    界面入口没有做(界面文件归 Codex),接线说明在客户端 `Docs/EquipmentForge-20261009.md`。
+- **做法**:调研(8 个只读视角)→ 契约 → 设计评审(3 个视角,30 条发现,采纳的并入契约)→ 分块实现(8 块,文件归属互不重叠)→
+  代码评审(8 个视角:编译可行性视角对产品代码零发现,其余 14 条全部 minor,已逐条处置,见设计文档 §10.8)。
+- **验证现状**:服务器侧**未编译、未正式导表、未 proto-gen、未跑任何 C++ / Go 测试、未起栈**。Claude 实际跑过的只有:补丁脚本(八个子命令 `--dry-run`
+  都报「已是目标状态」)、一次写到临时目录的沙盒导表(12 / 12 / 6 行,`item.json` 61 行,`equip_error` 28000–28021)、robot 的 `gofmt`、
+  以及客户端在临时目录的离线编译 + NUnit(占位 3 个消息号与 11 个 tip 枚举名,244 / 244,另有 44 个变异体全部被抓到;不是 Unity)。
+- **代码在哪**:服务器在隔离工作树 `E:\work\xuanming-server-mmo-equip`(分支 `feat/equip-enhance-inlay`,基线 `b3889a7c11`);客户端在
+  `E:\work\mmorpg-client-forge`(同名分支)。客户端在 `MessageIds.cs` / `EquipErrorTip.cs` 生成到位前有预期的 19 处 CS0117,不要合进客户端 main。
+- **给 Codex**:`docs/design/equipment-enhance-inlay.md` §9(是一期 §9 的增量与覆盖:两期要在同一次正式导表 / 全量 proto-gen 里首次产出;
+  发号只能在已含 244–249 的树上做;`message-limiter` 执行之前不要拿真实客户端连点强化)。新增用例:C++ `PlayerEquipTest` 47 → 151、
+  `PlayerEquipAttributeTest` 20 → 37、`BagInstanceDataTest` 27 → 31、`BagRemoveExactTest` 10、`Equip*` 33 → 56;Go `TestEquip*` 14 → 32;
+  客户端 `EquipForgeClientTests` 95、`EquipForgeModelTests` 35。
+- **已知缺口**(设计文档 §8):强化石、宝石与装备本身都没有产出途径(只能 GM 发物);洗练 / 宝石合成 / 强化保护未做;流水不带实例数据;
+  强化不是幂等操作(超时后手动再点会再扣一次);取下免费,同种宝石 10 分钟内取下超过 50 次会触发异常获得告警;重登窗口内战斗闸不生效(一期遗留)。
+- **Java 版(AGENTS §12)**:待做。本机没有 Java 仓库,`PARITY.md` 未登记;装备系统在 Java 版整体未做。客户端可见契约(`player_bag.proto` 新字段与 3 个 RPC、
+  `equip_error` 11 个新码、3 张新表与 Item 新行)以设计文档 §2 / §3 为准。
+
+## 2026-10-13 装备强化与镶嵌并入主干、正式生成与定向验证(Codex)
+
+- **主干整合**:按用户「全部分支合并到 main」要求,将装备功能提交 `1e2edced63` 重放为 `6e212616bf`。
+  基于已保留远端宠物 / 路由改动的新主干;唯一代码冲突保留强化属性计算和远端英文日志,没有重新引入已清理的旧 Boost 分卷历史。
+- **正式生成**:八项源表补丁 `--dry-run` 全通过;四份装备 proto 经 protoc 35.1 语法预检通过。
+  使用 Go 1.26.5 重建官方 proto 生成器,完成两次正式导表和一次全量 proto-gen,服务端十个配置代码部署目标均成功。
+  原有消息号 0–249 逐行保留,新发 `InlayGem=250`、`EnhanceEquip=251`、`RemoveGem=252`;装备 tip 新增 28011–28021,原有组与码号均保留。
+- **配表闭环**:`MessageLimiter.xlsx` 由官方脚本追加三条规则(强化 10/秒、镶嵌 / 取下各 5/秒),原 78 行不变;第二次导表后共 81 条。
+  最终 manifest 为 version 25 / 42 表;三张新表分别为 12 / 12 / 6 行,Item 61 行,远端 Pet 22 行与 Skill 14 行保留。
+  42 张源表和 84 份 JSON / PB 的尺寸、哈希、行数与清单逐项一致,配置表索引 `--check` 通过。
+- **生成保护**:`player_bag_handler.cpp` 与 scene 节点 gRPC 自定义实现同生成前逐字节一致;Agones 分配许可调用保留。
+  客户端代理在同批已合入的客户端主干同步官方 C# 协议、消息号、表代码与 handler,客户端运行结果由客户端记录。
+- **运行证据**:在 `robot` 使用 `GOTOOLCHAIN=local` 执行 `go test -mod=mod -run '^TestEquip' -count=1 -timeout=120s -json .`,
+  32 个顶层装备测试全部通过,连同子用例共 253 项通过、0 失败;包含新增的 18 个强化 / 镶嵌测试。测试使用当前 `go/proto` / `go/shared` 的本地模块。
+- **证据边界**:本批没有重编 C++ modules / scene / 节点,没有运行 C++ 单测或联机冒烟,没有替换运行中的服务;旧 vendor 口径未在此验证。
+  Python 环境未安装 pytest,未运行其测试套件;正式导表及上述清单 / 契约核验已执行。
+- **Java 版(AGENTS §12)**:仍待做,本次只整合当前 C++ / Go 仓库及其客户端;未登记独立 Java 服务器的 `PARITY.md`。
+
+## 2026-10-13 跨 zone 传送文档:按历史改写与日志英文化同步(Claude,纯文档,未改代码)
+
+- **起因(两件事都不是本会话做的)**:① 2026-10-12 前后 `origin/main` 被强制更新,整条历史重写,**提交号全部变了**(与改写前没有共同祖先;文件内容、提交的作者时间与标题保留),文档里引用的旧提交号在远端查不到;② `946ffd216d`「日志文案统一为英文,保留业务逻辑」改了 200 个文件的日志字符串,文档里按原文引用的中文日志随之过时。
+- **做了什么(只动跨 zone 这条线的文档)**:
+  - 提交号:按「作者时间 + 提交标题」把旧号唯一映射成新号,共 236 处([设计文档](design/cross-zone-scene-travel.md)、[故障注入 runbook](ops/cross-zone-failure-test-runbook.md)、[交接说明](handoff/handoff-crosszone-20260920.md))。设计文档 §13.0 新增「2026-10-13 两件事」一段,留了本轮十个提交的旧 → 新对照。
+  - 日志原文:runbook 升 **v2.8**,把文中引用的 scene_manager / gate / login / robot 日志原文改成当前代码里的英文原文,只改引用、不改场景与判据;设计文档改 5 处、另有 1 处加注;[组队设计文档](design/team-system.md) 改 1 处(跟随队长切场景那条)。C++ scene 侧的日志本来就是英文,`[RelocateConfirm]` / `[ZoneTravel]` 各行未受影响。
+- **核对方式(静态)**:三份文档里形如提交号的引用逐个用 `git cat-file` 与 `git merge-base --is-ancestor` 对过 —— 服务端的全部在 `origin/main` 上;剩下对不上的只有两类,一是客户端仓 `mmorpg-client` 的提交号(已在客户端仓确认存在),二是 §13.0 对照表里有意保留的十个旧号。runbook 里引用的日志原文由只读核对逐条对过当前代码(39 处逐字节一致,0 处过时)。
+- **没做的**:
+  - 别的文档里的旧提交号**仍是失效的**(例如组队设计文档里的 9 个),本条没有处理;`docs/PROGRESS.md` 的旧条目按只追加的规矩也没有回头改。要引用旧条目里的提交,按「日期 + 标题」到新历史里找。
+  - 跨 zone 这条线的代码本轮一行没动;§13 八项(含 GO-2 根治、CPP-3 待确认表)仍是**未编译、未测试,待 Codex 验证**,验证清单在设计文档 §13.7 / §13.8 与 runbook(B3a–B3d、H、SE、V1–V5)。GO-3 仍待拍板(§13.9)。
+- **提醒**:改写之后,凡是还停在旧历史上的本地目录,要先对齐到 `origin/main`(并把本地独有的提交带过去)再编译,否则编的不是最新代码。
+- **Java 版(AGENTS §12)**:对应 Java 版本号:无;本条只是文档,不涉及客户端契约,**不适用**。跨 zone 传送这条线的 Java 版仍是未做。
+
+## 2026-10-13 friend 推荐:SQL 按方言渲染(MySQL / TiDB 各一份提示)+ 服务端语句超时 + TiDB 计划回归(Claude,未编译)
+
+- **背景**:2026-10-09「friend 推荐:随机兜底的候选带真实的共同好友数 + TiDB 计划核对」那一条把「TiDB 上两条推荐查询有界只靠代价估算、统计低估时整表扫描」
+  登记成 handoff §9.5 第 12 条、没有改 SQL。用户要求按规范做完,本条把它处理掉。数据层迁 TiDB 是既定方向(AGENTS §1),friend 是全服服务,迟早跑在 TiDB 上。
+  代码 10-10 写完,评审做到一半时会话中断;10-13 评审收口后落库,标题用落库日期。
+- **做法**(`go/friend/internal`):
+  - `sqldialect/`(新,叶子包,只依赖标准库):启动期发一条 `SELECT VERSION(), @@version_comment` 判方言,两个串任一个含 TiDB 字样即 TiDB;
+    MariaDB 明确拒绝启动;其余按 MySQL。探测失败算启动致命;方言与两个原始串打进启动日志。
+    单独成包是为了让装配层 svc 不必为一个枚举去直接 import 数据层(svc 经 config 本来就间接依赖 data 与 metrics,那条链本条没有动)。
+  - `data/recommend_sql.go`(新):`recommendByMutualBaseSQL` / `recommendAnchorBaseSQL` 变成带提示占位符的模板,业务 SQL 仍只有一份,提示按方言填。
+    MySQL:五条排除各带 `SEMIJOIN(FIRSTMATCH)` —— 渲染结果与此前**逐字节相同**。
+    TiDB:五条排除各起查询块名、外层 `INL_JOIN(别名@块名, …)`,mutual 的派生表起名 `qb_fof`、外层 `INL_JOIN(@qb_fof f2)`;不带 `SEMIJOIN`。
+  - 两种方言的最外层都另带 `MAX_EXECUTION_TIME(毫秒)`,取整请求预算 `config.RequestBudget()`:请求预算到期时驱动只是关连接,
+    退化的 SELECT 会在服务器上继续跑完;现在最迟在这个时限被服务器自己掐掉。这是 handoff §9.5 第 9 条(MySQL 统计退化)此前没有的运行期兜底。
+  - `NewFriendRepo` 改收 `FriendRepoOptions`(多了方言与语句超时两项,不再继续加位置参数);`svc.ServiceContext` 多一个 `SQLDialect` 字段。
+    协议、配置项、`FriendStore` 接口都没动。
+- **为什么不是「一份文本写两套提示」或全局绑定**:前者两边每次调用都带对方的警告(MySQL 1064 / TiDB 8061),语句级警告会进各自的语句摘要;
+  后者存在集群里,漏建一次就悄悄退回代价估算。按方言各写一份,文本上就能看出每条提示归谁。
+- **SQL 级实测**(本机 TiDB v8.5.2 与 MySQL 26.7.0):
+  - TiDB 文本:13 种库 / 统计状态下(10-09 那 12 种 —— 其中 11 个 10-10 重建,聚簇主键那一个 10-13 补建 —— 再加一个按 Go 用例灌数顺序造的库)
+    两条查询都没有整表 / 全索引扫描;文本协议零警告;预处理协议下 mutual 零警告,兜底查询只有一条 1105
+    (子查询被做成 Apply,TiDB 不缓存这类计划 —— 每次执行重新优化,可以接受);结果与 MySQL 文本在同一库上逐行相同。
+  - 同一批库上 MySQL 文本的对照:b_in 全扫 50,000 行(总读 71,855 对 21,824)、r_in 全扫 50,000 行、mutual 85,276 对 10,256、f2 全扫等。
+  - MySQL:带与不带 `MAX_EXECUTION_TIME` 的计划、Handler 读数、结果相同(四个库,10-13 复测三档超时各两次);上限确实会触发(3024)。
+  - TiDB 上语句超时同样生效,但错误码两种都会出:1105 `context canceled` 或 3024(10-13 用真实兜底语句实测 35 次超时,1105 共 28 次、3024 共 7 次)。
+    logic 不区分错误码,行为不受影响;以后按错误码认「语句超时」时两种都得认。
+  - `server-version` 的影响(10-13,一次性起了一个改过该配置的 v8.5.2 单机实例,测完已删):配成 `"8.0.36"` 后 `VERSION()` 里没有 TiDB 字样,
+    `@@version_comment` 不受影响 —— 所以方言探测看两个串。
+  - TiDB 提示的三种写法是逐个试出来的(派生表里直接写 `INL_JOIN(f2)` 预处理时报 1815;`f2@qb_fof` 不生效;现写法无警告),细节在 `recommend_sql.go`。
+- **测试**:
+  - `sqldialect/dialect_test.go`(新,纯单测 4 条):方言名;两个版本串 → 方言的判定(含 `server-version` 被改写的 TiDB);MariaDB 拒绝。
+  - `data/recommend_sql_test.go`(新,纯单测 6 条):四份 golden 文本(MySQL 两份 = 改动前的原文,TiDB 两份 = 在 TiDB 上实测过的那一份);
+    两种方言去掉提示后是同一条 SQL;超时提示的位置与开关;占位符与参数个数。
+  - `data/recommend_repo_tidb_test.go`(新,门控 `FRIEND_TEST_TIDB_DSN`,验收开关 `FRIEND_REQUIRE_TIDB_TESTS`):三种统计状态下 EXPLAIN 无 FullScan、
+    五条排除与 f2 / m2 按连接键定位、无警告;结果与 MySQL 那组同夹具同期望。三种状态的断言已按用例的灌数顺序在 TiDB 上重放过。
+  - MySQL 真库用例:新增 `TestSQLDialectDetect_OnRealMySQL`(探测语句在真服务器上能跑);入口 `openFriendTestDB` 在每条用例动表之前判一次方言
+    (DSN 误指到 TiDB 即点名失败,不会在 TiDB 上重建表);其余只改了调用点
+    (拼装函数成了 `recommendStatements` 的方法、测试 repo 用 `FriendRepoOptions`),断言没有动。
+- **评审**(10-13 两轮:第一轮三个视角并行 + 逐条反驳式复验,共 14 个只读子任务;修完后第二轮两个视角复核改动;全部跑完):没有 P0 / P1。成立并已修的:
+  方言探测只看 `VERSION()`(加第二判据、实测复现);TiDB 用例门控在子用例里导致没连库时顶层显示 PASS(上提到顶层、加验收开关);
+  TiDB 超时错误码写成只有 1105;svc 为取方言类型新增了对 data 的直接 import(方言挪到只依赖标准库的叶子包);文档里「12 个库」实际只重测了 11 个(补建补测聚簇主键那个);
+  若干注释 / 文档措辞(运行期兜底、「唯一门控」、读数 1,083 应为 1,063、PREPARE 的 1815 条数、gofmt 范围)。驳回 1 条(一次性库评审期间有意保留)。
+- **证据边界**:Go 只过了 gofmt,**没有编译、没有跑 `go test`**(AGENTS §10.1)。SQL 文本的每一份都在对应的库上实测过;Go 侧的渲染代码是否产出这四份文本,
+  由 golden 单测在 Codex 那里验证 —— golden 是用与 Go 规则逐条对应的脚本从模板生成、并核对过「MySQL 渲染 == 10-09 已推送的原文」。
+  方言探测那条 SQL 在两种库上用命令行客户端跑过,没有经过 Go 驱动。MariaDB 对提示的支持来自其文档,本机没有 MariaDB、未实测。
+  一次性库(TiDB 的 `friend_tidb_chk_*`、MySQL 的 `friend_explain_tc_*`)已删、统计锁已解。
+- **给 Codex**:`docs/handoff/friend-handoff-20260920.md` §9.5 表后「第 12 条的 Codex 命令(2026-10-10)」;上一小节的 MySQL 命令照跑。
+  整包跑时没设 `FRIEND_TEST_TIDB_DSN` 的话 TiDB 两条顶层用例 SKIP;要分清「跑了」与「跳过」,把 `FRIEND_REQUIRE_TIDB_TESTS=1` 也设上。
+- **没有做**:MySQL 上 `recommendAnchor` 的统计退化本身(只加了超时兜底,没有让它不退化);TiDB 上兜底查询的计划缓存(1105);
+  其它服务的 SQL 没有按 TiDB 核对过(guild / trade / data_service 各自的事);`sqldialect` 目前只在 friend 里,等第二个服务需要时整包上提到 `go/shared`。
+- **Java 版(AGENTS §12)**:对应 Java 版本号:无;状态:**待做**。纯服务端内部实现,不改客户端契约。按 09-29 的记录 Java 版还没有 friend ——
+  本机没有 Java 仓(`D:\luyuan\xuanming-server-mmo` 不存在),这一点没有重新核对;做到好友推荐且目标库是 TiDB 时按同一口径处理
+  (每种库各自钉计划、各自有计划回归)。`PARITY.md` 由 Java 仓会话登记,本条没有改它。
+- **与历史重写的关系**:10-13 回来时远端 main 的历史已被整体重写过(去掉了 13 个 boost 源码压缩包分片,提交号全变,文件内容其余不变),
+  本条的改动是以补丁形式搬到重写后的主干上提交的。按提交 946ffd216d(日志文案统一为英文)的做法,本批新增的启动日志与 panic 文案写英文
+  (`[friend] SQL dialect = …`);注释、测试断言文案与文档仍是中文。10-09 那一条在重写后的历史里是 `ef14c98e68`。

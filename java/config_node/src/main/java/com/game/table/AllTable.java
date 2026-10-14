@@ -45,6 +45,20 @@ public class AllTable {
 
         DungeonTableManager.getInstance().load(configDir, useBinary);
 
+        EquipAffixPoolTableManager.getInstance().load(configDir, useBinary);
+
+        EquipAffixRuleTableManager.getInstance().load(configDir, useBinary);
+
+        EquipAttributeTableManager.getInstance().load(configDir, useBinary);
+
+        EquipAttributeCapTableManager.getInstance().load(configDir, useBinary);
+
+        EquipEnhanceTableManager.getInstance().load(configDir, useBinary);
+
+        EquipGemTableManager.getInstance().load(configDir, useBinary);
+
+        EquipGemSocketTableManager.getInstance().load(configDir, useBinary);
+
         EquipSlotTableManager.getInstance().load(configDir, useBinary);
 
         GlobalVariableTableManager.getInstance().load(configDir, useBinary);
@@ -102,7 +116,7 @@ public class AllTable {
      * @param useBinary true to load .pb (proto binary), false to load .json.
      */
     public static void loadTablesAsync(String configDir, boolean useBinary) throws Exception {
-        CountDownLatch latch = new CountDownLatch(35);
+        CountDownLatch latch = new CountDownLatch(42);
 
         new Thread(() -> {
             try {
@@ -239,6 +253,76 @@ public class AllTable {
                 DungeonTableManager.getInstance().load(configDir, useBinary);
             } catch (Exception e) {
                 throw new RuntimeException("Failed to load Dungeon table", e);
+            } finally {
+                latch.countDown();
+            }
+        }).start();
+
+        new Thread(() -> {
+            try {
+                EquipAffixPoolTableManager.getInstance().load(configDir, useBinary);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to load EquipAffixPool table", e);
+            } finally {
+                latch.countDown();
+            }
+        }).start();
+
+        new Thread(() -> {
+            try {
+                EquipAffixRuleTableManager.getInstance().load(configDir, useBinary);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to load EquipAffixRule table", e);
+            } finally {
+                latch.countDown();
+            }
+        }).start();
+
+        new Thread(() -> {
+            try {
+                EquipAttributeTableManager.getInstance().load(configDir, useBinary);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to load EquipAttribute table", e);
+            } finally {
+                latch.countDown();
+            }
+        }).start();
+
+        new Thread(() -> {
+            try {
+                EquipAttributeCapTableManager.getInstance().load(configDir, useBinary);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to load EquipAttributeCap table", e);
+            } finally {
+                latch.countDown();
+            }
+        }).start();
+
+        new Thread(() -> {
+            try {
+                EquipEnhanceTableManager.getInstance().load(configDir, useBinary);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to load EquipEnhance table", e);
+            } finally {
+                latch.countDown();
+            }
+        }).start();
+
+        new Thread(() -> {
+            try {
+                EquipGemTableManager.getInstance().load(configDir, useBinary);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to load EquipGem table", e);
+            } finally {
+                latch.countDown();
+            }
+        }).start();
+
+        new Thread(() -> {
+            try {
+                EquipGemSocketTableManager.getInstance().load(configDir, useBinary);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to load EquipGemSocket table", e);
             } finally {
                 latch.countDown();
             }
@@ -501,6 +585,20 @@ public class AllTable {
         CooldownTableManager.getInstance().load(configDir, useBinary);
 
         DungeonTableManager.getInstance().load(configDir, useBinary);
+
+        EquipAffixPoolTableManager.getInstance().load(configDir, useBinary);
+
+        EquipAffixRuleTableManager.getInstance().load(configDir, useBinary);
+
+        EquipAttributeTableManager.getInstance().load(configDir, useBinary);
+
+        EquipAttributeCapTableManager.getInstance().load(configDir, useBinary);
+
+        EquipEnhanceTableManager.getInstance().load(configDir, useBinary);
+
+        EquipGemTableManager.getInstance().load(configDir, useBinary);
+
+        EquipGemSocketTableManager.getInstance().load(configDir, useBinary);
 
         EquipSlotTableManager.getInstance().load(configDir, useBinary);
 

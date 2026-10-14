@@ -22,7 +22,7 @@ namespace MmorpgClient.Table
     public static class AllTable
     {
         /// <summary>Number of generated tables.</summary>
-        public const int TableCount = 35;
+        public const int TableCount = 42;
 
         private static Action s_loadSuccessCallback;
 
@@ -52,6 +52,13 @@ namespace MmorpgClient.Table
                 ConditionTableManager.FileName(useBinary),
                 CooldownTableManager.FileName(useBinary),
                 DungeonTableManager.FileName(useBinary),
+                EquipAffixPoolTableManager.FileName(useBinary),
+                EquipAffixRuleTableManager.FileName(useBinary),
+                EquipAttributeTableManager.FileName(useBinary),
+                EquipAttributeCapTableManager.FileName(useBinary),
+                EquipEnhanceTableManager.FileName(useBinary),
+                EquipGemTableManager.FileName(useBinary),
+                EquipGemSocketTableManager.FileName(useBinary),
                 EquipSlotTableManager.FileName(useBinary),
                 GlobalVariableTableManager.FileName(useBinary),
                 GuildActivityTableManager.FileName(useBinary),
@@ -94,6 +101,13 @@ namespace MmorpgClient.Table
             ConditionTableManager.Instance.Load(configDir, useBinary);
             CooldownTableManager.Instance.Load(configDir, useBinary);
             DungeonTableManager.Instance.Load(configDir, useBinary);
+            EquipAffixPoolTableManager.Instance.Load(configDir, useBinary);
+            EquipAffixRuleTableManager.Instance.Load(configDir, useBinary);
+            EquipAttributeTableManager.Instance.Load(configDir, useBinary);
+            EquipAttributeCapTableManager.Instance.Load(configDir, useBinary);
+            EquipEnhanceTableManager.Instance.Load(configDir, useBinary);
+            EquipGemTableManager.Instance.Load(configDir, useBinary);
+            EquipGemSocketTableManager.Instance.Load(configDir, useBinary);
             EquipSlotTableManager.Instance.Load(configDir, useBinary);
             GlobalVariableTableManager.Instance.Load(configDir, useBinary);
             GuildActivityTableManager.Instance.Load(configDir, useBinary);
@@ -167,6 +181,20 @@ namespace MmorpgClient.Table
                 CooldownTableManager.Instance.LoadFromBytes, CooldownTableManager.Instance.LoadFromJson);
             LoadOne(DungeonTableManager.FileName(useBinary), byteProvider, useBinary,
                 DungeonTableManager.Instance.LoadFromBytes, DungeonTableManager.Instance.LoadFromJson);
+            LoadOne(EquipAffixPoolTableManager.FileName(useBinary), byteProvider, useBinary,
+                EquipAffixPoolTableManager.Instance.LoadFromBytes, EquipAffixPoolTableManager.Instance.LoadFromJson);
+            LoadOne(EquipAffixRuleTableManager.FileName(useBinary), byteProvider, useBinary,
+                EquipAffixRuleTableManager.Instance.LoadFromBytes, EquipAffixRuleTableManager.Instance.LoadFromJson);
+            LoadOne(EquipAttributeTableManager.FileName(useBinary), byteProvider, useBinary,
+                EquipAttributeTableManager.Instance.LoadFromBytes, EquipAttributeTableManager.Instance.LoadFromJson);
+            LoadOne(EquipAttributeCapTableManager.FileName(useBinary), byteProvider, useBinary,
+                EquipAttributeCapTableManager.Instance.LoadFromBytes, EquipAttributeCapTableManager.Instance.LoadFromJson);
+            LoadOne(EquipEnhanceTableManager.FileName(useBinary), byteProvider, useBinary,
+                EquipEnhanceTableManager.Instance.LoadFromBytes, EquipEnhanceTableManager.Instance.LoadFromJson);
+            LoadOne(EquipGemTableManager.FileName(useBinary), byteProvider, useBinary,
+                EquipGemTableManager.Instance.LoadFromBytes, EquipGemTableManager.Instance.LoadFromJson);
+            LoadOne(EquipGemSocketTableManager.FileName(useBinary), byteProvider, useBinary,
+                EquipGemSocketTableManager.Instance.LoadFromBytes, EquipGemSocketTableManager.Instance.LoadFromJson);
             LoadOne(EquipSlotTableManager.FileName(useBinary), byteProvider, useBinary,
                 EquipSlotTableManager.Instance.LoadFromBytes, EquipSlotTableManager.Instance.LoadFromJson);
             LoadOne(GlobalVariableTableManager.FileName(useBinary), byteProvider, useBinary,

@@ -34,8 +34,6 @@ void GateEventHandler::Register()
     tlsEcs.dispatcher.sink<contracts::kafka::BroadcastToPlayersEvent>().connect<&GateEventHandler::BroadcastToPlayersEventHandler>();
     tlsEcs.dispatcher.sink<contracts::kafka::BroadcastToSceneEvent>().connect<&GateEventHandler::BroadcastToSceneEventHandler>();
     tlsEcs.dispatcher.sink<contracts::kafka::BroadcastToAllEvent>().connect<&GateEventHandler::BroadcastToAllEventHandler>();
-    tlsEcs.dispatcher.sink<contracts::kafka::BindBattleEvent>().connect<&GateEventHandler::BindBattleEventHandler>();
-    tlsEcs.dispatcher.sink<contracts::kafka::UnbindBattleEvent>().connect<&GateEventHandler::UnbindBattleEventHandler>();
 }
 
 void GateEventHandler::UnRegister()
@@ -50,8 +48,6 @@ void GateEventHandler::UnRegister()
     tlsEcs.dispatcher.sink<contracts::kafka::BroadcastToPlayersEvent>().disconnect<&GateEventHandler::BroadcastToPlayersEventHandler>();
     tlsEcs.dispatcher.sink<contracts::kafka::BroadcastToSceneEvent>().disconnect<&GateEventHandler::BroadcastToSceneEventHandler>();
     tlsEcs.dispatcher.sink<contracts::kafka::BroadcastToAllEvent>().disconnect<&GateEventHandler::BroadcastToAllEventHandler>();
-    tlsEcs.dispatcher.sink<contracts::kafka::BindBattleEvent>().disconnect<&GateEventHandler::BindBattleEventHandler>();
-    tlsEcs.dispatcher.sink<contracts::kafka::UnbindBattleEvent>().disconnect<&GateEventHandler::UnbindBattleEventHandler>();
 }
 void GateEventHandler::RoutePlayerEventHandler(const contracts::kafka::RoutePlayerEvent& event)
 {
@@ -335,16 +331,6 @@ void GateEventHandler::BroadcastToSceneEventHandler(const contracts::kafka::Broa
 ///<<< END WRITING YOUR CODE
 }
 void GateEventHandler::BroadcastToAllEventHandler(const contracts::kafka::BroadcastToAllEvent& event)
-{
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
-}
-void GateEventHandler::BindBattleEventHandler(const contracts::kafka::BindBattleEvent& event)
-{
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
-}
-void GateEventHandler::UnbindBattleEventHandler(const contracts::kafka::UnbindBattleEvent& event)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE

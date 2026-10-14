@@ -113,6 +113,7 @@ python tools/scripts/gen_docs_index.py
 - [character-appearance-identity.md](design/character-appearance-identity.md) — 人物外观身份链
 - [chat-sensitive-word-filter.md](design/chat-sensitive-word-filter.md) — Chat Sensitive-Word Filter — Design (todo.md #68)
 - [equipment-attributes.md](design/equipment-attributes.md) — 装备属性系统(问道式:基础属性 + 蓝/粉/黄随机属性)
+- [equipment-enhance-inlay.md](design/equipment-enhance-inlay.md) — 装备强化与镶嵌(装备属性系统二期)
 - [exploit_loss_prevention.md](design/exploit_loss_prevention.md) — Exploit & Loss Prevention Systems (漏洞止损与回收系统) · [EN](design/exploit_loss_prevention_en.md) · [中文](design/exploit_loss_prevention_zh.md)
 - [friend-client-spec-20260920.md](design/friend-client-spec-20260920.md) — friend 客户端任务规格(Unity,2026-09-20)
 - [friend-persistence-architecture.md](design/friend-persistence-architecture.md) — Friend Service Persistence Architecture

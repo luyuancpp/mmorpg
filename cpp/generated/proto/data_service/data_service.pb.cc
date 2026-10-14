@@ -85,6 +85,8 @@ PROTOBUF_CONSTINIT ::google::protobuf::internal::ReflectionData
         {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2fdata_5fservice_2fdata_5fservice_2eproto, /* tracker*/ nullptr,},
         // ::data_service::GetPlayerSnapshotDiffResponse
         {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2fdata_5fservice_2fdata_5fservice_2eproto, /* tracker*/ nullptr,},
+        // ::data_service::RollbackGuildDivergence
+        {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2fdata_5fservice_2fdata_5fservice_2eproto, /* tracker*/ nullptr,},
         // ::data_service::RollbackPlayerRequest
         {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2fdata_5fservice_2fdata_5fservice_2eproto, /* tracker*/ nullptr,},
         // ::data_service::RollbackPlayerResponse
@@ -128,6 +130,10 @@ PROTOBUF_CONSTINIT ::google::protobuf::internal::ReflectionData
         // ::data_service::BatchGetPlayerNameResponse_NamesEntry_DoNotUse
         {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2fdata_5fservice_2fdata_5fservice_2eproto, /* tracker*/ nullptr,},
         // ::data_service::BatchGetPlayerNameResponse
+        {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2fdata_5fservice_2fdata_5fservice_2eproto, /* tracker*/ nullptr,},
+        // ::data_service::GetPlayerAssetOpLedgerRequest
+        {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2fdata_5fservice_2fdata_5fservice_2eproto, /* tracker*/ nullptr,},
+        // ::data_service::GetPlayerAssetOpLedgerResponse
         {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2fdata_5fservice_2fdata_5fservice_2eproto, /* tracker*/ nullptr,},
 };
 }  // namespace
@@ -321,7 +327,7 @@ constexpr auto TransactionLogRow::InternalGenerateClassData_(
           false,
       },
 #ifdef PROTOBUF_MESSAGE_GLOBALS
-      &file_reflection_data[38],
+      &file_reflection_data[39],
 #else   // !PROTOBUF_MESSAGE_GLOBALS
       &::_pbi::kDescriptorMethods,
       &descriptor_table_proto_2fdata_5fservice_2fdata_5fservice_2eproto,
@@ -1190,194 +1196,6 @@ const ::_pbi::ClassData* SavePlayerDataRequest_DataEntry_DoNotUse_get_class_data
 }
 }  // namespace
 #endif  // PROTOBUF_CUSTOM_VTABLE
-class RollbackZoneResponse::_Internal {
- public:
-  using HasBits = decltype(::std::declval<RollbackZoneResponse>()._impl_._has_bits_);
-  static constexpr ::int32_t kHasBitsOffset =
-      8 * PROTOBUF_FIELD_OFFSET(RollbackZoneResponse, _impl_._has_bits_);
-};
-
-constexpr RollbackZoneResponse::ParseTableT_ RollbackZoneResponse::InternalGenerateParseTable_(const ::_pbi::ClassData* class_data) {
-  return ParseTableT_{
-    {
-      PROTOBUF_FIELD_OFFSET(RollbackZoneResponse, _impl_._has_bits_),
-      0, // no _extensions_
-      6, 56,  // max_field_number, fast_idx_mask
-      offsetof(ParseTableT_, field_lookup_table),
-      4294967232,  // skipmap
-      offsetof(ParseTableT_, field_entries),
-      6,  // num_field_entries
-      0,  // num_aux_entries
-      offsetof(ParseTableT_, field_names),  // no aux_entries
-      class_data,
-      nullptr,  // post_loop_handler
-      ::_pbi::TcParser::GenericFallback,  // fallback
-      #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-      ::_pbi::TcParser::GetTable<::data_service::RollbackZoneResponse>(),  // to_prefetch
-      #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
-    }, {{
-      {::_pbi::TcParser::MiniParse, {}},
-      // uint32 error_code = 1;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RollbackZoneResponse, _impl_.error_code_), 2>(),
-       {8, 2, 0,
-        PROTOBUF_FIELD_OFFSET(RollbackZoneResponse, _impl_.error_code_)}},
-      // uint32 players_affected = 2;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RollbackZoneResponse, _impl_.players_affected_), 3>(),
-       {16, 3, 0,
-        PROTOBUF_FIELD_OFFSET(RollbackZoneResponse, _impl_.players_affected_)}},
-      // uint32 players_failed = 3;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RollbackZoneResponse, _impl_.players_failed_), 4>(),
-       {24, 4, 0,
-        PROTOBUF_FIELD_OFFSET(RollbackZoneResponse, _impl_.players_failed_)}},
-      // repeated uint64 failed_player_ids = 4;
-      {::_pbi::TcParser::FastV64P1,
-       {34, 0, 0,
-        PROTOBUF_FIELD_OFFSET(RollbackZoneResponse, _impl_.failed_player_ids_)}},
-      // repeated uint64 orphan_player_ids = 5;
-      {::_pbi::TcParser::FastV64P1,
-       {42, 1, 0,
-        PROTOBUF_FIELD_OFFSET(RollbackZoneResponse, _impl_.orphan_player_ids_)}},
-      // uint32 orphans_cleaned = 6;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RollbackZoneResponse, _impl_.orphans_cleaned_), 5>(),
-       {48, 5, 0,
-        PROTOBUF_FIELD_OFFSET(RollbackZoneResponse, _impl_.orphans_cleaned_)}},
-      {::_pbi::TcParser::MiniParse, {}},
-    }}, {{
-      65535, 65535
-    }}, {{
-      // uint32 error_code = 1;
-      {PROTOBUF_FIELD_OFFSET(RollbackZoneResponse, _impl_.error_code_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
-      // uint32 players_affected = 2;
-      {PROTOBUF_FIELD_OFFSET(RollbackZoneResponse, _impl_.players_affected_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
-      // uint32 players_failed = 3;
-      {PROTOBUF_FIELD_OFFSET(RollbackZoneResponse, _impl_.players_failed_), _Internal::kHasBitsOffset + 4, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
-      // repeated uint64 failed_player_ids = 4;
-      {PROTOBUF_FIELD_OFFSET(RollbackZoneResponse, _impl_.failed_player_ids_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcRepeated | ::_fl::kPackedUInt64)},
-      // repeated uint64 orphan_player_ids = 5;
-      {PROTOBUF_FIELD_OFFSET(RollbackZoneResponse, _impl_.orphan_player_ids_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcRepeated | ::_fl::kPackedUInt64)},
-      // uint32 orphans_cleaned = 6;
-      {PROTOBUF_FIELD_OFFSET(RollbackZoneResponse, _impl_.orphans_cleaned_), _Internal::kHasBitsOffset + 5, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
-    }},
-    // no aux_entries
-    {{
-    }},
-  };
-}
-
-
-inline constexpr RollbackZoneResponse::Impl_::Impl_(
-    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
-    ::_pbi::ConstantInitialized) noexcept
-      : _cached_size_{0},
-        failed_player_ids_ { visibility, ::_pbi::InternalMetadataOffset::Build<
-            ::data_service::RollbackZoneResponse,
-            PROTOBUF_FIELD_OFFSET(::data_service::RollbackZoneResponse, _impl_.failed_player_ids_)>()
-         }
-        ,
-        _failed_player_ids_cached_byte_size_{0},
-        orphan_player_ids_ { visibility, ::_pbi::InternalMetadataOffset::Build<
-            ::data_service::RollbackZoneResponse,
-            PROTOBUF_FIELD_OFFSET(::data_service::RollbackZoneResponse, _impl_.orphan_player_ids_)>()
-         }
-        ,
-        _orphan_player_ids_cached_byte_size_{0},
-        error_code_{0u},
-        players_affected_{0u},
-        players_failed_{0u},
-        orphans_cleaned_{0u} {}
-
-template <typename>
-constexpr RollbackZoneResponse::RollbackZoneResponse(::_pbi::ConstantInitialized,
-                       const ::_pbi::ClassData* PROTOBUF_NONNULL class_data)
-    : ::google::protobuf::Message(
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-          class_data
-#endif  // PROTOBUF_CUSTOM_VTABLE
-          ),
-      _impl_(internal_visibility(), ::_pbi::ConstantInitialized()) {
-}
-inline void* PROTOBUF_NONNULL RollbackZoneResponse::PlacementNew_(
-    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
-    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
-  return ::new (mem) RollbackZoneResponse(arena);
-}
-constexpr auto RollbackZoneResponse::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(RollbackZoneResponse), alignof(RollbackZoneResponse));
-}
-constexpr auto RollbackZoneResponse::InternalGenerateClassData_(
-    const MessageLite& prototype,
-    const ::google::protobuf::internal::TcParseTableBase* tc_table) {
-  return ::google::protobuf::internal::ClassDataFull{
-      ::google::protobuf::internal::ClassData{
-          &prototype,
-#ifndef PROTOBUF_MESSAGE_GLOBALS
-          &_table_.header,
-#else
-          tc_table,
-#endif
-          nullptr,  // IsInitialized
-          &RollbackZoneResponse::MergeImpl,
-          ::google::protobuf::Message::GetNewImpl<RollbackZoneResponse>(),
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-          &RollbackZoneResponse::SharedDtor,
-          ::google::protobuf::Message::GetClearImpl<RollbackZoneResponse>(), &RollbackZoneResponse::ByteSizeLong,
-              &RollbackZoneResponse::_InternalSerialize,
-#endif  // PROTOBUF_CUSTOM_VTABLE
-          PROTOBUF_FIELD_OFFSET(RollbackZoneResponse, _impl_._cached_size_),
-          false,
-      },
-#ifdef PROTOBUF_MESSAGE_GLOBALS
-      &file_reflection_data[31],
-#else   // !PROTOBUF_MESSAGE_GLOBALS
-      &::_pbi::kDescriptorMethods,
-      &descriptor_table_proto_2fdata_5fservice_2fdata_5fservice_2eproto,
-      nullptr,  // tracker
-#endif  // PROTOBUF_MESSAGE_GLOBALS
-  };
-}
-struct RollbackZoneResponseGlobalsTypeInternal : ::_pbi::MessageGlobalsBase {
-  constexpr RollbackZoneResponseGlobalsTypeInternal()
-      :
-#ifndef PROTOBUF_MESSAGE_GLOBALS
-        _default(::_pbi::ConstantInitialized{},
-                 RollbackZoneResponse_class_data_.base())
-#else   // !PROTOBUF_MESSAGE_GLOBALS
-        MessageGlobalsBase(RollbackZoneResponse::InternalGenerateClassData_(
-            _default, &RollbackZoneResponse_globals_._table.header)),
-        _default(::_pbi::ConstantInitialized{}, GetClassData()),
-        _table(::_pbi::PrivateAccess::GenerateParseTable<RollbackZoneResponse>(
-            GetClassData()))
-#endif  // PROTOBUF_MESSAGE_GLOBALS
-  {
-  }
-  ~RollbackZoneResponseGlobalsTypeInternal() {}
-  union {
-    alignas(::_pbi::kMaxMessageAlignment) RollbackZoneResponse _default;
-  };
-#ifdef PROTOBUF_MESSAGE_GLOBALS
-  decltype(::_pbi::PrivateAccess::GenerateParseTable<RollbackZoneResponse>(
-      ::std::declval<const ::_pbi::ClassData*>())) _table;
-#endif
-};
-#ifdef PROTOBUF_MESSAGE_GLOBALS
-static_assert(PROTOBUF_FIELD_OFFSET(RollbackZoneResponseGlobalsTypeInternal, _default) ==
-              ::_pbi::MessageGlobalsBase::OffsetToDefault());
-#endif  // PROTOBUF_MESSAGE_GLOBALS
-
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PROTOBUF_MESSAGE_GLOBALS_CONST RollbackZoneResponseGlobalsTypeInternal RollbackZoneResponse_globals_
-        PROTOBUF_MESSAGE_GLOBALS_SECTION(.data.rel.ro);
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-namespace {
-const ::_pbi::ClassData* RollbackZoneResponse_get_class_data() {
-#ifdef PROTOBUF_MESSAGE_GLOBALS
-  return RollbackZoneResponse_globals_.GetClassData();
-#else
-  return RollbackZoneResponse_class_data_.base();
-#endif  // PROTOBUF_MESSAGE_GLOBALS
-}
-}  // namespace
-#endif  // PROTOBUF_CUSTOM_VTABLE
 class RollbackZoneRequest::_Internal {
  public:
   using HasBits = decltype(::std::declval<RollbackZoneRequest>()._impl_._has_bits_);
@@ -1390,11 +1208,11 @@ constexpr RollbackZoneRequest::ParseTableT_ RollbackZoneRequest::InternalGenerat
     {
       PROTOBUF_FIELD_OFFSET(RollbackZoneRequest, _impl_._has_bits_),
       0, // no _extensions_
-      4, 24,  // max_field_number, fast_idx_mask
+      5, 56,  // max_field_number, fast_idx_mask
       offsetof(ParseTableT_, field_lookup_table),
-      4294967280,  // skipmap
+      4294967264,  // skipmap
       offsetof(ParseTableT_, field_entries),
-      4,  // num_field_entries
+      5,  // num_field_entries
       0,  // num_aux_entries
       offsetof(ParseTableT_, field_names),  // no aux_entries
       class_data,
@@ -1404,10 +1222,7 @@ constexpr RollbackZoneRequest::ParseTableT_ RollbackZoneRequest::InternalGenerat
       ::_pbi::TcParser::GetTable<::data_service::RollbackZoneRequest>(),  // to_prefetch
       #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
     }, {{
-      // string operator = 4;
-      {::_pbi::TcParser::FastUS1,
-       {34, 1, 0,
-        PROTOBUF_FIELD_OFFSET(RollbackZoneRequest, _impl_.operator__)}},
+      {::_pbi::TcParser::MiniParse, {}},
       // uint32 zone_id = 1;
       {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RollbackZoneRequest, _impl_.zone_id_), 3>(),
        {8, 3, 0,
@@ -1420,6 +1235,16 @@ constexpr RollbackZoneRequest::ParseTableT_ RollbackZoneRequest::InternalGenerat
       {::_pbi::TcParser::FastUS1,
        {26, 0, 0,
         PROTOBUF_FIELD_OFFSET(RollbackZoneRequest, _impl_.reason_)}},
+      // string operator = 4;
+      {::_pbi::TcParser::FastUS1,
+       {34, 1, 0,
+        PROTOBUF_FIELD_OFFSET(RollbackZoneRequest, _impl_.operator__)}},
+      // bool accept_guild_divergence = 5;
+      {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(RollbackZoneRequest, _impl_.accept_guild_divergence_), 4>(),
+       {40, 4, 0,
+        PROTOBUF_FIELD_OFFSET(RollbackZoneRequest, _impl_.accept_guild_divergence_)}},
+      {::_pbi::TcParser::MiniParse, {}},
+      {::_pbi::TcParser::MiniParse, {}},
     }}, {{
       65535, 65535
     }}, {{
@@ -1431,6 +1256,8 @@ constexpr RollbackZoneRequest::ParseTableT_ RollbackZoneRequest::InternalGenerat
       {PROTOBUF_FIELD_OFFSET(RollbackZoneRequest, _impl_.reason_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
       // string operator = 4;
       {PROTOBUF_FIELD_OFFSET(RollbackZoneRequest, _impl_.operator__), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+      // bool accept_guild_divergence = 5;
+      {PROTOBUF_FIELD_OFFSET(RollbackZoneRequest, _impl_.accept_guild_divergence_), _Internal::kHasBitsOffset + 4, 0, (0 | ::_fl::kFcOptional | ::_fl::kBool)},
     }},
     // no aux_entries
     {{
@@ -1454,7 +1281,8 @@ inline constexpr RollbackZoneRequest::Impl_::Impl_(
             &::google::protobuf::internal::fixed_address_empty_string,
             ::_pbi::ConstantInitialized()),
         target_time_{::uint64_t{0u}},
-        zone_id_{0u} {}
+        zone_id_{0u},
+        accept_guild_divergence_{false} {}
 
 template <typename>
 constexpr RollbackZoneRequest::RollbackZoneRequest(::_pbi::ConstantInitialized,
@@ -1497,7 +1325,7 @@ constexpr auto RollbackZoneRequest::InternalGenerateClassData_(
           false,
       },
 #ifdef PROTOBUF_MESSAGE_GLOBALS
-      &file_reflection_data[30],
+      &file_reflection_data[31],
 #else   // !PROTOBUF_MESSAGE_GLOBALS
       &::_pbi::kDescriptorMethods,
       &descriptor_table_proto_2fdata_5fservice_2fdata_5fservice_2eproto,
@@ -1548,175 +1376,6 @@ const ::_pbi::ClassData* RollbackZoneRequest_get_class_data() {
 }
 }  // namespace
 #endif  // PROTOBUF_CUSTOM_VTABLE
-class RollbackPlayerResponse::_Internal {
- public:
-  using HasBits = decltype(::std::declval<RollbackPlayerResponse>()._impl_._has_bits_);
-  static constexpr ::int32_t kHasBitsOffset =
-      8 * PROTOBUF_FIELD_OFFSET(RollbackPlayerResponse, _impl_._has_bits_);
-};
-
-constexpr RollbackPlayerResponse::ParseTableT_ RollbackPlayerResponse::InternalGenerateParseTable_(const ::_pbi::ClassData* class_data) {
-  return ParseTableT_{
-    {
-      PROTOBUF_FIELD_OFFSET(RollbackPlayerResponse, _impl_._has_bits_),
-      0, // no _extensions_
-      4, 24,  // max_field_number, fast_idx_mask
-      offsetof(ParseTableT_, field_lookup_table),
-      4294967280,  // skipmap
-      offsetof(ParseTableT_, field_entries),
-      4,  // num_field_entries
-      0,  // num_aux_entries
-      offsetof(ParseTableT_, field_names),  // no aux_entries
-      class_data,
-      nullptr,  // post_loop_handler
-      ::_pbi::TcParser::GenericFallback,  // fallback
-      #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-      ::_pbi::TcParser::GetTable<::data_service::RollbackPlayerResponse>(),  // to_prefetch
-      #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
-    }, {{
-      // repeated string fields_restored = 4;
-      {::_pbi::TcParser::FastUR1,
-       {34, 0, 0,
-        PROTOBUF_FIELD_OFFSET(RollbackPlayerResponse, _impl_.fields_restored_)}},
-      // uint32 error_code = 1;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RollbackPlayerResponse, _impl_.error_code_), 3>(),
-       {8, 3, 0,
-        PROTOBUF_FIELD_OFFSET(RollbackPlayerResponse, _impl_.error_code_)}},
-      // uint64 snapshot_id_used = 2;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(RollbackPlayerResponse, _impl_.snapshot_id_used_), 1>(),
-       {16, 1, 0,
-        PROTOBUF_FIELD_OFFSET(RollbackPlayerResponse, _impl_.snapshot_id_used_)}},
-      // uint64 pre_rollback_snapshot_id = 3;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(RollbackPlayerResponse, _impl_.pre_rollback_snapshot_id_), 2>(),
-       {24, 2, 0,
-        PROTOBUF_FIELD_OFFSET(RollbackPlayerResponse, _impl_.pre_rollback_snapshot_id_)}},
-    }}, {{
-      65535, 65535
-    }}, {{
-      // uint32 error_code = 1;
-      {PROTOBUF_FIELD_OFFSET(RollbackPlayerResponse, _impl_.error_code_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
-      // uint64 snapshot_id_used = 2;
-      {PROTOBUF_FIELD_OFFSET(RollbackPlayerResponse, _impl_.snapshot_id_used_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
-      // uint64 pre_rollback_snapshot_id = 3;
-      {PROTOBUF_FIELD_OFFSET(RollbackPlayerResponse, _impl_.pre_rollback_snapshot_id_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
-      // repeated string fields_restored = 4;
-      {PROTOBUF_FIELD_OFFSET(RollbackPlayerResponse, _impl_.fields_restored_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcRepeated | ::_fl::kUtf8String | ::_fl::kRepSString)},
-    }},
-    // no aux_entries
-    {{
-      "\43\0\0\0\17\0\0\0"
-      "data_service.RollbackPlayerResponse"
-      "fields_restored"
-    }},
-  };
-}
-
-
-inline constexpr RollbackPlayerResponse::Impl_::Impl_(
-    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
-    ::_pbi::ConstantInitialized) noexcept
-      : _cached_size_{0},
-        fields_restored_ { visibility, ::_pbi::InternalMetadataOffset::Build<
-            ::data_service::RollbackPlayerResponse,
-            PROTOBUF_FIELD_OFFSET(::data_service::RollbackPlayerResponse, _impl_.fields_restored_)>()
-         }
-        ,
-        snapshot_id_used_{::uint64_t{0u}},
-        pre_rollback_snapshot_id_{::uint64_t{0u}},
-        error_code_{0u} {}
-
-template <typename>
-constexpr RollbackPlayerResponse::RollbackPlayerResponse(::_pbi::ConstantInitialized,
-                       const ::_pbi::ClassData* PROTOBUF_NONNULL class_data)
-    : ::google::protobuf::Message(
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-          class_data
-#endif  // PROTOBUF_CUSTOM_VTABLE
-          ),
-      _impl_(internal_visibility(), ::_pbi::ConstantInitialized()) {
-}
-inline void* PROTOBUF_NONNULL RollbackPlayerResponse::PlacementNew_(
-    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
-    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
-  return ::new (mem) RollbackPlayerResponse(arena);
-}
-constexpr auto RollbackPlayerResponse::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(RollbackPlayerResponse), alignof(RollbackPlayerResponse));
-}
-constexpr auto RollbackPlayerResponse::InternalGenerateClassData_(
-    const MessageLite& prototype,
-    const ::google::protobuf::internal::TcParseTableBase* tc_table) {
-  return ::google::protobuf::internal::ClassDataFull{
-      ::google::protobuf::internal::ClassData{
-          &prototype,
-#ifndef PROTOBUF_MESSAGE_GLOBALS
-          &_table_.header,
-#else
-          tc_table,
-#endif
-          nullptr,  // IsInitialized
-          &RollbackPlayerResponse::MergeImpl,
-          ::google::protobuf::Message::GetNewImpl<RollbackPlayerResponse>(),
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-          &RollbackPlayerResponse::SharedDtor,
-          ::google::protobuf::Message::GetClearImpl<RollbackPlayerResponse>(), &RollbackPlayerResponse::ByteSizeLong,
-              &RollbackPlayerResponse::_InternalSerialize,
-#endif  // PROTOBUF_CUSTOM_VTABLE
-          PROTOBUF_FIELD_OFFSET(RollbackPlayerResponse, _impl_._cached_size_),
-          false,
-      },
-#ifdef PROTOBUF_MESSAGE_GLOBALS
-      &file_reflection_data[29],
-#else   // !PROTOBUF_MESSAGE_GLOBALS
-      &::_pbi::kDescriptorMethods,
-      &descriptor_table_proto_2fdata_5fservice_2fdata_5fservice_2eproto,
-      nullptr,  // tracker
-#endif  // PROTOBUF_MESSAGE_GLOBALS
-  };
-}
-struct RollbackPlayerResponseGlobalsTypeInternal : ::_pbi::MessageGlobalsBase {
-  constexpr RollbackPlayerResponseGlobalsTypeInternal()
-      :
-#ifndef PROTOBUF_MESSAGE_GLOBALS
-        _default(::_pbi::ConstantInitialized{},
-                 RollbackPlayerResponse_class_data_.base())
-#else   // !PROTOBUF_MESSAGE_GLOBALS
-        MessageGlobalsBase(RollbackPlayerResponse::InternalGenerateClassData_(
-            _default, &RollbackPlayerResponse_globals_._table.header)),
-        _default(::_pbi::ConstantInitialized{}, GetClassData()),
-        _table(::_pbi::PrivateAccess::GenerateParseTable<RollbackPlayerResponse>(
-            GetClassData()))
-#endif  // PROTOBUF_MESSAGE_GLOBALS
-  {
-  }
-  ~RollbackPlayerResponseGlobalsTypeInternal() {}
-  union {
-    alignas(::_pbi::kMaxMessageAlignment) RollbackPlayerResponse _default;
-  };
-#ifdef PROTOBUF_MESSAGE_GLOBALS
-  decltype(::_pbi::PrivateAccess::GenerateParseTable<RollbackPlayerResponse>(
-      ::std::declval<const ::_pbi::ClassData*>())) _table;
-#endif
-};
-#ifdef PROTOBUF_MESSAGE_GLOBALS
-static_assert(PROTOBUF_FIELD_OFFSET(RollbackPlayerResponseGlobalsTypeInternal, _default) ==
-              ::_pbi::MessageGlobalsBase::OffsetToDefault());
-#endif  // PROTOBUF_MESSAGE_GLOBALS
-
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PROTOBUF_MESSAGE_GLOBALS_CONST RollbackPlayerResponseGlobalsTypeInternal RollbackPlayerResponse_globals_
-        PROTOBUF_MESSAGE_GLOBALS_SECTION(.data.rel.ro);
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-namespace {
-const ::_pbi::ClassData* RollbackPlayerResponse_get_class_data() {
-#ifdef PROTOBUF_MESSAGE_GLOBALS
-  return RollbackPlayerResponse_globals_.GetClassData();
-#else
-  return RollbackPlayerResponse_class_data_.base();
-#endif  // PROTOBUF_MESSAGE_GLOBALS
-}
-}  // namespace
-#endif  // PROTOBUF_CUSTOM_VTABLE
 class RollbackPlayerRequest::_Internal {
  public:
   using HasBits = decltype(::std::declval<RollbackPlayerRequest>()._impl_._has_bits_);
@@ -1729,11 +1388,11 @@ constexpr RollbackPlayerRequest::ParseTableT_ RollbackPlayerRequest::InternalGen
     {
       PROTOBUF_FIELD_OFFSET(RollbackPlayerRequest, _impl_._has_bits_),
       0, // no _extensions_
-      7, 56,  // max_field_number, fast_idx_mask
+      8, 56,  // max_field_number, fast_idx_mask
       offsetof(ParseTableT_, field_lookup_table),
-      4294967168,  // skipmap
+      4294967040,  // skipmap
       offsetof(ParseTableT_, field_entries),
-      7,  // num_field_entries
+      8,  // num_field_entries
       0,  // num_aux_entries
       offsetof(ParseTableT_, field_names),  // no aux_entries
       class_data,
@@ -1743,7 +1402,10 @@ constexpr RollbackPlayerRequest::ParseTableT_ RollbackPlayerRequest::InternalGen
       ::_pbi::TcParser::GetTable<::data_service::RollbackPlayerRequest>(),  // to_prefetch
       #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
     }, {{
-      {::_pbi::TcParser::MiniParse, {}},
+      // bool accept_guild_divergence = 8;
+      {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(RollbackPlayerRequest, _impl_.accept_guild_divergence_), 7>(),
+       {64, 7, 0,
+        PROTOBUF_FIELD_OFFSET(RollbackPlayerRequest, _impl_.accept_guild_divergence_)}},
       // uint64 player_id = 1;
       {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(RollbackPlayerRequest, _impl_.player_id_), 3>(),
        {8, 3, 0,
@@ -1789,10 +1451,12 @@ constexpr RollbackPlayerRequest::ParseTableT_ RollbackPlayerRequest::InternalGen
       {PROTOBUF_FIELD_OFFSET(RollbackPlayerRequest, _impl_.reason_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
       // string operator = 7;
       {PROTOBUF_FIELD_OFFSET(RollbackPlayerRequest, _impl_.operator__), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+      // bool accept_guild_divergence = 8;
+      {PROTOBUF_FIELD_OFFSET(RollbackPlayerRequest, _impl_.accept_guild_divergence_), _Internal::kHasBitsOffset + 7, 0, (0 | ::_fl::kFcOptional | ::_fl::kBool)},
     }},
     // no aux_entries
     {{
-      "\42\0\0\0\0\6\6\10"
+      "\42\0\0\0\0\6\6\10\0\0\0\0\0\0\0\0"
       "data_service.RollbackPlayerRequest"
       "fields"
       "reason"
@@ -1820,7 +1484,8 @@ inline constexpr RollbackPlayerRequest::Impl_::Impl_(
         player_id_{::uint64_t{0u}},
         snapshot_id_{::uint64_t{0u}},
         target_time_{::uint64_t{0u}},
-        scope_{static_cast< ::data_service::RollbackScope >(0)} {}
+        scope_{static_cast< ::data_service::RollbackScope >(0)},
+        accept_guild_divergence_{false} {}
 
 template <typename>
 constexpr RollbackPlayerRequest::RollbackPlayerRequest(::_pbi::ConstantInitialized,
@@ -1863,7 +1528,7 @@ constexpr auto RollbackPlayerRequest::InternalGenerateClassData_(
           false,
       },
 #ifdef PROTOBUF_MESSAGE_GLOBALS
-      &file_reflection_data[28],
+      &file_reflection_data[29],
 #else   // !PROTOBUF_MESSAGE_GLOBALS
       &::_pbi::kDescriptorMethods,
       &descriptor_table_proto_2fdata_5fservice_2fdata_5fservice_2eproto,
@@ -1914,59 +1579,83 @@ const ::_pbi::ClassData* RollbackPlayerRequest_get_class_data() {
 }
 }  // namespace
 #endif  // PROTOBUF_CUSTOM_VTABLE
-class RollbackAllResponse::_Internal {
+class RollbackGuildDivergence::_Internal {
  public:
-  using HasBits = decltype(::std::declval<RollbackAllResponse>()._impl_._has_bits_);
+  using HasBits = decltype(::std::declval<RollbackGuildDivergence>()._impl_._has_bits_);
   static constexpr ::int32_t kHasBitsOffset =
-      8 * PROTOBUF_FIELD_OFFSET(RollbackAllResponse, _impl_._has_bits_);
+      8 * PROTOBUF_FIELD_OFFSET(RollbackGuildDivergence, _impl_._has_bits_);
 };
 
-constexpr RollbackAllResponse::ParseTableT_ RollbackAllResponse::InternalGenerateParseTable_(const ::_pbi::ClassData* class_data) {
+constexpr RollbackGuildDivergence::ParseTableT_ RollbackGuildDivergence::InternalGenerateParseTable_(const ::_pbi::ClassData* class_data) {
   return ParseTableT_{
     {
-      PROTOBUF_FIELD_OFFSET(RollbackAllResponse, _impl_._has_bits_),
+      PROTOBUF_FIELD_OFFSET(RollbackGuildDivergence, _impl_._has_bits_),
       0, // no _extensions_
-      4, 24,  // max_field_number, fast_idx_mask
+      8, 56,  // max_field_number, fast_idx_mask
       offsetof(ParseTableT_, field_lookup_table),
-      4294967280,  // skipmap
+      4294967040,  // skipmap
       offsetof(ParseTableT_, field_entries),
-      4,  // num_field_entries
+      8,  // num_field_entries
       0,  // num_aux_entries
       offsetof(ParseTableT_, field_names),  // no aux_entries
       class_data,
       nullptr,  // post_loop_handler
       ::_pbi::TcParser::GenericFallback,  // fallback
       #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-      ::_pbi::TcParser::GetTable<::data_service::RollbackAllResponse>(),  // to_prefetch
+      ::_pbi::TcParser::GetTable<::data_service::RollbackGuildDivergence>(),  // to_prefetch
       #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
     }, {{
-      // uint32 players_failed = 4;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RollbackAllResponse, _impl_.players_failed_), 3>(),
-       {32, 3, 0,
-        PROTOBUF_FIELD_OFFSET(RollbackAllResponse, _impl_.players_failed_)}},
-      // uint32 error_code = 1;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RollbackAllResponse, _impl_.error_code_), 0>(),
+      // uint64 updated_ms = 8;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(RollbackGuildDivergence, _impl_.updated_ms_), 7>(),
+       {64, 7, 0,
+        PROTOBUF_FIELD_OFFSET(RollbackGuildDivergence, _impl_.updated_ms_)}},
+      // uint64 op_id = 1;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(RollbackGuildDivergence, _impl_.op_id_), 0>(),
        {8, 0, 0,
-        PROTOBUF_FIELD_OFFSET(RollbackAllResponse, _impl_.error_code_)}},
-      // uint32 zones_processed = 2;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RollbackAllResponse, _impl_.zones_processed_), 1>(),
+        PROTOBUF_FIELD_OFFSET(RollbackGuildDivergence, _impl_.op_id_)}},
+      // uint64 player_id = 2;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(RollbackGuildDivergence, _impl_.player_id_), 1>(),
        {16, 1, 0,
-        PROTOBUF_FIELD_OFFSET(RollbackAllResponse, _impl_.zones_processed_)}},
-      // uint32 players_affected = 3;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RollbackAllResponse, _impl_.players_affected_), 2>(),
+        PROTOBUF_FIELD_OFFSET(RollbackGuildDivergence, _impl_.player_id_)}},
+      // uint64 guild_id = 3;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(RollbackGuildDivergence, _impl_.guild_id_), 2>(),
        {24, 2, 0,
-        PROTOBUF_FIELD_OFFSET(RollbackAllResponse, _impl_.players_affected_)}},
+        PROTOBUF_FIELD_OFFSET(RollbackGuildDivergence, _impl_.guild_id_)}},
+      // uint32 kind = 4;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RollbackGuildDivergence, _impl_.kind_), 3>(),
+       {32, 3, 0,
+        PROTOBUF_FIELD_OFFSET(RollbackGuildDivergence, _impl_.kind_)}},
+      // uint32 status = 5;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RollbackGuildDivergence, _impl_.status_), 4>(),
+       {40, 4, 0,
+        PROTOBUF_FIELD_OFFSET(RollbackGuildDivergence, _impl_.status_)}},
+      // uint64 funds_delta = 6;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(RollbackGuildDivergence, _impl_.funds_delta_), 5>(),
+       {48, 5, 0,
+        PROTOBUF_FIELD_OFFSET(RollbackGuildDivergence, _impl_.funds_delta_)}},
+      // uint64 contribution_delta = 7;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(RollbackGuildDivergence, _impl_.contribution_delta_), 6>(),
+       {56, 6, 0,
+        PROTOBUF_FIELD_OFFSET(RollbackGuildDivergence, _impl_.contribution_delta_)}},
     }}, {{
       65535, 65535
     }}, {{
-      // uint32 error_code = 1;
-      {PROTOBUF_FIELD_OFFSET(RollbackAllResponse, _impl_.error_code_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
-      // uint32 zones_processed = 2;
-      {PROTOBUF_FIELD_OFFSET(RollbackAllResponse, _impl_.zones_processed_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
-      // uint32 players_affected = 3;
-      {PROTOBUF_FIELD_OFFSET(RollbackAllResponse, _impl_.players_affected_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
-      // uint32 players_failed = 4;
-      {PROTOBUF_FIELD_OFFSET(RollbackAllResponse, _impl_.players_failed_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      // uint64 op_id = 1;
+      {PROTOBUF_FIELD_OFFSET(RollbackGuildDivergence, _impl_.op_id_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      // uint64 player_id = 2;
+      {PROTOBUF_FIELD_OFFSET(RollbackGuildDivergence, _impl_.player_id_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      // uint64 guild_id = 3;
+      {PROTOBUF_FIELD_OFFSET(RollbackGuildDivergence, _impl_.guild_id_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      // uint32 kind = 4;
+      {PROTOBUF_FIELD_OFFSET(RollbackGuildDivergence, _impl_.kind_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      // uint32 status = 5;
+      {PROTOBUF_FIELD_OFFSET(RollbackGuildDivergence, _impl_.status_), _Internal::kHasBitsOffset + 4, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      // uint64 funds_delta = 6;
+      {PROTOBUF_FIELD_OFFSET(RollbackGuildDivergence, _impl_.funds_delta_), _Internal::kHasBitsOffset + 5, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      // uint64 contribution_delta = 7;
+      {PROTOBUF_FIELD_OFFSET(RollbackGuildDivergence, _impl_.contribution_delta_), _Internal::kHasBitsOffset + 6, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      // uint64 updated_ms = 8;
+      {PROTOBUF_FIELD_OFFSET(RollbackGuildDivergence, _impl_.updated_ms_), _Internal::kHasBitsOffset + 7, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
     }},
     // no aux_entries
     {{
@@ -1975,17 +1664,21 @@ constexpr RollbackAllResponse::ParseTableT_ RollbackAllResponse::InternalGenerat
 }
 
 
-inline constexpr RollbackAllResponse::Impl_::Impl_(
+inline constexpr RollbackGuildDivergence::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
-        error_code_{0u},
-        zones_processed_{0u},
-        players_affected_{0u},
-        players_failed_{0u} {}
+        op_id_{::uint64_t{0u}},
+        player_id_{::uint64_t{0u}},
+        guild_id_{::uint64_t{0u}},
+        kind_{0u},
+        status_{0u},
+        funds_delta_{::uint64_t{0u}},
+        contribution_delta_{::uint64_t{0u}},
+        updated_ms_{::uint64_t{0u}} {}
 
 template <typename>
-constexpr RollbackAllResponse::RollbackAllResponse(::_pbi::ConstantInitialized,
+constexpr RollbackGuildDivergence::RollbackGuildDivergence(::_pbi::ConstantInitialized,
                        const ::_pbi::ClassData* PROTOBUF_NONNULL class_data)
     : ::google::protobuf::Message(
 #if defined(PROTOBUF_CUSTOM_VTABLE)
@@ -1994,15 +1687,15 @@ constexpr RollbackAllResponse::RollbackAllResponse(::_pbi::ConstantInitialized,
           ),
       _impl_(internal_visibility(), ::_pbi::ConstantInitialized()) {
 }
-inline void* PROTOBUF_NONNULL RollbackAllResponse::PlacementNew_(
+inline void* PROTOBUF_NONNULL RollbackGuildDivergence::PlacementNew_(
     const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
-  return ::new (mem) RollbackAllResponse(arena);
+  return ::new (mem) RollbackGuildDivergence(arena);
 }
-constexpr auto RollbackAllResponse::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(RollbackAllResponse), alignof(RollbackAllResponse));
+constexpr auto RollbackGuildDivergence::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(RollbackGuildDivergence), alignof(RollbackGuildDivergence));
 }
-constexpr auto RollbackAllResponse::InternalGenerateClassData_(
+constexpr auto RollbackGuildDivergence::InternalGenerateClassData_(
     const MessageLite& prototype,
     const ::google::protobuf::internal::TcParseTableBase* tc_table) {
   return ::google::protobuf::internal::ClassDataFull{
@@ -2014,18 +1707,18 @@ constexpr auto RollbackAllResponse::InternalGenerateClassData_(
           tc_table,
 #endif
           nullptr,  // IsInitialized
-          &RollbackAllResponse::MergeImpl,
-          ::google::protobuf::Message::GetNewImpl<RollbackAllResponse>(),
+          &RollbackGuildDivergence::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<RollbackGuildDivergence>(),
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-          &RollbackAllResponse::SharedDtor,
-          ::google::protobuf::Message::GetClearImpl<RollbackAllResponse>(), &RollbackAllResponse::ByteSizeLong,
-              &RollbackAllResponse::_InternalSerialize,
+          &RollbackGuildDivergence::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<RollbackGuildDivergence>(), &RollbackGuildDivergence::ByteSizeLong,
+              &RollbackGuildDivergence::_InternalSerialize,
 #endif  // PROTOBUF_CUSTOM_VTABLE
-          PROTOBUF_FIELD_OFFSET(RollbackAllResponse, _impl_._cached_size_),
+          PROTOBUF_FIELD_OFFSET(RollbackGuildDivergence, _impl_._cached_size_),
           false,
       },
 #ifdef PROTOBUF_MESSAGE_GLOBALS
-      &file_reflection_data[33],
+      &file_reflection_data[28],
 #else   // !PROTOBUF_MESSAGE_GLOBALS
       &::_pbi::kDescriptorMethods,
       &descriptor_table_proto_2fdata_5fservice_2fdata_5fservice_2eproto,
@@ -2033,45 +1726,45 @@ constexpr auto RollbackAllResponse::InternalGenerateClassData_(
 #endif  // PROTOBUF_MESSAGE_GLOBALS
   };
 }
-struct RollbackAllResponseGlobalsTypeInternal : ::_pbi::MessageGlobalsBase {
-  constexpr RollbackAllResponseGlobalsTypeInternal()
+struct RollbackGuildDivergenceGlobalsTypeInternal : ::_pbi::MessageGlobalsBase {
+  constexpr RollbackGuildDivergenceGlobalsTypeInternal()
       :
 #ifndef PROTOBUF_MESSAGE_GLOBALS
         _default(::_pbi::ConstantInitialized{},
-                 RollbackAllResponse_class_data_.base())
+                 RollbackGuildDivergence_class_data_.base())
 #else   // !PROTOBUF_MESSAGE_GLOBALS
-        MessageGlobalsBase(RollbackAllResponse::InternalGenerateClassData_(
-            _default, &RollbackAllResponse_globals_._table.header)),
+        MessageGlobalsBase(RollbackGuildDivergence::InternalGenerateClassData_(
+            _default, &RollbackGuildDivergence_globals_._table.header)),
         _default(::_pbi::ConstantInitialized{}, GetClassData()),
-        _table(::_pbi::PrivateAccess::GenerateParseTable<RollbackAllResponse>(
+        _table(::_pbi::PrivateAccess::GenerateParseTable<RollbackGuildDivergence>(
             GetClassData()))
 #endif  // PROTOBUF_MESSAGE_GLOBALS
   {
   }
-  ~RollbackAllResponseGlobalsTypeInternal() {}
+  ~RollbackGuildDivergenceGlobalsTypeInternal() {}
   union {
-    alignas(::_pbi::kMaxMessageAlignment) RollbackAllResponse _default;
+    alignas(::_pbi::kMaxMessageAlignment) RollbackGuildDivergence _default;
   };
 #ifdef PROTOBUF_MESSAGE_GLOBALS
-  decltype(::_pbi::PrivateAccess::GenerateParseTable<RollbackAllResponse>(
+  decltype(::_pbi::PrivateAccess::GenerateParseTable<RollbackGuildDivergence>(
       ::std::declval<const ::_pbi::ClassData*>())) _table;
 #endif
 };
 #ifdef PROTOBUF_MESSAGE_GLOBALS
-static_assert(PROTOBUF_FIELD_OFFSET(RollbackAllResponseGlobalsTypeInternal, _default) ==
+static_assert(PROTOBUF_FIELD_OFFSET(RollbackGuildDivergenceGlobalsTypeInternal, _default) ==
               ::_pbi::MessageGlobalsBase::OffsetToDefault());
 #endif  // PROTOBUF_MESSAGE_GLOBALS
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PROTOBUF_MESSAGE_GLOBALS_CONST RollbackAllResponseGlobalsTypeInternal RollbackAllResponse_globals_
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PROTOBUF_MESSAGE_GLOBALS_CONST RollbackGuildDivergenceGlobalsTypeInternal RollbackGuildDivergence_globals_
         PROTOBUF_MESSAGE_GLOBALS_SECTION(.data.rel.ro);
 #if defined(PROTOBUF_CUSTOM_VTABLE)
 namespace {
-const ::_pbi::ClassData* RollbackAllResponse_get_class_data() {
+const ::_pbi::ClassData* RollbackGuildDivergence_get_class_data() {
 #ifdef PROTOBUF_MESSAGE_GLOBALS
-  return RollbackAllResponse_globals_.GetClassData();
+  return RollbackGuildDivergence_globals_.GetClassData();
 #else
-  return RollbackAllResponse_class_data_.base();
+  return RollbackGuildDivergence_class_data_.base();
 #endif  // PROTOBUF_MESSAGE_GLOBALS
 }
 }  // namespace
@@ -2088,11 +1781,11 @@ constexpr RollbackAllRequest::ParseTableT_ RollbackAllRequest::InternalGenerateP
     {
       PROTOBUF_FIELD_OFFSET(RollbackAllRequest, _impl_._has_bits_),
       0, // no _extensions_
-      3, 24,  // max_field_number, fast_idx_mask
+      4, 24,  // max_field_number, fast_idx_mask
       offsetof(ParseTableT_, field_lookup_table),
-      4294967288,  // skipmap
+      4294967280,  // skipmap
       offsetof(ParseTableT_, field_entries),
-      3,  // num_field_entries
+      4,  // num_field_entries
       0,  // num_aux_entries
       offsetof(ParseTableT_, field_names),  // no aux_entries
       class_data,
@@ -2102,7 +1795,10 @@ constexpr RollbackAllRequest::ParseTableT_ RollbackAllRequest::InternalGenerateP
       ::_pbi::TcParser::GetTable<::data_service::RollbackAllRequest>(),  // to_prefetch
       #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
     }, {{
-      {::_pbi::TcParser::MiniParse, {}},
+      // bool accept_guild_divergence = 4;
+      {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(RollbackAllRequest, _impl_.accept_guild_divergence_), 3>(),
+       {32, 3, 0,
+        PROTOBUF_FIELD_OFFSET(RollbackAllRequest, _impl_.accept_guild_divergence_)}},
       // uint64 target_time = 1;
       {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(RollbackAllRequest, _impl_.target_time_), 2>(),
        {8, 2, 0,
@@ -2124,6 +1820,8 @@ constexpr RollbackAllRequest::ParseTableT_ RollbackAllRequest::InternalGenerateP
       {PROTOBUF_FIELD_OFFSET(RollbackAllRequest, _impl_.reason_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
       // string operator = 3;
       {PROTOBUF_FIELD_OFFSET(RollbackAllRequest, _impl_.operator__), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+      // bool accept_guild_divergence = 4;
+      {PROTOBUF_FIELD_OFFSET(RollbackAllRequest, _impl_.accept_guild_divergence_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kBool)},
     }},
     // no aux_entries
     {{
@@ -2146,7 +1844,8 @@ inline constexpr RollbackAllRequest::Impl_::Impl_(
         operator__(
             &::google::protobuf::internal::fixed_address_empty_string,
             ::_pbi::ConstantInitialized()),
-        target_time_{::uint64_t{0u}} {}
+        target_time_{::uint64_t{0u}},
+        accept_guild_divergence_{false} {}
 
 template <typename>
 constexpr RollbackAllRequest::RollbackAllRequest(::_pbi::ConstantInitialized,
@@ -2189,7 +1888,7 @@ constexpr auto RollbackAllRequest::InternalGenerateClassData_(
           false,
       },
 #ifdef PROTOBUF_MESSAGE_GLOBALS
-      &file_reflection_data[32],
+      &file_reflection_data[33],
 #else   // !PROTOBUF_MESSAGE_GLOBALS
       &::_pbi::kDescriptorMethods,
       &descriptor_table_proto_2fdata_5fservice_2fdata_5fservice_2eproto,
@@ -2337,7 +2036,7 @@ constexpr auto ReservePlayerNameResponse::InternalGenerateClassData_(
           false,
       },
 #ifdef PROTOBUF_MESSAGE_GLOBALS
-      &file_reflection_data[45],
+      &file_reflection_data[46],
 #else   // !PROTOBUF_MESSAGE_GLOBALS
       &::_pbi::kDescriptorMethods,
       &descriptor_table_proto_2fdata_5fservice_2fdata_5fservice_2eproto,
@@ -2490,7 +2189,7 @@ constexpr auto ReservePlayerNameRequest::InternalGenerateClassData_(
           false,
       },
 #ifdef PROTOBUF_MESSAGE_GLOBALS
-      &file_reflection_data[44],
+      &file_reflection_data[45],
 #else   // !PROTOBUF_MESSAGE_GLOBALS
       &::_pbi::kDescriptorMethods,
       &descriptor_table_proto_2fdata_5fservice_2fdata_5fservice_2eproto,
@@ -2955,7 +2654,7 @@ constexpr auto ReleasePlayerNameRequest::InternalGenerateClassData_(
           false,
       },
 #ifdef PROTOBUF_MESSAGE_GLOBALS
-      &file_reflection_data[46],
+      &file_reflection_data[47],
 #else   // !PROTOBUF_MESSAGE_GLOBALS
       &::_pbi::kDescriptorMethods,
       &descriptor_table_proto_2fdata_5fservice_2fdata_5fservice_2eproto,
@@ -3294,7 +2993,7 @@ constexpr auto RecallResult::InternalGenerateClassData_(
           false,
       },
 #ifdef PROTOBUF_MESSAGE_GLOBALS
-      &file_reflection_data[35],
+      &file_reflection_data[36],
 #else   // !PROTOBUF_MESSAGE_GLOBALS
       &::_pbi::kDescriptorMethods,
       &descriptor_table_proto_2fdata_5fservice_2fdata_5fservice_2eproto,
@@ -3489,7 +3188,7 @@ constexpr auto QueryTransactionLogRequest::InternalGenerateClassData_(
           false,
       },
 #ifdef PROTOBUF_MESSAGE_GLOBALS
-      &file_reflection_data[37],
+      &file_reflection_data[38],
 #else   // !PROTOBUF_MESSAGE_GLOBALS
       &::_pbi::kDescriptorMethods,
       &descriptor_table_proto_2fdata_5fservice_2fdata_5fservice_2eproto,
@@ -4735,6 +4434,147 @@ const ::_pbi::ClassData* GetPlayerFieldRequest_get_class_data() {
 }
 }  // namespace
 #endif  // PROTOBUF_CUSTOM_VTABLE
+class GetPlayerAssetOpLedgerRequest::_Internal {
+ public:
+  using HasBits = decltype(::std::declval<GetPlayerAssetOpLedgerRequest>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(GetPlayerAssetOpLedgerRequest, _impl_._has_bits_);
+};
+
+constexpr GetPlayerAssetOpLedgerRequest::ParseTableT_ GetPlayerAssetOpLedgerRequest::InternalGenerateParseTable_(const ::_pbi::ClassData* class_data) {
+  return ParseTableT_{
+    {
+      PROTOBUF_FIELD_OFFSET(GetPlayerAssetOpLedgerRequest, _impl_._has_bits_),
+      0, // no _extensions_
+      1, 0,  // max_field_number, fast_idx_mask
+      offsetof(ParseTableT_, field_lookup_table),
+      4294967294,  // skipmap
+      offsetof(ParseTableT_, field_entries),
+      1,  // num_field_entries
+      0,  // num_aux_entries
+      offsetof(ParseTableT_, field_names),  // no aux_entries
+      class_data,
+      nullptr,  // post_loop_handler
+      ::_pbi::TcParser::GenericFallback,  // fallback
+      #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+      ::_pbi::TcParser::GetTable<::data_service::GetPlayerAssetOpLedgerRequest>(),  // to_prefetch
+      #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+    }, {{
+      // uint64 player_id = 1;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(GetPlayerAssetOpLedgerRequest, _impl_.player_id_), 0>(),
+       {8, 0, 0,
+        PROTOBUF_FIELD_OFFSET(GetPlayerAssetOpLedgerRequest, _impl_.player_id_)}},
+    }}, {{
+      65535, 65535
+    }}, {{
+      // uint64 player_id = 1;
+      {PROTOBUF_FIELD_OFFSET(GetPlayerAssetOpLedgerRequest, _impl_.player_id_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    }},
+    // no aux_entries
+    {{
+    }},
+  };
+}
+
+
+inline constexpr GetPlayerAssetOpLedgerRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        player_id_{::uint64_t{0u}} {}
+
+template <typename>
+constexpr GetPlayerAssetOpLedgerRequest::GetPlayerAssetOpLedgerRequest(::_pbi::ConstantInitialized,
+                       const ::_pbi::ClassData* PROTOBUF_NONNULL class_data)
+    : ::google::protobuf::Message(
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          class_data
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          ),
+      _impl_(internal_visibility(), ::_pbi::ConstantInitialized()) {
+}
+inline void* PROTOBUF_NONNULL GetPlayerAssetOpLedgerRequest::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) GetPlayerAssetOpLedgerRequest(arena);
+}
+constexpr auto GetPlayerAssetOpLedgerRequest::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(GetPlayerAssetOpLedgerRequest), alignof(GetPlayerAssetOpLedgerRequest));
+}
+constexpr auto GetPlayerAssetOpLedgerRequest::InternalGenerateClassData_(
+    const MessageLite& prototype,
+    const ::google::protobuf::internal::TcParseTableBase* tc_table) {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &prototype,
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+          &_table_.header,
+#else
+          tc_table,
+#endif
+          nullptr,  // IsInitialized
+          &GetPlayerAssetOpLedgerRequest::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<GetPlayerAssetOpLedgerRequest>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &GetPlayerAssetOpLedgerRequest::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<GetPlayerAssetOpLedgerRequest>(), &GetPlayerAssetOpLedgerRequest::ByteSizeLong,
+              &GetPlayerAssetOpLedgerRequest::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(GetPlayerAssetOpLedgerRequest, _impl_._cached_size_),
+          false,
+      },
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+      &file_reflection_data[51],
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+      &::_pbi::kDescriptorMethods,
+      &descriptor_table_proto_2fdata_5fservice_2fdata_5fservice_2eproto,
+      nullptr,  // tracker
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  };
+}
+struct GetPlayerAssetOpLedgerRequestGlobalsTypeInternal : ::_pbi::MessageGlobalsBase {
+  constexpr GetPlayerAssetOpLedgerRequestGlobalsTypeInternal()
+      :
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+        _default(::_pbi::ConstantInitialized{},
+                 GetPlayerAssetOpLedgerRequest_class_data_.base())
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+        MessageGlobalsBase(GetPlayerAssetOpLedgerRequest::InternalGenerateClassData_(
+            _default, &GetPlayerAssetOpLedgerRequest_globals_._table.header)),
+        _default(::_pbi::ConstantInitialized{}, GetClassData()),
+        _table(::_pbi::PrivateAccess::GenerateParseTable<GetPlayerAssetOpLedgerRequest>(
+            GetClassData()))
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  {
+  }
+  ~GetPlayerAssetOpLedgerRequestGlobalsTypeInternal() {}
+  union {
+    alignas(::_pbi::kMaxMessageAlignment) GetPlayerAssetOpLedgerRequest _default;
+  };
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  decltype(::_pbi::PrivateAccess::GenerateParseTable<GetPlayerAssetOpLedgerRequest>(
+      ::std::declval<const ::_pbi::ClassData*>())) _table;
+#endif
+};
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+static_assert(PROTOBUF_FIELD_OFFSET(GetPlayerAssetOpLedgerRequestGlobalsTypeInternal, _default) ==
+              ::_pbi::MessageGlobalsBase::OffsetToDefault());
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PROTOBUF_MESSAGE_GLOBALS_CONST GetPlayerAssetOpLedgerRequestGlobalsTypeInternal GetPlayerAssetOpLedgerRequest_globals_
+        PROTOBUF_MESSAGE_GLOBALS_SECTION(.data.rel.ro);
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+namespace {
+const ::_pbi::ClassData* GetPlayerAssetOpLedgerRequest_get_class_data() {
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  return GetPlayerAssetOpLedgerRequest_globals_.GetClassData();
+#else
+  return GetPlayerAssetOpLedgerRequest_class_data_.base();
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+}
+}  // namespace
+#endif  // PROTOBUF_CUSTOM_VTABLE
 class FieldDiff::_Internal {
  public:
   using HasBits = decltype(::std::declval<FieldDiff>()._impl_._has_bits_);
@@ -5643,7 +5483,7 @@ constexpr auto CreateEventSnapshotResponse::InternalGenerateClassData_(
           false,
       },
 #ifdef PROTOBUF_MESSAGE_GLOBALS
-      &file_reflection_data[41],
+      &file_reflection_data[42],
 #else   // !PROTOBUF_MESSAGE_GLOBALS
       &::_pbi::kDescriptorMethods,
       &descriptor_table_proto_2fdata_5fservice_2fdata_5fservice_2eproto,
@@ -5813,7 +5653,7 @@ constexpr auto CreateEventSnapshotRequest::InternalGenerateClassData_(
           false,
       },
 #ifdef PROTOBUF_MESSAGE_GLOBALS
-      &file_reflection_data[40],
+      &file_reflection_data[41],
 #else   // !PROTOBUF_MESSAGE_GLOBALS
       &::_pbi::kDescriptorMethods,
       &descriptor_table_proto_2fdata_5fservice_2fdata_5fservice_2eproto,
@@ -6035,7 +5875,7 @@ constexpr auto BatchRecallItemsRequest::InternalGenerateClassData_(
           false,
       },
 #ifdef PROTOBUF_MESSAGE_GLOBALS
-      &file_reflection_data[34],
+      &file_reflection_data[35],
 #else   // !PROTOBUF_MESSAGE_GLOBALS
       &::_pbi::kDescriptorMethods,
       &descriptor_table_proto_2fdata_5fservice_2fdata_5fservice_2eproto,
@@ -6171,7 +6011,7 @@ constexpr auto BatchGetPlayerNameResponse_NamesEntry_DoNotUse::InternalGenerateC
           false,
       },
 #ifdef PROTOBUF_MESSAGE_GLOBALS
-      &file_reflection_data[48],
+      &file_reflection_data[49],
 #else   // !PROTOBUF_MESSAGE_GLOBALS
       &::_pbi::kDescriptorMethods,
       &descriptor_table_proto_2fdata_5fservice_2fdata_5fservice_2eproto,
@@ -6317,7 +6157,7 @@ constexpr auto BatchGetPlayerNameRequest::InternalGenerateClassData_(
           false,
       },
 #ifdef PROTOBUF_MESSAGE_GLOBALS
-      &file_reflection_data[47],
+      &file_reflection_data[48],
 #else   // !PROTOBUF_MESSAGE_GLOBALS
       &::_pbi::kDescriptorMethods,
       &descriptor_table_proto_2fdata_5fservice_2fdata_5fservice_2eproto,
@@ -6752,7 +6592,7 @@ constexpr auto AllocateIdSegmentResponse::InternalGenerateClassData_(
           false,
       },
 #ifdef PROTOBUF_MESSAGE_GLOBALS
-      &file_reflection_data[43],
+      &file_reflection_data[44],
 #else   // !PROTOBUF_MESSAGE_GLOBALS
       &::_pbi::kDescriptorMethods,
       &descriptor_table_proto_2fdata_5fservice_2fdata_5fservice_2eproto,
@@ -6905,7 +6745,7 @@ constexpr auto AllocateIdSegmentRequest::InternalGenerateClassData_(
           false,
       },
 #ifdef PROTOBUF_MESSAGE_GLOBALS
-      &file_reflection_data[42],
+      &file_reflection_data[43],
 #else   // !PROTOBUF_MESSAGE_GLOBALS
       &::_pbi::kDescriptorMethods,
       &descriptor_table_proto_2fdata_5fservice_2fdata_5fservice_2eproto,
@@ -7119,6 +6959,625 @@ const ::_pbi::ClassData* SavePlayerDataRequest_get_class_data() {
 }
 }  // namespace
 #endif  // PROTOBUF_CUSTOM_VTABLE
+class RollbackZoneResponse::_Internal {
+ public:
+  using HasBits = decltype(::std::declval<RollbackZoneResponse>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(RollbackZoneResponse, _impl_._has_bits_);
+};
+
+constexpr RollbackZoneResponse::ParseTableT_ RollbackZoneResponse::InternalGenerateParseTable_(const ::_pbi::ClassData* class_data) {
+  return ParseTableT_{
+    {
+      PROTOBUF_FIELD_OFFSET(RollbackZoneResponse, _impl_._has_bits_),
+      0, // no _extensions_
+      9, 120,  // max_field_number, fast_idx_mask
+      offsetof(ParseTableT_, field_lookup_table),
+      4294966784,  // skipmap
+      offsetof(ParseTableT_, field_entries),
+      9,  // num_field_entries
+      1,  // num_aux_entries
+      offsetof(ParseTableT_, aux_entries),
+      class_data,
+      nullptr,  // post_loop_handler
+      ::_pbi::TcParser::GenericFallback,  // fallback
+      #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+      ::_pbi::TcParser::GetTable<::data_service::RollbackZoneResponse>(),  // to_prefetch
+      #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+    }, {{
+      {::_pbi::TcParser::MiniParse, {}},
+      // uint32 error_code = 1;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RollbackZoneResponse, _impl_.error_code_), 3>(),
+       {8, 3, 0,
+        PROTOBUF_FIELD_OFFSET(RollbackZoneResponse, _impl_.error_code_)}},
+      // uint32 players_affected = 2;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RollbackZoneResponse, _impl_.players_affected_), 4>(),
+       {16, 4, 0,
+        PROTOBUF_FIELD_OFFSET(RollbackZoneResponse, _impl_.players_affected_)}},
+      // uint32 players_failed = 3;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RollbackZoneResponse, _impl_.players_failed_), 5>(),
+       {24, 5, 0,
+        PROTOBUF_FIELD_OFFSET(RollbackZoneResponse, _impl_.players_failed_)}},
+      // repeated uint64 failed_player_ids = 4;
+      {::_pbi::TcParser::FastV64P1,
+       {34, 0, 0,
+        PROTOBUF_FIELD_OFFSET(RollbackZoneResponse, _impl_.failed_player_ids_)}},
+      // repeated uint64 orphan_player_ids = 5;
+      {::_pbi::TcParser::FastV64P1,
+       {42, 1, 0,
+        PROTOBUF_FIELD_OFFSET(RollbackZoneResponse, _impl_.orphan_player_ids_)}},
+      // uint32 orphans_cleaned = 6;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RollbackZoneResponse, _impl_.orphans_cleaned_), 6>(),
+       {48, 6, 0,
+        PROTOBUF_FIELD_OFFSET(RollbackZoneResponse, _impl_.orphans_cleaned_)}},
+      // uint32 guild_divergence_count = 7;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RollbackZoneResponse, _impl_.guild_divergence_count_), 7>(),
+       {56, 7, 0,
+        PROTOBUF_FIELD_OFFSET(RollbackZoneResponse, _impl_.guild_divergence_count_)}},
+      // repeated .data_service.RollbackGuildDivergence guild_divergences = 8;
+      {::_pbi::TcParser::FastMtR1,
+       {66, 2, 0,
+        PROTOBUF_FIELD_OFFSET(RollbackZoneResponse, _impl_.guild_divergences_)}},
+      // uint32 guild_unprovable_player_count = 9;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RollbackZoneResponse, _impl_.guild_unprovable_player_count_), 8>(),
+       {72, 8, 0,
+        PROTOBUF_FIELD_OFFSET(RollbackZoneResponse, _impl_.guild_unprovable_player_count_)}},
+      {::_pbi::TcParser::MiniParse, {}},
+      {::_pbi::TcParser::MiniParse, {}},
+      {::_pbi::TcParser::MiniParse, {}},
+      {::_pbi::TcParser::MiniParse, {}},
+      {::_pbi::TcParser::MiniParse, {}},
+      {::_pbi::TcParser::MiniParse, {}},
+    }}, {{
+      65535, 65535
+    }}, {{
+      // uint32 error_code = 1;
+      {PROTOBUF_FIELD_OFFSET(RollbackZoneResponse, _impl_.error_code_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      // uint32 players_affected = 2;
+      {PROTOBUF_FIELD_OFFSET(RollbackZoneResponse, _impl_.players_affected_), _Internal::kHasBitsOffset + 4, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      // uint32 players_failed = 3;
+      {PROTOBUF_FIELD_OFFSET(RollbackZoneResponse, _impl_.players_failed_), _Internal::kHasBitsOffset + 5, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      // repeated uint64 failed_player_ids = 4;
+      {PROTOBUF_FIELD_OFFSET(RollbackZoneResponse, _impl_.failed_player_ids_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcRepeated | ::_fl::kPackedUInt64)},
+      // repeated uint64 orphan_player_ids = 5;
+      {PROTOBUF_FIELD_OFFSET(RollbackZoneResponse, _impl_.orphan_player_ids_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcRepeated | ::_fl::kPackedUInt64)},
+      // uint32 orphans_cleaned = 6;
+      {PROTOBUF_FIELD_OFFSET(RollbackZoneResponse, _impl_.orphans_cleaned_), _Internal::kHasBitsOffset + 6, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      // uint32 guild_divergence_count = 7;
+      {PROTOBUF_FIELD_OFFSET(RollbackZoneResponse, _impl_.guild_divergence_count_), _Internal::kHasBitsOffset + 7, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      // repeated .data_service.RollbackGuildDivergence guild_divergences = 8;
+      {PROTOBUF_FIELD_OFFSET(RollbackZoneResponse, _impl_.guild_divergences_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
+      // uint32 guild_unprovable_player_count = 9;
+      {PROTOBUF_FIELD_OFFSET(RollbackZoneResponse, _impl_.guild_unprovable_player_count_), _Internal::kHasBitsOffset + 8, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+    }},
+    {{
+        #ifndef PROTOBUF_MESSAGE_GLOBALS
+        {::_pbi::TcParser::GetTable<::data_service::RollbackGuildDivergence>()},
+        #else
+        {::_pbi::FieldAuxMessageGlobals(), &::data_service::RollbackGuildDivergence_globals_},
+        #endif
+    }},
+    {{
+    }},
+  };
+}
+
+
+inline constexpr RollbackZoneResponse::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        failed_player_ids_ { visibility, ::_pbi::InternalMetadataOffset::Build<
+            ::data_service::RollbackZoneResponse,
+            PROTOBUF_FIELD_OFFSET(::data_service::RollbackZoneResponse, _impl_.failed_player_ids_)>()
+         }
+        ,
+        _failed_player_ids_cached_byte_size_{0},
+        orphan_player_ids_ { visibility, ::_pbi::InternalMetadataOffset::Build<
+            ::data_service::RollbackZoneResponse,
+            PROTOBUF_FIELD_OFFSET(::data_service::RollbackZoneResponse, _impl_.orphan_player_ids_)>()
+         }
+        ,
+        _orphan_player_ids_cached_byte_size_{0},
+        guild_divergences_ { visibility, ::_pbi::InternalMetadataOffset::Build<
+            ::data_service::RollbackZoneResponse,
+            PROTOBUF_FIELD_OFFSET(::data_service::RollbackZoneResponse, _impl_.guild_divergences_)>()
+         }
+        ,
+        error_code_{0u},
+        players_affected_{0u},
+        players_failed_{0u},
+        orphans_cleaned_{0u},
+        guild_divergence_count_{0u},
+        guild_unprovable_player_count_{0u} {}
+
+template <typename>
+constexpr RollbackZoneResponse::RollbackZoneResponse(::_pbi::ConstantInitialized,
+                       const ::_pbi::ClassData* PROTOBUF_NONNULL class_data)
+    : ::google::protobuf::Message(
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          class_data
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          ),
+      _impl_(internal_visibility(), ::_pbi::ConstantInitialized()) {
+}
+inline void* PROTOBUF_NONNULL RollbackZoneResponse::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) RollbackZoneResponse(arena);
+}
+constexpr auto RollbackZoneResponse::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(RollbackZoneResponse), alignof(RollbackZoneResponse));
+}
+constexpr auto RollbackZoneResponse::InternalGenerateClassData_(
+    const MessageLite& prototype,
+    const ::google::protobuf::internal::TcParseTableBase* tc_table) {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &prototype,
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+          &_table_.header,
+#else
+          tc_table,
+#endif
+          nullptr,  // IsInitialized
+          &RollbackZoneResponse::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<RollbackZoneResponse>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &RollbackZoneResponse::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<RollbackZoneResponse>(), &RollbackZoneResponse::ByteSizeLong,
+              &RollbackZoneResponse::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(RollbackZoneResponse, _impl_._cached_size_),
+          false,
+      },
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+      &file_reflection_data[32],
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+      &::_pbi::kDescriptorMethods,
+      &descriptor_table_proto_2fdata_5fservice_2fdata_5fservice_2eproto,
+      nullptr,  // tracker
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  };
+}
+struct RollbackZoneResponseGlobalsTypeInternal : ::_pbi::MessageGlobalsBase {
+  constexpr RollbackZoneResponseGlobalsTypeInternal()
+      :
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+        _default(::_pbi::ConstantInitialized{},
+                 RollbackZoneResponse_class_data_.base())
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+        MessageGlobalsBase(RollbackZoneResponse::InternalGenerateClassData_(
+            _default, &RollbackZoneResponse_globals_._table.header)),
+        _default(::_pbi::ConstantInitialized{}, GetClassData()),
+        _table(::_pbi::PrivateAccess::GenerateParseTable<RollbackZoneResponse>(
+            GetClassData()))
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  {
+  }
+  ~RollbackZoneResponseGlobalsTypeInternal() {}
+  union {
+    alignas(::_pbi::kMaxMessageAlignment) RollbackZoneResponse _default;
+  };
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  decltype(::_pbi::PrivateAccess::GenerateParseTable<RollbackZoneResponse>(
+      ::std::declval<const ::_pbi::ClassData*>())) _table;
+#endif
+};
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+static_assert(PROTOBUF_FIELD_OFFSET(RollbackZoneResponseGlobalsTypeInternal, _default) ==
+              ::_pbi::MessageGlobalsBase::OffsetToDefault());
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PROTOBUF_MESSAGE_GLOBALS_CONST RollbackZoneResponseGlobalsTypeInternal RollbackZoneResponse_globals_
+        PROTOBUF_MESSAGE_GLOBALS_SECTION(.data.rel.ro);
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+namespace {
+const ::_pbi::ClassData* RollbackZoneResponse_get_class_data() {
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  return RollbackZoneResponse_globals_.GetClassData();
+#else
+  return RollbackZoneResponse_class_data_.base();
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+}
+}  // namespace
+#endif  // PROTOBUF_CUSTOM_VTABLE
+class RollbackPlayerResponse::_Internal {
+ public:
+  using HasBits = decltype(::std::declval<RollbackPlayerResponse>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(RollbackPlayerResponse, _impl_._has_bits_);
+};
+
+constexpr RollbackPlayerResponse::ParseTableT_ RollbackPlayerResponse::InternalGenerateParseTable_(const ::_pbi::ClassData* class_data) {
+  return ParseTableT_{
+    {
+      PROTOBUF_FIELD_OFFSET(RollbackPlayerResponse, _impl_._has_bits_),
+      0, // no _extensions_
+      7, 56,  // max_field_number, fast_idx_mask
+      offsetof(ParseTableT_, field_lookup_table),
+      4294967168,  // skipmap
+      offsetof(ParseTableT_, field_entries),
+      7,  // num_field_entries
+      1,  // num_aux_entries
+      offsetof(ParseTableT_, aux_entries),
+      class_data,
+      nullptr,  // post_loop_handler
+      ::_pbi::TcParser::GenericFallback,  // fallback
+      #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+      ::_pbi::TcParser::GetTable<::data_service::RollbackPlayerResponse>(),  // to_prefetch
+      #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+    }, {{
+      {::_pbi::TcParser::MiniParse, {}},
+      // uint32 error_code = 1;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RollbackPlayerResponse, _impl_.error_code_), 4>(),
+       {8, 4, 0,
+        PROTOBUF_FIELD_OFFSET(RollbackPlayerResponse, _impl_.error_code_)}},
+      // uint64 snapshot_id_used = 2;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(RollbackPlayerResponse, _impl_.snapshot_id_used_), 2>(),
+       {16, 2, 0,
+        PROTOBUF_FIELD_OFFSET(RollbackPlayerResponse, _impl_.snapshot_id_used_)}},
+      // uint64 pre_rollback_snapshot_id = 3;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(RollbackPlayerResponse, _impl_.pre_rollback_snapshot_id_), 3>(),
+       {24, 3, 0,
+        PROTOBUF_FIELD_OFFSET(RollbackPlayerResponse, _impl_.pre_rollback_snapshot_id_)}},
+      // repeated string fields_restored = 4;
+      {::_pbi::TcParser::FastUR1,
+       {34, 0, 0,
+        PROTOBUF_FIELD_OFFSET(RollbackPlayerResponse, _impl_.fields_restored_)}},
+      // uint32 guild_divergence_count = 5;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RollbackPlayerResponse, _impl_.guild_divergence_count_), 5>(),
+       {40, 5, 0,
+        PROTOBUF_FIELD_OFFSET(RollbackPlayerResponse, _impl_.guild_divergence_count_)}},
+      // repeated .data_service.RollbackGuildDivergence guild_divergences = 6;
+      {::_pbi::TcParser::FastMtR1,
+       {50, 1, 0,
+        PROTOBUF_FIELD_OFFSET(RollbackPlayerResponse, _impl_.guild_divergences_)}},
+      // uint32 guild_unprovable_player_count = 7;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RollbackPlayerResponse, _impl_.guild_unprovable_player_count_), 6>(),
+       {56, 6, 0,
+        PROTOBUF_FIELD_OFFSET(RollbackPlayerResponse, _impl_.guild_unprovable_player_count_)}},
+    }}, {{
+      65535, 65535
+    }}, {{
+      // uint32 error_code = 1;
+      {PROTOBUF_FIELD_OFFSET(RollbackPlayerResponse, _impl_.error_code_), _Internal::kHasBitsOffset + 4, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      // uint64 snapshot_id_used = 2;
+      {PROTOBUF_FIELD_OFFSET(RollbackPlayerResponse, _impl_.snapshot_id_used_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      // uint64 pre_rollback_snapshot_id = 3;
+      {PROTOBUF_FIELD_OFFSET(RollbackPlayerResponse, _impl_.pre_rollback_snapshot_id_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      // repeated string fields_restored = 4;
+      {PROTOBUF_FIELD_OFFSET(RollbackPlayerResponse, _impl_.fields_restored_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcRepeated | ::_fl::kUtf8String | ::_fl::kRepSString)},
+      // uint32 guild_divergence_count = 5;
+      {PROTOBUF_FIELD_OFFSET(RollbackPlayerResponse, _impl_.guild_divergence_count_), _Internal::kHasBitsOffset + 5, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      // repeated .data_service.RollbackGuildDivergence guild_divergences = 6;
+      {PROTOBUF_FIELD_OFFSET(RollbackPlayerResponse, _impl_.guild_divergences_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
+      // uint32 guild_unprovable_player_count = 7;
+      {PROTOBUF_FIELD_OFFSET(RollbackPlayerResponse, _impl_.guild_unprovable_player_count_), _Internal::kHasBitsOffset + 6, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+    }},
+    {{
+        #ifndef PROTOBUF_MESSAGE_GLOBALS
+        {::_pbi::TcParser::GetTable<::data_service::RollbackGuildDivergence>()},
+        #else
+        {::_pbi::FieldAuxMessageGlobals(), &::data_service::RollbackGuildDivergence_globals_},
+        #endif
+    }},
+    {{
+      "\43\0\0\0\17\0\0\0"
+      "data_service.RollbackPlayerResponse"
+      "fields_restored"
+    }},
+  };
+}
+
+
+inline constexpr RollbackPlayerResponse::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        fields_restored_ { visibility, ::_pbi::InternalMetadataOffset::Build<
+            ::data_service::RollbackPlayerResponse,
+            PROTOBUF_FIELD_OFFSET(::data_service::RollbackPlayerResponse, _impl_.fields_restored_)>()
+         }
+        ,
+        guild_divergences_ { visibility, ::_pbi::InternalMetadataOffset::Build<
+            ::data_service::RollbackPlayerResponse,
+            PROTOBUF_FIELD_OFFSET(::data_service::RollbackPlayerResponse, _impl_.guild_divergences_)>()
+         }
+        ,
+        snapshot_id_used_{::uint64_t{0u}},
+        pre_rollback_snapshot_id_{::uint64_t{0u}},
+        error_code_{0u},
+        guild_divergence_count_{0u},
+        guild_unprovable_player_count_{0u} {}
+
+template <typename>
+constexpr RollbackPlayerResponse::RollbackPlayerResponse(::_pbi::ConstantInitialized,
+                       const ::_pbi::ClassData* PROTOBUF_NONNULL class_data)
+    : ::google::protobuf::Message(
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          class_data
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          ),
+      _impl_(internal_visibility(), ::_pbi::ConstantInitialized()) {
+}
+inline void* PROTOBUF_NONNULL RollbackPlayerResponse::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) RollbackPlayerResponse(arena);
+}
+constexpr auto RollbackPlayerResponse::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(RollbackPlayerResponse), alignof(RollbackPlayerResponse));
+}
+constexpr auto RollbackPlayerResponse::InternalGenerateClassData_(
+    const MessageLite& prototype,
+    const ::google::protobuf::internal::TcParseTableBase* tc_table) {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &prototype,
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+          &_table_.header,
+#else
+          tc_table,
+#endif
+          nullptr,  // IsInitialized
+          &RollbackPlayerResponse::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<RollbackPlayerResponse>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &RollbackPlayerResponse::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<RollbackPlayerResponse>(), &RollbackPlayerResponse::ByteSizeLong,
+              &RollbackPlayerResponse::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(RollbackPlayerResponse, _impl_._cached_size_),
+          false,
+      },
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+      &file_reflection_data[30],
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+      &::_pbi::kDescriptorMethods,
+      &descriptor_table_proto_2fdata_5fservice_2fdata_5fservice_2eproto,
+      nullptr,  // tracker
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  };
+}
+struct RollbackPlayerResponseGlobalsTypeInternal : ::_pbi::MessageGlobalsBase {
+  constexpr RollbackPlayerResponseGlobalsTypeInternal()
+      :
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+        _default(::_pbi::ConstantInitialized{},
+                 RollbackPlayerResponse_class_data_.base())
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+        MessageGlobalsBase(RollbackPlayerResponse::InternalGenerateClassData_(
+            _default, &RollbackPlayerResponse_globals_._table.header)),
+        _default(::_pbi::ConstantInitialized{}, GetClassData()),
+        _table(::_pbi::PrivateAccess::GenerateParseTable<RollbackPlayerResponse>(
+            GetClassData()))
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  {
+  }
+  ~RollbackPlayerResponseGlobalsTypeInternal() {}
+  union {
+    alignas(::_pbi::kMaxMessageAlignment) RollbackPlayerResponse _default;
+  };
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  decltype(::_pbi::PrivateAccess::GenerateParseTable<RollbackPlayerResponse>(
+      ::std::declval<const ::_pbi::ClassData*>())) _table;
+#endif
+};
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+static_assert(PROTOBUF_FIELD_OFFSET(RollbackPlayerResponseGlobalsTypeInternal, _default) ==
+              ::_pbi::MessageGlobalsBase::OffsetToDefault());
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PROTOBUF_MESSAGE_GLOBALS_CONST RollbackPlayerResponseGlobalsTypeInternal RollbackPlayerResponse_globals_
+        PROTOBUF_MESSAGE_GLOBALS_SECTION(.data.rel.ro);
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+namespace {
+const ::_pbi::ClassData* RollbackPlayerResponse_get_class_data() {
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  return RollbackPlayerResponse_globals_.GetClassData();
+#else
+  return RollbackPlayerResponse_class_data_.base();
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+}
+}  // namespace
+#endif  // PROTOBUF_CUSTOM_VTABLE
+class RollbackAllResponse::_Internal {
+ public:
+  using HasBits = decltype(::std::declval<RollbackAllResponse>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(RollbackAllResponse, _impl_._has_bits_);
+};
+
+constexpr RollbackAllResponse::ParseTableT_ RollbackAllResponse::InternalGenerateParseTable_(const ::_pbi::ClassData* class_data) {
+  return ParseTableT_{
+    {
+      PROTOBUF_FIELD_OFFSET(RollbackAllResponse, _impl_._has_bits_),
+      0, // no _extensions_
+      7, 56,  // max_field_number, fast_idx_mask
+      offsetof(ParseTableT_, field_lookup_table),
+      4294967168,  // skipmap
+      offsetof(ParseTableT_, field_entries),
+      7,  // num_field_entries
+      1,  // num_aux_entries
+      offsetof(ParseTableT_, aux_entries),
+      class_data,
+      nullptr,  // post_loop_handler
+      ::_pbi::TcParser::GenericFallback,  // fallback
+      #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+      ::_pbi::TcParser::GetTable<::data_service::RollbackAllResponse>(),  // to_prefetch
+      #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+    }, {{
+      {::_pbi::TcParser::MiniParse, {}},
+      // uint32 error_code = 1;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RollbackAllResponse, _impl_.error_code_), 1>(),
+       {8, 1, 0,
+        PROTOBUF_FIELD_OFFSET(RollbackAllResponse, _impl_.error_code_)}},
+      // uint32 zones_processed = 2;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RollbackAllResponse, _impl_.zones_processed_), 2>(),
+       {16, 2, 0,
+        PROTOBUF_FIELD_OFFSET(RollbackAllResponse, _impl_.zones_processed_)}},
+      // uint32 players_affected = 3;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RollbackAllResponse, _impl_.players_affected_), 3>(),
+       {24, 3, 0,
+        PROTOBUF_FIELD_OFFSET(RollbackAllResponse, _impl_.players_affected_)}},
+      // uint32 players_failed = 4;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RollbackAllResponse, _impl_.players_failed_), 4>(),
+       {32, 4, 0,
+        PROTOBUF_FIELD_OFFSET(RollbackAllResponse, _impl_.players_failed_)}},
+      // uint32 guild_divergence_count = 5;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RollbackAllResponse, _impl_.guild_divergence_count_), 5>(),
+       {40, 5, 0,
+        PROTOBUF_FIELD_OFFSET(RollbackAllResponse, _impl_.guild_divergence_count_)}},
+      // repeated .data_service.RollbackGuildDivergence guild_divergences = 6;
+      {::_pbi::TcParser::FastMtR1,
+       {50, 0, 0,
+        PROTOBUF_FIELD_OFFSET(RollbackAllResponse, _impl_.guild_divergences_)}},
+      // uint32 guild_unprovable_player_count = 7;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RollbackAllResponse, _impl_.guild_unprovable_player_count_), 6>(),
+       {56, 6, 0,
+        PROTOBUF_FIELD_OFFSET(RollbackAllResponse, _impl_.guild_unprovable_player_count_)}},
+    }}, {{
+      65535, 65535
+    }}, {{
+      // uint32 error_code = 1;
+      {PROTOBUF_FIELD_OFFSET(RollbackAllResponse, _impl_.error_code_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      // uint32 zones_processed = 2;
+      {PROTOBUF_FIELD_OFFSET(RollbackAllResponse, _impl_.zones_processed_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      // uint32 players_affected = 3;
+      {PROTOBUF_FIELD_OFFSET(RollbackAllResponse, _impl_.players_affected_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      // uint32 players_failed = 4;
+      {PROTOBUF_FIELD_OFFSET(RollbackAllResponse, _impl_.players_failed_), _Internal::kHasBitsOffset + 4, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      // uint32 guild_divergence_count = 5;
+      {PROTOBUF_FIELD_OFFSET(RollbackAllResponse, _impl_.guild_divergence_count_), _Internal::kHasBitsOffset + 5, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      // repeated .data_service.RollbackGuildDivergence guild_divergences = 6;
+      {PROTOBUF_FIELD_OFFSET(RollbackAllResponse, _impl_.guild_divergences_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
+      // uint32 guild_unprovable_player_count = 7;
+      {PROTOBUF_FIELD_OFFSET(RollbackAllResponse, _impl_.guild_unprovable_player_count_), _Internal::kHasBitsOffset + 6, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+    }},
+    {{
+        #ifndef PROTOBUF_MESSAGE_GLOBALS
+        {::_pbi::TcParser::GetTable<::data_service::RollbackGuildDivergence>()},
+        #else
+        {::_pbi::FieldAuxMessageGlobals(), &::data_service::RollbackGuildDivergence_globals_},
+        #endif
+    }},
+    {{
+    }},
+  };
+}
+
+
+inline constexpr RollbackAllResponse::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        guild_divergences_ { visibility, ::_pbi::InternalMetadataOffset::Build<
+            ::data_service::RollbackAllResponse,
+            PROTOBUF_FIELD_OFFSET(::data_service::RollbackAllResponse, _impl_.guild_divergences_)>()
+         }
+        ,
+        error_code_{0u},
+        zones_processed_{0u},
+        players_affected_{0u},
+        players_failed_{0u},
+        guild_divergence_count_{0u},
+        guild_unprovable_player_count_{0u} {}
+
+template <typename>
+constexpr RollbackAllResponse::RollbackAllResponse(::_pbi::ConstantInitialized,
+                       const ::_pbi::ClassData* PROTOBUF_NONNULL class_data)
+    : ::google::protobuf::Message(
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          class_data
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          ),
+      _impl_(internal_visibility(), ::_pbi::ConstantInitialized()) {
+}
+inline void* PROTOBUF_NONNULL RollbackAllResponse::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) RollbackAllResponse(arena);
+}
+constexpr auto RollbackAllResponse::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(RollbackAllResponse), alignof(RollbackAllResponse));
+}
+constexpr auto RollbackAllResponse::InternalGenerateClassData_(
+    const MessageLite& prototype,
+    const ::google::protobuf::internal::TcParseTableBase* tc_table) {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &prototype,
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+          &_table_.header,
+#else
+          tc_table,
+#endif
+          nullptr,  // IsInitialized
+          &RollbackAllResponse::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<RollbackAllResponse>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &RollbackAllResponse::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<RollbackAllResponse>(), &RollbackAllResponse::ByteSizeLong,
+              &RollbackAllResponse::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(RollbackAllResponse, _impl_._cached_size_),
+          false,
+      },
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+      &file_reflection_data[34],
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+      &::_pbi::kDescriptorMethods,
+      &descriptor_table_proto_2fdata_5fservice_2fdata_5fservice_2eproto,
+      nullptr,  // tracker
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  };
+}
+struct RollbackAllResponseGlobalsTypeInternal : ::_pbi::MessageGlobalsBase {
+  constexpr RollbackAllResponseGlobalsTypeInternal()
+      :
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+        _default(::_pbi::ConstantInitialized{},
+                 RollbackAllResponse_class_data_.base())
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+        MessageGlobalsBase(RollbackAllResponse::InternalGenerateClassData_(
+            _default, &RollbackAllResponse_globals_._table.header)),
+        _default(::_pbi::ConstantInitialized{}, GetClassData()),
+        _table(::_pbi::PrivateAccess::GenerateParseTable<RollbackAllResponse>(
+            GetClassData()))
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  {
+  }
+  ~RollbackAllResponseGlobalsTypeInternal() {}
+  union {
+    alignas(::_pbi::kMaxMessageAlignment) RollbackAllResponse _default;
+  };
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  decltype(::_pbi::PrivateAccess::GenerateParseTable<RollbackAllResponse>(
+      ::std::declval<const ::_pbi::ClassData*>())) _table;
+#endif
+};
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+static_assert(PROTOBUF_FIELD_OFFSET(RollbackAllResponseGlobalsTypeInternal, _default) ==
+              ::_pbi::MessageGlobalsBase::OffsetToDefault());
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PROTOBUF_MESSAGE_GLOBALS_CONST RollbackAllResponseGlobalsTypeInternal RollbackAllResponse_globals_
+        PROTOBUF_MESSAGE_GLOBALS_SECTION(.data.rel.ro);
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+namespace {
+const ::_pbi::ClassData* RollbackAllResponse_get_class_data() {
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  return RollbackAllResponse_globals_.GetClassData();
+#else
+  return RollbackAllResponse_class_data_.base();
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+}
+}  // namespace
+#endif  // PROTOBUF_CUSTOM_VTABLE
 class QueryTransactionLogResponse::_Internal {
  public:
   using HasBits = decltype(::std::declval<QueryTransactionLogResponse>()._impl_._has_bits_);
@@ -7234,7 +7693,7 @@ constexpr auto QueryTransactionLogResponse::InternalGenerateClassData_(
           false,
       },
 #ifdef PROTOBUF_MESSAGE_GLOBALS
-      &file_reflection_data[39],
+      &file_reflection_data[40],
 #else   // !PROTOBUF_MESSAGE_GLOBALS
       &::_pbi::kDescriptorMethods,
       &descriptor_table_proto_2fdata_5fservice_2fdata_5fservice_2eproto,
@@ -7909,7 +8368,7 @@ constexpr auto BatchRecallItemsResponse::InternalGenerateClassData_(
           false,
       },
 #ifdef PROTOBUF_MESSAGE_GLOBALS
-      &file_reflection_data[36],
+      &file_reflection_data[37],
 #else   // !PROTOBUF_MESSAGE_GLOBALS
       &::_pbi::kDescriptorMethods,
       &descriptor_table_proto_2fdata_5fservice_2fdata_5fservice_2eproto,
@@ -8057,7 +8516,7 @@ constexpr auto BatchGetPlayerNameResponse::InternalGenerateClassData_(
           false,
       },
 #ifdef PROTOBUF_MESSAGE_GLOBALS
-      &file_reflection_data[49],
+      &file_reflection_data[50],
 #else   // !PROTOBUF_MESSAGE_GLOBALS
       &::_pbi::kDescriptorMethods,
       &descriptor_table_proto_2fdata_5fservice_2fdata_5fservice_2eproto,
@@ -8249,6 +8708,160 @@ const ::_pbi::ClassData* BatchGetPlayerHomeZoneResponse_get_class_data() {
   return BatchGetPlayerHomeZoneResponse_globals_.GetClassData();
 #else
   return BatchGetPlayerHomeZoneResponse_class_data_.base();
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+}
+}  // namespace
+#endif  // PROTOBUF_CUSTOM_VTABLE
+class GetPlayerAssetOpLedgerResponse::_Internal {
+ public:
+  using HasBits = decltype(::std::declval<GetPlayerAssetOpLedgerResponse>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(GetPlayerAssetOpLedgerResponse, _impl_._has_bits_);
+};
+
+constexpr GetPlayerAssetOpLedgerResponse::ParseTableT_ GetPlayerAssetOpLedgerResponse::InternalGenerateParseTable_(const ::_pbi::ClassData* class_data) {
+  return ParseTableT_{
+    {
+      PROTOBUF_FIELD_OFFSET(GetPlayerAssetOpLedgerResponse, _impl_._has_bits_),
+      0, // no _extensions_
+      2, 8,  // max_field_number, fast_idx_mask
+      offsetof(ParseTableT_, field_lookup_table),
+      4294967292,  // skipmap
+      offsetof(ParseTableT_, field_entries),
+      2,  // num_field_entries
+      1,  // num_aux_entries
+      offsetof(ParseTableT_, aux_entries),
+      class_data,
+      nullptr,  // post_loop_handler
+      ::_pbi::TcParser::GenericFallback,  // fallback
+      #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+      ::_pbi::TcParser::GetTable<::data_service::GetPlayerAssetOpLedgerResponse>(),  // to_prefetch
+      #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+    }, {{
+      // .PlayerAssetOpLedgerComp ledger = 2;
+      {::_pbi::TcParser::FastMtS1,
+       {18, 0, 0,
+        PROTOBUF_FIELD_OFFSET(GetPlayerAssetOpLedgerResponse, _impl_.ledger_)}},
+      // bool found = 1;
+      {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(GetPlayerAssetOpLedgerResponse, _impl_.found_), 1>(),
+       {8, 1, 0,
+        PROTOBUF_FIELD_OFFSET(GetPlayerAssetOpLedgerResponse, _impl_.found_)}},
+    }}, {{
+      65535, 65535
+    }}, {{
+      // bool found = 1;
+      {PROTOBUF_FIELD_OFFSET(GetPlayerAssetOpLedgerResponse, _impl_.found_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kBool)},
+      // .PlayerAssetOpLedgerComp ledger = 2;
+      {PROTOBUF_FIELD_OFFSET(GetPlayerAssetOpLedgerResponse, _impl_.ledger_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+    }},
+    {{
+        #ifndef PROTOBUF_MESSAGE_GLOBALS
+        {::_pbi::TcParser::GetTable<::PlayerAssetOpLedgerComp>()},
+        #else
+        {::_pbi::FieldAuxMessageGlobals(), &::PlayerAssetOpLedgerComp_globals_},
+        #endif
+    }},
+    {{
+    }},
+  };
+}
+
+
+inline constexpr GetPlayerAssetOpLedgerResponse::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        ledger_{nullptr},
+        found_{false} {}
+
+template <typename>
+constexpr GetPlayerAssetOpLedgerResponse::GetPlayerAssetOpLedgerResponse(::_pbi::ConstantInitialized,
+                       const ::_pbi::ClassData* PROTOBUF_NONNULL class_data)
+    : ::google::protobuf::Message(
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          class_data
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          ),
+      _impl_(internal_visibility(), ::_pbi::ConstantInitialized()) {
+}
+inline void* PROTOBUF_NONNULL GetPlayerAssetOpLedgerResponse::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) GetPlayerAssetOpLedgerResponse(arena);
+}
+constexpr auto GetPlayerAssetOpLedgerResponse::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(GetPlayerAssetOpLedgerResponse), alignof(GetPlayerAssetOpLedgerResponse));
+}
+constexpr auto GetPlayerAssetOpLedgerResponse::InternalGenerateClassData_(
+    const MessageLite& prototype,
+    const ::google::protobuf::internal::TcParseTableBase* tc_table) {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &prototype,
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+          &_table_.header,
+#else
+          tc_table,
+#endif
+          nullptr,  // IsInitialized
+          &GetPlayerAssetOpLedgerResponse::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<GetPlayerAssetOpLedgerResponse>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &GetPlayerAssetOpLedgerResponse::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<GetPlayerAssetOpLedgerResponse>(), &GetPlayerAssetOpLedgerResponse::ByteSizeLong,
+              &GetPlayerAssetOpLedgerResponse::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(GetPlayerAssetOpLedgerResponse, _impl_._cached_size_),
+          false,
+      },
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+      &file_reflection_data[52],
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+      &::_pbi::kDescriptorMethods,
+      &descriptor_table_proto_2fdata_5fservice_2fdata_5fservice_2eproto,
+      nullptr,  // tracker
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  };
+}
+struct GetPlayerAssetOpLedgerResponseGlobalsTypeInternal : ::_pbi::MessageGlobalsBase {
+  constexpr GetPlayerAssetOpLedgerResponseGlobalsTypeInternal()
+      :
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+        _default(::_pbi::ConstantInitialized{},
+                 GetPlayerAssetOpLedgerResponse_class_data_.base())
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+        MessageGlobalsBase(GetPlayerAssetOpLedgerResponse::InternalGenerateClassData_(
+            _default, &GetPlayerAssetOpLedgerResponse_globals_._table.header)),
+        _default(::_pbi::ConstantInitialized{}, GetClassData()),
+        _table(::_pbi::PrivateAccess::GenerateParseTable<GetPlayerAssetOpLedgerResponse>(
+            GetClassData()))
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  {
+  }
+  ~GetPlayerAssetOpLedgerResponseGlobalsTypeInternal() {}
+  union {
+    alignas(::_pbi::kMaxMessageAlignment) GetPlayerAssetOpLedgerResponse _default;
+  };
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  decltype(::_pbi::PrivateAccess::GenerateParseTable<GetPlayerAssetOpLedgerResponse>(
+      ::std::declval<const ::_pbi::ClassData*>())) _table;
+#endif
+};
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+static_assert(PROTOBUF_FIELD_OFFSET(GetPlayerAssetOpLedgerResponseGlobalsTypeInternal, _default) ==
+              ::_pbi::MessageGlobalsBase::OffsetToDefault());
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PROTOBUF_MESSAGE_GLOBALS_CONST GetPlayerAssetOpLedgerResponseGlobalsTypeInternal GetPlayerAssetOpLedgerResponse_globals_
+        PROTOBUF_MESSAGE_GLOBALS_SECTION(.data.rel.ro);
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+namespace {
+const ::_pbi::ClassData* GetPlayerAssetOpLedgerResponse_get_class_data() {
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  return GetPlayerAssetOpLedgerResponse_globals_.GetClassData();
+#else
+  return GetPlayerAssetOpLedgerResponse_class_data_.base();
 #endif  // PROTOBUF_MESSAGE_GLOBALS
 }
 }  // namespace
@@ -8500,8 +9113,27 @@ const ::uint32_t
         2,
         0,
         0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::data_service::RollbackGuildDivergence, _impl_._has_bits_),
+        11, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::data_service::RollbackGuildDivergence, _impl_.op_id_),
+        PROTOBUF_FIELD_OFFSET(::data_service::RollbackGuildDivergence, _impl_.player_id_),
+        PROTOBUF_FIELD_OFFSET(::data_service::RollbackGuildDivergence, _impl_.guild_id_),
+        PROTOBUF_FIELD_OFFSET(::data_service::RollbackGuildDivergence, _impl_.kind_),
+        PROTOBUF_FIELD_OFFSET(::data_service::RollbackGuildDivergence, _impl_.status_),
+        PROTOBUF_FIELD_OFFSET(::data_service::RollbackGuildDivergence, _impl_.funds_delta_),
+        PROTOBUF_FIELD_OFFSET(::data_service::RollbackGuildDivergence, _impl_.contribution_delta_),
+        PROTOBUF_FIELD_OFFSET(::data_service::RollbackGuildDivergence, _impl_.updated_ms_),
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::data_service::RollbackPlayerRequest, _impl_._has_bits_),
-        10, // hasbit index offset
+        11, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::data_service::RollbackPlayerRequest, _impl_.player_id_),
         PROTOBUF_FIELD_OFFSET(::data_service::RollbackPlayerRequest, _impl_.snapshot_id_),
         PROTOBUF_FIELD_OFFSET(::data_service::RollbackPlayerRequest, _impl_.target_time_),
@@ -8509,6 +9141,7 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::data_service::RollbackPlayerRequest, _impl_.fields_),
         PROTOBUF_FIELD_OFFSET(::data_service::RollbackPlayerRequest, _impl_.reason_),
         PROTOBUF_FIELD_OFFSET(::data_service::RollbackPlayerRequest, _impl_.operator__),
+        PROTOBUF_FIELD_OFFSET(::data_service::RollbackPlayerRequest, _impl_.accept_guild_divergence_),
         3,
         4,
         5,
@@ -8516,63 +9149,86 @@ const ::uint32_t
         0,
         1,
         2,
+        7,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::data_service::RollbackPlayerResponse, _impl_._has_bits_),
-        7, // hasbit index offset
+        10, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::data_service::RollbackPlayerResponse, _impl_.error_code_),
         PROTOBUF_FIELD_OFFSET(::data_service::RollbackPlayerResponse, _impl_.snapshot_id_used_),
         PROTOBUF_FIELD_OFFSET(::data_service::RollbackPlayerResponse, _impl_.pre_rollback_snapshot_id_),
         PROTOBUF_FIELD_OFFSET(::data_service::RollbackPlayerResponse, _impl_.fields_restored_),
-        3,
-        1,
+        PROTOBUF_FIELD_OFFSET(::data_service::RollbackPlayerResponse, _impl_.guild_divergence_count_),
+        PROTOBUF_FIELD_OFFSET(::data_service::RollbackPlayerResponse, _impl_.guild_divergences_),
+        PROTOBUF_FIELD_OFFSET(::data_service::RollbackPlayerResponse, _impl_.guild_unprovable_player_count_),
+        4,
         2,
+        3,
         0,
+        5,
+        1,
+        6,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::data_service::RollbackZoneRequest, _impl_._has_bits_),
-        7, // hasbit index offset
+        8, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::data_service::RollbackZoneRequest, _impl_.zone_id_),
         PROTOBUF_FIELD_OFFSET(::data_service::RollbackZoneRequest, _impl_.target_time_),
         PROTOBUF_FIELD_OFFSET(::data_service::RollbackZoneRequest, _impl_.reason_),
         PROTOBUF_FIELD_OFFSET(::data_service::RollbackZoneRequest, _impl_.operator__),
+        PROTOBUF_FIELD_OFFSET(::data_service::RollbackZoneRequest, _impl_.accept_guild_divergence_),
         3,
         2,
         0,
         1,
+        4,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::data_service::RollbackZoneResponse, _impl_._has_bits_),
-        9, // hasbit index offset
+        12, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::data_service::RollbackZoneResponse, _impl_.error_code_),
         PROTOBUF_FIELD_OFFSET(::data_service::RollbackZoneResponse, _impl_.players_affected_),
         PROTOBUF_FIELD_OFFSET(::data_service::RollbackZoneResponse, _impl_.players_failed_),
         PROTOBUF_FIELD_OFFSET(::data_service::RollbackZoneResponse, _impl_.failed_player_ids_),
         PROTOBUF_FIELD_OFFSET(::data_service::RollbackZoneResponse, _impl_.orphan_player_ids_),
         PROTOBUF_FIELD_OFFSET(::data_service::RollbackZoneResponse, _impl_.orphans_cleaned_),
-        2,
+        PROTOBUF_FIELD_OFFSET(::data_service::RollbackZoneResponse, _impl_.guild_divergence_count_),
+        PROTOBUF_FIELD_OFFSET(::data_service::RollbackZoneResponse, _impl_.guild_divergences_),
+        PROTOBUF_FIELD_OFFSET(::data_service::RollbackZoneResponse, _impl_.guild_unprovable_player_count_),
         3,
         4,
+        5,
         0,
         1,
-        5,
+        6,
+        7,
+        2,
+        8,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::data_service::RollbackAllRequest, _impl_._has_bits_),
-        6, // hasbit index offset
+        7, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::data_service::RollbackAllRequest, _impl_.target_time_),
         PROTOBUF_FIELD_OFFSET(::data_service::RollbackAllRequest, _impl_.reason_),
         PROTOBUF_FIELD_OFFSET(::data_service::RollbackAllRequest, _impl_.operator__),
+        PROTOBUF_FIELD_OFFSET(::data_service::RollbackAllRequest, _impl_.accept_guild_divergence_),
         2,
         0,
         1,
+        3,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::data_service::RollbackAllResponse, _impl_._has_bits_),
-        7, // hasbit index offset
+        10, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::data_service::RollbackAllResponse, _impl_.error_code_),
         PROTOBUF_FIELD_OFFSET(::data_service::RollbackAllResponse, _impl_.zones_processed_),
         PROTOBUF_FIELD_OFFSET(::data_service::RollbackAllResponse, _impl_.players_affected_),
         PROTOBUF_FIELD_OFFSET(::data_service::RollbackAllResponse, _impl_.players_failed_),
-        0,
+        PROTOBUF_FIELD_OFFSET(::data_service::RollbackAllResponse, _impl_.guild_divergence_count_),
+        PROTOBUF_FIELD_OFFSET(::data_service::RollbackAllResponse, _impl_.guild_divergences_),
+        PROTOBUF_FIELD_OFFSET(::data_service::RollbackAllResponse, _impl_.guild_unprovable_player_count_),
         1,
         2,
         3,
+        4,
+        5,
+        0,
+        6,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::data_service::BatchRecallItemsRequest, _impl_._has_bits_),
         12, // hasbit index offset
@@ -8755,6 +9411,18 @@ const ::uint32_t
         4, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::data_service::BatchGetPlayerNameResponse, _impl_.names_),
         0,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::data_service::GetPlayerAssetOpLedgerRequest, _impl_._has_bits_),
+        4, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::data_service::GetPlayerAssetOpLedgerRequest, _impl_.player_id_),
+        0,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::data_service::GetPlayerAssetOpLedgerResponse, _impl_._has_bits_),
+        5, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::data_service::GetPlayerAssetOpLedgerResponse, _impl_.found_),
+        PROTOBUF_FIELD_OFFSET(::data_service::GetPlayerAssetOpLedgerResponse, _impl_.ledger_),
+        1,
+        0,
 };
 
 static const ::_pbi::MigrationSchema
@@ -8787,28 +9455,31 @@ static const ::_pbi::MigrationSchema
         {205, sizeof(::data_service::GetPlayerSnapshotDiffRequest)},
         {214, sizeof(::data_service::FieldDiff)},
         {227, sizeof(::data_service::GetPlayerSnapshotDiffResponse)},
-        {238, sizeof(::data_service::RollbackPlayerRequest)},
-        {255, sizeof(::data_service::RollbackPlayerResponse)},
-        {266, sizeof(::data_service::RollbackZoneRequest)},
-        {277, sizeof(::data_service::RollbackZoneResponse)},
-        {292, sizeof(::data_service::RollbackAllRequest)},
-        {301, sizeof(::data_service::RollbackAllResponse)},
-        {312, sizeof(::data_service::BatchRecallItemsRequest)},
-        {333, sizeof(::data_service::RecallResult)},
-        {348, sizeof(::data_service::BatchRecallItemsResponse)},
-        {361, sizeof(::data_service::QueryTransactionLogRequest)},
-        {380, sizeof(::data_service::TransactionLogRow)},
-        {411, sizeof(::data_service::QueryTransactionLogResponse)},
-        {420, sizeof(::data_service::CreateEventSnapshotRequest)},
-        {431, sizeof(::data_service::CreateEventSnapshotResponse)},
-        {440, sizeof(::data_service::AllocateIdSegmentRequest)},
-        {447, sizeof(::data_service::AllocateIdSegmentResponse)},
-        {456, sizeof(::data_service::ReservePlayerNameRequest)},
-        {463, sizeof(::data_service::ReservePlayerNameResponse)},
-        {470, sizeof(::data_service::ReleasePlayerNameRequest)},
-        {477, sizeof(::data_service::BatchGetPlayerNameRequest)},
-        {482, sizeof(::data_service::BatchGetPlayerNameResponse_NamesEntry_DoNotUse)},
-        {489, sizeof(::data_service::BatchGetPlayerNameResponse)},
+        {238, sizeof(::data_service::RollbackGuildDivergence)},
+        {257, sizeof(::data_service::RollbackPlayerRequest)},
+        {276, sizeof(::data_service::RollbackPlayerResponse)},
+        {293, sizeof(::data_service::RollbackZoneRequest)},
+        {306, sizeof(::data_service::RollbackZoneResponse)},
+        {327, sizeof(::data_service::RollbackAllRequest)},
+        {338, sizeof(::data_service::RollbackAllResponse)},
+        {355, sizeof(::data_service::BatchRecallItemsRequest)},
+        {376, sizeof(::data_service::RecallResult)},
+        {391, sizeof(::data_service::BatchRecallItemsResponse)},
+        {404, sizeof(::data_service::QueryTransactionLogRequest)},
+        {423, sizeof(::data_service::TransactionLogRow)},
+        {454, sizeof(::data_service::QueryTransactionLogResponse)},
+        {463, sizeof(::data_service::CreateEventSnapshotRequest)},
+        {474, sizeof(::data_service::CreateEventSnapshotResponse)},
+        {483, sizeof(::data_service::AllocateIdSegmentRequest)},
+        {490, sizeof(::data_service::AllocateIdSegmentResponse)},
+        {499, sizeof(::data_service::ReservePlayerNameRequest)},
+        {506, sizeof(::data_service::ReservePlayerNameResponse)},
+        {513, sizeof(::data_service::ReleasePlayerNameRequest)},
+        {520, sizeof(::data_service::BatchGetPlayerNameRequest)},
+        {525, sizeof(::data_service::BatchGetPlayerNameResponse_NamesEntry_DoNotUse)},
+        {532, sizeof(::data_service::BatchGetPlayerNameResponse)},
+        {537, sizeof(::data_service::GetPlayerAssetOpLedgerRequest)},
+        {542, sizeof(::data_service::GetPlayerAssetOpLedgerResponse)},
 };
 static const ::_pbi::MessageGlobalsBase* PROTOBUF_NONNULL const
     file_message_globals[] = {
@@ -8840,6 +9511,7 @@ static const ::_pbi::MessageGlobalsBase* PROTOBUF_NONNULL const
         &::data_service::GetPlayerSnapshotDiffRequest_globals_,
         &::data_service::FieldDiff_globals_,
         &::data_service::GetPlayerSnapshotDiffResponse_globals_,
+        &::data_service::RollbackGuildDivergence_globals_,
         &::data_service::RollbackPlayerRequest_globals_,
         &::data_service::RollbackPlayerResponse_globals_,
         &::data_service::RollbackZoneRequest_globals_,
@@ -8862,223 +9534,251 @@ static const ::_pbi::MessageGlobalsBase* PROTOBUF_NONNULL const
         &::data_service::BatchGetPlayerNameRequest_globals_,
         &::data_service::BatchGetPlayerNameResponse_NamesEntry_DoNotUse_globals_,
         &::data_service::BatchGetPlayerNameResponse_globals_,
+        &::data_service::GetPlayerAssetOpLedgerRequest_globals_,
+        &::data_service::GetPlayerAssetOpLedgerResponse_globals_,
 };
 const char descriptor_table_protodef_proto_2fdata_5fservice_2fdata_5fservice_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n%proto/data_service/data_service.proto\022"
     "\014data_service\032\033google/protobuf/empty.pro"
-    "to\":\n\025LoadPlayerDataRequest\022\021\n\tplayer_id"
-    "\030\001 \001(\004\022\016\n\006fields\030\002 \003(\t\"\250\001\n\026LoadPlayerDat"
-    "aResponse\022\022\n\nerror_code\030\001 \001(\r\022<\n\004data\030\002 "
-    "\003(\0132..data_service.LoadPlayerDataRespons"
-    "e.DataEntry\022\017\n\007version\030\003 \001(\004\032+\n\tDataEntr"
-    "y\022\013\n\003key\030\001 \001(\t\022\r\n\005value\030\002 \001(\014:\0028\001\"\256\001\n\025Sa"
-    "vePlayerDataRequest\022\021\n\tplayer_id\030\001 \001(\004\022;"
-    "\n\004data\030\002 \003(\0132-.data_service.SavePlayerDa"
-    "taRequest.DataEntry\022\030\n\020expected_version\030"
-    "\003 \001(\004\032+\n\tDataEntry\022\013\n\003key\030\001 \001(\t\022\r\n\005value"
-    "\030\002 \001(\014:\0028\001\"A\n\026SavePlayerDataResponse\022\022\n\n"
-    "error_code\030\001 \001(\r\022\023\n\013new_version\030\002 \001(\004\"9\n"
-    "\025GetPlayerFieldRequest\022\021\n\tplayer_id\030\001 \001("
-    "\004\022\r\n\005field\030\002 \001(\t\";\n\026GetPlayerFieldRespon"
-    "se\022\022\n\nerror_code\030\001 \001(\r\022\r\n\005value\030\002 \001(\014\"b\n"
-    "\025SetPlayerFieldRequest\022\021\n\tplayer_id\030\001 \001("
-    "\004\022\r\n\005field\030\002 \001(\t\022\r\n\005value\030\003 \001(\014\022\030\n\020expec"
-    "ted_version\030\004 \001(\004\"A\n\026SetPlayerFieldRespo"
-    "nse\022\022\n\nerror_code\030\001 \001(\r\022\023\n\013new_version\030\002"
-    " \001(\004\"X\n\031RegisterPlayerZoneRequest\022\021\n\tpla"
-    "yer_id\030\001 \001(\004\022\024\n\014home_zone_id\030\002 \001(\r\022\022\n\nst"
-    "orage_id\030\003 \001(\r\"-\n\030GetPlayerHomeZoneReque"
-    "st\022\021\n\tplayer_id\030\001 \001(\004\"L\n\031GetPlayerHomeZo"
-    "neResponse\022\024\n\014home_zone_id\030\001 \001(\r\022\031\n\021home"
-    "_zone_merging\030\002 \001(\010\"3\n\035BatchGetPlayerHom"
-    "eZoneRequest\022\022\n\nplayer_ids\030\001 \003(\004\"\260\001\n\036Bat"
-    "chGetPlayerHomeZoneResponse\022X\n\017player_zo"
-    "ne_map\030\002 \003(\0132\?.data_service.BatchGetPlay"
-    "erHomeZoneResponse.PlayerZoneMapEntry\0324\n"
-    "\022PlayerZoneMapEntry\022\013\n\003key\030\001 \001(\004\022\r\n\005valu"
-    "e\030\002 \001(\r:\0028\001\"_\n\034RemapHomeZoneForMergeRequ"
-    "est\022\026\n\016source_zone_id\030\001 \001(\r\022\026\n\016target_zo"
-    "ne_id\030\002 \001(\r\022\017\n\007dry_run\030\003 \001(\010\"e\n\035RemapHom"
-    "eZoneForMergeResponse\022\022\n\nerror_code\030\001 \001("
-    "\r\022\027\n\017players_matched\030\002 \001(\r\022\027\n\017players_up"
-    "dated\030\003 \001(\r\"I\n\027DeletePlayerDataRequest\022\021"
-    "\n\tplayer_id\030\001 \001(\004\022\033\n\023delete_zone_mapping"
-    "\030\002 \001(\010\"D\n\030DeletePlayerDataResponse\022\022\n\ner"
-    "ror_code\030\001 \001(\r\022\024\n\014keys_deleted\030\002 \001(\r\"|\n\033"
-    "CreatePlayerSnapshotRequest\022\021\n\tplayer_id"
-    "\030\001 \001(\004\022(\n\004type\030\002 \001(\0162\032.data_service.Snap"
-    "shotType\022\016\n\006reason\030\003 \001(\t\022\020\n\010operator\030\004 \001"
-    "(\t\"[\n\034CreatePlayerSnapshotResponse\022\022\n\ner"
-    "ror_code\030\001 \001(\r\022\023\n\013snapshot_id\030\002 \001(\004\022\022\n\nc"
-    "reated_at\030\003 \001(\004\"S\n\032ListPlayerSnapshotsRe"
-    "quest\022\021\n\tplayer_id\030\001 \001(\004\022\023\n\013before_time\030"
-    "\002 \001(\004\022\r\n\005limit\030\003 \001(\r\"\320\001\n\014SnapshotInfo\022\023\n"
-    "\013snapshot_id\030\001 \001(\004\022\021\n\tplayer_id\030\002 \001(\004\022\017\n"
-    "\007zone_id\030\003 \001(\r\022(\n\004type\030\004 \001(\0162\032.data_serv"
-    "ice.SnapshotType\022\022\n\ncreated_at\030\005 \001(\004\022\016\n\006"
-    "reason\030\006 \001(\t\022\020\n\010operator\030\007 \001(\t\022\027\n\017data_s"
-    "ize_bytes\030\010 \001(\r\022\016\n\006fields\030\t \003(\t\"`\n\033ListP"
-    "layerSnapshotsResponse\022\022\n\nerror_code\030\001 \001"
-    "(\r\022-\n\tsnapshots\030\002 \003(\0132\032.data_service.Sna"
-    "pshotInfo\"[\n\034GetPlayerSnapshotDiffReques"
-    "t\022\021\n\tplayer_id\030\001 \001(\004\022\023\n\013snapshot_id\030\002 \001("
-    "\004\022\023\n\013target_time\030\003 \001(\004\"|\n\tFieldDiff\022\r\n\005f"
-    "ield\030\001 \001(\t\022\026\n\016snapshot_value\030\002 \001(\014\022\025\n\rcu"
-    "rrent_value\030\003 \001(\014\022\030\n\020only_in_snapshot\030\004 "
-    "\001(\010\022\027\n\017only_in_current\030\005 \001(\010\"\214\001\n\035GetPlay"
-    "erSnapshotDiffResponse\022\022\n\nerror_code\030\001 \001"
-    "(\r\022\030\n\020snapshot_id_used\030\002 \001(\004\022\025\n\rsnapshot"
-    "_time\030\003 \001(\004\022&\n\005diffs\030\004 \003(\0132\027.data_servic"
-    "e.FieldDiff\"\262\001\n\025RollbackPlayerRequest\022\021\n"
-    "\tplayer_id\030\001 \001(\004\022\023\n\013snapshot_id\030\002 \001(\004\022\023\n"
-    "\013target_time\030\003 \001(\004\022*\n\005scope\030\004 \001(\0162\033.data"
-    "_service.RollbackScope\022\016\n\006fields\030\005 \003(\t\022\016"
-    "\n\006reason\030\006 \001(\t\022\020\n\010operator\030\007 \001(\t\"\201\001\n\026Rol"
-    "lbackPlayerResponse\022\022\n\nerror_code\030\001 \001(\r\022"
-    "\030\n\020snapshot_id_used\030\002 \001(\004\022 \n\030pre_rollbac"
-    "k_snapshot_id\030\003 \001(\004\022\027\n\017fields_restored\030\004"
-    " \003(\t\"]\n\023RollbackZoneRequest\022\017\n\007zone_id\030\001"
+    "to\0321proto/common/component/asset_op_ledg"
+    "er_comp.proto\":\n\025LoadPlayerDataRequest\022\021"
+    "\n\tplayer_id\030\001 \001(\004\022\016\n\006fields\030\002 \003(\t\"\250\001\n\026Lo"
+    "adPlayerDataResponse\022\022\n\nerror_code\030\001 \001(\r"
+    "\022<\n\004data\030\002 \003(\0132..data_service.LoadPlayer"
+    "DataResponse.DataEntry\022\017\n\007version\030\003 \001(\004\032"
+    "+\n\tDataEntry\022\013\n\003key\030\001 \001(\t\022\r\n\005value\030\002 \001(\014"
+    ":\0028\001\"\256\001\n\025SavePlayerDataRequest\022\021\n\tplayer"
+    "_id\030\001 \001(\004\022;\n\004data\030\002 \003(\0132-.data_service.S"
+    "avePlayerDataRequest.DataEntry\022\030\n\020expect"
+    "ed_version\030\003 \001(\004\032+\n\tDataEntry\022\013\n\003key\030\001 \001"
+    "(\t\022\r\n\005value\030\002 \001(\014:\0028\001\"A\n\026SavePlayerDataR"
+    "esponse\022\022\n\nerror_code\030\001 \001(\r\022\023\n\013new_versi"
+    "on\030\002 \001(\004\"9\n\025GetPlayerFieldRequest\022\021\n\tpla"
+    "yer_id\030\001 \001(\004\022\r\n\005field\030\002 \001(\t\";\n\026GetPlayer"
+    "FieldResponse\022\022\n\nerror_code\030\001 \001(\r\022\r\n\005val"
+    "ue\030\002 \001(\014\"b\n\025SetPlayerFieldRequest\022\021\n\tpla"
+    "yer_id\030\001 \001(\004\022\r\n\005field\030\002 \001(\t\022\r\n\005value\030\003 \001"
+    "(\014\022\030\n\020expected_version\030\004 \001(\004\"A\n\026SetPlaye"
+    "rFieldResponse\022\022\n\nerror_code\030\001 \001(\r\022\023\n\013ne"
+    "w_version\030\002 \001(\004\"X\n\031RegisterPlayerZoneReq"
+    "uest\022\021\n\tplayer_id\030\001 \001(\004\022\024\n\014home_zone_id\030"
+    "\002 \001(\r\022\022\n\nstorage_id\030\003 \001(\r\"-\n\030GetPlayerHo"
+    "meZoneRequest\022\021\n\tplayer_id\030\001 \001(\004\"L\n\031GetP"
+    "layerHomeZoneResponse\022\024\n\014home_zone_id\030\001 "
+    "\001(\r\022\031\n\021home_zone_merging\030\002 \001(\010\"3\n\035BatchG"
+    "etPlayerHomeZoneRequest\022\022\n\nplayer_ids\030\001 "
+    "\003(\004\"\260\001\n\036BatchGetPlayerHomeZoneResponse\022X"
+    "\n\017player_zone_map\030\002 \003(\0132\?.data_service.B"
+    "atchGetPlayerHomeZoneResponse.PlayerZone"
+    "MapEntry\0324\n\022PlayerZoneMapEntry\022\013\n\003key\030\001 "
+    "\001(\004\022\r\n\005value\030\002 \001(\r:\0028\001\"_\n\034RemapHomeZoneF"
+    "orMergeRequest\022\026\n\016source_zone_id\030\001 \001(\r\022\026"
+    "\n\016target_zone_id\030\002 \001(\r\022\017\n\007dry_run\030\003 \001(\010\""
+    "e\n\035RemapHomeZoneForMergeResponse\022\022\n\nerro"
+    "r_code\030\001 \001(\r\022\027\n\017players_matched\030\002 \001(\r\022\027\n"
+    "\017players_updated\030\003 \001(\r\"I\n\027DeletePlayerDa"
+    "taRequest\022\021\n\tplayer_id\030\001 \001(\004\022\033\n\023delete_z"
+    "one_mapping\030\002 \001(\010\"D\n\030DeletePlayerDataRes"
+    "ponse\022\022\n\nerror_code\030\001 \001(\r\022\024\n\014keys_delete"
+    "d\030\002 \001(\r\"|\n\033CreatePlayerSnapshotRequest\022\021"
+    "\n\tplayer_id\030\001 \001(\004\022(\n\004type\030\002 \001(\0162\032.data_s"
+    "ervice.SnapshotType\022\016\n\006reason\030\003 \001(\t\022\020\n\010o"
+    "perator\030\004 \001(\t\"[\n\034CreatePlayerSnapshotRes"
+    "ponse\022\022\n\nerror_code\030\001 \001(\r\022\023\n\013snapshot_id"
+    "\030\002 \001(\004\022\022\n\ncreated_at\030\003 \001(\004\"S\n\032ListPlayer"
+    "SnapshotsRequest\022\021\n\tplayer_id\030\001 \001(\004\022\023\n\013b"
+    "efore_time\030\002 \001(\004\022\r\n\005limit\030\003 \001(\r\"\320\001\n\014Snap"
+    "shotInfo\022\023\n\013snapshot_id\030\001 \001(\004\022\021\n\tplayer_"
+    "id\030\002 \001(\004\022\017\n\007zone_id\030\003 \001(\r\022(\n\004type\030\004 \001(\0162"
+    "\032.data_service.SnapshotType\022\022\n\ncreated_a"
+    "t\030\005 \001(\004\022\016\n\006reason\030\006 \001(\t\022\020\n\010operator\030\007 \001("
+    "\t\022\027\n\017data_size_bytes\030\010 \001(\r\022\016\n\006fields\030\t \003"
+    "(\t\"`\n\033ListPlayerSnapshotsResponse\022\022\n\nerr"
+    "or_code\030\001 \001(\r\022-\n\tsnapshots\030\002 \003(\0132\032.data_"
+    "service.SnapshotInfo\"[\n\034GetPlayerSnapsho"
+    "tDiffRequest\022\021\n\tplayer_id\030\001 \001(\004\022\023\n\013snaps"
+    "hot_id\030\002 \001(\004\022\023\n\013target_time\030\003 \001(\004\"|\n\tFie"
+    "ldDiff\022\r\n\005field\030\001 \001(\t\022\026\n\016snapshot_value\030"
+    "\002 \001(\014\022\025\n\rcurrent_value\030\003 \001(\014\022\030\n\020only_in_"
+    "snapshot\030\004 \001(\010\022\027\n\017only_in_current\030\005 \001(\010\""
+    "\214\001\n\035GetPlayerSnapshotDiffResponse\022\022\n\nerr"
+    "or_code\030\001 \001(\r\022\030\n\020snapshot_id_used\030\002 \001(\004\022"
+    "\025\n\rsnapshot_time\030\003 \001(\004\022&\n\005diffs\030\004 \003(\0132\027."
+    "data_service.FieldDiff\"\260\001\n\027RollbackGuild"
+    "Divergence\022\r\n\005op_id\030\001 \001(\004\022\021\n\tplayer_id\030\002"
+    " \001(\004\022\020\n\010guild_id\030\003 \001(\004\022\014\n\004kind\030\004 \001(\r\022\016\n\006"
+    "status\030\005 \001(\r\022\023\n\013funds_delta\030\006 \001(\004\022\032\n\022con"
+    "tribution_delta\030\007 \001(\004\022\022\n\nupdated_ms\030\010 \001("
+    "\004\"\323\001\n\025RollbackPlayerRequest\022\021\n\tplayer_id"
+    "\030\001 \001(\004\022\023\n\013snapshot_id\030\002 \001(\004\022\023\n\013target_ti"
+    "me\030\003 \001(\004\022*\n\005scope\030\004 \001(\0162\033.data_service.R"
+    "ollbackScope\022\016\n\006fields\030\005 \003(\t\022\016\n\006reason\030\006"
+    " \001(\t\022\020\n\010operator\030\007 \001(\t\022\037\n\027accept_guild_d"
+    "ivergence\030\010 \001(\010\"\212\002\n\026RollbackPlayerRespon"
+    "se\022\022\n\nerror_code\030\001 \001(\r\022\030\n\020snapshot_id_us"
+    "ed\030\002 \001(\004\022 \n\030pre_rollback_snapshot_id\030\003 \001"
+    "(\004\022\027\n\017fields_restored\030\004 \003(\t\022\036\n\026guild_div"
+    "ergence_count\030\005 \001(\r\022@\n\021guild_divergences"
+    "\030\006 \003(\0132%.data_service.RollbackGuildDiver"
+    "gence\022%\n\035guild_unprovable_player_count\030\007"
+    " \001(\r\"~\n\023RollbackZoneRequest\022\017\n\007zone_id\030\001"
     " \001(\r\022\023\n\013target_time\030\002 \001(\004\022\016\n\006reason\030\003 \001("
-    "\t\022\020\n\010operator\030\004 \001(\t\"\253\001\n\024RollbackZoneResp"
-    "onse\022\022\n\nerror_code\030\001 \001(\r\022\030\n\020players_affe"
-    "cted\030\002 \001(\r\022\026\n\016players_failed\030\003 \001(\r\022\031\n\021fa"
-    "iled_player_ids\030\004 \003(\004\022\031\n\021orphan_player_i"
-    "ds\030\005 \003(\004\022\027\n\017orphans_cleaned\030\006 \001(\r\"K\n\022Rol"
-    "lbackAllRequest\022\023\n\013target_time\030\001 \001(\004\022\016\n\006"
-    "reason\030\002 \001(\t\022\020\n\010operator\030\003 \001(\t\"t\n\023Rollba"
-    "ckAllResponse\022\022\n\nerror_code\030\001 \001(\r\022\027\n\017zon"
-    "es_processed\030\002 \001(\r\022\030\n\020players_affected\030\003"
-    " \001(\r\022\026\n\016players_failed\030\004 \001(\r\"\307\001\n\027BatchRe"
-    "callItemsRequest\022\022\n\nplayer_ids\030\001 \003(\004\022\026\n\016"
-    "item_config_id\030\002 \001(\r\022\025\n\rcurrency_type\030\003 "
-    "\001(\r\022\022\n\ntime_start\030\004 \001(\004\022\020\n\010time_end\030\005 \001("
-    "\004\022\020\n\010tx_types\030\006 \003(\r\022\016\n\006reason\030\007 \001(\t\022\020\n\010o"
-    "perator\030\010 \001(\t\022\017\n\007dry_run\030\t \001(\010\"\203\001\n\014Recal"
-    "lResult\022\021\n\tplayer_id\030\001 \001(\004\022\021\n\titem_uuid\030"
-    "\002 \001(\004\022\026\n\016item_config_id\030\003 \001(\r\022\016\n\006amount\030"
-    "\004 \001(\004\022\017\n\007success\030\005 \001(\010\022\024\n\014error_detail\030\006"
-    " \001(\t\"\240\001\n\030BatchRecallItemsResponse\022\022\n\nerr"
-    "or_code\030\001 \001(\r\022\025\n\rtotal_matched\030\002 \001(\r\022\026\n\016"
-    "total_recalled\030\003 \001(\r\022\024\n\014total_failed\030\004 \001"
-    "(\r\022+\n\007results\030\005 \003(\0132\032.data_service.Recal"
-    "lResult\"\265\001\n\032QueryTransactionLogRequest\022\021"
-    "\n\tplayer_id\030\001 \001(\004\022\022\n\ntime_start\030\002 \001(\004\022\020\n"
-    "\010time_end\030\003 \001(\004\022\020\n\010tx_types\030\004 \003(\r\022\026\n\016ite"
-    "m_config_id\030\005 \001(\r\022\025\n\rcurrency_type\030\006 \001(\r"
-    "\022\r\n\005limit\030\007 \001(\r\022\016\n\006offset\030\010 \001(\004\"\265\002\n\021Tran"
-    "sactionLogRow\022\r\n\005tx_id\030\001 \001(\004\022\021\n\ttimestam"
-    "p\030\002 \001(\004\022\017\n\007tx_type\030\003 \001(\r\022\023\n\013from_player\030"
-    "\004 \001(\004\022\021\n\tto_player\030\005 \001(\004\022\021\n\titem_uuid\030\006 "
-    "\001(\004\022\026\n\016item_config_id\030\007 \001(\r\022\025\n\ritem_quan"
-    "tity\030\010 \001(\r\022\025\n\rcurrency_type\030\t \001(\r\022\026\n\016cur"
-    "rency_delta\030\n \001(\003\022\026\n\016balance_before\030\013 \001("
-    "\004\022\025\n\rbalance_after\030\014 \001(\004\022\026\n\016correlation_"
-    "id\030\r \001(\004\022\r\n\005extra\030\016 \001(\t\"u\n\033QueryTransact"
-    "ionLogResponse\022\022\n\nerror_code\030\001 \001(\r\022-\n\004ro"
-    "ws\030\002 \003(\0132\037.data_service.TransactionLogRo"
-    "w\022\023\n\013total_count\030\003 \001(\r\"\214\001\n\032CreateEventSn"
-    "apshotRequest\022\021\n\tplayer_id\030\001 \001(\004\0223\n\neven"
-    "t_type\030\002 \001(\0162\037.data_service.SnapshotEven"
-    "tType\022\024\n\014event_detail\030\003 \001(\t\022\020\n\010operator\030"
-    "\004 \001(\t\"Z\n\033CreateEventSnapshotResponse\022\022\n\n"
-    "error_code\030\001 \001(\r\022\023\n\013snapshot_id\030\002 \001(\004\022\022\n"
-    "\ncreated_at\030\003 \001(\004\"9\n\030AllocateIdSegmentRe"
-    "quest\022\017\n\007biz_tag\030\001 \001(\t\022\014\n\004step\030\002 \001(\r\"G\n\031"
-    "AllocateIdSegmentResponse\022\022\n\nerror_code\030"
-    "\001 \001(\r\022\n\n\002lo\030\002 \001(\004\022\n\n\002hi\030\003 \001(\004\";\n\030Reserve"
-    "PlayerNameRequest\022\021\n\tplayer_id\030\001 \001(\004\022\014\n\004"
-    "name\030\002 \001(\t\"D\n\031ReservePlayerNameResponse\022"
-    "\016\n\006result\030\001 \001(\r\022\027\n\017owner_player_id\030\002 \001(\004"
-    "\";\n\030ReleasePlayerNameRequest\022\021\n\tplayer_i"
-    "d\030\001 \001(\004\022\014\n\004name\030\002 \001(\t\"/\n\031BatchGetPlayerN"
-    "ameRequest\022\022\n\nplayer_ids\030\001 \003(\004\"\216\001\n\032Batch"
-    "GetPlayerNameResponse\022B\n\005names\030\001 \003(\01323.d"
-    "ata_service.BatchGetPlayerNameResponse.N"
-    "amesEntry\032,\n\nNamesEntry\022\013\n\003key\030\001 \001(\004\022\r\n\005"
-    "value\030\002 \001(\t:\0028\001*\207\001\n\014SnapshotType\022\023\n\017SNAP"
-    "SHOT_MANUAL\020\000\022\025\n\021SNAPSHOT_PERIODIC\020\001\022\034\n\030"
-    "SNAPSHOT_PRE_MAINTENANCE\020\002\022\031\n\025SNAPSHOT_P"
-    "RE_ROLLBACK\020\003\022\022\n\016SNAPSHOT_LOGIN\020\004*8\n\rRol"
-    "lbackScope\022\021\n\rROLLBACK_FULL\020\000\022\024\n\020ROLLBAC"
-    "K_PARTIAL\020\001*\212\001\n\021SnapshotEventType\022\033\n\027EVE"
-    "NT_LARGE_TRANSACTION\020\000\022\022\n\016EVENT_RECHARGE"
-    "\020\001\022\031\n\025EVENT_PRE_MAINTENANCE\020\002\022\022\n\016EVENT_L"
-    "EVEL_UP\020\003\022\025\n\021EVENT_FIRST_LOGIN\020\0042\316\021\n\013Dat"
-    "aService\022]\n\016LoadPlayerData\022#.data_servic"
-    "e.LoadPlayerDataRequest\032$.data_service.L"
-    "oadPlayerDataResponse\"\000\022]\n\016SavePlayerDat"
-    "a\022#.data_service.SavePlayerDataRequest\032$"
-    ".data_service.SavePlayerDataResponse\"\000\022]"
-    "\n\016GetPlayerField\022#.data_service.GetPlaye"
-    "rFieldRequest\032$.data_service.GetPlayerFi"
-    "eldResponse\"\000\022]\n\016SetPlayerField\022#.data_s"
-    "ervice.SetPlayerFieldRequest\032$.data_serv"
-    "ice.SetPlayerFieldResponse\"\000\022W\n\022Register"
-    "PlayerZone\022\'.data_service.RegisterPlayer"
-    "ZoneRequest\032\026.google.protobuf.Empty\"\000\022f\n"
-    "\021GetPlayerHomeZone\022&.data_service.GetPla"
-    "yerHomeZoneRequest\032\'.data_service.GetPla"
-    "yerHomeZoneResponse\"\000\022u\n\026BatchGetPlayerH"
-    "omeZone\022+.data_service.BatchGetPlayerHom"
-    "eZoneRequest\032,.data_service.BatchGetPlay"
-    "erHomeZoneResponse\"\000\022r\n\025RemapHomeZoneFor"
-    "Merge\022*.data_service.RemapHomeZoneForMer"
-    "geRequest\032+.data_service.RemapHomeZoneFo"
-    "rMergeResponse\"\000\022c\n\020DeletePlayerData\022%.d"
-    "ata_service.DeletePlayerDataRequest\032&.da"
-    "ta_service.DeletePlayerDataResponse\"\000\022o\n"
-    "\024CreatePlayerSnapshot\022).data_service.Cre"
-    "atePlayerSnapshotRequest\032*.data_service."
-    "CreatePlayerSnapshotResponse\"\000\022l\n\023ListPl"
-    "ayerSnapshots\022(.data_service.ListPlayerS"
-    "napshotsRequest\032).data_service.ListPlaye"
-    "rSnapshotsResponse\"\000\022r\n\025GetPlayerSnapsho"
-    "tDiff\022*.data_service.GetPlayerSnapshotDi"
-    "ffRequest\032+.data_service.GetPlayerSnapsh"
-    "otDiffResponse\"\000\022]\n\016RollbackPlayer\022#.dat"
-    "a_service.RollbackPlayerRequest\032$.data_s"
-    "ervice.RollbackPlayerResponse\"\000\022W\n\014Rollb"
-    "ackZone\022!.data_service.RollbackZoneReque"
-    "st\032\".data_service.RollbackZoneResponse\"\000"
-    "\022T\n\013RollbackAll\022 .data_service.RollbackA"
-    "llRequest\032!.data_service.RollbackAllResp"
-    "onse\"\000\022c\n\020BatchRecallItems\022%.data_servic"
-    "e.BatchRecallItemsRequest\032&.data_service"
-    ".BatchRecallItemsResponse\"\000\022l\n\023QueryTran"
-    "sactionLog\022(.data_service.QueryTransacti"
-    "onLogRequest\032).data_service.QueryTransac"
-    "tionLogResponse\"\000\022l\n\023CreateEventSnapshot"
-    "\022(.data_service.CreateEventSnapshotReque"
-    "st\032).data_service.CreateEventSnapshotRes"
-    "ponse\"\000\022f\n\021AllocateIdSegment\022&.data_serv"
-    "ice.AllocateIdSegmentRequest\032\'.data_serv"
-    "ice.AllocateIdSegmentResponse\"\000\022f\n\021Reser"
-    "vePlayerName\022&.data_service.ReservePlaye"
-    "rNameRequest\032\'.data_service.ReservePlaye"
-    "rNameResponse\"\000\022U\n\021ReleasePlayerName\022&.d"
-    "ata_service.ReleasePlayerNameRequest\032\026.g"
-    "oogle.protobuf.Empty\"\000\022i\n\022BatchGetPlayer"
-    "Name\022\'.data_service.BatchGetPlayerNameRe"
-    "quest\032(.data_service.BatchGetPlayerNameR"
-    "esponse\"\000B\033Z\031data_service/data_serviceb\006"
-    "proto3"
+    "\t\022\020\n\010operator\030\004 \001(\t\022\037\n\027accept_guild_dive"
+    "rgence\030\005 \001(\010\"\264\002\n\024RollbackZoneResponse\022\022\n"
+    "\nerror_code\030\001 \001(\r\022\030\n\020players_affected\030\002 "
+    "\001(\r\022\026\n\016players_failed\030\003 \001(\r\022\031\n\021failed_pl"
+    "ayer_ids\030\004 \003(\004\022\031\n\021orphan_player_ids\030\005 \003("
+    "\004\022\027\n\017orphans_cleaned\030\006 \001(\r\022\036\n\026guild_dive"
+    "rgence_count\030\007 \001(\r\022@\n\021guild_divergences\030"
+    "\010 \003(\0132%.data_service.RollbackGuildDiverg"
+    "ence\022%\n\035guild_unprovable_player_count\030\t "
+    "\001(\r\"l\n\022RollbackAllRequest\022\023\n\013target_time"
+    "\030\001 \001(\004\022\016\n\006reason\030\002 \001(\t\022\020\n\010operator\030\003 \001(\t"
+    "\022\037\n\027accept_guild_divergence\030\004 \001(\010\"\375\001\n\023Ro"
+    "llbackAllResponse\022\022\n\nerror_code\030\001 \001(\r\022\027\n"
+    "\017zones_processed\030\002 \001(\r\022\030\n\020players_affect"
+    "ed\030\003 \001(\r\022\026\n\016players_failed\030\004 \001(\r\022\036\n\026guil"
+    "d_divergence_count\030\005 \001(\r\022@\n\021guild_diverg"
+    "ences\030\006 \003(\0132%.data_service.RollbackGuild"
+    "Divergence\022%\n\035guild_unprovable_player_co"
+    "unt\030\007 \001(\r\"\307\001\n\027BatchRecallItemsRequest\022\022\n"
+    "\nplayer_ids\030\001 \003(\004\022\026\n\016item_config_id\030\002 \001("
+    "\r\022\025\n\rcurrency_type\030\003 \001(\r\022\022\n\ntime_start\030\004"
+    " \001(\004\022\020\n\010time_end\030\005 \001(\004\022\020\n\010tx_types\030\006 \003(\r"
+    "\022\016\n\006reason\030\007 \001(\t\022\020\n\010operator\030\010 \001(\t\022\017\n\007dr"
+    "y_run\030\t \001(\010\"\203\001\n\014RecallResult\022\021\n\tplayer_i"
+    "d\030\001 \001(\004\022\021\n\titem_uuid\030\002 \001(\004\022\026\n\016item_confi"
+    "g_id\030\003 \001(\r\022\016\n\006amount\030\004 \001(\004\022\017\n\007success\030\005 "
+    "\001(\010\022\024\n\014error_detail\030\006 \001(\t\"\240\001\n\030BatchRecal"
+    "lItemsResponse\022\022\n\nerror_code\030\001 \001(\r\022\025\n\rto"
+    "tal_matched\030\002 \001(\r\022\026\n\016total_recalled\030\003 \001("
+    "\r\022\024\n\014total_failed\030\004 \001(\r\022+\n\007results\030\005 \003(\013"
+    "2\032.data_service.RecallResult\"\265\001\n\032QueryTr"
+    "ansactionLogRequest\022\021\n\tplayer_id\030\001 \001(\004\022\022"
+    "\n\ntime_start\030\002 \001(\004\022\020\n\010time_end\030\003 \001(\004\022\020\n\010"
+    "tx_types\030\004 \003(\r\022\026\n\016item_config_id\030\005 \001(\r\022\025"
+    "\n\rcurrency_type\030\006 \001(\r\022\r\n\005limit\030\007 \001(\r\022\016\n\006"
+    "offset\030\010 \001(\004\"\265\002\n\021TransactionLogRow\022\r\n\005tx"
+    "_id\030\001 \001(\004\022\021\n\ttimestamp\030\002 \001(\004\022\017\n\007tx_type\030"
+    "\003 \001(\r\022\023\n\013from_player\030\004 \001(\004\022\021\n\tto_player\030"
+    "\005 \001(\004\022\021\n\titem_uuid\030\006 \001(\004\022\026\n\016item_config_"
+    "id\030\007 \001(\r\022\025\n\ritem_quantity\030\010 \001(\r\022\025\n\rcurre"
+    "ncy_type\030\t \001(\r\022\026\n\016currency_delta\030\n \001(\003\022\026"
+    "\n\016balance_before\030\013 \001(\004\022\025\n\rbalance_after\030"
+    "\014 \001(\004\022\026\n\016correlation_id\030\r \001(\004\022\r\n\005extra\030\016"
+    " \001(\t\"u\n\033QueryTransactionLogResponse\022\022\n\ne"
+    "rror_code\030\001 \001(\r\022-\n\004rows\030\002 \003(\0132\037.data_ser"
+    "vice.TransactionLogRow\022\023\n\013total_count\030\003 "
+    "\001(\r\"\214\001\n\032CreateEventSnapshotRequest\022\021\n\tpl"
+    "ayer_id\030\001 \001(\004\0223\n\nevent_type\030\002 \001(\0162\037.data"
+    "_service.SnapshotEventType\022\024\n\014event_deta"
+    "il\030\003 \001(\t\022\020\n\010operator\030\004 \001(\t\"Z\n\033CreateEven"
+    "tSnapshotResponse\022\022\n\nerror_code\030\001 \001(\r\022\023\n"
+    "\013snapshot_id\030\002 \001(\004\022\022\n\ncreated_at\030\003 \001(\004\"9"
+    "\n\030AllocateIdSegmentRequest\022\017\n\007biz_tag\030\001 "
+    "\001(\t\022\014\n\004step\030\002 \001(\r\"G\n\031AllocateIdSegmentRe"
+    "sponse\022\022\n\nerror_code\030\001 \001(\r\022\n\n\002lo\030\002 \001(\004\022\n"
+    "\n\002hi\030\003 \001(\004\";\n\030ReservePlayerNameRequest\022\021"
+    "\n\tplayer_id\030\001 \001(\004\022\014\n\004name\030\002 \001(\t\"D\n\031Reser"
+    "vePlayerNameResponse\022\016\n\006result\030\001 \001(\r\022\027\n\017"
+    "owner_player_id\030\002 \001(\004\";\n\030ReleasePlayerNa"
+    "meRequest\022\021\n\tplayer_id\030\001 \001(\004\022\014\n\004name\030\002 \001"
+    "(\t\"/\n\031BatchGetPlayerNameRequest\022\022\n\nplaye"
+    "r_ids\030\001 \003(\004\"\216\001\n\032BatchGetPlayerNameRespon"
+    "se\022B\n\005names\030\001 \003(\01323.data_service.BatchGe"
+    "tPlayerNameResponse.NamesEntry\032,\n\nNamesE"
+    "ntry\022\013\n\003key\030\001 \001(\004\022\r\n\005value\030\002 \001(\t:\0028\001\"2\n\035"
+    "GetPlayerAssetOpLedgerRequest\022\021\n\tplayer_"
+    "id\030\001 \001(\004\"Y\n\036GetPlayerAssetOpLedgerRespon"
+    "se\022\r\n\005found\030\001 \001(\010\022(\n\006ledger\030\002 \001(\0132\030.Play"
+    "erAssetOpLedgerComp*\207\001\n\014SnapshotType\022\023\n\017"
+    "SNAPSHOT_MANUAL\020\000\022\025\n\021SNAPSHOT_PERIODIC\020\001"
+    "\022\034\n\030SNAPSHOT_PRE_MAINTENANCE\020\002\022\031\n\025SNAPSH"
+    "OT_PRE_ROLLBACK\020\003\022\022\n\016SNAPSHOT_LOGIN\020\004*8\n"
+    "\rRollbackScope\022\021\n\rROLLBACK_FULL\020\000\022\024\n\020ROL"
+    "LBACK_PARTIAL\020\001*\212\001\n\021SnapshotEventType\022\033\n"
+    "\027EVENT_LARGE_TRANSACTION\020\000\022\022\n\016EVENT_RECH"
+    "ARGE\020\001\022\031\n\025EVENT_PRE_MAINTENANCE\020\002\022\022\n\016EVE"
+    "NT_LEVEL_UP\020\003\022\025\n\021EVENT_FIRST_LOGIN\020\0042\305\022\n"
+    "\013DataService\022]\n\016LoadPlayerData\022#.data_se"
+    "rvice.LoadPlayerDataRequest\032$.data_servi"
+    "ce.LoadPlayerDataResponse\"\000\022]\n\016SavePlaye"
+    "rData\022#.data_service.SavePlayerDataReque"
+    "st\032$.data_service.SavePlayerDataResponse"
+    "\"\000\022]\n\016GetPlayerField\022#.data_service.GetP"
+    "layerFieldRequest\032$.data_service.GetPlay"
+    "erFieldResponse\"\000\022]\n\016SetPlayerField\022#.da"
+    "ta_service.SetPlayerFieldRequest\032$.data_"
+    "service.SetPlayerFieldResponse\"\000\022W\n\022Regi"
+    "sterPlayerZone\022\'.data_service.RegisterPl"
+    "ayerZoneRequest\032\026.google.protobuf.Empty\""
+    "\000\022f\n\021GetPlayerHomeZone\022&.data_service.Ge"
+    "tPlayerHomeZoneRequest\032\'.data_service.Ge"
+    "tPlayerHomeZoneResponse\"\000\022u\n\026BatchGetPla"
+    "yerHomeZone\022+.data_service.BatchGetPlaye"
+    "rHomeZoneRequest\032,.data_service.BatchGet"
+    "PlayerHomeZoneResponse\"\000\022r\n\025RemapHomeZon"
+    "eForMerge\022*.data_service.RemapHomeZoneFo"
+    "rMergeRequest\032+.data_service.RemapHomeZo"
+    "neForMergeResponse\"\000\022c\n\020DeletePlayerData"
+    "\022%.data_service.DeletePlayerDataRequest\032"
+    "&.data_service.DeletePlayerDataResponse\""
+    "\000\022o\n\024CreatePlayerSnapshot\022).data_service"
+    ".CreatePlayerSnapshotRequest\032*.data_serv"
+    "ice.CreatePlayerSnapshotResponse\"\000\022l\n\023Li"
+    "stPlayerSnapshots\022(.data_service.ListPla"
+    "yerSnapshotsRequest\032).data_service.ListP"
+    "layerSnapshotsResponse\"\000\022r\n\025GetPlayerSna"
+    "pshotDiff\022*.data_service.GetPlayerSnapsh"
+    "otDiffRequest\032+.data_service.GetPlayerSn"
+    "apshotDiffResponse\"\000\022]\n\016RollbackPlayer\022#"
+    ".data_service.RollbackPlayerRequest\032$.da"
+    "ta_service.RollbackPlayerResponse\"\000\022W\n\014R"
+    "ollbackZone\022!.data_service.RollbackZoneR"
+    "equest\032\".data_service.RollbackZoneRespon"
+    "se\"\000\022T\n\013RollbackAll\022 .data_service.Rollb"
+    "ackAllRequest\032!.data_service.RollbackAll"
+    "Response\"\000\022c\n\020BatchRecallItems\022%.data_se"
+    "rvice.BatchRecallItemsRequest\032&.data_ser"
+    "vice.BatchRecallItemsResponse\"\000\022l\n\023Query"
+    "TransactionLog\022(.data_service.QueryTrans"
+    "actionLogRequest\032).data_service.QueryTra"
+    "nsactionLogResponse\"\000\022l\n\023CreateEventSnap"
+    "shot\022(.data_service.CreateEventSnapshotR"
+    "equest\032).data_service.CreateEventSnapsho"
+    "tResponse\"\000\022f\n\021AllocateIdSegment\022&.data_"
+    "service.AllocateIdSegmentRequest\032\'.data_"
+    "service.AllocateIdSegmentResponse\"\000\022f\n\021R"
+    "eservePlayerName\022&.data_service.ReserveP"
+    "layerNameRequest\032\'.data_service.ReserveP"
+    "layerNameResponse\"\000\022U\n\021ReleasePlayerName"
+    "\022&.data_service.ReleasePlayerNameRequest"
+    "\032\026.google.protobuf.Empty\"\000\022i\n\022BatchGetPl"
+    "ayerName\022\'.data_service.BatchGetPlayerNa"
+    "meRequest\032(.data_service.BatchGetPlayerN"
+    "ameResponse\"\000\022u\n\026GetPlayerAssetOpLedger\022"
+    "+.data_service.GetPlayerAssetOpLedgerReq"
+    "uest\032,.data_service.GetPlayerAssetOpLedg"
+    "erResponse\"\000B\033Z\031data_service/data_servic"
+    "eb\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
-    descriptor_table_proto_2fdata_5fservice_2fdata_5fservice_2eproto_deps[1] = {
+    descriptor_table_proto_2fdata_5fservice_2fdata_5fservice_2eproto_deps[2] = {
         &::descriptor_table_google_2fprotobuf_2fempty_2eproto,
+        &::descriptor_table_proto_2fcommon_2fcomponent_2fasset_5fop_5fledger_5fcomp_2eproto,
 };
 static ::absl::once_flag descriptor_table_proto_2fdata_5fservice_2fdata_5fservice_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fdata_5fservice_2fdata_5fservice_2eproto = {
     false,
     false,
-    7886,
+    8889,
     descriptor_table_protodef_proto_2fdata_5fservice_2fdata_5fservice_2eproto,
     "proto/data_service/data_service.proto",
     &descriptor_table_proto_2fdata_5fservice_2fdata_5fservice_2eproto_once,
     descriptor_table_proto_2fdata_5fservice_2fdata_5fservice_2eproto_deps,
-    1,
-    50,
+    2,
+    53,
     schemas,
     file_message_globals,
     TableStruct_proto_2fdata_5fservice_2fdata_5fservice_2eproto::offsets,
@@ -15819,6 +16519,360 @@ void GetPlayerSnapshotDiffResponse::InternalSwap(GetPlayerSnapshotDiffResponse* 
 }
 // ===================================================================
 
+RollbackGuildDivergence::RollbackGuildDivergence(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, RollbackGuildDivergence_get_class_data()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:data_service.RollbackGuildDivergence)
+}
+RollbackGuildDivergence::RollbackGuildDivergence(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const RollbackGuildDivergence& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, RollbackGuildDivergence_get_class_data()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(from._impl_) {
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+PROTOBUF_NDEBUG_INLINE RollbackGuildDivergence::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0} {}
+
+inline void RollbackGuildDivergence::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, op_id_),
+           0,
+           offsetof(Impl_, updated_ms_) -
+               offsetof(Impl_, op_id_) +
+               sizeof(Impl_::updated_ms_));
+}
+RollbackGuildDivergence::~RollbackGuildDivergence() {
+  // @@protoc_insertion_point(destructor:data_service.RollbackGuildDivergence)
+  SharedDtor(*this);
+}
+inline void RollbackGuildDivergence::SharedDtor(MessageLite& self) {
+  RollbackGuildDivergence& this_ = static_cast<RollbackGuildDivergence&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.~Impl_();
+}
+
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull RollbackGuildDivergence_class_data_ =
+        RollbackGuildDivergence::InternalGenerateClassData_(RollbackGuildDivergence_globals_._default);
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+RollbackGuildDivergence::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&RollbackGuildDivergence_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(RollbackGuildDivergence_class_data_.tc_table);
+  return RollbackGuildDivergence_class_data_.base();
+}
+#else
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+RollbackGuildDivergence::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&RollbackGuildDivergence_globals_);
+  ::google::protobuf::internal::PrefetchToLocalCache(
+      ::google::protobuf::internal::MessageGlobalsBase::ToParseTableBase(&RollbackGuildDivergence_globals_));
+  return RollbackGuildDivergence_globals_.GetClassData();
+}
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const RollbackGuildDivergence::ParseTableT_
+    RollbackGuildDivergence::_table_ =
+        RollbackGuildDivergence::InternalGenerateParseTable_(RollbackGuildDivergence_class_data_.base());
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_NOINLINE void RollbackGuildDivergence::Clear() {
+// @@protoc_insertion_point(message_clear_start:data_service.RollbackGuildDivergence)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x000000ffU)) {
+    ::memset(&_impl_.op_id_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.updated_ms_) -
+        reinterpret_cast<char*>(&_impl_.op_id_)) + sizeof(_impl_.updated_ms_));
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL RollbackGuildDivergence::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const RollbackGuildDivergence& this_ = static_cast<const RollbackGuildDivergence&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL RollbackGuildDivergence::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const RollbackGuildDivergence& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:data_service.RollbackGuildDivergence)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // uint64 op_id = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (this_._internal_op_id() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          1, this_._internal_op_id(), target);
+    }
+  }
+
+  // uint64 player_id = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (this_._internal_player_id() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          2, this_._internal_player_id(), target);
+    }
+  }
+
+  // uint64 guild_id = 3;
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (this_._internal_guild_id() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          3, this_._internal_guild_id(), target);
+    }
+  }
+
+  // uint32 kind = 4;
+  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+    if (this_._internal_kind() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          4, this_._internal_kind(), target);
+    }
+  }
+
+  // uint32 status = 5;
+  if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+    if (this_._internal_status() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          5, this_._internal_status(), target);
+    }
+  }
+
+  // uint64 funds_delta = 6;
+  if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+    if (this_._internal_funds_delta() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          6, this_._internal_funds_delta(), target);
+    }
+  }
+
+  // uint64 contribution_delta = 7;
+  if (CheckHasBit(cached_has_bits, 0x00000040U)) {
+    if (this_._internal_contribution_delta() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          7, this_._internal_contribution_delta(), target);
+    }
+  }
+
+  // uint64 updated_ms = 8;
+  if (CheckHasBit(cached_has_bits, 0x00000080U)) {
+    if (this_._internal_updated_ms() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          8, this_._internal_updated_ms(), target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:data_service.RollbackGuildDivergence)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t RollbackGuildDivergence::ByteSizeLong(const MessageLite& base) {
+  const RollbackGuildDivergence& this_ = static_cast<const RollbackGuildDivergence&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t RollbackGuildDivergence::ByteSizeLong() const {
+  const RollbackGuildDivergence& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:data_service.RollbackGuildDivergence)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x000000ffU)) {
+    // uint64 op_id = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (this_._internal_op_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_op_id());
+      }
+    }
+    // uint64 player_id = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (this_._internal_player_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_player_id());
+      }
+    }
+    // uint64 guild_id = 3;
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (this_._internal_guild_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_guild_id());
+      }
+    }
+    // uint32 kind = 4;
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (this_._internal_kind() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_kind());
+      }
+    }
+    // uint32 status = 5;
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+      if (this_._internal_status() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_status());
+      }
+    }
+    // uint64 funds_delta = 6;
+    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+      if (this_._internal_funds_delta() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_funds_delta());
+      }
+    }
+    // uint64 contribution_delta = 7;
+    if (CheckHasBit(cached_has_bits, 0x00000040U)) {
+      if (this_._internal_contribution_delta() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_contribution_delta());
+      }
+    }
+    // uint64 updated_ms = 8;
+    if (CheckHasBit(cached_has_bits, 0x00000080U)) {
+      if (this_._internal_updated_ms() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_updated_ms());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void RollbackGuildDivergence::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                      const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this = static_cast<RollbackGuildDivergence*>(&to_msg);
+  auto& from = static_cast<const RollbackGuildDivergence&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(class_specific_merge_from_start:data_service.RollbackGuildDivergence)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x000000ffU)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (from._internal_op_id() != 0) {
+        _this->_impl_.op_id_ = from._impl_.op_id_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (from._internal_player_id() != 0) {
+        _this->_impl_.player_id_ = from._impl_.player_id_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (from._internal_guild_id() != 0) {
+        _this->_impl_.guild_id_ = from._impl_.guild_id_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (from._internal_kind() != 0) {
+        _this->_impl_.kind_ = from._impl_.kind_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+      if (from._internal_status() != 0) {
+        _this->_impl_.status_ = from._impl_.status_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+      if (from._internal_funds_delta() != 0) {
+        _this->_impl_.funds_delta_ = from._impl_.funds_delta_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000040U)) {
+      if (from._internal_contribution_delta() != 0) {
+        _this->_impl_.contribution_delta_ = from._impl_.contribution_delta_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000080U)) {
+      if (from._internal_updated_ms() != 0) {
+        _this->_impl_.updated_ms_ = from._impl_.updated_ms_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void RollbackGuildDivergence::CopyFrom(const RollbackGuildDivergence& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:data_service.RollbackGuildDivergence)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void RollbackGuildDivergence::InternalSwap(RollbackGuildDivergence* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(RollbackGuildDivergence, _impl_.updated_ms_)
+      + sizeof(RollbackGuildDivergence::_impl_.updated_ms_)
+      - PROTOBUF_FIELD_OFFSET(RollbackGuildDivergence, _impl_.op_id_)>(
+          reinterpret_cast<char*>(&_impl_.op_id_),
+          reinterpret_cast<char*>(&other->_impl_.op_id_));
+}
+
+::google::protobuf::Metadata RollbackGuildDivergence::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
 RollbackPlayerRequest::RollbackPlayerRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
     : ::google::protobuf::Message(arena, RollbackPlayerRequest_get_class_data()) {
@@ -15862,9 +16916,9 @@ RollbackPlayerRequest::RollbackPlayerRequest(
                offsetof(Impl_, player_id_),
            reinterpret_cast<const char*>(&from._impl_) +
                offsetof(Impl_, player_id_),
-           offsetof(Impl_, scope_) -
+           offsetof(Impl_, accept_guild_divergence_) -
                offsetof(Impl_, player_id_) +
-               sizeof(Impl_::scope_));
+               sizeof(Impl_::accept_guild_divergence_));
 
   // @@protoc_insertion_point(copy_constructor:data_service.RollbackPlayerRequest)
 }
@@ -15885,9 +16939,9 @@ inline void RollbackPlayerRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE ar
   ::memset(reinterpret_cast<char*>(&_impl_) +
                offsetof(Impl_, player_id_),
            0,
-           offsetof(Impl_, scope_) -
+           offsetof(Impl_, accept_guild_divergence_) -
                offsetof(Impl_, player_id_) +
-               sizeof(Impl_::scope_));
+               sizeof(Impl_::accept_guild_divergence_));
 }
 RollbackPlayerRequest::~RollbackPlayerRequest() {
   // @@protoc_insertion_point(destructor:data_service.RollbackPlayerRequest)
@@ -15950,10 +17004,10 @@ PROTOBUF_NOINLINE void RollbackPlayerRequest::Clear() {
       _impl_.operator__.ClearNonDefaultToEmpty();
     }
   }
-  if (BatchCheckHasBit(cached_has_bits, 0x00000078U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x000000f8U)) {
     ::memset(&_impl_.player_id_, 0, static_cast<::size_t>(
-        reinterpret_cast<char*>(&_impl_.scope_) -
-        reinterpret_cast<char*>(&_impl_.player_id_)) + sizeof(_impl_.scope_));
+        reinterpret_cast<char*>(&_impl_.accept_guild_divergence_) -
+        reinterpret_cast<char*>(&_impl_.player_id_)) + sizeof(_impl_.accept_guild_divergence_));
   }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
@@ -16044,6 +17098,15 @@ PROTOBUF_NOINLINE void RollbackPlayerRequest::Clear() {
     }
   }
 
+  // bool accept_guild_divergence = 8;
+  if (CheckHasBit(cached_has_bits, 0x00000080U)) {
+    if (this_._internal_accept_guild_divergence() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteBoolToArray(
+          8, this_._internal_accept_guild_divergence(), target);
+    }
+  }
+
   if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
     target =
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
@@ -16069,7 +17132,7 @@ PROTOBUF_NOINLINE void RollbackPlayerRequest::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000007fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x000000ffU)) {
     // repeated string fields = 5;
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       total_size +=
@@ -16121,6 +17184,12 @@ PROTOBUF_NOINLINE void RollbackPlayerRequest::Clear() {
                       ::_pbi::WireFormatLite::EnumSize(this_._internal_scope());
       }
     }
+    // bool accept_guild_divergence = 8;
+    if (CheckHasBit(cached_has_bits, 0x00000080U)) {
+      if (this_._internal_accept_guild_divergence() != 0) {
+        total_size += 2;
+      }
+    }
   }
   return this_.MaybeComputeUnknownFieldsSize(total_size,
                                              &this_._impl_._cached_size_);
@@ -16140,7 +17209,7 @@ void RollbackPlayerRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
   (void)cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000007fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x000000ffU)) {
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       _this->_internal_mutable_fields()->InternalMergeFromWithArena(
           ::google::protobuf::MessageLite::internal_visibility(), arena,
@@ -16184,6 +17253,11 @@ void RollbackPlayerRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
         _this->_impl_.scope_ = from._impl_.scope_;
       }
     }
+    if (CheckHasBit(cached_has_bits, 0x00000080U)) {
+      if (from._internal_accept_guild_divergence() != 0) {
+        _this->_impl_.accept_guild_divergence_ = from._impl_.accept_guild_divergence_;
+      }
+    }
   }
   _this->_impl_._has_bits_[0] |= cached_has_bits;
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
@@ -16208,8 +17282,8 @@ void RollbackPlayerRequest::InternalSwap(RollbackPlayerRequest* PROTOBUF_RESTRIC
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.reason_, &other->_impl_.reason_, arena);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.operator__, &other->_impl_.operator__, arena);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(RollbackPlayerRequest, _impl_.scope_)
-      + sizeof(RollbackPlayerRequest::_impl_.scope_)
+      PROTOBUF_FIELD_OFFSET(RollbackPlayerRequest, _impl_.accept_guild_divergence_)
+      + sizeof(RollbackPlayerRequest::_impl_.accept_guild_divergence_)
       - PROTOBUF_FIELD_OFFSET(RollbackPlayerRequest, _impl_.player_id_)>(
           reinterpret_cast<char*>(&_impl_.player_id_),
           reinterpret_cast<char*>(&other->_impl_.player_id_));
@@ -16241,6 +17315,13 @@ PROTOBUF_NDEBUG_INLINE RollbackPlayerResponse::Impl_::Impl_(
               PROTOBUF_FIELD_OFFSET(::data_service::RollbackPlayerResponse, _impl_.fields_restored_)>()
           , from.fields_restored_
         }
+        ,
+        guild_divergences_ {
+          visibility, ::_pbi::InternalMetadataOffset::Build<
+              ::data_service::RollbackPlayerResponse,
+              PROTOBUF_FIELD_OFFSET(::data_service::RollbackPlayerResponse, _impl_.guild_divergences_)>()
+          , from.guild_divergences_
+        }
      {}
 
 RollbackPlayerResponse::RollbackPlayerResponse(
@@ -16261,9 +17342,9 @@ RollbackPlayerResponse::RollbackPlayerResponse(
                offsetof(Impl_, snapshot_id_used_),
            reinterpret_cast<const char*>(&from._impl_) +
                offsetof(Impl_, snapshot_id_used_),
-           offsetof(Impl_, error_code_) -
+           offsetof(Impl_, guild_unprovable_player_count_) -
                offsetof(Impl_, snapshot_id_used_) +
-               sizeof(Impl_::error_code_));
+               sizeof(Impl_::guild_unprovable_player_count_));
 
   // @@protoc_insertion_point(copy_constructor:data_service.RollbackPlayerResponse)
 }
@@ -16275,6 +17356,11 @@ PROTOBUF_NDEBUG_INLINE RollbackPlayerResponse::Impl_::Impl_(
             ::data_service::RollbackPlayerResponse,
             PROTOBUF_FIELD_OFFSET(::data_service::RollbackPlayerResponse, _impl_.fields_restored_)>()
          }
+        ,
+        guild_divergences_ { visibility, ::_pbi::InternalMetadataOffset::Build<
+            ::data_service::RollbackPlayerResponse,
+            PROTOBUF_FIELD_OFFSET(::data_service::RollbackPlayerResponse, _impl_.guild_divergences_)>()
+         }
      {}
 
 inline void RollbackPlayerResponse::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
@@ -16282,9 +17368,9 @@ inline void RollbackPlayerResponse::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE a
   ::memset(reinterpret_cast<char*>(&_impl_) +
                offsetof(Impl_, snapshot_id_used_),
            0,
-           offsetof(Impl_, error_code_) -
+           offsetof(Impl_, guild_unprovable_player_count_) -
                offsetof(Impl_, snapshot_id_used_) +
-               sizeof(Impl_::error_code_));
+               sizeof(Impl_::guild_unprovable_player_count_));
 }
 RollbackPlayerResponse::~RollbackPlayerResponse() {
   // @@protoc_insertion_point(destructor:data_service.RollbackPlayerResponse)
@@ -16334,13 +17420,18 @@ PROTOBUF_NOINLINE void RollbackPlayerResponse::Clear() {
   (void) cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
-    _impl_.fields_restored_.Clear();
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      _impl_.fields_restored_.Clear();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      _impl_.guild_divergences_.Clear();
+    }
   }
-  if (BatchCheckHasBit(cached_has_bits, 0x0000000eU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000007cU)) {
     ::memset(&_impl_.snapshot_id_used_, 0, static_cast<::size_t>(
-        reinterpret_cast<char*>(&_impl_.error_code_) -
-        reinterpret_cast<char*>(&_impl_.snapshot_id_used_)) + sizeof(_impl_.error_code_));
+        reinterpret_cast<char*>(&_impl_.guild_unprovable_player_count_) -
+        reinterpret_cast<char*>(&_impl_.snapshot_id_used_)) + sizeof(_impl_.guild_unprovable_player_count_));
   }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
@@ -16366,7 +17457,7 @@ PROTOBUF_NOINLINE void RollbackPlayerResponse::Clear() {
 
   cached_has_bits = this_._impl_._has_bits_[0];
   // uint32 error_code = 1;
-  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000010U)) {
     if (this_._internal_error_code() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
@@ -16375,7 +17466,7 @@ PROTOBUF_NOINLINE void RollbackPlayerResponse::Clear() {
   }
 
   // uint64 snapshot_id_used = 2;
-  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
     if (this_._internal_snapshot_id_used() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
@@ -16384,7 +17475,7 @@ PROTOBUF_NOINLINE void RollbackPlayerResponse::Clear() {
   }
 
   // uint64 pre_rollback_snapshot_id = 3;
-  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
     if (this_._internal_pre_rollback_snapshot_id() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
@@ -16399,6 +17490,37 @@ PROTOBUF_NOINLINE void RollbackPlayerResponse::Clear() {
       ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
           s.data(), static_cast<int>(s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "data_service.RollbackPlayerResponse.fields_restored");
       target = stream->WriteString(4, s, target);
+    }
+  }
+
+  // uint32 guild_divergence_count = 5;
+  if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+    if (this_._internal_guild_divergence_count() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          5, this_._internal_guild_divergence_count(), target);
+    }
+  }
+
+  // repeated .data_service.RollbackGuildDivergence guild_divergences = 6;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    for (unsigned i = 0, n = static_cast<unsigned>(
+                             this_._internal_guild_divergences_size());
+         i < n; i++) {
+      const auto& repfield = this_._internal_guild_divergences().Get(i);
+      target =
+          ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+              6, repfield, repfield.GetCachedSize(),
+              target, stream);
+    }
+  }
+
+  // uint32 guild_unprovable_player_count = 7;
+  if (CheckHasBit(cached_has_bits, 0x00000040U)) {
+    if (this_._internal_guild_unprovable_player_count() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          7, this_._internal_guild_unprovable_player_count(), target);
     }
   }
 
@@ -16427,7 +17549,7 @@ PROTOBUF_NOINLINE void RollbackPlayerResponse::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000007fU)) {
     // repeated string fields_restored = 4;
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       total_size +=
@@ -16437,25 +17559,46 @@ PROTOBUF_NOINLINE void RollbackPlayerResponse::Clear() {
             this_._internal_fields_restored().Get(i));
       }
     }
-    // uint64 snapshot_id_used = 2;
+    // repeated .data_service.RollbackGuildDivergence guild_divergences = 6;
     if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      total_size += 1UL * this_._internal_guild_divergences_size();
+      for (const auto& msg : this_._internal_guild_divergences()) {
+        total_size += ::google::protobuf::internal::WireFormatLite::MessageSize(msg);
+      }
+    }
+    // uint64 snapshot_id_used = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
       if (this_._internal_snapshot_id_used() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
             this_._internal_snapshot_id_used());
       }
     }
     // uint64 pre_rollback_snapshot_id = 3;
-    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
       if (this_._internal_pre_rollback_snapshot_id() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
             this_._internal_pre_rollback_snapshot_id());
       }
     }
     // uint32 error_code = 1;
-    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
       if (this_._internal_error_code() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_error_code());
+      }
+    }
+    // uint32 guild_divergence_count = 5;
+    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+      if (this_._internal_guild_divergence_count() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_guild_divergence_count());
+      }
+    }
+    // uint32 guild_unprovable_player_count = 7;
+    if (CheckHasBit(cached_has_bits, 0x00000040U)) {
+      if (this_._internal_guild_unprovable_player_count() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_guild_unprovable_player_count());
       }
     }
   }
@@ -16477,25 +17620,40 @@ void RollbackPlayerResponse::MergeImpl(::google::protobuf::MessageLite& to_msg,
   (void)cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000007fU)) {
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       _this->_internal_mutable_fields_restored()->InternalMergeFromWithArena(
           ::google::protobuf::MessageLite::internal_visibility(), arena,
           from._internal_fields_restored());
     }
     if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      _this->_internal_mutable_guild_divergences()->InternalMergeFromWithArena(
+          ::google::protobuf::MessageLite::internal_visibility(), arena,
+          from._internal_guild_divergences());
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
       if (from._internal_snapshot_id_used() != 0) {
         _this->_impl_.snapshot_id_used_ = from._impl_.snapshot_id_used_;
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
       if (from._internal_pre_rollback_snapshot_id() != 0) {
         _this->_impl_.pre_rollback_snapshot_id_ = from._impl_.pre_rollback_snapshot_id_;
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
       if (from._internal_error_code() != 0) {
         _this->_impl_.error_code_ = from._impl_.error_code_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+      if (from._internal_guild_divergence_count() != 0) {
+        _this->_impl_.guild_divergence_count_ = from._impl_.guild_divergence_count_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000040U)) {
+      if (from._internal_guild_unprovable_player_count() != 0) {
+        _this->_impl_.guild_unprovable_player_count_ = from._impl_.guild_unprovable_player_count_;
       }
     }
   }
@@ -16517,9 +17675,10 @@ void RollbackPlayerResponse::InternalSwap(RollbackPlayerResponse* PROTOBUF_RESTR
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   _impl_.fields_restored_.InternalSwap(&other->_impl_.fields_restored_);
+  _impl_.guild_divergences_.InternalSwap(&other->_impl_.guild_divergences_);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(RollbackPlayerResponse, _impl_.error_code_)
-      + sizeof(RollbackPlayerResponse::_impl_.error_code_)
+      PROTOBUF_FIELD_OFFSET(RollbackPlayerResponse, _impl_.guild_unprovable_player_count_)
+      + sizeof(RollbackPlayerResponse::_impl_.guild_unprovable_player_count_)
       - PROTOBUF_FIELD_OFFSET(RollbackPlayerResponse, _impl_.snapshot_id_used_)>(
           reinterpret_cast<char*>(&_impl_.snapshot_id_used_),
           reinterpret_cast<char*>(&other->_impl_.snapshot_id_used_));
@@ -16566,9 +17725,9 @@ RollbackZoneRequest::RollbackZoneRequest(
                offsetof(Impl_, target_time_),
            reinterpret_cast<const char*>(&from._impl_) +
                offsetof(Impl_, target_time_),
-           offsetof(Impl_, zone_id_) -
+           offsetof(Impl_, accept_guild_divergence_) -
                offsetof(Impl_, target_time_) +
-               sizeof(Impl_::zone_id_));
+               sizeof(Impl_::accept_guild_divergence_));
 
   // @@protoc_insertion_point(copy_constructor:data_service.RollbackZoneRequest)
 }
@@ -16584,9 +17743,9 @@ inline void RollbackZoneRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE aren
   ::memset(reinterpret_cast<char*>(&_impl_) +
                offsetof(Impl_, target_time_),
            0,
-           offsetof(Impl_, zone_id_) -
+           offsetof(Impl_, accept_guild_divergence_) -
                offsetof(Impl_, target_time_) +
-               sizeof(Impl_::zone_id_));
+               sizeof(Impl_::accept_guild_divergence_));
 }
 RollbackZoneRequest::~RollbackZoneRequest() {
   // @@protoc_insertion_point(destructor:data_service.RollbackZoneRequest)
@@ -16646,10 +17805,10 @@ PROTOBUF_NOINLINE void RollbackZoneRequest::Clear() {
       _impl_.operator__.ClearNonDefaultToEmpty();
     }
   }
-  if (BatchCheckHasBit(cached_has_bits, 0x0000000cU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000001cU)) {
     ::memset(&_impl_.target_time_, 0, static_cast<::size_t>(
-        reinterpret_cast<char*>(&_impl_.zone_id_) -
-        reinterpret_cast<char*>(&_impl_.target_time_)) + sizeof(_impl_.zone_id_));
+        reinterpret_cast<char*>(&_impl_.accept_guild_divergence_) -
+        reinterpret_cast<char*>(&_impl_.target_time_)) + sizeof(_impl_.accept_guild_divergence_));
   }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
@@ -16712,6 +17871,15 @@ PROTOBUF_NOINLINE void RollbackZoneRequest::Clear() {
     }
   }
 
+  // bool accept_guild_divergence = 5;
+  if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+    if (this_._internal_accept_guild_divergence() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteBoolToArray(
+          5, this_._internal_accept_guild_divergence(), target);
+    }
+  }
+
   if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
     target =
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
@@ -16737,7 +17905,7 @@ PROTOBUF_NOINLINE void RollbackZoneRequest::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000001fU)) {
     // string reason = 3;
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       if (!this_._internal_reason().empty()) {
@@ -16766,6 +17934,12 @@ PROTOBUF_NOINLINE void RollbackZoneRequest::Clear() {
             this_._internal_zone_id());
       }
     }
+    // bool accept_guild_divergence = 5;
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+      if (this_._internal_accept_guild_divergence() != 0) {
+        total_size += 2;
+      }
+    }
   }
   return this_.MaybeComputeUnknownFieldsSize(total_size,
                                              &this_._impl_._cached_size_);
@@ -16784,7 +17958,7 @@ void RollbackZoneRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
   (void)cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000001fU)) {
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       if (!from._internal_reason().empty()) {
         _this->_internal_set_reason(from._internal_reason());
@@ -16813,6 +17987,11 @@ void RollbackZoneRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
         _this->_impl_.zone_id_ = from._impl_.zone_id_;
       }
     }
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+      if (from._internal_accept_guild_divergence() != 0) {
+        _this->_impl_.accept_guild_divergence_ = from._impl_.accept_guild_divergence_;
+      }
+    }
   }
   _this->_impl_._has_bits_[0] |= cached_has_bits;
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
@@ -16836,8 +18015,8 @@ void RollbackZoneRequest::InternalSwap(RollbackZoneRequest* PROTOBUF_RESTRICT PR
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.reason_, &other->_impl_.reason_, arena);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.operator__, &other->_impl_.operator__, arena);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(RollbackZoneRequest, _impl_.zone_id_)
-      + sizeof(RollbackZoneRequest::_impl_.zone_id_)
+      PROTOBUF_FIELD_OFFSET(RollbackZoneRequest, _impl_.accept_guild_divergence_)
+      + sizeof(RollbackZoneRequest::_impl_.accept_guild_divergence_)
       - PROTOBUF_FIELD_OFFSET(RollbackZoneRequest, _impl_.target_time_)>(
           reinterpret_cast<char*>(&_impl_.target_time_),
           reinterpret_cast<char*>(&other->_impl_.target_time_));
@@ -16878,7 +18057,14 @@ PROTOBUF_NDEBUG_INLINE RollbackZoneResponse::Impl_::Impl_(
           , from.orphan_player_ids_
         }
         ,
-        _orphan_player_ids_cached_byte_size_{0} {}
+        _orphan_player_ids_cached_byte_size_{0},
+        guild_divergences_ {
+          visibility, ::_pbi::InternalMetadataOffset::Build<
+              ::data_service::RollbackZoneResponse,
+              PROTOBUF_FIELD_OFFSET(::data_service::RollbackZoneResponse, _impl_.guild_divergences_)>()
+          , from.guild_divergences_
+        }
+     {}
 
 RollbackZoneResponse::RollbackZoneResponse(
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
@@ -16898,9 +18084,9 @@ RollbackZoneResponse::RollbackZoneResponse(
                offsetof(Impl_, error_code_),
            reinterpret_cast<const char*>(&from._impl_) +
                offsetof(Impl_, error_code_),
-           offsetof(Impl_, orphans_cleaned_) -
+           offsetof(Impl_, guild_unprovable_player_count_) -
                offsetof(Impl_, error_code_) +
-               sizeof(Impl_::orphans_cleaned_));
+               sizeof(Impl_::guild_unprovable_player_count_));
 
   // @@protoc_insertion_point(copy_constructor:data_service.RollbackZoneResponse)
 }
@@ -16919,16 +18105,21 @@ PROTOBUF_NDEBUG_INLINE RollbackZoneResponse::Impl_::Impl_(
             PROTOBUF_FIELD_OFFSET(::data_service::RollbackZoneResponse, _impl_.orphan_player_ids_)>()
          }
         ,
-        _orphan_player_ids_cached_byte_size_{0} {}
+        _orphan_player_ids_cached_byte_size_{0},
+        guild_divergences_ { visibility, ::_pbi::InternalMetadataOffset::Build<
+            ::data_service::RollbackZoneResponse,
+            PROTOBUF_FIELD_OFFSET(::data_service::RollbackZoneResponse, _impl_.guild_divergences_)>()
+         }
+     {}
 
 inline void RollbackZoneResponse::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char*>(&_impl_) +
                offsetof(Impl_, error_code_),
            0,
-           offsetof(Impl_, orphans_cleaned_) -
+           offsetof(Impl_, guild_unprovable_player_count_) -
                offsetof(Impl_, error_code_) +
-               sizeof(Impl_::orphans_cleaned_));
+               sizeof(Impl_::guild_unprovable_player_count_));
 }
 RollbackZoneResponse::~RollbackZoneResponse() {
   // @@protoc_insertion_point(destructor:data_service.RollbackZoneResponse)
@@ -16978,19 +18169,23 @@ PROTOBUF_NOINLINE void RollbackZoneResponse::Clear() {
   (void) cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       _impl_.failed_player_ids_.Clear();
     }
     if (CheckHasBit(cached_has_bits, 0x00000002U)) {
       _impl_.orphan_player_ids_.Clear();
     }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      _impl_.guild_divergences_.Clear();
+    }
   }
-  if (BatchCheckHasBit(cached_has_bits, 0x0000003cU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x000000f8U)) {
     ::memset(&_impl_.error_code_, 0, static_cast<::size_t>(
-        reinterpret_cast<char*>(&_impl_.orphans_cleaned_) -
-        reinterpret_cast<char*>(&_impl_.error_code_)) + sizeof(_impl_.orphans_cleaned_));
+        reinterpret_cast<char*>(&_impl_.guild_divergence_count_) -
+        reinterpret_cast<char*>(&_impl_.error_code_)) + sizeof(_impl_.guild_divergence_count_));
   }
+  _impl_.guild_unprovable_player_count_ = 0u;
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
@@ -17015,7 +18210,7 @@ PROTOBUF_NOINLINE void RollbackZoneResponse::Clear() {
 
   cached_has_bits = this_._impl_._has_bits_[0];
   // uint32 error_code = 1;
-  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
     if (this_._internal_error_code() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
@@ -17024,7 +18219,7 @@ PROTOBUF_NOINLINE void RollbackZoneResponse::Clear() {
   }
 
   // uint32 players_affected = 2;
-  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000010U)) {
     if (this_._internal_players_affected() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
@@ -17033,7 +18228,7 @@ PROTOBUF_NOINLINE void RollbackZoneResponse::Clear() {
   }
 
   // uint32 players_failed = 3;
-  if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000020U)) {
     if (this_._internal_players_failed() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
@@ -17064,11 +18259,42 @@ PROTOBUF_NOINLINE void RollbackZoneResponse::Clear() {
   }
 
   // uint32 orphans_cleaned = 6;
-  if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000040U)) {
     if (this_._internal_orphans_cleaned() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
           6, this_._internal_orphans_cleaned(), target);
+    }
+  }
+
+  // uint32 guild_divergence_count = 7;
+  if (CheckHasBit(cached_has_bits, 0x00000080U)) {
+    if (this_._internal_guild_divergence_count() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          7, this_._internal_guild_divergence_count(), target);
+    }
+  }
+
+  // repeated .data_service.RollbackGuildDivergence guild_divergences = 8;
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    for (unsigned i = 0, n = static_cast<unsigned>(
+                             this_._internal_guild_divergences_size());
+         i < n; i++) {
+      const auto& repfield = this_._internal_guild_divergences().Get(i);
+      target =
+          ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+              8, repfield, repfield.GetCachedSize(),
+              target, stream);
+    }
+  }
+
+  // uint32 guild_unprovable_player_count = 9;
+  if (CheckHasBit(cached_has_bits, 0x00000100U)) {
+    if (this_._internal_guild_unprovable_player_count() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          9, this_._internal_guild_unprovable_player_count(), target);
     }
   }
 
@@ -17097,7 +18323,7 @@ PROTOBUF_NOINLINE void RollbackZoneResponse::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000003fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x000000ffU)) {
     // repeated uint64 failed_player_ids = 4;
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       total_size +=
@@ -17112,32 +18338,55 @@ PROTOBUF_NOINLINE void RollbackZoneResponse::Clear() {
               this_._internal_orphan_player_ids(), 1,
               this_._impl_._orphan_player_ids_cached_byte_size_);
     }
-    // uint32 error_code = 1;
+    // repeated .data_service.RollbackGuildDivergence guild_divergences = 8;
     if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      total_size += 1UL * this_._internal_guild_divergences_size();
+      for (const auto& msg : this_._internal_guild_divergences()) {
+        total_size += ::google::protobuf::internal::WireFormatLite::MessageSize(msg);
+      }
+    }
+    // uint32 error_code = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
       if (this_._internal_error_code() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_error_code());
       }
     }
     // uint32 players_affected = 2;
-    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
       if (this_._internal_players_affected() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_players_affected());
       }
     }
     // uint32 players_failed = 3;
-    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
       if (this_._internal_players_failed() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_players_failed());
       }
     }
     // uint32 orphans_cleaned = 6;
-    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000040U)) {
       if (this_._internal_orphans_cleaned() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_orphans_cleaned());
+      }
+    }
+    // uint32 guild_divergence_count = 7;
+    if (CheckHasBit(cached_has_bits, 0x00000080U)) {
+      if (this_._internal_guild_divergence_count() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_guild_divergence_count());
+      }
+    }
+  }
+   {
+    // uint32 guild_unprovable_player_count = 9;
+    if (CheckHasBit(cached_has_bits, 0x00000100U)) {
+      if (this_._internal_guild_unprovable_player_count() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_guild_unprovable_player_count());
       }
     }
   }
@@ -17152,13 +18401,14 @@ void RollbackZoneResponse::MergeImpl(::google::protobuf::MessageLite& to_msg,
   if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
     from.CheckHasBitConsistency();
   }
+  ::google::protobuf::Arena* arena = _this->GetArena();
   // @@protoc_insertion_point(class_specific_merge_from_start:data_service.RollbackZoneResponse)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000003fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x000000ffU)) {
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       _this->_internal_mutable_failed_player_ids()->MergeFrom(from._internal_failed_player_ids());
     }
@@ -17166,24 +18416,39 @@ void RollbackZoneResponse::MergeImpl(::google::protobuf::MessageLite& to_msg,
       _this->_internal_mutable_orphan_player_ids()->MergeFrom(from._internal_orphan_player_ids());
     }
     if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      _this->_internal_mutable_guild_divergences()->InternalMergeFromWithArena(
+          ::google::protobuf::MessageLite::internal_visibility(), arena,
+          from._internal_guild_divergences());
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
       if (from._internal_error_code() != 0) {
         _this->_impl_.error_code_ = from._impl_.error_code_;
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
       if (from._internal_players_affected() != 0) {
         _this->_impl_.players_affected_ = from._impl_.players_affected_;
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
       if (from._internal_players_failed() != 0) {
         _this->_impl_.players_failed_ = from._impl_.players_failed_;
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000040U)) {
       if (from._internal_orphans_cleaned() != 0) {
         _this->_impl_.orphans_cleaned_ = from._impl_.orphans_cleaned_;
       }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000080U)) {
+      if (from._internal_guild_divergence_count() != 0) {
+        _this->_impl_.guild_divergence_count_ = from._impl_.guild_divergence_count_;
+      }
+    }
+  }
+  if (CheckHasBit(cached_has_bits, 0x00000100U)) {
+    if (from._internal_guild_unprovable_player_count() != 0) {
+      _this->_impl_.guild_unprovable_player_count_ = from._impl_.guild_unprovable_player_count_;
     }
   }
   _this->_impl_._has_bits_[0] |= cached_has_bits;
@@ -17205,9 +18470,10 @@ void RollbackZoneResponse::InternalSwap(RollbackZoneResponse* PROTOBUF_RESTRICT 
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   _impl_.failed_player_ids_.InternalSwap(&other->_impl_.failed_player_ids_);
   _impl_.orphan_player_ids_.InternalSwap(&other->_impl_.orphan_player_ids_);
+  _impl_.guild_divergences_.InternalSwap(&other->_impl_.guild_divergences_);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(RollbackZoneResponse, _impl_.orphans_cleaned_)
-      + sizeof(RollbackZoneResponse::_impl_.orphans_cleaned_)
+      PROTOBUF_FIELD_OFFSET(RollbackZoneResponse, _impl_.guild_unprovable_player_count_)
+      + sizeof(RollbackZoneResponse::_impl_.guild_unprovable_player_count_)
       - PROTOBUF_FIELD_OFFSET(RollbackZoneResponse, _impl_.error_code_)>(
           reinterpret_cast<char*>(&_impl_.error_code_),
           reinterpret_cast<char*>(&other->_impl_.error_code_));
@@ -17250,7 +18516,13 @@ RollbackAllRequest::RollbackAllRequest(
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
-  _impl_.target_time_ = from._impl_.target_time_;
+  ::memcpy(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, target_time_),
+           reinterpret_cast<const char*>(&from._impl_) +
+               offsetof(Impl_, target_time_),
+           offsetof(Impl_, accept_guild_divergence_) -
+               offsetof(Impl_, target_time_) +
+               sizeof(Impl_::accept_guild_divergence_));
 
   // @@protoc_insertion_point(copy_constructor:data_service.RollbackAllRequest)
 }
@@ -17263,7 +18535,12 @@ PROTOBUF_NDEBUG_INLINE RollbackAllRequest::Impl_::Impl_(
 
 inline void RollbackAllRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
-  _impl_.target_time_ = {};
+  ::memset(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, target_time_),
+           0,
+           offsetof(Impl_, accept_guild_divergence_) -
+               offsetof(Impl_, target_time_) +
+               sizeof(Impl_::accept_guild_divergence_));
 }
 RollbackAllRequest::~RollbackAllRequest() {
   // @@protoc_insertion_point(destructor:data_service.RollbackAllRequest)
@@ -17323,7 +18600,11 @@ PROTOBUF_NOINLINE void RollbackAllRequest::Clear() {
       _impl_.operator__.ClearNonDefaultToEmpty();
     }
   }
-  _impl_.target_time_ = ::uint64_t{0u};
+  if (BatchCheckHasBit(cached_has_bits, 0x0000000cU)) {
+    ::memset(&_impl_.target_time_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.accept_guild_divergence_) -
+        reinterpret_cast<char*>(&_impl_.target_time_)) + sizeof(_impl_.accept_guild_divergence_));
+  }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
@@ -17376,6 +18657,15 @@ PROTOBUF_NOINLINE void RollbackAllRequest::Clear() {
     }
   }
 
+  // bool accept_guild_divergence = 4;
+  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+    if (this_._internal_accept_guild_divergence() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteBoolToArray(
+          4, this_._internal_accept_guild_divergence(), target);
+    }
+  }
+
   if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
     target =
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
@@ -17401,7 +18691,7 @@ PROTOBUF_NOINLINE void RollbackAllRequest::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
     // string reason = 2;
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       if (!this_._internal_reason().empty()) {
@@ -17423,6 +18713,12 @@ PROTOBUF_NOINLINE void RollbackAllRequest::Clear() {
             this_._internal_target_time());
       }
     }
+    // bool accept_guild_divergence = 4;
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (this_._internal_accept_guild_divergence() != 0) {
+        total_size += 2;
+      }
+    }
   }
   return this_.MaybeComputeUnknownFieldsSize(total_size,
                                              &this_._impl_._cached_size_);
@@ -17441,7 +18737,7 @@ void RollbackAllRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
   (void)cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       if (!from._internal_reason().empty()) {
         _this->_internal_set_reason(from._internal_reason());
@@ -17463,6 +18759,11 @@ void RollbackAllRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
     if (CheckHasBit(cached_has_bits, 0x00000004U)) {
       if (from._internal_target_time() != 0) {
         _this->_impl_.target_time_ = from._impl_.target_time_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (from._internal_accept_guild_divergence() != 0) {
+        _this->_impl_.accept_guild_divergence_ = from._impl_.accept_guild_divergence_;
       }
     }
   }
@@ -17487,7 +18788,12 @@ void RollbackAllRequest::InternalSwap(RollbackAllRequest* PROTOBUF_RESTRICT PROT
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.reason_, &other->_impl_.reason_, arena);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.operator__, &other->_impl_.operator__, arena);
-  swap(_impl_.target_time_, other->_impl_.target_time_);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(RollbackAllRequest, _impl_.accept_guild_divergence_)
+      + sizeof(RollbackAllRequest::_impl_.accept_guild_divergence_)
+      - PROTOBUF_FIELD_OFFSET(RollbackAllRequest, _impl_.target_time_)>(
+          reinterpret_cast<char*>(&_impl_.target_time_),
+          reinterpret_cast<char*>(&other->_impl_.target_time_));
 }
 
 ::google::protobuf::Metadata RollbackAllRequest::GetMetadata() const {
@@ -17504,30 +18810,62 @@ RollbackAllResponse::RollbackAllResponse(::google::protobuf::Arena* PROTOBUF_NUL
   SharedCtor(arena);
   // @@protoc_insertion_point(arena_constructor:data_service.RollbackAllResponse)
 }
+PROTOBUF_NDEBUG_INLINE RollbackAllResponse::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::data_service::RollbackAllResponse& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        guild_divergences_ {
+          visibility, ::_pbi::InternalMetadataOffset::Build<
+              ::data_service::RollbackAllResponse,
+              PROTOBUF_FIELD_OFFSET(::data_service::RollbackAllResponse, _impl_.guild_divergences_)>()
+          , from.guild_divergences_
+        }
+     {}
+
 RollbackAllResponse::RollbackAllResponse(
-    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const RollbackAllResponse& from)
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const RollbackAllResponse& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, RollbackAllResponse_get_class_data()),
+    : ::google::protobuf::Message(arena, RollbackAllResponse_get_class_data()) {
+
 #else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::Message(arena),
+    : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
-      _impl_(from._impl_) {
+  RollbackAllResponse* const _this = this;
+  (void)_this;
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::memcpy(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, error_code_),
+           reinterpret_cast<const char*>(&from._impl_) +
+               offsetof(Impl_, error_code_),
+           offsetof(Impl_, guild_unprovable_player_count_) -
+               offsetof(Impl_, error_code_) +
+               sizeof(Impl_::guild_unprovable_player_count_));
+
+  // @@protoc_insertion_point(copy_constructor:data_service.RollbackAllResponse)
 }
 PROTOBUF_NDEBUG_INLINE RollbackAllResponse::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
-      : _cached_size_{0} {}
+      : _cached_size_{0},
+        guild_divergences_ { visibility, ::_pbi::InternalMetadataOffset::Build<
+            ::data_service::RollbackAllResponse,
+            PROTOBUF_FIELD_OFFSET(::data_service::RollbackAllResponse, _impl_.guild_divergences_)>()
+         }
+     {}
 
 inline void RollbackAllResponse::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char*>(&_impl_) +
                offsetof(Impl_, error_code_),
            0,
-           offsetof(Impl_, players_failed_) -
+           offsetof(Impl_, guild_unprovable_player_count_) -
                offsetof(Impl_, error_code_) +
-               sizeof(Impl_::players_failed_));
+               sizeof(Impl_::guild_unprovable_player_count_));
 }
 RollbackAllResponse::~RollbackAllResponse() {
   // @@protoc_insertion_point(destructor:data_service.RollbackAllResponse)
@@ -17577,10 +18915,13 @@ PROTOBUF_NOINLINE void RollbackAllResponse::Clear() {
   (void) cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    _impl_.guild_divergences_.Clear();
+  }
+  if (BatchCheckHasBit(cached_has_bits, 0x0000007eU)) {
     ::memset(&_impl_.error_code_, 0, static_cast<::size_t>(
-        reinterpret_cast<char*>(&_impl_.players_failed_) -
-        reinterpret_cast<char*>(&_impl_.error_code_)) + sizeof(_impl_.players_failed_));
+        reinterpret_cast<char*>(&_impl_.guild_unprovable_player_count_) -
+        reinterpret_cast<char*>(&_impl_.error_code_)) + sizeof(_impl_.guild_unprovable_player_count_));
   }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
@@ -17606,7 +18947,7 @@ PROTOBUF_NOINLINE void RollbackAllResponse::Clear() {
 
   cached_has_bits = this_._impl_._has_bits_[0];
   // uint32 error_code = 1;
-  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
     if (this_._internal_error_code() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
@@ -17615,7 +18956,7 @@ PROTOBUF_NOINLINE void RollbackAllResponse::Clear() {
   }
 
   // uint32 zones_processed = 2;
-  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
     if (this_._internal_zones_processed() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
@@ -17624,7 +18965,7 @@ PROTOBUF_NOINLINE void RollbackAllResponse::Clear() {
   }
 
   // uint32 players_affected = 3;
-  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
     if (this_._internal_players_affected() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
@@ -17633,11 +18974,42 @@ PROTOBUF_NOINLINE void RollbackAllResponse::Clear() {
   }
 
   // uint32 players_failed = 4;
-  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000010U)) {
     if (this_._internal_players_failed() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
           4, this_._internal_players_failed(), target);
+    }
+  }
+
+  // uint32 guild_divergence_count = 5;
+  if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+    if (this_._internal_guild_divergence_count() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          5, this_._internal_guild_divergence_count(), target);
+    }
+  }
+
+  // repeated .data_service.RollbackGuildDivergence guild_divergences = 6;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    for (unsigned i = 0, n = static_cast<unsigned>(
+                             this_._internal_guild_divergences_size());
+         i < n; i++) {
+      const auto& repfield = this_._internal_guild_divergences().Get(i);
+      target =
+          ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+              6, repfield, repfield.GetCachedSize(),
+              target, stream);
+    }
+  }
+
+  // uint32 guild_unprovable_player_count = 7;
+  if (CheckHasBit(cached_has_bits, 0x00000040U)) {
+    if (this_._internal_guild_unprovable_player_count() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          7, this_._internal_guild_unprovable_player_count(), target);
     }
   }
 
@@ -17666,33 +19038,54 @@ PROTOBUF_NOINLINE void RollbackAllResponse::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
-    // uint32 error_code = 1;
+  if (BatchCheckHasBit(cached_has_bits, 0x0000007fU)) {
+    // repeated .data_service.RollbackGuildDivergence guild_divergences = 6;
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      total_size += 1UL * this_._internal_guild_divergences_size();
+      for (const auto& msg : this_._internal_guild_divergences()) {
+        total_size += ::google::protobuf::internal::WireFormatLite::MessageSize(msg);
+      }
+    }
+    // uint32 error_code = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
       if (this_._internal_error_code() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_error_code());
       }
     }
     // uint32 zones_processed = 2;
-    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
       if (this_._internal_zones_processed() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_zones_processed());
       }
     }
     // uint32 players_affected = 3;
-    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
       if (this_._internal_players_affected() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_players_affected());
       }
     }
     // uint32 players_failed = 4;
-    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
       if (this_._internal_players_failed() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_players_failed());
+      }
+    }
+    // uint32 guild_divergence_count = 5;
+    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+      if (this_._internal_guild_divergence_count() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_guild_divergence_count());
+      }
+    }
+    // uint32 guild_unprovable_player_count = 7;
+    if (CheckHasBit(cached_has_bits, 0x00000040U)) {
+      if (this_._internal_guild_unprovable_player_count() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_guild_unprovable_player_count());
       }
     }
   }
@@ -17707,31 +19100,47 @@ void RollbackAllResponse::MergeImpl(::google::protobuf::MessageLite& to_msg,
   if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
     from.CheckHasBitConsistency();
   }
+  ::google::protobuf::Arena* arena = _this->GetArena();
   // @@protoc_insertion_point(class_specific_merge_from_start:data_service.RollbackAllResponse)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000007fU)) {
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      _this->_internal_mutable_guild_divergences()->InternalMergeFromWithArena(
+          ::google::protobuf::MessageLite::internal_visibility(), arena,
+          from._internal_guild_divergences());
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
       if (from._internal_error_code() != 0) {
         _this->_impl_.error_code_ = from._impl_.error_code_;
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
       if (from._internal_zones_processed() != 0) {
         _this->_impl_.zones_processed_ = from._impl_.zones_processed_;
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
       if (from._internal_players_affected() != 0) {
         _this->_impl_.players_affected_ = from._impl_.players_affected_;
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
       if (from._internal_players_failed() != 0) {
         _this->_impl_.players_failed_ = from._impl_.players_failed_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+      if (from._internal_guild_divergence_count() != 0) {
+        _this->_impl_.guild_divergence_count_ = from._impl_.guild_divergence_count_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000040U)) {
+      if (from._internal_guild_unprovable_player_count() != 0) {
+        _this->_impl_.guild_unprovable_player_count_ = from._impl_.guild_unprovable_player_count_;
       }
     }
   }
@@ -17752,9 +19161,10 @@ void RollbackAllResponse::InternalSwap(RollbackAllResponse* PROTOBUF_RESTRICT PR
   using ::std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  _impl_.guild_divergences_.InternalSwap(&other->_impl_.guild_divergences_);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(RollbackAllResponse, _impl_.players_failed_)
-      + sizeof(RollbackAllResponse::_impl_.players_failed_)
+      PROTOBUF_FIELD_OFFSET(RollbackAllResponse, _impl_.guild_unprovable_player_count_)
+      + sizeof(RollbackAllResponse::_impl_.guild_unprovable_player_count_)
       - PROTOBUF_FIELD_OFFSET(RollbackAllResponse, _impl_.error_code_)>(
           reinterpret_cast<char*>(&_impl_.error_code_),
           reinterpret_cast<char*>(&other->_impl_.error_code_));
@@ -22369,6 +23779,446 @@ void BatchGetPlayerNameResponse::InternalSwap(BatchGetPlayerNameResponse* PROTOB
 }
 
 ::google::protobuf::Metadata BatchGetPlayerNameResponse::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+GetPlayerAssetOpLedgerRequest::GetPlayerAssetOpLedgerRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, GetPlayerAssetOpLedgerRequest_get_class_data()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:data_service.GetPlayerAssetOpLedgerRequest)
+}
+GetPlayerAssetOpLedgerRequest::GetPlayerAssetOpLedgerRequest(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const GetPlayerAssetOpLedgerRequest& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, GetPlayerAssetOpLedgerRequest_get_class_data()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(from._impl_) {
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+PROTOBUF_NDEBUG_INLINE GetPlayerAssetOpLedgerRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0} {}
+
+inline void GetPlayerAssetOpLedgerRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  _impl_.player_id_ = {};
+}
+GetPlayerAssetOpLedgerRequest::~GetPlayerAssetOpLedgerRequest() {
+  // @@protoc_insertion_point(destructor:data_service.GetPlayerAssetOpLedgerRequest)
+  SharedDtor(*this);
+}
+inline void GetPlayerAssetOpLedgerRequest::SharedDtor(MessageLite& self) {
+  GetPlayerAssetOpLedgerRequest& this_ = static_cast<GetPlayerAssetOpLedgerRequest&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.~Impl_();
+}
+
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull GetPlayerAssetOpLedgerRequest_class_data_ =
+        GetPlayerAssetOpLedgerRequest::InternalGenerateClassData_(GetPlayerAssetOpLedgerRequest_globals_._default);
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+GetPlayerAssetOpLedgerRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&GetPlayerAssetOpLedgerRequest_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(GetPlayerAssetOpLedgerRequest_class_data_.tc_table);
+  return GetPlayerAssetOpLedgerRequest_class_data_.base();
+}
+#else
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+GetPlayerAssetOpLedgerRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&GetPlayerAssetOpLedgerRequest_globals_);
+  ::google::protobuf::internal::PrefetchToLocalCache(
+      ::google::protobuf::internal::MessageGlobalsBase::ToParseTableBase(&GetPlayerAssetOpLedgerRequest_globals_));
+  return GetPlayerAssetOpLedgerRequest_globals_.GetClassData();
+}
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const GetPlayerAssetOpLedgerRequest::ParseTableT_
+    GetPlayerAssetOpLedgerRequest::_table_ =
+        GetPlayerAssetOpLedgerRequest::InternalGenerateParseTable_(GetPlayerAssetOpLedgerRequest_class_data_.base());
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_NOINLINE void GetPlayerAssetOpLedgerRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:data_service.GetPlayerAssetOpLedgerRequest)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  _impl_.player_id_ = ::uint64_t{0u};
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL GetPlayerAssetOpLedgerRequest::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const GetPlayerAssetOpLedgerRequest& this_ = static_cast<const GetPlayerAssetOpLedgerRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL GetPlayerAssetOpLedgerRequest::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const GetPlayerAssetOpLedgerRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:data_service.GetPlayerAssetOpLedgerRequest)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // uint64 player_id = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (this_._internal_player_id() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          1, this_._internal_player_id(), target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:data_service.GetPlayerAssetOpLedgerRequest)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t GetPlayerAssetOpLedgerRequest::ByteSizeLong(const MessageLite& base) {
+  const GetPlayerAssetOpLedgerRequest& this_ = static_cast<const GetPlayerAssetOpLedgerRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t GetPlayerAssetOpLedgerRequest::ByteSizeLong() const {
+  const GetPlayerAssetOpLedgerRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:data_service.GetPlayerAssetOpLedgerRequest)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+   {
+    // uint64 player_id = 1;
+    cached_has_bits = this_._impl_._has_bits_[0];
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (this_._internal_player_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_player_id());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void GetPlayerAssetOpLedgerRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                      const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this = static_cast<GetPlayerAssetOpLedgerRequest*>(&to_msg);
+  auto& from = static_cast<const GetPlayerAssetOpLedgerRequest&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(class_specific_merge_from_start:data_service.GetPlayerAssetOpLedgerRequest)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (from._internal_player_id() != 0) {
+      _this->_impl_.player_id_ = from._impl_.player_id_;
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void GetPlayerAssetOpLedgerRequest::CopyFrom(const GetPlayerAssetOpLedgerRequest& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:data_service.GetPlayerAssetOpLedgerRequest)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void GetPlayerAssetOpLedgerRequest::InternalSwap(GetPlayerAssetOpLedgerRequest* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  swap(_impl_.player_id_, other->_impl_.player_id_);
+}
+
+::google::protobuf::Metadata GetPlayerAssetOpLedgerRequest::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+void GetPlayerAssetOpLedgerResponse::clear_ledger() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.ledger_ != nullptr) _impl_.ledger_->Clear();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+}
+GetPlayerAssetOpLedgerResponse::GetPlayerAssetOpLedgerResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, GetPlayerAssetOpLedgerResponse_get_class_data()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:data_service.GetPlayerAssetOpLedgerResponse)
+}
+PROTOBUF_NDEBUG_INLINE GetPlayerAssetOpLedgerResponse::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::data_service::GetPlayerAssetOpLedgerResponse& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0} {}
+
+GetPlayerAssetOpLedgerResponse::GetPlayerAssetOpLedgerResponse(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const GetPlayerAssetOpLedgerResponse& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, GetPlayerAssetOpLedgerResponse_get_class_data()) {
+
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  GetPlayerAssetOpLedgerResponse* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::uint32_t cached_has_bits = _impl_._has_bits_[0];
+  _impl_.ledger_ = (CheckHasBit(cached_has_bits, 0x00000001U))
+                ? ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.ledger_)
+                : nullptr;
+  _impl_.found_ = from._impl_.found_;
+
+  // @@protoc_insertion_point(copy_constructor:data_service.GetPlayerAssetOpLedgerResponse)
+}
+PROTOBUF_NDEBUG_INLINE GetPlayerAssetOpLedgerResponse::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0} {}
+
+inline void GetPlayerAssetOpLedgerResponse::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, ledger_),
+           0,
+           offsetof(Impl_, found_) -
+               offsetof(Impl_, ledger_) +
+               sizeof(Impl_::found_));
+}
+GetPlayerAssetOpLedgerResponse::~GetPlayerAssetOpLedgerResponse() {
+  // @@protoc_insertion_point(destructor:data_service.GetPlayerAssetOpLedgerResponse)
+  SharedDtor(*this);
+}
+inline void GetPlayerAssetOpLedgerResponse::SharedDtor(MessageLite& self) {
+  GetPlayerAssetOpLedgerResponse& this_ = static_cast<GetPlayerAssetOpLedgerResponse&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  delete this_._impl_.ledger_;
+  this_._impl_.~Impl_();
+}
+
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull GetPlayerAssetOpLedgerResponse_class_data_ =
+        GetPlayerAssetOpLedgerResponse::InternalGenerateClassData_(GetPlayerAssetOpLedgerResponse_globals_._default);
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+GetPlayerAssetOpLedgerResponse::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&GetPlayerAssetOpLedgerResponse_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(GetPlayerAssetOpLedgerResponse_class_data_.tc_table);
+  return GetPlayerAssetOpLedgerResponse_class_data_.base();
+}
+#else
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+GetPlayerAssetOpLedgerResponse::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&GetPlayerAssetOpLedgerResponse_globals_);
+  ::google::protobuf::internal::PrefetchToLocalCache(
+      ::google::protobuf::internal::MessageGlobalsBase::ToParseTableBase(&GetPlayerAssetOpLedgerResponse_globals_));
+  return GetPlayerAssetOpLedgerResponse_globals_.GetClassData();
+}
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const GetPlayerAssetOpLedgerResponse::ParseTableT_
+    GetPlayerAssetOpLedgerResponse::_table_ =
+        GetPlayerAssetOpLedgerResponse::InternalGenerateParseTable_(GetPlayerAssetOpLedgerResponse_class_data_.base());
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_NOINLINE void GetPlayerAssetOpLedgerResponse::Clear() {
+// @@protoc_insertion_point(message_clear_start:data_service.GetPlayerAssetOpLedgerResponse)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    ABSL_DCHECK(_impl_.ledger_ != nullptr);
+    _impl_.ledger_->Clear();
+  }
+  _impl_.found_ = false;
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL GetPlayerAssetOpLedgerResponse::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const GetPlayerAssetOpLedgerResponse& this_ = static_cast<const GetPlayerAssetOpLedgerResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL GetPlayerAssetOpLedgerResponse::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const GetPlayerAssetOpLedgerResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:data_service.GetPlayerAssetOpLedgerResponse)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // bool found = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (this_._internal_found() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteBoolToArray(
+          1, this_._internal_found(), target);
+    }
+  }
+
+  // .PlayerAssetOpLedgerComp ledger = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+        2, *this_._impl_.ledger_, this_._impl_.ledger_->GetCachedSize(), target,
+        stream);
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:data_service.GetPlayerAssetOpLedgerResponse)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t GetPlayerAssetOpLedgerResponse::ByteSizeLong(const MessageLite& base) {
+  const GetPlayerAssetOpLedgerResponse& this_ = static_cast<const GetPlayerAssetOpLedgerResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t GetPlayerAssetOpLedgerResponse::ByteSizeLong() const {
+  const GetPlayerAssetOpLedgerResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:data_service.GetPlayerAssetOpLedgerResponse)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    // .PlayerAssetOpLedgerComp ledger = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      total_size += 1 +
+                    ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.ledger_);
+    }
+    // bool found = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (this_._internal_found() != 0) {
+        total_size += 2;
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void GetPlayerAssetOpLedgerResponse::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                      const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this = static_cast<GetPlayerAssetOpLedgerResponse*>(&to_msg);
+  auto& from = static_cast<const GetPlayerAssetOpLedgerResponse&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  ::google::protobuf::Arena* arena = _this->GetArena();
+  // @@protoc_insertion_point(class_specific_merge_from_start:data_service.GetPlayerAssetOpLedgerResponse)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      ABSL_DCHECK(from._impl_.ledger_ != nullptr);
+      if (_this->_impl_.ledger_ == nullptr) {
+        _this->_impl_.ledger_ = ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.ledger_);
+      } else {
+        _this->_impl_.ledger_->MergeFrom(*from._impl_.ledger_);
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (from._internal_found() != 0) {
+        _this->_impl_.found_ = from._impl_.found_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void GetPlayerAssetOpLedgerResponse::CopyFrom(const GetPlayerAssetOpLedgerResponse& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:data_service.GetPlayerAssetOpLedgerResponse)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void GetPlayerAssetOpLedgerResponse::InternalSwap(GetPlayerAssetOpLedgerResponse* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(GetPlayerAssetOpLedgerResponse, _impl_.found_)
+      + sizeof(GetPlayerAssetOpLedgerResponse::_impl_.found_)
+      - PROTOBUF_FIELD_OFFSET(GetPlayerAssetOpLedgerResponse, _impl_.ledger_)>(
+          reinterpret_cast<char*>(&_impl_.ledger_),
+          reinterpret_cast<char*>(&other->_impl_.ledger_));
+}
+
+::google::protobuf::Metadata GetPlayerAssetOpLedgerResponse::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // @@protoc_insertion_point(namespace_scope)

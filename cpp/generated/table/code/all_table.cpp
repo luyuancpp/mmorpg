@@ -18,6 +18,13 @@
 #include "condition_table.h"
 #include "cooldown_table.h"
 #include "dungeon_table.h"
+#include "equipaffixpool_table.h"
+#include "equipaffixrule_table.h"
+#include "equipattribute_table.h"
+#include "equipattributecap_table.h"
+#include "equipenhance_table.h"
+#include "equipgem_table.h"
+#include "equipgemsocket_table.h"
 #include "equipslot_table.h"
 #include "globalvariable_table.h"
 #include "guildactivity_table.h"
@@ -72,6 +79,20 @@ void LoadTables() {
     CooldownTableManager::Instance().Load();
 
     DungeonTableManager::Instance().Load();
+
+    EquipAffixPoolTableManager::Instance().Load();
+
+    EquipAffixRuleTableManager::Instance().Load();
+
+    EquipAttributeTableManager::Instance().Load();
+
+    EquipAttributeCapTableManager::Instance().Load();
+
+    EquipEnhanceTableManager::Instance().Load();
+
+    EquipGemTableManager::Instance().Load();
+
+    EquipGemSocketTableManager::Instance().Load();
 
     EquipSlotTableManager::Instance().Load();
 
@@ -145,6 +166,20 @@ void LoadTables() {
 
     DungeonTableManager::Instance().LoadSuccess();
 
+    EquipAffixPoolTableManager::Instance().LoadSuccess();
+
+    EquipAffixRuleTableManager::Instance().LoadSuccess();
+
+    EquipAttributeTableManager::Instance().LoadSuccess();
+
+    EquipAttributeCapTableManager::Instance().LoadSuccess();
+
+    EquipEnhanceTableManager::Instance().LoadSuccess();
+
+    EquipGemTableManager::Instance().LoadSuccess();
+
+    EquipGemSocketTableManager::Instance().LoadSuccess();
+
     EquipSlotTableManager::Instance().LoadSuccess();
 
     GlobalVariableTableManager::Instance().LoadSuccess();
@@ -194,7 +229,7 @@ void LoadTables() {
 }
 
 void LoadTablesAsync() {
-    static muduo::CountDownLatch latch(35);
+    static muduo::CountDownLatch latch(42);
 
     std::thread ActivityScheduleLoadThread([]() {
         void InitThreadLocalConfig();
@@ -307,6 +342,62 @@ void LoadTablesAsync() {
         latch.countDown();
     });
     DungeonLoadThread.detach();
+
+    std::thread EquipAffixPoolLoadThread([]() {
+        void InitThreadLocalConfig();
+        InitThreadLocalConfig();
+        EquipAffixPoolTableManager::Instance().Load();
+        latch.countDown();
+    });
+    EquipAffixPoolLoadThread.detach();
+
+    std::thread EquipAffixRuleLoadThread([]() {
+        void InitThreadLocalConfig();
+        InitThreadLocalConfig();
+        EquipAffixRuleTableManager::Instance().Load();
+        latch.countDown();
+    });
+    EquipAffixRuleLoadThread.detach();
+
+    std::thread EquipAttributeLoadThread([]() {
+        void InitThreadLocalConfig();
+        InitThreadLocalConfig();
+        EquipAttributeTableManager::Instance().Load();
+        latch.countDown();
+    });
+    EquipAttributeLoadThread.detach();
+
+    std::thread EquipAttributeCapLoadThread([]() {
+        void InitThreadLocalConfig();
+        InitThreadLocalConfig();
+        EquipAttributeCapTableManager::Instance().Load();
+        latch.countDown();
+    });
+    EquipAttributeCapLoadThread.detach();
+
+    std::thread EquipEnhanceLoadThread([]() {
+        void InitThreadLocalConfig();
+        InitThreadLocalConfig();
+        EquipEnhanceTableManager::Instance().Load();
+        latch.countDown();
+    });
+    EquipEnhanceLoadThread.detach();
+
+    std::thread EquipGemLoadThread([]() {
+        void InitThreadLocalConfig();
+        InitThreadLocalConfig();
+        EquipGemTableManager::Instance().Load();
+        latch.countDown();
+    });
+    EquipGemLoadThread.detach();
+
+    std::thread EquipGemSocketLoadThread([]() {
+        void InitThreadLocalConfig();
+        InitThreadLocalConfig();
+        EquipGemSocketTableManager::Instance().Load();
+        latch.countDown();
+    });
+    EquipGemSocketLoadThread.detach();
 
     std::thread EquipSlotLoadThread([]() {
         void InitThreadLocalConfig();
@@ -506,6 +597,20 @@ void LoadTablesAsync() {
     CooldownTableManager::Instance().LoadSuccess();
 
     DungeonTableManager::Instance().LoadSuccess();
+
+    EquipAffixPoolTableManager::Instance().LoadSuccess();
+
+    EquipAffixRuleTableManager::Instance().LoadSuccess();
+
+    EquipAttributeTableManager::Instance().LoadSuccess();
+
+    EquipAttributeCapTableManager::Instance().LoadSuccess();
+
+    EquipEnhanceTableManager::Instance().LoadSuccess();
+
+    EquipGemTableManager::Instance().LoadSuccess();
+
+    EquipGemSocketTableManager::Instance().LoadSuccess();
 
     EquipSlotTableManager::Instance().LoadSuccess();
 

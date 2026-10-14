@@ -1119,7 +1119,10 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED RecommendFriendsRequest final : pub
   // accessors -------------------------------------------------------
   enum : int {
     kExcludePlayerIdsFieldNumber = 2,
+    kCursorFieldNumber = 4,
+    kQueryFieldNumber = 5,
     kLimitFieldNumber = 1,
+    kOnlineOnlyFieldNumber = 3,
   };
   // repeated uint64 exclude_player_ids = 2;
   [[nodiscard]] int exclude_player_ids_size()
@@ -1141,6 +1144,36 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED RecommendFriendsRequest final : pub
   ::google::protobuf::RepeatedField<::uint64_t>* PROTOBUF_NONNULL _internal_mutable_exclude_player_ids();
 
   public:
+  // string cursor = 4;
+  void clear_cursor() ;
+  [[nodiscard]] const ::std::string& cursor() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_cursor(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_cursor();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_cursor();
+  void set_allocated_cursor(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_cursor() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_cursor(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_cursor();
+
+  public:
+  // string query = 5;
+  void clear_query() ;
+  [[nodiscard]] const ::std::string& query() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_query(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_query();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_query();
+  void set_allocated_query(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_query() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_query(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_query();
+
+  public:
   // uint32 limit = 1;
   void clear_limit() ;
   [[nodiscard]] ::uint32_t limit() const;
@@ -1151,12 +1184,22 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED RecommendFriendsRequest final : pub
   void _internal_set_limit(::uint32_t value);
 
   public:
+  // bool online_only = 3;
+  void clear_online_only() ;
+  [[nodiscard]] bool online_only() const;
+  void set_online_only(bool value);
+
+  private:
+  bool _internal_online_only() const;
+  void _internal_set_online_only(bool value);
+
+  public:
   // @@protoc_insertion_point(class_scope:friendpb.RecommendFriendsRequest)
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<1, 2,
-                          0, 0,
+      ::google::protobuf::internal::TcParseTable<3, 5,
+                          0, 52,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
       const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
@@ -1186,7 +1229,10 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED RecommendFriendsRequest final : pub
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::google::protobuf::RepeatedField<::uint64_t> exclude_player_ids_;
     ::google::protobuf::internal::CachedSize _exclude_player_ids_cached_byte_size_;
+    ::google::protobuf::internal::ArenaStringPtr cursor_;
+    ::google::protobuf::internal::ArenaStringPtr query_;
     ::uint32_t limit_;
+    bool online_only_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -1342,11 +1388,47 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED RecommendEntry final : public ::goo
 
   // accessors -------------------------------------------------------
   enum : int {
+    kNameFieldNumber = 5,
+    kAppearanceIdFieldNumber = 9,
     kCandidatePlayerIdFieldNumber = 1,
     kMutualFriendsFieldNumber = 2,
     kIsOnlineFieldNumber = 3,
     kLastActiveMsFieldNumber = 4,
+    kLevelFieldNumber = 6,
+    kClassIdFieldNumber = 7,
+    kGenderFieldNumber = 8,
+    kZoneIdFieldNumber = 10,
   };
+  // string name = 5;
+  void clear_name() ;
+  [[nodiscard]] const ::std::string& name() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_name(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_name();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_name();
+  void set_allocated_name(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_name() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_name(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_name();
+
+  public:
+  // string appearance_id = 9;
+  void clear_appearance_id() ;
+  [[nodiscard]] const ::std::string& appearance_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_appearance_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_appearance_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_appearance_id();
+  void set_allocated_appearance_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_appearance_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_appearance_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_appearance_id();
+
+  public:
   // uint64 candidate_player_id = 1;
   void clear_candidate_player_id() ;
   [[nodiscard]] ::uint64_t candidate_player_id() const;
@@ -1387,12 +1469,52 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED RecommendEntry final : public ::goo
   void _internal_set_last_active_ms(::int64_t value);
 
   public:
+  // uint32 level = 6;
+  void clear_level() ;
+  [[nodiscard]] ::uint32_t level() const;
+  void set_level(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_level() const;
+  void _internal_set_level(::uint32_t value);
+
+  public:
+  // uint32 class_id = 7;
+  void clear_class_id() ;
+  [[nodiscard]] ::uint32_t class_id() const;
+  void set_class_id(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_class_id() const;
+  void _internal_set_class_id(::uint32_t value);
+
+  public:
+  // uint32 gender = 8;
+  void clear_gender() ;
+  [[nodiscard]] ::uint32_t gender() const;
+  void set_gender(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_gender() const;
+  void _internal_set_gender(::uint32_t value);
+
+  public:
+  // uint32 zone_id = 10;
+  void clear_zone_id() ;
+  [[nodiscard]] ::uint32_t zone_id() const;
+  void set_zone_id(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_zone_id() const;
+  void _internal_set_zone_id(::uint32_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:friendpb.RecommendEntry)
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<2, 4,
-                          0, 0,
+      ::google::protobuf::internal::TcParseTable<4, 10,
+                          0, 57,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
       const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
@@ -1420,10 +1542,16 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED RecommendEntry final : public ::goo
         const RecommendEntry& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::ArenaStringPtr name_;
+    ::google::protobuf::internal::ArenaStringPtr appearance_id_;
     ::uint64_t candidate_player_id_;
     ::uint32_t mutual_friends_;
     bool is_online_;
     ::int64_t last_active_ms_;
+    ::uint32_t level_;
+    ::uint32_t class_id_;
+    ::uint32_t gender_;
+    ::uint32_t zone_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -2455,11 +2583,47 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED FriendEntry final : public ::google
 
   // accessors -------------------------------------------------------
   enum : int {
+    kNameFieldNumber = 5,
+    kAppearanceIdFieldNumber = 9,
     kFriendPlayerIdFieldNumber = 1,
     kSinceMsFieldNumber = 2,
     kLastActiveMsFieldNumber = 3,
     kIsOnlineFieldNumber = 4,
+    kLevelFieldNumber = 6,
+    kClassIdFieldNumber = 7,
+    kGenderFieldNumber = 8,
+    kZoneIdFieldNumber = 10,
   };
+  // string name = 5;
+  void clear_name() ;
+  [[nodiscard]] const ::std::string& name() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_name(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_name();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_name();
+  void set_allocated_name(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_name() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_name(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_name();
+
+  public:
+  // string appearance_id = 9;
+  void clear_appearance_id() ;
+  [[nodiscard]] const ::std::string& appearance_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_appearance_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_appearance_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_appearance_id();
+  void set_allocated_appearance_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_appearance_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_appearance_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_appearance_id();
+
+  public:
   // uint64 friend_player_id = 1;
   void clear_friend_player_id() ;
   [[nodiscard]] ::uint64_t friend_player_id() const;
@@ -2500,12 +2664,52 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED FriendEntry final : public ::google
   void _internal_set_is_online(bool value);
 
   public:
+  // uint32 level = 6;
+  void clear_level() ;
+  [[nodiscard]] ::uint32_t level() const;
+  void set_level(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_level() const;
+  void _internal_set_level(::uint32_t value);
+
+  public:
+  // uint32 class_id = 7;
+  void clear_class_id() ;
+  [[nodiscard]] ::uint32_t class_id() const;
+  void set_class_id(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_class_id() const;
+  void _internal_set_class_id(::uint32_t value);
+
+  public:
+  // uint32 gender = 8;
+  void clear_gender() ;
+  [[nodiscard]] ::uint32_t gender() const;
+  void set_gender(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_gender() const;
+  void _internal_set_gender(::uint32_t value);
+
+  public:
+  // uint32 zone_id = 10;
+  void clear_zone_id() ;
+  [[nodiscard]] ::uint32_t zone_id() const;
+  void set_zone_id(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_zone_id() const;
+  void _internal_set_zone_id(::uint32_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:friendpb.FriendEntry)
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<2, 4,
-                          0, 0,
+      ::google::protobuf::internal::TcParseTable<4, 10,
+                          0, 54,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
       const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
@@ -2533,10 +2737,16 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED FriendEntry final : public ::google
         const FriendEntry& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::ArenaStringPtr name_;
+    ::google::protobuf::internal::ArenaStringPtr appearance_id_;
     ::uint64_t friend_player_id_;
     ::int64_t since_ms_;
     ::int64_t last_active_ms_;
     bool is_online_;
+    ::uint32_t level_;
+    ::uint32_t class_id_;
+    ::uint32_t gender_;
+    ::uint32_t zone_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -4130,7 +4340,9 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED RecommendFriendsResponse final : pu
   // accessors -------------------------------------------------------
   enum : int {
     kCandidatesFieldNumber = 2,
+    kNextCursorFieldNumber = 3,
     kErrorMessageFieldNumber = 1,
+    kOnlineDirectoryFieldNumber = 4,
   };
   // repeated .friendpb.RecommendEntry candidates = 2;
   [[nodiscard]] int candidates_size()
@@ -4153,6 +4365,21 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED RecommendFriendsResponse final : pu
   ::google::protobuf::RepeatedPtrField<::friendpb::RecommendEntry>* PROTOBUF_NONNULL _internal_mutable_candidates();
 
   public:
+  // string next_cursor = 3;
+  void clear_next_cursor() ;
+  [[nodiscard]] const ::std::string& next_cursor() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_next_cursor(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_next_cursor();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_next_cursor();
+  void set_allocated_next_cursor(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_next_cursor() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_next_cursor(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_next_cursor();
+
+  public:
   // .TipInfoMessage error_message = 1;
   [[nodiscard]] bool has_error_message()
       const;
@@ -4169,12 +4396,22 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED RecommendFriendsResponse final : pu
   ::TipInfoMessage* PROTOBUF_NONNULL _internal_mutable_error_message();
 
   public:
+  // bool online_directory = 4;
+  void clear_online_directory() ;
+  [[nodiscard]] bool online_directory() const;
+  void set_online_directory(bool value);
+
+  private:
+  bool _internal_online_directory() const;
+  void _internal_set_online_directory(bool value);
+
+  public:
   // @@protoc_insertion_point(class_scope:friendpb.RecommendFriendsResponse)
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<1, 2,
-                          2, 0,
+      ::google::protobuf::internal::TcParseTable<2, 4,
+                          2, 53,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
       const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
@@ -4203,7 +4440,9 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED RecommendFriendsResponse final : pu
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::google::protobuf::RepeatedPtrField< ::friendpb::RecommendEntry > candidates_;
+    ::google::protobuf::internal::ArenaStringPtr next_cursor_;
     ::TipInfoMessage* PROTOBUF_NULLABLE error_message_;
+    bool online_directory_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -5541,7 +5780,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED AcceptFriendResponse final : public
 inline void FriendEntry::clear_friend_player_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.friend_player_id_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
 }
 inline ::uint64_t FriendEntry::friend_player_id() const {
   // @@protoc_insertion_point(field_get:friendpb.FriendEntry.friend_player_id)
@@ -5549,7 +5788,7 @@ inline ::uint64_t FriendEntry::friend_player_id() const {
 }
 inline void FriendEntry::set_friend_player_id(::uint64_t value) {
   _internal_set_friend_player_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
   // @@protoc_insertion_point(field_set:friendpb.FriendEntry.friend_player_id)
 }
 inline ::uint64_t FriendEntry::_internal_friend_player_id() const {
@@ -5565,7 +5804,7 @@ inline void FriendEntry::_internal_set_friend_player_id(::uint64_t value) {
 inline void FriendEntry::clear_since_ms() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.since_ms_ = ::int64_t{0};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
 }
 inline ::int64_t FriendEntry::since_ms() const {
   // @@protoc_insertion_point(field_get:friendpb.FriendEntry.since_ms)
@@ -5573,7 +5812,7 @@ inline ::int64_t FriendEntry::since_ms() const {
 }
 inline void FriendEntry::set_since_ms(::int64_t value) {
   _internal_set_since_ms(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
   // @@protoc_insertion_point(field_set:friendpb.FriendEntry.since_ms)
 }
 inline ::int64_t FriendEntry::_internal_since_ms() const {
@@ -5589,7 +5828,7 @@ inline void FriendEntry::_internal_set_since_ms(::int64_t value) {
 inline void FriendEntry::clear_last_active_ms() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.last_active_ms_ = ::int64_t{0};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
 }
 inline ::int64_t FriendEntry::last_active_ms() const {
   // @@protoc_insertion_point(field_get:friendpb.FriendEntry.last_active_ms)
@@ -5597,7 +5836,7 @@ inline ::int64_t FriendEntry::last_active_ms() const {
 }
 inline void FriendEntry::set_last_active_ms(::int64_t value) {
   _internal_set_last_active_ms(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
   // @@protoc_insertion_point(field_set:friendpb.FriendEntry.last_active_ms)
 }
 inline ::int64_t FriendEntry::_internal_last_active_ms() const {
@@ -5613,7 +5852,7 @@ inline void FriendEntry::_internal_set_last_active_ms(::int64_t value) {
 inline void FriendEntry::clear_is_online() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.is_online_ = false;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
 }
 inline bool FriendEntry::is_online() const {
   // @@protoc_insertion_point(field_get:friendpb.FriendEntry.is_online)
@@ -5621,7 +5860,7 @@ inline bool FriendEntry::is_online() const {
 }
 inline void FriendEntry::set_is_online(bool value) {
   _internal_set_is_online(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
   // @@protoc_insertion_point(field_set:friendpb.FriendEntry.is_online)
 }
 inline bool FriendEntry::_internal_is_online() const {
@@ -5631,6 +5870,230 @@ inline bool FriendEntry::_internal_is_online() const {
 inline void FriendEntry::_internal_set_is_online(bool value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.is_online_ = value;
+}
+
+// string name = 5;
+inline void FriendEntry::clear_name() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.name_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+}
+inline const ::std::string& FriendEntry::name() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:friendpb.FriendEntry.name)
+  return _internal_name();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void FriendEntry::set_name(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  _impl_.name_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:friendpb.FriendEntry.name)
+}
+inline ::std::string* PROTOBUF_NONNULL FriendEntry::mutable_name()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::std::string* _s = _internal_mutable_name();
+  // @@protoc_insertion_point(field_mutable:friendpb.FriendEntry.name)
+  return _s;
+}
+inline const ::std::string& FriendEntry::_internal_name() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.name_.Get();
+}
+inline void FriendEntry::_internal_set_name(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.name_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL FriendEntry::_internal_mutable_name() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.name_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE FriendEntry::release_name() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:friendpb.FriendEntry.name)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000001U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  auto* released = _impl_.name_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.name_.Set("", GetArena());
+  }
+  return released;
+}
+inline void FriendEntry::set_allocated_name(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+  _impl_.name_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.name_.IsDefault()) {
+    _impl_.name_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:friendpb.FriendEntry.name)
+}
+
+// uint32 level = 6;
+inline void FriendEntry::clear_level() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.level_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000040U);
+}
+inline ::uint32_t FriendEntry::level() const {
+  // @@protoc_insertion_point(field_get:friendpb.FriendEntry.level)
+  return _internal_level();
+}
+inline void FriendEntry::set_level(::uint32_t value) {
+  _internal_set_level(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
+  // @@protoc_insertion_point(field_set:friendpb.FriendEntry.level)
+}
+inline ::uint32_t FriendEntry::_internal_level() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.level_;
+}
+inline void FriendEntry::_internal_set_level(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.level_ = value;
+}
+
+// uint32 class_id = 7;
+inline void FriendEntry::clear_class_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.class_id_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000080U);
+}
+inline ::uint32_t FriendEntry::class_id() const {
+  // @@protoc_insertion_point(field_get:friendpb.FriendEntry.class_id)
+  return _internal_class_id();
+}
+inline void FriendEntry::set_class_id(::uint32_t value) {
+  _internal_set_class_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000080U);
+  // @@protoc_insertion_point(field_set:friendpb.FriendEntry.class_id)
+}
+inline ::uint32_t FriendEntry::_internal_class_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.class_id_;
+}
+inline void FriendEntry::_internal_set_class_id(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.class_id_ = value;
+}
+
+// uint32 gender = 8;
+inline void FriendEntry::clear_gender() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.gender_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000100U);
+}
+inline ::uint32_t FriendEntry::gender() const {
+  // @@protoc_insertion_point(field_get:friendpb.FriendEntry.gender)
+  return _internal_gender();
+}
+inline void FriendEntry::set_gender(::uint32_t value) {
+  _internal_set_gender(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000100U);
+  // @@protoc_insertion_point(field_set:friendpb.FriendEntry.gender)
+}
+inline ::uint32_t FriendEntry::_internal_gender() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.gender_;
+}
+inline void FriendEntry::_internal_set_gender(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.gender_ = value;
+}
+
+// string appearance_id = 9;
+inline void FriendEntry::clear_appearance_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.appearance_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+}
+inline const ::std::string& FriendEntry::appearance_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:friendpb.FriendEntry.appearance_id)
+  return _internal_appearance_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void FriendEntry::set_appearance_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  _impl_.appearance_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:friendpb.FriendEntry.appearance_id)
+}
+inline ::std::string* PROTOBUF_NONNULL FriendEntry::mutable_appearance_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::std::string* _s = _internal_mutable_appearance_id();
+  // @@protoc_insertion_point(field_mutable:friendpb.FriendEntry.appearance_id)
+  return _s;
+}
+inline const ::std::string& FriendEntry::_internal_appearance_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.appearance_id_.Get();
+}
+inline void FriendEntry::_internal_set_appearance_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.appearance_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL FriendEntry::_internal_mutable_appearance_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.appearance_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE FriendEntry::release_appearance_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:friendpb.FriendEntry.appearance_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000002U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  auto* released = _impl_.appearance_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.appearance_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void FriendEntry::set_allocated_appearance_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  }
+  _impl_.appearance_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.appearance_id_.IsDefault()) {
+    _impl_.appearance_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:friendpb.FriendEntry.appearance_id)
+}
+
+// uint32 zone_id = 10;
+inline void FriendEntry::clear_zone_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.zone_id_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000200U);
+}
+inline ::uint32_t FriendEntry::zone_id() const {
+  // @@protoc_insertion_point(field_get:friendpb.FriendEntry.zone_id)
+  return _internal_zone_id();
+}
+inline void FriendEntry::set_zone_id(::uint32_t value) {
+  _internal_set_zone_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000200U);
+  // @@protoc_insertion_point(field_set:friendpb.FriendEntry.zone_id)
+}
+inline ::uint32_t FriendEntry::_internal_zone_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.zone_id_;
+}
+inline void FriendEntry::_internal_set_zone_id(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.zone_id_ = value;
 }
 
 // -------------------------------------------------------------------
@@ -7011,7 +7474,7 @@ ListBlocksResponse::_internal_mutable_blocks() {
 inline void RecommendFriendsRequest::clear_limit() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.limit_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
 }
 inline ::uint32_t RecommendFriendsRequest::limit() const {
   // @@protoc_insertion_point(field_get:friendpb.RecommendFriendsRequest.limit)
@@ -7019,7 +7482,7 @@ inline ::uint32_t RecommendFriendsRequest::limit() const {
 }
 inline void RecommendFriendsRequest::set_limit(::uint32_t value) {
   _internal_set_limit(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
   // @@protoc_insertion_point(field_set:friendpb.RecommendFriendsRequest.limit)
 }
 inline ::uint32_t RecommendFriendsRequest::_internal_limit() const {
@@ -7082,6 +7545,158 @@ RecommendFriendsRequest::_internal_mutable_exclude_player_ids() {
   return &_impl_.exclude_player_ids_;
 }
 
+// bool online_only = 3;
+inline void RecommendFriendsRequest::clear_online_only() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.online_only_ = false;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+}
+inline bool RecommendFriendsRequest::online_only() const {
+  // @@protoc_insertion_point(field_get:friendpb.RecommendFriendsRequest.online_only)
+  return _internal_online_only();
+}
+inline void RecommendFriendsRequest::set_online_only(bool value) {
+  _internal_set_online_only(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  // @@protoc_insertion_point(field_set:friendpb.RecommendFriendsRequest.online_only)
+}
+inline bool RecommendFriendsRequest::_internal_online_only() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.online_only_;
+}
+inline void RecommendFriendsRequest::_internal_set_online_only(bool value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.online_only_ = value;
+}
+
+// string cursor = 4;
+inline void RecommendFriendsRequest::clear_cursor() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.cursor_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+}
+inline const ::std::string& RecommendFriendsRequest::cursor() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:friendpb.RecommendFriendsRequest.cursor)
+  return _internal_cursor();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void RecommendFriendsRequest::set_cursor(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  _impl_.cursor_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:friendpb.RecommendFriendsRequest.cursor)
+}
+inline ::std::string* PROTOBUF_NONNULL RecommendFriendsRequest::mutable_cursor()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::std::string* _s = _internal_mutable_cursor();
+  // @@protoc_insertion_point(field_mutable:friendpb.RecommendFriendsRequest.cursor)
+  return _s;
+}
+inline const ::std::string& RecommendFriendsRequest::_internal_cursor() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.cursor_.Get();
+}
+inline void RecommendFriendsRequest::_internal_set_cursor(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.cursor_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL RecommendFriendsRequest::_internal_mutable_cursor() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.cursor_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE RecommendFriendsRequest::release_cursor() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:friendpb.RecommendFriendsRequest.cursor)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000002U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  auto* released = _impl_.cursor_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.cursor_.Set("", GetArena());
+  }
+  return released;
+}
+inline void RecommendFriendsRequest::set_allocated_cursor(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  }
+  _impl_.cursor_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.cursor_.IsDefault()) {
+    _impl_.cursor_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:friendpb.RecommendFriendsRequest.cursor)
+}
+
+// string query = 5;
+inline void RecommendFriendsRequest::clear_query() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.query_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+}
+inline const ::std::string& RecommendFriendsRequest::query() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:friendpb.RecommendFriendsRequest.query)
+  return _internal_query();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void RecommendFriendsRequest::set_query(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  _impl_.query_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:friendpb.RecommendFriendsRequest.query)
+}
+inline ::std::string* PROTOBUF_NONNULL RecommendFriendsRequest::mutable_query()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  ::std::string* _s = _internal_mutable_query();
+  // @@protoc_insertion_point(field_mutable:friendpb.RecommendFriendsRequest.query)
+  return _s;
+}
+inline const ::std::string& RecommendFriendsRequest::_internal_query() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.query_.Get();
+}
+inline void RecommendFriendsRequest::_internal_set_query(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.query_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL RecommendFriendsRequest::_internal_mutable_query() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.query_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE RecommendFriendsRequest::release_query() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:friendpb.RecommendFriendsRequest.query)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000004U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  auto* released = _impl_.query_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.query_.Set("", GetArena());
+  }
+  return released;
+}
+inline void RecommendFriendsRequest::set_allocated_query(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  }
+  _impl_.query_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.query_.IsDefault()) {
+    _impl_.query_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:friendpb.RecommendFriendsRequest.query)
+}
+
 // -------------------------------------------------------------------
 
 // RecommendEntry
@@ -7090,7 +7705,7 @@ RecommendFriendsRequest::_internal_mutable_exclude_player_ids() {
 inline void RecommendEntry::clear_candidate_player_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.candidate_player_id_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
 }
 inline ::uint64_t RecommendEntry::candidate_player_id() const {
   // @@protoc_insertion_point(field_get:friendpb.RecommendEntry.candidate_player_id)
@@ -7098,7 +7713,7 @@ inline ::uint64_t RecommendEntry::candidate_player_id() const {
 }
 inline void RecommendEntry::set_candidate_player_id(::uint64_t value) {
   _internal_set_candidate_player_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
   // @@protoc_insertion_point(field_set:friendpb.RecommendEntry.candidate_player_id)
 }
 inline ::uint64_t RecommendEntry::_internal_candidate_player_id() const {
@@ -7114,7 +7729,7 @@ inline void RecommendEntry::_internal_set_candidate_player_id(::uint64_t value) 
 inline void RecommendEntry::clear_mutual_friends() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.mutual_friends_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
 }
 inline ::uint32_t RecommendEntry::mutual_friends() const {
   // @@protoc_insertion_point(field_get:friendpb.RecommendEntry.mutual_friends)
@@ -7122,7 +7737,7 @@ inline ::uint32_t RecommendEntry::mutual_friends() const {
 }
 inline void RecommendEntry::set_mutual_friends(::uint32_t value) {
   _internal_set_mutual_friends(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
   // @@protoc_insertion_point(field_set:friendpb.RecommendEntry.mutual_friends)
 }
 inline ::uint32_t RecommendEntry::_internal_mutual_friends() const {
@@ -7138,7 +7753,7 @@ inline void RecommendEntry::_internal_set_mutual_friends(::uint32_t value) {
 inline void RecommendEntry::clear_is_online() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.is_online_ = false;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
 }
 inline bool RecommendEntry::is_online() const {
   // @@protoc_insertion_point(field_get:friendpb.RecommendEntry.is_online)
@@ -7146,7 +7761,7 @@ inline bool RecommendEntry::is_online() const {
 }
 inline void RecommendEntry::set_is_online(bool value) {
   _internal_set_is_online(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
   // @@protoc_insertion_point(field_set:friendpb.RecommendEntry.is_online)
 }
 inline bool RecommendEntry::_internal_is_online() const {
@@ -7162,7 +7777,7 @@ inline void RecommendEntry::_internal_set_is_online(bool value) {
 inline void RecommendEntry::clear_last_active_ms() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.last_active_ms_ = ::int64_t{0};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
 }
 inline ::int64_t RecommendEntry::last_active_ms() const {
   // @@protoc_insertion_point(field_get:friendpb.RecommendEntry.last_active_ms)
@@ -7170,7 +7785,7 @@ inline ::int64_t RecommendEntry::last_active_ms() const {
 }
 inline void RecommendEntry::set_last_active_ms(::int64_t value) {
   _internal_set_last_active_ms(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
   // @@protoc_insertion_point(field_set:friendpb.RecommendEntry.last_active_ms)
 }
 inline ::int64_t RecommendEntry::_internal_last_active_ms() const {
@@ -7182,13 +7797,237 @@ inline void RecommendEntry::_internal_set_last_active_ms(::int64_t value) {
   _impl_.last_active_ms_ = value;
 }
 
+// string name = 5;
+inline void RecommendEntry::clear_name() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.name_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+}
+inline const ::std::string& RecommendEntry::name() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:friendpb.RecommendEntry.name)
+  return _internal_name();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void RecommendEntry::set_name(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  _impl_.name_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:friendpb.RecommendEntry.name)
+}
+inline ::std::string* PROTOBUF_NONNULL RecommendEntry::mutable_name()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::std::string* _s = _internal_mutable_name();
+  // @@protoc_insertion_point(field_mutable:friendpb.RecommendEntry.name)
+  return _s;
+}
+inline const ::std::string& RecommendEntry::_internal_name() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.name_.Get();
+}
+inline void RecommendEntry::_internal_set_name(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.name_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL RecommendEntry::_internal_mutable_name() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.name_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE RecommendEntry::release_name() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:friendpb.RecommendEntry.name)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000001U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  auto* released = _impl_.name_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.name_.Set("", GetArena());
+  }
+  return released;
+}
+inline void RecommendEntry::set_allocated_name(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+  _impl_.name_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.name_.IsDefault()) {
+    _impl_.name_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:friendpb.RecommendEntry.name)
+}
+
+// uint32 level = 6;
+inline void RecommendEntry::clear_level() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.level_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000040U);
+}
+inline ::uint32_t RecommendEntry::level() const {
+  // @@protoc_insertion_point(field_get:friendpb.RecommendEntry.level)
+  return _internal_level();
+}
+inline void RecommendEntry::set_level(::uint32_t value) {
+  _internal_set_level(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
+  // @@protoc_insertion_point(field_set:friendpb.RecommendEntry.level)
+}
+inline ::uint32_t RecommendEntry::_internal_level() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.level_;
+}
+inline void RecommendEntry::_internal_set_level(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.level_ = value;
+}
+
+// uint32 class_id = 7;
+inline void RecommendEntry::clear_class_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.class_id_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000080U);
+}
+inline ::uint32_t RecommendEntry::class_id() const {
+  // @@protoc_insertion_point(field_get:friendpb.RecommendEntry.class_id)
+  return _internal_class_id();
+}
+inline void RecommendEntry::set_class_id(::uint32_t value) {
+  _internal_set_class_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000080U);
+  // @@protoc_insertion_point(field_set:friendpb.RecommendEntry.class_id)
+}
+inline ::uint32_t RecommendEntry::_internal_class_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.class_id_;
+}
+inline void RecommendEntry::_internal_set_class_id(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.class_id_ = value;
+}
+
+// uint32 gender = 8;
+inline void RecommendEntry::clear_gender() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.gender_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000100U);
+}
+inline ::uint32_t RecommendEntry::gender() const {
+  // @@protoc_insertion_point(field_get:friendpb.RecommendEntry.gender)
+  return _internal_gender();
+}
+inline void RecommendEntry::set_gender(::uint32_t value) {
+  _internal_set_gender(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000100U);
+  // @@protoc_insertion_point(field_set:friendpb.RecommendEntry.gender)
+}
+inline ::uint32_t RecommendEntry::_internal_gender() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.gender_;
+}
+inline void RecommendEntry::_internal_set_gender(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.gender_ = value;
+}
+
+// string appearance_id = 9;
+inline void RecommendEntry::clear_appearance_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.appearance_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+}
+inline const ::std::string& RecommendEntry::appearance_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:friendpb.RecommendEntry.appearance_id)
+  return _internal_appearance_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void RecommendEntry::set_appearance_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  _impl_.appearance_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:friendpb.RecommendEntry.appearance_id)
+}
+inline ::std::string* PROTOBUF_NONNULL RecommendEntry::mutable_appearance_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::std::string* _s = _internal_mutable_appearance_id();
+  // @@protoc_insertion_point(field_mutable:friendpb.RecommendEntry.appearance_id)
+  return _s;
+}
+inline const ::std::string& RecommendEntry::_internal_appearance_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.appearance_id_.Get();
+}
+inline void RecommendEntry::_internal_set_appearance_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.appearance_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL RecommendEntry::_internal_mutable_appearance_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.appearance_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE RecommendEntry::release_appearance_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:friendpb.RecommendEntry.appearance_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000002U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  auto* released = _impl_.appearance_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.appearance_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void RecommendEntry::set_allocated_appearance_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  }
+  _impl_.appearance_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.appearance_id_.IsDefault()) {
+    _impl_.appearance_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:friendpb.RecommendEntry.appearance_id)
+}
+
+// uint32 zone_id = 10;
+inline void RecommendEntry::clear_zone_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.zone_id_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000200U);
+}
+inline ::uint32_t RecommendEntry::zone_id() const {
+  // @@protoc_insertion_point(field_get:friendpb.RecommendEntry.zone_id)
+  return _internal_zone_id();
+}
+inline void RecommendEntry::set_zone_id(::uint32_t value) {
+  _internal_set_zone_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000200U);
+  // @@protoc_insertion_point(field_set:friendpb.RecommendEntry.zone_id)
+}
+inline ::uint32_t RecommendEntry::_internal_zone_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.zone_id_;
+}
+inline void RecommendEntry::_internal_set_zone_id(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.zone_id_ = value;
+}
+
 // -------------------------------------------------------------------
 
 // RecommendFriendsResponse
 
 // .TipInfoMessage error_message = 1;
 inline bool RecommendFriendsResponse::has_error_message() const {
-  bool value = CheckHasBit(_impl_._has_bits_[0], 0x00000002U);
+  bool value = CheckHasBit(_impl_._has_bits_[0], 0x00000004U);
   PROTOBUF_ASSUME(!value || _impl_.error_message_ != nullptr);
   return value;
 }
@@ -7209,16 +8048,16 @@ inline void RecommendFriendsResponse::unsafe_arena_set_allocated_error_message(
   }
   _impl_.error_message_ = reinterpret_cast<::TipInfoMessage*>(value);
   if (value != nullptr) {
-    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+    SetHasBit(_impl_._has_bits_[0], 0x00000004U);
   } else {
-    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+    ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
   }
   // @@protoc_insertion_point(field_unsafe_arena_set_allocated:friendpb.RecommendFriendsResponse.error_message)
 }
 inline ::TipInfoMessage* PROTOBUF_NULLABLE RecommendFriendsResponse::release_error_message() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
 
-  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
   ::TipInfoMessage* released = _impl_.error_message_;
   _impl_.error_message_ = nullptr;
   if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
@@ -7238,7 +8077,7 @@ inline ::TipInfoMessage* PROTOBUF_NULLABLE RecommendFriendsResponse::unsafe_aren
   ::google::protobuf::internal::TSanWrite(&_impl_);
   // @@protoc_insertion_point(field_release:friendpb.RecommendFriendsResponse.error_message)
 
-  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
   ::TipInfoMessage* temp = _impl_.error_message_;
   _impl_.error_message_ = nullptr;
   return temp;
@@ -7253,7 +8092,7 @@ inline ::TipInfoMessage* PROTOBUF_NONNULL RecommendFriendsResponse::_internal_mu
 }
 inline ::TipInfoMessage* PROTOBUF_NONNULL RecommendFriendsResponse::mutable_error_message()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
   ::TipInfoMessage* _msg = _internal_mutable_error_message();
   // @@protoc_insertion_point(field_mutable:friendpb.RecommendFriendsResponse.error_message)
   return _msg;
@@ -7270,9 +8109,9 @@ inline void RecommendFriendsResponse::set_allocated_error_message(::TipInfoMessa
     if (message_arena != submessage_arena) {
       value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
     }
-    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+    SetHasBit(_impl_._has_bits_[0], 0x00000004U);
   } else {
-    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+    ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
   }
 
   _impl_.error_message_ = reinterpret_cast<::TipInfoMessage*>(value);
@@ -7332,6 +8171,94 @@ inline ::google::protobuf::RepeatedPtrField<::friendpb::RecommendEntry>* PROTOBU
 RecommendFriendsResponse::_internal_mutable_candidates() {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return &_impl_.candidates_;
+}
+
+// string next_cursor = 3;
+inline void RecommendFriendsResponse::clear_next_cursor() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.next_cursor_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+}
+inline const ::std::string& RecommendFriendsResponse::next_cursor() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:friendpb.RecommendFriendsResponse.next_cursor)
+  return _internal_next_cursor();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void RecommendFriendsResponse::set_next_cursor(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  _impl_.next_cursor_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:friendpb.RecommendFriendsResponse.next_cursor)
+}
+inline ::std::string* PROTOBUF_NONNULL RecommendFriendsResponse::mutable_next_cursor()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::std::string* _s = _internal_mutable_next_cursor();
+  // @@protoc_insertion_point(field_mutable:friendpb.RecommendFriendsResponse.next_cursor)
+  return _s;
+}
+inline const ::std::string& RecommendFriendsResponse::_internal_next_cursor() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.next_cursor_.Get();
+}
+inline void RecommendFriendsResponse::_internal_set_next_cursor(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.next_cursor_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL RecommendFriendsResponse::_internal_mutable_next_cursor() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.next_cursor_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE RecommendFriendsResponse::release_next_cursor() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:friendpb.RecommendFriendsResponse.next_cursor)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000002U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  auto* released = _impl_.next_cursor_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.next_cursor_.Set("", GetArena());
+  }
+  return released;
+}
+inline void RecommendFriendsResponse::set_allocated_next_cursor(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  }
+  _impl_.next_cursor_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.next_cursor_.IsDefault()) {
+    _impl_.next_cursor_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:friendpb.RecommendFriendsResponse.next_cursor)
+}
+
+// bool online_directory = 4;
+inline void RecommendFriendsResponse::clear_online_directory() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.online_directory_ = false;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+}
+inline bool RecommendFriendsResponse::online_directory() const {
+  // @@protoc_insertion_point(field_get:friendpb.RecommendFriendsResponse.online_directory)
+  return _internal_online_directory();
+}
+inline void RecommendFriendsResponse::set_online_directory(bool value) {
+  _internal_set_online_directory(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  // @@protoc_insertion_point(field_set:friendpb.RecommendFriendsResponse.online_directory)
+}
+inline bool RecommendFriendsResponse::_internal_online_directory() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.online_directory_;
+}
+inline void RecommendFriendsResponse::_internal_set_online_directory(bool value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.online_directory_ = value;
 }
 
 // -------------------------------------------------------------------

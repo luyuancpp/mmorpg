@@ -19,6 +19,7 @@ public:
     struct Snapshot {
         ItemTableData data;
         IdMapType idMap;
+        std::unordered_map<uint32_t, std::vector<const ItemTable*>> affixRuleIndex;
     };
 
     static ItemTableManager& Instance() {
@@ -51,6 +52,14 @@ public:
 
     void LoadSuccess() { if (loadSuccessCallback) { loadSuccessCallback(); } }
 
+    // FK: affix_rule -> EquipAffixRule.id
+    const std::unordered_map<uint32_t, std::vector<const ItemTable*>>& GetAffixRuleIndex() const { return snapshot->affixRuleIndex; }
+    const std::vector<const ItemTable*>& GetByAffixRule(uint32_t key) const {
+        static const std::vector<const ItemTable*> kEmpty;
+        auto it = snapshot->affixRuleIndex.find(key);
+        return it != snapshot->affixRuleIndex.end() ? it->second : kEmpty;
+    }
+
     // ---- Exists ----
 
     bool Exists(uint32_t id) const { return snapshot->idMap.count(id) > 0; }
@@ -58,6 +67,10 @@ public:
     // ---- Count ----
 
     std::size_t Count() const { return snapshot->idMap.size(); }
+    std::size_t CountByAffixRuleIndex(uint32_t key) const {
+        auto it = snapshot->affixRuleIndex.find(key);
+        return it != snapshot->affixRuleIndex.end() ? it->second.size() : 0;
+    }
 
     // ---- FindByIds (IN) ----
 

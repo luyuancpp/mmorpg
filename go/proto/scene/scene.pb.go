@@ -541,7 +541,7 @@ type PrepareBattleRequest struct {
 	state             protoimpl.MessageState `protogen:"open.v1"`
 	PlayerId          uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
 	BattleId          uint64                 `protobuf:"varint,2,opt,name=battle_id,json=battleId,proto3" json:"battle_id,omitempty"`
-	BattleNodeId      uint32                 `protobuf:"varint,3,opt,name=battle_node_id,json=battleNodeId,proto3" json:"battle_node_id,omitempty"`                // 写进 InBattleComp,重连重挂绑定用
+	BattleNodeId      uint32                 `protobuf:"varint,3,opt,name=battle_node_id,json=battleNodeId,proto3" json:"battle_node_id,omitempty"`                // 写进 InBattleComp(日志/排障用)
 	DeadlineMs        uint64                 `protobuf:"varint,4,opt,name=deadline_ms,json=deadlineMs,proto3" json:"deadline_ms,omitempty"`                        // 战斗作废期限(Unix 毫秒),scene reaper 依据
 	PrepareDeadlineMs uint64                 `protobuf:"varint,5,opt,name=prepare_deadline_ms,json=prepareDeadlineMs,proto3" json:"prepare_deadline_ms,omitempty"` // 备战作废期限(Unix 毫秒):CreateBattle 确认前 reaper 按它解冻(二期,设计 cross-zone-matchmaking.md §10);0 = 沿用 deadline_ms
 	unknownFields     protoimpl.UnknownFields

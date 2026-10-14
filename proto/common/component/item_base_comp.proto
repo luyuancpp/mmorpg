@@ -17,10 +17,27 @@ message EquipAffix
 	uint32 seq = 4;
 }
 
+// 一颗已镶嵌的宝石(设计文档 docs/design/equipment-enhance-inlay.md §3.1)。
+//
+// 记 config 不记 guid:宝石是可叠加物品,guid 不是稳定身份(嵌入时销毁一颗、取下时另铸一颗)。
+// 属性值不入库:按 EquipGem 表现查,改表立即对已镶嵌的宝石生效。
+message EquipGem
+{
+	uint32 socket = 1;	// 孔位号(0 起)。显式字段,repeated 下标不承载语义(AGENTS §11.6)
+	uint32 gem_config_id = 2;	// 宝石的 Item 表 id(= EquipGem 表主键)
+}
+
 // 装备实例数据。只有装备实例才有这一段。
+//
+// 强化等级与宝石也放在这里(不启用 ItemEntry 预留的 6 号 enchant_level / 8 号 gem_uuids):
+// 这一段随 ItemComp.equip / ItemEntry.equip 整份搬运,穿脱、存档、跨区都不用再逐字段跟。
+// 强化 / 镶嵌只改 has_equip() 的实例;不要为了写这两个字段对未初始化的实例调 mutable_equip()
+// —— 那会把「没掷过属性」变成「已初始化」。
 message EquipInstanceData
 {
 	repeated EquipAffix affixes = 1;
+	uint32 enhance_level = 2;	// 强化等级(+N),0 = 未强化。入库的只有「+几」,加成按 EquipEnhance 表现查
+	repeated EquipGem gems = 3;	// 已镶嵌宝石;同一 socket 至多一条
 }
 
 message ItemComp
@@ -42,7 +59,7 @@ message ItemComp
 	// 0 = 未盖章(旧存档),此时退回按 item_id 排序,与本字段落地前的行为一致。
 	uint64 acquire_seq = 4;
 
-	// 装备实例数据(随机属性)。仅装备实例有。
+	// 装备实例数据(随机属性、强化等级、已镶嵌宝石)。仅装备实例有。
 	//
 	// **has_equip() == true 表示「已完成初始化」**,即使一条属性都没掷出 ——
 	// 搬运(穿脱 / 邮件回流 / 交易退回)靠它保证不重掷。所以存盘 / 读盘必须保留

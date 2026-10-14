@@ -1,9 +1,12 @@
 // 背包实例层:物品实例携带装备数据(ItemComp.equip)时的"不丢、不重掷"与穿脱搬运原语。
-// 契约见 docs/design/equipment-attributes.md §3.1 / §4.1 / §5(不变量 1 / 5 / 7)。
+// 契约见 docs/design/equipment-attributes.md §3.1 / §4.1 / §5(不变量 1 / 5 / 7);
+// 二期的强化等级与已镶宝石同在 equip 段里,见 docs/design/equipment-enhance-inlay.md
+// §3.1 / §5(不变量 1 / 2)。
 //
-// 这一层**不认识属性**,只认识"整份实例":用例里的 attr_id / tier / value 都是随手写的数,
-// 容器不解释它们,只负责原样带着走。所以这里只用既有的 Item / EquipSlot 夹具行
-// (item 1 / 2 = 不可叠加、部位 1;槽 0 / 1 接部位 1,槽 2 接部位 2),不依赖新装备行。
+// 这一层**不认识属性**,只认识"整份实例":用例里的 attr_id / tier / value、强化等级、
+// 孔位号、宝石 config 都是随手写的数,容器不解释它们,只负责原样带着走。所以这里只用
+// 既有的 Item / EquipSlot 夹具行(item 1 / 2 = 不可叠加、部位 1;槽 0 / 1 接部位 1,
+// 槽 2 接部位 2),不依赖新装备行,也不依赖强化 / 宝石那三张表。
 //
 // 夹具自带:SetUp 自己加载两张表、自己装 item 号段,TearDown 卸掉 BagService 的初始化回调
 // 并恢复其它用例使用的号段基线 —— 不依赖别的文件的用例先跑或后跑。
@@ -65,6 +68,11 @@ constexpr uint64_t kDynamicBagId = 4242;
 constexpr uint32_t kRolledAttrId = 3;
 constexpr uint32_t kRolledValueBase = 100;
 
+// 二期的实例数据。kOutOfTableEnhanceLevel 远超任何强化表的上限:等级按表上限夹取是消费侧
+// 的事,容器层必须把存档里的原值带着走(「不洗存档」)。
+constexpr uint32_t kRolledEnhanceLevel = 7;
+constexpr uint32_t kOutOfTableEnhanceLevel = 4000000000u;
+
 // 与 player_mission_system_test.cpp 同一个做法:无 I/O 的假传输 + 直接投一段号。
 bool ArmItemSegment(uint64_t lo, uint64_t hi)
 {
@@ -111,16 +119,47 @@ void AddAffix(ItemComp &item, uint32_t attrId, uint32_t tier, uint32_t value, ui
 	affix->set_seq(seq);
 }
 
+void AddGem(ItemComp &item, uint32_t socket, uint32_t gemConfigId)
+{
+	auto *gem = item.mutable_equip()->add_gems();
+	gem->set_socket(socket);
+	gem->set_gem_config_id(gemConfigId);
+}
+
 // 一件"已经掷过属性"的装备:两条属性,四个字段都取互不相同的值,丢哪个字段都看得出来。
+// 二期起它同时是"强化过、镶过宝石"的:强化等级与两颗宝石也全取非默认、互不相同的值。
+// 宝石故意不按孔位号升序写 —— 记录的先后是数据的一部分(消费侧对同一孔位「取第一条」),
+// 整份搬运必须连顺序一起保住。
 ItemComp MakeRolledInstance(Guid guid, uint32_t configId)
 {
 	ItemComp item = MakeInstance(guid, configId);
 	AddAffix(item, /*attrId=*/3, /*tier=*/1, /*value=*/17, /*seq=*/0);
 	AddAffix(item, /*attrId=*/12, /*tier=*/3, /*value=*/4, /*seq=*/1);
+	item.mutable_equip()->set_enhance_level(kRolledEnhanceLevel);
+	AddGem(item, /*socket=*/1, /*gemConfigId=*/2203);
+	AddGem(item, /*socket=*/0, /*gemConfigId=*/2101);
+	return item;
+}
+
+// 只强化 / 镶嵌过、一条随机属性都没有的装备:新字段不能靠"反正有 affixes"才被带上。
+// 形状故意取消费侧不会接受的 —— 等级远超表上限、同一孔位两条记录、孔位号不升序、
+// 宝石 config 查不到表。容器层不解释 equip 段:不夹取、不去重、不排序、不校验
+// (那些是消费侧现查的事,docs/design/equipment-enhance-inlay.md §4.3)。
+ItemComp MakeForgedOnlyInstance(Guid guid, uint32_t configId)
+{
+	ItemComp item = MakeInstance(guid, configId);
+	item.mutable_equip()->set_enhance_level(kOutOfTableEnhanceLevel);
+	AddGem(item, /*socket=*/6, /*gemConfigId=*/kUnknownConfig);
+	AddGem(item, /*socket=*/2, /*gemConfigId=*/2301);
+	AddGem(item, /*socket=*/6, /*gemConfigId=*/2102); // 同一孔位的第二条(脏数据的形状)
 	return item;
 }
 
 // equip 段逐字段相等,**含 presence**:has_equip() 且 0 条属性 != 没有 equip。
+//
+// 逐字段比是为了失败时说得出丢的是哪个字段;末尾再整段比一次字节,兜住 EquipInstanceData
+// 日后再加字段而这里忘了跟 —— 二期加强化等级 / 宝石之前,这个函数就只看得见 affixes,
+// 搬运那批用例对新字段丢失是瞎的。
 void ExpectSameEquip(const ItemComp &expected, const ItemComp &actual)
 {
 	ASSERT_EQ(expected.has_equip(), actual.has_equip()) << "equip presence must survive";
@@ -134,6 +173,17 @@ void ExpectSameEquip(const ItemComp &expected, const ItemComp &actual)
 		EXPECT_EQ(want.value(), got.value()) << "affix " << i;
 		EXPECT_EQ(want.seq(), got.seq()) << "affix " << i;
 	}
+	EXPECT_EQ(expected.equip().enhance_level(), actual.equip().enhance_level());
+	ASSERT_EQ(expected.equip().gems_size(), actual.equip().gems_size());
+	for (int i = 0; i < expected.equip().gems_size(); ++i)
+	{
+		const auto &want = expected.equip().gems(i);
+		const auto &got = actual.equip().gems(i);
+		EXPECT_EQ(want.socket(), got.socket()) << "gem " << i;
+		EXPECT_EQ(want.gem_config_id(), got.gem_config_id()) << "gem " << i;
+	}
+	EXPECT_EQ(expected.equip().SerializeAsString(), actual.equip().SerializeAsString())
+		<< "the equip section travels as a whole; a field this helper does not name was lost";
 }
 
 void ExpectStoredInstance(Bag &bag, const ItemComp &expected)
@@ -1101,6 +1151,253 @@ TEST_F(BagInstanceDataTest, WornSlotSurvivesTheMarshalRoundTrip)
 			EXPECT_TRUE(equipment.IsLayerConsistent());
 		}
 	}
+}
+
+// ── 强化等级与已镶宝石(二期:EquipInstanceData.enhance_level / gems)──────────
+//
+// 它们没有自己的搬运代码:随 equip 段整份走(TakeInstance 的整份拷贝、bag_marshal 带
+// presence 的 CopyFrom)。上面的用例经 MakeRolledInstance / ExpectSameEquip 已经顺带盖住了
+// "掷过属性又强化过"的装备;这一节补的是只有新字段时的形态、脏数据原样保留、以及 presence。
+
+// 穿脱搬运:只带强化等级与宝石(0 条随机属性)的实例,穿上再脱下一个字段都不变 ——
+// 等级不被夹取,同孔位的重复记录不被去重,记录的先后不被重排。
+TEST_F(BagInstanceDataTest, EnhanceLevelAndGemsTravelWithTakeAndPut)
+{
+	Bag inventory;
+	Bag equipment;
+	equipment.SetProfile(BagProfile::Equipment(kEquipmentCapacity));
+
+	const ItemComp original = MakeForgedOnlyInstance(kGuidA, kEquipA);
+	inventory.InsertItemForRestore(original, 2);
+	ASSERT_NO_FATAL_FAILURE(ExpectStoredInstance(inventory, original));
+
+	// 穿上(指定同部位的第二个槽)。
+	ItemComp carried;
+	ASSERT_EQ(kSuccess, inventory.TakeInstance(kGuidA, carried));
+	ASSERT_NO_FATAL_FAILURE(ExpectSameEquip(original, carried));
+	ASSERT_EQ(kSuccess, equipment.PutInstance(carried, kSlotKind1Second));
+	ASSERT_NO_FATAL_FAILURE(ExpectStoredInstance(equipment, original));
+
+	// 脱下。
+	ItemComp takenOff;
+	ASSERT_EQ(kSuccess, equipment.TakeInstance(kGuidA, takenOff));
+	ASSERT_EQ(kSuccess, inventory.PutInstance(takenOff));
+	ASSERT_NO_FATAL_FAILURE(ExpectStoredInstance(inventory, original));
+
+	// 逐条点名:不是"差不多一样",是连脏数据的形状都原样。
+	const ItemComp *stored = inventory.GetItemCompByGuid(kGuidA);
+	ASSERT_NE(nullptr, stored);
+	EXPECT_EQ(0, stored->equip().affixes_size());
+	EXPECT_EQ(kOutOfTableEnhanceLevel, stored->equip().enhance_level())
+		<< "the container never clamps the level; consumers do, at read time";
+	ASSERT_EQ(3, stored->equip().gems_size()) << "nor does it de-duplicate sockets";
+	EXPECT_EQ(6u, stored->equip().gems(0).socket()) << "nor reorder the records";
+	EXPECT_EQ(kUnknownConfig, stored->equip().gems(0).gem_config_id());
+	EXPECT_EQ(2u, stored->equip().gems(1).socket());
+	EXPECT_EQ(2301u, stored->equip().gems(1).gem_config_id());
+	EXPECT_EQ(6u, stored->equip().gems(2).socket());
+	EXPECT_EQ(2102u, stored->equip().gems(2).gem_config_id());
+	EXPECT_TRUE(inventory.IsLayerConsistent());
+	EXPECT_TRUE(equipment.IsLayerConsistent());
+}
+
+// 存档往返:新字段在盘上记录(ItemEntry.equip)里,四种形态各自保持 ——
+// 只有强化等级 / 只有宝石 / 有 equip 但全是默认值 / 没有 equip。
+//
+// proto3 的标量 0 不上线,所以"有 equip、等级 0、没有宝石、没有属性"在字节上是一段空的
+// 子消息,它与"没有 equip"的区别只剩 presence。而 presence 正是「已初始化」的判据:
+// 强化 / 镶嵌只收 has_equip() 的实例(docs/design/equipment-enhance-inlay.md §3.1),
+// 读盘时把它弄丢,这件装备就再也强化不了;反过来凭空长出来,一件普通物品就再也并不了堆。
+TEST_F(BagInstanceDataTest, MarshalRoundTripKeepsEnhanceLevelGemsAndPresence)
+{
+	ItemComp enhancedOnly = MakeInstance(kGuidA, kEquipA);
+	enhancedOnly.mutable_equip()->set_enhance_level(kRolledEnhanceLevel);
+	ItemComp gemsOnly = MakeInstance(kGuidB, kEquipB);
+	AddGem(gemsOnly, /*socket=*/1, /*gemConfigId=*/2401);
+	ItemComp allDefault = MakeInstance(kGuidC, kEquipA);
+	allDefault.mutable_equip(); // 已初始化、未强化、未镶嵌
+	const ItemComp uninitialised = MakeInstance(kGuidD, kEquipB); // 没有 equip 段
+	const ItemComp forged = MakeForgedOnlyInstance(kGuidE, kEquipA);
+
+	const auto source = NewPlayer();
+	{
+		auto &bags = tlsEcs.actorRegistry.emplace<PlayerBagsComp>(source);
+		bags.bags[kInventory].InsertItemForRestore(enhancedOnly, 0);
+		bags.bags[kInventory].InsertItemForRestore(allDefault, 1);
+		bags.bags[kInventory].InsertItemForRestore(uninitialised, 2);
+		bags.bags[kEquipment].InsertItemForRestore(gemsOnly, kSlotKind1Second);
+		bags.bags[kWarehouse].InsertItemForRestore(forged, 7);
+	}
+
+	BagAllData wire;
+	bag_marshal::Marshal(source, wire);
+	// 真的过一遍编解码:新字段与 presence 都必须撑得过字节。
+	std::string bytes;
+	ASSERT_TRUE(wire.SerializeToString(&bytes));
+	BagAllData parsed;
+	ASSERT_TRUE(parsed.ParseFromString(bytes));
+	ASSERT_EQ(5, parsed.items_size());
+
+	// 盘上记录。
+	const ItemEntry *enhancedEntry = FindEntry(parsed.items(), kGuidA);
+	const ItemEntry *gemsEntry = FindEntry(parsed.items(), kGuidB);
+	const ItemEntry *allDefaultEntry = FindEntry(parsed.items(), kGuidC);
+	const ItemEntry *uninitialisedEntry = FindEntry(parsed.items(), kGuidD);
+	const ItemEntry *forgedEntry = FindEntry(parsed.items(), kGuidE);
+	ASSERT_NE(nullptr, enhancedEntry);
+	ASSERT_NE(nullptr, gemsEntry);
+	ASSERT_NE(nullptr, allDefaultEntry);
+	ASSERT_NE(nullptr, uninitialisedEntry);
+	ASSERT_NE(nullptr, forgedEntry);
+
+	ASSERT_TRUE(enhancedEntry->has_equip());
+	EXPECT_EQ(kRolledEnhanceLevel, enhancedEntry->equip().enhance_level());
+	EXPECT_EQ(0, enhancedEntry->equip().gems_size());
+	EXPECT_EQ(0, enhancedEntry->equip().affixes_size());
+
+	ASSERT_TRUE(gemsEntry->has_equip());
+	EXPECT_EQ(0u, gemsEntry->equip().enhance_level());
+	ASSERT_EQ(1, gemsEntry->equip().gems_size());
+	EXPECT_EQ(1u, gemsEntry->equip().gems(0).socket());
+	EXPECT_EQ(2401u, gemsEntry->equip().gems(0).gem_config_id());
+
+	ASSERT_TRUE(allDefaultEntry->has_equip()) << "all-default is still 'initialised'";
+	EXPECT_EQ(0u, allDefaultEntry->equip().enhance_level());
+	EXPECT_EQ(0, allDefaultEntry->equip().gems_size());
+	EXPECT_EQ(0, allDefaultEntry->equip().affixes_size());
+
+	EXPECT_FALSE(uninitialisedEntry->has_equip())
+		<< "saving must not grow an equip section on an instance that has none";
+
+	ASSERT_TRUE(forgedEntry->has_equip());
+	EXPECT_EQ(forged.equip().SerializeAsString(), forgedEntry->equip().SerializeAsString());
+
+	// 读回来。
+	const auto dest = NewPlayer();
+	bag_marshal::Unmarshal(dest, parsed);
+	auto *restored = tlsEcs.actorRegistry.try_get<PlayerBagsComp>(dest);
+	ASSERT_NE(nullptr, restored);
+	ASSERT_NO_FATAL_FAILURE(ExpectStoredInstance(restored->bags[kInventory], enhancedOnly));
+	ASSERT_NO_FATAL_FAILURE(ExpectStoredInstance(restored->bags[kInventory], allDefault));
+	ASSERT_NO_FATAL_FAILURE(ExpectStoredInstance(restored->bags[kInventory], uninitialised));
+	ASSERT_NO_FATAL_FAILURE(ExpectStoredInstance(restored->bags[kEquipment], gemsOnly));
+	ASSERT_NO_FATAL_FAILURE(ExpectStoredInstance(restored->bags[kWarehouse], forged));
+	EXPECT_EQ(kSlotKind1Second, restored->bags[kEquipment].GetItemPosByGuid(kGuidB));
+	EXPECT_EQ(7u, restored->bags[kWarehouse].GetItemPosByGuid(kGuidE));
+	for (auto &bag : restored->bags)
+	{
+		EXPECT_TRUE(bag.IsLayerConsistent());
+	}
+}
+
+// 跨区往返:去程与回程各是一次 Marshal -> 字节 -> Unmarshal(跨 zone 传送、同 zone 跨节点
+// 换图、登录读盘走的都是 bag_marshal 这一对函数,没有第二条搬运路径)。穿在身上的、背包里的、
+// 动态包里的强化等级与宝石连过两跳都不丢,也不被"规范化":超上限的等级、同孔位的重复记录
+// 到了对面还是原样 —— 夹取与现查在消费侧,搬运不洗存档(契约 §5 不变量 2)。
+TEST_F(BagInstanceDataTest, EnhanceLevelAndGemsSurviveACrossZoneRoundTrip)
+{
+	const ItemComp worn = MakeRolledInstance(kGuidA, kEquipA);
+	const ItemComp inInventory = MakeForgedOnlyInstance(kGuidB, kEquipB);
+	const ItemComp inDynamicBag = MakeRolledInstance(kGuidC, kEquipB);
+
+	const auto home = NewPlayer();
+	{
+		auto &bags = tlsEcs.actorRegistry.emplace<PlayerBagsComp>(home);
+		ASSERT_EQ(kSuccess, bags.bags[kEquipment].PutInstance(worn, kSlotKind1Second));
+		bags.bags[kInventory].InsertItemForRestore(inInventory, 4);
+		bags.dynamicBags_[kDynamicBagId].InsertItemForRestore(inDynamicBag, 3);
+	}
+
+	const auto away = RoundTripBags(home); // 去程
+	const auto back = RoundTripBags(away); // 回程
+	for (const auto player : {away, back})
+	{
+		auto *restored = tlsEcs.actorRegistry.try_get<PlayerBagsComp>(player);
+		ASSERT_NE(nullptr, restored);
+
+		Bag &equipment = restored->bags[kEquipment];
+		ASSERT_EQ(1u, equipment.OccupiedGridCount());
+		ASSERT_NO_FATAL_FAILURE(ExpectStoredInstance(equipment, worn));
+		EXPECT_EQ(kSlotKind1Second, equipment.GetItemPosByGuid(kGuidA));
+
+		Bag &inventory = restored->bags[kInventory];
+		ASSERT_EQ(1u, inventory.OccupiedGridCount());
+		ASSERT_NO_FATAL_FAILURE(ExpectStoredInstance(inventory, inInventory));
+		EXPECT_EQ(4u, inventory.GetItemPosByGuid(kGuidB));
+
+		const auto dynamicIt = restored->dynamicBags_.find(kDynamicBagId);
+		ASSERT_NE(restored->dynamicBags_.end(), dynamicIt);
+		ASSERT_EQ(1u, dynamicIt->second.OccupiedGridCount());
+		ASSERT_NO_FATAL_FAILURE(ExpectStoredInstance(dynamicIt->second, inDynamicBag));
+		EXPECT_EQ(3u, dynamicIt->second.GetItemPosByGuid(kGuidC));
+
+		for (auto &bag : restored->bags)
+		{
+			EXPECT_TRUE(bag.IsLayerConsistent());
+		}
+		EXPECT_TRUE(dynamicIt->second.IsLayerConsistent());
+	}
+}
+
+// 强化 / 镶嵌是**原地改** equip 段:编排层按 guid 取到仓库里的那一份再写
+// (docs/design/equipment-enhance-inlay.md §4.3)。这里钉容器这一侧的三件事:
+//   * 改到的就是存盘会写出去的那一份,不是副本;
+//   * 槽位与入包序号不因此变化 —— 它们不在实例数据里;
+//   * 没有 equip 段的实例读新字段只读到默认值,而且"读"不会把 presence 读出来
+//     (取下宝石对未初始化的实例就是这么读的,不特判)。
+TEST_F(BagInstanceDataTest, InPlaceEquipEditIsWhatGetsSavedAndMovesNothing)
+{
+	const auto source = NewPlayer();
+	uint64_t seqBefore = 0;
+	{
+		auto &bags = tlsEcs.actorRegistry.emplace<PlayerBagsComp>(source);
+		Bag &inventory = bags.bags[kInventory];
+		ItemComp initialised = MakeInstance(kGuidA, kEquipA);
+		initialised.mutable_equip(); // 已初始化、未强化、未镶嵌
+		inventory.InsertItemForRestore(initialised, 6);
+		inventory.InsertItemForRestore(MakeInstance(kGuidB, kPlainNonStack), 7);
+
+		// 两件都放好之后才取指针:实例指针在下一次 Insert / Erase(含整理)后失效。
+		ItemComp *target = inventory.GetItemCompByGuid(kGuidA);
+		ASSERT_NE(nullptr, target);
+		ASSERT_TRUE(target->has_equip());
+		seqBefore = target->acquire_seq();
+		ASSERT_NE(0u, seqBefore);
+		target->mutable_equip()->set_enhance_level(3);
+		AddGem(*target, /*socket=*/0, /*gemConfigId=*/2101);
+
+		EXPECT_EQ(6u, inventory.GetItemPosByGuid(kGuidA));
+		EXPECT_EQ(seqBefore, target->acquire_seq());
+		EXPECT_EQ(2u, inventory.OccupiedGridCount());
+		EXPECT_TRUE(inventory.IsLayerConsistent());
+
+		const ItemComp *plain = inventory.GetItemCompByGuid(kGuidB);
+		ASSERT_NE(nullptr, plain);
+		EXPECT_EQ(0u, plain->equip().enhance_level());
+		EXPECT_EQ(0, plain->equip().gems_size());
+		EXPECT_FALSE(plain->has_equip()) << "reading the default equip must not create presence";
+	}
+
+	const auto dest = RoundTripBags(source);
+	auto *restored = tlsEcs.actorRegistry.try_get<PlayerBagsComp>(dest);
+	ASSERT_NE(nullptr, restored);
+	Bag &inventory = restored->bags[kInventory];
+
+	const ItemComp *saved = inventory.GetItemCompByGuid(kGuidA);
+	ASSERT_NE(nullptr, saved);
+	ASSERT_TRUE(saved->has_equip());
+	EXPECT_EQ(3u, saved->equip().enhance_level());
+	ASSERT_EQ(1, saved->equip().gems_size());
+	EXPECT_EQ(0u, saved->equip().gems(0).socket());
+	EXPECT_EQ(2101u, saved->equip().gems(0).gem_config_id());
+	EXPECT_EQ(seqBefore, saved->acquire_seq());
+	EXPECT_EQ(6u, inventory.GetItemPosByGuid(kGuidA));
+
+	const ItemComp *plainSaved = inventory.GetItemCompByGuid(kGuidB);
+	ASSERT_NE(nullptr, plainSaved);
+	EXPECT_FALSE(plainSaved->has_equip());
+	EXPECT_EQ(7u, inventory.GetItemPosByGuid(kGuidB));
+	EXPECT_TRUE(inventory.IsLayerConsistent());
 }
 
 } // namespace

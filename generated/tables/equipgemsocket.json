@@ -1,0 +1,46 @@
+{
+ "data": [
+  {
+   "equip_kind": 11,
+   "gem_type": 1,
+   "id": 1100,
+   "name": "攻击孔",
+   "socket": 0
+  },
+  {
+   "equip_kind": 11,
+   "gem_type": 0,
+   "id": 1101,
+   "name": "通用孔",
+   "socket": 1
+  },
+  {
+   "equip_kind": 12,
+   "gem_type": 3,
+   "id": 1200,
+   "name": "气血孔",
+   "socket": 0
+  },
+  {
+   "equip_kind": 13,
+   "gem_type": 2,
+   "id": 1300,
+   "name": "防御孔",
+   "socket": 0
+  },
+  {
+   "equip_kind": 13,
+   "gem_type": 3,
+   "id": 1301,
+   "name": "气血孔",
+   "socket": 1
+  },
+  {
+   "equip_kind": 14,
+   "gem_type": 4,
+   "id": 1400,
+   "name": "迅捷孔",
+   "socket": 0
+  }
+ ]
+}

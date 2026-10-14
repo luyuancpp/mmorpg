@@ -23,11 +23,17 @@
 //
 // Schema: item_uuid / config_id / stack_size / pos / bag_type, plus
 // acquire_seq (13) and, since 2026-10-07, equip (14) — the equipment
-// instance data (random attribute rows), see
-// docs/design/equipment-attributes.md §3.1. Remaining game-design
-// extensions (enchant level, gem inlay, bound state) are still TODO at
-// known field numbers in proto/common/database/bag_quest_mail_data.proto;
-// the migration path stays forward-compatible because proto field numbers
+// instance data: random attribute rows (see
+// docs/design/equipment-attributes.md §3.1) and, since the enhance /
+// inlay phase, the enhance level and the inlaid gems
+// (EquipInstanceData.enhance_level / .gems, see
+// docs/design/equipment-enhance-inlay.md §3.1). Those two ride inside
+// `equip`, so the conversion pair below carries them without naming
+// them; ItemEntry's old TODO slots 6 (enchant_level) and 8 (gem_uuids)
+// are retired and must not be reused. Remaining game-design extensions
+// (bound state, trade count, expiry) are still TODO at known field
+// numbers in proto/common/database/bag_quest_mail_data.proto; the
+// migration path stays forward-compatible because proto field numbers
 // are reserved.
 //
 // ItemComp(运行时实例)与 ItemEntry(存盘 / 跨服记录)之间的转换**只有下面这一对
@@ -55,6 +61,8 @@ void ItemToEntry(const ItemComp& item, uint32_t pos, uint32_t bagType, ItemEntry
     // 装备实例数据:**presence 有语义**。has_equip() == true 表示这件装备已经掷过属性
     // (哪怕一条都没掷出);无条件 mutable_equip() 会让每件普通物品读回来都"带一段空的
     // equip",反过来漏拷则让装备读回来像没初始化过、下次入包被重掷。
+    // 强化等级与已镶宝石也在这一段里,随这一次整份 CopyFrom 走:不要改成逐字段拷,
+    // 那样 EquipInstanceData 每加一个字段,这里就多一处「忘了拷 = 存档往返丢数据」。
     if (item.has_equip())
     {
         entry.mutable_equip()->CopyFrom(item.equip());

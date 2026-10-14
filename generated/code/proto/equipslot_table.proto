@@ -11,6 +11,7 @@ option java_multiple_files = true;
 message EquipSlotTable {
 	uint32 id = 1;
 	uint32 equip_kind = 2;
+	string name = 3;
 }
 
 message EquipSlotTableData {

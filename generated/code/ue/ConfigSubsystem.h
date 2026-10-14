@@ -43,8 +43,16 @@
 #include "ConditionTable.h"
 #include "CooldownTable.h"
 #include "DungeonTable.h"
+#include "EquipAffixPoolTable.h"
+#include "EquipAffixRuleTable.h"
+#include "EquipAttributeTable.h"
+#include "EquipAttributeCapTable.h"
+#include "EquipEnhanceTable.h"
+#include "EquipGemTable.h"
+#include "EquipGemSocketTable.h"
 #include "EquipSlotTable.h"
 #include "GlobalVariableTable.h"
+#include "GuildActivityTable.h"
 #include "GuildDonateTable.h"
 #include "GuildLevelTable.h"
 #include "GuildRuleTable.h"
@@ -101,7 +109,7 @@ class MMORPGCONFIG_API UConfigSubsystem : public UGameInstanceSubsystem
 
 public:
 	/// 本产物覆盖的表数量。
-	static constexpr int32 TableCount = 34;
+	static constexpr int32 TableCount = 42;
 
 	UFUNCTION(BlueprintPure, Category = "Config", meta = (WorldContext = "WorldContextObject"))
 	static UConfigSubsystem* Get(const UObject* WorldContextObject);
@@ -195,10 +203,34 @@ public:
 	UDungeonTable* GetDungeonTable() const { return DungeonTable; }
 
 	UFUNCTION(BlueprintPure, Category = "Config|Tables")
+	UEquipAffixPoolTable* GetEquipAffixPoolTable() const { return EquipAffixPoolTable; }
+
+	UFUNCTION(BlueprintPure, Category = "Config|Tables")
+	UEquipAffixRuleTable* GetEquipAffixRuleTable() const { return EquipAffixRuleTable; }
+
+	UFUNCTION(BlueprintPure, Category = "Config|Tables")
+	UEquipAttributeTable* GetEquipAttributeTable() const { return EquipAttributeTable; }
+
+	UFUNCTION(BlueprintPure, Category = "Config|Tables")
+	UEquipAttributeCapTable* GetEquipAttributeCapTable() const { return EquipAttributeCapTable; }
+
+	UFUNCTION(BlueprintPure, Category = "Config|Tables")
+	UEquipEnhanceTable* GetEquipEnhanceTable() const { return EquipEnhanceTable; }
+
+	UFUNCTION(BlueprintPure, Category = "Config|Tables")
+	UEquipGemTable* GetEquipGemTable() const { return EquipGemTable; }
+
+	UFUNCTION(BlueprintPure, Category = "Config|Tables")
+	UEquipGemSocketTable* GetEquipGemSocketTable() const { return EquipGemSocketTable; }
+
+	UFUNCTION(BlueprintPure, Category = "Config|Tables")
 	UEquipSlotTable* GetEquipSlotTable() const { return EquipSlotTable; }
 
 	UFUNCTION(BlueprintPure, Category = "Config|Tables")
 	UGlobalVariableTable* GetGlobalVariableTable() const { return GlobalVariableTable; }
+
+	UFUNCTION(BlueprintPure, Category = "Config|Tables")
+	UGuildActivityTable* GetGuildActivityTable() const { return GuildActivityTable; }
 
 	UFUNCTION(BlueprintPure, Category = "Config|Tables")
 	UGuildDonateTable* GetGuildDonateTable() const { return GuildDonateTable; }
@@ -284,9 +316,25 @@ private:
 	UPROPERTY(Transient)
 	TObjectPtr<UDungeonTable> DungeonTable;
 	UPROPERTY(Transient)
+	TObjectPtr<UEquipAffixPoolTable> EquipAffixPoolTable;
+	UPROPERTY(Transient)
+	TObjectPtr<UEquipAffixRuleTable> EquipAffixRuleTable;
+	UPROPERTY(Transient)
+	TObjectPtr<UEquipAttributeTable> EquipAttributeTable;
+	UPROPERTY(Transient)
+	TObjectPtr<UEquipAttributeCapTable> EquipAttributeCapTable;
+	UPROPERTY(Transient)
+	TObjectPtr<UEquipEnhanceTable> EquipEnhanceTable;
+	UPROPERTY(Transient)
+	TObjectPtr<UEquipGemTable> EquipGemTable;
+	UPROPERTY(Transient)
+	TObjectPtr<UEquipGemSocketTable> EquipGemSocketTable;
+	UPROPERTY(Transient)
 	TObjectPtr<UEquipSlotTable> EquipSlotTable;
 	UPROPERTY(Transient)
 	TObjectPtr<UGlobalVariableTable> GlobalVariableTable;
+	UPROPERTY(Transient)
+	TObjectPtr<UGuildActivityTable> GuildActivityTable;
 	UPROPERTY(Transient)
 	TObjectPtr<UGuildDonateTable> GuildDonateTable;
 	UPROPERTY(Transient)

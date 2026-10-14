@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+// EquipEnhance 表的权威 schema。源表 data/EquipEnhance.xlsx。
+// 设计:docs/design/equipment-enhance-inlay.md §2.1。
+//
+// 本文件不参与 protoc 编译,也不进任何语言的构建;导表器直接文本解析它。
+// 字段号只增不改、删字段用 reserved(data/AGENTS.md)。
+//
+// 装备强化规则:一行 = 一个**目标**强化等级。第 N 行既是「从 +(N-1) 强化到 +N」的规则(成功率、消耗、失败掉级),
+// 也是 +N 的加成。强化上限 = 表里从 1 起**连续**的最大 id(表为空 = 强化未开放),所以加等级只加行、id 不许跳号。
+// 加成只放大装备的基础属性,数值不入库:入库的只有「+几」,改表立即对存量装备生效(等级按表上限夹取)。
+// 源表由 tools/scripts/equip_xlsx_patch.py forge-tables 生成;schema 与 xlsx 必须成对提交。
+
+package mmorpg.cfgtable.v1;
+
+import "cfg_options.proto";
+
+message EquipEnhanceTable {
+  option (cfg_sheet)       = "EquipEnhance";
+  option (cfg_source_file) = "EquipEnhance.xlsx";
+  option (cfg_primary_key) = "id";
+
+  // 目标强化等级(从 1 起连续):第 N 行 = 从 +(N-1) 强化到 +N 的规则,以及 +N 的加成
+  uint32 id = 1;
+  // 强化到本级后基础属性的总加成(万分比,不是相对上一级的增量);随等级单调不减
+  uint32 bonus_permyriad = 2;
+  // 成功率(万分比,1..10000)
+  uint32 success_rate = 3;
+  // 失败时掉几级(0 = 不掉;最多掉到 0)
+  uint32 fail_level_loss = 4;
+  // 金币消耗(成败都扣);0 = 不收
+  uint64 cost_gold = 5;
+  // 材料物品。FK -> Item.id;0 = 不要材料
+  uint32 material_id = 6 [(cfg_fk) = "Item"];
+  // 材料数量(成败都扣);material_id 为 0 时必须为 0
+  uint32 material_count = 7;
+}

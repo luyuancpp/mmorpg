@@ -16,6 +16,7 @@ import (
 
 	"friend/internal/config"
 	friendkafka "friend/internal/kafka"
+	"friend/internal/sqldialect"
 
 	"shared/kafkacmd"
 	"shared/kafkautil"
@@ -67,6 +68,12 @@ type ServiceContext struct {
 	// (启动期 AutoMigrate 或 `-migrate`),本包一行 DDL 都不发。
 	DB *sql.DB
 
+	// SQLDialect 是 DB 背后那台服务器的方言(MySQL / TiDB),启动期探测一次。
+	// 好友推荐两条查询的优化器提示按它分写(data/recommend_sql.go);手工构造的 ServiceContext
+	// (logic 包的单测)不填它,零值即 MySQL。
+	// 类型来自只依赖标准库的叶子包 sqldialect:装配层不为一个枚举去直接 import 数据层。
+	SQLDialect sqldialect.Dialect
+
 	// 双存储(契约 §4):
 	//   - SharedRedis:跨运行时契约 key(`player:session:{id}`)的**唯一句柄**,禁 Cluster。
 	//     这条 key 的写者是 C++ / login,C++ 侧没有集群客户端,所以它永远指向既有共享库;
@@ -116,6 +123,11 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	if err != nil {
 		panic(fmt.Errorf("friend: %w", err))
 	}
+	dialect, err := detectSQLDialect(db, c.MySQL)
+	if err != nil {
+		_ = db.Close()
+		panic(fmt.Errorf("friend: %w", err))
+	}
 
 	friendRds, sharedRds, target := NewRedisHandles(c)
 	directoryClient, directoryConn := newDirectoryDataService(c)
@@ -124,6 +136,7 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		Config:             c,
 		Etcd:               etcdCli,
 		DB:                 db,
+		SQLDialect:         dialect,
 		SharedRedis:        sharedRds,
 		FriendRedis:        friendRds,
 		DataService:        directoryClient,
@@ -219,6 +232,24 @@ func OpenMySQL(c config.MySQLConf) (*sql.DB, error) {
 			MySQLTarget(c), c.DBName, err)
 	}
 	return db, nil
+}
+
+// detectSQLDialect 在启动期问一次服务器版本、判出方言,并把结果打进启动日志
+// (排障时"这个进程到底把库当成了 MySQL 还是 TiDB"必须一眼可查:判错的后果是推荐查询的提示全部失效)。
+// 探测失败、或对端是不支持的服务器(MariaDB),都算启动致命,理由见 sqldialect.Detect / sqldialect.FromServerInfo。
+// 超时与 ping 同值:两者是同一次连通性确认的两步。
+func detectSQLDialect(db *sql.DB, c config.MySQLConf) (sqldialect.Dialect, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), mysqlPingTimeout)
+	defer cancel()
+	dialect, info, err := sqldialect.Detect(ctx, db)
+	if err != nil {
+		return dialect, fmt.Errorf("detect SQL dialect of %s: %w", MySQLTarget(c), err)
+	}
+	// 日志文案写英文(提交 946ffd216d「日志文案统一为英文」起的做法);交接文档里 Codex 的通过标准引用的就是这一行的前缀。
+	// 两个原始串都打出来:TiDB 配了 server-version 时 VERSION() 里没有 TiDB 字样,判据落在 @@version_comment 上,
+	// 排障的人要能从这一行看出"为什么判成了 tidb"。
+	logx.Infof("[friend] SQL dialect = %s (%s, %s)", dialect, MySQLTarget(c), info)
+	return dialect, nil
 }
 
 // newKafkaWriter 建 S2C 推送用的 writer;没配 broker 返回 nil(见 ServiceContext.KafkaWriter 注释)。

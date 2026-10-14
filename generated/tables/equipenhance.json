@@ -1,0 +1,112 @@
+{
+ "data": [
+  {
+   "bonus_permyriad": 500,
+   "cost_gold": 1000,
+   "fail_level_loss": 0,
+   "id": 1,
+   "material_count": 1,
+   "material_id": 2001,
+   "success_rate": 10000
+  },
+  {
+   "bonus_permyriad": 1000,
+   "cost_gold": 2000,
+   "fail_level_loss": 0,
+   "id": 2,
+   "material_count": 1,
+   "material_id": 2001,
+   "success_rate": 10000
+  },
+  {
+   "bonus_permyriad": 1500,
+   "cost_gold": 3000,
+   "fail_level_loss": 0,
+   "id": 3,
+   "material_count": 2,
+   "material_id": 2001,
+   "success_rate": 10000
+  },
+  {
+   "bonus_permyriad": 2000,
+   "cost_gold": 5000,
+   "fail_level_loss": 0,
+   "id": 4,
+   "material_count": 2,
+   "material_id": 2001,
+   "success_rate": 9000
+  },
+  {
+   "bonus_permyriad": 2600,
+   "cost_gold": 8000,
+   "fail_level_loss": 0,
+   "id": 5,
+   "material_count": 3,
+   "material_id": 2001,
+   "success_rate": 8000
+  },
+  {
+   "bonus_permyriad": 3200,
+   "cost_gold": 12000,
+   "fail_level_loss": 0,
+   "id": 6,
+   "material_count": 3,
+   "material_id": 2001,
+   "success_rate": 7000
+  },
+  {
+   "bonus_permyriad": 3800,
+   "cost_gold": 18000,
+   "fail_level_loss": 0,
+   "id": 7,
+   "material_count": 4,
+   "material_id": 2001,
+   "success_rate": 6000
+  },
+  {
+   "bonus_permyriad": 4500,
+   "cost_gold": 26000,
+   "fail_level_loss": 0,
+   "id": 8,
+   "material_count": 4,
+   "material_id": 2001,
+   "success_rate": 5000
+  },
+  {
+   "bonus_permyriad": 5200,
+   "cost_gold": 36000,
+   "fail_level_loss": 0,
+   "id": 9,
+   "material_count": 5,
+   "material_id": 2001,
+   "success_rate": 4000
+  },
+  {
+   "bonus_permyriad": 6000,
+   "cost_gold": 50000,
+   "fail_level_loss": 0,
+   "id": 10,
+   "material_count": 6,
+   "material_id": 2001,
+   "success_rate": 3000
+  },
+  {
+   "bonus_permyriad": 7000,
+   "cost_gold": 70000,
+   "fail_level_loss": 0,
+   "id": 11,
+   "material_count": 8,
+   "material_id": 2001,
+   "success_rate": 2500
+  },
+  {
+   "bonus_permyriad": 8000,
+   "cost_gold": 100000,
+   "fail_level_loss": 0,
+   "id": 12,
+   "material_count": 10,
+   "material_id": 2001,
+   "success_rate": 2000
+  }
+ ]
+}

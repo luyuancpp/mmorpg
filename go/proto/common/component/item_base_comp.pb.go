@@ -21,6 +21,202 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// 一条装备随机属性(设计文档 docs/design/equipment-attributes.md §3.1)。
+//
+// 实例层只写「是什么」:上限、名称、百分比标记等能由配表重算的量**不入库**
+// (AGENTS §11.6「显示态不进持久化记录」),显示时按 (attr_id, 装备等级) 现查。
+type EquipAffix struct {
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	AttrId uint32                 `protobuf:"varint,1,opt,name=attr_id,json=attrId,proto3" json:"attr_id,omitempty"` // EquipAttribute 表 id
+	Tier   uint32                 `protobuf:"varint,2,opt,name=tier,proto3" json:"tier,omitempty"`                   // 颜色档:1 蓝 / 2 粉 / 3 黄 / 4 绿(预留,本期不掷)
+	Value  uint32                 `protobuf:"varint,3,opt,name=value,proto3" json:"value,omitempty"`                 // 当前值
+	// 档内序号(0 起)。显示顺序 = (tier, seq);repeated 的下标不承载语义,
+	// 序列化 / 合并 / 跨服迁移中任何一环打乱下标都不影响显示。
+	Seq           uint32 `protobuf:"varint,4,opt,name=seq,proto3" json:"seq,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EquipAffix) Reset() {
+	*x = EquipAffix{}
+	mi := &file_proto_common_component_item_base_comp_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EquipAffix) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EquipAffix) ProtoMessage() {}
+
+func (x *EquipAffix) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_common_component_item_base_comp_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EquipAffix.ProtoReflect.Descriptor instead.
+func (*EquipAffix) Descriptor() ([]byte, []int) {
+	return file_proto_common_component_item_base_comp_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *EquipAffix) GetAttrId() uint32 {
+	if x != nil {
+		return x.AttrId
+	}
+	return 0
+}
+
+func (x *EquipAffix) GetTier() uint32 {
+	if x != nil {
+		return x.Tier
+	}
+	return 0
+}
+
+func (x *EquipAffix) GetValue() uint32 {
+	if x != nil {
+		return x.Value
+	}
+	return 0
+}
+
+func (x *EquipAffix) GetSeq() uint32 {
+	if x != nil {
+		return x.Seq
+	}
+	return 0
+}
+
+// 一颗已镶嵌的宝石(设计文档 docs/design/equipment-enhance-inlay.md §3.1)。
+//
+// 记 config 不记 guid:宝石是可叠加物品,guid 不是稳定身份(嵌入时销毁一颗、取下时另铸一颗)。
+// 属性值不入库:按 EquipGem 表现查,改表立即对已镶嵌的宝石生效。
+type EquipGem struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Socket        uint32                 `protobuf:"varint,1,opt,name=socket,proto3" json:"socket,omitempty"`                                // 孔位号(0 起)。显式字段,repeated 下标不承载语义(AGENTS §11.6)
+	GemConfigId   uint32                 `protobuf:"varint,2,opt,name=gem_config_id,json=gemConfigId,proto3" json:"gem_config_id,omitempty"` // 宝石的 Item 表 id(= EquipGem 表主键)
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EquipGem) Reset() {
+	*x = EquipGem{}
+	mi := &file_proto_common_component_item_base_comp_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EquipGem) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EquipGem) ProtoMessage() {}
+
+func (x *EquipGem) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_common_component_item_base_comp_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EquipGem.ProtoReflect.Descriptor instead.
+func (*EquipGem) Descriptor() ([]byte, []int) {
+	return file_proto_common_component_item_base_comp_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *EquipGem) GetSocket() uint32 {
+	if x != nil {
+		return x.Socket
+	}
+	return 0
+}
+
+func (x *EquipGem) GetGemConfigId() uint32 {
+	if x != nil {
+		return x.GemConfigId
+	}
+	return 0
+}
+
+// 装备实例数据。只有装备实例才有这一段。
+//
+// 强化等级与宝石也放在这里(不启用 ItemEntry 预留的 6 号 enchant_level / 8 号 gem_uuids):
+// 这一段随 ItemComp.equip / ItemEntry.equip 整份搬运,穿脱、存档、跨区都不用再逐字段跟。
+// 强化 / 镶嵌只改 has_equip() 的实例;不要为了写这两个字段对未初始化的实例调 mutable_equip()
+// —— 那会把「没掷过属性」变成「已初始化」。
+type EquipInstanceData struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Affixes       []*EquipAffix          `protobuf:"bytes,1,rep,name=affixes,proto3" json:"affixes,omitempty"`
+	EnhanceLevel  uint32                 `protobuf:"varint,2,opt,name=enhance_level,json=enhanceLevel,proto3" json:"enhance_level,omitempty"` // 强化等级(+N),0 = 未强化。入库的只有「+几」,加成按 EquipEnhance 表现查
+	Gems          []*EquipGem            `protobuf:"bytes,3,rep,name=gems,proto3" json:"gems,omitempty"`                                      // 已镶嵌宝石;同一 socket 至多一条
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EquipInstanceData) Reset() {
+	*x = EquipInstanceData{}
+	mi := &file_proto_common_component_item_base_comp_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EquipInstanceData) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EquipInstanceData) ProtoMessage() {}
+
+func (x *EquipInstanceData) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_common_component_item_base_comp_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EquipInstanceData.ProtoReflect.Descriptor instead.
+func (*EquipInstanceData) Descriptor() ([]byte, []int) {
+	return file_proto_common_component_item_base_comp_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *EquipInstanceData) GetAffixes() []*EquipAffix {
+	if x != nil {
+		return x.Affixes
+	}
+	return nil
+}
+
+func (x *EquipInstanceData) GetEnhanceLevel() uint32 {
+	if x != nil {
+		return x.EnhanceLevel
+	}
+	return 0
+}
+
+func (x *EquipInstanceData) GetGems() []*EquipGem {
+	if x != nil {
+		return x.Gems
+	}
+	return nil
+}
+
 type ItemComp struct {
 	state    protoimpl.MessageState `protogen:"open.v1"`
 	ItemId   uint64                 `protobuf:"varint,1,opt,name=item_id,json=itemId,proto3" json:"item_id,omitempty"`
@@ -39,14 +235,21 @@ type ItemComp struct {
 	// 由 ItemStore 在实例入库时统一盖(见 item_store.h 的 nextAcquireSeq_),
 	// 跨服 / 快照随 ItemEntry.acquire_seq 原样带走,还原时恢复水位。
 	// 0 = 未盖章(旧存档),此时退回按 item_id 排序,与本字段落地前的行为一致。
-	AcquireSeq    uint64 `protobuf:"varint,4,opt,name=acquire_seq,json=acquireSeq,proto3" json:"acquire_seq,omitempty"`
+	AcquireSeq uint64 `protobuf:"varint,4,opt,name=acquire_seq,json=acquireSeq,proto3" json:"acquire_seq,omitempty"`
+	// 装备实例数据(随机属性、强化等级、已镶嵌宝石)。仅装备实例有。
+	//
+	// **has_equip() == true 表示「已完成初始化」**,即使一条属性都没掷出 ——
+	// 搬运(穿脱 / 邮件回流 / 交易退回)靠它保证不重掷。所以存盘 / 读盘必须保留
+	// presence:只在 has_equip() 时拷贝,不要无条件 mutable_equip()。
+	// 镜像 ItemEntry.equip(字段 14),两边必须同改(bag_marshal 的转换函数)。
+	Equip         *EquipInstanceData `protobuf:"bytes,5,opt,name=equip,proto3" json:"equip,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ItemComp) Reset() {
 	*x = ItemComp{}
-	mi := &file_proto_common_component_item_base_comp_proto_msgTypes[0]
+	mi := &file_proto_common_component_item_base_comp_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -58,7 +261,7 @@ func (x *ItemComp) String() string {
 func (*ItemComp) ProtoMessage() {}
 
 func (x *ItemComp) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_common_component_item_base_comp_proto_msgTypes[0]
+	mi := &file_proto_common_component_item_base_comp_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -71,7 +274,7 @@ func (x *ItemComp) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ItemComp.ProtoReflect.Descriptor instead.
 func (*ItemComp) Descriptor() ([]byte, []int) {
-	return file_proto_common_component_item_base_comp_proto_rawDescGZIP(), []int{0}
+	return file_proto_common_component_item_base_comp_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *ItemComp) GetItemId() uint64 {
@@ -102,17 +305,38 @@ func (x *ItemComp) GetAcquireSeq() uint64 {
 	return 0
 }
 
+func (x *ItemComp) GetEquip() *EquipInstanceData {
+	if x != nil {
+		return x.Equip
+	}
+	return nil
+}
+
 var File_proto_common_component_item_base_comp_proto protoreflect.FileDescriptor
 
 const file_proto_common_component_item_base_comp_proto_rawDesc = "" +
 	"\n" +
-	"+proto/common/component/item_base_comp.proto\"u\n" +
+	"+proto/common/component/item_base_comp.proto\"a\n" +
+	"\n" +
+	"EquipAffix\x12\x17\n" +
+	"\aattr_id\x18\x01 \x01(\rR\x06attrId\x12\x12\n" +
+	"\x04tier\x18\x02 \x01(\rR\x04tier\x12\x14\n" +
+	"\x05value\x18\x03 \x01(\rR\x05value\x12\x10\n" +
+	"\x03seq\x18\x04 \x01(\rR\x03seq\"F\n" +
+	"\bEquipGem\x12\x16\n" +
+	"\x06socket\x18\x01 \x01(\rR\x06socket\x12\"\n" +
+	"\rgem_config_id\x18\x02 \x01(\rR\vgemConfigId\"~\n" +
+	"\x11EquipInstanceData\x12%\n" +
+	"\aaffixes\x18\x01 \x03(\v2\v.EquipAffixR\aaffixes\x12#\n" +
+	"\renhance_level\x18\x02 \x01(\rR\fenhanceLevel\x12\x1d\n" +
+	"\x04gems\x18\x03 \x03(\v2\t.EquipGemR\x04gems\"\x9f\x01\n" +
 	"\bItemComp\x12\x17\n" +
 	"\aitem_id\x18\x01 \x01(\x04R\x06itemId\x12\x1b\n" +
 	"\tconfig_id\x18\x02 \x01(\rR\bconfigId\x12\x12\n" +
 	"\x04size\x18\x03 \x01(\rR\x04size\x12\x1f\n" +
 	"\vacquire_seq\x18\x04 \x01(\x04R\n" +
-	"acquireSeqB\x18Z\x16proto/common/componentb\x06proto3"
+	"acquireSeq\x12(\n" +
+	"\x05equip\x18\x05 \x01(\v2\x12.EquipInstanceDataR\x05equipB\x18Z\x16proto/common/componentb\x06proto3"
 
 var (
 	file_proto_common_component_item_base_comp_proto_rawDescOnce sync.Once
@@ -126,16 +350,22 @@ func file_proto_common_component_item_base_comp_proto_rawDescGZIP() []byte {
 	return file_proto_common_component_item_base_comp_proto_rawDescData
 }
 
-var file_proto_common_component_item_base_comp_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
+var file_proto_common_component_item_base_comp_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_proto_common_component_item_base_comp_proto_goTypes = []any{
-	(*ItemComp)(nil), // 0: ItemComp
+	(*EquipAffix)(nil),        // 0: EquipAffix
+	(*EquipGem)(nil),          // 1: EquipGem
+	(*EquipInstanceData)(nil), // 2: EquipInstanceData
+	(*ItemComp)(nil),          // 3: ItemComp
 }
 var file_proto_common_component_item_base_comp_proto_depIdxs = []int32{
-	0, // [0:0] is the sub-list for method output_type
-	0, // [0:0] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	0, // 0: EquipInstanceData.affixes:type_name -> EquipAffix
+	1, // 1: EquipInstanceData.gems:type_name -> EquipGem
+	2, // 2: ItemComp.equip:type_name -> EquipInstanceData
+	3, // [3:3] is the sub-list for method output_type
+	3, // [3:3] is the sub-list for method input_type
+	3, // [3:3] is the sub-list for extension type_name
+	3, // [3:3] is the sub-list for extension extendee
+	0, // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_proto_common_component_item_base_comp_proto_init() }
@@ -149,7 +379,7 @@ func file_proto_common_component_item_base_comp_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_common_component_item_base_comp_proto_rawDesc), len(file_proto_common_component_item_base_comp_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   1,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
