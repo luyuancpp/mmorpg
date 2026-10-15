@@ -201,7 +201,7 @@ void PlayerLandingSystem::OnEnteredScene(entt::entity player, uint32_t enterGsTy
 	LOG_DEBUG << "[PlayerLanding] OnEnteredScene player_id=" << GuidOf(player) << " enter_gs_type=" << enterGsType;
 
 	// 场景侧待办唤醒(设计 §5.2):guild / trade 资产通道收到后立即重投该玩家的 PENDING 行。
-	PublishAssetWake(player);
+	PublishAssetWake(player, AssetWakeReason::kEnteredScene);
 
 	// 后续落地钩子挂在这里,每个一行、互不依赖,顺序无业务含义:
 	//   - 统一玩家收件箱服务在 scene 侧的消费触发(由该会话提供一行调用,设计 §5.1)。
@@ -209,7 +209,7 @@ void PlayerLandingSystem::OnEnteredScene(entt::entity player, uint32_t enterGsTy
 	// 同 zone 换图连接不变、不算落地,服务端无从判断"这次进场是不是一次落地"。
 }
 
-void PlayerLandingSystem::PublishAssetWake(entt::entity player)
+void PlayerLandingSystem::PublishAssetWake(entt::entity player, AssetWakeReason reason)
 {
 	if (!tlsEcs.actorRegistry.valid(player))
 	{
@@ -229,9 +229,11 @@ void PlayerLandingSystem::PublishAssetWake(entt::entity player)
 		return;
 	}
 
+	// 合并窗口只对进场来源生效(见头文件 AssetWakeReason 的说明)。
+	const bool coalesce = reason == AssetWakeReason::kEnteredScene;
 	const uint64_t nowMs = SteadyNowMs();
 	if (const auto *wake = tlsEcs.actorRegistry.try_get<PlayerLandingWakeComp>(player);
-		wake != nullptr && nowMs - wake->lastWakeMs < player_landing::kAssetWakeCoalesceMs)
+		coalesce && wake != nullptr && nowMs - wake->lastWakeMs < player_landing::kAssetWakeCoalesceMs)
 	{
 		LOG_DEBUG << "[PlayerLanding] asset wake coalesced, player_id=" << playerId;
 		return;
@@ -268,5 +270,8 @@ void PlayerLandingSystem::PublishAssetWake(entt::entity player)
 				 << " ret=" << ret;
 		return;
 	}
-	tlsEcs.actorRegistry.emplace_or_replace<PlayerLandingWakeComp>(player).lastWakeMs = nowMs;
+	if (coalesce)
+	{
+		tlsEcs.actorRegistry.emplace_or_replace<PlayerLandingWakeComp>(player).lastWakeMs = nowMs;
+	}
 }

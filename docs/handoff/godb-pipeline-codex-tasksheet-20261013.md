@@ -1,6 +1,6 @@
 # Codex 任务单：存盘管线第 0 批与 proto2mysql 条件写原语的验证（2026-10-13）
 
-> **版本**：第 2 版（2026-10-14）。第 1 版经一轮可执行性评审（9 条意见，核实后全部成立或部分成立），本版逐条改过；负责人的同意状态已更新。
+> **版本**：第 2.1 版（2026-10-15）。第 1 版经一轮可执行性评审（9 条意见，核实后全部成立或部分成立），第 2 版逐条改过；第 2.1 版只改一处：负责人 2026-10-15 同意联网下载 Go 模块（「同意 2」），§1 的 `GOPROXY` 随之改为联网，其余命令不变。
 > **谁执行**：Codex。Claude 不编译、不测试（AGENTS.md §10.1）。
 > **验证什么**：[交接](godb-pipeline-handoff-20261013.md) §3.1（主仓库第 0 批）与 §3.2（proto2mysql `SaveConditional`）。两者都从未编译、未运行。
 > **结果交给谁**：把 §6 的回报表填好交给负责人，由负责人贴回 Claude 的对话。Claude 按交接 §3.0 写回文档。
@@ -23,12 +23,23 @@
 - **本单需要回环网络**：go/db 的既有用例用 miniredis 监听 127.0.0.1 的随机端口；任务 B 连 127.0.0.1:13307 / 14000。沙箱默认拦回环时先向负责人申请放行。
 - 被 Windows Application Control 拦截测试 exe 时（事件 3077 / 3033），记录事件号与被拦路径后停下，不绕过。
 
-### 0.1 负责人的同意（截至 2026-10-14）
+### 0.1 负责人的同意（截至 2026-10-15）
 
 | # | 事项 | 状态 |
 |---|---|---|
 | 同意 1 | 安装 Go | **负责人已自行安装 Go 1.27.2**（`C:\Program Files\Go\bin`，可能不在 PATH 上，见 §1）|
-| 同意 2 | 联网下载 Go 模块 | **未明确**。按 §1 先用 `GOPROXY=off` 跑；报缺模块就停下，向负责人请示，获准后改成 `https://goproxy.cn,direct` 再继续 |
+| 同意 2 | 联网下载 Go 模块 | **已同意**（负责人 2026-10-15 在 Claude 对话里答复「Codex 跑测试时下载」）。§1 的 `GOPROXY` 设为 `https://goproxy.cn,direct`；范围只限 `go test` / `go vet` 按 go.sum 自动拉取已登记的依赖，§0 第二条（不改 go.mod / go.sum、不 tidy、不 get、不 `go env -w`）不变 |
+| 同意 3 | 拉取 `mysql:8.4` 与 `pingcap/tidb:v8.5.1` 镜像 | **已同意** |
+
+「同意 2」之前为什么跑不动：Claude 2026-10-15 只读核对了本机模块缓存（`C:\Users\luyua\go\pkg\mod\cache\download`），下面这些依赖只有 `.info` / `.mod`、没有源码 `.zip`，`GOPROXY=off` 时编译不了。装 Go 不会补它们。
+
+| 用在哪 | 缺源码的依赖 |
+|---|---|
+| go/db（`0aa1027bc`、`73b852f32` 与当前 HEAD 都要）| `github.com/alicebob/miniredis/v2 v2.36.1` |
+| proto2mysql | `github.com/go-sql-driver/mysql v1.8.1` |
+| proto2mysql/tools/proto2sql | `github.com/bufbuild/protocompile v0.14.1`、`github.com/go-sql-driver/mysql v1.8.1`、`golang.org/x/sync v0.9.0` |
+
+go/login 在这两个提交上用 miniredis v2.35.0，缓存里有。`github.com/coreos/go-systemd/v22` 与 `github.com/prometheus/procfs` 也缺，但它们只在 Linux 上参与编译，Windows 上跑不到。核对按的是 go.mod 的 require 清单，以实际运行为准。
 | 同意 3 | 拉取 `mysql:8.4` 与 `pingcap/tidb:v8.5.1` 镜像 | **已同意** |
 
 ---

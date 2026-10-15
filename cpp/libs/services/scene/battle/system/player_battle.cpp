@@ -178,7 +178,7 @@ namespace
 		}
 		tlsEcs.actorRegistry.remove<InBattleComp>(player);
 		PlayerTeamSystem::OnBattleFreezeCleared(player);
-		PlayerLandingSystem::PublishAssetWake(player);
+		PlayerLandingSystem::PublishAssetWake(player, PlayerLandingSystem::AssetWakeReason::kBattleFreezeCleared);
 		return true;
 	}
 

@@ -113,6 +113,7 @@ set(SOURCE_FILES
     player/system/player_scene.cpp
     player/system/player_team.cpp
     player/system/player_team_aoi.cpp
+    player/system/player_landing.cpp
     player/system/player_skill.cpp
     player/system/player_attribute.cpp
     player/system/player_pet.cpp

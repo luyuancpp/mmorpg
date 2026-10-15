@@ -108,7 +108,7 @@ proto 枚举 `SyncDomain`，追加在 `proto/scene/player_scene.proto`（与读�
 | 5 | `SYNC_DOMAIN_TEAM_INVITE` | `ClientPlayerTeam.ListMyInvites` | team：邀请新增 / 撤销时给被邀请人 |
 | 6 | `SYNC_DOMAIN_GUILD` | `GuildService.GetPlayerGuild` | guild：创建、加入、离开、解散、公告、职位、踢人、转让、升级；给全帮成员（≤100）与被踢者 / 离开者；入会申请新增、撤回时给审批人（待审数在 GuildInfo 里） |
 | 7 | `SYNC_DOMAIN_GUILD_APPLICATION` | `GuildService.ListMyGuildApplications` | guild：申请、撤回、审批结果（申请人本人） |
-| 8 | `SYNC_DOMAIN_GUILD_ECONOMY` | `GuildService.GetGuildDonateOptions` / `GetGuildShop` | guild：捐献 / 兑换预留成功（本人）；资产指令终结（本人，**含同步投递路径**，放在 `GuildAssetStore.terminate` 提交之后） |
+| 8 | `SYNC_DOMAIN_GUILD_ECONOMY` | `GuildService.GetGuildDonateOptions` / `GetGuildShop` | guild：捐献 / 兑换预留成功（本人）；资产指令终结（本人，**含同步投递路径**，放在 `logic.OnAssetFinalized` 开头，它由 `GuildAssetStore.terminate` 在提交、缓存失效之后回调）。活动发奖类指令终结 bump 的是 `GUILD_ACTIVITY`（两个经济页按 kind 过滤掉它，变的是活动页的待发数）；`assetopfix` 人工终结不经这条回调，不 bump |
 | 9 | `SYNC_DOMAIN_GUILD_ACTIVITY` | `GuildService.GetGuildActivities` | guild：点灯、团圆、历练房间建立 / 响应 / 开战 / 结束 / 结算（本人；达阈值扇出时给全帮） |
 
 - 帮会级数值（资金、灯会进度）不逐次扇出 bump：每笔捐献乘 100 人的写放大不值得，由打开面板时的拉取覆盖。
@@ -233,9 +233,11 @@ message SyncDigestS2C {
 `PlayerLandingSystem::OnEnteredScene` 调 `PublishAssetWake(player)`：
 
 - 实体带 `PlayerFrozenComp`（交接在途）时跳过：资产写路径此时本来就会拒绝；交接结果若是销毁实体，新节点进场时会再唤醒；若是解冻，则退回原退避（≤60 秒）。
-- 合并窗口：同一实体 5 秒内只发一次（纯运行时组件 `PlayerLandingWakeComp{ uint64_t lastWakeMs; }`，不入库）。同 zone 频繁换图时避免刷屏。
+- 合并窗口：同一实体 5 秒内只发一次，只对进场来源生效（纯运行时组件 `PlayerLandingWakeComp{ uint64_t lastWakeMs; }`，不入库，单调时钟）。目的是同 zone 频繁换图、gate 补发重复路由时避免刷屏。
 - 命令：`PUBLISH assetop:wake <player_id 十进制>`，经 `tlsRedis.GetZoneRedis()->command(...)`，回调只在出错时打 WARN。
-- 额外发出点：战斗冻结解除（`ClearBattleFreeze` 之后）也调一次，覆盖 `kAssetInBattle` 的 RETRY [C]（`asset_op_system.cpp` 资产 RPC 在战斗中回 RETRY）。
+- 额外发出点：战斗冻结解除，覆盖 `kAssetInBattle` 的 RETRY [C]（`asset_op_system.cpp` 资产 RPC 在战斗中回 RETRY）。
+  - 实现挂在 `player_battle.cpp` 的 `RemoveInBattleComp`，这是摘 InBattleComp 的唯一入口。最常见的解冻是结算应用，走的是 `ReleaseFreezeKeepLock`，并不经过 `ClearBattleFreeze`；挂在唯一入口上才不会漏。
+  - 这一来源以 `AssetWakeReason::kBattleFreezeCleared` 发出，不受合并窗口限制。典型场景是重连复用实体时玩家仍在战斗中：进场唤醒撞上 RETRY，几秒后战斗结束。如果解冻唤醒被同一个窗口吞掉，它就失去了唯一要覆盖的场景。
 
 ### 5.3 Go 侧接收（`go/shared/assetop` + 新包 `go/shared/assetopwake`）
 
@@ -354,12 +356,14 @@ battle / scene 进程没有 Prometheus 端点 [C]，结算类信号只有结构�
   - 旧版写入仍带 TTL，7 天后照旧过期，行为与今天相同；
   - 新版写入不过期；
   - 旧版 scene 销账不清索引，索引里会留下孤儿，由下面的报数任务清理。
-- **报数**：battle 节点每 60 秒取一次：
-  - `ZCARD`；
-  - `ZRANGE 0 9 WITHSCORES` 取最老的 10 条，逐条 `EXISTS battle:settlement:pending:id:<pid>`，不存在即 `ZREM`（孤儿）；
+- **报数**：battle 节点在首次结算后装上 60 秒定时器（只捕获 `weak_ptr<自己>`）。每轮做三件事：
+  - 取一批索引成员。窗口在「头部」与「轮转游标」之间交替：偶数轮查头部，奇数轮按游标后移，扫到底绕回开头。对每个成员，用一段 Lua 原子地完成 `EXISTS battle:settlement:pending:id:<pid>`，不存在就 `ZREM`（孤儿）。
+    - 只查最老 10 条不够：记录不再过期之后，再也不上线的玩家会永久占住索引头部，排在后面的滚动升级孤儿就永远查不到。
+  - 清理完之后再读 `ZCARD` 与最老分数。这样头部的孤儿不会抬高年龄。
   - 打一行 `metric=battle_settlement_pending_backlog count=<n> oldest_age_s=<s> orphans_removed=<k>`。
-  
-  多个 battle 节点重复报相同的全局数，无害。
+
+  多个 battle 节点会重复报同一个全局数，无害。从未结算过的空闲节点不报。
+- **索引分数**：取写入方节点的墙钟毫秒，不在 Lua 里读 Redis TIME，脚本保持确定性。节点间秒级的墙钟偏差，对以天计的年龄指标没有影响。
 - **单槽语义不变**：同一时间每个玩家最多一局待结算，下一局的写入会覆盖。靠战斗锁一直保留到落盘销账来保证 [C]。去掉 TTL 不改变这一点；内存上界 = 有待结算的玩家数 × 一份结算 blob。
 - **在线玩家补读**：reaper 判定 FIGHTING 到期、只解冻时，对仍在线的实体顺手 GET 一次待结算记录，命中就走 `ApplyPendingSettlement`（与进场补应用同一函数）。今天这类奖励要等下一次 EnterScene 才补 [C]。
 - **用尽日志分两类**：`metric=battle_settlement_undelivered` 增加 `reason=no_target|not_acked`，便于设阈值（离线玩家 120 秒后必然出现 `no_target`）。

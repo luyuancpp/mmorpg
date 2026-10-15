@@ -13,7 +13,6 @@
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
-#include <memory>
 #include <string>
 #include <system_error>
 
@@ -23,7 +22,6 @@
 #include "table/code/buff_table.h"
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "thread_context/ecs_context.h"
-#include "time/system/time.h"
 #include <node_config_manager.h>
 
 namespace
@@ -38,8 +36,9 @@ constexpr uint32_t kPlainSubBuff = 9004;         // 无任何回调副作用的�
 constexpr int kManySubBuffCount = 16;
 
 // buff_type 一律显式写:缺省 0 是 kBuffTypeMovementSpeedReduction,会顺带去标记属性重算。
-// duration 取 -1(永久):正数会挂到期定时器,测试进程里没有 EventLoop。
-// combat_idle_seconds 取极大值,让 TickCombatIdleBuff 必然走到 AddSubBuffs 分支,不依赖墙钟快慢。
+// duration 取 -1(永久),不走到期定时器分支。
+// combat_idle_seconds 取极大值:新建 buff 的 last_time 是 proto 默认值 0,TickCombatIdleBuff 算出的
+// idleTime 就是当前毫秒数(约 1.8e12),远小于 1e15,必然走到 AddSubBuffs 分支;用例不再自己读墙钟。
 std::string FixtureBuffTableJson()
 {
 	std::string manySubs;
@@ -56,15 +55,6 @@ std::string FixtureBuffTableJson()
 		R"("sub_buff":[)" + manySubs + R"(]},)"
 		R"({"id":9004,"buff_type":10,"duration":-1})"
 		R"(]})";
-}
-
-// 让 TickCombatIdleBuff 认为"刚被打过",从而这一 tick 去加子 buff。
-void MarkCombatIdleJustReset(entt::entity actor, uint64_t buffId)
-{
-	auto &entry = tlsEcs.actorRegistry.get<BuffListComp>(actor).at(buffId);
-	const auto data = std::dynamic_pointer_cast<BuffNoDamageOrSkillHitInLastSecondsComp>(entry.dataPbPtr);
-	ASSERT_NE(nullptr, data);
-	data->set_last_time(TimeSystem::NowMilliseconds());
 }
 
 uint64_t AddBuffOrFail(entt::entity actor, uint32_t buffTableId)
@@ -119,7 +109,6 @@ TEST_F(BuffIntervalThinkTest, SubBuffDispelsOwner_StopsBeforeRemainingHandlers)
 {
 	const auto actor = tlsEcs.actorRegistry.create();
 	const auto ownerId = AddBuffOrFail(actor, kOwnerDispelledBySub);
-	MarkCombatIdleJustReset(actor, ownerId);
 
 	BuffSystem::OnIntervalThink(actor, ownerId);
 
@@ -133,7 +122,6 @@ TEST_F(BuffIntervalThinkTest, SubBuffDispelsOwner_ViaFrameUpdate)
 {
 	const auto actor = tlsEcs.actorRegistry.create();
 	const auto ownerId = AddBuffOrFail(actor, kOwnerDispelledBySub);
-	MarkCombatIdleJustReset(actor, ownerId);
 
 	BuffSystem::Update(1.0);  // == interval,恰好 tick 一次
 
@@ -149,7 +137,6 @@ TEST_F(BuffIntervalThinkTest, SubBuffsRehashList_OwnerRecordsEverySubBuff)
 {
 	const auto actor = tlsEcs.actorRegistry.create();
 	const auto ownerId = AddBuffOrFail(actor, kOwnerWithManySubs);
-	MarkCombatIdleJustReset(actor, ownerId);
 	const auto bucketsBefore = tlsEcs.actorRegistry.get<BuffListComp>(actor).bucket_count();
 
 	BuffSystem::OnIntervalThink(actor, ownerId);

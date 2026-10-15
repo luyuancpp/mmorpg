@@ -28,7 +28,7 @@
 | 3 | F003 | `TRANSFER_ERROR_MESSAGE` 把空 TLS tip 覆盖到 response，抹掉 `ReleaseSkill` 已写入的拒绝码，客户端收到类似成功的结果。 | TLS tip 无 id 且无参数时保留 response 原错误；非空 tip 仍转移并清理。 | 已有改动，待验证 |
 | 4 | F044 / F050 | 冷却表、技能上下文在生产初始化中缺失；缺冷却表还返回成功，技能效果阶段缺上下文而早退。 | actor 初始化守护段补挂两组件；冷却表缺失时返回 `kServiceUnavailable`。恢复上下文同时改变伤害、Buff 等路径的可达性。 | 已有改动，玩法变化待验收 |
 | 5 | F048 | 全新 actor registry 首个实体整数为 0，与协议“没有目标”的默认值冲突，首个角色可能无法被技能选中。 | `EcsContext` 构造时先 create / destroy 一次，推进首槽位版本。 | 已有改动，待验证 |
-| 6 | F040 | 遍历 Buff 表时添加子 Buff 可能 rehash，驱散可删除当前条目；回调返回后继续使用迭代器或 `BuffEntry&`，可能访问失效内存。 | 加成 Buff 先快照 id、逐条重查；生成子 Buff 前复制后续需要的技能上下文。 | 已有改动，待验证 |
+| 6 | F040 | 遍历 Buff 表时添加子 Buff 可能 rehash，驱散可删除当前条目；回调返回后继续使用迭代器或 `BuffEntry&`，可能访问失效内存。 | 加成 Buff 先快照 id、逐条重查；生成子 Buff 前复制后续需要的技能上下文。2026-10-15 补同类遗漏入口 `BuffSystem::OnIntervalThink`：三路周期回调之间改为每路前按 id 重查，并在 `buff_test` 补驱散自身与扩容用例（见 §3.3）。 | 已有改动，待验证 |
 | 7 | F047 | 对自己施法时施法者与目标共用上下文表，先按 key 删除、再使用失效迭代器删除同一项。 | 自目标不重复镜像；结束时删除施法者条目后，仅对不同目标清理镜像。 | 已有改动，待验证 |
 | 8 | F041 | Buff tick 只保证 Buff 表存在，却直接 `get` 三个属性组件；组件不齐时会断言或非法访问。 | 基础 / 派生属性改 `try_get`，缺失时记录并跳过；等级缺失按 1 级计算。 | 已有改动，待验证 |
 | 9 | F022 | 出站 TCP 客户端留在 thread_local registry，晚于 EventLoop 析构；客户端析构再次访问 loop，可能 use-after-free。 | 两跳 quit 前清理 `RpcClientPtr`；etcd / gRPC CQ、stub 和 watch 的关闭与排空仍未完成。 | **部分处理，剩余问题未关闭** |
@@ -61,6 +61,8 @@
 ### 3.3 Buff 与上下文：回调可能删除当前对象
 
 [buff_impl.cpp](../../cpp/libs/services/scene/combat/buff/system/buff_impl.cpp)存在两种不同失效：向 `unordered_map` 插入造成遍历迭代器失效，以及驱散删除条目造成该对象引用悬空。只预留容量不能解决后者；只做 id 快照也不能允许跨回调继续读旧引用。每次有副作用的回调之后，都要按稳定 id 重取仍需要的数据，或在回调前复制需要保留的值。
+
+2026-10-15 补登一处同类遗漏：[buff.cpp](../../cpp/libs/services/scene/combat/buff/system/buff.cpp) 的 `OnIntervalThink` 在第一路回调后仍用原迭代器调用另外两路。子 Buff 的驱散标签命中父 Buff 时，父 Buff 会在第一路回调中被删除，MSVC Debug 下随后的解引用直接断言。现表没有授予唯一 43 型 Buff 的入口，属潜伏缺陷。现已改为每一路之前按 id 重查，并在 [buff_test.cpp](../../cpp/tests/buff_test/buff_test.cpp) 新增 3 条用例；未编译、未运行，详见 PROGRESS 2026-10-15 条目。
 
 技能自目标删除还须满足“一份上下文只清理一次”；受伤回调须验证攻击者和受击者角色，不能靠含糊参数名推断。以上路径会在技能上下文恢复后共同变得可达，必须一起回归。
 

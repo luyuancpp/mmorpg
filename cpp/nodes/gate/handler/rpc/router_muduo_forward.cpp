@@ -14,6 +14,7 @@
 #include "network/network_utils.h"
 #include "node/system/grpc_call_deadline.h"
 #include "node/system/node/muduo_grpc_channel_slot.h"
+#include "node/system/node/node_util.h"
 #include "proto/client_rpc_router/client_rpc_router.pb.h"
 #include "proto/common/base/message.pb.h"
 #include "proto/common/base/node.pb.h"

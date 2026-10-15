@@ -1,4 +1,8 @@
-# Excel 6-Row Header Format (data_table_exporter)
+# 配置表格式说明入口（旧六行表头已停用）
+
+> **历史文档，已停用（2026-10-15 补注）**：2026-09-03 已迁移为权威 proto schema + Excel 数据。
+> 当前格式与流程见[现行中文说明](excel-6row-header-format_zh.md)及 [data/AGENTS.md](../../data/AGENTS.md)。
+> 下文保留旧六行表头设计，第 7 行起数据等约定不适用于当前仓库。
 
 **Date**: 2025-06 (session 3 of exporter rewrite)
 

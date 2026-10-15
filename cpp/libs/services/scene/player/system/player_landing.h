@@ -134,12 +134,22 @@ public:
 	// REPLACE 说法不一(设计 §5.1),唤醒对所有取值都该发。
 	static void OnEnteredScene(entt::entity player, uint32_t enterGsType);
 
+	// 唤醒来源。合并窗口只压同一来源的重复触发(进场被反复调用、gate 补发的重复路由),
+	// 不能拦战斗解冻那一次:典型场景是重连复用实体时玩家仍在战斗中,进场唤醒撞上 kAssetInBattle 回 RETRY,
+	// 几秒后战斗结束,解冻唤醒正是为了兜住这一刻;若被同一个 5 秒窗口吞掉,它就失去了唯一要覆盖的场景。
+	enum class AssetWakeReason : uint8_t
+	{
+		kEnteredScene,
+		kBattleFreezeCleared,
+	};
+
 	// 发布资产待办唤醒:PUBLISH assetop:wake <player_id 十进制>(设计 §5.2)。
 	//   - 实体带 PlayerFrozenComp(归属交接在途)时跳过:资产写路径此时本来就会拒绝;
-	//   - 同一实体 kAssetWakeCoalesceMs 内只发一次(PlayerLandingWakeComp);
+	//   - 只有 kEnteredScene 走合并窗口:同一实体 kAssetWakeCoalesceMs 内只发一次(PlayerLandingWakeComp);
+	//     kBattleFreezeCleared 直接发送,也不刷新窗口;
 	//   - Redis 未就绪 / 命令没发出去只打 WARN,不重试(唤醒丢了退回原退避);回调只在出错时打 WARN。
-	// 调用点:OnEnteredScene;战斗冻结解除(ClearBattleFreeze 之后,批次 D2)。
-	static void PublishAssetWake(entt::entity player);
+	// 调用点:OnEnteredScene(kEnteredScene);战斗冻结解除,即 player_battle.cpp 的 RemoveInBattleComp(kBattleFreezeCleared)。
+	static void PublishAssetWake(entt::entity player, AssetWakeReason reason);
 
 private:
 	// 整串都是十进制无符号整数才返回 true(不接受空串、符号、空白、溢出)。

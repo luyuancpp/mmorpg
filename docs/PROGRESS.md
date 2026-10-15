@@ -7983,3 +7983,54 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
 - **规范冲突,报负责人**:AGENTS.md §4 写的 proto 重生成命令 `cd go && build.bat` 只跑 goctl 包装、不产 pb,与实际流程(`dev_tools.ps1 proto-gen-build / proto-gen-run`)不符;AGENTS.md 本次没改。
 - **协调**:同一工作区并行的四个会话已约定先后。「玩家消息投递与位置管理」会话(其用户已确认)在本批之后接手设计 §7 / §9 的五项待办:踢线核对 player_id 并挪到 SetSession 之后;MarkOffline 与 LeaveScene 的竞态;ReleasePlayer 带预期 owner_epoch;scene_manager 落点 Lua 记会话身份;ExitGame 带登录代次、断线上报带 gate 实例号。「Route 水平扩展消息乱序问题」会话已在本批之后往 `SessionInfo` 追加成员,并在 `entergamelogic.go` 加会话栅栏检查点,不改铸造顺序。
 - **Java 版(AGENTS §12)**:对应 Java 版本号:无。状态:**不适用(结构上不存在)**。Java 每次进游戏都在库行上自增 `owner_epoch`,它本身就是永不清零的登录代次;scene 加载回调先比 pending 对象身份,再比库里与内存里的 epoch,才摘旧实例,且已有回归用例(`SceneWorldTest`)。`PARITY.md` 要带本仓 commit 号,待本批修正提交后登记。本批 proto 都是服务端内部消息,Java 仓届时跑 `ContractSync` 同步 `proto/` 目录。
+
+## 2026-10-15 配置表格式文档补同步
+
+- 用户指出 `docs/design/excel-6row-header-format_zh.md` 仍在介绍六行表头。核对提交 `722bac105`（2026-09-03）确认权威 schema 迁移早已落地，旧文档遗漏同步。
+- 中文说明改为当前格式：schema 在 `data/schema/*.proto`；xlsx 第 1 行列名、第 2–4 行空、第 5 行注释首行投影、第 6 行起数据。补充列名绑定、物理分组边界、字段号规则，以及仍保留旧五行解析但不自动识别六行格式的兼容边界。
+- 同名默认与英文旧副本增加历史标记并指向现行中文说明；`docs/README.md` 索引同步。保留原文件名以兼容链接。
+- 验证：对照配置、读取与 schema 实现完成静态复核；本次格式说明的本地链接检查及 `git diff --check` 通过。仅更正文档，未运行导表、构建或测试，未修改源表、生成物或运行代码。
+- Java 版（AGENTS.md §12）：对应 Java 版本号：无。本次为本仓导表文档补同步，未新增功能或修改两版共享契约，Java 版无需实现改动。
+
+## 2026-10-15 修复 Buff 周期回调跨回调复用迭代器(Claude,未编译、未测试)
+
+- **起因**:2026-10-14「继续审计迭代器与引用失效」一条的 P2。复核结论:成立,且比原报告多一条更实的路径。
+  - 原报告的扩容路径:`BuffSystem::OnIntervalThink` 第一路回调经 `TickCombatIdleBuff → AddSubBuffs → AddOrUpdateBuff` 往同一张 `BuffListComp` 插子 Buff,扩容后旧 `buffIt` 按标准失效;但 MSVC / libstdc++ 的扩容只搬桶不动节点,本平台没有可观察后果。
+  - 原报告漏掉的驱散自身路径:子 Buff 的 `dispel_tag` 命中发起 tick 的父 Buff 时,`DispelBuffsOnAwake → OnBuffExpire` 把父 Buff erase,随后两路对已释放节点解引用。MSVC Debug(本地 scene 只出 Debug)下迭代器检查会断言、进程终止;Release 下目前只形成悬空地址(Modifier 只处理 42 型、Motion 为空),属潜伏 UB。
+  - 可达性:现表唯一的 43 型是 Buff 18(子 Buff 17,无 `dispel_tag`),且没有任何技能 effect / 级联授予 18,两条路径在现网都走不到,属「改表即可触发」的潜伏缺陷。
+- **改动**:
+  - `cpp/libs/services/scene/combat/buff/system/buff.cpp`:`OnIntervalThink` 的三路 handler 放进函数指针数组,每一路之前 `try_get` + 按 id 重查,Buff 不在即返回。与 `UpdatePeriodicBuff`、`AddSubBuffsWithoutCheck` 的既有写法一致。
+  - `cpp/tests/buff_test/buff_test.cpp`:原 Smoke 占位换成 `BuffIntervalThinkTest` 3 条用例(夹具自带临时 `buff.json`,经 `tlsNodeConfigManager` 改配表目录后 `Load`):子 Buff 驱散父 Buff(直接调 / 经 `BuffSystem::Update` 两个入口);一次加 16 个子 Buff 强制扩容。驱散用例只在 Debug(IDL=2)下能让旧代码变红;扩容用例新旧代码都绿,只守结果。
+  - 提交状态:`buff.cpp` 修复与 `buff_test.cpp` 的第一版已被另一会话的工作区快照 `54c9d775d` 一并提交(不是本会话提交的);之后删掉多余墙钟写入的 `buff_test.cpp` 修订、本条与事故记录 F040 的补登仍未提交。
+- **复核**:一轮只读多代理工作流(修复正确性 / 测试正确性 / 原结论与可达性 / 同类排查,各条再做对抗复核)。修复判定正确;测试一条 low(多余的墙钟写入)已删。同类排查覆盖 buff 全目录、skill 中调 BuffSystem 的路径、`BuffSystem::Update` 的 view 遍历(EnTT 3.13.2 分页存储),未发现其他确认项;`AddOrUpdateBuff` 在 `OnBuffStart` 后仍用 `fst->second` 目前安全(监听者都不改 `BuffListComp`),新增 CombatState 监听者时须复查。
+- **另外确认的既存问题(未改,需拍板)**:
+  1. `buff_impl.cpp` `TickCombatIdleBuff`「脱战 N 秒给加成」实际失效:毫秒对秒比较差 1000 倍、比较方向反(只有被命中后约 5ms 内恰好 tick 才给)、`has_added_sub_buff` 从不复位(一生一次)、`last_time` 初值 0(从未被打永不给)。重构前 `0fbdc556f` 已是同样写法。改语义属玩法变更,需策划确认并同步 Java。
+  2. scene 侧 `AddOrUpdateBuff` 不读 `infinite_duration`,`duration=0` 一律当场到期;Buff 17(`infinite_duration=1`)挂上即消失,却仍把失效 id 记进父 Buff 的 `sub_buff_list_id`。
+  - 两者现网均因 Buff 18 无授予入口而不影响玩家。
+- **给 Codex 的验证**(仓库根目录,Debug|x64,MSBuild 串行 `/m:1`;`buff_test` 没有工程引用,链的是 `lib/scene.lib`,必须先重编 scene):
+  1. `msbuild cpp/libs/services/scene/scene.vcxproj /m:1 /p:Configuration=Debug /p:Platform=x64`
+  2. `pwsh tools/scripts/run_cpp_tests.ps1 -Build -Filter buff`:`BuffIntervalThinkTest` 3 例全绿。
+  3. `pwsh tools/scripts/run_cpp_tests.ps1 -Build -Filter skill`:skill.cpp 也调 BuffSystem,原有用例保持全绿。
+  - 若要修复前红证据:在隔离快照里只回退 `buff.cpp` 后重编 scene,驱散两例应以 STL 断言(0xC0000409、无 `[FAILED]` 行)判红;不要回退共享工作区。复核代理注意到本工作区 grpc 的 googletest 子模块未检出、`lib/` 只有 battle.pdb,需在依赖齐全的环境执行。
+- **Java 版(AGENTS §12)**:对应 Java 版本号:无。不适用(Java 没有 `BuffListComp`,且实时 Buff 未启用);上面两条既存问题若改语义,需两版同步。
+
+## 2026-10-15 entt 误用审计补完(Claude,只读)
+
+- **起因**:用户问代码里哪些地方乱用了 entt。2026-10-14 凌晨同一问题的审计,查找阶段已完成(100 条),复核只做完 55 条就撞上周额度。本次续跑补完剩下 45 条的复核和 2 条 high 的二审,并从 4 个补漏视角再扫一遍:同模式扩散、未覆盖文件与生成器模板、`tlsEcs` 线程亲和、细粒度 API 语义。
+- **结果**:共 110 条,102 条成立(1 high / 24 medium / 77 low),8 条被推翻。结论、HEAD 修复状态、修复注意事项和全部条目都写在 `docs/design/ecs-entt-misuse-audit-20261015.md`,已登记到 `docs/README.md`。
+- **HEAD(`ebccaf04d`)状态**:13 条 high/medium 已由「代码中的 entt 使用问题」会话修好或部分修好。仍未修的 medium:
+  - Kafka 入口没有事件白名单(F001/F002/F013/F098)
+  - 存盘 Marshal 用 `get_or_emplace`,会写出零值(F059/F060)
+  - 节点实体销毁前不先 Shutdown CQ(F010)
+  - 生成的 `Send*` 无守卫 `get`(F100)
+  - 停机后单例被重新造空(F008)
+  - `tlsNodeContextManager` 的清理只做了一半(F012/F022)
+  - scene_id 这个 GUID 被当成实体(F091)
+  - no_caster buff 叠层失效(C003,本次新发现)
+  - 实体整数当客户端 actor ID(F080,入站已防住)
+- **修复时要注意**:
+  - `dispatcher.clear()` 不会断开 sink,F009/F083 还没修掉。
+  - 生成的流式 gRPC 客户端把可移动的 protobuf 响应组件地址交给了异步 `Read`(C008)。修 F010/F012 时必须先 `TryCancel`,再 Shutdown 并排空 CQ,最后才能销毁节点实体。
+- **线程亲和专项**:没有发现问题。ECS 只在唯一的 loop 线程上访问,gRPC、Kafka、etcd 的回调都正确投回了 loop。
+- **验证**:纯只读审计,没有改代码,也没有运行构建或测试,不需要 Codex 执行代码验证。`docs/README.md` 的索引行是我按 `gen_docs_index.py` 的规则手工补的,建议 Codex 顺手跑一下 `python tools/scripts/gen_docs_index.py --check` 确认一致。
+- **Java 版(AGENTS §12)**:对应 Java 版本号:无。不适用,Java 版不用 entt。但 C003 的叠层口径和「技能目标必须同场景」是客户端可见行为,Java 版是否等价还没核对。
