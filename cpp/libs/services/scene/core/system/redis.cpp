@@ -2,6 +2,7 @@
 
 #include "muduo/net/EventLoop.h"
 
+#include "player/system/db_task_dispatch_system.h"
 #include "player/system/dirty_save_stats.h"
 #include "player/system/player_lifecycle.h"
 #include "thread_context/ecs_context.h"
@@ -24,6 +25,9 @@ void RedisSystem::Initialize(muduo::net::EventLoop* loop)
     // owner_epoch CAS 拒绝(Lua 比对 player:{id}:owner_epoch 不等)与"存盘失败"是两种语义:
     // 失败要重试、拒绝是终态(本节点已被废黜,再试也是拒)。分开接线,别让废黜走进重试队列。
     playerRedis->SetSaveRejectedCallback(PlayerLifecycleSystem::HandlePlayerSaveRejected);
+    // DBTask 投递记账:登记本线程 KafkaProducer 的逐条回执监听器,DBTask 落定后交给生命周期(下线收尾的回执闸门)。
+    // 必须早于任何存盘(存盘只可能发生在玩家进场之后)。函数指针,不绑任何对象。
+    DbTaskDispatchSystem::Initialize(&PlayerLifecycleSystem::OnDbTaskDispatchSettled);
 
     tlsRedis.SetReconnectCallback([this]()
                                   {
@@ -69,6 +73,15 @@ void RedisSystem::Initialize(muduo::net::EventLoop* loop)
         // BeginShutdown 只取消周期存盘,本定时器在停机 drain 期间仍在跑:停机谓词等待确认表清空靠的就是它。
         PlayerLifecycleSystem::SweepRelocateConfirms(relocate_confirm::Clock::now(), /*reconnected=*/false); });
     retryTimerActive_ = true;
+
+    // DBTask 投递回执的驱动点(DbTaskDispatchSystem::Pump):poll() 派发回执 → 330s 票据超时兜底 → 把落定的玩家交给
+    // PlayerLifecycleSystem::OnDbTaskDispatchSettled。回执只在本线程的 poll / flush / send 里派发,空闲节点上没有 send()
+    // 来驱动,下线收尾会一直等;50ms 让收尾正常只多 ≤ 50ms。BeginShutdown **不**取消它:停机 drain 期间被保留 / 等回执的
+    // 退出实体要靠它推完(停机谓词按 IsSaveInFlight 等这些实体)。lambda 无捕获,不绑 this。
+    static constexpr double kDbTaskDispatchPumpIntervalSec = 0.05;
+    dbTaskPumpTimerId_ = loop->runEvery(kDbTaskDispatchPumpIntervalSec, []
+                                        { DbTaskDispatchSystem::Pump(); });
+    dbTaskPumpTimerActive_ = true;
 
     // Periodically log a snapshot of internal queue sizes so operators can spot
     // a Redis stall (rising pending_loads / pending_saves) without enabling

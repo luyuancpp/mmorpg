@@ -22,6 +22,9 @@ constexpr size_t kHeaderEntryOverheadBytes = 32;
 // 存活探测 PING 的 8 字节负载,只用于日志里辨认;ACK 的匹配不依赖它(同一时刻至多一个探测在途)。
 constexpr uint8_t kProbePingPayload[8] = {'m', 'u', 'd', 'u', 'o', 'g', 'r', 'p'};
 
+// 双向流待发缓冲里已交给 nghttp2 的前缀超过这个量、且占缓冲一半以上时挪掉(见 ReadRequestBody)。
+constexpr size_t kPendingSendCompactBytes = 64 * 1024;
+
 std::string_view AsView(const uint8_t *data, size_t len)
 {
     return std::string_view(reinterpret_cast<const char *>(data), len);
@@ -198,7 +201,38 @@ struct ClientSessionCallbacks
         return 0;
     }
 
-    static int OnFrameRecv(nghttp2_session *, const nghttp2_frame *frame, void *userData)
+    static int OnFrameRecv(nghttp2_session *session, const nghttp2_frame *frame, void *userData)
+    {
+        const int result = HandleFrameRecv(frame, userData);
+        CloseStreamEndedByPeer(session, frame, Self(userData));
+        return result;
+    }
+
+    // 双向流:对端已经带 END_STREAM 结束了流(trailers / trailers-only / 非 gRPC 响应的最后一个 DATA),而本端方向还开着
+    // (DATA 挂在 DEFERRED、调用方还没 WritesDone)。nghttp2 只把流置为 half-closed(remote),两端都关之前不回调流关闭,
+    // 上层就永远收不到 onClose。照 grpc-go 客户端 closeStream(rst=true) 的做法补一个 RST_STREAM(NO_ERROR):
+    // 流随即关闭,BuildOutcome 按已收到的 trailers(或 HTTP 状态)给出结果。grpc-go 服务端自己会在 trailers 后补 RST,
+    // 这里是为了不依赖服务端的这个行为(代理、其他实现)。
+    static void CloseStreamEndedByPeer(nghttp2_session *session, const nghttp2_frame *frame, ClientSession &self)
+    {
+        if ((frame->hd.type != NGHTTP2_HEADERS && frame->hd.type != NGHTTP2_DATA) ||
+            (frame->hd.flags & NGHTTP2_FLAG_END_STREAM) == 0)
+        {
+            return;
+        }
+        auto *stream = self.FindStream(frame->hd.stream_id);
+        if (stream == nullptr || !stream->streaming || stream->remoteEnded || stream->localStatus)
+        {
+            return; // localStatus:本端已经发过 RST(截止 / 拆包错误 / 超限),不再补发
+        }
+        stream->remoteEnded = true;
+        if (nghttp2_session_get_stream_local_close(session, frame->hd.stream_id) == 0)
+        {
+            nghttp2_submit_rst_stream(session, NGHTTP2_FLAG_NONE, frame->hd.stream_id, NGHTTP2_NO_ERROR);
+        }
+    }
+
+    static int HandleFrameRecv(const nghttp2_frame *frame, void *userData)
     {
         auto &self = Self(userData);
         self.observer_.OnFrameReceived(frame->hd.type);
@@ -225,7 +259,9 @@ struct ClientSessionCallbacks
                 if (!informational)
                 {
                     stream->responseHeadersReceived = true;
-                    if (stream->streaming && !stream->localStatus)
+                    // 只对合法 gRPC 响应头回调 onHeaders;代理回的 503 等由流结束时的状态映射报告(§4.3)。
+                    if (stream->streaming && !stream->localStatus && stream->httpStatus == 200 &&
+                        stream->contentTypeIsGrpc)
                     {
                         self.observer_.OnStreamHeaders(frame->hd.stream_id, stream->initialMetadata);
                     }
@@ -293,19 +329,24 @@ struct ClientSessionCallbacks
             return 0;
         }
         Status status = stream->deframer.Feed(data, len, stream->messages);
-        if (!status.ok())
-        {
-            self.SetLocalErrorAndReset(streamId, *stream, std::move(status), NGHTTP2_CANCEL);
-            return 0;
-        }
         if (stream->streaming)
         {
-            // 双向流:每条完整消息立即交出去,不在会话里攒(长流上消息数没有上限)。
+            // 双向流:每条完整消息立即交出去,不在会话里攒(长流上消息数没有上限)。拆包出错时也先交付这个 DATA 块里
+            // 违约之前已经完整的消息,再按本地错误结束流。
             for (auto &message : stream->messages)
             {
                 self.observer_.OnStreamMessage(streamId, std::move(message));
             }
             stream->messages.clear();
+            if (!status.ok())
+            {
+                self.SetLocalErrorAndReset(streamId, *stream, std::move(status), NGHTTP2_CANCEL);
+            }
+            return 0;
+        }
+        if (!status.ok())
+        {
+            self.SetLocalErrorAndReset(streamId, *stream, std::move(status), NGHTTP2_CANCEL);
             return 0;
         }
         if (stream->messages.size() > 1)
@@ -368,6 +409,14 @@ struct ClientSessionCallbacks
                 {
                     *dataFlags |= NGHTTP2_DATA_FLAG_EOF;
                 }
+            }
+            else if (stream->pendingSendOffset >= kPendingSendCompactBytes &&
+                     stream->pendingSendOffset * 2 >= stream->pendingSend.size())
+            {
+                // 流控窗口成为瓶颈、写方持续追加时缓冲一直取不空:已交给 nghttp2 的前缀要及时丢掉,
+                // 否则内存随累计发送量增长(待发上限只约束未发部分)。前缀占一半以上才挪,摊还 O(1)。
+                stream->pendingSend.erase(0, stream->pendingSendOffset);
+                stream->pendingSendOffset = 0;
             }
             return static_cast<nghttp2_ssize>(chunk);
         }
@@ -570,16 +619,13 @@ ClientSession::SubmitResult ClientSession::SubmitRequest(const std::string &path
 bool ClientSession::AppendStreamMessage(int32_t streamId, std::string_view framedMessage)
 {
     auto *stream = FindStream(streamId);
-    if (stream == nullptr || !stream->streaming || stream->writesDone || stream->localStatus || !session_)
+    if (stream == nullptr || !stream->streaming || stream->writesDone || stream->localStatus || stream->remoteEnded ||
+        !session_)
     {
         return false;
     }
     stream->pendingSend.append(framedMessage.data(), framedMessage.size());
-    if (stream->dataDeferred)
-    {
-        stream->dataDeferred = false;
-        nghttp2_session_resume_data(session_.get(), streamId);
-    }
+    ResumeDeferredData(streamId, *stream);
     return true;
 }
 
@@ -591,10 +637,26 @@ void ClientSession::HalfCloseStream(int32_t streamId)
         return;
     }
     stream->writesDone = true;
-    if (stream->dataDeferred)
+    ResumeDeferredData(streamId, *stream);
+}
+
+void ClientSession::ResumeDeferredData(int32_t streamId, StreamState &stream)
+{
+    if (!stream.dataDeferred)
     {
-        stream->dataDeferred = false;
-        nghttp2_session_resume_data(session_.get(), streamId);
+        return;
+    }
+    stream.dataDeferred = false;
+    const int rv = nghttp2_session_resume_data(session_.get(), streamId);
+    if (rv != 0)
+    {
+        // 理论上只有内存不足或流已从发送队列摘除才会失败;不处理的话这个流会静默停写。
+        LOG_ERROR << "nghttp2_session_resume_data failed on stream " << streamId << ": " << nghttp2_strerror(rv)
+                  << "; resetting the stream";
+        SetLocalErrorAndReset(streamId, stream,
+                              Status(StatusCode::kInternal, std::string("failed to resume stream data: ") +
+                                                                nghttp2_strerror(rv)),
+                              NGHTTP2_INTERNAL_ERROR);
     }
 }
 

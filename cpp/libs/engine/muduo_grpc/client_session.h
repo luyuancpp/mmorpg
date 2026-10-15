@@ -152,6 +152,8 @@ private:
         size_t pendingSendOffset{0};
         bool writesDone{false};
         bool dataDeferred{false};
+        // 对端已带 END_STREAM 结束了流(本端随即补 RST_STREAM(NO_ERROR),见 .cpp 的 CloseStreamEndedByPeer);之后不再接受写入。
+        bool remoteEnded{false};
 
         // 当前正在读的头部块
         enum class Block
@@ -187,6 +189,8 @@ private:
 
     StreamOutcome BuildOutcome(StreamState &stream, uint32_t http2ErrorCode) const;
     void SetLocalErrorAndReset(int32_t streamId, StreamState &stream, Status status, uint32_t http2ErrorCode);
+    // 双向流的 DATA 挂在 DEFERRED 时唤醒它;失败则按本地错误重置该流(不让它静默停写)。
+    void ResumeDeferredData(int32_t streamId, StreamState &stream);
     StreamState *FindStream(int32_t streamId);
     const StreamState *FindStream(int32_t streamId) const;
     // unary 与双向流共用:拼请求头、提交给 nghttp2、登记流。grpcTimeout 为空则不发该头。

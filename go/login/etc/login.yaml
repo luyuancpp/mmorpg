@@ -448,6 +448,11 @@ AuthProviders:
 #   - reconnect/replace callers (existing PlayerSession) bypass the queue.
 #
 # Roll-out checklist:
+#   门槛(2026-10-15):打开排队之前,docs/handoff/launch-readiness-20261013/spec_G4b.md §7「合入门槛」的三项
+#      (G1b 多 zone 用例与 G4b-G 由 Codex 跑绿、spec_G4b-G.md §8.4 真实 Redis 冒烟记进 docs/PROGRESS.md)必须都已满足。
+#      K8s 部署由 tools/scripts/k8s_deploy.ps1 的 $script:LoginQueueMergeGateCleared 机械拦截(未清时各档位排队都关、
+#      -LoginQueue on 拒绝);手改本文件或 ConfigMap 的 Enabled 同样违规,脚本拦不住。清门槛本身的冒烟用 scratchpad 里的
+#      配置副本,本文件 Enabled 保持 false。
 #   0. 先在 Enabled=false 下把所有 zone 的 login 升到 2026-10-13(G4b-G,含 G1b)之后的版本,再打开 Enabled。
 #      排队开着混跑时:同一个 zone 可能短暂两个 leader(G1b);新旧两种在途占位键互不可见,旧版副本放行 / 取走的
 #      部分仍按旧版超发(G4b-G)。不丢人、不重复放行(docs/design/login-queue-2026-05.md §7.1 与「在途占位的生命周期」)。

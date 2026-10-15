@@ -4364,6 +4364,12 @@ PlayerLifecycleSystem::SaveResult PlayerLifecycleSystem::SavePlayerToRedisImpl(
 	const std::string dbTaskTopic = GetDbTaskTopic(
 		homeZoneId, tlsNodeConfigManager.GetBaseDeployConfig().db_task_topic_generation());
 
+	// DBTask 投递记账(DbTaskDispatchSystem):本次存盘领一个代号,每条 DBTask 一张票据(关联号随消息进 Kafka、
+	// 回执时带回)。任何一条没入队(序列化失败 / 同步被拒)或之后回执失败,该玩家记一笔「欠 MySQL 一次整份写」:
+	// 下一次存盘的 dirty-save 快路径让路,下线收尾等回执、必要时重存。返回值语义不变(kQueued = 已发出 Redis 存盘)。
+	const db_task_dispatch::SaveGeneration saveGeneration = DbTaskDispatchSystem::BeginSave(playerId);
+	bool allDbTasksQueued = true;
+
 	auto sendSubTableTask = [&](const google::protobuf::Message &subMsg)
 	{
 		const std::string tableName(subMsg.GetDescriptor()->full_name());
@@ -4373,6 +4379,8 @@ PlayerLifecycleSystem::SaveResult PlayerLifecycleSystem::SavePlayerToRedisImpl(
 		{
 			LOG_ERROR << "[SavePlayerToRedis] Serialize failed: table=" << tableName
 					  << " player=" << playerId;
+			DbTaskDispatchSystem::MarkLocalFailure(playerId, saveGeneration);
+			allDbTasksQueued = false;
 			return;
 		}
 
@@ -4391,20 +4399,31 @@ PlayerLifecycleSystem::SaveResult PlayerLifecycleSystem::SavePlayerToRedisImpl(
 		{
 			LOG_ERROR << "[SavePlayerToRedis] DBTask serialize failed: table=" << tableName
 					  << " player=" << playerId;
+			DbTaskDispatchSystem::MarkLocalFailure(playerId, saveGeneration);
+			allDbTasksQueued = false;
 			return;
 		}
 
-		auto err = KafkaProducer::Instance().send(dbTaskTopic, dbTaskBytes, playerIdStr);
-		if (err != RdKafka::ERR_NO_ERROR)
+		const auto sent =
+			DbTaskDispatchSystem::SendDbTask(playerId, saveGeneration, dbTaskTopic, dbTaskBytes, playerIdStr);
+		if (!sent.queued)
 		{
+			allDbTasksQueued = false;
 			LOG_ERROR << "[SavePlayerToRedis] Kafka send failed: table=" << tableName
 					  << " player=" << playerId << " topic=" << dbTaskTopic
-					  << " err=" << RdKafka::err2str(err);
+					  << " err=" << sent.error;
 		}
 	};
 
 	sendSubTableTask(message->player_database_data());
 	sendSubTableTask(message->player_database_1_data());
+	DbTaskDispatchSystem::FinishSave(playerId, saveGeneration, allDbTasksQueued);
+	if (!allDbTasksQueued)
+	{
+		LOG_ERROR << "[SavePlayerToRedis] player " << playerId << ": not every DB write task was queued to Kafka (topic="
+				  << dbTaskTopic << "); MySQL lags Redis until the next save re-sends the full state"
+				  << " (metric=db_task_produce_rejected)";
+	}
 
 	LOG_INFO << "[SavePlayerToRedis] Player " << playerId << " saved to Redis, DB write tasks enqueued"
 			 << " (topic=" << dbTaskTopic << ", owner_epoch=" << ownerEpoch << ")";

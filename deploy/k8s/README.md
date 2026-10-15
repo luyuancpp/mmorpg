@@ -446,6 +446,19 @@ pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-all-down -ZonesConfigPath de
     - 与开关无关:gateway ConfigMap 的 `spring.data.redis` 在 `MMORPG_REDIS_PASSWORD` 非空时写 `password`(staging / prod 必须设该变量;dev 档没设时回落空串,不写)。
       Bucket4j 的 Lettuce 客户端只从这个属性取口令,而 release 档的 Redis 带 `--requirepass`;不写口令时限流过不了 Redis 认证,要么每次调用都 fail-open 放行,
       要么 gateway 建连接时就起不来(取决于 Lettuce 的握手行为,未实测)。口令与 go-svc ConfigMap 一样是明文。
+  - **登录排队的合入门槛(2026-10-15 更正注:上面「staging / prod 开」目前只对 `-GatewayRateLimit` 成立)**。G4b-2 的 login 段已先于合入门槛
+    随 `e4ff1d165` / `ebccaf04d` 入库(越序),`k8s_deploy.ps1` 用脚本常量 `$script:LoginQueueMergeGateCleared`(当前 `$false`)机械拦截:
+    - 三项门槛(`docs/handoff/launch-readiness-20261013/spec_G4b.md` §7「合入门槛」):① G1b 规格指定的多 zone 用例(L-01 验收:每个 zone 的队列都能出队)
+      由 Codex 跑绿;② G4b-G 由 Codex 跑绿;③ `spec_G4b-G.md` §8.4 的真实 Redis 最小冒烟跑通,命令原文与输出摘要记进 `docs/PROGRESS.md`。
+    - 门槛未清时:`-LoginQueue auto` 在任何档位都解析为关(写路径打印是 `login_queue=off(-LoginQueue auto)`,下文计划行示例里的 `login_queue=on` 要等门槛清掉),
+      本次部署 login 的非 dev 档另打 `[PeakShaving]LoginQueueGate=closed` 警告;`-LoginQueue on` 在参数解析后、任何 kubectl 之前拒绝(`*-down` / `*-status` 带它也拒绝)。
+      login ConfigMap 不写 `Queue` / `Secrets.QueueToken`,`MMORPG_LOGIN_QUEUE_TOKEN_SECRET` 也不要求。`-GatewayRateLimit` 不受影响。
+    - 放开:三项都满足、`docs/PROGRESS.md` 有记录之后,由负责人在同一提交里把常量改为 `$true`,并在常量注释里写上那条 PROGRESS 条目的标题;
+      契约测试 `k8s_deploy_contract.tests.ps1` 里断「门槛未清」产物的两例(用例 19 / 20)随之改写。
+    - 门槛未清时手改 login ConfigMap 或 `go/login/etc/login.yaml` 的 `Queue.Enabled` 同样违规(文档约束,脚本拦不住)。清门槛本身要跑的真实 Redis 冒烟
+      用本地栈 + scratchpad 里的 login 配置副本,不经过 `k8s_deploy.ps1`,不受这道门禁影响。
+    - 契约测试用的环境变量 `MMORPG_TEST_LOGIN_QUEUE_GATE_CLEARED=1` 只在 `-DryRun` 下视为门槛已清;不带 `-DryRun` 时只要设置了它,脚本就在任何写操作之前拒绝。
+      运维机器上不要设它。
   - **环境变量 `MMORPG_LOGIN_QUEUE_TOKEN_SECRET`**:login 排队令牌的 HMAC 密钥,写进 login ConfigMap 的 `Secrets.QueueToken.Value`(与兄弟项 `InternalAuth` 同为明文)。
     staging / prod、排队开、且本次部署 login(`zone-up` / `all-up`,给了 `-GoSvcRegistry`、不带 `-SkipGoSvc`)时**必填**:非空、不是占位串、至少 32 位,
     并且与 `MMORPG_GATE_TOKEN_SECRET`、`MMORPG_INTERNAL_AUTH_SECRET` 都不同(原样比较,不 trim);不满足即在任何写操作之前拒绝,报错只点变量名、不回显值。
@@ -463,6 +476,8 @@ pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-all-down -ZonesConfigPath de
     另有三条英文 WARNING,只告警、不阻断,只在本次确实部署对应服务时打;开头都是不含空格的锚点(控制台可能在空格处折行,按锚点 grep):
     - `[PeakShaving]GatewayRateLimit=off`:非 dev 档关了限流;
     - `[PeakShaving]LoginQueue=off`:非 dev 档关了排队;
+    - `[PeakShaving]LoginQueueGate=closed`(2026-10-15 新增,上文「三条」更正为四条,四个锚点互不为前缀):非 dev 档按档位本该开排队,
+      却因合入门槛未清被关(见上面「登录排队的合入门槛」)。这时不再打上一条:它说的「不粘滞、下次部署恢复」在门槛未清时不成立;显式 `-LoginQueue off` 仍打上一条;
     - `[PeakShaving]GatewayTrustedProxies=unset`:限流开着却没给 `-GatewayTrustedProxies`。IP 桶按 socket 对端分:集群内直连的 robot 按 Pod IP 共用一个桶(5/s、突发 20),
       前面若有未登记的 L7 代理,全体玩家共用一个桶。已有 Ingress 却不给 trusted proxies 的情形由入口预检直接拒绝,不走这条警告。
   - **参数不粘滞**(与 `-GateRouterMode` 同一口径):每次部署按本次取值生成,不从集群读回。以 `off` 止血之后,下一次部署 —— 日常 `zone-up`、合服后的 `zone-up`、
@@ -490,6 +505,7 @@ pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-all-down -ZonesConfigPath de
   - **③ 对已在运行的 staging / prod zone 首次打开排队之前**,先核对该 zone 当前在线(各 gate 在 etcd NodeInfo 里自报的 `player_count` 之和,login 算余量用的就是它)
     低于 `LoginQueueZoneCapacity`(5000)。否则排队一开,新登录全部入队,直到在线降到 5000 以下才出队,dispatcher 不会因此报错(规格 R20)。
     超过的先调大常量(见下一条),或先只开 gateway 限流(`-LoginQueue off`)。
+    (2026-10-15 补:「首次打开排队」还要先过上面的合入门槛;门槛未清时排队在任何环境都关着,本条暂不适用。)
   - **调阈值**:阈值只在常量表 `$script:PeakShavingLaunchTier`(不设覆盖参数);改常量后重跑部署,gateway / login 按指纹自动滚动。限流阈值另外要**清桶**:
     Bucket4j 只在桶不存在时按新配置建桶,而持续有流量时桶的 TTL 一直被刷新、不会过期,所以改 rps / burst 后旧桶一直按旧配置跑
     (推断:`AssignGateRateLimiter` 用 `build(key, supplier)`、没有配置替换,依 Bucket4j 8.x 语义,未实测)。在维护窗口对共享 Redis(`redis.<InfraNamespace>`,
@@ -820,6 +836,8 @@ friend 与 trade 同形:全局池服务(`$GoSvcCatalogue.friend`,`Global = $true
   规划档与 `zones.json` 的峰值 ≤ `max_connections`;公式自检(复现 2026-10-12 核算的 Z=4 → 920、Z=2 → 500);ConfigMap 镜像值 == 服务 yaml;
   连 MySQL 的 ConfigMap 只有总账认识的那几个;写路径打印那一行;10 个 zone 打超限警告且不阻断;db 指标端口三处一致;告警阈值与规划档同源。
   `.github/workflows/deploy-config-tests.yml` 的触发路径已加上 gateway 的 `application.yaml` 与 `deploy/k8s/*.yaml` / `*.json`,改这些输入也会跑契约测试。
+  (2026-10-15 更正注:上面的「89 → 98」只是本项合入当时的计数,此后该文件又陆续加了用例(削峰 G4b、登录排队合入门槛等),用例数不再写死,
+  判据以 `Complete-TestRun` 汇总的 fail=0 为准。)
 
 ## Kafka 审计 topic 预建(kafka-topic-init,2026-09-08,node-id-overhaul-plan §2.0c)
 

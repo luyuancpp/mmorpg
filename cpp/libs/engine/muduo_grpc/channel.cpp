@@ -825,6 +825,13 @@ std::shared_ptr<ClientStream> Channel::StartStream(std::string method, Metadata 
     // ClientStream 的构造函数是私有的(只给 Channel 用),这里不能用 make_shared。
     std::shared_ptr<ClientStream> handle(new ClientStream(weak_from_this(), record, record->id));
 
+    if (!record->callbacks.onClose)
+    {
+        // onClose 是唯一的结束通知:没有它调用方永远不知道流结束了。按调用方错误拒绝,不开流。
+        LOG_ERROR << "muduo_grpc::Channel::StartStream called without an onClose callback, method=" << record->path;
+        record->closed = true;
+        return handle;
+    }
     for (const auto &[key, value] : record->metadata)
     {
         if (!IsValidCustomMetadataKey(key) || (!IsBinaryHeaderKey(key) && !IsValidAsciiMetadataValue(value)))
@@ -958,11 +965,17 @@ bool Channel::StreamWrite(uint64_t id, std::string message)
     std::string framed;
     AppendLengthPrefixedMessage(framed, message);
 
+    // 待发上限只在「已经有积压」时生效:缓冲为空时总放行一条(单条大小已受 maxSendMessageBytes 约束),
+    // 否则大于 maxStreamPendingSendBytes 的单条消息永远发不出去。内存上界 = max(上限, 一条消息) + 一条消息。
+    const auto overLimit = [this, &framed](size_t pending)
+    { return pending != 0 && pending + framed.size() > options_.maxStreamPendingSendBytes; };
     if (!record->active)
     {
-        if (record->pendingBytes + framed.size() > options_.maxStreamPendingSendBytes)
+        if (overLimit(record->pendingBytes))
         {
-            StreamCancelForError(record, Status(StatusCode::kResourceExhausted, "stream send buffer full"));
+            StreamCancelForError(record, Status(StatusCode::kResourceExhausted,
+                                                "stream send buffer full (" + std::to_string(record->pendingBytes) +
+                                                    " bytes pending before the stream opened)"));
             return false;
         }
         record->pendingBytes += framed.size();
@@ -974,9 +987,11 @@ bool Channel::StreamWrite(uint64_t id, std::string message)
     {
         return false; // 连接正在拆,流结束事件马上会到
     }
-    if (transport->PendingStreamBytes(record->streamId) + framed.size() > options_.maxStreamPendingSendBytes)
+    if (const size_t pending = transport->PendingStreamBytes(record->streamId); overLimit(pending))
     {
-        StreamCancelForError(record, Status(StatusCode::kResourceExhausted, "stream send buffer full"));
+        StreamCancelForError(record, Status(StatusCode::kResourceExhausted,
+                                            "stream send buffer full (" + std::to_string(pending) +
+                                                " bytes not yet accepted by flow control)"));
         return false;
     }
     return transport->WriteStreamMessage(record->streamId, framed);
@@ -1019,6 +1034,14 @@ void Channel::StreamWritesDone(uint64_t id)
 
 void Channel::StreamCancel(uint64_t id)
 {
+    if (!LoopIsCurrent())
+    {
+        // 句柄在 loop 线程之外析构(漏了关机清理):ClientStream::Cancel 已就地压住回调,这里不动 streams_ / 连接,
+        // 否则会与 loop 线程竞争。流随通道析构或连接断开结束。
+        LOG_ERROR << "muduo_grpc::ClientStream cancelled outside its EventLoop thread on channel " << target_
+                  << "; the stream is left to the channel teardown";
+        return;
+    }
     const auto it = streams_.find(id);
     if (it == streams_.end())
     {

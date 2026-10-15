@@ -77,9 +77,11 @@ struct ChannelOptions
     size_t maxPendingOutputBytes{1024 * 1024};
     std::chrono::milliseconds connectTimeout{20000};
     std::chrono::milliseconds keepaliveTimeout{20000};
-    // 周期 keepalive(§13.3):0 = 关(Go 业务服务通道);etcd 通道设 30s。
+    // 周期 keepalive(§13.3):0 = 关(Go 业务服务通道);etcd 通道设 30s。只给 keepalive 下限明确且远低于本值的
+    // 服务端开(etcd 默认 5s);对 grpc-go 默认强制策略(有流时 5min)的通道开启会被 too_many_pings 断开。
     std::chrono::milliseconds keepaliveTime{0};
-    // 单个双向流还没交给 nghttp2 的待发字节上限;超出以 RESOURCE_EXHAUSTED 结束该流(§13.2)。
+    // 单个双向流还没交给 nghttp2 的待发字节上限;已有积压时再写超出就以 RESOURCE_EXHAUSTED 结束该流(§13.2)。
+    // 缓冲为空时总放行一条(单条另受 maxSendMessageBytes 约束)。流不计入 maxOutstandingCalls。
     size_t maxStreamPendingSendBytes{1024 * 1024};
     BackoffOptions backoff;
 };
@@ -132,7 +134,8 @@ struct StreamRecord
 };
 } // namespace detail
 
-// 双向流句柄。只能在通道的 EventLoop 线程使用;析构等于 Cancel。通道先没了,句柄的操作一律失败、不崩。
+// 双向流句柄。只能在通道的 EventLoop 线程使用与析构;析构等于 Cancel。通道先没了,句柄的操作一律失败、不崩。
+// 对端带 END_STREAM 结束流(trailers / trailers-only)时本端立即补 RST_STREAM(NO_ERROR),onClose 不等调用方 WritesDone。
 class ClientStream
 {
 public:

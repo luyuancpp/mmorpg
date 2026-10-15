@@ -88,18 +88,22 @@ func TestGrpcInitTemplateSupportsMultipleServicesForSameNodeType(t *testing.T) {
 		t.Fatalf("render grpc init template: %v", err)
 	}
 	output := rendered.String()
+	// 只检查目标函数，避免新增的关机函数把合法的互斥分发带进 deadline 断言。
+	functionOutput := func(signature string) string {
+		t.Helper()
+		start := strings.Index(output, signature)
+		if start < 0 {
+			t.Fatalf("生成结果缺少函数 %q", signature)
+		}
+		end := strings.Index(output[start:], "\n}\n")
+		if end < 0 {
+			t.Fatalf("生成结果缺少函数 %q 的结束边界", signature)
+		}
+		return output[start : start+end+len("\n}\n")]
+	}
 
-	completionStart := strings.Index(output, "void HandleCompletedQueueMessage(entt::registry& registry)")
-	initStart := strings.Index(output, "void InitGrpcNode(")
-	if completionStart < 0 || initStart < 0 || completionStart >= initStart {
-		t.Fatal("expected completion and init functions in rendered output")
-	}
 	// deadline 按目标节点类型分发:同一节点类型的两个文件都要收到,分支互相独立(与 InitGrpcNode 同理)。
-	deadlineStart := strings.Index(output, "void SetGrpcCallDeadline(")
-	if deadlineStart < 0 || deadlineStart >= completionStart {
-		t.Fatal("expected SetGrpcCallDeadline before HandleCompletedQueueMessage in rendered output")
-	}
-	deadlineOutput := output[deadlineStart:completionStart]
+	deadlineOutput := functionOutput("void SetGrpcCallDeadline(")
 	if strings.Contains(deadlineOutput, "else if") {
 		t.Fatal("deadline dispatch for same-node gRPC clients must use independent branches")
 	}
@@ -111,7 +115,8 @@ func TestGrpcInitTemplateSupportsMultipleServicesForSameNodeType(t *testing.T) {
 		t.Fatal("expected both same-node gRPC clients to receive the call deadline")
 	}
 
-	completionOutput := output[completionStart:initStart]
+	// 完成队列分发由正常轮询与关机排空共用，实际分支位于 PollGrpcNodeShutdown。
+	completionOutput := functionOutput("bool PollGrpcNodeShutdown(")
 	if !strings.Contains(completionOutput, "messageId == 159u || messageId == 160u") {
 		t.Fatal("expected completion dispatch to aggregate methods from both services in battle_node.proto")
 	}
@@ -122,8 +127,11 @@ func TestGrpcInitTemplateSupportsMultipleServicesForSameNodeType(t *testing.T) {
 		!strings.Contains(completionOutput, "::HandlePlayerBattleCompletedQueueMessage") {
 		t.Fatal("expected both same-node completion handlers in rendered output")
 	}
+	if !strings.Contains(functionOutput("void HandleCompletedQueueMessage("), "PollGrpcNodeShutdown(registry, entity)") {
+		t.Fatal("正常轮询必须调用共用的完成队列分发函数")
+	}
 
-	initOutput := output[initStart:]
+	initOutput := functionOutput("void InitGrpcNode(")
 	if strings.Contains(initOutput, "else if") {
 		t.Fatal("same-node gRPC clients must use independent initialization branches")
 	}

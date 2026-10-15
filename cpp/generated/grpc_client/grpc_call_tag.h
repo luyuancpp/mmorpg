@@ -1,5 +1,7 @@
 #pragma once
+#include <chrono>
 #include <cstdint>
+#include <functional>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -23,6 +25,31 @@ inline constexpr uint32_t kDefaultGrpcCallDeadlineMs = 10000;
 
 // 本次调用随请求发出的 metadata,按 Send 传入的原值保存(Base64 之前)。
 using GrpcSentMetadata = std::vector<std::pair<std::string, std::string>>;
+
+// 每次调用回调(Send<Svc><Method> 的 GrpcDone 重载)拿到的结果。code 与 grpc::StatusCode 同值,0 = OK。
+// 非 OK 与 GrpcCallFailure 同义:结果未知,不代表服务端没执行。
+struct GrpcCallOutcome {
+	uint32_t code{0};
+	std::string message;
+
+	bool ok() const { return code == 0; }
+};
+
+// 每次调用的完成回调,契约(docs/design/grpc-client-deadline-failure-callback.md「每次调用回调」一节):
+// - 恰好调用一次;只在节点所属 EventLoop 线程调用,从不在 Send 栈内同步调用(本地拒绝也延后投递)。
+// - reply 只在 outcome.ok() 时非空,只在回调期间有效;要留用就拷贝。
+// - 带 done 的调用不再触发该方法的全局 Async<Svc><Method>Handler / FailedHandler。
+// - 节点摘除 / 停机先以非 OK 完成在途调用(官方 CQ 取消为 CANCELLED,本地拒绝为 UNAVAILABLE),
+//   再拆节点;回调里不要假设节点仍可用。
+template <typename Reply>
+using GrpcDone = std::function<void(const GrpcCallOutcome&, const Reply* reply)>;
+
+// 每次调用的可选参数。deadline <= 0 用该 proto 文件的默认 deadline(Set<File>CallDeadline);
+// metadata 填原值,发出前由生成代码做 Base64,失败时仍按原值交还(与 metaKeys/metaValues 重载一致)。
+struct GrpcCallOptions {
+	std::chrono::milliseconds deadline{0};
+	GrpcSentMetadata metadata;
+};
 
 // 一次 unary 调用以非 OK 状态结束时交给失败处理器(Async<Svc><Method>FailedHandler)的上下文。
 // 只在回调期间有效,不要保存其中的引用。

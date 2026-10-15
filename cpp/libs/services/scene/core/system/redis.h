@@ -51,9 +51,13 @@ private:
     muduo::net::TimerId retryTimerId_;
     muduo::net::TimerId snapshotTimerId_;
     muduo::net::TimerId periodicSaveTimerId_;
+    // DBTask 投递回执的 50ms Pump(DbTaskDispatchSystem::Pump)。BeginShutdown 不取消它:停机 drain 期间
+    // 下线收尾还要靠它把回执推完;Shutdown 里取消。
+    muduo::net::TimerId dbTaskPumpTimerId_;
     bool retryTimerActive_ = false;
     bool snapshotTimerActive_ = false;
     bool periodicSaveTimerActive_ = false;
+    bool dbTaskPumpTimerActive_ = false;
     bool shutdownBegun_ = false;
 };
 
