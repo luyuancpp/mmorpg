@@ -8,7 +8,6 @@
 #include <unordered_set>
 #include <utility>
 #include <vector>
-#include <vector>
 
 #include "engine/core/type_define/type_define.h"
 
@@ -17,6 +16,9 @@
 #include "eviction_policy.h"
 #include "item_store.h"
 #include "item_system.h"
+
+// 按配置号升序安排批量预检与写入。哈希遍历序不得决定谁先占低号格、先报错或先落流水。
+[[nodiscard]] std::vector<std::pair<uint32_t, uint32_t>> SortedByConfigId(const ItemCountMap &counts);
 
 // ─────────────────────────────────────────────────────────────────────────
 // Bag —— 桥层。
@@ -41,8 +43,8 @@
 // 一个函数既改 size 又重排格子、DestroyItem() 销毁实体后还要线扫 posToGuid。
 // 详见 docs/design/bag-instance-layout-split.md。
 //
-// **公开 API 与拆分前逐字一致** —— BagService / bag_marshal / PlayerBagsComp /
-// bag_test 一行都不用改。这也是这次重构的验收判据。
+// 以 guid / 槽位访问的公开 API 保持不变;2026-10-15 删除了两个零调用方的
+// entt::entity 访问器,私有存储的句柄不再外泄。
 // ─────────────────────────────────────────────────────────────────────────
 
 constexpr std::size_t kDefaultCapacity{10};
@@ -213,8 +215,8 @@ class Bag
 {
 public:
     // 特殊成员函数全部走隐式生成:layout_ 用类内初始化器给出默认布局,
-    // 于是 Bag 保持"默认可构造 + 可移动 + 不可复制"—— 与拆分前(entt::registry
-    // 本身就不可复制)完全一致。PlayerBagsComp 的 std::array<Bag,4> 和 entt
+    // 于是 Bag 保持"默认可构造 + 可移动 + 不可复制"(unique_ptr 成员禁止复制)。
+    // PlayerBagsComp 的 std::array<Bag,4> 和外层 ECS
     // 的组件存储都依赖这一点,别去手写它们。
 
     // ── 布局策略 ──────────────────────────────────────────────────────
@@ -267,8 +269,6 @@ public:
     std::size_t GetTotalItemCount(uint32_t config_id) const;
     ItemComp *GetItemCompByGuid(Guid guid);
     ItemComp *GetItemCompByPos(uint32_t pos);
-    entt::entity GetItemByGuid(Guid guid);
-    entt::entity GetItemByPos(uint32_t pos);
 
     // instancesNeededOut(可为 nullptr)回执:这一批总共要**新建多少个实例**。
     // 批量入包拿它做铸号预检 —— 见 AddItems 的注释。

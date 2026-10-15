@@ -28,6 +28,7 @@ package sessionfence
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strconv"
 	"time"
 
@@ -112,6 +113,11 @@ func CommitLogin(ctx context.Context, rdb *redis.Client, key Key,
 	loginSessionKey, account string, sessionTTL time.Duration,
 	deviceSetKey string, sessionID uint32, deviceSetTTL time.Duration,
 ) error {
+	// 脚本里是 SET ... PX,0 / 负值会被 Redis 以 invalid expire time 拒绝;旧路径 loginsession.Save 的 ttl = 0
+	// 表示永不过期,两条路径在误配置下行为分叉。这里显式报错,让误配置在第一次登录时就暴露,而不是静默写永久键。
+	if sessionTTL <= 0 || deviceSetTTL <= 0 {
+		return fmt.Errorf("session fence commit login: non-positive ttl session=%s device=%s", sessionTTL, deviceSetTTL)
+	}
 	res, err := commitLoginScript.Run(ctx, rdb,
 		[]string{key.redisKey(), loginSessionKey, deviceSetKey},
 		account, sessionTTL.Milliseconds(), strconv.FormatUint(uint64(sessionID), 10), deviceSetTTL.Milliseconds(),
@@ -145,21 +151,35 @@ func Close(ctx context.Context, rdb *redis.Client, key Key, ttl time.Duration) (
 	return parsePlayer(raw)
 }
 
+// 入口先建记录(gen 缺省写 0)并续期,再读:TTL 从最后一次写入算起,只读不续期时,入口记下 gen = N 之后
+// 记录可能在后台链绑定之前过期 —— 绑定读到 gen = 0 误判「期间已离开」;或过期后又来一次 LeaveGame,
+// HINCRBY 从空记录重建出 gen = 1 恰好等于入口的旧值,这次离开被漏掉。续期之后记录至少从入口起活一个 ttl,
+// 而 ttl = TTLFor(后台链总预算) 大于后台链本身。
+var checkEnterGameScript = redis.NewScript(`
+redis.call('HSETNX', KEYS[1], 'gen', '0')
+redis.call('PEXPIRE', KEYS[1], ARGV[1])
+local v = redis.call('HMGET', KEYS[1], 'closed', 'gen', 'player')
+return {v[1] or '', v[2] or '0', v[3] or ''}
+`)
+
 // CheckEnterGame 是 EnterGame 入口的判定:连接已关闭、或已经绑定了别的角色就拒绝;否则返回当前的 gen,
-// 后台链绑定时用它识别「期间已离开游戏」。
-func CheckEnterGame(ctx context.Context, rdb *redis.Client, key Key, playerID uint64) (Outcome, uint64, error) {
-	vals, err := rdb.HMGet(ctx, key.redisKey(), "closed", "gen", "player").Result()
+// 后台链绑定时用它识别「期间已离开游戏」。ttl 与其余操作同一个值(TTLFor 派生),入口会把记录续期到 ttl。
+func CheckEnterGame(ctx context.Context, rdb *redis.Client, key Key, playerID uint64, ttl time.Duration) (Outcome, uint64, error) {
+	vals, err := checkEnterGameScript.Run(ctx, rdb, []string{key.redisKey()}, ttl.Milliseconds()).StringSlice()
 	if err != nil {
 		return OutcomeOK, 0, err
 	}
-	if asString(vals[0]) == "1" {
+	if len(vals) != 3 {
+		return OutcomeOK, 0, fmt.Errorf("session fence check: unexpected reply length %d", len(vals))
+	}
+	if vals[0] == "1" {
 		return OutcomeClosed, 0, nil
 	}
-	gen, err := parseCounter(asString(vals[1]))
+	gen, err := parseCounter(vals[1])
 	if err != nil {
 		return OutcomeOK, 0, err
 	}
-	bound, err := parsePlayer(asString(vals[2]))
+	bound, err := parsePlayer(vals[2])
 	if err != nil {
 		return OutcomeOK, 0, err
 	}

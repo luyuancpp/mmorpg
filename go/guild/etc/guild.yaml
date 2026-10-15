@@ -141,6 +141,34 @@ AssetOp:
   CleanupIntervalMinutes: 10
   TerminalRetentionDays: 30
   CounterRetentionDays: 30
+  # ---- 落地恢复(docs/design/landing-recovery-sync-digest.md §5.3 / §6)----
+  # 离线停放档:本次结局是本地 NOT_HERE、位置键不存在、且已投递 ≥ OfflineAfterAttempts 次,下一次投递推到约
+  #   OfflineBackoffMs(±20% 抖动)之后;玩家上线由下面的落地唤醒立即重投。OfflineAfterAttempts 写 0 = 关闭停放档。
+  #   OfflineBackoffMs 必须 ≥ MaxBackoffMs、≤ 86400000。
+  OfflineAfterAttempts: 5
+  OfflineBackoffMs: 1800000
+  # 自动放弃(ABANDONED):PENDING 超过 AbandonAfterDays 天、玩家无位置、距最后一次可能的发送超过 AbandonSafetyGapMs、
+  #   已落盘账本确认 scene 从未见过这条 seq 时终结,对侧账同 REJECTED / ABORTED(捐献退次数、兑换退帮贡与限购、
+  #   活动发奖作废只留审计行)。不可逆:AbandonAfterDays 写 0 = 关闭,非 0 时 ≥ 30。
+  # !! 滚动升级:旧版实例的发送不推进 last_send_ms。从不认识 last_send_ms 的旧版本升级时,先把 AbandonAfterDays 写 0
+  #   全量上线新二进制,确认没有旧实例在跑之后再改回 180(设计 §6.3「滚动升级」)。本项目尚未上线,首发直接开启。
+  # 另需 DataServiceRpc(离线读账本)与 scene 节点镜像(重新定位),缺一则放弃不运行(只打一条 INFO)。
+  # AbandonSafetyGapMs ≥ 600000 且 ≥ LeaseMs;AbandonBatch 是每轮候选上限 [1, 1000];AbandonIntervalMs ∈ [60000, 86400000]。
+  AbandonAfterDays: 180
+  AbandonSafetyGapMs: 3600000
+  AbandonBatch: 200
+  AbandonIntervalMs: 3600000
+  # 日对账(只读):把 PENDING 行分成 online_retry / offline / alert / abandon_candidate 四类,刷新
+  #   assetop_pending_rows 与 assetop_pending_class_oldest_age_seconds。写 0 = 不跑;非 0 时 ∈ [60000, 604800000]。
+  # 对账与放弃只在选主当选的一个副本上跑(锁 guild:assetop:maintenance:leader 在上面的 RedisClient 里)。
+  AuditIntervalMs: 86400000
+  # 落地唤醒:订阅核心 Redis(上面的 PlayerLocatorRedis,scene 在同一实例上 PUBLISH assetop:wake <player_id>),
+  #   玩家进场完成后立即重投他的 PENDING 行,不再等退避 / 停放档。唤醒只是提示,丢了退回原退避,只慢不错。
+  # Enabled 不写 = 开;Concurrency 不写 = 4([1, 64],满了直接丢);TimeoutMs 不写 = 10000(必须 > OpBudgetMs,≤ 60000)。
+  Wake:
+    Enabled: true
+    Concurrency: 4
+    TimeoutMs: 10000
 
 # ---- 帮会同道历练(B6b,docs/design/guild-phase2/06-activities.md §6.22)----
 # 确认开战:邀请房间全员同意后,guild 调 match 内部服务 MatchInternal.StartActivityBattle 拿 battle_id。

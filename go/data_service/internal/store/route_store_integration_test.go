@@ -11,8 +11,9 @@ package store_test
 //  5. 锁等待封顶(innodb_lock_wait_timeout=1):ctx 超时的请求不会把同一围栏分片上的建角拖成 50s;
 //  6. 围栏分片生效 / 过期、懒建分片行;meta 缺失 / 不可写一律 fail-closed;
 //  7. 导入的分类、幂等与 rev 规则;沿聚簇键 (route_shard, player_id) 的键集翻页无漏无重;
-//  8. G1a:建池探针 P4 拒绝 chk_route_shard 不生效的库、P5 拒绝按另一个模数建的表;错片行只有 ScanRoutes 看得见;
-//     按键读走 PRIMARY range;可选的真 TiDB 用例(聚簇、P4 / P5、tidb-prepare 预切与幂等)。
+//  8. G1a:建池探针 P4 拒绝 chk_route_shard 不生效的库、P5 拒绝按另一个模数建的表;P5 的探针键已被真实玩家占着时
+//     撞键照常通过、不改行,被持锁时以 1205 失败、不重试;错片行只有 ScanRoutes 看得见;
+//     按键读走 PRIMARY range;可选的真 TiDB 用例(聚簇、P4 / P5 含撞键分支、tidb-prepare 预切与幂等)。
 //
 // 前提:P4 让所有建 route store 的用例要求 MySQL ≥ 8.0.16(更老的版本上是 FAIL 不是 SKIP)。
 //
@@ -889,9 +890,76 @@ func TestRouteStore_ProbeRejectsTableBuiltWithAnotherShardModulus(t *testing.T) 
 		assert.EqualValuesf(t, 0, db.Count(t, store.PlayerRouteTableName, ""), "按 %% %d 建的表:探针行必须已回滚", modulus)
 	}
 
+	// 生产常态是 63 / 64 号已建角、P5 撞键(1062 按「已接受」处理后同一事务继续),旧模数的表照样要认出来:
+	// 按 % 16 建并 seed 64 号((0, 64) 在 % 16 下合法)→ (0, 64) 撞键被接受、(63, 63) 被 chk_route_shard 拒 → 模数哨兵;
+	// seed 的那一行原样留着,探针什么也没留下。
+	rebuild(t, 16)
+	seedRouteRow(t, db, uint64(placement.RouteRowShards), 7, 0, 0, "", 1)
+	_, err := store.NewRouteStore(db.Cfg, routeTestOpts())
+	require.ErrorIs(t, err, store.ErrRouteShardModulusMismatch, "首行撞键之后第二行照常判定,按模数 16 建的表仍要被认出")
+	assert.EqualValues(t, 1, db.Count(t, store.PlayerRouteTableName, ""), "只剩 seed 的那一行")
+	assert.EqualValues(t, 1, db.Count(t, store.PlayerRouteTableName,
+		"route_shard = 0 AND player_id = ? AND rev = 1 AND updated_by = 'it-seed' AND updated_at_ms = 1", uint64(placement.RouteRowShards)),
+		"seed 的那一行不许被探针改")
+
 	rebuild(t, placement.RouteRowShards)
 	newRouteStore(t, db)
 	assert.EqualValues(t, 0, db.Count(t, store.PlayerRouteTableName, ""), "模数一致时 P5 的两行真的插进去过,必须已回滚")
+}
+
+// TestRouteStore_ProbeKeysHeldByRealPlayers:生产上 P5 的常态 —— 号段从 1 发号,63 / 64 号是开服后最早的真实玩家,
+// P5 的两行 (0, 64)、(63, 63) 都已有行。假驱动只钉了「回 1062 → 继续」,这里在真 InnoDB 上取证:
+//
+//	① 两行都已存在时建池通过(撞键之后只回滚那一条语句、事务仍可用,第二行照常判定),且这两行一个字节都不改;
+//	② 64 号玩家的行被别的事务 FOR UPDATE 持着时,P5 撞键要取的共享锁等满会话锁等待(1s)后以 1205 失败:
+//	   原样包装(不是模数哨兵)、不重试(提案 §11.2「正向探针 P5」:这次建池失败,重启即可);放锁之后建池通过。
+func TestRouteStore_ProbeKeysHeldByRealPlayers(t *testing.T) {
+	db := storetest.NewMigratedDB(t)
+	skipUnlessMySQLEnforcesCheck(t, db)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	n := uint64(placement.RouteRowShards)
+	probeIDs := []uint64{n, n - 1} // 与 routeShardModulusProbeKeys 同:(0, 64)、(63, 63)
+	for _, id := range probeIDs {
+		seedRouteRow(t, db, id, 7, 0, 0, "", 1)
+	}
+	requireSeedUntouched := func(t *testing.T) {
+		t.Helper()
+		require.EqualValues(t, len(probeIDs), db.Count(t, store.PlayerRouteTableName, ""), "探针撞键不许多出行")
+		for _, id := range probeIDs {
+			require.EqualValuesf(t, 1, db.Count(t, store.PlayerRouteTableName,
+				"route_shard = ? AND player_id = ? AND home_zone = 7 AND rev = 1 AND updated_by = 'it-seed' AND updated_at_ms = 1",
+				uint64(placement.RouteRowShard(id)), id), "player %d 被探针改了", id)
+		}
+	}
+
+	// ① 两行都撞键:建池通过,行不变。
+	newRouteStore(t, db)
+	requireSeedUntouched(t)
+
+	// ② 另一个事务持着 (0, 64) 的行锁(RC + 主键等值 FOR UPDATE,只锁这一行)。
+	holder, err := db.Raw.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
+	require.NoError(t, err)
+	defer func() { _ = holder.Rollback() }()
+	var locked uint64
+	require.NoError(t, holder.QueryRowContext(ctx,
+		"SELECT player_id FROM player_route WHERE route_shard = ? AND player_id = ? FOR UPDATE",
+		uint64(placement.RouteRowShard(n)), n).Scan(&locked))
+
+	start := time.Now()
+	_, err = store.NewRouteStore(db.Cfg, routeTestOpts())
+	elapsed := time.Since(start)
+	t.Logf("建池撞上被持锁的探针键:耗时 %s,err=%v", elapsed, err)
+	var me *mysql.MySQLError
+	require.Truef(t, errors.As(err, &me) && me.Number == 1205, "期望原样包装的 1205,got %v", err)
+	assert.NotErrorIs(t, err, store.ErrRouteShardModulusMismatch, "锁等待超时不是模数不一致")
+	// 会话锁等待 1s、1205 不重试;上限放宽到 4s(锁等待超时的检测有粒度),仍明显低于探针总时限 5s。
+	assert.Less(t, elapsed, 4*time.Second, "1205 被重试了,或会话锁等待没生效")
+
+	require.NoError(t, holder.Rollback())
+	newRouteStore(t, db)
+	requireSeedUntouched(t)
 }
 
 // TestRouteStore_ShardMismatchRowFailsClosed(评审 M1):CHECK 关掉期间被写进来的错片行 (3, 6) ——
@@ -1057,6 +1125,7 @@ func TestRouteStore_KeyedReadsUsePrimaryRange(t *testing.T) {
 
 // TestRouteStore_TiDBClusteredShardsAndPresplit 只在真 TiDB 上跑(本机 deploy/docker-compose.tidb.yml,且建表前
 // `SET GLOBAL tidb_enable_check_constraint=ON`):两张表是聚簇主键;P4 在 TiDB 上拿到 3819 + 约束名;注册后全表扫描覆盖;
+// 63 / 64 号已在库时再建池,P5 的撞键分支(1062 之后同一事务继续)在 TiDB 上也通过;
 // tidb-prepare 预切出 Region、再跑一次不报错(幂等)。二次预切期间并发建角的结果(是否出现 8028)只记录不断言(HR9 取证)。
 //
 // 末尾给按键读取证:R13(行构造器 IN)与 R12(键集翻页的中段游标 / 零游标)的 EXPLAIN 原样留档,R13 与 R12 中段游标
@@ -1115,6 +1184,20 @@ func TestRouteStore_TiDBClusteredShardsAndPresplit(t *testing.T) {
 		after = store.RouteScanCursorAt(page[len(page)-1])
 	}
 	assert.Equal(t, 40, scanned)
+
+	// 生产常态在 TiDB 上的取证:63 / 64 号已建角时 P5 的两行都撞 1062,按「已接受」在同一事务里继续 —— TiDB 上撞键之后
+	// 事务能否继续用【未核实】,这里再建一个 store 就是取证;失败时原样回报报错文本。放在上面的全表扫描之后,不改它的 40 行口径。
+	probeN := uint64(placement.RouteRowShards)
+	for _, id := range []uint64{probeN, probeN - 1} {
+		res, err := st.RegisterHome(ctx, store.RouteRegisterRequest{PlayerID: id, HomeZone: zone})
+		require.NoError(t, err)
+		require.Equal(t, store.RouteRegisterInserted, res.Outcome)
+	}
+	second, err := store.NewRouteStore(db.Cfg, routeTestOpts())
+	require.NoErrorf(t, err, "TiDB 上 63 / 64 号已在库时建池失败(P5 撞键之后事务是否可用),原样回报报错文本")
+	require.NoError(t, second.Close())
+	assert.EqualValues(t, 2, db.Count(t, store.PlayerRouteTableName, "player_id IN (?, ?) AND rev = 1", probeN, probeN-1),
+		"P5 撞键不许改这两行")
 
 	req := store.RouteTiDBPrepareRequest{Zones: []uint32{zone}, Storages: []uint32{1000000}}
 	rep, err := st.PrepareTiDB(ctx, req)

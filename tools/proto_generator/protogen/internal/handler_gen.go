@@ -16,9 +16,11 @@ type ServiceHandlerData struct {
 
 // GetServiceHandlerHeadStr generates the service handler header file.
 func GetServiceHandlerHeadStr(methods RPCMethods) (string, error) {
+	// 类级注释只放头文件:cpp 由守护段解析器重建,额外的注释会干扰守护段定位。
 	const tmplStr = `#pragma once
 {{.Include}}
 
+// done 由框架传入且非空:不碰它,handler 返回后框架立即回包;要等下游再回复,在返回前 RpcDoneCallback::Adopt(done)(network/rpc_done_callback.h)。
 class {{.Service}}Handler : public ::{{.Service}}
 {
 public:

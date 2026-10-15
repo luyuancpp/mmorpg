@@ -2,9 +2,9 @@
 #include <future>
 ///<<< BEGIN WRITING YOUR CODE
 #include "infra/agones/agones_gameserver_lifecycle.h"
-#include "modules/scene/comp/scene_node_comp.h"
+#include "proto/scene/scene_info.pb.h"
 #include "player/system/player_lifecycle.h"
-#include "proto/common/event/scene_event.pb.h"
+#include "modules/scene/scene_events.h"
 #include "thread_context/ecs_context.h"
 #include "muduo/base/Logging.h"
 #include "battle/system/player_battle.h"
@@ -38,30 +38,53 @@ void SceneNodeGrpcImpl::HandleCreateScene(const ::CreateSceneRequest* request,
 
     auto sceneEntity = tlsEcs.sceneRegistry.create();
 
-    auto &sceneInfo = tlsEcs.sceneRegistry.emplace<SceneInfoComp>(sceneEntity);
-    sceneInfo.set_scene_config_id(request->config_id());
-    sceneInfo.set_mirror_config_id(request->mirror_config_id());
-    sceneInfo.set_dungeon_config_id(request->dungeon_config_id());
-	sceneInfo.set_scene_id(request->scene_id());
-
-    for (const auto creator_id : request->creator_ids())
+    // sceneInfo 引用只在这个块里用。下面的 dispatcher.trigger 会同步跑监听者,监听者一旦删掉场景
+    // 或 SceneInfoComp(swap-and-pop),trigger 之前拿的引用就悬空了(ecs-entt-misuse-audit-20261015 F087/F088)。
     {
-        sceneInfo.mutable_creators()->insert({creator_id, true});
+        auto &sceneInfo = tlsEcs.sceneRegistry.emplace<SceneInfoComp>(sceneEntity);
+        sceneInfo.set_scene_config_id(request->config_id());
+        sceneInfo.set_mirror_config_id(request->mirror_config_id());
+        sceneInfo.set_dungeon_config_id(request->dungeon_config_id());
+        sceneInfo.set_scene_id(request->scene_id());
+
+        for (const auto creator_id : request->creator_ids())
+        {
+            sceneInfo.mutable_creators()->insert({creator_id, true});
+        }
     }
 
-    tlsEcs.sceneRegistry.emplace<ScenePlayers>(sceneEntity);
 
     OnSceneCreated event;
-    event.set_entity(entt::to_integral(sceneEntity));
+    event.scene = sceneEntity;
     tlsEcs.dispatcher.trigger(event);
 
-    response->mutable_scene_info()->CopyFrom(sceneInfo);
+    // 回包按监听者跑完之后的状态重新取。场景在 trigger 里被删掉时不回 scene_info,
+    // 与 SceneHandler::CreateScene 同一口径。
+    const auto *createdInfo = tlsEcs.sceneRegistry.try_get<SceneInfoComp>(sceneEntity);
+    if (createdInfo == nullptr)
+    {
+        LOG_ERROR << "[gRPC] CreateScene: entity=" << entt::to_integral(sceneEntity)
+                  << " scene_id=" << request->scene_id()
+                  << " lost SceneInfoComp inside OnSceneCreated listeners, not reporting success";
+        // 回滚半成品场景,与 SceneHandler::CreateScene 同一做法和理由:先补发 OnSceneDestroyed 让监听者
+        // 对称撤账(Agones 计数、AOI 格子表),再销毁实体;否则这个没有 SceneInfoComp 的实体去重看不到,
+        // 重试会再建一个,它永远留在 sceneRegistry 里。实体已被监听者自己销毁时不再重复。
+        if (tlsEcs.sceneRegistry.valid(sceneEntity))
+        {
+            OnSceneDestroyed rollbackEvent;
+            rollbackEvent.scene = sceneEntity;
+            tlsEcs.dispatcher.trigger(rollbackEvent);
+            tlsEcs.sceneRegistry.destroy(sceneEntity);
+        }
+        return;
+    }
+    response->mutable_scene_info()->CopyFrom(*createdInfo);
 
     LOG_INFO << "[gRPC] CreateScene: created entity=" << entt::to_integral(sceneEntity)
              << " config_id=" << request->config_id()
-             << " scene_id=" << sceneInfo.scene_id()
-             << " mirror_config_id=" << sceneInfo.mirror_config_id()
-             << " dungeon_config_id=" << sceneInfo.dungeon_config_id();
+             << " scene_id=" << createdInfo->scene_id()
+             << " mirror_config_id=" << createdInfo->mirror_config_id()
+             << " dungeon_config_id=" << createdInfo->dungeon_config_id();
     ///<<< END WRITING YOUR CODE
 }
 
@@ -70,7 +93,7 @@ void SceneNodeGrpcImpl::HandleDestroyScene(const ::DestroySceneRequest* request)
     ///<<< BEGIN WRITING YOUR CODE
     const auto sceneId = request->scene_id();
 
-    entt::entity targetEntity = entt::null;
+    SceneEntity targetEntity = entt::null;
     auto view = tlsEcs.sceneRegistry.view<SceneInfoComp>();
     for (auto entity : view)
     {
@@ -115,7 +138,7 @@ void SceneNodeGrpcImpl::HandleDestroyScene(const ::DestroySceneRequest* request)
     }
 
     OnSceneDestroyed event;
-    event.set_entity(entt::to_integral(targetEntity));
+    event.scene = targetEntity;
     tlsEcs.dispatcher.trigger(event);
 
     tlsEcs.sceneRegistry.destroy(targetEntity);

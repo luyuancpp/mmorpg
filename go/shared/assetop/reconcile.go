@@ -433,6 +433,10 @@ type Loop struct {
 	// abandonMu 串行化 AbandonOnce,并保护 abandonCursor(下一轮从哪个 op_id 之后接着翻页)。
 	abandonMu     sync.Mutex
 	abandonCursor uint64
+	// auditMu 串行化 AuditOnce 与 resetAuditGauges,并保护 auditExtra:上一轮报过的、不在
+	// LoopConfig.Streams 里的 (流, 类别) 组合,本轮没再出现时要置 0(audit.go)。
+	auditMu    sync.Mutex
+	auditExtra map[pendingKey]struct{}
 	// 「功能没装配齐、不运行」各只打一次 INFO,免得每一轮都刷一遍。
 	auditOffOnce   sync.Once
 	abandonOffOnce sync.Once
@@ -495,7 +499,7 @@ func (l *Loop) Run(ctx context.Context) {
 // 免得领导权来回抖动时每次当选都扫一遍。退出时清空按类 gauge(理由见 Metrics.resetPendingClass)。
 // 每一轮各自 recover,理由同 Run。
 func (l *Loop) RunMaintenance(ctx context.Context) {
-	defer l.metrics.resetPendingClass()
+	defer l.resetAuditGauges()
 
 	var auditC, abandonC <-chan time.Time
 	if l.cfg.AuditInterval > 0 {
@@ -581,11 +585,19 @@ func (l *Loop) drain(ctx context.Context, queue <-chan uint64, processed *atomic
 //
 // 返回这一行是否被本副本领到并处理过。ProcessOne 出错也算处理过:单行失败只记不抛,
 // 下一行照常处理,这一行靠 next_attempt_ms 再来。
+//
+// 拿到名额之后、领取之前再看一次剩余预算(rowBudgetLeft):等名额可能已经吃掉了大半预算,
+// 此时领下来的行会被截在半路 —— 投递超时被记成传输失败、attempts+1 并按退避重排;或者 Claim 已提交、
+// 调用方的 ctx 先到期,行带着租约却没人处理。不够一整个 OpBudget 就不领,行原样留给下一次。
+// Tick 用的是没有截止时刻的 Run ctx,这一步对它只等于「ctx 还没结束」。
 func (l *Loop) claimAndProcess(ctx context.Context, opID uint64) bool {
 	if !l.acquireSlot(ctx) {
 		return false
 	}
 	defer l.releaseSlot()
+	if !l.rowBudgetLeft(ctx) {
+		return false
+	}
 
 	op, claimed := l.claim(ctx, opID)
 	if claimed != claimOK {
@@ -622,6 +634,19 @@ func (l *Loop) releaseSlot() {
 	<-l.slots
 }
 
+// rowBudgetLeft 报告 ctx 剩下的时间还够不够**完整**处理一行(领取 + 投递 + 落库 <= OpBudget)。
+// ctx 已结束时为假;没有截止时刻时只看是否结束。
+//
+// 用的是真实时钟(time.Until)而不是 l.now:ctx 的截止时刻本来就是按真实单调时钟设的,
+// l.now 在单测里是一个固定时刻,拿它去减截止时刻毫无意义。
+func (l *Loop) rowBudgetLeft(ctx context.Context) bool {
+	if ctx.Err() != nil {
+		return false
+	}
+	deadline, ok := ctx.Deadline()
+	return !ok || time.Until(deadline) >= l.cfg.OpBudget
+}
+
 // WakePlayer 立即重投某个玩家的全部 PENDING 行,返回实际领到并处理的行数
 // (docs/design/landing-recovery-sync-digest.md §5.3)。
 //
@@ -634,7 +659,12 @@ func (l *Loop) releaseSlot() {
 //   - 并发计入 Workers 预算(与 Tick 共用 slots),一波登录潮压不垮 scene 的 poller。
 //
 // 逐行串行:一个玩家最多 32 行,串行只占一个名额,而且这些请求本来就都落在同一个 scene 节点上。
-// ctx 是这次唤醒的总预算(assetopwake 给 3 秒);预算用完时剩下的行不再领取,照常等各自的 next_attempt_ms。
+//
+// ctx 是这次唤醒的总预算(assetopwake 默认给 10 秒),它**只决定要不要开始下一行**:剩余时间不够
+// 一整个 OpBudget 就不再领取(rowBudgetLeft),已经开始的行总能在自己的 OpBudget 内走完,
+// 不会被截在半路。没轮到的行照常等各自的 next_attempt_ms —— 停放中的行最多再等一个 OfflineBackoff。
+// 总预算连一行都装不下(WakeTimeout 配得比 OpBudget 还小)时回错误:那样的唤醒永远领不到行,
+// 不报出来就会静默退化成「从不唤醒」。
 //
 // Store 没实现 PlayerPendingLister 时回 (0, nil):唤醒是加速,不是正确性路径。
 func (l *Loop) WakePlayer(ctx context.Context, playerID uint64) (int, error) {
@@ -642,6 +672,11 @@ func (l *Loop) WakePlayer(ctx context.Context, playerID uint64) (int, error) {
 	if !ok || playerID == 0 {
 		l.metrics.IncWake(WakeNone)
 		return 0, nil
+	}
+	if ctx.Err() == nil && !l.rowBudgetLeft(ctx) {
+		l.metrics.IncWake(WakeError)
+		return 0, fmt.Errorf("assetop: 唤醒预算不足一个 OpBudget(%v),一行也领不了;检查唤醒超时配置 player_id=%d",
+			l.cfg.OpBudget, playerID)
 	}
 	ids, err := lister.ListPendingByPlayer(ctx, playerID, maxWakeOpsPerPlayer)
 	if err != nil {
@@ -655,7 +690,8 @@ func (l *Loop) WakePlayer(ctx context.Context, playerID uint64) (int, error) {
 
 	processed := 0
 	for _, opID := range ids {
-		if ctx.Err() != nil {
+		// 预算只会越用越少:这一行开始不了,后面的也开始不了。
+		if !l.rowBudgetLeft(ctx) {
 			break
 		}
 		if l.claimAndProcess(ctx, opID) {
@@ -758,6 +794,9 @@ func (l *Loop) ProcessOne(ctx context.Context, op Op) (Processed, error) {
 		if park.Parks(res, op.Attempts) {
 			reason = "offline"
 		}
+		if err != nil {
+			return l.rescheduleTransportFailure(ctx, op, next, res, nowMs)
+		}
 		return l.reschedule(ctx, op, next, res, nowMs, reason)
 	default: // ActionAlert
 		if errors.Is(err, ErrOutcomeFlip) {
@@ -854,6 +893,29 @@ func (l *Loop) reschedule(ctx context.Context, op Op, nextAttemptMs uint64, res 
 	}
 	l.metrics.incReschedule(op.Stream, reason)
 	return Processed{Result: res}, nil
+}
+
+// rescheduleTransportFailure 重排一次「没拿到 scene 任何答复」的投递(传输失败、超时、定位出错)。
+//
+// 落库的那一份结局写 RETRY(原因码 0),而不是 Caller 回的零值 Result(结局 UNKNOWN):
+// last_outcome = UNKNOWN 在列上专指「scene 回了 UNKNOWN / 坏流号 / 毒行」这类要人看的行 ——
+// 日对账按它归 alert 类(ClassifyPending),assetopfix 按它判「反复 UNKNOWN」。传输失败若也写 UNKNOWN,
+// 对账那一刻 scene 短暂不可达就会让 alert 类误报一整天(gauge 24 小时才刷新一次),assetopfix 也会把
+// 「scene 可能已应用、只是回包丢了」的行当成可人工终结的候选。RETRY 的语义正是「结局未定、稍后再投」。
+//
+// 只改落库的那一份:返回给同步路径的仍是本次真实结果(零值),与以前一致。
+// 其余列照常:durable=0;last_reason 仍经 carryPartialReason(27007 粘性不变);
+// last_send_ms 照常推进(Result.Local 为假,按「可能发过」保守处理,见 abandon.go「LastSendMs 契约」)。
+// 实时信号不受影响:RPC 调用失败仍计 assetop_rpc_total{outcome="error"}(Caller.invoke);
+// 一直投不出去的行会在 online_retry 类里变老,由该类的最老年龄告警兜住。
+//
+// 这时列上的 RETRY + 原因码 0 与 scene 的「物品 guid 号段余量不足」(asset_op_system.cpp 回 RETRY、
+// 原因 0)分不开;两者都是「稍后再投」,分类与 assetopfix 的判定对它们一致,不需要分开。
+func (l *Loop) rescheduleTransportFailure(ctx context.Context, op Op, nextAttemptMs uint64, res Result, nowMs uint64) (Processed, error) {
+	stored := Result{Outcome: assetpb.AssetOpOutcome_ASSET_OP_OUTCOME_RETRY}
+	processed, err := l.reschedule(ctx, op, nextAttemptMs, stored, nowMs, "retry")
+	processed.Result = res
+	return processed, err
 }
 
 // carryPartialReason 让 outbox 行上的 last_reason 对「曾见部分发放」保持粘性。

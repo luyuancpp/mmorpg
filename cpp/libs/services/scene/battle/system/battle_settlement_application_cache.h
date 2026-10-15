@@ -9,7 +9,8 @@
 namespace battle_settlement {
 
 // 只保护同一 scene loop 的结算应用；不持有实体，正常下线重建后仍能识别同一局。
-// 保留期取 pending 的 7 天，上限约束进程内存；满时淘汰最早已完成项，绝不淘汰正在
+// 保留期 7 天只是进程内存上界(pending 自 2026-10-15 起已不过期,两者无需同值;
+// 权威去重是 BattleSettlementLedgerComp);满时淘汰最早已完成项，绝不淘汰正在
 // 应用的项。超过保留期/容量或进程重启后仍依赖 Redis 条件销账，不是持久化 exactly-once。
 class SettlementApplicationCache {
 public:

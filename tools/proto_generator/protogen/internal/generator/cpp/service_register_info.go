@@ -244,7 +244,8 @@ func writeServiceInfoCppFile(wg *sync.WaitGroup) {
 		ServiceInfoIncludes  []string
 		EventIncludesBlock   string
 		HandlerClasses       []string
-		EventDispatchCases   []string
+		SceneDispatchCases   []string
+		GateDispatchCases    []string
 		InitLines            []string
 		ClientMessageIdCases []string
 		MessageIdArraySize   int
@@ -257,7 +258,8 @@ func writeServiceInfoCppFile(wg *sync.WaitGroup) {
 		serviceInfoIncludes []string
 		eventIncludes       []string
 		handlerClasses      []string
-		eventDispatchCases  []string
+		sceneDispatchCases  []string
+		gateDispatchCases   []string
 		initLines           []string
 		clientIdLines       []string
 		senderFunction      []string
@@ -359,18 +361,26 @@ func writeServiceInfoCppFile(wg *sync.WaitGroup) {
 	}
 
 	for _, event := range globalProtoEventList {
+		if event.Ingress == eventIngressNone {
+			continue
+		}
 		eventIncludes = appendUniqueString(eventIncludes, eventIncludeSet, fmt.Sprintf("#include \"%s\"", event.ProtoInclude))
 		eventIdRef := event.IdName + _config.Global.Naming.EventId
-		eventDispatchCases = append(eventDispatchCases,
+		cases := []string{
 			fmt.Sprintf("case %s: {", eventIdRef),
 			fmt.Sprintf("\t%s event;", event.QualifiedName),
 			"\tif (!event.ParseFromString(payload)) {",
-			"\t\treturn false;",
+			"\t\treturn KafkaEventDispatchResult::kDecodeFailed;",
 			"\t}",
 			"\ttlsEcs.dispatcher.trigger(event);",
-			"\treturn true;",
+			"\treturn KafkaEventDispatchResult::kDispatched;",
 			"}",
-		)
+		}
+		if event.Ingress == eventIngressScene {
+			sceneDispatchCases = append(sceneDispatchCases, cases...)
+		} else {
+			gateDispatchCases = append(gateDispatchCases, cases...)
+		}
 	}
 
 	// Step 3: Fill template data and render
@@ -379,7 +389,8 @@ func writeServiceInfoCppFile(wg *sync.WaitGroup) {
 		ServiceInfoIncludes:  serviceInfoIncludes,
 		EventIncludesBlock:   strings.Join(eventIncludes, "\n") + "\n" + strings.Join(EventIdHeaderIncludes(), "\n") + "\n",
 		HandlerClasses:       handlerClasses,
-		EventDispatchCases:   eventDispatchCases,
+		SceneDispatchCases:   sceneDispatchCases,
+		GateDispatchCases:    gateDispatchCases,
 		InitLines:            initLines,
 		ClientMessageIdCases: clientIdLines,
 		MessageIdArraySize:   int(internal.MessageIdLen()),
@@ -535,6 +546,9 @@ func writePlayerServiceInstanceFiles(wg *sync.WaitGroup, serviceType string, isP
 
 func WriteServiceRegisterInfoFile(wg *sync.WaitGroup) {
 	writeEventIdHeaderFiles()
+	if err := writeKafkaCommandEventWhitelistHeader(); err != nil {
+		logger.Global.Fatal("Kafka 白名单生成失败", zap.Error(err))
+	}
 	// 头文件(kMaxRpcMethodCount)必须先于 .cpp 同步落盘:若生成中途 Fatal 退出,
 	// 只允许出现"头已扩容而 .cpp 未更新"的安全方向(数组偏大无害);反向会让
 	// InitMessageInfo 越界写 std::array,节点启动即断言(2026-09-01 事故)。

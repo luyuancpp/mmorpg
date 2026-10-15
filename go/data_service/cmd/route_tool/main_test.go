@@ -6,7 +6,6 @@ package main
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"net"
 	"os"
@@ -15,7 +14,6 @@ import (
 	"testing"
 
 	"data_service/internal/routetool"
-	"data_service/internal/store"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -167,21 +165,8 @@ func TestRouteToolTiDBPrepareDoesNotTouchRedis(t *testing.T) {
 	assert.NotContains(t, stderr, "unreachable", "那是 mapping Redis 的文案")
 }
 
-// TestOpenRouteStoreHintByCause:建池失败(退出码 2)时 stderr 括号里的提示按原因分流。表按另一个行片模数建的
-// (store.ErrRouteShardModulusMismatch,经 NewRouteStore 包了几层也要认得出)不能再提示「先跑迁移」—— 只重跑 -migrate
-// 修不好它;其余原因保持原文案,字节不变。建池失败本身要真库,run 的整条路径在这里测不到,只测这个纯函数。
-func TestOpenRouteStoreHintByCause(t *testing.T) {
-	mismatch := fmt.Errorf("route store on 127.0.0.1:3306/testdb: %w",
-		fmt.Errorf("%w: probe row (route_shard=63, player_id=63) is legal under %% 64 but chk_route_shard rejected it", store.ErrRouteShardModulusMismatch))
-	hint := openRouteStoreHint("x.yaml", mismatch)
-	assert.Contains(t, hint, "another route_shard modulus")
-	assert.Contains(t, hint, "§9.3")
-	assert.NotContains(t, hint, "-migrate` first", "模数不一致时只重跑迁移修不好,不能这样提示")
-
-	for _, cause := range []error{store.ErrRouteMetaMissing, store.ErrRouteCheckNotEnforced, errors.New("dial tcp: connection refused")} {
-		assert.Equal(t, "run `data_service -f x.yaml -migrate` first if route_meta is missing", openRouteStoreHint("x.yaml", cause))
-	}
-}
+// 建池失败时 stderr 括号里的提示按原因分流(store.OpenRouteStoreHint,三个建 route store 的入口共用),
+// 纯函数用例在 store 包的 TestOpenRouteStoreHintByCause。
 
 // minimalYaml 是能被 conf.Load 接受的最小配置(同 internal/config 的 minimalYaml),MappingRedis.Host 由用例填。
 const minimalYaml = `

@@ -5,9 +5,13 @@
 #include "node/system/node/node_util.h"
 #include "engine/core/type_define/type_define.h"
 
-using ServiceNodeList = std::array<NodeInfoListComp, eNodeType_ARRAYSIZE>;
-
-NodeInfo &GetNodeInfo();
+// 本节点身份的唯一所有者是 Node;底层模块只借用它的只读视图,不依赖 Node 的链接实现。
+// Node 在构造时安装、完成停机并析构时卸载;未安装时返回 protobuf 只读默认实例,不创建状态。
+// 安装/卸载仅用于所有者构造与排空后的析构(测试可用同线程夹具);访问限所属 loop 线程。
+// 返回引用不得越过所有者寿命。
+// 安装指针的原子发布不保护 NodeInfo 的并发读写,写入只经 Node::MutableNodeInfo()。
+const NodeInfo &GetNodeInfo();
+const NodeInfo *InstallLocalNodeInfo(const NodeInfo *info);
 uint32_t GetZoneId();
 
 // 为本玩家的请求挑一个 SceneManager 实例(换图、跨 zone 传送、镜像副本、紧急疏散、组队跟随都经这里)。

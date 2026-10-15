@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include "engine/core/type_define/player_guid_comp.h"
 
 #include "table/code/condition_table.h"
 #include "table/code/mission_table.h"
@@ -7,16 +8,17 @@
 #include "table/code/dungeon_table.h"
 #include "table/code/monster_table.h"
 #include "modules/condition/condition_type.h"
+#include "modules/condition/condition_util.h"
 #include "modules/mission/comp/mission_comp.h"
 #include "modules/mission/comp/missions_config_comp.h"
 #include "modules/mission/system/mission.h"
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "table/proto/tip/mission_error_tip.pb.h"
-#include "../../nodes/scene/handler/event/mission_event_handler.h"
+#include "../../nodes/scene/handler/local_event/scene_local_events.h"
 #include "engine/core/utils/random/random.h"
 
 #include "proto/common/component/mission_comp.pb.h"
-#include "proto/common/event/mission_event.pb.h"
+#include "modules/mission/mission_events.h"
 #include <thread_context/ecs_context.h>
 #include "../test_config_helper.h"
 
@@ -27,8 +29,8 @@
 entt::entity CreateTestPlayer()
 {
 	const auto player = tlsEcs.actorRegistry.create();
-	(void)tlsEcs.actorRegistry.emplace<Guid>(player, Guid{100000} + entt::to_integral(player));
-	MissionEventHandler::Register();
+	(void)tlsEcs.actorRegistry.emplace<PlayerGuidComp>(player, Guid{100000} + entt::to_integral(player));
+	scene_local_events::RegisterMission();
 	return player;
 }
 
@@ -41,23 +43,36 @@ MissionsComp &GetPlayerMissionsComp(entt::entity player)
 AcceptMissionEvent MakeAcceptEvent(entt::entity player, uint32_t missionId)
 {
 	AcceptMissionEvent e;
-	e.set_entity(entt::to_integral(player));
-	e.set_mission_id(missionId);
+	e.player = player;
+	e.missionId = missionId;
 	return e;
 }
 
 ConditionEvent MakeConditionEvent(entt::entity player, eConditionType type, uint32_t amount = 1)
 {
 	ConditionEvent e;
-	e.set_entity(entt::to_integral(player));
-	e.set_condition_type(static_cast<uint32_t>(type));
-	e.set_amount(amount);
+	e.player = player;
+	e.conditionType = static_cast<uint32_t>(type);
+	e.amount = amount;
 	return e;
 }
 
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
+
+TEST(MissionLocalEvent, MultipleConditionIdsMatchConfiguredSlots)
+{
+    ConditionTable condition;
+    condition.add_condition1(7);
+    condition.add_condition2(11);
+    ConditionEvent event{entt::null, 0, {7, 11}, 1};
+    EXPECT_TRUE(condition_util::MatchesEventSlots(&condition, event.conditionIds));
+    event.conditionIds[1] = 12;
+    EXPECT_FALSE(condition_util::MatchesEventSlots(&condition, event.conditionIds));
+    event.conditionIds.pop_back();
+    EXPECT_FALSE(condition_util::MatchesEventSlots(&condition, event.conditionIds));
+}
 
 TEST(MissionsComp, AcceptMission)
 {
@@ -125,16 +140,16 @@ TEST(MissionsComp, TriggerMissionCondition)
 	// Conditions 1-3: mission stays in progress
 	for (uint32_t condId = 1; condId <= 3; ++condId)
 	{
-		condEv.clear_condition_ids();
-		condEv.add_condition_ids(condId);
+		condEv.conditionIds.clear();
+		condEv.conditionIds.push_back(condId);
 		MissionSystem::HandleConditionEvent(condEv, missions, MissionConfig::GetSingleton());
 		EXPECT_EQ(1, missions.MissionSize());
 		EXPECT_EQ(0, missions.CompleteSize());
 	}
 
 	// Condition 4: mission completes
-	condEv.clear_condition_ids();
-	condEv.add_condition_ids(4);
+	condEv.conditionIds.clear();
+	condEv.conditionIds.push_back(4);
 	MissionSystem::HandleConditionEvent(condEv, missions, MissionConfig::GetSingleton());
 	EXPECT_EQ(0, missions.MissionSize());
 	EXPECT_EQ(1, missions.CompleteSize());
@@ -162,44 +177,44 @@ TEST(MissionsComp, ConditionTypeSize)
 	}
 
 	auto condEv = MakeConditionEvent(player, eConditionType::kConditionKillMonster);
-	condEv.add_condition_ids(1);
+	condEv.conditionIds.push_back(1);
 
 	// KillMonster
 	MissionSystem::HandleConditionEvent(condEv, missions, MissionConfig::GetSingleton());
 	EXPECT_EQ(1, missions.MissionSize());
 
 	// TalkWithNpc
-	condEv.set_condition_type(static_cast<uint32_t>(eConditionType::kConditionTalkWithNpc));
+	condEv.conditionType = static_cast<uint32_t>(eConditionType::kConditionTalkWithNpc);
 	MissionSystem::HandleConditionEvent(condEv, missions, MissionConfig::GetSingleton());
 	EXPECT_EQ(1, missions.MissionSize());
 
 	// CompleteCondition
-	condEv.set_condition_type(static_cast<uint32_t>(eConditionType::kConditionCompleteCondition));
+	condEv.conditionType = static_cast<uint32_t>(eConditionType::kConditionCompleteCondition);
 	MissionSystem::HandleConditionEvent(condEv, missions, MissionConfig::GetSingleton());
 	EXPECT_EQ(1, missions.MissionSize());
 
 	// UseItem (needs condition ids {1, 2})
-	condEv.set_condition_type(static_cast<uint32_t>(eConditionType::kConditionUseItem));
-	condEv.clear_condition_ids();
-	condEv.add_condition_ids(1);
-	condEv.add_condition_ids(2);
+	condEv.conditionType = static_cast<uint32_t>(eConditionType::kConditionUseItem);
+	condEv.conditionIds.clear();
+	condEv.conditionIds.push_back(1);
+	condEv.conditionIds.push_back(2);
 	MissionSystem::HandleConditionEvent(condEv, missions, MissionConfig::GetSingleton());
 	EXPECT_EQ(1, missions.MissionSize());
 
     // 等级是当前拥有值；生产事件同时在 ID 槽和 amount 携带当前等级。
-	condEv.set_condition_type(static_cast<uint32_t>(eConditionType::kConditionLevelUp));
-	condEv.clear_condition_ids();
-	condEv.add_condition_ids(10);
-    condEv.set_amount(10);
+	condEv.conditionType = static_cast<uint32_t>(eConditionType::kConditionLevelUp);
+	condEv.conditionIds.clear();
+	condEv.conditionIds.push_back(10);
+    condEv.amount = 10;
 	MissionSystem::HandleConditionEvent(condEv, missions, MissionConfig::GetSingleton());
 	EXPECT_EQ(1, missions.MissionSize());
 
 	// Interaction — final condition, completes the mission
-    condEv.set_amount(1);
-	condEv.set_condition_type(static_cast<uint32_t>(eConditionType::kConditionInteraction));
-	condEv.clear_condition_ids();
-	condEv.add_condition_ids(1);
-	condEv.add_condition_ids(2);
+    condEv.amount = 1;
+	condEv.conditionType = static_cast<uint32_t>(eConditionType::kConditionInteraction);
+	condEv.conditionIds.clear();
+	condEv.conditionIds.push_back(1);
+	condEv.conditionIds.push_back(2);
 	MissionSystem::HandleConditionEvent(condEv, missions, MissionConfig::GetSingleton());
 
 	tlsEcs.dispatcher.update<ConditionEvent>();
@@ -230,7 +245,7 @@ TEST(MissionsComp, CompleteAcceptMission)
 
 	// Fulfill condition → mission completes
 	auto condEv = MakeConditionEvent(player, eConditionType::kConditionKillMonster);
-	condEv.add_condition_ids(1);
+	condEv.conditionIds.push_back(1);
 	MissionSystem::HandleConditionEvent(condEv, missions, MissionConfig::GetSingleton());
 
 	EXPECT_FALSE(missions.IsAccepted(missionId));
@@ -258,8 +273,8 @@ TEST(MissionsComp, EventTriggerMutableMission)
 	auto condEv = MakeConditionEvent(player, eConditionType::kConditionKillMonster, 4);
 	for (uint32_t i = 1; i <= 4; ++i)
 	{
-		condEv.clear_condition_ids();
-		condEv.add_condition_ids(i);
+		condEv.conditionIds.clear();
+		condEv.conditionIds.push_back(i);
 		MissionSystem::HandleConditionEvent(condEv, missions, MissionConfig::GetSingleton());
 	}
 
@@ -284,7 +299,7 @@ TEST(MissionsComp, OnCompleteMission)
 	// Complete mission 7, triggering next mission in chain
 	// amount must satisfy mission target_count (highest in chain is 12)
 	auto condEv = MakeConditionEvent(player, eConditionType::kConditionKillMonster, 12);
-	condEv.add_condition_ids(1);
+	condEv.conditionIds.push_back(1);
 	MissionSystem::HandleConditionEvent(condEv, missions, MissionConfig::GetSingleton());
 
 	tlsEcs.dispatcher.update<AcceptMissionEvent>();
@@ -300,8 +315,8 @@ TEST(MissionsComp, OnCompleteMission)
 	for (uint32_t i = static_cast<uint32_t>(eConditionType::kConditionKillMonster);
 		 i < static_cast<uint32_t>(eConditionType::kConditionInteraction); ++i)
 	{
-		condEv.clear_condition_ids();
-		condEv.add_condition_ids(i);
+		condEv.conditionIds.clear();
+		condEv.conditionIds.push_back(i);
 		MissionSystem::HandleConditionEvent(condEv, missions, MissionConfig::GetSingleton());
 
 		EXPECT_FALSE(missions.IsAccepted(missionId));
@@ -340,7 +355,7 @@ TEST(MissionsComp, AcceptNextMirroMission)
 
 	// Complete mission 7 (target_count=8)
 	auto condEv = MakeConditionEvent(player, eConditionType::kConditionKillMonster, 8);
-	condEv.add_condition_ids(1);
+	condEv.conditionIds.push_back(1);
 	MissionSystem::HandleConditionEvent(condEv, missions, MissionConfig::GetSingleton());
 
 	tlsEcs.dispatcher.update<AcceptMissionEvent>();
@@ -373,7 +388,7 @@ TEST(MissionsComp, MissionCondition)
 
 	// Single condition event completes all three
 	auto condEv = MakeConditionEvent(player, eConditionType::kConditionKillMonster);
-	condEv.add_condition_ids(1);
+	condEv.conditionIds.push_back(1);
 	MissionSystem::HandleConditionEvent(condEv, missions, MissionConfig::GetSingleton());
 
 	tlsEcs.dispatcher.update<AcceptMissionEvent>();
@@ -397,7 +412,7 @@ TEST(MissionsComp, ConditionAmount)
 	EXPECT_TRUE(missions.IsAccepted(missionId));
 
 	auto condEv = MakeConditionEvent(player, eConditionType::kConditionKillMonster);
-	condEv.add_condition_ids(1);
+	condEv.conditionIds.push_back(1);
 
 	// First event: progress increases but not enough to complete
 	MissionSystem::HandleConditionEvent(condEv, missions, MissionConfig::GetSingleton());
@@ -429,7 +444,7 @@ TEST(MissionsComp, ProgressClampedToTarget)
 
 	// Fire a huge amount at the first condition (KillMonster, condition id 1).
 	auto condEv = MakeConditionEvent(player, eConditionType::kConditionKillMonster, 1000000);
-	condEv.add_condition_ids(1);
+	condEv.conditionIds.push_back(1);
 	MissionSystem::HandleConditionEvent(condEv, missions, MissionConfig::GetSingleton());
 
 	// The mission stays accepted because the remaining conditions are unmet.
@@ -463,7 +478,7 @@ TEST(MissionsComp, MissionRewardList)
 
 	// Complete the mission
 	auto condEv = MakeConditionEvent(player, eConditionType::kConditionKillMonster);
-	condEv.add_condition_ids(1);
+	condEv.conditionIds.push_back(1);
 	MissionSystem::HandleConditionEvent(condEv, missions, MissionConfig::GetSingleton());
 	EXPECT_FALSE(missions.IsAccepted(missionId));
 	EXPECT_TRUE(missions.IsComplete(missionId));

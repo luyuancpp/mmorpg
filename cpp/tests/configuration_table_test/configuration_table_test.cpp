@@ -537,6 +537,33 @@ TEST(GameConfigEnvOverride, AcceptsAllFourSceneNodeTypeValues)
     ClearEnvVar("SCENE_NODE_TYPE");
 }
 
+// P0-A(docs/handoff/global-singletons-p0-findings-20261014.md):zone Redis 口令可由环境变量
+// ZONE_REDIS_PASSWORD 注入(K8s Secret),覆盖 yaml 的 zoneredis.password。
+// 先读配置、再清变量、最后断言:断言失败提前返回时也不会把变量漏给后面的用例。
+// 断言不打印口令值(AGENTS.md §11.3),只说明哪条规则不成立。
+TEST(GameConfigEnvOverride, ZoneRedisPasswordFromEnvOverridesYaml)
+{
+    constexpr const char *kEnvPassword = "p0a-env-pass-01";
+    GameConfig cfg;
+    SetEnvVar("ZONE_REDIS_PASSWORD", kEnvPassword);
+    const bool loaded = readGameConfig("etc/game_config.yaml", cfg);
+    ClearEnvVar("ZONE_REDIS_PASSWORD");
+    ASSERT_TRUE(loaded);
+    EXPECT_TRUE(cfg.zone_redis().password() == kEnvPassword)
+        << "ZONE_REDIS_PASSWORD must win over the yaml zoneredis.password";
+}
+
+TEST(GameConfigEnvOverride, ZoneRedisPasswordWithoutEnvKeepsYaml)
+{
+    GameConfig cfg;
+    ClearEnvVar("ZONE_REDIS_PASSWORD");
+    ASSERT_TRUE(readGameConfig("etc/game_config.yaml", cfg));
+    // 随仓库发布的 bin/etc/game_config.yaml 写的是空串(= 不认证);同时钉住占位口令 "yourpassword" 不再回来。
+    // 用 EXPECT_TRUE 而不是 EXPECT_EQ:失败时不把 yaml 里的口令值打进测试输出(AGENTS.md §11.3)。
+    EXPECT_TRUE(cfg.zone_redis().password().empty())
+        << "the shipped yaml must keep zoneredis.password empty; inject real passwords via ZONE_REDIS_PASSWORD";
+}
+
 // ---------------------------------------------------------------------------
 // Lookup 守卫宏
 // ---------------------------------------------------------------------------

@@ -90,6 +90,7 @@ set(SOURCE_FILES
     combat/skill/system/skill.cpp
     combat_state/system/combat_state.cpp
     core/config/config.cpp
+    actor/actor_net_id.cpp
     core/system/id_generator.cpp
     core/system/redis.cpp
     frame/manager/frame_time.cpp
@@ -133,11 +134,9 @@ set(SOURCE_FILES
     spatial/system/grid.cpp
     spatial/system/interest.cpp
     spatial/system/movement.cpp
-    spatial/system/movement_acceleration.cpp
     spatial/system/nav_query.cpp
     spatial/system/navigation.cpp
     spatial/system/recast.cpp
-    spatial/system/scene_crowd.cpp
     spatial/system/scene_spawn.cpp
     spatial/system/view.cpp
     world/world.cpp

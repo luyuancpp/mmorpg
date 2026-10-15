@@ -11,7 +11,8 @@
 #include "player/player_gm_guard.h" // 客户端 GM 指令统一闸门(guild-phase2 §S4 4.34)
 #include "battle/system/player_battle.h"
 #include "rpc/player_service_interface.h"
-#include "network/rpc_session.h"
+#include "network/rpc_channel.h"          // IsDispatchableMessageId:消息号越界或注册表空槽都不可派发
+#include "network/rpc_channel_stats.h"    // ShouldLogRpcEvent
 #include "network/rpc_controller.h"
 #include "network/network_constants.h"
 #include "network/error_handling_system.h"
@@ -23,16 +24,12 @@
 #include "type_alias/player_session_type_alias.h"
 #include "core/utils/proto/proto_field_checker.h"
 #include "network/network_utils.h"
-#include "thread_context/node_context_manager.h"
 #include "core/system/redis.h"
-#include "rpc/service_metadata/scene_service_metadata.h"
 #include "player/comp/afk_comp.h"
 #include "frame/manager/frame_time.h"
-#include "rpc/service_metadata/gate_service_service_metadata.h"
 #include "rpc/service_metadata/player_lifecycle_service_metadata.h"
-#include "proto/db/proto_option.pb.h"
-#include "modules/scene/comp/scene_node_comp.h"
-#include "proto/common/event/scene_event.pb.h"
+#include "proto/scene/scene_info.pb.h"
+#include "modules/scene/scene_events.h"
 #include <unordered_map>
 #include <string>
 
@@ -43,54 +40,35 @@ using namespace muduo::net;
 namespace
 {
 
-	MessagePriority GetMethodPriority(const google::protobuf::MethodDescriptor *method)
+	// 源路由一族(Scene.RoutePlayerStringMsg / Scene.RouteNodeStringMsg,gate 侧的 RoutePlayerMessage /
+	// RouteNodeMessage)已退役,只做显式拒绝。理由见 docs/design/muduo-rpc-channel.md §9.3:
+	//   - 全仓没有发起端(C++ 只有这几个 handler 互相转发);RoutePlayerStringMsg(81)/ RoutePlayerMessage(74)
+	//     不在 IsClientMessageId 里,客户端不可达;
+	//   - 它是「源路由 + 逐跳同步镜像应答」:应答在下游完成之前就回给上游且没有错误字段,正是 A→B→C 的反例;
+	//   - 旧的 scene 本地命中分支只打 TRACE、从不派发,gate→gate / scene→scene 分支拓扑不可达;
+	//   - 跨节点玩家消息的权威通道是 Kafka 与持久收件箱(cross_scene_player_messaging.md、reliable-player-inbox-20261014.md)。
+	// SetFailed 之后框架回 RPC_ERROR(HANDLER_FAILED),调用方得到 kRemoteFailed;这里不转发、不派发、不填 response。
+	// proto 方法暂不删:message_id 还没有墓碑,删了会被发号器回收给新方法(§9.3 末段)。
+	// 原先只为它们存在的 ResolveRoutedMessagePriority / GetMethodPriority / IsImportantPriority 一并删除。
+	//
+	// occurrences 由各 handler 的函数内 static 持有:handler 只在节点唯一的 EventLoop 线程上派发,不需要原子。
+	// 日志按 ShouldLogRpcEvent 采样(前 8 条逐条,之后每 1024 条一条),防止对端刷包把日志打爆。
+	void RejectDeprecatedRouteCall(::google::protobuf::RpcController *controller, const char *method,
+								   uint64_t &occurrences)
 	{
-		if (!method)
+		controller->SetFailed(std::string(method) +
+							  " is deprecated: no initiator; cross-node player messages go through Kafka / reliable inbox");
+		++occurrences;
+		if (!ShouldLogRpcEvent(occurrences))
 		{
-			return MESSAGE_PRIORITY_NORMAL;
+			return;
 		}
-
-		const auto &options = method->options();
-		if (!options.HasExtension(OptionMessagePriority))
-		{
-			return MESSAGE_PRIORITY_NORMAL;
-		}
-
-		return options.GetExtension(OptionMessagePriority);
-	}
-
-	MessagePriority ResolveRoutedMessagePriority(const RoutePlayerMessageRequest &request)
-	{
-		ClientRequest clientRequest;
-		if (!clientRequest.ParseFromString(request.body()))
-		{
-			return GetMethodPriority(::Scene::descriptor()->FindMethodByName("RoutePlayerStringMsg"));
-		}
-
-		if (clientRequest.message_id() >= gRpcMethodRegistry.size())
-		{
-			return GetMethodPriority(::Scene::descriptor()->FindMethodByName("RoutePlayerStringMsg"));
-		}
-
-		const auto &messageInfo = gRpcMethodRegistry[clientRequest.message_id()];
-		const auto serviceIt = gPlayerService.find(messageInfo.serviceName);
-		if (serviceIt == gPlayerService.end())
-		{
-			return GetMethodPriority(::Scene::descriptor()->FindMethodByName("RoutePlayerStringMsg"));
-		}
-
-		google::protobuf::Service *service = serviceIt->second->service();
-		if (!service || !service->GetDescriptor())
-		{
-			return GetMethodPriority(::Scene::descriptor()->FindMethodByName("RoutePlayerStringMsg"));
-		}
-
-		return GetMethodPriority(service->GetDescriptor()->FindMethodByName(messageInfo.methodName));
-	}
-
-	bool IsImportantPriority(const MessagePriority priority)
-	{
-		return priority == MESSAGE_PRIORITY_IMPORTANT;
+		const auto &conn = RpcController::From(controller).conn();
+		LOG_WARN << "Rejected deprecated RPC " << method
+				 << ": no initiator; cross-node player messages go through Kafka / reliable inbox"
+				 << " (docs/design/muduo-rpc-channel.md 9.3). peer="
+				 << (conn ? conn->peerAddress().toIpPort() : std::string("<unknown>"))
+				 << " occurrences=" << occurrences;
 	}
 
 	// 反向身份栅栏(docs/design/routing-identity-audit-20260908.md R13 的反向面)。
@@ -133,10 +111,8 @@ namespace
 		return false;
 	}
 
-	// 把一个拒绝码写进泛型应答的 error_message(按字段名反射,与生成层同一个 "error_message" 字段名契约)。
+	// 泛型应答按字段名写拒绝码;契约与生成层守卫见 services/player/rpc/player_service_interface.h。
 	// 应答里没有这个字段(返回 Empty 的推送类方法)时返回 false、什么都不写。
-	// 不经进程级全局 TipInfoMessage:直接构造局部 tip 写进应答,没有跨请求污染的问题
-	// (GM 闸门那条分支为什么要清全局 tip,见 ProcessClientPlayerMessage 里的注释)。
 	bool WriteRejectTip(google::protobuf::Message &playerResponse, const uint32_t tipId)
 	{
 		const auto *tipField = playerResponse.GetDescriptor()->FindFieldByName("error_message");
@@ -248,7 +224,9 @@ void SceneHandler::SendMessageToPlayer(::google::protobuf::RpcController* contro
 		return;
 	}
 
-	if (request->message_content().message_id() >= gRpcMethodRegistry.size())
+	// 越界与注册表空槽(serviceName / methodName 为 nullptr,例如被跳过的 DB 域)都不可派发:
+	// 只查越界会拿 nullptr 去构造 std::string(gPlayerService.find),对端发一帧就是 UB。
+	if (!IsDispatchableMessageId(request->message_content().message_id()))
 	{
 		LOG_ERROR << "Invalid message ID: " << request->message_content().message_id();
 		return;
@@ -320,7 +298,8 @@ void SceneHandler::ProcessClientPlayerMessage(::google::protobuf::RpcController*
 	const auto &msg = request->message_content();
 	const SessionId sessionId = request->session_id();
 
-	if (msg.message_id() >= gRpcMethodRegistry.size())
+	// 越界与注册表空槽都按「message_id not found」处理(见 SendMessageToPlayer 同一判据的注释)。
+	if (!IsDispatchableMessageId(msg.message_id()))
 	{
 		LOG_ERROR << "ProcessClientPlayerMessage: message_id not found " << msg.message_id();
 		return;
@@ -468,27 +447,9 @@ void SceneHandler::ProcessClientPlayerMessage(::google::protobuf::RpcController*
 		LOG_WARN << "ProcessClientPlayerMessage: client GM rejected method=" << methodName
 				 << " player_id=" << it->second << " session=" << sessionId;
 
-		// 把拒绝码搬进应答并清零全局 tip —— 这两件事平时由各 handler 生成的 CallMethod 里的
-		// TRANSFER_ERROR_MESSAGE(engine/core/macros/return_define.h)做,而本分支**不走**
-		// CallMethod,必须自己做。漏掉任一半都有确定性后果:
-		//   * 不搬:下面照常把一个空 playerResponse 序列化回 gate,客户端拿到「成功但 error_message
-		//     为空」,拒绝完全不可见(与 player_scene_handler.cpp 文件头 SetTip 注释里修掉的同一类);
-		//   * 不清:这条 tip 留在**进程级**全局上,同一 scene 节点上下一条走 CallMethod 且带非 Empty
-		//     应答的客户端请求(任意玩家、任意功能)会把它 move 进自己的应答 —— 一次本来成功的
-		//     操作被报成「功能暂不可用」,跨请求跨玩家污染。
-		// playerResponse 是泛型 Message*,没有 mutable_error_message(),所以按字段名反射写入
-		// (与生成层同一个 "error_message" 字段名契约);应答里没有这个字段(返回 Empty 的推送类
-		// 方法)时只清零、不搬运。
-		auto &gmRejectTip = tlsEcs.globalRegistry.get_or_emplace<TipInfoMessage>(tlsEcs.GlobalEntity());
-		gmRejectTip.set_id(kFeatureUnavailable);
-		if (const auto *tipField = playerResponse->GetDescriptor()->FindFieldByName("error_message");
-			tipField != nullptr &&
-			tipField->cpp_type() == google::protobuf::FieldDescriptor::CPPTYPE_MESSAGE &&
-			tipField->message_type() == TipInfoMessage::descriptor())
-		{
-			playerResponse->GetReflection()->MutableMessage(playerResponse.get(), tipField)->CopyFrom(gmRejectTip);
-		}
-		gmRejectTip.Clear();
+		// GM 闸不走 CallMethod,与退出闸共用 WriteRejectTip 直接写本次应答。
+		// Empty 应答没有 error_message 字段,不写。
+		WriteRejectTip(*playerResponse, kFeatureUnavailable);
 	}
 	else
 	{
@@ -556,7 +517,8 @@ void SceneHandler::InvokePlayerService(::google::protobuf::RpcController* contro
 		return;
 	}
 
-	if (request->message_content().message_id() >= gRpcMethodRegistry.size())
+	// 越界与注册表空槽都按「message_id not found」处理(见 SendMessageToPlayer 同一判据的注释)。
+	if (!IsDispatchableMessageId(request->message_content().message_id()))
 	{
 		LOG_ERROR << "message_id not found " << request->message_content().message_id();
 		SendErrorToClient(*request, *response, kMessageIdNotFound);
@@ -620,10 +582,6 @@ void SceneHandler::InvokePlayerService(::google::protobuf::RpcController* contro
 		return;
 	}
 
-	auto &tipInfoMessage = tlsEcs.globalRegistry.get_or_emplace<TipInfoMessage>(tlsEcs.GlobalEntity());
-	response->mutable_message_content()->mutable_error_message()->CopyFrom(tipInfoMessage);
-	tipInfoMessage.Clear();
-
 	const auto byte_size = playerResponse->ByteSizeLong();
 	response->mutable_message_content()->mutable_serialized_message()->resize(byte_size);
 	if (!playerResponse->SerializePartialToArray(response->mutable_message_content()->mutable_serialized_message()->data(),
@@ -642,6 +600,9 @@ void SceneHandler::RouteNodeStringMsg(::google::protobuf::RpcController* control
 	::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
+	// 已退役:显式拒绝,不再转发(见全局守护段 RejectDeprecatedRouteCall 与 docs/design/muduo-rpc-channel.md §9.3)。
+	static uint64_t rejectedCalls = 0;
+	RejectDeprecatedRouteCall(controller, "Scene.RouteNodeStringMsg", rejectedCalls);
 	///<<< END WRITING YOUR CODE
 }
 
@@ -650,110 +611,10 @@ void SceneHandler::RoutePlayerStringMsg(::google::protobuf::RpcController* contr
 	::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
-	if (!request || !response)
-	{
-		return;
-	}
-
-	// Always mirror request in response so callers can correlate route result.
-	response->set_body(request->body());
-	response->mutable_player_info()->CopyFrom(request->player_info());
-	response->mutable_node_list()->CopyFrom(request->node_list());
-
-	// Local fast path: player already loaded on this scene and no further route nodes.
-	const Guid playerId = request->player_info().player_id();
-	const MessagePriority routedPriority = ResolveRoutedMessagePriority(*request);
-	const bool importantRoute = IsImportantPriority(routedPriority);
-	if (playerId != kInvalidGuid)
-	{
-		const auto localPlayer = tlsEcs.GetPlayer(playerId);
-		if (localPlayer != entt::null && request->node_list_size() == 0)
-		{
-			// 归属交接冻结闸(跨 zone 传送 / 同 zone 跨节点换图,见 PlayerFrozenComp)。
-			// 冻结中的实体只是在等 scene_manager 的放行结果:盘上那份才是要交给目标节点的真值,
-			// 这时再把消息派给它,改出来的状态要么随实体销毁而丢失、要么与盘上分叉。
-			// 丢弃消息,交接出结果后客户端自行重试(gate 会话在冻结期间保留,连接不断)。
-			//
-			// IMPORTANT 消息打 ERROR:如果交接迟迟不出结果(scene_manager 不可达、应答看门狗在
-			// 反复重挂),客户端的重试会堆在这里,这是需要运维介入的信号。
-			if (PlayerLifecycleSystem::IsCrossZoneFrozen(localPlayer))
-			{
-				if (importantRoute)
-				{
-					LOG_ERROR << "RoutePlayerStringMsg dropped: player frozen for cross-zone migration "
-							  << "(IMPORTANT, may need client retry), player_id=" << playerId;
-				}
-				else
-				{
-					LOG_DEBUG << "RoutePlayerStringMsg dropped: player frozen for cross-zone migration "
-							  << "(NORMAL, silent drop), player_id=" << playerId;
-				}
-				return;
-			}
-
-			LOG_TRACE << "RoutePlayerStringMsg local hit, player_id=" << playerId;
-			return;
-		}
-	}
-
-	if (request->node_list_size() == 0)
-	{
-		if (importantRoute)
-		{
-			LOG_ERROR << "RoutePlayerStringMsg IMPORTANT route dropped: no next node, player_id=" << playerId;
-		}
-		else
-		{
-			LOG_WARN << "RoutePlayerStringMsg NORMAL route dropped: no next node, player_id=" << playerId;
-		}
-		return;
-	}
-
-	RoutePlayerMessageRequest nextRequest(*request);
-	// Consume the current hop before forwarding.
-	nextRequest.mutable_node_list()->DeleteSubrange(0, 1);
-
-	const auto &nextNode = request->node_list(0);
-	// node_id 是**业务节点号**,不是 entt 实体整数 —— uuid 主键重构之后
-	// (node_connector.cpp 改用 registry.create() 并按 uuid 建索引)两者不再相等。
-	// 裸 `entt::entity{node_id}` 要么撞不上任何有效槽位(消息静默丢失),要么更糟:
-	// 撞上一个恰好有效但完全无关的节点实体,把玩家消息路由到错误的节点。
-	// 与 gate 侧已修的那处(gate_service_handler.cpp RoutePlayerMessage)对齐;
-	// 这里用带 zone 的版本,因为 node_id 在 zone-scoped 类型上只保证同 zone 内不歧义,
-	// 而多跳路由的下一跳按契约总在本 zone(跨 zone 由 SceneManager 层重定向)。
-	// 判据来源:docs/design/routing-identity-audit-20260908.md R03。
-	const auto nextNodeEntityOpt = NodeUtils::FindNodeEntityByZoneAndNodeId(
-		nextNode.node_type(), GetZoneId(), nextNode.node_id());
-	if (!nextNodeEntityOpt)
-	{
-		LOG_ERROR << "RoutePlayerStringMsg route dropped: next node not found, node_type=" << nextNode.node_type()
-				  << ", node_id=" << nextNode.node_id() << ", player_id=" << playerId;
-		return;
-	}
-	const entt::entity nextNodeEntity = *nextNodeEntityOpt;
-	auto &nextRegistry = tlsNodeContextManager.GetRegistry(nextNode.node_type());
-
-	const auto nextSession = nextRegistry.try_get<RpcSession>(nextNodeEntity);
-	if (!nextSession)
-	{
-		LOG_ERROR << "RoutePlayerStringMsg route dropped: next node session missing, node_type=" << nextNode.node_type()
-				  << ", node_id=" << nextNode.node_id() << ", player_id=" << playerId;
-		return;
-	}
-
-	switch (nextNode.node_type())
-	{
-	case eNodeType::SceneNodeService:
-		nextSession->SendRequest(SceneRoutePlayerStringMsgMessageId, nextRequest);
-		return;
-	case eNodeType::GateNodeService:
-		nextSession->SendRequest(GateRoutePlayerMessageMessageId, nextRequest);
-		return;
-	default:
-		LOG_WARN << "RoutePlayerStringMsg route dropped: unsupported next node_type=" << nextNode.node_type()
-				 << ", node_id=" << nextNode.node_id() << ", player_id=" << playerId;
-		return;
-	}
+	// 已退役:显式拒绝。不再按 node_list 转发、不再镜像 response;跨 zone 冻结闸等本地分支随之退场
+	// (见全局守护段 RejectDeprecatedRouteCall 与 docs/design/muduo-rpc-channel.md §9.3)。
+	static uint64_t rejectedCalls = 0;
+	RejectDeprecatedRouteCall(controller, "Scene.RoutePlayerStringMsg", rejectedCalls);
 	///<<< END WRITING YOUR CODE
 }
 
@@ -776,8 +637,9 @@ void SceneHandler::UpdateSessionDetail(::google::protobuf::RpcController* contro
 		return;
 	}
 
-	PlayerLifecycleSystem::RemovePlayerSession(request->player_id());
-
+	// 只读校验全部做完再动会话,与上面栅栏拒绝同口径:任何一项不满足都什么都不碰。
+	// 以前先 RemovePlayerSession 再查 gate / 玩家:gate 查不到时旧会话已经摘掉,玩家停在无会话状态;
+	// 快照组件缺失时还会走到无守卫的 get(ecs-entt-misuse-audit-20261015 F094)。
 	if (!ResolveLocalZoneGateEntity(request->session_id()))
 	{
 		LOG_ERROR << "Gate not found " << GetGateNodeId(request->session_id());
@@ -791,9 +653,26 @@ void SceneHandler::UpdateSessionDetail(::google::protobuf::RpcController* contro
 		return;
 	}
 
-	SessionMap().emplace(request->session_id(), request->player_id());
+	// PlayerSessionSnapshotComp 只在入场流程绑定会话时创建(player_lifecycle.cpp,会话号非 0 才建),
+	// 不带会话入场的玩家没有它。缺失说明这个玩家从未绑定过会话:拒绝改绑,不在这里补建。
+	auto *sessionSnapshot = tlsEcs.actorRegistry.try_get<PlayerSessionSnapshotComp>(player);
+	if (sessionSnapshot == nullptr)
+	{
+		LOG_ERROR << "UpdateSessionDetail rejected: PlayerSessionSnapshotComp missing, player=" << request->player_id()
+				  << " entity=" << entt::to_integral(player) << " session=" << request->session_id();
+		return;
+	}
 
-	tlsEcs.actorRegistry.get<PlayerSessionSnapshotComp>(player).set_gate_session_id(request->session_id());
+	PlayerLifecycleSystem::RemovePlayerSession(player);
+
+	// 与入场绑定会话(player_lifecycle.cpp)同口径用 insert_or_assign:gate 同 node_id 重启后会话号从头发,
+	// 这个号可能还挂着别的玩家的旧映射。emplace 遇到已有键不覆盖,映射会停在旧玩家身上,本玩家快照却写成新号,
+	// 两边不一致。旧玩家那边擦映射时只擦仍归自己的(EraseSessionMappingIfOwned),不会反过来擦掉这条
+	// (scene-enter-session-fence.md §5.6)。
+	SessionMap().insert_or_assign(request->session_id(), request->player_id());
+
+	// RemovePlayerSession 与 SessionMap 只改字段和映射,不增删 actorRegistry 的组件,sessionSnapshot 仍然有效。
+	sessionSnapshot->set_gate_session_id(request->session_id());
 	// 改绑后同步登录身份的会话号(代次按 0 传 = 保持原值):之后到达的陈旧入场拿它比,而不是拿已被改掉的旧会话。
 	PlayerLifecycleSystem::RecordLoginIdentity(player, request->session_id(), /*loginGeneration=*/0);
 
@@ -851,30 +730,56 @@ void SceneHandler::CreateScene(::google::protobuf::RpcController* controller, co
 	// Keep this block in sync with SceneNodeGrpcImpl::HandleCreateScene. Both
 	// entrypoints write the same fields so the mirror-co-location pipeline
 	// works no matter which transport the caller uses.
-	auto &sceneInfo = tlsEcs.sceneRegistry.emplace<SceneInfoComp>(sceneEntity);
-	sceneInfo.set_scene_config_id(request->config_id());
-	sceneInfo.set_scene_id(request->scene_id());
-	sceneInfo.set_mirror_config_id(request->mirror_config_id());
-	sceneInfo.set_dungeon_config_id(request->dungeon_config_id());
-
-	for (const auto creator_id : request->creator_ids())
+	//
+	// sceneInfo 引用只在这个块里用。下面的 dispatcher.trigger 会同步跑监听者,监听者一旦删掉场景
+	// 或 SceneInfoComp(swap-and-pop),trigger 之前拿的引用就悬空了(ecs-entt-misuse-audit-20261015 F096)。
 	{
-		sceneInfo.mutable_creators()->insert({creator_id, true});
+		auto &sceneInfo = tlsEcs.sceneRegistry.emplace<SceneInfoComp>(sceneEntity);
+		sceneInfo.set_scene_config_id(request->config_id());
+		sceneInfo.set_scene_id(request->scene_id());
+		sceneInfo.set_mirror_config_id(request->mirror_config_id());
+		sceneInfo.set_dungeon_config_id(request->dungeon_config_id());
+
+		for (const auto creator_id : request->creator_ids())
+		{
+			sceneInfo.mutable_creators()->insert({creator_id, true});
+		}
 	}
 
-	tlsEcs.sceneRegistry.emplace<ScenePlayers>(sceneEntity);
 
 	OnSceneCreated event;
-	event.set_entity(entt::to_integral(sceneEntity));
+	event.scene = sceneEntity;
 	tlsEcs.dispatcher.trigger(event);
 
-	response->mutable_scene_info()->CopyFrom(sceneInfo);
+	// 回包按监听者跑完之后的状态重新取。场景在 trigger 里被删掉时不回 scene_info,
+	// 和上面的校验失败分支同一口径。
+	const auto *createdInfo = tlsEcs.sceneRegistry.try_get<SceneInfoComp>(sceneEntity);
+	if (createdInfo == nullptr)
+	{
+		LOG_ERROR << "CreateScene: scene entity=" << entt::to_integral(sceneEntity)
+				  << " scene_id=" << request->scene_id()
+				  << " lost SceneInfoComp inside OnSceneCreated listeners, not reporting success";
+		// 回滚半成品场景,做成真正的 fail-closed。OnSceneCreated 已经发出,监听者按「场景已建成」记过账
+		// (Agones 计数、AOI 格子表)。不收掉的话,这个实体没有 SceneInfoComp,按 scene_id 去重的 view 看不到它,
+		// 调用方重试会再建一个,它就永远留在 sceneRegistry 里。先补发 OnSceneDestroyed 让监听者对称撤账,
+		// 再销毁实体,与 DestroyScene 的收尾顺序一致;刚建的场景没有住户,不需要先排空。
+		// 实体已被监听者自己销毁时,撤账归那个监听者,这里不再重复。
+		if (tlsEcs.sceneRegistry.valid(sceneEntity))
+		{
+			OnSceneDestroyed rollbackEvent;
+			rollbackEvent.scene = sceneEntity;
+			tlsEcs.dispatcher.trigger(rollbackEvent);
+			tlsEcs.sceneRegistry.destroy(sceneEntity);
+		}
+		return;
+	}
+	response->mutable_scene_info()->CopyFrom(*createdInfo);
 
 	LOG_INFO << "CreateScene: created scene entity=" << entt::to_integral(sceneEntity)
 			 << " config_id=" << request->config_id()
-			 << " scene_id=" << sceneInfo.scene_id()
-			 << " mirror_config_id=" << sceneInfo.mirror_config_id()
-			 << " dungeon_config_id=" << sceneInfo.dungeon_config_id();
+			 << " scene_id=" << createdInfo->scene_id()
+			 << " mirror_config_id=" << createdInfo->mirror_config_id()
+			 << " dungeon_config_id=" << createdInfo->dungeon_config_id();
 	///<<< END WRITING YOUR CODE
 }
 
@@ -891,7 +796,7 @@ void SceneHandler::DestroyScene(::google::protobuf::RpcController* controller, c
 	}
 
 	// Find the scene entity by scene_id.
-	entt::entity targetEntity = entt::null;
+	SceneEntity targetEntity = entt::null;
 	auto view = tlsEcs.sceneRegistry.view<SceneInfoComp>();
 	for (auto entity : view)
 	{
@@ -920,7 +825,7 @@ void SceneHandler::DestroyScene(::google::protobuf::RpcController* controller, c
 
 	// Fire scene-destroyed event before entity removal.
 	OnSceneDestroyed event;
-	event.set_entity(entt::to_integral(targetEntity));
+	event.scene = targetEntity;
 	tlsEcs.dispatcher.trigger(event);
 
 	// Destroy the ECS entity (removes all components).

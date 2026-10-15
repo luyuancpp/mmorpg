@@ -37,6 +37,10 @@ on:
       - "java/gateway_node/src/main/resources/application.yaml"
       - "deploy/k8s/*.yaml"
       - "deploy/k8s/*.json"
+      - "go/login/internal/config/config.go"
+      - "go/login/internal/logic/pkg/loginqueue/dispatcher.go"
+      - "go/login/internal/svc/servicecontext.go"
+      - "java/gateway_node/src/main/java/com/game/gateway/ratelimit/RateLimitProperties.java"
       - ".github/workflows/deploy-config-tests.yml"
       - "deploy/k8s/Dockerfile*"
       - ".dockerignore"
@@ -59,6 +63,12 @@ on:
       - "java/gateway_node/src/main/resources/application.yaml"
       - "deploy/k8s/*.yaml"
       - "deploy/k8s/*.json"
+      # 削峰(G4b)契约用例直接读的源码:login 排队配置结构体的 json tag 与缺省值、锁键按 zone 派生(G1b → G4b-2 门禁)、
+      # gateway 限流总开关缺省。改这几个文件也要重跑,否则锁键改回「全服一个 leader」或 tag 改名(ConfigMap 写的键被静默忽略)都不会报红
+      - "go/login/internal/config/config.go"
+      - "go/login/internal/logic/pkg/loginqueue/dispatcher.go"
+      - "go/login/internal/svc/servicecontext.go"
+      - "java/gateway_node/src/main/java/com/game/gateway/ratelimit/RateLimitProperties.java"
       - ".github/workflows/deploy-config-tests.yml"
       # 镜像构建输入:版本注入 / OCI label / 构建上下文排除规则改了,发布契约测试要重跑
       - "deploy/k8s/Dockerfile*"

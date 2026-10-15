@@ -4,16 +4,6 @@
 #include <utility>
 #include <vector>
 
-uint64_t EvictOldestFirst::AcquisitionOrderOf(Guid /*guid*/, const ItemComp &item)
-{
-	// `ItemStore::Insert` 保证店里每个实例的 acquire_seq 都非零、且同包内单调
-	// (新实例盖当前水位,快照带回来的章原样保留并抬高水位)。所以这里直接比它。
-	//
-	// 恒为 0 是构造上不可达的;真出现了就排最前(当作最早),即"优先被挤掉" ——
-	// 一个没有身份的实例先走,比让它永远赖着不走安全。
-	return item.acquire_seq();
-}
-
 GuidVector EvictOldestFirst::SelectVictims(std::size_t needed, const ItemStore &store,
 										   const IContainerLayout & /*layout*/) const
 {
@@ -29,24 +19,23 @@ GuidVector EvictOldestFirst::SelectVictims(std::size_t needed, const ItemStore &
 		return {};
 	}
 
-	std::vector<std::pair<uint64_t, Guid>> byAge;
+	std::vector<std::pair<Guid, const ItemComp *>> byAge;
 	byAge.reserve(store.Size());
 	store.ForEach([&byAge](Guid guid, const ItemComp &item)
-				  { byAge.emplace_back(AcquisitionOrderOf(guid, item), guid); });
+				  { byAge.emplace_back(guid, &item); });
 
 	// 只需要最早的 needed 个,不必全序 —— partial_sort 就够。
-	// 次键取 guid 保证同序号时结果稳定(遍历来自 unordered 容器,不定序)。
+	// 显式依赖实例序比较器,资产淘汰不依赖 ForEach 的隐式遍历顺序。
 	const auto nth = byAge.begin() + static_cast<std::ptrdiff_t>(needed);
 	std::partial_sort(byAge.begin(), nth, byAge.end(),
 					  [](const auto &lhs, const auto &rhs)
-					  { return lhs.first != rhs.first ? lhs.first < rhs.first
-													  : lhs.second < rhs.second; });
+					  { return ItemStore::AcquiredBefore(*lhs.second, *rhs.second); });
 
 	GuidVector victims;
 	victims.reserve(needed);
 	for (auto it = byAge.begin(); it != nth; ++it)
 	{
-		victims.push_back(it->second);
+		victims.push_back(it->first);
 	}
 	return victims;
 }

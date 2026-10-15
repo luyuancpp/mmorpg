@@ -1210,6 +1210,48 @@ TEST(CurrencyTest, ProgrammingErrorsStillReturnInvalidParameter)
 }
 
 // ---------------------------------------------------------------------------
+// 必需组件缺失必须 fail-closed(docs/design/ecs-entt-misuse-audit-20261015.md F025)
+//
+// PlayerCurrencyComp 只在玩家加载时挂上(欠款从 CurrencyComp.debts 装载)。修复前增减路径在
+// 缺它时当场 get_or_emplace 一本空的继续记账:欠款被绕过、组件集合被悄悄改掉,
+// 下一次存盘还会用空表覆盖盘上的欠款。修复后:拒绝(kInvalidParameter)、余额不动、不补建组件。
+// ---------------------------------------------------------------------------
+
+TEST(CurrencyTest, AddCurrencyMissingPlayerCurrencyCompFailsClosed)
+{
+    // 只有 CurrencyComp、没有 PlayerCurrencyComp:模拟加载不完整的实体。
+    const auto player = tlsEcs.actorRegistry.create();
+    tlsEcs.actorRegistry.emplace<CurrencyComp>(player);
+
+    // 修复前这三条都红:返回 kSuccess、余额变成 100、组件被补建出来。
+    EXPECT_EQ(kInvalidParameter, CurrencySystem::AddCurrency(player, kCurrencyGold, 100));
+    EXPECT_EQ(0u, CurrencySystem::GetBalance(player, kCurrencyGold));
+    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<PlayerCurrencyComp>(player));
+
+    DestroyTestPlayer(player);
+}
+
+TEST(CurrencyTest, DeductCurrencyMissingPlayerCurrencyCompFailsClosed)
+{
+    auto player = CreateTestPlayer();
+    ASSERT_EQ(kSuccess, CurrencySystem::AddCurrency(player, kCurrencyGold, 100));
+    tlsEcs.actorRegistry.remove<PlayerCurrencyComp>(player);
+
+    // 修复前先扣钱、再补建组件:返回 kSuccess、余额 60、组件重新出现 —— 三条都红。
+    EXPECT_EQ(kInvalidParameter, CurrencySystem::DeductCurrency(player, kCurrencyGold, 40));
+    EXPECT_EQ(100u, CurrencySystem::GetBalance(player, kCurrencyGold));
+    // ASSERT 而非 EXPECT:修复前组件已被补建,下面的 emplace 会触发 entt 断言把整个测试进程带崩。
+    ASSERT_FALSE(tlsEcs.actorRegistry.any_of<PlayerCurrencyComp>(player));
+
+    // 组件按加载路径补回来之后同一笔扣款照常成立:拒绝的原因确实只是缺组件。
+    tlsEcs.actorRegistry.emplace<PlayerCurrencyComp>(player);
+    EXPECT_EQ(kSuccess, CurrencySystem::DeductCurrency(player, kCurrencyGold, 40));
+    EXPECT_EQ(60u, CurrencySystem::GetBalance(player, kCurrencyGold));
+
+    DestroyTestPlayer(player);
+}
+
+// ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
 

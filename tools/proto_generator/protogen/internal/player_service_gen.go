@@ -1,18 +1,16 @@
 package internal
 
 import (
-	"strings"
-
 	_config "protogen/internal/config"
 	"protogen/internal/utils"
 )
 
 // PlayerMethod holds data for a player service method.
 type PlayerMethod struct {
-	Method          string
-	CppRequest      string
-	CppResponse     string
-	IsEmptyResponse bool
+	Method           string
+	CppRequest       string
+	CppResponse      string
+	HasErrorResponse bool
 }
 
 // PlayerMethodFunctionsData holds data for generating player method functions.
@@ -24,6 +22,9 @@ type PlayerMethodFunctionsData struct {
 // GetPlayerServiceHeadStr generates the player service header file.
 func GetPlayerServiceHeadStr(methods RPCMethods) (string, error) {
 	const tmplStr = `#pragma once
+
+#include <type_traits>
+#include <utility>
 
 {{.IncludeName}}
 {{.PlayerServiceIncludeName}}
@@ -79,12 +80,13 @@ func getPlayerMethodHandlerFunctions(methods RPCMethods) string {
 {{- range $index, $method := .Methods }}
         case {{ $index }}:
 			{
+{{- if $method.HasErrorResponse }}
+            static_assert(std::is_same_v<decltype(std::declval<{{ $method.CppResponse }}&>().mutable_error_message()), ::TipInfoMessage*>,
+                "玩家 RPC 非 Empty 应答必须提供 TipInfoMessage error_message");
+{{- end }}
             {{ $method.Method }}(player,
                 static_cast<const {{ $method.CppRequest }}*>(request),
                 static_cast<{{ $method.CppResponse }}*>(response));
-{{- if not $method.IsEmptyResponse }}
-            TRANSFER_ERROR_MESSAGE(static_cast<{{ $method.CppResponse }}*>(response));
-{{- end }}
 			}
             break;
 {{- end }}
@@ -97,10 +99,10 @@ func getPlayerMethodHandlerFunctions(methods RPCMethods) string {
 	var methodList []PlayerMethod
 	for _, method := range methods {
 		methodList = append(methodList, PlayerMethod{
-			Method:          method.Method(),
-			CppRequest:      method.CppRequest(),
-			CppResponse:     method.CppResponse(),
-			IsEmptyResponse: strings.Contains(method.CppResponse(), _config.Global.Naming.EmptyResponse),
+			Method:           method.Method(),
+			CppRequest:       method.CppRequest(),
+			CppResponse:      method.CppResponse(),
+			HasErrorResponse: method.CppResponse() != "::"+_config.Global.Naming.EmptyResponse,
 		})
 	}
 

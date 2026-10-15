@@ -10,17 +10,9 @@
 #include "proto/common/component/battle_comp.pb.h"  // InBattleComp:回合制战斗在途拒绝 GM 写操作
 #include "table/proto/tip/common_error_tip.pb.h"
 
-// Convenience: stamp kInvalidParameter into the global TipInfoMessage so
-// the GM-side caller's reply carries a generic "rejected" code. We use
-// kInvalidParameter rather than minting a kPlayerCrossZoneFrozen tip
-// because (a) GM tooling rarely surfaces tip strings — operators read
-// the LOG_WARN line — and (b) introducing a tip code touches the
-// generated tip-table proto, disproportionate for a guard rail.
-//
-// The GM business logic in each Gm* handler below is currently empty
-// (auto-generated stubs); these guards are placed up-front so that
-// whoever fills the TODO blocks already lands inside Frozen-protected
-// code without having to remember §11.1 themselves.
+// 拒绝直接写本次应答;错误码规则见 services/player/rpc/player_service_interface.h。
+// GM 工具沿用 kInvalidParameter 表示冻结或战斗在途拒绝,诊断详情保留在 LOG_WARN。
+// 当前业务体仍是 TODO,闸放在入口,后续填充业务时也必须保留这层保护。
 namespace
 {
     // ── GM 闸:本文件**全部十二条**的第一句都是它,读写不分 ──────────────
@@ -42,27 +34,25 @@ namespace
     // 判据与另外六条 GM handler 同一个 SCENE_RUN_MODE:默认(未设 / prod)拒绝,
     // 本地联调由启动器显式设 dev。线上改玩家数据走 scene_admin / data_service 那条
     // 带 HMAC 签名与审计日志的运维面(cpp/nodes/gate/SECURITY.md §2/§3)。
-    bool RejectGmRollbackRpc(const char* gmRpcName)
+    template <typename Response>
+    bool RejectGmRollbackRpc(const char* gmRpcName, Response& response)
     {
         if (!scene_gm_guard::RejectGmClientRpc(gmRpcName))
         {
             return false;
         }
-        tlsEcs.globalRegistry
-            .get_or_emplace<TipInfoMessage>(tlsEcs.GlobalEntity())
-            .set_id(kFeatureUnavailable);
+        response.mutable_error_message()->set_id(kFeatureUnavailable);
         return true;
     }
 
-    bool RejectIfFrozen(entt::entity player, const char* gmRpcName)
+    template <typename Response>
+    bool RejectIfFrozen(entt::entity player, const char* gmRpcName, Response& response)
     {
         if (PlayerLifecycleSystem::IsCrossZoneFrozen(player))
         {
             LOG_WARN << gmRpcName << " rejected: player frozen for cross-zone migration. "
                      << "entity=" << entt::to_integral(player);
-            tlsEcs.globalRegistry
-                .get_or_emplace<TipInfoMessage>(tlsEcs.GlobalEntity())
-                .set_id(kInvalidParameter);
+            response.mutable_error_message()->set_id(kInvalidParameter);
             return true;
         }
         // 回合制战斗在途同样拒绝:GM 回档 / 回收会改背包与属性,而战斗快照已经发出去了。
@@ -73,9 +63,7 @@ namespace
         {
             LOG_WARN << gmRpcName << " rejected: player is in a turn battle. "
                      << "entity=" << entt::to_integral(player);
-            tlsEcs.globalRegistry
-                .get_or_emplace<TipInfoMessage>(tlsEcs.GlobalEntity())
-                .set_id(kInvalidParameter);
+            response.mutable_error_message()->set_id(kInvalidParameter);
             return true;
         }
         return false;
@@ -90,8 +78,8 @@ void SceneRollbackClientPlayerHandler::GmAttachDebt(entt::entity player,const ::
 	// Write-class GM op: attaches a debt entry to the player's debt list,
 	// which the destination zone's snapshot already carries. Reject during
 	// migration; ops can re-attach after migration completes.
-	if (RejectGmRollbackRpc("GmAttachDebt")) return;
-	if (RejectIfFrozen(player, "GmAttachDebt")) return;
+	if (RejectGmRollbackRpc("GmAttachDebt", *response)) return;
+	if (RejectIfFrozen(player, "GmAttachDebt", *response)) return;
 	// TODO(P1-B): implement debt-attach logic.
 ///<<< END WRITING YOUR CODE
 
@@ -102,8 +90,8 @@ void SceneRollbackClientPlayerHandler::GmWaiveDebt(entt::entity player,const ::G
 {
 ///<<< BEGIN WRITING YOUR CODE
 	// Write-class GM op: removes a debt entry; same Frozen rationale as Attach.
-	if (RejectGmRollbackRpc("GmWaiveDebt")) return;
-	if (RejectIfFrozen(player, "GmWaiveDebt")) return;
+	if (RejectGmRollbackRpc("GmWaiveDebt", *response)) return;
+	if (RejectIfFrozen(player, "GmWaiveDebt", *response)) return;
 	// TODO(P1-B): implement debt-waive logic.
 ///<<< END WRITING YOUR CODE
 
@@ -114,8 +102,8 @@ void SceneRollbackClientPlayerHandler::GmAdjustDebt(entt::entity player,const ::
 {
 ///<<< BEGIN WRITING YOUR CODE
 	// Write-class GM op: edits an existing debt entry's amount; same Frozen rationale.
-	if (RejectGmRollbackRpc("GmAdjustDebt")) return;
-	if (RejectIfFrozen(player, "GmAdjustDebt")) return;
+	if (RejectGmRollbackRpc("GmAdjustDebt", *response)) return;
+	if (RejectIfFrozen(player, "GmAdjustDebt", *response)) return;
 	// TODO(P1-B): implement debt-adjust logic.
 ///<<< END WRITING YOUR CODE
 
@@ -127,8 +115,8 @@ void SceneRollbackClientPlayerHandler::GmFreezeDebt(entt::entity player,const ::
 ///<<< BEGIN WRITING YOUR CODE
 	// Write-class GM op: toggles the deferred-clawback "frozen" flag on a
 	// debt; same Frozen rationale as Attach.
-	if (RejectGmRollbackRpc("GmFreezeDebt")) return;
-	if (RejectIfFrozen(player, "GmFreezeDebt")) return;
+	if (RejectGmRollbackRpc("GmFreezeDebt", *response)) return;
+	if (RejectIfFrozen(player, "GmFreezeDebt", *response)) return;
 	// TODO(P1-B): implement debt-freeze logic.
 ///<<< END WRITING YOUR CODE
 
@@ -141,7 +129,7 @@ void SceneRollbackClientPlayerHandler::GmQueryDebt(entt::entity player,const ::G
 	// Read-only: no Frozen guard. Querying during migration returns the
 	// source-side snapshot which is by definition the same state the
 	// destination will load (we marshalled before freezing) — safe.
-	if (RejectGmRollbackRpc("GmQueryDebt")) return;
+	if (RejectGmRollbackRpc("GmQueryDebt", *response)) return;
 	// TODO(P1-B): implement debt-query.
 ///<<< END WRITING YOUR CODE
 
@@ -155,7 +143,7 @@ void SceneRollbackClientPlayerHandler::GmCreateSnapshot(entt::entity player,cons
 	// of state the destination is about to load anyway, so creating one on
 	// the source side at Frozen time is semantically fine — and arguably
 	// useful for forensics. No Frozen guard.
-	if (RejectGmRollbackRpc("GmCreateSnapshot")) return;
+	if (RejectGmRollbackRpc("GmCreateSnapshot", *response)) return;
 	// TODO(P1-B): implement snapshot creation.
 ///<<< END WRITING YOUR CODE
 
@@ -166,7 +154,7 @@ void SceneRollbackClientPlayerHandler::GmListSnapshots(entt::entity player,const
 {
 ///<<< BEGIN WRITING YOUR CODE
 	// Read-only: no Frozen guard.
-	if (RejectGmRollbackRpc("GmListSnapshots")) return;
+	if (RejectGmRollbackRpc("GmListSnapshots", *response)) return;
 	// TODO(P1-B): implement snapshot listing.
 ///<<< END WRITING YOUR CODE
 
@@ -177,7 +165,7 @@ void SceneRollbackClientPlayerHandler::GmPreviewRollback(entt::entity player,con
 {
 ///<<< BEGIN WRITING YOUR CODE
 	// Read-only "what would happen if we rolled back" simulation. No Frozen guard.
-	if (RejectGmRollbackRpc("GmPreviewRollback")) return;
+	if (RejectGmRollbackRpc("GmPreviewRollback", *response)) return;
 	// TODO(P1-B): implement preview.
 ///<<< END WRITING YOUR CODE
 
@@ -192,8 +180,8 @@ void SceneRollbackClientPlayerHandler::GmExecuteRollback(entt::entity player,con
 	// from a marshalled blob; rolling back the source would diverge from
 	// what the destination loads. Operators should wait for the migration
 	// to settle (or fail) and rollback on the post-migration zone.
-	if (RejectGmRollbackRpc("GmExecuteRollback")) return;
-	if (RejectIfFrozen(player, "GmExecuteRollback")) return;
+	if (RejectGmRollbackRpc("GmExecuteRollback", *response)) return;
+	if (RejectIfFrozen(player, "GmExecuteRollback", *response)) return;
 	// TODO(P1-B): implement actual rollback execution.
 ///<<< END WRITING YOUR CODE
 
@@ -204,7 +192,7 @@ void SceneRollbackClientPlayerHandler::GmQueryTransactionLog(entt::entity player
 {
 ///<<< BEGIN WRITING YOUR CODE
 	// Read-only: forwards to data_service::QueryTransactionLog. No Frozen guard.
-	if (RejectGmRollbackRpc("GmQueryTransactionLog")) return;
+	if (RejectGmRollbackRpc("GmQueryTransactionLog", *response)) return;
 	// TODO(P1-B): implement RPC forward.
 ///<<< END WRITING YOUR CODE
 
@@ -215,7 +203,7 @@ void SceneRollbackClientPlayerHandler::GmTraceItem(entt::entity player,const ::G
 {
 ///<<< BEGIN WRITING YOUR CODE
 	// Read-only: walks the transaction-log graph for one item_uuid. No Frozen guard.
-	if (RejectGmRollbackRpc("GmTraceItem")) return;
+	if (RejectGmRollbackRpc("GmTraceItem", *response)) return;
 	// TODO(P1-B): implement item trace.
 ///<<< END WRITING YOUR CODE
 
@@ -228,8 +216,8 @@ void SceneRollbackClientPlayerHandler::GmClawbackItem(entt::entity player,const 
 	// Write-class — removes an exploit-spawned item from the player's bag
 	// (or attaches debt if the item was already consumed). Reject during
 	// migration; same rationale as GmExecuteRollback.
-	if (RejectGmRollbackRpc("GmClawbackItem")) return;
-	if (RejectIfFrozen(player, "GmClawbackItem")) return;
+	if (RejectGmRollbackRpc("GmClawbackItem", *response)) return;
+	if (RejectIfFrozen(player, "GmClawbackItem", *response)) return;
 	// TODO(P1-B): implement clawback execution.
 ///<<< END WRITING YOUR CODE
 

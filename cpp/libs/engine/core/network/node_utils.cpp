@@ -1,4 +1,5 @@
 #include "node_utils.h"
+#include <atomic>
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
@@ -7,12 +8,23 @@
 #include <optional>
 #include <grpcpp/channel.h>
 #include "muduo/base/Logging.h"
-#include <thread_context/ecs_context.h>
 #include <thread_context/node_context_manager.h>
 
-NodeInfo &GetNodeInfo()
+namespace
 {
-	return tlsEcs.globalRegistry.get_or_emplace<NodeInfo>(tlsEcs.GlobalEntity());
+// 这里只发布所属对象的地址;内容与引用寿命仍由 loop 线程归属和停机排空保证。
+std::atomic<const NodeInfo *> localNodeInfo{nullptr};
+}
+
+const NodeInfo *InstallLocalNodeInfo(const NodeInfo *info)
+{
+	return localNodeInfo.exchange(info, std::memory_order_acq_rel);
+}
+
+const NodeInfo &GetNodeInfo()
+{
+	const auto *info = localNodeInfo.load(std::memory_order_acquire);
+	return info != nullptr ? *info : NodeInfo::default_instance();
 }
 
 uint32_t GetZoneId()

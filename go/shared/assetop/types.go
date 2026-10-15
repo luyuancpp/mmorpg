@@ -181,6 +181,11 @@ type Result struct {
 	// Local 表示这次根本没发出 RPC(玩家无位置 / 节点未注册),NOT_HERE 是本地合成的。
 	// 离线已落盘结局读取(reconcile.go)只在 Local 时才有意义。
 	Local bool
+	// Absent 表示 Local 的原因是**位置键不存在**(scenenode.ErrNotOnline):玩家确实不在线。
+	// 等待跨 zone 落点、节点未注册 / 歧义、节点镜像未完成首次同步时 Local 为真而 Absent 为假 ——
+	// 那时玩家多半在线,不会再有落地唤醒,所以只有 Absent 才进离线停放档(decide.go OfflineParking),
+	// 与自动放弃的「没有位置」(abandon.go playerAbsent)同一口径。
+	Absent bool
 }
 
 // Terminal 报告这条结果是否足以终结 outbox 行:结局固定 **且** 已落盘。

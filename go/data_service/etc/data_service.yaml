@@ -218,7 +218,7 @@ Schema:
 # max_id ≥ 消费表最大号,这是 ID 安全事件,不是普通的库恢复。
 IdSegment:
   AllowAutoSeed: true      # dev only;生产必须 false
-  BootstrapTags: [player, guild, item, txlog, snapshot, trade_listing, guild_asset_op]
+  BootstrapTags: [player, guild, item, txlog, snapshot, trade_listing, guild_asset_op, friend_request]
 
 # C++ scene 产出的交易流水 / 玩家快照落库消费者。Brokers 留空 = 不消费(本地无 Kafka 合法)。
 # Kafka 不可达不影响 Load/Save,只记日志并每 30s 后台重试。

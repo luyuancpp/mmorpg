@@ -37,5 +37,6 @@ public:
     // Marshal current player state, build a PlayerSnapshotEntry, and push to Kafka.
     // Returns the assigned snapshot_id (from the snapshot id segment), or 0 on failure
     // (including "segment not ready": the snapshot is skipped, fail-closed).
+    // 只读:不改变实体的组件集合。持久化组件缺失时同样返回 0、不发快照(不消耗号段)。
     static uint64_t CaptureAndSend(entt::entity player, SnapshotTrigger trigger);
 };

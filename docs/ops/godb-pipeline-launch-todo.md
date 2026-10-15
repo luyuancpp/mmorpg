@@ -11,7 +11,7 @@
 
 | # | 事项 | 怎么做 | 状态 |
 |---|---|---|---|
-| 1.1 | 第 0 批（子 shard 打散、login 自锁、位点重置判定、汇总脚本 DB 段）的编译与单测 | [Codex 任务单](../handoff/godb-pipeline-codex-tasksheet-20261013.md) 任务 A | 待 Codex。负责人已自行安装 Go 1.27.2；Go 模块下载的同意未明确 |
+| 1.1 | 第 0 批（子 shard 打散、login 自锁、位点重置判定、汇总脚本 DB 段）的编译与单测 | [Codex 任务单](../handoff/godb-pipeline-codex-tasksheet-20261013.md) 任务 A | 待 Codex。负责人已自行安装 Go 1.27.2；2026-10-15 同意 Codex 跑测试时联网下载 Go 模块（任务单第 2.1 版 §0.1「同意 2」）|
 | 1.2 | proto2mysql `SaveConditional` 的离线、真库（MySQL 8.4 / TiDB 8.5）、竞态测试 | 同上，任务 B | 待 Codex。负责人已同意拉取两个镜像 |
 | 1.3 | 1.2 全绿后合入 proto2mysql main，不打 tag；go/db 用伪版本钉 main 上那个提交 | 负责人 2026-10-13 的决定 | 等 1.2 |
 
@@ -19,7 +19,9 @@
 
 ## 2. L-04 第 1 批（存储不可用时延后、不进死信；业务池读写超时）
 
-代码已落：第 1 批随 2026-10-14 的提交 `ebccaf04d`（已推送）入库；之后的复核修订在工作区未提交。文件清单见 [L-04 设计](../design/db-task-store-unavailable-deferral.md) §7。
+代码已落：第 1 批随 2026-10-14 的提交 `ebccaf04d`（已推送）入库；之后的复核修订随 2026-10-15 的工作区快照 `54c9d775d`（已推送）入库。`2f897bd07..54c9d775d` 之间 go/db 的 15 个文件改动全部属于本批，文件清单见 [L-04 设计](../design/db-task-store-unavailable-deferral.md) §7；同一区间别的会话改了 go/shared（go/db 经 `replace shared => ../shared` 依赖它）。
+
+**怎么跑**：不在主工作区跑（别的会话在写）。用两个临时 worktree：被测 `$env:TEMP\l04_head` 建在 `54c9d775d`，基线 `$env:TEMP\l04_base` 建在 `2f897bd07`（`ebccaf04d` 的父提交）；做法与收尾照 [Codex 任务单](../handoff/godb-pipeline-codex-tasksheet-20261013.md) §2.1 / §2.6，环境变量照任务单 §1（`GOTOOLCHAIN=local`、`GOFLAGS=-mod=readonly`、`GOPROXY=https://goproxy.cn,direct`，「同意 2」2026-10-15 已获）。下面命令的工作目录都是 worktree 里的 `go\db`。
 
 ### 2.1 编译与静态检查
 
@@ -33,7 +35,7 @@ go build ./...
 
 通过标准：`gofmt -l` 无输出；vet 与 build 退出码 0。失败时保留第一条 error 及其前后 20 行。
 
-状态：2026-10-14 提交 `ebccaf04d` 的说明记录「已检查范围的 Go 格式检查通过」（范围未写明；vet 与 build 未记录）。之后的复核修订（未提交）需要重跑。
+状态：2026-10-14 提交 `ebccaf04d` 的说明记录「已检查范围的 Go 格式检查通过」（范围未写明；vet 与 build 未记录）。复核修订（`54c9d775d`，提交说明没有记录任何验证）需要在 `l04_head` 上重跑。
 
 ### 2.2 已随代码写的单测
 
@@ -45,10 +47,10 @@ go test ./internal/storeerr/... ./internal/logic/pkg/proto_sql/... ./internal/ka
 
 - 新增：`internal/storeerr/storeerr_test.go`（4 个用例）、`internal/logic/pkg/proto_sql/store_health_test.go`（7 个用例）。
 - 改写：`internal/kafka/placement_route_test.go` 的 `TestStoreUnavailable_WriteKeepsBudgetReadFailsFast`（读任务改为立即回失败回执）；`key_ordered_consumer_test.go` 的 `recordingHarness`（handler 签名改为返回 error）。
-- 基线：在改动前的提交上跑同一条命令对比失败集合（L-04 提交之前就是当前 HEAD；提交之后用它的父提交建临时 worktree）。`internal/kafka` 的既有用例依赖 miniredis 监听 127.0.0.1，沙箱拦回环时先申请放行。
-- 通过标准：新增用例全部 PASS；既有用例的失败集合是基线失败集合的子集。
+- 基线：在 `l04_base` 上跑同一条命令（基线没有 `internal/storeerr`，从命令里去掉它），对比失败集合。`internal/kafka` 的既有用例依赖 miniredis 监听 127.0.0.1，沙箱拦回环时先申请放行。
+- 通过标准：新增用例全部 PASS；既有用例的失败集合是基线失败集合的子集。出现新增失败时，先看失败栈是否落在本批 15 个文件之外（例如 go/shared），并如实写明，不要直接算到本批头上。
 
-状态：2026-10-14 提交 `ebccaf04d` 的说明记录「storeerr、proto_sql、config、metrics 定向单测通过」；`internal/kafka` 包未跑（本机缺 `miniredis/v2 v2.36.1` 模块且离线模式阻止下载）。这是复核修订之前的代码；修订改了 `proto_sql`（探活、冷却计数，新增 2 条用例）、`metrics`、`internal/kafka/placement_route.go`，需要重跑；`internal/kafka` 需要先解决模块下载（Go 模块下载的同意仍未明确）。
+状态：2026-10-14 提交 `ebccaf04d` 的说明记录「storeerr、proto_sql、config、metrics 定向单测通过」；`internal/kafka` 包未跑（本机缺 `miniredis/v2 v2.36.1` 的源码包，离线模式下载不了）。这是复核修订之前的代码；修订改了 `proto_sql`（探活、冷却计数，新增 2 条用例）、`metrics`、`internal/kafka/placement_route.go`，需要重跑。2026-10-15 负责人同意 Codex 联网下载 Go 模块，`internal/kafka` 已不再被模块挡住（Claude 只读核对：go/db 在 `2f897bd07` 与 `54c9d775d` 上缺的源码包只有 miniredis v2.36.1）。
 
 ### 2.3 还没写的单测（上线前补）
 
@@ -90,7 +92,7 @@ go test ./internal/storeerr/... ./internal/logic/pkg/proto_sql/... ./internal/ka
 | 2.5.3 | 上线前记录各 zone 现有死信长度（`LLEN kafka:dead:queue:db_task_zone_<zone>`，换代后带 `_g<N>`），否则 `DbTaskDeadLetterNonEmpty` 部署后常亮；存量死信由负责人决定怎么处理 | 待做 |
 | 2.5.4 | 与 G2b 那个会话对齐：`deploy/k8s/mysql-connection-alerts.yaml` 描述里「go/db 把 1040 当普通失败 → 进死信」在本批部署后过时 | 待对齐 |
 | 2.5.5 | `DbTaskRetryQueueGrowing` 的阈值（现为 1000）按压测数据定 | 待 R20 |
-| 2.5.6 | 本批提交后在 Java 仓库 `PARITY.md` 追加一行「不适用（Java 没有 Kafka 存盘链）」，备注指向第 60 行 | 待提交后 |
+| 2.5.6 | 本批提交后在 Java 仓库 `PARITY.md` 登记 | 2026-10-15 Claude 在 Java 仓库 `PARITY.md` 文件尾追加两行（未提交）：「存储不可用时存盘任务延后」为不适用（Java 不经 Kafka 落库，与「db 多实例」行同理）；「业务库连接超时与会话锁等待」为 Java 待做（待核对）——Java 的 game-scene / game-login 设了 `socketTimeout=10000` 但没设会话锁等待，MySQL 缺省值都比 10 s 长 |
 | 2.5.7 | TiDB 阶段：确认 TiDB 接受会话变量 `lock_wait_timeout`，不接受时 `SessionLockWaitSeconds` 写 -1 | 待 TiDB 阶段 |
 
 ### 2.6 部署顺序与红线

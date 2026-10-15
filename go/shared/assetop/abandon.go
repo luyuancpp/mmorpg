@@ -61,8 +61,10 @@ import (
 // **安全**(不小于任何一次真实发送的时刻,包括发完请求就崩溃、没来得及 Reschedule 的那一次)与
 // **活性**(本地 NOT_HERE、放弃方自己的领取与归还都不推进它)。Store 按下面四条维护 last_send_ms 列:
 //
-//  1. 插行时写 created_ms(插行即持租约,同步投递紧接着就可能发出)。新增这一列时,存量行回填为
-//     GREATEST(created_ms, updated_ms, lease_until_ms)。
+//  1. 插行时写 created_ms(插行即持租约,同步投递紧接着就可能发出)。存量行不做单独的回填迁移,
+//     在第 2 条的 Claim CAS 里懒初始化:last_send_ms = 0 时先取 GREATEST(created_ms, updated_ms) 作初值,
+//     再与 lease_until_ms 取 GREATEST。此前每次发送之后都有一次写 updated_ms 的重排或终结,没收尾的那次
+//     由 lease_until_ms 盖住,所以初值不小于任何真实发送(设计 §6.3「last_send_ms 契约」第 5 条)。
 //  2. Claim 的那条 CAS 里,**先于**改写 lease_until_ms 写
 //     last_send_ms = GREATEST(last_send_ms, lease_until_ms)。
 //     上一个租约若没有正常收尾(持有者发完请求就崩溃、Reschedule 落空或出错),lease_until_ms 仍是那个

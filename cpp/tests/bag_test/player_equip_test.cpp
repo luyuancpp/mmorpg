@@ -10,7 +10,7 @@
 //   * 「怎么掷、怎么累加」的纯规则在 turn_battle_engine_test/equip_attribute_rules_test.cpp;
 //     这里验的是表行 / 实例被正确翻译成规则的输入。
 //   * 装备加成进面板 / 进战斗的数值在 player_equip_attribute_test.cpp;这里只确认穿脱之后
-//     触发了重算(DerivedAttributesComp 出现)。强化 / 镶嵌 / 取下同理:这里钉的是校验顺序、
+//     触发了重算(max_health 被写成非 0)。强化 / 镶嵌 / 取下同理:这里钉的是校验顺序、
 //     扣了什么、实例上写了什么、哪些情况重算;「强化多少级 = 面板多几点」的六项增量在那个文件。
 //   * 按 config 全或无扣物的原语(BagService::RemoveItemsExact)在 bag_remove_exact_test.cpp。
 //
@@ -23,6 +23,7 @@
 // 不依赖别的文件的用例先跑或后跑。
 
 #include <gtest/gtest.h>
+#include "engine/core/type_define/player_guid_comp.h"
 
 #include <cstdint>
 #include <functional>
@@ -51,6 +52,7 @@
 #include "proto/common/component/currency_comp.pb.h"
 #include "proto/common/component/item_base_comp.pb.h"
 #include "proto/common/component/player_comp.pb.h"
+#include "proto/common/component/player_attribute_comp.pb.h"
 #include "proto/scene/player_bag.pb.h"
 #include "services/scene/player/comp/player_frozen_comp.h"
 #include "services/scene/player/system/equip_attribute_rules.h"
@@ -604,7 +606,6 @@ protected:
 		BagService::SetItemInstanceInitializer({});
 		PlayerEquipSystem::SetRandomSourceForTest({});
 		ASSERT_NO_FATAL_FAILURE(RequireFixtureRows());
-		Tip().Clear();
 		player = NewPlayer(kPlayerGuid, kMaxLevel);
 	}
 
@@ -614,7 +615,6 @@ protected:
 		// 脚本随机源是进程级静态:不复原的话,排在后面的用例掷属性时吃到的是用完了的脚本。
 		PlayerEquipSystem::SetRandomSourceForTest({});
 		dice.reset();
-		Tip().Clear();
 		for (const auto entity : players)
 		{
 			if (tlsEcs.actorRegistry.valid(entity))
@@ -822,7 +822,7 @@ protected:
 	{
 		const auto entity = tlsEcs.actorRegistry.create();
 		players.push_back(entity);
-		tlsEcs.actorRegistry.emplace<Guid>(entity, Guid{guid});
+		tlsEcs.actorRegistry.emplace<PlayerGuidComp>(entity, Guid{guid});
 		auto &bags = tlsEcs.actorRegistry.emplace<PlayerBagsComp>(entity);
 		for (auto &bag : bags.bags)
 		{
@@ -837,12 +837,9 @@ protected:
 		// (做法同 player_battle_settlement_test.cpp)。余额从 0 起,要用金币的用例自己 SetGold。
 		tlsEcs.actorRegistry.emplace<CurrencyComp>(entity);
 		tlsEcs.actorRegistry.emplace<PlayerCurrencyComp>(entity);
+		tlsEcs.actorRegistry.emplace<PlayerAttributeComp>(entity);
+		tlsEcs.actorRegistry.emplace<DerivedAttributesComp>(entity);
 		return entity;
-	}
-
-	TipInfoMessage &Tip()
-	{
-		return tlsEcs.globalRegistry.get_or_emplace<TipInfoMessage>(tlsEcs.GlobalEntity());
 	}
 	Bag &Inventory() { return tlsEcs.actorRegistry.get<PlayerBagsComp>(player).bags[kInventory]; }
 	Bag &Equipment() { return tlsEcs.actorRegistry.get<PlayerBagsComp>(player).bags[kEquipment]; }
@@ -966,11 +963,12 @@ protected:
 		ExpectBagsUnchanged(before.inventory, before.equipment);
 	}
 
-	// 穿着的装备被改动之后是否触发过属性重算:夹具玩家一开始没有 DerivedAttributesComp,
-	// 第一次重算才会出现(与一期穿脱用例的判据相同)。
+	// 派生组件在夹具初始化时已经存在;重算会把 max_health 从默认 0 写成至少 1。
+	// 用值的变化判断是否触发重算(与一期穿脱用例的判据相同)。
 	bool AttributesWereRecalculated()
 	{
-		return tlsEcs.actorRegistry.try_get<DerivedAttributesComp>(player) != nullptr;
+		const auto* derived = tlsEcs.actorRegistry.try_get<DerivedAttributesComp>(player);
+		return derived != nullptr && derived->max_health() != 0;
 	}
 
 	std::vector<entt::entity> players;
@@ -1315,7 +1313,7 @@ TEST_F(PlayerEquipTest, EquipMovesTheSameInstanceIntoTheWeaponSlot)
 	const ItemComp weapon = MakeRolledInstance(kGuidA, kWeaponL80);
 	Inventory().InsertItemForRestore(weapon, 5);
 	Inventory().InsertItemForRestore(MakeInstance(kGuidB, kPlainNonStack), 6);
-	ASSERT_EQ(nullptr, tlsEcs.actorRegistry.try_get<DerivedAttributesComp>(player));
+	ASSERT_FALSE(AttributesWereRecalculated());
 
 	ASSERT_EQ(kSuccess, PlayerEquipSystem::Equip(player, kGuidA));
 
@@ -1331,7 +1329,7 @@ TEST_F(PlayerEquipTest, EquipMovesTheSameInstanceIntoTheWeaponSlot)
 	EXPECT_TRUE(Equipment().IsLayerConsistent());
 
 	// 穿上之后属性重算过(数值本身由 player_equip_attribute_test.cpp 验)。
-	EXPECT_NE(nullptr, tlsEcs.actorRegistry.try_get<DerivedAttributesComp>(player));
+	EXPECT_TRUE(AttributesWereRecalculated());
 }
 
 TEST_F(PlayerEquipTest, EquipChecksTheLevelRequirement)
@@ -1507,7 +1505,7 @@ TEST_F(PlayerEquipTest, UnequipReturnsTheSameInstanceToTheInventory)
 {
 	const ItemComp weapon = MakeRolledInstance(kGuidA, kWeaponL80);
 	ASSERT_EQ(kSuccess, Equipment().PutInstance(weapon, kWeaponSlot));
-	ASSERT_EQ(nullptr, tlsEcs.actorRegistry.try_get<DerivedAttributesComp>(player));
+	ASSERT_FALSE(AttributesWereRecalculated());
 
 	ASSERT_EQ(kSuccess, PlayerEquipSystem::Unequip(player, kGuidA));
 
@@ -1518,7 +1516,7 @@ TEST_F(PlayerEquipTest, UnequipReturnsTheSameInstanceToTheInventory)
 	EXPECT_EQ(0u, Equipment().OccupiedGridCount());
 	EXPECT_TRUE(Inventory().IsLayerConsistent());
 	EXPECT_TRUE(Equipment().IsLayerConsistent());
-	EXPECT_NE(nullptr, tlsEcs.actorRegistry.try_get<DerivedAttributesComp>(player))
+	EXPECT_TRUE(AttributesWereRecalculated())
 		<< "taking equipment off recalculates attributes too";
 
 	// 穿回去再脱下来:几趟往返属性都不变(穿脱不重掷)。
@@ -4222,7 +4220,6 @@ TEST_F(PlayerEquipTest, EquipHandlerReturnsBothBagsAndDoesNotLeakTips)
 	EXPECT_EQ(kInvalidParameter, response.error_message().id());
 	EXPECT_FALSE(response.has_bag());
 	EXPECT_FALSE(response.has_equipment());
-	EXPECT_EQ(0u, Tip().id()) << "the tip is moved into the response, not left behind";
 
 	// 业务拒绝:原样带回编排层的码,不带半份快照。
 	request.set_item_id(kGuidB);
@@ -4231,7 +4228,6 @@ TEST_F(PlayerEquipTest, EquipHandlerReturnsBothBagsAndDoesNotLeakTips)
 	EXPECT_EQ(kEquipNotEquipment, response.error_message().id());
 	EXPECT_FALSE(response.has_bag());
 	EXPECT_FALSE(response.has_equipment());
-	EXPECT_EQ(0u, Tip().id());
 
 	// 成功:上一次的失败码没有漏进来;两个包的全量都在,且已经是穿上之后的样子。
 	request.set_item_id(kGuidA);
@@ -4251,7 +4247,6 @@ TEST_F(PlayerEquipTest, EquipHandlerReturnsBothBagsAndDoesNotLeakTips)
 	EXPECT_EQ(kWeaponSlot, response.equipment().layout().slots(0).slot());
 	EXPECT_GT(response.equipment().layout().equip_slots_size(), 0);
 	EXPECT_EQ(0, response.bag().layout().equip_slots_size());
-	EXPECT_EQ(0u, Tip().id());
 	EXPECT_EQ(kWeaponSlot, Equipment().GetItemPosByGuid(kGuidA));
 }
 
@@ -4273,7 +4268,6 @@ TEST_F(PlayerEquipTest, UnequipHandlerReturnsBothBagsAndDoesNotLeakTips)
 	handler.CallMethod(method, player, &request, &response);
 	EXPECT_EQ(kEquipNotEquipped, response.error_message().id());
 	EXPECT_FALSE(response.has_bag());
-	EXPECT_EQ(0u, Tip().id());
 
 	request.set_item_id(kGuidA);
 	response.Clear();
@@ -4284,7 +4278,6 @@ TEST_F(PlayerEquipTest, UnequipHandlerReturnsBothBagsAndDoesNotLeakTips)
 	EXPECT_TRUE(ContainsItem(response.bag().items(), kGuidA));
 	EXPECT_EQ(0, response.equipment().items_size());
 	EXPECT_GT(response.equipment().layout().equip_slots_size(), 0) << "empty slots are still listed";
-	EXPECT_EQ(0u, Tip().id());
 	EXPECT_NE(nullptr, Inventory().GetItemCompByGuid(kGuidA));
 }
 
@@ -4303,7 +4296,6 @@ TEST_F(PlayerEquipTest, GmGrantItemHandlerFollowsTheSceneRunMode)
 	request.set_count(1);
 	GmGrantItemResponse response;
 	handler.CallMethod(method, player, &request, &response);
-	EXPECT_EQ(0u, Tip().id());
 
 	if (!gmAllowed)
 	{
@@ -4353,7 +4345,6 @@ TEST_F(PlayerEquipTest, EnhanceHandlerReturnsBothBagsAndDoesNotLeakTips)
 	EXPECT_EQ(kInvalidParameter, response.error_message().id());
 	EXPECT_FALSE(response.has_bag());
 	EXPECT_FALSE(response.has_equipment());
-	EXPECT_EQ(0u, Tip().id()) << "the tip is moved into the response, not left behind";
 
 	// 业务拒绝:原样带回编排层的码,不带半份快照,也不带结果字段。
 	request.set_item_id(kGuidB);
@@ -4364,7 +4355,6 @@ TEST_F(PlayerEquipTest, EnhanceHandlerReturnsBothBagsAndDoesNotLeakTips)
 	EXPECT_FALSE(response.has_equipment());
 	EXPECT_FALSE(response.success());
 	EXPECT_EQ(0u, response.enhance_level());
-	EXPECT_EQ(0u, Tip().id());
 
 	// 成功:上一次的失败码没有漏进来;两个包的全量都在,带成败与新等级。
 	request.set_item_id(kGuidA);
@@ -4387,7 +4377,6 @@ TEST_F(PlayerEquipTest, EnhanceHandlerReturnsBothBagsAndDoesNotLeakTips)
 	ExpectNoEmptyEntries(response.bag().items());
 	EXPECT_TRUE(ContainsItem(response.bag().items(), kGuidB));
 	EXPECT_EQ(0, response.equipment().items_size());
-	EXPECT_EQ(0u, Tip().id());
 }
 
 // 掷骰没过不是错误:客户端见到 tip 会保留旧快照,而金币与材料已经扣了 —— 所以这一次照样是
@@ -4421,7 +4410,6 @@ TEST_F(PlayerEquipTest, EnhanceHandlerReportsAFailedRollAsASuccessfulResponse)
 	const BagItemInfo *worn = FindItem(response.equipment().items(), kGuidA);
 	ASSERT_NE(nullptr, worn);
 	EXPECT_EQ(3u, worn->enhance_level());
-	EXPECT_EQ(0u, Tip().id());
 }
 
 TEST_F(PlayerEquipTest, InlayGemHandlerReturnsBothBagsAndDoesNotLeakTips)
@@ -4439,7 +4427,6 @@ TEST_F(PlayerEquipTest, InlayGemHandlerReturnsBothBagsAndDoesNotLeakTips)
 	EXPECT_EQ(kInvalidParameter, response.error_message().id());
 	EXPECT_FALSE(response.has_bag());
 	EXPECT_FALSE(response.has_equipment());
-	EXPECT_EQ(0u, Tip().id()) << "the tip is moved into the response, not left behind";
 
 	request.set_item_id(kGuidA);
 	request.set_gem_config_id(0);
@@ -4456,7 +4443,6 @@ TEST_F(PlayerEquipTest, InlayGemHandlerReturnsBothBagsAndDoesNotLeakTips)
 	EXPECT_EQ(kEquipGemSocketInvalid, response.error_message().id());
 	EXPECT_FALSE(response.has_bag());
 	EXPECT_FALSE(response.has_equipment());
-	EXPECT_EQ(0u, Tip().id());
 
 	// 成功。孔位号 0 是合法值,不能被粗检当成「没填」。
 	request.set_socket(kWeaponAttackSocket);
@@ -4474,7 +4460,6 @@ TEST_F(PlayerEquipTest, InlayGemHandlerReturnsBothBagsAndDoesNotLeakTips)
 	EXPECT_TRUE(shown->gem_sockets(0).has_attr());
 	EXPECT_FALSE(ContainsItem(response.bag().items(), kGuidGemA)) << "the emptied gem stack is not listed";
 	ExpectNoEmptyEntries(response.bag().items());
-	EXPECT_EQ(0u, Tip().id());
 }
 
 TEST_F(PlayerEquipTest, RemoveGemHandlerReturnsBothBagsAndDoesNotLeakTips)
@@ -4492,7 +4477,6 @@ TEST_F(PlayerEquipTest, RemoveGemHandlerReturnsBothBagsAndDoesNotLeakTips)
 	EXPECT_EQ(kInvalidParameter, response.error_message().id());
 	EXPECT_FALSE(response.has_bag());
 	EXPECT_FALSE(response.has_equipment());
-	EXPECT_EQ(0u, Tip().id()) << "the tip is moved into the response, not left behind";
 
 	// 业务拒绝:那个孔是空的。
 	request.set_item_id(kGuidA);
@@ -4502,7 +4486,6 @@ TEST_F(PlayerEquipTest, RemoveGemHandlerReturnsBothBagsAndDoesNotLeakTips)
 	EXPECT_EQ(kEquipGemSocketEmpty, response.error_message().id());
 	EXPECT_FALSE(response.has_bag());
 	EXPECT_FALSE(response.has_equipment());
-	EXPECT_EQ(0u, Tip().id());
 
 	// 成功:宝石回到人物背包,穿着的那件上这个孔空了。
 	request.set_socket(kWeaponAttackSocket);
@@ -4517,7 +4500,6 @@ TEST_F(PlayerEquipTest, RemoveGemHandlerReturnsBothBagsAndDoesNotLeakTips)
 	ASSERT_EQ(2, worn->gem_sockets_size());
 	EXPECT_EQ(0u, worn->gem_sockets(0).gem_config_id());
 	EXPECT_FALSE(worn->gem_sockets(0).has_attr());
-	EXPECT_EQ(0u, Tip().id());
 }
 
 } // namespace

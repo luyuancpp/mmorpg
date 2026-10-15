@@ -17,6 +17,7 @@
 #include <mutex>
 #include <network/node_utils.h>
 #include <thread>
+#include "entt/src/entt/signal/sigh.hpp"
 #include "infra/messaging/kafka/kafka_manager.h"
 #include "node/system/etcd/etcd_service.h"
 #include "node/system/etcd/etcd_manager.h"
@@ -78,7 +79,10 @@ public:
     muduo::net::EventLoop *GetLoop() { return eventLoop; }
     NodeId GetNodeId() const { return GetNodeInfo().node_id(); }
     uint32_t GetNodeType() const { return GetNodeInfo().node_type(); }
-    NodeInfo &GetNodeInfo() const;
+    // 身份由本节点独占持有;读写均限所属 loop 线程,不能跨线程借用引用。
+    const NodeInfo &GetNodeInfo() const { return localNodeInfo_; }
+    // 仅供启动、注册链路与 gate 人数上报写入;不会向 ECS 补默认组件。
+    NodeInfo &MutableNodeInfo();
     KafkaManager &GetKafkaManager() { return kafkaManager; }
     virtual google::protobuf::Service *GetNodeReplyService() { return replyService_; }
     muduo::AsyncLogging &Log() { return logSystem; }
@@ -124,14 +128,7 @@ public:
     }
     bool HasDiscoveredServiceNode(uint32_t nodeType) const
     {
-        auto &allNodes = tlsEcs.nodeGlobalRegistry.get_or_emplace<ServiceNodeList>(tlsEcs.GrpcNodeEntity());
-        if (nodeType >= allNodes.size())
-        {
-            return false;
-        }
-
-        const auto &nodes = allNodes[nodeType].node_list();
-        return nodes.size() > 0;
+        return serviceDiscoveryManager.ServiceNodes().HasNodesOfType(nodeType);
     }
 
     std::vector<uint32_t> CollectMissingDiscoveredServiceNodes(const std::vector<uint32_t> &requiredNodeTypes) const
@@ -201,9 +198,8 @@ public:
     // 只给"把本节点地址下发给客户端"的出口做纵深防御:为 true 时经
     // client_endpoint::ClientFacing(GetNodeInfo(), true) 拿不到地址就必须拒签,不许回落 endpoint。
     // 线程:本函数读的是普通成员(构造期写一次、之后只读),任何线程都可调用。
-    // 但配套的 GetNodeInfo() 读的是 thread_local tlsEcs,只有 loop 线程上才是本节点真实的 NodeInfo;
-    // 在 gRPC 等非 loop 线程上调用会就地 emplace 出一个空 NodeInfo,ClientFacing 随之恒返回 nullopt ——
-    // 仍是 fail-closed,但整批静默拒签、极难排查。所以 ClientFacing 的 node 实参必须取自 loop 线程上的
+    // 配套的 NodeInfo 由 Node 持有,只在 loop 线程写;跨线程读取不会与写入同步。
+    // 所以 ClientFacing 的 node 实参必须取自 loop 线程上的
     // gNode->GetNodeInfo()(例如 battle 在 runInLoop 之内的 BuildAssignment / 预签,不得挪到 gRPC 线程上的许可阶段)。
     bool ClientEndpointRequired() const { return clientEndpointRequired_; }
 
@@ -227,7 +223,10 @@ protected:
     // gRPC server lifecycle (called automatically if services registered).
     void StartGrpcServer();
     void ShutdownGrpcServer();
+    // 关机收尾分两段(docs/design/muduo-rpc-channel.md §6.5):阶段 0 关闭全部 RPC 通道、让在途调用以失败完成,
+    // 再把拆除(FinalizeTeardownInLoop)排到这些失败回调之后。
     void FinalizeShutdownInLoop();
+    void FinalizeTeardownInLoop();
 
     void ReleaseNodeId();
     void RegisterHandlers();
@@ -245,6 +244,8 @@ protected:
     void ShutdownInLoop();
 
     // Member variables
+    // 本节点身份的唯一所有者,最先构造、最后析构;ECS Clear 不影响身份。
+    NodeInfo localNodeInfo_;
     muduo::net::EventLoop *eventLoop;
     muduo::AsyncLogging logSystem;
     RpcServerPtr rpcServer;
@@ -300,6 +301,8 @@ protected:
     // 不再为 Server::Wait() 常驻一条线程。只在关机期间临时起线程跑同步
     // Server::Shutdown(),让 muduo loop 保持可运行并完成已在途的 runInLoop handler。
     std::thread grpcShutdownThread_;
+    // 最后声明，最先析构：其它成员开始释放前先断开带 this 的 dispatcher 订阅。
+    entt::scoped_connection nodeConnectedSubscription_;
 };
 
 // DependencyGate — polls for required service-discovery dependencies before
@@ -313,6 +316,13 @@ protected:
 //
 struct DependencyGate
 {
+    // 探测回调捕获 this;定时器可转移不代表宿主地址可以改变。
+    DependencyGate() = default;
+    DependencyGate(const DependencyGate&) = delete;
+    DependencyGate& operator=(const DependencyGate&) = delete;
+    DependencyGate(DependencyGate&&) = delete;
+    DependencyGate& operator=(DependencyGate&&) = delete;
+
     struct ExtraCondition
     {
         std::string name;

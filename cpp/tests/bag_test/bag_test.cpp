@@ -1,4 +1,5 @@
 ﻿#include <gtest/gtest.h>
+#include "engine/core/type_define/player_guid_comp.h"
 
 #include "engine/core/type_define/type_define.h"
 
@@ -8,6 +9,8 @@
 #include "modules/bag/bag_service.h"
 #include "modules/bag/bag_profile_registry.h"
 #include "modules/bag/comp/player_bags_comp.h"
+#include "modules/currency/comp/player_currency_comp.h"
+#include "modules/mission/comp/mission_comp.h"
 #include "modules/id_segment/guid_segment_registry.h"
 #include "player/system/player_pet.h"
 #include "modules/snapshot/snapshot_system.h"
@@ -29,6 +32,8 @@
 #include "table/code/attributepool_table.h"
 #include "table/code/attributedimension_table.h"
 #include "proto/common/component/player_pet_comp.pb.h"
+#include "proto/common/component/actor_comp.pb.h"
+#include "proto/common/database/mysql_database_table.pb.h"
 #include "../test_config_helper.h"
 
 // ---------------------------------------------------------------------------
@@ -2921,6 +2926,8 @@ protected:
         petTableId = rows.data(0).id();
         player = tlsEcs.actorRegistry.create();
         tlsEcs.actorRegistry.emplace<PlayerPetComp>(player);
+        // 发放依赖已加载的主人等级;号段用例必须越过这条前置条件再验证发号结果。
+        tlsEcs.actorRegistry.emplace<LevelComp>(player).set_level(1);
     }
 
     void TearDown() override
@@ -2960,6 +2967,21 @@ TEST_F(PetIdSegmentTest, GrantPetSharesItemRangeWithoutReusingItemId)
     EXPECT_EQ(petId, pets.pets(0).pet_id());
     EXPECT_EQ(petTableId, pets.pets(0).pet_table_id());
     EXPECT_EQ(702u, ItemStore::MintGuid());
+}
+
+TEST_F(PetIdSegmentTest, MissingOwnerLevelRejectsBeforeMintingOrAddingPet)
+{
+    segment.item().Warm();
+    segment.item().OnResponse(0, 900, 910);
+    ASSERT_TRUE(segment.item().IsReady());
+    tlsEcs.actorRegistry.remove<LevelComp>(player);
+    const auto before = tlsEcs.actorRegistry.get<PlayerPetComp>(player).SerializeAsString();
+    uint64_t petId = 123;
+    EXPECT_EQ(kServiceUnavailable, PetSystem::GrantPet(player, petTableId, petId));
+    EXPECT_EQ(0u, petId);
+    EXPECT_EQ(before, tlsEcs.actorRegistry.get<PlayerPetComp>(player).SerializeAsString());
+    EXPECT_FALSE(tlsEcs.actorRegistry.all_of<LevelComp>(player));
+    EXPECT_EQ(900u, ItemStore::MintGuid()) << "拒绝发放不能消耗共用的 item 号段";
 }
 
 // ---------------------------------------------------------------------------
@@ -3078,7 +3100,7 @@ TEST_F(PetTradeAssetTest, RemoveForTradeUnknownIdLeavesComponentUntouched)
 
 TEST_F(PetTradeAssetTest, RestoreKeepsIdentityWhenOwnerLevelIsLower)
 {
-    // 卖家 85 级的宝宝;买家(本用例的 player 没有 LevelComp,等于 1 级)收下它。
+    // 卖家 85 级的宝宝;买家即使尚无 LevelComp,还原也只使用快照等级,不伪造主人等级。
     PushPet(900001, 85);
     PetInstance snapshot;
     ASSERT_EQ(kSuccess, PetSystem::RemovePetForTrade(player, 900001, snapshot));
@@ -3800,7 +3822,7 @@ TEST(GuidSourcePolicyTest, TxLogFailsClosedUntilItsOwnKindHasARange)
 {
     ScopedKindOverride tx(GuidKind::kTxLog, 10); // 启用、未领段
     const auto player = tlsEcs.actorRegistry.create();
-    tlsEcs.actorRegistry.emplace<Guid>(player, Guid{4242});
+    tlsEcs.actorRegistry.emplace<PlayerGuidComp>(player, Guid{4242});
 
     const auto baselineRequests = BaselineTransport().requests.size();
     TransactionLogSystem::LogItemDestroy(player, 77, kNonStack1, 1);
@@ -3826,7 +3848,24 @@ TEST(GuidSourcePolicyTest, SnapshotIsSkippedUntilItsOwnKindHasARange)
 {
     ScopedKindOverride snap(GuidKind::kSnapshot, 10); // 启用、未领段
     const auto player = tlsEcs.actorRegistry.create();
-    tlsEcs.actorRegistry.emplace<Guid>(player, Guid{4243});
+    tlsEcs.actorRegistry.emplace<PlayerGuidComp>(player, Guid{4243});
+
+    // 手搭玩家补成加载完成的持久化形状;否则只读 Marshal 会先拒绝,测不到 snapshot 号源门。
+    tlsEcs.actorRegistry.emplace<Transform>(player);
+    tlsEcs.actorRegistry.emplace<PlayerUint64Comp>(player);
+    tlsEcs.actorRegistry.emplace<PlayerSkillListComp>(player);
+    tlsEcs.actorRegistry.emplace<PlayerUint32Comp>(player);
+    tlsEcs.actorRegistry.emplace<BaseAttributesComp>(player);
+    tlsEcs.actorRegistry.emplace<LevelComp>(player);
+    tlsEcs.actorRegistry.emplace<PlayerAttributeComp>(player);
+    tlsEcs.actorRegistry.emplace<PlayerPetComp>(player);
+    tlsEcs.actorRegistry.emplace<PlayerProfileComp>(player);
+    tlsEcs.actorRegistry.emplace<PlayerBagsComp>(player);
+    tlsEcs.actorRegistry.emplace<MissionsContainerComp>(player);
+    tlsEcs.actorRegistry.emplace<PlayerAssetOpLedgerComp>(player);
+    tlsEcs.actorRegistry.emplace<BattleSettlementLedgerComp>(player);
+    tlsEcs.actorRegistry.emplace<CurrencyComp>(player);
+    tlsEcs.actorRegistry.emplace<PlayerCurrencyComp>(player);
 
     EXPECT_EQ(0u, SnapshotSystem::CaptureAndSend(player, SNAPSHOT_LOGIN)) << "没 snapshot_id 就跳过这条快照";
     auto s = snap.client().GetStats();

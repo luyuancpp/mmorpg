@@ -201,9 +201,11 @@ Go 侧没有任何服务配置 `KeepaliveEnforcementPolicy`,即 grpc-go 默认:�
 - 截止时间用 `steady_clock`;muduo 定时器是墙钟,只作唤醒提示,到点用 steady_clock 复核,未到期就重新 arm。
 - 节点摘除:通道是节点实体上的组件(`MuduoGrpcChannelPtr`),`ExecuteNodeRemoval` 的 `DestroyEntity` 析构它;
   析构把在途调用以 UNAVAILABLE 投递失败回调(gate 据此回客户端 1003 —— 旧路径这里是静默丢失)。
-- 关机:`Node::FinalizeShutdownInLoop` 在两跳 `queueInLoop` 之前清掉所有 registry 上的 `MuduoGrpcChannelPtr`,
-  与同一处清 `RpcClientPtr` 的理由相同(`~TcpClient` 要用 loop);它们排进队列的 `forceCloseInLoop` / `connectDestroyed`
-  由两跳覆盖。
+- 关机:关机分两段(2026-10-15 由「C++ RPC 异步回调链式调用设计」会话改成两段式,见 muduo-rpc-channel.md)。
+  **阶段 0**(`Node::FinalizeShutdownInLoop`)取消定时器、关闭 RPC0 通道,并清掉所有 registry 上的 `MuduoGrpcChannelPtr`,
+  然后 `queueInLoop(FinalizeTeardownInLoop)`。按 FIFO,`~Channel` 排进队列的 UNAVAILABLE 失败回调先于拆除段执行,
+  执行时 ECS 与日志都还活着。拆除段(ReleaseNodeId …… `tlsEcs.Clear()` …… 两跳 quit)覆盖 `~TcpClient` 排进的
+  `forceCloseInLoop` / `connectDestroyed`,理由与清 `RpcClientPtr` 相同(`~TcpClient` 要用 loop)。
 
 ## 7. 限额汇总
 
@@ -233,14 +235,18 @@ Go 侧没有任何服务配置 `KeepaliveEnforcementPolicy`,即 grpc-go 默认:�
 
 ## 9. 构建
 
-- Windows:`tools/scripts/third_party/build_nghttp2.ps1` 用上游 CMake(Debug、`/MDd`、静态)装到
-  `third_party/grpc/install_vs2026_dbg`(节点与测试已有的库目录),产物 `lib/nghttp2.lib` 与 `include/nghttp2/*.h`。
+- Windows:`tools/scripts/third_party/build_nghttp2.ps1` 用上游 CMake(Debug、`/MDd`、只编静态库、优先 Ninja)装到
+  `third_party/nghttp2/install_vs2026_dbg`(子模块内,`.gitmodules` 为它设了 `ignore = dirty`,与 grpc 的安装目录同做法),
+  产物 `lib/nghttp2.lib` 与 `include/nghttp2/{nghttp2.h,nghttp2ver.h}`。脚本先核对子模块提交号。
   使用 `nghttp2.h` 的翻译单元定义 `NGHTTP2_STATICLIB`(只有 `muduo_grpc` 库与它的测试)。
-- 新库 `cpp/libs/engine/muduo_grpc/muduo_grpc.vcxproj`:只依赖 muduo 头、nghttp2、protobuf;`/utf-8`、`/WX`、`/MDd`。
-  gate 链接 `muduo_grpc.lib` 与 `nghttp2.lib`。
-- 测试 `cpp/tests/muduo_grpc_test`:**不链接 grpc / grpc++ / core / session / proto**,只链 muduo、nghttp2、protobuf。
-- Linux:`setup_dependencies.sh` 加 nghttp2 段(钉同一提交)、`Dockerfile.cpp` deps 阶段 COPY 子模块、CI 子模块清单、
-  `vcxproj2cmake.py` 的 `EXTERNAL_LIBS` 与工程清单、`build_linux.sh` 的 `LIB_PROJECTS`。
+- 新库 `cpp/libs/engine/muduo_grpc/muduo_grpc.vcxproj`:只依赖 muduo 头(及 muduo 头间接要的 boost)与 nghttp2,
+  **不依赖 protobuf / grpc / core / entt**(收发的都是字节,序列化由调用方做);`/utf-8`、`/WX`、`/MDd`。
+  gate 链接 `muduo_grpc.lib` 与 `nghttp2.lib`(库目录加 `third_party/nghttp2/install_vs2026_dbg/lib/`);game.sln 里 gate 依赖它。
+- 测试 `cpp/tests/muduo_grpc_test`:**不链接 grpc / grpc++ / core / session / proto**,只链 muduo、nghttp2。
+- Linux:`setup_dependencies.sh` 加 nghttp2 段(核对同一提交 / 版本,源码 stamp 判定是否重编)、`Dockerfile.cpp` deps 阶段
+  COPY 子模块、CI 子模块清单(不递归拉 nghttp2 的嵌套子模块)、`vcxproj2cmake.py` 的 `EXTERNAL_LIBS` 与工程清单、
+  `build_linux.sh` 的 `LIB_PROJECTS`。运行镜像里 libcurl 依赖系统自带的旧版 `libnghttp2.so`,所以节点链接时加
+  `-Wl,--exclude-libs,libnghttp2.a`,不把静态链入的 1.70 符号导出,避免 libcurl 运行期混用两个版本。
 
 ## 10. 分批计划
 
@@ -253,6 +259,46 @@ Go 侧没有任何服务配置 `KeepaliveEnforcementPolicy`,即 grpc-go 默认:�
 | 5 | 删除官方 gRPC:proto-gen 停用 `grpc_cpp_plugin`、删 `*.grpc.pb.cc`、28 个工程去掉 grpc 链接项、Linux 改独立构建 protobuf 35.1 / abseil、文档同步 | 4 |
 
 每批完成后交 Codex 编译与验证,通过再开下一批。
+
+### 10.1 来自 entt 审计的验收条件
+
+2026-10-15 并行会话「代码中的 entt 使用问题」移交,原文见 [ecs-entt-misuse-audit-20261015.md](ecs-entt-misuse-audit-20261015.md)
+「仍未修」表与「修复时的注意事项」。旧模板不在那边修,这里把它们列为迁移的验收条件:
+
+| 审计号 | 问题 | 新传输的要求 | 落在哪批 | 第 1 批状态 |
+|---|---|---|---|---|
+| F010 | 节点摘除直接 destroy 挂着 CQ 的实体,在途调用永不回调、调用对象不释放 | 摘除时先让在途调用以失败结束(走失败回调),再释放 | 1(muduo 通道)/ 3(删 CQ) | muduo 通道已满足:`~Channel` 把在途调用以 UNAVAILABLE 投递失败回调(§6);官方路径仍是旧行为,第 3 批随 CQ 一起删 |
+| F100 / F006 / F082 / F011 | 生成的 Send* 对节点实体无守卫 `get<CompletionQueue>` / `get<StubPtr>`;选点只按 `view<NodeInfo>`,混进 TCP 握手建的、缺这两个组件的实体 | 新模板对通道组件 `try_get`,缺失走失败回调;选点改按通道组件的 view | 3 | gate 路由路径已对 `MuduoGrpcChannelPtr` 用 `try_get`;缺组件时仍落到官方 Send*(旧行为),第 3 批改模板时一并收口 |
+| F012 / F022 | `tlsNodeContextManager` 从不 Clear;RunNodeMain 兜底路径与 CQ / stub 未处理 | 关机在两跳排空前清掉所有传输组件;兜底路径同样处理 | 1(部分)/ 2 / 3 | `FinalizeShutdownInLoop` 已清 `MuduoGrpcChannelPtr`;兜底路径与 CQ / stub 待第 2、3 批 |
+| C008 | 流式客户端把 registry 里可移动的 protobuf 响应组件地址交给异步 Read(swap-and-pop 后悬空) | 流的响应缓冲放进不可移动的通道 / 调用对象,不作为 entt 组件 | 2(etcd 双向流) | 不涉及(第 1 批只有 unary;调用状态存在 Channel 内部的节点式容器里,地址稳定) |
+
+### 10.2 第 2 批(etcd)的验收条件:P0-D「etcd 双向流断开后不重建」
+
+2026-10-15 并行会话「全局单例扩容交接」移交,不在旧 CQ 模板上修。证据与测试设计见
+[global-singletons-p0-findings-20261014.md](../handoff/global-singletons-p0-findings-20261014.md)「## P0-D」及其「原报告:修复设计」。
+以下结论均为静态分析(基线 `2f897bd07`),**未实测**:
+
+- 生成的 `HandleCompletedQueueMessage` 遇 `ok=false` 只打 `RPC failed` 就 return:tag 不分发不回收、跳过本轮其余事件。
+  Watch / LeaseKeepAlive 在任何一次断连后永久失效,约每 181s 本地判失租重注册一轮;推断从第 2 轮起本节点的键会先被 etcd
+  删 1~2s 再写回,watch 正常的 gate 会立刻摘掉它。
+- 每 2s 的全前缀 Range 只当 PUT 处理,补不回删除:流断期间下线的对端永久留成幽灵节点。
+- DELETE 处理依赖 `prev_kv`,开 MVCC 压缩后可能拿不到;`ScheduleWatchReconnect` 只处理 canceled,不处理 `compact_revision`。
+- 生成物 FINISH 分支是 `cq.Shutdown()`,真走到会关掉整条 etcd 完成队列。
+
+第 2 批必须满足:
+
+1. 流断(RST / GOAWAY / 靠 HTTP/2 keepalive 发现的静默断链)后按退避重建:0.2s 起、封顶 5s、±20% 抖动、稳定 10s 清零、**不设次数上限**。
+   最后一项是对 AGENTS §11.3「重试有次数上限」的有意偏离:etcd 连接是节点身份的生命线,放弃重连等于主动失租;
+   与 etcd clientv3 的做法一致。代价是 etcd 长时间不可用时持续重连(每 5s 一次,带抖动,不形成风暴)。
+2. KeepAlive 流重建后立刻发一拍,不等 1s 定时器。
+3. Watch 流重建后逐前缀做「Range → 对账删除本地多出的节点 → 从 R+1 watch」;快照不完整(`more=true`、值解析失败、键不属前缀)一律不删。
+4. 处理 `compact_revision` 取消(重新 Range 后续 watch);DELETE 处理不依赖 `prev_kv`(按键反查本地快照)。
+5. 不再有任何会关掉整条完成队列 / 整条连接的流结束分支;流结束只影响该流。
+6. 验收口径:删除 / 重启一个 etcd 成员后**无节点 fence 且零重注册**(node-id-overhaul-plan 原口径只有前半句)。
+7. 硬约束(移交方同时写进其 PROGRESS 与交接):任何 etcd 滚动(钉镜像版本、加压缩参数)都要等本项验证通过后再做。
+
+回退开关:第 2 批沿用第 1 批的做法,新实现走开关、验证通过前默认仍是旧 CQ 版;**回退到旧实现时上述缺陷依然存在**,
+运维手册与启动日志都要写明,回退只用于新实现自身出问题的场景。
 
 ## 11. 第 1 批验证(交 Codex,未执行)
 

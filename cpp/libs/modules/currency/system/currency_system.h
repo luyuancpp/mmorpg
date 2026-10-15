@@ -43,6 +43,8 @@ public:
     //   冻结      -> kAssetFrozen              (RETRY 类:条件会消失,调用方可重投)
     //   封禁      -> kAssetBlocked             (REJECTED 类:终局拒绝)
     //   amount<=0 / 类型越界 / 缺组件 -> kInvalidParameter(编程错误,不变)
+    //   缺组件 = CurrencyComp 或 PlayerCurrencyComp 任一缺失(两者都只在玩家加载时挂上)。
+    //   本系统只取不建:缺失时余额、欠款、流水都不动,也不会补建组件。
     //
     // **判定顺序是契约的一部分**:amount<=0 与类型越界这两条零副作用的纯参数校验
     // 排在冻结 / 封禁之前。冻结中的玩家传一个越界币种,得到的仍是 kInvalidParameter
@@ -57,7 +59,7 @@ public:
     // Writes a TransactionLogEntry to Kafka.
     //
     // 返回值口径(§4.10):冻结 -> kAssetFrozen;余额不足 -> kAssetCurrencyInsufficient;
-    // amount<=0 / 类型越界 / 缺组件 -> kInvalidParameter(不变)。
+    // amount<=0 / 类型越界 / 缺组件 -> kInvalidParameter(不变;缺组件口径同 AddCurrency,失败时余额未动)。
     // 判定顺序同 AddCurrency:纯参数校验先跑,冻结 / 余额不足在其后。
     static uint32_t DeductCurrency(entt::entity player, CurrencyType type, int64_t amount,
                                    TransactionType txType = TX_CURRENCY_DEDUCT,

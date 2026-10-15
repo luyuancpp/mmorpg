@@ -1,4 +1,5 @@
 #include "player_equip.h"
+#include "engine/core/type_define/player_guid_comp.h"
 
 #include <algorithm>
 #include <cstddef>
@@ -47,8 +48,8 @@ using equiprules::AffixTier;
 using equiprules::EffectKind;
 
 uint64_t GuidForLog(entt::entity player) {
-	const auto* guid = tlsEcs.actorRegistry.try_get<Guid>(player);
-	return guid != nullptr ? *guid : 0;
+	const auto* guid = tlsEcs.actorRegistry.try_get<PlayerGuidComp>(player);
+	return guid != nullptr ? guid->value : 0;
 }
 
 // 等级 / 职业的取法与 player_attribute.cpp 的同名函数同口径(那两个是它的文件内私有函数,

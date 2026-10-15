@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="actor\actor_net_id.h" />
     <ClInclude Include="battle\system\battle_settlement_application_cache.h" />
     <ClInclude Include="actor\action_state\constants\actor_effect_state.h" />
     <ClInclude Include="actor\action_state\constants\actor_state.h" />
@@ -79,12 +80,10 @@
     <ClInclude Include="player\system\player_level_rules.h" />
     <ClInclude Include="player\system\stress_test_probe.h" />
     <ClInclude Include="player\system\player_tip.h" />
-    <ClInclude Include="spatial\comp\dt_crowd_comp.h" />
     <ClInclude Include="spatial\comp\grid_comp.h" />
     <ClInclude Include="spatial\comp\nav_comp.h" />
     <ClInclude Include="spatial\comp\scene_node_scene_comp.h" />
     <ClInclude Include="spatial\constants\aoi_priority.h" />
-    <ClInclude Include="spatial\constants\dt_crowd.h" />
     <ClInclude Include="spatial\constants\nav.h" />
     <ClInclude Include="spatial\constants\view.h" />
     <ClInclude Include="spatial\manager\scene_nav.h" />
@@ -92,11 +91,9 @@
     <ClInclude Include="spatial\system\grid.h" />
     <ClInclude Include="spatial\system\interest.h" />
     <ClInclude Include="spatial\system\movement.h" />
-    <ClInclude Include="spatial\system\movement_acceleration.h" />
     <ClInclude Include="spatial\system\nav_query.h" />
     <ClInclude Include="spatial\system\navigation.h" />
     <ClInclude Include="spatial\system\recast.h" />
-    <ClInclude Include="spatial\system\scene_crowd.h" />
     <ClInclude Include="spatial\system\scene_spawn.h" />
     <ClInclude Include="spatial\system\view.h" />
     <ClInclude Include="world\world.h" />
@@ -112,6 +109,7 @@
     <ClCompile Include="combat\skill\system\skill.cpp" />
     <ClCompile Include="combat_state\system\combat_state.cpp" />
     <ClCompile Include="core\config\config.cpp" />
+    <ClCompile Include="actor\actor_net_id.cpp" />
     <ClCompile Include="core\system\id_generator.cpp" />
     <ClCompile Include="core\system\redis.cpp" />
     <ClCompile Include="frame\manager\frame_time.cpp" />
@@ -144,11 +142,9 @@
     <ClCompile Include="spatial\system\grid.cpp" />
     <ClCompile Include="spatial\system\interest.cpp" />
     <ClCompile Include="spatial\system\movement.cpp" />
-    <ClCompile Include="spatial\system\movement_acceleration.cpp" />
     <ClCompile Include="spatial\system\nav_query.cpp" />
     <ClCompile Include="spatial\system\navigation.cpp" />
     <ClCompile Include="spatial\system\recast.cpp" />
-    <ClCompile Include="spatial\system\scene_crowd.cpp" />
     <ClCompile Include="spatial\system\scene_spawn.cpp" />
     <ClCompile Include="spatial\system\view.cpp" />
     <ClCompile Include="world\world.cpp" />
@@ -313,5 +309,10 @@
     <ClInclude Include="player\system\mission_marshal.h" />
     <ClCompile Include="player\system\player_activity_schedule.cpp" />
     <ClInclude Include="player\system\player_activity_schedule.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="actor\actor_events.h" />
+    <ClInclude Include="combat\combat_events.h" />
+    <ClInclude Include="player\player_events.h" />
   </ItemGroup>
 </Project>

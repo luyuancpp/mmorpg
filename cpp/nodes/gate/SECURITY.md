@@ -44,8 +44,10 @@
 ### 签名寄生在 `operator` 字段里(为什么不加 proto 字段)
 
 `GmGracefulShutdownRequest` 只有 `operator` / `reason` 两个字段
-(`proto/common/base/gm_admin.proto`),而这条 RPC 走 muduo `GameChannel` 通道:
-`CallMethod` 的 `controller` 与 `done` 都恒为 `nullptr`(`game_channel.cpp:451`),
+(`proto/common/base/gm_admin.proto`),而这条 RPC 走节点间 muduo RPC0 通道(`RpcChannel`,
+`cpp/libs/engine/core/network/rpc_channel.h`):handler 拿到的 `controller` 是每次派发在栈上构造的
+`RpcController`(只携带本次调用所在的连接),`done` 非空、可经 `RpcDoneCallback::Adopt` 接管延后完成;
+两者都不承载调用方身份,信封 `GameRpcMessage` 也只有类型 / 调用号 / 消息号 / 载荷,
 **没有任何 metadata 边信道**。改 proto 要连带重生成 C++/Go/Java 三侧产物,
 不在本次可验证范围内,因此签名放进 `operator`:
 
@@ -105,6 +107,21 @@ echo "reason=${REASON}"
 `LOG_ERROR`,不回错误码(响应 proto 里没有错误字段)。可能的 `reason`:
 `secret_not_configured` / `malformed_envelope` / `timestamp_out_of_window` /
 `signature_mismatch` / `replayed_nonce`。
+
+### 应答语义:必须带非 0 调用 id(2026-10 RpcChannel 改造起)
+
+节点间 RPC0 的信封 `GameRpcMessage` 有调用号 `id`(字段 6,见 `docs/design/muduo-rpc-channel.md` §4.1),
+是否回包由**调用方**按次声明,不再由响应内容决定:
+
+- `id != 0`:服务端恰好回一帧。handler 同步返回后框架立即回 `RESPONSE`(同 `id`、同 `message_id`),
+  **`affected_count` 为 0 也回包**(鉴权被拒、没有在线会话 / 玩家时都是 0);handler 显式失败时回 `RPC_ERROR`。
+- `id == 0`:单向调用,服务端**永不回包**。
+
+所以外部 GM 停机工具调用 `Gate.GmGracefulShutdown` 与 `SceneScene.GmGracefulShutdown`(scene 侧的 proto
+服务名是 `SceneScene`;canonical 串里的 method 名见下一节)时,**必须带非 0 的调用 id 才能收到应答**,
+并按 `id` 认领回包。鉴权被拒与"确实没有可关闭的对象"在应答上都表现为 `affected_count == 0`,
+区分两者要看节点日志里的 `REJECTED` 行。两条 handler 都不接管 `done`,回包先于排队的停机动作发出。
+仓库内没有这条 RPC 的发送方,上述约定由外部工具自行遵守。
 
 ### scene 节点用同一套机制,但 method 名不同
 

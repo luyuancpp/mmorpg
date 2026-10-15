@@ -22,7 +22,10 @@
 #   critical: count_over_time({app="battle"} |= "metric=battle_settlement_not_durable" [10m]) > 0
 #   critical: count_over_time({app="scene"}  |= "metric=battle_settlement_ledger_evicted" [10m]) > 0
 #   warning : count_over_time({app="battle"} |= "metric=battle_settlement_undelivered" |= "reason=not_acked" [10m]) > 5
-#   warning : 最近一条 {app="battle"} |= "metric=battle_settlement_pending_backlog" 的 oldest_age_s > 86400
+#   观察项  : 最近一条 {app="battle"} |= "metric=battle_settlement_pending_backlog" 的 count 增速与 oldest_age_s。
+#             玩家带着未应用的结算永久流失后,oldest_age_s 会单调增长(预期),所以它不转成规则;
+#             判异常看上一行的 reason=not_acked 与 count 增速(设计 §12 第 9 条)。
+#   info    : count_over_time({app="scene"} |= "metric=battle_settlement_freeze_expiry_pending_hit" [1h]) > 0(在线补读命中,观察用)
 #   critical: count_over_time({app="battle"} |= "metric=battle_activity_result_not_durable" [10m]) > 0
 #   critical: count_over_time({app="battle"} |= "metric=battle_activity_result_serialize_failed" [10m]) > 0
 #

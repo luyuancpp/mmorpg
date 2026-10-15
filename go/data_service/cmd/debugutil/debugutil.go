@@ -145,8 +145,8 @@ func NewServiceContext(configPath string) (*svc.ServiceContext, func(), error) {
 			Writer:      store.NewRouteWriterID("data_service_debug", host),
 		})
 		if err != nil {
-			return nil, nil, fmt.Errorf("RouteStore.Mode=db_first but the route store cannot be opened "+
-				"(run `data_service -f <yaml> -migrate` if route_meta is missing): %w", err)
+			return nil, nil, fmt.Errorf("RouteStore.Mode=db_first but the route store cannot be opened (%s): %w",
+				store.OpenRouteStoreHint(configPath, err), err)
 		}
 		routeStore = rs
 		routerOpts = append(routerOpts, routing.WithRouteStore(rs))

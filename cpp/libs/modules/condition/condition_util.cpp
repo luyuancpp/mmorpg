@@ -31,7 +31,7 @@ bool IsFulfilled(uint32_t conditionId, uint32_t progressValue, uint32_t targetCo
 }
 
 bool MatchesEventSlots(const ConditionTable* conditionRow,
-					   const google::protobuf::RepeatedField<uint32_t>& eventConditionIds) {
+					   std::span<const uint32_t> eventConditionIds) {
 	size_t configSlotCount = 0;
 	size_t matchedSlotCount = 0;
 
@@ -43,7 +43,7 @@ bool MatchesEventSlots(const ConditionTable* conditionRow,
 		if (slotIndex >= static_cast<size_t>(eventConditionIds.size())) {
 			return;
 		}
-		const auto eventId = eventConditionIds.Get(static_cast<int>(slotIndex));
+		const auto eventId = eventConditionIds[slotIndex];
 		for (int32_t ci = 0; ci < slotValues.size(); ++ci) {
 			if (slotValues.Get(ci) == eventId) {
 				++matchedSlotCount;

@@ -9,7 +9,8 @@ import (
 )
 
 // fakeStore 是内存版锁存储:单 key、带过期,行为对齐 Redis 的
-// SET NX EX / 属主校验 Lua。不引入 miniredis,shared 模块零新增依赖。
+// SET NX EX / 属主校验 Lua。本文件不用 miniredis(内存替身足以覆盖租约语义);
+// shared 模块自 2026-10-15 起已为 playersync 的 Lua 用例引入 miniredis,两者不冲突。
 // 刻意不实现 CallBounder:心跳的 maxCall 即续期 ctx 超时,门槛可按 TTL 精确推算。
 type fakeStore struct {
 	mu       sync.Mutex

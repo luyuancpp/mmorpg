@@ -1,35 +1,8 @@
-# Proto (Legacy) - DEPRECATED
+# 旧协议工具目录（已退役）
 
-This directory contains legacy protocol definitions and is retained for backward compatibility only.
+此目录只保留弃用说明，没有可运行的 `protogen/` 源码、兼容二进制或协议事实源。历史脚本若仍依赖此目录，需要改用现行入口。
 
-## Status
-
-⚠️ **DEPRECATED** — New protocol definitions should use the root-level `proto/` directory instead.
-
-## Purpose
-
-This legacy directory exists to support:
-- Old build configurations that reference this location
-- Backward compatibility with existing deployments
-- Gradual migration to the new schema location
-
-## Migration Path
-
-If you're adding new protocol definitions:
-
-1. **Don't** add to `tools/proto/`
-2. **Do** add to the root `proto/` directory instead
-3. Update build configurations to reference the new location
-4. Remove references to `tools/proto/` once migration is complete
-
-## Contents
-
-This directory may contain:
-- `message_id.txt` - Legacy message ID mappings
-- `.gitignore` - Ignored files list
-
-## Notes
-
-- This directory will be removed in a future major version
-- Coordinate with the team before removing this path
-- Update CI/CD pipelines if they reference this location
+- 协议事实源：[仓库根 proto/](../../proto/)。
+- 生成器源码：[tools/proto_generator/protogen](../proto_generator/protogen/)。
+- 完整生成流程：[根 AGENTS.md §4](../../AGENTS.md#4-proto-同步流程)。
+- `pbgen-build` / `pbgen-run` 兼容名称由 `tools/scripts/dev_tools.ps1` 提供，与此目录无关。

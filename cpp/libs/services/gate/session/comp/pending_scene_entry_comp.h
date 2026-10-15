@@ -13,7 +13,8 @@
 //
 // 不变量:
 //   I1 一次路由决策最多真正转发一次。只有"本地确定没发出去"的失败(节点找不到 / 没有 RpcClient /
-//      TCP 未连上 / 当前连接未握手)才续期欠账;这些都在调用 CallRemoteMethod 之前判定。一旦 kSent
+//      TCP 未连上 / 当前连接未握手 / SendRequest 本地拒绝)才续期欠账;前四种在调用 SendRequest 之前判定,
+//      SendRequest 返回 false(本地确定没交给连接)归入 kNotConnected。一旦 kSent
 //      就清掉欠账,绝不重发 —— kSent 之后在路上丢失检测不到,是已登记的残余。
 //   I2 欠账与路由快照都存在 SessionInfo 里,只由 gate 主 EventLoop 线程读写(Kafka 回调、RPC 应答、
 //      定时器都投递到这个线程)。会话 erase 即随之取消;session_id 被复用时新 SessionInfo 上什么都没有。
@@ -34,7 +35,8 @@ enum class SceneForwardResult : uint8_t
     kNodeNotFound,
     // 节点实体在,但还没有挂 RpcClient(node_connector 先建实体后连)。
     kNoRpcClient,
-    // TCP 不在已连接态。RpcClient::CallRemoteMethod 此时只打一条 ERROR 就静默丢弃,必须在调用前拦下。
+    // TCP 不在已连接态,在调用 SendRequest 之前按链路状态拦下;链路判定通过后 SendRequest
+    // 仍返回 false(本地确定没交给连接,RpcClient / RpcChannel 内部计数)时也归入此类。
     kNotConnected,
     // TCP 已连上,但 scene 还没为本 gate 挂 RpcSession(握手在连上 0.5s 后才发)。此时发出的进场
     // scene 照常载入玩家,但 NotifyEnterScene 等下行推送找不到 RpcSession 会被丢掉。

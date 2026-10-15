@@ -300,7 +300,7 @@ func (m *Metrics) setPendingOldestAge(stream assetpb.AssetOpStream, seconds floa
 // 两处计数,各管一段,不重复:
 //   - shared/assetopwake(订阅端)计 received / deduped / dropped,以及消息本身非法、去重键写失败的 error;
 //   - Loop.WakePlayer 计 woke(至少处理了一行)/ none(该玩家没有可领的行,或 Store 不支持按玩家列出)
-//     / error(列出失败)。
+//     / error(列出失败,或唤醒总预算不足一个 OpBudget —— 超时配错)。
 type WakeResult uint8
 
 const (
@@ -314,7 +314,7 @@ const (
 	WakeWoke
 	// WakeNone 没有可处理的行。
 	WakeNone
-	// WakeError 消息非法、去重键写失败或列出失败。
+	// WakeError 消息非法、去重键写失败、列出失败,或唤醒总预算不足一个 OpBudget。
 	WakeError
 
 	wakeResultCount

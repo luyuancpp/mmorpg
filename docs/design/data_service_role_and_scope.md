@@ -1,39 +1,42 @@
-# data_service 定位与边界 (2026-04-11)
+# data_service 定位与边界
+
+> 2026-10-15 按当前代码修订服务职责与 Login 依赖；本文区分目录/发号 RPC 与玩家存档的 Redis/Kafka 加载链。
 
 ## 定位
-`go/data_service/` 是**跨区(cross-zone)运行时数据代理**，服务于玩家游戏过程中的跨区场景数据访问和运维工具。
+`go/data_service/` 承担全局玩家目录、永久 ID 号段、角色名登记，以及快照、流水与 GM 数据操作。它保留按 `player_id → home_zone_id → Redis` 路由的数据访问 RPC；当前 Scene 的普通载入与存盘仍直接使用共享 Redis，并经 Kafka DBTask 交给 go/db 落玩家库，跨 zone 游玩沿用这条加载链。
 
 ## 核心职责
-1. **跨区数据透明访问** — Scene Server 调 gRPC 统一接口，data_service 按 `player_id → home_zone_id → Redis` 路由，Scene 无需知道玩家归属哪个区
-2. **Load/Save** — `LoadPlayerData`, `SavePlayerData`, `GetPlayerField`, `SetPlayerField`
-3. **玩家区归属** — `RegisterPlayerZone`, `GetPlayerHomeZone`
-4. **快照与回档** — `CreateSnapshot`, `DiffSnapshot`, `RollbackPlayer/Zone/All`
-5. **GM/运维** — `BatchRecallItems`, `QueryTransactionLog`, `CreateEventSnapshot`
+1. **玩家目录** — `RegisterPlayerZone`, `GetPlayerHomeZone`, `BatchGetPlayerHomeZone`；维护逻辑归属与存储落点。映射持久化处于分批实施阶段，`RouteStore.Mode` 默认仍为 `redis`，详见 [映射持久化方案](./player-route-mapping-durability-proposal.md)。
+2. **永久 ID 与角色名** — `AllocateIdSegment`, `ReservePlayerName`, `ReleasePlayerName`, `BatchGetPlayerName`。
+3. **按归属路由的数据操作** — `LoadPlayerData`, `SavePlayerData`, `GetPlayerField`, `SetPlayerField`；这些 RPC 的存在不代表 Scene 的普通存盘经此中转。
+4. **快照、流水与回档入口** — `CreatePlayerSnapshot`, `GetPlayerSnapshotDiff`, `CreateEventSnapshot`, `QueryTransactionLog`，以及两条审计 Kafka 消费者。`RollbackPlayer/Zone/All` 的生产 `RollbackFence` 尚未装配，真实执行保持 fail-closed，见 [zone_data_rollback.md](./zone_data_rollback.md)。
+5. **GM 回收入口** — `BatchRecallItems` 的 dry-run 查询可用，真实回收尚未实现；勿把 RPC 骨架视为可执行回收能力。
 
-## 与 Login 的关系：无关
-- Login 使用 Kafka 直连 db 服务读写玩家数据（`sync_loader.go` → Redis check → Kafka DBTask → BLPop）
-- Login 只操作玩家所在区的 Redis，不需要跨区路由
-- 在登录时间敏感路径上加一层 gRPC 到 data_service 会增加延迟，无收益
-- **结论：Login 不接 data_service，两者独立**
+## 与 Login 的关系
+
+Login 已经依赖 data_service：建角前领取 PlayerId 号段、登记角色名与归属，角色列表和进场时查询权威 home_zone。`go/login/internal/svc/servicecontext.go` 装配共用的 `DataServiceClient`；`player_id_minter.go`、`home_zone.go` 与 `playernamereg` 分别封装调用。缺少归属/名字客户端会拒绝建角；号段失败按发号配置处理，默认禁止回退 Snowflake。
+
+玩家 blob 走另一条链：EnterGame 先检查 Redis 父键，缺失时通过 Kafka 发 DBTask 读取子表，由 TaskResultDispatcher 的 Pub/Sub 回调拼装父键。EnterGame 的成功应答只表示已受理，真正进场由后续 Scene 通知确认。`sync_loader.go` 中的同步辅助路径不代表当前 EnterGame 在等待 BLPOP。目录与发号依赖的故障语义、预算及数据读路径应分别排查。
 
 ## 谁用 data_service
 | 调用方 | 场景 |
 |--------|------|
-| Scene Server (C++) | 跨区玩家在非本区 Scene 上游戏时，通过 data_service 透明读写 home zone Redis |
+| Login | PlayerId 号段、角色名登记/释放、归属登记与查询 |
+| Scene / guild 等永久 ID 使用方 | 领取各业务号段；需要名字/归属的调用方使用相应目录 RPC |
 | GM/运维工具 | 快照、回档、批量回收、交易日志查询 |
-| 未来跨区功能 | 跨区邮件、拍卖行等需要访问玩家 home zone 数据的系统 |
+| Kafka 审计生产者 | C++ Scene 发流水与快照，data_service 消费后写全局库 |
 
 ## 架构位置
 ```
-Player → Gate → Scene Server (任意区)
-                    │
-                    │ gRPC (区无关的统一接口)
-                    ▼
-              data_service (Go, go-zero)
-                    │
-                    │ 按 player_id → home_zone_id 路由
-                    ▼
-              Redis (玩家 home zone)
+Login / 号段与目录使用方 ── gRPC ──▶ data_service
+                                     ├─ mapping Redis（归属/落点）
+                                     └─ 全局 MySQL（号段、名字、快照、流水等）
+
+Login / Scene ──▶ 共享 Redis（玩家父键/子表缓存）
+       │
+       └─ Kafka DBTask ──▶ go/db ──▶ 按当前存储落点选玩家库
+
+Scene ── Kafka 流水/快照 ──▶ data_service ──▶ 全局 MySQL
 ```
 
 ## 关键文件
@@ -71,7 +74,7 @@ sarama 只读探针按 broker 视角报消费组 lag(全部分区合计与单分
 关停顺序:`main` 先 cancel 消费者 ctx、有界等它们退出(8s,`kafkaShutdownGrace`),**之后**才 `svcCtx.Close()` 关连接池。反过来的话 txlog 的 `flushOnShutdown` 只会拿到一个已经关掉的池,那段"关停前尽力落最后一批"等于从来没写过。等超时就照常关池:未提交的 offset 会在下次启动时重放,`tx_id` 主键与 `snapshot_guid` 去重让重放幂等。
 
 #### topic 名带代号(`Kafka.TopicGeneration`,默认 1)
-有效名 = `<基名>_g<TopicGeneration>`,当前即 `transaction_log_topic_g1` / `player_snapshot_topic_g1`;**C++ 生产者的 topic 常量必须同名**(`cpp/libs/modules/transaction_log/transaction_log_system.h`、`cpp/libs/modules/snapshot/snapshot_system.h`)。
+有效名 = `<基名>_g<TopicGeneration>`,当前即 `transaction_log_topic_g1` / `player_snapshot_topic_g1`。C++ 生产者已由部署配置 `AuditTopicGeneration` 拼接代号，入口见 `cpp/libs/modules/transaction_log/transaction_log_system.h`、`cpp/libs/modules/snapshot/snapshot_system.h`；必须与 Go 的 `Kafka.TopicGeneration` 同步，不能再按“修改两处编译期常量”操作。
 
 为什么连第一代也带后缀(与 go/db 的 `DbTaskTopicForGeneration` 在 `<=1` 时用裸名不同):broker 开着 `auto.create.topics.enable` 且 `num.partitions=1`(`deploy/docker-compose.yml` 的 `KAFKA_NUM_PARTITIONS=1`;k8s 清单没设,同样是默认 1),C++ 生产者一发消息就把**裸名字**的 topic 自动建成 1 分区。`EnsureTopics` 拿 6/3 的契约去比,只会永远返回 `partition contract mismatch`,两条消费者一条都起不来,唯一症状是每 30s 一条 Error 日志,而流水/快照全被保留期吃掉。带代号的名字与那两个自动建出来的裸 topic 互不相干。
 
@@ -147,8 +150,8 @@ Kafka:
 
 ### 已知缺口
 - 表 proto `player_snapshot` 的 `OptionIndex` 还缺 `zone_id,created_at`,暂由 `store/schema.go: extraIndexes` 补(见上一节;`proto/` 归另一位负责)。
-- C++ 生产者的 topic 常量还是裸名(`transaction_log_topic` / `player_snapshot_topic`),需要改成 `transaction_log_topic_g1` / `player_snapshot_topic_g1` 才能与消费者对上;在那之前 Go 侧消费的是**空的**新 topic(不会卡住,只是没有数据)。同样地,`tools/scripts/k8s_deploy.ps1` 的 data-service ConfigMap 还没写 `Kafka.TopicGeneration`(缺省 1,与服务 yaml 一致,所以名字仍对得上;要改代号必须两边一起改)。
-- 本地 docker MySQL 上不存在 `testdb`,`appuser` 也无权限;按当前 yaml 启动 data_service 会迁移失败、三个 store 置 nil、消费者不启动(非致命)。本地联调应把 `SnapshotMySQL.DBName` 指到有权限的库(如 `mmorpg`)。
+- 本地 yaml 的 `SnapshotMySQL.DBName` 仍为 `testdb`；目标库是否存在及账号是否获授权取决于环境，不能从 yaml 推断本机实时状态。联调前应预建目标库并授权，或显式选择已获授权的全局库；迁移失败会导致相应 store 不可用，不能把服务端口已监听视为数据能力就绪。
 
 ### 已澄清(不再是缺口)
+- C++ 审计 topic 已按 `AuditTopicGeneration` 生成带代号的名字，部署渲染的 data-service 配置也包含 `Kafka.TopicGeneration`；旧版“生产者仍发裸 topic”的待办已完成。换代仍需同步配置并按审计 topic 换代 runbook 排空旧代。
 - ~~表 proto `transaction_log` 没有 `zone_id` 字段,消费者收到的 `zone_id` 被丢弃~~ —— **已过时**:`rollback_database_table.proto` 的 `transaction_log` 已有 `uint32 zone_id = 15`,`store.txLogHasZoneColumn` 因此为 true,`InsertBatchIgnore` 的列序里带着 `zone_id`,`NewTransactionLogStore` 那条 Error 不会打。回归用例 `TestTransactionLogStore_TimestampSecAndZoneLand` 直接断言这一列真的落库。

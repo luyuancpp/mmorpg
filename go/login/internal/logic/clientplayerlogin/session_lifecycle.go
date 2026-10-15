@@ -27,6 +27,22 @@ func cleanupLoginSessionState(ctx context.Context, svcCtx *svc.ServiceContext, s
 	loginsession.Cleanup(ctx, svcCtx.RedisClient, sessionID, logicTag)
 }
 
+// sessionPlayersToSettle 返回 Disconnect / LeaveGame 要收尾的玩家:gate 会话头带来的玩家,
+// 加上会话栅栏里绑定的玩家(不同且非 0 时)。两者都要处理:gate 在 LeaveGame 之后不清 playerId,
+// 同一连接换角时会话头带的是旧角色,只认它会把栅栏刚绑定的新角色永久留在 ONLINE;
+// 反过来旧角色之前的 MarkOffline 若失败过,会话头里的它是清理它的唯一线索。
+// 下游 SetDisconnecting / DeleteSession 都按 session_id 做 CAS,对不属于本会话的玩家是 no-op。
+func sessionPlayersToSettle(fromGate, bound uint64) []uint64 {
+	players := make([]uint64, 0, 2)
+	if fromGate != 0 {
+		players = append(players, fromGate)
+	}
+	if bound != 0 && bound != fromGate {
+		players = append(players, bound)
+	}
+	return players
+}
+
 func deletePlayerSession(ctx context.Context, svcCtx *svc.ServiceContext, playerID uint64, sessionID uint32) {
 	if playerID == 0 || sessionID == 0 {
 		return

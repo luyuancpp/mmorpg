@@ -1,4 +1,6 @@
 #include "bag_marshal.h"
+#include "engine/core/type_define/player_guid_comp.h"
+#include "engine/core/utils/registry/actor_log.h"
 
 #include <muduo/base/Logging.h>
 
@@ -150,8 +152,8 @@ void Unmarshal(entt::entity player, const BagAllData& in)
     // Bag::playerGuid 此前全仓没有任何写入点,于是每一条带 player= 的错误日志
     // 打的都是 kInvalidGuid 哨兵,排障时等于没有。这里取的是挂在实体上的 Guid
     // 组件,与 TransactionLogSystem::ResolvePlayerId 同源。
-    const auto* ownerGuid = tlsEcs.actorRegistry.try_get<Guid>(player);
-    const Guid owner = (ownerGuid != nullptr) ? *ownerGuid : kInvalidGuid;
+    const auto* ownerGuid = tlsEcs.actorRegistry.try_get<PlayerGuidComp>(player);
+    const Guid owner = (ownerGuid != nullptr) ? ownerGuid->value : kInvalidGuid;
 
     // Capacity replay first — InsertItemForRestore validates against
     // capacity_ via the bag's own bookkeeping, so getting capacities
@@ -186,7 +188,7 @@ void Unmarshal(entt::entity player, const BagAllData& in)
                      << static_cast<uint32_t>(kBagTypeCount) << ") "
                      << "item_uuid=" << entry.item_uuid()
                      << " config_id=" << entry.config_id()
-                     << " player=" << entt::to_integral(player);
+                     << " " << ActorLog(player);
             continue;
         }
         // 整份重载:实例数据(equip 段)原样带回。位置参数那个重载带不动它。

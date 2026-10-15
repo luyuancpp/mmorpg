@@ -1,4 +1,6 @@
 #include "mission.h"
+#include "engine/core/type_define/player_guid_comp.h"
+#include "engine/core/utils/registry/actor_log.h"
 
 #include <algorithm>
 #include <ranges>
@@ -19,21 +21,21 @@
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "table/proto/tip/mission_error_tip.pb.h"
 #include "proto/common/component/mission_comp.pb.h"
-#include "proto/common/event/mission_event.pb.h"
+#include "modules/mission/mission_events.h"
 #include <condition/condition_type.h>
 
 uint32_t MissionSystem::GetMissionReward(const GetRewardParam &param, MissionsComp &missionComp)
 {
-	// Validate the entity before touching its components (get<Guid> asserts existence).
+	// 先确认实体存活,再读取玩家身份组件;缺失时拒绝领取,不补默认身份。
 	if (!tlsEcs.actorRegistry.valid(param.playerEntity))
 	{
 		LOG_ERROR << "Claim reward failed: invalid player entity = " << entt::to_integral(param.playerEntity);
 		return PrintStackAndReturnError(kInvalidParameter);
 	}
 
-	const auto* owner = tlsEcs.actorRegistry.try_get<Guid>(param.playerEntity);
+	const auto* owner = tlsEcs.actorRegistry.try_get<PlayerGuidComp>(param.playerEntity);
     if (owner == nullptr) return kInvalidParameter;
-    const auto playerId = *owner;
+    const auto playerId = owner->value;
 
 	if (!missionComp.IsClaimable(param.missionId))
 	{
@@ -50,7 +52,7 @@ uint32_t MissionSystem::GetMissionReward(const GetRewardParam &param, MissionsCo
 
 uint32_t MissionSystem::CheckMissionAcceptance(const AcceptMissionEvent &acceptEvent, MissionsComp &missionComp, const IMissionConfig &config)
 {
-	const uint32_t missionId = acceptEvent.mission_id();
+	const uint32_t missionId = acceptEvent.missionId;
 
 	RETURN_ON_ERROR(missionComp.ValidateNotAccepted(missionId));
 	RETURN_ON_ERROR(missionComp.ValidateNotCompleted(missionId));
@@ -73,13 +75,13 @@ uint32_t MissionSystem::CheckMissionAcceptance(const AcceptMissionEvent &acceptE
 
 uint32_t MissionSystem::AcceptMission(const AcceptMissionEvent &acceptEvent, MissionsComp &missionComp, const IMissionConfig &config)
 {
-	const entt::entity playerEntity = entt::to_entity(acceptEvent.entity());
-	const uint32_t missionId = acceptEvent.mission_id();
+	const entt::entity playerEntity = acceptEvent.player;
+	const uint32_t missionId = acceptEvent.missionId;
 
 	if (const uint32_t checkResult = CheckMissionAcceptance(acceptEvent, missionComp, config); checkResult != kSuccess)
 	{
 		LOG_ERROR << "Accept mission rejected: missionId = " << missionId
-				  << ", playerId = " << entt::to_integral(playerEntity);
+				  << " " << ActorLog(playerEntity);
 		return checkResult;
 	}
 
@@ -103,12 +105,12 @@ uint32_t MissionSystem::AcceptMission(const AcceptMissionEvent &acceptEvent, Mis
 	missionComp.GetMutableMissionList().mutable_missions()->insert({missionId, std::move(mission)});
 
 	OnAcceptedMissionEvent acceptedEvent;
-	acceptedEvent.set_entity(entt::to_integral(playerEntity));
-	acceptedEvent.set_mission_id(missionId);
+	acceptedEvent.player = playerEntity;
+	acceptedEvent.missionId = missionId;
 	tlsEcs.dispatcher.trigger(acceptedEvent);
 
 	LOG_INFO << "Mission accepted: missionId = " << missionId
-			 << ", playerId = " << entt::to_integral(playerEntity);
+			 << " " << ActorLog(playerEntity);
 	return kSuccess;
 }
 
@@ -118,7 +120,7 @@ uint32_t MissionSystem::AbandonMission(const AbandonParam &param, MissionsComp &
 	{
 		return MAKE_ERROR_MSG(kMissionAlreadyCompleted,
 							  "missionId=" << param.missionId
-										   << " playerId=" << entt::to_integral(param.playerEntity));
+										   << " " << ActorLog(param.playerEntity));
 	}
 
 	missionComp.ClearClaimable(param.missionId);
@@ -128,7 +130,7 @@ uint32_t MissionSystem::AbandonMission(const AbandonParam &param, MissionsComp &
 	UnregisterMissionIndexes(missionComp, param.missionId, config);
 
 	LOG_INFO << "Mission abandoned: missionId = " << param.missionId
-			 << ", playerId = " << entt::to_integral(param.playerEntity);
+			 << " " << ActorLog(param.playerEntity);
 	return kSuccess;
 }
 
@@ -177,21 +179,21 @@ bool MissionSystem::AreAllConditionsFulfilled(const MissionComp &mission, uint32
 
 void MissionSystem::HandleConditionEvent(const ConditionEvent &conditionEvent, MissionsComp &missionComp, const IMissionConfig &config, uint32_t onlyMissionId)
 {
-	if (conditionEvent.condition_ids().empty())
+	if (conditionEvent.conditionIds.empty())
 	{
-		LOG_ERROR << "HandleConditionEvent: empty condition IDs for entity = " << conditionEvent.entity();
+		LOG_ERROR << "HandleConditionEvent: empty condition IDs for entity = " << entt::to_integral(conditionEvent.player);
 		return;
 	}
 
 	// Only missions that watch this condition category can be affected by the event.
 	auto &missionsByCondition = missionComp.GetMutableEventMissionsClassify();
-	const auto watchersIt = missionsByCondition.find(conditionEvent.condition_type());
+	const auto watchersIt = missionsByCondition.find(conditionEvent.conditionType);
 	if (watchersIt == missionsByCondition.end())
 	{
 		return;
 	}
 
-	const entt::entity playerEntity = entt::to_entity(conditionEvent.entity());
+	const entt::entity playerEntity = conditionEvent.player;
 	auto &missions = *missionComp.GetMutableMissionList().mutable_missions();
 
 	std::unordered_set<uint32_t> justCompleted;
@@ -250,7 +252,7 @@ bool MissionSystem::UpdateMissionProgress(const ConditionEvent &conditionEvent, 
 {
 	// A condition whose table defines no slot filters matches *any* event, so an
 	// event carrying no condition ids must not be allowed to advance progress.
-	if (conditionEvent.condition_ids().empty())
+	if (conditionEvent.conditionIds.empty())
 	{
 		return false;
 	}
@@ -287,7 +289,7 @@ bool MissionSystem::UpdateProgressIfConditionMatches(const ConditionEvent &condi
 		return false;
 	}
 	// The event must match this condition's category and its slot filters.
-	if (conditionEvent.condition_type() != conditionTable->condition_category())
+	if (conditionEvent.conditionType != conditionTable->condition_category())
 	{
 		return false;
 	}
@@ -296,11 +298,11 @@ bool MissionSystem::UpdateProgressIfConditionMatches(const ConditionEvent &condi
         // condition1 是等级门槛：已有 20 级的玩家接取“达到 10 级”也应满足。
         if (!conditionTable->condition1().empty() && std::none_of(
             conditionTable->condition1().begin(), conditionTable->condition1().end(),
-            [&conditionEvent](uint32_t level) { return conditionEvent.amount() >= level; })) return false;
+            [&conditionEvent](uint32_t level) { return conditionEvent.amount >= level; })) return false;
         if (!conditionTable->condition2().empty() || !conditionTable->condition3().empty() || !conditionTable->condition4().empty())
             return false;
     }
-    else if (!condition_util::MatchesEventSlots(conditionTable, conditionEvent.condition_ids()))
+    else if (!condition_util::MatchesEventSlots(conditionTable, conditionEvent.conditionIds))
     {
         return false;
     }
@@ -308,8 +310,8 @@ bool MissionSystem::UpdateProgressIfConditionMatches(const ConditionEvent &condi
     const uint64_t target = targetCount > 0 ? targetCount : conditionTable->target_count();
     const bool owned = conditionTable->quantity_type() == 1 ||
         conditionTable->condition_category() == static_cast<uint32_t>(eConditionType::kConditionLevelUp);
-    const uint64_t candidate = owned ? conditionEvent.amount() :
-        uint64_t{currentProgress} + conditionEvent.amount();
+    const uint64_t candidate = owned ? conditionEvent.amount :
+        uint64_t{currentProgress} + conditionEvent.amount;
     // 累计目标饱和；严格 > 的完成值是 target+1，不能夹回 target 后又变成未完成。
     const uint64_t ceiling = conditionTable->comparison_op() == 1 ? target + 1 : target;
     const auto newProgress = static_cast<uint32_t>(std::min<uint64_t>(
@@ -342,7 +344,7 @@ void MissionSystem::OnMissionCompletion(entt::entity playerEntity, const std::un
 {
 	// 必须保留完整 64 位:高 32 位是 version,截成 uint32 后槽位复用过的玩家
 	// 还原出来的是 version 0 的句柄,handler 里 valid() 判否,事件被静默丢弃。
-	const uint64_t playerEntityValue = entt::to_integral(playerEntity);
+	const auto playerEntityValue = playerEntity;
 
 	// 副作用事件先收集、等全部完成任务的状态落定后再派发。
 	// 不能边处理边派发:同一批里的任务 B 已从任务表摘掉但还没置完成位,
@@ -368,8 +370,8 @@ void MissionSystem::OnMissionCompletion(entt::entity playerEntity, const std::un
             // 先保留待领取权，再尝试发奖；满包、禁发或号段不足都可以重试。
             missionComp.RestoreClaimable(missionId);
 			OnMissionAwardEvent &awardEvent = awardEvents.emplace_back();
-			awardEvent.set_entity(playerEntityValue);
-			awardEvent.set_mission_id(missionId);
+			awardEvent.player = playerEntityValue;
+			awardEvent.missionId = missionId;
 			break;
 		}
 		case RewardAction::kClaimable:
@@ -383,16 +385,16 @@ void MissionSystem::OnMissionCompletion(entt::entity playerEntity, const std::un
 		for (const uint32_t nextMissionId : config.GetNextMissionTableIds(missionId))
 		{
 			AcceptMissionEvent &nextMissionEvent = acceptEvents.emplace_back();
-			nextMissionEvent.set_entity(playerEntityValue);
-			nextMissionEvent.set_mission_id(nextMissionId);
+			nextMissionEvent.player = playerEntityValue;
+			nextMissionEvent.missionId = nextMissionId;
 		}
 
 		// Notify the condition system so "complete mission X" conditions can trigger.
 		ConditionEvent &completeMissionCondition = conditionEvents.emplace_back();
-		completeMissionCondition.set_entity(playerEntityValue);
-		completeMissionCondition.set_condition_type(static_cast<uint32_t>(eConditionType::kConditionCompleteMission));
-		completeMissionCondition.set_amount(1);
-		completeMissionCondition.mutable_condition_ids()->Add(missionId);
+		completeMissionCondition.player = playerEntityValue;
+		completeMissionCondition.conditionType = static_cast<uint32_t>(eConditionType::kConditionCompleteMission);
+		completeMissionCondition.amount = 1;
+		completeMissionCondition.conditionIds.push_back(missionId);
 	}
 
 	// 派发顺序与原先按类型 update 的口径一致:先发奖,再接后续任务,最后推进「完成任务 X」条件。

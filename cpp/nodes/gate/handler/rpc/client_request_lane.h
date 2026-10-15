@@ -9,7 +9,8 @@
 // 只在路由模式(GATE_CLIENT_RPC_ROUTER=1)、只对 PROTOCOL_GRPC 消息启用(O2):
 //   - scene 的 TCP 路径本身单连接 FIFO,已经有序;Empty 返回的移动消息不回包,排队会卡死;
 //   - 直连模式下 match 不回写会话头,认领不了(O7,等 D61 删除直连路径);
-//   - gate 合成的断线通知不进 lane(O8):它带 gate_call_seq = 0,由 login 会话栅栏兜底。
+//   - gate 合成的断线通知不进 lane(O8):它带 gate_call_seq = 0、但必须带 session_incarnation,
+//     由 login 会话栅栏兜底(代次为 0 时栅栏的 Close 会被跳过)。
 //
 // 纯逻辑(排队、单飞、认领恰好一次、过期堆)在 services/gate/session/comp/router_lane.h,本文件只做装配与副作用
 // (发出、回执、计数、日志)。全部在 gate 唯一的 EventLoop 线程上调用,不加锁,不新增线程。
@@ -52,10 +53,20 @@ inline constexpr double kSweepIntervalSeconds = 0.25;
 // 会话代次发号:建连时调用,进程内单调,从 1 开始。与 gate_instance_id 合起来全局唯一。
 uint64_t NextIncarnation();
 
+// 带请求 id 与原消息号的错误信封(与路由服的拒绝信封同形,客户端按 id 对上请求)。连接已释放就不发。
+// 路由 lane 与 scene 的 TCP(RPC0)回包路径共用(docs/design/muduo-rpc-channel.md §8.1)。
+// 只能在 gate 的 EventLoop 线程上调用(会话表是 thread_local)。
+void SendEnvelope(SessionInfo &session, uint64_t clientRequestId, uint32_t messageId, uint32_t tipId);
+
+// 按 session_id 找会话并核对会话代次:session_id 被新连接复用之后,旧会话迟到的完成不得落到新会话上(F47)。
+// 代次不符计入 [lane] 汇总里的 incarnation_mismatch —— 该计数同时包含路由 lane 与 TCP(RPC0)回包两条路径,
+// 不再只是 lane 的。只能在 gate 的 EventLoop 线程上调用。
+SessionInfo *FindLiveSession(SessionId sessionId, uint64_t incarnation);
+
 // 发往路由服的发送函数,由 client_message_processor.cpp 在启动时注入(它持有挑路由服副本与生成 sender 的细节)。
 // sessionDetailsBin 是序列化好的 SessionDetails,原样作为 x-session-detail-bin。
 // 返回被选中的路由服节点实体整数;本地还没发现任何路由服时返回 nullopt(lane 据此回 1003)。
-using RouterSendFn = std::optional<uint64_t> (*)(const ClientRequest &request, const std::string &sessionDetailsBin);
+using RouterSendFn = std::optional<entt::entity> (*)(const ClientRequest &request, const std::string &sessionDetailsBin);
 void SetRouterSender(RouterSendFn fn);
 
 // 准入。前置条件:会话存在且已验证;白名单 / 体积 / 限流 / GM / battle 几道闸都已通过;协议是 PROTOCOL_GRPC;路由模式。
@@ -74,8 +85,9 @@ bool OnRouterReply(const SessionDetails &echoed, const ::google::protobuf::Messa
 bool OnRouterCallFailed(const SessionDetails &sent);
 
 // 路由服节点摘除(OnNodeRemoveEvent 在 DestroyEntity 之前、同一 loop 线程触发):该节点上的在途调用永远不会再有回调,
-// 当作失败处理:回 1003,放行下一条。
-void OnRouterNodeRemoved(uint64_t routerEntity);
+// 当作失败处理:回 1003,放行下一条。摘出在途项同步做(恰好一次),回执与放行下一条推到下一轮 loop,
+// 那时被摘实体已销毁,下一条不会再选中它。
+void OnRouterNodeRemoved(entt::entity routerEntity);
 
 // 主动过期扫描(GateRuntimeContext 上的 TimerTaskComp 驱动,回调不捕获对象)。顺带每 30s 打一行 [lane] 汇总。
 void ExpireDue(std::chrono::steady_clock::time_point now);

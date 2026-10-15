@@ -185,6 +185,8 @@ void GateEventHandler::PlayerLeaseExpiredEventHandler(const contracts::kafka::Pl
     // 无 conn 的残留会话:断开回调永远不会来,只能就地摘除。
     LOG_INFO << "LeaseExpired: removing connectionless session. session_id=" << sessionId
              << " player_id=" << event.player_id();
+    // 与正常断开同一收尾:先注销路由 lane 的在途调用、丢弃排队项,再摘会话(client-request-ordering.md §4.6)。
+    gate_lane::OnSessionClosing(it->second);
     sessions.erase(it);
 ///<<< END WRITING YOUR CODE
 }

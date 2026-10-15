@@ -984,7 +984,7 @@ func (l *GuildLogic) SettleTrialResult(ctx context.Context, ev *kafkapb.BattleRe
 	// 已提交。此后全部 best-effort(activity_logic.go 纪律 3):销账最先 —— 它决定 battle 还要不要重发。
 	l.ackTrialResult(ctx, d, battle.BattleID)
 	countTrialSettled(res, in.FinishedAtMs, nowMs, bundle != nil)
-	l.notifyTrialSettled(ctx, battle, ev, res.FundsGranted)
+	l.notifyTrialSettled(ctx, battle, ev, res)
 	l.deliverTrialRewards(ctx, d, battle, bundle, res.Enqueued)
 	return TrialOutcomeSettled, nil
 }
@@ -1164,21 +1164,36 @@ func countTrialSettled(res data.TrialSettleResult, finishedAtMs, nowMs uint64, h
 // 结算没有"操作者":没有谁手上拿着回包,所以参战者全部在收件人里;actor 填发起人只作展示。
 // 取成员名单失败时退回只推参战者:推送本来就是至多一次的提示。
 //
-// 摘要 bump 用**同一份**收件人(landing-recovery-sync-digest.md §3.3 表第 9 行:结算给参战者,计了资金时扇出全帮):
-// 结算没有操作者,推送的收件人本来就含全体参战者,与"拉取结果会变的所有玩家"一致。取成员名单失败时同样只 bump 参战者,
-// 其余成员的资金 / 胜场由打开活动页时的拉取覆盖(§3.3:帮会级数值不靠扇出保证)。
-func (l *GuildLogic) notifyTrialSettled(ctx context.Context, battle data.TrialBattleKey, ev *kafkapb.BattleResultEvent, fundsGranted bool) {
+// 摘要 bump 用**同一份**收件人(landing-recovery-sync-digest.md §3.3 表第 6、9 行:结算给参战者,计了资金时扇出全帮):
+// 结算没有操作者,推送的收件人本来就含全体参战者,与"拉取结果会变的所有玩家"一致。
+//   - GUILD_ACTIVITY:收件人全体(活动页的"进行中"、次数、胜场)。
+//   - GUILD:得奖者的帮贡在结算事务里已记账(GuildInfo.members[] 的 contribution_*);计了资金时全帮 GuildInfo.funds
+//     也变了,而这次扇出本来就在发,顺带一个域号不多一次 Redis 往返,所以整批一起带上。
+//
+// 取成员名单失败时只 bump 参战者(活动页)与得奖者(GUILD),其余成员的资金 / 胜场由打开界面时的拉取覆盖
+// (§3.3:帮会级数值不靠扇出保证)。
+func (l *GuildLogic) notifyTrialSettled(ctx context.Context, battle data.TrialBattleKey, ev *kafkapb.BattleResultEvent, res data.TrialSettleResult) {
 	recipients := trialTeamZero(ev)
-	if fundsGranted && l.repo != nil {
+	wholeGuild := false
+	if res.FundsGranted && l.repo != nil {
 		g, err := l.repo.GetGuild(ctx, battle.GuildID)
 		if err != nil {
 			logx.Errorf("[GuildTrial] load guild %d for settle push failed, notifying participants only: %v", battle.GuildID, err)
 		} else {
 			recipients = append(recipients, membersExcept(g)...)
+			wholeGuild = true
 		}
 	}
 	l.notify(pb.GuildChangeKind_GUILD_CHANGE_KIND_ACTIVITY_CHANGED, battle.GuildID, battle.InitiatorPlayerID, 0, recipients)
+	if wholeGuild {
+		// 得奖者是参战者的子集,已在全帮收件人里:一条 Lua 两个域号。
+		l.bumpSync(recipients, scenepb.SyncDomain_SYNC_DOMAIN_GUILD_ACTIVITY, scenepb.SyncDomain_SYNC_DOMAIN_GUILD)
+		return
+	}
 	l.bumpSync(recipients, scenepb.SyncDomain_SYNC_DOMAIN_GUILD_ACTIVITY)
+	if len(res.Rewarded) > 0 {
+		l.bumpSync(res.Rewarded, scenepb.SyncDomain_SYNC_DOMAIN_GUILD)
+	}
 }
 
 // deliverTrialRewards 在结算提交后把本局插下的物品指令各同步投一次,让玩家打完就看到物品到账(06 §6.29 第 7 步)。

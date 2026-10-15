@@ -45,13 +45,11 @@ namespace muduo
     private:
       void onConnection(const TcpConnectionPtr &conn);
 
-      // void onMessage(const TcpConnectionPtr& connection,
-      //                Buffer* buf,
-      //                Timestamp time);
+      // 声明在 tcpServer 之前:~TcpServer 会对每条连接同步执行 connectDestroyed,并以裸 this 回调 onConnection(DOWN);
+      // 那时声明在它之后的成员已经析构。DOWN 分支本身也不读服务表(每个 RpcChannel 自持一份拷贝)。
+      std::map<std::string, ::google::protobuf::Service *> services_;
 
       TcpServer tcpServer;
-
-      std::map<std::string, ::google::protobuf::Service *> services_;
     };
 
   } // namespace net

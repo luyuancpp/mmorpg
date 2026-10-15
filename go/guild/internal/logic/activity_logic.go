@@ -483,14 +483,24 @@ func (l *GuildLogic) afterActivityCommit(ctx context.Context, d *ActivityDeps, a
 	if res.ReachedNow {
 		l.notify(pb.GuildChangeKind_GUILD_CHANGE_KIND_ACTIVITY_CHANGED, a.guild.GuildID, a.playerID, 0, membersExcept(a.guild, a.playerID))
 	}
-	// 摘要(landing-recovery-sync-digest.md §3.3 表第 9 行):本人的活动页总会变(今日次数、待发奖励);
-	// 本档期首次达阈值时全帮的活动页都变了(进度锁存),扇出给快照全体 + 本人。未达阈值时的每盏灯只改帮会级进度,
-	// 不扇出(§3.3:帮会级数值由打开活动页时的拉取覆盖)。收件人取缓存快照,口径同上面的推送。
-	players := []uint64{a.playerID}
+	// 摘要(landing-recovery-sync-digest.md §3.3 表第 6、9 行):
+	//   - 本人:活动页总会变(今日次数、待发奖励);GetPlayerGuild 也变了 —— personal_contribution 在同一事务里
+	//     记进了他的帮贡(GuildInfo.members[] 的 contribution_*)。给本人多带一个域号是零成本(同一条 Lua)。
+	//   - 本档期首次达阈值(ReachedNow):全帮的活动页都变了(进度锁存),扇出 GUILD_ACTIVITY;
+	//   - 本次发了帮会资金(FundsGranted,本档期至多一次):全帮 GuildInfo.funds 变了,扇出 GUILD。
+	//     这不是 §3.3 豁免的"逐次扇出"(那条豁免的是每次参与都乘全帮人数)。
+	// 未达阈值时的每盏灯只改帮会级进度,不扇出(由打开活动页时的拉取覆盖)。收件人取缓存快照,口径同上面的推送。
+	l.bumpSync([]uint64{a.playerID}, scenepb.SyncDomain_SYNC_DOMAIN_GUILD_ACTIVITY, scenepb.SyncDomain_SYNC_DOMAIN_GUILD)
+	var fanout []scenepb.SyncDomain
 	if res.ReachedNow {
-		players = membersPlus(a.guild, a.playerID)
+		fanout = append(fanout, scenepb.SyncDomain_SYNC_DOMAIN_GUILD_ACTIVITY)
 	}
-	l.bumpSync(players, scenepb.SyncDomain_SYNC_DOMAIN_GUILD_ACTIVITY)
+	if res.FundsGranted {
+		fanout = append(fanout, scenepb.SyncDomain_SYNC_DOMAIN_GUILD)
+	}
+	if len(fanout) > 0 {
+		l.bumpSync(membersExcept(a.guild, a.playerID), fanout...)
+	}
 }
 
 // deliverActivityReward 在事务提交之后同步投一次,让玩家当场看到物品到账(06 §6.6,预算按裁决 K)。

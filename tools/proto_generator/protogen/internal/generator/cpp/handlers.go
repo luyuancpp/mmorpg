@@ -28,16 +28,8 @@ func ProcessAllHandlers(wg *sync.WaitGroup, methodList internal.RPCMethods) {
 			CppExt:              _config.Global.FileExtensions.HandlerCpp,
 			IsRepliedHandler:    false,
 		},
-		{
-			IsValidFunc:         IsSceneNodeReceivedProtocolResponseHandler,
-			GenerateDataFunc:    internal.GetServiceRepliedHandlerHeadStr,
-			GenerateCppDataFunc: internal.GetServiceRepliedHandlerCppStr,
-			Dir:                 _config.Global.PathLists.MethodHandlerDirectories.SceneNodeReplied,
-			CppDir:              _config.Global.PathLists.MethodHandlerDirectories.SceneNodeReplied,
-			HeaderExt:           _config.Global.FileExtensions.RepliedHandlerHeaderExtension,
-			CppExt:              _config.Global.FileExtensions.CppRepliedHandlerEx,
-			IsRepliedHandler:    true,
-		},
+		// 节点间 RPC0(Gate / Scene / SceneScene)不再生成 rpc_replies 回包:回包在调用点的每次调用 lambda 里完成
+		// (docs/design/muduo-rpc-channel.md §9.2)。rpc_replies 下只剩玩家回包链与手写的 gRPC 应答适配。
 		{
 			IsValidFunc:         IsSceneNodeReceivedPlayerResponseHandler,
 			GenerateDataFunc:    internal.GetPlayerMethodRepliedHeadStr,
@@ -57,16 +49,6 @@ func ProcessAllHandlers(wg *sync.WaitGroup, methodList internal.RPCMethods) {
 			HeaderExt:           _config.Global.FileExtensions.HandlerH,
 			CppExt:              _config.Global.FileExtensions.HandlerCpp,
 			IsRepliedHandler:    false,
-		},
-		{
-			IsValidFunc:         IsGateNodeReceivedResponseHandler,
-			GenerateDataFunc:    internal.GetServiceRepliedHandlerHeadStr,
-			GenerateCppDataFunc: internal.GetServiceRepliedHandlerCppStr,
-			Dir:                 _config.Global.PathLists.MethodHandlerDirectories.GateNodeReplied,
-			CppDir:              _config.Global.PathLists.MethodHandlerDirectories.GateNodeReplied,
-			HeaderExt:           _config.Global.FileExtensions.RepliedHandlerHeaderExtension,
-			CppExt:              _config.Global.FileExtensions.CppRepliedHandlerEx,
-			IsRepliedHandler:    true,
 		},
 		{
 			IsValidFunc:              IsSceneNodeGrpcHandler,

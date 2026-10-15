@@ -695,6 +695,8 @@ func (p *panicOnCandidatesProvider) ZoneCapacity(uint32) uint32 { return 100 }
 // 退避再参选。同 zone 的另一个副本因此能抢到锁、把队列出空。
 // 修复前收尾是直线代码:panic 被 safego 接住、选主 goroutine 退出,心跳 goroutine 却还在续期,
 // 这个副本成了「持锁不出队」的僵尸 leader —— 只 panic 一次、锁键一直在,本用例在第一个 waitFor 处红。
+// 退避本身也钉住:去掉 panic 之后的退避,任期就成了「当选 → panic → 打栈 → 放锁」的热循环,
+// 在第一个 waitFor 之后那 300ms 的观察里红。
 func TestIntegration_PanickedTermReleasesLockForSameZoneStandby(t *testing.T) {
 	mr, err := miniredis.Run()
 	if err != nil {
@@ -724,6 +726,13 @@ func TestIntegration_PanickedTermReleasesLockForSameZoneStandby(t *testing.T) {
 	waitFor(t, 3*time.Second, "panicking dispatcher runs for election again after backoff", func() bool {
 		return bad.calls.Load() >= 2
 	})
+	// 退避钉住(G1b-consistency-2):第 2 次 panic 刚出现,下一次最早在 max(lockTTL/3, 1s) = 1s 之后。
+	// 观察 300ms 计数不应变化;去掉退避就是热循环,这段时间里会反复当选、反复 panic。
+	before := bad.calls.Load()
+	time.Sleep(300 * time.Millisecond)
+	if got := bad.calls.Load(); got != before {
+		t.Fatalf("panicked term re-elected within 300ms (calls %d -> %d): electAndRun must back off max(lockTTL/3, 1s) after a panicked term", before, got)
+	}
 	// 退避期间锁键不在:panic 的那个任期已经放锁(不靠 TTL 过期,miniredis 也不按墙钟过期)。
 	waitFor(t, 3*time.Second, "lock released by the panicked term", func() bool {
 		return !mr.Exists(lockKey)
@@ -774,7 +783,13 @@ func leaderGaugeValue(t *testing.T, pod, zone string) (float64, bool) {
 
 // G1b-spec-1 回归:leader 指标是电平,不是边沿。生产上 dispatcher 在 go-zero 指标开关打开之前就 Start
 // 并当选(login.go 先 ctx.Start(),zrpc.MustNewServer 里的 SetUp → StartAgent 才打开开关),那时写的
-// 样本被直接丢弃。leader 每拍重发 1,开关一开就补上。
+// 样本被直接丢弃。修复有三处写指标,这里逐一钉住:
+//   - leader 每拍重发 1(drainLoop),开关一开就补上;
+//   - 备机每轮抢锁失败重发 0(electAndRun):没有它,冷启动后备机整个生命周期都没有序列,
+//     runbook 里按 zone 的 absent / sum by (zone) 告警读不到它;
+//   - 任期结束归 0(leadOneTerm 的 defer):没有它,Stop 之后(以及 panic 后的退避窗口里)留着陈旧的 1,
+//     双副本 zone 上读成双 leader。
+//
 // pod / zone 标签独立,不与包内其它用例的 {unknown, 1} 序列互相覆盖。开关是进程级的、打开后关不回去:
 // 修复前只在全新进程里第一次跑时红(-run 单跑、-count=1),修复后恒绿。
 func TestDispatcher_LeaderGaugeRepublishedAfterMetricsEnabled(t *testing.T) {
@@ -798,6 +813,13 @@ func TestDispatcher_LeaderGaugeRepublishedAfterMetricsEnabled(t *testing.T) {
 	waitFor(t, 3*time.Second, "zone 4242 leader lock acquired", func() bool {
 		return mr.Exists(ZoneDispatcherLockKey(base, zone))
 	})
+	// 锁已在 d 手里(miniredis 不按墙钟过期,d 停之前一直持有),d2 只能当备机。
+	// d2.Start 里那次写 0 是同步的、落在开关打开之前,被丢弃;开关打开后它的序列只能来自
+	// 抢锁失败分支的重发(1s 退避内必有一轮)。修复前这个分支不写指标,d2 的序列一直不出现。
+	d2 := mustNewDispatcher(t, q, &integrationProvider{}, rdb, secret, base, zone)
+	d2.SetPodID("gauge-test-standby")
+	d2.Start()
+	defer d2.Stop()
 	// 再等两拍(30ms 一拍):避开「锁键已写、goroutine 还没走到当选那次 setLeaderGauge(1)」的窗口,
 	// 让当选那次写入确定落在开关打开之前。这一步只影响修复前能不能稳定红,不影响修复后的结果。
 	time.Sleep(60 * time.Millisecond)
@@ -807,4 +829,16 @@ func TestDispatcher_LeaderGaugeRepublishedAfterMetricsEnabled(t *testing.T) {
 		v, ok := leaderGaugeValue(t, "gauge-test-pod", "4242")
 		return ok && v == 1
 	})
+	waitFor(t, 3*time.Second, `login_queue_dispatcher_is_leader{pod="gauge-test-standby",zone="4242"} == 0`, func() bool {
+		v, ok := leaderGaugeValue(t, "gauge-test-standby", "4242")
+		return ok && v == 0
+	})
+
+	// 任期收尾归 0:Stop 等 close(d.stopped),它在 leadOneTerm 的 defer(setLeaderGauge(0))之后才执行,
+	// 所以 Stop 返回时这条序列一定已是 0。d 放锁后 d2 可能接任,只改它自己的序列,不影响这里。
+	// Stop 可重复调用,上面的 defer d.Stop() 不受影响。
+	d.Stop()
+	if v, ok := leaderGaugeValue(t, "gauge-test-pod", "4242"); !ok || v != 0 {
+		t.Fatalf(`login_queue_dispatcher_is_leader{pod="gauge-test-pod",zone="4242"} after Stop = %v (present=%v), want 0`, v, ok)
+	}
 }

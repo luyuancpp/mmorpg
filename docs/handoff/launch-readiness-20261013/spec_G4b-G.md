@@ -108,7 +108,9 @@
 
 **整键 TTL 为什么还要**：成员逐个到期靠「读的时候清」。zone 下线或被合走之后没有 login 再来读，剩下的成员没人清，键永久残留。有了整键 TTL，最后一次写入后 `W` 之内整键消失。
 
-**为什么可以无条件 `PEXPIRE W`**（Java 版是 `pttl < X 才 pexpire X`）：所有写入用同一个 `W`，而任何成员写入时的剩余寿命都 ≤ `max(AdmitTTL, G) < W`。后一次写入把整键到期时刻推到「那一刻 + W」，不会早于此前任何成员的到期时刻，所以不存在「把 TTL 缩短到某个成员之前」的情况。少一次 `PTTL`，脚本里也没有分支。
+**为什么可以无条件 `PEXPIRE W`**（Java 版是 `pttl < X 才 pexpire X`）：同一 zone 的所有副本配同一个 `AdmitTTL` 时，所有写入用同一个 `W`，而任何成员写入时的剩余寿命都 ≤ `max(AdmitTTL, G) < W`。后一次写入把整键到期时刻推到「那一刻 + W」，不会早于此前任何成员的到期时刻，所以不存在「把 TTL 缩短到某个成员之前」的情况。少一次 `PTTL`，脚本里也没有分支。
+
+**（评审后更正）「同一个 `W`」不是恒成立的**：`W` 由各副本按自己的 `AdmitTTL` 算（`queue.go` 的 `admittedKeyTTL`），而 `k8s_deploy.ps1` 从 `login.yaml` 读 `Queue.AdmitTTL` 写进 ConfigMap，排队开着时改值滚动，就有新旧 `AdmitTTL` 并存的窗口。设大值副本的 `AdmitTTL` 为 `A₁`、小值副本为 `A₂`：小值副本的每次写入把整键到期推到「那一刻 + `max(A₂, G) + 1min`」，大值副本此前写的放行占位最长活到「写入时刻 + `A₁`」。所以只要 `A₁ − A₂ ≤ 1min`（`admittedKeyGCSlack`），整键仍不会先于任何成员到期，只是给 login / Redis 时钟偏差留的余量被吃掉相应部分；超过 1min 时，小值副本写完后若 `max(A₂, G) + 1min` 之内该 zone 没有任何写入（例如满员：`free == 0` 时 dispatcher 不放行、快速通道不占位），整键会连同大值副本写的未到期放行占位一起消失，下一拍按在途 0 最多多放一批 `C − O`。后果与 §5.3「占位键被淘汰或误删」同类，触发条件窄，约束与处置写在 §5.5；代码改成条件续期留给负责人决定（§11 #6）。
 
 **多留的 1 分钟**（常量 `admittedKeyGCSlack`）：分数用 login 时钟，整键 TTL 用 Redis 时钟，两者有偏差时不能让整键先于成员消失；同时保证 `PEXPIRE` 的参数恒 ≥ 60000，不会因为配置了亚毫秒的 `AdmitTTL` 变成 `PEXPIRE key 0`（那等于删键）。
 
@@ -589,6 +591,7 @@ go-redis 把 `int64` / `uint32` 参数编码成十进制字符串，`float64` �
 - **旧键**：新版本不再写。最后一个旧 Pod 停写后，旧键在 `AdmitTTL`（60s）内整键过期，不需要清理步骤。要立即清：`redis-cli DEL admitted:zone:<z>`。
 - **新键的止血命令**：`redis-cli DEL admitted:zset:zone:<z>`（时钟故障残留，§4.2；或任何怀疑占位记账卡住的时候）。代价是最多多放一批 `C − O`。
 - **回滚（新 → 旧）**：窗口与上面对称。新键在最后一次写入后 `W`（默认 2 分钟）内整键过期。排队开着时不要用 `kubectl rollout undo` 退镜像（`spec_G4b.md` §12 已写）：先用 `-LoginQueue off` 关排队，再退。
+- **（评审后补）同版本内滚动调整 `AdmitTTL`**：整键 TTL 由各副本按自己的 `AdmitTTL` 无条件续期，新旧值并存的窗口里「所有写入用同一个 `W`」不成立（§4.1 更正）。约束：**排队开着时，`AdmitTTL` 的调整幅度不超过 `admittedKeyGCSlack`（1min）**；更大的调整先用 `-LoginQueue off` 关掉排队，滚完再开。不遵守时的上界：整键可能提前消失、最多多放一批 `C − O`，与 §5.3「占位键被 Redis 淘汰或误删」同一行。这条约束同步写在 `login.yaml` 的 `Queue:` 段注释、`config.go` `QueueConf` 注释与 runbook 模式 4。
 
 ### 5.6 zone-down 与合服后旧 zone 的残留
 
@@ -1575,7 +1578,7 @@ Remove-Item Env:GOTOOLCHAIN, Env:GOPROXY -ErrorAction SilentlyContinue
 | 3 | 计数变成写脚本 | `SCARD`，只读 | 清理与计数必须原子，否则读到已到期的成员 | 每次非重入的 assign-gate 里那次 `SCARD` 变成一次 EVAL 写；dispatcher 每拍两次。没有成员可清时是否产生复制 / AOF 流量**未核实**，L-14 看 `redis-queue` 的写 ops |
 | 4 | 快速通道占位寿命取 15s | 现状：整键 `AdmitTTL`；Java：`now + admitTtl`（60s） | 快速通道当场交票，等同已取走；取 60s 时 Q1 的现象只是变短、没有消除（§5.1） | 与 Java 不同；建连超过 5s 的快速通道玩家与排队玩家一样会漏计（§5.2）。列入 §11 #2 |
 | 5 | 取走时用普通 ZADD | Java 用 `ZADD XX`（成员不在就不补） | 两种时钟混用时不漏人；混跑时新版计数更准 | 占位已被清的边角下，多扣一个名额 15s |
-| 6 | 整键 TTL 无条件 `PEXPIRE W`，`W` 多留 1 分钟 | Java：`pttl < X 才 pexpire X`，`X` = `admit_ttl` 或 15s | 同一个 `W` 下无条件续期不会缩短任何成员的寿命，少一次 `PTTL` 与一个分支 | zone 下线后占位键多留 1 分钟（共 2 分钟）才消失 |
+| 6 | 整键 TTL 无条件 `PEXPIRE W`，`W` 多留 1 分钟 | Java：`pttl < X 才 pexpire X`，`X` = `admit_ttl` 或 15s | 同一 zone 全部副本 `AdmitTTL` 相同（即同一个 `W`）时，无条件续期不会缩短任何成员的寿命，少一次 `PTTL` 与一个分支 | zone 下线后占位键多留 1 分钟（共 2 分钟）才消失；**（评审后补）**排队开着时滚动调整 `AdmitTTL` 超过 1min，新旧 `W` 并存，整键可能先于大值副本写的占位消失，最多多放一批 `C − O`（§4.1 更正、§5.5）。是否改成条件续期见 §11 #6 |
 | 7 | 时间取 login 墙钟 | 仓库里 `go/match`、`go/db` 的新代码取 Redis `TIME`；Java 排队取客户端时钟 | §4.2 | 多副本时钟偏差直接进占位寿命（± δ）；钟快的副本恢复或摘掉之后，它留下的占位还要再拖 δ 才到期（§4.2 代价）。列入 §11 #3、#4 |
 | 8 | `Queue` 新增两个未导出字段，只有测试会改 | — | 既有集成用例需要宽限为 0；占位到期需要可控时钟（AGENTS §11.2 显式依赖） | 包内多一处「测试可改」的状态；`New` 不暴露它，生产路径改不到 |
 | 9 | `AdmitTTL` 的含义收窄 | 既是放行槽 TTL，也是占位整键 TTL（间接决定快速通道占位的寿命） | 取走后与快速通道改由常量决定 | 运维调 `AdmitTTL` 不再影响快速通道占位；注释与设计稿同步写明 |
@@ -1604,7 +1607,7 @@ Remove-Item Env:GOTOOLCHAIN, Env:GOPROXY -ErrorAction SilentlyContinue
 
 ## 11. 待负责人拍板
 
-只列会改变线上行为或验证口径、且本规格无法靠读代码定下来的五条（#1–#3 是原有的，#4、#5 是评审后补的）。每条都给了默认做法，本规格的代码与用例按默认写；落码前要不要先等负责人回复，由主会话按用户的约定判断。#1–#4 都只影响常量或一两行代码，落码后再改的成本很低；#5 不改代码。
+只列会改变线上行为或验证口径、且本规格无法靠读代码定下来的六条（#1–#3 是原有的，#4、#5 是评审后补的，#6 是落码后评审补的）。每条都给了默认做法，本规格的代码与用例按默认写；落码前要不要先等负责人回复，由主会话按用户的约定判断。#1–#4 都只影响常量或一两行代码，落码后再改的成本很低；#5 不改代码；#6 选备选时要改两段脚本并新增一段脚本。
 
 1. **交票后宽限取多少**。
    - **默认：15s**（方案 A 提纲写的值，与 Java 同值）。
@@ -1626,6 +1629,9 @@ Remove-Item Env:GOTOOLCHAIN, Env:GOPROXY -ErrorAction SilentlyContinue
    - **默认：登记为 G4b-2 打开排队之前要做的一步**（写进 `spec_G4b.md` 合入门槛处，§7.2 第 4 项），本批不跑；步骤见 §8.4。本批的运行证据只有 miniredis，runbook 验证清单第 2–5 步未执行（§9 #11）。
    - 备选 A：本批就按 §8.4 跑一次最小冒烟（要起本地栈；需要拉镜像或装东西时先问用户）。
    - 备选 B：只当建议，不作为 G4b-2 的门槛。代价：新脚本第一次碰真实 Redis 可能就是 staging / prod 打开排队的那一刻。
+6. **（落码后评审补）整键 TTL 要不要改成条件续期**，消掉「滚动调整 `AdmitTTL` 时新旧 `W` 并存」的耦合（§4.1 更正、§5.5、§9 #6）。
+   - **默认：不改代码**。约束「排队开着时 `AdmitTTL` 调整幅度不超过 1min，更大的先 `-LoginQueue off` 再滚」写进 `login.yaml` / `config.go` 注释与 runbook；不遵守时的上界是最多多放一批 `C − O`，与 §5.3「占位键被淘汰或误删」同类。
+   - 备选：照 Java 版改成条件续期：两段 Lua 里把无条件 `PEXPIRE` 换成 `if redis.call('PTTL', KEYS[1]) < tonumber(W) then redis.call('PEXPIRE', KEYS[1], W) end`；`holdAdmitted` 的 `ZADD + PEXPIRE` 也改成同样的一段脚本（`PopAdmit` 的 MULTI 里可以 `EVAL`）。代价：推翻 §9 #6 的取舍（多一次 `PTTL` 与一个分支）；整键 TTL 只增不减，配置调小后旧的大 TTL 要自然走完才收敛；T2、T3 的整键 PTTL 断言在单副本下仍成立，另要补一条「预先设了更大 TTL 的键，写入后 TTL 不被缩短」的用例。不要直接换成 `PEXPIRE … GT`：刚由 `ZADD` 建出、还没有 TTL 的键会被 `GT` 当作无限期而不设过期（Redis 7 语义，凭记忆，**未核实**）。
 
 不需要拍板、已按 YAGNI 定下的：不新增配置键；不新增指标；不动 `Lookup` 的重复轮询行为；`PopAdmit` 不改单段 Lua；`shared-redis-split-by-purpose.md` 本轮只改两处。
 

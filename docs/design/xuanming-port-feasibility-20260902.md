@@ -1,5 +1,7 @@
 # XuanMing-Server → mmorpg/go 移植可行性定谳（2026-09-02）
 
+> **2026-10-15 范围更新：读本文末 §13 与 [最新决定 D-15](xuanming-port-decisions-20260910.md#d-15-八域对比选型与容量目标2026-10-15用户最终范围)。** 本轮为 friend / chat / guild / mail / leaderboard / login / auction / trade 八域，目标 DAU 1 亿 / CCU 2000 万，独立客户端同步已授权。最新准则为逐域比较两仓并选择更可扩展实现，正确性/一致性/兼容不降级；排除 dialogue / player / inventory / mission / scene_manager。静态推断与实测证据分开。
+
 > 范围：`F:\XuanMing-Server`（下称 **A**，Kratos + go.work，Pandora/玄冥 UE5 后端）→ `D:\luyuan\mmorpg\go`（下称 **B**，go-zero + C++ 场景服）。
 > 用户三问：① A 是不是没有单点？② 除 DS 外全搬可以吗？③ B 原来有的模块不搬可以吗？
 > 方法：8 维度调查 → 30 组件逐个评估（+ 补评 pkg/config）→ 17 组件对抗证伪 → 3 个独立验证者复核单点清单 → 基于完整输入的跨组件批判（§4.3）→ 每条待拍板问题一份 ADR + 反方挑战（§8）→ 首两批文件级执行清单（§9）。所有结论均附 `file:line`，审计原始产物见 §11。
@@ -475,3 +477,99 @@ cd /d/luyuan/mmorpg && git status --porcelain go/ && git log -1 --format='%h %ci
 - **已知代价**:共用 zrpc Timeout、注册失败 / 雪花失租 / OOM 连带匹配、发版与扩缩容绑定、DV-2 写 SharedRedis 的例外。
 - **领域口径**:team 属于社交/会话域，只是部署寄宿在 match 进程;D-2 的 team 行已改为按数据归属论证，不再引用本条。
 - **12.3 第 1 条部分过期**:PROGRESS 2026-10-10 记录 `go/match`(含 team)在 `21d5b25120` 之上通过 build / vet / test;该证据早于 10-12 的 `go/match` 改动(EndMatch 兜底上限),当前工作区 `go/match` 未编译。C++ `player_team.cpp`、robot team-smoke、`-race` fuzz、K8s 可达性仍无运行证据。
+
+---
+
+## 13. 八域能力对比与依赖批次(2026-10-15)
+
+### 13.1 最终范围与基线
+
+用户最终指定 **friend / chat / guild / mail / leaderboard / login / auction / trade** 八域比较 `D:/luyuan/xuanming-server` 与本仓，目标 DAU 1 亿 / CCU 2000 万，授权独立客户端同步并分批端到端完成。用户最新准则为“对比原来，哪个能承载更多玩家用哪个”，覆盖此前机械照搬/逐字复用的要求；正确性/一致性/安全/兼容不能降级。现行决定见 [D-15](xuanming-port-decisions-20260910.md#d-15-八域对比选型与容量目标2026-10-15用户最终范围)，本节覆盖原 §3.2 / §5 / §6 对八域的缩减范围，不扩大到所有大厅或所有非 DS 服务。
+
+**排除 dialogue、player、inventory、mission、scene_manager。** 用户纳入 economy 后增加 auction / trade，结合此前 inventory 不迁的约束，inventory 仍排除。team / matchmaker / ds_allocator / hub_allocator / owner / player_locator / data_service 只记录必要接缝，不独立移植。登录管理面、邮件/榜奖励、交易/拍卖托管结算适配既有接口，不等于获准迁移这些依赖服务。源 UE 客户端不在本轮范围，客户端同步指本项目 `../mmorpg-client/`。
+
+源 HEAD 为 **`b1f6c1ebf4583b45a9370ad0522c64196dc792b2`**，2026-10-15 核对时工作区干净。本仓工作树已有大量并行改动，旧提交的通过记录不能覆盖当前实现，不覆盖他人进度。以下为静态差异与后续门禁，不是完成证书；接口相似、提案、纯函数及未装配代码均不算完成。
+
+### 13.2 两仓逐域比较与静态候选
+
+| 域 | 原 Go 仓代码/配置事实 | 本仓代码/配置事实 | 静态候选及容量判断边界 |
+|---|---|---|---|
+| friend | `services/social/friend` 完整申请/关系/黑名单/推荐等，申请有 `request_id`；本地默认 TiDB，`database/sql` 事务由数据库扩展 | 已接服务/路由/迁移；已修完整主键点锁/固定锁序、容量计数、有界推荐及 MySQL/TiDB 方言提示；仍有申请代次与默认存储/部署差异 | 候选为保留本仓已修数据路径，结合源申请代次/默认 TiDB/恢复能力。两边仍有玩家容量守卫等争用点，真实 TiDB 锁等待、推荐计划和同负载吞吐未比较，不能直接宣称哪边人数更多 |
+| chat | 五频道和成员读取适配器有实现；区域路由/桥接文件明确只观测，世界消息实际走全服 `PushWorld` | WORLD/PRIVATE 历史已接；TEAM 拒绝，缺 GUILD/GROUP 与实际推送；`chat:{world}:log` 为单热键 | 两边均不能原样作为大规模世界聊天终态。按源补能力并比较频道/地域分区、历史热键、限速/扇出和交付成本；功能少不证明容量高，观测分区不等于真实路由 |
+| guild | 审批、职位/成员/申请接口与独立入口真实存在；社会默认 TiDB | 管理/经济/活动、zone/合服和榜已有实现，现 K8s `$GoSvcCatalogue` 未登记 guild | 优先保留已用业务和一致性修复，逐项补差异/部署；比较按公会的事务争用、成员列表/分页和大公会扇出，不因“actor”或“独立进程”名称给容量结论 |
+| mail | 三类邮件、领取/补偿有真实装配；源当前 Snowflake 最大 ID 游标有跨副本晚提交小 ID 漏收风险，系统/公会拉取缺 LIMIT | `go/mail` / `proto/mail` 不存在；旧 M1 仅设计且领取短路 | 源能力可复用，但先修提交序/游标与有界查询再接入；不原样复制已知正确性/容量风险。附件接本仓唯一资产权威，需证明离线、重复和崩溃后恢复 |
+| leaderboard | 真实仓储/ZSET/奖励装配，支持写分、名次/范围/周边/结算 | 通用榜不存在；guild 榜不可替代，现文档仅设计 | 源业务作为候选，比较单榜热键、写分合并/版本、Top/周边读与结算批量；须先有真实权威写分方和奖励出口。没有可比测量，不能宣布 Redis 榜天然撑目标人数 |
+| login | 账号/角色/会话/进场代码真实存在；依赖源 owner/locator/allocator 的模型 | 已有会话代次、登录队列、位置/进场接线；模型与源不同，scene_manager 不迁移 | 保留现模型和安全/恢复约束，比较限速/排队、会话权威热键、数据库事务与重连风暴；仅适配既有依赖。源管理面整服替换不在范围，也没有两仓等负载结果 |
+| auction | 独立市场路由、订单/撮合/账本和事件装配；分片拓扑和实际跨实例寻址须专项核验，不能把 HRW 观测算转发 | 无对应拍卖/撮合域；聚宝斋浏览不能替代 | 源业务作为候选，先证实分片上限、单市场写者/fencing、订单簿热点和实际转发，再接本仓资产托管；未测不能由“有分片类”推出横向扩容成立 |
+| trade | 双人 CreateOrder / ConfirmOrder / CancelOrder / ListMyOrders，Redis 状态机与 inventory 结算调用真实存在 | `go/trade` 实际是聚宝斋，只有浏览/详情/收藏/货架及已有资产通道；同名不同域 | 原双人交易业务作为候选，保留聚宝斋现行为并明确边界；对比订单 CAS/热点/超时、双方托管/结算原子边界，适配 C++ 唯一权威，先验证重试/崩溃恢复再测吞吐 |
+
+表中“候选/优先保留”仅是结构判断，不是最终容量胜负或实施完成；最终选择以正确性门禁与同负载证据决定。逐接口对账不得在候选选择时丢失源既有业务。源风险、适配差异、复用文件的源版本/内容校验和实际偏离均须记录，原样复用只是可选方式。
+
+本次专项核对补充（均为静态证据，未做本轮故障复现或吞吐比较；下列源路径相对 `D:/luyuan/xuanming-server`）：
+
+- **guild：混合选择，先处理不相关公会之间的串行化。** 本仓 `go/guild/internal/data/guild_manage_repo.go:27` 的 `guild_player_state(0)` 是已有死锁修复的全局首插守卫，不可直接删除；`guild_repo.go:157/567/624` 的 `guild_rank:maintenance_lock` 串行化积分写入与重建，单纯增加副本不能解除。源 `services/social/guild/internal/data/guild_repo.go:270` 主要按公会父行锁，成员/申请分页有 LIMIT；但源推送在 `internal/biz/guild.go:594` 逐成员同步发送。本仓 `go/guild/internal/logic/push.go:124` 已按 gate 批量发送并有整体预算，应保留，同时保留资产操作账本、seq 和重投。不能以少做经济/活动规则的业务直接比 QPS。
+- **mail：源业务与本仓较新设计结合，先关闭已知正确性缺口。** 源 `services/social/mail/cmd/mail/main.go:87` 明确承认最大已见 Snowflake mail_id 游标在多副本提交乱序时漏信；`internal/data/mail_repo.go:173` 的系统/公会增量查询无 LIMIT，`internal/biz/mail.go:719` 逐封查领取态形成 N+1 且查询错误被忽略。`mail_repo.go:399` 的收件箱上限使用 COUNT FOR UPDATE，没有稳定父行守卫，不能据此证明 TiDB 空箱并发首写的硬上限。保留本仓 `mail-system.md` 已设计的发信幂等、有界读取与不采用最大已见 ID 游标的方向；设计尚不是已运行代码。
+- **leaderboard：复用业务定义，单榜写热点与结算恢复另行补齐。** 源 `services/runtime/leaderboard/internal/data/board_store.go:3/20` 同榜五键共槽，Top-N 只裁剪部分结构，全员分数/直方图仍按参与人数增长；`:224` 的 INCREMENT 无请求去重，`:365` 起榜外估算会读全部桶。`internal/biz/leaderboard.go:279` 先 ClaimSettlement，随后才保存快照和奖励日志；Claim 在 `internal/data/leaderboard_repo.go:107` 单独提交，中间崩溃后 already 分支不续建未建立的奖励意图。源服务存在不等于已有可恢复的全局热榜终态。保留本仓设计的版本化评分快照与邮件发奖方向，分片 Top-K/分区汇总作为待验证方案，不能暗改既有名次和结算语义。
+- **login：迁规则并适配当前恢复出口，不引入被排除的管理面。** 源 `services/account/login/cmd/login/main.go:309` 的统一恢复依赖 owner，缺配置时只会 WAIT；本次不能照搬该装配。保留本仓 gate 会话栅栏、KDF 资源上限和开服队列，比较源 SQL 会话代际、账号/IP 凭据失败配额、统一恢复协议及本仓既有进场幂等。源账号域生产校验 TiDB，而本仓当前账号/角色目录仍有 Redis/DBTask 路径；不能仅替换一个 DSN 声称等价，亦不能用两种不同原子范围的会话代际直接互换。
+- **auction：有真实市场分片，但扩片和跨实例路由并未通用化。** 源 `services/economy/auction/internal/data/auction_repo.go:163` 按 market_id 取模选库，`cmd/auction/main.go:54/102` 硬限最多两片并校验拓扑标记；HRW `market_router.go` 当前只计算/告警，不是跨实例请求转发。逐市场 Redis 续租锁只是工作互斥，最终正确性仍由 SQL 行锁/CAS 保证，不能称其为完整 fencing。`gen_cluster_config.ps1:1660` 的社会服 TiDB 替换名单不含 auction；其 K8s 应用模板单副本，也不是既有大规模部署证据。
+- **trade：先保结算意图与真实资产提交，再比较吞吐。** 源 `services/economy/trade/internal/data/trade_repo.go:95/185` 所有状态沿用可配置的 OrderTTL（dev 默认 10 分钟），结算中状态未单独转为持久保留；业务虽禁止 SELLER_CONFIRMED 取消/过期，但没有常驻后台恢复，靠再次 Confirm 驱动，无法据此证明结算未知跨 TTL 的恢复。`etc/trade-dev.yaml:54/57` 默认 inventory_addr 未接、allow_noop_ledger=true，集群生成器未覆盖此配置，不能把默认部署算作真实成交。本仓聚宝斋的 `go/trade/internal/data/asset_op_repo.go:772` 明确 P3 订单/卖家账仍待落地，K8s 配置 `AssetOp.Enabled=false`；仅有资产管道骨架也不代表能完成交易。源 inventory 的双方转移在一个 SQL 事务内，本次不迁 inventory，必须证明适配现有 C++ 权威后的同等提交/补偿边界，不能拆成独立 RPC 后直接宣称原子。
+
+经济域还有两个不能外推的边界：源 auction 的 `internal/data/budgets.go:7` 使用 DAU 1 万、每天 5 单推导单片预算，这是代码内假设，不是本次 1 亿 DAU / 2000 万 CCU 的验收；同一市场撮合在 `internal/biz/auction.go:377` 的 guard 内依次 Reserve/Settle，冲突重试上限不等于整轮成交笔数或时间预算。源 trade 的 `proto/pandora/trade/v1/trade.proto:37` 物品契约只有配置和数量、实例 UID 仍 reserved；不得把它当成已经支持本仓实例装备/宠物交易，也不得为迁移去改动本次明确排除的 inventory 权威。
+
+共同接缝与边界：
+
+- **数据库：**源 friend 的 `database/sql` 显式事务由 TiDB 提供跨节点事务，不能因 `BeginTx` 判为单机。源 `run_services.ps1` 默认社会四服 `*-dev-tidb.yaml`；`gen_cluster_config.ps1` 参数默认 mysql，但 `start.ps1` 的 K8s 编排显式传 `-SocialStore tidb`。`friend_sharding.go` 仅路由/幂等键/观测，不是已经接通的应用分库 Saga。
+- **通知：**源 runtime/push 消费 Kafka 后 `AssignAndBuffer` 并重放，失败拒绝成功消费；源好友提交→Kafka 无同事务 outbox，存在生产侧窗口。本仓好友等至多一次推送也需准确记账，必要可靠事件按八域自身事务/重放需求补齐，不能自动另起整套 push 服务移植。
+- **排除域：**原 inventory 的商店/托管、mission 的事实/奖励、team 的准备/招募、owner/allocator 管理面不独立移植，仅在八域依赖时说明已有接口/差异/阻塞。auction / trade 在本轮内，但其库存和结算不能另建资产权威。
+
+证据锚点：本仓 `proto/{friend,chat,guild,trade}`、`go/{friend,chat,guild,login,trade}` 入口/逻辑、`tools/scripts/{go_services,k8s_deploy}.ps1`；mail/rank 两份设计的未落码声明；源各域入口/业务、chat 的 `chat_routing.go` / `chat.go`、mail 的仓储查询与启动限制、`proto/pandora/*/v1`。本节未运行这些路径；容量模型新口径另见 [capacity-model-hok-scale.md](capacity-model-hok-scale.md)。
+
+### 13.3 按依赖分批，逐批端到端完成
+
+| 批次 | 范围与依赖 | 当批可观察结果 |
+|---|---|---|
+| A 对比与好友切片 | 固定源/本仓基线，逐域列契约、代码/配置事实、热点假设和静态候选；申请代次等回归切片，按选型接真实 TiDB/配置/迁移/部署，保留点锁与 SQL 上限 | 可审比较矩阵与待测项；授权客户端/robot 跨区好友闭环及真库证据。代次修复只是切片，不能算整体完成 |
+| B 登录对齐 | 源 login 完整行为映射；只适配本仓现会话/locator/scene_manager/进场接口，不搬 owner 或 allocator | 登录、角色选择、会话失效与恢复可实际运行；重复、超时/断线和进场失败均有真实恢复入口 |
+| C 公会与聊天 | A；补 guild 契约/权限/名单接口与部署，chat 接五频道与必要成员查询；team/GROUP 所需现有接缝缺失时明确列阻塞 | 八域内的社交能力、权限和频道端到端可用，跨副本/跨区/断线补拉覆盖；不以弱依赖未配置冒充可用 |
+| D 邮件完整交付 | A、C 的公会查询及本仓已有资产出口；完整个人/系统/公会邮件和领取 | 客户端真实读/领/删，游标不漏、附件不重发，离线/过期/提交未知/崩溃后能恢复；资产缺口先列最小接缝，不独立迁 inventory/player |
+| E 通用排行榜 | 明确既有写分方、D 的邮件或已有奖励接口、现有资产权威 | 名次/范围/周边及结算有真实写分、唯一发奖与重建补偿；不用 guild 内部榜或占位分数顶替 |
+| F 交易与拍卖 | 源状态机/托管结算边界与本仓聚宝斋/资产通道比较后选型；依赖现资产权威，inventory 不迁移 | 双方确认、托管、撮合、交付/撤销及补偿真实贯通客户端，重复/提交未知/崩溃可恢复；与聚宝斋现行为区分 |
+| G 容量与故障验收 | 各批先验证本域，必要时同负载比较候选；集成后依 DAU/CCU 模型测关键依赖 | 同口径基线/对比/SLO/资源/故障证据支撑最终取舍；未测不得宣称任何一套整体撑 2000 万在线 |
+
+这是依赖顺序，不表示已经开工/完成；独立部分可并行，依赖未闭合不得记完成。每批包括本项目独立客户端、生成源/产物、迁移、真实部署和对应 Java 状态登记；Java 当前**待逐能力对账与对齐**。用户已授权八域整体及客户端，必要改动可跨 30 文件；仍保持可审阅/回滚单位，不覆盖并行工作。其余域独立迁移不在本次范围内。
+
+### 13.4 容量证据与源仓部署限制
+
+**DAU 1 亿 / CCU 2000 万是目标，不是已达标结论。** 源服务独立拆分不等于各域已经多副本/多分片压测；其 `deploy/k8s/services/services.yaml` 多数为 1 副本，`overlays/online/kustomization.yaml` 明确 login / player-locator=2、push=1；开发 `infra/tidb.yaml` 的 PD / TiKV / TiDB 各为 1 副本。开发/应用清单不能证明实际生产基础设施，也不能直接作为目标容量的生产高可用拓扑。
+
+需确认各域活跃率/行为 QPS、好友图和申请/群/邮件规模、热点扇出、重连风暴、消息大小、保留期/增长、地域与硬件/容灾预算，再定分片/副本/池/排队和背压。单域吞吐、稳态/峰值、滚更和依赖故障各留证据；按本仓压测纪律保存基线和统一摘要，不能由“换 TiDB”推出达标。
+
+**本节仅最终范围与静态对账，未新增实现、未构建、未测试、未压测。**
+
+### 13.5 后续范围修订：全球匹配加入，商城仅比较
+
+用户随后明确把匹配纳入全球同服对齐，确认采用“区域内优先，等待后跨区域兜底”，并要求每位玩家的延迟上限与实际战斗服放置闭环。D-15 的八域基础范围不变，新增匹配要求以 D-16 和 cross-zone-matchmaking.md §12 为准；本节前文把 matchmaker 仅作依赖的口径在这一点上被后续指令取代。dialogue / player / inventory / mission / scene_manager 仍不独立迁移。原仓的地域分桶、超时溢出已实现，但队长逻辑归属不等于全成员实测延迟，放置提示仅写日志也不等于实际分配。
+
+用户提到商城与高 Star 项目后，具体指出 macrozheng/mall，又澄清只要求比较，并回查“不引入太大电商系统”的既有结论。因此商城本轮为选型比较，不直接加入新的完整电商运行时或第二套资产权威；未决定采用 mall / mall-swarm / Medusa / Vendure。
+
+### 13.6 商城开源方案比较（2026-10-15，源码静态审计）
+
+既有结论已找到：原仓 docs/design/decision-revisit-auction-engine.md:109 否决整套 macrozheng/mall 替代拍卖，允许借鉴状态机和防超卖；该文 2026-07-12 的覆盖头明确后续拍卖采用 SQL 权威候选、同分片持久成交意图和资产幂等结算。本仓已有 Java 版本，不能照搬旧文中“新增语言/headless”作为唯一否决理由；取舍基于以下实际职责与正确性。
+
+| 候选 | 适合参考/复用 | 本游戏的额外成本与结论 |
+|---|---|---|
+| [macrozheng/mall](https://github.com/macrozheng/mall) | 商品/SKU、上下架、促销、运营后台与订单管理的功能组织；Apache-2.0 | Spring Boot/MyBatis 的完整电商，默认还涉及会员、购物车、支付及多种基础设施；不能以 Star 数或本地事务注解替代游戏资产安全。当前不整套引入，库存/支付/积分实现不原样移植 |
+| [Medusa](https://github.com/medusajs/medusa) | 可组合的 commerce 模块、[库存预留生命周期](https://docs.medusajs.com/resources/commerce-modules/inventory/reservations-lifecycle)及工作流补偿接缝 | 模块化不等于无需新增框架与运行环境；仍须适配现资产权威。当前公开仓为 open-core，核心 MIT、另列 Enterprise 材料，使用时按具体模块核查；本轮未作同深度事务审计，不宣称更安全/更快 |
+| [Vendure](https://github.com/vendurehq/vendure) | 商品、订单、库存、支付与后台的扩展点 | Node/NestJS/GraphQL 完整 commerce 平台；对当前游戏的固定价扣币发货仍增加框架与接入面。本轮仅能力粗筛，无容量或故障验证，不作为自动替代项 |
+| 现有体系内的轻量游戏商城 | 商品配置/报价版本、限购、稳定购买幂等键、订单与持久恢复，复用既有资产出口 | 优先候选方向；资产由既有 C++/Java 权威拥有。需要实现/补齐的规则必须有真实调用与验收，不以“轻量”为由省去事务、权限、对账或恢复 |
+| 原 Go auction 业务适配 | 按市场撮合、锁定买卖订单、原子推进数量/状态并登记成交意图，后续幂等托管结算 | 用于玩家市场，不当成商城框架内置模块；真实分片寻址、单市场热点和资产交付仍逐项修复/验证 |
+
+mall 核查版本：[dcaa93b3150352e5044708d7211b5bed0af4509f](https://github.com/macrozheng/mall/commit/dcaa93b3150352e5044708d7211b5bed0af4509f)（2026-09-15，官方 master）。下单/支付/取消接口确实有 @Transactional，不能说没有事务；但以下是本地事务注解不能自动封闭的静态风险，**未进行故障复现或压测**：
+
+- [lockStock](https://github.com/macrozheng/mall/blob/dcaa93b3150352e5044708d7211b5bed0af4509f/mall-portal/src/main/java/com/macro/mall/portal/service/impl/OmsPortalOrderServiceImpl.java#L734) 普通读后写绝对 lockStock 值，未见锁定读或“可用库存>=数量”的提交条件；并发两单可通过同一旧值并覆盖预占。
+- [paySuccess 与取消](https://github.com/macrozheng/mall/blob/dcaa93b3150352e5044708d7211b5bed0af4509f/mall-portal/src/main/java/com/macro/mall/portal/service/impl/OmsPortalOrderServiceImpl.java#L253) 依赖普通查询状态再无条件主键更新；按订单号顺序重放通常可被前置过滤，但并发支付、双取消以及支付/取消相交仍缺旧状态 CAS，可能重复扣减/释放或覆盖状态。不能将顺序幂等测试当并发证明。
+- [门户支付入口](https://github.com/macrozheng/mall/blob/dcaa93b3150352e5044708d7211b5bed0af4509f/mall-portal/src/main/java/com/macro/mall/portal/controller/OmsPortalOrderController.java#L51) 普通已认证用户可传订单ID和支付类型；所查调用链未见付款证明与订单归属校验，另一路支付宝验签不覆盖这个旁路，不能放入游戏资产入口。
+- [积分更新](https://github.com/macrozheng/mall/blob/dcaa93b3150352e5044708d7211b5bed0af4509f/mall-portal/src/main/java/com/macro/mall/portal/service/impl/UmsMemberServiceImpl.java#L140) 由会员对象读值后覆盖写回，不等于带流水/幂等键的游戏钱包。下单事务内直接发 RabbitMQ 延迟取消消息，所查链路没有同库 outbox；DB/MQ 成败窗口须另行恢复设计。
+
+当前判断：维持不引入整套电商运行时的方向，按职责择取功能与设计；商城和拍卖分别适配唯一资产权威。此结论不宣称已有轻量商城完整实现，不证明任何候选满足 DAU 1 亿 / CCU 2000 万，也不把本地 SQL 事务误称整游跨服务强一致。
+用户最后澄清：本次追问重点是“此前已经评估过 mall”，而非仅因体量大而排除。后续沿已找到的拍卖选型记录继续，新增比较用于核验实际适配与版本变化，不把候选提及视作重新选型或引入框架授权。

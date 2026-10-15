@@ -2,6 +2,7 @@ package store
 
 import (
 	"errors"
+	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/token"
@@ -209,6 +210,31 @@ func TestRouteShardModulusProbeDiscriminates(t *testing.T) {
 		}
 		if want := m == placement.RouteRowShards; all != want {
 			t.Fatalf("表模数 %d:两行都被接受 = %t, want %t", m, all, want)
+		}
+	}
+}
+
+// TestOpenRouteStoreHintByCause:建 route store 失败时给运维的提示按原因分流(OpenRouteStoreHint,db_first 的
+// data_service、debugutil、route_tool 三处共用)。表按另一个行片模数建的(ErrRouteShardModulusMismatch,经 NewRouteStore
+// 包了几层也要认得出)不能再提示「先跑迁移」—— 只重跑 -migrate 修不好它;其余原因保持 route_tool 原来的文案,字节不变。
+// 建池失败本身要真库,三个入口的整条路径在这里测不到,只测这个纯函数。
+func TestOpenRouteStoreHintByCause(t *testing.T) {
+	mismatch := fmt.Errorf("route store on 127.0.0.1:3306/testdb: %w",
+		fmt.Errorf("%w: probe row (route_shard=63, player_id=63) is legal under %% 64 but chk_route_shard rejected it", ErrRouteShardModulusMismatch))
+	hint := OpenRouteStoreHint("x.yaml", mismatch)
+	for _, want := range []string{"another route_shard modulus", "§9.3"} {
+		if !strings.Contains(hint, want) {
+			t.Fatalf("模数不一致时的提示 %q 缺 %q", hint, want)
+		}
+	}
+	if strings.Contains(hint, "-migrate` first") {
+		t.Fatalf("模数不一致时只重跑迁移修不好,不能提示先跑迁移:%q", hint)
+	}
+
+	const want = "run `data_service -f x.yaml -migrate` first if route_meta is missing"
+	for _, cause := range []error{ErrRouteMetaMissing, ErrRouteCheckNotEnforced, errors.New("dial tcp: connection refused")} {
+		if got := OpenRouteStoreHint("x.yaml", cause); got != want {
+			t.Fatalf("OpenRouteStoreHint(%v) = %q, want %q", cause, got, want)
 		}
 	}
 }

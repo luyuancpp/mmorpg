@@ -78,6 +78,15 @@ type fakeFriendStore struct {
 	mutual  []data.RecommendCandidate
 	random  []data.RecommendCandidate
 
+	// Block / RemoveFriend 成功时报告的实际效果(决定给被动方 bump 哪些摘要域)。
+	// 零值 = 拉黑陌生人 / 删一个本来就不是好友的人,对方的任何拉取结果都没变;
+	// 要验"给对方 bump"的用例显式置位,别让默认值替用例做决定。
+	blockEffect    data.BlockEffect
+	removed        bool
+	unchanged      bool
+	lastRequestID  uint64
+	lastAccepterID uint64
+
 	// 记录最后一次调用的入参,用来断言限幅、排除集这些"传进去的值"。
 	lastAddLimits     data.AddFriendLimits
 	lastMutualExclude []uint64
@@ -91,6 +100,32 @@ func newFakeStore() *fakeFriendStore {
 	return &fakeFriendStore{errs: map[string]error{}, calls: map[string]int{}}
 }
 
+// 旧客户端只给申请人，不能借此处理该玩家后来重新发起的另一代申请。
+func TestAcceptRejectRequireRequestID(t *testing.T) {
+	f := newFixture(t, nil)
+	accepted, err := f.logic().AcceptFriend(playerCtx(200), &pb.AcceptFriendRequest{FromPlayerId: 100})
+	require.NoError(t, err)
+	require.Equal(t, constants.ErrInvalidParameter, accepted.GetErrorMessage().GetId())
+	rejected, err := f.logic().RejectFriend(playerCtx(200), &pb.RejectFriendRequest{FromPlayerId: 100})
+	require.NoError(t, err)
+	require.Equal(t, constants.ErrInvalidParameter, rejected.GetErrorMessage().GetId())
+	assert.Zero(t, f.store.calls["AcceptFriend"])
+	assert.Zero(t, f.store.calls["RejectFriend"])
+}
+
+func TestRequestGeneration_ReplayStillUsesAntiAbuseQuota(t *testing.T) {
+	f := newFixture(t, func(c *config.Config) { c.Friend.RequestQuotaPerMinute = 1 })
+	f.store.unchanged = true
+	first, err := f.logic().AddFriend(playerCtx(201), &pb.AddFriendRequest{TargetPlayerId: 202})
+	require.NoError(t, err)
+	assert.Zero(t, first.GetErrorMessage().GetId())
+	assert.EqualValues(t, 123, first.GetRequestId())
+	second, err := f.logic().AddFriend(playerCtx(201), &pb.AddFriendRequest{TargetPlayerId: 202})
+	require.NoError(t, err)
+	assert.Equal(t, constants.ErrRateLimited, second.GetErrorMessage().GetId())
+	assert.Equal(t, 1, f.store.calls["AddFriendRequest"], "状态幂等不能绕过入口频率配额")
+}
+
 func (f *fakeFriendStore) fail(method string, err error) *fakeFriendStore {
 	f.errs[method] = err
 	return f
@@ -101,21 +136,27 @@ func (f *fakeFriendStore) take(method string) error {
 	return f.errs[method]
 }
 
-func (f *fakeFriendStore) AddFriendRequest(_ context.Context, _, _ uint64, lim data.AddFriendLimits) error {
+func (f *fakeFriendStore) CreateRequest(_ context.Context, from, to uint64, lim data.AddFriendLimits) (data.RequestChange, error) {
 	f.lastAddLimits = lim
-	return f.take("AddFriendRequest")
+	return data.RequestChange{RequestID: 123, FromPlayerID: from, ToPlayerID: to, Changed: !f.unchanged}, f.take("AddFriendRequest")
 }
 
-func (f *fakeFriendStore) AcceptFriend(_ context.Context, _, _ uint64, _ uint32) error {
-	return f.take("AcceptFriend")
+func (f *fakeFriendStore) AcceptRequest(_ context.Context, requestID, accepterID uint64, _ uint32) (data.RequestChange, error) {
+	f.lastRequestID, f.lastAccepterID = requestID, accepterID
+	// 旧测试选择 request_id 等于 peerID 仅为夹具简洁；生产从权威记录解析申请人。
+	return data.RequestChange{RequestID: requestID, FromPlayerID: requestID, ToPlayerID: accepterID, Changed: !f.unchanged}, f.take("AcceptFriend")
 }
 
-func (f *fakeFriendStore) RejectFriend(_ context.Context, _, _ uint64) error {
-	return f.take("RejectFriend")
+func (f *fakeFriendStore) RejectRequest(_ context.Context, requestID, accepterID uint64) (data.RequestChange, error) {
+	f.lastRequestID, f.lastAccepterID = requestID, accepterID
+	return data.RequestChange{RequestID: requestID, FromPlayerID: requestID, ToPlayerID: accepterID, Changed: !f.unchanged}, f.take("RejectFriend")
 }
 
-func (f *fakeFriendStore) RemoveFriend(_ context.Context, _, _ uint64) error {
-	return f.take("RemoveFriend")
+func (f *fakeFriendStore) RemoveFriend(_ context.Context, _, _ uint64) (bool, error) {
+	if err := f.take("RemoveFriend"); err != nil {
+		return false, err
+	}
+	return f.removed, nil
 }
 
 func (f *fakeFriendStore) GetFriendList(_ context.Context, _ uint64) ([]data.FriendEntry, error) {
@@ -132,8 +173,11 @@ func (f *fakeFriendStore) GetPendingRequests(_ context.Context, _ uint64) ([]dat
 	return f.pending, nil
 }
 
-func (f *fakeFriendStore) Block(_ context.Context, _, _ uint64, _ uint32) error {
-	return f.take("Block")
+func (f *fakeFriendStore) Block(_ context.Context, _, _ uint64, _ uint32) (data.BlockEffect, error) {
+	if err := f.take("Block"); err != nil {
+		return data.BlockEffect{}, err
+	}
+	return f.blockEffect, nil
 }
 
 func (f *fakeFriendStore) Unblock(_ context.Context, _, _ uint64) error {
@@ -376,11 +420,11 @@ func allClientRPCs() []rpcCall {
 			return r.GetErrorMessage().GetId(), err
 		}},
 		{"AcceptFriend", func(l *FriendLogic, ctx context.Context) (uint32, error) {
-			r, err := l.AcceptFriend(ctx, &pb.AcceptFriendRequest{FromPlayerId: peerID})
+			r, err := l.AcceptFriend(ctx, &pb.AcceptFriendRequest{FromPlayerId: peerID, RequestId: peerID})
 			return r.GetErrorMessage().GetId(), err
 		}},
 		{"RejectFriend", func(l *FriendLogic, ctx context.Context) (uint32, error) {
-			r, err := l.RejectFriend(ctx, &pb.RejectFriendRequest{FromPlayerId: peerID})
+			r, err := l.RejectFriend(ctx, &pb.RejectFriendRequest{FromPlayerId: peerID, RequestId: peerID})
 			return r.GetErrorMessage().GetId(), err
 		}},
 		{"RemoveFriend", func(l *FriendLogic, ctx context.Context) (uint32, error) {
@@ -630,7 +674,7 @@ func TestAcceptFriendMapsStoreErrors(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			f := newFixture(t, nil)
 			f.store.fail("AcceptFriend", c.storeErr)
-			resp, err := f.logic().AcceptFriend(playerCtx(5020), &pb.AcceptFriendRequest{FromPlayerId: peerID})
+			resp, err := f.logic().AcceptFriend(playerCtx(5020), &pb.AcceptFriendRequest{FromPlayerId: peerID, RequestId: peerID})
 			require.NoError(t, err)
 			assert.Equal(t, c.wantTip, resp.GetErrorMessage().GetId())
 		})
@@ -651,7 +695,7 @@ func TestFriendsFullTipsAreNotInterchangeable(t *testing.T) {
 
 	acc := newFixture(t, nil)
 	acc.store.fail("AcceptFriend", data.ErrSenderFriendsFull)
-	accResp, err := acc.logic().AcceptFriend(playerCtx(5030), &pb.AcceptFriendRequest{FromPlayerId: peerID})
+	accResp, err := acc.logic().AcceptFriend(playerCtx(5030), &pb.AcceptFriendRequest{FromPlayerId: peerID, RequestId: peerID})
 	require.NoError(t, err)
 
 	assert.Equal(t, constants.ErrFriendListFull, addResp.GetErrorMessage().GetId(),
@@ -994,7 +1038,7 @@ func TestPushFailureDoesNotAffectRpcResult(t *testing.T) {
 	assert.Equal(t, 1, f.store.calls["AddFriendRequest"])
 
 	acc := newFixture(t, nil)
-	accResp, err := acc.logic().AcceptFriend(playerCtx(5081), &pb.AcceptFriendRequest{FromPlayerId: peerID})
+	accResp, err := acc.logic().AcceptFriend(playerCtx(5081), &pb.AcceptFriendRequest{FromPlayerId: peerID, RequestId: peerID})
 	require.NoError(t, err)
 	assert.Zero(t, accResp.GetErrorMessage().GetId())
 }
@@ -1086,13 +1130,14 @@ func TestListBlocksCarriesNoOnlineState(t *testing.T) {
 func TestGetPendingRequestsMapsStatus(t *testing.T) {
 	f := newFixture(t, nil)
 	f.store.pending = []data.FriendRequestEntry{
-		{FromPlayerID: 8005, ToPlayerID: 5103, RequestTimeMs: 42, Status: 1},
+		{RequestID: 7001, FromPlayerID: 8005, ToPlayerID: 5103, RequestTimeMs: 42, Status: 1},
 	}
 	resp, err := f.logic().GetPendingRequests(playerCtx(5103), &pb.GetPendingRequestsRequest{})
 	require.NoError(t, err)
 	require.Len(t, resp.GetRequests(), 1)
 	got := resp.GetRequests()[0]
 	assert.EqualValues(t, 8005, got.GetFromPlayerId())
+	assert.EqualValues(t, 7001, got.GetRequestId())
 	assert.EqualValues(t, 42, got.GetRequestTimeMs())
 	assert.EqualValues(t, 1, int32(got.GetStatus()), "status 的数值必须原样过渡(1=pending)")
 }

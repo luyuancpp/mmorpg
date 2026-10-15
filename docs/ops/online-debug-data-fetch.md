@@ -1,76 +1,46 @@
-# Online Debug Data Fetch
+# 在线调试数据读取
 
-This repo now includes a small read-only debug tool for pulling player or zone data during investigation.
+2026-10-15 按当前 CLI 修订。实际入口是 `go/data_service/cmd/debug_fetch`,仓库没有 `tools/scripts/debug_fetch_data.ps1` 包装器。
 
-## Entry points
-
-- PowerShell wrapper: `tools/scripts/debug_fetch_data.ps1`
-- Go tool: `go/data_service/cmd/debug_fetch`
-
-## Common examples
-
-### 1) Pull one player's live Redis data
+下列命令均先从仓库根进入 Go 模块;示例 ID 要替换成待查实体。服务配置按该工作目录解析,目标环境使用实际配置文件的绝对路径,不要把凭据写进命令行或输出。
 
 ```powershell
-pwsh -File tools/scripts/debug_fetch_data.ps1 -Mode player -PlayerId 10001
+Set-Location go/data_service
 ```
 
-### 2) Pull specific player fields only
+## 常用命令
 
 ```powershell
-pwsh -File tools/scripts/debug_fetch_data.ps1 -Mode player -PlayerId 10001 -Fields "PlayerDatabaseData,bag,currency"
+# 一名玩家的实时 Redis 数据;先看返回的 field_names,再按真实字段名收窄。
+go run ./cmd/debug_fetch -config etc/data_service.yaml -mode player -player 10001
+
+# 指定 Redis hash 字段;名称以实际 field_names 为准。
+go run ./cmd/debug_fetch -config etc/data_service.yaml -mode player -player 10001 -fields "PlayerDatabaseData"
+
+# 给二进制字段显式指定 protobuf 类型。
+go run ./cmd/debug_fetch -config etc/data_service.yaml -mode player -player 10001 -fields "PlayerDatabaseData" -proto-type PlayerDatabase
+
+# zone 映射与路由信息;server 是 zone 的别名。
+go run ./cmd/debug_fetch -config etc/data_service.yaml -mode server -zone 1 -limit 50
+
+# 扫描指定 zone 业务库中与玩家 ID 匹配的行。
+go run ./cmd/debug_fetch -db-config ../db/etc/db.yaml -mode player-db -zone 1 -player 10001 -limit 20
+
+# 全局快照库中该玩家的审计快照。
+go run ./cmd/debug_fetch -config etc/data_service.yaml -mode snapshot -player 10001 -limit 10
+
+# 只读 SQL:先确认实际表名,再选择字段;SQL 模式连的是 zone 库。
+go run ./cmd/debug_fetch -db-config ../db/etc/db.yaml -mode sql -zone 1 -sql "SHOW TABLES"
+go run ./cmd/debug_fetch -db-config ../db/etc/db.yaml -mode sql -zone 1 -sql "SELECT player_id FROM player_database LIMIT 20"
+
+# 保存到本地临时目录;下列路径相对于 go/data_service。
+go run ./cmd/debug_fetch -config etc/data_service.yaml -mode player -player 10001 -out ../../run/scratch/player-10001.json
 ```
 
-### 2.1) Decode protobuf binary payloads into readable JSON
+## 参数与边界
 
-```powershell
-pwsh -File tools/scripts/debug_fetch_data.ps1 -Mode player -PlayerId 10001 -Fields "PlayerDatabaseData" -ProtoType "PlayerDatabase"
-```
-
-### 3) List players currently mapped to one zone/server
-
-```powershell
-pwsh -File tools/scripts/debug_fetch_data.ps1 -Mode server -ZoneId 1 -Limit 50
-```
-
-### 4) Sweep the zone database for one player's rows
-
-```powershell
-pwsh -File tools/scripts/debug_fetch_data.ps1 -Mode player-db -ZoneId 1 -PlayerId 10001 -Limit 20
-```
-
-### 5) List snapshot records from MySQL for one player
-
-```powershell
-pwsh -File tools/scripts/debug_fetch_data.ps1 -Mode snapshot -PlayerId 10001 -Limit 10
-```
-
-### 6) Run a read-only SQL query against a zone DB
-
-```powershell
-pwsh -File tools/scripts/debug_fetch_data.ps1 -Mode sql -ZoneId 1 -Sql "SELECT * FROM player LIMIT 20"
-```
-
-### 6.1) Decode PB blob columns from SQL results
-
-```powershell
-pwsh -File tools/scripts/debug_fetch_data.ps1 -Mode sql -ZoneId 1 -Sql "SELECT player_database_blob FROM player_snapshot_entry LIMIT 1" -ProtoType "PlayerDatabase"
-```
-
-### 7) Save the result to a JSON file for sharing
-
-```powershell
-pwsh -File tools/scripts/debug_fetch_data.ps1 -Mode player -PlayerId 10001 -OutFile "bin/debug/player-10001.json"
-```
-
-## Production usage notes
-
-- Point `-ConfigPath` at the real `data_service.yaml` used by the running environment.
-- Point `-DbConfigPath` at the real `db.yaml` when using SQL mode.
-- SQL mode only allows `SELECT`, `SHOW`, `DESCRIBE`, and `EXPLAIN`.
-- `server` is an alias of the zone inspection mode and includes Redis routing details.
-- `player-db` will scan common player ID columns across the zone database to find matching rows quickly.
-- The tool now auto-detects common PB payload names such as PlayerDatabase, PlayerDatabase_1, PlayerAllData, and PlayerCentreDatabase.
-- If auto-detection is not enough, pass `-ProtoType` explicitly to force PB decoding.
-- Binary Redis values are returned as base64 only when the tool cannot decode them as protobuf, JSON, or text.
-- Text or JSON values are printed directly in formatted JSON for easier debugging.
+- Redis、路由和快照模式用 `-config`;业务库 SQL 与 `player-db` 用 `-db-config`。默认分别为 `etc/data_service.yaml`、`../db/etc/db.yaml`。
+- `-timeout-seconds` 控制整次读取预算,默认 10 秒;`-limit` 默认 20。
+- SQL 模式只接受 `SELECT`、`SHOW`、`DESCRIBE`、`EXPLAIN`,不是通用数据库终端。`player-db` 会扫描常见玩家 ID 列,生产读取仍须控制范围。
+- 工具尝试自动解码 protobuf、JSON 或文本;识别不足时使用 `-proto-type`。未解码的二进制以 base64 返回。
+- 全局快照表不在 zone 业务库里,读取审计快照使用 `snapshot` 模式;不要把旧文档中的 `player_snapshot_entry` 当成 zone 库固定表名。

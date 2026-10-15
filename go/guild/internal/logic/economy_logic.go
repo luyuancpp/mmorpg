@@ -463,6 +463,9 @@ func (l *GuildLogic) deliverNow(ctx context.Context, eco *EconomyDeps, op asseto
 //
 // reason 的取法(05 §5.6):PENDING 取 last_reason(最近一次暂时原因,如战斗中 / 背包满);
 // 终态取 reason_tip_id(只有 REJECTED 非 0)。未知状态回 UNSPECIFIED,由调用方记 ERROR。
+//
+// 库内的 ABANDONED(超 180 天自动放弃,落地恢复 §6.3)不是客户端契约:映射成已有的 ABORTED("超时或人工撤销"),
+// 不新增客户端枚举、不新增 tip。它的 reason_tip_id 恒为 0,与 ABORTED 一致。
 func orderViewOf(st pb.GuildAssetOpStatus, lastReason, reasonTipID uint32) (pb.GuildAssetOrderStatus, uint32) {
 	switch st {
 	case pb.GuildAssetOpStatus_GUILD_ASSET_OP_STATUS_PENDING:
@@ -471,7 +474,8 @@ func orderViewOf(st pb.GuildAssetOpStatus, lastReason, reasonTipID uint32) (pb.G
 		return pb.GuildAssetOrderStatus_GUILD_ASSET_ORDER_STATUS_APPLIED, reasonTipID
 	case pb.GuildAssetOpStatus_GUILD_ASSET_OP_STATUS_REJECTED:
 		return pb.GuildAssetOrderStatus_GUILD_ASSET_ORDER_STATUS_REJECTED, reasonTipID
-	case pb.GuildAssetOpStatus_GUILD_ASSET_OP_STATUS_ABORTED:
+	case pb.GuildAssetOpStatus_GUILD_ASSET_OP_STATUS_ABORTED,
+		pb.GuildAssetOpStatus_GUILD_ASSET_OP_STATUS_ABANDONED:
 		return pb.GuildAssetOrderStatus_GUILD_ASSET_ORDER_STATUS_ABORTED, reasonTipID
 	case pb.GuildAssetOpStatus_GUILD_ASSET_OP_STATUS_APPLIED_PARTIAL:
 		return pb.GuildAssetOrderStatus_GUILD_ASSET_ORDER_STATUS_APPLIED_PARTIAL, reasonTipID
@@ -480,13 +484,15 @@ func orderViewOf(st pb.GuildAssetOpStatus, lastReason, reasonTipID uint32) (pb.G
 	}
 }
 
-// isTerminalOpStatus:进入"最近结果"的四种终态。
+// isTerminalOpStatus:进入"最近结果"的终态。ABANDONED 也在其中(展示为 ABORTED,见 orderViewOf):
+// 漏了它,被放弃的那一行在"待结算"与"最近结果"里都看不到,玩家只会觉得东西凭空消失。
 func isTerminalOpStatus(st pb.GuildAssetOpStatus) bool {
 	switch st {
 	case pb.GuildAssetOpStatus_GUILD_ASSET_OP_STATUS_APPLIED,
 		pb.GuildAssetOpStatus_GUILD_ASSET_OP_STATUS_REJECTED,
 		pb.GuildAssetOpStatus_GUILD_ASSET_OP_STATUS_ABORTED,
-		pb.GuildAssetOpStatus_GUILD_ASSET_OP_STATUS_APPLIED_PARTIAL:
+		pb.GuildAssetOpStatus_GUILD_ASSET_OP_STATUS_APPLIED_PARTIAL,
+		pb.GuildAssetOpStatus_GUILD_ASSET_OP_STATUS_ABANDONED:
 		return true
 	default:
 		return false
@@ -785,6 +791,7 @@ func (l *GuildLogic) donateToGuild(ctx context.Context, req *pb.DonateToGuildReq
 	}
 	// 预留已提交:捐献页的待结算列表与今日次数变了。紧接着的同步投递若当场终结,OnAssetFinalized 会再 bump 一次,
 	// 两次都只是"去拉一次"的提示;这一次不能省 —— scene 不可达时行停在 PENDING,终结可能在玩家下线之后才发生。
+	// 不带 GUILD:预留只占次数、建 PENDING 行,资金与帮贡要等 APPLIED 终结才入账(那时 OnAssetFinalized 带 GUILD)。
 	l.bumpSync([]uint64{playerID}, scenepb.SyncDomain_SYNC_DOMAIN_GUILD_ECONOMY)
 
 	l.deliverNow(ctx, eco, assetop.Op{
@@ -862,8 +869,15 @@ func (l *GuildLogic) upgradeGuild(ctx context.Context, req *pb.UpgradeGuildReque
 	if res.Changed {
 		result = resultOK
 		l.notify(pb.GuildChangeKind_GUILD_CHANGE_KIND_LEVEL_UP, g.GuildID, playerID, 0, exceptPlayer(res.MemberIDs, playerID))
-		// 等级、成员上限、资金对全帮可见:MemberIDs(含操作者本人)全体 bump GUILD。Changed=false 时库里没变,不 bump。
-		l.bumpSync(res.MemberIDs, scenepb.SyncDomain_SYNC_DOMAIN_GUILD)
+		// 等级、成员上限、资金对全帮可见:MemberIDs(含操作者本人)全体 bump GUILD。
+		// 同一次扇出带上 GUILD_ECONOMY 与 GUILD_ACTIVITY:捐献档位的 unlocked(min_guild_level)、商品的 unlocked
+		// (required_guild_level)、活动行的等级门槛(blocked_tip_id)都随帮会等级变,全帮成员这两个域的拉取结果同样变了
+		// (§3.5 第 3 条)。多两个域号只是同一条 Lua 多两个 ARGV,不多一次 Redis 往返,不属于 §3.3"帮会级数值
+		// 不逐次扇出"的豁免。Changed=false 时库里没变,不 bump。
+		l.bumpSync(res.MemberIDs,
+			scenepb.SyncDomain_SYNC_DOMAIN_GUILD,
+			scenepb.SyncDomain_SYNC_DOMAIN_GUILD_ECONOMY,
+			scenepb.SyncDomain_SYNC_DOMAIN_GUILD_ACTIVITY)
 	}
 	// Changed=false(expected_level 与库里不符 = 已被别人升过)同样回成功 + 最新 GuildInfo,不再扣资金。
 	return &pb.UpgradeGuildResponse{Guild: l.freshGuildInfo(ctx, g.GuildID, playerID)}, result, nil
@@ -969,7 +983,8 @@ func (l *GuildLogic) buyGuildShopGoods(ctx context.Context, req *pb.BuyGuildShop
 		return &pb.BuyGuildShopGoodsResponse{ErrorMessage: rejectTip}, result, nil
 	}
 	// 预留已提交(帮贡已扣、限购已占、PENDING 行已建):商店页变了。理由同捐献。
-	l.bumpSync([]uint64{playerID}, scenepb.SyncDomain_SYNC_DOMAIN_GUILD_ECONOMY)
+	// 另带 GUILD:帮贡余额在预留事务里已扣,本人 GuildInfo.members[] 的 contribution_balance 变了。
+	l.bumpSync([]uint64{playerID}, scenepb.SyncDomain_SYNC_DOMAIN_GUILD_ECONOMY, scenepb.SyncDomain_SYNC_DOMAIN_GUILD)
 
 	l.deliverNow(ctx, eco, assetop.Op{
 		OpID:          opID,

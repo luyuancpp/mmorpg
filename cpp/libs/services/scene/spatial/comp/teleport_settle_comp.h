@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-#include "entt/src/entt/entity/entity.hpp"
+#include "engine/core/utils/registry/scene_entity.h"
 
 // 服务器主动瞬移之后、客户端确认落位之前挂在实体上(只由 MovementSystem 读写)。
 //
@@ -20,7 +20,7 @@
 struct TeleportSettleComp
 {
 	// 瞬移发生时实体所在的场景(sceneRegistry 句柄);没有场景时为 entt::null。
-	entt::entity scene{entt::null};
+	SceneEntity scene{entt::null};
 	// 瞬移目标(服务器坐标;水平面是 x/y,z 为高度)。
 	double targetX = 0.0;
 	double targetY = 0.0;

@@ -54,6 +54,11 @@ namespace bag_marshal
     // A player entity with no PlayerBagsComp yields an empty BagAllData
     // (that is the correct payload for an entity that hasn't been through
     // the lifecycle yet), not an error.
+    //
+    // 只读:不会给实体补建 PlayerBagsComp。注意上面那条「空记录」语义**不适用于存盘**:
+    // 对已加载玩家,空 BagAllData 落盘就是清空全部物品。存盘入口
+    // PlayerDatabaseMessageFieldsMarshal 会先确认 PlayerBagsComp 在场,缺失时整份拒绝,
+    // 新增的存盘调用方必须走那个入口,不要直接拿本函数的输出落盘。
     void Marshal(entt::entity player, BagAllData& out);
 
     // Reverse direction: rebuild bag/warehouse/equipment/temp ECS state

@@ -9,7 +9,7 @@
 //
 // 两种运行形态:
 //   - 常驻服务(默认):建表 / 查表 → metrics → killswitch → gRPC → 注册 etcd;
-//     本服务不领任何号段、不连 data_service(好友关系的主键就是两个 player_id,没有自增身份要发)。
+//     申请代次复用 data_service 的 friend_request 号段，好友边仍用玩家对主键。
 //   - `-migrate`:只连 MySQL 跑一次 schemamigrate.Up,按 D-14 退出码退出(K8s friend-migrate Job 用),
 //     不起 gRPC、不连 etcd。
 package main
@@ -105,7 +105,10 @@ func main() {
 	conf.MustLoad(*configFile, &c)
 
 	if *migrateOnly {
-		os.Exit(runMigration(c, *allowModify, svc.OpenMySQL, schemamigrate.Up))
+		openAuthority := func(mysqlConf config.MySQLConf) (*sql.DB, error) {
+			return svc.OpenMySQL(mysqlConf, c.RequireTiDB)
+		}
+		os.Exit(runMigration(c, *allowModify, openAuthority, schemamigrate.Up))
 	}
 	if err := runFriend(c); err != nil {
 		fmt.Fprintf(os.Stderr, "[friend] %v\n", err)
@@ -172,6 +175,12 @@ func runFriend(c config.Config) (runErr error) {
 	// 不设整体超时、也不接退出信号:schemamigrate 自带锁等待与每条语句硬超时;中途取消 DDL 可能留下 dirty 台账。
 	if err := ensureSchema(context.Background(), svcCtx.DB, c, schemamigrate.Up, schemamigrate.Plan); err != nil {
 		return err
+	}
+	indexCtx, indexCancel := context.WithTimeout(ctx, 5*time.Second)
+	indexErr := data.CheckRequestIDLookupIndex(indexCtx, svcCtx.DB)
+	indexCancel()
+	if indexErr != nil {
+		return indexErr
 	}
 	if exitRequested(ctx) {
 		return nil

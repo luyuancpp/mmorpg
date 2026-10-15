@@ -1535,8 +1535,8 @@ bool BattleRoomManager::BuildAssignment(const BattleRoom &room, const uint64_t p
     {
         return false;
     }
-    // 本函数只在 loop 线程执行(Handle* 经 runInLoop 投递):GetNodeInfo() 读 thread_local,
-    // 换到 gRPC 线程会拿到空 NodeInfo、整批静默拒签。
+    // NodeInfo 由 Node 持有、只在 loop 线程写;跨线程读取不与写入同步。
+    // 本函数仍只在 loop 线程执行(Handle* 经 runInLoop 投递)。
     const auto &self = gNode->GetNodeInfo();
     // 客户端可达地址(集群外入口 D76/D78,规则唯一权威实现在 client_endpoint::ClientFacing):
     // client_endpoint 可用就用它;否则 required=false 时回落 endpoint(podip 形态),

@@ -1,8 +1,8 @@
 #pragma once
 #include <entt/src/entt/entity/entity.hpp>
 
-class CombatStateAddedEvent;
-class CombatStateRemovedEvent;
+struct CombatStateAddedEvent;
+struct CombatStateRemovedEvent;
 
 class CombatStateSystem
 {

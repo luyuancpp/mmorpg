@@ -173,6 +173,10 @@ namespace
     struct GateNodeHooks
     {
         using KafkaCommandType = contracts::kafka::GateCommand;
+        static void DispatchKafkaCommand(const std::string& topic, const KafkaCommandType& command)
+        {
+            DispatchGateKafkaCommand(topic, command);
+        }
     };
 
 } // namespace
@@ -247,6 +251,21 @@ int main(int argc, char *argv[])
                                  : ", direct mode:non-battle behavior matches behavior before router introduction;all battle messages rejected(direct connections only)");
             }
 
+            // CPP-2 链路就绪印章:TCP 连上 0.5s 后才发握手,scene 在收到握手时才为本 gate 挂 RpcSession,之前发出的
+            // 进场通知会被丢掉,所以「可以向这个 scene 交付进场」要以握手成功为准。conn 是发出握手的那条出站连接
+            // (在途调用在 DOWN 时已全部失败,成功回调里它必然就是回包所走的连接),按连接对象盖章,重连后旧章自然失效。
+            // 以前写在按 message_id 注册的 OnSceneNodeHandshakeReply 里(docs/design/muduo-rpc-channel.md §8.3)。
+            node.GetNodeRegistrationManager().SetHandshakeSucceededHook(
+                [](uint32_t nodeType, const muduo::net::TcpConnectionPtr &conn, const NodeHandshakeResponse &response)
+                {
+                    if (nodeType != SceneNodeService)
+                    {
+                        return;
+                    }
+                    gate_scene_entry::OnSceneLinkHandshaken(conn, response.peer_node().node_uuid(),
+                                                            std::chrono::steady_clock::now());
+                });
+
             // gate → 路由服的 gRPC 实现(GATE_ROUTER_TRANSPORT,docs/design/grpc-muduo-transport.md §8)。
             // muduo_h2 时在路由服节点 registry 上装通道工厂:必须早于服务发现建连(那要等 loop 跑起来之后的 etcd 应答)。
             {
@@ -273,13 +292,6 @@ int main(int argc, char *argv[])
                                         " etcd still uses the official gRPC runtime)"
                                       : " (official gRPC C++ runtime)");
             }
-
-            // Override the default Kafka dispatch with GateCommand-specific routing
-            // that handles empty-payload events via fallback field mapping.
-            node.SetKafkaHandlers([](Node &n)
-                                  { return node::kafka::RegisterKafkaCommandHandler<contracts::kafka::GateCommand>(
-                                        n, node::kafka::BuildDefaultKafkaOptions(n.GetNodeType()),
-                                        DispatchGateKafkaCommand); });
 
             // Disconnect all client sessions before shutdown (SIGTERM or conflict).
             auto disconnectAllClients = [](Node &)
@@ -387,7 +399,7 @@ int main(int argc, char *argv[])
                         // Report player_count to etcd every 10 seconds for load balancing
                         context.playerCountReportTimer.RunEvery(10.0, [&n] {
                             auto count = static_cast<uint32_t>(tlsSessionManager.sessions().size());
-                            n.GetNodeInfo().set_player_count(count);
+                            n.MutableNodeInfo().set_player_count(count);
                             n.GetEtcdManager().UpdateNodeInfo();
                         }); }, "Gate"); });
         });

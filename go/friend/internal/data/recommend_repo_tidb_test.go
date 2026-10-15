@@ -43,6 +43,7 @@ import (
 	"time"
 
 	"github.com/alicebob/miniredis/v2"
+	drivermysql "github.com/go-sql-driver/mysql"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/zeromicro/go-zero/core/stores/redis"
@@ -90,7 +91,10 @@ func openFriendTiDBTestDB(t *testing.T, dsn string) (*sql.DB, context.Context) {
 	t.Helper()
 
 	// 会话隔离级别与生产连接池一致(svc.BuildDSN 固定 READ-COMMITTED;TiDB 认这个取值)。
-	db, err := sql.Open("mysql", withProductionSessionIsolation(dsn))
+	parsed, err := drivermysql.ParseDSN(withProductionSessionIsolation(dsn))
+	require.NoError(t, err)
+	parsed.Params["tidb_txn_mode"] = "'pessimistic'"
+	db, err := sql.Open("mysql", parsed.FormatDSN())
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = db.Close() })
 
@@ -135,9 +139,11 @@ func resetFriendTiDBSchema(t *testing.T, ctx context.Context, db *sql.DB) {
             request_time_ms BIGINT UNSIGNED NOT NULL DEFAULT 0,
             status INT UNSIGNED NOT NULL DEFAULT 0,
             updated_ms BIGINT UNSIGNED NOT NULL DEFAULT 0,
+            request_id BIGINT UNSIGNED NOT NULL DEFAULT 0,
             PRIMARY KEY (from_player_id, to_player_id) /*T![clustered_index] NONCLUSTERED */,
             KEY idx_to_player (to_player_id, status),
-            KEY idx_status_updated (status, updated_ms)
+            KEY idx_status_updated (status, updated_ms),
+            KEY idx_request_id (request_id)
         )` + tidbTableOptions,
 		`CREATE TABLE friend_capacity (
             player_id BIGINT UNSIGNED NOT NULL DEFAULT 0,

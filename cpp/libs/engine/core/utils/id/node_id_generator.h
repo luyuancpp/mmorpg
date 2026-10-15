@@ -52,6 +52,19 @@ public:
 		return node_id_ | seq_;
 	}
 
+	// 对外短期身份不能回绕复用:node 未分配或序号耗尽时拒绝,耗尽后保持饱和。
+	// 原 Generate 的回绕契约保留,只有明确要求不复用的号源使用本入口。
+	bool TryGenerateWithoutReuse(T& value)
+	{
+		value = 0;
+		if (node_id_ == 0 || seq_ == kSeqMask) {
+			return false;
+		}
+		++seq_;
+		value = node_id_ | seq_;
+		return true;
+	}
+
 	T node_id_prefix() const { return node_id_; }
 
 	T LastId()

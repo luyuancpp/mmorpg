@@ -1,6 +1,7 @@
 #pragma once
 
 #include "entt/src/entt/entity/entity.hpp"
+#include "engine/core/utils/registry/scene_entity.h"
 
 #include "proto/common/component/actor_comp.pb.h"
 
@@ -36,7 +37,7 @@ public:
 	//   - useSceneSpawn=true → 换地图时直接采用目标出生点,不复用旧地图坐标。
 	// 返回 true 表示位置被改写(调用方可据此打日志/置脏位)。
 	// 必须在 SceneEntityComp 绑定之后、自身 ActorCreate 下发之前调用。
-	static bool EnsureValidEnterLocation(entt::entity player, entt::entity scene, bool useSceneSpawn = false);
+	static bool EnsureValidEnterLocation(entt::entity player, SceneEntity scene, bool useSceneSpawn = false);
 
 	// 玩家当前所在场景的合法兜底点:移动裁决发现"服务器当前位置与上报位置
 	// 都不在网格上"时用它代替原地不动(原地本身就是非法点,回 ack 只会把

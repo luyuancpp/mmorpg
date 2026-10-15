@@ -1,7 +1,9 @@
 #include "player_pet.h"
+#include "engine/core/type_define/player_guid_comp.h"
 
 #include <algorithm>
 #include <limits>
+#include <optional>
 #include <utility>
 #include <vector>
 
@@ -41,13 +43,21 @@ using attributerules::AllocError;
 using attributerules::PoolRule;
 
 uint64_t GuidForLog(entt::entity player) {
-	const auto* guid = tlsEcs.actorRegistry.try_get<Guid>(player);
-	return guid != nullptr ? *guid : 0;
+	const auto* guid = tlsEcs.actorRegistry.try_get<PlayerGuidComp>(player);
+	return guid != nullptr ? guid->value : 0;
 }
 
-uint32_t OwnerLevel(entt::entity player) {
+// 依赖主人等级的初始化、重算、召唤、加点、洗点和发放入口必须先取到 LevelComp,
+// 再执行任何持久数据修补、扣费或铸号。列表与交易快照还原只读宠物已存等级,不加此依赖。
+std::optional<uint32_t> OwnerLevel(entt::entity player) {
 	const auto* levelComp = tlsEcs.actorRegistry.try_get<LevelComp>(player);
-	return (levelComp != nullptr && levelComp->level() > 0) ? levelComp->level() : 1;
+	if (levelComp == nullptr) {
+		LOG_ERROR << "[PlayerPet] LevelComp missing (load invariant broken); owner-level operation skipped: entity="
+				  << entt::to_integral(player) << " player_id=" << GuidForLog(player);
+		return std::nullopt;
+	}
+	// 新角色加载期间的零等级仍按既有规则归一成1;组件缺失不能走这条存量兼容分支。
+	return std::max<uint32_t>(levelComp->level(), 1);
 }
 
 const PetRuleTable* RuleRow() {
@@ -208,9 +218,17 @@ void SanitizeAllocations(PlayerPetComp& comp, uint32_t poolId) {
 	}
 }
 
-PlayerPetComp& EnsureComp(entt::entity player) {
-	// 初始化路径允许 get_or_emplace(ecs-component-access-rules.md)
-	return tlsEcs.actorRegistry.get_or_emplace<PlayerPetComp>(player);
+// PlayerPetComp 是玩家必需组件(存档字段),唯一创建点是加载时的 PlayerDatabaseMessageFieldsUnmarshal。
+// 所有入口都经这里取,只取不建:缺了说明加载链路没走完或组件被误删,记错误并由调用方拒绝 / 跳过。
+// 以前这里 get_or_emplace,连战斗快照、结算回写、只读列表都会给实体补一个空的宝宝组件,
+// 下一次存盘就把「没有宝宝」当真数据写回,而且零报错。
+PlayerPetComp* FindComp(entt::entity player) {
+	auto* comp = tlsEcs.actorRegistry.try_get<PlayerPetComp>(player);
+	if (comp == nullptr) {
+		LOG_ERROR << "[PlayerPet] PlayerPetComp missing (load path incomplete?): entity=" << entt::to_integral(player)
+				  << " player_id=" << GuidForLog(player);
+	}
+	return comp;
 }
 
 uint32_t MapAllocError(AllocError err) {
@@ -311,7 +329,7 @@ petrules::DerivedAttributes ComputeDerived(const PetInstance& pet, const PetTabl
 // "旧上限"就已经等于新上限了 —— 按比例保持会退化成恒等式:洗点把上限打下去时当前血只被夹,
 // 再把点加回来血也不涨,一趟往返白掉一截血。所以这两条路径必须由调用方传旧值进来。
 // kLoad / kLevelChanged 传 nullptr:那两条路径改的是 level,旧值在本函数内 set_level 之前算得到。
-bool RecalculateOne(entt::entity player, PetInstance& pet, const AttributePoolTable& pool,
+bool RecalculateOne(entt::entity player, uint32_t ownerLevel, PetInstance& pet, const AttributePoolTable& pool,
 					PetSystem::RecalcReason reason,
 					const petrules::DerivedAttributes* previous = nullptr) {
 	const auto* row = PetRow(pet.pet_table_id());
@@ -323,7 +341,7 @@ bool RecalculateOne(entt::entity player, PetInstance& pet, const AttributePoolTa
 	}
 
 	const auto oldLevel = pet.level();
-	const auto newLevel = petrules::EffectiveLevel(OwnerLevel(player), row->level_cap());
+	const auto newLevel = petrules::EffectiveLevel(ownerLevel, row->level_cap());
 	const auto oldDerived = previous != nullptr ? *previous : ComputeDerived(pet, *row, pool.id());
 	pet.set_level(newLevel);
 
@@ -424,7 +442,16 @@ void PetSystem::InitializeOnLoad(entt::entity player) {
 	if (!tlsEcs.actorRegistry.valid(player)) {
 		return;
 	}
-	auto& comp = EnsureComp(player);
+	// 存档组件由 Unmarshal 挂上;这里只做加载期的数据修补,不替加载链路补建(FindComp 已记错误)。
+	auto* petComp = FindComp(player);
+	if (petComp == nullptr) {
+		return;
+	}
+	// 初始化会清理持久化分配并同步等级,必须在任何修补之前确认等级已经载入。
+	if (!OwnerLevel(player).has_value()) {
+		return;
+	}
+	auto& comp = *petComp;
 	// 出战指向一只已不存在的宝宝(异常存档 / 二期放生后的残留):就地纠正为未出战
 	if (comp.active_pet_id() != 0 && FindPet(comp, comp.active_pet_id()) == nullptr) {
 		LOG_WARN << "[PlayerPet] active_pet_id points to nonexistent pet;cleared: player_id=" << GuidForLog(player)
@@ -441,7 +468,15 @@ void PetSystem::RecalculateAll(entt::entity player, RecalcReason reason) {
 	if (!tlsEcs.actorRegistry.valid(player)) {
 		return;
 	}
-	auto& comp = EnsureComp(player);
+	auto* petComp = FindComp(player);
+	if (petComp == nullptr) {
+		return;
+	}
+	const auto ownerLevel = OwnerLevel(player);
+	if (!ownerLevel.has_value()) {
+		return;
+	}
+	auto& comp = *petComp;
 	if (comp.pets_size() == 0) {
 		return;
 	}
@@ -451,16 +486,22 @@ void PetSystem::RecalculateAll(entt::entity player, RecalcReason reason) {
 		return;
 	}
 	for (auto& pet : *comp.mutable_pets()) {
-		RecalculateOne(player, pet, *pool, reason);
+		RecalculateOne(player, *ownerLevel, pet, *pool, reason);
 	}
 }
 
-void PetSystem::BuildList(entt::entity player, PetListInfo& list) {
+uint32_t PetSystem::BuildList(entt::entity player, PetListInfo& list) {
 	list.Clear();
 	if (!tlsEcs.actorRegistry.valid(player)) {
-		return;
+		return kEntityIsNull;
 	}
-	const auto& comp = EnsureComp(player);
+	// 只读路径:不改变实体的组件集合。缺组件时列表保持清空并返回故障码(FindComp 已记错误),
+	// 调用方据返回值回错误码,不能把空列表当成功发给客户端(那等于告诉玩家宝宝全没了)。
+	const auto* petComp = FindComp(player);
+	if (petComp == nullptr) {
+		return kServiceUnavailable;
+	}
+	const auto& comp = *petComp;
 	list.set_active_pet_id(comp.active_pet_id());
 	list.set_max_pets(MaxPets());
 	if (const auto* rule = RuleRow(); rule != nullptr) {
@@ -468,18 +509,27 @@ void PetSystem::BuildList(entt::entity player, PetListInfo& list) {
 	}
 	const auto* pool = PetPool();
 	if (pool == nullptr) {
-		return;
+		return kSuccess;  // 宝宝池缺配是配表问题(RecalculateAll 会记 ERROR),列表照旧只缺宝宝明细
 	}
 	for (const auto& pet : comp.pets()) {
 		FillPetInfo(player, comp, pet, *pool, *list.add_pets());
 	}
+	return kSuccess;
 }
 
 uint32_t PetSystem::Summon(entt::entity player, uint64_t petId) {
 	if (const auto err = CheckWritable(player); err != kSuccess) {
 		return err;
 	}
-	auto& comp = EnsureComp(player);
+	auto* petComp = FindComp(player);
+	if (petComp == nullptr) {
+		return kServiceUnavailable;  // 缺必需组件 = 服务端故障,FindComp 已记错误
+	}
+	const auto ownerLevel = OwnerLevel(player);
+	if (!ownerLevel.has_value()) {
+		return kServiceUnavailable;
+	}
+	auto& comp = *petComp;
 	auto* pet = FindPet(comp, petId);
 	if (pet == nullptr) {
 		return kPetNotFound;
@@ -491,7 +541,7 @@ uint32_t PetSystem::Summon(entt::entity player, uint64_t petId) {
 	if (row == nullptr) {
 		return kPetTableRowMissing;
 	}
-	if (OwnerLevel(player) < row->unlock_level()) {
+	if (*ownerLevel < row->unlock_level()) {
 		return kPetOwnerLevelNotEnough;
 	}
 	comp.set_active_pet_id(petId);
@@ -504,7 +554,11 @@ uint32_t PetSystem::Recall(entt::entity player) {
 	if (const auto err = CheckWritable(player); err != kSuccess) {
 		return err;
 	}
-	auto& comp = EnsureComp(player);
+	auto* petComp = FindComp(player);
+	if (petComp == nullptr) {
+		return kServiceUnavailable;  // 缺必需组件 = 服务端故障,FindComp 已记错误
+	}
+	auto& comp = *petComp;
 	if (comp.active_pet_id() == 0) {
 		return kPetNotActive;
 	}
@@ -523,7 +577,15 @@ uint32_t PetSystem::Allocate(entt::entity player, uint64_t petId,
 	if (pool == nullptr) {
 		return kInvalidTableData;
 	}
-	auto& comp = EnsureComp(player);
+	auto* petComp = FindComp(player);
+	if (petComp == nullptr) {
+		return kServiceUnavailable;  // 缺必需组件 = 服务端故障,FindComp 已记错误
+	}
+	const auto ownerLevel = OwnerLevel(player);
+	if (!ownerLevel.has_value()) {
+		return kServiceUnavailable;
+	}
+	auto& comp = *petComp;
 	auto* pet = FindPet(comp, petId);
 	if (pet == nullptr) {
 		return kPetNotFound;
@@ -552,7 +614,7 @@ uint32_t PetSystem::Allocate(entt::entity player, uint64_t petId,
 	for (const auto& [dimensionId, want] : target) {
 		(*pet->mutable_allocated())[dimensionId] = want;
 	}
-	RecalculateOne(player, *pet, *pool, RecalcReason::kAllocate, &before);
+	RecalculateOne(player, *ownerLevel, *pet, *pool, RecalcReason::kAllocate, &before);
 	LOG_INFO << "[PlayerPet] Points allocated: player_id=" << GuidForLog(player) << " pet_id=" << petId
 			 << " delta=" << delta << " remaining=" << (remaining - delta);
 	return kSuccess;
@@ -566,7 +628,15 @@ uint32_t PetSystem::Reset(entt::entity player, uint64_t petId) {
 	if (pool == nullptr) {
 		return kInvalidTableData;
 	}
-	auto& comp = EnsureComp(player);
+	auto* petComp = FindComp(player);
+	if (petComp == nullptr) {
+		return kServiceUnavailable;  // 缺必需组件 = 服务端故障,FindComp 已记错误
+	}
+	const auto ownerLevel = OwnerLevel(player);
+	if (!ownerLevel.has_value()) {
+		return kServiceUnavailable;
+	}
+	auto& comp = *petComp;
 	auto* pet = FindPet(comp, petId);
 	if (pet == nullptr) {
 		return kPetNotFound;
@@ -592,7 +662,7 @@ uint32_t PetSystem::Reset(entt::entity player, uint64_t petId) {
 	// 同 Allocate:洗点会把上限打下去,旧上限只能在清点之前取
 	const auto before = ComputeDerived(*pet, *row, pool->id());
 	pet->mutable_allocated()->clear();
-	RecalculateOne(player, *pet, *pool, RecalcReason::kReset, &before);
+	RecalculateOne(player, *ownerLevel, *pet, *pool, RecalcReason::kReset, &before);
 	LOG_INFO << "[PlayerPet] Points reset: player_id=" << GuidForLog(player) << " pet_id=" << petId
 			 << " cost_gold=" << cost;
 	return kSuccess;
@@ -608,7 +678,11 @@ uint32_t PetSystem::AutoAllocate(entt::entity player, uint64_t petId,
 	if (pool == nullptr) {
 		return kInvalidTableData;
 	}
-	auto& comp = EnsureComp(player);
+	auto* petComp = FindComp(player);
+	if (petComp == nullptr) {
+		return kServiceUnavailable;  // 缺必需组件 = 服务端故障,FindComp 已记错误
+	}
+	auto& comp = *petComp;
 	const auto* pet = FindPet(comp, petId);
 	if (pet == nullptr) {
 		return kPetNotFound;
@@ -656,7 +730,11 @@ uint32_t PetSystem::Rename(entt::entity player, uint64_t petId, const std::strin
 	if (!IsPetNameValid(name)) {
 		return kPetNameInvalid;
 	}
-	auto& comp = EnsureComp(player);
+	auto* petComp = FindComp(player);
+	if (petComp == nullptr) {
+		return kServiceUnavailable;  // 缺必需组件 = 服务端故障,FindComp 已记错误
+	}
+	auto& comp = *petComp;
 	auto* pet = FindPet(comp, petId);
 	if (pet == nullptr) {
 		return kPetNotFound;
@@ -699,7 +777,15 @@ uint32_t PetSystem::GrantPet(entt::entity player, uint32_t petTableId, uint64_t&
 	if (pool == nullptr) {
 		return kInvalidTableData;
 	}
-	auto& comp = EnsureComp(player);
+	auto* petComp = FindComp(player);
+	if (petComp == nullptr) {
+		return kServiceUnavailable;  // 缺必需组件 = 服务端故障,FindComp 已记错误
+	}
+	const auto ownerLevel = OwnerLevel(player);
+	if (!ownerLevel.has_value()) {
+		return kServiceUnavailable;
+	}
+	auto& comp = *petComp;
 	if (static_cast<uint32_t>(comp.pets_size()) >= MaxPets()) {
 		return kPetSlotFull;
 	}
@@ -716,7 +802,7 @@ uint32_t PetSystem::GrantPet(entt::entity player, uint32_t petTableId, uint64_t&
 	auto* pet = comp.add_pets();
 	pet->set_pet_id(petId);
 	pet->set_pet_table_id(petTableId);
-	pet->set_level(petrules::EffectiveLevel(OwnerLevel(player), row->level_cap()));
+	pet->set_level(petrules::EffectiveLevel(*ownerLevel, row->level_cap()));
 	pet->set_created_at(TimeSystem::NowSecondsUTC());
 
 	// 资质:每个维度在 [aptitude_min, aptitude_max] 闭区间独立随机,出生即定终身(洗资质是二期)。
@@ -765,7 +851,11 @@ uint32_t PetSystem::RemovePetForTrade(entt::entity player, uint64_t petId, PetIn
 	if (petId == 0) {
 		return kInvalidParameter;
 	}
-	auto& comp = EnsureComp(player);
+	auto* petComp = FindComp(player);
+	if (petComp == nullptr) {
+		return kServiceUnavailable;  // 缺必需组件 = 服务端故障,FindComp 已记错误
+	}
+	auto& comp = *petComp;
 	// 出战中先拒:先判它再找宝宝,这样"出战中"永远压过"找不到"的可能歧义。
 	if (comp.active_pet_id() == petId) {
 		return kPetAlreadyActive;
@@ -800,7 +890,11 @@ uint32_t PetSystem::RestorePetFromSnapshot(entt::entity player, const PetInstanc
 				  << " pet_id=" << snapshot.pet_id() << " pet_table_id=" << snapshot.pet_table_id();
 		return kInvalidParameter;
 	}
-	auto& comp = EnsureComp(player);
+	auto* petComp = FindComp(player);
+	if (petComp == nullptr) {
+		return kServiceUnavailable;  // 缺必需组件 = 服务端故障,FindComp 已记错误
+	}
+	auto& comp = *petComp;
 	// 撞号:同一 pet_id 已在名下。资产通道的 seq 账本负责幂等,所以走到这里的重复只可能是
 	// 数据事故(号段回退 / 快照被复制过),必须拒绝而不是覆盖 —— 覆盖会静默吃掉一只宝宝。
 	if (FindPet(comp, snapshot.pet_id()) != nullptr) {
@@ -859,7 +953,7 @@ uint32_t PetSystem::RestorePetFromSnapshot(entt::entity player, const PetInstanc
 
 	LOG_INFO << "[PlayerPet] Traded pet restored: player_id=" << GuidForLog(player)
 			 << " pet_id=" << pet->pet_id() << " pet_table_id=" << pet->pet_table_id()
-			 << " level=" << pet->level() << " owner_level=" << OwnerLevel(player)
+			 << " level=" << pet->level()
 			 << " total=" << comp.pets_size();
 	return kSuccess;
 }
@@ -868,7 +962,12 @@ bool PetSystem::BuildBattleSnapshot(entt::entity player, ::BattlePetSnapshot& sn
 	if (!tlsEcs.actorRegistry.valid(player)) {
 		return false;
 	}
-	auto& comp = EnsureComp(player);
+	// 只读路径:缺组件按「没有出战宝宝」处理(FindComp 已记错误),玩家本人照常进战斗。
+	const auto* petComp = FindComp(player);
+	if (petComp == nullptr) {
+		return false;
+	}
+	const auto& comp = *petComp;
 	if (comp.active_pet_id() == 0) {
 		return false;
 	}
@@ -915,7 +1014,11 @@ void PetSystem::ApplyBattleSettlement(entt::entity player, const ::BattlePetSett
 	if (!tlsEcs.actorRegistry.valid(player)) {
 		return;
 	}
-	auto& comp = EnsureComp(player);
+	auto* petComp = FindComp(player);
+	if (petComp == nullptr) {
+		return;
+	}
+	auto& comp = *petComp;
 	auto* pet = FindPet(comp, settlement.pet_id());
 	if (pet == nullptr) {
 		LOG_WARN << "[PlayerPet] Settlement pet_id does not belong to player;ignored: player_id=" << GuidForLog(player)
@@ -941,10 +1044,11 @@ void PetSystem::ApplyBattleSettlement(entt::entity player, const ::BattlePetSett
 }
 
 void PetSystem::PushList(entt::entity player) {
-	if (!tlsEcs.actorRegistry.valid(player)) {
+	// 列表建不出来(实体无效 / 缺必需组件)就不推:客户端按整体覆盖处理列表,
+	// 推一张空列表等于告诉玩家宝宝全没了。缺组件的错误 BuildList 已记过。
+	PetListChangedS2C message;
+	if (BuildList(player, *message.mutable_pets()) != kSuccess) {
 		return;
 	}
-	PetListChangedS2C message;
-	BuildList(player, *message.mutable_pets());
 	SendMessageToClientViaGate(ScenePetClientPlayerNotifyPetListChangedMessageId, message, player);
 }

@@ -170,7 +170,7 @@
   > - `max_connections` 500 → **1800**,MySQL Pod 内存 requests 512Mi → 1Gi、limits 1Gi → 5Gi(`deploy/k8s/manifests/infra/mysql.yaml`);
   > - Java gateway 显式配 Hikari 池 `maximum-pool-size: 5` / `minimum-idle: 2`(以前没配,按默认值推断每实例恒开约 10 条),K8s ConfigMap 镜像这两个值;
   > - 滚动余量按**每个 Deployment 多 2 个实例**计(maxSurge 的 1 个新 Pod + 1 个仍在优雅退出、连接还没释放的旧 Pod),范围是一个 zone 的 db / data-service / gateway 加全局的 friend、trade。上面写的「每个 zone 还会临时再多 (60+8E)+35」少算了退出中的旧 Pod,也漏了 gateway 与两个全局服务;
-  > - 总账写成可执行函数 `Get-MysqlConnectionPlan` / `Get-MysqlConnectionLedger`(`tools/scripts/k8s_deploy.ps1`),输入从服务 yaml 与 manifest 读,部署写路径打印一行 `MySQL connection ledger: …`,超限打 `MySQL连接总账超限:` 开头的警告(只警告、不阻断)。
+  > - 总账写成可执行函数 `Get-MysqlConnectionPlan` / `Get-MysqlConnectionLedger`(`tools/scripts/k8s_deploy.ps1`),输入从服务 yaml 与 manifest 读,部署写路径打印一行 `MySQL connection ledger: …`,超限打 `[MySQLConnectionLedger]OverLimit:` 开头的英文警告(开头这一段不含空格,按它 grep;只警告、不阻断)。
   >   规划档(4 个 zone、每个 go/db 实例打开其余 3 个 zone 的库、Phase 2 未开、route store 按 db_first 计入、运维余量 20)峰值 1620,对 1800 留 180;
   > - 契约测试 `tools/scripts/tests/k8s_deploy_contract.tests.ps1` 新增 9 例(批 A 7、批 B 2),当前文件 89 → 98:钉住「规划峰值 ≤ `max_connections`」、公式自检(复现上面的 920 / 500)、ConfigMap 镜像值与服务 yaml 一致等;
   > - 池指标 `mmorpg_sql_pool_*{sql_client,pool}`(`go/shared/sqlpoolstats`,label 只有池类别):go/db 在 K8s 上打开 `:9160`,data_service 在 `:9260`;告警文件 `deploy/k8s/mysql-connection-alerts.yaml`;

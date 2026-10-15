@@ -1,12 +1,13 @@
 // 会话路由 lane 纯逻辑单测(docs/design/client-request-ordering.md §4)。
 //
 // 与 gate_security_test.cpp 同一做法:不进 gate.vcxproj 的 ClCompile 列表,不被编进 gate 可执行文件,独立跑。
-// router_lane.h 只依赖 STL,所以这份测试不需要 muduo / protobuf / 引擎。
+// router_lane.h 只依赖 STL(InflightIndex 在 engine/core 的 utils/data_structures/inflight_index.h,同样只依赖 STL),
+// 所以这份测试不需要 muduo / protobuf / 引擎库,只多一个 include 目录。
 //
 // 跑法(仓库根目录,带 g++ 的环境;gtest 用仓库里已经 vendored 的那份):
 //
 //   GT=third_party/grpc/third_party/googletest/googletest
-//   g++ -std=c++23 -I cpp/libs/services/gate/session/comp -I "$GT/include" -I "$GT"
+//   g++ -std=c++23 -I cpp/libs/services/gate/session/comp -I cpp/libs/engine/core -I "$GT/include" -I "$GT"
 //       cpp/nodes/gate/tests/router_lane_test.cpp
 //       "$GT/src/gtest-all.cc" "$GT/src/gtest_main.cc"
 //       -lpthread -o /tmp/router_lane_test

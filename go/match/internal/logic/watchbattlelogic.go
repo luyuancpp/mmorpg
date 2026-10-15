@@ -92,6 +92,12 @@ func (l *WatchBattleLogic) WatchBattle(in *matchpb.WatchBattleRequest) (*matchpb
 		return internalErr("读观战标记", err)
 	}
 	if watchingRaw != "" {
+		// 换场清退 / 删旧标记是副作用,截止之后不再发出(client-request-ordering.md §6.1):前面几次无 ctx 的读在
+		// Redis 慢时可以卡过 router 的 ForwardTimeoutMs,gate lane 已放行下一条 WatchBattle;它刚建立的观战标记
+		// 会被这条已超时的请求读到并拆掉。
+		if err := l.ctx.Err(); err != nil {
+			return internalErr("请求已截止,不再清退旧观战", err)
+		}
 		// "已在观战"不拒绝,懒清退旧场后放行:StopWatchBattle 经 battle 直连直达
 		// 不经 match,战斗收尾 battle 也不回写 Redis,标记只能靠 TTL 自灭,一律
 		// 拒绝会把玩家卡死整个 TTL 窗口。metrics 在此仅计数懒清退;该标签的
@@ -236,6 +242,11 @@ func (l *WatchBattleLogic) WatchBattle(in *matchpb.WatchBattleRequest) (*matchpb
 				playerId, battleId, record.GetBattleNodeId(), randomMode)
 			metrics.ObserveWatchBattle("ok")
 			return &matchpb.WatchBattleResponse{BattleId: battleId}, nil
+		}
+		if errors.Is(err, errAddObserverOutcomeUnknown) {
+			// 结果未知(多半是请求 ctx 截止):观众可能已在 battle 挂上,要回失败就先摘掉,与回滚标记保持一致。
+			// removeObserver 走独立 ctx,是补偿。
+			removeObserver(l.svcCtx, record.GetBattleNodeId(), battleId, playerId, "watch_outcome_unknown")
 		}
 		deleteSpectateWatching(l.svcCtx, playerId)
 		if roomMissing {

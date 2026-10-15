@@ -53,11 +53,11 @@ constexpr FriendRequestRecord::ParseTableT_ FriendRequestRecord::InternalGenerat
     {
       PROTOBUF_FIELD_OFFSET(FriendRequestRecord, _impl_._has_bits_),
       0, // no _extensions_
-      5, 56,  // max_field_number, fast_idx_mask
+      6, 56,  // max_field_number, fast_idx_mask
       offsetof(ParseTableT_, field_lookup_table),
-      4294967264,  // skipmap
+      4294967232,  // skipmap
       offsetof(ParseTableT_, field_entries),
-      5,  // num_field_entries
+      6,  // num_field_entries
       0,  // num_aux_entries
       offsetof(ParseTableT_, field_names),  // no aux_entries
       class_data,
@@ -81,14 +81,17 @@ constexpr FriendRequestRecord::ParseTableT_ FriendRequestRecord::InternalGenerat
        {24, 2, 0,
         PROTOBUF_FIELD_OFFSET(FriendRequestRecord, _impl_.request_time_ms_)}},
       // uint32 status = 4;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(FriendRequestRecord, _impl_.status_), 4>(),
-       {32, 4, 0,
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(FriendRequestRecord, _impl_.status_), 5>(),
+       {32, 5, 0,
         PROTOBUF_FIELD_OFFSET(FriendRequestRecord, _impl_.status_)}},
       // uint64 updated_ms = 5;
       {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(FriendRequestRecord, _impl_.updated_ms_), 3>(),
        {40, 3, 0,
         PROTOBUF_FIELD_OFFSET(FriendRequestRecord, _impl_.updated_ms_)}},
-      {::_pbi::TcParser::MiniParse, {}},
+      // uint64 request_id = 6;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(FriendRequestRecord, _impl_.request_id_), 4>(),
+       {48, 4, 0,
+        PROTOBUF_FIELD_OFFSET(FriendRequestRecord, _impl_.request_id_)}},
       {::_pbi::TcParser::MiniParse, {}},
     }}, {{
       65535, 65535
@@ -100,9 +103,11 @@ constexpr FriendRequestRecord::ParseTableT_ FriendRequestRecord::InternalGenerat
       // uint64 request_time_ms = 3;
       {PROTOBUF_FIELD_OFFSET(FriendRequestRecord, _impl_.request_time_ms_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
       // uint32 status = 4;
-      {PROTOBUF_FIELD_OFFSET(FriendRequestRecord, _impl_.status_), _Internal::kHasBitsOffset + 4, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      {PROTOBUF_FIELD_OFFSET(FriendRequestRecord, _impl_.status_), _Internal::kHasBitsOffset + 5, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
       // uint64 updated_ms = 5;
       {PROTOBUF_FIELD_OFFSET(FriendRequestRecord, _impl_.updated_ms_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      // uint64 request_id = 6;
+      {PROTOBUF_FIELD_OFFSET(FriendRequestRecord, _impl_.request_id_), _Internal::kHasBitsOffset + 4, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
     }},
     // no aux_entries
     {{
@@ -119,6 +124,7 @@ inline constexpr FriendRequestRecord::Impl_::Impl_(
         to_player_id_{::uint64_t{0u}},
         request_time_ms_{::uint64_t{0u}},
         updated_ms_{::uint64_t{0u}},
+        request_id_{::uint64_t{0u}},
         status_{0u} {}
 
 template <typename>
@@ -700,17 +706,19 @@ const ::uint32_t
         2,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::friendpb::FriendRequestRecord, _impl_._has_bits_),
-        8, // hasbit index offset
+        9, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::friendpb::FriendRequestRecord, _impl_.from_player_id_),
         PROTOBUF_FIELD_OFFSET(::friendpb::FriendRequestRecord, _impl_.to_player_id_),
         PROTOBUF_FIELD_OFFSET(::friendpb::FriendRequestRecord, _impl_.request_time_ms_),
         PROTOBUF_FIELD_OFFSET(::friendpb::FriendRequestRecord, _impl_.status_),
         PROTOBUF_FIELD_OFFSET(::friendpb::FriendRequestRecord, _impl_.updated_ms_),
+        PROTOBUF_FIELD_OFFSET(::friendpb::FriendRequestRecord, _impl_.request_id_),
         0,
         1,
         2,
-        4,
+        5,
         3,
+        4,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::friendpb::FriendCapacityRecord, _impl_._has_bits_),
         6, // hasbit index offset
@@ -735,8 +743,8 @@ static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, sizeof(::friendpb::FriendEdgeRecord)},
         {9, sizeof(::friendpb::FriendRequestRecord)},
-        {22, sizeof(::friendpb::FriendCapacityRecord)},
-        {31, sizeof(::friendpb::FriendBlockRecord)},
+        {24, sizeof(::friendpb::FriendCapacityRecord)},
+        {33, sizeof(::friendpb::FriendBlockRecord)},
 };
 static const ::_pbi::MessageGlobalsBase* PROTOBUF_NONNULL const
     file_message_globals[] = {
@@ -752,23 +760,23 @@ const char descriptor_table_protodef_proto_2ffriend_2ffriend_5ftable_2eproto[] A
     "endEdgeRecord\022\021\n\tplayer_id\030\001 \001(\004\022\030\n\020frie"
     "nd_player_id\030\002 \001(\004\022\020\n\010since_ms\030\003 \001(\004:N\212\222"
     "\364\001\006friend\222\222\364\001\032player_id,friend_player_id"
-    "\332\222\364\001\020friend_player_id\250\223\364\001\001\260\223\364\001\004\270\223\364\001\004\"\356\001\n"
+    "\332\222\364\001\020friend_player_id\250\223\364\001\001\260\223\364\001\004\270\223\364\001\004\"\215\002\n"
     "\023FriendRequestRecord\022\026\n\016from_player_id\030\001"
     " \001(\004\022\024\n\014to_player_id\030\002 \001(\004\022\027\n\017request_ti"
     "me_ms\030\003 \001(\004\022\016\n\006status\030\004 \001(\r\022\022\n\nupdated_m"
-    "s\030\005 \001(\004:l\212\222\364\001\016friend_request\222\222\364\001\033from_pl"
-    "ayer_id,to_player_id\332\222\364\001%to_player_id,st"
-    "atus;status,updated_ms\250\223\364\001\001\260\223\364\001\004\270\223\364\001\004\"\242\001"
-    "\n\024FriendCapacityRecord\022\021\n\tplayer_id\030\001 \001("
-    "\004\022\024\n\014friend_count\030\002 \001(\r\022\022\n\ncreated_ms\030\003 "
-    "\001(\004:M\212\222\364\001\017friend_capacity\222\222\364\001\tplayer_id\332"
-    "\222\364\001\027friend_count,created_ms\250\223\364\001\001\260\223\364\001\004\270\223\364"
-    "\001\004\"\253\001\n\021FriendBlockRecord\022\021\n\tplayer_id\030\001 "
-    "\001(\004\022\031\n\021blocked_player_id\030\002 \001(\004\022\020\n\010since_"
-    "ms\030\003 \001(\004:V\212\222\364\001\014friend_block\222\222\364\001\033player_i"
-    "d,blocked_player_id\332\222\364\001\021blocked_player_i"
-    "d\250\223\364\001\001\260\223\364\001\004\270\223\364\001\004B\025Z\023friend/proto/friendb"
-    "\006proto3"
+    "s\030\005 \001(\004\022\022\n\nrequest_id\030\006 \001(\004:w\212\222\364\001\016friend"
+    "_request\222\222\364\001\033from_player_id,to_player_id"
+    "\332\222\364\0010to_player_id,status;status,updated_"
+    "ms;request_id\250\223\364\001\001\260\223\364\001\004\270\223\364\001\004\"\242\001\n\024FriendC"
+    "apacityRecord\022\021\n\tplayer_id\030\001 \001(\004\022\024\n\014frie"
+    "nd_count\030\002 \001(\r\022\022\n\ncreated_ms\030\003 \001(\004:M\212\222\364\001"
+    "\017friend_capacity\222\222\364\001\tplayer_id\332\222\364\001\027frien"
+    "d_count,created_ms\250\223\364\001\001\260\223\364\001\004\270\223\364\001\004\"\253\001\n\021Fr"
+    "iendBlockRecord\022\021\n\tplayer_id\030\001 \001(\004\022\031\n\021bl"
+    "ocked_player_id\030\002 \001(\004\022\020\n\010since_ms\030\003 \001(\004:"
+    "V\212\222\364\001\014friend_block\222\222\364\001\033player_id,blocked"
+    "_player_id\332\222\364\001\021blocked_player_id\250\223\364\001\001\260\223\364"
+    "\001\004\270\223\364\001\004B\025Z\023friend/proto/friendb\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2ffriend_2ffriend_5ftable_2eproto_deps[1] = {
@@ -778,7 +786,7 @@ static ::absl::once_flag descriptor_table_proto_2ffriend_2ffriend_5ftable_2eprot
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2ffriend_2ffriend_5ftable_2eproto = {
     false,
     false,
-    847,
+    878,
     descriptor_table_protodef_proto_2ffriend_2ffriend_5ftable_2eproto,
     "proto/friend/friend_table.proto",
     &descriptor_table_proto_2ffriend_2ffriend_5ftable_2eproto_once,
@@ -1125,7 +1133,7 @@ PROTOBUF_NOINLINE void FriendRequestRecord::Clear() {
   (void) cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000001fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000003fU)) {
     ::memset(&_impl_.from_player_id_, 0, static_cast<::size_t>(
         reinterpret_cast<char*>(&_impl_.status_) -
         reinterpret_cast<char*>(&_impl_.from_player_id_)) + sizeof(_impl_.status_));
@@ -1181,7 +1189,7 @@ PROTOBUF_NOINLINE void FriendRequestRecord::Clear() {
   }
 
   // uint32 status = 4;
-  if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000020U)) {
     if (this_._internal_status() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
@@ -1195,6 +1203,15 @@ PROTOBUF_NOINLINE void FriendRequestRecord::Clear() {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
           5, this_._internal_updated_ms(), target);
+    }
+  }
+
+  // uint64 request_id = 6;
+  if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+    if (this_._internal_request_id() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          6, this_._internal_request_id(), target);
     }
   }
 
@@ -1223,7 +1240,7 @@ PROTOBUF_NOINLINE void FriendRequestRecord::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000001fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000003fU)) {
     // uint64 from_player_id = 1;
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       if (this_._internal_from_player_id() != 0) {
@@ -1252,8 +1269,15 @@ PROTOBUF_NOINLINE void FriendRequestRecord::Clear() {
             this_._internal_updated_ms());
       }
     }
-    // uint32 status = 4;
+    // uint64 request_id = 6;
     if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+      if (this_._internal_request_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_request_id());
+      }
+    }
+    // uint32 status = 4;
+    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
       if (this_._internal_status() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_status());
@@ -1277,7 +1301,7 @@ void FriendRequestRecord::MergeImpl(::google::protobuf::MessageLite& to_msg,
   (void)cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000001fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000003fU)) {
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       if (from._internal_from_player_id() != 0) {
         _this->_impl_.from_player_id_ = from._impl_.from_player_id_;
@@ -1299,6 +1323,11 @@ void FriendRequestRecord::MergeImpl(::google::protobuf::MessageLite& to_msg,
       }
     }
     if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+      if (from._internal_request_id() != 0) {
+        _this->_impl_.request_id_ = from._impl_.request_id_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
       if (from._internal_status() != 0) {
         _this->_impl_.status_ = from._impl_.status_;
       }

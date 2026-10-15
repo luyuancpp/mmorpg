@@ -93,7 +93,7 @@ grpc::Status BattleNodeImpl::CreateBattle(grpc::ServerContext* /*context*/,
     // match 据此跳过 DestroyBattle、换节点重试一次。
     // 顺序:准入闸(本线程)→ 许可(本线程)→ 准入闸复核(loop 内)→ 预签票据(loop 内,BuildAssignment)
     // → 插表(EmplaceRoom)。
-    // 注意:gRPC 线程上不能碰 NodeInfo / ClientFacing —— GetNodeInfo() 读 thread_local,这里是空的。
+    // NodeInfo 由 Node 持有、只在 loop 线程写;跨线程读写不同步,这里不能读取它或调用 ClientFacing。
 
     // 1) 建房准入闸(battle_admission_gate.h):启动完成之前(lifecycle 还没启动,Disabled 默认值会
     //    不经 allocate 放行许可)与停机开始之后都不接新房间。闸没开就连许可都不取。

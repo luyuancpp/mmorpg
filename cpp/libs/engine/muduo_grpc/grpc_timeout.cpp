@@ -82,7 +82,11 @@ std::optional<std::chrono::nanoseconds> ParseGrpcTimeout(std::string_view value)
     {
         if (unit.suffix == suffix)
         {
-            // 8 位 × 3600e9 ≈ 3.6e17 < int64 上限,不会溢出。
+            // 8 位数字配上 H / M 会超出 int64 纳秒(99999999H ≈ 3.6e20ns):与 grpc-go 一样钳到最大值,而不是溢出。
+            if (amount > std::numeric_limits<int64_t>::max() / unit.nanosPerUnit)
+            {
+                return std::chrono::nanoseconds::max();
+            }
             return std::chrono::nanoseconds(amount * unit.nanosPerUnit);
         }
     }

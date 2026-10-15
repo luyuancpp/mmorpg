@@ -251,11 +251,8 @@ void EtcdService::OnTxnFailed(const std::string &key)
 		return;
 	}
 
-	// Lost the race for this (node_type, node_id) globally — another zone
-	// claimed it microseconds before us. Record the loss so the next
-	// AcquireNode pass deterministically skips this id (the local
-	// ServiceNodeList snapshot lags the etcd watch stream during cold
-	// start, so without this hint we'd loop on the same id forever).
+	// 记录本轮全局抢号失败，重试直接跳过已知被占的号。
+	// 冷启动时服务发现快照可能尚未收到获胜节点，不能仅靠快照决定下一次选号。
 	if (IsNodeAllocationKey(key))
 	{
 		const auto lostId = gNode->GetNodeInfo().node_id();

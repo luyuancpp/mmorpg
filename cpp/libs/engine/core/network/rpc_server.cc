@@ -7,10 +7,11 @@
 // Author: Shuo Chen (chenshuo at chenshuo dot com)
 
 #include "rpc_server.h"
-#include "game_channel.h"
+#include "rpc_channel.h"
 
 #include "muduo/base/Logging.h"
 
+#include <boost/any.hpp>
 #include <google/protobuf/descriptor.h>
 #include <google/protobuf/service.h>
 
@@ -20,20 +21,21 @@
 using namespace muduo;
 using namespace muduo::net;
 
+// 本文件在 namespace muduo::net 的 using 之下:本仓的 RpcChannel 一律写全限定的 ::RpcChannel,
+// 不要被 muduo 原版 protorpc 的 muduo::net::RpcChannel(未编译,但头文件在 include 路径上)劫持。
+
 RpcServer::RpcServer(EventLoop* loop,
                      const InetAddress& listenAddr)
     : tcpServer(loop, listenAddr, "RpcServer")
 {
   tcpServer.setConnectionCallback(
       std::bind(&RpcServer::onConnection, this, _1));
-//   tcpServer.setMessageCallback(
-//       std::bind(&RpcServer::onMessage, this, _1, _2, _3));
 }
 
 void RpcServer::registerService(google::protobuf::Service* service)
 {
   const google::protobuf::ServiceDescriptor* desc = service->GetDescriptor();
-  services_[desc->full_name().data()] = service;
+  services_[std::string(desc->full_name())] = service;
 }
 
 void RpcServer::start()
@@ -61,33 +63,37 @@ void RpcServer::onConnection(const TcpConnectionPtr& conn)
           c->forceClose();
         },
         kInterNodeHighWaterMark);
-    GameChannelPtr channel(new GameChannel(conn));
-    channel->SetServiceMap(services_);
+    // 每条入站连接一个 channel,由连接的 context 持有;服务表拷进 channel(不借用本对象的成员)。
+    ::RpcChannelPtr channel = ::RpcChannel::Create(*conn->getLoop(), conn, services_);
+    // 消息回调只绑 weak(§11.7):以前绑的是裸 get_pointer(channel),安全性全靠 context 恰好还持着它。
+    std::weak_ptr<::RpcChannel> weakChannel = channel;
     conn->setMessageCallback(
-        std::bind(&GameChannel::HandleIncomingMessage, get_pointer(channel), _1, _2, _3));
+        [weakChannel](const TcpConnectionPtr& c, Buffer* buf, Timestamp receiveTime)
+        {
+          if (const auto locked = weakChannel.lock())
+          {
+            locked->OnMessage(c, buf, receiveTime);
+            return;
+          }
+          buf->retrieveAll();
+        });
     conn->setContext(channel);
   }
   else
   {
-    conn->setContext(GameChannelPtr());
+    // 在途调用(本端经 RpcSession 发起的)以 kDisconnected 失败;回调 queueInLoop,不在本回调栈上执行。
+    // 这个分支可能跑在 ~TcpServer → connectDestroyed 的同步栈上:只碰连接自己的 context,不读本对象的成员。
+    if (const auto* channel = boost::any_cast<::RpcChannelPtr>(&conn->getContext()); channel != nullptr && *channel)
+    {
+      (*channel)->OnDisconnect();
+    }
+    conn->setContext(::RpcChannelPtr());
     // 入站节点链路断开:摘掉所有仍引用这条连接的 RpcSession 组件。
-    // RpcSession::connection 现已是 weak_ptr(§7.4 / §8.0),不摘也不会把连接对象钉住;
-    // 仍要摘,是为了让路由方**立刻**看到"节点不可达"(try_get<RpcSession> 为空),
-    // 而不是留一个 lock() 永远失败的空壳,等到对端 etcd 键过期(NodeTTLSeconds,默认
-    // 180s)触发 DestroyEntity 才消失。消费方(player_message_utils / node_message_utils /
-    // scene_handler ...)本来就按 try_get<RpcSession> 为空处理"节点不可达",与此前
-    // IsConnected()==false 的分支等价;重注册时 tryRegister 先 remove 再 emplace,组件已不在也无副作用。
+    // RpcSession 只存 weak,不摘也不会把连接或 channel 钉住;仍要摘,是为了让路由方**立刻**看到"节点不可达"
+    // (try_get<RpcSession> 为空),而不是留一个 lock() 永远失败的空壳,等到对端 etcd 键过期(NodeTTLSeconds,
+    // 默认 180s)触发 DestroyEntity 才消失。消费方(player_message_utils / scene_handler ...)本来就按
+    // try_get<RpcSession> 为空处理"节点不可达";重注册时 tryRegister 先 remove 再 emplace,组件已不在也无副作用。
     // 见 docs/ops/incident-gate-tcpconnection-dtor-assert-2026-09-13.md §7.4。
     NodeUtils::RemoveRpcSessionsBoundTo(conn);
   }
 }
-
-// void RpcServer::onMessage(const TcpConnectionPtr& conn,
-//                           Buffer* buf,
-//                           Timestamp time)
-// {
-//   RpcChannelPtr& channel = boost::any_cast<RpcChannelPtr&>(conn->getContext());
-//   channel->onMessage(conn, buf, time);
-// }
-
-

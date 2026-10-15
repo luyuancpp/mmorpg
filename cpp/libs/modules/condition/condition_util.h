@@ -1,6 +1,7 @@
 #pragma once
 
-#include <google/protobuf/repeated_field.h>
+#include <cstdint>
+#include <span>
 
 class ConditionTable;
 
@@ -15,7 +16,7 @@ namespace condition_util
 
     /// Checks whether all configured condition slots match the given event IDs.
     bool MatchesEventSlots(const ConditionTable *conditionRow,
-                           const google::protobuf::RepeatedField<uint32_t> &eventConditionIds);
+                           std::span<const uint32_t> eventConditionIds);
 
     /// Clamps progress to targetCount if the condition is fulfilled.
     uint32_t ClampIfFulfilled(uint32_t conditionId, uint32_t progress, uint32_t targetCount);

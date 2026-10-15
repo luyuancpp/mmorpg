@@ -26,6 +26,14 @@ class BattlePetSettlementData;
 // 快照已出,改宝宝会让局内单位与面板分叉(与 PlayerAttributeSystem::CheckWritable 同口径)。
 //
 // 线程模型:全部方法都在 scene 节点 loop 线程调用。
+//
+// 组件归属:PlayerPetComp 由加载(PlayerDatabaseMessageFieldsUnmarshal)挂上,本类所有入口只取不建。
+// 缺组件是服务端故障:返回错误码的入口(含 BuildList)一律返回 kServiceUnavailable(写入口在任何扣费 /
+// 改动之前返回),BuildBattleSnapshot 答 false(不带宝宝),其余重算入口跳过,PushList 不推;都记 ERROR。
+// 错误码口径与 player_mission.cpp / skill.cpp 一致:实体无效 → kEntityIsNull,实体有效但缺必需组件 → kServiceUnavailable。
+// 使用主人等级的初始化修补、重算、召唤、加点、洗点、发放还要求已加载 LevelComp;
+// 缺失时在清理存档、扣费或铸号之前拒绝 / 跳过,不拿默认 1 级覆盖宝宝。BuildList 读取已存宝宝等级,
+// 交易恢复保留快照等级,这两处不额外依赖主人 LevelComp。
 class PetSystem {
 public:
 	// 从 DB 加载 / 首登后调用:清理已失效引用、同步等级、按上限夹当前 HP/MP。
@@ -40,8 +48,10 @@ public:
 	// 重算全部宝宝(同步等级 + 处理当前 HP/MP);不落库。
 	static void RecalculateAll(entt::entity player, RecalcReason reason = RecalcReason::kLoad);
 
-	// 面板全量(客户端零配表:维度名/说明/上限/剩余点/资质/成长率都在这里)
-	static void BuildList(entt::entity player, PetListInfo& list);
+	// 面板全量(客户端零配表:维度名/说明/上限/剩余点/资质/成长率都在这里)。
+	// 返回值:kSuccess;实体无效 kEntityIsNull;缺 PlayerPetComp(加载链路故障)kServiceUnavailable。
+	// 非 kSuccess 时 list 是清空的 —— 调用方必须回错误码,不能把空列表当成功发给客户端。只读,不改变组件集合。
+	static uint32_t BuildList(entt::entity player, PetListInfo& list);
 
 	// 出战 / 收回。出战同时只能有一只(PetRule.max_pets 管的是携带量,不是出战量)。
 	static uint32_t Summon(entt::entity player, uint64_t petId);
@@ -76,7 +86,8 @@ public:
 	// 否则"取出成功但回包丢了"的重投会推两次、记两条。
 	//
 	// 返回值给调用方的映射建议(入口层负责):kPetSlotFull → RETRY(买家腾位后可成),其余非
-	// kSuccess → REJECTED(终局)。
+	// kSuccess → REJECTED(终局)。例外:kServiceUnavailable 是「宝宝组件缺失」—— 加载链路故障而非
+	// 交易本身不成立,应与入口层对账本组件缺失的处置同口径(RETRY、不记账),不能判成终局。
 
 	// 取出用于交易:把 petId 这只宝宝整条移出 PlayerPetComp,移出前的完整实例写进 snapshotOut。
 	// 快照就是托管期间的权威副本(聚宝斋 §6.1 第 1 条),调用方须原样持久化。
@@ -104,7 +115,7 @@ public:
 	// 否则 0 血宝宝会一直被快照进新局、开局即倒)。未知 pet_id 忽略并告警。
 	static void ApplyBattleSettlement(entt::entity player, const ::BattlePetSettlementData& settlement);
 
-	// 主动推列表(主人升级带动宝宝升级、结算回写等)
+	// 主动推列表(主人升级带动宝宝升级、结算回写等);BuildList 失败时不推。
 	static void PushList(entt::entity player);
 
 	// 宝宝属性点池的 owner_type 值(AttributePool.owner_type)

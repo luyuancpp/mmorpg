@@ -297,6 +297,28 @@ func TestRejectedTeamWriteDoesNotBump(t *testing.T) {
 	require.Empty(t, digest.take(t))
 }
 
+// 踢人与拒绝邀请:
+//   - 被踢者在 Left 里,与留下的人一起 bump TEAM(新旧成员全集,被踢者的 GetMyTeam 从「有队」变成「无队」);
+//   - 被邀请人拒绝邀请不是按时过期,他的 ListMyInvites 变了,bump TEAM_INVITE;
+//     他作为调用者同样 bump TEAM —— 操作者一律在 bump 集合里(§3.5 第 3 条),多拉一次无害。
+func TestTeamKickAndDeclineBumpSyncDigest(t *testing.T) {
+	h := newServiceHarness(t, config.TeamConf{})
+	h.addPlayers(testZone, 1, 2, 3)
+	digest := h.withDigestRecorder()
+
+	tid := h.create(1)
+	h.join(1, tid, 2)
+	digest.take(t)
+
+	requireCode(t, 0, h.ok(h.server.KickMember(asPlayer(1), &teampb.KickMemberRequest{TargetPlayerId: 2, ExpectedTeamId: tid})))
+	require.Equal(t, map[scenepb.SyncDomain][]uint64{domTeam: {1, 2}}, digest.take(t))
+
+	h.invite(1, tid, 3)
+	digest.take(t)
+	requireCode(t, 0, h.ok(h.server.RespondInvite(asPlayer(3), &teampb.RespondInviteRequest{TeamId: tid, Accept: false})))
+	require.Equal(t, map[scenepb.SyncDomain][]uint64{domTeam: {1, 3}, domTeamInvite: {3}}, digest.take(t))
+}
+
 // 装配形态:SharedRedis(go-zero)上真实执行 BumpScript。
 func TestTeamBumpsSharedRedis(t *testing.T) {
 	h := newServiceHarness(t, config.TeamConf{})

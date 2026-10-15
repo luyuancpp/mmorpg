@@ -69,10 +69,10 @@ public:
 // 临时格(`kTemporary`)用它:那个包是掉落溢出的缓冲,语义本来就是"新的进来、
 // 旧的顶出去",而不是"满了就捡不起来"。
 //
-// 排序依据是 `ItemComp.acquire_seq` —— 由 `ItemStore::Insert` 在唯一的入库口盖章、
-// 同包内单调、随快照原样带走并在还原时恢复水位。
+// 排序依据是 ItemStore::AcquiredBefore:先比较入包序号,同序号再比较 guid。
+// 入包序号由 Insert 盖章,随快照原样带走并在还原时恢复水位。
 //
-// **刻意不用 guid。** item guid 是 snowflake,高位是时间,升序看似等于入包先后,
+// **guid 只作平局次键。** 号源顺序不等于入包顺序,
 // 但两条路径会打乱它,而且都是生产路径:
 //   ① 跨服迁移带回来的实例,guid 是**源服 node** 铸的;
 //   ② `AddItems(std::vector<InitItemParam>)`(邮件附件)**沿用调用方预设的
@@ -85,7 +85,4 @@ class EvictOldestFirst final : public IEvictionPolicy
 public:
     [[nodiscard]] GuidVector SelectVictims(std::size_t needed, const ItemStore &store,
                                            const IContainerLayout &layout) const override;
-
-    // 一个实例的"入包早晚"。越小越早。排序依据的**唯一**来源。
-    [[nodiscard]] static uint64_t AcquisitionOrderOf(Guid guid, const ItemComp &item);
 };

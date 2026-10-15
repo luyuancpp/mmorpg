@@ -1,4 +1,7 @@
 #include "view.h"
+#include "actor/actor_net_id.h"
+#include "muduo/base/Logging.h"
+#include "engine/core/type_define/player_guid_comp.h"
 
 #include "grid.h"
 #include "proto/common/component/base_comp.pb.h"
@@ -87,7 +90,12 @@ std::optional<double> ViewSystem::GetDistanceBetweenEntities(entt::entity entity
 
 void ViewSystem::FillActorCreateMessageInfo(entt::entity observer, entt::entity entrant, ActorCreateS2C &createMessage)
 {
-    createMessage.set_entity(entt::to_integral(entrant));
+    const auto netId = actor_net_id::Of(tlsEcs.actorRegistry, entrant);
+    if (netId == 0) {
+        LOG_ERROR << "FillActorCreateMessageInfo: actor network id missing";
+        return;
+    }
+    createMessage.set_entity(netId);
 
     const auto *entrantTransformPtr = tlsEcs.actorRegistry.try_get<Transform>(entrant);
     if (entrantTransformPtr)
@@ -114,10 +122,10 @@ void ViewSystem::FillActorCreateMessageInfo(entt::entity observer, entt::entity 
         createMessage.set_actor_type(ACTOR_TYPE_NPC);
     }
 
-    const auto *guidPtr = tlsEcs.actorRegistry.try_get<Guid>(entrant);
+    const auto *guidPtr = tlsEcs.actorRegistry.try_get<PlayerGuidComp>(entrant);
     if (guidPtr)
     {
-        createMessage.set_guid(*guidPtr);
+        createMessage.set_guid(guidPtr->value);
     }
 }
 

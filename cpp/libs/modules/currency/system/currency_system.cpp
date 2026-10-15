@@ -35,6 +35,23 @@ bool IsKnownCurrencyType(CurrencyType type)
     return static_cast<uint32_t>(type) < static_cast<uint32_t>(kCurrencyMax);
 }
 
+// PlayerCurrencyComp(补缴欠款 + 脏标记)是玩家的**必需组件**,唯一创建点是加载
+// (PlayerDatabaseMessageFieldsUnmarshal 从 CurrencyComp.debts 装载)。增减路径只取不建:
+// 缺了说明加载不变量已被破坏 —— 欠款压根没装载进来。此时补建一本空的,补缴会被整笔绕过,
+// 下一次存盘 SaveToProto 还会拿空表把盘上的欠款覆盖掉(GM 挂的债就此消失)。
+// 所以只记错误、返回 nullptr,由调用方在**任何改动之前**拒绝本次操作(kInvalidParameter)。
+PlayerCurrencyComp *FindRequiredPlayerCurrencyComp(entt::entity player, const char *caller)
+{
+    auto *comp = tlsEcs.actorRegistry.try_get<PlayerCurrencyComp>(player);
+    if (comp == nullptr)
+    {
+        LOG_ERROR << caller << ": PlayerCurrencyComp missing on entity "
+                  << entt::to_integral(player)
+                  << " (load invariant broken; rejected without creating the component)";
+    }
+    return comp;
+}
+
 } // namespace
 
 void CurrencySystem::EnsureCurrencySlots(CurrencyComp &currency)
@@ -132,6 +149,14 @@ uint32_t CurrencySystem::AddCurrency(entt::entity player, CurrencyType type, int
         return PrintStackAndReturnError(kAssetBlocked);
     }
 
+    // 必需组件先齐再动账(校验前置):补缴记录缺失时一分钱都不能入账 —— 入了账,
+    // 欠款就被绕过,而这笔收入的流水一经写出便收不回来。
+    auto *comp = FindRequiredPlayerCurrencyComp(player, "CurrencySystem::AddCurrency");
+    if (comp == nullptr)
+    {
+        return PrintStackAndReturnError(kInvalidParameter);
+    }
+
     uint64_t gain = static_cast<uint64_t>(amount);
 
     uint64_t *balance = ResolveCurrencyField(player, type);
@@ -143,11 +168,6 @@ uint32_t CurrencySystem::AddCurrency(entt::entity player, CurrencyType type, int
     const uint64_t balanceBefore = *balance;
 
     // ── Deferred-clawback / 补缴 deduction ──────────────────────────────
-    auto *comp = tlsEcs.actorRegistry.try_get<PlayerCurrencyComp>(player);
-    if (comp == nullptr)
-    {
-        comp = &tlsEcs.actorRegistry.get_or_emplace<PlayerCurrencyComp>(player);
-    }
     auto it = comp->debts.find(static_cast<uint32_t>(type));
     if (it != comp->debts.end())
     {
@@ -235,6 +255,14 @@ uint32_t CurrencySystem::DeductCurrency(entt::entity player, CurrencyType type, 
         return PrintStackAndReturnError(kAssetFrozen);
     }
 
+    // 同 AddCurrency:必需组件在扣余额之前确认。原先是先扣钱、再发现缺组件时当场补建一本空的,
+    // 扣款照样成立,而缺组件本身(欠款没装载)被悄悄掩盖。
+    auto *comp = FindRequiredPlayerCurrencyComp(player, "CurrencySystem::DeductCurrency");
+    if (comp == nullptr)
+    {
+        return PrintStackAndReturnError(kInvalidParameter);
+    }
+
     uint64_t cost = static_cast<uint64_t>(amount);
 
     uint64_t *balance = ResolveCurrencyField(player, type);
@@ -257,11 +285,6 @@ uint32_t CurrencySystem::DeductCurrency(entt::entity player, CurrencyType type, 
     const uint64_t balanceBefore = *balance;
     *balance -= cost;
 
-    auto *comp = tlsEcs.actorRegistry.try_get<PlayerCurrencyComp>(player);
-    if (comp == nullptr)
-    {
-        comp = &tlsEcs.actorRegistry.get_or_emplace<PlayerCurrencyComp>(player);
-    }
     comp->dirty = true;
 
     // ── Transaction log ──────────────────────────────────────────────────

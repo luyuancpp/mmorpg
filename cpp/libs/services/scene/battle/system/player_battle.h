@@ -131,6 +131,8 @@ private:
 	// 返回 true = 这一局已经应用(本次应用成功,或此前已应用过),调用方可以解冻并尝试销账。
 	// alreadyAppliedOut 置 true 表示「此前就已应用」—— 奖是上一次发的,调用方**不要**再推一次
 	// 战斗结束面板,否则重投/重登会让客户端反复弹结算。
+	// 实体缺结算幂等账本(BattleSettlementLedgerComp,加载时挂上的必需组件)时返回 false 且零副作用:
+	// 判不了这一局应用过没有,整笔不应用、pending 保留;本函数不会补建账本。
 	static bool ApplySettlementToEntity(entt::entity player, const ::BattleSettlementData& settlement,
 										bool* alreadyAppliedOut = nullptr);
 

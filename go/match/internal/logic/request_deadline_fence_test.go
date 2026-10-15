@@ -13,10 +13,13 @@ import (
 	"match/internal/constants"
 	"match/internal/pkg/ctxkeys"
 
+	battlepb "proto/battle"
 	base "proto/common/base"
 	matchpb "proto/match"
 
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // sessionRequestCtx 模拟 gate 经路由服带来的会话身份。setPlayerSessionOnline 写入的当前会话是
@@ -140,4 +143,58 @@ func TestWatchBattleAfterRequestDeadlineDoesNotBindObserver(t *testing.T) {
 	require.NotZero(t, resp.GetErrorMessage().GetId(), "截止之后必须回错误")
 	require.Empty(t, fake.adds, "截止之后不得调用 battle 挂观众")
 	require.Empty(t, watchingMark(t, mr, watcher), "截止之后不得留下观战标记")
+}
+
+func TestWatchBattleRewatchAfterRequestDeadlineDoesNotEvictCurrentWatch(t *testing.T) {
+	// 已超时的旧 WatchBattle(B) 不得拆掉 gate 放行之后的新请求刚建立的观战(A):换场清退是副作用,截止之后不再发出。
+	svcCtx, mr := newGatherSvcCtx(t)
+	fake := stubObserverRPCs(t)
+	const watcher = uint64(9805)
+	setPlayerLocation(t, mr, watcher, 2)
+	setPlayerSessionOnline(t, mr, watcher)
+	registerBattle(t, svcCtx, 880981, nowMs(), "甲", "乙")
+	registerBattle(t, svcCtx, 880982, nowMs(), "丙", "丁")
+	require.NoError(t, mr.Set(spectateWatchingKey(watcher), "880981"))
+
+	resp, err := NewWatchBattleLogic(canceledRequestCtx(), svcCtx).WatchBattle(&matchpb.WatchBattleRequest{
+		PlayerId: watcher, BattleId: 880982,
+	})
+	require.NoError(t, err)
+	require.NotZero(t, resp.GetErrorMessage().GetId())
+	require.Empty(t, fake.removes, "截止之后不得对当前观战的场发 RemoveObserver")
+	require.Equal(t, "880981", watchingMark(t, mr, watcher), "截止之后不得删当前观战标记")
+}
+
+func TestWatchBattleAddObserverOutcomeUnknownRemovesObserver(t *testing.T) {
+	// AddObserver 截止 / 取消 / 不可用:观众可能已在 battle 挂上。回失败之前补一次 RemoveObserver,与回滚标记一致。
+	cases := []struct {
+		name string
+		err  error
+	}{
+		{name: "截止", err: status.Error(codes.DeadlineExceeded, "context deadline exceeded")},
+		{name: "取消", err: status.Error(codes.Canceled, "context canceled")},
+		{name: "不可用", err: status.Error(codes.Unavailable, "transport is closing")},
+	}
+	for i, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			svcCtx, mr := newGatherSvcCtx(t)
+			fake := stubObserverRPCs(t)
+			watcher := uint64(9810 + i)
+			battleId := uint64(880990 + i)
+			setPlayerLocation(t, mr, watcher, 2)
+			setPlayerSessionOnline(t, mr, watcher)
+			registerBattle(t, svcCtx, battleId, nowMs(), "甲", "乙")
+			fake.onAdd = func(*battlepb.AddObserverRequest) (*battlepb.AddObserverResponse, error) {
+				return nil, tc.err
+			}
+
+			resp := watchBattle(t, svcCtx, watcher, battleId)
+			require.Equal(t, constants.ErrBattleNotWatchable, resp.GetErrorMessage().GetId())
+			require.Len(t, fake.removes, 1, "结果未知必须补发 RemoveObserver")
+			require.Equal(t, battleId, fake.removes[0].GetBattleId())
+			require.Equal(t, watcher, fake.removes[0].GetObserverPlayerId())
+			require.Equal(t, "watch_outcome_unknown", fake.removes[0].GetReason())
+			require.Empty(t, watchingMark(t, mr, watcher))
+		})
+	}
 }

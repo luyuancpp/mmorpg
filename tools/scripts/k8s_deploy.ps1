@@ -36,6 +36,9 @@ param(
 	# 从环境变量注入密钥、且 tag 必须不可变,查不到就 fail-closed。
 	[ValidateSet("dev", "staging", "prod")]
 	[string]$ReleaseProfile = "dev",
+	# 全服好友权威 TiDB 的同一 SQL 入口(host:port)。staging/prod 必填，禁止回落到 infra MySQL。
+	# 这里只选择已有数据库，不创建 TiDB 集群、数据库或账号。
+	[string]$FriendTiDBHost = "",
 	# 留空 = 按 tag 是否可变自动推导(不可变 tag -> IfNotPresent,可变 tag -> Always)。
 	# 以前无条件写死 IfNotPresent,配上 latest 就是"节点上有旧层就永远不拉新的"。
 	[ValidateSet("", "Always", "IfNotPresent", "Never")]
@@ -1307,10 +1310,15 @@ function Get-MysqlConnectionLedger {
 
 .DESCRIPTION
 	只在写路径(zone-up / infra-up / all-up)的入口调用;*-down / *-status 不经过这里。
-	本次部署那一份:Z = zones 配置里的全部 zone ∪ 本次 -ZoneId(与 Get-InfraZoneIds 同一口径;-ZoneId 不在 zones 配置里时
-	Z 多 1,偏保守),E_z 取 max(0, Z−1),其余参数取规划档。
-	zones 配置文件缺席时不调 Get-InfraZoneIds:它那条 WARNING 讲的是「mysql-init-sql 只预建 -ZoneId 的库」,出现在
-	zone-up 的输出里是误导。此时 Z 取 1(只有 -ZoneId),并在行尾标 zones_config=missing。
+	本次部署那一份的 Z 按命令计(同一 zoneId 只算一次),E_z 取 max(0, Z−1),其余参数取规划档:
+	  - zone-up:zones 配置里的全部 zone ∪ 本次 -ZoneId(-ZoneId 不在 zones 配置里也并入:这个 zone 确实要部署);
+	  - all-up / infra-up:只取 zones 配置里的 zone。这两条命令不用 -ZoneId,而它有缺省值 101:并进来的话,zones 配置
+	    不含 101 时(例如 zones.10zones.yaml 的 1..10)Z 凭空多 1,可能打出一条虚假的 OverLimit。
+	zones 配置直接用 Get-ZonesFromJson 读(Get-InfraZoneIds 内部用的同一个),不调 Get-InfraZoneIds:它为 mysql-init-sql
+	预建库服务,在那里并入 -ZoneId 是对的,在这里会多算连接;它在 zones 配置缺席时那条 WARNING 讲的是
+	「mysql-init-sql 只预建 -ZoneId 的库」,出现在 zone-up 的输出里也是误导。
+	zones 配置文件缺席时 Z 取 1(zone-up 即 -ZoneId 那一个;infra-up 不部署 zone,取总账允许的下限 1),并在行尾标
+	zones_config=missing。all-up 走不到这一支:写路径入口里排在前面的 Assert-ClientEntryDeployPreflight 读 zones 配置时已经 throw。
 	超限只打 WARN 不 throw(是否升级为部署门禁待拍板)。输入文件缺键、max_connections / replicas 不是恰好一处、
 	zones 配置在却解析不了,照常 throw —— 与 ConfigMap 生成器同一纪律(zone-up 以前不读 zones 配置,现在为了数 zone 会读)。
 #>
@@ -1320,9 +1328,18 @@ function Write-MysqlConnectionLedger {
 
 	$deployZoneCount = 1
 	$zonesConfigTail = ' zones_config=missing'
-	# 与 Get-InfraZoneIds 用同一个判据(Test-Path 不带 -LiteralPath):两边对「文件在不在」不会各说各话。
-	if (Test-Path (Resolve-ZonesConfigPath)) {
-		$deployZoneCount = @(Get-InfraZoneIds).Count
+	$zonesPath = Resolve-ZonesConfigPath
+	# 与 Get-ZonesFromJson / Get-InfraZoneIds 用同一个判据(Test-Path 不带 -LiteralPath):几处对「文件在不在」不会各说各话。
+	if (Test-Path $zonesPath) {
+		$deployZoneIds = [System.Collections.Generic.HashSet[int]]::new()
+		foreach ($zone in (Get-ZonesFromJson -Path $zonesPath)) {
+			$null = $deployZoneIds.Add([int]$zone.zoneId)
+		}
+		# 只有 zone-up 部署 -ZoneId;all-up / infra-up 不用它,并入它的缺省值 101 会凭空多算一个 zone。
+		if ($Command -eq "zone-up") {
+			$null = $deployZoneIds.Add([int]$ZoneId)
+		}
+		$deployZoneCount = $deployZoneIds.Count
 		$zonesConfigTail = ''
 	}
 	$deployExtraZoneStores = [Math]::Max(0, $deployZoneCount - 1)
@@ -1768,10 +1785,17 @@ function Show-PeakShavingPlan {
 	$gw = if ($script:GatewayRateLimitOn) { 'on' } else { 'off' }
 	$lq = if ($script:LoginQueueOn) { 'on' } else { 'off' }
 	Write-Host "PeakShaving: gateway_rate_limit=${gw}(-GatewayRateLimit $GatewayRateLimit) login_queue=${lq}(-LoginQueue $LoginQueue) profile=$ReleaseProfile initial values (pending stress-test validation) zone=$($t.ZoneDefaultRps)/s burst=$($t.ZoneDefaultBurst) ip=$($t.IpRps)/s burst=$($t.IpBurst) cooldown=$($t.AccountCooldownMs)ms queue_capacity=$($t.LoginQueueZoneCapacity)/zone"
-	# 常量表自检提前到这里(本函数先于 Initialize-InjectedSecrets 与任何 kubectl 写操作):Get-GatewayRateLimitSettings 的
-	# 「rps ≥ 1、burst ≥ rps、冷却非负」本来要到生成 gateway ConfigMap 时才求值,那时同一 zone 的 node ConfigMap / gate 等已经 apply 过了。
+	# 生成器自检提前到这里(本函数先于 Initialize-InjectedSecrets 与任何 kubectl 写操作)。两个生成器本来要到 Apply-Zone 中途才求值,
+	# 那时同一 zone 的 node ConfigMap / gate / scene 已经 apply 过了(all-up 还先跑了 Apply-Infra),这时 throw 就留下半截部署:
+	#   - Get-GatewayRateLimitSettings:限流阈值「rps ≥ 1、burst ≥ rps、冷却非负」;
+	#   - New-LoginQueueYaml:排队容量在 1..uint32 内,且 go/login/etc/login.yaml 的 7 个 Queue.* 镜像键都读得到(缺一个就 throw)。
+	#     这两项与 zone 无关,求一次就够,产物丢弃。Max(1, …):all-up 不用 -ZoneId,顺手带了 -ZoneId 0 也不该在这里误报「ZoneId 必须为正」;
+	#     zone-up 的 ZoneId < 1 照旧在生成 login 段时报。
 	if ($script:GatewayRateLimitOn -and (Test-ZoneGatewayDeployed)) {
 		$null = Get-GatewayRateLimitSettings
+	}
+	if ($script:LoginQueueOn -and (Test-ZoneLoginDeployed)) {
+		$null = New-LoginQueueYaml -CurrentZoneId ([Math]::Max(1, $ZoneId))
 	}
 	if ($ReleaseProfile -ne 'dev' -and -not $script:GatewayRateLimitOn -and (Test-ZoneGatewayDeployed)) {
 		Write-Warning "[PeakShaving]GatewayRateLimit=off(ReleaseProfile=${ReleaseProfile}):gateway rate limiting disabled. Use only for incident mitigation or baseline stress tests; this flag is not persistent and the next deployment enables it unless overridden."
@@ -3610,7 +3634,8 @@ function Wait-ForZoneReady {
 	  否则 N 个 leader 同时出队所有 zone、超发准入(契约测试钉住 ZoneDispatcherLockKey 的前缀语义)。
 	- ZoneCapacityOverride 只写本 zone:每个 zone 的 login 只出队本 zone。不配会落到 loginqueue.FreeSlots 的回落公式
 	  (max(在线, 1) × SoftCapMultiplier 向下取整,在线 0 / 1 人时容量为 1),队列非空时可能永远放不出人。
-	- 调用方只在生成 login 的 ConfigMap / Pod 指纹时调用(New-GoSvcConfigMapYaml、Apply-OneGoSvc),两处拿到的是同一段文本。
+	- 调用方:生成 login 的 ConfigMap / Pod 指纹(New-GoSvcConfigMapYaml、Apply-OneGoSvc),两处拿到的是同一段文本;另有写路径入口的
+	  Show-PeakShavingPlan 先求一次、丢弃产物,让容量越界与 login.yaml 缺 Queue 键在任何写操作之前 throw(那两处已在 Apply-Zone 中途)。
 #>
 function New-LoginQueueYaml {
 	param([Parameter(Mandatory = $true)][int]$CurrentZoneId)
@@ -3647,6 +3672,22 @@ Queue:
   ZoneCapacityOverride:
     "${CurrentZoneId}": $capacity
 "@
+}
+
+function Get-FriendSqlSettings {
+	param([string]$Profile, [string]$TiDBHost, [string]$DevelopmentHost)
+	if ([string]::IsNullOrEmpty($TiDBHost)) {
+		if ($Profile -ne 'dev') {
+			throw '全服好友在 staging/prod 必须显式提供 -FriendTiDBHost(host:port)，全部副本使用同一权威 TiDB 事务域。'
+		}
+		return @{ Host = $DevelopmentHost; RequireTiDB = 'false' }
+	}
+	# 限定为主机与端口，避免把凭据、DSN 或换行带入 ConfigMap；后端身份仍由服务启动探测。
+	if ($TiDBHost -notmatch '\A(?:[A-Za-z0-9][A-Za-z0-9.-]*|\[[0-9A-Fa-f:]+\]):([0-9]{1,5})\z' -or
+		[int]$Matches[1] -lt 1 -or [int]$Matches[1] -gt 65535) {
+		throw '-FriendTiDBHost 必须是有效的 host:port，不接受凭据、DSN 或其他配置内容。'
+	}
+	return @{ Host = $TiDBHost; RequireTiDB = 'true' }
 }
 
 function New-GoSvcConfigMapYaml {
@@ -3938,7 +3979,9 @@ function New-GoSvcConfigMapYaml {
 	# 非 dev 档的固定值(见下面 if 块里的注释)。
 	$friendMode                    = 'pro'
 	$friendAutoMigrate             = 'false'
+	$friendSql                    = $null
 	if ($SvcName -eq 'friend') {
+		$friendSql = Get-FriendSqlSettings -Profile $ReleaseProfile -TiDBHost $FriendTiDBHost -DevelopmentHost "mysql.${InfraNamespace}:3306"
 		$friendName                  = Get-AuthoritativeScalar -RelativePath $friendYaml -KeyPath 'Name'
 		$friendTimeout               = Get-AuthoritativeScalar -RelativePath $friendYaml -KeyPath 'Timeout'
 		$friendLeaseTTL              = Get-AuthoritativeScalar -RelativePath $friendYaml -KeyPath 'LeaseTTL'
@@ -4230,7 +4273,7 @@ MetricsListenAddr: ":9260"
 # 用 INSERT IGNORE 预建这些 biz_tag 行,幂等、绝不降低已有行的 max_id;新增永久身份两边同加。
 IdSegment:
   AllowAutoSeed: ${dataServiceAllowAutoSeed}
-  BootstrapTags: [player, guild, item, txlog, snapshot, trade_listing, guild_asset_op]
+  BootstrapTags: [player, guild, item, txlog, snapshot, trade_listing, guild_asset_op, friend_request]
 # C++ scene 产出的交易流水 / 玩家快照落库消费者。topic 名与分区数是不可变契约,值来自服务 yaml。
 # Kafka 不可达不影响 Load/Save,只记日志并每 30s 后台重试。
 # TopicGeneration 是分区契约的代号,进有效 topic 名(<基名>_g<N>);从服务 yaml 镜像过来,当前集群
@@ -4734,6 +4777,7 @@ Timeout: ${friendTimeout}
 # go-zero Mode:dev/test 才放开的调试入口(config.IsRelaxedMode,含 gRPC reflection)。
 # dev 档 = go/friend/etc/friend.yaml 的值;staging/prod 固定 pro(见生成器注释)。显式写出,不赌 go-zero 缺省值。
 Mode: ${friendMode}
+RequireTiDB: $($friendSql.RequireTiDB)
 # Etcd 段 **Key 显式留空**(port-decisions D-13,与 chat / trade 同理):friend 按 C++ 约定注册
 # FriendNodeService.rpc/zone/<z>/...(go/shared/noderegistry),路由服按这个前缀发现它;没有任何 Go 调用方
 # 经 go-zero 发现键找 friend,填了 Key 只会多一条无人消费的注册(friend 的 config.Validate 直接拒非空 Key)。
@@ -4772,11 +4816,12 @@ LeaseTTL: ${friendLeaseTTL}
 MetricsListenAddr: ":9180"
 # 留空 = shared/killswitch 的 DefaultPrefix(/mmorpg/killswitch/),与其它服务共用同一棵规则树。
 KillSwitchPrefix: ""
-# 独占库(port-decisions D-14):库 ${friendMysqlDBName} 由 infra-up 的 mysql-init-sql(原样带入 deploy/mysql-init/00_init_zone_dbs.sql)
-# 预建并 GRANT 给 appuser;账号沿用 db / data-service 同一组注入值(MMORPG_MYSQL_USER / MMORPG_MYSQL_PASSWORD,dev 回落 root),
+# 独占逻辑库(port-decisions D-14):开发 MySQL 由 infra-up 预建；TiDB 入口的同名库与权限必须事先准备。
+# staging/prod 必须显式指定同一个 -FriendTiDBHost；启动验证真实 TiDB，不能按 zone 写独立库。
+# 账号沿用注入值(MMORPG_MYSQL_USER / MMORPG_MYSQL_PASSWORD,dev 回落 root),
 # 换成别的账号要自己补 GRANT。MaxOpenConn × Deployment 副本数(2)要算进 MySQL 的 max_connections(总账见 Get-MysqlConnectionLedger)。
 MySQL:
-  Host: "mysql.${InfraNamespace}:3306"
+  Host: "$($friendSql.Host)"
   User: "${mysqlUser}"
   Password: "${mysqlPassword}"
   DBName: "${friendMysqlDBName}"
@@ -6755,12 +6800,18 @@ if ($script:ReleaseStamp.Ok -and $script:ReleaseStamp.Dirty) {
 
 # 写操作才需要门禁;*-down / *-status 是止血和排查路径,不能被预检或密钥缺失挡住。
 if ($Command -in @("zone-up", "all-up", "infra-up")) {
+	# 好友全局池部署前检查权威事务域配置，早于任何基础设施写入。
+	if (($Command -eq 'infra-up' -or ($Command -eq 'all-up' -and -not $SkipInfra)) -and
+		-not $SkipGoSvc -and -not [string]::IsNullOrWhiteSpace($GoSvcRegistry)) {
+		$null = Get-FriendSqlSettings -Profile $ReleaseProfile -TiDBHost $FriendTiDBHost -DevelopmentHost "mysql.${InfraNamespace}:3306"
+	}
 	Assert-ImmutableReleaseImages
 	Invoke-ReleasePreflight
 	# 集群外入口的组合校验(含 -LoginDevPasswordAuth 只许 dev 档)排在密钥解析之前:非 dev 档传该开关时,
 	# 报的是门禁原因,而不是"缺环境变量"。battle 工作负载渲染与集群现状预检(只读 kubectl)也在这里,早于任何写操作。
 	Assert-ClientEntryDeployPreflight
-	# 削峰(G4b)的开关与起步值打一行,关着 / 没配可信代理时告警;只打印、不阻断(唯一例外:常量表被改坏时 throw)。排在密钥解析之前:
+	# 削峰(G4b)的开关与起步值打一行,关着 / 没配可信代理时告警;只打印、不阻断。例外是生成器自检,在这里就 throw:常量表被改坏
+	# (限流阈值、排队容量不在 1..uint32),或 go/login/etc/login.yaml 缺 Queue.* 镜像键。排在密钥解析之前:
 	# 缺 MMORPG_LOGIN_QUEUE_TOKEN_SECRET 被拒时,输出里已经有「login_queue=on」这一行可对照。
 	Show-PeakShavingPlan
 	Initialize-InjectedSecrets

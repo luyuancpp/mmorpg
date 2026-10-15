@@ -292,7 +292,7 @@ int main(int argc, char *argv[])
                 // 两个地址都打出来(集群外入口 D76):endpoint 是集群内身份(直连面监听在它的端口上),
                 // client_endpoint 是自报的客户端可达地址(未设置 = podip 形态,客户端直接用 endpoint);
                 // client_facing 是票据里真正下发的地址(ClientFacing,与 BuildAssignment 同一规则)。
-                // 这里在 loop 线程,GetNodeInfo() 有效。
+                // NodeInfo 由 Node 持有且跨线程读写不同步;此处在 loop 线程读取。
                 const auto &info = n.GetNodeInfo();
                 const bool required = n.ClientEndpointRequired();
                 const auto clientFacing = client_endpoint::ClientFacing(info, required);

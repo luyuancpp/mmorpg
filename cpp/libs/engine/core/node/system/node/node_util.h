@@ -101,6 +101,12 @@ namespace NodeUtils
 	// 见 docs/ops/incident-gate-tcpconnection-dtor-assert-2026-09-13.md §7.4。
 	std::size_t RemoveRpcSessionsBoundTo(const muduo::net::TcpConnectionPtr &conn);
 
+	// 节点关机阶段 0:关闭全部节点间 RPC0 通道(各 registry 里出站 RpcClient 与入站 RpcSession 的 channel)。
+	// 在途调用以 kChannelClosed 失败,回调经 queueInLoop 投递 —— 调用方随后必须把拆除排在这些回调之后
+	// (Node::FinalizeShutdownInLoop 的两段式)。关闭后的 channel 拒收新调用,但已接管的延后回复仍可在连接存活时发出。
+	// 只能在 loop 线程调用。docs/design/muduo-rpc-channel.md §6.5。
+	void CloseAllRpcChannels();
+
 	// True for services whose node_id is only unique within a zone and whose
 	// runtime contract is "caller only talks to the same zone". The local
 	// service registry on each node must refuse to insert such nodes from

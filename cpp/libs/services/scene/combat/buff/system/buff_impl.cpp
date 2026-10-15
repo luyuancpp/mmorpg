@@ -7,12 +7,13 @@
 #include "combat_state/constants/combat_state.h"
 #include "combat/buff/constants/buff.h"
 #include "macros/return_define.h"
-#include "proto/common/event/actor_combat_state_event.pb.h"
-#include "time/system/time.h"
+#include "services/scene/actor/actor_events.h"
 #include "core/utils/defer/defer.h"
 
-void BuffImplSystem::OnIntervalThink(entt::entity parent, BuffEntry& buff, const BuffTable* buffTable) {    if (buffTable && buffTable->buff_type() == kBuffTypeNoDamageOrSkillHitInLastSeconds) {
-        TickCombatIdleBuff(parent, buff, buffTable);
+void BuffImplSystem::OnIntervalThink(entt::entity parent, BuffEntry& buff, const BuffTable* buffTable,
+                                    uint64_t nowMilliseconds) {
+    if (buffTable && buffTable->buff_type() == kBuffTypeNoDamageOrSkillHitInLastSeconds) {
+        TickCombatIdleBuff(parent, buff, buffTable, nowMilliseconds);
     }
 }
 
@@ -58,13 +59,12 @@ void BuffImplSystem::OnBeforeGiveDamage(entt::entity caster, entt::entity target
     }
 }
 
-void BuffImplSystem::OnSkillHit(entt::entity caster, entt::entity target) {
-    ResetCombatIdleBuff(caster, target);
+void BuffImplSystem::OnSkillHit(entt::entity caster, entt::entity target, uint64_t nowMilliseconds) {
+    ResetCombatIdleBuff(caster, target, nowMilliseconds);
 }
 
-void BuffImplSystem::ResetCombatIdleBuff(entt::entity caster, entt::entity victim) {
-    // The combat-idle buff grants an out-of-combat bonus; taking damage or being
-    // hit by a skill resets its timer and strips the bonus sub-buffs.
+void BuffImplSystem::ResetCombatIdleBuff(entt::entity caster, entt::entity victim, uint64_t nowMilliseconds) {
+    // 清理加成后允许下一次安静窗口重新授予；同一轮安静期间仍只授予一次。
     UInt64Set buffsToRemove;
     defer(BuffSystem::RemoveBuff(victim, buffsToRemove));
 
@@ -75,43 +75,46 @@ void BuffImplSystem::ResetCombatIdleBuff(entt::entity caster, entt::entity victi
             continue;
         }
         if (const auto data = std::dynamic_pointer_cast<BuffNoDamageOrSkillHitInLastSecondsComp>(buff.dataPbPtr)) {
-            data->set_last_time(TimeSystem::NowMilliseconds());
+            data->set_last_time(nowMilliseconds);
         }
         BuffSystem::RemoveSubBuff(buff, buffsToRemove);
+        buff.buffPb.set_has_added_sub_buff(false);
     }
 }
 
 void BuffImplSystem::AddSilenceState(entt::entity parent, const BuffEntry& buff) {
     CombatStateAddedEvent event;
-    event.set_actor_entity(entt::to_integral(parent));
-    event.set_source_buff_id(buff.buffPb.buff_id());
-    event.set_state_type(kActorCombatStateSilence);
+    event.actor = parent;
+    event.sourceBuffId = buff.buffPb.buff_id();
+    event.stateType = kActorCombatStateSilence;
 
     tlsEcs.dispatcher.trigger(event);
 }
 
 void BuffImplSystem::RemoveSilenceState(entt::entity parent, uint64_t buffId) {
     CombatStateRemovedEvent event;
-    event.set_actor_entity(entt::to_integral(parent));
-    event.set_source_buff_id(buffId);
-    event.set_state_type(kActorCombatStateSilence);
+    event.actor = parent;
+    event.sourceBuffId = buffId;
+    event.stateType = kActorCombatStateSilence;
 
     tlsEcs.dispatcher.trigger(event);
 }
 
-void BuffImplSystem::TickCombatIdleBuff(entt::entity parent, BuffEntry& buff, const BuffTable* buffTable) {
+void BuffImplSystem::TickCombatIdleBuff(entt::entity parent, BuffEntry& buff, const BuffTable* buffTable,
+                                      uint64_t nowMilliseconds) {
     if (buffTable->combat_idle_seconds() <= 0) {
         return;
     }
 
     const auto data = std::dynamic_pointer_cast<BuffNoDamageOrSkillHitInLastSecondsComp>(buff.dataPbPtr);
-    if (!data) {
+    if (!data || nowMilliseconds < data->last_time()) {
         return;
     }
 
-    const auto idleTime = TimeSystem::NowMilliseconds() - data->last_time();
-    if (static_cast<double>(idleTime) > buffTable->combat_idle_seconds()) {
-        return;  // idle long enough -- bonus already granted, nothing to do
+    // 配表单位为秒，时钟单位为毫秒；达到阈值才授予，等于阈值也算完成等待。
+    const double idleSeconds = static_cast<double>(nowMilliseconds - data->last_time()) / 1000.0;
+    if (idleSeconds < buffTable->combat_idle_seconds()) {
+        return;
     }
 
     BuffSystem::AddSubBuffs(parent, buffTable, buff);

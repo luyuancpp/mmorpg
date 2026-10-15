@@ -175,18 +175,22 @@ type OfflineParking struct {
 	Backoff time.Duration
 }
 
-// Parks 报告这次结局是否落进停放档:结局是**本地合成**的 NOT_HERE(玩家没有位置,
-// 根本没发出 RPC),且这一行此前已投递 attempts 次、达到门槛。
+// Parks 报告这次结局是否落进停放档:结局是**本地合成**的 NOT_HERE、原因是玩家**没有位置**
+// (res.Absent,根本没发出 RPC),且这一行此前已投递 attempts 次、达到门槛。
 //
 // 只认 res.Local:scene 自己回的 NOT_HERE 说明玩家刚换节点、位置正在更新,下一次很可能就成,
 // 不能一停半小时。传输层失败时 res 是零值(不是 Local),同样不停放 —— 那是 scene 或网络的问题,
 // 不是玩家不在。
 //
-// 本次若读过已落盘账本但没有拿到结局(未见 / 没有 blob / 读失败),res 仍是 Local,照样停放:
+// 还要 res.Absent:等待跨 zone 落点、节点未注册 / 歧义、节点镜像未完成首次同步(每次服务重启都有
+// 这个窗口)同样是本地合成的 NOT_HERE,但那时玩家多半在线、不会再有落地唤醒,停半小时就是玩家
+// 可感知的延迟。位置键不存在时玩家下次上线一定经过进场,唤醒兜得住。
+//
+// 本次若读过已落盘账本但没有拿到结局(未见 / 没有 blob / 读失败),res 原样保留,照样停放:
 // 读失败多半是 data_service 不可用,此时把成批离线行留在 60s 退避里只会持续压它。
 func (p OfflineParking) Parks(res Result, attempts uint32) bool {
 	return p.AfterAttempts > 0 && p.Backoff > 0 &&
-		res.Local && res.Outcome == assetpb.AssetOpOutcome_ASSET_OP_OUTCOME_NOT_HERE &&
+		res.Local && res.Absent && res.Outcome == assetpb.AssetOpOutcome_ASSET_OP_OUTCOME_NOT_HERE &&
 		attempts >= p.AfterAttempts
 }
 

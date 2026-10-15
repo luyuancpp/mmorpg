@@ -1,4 +1,5 @@
 #include "player_landing.h"
+#include "engine/core/type_define/player_guid_comp.h"
 
 #include <chrono>
 #include <string>
@@ -23,8 +24,8 @@ namespace
 {
 	uint64_t GuidOf(entt::entity player)
 	{
-		const auto *guid = tlsEcs.actorRegistry.try_get<Guid>(player);
-		return guid != nullptr ? *guid : 0;
+		const auto *guid = tlsEcs.actorRegistry.try_get<PlayerGuidComp>(player);
+		return guid != nullptr ? guid->value : 0;
 	}
 
 	bool ZoneRedisReady()

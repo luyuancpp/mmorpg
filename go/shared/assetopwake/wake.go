@@ -29,7 +29,8 @@ import (
 	"shared/safego"
 )
 
-// Channel 是唤醒频道名。scene(C++,player_landing.cpp)发布用的是同一串字面量,改名两边同改。
+// Channel 是唤醒频道名。scene 发布用的是 C++ player_landing.h 的 kAssetWakeChannel,
+// 两边逐字一致由 wake_test.go 的 TestChannelMatchesCpp 守住。
 const Channel = "assetop:wake"
 
 // dedupKeyFormat 是跨副本去重键:assetop:wake:{服务名}:{player_id}。
@@ -43,10 +44,16 @@ func DedupKey(service string, playerID uint64) string {
 
 // 默认值。去重窗口 5 秒对齐 scene 侧「同一实体 5 秒内只发一次」的合并窗口(设计 §5.2):
 // 同一次落地的重复发布(重连、gate 补发)落在一个窗口里,每个服务只有一个副本去查库。
+//
+// 唤醒超时 10 秒的来历:Loop.WakePlayer 只在剩余预算还够一整个 OpBudget(默认 2.5 秒)时才开始下一行,
+// 所以真正用来「开始新行」的只有 WakeTimeout − OpBudget。一行常见耗时约 100–150ms(首答多为未落盘,
+// 还要等一次重查),10 秒能开始约 50 行,盖得住一个玩家最多 32 行的上限;库或 scene 变慢时剩下的行
+// 照常等各自的 next_attempt_ms。原先的 3 秒只够开始 0.5 秒内的几行,而且行会被截在半路。
+// 代价是 Stop 的最坏等待随之变长(见 Stop)。
 const (
 	DefaultConcurrency = 4
 	DefaultDedupTTL    = 5 * time.Second
-	DefaultWakeTimeout = 3 * time.Second
+	DefaultWakeTimeout = 10 * time.Second
 )
 
 const (
@@ -80,7 +87,8 @@ type Config struct {
 	Concurrency int
 	// DedupTTL 是去重键的存活时间(SET NX EX)。默认 5 秒。
 	DedupTTL time.Duration
-	// WakeTimeout 是每次 WakePlayer 的独立超时。默认 3 秒。
+	// WakeTimeout 是每次 WakePlayer 的独立超时。默认 10 秒。必须大于 Loop 的 OpBudget:
+	// 剩余预算不够一整个 OpBudget 时 WakePlayer 不再开始新行,配得比它小则每次唤醒都回错误。
 	WakeTimeout time.Duration
 }
 
@@ -105,7 +113,8 @@ func (c Config) withDefaults() (Config, error) {
 }
 
 // bus 是本包用到的全部 Redis 能力。生产实现是 goRedisBus;单测注入替身,
-// 不为测试给 shared 模块加 miniredis 依赖(同 shared/leader 的做法)。
+// 便于确定性地驱动订阅、去重与并发满载(shared 模块自 2026-10-15 起已为 playersync 的 Lua 用例引入 miniredis,
+// 本包仍用替身是因为要精确控制消息到达时序,不是为了避开依赖)。
 type bus interface {
 	// subscribe 订阅 channel,确认订阅生效后返回消息通道与关闭函数。
 	// 通道只在关闭函数被调用、或底层订阅被永久关闭时关闭;go-redis 断线会自动重订阅,期间的消息丢失。
@@ -186,7 +195,8 @@ func (s *Subscriber) Start(ctx context.Context) {
 	logx.Infof("[AssetOpWake] Subscribed to wake channel=%s service=%s concurrency=%d", Channel, s.cfg.Service, s.cfg.Concurrency)
 }
 
-// Stop 取消订阅并等所有在途唤醒结束(每个最多 WakeTimeout,外加 assetop 落库预留的一小段)。
+// Stop 取消订阅并等所有在途唤醒结束。取消会让在途唤醒立刻停止领新行,正在处理的那一行的投递
+// 随之结束,只剩 assetop 落库预留的一小段;最坏(某一步不理会取消)也不超过 WakeTimeout 加这一小段。
 // 可重复调用;nil 接收者安全。
 func (s *Subscriber) Stop() {
 	if s == nil {

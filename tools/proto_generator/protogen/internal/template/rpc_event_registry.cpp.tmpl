@@ -1,5 +1,6 @@
 #include <array>
 #include "rpc_event_registry.h"
+#include "kafka_command_event_whitelist.h"
 #include "proto/common/base/node.pb.h"
 #include "thread_context/ecs_context.h"
 
@@ -49,13 +50,26 @@ bool IsValidEventId(uint32_t eventId)
 	return eventId < kMaxEventCount;
 }
 
-bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
+KafkaEventDispatchResult DispatchSceneCommandEvent(uint32_t eventId, const std::string& payload)
 {
+	if (!IsSceneCommandEvent(eventId)) return KafkaEventDispatchResult::kNotAllowed;
 	switch (eventId) {
-{{- range .EventDispatchCases }}
+{{- range .SceneDispatchCases }}
 	{{ . }}
 {{- end }}
 	default:
-		return false;
+		return KafkaEventDispatchResult::kNotAllowed;
+	}
+}
+
+KafkaEventDispatchResult DispatchGateCommandEvent(uint32_t eventId, const std::string& payload)
+{
+	if (!IsGateCommandEvent(eventId)) return KafkaEventDispatchResult::kNotAllowed;
+	switch (eventId) {
+{{- range .GateDispatchCases }}
+	{{ . }}
+{{- end }}
+	default:
+		return KafkaEventDispatchResult::kNotAllowed;
 	}
 }

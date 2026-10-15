@@ -1,26 +1,28 @@
 #include "player_scene.h"
+#include "engine/core/utils/registry/actor_log.h"
+#include "engine/core/type_define/player_guid_comp.h"
+#include "actor/actor_net_id.h"
 
 #include "muduo/base/Logging.h"
 
-#include "proto/common/event/scene_event.pb.h"
+#include "modules/scene/scene_events.h"
 #include "hexagons_grid.h"
 
 #include "rpc/service_metadata/player_scene_service_metadata.h"
 
 #include "network/player_message_utils.h"
-#include "network/node_message_utils.h"
 #include "network/network_utils.h"
 #include "engine/thread_context/node_context_manager.h"
 #include "proto/scene_manager/scene_manager_service.pb.h"
 #include "grpc_client/scene_manager/scene_manager_service_grpc_client.h"
 #include "network/node_utils.h"
 #include <modules/scene/comp/scene_comp.h>
-#include <modules/scene/comp/scene_node_comp.h>
 #include <proto/common/component/player_network_comp.pb.h>
 #include "node/system/node/node_util.h"
 #include "battle/system/player_battle.h"
 #include "spatial/system/scene_spawn.h"
 #include "spatial/system/view.h"
+#include "spatial/system/aoi.h"
 #include <thread_context/ecs_context.h>
 // 以下几个头只为 SendSceneInfo 的分线目录转发:zone Redis 的异步 GET(tlsRedis)、hiredis 应答类型
 // (redisReply / REDIS_REPLY_* / REDIS_OK)、长度保护与命令拼接。
@@ -41,8 +43,8 @@ constexpr char kWorldChannelDirectoryKeyFmt[] = "world_channel_directory:zone:%u
 // Best-effort player guid for logging (0 if the Guid component is absent).
 uint64_t GuidForLog(entt::entity player)
 {
-	const auto* g = tlsEcs.actorRegistry.try_get<Guid>(player);
-	return g ? *g : 0;
+	const auto* g = tlsEcs.actorRegistry.try_get<PlayerGuidComp>(player);
+	return g ? g->value : 0;
 }
 
 bool ZoneRedisReady()
@@ -141,61 +143,65 @@ bool ParseChannelDirectoryReply(const redisReply* reply, uint32_t sceneConfigId,
 // (player_team.{h,cpp},team-system.md §F.2):调用点改为 HandleEnterScene 之后,
 // 因为本函数开头的"已在目标场景"幂等早退会让同场景重连漏掉刷新。
 
-void PlayerSceneSystem::HandleEnterScene(entt::entity player, entt::entity scene)
+bool PlayerSceneSystem::HandleEnterScene(entt::entity player, SceneEntity scene)
 {
+	if (!tlsEcs.actorRegistry.valid(player) || !tlsEcs.sceneRegistry.valid(scene))
+	{
+		LOG_ERROR << "HandleEnterScene: invalid player or scene, entity=" << entt::to_integral(player);
+		return false;
+	}
 	const auto sceneInfo = tlsEcs.sceneRegistry.try_get<SceneInfoComp>(scene);
 	if (sceneInfo == nullptr)
 	{
-		LOG_ERROR << "HandleEnterScene: scene info not found for player: "
-		          << entt::to_integral(player);
-		return;
+		LOG_ERROR << "HandleEnterScene: scene info missing, " << ActorLog(player);
+		return false;
 	}
+	// 通知可以同步搬移组件存储;回包和日志使用值副本,不跨通知保留场景组件指针。
+	const SceneInfoComp targetSceneInfo(*sceneInfo);
 
 	// 0. Idempotency: if player is already in the target scene, skip.
 	auto *oldSceneComp = tlsEcs.actorRegistry.try_get<SceneEntityComp>(player);
-	if (oldSceneComp != nullptr && oldSceneComp->sceneEntity == scene)
+	const auto oldScene = oldSceneComp != nullptr ? oldSceneComp->sceneEntity : SceneEntity{entt::null};
+	if (oldScene == scene)
 	{
 		LOG_INFO << "HandleEnterScene: player " << GuidForLog(player)
-		         << " already in scene_id=" << sceneInfo->scene_id() << ", skipping";
-		return;
+		         << " already in scene_id=" << targetSceneInfo.scene_id() << ", skipping";
+		return true;
 	}
 
 	// 同图换线保留坐标,换地图使用目标出生点;判断须在旧场景绑定被替换前完成。
 	bool mapChanged = false;
-	if (oldSceneComp != nullptr && oldSceneComp->sceneEntity != entt::null)
+	if (oldScene != entt::null)
 	{
-		const auto* oldInfo = tlsEcs.sceneRegistry.try_get<SceneInfoComp>(oldSceneComp->sceneEntity);
-		mapChanged = oldInfo != nullptr && oldInfo->scene_config_id() != sceneInfo->scene_config_id();
+		const auto* oldInfo = tlsEcs.sceneRegistry.try_get<SceneInfoComp>(oldScene);
+		mapChanged = oldInfo != nullptr && oldInfo->scene_config_id() != targetSceneInfo.scene_config_id();
 	}
 
 	// 1. Leave old scene if player is already in one.
-	if (oldSceneComp != nullptr && oldSceneComp->sceneEntity != entt::null
-	    && oldSceneComp->sceneEntity != scene)
+	if (oldScene != entt::null && oldScene != scene)
 	{
-		// Clean up AOI grid before leaving the old scene.
+		// 必需清理由实际入口显式执行;先解绑再发通知,不依赖是否注册事件监听者。
 		BeforeLeaveScene leaveEvent;
-		leaveEvent.set_entity(entt::to_integral(player));
-		tlsEcs.dispatcher.trigger(leaveEvent);
-
-		// Remove old hex so AOI treats the new scene as a fresh entry.
-		tlsEcs.actorRegistry.remove<Hex>(player);
-
-		auto *oldPlayers = tlsEcs.sceneRegistry.try_get<ScenePlayers>(oldSceneComp->sceneEntity);
-		if (oldPlayers)
+		leaveEvent.actor = player;
+		AoiSystem::BeforeLeaveSceneHandler(leaveEvent);
+		if (!tlsEcs.actorRegistry.valid(player))
 		{
-			oldPlayers->erase(player);
+			return false;
+		}
+		tlsEcs.actorRegistry.remove<SceneEntityComp, Hex>(player);
+		tlsEcs.dispatcher.trigger(leaveEvent);
+		if (!tlsEcs.actorRegistry.valid(player) || !tlsEcs.sceneRegistry.valid(scene))
+		{
+			return false;
+		}
+		if (tlsEcs.actorRegistry.all_of<SceneEntityComp>(player))
+		{
+			return false; // 通知中已经完成了另一次入场,不覆盖其新绑定。
 		}
 	}
 
 	// 2. Bind player to the new scene entity.
 	tlsEcs.actorRegistry.get_or_emplace<SceneEntityComp>(player).sceneEntity = scene;
-
-	// 3. Track player in the scene's player set.
-	auto *scenePlayers = tlsEcs.sceneRegistry.try_get<ScenePlayers>(scene);
-	if (scenePlayers)
-	{
-		scenePlayers->emplace(player);
-	}
 
 	// 3.5 服务器权威落位:Transform 来自 DB(新号是 proto 默认 (0,0,0),旧号可能
 	// 存着旧地图/别的场景的坐标),必须在自身 ActorCreate(4.5)与 AOI 广播之前
@@ -206,7 +212,7 @@ void PlayerSceneSystem::HandleEnterScene(entt::entity player, entt::entity scene
 
 	// 4. Notify client of scene entry.
 	EnterSceneS2C message;
-	message.mutable_scene_info()->CopyFrom(*sceneInfo);
+	message.mutable_scene_info()->CopyFrom(targetSceneInfo);
 	SendMessageToClientViaGate(SceneSceneClientPlayerNotifyEnterSceneMessageId, message, player);
 
 	// 4.5 补发"自己"的 ActorCreate:AOI 可见性遍历刻意跳过 observer 本身
@@ -215,11 +221,19 @@ void PlayerSceneSystem::HandleEnterScene(entt::entity player, entt::entity scene
 	// 客户端将收不到任何 ActorCreate,本地角色/相机绑定/移动控制器全部
 	// 无法建立。客户端靠 guid == player_id 识别并绑定本地角色。
 	ActorCreateS2C selfCreate;
-	ViewSystem::FillActorCreateMessageInfo(player, player, selfCreate);
-	SendMessageToClientViaGate(SceneSceneClientPlayerNotifyActorCreateMessageId, selfCreate, player);
+	if (actor_net_id::Of(tlsEcs.actorRegistry, player) != 0)
+	{
+		ViewSystem::FillActorCreateMessageInfo(player, player, selfCreate);
+		SendMessageToClientViaGate(SceneSceneClientPlayerNotifyActorCreateMessageId, selfCreate, player);
+	}
+	else
+	{
+		LOG_ERROR << "HandleEnterScene: self actor notification skipped, network id missing";
+	}
 
 	LOG_INFO << "HandleEnterScene: player " << GuidForLog(player)
-			 << " entered scene_id=" << sceneInfo->scene_id();
+			 << " entered scene_id=" << targetSceneInfo.scene_id();
+	return true;
 }
 
 bool PlayerSceneSystem::RequestEnterMirrorScene(entt::entity player, uint32_t mirrorConfigId)
@@ -248,7 +262,7 @@ bool PlayerSceneSystem::RequestEnterMirrorScene(entt::entity player, uint32_t mi
 	const auto* sceneEntityComp = tlsEcs.actorRegistry.try_get<SceneEntityComp>(player);
 	if (sceneEntityComp == nullptr || sceneEntityComp->sceneEntity == entt::null)
 	{
-		LOG_WARN << "RequestEnterMirrorScene: player " << entt::to_integral(player)
+		LOG_WARN << "RequestEnterMirrorScene: " << ActorLog(player)
 		         << " has no current scene; mirror requires a source";
 		return false;
 	}
@@ -274,8 +288,7 @@ bool PlayerSceneSystem::RequestEnterMirrorScene(entt::entity player, uint32_t mi
 	const auto* playerSessionPB = tlsEcs.actorRegistry.try_get<PlayerSessionSnapshotComp>(player);
 	if (playerSessionPB == nullptr)
 	{
-		LOG_WARN << "RequestEnterMirrorScene: missing PlayerSessionSnapshotComp on player "
-		         << entt::to_integral(player);
+		LOG_WARN << "RequestEnterMirrorScene: PlayerSessionSnapshotComp missing, " << ActorLog(player);
 		return false;
 	}
 

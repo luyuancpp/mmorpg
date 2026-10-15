@@ -63,38 +63,12 @@
         }                                                                   \
     } while (0)
 
-// Transfer accumulated TipInfoMessage to a protobuf response and clear TLS state.
-// TLS 里没有 tip(id 为 0 且没有参数)时不覆盖:handler 可能已经把拒绝码直接写进了
-// response->error_message,以前这里无条件整体覆盖,拒绝码被空 tip 抹成「成功」
-// (ReleaseSkill 的两处拒绝、EnterScene 原先的 7 处拒绝都栽在这里)。
-#define TRANSFER_ERROR_MESSAGE(response)                                                        \
-    do {                                                                                        \
-        auto* _resp = (response);                                                               \
-        if (_resp) {                                                                            \
-            auto& _tip = tlsEcs.globalRegistry.get_or_emplace<TipInfoMessage>(      \
-                tlsEcs.GlobalEntity());                                                                \
-            if (_tip.id() != 0 || _tip.parameters_size() > 0) {                                 \
-                *(_resp->mutable_error_message()) = std::move(_tip);                            \
-            }                                                                                   \
-            _tip.Clear();                                                                       \
-        }                                                                                       \
-    } while (0)
+// 过渡兼容:生成头仍有调用;proto-gen 重生并确认无调用后删除本宏。
+// 拒绝码规则见 services/player/rpc/player_service_interface.h,这里不再搬运任何状态。
+#define TRANSFER_ERROR_MESSAGE(response) do { (void)(response); } while (0)
 
-// Validate a request through |fn|; on failure, record error in TLS and return void.
-#define CHECK_REQUEST_PRECONDITIONS(request, fn)                                                \
-    do {                                                                                        \
-        const auto _err3 = fn(request);                                                         \
-        if (_err3 != kSuccess) {                                                                \
-            LOG_WARN << "CHECK_REQUEST_PRECONDITIONS: " << __FUNCTION__                         \
-                     << " (" << __FILE__ << ":" << __LINE__                                     \
-                     << ") code=" << _err3;                                                     \
-            tlsEcs.globalRegistry.get_or_emplace<TipInfoMessage>(tlsEcs.GlobalEntity())    \
-                .set_id(_err3);                                                                 \
-            return;                                                                             \
-        }                                                                                       \
-    } while (0)
-
-// Validate a player request through |fn(player, request)|.
+// 依赖调用处的 player / request / response;校验失败写本次应答并退出调用方。
+// 拒绝码规则见 services/player/rpc/player_service_interface.h。
 #define CHECK_PLAYER_REQUEST(request, fn)                                                       \
     do {                                                                                        \
         const auto _err4 = fn(player, request);                                                 \
@@ -102,8 +76,7 @@
             LOG_WARN << "CHECK_PLAYER_REQUEST: " << __FUNCTION__                                \
                      << " (" << __FILE__ << ":" << __LINE__                                     \
                      << ") code=" << _err4;                                                     \
-            tlsEcs.globalRegistry.get_or_emplace<TipInfoMessage>(tlsEcs.GlobalEntity())    \
-                .set_id(_err4);                                                                 \
+            response->mutable_error_message()->set_id(_err4);                                   \
             return;                                                                             \
         }                                                                                       \
     } while (0)

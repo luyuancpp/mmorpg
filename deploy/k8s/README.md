@@ -458,8 +458,8 @@ pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-all-down -ZonesConfigPath de
     ```text
     PeakShaving: gateway_rate_limit=on(-GatewayRateLimit auto) login_queue=on(-LoginQueue auto) profile=prod initial values (pending stress-test validation) zone=2000/s burst=5000 ip=5/s burst=20 cooldown=5000ms queue_capacity=5000/zone
     ```
-    常量表被改坏时 throw `内部错误:…`:限流阈值(rps < 1、burst < rps、冷却为负)在这一行之后、任何写操作之前就查;排队容量(不在 1..uint32)
-    要到生成 login ConfigMap 时才查,那时同一 zone 先部署的工作负载已经 apply 过了。
+    常量表被改坏时 throw `内部错误:…`:限流阈值(rps < 1、burst < rps、冷却为负,本次部署 gateway 且限流开时)与排队容量(不在 1..uint32,
+    本次部署 login 且排队开时)都在这一行之后、任何写操作之前就查;`go/login/etc/login.yaml` 缺 `Queue.*` 镜像键也在这里 throw(`生成 ConfigMap 失败:…`)。
     另有三条英文 WARNING,只告警、不阻断,只在本次确实部署对应服务时打;开头都是不含空格的锚点(控制台可能在空格处折行,按锚点 grep):
     - `[PeakShaving]GatewayRateLimit=off`:非 dev 档关了限流;
     - `[PeakShaving]LoginQueue=off`:非 dev 档关了排队;
@@ -681,7 +681,7 @@ friend 与 trade 同形:全局池服务(`$GoSvcCatalogue.friend`,`Global = $true
   前置与集群外口径(`client-rpc-router` 已部署、集群外玩家需 `-ClientEntryMode external`)相同,以 `"0"` 回退运行时仍不可达。
 - **工作负载**:`manifests/go-svc/friend.yaml` = Service `friend`(50400)+ Deployment(`replicas: 2`、podAntiAffinity、grpc 探针、
   `preStop sleep 5`、Downward API `POD_IP`、metrics 9180)+ 同文件 PDB `friend-pdb`。ConfigMap `go-svc-friend-config` 由脚本生成。
-  **不挂 snowflake 卷**:friend 不发号,好友 / 申请 / 黑名单的主键都是 player_id 组合键。
+  **不挂 snowflake 卷**:好友边/拉黑仍用玩家对主键；2026-10-15 起申请另有唯一 `request_id`，由 data_service 的 `friend_request` 号段生成，失败不回退 Snowflake。
 - **端口五处登记必须逐字一致**:`go_services.ps1` 的 `Port = 50400`、`go/friend/etc/friend.yaml` 的 `ListenOn`、
   `k8s_deploy.ps1` 的 `$GoSvcCatalogue.friend.Port`、生成的 ConfigMap 里的 `ListenOn`、本 manifest 的 Service / `containerPort` / 探针。
 - **建库**:`mmorpg_friend` 只登记在 `deploy/mysql-init/00_init_zone_dbs.sql`,`infra-up` 的 `mysql-init-sql` ConfigMap 原样带入。
@@ -692,6 +692,8 @@ friend 与 trade 同形:全局池服务(`$GoSvcCatalogue.friend`,`Global = $true
   按 `proto/friend/friend_table.proto` 建 `friend` / `friend_request` / `friend_block` / `friend_capacity` 四张表。
   目录条目用 `MigrateJob = "friend-migrate.yaml"` 登记。`WAIT_MYSQL_TIMEOUT_SECONDS=150` 与 `trade-migrate.yaml` 取同一个值,
   同样与 `$GoSvcMigrateJobMinWaitSeconds`(300)联动,改其一必须核对另一个。
+- **全服 TiDB 入口（2026-10-15）**:staging/prod 部署全局 friend 时必须显式传 `-FriendTiDBHost "<同一权威入口>:4000"`，全部副本连接同一逻辑库，服务启动验证真实 TiDB，并为每个物理连接固定 RC 与 pessimistic。脚本不创建 TiDB 集群/库/账号，须先准备 `mmorpg_friend` 与注入账号权限。dev 不传则保留 infra MySQL，显式传入也会打开 `RequireTiDB` 验证；`zone-up` / `all-up -SkipInfra` 不部署 friend，不要求此参数。不得把按 zone 独立库拼接当成全服强一致。
+- **存量申请升级**:先停旧 friend 写者，再用新二进制 `-migrate`。新增 `request_id` 列可自动补齐，旧表的普通索引不会自动新建；缺索引时迁移明确 exit 4，必须审阅当前 proto 生成的 `friend_request` 索引定义、补建后再迁移到 exit 0，禁止跳过门禁。当前生成名为 `idx_friend_request_2`、列为 `request_id`；新建库由 proto 一次生成。旧 pending 的零 ID 由新服务安全补号，保留原时间，客户端须带非零 request_id；旧业务写者与新协议不能混跑。实际 TiDB 8.5.2 的旧表升级/缺索引拒绝/补索引再迁移已验证，见 `docs/design/friend-port-20260918.md` §9.6。
 - **⚠ 旧建表路径已退役**:`deploy/mysql-init/guild_friend_tables.sql` 过去在 initdb 里把 friend 三张表建进**共享库 `mmorpg`**(= `MYSQL_DATABASE`;该文件没有 `USE` 语句,initdb 按 `--database=$MYSQL_DATABASE` 落库,**不是 `zone_N_db`**),
   还带一段 `friend_capacity` 回填与 `friend_capacity_backfill_v1` 门禁。2026-09-18 两段一起删除(D-10 修订)。
   **不要把它们加回去**:两处都建表 → schemamigrate 把 initdb 建出来的旧结构判成类型漂移(退出码 4,需人工),friend 起不来。
@@ -701,12 +703,8 @@ friend 与 trade 同形:全局池服务(`$GoSvcCatalogue.friend`,`Global = $true
   缓存键已带 hash tag、Cluster 安全;但 staging/prod 若要给它配独立实例,该实例必须 `maxmemory-policy=noeviction` ——
   共享库是 `allkeys-lfu`,缓存被淘汰只是多打一次 MySQL,**配额 / 限流 key 被淘汰等于限流静默失效**。
   跨运行时契约 key `player:session:{id}`(判好友在不在线)永远走共享库,共享库不许集群化(C++ 侧 hiredis 没有集群客户端)。
-- **TiDB BR 按库恢复清单**:`mmorpg_friend` 与 `mmorpg_trade` 一样是独占库,`--all-databases` 的备份 CronJob
-  (`manifests/infra/mysql-backup-cronjob.yaml`)天然覆盖它,**备份侧不用改**;要改的是**恢复侧的清单** ——
-  按库恢复时必须把 `mmorpg_friend` 一起列上,否则恢复完 friend 是空库,玩家的好友关系凭空消失且没有任何报错。
-  恢复顺序上它没有 `id_segment` 那种水位约束,但见上面「恢复全局库」一条的孤儿边提醒。
-- **连接数**:`MySQL.MaxOpenConn`(20)× 2 个副本计入共用 MySQL 的总账(「全局」一项),`friend-migrate` Job 的连接算在运维余量里;
-  总账与 `max_connections` 的取值见下面「MySQL 连接总账」一节。
+- **备份与恢复**:开发 MySQL 上的 `mmorpg_friend` 由既有 `mysql-backup-cronjob.yaml` 的 mysqldump 覆盖；迁到独立 TiDB 后该 Job 不会覆盖新入口，须另按 TiDB BR/PITR 方案纳入备份与演练，不能沿用“备份侧不用改”的旧结论。恢复清单必须包含好友库及全局 `friend_request` 号段水位；跨库号段不会自动从消费表推高，水位绝不能回退到已发 ID。禁止单独回档号段导致旧请求 ID 被复用，并核对玩家引用的孤儿边。生产备份/恢复尚未在本批部署或演练。
+- **连接数**:开发共库时 `MySQL.MaxOpenConn`(20)× 2 个副本仍计既有 MySQL 总账，迁移 Job 算运维余量；独立 TiDB 时另核连接与故障预算，现有 MySQL 总账保守保留该份额，不能据此认定 TiDB 容量已验收。
 - **Kafka 命令 topic 代号不一致(存量全仓缺口,2026-09-28 已修,下面保留原记录)**:friend 的 S2C 推送经 `gate-cmd_g<N>` 到目标 zone 的 gate。
   `bin/etc/base_deploy_config.yaml` 当前是 `CommandTopicGeneration: 2`,`kafka-topic-init` 预建 `gate-cmd_g2`、C++ gate 也消费 g2;
   而 **没有任何 go-svc manifest 注入 `KAFKA_COMMAND_TOPIC_PARTITIONS` / `KAFKA_COMMAND_TOPIC_GENERATION`**,

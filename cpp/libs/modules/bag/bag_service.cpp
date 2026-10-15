@@ -192,8 +192,9 @@ uint32_t BagService::AddItems(
 		return PrintStackAndReturnError(kInvalidParameter);
 	}
 
-	// ── Block checks first (transactional: reject whole batch if any blocked) ──
-	for (const auto &[configId, count] : itemsToAdd)
+	// 同一批按配置号升序预检、占格和记流水,不依赖请求哈希表的历史插入顺序。
+	const auto ordered = SortedByConfigId(itemsToAdd);
+	for (const auto &[configId, count] : ordered)
 	{
 		if (GainBlockService::IsGainBlocked(GainBlockService::GainType::kItem, configId))
 		{
@@ -225,7 +226,7 @@ uint32_t BagService::AddItems(
 	RETURN_ON_ERROR(reserved);
 
 	// ── Apply per config: Bag::AddItem → transaction log + anomaly ───────
-	for (const auto &[configId, count] : itemsToAdd)
+	for (const auto &[configId, count] : ordered)
 	{
 		InitItemParam param;
 		param.itemPBComp.set_config_id(configId);

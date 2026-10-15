@@ -55,26 +55,41 @@ spec:
               查 data_service 日志的 `STOPPED:` 行(点名了哪个 guid / 哪批、哪个 offset 没提交)与 `consumers not started`;
               DB 故障先修库,消费者会在冷却后从断点自动续消费(宁可积压不丢)。积压期间盯住 DataServiceAuditRetentionGap。
 
-        # 保留期已经删掉了还没消费的审计消息:**数据已丢**。所有实例报同一个组的值,取 max。
-        # for: 2m —— 探针先读 committed 后读 start,保留期恰在两次读之间推进时会有一次瞬时假阳性;真缺口在消费者越过之前持续存在。
-        # 注意:消费者越过缺口并提交后本 gauge 会自行归零,告警随之 resolve —— 「丢了多少」以日志为准,不以 gauge 为准。
-        # 日志口径(kafka-go v0.4.47,已按 tag 源码核对;data_service 日志前缀 `[kafka-go]`):
+        # 保留期已经删掉了还没消费的审计消息:**数据已丢**。所有实例报同一个组的值,按 consumer 取 max(与本文件其它规则一致;
+        # 单个实例探针失明留下的陈值由按实例触发的 DataServiceAuditLagProbeBlind 点名)。
+        # 丢数据类告警对任何一次出现都要响(负责人 2026-10-15 拍板):对 gauge 取窗口最大值、for: 0m,不再等缺口持续。
+        # 以前的 `for: 2m` 下,缺口存续不足 2 分钟(删除发生在 STOPPED 冷却后重建前不久,重建后一提交 gauge 就归零)时不响,只剩日志。
+        # 窗口取 15m,依据如下(待压测 / 故障演练确认,做法见 runbook §7):
+        #   - 下限 = 规则评估间隔 + 探针间隔:被抓到的正值样本至少要落进一次规则评估的回看范围(需 ≥ 评估间隔,外加抓取写入的延迟),
+        #     再加一个探针间隔,吸收探针、抓取、评估三者相位不同步的余量。本组 interval 30s;探针 Kafka.LagProbeIntervalMs 默认 30s、
+        #     可配上限 600000ms(10 分钟),下限最大约 10.5 分钟,15m 在整个可配范围内都满足。
+        #   - 窗口同时决定缺口消失后告警还保持 firing 多久(约 15 分钟)。它要长于 Alertmanager 的 group_wait 与 group_interval
+        #     (默认 30s / 5m,凭记忆、未核实;本仓不含 Alertmanager 配置):在 Alertmanager 下一次发送之前就 resolve 的告警可能不发通知。
+        #   - 与本文件另一条「任何一次出现就响」的规则 DataServiceAuditMessagesSkipped 的 [15m] 一致。
+        # 前提:抓取间隔 ≤ LagProbeIntervalMs(ServiceMonitor 不在本仓,取值未核实),否则只保持一轮探针的正值可能一个样本都没被抓到。
+        # 代价:
+        #   - 探针先读 committed 后读 start 的瞬时假阳性不再被 for 滤掉,也会呼叫。它只在消费者正读着分区里最老的段、
+        #     该段恰在探针两次读之间被删时出现 —— 那一刻积压已经在删除线上;按丢数据处置,用下面的日志确认条数(可能为 0)。
+        #   - 消费者越过缺口并提交后 gauge 自行归零,告警还会再挂约 15 分钟;resolve 只说明窗口里不再有正值,不代表数据找回。
+        # 仍会漏的:缺口整段落在两次探针之间(短于一个探针间隔;多实例各自探测、相位不同时采样更密,但不保证)时 gauge 从未为正,
+        # 本告警无从触发,只剩日志 —— 所以积压事故收尾时不论告警响没响都按下面的口径 grep 一遍。
+        # 「丢了多少」以日志为准,不以 gauge 为准。日志口径(kafka-go v0.4.47,已按 tag 源码核对;data_service 日志前缀 `[kafka-go]`):
         #   - 消费者运行中被保留期追上:`skipping from offset X to Y (N messages)` 行,N 是精确条数;
         #   - 分区 reader (重新)初始化时(进程重启 / STOPPED 冷却后重建 / rebalance / 断线重连)kafka-go **静默**跳到日志起点,没有上面那一行,
         #     看同一分区的 `starting at offset A` 与 `seeking to offset B` 两行(A 非负且 B > A 时,B − A 即被跳过的条数)。
-        # 已知缺口:后一条路径上缺口存续不足 2 分钟(删除发生在消费者重建前不久)时本告警不会响,只剩日志。
-        # 改成不带 for 的单调计数器会改本告警的语义,是负责人拍板项(与 G2a 规格 Q-1 相关),这里没有改。
         - alert: DataServiceAuditRetentionGap
           expr: |
-            max by (consumer) (data_service_kafka_consumer_retention_gap_messages) > 0
-          for: 2m
+            max by (consumer) (max_over_time(data_service_kafka_consumer_retention_gap_messages[15m])) > 0
+          for: 0m
           labels:
             severity: critical
           annotations:
             summary: "审计 topic 的保留期删掉了 {{ $labels.consumer }} 还没消费的消息(审计数据已丢)"
             description: >-
-              约 {{ $value | printf "%.0f" }} 条未消费消息已被 broker 的 retention(retention.ms 或每分区 retention.bytes)删除
-              (探针采样值,是下界;data_service 日志里另有 `AUDIT DATA LOST` 行)。精确条数在 data_service 日志里 grep `[kafka-go]`:
+              过去 15 分钟探针采到的缺口最大约 {{ $value | printf "%.0f" }} 条:这些未消费消息已被 broker 的 retention
+              (retention.ms 或每分区 retention.bytes)删除(采样值,是下界;data_service 日志里另有 `AUDIT DATA LOST` 行)。
+              本告警对任何一次采到的缺口都响,缺口消失后还会保持约 15 分钟,resolve 不代表数据找回。
+              精确条数在 data_service 日志里 grep `[kafka-go]`:
               消费者运行中被追上时是 `skipping from offset X to Y (N messages)` 行;消费者停机 / 重启 / rebalance 后重建时
               kafka-go 静默跳到日志起点,没有那一行,看同一分区的 `starting at offset A` 与 `seeking to offset B` 两行
               (A 非负且 B 大于 A 时,两者之差即丢失条数)。

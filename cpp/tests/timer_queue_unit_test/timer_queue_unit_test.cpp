@@ -19,9 +19,7 @@
 using namespace muduo;
 using namespace muduo::net;
 
-// 所有直接交给 EnTT 存储的生产 TimerTaskComp 组件都必须使用稳定地址。
-// 内嵌组件需要独立声明；EnTT 不会通过包装成员传播
-// TimerTaskComp::in_place_delete。
+// 保留现有直接组件及技能包装的地址稳定性;下方另测无此标记的包装也能安全搬移。
 static_assert(entt::component_traits<TimerTaskComp>::in_place_delete);
 static_assert(entt::component_traits<CastingTimerComp>::in_place_delete);
 static_assert(entt::component_traits<RecoveryTimerComp>::in_place_delete);
@@ -33,6 +31,11 @@ class GameTimerTest
 public:
 	GameTimerTest(std::atomic<int>& afterCount, std::atomic<int>& everyCount)
 		: afterCount_(afterCount), everyCount_(everyCount) {}
+	// 本夹具的回调绑定 this,因此宿主地址固定。
+	GameTimerTest(const GameTimerTest&) = delete;
+	GameTimerTest& operator=(const GameTimerTest&) = delete;
+	GameTimerTest(GameTimerTest&&) = delete;
+	GameTimerTest& operator=(GameTimerTest&&) = delete;
 
 	void RunAfter()
 	{
@@ -85,24 +88,7 @@ TEST(TimerQueueTest, ComponentStaysSmall)
 		sizeof(TimerCallback));
 	std::printf("[  SIZEOF  ]   alignof              = %zu\n", alignof(TimerTaskComp));
 
-	// TimerId(16) + generation(4) + armed(1) + 3 bytes of tail padding = 24.
-	//
-	// The callback used to be a member -- 64 bytes on MSVC, 32 on libstdc++ --
-	// which made this 88 and 56 respectively. It now lives in the closure
-	// muduo's Timer holds, so the component is the same size on both
-	// toolchains and carries no std::function at all.
-	//
-	// Upper bound rather than equality: a smaller layout on some future ABI is
-	// not a failure. Growth is, because this is a per-entity component and
-	// entities carry several of them (casting / recovery / channel / buff).
-	// Shrinking `generation` would not help -- alignment forces the tail to 8
-	// bytes whether it holds a uint64 or a uint32 plus a bool.
-	//
-	// 2026-08 起多了 `aliveToken`(std::shared_ptr,一对指针 = 16 字节):同批到期的
-	// 定时器里,前一个回调销毁了后一个的宿主后,后者的闭包仍会带着已释放的 this 进
-	// OnTimer —— generation 住在那块内存里,读它就已经是 use-after-free;闭包只持
-	// weak_ptr、开火先 lock() 才能挡住。组件注释原话:correctness over 16 bytes。
-	// 所以上界 = TimerId + 8 字节尾 + 一个 shared_ptr;再长仍然红。
+	// 组件只持有一个 shared_ptr<State>,回调由 muduo 持有;保留原体积上界防止膨胀。
 	EXPECT_LE(sizeof(TimerTaskComp),
 	          sizeof(TimerId) + sizeof(std::uint64_t) + sizeof(std::shared_ptr<void>));
 }
@@ -153,16 +139,108 @@ TEST(TimerQueueTest, MoveAndCopyAreSafe)
 	source.RunAfter(60.0, []() {});   // far enough out that it never fires here
 	EXPECT_TRUE(source.IsActive());
 
-	// A copy never inherits the timer: the callback captures the source's
-	// `this`, so sharing it would leave a dangling pointer behind.
+	// 复制不共享源对象的计时所有权。
 	TimerTaskComp copied(source);
 	EXPECT_FALSE(copied.IsActive());
 
-	// A move cancels the source rather than transferring the timer, for the
-	// same reason -- the destination lives at a different address.
+	// 移动转交已武装的状态,与组件地址无关。
 	TimerTaskComp moved(std::move(source));
-	EXPECT_FALSE(moved.IsActive());
+	EXPECT_TRUE(moved.IsActive());
 	EXPECT_FALSE(source.IsActive());
+}
+
+TEST(TimerQueueTest, MovedArmedTimerFiresOnceIntoNewOwner)
+{
+	EventLoop loop;
+	int fires = 0;
+	TimerTaskComp source;
+	const auto now = Timestamp::now();
+	source.RunAt(addTime(now, -2.0), [&fires] { ++fires; });
+	TimerTaskComp moved(std::move(source));
+	// 两个时刻都在过去,同批处理且开火在退出之前,不依赖 sleep 或调度速度。
+	loop.runAt(addTime(now, -1.0), [&loop] { loop.quit(); });
+	loop.loop();
+	EXPECT_EQ(1, fires);
+	EXPECT_FALSE(source.IsActive());
+	EXPECT_FALSE(moved.IsActive());
+}
+
+TEST(TimerQueueTest, MoveAssignCancelsDestinationOwnTimer)
+{
+	EventLoop loop;
+	int sourceFires = 0;
+	int destinationFires = 0;
+	TimerTaskComp source;
+	TimerTaskComp destination;
+	const auto now = Timestamp::now();
+	destination.RunAt(addTime(now, -3.0), [&destinationFires] { ++destinationFires; });
+	source.RunAt(addTime(now, -2.0), [&sourceFires] { ++sourceFires; });
+	destination = std::move(source);
+	ASSERT_TRUE(destination.IsActive());
+	EXPECT_FALSE(source.IsActive());
+	loop.runAt(addTime(now, -1.0), [&loop] { loop.quit(); });
+	loop.loop();
+	EXPECT_EQ(1, sourceFires);
+	EXPECT_EQ(0, destinationFires);
+}
+
+namespace {
+struct NoPinTimerComp
+{
+	TimerTaskComp timer;
+};
+static_assert(!entt::component_traits<NoPinTimerComp>::in_place_delete);
+} // namespace
+
+TEST(TimerQueueTest, SwapAndPopWithoutInPlaceDeleteKeepsSurvivorTimer)
+{
+	EventLoop loop;
+	entt::registry registry;
+	const auto removed = registry.create();
+	const auto survivor = registry.create();
+	int removedFires = 0;
+	int survivorFires = 0;
+	const auto now = Timestamp::now();
+	registry.emplace<NoPinTimerComp>(removed).timer.RunAt(addTime(now, -3.0), [&removedFires] { ++removedFires; });
+	registry.emplace<NoPinTimerComp>(survivor).timer.RunAt(addTime(now, -2.0), [&survivorFires] { ++survivorFires; });
+	registry.destroy(removed);
+	ASSERT_TRUE(registry.get<NoPinTimerComp>(survivor).timer.IsActive());
+	loop.runAt(addTime(now, -1.0), [&loop] { loop.quit(); });
+	loop.loop();
+	EXPECT_EQ(0, removedFires);
+	EXPECT_EQ(1, survivorFires);
+	EXPECT_FALSE(registry.get<NoPinTimerComp>(survivor).timer.IsActive());
+}
+
+TEST(TimerQueueTest, MovedFromObjectDestructionDoesNotCancel)
+{
+	EventLoop loop;
+	int fires = 0;
+	const auto now = Timestamp::now();
+	auto source = std::make_unique<TimerTaskComp>();
+	source->RunAt(addTime(now, -2.0), [&fires] { ++fires; });
+	TimerTaskComp destination(std::move(*source));
+	source.reset();
+	ASSERT_TRUE(destination.IsActive());
+	loop.runAt(addTime(now, -1.0), [&loop] { loop.quit(); });
+	loop.loop();
+	EXPECT_EQ(1, fires);
+}
+
+TEST(TimerQueueTest, CallbackCanDestroyItsOwner)
+{
+	EventLoop loop;
+	int fires = 0;
+	const auto now = Timestamp::now();
+	auto owner = std::make_unique<TimerTaskComp>();
+	owner->RunAt(addTime(now, -2.0), [&owner, &fires] {
+		owner.reset();
+		++fires;
+	});
+	loop.runAt(addTime(now, -1.0), [&loop] { loop.quit(); });
+	loop.loop();
+	EXPECT_EQ(1, fires);
+	EXPECT_EQ(nullptr, owner);
 }
 
 TEST(TimerQueueTest, EnTTDeletePreservesRawTimerOfSurvivingEntity)
@@ -181,9 +259,7 @@ TEST(TimerQueueTest, EnTTDeletePreservesRawTimerOfSurvivingEntity)
 	ASSERT_TRUE(removedTimer.IsActive());
 	ASSERT_TRUE(survivorTimer.IsActive());
 
-	// `removed` 先插入，因此不是紧凑存储中的末尾组件。若未启用原地删除，
-	// EnTT 会把 `survivor` 移入这个空位，而 TimerTaskComp 必需的移动语义
-	// 会取消 survivor 的定时器。
+	// 保留直接存 TimerTaskComp 时的地址稳定契约;无原地删除的正确性由上面的包装用例覆盖。
 	registry.remove<TimerTaskComp>(removed);
 
 	auto& preserved = registry.get<TimerTaskComp>(survivor);

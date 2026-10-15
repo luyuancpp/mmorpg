@@ -37,6 +37,23 @@ void GridSystem::GetCurrentAndNeighborGridIds(const Hex& hex, GridSet& gridSet) 
     GetNeighborGridIds(hex, gridSet);
 }
 
+namespace {
+// 空间查询是只读路径,不得改变场景实体的组件集合。
+// 格子表在首次真实入格时创建;活场景没有表表示尚无入格记录,正常返回空。
+// 场景失效仍是错误,返回 nullptr,由调用方按"查不到任何实体"处理。
+// 场景句柄必须先 valid() 再 try_get:SceneEntityComp 里存的是 sceneRegistry 的句柄,场景销毁后可能已陈旧。
+const SceneGridListComp* FindSceneGridList(entt::entity actor, SceneEntity sceneEntity)
+{
+    if (!tlsEcs.sceneRegistry.valid(sceneEntity)) {
+        LOG_ERROR << "Scene not found for entity " << entt::to_integral(actor)
+                  << ", scene " << entt::to_integral(sceneEntity);
+        return nullptr;
+    }
+
+    return tlsEcs.sceneRegistry.try_get<SceneGridListComp>(sceneEntity);
+}
+}
+
 void GridSystem::GetEntitiesInGridAndNeighbors(entt::entity entity, EntityUnorderedSet& entities, bool excludingSelf)
 {
     if (!tlsEcs.actorRegistry.valid(entity)) {
@@ -54,15 +71,18 @@ void GridSystem::GetEntitiesInGridAndNeighbors(entt::entity entity, EntityUnorde
         return;
     }
 
-    auto& gridList = tlsEcs.sceneRegistry.get_or_emplace<SceneGridListComp>(sceneComponent->sceneEntity);
-    
+    const auto* gridList = FindSceneGridList(entity, sceneComponent->sceneEntity);
+    if (gridList == nullptr) {
+        return;
+    }
+
     GridSet grids;
     GetCurrentAndNeighborGridIds(*hexPosition, grids);
 
     for (const auto& gridId : grids)
     {
-        auto gridIt = gridList.find(gridId);
-        if (gridIt == gridList.end())
+        auto gridIt = gridList->find(gridId);
+        if (gridIt == gridList->end())
         {
             continue;
         }
@@ -96,15 +116,18 @@ void GridSystem::GetEntitiesInViewAndNearby(entt::entity entity, EntityUnordered
         return;
     }
 
-    auto& gridList = tlsEcs.sceneRegistry.get_or_emplace<SceneGridListComp>(sceneComponent->sceneEntity);
-    
+    const auto* gridList = FindSceneGridList(entity, sceneComponent->sceneEntity);
+    if (gridList == nullptr) {
+        return;
+    }
+
     GridSet inViewGrids;
     GetCurrentAndNeighborGridIds(*hexPosition, inViewGrids);
 
     for (const auto& gridId : inViewGrids)
     {
-        auto gridIt = gridList.find(gridId);
-        if (gridIt == gridList.end())
+        auto gridIt = gridList->find(gridId);
+        if (gridIt == gridList->end())
         {
             continue;
         }

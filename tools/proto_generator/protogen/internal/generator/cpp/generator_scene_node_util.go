@@ -68,25 +68,6 @@ func IsSceneNodeReceivedPlayerResponseHandler(methodList *internal.RPCMethods) b
 	)
 }
 
-// IsSceneNodeReceivedProtocolResponseHandler checks if the handler processes protocol responses received by the SceneNode.
-// (SceneNode acts as client, handling protocol-related responses from external services.)
-func IsSceneNodeReceivedProtocolResponseHandler(methodList *internal.RPCMethods) bool {
-	return checkFirstMethod(methodList,
-		func(m *internal.MethodInfo) bool {
-			return m.CcGenericServices()
-		},
-		func(m *internal.MethodInfo) bool {
-			return !isSceneOwnedMethod(m)
-		},
-		func(m *internal.MethodInfo) bool {
-			return !internal.IsClientProtocolService(m.ServiceDescriptorProto)
-		},
-		func(m *internal.MethodInfo) bool {
-			return !internal.IsPlayerService(m.ServiceDescriptorProto)
-		},
-	)
-}
-
 // IsSceneNodeGrpcHandler checks if the handler is a gRPC service targeting the Scene node.
 // Matches proto files that:
 //   - use gRPC (not cc_generic_services)

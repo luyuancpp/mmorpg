@@ -1,13 +1,16 @@
 ﻿#pragma once
 
 #include "entt/src/entt/entity/entity.hpp"
+#include "engine/core/utils/registry/scene_entity.h"
 
 #include <cstdint>
 
 class PlayerSceneSystem
 {
 public:
-	static void HandleEnterScene(entt::entity player, entt::entity scene);
+	// true 表示已绑定目标场景(含幂等命中);通知中销毁/重绑或输入无效返回 false。
+	// 调用方只有成功后才可写登录态、触发后续落地逻辑。
+	[[nodiscard]] static bool HandleEnterScene(entt::entity player, SceneEntity scene);
 
 	// RequestEnterMirrorScene asks SceneManager to create a mirror of the
 	// player's current scene and then route the player into it. The

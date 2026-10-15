@@ -7,12 +7,8 @@
 #include "gate_codec.h"
 #include "gate_security.h"
 #include "node/system/node/node.h"
-#include "network/rpc_client.h"
+#include "network/rpc_channel_stats.h"
 #include "network/rpc_controller.h"
-#include "thread_context/node_context_manager.h"
-#include "rpc/service_metadata/scene_service_metadata.h"
-#include "rpc/service_metadata/gate_service_service_metadata.h"
-#include "proto/common/base/message.pb.h"
 
 #include "proto/common/component/player_network_comp.pb.h"
 #include "network/broadcast_target_codec.h"
@@ -55,6 +51,37 @@ namespace
 				 << "Identity fence is inactive for such messages; this is logged once. "
 				 << "See docs/design/routing-identity-audit-20260908.md R13.";
 	}
+
+	// 源路由一族(Gate.RoutePlayerMessage / Gate.RouteNodeMessage,scene 侧的 RoutePlayerStringMsg /
+	// RouteNodeStringMsg)已退役,只做显式拒绝。理由见 docs/design/muduo-rpc-channel.md §9.3:
+	//   - 全仓没有发起端(C++ 只有这几个 handler 互相转发);RoutePlayerMessage(74)/ RoutePlayerStringMsg(81)
+	//     不在 IsClientMessageId 里,客户端不可达;
+	//   - 它是「源路由 + 逐跳同步镜像应答」:应答在下游完成之前就回给上游且没有错误字段,正是 A→B→C 的反例;
+	//   - 旧的 gate 终点分支 O(N) 扫会话、绕过身份栅栏,还把 body 里的 ClientRequest.id 当作 MessageContent.id
+	//     写进客户端 socket,可能被客户端当成某次请求的回包;
+	//   - 跨节点玩家消息的权威通道是 Kafka 与持久收件箱(cross_scene_player_messaging.md、reliable-player-inbox-20261014.md)。
+	// SetFailed 之后框架回 RPC_ERROR(HANDLER_FAILED),调用方得到 kRemoteFailed;这里不转发、不写客户端 socket、
+	// 不填 response。proto 方法暂不删:message_id 还没有墓碑,删了会被发号器回收给新方法(§9.3 末段)。
+	//
+	// occurrences 由各 handler 的函数内 static 持有:handler 只在节点唯一的 EventLoop 线程上派发,不需要原子。
+	// 日志按 ShouldLogRpcEvent 采样(前 8 条逐条,之后每 1024 条一条),防止对端刷包把日志打爆。
+	void RejectDeprecatedRouteCall(::google::protobuf::RpcController *controller, const char *method,
+								   uint64_t &occurrences)
+	{
+		controller->SetFailed(std::string(method) +
+							  " is deprecated: no initiator; cross-node player messages go through Kafka / reliable inbox");
+		++occurrences;
+		if (!ShouldLogRpcEvent(occurrences))
+		{
+			return;
+		}
+		const auto &conn = RpcController::From(controller).conn();
+		LOG_WARN << "Rejected deprecated RPC " << method
+				 << ": no initiator; cross-node player messages go through Kafka / reliable inbox"
+				 << " (docs/design/muduo-rpc-channel.md 9.3). peer="
+				 << (conn ? conn->peerAddress().toIpPort() : std::string("<unknown>"))
+				 << " occurrences=" << occurrences;
+	}
 } // namespace
 
 ///<<< END WRITING YOUR CODE
@@ -73,7 +100,7 @@ void GateHandler::PlayerEnterGameNode(::google::protobuf::RpcController* control
 	// Resolve protocol node_id -> local registry entity before binding the session.
 	if (const auto sceneNodeEntity = NodeUtils::FindNodeEntityByNodeId(SceneNodeService, request->scene_node_id()); sceneNodeEntity)
 	{
-		sessionIt->second.SetEntityId(SceneNodeService, entt::to_integral(*sceneNodeEntity));
+		sessionIt->second.SetNodeEntity(SceneNodeService, *sceneNodeEntity);
 	}
 	else
 	{
@@ -135,6 +162,9 @@ void GateHandler::RouteNodeMessage(::google::protobuf::RpcController* controller
 	::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
+	// 已退役:显式拒绝,不再转发(见上方 RejectDeprecatedRouteCall 与 docs/design/muduo-rpc-channel.md §9.3)。
+	static uint64_t rejectedCalls = 0;
+	RejectDeprecatedRouteCall(controller, "Gate.RouteNodeMessage", rejectedCalls);
 	///<<< END WRITING YOUR CODE
 }
 
@@ -143,82 +173,10 @@ void GateHandler::RoutePlayerMessage(::google::protobuf::RpcController* controll
 	::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
-	if (!request || !response) {
-		return;
-	}
-
-	response->set_body(request->body());
-	response->mutable_player_info()->CopyFrom(request->player_info());
-	response->mutable_node_list()->CopyFrom(request->node_list());
-
-	const Guid playerId = request->player_info().player_id();
-	if (request->node_list_size() == 0) {
-		auto targetSessionIt = tlsSessionManager.sessions().end();
-		for (auto it = tlsSessionManager.sessions().begin(); it != tlsSessionManager.sessions().end(); ++it) {
-			if (it->second.playerId == playerId) {
-				targetSessionIt = it;
-				break;
-			}
-		}
-
-		if (targetSessionIt == tlsSessionManager.sessions().end()) {
-			LOG_WARN << "RoutePlayerMessage: target player session not found on gate, player_id=" << playerId;
-			return;
-		}
-
-		ClientRequest routedClientRequest;
-		if (!routedClientRequest.ParseFromString(request->body())) {
-			LOG_ERROR << "RoutePlayerMessage: failed to parse ClientRequest body, player_id=" << playerId;
-			return;
-		}
-
-		MessageContent outbound;
-		outbound.set_id(routedClientRequest.id());
-		outbound.set_message_id(routedClientRequest.message_id());
-		outbound.set_serialized_message(routedClientRequest.body());
-		if (const auto conn = targetSessionIt->second.conn.lock())
-		{
-			GetGateCodec().send(conn, outbound);
-		}
-		return;
-	}
-
-	RoutePlayerMessageRequest nextRequest(*request);
-	nextRequest.mutable_node_list()->DeleteSubrange(0, 1);
-
-	const auto& nextNode = request->node_list(0);
-	// node_id 是**业务节点号**,不是 entt 实体整数。uuid 主键重构之后两者不再相等,
-	// 直接 `entt::entity{node_id}` 要么撞不上任何有效槽位(消息静默丢失),要么
-	// 更糟 —— 撞上一个恰好有效但完全无关的节点实体,把玩家消息路由到错误的节点。
-	// 全仓其他地方都走 FindNodeEntityByNodeId,这里是唯一漏网的裸转换。
-	const auto nextNodeEntityOpt = NodeUtils::FindNodeEntityByNodeId(nextNode.node_type(), nextNode.node_id());
-	if (!nextNodeEntityOpt) {
-		LOG_ERROR << "RoutePlayerMessage: next node not found, node_type=" << nextNode.node_type()
-				  << ", node_id=" << nextNode.node_id() << ", player_id=" << playerId;
-		return;
-	}
-	const entt::entity nextNodeEntity = *nextNodeEntityOpt;
-	auto& nextRegistry = tlsNodeContextManager.GetRegistry(nextNode.node_type());
-
-	const auto *nextClient = nextRegistry.try_get<RpcClientPtr>(nextNodeEntity);
-	if (!nextClient || !*nextClient) {
-		LOG_ERROR << "RoutePlayerMessage: next node RpcClient missing, node_type=" << nextNode.node_type()
-				  << ", node_id=" << nextNode.node_id() << ", player_id=" << playerId;
-		return;
-	}
-
-	switch (nextNode.node_type()) {
-	case eNodeType::SceneNodeService:
-		(*nextClient)->CallRemoteMethod(SceneRoutePlayerStringMsgMessageId, nextRequest);
-		return;
-	case eNodeType::GateNodeService:
-		(*nextClient)->CallRemoteMethod(GateRoutePlayerMessageMessageId, nextRequest);
-		return;
-	default:
-		LOG_ERROR << "RoutePlayerMessage: unsupported next node_type=" << nextNode.node_type()
-				  << ", node_id=" << nextNode.node_id() << ", player_id=" << playerId;
-		return;
-	}
+	// 已退役:显式拒绝。不再按 node_list 转发、不再往客户端 socket 写 body、不再镜像 response
+	// (见上方 RejectDeprecatedRouteCall 与 docs/design/muduo-rpc-channel.md §9.3)。
+	static uint64_t rejectedCalls = 0;
+	RejectDeprecatedRouteCall(controller, "Gate.RoutePlayerMessage", rejectedCalls);
 	///<<< END WRITING YOUR CODE
 }
 
@@ -358,10 +316,10 @@ void GateHandler::GmGracefulShutdown(::google::protobuf::RpcController* controll
 	//
 	// 为什么签名寄生在 operator 字段而不是新增 proto 字段:
 	// GmGracefulShutdownRequest 只有 operator / reason 两个字段
-	// (proto/common/base/gm_admin.proto),而这条 RPC 走的是 muduo GameChannel
-	// 通道 —— CallMethod 传入的 controller 是本次调用的 RpcController(只携带所在
-	// 连接,**不是 metadata 边信道**,见 network/rpc_controller.h),done 仍恒为
-	// nullptr(见 GameChannel::ProcessMessage);改 proto 则要
+	// (proto/common/base/gm_admin.proto),而这条 RPC 走的是节点间 muduo RPC0 通道
+	// (RpcChannel)—— 框架传入的 controller 是本次派发的 RpcController(只携带所在
+	// 连接,**不是 metadata 边信道**,见 network/rpc_controller.h);done 是本次派发的
+	// 完成句柄(非空,可经 RpcDoneCallback::Adopt 接管),同样不携带调用方身份;改 proto 则要
 	// 连带重生成 C++/Go/Java 三侧产物,不在本次可验证范围内。信封格式与
 	// canonical 串的完整定义见 gate_security.h。
 	//
@@ -408,16 +366,19 @@ void GateHandler::GmGracefulShutdown(::google::protobuf::RpcController* controll
 	LOG_INFO << "GM graceful shutdown: closed " << count << " client sessions, scheduling node shutdown.";
 	response->set_affected_count(count);
 
-	// 应答由框架负责发送,这里**不能**碰 done。
+	// 应答由框架负责发送:本 handler 不调 done->Run(),也不接管 done(不调 RpcDoneCallback::Adopt)。
 	//
-	// GameChannel::ProcessMessage 调 CallMethod 时传进来的 done 恒为 nullptr,
-	// 应答是在 CallMethod 返回之后由框架序列化 response 再发出的。旧代码 `done->Run()`
-	// 是确定性的空指针解引用:GM 一敲停机,进程当场崩在这一行 —— 上面刚把所有客户端
-	// forceClose 了,而 gNode->Shutdown() 的租约注销与优雅收尾根本没机会跑,
-	// "优雅停机"退化成硬杀。
+	// RpcChannel::CallServiceMethod 在 handler 同步返回之后立即序列化 response 并回包
+	// (调用方带非 0 调用 id 时必回,affected_count 为 0 也回;id 为 0 是单向调用,永不回包)。
+	// 下面的 queueInLoop 依赖这条时序:回包先于 Shutdown。若改成 Adopt 延后完成,
+	// 回包就可能落在 Shutdown 之后,调用方只能等到超时或断连。
+	//
+	// 历史:旧框架传进来的 done 恒为 nullptr,旧代码 `done->Run()` 是确定性的空指针解引用 ——
+	// GM 一敲停机,进程当场崩在这一行,上面刚把所有客户端 forceClose 了,而 gNode->Shutdown()
+	// 的租约注销与优雅收尾根本没机会跑,"优雅停机"退化成硬杀。
 	//
 	// 停机延后到本次 RPC 应答发出之后:queueInLoop 排到当前事件循环回合末尾,
-	// 此时 CallMethod 已返回、应答已写进发送缓冲。
+	// 此时 handler 已返回、应答已写进发送缓冲。
 	gNode->GetLoop()->queueInLoop([] { gNode->Shutdown(); });
 	return;
 

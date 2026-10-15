@@ -1,4 +1,5 @@
 #include "transaction_log_system.h"
+#include "engine/core/type_define/player_guid_comp.h"
 
 #include <chrono>
 #include <muduo/base/Logging.h>
@@ -16,8 +17,8 @@
 
 uint64_t TransactionLogSystem::ResolvePlayerId(entt::entity player)
 {
-    const auto *guid = tlsEcs.actorRegistry.try_get<Guid>(player);
-    return (guid != nullptr && *guid != kInvalidGuid) ? *guid : 0;
+    const auto *guid = tlsEcs.actorRegistry.try_get<PlayerGuidComp>(player);
+    return (guid != nullptr && guid->value != kInvalidGuid) ? guid->value : 0;
 }
 
 // tx_id 走 txlog 种类的号段(docs/design/node-id-overhaul-plan-20260908.md §7.5 第 1 条):它只是

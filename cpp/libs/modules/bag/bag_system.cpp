@@ -13,6 +13,14 @@
 #include "table/code/item_table.h"
 #include "table/code/equipslot_table.h"
 
+std::vector<std::pair<uint32_t, uint32_t>> SortedByConfigId(const ItemCountMap &counts)
+{
+	std::vector<std::pair<uint32_t, uint32_t>> ordered(counts.begin(), counts.end());
+	std::sort(ordered.begin(), ordered.end(), [](const auto &lhs, const auto &rhs)
+			  { return lhs.first < rhs.first; });
+	return ordered;
+}
+
 // Bag 是桥层。凡是只需要一层就能回答的问题,这里都不实现,直接转给
 // store_(实例层)或 layout_(布局层);留在本文件里的,全是**同时需要
 // 两层**才成立的玩法规则。判断一段代码该不该待在这里,就看它是不是两层都碰。
@@ -111,23 +119,12 @@ ItemComp *Bag::GetItemCompByGuid(Guid guid)
 	return store_.Find(guid);
 }
 
-entt::entity Bag::GetItemByGuid(Guid guid)
-{
-	return store_.EntityOf(guid);
-}
-
 // ── 按槽位取物:布局层查 guid,实例层查内容 ───────────────────────────────
 
 ItemComp *Bag::GetItemCompByPos(uint32_t pos)
 {
 	const Guid guid = layout_->At(pos);
 	return guid != kInvalidGuid ? store_.Find(guid) : nullptr;
-}
-
-entt::entity Bag::GetItemByPos(uint32_t pos)
-{
-	const Guid guid = layout_->At(pos);
-	return guid != kInvalidGuid ? store_.EntityOf(guid) : entt::null;
 }
 
 // ── 容量预检:plan 问实例层,reserve 问布局层 ─────────────────────────────
@@ -150,7 +147,7 @@ uint32_t Bag::PlanInstances(const ItemCountMap &itemsToAdd, ItemCountMap *instan
 	// (两个 config 可能共用同一个部位,例如两件不同的手镯)。
 	std::size_t instancesNeeded = 0;
 	ItemCountMap instancesByConfig;
-	for (const auto &[configId, count] : itemsToAdd)
+	for (const auto &[configId, count] : SortedByConfigId(itemsToAdd))
 	{
 		LookupItemOrReturnError(configId);
 		const uint32_t maxStack = itemRow->max_stack_size();
@@ -386,7 +383,7 @@ uint32_t Bag::RemoveItems(const ItemCountMap &itemsToRemove,
 
 	// 扣数量是纯实例层操作:被抽光的堆 size 变 0 但实例保留,槽位也就跟着留着。
 	// 这与 RemoveItem(guid) 的"彻底销毁 + 释放槽位"是两回事。
-	for (const auto &[configId, count] : itemsToRemove)
+	for (const auto &[configId, count] : SortedByConfigId(itemsToRemove))
 	{
 		DrainOneConfig(configId, count, drainedOut);
 	}
@@ -478,7 +475,7 @@ uint32_t Bag::RemoveItemsClamped(const ItemCountMap &itemsToRemove,
 {
 	// 与上面唯一的差别:不做 CheckItemsAvailable。每个 config 扣多少由实例层
 	// 按实际持有夹紧,扣不满不算失败 —— 调用方比对请求量与回执总量就知道差了多少。
-	for (const auto &[configId, count] : itemsToRemove)
+	for (const auto &[configId, count] : SortedByConfigId(itemsToRemove))
 	{
 		DrainOneConfig(configId, count, drainedOut);
 	}
@@ -493,14 +490,18 @@ void Bag::DrainOneConfig(uint32_t configId, uint32_t count,
 	{
 		return;  // 0 数量的条目直接跳过,免得在回执里留一串 amount=0 的噪声
 	}
+	// 先扣槽位号最小的堆,同槽位按实例序;与 Java 战斗结算扣除规则一致。
+	// 只把中性的 rank 交给实例层,它不认识槽位。无槽位的异常实例排在最后。
+	const ItemStore::DrainRank bySlot = [this](Guid guid)
+		{ return static_cast<uint64_t>(layout_->SlotOf(guid)); };
 	if (drainedOut == nullptr)
 	{
-		store_.DrainStacks(configId, count);
+		store_.DrainStacks(configId, count, bySlot);
 		return;
 	}
 	// 实例层只知道 guid 与数量,config 由桥层补齐(分层:ItemStore 不向上暴露 config 语义)
 	std::vector<ItemStore::StackDrain> drains;
-	store_.DrainStacks(configId, count, &drains);
+	store_.DrainStacks(configId, count, bySlot, &drains);
 	for (const auto &drain : drains)
 	{
 		drainedOut->push_back(DrainedInstance{drain.guid, configId, drain.amount});
@@ -560,34 +561,32 @@ GuidVector Bag::DesiredOrder() const
 	// 期望顺序 (config 升序, size 降序):同种聚拢、组内满堆在前、零头落到该组
 	// 末尾,得到 [config A: 满..满 零头][config B: 满..满 零头]...
 	//
+	// 真正发生重排时,同 config / size 再按实例序打破平局;已整齐的布局仍保留玩家摆法。
 	// 这是**实例层数据**决定的顺序,布局层只负责按它落位 —— 于是"按什么排"
 	// 是一条可以随时改的玩法规则,不必碰任何一层。
-	struct OrderKey
-	{
-		Guid guid;
-		uint32_t configId;
-		uint32_t size;
-	};
-
-	std::vector<OrderKey> ordered;
+	std::vector<std::pair<Guid, const ItemComp *>> ordered;
 	ordered.reserve(store_.Size());
 	store_.ForEach([&ordered](Guid guid, const ItemComp &item)
-				   { ordered.emplace_back(OrderKey{guid, item.config_id(), item.size()}); });
+				   { ordered.emplace_back(guid, &item); });
 
-	std::sort(ordered.begin(), ordered.end(), [](const OrderKey &a, const OrderKey &b)
+	std::sort(ordered.begin(), ordered.end(), [](const auto &a, const auto &b)
 			  {
-				  if (a.configId != b.configId)
+				  if (a.second->config_id() != b.second->config_id())
 				  {
-					  return a.configId < b.configId; // 同种聚拢
+					  return a.second->config_id() < b.second->config_id(); // 同种聚拢
 				  }
-				  return a.size > b.size;             // 满堆在前、零头在后
+				  if (a.second->size() != b.second->size())
+				  {
+					  return a.second->size() > b.second->size(); // 满堆在前、零头在后
+				  }
+				  return ItemStore::AcquiredBefore(*a.second, *b.second);
 			  });
 
 	GuidVector order;
 	order.reserve(ordered.size());
 	for (const auto &key : ordered)
 	{
-		order.push_back(key.guid);
+		order.push_back(key.first);
 	}
 	return order;
 }
@@ -663,7 +662,7 @@ bool Bag::MergeAndCompact(std::vector<DestroyedInstance> *destroyedOut, CompactP
 	// ① 合并同种未满堆(纯实例层)。被合并空的堆 size 变 0,连同下面②一起回收。
 	store_.MergePartialStacks();
 
-	// ② 回收所有 size==0 的实例 —— 一次扫描,不区分来路:
+	// ② 按实例序回收所有 size==0 的实例。空堆只回收、不参与合并,不区分来路:
 	//      * ① 刚清空的可叠加堆;
 	//      * 可叠加物品被 RemoveItems 抽光留下的空堆;
 	//      * **不可叠加物品被 RemoveItemByPos 扣到 0 的僵尸** —— 这一类
@@ -944,7 +943,7 @@ uint32_t Bag::AddStackableItem(ItemComp itemProto, uint32_t maxStackSize,
 
 		// **腾位之后必须重新规划。** 淘汰可能刚好销毁了本次打算并进去的那个未满堆
 		// (临时格里同 config 的旧堆恰恰是最早进包的),于是上面那份 fillPlan 里的
-		// entity 已经失效。不重算就会拿着悬空的 entity 去 ApplyStackFill。
+		// guid 已经被销毁。不重算就会拿着失效的计划去 ApplyStackFill。
 		// 无淘汰时重算结果与第一次相同 —— 一次遍历,换一个不靠调用方记性的保证。
 		fillPlan.clear();
 		remaining = store_.PlanStackIntoExistingStacks(itemProto, maxStackSize, fillPlan);
@@ -1031,7 +1030,7 @@ uint32_t Bag::AddItems(const ItemCountMap &itemsToAdd,
 
 	// 位已腾够、预检全过,逐个按配置发放。每个 config 复用单个 AddItem 的完整逻辑
 	// (堆叠/非堆叠分发、要位置等),主函数只表达"批量发放"的意图。
-	for (const auto &[configId, count] : itemsToAdd)
+	for (const auto &[configId, count] : SortedByConfigId(itemsToAdd))
 	{
 		InitItemParam param;
 		param.itemPBComp.set_config_id(configId);
@@ -1418,7 +1417,7 @@ void Bag::DestroyItem(Guid guid)
 {
 	// 两层成对销毁 —— 少做任何一半都会留下腐化:
 	//   只删实例:槽位被一个幽灵 guid 永久占着,背包会"莫名其妙满了";
-	//   只删槽位:size=0 的孤儿实例仍在 view<ItemComp> 里,后续并堆会往一个
+	//   只删槽位:size=0 的孤儿实例仍在实例表里,后续并堆会往一个
 	//             已经没有位置的实例上灌数量,单位就静默丢了。
 	// 拆分前这两半写在同一个函数体里(destroy 实体 + 线扫 posToGuid),
 	// 现在是桥层显式地各调一次 —— 这正是桥层存在的理由。

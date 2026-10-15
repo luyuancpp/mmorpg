@@ -97,6 +97,9 @@ public:
 
 	bool initialized() const { return producer_ != nullptr; }
 
+	// 已登记 broker(句柄可能尚未惰性创建)。单测与诊断用。
+	bool brokersConfigured() const { return producer_ != nullptr || !pendingBrokers_.empty(); }
+
 	static KafkaProducer& Instance() {
 		thread_local KafkaProducer instance;
 		return instance;

@@ -16,14 +16,14 @@
 | DB consumer (Kafka → MySQL+Redis) | `db/db.go`, `db/internal/kafka/key_ordered_consumer.go` | Per-partition workers, write coalescing, retry queue, per-key applied-seq guard |
 | Data consistency stress harness | `db/cmd/data_stress/`, `db/cmd/verifier/`, `db/internal/stresstest/` | L2 Kafka driver + verifier. Design: `docs/design/data-consistency-stress-testing.md` |
 | Config/runtime flags | `*/etc/` + entry file flags | Reflection only in dev/test |
-| Generated RPC stubs | `*/proto/` and `generated/` | Review only; regenerate instead of patching |
+| 生成协议与消息号 | `proto/`、各服务 `generated/` | 共享 `.pb.go` 在 `go/proto/`；只重生成，不手改 |
 
 ## CONVENTIONS
 - Services follow go-zero / `zrpc.MustNewServer` startup.
 - Reflection is enabled only for dev/test mode checks.
-- `login` owns etcd-backed node registration behavior; trace service-discovery issues from `login.go` first.
+- 各服务在自己的启动入口注册节点；排查服务发现时先读目标服务的入口，再追 `shared/noderegistry`。login、data_service、scene_manager 都直接使用注册工具。
 - Contract changes should be regenerated through repo tooling, not fixed manually inside generated Go files.
-- Service-local `proto/` directories and top-level `generated/` are outputs, not primary authoring targets.
+- 协议事实源是仓库根 `proto/`；`go/proto/` 和各服务 `generated/` 都是产物。db/login 的临时服务内 `proto/` 由包装生成脚本清理，不能作为共享绑定的读取入口。
 
 ## ANTI-PATTERNS
 - Hand-editing generated `*.pb.go` / grpc outputs.
@@ -32,9 +32,10 @@
 
 ## COMMANDS
 ```bash
-cd go && build.bat                                    # goctl regen + import fixup
-cd go && test.bat                                     # L1 unit tests (db consumer + stresstest golden vectors)
-cd go && test.bat -Verbose -Race                      # same with verbose output + race detector
+pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-run -ConfigPath tools/proto_generator/protogen/etc/proto_gen.no-unity.yaml # 仓库根：共享绑定重生成
+cd go && build.bat                                    # 仅 db/login 的 goctl 包装、导入修正与临时产物清理
+cd go && test.bat                                     # L1 隔离测试子集，范围见 test.ps1 的 L1Suites
+cd go && test.bat -Verbose -Race                      # 同一子集，增加详细输出与竞态检测
 cd go\login && go run login.go
 cd go\login && go test ./...
 cd go\login && go mod tidy
@@ -46,11 +47,9 @@ cd go\db && go build ./cmd/data_stress ./cmd/verifier # build L2 stress tools
 ```
 
 ## NOTES
-- `build.bat` mixes `goctl rpc protoc` and raw `protoc`; it is the canonical regeneration path found in-repo.
-- `test.bat` / `test.ps1` runs the L1 hermetic unit-test subset (no live Kafka/MySQL/Redis needed — uses miniredis + in-process mocks). It is designed to be cheap enough for every CI build. The two packages it covers:
-  - `db/internal/kafka` — `processTaskBatch` coalescing (TC1–TC4), retry-queue write-back (TC5a), per-key applied-seq guard (TC5b), concurrent-worker convergence (TC6), retry payload wire-format (4 cases).
-  - `db/internal/stresstest` — `ComputeSig` golden vectors (cross-language parity with `cpp/libs/services/scene/player/system/stress_test_probe.cpp`), `VerifyProbe` round-trip, and tampering detection.
-- `data_service` and `scene_manager` follow the same high-level go-zero server shape as login, but only login handles node registration directly.
+- `build.bat` 仅转调 `build.ps1`；完整 `.pb.go` 重生成由 protogen 完成，流程见根 `AGENTS.md` §4。
+- `test.bat` / `test.ps1` 执行不依赖真实 Kafka/MySQL/Redis 的 L1 子集，使用 miniredis 与进程内替身。当前覆盖 db 的 `internal/kafka`、`internal/stresstest`、`internal/logic/pkg/proto_sql`、`internal/config`、`cmd/migrate`，以及 shared 的 `placement`；完整清单以 `test.ps1` 的 `L1Suites` 为准，不代表所有服务测试。
+- login、data_service、scene_manager 均采用 go-zero 服务装配并各自管理注册生命周期。
 - **Scene manager**: C++ scene nodes register in etcd; LoadReporter mirrors type/load into Redis. World channel moves use `RebalanceWorldChannelsForZone` (planner `PlanWorldChannelRebalance`). Before changing that path, run `cd go\scene_manager && go test ./internal/logic/ -run TestIntegration_ -count=1` and extend `integration_test.go` if you add new invariants.
 - **DB consumer** (`go/db`): the data consistency contract is "per-key monotonic last-write-wins". Three production bugs were found and fixed by the stress test suite — see `docs/design/data-consistency-stress-testing.md` §4 for details. Key mechanisms in `key_ordered_consumer.go`:
   - **Reverse-pass coalescing** in `processTaskBatch`: reads act as barriers so writes before a read are never coalesced away.

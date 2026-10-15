@@ -300,6 +300,14 @@ bool readGameConfig(const std::string &filename, GameConfig &gameConfig)
 		{
 			gameConfig.mutable_zone_redis()->set_db(zoneredisNode["db"].as<uint32_t>());
 		}
+
+		// 口令的环境变量覆盖(后者生效,与上面 SCENE_NODE_TYPE / ZONE_ID 同一模式):带口令的环境从 Secret
+		// 注入,不写进 yaml;本机验收也不必改被跟踪的文件。口令值不进日志。
+		if (const char *envPassword = GetNonEmptyEnv("ZONE_REDIS_PASSWORD"))
+		{
+			gameConfig.mutable_zone_redis()->set_password(envPassword);
+			LOG_INFO << "ZONE_REDIS_PASSWORD env override applied (value hidden)";
+		}
 	}
 	else
 	{

@@ -257,6 +257,9 @@ type HomeZoneConf struct {
 //   - AdmitTTL 是放行槽等客户端来取的时限,也是没人来取时在途占位的寿命(默认 60s)。
 //     取走之后、以及快速通道当场交票之后,占位只再留 15s:那是代码常量
 //     loginqueue.defaultHandoffGrace,不是配置,依据见该常量的注释(G4b-G)。
+//     排队开着时滚动调整它,新旧值之差不要超过 1min(loginqueue.admittedKeyGCSlack):占位键的
+//     整键 TTL 由各副本按自己的 AdmitTTL 无条件续期,差得更多时可能提前收走未到期的占位,
+//     最多多放一批。更大的调整先关排队、滚完再开(见 login.yaml Queue 段注释)。
 //   - SoftCapMultiplier (e.g. 1.5) is the headroom factor applied to the
 //     largest observed PlayerCount when no explicit ZoneCapacityOverride is
 //     set, so freshly-deployed zones aren't capped at "current load".
@@ -267,6 +270,8 @@ type HomeZoneConf struct {
 //     zone 出队(G1b)。默认值没变,旧配置无需改动;Queue.Enabled=true 时它不能为空、
 //     Node.ZoneId 不能为 0,否则起服失败。同一 zone 的所有 login 副本必须配同一个值,
 //     配得不一样就是两把互不相干的锁,该 zone 长期双 leader。
+//   - Queue.Enabled=true 时 DispatchInterval、DispatcherLockTTL 必须为正(loginqueue.NewDispatcher
+//     校验),否则起服失败。default=1s / 30s 只在键缺省时生效,显式写 0s 不会回落到默认值。
 type QueueConf struct {
 	Enabled             bool          `json:"Enabled,default=false"`
 	DispatchInterval    time.Duration `json:"DispatchInterval,default=1s"`

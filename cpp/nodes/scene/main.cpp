@@ -1,4 +1,5 @@
 ﻿#include "muduo/net/EventLoop.h"
+#include "engine/core/type_define/player_guid_comp.h"
 #include "muduo/base/Logging.h"
 
 #include "node/system/node/node_entry.h"
@@ -15,6 +16,8 @@
 #include "battle/system/player_battle.h"
 #include "services/battle/data/battle_table_fingerprint.h"
 #include "proto/contracts/kafka/scene_command.pb.h"
+#include "handler/event/scene_kafka_command_router.h"
+#include "handler/local_event/scene_local_events.h"
 #include "id_segment_bootstrap.h"
 #include "modules/id_segment/guid_segment_registry.h"
 
@@ -66,6 +69,10 @@ namespace
             }
         };
         using KafkaCommandType = contracts::kafka::SceneCommand;
+        static void DispatchKafkaCommand(const std::string& topic, const KafkaCommandType& command)
+        {
+            DispatchSceneKafkaCommand(topic, command);
+        }
     };
 
 } // namespace
@@ -87,6 +94,7 @@ int main(int argc, char *argv[])
                   &handler);
 
         node::entry::detail::ApplyPostConstructionHooks<SceneNodeHooks>(node);
+        scene_local_events::RegisterAll();
 
         // 断线释放标记(A1′)的"本节点身份当前有效"探针(cross-zone-scene-travel.md §12.6.4 M3):
         // EtcdService::IsIdentityConfirmedFresh —— lease 已授予、不在重注册中(分配键 CAS 尚未裁定)、
@@ -104,12 +112,13 @@ int main(int argc, char *argv[])
 
         // SceneManager 的 gRPC 应答处理器必须由这里装。
         //
-        // 别的应答处理器走 Node::RegisterHandlers() → InitReply(),但那个 InitReply 在
-        // rpc_replies/register_response_handler.cpp 里,是 proto 生成器的产物
-        // (WriteRepliedRegisterFile,筛选谓词 IsSceneNodeReceivedProtocolResponseHandler),
-        // 而该谓词只收 cc_generic_services(muduo TCP RPC)的服务;scene_manager 在
-        // tools/proto_generator/protogen/etc/proto_gen.yaml 里是 rpc.type: grpc,
-        // **生成器永远不会把 InitSceneManagerReply 写进去**。手写加进那个文件也没用:
+        // 节点间 muduo RPC0 的「按 message_id 的全局回包表」(InitReply / gRpcResponseDispatcher /
+        // 生成的 rpc_replies/register_response_handler.cpp)已整体退场:RPC0 的回包改在调用点按次的 lambda 里处理
+        // (docs/design/muduo-rpc-channel.md §9.2),Node::RegisterHandlers() 也不再调用 InitReply。
+        // gRPC 应答适配从来不在那条链上,本段照旧:那份生成文件的筛选谓词
+        // (IsSceneNodeReceivedProtocolResponseHandler)只收 cc_generic_services(muduo TCP RPC)的服务,
+        // scene_manager 在 tools/proto_generator/protogen/etc/proto_gen.yaml 里是 rpc.type: grpc,
+        // **生成器从来不会替它装 InitSceneManagerReply**。历史上手写加进那个生成文件,
         // 下一次 regen 必然抹掉(2026-04-16 的 f1b110bcc 就是这么把它弄丢的,
         // 自那以后 AsyncSceneManagerEnterScene/CreateSceneHandler 一直为空,
         // 生成客户端的 if(handler) 静默跳过每一条应答)。
@@ -154,9 +163,9 @@ int main(int argc, char *argv[])
             for (auto entity : view)
             {
 				players.push_back(entity);
-				if (const auto *playerId = tlsEcs.actorRegistry.try_get<Guid>(entity))
+				if (const auto *playerId = tlsEcs.actorRegistry.try_get<PlayerGuidComp>(entity))
 				{
-					context->shutdownPlayerIds.insert(*playerId);
+					context->shutdownPlayerIds.insert(playerId->value);
 				}
             }
 
@@ -180,13 +189,13 @@ int main(int argc, char *argv[])
 			std::vector<entt::entity> playersNeedingExit;
 			for (auto entity : view)
 			{
-				const auto *playerId = tlsEcs.actorRegistry.try_get<Guid>(entity);
+				const auto *playerId = tlsEcs.actorRegistry.try_get<PlayerGuidComp>(entity);
 				if (playerId == nullptr)
 				{
 					continue;
 				}
-				context->shutdownPlayerIds.insert(*playerId);
-				if (!PlayerLifecycleSystem::IsSaveInFlight(*playerId))
+				context->shutdownPlayerIds.insert(playerId->value);
+				if (!PlayerLifecycleSystem::IsSaveInFlight(playerId->value))
 				{
 					playersNeedingExit.push_back(entity);
 				}
@@ -357,6 +366,7 @@ int main(int argc, char *argv[])
 
         loop.loop();
 		} // 异常 quit 时先让 Node 析构兜底完成业务 drain,Redis 此时仍保持可用。
+		scene_local_events::UnregisterAll();
 
 		// Node 已析构:身份探针捕获的引用从此悬空,立即清掉(之后不再跑 loop,A1′ 也不会再被调用)。
 		PlayerLifecycleSystem::SetNodeIdentityProbe({});

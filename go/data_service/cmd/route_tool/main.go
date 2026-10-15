@@ -140,7 +140,7 @@ func run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 	}
 	st, err := openRouteStore(c)
 	if err != nil {
-		fmt.Fprintf(stderr, "route_tool: cannot open the route tables on the global DB (%s): %v\n", openRouteStoreHint(a.configPath, err), err)
+		fmt.Fprintf(stderr, "route_tool: cannot open the route tables on the global DB (%s): %v\n", store.OpenRouteStoreHint(a.configPath, err), err)
 		return routetool.ExitFailed
 	}
 	defer func() { _ = st.Close() }()
@@ -183,7 +183,7 @@ func run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 func runTiDBPrepare(ctx context.Context, a cliArgs, c config.Config, stdout, stderr io.Writer) int {
 	st, err := openRouteStore(c)
 	if err != nil {
-		fmt.Fprintf(stderr, "route_tool: cannot open the route tables on the global DB (%s): %v\n", openRouteStoreHint(a.configPath, err), err)
+		fmt.Fprintf(stderr, "route_tool: cannot open the route tables on the global DB (%s): %v\n", store.OpenRouteStoreHint(a.configPath, err), err)
 		return routetool.ExitFailed
 	}
 	defer func() { _ = st.Close() }()
@@ -338,15 +338,4 @@ func openRouteStore(c config.Config) (*store.RouteStore, error) {
 		FenceShards: uint32(c.RouteStore.FenceShards),
 		Writer:      store.NewRouteWriterID("route_tool", host),
 	})
-}
-
-// openRouteStoreHint 是建池失败时 stderr 里括号中的处理提示(退出码一律 2)。表按另一个行片模数建
-// (store.ErrRouteShardModulusMismatch)时不能照常提示「先跑迁移」:CREATE TABLE IF NOT EXISTS 不改已有的表,
-// 只重跑 -migrate 修不好,要先按报错里的步骤 DROP 五张路由表(runbook §9.3 前置第 1 条)。
-func openRouteStoreHint(configPath string, err error) string {
-	if errors.Is(err, store.ErrRouteShardModulusMismatch) {
-		return "the route tables were created with another route_shard modulus; rerunning -migrate alone does not fix that, " +
-			"see merge-zone-runbook §9.3 prerequisite 1"
-	}
-	return fmt.Sprintf("run `data_service -f %s -migrate` first if route_meta is missing", configPath)
 }

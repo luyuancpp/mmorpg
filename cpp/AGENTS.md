@@ -25,7 +25,7 @@ cpp/
 | Scene gameplay/domain | `libs/services/scene/` | actor/player/world/frame/team/etc. |
 | Player save pipeline | `libs/services/scene/player/system/player_lifecycle.cpp` | `SavePlayerToRedis`: marshals → stamps probe → Redis cache → Kafka |
 | Data-consistency stress probe | `libs/services/scene/player/system/stress_test_probe.{h,cpp}` | Gated by `STRESS_TEST_PROBE=1` env var. Go mirror: `go/db/internal/stresstest/probe.go` |
-| Scene node role config | `libs/engine/config/config.cpp` `readGameConfig` | Honours `SCENE_NODE_TYPE` / `ZONE_ID` / `GAME_CONFIG_PATH` env overrides |
+| Scene node role config | `libs/engine/config/config.cpp` `readGameConfig` | Honours `SCENE_NODE_TYPE` / `ZONE_ID` / `GAME_CONFIG_PATH` / `ZONE_REDIS_PASSWORD` env overrides (the last one is the zone Redis AUTH password; never logged) |
 | Agones lifecycle (high-density) | `libs/engine/infra/agones/` | One `agones::GameServerLifecycle` shared by scene and battle (a scene or a battle room is one "unit"). Ready/Allocated state machine + unit counting. HTTP only on the lifecycle worker thread, never on the EventLoop. Design: `docs/design/agones-scene-node-high-density.md` |
 | Static analysis rule | `.clang-tidy` | Custom `myplugin-no-member-pointer` check only |
 
@@ -47,17 +47,14 @@ cpp/
 - Do not hand-edit generated outputs while wiring new node startup.
 
 ### ECS component access rules
-- `get<T>`: only inside `view<T,...>` or after `any_of<T>`/`all_of<T>` guard. Asserts; crashes if absent.
-- `try_get<T>`: cross-entity lookups, optional components. Returns nullptr when absent.
-- `get_or_emplace<T>`: **only** during entity init/setup. **Never** in per-tick, combat, spatial, attribute sync.
-- Return `std::optional<T>` from functions that depend on optional components.
+- 修改或评审组件访问前，先读 [组件访问规则](../docs/design/ecs-component-access-rules.md)：持久数据在加载边界创建，按需状态在唯一写入口延迟创建，派生数据在实体创建时计算；读路径只读，缺失处理按类别执行。
 
 ## ANTI-PATTERNS
 - Embedding large gameplay branches inside node handlers.
 - Rewiring Kafka command flow ad hoc from inside unrelated handlers.
 - Editing generated protobuf/codegen outputs directly.
 - Broad edits in vendored engine trees when a node/service-layer fix is enough.
-- Using `get_or_emplace<T>` in per-tick systems, combat, spatial queries, or attribute sync — silently creates default components and corrupts ECS state.
+- 组件访问中的反例与审查清单统一见上述权威规则，避免在此复制另一套判据。
 
 ## COMMANDS
 ```bash

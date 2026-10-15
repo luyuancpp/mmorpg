@@ -19,8 +19,8 @@ Rules, in priority order:
 1. **Every `.vcxproj` MUST pass `/utf-8`** in `<AdditionalOptions>` for each
    `ItemDefinitionGroup/ClCompile`. This is the fix that scales; per-file BOMs
    are not.
-   - **Known gap**: only 17 of 54 `.vcxproj` currently set it. Find the rest with
-     `grep -L "/utf-8" $(find cpp third_party -maxdepth 4 -name '*.vcxproj' -not -path '*muduo_windows*')`.
+   - 检查当前工程时逐个核对编译配置，不使用历史的“17/54 个工程”统计作为现状。
+     PowerShell 可用 `rg --files-without-match '/utf-8' cpp -g '*.vcxproj' -g '!**/muduo_windows/**'` 初筛；文件中出现一次选项仍不代表每个配置都已覆盖。
      A non-ASCII source compiled by one of those projects **is** at risk on a
      CP936 machine: multi-byte UTF-8 (e.g. `→` = `E2 86 92`) is misread as GBK
      and corrupts the parser, with cascading errors on later lines.
@@ -39,12 +39,7 @@ mention `/utf-8` at all, which caused at least one agent to rewrite Chinese
 comments as English to dodge a hazard the build already handled.
 
 ## ECS Component Access Rules (`get` vs `try_get` vs `get_or_emplace`)
-- `get<T>(entity)`: asserts existence — crashes if absent. Only safe inside `view<T,...>` iterations or after an `any_of<T>`/`all_of<T>` guard.
-- `try_get<T>(entity)`: returns nullptr when absent. Use for cross-entity lookups, optional components, or any entity whose archetype is not guaranteed.
-- `get_or_emplace<T>(entity)`: **only** during entity initialization/setup. **Never** in per-tick systems, combat, spatial, attribute sync, or any per-frame code path. It silently creates zero-valued default components that corrupt ECS state and mask missing initialization.
-- Return `std::optional<T>` from functions that depend on optional components.
-- ECS sparse-set: entities without a component use zero memory in that pool and skip `view<T>` — intentional design for dungeons/instances.
-- **Guard macros** (`macros/return_define.h`): Use `ECS_GET_OR_RETURN(var, Type, entity, retval)`, `ECS_GET_OR_VOID(var, Type, entity)`, `ECS_GET_OR_CONTINUE(var, Type, entity)`, `ECS_GET_OR_FALSE(var, Type, entity)` to reduce `try_get` + null-check boilerplate. Same convention as generated `Lookup*` macros.
+- 修改或评审组件创建、读取、存盘与快照前，先读 [组件访问规则](../docs/design/ecs-component-access-rules.md)：持久数据在加载边界创建，按需状态在唯一写入口延迟创建，派生数据在实体创建时计算；读路径只读，缺失处理按类别执行。
 
 ## MSVC Lambda Capture with entt::entity
 - MSVC (`/std:c++latest`) has a known issue (C3495) capturing `entt::entity` (enum class) variables in lambdas via simple capture `[entity]`.
@@ -54,6 +49,7 @@ comments as English to dodge a hazard the build already handled.
 - `TimerTaskComp::Cancel()` must null-check `GetThreadEventLoop()` before calling `loop->cancel()`. The EventLoop destructor sets `t_loopInThisThread = NULL` **before** entt registry cleanup destroys entity components.
 - **Rule**: `Cancel()` must skip `loop->cancel()` when the loop is already gone to prevent nullptr crashes. 
 - **Rule**: Constructors should not call `Cancel()` — `timerId` is already default-initialized.
+- 定时器闭包只捕获内部 State 的 weak_ptr；移动转移调度状态，复制得到空定时器。包装组件的 `in_place_delete` 仅为指针稳定性选择，不再是定时器正确性的前提。业务回调若捕获外层 owner 的 `this`，该 owner 必须显式禁止移动；详情见 [组件访问规则](../docs/design/ecs-component-access-rules.md)。
 - **Test pattern**: After `loop.loop()` returns, call `tlsEcs.actorRegistry.clear()` while the loop is still alive to cancel all entity timers cleanly. Tests using `EventLoop` must use `loop.runAfter(duration, quit)` instead of infinite `while(true)` loops.
 
 ## Reward System Design (Claimed-Status Ownership)
@@ -67,7 +63,7 @@ comments as English to dodge a hazard the build already handled.
 ## Proto Field Type Constraints
 - **Coordinates/Transform (double, NOT float)**: `Location`, `Rotation`, `Scale`, `Vector3`, `Velocity`, `Acceleration` x/y/z fields MUST stay `double` to match UE4 client-side precision. `float` loses accuracy at large world coordinates.
 - **BaseAttributesComp (uint64, NOT uint32)**: `strength`, `stamina`, `health`, `mana`, `critchance`, `armor`, `resistance` MUST stay `uint64`. C++ combat code casts these to `double` for damage formulas; uint64 avoids narrowing and keeps headroom for late-game stat scaling.
-- **SnowFlake GUIDs (uint64)**: All `player_id`, `entity`, `scene_id`, `item_id`, `buff_id`, `skill_id` (runtime instance), `tx_id`, `snapshot_id` etc. MUST stay `uint64` (64-bit SnowFlake layout).
+- **身份字段保持 uint64**：`player_id`、`entity`、`scene_id`、`item_id`、`buff_id`、`skill_id`（运行时实例）、`tx_id`、`snapshot_id` 等保持 64 位。具体号源按契约判断：部分身份已用号段，客户端 actor 号是不透明运行时编号，不能按字段名推断 SnowFlake 布局或转换成 EnTT 句柄。
 - **Unix timestamps (uint64/int64)**: `created_at`, `expires_at`, `castTime`, `previous_time`, `last_time`, `start` (TimeMeter/Cooldown) etc. MUST stay 64-bit (Unix ms exceeds uint32).
 - **Currency (uint64)**: `CurrencyComp.values`, `owed`, `paid`, `balance_before/after` — keep uint64 for economy headroom.
 - **Safe to use uint32**: `session_id`, `session_version`, `attack_power`, `defense_power`, `max_health`, `skill_table_id` (table lookup key), `current_frame` (tick counter).
@@ -81,14 +77,13 @@ comments as English to dodge a hazard the build already handled.
 - If a globally-unique cross-node-type ID is ever needed, either encode `node_type` into the worker field (e.g. 5-bit type + 12-bit node) or switch node ID allocation to a single global namespace.
 
 ## Kafka Zombie Message Protection
-- All C++ node types (Gate, Scene, Centre) subscribe to Kafka topics named `{type}-{node_id}`. Node IDs are recycled via etcd after restart.
-- Each `*_command.proto` (gate, scene, centre) includes a `target_instance_id` field. The shared C++ consumer in `node_kafka_command_handler.h` validates it: mismatched instance UUID -> message dropped.
-- **Rule**: Every Kafka producer (Go or C++) sending to `{type}-{id}` topics MUST fill `target_instance_id` with the target node's UUID. Empty value disables zombie filtering.
-- **Rule**: Any new `*_command.proto` MUST include a `target_instance_id` string field for the shared consumer validation to work.
-- Three-layer defense: (1) instance UUID validation, (2) 60s topic retention, (3) node ID reuse cooldown (etcd 60s + SnowFlake guard 600s).
+- 节点命令现用共享分区 topic：`gate-cmd_g<N>`、`scene-cmd_g<N>`，按目标 node_id 定分区。`{type}-{node_id}` 仅是迁移期兼容路径，是否继续消费由 `disable_legacy_per_node_topic` 控制；Centre 已退役。
+- 契约在 `proto/contracts/kafka/`，GateCommand 位于 `gate_event.proto`。发送方通过共享寻址工具选择 topic 和分区，不自行拼旧 topic 名。
+- 每条定向节点命令必须携带目标节点的 `target_instance_id`；共享消费者会丢弃实例 UUID 不匹配的消息，空值会关闭这层过滤。共享分区也不能省略此字段。
+- topic 保留、分区数、换代和节点号复用约束见 `docs/design/control-plane-topic-partitioning-20260908.md` 与 `docs/design/kafka-topic-retention-strategy.md`，以实际配置为准。
 
 ## Traffic Statistics System
-- **C++**: `TrafficStatsCollector` singleton in `cpp/libs/engine/core/network/traffic_statistics.h/.cpp`. Per-message atomic counters (send/recv count, bytes, max size). Registered automatically in `Node` constructor via `RegisterTrafficStatsReporter()`. Old `LogMessageStatistics()` in `GameChannel` is legacy (per-message logging, not thread-safe); new system replaces it with periodic summary logging.
+- **C++**: `TrafficStatsCollector` singleton in `cpp/libs/engine/core/network/traffic_statistics.h/.cpp`. Per-message atomic counters (send/recv count, bytes, max size). Registered automatically in `Node` constructor via `RegisterTrafficStatsReporter()`. The old per-message `LogMessageStatistics()` in `GameChannel` has been removed with the `RpcChannel` rewrite; RPC0 call outcomes are counted by `RpcChannelStats` (`network/rpc_channel_stats.h`, 30s `[RpcChannel] summary` line).
 - **Go**: `grpcstats.Collector` in `go/shared/grpcstats/collector.go`. gRPC `UnaryServerInterceptor` tracking per-method call count, request/response bytes, latency avg/max. Wired into all Go services.
 - **Toggle C++**: env `NODE_TRAFFIC_STATS_ENABLED=1`, optional `NODE_TRAFFIC_STATS_AUTO_DISABLE_MINUTES`, `NODE_TRAFFIC_STATS_INTERVAL_SECONDS` (default 30s).
 - **Toggle Go**: env `GRPC_TRAFFIC_STATS_ENABLED=1`, optional `GRPC_TRAFFIC_STATS_AUTO_DISABLE_MINUTES`, `GRPC_TRAFFIC_STATS_INTERVAL_SECONDS` (default 30s).
@@ -98,10 +93,10 @@ comments as English to dodge a hazard the build already handled.
 - **Three levels**: `BroadcastToPlayers` (AOI subset), `BroadcastToScene` (scene-wide), `BroadcastToAll` (server-wide).
 - **Bitmap encoding**: `BroadcastToPlayers` auto-selects bitmap when `count >= 32 && bitmapBytes + 6 < count * 3`. Session IDs encoded as `session_bitmap_base` (uint32) + `session_bitmap` (bytes). 750 players: ~2250 → ~155 bytes (-93%).
 - **Session ID layout**: `uint32`, upper 15 bits = gate node_id, lower 17 bits = sequence. All sessions on one gate share upper bits → bitmap span bounded.
-- **C++ API** (`player_message_utils.h/cpp`): `BroadcastMessageToPlayers()` (gRPC per gate, auto bitmap), `BroadcastMessageToScene()` (gRPC per gate, by scene_id), `BroadcastMessageToAll()` (gRPC to all gates).
+- **C++ API**（`player_message_utils.h/cpp`）：三种 `BroadcastMessageTo*()` 均经 `RpcSession::SendRequest` 走 muduo TCP RPC；玩家子集自动编码 bitmap，场景广播按 scene_id 筛选。
 - **Go API** (`go/shared/kafkautil/gate_push.go`): `BroadcastToPlayers()`, `BroadcastToScene()`, `BroadcastToAll()` — Kafka-based, same three levels. `EncodeBitmapFields()` for auto bitmap in Go.
-- **Gate handlers**: gRPC in `gate_service_handler.cpp`, Kafka in `gate_event_handler.cpp`. Both implement bitmap decode, scene filter, and all-session dispatch.
-- **Proto**: `proto/gate/gate_service.proto` (gRPC), `proto/contracts/kafka/gate_event.proto` (Kafka events).
+- **Gate handlers**：muduo RPC 在 `gate_service_handler.cpp`，Kafka 在 `gate_event_handler.cpp`；两者实现对应的目标解码与广播。
+- **Proto**：`proto/gate/gate_service.proto`（C++ 节点 RPC）、`proto/contracts/kafka/gate_event.proto`（Kafka 命令）。
 - **Design doc**: `docs/design/broadcast-message-size-analysis.md`.
 
 ## gRPC Server Thread Pool (C++ Nodes)
@@ -119,45 +114,27 @@ comments as English to dodge a hazard the build already handled.
 - Do not immediately join the shutdown worker on the EventLoop, and do not detach it past the lifetime of `Node` or the registered gRPC services.
 - A shutdown deadline is only a transport grace deadline. It may cancel pending calls but cannot forcibly terminate an already-running C++ sync handler; it is not a hard handler-duration or process-shutdown bound.
 
-## Recent Architectural Decisions (2025-03-09)
+## Scene Manager 与 Gate 当前通信
 
-### Scene Manager & Gate Communication
-1. **Switch from gRPC Stream to Kafka**:
-   - **Problem**: A full mesh of 40,000 Gates * 2000 Scene Managers would exhaust file descriptors and network resources.
-   - **Solution**: Use Kafka for control messages (`RoutePlayer`, `KickPlayer`) to decouple Gate and SceneManager.
-   - **Protocol**: 
-     - Messages are defined in `GateCommand` within `scene_manager_service.proto`.
-     - Topics follow the pattern `gate-{gate_id}`.
-     - Messages include `target_instance_id` to prevent "zombie" messages from affecting restarted Gate nodes.
-
-2. **Scene Manager Implementation (Go-Zero)**:
-   - `SceneManager` is implemented in Go using go-zero.
-   - It handles `EnterScene` requests by looking up player location in Redis.
-   - Instead of maintaining a gRPC stream to Gate, it now pushes `RoutePlayer` commands to the appropriate Kafka topic.
-   - Configuration requires Kafka brokers in `etc/scene_manager_service.yaml`.
-
-3. **Gate Node Implementation (C++)**:
-   - **Naming**: Use **Scene Node** (not Game Node) for consistency.
-   - **Communication**: Gate Node must implement a Kafka Consumer to listen on `gate-{gate_id}`.
-   - **Service Type**: Added `SceneManagerNodeService` (ID 25) to `node.proto` and `node_util.cpp` to distinguish the Go-based manager from C++ services.
-
-4. **Pending Work**:
-   - C++ side needs to link `librdkafka` or `cppkafka` and implement the consumer loop in `GateNode`.
+- SceneManager 为 Go/go-zero 服务，配置入口 `go/scene_manager/etc/scene_manager_service.yaml`；Gate 的 Kafka 消费链已实现，不是待接线功能。
+- `RoutePlayer`、`BindSession`、`KickPlayer` 等控制命令经上述 Kafka 节点命令 topic 投递。Gate 与本 zone Scene 的玩家热路径走 muduo TCP RPC；Go 控制面仍走 gRPC。
+- 节点类型事实源在 `proto/common/base/node.proto`，`SceneManagerNodeService = 25`；新改动统一使用 Scene Node 名称。
+- 完整架构与路由模式默认值见 `docs/design/ARCH.md`、`docs/design/client-rpc-router.md`，共享分区寻址见 `docs/design/control-plane-topic-partitioning-20260908.md`。
 
 ## Build, Test, and Lint Commands
 
 ### C++ (Core Game Server)
-- **Build (Windows solution)**: `msbuild game.sln /m /p:Configuration=Debug /p:Platform=x64`
+- **Build (Windows solution)**: `msbuild game.sln /m:1 /p:Configuration=Debug /p:Platform=x64`（按根规范串行）
 - **Build a node with CMake (example: scene)**: `cd cpp\nodes\scene && cmake -S . -B build && cmake --build build --config Debug`
 - **Run C++ tests**: test projects are under `cpp\tests\` (run in Visual Studio Test Explorer or execute the built test binary directly).
 - **Run a single C++ test**: `build\cpp\tests\bag_test.exe --gtest_filter=BagTest.AddNewGridItem`
 - **Lint C++**: use `clang-tidy` with `cpp\.clang-tidy` (example: `clang-tidy <file.cpp> --config-file=cpp\.clang-tidy`)
 
 ### Go (Microservices)
-- **Regenerate Go gRPC/proto code**: `cd go && build.bat`
+- **协议重生成**：在仓库根按 `AGENTS.md` §4 运行 `dev_tools.ps1 -Command proto-gen-run`；无客户端任务授权时使用 `proto_gen.no-unity.yaml`。`cd go && build.bat` 仅处理 db/login 包装与导入修正。
 - **Run login service**: `cd go\login && go run login.go`
 - **Run all login tests**: `cd go\login && go test ./...`
-- **Run a single Go test**: `cd go\login && go test ./data -run TestPlayerFSM_InitialState`
+- **Run a single Go test**: `cd go\login && go test ./internal/logic/pkg/sessionmanager -run '^TestMintLoginGeneration_KeyName$'`
 - **Dependencies**: `cd go\login && go mod tidy`
 
 ### Java (Gateway/Web)
@@ -197,10 +174,10 @@ comments as English to dodge a hazard the build already handled.
   - **Java gateway/web** (`java/gateway_node`): Spring Boot gateway service (zone directory, gate assignment, admin APIs).
 - **Proto-first contract flow**:
   - Source contracts live in `proto/`.
-  - Generated protocol outputs are checked into `generated/proto/` and language-specific trees (e.g., `go/login/proto/...`).
-  - `go/build.bat` regenerates Go-side rpc/proto artifacts for login/db services.
+  - 共享 Go 绑定在 `go/proto/`，C++ 绑定在 `cpp/generated/`；`generated/proto/` 是生成流水线的暂存树，不能当作业务源码修改。
+  - 完整绑定由 protogen 生成；`go/build.bat` 只重生成 db/login 的 go-zero 包装、修正导入并清理服务内重复绑定。
 - **Service discovery/runtime wiring**:
-  - Go login starts grpc via `zrpc.MustNewServer`, registers node metadata, and watches centre nodes through `NodeWatcher` (etcd-backed).
+  - Go 服务通过自己的启动入口注册到 etcd，使用共享注册与发现组件；Centre 已退役，login 的会话编排依赖 player_locator 与 scene_manager。
   - C++ scene request handlers delegate gameplay work to systems such as `PlayerSceneSystem`/`PlayerLifecycleSystem` instead of embedding heavy logic in transport layer handlers.
 
 ## Key Conventions
@@ -210,7 +187,8 @@ comments as English to dodge a hazard the build already handled.
   - In generated-style C++ handler files that contain `///<<< BEGIN WRITING YOUR CODE`, keep custom logic inside those guarded sections.
 - **C++ naming and layering**:
   - RPC request handlers are `*Handler` classes in `cpp/nodes/scene/handler/rpc/...` (example: `SceneScenePlayerHandler`).
-  - Async/reply handling uses dedicated reply handler functions (example pattern: `On<Domain><Method>Reply` in `cpp/nodes/scene/rpc_replies`).
+  - Inter-node muduo RPC (RPC0) replies are handled at the call site: each `CallMethod` takes its own lambda (`RpcStatus` + response); there is no global per-message_id reply table any more. A server handler that must wait for a downstream call adopts its `done` with `RpcDoneCallback::Adopt(done)` (see `docs/design/muduo-rpc-channel.md`).
+  - `rpc_replies/` only holds gRPC async reply adapters (pattern: `On<Domain><Method>Reply`) and the player reply chain.
   - ECS/domain logic stays in `*System` classes and `*Comp` structs under `cpp/libs/services/scene/...`.
 - **Cross-service change workflow**:
-  - When `.proto` changes, regenerate Go artifacts (`go\build.bat`) and then rebuild affected C++/Go/Java services that consume the updated contract.
+  - `.proto` 变化后按根 `AGENTS.md` §4 重生成，再构建受影响的 C++/Go/Java 服务；不能用包装生成代替共享协议生成。

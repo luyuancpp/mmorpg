@@ -1727,6 +1727,153 @@ func TestNewRouteStoreShardModulusProbeContract(t *testing.T) {
 	}
 }
 
+// TestNewRouteStoreProbeRetriesLockConflict:P4 + P5 的事务遇到 1213 时整事务重跑(三个及以上建池方并发插同一个缺席的
+// 探针键时,MySQL 8.0 在 RC 下也可能互等成 1213,见 probeRouteShardModulus 的「锁」)。每次重来新开事务、P4 与 P5 从头发,
+// 任何结局都只回滚、不提交;连续 routeTxAttempts 次冲突后建池失败并关池,errors.As 仍取得出 1213;退避途中 ctx 结束即停、
+// 不再开下一个事务。1205 不重试由 TestNewRouteStoreShardModulusProbeContract 的「1205锁等待超时_原样包装」钉住。
+func TestNewRouteStoreProbeRetriesLockConflict(t *testing.T) {
+	sessionOK := fakeRouteReply{rows: [][]driver.Value{{"READ-COMMITTED", int64(1)}}}
+	mysqlVersion := fakeRouteReply{rows: [][]driver.Value{{"8.0.36"}}}
+	shardCheckViolated := replyErr(&mysql.MySQLError{Number: 3819, Message: "Check constraint 'chk_route_shard' is violated."})
+	deadlock := replyErr(mysqlErrNo(mysqlErrDeadlock))
+	opts := RouteStoreOptions{FenceShards: fakeRouteShards, Writer: fakeRouteWriter}
+	// script:P1–P3 各一份应答;P4 每次尝试一份「3819 且点名 chk_route_shard」(= P4 通过);P5 按 modulus 排队。
+	script := func(attempts int, modulus ...fakeRouteReply) map[string][]fakeRouteReply {
+		checks := make([]fakeRouteReply, attempts)
+		for i := range checks {
+			checks[i] = shardCheckViolated
+		}
+		return map[string][]fakeRouteReply{
+			"PROBE": {sessionOK}, "VERSION": {mysqlVersion}, "R1": {replyWritable},
+			"PROBE_CHECK": checks, "PROBE_MODULUS": modulus,
+		}
+	}
+	// attempt 是一次尝试的语句序列:p5Calls 是这次发出的 P5 条数(冲突的那一行之后不再发),一律以 ROLLBACK 收尾。
+	attempt := func(p5Calls int) []string {
+		out := []string{"BEGIN", "PROBE_CHECK"}
+		for i := 0; i < p5Calls; i++ {
+			out = append(out, "PROBE_MODULUS")
+		}
+		return append(out, "ROLLBACK")
+	}
+	// seq 是完整的探针语句序列:P1–P3 之后接各次尝试。
+	seq := func(attempts ...[]string) []string {
+		out := []string{"PROBE", "VERSION", "R1"}
+		for _, a := range attempts {
+			out = append(out, a...)
+		}
+		return out
+	}
+	// 两行探针键的实参,同 TestNewRouteStoreShardModulusProbeContract 写成字面量。
+	keyLow, keyHigh := []driver.Value{uint64(0), uint64(64)}, []driver.Value{uint64(63), uint64(63)}
+
+	for _, tc := range []struct {
+		name       string
+		attempts   int
+		modulus    []fakeRouteReply
+		wantLabels []string
+		wantArgs   [][]driver.Value
+	}{
+		{
+			name:       "首行1213_重跑后建池",
+			attempts:   2,
+			modulus:    []fakeRouteReply{deadlock, replyAffected(1), replyAffected(1)},
+			wantLabels: seq(attempt(1), attempt(2)),
+			wantArgs:   [][]driver.Value{keyLow, keyLow, keyHigh},
+		},
+		{
+			name:       "次行1213_重跑后建池",
+			attempts:   2,
+			modulus:    []fakeRouteReply{replyAffected(1), deadlock, replyAffected(1), replyAffected(1)},
+			wantLabels: seq(attempt(2), attempt(2)),
+			wantArgs:   [][]driver.Value{keyLow, keyHigh, keyLow, keyHigh},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			fake := newFakeRouteDB(fakeRouteScript{replies: script(tc.attempts, tc.modulus...)})
+			db := sql.OpenDB(fakeRouteConnector{fake: fake})
+			t.Cleanup(func() { _ = db.Close() })
+
+			st, err := newRouteStoreFromDB(context.Background(), db, opts)
+			if err != nil || st == nil {
+				t.Fatalf("1213 重跑之后探针应通过:st=%v err=%v", st, err)
+			}
+			if pingErr := db.PingContext(context.Background()); pingErr != nil {
+				t.Fatalf("建池成功却关了池:%v", pingErr)
+			}
+			if got := fake.labels(); !reflect.DeepEqual(got, tc.wantLabels) {
+				t.Fatalf("探针语句序列不对:\n got=%v\nwant=%v", got, tc.wantLabels)
+			}
+			calls := fake.callsWithLabel("PROBE_MODULUS")
+			if len(calls) != len(tc.wantArgs) {
+				t.Fatalf("P5 发了 %d 条,want %d", len(calls), len(tc.wantArgs))
+			}
+			for i, c := range calls {
+				if !reflect.DeepEqual(c.args, tc.wantArgs[i]) {
+					t.Fatalf("P5 第 %d 条的实参 = %#v, want %#v(每次重来都从 (0, 64) 起按聚簇键升序)", i+1, c.args, tc.wantArgs[i])
+				}
+			}
+		})
+	}
+
+	t.Run("连续1213用尽预算_建池失败", func(t *testing.T) {
+		modulus := make([]fakeRouteReply, routeTxAttempts)
+		attempts := make([][]string, routeTxAttempts)
+		for i := range modulus {
+			modulus[i] = deadlock
+			attempts[i] = attempt(1)
+		}
+		fake := newFakeRouteDB(fakeRouteScript{replies: script(routeTxAttempts, modulus...)})
+		db := sql.OpenDB(fakeRouteConnector{fake: fake})
+		t.Cleanup(func() { _ = db.Close() })
+
+		st, err := newRouteStoreFromDB(context.Background(), db, opts)
+		if st != nil {
+			t.Fatal("用尽预算却返回了 store")
+		}
+		var me *mysql.MySQLError
+		if !errors.As(err, &me) || me.Number != mysqlErrDeadlock {
+			t.Fatalf("err = %v, want 包着最后一次的 1213", err)
+		}
+		if errors.Is(err, ErrRouteShardModulusMismatch) {
+			t.Fatalf("锁冲突不是模数不一致:%v", err)
+		}
+		if db.PingContext(context.Background()) == nil {
+			t.Fatal("建池失败必须关池")
+		}
+		if got, want := fake.labels(), seq(attempts...); !reflect.DeepEqual(got, want) {
+			t.Fatalf("探针语句序列不对:\n got=%v\nwant=%v", got, want)
+		}
+	})
+
+	t.Run("退避途中ctx结束_不再开事务", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		// 第二轮的应答刻意留着:真的重来了就能看出来。第一次 ROLLBACK 记下之后才取消,序列才是确定的。
+		fake := newFakeRouteDB(fakeRouteScript{
+			replies:    script(2, deadlock, replyAffected(1), replyAffected(1)),
+			onRollback: cancel,
+		})
+		db := sql.OpenDB(fakeRouteConnector{fake: fake})
+		t.Cleanup(func() { _ = db.Close() })
+
+		st, err := newRouteStoreFromDB(ctx, db, opts)
+		if st != nil || !errors.Is(err, context.Canceled) {
+			t.Fatalf("newRouteStoreFromDB = (%v, %v), want (nil, 带 context.Canceled)", st, err)
+		}
+		var me *mysql.MySQLError
+		if !errors.As(err, &me) || me.Number != mysqlErrDeadlock {
+			t.Fatalf("err = %v, want 同时带着那次 1213", err)
+		}
+		if db.PingContext(context.Background()) == nil {
+			t.Fatal("建池失败必须关池")
+		}
+		if got, want := fake.labels(), seq(attempt(1)); !reflect.DeepEqual(got, want) {
+			t.Fatalf("ctx 取消后仍在重试:\n got=%v\nwant=%v", got, want)
+		}
+	})
+}
+
 // ── tidb-prepare ─────────────────────────────────────────────────────────────────
 
 // TestPrepareTiDBContract:MySQL 上整步跳过(只问一次版本);TiDB 上先核对两张表都是聚簇主键,再按

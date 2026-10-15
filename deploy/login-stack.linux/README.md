@@ -100,17 +100,22 @@ not for cliff measurement.
 
 ## Bucket4j ON
 
-By default the limiter is OFF (so smoke runs don't hit cooldown surprises).
-Flip it for the limiter-side smoke:
+2026-10-15 修订:基础 Compose 把容器内 `GATE_RATE_LIMIT_ENABLED` 固定为 `false`,直接在宿主命令前写同名环境变量不会覆盖它,RPS / burst 也不会自动传入。用本地临时 Compose override 显式改 gateway 的容器环境:
 
 ```
-docker compose -f deploy/docker-compose.login-stack.yml stop gateway
-GATE_RATE_LIMIT_ENABLED=true \
-GATE_RATE_LIMIT_ZONE_DEFAULT_RPS=2 \
-GATE_RATE_LIMIT_ZONE_DEFAULT_BURST=4 \
-  docker compose -f deploy/docker-compose.login-stack.yml up -d gateway
+cat > /tmp/mmorpg-login-limit.override.yml <<'YAML'
+services:
+  gateway:
+    environment:
+      GATE_RATE_LIMIT_ENABLED: "true"
+      GATE_RATE_LIMIT_ZONE_DEFAULT_RPS: "2"
+      GATE_RATE_LIMIT_ZONE_DEFAULT_BURST: "4"
+YAML
+docker compose -f deploy/docker-compose.login-stack.yml \
+  -f /tmp/mmorpg-login-limit.override.yml up -d --force-recreate gateway
 
-# then burst 10 reqs and confirm 4 pass + 6 QUEUEING (code:100)
+# 在无其他流量时观察突发请求中的 code=100。/api/login 的响应没有 queue_source 字段。
+# 下列请求串行发送,期间令牌会补充,还可能命中 IP 桶,不要求固定 4 放行 / 6 排队。
 for i in $(seq 1 10); do
   jq -nc --arg account "robot_limit_$i" \
     '{zone_id:1,account:$account,password:env.LOGIN_DEV_PASSWORD_SHARED_SECRET}' | \
@@ -118,6 +123,10 @@ for i in $(seq 1 10); do
       -H 'Content-Type: application/json' --data-binary @-
   echo
 done | grep -oE '"code":[0-9]*' | sort | uniq -c
+
+# 恢复基础 Compose 的限流关闭状态:
+docker compose -f deploy/docker-compose.login-stack.yml up -d --force-recreate gateway
+rm /tmp/mmorpg-login-limit.override.yml
 ```
 
 ## Switching sandbox-mock → real WeChat / QQ

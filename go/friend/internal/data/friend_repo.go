@@ -242,13 +242,15 @@ type FriendEntry struct {
 }
 
 type FriendRequestEntry struct {
+	RequestID     uint64 `json:"request_id"`
 	FromPlayerID  uint64 `json:"from_player_id"`
 	ToPlayerID    uint64 `json:"to_player_id"`
 	RequestTimeMs int64  `json:"request_time_ms"`
 	Status        int32  `json:"status"` // 1=pending, 2=accepted, 3=rejected
 }
 
-// FriendRepo 是 mmorpg_friend 的存储访问层:MySQL 是权威,FriendRedis 只做 cache-aside。
+// FriendRepo 是 mmorpg_friend 的权威存储访问层。好友边、申请和黑名单列表直接读 SQL；
+// Redis 只服务限流及非权威派生数据，不能用旧列表缓存作权限或申请处理依据。
 type FriendRepo struct {
 	rdb        *redis.Redis
 	db         *sql.DB
@@ -264,12 +266,15 @@ type FriendRepo struct {
 	// 串行成一条队列,缓存冷时每个请求都要排在一次完整 MySQL 往返后面。
 	cacheLoadMu sync.Map
 	// recommend 是好友推荐两条查询按方言渲染好的 SQL 主体(recommend_sql.go),构造后只读。
-	recommend recommendStatements
+	recommend     recommendStatements
+	nextRequestID func(context.Context) (uint64, error)
 }
 
 // FriendRepoOptions 是 NewFriendRepo 的装配参数。用结构体而不是继续加位置参数:四个值里有两个 time.Duration,
 // 按位置传很容易对调而编译器不报。调用方是 logic.NewDeps。
 type FriendRepoOptions struct {
+	// NextRequestID 只接 data_service 的 friend_request 号段；不得回退到时钟或玩家对。
+	NextRequestID func(context.Context) (uint64, error)
 	// DefaultTTL 是好友列表等缓存的默认存活时间(Friend.CacheTTL)。
 	DefaultTTL time.Duration
 	// ListReadHardLimit 是列表类读的 SQL LIMIT(Friend.ListReadHardLimit,config.Validate 已拒 0)。
@@ -290,6 +295,7 @@ func NewFriendRepo(rdb *redis.Redis, db *sql.DB, opts FriendRepoOptions) *Friend
 		defaultTTL:        opts.DefaultTTL,
 		listReadHardLimit: opts.ListReadHardLimit,
 		recommend:         newRecommendStatements(opts.SQLDialect, opts.RecommendStatementTimeout),
+		nextRequestID:     opts.NextRequestID,
 	}
 }
 
@@ -309,7 +315,7 @@ func friendListKey(playerID uint64) string {
 }
 
 func pendingRequestsKey(playerID uint64) string {
-	return fmt.Sprintf("friend:{f:%d}:req:v3", playerID)
+	return fmt.Sprintf("friend:{f:%d}:req:v4", playerID)
 }
 
 // 两条 Lua 以**脚本正文**保存而不是 redis.NewScript 包装:go-zero 的执行入口是
@@ -341,40 +347,35 @@ func friendCacheGenerationKey(cacheKey string) string {
 // ── Read (cache-aside + singleflight) ──────────────────────────
 
 func (r *FriendRepo) GetFriendList(ctx context.Context, playerID uint64) ([]FriendEntry, error) {
-	return loadVersionedFriendCache(
-		ctx, r, friendListKey(playerID),
-		func(ctx context.Context) ([]FriendEntry, error) { return r.loadFriendListFromMySQL(ctx, playerID) },
-	)
+	// 好友边用于权限与后续操作判定，必须读权威库；失效失败后的旧缓存不能伪装成功。
+	return r.loadFriendListFromMySQL(ctx, playerID)
 }
 
 func (r *FriendRepo) GetPendingRequests(ctx context.Context, playerID uint64) ([]FriendRequestEntry, error) {
-	return loadVersionedFriendCache(
-		ctx, r, pendingRequestsKey(playerID),
-		func(ctx context.Context) ([]FriendRequestEntry, error) {
-			return r.loadPendingRequestsFromMySQL(ctx, playerID)
-		},
-	)
+	// 待处理申请同样直接回源，旧缓存（包括 request_id=0）不参与权威读取。
+	return r.loadPendingRequestsFromMySQL(ctx, playerID)
 }
 
 // ── Write operations ───────────────────────────────────────────
 
-// AddFriendRequest 是"发起好友申请"的**权威事务**(F2 §3.1)。
+// CreateRequest 是"发起好友申请"的权威事务：同一 pending 返回同号且不刷新时间，
+// 终态重新发起换号，所有关系及上限判定仍在容量守卫内复核。
 //
 // F1 之前它是一条自动提交的 upsert,四道上限判定(已是好友 / 列表满 / 重复申请 / 出站配额)
 // 全在事务外的 logic 层做 —— 那是典型的 check-then-act:两个请求并发时都能通过检查。
 // 现在所有判定都在同一把容量守卫内完成,logic 层保留的预检只是省掉明显不可能成功的开库,
 // **不得**替代这里的复核(AGENTS §11.3)。
 //
-// 返回的哨兵见文件顶部的映射表。方法名保留 AddFriendRequest:它写的是一行**申请**,
-// 不是好友关系(真正建边在 AcceptFriend),与 RPC 名 AddFriend 刻意不同名。
+// 返回的哨兵见文件顶部映射表；成功结果中的 Changed 决定是否发送通知。
 //
 // ⚠ 三个上限收在 AddFriendLimits 里,字段名自解释,不再有位置参数 —— 出站与入站两条上限
 // 类型相同、方向相反(出站 50 / 入站 200 是两个默认值),做成并排的 uint32 时传反了不会报错,
 // 只会让两条上限张冠李戴。
-func (r *FriendRepo) AddFriendRequest(ctx context.Context, fromPlayerID, toPlayerID uint64,
-	lim AddFriendLimits) error {
+func (r *FriendRepo) CreateRequest(ctx context.Context, fromPlayerID, toPlayerID uint64,
+	lim AddFriendLimits) (RequestChange, error) {
+	change := RequestChange{FromPlayerID: fromPlayerID, ToPlayerID: toPlayerID}
 	if toPlayerID == 0 || fromPlayerID == 0 || fromPlayerID == toPlayerID {
-		return errInvalidPlayerPair(fromPlayerID, toPlayerID)
+		return RequestChange{}, errInvalidPlayerPair(fromPlayerID, toPlayerID)
 	}
 
 	// 容量行在主事务之前、按 player_id 升序自动提交地补齐(理由见顶部锁序说明 (1))。
@@ -387,7 +388,7 @@ func (r *FriendRepo) AddFriendRequest(ctx context.Context, fromPlayerID, toPlaye
 	// ① 容量守卫:本事务的第一把锁(runGuardedWrite 取),顺带把双方当前的 friend_count 读回来、
 	//    以 counts 传进闭包(守卫锁在手,这两个值到 Commit 之前不可能被别人改,⑦ 直接用,不必再查一次)。
 	// 闭包里 return 的哨兵由 runGuardedWrite 回滚后原样上抛。
-	err := r.runGuardedWrite(ctx, fromPlayerID, toPlayerID, func(ctx context.Context, tx *sql.Tx, counts map[uint64]uint32) error {
+	err := r.runRequestWrite(ctx, fromPlayerID, toPlayerID, func(ctx context.Context, tx *sql.Tx, counts map[uint64]uint32, candidateID uint64) error {
 		// ② 拉黑(两个方向,锁定读)。任一方向命中就拒:被拉黑的人不该能继续发申请,
 		//    拉黑了别人的人也不该收到对方的申请。
 		blocked, err := blockedEitherWay(ctx, tx, fromPlayerID, toPlayerID)
@@ -408,16 +409,28 @@ func (r *FriendRepo) AddFriendRequest(ctx context.Context, fromPlayerID, toPlaye
 			return ErrAlreadyFriends
 		}
 
-		// ④ 本方向的申请行(按主键单行锁定读)。已经 pending 就直接拒,不刷新时间 ——
+		// ④ 本方向的申请行(按主键单行锁定读)。已经 pending 就回放同一代次，不刷新时间 ——
 		//    否则"反复点加好友"能把自己的申请一直顶到对方列表最前面。
 		var existingStatus int32
+		var existingID uint64
 		err = tx.QueryRowContext(ctx,
-			"SELECT status FROM friend_request WHERE from_player_id=? AND to_player_id=? FOR UPDATE",
-			fromPlayerID, toPlayerID).Scan(&existingStatus)
+			"SELECT status, request_id FROM friend_request WHERE from_player_id=? AND to_player_id=? FOR UPDATE",
+			fromPlayerID, toPlayerID).Scan(&existingStatus, &existingID)
 		switch {
 		case err == nil:
 			if existingStatus == requestStatusPending {
-				return ErrRequestAlreadySent
+				change.RequestID = existingID
+				if existingID != 0 {
+					return nil // 同代次重放不改时间、不重复通知，也不依赖号源可用性。
+				}
+				if candidateID == 0 {
+					return errRequestIDRequired
+				}
+				if err := backfillPendingRequestID(ctx, tx, fromPlayerID, toPlayerID, candidateID); err != nil {
+					return err
+				}
+				change.RequestID, change.Changed = candidateID, true
+				return nil
 			}
 		case errors.Is(err, sql.ErrNoRows):
 			// 无历史申请,走下面的 INSERT 分支。
@@ -489,42 +502,40 @@ func (r *FriendRepo) AddFriendRequest(ctx context.Context, fromPlayerID, toPlaye
 		//    ⚠ 用 VALUES() 取待插入值而不是 MySQL 8.0.20+ 新增的行别名(`... AS new`):
 		//    VALUES() 虽被标记 deprecated,但四张表都带着 TiDB 打散选项(friend_table.proto),
 		//    数据层迁 TiDB 是既定方向,而行别名语法的 TiDB 支持面不确定 —— 这里选可移植的那个。
+		if candidateID == 0 {
+			return errRequestIDRequired
+		}
 		now := time.Now().UnixMilli()
 		if _, err := tx.ExecContext(ctx,
-			`INSERT INTO friend_request (from_player_id, to_player_id, request_time_ms, status, updated_ms)
-		 VALUES (?, ?, ?, ?, ?)
-		 ON DUPLICATE KEY UPDATE status=VALUES(status), request_time_ms=VALUES(request_time_ms), updated_ms=VALUES(updated_ms)`,
-			fromPlayerID, toPlayerID, now, requestStatusPending, now); err != nil {
+			`INSERT INTO friend_request (from_player_id, to_player_id, request_time_ms, status, updated_ms, request_id)
+		 VALUES (?, ?, ?, ?, ?, ?)
+		 ON DUPLICATE KEY UPDATE status=VALUES(status), request_time_ms=VALUES(request_time_ms), updated_ms=VALUES(updated_ms), request_id=VALUES(request_id)`,
+			fromPlayerID, toPlayerID, now, requestStatusPending, now, candidateID); err != nil {
 			return fmt.Errorf("upsert friend request %d->%d: %w", fromPlayerID, toPlayerID, err)
 		}
+		change.RequestID, change.Changed = candidateID, true
 		return nil
 	})
 	if err != nil {
-		return err
+		return RequestChange{}, err
 	}
 
 	// generation + Lua CAS 会阻止并发 miss 把写入前读到的旧 DB 快照回填。
 	// 只失效接收者的申请缓存:申请行落在 to_player_id 的收件箱里,申请人这边没有缓存视图。
-	r.invalidateCachesAfterCommit(ctx, pendingRequestsKey(toPlayerID))
-	return nil
+	if change.Changed {
+		r.invalidateCachesAfterCommit(ctx, pendingRequestsKey(toPlayerID))
+	}
+	return change, nil
 }
 
-// AcceptFriend 接受 fromPlayerID 发给 toPlayerID 的好友申请(toPlayerID 必须是会话里的 me)。
-func (r *FriendRepo) AcceptFriend(ctx context.Context, fromPlayerID, toPlayerID uint64, maxFriends uint32) error {
-	if fromPlayerID == 0 || toPlayerID == 0 || fromPlayerID == toPlayerID {
-		return errInvalidPlayerPair(fromPlayerID, toPlayerID)
+// AcceptRequest 仅接受指定代次；接受者只能是当前会话主体。查号只用于定位主键，
+// 所有权威复核仍在同一个 RC 事务、双方容量守卫之后完成。
+func (r *FriendRepo) AcceptRequest(ctx context.Context, requestID, accepterID uint64, maxFriends uint32) (RequestChange, error) {
+	change, err := r.findRequest(ctx, requestID, accepterID)
+	if err != nil {
+		return RequestChange{}, err
 	}
-	// 事务外预检只用于避免恶意无申请调用制造无界 capacity 空行(与 RemoveFriend 的
-	// F2-15 前置判定同一个目的);真正的安全门禁仍是事务内守卫之后的锁定读复核。
-	var pending int
-	if err := r.db.QueryRowContext(ctx,
-		"SELECT 1 FROM friend_request WHERE from_player_id=? AND to_player_id=? AND status=?",
-		fromPlayerID, toPlayerID, requestStatusPending).Scan(&pending); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return ErrRequestNotFound
-		}
-		return err
-	}
+	fromPlayerID, toPlayerID := change.FromPlayerID, change.ToPlayerID
 	cacheKeys := []string{
 		friendListKey(fromPlayerID),
 		friendListKey(toPlayerID),
@@ -543,17 +554,7 @@ func (r *FriendRepo) AcceptFriend(ctx context.Context, fromPlayerID, toPlayerID 
 	// 好友数上限由 friend_capacity 行保护,不依赖
 	// COUNT ... FOR UPDATE 的 gap-lock 行为(它会随隔离级别变化);双方始终按 player_id
 	// 升序加锁,避免反向申请同时接受时 ABBA。
-	err := r.runGuardedWrite(ctx, fromPlayerID, toPlayerID, func(ctx context.Context, tx *sql.Tx, counts map[uint64]uint32) error {
-		// ② 拉黑复核(F2 §3.2 新增)。没有这一步,"Block 删边 → Accept 插边"可以交错出
-		// "既是好友又在黑名单里"的状态:Block 与 Accept 现在锁同一对容量行,任一先行另一必见其果。
-		blocked, err := blockedEitherWay(ctx, tx, fromPlayerID, toPlayerID)
-		if err != nil {
-			return err
-		}
-		if blocked {
-			return ErrBlocked
-		}
-
+	err = r.runGuardedWrite(ctx, fromPlayerID, toPlayerID, func(ctx context.Context, tx *sql.Tx, counts map[uint64]uint32) error {
 		// ③ 申请行按主键单行锁定读并复核仍是 pending。
 		//
 		// ⚠ 这条 SELECT **必须留在容量守卫之后**(F2 §2.2 的裁定)。它原先排在守卫之前,
@@ -563,16 +564,30 @@ func (r *FriendRepo) AcceptFriend(ctx context.Context, fromPlayerID, toPlayerID 
 		// 下面的 UPDATE 仍在守卫之后,这里下移的只是一条主键单行的 SELECT,
 		// 它锁的是 (from,to) 这一行、不碰 idx_to_player 的范围。
 		var requestStatus int32
+		var currentRequestID uint64
 		if err := tx.QueryRowContext(ctx,
-			"SELECT status FROM friend_request WHERE from_player_id=? AND to_player_id=? FOR UPDATE",
-			fromPlayerID, toPlayerID).Scan(&requestStatus); err != nil {
+			"SELECT status, request_id FROM friend_request WHERE from_player_id=? AND to_player_id=? FOR UPDATE",
+			fromPlayerID, toPlayerID).Scan(&requestStatus, &currentRequestID); err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
 				return ErrRequestNotFound
 			}
 			return err
 		}
+		if currentRequestID != requestID {
+			return ErrRequestNotFound // 预读后重发已换代，迟到接受不能消费新申请。
+		}
+		if requestStatus == requestStatusAccepted {
+			return nil // 同代次成功重放不再建边，也不再发摘要或推送。
+		}
 		if requestStatus != requestStatusPending {
 			return ErrRequestNotFound
+		}
+		blocked, err := blockedEitherWay(ctx, tx, fromPlayerID, toPlayerID)
+		if err != nil {
+			return err
+		}
+		if blocked {
+			return ErrBlocked
 		}
 
 		// ④ 上限判定用守卫读回来的 friend_count(锁在手,值不会变)。
@@ -592,8 +607,8 @@ func (r *FriendRepo) AcceptFriend(ctx context.Context, fromPlayerID, toPlayerID 
 		// ⑤ 推进申请状态。保留 RowsAffected 的 fail-closed 门禁(WHERE status=pending),
 		// 并补写 updated_ms(F2-14:不写它 sweep 就没有可用的保留期依据)。
 		res, err := tx.ExecContext(ctx,
-			"UPDATE friend_request SET status=?, updated_ms=? WHERE from_player_id=? AND to_player_id=? AND status=?",
-			requestStatusAccepted, now, fromPlayerID, toPlayerID, requestStatusPending)
+			"UPDATE friend_request SET status=?, updated_ms=? WHERE from_player_id=? AND to_player_id=? AND status=? AND request_id=?",
+			requestStatusAccepted, now, fromPlayerID, toPlayerID, requestStatusPending, requestID)
 		if err != nil {
 			return err
 		}
@@ -638,49 +653,86 @@ func (r *FriendRepo) AcceptFriend(ctx context.Context, fromPlayerID, toPlayerID 
 				}
 			}
 		}
+		change.Changed = true
 		return nil
 	})
 	if err != nil {
-		return err
+		return RequestChange{}, err
 	}
 
-	r.invalidateCachesAfterCommit(ctx, cacheKeys...)
-	return nil
+	if change.Changed {
+		r.invalidateCachesAfterCommit(ctx, cacheKeys...)
+	}
+	return change, nil
 }
 
-// RejectFriend 拒绝一条 pending 申请。单行 CAS,不碰容量、不需要事务:
-// 它只让 pending 计数变小,不可能越过任何上限(顶部锁序说明 (4) 的例外说明)。
-func (r *FriendRepo) RejectFriend(ctx context.Context, fromPlayerID, toPlayerID uint64) error {
-	if fromPlayerID == 0 || toPlayerID == 0 || fromPlayerID == toPlayerID {
-		return errInvalidPlayerPair(fromPlayerID, toPlayerID)
-	}
-	key := pendingRequestsKey(toPlayerID)
-	// updated_ms 与 status 同一条语句里写(F2-14):sweep 的保留期靠它,
-	// 而"被拒"恰恰是 sweep 主要要清的那一类行。
-	result, err := r.db.ExecContext(ctx,
-		"UPDATE friend_request SET status=?, updated_ms=? WHERE from_player_id=? AND to_player_id=? AND status=?",
-		requestStatusRejected, time.Now().UnixMilli(), fromPlayerID, toPlayerID, requestStatusPending)
+// RejectRequest 在容量守卫后按主键锁行并复核代次，与重发及旧数据回填互斥。
+// 同代次已拒绝为无变化成功，其他终态或旧代次均不能处理新申请。
+func (r *FriendRepo) RejectRequest(ctx context.Context, requestID, accepterID uint64) (RequestChange, error) {
+	change, err := r.findRequest(ctx, requestID, accepterID)
 	if err != nil {
-		return err
+		return RequestChange{}, err
 	}
-	affected, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if affected == 0 {
-		return ErrRequestNotFound
-	}
-	r.invalidateCachesAfterCommit(ctx, key)
-	return nil
-}
-
-// RemoveFriend 删双向好友边并同步 friend_count。幂等:不是好友时返回成功。
-func (r *FriendRepo) RemoveFriend(ctx context.Context, playerID, targetPlayerID uint64) error {
-	if playerID == targetPlayerID {
+	err = r.runGuardedWrite(ctx, change.FromPlayerID, accepterID, func(ctx context.Context, tx *sql.Tx, _ map[uint64]uint32) error {
+		var status int32
+		var currentID uint64
+		if err := tx.QueryRowContext(ctx,
+			"SELECT status, request_id FROM friend_request WHERE from_player_id=? AND to_player_id=? FOR UPDATE",
+			change.FromPlayerID, accepterID).Scan(&status, &currentID); err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return ErrRequestNotFound
+			}
+			return err
+		}
+		if currentID != requestID {
+			return ErrRequestNotFound
+		}
+		if status == requestStatusRejected {
+			return nil
+		}
+		if status != requestStatusPending {
+			return ErrRequestNotFound
+		}
+		result, err := tx.ExecContext(ctx,
+			"UPDATE friend_request SET status=?, updated_ms=? WHERE from_player_id=? AND to_player_id=? AND status=? AND request_id=?",
+			requestStatusRejected, time.Now().UnixMilli(), change.FromPlayerID, accepterID, requestStatusPending, requestID)
+		if err != nil {
+			return err
+		}
+		affected, err := result.RowsAffected()
+		if err != nil {
+			return err
+		}
+		if affected != 1 {
+			return ErrRequestNotFound
+		}
+		change.Changed = true
 		return nil
+	})
+	if err != nil {
+		return RequestChange{}, err
+	}
+	if change.Changed {
+		r.invalidateCachesAfterCommit(ctx, pendingRequestsKey(accepterID))
+	}
+	return change, nil
+}
+
+// RemoveFriend 删双向好友边并同步 friend_count。幂等:不是好友时返回 (false, nil)。
+//
+// 第一个返回值(removed)报告这次调用是否**真的删掉了好友边**(守卫内删边语句的 RowsAffected 合计 > 0)。
+// logic 只在 removed 时给双方 bump 落地摘要(docs/design/landing-recovery-sync-digest.md §3.3):
+// RemoveFriend 没有任何频率配额,对任意 target 无条件 bump,客户端就能在核心 Redis 上
+// 凭空造出 30 天的摘要键 —— 与 F2-15 挡 friend_capacity 空行是同一类增长。
+// 两种 false:事务外前置判定说"不是好友"(下面那一探);判定说是、但拿到守卫时边已被并发的
+// RemoveFriend / Block 删掉。后者的变化由那次删除的发起方按它自己的效果 bump 过,这里不重复。
+// 只在 err == nil 时有意义。
+func (r *FriendRepo) RemoveFriend(ctx context.Context, playerID, targetPlayerID uint64) (bool, error) {
+	if playerID == targetPlayerID {
+		return false, nil
 	}
 	if playerID == 0 || targetPlayerID == 0 {
-		return errInvalidPlayerPair(playerID, targetPlayerID)
+		return false, errInvalidPlayerPair(playerID, targetPlayerID)
 	}
 
 	// F2-15:**先判是不是好友,再 ensure 容量行**。
@@ -695,25 +747,29 @@ func (r *FriendRepo) RemoveFriend(ctx context.Context, playerID, targetPlayerID 
 	// 反过来"边存在却读不到"不可能:已提交的边在 RC 的新快照里一定可见。
 	exists, err := r.friendEdgeExists(ctx, playerID, targetPlayerID)
 	if err != nil {
-		return err
+		return false, err
 	}
 	if !exists {
-		return nil
+		return false, nil
 	}
 
 	cacheKeys := []string{friendListKey(playerID), friendListKey(targetPlayerID)}
 	// 容量守卫(runGuardedWrite 取)。这里不需要 friend_count 的值(只做增减,所以闭包不收 counts),
 	// 但锁必须照样先拿:它同时是"这一对玩家"的串行化载体,Block 与 AcceptFriend 都锁同一对行。
 	// 上面的 friendEdgeExists 在 runGuardedWrite 之外,不随回收竞态的重试重跑。
+	// deleted 由 body 覆盖赋值(不累加),留下的只会是走到 Commit 的那一遍(与 Block 的 effect 同一口径)。
+	var deleted int64
 	err = r.runGuardedWrite(ctx, playerID, targetPlayerID, func(ctx context.Context, tx *sql.Tx, _ map[uint64]uint32) error {
 		// 时刻取在闭包里:它属于真正拿到守卫的那一遍尝试(与 Block 同一个口径)。
-		return deleteFriendEdges(ctx, tx, playerID, targetPlayerID, time.Now().UnixMilli())
+		n, err := deleteFriendEdges(ctx, tx, playerID, targetPlayerID, time.Now().UnixMilli())
+		deleted = n
+		return err
 	})
 	if err != nil {
-		return err
+		return false, err
 	}
 	r.invalidateCachesAfterCommit(ctx, cacheKeys...)
-	return nil
+	return deleted > 0, nil
 }
 
 // ── 写事务的公共步骤(block_repo.go 也用这几个,别各写一份)──────────────────────
@@ -948,17 +1004,23 @@ func (r *FriendRepo) friendEdgeExists(ctx context.Context, a, b uint64) (bool, e
 // 一个好友的那一刻,他的行(0, 很老的 created_ms)立即就是回收候选,陈旧 ensure 会把计数
 // 永久写大 1(完整交错见顶部锁序说明 (5) 的"为什么删行也不会让计数偏大")。
 // 这偏离了收尾批冻结规格里"created_ms 只在 INSERT 写"的表述,原因即上述交错,已登记进交付说明。
-func deleteFriendEdges(ctx context.Context, tx *sql.Tx, a, b uint64, nowMs int64) error {
+//
+// 返回两个方向实际删掉的边数合计(0..2)。RemoveFriend 与 Block 据此向 logic 报告"好友边是否真的被删",
+// logic 只在真删时给被动方 bump 落地摘要(docs/design/landing-recovery-sync-digest.md §3.3)。
+// 出错时返回 0:事务随即回滚,这个数没有意义。
+func deleteFriendEdges(ctx context.Context, tx *sql.Tx, a, b uint64, nowMs int64) (int64, error) {
+	var removed int64
 	for _, edge := range [][2]uint64{{a, b}, {b, a}} {
 		result, err := tx.ExecContext(ctx,
 			"DELETE FROM friend WHERE player_id=? AND friend_player_id=?", edge[0], edge[1])
 		if err != nil {
-			return fmt.Errorf("delete friend edge %d->%d: %w", edge[0], edge[1], err)
+			return 0, fmt.Errorf("delete friend edge %d->%d: %w", edge[0], edge[1], err)
 		}
 		deleted, err := result.RowsAffected()
 		if err != nil {
-			return err
+			return 0, err
 		}
+		removed += deleted
 		if deleted == 1 {
 			// 用 `AND friend_count > 0` 代替 IF() 做下溢保护:两者的净效果一样(减不到负数),
 			// 但这样能通过 RowsAffected 看见"被夹住"这件事。夹住 = 计数与 friend 表的权威边数
@@ -968,11 +1030,11 @@ func deleteFriendEdges(ctx context.Context, tx *sql.Tx, a, b uint64, nowMs int64
 				"UPDATE friend_capacity SET friend_count = friend_count - 1, created_ms = ? WHERE player_id = ? AND friend_count > 0",
 				nowMs, edge[0])
 			if err != nil {
-				return fmt.Errorf("decrement friend count %d: %w", edge[0], err)
+				return 0, fmt.Errorf("decrement friend count %d: %w", edge[0], err)
 			}
 			n, err := res.RowsAffected()
 			if err != nil {
-				return err
+				return 0, err
 			}
 			if n == 0 {
 				logx.WithContext(ctx).Errorf("[friend] friend_count underflow prevented: player=%d edge deleted but count already 0, "+
@@ -981,7 +1043,7 @@ func deleteFriendEdges(ctx context.Context, tx *sql.Tx, a, b uint64, nowMs int64
 			}
 		}
 	}
-	return nil
+	return removed, nil
 }
 
 // ascendingUniqueIDs 把玩家 id 规整成升序去重切片。锁序纪律的唯一实现点:
@@ -1269,8 +1331,40 @@ func (r *FriendRepo) loadFriendListFromMySQL(ctx context.Context, playerID uint6
 }
 
 func (r *FriendRepo) loadPendingRequestsFromMySQL(ctx context.Context, playerID uint64) ([]FriendRequestEntry, error) {
+	requests, err := r.queryPendingRequests(ctx, playerID)
+	if err != nil {
+		return nil, err
+	}
+	backfilled := false
+	for _, request := range requests {
+		if request.RequestID != 0 {
+			continue
+		}
+		if _, _, err := r.ensurePendingRequest(ctx, request.FromPlayerID, playerID); err != nil {
+			return nil, err
+		}
+		backfilled = true
+	}
+	if !backfilled {
+		return requests, nil
+	}
+	// 补号期间其他申请可能已被接受或重发；必须用一个新SQL语句的完整快照返回，
+	// 不能将补号结果拼进初读列表。返回后发生的并发变化属于正常的快照读边界。
+	requests, err = r.queryPendingRequests(ctx, playerID)
+	if err != nil {
+		return nil, err
+	}
+	for _, request := range requests {
+		if request.RequestID == 0 {
+			return nil, errors.New("补号后仍出现零代次pending；检查旧写者是否已全部停写，拒绝返回混版申请")
+		}
+	}
+	return requests, nil
+}
+
+func (r *FriendRepo) queryPendingRequests(ctx context.Context, playerID uint64) ([]FriendRequestEntry, error) {
 	rows, err := r.db.QueryContext(ctx,
-		`SELECT from_player_id, to_player_id, request_time_ms, status
+		`SELECT from_player_id, to_player_id, request_time_ms, status, request_id
 		 FROM friend_request WHERE to_player_id = ? AND status = ? LIMIT ?`,
 		playerID, requestStatusPending, r.listReadHardLimit)
 	if err != nil {
@@ -1281,7 +1375,7 @@ func (r *FriendRepo) loadPendingRequestsFromMySQL(ctx context.Context, playerID 
 	var requests []FriendRequestEntry
 	for rows.Next() {
 		var req FriendRequestEntry
-		if err := rows.Scan(&req.FromPlayerID, &req.ToPlayerID, &req.RequestTimeMs, &req.Status); err != nil {
+		if err := rows.Scan(&req.FromPlayerID, &req.ToPlayerID, &req.RequestTimeMs, &req.Status, &req.RequestID); err != nil {
 			return nil, fmt.Errorf("scan friend request: %w", err)
 		}
 		requests = append(requests, req)

@@ -3,6 +3,8 @@
 **Date:** 2026-05-08 · **Updated:** 2026-09-29(§1 拓扑补 battle 与客户端第二条连接;§2 / §6 更正 gate↔scene 传输与路由模式默认值;§10 / §11 补 battle 直连收缩与集群外入口)
 **Status:** Living document — 总入口,串联各专题文档
 
+2026-10-15 按 `6281e4d27` 修订 Gate 重连、票据有效期及连接建立说明；本次只改文档，未新增构建或运行证据。工作区未提交的 RPC channel 改造不作为已完成验收。
+
 > 本文是**架构索引 + 关键决策记录**,不重复造轮子。
 > 每个子模块有独立深度文档,本文负责告诉你"为什么这么做、去哪儿看细节"。
 
@@ -179,9 +181,9 @@ Layer 2: Access Token (2h) + Refresh Token (30d)
               │
               │ 玩家断线/换设备,凭 access 静默续会话
               ▼
-Layer 3: Gate Token (HMAC-SHA256, 300s)
+Layer 3: Gate Token (HMAC-SHA256, AssignGate 当前 600s)
               │
-              │ 一次性 TCP 握手凭证
+              │ 短期 TCP 握手凭证（本地验签不等于一次性消费）
               ▼
          TCP 长连接 (Gate)
 ```
@@ -199,16 +201,18 @@ Layer 3: Gate Token (HMAC-SHA256, 300s)
 
 ## 5. Gate:有状态长连接层
 
-### 5.1 为什么 gate 不能用 L4 LB 做后向均衡
+### 5.1 Gate 实例寻址与重连边界
 
-| 维度 | 我们的 Gate | L4 LB 要求 |
-|---|---|---|
-| 连接状态 | `SessionInfo`(playerId + 节点绑定 + sessionVersion) | 无状态 |
-| 定向推送 | Kafka `gate-{gateId}` 路由 | 不需要 |
-| 断线感知 | session_id 必须由原 Gate 发出 | LB 或后端自感知 |
-| 重连 | **必须回到同一 Gate**(SessionInfo 在那) | 任意 Gate 均可 |
+| 维度 | 当前约束 |
+|---|---|
+| 连接状态 | `SessionInfo`、socket、节点绑定属于承载当前 TCP 连接的 Gate |
+| 定向推送 | Kafka 命令按目标 Gate 与实例 UUID 路由 |
+| 断线感知 | 由持有原连接的 Gate 发出 |
+| 重连 | 支持选另一 Gate；新票据、握手与登录链重建上下文，并更新 player_locator 会话 |
+| 入口寻址 | 票据绑定选中的 Gate，不能让共享 LB 再把连接随机送到其他 Gate |
 
-→ **所以选 "Login 分配 + HMAC token"**,而不是 LVS DR / Nginx。详见 [gate-load-balancing-design.md](./gate-load-balancing-design.md)
+本仓采用 **login 分配实例地址 + HMAC token**。跨 Gate 重连能力与这项入口约束并不冲突；
+K8s 外部入口保持每实例可寻址。详见 [gate-load-balancing-design.md](./gate-load-balancing-design.md)。
 
 ### 5.2 gate 上的会话状态
 
@@ -246,12 +250,12 @@ Bound        15470→  2704    (5.7x 缓解)
 
 | 平面 | 路径 | 传输 | 理由 |
 |---|---|---|---|
-| **游戏热路径**(客户端包 ↔ scene) | C++ Gate ↔ C++ Scene | ~~**直连 gRPC**(lazy 建连 + channel pool + 同区)~~ **(2026-09-29 更正)muduo TCP RPC 直连**(RpcCodec,同区;scene 以 `PROTOCOL_TCP` 注册,`node.cpp:534-535`;gate 出站说明 `gate/main.cpp:183`、两种路由模式白名单都含 `SceneNodeService` `:216-219`) | 延迟敏感,要常驻有状态低延迟通道 |
+| **游戏热路径**（客户端包 ↔ scene） | C++ Gate ↔ C++ Scene | **muduo TCP RPC 直连**（RPC0，同 zone）；两种 Gate 路由模式均包含 Scene 白名单，发现节点后创建 `RpcClient` 并建连，启动时遍历已有发现记录；不经过 gRPC channel pool，也不等玩家首次使用才建连 | 延迟敏感，要常驻有状态低延迟通道 |
 | **控制面**(RoutePlayer / Kick / Bind / LeaseExpired / Redirect) | Go 服务 → `gate-{gateId}` topic → Gate | **Kafka** | 低频、fire-and-forget,要解耦防连接爆炸 |
 | **业务反向推送**(好友/公会 server→client) | Go 服务 → Kafka → Gate → client TCP | **Kafka** | 异步通知,非实时 |
 | **客户端业务请求**(login / match / chat / friend / guild …) | client TCP → Gate → `client_rpc_router` → 目标 Go 服务 | **gRPC unary,原始字节透传**(gate 只连路由服一类;`GATE_CLIENT_RPC_ROUTER=1`,见 [client-rpc-router.md](./client-rpc-router.md))。**(2026-09-29)** 部署层默认路由模式(本地 `start_game.ps1`、K8s `k8s_deploy.ps1` 的 `-GateRouterMode` 均默认 `"1"`),C++ 进程默认直连,见 §2 原则 5 更正与 [xuanming-port-decisions-20260910.md](./xuanming-port-decisions-20260910.md) D-12 修订 | 请求/应答语义,一跳亚毫秒;gate 不持任何业务 stub,加服务不碰 gate |
 | **对局战斗**(回合制 battle) | client TCP **直连** battle 节点(票据入场) | **TCP,零字节经 gate**([turn-based-battle-server.md §18](./turn-based-battle-server.md));**(2026-09-29 精确)** 战斗上下行(四条战斗 RPC 及应答、握手后的全部战斗帧)零字节经 gate,battle 与大厅之间只剩 Kafka 大厅公告(见下一行),gate 两种路由模式都不中继战斗(turn-based §22 D66);match 的大厅 RPC(补签 `MatchService.RequestBattleTicket`,应答带完整 `BattleAssignedS2C`;观战 `WatchBattle`)按设计走「客户端业务请求」一行的 gate 路径,不算战斗流量(turn-based §22.1) | 战斗服可随时 kill;gate 与 battle 之间无连接 |
-| **对局大厅公告**(2026-09-29 补) | battle → Kafka gate 命令 topic(`PushToPlayerEvent`;现行名 `gate-cmd_g<N>`、按 gate node_id 定分区,`battle_room_manager.cpp:91-94`,[control-plane-topic-partitioning-20260908.md](./control-plane-topic-partitioning-20260908.md);`gate-{gateId}` 为本文沿用的旧记法)→ Gate → 大厅连接 | **Kafka,battle → gate 只剩这一条** | 只承载 `NotifyBattleAssigned`(带票据)与 `NotifyBattleStart`,且仅在该玩家没有活直连时回落(turn-based §22 D68,`battle_push_policy.h:46-48`);战斗帧、观战帧、终局无直连即丢弃。scene 发的 `NotifyBattleReconnect` 与结算后 `NotifyBattleEnd` 属 scene 自己的下行(scene → gate → 大厅连接)。Kafka `BindBattleEvent` / `UnbindBattleEvent` 已从 `proto/contracts/kafka/gate_event.proto` 删除(:98-100,D67);事件号 43/44 永不复用,重生时由生成器改写成 `N=reserved:<原名>` 墓碑(`event_id.go:59`;截至本次 `proto/event_id.txt:44-45` 尚未重生)。未编译、未测试,待 Codex 验证 |
+| **对局大厅公告**(2026-09-29 补) | battle → Kafka gate 命令 topic(`PushToPlayerEvent`;现行名 `gate-cmd_g<N>`、按 gate node_id 定分区,`battle_room_manager.cpp:91-94`,[control-plane-topic-partitioning-20260908.md](./control-plane-topic-partitioning-20260908.md);`gate-{gateId}` 为本文沿用的旧记法)→ Gate → 大厅连接 | **Kafka,battle → gate 只剩这一条** | 只承载 `NotifyBattleAssigned`(带票据)与 `NotifyBattleStart`,且仅在该玩家没有活直连时回落(turn-based §22 D68,`battle_push_policy.h:46-48`);战斗帧、观战帧、终局无直连即丢弃。scene 发的 `NotifyBattleReconnect` 与结算后 `NotifyBattleEnd` 属 scene 自己的下行(scene → gate → 大厅连接)。Kafka `BindBattleEvent` / `UnbindBattleEvent` 已从 `proto/contracts/kafka/gate_event.proto` 删除(:98-100,D67);事件号 43/44 已在 `proto/event_id.txt` 登记为 `reserved:ContractsKafkaBindBattleEvent` / `reserved:ContractsKafkaUnbindBattleEvent` 墓碑，永不复用；该生成状态不代表节点构建或联机验证通过。未编译、未测试,待 Codex 验证 |
 
 ### 6.2 Kafka topic 路由(控制面)
 

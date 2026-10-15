@@ -1063,7 +1063,7 @@ Test-Case "login 的 go-zero Mode:dev 档必须写且 == go/login/etc/login.yaml
 # ─────────────────────────────────────────────────────────────────
 # k8s_deploy.ps1 按 -ReleaseProfile 生成:dev 两项都关(产物与 G4b 之前逐字相同),staging / prod 两项都开;阈值只有一份
 # ($script:PeakShavingLaunchTier,全部待压测确认)。-GatewayRateLimit / -LoginQueue 取 auto|on|off(auto = 跟随档位),
-# off 只用于止血与基线压测。复用上面的 $devOut(dev 缺省)与 $prodRun(prod 缺省),另起 8 个 DryRun 子进程:下面 5 个,
+# off 只用于止血与基线压测。复用上面的 $devOut(dev 缺省)与 $prodRun(prod 缺省),另起 9 个 DryRun 子进程:下面 6 个,
 # 用例 10 一个、用例 11 两个在用例里起。部署子进程一律带 -DryRun($BaseArgs / $ProdArgs 已带),不碰任何集群。
 # 计划行与警告是 Show-PeakShavingPlan 打的英文原文;警告只断开头不含空格的「[PeakShaving]Xxx=yyy」一段
 # (Write-Warning 可能在空格处折行,同下文 MySQL 连接总账、gateway 管理面口令两节的说明)。
@@ -1089,6 +1089,10 @@ $PeakRotatedRedisPassword = 'contract-test-redis-pw-rotated-02'
 $peakGwRedisRotEnv = @{} + $ProdEnv
 $peakGwRedisRotEnv['MMORPG_REDIS_PASSWORD'] = $PeakRotatedRedisPassword
 $peakGwRedisRotRun = Invoke-DeployDryRun -Arguments ($ProdArgs + @('-SkipGoSvc')) -Env $peakGwRedisRotEnv
+# 只加可信代理网段(gateway 削峰指纹的另一份输入:rate-limit 段文本),密钥与 $prodRun 完全相同;-SkipGoSvc:本次只看 gateway。
+# 没有 Ingress 时给可信代理不会被入口预检拒绝(lib/k8s_client_entry.ps1 只在给了 -GatewayIngressHost 却没给它时报错)。
+$PeakTrustedProxies = '10.0.0.0/8'
+$peakGwProxyRun = Invoke-DeployDryRun -Arguments ($ProdArgs + @('-SkipGoSvc', '-GatewayTrustedProxies', $PeakTrustedProxies)) -Env $ProdEnv
 
 # 拍平后的 manifest 里某个路径本身及其全部子键(序数比较;'Queue' 不会误中 'QueueXxx')。
 function Get-FlatSubtreeKeys {
@@ -1148,14 +1152,20 @@ function Get-ManifestSectionText {
     return ($section -join "`n")
 }
 
-# 常量表自检(用例 16):按 AST 从 k8s_deploy.ps1 抽出 Get-GatewayRateLimitSettings 直接调用(与上面 deadline 守卫、下文 Kafka 拓扑
-# 同一做法)。它只读 $script:GatewayRateLimitOn 与 $script:PeakShavingLaunchTier,由用例在本脚本作用域里设好、用完即删。
+# 常量表自检(用例 16):按 AST 从 k8s_deploy.ps1 抽出下面三个函数直接调用(与上面 deadline 守卫、下文 Kafka 拓扑同一做法)。
+#   - Get-GatewayRateLimitSettings 只读 $script:GatewayRateLimitOn 与 $script:PeakShavingLaunchTier;
+#   - New-LoginQueueYaml 读 $script:LoginQueueOn、$script:PeakShavingLaunchTier,并经 Get-AuthoritativeScalar 按 $RepoRoot 读
+#     go/login/etc/login.yaml(Get-YamlScalar 来自 deploy_capture.ps1 dot-source 的 release_common.ps1)。
+# 脚本级变量由用例在本脚本作用域里设好、用完即删;$RepoRoot 由用例自己设(下文 MySQL 节同样抽 Get-AuthoritativeScalar,重设无害)。
+$peakFunctionNames = @('Get-GatewayRateLimitSettings', 'New-LoginQueueYaml', 'Get-AuthoritativeScalar')
 foreach ($peakFnAst in $deadlineDeployAst.FindAll({ param($a) $a -is [System.Management.Automation.Language.FunctionDefinitionAst] }, $false)) {
-    if ($peakFnAst.Name -eq 'Get-GatewayRateLimitSettings') {
+    if ($peakFunctionNames -contains $peakFnAst.Name) {
         Set-Item -Path "Function:script:$($peakFnAst.Name)" -Value $peakFnAst.Body.GetScriptBlock()
     }
 }
-if (-not (Test-Path 'Function:Get-GatewayRateLimitSettings')) { throw 'k8s_deploy.ps1 缺少函数 Get-GatewayRateLimitSettings(削峰阈值的生成与自检被删了?后续断言无意义)' }
+foreach ($peakFnName in $peakFunctionNames) {
+    if (-not (Test-Path "Function:$peakFnName")) { throw "k8s_deploy.ps1 缺少函数 $peakFnName(削峰阈值 / 排队段的生成与自检被删了?后续断言无意义)" }
+}
 
 Test-Case '削峰 dev 档缺省关:gateway 不写 gate.rate-limit.enabled,login 不写 Queue / Secrets.QueueToken,两者无 peak-shaving 注解(产物与 G4b 前相同)' {
     # dev 档(auto)两项都关:落回 jar 内 / login.yaml 的 enabled: false,本地与 kind 联调不受削峰影响。
@@ -1372,7 +1382,7 @@ Test-Case 'dev -GatewayRateLimit on -LoginQueue on:两段写出,不写 Secrets.Q
     Assert-Match -Text $peakDevOnRun.Output -Pattern 'PeakShaving: gateway_rate_limit=on\(-GatewayRateLimit on\) login_queue=on\(-LoginQueue on\) profile=dev ' -Because '计划行要打出显式 on 的解析结果'
 }
 
-Test-Case 'all-up 多 zone(prod):每个 zone 的 login 锁键与 ZoneCapacityOverride 只指向本 zone,两把锁键互不相同' {
+Test-Case 'all-up 多 zone(prod):每个 zone 的 login 锁键与 ZoneCapacityOverride 只指向本 zone,两把锁键互不相同,login 削峰指纹也互不相同' {
     Assert-True -Condition ($PeakAllUpArgs -contains '-DryRun') -Because '夹具前提:all-up 必须是 DryRun(不带它会对本机当前 kubectl context 真执行 apply)'
     $expectedZoneIds = @((Get-Content -LiteralPath (Join-Path (Get-RepoRoot) 'deploy/k8s/zones.sample.json') -Raw | ConvertFrom-Json).zones | ForEach-Object { [string]$_.zoneId } | Sort-Object)
     Assert-True -Condition ($expectedZoneIds.Count -ge 2) -Because "夹具前提:deploy/k8s/zones.sample.json 至少有两个 zone(实际 $($expectedZoneIds.Count) 个)"
@@ -1394,6 +1404,23 @@ Test-Case 'all-up 多 zone(prod):每个 zone 的 login 锁键与 ZoneCapacityOve
     }
     Assert-Equal -Expected ($expectedZoneIds -join ',') -Actual (@($zoneIds | Sort-Object) -join ',') -Because 'login ConfigMap 的 Node.ZoneId 与 zones.sample.json 的 zone 一一对应'
     Assert-Equal -Expected $expectedZoneIds.Count -Actual (@($lockKeys | Sort-Object -Unique).Count) -Because '各 zone 的锁键必须互不相同(同一把锁 = 全集群只有一个 leader,其它 zone 的队列不出队)'
+
+    # login 指纹的输入里有配置文本(Queue 段),不只有排队密钥:各 zone 用同一把密钥,Queue 段只差 zone(锁键与 ZoneCapacityOverride),
+    # 指纹必须各不相同。指纹若退化成只含密钥,改排队配置后 login 不会滚动,而用例 8 的「dev on 对 prod」(两边只差密钥)照样绿。
+    # 不用 Get-PeakShavingAnnotation:它经 Select-ManifestByName 只取第一个同名块,拿不到第二个 zone 的 login。
+    $loginDeployments = @(Get-ManifestBlocks -Output $peakAllUpRun.Output | Where-Object {
+        $_ -match '(?m)^\s*kind:\s*Deployment\s*$' -and $_ -match '(?m)^\s*name:\s*login\s*$' -and $_.Contains('mmorpg.io/peak-shaving-hash')
+    })
+    Assert-Equal -Expected $expectedZoneIds.Count -Actual $loginDeployments.Count -Because '每个 zone 各有一份带削峰指纹的 login Deployment'
+    $loginPeaks = @()
+    foreach ($block in $loginDeployments) {
+        Assert-Equal -Expected 1 -Actual ([regex]::Matches($block, 'mmorpg\.io/peak-shaving-hash').Count) -Because 'login manifest 里削峰指纹注解应恰好 1 处'
+        # Get-ManifestBlocks 已把块内换行统一成 LF,与 Get-PeakShavingAnnotation 同一个锚定写法。
+        $peakMatch = [regex]::Match($block, 'annotations:[ ]*\n[ ]+mmorpg\.io/peak-shaving-hash: "(?<peak>[0-9a-f]{12})"')
+        Assert-True -Condition $peakMatch.Success -Because 'login 的削峰指纹必须在 Pod 模板 annotations 的下一行,值为加双引号的 12 位小写十六进制'
+        $loginPeaks += $peakMatch.Groups['peak'].Value
+    }
+    Assert-Equal -Expected $expectedZoneIds.Count -Actual (@($loginPeaks | Sort-Object -Unique).Count) -Because "同一把排队密钥下各 zone 的 Queue 段不同,login 指纹必须互不相同(实际:$($loginPeaks -join ', '))"
 }
 
 Test-Case 'staging 与 prod 的削峰产物逐字相同(档位只决定开关,不决定阈值)' {
@@ -1407,7 +1434,7 @@ Test-Case 'staging 与 prod 的削峰产物逐字相同(档位只决定开关,�
     }
 }
 
-Test-Case 'G4b-2 前置:G1b 已合入(DispatcherLockKey 是前缀,锁键按 zone 派生)' {
+Test-Case 'G4b-2 前置:G1b 与 G4b-G 已合入(DispatcherLockKey 是前缀,锁键按 zone 派生;在途占位是新键 ZSET)' {
     # 生成器给每个 zone 显式写 <基名>:zone:<id>,前提是 login 把配置值当前缀、只出队本 zone(G1b)。login 若改成「一个 leader
     # 覆盖全部 zone」,显式分 zone 键就变成 N 个 leader 同时出队所有 zone、超发准入 —— 这条把「G1b → G4b-2」钉成机械门禁。
     $dispatcherGo = Get-Content -LiteralPath (Join-Path (Get-RepoRoot) 'go/login/internal/logic/pkg/loginqueue/dispatcher.go') -Raw
@@ -1415,6 +1442,12 @@ Test-Case 'G4b-2 前置:G1b 已合入(DispatcherLockKey 是前缀,锁键按 zone
     Assert-True -Condition ($dispatcherGo.Contains('"%s:zone:%d"')) -Because '锁键派生格式必须是 <前缀>:zone:<id>(生成器显式写的键与排查时要查的键都按它推)'
     $svcGo = Get-Content -LiteralPath (Join-Path (Get-RepoRoot) 'go/login/internal/svc/servicecontext.go') -Raw
     Assert-True -Condition (-not $svcGo.Contains('activeZones := func')) -Because 'G1b 之前「一个 leader 遍历 activeZones 出队」的实现必须已删除'
+    # G4b-G:在途占位改成逐个到期的 admitted:zset:zone:{z}。G4b-2 一打开排队,G4b-G 之前的 SET 版本就把 Q1(快速通道占位被重复
+    # 扣减、放一批停最长 60s)与 Q2(取走即撤占位、开区超发数倍容量)带上线 —— 下面两条把「G4b-G → G4b-2」也钉成机械门禁
+    # (docs/handoff/launch-readiness-20261013/spec_G4b-G.md §5.5)。
+    $queueGo = Get-Content -LiteralPath (Join-Path (Get-RepoRoot) 'go/login/internal/logic/pkg/loginqueue/queue.go') -Raw
+    Assert-True -Condition ($queueGo.Contains('admitted:zset:zone:%d')) -Because '在途占位键必须是 admitted:zset:zone:<id>(G4b-G:ZSET,成员按分数逐个到期)'
+    Assert-True -Condition (-not $queueGo.Contains('"admitted:zone:%d"')) -Because 'G4b-G 之前的 SET 键 "admitted:zone:%d" 必须已不再使用(新版本不读不写旧键)'
 }
 
 Test-Case '常量表自检:改坏 PeakShavingLaunchTier 时在任何写操作之前 throw' {
@@ -1443,18 +1476,39 @@ Test-Case '常量表自检:改坏 PeakShavingLaunchTier 时在任何写操作之
         Assert-Equal -Expected 'enabled,zone-default-rps,zone-default-burst,ip-rps,ip-burst,account-cooldown-ms' -Actual (@($settings.Keys) -join ',') -Because '合法常量表不 throw,按固定顺序返回 6 个 Spring 属性名'
         $script:GatewayRateLimitOn = $false
         Assert-True -Condition ($null -eq (Get-GatewayRateLimitSettings)) -Because '限流关时返回 $null(什么都不写,落回 jar 内的 enabled: false)'
+
+        # 排队容量是常量表的另一项(Go 侧 uint32),由 New-LoginQueueYaml 守。它还要读 go/login/etc/login.yaml 的 Queue.* 镜像键:
+        # Get-AuthoritativeScalar 按 $RepoRoot 定位仓库(在 k8s_deploy.ps1 里是脚本级变量,这里按动态作用域给)。
+        $RepoRoot = Get-RepoRoot
+        $script:LoginQueueOn = $true
+        foreach ($badCapacity in @(0, 4294967296)) {
+            $tier = & $newTier
+            $tier['LoginQueueZoneCapacity'] = $badCapacity
+            $script:PeakShavingLaunchTier = $tier
+            $message = ''
+            try { New-LoginQueueYaml -CurrentZoneId 101 | Out-Null } catch { $message = $_.Exception.Message }
+            Assert-Match -Text $message -Pattern ([regex]::Escape("LoginQueueZoneCapacity=$badCapacity 不在 1..4294967295")) -Because "排队容量 $badCapacity 越界必须 throw 并点名常量与值(0 = 本 zone 永远放不出人;超过 uint32 在 Go 侧解析失败)"
+        }
+        $script:PeakShavingLaunchTier = & $newTier
+        $queueYaml = New-LoginQueueYaml -CurrentZoneId 101
+        Assert-Match -Text $queueYaml -Pattern '(?m)^    "101": 5000\s*$' -Because '合法常量表不 throw,ZoneCapacityOverride 只写本 zone 的开服档容量'
+        $script:LoginQueueOn = $false
+        Assert-Equal -Expected '' -Actual (New-LoginQueueYaml -CurrentZoneId 101) -Because '排队关时返回空串(不写 Queue 段,落回 login.yaml 的 Enabled: false)'
     }
     finally {
-        Remove-Variable -Name GatewayRateLimitOn, PeakShavingLaunchTier -Scope Script -ErrorAction SilentlyContinue
+        Remove-Variable -Name GatewayRateLimitOn, LoginQueueOn, PeakShavingLaunchTier -Scope Script -ErrorAction SilentlyContinue
     }
 
     # 「在任何写操作之前」:写路径入口的 Show-PeakShavingPlan(先于 Initialize-InjectedSecrets 与任何 kubectl 写操作)在本次部署
-    # gateway 且限流开时先求一次 Get-GatewayRateLimitSettings。否则自检要等到生成 gateway ConfigMap 才跑,那时同一 zone 的
-    # node ConfigMap / gate 等已经 apply 过了,留下半截部署。
+    # gateway 且限流开时先求一次 Get-GatewayRateLimitSettings,部署 login 且排队开时先求一次 New-LoginQueueYaml(容量越界、login.yaml
+    # 缺 Queue 键都在这里 throw)。否则自检要等到生成 gateway / login ConfigMap 才跑,那时同一 zone 的 node ConfigMap / gate / scene
+    # 已经 apply 过了,留下半截部署(spec_G4b §5 表头「部署期,都在任何 kubectl 写操作之前」)。
     $planFn = $deadlineDeployAst.Find({ param($a) $a -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $a.Name -eq 'Show-PeakShavingPlan' }, $true)
     Assert-True -Condition ($null -ne $planFn) -Because 'k8s_deploy.ps1 应当有 Show-PeakShavingPlan(写路径入口的削峰计划)'
     $selfCheckCall = $planFn.Body.Find({ param($a) $a -is [System.Management.Automation.Language.CommandAst] -and $a.GetCommandName() -eq 'Get-GatewayRateLimitSettings' }, $true)
     Assert-True -Condition ($null -ne $selfCheckCall) -Because 'Show-PeakShavingPlan 必须调用 Get-GatewayRateLimitSettings,把常量表自检提前到写路径入口'
+    $queueSelfCheckCall = $planFn.Body.Find({ param($a) $a -is [System.Management.Automation.Language.CommandAst] -and $a.GetCommandName() -eq 'New-LoginQueueYaml' }, $true)
+    Assert-True -Condition ($null -ne $queueSelfCheckCall) -Because 'Show-PeakShavingPlan 必须调用 New-LoginQueueYaml,把排队容量越界与 login.yaml 缺 Queue 键的检查提前到写路径入口'
     $planAt = $prodRun.Output.IndexOf('PeakShaving: ')
     $firstKubectlAt = $prodRun.Output.IndexOf('[dry-run] kubectl')
     Assert-True -Condition ($planAt -ge 0 -and ($firstKubectlAt -lt 0 -or $planAt -lt $firstKubectlAt)) -Because '削峰计划(含常量表自检)必须先于任何 kubectl 写操作打出'
@@ -1470,6 +1524,18 @@ Test-Case 'gateway 削峰指纹随 Redis 口令变化(轮换口令自动滚动 g
     Assert-Equal -Expected $baseline.AdminKey -Actual $rotated.AdminKey -Because '管理面口令没变,口令指纹必须不变(两条注解各管各的输入)'
     $flat = ConvertTo-FlatManifest -Block (Select-ManifestByName -Output $peakGwRedisRotRun.Output -Name 'java-svc-gateway-config')
     Assert-True -Condition ((Get-FlatValue -Flat $flat -KeyPath 'data.application.yaml.spring.data.redis.password') -ceq $PeakRotatedRedisPassword) -Because 'ConfigMap 里的 Redis 口令必须是换过的新值(与指纹同一份输入)'
+}
+
+Test-Case 'gateway 削峰指纹随 rate-limit 段文本变化(只改 -GatewayTrustedProxies,密钥不变,也要自动滚动 gateway)' {
+    # 指纹输入 = 整段 rate-limit 文本 + Redis 口令。上面几例只验证了「随口令变」「同输入同指纹」「关时消失」:指纹输入若退化成只含口令,
+    # 它们照样全绿,而改阈值、改可信代理网段都不会再滚动 gateway(ConfigMap 只在启动时读)。这里密钥与 $prodRun 完全相同,只多一段代理网段。
+    Assert-Equal -Expected 0 -Actual $peakGwProxyRun.ExitCode -Because "只加 -GatewayTrustedProxies 的 prod DryRun 应当成功。输出: $($peakGwProxyRun.Output)"
+    $gatewayCm = Select-ManifestByName -Output $peakGwProxyRun.Output -Name 'java-svc-gateway-config'
+    Assert-Match -Text $gatewayCm -Pattern ('(?m)^[ ]+trusted-proxies:[ ]*\r?\n[ ]+- "' + [regex]::Escape($PeakTrustedProxies) + '"') -Because '夹具前提:rate-limit 段里要真的多出这段可信代理网段,否则下面「指纹变了」无从谈起'
+    $withProxies = Get-PeakShavingAnnotation -Output $peakGwProxyRun.Output -Workload 'gateway' -Label '加可信代理'
+    $baseline = Get-PeakShavingAnnotation -Output $prodRun.Output -Workload 'gateway' -Label 'prod 基线'
+    Assert-True -Condition ($withProxies.Peak -ne $baseline.Peak) -Because "rate-limit 段文本变了(多了 trusted-proxies),gateway 削峰指纹必须变(两者都是 $($baseline.Peak))"
+    Assert-Equal -Expected $baseline.AdminKey -Actual $withProxies.AdminKey -Because '管理面口令没变,口令指纹必须不变(两条注解各管各的输入)'
 }
 
 # ─────────────────────────────────────────────────────────────────
@@ -1869,10 +1935,13 @@ Test-Case '负向:-KafkaBrokers 2 在任何清单生成之前被拒' {
 # 这笔账只有一份,在 k8s_deploy.ps1:Get-MysqlConnectionPlan(规划档)、Get-MysqlConnectionLedgerInputs(从权威文件读池上限 /
 # 副本数 / max_connections)、Get-MysqlConnectionLedger(纯函数:稳态 / 滚动余量 / 峰值 / 余量)。这里按 AST 把它们连同依赖抽出来
 # 直接调用(与上面 deadline 守卫、Kafka 拓扑同一做法),不另抄一份公式。读文件的那几个经 $RepoRoot 定位仓库,由调用方设好。
-# 写路径入口的 Write-MysqlConnectionLedger 不在名单里:它依赖脚本参数(-ZoneId / -ZonesConfigPath),用 DryRun 输出核对。
+# 写路径入口的 Write-MysqlConnectionLedger 不在名单里:它依赖脚本参数(-Command / -ZoneId / -ZonesConfigPath),用 DryRun 输出核对。
+# 连接池镜像门禁 Get-MysqlPoolMirror / Assert-MysqlPoolMirror 也在名单里:它们只经 Get-AuthoritativeScalar 与 $RepoRoot 读三份服务配置,
+# 负向用例把 $RepoRoot 指向临时目录里的配置副本。
 $mysqlLedgerFunctionNames = @(
     'Get-AuthoritativeScalar', 'Get-MysqlConnectionPlan', 'Get-MysqlMaxConnectionsFromManifest',
-    'Get-ManifestDeploymentReplicas', 'Get-MysqlConnectionLedgerInputs', 'Get-MysqlConnectionLedger'
+    'Get-ManifestDeploymentReplicas', 'Get-MysqlConnectionLedgerInputs', 'Get-MysqlConnectionLedger',
+    'Get-MysqlPoolMirror', 'Assert-MysqlPoolMirror'
 )
 foreach ($mysqlLedgerFnAst in $deadlineDeployAst.FindAll({ param($a) $a -is [System.Management.Automation.Language.FunctionDefinitionAst] }, $false)) {
     if ($mysqlLedgerFunctionNames -contains $mysqlLedgerFnAst.Name) {
@@ -2039,6 +2108,8 @@ Test-Case '连 MySQL 的 ConfigMap 只有总账认识的那些(zone-up 三个、
     Assert-Equal -Expected 0 -Actual $infraRun.ExitCode -Because "带全局 Go 服务的 infra-up DryRun 必须成功。输出: $($infraRun.Output)"
     $infraExpected = @('go-svc-friend-config', 'go-svc-trade-config' | Sort-Object) -join ','
     Assert-Equal -Expected $infraExpected -Actual (@(Get-MysqlClientConfigMapNames -Output $infraRun.Output) -join ',') -Because 'infra-up 产物里连 MySQL 的 ConfigMap 必须恰好是 friend / trade 两个(总账的全局部分只算了它们)'
+    $friendConfig = Select-ManifestByName -Output $infraRun.Output -Name 'go-svc-friend-config'
+    Assert-Match -Text $friendConfig -Pattern 'RequireTiDB: false' -Because '开发 ConfigMap 必须显式说明未要求 TiDB'
 }
 
 Test-Case '部署写路径打印 MySQL connection ledger(zone-up DryRun)' {
@@ -2076,6 +2147,129 @@ Test-Case '负向:zones.10zones.yaml 时打 [MySQLConnectionLedger]OverLimit 警
     Assert-Match -Text $run.Output -Pattern 'MySQL connection ledger: zones=11 steady=\d+ peak=\d+ max_connections=\d+ headroom=-\d+;' -Because '本次部署那一份按 11 个 zone 算,余量为负'
     Assert-Match -Text $run.Output -Pattern '--- BEGIN MANIFEST ---' -Because '不阻断:告警之后清单照常生成'
     Assert-NotMatch -Text $devOut -Pattern '\[MySQLConnectionLedger\]OverLimit:' -Because '对照:仓库 zones.json 与规划档都在上限内,基线 DryRun 不该打这条警告(否则本条区分不出「超限才告警」)'
+}
+
+Test-Case 'zones 配置缺席(zone-up DryRun):总账按 zones=1 算、行尾标 zones_config=missing,不打 Get-InfraZoneIds 的 WARNING' {
+    # Write-MysqlConnectionLedger 的缺席分支(spec_G2b §5):Z 取 1(只有 -ZoneId),行尾带 zones_config=missing,且不调 Get-InfraZoneIds ——
+    # 它那条 WARNING 讲的是「mysql-init-sql 只预建 -ZoneId 的库」,出现在 zone-up 的输出里是误导。
+    # -ZonesConfigPath 给临时目录下一个不存在的绝对路径(只造路径、不建文件);zone-up 不在别处读 zones 配置。
+    $missingZonesPath = Join-Path ([System.IO.Path]::GetTempPath()) ('zones-config-missing-' + [guid]::NewGuid().ToString('N') + '.json')
+    Assert-True -Condition (-not (Test-Path -LiteralPath $missingZonesPath)) -Because '夹具前提:zones 配置路径必须不存在'
+    $run = Invoke-DeployDryRun -Arguments ($BaseArgs + @('-SkipGoSvc', '-SkipJavaSvc', '-ZonesConfigPath', $missingZonesPath))
+    Assert-Equal -Expected 0 -Actual $run.ExitCode -Because "zones 配置缺席不该阻断 zone-up。输出: $($run.Output)"
+    $ledgerLines = @($run.Output -split "`r?`n" | Where-Object { $_ -match '^\s*MySQL connection ledger: zones=' })
+    Assert-Equal -Expected 1 -Actual $ledgerLines.Count -Because '写路径入口必须恰好打印一行 MySQL connection ledger'
+    Assert-Match -Text ([string]$ledgerLines[0]) -Pattern 'MySQL connection ledger: zones=1 ' -Because 'zones 配置缺席时本次部署那一份只算 -ZoneId 一个 zone'
+    Assert-Match -Text ([string]$ledgerLines[0]) -Pattern 'zones_config=missing\s*$' -Because '缺席要在行尾标出来,部署的人才知道这份账没算其它 zone'
+    Assert-NotMatch -Text $run.Output -Pattern 'Zones configuration missing' -Because '缺席分支不调 Get-InfraZoneIds,不该出现它那条讲 mysql-init-sql 预建库的 WARNING'
+}
+
+# 连接池镜像门禁(Assert-MysqlPoolMirror)读的全部文件。夹具用例把它们拷到临时目录再逐项改坏,不碰仓库。
+$mysqlPoolMirrorFixtureFiles = @(
+    'go/db/etc/db.yaml'
+    'go/data_service/etc/data_service.yaml'
+    'java/gateway_node/src/main/resources/application.yaml'
+)
+
+# 夹具:把临时副本里某个键路径(与 release_common.ps1 ConvertFrom-YamlToFlatMap 同一套点分路径)的值改成 $Value,只改那一行。
+# 路径按同一套缩进栈规则解析,改的就是 Get-AuthoritativeScalar 会读到的那一行;恰好一处才改,改完再用 Get-YamlScalar 读回核对。
+# 任一步不成立就 throw:没改成的负向断言是空转。被改那一行的行尾注释随之丢掉,不影响判定。
+function Set-FixtureYamlScalar {
+    param(
+        [Parameter(Mandatory = $true)][string]$Path,
+        [Parameter(Mandatory = $true)][string]$KeyPath,
+        [Parameter(Mandatory = $true)][string]$Value
+    )
+    $lines = @([System.IO.File]::ReadAllText($Path) -split "`r?`n")
+    $stack = New-Object System.Collections.Generic.List[object]
+    $hits = New-Object System.Collections.Generic.List[int]
+    for ($i = 0; $i -lt $lines.Count; $i++) {
+        if ([string]::IsNullOrWhiteSpace($lines[$i])) { continue }
+        $stripped = Remove-YamlInlineComment -Value ($lines[$i] -replace "`t", '    ')
+        if ([string]::IsNullOrWhiteSpace($stripped)) { continue }
+        $indent = $stripped.Length - $stripped.TrimStart(' ').Length
+        $content = $stripped.Trim()
+        if ($content.StartsWith('---') -or $content.StartsWith('...')) { continue }
+        # 与解析器同序:序列元素只弹栈不入栈;既不是元素也不是「键:」的行不动栈。
+        $isSequenceItem = $content.StartsWith('- ') -or $content -eq '-'
+        if (-not $isSequenceItem -and -not [regex]::IsMatch($content, '^[^:]+:')) { continue }
+        while ($stack.Count -gt 0 -and $stack[$stack.Count - 1].Indent -ge $indent) { $stack.RemoveAt($stack.Count - 1) }
+        if ($isSequenceItem) { continue }
+        $key = ConvertFrom-YamlScalarLiteral -Value ([regex]::Match($content, '^(?<k>[^:]+):').Groups['k'].Value)
+        $stack.Add(@{ Indent = $indent; Key = $key })
+        if ((@($stack | ForEach-Object { $_.Key }) -join '.') -ceq $KeyPath) { $hits.Add($i) }
+    }
+    if ($hits.Count -ne 1) { throw "夹具:$Path 里键路径 $KeyPath 应恰好 1 处,实际 $($hits.Count) 处" }
+    $lines[$hits[0]] = [regex]::Replace($lines[$hits[0]], '^(?<head>[^:]+:).*$', ('${head} ' + $Value))
+    [System.IO.File]::WriteAllText($Path, ($lines -join "`n"), [System.Text.UTF8Encoding]::new($false))
+    $readBack = Get-YamlScalar -Path $Path -KeyPath $KeyPath
+    if (-not $readBack.Found -or $readBack.Value -cne $Value) { throw "夹具:$Path 的 $KeyPath 没有改成 '$Value'(读回 '$($readBack.Value)')" }
+}
+
+Test-Case '负向:ConfigMap 要镜像的 MySQL 池参数不合格时,入口门禁 Assert-MysqlPoolMirror throw 并点名文件与键路径(夹具是临时目录里的配置副本,不碰仓库)' {
+    # spec_G2b §5:池参数不合格要在任何 apply 之前 throw,不留半截部署。Go 服务的空闲数下限是 1(0 在 Go 侧 = 没配、取默认),
+    # Hikari minimum-idle 的下限是 0;ExtraStoreConnMaxIdleSeconds 必须为正(Go 侧把 ≤0 当成没写)。每次只改一个键,其余保持仓库原值。
+    # 两个「超过上限」的值按仓库当前上限 + 1 取:调池上限不需要来改本用例。
+    $routeStoreMaxOpen = [int](Get-EtcValue -RelativePath 'go/data_service/etc/data_service.yaml' -KeyPath 'RouteStore.MaxOpenConn')
+    $hikariMaxPool = [int](Get-EtcValue -RelativePath 'java/gateway_node/src/main/resources/application.yaml' -KeyPath 'spring.datasource.hikari.maximum-pool-size')
+    $tempRoot = Join-Path ([System.IO.Path]::GetTempPath()) ('mysql-pool-mirror-' + [guid]::NewGuid().ToString('N'))
+    $resetFixture = {
+        foreach ($rel in $mysqlPoolMirrorFixtureFiles) {
+            $dst = Join-Path $tempRoot $rel
+            New-Item -ItemType Directory -Force -Path (Split-Path -Parent $dst) | Out-Null
+            Copy-Item -LiteralPath (Join-Path (Get-RepoRoot) $rel) -Destination $dst -Force
+        }
+    }
+    try {
+        # Get-AuthoritativeScalar 按动态作用域读 $RepoRoot(在 k8s_deploy.ps1 里是脚本级变量)。
+        $RepoRoot = $tempRoot
+        # 前提:副本不改就该放行。否则下面几条负向断言分不清是谁造成的失败。
+        & $resetFixture
+        Assert-MysqlPoolMirror
+
+        foreach ($bad in @(
+            @{ Why = 'RouteStore 空闲数超过上限'; File = 'go/data_service/etc/data_service.yaml'; KeyPath = 'RouteStore.MaxIdleConn'; Value = [string]($routeStoreMaxOpen + 1) }
+            @{ Why = 'PlayerName 上限为 0'; File = 'go/data_service/etc/data_service.yaml'; KeyPath = 'PlayerName.MaxOpenConn'; Value = '0' }
+            @{ Why = 'zone 家族额外库空闲数为 0(Go 侧下限 1)'; File = 'go/db/etc/db.yaml'; KeyPath = 'Placement.ZoneStoreMaxIdleConn'; Value = '0' }
+            @{ Why = '额外库空闲连接回收秒数为 0'; File = 'go/db/etc/db.yaml'; KeyPath = 'Placement.ExtraStoreConnMaxIdleSeconds'; Value = '0' }
+            @{ Why = 'Hikari minimum-idle 为负(下限 0)'; File = 'java/gateway_node/src/main/resources/application.yaml'; KeyPath = 'spring.datasource.hikari.minimum-idle'; Value = '-1' }
+            @{ Why = 'Hikari minimum-idle 超过 maximum-pool-size'; File = 'java/gateway_node/src/main/resources/application.yaml'; KeyPath = 'spring.datasource.hikari.minimum-idle'; Value = [string]($hikariMaxPool + 1) }
+        )) {
+            & $resetFixture
+            Set-FixtureYamlScalar -Path (Join-Path $tempRoot $bad.File) -KeyPath $bad.KeyPath -Value $bad.Value
+            $message = ''
+            try { Assert-MysqlPoolMirror } catch { $message = $_.Exception.Message }
+            Assert-Match -Text $message -Pattern 'MySQL 连接池镜像' -Because "$($bad.Why):入口门禁必须 throw(fail-closed),不能把非法池值镜像进 ConfigMap"
+            Assert-Match -Text $message -Pattern ([regex]::Escape("$($bad.File) 的 $($bad.KeyPath)='$($bad.Value)'")) -Because "$($bad.Why):错误必须点名文件、键路径与值"
+        }
+
+        # 对照:Hikari minimum-idle=0 是合法值(不保留空闲连接),门禁放行并原样镜像 0。与上面 Go 服务的下限 1 一起,两个下限都钉住。
+        & $resetFixture
+        Set-FixtureYamlScalar -Path (Join-Path $tempRoot 'java/gateway_node/src/main/resources/application.yaml') -KeyPath 'spring.datasource.hikari.minimum-idle' -Value '0'
+        Assert-MysqlPoolMirror
+        $gatewayMirror = Get-MysqlPoolMirror -Target 'gateway'
+        Assert-Equal -Expected 0 -Actual $gatewayMirror['spring.datasource.hikari.minimum-idle'] -Because 'Hikari minimum-idle=0 必须放行,并原样镜像 0'
+    }
+    finally {
+        Remove-Item -LiteralPath $tempRoot -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
+Test-Case '写路径入口:Assert-MysqlPoolMirror 挂在 zone-up / all-up / infra-up 门禁块里,先于 switch ($Command)' {
+    # 生成器取值时会再核一次,但那已经在 Apply-Zone 中途(node-config / gate / scene 都 apply 完了)。上面的负向用例只证明门禁函数会 throw,
+    # 这里钉住它确实挂在写路径入口、且先于任何集群写操作(写操作都在 switch ($Command) 的分支里)。与 Write-MysqlConnectionLedger 的先后无关。
+    $writeGates = @($deadlineDeployAst.EndBlock.Statements | Where-Object {
+        $_ -is [System.Management.Automation.Language.IfStatementAst] -and
+        $_.Clauses[0].Item1.Extent.Text -match '^\$Command\s+-in\s+@\(\s*"zone-up"\s*,\s*"all-up"\s*,\s*"infra-up"\s*\)$'
+    })
+    Assert-Equal -Expected 1 -Actual $writeGates.Count -Because 'k8s_deploy.ps1 顶层应当恰好有一个 if ($Command -in @("zone-up", "all-up", "infra-up")) 写路径门禁块'
+    $mirrorCalls = @($writeGates[0].Clauses[0].Item2.FindAll({ param($a) $a -is [System.Management.Automation.Language.CommandAst] -and $a.GetCommandName() -eq 'Assert-MysqlPoolMirror' }, $true))
+    Assert-Equal -Expected 1 -Actual $mirrorCalls.Count -Because '写路径门禁块里必须调用一次 Assert-MysqlPoolMirror'
+    $commandSwitches = @($deadlineDeployAst.EndBlock.Statements | Where-Object {
+        $_ -is [System.Management.Automation.Language.SwitchStatementAst] -and $_.Condition.Extent.Text -match '^\(?\s*\$Command\s*\)?$'
+    })
+    Assert-Equal -Expected 1 -Actual $commandSwitches.Count -Because 'k8s_deploy.ps1 顶层应当恰好有一个 switch ($Command)'
+    Assert-True -Condition ($mirrorCalls[0].Extent.StartOffset -lt $commandSwitches[0].Extent.StartOffset) -Because 'Assert-MysqlPoolMirror 必须先于 switch ($Command)(Apply-Infra / Apply-Zone 的集群写操作都在它的分支里)'
 }
 
 Test-Case 'mysql-connection-alerts.yaml:PrometheusRule 形状,额外库数阈值与 Get-MysqlConnectionPlan 同源' {
@@ -2290,7 +2484,7 @@ Test-Case 'gateway Pod 模板带口令指纹注解(加引号的 12 位十六进�
 Test-Case 'gateway 写入顺序 ConfigMap → Secret → Deployment,Secret 与 Deployment 同 namespace(secretKeyRef 非 optional,Secret 必须先落地)' {
     $out = $adminDevPlaceholderRun.Output
     $cm = [regex]::Match($out, '(?m)^  name: java-svc-gateway-config\s*$')
-    $secrets = [regex]::Matches($out, '(?m)^\[dry-run\] kubectl apply -n (?<ns>\S+) -f -\s+# Secret gateway-admin-api-key\(')
+    $secrets = [regex]::Matches($out, '(?m)^\[dry-run\] kubectl apply -n (?<ns>\S+) -f -\s+# Secret gateway-admin-api-key \(')
     $deployEnv = [regex]::Match($out, '(?m)^[ ]+- name: ADMIN_APIKEY\s*$')
     Assert-True -Condition $cm.Success -Because 'DryRun 输出里应当有 java-svc-gateway-config 的 metadata.name'
     Assert-Equal -Expected 1 -Actual $secrets.Count -Because '单 zone 的 zone-up 只写一次管理面口令 Secret'
@@ -2382,6 +2576,38 @@ Test-Case "自检:路由服预算判定对 修复前 login 的 10000 / 差 1ms /
         $got = @(& $check $c.Forward "Timeout: 1000")
         Assert-True -Condition ($got.Count -gt 0) -Because "$($c.Why) 必须报违例"
         Assert-Match -Text $got[0] -Pattern 'ForwardTimeoutMs' -Because "$($c.Why) 的违例必须点名 ForwardTimeoutMs"
+    }
+}
+
+$friendSqlAst = $deadlineDeployAst.Find({ param($a)
+    $a -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $a.Name -eq 'Get-FriendSqlSettings'
+}, $false)
+if ($null -eq $friendSqlAst) { throw '好友权威 SQL 配置门禁缺失' }
+Set-Item -Path Function:script:Get-FriendSqlSettings -Value $friendSqlAst.Body.GetScriptBlock()
+
+Test-Case '全服好友开发可用 MySQL，显式 TiDB 入口始终启用后端验证' {
+    $local = Get-FriendSqlSettings -Profile 'dev' -TiDBHost '' -DevelopmentHost 'mysql.test:3306'
+    Assert-Equal -Expected 'mysql.test:3306' -Actual $local.Host -Because '开发默认沿用独立测试 MySQL'
+    Assert-Equal -Expected 'false' -Actual $local.RequireTiDB -Because '开发不得误称已使用 TiDB'
+    foreach ($profile in @('dev', 'staging', 'prod')) {
+        $settings = Get-FriendSqlSettings -Profile $profile -TiDBHost 'tidb.global.test:4000' -DevelopmentHost 'mysql.test:3306'
+        Assert-Equal -Expected 'tidb.global.test:4000' -Actual $settings.Host -Because '所有副本的显式权威入口必须原样保留'
+        Assert-Equal -Expected 'true' -Actual $settings.RequireTiDB -Because '指定 TiDB 必须同时启用实际后端身份验证'
+    }
+}
+
+Test-Case '全服好友生产缺 TiDB 入口或入口非法时拒绝生成' {
+    foreach ($profile in @('staging', 'prod')) {
+        $rejected = $false
+        try { $null = Get-FriendSqlSettings -Profile $profile -TiDBHost '' -DevelopmentHost 'mysql.test:3306' }
+        catch { $rejected = $_.Exception.Message -match 'FriendTiDBHost' }
+        Assert-True -Condition $rejected -Because '生产不得悄悄落回 MySQL'
+    }
+    foreach ($hostValue in @('tidb', 'tidb:0', 'tidb:65536', 'user:pass@tidb:4000', 'tidb:4000/db', "tidb:4000`nMode: dev")) {
+        $rejected = $false
+        try { $null = Get-FriendSqlSettings -Profile 'prod' -TiDBHost $hostValue -DevelopmentHost 'mysql.test:3306' }
+        catch { $rejected = $_.Exception.Message -match 'FriendTiDBHost' }
+        Assert-True -Condition $rejected -Because '不能把非法地址、凭据或额外配置写入 ConfigMap'
     }
 }
 

@@ -132,7 +132,8 @@ public:
 	//
 	// correlationId / extra 落进流水(战斗传 battle_id 与来源 JSON),否则事后
 	// 查不出这瓶药是哪一场战斗喝掉的,反刷追溯链断在这里。
-	// drainedOut(可为 nullptr)按抽取顺序给出被扣的 (guid, config, 数量);
+	// drainedOut(可为 nullptr)按 config_id 升序、同 config 内槽位号升序
+	// 给出被扣的 (guid, config, 数量),同槽位按实例序打破平局;
 	// 调用方把它的总量与请求量一比,就知道夹紧了多少、要不要告警。
 	//
 	// 返回:跨 zone 冻结期返回 kInvalidParameter(一件不扣);其余恒 kSuccess。
@@ -172,7 +173,8 @@ public:
 	//   * 按 config 抽数量**不看是不是装备**(不查表,也不看 has_equip()):调用方必须保证
 	//     被扣的 config 不是装备。否则被抽成 0 的可能是一件带属性的装备实例(甚至就是正在
 	//     被强化的那一件),下一次整理它就没了。
-	//   * 抽哪一堆由实例层的遍历序决定,不保证是玩家点的那一堆。
+	//   * 逐条流水按 config_id 升序、同 config 内槽位号升序,同槽位按实例序。
+	//     按数量扣除不保证是玩家点的那一堆。
 	//
 	// txType 进流水,**刻意没有默认值**:加这条入口就是因为"销毁的原因"要在流水里分得开
 	// (强化传 TX_EQUIP_ENHANCE、镶嵌传 TX_EQUIP_INLAY),默认成 TX_ITEM_DESTROY 等于白加。

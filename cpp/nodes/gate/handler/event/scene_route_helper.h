@@ -45,16 +45,16 @@ inline constexpr uint32_t kSceneEntryMaxAttempts{16};
 //
 // 旧指向无效一律算 kChanged,不区分"从未绑定"与"绑定过、但节点已被摘除":scene 节点下线时
 // OnNodeRemoveEventHandler / ResolveSessionTargetNode(client_message_processor.cpp)会把指向置为
-// kInvalidEntityId,随后 node_gone 迁频道(沿用原 scene_id)或同 node_id 重启后的改派必须重新进场,
+// entt::null,随后 node_gone 迁频道(沿用原 scene_id)或同 node_id 重启后的改派必须重新进场,
 // 若把无效指向当"未变化",这条路由会被当成重复事件吞掉。首登(从未收到过路由)不会因此误转发:
 // ApplyRoute 要求 session.sceneId != 0。节点以新实体重新注册、而旧进程仍持有玩家实体时会多转发一次
 // enterType=0:scene 侧 PlayerEnterGameNode 对已有实体走 EnterScene 复用路径(player_lifecycle.cpp)——
 // session 重绑同号、HandleEnterScene 对"已在目标场景"幂等早退、3.2 交接就地收尾有 epoch 复核、
 // 0 不置登录态也不触发登录事件。唯一的状态副作用是 3.1 会顺带摘掉 PlayerSceneChangeInFlightComp,
 // 即提前放开一次在途换图的"切换中"闸;静态读下来迟到应答找不到在途组件是静默 no-op,未经运行验证。
-inline SceneNodeChange CompareSceneNode(const SessionInfo& session, const uint64_t targetNodeEntityId)
+inline SceneNodeChange CompareSceneNode(const SessionInfo& session, const entt::entity targetNodeEntityId)
 {
-    return session.GetEntityId(common::base::SceneNodeService) != targetNodeEntityId
+    return session.GetNodeEntity(common::base::SceneNodeService) != targetNodeEntityId
                ? SceneNodeChange::kChanged
                : SceneNodeChange::kUnchanged;
 }
@@ -63,10 +63,10 @@ inline SceneNodeChange CompareSceneNode(const SessionInfo& session, const uint64
 // 生产路径已改走 AttemptPendingSceneEntry(只在转发成功后提交指向);本函数保留供已有用例钉住原语语义,
 // 不要把它重新接回转发之前 —— 那样转发失败后同一路由再来时会被判成"节点未变化",同 scene_id 换节点
 // 这一支就再也补发不了(SceneRouteEntry.NodeChangeForwardFailureIsNotRecoveredByRedelivery)。
-inline SceneNodeChange RebindSceneNode(SessionInfo& session, const uint64_t targetNodeEntityId)
+inline SceneNodeChange RebindSceneNode(SessionInfo& session, const entt::entity targetNodeEntityId)
 {
     const auto change = CompareSceneNode(session, targetNodeEntityId);
-    session.SetEntityId(common::base::SceneNodeService, targetNodeEntityId);
+    session.SetNodeEntity(common::base::SceneNodeService, targetNodeEntityId);
     return change;
 }
 
@@ -322,7 +322,7 @@ enum class SceneEntryAttempt : uint8_t
 };
 
 // 对会话上的欠账做一次尝试:比较、转发、成功后才提交(I5)。
-//   resolve(nodeId) -> std::optional<uint64_t>:按业务 node_id 解析 gate 上的节点实体号(I3,每次重解析);
+//   resolve(nodeId) -> std::optional<entt::entity>:按业务 node_id 解析 gate 上的节点实体号(I3,每次重解析);
 //   forward(enterType, nodeEntityId, sceneId) -> SceneForwardResult。
 // 失败窗口里会话的 sceneId 与节点指向都不动,所以重试时 CompareSceneNode 仍对着旧节点比,同 scene_id
 // 换节点照样判成 kChanged 并补发 0,不需要任何记忆位;放弃时断线 ExitGame 也落到旧节点,而不是一个
@@ -355,7 +355,7 @@ SceneEntryAttempt AttemptPendingSceneEntry(SessionInfo& session, const SceneEntr
         return SceneEntryAttempt::kGiveUp;
     }
 
-    const std::optional<uint64_t> nodeEntity = resolve(target.nodeId);
+    const std::optional<entt::entity> nodeEntity = resolve(target.nodeId);
     if (!nodeEntity.has_value())
     {
         return RecordSceneEntryFailure(entry, SceneForwardResult::kNodeNotFound, now) == SceneEntryRetryVerdict::kRetry
@@ -372,7 +372,7 @@ SceneEntryAttempt AttemptPendingSceneEntry(SessionInfo& session, const SceneEntr
     });
     if (applied)
     {
-        session.SetEntityId(common::base::SceneNodeService, *nodeEntity);
+        session.SetNodeEntity(common::base::SceneNodeService, *nodeEntity);
         session.pendingSceneEntry.reset();
         return SceneEntryAttempt::kApplied;
     }

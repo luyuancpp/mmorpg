@@ -1,6 +1,7 @@
 package cpp
 
 import (
+	"fmt"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -60,29 +61,33 @@ func collectFieldsByName(message *descriptorpb.DescriptorProto) map[string]*desc
 	return fields
 }
 
-func buildGateKafkaRouterCases() []gateKafkaRouterCase {
+func buildGateKafkaRouterCases() ([]gateKafkaRouterCase, error) {
 	gateCommandFd := findProtoFileBySuffix("contracts.kafka", "gate_command.proto")
 	if gateCommandFd == nil {
-		logger.Global.Warn("gate_command.proto not found, skipping Gate Kafka router file generation")
-		return nil
+		return nil, fmt.Errorf("缺少 contracts.kafka gate_command.proto 描述符")
 	}
 
 	gateEventFd := findProtoFileBySuffix("contracts.kafka", "gate_event.proto")
 	if gateEventFd == nil {
-		logger.Global.Warn("gate_event.proto not found, skipping Gate Kafka router file generation")
-		return nil
+		return nil, fmt.Errorf("缺少 contracts.kafka gate_event.proto 描述符")
 	}
 
 	gateCommandMsg := findMessageByName(gateCommandFd, "GateCommand")
 	if gateCommandMsg == nil {
-		logger.Global.Warn("GateCommand message definition not found, skipping Gate Kafka router file generation")
-		return nil
+		return nil, fmt.Errorf("缺少 GateCommand 消息描述符")
 	}
 
 	commandFieldMap := collectFieldsByName(gateCommandMsg)
 
 	cases := make([]gateKafkaRouterCase, 0)
 	for _, eventMsg := range gateEventFd.GetMessageType() {
+		enabled, err := kafkaIngressEnabled(eventMsg)
+		if err != nil {
+			return nil, fmt.Errorf("网关事件 %s 入口标注损坏: %w", eventMsg.GetName(), err)
+		}
+		if !enabled {
+			continue
+		}
 		eventMessageName := eventMsg.GetName()
 
 		// Compute the C++ event_id constant name: e.g. "ContractsKafkaKickPlayerEventEventId"
@@ -121,7 +126,7 @@ func buildGateKafkaRouterCases() []gateKafkaRouterCase {
 		cases = append(cases, caseData)
 	}
 
-	return cases
+	return cases, nil
 }
 
 func GenerateGateKafkaCommandRouter(wg *sync.WaitGroup) {
@@ -129,17 +134,17 @@ func GenerateGateKafkaCommandRouter(wg *sync.WaitGroup) {
 	go func() {
 		defer wg.Done()
 
-		cases := buildGateKafkaRouterCases()
-		if len(cases) == 0 {
-			logger.Global.Warn("No cases to generate for Gate Kafka router file, skipping output")
-			return
+		cases, err := buildGateKafkaRouterCases()
+		if err != nil {
+			logger.Global.Fatal("生成网关 Kafka 路由失败", zap.Error(err))
 		}
 
+		// 撤销全部标注也必须覆写旧输出,使空白名单确实拒绝所有事件。
 		outputPath := filepath.Join(_config.Global.Paths.GateNodeEventHandlerDirectory, "gate_kafka_command_router.cpp")
 		data := gateKafkaRouterTemplateData{Cases: cases}
 
 		if err := utils2.RenderTemplateToFile("internal/template/gate_kafka_command_router.cpp.tmpl", outputPath, data); err != nil {
-			logger.Global.Error("Failed to generate Gate Kafka router file",
+			logger.Global.Fatal("写入网关 Kafka 路由失败",
 				zap.String("output_file", outputPath),
 				zap.Error(err),
 			)

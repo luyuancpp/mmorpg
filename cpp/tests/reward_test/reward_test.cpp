@@ -1,4 +1,5 @@
 #include "modules/reward/system/reward.h"
+#include "engine/core/type_define/player_guid_comp.h"
 #include <gtest/gtest.h>
 
 #include "modules/reward/comp/reward_comp.h"
@@ -12,7 +13,7 @@
 decltype(auto) CreatePlayerEntityWithRewardComponent()
 {
     const auto playerEntity = tlsEcs.actorRegistry.create();
-    tlsEcs.actorRegistry.emplace<Guid>(playerEntity);
+    tlsEcs.actorRegistry.emplace<PlayerGuidComp>(playerEntity, Guid{100000} + entt::to_integral(playerEntity));
 
     return playerEntity;
 }

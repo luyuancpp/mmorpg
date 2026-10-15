@@ -4,7 +4,7 @@ package main
 // (docs/design/client-request-ordering.md §1.3 / §12 批次 R):
 //
 //	O1 登录进场;
-//	O2 清场:GetQueueStatus(153),若还在排队(上一轮残留)先带票号 CancelQueue(148)取消;
+//	O2 清场:GetQueueStatus(153)必须是 NOT_QUEUED;还在排队(上一轮残留)直接失败并说明,不自动取消;
 //	O3 重复 orderingSmokeRounds 轮:**不等回包**,连发 JoinQueue(157,1V1)→ CancelQueue(148,不带票号),
 //	   等两条回包都到,再查 GetQueueStatus。客户端的意图是「加入后取消」,所以最终必须不在队列里。
 //	   执行顺序被颠倒(Cancel 先执行、找不到票据回成功,Join 后执行入队)时,这一轮会停在 QUEUED;
@@ -57,7 +57,7 @@ import (
 const orderingSmokeAccount = "robot_9901"
 
 const (
-	// 轮数:乱序是概率事件,轮数越多越容易在 lane 上线前暴露。20 轮约 50 秒。
+	// 轮数:乱序是概率事件,轮数越多越容易在 lane 上线前暴露。20 轮约 30 秒(间隔 1.1s × 20 加往返)。
 	orderingSmokeRounds = 20
 	// 两轮之间的间隔:每个消息号每轮至多 2 次(148 在乱序轮会多发一次收尾),1.1s 保证滑动 1 秒内不超过 3 次。
 	orderingSmokeRoundSpacing = 1100 * time.Millisecond

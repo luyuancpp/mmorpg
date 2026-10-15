@@ -62,9 +62,10 @@ class AssignGateControllerTest {
 
     @Test
     void reentryWithQueueToken_zoneBucketEmpty_returnsRatelimitQueueWithoutToken() {
-        // J0 之前带 token 的请求走不到这条路。客户端契约(spec_G4b §4.10 J0、§11.5):重入被 zone 桶 / 波次
-        // 挡住时回 code=100、queue_source="ratelimit",不带新 token,请求不进 login;客户端保留原 token
-        // 按 retry_after_ms 重试。回显 token、改走 login、换成别的码都会破坏这个契约。
+        // J0 之前带 token 的请求走不到这条路。客户端契约(spec_G4b §4.10 J0、§12;
+        // open-server-rate-limit-design.md §11.5):重入被 zone 桶 / 波次挡住时回 code=100、
+        // queue_source="ratelimit",不带新 token,请求不进 login;客户端保留原 token 按 retry_after_ms 重试。
+        // 回显 token、改走 login、换成别的码都会破坏这个契约。
         when(limiter.check(anyLong(), anyString(), any())).thenReturn(RateLimitDecision.queue(2500, 0));
 
         AssignGateResponse resp = controller.assignGate(request("tok"), http);

@@ -18,15 +18,6 @@ std::string JoinBrokers(const KafkaConfig& config) {
 
 	return boost::algorithm::join(brokersVec, ",");
 }
-
-std::vector<std::string> CollectTopics(const KafkaConfig& config) {
-	std::vector<std::string> topicsVec;
-	for (const auto& topic : config.topics()) {
-		topicsVec.push_back(topic);
-	}
-
-	return topicsVec;
-}
 }
 
 KafkaManager::KafkaManager() = default;
@@ -36,31 +27,22 @@ KafkaManager::~KafkaManager() {
 }
 
 bool KafkaManager::Init(const KafkaConfig& config) {
-	// The deploy yaml intentionally leaves Kafka.GroupID empty so each node
-	// derives a per-node-id group later (see node_kafka_command_handler.h).
-	// Skip the eager top-level subscribe in that case instead of letting
-	// KafkaConsumer::init bail with a misleading librdkafka error: the real
-	// subscribe happens via Node::RegisterKafkaMessageHandler when
-	// SetKafkaHandlers fires, which always supplies a non-empty group id.
-	if (config.group_id().empty()) {
-		LOG_INFO << "KafkaManager::Init skipped: empty default group_id. "
-			<< "Per-node Kafka consumer will be created via "
-			<< "RegisterKafkaCommandHandler.";
-		// Producer brokers still need to be wired up for outbound Publish().
-		const std::string brokers = JoinBrokers(config);
-		if (!brokers.empty()) {
-			KafkaProducer::Instance().setBrokers(brokers);
-		}
-		return true;
+	// 生产端 broker 与本节点有没有消费者无关,无条件登记。setBrokers 只存字符串,
+	// librdkafka 句柄仍在第一次 send() 时惰性创建。
+	//
+	// 2026-10 之前这里只在 Kafka.GroupID 为空时登记;非空时走一次不带回调的 Subscribe,
+	// 那次调用必然在登记 broker 之前返回 false(返回值又被 Node::InitKafka 丢掉)。只生产不消费的
+	// 节点(battle)因此在 GroupID 非空的部署里拿不到 broker,每次 send() 都被拒 —— K8s 的 node
+	// ConfigMap 至今写死 GroupID: "game-consumer-group"(k8s_deploy.ps1 的 New-NodeConfigMapYaml,
+	// 改为从 bin/etc 镜像是 P0-B 批 2,尚未落地)。见 docs/handoff/global-singletons-p0-findings-20261014.md P0-B。
+	const std::string brokers = JoinBrokers(config);
+	if (brokers.empty()) {
+		LOG_ERROR << "KafkaManager::Init failed: Kafka.Brokers is empty.";
+		return false;
 	}
-
-	auto zoneId = tlsNodeConfigManager.GetGameConfig().zone_id();
-	return Subscribe(
-		config,
-		CollectTopics(config),
-		config.group_id(),
-		{ static_cast<int32_t>(zoneId) }
-	);
+	KafkaProducer::Instance().setBrokers(brokers);
+	// 没有顶层默认订阅:消费一律经 Node::RegisterKafkaMessageHandler -> Subscribe,组名由那里给出。
+	return true;
 }
 
 bool KafkaManager::Subscribe(const KafkaConfig& config,

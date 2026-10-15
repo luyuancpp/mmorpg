@@ -18,7 +18,9 @@ import (
 	assetpb "proto/common/asset"
 	dspb "proto/data_service"
 	"shared/assetop"
+	"shared/assetopwake"
 	"shared/idsegment"
+	"shared/leader"
 	"shared/safego"
 	"shared/scenenode"
 )
@@ -90,7 +92,9 @@ func GuildAssetStreams() []assetpb.AssetOpStream {
 // logic.ValidateEconomyTables 之后取):它是策划口径的"多久重试一次",不进 yaml。
 //
 // AwaitDurableDelay 不在 Y-06 的配置项里,取 assetop.DefaultLoopConfig 的值(唯一事实源在那边)。
-// Streams 必须填:留空时循环不刷 assetop_pending_oldest_age_seconds,卡死行的年龄告警永远没有序列。
+// Streams 必须填:留空时循环不刷 assetop_pending_oldest_age_seconds,卡死行的年龄告警永远没有序列;
+// 日对账的按类 gauge 也按它逐流置值。
+// 落地恢复的停放档 / 自动放弃 / 日对账(设计 §6)逐项照搬,0 = 关闭的语义两边一致(配置字面量没写这些键时即全关)。
 // 合法性由 assetop.NewLoop 校验;config.Validate 已按同形约束先拦一道。
 func LoopConfigFrom(c config.AssetOpConf, retryBase time.Duration) assetop.LoopConfig {
 	return assetop.LoopConfig{
@@ -105,6 +109,13 @@ func LoopConfigFrom(c config.AssetOpConf, retryBase time.Duration) assetop.LoopC
 		PoisonDelay:           msToDuration(c.PoisonDelayMs),
 		LedgerReadMinAttempts: uint32(c.LedgerReadMinAttempts),
 		Streams:               GuildAssetStreams(),
+		OfflineAfterAttempts:  uint32(c.OfflineAfterAttempts),
+		OfflineBackoff:        msToDuration(c.OfflineBackoffMs),
+		AbandonAfter:          time.Duration(c.AbandonAfterDays) * 24 * time.Hour,
+		AbandonSafetyGap:      msToDuration(c.AbandonSafetyGapMs),
+		AbandonBatch:          c.AbandonBatch,
+		AbandonInterval:       msToDuration(c.AbandonIntervalMs),
+		AuditInterval:         msToDuration(c.AuditIntervalMs),
 	}
 }
 
@@ -140,10 +151,11 @@ func msToDuration(ms int) time.Duration {
 }
 
 // AssetPipeline 是资产通道在进程内的一整套运行件:scene 节点镜像(watcher)、连接缓存、
-// 重投循环。Loop 同时供 logic 的同步投递使用(EconomyDeps.Loop)。
+// 重投循环,以及落地恢复追加的落地唤醒订阅与"日对账 + 自动放弃"的选主维护(设计 §5.3 / §6)。
+// Loop 同时供 logic 的同步投递使用(EconomyDeps.Loop)。
 //
-// 生命周期:NewAssetPipeline → Start → Stop。Stop 会等两个后台 goroutine 真正退出,
-// **必须先于** etcd 客户端与 MySQL 的关闭(guild.go 的 defer 顺序)。
+// 生命周期:NewAssetPipeline → AttachPersistedLedger / AttachMaintenanceLeader → Start → Stop。
+// Stop 会等全部后台 goroutine 真正退出,**必须先于** etcd 客户端、Redis 与 MySQL 的关闭(guild.go 的 defer 顺序)。
 type AssetPipeline struct {
 	// Loop 重投循环;构造后只读。
 	Loop *assetop.Loop
@@ -151,7 +163,15 @@ type AssetPipeline struct {
 	watcher *scenenode.Watcher
 	conns   *scenenode.ConnCache
 
-	// mu 只保护 started / stopped / cancel,让 Start 与 Stop 的先后无论怎么交错都不会
+	// wake 订阅 scene 发布的落地唤醒(核心 Redis 频道 assetop:wake);AssetOp.Wake 关闭时为 nil。构造后只读。
+	wake *assetopwake.Subscriber
+	// maintenanceOn:本副本的配置是否开了日对账或自动放弃(两项都关时不竞选,省一把锁)。构造后只读。
+	maintenanceOn bool
+	// maintenance 是对账 + 放弃的选主器(go/shared/leader);只有当选副本跑 Loop.RunMaintenance。
+	// 由 AttachMaintenanceLeader 在 Start 之前设置,之后只读;nil = 本副本不跑维护。受 mu 保护的只是"Start 之前才能设"这一约束。
+	maintenance *leader.Elector
+
+	// mu 只保护 started / stopped / cancel(以及 Start 之前的 Attach*),让 Start 与 Stop 的先后无论怎么交错都不会
 	// 在 Stop 的 wg.Wait 之后再 wg.Add(WaitGroup 不允许 Add 与 Wait 并发)。
 	mu      sync.Mutex
 	started bool
@@ -160,6 +180,10 @@ type AssetPipeline struct {
 	wg      sync.WaitGroup
 }
 
+// maintenanceLeaderKey 是"资产通道维护(日对账 + 自动放弃)"选主锁的键,放在 guild 全局 Redis(RedisClient,全体副本共享)。
+// 与历练巡检租约 guild:trial:sweep:lease 同一个前缀风格;值是竞选者的节点 uuid + 随机串,排障时 GET 一眼看出谁在跑。
+const maintenanceLeaderKey = "guild:assetop:maintenance:leader"
+
 // NewAssetPipeline 建签名器、scene 定位件、Caller 与重投循环。只在 AssetOp.Enabled=true 时调用;
 // 返回错误一律启动致命(密钥缺失 / 过短、循环参数非法、退避基数大于 MaxBackoffMs 等)。
 //
@@ -167,7 +191,11 @@ type AssetPipeline struct {
 // (本地是 svcCtx.PlayerLocatorRedisClient;K8s 必须指向 SharedRedis),指错的表现是所有玩家
 // "不在线"、资产指令永远 PENDING,且没有任何报错。
 //
-// 不连任何东西:ConnCache 惰性拨号,watcher 在 Start 里才连 etcd,Redis 在第一次定位时才读。
+// 落地唤醒(AssetOp.Wake 开启时)订阅的也是 locatorRedis:scene 在核心 Redis(`redis` 实例 DB 0)上 PUBLISH assetop:wake,
+// 本服务里指向它的正是 PlayerLocatorRedis 这一份配置(设计 §2「唤醒通道」)。Pub/Sub 不分 DB,但实例指错的表现同样是
+// 永远收不到唤醒、只剩原退避,且不报错。
+//
+// 不连任何东西:ConnCache 惰性拨号,watcher 在 Start 里才连 etcd,Redis 在第一次定位 / Start 订阅时才连。
 func NewAssetPipeline(c config.AssetOpConf, retryBase time.Duration, locatorRedis *redis.Client, store assetop.Store) (*AssetPipeline, error) {
 	if store == nil {
 		return nil, errors.New("guild: 资产管线缺 outbox 存储(GuildAssetStore)")
@@ -200,16 +228,82 @@ func NewAssetPipeline(c config.AssetOpConf, retryBase time.Duration, locatorRedi
 		Requery:     assetop.DefaultRequery,
 		Metrics:     assetMetrics,
 	}
-	loop, err := assetop.NewLoop(LoopConfigFrom(c, retryBase), store, caller, assetMetrics, time.Now)
+	loopCfg := LoopConfigFrom(c, retryBase)
+	loop, err := assetop.NewLoop(loopCfg, store, caller, assetMetrics, time.Now)
 	if err != nil {
 		conns.Close()
 		return nil, fmt.Errorf("guild: 资产重投循环参数非法(AssetOp 段 + GuildRule.asset_op_retry_base_ms): %w", err)
 	}
+	// 自动放弃前重新解析位置(abandon.go 条件 3)用的是与 Caller 同一个 Locator:同一份 player:{id}:location、
+	// 同一份节点镜像,"有没有位置"与投递看到的是同一件事。在任何 goroutine 读它之前(此处)写入。
+	loop.Locator = locator
 	// Loop.Ledger 在这里先留 nil,由装配方在 Start 之前调 AttachPersistedLedger 接上(B5d-1,Y-06):
-	// 本函数拿不到 data_service 客户端(它挂在 ServiceContext 上),不为此改签名。
+	// 本函数拿不到 data_service 客户端(它挂在 ServiceContext 上),不为此改签名。没有 Ledger 时自动放弃不运行(fail-closed)。
 	// Loop.Manual 不挂:人工终结 v1 只做离线 CLI(90 清单 D4),进程里没有调用者;
 	// assetopfix 走包级 assetop.ResolveManually,不经 Loop。
-	return &AssetPipeline{Loop: loop, watcher: watcher, conns: conns}, nil
+
+	// 落地唤醒(设计 §5.3)。counter 必须是 Loop 用的同一个 assetop.Metrics:assetop_wake_total 在一个注册表里只能注册一次,
+	// 订阅端与 Loop.WakePlayer 各管一段 result。Service 进跨副本去重键 assetop:wake:guild:{player_id},取本服务的调用方名。
+	var wake *assetopwake.Subscriber
+	if c.Wake.On() {
+		wake, err = assetopwake.New(locatorRedis, assetopwake.Config{
+			Service:     AssetOpCaller,
+			Concurrency: c.Wake.EffectiveConcurrency(),
+			WakeTimeout: c.Wake.EffectiveTimeout(),
+		}, loop, assetMetrics)
+		if err != nil {
+			conns.Close()
+			return nil, fmt.Errorf("guild: 落地唤醒订阅参数非法(AssetOp.Wake): %w", err)
+		}
+	} else {
+		logx.Info("[guild] AssetOp.Wake.Enabled=false: landing wake not subscribed; pending rows of returning players wait for their own backoff (up to OfflineBackoffMs when parked)")
+	}
+	return &AssetPipeline{
+		Loop:          loop,
+		watcher:       watcher,
+		conns:         conns,
+		wake:          wake,
+		maintenanceOn: loopCfg.AuditInterval > 0 || loopCfg.AbandonAfter > 0,
+	}, nil
+}
+
+// AttachMaintenanceLeader 给"日对账 + 自动放弃"(Loop.RunMaintenance,设计 §6.2 / §6.3)接上选主:全体副本竞选
+// guild 全局 Redis 上的同一把锁(maintenanceLeaderKey),只有当选的副本跑维护,卸任即停(领导权 ctx 取消)。
+//
+// 为什么要选主:对账只读、放弃靠 Claim CAS 与令牌互斥,多副本同时跑不会出错;但按类 gauge 会有多份、候选扫描会重复,
+// 告警 `max(...)` 的口径也会被多份序列搅乱(设计 §6.2)。
+//
+// 必须在 Start 之前调用(同 AttachPersistedLedger:Start 之后再写字段就是数据竞争,这里打 ERROR、不生效);nil 接收者安全。
+// rdb 为 nil 时不竞选、打 ERROR:维护不跑只会少对账、不放弃(fail-closed),不影响资产正确性。
+// 配置里对账与放弃都关着时不竞选,只打 INFO。id 是竞选者标识(节点 uuid),只进锁值与日志。
+func (p *AssetPipeline) AttachMaintenanceLeader(rdb *redis.Client, id string) {
+	if p == nil {
+		return
+	}
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if p.started || p.stopped {
+		logx.Error("[guild] AttachMaintenanceLeader called after asset channel Start / Stop; ignored: maintenance leader can only be set before Start")
+		return
+	}
+	if !p.maintenanceOn {
+		logx.Info("[guild] Asset channel maintenance disabled (AssetOp.AuditIntervalMs=0 and AssetOp.AbandonAfterDays=0): no leader election, no pending audit, no automatic abandon")
+		return
+	}
+	if rdb == nil {
+		logx.Error("[guild] Asset channel maintenance not started: no Redis client for leader election; pending audit and automatic abandon will not run")
+		return
+	}
+	p.maintenance = leader.New(leader.NewGoRedisStore(rdb), maintenanceLeaderKey, leader.Options{
+		ID: id,
+		OnStateChange: func(leading bool) {
+			if leading {
+				logx.Infof("[guild] Asset channel maintenance leader acquired (pending audit + automatic abandon run on this replica) id=%s", id)
+				return
+			}
+			logx.Infof("[guild] Asset channel maintenance leader released id=%s", id)
+		},
+	})
 }
 
 // AttachPersistedLedger 给重投循环接上离线读账本(docs/design/guild-phase2/07-rollback-fail-closed.md §7.8.3):
@@ -241,11 +335,13 @@ func (p *AssetPipeline) AttachPersistedLedger(client dspb.DataServiceClient) {
 	logx.Infof("[guild] Asset redelivery loop wired to offline ledger reads: data_service.GetPlayerAssetOpLedger (per-call limit %v)", persistedLedgerReadTimeout)
 }
 
-// Start 起 scene 节点镜像与重投循环两个后台 goroutine。ctx 取消或 Stop 都会让两者退出;
-// 重复调用、Stop 之后再调都是空操作;nil 接收者安全。
+// Start 起 scene 节点镜像与重投循环两个后台 goroutine,以及(装配了的话)维护选主与落地唤醒订阅。
+// ctx 取消或 Stop 都会让它们退出;重复调用、Stop 之后再调都是空操作;nil 接收者安全。
 //
 // 先起 watcher 再起循环:反过来也能工作(镜像没同步时定位回 node_unknown,循环按退避重来),只是白跑一轮。
-// etcdCli 为 nil 时 watcher 打 ERROR 后直接返回,定位一律失败(fail-closed),循环照跑但行都留在 PENDING。
+// etcdCli 为 nil 时 watcher 打 ERROR 后直接返回,定位一律失败(fail-closed),循环照跑但行都留在 PENDING;
+// 放弃判定拿不到"没有位置"的证据(locate_error),同样一行也不放弃。
+// 唤醒订阅最后起:它调的 Loop.WakePlayer 与 Tick 共用 Workers 预算,早起晚起都不改变任何正确性论证(设计 L-4)。
 func (p *AssetPipeline) Start(ctx context.Context, etcdCli *clientv3.Client) {
 	if p == nil {
 		return
@@ -270,16 +366,30 @@ func (p *AssetPipeline) Start(ctx context.Context, etcdCli *clientv3.Client) {
 		defer p.wg.Done()
 		p.Loop.Run(runCtx)
 	})
-	logx.Infof("[guild] Asset channel started: goroutine guild.scene_node_watch + guild.asset_op_reconcile(caller=%s)", AssetOpCaller)
+	if p.maintenance != nil {
+		p.wg.Add(1)
+		// 当选时以领导权 ctx 跑 RunMaintenance(启动先对账一轮,之后按间隔对账 / 放弃),丢锁或 runCtx 取消即返回、
+		// 释放锁(leader.Elector.Run 的收尾,自带 2s 预算 —— 所以 Stop 必须早于关 Redis)。
+		safego.Go("guild.asset_op_maintenance", func() {
+			defer p.wg.Done()
+			p.maintenance.Run(runCtx, p.Loop.RunMaintenance)
+		})
+	}
+	p.wake.Start(runCtx) // nil 接收者安全:Wake 关闭时什么都不做
+	logx.Infof("[guild] Asset channel started: goroutine guild.scene_node_watch + guild.asset_op_reconcile(caller=%s) maintenance_election=%t landing_wake=%t",
+		AssetOpCaller, p.maintenance != nil, p.wake != nil)
 }
 
-// Stop 取消两个后台 goroutine、**等它们退出**,再关到各 scene 节点的连接。幂等;nil 接收者安全;
+// Stop 取消全部后台 goroutine、**等它们退出**,再关到各 scene 节点的连接。幂等;nil 接收者安全;
 // 没 Start 过也可以调(只关连接缓存)。
 //
 // 为什么必须等:Loop 落库那一步用 context.WithoutCancel + 700ms(assetop settleContext),
 // 取消 ctx 拦不住它。不等就去关 DB,终局写不回 outbox,行留在 PENDING、下一轮再投一次 ——
 // 钱不丢(scene 对同一 seq 只读答复),但 Finalize 报错、白投一轮。等待时长有上界:
-// Tick 等本批 worker 结束,每行最多 OpBudget(投递 + 落库),Store 的每条 SQL 都有自己的子预算。
+// Tick 等本批 worker 结束,每行最多 OpBudget(投递 + 落库),Store 的每条 SQL 都有自己的子预算;
+// 在途唤醒最坏再等 WakeTimeout 加落库预留(assetopwake.Subscriber.Stop);放弃那一行的提交同样走 settleContext;
+// 维护选主卸任时带属主校验释放锁(≤ 2s)。
+// 唤醒订阅先停:它的在途唤醒用的是 Loop 与连接缓存,必须在关连接之前结束。
 //
 // 在途的资产 RPC 被连接关闭打断不会丢数据:那一行仍是 PENDING,下次循环照常重投(不变量 I2)。
 func (p *AssetPipeline) Stop() {
@@ -298,11 +408,12 @@ func (p *AssetPipeline) Stop() {
 	if cancel != nil {
 		cancel()
 	}
+	p.wake.Stop() // 等在途唤醒结束;nil 接收者与没 Start 过都安全
 	p.wg.Wait()
 	if p.conns != nil {
 		p.conns.Close()
 	}
-	logx.Info("[guild] Asset channel stopped: redelivery loop and scene node mirror exited")
+	logx.Info("[guild] Asset channel stopped: redelivery loop, maintenance, landing wake and scene node mirror exited")
 }
 
 // initAssetOpIDSegment 按 IdSegment 配置建 op_id 号段客户端(biz_tag = guild_asset_op),写法同

@@ -9,6 +9,13 @@
 
 class EtcdService {
 public:
+    // 重试回调捕获 this;已武装的定时器可移动,宿主地址仍必须固定。
+    EtcdService() = default;
+    EtcdService(const EtcdService&) = delete;
+    EtcdService& operator=(const EtcdService&) = delete;
+    EtcdService(EtcdService&&) = delete;
+    EtcdService& operator=(EtcdService&&) = delete;
+
     void Init();
     void InitHandlers();
     void StartWatchingPrefixes();

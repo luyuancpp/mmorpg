@@ -14,10 +14,12 @@ public:
     void SetNodeId(uint32_t nodeId) {
         buffIdGenerator.set_node_id(nodeId);
         skillIdGenerator.set_node_id(nodeId);
+        actorNetIdGenerator.set_node_id(nodeId);
     }
 
 	TransientNode32BitCompositeIdGenerator buffIdGenerator;
 	TransientNode32BitCompositeIdGenerator skillIdGenerator;
+	TransientNode32BitCompositeIdGenerator actorNetIdGenerator;
 };
 
 extern thread_local ThreadLocalIdGeneratorManager tlsIdGeneratorManager;

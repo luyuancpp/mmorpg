@@ -82,12 +82,12 @@ bool KafkaConsumer::init(const std::string &brokers, const std::string &groupId,
 
 	std::string errstr;
 
-	// librdkafka rejects an empty group.id outright (returns CONF_INVALID with
-	// "Invalid value for configuration property 'group.id'"). Callers were
-	// hitting this during the eager Node::InitKafka() pass — the deploy yaml
-	// keeps GroupID empty on purpose so per-node-id groups get derived later
-	// (see node_kafka_command_handler.h:150). Detect it explicitly here so
-	// the failure is one clear log line instead of a misleading rdkafka error.
+	// librdkafka 对空 group.id 直接拒绝(返回 CONF_INVALID,报
+	// "Invalid value for configuration property 'group.id'")。
+	// 2026-10 起 KafkaManager::Init 不再订阅任何 topic,所以走到这里的空 group.id 只可能来自
+	// 直接调用 KafkaManager::Subscribe:调用方没给组名,Kafka.GroupID 也为空。旧路径按节点
+	// 拼组名的回落在 node_kafka_command_handler.h 的 RegisterKafkaCommandHandler 里。
+	// 这里显式拦下,免得失败表现为一条误导人的 librdkafka 报错。
 	if (groupId.empty())
 	{
 		LOG_INFO << "KafkaConsumer::init skipped: empty group.id "

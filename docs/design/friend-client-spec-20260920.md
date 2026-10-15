@@ -1,5 +1,7 @@
 # friend 客户端任务规格(Unity,2026-09-20)
 
+> **2026-10-15 当前修订：客户端修改已获用户明确授权，申请代次首批已实现。** 协议追加 `FriendRequest.request_id=5`、`AddFriendResponse.request_id=2`、`AcceptFriendRequest.request_id=3`、`RejectFriendRequest.request_id=3`；接受/拒绝按非零 ID 与当前会话身份裁决，保留的 `from_player_id` 兼容字段不参与处理。重复 pending 返回同 ID/原时间，终态后重发换 ID；不能按 sender 删除新代次。客户端已增加真实好友申请入口、添加/拉待审/接受/拒绝、零 ID 禁操作与补拉、会话和迟到回调隔离；Unity 定向 89 例通过（22 条新增好友），离线运行时编译通过。其余好友分组/黑名单/完整列表 UI 不因此标完成。当前详情见服务端 `friend-port-20260918.md` §9.5、客户端既有 `Docs/SocialUI.md`。以下 09-20 的“尚未授权”、按玩家对处理和旧缓存等历史口径在冲突处被本条覆盖；本批尚未执行真实 gate 端到端或容量验收。
+
 > **复核说明(2026-09-20)**:客户端仓已从 `d2b165a` fast-forward 到 **`120e2d8`**(`main`,与 `origin/main` 持平)。本文按「`120e2d8` 已提交内容 + 当前工作区」重新做了只读核对。工作区里除了 `tools/gen_proto.ps1` 末尾那行未提交的 `"proto/friend/friend.proto"`,还发现有人跑过一次 handler 生成:11 个未跟踪的 `ClientPlayerFriend*Handler.cs`、`HandlerRegistry.cs` 多了 11 行、20 个 Team / Jubaozhai / TravelToZone 桩被改成 LF 行尾;`Proto/Generated/Friend.cs` 还没有生成(见 §1.1、§9)。本轮共核对 **40** 条差异(s0-s1 9、s2-s3 11、s4-s6 7、s5-s9 13),**确认 40 条,驳回 0 条**,都已在正文就地订正。基线变化导致的过期处注明「(2026-09-20 客户端基线 d2b165a → 120e2d8 后更正)」。
 > **会让实现者做错事的更正**:
 > ① proto-gen 只新增 Friend 的 11 个桩(92→103),不是 31 个;team / jubaozhai 已经在清单里,不用再补(§0-2、§1.2-§1.4)。

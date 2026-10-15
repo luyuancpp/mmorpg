@@ -4,8 +4,6 @@
 ///<<< BEGIN WRITING YOUR CODE
 #include <map>
 
-#include <muduo/base/Logging.h>
-
 #include "player/system/player_attribute.h"
 #include "player_gm_guard.h" // P0-a:GM 客户端指令的 scene 侧第二道锁
 #include "table/proto/tip/common_error_tip.pb.h"
@@ -13,12 +11,6 @@
 
 namespace
 {
-	// 失败码统一写全局 tip 实体,由生成层 TRANSFER_ERROR_MESSAGE 搬进响应
-	void SetTip(uint32_t err)
-	{
-		tlsEcs.globalRegistry.get_or_emplace<TipInfoMessage>(tlsEcs.GlobalEntity()).set_id(err);
-	}
-
 	std::map<uint32_t, uint32_t> ToStdMap(const google::protobuf::Map<uint32_t, uint32_t>& source)
 	{
 		std::map<uint32_t, uint32_t> result;
@@ -35,7 +27,12 @@ void SceneAttributeClientPlayerHandler::GetAttributePanel(entt::entity player,co
 	::GetAttributePanelResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	PlayerAttributeSystem::BuildPanel(player, *response->mutable_panel());
+	response->clear_panel();
+	if (const auto err = PlayerAttributeSystem::BuildPanel(player, *response->mutable_panel()); err != kSuccess)
+	{
+		response->clear_panel();
+		response->mutable_error_message()->set_id(err);
+	}
 ///<<< END WRITING YOUR CODE
 
 }
@@ -46,16 +43,20 @@ void SceneAttributeClientPlayerHandler::AllocateAttributePoints(entt::entity pla
 ///<<< BEGIN WRITING YOUR CODE
 	if (request->pool_id() == 0 || request->allocated().empty())
 	{
-		SetTip(kInvalidParameter);
+		response->mutable_error_message()->set_id(kInvalidParameter);
 		return;
 	}
 	if (const auto err = PlayerAttributeSystem::Allocate(player, request->pool_id(), ToStdMap(request->allocated()));
 		err != kSuccess)
 	{
-		SetTip(err);
+		response->mutable_error_message()->set_id(err);
 		return;
 	}
-	PlayerAttributeSystem::BuildPanel(player, *response->mutable_panel());
+	if (const auto err = PlayerAttributeSystem::BuildPanel(player, *response->mutable_panel()); err != kSuccess)
+	{
+		response->clear_panel();
+		response->mutable_error_message()->set_id(err);
+	}
 ///<<< END WRITING YOUR CODE
 
 }
@@ -66,10 +67,14 @@ void SceneAttributeClientPlayerHandler::ResetAttributePoints(entt::entity player
 ///<<< BEGIN WRITING YOUR CODE
 	if (const auto err = PlayerAttributeSystem::Reset(player, request->pool_id()); err != kSuccess)
 	{
-		SetTip(err);
+		response->mutable_error_message()->set_id(err);
 		return;
 	}
-	PlayerAttributeSystem::BuildPanel(player, *response->mutable_panel());
+	if (const auto err = PlayerAttributeSystem::BuildPanel(player, *response->mutable_panel()); err != kSuccess)
+	{
+		response->clear_panel();
+		response->mutable_error_message()->set_id(err);
+	}
 ///<<< END WRITING YOUR CODE
 
 }
@@ -81,7 +86,7 @@ void SceneAttributeClientPlayerHandler::AutoAllocateAttributePoints(entt::entity
 	std::map<uint32_t, uint32_t> suggested;
 	if (const auto err = PlayerAttributeSystem::AutoAllocate(player, request->pool_id(), suggested); err != kSuccess)
 	{
-		SetTip(err);
+		response->mutable_error_message()->set_id(err);
 		return;
 	}
 	response->set_pool_id(request->pool_id());
@@ -100,11 +105,15 @@ void SceneAttributeClientPlayerHandler::CreateAttributeScheme(entt::entity playe
 	uint32_t schemeId = 0;
 	if (const auto err = PlayerAttributeSystem::CreateScheme(player, request->name(), schemeId); err != kSuccess)
 	{
-		SetTip(err);
+		response->mutable_error_message()->set_id(err);
 		return;
 	}
 	response->set_scheme_id(schemeId);
-	PlayerAttributeSystem::BuildPanel(player, *response->mutable_panel());
+	if (const auto err = PlayerAttributeSystem::BuildPanel(player, *response->mutable_panel()); err != kSuccess)
+	{
+		response->clear_panel();
+		response->mutable_error_message()->set_id(err);
+	}
 ///<<< END WRITING YOUR CODE
 
 }
@@ -115,10 +124,14 @@ void SceneAttributeClientPlayerHandler::SwitchAttributeScheme(entt::entity playe
 ///<<< BEGIN WRITING YOUR CODE
 	if (const auto err = PlayerAttributeSystem::SwitchScheme(player, request->scheme_id()); err != kSuccess)
 	{
-		SetTip(err);
+		response->mutable_error_message()->set_id(err);
 		return;
 	}
-	PlayerAttributeSystem::BuildPanel(player, *response->mutable_panel());
+	if (const auto err = PlayerAttributeSystem::BuildPanel(player, *response->mutable_panel()); err != kSuccess)
+	{
+		response->clear_panel();
+		response->mutable_error_message()->set_id(err);
+	}
 ///<<< END WRITING YOUR CODE
 
 }
@@ -129,10 +142,14 @@ void SceneAttributeClientPlayerHandler::RenameAttributeScheme(entt::entity playe
 ///<<< BEGIN WRITING YOUR CODE
 	if (const auto err = PlayerAttributeSystem::RenameScheme(player, request->scheme_id(), request->name()); err != kSuccess)
 	{
-		SetTip(err);
+		response->mutable_error_message()->set_id(err);
 		return;
 	}
-	PlayerAttributeSystem::BuildPanel(player, *response->mutable_panel());
+	if (const auto err = PlayerAttributeSystem::BuildPanel(player, *response->mutable_panel()); err != kSuccess)
+	{
+		response->clear_panel();
+		response->mutable_error_message()->set_id(err);
+	}
 ///<<< END WRITING YOUR CODE
 
 }
@@ -153,15 +170,19 @@ void SceneAttributeClientPlayerHandler::GmSetPlayerLevel(entt::entity player,con
 	// 这里是防绕开 gate 直连 scene RPC 端口的第二道锁,判据 SCENE_RUN_MODE。
 	if (scene_gm_guard::RejectGmClientRpc("GmSetPlayerLevel"))
 	{
-		SetTip(kFeatureUnavailable);
+		response->mutable_error_message()->set_id(kFeatureUnavailable);
 		return;
 	}
 	if (const auto err = PlayerAttributeSystem::GmSetLevel(player, request->level()); err != kSuccess)
 	{
-		SetTip(err);
+		response->mutable_error_message()->set_id(err);
 		return;
 	}
-	PlayerAttributeSystem::BuildPanel(player, *response->mutable_panel());
+	if (const auto err = PlayerAttributeSystem::BuildPanel(player, *response->mutable_panel()); err != kSuccess)
+	{
+		response->clear_panel();
+		response->mutable_error_message()->set_id(err);
+	}
 ///<<< END WRITING YOUR CODE
 
 }

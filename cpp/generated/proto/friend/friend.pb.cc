@@ -377,11 +377,11 @@ constexpr RejectFriendRequest::ParseTableT_ RejectFriendRequest::InternalGenerat
     {
       PROTOBUF_FIELD_OFFSET(RejectFriendRequest, _impl_._has_bits_),
       0, // no _extensions_
-      2, 0,  // max_field_number, fast_idx_mask
+      3, 8,  // max_field_number, fast_idx_mask
       offsetof(ParseTableT_, field_lookup_table),
-      4294967293,  // skipmap
+      4294967289,  // skipmap
       offsetof(ParseTableT_, field_entries),
-      1,  // num_field_entries
+      2,  // num_field_entries
       0,  // num_aux_entries
       offsetof(ParseTableT_, field_names),  // no aux_entries
       class_data,
@@ -395,11 +395,17 @@ constexpr RejectFriendRequest::ParseTableT_ RejectFriendRequest::InternalGenerat
       {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(RejectFriendRequest, _impl_.from_player_id_), 0>(),
        {16, 0, 0,
         PROTOBUF_FIELD_OFFSET(RejectFriendRequest, _impl_.from_player_id_)}},
+      // uint64 request_id = 3;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(RejectFriendRequest, _impl_.request_id_), 1>(),
+       {24, 1, 0,
+        PROTOBUF_FIELD_OFFSET(RejectFriendRequest, _impl_.request_id_)}},
     }}, {{
       65535, 65535
     }}, {{
       // uint64 from_player_id = 2;
       {PROTOBUF_FIELD_OFFSET(RejectFriendRequest, _impl_.from_player_id_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      // uint64 request_id = 3;
+      {PROTOBUF_FIELD_OFFSET(RejectFriendRequest, _impl_.request_id_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
     }},
     // no aux_entries
     {{
@@ -412,7 +418,8 @@ inline constexpr RejectFriendRequest::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
-        from_player_id_{::uint64_t{0u}} {}
+        from_player_id_{::uint64_t{0u}},
+        request_id_{::uint64_t{0u}} {}
 
 template <typename>
 constexpr RejectFriendRequest::RejectFriendRequest(::_pbi::ConstantInitialized,
@@ -1293,11 +1300,11 @@ constexpr FriendRequest::ParseTableT_ FriendRequest::InternalGenerateParseTable_
     {
       PROTOBUF_FIELD_OFFSET(FriendRequest, _impl_._has_bits_),
       0, // no _extensions_
-      4, 24,  // max_field_number, fast_idx_mask
+      5, 56,  // max_field_number, fast_idx_mask
       offsetof(ParseTableT_, field_lookup_table),
-      4294967280,  // skipmap
+      4294967264,  // skipmap
       offsetof(ParseTableT_, field_entries),
-      4,  // num_field_entries
+      5,  // num_field_entries
       0,  // num_aux_entries
       offsetof(ParseTableT_, field_names),  // no aux_entries
       class_data,
@@ -1307,10 +1314,7 @@ constexpr FriendRequest::ParseTableT_ FriendRequest::InternalGenerateParseTable_
       ::_pbi::TcParser::GetTable<::friendpb::FriendRequest>(),  // to_prefetch
       #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
     }, {{
-      // .friendpb.FriendRequestStatus status = 4;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(FriendRequest, _impl_.status_), 3>(),
-       {32, 3, 0,
-        PROTOBUF_FIELD_OFFSET(FriendRequest, _impl_.status_)}},
+      {::_pbi::TcParser::MiniParse, {}},
       // uint64 from_player_id = 1;
       {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(FriendRequest, _impl_.from_player_id_), 0>(),
        {8, 0, 0,
@@ -1323,6 +1327,16 @@ constexpr FriendRequest::ParseTableT_ FriendRequest::InternalGenerateParseTable_
       {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(FriendRequest, _impl_.request_time_ms_), 2>(),
        {24, 2, 0,
         PROTOBUF_FIELD_OFFSET(FriendRequest, _impl_.request_time_ms_)}},
+      // .friendpb.FriendRequestStatus status = 4;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(FriendRequest, _impl_.status_), 4>(),
+       {32, 4, 0,
+        PROTOBUF_FIELD_OFFSET(FriendRequest, _impl_.status_)}},
+      // uint64 request_id = 5;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(FriendRequest, _impl_.request_id_), 3>(),
+       {40, 3, 0,
+        PROTOBUF_FIELD_OFFSET(FriendRequest, _impl_.request_id_)}},
+      {::_pbi::TcParser::MiniParse, {}},
+      {::_pbi::TcParser::MiniParse, {}},
     }}, {{
       65535, 65535
     }}, {{
@@ -1333,7 +1347,9 @@ constexpr FriendRequest::ParseTableT_ FriendRequest::InternalGenerateParseTable_
       // int64 request_time_ms = 3;
       {PROTOBUF_FIELD_OFFSET(FriendRequest, _impl_.request_time_ms_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kInt64)},
       // .friendpb.FriendRequestStatus status = 4;
-      {PROTOBUF_FIELD_OFFSET(FriendRequest, _impl_.status_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
+      {PROTOBUF_FIELD_OFFSET(FriendRequest, _impl_.status_), _Internal::kHasBitsOffset + 4, 0, (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
+      // uint64 request_id = 5;
+      {PROTOBUF_FIELD_OFFSET(FriendRequest, _impl_.request_id_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
     }},
     // no aux_entries
     {{
@@ -1349,6 +1365,7 @@ inline constexpr FriendRequest::Impl_::Impl_(
         from_player_id_{::uint64_t{0u}},
         to_player_id_{::uint64_t{0u}},
         request_time_ms_{::int64_t{0}},
+        request_id_{::uint64_t{0u}},
         status_{static_cast< ::friendpb::FriendRequestStatus >(0)} {}
 
 template <typename>
@@ -2259,11 +2276,11 @@ constexpr AcceptFriendRequest::ParseTableT_ AcceptFriendRequest::InternalGenerat
     {
       PROTOBUF_FIELD_OFFSET(AcceptFriendRequest, _impl_._has_bits_),
       0, // no _extensions_
-      2, 0,  // max_field_number, fast_idx_mask
+      3, 8,  // max_field_number, fast_idx_mask
       offsetof(ParseTableT_, field_lookup_table),
-      4294967293,  // skipmap
+      4294967289,  // skipmap
       offsetof(ParseTableT_, field_entries),
-      1,  // num_field_entries
+      2,  // num_field_entries
       0,  // num_aux_entries
       offsetof(ParseTableT_, field_names),  // no aux_entries
       class_data,
@@ -2277,11 +2294,17 @@ constexpr AcceptFriendRequest::ParseTableT_ AcceptFriendRequest::InternalGenerat
       {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(AcceptFriendRequest, _impl_.from_player_id_), 0>(),
        {16, 0, 0,
         PROTOBUF_FIELD_OFFSET(AcceptFriendRequest, _impl_.from_player_id_)}},
+      // uint64 request_id = 3;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(AcceptFriendRequest, _impl_.request_id_), 1>(),
+       {24, 1, 0,
+        PROTOBUF_FIELD_OFFSET(AcceptFriendRequest, _impl_.request_id_)}},
     }}, {{
       65535, 65535
     }}, {{
       // uint64 from_player_id = 2;
       {PROTOBUF_FIELD_OFFSET(AcceptFriendRequest, _impl_.from_player_id_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      // uint64 request_id = 3;
+      {PROTOBUF_FIELD_OFFSET(AcceptFriendRequest, _impl_.request_id_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
     }},
     // no aux_entries
     {{
@@ -2294,7 +2317,8 @@ inline constexpr AcceptFriendRequest::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
-        from_player_id_{::uint64_t{0u}} {}
+        from_player_id_{::uint64_t{0u}},
+        request_id_{::uint64_t{0u}} {}
 
 template <typename>
 constexpr AcceptFriendRequest::AcceptFriendRequest(::_pbi::ConstantInitialized,
@@ -3659,11 +3683,11 @@ constexpr AddFriendResponse::ParseTableT_ AddFriendResponse::InternalGeneratePar
     {
       PROTOBUF_FIELD_OFFSET(AddFriendResponse, _impl_._has_bits_),
       0, // no _extensions_
-      1, 0,  // max_field_number, fast_idx_mask
+      2, 8,  // max_field_number, fast_idx_mask
       offsetof(ParseTableT_, field_lookup_table),
-      4294967294,  // skipmap
+      4294967292,  // skipmap
       offsetof(ParseTableT_, field_entries),
-      1,  // num_field_entries
+      2,  // num_field_entries
       1,  // num_aux_entries
       offsetof(ParseTableT_, aux_entries),
       class_data,
@@ -3673,6 +3697,10 @@ constexpr AddFriendResponse::ParseTableT_ AddFriendResponse::InternalGeneratePar
       ::_pbi::TcParser::GetTable<::friendpb::AddFriendResponse>(),  // to_prefetch
       #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
     }, {{
+      // uint64 request_id = 2;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(AddFriendResponse, _impl_.request_id_), 1>(),
+       {16, 1, 0,
+        PROTOBUF_FIELD_OFFSET(AddFriendResponse, _impl_.request_id_)}},
       // .TipInfoMessage error_message = 1;
       {::_pbi::TcParser::FastMtS1,
        {10, 0, 0,
@@ -3682,6 +3710,8 @@ constexpr AddFriendResponse::ParseTableT_ AddFriendResponse::InternalGeneratePar
     }}, {{
       // .TipInfoMessage error_message = 1;
       {PROTOBUF_FIELD_OFFSET(AddFriendResponse, _impl_.error_message_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+      // uint64 request_id = 2;
+      {PROTOBUF_FIELD_OFFSET(AddFriendResponse, _impl_.request_id_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
     }},
     {{
         #ifndef PROTOBUF_MESSAGE_GLOBALS
@@ -3700,7 +3730,8 @@ inline constexpr AddFriendResponse::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
-        error_message_{nullptr} {}
+        error_message_{nullptr},
+        request_id_{::uint64_t{0u}} {}
 
 template <typename>
 constexpr AddFriendResponse::AddFriendResponse(::_pbi::ConstantInitialized,
@@ -3974,14 +4005,16 @@ const ::uint32_t
         9,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::friendpb::FriendRequest, _impl_._has_bits_),
-        7, // hasbit index offset
+        8, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::friendpb::FriendRequest, _impl_.from_player_id_),
         PROTOBUF_FIELD_OFFSET(::friendpb::FriendRequest, _impl_.to_player_id_),
         PROTOBUF_FIELD_OFFSET(::friendpb::FriendRequest, _impl_.request_time_ms_),
         PROTOBUF_FIELD_OFFSET(::friendpb::FriendRequest, _impl_.status_),
+        PROTOBUF_FIELD_OFFSET(::friendpb::FriendRequest, _impl_.request_id_),
         0,
         1,
         2,
+        4,
         3,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::friendpb::AddFriendRequest, _impl_._has_bits_),
@@ -3990,14 +4023,18 @@ const ::uint32_t
         0,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::friendpb::AddFriendResponse, _impl_._has_bits_),
-        4, // hasbit index offset
+        5, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::friendpb::AddFriendResponse, _impl_.error_message_),
+        PROTOBUF_FIELD_OFFSET(::friendpb::AddFriendResponse, _impl_.request_id_),
         0,
+        1,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::friendpb::AcceptFriendRequest, _impl_._has_bits_),
-        4, // hasbit index offset
+        5, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::friendpb::AcceptFriendRequest, _impl_.from_player_id_),
+        PROTOBUF_FIELD_OFFSET(::friendpb::AcceptFriendRequest, _impl_.request_id_),
         0,
+        1,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::friendpb::AcceptFriendResponse, _impl_._has_bits_),
         4, // hasbit index offset
@@ -4005,9 +4042,11 @@ const ::uint32_t
         0,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::friendpb::RejectFriendRequest, _impl_._has_bits_),
-        4, // hasbit index offset
+        5, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::friendpb::RejectFriendRequest, _impl_.from_player_id_),
+        PROTOBUF_FIELD_OFFSET(::friendpb::RejectFriendRequest, _impl_.request_id_),
         0,
+        1,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::friendpb::RejectFriendResponse, _impl_._has_bits_),
         4, // hasbit index offset
@@ -4136,29 +4175,29 @@ static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, sizeof(::friendpb::FriendEntry)},
         {23, sizeof(::friendpb::FriendRequest)},
-        {34, sizeof(::friendpb::AddFriendRequest)},
-        {39, sizeof(::friendpb::AddFriendResponse)},
-        {44, sizeof(::friendpb::AcceptFriendRequest)},
-        {49, sizeof(::friendpb::AcceptFriendResponse)},
-        {54, sizeof(::friendpb::RejectFriendRequest)},
-        {59, sizeof(::friendpb::RejectFriendResponse)},
-        {64, sizeof(::friendpb::RemoveFriendRequest)},
-        {69, sizeof(::friendpb::RemoveFriendResponse)},
-        {74, sizeof(::friendpb::GetFriendListRequest)},
-        {75, sizeof(::friendpb::GetFriendListResponse)},
-        {82, sizeof(::friendpb::GetPendingRequestsRequest)},
-        {83, sizeof(::friendpb::GetPendingRequestsResponse)},
-        {90, sizeof(::friendpb::BlockRequest)},
-        {95, sizeof(::friendpb::BlockResponse)},
-        {100, sizeof(::friendpb::UnblockRequest)},
-        {105, sizeof(::friendpb::UnblockResponse)},
-        {110, sizeof(::friendpb::ListBlocksRequest)},
-        {111, sizeof(::friendpb::BlockEntry)},
-        {118, sizeof(::friendpb::ListBlocksResponse)},
-        {125, sizeof(::friendpb::RecommendFriendsRequest)},
-        {138, sizeof(::friendpb::RecommendEntry)},
-        {161, sizeof(::friendpb::RecommendFriendsResponse)},
-        {172, sizeof(::friendpb::FriendEventS2C)},
+        {36, sizeof(::friendpb::AddFriendRequest)},
+        {41, sizeof(::friendpb::AddFriendResponse)},
+        {48, sizeof(::friendpb::AcceptFriendRequest)},
+        {55, sizeof(::friendpb::AcceptFriendResponse)},
+        {60, sizeof(::friendpb::RejectFriendRequest)},
+        {67, sizeof(::friendpb::RejectFriendResponse)},
+        {72, sizeof(::friendpb::RemoveFriendRequest)},
+        {77, sizeof(::friendpb::RemoveFriendResponse)},
+        {82, sizeof(::friendpb::GetFriendListRequest)},
+        {83, sizeof(::friendpb::GetFriendListResponse)},
+        {90, sizeof(::friendpb::GetPendingRequestsRequest)},
+        {91, sizeof(::friendpb::GetPendingRequestsResponse)},
+        {98, sizeof(::friendpb::BlockRequest)},
+        {103, sizeof(::friendpb::BlockResponse)},
+        {108, sizeof(::friendpb::UnblockRequest)},
+        {113, sizeof(::friendpb::UnblockResponse)},
+        {118, sizeof(::friendpb::ListBlocksRequest)},
+        {119, sizeof(::friendpb::BlockEntry)},
+        {126, sizeof(::friendpb::ListBlocksResponse)},
+        {133, sizeof(::friendpb::RecommendFriendsRequest)},
+        {146, sizeof(::friendpb::RecommendEntry)},
+        {169, sizeof(::friendpb::RecommendFriendsResponse)},
+        {180, sizeof(::friendpb::FriendEventS2C)},
 };
 static const ::_pbi::MessageGlobalsBase* PROTOBUF_NONNULL const
     file_message_globals[] = {
@@ -4198,18 +4237,20 @@ const char descriptor_table_protodef_proto_2ffriend_2ffriend_2eproto[] ABSL_ATTR
     "e_ms\030\003 \001(\003\022\021\n\tis_online\030\004 \001(\010\022\014\n\004name\030\005 "
     "\001(\t\022\r\n\005level\030\006 \001(\r\022\020\n\010class_id\030\007 \001(\r\022\016\n\006"
     "gender\030\010 \001(\r\022\025\n\rappearance_id\030\t \001(\t\022\017\n\007z"
-    "one_id\030\n \001(\r\"\205\001\n\rFriendRequest\022\026\n\016from_p"
+    "one_id\030\n \001(\r\"\231\001\n\rFriendRequest\022\026\n\016from_p"
     "layer_id\030\001 \001(\004\022\024\n\014to_player_id\030\002 \001(\004\022\027\n\017"
     "request_time_ms\030\003 \001(\003\022-\n\006status\030\004 \001(\0162\035."
-    "friendpb.FriendRequestStatus\"=\n\020AddFrien"
-    "dRequest\022\030\n\020target_player_id\030\002 \001(\004J\004\010\001\020\002"
-    "R\tplayer_id\";\n\021AddFriendResponse\022&\n\rerro"
-    "r_message\030\001 \001(\0132\017.TipInfoMessage\">\n\023Acce"
-    "ptFriendRequest\022\026\n\016from_player_id\030\002 \001(\004J"
-    "\004\010\001\020\002R\tplayer_id\">\n\024AcceptFriendResponse"
-    "\022&\n\rerror_message\030\001 \001(\0132\017.TipInfoMessage"
-    "\">\n\023RejectFriendRequest\022\026\n\016from_player_i"
-    "d\030\002 \001(\004J\004\010\001\020\002R\tplayer_id\">\n\024RejectFriend"
+    "friendpb.FriendRequestStatus\022\022\n\nrequest_"
+    "id\030\005 \001(\004\"=\n\020AddFriendRequest\022\030\n\020target_p"
+    "layer_id\030\002 \001(\004J\004\010\001\020\002R\tplayer_id\"O\n\021AddFr"
+    "iendResponse\022&\n\rerror_message\030\001 \001(\0132\017.Ti"
+    "pInfoMessage\022\022\n\nrequest_id\030\002 \001(\004\"R\n\023Acce"
+    "ptFriendRequest\022\026\n\016from_player_id\030\002 \001(\004\022"
+    "\022\n\nrequest_id\030\003 \001(\004J\004\010\001\020\002R\tplayer_id\">\n\024"
+    "AcceptFriendResponse\022&\n\rerror_message\030\001 "
+    "\001(\0132\017.TipInfoMessage\"R\n\023RejectFriendRequ"
+    "est\022\026\n\016from_player_id\030\002 \001(\004\022\022\n\nrequest_i"
+    "d\030\003 \001(\004J\004\010\001\020\002R\tplayer_id\">\n\024RejectFriend"
     "Response\022&\n\rerror_message\030\001 \001(\0132\017.TipInf"
     "oMessage\"@\n\023RemoveFriendRequest\022\030\n\020targe"
     "t_player_id\030\002 \001(\004J\004\010\001\020\002R\tplayer_id\">\n\024Re"
@@ -4287,7 +4328,7 @@ static ::absl::once_flag descriptor_table_proto_2ffriend_2ffriend_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2ffriend_2ffriend_2eproto = {
     false,
     false,
-    3436,
+    3516,
     descriptor_table_protodef_proto_2ffriend_2ffriend_2eproto,
     "proto/friend/friend.proto",
     &descriptor_table_proto_2ffriend_2ffriend_2eproto_once,
@@ -4851,7 +4892,7 @@ PROTOBUF_NOINLINE void FriendRequest::Clear() {
   (void) cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000001fU)) {
     ::memset(&_impl_.from_player_id_, 0, static_cast<::size_t>(
         reinterpret_cast<char*>(&_impl_.status_) -
         reinterpret_cast<char*>(&_impl_.from_player_id_)) + sizeof(_impl_.status_));
@@ -4907,11 +4948,20 @@ PROTOBUF_NOINLINE void FriendRequest::Clear() {
   }
 
   // .friendpb.FriendRequestStatus status = 4;
-  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000010U)) {
     if (this_._internal_status() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteEnumToArray(
           4, this_._internal_status(), target);
+    }
+  }
+
+  // uint64 request_id = 5;
+  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+    if (this_._internal_request_id() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          5, this_._internal_request_id(), target);
     }
   }
 
@@ -4940,7 +4990,7 @@ PROTOBUF_NOINLINE void FriendRequest::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000001fU)) {
     // uint64 from_player_id = 1;
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       if (this_._internal_from_player_id() != 0) {
@@ -4962,8 +5012,15 @@ PROTOBUF_NOINLINE void FriendRequest::Clear() {
             this_._internal_request_time_ms());
       }
     }
-    // .friendpb.FriendRequestStatus status = 4;
+    // uint64 request_id = 5;
     if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (this_._internal_request_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_request_id());
+      }
+    }
+    // .friendpb.FriendRequestStatus status = 4;
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
       if (this_._internal_status() != 0) {
         total_size += 1 +
                       ::_pbi::WireFormatLite::EnumSize(this_._internal_status());
@@ -4987,7 +5044,7 @@ void FriendRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
   (void)cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000001fU)) {
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       if (from._internal_from_player_id() != 0) {
         _this->_impl_.from_player_id_ = from._impl_.from_player_id_;
@@ -5004,6 +5061,11 @@ void FriendRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
       }
     }
     if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (from._internal_request_id() != 0) {
+        _this->_impl_.request_id_ = from._impl_.request_id_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
       if (from._internal_status() != 0) {
         _this->_impl_.status_ = from._impl_.status_;
       }
@@ -5267,6 +5329,7 @@ AddFriendResponse::AddFriendResponse(
   _impl_.error_message_ = (CheckHasBit(cached_has_bits, 0x00000001U))
                 ? ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.error_message_)
                 : nullptr;
+  _impl_.request_id_ = from._impl_.request_id_;
 
   // @@protoc_insertion_point(copy_constructor:friendpb.AddFriendResponse)
 }
@@ -5277,7 +5340,12 @@ PROTOBUF_NDEBUG_INLINE AddFriendResponse::Impl_::Impl_(
 
 inline void AddFriendResponse::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
-  _impl_.error_message_ = {};
+  ::memset(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, error_message_),
+           0,
+           offsetof(Impl_, request_id_) -
+               offsetof(Impl_, error_message_) +
+               sizeof(Impl_::request_id_));
 }
 AddFriendResponse::~AddFriendResponse() {
   // @@protoc_insertion_point(destructor:friendpb.AddFriendResponse)
@@ -5332,6 +5400,7 @@ PROTOBUF_NOINLINE void AddFriendResponse::Clear() {
     ABSL_DCHECK(_impl_.error_message_ != nullptr);
     _impl_.error_message_->Clear();
   }
+  _impl_.request_id_ = ::uint64_t{0u};
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
@@ -5362,6 +5431,15 @@ PROTOBUF_NOINLINE void AddFriendResponse::Clear() {
         stream);
   }
 
+  // uint64 request_id = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (this_._internal_request_id() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          2, this_._internal_request_id(), target);
+    }
+  }
+
   if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
     target =
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
@@ -5385,12 +5463,20 @@ PROTOBUF_NOINLINE void AddFriendResponse::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void)cached_has_bits;
 
-   {
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
     // .TipInfoMessage error_message = 1;
-    cached_has_bits = this_._impl_._has_bits_[0];
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       total_size += 1 +
                     ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.error_message_);
+    }
+    // uint64 request_id = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (this_._internal_request_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_request_id());
+      }
     }
   }
   return this_.MaybeComputeUnknownFieldsSize(total_size,
@@ -5411,12 +5497,19 @@ void AddFriendResponse::MergeImpl(::google::protobuf::MessageLite& to_msg,
   (void)cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
-    ABSL_DCHECK(from._impl_.error_message_ != nullptr);
-    if (_this->_impl_.error_message_ == nullptr) {
-      _this->_impl_.error_message_ = ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.error_message_);
-    } else {
-      _this->_impl_.error_message_->MergeFrom(*from._impl_.error_message_);
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      ABSL_DCHECK(from._impl_.error_message_ != nullptr);
+      if (_this->_impl_.error_message_ == nullptr) {
+        _this->_impl_.error_message_ = ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.error_message_);
+      } else {
+        _this->_impl_.error_message_->MergeFrom(*from._impl_.error_message_);
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (from._internal_request_id() != 0) {
+        _this->_impl_.request_id_ = from._impl_.request_id_;
+      }
     }
   }
   _this->_impl_._has_bits_[0] |= cached_has_bits;
@@ -5436,7 +5529,12 @@ void AddFriendResponse::InternalSwap(AddFriendResponse* PROTOBUF_RESTRICT PROTOB
   using ::std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
-  swap(_impl_.error_message_, other->_impl_.error_message_);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(AddFriendResponse, _impl_.request_id_)
+      + sizeof(AddFriendResponse::_impl_.request_id_)
+      - PROTOBUF_FIELD_OFFSET(AddFriendResponse, _impl_.error_message_)>(
+          reinterpret_cast<char*>(&_impl_.error_message_),
+          reinterpret_cast<char*>(&other->_impl_.error_message_));
 }
 
 ::google::protobuf::Metadata AddFriendResponse::GetMetadata() const {
@@ -5471,7 +5569,12 @@ PROTOBUF_NDEBUG_INLINE AcceptFriendRequest::Impl_::Impl_(
 
 inline void AcceptFriendRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
-  _impl_.from_player_id_ = {};
+  ::memset(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, from_player_id_),
+           0,
+           offsetof(Impl_, request_id_) -
+               offsetof(Impl_, from_player_id_) +
+               sizeof(Impl_::request_id_));
 }
 AcceptFriendRequest::~AcceptFriendRequest() {
   // @@protoc_insertion_point(destructor:friendpb.AcceptFriendRequest)
@@ -5520,7 +5623,12 @@ PROTOBUF_NOINLINE void AcceptFriendRequest::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  _impl_.from_player_id_ = ::uint64_t{0u};
+  cached_has_bits = _impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    ::memset(&_impl_.from_player_id_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.request_id_) -
+        reinterpret_cast<char*>(&_impl_.from_player_id_)) + sizeof(_impl_.request_id_));
+  }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
@@ -5553,6 +5661,15 @@ PROTOBUF_NOINLINE void AcceptFriendRequest::Clear() {
     }
   }
 
+  // uint64 request_id = 3;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (this_._internal_request_id() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          3, this_._internal_request_id(), target);
+    }
+  }
+
   if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
     target =
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
@@ -5576,13 +5693,21 @@ PROTOBUF_NOINLINE void AcceptFriendRequest::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void)cached_has_bits;
 
-   {
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
     // uint64 from_player_id = 2;
-    cached_has_bits = this_._impl_._has_bits_[0];
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       if (this_._internal_from_player_id() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
             this_._internal_from_player_id());
+      }
+    }
+    // uint64 request_id = 3;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (this_._internal_request_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_request_id());
       }
     }
   }
@@ -5603,9 +5728,16 @@ void AcceptFriendRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
   (void)cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
-    if (from._internal_from_player_id() != 0) {
-      _this->_impl_.from_player_id_ = from._impl_.from_player_id_;
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (from._internal_from_player_id() != 0) {
+        _this->_impl_.from_player_id_ = from._impl_.from_player_id_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (from._internal_request_id() != 0) {
+        _this->_impl_.request_id_ = from._impl_.request_id_;
+      }
     }
   }
   _this->_impl_._has_bits_[0] |= cached_has_bits;
@@ -5625,7 +5757,12 @@ void AcceptFriendRequest::InternalSwap(AcceptFriendRequest* PROTOBUF_RESTRICT PR
   using ::std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
-  swap(_impl_.from_player_id_, other->_impl_.from_player_id_);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(AcceptFriendRequest, _impl_.request_id_)
+      + sizeof(AcceptFriendRequest::_impl_.request_id_)
+      - PROTOBUF_FIELD_OFFSET(AcceptFriendRequest, _impl_.from_player_id_)>(
+          reinterpret_cast<char*>(&_impl_.from_player_id_),
+          reinterpret_cast<char*>(&other->_impl_.from_player_id_));
 }
 
 ::google::protobuf::Metadata AcceptFriendRequest::GetMetadata() const {
@@ -5876,7 +6013,12 @@ PROTOBUF_NDEBUG_INLINE RejectFriendRequest::Impl_::Impl_(
 
 inline void RejectFriendRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
-  _impl_.from_player_id_ = {};
+  ::memset(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, from_player_id_),
+           0,
+           offsetof(Impl_, request_id_) -
+               offsetof(Impl_, from_player_id_) +
+               sizeof(Impl_::request_id_));
 }
 RejectFriendRequest::~RejectFriendRequest() {
   // @@protoc_insertion_point(destructor:friendpb.RejectFriendRequest)
@@ -5925,7 +6067,12 @@ PROTOBUF_NOINLINE void RejectFriendRequest::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  _impl_.from_player_id_ = ::uint64_t{0u};
+  cached_has_bits = _impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    ::memset(&_impl_.from_player_id_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.request_id_) -
+        reinterpret_cast<char*>(&_impl_.from_player_id_)) + sizeof(_impl_.request_id_));
+  }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
@@ -5958,6 +6105,15 @@ PROTOBUF_NOINLINE void RejectFriendRequest::Clear() {
     }
   }
 
+  // uint64 request_id = 3;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (this_._internal_request_id() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          3, this_._internal_request_id(), target);
+    }
+  }
+
   if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
     target =
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
@@ -5981,13 +6137,21 @@ PROTOBUF_NOINLINE void RejectFriendRequest::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void)cached_has_bits;
 
-   {
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
     // uint64 from_player_id = 2;
-    cached_has_bits = this_._impl_._has_bits_[0];
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       if (this_._internal_from_player_id() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
             this_._internal_from_player_id());
+      }
+    }
+    // uint64 request_id = 3;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (this_._internal_request_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_request_id());
       }
     }
   }
@@ -6008,9 +6172,16 @@ void RejectFriendRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
   (void)cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
-    if (from._internal_from_player_id() != 0) {
-      _this->_impl_.from_player_id_ = from._impl_.from_player_id_;
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (from._internal_from_player_id() != 0) {
+        _this->_impl_.from_player_id_ = from._impl_.from_player_id_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (from._internal_request_id() != 0) {
+        _this->_impl_.request_id_ = from._impl_.request_id_;
+      }
     }
   }
   _this->_impl_._has_bits_[0] |= cached_has_bits;
@@ -6030,7 +6201,12 @@ void RejectFriendRequest::InternalSwap(RejectFriendRequest* PROTOBUF_RESTRICT PR
   using ::std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
-  swap(_impl_.from_player_id_, other->_impl_.from_player_id_);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(RejectFriendRequest, _impl_.request_id_)
+      + sizeof(RejectFriendRequest::_impl_.request_id_)
+      - PROTOBUF_FIELD_OFFSET(RejectFriendRequest, _impl_.from_player_id_)>(
+          reinterpret_cast<char*>(&_impl_.from_player_id_),
+          reinterpret_cast<char*>(&other->_impl_.from_player_id_));
 }
 
 ::google::protobuf::Metadata RejectFriendRequest::GetMetadata() const {

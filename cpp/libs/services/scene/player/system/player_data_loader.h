@@ -3,19 +3,28 @@
 #include "proto/common/database/player_cache.pb.h"
 #include "services/scene/player/system/bag_marshal.h"
 #include "services/scene/player/system/mission_marshal.h"
+// Unmarshal 是持久化组件的唯一创建点(emplace);Marshal 只读(try_get),不改变实体的组件集合。
+// Marshal 返回 false = 有持久化组件缺失(加载不变量被破坏),此时不写出任何零值。
 void PlayerDatabaseMessageFieldsUnmarshal(entt::entity player, const player_database& message);
-void PlayerDatabaseMessageFieldsMarshal(entt::entity player, player_database& message);
+[[nodiscard]] bool PlayerDatabaseMessageFieldsMarshal(entt::entity player, player_database& message);
 
 void PlayerDatabase1MessageFieldsUnmarshal(entt::entity player, const player_database_1& message);
-void PlayerDatabase1MessageFieldsMarshal(entt::entity player, player_database_1& message);
+[[nodiscard]] bool PlayerDatabase1MessageFieldsMarshal(entt::entity player, player_database_1& message);
 
-inline void PlayerAllDataMessageFieldsMarshal(entt::entity player, PlayerAllData& message)
+// 全部子表成功后才替换输出；返回 false 时原输出的内容、presence 和未知字段都保持原样。
+// 调用方仍须拒绝此次 Redis / DB / 快照写入，不得把拒绝当作已经落盘。
+[[nodiscard]] inline bool PlayerAllDataMessageFieldsMarshal(entt::entity player, PlayerAllData& message)
 {
-PlayerDatabaseMessageFieldsMarshal(player, *message.mutable_player_database_data());
-PlayerDatabase1MessageFieldsMarshal(player, *message.mutable_player_database_1_data());
-// 兼容旧跨服/回滚读者；数据库记录中的两项是持久化事实源。
-message.mutable_bag_data()->CopyFrom(message.player_database_data().bag_component());
-message.mutable_quest_data()->CopyFrom(message.player_database_data().mission_component());
+    PlayerAllData candidate(message);
+    if (!PlayerDatabaseMessageFieldsMarshal(player, *candidate.mutable_player_database_data()))
+        return false;
+    if (!PlayerDatabase1MessageFieldsMarshal(player, *candidate.mutable_player_database_1_data()))
+        return false;
+    // 兼容旧跨服/回滚读者；数据库记录中的两项是持久化事实源。
+    candidate.mutable_bag_data()->CopyFrom(candidate.player_database_data().bag_component());
+    candidate.mutable_quest_data()->CopyFrom(candidate.player_database_data().mission_component());
+    message.Swap(&candidate);
+    return true;
 }
 
 inline void PlayerAllDataMessageFieldsUnMarshal(entt::entity player, const PlayerAllData& message)

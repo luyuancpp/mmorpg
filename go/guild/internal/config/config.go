@@ -9,6 +9,7 @@ import (
 	"github.com/zeromicro/go-zero/zrpc"
 
 	"guild/internal/data"
+	"shared/assetopwake"
 	"shared/idsegment"
 )
 
@@ -317,6 +318,68 @@ type AssetOpConf struct {
 	TerminalRetentionDays int `json:",default=30"`
 	// CounterRetentionDays 每日 / 每周计数行保留天数(只影响历史周期,当期行永不被删)。
 	CounterRetentionDays int `json:",default=30"`
+
+	// ── 落地恢复(docs/design/landing-recovery-sync-digest.md §5.3 / §6;映射进 assetop.LoopConfig 的同名项)──
+	// 与上面的循环参数一样只在 Enabled 时校验;段出现而没写这些键时按 default 回填。
+
+	// OfflineAfterAttempts 进入离线停放档的已投递次数门槛:本次结局是本地 NOT_HERE 且位置键不存在、attempts 达到它,
+	// 下一次投递推到约 OfflineBackoffMs 之后(玩家上线由落地唤醒兜住)。0 = 关闭停放档。
+	OfflineAfterAttempts int `json:",default=5"`
+	// OfflineBackoffMs 停放档的间隔中值(±20% 抖动)。停放档开启时必须 ≥ MaxBackoffMs、≤ 24 小时。
+	OfflineBackoffMs int `json:",default=1800000"`
+	// AbandonAfterDays 自动放弃的年龄门槛(天):PENDING 且创建早于它的行,在玩家无位置、账本确认未见时终结为 ABANDONED,
+	// 对侧账同 REJECTED / ABORTED。0 = 关闭;非 0 时 ≥ 30(放弃不可逆)。
+	// **滚动升级**:旧版实例的发送不推进 last_send_ms,新二进制全量上线之前必须写 0,全量之后再设 180(设计 §6.3)。
+	AbandonAfterDays int `json:",default=180"`
+	// AbandonSafetyGapMs 放弃条件 4 的安全间隔:距该行最后一次可能的发送不足它就不放弃。开启放弃时 ≥ 600000 且 ≥ LeaseMs。
+	AbandonSafetyGapMs int `json:",default=3600000"`
+	// AbandonBatch 一轮放弃最多处理多少行(候选分页大小),开启放弃时取 [1, 1000]。
+	AbandonBatch int `json:",default=200"`
+	// AbandonIntervalMs 两轮放弃的间隔,开启放弃时取 [60000, 86400000]。
+	AbandonIntervalMs int `json:",default=3600000"`
+	// AuditIntervalMs 日对账(只读,刷新 assetop_pending_rows / assetop_pending_class_oldest_age_seconds)的间隔。
+	// 0 = 不跑对账;非 0 时取 [60000, 604800000]。对账与放弃只在选主当选的一个副本上跑(svc.AssetPipeline)。
+	AuditIntervalMs int `json:",default=86400000"`
+	// Wake 是落地唤醒订阅(核心 Redis 频道 assetop:wake),见 AssetOpWakeConf。
+	Wake AssetOpWakeConf `json:",optional"`
+}
+
+// AssetOpWakeConf 是落地唤醒订阅的参数(shared/assetopwake,设计 §5.3)。
+//
+// # 为什么三个键都是 optional、默认值走方法
+//
+// 理由同 ActivityConf:整段可选的嵌套结构缺失时 go-zero 不下钻、不回填 default。要做到"Wake 段没写 = 开、并发 4、超时 10s",
+// 默认值只能由读取方法给出;Enabled 用 *bool 区分"没写"(nil = 开)与"显式写 false"(关)。
+// 默认值的唯一来源是 shared/assetopwake 的 DefaultConcurrency / DefaultWakeTimeout,这里不另抄数字。
+type AssetOpWakeConf struct {
+	// Enabled:nil(没写)或 true = 订阅;显式 false = 不订阅,PENDING 行只按原退避 / 停放档重投(只慢不错)。
+	Enabled *bool `json:",optional"`
+	// Concurrency 本副本同时在跑的唤醒数上限,满了直接丢;0(没写)= assetopwake.DefaultConcurrency(4),否则 [1, 64]。
+	Concurrency int `json:",optional"`
+	// TimeoutMs 每次唤醒的总预算;0(没写)= assetopwake.DefaultWakeTimeout(10s)。生效值必须 > OpBudgetMs
+	// (剩余预算不够一整个 OpBudget 就不再领行,配小了每次唤醒都回错误),且 ≤ 60000(关停最坏要等它)。
+	TimeoutMs int `json:",optional"`
+}
+
+// On 报告是否订阅落地唤醒:没写 = 开。
+func (w AssetOpWakeConf) On() bool {
+	return w.Enabled == nil || *w.Enabled
+}
+
+// EffectiveConcurrency 是生效的并发上限;0(没写)取 assetopwake 的默认值。
+func (w AssetOpWakeConf) EffectiveConcurrency() int {
+	if w.Concurrency == 0 {
+		return assetopwake.DefaultConcurrency
+	}
+	return w.Concurrency
+}
+
+// EffectiveTimeout 是生效的单次唤醒预算;0(没写)取 assetopwake 的默认值。
+func (w AssetOpWakeConf) EffectiveTimeout() time.Duration {
+	if w.TimeoutMs == 0 {
+		return assetopwake.DefaultWakeTimeout
+	}
+	return time.Duration(w.TimeoutMs) * time.Millisecond
 }
 
 // DefaultTerminalRetentionDays:TerminalRetentionDays 的默认值(与 struct tag 同值)。
@@ -346,6 +409,23 @@ const (
 	maxCleanupIntervalMinutes = 1440
 	minRetentionDays          = 7
 	maxRetentionDays          = 365
+)
+
+// 落地恢复配置的合法区间。与 assetop.LoopConfig.validate / validateAbandon 同形(停放上限 24h、放弃门槛 ≥ 30 天、
+// 安全间隔 ≥ 10 分钟且 ≥ 租约、批 [1, 1000]),这里放过的配置不该在 assetop.NewLoop 里才炸;
+// 另加的上下界(次数 / 天数 / 间隔的上限、间隔下限 1 分钟)只为挡住毫秒 / 秒写错一个量级。
+const (
+	maxOfflineAfterAttempts = 1000
+	maxOfflineBackoffMs     = 86400000
+	minAbandonAfterDays     = 30
+	maxAbandonAfterDays     = 3650
+	minAbandonSafetyGapMs   = 600000
+	maxAbandonBatch         = 1000
+	minMaintenanceTickMs    = 60000
+	maxAbandonIntervalMs    = 86400000
+	maxAuditIntervalMs      = 7 * 86400000
+	maxWakeConcurrency      = 64
+	maxWakeTimeoutMs        = 60000
 )
 
 // validateLoop 校验重投循环参数;只在 Enabled 时调用。
@@ -380,6 +460,59 @@ func (a AssetOpConf) validateLoop() error {
 	}
 	if a.LedgerReadMinAttempts < 1 {
 		return fmt.Errorf("AssetOp.LedgerReadMinAttempts(%d)必须 ≥ 1", a.LedgerReadMinAttempts)
+	}
+	return a.validateLanding()
+}
+
+// validateLanding 校验落地恢复的停放档 / 自动放弃 / 日对账 / 唤醒参数;由 validateLoop 在最后调用(只在 Enabled 时)。
+// 每一项都是"0 = 关闭"时其余从属参数不校验,与 assetop 的口径一致。
+func (a AssetOpConf) validateLanding() error {
+	if a.OfflineAfterAttempts < 0 || a.OfflineAfterAttempts > maxOfflineAfterAttempts {
+		return fmt.Errorf("AssetOp.OfflineAfterAttempts(%d)必须在 [0, %d] 内(0 = 关闭停放档)",
+			a.OfflineAfterAttempts, maxOfflineAfterAttempts)
+	}
+	if a.OfflineAfterAttempts > 0 && (a.OfflineBackoffMs < a.MaxBackoffMs || a.OfflineBackoffMs > maxOfflineBackoffMs) {
+		return fmt.Errorf("AssetOp.OfflineBackoffMs(%d)必须在 [MaxBackoffMs(%d), %d] 内:停放比普通退避还勤等于没有停放,"+
+			"超过 24 小时则唤醒丢失时玩家要等太久", a.OfflineBackoffMs, a.MaxBackoffMs, maxOfflineBackoffMs)
+	}
+
+	if a.AbandonAfterDays != 0 {
+		if a.AbandonAfterDays < minAbandonAfterDays || a.AbandonAfterDays > maxAbandonAfterDays {
+			return fmt.Errorf("AssetOp.AbandonAfterDays(%d)必须为 0(关闭)或在 [%d, %d] 内:放弃不可逆",
+				a.AbandonAfterDays, minAbandonAfterDays, maxAbandonAfterDays)
+		}
+		if a.AbandonSafetyGapMs < minAbandonSafetyGapMs || a.AbandonSafetyGapMs < a.LeaseMs {
+			return fmt.Errorf("AssetOp.AbandonSafetyGapMs(%d)必须 ≥ %d 且 ≥ LeaseMs(%d):间隔不足会让放弃撞上仍在途的请求",
+				a.AbandonSafetyGapMs, minAbandonSafetyGapMs, a.LeaseMs)
+		}
+		if a.AbandonBatch < 1 || a.AbandonBatch > maxAbandonBatch {
+			return fmt.Errorf("AssetOp.AbandonBatch(%d)必须在 [1, %d] 内", a.AbandonBatch, maxAbandonBatch)
+		}
+		if a.AbandonIntervalMs < minMaintenanceTickMs || a.AbandonIntervalMs > maxAbandonIntervalMs {
+			return fmt.Errorf("AssetOp.AbandonIntervalMs(%d)必须在 [%d, %d] 内",
+				a.AbandonIntervalMs, minMaintenanceTickMs, maxAbandonIntervalMs)
+		}
+	} else if a.AbandonAfterDays < 0 {
+		return fmt.Errorf("AssetOp.AbandonAfterDays(%d)不得为负(0 = 关闭)", a.AbandonAfterDays)
+	}
+
+	if a.AuditIntervalMs != 0 && (a.AuditIntervalMs < minMaintenanceTickMs || a.AuditIntervalMs > maxAuditIntervalMs) {
+		return fmt.Errorf("AssetOp.AuditIntervalMs(%d)必须为 0(不跑对账)或在 [%d, %d] 内",
+			a.AuditIntervalMs, minMaintenanceTickMs, maxAuditIntervalMs)
+	}
+
+	if !a.Wake.On() {
+		return nil
+	}
+	if c := a.Wake.EffectiveConcurrency(); c < 1 || c > maxWakeConcurrency {
+		return fmt.Errorf("AssetOp.Wake.Concurrency(%d)必须为 0(默认 %d)或在 [1, %d] 内",
+			a.Wake.Concurrency, assetopwake.DefaultConcurrency, maxWakeConcurrency)
+	}
+	timeout := a.Wake.EffectiveTimeout()
+	if timeout <= time.Duration(a.OpBudgetMs)*time.Millisecond || timeout > time.Duration(maxWakeTimeoutMs)*time.Millisecond {
+		return fmt.Errorf("AssetOp.Wake.TimeoutMs(生效值 %d)必须大于 OpBudgetMs(%d)且不超过 %d:"+
+			"剩余预算不够一整个 OpBudget 时唤醒一行也不领,每次都回错误",
+			timeout.Milliseconds(), a.OpBudgetMs, maxWakeTimeoutMs)
 	}
 	return nil
 }

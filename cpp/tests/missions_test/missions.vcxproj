@@ -157,7 +157,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\nodes\scene\handler\event\mission_event_handler.cpp" />
+    <ClCompile Include="..\..\nodes\scene\handler\local_event\scene_local_events.cpp" />
     <ClCompile Include="missions_test.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

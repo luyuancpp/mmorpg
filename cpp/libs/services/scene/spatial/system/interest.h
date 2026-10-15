@@ -8,6 +8,9 @@ public:
     // Add target to watcher's interest list with the given priority.
     // Returns true if the target was inserted (or upgraded); false if capacity is
     // full and the target's priority is too low to evict anyone.
+    // 前置条件:watcher 与 target 都是活着的 actor;无效句柄被拒绝且不会创建组件。
+    // AoiListComp 是按需状态,本函数是唯一创建入口,第一次实际插入时创建。
+    // Pin 同样经过此入口,不要求观察者预先入格;只读查询拿不到表表示没有观察对象。
     static bool AddAoiEntity(entt::entity watcher, entt::entity target,
                              AoiPriority priority = AoiPriority::kNormal);
 
@@ -15,13 +18,8 @@ public:
     static void RemoveAoiEntity(entt::entity watcher, entt::entity target);
 
     // Pin a remote entity into the watcher's interest list (buff/skill use).
-    // Pinned entries survive spatial grid changes; they can only be removed by
-    // an explicit UnpinAoiEntity or RemoveAoiEntity call.
+    // 钉住条目跨格保留;解除钉住必须经 AoiSystem::UnpinAoiEntity 重验可见性。
     static bool PinAoiEntity(entt::entity watcher, entt::entity target);
-
-    // Unpin a previously pinned entity (reverts priority to kNormal if still in
-    // range, or removes it if out of range).
-    static void UnpinAoiEntity(entt::entity watcher, entt::entity target);
 
     // Upgrade the priority of an existing entry (no-op if the target is absent
     // or already at a higher weight under the active policy).

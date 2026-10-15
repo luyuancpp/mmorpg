@@ -59,7 +59,6 @@
     <ClInclude Include="mission\system\mission.h" />
     <ClInclude Include="reward\comp\reward_comp.h" />
     <ClInclude Include="reward\system\reward.h" />
-    <ClInclude Include="scene\comp\scene_node_comp.h" />
     <ClInclude Include="scene\comp\scene_comp.h" />
     <ClInclude Include="snapshot\snapshot_system.h" />
     <ClInclude Include="transaction_log\anomaly_detector.h" />
@@ -214,4 +213,8 @@
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets"></ImportGroup>
+  <ItemGroup>
+    <ClInclude Include="mission\mission_events.h" />
+    <ClInclude Include="scene\scene_events.h" />
+  </ItemGroup>
 </Project>

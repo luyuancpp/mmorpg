@@ -3,19 +3,26 @@
 #include "proto/common/database/player_cache.pb.h"
 #include "services/scene/player/system/bag_marshal.h"
 #include "services/scene/player/system/mission_marshal.h"
+// Unmarshal 是持久化组件的唯一创建点(emplace);Marshal 只读(try_get),不改变实体的组件集合。
+// Marshal 返回 false = 有持久化组件缺失(加载不变量被破坏),此时不写出任何零值。
 {{- range .Entries }}
 void {{.HandlerName}}MessageFieldsUnmarshal(entt::entity player, const {{.MessageType}}& message);
-void {{.HandlerName}}MessageFieldsMarshal(entt::entity player, {{.MessageType}}& message);
+[[nodiscard]] bool {{.HandlerName}}MessageFieldsMarshal(entt::entity player, {{.MessageType}}& message);
 {{ end }}
-
-inline void PlayerAllDataMessageFieldsMarshal(entt::entity player, PlayerAllData& message)
+// 全部子表成功后才替换输出；返回 false 时原输出的内容、presence 和未知字段都保持原样。
+// 调用方仍须拒绝此次 Redis / DB / 快照写入，不得把拒绝当作已经落盘。
+[[nodiscard]] inline bool PlayerAllDataMessageFieldsMarshal(entt::entity player, PlayerAllData& message)
 {
+    PlayerAllData candidate(message);
 {{- range .Entries }}
-{{.HandlerName}}MessageFieldsMarshal(player, *message.mutable_{{.MessageType}}_data());
+    if (!{{.HandlerName}}MessageFieldsMarshal(player, *candidate.mutable_{{.MessageType}}_data()))
+        return false;
 {{- end }}
-// 兼容旧跨服/回滚读者；数据库记录中的两项是持久化事实源。
-message.mutable_bag_data()->CopyFrom(message.player_database_data().bag_component());
-message.mutable_quest_data()->CopyFrom(message.player_database_data().mission_component());
+    // 兼容旧跨服/回滚读者；数据库记录中的两项是持久化事实源。
+    candidate.mutable_bag_data()->CopyFrom(candidate.player_database_data().bag_component());
+    candidate.mutable_quest_data()->CopyFrom(candidate.player_database_data().mission_component());
+    message.Swap(&candidate);
+    return true;
 }
 
 inline void PlayerAllDataMessageFieldsUnMarshal(entt::entity player, const PlayerAllData& message)

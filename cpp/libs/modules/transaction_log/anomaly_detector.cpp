@@ -1,4 +1,5 @@
 #include "anomaly_detector.h"
+#include "engine/core/type_define/player_guid_comp.h"
 
 #include <chrono>
 
@@ -11,10 +12,6 @@
 // ---------------------------------------------------------------------------
 // Static storage (thread-local — each Scene/Gate thread has its own copy)
 // ---------------------------------------------------------------------------
-
-thread_local std::unordered_map<entt::entity, AnomalyDetector::PlayerBuckets,
-                                AnomalyDetector::EntityHash>
-    AnomalyDetector::buckets_;
 
 thread_local std::unordered_map<uint32_t, AnomalyThreshold>
     AnomalyDetector::currencyThresholds_;
@@ -105,8 +102,8 @@ void AnomalyDetector::EmitAlert(entt::entity player, const std::string &category
                                 uint32_t subKey, uint64_t count, uint64_t totalAmount,
                                 const AnomalyThreshold &threshold)
 {
-    const auto *guid = tlsEcs.actorRegistry.try_get<Guid>(player);
-    const uint64_t playerId = (guid != nullptr) ? *guid : 0;
+    const auto *guid = tlsEcs.actorRegistry.try_get<PlayerGuidComp>(player);
+    const uint64_t playerId = (guid != nullptr) ? guid->value : 0;
 
     LOG_WARN << "AnomalyDetector: ALERT player=" << playerId
              << " category=" << category << " subKey=" << subKey
@@ -142,12 +139,13 @@ void AnomalyDetector::EmitAlert(entt::entity player, const std::string &category
 bool AnomalyDetector::RecordCurrencyGain(entt::entity player, CurrencyType type, uint64_t amount)
 {
     const auto &threshold = GetCurrencyThreshold(type);
-    if (threshold.maxCountPerWindow == 0 && threshold.maxAmountPerWindow == 0)
+    auto* window = WindowForWrite(player, threshold);
+    if (window == nullptr)
     {
-        return false; // anomaly detection disabled for this type
+        return false;
     }
 
-    auto &bucket = buckets_[player].currencies[static_cast<uint32_t>(type)];
+    auto &bucket = window->currencies[static_cast<uint32_t>(type)];
     bool triggered = RecordAndCheck(bucket, amount, threshold);
 
     if (triggered)
@@ -162,12 +160,13 @@ bool AnomalyDetector::RecordCurrencyGain(entt::entity player, CurrencyType type,
 bool AnomalyDetector::RecordItemGain(entt::entity player, uint32_t configId, uint32_t quantity)
 {
     const auto &threshold = GetItemThreshold(configId);
-    if (threshold.maxCountPerWindow == 0 && threshold.maxAmountPerWindow == 0)
+    auto* window = WindowForWrite(player, threshold);
+    if (window == nullptr)
     {
         return false;
     }
 
-    auto &bucket = buckets_[player].items[configId];
+    auto &bucket = window->items[configId];
     bool triggered = RecordAndCheck(bucket, static_cast<uint64_t>(quantity), threshold);
 
     if (triggered)
@@ -183,16 +182,35 @@ bool AnomalyDetector::RecordItemGain(entt::entity player, uint32_t configId, uin
 // Query / Reset
 // ---------------------------------------------------------------------------
 
+PlayerAnomalyWindowComp* AnomalyDetector::WindowForWrite(entt::entity player, const AnomalyThreshold& threshold)
+{
+    // 空主体不记窗口或发告警;陈旧句柄更不能 emplace 覆盖复用该槽位的新实体。
+    if (!tlsEcs.actorRegistry.valid(player))
+    {
+        if (player != entt::null)
+        {
+            LOG_WARN << "AnomalyDetector: stale player entity ignored=" << entt::to_integral(player);
+        }
+        return nullptr;
+    }
+    if (threshold.maxCountPerWindow == 0 && threshold.maxAmountPerWindow == 0)
+    {
+        return nullptr;
+    }
+    // 此处是异常窗口唯一的延迟创建写入口;只读查询不会使实体参加该功能。
+    return &tlsEcs.actorRegistry.get_or_emplace<PlayerAnomalyWindowComp>(player);
+}
+
 uint32_t AnomalyDetector::GetCurrencyGainCount(entt::entity player, CurrencyType type)
 {
-    auto playerIt = buckets_.find(player);
-    if (playerIt == buckets_.end())
+    const auto* window = tlsEcs.actorRegistry.try_get<PlayerAnomalyWindowComp>(player);
+    if (window == nullptr)
     {
         return 0;
     }
 
-    auto it = playerIt->second.currencies.find(static_cast<uint32_t>(type));
-    if (it == playerIt->second.currencies.end())
+    auto it = window->currencies.find(static_cast<uint32_t>(type));
+    if (it == window->currencies.end())
     {
         return 0;
     }
@@ -215,10 +233,13 @@ uint32_t AnomalyDetector::GetCurrencyGainCount(entt::entity player, CurrencyType
 
 void AnomalyDetector::ClearPlayer(entt::entity player)
 {
-    buckets_.erase(player);
+    if (tlsEcs.actorRegistry.valid(player))
+    {
+        tlsEcs.actorRegistry.remove<PlayerAnomalyWindowComp>(player);
+    }
 }
 
 void AnomalyDetector::ClearAll()
 {
-    buckets_.clear();
+    tlsEcs.actorRegistry.clear<PlayerAnomalyWindowComp>();
 }

@@ -503,6 +503,12 @@ func TestTryReserveFastPathSlot_BudgetAndPerMemberExpiry(t *testing.T) {
 				name, m.Score, wantScore)
 		}
 	}
+	// 快速通道脚本给整键续的垃圾回收 TTL(ARGV[5])。miniredis 的 TTL 不随墙钟走、只在 FastForward 里递减,
+	// 单位传错(比如 .Seconds() 变成 PEXPIRE 120ms)或者漏掉这条 PEXPIRE,只有这里能发现;
+	// 到了真实 Redis 上,整键会在 120ms 后连同未到期的占位一起消失(或永不过期)。
+	if ttl, err := rdb.PTTL(ctx, admittedZSetKey(1)).Result(); err != nil || ttl <= q.admitTTL || ttl > q.admittedKeyTTL() {
+		t.Fatalf("fast-path whole-key PTTL = %v err=%v, want (%v, %v]", ttl, err, q.admitTTL, q.admittedKeyTTL())
+	}
 
 	clk.Advance(q.handoffGrace - time.Millisecond)
 	if reserve(2) {

@@ -106,16 +106,16 @@ Bag            ← 桥:需要两层才能回答的玩法规则(堆叠 + 摆放 +
 
 ### 3.1 实例层 `ItemStore`(`cpp/libs/modules/bag/item_store.{h,cpp}`)
 
-拥有:`guidToEntity_`(guid → 实体)+ `registry_`(实体 → `ItemComp`)。
+拥有:`items_`（`Guid -> ItemComp`），单一字典同时承载实例身份和状态；2026-10-15 第 3 批已去掉私有 EnTT registry。
 
-- 身份与生命期:`Insert` / `Erase` / `Clear` / `Find` / `Contains` / `EntityOf` / `ForEach`
+- 身份与生命期:`Insert` / `Erase` / `Clear` / `Find` / `Contains` / `ForEach`
 - 数量:`TotalCountOf` / `HasAll` / `DrainStacks`
 - 堆叠语义:`MeasureFreeRoomPerConfig` / `PlanStackIntoExistingStacks` / `ApplyStackFill` / `HasMergeablePartials` / `MergePartialStacks` / `CanStack` / `StacksNeededFor`
 - guid 发号:`MintGuid` / `CanMintGuid` / `IsInvalidGuid`
 
 不知道:槽位、容量、满没满。
 
-`guidToEntity_` 与 `registry_` 必须始终同步。为了让"改了一边忘了另一边"在结构上不可能发生,**所有**创建走 `Insert`、**所有**销毁走 `Erase` / `Clear`,任何地方都不直接碰 `registry_.create()/destroy()`。这条纪律是从拆分前的 `InsertItemEntity` / `DestroyItem` 原样继承下来的。
+map 的 key 是身份权威，必须等于 `ItemComp.item_id`，调用者不能借可写指针修改身份或入包序号。创建走 `Insert`，销毁走 `Erase` / `Clear`；`Find` 借用和 `ForEach` 回调不能跨结构写操作保留或重入修改。实例序显式为 `(acquire_seq, guid)`：补堆、合并、遍历和 FIFO 淘汰采用这一全序，扣除先比较桥层给出的槽位 rank，再比较实例序；rank 每候选只算一次。批量 config 写入按配置号升序，空堆只回收，不参与并堆幸存者选择。
 
 ### 3.2 布局层 `IContainerLayout`(`cpp/libs/modules/bag/container_layout.{h,cpp}`)
 
@@ -180,7 +180,7 @@ commit  : 两层一起写;失败一定发生在 reserve 之前,绝无半写状�
 
 判断一段代码该不该待在 `Bag` 里,就看它是不是两层都碰。`RemoveItemByPos` 的守卫链是最好的例子:前两项(槽位在不在、上面是谁)问布局层,后两项(它是什么、够不够扣)问实例层。
 
-`Bag` 的特殊成员函数全部走隐式生成:`layout_` 用类内初始化器给出默认布局,于是 `Bag` 保持"默认可构造 + 可移动 + 不可复制",与拆分前(`entt::registry` 本身就不可复制)完全一致。`PlayerBagsComp` 的 `std::array<Bag, 4>`、`dynamicBags_` 的 `unordered_map<uint64_t, Bag>`、以及 entt 组件存储都依赖这一点,**不要去手写它们**。
+`Bag` 的特殊成员函数全部走隐式生成:`layout_` 用类内初始化器给出默认布局，其独占所有权使 `Bag` 保持默认可构造、可移动、不可复制。`PlayerBagsComp` 的 `std::array<Bag, 4>`、`dynamicBags_` 的 `unordered_map<uint64_t, Bag>`、以及组件存储均沿用该契约。
 
 ---
 
@@ -206,7 +206,7 @@ commit  : 两层一起写;失败一定发生在 reserve 之前,绝无半写状�
 
 | 拆分前 | 拆分后 |
 |---|---|
-| `ItemsMap items` + `entt::registry itemRegistry` | `ItemStore::guidToEntity_` + `registry_` |
+| `ItemsMap items` + `entt::registry itemRegistry` | `ItemStore::items_`（Guid → ItemComp） |
 | `InsertItemEntity` / `ClearAllItems` | `Insert` / `Clear` |
 | `DestroyItem` 里销毁实体的那半 | `Erase(guid)` |
 | `GetItemCompByGuid` / `GetTotalItemCount` / `ForEachItem` | `Find` / `TotalCountOf` / `ForEach` |
@@ -267,7 +267,7 @@ W×H 二维格,实例按 `Footprint` 的宽高占据一块矩形,`SlotId = y * w
 1. 布局层不认识 `config_id` / `size` / `ItemComp` / `ItemTable` / entt(§2.2)。
 2. 实例层不认识槽位 / 容量 / 满没满。
 3. 销毁必须两层成对,唯一入口 `Bag::DestroyItem`。
-4. `ItemStore` 内 `guidToEntity_` 与 `registry_` 严格同步,创建只走 `Insert`、销毁只走 `Erase`/`Clear`。
+4. `ItemStore::items_` 的 key 等于实例 `item_id`，创建只走 `Insert`，销毁只走 `Erase` / `Clear`。
 5. 入包一律 plan → reserve → commit;任何失败都发生在第一次写入之前。
 6. `SlotId` 序列化后就是 `ItemEntry.pos`(uint32),各策略对它的解释不同但宽度与语义位置不变。
 7. 换布局策略只允许在空背包上做(`Bag::SetLayout` fail-closed)——槽位号在不同策略下含义不同,带着物品换等于让所有已持久化的 `pos` 突然改变意义。
@@ -493,7 +493,7 @@ enum class CompactPolicy : uint8_t {
 后续三步(按依赖顺序,每步都可独立发布):
 
 1. **`FixedSlotLayout` + `kEquipment` 切换。** 装备栏不再被整理重排,`pos` 从自由下标变成槽位枚举——需要一次数据迁移或一次"重新穿戴"。
-2. **把 `ItemStore` 提到玩家级。** 今天每个 `Bag` 各有一份 `ItemStore`(即每个玩家 4+N 个 `entt::registry`)。提到 `PlayerBagsComp` 上之后,「背包 ↔ 仓库 ↔ 装备栏」的移动就变成**纯布局操作**:从布局 A 摘掉 guid、在布局 B 落位,实例一动不动——`item_uuid` 天然稳定,未来挂在实例上的 per-instance 组件也不会丢。这是本次拆分真正的收益兑现点。
+2. **把 `ItemStore` 提到玩家级。** 每个 `Bag` 仍各有一个实例字典。未来若提到 `PlayerBagsComp` 上，「背包 ↔ 仓库 ↔ 装备栏」的移动可成为纯布局操作：从布局 A 摘掉 guid、在布局 B 落位，实例不搬动。该调整不属于本轮去 EnTT 的范围。
 3. **`Footprint` 接上配置表。** `Bag::FootprintFor(configId)` 今天恒返回 `kSingleCell`,是"形状从哪来"的唯一入口。给 `CfgItem` 加 `grid_w` / `grid_h` 两列并在这里读表,格子背包就通了——实例层与布局层都不用动。届时 `Bag::CheckSpaceFor` 里那次 `CanFit(n, kSingleCell)` 要改成按 config 分组、逐形状递交。
 
 ---

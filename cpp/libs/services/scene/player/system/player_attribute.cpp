@@ -1,4 +1,5 @@
 #include "player_attribute.h"
+#include "engine/core/type_define/player_guid_comp.h"
 
 #include <algorithm>
 #include <cmath>
@@ -15,6 +16,7 @@
 #include "actor/attribute/constants/actor_state_attribute_calculator_constants.h"
 #include "actor/attribute/system/actor_attribute_calculator.h"
 #include "battle/system/player_battle.h"
+#include "modules/bag/comp/player_bags_comp.h"
 #include "modules/currency/constants/currency.h"
 #include "modules/currency/system/currency_system.h"
 #include "player/comp/player_frozen_comp.h"
@@ -37,7 +39,7 @@
 #include "proto/common/component/actor_comp.pb.h"
 #include "proto/common/component/player_attribute_comp.pb.h"
 #include "proto/common/component/player_comp.pb.h"
-#include "proto/common/event/player_event.pb.h"
+#include "services/scene/player/player_events.h"
 #include "proto/scene/player_attribute.pb.h"
 
 namespace {
@@ -59,8 +61,8 @@ std::string DefaultSchemeName(uint32_t ordinal) {
 }
 
 uint64_t GuidForLog(entt::entity player) {
-	const auto* guid = tlsEcs.actorRegistry.try_get<Guid>(player);
-	return guid != nullptr ? *guid : 0;
+	const auto* guid = tlsEcs.actorRegistry.try_get<PlayerGuidComp>(player);
+	return guid != nullptr ? guid->value : 0;
 }
 
 uint32_t PlayerLevel(entt::entity player) {
@@ -492,10 +494,32 @@ uint32_t MapAllocError(AllocError err) {
 	return kInvalidParameter;
 }
 
-// 写操作统一前置:实体有效 / 未跨 zone 冻结 / 不在战斗
-uint32_t CheckWritable(entt::entity player) {
+// 面板、重算与写入口共用的真实输入契约。没有背包/职业/等级不是「空装备/默认职业/1级」;
+// 派生缓存只由 InitializeOnLoad 创建,缺任一输入都在扣费、方案收敛或夹 HP/MP 之前拒绝。
+uint32_t CheckAttributeInputs(entt::entity player) {
 	if (!tlsEcs.actorRegistry.valid(player)) {
 		return kEntityIsNull;
+	}
+	const auto& registry = tlsEcs.actorRegistry;
+	if (!registry.all_of<BaseAttributesComp, PlayerAttributeComp, LevelComp, PlayerUint32Comp,
+						 PlayerBagsComp, DerivedAttributesComp>(player)) {
+		LOG_ERROR << "[PlayerAttribute] Required input missing; operation skipped: entity="
+				  << entt::to_integral(player) << " player_id=" << GuidForLog(player)
+				  << " has_base=" << registry.all_of<BaseAttributesComp>(player)
+				  << " has_attribute=" << registry.all_of<PlayerAttributeComp>(player)
+				  << " has_level=" << registry.all_of<LevelComp>(player)
+				  << " has_class=" << registry.all_of<PlayerUint32Comp>(player)
+				  << " has_bags=" << registry.all_of<PlayerBagsComp>(player)
+				  << " has_derived=" << registry.all_of<DerivedAttributesComp>(player);
+		return kServiceUnavailable;
+	}
+	return kSuccess;
+}
+
+// 写操作额外限制跨 zone 冻结与战斗;只读面板/自动建议不复用这些写限制。
+uint32_t CheckWritable(entt::entity player) {
+	if (const auto err = CheckAttributeInputs(player); err != kSuccess) {
+		return err;
 	}
 	if (tlsEcs.actorRegistry.any_of<PlayerFrozenComp>(player)) {
 		LOG_WARN << "[PlayerAttribute] Rejected: cross-zone freeze in progress player_id=" << GuidForLog(player);
@@ -568,9 +592,23 @@ bool IsSchemeNameValid(const std::string& name) {
 	return hasVisible && codePoints <= maxLen;
 }
 
-PlayerAttributeComp& EnsureComp(entt::entity player) {
-	// 初始化路径允许 get_or_emplace(ecs-component-access-rules.md)
-	auto& comp = tlsEcs.actorRegistry.get_or_emplace<PlayerAttributeComp>(player);
+// PlayerAttributeComp 是玩家必需组件,唯一创建点是加载时的 PlayerDatabaseMessageFieldsUnmarshal
+// (从存档 emplace)。加载入口在这里取;其它入口先经 CheckAttributeInputs 统一验证真实输入,
+// 只取不建:缺了说明加载链路没走完或组件被误删,记错误并由调用方拒绝本次操作。
+// 以前这里 get_or_emplace 并顺手补默认方案,任何一次开面板都能造出一个「看起来完全正常」的空组件,
+// 下一次存盘就把它当真数据写回,玩家的加点与方案就此清零且零报错。
+PlayerAttributeComp* FindComp(entt::entity player) {
+	auto* comp = tlsEcs.actorRegistry.try_get<PlayerAttributeComp>(player);
+	if (comp == nullptr) {
+		LOG_ERROR << "[PlayerAttribute] PlayerAttributeComp missing (load path incomplete?): entity="
+				  << entt::to_integral(player) << " player_id=" << GuidForLog(player);
+	}
+	return comp;
+}
+
+// 旧存档 / 新号的默认值只在加载时补一次(InitializeOnLoad):没有方案补「方案一」,激活方案缺失就指向
+// 第一个,next_scheme_id 缺失就接在最大号后面。读写路径不再顺手修数据,修补会掩盖组件被写坏的真实原因。
+void NormalizeSchemesOnLoad(PlayerAttributeComp& comp) {
 	if (comp.schemes_size() == 0 || comp.active_scheme_id() == 0) {
 		if (comp.schemes_size() == 0) {
 			auto* scheme = comp.add_schemes();
@@ -586,7 +624,6 @@ PlayerAttributeComp& EnsureComp(entt::entity player) {
 		}
 		comp.set_next_scheme_id(maxId + 1);
 	}
-	return comp;
 }
 
 // 清掉表里已不存在的维度(改表后老存档自愈,点数自动返还)
@@ -615,8 +652,16 @@ void PlayerAttributeSystem::InitializeOnLoad(entt::entity player) {
 	if (!tlsEcs.actorRegistry.valid(player)) {
 		return;
 	}
-	auto& comp = EnsureComp(player);
-	SanitizeSchemes(comp);
+	// 存档组件由 Unmarshal 挂上;这里只做加载期的数据修补,不替加载链路补建(FindComp 已记错误)。
+	auto* comp = FindComp(player);
+	if (comp == nullptr) {
+		return;
+	}
+	NormalizeSchemesOnLoad(*comp);
+	SanitizeSchemes(*comp);
+	// 二级属性是派生缓存、不入库,唯一创建点就是这里;之后 Recalculate 只写不建。
+	// 每次加载从零开始:旧上限为 0 时 Recalculate(kLoad) 只把当前 HP/MP 向下夹到新上限。
+	tlsEcs.actorRegistry.emplace_or_replace<DerivedAttributesComp>(player);
 	Recalculate(player);
 }
 
@@ -648,14 +693,13 @@ void ConvergeOverAllocation(entt::entity player, PlayerAttributeComp& comp) {
 }  // namespace
 
 void PlayerAttributeSystem::Recalculate(entt::entity player, RecalcReason reason) {
-	if (!tlsEcs.actorRegistry.valid(player)) {
+	if (CheckAttributeInputs(player) != kSuccess) {
 		return;
 	}
-	auto* baseAttrs = tlsEcs.actorRegistry.try_get<BaseAttributesComp>(player);
-	if (baseAttrs == nullptr) {
-		return;
-	}
-	auto& comp = EnsureComp(player);
+	// 输入已统一校验;后面的收敛会改方案、重算会夹 HP/MP,不能带缺失输入继续执行。
+	auto* baseAttrs = &tlsEcs.actorRegistry.get<BaseAttributesComp>(player);
+	auto& comp = tlsEcs.actorRegistry.get<PlayerAttributeComp>(player);
+	auto& derived = tlsEcs.actorRegistry.get<DerivedAttributesComp>(player);
 	if (reason == RecalcReason::kLoad || reason == RecalcReason::kLevelChanged) {
 		ConvergeOverAllocation(player, comp);
 	}
@@ -705,7 +749,6 @@ void PlayerAttributeSystem::Recalculate(entt::entity player, RecalcReason reason
 	// 装备的二级属性平加:在维度循环之后、向下取整之前进累加器。
 	acc.AddEquipFlat(equipBonus);
 
-	auto& derived = tlsEcs.actorRegistry.get_or_emplace<DerivedAttributesComp>(player);
 	const uint64_t oldMaxHealth = derived.max_health();
 	const uint64_t oldMaxMana = derived.max_mana();
 	derived.set_max_health(std::max<uint64_t>(FloorToU64(acc.maxHealth), 1));
@@ -758,12 +801,13 @@ void PlayerAttributeSystem::Recalculate(entt::entity player, RecalcReason reason
 	ActorAttributeCalculatorSystem::MarkAttributeForUpdate(player, kEnergy);
 }
 
-void PlayerAttributeSystem::BuildPanel(entt::entity player, AttributePanelInfo& panel) {
+uint32_t PlayerAttributeSystem::BuildPanel(entt::entity player, AttributePanelInfo& panel) {
 	panel.Clear();
-	if (!tlsEcs.actorRegistry.valid(player)) {
-		return;
+	if (const auto err = CheckAttributeInputs(player); err != kSuccess) {
+		return err;
 	}
-	const auto& comp = EnsureComp(player);
+	// 只读路径:缺任何真实输入都回故障码和空面板,不拿默认值冒充已加载的数据。
+	const auto& comp = tlsEcs.actorRegistry.get<PlayerAttributeComp>(player);
 	const auto* scheme = ActiveScheme(comp);
 	const auto level = PlayerLevel(player);
 	panel.set_level(level);
@@ -828,20 +872,19 @@ void PlayerAttributeSystem::BuildPanel(entt::entity player, AttributePanelInfo& 
 	}
 
 	auto* derivedInfo = panel.mutable_derived();
-	if (const auto* derived = tlsEcs.actorRegistry.try_get<DerivedAttributesComp>(player)) {
-		derivedInfo->set_max_health(derived->max_health());
-		derivedInfo->set_max_mana(derived->max_mana());
-		derivedInfo->set_physical_attack(derived->physical_attack());
-		derivedInfo->set_magic_attack(derived->magic_attack());
-		derivedInfo->set_speed(derived->speed());
-		derivedInfo->set_defense(derived->defense());
-	}
-	if (const auto* base = tlsEcs.actorRegistry.try_get<BaseAttributesComp>(player)) {
-		derivedInfo->set_health(base->health());
-		derivedInfo->set_mana(base->mana());
-	}
+	const auto& derived = tlsEcs.actorRegistry.get<DerivedAttributesComp>(player);
+	derivedInfo->set_max_health(derived.max_health());
+	derivedInfo->set_max_mana(derived.max_mana());
+	derivedInfo->set_physical_attack(derived.physical_attack());
+	derivedInfo->set_magic_attack(derived.magic_attack());
+	derivedInfo->set_speed(derived.speed());
+	derivedInfo->set_defense(derived.defense());
+	const auto& base = tlsEcs.actorRegistry.get<BaseAttributesComp>(player);
+	derivedInfo->set_health(base.health());
+	derivedInfo->set_mana(base.mana());
 
 	FillCombatPanel(player, panel);
+	return kSuccess;
 }
 
 uint32_t PlayerAttributeSystem::Allocate(entt::entity player, uint32_t poolId,
@@ -853,7 +896,11 @@ uint32_t PlayerAttributeSystem::Allocate(entt::entity player, uint32_t poolId,
 	if (pool == nullptr || !IsPlayerPool(*pool)) {
 		return kAttributePoolNotFound;  // 宝宝池走 PetSystem,角色接口按不存在处理
 	}
-	auto& comp = EnsureComp(player);
+	auto* attributeComp = FindComp(player);
+	if (attributeComp == nullptr) {
+		return kServiceUnavailable;  // 缺必需组件 = 服务端故障,FindComp 已记错误
+	}
+	auto& comp = *attributeComp;
 	auto* scheme = ActiveSchemeMutable(comp);
 	if (scheme == nullptr) {
 		return kAttributeSchemeNotFound;
@@ -891,7 +938,11 @@ uint32_t PlayerAttributeSystem::Reset(entt::entity player, uint32_t poolId) {
 	if (pool == nullptr || !IsPlayerPool(*pool)) {
 		return kAttributePoolNotFound;  // 宝宝池走 PetSystem,角色接口按不存在处理
 	}
-	auto& comp = EnsureComp(player);
+	auto* attributeComp = FindComp(player);
+	if (attributeComp == nullptr) {
+		return kServiceUnavailable;  // 缺必需组件 = 服务端故障,FindComp 已记错误
+	}
+	auto& comp = *attributeComp;
 	auto* scheme = ActiveSchemeMutable(comp);
 	if (scheme == nullptr) {
 		return kAttributeSchemeNotFound;
@@ -922,8 +973,8 @@ uint32_t PlayerAttributeSystem::Reset(entt::entity player, uint32_t poolId) {
 uint32_t PlayerAttributeSystem::AutoAllocate(entt::entity player, uint32_t poolId,
 											 std::map<uint32_t, uint32_t>& suggested) {
 	suggested.clear();
-	if (!tlsEcs.actorRegistry.valid(player)) {
-		return kEntityIsNull;
+	if (const auto err = CheckAttributeInputs(player); err != kSuccess) {
+		return err;
 	}
 	const auto [pool, poolErr] = AttributePoolTableManager::Instance().FindByIdSilent(poolId);
 	if (pool == nullptr || !IsPlayerPool(*pool)) {
@@ -933,7 +984,11 @@ uint32_t PlayerAttributeSystem::AutoAllocate(entt::entity player, uint32_t poolI
 	if (!attributerules::IsUnlocked(ToRule(*pool), level)) {
 		return kAttributePoolLocked;
 	}
-	auto& comp = EnsureComp(player);
+	auto* attributeComp = FindComp(player);
+	if (attributeComp == nullptr) {
+		return kServiceUnavailable;  // 缺必需组件 = 服务端故障,FindComp 已记错误
+	}
+	auto& comp = *attributeComp;
 	const auto* scheme = ActiveScheme(comp);
 	if (scheme == nullptr) {
 		return kAttributeSchemeNotFound;
@@ -984,7 +1039,11 @@ uint32_t PlayerAttributeSystem::CreateScheme(entt::entity player, const std::str
 	if (const auto err = CheckWritable(player); err != kSuccess) {
 		return err;
 	}
-	auto& comp = EnsureComp(player);
+	auto* attributeComp = FindComp(player);
+	if (attributeComp == nullptr) {
+		return kServiceUnavailable;  // 缺必需组件 = 服务端故障,FindComp 已记错误
+	}
+	auto& comp = *attributeComp;
 	if (static_cast<uint32_t>(comp.schemes_size()) >= MaxSchemes()) {
 		return kAttributeSchemeLimitReached;
 	}
@@ -1016,7 +1075,11 @@ uint32_t PlayerAttributeSystem::SwitchScheme(entt::entity player, uint32_t schem
 	if (const auto err = CheckWritable(player); err != kSuccess) {
 		return err;
 	}
-	auto& comp = EnsureComp(player);
+	auto* attributeComp = FindComp(player);
+	if (attributeComp == nullptr) {
+		return kServiceUnavailable;  // 缺必需组件 = 服务端故障,FindComp 已记错误
+	}
+	auto& comp = *attributeComp;
 	if (FindScheme(comp, schemeId) == nullptr) {
 		return kAttributeSchemeNotFound;
 	}
@@ -1044,7 +1107,11 @@ uint32_t PlayerAttributeSystem::RenameScheme(entt::entity player, uint32_t schem
 	if (!IsSchemeNameValid(name)) {
 		return kAttributeSchemeNameInvalid;
 	}
-	auto& comp = EnsureComp(player);
+	auto* attributeComp = FindComp(player);
+	if (attributeComp == nullptr) {
+		return kServiceUnavailable;  // 缺必需组件 = 服务端故障,FindComp 已记错误
+	}
+	auto& comp = *attributeComp;
 	auto* scheme = FindScheme(comp, schemeId);
 	if (scheme == nullptr) {
 		return kAttributeSchemeNotFound;
@@ -1060,24 +1127,32 @@ uint32_t PlayerAttributeSystem::GmSetLevel(entt::entity player, uint32_t level) 
 	if (!playerlevel::IsValidLevel(level)) {
 		return kInvalidParameter;
 	}
-	auto& levelComp = tlsEcs.actorRegistry.get_or_emplace<LevelComp>(player);
+	// LevelComp 由 Unmarshal 挂上(存档字段),这里只取不建:补建出的等级组件会被下一次存盘写回 DB。
+	auto* levelCompPtr = tlsEcs.actorRegistry.try_get<LevelComp>(player);
+	if (levelCompPtr == nullptr) {
+		LOG_ERROR << "[PlayerAttribute] LevelComp missing (load path incomplete?); GM set level rejected: entity="
+				  << entt::to_integral(player) << " player_id=" << GuidForLog(player);
+		return kServiceUnavailable;
+	}
+	auto& levelComp = *levelCompPtr;
 	const auto oldLevel = levelComp.level();
 	levelComp.set_level(level);
 	LOG_INFO << "[PlayerAttribute] GM level set: player_id=" << GuidForLog(player) << " " << oldLevel << " -> " << level;
 
 	// 走升级事件(其他系统按同一事件接经验/技能解锁),事件处理里会 Recalculate + PushPanel
 	PlayerUpgradeEvent upgrade;
-	upgrade.set_actor_entity(entt::to_integral(player));
-	upgrade.set_new_level(level);
+	upgrade.player = player;
+	upgrade.newLevel = level;
 	tlsEcs.dispatcher.trigger(upgrade);
 	return kSuccess;
 }
 
 void PlayerAttributeSystem::PushPanel(entt::entity player) {
-	if (!tlsEcs.actorRegistry.valid(player)) {
+	// 面板建不出来(实体无效 / 缺必需组件)就不推:客户端按整体覆盖处理面板,
+	// 推一张空面板等于把真实数据抹掉。缺组件的错误 BuildPanel 已记过。
+	AttributePanelChangedS2C message;
+	if (BuildPanel(player, *message.mutable_panel()) != kSuccess) {
 		return;
 	}
-	AttributePanelChangedS2C message;
-	BuildPanel(player, *message.mutable_panel());
 	SendMessageToClientViaGate(SceneAttributeClientPlayerNotifyAttributePanelChangedMessageId, message, player);
 }

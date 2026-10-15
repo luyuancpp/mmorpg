@@ -4,10 +4,12 @@ package contracts.kafka;
 option go_package = "contracts/kafka";
 
 import "proto/common/base/message.proto";
+import "proto/common/options/event_ingress_option.proto";
 
 // In-process events decoded from Gate Kafka transport payloads.
 // These are intentionally modeled like node event protos so handlers can stay split by file/domain.
 message RoutePlayerEvent {
+  option (OptionKafkaIngress) = true;
   uint32 session_id = 1;
   uint32 target_node_id = 2;
   uint64 scene_id = 3;        // Scene instance GUID allocated by SceneManager
@@ -25,6 +27,7 @@ message RoutePlayerEvent {
 }
 
 message KickPlayerEvent {
+  option (OptionKafkaIngress) = true;
   uint32 session_id = 1;
 }
 
@@ -40,6 +43,7 @@ message PlayerDisconnectedEvent {
 // Published by player_locator when disconnect lease expires (player didn't reconnect).
 // Consumed by Scene to clean up player entity, and Gate to clean up stale session.
 message PlayerLeaseExpiredEvent {
+  option (OptionKafkaIngress) = true;
   uint64 player_id = 1;
   uint32 session_id = 2;
   string scene_node_id = 3;
@@ -51,6 +55,7 @@ message PlayerLeaseExpiredEvent {
 // Sent by Login/player_locator to bind a session to Gate.
 // login 经 GateCommand.payload 下发(信封字段照填);payload 为空的旧版 login 只带得到前两个字段与 enter_gs_type。
 message BindSessionEvent {
+  option (OptionKafkaIngress) = true;
   uint32 session_id = 1;
   uint64 player_id = 2;
   uint32 session_version = 3;
@@ -63,6 +68,7 @@ message BindSessionEvent {
 // Sent by SceneManager to Gate when a player requests a cross-zone scene.
 // Gate forwards the redirect info to the client so it can reconnect to the target zone's Gate.
 message RedirectToGateEvent {
+  option (OptionKafkaIngress) = true;
   uint64 player_id = 1;
   uint32 session_id = 2;
   string target_gate_ip = 3;
@@ -75,6 +81,7 @@ message RedirectToGateEvent {
 // Go service pushes a single message to a player's client via Gate.
 // Flow: Go service -> Kafka gate-{gate_id} -> Gate -> client TCP
 message PushToPlayerEvent {
+  option (OptionKafkaIngress) = true;
   uint32 session_id = 1;
   MessageContent message_content = 2;
 }
@@ -83,6 +90,7 @@ message PushToPlayerEvent {
 // Sender groups players by gate_id and sends one Kafka message per Gate.
 // Flow: Go service -> Kafka gate-{gate_id} -> Gate -> N client TCP connections
 message BroadcastToPlayersEvent {
+  option (OptionKafkaIngress) = true;
   repeated uint32 session_list = 1;
   MessageContent message_content = 2;
   uint32 session_bitmap_base = 3;
@@ -92,6 +100,7 @@ message BroadcastToPlayersEvent {
 // Scene-wide broadcast: Gate iterates all sessions with matching scene_id.
 // More compact than session_list when broadcasting to most/all players in a scene.
 message BroadcastToSceneEvent {
+  option (OptionKafkaIngress) = true;
   uint64 scene_id = 1;
   MessageContent message_content = 2;
 }
@@ -99,6 +108,7 @@ message BroadcastToSceneEvent {
 // Server-wide broadcast: Gate sends to ALL connected sessions.
 // Caller sends one message per Gate node.
 message BroadcastToAllEvent {
+  option (OptionKafkaIngress) = true;
   MessageContent message_content = 1;
 }
 

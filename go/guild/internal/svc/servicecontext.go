@@ -27,6 +27,16 @@ import (
 // playerSyncServiceName 是本服务在落地恢复摘要指标 player_sync_bump_total 里的 service label。
 const playerSyncServiceName = "guild"
 
+// 摘要 bump 专用 Redis 客户端的参数(见 newPlayerSyncRedis)。
+const (
+	// playerSyncRedisPoolSize:bump 是提交后的异步提示,串行逐人发,正常一批只占一条连接;
+	// 给小池子是为了 Redis 卡住时堆积的 bump 协程只占这几条连接,不去挤在线查询与推送路由的连接池。
+	playerSyncRedisPoolSize = 4
+	// playerSyncRedisIOTimeout:拨号与单次读写的兜底上限,与 logic 的整批预算 guildSyncBumpBudget 同为 2s。
+	// 开了 ContextTimeoutEnabled 之后套接字截止取 ctx 截止与它两者中较早的一个,所以真正起作用的是整批预算。
+	playerSyncRedisIOTimeout = 2 * time.Second
+)
+
 type ServiceContext struct {
 	Config                   config.Config
 	RedisClient              *redis.Client
@@ -60,9 +70,12 @@ type ServiceContext struct {
 	//
 	// 摘要必须写在 C++ scene 读得到的那个 Redis 上(scene 只连 zone Redis,且不发 AUTH / SELECT,只读得到 DB 0),
 	// 也就是与 scene / scene_manager 写 player:{id}:location 的**同一实例同一 DB**:
-	// 本服务里就是 PlayerLocatorRedisClient(本地缺省回落到 RedisClient 的 DB 0;K8s 指向 SharedRedis)。
+	// 本服务里就是 PlayerLocatorRedis 那一份配置(本地缺省回落到 RedisClient 的 DB 0;K8s 指向 SharedRedis)。
 	// 指错的表现是 scene 读到的摘要永不变化 —— 客户端退化为"打开帮会界面才拉",且不报错。
+	// 底下是专用客户端 PlayerSyncRedisClient(同址同 DB、单独连接池),理由见 newPlayerSyncRedis。
 	PlayerSyncBumper *playersync.Bumper
+	// PlayerSyncRedisClient 是 PlayerSyncBumper 专用的 go-redis 客户端,只由 Stop 关闭;别的代码不要拿它发命令。
+	PlayerSyncRedisClient *redis.Client
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
@@ -141,6 +154,7 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		}
 	}
 
+	syncRdb := newPlayerSyncRedis(plRedisConf)
 	sc := &ServiceContext{
 		Config:                   c,
 		RedisClient:              rdb,
@@ -150,8 +164,8 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		GateCommandBuilder:       guildkafka.NewGateCommandBuilder(),
 		MergeMarkerRedisClient:   newMergeMarkerRedis(c),
 		// 服务名 "guild" 只作 player_sync_bump_total 的 service label(有界常量,不带任何 id)。
-		// 与 PlayerLocatorRedisClient 共用连接:bump 是提交后异步的单键 Lua,量级远低于在线查询。
-		PlayerSyncBumper: playersync.NewBumper(playersync.NewGoRedisEvaler(plRdb), playerSyncServiceName),
+		PlayerSyncBumper:      playersync.NewBumper(playersync.NewGoRedisEvaler(syncRdb), playerSyncServiceName),
+		PlayerSyncRedisClient: syncRdb,
 	}
 	sc.initDataServiceClient()
 	sc.initGuildIDSegment()
@@ -181,6 +195,32 @@ func (s *ServiceContext) initMatchInternalClient() {
 	conn := zrpc.MustNewClient(rpcConf)
 	s.MatchInternal = matchpb.NewMatchInternalClient(conn.Conn())
 	logx.Infof("[ServiceContext] MatchInternal client created (nonblocking dial): timeout=%dms", rpcConf.Timeout)
+}
+
+// newPlayerSyncRedis 建落地恢复摘要 bump 专用的 go-redis 客户端。地址、口令、DB 与 locator 客户端完全相同
+// (conf 就是 NewServiceContext 里回落之后的 plRedisConf,摘要必须写在 scene 读得到的核心实例上),
+// 但单独一个客户端,因为 bump 需要 locator 客户端没有的两样东西:
+//
+//   - ContextTimeoutEnabled:go-redis v9(按 v9.16.0 核对)不开它时 baseClient.context() 换成 context.Background(),
+//     套接字读写只受 ReadTimeout(默认 3s)约束;logic.AsyncGuildSyncBumper 的整批预算(2s)要封住**单条**命令,
+//     靠的是这一项。取连接排队(ConnPool.waitTurn)与拨号(net.Dialer.DialContext)本来就看 ctx。
+//     不直接给 locator 客户端开它:那个客户端被在线查询、资产循环、推送路由、历练结果记录等多处共用,
+//     开了会让各调用方的 ctx 截止开始截断套接字读,超时语义整体改变,要逐个复核,不在本批范围。
+//   - 小连接池(playerSyncRedisPoolSize):不和在线查询、资产循环、推送路由抢 locator 客户端的连接池。
+//
+// 不在启动时 Ping:同址同 DB 的 locator 客户端刚 Ping 过;摘要是可丢的提示,运行期不可达只计
+// player_sync_bump_total{result="error"},不该为它多一个拒启点。
+func newPlayerSyncRedis(conf config.RedisConf) *redis.Client {
+	return redis.NewClient(&redis.Options{
+		Addr:                  conf.Host,
+		Password:              conf.Password,
+		DB:                    conf.DB,
+		ContextTimeoutEnabled: true,
+		DialTimeout:           playerSyncRedisIOTimeout,
+		ReadTimeout:           playerSyncRedisIOTimeout,
+		WriteTimeout:          playerSyncRedisIOTimeout,
+		PoolSize:              playerSyncRedisPoolSize,
+	})
 }
 
 // newMergeMarkerRedis 建合服闸门用的只读 Redis 客户端;没配 = nil = 闸门不生效。
@@ -230,6 +270,12 @@ func (s *ServiceContext) Stop() {
 	if s.PlayerLocatorRedisClient != nil {
 		if err := s.PlayerLocatorRedisClient.Close(); err != nil {
 			logx.Errorf("Failed to close player locator Redis client: %v", err)
+		}
+	}
+	// 关掉之后仍在途的 bump 协程会拿到 redis: client is closed,只计 result="error",不影响任何业务结果。
+	if s.PlayerSyncRedisClient != nil {
+		if err := s.PlayerSyncRedisClient.Close(); err != nil {
+			logx.Errorf("Failed to close player sync digest Redis client: %v", err)
 		}
 	}
 	if s.MergeMarkerRedisClient != nil {

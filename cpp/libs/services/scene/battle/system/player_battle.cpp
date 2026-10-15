@@ -1,4 +1,5 @@
 #include "player_battle.h"
+#include "engine/core/type_define/player_guid_comp.h"
 #include "battle_settlement_application_cache.h"
 #include "battle_settlement_ledger.h"
 
@@ -32,6 +33,7 @@
 #include "modules/bag/comp/player_bags_comp.h"
 #include "modules/currency/constants/currency.h"
 #include "modules/currency/system/currency_system.h"
+#include "modules/mission/comp/mission_comp.h"
 #include "player/comp/player_frozen_comp.h"
 // PlayerTravelHandoffComp:交接一挂上 SavePlayerToRedis 就硬性跳过写盘,此刻应用等于落不了盘。
 #include "player/comp/player_ownership_comp.h"
@@ -42,7 +44,7 @@
 #include "core/system/redis.h"  // tlsRedisSystem:判断该玩家是否还有未落地的存盘
 #include "player/system/player_pet.h"
 #include "modules/condition/condition_type.h"
-#include "proto/common/event/mission_event.pb.h"
+#include "modules/mission/mission_events.h"
 #include "player/system/player_revive.h"
 #include "player/system/player_team.h"
 // PublishAssetWake:战斗冻结解除后唤醒资产通道(landing-recovery-sync-digest.md §5.2)。
@@ -67,6 +69,7 @@
 #include "proto/common/component/player_comp.pb.h"  // PlayerProfileComp(快照里的角色名)
 #include "proto/common/component/player_login_comp.pb.h"
 #include "proto/common/component/player_network_comp.pb.h"
+#include "proto/common/component/player_pet_comp.pb.h"
 #include "proto/common/component/player_skill_comp.pb.h"
 
 // —— 以下生成产物当前尚未生成,proto 重生成后出现(路径按仓库生成器命名规律推断,
@@ -129,8 +132,15 @@ namespace
 
 	uint64_t GuidForLog(entt::entity player)
 	{
-		const auto* g = tlsEcs.actorRegistry.try_get<Guid>(player);
-		return g ? *g : 0;
+		const auto* g = tlsEcs.actorRegistry.try_get<PlayerGuidComp>(player);
+		return g ? g->value : 0;
+	}
+
+	// 战斗冻结的唯一按需创建口。备战、迟到确认重建和登录恢复都先完成各自的
+	// 实体有效性、既有冻结及快照或锁/账本校验，再在实际写入时调用；读路径不创建。
+	InBattleComp& StoreBattleFreezeForWrite(entt::entity player)
+	{
+		return tlsEcs.actorRegistry.get_or_emplace<InBattleComp>(player);
 	}
 
 	// 备战时写进快照 routing 的大厅会话号(turn-based §22.5 第 3 条)。
@@ -321,10 +331,25 @@ namespace
 	//   IsSettlementDurable(落盘快照)   -> 「可以销账」
 	// 活账本里有、落盘快照里没有,恰恰是最危险的一刻:此时销账 = 崩溃即永久丢失。
 
-	BattleSettlementLedgerComp& SettlementLedgerOf(entt::entity player)
+	// 活账本是玩家的**必需组件**,唯一创建点是加载(PlayerDatabaseMessageFieldsUnmarshal 无条件
+	// emplace,内容随 player_database 回来),这里只取不建。缺失 = 加载不变量被破坏:记 ERROR 并返回
+	// nullptr,调用方一律 fail-closed —— 不应用、不销账、不按锁重建冻结,pending 原样保留,交给
+	// 发件箱重投 / 下一次登录(届时账本随盘上字节回来)裁决。
+	// **绝不** get_or_emplace 一本空账本:空账本把已经应用过的局重新判成「没应用」,应用路径据此
+	// 再发一次奖、销账路径据此当场销账;下一次存盘还会拿空账本覆盖盘上的条目。
+	// 与资产通道账本(asset_op_system.cpp「绝不 get_or_emplace 一本空账本」)是同一条约定。
+	BattleSettlementLedgerComp* FindSettlementLedger(entt::entity player, const uint64_t playerId,
+													 const uint64_t battleId, const char* context)
 	{
-		// 存盘路径非逐帧,沿用仓库在这类路径上的 get_or_emplace 写法(§7 不变量 5 限的是 per-tick)。
-		return tlsEcs.actorRegistry.get_or_emplace<BattleSettlementLedgerComp>(player);
+		auto* ledger = tlsEcs.actorRegistry.try_get<BattleSettlementLedgerComp>(player);
+		if (ledger == nullptr)
+		{
+			LOG_ERROR << "[PlayerBattle] metric=battle_settlement_ledger_missing player_id=" << playerId
+					  << " entity=" << entt::to_integral(player) << " battle_id=" << battleId
+					  << " context=" << context
+					  << ",settlement ledger component missing(load invariant broken);operation skipped, pending retained";
+		}
+		return ledger;
 	}
 
 	// 这一局的账本条目是否**确实已经在盘上**。只看 PlayerLastPersistedSnapshotComp —— 它是
@@ -424,7 +449,14 @@ namespace
 					 << " battle_id=" << battleId;
 			return;
 		}
-		if (!battle_settlement::HasApplied(SettlementLedgerOf(player), battleId))
+		// 活实体却没有账本:规则 1 / 2 都判不了。销账是不可逆的那一侧(销了就可能丢奖励),
+		// 所以什么都不删,pending 留给重投 / 登录钩子(FindSettlementLedger 的说明)。
+		const auto* ledger = FindSettlementLedger(player, playerId, battleId, "ack");
+		if (ledger == nullptr)
+		{
+			return;
+		}
+		if (!battle_settlement::HasApplied(*ledger, battleId))
 		{
 			ClearPendingSettlementIfMatch(playerId, battleId);
 			return;
@@ -892,6 +924,16 @@ bool PlayerBattleSystem::BuildBattleSnapshot(entt::entity player, ::BattlePlayer
 		return false;
 	}
 
+	// 空背包、空技能和空宠物列表有各自的已加载组件；组件本身缺失不是“玩家没有这些数据”。
+	// 派生属性也应在加载完成时算好。先拒绝不完整输入，不能用一级、空列表或零加成拼出合法快照。
+	if (!tlsEcs.actorRegistry.all_of<LevelComp, PlayerUint32Comp, PlayerProfileComp,
+		PlayerSkillListComp, PlayerPetComp, PlayerBagsComp, DerivedAttributesComp>(player))
+	{
+		LOG_ERROR << "[PlayerBattle] Snapshot creation failed: persisted or derived component missing, player_id=" << playerId;
+		errorTipId = kServiceUnavailable;
+		return false;
+	}
+
 	// —— 路由信息(必需;battle 节点出站 Kafka 全靠它,不查 etcd)——
 	GateRoute gateRoute;
 	if (!ResolveGateRoute(player, gateRoute))
@@ -903,7 +945,7 @@ bool PlayerBattleSystem::BuildBattleSnapshot(entt::entity player, ::BattlePlayer
 
 	snapshot.set_player_id(playerId);
 	// 名字副本来自 PlayerProfileComp(真源 data_service player_name;login 首次入场补齐,scene 只读)。
-	// 缺组件或副本尚未补齐时留空,battle 侧照常结算 —— 名字是展示数据,不拦开战。
+	// 组件已在前置校验中确认存在；名字字段尚未补齐时允许留空，不凭空补建组件。
 	const auto* profile = tlsEcs.actorRegistry.try_get<PlayerProfileComp>(player);
 	snapshot.set_player_name(profile != nullptr ? profile->name() : std::string());
 	snapshot.set_appearance_id(profile != nullptr ? profile->appearance_id() : std::string());
@@ -924,14 +966,14 @@ bool PlayerBattleSystem::BuildBattleSnapshot(entt::entity player, ::BattlePlayer
 				 << ", player_id=" << playerId;
 	}
 
-	// max_health:派生属性缺失时保守取当前 HP(不给引擎超治疗空间)
+	// 派生组件已确认存在；存量 max_health=0 时保守取当前 HP(不给引擎超治疗空间)。
 	const auto* derived = tlsEcs.actorRegistry.try_get<DerivedAttributesComp>(player);
 	const uint64_t maxHealth = (derived != nullptr && derived->max_health() > 0)
 								   ? derived->max_health()
 								   : std::max<uint64_t>(baseAttributes->health(), 1);
 	snapshot.set_max_health(maxHealth);
 	// max_mana / 二级属性:来自属性加点系统的 DerivedAttributesComp(登录加载即重算);
-	// 缺失时蓝上限取当前 MP(引擎内不回蓝越界),物伤/法伤/防御为 0 = 引擎老公式
+	// 存量蓝上限为 0 时取当前 MP；物伤/法伤/防御沿用已经计算出的派生值。
 	const uint64_t maxMana = (derived != nullptr && derived->max_mana() > 0)
 								 ? derived->max_mana()
 								 : std::max<uint64_t>(baseAttributes->mana(), 1);
@@ -942,7 +984,7 @@ bool PlayerBattleSystem::BuildBattleSnapshot(entt::entity player, ::BattlePlayer
 		snapshot.set_magic_attack(derived->magic_attack());
 		snapshot.set_defense(derived->defense());
 		// 战斗类属性的装备加成(必杀 / 连击 / 反击 / 反震 / 抗性,equipment-attributes.md §4.5):
-		// 整块原样拷给引擎;derived 缺失时不带 = 全 0 = 引擎行为与装备系统落地前逐位一致
+		// 整块原样拷给引擎，不把缺失组件伪装成全 0 加成。
 		snapshot.mutable_combat()->CopyFrom(derived->combat());
 	}
 
@@ -1169,8 +1211,8 @@ void PlayerBattleSystem::PrepareBattle(const ::PrepareBattleRequest& request, ::
 	const uint64_t prepareDeadlineMs =
 		request.prepare_deadline_ms() != 0 ? request.prepare_deadline_ms() : request.deadline_ms();
 
-	// 挂 InBattleComp(上面已确认不存在,直接 emplace;此处非 per-tick 路径)
-	auto& inBattle = tlsEcs.actorRegistry.emplace<InBattleComp>(player);
+	// 上面已确认没有冻结且快照完整，此处才创建本次备战状态。
+	auto& inBattle = StoreBattleFreezeForWrite(player);
 	inBattle.set_battle_id(battleId);
 	inBattle.set_battle_node_id(request.battle_node_id());
 	inBattle.set_deadline_ms(request.deadline_ms());
@@ -1480,7 +1522,14 @@ void PlayerBattleSystem::RebuildBattleFreezeFromLock(entt::entity player, const 
 			// 锁在结算应用后一直留到落盘销账(ReleaseFreezeKeepLock)。锁指向的这一局若已在活账本里,
 			// 说明它已经结算完、只是还没落盘销账 —— 不能据此把玩家重新冻进一场已结束的战斗,
 			// 改为推进销账(已落盘就连锁一起放掉)。
-			if (battle_settlement::HasApplied(SettlementLedgerOf(player), battleId))
+			// 没有账本就判不了这一局结没结算:不能把「缺账本」当「没应用」去冻人,也推进不了销账。
+			// 本次重建跳过 —— 锁仍在 Redis 里串行化下一次排队,结算应用路径对缺账本同样 fail-closed。
+			const auto* ledger = FindSettlementLedger(player, playerId, battleId, "freeze_rebuild");
+			if (ledger == nullptr)
+			{
+				return;
+			}
+			if (battle_settlement::HasApplied(*ledger, battleId))
 			{
 				LOG_INFO << "[PlayerBattle] Freeze reconstruction skipped: locked battle settled and awaiting persistence, player_id=" << playerId
 						 << " battle_id=" << battleId << " reason=" << reasonCopy;
@@ -1498,7 +1547,7 @@ void PlayerBattleSystem::RebuildBattleFreezeFromLock(entt::entity player, const 
 			{
 				rebuilt.set_deadline_ms(deadlineMsHint);
 			}
-			tlsEcs.actorRegistry.emplace<InBattleComp>(player, rebuilt);
+			StoreBattleFreezeForWrite(player).CopyFrom(rebuilt);
 
 			// 续期到正式 deadline + 覆写 ctx,同时复核锁仍是本战斗的(否则撤销重建)
 			const uint64_t ttlSec = LockTtlSecFor(rebuilt.deadline_ms(), nowMs);
@@ -1567,7 +1616,13 @@ void PlayerBattleSystem::RestoreBattleFreezeOnLogin(entt::entity player, const u
 			// 锁在结算应用后一直留到落盘销账(ReleaseFreezeKeepLock)。锁指向的这一局若已在活账本里,
 			// 说明它已经结算完、只是还没落盘销账 —— 不能据此把玩家重新冻进一场已结束的战斗,
 			// 改为推进销账(已落盘就连锁一起放掉)。
-			if (battle_settlement::HasApplied(SettlementLedgerOf(player), battleId))
+			// 缺账本时跳过本次重建,理由同 RebuildBattleFreezeFromLock。
+			const auto* ledger = FindSettlementLedger(player, playerId, battleId, "login_freeze_restore");
+			if (ledger == nullptr)
+			{
+				return;
+			}
+			if (battle_settlement::HasApplied(*ledger, battleId))
 			{
 				LOG_INFO << "[PlayerBattle] Freeze reconstruction skipped: locked battle settled and awaiting persistence, player_id=" << playerId
 						 << " battle_id=" << battleId << " reason=login";
@@ -1579,7 +1634,7 @@ void PlayerBattleSystem::RestoreBattleFreezeOnLogin(entt::entity player, const u
 			const uint64_t nowMs = TimeSystem::NowMillisecondsUTC();
 			const InBattleComp rebuilt =
 				BuildInBattleFromCtx(battleId, ctxPayload, ReplyElementToInteger(reply, 2), nowMs);
-			tlsEcs.actorRegistry.emplace<InBattleComp>(player, rebuilt);
+			StoreBattleFreezeForWrite(player).CopyFrom(rebuilt);
 
 			// 复核锁仍是本战斗的(登录窗口内恰好到达的结算已删锁 -> 撤销重建);
 			// TTL 按重建后的有效期限算:PREPARING 看 prepare_deadline,其余看 deadline
@@ -1628,7 +1683,14 @@ bool PlayerBattleSystem::ApplySettlementToEntity(entt::entity player, const ::Ba
     // 生效的一层(thread_local 应用缓存重启即空)。命中 = 奖已经发过,绝不能再发一次。
     // 但这**不**代表可以销账 —— 能不能销账由 IsSettlementDurable 按落盘字节单独判,
     // 调用方经 AckSettlementPending 决定。两条判据分开是本次改造的核心。
-    if (battle_settlement::HasApplied(SettlementLedgerOf(player), battleId))
+    // 账本缺失在任何副作用之前就拒绝(校验前置):既判不了这一局应用过没有,应用完也无处登记,
+    // 只能整笔不应用、保留 pending 等重投(FindSettlementLedger 的说明)。
+    const auto* ledger = FindSettlementLedger(player, playerId, battleId, "apply");
+    if (ledger == nullptr)
+    {
+        return false;
+    }
+    if (battle_settlement::HasApplied(*ledger, battleId))
     {
         LOG_INFO << "[PlayerBattle] Settlement already in persistent ledger;duplicate application skipped: player_id=" << playerId
                  << " battle_id=" << battleId;
@@ -1644,6 +1706,21 @@ bool PlayerBattleSystem::ApplySettlementToEntity(entt::entity player, const ::Ba
     {
         LOG_WARN << "[PlayerBattle] Player cannot currently be modified(cross-zone freeze / handoff in progress / exiting),"
                     "settlement retained for redelivery: player_id=" << playerId << " battle_id=" << battleId;
+        return false;
+    }
+
+    // 宠物、物品和任务的写入口不能把加载故障当空状态跳过。必须在金币、HP/MP、任务与幂等账本
+    // 产生任何副作用前检查，否则重投会被整笔账本挡住，漏掉的宠物状态或物品再也无法补回。
+    const bool advancesMissions = std::any_of(settlement.defeated_monsters().begin(), settlement.defeated_monsters().end(),
+        [](const auto& defeat) { return defeat.monster_config_id() != 0 && defeat.count() > 0; });
+    if (!tlsEcs.actorRegistry.all_of<DerivedAttributesComp>(player) ||
+        (settlement.pets_size() > 0 && !tlsEcs.actorRegistry.all_of<PlayerPetComp>(player)) ||
+        (advancesMissions && !tlsEcs.actorRegistry.all_of<MissionsContainerComp>(player)) ||
+        ((settlement.items_consumed_size() > 0 || settlement.items_gained_size() > 0) &&
+         !tlsEcs.actorRegistry.all_of<PlayerBagsComp>(player)))
+    {
+        LOG_ERROR << "[PlayerBattle] Settlement application failed: required persisted or derived component missing, player_id="
+                  << playerId << " battle_id=" << battleId;
         return false;
     }
 
@@ -1758,18 +1835,28 @@ bool PlayerBattleSystem::ApplySettlementToEntity(entt::entity player, const ::Ba
 	        if (defeat.monster_config_id() == 0) continue;
 	        for (uint32_t index = 0; index < defeat.count(); ++index) {
 	            ConditionEvent progress;
-	            progress.set_entity(entt::to_integral(player));
-	            progress.set_condition_type(static_cast<uint32_t>(eConditionType::kConditionKillMonster));
-	            progress.add_condition_ids(defeat.monster_config_id());
-	            progress.set_amount(1);
+	            progress.player = player;
+	            progress.conditionType = static_cast<uint32_t>(eConditionType::kConditionKillMonster);
+	            progress.conditionIds.push_back(defeat.monster_config_id());
+	            progress.amount = 1;
 	            tlsEcs.dispatcher.trigger(progress);
 	        }
 	    }
 		// 登记「这一局已应用」。必须在所有副作用之后、返回 true 之前:提前登记会让中途
 		// 失败的结算被永久判成已应用。条目与上面这些资产改动在同一份 player_database blob 里,
 		// 下一次落盘要么一起落、要么一起没 —— 这正是幂等能跨进程重启生效的全部原因。
-		if (battle_settlement::RecordApplied(SettlementLedgerOf(player), battleId,
-											 TimeSystem::NowMillisecondsUTC()))
+		// 这里重新取一次,不复用开头那个指针:中途派发的任务事件等若销毁了别的实体,entt 的
+		// swap-and-pop 会挪动同类组件,旧指针不再可靠。开头已确认过账本在,此处缺失只可能是
+		// 本实体在应用途中被拆掉 —— 副作用已发生、撤不回,仍返回 true 让应用缓存记成已完成
+		// (返回 false 会让重投再发一次奖,违反应用缓存契约),只大声报错交人工按流水核对。
+		auto* recordLedger = tlsEcs.actorRegistry.try_get<BattleSettlementLedgerComp>(player);
+		if (recordLedger == nullptr)
+		{
+			LOG_ERROR << "[PlayerBattle] metric=battle_settlement_ledger_missing Settlement side effects applied but ledger entry could not be recorded, player_id="
+					  << playerId << " battle_id=" << battleId
+					  << ",only the in-process cache blocks reapplication;persistent idempotency lost for this battle";
+		}
+		else if (battle_settlement::RecordApplied(*recordLedger, battleId, TimeSystem::NowMillisecondsUTC()))
 		{
 			LOG_ERROR << "[PlayerBattle] metric=battle_settlement_ledger_evicted player_id=" << playerId
 					  << " battle_id=" << battleId << ",ledger full(consecutive "
@@ -1982,17 +2069,33 @@ void PlayerBattleSystem::RecoverPendingSettlementAfterFreezeExpiry(entt::entity 
 				 << playerId << "(pending settlement retained;login hook will apply it on next scene entry)";
 		return;
 	}
-	tlsRedis.GetZoneRedis()->command(
-		[player, playerId](hiredis::Hiredis*, redisReply* reply) {
+	// entt::entity 用 init-capture(MSVC C3495,见 copilot-instructions)。
+	const int ret = tlsRedis.GetZoneRedis()->command(
+		[player = player, playerId](hiredis::Hiredis*, redisReply* reply) {
 			// 身份复核与 OnPlayerEnterScene 的回调同一写法:实体已销毁 / 句柄被复用就什么都不做,
 			// pending 留给下次进场的登录钩子。
 			if (!tlsEcs.actorRegistry.valid(player) || GuidForLog(player) != playerId)
 			{
 				return;
 			}
-			if (reply == nullptr || reply->type != REDIS_REPLY_STRING)
+			if (reply != nullptr && reply->type == REDIS_REPLY_NIL)
 			{
-				// 没有待结算记录(或读失败):只解冻,与改造前一致。
+				// 没有待结算记录:只解冻,与改造前一致。
+				return;
+			}
+			if (reply == nullptr || reply->type == REDIS_REPLY_ERROR)
+			{
+				// 读失败不能当成"没有记录"吞掉:这是到期后唯一一次补读机会(battle 发件箱已停止重投),
+				// 必须留下痕迹,才分得清"没有记录"与"没读到"。
+				LOG_WARN << "[PlayerBattle] Pending settlement read failed during freeze-expiry recovery, player_id=" << playerId
+						 << " err=" << (reply != nullptr && reply->str != nullptr ? reply->str : "no reply(Redis disconnected)")
+						 << "(pending settlement retained;login hook will apply it on next scene entry)";
+				return;
+			}
+			if (reply->type != REDIS_REPLY_STRING)
+			{
+				LOG_ERROR << "[PlayerBattle] Pending settlement read returned unexpected reply type=" << reply->type
+						  << " during freeze-expiry recovery, player_id=" << playerId << "(left for the login hook)";
 				return;
 			}
 			if (reply->len > static_cast<size_t>(std::numeric_limits<int>::max()))
@@ -2014,6 +2117,12 @@ void PlayerBattleSystem::RecoverPendingSettlementAfterFreezeExpiry(entt::entity 
 			ApplyPendingSettlement(player, event);
 		},
 		(std::string("GET ") + kPendingSettlementKeyFmt).c_str(), playerId);
+	if (ret != REDIS_OK)
+	{
+		// 命令没发出去时回调永远不会被调:就地留痕,pending 照旧留给登录钩子。
+		LOG_WARN << "[PlayerBattle] Pending settlement recovery after freeze expiry not sent, player_id=" << playerId
+				 << " ret=" << ret << "(pending settlement retained;login hook will apply it on next scene entry)";
+	}
 }
 
 void PlayerBattleSystem::NotifyBattleReconnectToClient(entt::entity player)
@@ -2216,7 +2325,7 @@ void PlayerBattleSystem::StartReaper(muduo::net::EventLoop* loop)
 		// 没有这一遍,条目会一直挂到玩家下次登录,pending 也一直白占(不再过期),还会被下一局的
 		// 无条件 SET 覆盖。有了它,排空只依赖本节点自己的定时器,不依赖对端是否还在重投。
 		//
-		// 稳态下这个 view 是空的(销账一确认就摘条目),所以这一遍几乎不产生开销。
+		// 账本在加载时创建，view 覆盖全部在线玩家；稳态只是条目为空，由下方 applied_size 跳过。
 		struct PendingAck
 		{
 			uint64_t playerId;

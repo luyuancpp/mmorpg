@@ -282,6 +282,12 @@ struct ClientSessionCallbacks
         {
             return 0; // 本端已经放弃这个流(截止 / 超限):数据只计入流控,直接丢弃
         }
+        if (stream->httpStatus != 200 || !stream->contentTypeIsGrpc)
+        {
+            // 不是 gRPC 响应(如代理回的 503 + text/html):响应体不是长度前缀消息,不拆;
+            // 结果按 HTTP 状态合成(§4.3),与 grpc-go 一致。
+            return 0;
+        }
         Status status = stream->deframer.Feed(data, len, stream->messages);
         if (!status.ok())
         {
@@ -374,9 +380,19 @@ Status ClientSession::Start()
     nghttp2_session_callbacks_set_on_stream_close_callback(callbacks.get(), &ClientSessionCallbacks::OnStreamClose);
     nghttp2_session_callbacks_set_error_callback2(callbacks.get(), &ClientSessionCallbacks::OnError);
 
+    nghttp2_option *rawOption = nullptr;
+    if (nghttp2_option_new(&rawOption) != 0)
+    {
+        return Status(StatusCode::kResourceExhausted, "nghttp2_option_new failed");
+    }
+    const std::unique_ptr<nghttp2_option, void (*)(nghttp2_option *)> option(rawOption, &nghttp2_option_del);
+    // 其余保持默认:自动回 PING ACK、自动 WINDOW_UPDATE、开启 HTTP 语义校验(响应必须有 :status 等)。
+    // 关掉 RFC 9113 的首尾空白校验:grpc-message 的空格不做百分号编码,grpc-go 发出 "error: " 这类
+    // 以空格结尾的消息时,nghttp2 默认会把这个头当非法字段丢掉,状态说明就没了(状态码不受影响)。
+    nghttp2_option_set_no_rfc9113_leading_and_trailing_ws_validation(option.get(), 1);
+
     nghttp2_session *rawSession = nullptr;
-    // 不传 option:默认自动回 PING ACK、自动 WINDOW_UPDATE、开启 HTTP 语义校验(响应必须有 :status 等)。
-    const int created = nghttp2_session_client_new2(&rawSession, callbacks.get(), this, nullptr);
+    const int created = nghttp2_session_client_new2(&rawSession, callbacks.get(), this, option.get());
     if (created != 0)
     {
         return Status(StatusCode::kResourceExhausted,

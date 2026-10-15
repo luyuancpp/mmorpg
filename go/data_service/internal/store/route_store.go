@@ -91,7 +91,7 @@ const (
 	routeLockRetryBackoffMax = 50 * time.Millisecond
 
 	// routeProbeTimeout 是建 store 时探针(会话变量、TiDB 事务模式、route_meta 行、chk_route_shard 实测与模数核对)的总时限,
-	// 五步共用。
+	// 五步共用(含 P4 + P5 遇 1213 / 9007 的重跑与退避)。
 	routeProbeTimeout = 5 * time.Second
 
 	// routeWriterMaxLen = player_route.updated_by 的列宽 varchar(96)。
@@ -402,6 +402,19 @@ func NewRouteStore(cfg MySQLConfig, opts RouteStoreOptions) (*RouteStore, error)
 	return st, nil
 }
 
+// OpenRouteStoreHint 是 NewRouteStore 失败时给运维的一句处理提示(英文,拼进日志、错误或 stderr 的括号里),建 route store 的
+// 三个入口共用:db_first 的 data_service 装配、debugutil、route_tool。configPath 是 data_service 的 yaml 路径,
+// 不知道时传 "<yaml>"。表按另一个行片模数建的(ErrRouteShardModulusMismatch)不能照常提示「先跑迁移」:
+// CREATE TABLE IF NOT EXISTS 不改已有的表,只重跑 -migrate 修不好,要先按报错里的步骤 DROP 五张路由表
+// (runbook §9.3 前置第 1 条)。其余原因回原来的「先跑迁移」提示。
+func OpenRouteStoreHint(configPath string, err error) string {
+	if errors.Is(err, ErrRouteShardModulusMismatch) {
+		return "the route tables were created with another route_shard modulus; rerunning -migrate alone does not fix that, " +
+			"see merge-zone-runbook §9.3 prerequisite 1"
+	}
+	return fmt.Sprintf("run `data_service -f %s -migrate` first if route_meta is missing", configPath)
+}
+
 // newRouteStoreFromDB 在一个已开好的池上跑探针并装出 store。任一步失败都会关掉 db(调用方不必再 Close)。
 // 单独成函数是为了让契约用例注入假驱动、真库用例注入一个会话变量不对的池。
 //
@@ -415,6 +428,7 @@ func NewRouteStore(cfg MySQLConfig, opts RouteStoreOptions) (*RouteStore, error)
 //     这一步是一次必然回滚的写尝试,所以只读用途(route_tool audit)也要 player_route 的 INSERT 权限;
 //  5. chk_route_shard 的模数必须是 placement.RouteRowShards(probeRouteShardModulus,P5):与 P4 同一个必然回滚的事务、
 //     同一条权限;按另一个模数建过的表 → ErrRouteShardModulusMismatch。
+//     P4 + P5 这个事务遇到 1213 / 9007 时整个重跑(retryRouteTx,与写事务同一预算;1205 不重试)。
 func newRouteStoreFromDB(ctx context.Context, db *sql.DB, opts RouteStoreOptions) (*RouteStore, error) {
 	fail := func(err error) (*RouteStore, error) {
 		_ = db.Close()
@@ -434,7 +448,9 @@ func newRouteStoreFromDB(ctx context.Context, db *sql.DB, opts RouteStoreOptions
 		logx.Errorf("[RouteStore] route_meta(id=%d).writable=%d: route writers are frozen, every db_first RegisterPlayerZone "+
 			"will be refused until it is set back to 1", routeMetaRowID, writable)
 	}
-	if err := probeRouteShardCheck(ctx, db); err != nil {
+	// P4 + P5 每次尝试都是新开的一个必然回滚的事务,1213 / 9007 整事务重跑(见 probeRouteShardModulus 的「锁」);
+	// 1205 与其它错误不重试(文件头不变量 4)。退避受 ctx(routeProbeTimeout)约束。
+	if err := retryRouteTx(ctx, "chk_route_shard probes", nil, func() error { return probeRouteShardCheck(ctx, db) }); err != nil {
 		return fail(err)
 	}
 	return &RouteStore{db: db, fenceShards: opts.FenceShards, writer: opts.Writer}, nil
@@ -451,7 +467,8 @@ func newRouteStoreFromDB(ctx context.Context, db *sql.DB, opts RouteStoreOptions
 // 按旧模数 16 建的表也过得了这一步):P4 通过之后,在同一个事务里接着跑第 5 步 probeRouteShardModulus 核对模数。
 //
 // 无论哪种结果事务都回滚,CHECK 没生效时那行也不会留下。CHECK 生效时语句在写索引前就被拒、不取锁;
-// 不生效时多副本同时探针,后到的最多等 1s 行锁(会话锁等待封顶)后同样回滚。
+// 不生效时多副本同时探针,后到的最多等 1s 行锁(会话锁等待封顶)后同样回滚(三方以上并发时可能 1213,
+// 由 newRouteStoreFromDB 整事务有界重跑,见 probeRouteShardModulus 的「锁」)。
 func probeRouteShardCheck(ctx context.Context, db *sql.DB) error {
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
@@ -510,14 +527,19 @@ func probeRouteShardCheck(ctx context.Context, db *sql.DB) error {
 //
 // 逐行判定:成功或 1062 = 该行被接受;3819 且点名 chk_route_shard → ErrRouteShardModulusMismatch;1142 → 与 P4
 // 同一条权限提示;3819 点名别的约束(探针行本该满足其余全部约束)、1205 与其它任何错误 → 原样包装(证不了就不建
-// store,fail-closed)。不需要 P4 之外的新权限。1062 = 库里已有这一行:CHECK 生效的表上已有的行都满足它,所以撞键
-// 同样说明这一行在表的模数下合法,与引擎先判 CHECK 还是先判撞键无关(CHECK 被关掉期间写进来的行除外,那是 HR2 的
-// 范畴)。号段从 1 发号(IdSegmentFirstID),63 / 64 号是开服后最早的一批真实玩家,撞键在生产上是常态。
+// store,fail-closed);其中 1213 / 9007 由调用方整事务重跑(见下「锁」)。不需要 P4 之外的新权限。
+// 1062 = 库里已有这一行:CHECK 生效的表上已有的行都满足它,所以撞键同样说明这一行在表的模数下合法,
+// 与引擎先判 CHECK 还是先判撞键无关(CHECK 被关掉期间写进来的行除外,那是 HR2 的范畴)。号段从 1 发号
+// (IdSegmentFirstID),63 / 64 号是开服后最早的一批真实玩家,撞键在生产上是常态。
 //
-// 锁:这两行不存在且模数一致时真的插进去(未提交);已存在时撞键也会在那一行上取共享锁(InnoDB 的行为,凭记忆、
-// 未核实)。两种都持到回滚(毫秒级),所以 63 / 64 号玩家的 W1 可能在探针期间短暂排队;反过来探针最多等会话锁等待
-// 1s,等满即 1205、这次建池失败(重启即可);多副本同时建池时后到的在这两行上排队(各副本都按聚簇键升序插,探针
-// 之间不成环)。P4 被拒之后事务继续用:MySQL 只回滚失败的那条语句;TiDB 是否同样只回滚语句【未核实】,
+// 锁:这两行不存在且模数一致时真的插进去(未提交);已存在时撞键会在那一行上取共享锁(评审按 mysql-server 8.0.36
+// 源码 row0ins.cc 核对,未实跑;真库用例 TestRouteStore_ProbeKeysHeldByRealPlayers 取证)。两种都持到回滚(毫秒级),
+// 所以 63 / 64 号玩家的 W1 可能在探针期间短暂排队;反过来探针最多等会话锁等待 1s,等满即 1205、这次建池失败
+// (不重试,重启即可)。各副本都按聚簇键升序插这两行,两行之间不成环;但三个及以上会话并发插同一个**缺席**的探针键时
+// (空表、首次部署,或 63 / 64 号还没建角),先插入者回滚后,其余等待者查重取的 S 锁会被继承成 gap 锁(MySQL 8.0 在
+// RC 下同样继承;评审按源码 lock0lock.cc 推断,未实跑),它们重新插入要插入意向锁,互等成 1213。所以 newRouteStoreFromDB
+// 对 P4 + P5 整个事务按 1213 / 9007 有界重跑(retryRouteTx;InnoDB 遇 1213 已整事务回滚、探针不留数据,重跑安全)。
+// P4 被拒之后事务继续用:MySQL 只回滚失败的那条语句;TiDB 是否同样只回滚语句【未核实】,
 // 由真 TiDB 用例(TestRouteStore_TiDBClusteredShardsAndPresplit)取证。
 //
 // 作用范围:只在建 route store 时跑(db_first 的 data_service、debugutil、route_tool)。redis 模式的 data_service
@@ -1092,13 +1114,20 @@ func isRouteLockConflict(err error) bool {
 	return me.Number == mysqlErrDeadlock || me.Number == tidbErrWriteConflict
 }
 
-// runRouteTx 跑一个「一次事务尝试」的函数,有界重来:
+// runRouteTx 跑一个「一次事务尝试」的函数,有界重来(规则见 retryRouteTx),1213 / 9007 的重来次数记进 s.lockRetries。
+func (s *RouteStore) runRouteTx(ctx context.Context, op string, attempt func() error) error {
+	return retryRouteTx(ctx, op, &s.lockRetries, attempt)
+}
+
+// retryRouteTx 是 runRouteTx 的循环体,有界重来:
 //   - 1213 / 9007:计 lockRetries,抖动退避(可被 ctx 取消)后重来;
 //   - errRouteImportRaced:不是锁冲突,不计数、不退避,直接重来;
 //   - 其它错误(含 1205):立刻返回。
 //
 // 总尝试次数不超过 routeTxAttempts;用尽后把最后一次的错误包着返回(errors.As 仍能取到 MySQLError)。
-func (s *RouteStore) runRouteTx(ctx context.Context, op string, attempt func() error) error {
+// 抽成自由函数是因为建 store 的探针 P4 + P5(newRouteStoreFromDB)也要同一套重来规则,而那时 store 还没建出来:
+// lockRetries 为 nil 时不计数(日志照打)。
+func retryRouteTx(ctx context.Context, op string, lockRetries *atomic.Uint64, attempt func() error) error {
 	var err error
 	for n := 1; n <= routeTxAttempts; n++ {
 		if err = attempt(); err == nil {
@@ -1115,7 +1144,9 @@ func (s *RouteStore) runRouteTx(ctx context.Context, op string, attempt func() e
 			logx.Infof("[RouteStore] %s retry %d/%d: %v", op, n, routeTxAttempts, err)
 			continue
 		}
-		s.lockRetries.Add(1)
+		if lockRetries != nil {
+			lockRetries.Add(1)
+		}
 		logx.Infof("[RouteStore] %s retry %d/%d after lock conflict: %v", op, n, routeTxAttempts, err)
 		if waitErr := sleepCtx(ctx, jitteredBackoff(routeLockRetryBackoffMin, routeLockRetryBackoffMax)); waitErr != nil {
 			return fmt.Errorf("%s: %w", op, errors.Join(err, waitErr))

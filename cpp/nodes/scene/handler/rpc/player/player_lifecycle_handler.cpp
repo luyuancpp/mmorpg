@@ -3,6 +3,7 @@
 
 ///<<< BEGIN WRITING YOUR CODE
 
+#include "engine/core/utils/registry/actor_log.h"
 #include "muduo/base/Logging.h"
 #include "player/system/player_lifecycle.h"
 ///<<< END WRITING YOUR CODE
@@ -14,8 +15,8 @@ void ScenePlayerHandler::GateLoginNotify(entt::entity player,const ::GateLoginNo
 	// Deprecated: Gate now sends PlayerEnterGameNode RPC directly (carries session_id,
 	// enter_gs_type, scene_id). This handler is kept for backward compatibility but
 	// should not be reached in normal operation.
-	LOG_WARN << "GateLoginNotify: deprecated path reached for player "
-	         << entt::to_integral(player)
+	LOG_WARN << "GateLoginNotify: deprecated path reached "
+	         << ActorLog(player)
 	         << ", enter_gs_type=" << request->enter_gs_type();
 	///<<< END WRITING YOUR CODE
 
@@ -25,7 +26,7 @@ void ScenePlayerHandler::ExitGame(entt::entity player,const ::GameNodeExitGameRe
 	::google::protobuf::Empty* response)
 {
 	///<<< BEGIN WRITING YOUR CODE
-	LOG_INFO << "ExitGame: player=" << entt::to_integral(player);
+	LOG_INFO << "ExitGame: " << ActorLog(player);
 
 	// TODO: If player has monthly card subscription, switch to AI control instead of exiting.
 	// auto* subscriptionComp = tlsEcs.actorRegistry.try_get<MonthlyCardComp>(player);

@@ -94,6 +94,12 @@ void RedisSystem::Initialize(muduo::net::EventLoop* loop)
                      << " skip_pct=" << (pctTenths / 10) << "."
                      << (pctTenths % 10) << "%";
         }
+        // 拒存与相等跳过分开汇总,保持 [DirtySave] 的既有解析格式和跳过率分母不变。
+        // 只统计缺有效 Guid/持久组件造成的完整消息组装失败,累计值不带玩家维度。
+        if (stats.marshalRefused > 0)
+        {
+            LOG_WARN << "[PlayerSave] save_marshal_refused=" << stats.marshalRefused;
+        }
         // 归属健康计数单独一行、单独前缀,不动 [DirtySave] 的解析格式。
         // 三个值在链路升级完成后都应恒 0;任一非 0 都是要查的信号(含义见 owner_epoch_stats)。
         const auto ownerStats = owner_epoch_stats::Read();

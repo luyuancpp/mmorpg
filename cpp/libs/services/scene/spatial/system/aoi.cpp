@@ -1,4 +1,5 @@
 #include "aoi.h"
+#include "actor/actor_net_id.h"
 
 #include "hexagons_grid.h"
 #include "spatial/comp/grid_comp.h"
@@ -11,7 +12,7 @@
 #include "muduo/base/Logging.h"
 #include "proto/common/component/actor_comp.pb.h"
 #include "proto/common/component/team_comp.pb.h"
-#include "proto/common/event/scene_event.pb.h"
+#include "modules/scene/scene_events.h"
 #include "rpc/service_metadata/player_scene_service_metadata.h"
 #include "core/utils/stat/stat.h"
 #include "proto/scene/player_scene.pb.h"
@@ -45,33 +46,39 @@ void AoiSystem::Update(double delta) {
             continue;
         }
 
-        auto& gridList = tlsEcs.sceneRegistry.get_or_emplace<SceneGridListComp>(sceneComp.sceneEntity);
-
         // Get current hex grid position
         const auto currentHex = GridSystem::CalculateHexPosition(transform);
         const auto currentGridId = GridSystem::GetGridId(currentHex);
 
         GridSet gridsToEnter, gridsToLeave;
-        UpdateGridState(entity, gridList, currentHex, currentGridId, gridsToEnter, gridsToLeave);
+        auto* gridList = UpdateGridState(entity, sceneComp.sceneEntity, currentHex,
+                                        currentGridId, gridsToEnter, gridsToLeave);
+        if (gridList == nullptr) continue;
 
         // Handle entity enter/leave visibility
-        HandleEntityVisibility(entity, gridList, gridsToEnter, gridsToLeave);
+        HandleEntityVisibility(entity, *gridList, gridsToEnter, gridsToLeave);
     }
 }
 
-void AoiSystem::UpdateGridState(const entt::entity entity, SceneGridListComp& gridList, const Hex& currentHex,
+SceneGridListComp* AoiSystem::UpdateGridState(const entt::entity entity, const SceneEntity sceneEntity, const Hex& currentHex,
                                 const GridId currentGridId, GridSet& gridsToEnter, GridSet& gridsToLeave) {
-    if (!tlsEcs.actorRegistry.any_of<Hex>(entity)) {
+    const auto* previousHexPtr = tlsEcs.actorRegistry.try_get<Hex>(entity);
+    if (previousHexPtr != nullptr && hex_distance(*previousHexPtr, currentHex) == 0) {
+        return nullptr;
+    }
+
+    // 此处延迟创建:真实入格写入口是 SceneGridListComp 的唯一创建点。
+    // 空场景和只读空间查询不需要表;首次入格与跨格移动都在这里完成占位。
+    auto& gridList = tlsEcs.sceneRegistry.get_or_emplace<SceneGridListComp>(sceneEntity);
+    if (previousHexPtr == nullptr) {
         // First time entering scene
+        // AoiListComp 不在这里预挂;实际可见关系由 InterestSystem::AddAoiEntity 按需创建。
         gridList[currentGridId].entities.insert(entity);
         tlsEcs.actorRegistry.emplace<Hex>(entity, currentHex);
         GridSystem::GetCurrentAndNeighborGridIds(currentHex, gridsToEnter);
     } else {
         // Position update
-        const auto previousHex = tlsEcs.actorRegistry.get<Hex>(entity);
-        if (hex_distance(previousHex, currentHex) == 0) {
-            return;
-        }
+        const auto previousHex = *previousHexPtr;
 
         GridSystem::GetCurrentAndNeighborGridIds(previousHex, gridsToLeave);
         GridSystem::GetCurrentAndNeighborGridIds(currentHex, gridsToEnter);
@@ -86,7 +93,9 @@ void AoiSystem::UpdateGridState(const entt::entity entity, SceneGridListComp& gr
         }
 
         const auto previousGridId = GridSystem::GetGridId(previousHex);
-        gridList[previousGridId].entities.erase(entity);
+        if (auto previousGrid = gridList.find(previousGridId); previousGrid != gridList.end()) {
+            previousGrid->second.entities.erase(entity);
+        }
         gridList[currentGridId].entities.insert(entity);
 
         // Hex has const members -> copy assignment is deleted -> emplace_or_replace won't compile.
@@ -94,6 +103,7 @@ void AoiSystem::UpdateGridState(const entt::entity entity, SceneGridListComp& gr
         tlsEcs.actorRegistry.remove<Hex>(entity);
         tlsEcs.actorRegistry.emplace<Hex>(entity, currentHex);
     }
+    return &gridList;
 }
 
 void AoiSystem::HandleEntityVisibility(entt::entity entity, SceneGridListComp& gridList, 
@@ -164,71 +174,110 @@ void AoiSystem::HandleEntityVisibility(entt::entity entity, SceneGridListComp& g
 void AoiSystem::NotifyEntityVisibilityChanges(entt::entity entity, 
                                               const EntityUnorderedSet& enteringEntities, 
                                               const EntityUnorderedSet& leavingEntities) {
+    // 下面几处 S2C 消息都是"本线程复用的发送缓冲",不是任何实体的数据,所以不挂在 GlobalEntity 上:
+    // 那样每次通知都要过一遍 get_or_emplace,而且这块缓冲会以组件身份混进 globalRegistry。
+    // 用函数内 static thread_local:与 tlsEcs 同线程、同寿命,Clear() 保留已分配的子消息供下次复用;
+    // 填好后同步发送,发送路径不会回调进 AOI,不存在重入覆盖。
     // Notify entities entering view
     if (!enteringEntities.empty()) {
-        auto &createMsg = tlsEcs.globalRegistry.get_or_emplace<ActorListCreateS2C>(tlsEcs.GlobalEntity());
+        static thread_local ActorListCreateS2C createMsg;
         createMsg.Clear();
         for (auto& otherEntity : enteringEntities) {
+            if (actor_net_id::Of(tlsEcs.actorRegistry, otherEntity) == 0) {
+                LOG_ERROR << "AOI: actor create skipped, network id missing";
+                continue;
+            }
             ViewSystem::FillActorCreateMessageInfo(entity, otherEntity, *createMsg.add_actor_list());
         }
-        SendMessageToClientViaGate(SceneSceneClientPlayerNotifyActorListCreateMessageId, createMsg, entity);
+        if (!createMsg.actor_list().empty()) {
+            SendMessageToClientViaGate(SceneSceneClientPlayerNotifyActorListCreateMessageId, createMsg, entity);
+        }
     }
 
     // Notify entities leaving view
     if (!leavingEntities.empty()) {
-        auto &destroyMsg = tlsEcs.globalRegistry.get_or_emplace<ActorListDestroyS2C>(tlsEcs.GlobalEntity());
+        static thread_local ActorListDestroyS2C destroyMsg;
         destroyMsg.Clear();
         for (auto& otherEntity : leavingEntities) {
-            destroyMsg.add_entity(entt::to_integral(otherEntity));
+            const auto netId = actor_net_id::Of(tlsEcs.actorRegistry, otherEntity);
+            if (netId == 0) {
+                LOG_ERROR << "AOI: actor removal skipped, network id missing";
+                continue;
+            }
+            destroyMsg.add_entity(netId);
         }
-        SendMessageToClientViaGate(SceneSceneClientPlayerNotifyActorListDestroyMessageId, destroyMsg, entity);
+        if (!destroyMsg.entity().empty()) {
+            SendMessageToClientViaGate(SceneSceneClientPlayerNotifyActorListDestroyMessageId, destroyMsg, entity);
+        }
     }
 }
 
 void AoiSystem::BeforeLeaveSceneHandler(const BeforeLeaveScene& message) {
-    const auto entity = entt::to_entity(message.entity());
-    if (!tlsEcs.actorRegistry.valid(entity)) {
-        LOG_ERROR << "Entity not found in scene";
+    const auto entity = message.actor;
+    if (tlsEcs.actorRegistry.valid(entity)) {
+        // 离场者本人的表也必须清空,否则旧场景的条目会占满新场景的观察容量。
+        if (auto* ownList = tlsEcs.actorRegistry.try_get<AoiListComp>(entity)) {
+            ownList->entries.clear();
+        }
+        const auto* hex = tlsEcs.actorRegistry.try_get<Hex>(entity);
+        const auto* scene = tlsEcs.actorRegistry.try_get<SceneEntityComp>(entity);
+        if (hex != nullptr && scene != nullptr && tlsEcs.sceneRegistry.valid(scene->sceneEntity)) {
+            // 格子表是按需状态;缺表时仍须继续做远端关系清扫,不得补建空表。
+            if (auto* gridList = tlsEcs.sceneRegistry.try_get<SceneGridListComp>(scene->sceneEntity)) {
+                GridSet gridsToLeave;
+                GridSystem::GetCurrentAndNeighborGridIds(*hex, gridsToLeave);
+                RemoveEntityFromGrid(*hex, *gridList, entity);
+                BroadcastEntityLeave(*gridList, entity, gridsToLeave);
+            }
+        }
+    }
+
+    // 跨实体关系不能靠 on_destroy:组件销毁顺序不保证 Hex / 场景绑定仍在。
+    // 邻格广播之后再扫全部 AOI 参与者,回收远端 Pin 和缺格子记录的残留。
+    // 成本为 O(AOI 参与者)/次离场;离场频率低,正确性不依赖空间索引完整。
+    EntityUnorderedSet remoteWatchers;
+    for (auto&& [watcher, list] : tlsEcs.actorRegistry.view<AoiListComp>().each()) {
+        if (watcher != entity && list.entries.erase(entity) > 0) {
+            remoteWatchers.insert(watcher);
+        }
+    }
+    for (const auto watcher : remoteWatchers) {
+        NotifyEntityVisibilityChanges(watcher, {}, EntityUnorderedSet{entity});
+    }
+}
+
+bool AoiSystem::PinAoiEntity(entt::entity watcher, entt::entity target) {
+    return InterestSystem::PinAoiEntity(watcher, target);
+}
+
+void AoiSystem::UnpinAoiEntity(entt::entity watcher, entt::entity target) {
+    if (!tlsEcs.actorRegistry.valid(watcher)) return;
+    auto* list = tlsEcs.actorRegistry.try_get<AoiListComp>(watcher);
+    if (list == nullptr) return;
+    const auto entry = list->entries.find(target);
+    if (entry == list->entries.end() || entry->second.priority != AoiPriority::kPinned) return;
+
+    bool visible = false;
+    if (tlsEcs.actorRegistry.valid(target)) {
+        const auto* watcherScene = tlsEcs.actorRegistry.try_get<SceneEntityComp>(watcher);
+        const auto* targetScene = tlsEcs.actorRegistry.try_get<SceneEntityComp>(target);
+        const auto* watcherHex = tlsEcs.actorRegistry.try_get<Hex>(watcher);
+        const auto* targetHex = tlsEcs.actorRegistry.try_get<Hex>(target);
+        if (watcherScene != nullptr && targetScene != nullptr && watcherHex != nullptr && targetHex != nullptr &&
+            watcherScene->sceneEntity == targetScene->sceneEntity &&
+            tlsEcs.sceneRegistry.valid(watcherScene->sceneEntity)) {
+            // 先解除强制可见权限再判 CanSee,否则隐身目标会借当前 kPinned 绕过检查。
+            entry->second.priority = DetermineAoiPriority(watcher, target);
+            GridSet visibleGrids;
+            GridSystem::GetCurrentAndNeighborGridIds(*watcherHex, visibleGrids);
+            visible = visibleGrids.contains(GridSystem::GetGridId(*targetHex)) && ViewSystem::CanSee(watcher, target);
+        }
+    }
+    if (visible) {
         return;
     }
-
-    // 把离场者自己的兴趣列表清空。
-    //
-    // 下面的 BroadcastEntityLeave 只做了反方向 —— 把离场者从各观察者的 AoiListComp
-    // 里摘掉;离场者自己那张表从来没人清过。换场景时实体不销毁(player_scene.cpp
-    // 只删了 Hex),于是旧场景的条目会原样带进新场景,而新场景的格子永远不会出现在
-    // gridsToLeave 里,这些陈旧条目再也没有机会被删掉:
-    //   1) 无上界泄漏,每换一次场景涨一截;
-    //   2) 更要命的是它们占着 AOI 容量 —— 旧场景人多时列表直接是满的,
-    //      新场景的实体在 AddAoiEntity 里因为权重不够被全部拒收,
-    //      entitiesEnteringView 恒空 => 客户端收不到 ActorListCreate,
-    //      表现为"进了新场景但世界是空的"。
-    // 登出那条路径(player_lifecycle.cpp)实体随后就销毁,清一下也无副作用。
-    if (auto* leaverAoiList = tlsEcs.actorRegistry.try_get<AoiListComp>(entity)) {
-        leaverAoiList->entries.clear();
-    }
-
-    ECS_GET_OR_VOID(hex, Hex, entity);
-
-    const auto *sceneEntityComp = tlsEcs.actorRegistry.try_get<SceneEntityComp>(entity);
-    if (!sceneEntityComp)
-    {
-        LOG_ERROR << "Entity has no SceneEntityComp: " << entt::to_integral(entity);
-        return;
-    }
-    auto sceneEntity = sceneEntityComp->sceneEntity;
-    if (!tlsEcs.sceneRegistry.valid(sceneEntity))
-    {
-        LOG_ERROR << "Scene entity not found for entity " << entt::to_integral(entity);
-		return;
-    }
-
-    auto& gridList = tlsEcs.sceneRegistry.get_or_emplace<SceneGridListComp>(sceneEntity);
-    GridSet gridsToLeave;
-    GridSystem::GetCurrentAndNeighborGridIds(*hex, gridsToLeave);
-
-    RemoveEntityFromGrid(*hex, gridList, entity);
-    BroadcastEntityLeave(gridList, entity, gridsToLeave);
+    InterestSystem::RemoveAoiEntity(watcher, target);
+    NotifyEntityVisibilityChanges(watcher, {}, EntityUnorderedSet{target});
 }
 
 void AoiSystem::ResetEntityVisibility(entt::entity entity) {
@@ -253,7 +302,7 @@ void AoiSystem::ResetEntityVisibility(entt::entity entity) {
     }
 
     // 2) 观察者一侧:按格子建立的条目只存在于"当前格及邻格"的实体之间,遍历旧 Hex 的这 7 格就够了。
-    //    (被 Unpin 降级后留在远处观察者表里的条目不在此列 —— 它们本来就不归格子逻辑管。)
+    //    Unpin 已立即剔除超出范围的条目,远端剩余条目仍为 kPinned,按约定保留。
     const auto* hex = tlsEcs.actorRegistry.try_get<Hex>(entity);
     if (hex == nullptr) {
         return;
@@ -317,9 +366,12 @@ void AoiSystem::RemoveEntityFromGrid(const Hex& hex, SceneGridListComp& gridList
 void AoiSystem::BroadcastEntityLeave(const SceneGridListComp& gridList, entt::entity entity, const GridSet& gridsToLeave) {
     if (gridsToLeave.empty()) return;
 
-    auto &destroyMsg = tlsEcs.globalRegistry.get_or_emplace<ActorDestroyS2C>(tlsEcs.GlobalEntity());
+    const auto netId = actor_net_id::Of(tlsEcs.actorRegistry, entity);
+
+    // 本线程复用的发送缓冲,理由同 NotifyEntityVisibilityChanges。
+    static thread_local ActorDestroyS2C destroyMsg;
     destroyMsg.Clear();
-    destroyMsg.set_entity(entt::to_integral(entity));
+    destroyMsg.set_entity(netId);
 
     EntityUnorderedSet observersToNotify;
     for (const auto& gridId : gridsToLeave) {
@@ -332,6 +384,10 @@ void AoiSystem::BroadcastEntityLeave(const SceneGridListComp& gridList, entt::en
         }
     }
 
-    BroadcastMessageToPlayers(SceneSceneClientPlayerNotifyActorDestroyMessageId, destroyMsg, observersToNotify);
+    if (netId != 0) {
+        BroadcastMessageToPlayers(SceneSceneClientPlayerNotifyActorDestroyMessageId, destroyMsg, observersToNotify);
+    } else {
+        LOG_ERROR << "AOI: actor leave notification skipped, network id missing";
+    }
 }
 

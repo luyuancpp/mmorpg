@@ -285,6 +285,25 @@ func TestBumpWithoutTargetSendsNothing(t *testing.T) {
 	}
 }
 
+// 非法域(UNSPECIFIED、负值)混在合法域里:只跳过非法的,合法的照常 bump ——
+// 写进 hash 会留下 C++ 不认的字段,而整条丢掉又会让合法域漏 bump。
+func TestBumpSkipsInvalidDomainsKeepsValid(t *testing.T) {
+	ev := &recordingEvaler{}
+	b := NewBumper(ev, "playersync_invalid")
+	if err := b.Bump(context.Background(), 5,
+		scenepb.SyncDomain_SYNC_DOMAIN_UNSPECIFIED, domainFriendBlock, scenepb.SyncDomain(-1)); err != nil {
+		t.Fatalf("Bump: %v", err)
+	}
+	calls := ev.taken()
+	if len(calls) != 1 {
+		t.Fatalf("calls = %d, want 1", len(calls))
+	}
+	want := []string{"2592000", field(domainFriendBlock)}
+	if strings.Join(calls[0].args, ",") != strings.Join(want, ",") {
+		t.Fatalf("args = %v, want %v", calls[0].args, want)
+	}
+}
+
 // nil Bumper 与 nil 句柄:未装配摘要的服务、手工构造 ServiceContext 的单测不必判空。
 func TestNilBumperIsNoop(t *testing.T) {
 	var b *Bumper

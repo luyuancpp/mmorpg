@@ -59,19 +59,19 @@ const (
 	guildAssetOpTable     = "guild_asset_op"
 )
 
-// assetOpColumns 是 guild_asset_op 的全列,**顺序 = GuildAssetOpRecord 的 proto 字段序**(1..28)。
+// assetOpColumns 是 guild_asset_op 的全列,**顺序 = GuildAssetOpRecord 的 proto 字段序**(1..29)。
 // 插入参数(assetOpInsertArgs)与扫描(scanAssetOpRecord)都按它排;加字段忘了同步三处,
 // 表现是"新列永远零值"或运行期 Scan 数量不符,编译期都看不出来 —— TestAssetOpColumnsCoverEveryProtoField 机械比对。
 const assetOpColumns = "`op_id`, `player_id`, `stream`, `seq`, `guild_id`, `kind`, `status`, `durable`, " +
 	"`attempts`, `next_attempt_ms`, `deadline_ms`, `payload`, `ref_id`, `ref_count`, `period_key`, " +
 	"`contribution_delta`, `funds_delta`, `reason_tip_id`, `created_ms`, `updated_ms`, " +
 	"`lease_until_ms`, `lease_token`, `tx_type`, `last_outcome`, `last_reason`, `stream_epoch`, " +
-	"`resolved_by`, `resolve_reason`"
+	"`resolved_by`, `resolve_reason`, `last_send_ms`"
 
 // assetOpColumnCount 与 assetOpColumns 的列数一致,由单测守住。
-const assetOpColumnCount = 28
+const assetOpColumnCount = 29
 
-// sqlInsertAssetOp 显式写全 28 列:payload / resolved_by / resolve_reason 在库里是**可空**列
+// sqlInsertAssetOp 显式写全 29 列:payload / resolved_by / resolve_reason 在库里是**可空**列
 // (MEDIUMBLOB / MEDIUMTEXT,92-handoff §10.3 第 5 条),漏写就是 NULL,读路径要多一层判空才不出错。
 var sqlInsertAssetOp = "INSERT INTO " + guildAssetOpTable + " (" + assetOpColumns + ") VALUES (" +
 	placeholders(assetOpColumnCount) + ")"
@@ -226,7 +226,7 @@ func scanAssetOpRecord(row rowScanner) (*pb.GuildAssetOpRecord, error) {
 		&rec.Payload, &rec.RefId, &rec.RefCount, &rec.PeriodKey,
 		&rec.ContributionDelta, &rec.FundsDelta, &rec.ReasonTipId, &rec.CreatedMs, &rec.UpdatedMs,
 		&rec.LeaseUntilMs, &rec.LeaseToken, &rec.TxType, &rec.LastOutcome, &rec.LastReason,
-		&rec.StreamEpoch, &resolvedBy, &resolveReason,
+		&rec.StreamEpoch, &resolvedBy, &resolveReason, &rec.LastSendMs,
 	); err != nil {
 		return nil, err
 	}
@@ -238,6 +238,8 @@ func scanAssetOpRecord(row rowScanner) (*pb.GuildAssetOpRecord, error) {
 }
 
 // assetOpInsertArgs 按 assetOpColumns 的列序给出插入参数。枚举列按整数绑定(列类型是 int)。
+// last_send_ms 不照抄 rec,取 lastSendMsOnInsert(LastSendMs 契约第 1 条,见 asset_store.go):
+// 所有插行路径(捐献 / 兑换预留、活动发奖入队)都经这里,调用方不必各自填。
 func assetOpInsertArgs(rec *pb.GuildAssetOpRecord) []any {
 	return []any{
 		rec.GetOpId(), rec.GetPlayerId(), rec.GetStream(), rec.GetSeq(), rec.GetGuildId(),
@@ -246,7 +248,7 @@ func assetOpInsertArgs(rec *pb.GuildAssetOpRecord) []any {
 		rec.GetPeriodKey(), rec.GetContributionDelta(), rec.GetFundsDelta(), rec.GetReasonTipId(),
 		rec.GetCreatedMs(), rec.GetUpdatedMs(), rec.GetLeaseUntilMs(), rec.GetLeaseToken(), rec.GetTxType(),
 		rec.GetLastOutcome(), rec.GetLastReason(), rec.GetStreamEpoch(),
-		rec.GetResolvedBy(), rec.GetResolveReason(),
+		rec.GetResolvedBy(), rec.GetResolveReason(), lastSendMsOnInsert(rec),
 	}
 }
 

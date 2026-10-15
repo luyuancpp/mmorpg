@@ -102,9 +102,8 @@ bool IsUsable(const EndpointComp &endpoint);
 //   2) required=true → nullopt(不回落,调用方必须跳过该节点或拒签);
 //   3) 否则回落 endpoint;endpoint 本身不可用同样 nullopt。
 // 与 go/shared/clientendpoint.Select 同一口径;无 I/O、无副作用,可在热路径调用。
-// 线程约束落在实参上:node 必须取自 loop 线程上的 gNode->GetNodeInfo()。GetNodeInfo() 读的是
-// thread_local tlsEcs,在 gRPC 等非 loop 线程上会就地 emplace 出一个空 NodeInfo,本函数随之恒返回
-// nullopt —— 仍是 fail-closed,但整批静默拒签、没有任何报错。required 取 gNode->ClientEndpointRequired()
+// 线程约束落在实参上:NodeInfo 由 Node 持有、只在 loop 线程写;跨线程读取不与写入同步,
+// 所以 node 仍须取自 loop 线程上的 gNode->GetNodeInfo()。required 取 gNode->ClientEndpointRequired()
 // (普通成员,可跨线程读)。battle 只能在 runInLoop 之内的 BuildAssignment / 预签里调用本函数。
 std::optional<EndpointComp> ClientFacing(const NodeInfo &node, bool required);
 

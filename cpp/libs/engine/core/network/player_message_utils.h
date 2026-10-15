@@ -16,8 +16,6 @@ void SendMessageToClientViaGate(uint32_t messageId, const google::protobuf::Mess
 // 收方会放行并记 INFO —— 灰度一版之后 0 将被丢弃。
 void SendMessageToClientViaGate(uint32_t messageId, const google::protobuf::Message& message, RpcSession& gateSession, SessionId sessionId, Guid targetPlayerId);
 
-void SendMessageToGateById(uint32_t messageId, const google::protobuf::Message& message, NodeId gateNodeId);
-
 void BroadcastMessageToPlayers(uint32_t messageId, const google::protobuf::Message& message, const EntityUnorderedSet& playerList);
 void BroadcastMessageToPlayers(uint32_t messageId, const google::protobuf::Message& message, const EntityVector& playerList);
 
@@ -26,34 +24,3 @@ void BroadcastMessageToScene(uint32_t messageId, const google::protobuf::Message
 
 void BroadcastMessageToAll(uint32_t messageId, const google::protobuf::Message &message);
 
-void SendMessageToPlayerOnNode(uint32_t wrappedMessageId,
-	uint32_t nodeType,
-	uint32_t messageId,
-	const google::protobuf::Message& message,
-	entt::entity playerEntity);
-void SendMessageToPlayerOnNode(uint32_t wrappedMessageId,
-	uint32_t nodeType,
-	uint32_t messageId,
-	const google::protobuf::Message& message,
-	Guid playerId);
-
-void SendMessageToPlayerOnSceneNode(uint32_t messageId,
-	const google::protobuf::Message& message,
-	entt::entity playerEntity);
-void SendMessageToPlayerOnSceneNode(uint32_t messageId,
-	const google::protobuf::Message& message,
-	Guid playerId);
-
-void CallMethodOnPlayerNode(
-	uint32_t remoteMethodId,
-	uint32_t nodeType,
-	uint32_t messageId,
-	const google::protobuf::Message& message,
-	entt::entity player	);
-
-void CallMethodOnPlayerNode(
-	uint32_t remoteMethodId,
-	uint32_t nodeType,
-	uint32_t messageId,
-	const google::protobuf::Message& message,
-	Guid playerId);

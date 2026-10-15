@@ -49,6 +49,11 @@ Kafka:
     - 127.0.0.1:9092
 
 # 挑战邀请/结果 S2C 走 Kafka gate-{id} 推送时 writer 侧的一次同步 produce 超时(秒)。
+# 推送不受请求截止约束(有意,2026-10-15 记):ChallengePlayer / RespondChallenge 在提交点(挑战记录已原子写入)
+# 之后才推,推送用独立的 pushTimeout(5s,push.go),与本值一样大于上面的 Timeout 4000。所以可能出现「路由服已向
+# 客户端回超时、邀请随后仍推到目标」,推送失败的 cleanup 也可能在截止之后执行。记录在截止前已合法提交,这只是
+# 回执与推送的先后不一致,不破坏数据;改成跟随请求 ctx 会让「已提交的挑战」反而推不出去,代价更大。
+# 见 docs/design/client-request-ordering.md §5。
 KafkaWriteTimeoutSeconds: 5
 
 # matcher loop 扫队列的间隔(毫秒)。

@@ -517,7 +517,8 @@ func (l *GuildLogic) ApplyJoinGuild(ctx context.Context, req *pb.ApplyJoinGuildR
 	return &pb.ApplyJoinGuildResponse{}, nil
 }
 
-// CancelGuildApplication:撤回自己的一条申请。撤回从不推送(只影响申请人自己看得到的列表)。
+// CancelGuildApplication:撤回自己的一条申请。撤回从不推送(申请人手上有回包;审批人只是待审数少一条,
+// 不值得一条在线推送)。落地恢复摘要照常 bump,两边都给,见函数末尾。
 func (l *GuildLogic) CancelGuildApplication(ctx context.Context, req *pb.CancelGuildApplicationRequest) (*pb.CancelGuildApplicationResponse, error) {
 	actor, _, tip, err := l.clientWrite(ctx)
 	if err != nil {
@@ -539,11 +540,28 @@ func (l *GuildLogic) CancelGuildApplication(ctx context.Context, req *pb.CancelG
 	if tip, err := l.mapWriteErr(ctx, actor, guildID, 0, err); err != nil || tip != nil {
 		return &pb.CancelGuildApplicationResponse{ErrorMessage: tip}, err
 	}
-	// 摘要只给申请人本人。审批人的待审数同样少了一条,但 CancelApplication 不回审批人集合
-	// (改 data 层不在本批范围;为此在提交后多读一次帮会快照又是每次撤回一次额外的读):
-	// 审批人的待审数由他们打开帮会界面时的拉取覆盖,偏差方向是"多显示一条已撤回的申请",点开列表即消失。
+	// 摘要(landing-recovery-sync-digest.md §3.3 表第 6、7 行):申请人本人的申请列表少了一行 → GUILD_APPLICATION;
+	// 审批人(长老 / 帮主)的待审数(GuildInfo.pending_application_count)也少了一条 → GUILD。后者若不 bump,
+	// 审批人在传送 / 离线期间有人撤回,落地后 GUILD 没变、不会重拉,待审数与红点会一直多显示一条(违反 L-1)。
 	l.bumpSync([]uint64{actor}, scenepb.SyncDomain_SYNC_DOMAIN_GUILD_APPLICATION)
+	l.bumpCancelReviewers(ctx, guildID, actor)
 	return &pb.CancelGuildApplicationResponse{}, nil
+}
+
+// bumpCancelReviewers 在撤回申请提交之后给目标帮的审批人 bump GUILD(待审数少了一条)。
+//
+// CancelApplication 的事务不回审批人集合,这里在提交之后读一次帮会(GetGuild 走 cache-aside;撤回是低频操作,
+// 正常是一次缓存命中)。取不到就只记日志、不影响回包:撤回已经成功,漏掉的一次由审批人打开帮会界面时的拉取兜底
+// (§3.5 第 5 条)。帮会已不存在(并发解散)时 GetGuild 回 nil,reviewersIn(nil) 为空,什么都不发 —— 解散本身已给全帮 bump。
+func (l *GuildLogic) bumpCancelReviewers(ctx context.Context, guildID, applicant uint64) {
+	g, err := l.repo.GetGuild(ctx, guildID)
+	if err != nil {
+		// go-zero 的 logx 没有 Warn 级别:用 Error 级 + "WARN" 前缀(同 playersync 的写法)。
+		logx.WithContext(ctx).Errorf("[guild] WARN load guild %d after application cancel by %d failed, reviewers not bumped: %v",
+			guildID, applicant, err)
+		return
+	}
+	l.bumpSync(reviewersIn(g), scenepb.SyncDomain_SYNC_DOMAIN_GUILD)
 }
 
 // ListMyGuildApplications:申请人视角的待审列表。读 RPC 要会话(列表是本人私有信息),但不查合服闸门 ——

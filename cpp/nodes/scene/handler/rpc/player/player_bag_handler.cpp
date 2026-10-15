@@ -11,12 +11,6 @@
 
 namespace
 {
-	// 失败码统一写全局 tip 实体,由生成层 TRANSFER_ERROR_MESSAGE 搬进响应并清空
-	void SetTip(uint32_t err)
-	{
-		tlsEcs.globalRegistry.get_or_emplace<TipInfoMessage>(tlsEcs.GlobalEntity()).set_id(err);
-	}
-
 	// 穿 / 脱 / 强化 / 镶嵌 / 取下成功之后把人物背包与装备栏的全量带回去,客户端整体覆盖两份缓存。
 	//
 	// 走到这里时操作已经生效,不存在"回滚"这回事。任何一份快照建不出来(两层不一致等)都不发半份:
@@ -35,7 +29,7 @@ namespace
 		{
 			response.clear_bag();
 			response.clear_equipment();
-			SetTip(result);
+			response.mutable_error_message()->set_id(result);
 			return false;
 		}
 		return true;
@@ -50,7 +44,7 @@ void SceneBagClientPlayerHandler::GetBag(entt::entity player,const ::GetBagReque
 const auto result = PlayerBagSystem::BuildSnapshot(player, request->bag_type(), *response->mutable_bag());
     if (result != kSuccess) {
         response->clear_bag();
-        tlsEcs.globalRegistry.get_or_emplace<TipInfoMessage>(tlsEcs.GlobalEntity()).set_id(result);
+        response->mutable_error_message()->set_id(result);
     }
 ///<<< END WRITING YOUR CODE
 
@@ -64,7 +58,7 @@ bool changed = false;
     const auto result = PlayerBagSystem::Sort(player, request->bag_type(), *response->mutable_bag(), changed);
     if (result != kSuccess) {
         response->clear_bag();
-        tlsEcs.globalRegistry.get_or_emplace<TipInfoMessage>(tlsEcs.GlobalEntity()).set_id(result);
+        response->mutable_error_message()->set_id(result);
         return;
     }
     response->set_changed(changed);
@@ -79,12 +73,12 @@ void SceneBagClientPlayerHandler::EquipItem(entt::entity player,const ::EquipIte
 	// 规则(等级 / 职业 / 选槽 / 战斗中与冻结中拒绝)全在 PlayerEquipSystem,这里只做传输层的事。
 	if (request->item_id() == 0)
 	{
-		SetTip(kInvalidParameter);
+		response->mutable_error_message()->set_id(kInvalidParameter);
 		return;
 	}
 	if (const auto err = PlayerEquipSystem::Equip(player, request->item_id()); err != kSuccess)
 	{
-		SetTip(err);
+		response->mutable_error_message()->set_id(err);
 		return;
 	}
 	ReplyInventoryAndEquipment(player, *response);
@@ -98,12 +92,12 @@ void SceneBagClientPlayerHandler::UnequipItem(entt::entity player,const ::Unequi
 ///<<< BEGIN WRITING YOUR CODE
 	if (request->item_id() == 0)
 	{
-		SetTip(kInvalidParameter);
+		response->mutable_error_message()->set_id(kInvalidParameter);
 		return;
 	}
 	if (const auto err = PlayerEquipSystem::Unequip(player, request->item_id()); err != kSuccess)
 	{
-		SetTip(err);
+		response->mutable_error_message()->set_id(err);
 		return;
 	}
 	ReplyInventoryAndEquipment(player, *response);
@@ -120,21 +114,21 @@ void SceneBagClientPlayerHandler::GmGrantItem(entt::entity player,const ::GmGran
 	// 见 docs/design/equipment-attributes.md §4.6 与 cpp/nodes/gate/SECURITY.md §3。
 	if (scene_gm_guard::RejectGmClientRpc("GmGrantItem"))
 	{
-		SetTip(kFeatureUnavailable);
+		response->mutable_error_message()->set_id(kFeatureUnavailable);
 		return;
 	}
 	// 参数范围(config 是否存在、数量上限)由 PlayerEquipSystem::GmGrantItem 统一判,不在这里抄第二份。
 	if (const auto err = PlayerEquipSystem::GmGrantItem(player, request->config_id(), request->count());
 		err != kSuccess)
 	{
-		SetTip(err);
+		response->mutable_error_message()->set_id(err);
 		return;
 	}
 	if (const auto result = PlayerBagSystem::BuildSnapshot(player, kInventory, *response->mutable_bag());
 		result != kSuccess)
 	{
 		response->clear_bag();
-		SetTip(result);
+		response->mutable_error_message()->set_id(result);
 	}
 ///<<< END WRITING YOUR CODE
 
@@ -148,13 +142,13 @@ void SceneBagClientPlayerHandler::EnhanceEquip(entt::entity player,const ::Enhan
 	// 见 docs/design/equipment-enhance-inlay.md §4.4。
 	if (request->item_id() == 0)
 	{
-		SetTip(kInvalidParameter);
+		response->mutable_error_message()->set_id(kInvalidParameter);
 		return;
 	}
 	PlayerEquipSystem::EnhanceOutcome outcome;
 	if (const auto err = PlayerEquipSystem::Enhance(player, request->item_id(), outcome); err != kSuccess)
 	{
-		SetTip(err);
+		response->mutable_error_message()->set_id(err);
 		return;
 	}
 	// 走到这里金币与材料已经扣了。掷骰失败**不是错误**:不回 tip,两份快照照常带回,靠 success 区分 ——
@@ -175,14 +169,14 @@ void SceneBagClientPlayerHandler::InlayGem(entt::entity player,const ::InlayGemR
 	// socket 可以是 0(孔位号从 0 起),不在这里判;孔位是否存在、宝石是否合适由 PlayerEquipSystem 判。
 	if (request->item_id() == 0 || request->gem_config_id() == 0)
 	{
-		SetTip(kInvalidParameter);
+		response->mutable_error_message()->set_id(kInvalidParameter);
 		return;
 	}
 	if (const auto err = PlayerEquipSystem::InlayGem(player, request->item_id(), request->socket(),
 													 request->gem_config_id());
 		err != kSuccess)
 	{
-		SetTip(err);
+		response->mutable_error_message()->set_id(err);
 		return;
 	}
 	ReplyInventoryAndEquipment(player, *response);
@@ -196,13 +190,13 @@ void SceneBagClientPlayerHandler::RemoveGem(entt::entity player,const ::RemoveGe
 ///<<< BEGIN WRITING YOUR CODE
 	if (request->item_id() == 0)
 	{
-		SetTip(kInvalidParameter);
+		response->mutable_error_message()->set_id(kInvalidParameter);
 		return;
 	}
 	if (const auto err = PlayerEquipSystem::RemoveGem(player, request->item_id(), request->socket());
 		err != kSuccess)
 	{
-		SetTip(err);
+		response->mutable_error_message()->set_id(err);
 		return;
 	}
 	ReplyInventoryAndEquipment(player, *response);

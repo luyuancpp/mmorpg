@@ -14,7 +14,7 @@ void SceneMissionClientPlayerHandler::GetMissionList(entt::entity player,const :
 {
 ///<<< BEGIN WRITING YOUR CODE
 const auto result = PlayerMissionReadSystem::BuildList(player, *response);
-    if (result != kSuccess) tlsEcs.globalRegistry.get_or_emplace<TipInfoMessage>(tlsEcs.GlobalEntity()).set_id(result);
+    if (result != kSuccess) response->mutable_error_message()->set_id(result);
 ///<<< END WRITING YOUR CODE
 
 }
@@ -25,7 +25,7 @@ void SceneMissionClientPlayerHandler::AcceptMission(entt::entity player,const ::
 ///<<< BEGIN WRITING YOUR CODE
 auto result = PlayerMissionSystem::Accept(player, request->scope(), request->mission_id(), TimeSystem::NowMillisecondsUTC());
     if (result == kSuccess) result = PlayerMissionReadSystem::BuildList(player, *response);
-    if (result != kSuccess) tlsEcs.globalRegistry.get_or_emplace<TipInfoMessage>(tlsEcs.GlobalEntity()).set_id(result);
+    if (result != kSuccess) response->mutable_error_message()->set_id(result);
 ///<<< END WRITING YOUR CODE
 
 }
@@ -36,7 +36,7 @@ void SceneMissionClientPlayerHandler::ClaimMissionReward(entt::entity player,con
 ///<<< BEGIN WRITING YOUR CODE
 auto result = PlayerMissionSystem::ClaimReward(player, request->scope(), request->mission_id());
     if (result == kSuccess) result = PlayerMissionReadSystem::BuildList(player, *response);
-    if (result != kSuccess) tlsEcs.globalRegistry.get_or_emplace<TipInfoMessage>(tlsEcs.GlobalEntity()).set_id(result);
+    if (result != kSuccess) response->mutable_error_message()->set_id(result);
 ///<<< END WRITING YOUR CODE
 
 }

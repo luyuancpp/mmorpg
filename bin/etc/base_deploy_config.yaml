@@ -228,7 +228,7 @@ GrpcClient:
     SceneManagerNodeService: 10000     # scene_manager_service.yaml Timeout 8000(归属查询 1500 + Kafka 写 5000 + 1500)
     DataServiceNodeService: 4000       # data_service.yaml 没写 Timeout = go-zero 默认 2000(RpcServerConf default=2000),+2000 余量;号段 fetchTimeout 由此派生为 5s
     ClientRpcRouterNodeService: 8000   # client_rpc_router.yaml Timeout 6000(> ForwardTimeoutMs 5000)
-    MatchNodeService: 7000             # match_service.yaml Timeout 5000(gate 直连模式)
-    LoginNodeService: 12000            # login.yaml Timeout 10000(gate 直连模式;09-29 由笔误 100000 改正,原 deadline 102000)
+    MatchNodeService: 7000             # match_service.yaml Timeout 4000(10-14 由 5000 降,client-request-ordering.md O10;gate 直连模式,仍 ≥ +2000)
+    LoginNodeService: 12000            # login.yaml Timeout 4000(10-14 由 10000 降,同上;gate 直连模式,仍 ≥ +2000。09-29 由笔误 100000 改正,原 deadline 102000)
     BattleNodeService: 5000            # C++ battle gRPC 同步处理,无服务端超时(gate 直连模式)
     EtcdNodeService: 5000              # etcd 无服务端超时;须 < etcd_service 的 Txn 看门狗 / LeaseGrant 重试 10s

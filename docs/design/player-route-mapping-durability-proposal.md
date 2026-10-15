@@ -849,7 +849,7 @@ gRPC code 的集合与今天相同:OK、AlreadyExists、FailedPrecondition、Una
 | H7 | 新增 `route_tool tidb-prepare`(§7 与偏离第 8 条之外的新入口) | 预切要真实 zone 清单,迁移拿不到;运维可重放 | 多一个要记得跑的步骤;K8s 上依赖第 1b 批并进主程序;漏跑只影响性能 |
 | H8 | 对 `player_route` 也预切(原任务只点了围栏) | 不预切,片前缀在首日不生效 | Region 数 ≈ 63 + 63 + 8·Z + 8·S + Z(2026-10-13 行片改 64 之后:行数据与 `idx_route_updated` 每片一段;`idx_route_home` / `idx_route_storage` 每个 zone / 落点值只切 8 个点,即每 8 片一段,见下「行片 16 → 64」。16 片时是 15 + 15 + 16·Z + 16·S + Z),空 Region 靠 `merge_option=deny` 永久留住;Z 上百时 `idx_route_home` 的空 Region 仍以千计,届时可把语句生成改成每 zone 只切 `(z,0,0)`(只改 `route_tidb.go`) |
 | H9 | 显式排序规则(`utf8mb4_bin` / `ascii_bin`;`route_reconcile.leader` 由 utf8mb4 改 ascii) | 两种引擎默认不同,建表前改最便宜 | 与 MySQL 现状默认的 `utf8mb4_0900_ai_ci` 不同;这些列都是标识符,逐字节比较是正确语义 |
-| H10 | 建池探针 P5(2026-10-14,P4 的同一个回滚事务里再插两行按当前模数合法的行) | 模数建表后改不了,按另一个模数建的表能一路通过迁移、形状守卫与 P4 | 每次建池再多 2 条 `INSERT`;正确的库上这两行真的插入(未提交)、持锁到回滚,63 / 64 号玩家的 W1 与并发建池会短暂排队;redis 模式不建 store、认不出。详见下「正向探针 P5」 |
+| H10 | 建池探针 P5(2026-10-14,P4 的同一个回滚事务里再插两行按当前模数合法的行) | 模数建表后改不了,按另一个模数建的表能一路通过迁移、形状守卫与 P4 | 每次建池再多 2 条 `INSERT`;正确的库上这两行真的插入(未提交)、持锁到回滚,63 / 64 号玩家的 W1 与并发建池会短暂排队;探针键缺席时三方以上并发建池可能 1213,建池整事务有界重跑(2026-10-15 补);redis 模式不建 store、认不出。详见下「正向探针 P5」 |
 
 **风险(HR)**
 
@@ -976,13 +976,13 @@ Region 总数 ≈ 63 + 63 + 8·Z + 8·S + Z。行数据与 `idx_route_updated` �
 - 成功或 1062 → 该行被接受。1062 = 库里已有这一行。CHECK 生效的表上已有的行都满足它,所以撞键同样说明该行在表的模数下合法,与引擎先判 CHECK 还是先判撞键无关(CHECK 被关掉期间写进来的行除外,属 HR2)。号段从 1 发号,63 / 64 号是开服后最早的真实玩家,撞键在生产上是常态;
 - 3819 且点名 `chk_route_shard` → `ErrRouteShardModulusMismatch`,拒建 store。文案:表的行片模数与二进制不一致;确认无数据后按 HR4 DROP 五张路由表再 `-migrate`;不要改常量迁就旧表;
 - 1142 → 与 P4 同一条权限提示(两步都是回滚的 INSERT,不新增权限要求);
-- 3819 点名别的约束、1205、其它任何错误 → 原样包装,拒建 store(fail-closed)。
+- 3819 点名别的约束、1205、其它任何错误 → 原样包装,拒建 store(fail-closed)。其中 1213 / 9007 由建池整事务有界重跑(2026-10-15 补,见下「风险」的锁一条)。
 
 **作用范围**。只在建 route store 时跑:db_first 的 data_service(失败只记 ERROR、store 不装配,`Store.Required=true` 时拒启)、debugutil、route_tool(退出码 2,stderr 提示「只重跑 -migrate 修不好」)。**redis 模式的 data_service 不建这个 store**,它启动期的迁移照样会建出(或留着)旧模数的表而 P5 挡不住,所以上面「前置」的人工 `SHOW CREATE TABLE player_route` 核对保留,runbook §9.3 前置第 1 条同步。
 
 **风险与未核实项**
 
-- 锁:模数一致时两行真的插入(未提交),撞键时在已有行上取共享锁(InnoDB 的行为,凭记忆、未核实),都持到回滚(毫秒级)。63 / 64 号玩家的 W1 可能短暂排队;反过来他们的 W1 持锁超过会话锁等待 1s 时,这次建池以 1205 失败,重启即可。多副本同时建池在这两行上排队,各副本按同一顺序插,不成环。
+- 锁:模数一致时两行真的插入(未提交),撞键时在已有行上取共享锁(评审按 mysql-server 8.0.36 源码 `row0ins.cc` 核对,未实跑;真库用例 `TestRouteStore_ProbeKeysHeldByRealPlayers` 取证),都持到回滚(毫秒级)。63 / 64 号玩家的 W1 可能短暂排队;反过来他们的 W1 持锁超过会话锁等待 1s 时,这次建池以 1205 失败(不重试),重启即可。**2026-10-15 更正**(原句「多副本同时建池……不成环」不成立):各副本按同一顺序插这两行,两行之间不成环;但三个及以上会话并发插同一个**缺席**的探针键时(空表、首次部署,或 63 / 64 号还没建角),先插入者回滚后,其余等待者查重取的 S 锁会被继承成 gap 锁(MySQL 8.0 在 RC 下同样继承,评审按源码 `lock0lock.cc` 推断、未实跑),它们重新插入要插入意向锁,互等成 1213。现已按 1213 / 9007 对 P4 + P5 整个事务有界重跑(与写事务同一预算 `routeTxAttempts`、同一退避,受探针总时限 5s 约束;1205 仍不重试),见下「2026-10-15 评审修复」。
 - TiDB:P4 的语句失败之后同一事务能否继续用(语句级回滚)【未核实】,`TestRouteStore_TiDBClusteredShardsAndPresplit` 的建池就是取证。不成立时建池会以 P5 原样包装的错误失败(fail-closed),届时改成 P5 另开一个回滚事务,判别表不变。
 - 1062 的语义依赖「已有行都满足当前 CHECK」:CHECK 关掉期间写进来的错片行恰好占了探针键时会漏判,检测仍靠 audit 方向 A(HR2)。
 
@@ -1001,6 +1001,19 @@ Region 总数 ≈ 63 + 63 + 8·Z + 8·S + Z。行数据与 `idx_route_updated` �
 2. 真库(MySQL ≥ 8.0.16,环境变量同上面第 4 步):`go test -tags=integration -count=1 -v ./internal/store/... -run "Route"`,`TestRouteStore_ProbeRejectsTableBuiltWithAnotherShardModulus` 必须 PASS,其余建 route store 的真库用例(都经过 P5)不许因 P5 变红;第 1a 批验证里 routing 带 integration 的那一步按原样跑,`TestDBFirstRegister_RealStores` 必须 PASS(它经过 P5)。
 3. 可选真 TiDB:同「验证增量」,只跑 `-run "TiDB"`;建池失败时原样回报报错文本(P4 失败后事务是否可用未核实)。
 4. 前置纪律不变:任何可能建过路由表的库仍先 `SHOW CREATE TABLE player_route`。
+
+**2026-10-15 评审修复**(未编译、未测试,待 Codex 验证;AGENTS.md §10.1)
+
+| 问题 | 修法 | 位置 |
+|---|---|---|
+| 探针键缺席时三方以上并发建池可能 1213,P5 原样包装、不重试,这次建池直接失败(`Store.Required=false` 时该副本带着 nil 的 route store 跑到重启) | `runRouteTx` 的循环体抽成自由函数 `retryRouteTx`(计数器可传 nil),`newRouteStoreFromDB` 用它包住 P4 + P5:只认 1213 / 9007,每次重开事务,退避与写事务相同,受探针总时限约束;1205 与其它错误立即返回 | `store/route_store.go` |
+| 模数不一致时只有 route_tool 改了提示,db_first 的 data_service 与 debugutil 仍无条件提示「重跑 -migrate」 | 分流收进 store 包的 `OpenRouteStoreHint`,三处共用;route_tool 私有的 `openRouteStoreHint` 删除,纯函数用例 `TestOpenRouteStoreHintByCause` 移到 store 包(名字不变) | `store/route_store.go`、`svc/servicecontext.go`、`cmd/debugutil/debugutil.go`、`cmd/route_tool/main.go` 与 `main_test.go` |
+| 生产常态(63 / 64 号已在库,P5 撞 1062 后继续)与持锁时的 1205 没有真库取证 | 按 `% 16` 建的表 seed 64 号后仍被认出、seed 行不变;新真库用例 `TestRouteStore_ProbeKeysHeldByRealPlayers`(两行都在 → 建池通过、行不变;另一事务 FOR UPDATE 持 (0, 64) → 1205 原样包装、不重试,放锁后建池通过);真 TiDB 用例登记 63 / 64 号后再建一个 store | `store/route_store_integration_test.go` |
+| `placement/route.go` 常量注释与容量模型状态注描述的仍是「没有 P5 时」的失败形态 | 注释改为「建池由 P5 拒绝、redis 模式认不出」;容量模型 §4.1 状态注追加 2026-10-15 补注(原句不回改) | `shared/placement/route.go`、`docs/design/capacity-model-hok-scale.md` |
+
+另补契约用例 `TestNewRouteStoreProbeRetriesLockConflict`:首行 / 次行 1213 重跑后建池,语句序列与实参逐条钉住;连续 `routeTxAttempts` 次 1213 建池失败、关池,`errors.As` 取得出 1213;退避途中 ctx 结束即停、不再开事务。
+
+验证增量(接在上面「交 Codex 的验证」之后,口径不变):第 1 步的 `-run` 已覆盖新用例(`NewRouteStore`、`OpenRouteStoreHint`);不带 `-run` 的那一次加上 `./internal/svc/... ./cmd/debugutil/...`,`go vet` 也加上这两处(它们改了调用)。第 2 步 `TestRouteStore_ProbeKeysHeldByRealPlayers` 必须 PASS,原样回报它日志里的耗时。第 3 步真 TiDB 上建第二个 store 失败时,原样回报报错文本。
 
 **Java 版(AGENTS.md §12)**:服务端内部存储的启动探针,不涉及客户端契约,不需要同批改;Java 版的 D1 仍是「待做」。做等价的「库为真源」目录时若同样用片前缀 + CHECK,建议在启动时同样实测模数。
 

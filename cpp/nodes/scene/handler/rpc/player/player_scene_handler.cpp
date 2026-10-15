@@ -2,6 +2,7 @@
 #include "player_scene_handler.h"
 
 ///<<< BEGIN WRITING YOUR CODE
+#include "engine/core/type_define/player_guid_comp.h"
 
 #include "node/system/node/node.h"
 #include "table/proto/tip/scene_error_tip.pb.h"
@@ -20,26 +21,14 @@
 #include "player/system/player_landing.h"
 #include "battle/system/player_battle.h"
 
-namespace
-{
-	// 拒绝码必须写进 TLS 的 TipInfoMessage,不能直接写 response->error_message:
-	// 生成的 CallMethod 在 handler 返回后执行 TRANSFER_ERROR_MESSAGE,用 TLS 那份**整体覆盖**
-	// response 的 error_message。直接写 response 的码会被一个空 tip 盖掉,客户端看到的是"成功"。
-	// (本文件 EnterScene 原先的 7 处拒绝就是这样全部失效的。)写法照 player_attribute_handler.cpp。
-	// helper 只能放在文件头这个守护段里:守护段之外的手写内容 regen 时会整段丢失。
-	void SetTip(uint32_t err)
-	{
-		tlsEcs.globalRegistry.get_or_emplace<TipInfoMessage>(tlsEcs.GlobalEntity()).set_id(err);
-	}
-} // namespace
 ///<<< END WRITING YOUR CODE
 
 void SceneSceneClientPlayerHandler::EnterScene(entt::entity player,const ::EnterSceneC2SRequest* request,
 	::EnterSceneC2SResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	const auto* g = tlsEcs.actorRegistry.try_get<Guid>(player);
-	LOG_TRACE << "EnterSceneC2S request received for player: " << (g ? *g : 0)
+	const auto* g = tlsEcs.actorRegistry.try_get<PlayerGuidComp>(player);
+	LOG_TRACE << "EnterSceneC2S request received for player: " << (g ? g->value : 0)
 		<< ", scene_info: " << request->scene_info().ShortDebugString();
 
 	auto game_node_type = gNode->GetNodeInfo().scene_node_type();
@@ -47,7 +36,7 @@ void SceneSceneClientPlayerHandler::EnterScene(entt::entity player,const ::Enter
 		game_node_type == eSceneNodeType::kSceneSceneCrossNode)
 	{
 		LOG_ERROR << "EnterSceneC2S request rejected due to server type: " << game_node_type;
-		SetTip(kEnterSceneServerType);
+		response->mutable_error_message()->set_id(kEnterSceneServerType);
 		return;
 	}
 
@@ -55,8 +44,8 @@ void SceneSceneClientPlayerHandler::EnterScene(entt::entity player,const ::Enter
 	// 结算落地摘除 InBattleComp 前,玩家必须留在当前场景节点接收结算事件。
 	if (PlayerBattleSystem::IsInBattle(player))
 	{
-		LOG_WARN << "[PlayerBattle] EnterSceneC2S rejected: player battle in progress, player_id=" << (g ? *g : 0);
-		SetTip(kEnterSceneFailed);
+		LOG_WARN << "[PlayerBattle] EnterSceneC2S rejected: player battle in progress, player_id=" << (g ? g->value : 0);
+		response->mutable_error_message()->set_id(kEnterSceneFailed);
 		return;
 	}
 
@@ -66,8 +55,8 @@ void SceneSceneClientPlayerHandler::EnterScene(entt::entity player,const ::Enter
 	// 放在镜像分支之前:冻结中的玩家同样不该去创建镜像。
 	if (PlayerLifecycleSystem::IsSceneChangeBusy(player))
 	{
-		LOG_INFO << "EnterSceneC2S rejected: scene change already in flight, player_id=" << (g ? *g : 0);
-		SetTip(kEnterSceneChangingScene);
+		LOG_INFO << "EnterSceneC2S rejected: scene change already in flight, player_id=" << (g ? g->value : 0);
+		response->mutable_error_message()->set_id(kEnterSceneChangingScene);
 		return;
 	}
 
@@ -76,7 +65,7 @@ void SceneSceneClientPlayerHandler::EnterScene(entt::entity player,const ::Enter
 	    && scene_info.mirror_config_id() <= 0)
 	{
 		LOG_ERROR << "EnterSceneC2S request rejected due to invalid scene_info: " << scene_info.ShortDebugString();
-		SetTip(kEnterSceneParamError);
+		response->mutable_error_message()->set_id(kEnterSceneParamError);
 		return;
 	}
 
@@ -94,13 +83,13 @@ void SceneSceneClientPlayerHandler::EnterScene(entt::entity player,const ::Enter
 	{
 		if (PlayerSceneSystem::RequestEnterMirrorScene(player, scene_info.mirror_config_id()))
 		{
-			LOG_INFO << "EnterSceneC2S: mirror request dispatched player=" << (g ? *g : 0)
+			LOG_INFO << "EnterSceneC2S: mirror request dispatched player=" << (g ? g->value : 0)
 			         << " mirror_config=" << scene_info.mirror_config_id();
 			return;
 		}
-		LOG_ERROR << "EnterSceneC2S: mirror dispatch failed player=" << (g ? *g : 0)
+		LOG_ERROR << "EnterSceneC2S: mirror dispatch failed player=" << (g ? g->value : 0)
 		          << " mirror_config=" << scene_info.mirror_config_id();
-		SetTip(kEnterSceneParamError);
+		response->mutable_error_message()->set_id(kEnterSceneParamError);
 		return;
 	}
 
@@ -109,8 +98,8 @@ void SceneSceneClientPlayerHandler::EnterScene(entt::entity player,const ::Enter
 		const auto current_scene_info = tlsEcs.sceneRegistry.try_get<SceneInfoComp>(current_scene_comp->sceneEntity);
 		if (current_scene_info && current_scene_info->scene_id() == scene_info.scene_id() && scene_info.scene_id() > 0)
 		{
-			LOG_WARN << "Player " << (g ? *g : 0) << " is already in the requested scene: " << scene_info.scene_id();
-			SetTip(kEnterSceneYouInCurrentScene);
+			LOG_WARN << "Player " << (g ? g->value : 0) << " is already in the requested scene: " << scene_info.scene_id();
+			response->mutable_error_message()->set_id(kEnterSceneYouInCurrentScene);
 			return;
 		}
 	}
@@ -118,8 +107,8 @@ void SceneSceneClientPlayerHandler::EnterScene(entt::entity player,const ::Enter
 	const auto* playerSessionPB = tlsEcs.actorRegistry.try_get<PlayerSessionSnapshotComp>(player);
 	if (!playerSessionPB)
 	{
-		LOG_ERROR << "EnterSceneC2S: PlayerSessionSnapshotComp missing for player " << (g ? *g : 0);
-		SetTip(kEnterSceneParamError);
+		LOG_ERROR << "EnterSceneC2S: PlayerSessionSnapshotComp missing for player " << (g ? g->value : 0);
+		response->mutable_error_message()->set_id(kEnterSceneParamError);
 		return;
 	}
 
@@ -144,7 +133,7 @@ void SceneSceneClientPlayerHandler::EnterScene(entt::entity player,const ::Enter
 		LOG_ERROR << "EnterSceneC2S: No SceneManager node available for player " << playerSessionPB->player_id();
 		// 一个 SceneManager 都没注册:是服务端暂时不可用,不是客户端参数错。与 EnterScene 传输失败
 		// (PlayerLifecycleSystem::DispatchEnterSceneTransportFailure)回的是同一个提示「服务器繁忙,请稍后再试」。
-		SetTip(kEnterSceneServerBusy);
+		response->mutable_error_message()->set_id(kEnterSceneServerBusy);
 		return;
 	}
 
@@ -249,12 +238,12 @@ void SceneSceneClientPlayerHandler::TravelToZone(entt::entity player,const ::Tra
 	// 跨 zone 场景传送入口(cross-zone-scene-travel.md CZ-7)。handler 只委托系统层:
 	// CZ-6 校验、冻结、存盘、交接全在 PlayerLifecycleSystem::RequestZoneTravel。
 	// 无错应答 = 已受理,不代表已到达:到达 = 客户端随后收到 RedirectToGate;
-	// 未成 = 随后收到 SendTipToClient(kZoneTravel*)且已解冻。拒绝码写 TLS tip(见文件头 SetTip)。
+	// 未成 = 随后收到 SendTipToClient(kZoneTravel*)且已解冻。拒绝码直接写本次应答。
 	if (const uint32_t tip = PlayerLifecycleSystem::RequestZoneTravel(player, request->target_zone_id(),
 																	  request->scene_config_id());
 		tip != PlayerLifecycleSystem::kTravelAccepted)
 	{
-		SetTip(tip);
+		response->mutable_error_message()->set_id(tip);
 	}
 ///<<< END WRITING YOUR CODE
 
@@ -265,7 +254,7 @@ void SceneSceneClientPlayerHandler::GetSyncDigest(entt::entity player,const ::Ge
 {
 ///<<< BEGIN WRITING YOUR CODE
 	// 落地恢复取摘要(docs/design/landing-recovery-sync-digest.md §4.2)。handler 只委托:读 Redis、解析、
-	// 推 NotifySyncDigest 都在系统层。应答类型是 Empty,禁止 SetTip(全局 tip 会污染同节点下一条非 Empty 请求),
+	// 推 NotifySyncDigest 都在系统层。应答类型是 Empty,没有 error_message 字段,
 	// 所有失败都由系统层推一条 status = UNAVAILABLE 的 NotifySyncDigest。
 	PlayerLandingSystem::SendSyncDigest(player);
 ///<<< END WRITING YOUR CODE

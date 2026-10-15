@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <chrono>
 #include <functional>
 #include <memory>
 #include <unordered_map>
@@ -25,12 +26,14 @@
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "rpc/service_metadata/rpc_event_registry.h"
 #include "rpc/service_metadata/scene_service_metadata.h"
+#include "proto/common/base/empty.pb.h"
+#include "proto/scene/scene.pb.h"
 #include "rpc/service_metadata/player_lifecycle_service_metadata.h"
 #include "rpc/service_metadata/login_service_metadata.h"
 #include "rpc/service_metadata/client_player_common_service_metadata.h"
 #include "proto/common/base/node.pb.h"
 #include "node/system/node/node_util.h"
-#include "proto/common/event/node_event.pb.h"
+#include "node/system/node/node_events.h"
 #include "thread_context/node_context_manager.h"
 #include <session/manager/session_manager.h>
 #include <network/node_utils.h>
@@ -50,6 +53,47 @@ static void LogClientSecurityRejectionSampled(const char *reason, SessionId sess
 		LOG_WARN << "Unauthenticated client traffic rejected (sampled), reason=" << reason
 				 << ", latest_session_id=" << sessionId
 				 << ", rejected_total=" << rejectedCount;
+	}
+}
+
+// gate → scene 转发客户端请求类消息(内层非 Empty)的超时。不变式 I5(与 client-request-ordering.md §5 的 I4 同一条预算链):
+//   scene 侧下游最大 deadline(当前只有 SceneManager gRPC,10000;scene 不调 login)+ 1000 ≤ 本值 ≤ 客户端请求超时(15000)− 1000。
+// 今天 scene 的玩家 handler 都是同步完成的,超时只兜「scene 卡住 / 回包丢失」;取上限附近是为了以后玩家 handler
+// 延后完成(等下游)时不必再改。超时 = 结果未知:回带请求 id 的 1003,不重发。
+constexpr std::chrono::milliseconds kGateToSceneClientCallTimeout{12000};
+
+// scene 对一条客户端消息的回包 / 失败落到客户端(docs/design/muduo-rpc-channel.md §8.1)。
+// 会话按 (session_id, 会话代次) 复核:session_id 被新连接复用之后,旧会话迟到的回包不得写进新会话的 socket。
+static void OnSceneClientMessageCallDone(SessionId sessionId, uint64_t incarnation, uint64_t clientRequestId,
+										 uint32_t innerMessageId, const RpcStatus &status,
+										 const std::shared_ptr<ProcessClientPlayerMessageResponse> &response)
+{
+	SessionInfo *session = gate_lane::FindLiveSession(sessionId, incarnation);
+	if (session == nullptr)
+	{
+		return; // 会话已关闭或号已复用:没有客户端可回(断线后的回包本来就无处可去)
+	}
+	if (!status.ok())
+	{
+		// 确定未执行(没发出去 / 对端派发前拒绝)或结果未知(超时 / 断连 / 关机):都回带请求 id 的 1003,
+		// 客户端不必干等自己的 15s 超时。结果未知时下游可能已执行,有副作用的请求靠业务侧栅栏与幂等兜底。
+		static uint64_t failedCount = 0;
+		if ((failedCount++ & 0x3FF) == 0)
+		{
+			LOG_WARN << "[TCP Node] scene call failed (sampled): status=" << status.name()
+					 << ", remote_error=" << status.remoteError() << ", message_id=" << innerMessageId
+					 << ", failed_total=" << failedCount;
+		}
+		gate_lane::SendEnvelope(*session, clientRequestId, innerMessageId, kServiceUnavailable);
+		return;
+	}
+	if (!response->has_message_content())
+	{
+		return; // scene 早返回、没有应答内容:与改造前一致,不下发
+	}
+	if (const auto clientConn = session->conn.lock())
+	{
+		GetGateCodec().send(clientConn, response->message_content());
 	}
 }
 
@@ -83,32 +127,25 @@ static std::optional<entt::entity> PickRandomNode(uint32_t nodeType)
 	return candidates[dis(gen)];
 }
 
-static inline uint64_t GetEffectiveNodeId(
+static inline entt::entity GetEffectiveNodeEntity(
 	const SessionInfo &session,
 	uint32_t nodeType)
 {
-	// Despite the name, this is the integral form of an entt::entity, not a
-	// business node_id. The handshake layer (registration_manager /
-	// gate_event_handler) always stores `entt::to_integral(entity)` here.
-	const auto storedEntityInt = session.GetEntityId(nodeType);
-	if (storedEntityInt == SessionInfo::kInvalidEntityId)
+	// 节点句柄保留版本位，只能在对应节点类型的 registry 中验证。
+	const auto storedEntity = session.GetNodeEntity(nodeType);
+	if (storedEntity == entt::null)
 	{
-		return storedEntityInt;
+		return entt::null;
 	}
 
 	auto &registry = tlsNodeContextManager.GetRegistry(nodeType);
-	const entt::entity storedEntity{storedEntityInt};
 	if (registry.valid(storedEntity))
 	{
-		return storedEntityInt;
+		return storedEntity;
 	}
 
-	// Post uuid-refactor there is no node_id -> entity fallback: when the
-	// stored entity has been destroyed it means the remote node is gone, and
-	// any re-registration will be surfaced through event handlers that refresh
-	// the session binding via entity integers. Returning kInvalidEntityId lets
-	// the caller short-circuit rather than forward to a phantom node.
-	return SessionInfo::kInvalidEntityId;
+	// 已销毁的节点必须等注册事件重新绑定，不能用旧 index 猜测继任节点。
+	return entt::null;
 }
 
 // SessionDetails 是 gate 递给 Go 服务的会话身份(gRPC metadata x-session-detail-bin,
@@ -142,7 +179,7 @@ static SessionDetails BuildSessionDetails(const SessionId sessionId, const Guid 
 // 返回被选中的路由服节点实体整数;本地尚未发现任何路由服实例(启动窗口 / 路由服全部下线)返回 nullopt。
 // 调用方决定后果:路由 lane 回客户端带请求 id 的 kServiceUnavailable;断线通知没有客户端可回,只留痕。
 // 路由 lane 经 gate_lane::SetRouterSender 注入本函数(client_request_lane.h)。
-static std::optional<uint64_t> SendRawViaRouter(const ClientRequest &request, const std::string &sessionDetailsBin)
+static std::optional<entt::entity> SendRawViaRouter(const ClientRequest &request, const std::string &sessionDetailsBin)
 {
 	const auto routerNode = PickRandomNode(eNodeType::ClientRpcRouterNodeService);
 	if (!routerNode)
@@ -171,7 +208,7 @@ static std::optional<uint64_t> SendRawViaRouter(const ClientRequest &request, co
 		muduoChannel != nullptr && *muduoChannel)
 	{
 		gate_router_muduo::SendForward(**muduoChannel, forwardRequest, sessionDetailsBin);
-		return static_cast<uint64_t>(entt::to_integral(*routerNode));
+		return *routerNode;
 	}
 	client_rpc_router::SendClientRpcRouterForward(
 		routerRegistry,
@@ -179,7 +216,7 @@ static std::optional<uint64_t> SendRawViaRouter(const ClientRequest &request, co
 		forwardRequest,
 		{kSessionBinMetaKey},
 		{sessionDetailsBin});
-	return static_cast<uint64_t>(entt::to_integral(*routerNode));
+	return *routerNode;
 }
 
 // 不经路由 lane 的发送(gate 合成的断线通知):SessionDetails 的 gate_call_seq 留 0,回包不归 lane 认领。
@@ -202,7 +239,7 @@ RpcClientSessionHandler::RpcClientSessionHandler(ProtobufCodec &codec,
 	messageDispatcher.registerMessageCallback<ClientTokenVerifyRequest>(
 		std::bind(&RpcClientSessionHandler::DispatchTokenVerify, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
-	tlsEcs.dispatcher.sink<OnNodeRemoveEvent>().connect<&RpcClientSessionHandler::OnNodeRemoveEventHandler>(*this);
+	nodeRemovedSubscription_ = tlsEcs.dispatcher.sink<OnNodeRemoveEvent>().connect<&RpcClientSessionHandler::OnNodeRemoveEventHandler>(*this);
 }
 
 // Scene node binding must be set explicitly by scene manager (e.g. EnterScene).
@@ -218,27 +255,27 @@ std::optional<entt::entity> ResolveSessionTargetNode(SessionId sessionId, uint32
 
 	auto &session = sessionIt->second;
 
-	if (!session.HasEntityId(nodeType))
+	if (!session.HasNodeEntity(nodeType))
 	{
 		LOG_ERROR << "No node bound for nodeType: " << nodeType << ", session id: " << sessionId;
 		return std::nullopt;
 	}
 
 	const auto &registry = tlsNodeContextManager.GetRegistry(nodeType);
-	const auto effectiveEntityInt = GetEffectiveNodeId(session, nodeType);
-	entt::entity nodeEntity = entt::entity{effectiveEntityInt};
+	const auto effectiveNodeEntity = GetEffectiveNodeEntity(session, nodeType);
+	const auto nodeEntity = effectiveNodeEntity;
 	if (!registry.valid(nodeEntity))
 	{
 		LOG_ERROR << "Bound node is invalid. nodeType: " << nodeType
 				  << ", session id: " << sessionId
-				  << ", stored_entity_int=" << session.GetEntityId(nodeType);
-		session.SetEntityId(nodeType, SessionInfo::kInvalidEntityId);
+				  << ", stored_entity_int=" << entt::to_integral(session.GetNodeEntity(nodeType));
+		session.SetNodeEntity(nodeType, entt::null);
 		return std::nullopt;
 	}
 
-	if (effectiveEntityInt != session.GetEntityId(nodeType))
+	if (effectiveNodeEntity != session.GetNodeEntity(nodeType))
 	{
-		session.SetEntityId(nodeType, effectiveEntityInt);
+		session.SetNodeEntity(nodeType, effectiveNodeEntity);
 	}
 
 	return nodeEntity;
@@ -430,15 +467,16 @@ void RpcClientSessionHandler::HandleConnectionDisconnection(const muduo::net::Tc
 	if (sessionFound)
 	{
 		// Notify Scene to exit the player immediately (saves state and stops broadcasting).
-		if (sessionIt->second.HasEntityId(SceneNodeService))
+		if (sessionIt->second.HasNodeEntity(SceneNodeService))
 		{
-			const auto sceneEntityId = sessionIt->second.GetEntityId(SceneNodeService);
-			sceneNodeId = sceneEntityId;
-			auto &sceneRegistry = tlsNodeContextManager.GetRegistry(SceneNodeService);
-			entt::entity sceneEntity{sceneEntityId};
-			if (sceneRegistry.valid(sceneEntity))
+			const auto sceneEntityId = sessionIt->second.GetNodeEntity(SceneNodeService);
+
+			auto &sceneNodeRegistry = tlsNodeContextManager.GetRegistry(SceneNodeService);
+			const auto sceneEntity = sceneEntityId;
+			if (sceneNodeRegistry.valid(sceneEntity))
 			{
-				const auto *rpcClient = sceneRegistry.try_get<RpcClientPtr>(sceneEntity);
+				if (const auto* info = sceneNodeRegistry.try_get<NodeInfo>(sceneEntity)) sceneNodeId = info->node_id();
+				const auto *rpcClient = sceneNodeRegistry.try_get<RpcClientPtr>(sceneEntity);
 				if (rpcClient && *rpcClient)
 				{
 					ProcessClientPlayerMessageRequest exitMsg;
@@ -452,8 +490,8 @@ void RpcClientSessionHandler::HandleConnectionDisconnection(const muduo::net::Tc
 						exitMsg.set_player_id(playerId);
 					}
 					exitMsg.mutable_message_content()->set_message_id(ScenePlayerExitGameMessageId);
-					(*rpcClient)->CallRemoteMethod(SceneProcessClientPlayerMessageMessageId, exitMsg);
-					sceneNotified = true;
+					// 单向:会话随后就 erase,回包无处可去。返回值只用于日志(未连接时为 false)。
+					sceneNotified = (*rpcClient)->SendRequest<SceneProcessClientPlayerMessageRpc>(exitMsg);
 				}
 			}
 		}
@@ -477,7 +515,12 @@ void RpcClientSessionHandler::HandleConnectionDisconnection(const muduo::net::Tc
 		loginpb::LoginNodeDisconnectRequest request;
 		request.set_session_id(sessionId);
 		// 未绑定玩家时 player_id 保持 0(见上面的注释:Login 会在 playerID==0 门禁早退)。
-		const SessionDetails sessionDetails = BuildSessionDetails(sessionId, hasBoundPlayer ? playerId : 0);
+		SessionDetails sessionDetails = BuildSessionDetails(sessionId, hasBoundPlayer ? playerId : 0);
+		// 必须带会话代次:login 会话栅栏按 (gate_instance_id, session_incarnation) 记闭合标记,
+		// 代次为 0 时 Close 整段跳过,经 lane 发出的 Login / EnterGame 建起的栅栏就永远关不上
+		// (client-request-ordering.md §6.2)。shouldNotifyLogin 蕴含 sessionFound,且此处在
+		// 下面的 OnSessionClosing / erase 之前,sessionIt 有效。gate_call_seq 留 0:回包不归 lane。
+		sessionDetails.set_session_incarnation(sessionIt->second.incarnation);
 
 		if (gate_router_mode::IsRouterModeEnabled())
 		{
@@ -704,7 +747,7 @@ void HandleTcpNodeMessage(const SessionInfo &session, const RpcClientMessagePtr 
 	auto &handlerMeta = gRpcMethodRegistry[request->message_id()];
 
 	// Player sent message without being logged in — invalid node binding
-	entt::entity targetNodeEntity = entt::entity{GetEffectiveNodeId(session, handlerMeta.targetNodeType)};
+	const auto targetNodeEntity = GetEffectiveNodeEntity(session, handlerMeta.targetNodeType);
 	auto &registry = tlsNodeContextManager.GetRegistry(handlerMeta.targetNodeType);
 	if (!registry.valid(targetNodeEntity))
 	{
@@ -746,7 +789,27 @@ void HandleTcpNodeMessage(const SessionInfo &session, const RpcClientMessagePtr 
 	}
 	message.mutable_message_content()->set_id(request->id());
 	message.mutable_message_content()->set_message_id(request->message_id());
-	(*tcpNode)->CallRemoteMethod(SceneProcessClientPlayerMessageMessageId, message);
+
+	// 内层方法的响应是 Empty(MoveStart / MoveStop / MoveSync 等):单向发送,scene 不回包 —— 线上与改造前逐字节相同
+	// (client-request-ordering.md O2 的前提不变),不登记在途、不推失败回执,gate 最热的路径上零新增开销。
+	const auto *innerResponse = handlerMeta.responseProto.get();
+	if (innerResponse == nullptr || innerResponse->GetDescriptor() == ::Empty::GetDescriptor())
+	{
+		(*tcpNode)->SendRequest<SceneProcessClientPlayerMessageRpc>(message);
+		LOG_TRACE << "Sent one-way message to game node, session id: " << sessionId << ", message id: " << request->message_id();
+		return;
+	}
+
+	// 其余走每次调用回调(docs/design/muduo-rpc-channel.md §8.1):回包与失败都在这里落到客户端,
+	// 上下文在发出时捕获,不再靠 scene 回显 session_id 去查全局回包表。
+	(*tcpNode)->CallMethod<SceneProcessClientPlayerMessageRpc>(
+		message,
+		[sessionId, incarnation = session.incarnation, clientRequestId = request->id(), innerMessageId = request->message_id()](
+			const RpcStatus &status, const std::shared_ptr<ProcessClientPlayerMessageResponse> &response)
+		{
+			OnSceneClientMessageCallDone(sessionId, incarnation, clientRequestId, innerMessageId, status, response);
+		},
+		RpcCallOptions{kGateToSceneClientCallTimeout});
 
 	LOG_TRACE << "Sent message to game node, session id: " << sessionId << ", message id: " << request->message_id();
 }
@@ -785,7 +848,7 @@ void HandleGrpcNodeMessage(SessionId sessionId, const RpcClientMessagePtr &reque
 	if (rpcHandlerMeta.sender)
 	{
 		// 路由规则(保持向后兼容):
-		//   1. 会话对目标 nodeType 已有绑定(SessionInfo.SetEntityId 过)→ 一律走绑定实体;
+		//   1. 会话对目标 nodeType 已有绑定(SessionInfo.SetNodeEntity 过)→ 一律走绑定实体;
 		//   2. 无绑定时,有状态节点(Scene)不能随机路由 —— 玩家实体只在特定 scene 节点上,
 		//      随机挑一个只会得到"玩家不存在";ResolveSessionTargetNode 对无绑定会话返回 nullopt,
 		//      统一落到下面的错误应答;
@@ -795,7 +858,7 @@ void HandleGrpcNodeMessage(SessionId sessionId, const RpcClientMessagePtr &reque
 		std::optional<entt::entity> node;
 		const bool requiresSessionBinding =
 			rpcHandlerMeta.targetNodeType == eNodeType::SceneNodeService;
-		if (requiresSessionBinding || sessionIt->second.HasEntityId(rpcHandlerMeta.targetNodeType))
+		if (requiresSessionBinding || sessionIt->second.HasNodeEntity(rpcHandlerMeta.targetNodeType))
 		{
 			node = ResolveSessionTargetNode(sessionId, rpcHandlerMeta.targetNodeType);
 		}
@@ -1130,16 +1193,15 @@ void RpcClientSessionHandler::OnNodeRemoveEventHandler(const OnNodeRemoveEvent &
 {
 	// 路由服节点摘除:事件在 DestroyEntity 之前、同一 loop 线程触发;实体上的 CompletionQueue 随后析构,
 	// 其上的在途调用永远不会再有回调(F29)。当作失败处理,让这些会话的 lane 继续往下走。
-	if (pb.node_type() == eNodeType::ClientRpcRouterNodeService)
+	if (pb.nodeType == eNodeType::ClientRpcRouterNodeService)
 	{
-		gate_lane::OnRouterNodeRemoved(pb.entity());
+		gate_lane::OnRouterNodeRemoved(pb.node);
 	}
 
-	auto &registry = tlsNodeContextManager.GetRegistry(pb.node_type());
 	for (auto &session : tlsSessionManager.sessions())
 	{
-		if (session.second.GetEntityId(pb.node_type()) != pb.entity())
+		if (session.second.GetNodeEntity(pb.nodeType) != pb.node)
 			continue;
-		session.second.SetEntityId(pb.node_type(), SessionInfo::kInvalidEntityId);
+		session.second.SetNodeEntity(pb.nodeType, entt::null);
 	}
 }

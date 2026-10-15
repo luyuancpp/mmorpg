@@ -4,8 +4,10 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
+#include <cstdio>
 #include <cstring>
 #include <iterator>
+#include <memory>
 #include <optional>
 #include <set>
 #include <string>
@@ -13,6 +15,7 @@
 #include <utility>
 #include <vector>
 
+#include "muduo/base/Logging.h"
 #include "network/broadcast_target_codec.h"
 #include "node/system/node/node_util.h"
 #include "services/battle/settlement/settlement_outbox.h"
@@ -333,6 +336,82 @@ TEST(NodeEntityLookup, ZoneScopedLookupDoesNotAliasAcrossZones)
 }
 
 // ===========================================================================
+// 对端带来的 node_type 越界(docs/design/ecs-entt-misuse-audit-20261015.md F093 / C007)
+// ===========================================================================
+//
+// gate RoutePlayerMessage、scene RoutePlayerStringMsg、NodeHandshakeManager 的握手应答处理
+// 都拿对端带来的 node_type 选 registry。以前 NodeContextManager::GetRegistry 只有 assert,
+// Release 下 NDEBUG 抹掉它,越界读写 registries_ 之外的内存。
+// 现在分两类:外部输入走 TryGetRegistry(越界返回 nullptr,由入口拒绝);GetRegistry 只给可信内部调用方,
+// 越界是编程错误,任何构建下都 LOG_FATAL。
+// 修复前:TryGetRegistry / IsValidNodeType 不存在,第一个用例编译不过;死亡测试见下方各自的说明。
+
+namespace
+{
+	// 对端可能发来的非法 node_type:刚好越界一格、越界很多、int32 上限、uint32 上限。
+	constexpr uint32_t kForeignNodeTypes[] = {kNodeTypeCount, kNodeTypeCount + 1, 0x7fffffffu, UINT32_MAX};
+} // namespace
+
+TEST(NodeContextManagerBounds, TryGetRegistryRejectsOutOfRangeNodeType)
+{
+	// 用独立实例,不碰 tlsNodeContextManager,用例之间互不影响。
+	const auto manager = std::make_unique<NodeContextManager>();
+	for (const auto nodeType : kForeignNodeTypes)
+	{
+		EXPECT_FALSE(NodeContextManager::IsValidNodeType(nodeType)) << "node_type=" << nodeType;
+		EXPECT_EQ(manager->TryGetRegistry(nodeType), nullptr) << "node_type=" << nodeType;
+	}
+	// 合法值必须拿到与 GetRegistry 同一个 registry,入口改用 TryGetRegistry 后行为不变。
+	for (uint32_t nodeType = 0; nodeType < kNodeTypeCount; ++nodeType)
+	{
+		EXPECT_TRUE(NodeContextManager::IsValidNodeType(nodeType)) << "node_type=" << nodeType;
+		EXPECT_EQ(manager->TryGetRegistry(nodeType), &manager->GetRegistry(nodeType)) << "node_type=" << nodeType;
+	}
+}
+
+#if GTEST_HAS_DEATH_TEST
+
+namespace
+{
+	// muduo 默认把日志写到 stdout,死亡测试只比对子进程的 stderr。在死亡语句里(只在子进程执行)把日志
+	// 改到 stderr,才能断言子进程死于 NodeContextManager 自己的越界检查,而不是死于别的原因。
+	void RouteMuduoLogToStderr()
+	{
+		muduo::Logger::setOutput([](const char *msg, int len) {
+			std::fwrite(msg, 1, static_cast<std::size_t>(len), stderr);
+			std::fflush(stderr);
+		});
+	}
+} // namespace
+
+// GetRegistry 与全局实体三件套只给可信内部调用方用:越界是编程错误,任何构建下都必须当场终止,
+// 不能返回替身 registry 让调用方带着它照常往下跑(建 RpcClient、发起连接这类副作用照样会发生)。
+// NodeUtils 的节点查找内部走 GetRegistry,同样不接受未校验的 node_type:这正是对端输入的入口
+// 必须先 TryGetRegistry、再做查找的原因。
+// 修复前为红:Release 下 NDEBUG 抹掉 assert,越界读写 registries_ / globalEntities_ 之外的内存,子进程不死;
+// Debug 下子进程死于 assert,但 assert 文本里没有「NodeContextManager::<函数名>:」,正则不匹配。
+TEST(NodeContextManagerBoundsDeathTest, OutOfRangeNodeTypeIsFatalInEveryBuild)
+{
+	const auto manager = std::make_unique<NodeContextManager>();
+	for (const auto nodeType : kForeignNodeTypes)
+	{
+		EXPECT_DEATH({ RouteMuduoLogToStderr(); (void)manager->GetRegistry(nodeType); },
+					 "NodeContextManager::GetRegistry: nodeType=")
+			<< "node_type=" << nodeType;
+	}
+	EXPECT_DEATH({ RouteMuduoLogToStderr(); manager->SetGlobalEntity(UINT32_MAX, entt::null); },
+				 "NodeContextManager::SetGlobalEntity: nodeType=");
+	EXPECT_DEATH({ RouteMuduoLogToStderr(); (void)manager->GetGlobalEntity(UINT32_MAX); },
+				 "NodeContextManager::GetGlobalEntity: nodeType=");
+	EXPECT_DEATH({ RouteMuduoLogToStderr(); (void)manager->GetOrCreateGlobalEntity(UINT32_MAX); },
+				 "NodeContextManager::GetOrCreateGlobalEntity: nodeType=");
+	EXPECT_DEATH({ RouteMuduoLogToStderr(); (void)NodeUtils::FindNodeEntityByZoneAndNodeId(kNodeTypeCount, 1, 1); },
+				 "NodeContextManager::GetRegistry: nodeType=");
+}
+
+#endif // GTEST_HAS_DEATH_TEST
+
+// ===========================================================================
 // R07:结算发件箱的重投判定
 // ===========================================================================
 
@@ -495,15 +574,15 @@ TEST(SceneRouteEntry, NodeChangeForwardFailureIsNotRecoveredByRedelivery)
 {
     SessionInfo session;
     session.sceneId = 2001;
-    session.SetEntityId(eNodeType::SceneNodeService, 7);
+    session.SetNodeEntity(eNodeType::SceneNodeService, entt::entity{7});
     std::vector<uint32_t> attempted;
-    const auto first = gate_scene_route::RebindSceneNode(session, 9);
+    const auto first = gate_scene_route::RebindSceneNode(session, entt::entity{9});
     ASSERT_EQ(SceneNodeChange::kChanged, first);
     EXPECT_FALSE(gate_scene_route::ApplyRoute(session, 2001, first,
                                               [&](uint32_t type) { attempted.push_back(type); return false; }));
     EXPECT_EQ((std::vector<uint32_t>{0}), attempted);
     // 同一事件重投:指向已是 9,判成未变化,不再转发。
-    const auto redelivered = gate_scene_route::RebindSceneNode(session, 9);
+    const auto redelivered = gate_scene_route::RebindSceneNode(session, entt::entity{9});
     EXPECT_EQ(SceneNodeChange::kUnchanged, redelivered);
     EXPECT_TRUE(gate_scene_route::ApplyRoute(session, 2001, redelivered,
                                              [&](uint32_t type) { attempted.push_back(type); return true; }));
@@ -532,42 +611,59 @@ TEST(SceneRouteEntry, RebindSceneNodeReportsChangeAgainstPreviousBinding)
 {
     SessionInfo session;
     // 从未绑定:旧指向无效,算换了节点(首登是否转发由 ApplyRoute 的 sceneId != 0 把关)。
-    EXPECT_EQ(SceneNodeChange::kChanged, gate_scene_route::RebindSceneNode(session, 7));
-    EXPECT_EQ(7u, session.GetEntityId(eNodeType::SceneNodeService));
+    EXPECT_EQ(SceneNodeChange::kChanged, gate_scene_route::RebindSceneNode(session, entt::entity{7}));
+    EXPECT_EQ(entt::entity{7}, session.GetNodeEntity(eNodeType::SceneNodeService));
     // 同实体:重复路由。
-    EXPECT_EQ(SceneNodeChange::kUnchanged, gate_scene_route::RebindSceneNode(session, 7));
+    EXPECT_EQ(SceneNodeChange::kUnchanged, gate_scene_route::RebindSceneNode(session, entt::entity{7}));
     // 不同实体:换了节点,指向被改写。
-    EXPECT_EQ(SceneNodeChange::kChanged, gate_scene_route::RebindSceneNode(session, 9));
-    EXPECT_EQ(9u, session.GetEntityId(eNodeType::SceneNodeService));
-    EXPECT_EQ(SceneNodeChange::kUnchanged, gate_scene_route::RebindSceneNode(session, 9));
+    EXPECT_EQ(SceneNodeChange::kChanged, gate_scene_route::RebindSceneNode(session, entt::entity{9}));
+    EXPECT_EQ(entt::entity{9}, session.GetNodeEntity(eNodeType::SceneNodeService));
+    EXPECT_EQ(SceneNodeChange::kUnchanged, gate_scene_route::RebindSceneNode(session, entt::entity{9}));
 }
 
-// scene 节点被摘除时 gate 会把会话指向置为 kInvalidEntityId(OnNodeRemoveEventHandler)。
+// scene 节点被摘除时 gate 会把会话指向置为 entt::null(OnNodeRemoveEventHandler)。
 // 之后无论改派到新节点,还是同一进程重启后恰好复用了同一个实体号,都必须算换了节点、重新进场。
 TEST(SceneRouteEntry, RebindSceneNodeAfterNodeRemovalCountsAsChanged)
 {
     SessionInfo session;
     session.sceneId = 2001;
-    session.SetEntityId(eNodeType::SceneNodeService, 7);
-    session.SetEntityId(eNodeType::SceneNodeService, SessionInfo::kInvalidEntityId);
-    const auto change = gate_scene_route::RebindSceneNode(session, 7);
+    session.SetNodeEntity(eNodeType::SceneNodeService, entt::entity{7});
+    session.SetNodeEntity(eNodeType::SceneNodeService, entt::null);
+    const auto change = gate_scene_route::RebindSceneNode(session, entt::entity{7});
     EXPECT_EQ(SceneNodeChange::kChanged, change);
-    EXPECT_TRUE(session.HasEntityId(eNodeType::SceneNodeService));
+    EXPECT_TRUE(session.HasNodeEntity(eNodeType::SceneNodeService));
     std::vector<uint32_t> forwarded;
     ASSERT_TRUE(gate_scene_route::ApplyRoute(session, 2001, change,
                                              [&](uint32_t type) { forwarded.push_back(type); return true; }));
     EXPECT_EQ((std::vector<uint32_t>{0}), forwarded);
 }
 
+TEST(SceneRouteEntry, RecycledNodeIndexWithAnotherVersionCountsAsChanged)
+{
+    entt::registry nodes;
+    const auto previous = nodes.create();
+    SessionInfo session;
+    session.SetNodeEntity(eNodeType::SceneNodeService, previous);
+    nodes.destroy(previous);
+    const auto replacement = nodes.create();
+
+    ASSERT_EQ(entt::entt_traits<entt::entity>::to_entity(previous),
+              entt::entt_traits<entt::entity>::to_entity(replacement));
+    ASSERT_NE(previous, replacement);
+    EXPECT_FALSE(nodes.valid(session.GetNodeEntity(eNodeType::SceneNodeService)));
+    EXPECT_EQ(SceneNodeChange::kChanged, gate_scene_route::RebindSceneNode(session, replacement));
+    EXPECT_EQ(replacement, session.GetNodeEntity(eNodeType::SceneNodeService));
+}
+
 // 别的节点类型的指向不参与判定,也不被改写。
 TEST(SceneRouteEntry, RebindSceneNodeIgnoresOtherNodeTypes)
 {
     SessionInfo session;
-    session.SetEntityId(eNodeType::BattleNodeService, 7);
-    session.SetEntityId(eNodeType::SceneNodeService, 7);
-    EXPECT_EQ(SceneNodeChange::kUnchanged, gate_scene_route::RebindSceneNode(session, 7));
-    EXPECT_EQ(SceneNodeChange::kChanged, gate_scene_route::RebindSceneNode(session, 8));
-    EXPECT_EQ(7u, session.GetEntityId(eNodeType::BattleNodeService));
+    session.SetNodeEntity(eNodeType::BattleNodeService, entt::entity{7});
+    session.SetNodeEntity(eNodeType::SceneNodeService, entt::entity{7});
+    EXPECT_EQ(SceneNodeChange::kUnchanged, gate_scene_route::RebindSceneNode(session, entt::entity{7}));
+    EXPECT_EQ(SceneNodeChange::kChanged, gate_scene_route::RebindSceneNode(session, entt::entity{8}));
+    EXPECT_EQ(entt::entity{7}, session.GetNodeEntity(eNodeType::BattleNodeService));
 }
 
 TEST(SceneRouteEntry, RouteBeforeLoginBindingWaitsForLogin)
@@ -647,21 +743,21 @@ TEST(SceneRouteEntry, MissingRpcClientDoesNotConsumePendingLogin)
 TEST(SceneRouteEntry, CompareSceneNodeReportsChangeWithoutRebinding)
 {
     SessionInfo session;
-    session.SetEntityId(eNodeType::SceneNodeService, 7);
-    EXPECT_EQ(SceneNodeChange::kChanged, gate_scene_route::CompareSceneNode(session, 9));
-    EXPECT_EQ(7u, session.GetEntityId(eNodeType::SceneNodeService));
-    EXPECT_EQ(SceneNodeChange::kUnchanged, gate_scene_route::CompareSceneNode(session, 7));
+    session.SetNodeEntity(eNodeType::SceneNodeService, entt::entity{7});
+    EXPECT_EQ(SceneNodeChange::kChanged, gate_scene_route::CompareSceneNode(session, entt::entity{9}));
+    EXPECT_EQ(entt::entity{7}, session.GetNodeEntity(eNodeType::SceneNodeService));
+    EXPECT_EQ(SceneNodeChange::kUnchanged, gate_scene_route::CompareSceneNode(session, entt::entity{7}));
 
     // 节点被摘除后指向置无效:再路由回同一个实体号也算换了节点。
-    session.SetEntityId(eNodeType::SceneNodeService, SessionInfo::kInvalidEntityId);
-    EXPECT_EQ(SceneNodeChange::kChanged, gate_scene_route::CompareSceneNode(session, 7));
+    session.SetNodeEntity(eNodeType::SceneNodeService, entt::null);
+    EXPECT_EQ(SceneNodeChange::kChanged, gate_scene_route::CompareSceneNode(session, entt::entity{7}));
 
     // 别的节点类型的指向不参与判定,也不被改写。
     SessionInfo battleOnly;
-    battleOnly.SetEntityId(eNodeType::BattleNodeService, 7);
-    EXPECT_EQ(SceneNodeChange::kChanged, gate_scene_route::CompareSceneNode(battleOnly, 7));
-    EXPECT_EQ(7u, battleOnly.GetEntityId(eNodeType::BattleNodeService));
-    EXPECT_FALSE(battleOnly.HasEntityId(eNodeType::SceneNodeService));
+    battleOnly.SetNodeEntity(eNodeType::BattleNodeService, entt::entity{7});
+    EXPECT_EQ(SceneNodeChange::kChanged, gate_scene_route::CompareSceneNode(battleOnly, entt::entity{7}));
+    EXPECT_EQ(entt::entity{7}, battleOnly.GetNodeEntity(eNodeType::BattleNodeService));
+    EXPECT_FALSE(battleOnly.HasNodeEntity(eNodeType::SceneNodeService));
 }
 
 // ===========================================================================
@@ -686,7 +782,7 @@ namespace
     }
 
     // (enterType, nodeEntityId, sceneId)
-    using ForwardCall = std::tuple<uint32_t, uint64_t, uint64_t>;
+    using ForwardCall = std::tuple<uint32_t, entt::entity, uint64_t>;
 
     // 按真实扫描的节奏驱动一笔欠账直到放弃:每轮 now = nextAttemptAt、++attempts、记一次同样的失败。
     // 返回每一轮尝试的时刻(相对 kT0 的毫秒);过程中顺带核对 nextAttemptAt 严格递增且不越过截止。
@@ -906,14 +1002,14 @@ TEST(SceneEntryAttempt, UndiscoveredNodeRetriesThenForwardsLoginOnce)
     session.pendingEnterGsType = 1;
     session.pendingSceneEntry = gate_scene_route::BeginPendingSceneEntry(SceneRouteTarget{42, 7, 1001}, kT0);
 
-    std::optional<uint64_t> resolvedEntity;
+    std::optional<entt::entity> resolvedEntity;
     std::vector<ForwardCall> calls;
     auto resolve = [&](const uint32_t nodeId)
     {
         EXPECT_EQ(7u, nodeId);
         return resolvedEntity;
     };
-    auto forward = [&](const uint32_t enterType, const uint64_t nodeEntity, const uint64_t sceneId)
+    auto forward = [&](const uint32_t enterType, const entt::entity nodeEntity, const uint64_t sceneId)
     {
         calls.emplace_back(enterType, nodeEntity, sceneId);
         return SceneForwardResult::kSent;
@@ -923,21 +1019,21 @@ TEST(SceneEntryAttempt, UndiscoveredNodeRetriesThenForwardsLoginOnce)
               gate_scene_route::AttemptPendingSceneEntry(session, kT0, resolve, forward));
     EXPECT_EQ(0u, session.sceneId);
     EXPECT_EQ(1u, session.pendingEnterGsType);
-    EXPECT_FALSE(session.HasEntityId(eNodeType::SceneNodeService));
+    EXPECT_FALSE(session.HasNodeEntity(eNodeType::SceneNodeService));
     ASSERT_TRUE(session.pendingSceneEntry.has_value());
     EXPECT_EQ(1u, session.pendingSceneEntry->attempts);
     EXPECT_EQ(SceneForwardResult::kNodeNotFound, session.pendingSceneEntry->lastFailure);
     EXPECT_TRUE(calls.empty());
 
-    resolvedEntity = 55;
+    resolvedEntity = entt::entity{55};
     const auto secondAt = session.pendingSceneEntry->nextAttemptAt;
     EXPECT_EQ(SceneEntryAttempt::kApplied,
               gate_scene_route::AttemptPendingSceneEntry(session, secondAt, resolve, forward));
-    EXPECT_EQ((std::vector<ForwardCall>{ForwardCall{1u, 55u, 1001u}}), calls);
+    EXPECT_EQ((std::vector<ForwardCall>{ForwardCall{1u, entt::entity{55}, 1001u}}), calls);
     EXPECT_EQ(1001u, session.sceneId);
     EXPECT_EQ(0u, session.pendingEnterGsType);
     EXPECT_FALSE(session.pendingSceneEntry.has_value());
-    EXPECT_EQ(55u, session.GetEntityId(eNodeType::SceneNodeService));
+    EXPECT_EQ(entt::entity{55}, session.GetNodeEntity(eNodeType::SceneNodeService));
 
     // 欠账已清:再尝试是 no-op,不会重发。
     EXPECT_EQ(SceneEntryAttempt::kApplied,
@@ -957,8 +1053,8 @@ TEST(SceneEntryAttempt, NotConnectedKeepsLoginTypeAndSendsExactlyOnceAfterReconn
                                                  SceneForwardResult::kHandshakePending,
                                                  SceneForwardResult::kSent};
     std::vector<uint32_t> forwardedTypes;
-    auto resolve = [](uint32_t) { return std::optional<uint64_t>{9}; };
-    auto forward = [&](const uint32_t enterType, uint64_t, uint64_t)
+    auto resolve = [](uint32_t) { return std::optional<entt::entity>{entt::entity{9}}; };
+    auto forward = [&](const uint32_t enterType, entt::entity, uint64_t)
     {
         forwardedTypes.push_back(enterType);
         if (forwardedTypes.size() > script.size())
@@ -994,12 +1090,12 @@ TEST(SceneEntryAttempt, SameSceneOnAnotherNodeIsResentAfterForwardFailure)
 {
     SessionInfo session;
     session.sceneId = 2001;
-    session.SetEntityId(eNodeType::SceneNodeService, 7);
+    session.SetNodeEntity(eNodeType::SceneNodeService, entt::entity{7});
     session.pendingSceneEntry = gate_scene_route::BeginPendingSceneEntry(SceneRouteTarget{0, 9, 2001}, kT0);
 
     std::vector<uint32_t> forwardedTypes;
-    auto resolve = [](uint32_t) { return std::optional<uint64_t>{9}; };
-    auto forward = [&](const uint32_t enterType, uint64_t, uint64_t)
+    auto resolve = [](uint32_t) { return std::optional<entt::entity>{entt::entity{9}}; };
+    auto forward = [&](const uint32_t enterType, entt::entity, uint64_t)
     {
         forwardedTypes.push_back(enterType);
         return forwardedTypes.size() == 1 ? SceneForwardResult::kNotConnected : SceneForwardResult::kSent;
@@ -1007,13 +1103,13 @@ TEST(SceneEntryAttempt, SameSceneOnAnotherNodeIsResentAfterForwardFailure)
 
     EXPECT_EQ(SceneEntryAttempt::kRetryLater,
               gate_scene_route::AttemptPendingSceneEntry(session, kT0, resolve, forward));
-    EXPECT_EQ(7u, session.GetEntityId(eNodeType::SceneNodeService)); // 没提交
+    EXPECT_EQ(entt::entity{7}, session.GetNodeEntity(eNodeType::SceneNodeService)); // 没提交
     ASSERT_TRUE(session.pendingSceneEntry.has_value());
     EXPECT_EQ(SceneEntryAttempt::kApplied,
               gate_scene_route::AttemptPendingSceneEntry(session, session.pendingSceneEntry->nextAttemptAt, resolve,
                                                          forward));
     EXPECT_EQ((std::vector<uint32_t>{0, 0}), forwardedTypes);
-    EXPECT_EQ(9u, session.GetEntityId(eNodeType::SceneNodeService));
+    EXPECT_EQ(entt::entity{9}, session.GetNodeEntity(eNodeType::SceneNodeService));
 }
 
 // 失败窗口内 sceneId 与指向都不动:断线 ExitGame 与客户端消息仍发往旧节点(I5)。
@@ -1022,15 +1118,15 @@ TEST(SceneEntryAttempt, FailedAttemptsNeverCommitTheNewRoute)
     SessionInfo session;
     session.playerId = 42;
     session.sceneId = 2001;
-    session.SetEntityId(eNodeType::SceneNodeService, 7);
+    session.SetNodeEntity(eNodeType::SceneNodeService, entt::entity{7});
     session.pendingSceneEntry = gate_scene_route::BeginPendingSceneEntry(SceneRouteTarget{42, 9, 3001}, kT0);
 
     const std::vector<SceneForwardResult> script{SceneForwardResult::kHandshakePending,
                                                  SceneForwardResult::kNotConnected,
                                                  SceneForwardResult::kSent};
     std::vector<uint32_t> forwardedTypes;
-    auto resolve = [](uint32_t) { return std::optional<uint64_t>{9}; };
-    auto forward = [&](const uint32_t enterType, uint64_t, uint64_t)
+    auto resolve = [](uint32_t) { return std::optional<entt::entity>{entt::entity{9}}; };
+    auto forward = [&](const uint32_t enterType, entt::entity, uint64_t)
     {
         forwardedTypes.push_back(enterType);
         if (forwardedTypes.size() > script.size())
@@ -1047,14 +1143,14 @@ TEST(SceneEntryAttempt, FailedAttemptsNeverCommitTheNewRoute)
         EXPECT_EQ(SceneEntryAttempt::kRetryLater,
                   gate_scene_route::AttemptPendingSceneEntry(session, now, resolve, forward));
         EXPECT_EQ(2001u, session.sceneId);
-        EXPECT_EQ(7u, session.GetEntityId(eNodeType::SceneNodeService));
+        EXPECT_EQ(entt::entity{7}, session.GetNodeEntity(eNodeType::SceneNodeService));
         ASSERT_TRUE(session.pendingSceneEntry.has_value());
         now = session.pendingSceneEntry->nextAttemptAt;
     }
     EXPECT_EQ(SceneEntryAttempt::kApplied,
               gate_scene_route::AttemptPendingSceneEntry(session, now, resolve, forward));
     EXPECT_EQ(3001u, session.sceneId);
-    EXPECT_EQ(9u, session.GetEntityId(eNodeType::SceneNodeService));
+    EXPECT_EQ(entt::entity{9}, session.GetNodeEntity(eNodeType::SceneNodeService));
     EXPECT_EQ((std::vector<uint32_t>{0, 0, 0}), forwardedTypes);
 }
 
@@ -1063,12 +1159,12 @@ TEST(SceneEntryAttempt, DuplicateRouteNeedsNoForwardAndClearsDebt)
 {
     SessionInfo session;
     session.sceneId = 2001;
-    session.SetEntityId(eNodeType::SceneNodeService, 9);
+    session.SetNodeEntity(eNodeType::SceneNodeService, entt::entity{9});
     session.pendingEnterGsType = 0;
     session.pendingSceneEntry = gate_scene_route::BeginPendingSceneEntry(SceneRouteTarget{0, 9, 2001}, kT0);
 
-    auto resolve = [](uint32_t) { return std::optional<uint64_t>{9}; };
-    auto forward = [](uint32_t, uint64_t, uint64_t)
+    auto resolve = [](uint32_t) { return std::optional<entt::entity>{entt::entity{9}}; };
+    auto forward = [](uint32_t, entt::entity, uint64_t)
     {
         ADD_FAILURE() << "重复路由不应转发";
         return SceneForwardResult::kSent;
@@ -1083,19 +1179,19 @@ TEST(SceneEntryAttempt, GivesUpAtDeadlineAndLeavesDebtForCallerToLog)
 {
     SessionInfo session;
     session.sceneId = 2001;
-    session.SetEntityId(eNodeType::SceneNodeService, 7);
+    session.SetNodeEntity(eNodeType::SceneNodeService, entt::entity{7});
     session.pendingEnterGsType = 1;
     session.pendingSceneEntry = gate_scene_route::BeginPendingSceneEntry(SceneRouteTarget{0, 9, 3001}, kT0);
 
-    auto resolve = [](uint32_t) { return std::optional<uint64_t>{9}; };
-    auto forward = [](uint32_t, uint64_t, uint64_t) { return SceneForwardResult::kNotConnected; };
+    auto resolve = [](uint32_t) { return std::optional<entt::entity>{entt::entity{9}}; };
+    auto forward = [](uint32_t, entt::entity, uint64_t) { return SceneForwardResult::kNotConnected; };
     EXPECT_EQ(SceneEntryAttempt::kGiveUp,
               gate_scene_route::AttemptPendingSceneEntry(session, kT0 + gate_scene_route::kSceneEntryRetryBudget,
                                                          resolve, forward));
     ASSERT_TRUE(session.pendingSceneEntry.has_value());
     EXPECT_EQ(SceneForwardResult::kNotConnected, session.pendingSceneEntry->lastFailure);
     EXPECT_EQ(1u, session.pendingEnterGsType);
-    EXPECT_EQ(7u, session.GetEntityId(eNodeType::SceneNodeService));
+    EXPECT_EQ(entt::entity{7}, session.GetNodeEntity(eNodeType::SceneNodeService));
     EXPECT_EQ(2001u, session.sceneId);
 }
 
@@ -1104,16 +1200,16 @@ TEST(SceneEntryAttempt, ZeroSceneIdIsGivenUpWithoutTouchingSession)
 {
     SessionInfo session;
     session.sceneId = 1001;
-    session.SetEntityId(eNodeType::SceneNodeService, 7);
+    session.SetNodeEntity(eNodeType::SceneNodeService, entt::entity{7});
     session.pendingEnterGsType = 1;
     session.pendingSceneEntry = gate_scene_route::BeginPendingSceneEntry(SceneRouteTarget{0, 9, 0}, kT0);
 
     auto resolve = [](uint32_t)
     {
         ADD_FAILURE() << "无效路由不应解析节点";
-        return std::optional<uint64_t>{};
+        return std::optional<entt::entity>{};
     };
-    auto forward = [](uint32_t, uint64_t, uint64_t)
+    auto forward = [](uint32_t, entt::entity, uint64_t)
     {
         ADD_FAILURE() << "无效路由不应转发";
         return SceneForwardResult::kSent;
@@ -1123,7 +1219,7 @@ TEST(SceneEntryAttempt, ZeroSceneIdIsGivenUpWithoutTouchingSession)
     ASSERT_TRUE(session.pendingSceneEntry.has_value());
     EXPECT_EQ(SceneForwardResult::kInvalidRoute, session.pendingSceneEntry->lastFailure);
     EXPECT_EQ(1001u, session.sceneId);
-    EXPECT_EQ(7u, session.GetEntityId(eNodeType::SceneNodeService));
+    EXPECT_EQ(entt::entity{7}, session.GetNodeEntity(eNodeType::SceneNodeService));
     EXPECT_EQ(1u, session.pendingEnterGsType);
 }
 
@@ -1133,16 +1229,16 @@ TEST(SceneEntryAttempt, PlayerMismatchCancelsWithoutForwarding)
     SessionInfo session;
     session.playerId = 43;
     session.sceneId = 1001;
-    session.SetEntityId(eNodeType::SceneNodeService, 7);
+    session.SetNodeEntity(eNodeType::SceneNodeService, entt::entity{7});
     session.pendingEnterGsType = 1;
     session.pendingSceneEntry = gate_scene_route::BeginPendingSceneEntry(SceneRouteTarget{42, 9, 2001}, kT0);
 
     auto resolve = [](uint32_t)
     {
         ADD_FAILURE() << "角色不符不应解析节点";
-        return std::optional<uint64_t>{9};
+        return std::optional<entt::entity>{entt::entity{9}};
     };
-    auto forward = [](uint32_t, uint64_t, uint64_t)
+    auto forward = [](uint32_t, entt::entity, uint64_t)
     {
         ADD_FAILURE() << "角色不符不应转发";
         return SceneForwardResult::kSent;
@@ -1152,7 +1248,7 @@ TEST(SceneEntryAttempt, PlayerMismatchCancelsWithoutForwarding)
     ASSERT_TRUE(session.pendingSceneEntry.has_value());
     EXPECT_EQ(0u, session.pendingSceneEntry->attempts);
     EXPECT_EQ(1001u, session.sceneId);
-    EXPECT_EQ(7u, session.GetEntityId(eNodeType::SceneNodeService));
+    EXPECT_EQ(entt::entity{7}, session.GetNodeEntity(eNodeType::SceneNodeService));
     EXPECT_EQ(1u, session.pendingEnterGsType);
 }
 
@@ -1165,8 +1261,8 @@ TEST(SceneEntryAttempt, UnknownRoutedPlayerIsNotFenced)
     session.pendingSceneEntry = gate_scene_route::BeginPendingSceneEntry(SceneRouteTarget{0, 9, 2001}, kT0);
 
     int sends = 0;
-    auto resolve = [](uint32_t) { return std::optional<uint64_t>{9}; };
-    auto forward = [&](uint32_t, uint64_t, uint64_t)
+    auto resolve = [](uint32_t) { return std::optional<entt::entity>{entt::entity{9}}; };
+    auto forward = [&](uint32_t, entt::entity, uint64_t)
     {
         ++sends;
         return SceneForwardResult::kSent;
@@ -1190,7 +1286,7 @@ TEST(SceneEntryLateLogin, LoginBoundAfterCommittedRouteWhoseNodeWasRemovedRetrie
 {
     SessionInfo session;
     session.sceneId = 1001;
-    session.SetEntityId(eNodeType::SceneNodeService, SessionInfo::kInvalidEntityId);
+    session.SetNodeEntity(eNodeType::SceneNodeService, entt::null);
     session.lastSceneRoute = SceneRouteTarget{42, 7, 1001};
     session.playerId = 42;
     session.pendingEnterGsType = 1;
@@ -1199,8 +1295,8 @@ TEST(SceneEntryLateLogin, LoginBoundAfterCommittedRouteWhoseNodeWasRemovedRetrie
     ASSERT_TRUE(entry.has_value());
     session.pendingSceneEntry = *entry;
 
-    auto resolve = [](uint32_t) { return std::optional<uint64_t>{}; };
-    auto forward = [](uint32_t, uint64_t, uint64_t)
+    auto resolve = [](uint32_t) { return std::optional<entt::entity>{}; };
+    auto forward = [](uint32_t, entt::entity, uint64_t)
     {
         ADD_FAILURE() << "节点找不到时不应转发";
         return SceneForwardResult::kSent;
@@ -1218,12 +1314,12 @@ TEST(SceneEntryLateLogin, LoginBoundAfterCommittedRouteWhoseNodeWasRemovedRetrie
     EXPECT_EQ(1u, session.pendingEnterGsType);
 }
 
-// 同 uuid 重注册留下悬空实体号(HasEntityId 仍为 true):按 node_id 重新解析到新实体,以登录类型转发。
+// 同 uuid 重注册留下悬空实体号(HasNodeEntity 仍为 true):按 node_id 重新解析到新实体,以登录类型转发。
 TEST(SceneEntryLateLogin, LoginBoundAfterRouteToReRegisteredNodeResolvesByNodeId)
 {
     SessionInfo session;
-    session.SetEntityId(eNodeType::SceneNodeService, 7); // 已销毁的旧实体号
-    ASSERT_TRUE(session.HasEntityId(eNodeType::SceneNodeService));
+    session.SetNodeEntity(eNodeType::SceneNodeService, entt::entity{7}); // 已销毁的旧实体号
+    ASSERT_TRUE(session.HasNodeEntity(eNodeType::SceneNodeService));
     session.sceneId = 1001;
     session.lastSceneRoute = SceneRouteTarget{42, 3, 1001};
     session.playerId = 42;
@@ -1237,17 +1333,17 @@ TEST(SceneEntryLateLogin, LoginBoundAfterRouteToReRegisteredNodeResolvesByNodeId
     auto resolve = [](const uint32_t nodeId)
     {
         EXPECT_EQ(3u, nodeId);
-        return std::optional<uint64_t>{12};
+        return std::optional<entt::entity>{entt::entity{12}};
     };
-    auto forward = [&](const uint32_t enterType, const uint64_t nodeEntity, const uint64_t sceneId)
+    auto forward = [&](const uint32_t enterType, const entt::entity nodeEntity, const uint64_t sceneId)
     {
         calls.emplace_back(enterType, nodeEntity, sceneId);
         return SceneForwardResult::kSent;
     };
     EXPECT_EQ(SceneEntryAttempt::kApplied,
               gate_scene_route::AttemptPendingSceneEntry(session, kT0, resolve, forward));
-    EXPECT_EQ((std::vector<ForwardCall>{ForwardCall{1u, 12u, 1001u}}), calls);
-    EXPECT_EQ(12u, session.GetEntityId(eNodeType::SceneNodeService));
+    EXPECT_EQ((std::vector<ForwardCall>{ForwardCall{1u, entt::entity{12}, 1001u}}), calls);
+    EXPECT_EQ(entt::entity{12}, session.GetNodeEntity(eNodeType::SceneNodeService));
     EXPECT_EQ(0u, session.pendingEnterGsType);
 }
 
@@ -1369,7 +1465,7 @@ TEST(LoginGeneration, LateBindingResendCarriesNewGenerationAtForwardTime)
     session.playerId = kPlayerA;
     session.loginGeneration = kPreviousLoginGeneration;
     session.sceneId = 1001;
-    session.SetEntityId(eNodeType::SceneNodeService, 9);
+    session.SetNodeEntity(eNodeType::SceneNodeService, entt::entity{9});
     session.lastSceneRoute = SceneRouteTarget{kPlayerA, 7, 1001};
 
     ASSERT_TRUE(gate_scene_route::ApplyLoginBinding(session, kPlayerA, 2, kNewLoginGeneration, kLoginReplace));
@@ -1380,8 +1476,8 @@ TEST(LoginGeneration, LateBindingResendCarriesNewGenerationAtForwardTime)
     session.pendingSceneEntry = *entry;
 
     std::vector<StampedForward> stamped;
-    auto resolve = [](uint32_t) { return std::optional<uint64_t>{9}; };
-    auto forward = [&](const uint32_t enterType, uint64_t, uint64_t)
+    auto resolve = [](uint32_t) { return std::optional<entt::entity>{entt::entity{9}}; };
+    auto forward = [&](const uint32_t enterType, entt::entity, uint64_t)
     {
         stamped.emplace_back(enterType, session.loginGeneration);
         return SceneForwardResult::kSent;
@@ -1460,7 +1556,7 @@ TEST(LoginGeneration, LowerGenerationRouteIsStillForwarded)
     session.playerId = kPlayerA;
     session.loginGeneration = kNewLoginGeneration;
     session.sceneId = 1001;
-    session.SetEntityId(eNodeType::SceneNodeService, 9);
+    session.SetNodeEntity(eNodeType::SceneNodeService, entt::entity{9});
 
     const SceneRouteTarget travel{kPlayerA, 7, 2001};
     gate_scene_route::ApplyRouteIdentity(session, travel.playerId, 1, 5, /*loginGeneration=*/0);
@@ -1468,8 +1564,8 @@ TEST(LoginGeneration, LowerGenerationRouteIsStillForwarded)
 
     session.pendingSceneEntry = gate_scene_route::BeginPendingSceneEntry(travel, kT0);
     std::vector<StampedForward> stamped;
-    auto resolve = [](uint32_t) { return std::optional<uint64_t>{9}; };
-    auto forward = [&](const uint32_t enterType, uint64_t, uint64_t)
+    auto resolve = [](uint32_t) { return std::optional<entt::entity>{entt::entity{9}}; };
+    auto forward = [&](const uint32_t enterType, entt::entity, uint64_t)
     {
         stamped.emplace_back(enterType, session.loginGeneration);
         return SceneForwardResult::kSent;

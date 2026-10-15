@@ -65,6 +65,12 @@ class BattleClientEdge;
 class BattleRoomManager
 {
 public:
+    // 房间及重试回调捕获管理器 this,单例的地址必须固定。
+    BattleRoomManager(const BattleRoomManager&) = delete;
+    BattleRoomManager& operator=(const BattleRoomManager&) = delete;
+    BattleRoomManager(BattleRoomManager&&) = delete;
+    BattleRoomManager& operator=(BattleRoomManager&&) = delete;
+
     static BattleRoomManager &Instance();
 
     // ---- 房间生命周期回调(集群外入口 D82 / D85;main.cpp 装配,转发给 Agones GameServerLifecycle) ----
@@ -316,7 +322,7 @@ private:
     // 不能放玩家进一场连不上的战斗。expire_at_ms = room.deadlineMs(调用前必须已落到房间上)。
     // host/port 取 client_endpoint::ClientFacing(集群外入口 D78):client_endpoint 可用就用它,
     // 否则 required=false 时回落 endpoint,required=true(CLIENT_ENDPOINT_REQUIRED=1)时拒签。
-    // 只能在 loop 线程调用:ClientFacing 的 NodeInfo 取自 thread_local 的 gNode->GetNodeInfo()。
+    // NodeInfo 由 Node 持有、只在 loop 线程写;跨线程读写不同步,本函数仍只能在 loop 线程调用。
     bool BuildAssignment(const BattleRoom &room, uint64_t playerId, ::eBattleTicketRole role,
                          ::BattleAssignedS2C &out) const;
 

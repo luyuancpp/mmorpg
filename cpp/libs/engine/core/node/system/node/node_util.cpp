@@ -220,7 +220,7 @@ std::size_t NodeUtils::RemoveRpcSessionsBoundTo(const muduo::net::TcpConnectionP
 		// 先收集再删:不在正在迭代的视图上就地 remove,不依赖 EnTT 对"当前元素可删"的保证。
 		// 顺带把 weak 已过期(对端早已断开、组件却没摘)的会话一并清掉:它们已经不指向任何连接。
 		std::vector<entt::entity> bound;
-		for (const auto &[entity, session] : registry.view<RpcSession>().each())
+		for (const auto &[_, session] : registry.view<RpcSession>().each())
 		{
 			const auto sessionConn = session.connection.lock();
 			if (!sessionConn || sessionConn.get() == conn.get())
@@ -241,4 +241,22 @@ std::size_t NodeUtils::RemoveRpcSessionsBoundTo(const muduo::net::TcpConnectionP
 				 << conn->peerAddress().toIpPort();
 	}
 	return removed;
+}
+
+void NodeUtils::CloseAllRpcChannels()
+{
+	for (auto &registry : tlsNodeContextManager.GetAllRegistries())
+	{
+		for (const auto &[_, client] : registry.view<RpcClientPtr>().each())
+		{
+			if (client)
+			{
+				client->CloseChannel();
+			}
+		}
+		for (const auto &[_, session] : registry.view<RpcSession>().each())
+		{
+			session.CloseChannel();
+		}
+	}
 }

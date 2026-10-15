@@ -55,9 +55,6 @@
     <ClCompile Include="rpc_replies\register_handler.cpp">
       <Filter>rpc_replies</Filter>
     </ClCompile>
-    <ClCompile Include="rpc_replies\register_response_handler.cpp">
-      <Filter>rpc_replies</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="battle_admission_gate.h" />

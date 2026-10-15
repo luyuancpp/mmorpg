@@ -12,6 +12,10 @@ package data
 // 幂等也必须验:客户端重试、双击、Kafka 重投都会让 Block 被调第二次。第二次若占掉一个
 // 新名额,玩家的黑名单上限会被自己的重试吃光。
 //
+// Block 返回的 BlockEffect 是 logic 给被拉黑方 bump 落地摘要的唯一依据(landing-recovery-sync-digest.md §3.3):
+// 报多了,客户端循环拉黑陌生人就能在核心 Redis 上为任意 id 造摘要键;报少了,对方落地后漏拉(违反 L-1)。
+// 所以凡是能确定效果的用例都断言它的**精确值**,而不只是"成功"。
+//
 // 公共夹具(门控、schema、seed*、不变量断言)在 friend_repo_mysql_test.go。
 
 import (
@@ -29,9 +33,13 @@ func TestBlock_IsIdempotentAndDoesNotConsumeExtraSlot(t *testing.T) {
 	lim := defaultTestLimits()
 	lim.MaxBlocks = 1 // 名额恰好 1:重复拉黑若占新名额,第二次必然报满 —— 这条才有鉴别力
 
-	require.NoError(t, callBlock(ctx, repo, me, target, lim))
-	require.NoError(t, callBlock(ctx, repo, me, target, lim),
-		"重复拉黑同一人必须幂等成功:客户端重试 / 双击会走到这里")
+	effect, err := callBlockEffect(ctx, repo, me, target, lim)
+	require.NoError(t, err)
+	assert.Equal(t, BlockEffect{}, effect,
+		"拉黑陌生人:对方的好友列表与收件箱都没变,不得报告任何效果(否则可为任意 id 造摘要键)")
+	effect, err = callBlockEffect(ctx, repo, me, target, lim)
+	require.NoError(t, err, "重复拉黑同一人必须幂等成功:客户端重试 / 双击会走到这里")
+	assert.Equal(t, BlockEffect{}, effect, "重复拉黑同样没有对方可见的效果")
 
 	assert.Equal(t, int64(1), mustCount(t, ctx, db,
 		"SELECT COUNT(*) FROM friend_block WHERE player_id=?", me),
@@ -75,13 +83,18 @@ func TestBlock_DeletesFriendEdgesAndDecrementsCount(t *testing.T) {
 	// 先把 me 与两个人都变成好友:留一个无关好友(other)在场,
 	// 才能分辨"减了 1"和"把计数清成 0"这两种错。
 	seedPending(t, ctx, db, target, me)
-	require.NoError(t, repo.AcceptFriend(ctx, target, me, lim.MaxFriends))
+	require.NoError(t, callAcceptFriend(ctx, repo, target, me, lim.MaxFriends))
 	seedPending(t, ctx, db, other, me)
-	require.NoError(t, repo.AcceptFriend(ctx, other, me, lim.MaxFriends))
+	require.NoError(t, callAcceptFriend(ctx, repo, other, me, lim.MaxFriends))
 	require.Equal(t, int64(2), mustCount(t, ctx, db,
 		"SELECT friend_count FROM friend_capacity WHERE player_id=?", me))
 
-	require.NoError(t, callBlock(ctx, repo, me, target, lim))
+	effect, err := callBlockEffect(ctx, repo, me, target, lim)
+	require.NoError(t, err)
+	// 精确值:删了边 → EdgeRemoved;target→me 那条申请早已被 Accept 置成 accepted、me→target 从未有过,
+	// 所以 OutboundPendingRejected 必须为假(把终态行也数进去就会报成真)。
+	assert.Equal(t, BlockEffect{EdgeRemoved: true}, effect,
+		"拉黑好友:必须报告删了边(对方的好友列表变了),且不得报告不存在的出站申请")
 
 	// 双向边都要没:只删一个方向会让对方的好友列表里还留着我。
 	assert.Zero(t, mustCount(t, ctx, db,
@@ -102,10 +115,13 @@ func TestBlock_DeletesFriendEdgesAndDecrementsCount(t *testing.T) {
 
 	// 幂等第二次:已经没有边了,RowsAffected==0,计数**不得**再减(否则会减成负数 / 被夹到 0,
 	// 与真实边数脱节)。
-	require.NoError(t, callBlock(ctx, repo, me, target, lim))
+	effect, err = callBlockEffect(ctx, repo, me, target, lim)
+	require.NoError(t, err)
 	assert.Equal(t, int64(1), mustCount(t, ctx, db,
 		"SELECT friend_count FROM friend_capacity WHERE player_id=?", me),
 		"没有边可删时不得再减计数(必须按 RowsAffected 决定)")
+	assert.Equal(t, BlockEffect{}, effect,
+		"第二次没有删掉任何边,不得再报告 EdgeRemoved(重试 / 双击不该让对方的摘要再变一次)")
 	assertFriendInvariants(t, ctx, db)
 }
 
@@ -132,7 +148,11 @@ func TestBlock_CancelsPendingInBothDirections(t *testing.T) {
 	require.Zero(t, readRequestUpdatedMs(t, ctx, db, target, me), "前置条件:归零必须真的生效,否则下面的 NotZero 没有鉴别力")
 	require.Zero(t, readRequestUpdatedMs(t, ctx, db, me, target), "前置条件:归零必须真的生效,否则下面的 NotZero 没有鉴别力")
 
-	require.NoError(t, callBlock(ctx, repo, me, target, lim))
+	effect, err := callBlockEffect(ctx, repo, me, target, lim)
+	require.NoError(t, err)
+	// 我发给他的那条落在他的收件箱 → OutboundPendingRejected;两人不是好友 → 没有边可删。
+	assert.Equal(t, BlockEffect{OutboundPendingRejected: true}, effect,
+		"撤回了发给对方的申请:必须报告对方收件箱变了,且不得报告不存在的好友边")
 
 	// 断言**精确值**而不是"不等于 pending":置成 accepted(2) 同样能过 NotEqual,
 	// 却会让被拉黑的一对在历史里显示成"申请已通过"。
@@ -150,6 +170,30 @@ func TestBlock_CancelsPendingInBothDirections(t *testing.T) {
 	assertFriendInvariants(t, ctx, db)
 }
 
+// TestBlock_InboundPendingIsNotReportedAsPeerVisible:只有他发给我的申请时,Block 照样把它置 rejected,
+// 但那一行落在**我自己**的收件箱(GetPendingRequests 只列入站),对方的任何拉取结果都没变,
+// 所以 BlockEffect 必须是零值。
+//
+// 上一条用例两个方向都有 pending,区分不了"按 me→target 那一条报"与"任一方向改了行就报";
+// 后者会让"拉黑一个给我发过申请的陌生人"给对方 bump 一次 —— 被拉黑者的摘要无端变化,正是 §3.5 第 4 条要避免的。
+func TestBlock_InboundPendingIsNotReportedAsPeerVisible(t *testing.T) {
+	db, ctx := openFriendTestDB(t)
+	repo, _ := newFriendTestRepo(t, db)
+
+	const me, target uint64 = 34101, 34102
+	lim := defaultTestLimits()
+	seedPending(t, ctx, db, target, me) // 只有他申请我
+
+	effect, err := callBlockEffect(ctx, repo, me, target, lim)
+	require.NoError(t, err)
+	// 前置条件:入站那条确实被改了 —— 否则下面的零值断言在"⑥ 什么都没做"时也照绿。
+	require.Equal(t, testStatusRejected, readRequestStatus(t, ctx, db, target, me),
+		"前置条件:他发给我的 pending 必须已被置成 rejected")
+	assert.Equal(t, BlockEffect{}, effect,
+		"入站申请落在拉黑者自己的收件箱,不是对方可见的效果;报成 OutboundPendingRejected 会无端 bump 被拉黑者")
+	assertFriendInvariants(t, ctx, db)
+}
+
 // TestBlock_InvalidatesCachedFriendList:Block 提交后必须失效双方的好友列表缓存。
 //
 // 漏了这一步,被拉黑的人会在缓存 TTL(默认 30 分钟)内继续出现在好友列表里 ——
@@ -161,12 +205,14 @@ func TestBlock_InvalidatesCachedFriendList(t *testing.T) {
 	const me, target uint64 = 35001, 35002
 	lim := defaultTestLimits()
 	seedPending(t, ctx, db, target, me)
-	require.NoError(t, repo.AcceptFriend(ctx, target, me, lim.MaxFriends))
+	require.NoError(t, callAcceptFriend(ctx, repo, target, me, lim.MaxFriends))
 
-	// 先把缓存烘热,并确认它真的写进去了(否则下面"缓存不见了"这条断言恒真 = 永远绿)。
+	// 权威读取已不回填缓存；显式预置旧版本可能留下的快照，验证写后兼容清理。
 	warm, err := repo.GetFriendList(ctx, me)
 	require.NoError(t, err)
 	require.Len(t, warm, 1)
+	mr.Set(friendListKey(me), `[{"friend_player_id":35002,"since_ms":1}]`)
+	mr.Set(friendListKey(target), `[{"friend_player_id":35001,"since_ms":1}]`)
 	require.True(t, mr.Exists(friendListKey(me)), "前置条件:缓存必须已被回填,否则本用例没有鉴别力")
 
 	require.NoError(t, callBlock(ctx, repo, me, target, lim))
@@ -185,7 +231,7 @@ func TestUnblock_IsIdempotentAndDoesNotRestoreFriendship(t *testing.T) {
 	const me, target uint64 = 36001, 36002
 	lim := defaultTestLimits()
 	seedPending(t, ctx, db, target, me)
-	require.NoError(t, repo.AcceptFriend(ctx, target, me, lim.MaxFriends))
+	require.NoError(t, callAcceptFriend(ctx, repo, target, me, lim.MaxFriends))
 	require.NoError(t, callBlock(ctx, repo, me, target, lim))
 
 	require.NoError(t, callUnblock(ctx, repo, me, target))

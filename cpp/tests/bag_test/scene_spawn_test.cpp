@@ -44,7 +44,7 @@ protected:
         EXPECT_NEAR(expected.z(), actual.z(), 0.02);
     }
     entt::entity player{entt::null};
-    entt::entity scene{entt::null};
+    SceneEntity scene{entt::null};
     SceneNavMapComp previousNav;
 };
 

@@ -3,7 +3,7 @@
 # setup_dependencies.sh — Build third-party C++ dependencies for Linux
 #
 # Builds: gRPC (+ protobuf, abseil, re2, c-ares, utf8_range),
-#         muduo-linux, librdkafka, yaml-cpp, hiredis, zlib
+#         muduo-linux, librdkafka, yaml-cpp, hiredis, zlib, nghttp2
 #
 # Run from repo root:  ./tools/archived/setup_dependencies.sh
 #
@@ -387,6 +387,99 @@ if [ ! -f "$LIB_DIR/libz.a" ]; then
     echo "zlib install ok"
 else
     echo "zlib already built, skipping"
+fi
+
+# ── 8. nghttp2 (HTTP/2 codec core for cpp/libs/engine/muduo_grpc) ──────────
+#
+# 只编静态核心库(ENABLE_LIB_ONLY):不编 nghttp / nghttpx / h2load / 示例 / 测试 / 文档,
+# 也用不到 nghttp2 自己的嵌套子模块(mruby / neverbleed / munit / urlparse)。
+# 版本钉 v1.70.0,与 Windows 的 tools/scripts/third_party/build_nghttp2.ps1 是同一提交,
+# 升级时两处与 docs/design/grpc-muduo-transport.md §2 一起改。
+#
+# 构建方式照 zlib 段(上游 CMake、静态、装到 /usr/local),但是否重编按源码 stamp 判断,
+# 不只看 libnghttp2.a 在不在:子模块升级后旧归档还在,只看文件会静默沿用旧版本。
+#
+# BUILD_SHARED_LIBS=OFF 保证 /usr/local/lib 里只有 libnghttp2.a,-lnghttp2 不会落到 .so 上。
+# CMAKE_POSITION_INDEPENDENT_CODE=ON:我们自己的库都带 -fPIC,归档也按 PIC 编,
+# 链进 PIE 可执行文件时不会报 "recompile with -fPIC"。
+# CMAKE_INSTALL_LIBDIR=lib:GNUInstallDirs 在部分发行版上会选 lib64 / 多架构目录,
+# 而 vcxproj2cmake.py 生成的 link_directories 只认 /usr/local/lib。
+
+NGHTTP2_DIR="$REPO_ROOT/third_party/nghttp2"
+NGHTTP2_BUILD="$NGHTTP2_DIR/.build_linux"
+NGHTTP2_STAMP_FILE="/usr/local/share/mmorpg-deps/nghttp2-linux.stamp"
+EXPECTED_NGHTTP2_GIT_SHA="85e300c79fb6dbcfa9c1013215c8710c1c2cd3d2"
+EXPECTED_NGHTTP2_VERSION="1.70.0"
+NGHTTP2_ARTIFACTS=(
+    /usr/local/lib/libnghttp2.a
+    /usr/local/include/nghttp2/nghttp2.h
+    /usr/local/include/nghttp2/nghttp2ver.h
+)
+
+if [ ! -f "$NGHTTP2_DIR/CMakeLists.txt" ]; then
+    echo "ERROR: nghttp2 source is missing: $NGHTTP2_DIR" >&2
+    echo "Run: git submodule update --init third_party/nghttp2" >&2
+    exit 1
+fi
+
+if is_git_worktree_root "$NGHTTP2_DIR"; then
+    ACTUAL_NGHTTP2_GIT_SHA="$(git -C "$NGHTTP2_DIR" rev-parse HEAD)"
+    if [ "$ACTUAL_NGHTTP2_GIT_SHA" != "$EXPECTED_NGHTTP2_GIT_SHA" ]; then
+        echo "ERROR: unexpected nghttp2 source revision." >&2
+        echo "  expected: $EXPECTED_NGHTTP2_GIT_SHA (v$EXPECTED_NGHTTP2_VERSION)" >&2
+        echo "  actual  : $ACTUAL_NGHTTP2_GIT_SHA" >&2
+        exit 1
+    fi
+    NGHTTP2_EXPECTED_STAMP="nghttp2-linux-v1:git=$EXPECTED_NGHTTP2_GIT_SHA"
+else
+    # Docker deps 阶段 COPY 进来的源码树没有可用的 .git,核对不了提交号:
+    # 退而核对上游 CMakeLists.txt 声明的版本号,stamp 用内容哈希(与 muduo 段同口径)。
+    if ! grep -Fq "project(nghttp2 VERSION $EXPECTED_NGHTTP2_VERSION " "$NGHTTP2_DIR/CMakeLists.txt"; then
+        echo "ERROR: nghttp2 source tree at $NGHTTP2_DIR does not declare version $EXPECTED_NGHTTP2_VERSION." >&2
+        exit 1
+    fi
+    NGHTTP2_EXPECTED_STAMP="nghttp2-linux-v1:tree=$(hash_source_tree "$NGHTTP2_DIR")"
+fi
+NGHTTP2_INSTALLED_STAMP="$(read_stamp "$NGHTTP2_STAMP_FILE")"
+
+if have_all_files "${NGHTTP2_ARTIFACTS[@]}" \
+    && [ "$NGHTTP2_INSTALLED_STAMP" = "$NGHTTP2_EXPECTED_STAMP" ]; then
+    echo "nghttp2 source stamp matches, skipping"
+else
+    if have_all_files "${NGHTTP2_ARTIFACTS[@]}"; then
+        echo "=== nghttp2 source stamp changed; rebuilding ==="
+    else
+        echo "=== nghttp2 install incomplete; rebuilding ==="
+    fi
+
+    # 与 gRPC 段同理:stamp 失配时整个构建目录重来,不依赖旧目录里的文件时间戳。
+    rm -f "$NGHTTP2_STAMP_FILE"
+    rm -rf "$NGHTTP2_BUILD"
+    mkdir -p "$NGHTTP2_BUILD"
+    cmake -S "$NGHTTP2_DIR" -B "$NGHTTP2_BUILD" \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr/local \
+        -DCMAKE_INSTALL_LIBDIR=lib \
+        -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+        -DENABLE_LIB_ONLY=ON \
+        -DBUILD_SHARED_LIBS=OFF \
+        -DBUILD_STATIC_LIBS=ON \
+        -DENABLE_DOC=OFF \
+        -DBUILD_TESTING=OFF \
+        -DENABLE_FAILMALLOC=OFF
+    cmake --build "$NGHTTP2_BUILD" -j "$CPU"
+    cmake --install "$NGHTTP2_BUILD"
+    if ! have_all_files "${NGHTTP2_ARTIFACTS[@]}"; then
+        echo "ERROR: nghttp2 install completed without all required artifacts." >&2
+        exit 1
+    fi
+    if ! grep -Fq "#define NGHTTP2_VERSION \"$EXPECTED_NGHTTP2_VERSION\"" \
+        /usr/local/include/nghttp2/nghttp2ver.h; then
+        echo "ERROR: installed nghttp2ver.h does not declare version $EXPECTED_NGHTTP2_VERSION." >&2
+        exit 1
+    fi
+    write_stamp "$NGHTTP2_STAMP_FILE" "$NGHTTP2_EXPECTED_STAMP"
+    echo "nghttp2 install ok ($NGHTTP2_EXPECTED_STAMP)"
 fi
 
 # ── Done ────────────────────────────────────────────────────────────────────

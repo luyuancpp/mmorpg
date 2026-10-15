@@ -17,8 +17,8 @@
 
 > **状态**:提案(开服准备 L-05 / G3),2026-10-12 起草,等负责人按 §10 拍板。代码未落,没有编译、测试或压测;落码后按 AGENTS.md §10.1 交 Codex 验证。
 > **依据**:只读核对代码、配置与文档,HEAD `73b852f32`。`go/db/internal/kafka/key_ordered_consumer.go`、`tools/scripts/k8s_deploy.ps1`、`docs/design/player-storage-placement.md`、`docs/design/zone_data_rollback.md` 有他人未提交的改动,按工作区行号引用;其余文件工作区与 HEAD 相同。
-> **起因**:[tidb-phase1-and-launch-readiness.md](./tidb-phase1-and-launch-readiness.md) §7 的 L-05(:816)。新号第一次 EnterGame 一定冷读数据库,玩家在加载屏上同步等待,每个读任务的等待上限是 8s。首日这是 Phase 2 全局玩家库唯一的同步路径,也是单 zone 预加载链的第一个瓶颈。
-> **关联**:[player-storage-placement.md](./player-storage-placement.md) §13、[player-route-mapping-durability-proposal.md](./player-route-mapping-durability-proposal.md) §12、[cross-zone-scene-travel.md](./cross-zone-scene-travel.md) CZ-2 / CZ-4、[scene-owner-reentry-barrier.md](./scene-owner-reentry-barrier.md)、[no-single-node-horizontal-scaling-20261001.md](./no-single-node-horizontal-scaling-20261001.md) §5。
+> **起因**:[tidb-phase1-and-launch-readiness.md](../../design/tidb-phase1-and-launch-readiness.md) §7 的 L-05(:816)。新号第一次 EnterGame 一定冷读数据库,玩家在加载屏上同步等待,每个读任务的等待上限是 8s。首日这是 Phase 2 全局玩家库唯一的同步路径,也是单 zone 预加载链的第一个瓶颈。
+> **关联**:[player-storage-placement.md](../../design/player-storage-placement.md) §13、[player-route-mapping-durability-proposal.md](../../design/player-route-mapping-durability-proposal.md) §12、[cross-zone-scene-travel.md](../../design/cross-zone-scene-travel.md) CZ-2 / CZ-4、[scene-owner-reentry-barrier.md](../../design/scene-owner-reentry-barrier.md)、[no-single-node-horizontal-scaling-20261001.md](../../design/no-single-node-horizontal-scaling-20261001.md) §5。
 
 ## 1. 结论
 
@@ -799,7 +799,7 @@ NewPlayerSeed:
 
 在这一段末尾追加一句,不改原句:
 
-> 开着 login 的 `NewPlayerSeed` 时,新号首次进场不再走预加载读,「预加载秒级失败」不会出现,症状只剩存盘这一半:死信(`missing_required`),或落点库打不开时的无限重试。所以打开种子前,`missing_required` 与 `db_placement_store_open_total{result=~"error|rejected"}` 两类告警必须就位([new-player-first-enter-no-cold-read.md](./new-player-first-enter-no-cold-read.md) §9)。
+> 开着 login 的 `NewPlayerSeed` 时,新号首次进场不再走预加载读,「预加载秒级失败」不会出现,症状只剩存盘这一半:死信(`missing_required`),或落点库打不开时的无限重试。所以打开种子前,`missing_required` 与 `db_placement_store_open_total{result=~"error|rejected"}` 两类告警必须就位([new-player-first-enter-no-cold-read.md](../../design/new-player-first-enter-no-cold-read.md) §9)。
 
 ## B3 关键类型 / 函数 / 脚本 / 配置键 / 指标
 

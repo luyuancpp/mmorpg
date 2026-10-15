@@ -20,9 +20,17 @@ class AttributePanelInfo;
 //
 // 跨 zone 冻结(PlayerFrozenComp)期间所有写操作拒绝(cross-zone-readiness-audit.md §11.1);
 // 战斗在途(InBattleComp)期间同样拒绝:快照已出,改属性会让局内数值与面板分叉。
+//
+// 组件归属:PlayerAttributeComp / BaseAttributesComp / LevelComp / PlayerUint32Comp / PlayerBagsComp
+// 由加载(PlayerDatabaseMessageFieldsUnmarshal)挂上,DerivedAttributesComp 由 InitializeOnLoad 挂上;
+// 面板、重算、写入口与 AutoAllocate 统一要求这六项就绪,只取不建。缺必需组件是服务端故障:
+// 写操作、AutoAllocate 与 BuildPanel 返回 kServiceUnavailable(写操作在任何扣费 / 改动之前返回),
+// Recalculate 跳过,PushPanel 不推;都记 ERROR。错误码口径与 player_mission.cpp / skill.cpp 一致:
+// 实体无效 → kEntityIsNull(本类既有口径),实体有效但缺必需组件 → kServiceUnavailable。
 class PlayerAttributeSystem {
 public:
-	// 从 DB 加载 / 首登后调用:补默认方案、清理不存在的维度、重算二级属性。
+	// 从 DB 加载 / 首登后调用(PlayerAttributeComp 已由 Unmarshal 挂上):补默认方案、清理不存在的维度、
+	// 挂上全新的 DerivedAttributesComp 并重算二级属性。存档组件缺失时只记错误,不补建。
 	static void InitializeOnLoad(entt::entity player);
 
 	// 重算的触发原因:决定当前 HP/MP 怎么跟随上限变化(评审 2026-09-04 堵住"降后再升"白嫖回血):
@@ -65,7 +73,10 @@ public:
 	//   * EquipAttribute 表里没有显示行(effect = 5 且 effect_param = 该项)的项不下发:没有名字,客户端无从显示。
 	//     表完整时恒为 15 项。缺行不在这里打日志(每次开面板都会刷一遍);它由启动时的装备表校验
 	//     (PlayerEquipSystem::ValidateTables 的「战斗属性 1..15 各有显示行」)报 ERROR。
-	static void BuildPanel(entt::entity player, AttributePanelInfo& panel);
+	// 返回值:kSuccess;实体无效 kEntityIsNull;缺上述任一持久 / 派生输入 kServiceUnavailable。
+	// 非 kSuccess 时 panel 是清空的 —— 调用方必须回错误码,不能把空面板当成功发给客户端
+	// (客户端按整体覆盖处理面板,空面板等于把真实数据抹掉)。只读,不改变实体的组件集合。
+	static uint32_t BuildPanel(entt::entity player, AttributePanelInfo& panel);
 
 	// 确认加点:target 为该池"目标已分配"(全量、幂等;缺省维度视为不变)
 	static uint32_t Allocate(entt::entity player, uint32_t poolId,
@@ -85,7 +96,7 @@ public:
 	// GM:设等级(1..kMaxLevel),触发 PlayerUpgradeEvent → 重算 + 推面板
 	static uint32_t GmSetLevel(entt::entity player, uint32_t level);
 
-	// 主动推面板(升级 / GM / 外部加成变化)
+	// 主动推面板(升级 / GM / 外部加成变化);BuildPanel 失败时不推。
 	static void PushPanel(entt::entity player);
 
 	// 该维度是不是「角色池」的维度:AttributeDimension 里有这一行,且它所属的池 AttributePool.owner_type == 0

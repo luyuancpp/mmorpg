@@ -1,4 +1,4 @@
-﻿// aoi_system_test.cpp — AOI (Area of Interest) system tests
+// aoi_system_test.cpp — AOI (Area of Interest) system tests
 //
 // Verifies:
 //   1. Hex-grid coordinate mapping and neighbor lookup
@@ -10,6 +10,8 @@
 //   7. Per-scene priority policies (open-world, dungeon, PvP)
 
 #include "spatial/system/aoi.h"
+#include "actor/actor_net_id.h"
+#include "core/system/id_generator.h"
 #include <gtest/gtest.h>
 #include "hexagons_grid.h"
 #include "spatial/comp/grid_comp.h"
@@ -18,10 +20,11 @@
 #include "spatial/system/grid.h"
 #include "spatial/system/interest.h"
 #include "spatial/system/movement.h"
+#include "combat/buff/comp/buff_comp.h"
 #include "player/system/player_team.h"
 #include "proto/common/component/actor_comp.pb.h"
 #include "proto/common/component/team_comp.pb.h"
-#include "proto/common/event/scene_event.pb.h"
+#include "modules/scene/scene_events.h"
 #include "modules/scene/comp/scene_comp.h"
 
 #include "engine/core/type_define/type_define.h"
@@ -34,26 +37,16 @@ extern const Point kDefaultSize(20.0, 20.0);
 extern const Point kOrigin(0.0, 0.0);
 extern const auto kHexLayout = Layout(layout_flat, kDefaultSize, kOrigin);
 
-// ---------------------------------------------------------------------------
-// Helper: register / unregister global message components used by AoiSystem
-// ---------------------------------------------------------------------------
+// AoiSystem 的 S2C 发送缓冲是函数内 static thread_local(不再挂在 GlobalEntity 上),
+// 测试无需预先往 globalRegistry 注册任何消息组件。
 
-static void RegisterGlobalMessageComponents()
+// 夹具显式模拟角色创建边界，查询和 AOI 更新不会代为补建身份。
+static entt::entity CreateAoiActor()
 {
-    tlsEcs.globalRegistry.emplace<ActorCreateS2C>(tlsEcs.GlobalEntity());
-    tlsEcs.globalRegistry.emplace<ActorDestroyS2C>(tlsEcs.GlobalEntity());
-    tlsEcs.globalRegistry.emplace<ActorListCreateS2C>(tlsEcs.GlobalEntity());
-    tlsEcs.globalRegistry.emplace<ActorListDestroyS2C>(tlsEcs.GlobalEntity());
+    const auto actor = tlsEcs.actorRegistry.create();
+    EXPECT_NE(0, actor_net_id::Assign(tlsEcs.actorRegistry, actor));
+    return actor;
 }
-
-static void UnregisterGlobalMessageComponents()
-{
-    tlsEcs.globalRegistry.remove<ActorCreateS2C>(tlsEcs.GlobalEntity());
-    tlsEcs.globalRegistry.remove<ActorDestroyS2C>(tlsEcs.GlobalEntity());
-    tlsEcs.globalRegistry.remove<ActorListCreateS2C>(tlsEcs.GlobalEntity());
-    tlsEcs.globalRegistry.remove<ActorListDestroyS2C>(tlsEcs.GlobalEntity());
-}
-
 // Free helper: check whether |observer| has |target| in its AoiListComp.
 static bool IsInAoiList(entt::entity observer, entt::entity target)
 {
@@ -68,11 +61,8 @@ static bool IsInAoiList(entt::entity observer, entt::entity target)
 class AoiGridTest : public ::testing::Test
 {
 protected:
-    void SetUp() override { RegisterGlobalMessageComponents(); }
-
     void TearDown() override
     {
-        UnregisterGlobalMessageComponents();
         tlsEcs.sceneRegistry.clear();
         tlsEcs.actorRegistry.clear();
     }
@@ -119,7 +109,7 @@ TEST_F(AoiGridTest, RandomSpawnAssignsCorrectGrid)
 
     for (uint32_t i = 0; i < 10; ++i)
     {
-        auto playerEntity = tlsEcs.actorRegistry.create();
+        auto playerEntity = CreateAoiActor();
         auto& transform = tlsEcs.actorRegistry.get_or_emplace<Transform>(playerEntity);
         transform.mutable_location()->set_x(tlsRandom.RandReal<double>(0, 1000));
         transform.mutable_location()->set_y(tlsRandom.RandReal<double>(0, 1000));
@@ -151,7 +141,7 @@ TEST_F(AoiGridTest, RoundTripThroughAllSixNeighbors)
     auto sceneEntity = tlsEcs.sceneRegistry.create();
     auto& sceneGridList = tlsEcs.sceneRegistry.emplace<SceneGridListComp>(sceneEntity);
 
-    auto playerEntity = tlsEcs.actorRegistry.create();
+    auto playerEntity = CreateAoiActor();
     auto& transform = tlsEcs.actorRegistry.emplace<Transform>(playerEntity);
     transform.mutable_location()->set_x(0);
     transform.mutable_location()->set_y(0);
@@ -200,6 +190,93 @@ TEST_F(AoiGridTest, RoundTripThroughAllSixNeighbors)
     EXPECT_EQ(totalEntities, 1);
 }
 
+// 空场景没有入格写入时不需要格子表,每帧更新也不应预挂空表。
+TEST_F(AoiGridTest, EmptySceneUpdateDoesNotCreateGridList)
+{
+    auto sceneEntity = tlsEcs.sceneRegistry.create();
+    AoiSystem::Update(0.1);
+    EXPECT_FALSE(tlsEcs.sceneRegistry.any_of<SceneGridListComp>(sceneEntity));
+}
+
+// SceneGridListComp 是按需状态:第一次真实入格必须创建,并保留后续实体的登记。
+TEST_F(AoiGridTest, FirstGridEntryCreatesGridList)
+{
+    auto sceneEntity = tlsEcs.sceneRegistry.create();
+    auto playerEntity = CreateAoiActor();
+    const auto& transform = tlsEcs.actorRegistry.emplace<Transform>(playerEntity);
+    tlsEcs.actorRegistry.emplace<SceneEntityComp>(playerEntity, SceneEntityComp{sceneEntity});
+    EXPECT_FALSE(tlsEcs.sceneRegistry.any_of<SceneGridListComp>(sceneEntity));
+    AoiSystem::Update(0.1);
+
+    ASSERT_TRUE(tlsEcs.sceneRegistry.any_of<SceneGridListComp>(sceneEntity));
+    const auto& gridList = tlsEcs.sceneRegistry.get<SceneGridListComp>(sceneEntity);
+    const auto gridIt = gridList.find(GridSystem::GetGridId(transform.location()));
+    ASSERT_TRUE(gridIt != gridList.end());
+    EXPECT_TRUE(gridIt->second.entities.contains(playerEntity));
+    EXPECT_TRUE(tlsEcs.actorRegistry.any_of<Hex>(playerEntity));
+    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<AoiListComp>(playerEntity))
+        << "独自入格没有可见对象,不应创建兴趣表";
+}
+
+// 活场景尚无格子表表示空场景,只读查询返回空,不能替它初始化。
+TEST_F(AoiGridTest, SpatialQueryOnEmptySceneDoesNotCreateGridList)
+{
+    auto sceneEntity = tlsEcs.sceneRegistry.create();
+    auto playerEntity = CreateAoiActor();
+    const auto& transform = tlsEcs.actorRegistry.emplace<Transform>(playerEntity);
+    tlsEcs.actorRegistry.emplace<SceneEntityComp>(playerEntity, SceneEntityComp{sceneEntity});
+    tlsEcs.actorRegistry.emplace<Hex>(playerEntity, GridSystem::CalculateHexPosition(transform));
+
+    EntityUnorderedSet nearby;
+    GridSystem::GetEntitiesInGridAndNeighbors(playerEntity, nearby, true);
+    GridSystem::GetEntitiesInViewAndNearby(playerEntity, nearby);
+
+    EXPECT_FALSE(tlsEcs.sceneRegistry.any_of<SceneGridListComp>(sceneEntity));
+    EXPECT_TRUE(nearby.empty());
+    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<AoiListComp>(playerEntity));
+}
+
+TEST_F(AoiGridTest, UpdateOnDestroyedSceneDoesNotCreateGridList)
+{
+    const auto sceneEntity = tlsEcs.sceneRegistry.create();
+    const auto playerEntity = CreateAoiActor();
+    tlsEcs.actorRegistry.emplace<Transform>(playerEntity);
+    tlsEcs.actorRegistry.emplace<SceneEntityComp>(playerEntity, SceneEntityComp{sceneEntity});
+    tlsEcs.sceneRegistry.destroy(sceneEntity);
+
+    AoiSystem::Update(0.1);
+
+    EXPECT_EQ(tlsEcs.sceneRegistry.try_get<SceneGridListComp>(sceneEntity), nullptr);
+    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<Hex>(playerEntity));
+    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<AoiListComp>(playerEntity));
+}
+
+// F077 回归:空间查询是只读路径。场景已销毁(SceneEntityComp 里是陈旧句柄)时必须先 valid() 再查、查不到就返回空;
+// 修复前 get_or_emplace 会在已销毁的场景句柄上挂出一张孤儿格子表。
+TEST_F(AoiGridTest, SpatialQueryOnDestroyedSceneDoesNotCreateGridList)
+{
+    auto sceneEntity = tlsEcs.sceneRegistry.create();
+    tlsEcs.sceneRegistry.emplace<SceneGridListComp>(sceneEntity);
+
+    auto observer = CreateAoiActor();
+    tlsEcs.actorRegistry.emplace<Transform>(observer);
+    tlsEcs.actorRegistry.emplace<SceneEntityComp>(observer, SceneEntityComp{sceneEntity});
+    auto neighbour = CreateAoiActor();
+    tlsEcs.actorRegistry.emplace<Transform>(neighbour);
+    tlsEcs.actorRegistry.emplace<SceneEntityComp>(neighbour, SceneEntityComp{sceneEntity});
+    AoiSystem::Update(0.1);
+    ASSERT_TRUE(tlsEcs.actorRegistry.any_of<Hex>(observer));
+
+    tlsEcs.sceneRegistry.destroy(sceneEntity);
+
+    EntityUnorderedSet nearby;
+    GridSystem::GetEntitiesInGridAndNeighbors(observer, nearby, true);
+    GridSystem::GetEntitiesInViewAndNearby(observer, nearby);
+    EXPECT_TRUE(nearby.empty());
+    EXPECT_EQ(tlsEcs.sceneRegistry.try_get<SceneGridListComp>(sceneEntity), nullptr)
+        << "只读查询不得在已销毁的场景句柄上挂组件";
+}
+
 // ---------------------------------------------------------------------------
 // Fixture: Entity enter / leave visibility (verified via AoiListComp)
 // ---------------------------------------------------------------------------
@@ -209,22 +286,19 @@ class AoiVisibilityTest : public ::testing::Test
 protected:
     entt::entity entity1 = entt::null;
     entt::entity entity2 = entt::null;
-    entt::entity sceneEntity = entt::null;
+    SceneEntity sceneEntity = entt::null;
 
     void SetUp() override
     {
-        RegisterGlobalMessageComponents();
-
         sceneEntity = tlsEcs.sceneRegistry.create();
-        tlsEcs.sceneRegistry.emplace<SceneGridListComp>(sceneEntity);
 
         const SceneEntityComp sceneComp{sceneEntity};
 
-        entity1 = tlsEcs.actorRegistry.create();
+        entity1 = CreateAoiActor();
         tlsEcs.actorRegistry.emplace<Transform>(entity1);            // origin (0,0,0)
         tlsEcs.actorRegistry.emplace<SceneEntityComp>(entity1, sceneComp);
 
-        entity2 = tlsEcs.actorRegistry.create();
+        entity2 = CreateAoiActor();
         auto& t2 = tlsEcs.actorRegistry.emplace<Transform>(entity2);
         t2.mutable_location()->set_x(100);                           // far away initially
         t2.mutable_location()->set_y(100);
@@ -233,7 +307,6 @@ protected:
 
     void TearDown() override
     {
-        UnregisterGlobalMessageComponents();
         tlsEcs.actorRegistry.clear();
         tlsEcs.sceneRegistry.clear();
     }
@@ -273,7 +346,7 @@ TEST_F(AoiVisibilityTest, EntityRemovedFromAoiListAfterLeavingScene)
 
     // entity2 leaves the scene.
     BeforeLeaveScene leaveEvent;
-    leaveEvent.set_entity(entt::to_integral(entity2));
+    leaveEvent.actor = entity2;
     AoiSystem::BeforeLeaveSceneHandler(leaveEvent);
 
     // entity1 should no longer list entity2.
@@ -389,6 +462,51 @@ TEST_F(AoiVisibilityTest, ResetEntityVisibilityBeforeFirstUpdateIsHarmless)
     EXPECT_TRUE(IsInAoiList(entity2, entity1));
 }
 
+// 兴趣表只在真正加入第一个可见对象时创建,孤身入格无需空表。
+TEST_F(AoiVisibilityTest, FirstGridEntryWithoutVisibleTargetDoesNotCreateInterestList)
+{
+    // entity2 远在 (100,100),entity1 周围没有任何人。
+    AoiSystem::Update(0.0);
+
+    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<AoiListComp>(entity1));
+    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<AoiListComp>(entity2));
+}
+
+// 重走首次进场分支(同场景瞬移之后)必须沿用已有兴趣表:kPinned 条目由 buff/skill 生命周期管理,
+// 要跨瞬移存活,不能被一张新表覆盖。守护创建点不被改成 emplace_or_replace。
+TEST_F(AoiVisibilityTest, FirstEntryAfterResetKeepsPinnedEntries)
+{
+    auto& location2 = *tlsEcs.actorRegistry.get<Transform>(entity2).mutable_location();
+    location2.set_x(0);
+    location2.set_y(0);
+    AoiSystem::Update(0.0);
+    ASSERT_TRUE(InterestSystem::PinAoiEntity(entity2, entity1));
+
+    location2.set_x(500);
+    location2.set_y(500);
+    AoiSystem::ResetEntityVisibility(entity2);
+    AoiSystem::Update(0.0);
+
+    ASSERT_TRUE(IsInAoiList(entity2, entity1));
+    EXPECT_EQ(tlsEcs.actorRegistry.get<AoiListComp>(entity2).entries.at(entity1).priority, AoiPriority::kPinned);
+}
+
+// 离场路径对场景格子表只读/摘除。表缺失时按空表处理,不得补建。
+// 修复前 BeforeLeaveSceneHandler 对场景实体 get_or_emplace<SceneGridListComp>,会重新挂出一张空表。
+TEST_F(AoiVisibilityTest, BeforeLeaveSceneDoesNotRecreateMissingGridList)
+{
+    AoiSystem::Update(0.0);
+    ASSERT_TRUE(tlsEcs.actorRegistry.any_of<Hex>(entity1));
+
+    tlsEcs.sceneRegistry.remove<SceneGridListComp>(sceneEntity);
+
+    BeforeLeaveScene leaveEvent;
+    leaveEvent.actor = entity1;
+    AoiSystem::BeforeLeaveSceneHandler(leaveEvent);
+
+    EXPECT_FALSE(tlsEcs.sceneRegistry.any_of<SceneGridListComp>(sceneEntity));
+}
+
 // ---------------------------------------------------------------------------
 // Fixture: Priority, capacity, pin/unpin, stealth
 // ---------------------------------------------------------------------------
@@ -396,18 +514,15 @@ TEST_F(AoiVisibilityTest, ResetEntityVisibilityBeforeFirstUpdateIsHarmless)
 class AoiPriorityTest : public ::testing::Test
 {
 protected:
-    entt::entity sceneEntity = entt::null;
+    SceneEntity sceneEntity = entt::null;
 
     void SetUp() override
     {
-        RegisterGlobalMessageComponents();
         sceneEntity = tlsEcs.sceneRegistry.create();
-        tlsEcs.sceneRegistry.emplace<SceneGridListComp>(sceneEntity);
     }
 
     void TearDown() override
     {
-        UnregisterGlobalMessageComponents();
         tlsEcs.actorRegistry.clear();
         tlsEcs.sceneRegistry.clear();
     }
@@ -415,7 +530,7 @@ protected:
     // Create an entity at a given position in the scene.
     entt::entity SpawnAt(double x, double y)
     {
-        auto e = tlsEcs.actorRegistry.create();
+        auto e = CreateAoiActor();
         auto& t = tlsEcs.actorRegistry.emplace<Transform>(e);
         t.mutable_location()->set_x(x);
         t.mutable_location()->set_y(y);
@@ -448,7 +563,7 @@ TEST_F(AoiPriorityTest, CapacityEvictsLowestPriority)
 
     // Fill to default capacity with kNormal entities.
     for (std::size_t i = 0; i < kAoiListCapacityDefault; ++i) {
-        auto filler = tlsEcs.actorRegistry.create();
+        auto filler = CreateAoiActor();
         InterestSystem::AddAoiEntity(watcher, filler, AoiPriority::kNormal);
     }
 
@@ -457,12 +572,12 @@ TEST_F(AoiPriorityTest, CapacityEvictsLowestPriority)
     EXPECT_EQ(comp->Size(), kAoiListCapacityDefault);
 
     // Try to add another kNormal entity — should fail (same priority, no eviction).
-    auto lowEntity = tlsEcs.actorRegistry.create();
+    auto lowEntity = CreateAoiActor();
     EXPECT_FALSE(InterestSystem::AddAoiEntity(watcher, lowEntity, AoiPriority::kNormal));
     EXPECT_EQ(comp->Size(), kAoiListCapacityDefault);
 
     // Add a kTeammate entity — should succeed by evicting a kNormal one.
-    auto teammateEntity = tlsEcs.actorRegistry.create();
+    auto teammateEntity = CreateAoiActor();
     EXPECT_TRUE(InterestSystem::AddAoiEntity(watcher, teammateEntity, AoiPriority::kTeammate));
     EXPECT_EQ(comp->Size(), kAoiListCapacityDefault);
     EXPECT_TRUE(comp->Contains(teammateEntity));
@@ -481,20 +596,59 @@ TEST_F(AoiPriorityTest, PinAddsAtPinnedPriority)
     EXPECT_EQ(comp->entries.at(target).priority, AoiPriority::kPinned);
 }
 
-// UnpinAoiEntity downgrades pinned entry to kNormal.
-TEST_F(AoiPriorityTest, UnpinDowngradesToNormal)
+TEST_F(AoiPriorityTest, UnpinOutOfRangeRemovesImmediately)
 {
     auto watcher = SpawnAt(0, 0);
-    auto target  = SpawnAt(100, 100);
+    auto target  = SpawnAt(1000, 1000);
+    AoiSystem::Update(0);
 
-    InterestSystem::PinAoiEntity(watcher, target);
-    InterestSystem::UnpinAoiEntity(watcher, target);
+    ASSERT_TRUE(AoiSystem::PinAoiEntity(watcher, target));
+    AoiSystem::UnpinAoiEntity(watcher, target);
 
     auto* comp = tlsEcs.actorRegistry.try_get<AoiListComp>(watcher);
     ASSERT_NE(comp, nullptr);
-    // Still present (not removed yet), but priority downgraded.
-    EXPECT_TRUE(comp->Contains(target));
+    EXPECT_FALSE(comp->Contains(target));
+}
+
+TEST_F(AoiPriorityTest, UnpinNearbyRestoresNormalPriority)
+{
+    const auto watcher = SpawnAt(0, 0);
+    const auto target = SpawnAt(1, 0);
+    AoiSystem::Update(0);
+    ASSERT_TRUE(AoiSystem::PinAoiEntity(watcher, target));
+    AoiSystem::UnpinAoiEntity(watcher, target);
+    const auto* comp = tlsEcs.actorRegistry.try_get<AoiListComp>(watcher);
+    ASSERT_NE(nullptr, comp);
+    ASSERT_TRUE(comp->Contains(target));
     EXPECT_EQ(comp->entries.at(target).priority, AoiPriority::kNormal);
+}
+
+TEST_F(AoiPriorityTest, UnpinNearbyTeammateRestoresTeamPriority)
+{
+    const auto watcher = SpawnAt(0, 0);
+    const auto target = SpawnAt(1, 0);
+    tlsEcs.actorRegistry.emplace<TeamId>(watcher).set_team_id(42);
+    tlsEcs.actorRegistry.emplace<TeamId>(target).set_team_id(42);
+    AoiSystem::Update(0);
+    ASSERT_TRUE(AoiSystem::PinAoiEntity(watcher, target));
+    AoiSystem::UnpinAoiEntity(watcher, target);
+    const auto* comp = tlsEcs.actorRegistry.try_get<AoiListComp>(watcher);
+    ASSERT_NE(nullptr, comp);
+    ASSERT_TRUE(comp->Contains(target));
+    EXPECT_EQ(AoiPriority::kTeammate, comp->entries.at(target).priority);
+}
+
+TEST_F(AoiPriorityTest, UnpinDoesNotKeepNearbyStealthedTargetVisible)
+{
+    const auto watcher = SpawnAt(0, 0);
+    const auto target = SpawnAt(1, 0);
+    AoiSystem::Update(0);
+    ASSERT_TRUE(AoiSystem::PinAoiEntity(watcher, target));
+    tlsEcs.actorRegistry.emplace<StealthedTagComp>(target);
+    AoiSystem::UnpinAoiEntity(watcher, target);
+    const auto* comp = tlsEcs.actorRegistry.try_get<AoiListComp>(watcher);
+    ASSERT_NE(nullptr, comp);
+    EXPECT_FALSE(comp->Contains(target));
 }
 
 // Pinned entries are NOT removed when the observer moves to a different grid.
@@ -538,6 +692,65 @@ TEST_F(AoiPriorityTest, TeammatesGetHigherPriority)
     EXPECT_EQ(comp->entries.at(player2).priority, AoiPriority::kTeammate);
 }
 
+// 直接写入口与 Pin 都允许尚未入格的活 actor,第一次真实插入时创建兴趣表。
+TEST_F(AoiPriorityTest, AddAoiEntityCreatesInterestListBeforeGridEntry)
+{
+    auto watcher = SpawnAt(0, 0);
+    auto target  = SpawnAt(5, 0);
+
+    EXPECT_TRUE(InterestSystem::AddAoiEntity(watcher, target, AoiPriority::kNormal));
+    EXPECT_TRUE(IsInAoiList(watcher, target));
+    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<Hex>(watcher));
+    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<AoiListComp>(target));
+}
+
+TEST_F(AoiPriorityTest, PinAoiEntityCreatesInterestListThroughWriteEntry)
+{
+    const auto watcher = SpawnAt(0, 0);
+    const auto target = SpawnAt(500, 500);
+    ASSERT_TRUE(InterestSystem::PinAoiEntity(watcher, target));
+    const auto* comp = tlsEcs.actorRegistry.try_get<AoiListComp>(watcher);
+    ASSERT_NE(comp, nullptr);
+    EXPECT_EQ(comp->entries.at(target).priority, AoiPriority::kPinned);
+}
+
+TEST_F(AoiPriorityTest, AbsentInterestListReadsAndRemovalDoNotCreateIt)
+{
+    const auto watcher = SpawnAt(0, 0);
+    const auto target = SpawnAt(5, 0);
+    EXPECT_FALSE(IsInAoiList(watcher, target));
+    InterestSystem::RemoveAoiEntity(watcher, target);
+    AoiSystem::UnpinAoiEntity(watcher, target);
+    InterestSystem::UpgradePriority(watcher, target, AoiPriority::kPinned);
+    InterestSystem::DowngradePriority(watcher, target, AoiPriority::kPinned, AoiPriority::kNormal);
+    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<AoiListComp>(watcher));
+}
+
+// F078 回归:已销毁的观察者必须被拒绝。修复前 get_or_emplace 不校验存活,
+// 会在已销毁的句柄上挂出一张孤儿 AoiListComp 并返回 true。
+TEST_F(AoiPriorityTest, AddAoiEntityRejectsDestroyedWatcher)
+{
+    auto watcher = SpawnAt(0, 0);
+    auto target  = SpawnAt(5, 0);
+    tlsEcs.actorRegistry.destroy(watcher);
+
+    EXPECT_FALSE(InterestSystem::AddAoiEntity(watcher, target, AoiPriority::kNormal));
+    EXPECT_EQ(tlsEcs.actorRegistry.try_get<AoiListComp>(watcher), nullptr);
+}
+
+// 已销毁的目标同样不得登记进兴趣表:否则下发给客户端的实体号会指向一个不存在的 actor。
+// 修复前目标不做存活校验,会被直接插入并返回 true。
+TEST_F(AoiPriorityTest, AddAoiEntityRejectsDestroyedTarget)
+{
+    auto watcher = SpawnAt(0, 0);
+    auto target  = SpawnAt(5, 0);
+    tlsEcs.actorRegistry.destroy(target);
+
+    EXPECT_FALSE(InterestSystem::AddAoiEntity(watcher, target, AoiPriority::kNormal));
+    EXPECT_FALSE(IsInAoiList(watcher, target));
+    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<AoiListComp>(watcher));
+}
+
 // ---------------------------------------------------------------------------
 // Fixture: Dynamic capacity (client-reported + server pressure)
 // ---------------------------------------------------------------------------
@@ -545,25 +758,22 @@ TEST_F(AoiPriorityTest, TeammatesGetHigherPriority)
 class AoiDynamicCapacityTest : public ::testing::Test
 {
 protected:
-    entt::entity sceneEntity = entt::null;
+    SceneEntity sceneEntity = entt::null;
 
     void SetUp() override
     {
-        RegisterGlobalMessageComponents();
         sceneEntity = tlsEcs.sceneRegistry.create();
-        tlsEcs.sceneRegistry.emplace<SceneGridListComp>(sceneEntity);
     }
 
     void TearDown() override
     {
-        UnregisterGlobalMessageComponents();
         tlsEcs.actorRegistry.clear();
         tlsEcs.sceneRegistry.clear();
     }
 
     entt::entity SpawnAt(double x, double y)
     {
-        auto e = tlsEcs.actorRegistry.create();
+        auto e = CreateAoiActor();
         auto& t = tlsEcs.actorRegistry.emplace<Transform>(e);
         t.mutable_location()->set_x(x);
         t.mutable_location()->set_y(y);
@@ -677,12 +887,12 @@ TEST_F(AoiDynamicCapacityTest, AddAoiEntityRespectsReducedCapacity)
 
     for (std::size_t i = 0; i < 30; ++i)
     {
-        auto filler = tlsEcs.actorRegistry.create();
+        auto filler = CreateAoiActor();
         EXPECT_TRUE(InterestSystem::AddAoiEntity(watcher, filler, AoiPriority::kNormal));
     }
 
     // 31st entity should be rejected.
-    auto overflow = tlsEcs.actorRegistry.create();
+    auto overflow = CreateAoiActor();
     EXPECT_FALSE(InterestSystem::AddAoiEntity(watcher, overflow, AoiPriority::kNormal));
 
     auto* comp = tlsEcs.actorRegistry.try_get<AoiListComp>(watcher);
@@ -705,25 +915,22 @@ TEST_F(AoiDynamicCapacityTest, ZeroPressureYieldsMaxCapacity)
 class AoiPriorityPolicyTest : public ::testing::Test
 {
 protected:
-    entt::entity sceneEntity = entt::null;
+    SceneEntity sceneEntity = entt::null;
 
     void SetUp() override
     {
-        RegisterGlobalMessageComponents();
         sceneEntity = tlsEcs.sceneRegistry.create();
-        tlsEcs.sceneRegistry.emplace<SceneGridListComp>(sceneEntity);
     }
 
     void TearDown() override
     {
-        UnregisterGlobalMessageComponents();
         tlsEcs.actorRegistry.clear();
         tlsEcs.sceneRegistry.clear();
     }
 
     entt::entity SpawnAt(double x, double y)
     {
-        auto e = tlsEcs.actorRegistry.create();
+        auto e = CreateAoiActor();
         auto& t = tlsEcs.actorRegistry.emplace<Transform>(e);
         t.mutable_location()->set_x(x);
         t.mutable_location()->set_y(y);
@@ -846,25 +1053,22 @@ TEST_F(AoiPriorityPolicyTest, UpgradePriorityNoOpWhenWeightIsLower)
 class AoiTeammateRefreshTest : public ::testing::Test
 {
 protected:
-    entt::entity sceneEntity = entt::null;
+    SceneEntity sceneEntity = entt::null;
 
     void SetUp() override
     {
-        RegisterGlobalMessageComponents();
         sceneEntity = tlsEcs.sceneRegistry.create();
-        tlsEcs.sceneRegistry.emplace<SceneGridListComp>(sceneEntity);
     }
 
     void TearDown() override
     {
-        UnregisterGlobalMessageComponents();
         tlsEcs.actorRegistry.clear();
         tlsEcs.sceneRegistry.clear();
     }
 
     entt::entity SpawnAt(double x, double y)
     {
-        auto e = tlsEcs.actorRegistry.create();
+        auto e = CreateAoiActor();
         auto& t = tlsEcs.actorRegistry.emplace<Transform>(e);
         t.mutable_location()->set_x(x);
         t.mutable_location()->set_y(y);
@@ -1194,6 +1398,8 @@ TEST_F(TeamIndexReplyParseTest, IntegerElementsAreUnknown)
 int main(int argc, char** argv)
 {
     ::testing::InitGoogleTest(&argc, argv);
+    tlsIdGeneratorManager.SetNodeId(92);
+    actor_net_id::Install(tlsEcs.actorRegistry);
     return RUN_ALL_TESTS();
 }
 

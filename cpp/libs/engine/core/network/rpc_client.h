@@ -1,29 +1,40 @@
 #pragma once
 #include <memory>
+#include <string>
+#include <utility>
 
 #include "muduo/base/Logging.h"
 #include "muduo/base/Timestamp.h"
+#include "muduo/net/Buffer.h"
 #include "muduo/net/InetAddress.h"
 #include "muduo/net/TcpClient.h"
 #include "muduo/net/TcpConnection.h"
 
-#include "network/game_channel.h"
+#include "network/rpc_channel.h"
+#include "network/rpc_channel_stats.h"
 
 #include "rpc_connection_event.h"
 #include <thread_context/ecs_context.h>
 
-// 连接生命周期约定(docs/ops/incident-gate-tcpconnection-dtor-assert-2026-09-13.md §8):
-//  1. 连接的所有权只在 muduo(这里是 client_)手里;本类和 GameChannel 只存 weak_ptr。
+// 出站节点链路:一个 muduo TcpClient(enableRetry 自动重连)+ 当前连接上的 RpcChannel。
+//
+// 连接生命周期约定(docs/ops/incident-gate-tcpconnection-dtor-assert-2026-09-13.md §8、AGENTS §11.7):
+//  1. 连接的所有权只在 muduo(这里是 client_)手里;本类和 RpcChannel 只存 weak_ptr。
 //  2. 绑进 muduo 回调的不是裸 this,而是 weak_ptr<自己>:对象没了,回调 lock() 失败即返回。
 // 于是本类**不需要析构函数**去摘回调,也不需要任何"延迟关闭"兜底 —— 直接销毁就是安全的:
-// ~TcpClient 见 use_count()==1 会 forceClose,之后到达的 handleClose 回调发现对象已亡就什么都不做。
+// ~TcpClient 见 use_count()==1 会 forceClose,之后到达的 handleClose 回调发现对象已亡就什么都不做;
+// 在途调用由 ~RpcChannel 以 kChannelClosed 失败。
+//
+// 每次连上新建一个 RpcChannel(与入站 RpcServer 对称),断开时让在途调用以 kDisconnected 失败并丢掉它
+// (docs/design/muduo-rpc-channel.md §6.1)。以前一个 channel 跨重连复用:旧连接的在途调用要靠手动清,
+// 本端作为服务端延后回包时还会用新连接回旧 id,被对端新 channel 里同号的调用误认领。
 class RpcClient : muduo::noncopyable, public std::enable_shared_from_this<RpcClient>
 {
 public:
     RpcClient(muduo::net::EventLoop* loop,
         const muduo::net::InetAddress& serverAddr)
         : client_(loop, serverAddr, "RpcClient"),
-        channel_(std::make_shared<GameChannel>())
+        serverAddr_(serverAddr)
     {
         // 回调在 connect() 里绑:构造函数里还拿不到 weak_from_this()。
         client_.enableRetry();
@@ -51,8 +62,10 @@ public:
         return client_.connection()->peerAddress();
     }
 
-    inline bool connected()const { return connected_; }
+    // 当前有可用的 channel(TCP 已连上)。握手是否完成由节点注册流程另外判定。
+    inline bool connected()const { return channel_ != nullptr; }
 
+    // 必须在 connect() 之前调用:每次连上时把服务表拷进新的 RpcChannel。
     void registerService(google::protobuf::Service* service)
     {
         const google::protobuf::ServiceDescriptor* desc = service->GetDescriptor();
@@ -70,7 +83,6 @@ public:
         // muduo 会把这两个回调拷到 TcpConnection 上,并可能在本对象析构之后才调用
         // (forceClose 一律 queueInLoop)。绑 weak_ptr:对象已亡则回调什么都不做。
         std::weak_ptr<RpcClient> weakSelf = weak_from_this();
-        std::weak_ptr<GameChannel> weakChannel = channel_;
         client_.setConnectionCallback([weakSelf](const muduo::net::TcpConnectionPtr& conn)
         {
             if (const auto self = weakSelf.lock())
@@ -78,56 +90,92 @@ public:
                 self->onConnection(conn);
             }
         });
-        client_.setMessageCallback([weakChannel](const muduo::net::TcpConnectionPtr& conn,
-                                                 muduo::net::Buffer* buf, muduo::Timestamp ts)
+        client_.setMessageCallback([weakSelf](const muduo::net::TcpConnectionPtr& conn,
+                                              muduo::net::Buffer* buf, muduo::Timestamp ts)
         {
-            if (const auto channel = weakChannel.lock())
+            // 只在取 channel 的这一行持有 RpcClient,派发期间不强持它:回调里若销毁了节点实体,
+            // ~RpcClient 立即执行(~TcpClient 的 use_count 判断不被本闭包带偏)。channel 由局部强引用保活到派发结束。
+            RpcChannelPtr channel;
+            if (const auto self = weakSelf.lock())
             {
-                channel->HandleIncomingMessage(conn, buf, ts);
+                channel = self->channel_;
             }
+            if (channel && channel->IsBoundTo(conn))
+            {
+                channel->OnMessage(conn, buf, ts);
+                return;
+            }
+            buf->retrieveAll();   // 对象已亡或连接已被替换:丢弃,不让缓冲无界增长
         });
-        channel_->SetServiceMap(services_);
         client_.connect();
     }
 
-    void CallRemoteMethod(uint32_t message_id, const ::google::protobuf::Message& request)
+    // 需要应答的调用,语义见 RpcChannel::CallMethod:done 恰好一次、永不同步执行;未连接时以 kNotSent 投递。
+    void CallMethod(uint32_t messageId, const ::google::protobuf::Message& request, ClientDoneCallback done,
+                    const RpcCallOptions& options = {})
     {
-        if (!connected_)
+        if (!channel_)
         {
-            LOG_ERROR << "Failed to call remote method: Client is not connected to the server.";
+            RpcChannel::FailNotSent(*client_.getLoop(), messageId, std::move(done), "not connected",
+                                    serverAddr_.toIpPort());
             return;
         }
-
-        LOG_DEBUG << "Sending request (Message ID: " << message_id << ") to remote method...";
-        channel_->CallRemoteMethod(message_id, request);
+        channel_->CallMethod(messageId, request, std::move(done), options);
     }
 
-    void SendRequest(uint32_t message_id, const ::google::protobuf::Message& message)
+    template <typename Method, typename Done>
+    void CallMethod(const typename Method::Request& request, Done&& done, const RpcCallOptions& options = {})
     {
-        if (!connected_)
+        if (!channel_)
         {
-            LOG_ERROR << "Failed to send request: Client is not connected to the server.";
+            RpcChannel::FailNotSent(
+                *client_.getLoop(), Method::kMessageId,
+                [typedDone = std::forward<Done>(done)](const RpcStatus& status, const MessagePtr&) mutable
+                {
+                    typedDone(status, std::shared_ptr<typename Method::Response>{});
+                },
+                "not connected", serverAddr_.toIpPort());
             return;
         }
-
-        LOG_DEBUG << "Sending request (Message ID: " << message_id << ") with message size: " << message.ByteSizeLong() << " bytes.";
-        channel_->SendRequest(message_id, message);
+        channel_->CallMethod<Method>(request, std::forward<Done>(done), options);
     }
 
-    void RouteMessageToNode(uint32_t message_id, const ::google::protobuf::Message& request)
+    // 单向(调用方不要应答)。未连接时返回 false 并计数。
+    bool SendRequest(uint32_t messageId, const ::google::protobuf::Message& message)
     {
-        if (!connected_)
+        if (!channel_)
         {
-            LOG_ERROR << "Failed to route message: Client is not connected to the server.";
-            return;
+            const auto n = GetRpcChannelStats().onewayRejected.fetch_add(1, std::memory_order_relaxed) + 1;
+            if (ShouldLogRpcEvent(n))
+            {
+                LOG_WARN << "[RpcChannel] one-way request dropped: reason=not connected, message_id=" << messageId
+                         << ", peer=" << serverAddr_.toIpPort() << ", occurrences=" << n;
+            }
+            return false;
         }
+        return channel_->SendRequest(messageId, message);
+    }
 
-        LOG_DEBUG << "Routing message (Message ID: " << message_id << ") to node...";
-        channel_->RouteMessageToNode(message_id, request);
+    template <typename Method>
+    bool SendRequest(const typename Method::Request& request)
+    {
+        return SendRequest(Method::kMessageId, request);
+    }
+
+    // 节点关机阶段 0(NodeUtils::CloseAllRpcChannels):在途调用以 kChannelClosed 失败,之后拒收新调用。
+    void CloseChannel()
+    {
+        if (channel_)
+        {
+            channel_->Close();
+        }
     }
 
     // 没连接时 TcpClient::connection() 本来就返回空指针,不需要再造一个 static 哨兵。
     muduo::net::TcpConnectionPtr GetConnection() const { return client_.connection(); }
+
+    // 当前连接上的 channel(未连接时为空)。给测试与关机收尾用;业务代码走上面的 CallMethod / SendRequest。
+    const RpcChannelPtr& channel() const { return channel_; }
 
 private:
     // Disconnects within this window after the initial successful connect are
@@ -162,8 +210,12 @@ private:
         {
             conn->setTcpNoDelay(true);
             conn->setHighWaterMarkCallback(OnInterNodeHighWaterMark, kInterNodeHighWaterMark);
-            channel_->SetConnection(conn);
-            connected_ = true;
+            if (channel_)
+            {
+                // 没等到旧连接的 DOWN 就来了新连接(不应发生):旧 channel 上的在途调用先按断连失败。
+                channel_->OnDisconnect();
+            }
+            channel_ = RpcChannel::Create(*conn->getLoop(), conn, services_);
             if (connectedAt_ == muduo::Timestamp::invalid())
             {
                 connectedAt_ = muduo::Timestamp::now();
@@ -172,7 +224,13 @@ private:
         }
         else
         {
-            connected_ = false;
+            if (channel_ && channel_->IsBoundTo(conn))
+            {
+                // 在途调用以 kDisconnected 失败(回调 queueInLoop,不在本回调栈上执行);channel 随之丢弃 ——
+                // 本端在它上面接管(Adopt)的延后回复此后一律 lock 失败而丢弃,不会落到下一条连接上。
+                channel_->OnDisconnect();
+                channel_.reset();
+            }
             const double sinceConnect = (connectedAt_ == muduo::Timestamp::invalid())
                                             ? -1.0
                                             : muduo::timeDifference(muduo::Timestamp::now(), connectedAt_);
@@ -191,11 +249,12 @@ private:
         tlsEcs.dispatcher.trigger<OnConnected2TcpServerEvent>(conn);
     }
 
-    bool connected_{ false };
     muduo::Timestamp connectedAt_{};
     muduo::net::TcpClient client_;
-    GameChannelPtr channel_;
-    std::map<std::string, ::google::protobuf::Service*> services_;
+    muduo::net::InetAddress serverAddr_;
+    RpcServiceMap services_;
+    // 声明在 client_ 之后:析构时先于 client_ 释放(~RpcChannel 在 loop 还活着时把在途调用排进队列)。
+    RpcChannelPtr channel_;
 };
 
 using RpcClientPtr = std::shared_ptr<RpcClient>;

@@ -2,6 +2,7 @@ package logic
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math/rand"
 	"strconv"
@@ -16,6 +17,8 @@ import (
 	"shared/generated/pb/table"
 
 	"github.com/zeromicro/go-zero/core/logx"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -348,6 +351,20 @@ func removeObserverRPC(endpoint string, req *battlepb.RemoveObserverRequest) err
 	return err
 }
 
+// errAddObserverOutcomeUnknown 标记「AddObserver 可能已在 battle 落地」的失败:截止 / 取消 / 不可用时请求可能
+// 已经送达,C++ battle 同步处理、不一定看 grpc-timeout,观众可能已挂上并经 Kafka→gate 推了观战落点。
+// 调用方回滚时要补一次 RemoveObserver,否则 match 删了观战标记、battle 上却留着观众:客户端先收到失败又收到落点,
+// 之后排队时 gather 的 stopWatchingIfAny 也读不到标记、不会清退它(D11)。对没挂上的观众补发是 no-op。
+var errAddObserverOutcomeUnknown = errors.New("AddObserver outcome unknown")
+
+func addObserverOutcomeUnknown(err error) bool {
+	switch status.Code(err) {
+	case codes.DeadlineExceeded, codes.Canceled, codes.Unavailable:
+		return true
+	}
+	return errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled)
+}
+
 // addObserver 调 battle 节点挂观众。返回 roomMissing=true 表示 battle 回
 // "房间不存在"(战斗已收尾),调用方据此懒剔除索引;其余错误(节点定位失败/
 // RPC 失败/满员/观众是参战者/签不出票)不动索引。ctx 是请求 ctx,见 addObserverRPC。
@@ -368,6 +385,9 @@ func addObserver(ctx context.Context, svcCtx *svc.ServiceContext, battleNodeId u
 		ObserverName:     observerName,
 	})
 	if err != nil {
+		if addObserverOutcomeUnknown(err) {
+			return false, fmt.Errorf("AddObserver RPC 结果未知: %w: %w", errAddObserverOutcomeUnknown, err)
+		}
 		return false, fmt.Errorf("AddObserver RPC 失败: %w", err)
 	}
 	if tipId := resp.GetErrorMessage().GetId(); tipId != 0 {

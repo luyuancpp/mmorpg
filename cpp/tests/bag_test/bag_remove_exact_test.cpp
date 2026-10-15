@@ -25,6 +25,7 @@
 // 进程基线的"未启用" —— 不依赖别的文件的用例先跑或后跑。
 
 #include <gtest/gtest.h>
+#include "engine/core/type_define/player_guid_comp.h"
 
 #include <cstdint>
 #include <functional>
@@ -133,7 +134,7 @@ protected:
 		ASSERT_NO_FATAL_FAILURE(RequireFixtureRows());
 
 		player = tlsEcs.actorRegistry.create();
-		tlsEcs.actorRegistry.emplace<Guid>(player, kPlayerGuid);
+		tlsEcs.actorRegistry.emplace<PlayerGuidComp>(player, kPlayerGuid);
 	}
 
 	void TearDown() override

@@ -50,10 +50,10 @@ set(SOURCE_FILES
     log/system/console_log.cpp
     message_limiter/message_limiter.cpp
     network/codec/codec.cpp
-    network/game_channel.cpp
+    network/rpc_channel.cpp
+    network/rpc_channel_stats.cpp
     network/message_statistics.cpp
     network/network_utils.cpp
-    network/node_message_utils.cpp
     network/node_utils.cpp
     network/player_message_utils.cpp
     network/process_info.cpp

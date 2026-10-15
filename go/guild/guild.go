@@ -279,6 +279,10 @@ func main() {
 		// (下面的 EconomyDeps.Loop / ActivityDeps.Loop)与 Start 之前接上 —— Loop.Ledger 是无锁字段。
 		// 没配 DataServiceRpc 时客户端为 nil,方法内保持 Ledger=nil 并打 INFO(离线读账本是优化,不是正确性路径)。
 		assetPipe.AttachPersistedLedger(svcCtx.DataServiceClient)
+		// 日对账 + 自动放弃(落地恢复 §6.2 / §6.3)的选主:锁在 guild 全局 Redis(全体副本共享),只有当选副本跑维护。
+		// 同样必须在 Start 之前接上。竞选者标识用节点 uuid(每个进程实例唯一,与历练巡检租约的持有者标识同源)。
+		// 自动放弃另需 Loop.Ledger(上一行;没配 DataServiceRpc 时不放弃)与 Loop.Locator(NewAssetPipeline 已接),缺一不跑。
+		assetPipe.AttachMaintenanceLeader(svcCtx.RedisClient, n.Info.NodeUuid)
 		svcCtx.WarmAssetOpIDSegment()
 	} else {
 		// go-zero logx 没有 WARN 级;沿用本文件"降级形态打一条 ERROR"的写法(同 DataServiceRpc 未配置)。
@@ -386,12 +390,17 @@ func main() {
 	// 不注入 = 总是放行,只有单测才会走那条默认。
 	//
 	// WithPlayerNames 收到 nil 接口时什么都不做(90-consistency.md Y-02:依赖只经函数式 Option 一次装配)。
+	//
+	// WithSyncBumper:落地恢复摘要(docs/design/landing-recovery-sync-digest.md §3)。guild 的所有 bump 点(含资产终结的
+	// OnAssetFinalized)都经 logic 的 syncBumper 发出,**不接这一项,guild 四个域的 bump 全不生效**(静默退化为 Noop)。
+	// svcCtx.PlayerSyncBumper 由 NewServiceContext 无条件建好(指向核心 Redis DB 0 的专用客户端),NewGuildSyncBumper 自己判 nil。
 	guildLogic := logic.NewGuildLogic(repo, guildIDs, onlineResolver, mergeFence, homeZones,
 		logic.WithNotifier(logic.NewGuildNotifier(svcCtx.KafkaWriter, svcCtx.GateCommandBuilder, svcCtx.PlayerLocatorRedisClient)),
 		logic.WithApplyPushGate(repo.TryMarkApplyPush),
 		logic.WithPlayerNames(playerNames),
 		logic.WithEconomy(economy),
-		logic.WithActivities(activities))
+		logic.WithActivities(activities),
+		logic.WithSyncBumper(logic.NewGuildSyncBumper(svcCtx.PlayerSyncBumper)))
 
 	// 终结推送回调。必须在重投循环与 gRPC server 启动**之前**赋值:此后只读,不需要同步。
 	// 晚于它们赋值 = 启动初期被循环终结的行不推送,且与读它的 worker 构成数据竞争。
@@ -418,7 +427,8 @@ func main() {
 	s.AddUnaryInterceptors(buildUnaryInterceptors(ks, config.AppConfig.RequestBudget())...)
 	defer s.Stop()
 
-	// 资产通道后台 goroutine(guild.scene_node_watch / guild.asset_op_reconcile / guild.asset_op_cleanup)。
+	// 资产通道后台 goroutine(guild.scene_node_watch / guild.asset_op_reconcile / guild.asset_op_cleanup,
+	// 以及落地恢复的 guild.asset_op_maintenance(选主后的日对账 + 自动放弃)与 assetopwake 的唤醒订阅)。
 	//
 	// ⚠️ 它们的 stop 必须写在 `defer s.Stop()` 之后:defer 后进先出,进程退出时它们**最先**执行,
 	// 从而早于 ksCancel、sfHandle.Close、etcdCli.Close、n.Close 与 svcCtx.Stop(关 MySQL / Redis)。

@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include <cstdint>
 #include <memory>
 
 #include "muduo/net/Callbacks.h"
@@ -10,16 +11,13 @@ using muduo::net::EventLoop;
 using muduo::net::TimerCallback;
 using muduo::net::TimerId;
 
-// Timer must be owned by its callback target; if B owns A's timer,
-// A may be destroyed before B's timer fires.
+// 定时器与宿主同寿命,只在所属 EventLoop 线程调度、移动、取消和销毁。
+// 移动会转移已武装的定时器。回调应捕获实体句柄或业务 ID,不能依赖可移动宿主的地址;
+// 必须捕获宿主 this 的类型须显式禁止移动。闭包从不捕获 TimerTaskComp 自身地址。
 class TimerTaskComp
 {
 public:
-    // muduo 回调捕获本组件地址。EnTT 默认的 swap-and-pop 删除会把末尾组件
-    // 移入被删除位置；由于回调仍指向源地址，移动操作必须取消源定时器。
-    // 将直接存入 ECS 的 TimerTaskComp 固定为原地删除，避免删除一个实体时
-    // 取消或搬移另一个实体的定时器。作为 EnTT 存储之外的普通成员使用时，
-    // 此标记不影响 TimerTaskComp 的行为。
+    // 保留直接存储本组件时的地址稳定性;移动正确性已不依赖此标记。
     static constexpr bool in_place_delete = true;
 
     TimerTaskComp();
@@ -37,62 +35,23 @@ public:
 
     void Cancel();
 
-    // "Is a timer currently armed", nothing more. Deliberately does not expose
-    // a deadline: remaining time is entity data that must survive save/load,
-    // reach the client, and be restored on reconnect, and muduo's Timer can do
-    // none of those. The old GetEndTime() read it out of muduo's private Timer
-    // and was removed -- put the deadline on the entity's protobuf component
-    // instead, which is what already gets synced and persisted.
+    // 只表示是否已武装,不读 muduo Timer 的私有状态。跨存盘的截止时间属于业务组件。
     bool IsActive() const;
 
 private:
-    // Common guard + schedule logic shared by RunAt/RunAfter/RunEvery.
-    // Takes cb by value so it can be moved into the closure handed to muduo.
+    struct State
+    {
+        TimerId timerId;
+        uint32_t generation{0};
+        bool armed{false};
+    };
+
+    // 只在实际调度时创建状态。复制不继承计时,移动整体转交状态。
     template <typename ScheduleFn>
     void ScheduleTimer(TimerCallback cb, bool repeating, ScheduleFn &&schedule);
 
-    // Everything it needs is bound at schedule time and lives in muduo's Timer,
-    // not in this component.
-    //
-    // `firedGeneration` lets a firing left over from a superseded arming
-    // recognise itself and bail out -- see the .cpp for the use-after-free it
-    // prevents. `repeating` replaces asking muduo's Timer what kind it is; we
-    // scheduled it, so we already know. `cb` used to be a member: keeping it in
-    // the closure instead means Cancel() cannot destroy the callable while it
-    // is executing, so re-arming from inside one's own callback needs no
-    // defensive copy. It also shrank the component substantially (88 -> 24 on
-    // MSVC, 56 -> 24 on libstdc++ at the time) and removes one std::function
-    // copy per firing, which was a heap allocation on Linux for any callable
-    // larger than the 16-byte inline buffer. (`aliveToken` has since added one
-    // pointer pair back — see its comment; correctness over 16 bytes.)
-    void OnTimer(uint32_t firedGeneration, bool repeating, const TimerCallback &cb);
-
-    // 存活令牌:定时器闭包只持有它的 weak_ptr,开火时先 lock() 再碰 this。
-    //
-    // 为什么 generation 挡不住这一类:muduo 的 TimerQueue::handleRead 先把到期
-    // 定时器整批取出(getExpired 已把它们从 activeTimers_ 摘掉),再逐个 run()。
-    // 此后调 cancel() 只会记进 cancelingTimers_ —— 那只影响重复定时器要不要重挂,
-    // **run() 照常发生**。于是批内前一个回调若销毁了后一个定时器的宿主,后者的
-    // 闭包仍会以已释放的 this 进入 OnTimer,而 generation 本身就住在那块内存里,
-    // 读它就已经是 use-after-free。
-    //
-    // 可达路径(2026-08-03 审计):同一实体上两个 buff 同批到期,buff1 的
-    // OnBuffExpire → RemoveSubBuff → RemoveBuff → OnBuffExpire →
-    // buffList.erase(buff2) 同步析构 buff2 的 BuffEntry(内含 expireTimerTaskComp),
-    // 而 buff2 的定时器就在同一批里等着 run()。实体整体销毁(DestroyEntity 连带
-    // 析构 BuffListComp)同理。
-    //
-    // 懒创建:只有真正挂过定时器的组件才付这次控制块分配,未武装的
-    // TimerTaskComp(数量很大:每 buff / 每技能一个)不受影响。
-    std::shared_ptr<char> aliveToken;
-
-    TimerId timerId;
-    // Bumped on every Cancel() -- and therefore on every re-arm, since
-    // ScheduleTimer() cancels first. Only ever compared for equality, so
-    // wrapping is harmless. uint32 rather than uint64 so that `armed` fits in
-    // the same 8 bytes of tail padding.
-    uint32_t generation = 0;
-    // Backs IsActive(). True from a successful arming until the one-shot fires
-    // or Cancel() runs; a repeating timer stays armed.
-    bool armed = false;
+    // 开火期间强持有 State,cb 销毁或移动宿主也不会释放当前状态。
+    // generation 使已被 muduo 摘进到期批次的旧回调在取消或重新武装后失效。
+    static void OnTimer(State &state, uint32_t firedGeneration, bool repeating, const TimerCallback &cb);
+    std::shared_ptr<State> state_;
 };

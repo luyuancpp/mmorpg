@@ -113,7 +113,7 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 	fenceKey, fenced := sessionfence.KeyOf(sessionDetails)
 	var fenceGen uint64
 	if fenced {
-		outcome, gen, fenceErr := sessionfence.CheckEnterGame(ctx, l.svcCtx.RedisClient, fenceKey, in.PlayerId)
+		outcome, gen, fenceErr := sessionfence.CheckEnterGame(ctx, l.svcCtx.RedisClient, fenceKey, in.PlayerId, sessionFenceTTL)
 		if fenceErr != nil {
 			logx.Errorf("EnterGame session fence check failed: playerId=%d session=%d err=%v", in.PlayerId, sessionDetails.SessionId, fenceErr)
 			resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginRedisError)}
@@ -849,27 +849,48 @@ func (l *EnterGameLogic) applyLoadedPlayerSession(ctx context.Context, state ent
 // (docs/design/client-request-ordering.md §6.2)。旧版 gate(没有会话代次)不做。
 // 绑定失败时由本函数补偿,并返回 error 让后台链按失败收尾(不发 BindSession、不进场):
 //   - 连接已断开:Disconnect 先到时这条连接还没绑定玩家(它带的 player_id 为 0),没能挂断线租约 → 这里补挂;
-//   - 期间离开了游戏 / 连接上已绑定别的角色:删掉本次写入的会话(MarkOffline 按 session_id + version CAS)。
+//   - 期间离开了游戏 / 连接上已绑定别的角色:删掉本次写入的会话(MarkOffline 按 session_id + version CAS);
+//   - 绑定本身报错(结果未知):同「连接已断开」补挂断线租约 —— 链不会再发 BindSession,gate 之后的断线通知
+//     不带这个玩家,脚本若没执行 Close 也读不到它,不补挂就会永久停在 ONLINE。连接还活着时客户端重试 EnterGame,
+//     走短线重连接回;租约到期之前不会误清。
+//
+// 补偿用 WithoutCancel 派生的独立 ctx:走到这里时链 ctx 可能已被心跳丢锁取消(chainCancel)或临近链预算截止,
+// markPlayerSessionDisconnecting 在 ctx 已取消时直接放弃,只留一条 CRITICAL 日志(与 CreatePlayer 补偿同约定)。
 func (l *EnterGameLogic) bindSessionFence(ctx context.Context, state enterGameSessionState) error {
 	if !state.fenced {
 		return nil
 	}
 	outcome, err := sessionfence.BindPlayer(ctx, l.svcCtx.RedisClient, state.fenceKey, state.playerID, state.fenceGen, sessionFenceTTL)
 	if err != nil {
-		return fmt.Errorf("session fence bind for player %d: %w", state.playerID, err)
+		l.compensateFenceBind(ctx, state, true)
+		return fmt.Errorf("session fence bind for player %d: %w; disconnect lease placed by the enter chain", state.playerID, err)
 	}
 	switch outcome {
 	case sessionfence.OutcomeOK:
 		return nil
 	case sessionfence.OutcomeClosed:
-		markPlayerSessionDisconnecting(ctx, l.svcCtx, state.playerID, state.sessionID)
+		l.compensateFenceBind(ctx, state, true)
 		return fmt.Errorf("gate connection closed before binding player %d session %d; disconnect lease placed by the enter chain",
 			state.playerID, state.sessionID)
 	default:
-		deletePlayerSession(ctx, l.svcCtx, state.playerID, state.sessionID)
+		l.compensateFenceBind(ctx, state, false)
 		return fmt.Errorf("session fence %s when binding player %d session %d; session record removed",
 			outcome, state.playerID, state.sessionID)
 	}
+}
+
+// fenceBindCompensationTimeout 覆盖 markPlayerSessionDisconnecting 的 4 次尝试(退避合计 1.4s)加每次 RPC。
+const fenceBindCompensationTimeout = 10 * time.Second
+
+// compensateFenceBind 撤销绑定失败时已写入的会话:placeLease = true 挂断线租约,否则删会话。
+func (l *EnterGameLogic) compensateFenceBind(ctx context.Context, state enterGameSessionState, placeLease bool) {
+	cctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), fenceBindCompensationTimeout)
+	defer cancel()
+	if placeLease {
+		markPlayerSessionDisconnecting(cctx, l.svcCtx, state.playerID, state.sessionID)
+		return
+	}
+	deletePlayerSession(cctx, l.svcCtx, state.playerID, state.sessionID)
 }
 
 // persistEnterGameSession persists the session and returns the new session version.

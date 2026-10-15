@@ -90,7 +90,7 @@ enum ActorType
 
 message ActorCreateS2C
 {
-	uint64 entity = 1;
+	uint64 entity = 1; // 不透明 actor 网络号；不持久化，不是玩家 GUID 或本地 ECS 句柄。
 	Transform transform = 2;
 	ActorType actor_type = 3;
 	uint64 guid = 4;
@@ -102,7 +102,7 @@ message ActorCreateS2C
 
 message ActorDestroyS2C
 {
-	uint64 entity = 1;
+	uint64 entity = 1; // 需要移除的不透明 actor 网络号。
 }
 
 message ActorListCreateS2C
@@ -112,7 +112,7 @@ message ActorListCreateS2C
 
 message ActorListDestroyS2C
 {
-	repeated uint64 entity = 1;
+	repeated uint64 entity = 1; // 需要移除的不透明 actor 网络号列表。
 }
 
 // 跨 zone 场景传送(docs/design/cross-zone-scene-travel.md CZ-7)。

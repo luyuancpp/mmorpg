@@ -13,6 +13,7 @@
 #include "engine/core/time/system/time.h"
 #include "modules/bag/bag_service.h"
 #include "modules/bag/comp/player_bags_comp.h"
+#include "modules/currency/comp/player_currency_comp.h"
 #include "modules/currency/system/currency_system.h"
 #include "modules/gain_block/gain_block_service.h"
 #include "modules/id_segment/guid_segment_registry.h"
@@ -218,9 +219,9 @@ bool IsAssetOpDurable(entt::entity player, AssetOpStream stream, uint64_t epoch,
 }
 
 // 触发一次存盘并记下时刻。返回 SavePlayerToRedis 的原值:
-// true = 确实压了一次写、稍后有落盘回调;false = 脏比较判定与上次落盘逐字段相等、本次不写。
-// **前置**:IsPlayerMutable(player) 为真 —— 否则 false 还可能来自"交接在途跳过写盘",
-// 那是"没落盘",不是"已在盘上"(见 IsPlayerMutable 的说明)。
+// true = 确实压了一次写、稍后有落盘回调;false 仅表示没有压入新写,
+// 包括与旧快照相等、交接已发起、缺身份/持久组件拒存。不能从 bool 推断具体原因或 durable。
+// **前置**:IsPlayerMutable(player) 为真;durable 始终由真实落盘快照单独判定。
 bool RequestAssetOpPersist(entt::entity player, int64_t nowMs)
 {
 	auto& persistRequest = tlsEcs.actorRegistry.get_or_emplace<PlayerAssetOpPersistRequestComp>(player);
@@ -237,9 +238,9 @@ bool PersistAndProbeDurable(entt::entity player, const ::AssetOpRequest& request
 		IsAssetOpDurable(player, request.stream(), request.stream_epoch(), request.seq(), expectApplied);
 	if (!wrote && !durable)
 	{
-		// 没写盘 = 内存与上次落盘快照逐字段相等;结局既然已在内存里,就必然也在快照里。
-		// 走到这里说明脏比较或快照维护有 bug,如实报 durable=false 让 Go 继续重查。
-		LOG_ERROR << "[AssetOp] Save skipped by dirty comparison but outcome is absent from persisted snapshot player_id=" << request.player_id()
+		// bool facade 分不出相等跳过、交接跳过和拒存。这里只报告未排入新写且缺少落盘证据,
+		// 如实保留 durable=false 让 Go 重查;具体拒存原因由保存入口日志和累计计数说明。
+		LOG_ERROR << "[AssetOp] No save queued and outcome is absent from persisted snapshot player_id=" << request.player_id()
 				  << " stream=" << static_cast<int>(request.stream()) << " epoch=" << request.stream_epoch()
 				  << " seq=" << request.seq();
 	}
@@ -794,9 +795,14 @@ void Decide(AssetOpRpc rpc, const ::AssetOpRequest& request, ::AssetOpResponse& 
 		Answer(response, ASSET_OP_OUTCOME_RETRY, kAssetInBattle);
 		return;
 	}
-	if (tlsEcs.actorRegistry.try_get<CurrencyComp>(player) == nullptr)
+	if (!tlsEcs.actorRegistry.all_of<CurrencyComp, PlayerCurrencyComp>(player))
 	{
-		LOG_WARN << "[AssetOp] Player lacks CurrencyComp(still loading) player_id=" << request.player_id();
+		// 两份数据都由加载恢复。尤其 Credit 先发物品再加币,缺债务镜像必须在物品副作用前拦住,
+		// 不能由后面的 AddCurrency 拒绝才发现,否则这笔资产指令已经部分应用。
+		LOG_ERROR << "[AssetOp] Asset application refused: persisted currency component missing (load invariant broken) player_id="
+				  << request.player_id()
+				  << " has_currency=" << tlsEcs.actorRegistry.all_of<CurrencyComp>(player)
+				  << " has_player_currency=" << tlsEcs.actorRegistry.all_of<PlayerCurrencyComp>(player);
 		Answer(response, ASSET_OP_OUTCOME_RETRY, kAssetPlayerNotHere);
 		return;
 	}

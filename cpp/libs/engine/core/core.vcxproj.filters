@@ -19,10 +19,10 @@
     <ClCompile Include="time\comp\timer_task_comp.cpp" />
     <ClCompile Include="time\system\time.cpp" />
     <ClCompile Include="network\codec\codec.cpp" />
-    <ClCompile Include="network\game_channel.cpp" />
+    <ClCompile Include="network\rpc_channel.cpp" />
+    <ClCompile Include="network\rpc_channel_stats.cpp" />
     <ClCompile Include="network\message_statistics.cpp" />
     <ClCompile Include="network\network_utils.cpp" />
-    <ClCompile Include="network\node_message_utils.cpp" />
     <ClCompile Include="network\player_message_utils.cpp" />
     <ClCompile Include="network\process_info.cpp" />
     <ClCompile Include="network\rpc_server.cc" />
@@ -68,12 +68,14 @@
     <ClInclude Include="network\codec\codec.h" />
     <ClInclude Include="network\codec\dispatcher.h" />
     <ClInclude Include="network\codec\dispatcher_lite.h" />
-    <ClInclude Include="network\codec\message_response_dispatcher.h" />
-    <ClInclude Include="network\game_channel.h" />
+    <ClInclude Include="network\rpc_channel.h" />
+    <ClInclude Include="network\rpc_channel_stats.h" />
+    <ClInclude Include="network\rpc_controller.h" />
+    <ClInclude Include="network\rpc_done_callback.h" />
+    <ClInclude Include="network\rpc_status.h" />
     <ClInclude Include="network\message_statistics.h" />
     <ClInclude Include="network\network_constants.h" />
     <ClInclude Include="network\network_utils.h" />
-    <ClInclude Include="network\node_message_utils.h" />
     <ClInclude Include="network\player_message_utils.h" />
     <ClInclude Include="network\process_info.h" />
     <ClInclude Include="network\rpc_client.h" />
@@ -96,6 +98,7 @@
     <ClInclude Include="utils\encode\sha256.h" />
     <ClInclude Include="utils\random\random.h" />
     <ClInclude Include="utils\registry\game_registry.h" />
+    <ClInclude Include="utils\registry\scene_entity.h" />
     <ClInclude Include="utils\stat\stat.h" />
     <ClInclude Include="utils\proto\message_util.h" />
     <ClInclude Include="node\system\grpc_channel_cache.h" />
@@ -106,10 +109,11 @@
     <ClInclude Include="network\traffic_statistics.h" />
     <ClInclude Include="utils\bit_index\bit_index_util.h" />
     <ClInclude Include="utils\data_structures\double_buffer_queue.h" />
+    <ClInclude Include="utils\data_structures\inflight_index.h" />
+    <ClInclude Include="type_define\player_guid_comp.h" />
+    <ClInclude Include="utils\registry\actor_log.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="network\autogen.bat" />
-    <None Include="network\autogen.sh" />
-    <None Include="network\rpc_message.proto" />
+    <ClInclude Include="node\system\node\node_events.h" />
   </ItemGroup>
 </Project>

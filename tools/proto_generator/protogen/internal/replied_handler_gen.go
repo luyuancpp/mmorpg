@@ -5,6 +5,10 @@ import (
 	"protogen/internal/utils"
 )
 
+// 本文件只剩玩家回包链(rpc_replies/player/* 的 <Svc>Reply : PlayerServiceReplied)。节点级 muduo 回包
+// (On<KeyName>Reply + gRpcResponseDispatcher 注册)已退场,回包改在调用点的每次调用 lambda 里完成
+// (docs/design/muduo-rpc-channel.md §9.2)。
+
 // RepliedMethod holds data for a replied RPC method.
 type RepliedMethod struct {
 	Method      string
@@ -95,125 +99,4 @@ func getPlayerMethodRepliedHandlerFunctions(methods RPCMethods) string {
 	}
 
 	return utils.ExecuteTemplate("playerRepliedFunctions", tmplStr, data)
-}
-
-// RepliedHandlerMethod holds data for a service replied handler method.
-type RepliedHandlerMethod struct {
-	FuncName    string
-	CppResponse string
-	Code        string
-	HasCode     bool
-	KeyName     string
-}
-
-// GetServiceRepliedHandlerHeadStr generates the service replied handler header file.
-func GetServiceRepliedHandlerHeadStr(methods RPCMethods) (string, error) {
-	const tmplStr = `#pragma once
-#include "muduo/net/TcpConnection.h"
-{{.FirstMethodInfo.IncludeName }}
-
-{{- range .Methods }}
-void On{{ .KeyName }}{{ $.RepliedHandlerFileName }}(const muduo::net::TcpConnectionPtr& conn, const std::shared_ptr<{{ .CppResponse }}>& replied, muduo::Timestamp timestamp);
-
-{{- end }}
-`
-
-	if len(methods) == 0 {
-		return "", nil
-	}
-
-	data := struct {
-		FirstMethodInfo        *MethodInfo
-		Methods                RPCMethods
-		RepliedHandlerFileName string
-	}{
-		FirstMethodInfo:        methods[0],
-		Methods:                methods,
-		RepliedHandlerFileName: _config.Global.Naming.RepliedHandlerFile,
-	}
-
-	return utils.GlobalEngine.MustExecute("serviceRepliedHandlerHead", tmplStr, data)
-}
-
-// GetServiceRepliedHandlerCppStr generates the service replied handler CPP file.
-func GetServiceRepliedHandlerCppStr(dst string, methods RPCMethods, _ string, _ string) string {
-	const tmplStr = `
-{{ .CppRepliedHandlerInclude }}
-#include "rpc/{{ .ServiceInfoName }}{{ .ServiceInfoHeadInclude }}"
-#include "network/codec/message_response_dispatcher.h"
-
-extern MessageResponseDispatcher gRpcResponseDispatcher;
-
-{{ if .FirstCode }}
-{{ .FirstCode }}
-{{ end }}
-
-void Init{{ .InitFuncName }}{{ .RepliedHandlerFileName }}()
-{
-{{- range .Methods }}
-{{- if .HasCode }}
-    gRpcResponseDispatcher.registerMessageCallback<{{ .CppResponse }}>({{.KeyName}}{{$.MessageIdName}},
-        std::bind(&{{ .FuncName }}, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-{{- end }}
-{{- end }}
-}
-
-{{- range .Methods }}
-{{- if .HasCode }}
-
-void {{ .FuncName }}(const muduo::net::TcpConnectionPtr& conn, const std::shared_ptr<{{ .CppResponse }}>& replied, muduo::Timestamp timestamp)
-{
-{{ .Code -}}
-}
-{{- end }}
-{{- end }}
-`
-
-	if len(methods) == 0 {
-		return ""
-	}
-
-	emptyStr := ""
-	yourCodesMap, firstCode, _ := ReadCodeSectionsFromFile(dst, &methods, GenerateMethodHandlerKeyNameWrapper, emptyStr)
-	firstMethodInfo := methods[0]
-
-	var methodsData []RepliedHandlerMethod
-	for _, method := range methods {
-		funcName := GenerateMethodHandlerKeyNameWrapper(method, emptyStr)
-		code, exists := yourCodesMap[funcName]
-		methodsData = append(methodsData, RepliedHandlerMethod{
-			FuncName:    funcName,
-			CppResponse: method.CppResponse(),
-			Code:        code,
-			HasCode:     exists,
-			KeyName:     method.KeyName(),
-		})
-	}
-
-	data := struct {
-		CppRepliedHandlerInclude string
-		FirstCode                string
-		InitFuncName             string
-		RepliedHandlerFileName   string
-		Methods                  []RepliedHandlerMethod
-		MessageIdName            string
-		ServiceInfoHeadInclude   string
-		ServiceInfoName          string
-	}{
-		CppRepliedHandlerInclude: firstMethodInfo.CppRepliedHandlerIncludeName(),
-		FirstCode:                firstCode,
-		InitFuncName:             firstMethodInfo.Service(),
-		RepliedHandlerFileName:   _config.Global.Naming.RepliedHandlerFile,
-		Methods:                  methodsData,
-		MessageIdName:            _config.Global.Naming.MessageId,
-		ServiceInfoHeadInclude:   firstMethodInfo.ServiceInfoHeadInclude(),
-		ServiceInfoName:          _config.Global.DirectoryNames.ServiceInfoName,
-	}
-
-	return utils.ExecuteTemplate("serviceRepliedHandlerCpp", tmplStr, data)
-}
-
-// GenerateMethodHandlerKeyNameWrapper generates the method handler key name.
-func GenerateMethodHandlerKeyNameWrapper(info *MethodInfo, _ string) string {
-	return "On" + info.KeyName() + _config.Global.Naming.RepliedHandlerFile
 }

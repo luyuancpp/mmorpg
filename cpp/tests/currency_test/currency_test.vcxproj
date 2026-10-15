@@ -159,6 +159,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="currency_test.cpp" />
+    <ClCompile Include="anomaly_detector_test.cpp" />
     <ClCompile Include="asset_op_auth_test.cpp" />
     <ClCompile Include="asset_op_ledger_test.cpp" />
     <ClCompile Include="asset_op_system_test.cpp" />

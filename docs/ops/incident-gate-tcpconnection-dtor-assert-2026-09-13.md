@@ -28,7 +28,7 @@ ucrtbased.dll!...                                   ← _wassert / abort
 
 - 断言点是 [third_party/muduo/muduo/net/TcpConnection.cc:71](../../third_party/muduo/muduo/net/TcpConnection.cc) `assert(state_ == kDisconnected);`
   —— **一个 `state_` 仍为 `kConnected` 的连接对象被销毁了**。不是"连接早断开",是反过来。
-- 触发帧是 [cpp/libs/engine/core/network/game_channel.cpp](../../cpp/libs/engine/core/network/game_channel.cpp) 原 314 行 `tlsRpc.conn = conn;`:这次赋值放掉了**上一个**连接的最后一根强引用。
+- 触发帧是 [cpp/libs/engine/core/network/game_channel.cpp](../../cpp/libs/engine/core/network/rpc_channel.cpp) 原 314 行 `tlsRpc.conn = conn;`:这次赋值放掉了**上一个**连接的最后一根强引用。
 - 断住后进程被调试器挂起:CPU 5 秒内 0 ms、46 个线程 `Suspended`、`run/logs/cpp_nodes/z1_gate.stdout.log` 停在 23:45:46,而 scene/battle 日志仍在滚动。**调试期间一区 gate 事实上下线。**
 
 ## 2. 时间线
@@ -334,7 +334,7 @@ gate(pid 52724)与 scene(pid 7956)全程存活,新增日志中无 FATAL、无 as
 
 ### 7.2 【已修 09-14,待编译验证】`GameChannel::connection_` 对出站连接是强引用,且 DOWN 时不清
 
-[game_channel.h:87](../../cpp/libs/engine/core/network/game_channel.h) 在 UP 时由 [rpc_client.h:145](../../cpp/libs/engine/core/network/rpc_client.h) `channel_->SetConnection(conn)` 设置,DOWN 分支(rpc_client.h:153)只翻 `connected_`,从不清空。它今天不触发 `~TcpClient` 的 unique-skip,**只**因为 (a) `RpcClient` 把 `client_` 声明在 `channel_` 之前(析构时 channel 先释放引用),(b) `channel_` 是 `GameChannel` 的唯一持有者(消息回调绑的是裸指针)。把这两个成员调换顺序、或在别处拷一份 `channel_`,本事故原样重演;同时 DOWN 到下一次 UP 之间它钉住一条已死连接和其 fd。
+[game_channel.h:87](../../cpp/libs/engine/core/network/rpc_channel.h) 在 UP 时由 [rpc_client.h:145](../../cpp/libs/engine/core/network/rpc_client.h) `channel_->SetConnection(conn)` 设置,DOWN 分支(rpc_client.h:153)只翻 `connected_`,从不清空。它今天不触发 `~TcpClient` 的 unique-skip,**只**因为 (a) `RpcClient` 把 `client_` 声明在 `channel_` 之前(析构时 channel 先释放引用),(b) `channel_` 是 `GameChannel` 的唯一持有者(消息回调绑的是裸指针)。把这两个成员调换顺序、或在别处拷一份 `channel_`,本事故原样重演;同时 DOWN 到下一次 UP 之间它钉住一条已死连接和其 fd。
 
 **修法**(二选一):`connection_` 改 `std::weak_ptr<TcpConnection>`,`game_channel.cpp` 四处发送点改 `if (auto c = connection_.lock()) codec_.send(c, msg); else LOG_WARN ...`,`HandleRpcMessage` 首行改 `assert(conn == connection_.lock())`;`RpcSession` / `RpcServer` 用服务端连接构造 `GameChannel` 的路径同样适用且安全。**最小替代**:DOWN 分支加 `channel_->SetConnection(nullptr)`,并在 `rpc_client.h:176-177` 加注释 / `static_assert` 钉死 `client_` 先于 `channel_` 的顺序。
 

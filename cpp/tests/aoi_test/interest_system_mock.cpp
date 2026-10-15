@@ -63,17 +63,23 @@ const AoiPriorityPolicy& InterestSystem::GetPriorityPolicy(entt::entity watcher)
 bool InterestSystem::AddAoiEntity(entt::entity watcher, entt::entity target, AoiPriority priority)
 {
     if (watcher == entt::null || target == entt::null) return false;
-    auto& comp = tlsEcs.actorRegistry.get_or_emplace<AoiListComp>(watcher);
+    // 与生产实现同语义:句柄必须存活,兴趣表只在本写入口第一次真正插入时创建。
+    if (!tlsEcs.actorRegistry.valid(watcher) || !tlsEcs.actorRegistry.valid(target)) return false;
+    auto* comp = tlsEcs.actorRegistry.try_get<AoiListComp>(watcher);
+    if (comp == nullptr) {
+        if (GetEffectiveCapacity(watcher) == 0) return false;
+        comp = &tlsEcs.actorRegistry.emplace<AoiListComp>(watcher);
+    }
     const auto& policy = MockGetPolicy(watcher);
 
-    if (auto it = comp.entries.find(target); it != comp.entries.end())
+    if (auto it = comp->entries.find(target); it != comp->entries.end())
     {
         if (policy.GetWeight(priority) > policy.GetWeight(it->second.priority))
             it->second.priority = priority;
         return true;
     }
-    if (comp.entries.size() >= GetEffectiveCapacity(watcher)) return false;
-    comp.entries.emplace(target, AoiEntry{priority});
+    if (comp->entries.size() >= GetEffectiveCapacity(watcher)) return false;
+    comp->entries.emplace(target, AoiEntry{priority});
     return true;
 }
 
@@ -88,16 +94,6 @@ void InterestSystem::RemoveAoiEntity(entt::entity watcher, entt::entity target)
 bool InterestSystem::PinAoiEntity(entt::entity watcher, entt::entity target)
 {
     return AddAoiEntity(watcher, target, AoiPriority::kPinned);
-}
-
-void InterestSystem::UnpinAoiEntity(entt::entity watcher, entt::entity target)
-{
-    if (watcher == entt::null || target == entt::null) return;
-    auto* comp = tlsEcs.actorRegistry.try_get<AoiListComp>(watcher);
-    if (comp == nullptr) return;
-    auto it = comp->entries.find(target);
-    if (it == comp->entries.end()) return;
-    it->second.priority = AoiPriority::kNormal;
 }
 
 void InterestSystem::UpgradePriority(entt::entity watcher, entt::entity target, AoiPriority priority)

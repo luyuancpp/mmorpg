@@ -9,6 +9,7 @@
 #include <utility>
 
 #include "muduo/base/Logging.h"
+#include "muduo/net/EventLoop.h"
 #include "gate_codec.h"
 #include "error_reporter/error_reporter.h"
 #include "node/system/grpc_call_deadline.h"
@@ -34,7 +35,7 @@ struct InflightCall
 	uint64_t incarnation{0};
 	uint64_t clientRequestId{0};
 	uint32_t messageId{0};
-	uint64_t routerEntity{0};
+	entt::entity routerEntity{entt::null};
 };
 
 // 只用于每 30s 一行的 [lane] 汇总日志(gate 没有 Prometheus 出口)。不按会话、玩家或消息号分维度(AGENTS.md §9)。
@@ -80,6 +81,11 @@ uint64_t NormalizePlayerId(uint64_t playerId)
 	return playerId == kInvalidGuid ? 0 : playerId;
 }
 
+} // namespace
+
+// 以下两个函数导出给 scene 的 TCP(RPC0)回包路径共用(client_request_lane.h;docs/design/muduo-rpc-channel.md §8.1),
+// 定义仍留在这里,紧挨着它们用到的计数。
+
 // 带请求 id 与原消息号的错误信封(与路由服的拒绝信封同形,客户端按 id 对上请求)。连接已释放就不发。
 void SendEnvelope(SessionInfo &session, uint64_t clientRequestId, uint32_t messageId, uint32_t tipId)
 {
@@ -112,6 +118,9 @@ SessionInfo *FindLiveSession(SessionId sessionId, uint64_t incarnation)
 	return &it->second;
 }
 
+namespace
+{
+
 // lane 空闲时按收包顺序发出下一条。排队超时或没有路由服的条目直接回 1003 并继续取下一条;循环次数 ≤ 队长(≤ 32)。
 void Pump(SessionId sessionId, SessionInfo &session)
 {
@@ -125,7 +134,7 @@ void Pump(SessionId sessionId, SessionInfo &session)
 			SendEnvelope(session, item->clientRequestId, item->messageId, kServiceUnavailable);
 			continue;
 		}
-		const std::optional<uint64_t> router =
+		const std::optional<entt::entity> router =
 			gRouterSender != nullptr ? gRouterSender(*item->request, item->sessionDetailsBin) : std::nullopt;
 		if (!router)
 		{
@@ -255,7 +264,7 @@ void Admit(SessionId sessionId, SessionInfo &session, const std::shared_ptr<Clie
 		return;
 	}
 	++tlsCounters.admitted;
-	tlsCounters.maxDepthSeen = std::max(tlsCounters.maxDepthSeen, session.routerLane.Depth());
+	tlsCounters.maxDepthSeen = (std::max)(tlsCounters.maxDepthSeen, session.routerLane.Depth());
 	Pump(sessionId, session);
 }
 
@@ -310,7 +319,7 @@ bool OnRouterCallFailed(const SessionDetails &sent)
 	return true;
 }
 
-void OnRouterNodeRemoved(uint64_t routerEntity)
+void OnRouterNodeRemoved(entt::entity routerEntity)
 {
 	auto removed = tlsInflight.ExtractIf([routerEntity](const InflightCall &call) { return call.routerEntity == routerEntity; });
 	if (removed.empty())
@@ -319,11 +328,24 @@ void OnRouterNodeRemoved(uint64_t routerEntity)
 	}
 	tlsCounters.nodeRemoved += removed.size();
 	LOG_WARN << "[lane] Router node removed with in-flight calls; failing them with 1003 so their sessions can proceed"
-			 << " router_entity=" << routerEntity << " in_flight=" << removed.size();
-	for (const auto &[seq, call] : removed)
+			 << " router_entity=" << entt::to_integral(routerEntity) << " in_flight=" << removed.size();
+	// 摘出(恰好一次)同步做,回执与 Pump 推到下一轮:本回调在 DestroyEntity 之前触发(node.cpp OnNodeRemoveEvent),
+	// 被摘实体的 NodeInfo / 通道都还在,同步 Pump 会让 PickRandomNode 以 1/N 概率把下一条又发给它。
+	// 中间这一轮 lane 的在途序号保持不变,新请求只会排队;会话断线 / 换代 / 重定向由 FindLiveSession 与 Complete(seq) 兜住。
+	// 闭包只捕获数据(AGENTS.md §11.7)。
+	auto finish = [removed = std::move(removed)]()
 	{
-		FinishWithFailure(seq, call);
+		for (const auto &[seq, call] : removed)
+		{
+			FinishWithFailure(seq, call);
+		}
+	};
+	if (auto *loop = muduo::net::EventLoop::getEventLoopOfCurrentThread())
+	{
+		loop->queueInLoop(std::move(finish));
+		return;
 	}
+	finish(); // 无 loop 的宿主(单测):同步收尾
 }
 
 void ExpireDue(std::chrono::steady_clock::time_point now)

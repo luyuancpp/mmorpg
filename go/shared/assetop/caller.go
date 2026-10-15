@@ -101,10 +101,12 @@ func (c *Caller) Do(ctx context.Context, rpc RPC, req *assetpb.AssetOpRequest) (
 		// 帮会同步路径就会在玩家过图的那一两秒里给出"操作失败",而其实只该稍后重试。
 		if scenenode.IsNoHolder(err) {
 			// 没人持有:本地合成 NOT_HERE。不记账、不终结,交给重投循环退避。
+			// 只有位置键不存在才标 Absent:另两种玩家多半在线,不能进停放档(见 Result.Absent)。
 			c.Metrics.incRPCNoLocation(req.GetStream(), rpc)
 			return Result{
 				Outcome: assetpb.AssetOpOutcome_ASSET_OP_OUTCOME_NOT_HERE,
 				Local:   true,
+				Absent:  errors.Is(err, scenenode.ErrNotOnline),
 			}, nil
 		}
 		return Result{}, err

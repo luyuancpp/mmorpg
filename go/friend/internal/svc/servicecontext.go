@@ -10,6 +10,7 @@ package svc
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -18,6 +19,7 @@ import (
 	friendkafka "friend/internal/kafka"
 	"friend/internal/sqldialect"
 
+	"shared/idsegment"
 	"shared/kafkacmd"
 	"shared/kafkautil"
 	"shared/playersync"
@@ -98,6 +100,7 @@ type ServiceContext struct {
 
 	// 在线组队目录按权威 home zone 过滤；映射库不一定与 SharedRedis 同库。
 	DataService   dspb.DataServiceClient
+	RequestIDs    *idsegment.Client
 	directoryConn *grpc.ClientConn
 
 	// FriendRedisTarget 是 FriendRedis 实际落点的可读描述,启动横幅打印用
@@ -129,7 +132,7 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		panic("friend: failed to create etcd client: " + err.Error())
 	}
 
-	db, err := OpenMySQL(c.MySQL)
+	db, err := OpenMySQL(c.MySQL, c.RequireTiDB)
 	if err != nil {
 		panic(fmt.Errorf("friend: %w", err))
 	}
@@ -138,9 +141,21 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		_ = db.Close()
 		panic(fmt.Errorf("friend: %w", err))
 	}
+	if c.RequireTiDB && dialect != sqldialect.TiDB {
+		_ = db.Close()
+		_ = etcdCli.Close()
+		panic("friend: RequireTiDB=true，但权威数据库不是 TiDB；拒绝启动")
+	}
 
 	friendRds, sharedRds, target := NewRedisHandles(c)
 	directoryClient, directoryConn := newDirectoryDataService(c)
+	requestIDs, err := NewRequestIDSegment(directoryClient)
+	if err != nil {
+		_ = directoryConn.Close()
+		_ = db.Close()
+		_ = etcdCli.Close()
+		panic(fmt.Errorf("friend 申请号源装配失败: %w", err))
+	}
 
 	return &ServiceContext{
 		Config:             c,
@@ -151,6 +166,7 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		FriendRedis:        friendRds,
 		SyncDigest:         playersync.NewBumper(playersync.NewGoZeroEvaler(sharedRds), "friend"),
 		DataService:        directoryClient,
+		RequestIDs:         requestIDs,
 		directoryConn:      directoryConn,
 		FriendRedisTarget:  target,
 		KafkaWriter:        newKafkaWriter(c),
@@ -210,10 +226,16 @@ func NewRedisHandles(c config.Config) (friendRds, sharedRds *redis.Redis, target
 // 自动提交语句每条各取新快照,读语义与 RR 下相同,不影响任何业务判定。
 //
 // 返回值**含密码**,只能交给 sql.Open,绝不打日志、绝不进错误信息(横幅用 MySQLTarget)。
-func BuildDSN(c config.MySQLConf) string {
-	return fmt.Sprintf("%s:%s@tcp(%s)/%s?parseTime=true&charset=utf8mb4&sql_mode=%%27STRICT_TRANS_TABLES%%27"+
+func BuildDSN(c config.MySQLConf, requireTiDB bool) string {
+	dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s?parseTime=true&charset=utf8mb4&sql_mode=%%27STRICT_TRANS_TABLES%%27"+
 		"&transaction_isolation=%%27READ-COMMITTED%%27",
 		c.User, c.Password, c.Host, c.DBName)
+	if requireTiDB {
+		// 驱动在每条新建物理连接上初始化会话，不能只在当前Ping连接SET一次。
+		// 仅TiDB池设置此变量，MySQL开发池不发送它；禁止改服务器全局模式。
+		dsn += "&tidb_txn_mode=%27pessimistic%27"
+	}
+	return dsn
 }
 
 // MySQLTarget 是连接目标的可读描述(**不含密码**),供启动横幅与错误信息使用。
@@ -225,8 +247,8 @@ func MySQLTarget(c config.MySQLConf) string {
 // connectionOpener goroutine 泄漏在一个注定要退出的进程里)。
 // 错误信息点名库名:友好度不是重点,重点是 `-migrate` 以 1 退出时运维能直接看出
 // 是"库不存在"而不是"密码错"(D-14 第 5 条)。
-func OpenMySQL(c config.MySQLConf) (*sql.DB, error) {
-	db, err := sql.Open("mysql", BuildDSN(c))
+func OpenMySQL(c config.MySQLConf, requireTiDB bool) (*sql.DB, error) {
+	db, err := sql.Open("mysql", BuildDSN(c, requireTiDB))
 	if err != nil {
 		return nil, fmt.Errorf("open MySQL %s: %w", MySQLTarget(c), err)
 	}
@@ -241,6 +263,18 @@ func OpenMySQL(c config.MySQLConf) (*sql.DB, error) {
 		_ = db.Close()
 		return nil, fmt.Errorf("ping MySQL %s 失败(库 %s 不存在时先按 deploy/mysql-init/00_init_zone_dbs.sql 建库并授权): %w",
 			MySQLTarget(c), c.DBName, err)
+	}
+	if requireTiDB {
+		dialect, _, err := sqldialect.Detect(ctx, db)
+		if err != nil || dialect != sqldialect.TiDB {
+			_ = db.Close()
+			return nil, fmt.Errorf("好友权威池必须连接TiDB: %w", errors.Join(err, errors.New("后端校验未通过")))
+		}
+		var mode string
+		if err := db.QueryRowContext(ctx, "SELECT @@tidb_txn_mode").Scan(&mode); err != nil || mode != "pessimistic" {
+			_ = db.Close()
+			return nil, fmt.Errorf("TiDB好友权威池必须使用pessimistic会话: %w", errors.Join(err, errors.New("事务模式校验未通过")))
+		}
 	}
 	return db, nil
 }
@@ -312,6 +346,9 @@ func newKafkaWriter(c config.Config) *kafkago.Writer {
 // 并让 watch 撞上已关闭的 client。
 func (sc *ServiceContext) Stop() {
 	sc.stopOnce.Do(func() {
+		if sc.RequestIDs != nil {
+			sc.RequestIDs.Close()
+		}
 		if sc.directoryConn != nil {
 			if err := sc.directoryConn.Close(); err != nil {
 				logx.Errorf("[friend] Failed to close online directory data_service connection: %v", err)

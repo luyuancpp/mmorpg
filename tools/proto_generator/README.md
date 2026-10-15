@@ -33,41 +33,41 @@ The main configuration file is `protogen/etc/proto_gen.yaml`. It specifies:
 
 ## Usage
 
+以下命令均在仓库根目录执行；`-ConfigPath` 的相对路径也按仓库根解析。默认配置会写同级客户端仓，只有服务端任务时使用下列 no-unity 配置。
+
 If you are not sure which command to use, start with:
 
 ```powershell
-pwsh -File ../../scripts/dev_tools.ps1 -Command help
+pwsh -File tools/scripts/dev_tools.ps1 -Command help
 ```
 
 ### Build proto-gen
 
 ```powershell
-pwsh -File ../../scripts/dev_tools.ps1 -Command proto-gen-build
+pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-build
 ```
 
 ### Generate Code
 
 ```powershell
-# Using default config
-pwsh -File ../../scripts/dev_tools.ps1 -Command proto-gen-run
+# 仅重生成服务端与机器人产物
+pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-run -ConfigPath tools/proto_generator/protogen/etc/proto_gen.no-unity.yaml
 
 # Using custom config
-pwsh -File ../../scripts/dev_tools.ps1 -Command proto-gen-run -ConfigPath etc/proto_gen.yaml
+pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-run -ConfigPath tools/proto_generator/protogen/etc/proto_gen.yaml
 ```
 
 ## Output
 
 Generated code is placed in:
-- `generated/proto/` - All language proto outputs
-- `go/generated/proto/` - Go-specific bindings
+- `generated/proto/` — 按服务与统一 Go 模块组织的暂存 proto 树
+- `go/proto/` — 统一共享 Go module 的 protobuf/gRPC 绑定；服务内重复绑定不作为事实源
 - `cpp/generated/` - C++ protobuf and gRPC stubs
 - `java/` - Java generated classes
 
 ## Logs
 
-Generation logs are stored in:
-- `protogen/` directory (*.log, *.txt files)
-- Check `docs/protogen/` for historical run logs
+运行输出写到调用终端，日志行为以 `protogen/logger/` 与实际调用参数为准。当前没有 `docs/protogen/` 历史日志目录。
 
 ## Naming Transition Policy
 

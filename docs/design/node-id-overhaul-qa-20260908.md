@@ -255,7 +255,7 @@ snowflake 本身保持 `[time32][node17][step15]`、只认一个 17 位的 worke
 1. **scene 彻底退出 snowflake 槽位协议。** item guid、tx_id、snapshot_id 三种全部走号段(biz_tag `item` / `txlog` / `snapshot`)。理由:10 万节点每秒 10 万次水位写 + 10 万次 lease 续约超出单个 etcd 一个数量级,任何"每节点一个 etcd 槽"在这个规模都不成立;号段对节点数不敏感。tx_id / snapshot_id 只是去重键与主键,不需要时间序(时间在 `timestamp_sec` / `created_at` 列里)。**因此第 8 节里描述的 C++ `SnowflakeSlotClient`、`snow_flake.h` 的集群/槽位常量与期限 fence、缓存文件、灰度双向兼容全部作废删除,`snow_flake.h` / `snow_flake_manager.h` 回到改造前形态**;`FallbackToSnowflake` 随之删除(没有槽位就没有可回退的发号器,只保留 fail-closed)。
 2. **槽位协议只服务 Go 的四种**(login-player、guild、scene-manager、match,合计几十个实例),4096 槽无容量压力;不再追加按槽位的通用 released 标记。
 3. **一种 GUID 一个号段客户端实例**:C++ 改成通用 `GuidSegmentClient` + 按类型注册表,启动时按配置实例化 item / txlog / snapshot,以后 pet、guild 等只加一行注册;各实例独立缓冲、预取、退避、指标,共享一条到 data_service 的 gRPC 连接,响应按请求编号分发。Go 的 `idsegment.Client` 本来就是通用的。
-4. **动态 step(Leaf 口径)**:不到 15 分钟用完则下次翻倍,超过 30 分钟减半,钉在 [MinStep, MaxStep](item 默认 [1000, 1,000,000] 初值 20,000;player/guild [10, 1000] 初值 100)。每天重启一次浪费 ≤ 2×step,2^55 在 10 万台每天重启下仍可撑两万年以上。
+4. **动态 step(Leaf 口径)**:不到 15 分钟用完则下次翻倍,超过 30 分钟减半,钉在 `[MinStep, MaxStep]`（item 默认 [1000, 1,000,000] 初值 20,000;player/guild [10, 1000] 初值 100）。每天重启一次浪费 ≤ 2×step,2^55 在 10 万台每天重启下仍可撑两万年以上。
 5. **不做的**:优雅关服把没用完的尾巴还给数据库(破坏"每段必比上一段大"的不变量);本地 json 缓存改 Redis(另一个协调器,崩了就没了;缓存唯一意义是 etcd 不通还能起,只能靠本机磁盘);Go 侧缓存改为**故障期才写**(etcd 水位写失败时才把本进程高水位落盘)。
 6. **号段客户端不持久化游标**:一段在 `AllocateIdSegment` 提交时就已被数据库判定为用掉,进程崩溃只产生空洞不产生重号。
 7. **`id_segment` 行被重置/从备份恢复是 ID 安全事件**:生产不自动补种(`AllowAutoSeed` 仅 dev),行由迁移显式创建(`BootstrapTags`);运维手册记录"恢复全局库前须先核对 max_id ≥ 消费表最大号"。

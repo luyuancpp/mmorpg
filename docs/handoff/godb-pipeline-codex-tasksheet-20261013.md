@@ -50,7 +50,7 @@ go/login 在这两个提交上用 miniredis v2.35.0，缓存里有。`github.com
 if (-not (Get-Command go -ErrorAction SilentlyContinue)) { $env:PATH = 'C:\Program Files\Go\bin;' + $env:PATH }
 $env:GOTOOLCHAIN = 'local'          # 本地 Go 版本不够时直接报错,不静默下载工具链
 $env:GOFLAGS     = '-mod=readonly'
-$env:GOPROXY     = 'off'            # 「同意 2」之前不联网
+$env:GOPROXY     = 'https://goproxy.cn,direct'   # 「同意 2」2026-10-15 已获:只按 go.sum 拉已登记的依赖
 
 git -C D:\luyuan\xuanming-server-mmo-cpp rev-parse HEAD
 git -C D:\luyuan\xuanming-server-mmo-cpp cat-file -e '0aa1027bc^{commit}'; "0aa1027bc exists: $LASTEXITCODE"
@@ -72,6 +72,7 @@ go env GOVERSION GOROOT GOMODCACHE GOPROXY GOTOOLCHAIN GOFLAGS CGO_ENABLED
 - `go version` 应 ≥ 1.26.5（`0aa1027bc` 上 go/db 的 go.mod 要求）。
 - `docker version` 连不上守护进程：任务 B 的真库与竞态两项记「未执行」，不代为启动 Docker Desktop。
 - `pwsh` 不在 PATH 上：把 Codex 自带的 pwsh 所在目录临时加进 `$env:PATH`（只改本进程）。版本需 ≥ 7.3。
+- 后续任一条 `go` 命令报模块下载失败（连不上代理、`verifying … checksum mismatch`、`missing go.sum entry`）：按 §0 停下报告，原样保留那几行。不换代理重试，不改 go.sum，不关校验（不设 `GOSUMDB=off` / `GONOSUMDB` / `GOPRIVATE` / `GOINSECURE`）。
 
 ---
 
@@ -273,7 +274,7 @@ Pop-Location
 `-race` 需要 `CGO_ENABLED=1` 和 gcc。本机没有 gcc，也没有安装 WSL 发行版。做法二选一：
 
 - **有 gcc 的环境**：用下面的完整代码块（自己重设变量，不依赖 3.3）。
-- **没有 gcc**：用 `golang:1.26.5` 镜像的容器跑，只读挂载 `D:\luyuan\proto2mysql`，用 `-e` 显式传 `CGO_ENABLED=1`、`GOFLAGS=-mod=readonly`、`GOPROXY`、`PROTO2MYSQL_INTEGRATION=1` 与 `PROTO2MYSQL_TEST_DSN`（主机写 `host.docker.internal:13307`）。这需要额外拉 `golang:1.26.5` 镜像并在容器里下载模块，**先向负责人请示**（不在已获的「同意 3」范围内）。
+- **没有 gcc**：用 `golang:1.26.5` 镜像的容器跑，只读挂载 `D:\luyuan\proto2mysql`，用 `-e` 显式传 `CGO_ENABLED=1`、`GOFLAGS=-mod=readonly`、`GOPROXY`、`PROTO2MYSQL_INTEGRATION=1` 与 `PROTO2MYSQL_TEST_DSN`（主机写 `host.docker.internal:13307`）。这需要额外拉 `golang:1.26.5` 镜像，**先向负责人请示**（镜像不在已获的「同意 3」范围内；容器里下载模块属于「同意 2」，已获）。
 - 两者都不行：写「race 未执行」，不安装 gcc 或 WSL。
 
 ```powershell
@@ -304,7 +305,7 @@ git -C D:\luyuan\proto2mysql status --porcelain     # 应为空
 
 ## 4. 不在本单范围内
 
-- 主仓库 HEAD 上 2026-10-14 新增的 L-04 第 1 批代码（未提交）。它的验证命令在 [godb-pipeline-launch-todo.md](../ops/godb-pipeline-launch-todo.md) §2，另行执行。
+- 主仓库的 L-04 第 1 批代码（第 1 批随 `ebccaf04d`、复核修订随 `54c9d775d` 入库，都已推送）。它的验证命令在 [godb-pipeline-launch-todo.md](../ops/godb-pipeline-launch-todo.md) §2，另行执行；环境变量同本单 §1。
 
 ---
 
@@ -325,7 +326,7 @@ git -C D:\luyuan\proto2mysql status --porcelain     # 应为空
 | 项 | 结果（通过 / 失败 / 未执行）| 退出码 | 关键数字 | 备注 |
 |---|---|---|---|---|
 | 第 0 步 | | — | Go 版本、pwsh 版本、Docker 版本、平台、设置后的 go env 三项 | |
-| 同意 2 | 已获 / 未获 | — | — | 若中途请示过,写明时间 |
+| 同意 2 | 已获（2026-10-15）| — | 有无模块下载失败 | 失败时贴出模块名与报错行 |
 | base-b | | | 顶层用例数、FAIL 数、SKIP 数 | 失败用例名 |
 | base-d | | | 同上 | |
 | 2.3 红 | 预期为失败 | | 耗时 | 是否出现 `deadlocked` |

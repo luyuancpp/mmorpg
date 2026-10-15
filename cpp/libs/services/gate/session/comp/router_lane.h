@@ -5,7 +5,7 @@
 // gate 对同一会话经路由服转发的 gRPC 类请求按收包顺序单飞:上一条观察到完成(成功回包 / 失败回调 /
 // 路由服节点摘除 / 本地截止到期)之后才发下一条。不同会话之间互不影响;路由服与业务服保持无状态、随机分配。
 //
-// 本文件只依赖 STL:不认识连接、gRPC、ECS,也不读时钟(时刻由调用方传入),所以单测可以脱离引擎直接编译
+// 本文件只依赖 STL(含同样只依赖 STL 的 engine/core utils/data_structures/inflight_index.h):不认识连接、gRPC、ECS,也不读时钟(时刻由调用方传入),所以单测可以脱离引擎直接编译
 // (cpp/nodes/gate/tests/router_lane_test.cpp)。装配与副作用(发送、回执、日志)在
 // cpp/nodes/gate/handler/rpc/client_request_lane.cpp。
 //
@@ -18,9 +18,12 @@
 #include <functional>
 #include <optional>
 #include <queue>
+#include <type_traits>
 #include <unordered_map>
 #include <utility>
 #include <vector>
+
+#include "utils/data_structures/inflight_index.h"
 
 namespace gate_lane
 {
@@ -30,6 +33,8 @@ using SteadyTime = std::chrono::steady_clock::time_point;
 // gate 自己发的调用序号:进程内单调,准入时按收包顺序分配。0 保留,表示「不受 lane 管理的调用」
 // (例如 gate 合成的断线通知),认领时一律不当作 lane 的完成。
 using CallSeq = uint64_t;
+static_assert(std::is_same_v<CallSeq, InflightCallId>);
+static_assert(std::is_same_v<SteadyTime, InflightSteadyTime>);
 inline constexpr CallSeq kNoCallSeq = 0;
 
 enum class AdmitResult : uint8_t
@@ -129,89 +134,12 @@ private:
 // 为什么要过期堆:路由服节点被摘除时,实体上的 CompletionQueue 随之析构,在途调用既不会触发成功回调也不会
 // 触发失败回调(client-access-band-routing.md F29)。队头卡住时客户端在等回包,不会再发新请求,所以必须有
 // 主动扫描,纯惰性清理永远触发不到(client-request-ordering.md §4.5)。
+//
+// 实现已上移到 engine/core(utils/data_structures/inflight_index.h),与节点间 RPC0 的 RpcChannel::outstandings_
+// 共用同一份(docs/design/muduo-rpc-channel.md §4.4)。语义不变:Insert 拒收 0 与重复;Extract 恰好一次;
+// 过期堆惰性删除;ExtractIf 遍历摘除。SteadyTime / CallSeq 与引擎的 InflightSteadyTime / InflightCallId 是同一类型。
 template <typename Call>
-class InflightIndex
-{
-public:
-	// 登记在途调用。seq 必须非 0 且不重复,否则返回 false、不登记。
-	bool Insert(CallSeq seq, Call call)
-	{
-		if (seq == kNoCallSeq)
-		{
-			return false;
-		}
-		const SteadyTime expiresAt = call.expiresAt;
-		if (!calls_.emplace(seq, std::move(call)).second)
-		{
-			return false;
-		}
-		expiry_.emplace(expiresAt, seq);
-		return true;
-	}
-
-	// 认领并注销。找不到(已过期、已失败、已因节点摘除处理、断线时已注销,或根本不是本索引登记的)返回 nullopt。
-	std::optional<Call> Extract(CallSeq seq)
-	{
-		auto it = calls_.find(seq);
-		if (it == calls_.end())
-		{
-			return std::nullopt;
-		}
-		Call call = std::move(it->second);
-		calls_.erase(it);
-		return call;
-	}
-
-	// 只注销、不需要返回值的场景(断线)。返回是否找到。
-	bool Erase(CallSeq seq) { return calls_.erase(seq) > 0; }
-
-	// 取出全部 expiresAt <= now 的调用(按截止时刻先后)。堆里已注销的序号惰性跳过。
-	std::vector<std::pair<CallSeq, Call>> ExtractExpired(SteadyTime now)
-	{
-		std::vector<std::pair<CallSeq, Call>> expired;
-		while (!expiry_.empty() && expiry_.top().first <= now)
-		{
-			const CallSeq seq = expiry_.top().second;
-			expiry_.pop();
-			auto call = Extract(seq);
-			if (call)
-			{
-				expired.emplace_back(seq, std::move(*call));
-			}
-		}
-		return expired;
-	}
-
-	// 取出全部满足 pred(call) 的调用(路由服节点摘除时按节点实体筛)。O(在途数),节点摘除很少发生。
-	// 堆里对应的条目留着,弹出时因已不在索引里而被跳过。
-	template <typename Pred>
-	std::vector<std::pair<CallSeq, Call>> ExtractIf(Pred pred)
-	{
-		std::vector<std::pair<CallSeq, Call>> matched;
-		for (auto it = calls_.begin(); it != calls_.end();)
-		{
-			if (pred(it->second))
-			{
-				matched.emplace_back(it->first, std::move(it->second));
-				it = calls_.erase(it);
-			}
-			else
-			{
-				++it;
-			}
-		}
-		return matched;
-	}
-
-	std::size_t Size() const { return calls_.size(); }
-	// 堆里可能残留已注销的序号,这个数只用于观测(汇总日志),不参与判定。
-	std::size_t ExpiryHeapSize() const { return expiry_.size(); }
-
-private:
-	using ExpiryEntry = std::pair<SteadyTime, CallSeq>;
-	std::unordered_map<CallSeq, Call> calls_;
-	std::priority_queue<ExpiryEntry, std::vector<ExpiryEntry>, std::greater<ExpiryEntry>> expiry_;
-};
+using InflightIndex = ::InflightIndex<Call>;
 
 // 排队等待是否已超过上限:超过就不再发出,直接回带请求 id 的 1003(明确「没有执行」,客户端重试安全)。
 // 不变式 I4:gate deadline(路由服)+ maxWait + 1000 ≤ 客户端超时(client-request-ordering.md §5.2)。

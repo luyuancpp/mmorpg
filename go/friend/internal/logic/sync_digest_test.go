@@ -19,6 +19,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"friend/internal/data"
+	"friend/internal/metrics"
 
 	pb "proto/friend"
 	scenepb "proto/scene"
@@ -90,6 +91,30 @@ const (
 	digestPeer uint64 = 6101
 )
 
+func TestRequestGeneration_ReplaysDoNotRepeatDigest(t *testing.T) {
+	ensureMetricsRegistered(t)
+	f := newFixture(t, nil)
+	digest := f.withSyncDigest()
+	f.store.unchanged = true
+	beforeRequest := pushCount(t, metrics.ReasonRequestReceived, metrics.OutcomeError)
+	beforeAccepted := pushCount(t, metrics.ReasonRequestAccepted, metrics.OutcomeError)
+	add, err := f.logic().AddFriend(playerCtx(digestMe), &pb.AddFriendRequest{TargetPlayerId: digestPeer})
+	require.NoError(t, err)
+	assert.Zero(t, add.GetErrorMessage().GetId())
+	assert.EqualValues(t, 123, add.GetRequestId())
+	accepted, err := f.logic().AcceptFriend(playerCtx(digestMe), &pb.AcceptFriendRequest{RequestId: digestPeer, FromPlayerId: 999999})
+	require.NoError(t, err)
+	assert.Zero(t, accepted.GetErrorMessage().GetId())
+	assert.Equal(t, digestPeer, f.store.lastRequestID)
+	assert.Equal(t, digestMe, f.store.lastAccepterID, "接受者只能来自当前会话")
+	rejected, err := f.logic().RejectFriend(playerCtx(digestMe), &pb.RejectFriendRequest{RequestId: digestPeer})
+	require.NoError(t, err)
+	assert.Zero(t, rejected.GetErrorMessage().GetId())
+	assert.Empty(t, digest.calls, "相同代次成功重放不得重复摘要或通知")
+	assert.Equal(t, beforeRequest, pushCount(t, metrics.ReasonRequestReceived, metrics.OutcomeError))
+	assert.Equal(t, beforeAccepted, pushCount(t, metrics.ReasonRequestAccepted, metrics.OutcomeError))
+}
+
 var (
 	domFriendList    = scenepb.SyncDomain_SYNC_DOMAIN_FRIEND_LIST
 	domFriendRequest = scenepb.SyncDomain_SYNC_DOMAIN_FRIEND_REQUEST
@@ -115,7 +140,7 @@ func TestFriendWritesBumpSyncDigest(t *testing.T) {
 		{
 			name: "AcceptFriend:双方的好友列表与申请列表",
 			call: func(l *FriendLogic) (uint32, error) {
-				r, err := l.AcceptFriend(playerCtx(digestMe), &pb.AcceptFriendRequest{FromPlayerId: digestPeer})
+				r, err := l.AcceptFriend(playerCtx(digestMe), &pb.AcceptFriendRequest{FromPlayerId: digestPeer, RequestId: digestPeer})
 				return r.GetErrorMessage().GetId(), err
 			},
 			want: map[string][]string{
@@ -126,15 +151,15 @@ func TestFriendWritesBumpSyncDigest(t *testing.T) {
 		{
 			name: "RejectFriend:只有拒绝方本人的申请列表",
 			call: func(l *FriendLogic) (uint32, error) {
-				r, err := l.RejectFriend(playerCtx(digestMe), &pb.RejectFriendRequest{FromPlayerId: digestPeer})
+				r, err := l.RejectFriend(playerCtx(digestMe), &pb.RejectFriendRequest{FromPlayerId: digestPeer, RequestId: digestPeer})
 				return r.GetErrorMessage().GetId(), err
 			},
 			want: map[string][]string{digestKey(digestMe): digestFields(domFriendRequest)},
 		},
 		{
-			name: "RemoveFriend:是好友时双方的好友列表",
+			name: "RemoveFriend:repo 报告真删了边时双方的好友列表",
 			setup: func(f *fixture) {
-				f.store.friends = []data.FriendEntry{{FriendPlayerID: digestPeer}}
+				f.store.removed = true
 			},
 			call: func(l *FriendLogic) (uint32, error) {
 				r, err := l.RemoveFriend(playerCtx(digestMe), &pb.RemoveFriendRequest{TargetPlayerId: digestPeer})
@@ -145,8 +170,51 @@ func TestFriendWritesBumpSyncDigest(t *testing.T) {
 				digestKey(digestPeer): digestFields(domFriendList),
 			},
 		},
+		// Block 的四种效果组合:本人永远三个域;对方只按 repo 报告的实际效果 bump(设计 §3.3)。
 		{
-			name: "Block:本人三个域,对方好友列表与申请列表",
+			name: "Block 陌生人:本人三个域,对方一个键都不写",
+			// blockEffect 零值:没有好友边可删、也没有我发给他的 pending。
+			call: func(l *FriendLogic) (uint32, error) {
+				r, err := l.Block(playerCtx(digestMe), &pb.BlockRequest{TargetPlayerId: digestPeer})
+				return r.GetErrorMessage().GetId(), err
+			},
+			want: map[string][]string{
+				digestKey(digestMe): digestFields(domFriendBlock, domFriendList, domFriendRequest),
+			},
+		},
+		{
+			name: "Block 好友:对方只 bump 好友列表",
+			setup: func(f *fixture) {
+				f.store.blockEffect = data.BlockEffect{EdgeRemoved: true}
+			},
+			call: func(l *FriendLogic) (uint32, error) {
+				r, err := l.Block(playerCtx(digestMe), &pb.BlockRequest{TargetPlayerId: digestPeer})
+				return r.GetErrorMessage().GetId(), err
+			},
+			want: map[string][]string{
+				digestKey(digestMe):   digestFields(domFriendBlock, domFriendList, domFriendRequest),
+				digestKey(digestPeer): digestFields(domFriendList),
+			},
+		},
+		{
+			name: "Block 时撤回了发给对方的申请:对方只 bump 申请列表",
+			setup: func(f *fixture) {
+				f.store.blockEffect = data.BlockEffect{OutboundPendingRejected: true}
+			},
+			call: func(l *FriendLogic) (uint32, error) {
+				r, err := l.Block(playerCtx(digestMe), &pb.BlockRequest{TargetPlayerId: digestPeer})
+				return r.GetErrorMessage().GetId(), err
+			},
+			want: map[string][]string{
+				digestKey(digestMe):   digestFields(domFriendBlock, domFriendList, domFriendRequest),
+				digestKey(digestPeer): digestFields(domFriendRequest),
+			},
+		},
+		{
+			name: "Block 好友且撤回了发给对方的申请:对方好友列表与申请列表",
+			setup: func(f *fixture) {
+				f.store.blockEffect = data.BlockEffect{EdgeRemoved: true, OutboundPendingRejected: true}
+			},
 			call: func(l *FriendLogic) (uint32, error) {
 				r, err := l.Block(playerCtx(digestMe), &pb.BlockRequest{TargetPlayerId: digestPeer})
 				return r.GetErrorMessage().GetId(), err
@@ -180,34 +248,20 @@ func TestFriendWritesBumpSyncDigest(t *testing.T) {
 	}
 }
 
-// 删一个本来就不是好友的人:repo 什么都不写,所以一个摘要都不许 bump ——
-// 否则客户端能用任意 target 在核心 Redis 上造出 30 天的摘要键(见 listedAsFriend)。
+// 删一个本来就不是好友的人:repo 报告 removed=false(什么都没写),所以一个摘要都不许 bump ——
+// 否则客户端能用任意 target 在核心 Redis 上造出 30 天的摘要键,而 RemoveFriend 没有任何频率配额。
 func TestRemoveNonFriendDoesNotBump(t *testing.T) {
 	f := newFixture(t, nil)
 	ev := f.withSyncDigest()
-	f.store.friends = []data.FriendEntry{{FriendPlayerID: 9999}}
+	f.store.removed = false // 显式写出:本用例的前提就是 repo 报告"没删"
 
 	resp, err := f.logic().RemoveFriend(playerCtx(digestMe), &pb.RemoveFriendRequest{TargetPlayerId: digestPeer})
 	require.NoError(t, err)
 	require.Zero(t, resp.GetErrorMessage().GetId(), "删非好友是幂等成功")
-	assert.Equal(t, 1, f.store.calls["RemoveFriend"], "判定只决定 bump,删除照常交给 repo")
+	assert.Equal(t, 1, f.store.calls["RemoveFriend"], "删除照常交给 repo,bump 与否只看它报告的效果")
+	assert.Zero(t, f.store.calls["GetFriendList"],
+		"删除前不得再预读好友列表来猜:repo 在同一事务里报告的删除行数才是确定的")
 	assert.Empty(t, ev.bumped())
-}
-
-// 删之前的那一读失败:拿不准就按「可能是好友」bump 双方(多拉一次,不漏),删除本身照常。
-func TestRemoveFriendBumpsWhenPreReadFails(t *testing.T) {
-	f := newFixture(t, nil)
-	ev := f.withSyncDigest()
-	f.store.fail("GetFriendList", errors.New("redis: connection refused"))
-
-	resp, err := f.logic().RemoveFriend(playerCtx(digestMe), &pb.RemoveFriendRequest{TargetPlayerId: digestPeer})
-	require.NoError(t, err)
-	require.Zero(t, resp.GetErrorMessage().GetId(), "判定读失败不许把删好友变成失败")
-	assert.Equal(t, 1, f.store.calls["RemoveFriend"])
-	assert.Equal(t, map[string][]string{
-		digestKey(digestMe):   digestFields(domFriendList),
-		digestKey(digestPeer): digestFields(domFriendList),
-	}, ev.bumped())
 }
 
 // 业务拒绝与存储故障:没有提交就不许 bump(§3.5 第 1 条)。
@@ -231,11 +285,11 @@ func TestRejectedWritesDoNotBump(t *testing.T) {
 			return r.GetErrorMessage().GetId(), err
 		},
 		"AcceptFriend": func(l *FriendLogic) (uint32, error) {
-			r, err := l.AcceptFriend(playerCtx(digestMe), &pb.AcceptFriendRequest{FromPlayerId: digestPeer})
+			r, err := l.AcceptFriend(playerCtx(digestMe), &pb.AcceptFriendRequest{FromPlayerId: digestPeer, RequestId: digestPeer})
 			return r.GetErrorMessage().GetId(), err
 		},
 		"RejectFriend": func(l *FriendLogic) (uint32, error) {
-			r, err := l.RejectFriend(playerCtx(digestMe), &pb.RejectFriendRequest{FromPlayerId: digestPeer})
+			r, err := l.RejectFriend(playerCtx(digestMe), &pb.RejectFriendRequest{FromPlayerId: digestPeer, RequestId: digestPeer})
 			return r.GetErrorMessage().GetId(), err
 		},
 		"RemoveFriend": func(l *FriendLogic) (uint32, error) {
@@ -255,8 +309,10 @@ func TestRejectedWritesDoNotBump(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			f := newFixture(t, nil)
 			ev := f.withSyncDigest()
-			// RemoveFriend 要先过「是好友」的判定,才能证明不 bump 是因为删除失败而不是因为判成了非好友。
-			f.store.friends = []data.FriendEntry{{FriendPlayerID: digestPeer}}
+			// 把"成功时会给对方 bump"的效果全部置位:这样不 bump 只能是因为写被拒或失败,
+			// 而不是因为假 store 默认报告"没删 / 陌生人"。
+			f.store.removed = true
+			f.store.blockEffect = data.BlockEffect{EdgeRemoved: true, OutboundPendingRejected: true}
 			f.store.fail(c.method, c.err)
 
 			tip, err := rpcs[c.method](f.logic())
@@ -275,11 +331,11 @@ func TestBumpFailureDoesNotAffectRpcResult(t *testing.T) {
 			return r.GetErrorMessage().GetId(), err
 		},
 		"AcceptFriend": func(l *FriendLogic) (uint32, error) {
-			r, err := l.AcceptFriend(playerCtx(digestMe), &pb.AcceptFriendRequest{FromPlayerId: digestPeer})
+			r, err := l.AcceptFriend(playerCtx(digestMe), &pb.AcceptFriendRequest{FromPlayerId: digestPeer, RequestId: digestPeer})
 			return r.GetErrorMessage().GetId(), err
 		},
 		"RejectFriend": func(l *FriendLogic) (uint32, error) {
-			r, err := l.RejectFriend(playerCtx(digestMe), &pb.RejectFriendRequest{FromPlayerId: digestPeer})
+			r, err := l.RejectFriend(playerCtx(digestMe), &pb.RejectFriendRequest{FromPlayerId: digestPeer, RequestId: digestPeer})
 			return r.GetErrorMessage().GetId(), err
 		},
 		"RemoveFriend": func(l *FriendLogic) (uint32, error) {
@@ -300,7 +356,8 @@ func TestBumpFailureDoesNotAffectRpcResult(t *testing.T) {
 			f := newFixture(t, nil)
 			ev := f.withSyncDigest()
 			ev.err = errors.New("dial tcp 127.0.0.1:6379: connect: connection refused")
-			f.store.friends = []data.FriendEntry{{FriendPlayerID: digestPeer}}
+			// RemoveFriend 只在 repo 报告真删了边时才 bump;不置位的话它一次都不尝试,下面的前提断言会红。
+			f.store.removed = true
 
 			tip, err := call(f.logic())
 			require.NoError(t, err)
@@ -315,7 +372,7 @@ func TestNilSyncDigestIsNoop(t *testing.T) {
 	f := newFixture(t, nil) // SyncDigest 默认 nil
 	require.Nil(t, f.svcCtx.SyncDigest)
 	assert.NotPanics(t, func() {
-		resp, err := f.logic().AcceptFriend(playerCtx(digestMe), &pb.AcceptFriendRequest{FromPlayerId: digestPeer})
+		resp, err := f.logic().AcceptFriend(playerCtx(digestMe), &pb.AcceptFriendRequest{FromPlayerId: digestPeer, RequestId: digestPeer})
 		require.NoError(t, err)
 		require.Zero(t, resp.GetErrorMessage().GetId())
 	})
@@ -326,7 +383,7 @@ func TestAcceptFriendBumpsSharedRedis(t *testing.T) {
 	f := newFixture(t, nil)
 	f.svcCtx.SyncDigest = playersync.NewBumper(playersync.NewGoZeroEvaler(f.svcCtx.SharedRedis), "friend")
 
-	resp, err := f.logic().AcceptFriend(playerCtx(digestMe), &pb.AcceptFriendRequest{FromPlayerId: digestPeer})
+	resp, err := f.logic().AcceptFriend(playerCtx(digestMe), &pb.AcceptFriendRequest{FromPlayerId: digestPeer, RequestId: digestPeer})
 	require.NoError(t, err)
 	require.Zero(t, resp.GetErrorMessage().GetId())
 

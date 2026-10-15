@@ -1,4 +1,5 @@
 #include "player_mission.h"
+#include "engine/core/type_define/player_guid_comp.h"
 
 #include <algorithm>
 #include <limits>
@@ -9,7 +10,7 @@
 #include "modules/condition/condition_type.h"
 #include "modules/mission/comp/mission_comp.h"
 #include "modules/mission/system/mission.h"
-#include "proto/common/event/mission_event.pb.h"
+#include "modules/mission/mission_events.h"
 #include "proto/common/component/actor_comp.pb.h"
 #include "services/scene/player/system/player_activity_schedule.h"
 #include "services/scene/player/system/player_lifecycle.h"
@@ -26,8 +27,8 @@ namespace {
 uint32_t CheckPlayer(entt::entity player, uint32_t scope) {
     if (!tlsEcs.actorRegistry.valid(player)) return kThisEntityIsInvalid;
     if (scope != MissionListComp::kPlayerMission) return kInvalidParameter;
-    const auto* guid = tlsEcs.actorRegistry.try_get<Guid>(player);
-    if (guid == nullptr || *guid == 0 || *guid == kInvalidGuid) return kInvalidParameter;
+    const auto* guid = tlsEcs.actorRegistry.try_get<PlayerGuidComp>(player);
+    if (guid == nullptr || guid->value == 0 || guid->value == kInvalidGuid) return kInvalidParameter;
     if (PlayerLifecycleSystem::IsCrossZoneFrozen(player)) return kInvalidParameter;
     if (tlsEcs.actorRegistry.try_get<MissionsContainerComp>(player) == nullptr) return kServiceUnavailable;
     return kSuccess;
@@ -138,17 +139,17 @@ uint32_t PlayerMissionSystem::Accept(entt::entity player, uint32_t scope,
     if (const auto error = CheckAccept(player, scope, missionId, nowMs); error != kSuccess) return error;
     auto& missions = tlsEcs.actorRegistry.get<MissionsContainerComp>(player).map.at(scope);
     AcceptMissionEvent event;
-    event.set_entity(entt::to_integral(player));
-    event.set_mission_id(missionId);
+    event.player = player;
+    event.missionId = missionId;
     const auto result = MissionSystem::AcceptMission(event, missions, MissionConfig::GetSingleton());
     if (result == kSuccess) {
         (*missions.GetMutableMissionList().mutable_mission_begin_time())[missionId] = nowMs;
         if (const auto* level = tlsEcs.actorRegistry.try_get<LevelComp>(player); level != nullptr) {
             ConditionEvent currentLevel;
-            currentLevel.set_entity(entt::to_integral(player));
-            currentLevel.set_condition_type(static_cast<uint32_t>(eConditionType::kConditionLevelUp));
-            currentLevel.add_condition_ids(level->level());
-            currentLevel.set_amount(level->level());
+            currentLevel.player = player;
+            currentLevel.conditionType = static_cast<uint32_t>(eConditionType::kConditionLevelUp);
+            currentLevel.conditionIds.push_back(level->level());
+            currentLevel.amount = level->level();
             MissionSystem::HandleConditionEvent(currentLevel, missions, MissionConfig::GetSingleton(), missionId);
         }
         // 完成事实已持久化：晚接取依赖任务也能补齐，但只更新本次新任务。
@@ -172,10 +173,10 @@ uint32_t PlayerMissionSystem::Accept(entt::entity player, uint32_t scope,
         }
         for (const uint32_t completedId : relevantCompleted) {
             ConditionEvent completed;
-            completed.set_entity(entt::to_integral(player));
-            completed.set_condition_type(static_cast<uint32_t>(eConditionType::kConditionCompleteMission));
-            completed.add_condition_ids(completedId);
-            completed.set_amount(1);
+            completed.player = player;
+            completed.conditionType = static_cast<uint32_t>(eConditionType::kConditionCompleteMission);
+            completed.conditionIds.push_back(completedId);
+            completed.amount = 1;
             MissionSystem::HandleConditionEvent(completed, missions, MissionConfig::GetSingleton(), missionId);
         }
     }

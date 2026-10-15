@@ -180,7 +180,7 @@ void NodeConnector::ConnectToHttpNode(const NodeInfo &)
 
 void NodeConnector::ConnectAllNodes()
 {
-	auto &serviceNodesByType = tlsEcs.nodeGlobalRegistry.get_or_emplace<ServiceNodeList>(tlsEcs.GrpcNodeEntity());
+	const auto &serviceNodes = gNode->GetServiceDiscoveryManager().ServiceNodes();
 
 	const auto &whitelist = gNode->GetTargetNodeTypeWhitelist();
 	for (uint32_t nodeType = 0; nodeType < eNodeType_ARRAYSIZE; ++nodeType)
@@ -188,7 +188,7 @@ void NodeConnector::ConnectAllNodes()
 		if (!whitelist.contains(nodeType))
 			continue;
 
-		for (const auto &serviceNode : serviceNodesByType[nodeType].node_list())
+		for (const auto &serviceNode : serviceNodes.NodesOfType(nodeType))
 		{
 			if (NodeUtils::IsNodeConnected(nodeType, serviceNode))
 				continue;

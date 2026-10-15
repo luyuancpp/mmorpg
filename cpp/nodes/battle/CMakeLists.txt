@@ -59,7 +59,6 @@ set(SOURCE_FILES
     main.cpp
     rpc_replies/player/player_rpc_response_handler.cpp
     rpc_replies/register_handler.cpp
-    rpc_replies/register_response_handler.cpp
 )
 
 find_package(absl CONFIG REQUIRED)

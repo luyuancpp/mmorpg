@@ -62,7 +62,7 @@
 | 键 | 写 | 读 | 频率 | TTL | 多键原子 | 证据 |
 |---|---|---|---|---|---|---|
 | `queue:zone:{z}` ZSET、`queue:meta:{qid}` HASH、`queue:token:{token}` | login Enqueue | login Lookup(每次轮询 ≥4–5 条命令) | 排队开启时最高频 | `QueueEntryTTL` 1h | Enqueue 用 MULTI 写三键 | `go/login/internal/logic/pkg/loginqueue/queue.go:138-142`、`:170-183`、`:226-284` |
-| `admit:{qid}`、`admitted:zone:{z}` SET | login 放行循环、快速通道 | login | 中 | `AdmitTTL` 60s | MULTI(`:428-431`);快速通道是单键 Lua(`:456-463`) | 同上 |
+| `admit:{qid}`、`admitted:zset:zone:{z}` ZSET(成员逐个到期;2026-10-13 G4b-G 起,此前是 `admitted:zone:{z}` SET) | login 放行循环、快速通道 | login | 中 | `admit:{qid}` 为 `AdmitTTL` 60s;占位成员按分数到期,整键 TTL `AdmitTTL + 1min` 只做垃圾回收 | 放行 MULTI(`:465-469`);计数与快速通道是单键 Lua(`:495-498`、`:521-527`);取走后续期是单键 MULTI(`:387-389`) | 同上 |
 | `dispatcher:lock:login_queue` | login 选主 | login | 1/s | 30s | 单键 | `go/login/internal/config/config.go:244-258`;`go/login/etc/login.yaml:436`。键是全局的,L-01 缺陷相关 |
 | `gate:{id}:draining` / `gate:{id}:drained` | `k8s_gate_drain.ps1` 的多键 Lua;login 排空循环 | login AssignGate 一次 MGET(失败时放行) | 低 | 有 | MarkScript 同时碰本台的 draining、drained 和同 zone 其它候选的 draining | `tools/scripts/k8s_gate_drain.ps1:150-158`;`loginqueue/gatedrain.go:30`、`:47-81`;`gatedrain_monitor.go:37`、`:129-181` |
 
@@ -122,7 +122,10 @@ merge_zone 合服与撤销时会按玩家删缓存(`tools/merge_zone/player_rows
 | `player:{id}:login_generation`(2026-10-14 新增) | login 登录链持锁铸造(一段 Lua) | **只有铸造脚本自己读**;校验方比的是会话记录里的值 | 7 天;**可丢**:重建以毫秒时间与会话记录代次为下限,不回退,不必进清库 / 回档 / 合服清单 | `go/login/internal/logic/pkg/sessionmanager/login_generation.go`;设计见 [scene-enter-session-fence.md](scene-enter-session-fence.md) §3 |
 | `player_merge_notice:{id}`、`player_force_rename:{id}` | merge_zone | login | — | `tools/merge_zone/post_merge_stamp.go:65-66`;`entergamelogic.go:494-531` |
 | 场景路由:`scene:{id}:node\|zone\|mirror\|source\|mirrors\|draining\|agones_gs`、`instances:zone:{z}:active`、`instance:{id}:player_count`、`node:zone:{z}:{node}:scenes\|death_at`、`scene_nodes:zone:{z}:load`、`world_channels:*`、`world_channel_directory:zone:*`、`world_channel_lineno:*`、`world_init:lock:zone:{z}`、`enter_scene:dedup:{id}:{req}`、`player:{id}:channel_switch_cooldown`、`scene_manager:leader:lock` | scene_manager | scene_manager;C++ 读频道目录(`cpp/libs/services/scene/player/system/player_scene.cpp:39`);merge_zone | 部分有 | `go/scene_manager/internal/logic/createscenelogic.go:19-40`;`load_reporter.go:23`;`reentry_barrier.go:39`;`channel_pick.go:50`;`agones_binding.go:25`;`enterscenelogic.go:204`;`world_*.go`;`go/scene_manager/scene_manager_service.go:94-96` |
-| 战斗:`battle:lock:{id}`、`battle:ctx:{id}`、`battle:settlement:pending[:id]:{id}`、`battle:activity_result:*` | C++ scene;battle 节点 | match、C++ | 有 | `cpp/libs/services/scene/battle/system/player_battle.cpp:94-95`;`cpp/libs/services/battle/settlement/settlement_outbox.h:98-111`;`battle/system/battle_result_activity.h:30` |
+| 战斗:`battle:lock:{id}`、`battle:ctx:{id}`、`battle:settlement:pending[:id]:{id}`、`battle:activity_result:*` | C++ scene;battle 节点 | match、C++ | 有;**2026-10-15 起 `battle:settlement:pending[:id]:{id}` 不再过期**(去掉 7 天 TTL,保留到应用为止,每玩家单槽) | `cpp/libs/services/scene/battle/system/player_battle.cpp:94-95`;`cpp/libs/services/battle/settlement/settlement_outbox.h:98-111`;`battle/system/battle_result_activity.h:30`;保留期改动见 [landing-recovery-sync-digest.md](landing-recovery-sync-digest.md) §7 |
+| `battle:settlement:pending:index`(2026-10-15 新增,全局一把 ZSET) | battle 节点、C++ scene(与写入 / 销账同一段 Lua 内 ZADD / ZREM) | battle 节点报数(积压数、最老年龄)与孤儿清理 | 无;**可丢**:只用于监控,丢了只影响报数,不影响结算 | `cpp/libs/services/battle/settlement/settlement_outbox.h`;设计见 [landing-recovery-sync-digest.md](landing-recovery-sync-digest.md) §7 |
+| `player:{id}:sync_digest`(2026-10-15 新增,hash) | friend / match(team)/ guild 在业务提交后 bump(一段单键 Lua) | C++ scene(`HGETALL`,`player_landing.cpp`) | 30 天,每次 bump 续期;**可丢**:丢失或过期即代次 `g` 改变,客户端全量拉一次;不必进清库 / 回档 / 合服清单,但回档 Go 域权威数据(friend / guild 库)的工具应删除受影响玩家的这把键 | `go/shared/playersync/digest.go`;`cpp/libs/services/scene/player/system/player_landing.h`;设计见 [landing-recovery-sync-digest.md](landing-recovery-sync-digest.md) §3 |
+| 资产唤醒:频道 `assetop:wake`(Pub/Sub,不落键)、去重键 `assetop:wake:{service}:{id}`(2026-10-15 新增) | C++ scene `PUBLISH`;guild / trade 订阅后 `SET NX EX 5` | guild / trade | 去重键 5 秒;**可丢** | `cpp/libs/services/scene/player/system/player_landing.cpp`;`go/shared/assetopwake/`;设计见 [landing-recovery-sync-digest.md](landing-recovery-sync-digest.md) §5 |
 | 组队:`team:rec:{tid}`、`team:{tid}`、`team:player:{pid}`、`team:invite:{pid}` | match 的 team 模块(S_COMMIT 一段 Lua 写四类) | C++(`player_team.cpp:43-45`、`:202`、`:291`、`:355`) | — | `go/match/internal/team/keys.go:9`、`:38-53` |
 | data_service 玩家数据 `player:{%d}:*`(含 `__lock`、`__version`) | data_service | data_service | — | `go/data_service/internal/logic/data_logic.go:20-25`;`router.go:531-533`。Load / Save 这两个 RPC 在仓库里 grep 不到生产调用方 |
 
@@ -716,7 +719,7 @@ type Family struct {
 - **原则**:切换之后,新写只落在新实例上,旧实例上留着的是切换那一刻的旧值。**回退必须用新实例的数据整体覆盖旧实例,不能只改地址,也不能只补缺。**所以回退一律用 `redis_split restore -confirm-overwrite`(先清目标上的本用途键再拷,§5.2),不用 `delta`。purge 前后做法相同。
 - **queue**:
   - 排队关着时:去掉 `queue` 重新部署即可,没有数据要搬。约束同 §5.3(禁排空与 gate 滚动,直到所有 zone rollout 完成)。
-  - 排队已经打开(L-02 之后)时:逐 zone 回退会重演 §3.2.1 约束 2 的双 leader 与双队列;排位与在途准入随实例丢失。必须先把各 zone 的 `Queue.Enabled` 关掉、等 `admitted:*` 过期(AdmitTTL 60s),再回退。部署闸的 `Queue.Enabled` 检查对回退方向同样生效。
+  - 排队已经打开(L-02 之后)时:逐 zone 回退会重演 §3.2.1 约束 2 的双 leader 与双队列;排位与在途准入随实例丢失。必须先把各 zone 的 `Queue.Enabled` 关掉、等 `admitted:*` 过期(AdmitTTL + 1min,默认 2 分钟),再回退。部署闸的 `Queue.Enabled` 检查对回退方向同样生效。
 - **mapping**:
   1. 冻结(同 §5.4 第 2 步)。
   2. 如果 `redis-mapping` 上有 `mapping:route:ready`,先记下;核心上的同名键一律 DEL。

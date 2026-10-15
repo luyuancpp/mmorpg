@@ -4,8 +4,6 @@
 ///<<< BEGIN WRITING YOUR CODE
 #include <map>
 
-#include <muduo/base/Logging.h>
-
 #include "player/system/player_pet.h"
 #include "player_gm_guard.h" // P0-a:GM 客户端指令的 scene 侧第二道锁
 #include "table/proto/tip/common_error_tip.pb.h"
@@ -13,12 +11,6 @@
 
 namespace
 {
-	// 失败码统一写全局 tip 实体,由生成层 TRANSFER_ERROR_MESSAGE 搬进响应
-	void SetTip(uint32_t err)
-	{
-		tlsEcs.globalRegistry.get_or_emplace<TipInfoMessage>(tlsEcs.GlobalEntity()).set_id(err);
-	}
-
 	std::map<uint32_t, uint32_t> ToStdMap(const google::protobuf::Map<uint32_t, uint32_t>& source)
 	{
 		std::map<uint32_t, uint32_t> result;
@@ -35,7 +27,12 @@ void ScenePetClientPlayerHandler::GetPetList(entt::entity player,const ::GetPetL
 	::GetPetListResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	PetSystem::BuildList(player, *response->mutable_pets());
+	response->clear_pets();
+	if (const auto err = PetSystem::BuildList(player, *response->mutable_pets()); err != kSuccess)
+	{
+		response->clear_pets();
+		response->mutable_error_message()->set_id(err);
+	}
 ///<<< END WRITING YOUR CODE
 
 }
@@ -46,10 +43,14 @@ void ScenePetClientPlayerHandler::SummonPet(entt::entity player,const ::SummonPe
 ///<<< BEGIN WRITING YOUR CODE
 	if (const auto err = PetSystem::Summon(player, request->pet_id()); err != kSuccess)
 	{
-		SetTip(err);
+		response->mutable_error_message()->set_id(err);
 		return;
 	}
-	PetSystem::BuildList(player, *response->mutable_pets());
+	if (const auto err = PetSystem::BuildList(player, *response->mutable_pets()); err != kSuccess)
+	{
+		response->clear_pets();
+		response->mutable_error_message()->set_id(err);
+	}
 ///<<< END WRITING YOUR CODE
 
 }
@@ -60,10 +61,14 @@ void ScenePetClientPlayerHandler::RecallPet(entt::entity player,const ::RecallPe
 ///<<< BEGIN WRITING YOUR CODE
 	if (const auto err = PetSystem::Recall(player); err != kSuccess)
 	{
-		SetTip(err);
+		response->mutable_error_message()->set_id(err);
 		return;
 	}
-	PetSystem::BuildList(player, *response->mutable_pets());
+	if (const auto err = PetSystem::BuildList(player, *response->mutable_pets()); err != kSuccess)
+	{
+		response->clear_pets();
+		response->mutable_error_message()->set_id(err);
+	}
 ///<<< END WRITING YOUR CODE
 
 }
@@ -74,16 +79,20 @@ void ScenePetClientPlayerHandler::AllocatePetPoints(entt::entity player,const ::
 ///<<< BEGIN WRITING YOUR CODE
 	if (request->pet_id() == 0 || request->allocated().empty())
 	{
-		SetTip(kInvalidParameter);
+		response->mutable_error_message()->set_id(kInvalidParameter);
 		return;
 	}
 	if (const auto err = PetSystem::Allocate(player, request->pet_id(), ToStdMap(request->allocated()));
 		err != kSuccess)
 	{
-		SetTip(err);
+		response->mutable_error_message()->set_id(err);
 		return;
 	}
-	PetSystem::BuildList(player, *response->mutable_pets());
+	if (const auto err = PetSystem::BuildList(player, *response->mutable_pets()); err != kSuccess)
+	{
+		response->clear_pets();
+		response->mutable_error_message()->set_id(err);
+	}
 ///<<< END WRITING YOUR CODE
 
 }
@@ -94,10 +103,14 @@ void ScenePetClientPlayerHandler::ResetPetPoints(entt::entity player,const ::Res
 ///<<< BEGIN WRITING YOUR CODE
 	if (const auto err = PetSystem::Reset(player, request->pet_id()); err != kSuccess)
 	{
-		SetTip(err);
+		response->mutable_error_message()->set_id(err);
 		return;
 	}
-	PetSystem::BuildList(player, *response->mutable_pets());
+	if (const auto err = PetSystem::BuildList(player, *response->mutable_pets()); err != kSuccess)
+	{
+		response->clear_pets();
+		response->mutable_error_message()->set_id(err);
+	}
 ///<<< END WRITING YOUR CODE
 
 }
@@ -109,7 +122,7 @@ void ScenePetClientPlayerHandler::AutoAllocatePetPoints(entt::entity player,cons
 	std::map<uint32_t, uint32_t> suggested;
 	if (const auto err = PetSystem::AutoAllocate(player, request->pet_id(), suggested); err != kSuccess)
 	{
-		SetTip(err);
+		response->mutable_error_message()->set_id(err);
 		return;
 	}
 	response->set_pet_id(request->pet_id());
@@ -127,10 +140,14 @@ void ScenePetClientPlayerHandler::RenamePet(entt::entity player,const ::RenamePe
 ///<<< BEGIN WRITING YOUR CODE
 	if (const auto err = PetSystem::Rename(player, request->pet_id(), request->name()); err != kSuccess)
 	{
-		SetTip(err);
+		response->mutable_error_message()->set_id(err);
 		return;
 	}
-	PetSystem::BuildList(player, *response->mutable_pets());
+	if (const auto err = PetSystem::BuildList(player, *response->mutable_pets()); err != kSuccess)
+	{
+		response->clear_pets();
+		response->mutable_error_message()->set_id(err);
+	}
 ///<<< END WRITING YOUR CODE
 
 }
@@ -152,17 +169,21 @@ void ScenePetClientPlayerHandler::GmGrantPet(entt::entity player,const ::GmGrant
 	// 见 docs/design/player-pet.md §8 与 cpp/nodes/gate/SECURITY.md §3。
 	if (scene_gm_guard::RejectGmClientRpc("GmGrantPet"))
 	{
-		SetTip(kFeatureUnavailable);
+		response->mutable_error_message()->set_id(kFeatureUnavailable);
 		return;
 	}
 	uint64_t petId = 0;
 	if (const auto err = PetSystem::GrantPet(player, request->pet_table_id(), petId); err != kSuccess)
 	{
-		SetTip(err);
+		response->mutable_error_message()->set_id(err);
 		return;
 	}
 	response->set_pet_id(petId);
-	PetSystem::BuildList(player, *response->mutable_pets());
+	if (const auto err = PetSystem::BuildList(player, *response->mutable_pets()); err != kSuccess)
+	{
+		response->clear_pets();
+		response->mutable_error_message()->set_id(err);
+	}
 ///<<< END WRITING YOUR CODE
 
 }

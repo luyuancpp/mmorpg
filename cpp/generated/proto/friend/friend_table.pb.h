@@ -252,6 +252,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED FriendRequestRecord final : public 
     kToPlayerIdFieldNumber = 2,
     kRequestTimeMsFieldNumber = 3,
     kUpdatedMsFieldNumber = 5,
+    kRequestIdFieldNumber = 6,
     kStatusFieldNumber = 4,
   };
   // uint64 from_player_id = 1;
@@ -294,6 +295,16 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED FriendRequestRecord final : public 
   void _internal_set_updated_ms(::uint64_t value);
 
   public:
+  // uint64 request_id = 6;
+  void clear_request_id() ;
+  [[nodiscard]] ::uint64_t request_id() const;
+  void set_request_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_request_id() const;
+  void _internal_set_request_id(::uint64_t value);
+
+  public:
   // uint32 status = 4;
   void clear_status() ;
   [[nodiscard]] ::uint32_t status() const;
@@ -308,7 +319,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED FriendRequestRecord final : public 
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<3, 5,
+      ::google::protobuf::internal::TcParseTable<3, 6,
                           0, 0,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
@@ -341,6 +352,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED FriendRequestRecord final : public 
     ::uint64_t to_player_id_;
     ::uint64_t request_time_ms_;
     ::uint64_t updated_ms_;
+    ::uint64_t request_id_;
     ::uint32_t status_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -1191,7 +1203,7 @@ inline void FriendRequestRecord::_internal_set_request_time_ms(::uint64_t value)
 inline void FriendRequestRecord::clear_status() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.status_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
 }
 inline ::uint32_t FriendRequestRecord::status() const {
   // @@protoc_insertion_point(field_get:friendpb.FriendRequestRecord.status)
@@ -1199,7 +1211,7 @@ inline ::uint32_t FriendRequestRecord::status() const {
 }
 inline void FriendRequestRecord::set_status(::uint32_t value) {
   _internal_set_status(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
   // @@protoc_insertion_point(field_set:friendpb.FriendRequestRecord.status)
 }
 inline ::uint32_t FriendRequestRecord::_internal_status() const {
@@ -1233,6 +1245,30 @@ inline ::uint64_t FriendRequestRecord::_internal_updated_ms() const {
 inline void FriendRequestRecord::_internal_set_updated_ms(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.updated_ms_ = value;
+}
+
+// uint64 request_id = 6;
+inline void FriendRequestRecord::clear_request_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.request_id_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+}
+inline ::uint64_t FriendRequestRecord::request_id() const {
+  // @@protoc_insertion_point(field_get:friendpb.FriendRequestRecord.request_id)
+  return _internal_request_id();
+}
+inline void FriendRequestRecord::set_request_id(::uint64_t value) {
+  _internal_set_request_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  // @@protoc_insertion_point(field_set:friendpb.FriendRequestRecord.request_id)
+}
+inline ::uint64_t FriendRequestRecord::_internal_request_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.request_id_;
+}
+inline void FriendRequestRecord::_internal_set_request_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.request_id_ = value;
 }
 
 // -------------------------------------------------------------------
