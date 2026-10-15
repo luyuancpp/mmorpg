@@ -36,21 +36,32 @@ static bool OnHealthRegenerationBasedOnLostHealth(entt::entity parent, BuffEntry
     }
 
     // TODO: Compute max_health on demand
-    auto &baseAttributesPbComponent = tlsEcs.actorRegistry.get<BaseAttributesComp>(parent);
-    const auto &derivedAttributesPbComponent = tlsEcs.actorRegistry.get<DerivedAttributesComp>(parent);
-    const auto &levelComponent = tlsEcs.actorRegistry.get<LevelComp>(parent);
+    // 每帧 buff tick 路径:BuffSystem::Update 的 view 只保证 BuffListComp 存在,
+    // 属性组件不一定齐(例如以后的 NPC / 怪物),不能无守卫 get。
+    auto *baseAttributesPbComponent = tlsEcs.actorRegistry.try_get<BaseAttributesComp>(parent);
+    const auto *derivedAttributesPbComponent = tlsEcs.actorRegistry.try_get<DerivedAttributesComp>(parent);
+    if (baseAttributesPbComponent == nullptr || derivedAttributesPbComponent == nullptr) {
+        LOG_WARN << "Health regeneration skipped: missing attribute components, entity="
+                 << entt::to_integral(parent) << " buff_table_id=" << buffTable->id();
+        return false;
+    }
+    // 没有等级组件的目标按 1 级算(与 skill.cpp 的伤害公式一致)
+    uint32_t level = 1;
+    if (const auto *levelComponent = tlsEcs.actorRegistry.try_get<LevelComp>(parent)) {
+        level = levelComponent->level();
+    }
 
-    const auto lostHealth = derivedAttributesPbComponent.max_health() - baseAttributesPbComponent.health();
+    const auto lostHealth = derivedAttributesPbComponent->max_health() - baseAttributesPbComponent->health();
 
     BuffTableManager::Instance().SetHealthRegenerationParam(
-        { static_cast<double>(levelComponent.level()),  static_cast<double>(lostHealth) });
+        { static_cast<double>(level),  static_cast<double>(lostHealth) });
 
     const auto healingAmount = BuffTableManager::Instance().GetHealthRegeneration(buffTable->id());
-    const auto currentHealth = std::min<uint64_t>(derivedAttributesPbComponent.max_health(),
-        static_cast<uint64_t>(static_cast<double>(baseAttributesPbComponent.health()) +
+    const auto currentHealth = std::min<uint64_t>(derivedAttributesPbComponent->max_health(),
+        static_cast<uint64_t>(static_cast<double>(baseAttributesPbComponent->health()) +
             healingAmount));
 
-    baseAttributesPbComponent.set_health(currentHealth);
+    baseAttributesPbComponent->set_health(currentHealth);
 
     LOG_TRACE << "Healing applied, current health: " << currentHealth;
 

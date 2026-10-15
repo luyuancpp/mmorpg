@@ -201,6 +201,7 @@ func AllocationKey(prefix string, nodeType, nodeId uint32) string
 - **超时预算**:业务服务 zrpc `Timeout ≤ ForwardTimeoutMs − 1000`。
   - 路由服 `ForwardTimeoutMs: 5000`(`go/client_rpc_router/etc/client_rpc_router.yaml:32`),所以 chat `Timeout: 4000`(`go/chat/etc/chat.yaml:9`);`Validate` 拒 0 与 >4000(`config.go:20`、`:112`)。
   - 为什么:上游先于下游超时,会把下游的正常慢响应判成故障,客户端再重试,请求就翻倍。
+  - **2026-10-14 补充**:这条不等式现在还是保序的前提。gate 对同一会话的路由类请求单飞,路由服回超时就放行下一条;下游 handler 如果还没超时,就会晚于下一条落地。所以它从「建议」升级为部署门禁:`tools/scripts/k8s_deploy.ps1` 的 `Assert-RouterForwardBudget` 对全部路由目标(login / match / team / chat / friend / guild / trade)核对。原先不满足的 login(10000)与 match(5000)同日改为 4000。完整预算链(I1–I4)见 [client-request-ordering.md](./client-request-ordering.md) §5.2。
 - **幂等**:有副作用的 C2S 必须带幂等键。SendChat 用 `request_id`(§9.3)。
 - **限速两层**:
   - 第一道:gate 每会话、每消息号的 MessageLimiter。28 / 61 不在表里,吃默认档 3 次 / 1 秒窗口(`robot/chat_smoke_scenario.go:72-77` 注释)。

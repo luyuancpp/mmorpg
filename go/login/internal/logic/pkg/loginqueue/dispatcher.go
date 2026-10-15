@@ -23,15 +23,17 @@
 //   - TryLock with TTL=DispatcherLockTTL (e.g. 30s)
 //   - StartHeartbeat at TTL/3 keeps the lease alive while we're draining
 //   - On lost-lock: dispatcher cancels its loop ctx, the next replica's
-//     periodic TryLock takes over within ~LockTTL.
+//     periodic TryLock takes over within ~LockTTL + LockTTL/3.
 //
 // Dispatcher lifecycle:
 //
 //	Start() (called from svc.ServiceContext.Start)
 //	  └─ goroutine: leader election loop
 //	      ├─ try acquire lock
-//	      ├─ on success: drain loop until lost
-//	      └─ on failure or lost: sleep ~LockTTL/3, retry
+//	      ├─ on success: one term (leadOneTerm) = heartbeat + drain loop until lost;
+//	      │  the term's cleanup (stop heartbeat, gauge 0, release lock) is deferred,
+//	      │  so a panicking term still releases the lock
+//	      └─ on failure, lost or panic: sleep ~LockTTL/3, retry
 //	Stop()
 //	  └─ cancel ctx, wait for goroutine to exit, release lock if held.
 //
@@ -89,6 +91,9 @@ type Dispatcher struct {
 //
 // zoneID 为 0 或 lockKeyBase 为空时返回错误,并且不起任何 goroutine:zone 0 的队列条目
 // 在 Lookup 里被当成损坏数据(queue.go 的 Lookup),空前缀会让锁键和别的业务键挤在一起。
+// interval 或 lockTTL 非正同样返回错误:interval <= 0 时 drainLoop 的 time.NewTicker 在拿到锁之后
+// 才 panic,起服零报错;lockTTL <= 0 时 TryLock 走不带过期的 SETNX、心跳不启动,leader 进程异常
+// 退出后锁键永不过期,该 zone 永久没有 leader。两者与 zone 0 同级:开了排队却出不了队。
 func NewDispatcher(
 	queue *Queue,
 	provider CapacityProvider,
@@ -106,6 +111,12 @@ func NewDispatcher(
 	}
 	if lockKeyBase == "" {
 		return nil, errors.New("loginqueue: dispatcher lock key base must be non-empty")
+	}
+	if interval <= 0 {
+		return nil, errors.New("loginqueue: dispatch interval must be positive")
+	}
+	if lockTTL <= 0 {
+		return nil, errors.New("loginqueue: dispatcher lock ttl must be positive")
 	}
 	return &Dispatcher{
 		queue:             queue,
@@ -136,14 +147,16 @@ func (d *Dispatcher) Start() {
 	d.cancel = cancel
 	d.mu.Unlock()
 
-	// Initialize the leader gauge to 0 so the metric appears on /metrics
-	// before the first election round completes. Without this, a fresh
-	// pod looks "missing" in Grafana for ~lockTTL/3 seconds.
+	// 先发一次 0,指标开关已开时这条序列立刻出现在 /metrics 上。但生产上此刻开关多半还没开:
+	// login.go 先 ctx.Start(),之后 zrpc.MustNewServer 里的 SetUp → StartAgent 才打开 go-zero
+	// 指标的全局开关,在那之前写的样本被直接丢弃。所以 leader 指标按电平重发,不按边沿写一次:
+	// leader 每拍重发 1(drainLoop),备机每轮抢锁失败重发 0(electAndRun),开关一开就补上。
 	d.setLeaderGauge(0)
 
 	// safego:选主循环 panic 会让这个副本永远不再参选,而队列没有 leader 时
 	// 所有排队玩家都晾在那里。裸 go func 的旧写法是"炸了就整进程死",
 	// 现在换成"记点位 + 计数",故障可见且不牵连其它链路。
+	// 任期内(出队路径)的 panic 不走到这一层:electAndRun 按任期接住,放锁后退避再参选。
 	safego.Go("login.queue_dispatcher", func() { d.electAndRun(ctx) })
 }
 
@@ -184,7 +197,7 @@ func (d *Dispatcher) Stop() {
 }
 
 // electAndRun is the outer loop: keep trying to become leader. When elected,
-// run drainLoop until we lose the lease or shutdown is requested.
+// run one term (leadOneTerm) until we lose the lease or shutdown is requested.
 func (d *Dispatcher) electAndRun(ctx context.Context) {
 	defer close(d.stopped)
 
@@ -199,6 +212,8 @@ func (d *Dispatcher) electAndRun(ctx context.Context) {
 		lock, err := rl.TryLock(ctx, d.lockKey, d.lockTTL)
 		if err != nil || !lock.IsLocked() {
 			// Another login replica is leader (or Redis blip). Wait and retry.
+			// 备机每轮重发 0:指标开关打开之前写的 0 会被丢,见 Start。
+			d.setLeaderGauge(0)
 			select {
 			case <-ctx.Done():
 				return
@@ -210,28 +225,46 @@ func (d *Dispatcher) electAndRun(ctx context.Context) {
 		logx.Infof("[loginqueue] elected dispatcher leader zone=%d key=%s", d.zoneID, d.lockKey)
 		d.setLeaderGauge(1)
 
-		// Cancel drain when we lose the lease (e.g. Redis flap → key
-		// expired and another replica took over). drainLoop respects this
-		// ctx on every tick.
-		drainCtx, drainCancel := context.WithCancel(ctx)
-		stopHB := lock.StartHeartbeat(d.lockTTL/3, d.lockTTL, func(err error) {
-			logx.Errorf("[loginqueue] dispatcher lost leadership zone=%d: %v", d.zoneID, err)
-			d.setLeaderGauge(0)
-			drainCancel()
-		})
+		// 一个任期在 safego.Run 里跑:任期内 panic(出队路径上的代码缺陷)只结束这一个任期。
+		// 收尾都在 leadOneTerm 的 defer 里,panic 展开时照样停心跳、指标归 0、放锁,同 zone 的
+		// 备机下一轮就能接手;本副本退避一轮再参选,不永久退出选举。任期收尾若不走 defer,
+		// panic 后心跳 goroutine 还在续期,本副本就成了「持锁不出队」的僵尸 leader。
+		if !safego.Run("login.queue_dispatcher_term", func() { d.leadOneTerm(ctx, lock) }) {
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(backoff):
+			}
+		}
+	}
+}
 
-		d.drainLoop(drainCtx)
-
+// leadOneTerm 是拿到锁之后的一个任期:起心跳、出队直到丢租约或停服。收尾(停心跳 →
+// leader 指标归 0 → 放锁 → 取消 drain ctx)全部走 defer,正常返回与 panic 展开走同一条路。
+func (d *Dispatcher) leadOneTerm(ctx context.Context, lock *locker.Lock) {
+	// Cancel drain when we lose the lease (e.g. Redis flap → key
+	// expired and another replica took over). drainLoop respects this
+	// ctx on every tick.
+	drainCtx, drainCancel := context.WithCancel(ctx)
+	defer drainCancel()
+	// onLost 只取消 drain ctx、不调 stopHB:它在心跳 goroutine 里同步执行,stopHB 会等它返回。
+	stopHB := lock.StartHeartbeat(d.lockTTL/3, d.lockTTL, func(err error) {
+		logx.Errorf("[loginqueue] dispatcher lost leadership zone=%d: %v", d.zoneID, err)
+		d.setLeaderGauge(0)
+		drainCancel()
+	})
+	defer func() {
 		stopHB()
 		d.setLeaderGauge(0)
 		// Best-effort release; on ctx cancel or lost lease this may no-op,
 		// which is fine — the next replica's TryLock will succeed once the
 		// TTL expires.
 		releaseCtx, releaseCancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer releaseCancel()
 		_, _ = lock.Release(releaseCtx)
-		releaseCancel()
-		drainCancel()
-	}
+	}()
+
+	d.drainLoop(drainCtx)
 }
 
 // drainLoop runs one drain pass per d.interval until ctx is cancelled.
@@ -248,6 +281,12 @@ func (d *Dispatcher) drainLoop(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
+			// ticker 与 ctx 同时就绪时 select 随机选:丢租约后不再重发 1。
+			if ctx.Err() != nil {
+				return
+			}
+			// 每拍重发 1:当选那一刻写的 1 可能落在指标开关打开之前被丢,见 Start。
+			d.setLeaderGauge(1)
 			d.dispatchOnce(ctx)
 		}
 	}
@@ -267,7 +306,16 @@ func (d *Dispatcher) dispatchOnce(ctx context.Context) {
 	// 会每拍刷一条 freeSlots ERROR。队列非空却没有 gate,说明有人在排而放不进去,
 	// 下面照常报 ERROR。
 	queueLen, err := d.queue.QueueLen(ctx, zoneID)
-	if err != nil || queueLen == 0 {
+	if err != nil {
+		// 读不出队列长度就不出队,但不能静默:只有队列键读不了(WRONGTYPE / ACL 等)而锁照常续期时,
+		// 现象是「leader=1、admit 不涨」。频率与下面的 freeSlots ERROR 相同,每拍至多一条、只有 leader 打。
+		// ctx 已取消(丢租约或停服那一拍)时的 context canceled 没有信息量,不报。
+		if ctx.Err() == nil {
+			logx.Errorf("[loginqueue] queueLen zone=%d err=%v", zoneID, err)
+		}
+		return
+	}
+	if queueLen == 0 {
 		return
 	}
 	free, _, _, _, err := FreeSlots(ctx, d.provider, d.queue, zoneID, d.softCapMultiplier)

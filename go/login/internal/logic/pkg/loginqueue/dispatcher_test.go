@@ -2,13 +2,16 @@ package loginqueue
 
 import (
 	"context"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/alicebob/miniredis/v2"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/redis/go-redis/v9"
+	gzprom "github.com/zeromicro/go-zero/core/prometheus"
 )
 
 // integrationProvider satisfies CapacityProvider for end-to-end tests.
@@ -46,6 +49,11 @@ func startIntegrationFixture(t *testing.T, prov *integrationProvider) (*Queue, *
 	rdb := redis.NewClient(&redis.Options{Addr: mr.Addr()})
 	secret := []byte("integration-test-secret")
 	q := New(rdb, time.Hour, 60*time.Second, secret)
+	// 这个 fixture 的两个用例(QueueDrainAdmits / DispatcherRespectsCapacity)里 PlayerCount 是写死的,
+	// 靠「取走即腾出名额」推进。交票后宽限(生产 15s)在这里设 0:取走时分数 = 现在,下一次计数就清掉,
+	// 与 G4b-G 之前的行为等价。宽限本身由 TestConsume_* 与
+	// TestDispatchOnce_ConsumedAdmitsHoldCapacityForHandoffGrace 用假时钟钉住。
+	q.handoffGrace = 0
 
 	// 用它的两个用例都只有 zone 1:dispatcher 只出自己那一个 zone(G1b)。
 	d, err := NewDispatcher(
@@ -133,7 +141,8 @@ func TestIntegration_QueueDrainAdmits(t *testing.T) {
 	}
 
 	// Dispatcher should drain all 5 within ~1s (capacity 2 + dispatcher
-	// PopAdmit each tick + GETDEL on each Lookup frees the slot).
+	// PopAdmit each tick; the fixture sets handoffGrace=0, so a consumed
+	// admit frees its slot at the next count).
 	admitted := make(map[string]string) // token → ip
 	waitFor(t, 3*time.Second, "all 5 entries admitted", func() bool {
 		for _, tok := range tokens {
@@ -257,14 +266,24 @@ func TestIntegration_LeaderElectionSerializesDispatch(t *testing.T) {
 
 	// All N must drain — the property is "no entry vanishes due to
 	// double-pop", not "drain happens twice as fast".
-	drained := make(map[string]bool)
 	waitFor(t, 3*time.Second, "all entries drained", func() bool {
 		// We cheat by checking ZCARD: dispatcher pops members out, so
 		// queue length monotonically drops to zero when all admitted.
 		n, _ := q.QueueLen(ctx, 1)
-		_ = drained
 		return n == 0
 	})
+
+	// 同前缀同 zone 是同一把锁:库里以这个前缀开头的键恰好一把,就是 zone 1 的锁键。
+	// 只看队列出空证明不了这一点,两把互不相干的锁(双 leader)也能出空。
+	var lockKeys []string
+	for _, key := range mr.Keys() {
+		if strings.HasPrefix(key, "dispatcher:lock:dual") {
+			lockKeys = append(lockKeys, key)
+		}
+	}
+	if want := ZoneDispatcherLockKey("dispatcher:lock:dual", 1); len(lockKeys) != 1 || lockKeys[0] != want {
+		t.Fatalf("lock keys with prefix dispatcher:lock:dual = %v, want exactly [%s]", lockKeys, want)
+	}
 }
 
 // 锁键按 zone 拆:同一前缀下每个 zone 一把,互不相同,也都不等于前缀本身(旧的全服键)。
@@ -303,6 +322,30 @@ func TestNewDispatcher_RejectsZeroZoneOrEmptyLockKeyBase(t *testing.T) {
 			if d != nil || err == nil {
 				t.Fatalf("NewDispatcher(lockKeyBase=%q, zone=%d) = (%v, %v), want (nil, error)",
 					tc.lockKeyBase, tc.zoneID, d, err)
+			}
+		})
+	}
+}
+
+// 出队间隔或锁 TTL 非正同样是「开了排队却出不了队」:前者让 drainLoop 的 NewTicker 在拿到锁之后
+// panic,后者让锁键不带过期、心跳不起,leader 异常退出后该 zone 永久没有 leader。构造期就拒绝,
+// 与 zone 0 / 空前缀同一口径;q / prov / rdb 传 nil,证明校验先于任何使用。
+func TestNewDispatcher_RejectsNonPositiveIntervalOrLockTTL(t *testing.T) {
+	cases := []struct {
+		name     string
+		interval time.Duration
+		lockTTL  time.Duration
+	}{
+		{name: "zero interval", interval: 0, lockTTL: 2 * time.Second},
+		{name: "zero lock ttl", interval: 30 * time.Millisecond, lockTTL: 0},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			d, err := NewDispatcher(nil, nil, nil, nil, 300*time.Second, tc.interval, 1.5,
+				tc.lockTTL, "dispatcher:lock:login_queue", 1)
+			if d != nil || err == nil {
+				t.Fatalf("NewDispatcher(interval=%v, lockTTL=%v) = (%v, %v), want (nil, error)",
+					tc.interval, tc.lockTTL, d, err)
 			}
 		})
 	}
@@ -408,7 +451,7 @@ func TestIntegration_DualLeadersSameZone_NoLossBoundedOverAdmit(t *testing.T) {
 
 	snapshot := func() (queued, admitted []string) {
 		queued, _ = rdb.ZRange(ctx, zoneZSetKey(1), 0, -1).Result()
-		admitted, _ = rdb.SMembers(ctx, admittedSetKey(1)).Result()
+		admitted, _ = rdb.ZRange(ctx, admittedZSetKey(1), 0, -1).Result()
 		return queued, admitted
 	}
 	waitFor(t, 3*time.Second, "both leaders saturated the zone", func() bool {
@@ -484,4 +527,284 @@ func TestDispatchOnce_EmptyQueueSkipsGateDirectory(t *testing.T) {
 	if n, err := q.QueueLen(ctx, 1); err != nil || n != 0 {
 		t.Fatalf("queue should be drained after one pass: len=%d err=%v", n, err)
 	}
+}
+
+// G4b-G(Q2 回归,dispatcher 层):取走放行槽后,gate 要到下一次上报才把人数算进 PlayerCount。
+// 这几拍里占位必须留着,否则每一拍都按「在线 0、在途 0」再放一满批。
+func TestDispatchOnce_ConsumedAdmitsHoldCapacityForHandoffGrace(t *testing.T) {
+	mr, err := miniredis.Run()
+	if err != nil {
+		t.Fatalf("miniredis: %v", err)
+	}
+	defer mr.Close()
+	rdb := redis.NewClient(&redis.Options{Addr: mr.Addr()})
+	defer rdb.Close()
+	secret := []byte("g4bg")
+	q := New(rdb, time.Hour, 60*time.Second, secret)
+	clk := newFakeClock()
+	q.now = clk.Now
+	ctx := context.Background()
+
+	prov := &integrationProvider{
+		caps:  map[uint32]uint32{1: 2},
+		cands: map[uint32][]GateCandidate{1: {{NodeID: 1, IP: "10.0.0.1", Port: 9000, ZoneID: 1}}},
+	}
+	// 不 Start:直接调 dispatchOnce,没有 goroutine,结果确定。
+	d := mustNewDispatcher(t, q, prov, rdb, secret, "dispatcher:lock:g4bg", 1)
+
+	tokens := make([]string, 0, 6)
+	for range 6 {
+		res, err := q.Enqueue(ctx, 1, "u", "d")
+		if err != nil {
+			t.Fatalf("enqueue: %v", err)
+		}
+		tokens = append(tokens, res.QueueToken)
+	}
+	mustQueueLen := func(want uint32, when string) {
+		t.Helper()
+		n, err := q.QueueLen(ctx, 1)
+		if err != nil || n != want {
+			t.Fatalf("queue len (%s) = %d err=%v, want %d", when, n, err, want)
+		}
+	}
+
+	d.dispatchOnce(ctx)
+	mustQueueLen(4, "first tick admits exactly the capacity")
+
+	taken := 0
+	for _, token := range tokens {
+		st, err := q.Lookup(ctx, token, stubSignFn)
+		if err != nil {
+			t.Fatalf("lookup: %v", err)
+		}
+		if st.Status == StatusAdmitted {
+			taken++
+		}
+	}
+	if taken != 2 {
+		t.Fatalf("consumed %d admits, want 2", taken)
+	}
+
+	// gate 还没上报的 5 拍:一个都不能再放。
+	for range 5 {
+		clk.Advance(time.Second)
+		d.dispatchOnce(ctx)
+	}
+	mustQueueLen(4, "ticks before the gate reports: consumed admits still hold their slots")
+
+	// 宽限过去,这两个人始终没出现在 PlayerCount 里:名额放回,再放一批。
+	clk.Advance(q.handoffGrace)
+	d.dispatchOnce(ctx)
+	mustQueueLen(2, "handoff grace elapsed")
+}
+
+// 规格 §4.3:队列非空,但本 zone 一台 gate 都没有。每拍报一条 freeSlots ERROR,条目留在队列里,不丢人、不放行。
+// T9 的 provider 始终有一台 gate,覆盖不到这条。
+func TestDispatchOnce_NonEmptyQueueWithoutGates_KeepsEntries(t *testing.T) {
+	mr, err := miniredis.Run()
+	if err != nil {
+		t.Fatalf("miniredis: %v", err)
+	}
+	defer mr.Close()
+	rdb := redis.NewClient(&redis.Options{Addr: mr.Addr()})
+	defer rdb.Close()
+	secret := []byte("g1b-nogate")
+	q := New(rdb, time.Hour, 60*time.Second, secret)
+	ctx := context.Background()
+
+	prov := &integrationProvider{caps: map[uint32]uint32{1: 10}, cands: map[uint32][]GateCandidate{}}
+	// 不 Start:直接调 dispatchOnce,没有 goroutine,结果确定。
+	d := mustNewDispatcher(t, q, prov, rdb, secret, "dispatcher:lock:nogate", 1)
+
+	if _, err := q.Enqueue(ctx, 1, "u", "d"); err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+	for range 3 {
+		d.dispatchOnce(ctx)
+	}
+	if n, err := q.QueueLen(ctx, 1); err != nil || n != 1 {
+		t.Fatalf("queue len = %d err=%v, want 1: the entry must stay queued while the zone has no gate", n, err)
+	}
+	if n, err := q.AdmittedCount(ctx, 1); err != nil || n != 0 {
+		t.Fatalf("admitted count = %d err=%v, want 0: nothing may be admitted without a gate", n, err)
+	}
+}
+
+// 同 zone 主备切换:leader 正常停机放锁,同 zone 的备机在下一次重试时接管并出队
+// (测试参数下重试周期 max(2s/3, 1s) = 1s)。T7 只断言出空,覆盖不到「Stop 放锁 → 备机接管」这条路径。
+func TestIntegration_SameZoneStandbyTakesOverAfterLeaderStops(t *testing.T) {
+	mr, err := miniredis.Run()
+	if err != nil {
+		t.Fatalf("miniredis: %v", err)
+	}
+	defer mr.Close()
+	rdb := redis.NewClient(&redis.Options{Addr: mr.Addr()})
+	defer rdb.Close()
+	secret := []byte("g1b-failover")
+	q := New(rdb, time.Hour, 60*time.Second, secret)
+	ctx := context.Background()
+
+	const base = "dispatcher:lock:failover"
+	lockKey := ZoneDispatcherLockKey(base, 1)
+	prov := &integrationProvider{
+		caps:  map[uint32]uint32{1: 100},
+		cands: map[uint32][]GateCandidate{1: {{NodeID: 1, IP: "10.0.0.1", Port: 9000, ZoneID: 1}}},
+	}
+	d1 := mustNewDispatcher(t, q, prov, rdb, secret, base, 1)
+	d2 := mustNewDispatcher(t, q, prov, rdb, secret, base, 1)
+
+	d1.Start()
+	defer d1.Stop() // Stop 可重复调用;中途 Fatal 时由它收尾
+	// d2 还没起,锁出现就是 d1 拿到的。
+	waitFor(t, 3*time.Second, "d1 holds the zone lock", func() bool { return mr.Exists(lockKey) })
+	d2.Start()
+	defer d2.Stop()
+	d1.Stop()
+
+	const N = 5
+	for range N {
+		if _, err := q.Enqueue(ctx, 1, "u", "d"); err != nil {
+			t.Fatalf("enqueue: %v", err)
+		}
+	}
+	// d1 已停,只剩 d2 能出队。
+	waitFor(t, 3*time.Second, "standby d2 took over and drained the queue", func() bool {
+		n, err := q.QueueLen(ctx, 1)
+		return err == nil && n == 0
+	})
+	if !mr.Exists(lockKey) {
+		t.Fatalf("zone lock %q must be held by the new leader", lockKey)
+	}
+}
+
+// panicOnCandidatesProvider 模拟出队路径上的代码缺陷:一碰 gate 目录就 panic。
+// 队列非空时 dispatchOnce 才会走到 CandidatesForZone(先判空再算容量)。
+type panicOnCandidatesProvider struct {
+	calls atomic.Int32
+}
+
+func (p *panicOnCandidatesProvider) CandidatesForZone(context.Context, uint32) ([]GateCandidate, error) {
+	p.calls.Add(1)
+	panic("loginqueue test: injected gate directory defect")
+}
+
+func (p *panicOnCandidatesProvider) ZoneCapacity(uint32) uint32 { return 100 }
+
+// G1b-consistency-2 回归:任期内 panic(这里是出队路径上的 provider 缺陷,队列非空才碰得到)。
+// 任期的收尾(停心跳、leader 指标归 0、放锁)全在 defer 里,panic 展开时照样执行;safego 按任期接住后
+// 退避再参选。同 zone 的另一个副本因此能抢到锁、把队列出空。
+// 修复前收尾是直线代码:panic 被 safego 接住、选主 goroutine 退出,心跳 goroutine 却还在续期,
+// 这个副本成了「持锁不出队」的僵尸 leader —— 只 panic 一次、锁键一直在,本用例在第一个 waitFor 处红。
+func TestIntegration_PanickedTermReleasesLockForSameZoneStandby(t *testing.T) {
+	mr, err := miniredis.Run()
+	if err != nil {
+		t.Fatalf("miniredis: %v", err)
+	}
+	defer mr.Close()
+	rdb := redis.NewClient(&redis.Options{Addr: mr.Addr()})
+	defer rdb.Close()
+	secret := []byte("g1b-panic")
+	q := New(rdb, time.Hour, 60*time.Second, secret)
+	ctx := context.Background()
+
+	const base = "dispatcher:lock:panic"
+	lockKey := ZoneDispatcherLockKey(base, 1)
+	for range 3 {
+		if _, err := q.Enqueue(ctx, 1, "u", "d"); err != nil {
+			t.Fatalf("enqueue: %v", err)
+		}
+	}
+
+	bad := &panicOnCandidatesProvider{}
+	dBad := mustNewDispatcher(t, q, bad, rdb, secret, base, 1)
+	dBad.Start()
+	defer dBad.Stop()
+
+	// 第二次 panic 说明选主循环挺过了第一次:退避(测试参数下 1s)后又参选、又当选。
+	waitFor(t, 3*time.Second, "panicking dispatcher runs for election again after backoff", func() bool {
+		return bad.calls.Load() >= 2
+	})
+	// 退避期间锁键不在:panic 的那个任期已经放锁(不靠 TTL 过期,miniredis 也不按墙钟过期)。
+	waitFor(t, 3*time.Second, "lock released by the panicked term", func() bool {
+		return !mr.Exists(lockKey)
+	})
+	// panic 发生在 FreeSlots 里、PopAdmit 之前:条目一个没动。
+	if n, err := q.QueueLen(ctx, 1); err != nil || n != 3 {
+		t.Fatalf("queue len after panicked terms = %d err=%v, want 3", n, err)
+	}
+
+	good := &integrationProvider{
+		caps:  map[uint32]uint32{1: 100},
+		cands: map[uint32][]GateCandidate{1: {{NodeID: 1, IP: "10.0.0.1", Port: 9000, ZoneID: 1}}},
+	}
+	dGood := mustNewDispatcher(t, q, good, rdb, secret, base, 1)
+	dGood.Start()
+	defer dGood.Stop()
+
+	// dBad 每轮只持锁一瞬(当选 → panic → 放锁)就退避 1s,dGood 每 1s 重试一次,几轮之内必然抢到。
+	waitFor(t, 5*time.Second, "same-zone standby drained the queue", func() bool {
+		n, err := q.QueueLen(ctx, 1)
+		return err == nil && n == 0
+	})
+}
+
+// leaderGaugeValue 从默认 registry 读 login_queue_dispatcher_is_leader 里标签恰为 {pod, zone} 的序列。
+// Gather 出来的标签按名字排序,这里同时钉住标签集:多一个、少一个、名字或位置对不上都找不到。
+func leaderGaugeValue(t *testing.T, pod, zone string) (float64, bool) {
+	t.Helper()
+	families, err := prometheus.DefaultGatherer.Gather()
+	if err != nil {
+		t.Fatalf("gather metrics: %v", err)
+	}
+	for _, mf := range families {
+		if mf.GetName() != "login_queue_dispatcher_is_leader" {
+			continue
+		}
+		for _, m := range mf.GetMetric() {
+			labels := m.GetLabel()
+			if len(labels) == 2 &&
+				labels[0].GetName() == "pod" && labels[0].GetValue() == pod &&
+				labels[1].GetName() == "zone" && labels[1].GetValue() == zone {
+				return m.GetGauge().GetValue(), true
+			}
+		}
+	}
+	return 0, false
+}
+
+// G1b-spec-1 回归:leader 指标是电平,不是边沿。生产上 dispatcher 在 go-zero 指标开关打开之前就 Start
+// 并当选(login.go 先 ctx.Start(),zrpc.MustNewServer 里的 SetUp → StartAgent 才打开开关),那时写的
+// 样本被直接丢弃。leader 每拍重发 1,开关一开就补上。
+// pod / zone 标签独立,不与包内其它用例的 {unknown, 1} 序列互相覆盖。开关是进程级的、打开后关不回去:
+// 修复前只在全新进程里第一次跑时红(-run 单跑、-count=1),修复后恒绿。
+func TestDispatcher_LeaderGaugeRepublishedAfterMetricsEnabled(t *testing.T) {
+	mr, err := miniredis.Run()
+	if err != nil {
+		t.Fatalf("miniredis: %v", err)
+	}
+	defer mr.Close()
+	rdb := redis.NewClient(&redis.Options{Addr: mr.Addr()})
+	defer rdb.Close()
+	secret := []byte("g1b-gauge")
+	q := New(rdb, time.Hour, 60*time.Second, secret)
+
+	const base, zone = "dispatcher:lock:gauge", uint32(4242)
+	// 队列一直是空的,provider 不会被碰到。
+	d := mustNewDispatcher(t, q, &integrationProvider{}, rdb, secret, base, zone)
+	d.SetPodID("gauge-test-pod")
+	d.Start()
+	defer d.Stop()
+
+	waitFor(t, 3*time.Second, "zone 4242 leader lock acquired", func() bool {
+		return mr.Exists(ZoneDispatcherLockKey(base, zone))
+	})
+	// 再等两拍(30ms 一拍):避开「锁键已写、goroutine 还没走到当选那次 setLeaderGauge(1)」的窗口,
+	// 让当选那次写入确定落在开关打开之前。这一步只影响修复前能不能稳定红,不影响修复后的结果。
+	time.Sleep(60 * time.Millisecond)
+
+	gzprom.Enable()
+	waitFor(t, 3*time.Second, `login_queue_dispatcher_is_leader{pod="gauge-test-pod",zone="4242"} == 1`, func() bool {
+		v, ok := leaderGaugeValue(t, "gauge-test-pod", "4242")
+		return ok && v == 1
+	})
 }

@@ -2,6 +2,7 @@ package logic
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -61,6 +62,15 @@ func (l *ReconnectLogic) Reconnect(in *pb.ReconnectRequest) (*pb.ReconnectRespon
 			ErrorMessage: "session account mismatch",
 		}, nil
 	}
+	// 代次栅栏排在同请求重放之后:重放的代次与记录相等,先判会把丢包重试误拒。
+	// 判定基于本次读到的 data,随后的整字节 CAS 以同一份 data 为 expected,判与写之间没有窗口。
+	if !loginGenerationAdvances(session.LoginGeneration, in.LoginGeneration) {
+		return &pb.ReconnectResponse{
+			Success: false,
+			ErrorMessage: fmt.Sprintf("stale login generation: current=%d incoming=%d",
+				session.LoginGeneration, in.LoginGeneration),
+		}, nil
+	}
 
 	// Update session with new connection info
 	session.SessionId = in.NewSessionId
@@ -69,6 +79,8 @@ func (l *ReconnectLogic) Reconnect(in *pb.ReconnectRequest) (*pb.ReconnectRespon
 	session.TokenId = in.TokenId
 	session.TokenExpiryMs = in.TokenExpiryMs
 	session.RequestId = in.RequestId
+	// 请求为 0(旧版 login)也照写 0:记录如实表示这条会话没有代次,不保留上一会话的值。
+	session.LoginGeneration = in.LoginGeneration
 	session.SessionVersion++
 	session.State = pb.PlayerSessionState_SESSION_STATE_ONLINE
 	session.LastActiveTs = time.Now().UnixMilli()
@@ -92,8 +104,8 @@ func (l *ReconnectLogic) Reconnect(in *pb.ReconnectRequest) (*pb.ReconnectRespon
 		}, nil
 	}
 
-	l.Infof("Reconnect: player=%d new_session=%d gate=%s version=%d",
-		in.PlayerId, in.NewSessionId, in.GateId, session.SessionVersion)
+	l.Infof("Reconnect: player=%d new_session=%d gate=%s version=%d login_generation=%d",
+		in.PlayerId, in.NewSessionId, in.GateId, session.SessionVersion, session.LoginGeneration)
 
 	return &pb.ReconnectResponse{
 		Success: true,

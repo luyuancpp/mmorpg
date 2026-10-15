@@ -233,6 +233,14 @@ func main() {
 		return
 	}
 
+	// Ordering-smoke 模式:单机器人验证「同一会话经路由服的请求按收包顺序执行」
+	// (不等回包连发 JoinQueue → CancelQueue,再查 GetQueueStatus,最终必须不在队列里)。
+	// 见 ordering_smoke_scenario.go 与 docs/design/client-request-ordering.md;前置条件写在 etc/ordering_smoke.yaml 文件头。
+	if cfg.Mode == "ordering-smoke" {
+		RunOrderingSmoke(cfg)
+		return
+	}
+
 	stopReport := make(chan struct{})
 	reportInterval := time.Duration(cfg.ReportInterval) * time.Second
 	if reportInterval <= 0 {

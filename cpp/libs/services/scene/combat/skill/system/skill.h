@@ -24,8 +24,8 @@ public:
 	static void HandleChannelThink(entt::entity casterEntity, uint64_t skillId);
 	static void HandleChannelFinish(entt::entity casterEntity, uint64_t skillId);
 
-    // Validate target
-    static uint32_t ValidateTarget(const ::ReleaseSkillRequest* request);
+    // 校验目标;指定目标类技能要求目标与施法者同场景,见 skill.cpp 的 ResolveSkillTarget
+    static uint32_t ValidateTarget(entt::entity casterEntity, const ::ReleaseSkillRequest* request);
 
     // Check cooldown
     static uint32_t CheckCooldown(entt::entity casterEntity, const SkillTable* skillTable);

@@ -163,6 +163,56 @@ func TestRouteBootstrapDDLContract(t *testing.T) {
 	}
 }
 
+// TestRouteShardModulusProbeDiscriminates 钉住建池探针 P5(probeRouteShardModulus)的判别表:按 64 片合法的两行
+// (0, 64)、(63, 63),在 CHECK 为 route_shard = player_id % M 的表上,只有 M = 64 时两行都被接受。
+// accepts 是对这条 CHECK 的模拟(不连库);另钉住两行在本二进制的模数下合法、片放得进 tinyint unsigned、按聚簇键升序。
+func TestRouteShardModulusProbeDiscriminates(t *testing.T) {
+	keys := routeShardModulusProbeKeys()
+	// 期望写成字面量(64 片):被测函数用的就是 placement.RouteRowShards,期望再引用它等于自己证自己。
+	if want := []RouteScanCursor{{Shard: 0, PlayerID: 64}, {Shard: 63, PlayerID: 63}}; !slices.Equal(keys, want) {
+		t.Fatalf("routeShardModulusProbeKeys() = %+v, want %+v", keys, want)
+	}
+	for i, k := range keys {
+		if k.Shard != placement.RouteRowShard(k.PlayerID) {
+			t.Fatalf("探针第 %d 行 %+v 在本二进制的模数下不合法:正确的库上也会被拒、误报模数不一致", i+1, k)
+		}
+		if k.Shard > 255 {
+			t.Fatalf("探针第 %d 行的片 %d 放不进 route_shard(tinyint unsigned)", i+1, k.Shard)
+		}
+		if i > 0 && !keys[i-1].Less(k) {
+			t.Fatalf("探针行没有按聚簇键升序:%+v 排在 %+v 之后(多副本同时探针时取锁顺序要一致)", k, keys[i-1])
+		}
+	}
+
+	accepts := func(modulus uint32, k RouteScanCursor) bool { return uint64(k.Shard) == k.PlayerID%uint64(modulus) }
+	// 判别表(与 probeRouteShardModulus 注释里的表一致):true = 被接受。
+	for _, tc := range []struct {
+		modulus uint32
+		want    [2]bool // (0, 64)、(63, 63)
+	}{
+		{16, [2]bool{true, false}},
+		{32, [2]bool{true, false}},
+		{64, [2]bool{true, true}},
+		{128, [2]bool{false, true}},
+		{192, [2]bool{false, true}},
+		{256, [2]bool{false, true}},
+	} {
+		if got := [2]bool{accepts(tc.modulus, keys[0]), accepts(tc.modulus, keys[1])}; got != tc.want {
+			t.Fatalf("表模数 %d:两行被接受 = %v, want %v", tc.modulus, got, tc.want)
+		}
+	}
+	// 穷举 route_shard 放得下的全部模数 1..256:两行都被接受当且仅当模数就是本二进制的模数 —— 不止上表几个点。
+	for m := uint32(1); m <= 256; m++ {
+		all := true
+		for _, k := range keys {
+			all = all && accepts(m, k)
+		}
+		if want := m == placement.RouteRowShards; all != want {
+			t.Fatalf("表模数 %d:两行都被接受 = %t, want %t", m, all, want)
+		}
+	}
+}
+
 // allRouteSQLForTest 是本 store 发出的全部语句(动态语句取几个代表长度;tidb-prepare 的语句取一组代表入参)。
 func allRouteSQLForTest() map[string]string {
 	out := map[string]string{
@@ -188,6 +238,7 @@ func allRouteSQLForTest() map[string]string {
 		"R15":             routeMetaSeedSQL,
 		"R16":             routeReconcileSeedSQL,
 		"P4":              routeProbeShardCheckSQL,
+		"P5":              routeProbeShardModulusSQL,
 		"T1":              routeTiDBPKTypeSQL,
 		"ddl_route":       playerRouteBootstrapDDL,
 		"ddl_fence":       zoneMergeFenceBootstrapDDL,
@@ -679,9 +730,9 @@ func TestRouteTiDBPrepareStatements(t *testing.T) {
 	if n := len(routeTiDBPrepareStatements([]uint32{7}, nil)); n != 2+2+1+0+1 {
 		t.Fatalf("1 个 zone、0 个 storage 应生成 6 条语句,got %d", n)
 	}
-	// 切点密度的两个常量:8 个点、间隔 8 片(64 / 8);间隔必须整除行片数(route_tidb.go 另有编译期断言)。
-	if routeTiDBPrefixSplitPoints != 8 || routeTiDBPrefixSplitStride != 8 || placement.RouteRowShards%routeTiDBPrefixSplitStride != 0 {
-		t.Fatalf("切点数 / 间隔 = %d / %d(行片 %d),want 8 / 8 且间隔整除行片数:改密度要同步容量模型 §4.1 与提案 H8",
+	// 切点密度的两个常量:8 个点、间隔 8 片(64 / 8);切点数必须整除行片数(route_tidb.go 另有编译期断言)。
+	if routeTiDBPrefixSplitPoints != 8 || routeTiDBPrefixSplitStride != 8 || placement.RouteRowShards%routeTiDBPrefixSplitPoints != 0 {
+		t.Fatalf("切点数 / 间隔 = %d / %d(行片 %d),want 8 / 8 且切点数整除行片数:改密度要同步容量模型 §4.1 与提案 H8",
 			routeTiDBPrefixSplitPoints, routeTiDBPrefixSplitStride, placement.RouteRowShards)
 	}
 

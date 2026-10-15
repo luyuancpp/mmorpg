@@ -71,6 +71,15 @@ struct SessionInfo
 	uint32_t homeZoneId{0}; // 玩家归属 zone;0 = 未知(旧版 scene_manager 未填),scene 侧 fail-closed 落进程 zone 并计数
 	uint64_t ownerEpoch{0}; // 本次路由的归属 epoch;0 = 旧版未铸造(兼容窗口),scene 侧存盘跳过 CAS 并计数
 
+	// 登录代次(docs/design/scene-enter-session-fence.md §4):本会话、本角色见过的最高代次。来源是
+	// BindSessionEvent 与 RoutePlayerEvent,同一角色取 max;同一条连接上换了角色时以新角色的值为准(上一个
+	// 角色的代次与新角色无关)。只用于给 PlayerEnterGameNodeRequest 盖章,新旧由 scene 入场栅栏判;gate 不据此
+	// 拒绝或丢弃任何路由:一次失败的重登(Bind 已到、scene_manager 拒绝)会把会话代次抬高,之后同连接上
+	// scene 自发的换图路由带的是 0(由本字段盖章),按代次丢会把它们全吞掉。0 = 上游未带(旧版),原样透传。
+	// 写入只经 scene_route_helper.h 的 ApplyLoginBinding / ApplyRouteIdentity,且都必须先于转发:
+	// 转发从会话取值盖章。会话销毁即随之消失。
+	uint64_t loginGeneration{0};
+
 	// 最近一次 RoutePlayerEvent 的决策(CPP-2);每次到达无条件覆盖,与是否转发成功无关。
 	// 只供 BindSession 晚到时按 node_id 重建欠账(scene_route_helper.h EntryForLateLoginBinding):
 	// 不从已提交的节点实体反查 NodeInfo —— 已提交的指向可能已被节点摘除置无效,或因同 uuid 重注册而悬空。

@@ -153,6 +153,7 @@ TiDB 决策 D1 的「映射持久化兜底表」仍是遗留项(§11.4)。
 
 实现口径(v2.1):
 - **不耗预算只对写生效,读照常耗预算。** 「写进死信 = 丢盘」对读不成立:读不改数据,等待方早已超时。读也豁免的话,库长期打不开时每次登录都往重试队列加一条永远排不完的读,会挤掉真正需要重试的写。
+  - 2026-10-14 L-04 第 1 批起(代码已落、未编译):选库时库打不开或在冷却期内的读**立即回失败回执**并 ack,不再进重试队列;读重试用完预算后丢弃,不进死信。已打开的库在运行期失联时也会进冷却(探活确认整库不可达才进)。见 [db-task-store-unavailable-deferral.md](db-task-store-unavailable-deferral.md) §3.4、§3.6。
 - **单次按需打开预算 10s,失败后冷却 10s。** 同一个库的并发请求在 singleflight 上等打开结果,所在的 worker 子分片跟着停住。没有冷却,一个连不上的库会让每条指向它的任务都在 worker 上等满超时,同子分片里无关的玩家一起被拖住。冷却期内直接复用上次的错误,不重复计数、不重复打 ERROR。
 - `db_placement_store_open_total` 的 result 多一个 `rejected`(不被放行,属于配置问题),与 `error`(连不上 / 库不存在 / schema 闸不过)分开。
 - 本 zone 库照旧由 `InitDB` 打开,再登记为落点 ZoneId。启动期有两道拒启:ZoneId 不在 `1..999999`;`config.ZoneDBName(ZoneId)` 与 `placement.StoreDBName(ZoneId)` 不一致。

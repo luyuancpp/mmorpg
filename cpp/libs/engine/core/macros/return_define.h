@@ -64,13 +64,18 @@
     } while (0)
 
 // Transfer accumulated TipInfoMessage to a protobuf response and clear TLS state.
+// TLS 里没有 tip(id 为 0 且没有参数)时不覆盖:handler 可能已经把拒绝码直接写进了
+// response->error_message,以前这里无条件整体覆盖,拒绝码被空 tip 抹成「成功」
+// (ReleaseSkill 的两处拒绝、EnterScene 原先的 7 处拒绝都栽在这里)。
 #define TRANSFER_ERROR_MESSAGE(response)                                                        \
     do {                                                                                        \
         auto* _resp = (response);                                                               \
         if (_resp) {                                                                            \
             auto& _tip = tlsEcs.globalRegistry.get_or_emplace<TipInfoMessage>(      \
                 tlsEcs.GlobalEntity());                                                                \
-            *(_resp->mutable_error_message()) = std::move(_tip);                                \
+            if (_tip.id() != 0 || _tip.parameters_size() > 0) {                                 \
+                *(_resp->mutable_error_message()) = std::move(_tip);                            \
+            }                                                                                   \
             _tip.Clear();                                                                       \
         }                                                                                       \
     } while (0)

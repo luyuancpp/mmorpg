@@ -164,27 +164,13 @@ void SceneHandler::PlayerEnterGameNode(::google::protobuf::RpcController* contro
 	LOG_DEBUG << "Handling PlayerEnterGameNode for player: " << request->player_id()
 	          << " session=" << request->session_id()
 	          << " enter_gs_type=" << request->enter_gs_type()
-	          << " scene_id=" << request->scene_id();
+	          << " scene_id=" << request->scene_id()
+	          << " login_generation=" << request->login_generation();
 
-	// 0. 进场路由把玩家派回了本节点:先让疏散 / 排空改派的待确认表(relocate_confirm.h)知道。
-	//    ① 他还没派发的改派票据作废 —— 这次进场要么复用实体并取消退出(EnterScene 第 0 步),要么在 1.5 / 1.6 把实体
-	//       按"被废黜"销毁后重载,那次退出都不会再正常收尾;留着票据只会在下一次、会话已换的退出里被误消费。
-	//       例外:整节点疏散中、带着票据那同一条有效会话的进场,票据留着(疏散只发一轮票,删掉的话被留在将死节点上的
-	//       玩家既不改派也不踢);它若随后在 1.5 / 1.6 被废黜销毁,票据由 DestroyDeposedPlayer 删掉(计 ticket_dropped_deposed)。
-	//    ② 本节点替他发的改派有了去向:同一条会话 → 条目转入"落地等载入",由待确认表每拍看实体建出来没有,载入被放弃
-	//       (下面 3.5 的标记清理核对不过 / 载入失败)就核实后踢线;会话不同或为 0 → 玩家已重登、旧会话已死,结清不踢。
-	//    必须排在最前面:要赶在第 1 步擦旧会话、1.5 / 1.6 销毁旧实体(那里也会删票据,排在后面就分不清是谁删的)、
-	//    第 3 步登记待入场条目之前 —— 它靠"此刻待入场表里有没有他"区分同一条路由被 gate 补发与真正的第二次进场。
-	//    入口目前没有 owner_epoch 栅栏(陈旧路由只在 EnterScene 里打一条 WARN);以后加栅栏时本调用要挪到放行之后,
-	//    否则一条陈旧路由带着别的会话到达,会把条目误结清、玩家不被踢。
-	PlayerLifecycleSystem::ReconcileRelocateOnReentry(request->player_id(), request->session_id());
-
-	// 1. Clear existing player session (handles rapid reconnect / account takeover)
-	PlayerLifecycleSystem::RemovePlayerSessionSilently(request->player_id());
-
-	auto playerIt = tlsEcs.playerList.find(request->player_id());
-
-	// Carry session/login/scene context through the async load pipeline.
+	// 入场的全部处置 —— 入场会话栅栏、改派待确认表对账、擦旧会话、两道 owner_epoch 废黜判定、复用实体或登记待入场
+	// 上下文 —— 都在 PlayerLifecycleSystem::HandleEnterGameNode 里,顺序与理由见那里(scene-enter-session-fence.md §5.3)。
+	// 这里只组上下文,并在需要新载入时发 AsyncLoad:AsyncLoad 留在节点层,scene 库的单测宿主没有 Redis 客户端,
+	// 入口逻辑因此可以直接在宿主里驱动。
 	PlayerEnterContext ctx;
 	ctx.enterInfo.set_session_id(request->session_id());
 	ctx.enterInfo.set_enter_gs_type(request->enter_gs_type());
@@ -197,83 +183,23 @@ void SceneHandler::PlayerEnterGameNode(::google::protobuf::RpcController* contro
 	// 逐字节等于本次标记原文;location 指回本节点本 zone。别处新增"读 Redis 采纳 epoch"必须同时满足这三条。
 	ctx.homeZoneId = request->home_zone_id();
 	ctx.ownerEpoch = request->owner_epoch();
+	// 登录代次(gate 用本会话、本角色见过的最高代次盖章):入场会话栅栏据此拒绝跨会话的陈旧入场。
+	// 0 = 上游未带(旧版 gate / login),按判定表的版本 0 规则处理(scene-enter-session-fence.md §5.2 / §6)。
+	ctx.loginGeneration = request->login_generation();
 
-	// 1.5 本节点上的旧实体若正处于"归属交接已发起",且这次路由带来的 owner_epoch 比它缓存的新:
-	//     那次交接其实已被放行(EnterScene 应答丢了,30s 看门狗还没到期),玩家在别的节点 / zone
-	//     玩过之后又被派回本节点。旧实体的内存态停在交接那一刻,复用它 = 回档。
-	//     按"被废黜"销毁(不存盘),然后落到第 3 步从盘上重新加载。
-	//     更新的 epoch 也可能是"交接被 scene_manager 单调回滚到本节点"之后的同落点重连(E+2,本节点还没取证采纳):
-	//     同样销毁重载,交接发起后实体不再写盘、Redis 包含冻结内存,零损失。
-	//     epoch 相等(同 zone 重发后落回本节点)或为 0(上游未填)时返回 false,照旧复用实体。
-	if (playerIt != tlsEcs.playerList.end() &&
-		PlayerLifecycleSystem::DiscardStaleHandoffEntity(playerIt->second, ctx.ownerEpoch))
+	if (PlayerLifecycleSystem::HandleEnterGameNode(request->player_id(), std::move(ctx)) !=
+		PlayerLifecycleSystem::EnterGameNodeOutcome::kLoadRequired)
 	{
-		// 销毁会改 playerList,迭代器已失效,不得再用。
-		playerIt = tlsEcs.playerList.end();
-	}
-	// 1.6 同一套路,针对其余旧实体(仍在退出中的,或没退出的活僵尸):owner_epoch 至少比它缓存的大 2 = 中间有别的
-	//     持有者(退出被保留到租约之后 / 僵尸没退出,玩家在别处玩过又被派回来),复用它同样是回档,按"被废黜"
-	//     销毁后重载。恰好 +1(落回本节点这一次自己铸的)照旧复用,退出中的由 EnterScene 第 0 步取消退出
-	//     (cross-zone-scene-travel.md §12.6)。
-	else if (playerIt != tlsEcs.playerList.end() &&
-		PlayerLifecycleSystem::DiscardDeposedEntityOnReentry(playerIt->second, ctx.ownerEpoch))
-	{
-		playerIt = tlsEcs.playerList.end();
-	}
-
-	// 2. If player is already online, enter scene directly.
-	//    重连 / 顶号复用实体:EnterScene 用 ctx 里的非 0 epoch 更新 PlayerOwnerEpochComp
-	//    (Go 给重连发的是当前值),否则实体会一直拿首登那次的 epoch 存盘。
-	if (playerIt != tlsEcs.playerList.end())
-	{
-		PlayerLifecycleSystem::EnterScene(playerIt->second, ctx);
 		return;
 	}
 
-	// 3. Player not online — kick off Redis-only async load.
-	//    Player data is expected to already be in Redis, preloaded by Login via
-	//    Kafka -> DB Service -> Redis. On Redis NIL, AsyncLoad retries with
-	//    millisecond-grade exponential backoff (500ms/1s/2s/4s/8s/16s) up to
-	//    kMaxLoadRetries; the first retry is fast so a healthy preload barely
-	//    impacts player-perceived login latency.
-	//    After load completes, HandlePlayerAsyncLoaded -> InitPlayerFromAllData -> EnterScene
-	//    will use enterInfo to bind session, find scene, and process the login.
-
-	// Pre-register session so that client messages arriving during async load
-	// hit the "player not loaded" guard instead of "session id not found".
-	// insert_or_assign defends against unlikely session_id reuse (snowflake collision).
-	if (request->session_id() != 0)
-	{
-		SessionMap().insert_or_assign(request->session_id(), request->player_id());
-	}
-
-	// Store enter info in PendingEnterMap. If a load is already in flight
-	// (rapid disconnect+reconnect), this overwrites the old entry so the
-	// callback will use the latest session/scene context.
-	// First, clean up the stale session from the previous in-flight load
-	// to prevent late ExitGame(old_session) from killing the new player.
-	auto& pendingMap = PlayerLifecycleSystem::GetPendingEnterMap();
-	auto pendingIt = pendingMap.find(request->player_id());
-	if (pendingIt != pendingMap.end()
-		&& pendingIt->second.enterInfo.session_id() != 0
-		&& pendingIt->second.enterInfo.session_id() != request->session_id())
-	{
-		SessionMap().erase(pendingIt->second.enterInfo.session_id());
-	}
-	// A2′ 的清理状态(生命周期号、已确认 / 在途的 epoch、删过哪一代标记、暂存的载入结果)属于"这一次载入",
-	// 覆盖在途条目时原样沿用 —— AsyncLoad 对在途 key 不重发 GET,载入仍是同一个(§12.6.3 第三步)。
-	if (pendingIt != pendingMap.end())
-	{
-		ctx.inheritClear = pendingIt->second.inheritClear;
-	}
-	pendingMap[request->player_id()] = ctx;
-
-	// 3.5 A2′:载入之前"先核归属再删"继承来的 handoff 标记(owner_epoch ≠ ctx.ownerEpoch 一个都不删)。
-	//     必须在登记待入场上下文之后(应答按 player_id 找它)、AsyncLoad 之前(同一条 zone Redis 连接 FIFO,
-	//     EVAL 排在 GET 前面)。结果决定 HandlePlayerAsyncLoaded 建不建实体;ctx.ownerEpoch == 0(旧版路由)
-	//     改为不核对归属、删 ≤ 当前 owner_epoch 的标记,闸门同样等它确认。
-	PlayerLifecycleSystem::BeginInheritedMarkClear(request->player_id());
-
+	// Player not online — kick off Redis-only async load.
+	// Player data is expected to already be in Redis, preloaded by Login via
+	// Kafka -> DB Service -> Redis. On Redis NIL, AsyncLoad retries with
+	// millisecond-grade exponential backoff (500ms/1s/2s/4s/8s/16s) up to
+	// kMaxLoadRetries; the first retry is fast so a healthy preload barely
+	// impacts player-perceived login latency.
+	// HandleEnterGameNode 已登记待入场上下文并发出 A2′(同一条 zone Redis 连接 FIFO,EVAL 排在这次 GET 前面)。
 	tlsRedisSystem.GetPlayerDataRedis()->AsyncLoad(request->player_id());
 	///<<< END WRITING YOUR CODE
 }
@@ -836,6 +762,20 @@ void SceneHandler::UpdateSessionDetail(::google::protobuf::RpcController* contro
 	::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
+	// 入场会话栅栏(scene-enter-session-fence.md §5.8):本 RPC 无条件改绑会话、不带登录代次,按代次 0 过同一栅栏 ——
+	// 实体已有代次且会话不同即拒(kRejectUnversioned)。非生成代码里没有发送方,但消息号可达,不能留成绕过栅栏的口子。
+	// 拒绝时什么都不碰(不摘当前会话)。
+	const enter_fence::Verdict verdict =
+		PlayerLifecycleSystem::JudgeEnter(request->player_id(), request->session_id(), /*loginGeneration=*/0);
+	if (!enter_fence::Admits(verdict))
+	{
+		enter_fence_stats::Inc(enter_fence_stats::Get().sessionUpdateRejected);
+		LOG_WARN << "[EnterFence] UpdateSessionDetail rejected player=" << request->player_id()
+				 << " session=" << request->session_id() << " verdict=" << enter_fence::VerdictName(verdict)
+				 << " (metric=session_update_rejected)";
+		return;
+	}
+
 	PlayerLifecycleSystem::RemovePlayerSession(request->player_id());
 
 	if (!ResolveLocalZoneGateEntity(request->session_id()))
@@ -854,6 +794,8 @@ void SceneHandler::UpdateSessionDetail(::google::protobuf::RpcController* contro
 	SessionMap().emplace(request->session_id(), request->player_id());
 
 	tlsEcs.actorRegistry.get<PlayerSessionSnapshotComp>(player).set_gate_session_id(request->session_id());
+	// 改绑后同步登录身份的会话号(代次按 0 传 = 保持原值):之后到达的陈旧入场拿它比,而不是拿已被改掉的旧会话。
+	PlayerLifecycleSystem::RecordLoginIdentity(player, request->session_id(), /*loginGeneration=*/0);
 
 	PlayerLifecycleSystem::HandleBindPlayerToGateOK(player);
 	///<<< END WRITING YOUR CODE

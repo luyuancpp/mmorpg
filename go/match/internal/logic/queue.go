@@ -310,9 +310,16 @@ func isQueuedTicketInQueue(svcCtx *svc.ServiceContext, playerId uint64, t *queue
 }
 
 // cancelTicketIfQueued 取消排队的删票:ticket id 一致且仍是 queued 才删
-// (见 ticketCancelScript)。返回 (删了, err)。
+// (见 ticketCancelScript)。返回 (删了, err)。无 ctx 版本给票据自愈等内部路径用,传 Background。
 func cancelTicketIfQueued(svcCtx *svc.ServiceContext, playerId uint64, expectedTicket string) (bool, error) {
-	res, err := svcCtx.MatchRedis.Eval(ticketCancelScript, []string{matchTicketKey(playerId)}, expectedTicket)
+	return cancelTicketIfQueuedCtx(context.Background(), svcCtx, playerId, expectedTicket)
+}
+
+// cancelTicketIfQueuedCtx 同 cancelTicketIfQueued,Redis 往返受调用方 ctx 约束。客户端 CancelQueue 传请求 ctx:
+// gate 对同一会话单飞,路由服回超时之后会放行下一条请求,请求 ctx 已取消时不能再发出删票
+// (docs/design/client-request-ordering.md §6.1)。
+func cancelTicketIfQueuedCtx(ctx context.Context, svcCtx *svc.ServiceContext, playerId uint64, expectedTicket string) (bool, error) {
+	res, err := svcCtx.MatchRedis.EvalCtx(ctx, ticketCancelScript, []string{matchTicketKey(playerId)}, expectedTicket)
 	if err != nil {
 		return false, err
 	}
@@ -436,11 +443,17 @@ func casTicketFields(svcCtx *svc.ServiceContext, playerId uint64, expectedTicket
 // (一条 Lua,见 enqueueScript)。rating 由调用方在 Go 侧读出传入:评分 key
 // 按玩家分布,与队列不同 slot,Lua 里不能 GET。
 func enqueueAtomic(svcCtx *svc.ServiceContext, queueKey string, playerId uint64, rating float64) error {
+	return enqueueAtomicCtx(context.Background(), svcCtx, queueKey, playerId, rating)
+}
+
+// enqueueAtomicCtx 同 enqueueAtomic,Redis 往返受调用方 ctx 约束。客户端 JoinQueue 传请求 ctx,
+// 截止之后不再入队(docs/design/client-request-ordering.md §6.1)。
+func enqueueAtomicCtx(ctx context.Context, svcCtx *svc.ServiceContext, queueKey string, playerId uint64, rating float64) error {
 	rankKey, err := rankKeyForQueue(queueKey)
 	if err != nil {
 		return err
 	}
-	_, err = svcCtx.MatchRedis.Eval(enqueueScript, []string{matchQueueIndexKey, queueKey, rankKey},
+	_, err = svcCtx.MatchRedis.EvalCtx(ctx, enqueueScript, []string{matchQueueIndexKey, queueKey, rankKey},
 		queueKey, strconv.FormatUint(playerId, 10), formatRating(rating))
 	return err
 }
@@ -461,6 +474,11 @@ func pushFrontRegistered(svcCtx *svc.ServiceContext, queueKey string, raw string
 // removeQueueMembers 把一批成员从队列 list 与评分镜像 ZSET 原子摘出(见
 // removeQueueMembersScript),返回实际从 list 摘出的成员。
 func removeQueueMembers(svcCtx *svc.ServiceContext, queueKey string, members []uint64) ([]uint64, error) {
+	return removeQueueMembersCtx(context.Background(), svcCtx, queueKey, members)
+}
+
+// removeQueueMembersCtx 同 removeQueueMembers,Redis 往返受调用方 ctx 约束。
+func removeQueueMembersCtx(ctx context.Context, svcCtx *svc.ServiceContext, queueKey string, members []uint64) ([]uint64, error) {
 	rankKey, err := rankKeyForQueue(queueKey)
 	if err != nil {
 		return nil, err
@@ -469,7 +487,7 @@ func removeQueueMembers(svcCtx *svc.ServiceContext, queueKey string, members []u
 	for _, pid := range members {
 		args = append(args, strconv.FormatUint(pid, 10))
 	}
-	res, err := svcCtx.MatchRedis.Eval(removeQueueMembersScript, []string{queueKey, rankKey}, args...)
+	res, err := svcCtx.MatchRedis.EvalCtx(ctx, removeQueueMembersScript, []string{queueKey, rankKey}, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -486,16 +504,21 @@ func removeQueueMembers(svcCtx *svc.ServiceContext, queueKey string, members []u
 	return removed, nil
 }
 
-// dequeueMember 取消 / 剔除时把单个玩家从队列摘出。新格式 key(带 hash tag,
+// dequeueMemberCtx 取消 / 剔除时把单个玩家从队列摘出。新格式 key(带 hash tag,
 // 有评分镜像)走 list+ZSET 原子 Lua;旧格式 key(`match:queue:<mode>:<config>`,
 // 无 tag、从未有过镜像)只做单 key LREM —— 旧 key 与按它推出的 rank key 不同
 // slot,集群下不能放进同一条 Lua。
-func dequeueMember(svcCtx *svc.ServiceContext, queueKey string, playerId uint64) error {
+//
+// Redis 往返受调用方 ctx 约束。客户端 CancelQueue 传请求 ctx:
+// 出队如果晚于 gate 放行的下一条 JoinQueue 落地,会把新入队的同一玩家 LREM 掉,
+// 留下「票据 queued、队列无人」的孤儿(docs/design/client-request-ordering.md §6.1)。
+// 截止之后不发出时只留下没有票的残留队列项,由 matcher 的票据校验摘掉,是良性的。
+func dequeueMemberCtx(ctx context.Context, svcCtx *svc.ServiceContext, queueKey string, playerId uint64) error {
 	if !strings.Contains(queueKey, matchQueueHashTag) {
-		_, err := svcCtx.MatchRedis.Lrem(queueKey, 0, strconv.FormatUint(playerId, 10))
+		_, err := svcCtx.MatchRedis.LremCtx(ctx, queueKey, 0, strconv.FormatUint(playerId, 10))
 		return err
 	}
-	_, err := removeQueueMembers(svcCtx, queueKey, []uint64{playerId})
+	_, err := removeQueueMembersCtx(ctx, svcCtx, queueKey, []uint64{playerId})
 	return err
 }
 

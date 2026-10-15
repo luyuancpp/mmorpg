@@ -65,6 +65,16 @@ ServerConfig:
       InnodbLockWaitSeconds: 5     # 行锁等待上限
       StatementTimeoutSeconds: 300 # 单条 DDL 硬超时,超时后旁路 KILL QUERY
       AdvisoryLockSeconds: 60      # GET_LOCK 等待:多副本同时部署时后到的排队
+    # ── 业务连接池的超时与会话级锁等待(L-04,docs/design/db-task-store-unavailable-deferral.md §8)──
+    # 本 zone 库与按需打开的落点库都用这组值;迁移入口(cmd/migrate)与建库不用(DDL 可能合法地跑几分钟)。
+    # 不写或写 0 取默认值(即下面这几个数);写负数表示不设。K8s 的 ConfigMap 不写这几项,走默认值。
+    # 会话级锁等待必须短于读超时:客户端读超时撤不回已经发出的语句,让服务端先以 1205 中止排队中的语句,
+    # 超时之后才不会留下事后生效的在途写。本地打开 AutoMigrateSchema 时启动期建表 / 补列也走这个池,大表上可能撞读超时。
+    DialTimeoutSeconds: 5
+    ReadTimeoutSeconds: 30
+    WriteTimeoutSeconds: 30
+    SessionLockWaitSeconds: 10       # MySQL lock_wait_timeout(元数据锁);TiDB 是否接受未核实,不接受时写 -1
+    SessionInnodbLockWaitSeconds: 10 # MySQL innodb_lock_wait_timeout(行锁)
     MaxOpenConn: 60 # 2026-05-28 deep-dive §1: 10 was the real bottleneck.
                     # partition=10 + MaxOpenConn=10 meant every worker
                     # competed for exactly one MySQL connection; under

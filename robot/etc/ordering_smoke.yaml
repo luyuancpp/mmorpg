@@ -1,0 +1,39 @@
+# ordering-smoke 配置:单机器人验证「同一会话经路由服的请求按收包顺序执行」
+# (docs/design/client-request-ordering.md §1.3 / §12 批次 R;场景实现见 robot/ordering_smoke_scenario.go)
+#
+# 流程:O1 登录进场
+#       → O2 清场:GetQueueStatus(153)必须是 NOT_QUEUED(上一轮残留会直接失败并说明)
+#       → O3 重复 20 轮:不等回包连发 JoinQueue(157,1V1)→ CancelQueue(148,不带票号),等两条回包都到,
+#          再查 GetQueueStatus。客户端意图是「加入后取消」,最终必须不在队列里;停在 QUEUED 就是执行顺序被颠倒,
+#          本轮带 Join 回包里的票号补一次取消收尾,最后汇总乱序轮次。
+#
+# 预期:gate 路由 lane(批次 C)上线之前,本场景**会间歇失败**(ORDERING_SMOKE_FAIL step=O3-order),这正是它要证明的缺陷;
+#       上线之后必须每轮都通过。
+#
+# 前置(缺一条就会失败,原因写进 ORDERING_SMOKE_FAIL 的 reason):
+#   1. gate 是路由模式(GATE_CLIENT_RPC_ROUTER=1;本地 start_game.ps1 与 K8s 默认都是)。直连模式下 match 不回写会话头,
+#      gate 收不到 match 的回包,O2 会超时。
+#   2. client_rpc_router、match 已启动;玩家有场景位置(JoinQueue 要求在场景里)。
+#   3. 环境里没有别的玩家在排 1V1:否则本机器人可能在 Join 与 Cancel 之间被凑走(O3-status 报前置条件不满足)。
+#   4. robot_9901 不在任何队伍里、没有未收尾的匹配票据。前缀必须是 robot_ 才会命中 login 侧 DevPasswordAuth。
+#   5. 从 robot/ 目录运行(table_dir 是相对路径)。
+#
+# 用法(robot/ 目录下):
+#   .\robot.exe -c etc/ordering_smoke.yaml
+# 退出码 0 = 全部轮次按发送顺序执行(日志有 ORDERING_SMOKE_OK player_id=… rounds=20 一行);
+# 退出码 1 = 任一步失败(ORDERING_SMOKE_FAIL step=… reason=…)。每步通过另有一行 [ordering-smoke] PASS step=…。
+# 跑一轮约 30 秒。
+
+gateway_addr: "http://127.0.0.1:8081" # Gateway HTTP endpoint(/api/assign-gate)
+zone_id: 1 # 目标 zone
+robot_count: 1 # 语义占位:本模式固定单机器人
+account_fmt: "robot_%04d" # 保留骨架字段;本模式用固定账号 robot_9901
+password: "123456"
+skill_ids: [] # 本模式不放技能
+table_dir: "../generated/tables"
+action_interval: 3 # 本模式不跑场景 AI 循环,保留默认
+report_interval: 5
+
+mode: "ordering-smoke"
+
+auth_type: "password"

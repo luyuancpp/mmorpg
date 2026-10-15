@@ -21,6 +21,8 @@
 // 疏散 / 排空改派的待确认表(SweepRelocateConfirms / PeekRelocateConfirm 的参数与返回类型、relocate_confirm_stats
 // 的数组长度)。写全路径,理由同上。
 #include "services/scene/player/system/relocate_confirm.h"
+// 入场会话栅栏(JudgeEnter 的返回类型、PlayerLoginIdentityComp、enter_fence_stats)。写全路径,理由同上。
+#include "services/scene/player/system/enter_fence.h"
 
 namespace scene_manager { class EnterSceneRequest; class EnterSceneResponse; }
 namespace storage { class PlayerLocation; }
@@ -46,7 +48,7 @@ namespace player_ownership
 // 只在建实体 / 重连时消费一次。0 的含义见 player/comp/player_ownership_comp.h。
 // 一次载入生命周期里 A2′(载入前"先核归属再删"继承来的 handoff 标记,cross-zone-scene-travel.md §12.6.3
 // 第三步)的状态。挂在待入场上下文上:同一次载入期间的重连覆盖上下文时必须原样拷过去
-// (scene_handler.cpp 的新载入分支),载入完成 / 放弃时随上下文一起消失。
+// (PlayerLifecycleSystem::HandleEnterGameNode 的新载入分支),载入完成 / 放弃时随上下文一起消失。
 // 只在 scene 逻辑线程上读写(PlayerEnterGameNode、Redis 回调、RedisSystem 定时器同一个 EventLoop)。
 struct InheritClearState
 {
@@ -75,6 +77,10 @@ struct PlayerEnterContext
 	PlayerGameNodeEntryInfoComp enterInfo;
 	uint32_t homeZoneId{0};
 	uint64_t ownerEpoch{0};
+	// 本次入场的登录代次(PlayerEnterGameNodeRequest.login_generation,gate 用本会话见过的最高代次盖章);0 = 上游未带。
+	// 入场会话栅栏的输入,也是待入场上下文这一处"当前身份"的代次(scene-enter-session-fence.md §5.1 / §5.5)。
+	// 不进存盘(G5)。
+	uint64_t loginGeneration{0};
 	InheritClearState inheritClear;
 };
 
@@ -954,8 +960,42 @@ public:
 	// 详见 docs/design/player-async-save-loss-windows.md §4.1。
 	static void HandlePlayerAsyncSaveFailed(Guid player_id, const std::string& redisKey, int retryCount);
 
+	// ── 入场(PlayerEnterGameNode)与入场会话栅栏(enter_fence.h;scene-enter-session-fence.md §5)──
+
+	// HandleEnterGameNode 的结果。只有 kLoadRequired 要调用方发 AsyncLoad(留在节点层:单测宿主没有 Redis 客户端)。
+	enum class EnterGameNodeOutcome : uint8_t
+	{
+		kRejected,        // 栅栏拒绝:什么都没碰,已给请求自己的会话推 kEnterSceneFailed(会话有效时)
+		kEnteredExisting, // 复用本节点上的实体,已走完 EnterScene
+		kLoadRequired,    // 已预登记会话、写好待入场上下文并发起 A2′,调用方接着发 AsyncLoad
+
+		kCount
+	};
+
+	// 进场路由把玩家派到本节点(SceneHandler::PlayerEnterGameNode 的守护段只组上下文、调本函数)。顺序(设计 §5.3):
+	//   0. 栅栏(只读):enter_fence::DecideAll(实体, 待入场, 改派条目)。拒 → 计数、WARN、推 tip、返回 kRejected;
+	//   1. ReconcileRelocateOnReentry;2. 摘旧会话(只摘属于本玩家的映射);3. 交接 / 废黜两道 owner_epoch 判定;
+	//   4. 实体在 → EnterScene → kEnteredExisting;5. 预登记会话、覆盖待入场上下文(同一会话合并,§5.5);
+	//   6. BeginInheritedMarkClear → kLoadRequired。
+	// 只在 scene 逻辑线程上调用。
+	static EnterGameNodeOutcome HandleEnterGameNode(Guid playerId, PlayerEnterContext ctx);
+
+	// 只读:按本节点此刻的三处当前身份(实体 / 待入场 / 改派待确认条目)判一个入场请求,不计数、不打日志、不改任何状态。
+	// 入口、UpdateSessionDetail(代次按 0 传)与单测共用。
+	static enter_fence::Verdict JudgeEnter(Guid playerId, SessionId sessionId, uint64_t loginGeneration);
+
+	// 只在 SessionMap[sessionId] 此刻映射到 playerId 时才擦,返回是否擦了(设计 §5.6)。gate 以同一 node_id 重启后
+	// 会话序号从头发,同号会话可能已属于别的玩家;按自己快照里的旧号无条件擦,擦掉的是别人的在线映射。
+	// SessionMap 的擦除点(RemovePlayerSession、EnterScene 换会话、覆盖待入场上下文、三条载入放弃路径)一律走它。
+	static bool EraseSessionMappingIfOwned(SessionId sessionId, Guid playerId);
+
+	// 把一次已放行的绑定写进实体的 PlayerLoginIdentityComp:会话有效才记会话号,代次取 max。只由 EnterScene 第 1 步与
+	// SceneHandler::UpdateSessionDetail 调用。非 per-tick 路径,内部用 get_or_emplace。
+	static void RecordLoginIdentity(entt::entity player, SessionId sessionId, uint64_t loginGeneration);
+
 	// ctx.homeZoneId / ctx.ownerEpoch 非 0 时更新实体上的归属组件(重连 / 顶号复用实体的路径
 	// 靠这里拿到 Go 给的当前 epoch;首登路径 InitPlayerFromAllData 先挂零值组件再经这里赋值)。
+	// 最前面按实体自己的登录身份复核一次入场栅栏(设计 §5.4),拒绝时什么都不碰、计 bind_rejected。
 	static void EnterScene(const entt::entity player, const PlayerEnterContext& ctx);
 	static void HandleBindPlayerToGateOK(entt::entity player);
 	static void RemovePlayerSession(Guid player_id);
@@ -981,12 +1021,12 @@ public:
 
 	// 进场路由命中本节点上的旧实体(退出中的,或不在交接中的活实体)、且 owner_epoch 显示中间有别的持有者
 	// (player_exit::IsDeposedOnReentry)时,按"被废黜"不存盘销毁它并返回 true,调用方随后从盘上重载。
-	// 其余情况返回 false、什么都不做(照常复用实体)。只由 SceneHandler::PlayerEnterGameNode 调用,
+	// 其余情况返回 false、什么都不做(照常复用实体)。只由 HandleEnterGameNode 调用,
 	// 排在 DiscardStaleHandoffEntity 之后(交接已发起的实体由它先处理,任何更新的 epoch 都丢弃)。
 	static bool DiscardDeposedEntityOnReentry(entt::entity player, uint64_t incomingOwnerEpoch);
 
 	// ── A2′:新载入前"先核归属再删"继承来的 handoff 标记(§12.6.3 第三步,M2 / M7 / M10)──
-	// SceneHandler::PlayerEnterGameNode 的新载入分支在登记待入场上下文之后、AsyncLoad 之前调用。
+	// HandleEnterGameNode 的新载入分支在登记待入场上下文之后、调用方发 AsyncLoad 之前调用。
 	// ctx.ownerEpoch == N(非 0)且本生命周期还没针对 N 发过时,在 zone Redis 上发一段原子 Lua
 	// (exit_release_mark::kLuaInheritClear):owner_epoch ≠ N 返回 -1、一个标记都不删;相等才删 epoch ≤ N 的标记。
 	// 结果决定 HandlePlayerAsyncLoaded 的闸门(exit_release_mark::DecideInheritGate):已确认 → 建实体;
@@ -1276,8 +1316,8 @@ public:
 	// ── 疏散 / 排空改派的待确认表(契约与判定见 relocate_confirm.h;设计见 cross-zone-scene-travel.md
 	//    「CPP-3 疏散 / 排空改派的待确认表」)──────────────────────────────────────────
 
-	// 进场路由把玩家派回了本节点。只由 SceneHandler::PlayerEnterGameNode 的守护段最前面调用(排在擦旧会话、丢弃旧实体、
-	// 登记待入场条目之前;入口以后若加 owner_epoch 栅栏,本调用要挪到栅栏放行之后,否则陈旧路由会把条目误结清)。
+	// 进场路由把玩家派回了本节点。只由 HandleEnterGameNode 调用:排在入场会话栅栏放行之后(陈旧路由带着别的会话到达时
+	// 会把条目误结清,所以必须先过栅栏),擦旧会话、丢弃旧实体、登记待入场条目之前。
 	//   1. 该玩家还没派发的改派票据作废(cancelled_on_reentry):这次进场要么复用实体并取消退出,要么废黜实体后重载,
 	//      那次退出都不会再正常收尾;留着票据只会在下一次、会话已换的退出里被误消费。
 	//      例外(relocate_confirm::CancelsTicketOnReentry):整节点疏散中、sessionId 就是票据里那条有效会话、且被打断的

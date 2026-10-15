@@ -5,6 +5,7 @@ import (
 	db_config "db/internal/config"
 	"db/internal/dbguard"
 	"db/internal/metrics"
+	"db/internal/storeerr"
 	"encoding/binary"
 	"encoding/json"
 	"errors"
@@ -318,18 +319,21 @@ func failKafkaTask(task *workerTask, err error) {
 	task.acker.fail(task.kafkaMsg, err)
 }
 
-// dbOpHandler 在选好的落点库上执行一条任务的 SQL 半程(读 = SELECT,写 = 大字段闸 + REPLACE),
+// dbOpHandler 在选好的落点库上执行一条任务的 SQL 半程(读 = SELECT,写 = 大字段闸 + Save),
 // 不碰任何共享 Redis。
 //
 // 共享缓存回写与读结果发布是另一半(publishDBOpResult),由 runDBOp 在落库后复核(§6.3)通过之后
 // 才做。拆成两半是为了让复核卡在「SQL 已执行、别人还没看到结果」这一个点上 —— 复核写在公共路径里,
 // 任何 handler(包括测试替换进来的)都绕不过去。
+//
+// 返回 error 而不是文本(L-04):驱动错误经 storeerr.Tag 打上来源标记、%w 包住原始错误,上层才能区分
+// 「存储此刻不可用」(延后、不耗重试预算)与任务自身的问题。
 type dbOpHandler func(
 	ctx context.Context,
 	store *proto2mysql.DB,
 	task *db_proto.DBTask,
 	msg proto.Message,
-) string
+) error
 
 var dbOpHandlers = map[string]dbOpHandler{
 	"read":  handleDBReadOp,
@@ -341,26 +345,26 @@ func handleDBReadOp(
 	store *proto2mysql.DB,
 	task *db_proto.DBTask,
 	msg proto.Message,
-) string {
+) error {
 	if err := store.FindOneByWhereClause(msg, task.WhereCase); err != nil && !errors.Is(err, proto2mysql.ErrNoRowsFound) {
-		return fmt.Sprintf("db read failed: %v", err)
+		return fmt.Errorf("db read failed: %w", storeerr.Tag(err))
 	}
-	return ""
+	return nil
 }
 
 // publishDBOpResult 是任务的共享 Redis 半程:读 = 缓存回写 + 结果发布,写 = 缓存回写。
 // 只能在落库后复核通过之后调用(见 runDBOp)。
-func publishDBOpResult(ctx context.Context, redisClient redis.Cmdable, task *db_proto.DBTask, msg proto.Message) string {
+func publishDBOpResult(ctx context.Context, redisClient redis.Cmdable, task *db_proto.DBTask, msg proto.Message) error {
 	if task.Op == "read" {
 		return publishDBReadResult(ctx, redisClient, task, msg)
 	}
 	return publishDBWriteResult(ctx, redisClient, task, msg)
 }
 
-func publishDBReadResult(ctx context.Context, redisClient redis.Cmdable, task *db_proto.DBTask, msg proto.Message) string {
+func publishDBReadResult(ctx context.Context, redisClient redis.Cmdable, task *db_proto.DBTask, msg proto.Message) error {
 	resultData, err := proto.Marshal(msg)
 	if err != nil {
-		return fmt.Sprintf("marshal read result failed: %v", err)
+		return fmt.Errorf("marshal read result failed: %w", err)
 	}
 
 	// Write-back: update Redis cache so login can hit cache next time
@@ -380,12 +384,12 @@ func publishDBReadResult(ctx context.Context, redisClient redis.Cmdable, task *d
 			Error:   "",
 		}
 		if err := publishTaskResult(ctx, redisClient, task.TaskId, result); err != nil {
-			return err.Error()
+			return err
 		}
 		metrics.ObserveStage(metrics.StageResultPublish, "read", time.Since(publishStart))
 	}
 
-	return ""
+	return nil
 }
 
 // publishTaskResult 把读任务的回执交给等待方:LPUSH task:result:{taskID} + EXPIRE + PUBLISH 通知。
@@ -812,7 +816,7 @@ func handleDBWriteOp(
 	store *proto2mysql.DB,
 	task *db_proto.DBTask,
 	msg proto.Message,
-) string {
+) error {
 	// 大字段闸必须卡在 Save **之前**:一旦写进 MEDIUMBLOB,后面 Redis 写回、
 	// login 侧读取、下一次全量存盘都要原样搬运同一坨字节,拒不拒已经不重要了。
 	// 超限的任务照常走 deferFailedTask → 重试队列 → 死信,payload 不会丢,
@@ -823,24 +827,24 @@ func handleDBWriteOp(
 			guardResult.Level, task.Key, task.TaskId, strings.Join(warnings, "; "))
 	}
 	if guardErr != nil {
-		return fmt.Sprintf("db write rejected by blob size gate: %v", guardErr)
+		return fmt.Errorf("db write rejected by blob size gate: %w", guardErr)
 	}
 
 	if err := store.Save(msg); err != nil {
-		return fmt.Sprintf("db write failed: %v", err)
+		return fmt.Errorf("db write failed: %w", storeerr.Tag(err))
 	}
-	return ""
+	return nil
 }
 
-func publishDBWriteResult(ctx context.Context, redisClient redis.Cmdable, task *db_proto.DBTask, msg proto.Message) string {
+func publishDBWriteResult(ctx context.Context, redisClient redis.Cmdable, task *db_proto.DBTask, msg proto.Message) error {
 	if err := writeBackDBCache(ctx, redisClient, task, msg); err != nil {
 		// MySQL is already durable, but ACKing here would leave login reading an
 		// older Redis snapshot indefinitely. Return failure so the same
 		// idempotent full-row write remains in Kafka/retry until cache publication
 		// succeeds; the applied cursor is intentionally not advanced yet.
-		return fmt.Sprintf("db write durable but cache publication failed: %v", err)
+		return fmt.Errorf("db write durable but cache publication failed: %w", err)
 	}
-	return ""
+	return nil
 }
 
 func writeBackDBCache(ctx context.Context, redisClient redis.Cmdable, task *db_proto.DBTask, msg proto.Message) error {
@@ -1120,13 +1124,16 @@ func ackRetryReceipt(ctx context.Context, rc redis.Cmdable, processingKey string
 	return nil
 }
 
-func (c *KeyOrderedKafkaConsumer) moveClaimedRetryToDead(receipt, payload []byte, reason string) {
+// moveClaimedRetryToDead 把认领到的收据原子搬进死信。label 是 db_task_dead_letter_total 的 reason(metrics.DeadLetter*),
+// reason 是写进日志的详细原因。
+func (c *KeyOrderedKafkaConsumer) moveClaimedRetryToDead(receipt, payload []byte, label, reason string) {
 	moved, err := moveRetryReceipt(c.ctx, c.redisClient, c.retryProcessingKey, c.retryDeadQueueKey, receipt, payload)
 	if err != nil || !moved {
 		logx.Errorf("retry dead-letter failed; receipt remains recoverable in processing: topic=%s reason=%s moved=%v err=%v",
 			c.topic, reason, moved, err)
 		return
 	}
+	metrics.CountTaskDeadLetter(label)
 	logx.Errorf("retry task moved to dead queue: topic=%s reason=%s deadQueue=%s", c.topic, reason, c.retryDeadQueueKey)
 }
 
@@ -1138,8 +1145,23 @@ func (c *KeyOrderedKafkaConsumer) moveClaimedRetryToDead(receipt, payload []byte
 // 而 retryMaxTimes=3 又会把超限的任务推进 kafka:dead:queue:* —— 那个 key 全仓
 // 没有任何消费者,等于静默丢盘。
 // 单条 claim 的原子性语义不变,只是把它放进有界循环里。
+//
+// L-04(docs/design/db-task-store-unavailable-deferral.md §3.5)加了两条:
+//   - 本拍最多认领「拍开始时 ready 的长度」与 200 中较小的那个数。搬回 ready 是 LPUSH 到队头、认领从队尾取,
+//     原来一条任务可以在同一拍里被反复认领,3 次重试最短可以在 1 秒内用完,被豁免的任务则没有任何最小间隔。
+//     现在每实例每拍对每条至多认领一次;R 个实例共用 ready 时,3 次预算最短约 3/R 秒。
+//   - 本 zone 主库已被探活确认不可达(冷却中)时整拍跳过:此时每条任务都只会在选库处被挡回,认领只是白花
+//     Redis 往返。代价是主库整个不可用期间,落到其它库的重试任务也不排空。
 func (c *KeyOrderedKafkaConsumer) consumeRetryQueue() {
-	for i := 0; i < retryDrainBudgetPerTick; i++ {
+	ready := c.sampleRetryQueues()
+	if c.homeStoreCoolingDown() {
+		return
+	}
+	budget := retryDrainBudgetPerTick
+	if ready >= 0 && ready < int64(budget) {
+		budget = int(ready)
+	}
+	for i := 0; i < budget; i++ {
 		select {
 		case <-c.ctx.Done():
 			return
@@ -1149,8 +1171,10 @@ func (c *KeyOrderedKafkaConsumer) consumeRetryQueue() {
 			return
 		}
 	}
-	logx.Infof("retry drain budget reached this tick: topic=%s budget=%d readyQueue=%s",
-		c.topic, retryDrainBudgetPerTick, c.retryQueueKey)
+	if budget == retryDrainBudgetPerTick {
+		logx.Infof("retry drain budget reached this tick: topic=%s budget=%d readyQueue=%s",
+			c.topic, retryDrainBudgetPerTick, c.retryQueueKey)
+	}
 }
 
 // consumeOneRetryTask 认领并处理一条重试任务。返回 false 表示队列已空(或认领失败),
@@ -1170,12 +1194,17 @@ func (c *KeyOrderedKafkaConsumer) consumeOneRetryTask() bool {
 	seq, storedPartition, hasPartition, taskBytes := unwrapRetryPayload(msgBytes)
 	var task db_proto.DBTask
 	if err := proto.Unmarshal(taskBytes, &task); err != nil {
-		c.moveClaimedRetryToDead(msgBytes, msgBytes, fmt.Sprintf("malformed payload: %v", err))
+		c.moveClaimedRetryToDead(msgBytes, msgBytes, metrics.DeadLetterMalformedPayload, fmt.Sprintf("malformed payload: %v", err))
 		return true
 	}
 
 	if task.RetryCount >= int32(c.retryMaxTimes) {
-		c.moveClaimedRetryToDead(msgBytes, msgBytes,
+		if task.Op == "read" {
+			// 读不改数据,进死信没有可保全的东西,只会让死信告警失去判别力(L-04 §3.6)。
+			c.abandonClaimedReadRetry(msgBytes, &task)
+			return true
+		}
+		c.moveClaimedRetryToDead(msgBytes, msgBytes, metrics.DeadLetterBudgetExhausted,
 			fmt.Sprintf("max retries exceeded taskID=%s retryCount=%d", task.TaskId, task.RetryCount))
 		return true
 	}
@@ -1183,7 +1212,7 @@ func (c *KeyOrderedKafkaConsumer) consumeOneRetryTask() bool {
 		// v1/raw legacy payloads have no trustworthy producer partition. Key%N
 		// is not equivalent to Sarama's hash partitioner, so dispatching them can
 		// race or regress fresh writes. Preserve the payload for operator repair.
-		c.moveClaimedRetryToDead(msgBytes, msgBytes,
+		c.moveClaimedRetryToDead(msgBytes, msgBytes, metrics.DeadLetterLegacyPayload,
 			fmt.Sprintf("ORDERING: legacy retry has no proven origin partition taskID=%s key=%d", task.TaskId, task.Key))
 		return true
 	}
@@ -1195,13 +1224,13 @@ func (c *KeyOrderedKafkaConsumer) consumeOneRetryTask() bool {
 	// 并发。旧格式没有原始分区,已在上方 fail-closed 隔离,不再用 Key%N 猜测。
 	partition := storedPartition
 	if partition < 0 {
-		c.moveClaimedRetryToDead(msgBytes, msgBytes,
+		c.moveClaimedRetryToDead(msgBytes, msgBytes, metrics.DeadLetterInvalidPartition,
 			fmt.Sprintf("invalid origin partition=%d taskID=%s", partition, task.TaskId))
 		return true
 	}
 	w, err := c.ensureWorker(partition)
 	if err != nil {
-		c.moveClaimedRetryToDead(msgBytes, msgBytes,
+		c.moveClaimedRetryToDead(msgBytes, msgBytes, metrics.DeadLetterInvalidPartition,
 			fmt.Sprintf("ORDERING: retry partition outside immutable contract: %v taskID=%s", err, task.TaskId))
 		return true
 	}
@@ -1587,7 +1616,7 @@ func (w *worker) handleTask(task *workerTask, isOfflineExpand bool) {
 		ackKafkaTask(task)
 		return
 	case orderingIncomparable:
-		w.quarantineOrderingConflict(task, dbTask,
+		w.quarantineOrderingConflict(task, dbTask, metrics.DeadLetterOrderingIncomparable,
 			"origin partition cannot be safely compared with the existing applied cursor")
 		return
 	}
@@ -1617,8 +1646,11 @@ func (w *worker) handleTask(task *workerTask, isOfflineExpand bool) {
 	err := processDBTask(processCtx, w, dbTask, route, w.partition, task.seq, isOfflineExpand)
 
 	if err != nil {
-		logx.Errorf("worker process task failed: partition=%d, cost=%v, err=%v",
-			w.partition, time.Since(startTime), err)
+		// 存储不可用(L-04)时每条任务都会失败一次,逐条 ERROR 会刷屏;由 deferFailedTask 按原因限速记录。
+		if !logsAsStoreOutage(err) {
+			logx.Errorf("worker process task failed: partition=%d, cost=%v, err=%v",
+				w.partition, time.Since(startTime), err)
+		}
 		w.deferFailedTask(task, dbTask, err)
 		return
 	} else {
@@ -1629,7 +1661,7 @@ func (w *worker) handleTask(task *workerTask, isOfflineExpand bool) {
 		// verify() performs one final token-checked Lua extension before SET.
 		if orderingLock != nil {
 			if verifyErr := orderingLock.verify(w.ctx); verifyErr != nil {
-				w.deferFailedTask(task, dbTask, fmt.Errorf("ordering lock ownership lost after DB write: %w", verifyErr))
+				w.deferFailedTask(task, dbTask, fmt.Errorf("%w: %w", errOrderingLeaseLost, verifyErr))
 				return
 			}
 		}
@@ -2037,16 +2069,16 @@ func runDBOp(ctx context.Context, redisClient redis.Cmdable, task *db_proto.DBTa
 	if route == nil || route.store == nil {
 		return fmt.Errorf("no placement route for op=%s taskID=%s; refusing to guess a database", task.Op, task.TaskId)
 	}
-	if resultErr := handler(ctx, route.store, task, msg); resultErr != "" {
-		return errors.New(resultErr)
+	handlerErr := handler(ctx, route.store, task, msg)
+	// 只把 SQL 这一步的结果报给注册表(L-04 §3.4):复核与缓存回写的错误来自 Redis,不能拿来判断库通不通。
+	route.reportStoreResult(handlerErr)
+	if handlerErr != nil {
+		return handlerErr
 	}
 	if err := route.confirm(ctx); err != nil {
 		return err
 	}
-	if resultErr := publishDBOpResult(ctx, redisClient, task, msg); resultErr != "" {
-		return errors.New(resultErr)
-	}
-	return nil
+	return publishDBOpResult(ctx, redisClient, task, msg)
 }
 
 func encodeRetryPayload(task *db_proto.DBTask, seq uint64, partition int32, hasPartition bool) ([]byte, error) {
@@ -2070,6 +2102,8 @@ func encodeRetryPayload(task *db_proto.DBTask, seq uint64, partition int32, hasP
 }
 
 func (w *worker) deferFailedTask(task *workerTask, dbTask *db_proto.DBTask, cause error) {
+	// 每一次延后都按原因计数(L-04 §3.7):一眼能看出任务为什么没落库,也是「存储延后持续不退」告警的数据源。
+	metrics.CountTaskDeferred(taskOpLabel(dbTask), deferReason(cause))
 	if task.fromRetry {
 		if retryBudgetExempt(dbTask, cause) && dbTask.RetryCount > 0 {
 			// Lock contention is serialization backpressure, not a failed DB
@@ -2102,9 +2136,17 @@ func (w *worker) deferFailedTask(task *workerTask, dbTask *db_proto.DBTask, caus
 				dbTask.TaskId, dbTask.RetryCount, cause)
 			return
 		}
+		if logsAsStoreOutage(cause) {
+			// 存储不可用(L-04):每条每轮都会走到这里,按原因限速。落点库打开失败不在此列,下面照旧逐条 ERROR。
+			logStoreDeferral(dbTask, deferReason(cause), cause)
+			return
+		}
 		logx.Errorf("retry task rescheduled: taskID=%s retryCount=%d cause=%v",
 			dbTask.TaskId, dbTask.RetryCount, cause)
 		return
+	}
+	if logsAsStoreOutage(cause) {
+		logStoreDeferral(dbTask, deferReason(cause), cause)
 	}
 
 	partition := w.partition
@@ -2124,7 +2166,7 @@ func (w *worker) deferFailedTask(task *workerTask, dbTask *db_proto.DBTask, caus
 	ackKafkaTask(task)
 }
 
-func (w *worker) deadLetterRetry(task *workerTask, dbTask *db_proto.DBTask, reason string) error {
+func (w *worker) deadLetterRetry(task *workerTask, dbTask *db_proto.DBTask, label, reason string) error {
 	payload, err := encodeRetryPayload(dbTask, task.seq, task.originPartition, task.hasOriginPartition)
 	if err != nil {
 		return err
@@ -2137,14 +2179,17 @@ func (w *worker) deadLetterRetry(task *workerTask, dbTask *db_proto.DBTask, reas
 	if !moved {
 		return fmt.Errorf("processing receipt not found")
 	}
+	metrics.CountTaskDeadLetter(label)
 	logx.Errorf("DATA-LOSS/ORDERING: retry quarantined in dead queue: taskID=%s key=%d msgType=%s originKnown=%v originPartition=%d seq=%d reason=%s",
 		dbTask.TaskId, dbTask.Key, dbTask.MsgType, task.hasOriginPartition, task.originPartition, task.seq, reason)
 	return nil
 }
 
-func (w *worker) quarantineOrderingConflict(task *workerTask, dbTask *db_proto.DBTask, reason string) {
+// quarantineOrderingConflict 把一条不能落库的写持久化进死信后 ack。label 是 db_task_dead_letter_total 的 reason
+// (metrics.DeadLetter*),reason 是写进日志的详细原因。
+func (w *worker) quarantineOrderingConflict(task *workerTask, dbTask *db_proto.DBTask, label, reason string) {
 	if task.fromRetry {
-		if err := w.deadLetterRetry(task, dbTask, reason); err != nil {
+		if err := w.deadLetterRetry(task, dbTask, label, reason); err != nil {
 			logx.Errorf("DATA-LOSS/ORDERING: retry quarantine failed; receipt remains recoverable: taskID=%s err=%v",
 				dbTask.TaskId, err)
 		}
@@ -2163,6 +2208,7 @@ func (w *worker) quarantineOrderingConflict(task *workerTask, dbTask *db_proto.D
 		return
 	}
 
+	metrics.CountTaskDeadLetter(label)
 	logx.Errorf("DATA-LOSS/ORDERING: fresh Kafka task durably quarantined: taskID=%s key=%d msgType=%s originPartition=%d seq=%d reason=%s deadQueue=%s",
 		dbTask.TaskId, dbTask.Key, dbTask.MsgType, task.originPartition, task.seq, reason, w.retryDeadQueueKey)
 	// The offset is safe to acknowledge only after the dead queue owns a copy.
@@ -2174,7 +2220,12 @@ func persistPoisonMessage(ctx context.Context, rc redis.Cmdable, deadQueueKey st
 	if err != nil {
 		return err
 	}
-	return pushPayloadDurably(ctx, rc, deadQueueKey, payload)
+	if err := pushPayloadDurably(ctx, rc, deadQueueKey, payload); err != nil {
+		return err
+	}
+	// 计数放在这里而不是 quarantinePoisonTask:ConsumeClaim 在分发前解码失败时直接调用本函数(L-04 评审 F10)。
+	metrics.CountTaskDeadLetter(metrics.DeadLetterPoison)
+	return nil
 }
 
 func (w *worker) quarantinePoisonTask(task *workerTask, decodeErr error) {

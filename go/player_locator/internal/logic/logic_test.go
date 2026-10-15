@@ -749,3 +749,237 @@ func TestLeaseExpiry_PlayerIDMismatchRetainsReceiptForRetry(t *testing.T) {
 	assert.NotEqual(t, first.token, reclaimed[0].token)
 	assert.Equal(t, first.payload, reclaimed[0].payload)
 }
+
+// ---------------------------------------------------------------------------
+// 登录代次栅栏(docs/design/scene-enter-session-fence.md §3.4)
+// ---------------------------------------------------------------------------
+
+// readSessionBytes 读会话键原始字节。"被拒后记录不变"按整字节比较,与提交点的整字节 CAS 同一口径。
+func readSessionBytes(t *testing.T, sc *svc.ServiceContext, playerID uint64) []byte {
+	t.Helper()
+	data, err := sc.RedisClient.Get(context.Background(), sessionKey(playerID)).Bytes()
+	require.NoError(t, err)
+	return data
+}
+
+func readSession(t *testing.T, sc *svc.ServiceContext, playerID uint64) *pb.PlayerSession {
+	t.Helper()
+	s := &pb.PlayerSession{}
+	require.NoError(t, proto.Unmarshal(readSessionBytes(t, sc, playerID), s))
+	return s
+}
+
+// takeoverSession 以 base 为当前记录构造一次顶号写入:换会话号、session_version 恰好 +1、带指定代次。
+// 版本号总是合法的,被拒时原因只可能是登录代次。
+func takeoverSession(base *pb.PlayerSession, sessionID uint32, generation uint64) *pb.PlayerSession {
+	next := proto.Clone(base).(*pb.PlayerSession)
+	next.SessionId = sessionID
+	next.SessionVersion = base.SessionVersion + 1
+	next.LoginGeneration = generation
+	return next
+}
+
+// 代次严格递增才提交。相等 = 两条会话共用一个代次(违反 G2);更小 = 失锁的旧登录链在新链提交之后
+// 才写(违反 G1)。两者都按 stale 拒,且记录逐字节不变。
+func TestSetSession_LoginGenerationMustStrictlyIncrease(t *testing.T) {
+	sc, _ := newTestSvcCtx(t)
+	ctx := context.Background()
+	const playerID uint64 = 16001
+
+	first := makeTestSession(playerID)
+	first.LoginGeneration = 100
+	_, err := NewSetSessionLogic(ctx, sc).SetSession(&pb.SetSessionRequest{Session: first})
+	require.NoError(t, err)
+
+	newer := takeoverSession(first, 200, 101)
+	_, err = NewSetSessionLogic(ctx, sc).SetSession(&pb.SetSessionRequest{Session: newer})
+	require.NoError(t, err)
+	assert.Equal(t, uint64(101), readSession(t, sc, playerID).LoginGeneration)
+	committed := readSessionBytes(t, sc, playerID)
+
+	for _, tc := range []struct {
+		name       string
+		generation uint64
+	}{
+		{name: "equal", generation: 101},
+		{name: "smaller", generation: 100},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			stale := takeoverSession(newer, 300, tc.generation)
+			_, err := NewSetSessionLogic(ctx, sc).SetSession(&pb.SetSessionRequest{Session: stale})
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), "stale session update")
+			assert.Contains(t, err.Error(), "login_generation")
+			assert.Equal(t, committed, readSessionBytes(t, sc, playerID), "被拒的写入不得改动记录")
+		})
+	}
+}
+
+// 顶号写入的响应丢失后 login 原样重放:请求代次与记录相等,必须先命中 proto.Equal 的重放分支
+// 幂等成功,不能被代次栅栏判成 stale(否则合法登录因一次丢包失败)。
+func TestSetSession_ReplayWithSameLoginGenerationIsIdempotent(t *testing.T) {
+	sc, _ := newTestSvcCtx(t)
+	ctx := context.Background()
+	const playerID uint64 = 16101
+
+	first := makeTestSession(playerID)
+	first.LoginGeneration = 100
+	_, err := NewSetSessionLogic(ctx, sc).SetSession(&pb.SetSessionRequest{Session: first})
+	require.NoError(t, err)
+
+	takeover := takeoverSession(first, 200, 101)
+	_, err = NewSetSessionLogic(ctx, sc).SetSession(&pb.SetSessionRequest{Session: takeover})
+	require.NoError(t, err)
+	committed := readSessionBytes(t, sc, playerID)
+
+	_, err = NewSetSessionLogic(ctx, sc).SetSession(&pb.SetSessionRequest{Session: takeover})
+	require.NoError(t, err)
+	assert.Equal(t, committed, readSessionBytes(t, sc, playerID))
+}
+
+// 请求代次为 0(旧版 login)不校验、原样写 0,不继承记录里的旧代次:继承会让无代次的会话冒用上一次
+// 登录的代次。记录为 0 时不与任何历史值比较,任意非 0 代次都能提交(升级后的第一次登录)。
+func TestSetSession_ZeroLoginGenerationSkipsCheck(t *testing.T) {
+	sc, _ := newTestSvcCtx(t)
+	ctx := context.Background()
+	const playerID uint64 = 16201
+
+	first := makeTestSession(playerID)
+	first.LoginGeneration = 100
+	_, err := NewSetSessionLogic(ctx, sc).SetSession(&pb.SetSessionRequest{Session: first})
+	require.NoError(t, err)
+
+	legacy := takeoverSession(first, 200, 0)
+	_, err = NewSetSessionLogic(ctx, sc).SetSession(&pb.SetSessionRequest{Session: legacy})
+	require.NoError(t, err)
+	stored := readSession(t, sc, playerID)
+	assert.Equal(t, uint32(200), stored.SessionId)
+	assert.Zero(t, stored.LoginGeneration, "请求无代次时记录如实为 0,不得继承旧值")
+
+	upgraded := takeoverSession(legacy, 300, 1)
+	_, err = NewSetSessionLogic(ctx, sc).SetSession(&pb.SetSessionRequest{Session: upgraded})
+	require.NoError(t, err)
+	assert.Equal(t, uint64(1), readSession(t, sc, playerID).LoginGeneration)
+}
+
+// 断线不改代次;Reconnect 把本链铸出的代次写进记录并在应答里回带。同 (session_id, request_id) 的
+// 重放请求代次与记录相等,必须先于代次栅栏命中重放分支,幂等成功且记录不变。
+func TestReconnect_WritesLoginGenerationAndReplayIsIdempotent(t *testing.T) {
+	sc, _ := newTestSvcCtx(t)
+	ctx := context.Background()
+	const playerID uint64 = 16301
+
+	session := makeTestSession(playerID)
+	session.LoginGeneration = 100
+	_, err := NewSetSessionLogic(ctx, sc).SetSession(&pb.SetSessionRequest{Session: session})
+	require.NoError(t, err)
+	_, err = NewSetDisconnectingLogic(ctx, sc).SetDisconnecting(&pb.SetDisconnectingRequest{
+		PlayerId: playerID, SessionId: session.SessionId, LeaseTtlSeconds: 30,
+	})
+	require.NoError(t, err)
+	disconnected := readSession(t, sc, playerID)
+	require.Equal(t, pb.PlayerSessionState_SESSION_STATE_DISCONNECTING, disconnected.State)
+	assert.Equal(t, uint64(100), disconnected.LoginGeneration, "断线只推进 session_version,不改登录代次")
+
+	req := &pb.ReconnectRequest{
+		PlayerId: playerID, NewSessionId: 200, GateId: "gate-2", GateInstanceId: "inst-2",
+		RequestId: "req-reconnect-1", LoginGeneration: 101,
+	}
+	resp, err := NewReconnectLogic(ctx, sc).Reconnect(req)
+	require.NoError(t, err)
+	require.True(t, resp.Success, resp.ErrorMessage)
+	assert.Equal(t, uint64(101), resp.Session.LoginGeneration)
+	assert.Equal(t, uint64(101), readSession(t, sc, playerID).LoginGeneration)
+	committed := readSessionBytes(t, sc, playerID)
+
+	replay, err := NewReconnectLogic(ctx, sc).Reconnect(req)
+	require.NoError(t, err)
+	require.True(t, replay.Success, replay.ErrorMessage)
+	assert.Equal(t, uint64(101), replay.Session.LoginGeneration)
+	assert.Equal(t, committed, readSessionBytes(t, sc, playerID), "重放不得再次改写记录")
+}
+
+// 记录与请求代次都非 0 时要求严格递增:相等 / 更小按现有失败语义回 success=false,记录逐字节不变
+// (仍是 DISCONNECTING、租约仍在);随后更大的代次照常重连。
+func TestReconnect_RejectsNonIncreasingLoginGeneration(t *testing.T) {
+	sc, mr := newTestSvcCtx(t)
+	ctx := context.Background()
+	const playerID uint64 = 16401
+
+	session := makeTestSession(playerID)
+	session.LoginGeneration = 100
+	_, err := NewSetSessionLogic(ctx, sc).SetSession(&pb.SetSessionRequest{Session: session})
+	require.NoError(t, err)
+	_, err = NewSetDisconnectingLogic(ctx, sc).SetDisconnecting(&pb.SetDisconnectingRequest{
+		PlayerId: playerID, SessionId: session.SessionId, LeaseTtlSeconds: 30,
+	})
+	require.NoError(t, err)
+	disconnected := readSessionBytes(t, sc, playerID)
+
+	for _, tc := range []struct {
+		name       string
+		sessionID  uint32
+		requestID  string
+		generation uint64
+	}{
+		{name: "equal", sessionID: 200, requestID: "req-equal", generation: 100},
+		{name: "smaller", sessionID: 201, requestID: "req-smaller", generation: 99},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			resp, err := NewReconnectLogic(ctx, sc).Reconnect(&pb.ReconnectRequest{
+				PlayerId: playerID, NewSessionId: tc.sessionID, GateId: "gate-2",
+				RequestId: tc.requestID, LoginGeneration: tc.generation,
+			})
+			require.NoError(t, err)
+			assert.False(t, resp.Success)
+			assert.Contains(t, resp.ErrorMessage, "login generation")
+			assert.Equal(t, disconnected, readSessionBytes(t, sc, playerID), "被拒的重连不得改动记录")
+		})
+	}
+	members, err := mr.ZMembers(LeaseZSetKey)
+	require.NoError(t, err)
+	assert.Contains(t, members, "16401", "被拒的重连不得撤销断线租约")
+
+	resp, err := NewReconnectLogic(ctx, sc).Reconnect(&pb.ReconnectRequest{
+		PlayerId: playerID, NewSessionId: 300, GateId: "gate-2", RequestId: "req-newer", LoginGeneration: 101,
+	})
+	require.NoError(t, err)
+	require.True(t, resp.Success, resp.ErrorMessage)
+	assert.Equal(t, uint64(101), readSession(t, sc, playerID).LoginGeneration)
+}
+
+// 任一方代次为 0 不校验:记录无代次(旧版 login 写入)时接受新代次;请求无代次时如实写 0,
+// 不保留记录里的旧代次。
+func TestReconnect_ZeroLoginGenerationSkipsCheck(t *testing.T) {
+	sc, _ := newTestSvcCtx(t)
+	ctx := context.Background()
+	const playerID uint64 = 16501
+
+	session := makeTestSession(playerID) // 代次 0:旧版 login 写入的会话
+	_, err := NewSetSessionLogic(ctx, sc).SetSession(&pb.SetSessionRequest{Session: session})
+	require.NoError(t, err)
+	disconnect := func(sessionID uint32) {
+		t.Helper()
+		_, err := NewSetDisconnectingLogic(ctx, sc).SetDisconnecting(&pb.SetDisconnectingRequest{
+			PlayerId: playerID, SessionId: sessionID, LeaseTtlSeconds: 30,
+		})
+		require.NoError(t, err)
+	}
+
+	disconnect(session.SessionId)
+	resp, err := NewReconnectLogic(ctx, sc).Reconnect(&pb.ReconnectRequest{
+		PlayerId: playerID, NewSessionId: 200, GateId: "gate-2", RequestId: "req-upgraded", LoginGeneration: 7,
+	})
+	require.NoError(t, err)
+	require.True(t, resp.Success, resp.ErrorMessage)
+	assert.Equal(t, uint64(7), readSession(t, sc, playerID).LoginGeneration)
+
+	disconnect(200)
+	resp, err = NewReconnectLogic(ctx, sc).Reconnect(&pb.ReconnectRequest{
+		PlayerId: playerID, NewSessionId: 300, GateId: "gate-3", RequestId: "req-legacy",
+	})
+	require.NoError(t, err)
+	require.True(t, resp.Success, resp.ErrorMessage)
+	assert.Zero(t, resp.Session.LoginGeneration)
+	assert.Zero(t, readSession(t, sc, playerID).LoginGeneration, "请求无代次时记录如实为 0")
+}

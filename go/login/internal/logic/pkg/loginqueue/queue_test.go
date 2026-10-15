@@ -340,3 +340,528 @@ func TestPopAdmitReQueuesOnSignFailure(t *testing.T) {
 		t.Errorf("status after failed admit = %d, want StatusQueueing — entry was lost", state.Status)
 	}
 }
+
+// ── G4b-G:在途占位逐个到期 ─────────────────────────────────────────────
+
+// legacyAdmittedSetKeyZone1 是 G4b-G 之前的在途占位键(SET)。新实现不再读写它,
+// 用例拿它断言「旧键没人写」。新旧版本混跑时两种键并存、互不可见。
+const legacyAdmittedSetKeyZone1 = "admitted:zone:1"
+
+// fakeClock 是在途占位记账用的可拨时钟。占位的到期分数与清理都读 Queue.now,
+// 用例直接拨它:不 sleep,也不依赖 miniredis 的时间(miniredis 里键的 TTL 不随它走)。
+type fakeClock struct{ ms atomic.Int64 }
+
+func newFakeClock() *fakeClock {
+	c := &fakeClock{}
+	c.ms.Store(1_800_000_000_000)
+	return c
+}
+
+func (c *fakeClock) Now() time.Time          { return time.UnixMilli(c.ms.Load()) }
+func (c *fakeClock) Advance(d time.Duration) { c.ms.Add(d.Milliseconds()) }
+
+// newClockedQueue 在 newTestQueue 的基础上把占位时钟换成假时钟(起点固定,结果可复现)。
+func newClockedQueue(t *testing.T) (*Queue, *redis.Client, *fakeClock) {
+	t.Helper()
+	q, rdb, _, cleanup := newTestQueue(t)
+	t.Cleanup(cleanup)
+	clk := newFakeClock()
+	q.now = clk.Now
+	return q, rdb, clk
+}
+
+// oneGateProvider:zone 1 一台 gate、固定容量。在线数由用例直接改 cands[1][0].PlayerCount
+// (fakeProvider 返回的是同一个切片,不是副本)。
+func oneGateProvider(capacity, online uint32) *fakeProvider {
+	return &fakeProvider{
+		cands: map[uint32][]GateCandidate{
+			1: {{NodeID: 1, IP: "10.0.0.1", Port: 9000, PlayerCount: online, ZoneID: 1}},
+		},
+		caps: map[uint32]uint32{1: capacity},
+	}
+}
+
+func pickZone1Gate(zoneID uint32, _ string) (*AdmitSlot, error) {
+	return &AdmitSlot{NodeID: 1, IP: "10.0.0.1", Port: 9000, ZoneID: zoneID}, nil
+}
+
+func mustAdmittedCount(t *testing.T, q *Queue, want uint32, when string) {
+	t.Helper()
+	got, err := q.AdmittedCount(context.Background(), 1)
+	if err != nil {
+		t.Fatalf("admitted count (%s): %v", when, err)
+	}
+	if got != want {
+		t.Fatalf("admitted count (%s) = %d, want %d", when, got, want)
+	}
+}
+
+func mustFree(t *testing.T, prov CapacityProvider, q *Queue, want uint32, when string) {
+	t.Helper()
+	free, capacity, online, admitted, err := FreeSlots(context.Background(), prov, q, 1, 1.5)
+	if err != nil {
+		t.Fatalf("freeslots (%s): %v", when, err)
+	}
+	if free != want {
+		t.Fatalf("free (%s) = %d, want %d (cap=%d online=%d admitted=%d)",
+			when, free, want, capacity, online, admitted)
+	}
+}
+
+func mustLegacyKeyUntouched(t *testing.T, rdb *redis.Client) {
+	t.Helper()
+	n, err := rdb.Exists(context.Background(), legacyAdmittedSetKeyZone1).Result()
+	if err != nil || n != 0 {
+		t.Fatalf("legacy key %q must not be written any more: exists=%d err=%v", legacyAdmittedSetKeyZone1, n, err)
+	}
+}
+
+// 15s 与 gate 的上报周期(10s)配套,见 defaultHandoffGrace 的注释;改它要同步改设计稿与 runbook。
+func TestNew_DefaultsHandoffGraceAndClock(t *testing.T) {
+	q := New(nil, time.Hour, 60*time.Second, nil)
+	if q.handoffGrace != 15*time.Second {
+		t.Fatalf("handoffGrace = %v, want 15s", q.handoffGrace)
+	}
+	if q.now == nil {
+		t.Fatal("Queue.now must default to time.Now")
+	}
+	if got, want := q.admittedKeyTTL(), 2*time.Minute; got != want {
+		t.Fatalf("admittedKeyTTL = %v, want %v (max(AdmitTTL, handoffGrace) + 1min)", got, want)
+	}
+}
+
+// 放行写的是新键 ZSET,分数 = 到期毫秒;没人来取时按自己的分数到期,不靠整键 TTL。
+func TestPopAdmit_HoldsPlaceholderInZSetUntilAdmitTTL(t *testing.T) {
+	q, rdb, clk := newClockedQueue(t)
+	ctx := context.Background()
+
+	res, err := q.Enqueue(ctx, 1, "alice", "dev1")
+	if err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+	admittedAt := clk.Now()
+	if n, err := q.PopAdmit(ctx, 1, 1, pickZone1Gate); err != nil || n != 1 {
+		t.Fatalf("popadmit = (%d, %v), want (1, nil)", n, err)
+	}
+
+	key := admittedZSetKey(1)
+	if key != "admitted:zset:zone:1" {
+		t.Fatalf("admitted key = %q, want admitted:zset:zone:1", key)
+	}
+	if typ, err := rdb.Type(ctx, key).Result(); err != nil || typ != "zset" {
+		t.Fatalf("type(%s) = %q err=%v, want zset", key, typ, err)
+	}
+	score, err := rdb.ZScore(ctx, key, res.QueueID).Result()
+	if err != nil {
+		t.Fatalf("zscore: %v", err)
+	}
+	if want := float64(admittedAt.Add(q.admitTTL).UnixMilli()); score != want {
+		t.Fatalf("placeholder score = %.0f, want %.0f (admit time + AdmitTTL, unix ms)", score, want)
+	}
+	if ttl, err := rdb.PTTL(ctx, key).Result(); err != nil || ttl <= q.admitTTL || ttl > q.admittedKeyTTL() {
+		t.Fatalf("whole-key PTTL = %v err=%v, want (%v, %v]", ttl, err, q.admitTTL, q.admittedKeyTTL())
+	}
+
+	clk.Advance(q.admitTTL - time.Millisecond)
+	mustAdmittedCount(t, q, 1, "1ms before AdmitTTL")
+	clk.Advance(time.Millisecond)
+	mustAdmittedCount(t, q, 0, "at AdmitTTL, never picked up")
+	mustLegacyKeyUntouched(t, rdb)
+}
+
+func TestTryReserveFastPathSlot_BudgetAndPerMemberExpiry(t *testing.T) {
+	q, rdb, clk := newClockedQueue(t)
+	ctx := context.Background()
+	reserve := func(budget uint32) bool {
+		t.Helper()
+		ok, err := q.TryReserveFastPathSlot(ctx, 1, budget)
+		if err != nil {
+			t.Fatalf("reserve(budget=%d): %v", budget, err)
+		}
+		return ok
+	}
+
+	if !reserve(2) || !reserve(2) {
+		t.Fatal("first two reservations must fit budget 2")
+	}
+	if reserve(2) {
+		t.Fatal("third reservation must be refused: budget 2 is full")
+	}
+	if reserve(0) {
+		t.Fatal("budget 0 must never reserve")
+	}
+
+	wantScore := float64(clk.Now().Add(q.handoffGrace).UnixMilli())
+	members, err := rdb.ZRangeWithScores(ctx, admittedZSetKey(1), 0, -1).Result()
+	if err != nil || len(members) != 2 {
+		t.Fatalf("placeholders = %v err=%v, want 2 members", members, err)
+	}
+	for _, m := range members {
+		name, _ := m.Member.(string)
+		if !strings.HasPrefix(name, "fast:") || m.Score != wantScore {
+			t.Fatalf("placeholder %q score %.0f, want fast:<uuid> with score %.0f (now + handoff grace)",
+				name, m.Score, wantScore)
+		}
+	}
+
+	clk.Advance(q.handoffGrace - time.Millisecond)
+	if reserve(2) {
+		t.Fatal("placeholders are still live 1ms before they expire")
+	}
+	clk.Advance(time.Millisecond)
+	mustAdmittedCount(t, q, 0, "handoff grace elapsed")
+	if !reserve(2) {
+		t.Fatal("expired fast-path placeholders must free their slots")
+	}
+	mustLegacyKeyUntouched(t, rdb)
+}
+
+// Q1 回归:每秒 1 人走快速通道,10 秒后(gate 的上报周期)出现在 PlayerCount 里,连续 60 秒。
+// 旧实现的 fast:<uuid> 占位永远不单独回收,整集合 TTL 又被每次占位续上:
+// 连上 gate 的人同时算进 online 和 admitted,第 55 秒余量归零。
+func TestFastPath_SustainedLoginsDoNotStarveBudget(t *testing.T) {
+	q, rdb, clk := newClockedQueue(t)
+	ctx := context.Background()
+	const capacity = 100
+	prov := oneGateProvider(capacity, 0)
+
+	for sec := 0; sec < 60; sec++ {
+		online := uint32(0)
+		if sec > 10 {
+			online = uint32(sec - 10)
+		}
+		prov.cands[1][0].PlayerCount = online
+
+		free, _, _, admitted, err := FreeSlots(ctx, prov, q, 1, 1.5)
+		if err != nil {
+			t.Fatalf("sec=%d freeslots: %v", sec, err)
+		}
+		if free == 0 {
+			t.Fatalf("sec=%d: free hit 0 with %d online of %d (admitted=%d): connected players are double-counted",
+				sec, online, capacity, admitted)
+		}
+		ok, err := q.TryReserveFastPathSlot(ctx, 1, capacity-online)
+		if err != nil || !ok {
+			t.Fatalf("sec=%d: fast-path reservation refused (ok=%v err=%v) with %d online of %d",
+				sec, ok, err, online, capacity)
+		}
+		clk.Advance(time.Second)
+	}
+
+	// 稳态下占位数 = 最近 handoffGrace 内交出去的票数,不随登录总数增长。
+	n, err := q.AdmittedCount(ctx, 1)
+	if err != nil {
+		t.Fatalf("admitted count: %v", err)
+	}
+	if limit := uint32(q.handoffGrace / time.Second); n > limit {
+		t.Fatalf("placeholders = %d after 60 logins, want <= %d (one per second of handoff grace)", n, limit)
+	}
+	mustLegacyKeyUntouched(t, rdb)
+}
+
+// Q2 回归:取走放行槽之后,gate 要到下一次上报才把人数算进 PlayerCount。
+// 这段时间占位必须留着;旧实现取走即 SREM,下一拍按「在线 0、在途 0」再放一满批。
+func TestConsume_KeepsPlaceholderForHandoffGraceThenReleases(t *testing.T) {
+	q, rdb, clk := newClockedQueue(t)
+	ctx := context.Background()
+	prov := oneGateProvider(2, 0)
+
+	queueIDs := make(map[string]string) // token → queueId
+	for range 6 {
+		res, err := q.Enqueue(ctx, 1, "u", "d")
+		if err != nil {
+			t.Fatalf("enqueue: %v", err)
+		}
+		queueIDs[res.QueueToken] = res.QueueID
+	}
+	mustFree(t, prov, q, 2, "before any admit")
+	if n, err := q.PopAdmit(ctx, 1, 2, pickZone1Gate); err != nil || n != 2 {
+		t.Fatalf("popadmit = (%d, %v), want (2, nil)", n, err)
+	}
+
+	clk.Advance(2 * time.Second) // 客户端的下一次轮询
+	consumedAt := clk.Now()
+	var taken []string
+	for token, queueID := range queueIDs {
+		st, err := q.Lookup(ctx, token, stubSignFn)
+		if err != nil {
+			t.Fatalf("lookup: %v", err)
+		}
+		if st.Status == StatusAdmitted {
+			taken = append(taken, queueID)
+		}
+	}
+	if len(taken) != 2 {
+		t.Fatalf("consumed %d admits, want 2", len(taken))
+	}
+	wantScore := float64(consumedAt.Add(q.handoffGrace).UnixMilli())
+	for _, queueID := range taken {
+		score, err := rdb.ZScore(ctx, admittedZSetKey(1), queueID).Result()
+		if err != nil || score != wantScore {
+			t.Fatalf("placeholder %s score = %.0f err=%v, want %.0f (consume time + handoff grace)",
+				queueID, score, err, wantScore)
+		}
+	}
+
+	mustFree(t, prov, q, 0, "right after consume, gate still reports 0 online")
+	clk.Advance(q.handoffGrace - time.Millisecond)
+	mustFree(t, prov, q, 0, "1ms before the handoff grace ends")
+	clk.Advance(time.Millisecond)
+	mustAdmittedCount(t, q, 0, "handoff grace elapsed")
+	mustFree(t, prov, q, 2, "handoff grace elapsed, players never showed up")
+}
+
+// login 的钟比 Redis 快时,占位(login 钟)可能先于放行槽(Redis TTL)到期被清掉。
+// 这时取走仍要给这个人占 15s:他确实马上要连 gate。所以是普通 ZADD,不是 XX。
+func TestConsume_HoldsPlaceholderEvenIfAlreadyExpired(t *testing.T) {
+	q, rdb, clk := newClockedQueue(t)
+	ctx := context.Background()
+
+	res, err := q.Enqueue(ctx, 1, "alice", "dev1")
+	if err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+	if n, err := q.PopAdmit(ctx, 1, 1, pickZone1Gate); err != nil || n != 1 {
+		t.Fatalf("popadmit = (%d, %v), want (1, nil)", n, err)
+	}
+	clk.Advance(q.admitTTL) // miniredis 里放行槽的 TTL 不随假时钟走,槽还在
+	mustAdmittedCount(t, q, 0, "placeholder expired by score")
+
+	st, err := q.Lookup(ctx, res.QueueToken, stubSignFn)
+	if err != nil || st.Status != StatusAdmitted {
+		t.Fatalf("lookup = (%+v, %v), want ADMITTED", st, err)
+	}
+	mustAdmittedCount(t, q, 1, "consume re-holds the slot")
+	score, err := rdb.ZScore(ctx, admittedZSetKey(1), res.QueueID).Result()
+	if want := float64(clk.Now().Add(q.handoffGrace).UnixMilli()); err != nil || score != want {
+		t.Fatalf("placeholder score = %.0f err=%v, want %.0f", score, err, want)
+	}
+}
+
+// 清理是闭区间:分数 <= now 的成员算已到期。
+func TestAdmittedCount_DropsOnlyExpiredMembers(t *testing.T) {
+	q, rdb, clk := newClockedQueue(t)
+	ctx := context.Background()
+	mustAdmittedCount(t, q, 0, "key does not exist")
+
+	now := clk.Now().UnixMilli()
+	key := admittedZSetKey(1)
+	if err := rdb.ZAdd(ctx, key,
+		redis.Z{Score: float64(now - 1), Member: "expired"},
+		redis.Z{Score: float64(now), Member: "expires-now"},
+		redis.Z{Score: float64(now + 1), Member: "live"},
+	).Err(); err != nil {
+		t.Fatalf("seed: %v", err)
+	}
+	mustAdmittedCount(t, q, 1, "only the member with score > now is live")
+	left, err := rdb.ZRange(ctx, key, 0, -1).Result()
+	if err != nil || len(left) != 1 || left[0] != "live" {
+		t.Fatalf("members after count = %v err=%v, want [live]", left, err)
+	}
+}
+
+// 清理、判定、占位在一段 Lua 里:并发调用成功的个数恰好等于 budget。
+func TestTryReserveFastPathSlot_ConcurrentNeverExceedsBudget(t *testing.T) {
+	q, rdb, _ := newClockedQueue(t)
+	ctx := context.Background()
+	const budget, callers = 8, 64
+
+	var granted atomic.Int32
+	var wg sync.WaitGroup
+	errs := make(chan error, callers)
+	for range callers {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			ok, err := q.TryReserveFastPathSlot(ctx, 1, budget)
+			if err != nil {
+				errs <- err
+				return
+			}
+			if ok {
+				granted.Add(1)
+			}
+		}()
+	}
+	wg.Wait()
+	close(errs)
+	for err := range errs {
+		t.Fatalf("reserve: %v", err)
+	}
+	if got := granted.Load(); got != budget {
+		t.Fatalf("granted %d reservations, want exactly %d", got, budget)
+	}
+	if n, err := rdb.ZCard(ctx, admittedZSetKey(1)).Result(); err != nil || n != budget {
+		t.Fatalf("placeholders = %d err=%v, want %d", n, err, budget)
+	}
+}
+
+// 新版本只读写新键。旧键 admitted:zone:{z} 靠旧版本最后一次写入后的 TTL 自己消失。
+func TestLegacyAdmittedSetKey_NeverWritten(t *testing.T) {
+	q, rdb, _ := newClockedQueue(t)
+	ctx := context.Background()
+	prov := oneGateProvider(10, 0)
+
+	if ok, err := q.TryReserveFastPathSlot(ctx, 1, 10); err != nil || !ok {
+		t.Fatalf("reserve = (%v, %v), want (true, nil)", ok, err)
+	}
+	res, err := q.Enqueue(ctx, 1, "alice", "dev1")
+	if err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+	mustFree(t, prov, q, 9, "one fast-path placeholder")
+	if n, err := q.PopAdmit(ctx, 1, 1, pickZone1Gate); err != nil || n != 1 {
+		t.Fatalf("popadmit = (%d, %v), want (1, nil)", n, err)
+	}
+	if st, err := q.Lookup(ctx, res.QueueToken, stubSignFn); err != nil || st.Status != StatusAdmitted {
+		t.Fatalf("lookup = (%+v, %v), want ADMITTED", st, err)
+	}
+	mustAdmittedCount(t, q, 2, "fast-path placeholder + consumed admit")
+
+	keys, err := rdb.Keys(ctx, "admitted:*").Result()
+	if err != nil || len(keys) != 1 || keys[0] != "admitted:zset:zone:1" {
+		t.Fatalf("keys admitted:* = %v err=%v, want only admitted:zset:zone:1", keys, err)
+	}
+}
+
+// Redis 出错时的方向不变:读不出在途占位就不放行。
+func TestAdmittedAccounting_RedisDown_FailsClosed(t *testing.T) {
+	mr, err := miniredis.Run()
+	if err != nil {
+		t.Fatalf("miniredis: %v", err)
+	}
+	// MaxRetries -1 关命令重试;DialerRetries 1 关拨号重试(缺省拨 5 次、每次失败后固定等 100ms)。
+	// 下面三条会走到 Redis 的调用各拨号一次,每次最多等一个 DialTimeout。
+	rdb := redis.NewClient(&redis.Options{
+		Addr:               mr.Addr(),
+		MaxRetries:         -1,
+		DialTimeout:        200 * time.Millisecond,
+		DialerRetries:      1,
+		DialerRetryTimeout: time.Millisecond,
+	})
+	defer rdb.Close()
+	q := New(rdb, time.Hour, 60*time.Second, []byte("test-secret"))
+	ctx := context.Background()
+	prov := oneGateProvider(10, 0)
+	mr.Close()
+
+	if _, err := q.AdmittedCount(ctx, 1); err == nil {
+		t.Fatal("AdmittedCount must surface the Redis error")
+	}
+	if free, _, _, _, err := FreeSlots(ctx, prov, q, 1, 1.5); err == nil || free != 0 {
+		t.Fatalf("FreeSlots = (free=%d, err=%v), want (0, error): no accounting, no admission", free, err)
+	}
+	if ok, err := q.TryReserveFastPathSlot(ctx, 1, 5); err == nil || ok {
+		t.Fatalf("TryReserveFastPathSlot = (%v, %v), want (false, error)", ok, err)
+	}
+	// budget 0 不碰 Redis:Redis 挂着也不报错。
+	if ok, err := q.TryReserveFastPathSlot(ctx, 1, 0); err != nil || ok {
+		t.Fatalf("TryReserveFastPathSlot(budget=0) = (%v, %v), want (false, nil)", ok, err)
+	}
+}
+
+// 取走时占位记账失败不让这次取走作废(票已签好);但之后读不出记账,容量判定一律不放行。
+func TestConsume_PlaceholderWriteFailureDoesNotFailAdmit(t *testing.T) {
+	q, rdb, _ := newClockedQueue(t)
+	ctx := context.Background()
+
+	res, err := q.Enqueue(ctx, 1, "alice", "dev1")
+	if err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+	if n, err := q.PopAdmit(ctx, 1, 1, pickZone1Gate); err != nil || n != 1 {
+		t.Fatalf("popadmit = (%d, %v), want (1, nil)", n, err)
+	}
+	// 把占位键换成 STRING:取走时那次 ZADD 必然 WRONGTYPE。
+	key := admittedZSetKey(1)
+	if err := rdb.Del(ctx, key).Err(); err != nil {
+		t.Fatalf("del: %v", err)
+	}
+	if err := rdb.Set(ctx, key, "not-a-zset", 0).Err(); err != nil {
+		t.Fatalf("set: %v", err)
+	}
+
+	st, err := q.Lookup(ctx, res.QueueToken, stubSignFn)
+	if err != nil || st.Status != StatusAdmitted || st.Admit == nil {
+		t.Fatalf("lookup = (%+v, %v), want ADMITTED despite the accounting failure", st, err)
+	}
+	if _, err := q.AdmittedCount(ctx, 1); err == nil {
+		t.Fatal("AdmittedCount must fail on a wrong-type key")
+	}
+	if ok, err := q.TryReserveFastPathSlot(ctx, 1, 5); err == nil || ok {
+		t.Fatalf("TryReserveFastPathSlot = (%v, %v), want (false, error)", ok, err)
+	}
+}
+
+// 取走只发生一次。取走之后客户端按协议还会每 2s 轮询(回「排队中、名次 0」,直到条目 1h 过期),
+// 这些轮询不能给占位续期:否则每次续 15s,占位永不到期,名额一直被扣着。
+func TestConsume_RepeatPollDoesNotExtendPlaceholder(t *testing.T) {
+	q, rdb, clk := newClockedQueue(t)
+	ctx := context.Background()
+
+	res, err := q.Enqueue(ctx, 1, "alice", "dev1")
+	if err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+	if n, err := q.PopAdmit(ctx, 1, 1, pickZone1Gate); err != nil || n != 1 {
+		t.Fatalf("popadmit = (%d, %v), want (1, nil)", n, err)
+	}
+	if st, err := q.Lookup(ctx, res.QueueToken, stubSignFn); err != nil || st.Status != StatusAdmitted {
+		t.Fatalf("first lookup = (%+v, %v), want ADMITTED", st, err)
+	}
+	want := float64(clk.Now().Add(q.handoffGrace).UnixMilli())
+
+	clk.Advance(5 * time.Second)
+	st, err := q.Lookup(ctx, res.QueueToken, stubSignFn)
+	if err != nil {
+		t.Fatalf("repeat lookup: %v", err)
+	}
+	if st.Status == StatusAdmitted {
+		t.Fatal("admit was consumed twice")
+	}
+	score, err := rdb.ZScore(ctx, admittedZSetKey(1), res.QueueID).Result()
+	if err != nil || score != want {
+		t.Fatalf("placeholder score after a repeat poll = %.0f err=%v, want %.0f (first consume + handoff grace, not extended)",
+			score, err, want)
+	}
+	mustAdmittedCount(t, q, 1, "5s after consume")
+
+	clk.Advance(q.handoffGrace - 5*time.Second)
+	mustAdmittedCount(t, q, 0, "handoff grace elapsed since the first consume")
+}
+
+// signFn 失败:放行槽已被 GETDEL 删掉,这个人拿不到票;占位不改分数,保持「放行时刻 + AdmitTTL」,到点自己消失。
+func TestConsume_SignFailureKeepsAdmitTimeScore(t *testing.T) {
+	q, rdb, clk := newClockedQueue(t)
+	ctx := context.Background()
+
+	res, err := q.Enqueue(ctx, 1, "alice", "dev1")
+	if err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+	admittedAt := clk.Now()
+	if n, err := q.PopAdmit(ctx, 1, 1, pickZone1Gate); err != nil || n != 1 {
+		t.Fatalf("popadmit = (%d, %v), want (1, nil)", n, err)
+	}
+	want := float64(admittedAt.Add(q.admitTTL).UnixMilli())
+
+	clk.Advance(2 * time.Second) // 客户端的下一次轮询
+	failSign := func(*AdmitSlot) (*AdmitToken, error) { return nil, context.DeadlineExceeded }
+	if st, err := q.Lookup(ctx, res.QueueToken, failSign); err == nil {
+		t.Fatalf("lookup = (%+v, nil), want the signing error", st)
+	}
+	score, err := rdb.ZScore(ctx, admittedZSetKey(1), res.QueueID).Result()
+	if err != nil || score != want {
+		t.Fatalf("placeholder score after a failed sign = %.0f err=%v, want %.0f (admit time + AdmitTTL, untouched)",
+			score, err, want)
+	}
+	// 放行槽已经没了:再来轮询也拿不到票。
+	if st, err := q.Lookup(ctx, res.QueueToken, stubSignFn); err != nil || st.Status == StatusAdmitted {
+		t.Fatalf("lookup after a failed sign = (%+v, %v), want not ADMITTED and no error", st, err)
+	}
+
+	clk.Advance(q.admitTTL - 2*time.Second - time.Millisecond)
+	mustAdmittedCount(t, q, 1, "1ms before AdmitTTL")
+	clk.Advance(time.Millisecond)
+	mustAdmittedCount(t, q, 0, "at AdmitTTL after a failed sign")
+}

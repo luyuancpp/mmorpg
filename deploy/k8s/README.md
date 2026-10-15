@@ -432,6 +432,76 @@ pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-all-down -ZonesConfigPath de
     起因多传 4 个 Agones 参数在参数绑定阶段就失败,现已去掉并对 `-AgonesHighDensity` / `-AgonesAutoscale` 显式拒绝。这条链很久没人跑通,首次使用先加 `-DryRun`。
   - 以上透传与拒绝**未运行**,契约测试 `tools/scripts/tests/k8s_client_entry_contract.tests.ps1`、`k8s_deploy_contract.tests.ps1`、
     `k8s_zone_rollback_gate_router_mode.tests.ps1` 待 Codex 验证。
+- **削峰(G4b):`-GatewayRateLimit` / `-LoginQueue`**(2026-10-14;设计 `docs/design/open-server-rate-limit-design.md` §十一,规格
+  `docs/handoff/launch-readiness-20261013/spec_G4b.md`;权威口径是 `tools/scripts/k8s_deploy.ps1` 的参数注释与常量表 `$script:PeakShavingLaunchTier`)。
+  状态:已落码,**未编译、未测试**,待 Codex 验证。下面的阈值全部是开服档起步值,**待压测确认**(L-14),不能据此下容量结论(AGENTS §6)。
+  - 两个参数都取 `auto|on|off`,缺省 `auto` = 跟随 `-ReleaseProfile`:dev 关(ConfigMap 与 G4b 之前逐字相同),staging / prod 开。
+    `off` 只用于事故止血与基线压测;`on` 只用于 dev 档联调。取值拼错在参数绑定时就失败。
+    - `-GatewayRateLimit`(gateway Bucket4j 限流):开时 gateway ConfigMap 的 `gate.rate-limit` 下写 `enabled: true`、`zone-default-rps: 2000`、
+      `zone-default-burst: 5000`、`ip-rps: 5`、`ip-burst: 20`、`account-cooldown-ms: 5000`,与 `trusted-proxies` 共用同一个 `rate-limit:` 键;
+      不写 `wave.*`(开服波次要一个开服时刻,属运营决策)、`zone-overrides` 和没有消费方的 `queue-timeout-ms`。关时不写,落回 jar 内的 `enabled: false`。
+    - `-LoginQueue`(login 登录排队):开时 login ConfigMap 写 `Queue` 段:`Enabled: true`;`DispatcherLockKey` = login.yaml 的值加 `:zone:<本 zone>`(见下面 ②);
+      `ZoneCapacityOverride` 只含本 zone 一项 `5000`,这是**本 zone 同时在线上限,不是速率**;其余键(`DispatchInterval` / `AdmitTTL` / `QueueEntryTTL` /
+      `SoftCapMultiplier` / `DefaultRetryAfterMs` / `DispatcherLockTTL`)从 `go/login/etc/login.yaml` 镜像。`Secrets` 下另写 `QueueToken.Value`(见下一条)。
+    - 与开关无关:gateway ConfigMap 的 `spring.data.redis` 在 `MMORPG_REDIS_PASSWORD` 非空时写 `password`(staging / prod 必须设该变量;dev 档没设时回落空串,不写)。
+      Bucket4j 的 Lettuce 客户端只从这个属性取口令,而 release 档的 Redis 带 `--requirepass`;不写口令时限流过不了 Redis 认证,要么每次调用都 fail-open 放行,
+      要么 gateway 建连接时就起不来(取决于 Lettuce 的握手行为,未实测)。口令与 go-svc ConfigMap 一样是明文。
+  - **环境变量 `MMORPG_LOGIN_QUEUE_TOKEN_SECRET`**:login 排队令牌的 HMAC 密钥,写进 login ConfigMap 的 `Secrets.QueueToken.Value`(与兄弟项 `InternalAuth` 同为明文)。
+    staging / prod、排队开、且本次部署 login(`zone-up` / `all-up`,给了 `-GoSvcRegistry`、不带 `-SkipGoSvc`)时**必填**:非空、不是占位串、至少 32 位,
+    并且与 `MMORPG_GATE_TOKEN_SECRET`、`MMORPG_INTERNAL_AUTH_SECRET` 都不同(原样比较,不 trim);不满足即在任何写操作之前拒绝,报错只点变量名、不回显值。
+    `-LoginQueue off`、`infra-up`、`-SkipGoSvc` 都不要求它。dev 档可以不设:不写 `Secrets.QueueToken`,login 宽松档回落 GateToken 密钥并打 WARN;
+    生产模式开了排队却没有合格的 QueueToken,login 拒绝启动(`go/login/internal/config/secrets.go`)。
+    - 用随机串:login 的占位判定按前缀(以 `secret`、`example`、`test-secret`、`change-me`、`local-dev` 等开头一律算占位,`secrets.go` 的 `placeholderPrefixes`),
+      比部署侧的精确匹配严,撞上前缀的值能过部署检查、login 却 CrashLoopBackOff。值里不要有 `"` 和 `\`(会破坏生成的 YAML)。
+    - 轮换会自动滚动 login(见下),在排玩家手里的 token 随之失效、重新入队,排位丢失;只在维护窗口轮换。
+  - **写路径打印**:`zone-up` / `all-up` / `infra-up` 打一行(`-DryRun` 也打,`*-down` / `*-status` 不打),排在密钥解析之前:
+    ```text
+    PeakShaving: gateway_rate_limit=on(-GatewayRateLimit auto) login_queue=on(-LoginQueue auto) profile=prod initial values (pending stress-test validation) zone=2000/s burst=5000 ip=5/s burst=20 cooldown=5000ms queue_capacity=5000/zone
+    ```
+    常量表被改坏时 throw `内部错误:…`:限流阈值(rps < 1、burst < rps、冷却为负)在这一行之后、任何写操作之前就查;排队容量(不在 1..uint32)
+    要到生成 login ConfigMap 时才查,那时同一 zone 先部署的工作负载已经 apply 过了。
+    另有三条英文 WARNING,只告警、不阻断,只在本次确实部署对应服务时打;开头都是不含空格的锚点(控制台可能在空格处折行,按锚点 grep):
+    - `[PeakShaving]GatewayRateLimit=off`:非 dev 档关了限流;
+    - `[PeakShaving]LoginQueue=off`:非 dev 档关了排队;
+    - `[PeakShaving]GatewayTrustedProxies=unset`:限流开着却没给 `-GatewayTrustedProxies`。IP 桶按 socket 对端分:集群内直连的 robot 按 Pod IP 共用一个桶(5/s、突发 20),
+      前面若有未登记的 L7 代理,全体玩家共用一个桶。已有 Ingress 却不给 trusted proxies 的情形由入口预检直接拒绝,不走这条警告。
+  - **参数不粘滞**(与 `-GateRouterMode` 同一口径):每次部署按本次取值生成,不从集群读回。以 `off` 止血之后,下一次部署 —— 日常 `zone-up`、合服后的 `zone-up`、
+    `k8s_zone_rollback.ps1` 的 Step 6、经 `dev_tools.ps1` / `k8s_image.ps1` 的入口 —— 不传就按档位恢复为开。
+  - **切换自动滚动**:开着时 gateway 与 login 的 Pod 模板各带一条注解 `mmorpg.io/peak-shaving-hash`(gateway 的指纹输入 = 整段 `rate-limit` 文本 + Redis 口令,
+    排在管理面口令指纹 `mmorpg.io/gateway-admin-api-key-hash` 之后;login 的 = `Queue` 段 + 排队密钥),关时注解消失。开关、阈值、可信代理网段、Redis 口令、
+    排队密钥任一变化 → 模板变 → apply 即滚动,不需要手工 `rollout restart`(ConfigMap 只在进程启动时读,靠的就是这条注解)。
+    既有缺口:只改 Redis 口令时 login 不滚动(go-svc 的 ConfigMap 都没有内容哈希)。
+  - **不要用 `kubectl rollout undo` 关排队或关限流**:它只退 Pod 模板(镜像与注解),不退 ConfigMap,排队 / 限流照旧开着。止血一律走下一条。
+  - **① 止血要直接调 `k8s_deploy.ps1`**:`dev_tools.ps1`、`k8s_image.ps1`、`k8s_zone_rollback.ps1` 都**不透传**这两个参数(它们透传 `-ReleaseProfile`,`auto` 随档位开启),
+    事故时在包装入口上找不到参数。`zone-up` 会按本次参数重写该 zone 的全部工作负载,所以除了加上的 `off`,其余参数(模式、地址、Ingress、档位、镜像 tag)必须与该 zone
+    上一次部署一致;镜像 tag 留空 = 当前工作树的 git 短 sha,不一定是线上那一版,要显式给。环境变量照常设好(`MMORPG_REDIS_PASSWORD` 等;关排队时不要求排队密钥):
+    ```powershell
+    # 先加 -DryRun 跑一遍,核对 "PeakShaving:" 那一行是 off、渲染无误,再去掉 -DryRun 执行。只关一项就只给那一项。
+    pwsh -File tools/scripts/k8s_deploy.ps1 -Command zone-up -ZoneName <zone> -ZoneId <id> -ReleaseProfile prod `
+      -NodeImage <线上 node 镜像> -GoSvcRegistry <registry> -GoSvcTag <线上 tag> -JavaSvcRegistry <registry> -JavaSvcTag <线上 tag> `
+      <该 zone 上一次部署的其余参数照传> `
+      -GatewayRateLimit off -LoginQueue off
+    ```
+    关排队后,在排玩家轮询 `/api/queue-status` 拿到 EXPIRED(gateway 回 410),丢掉 token 重走 assign-gate 快速通道。是否给包装入口补透传待拍板(规格 §10 #9)。
+  - **② K8s 上实际的排队 leader 锁键是 `dispatcher:lock:login_queue:zone:<id>:zone:<id>`**:ConfigMap 写的 `DispatcherLockKey` 已带本 zone,而 login(G1b 之后)把配置值当前缀,
+    再拼一次 `:zone:<Node.ZoneId>`。每个 zone 仍恰好一个 leader,选主日志是 `[loginqueue] elected dispatcher leader zone=<id> key=dispatcher:lock:login_queue:zone:<id>:zone:<id>`。
+    排查时按这个键查;`docs/ops/login-queue-stress-runbook.md` 与 `docs/design/login-queue-2026-05.md` 里的 `dispatcher:lock:login_queue:zone:<id>` 是本地 / compose 默认配置下的键名,
+    在 K8s 上不适用。显式带 zone 是纵深防御:`kubectl rollout undo` 把 login 退回 G1b 之前的镜像、ConfigMap 仍开着排队时,旧镜像原样使用配置值,仍按 zone 隔离。
+  - **③ 对已在运行的 staging / prod zone 首次打开排队之前**,先核对该 zone 当前在线(各 gate 在 etcd NodeInfo 里自报的 `player_count` 之和,login 算余量用的就是它)
+    低于 `LoginQueueZoneCapacity`(5000)。否则排队一开,新登录全部入队,直到在线降到 5000 以下才出队,dispatcher 不会因此报错(规格 R20)。
+    超过的先调大常量(见下一条),或先只开 gateway 限流(`-LoginQueue off`)。
+  - **调阈值**:阈值只在常量表 `$script:PeakShavingLaunchTier`(不设覆盖参数);改常量后重跑部署,gateway / login 按指纹自动滚动。限流阈值另外要**清桶**:
+    Bucket4j 只在桶不存在时按新配置建桶,而持续有流量时桶的 TTL 一直被刷新、不会过期,所以改 rps / burst 后旧桶一直按旧配置跑
+    (推断:`AssignGateRateLimiter` 用 `build(key, supplier)`、没有配置替换,依 Bucket4j 8.x 语义,未实测)。在维护窗口对共享 Redis(`redis.<InfraNamespace>`,
+    staging / prod 要带口令)执行:
+    ```bash
+    redis-cli --scan --pattern 'rl:zone:*' | xargs -r redis-cli DEL
+    redis-cli --scan --pattern 'rl:ip:*'   | xargs -r redis-cli DEL
+    ```
+    代价:清空后每个桶会重新拿到一次满额 burst。只是关掉限流不需要清:`rl:*` 空闲约 1h(外加重填到满的时间)后按 TTL 自然过期。
+  - **观测缺口**:gateway 没有限流指标;K8s 的 login ConfigMap 没有 `Prometheus` 段,`login_queue_*` 在集群里抓不到。开服当天看日志与回包码:gateway 启动时打
+    `Bucket4j Redis client -> …`(限流开)或 `RateLimiter disabled …`(关);Redis 出错时逐请求 WARN `rate-limit fail-open due to backend error`;login 的选主日志见 ②。
+  - 已知风险(保护不了 EnterGame、IP 桶误伤 NAT、先扣 zone 令牌再判 IP 桶、排队轮询压在共享 Redis 等)见设计稿 §十一。
 
 ## Important Notes
 
@@ -702,7 +772,7 @@ friend 与 trade 同形:全局池服务(`$GoSvcCatalogue.friend`,`Global = $true
   分号前是**本次 zones 配置**的账(Z = zones 配置 ∪ `-ZoneId`,E_z 取 Z−1,其余取规划档),分号后是规划档。`headroom` 为负就是超限。
   按仓库当前值手算(未运行):`zones.json` 两个 zone 时是 `zones=2 steady=592 peak=948 max_connections=1800 headroom=852; plan zones=4 peak=1620 headroom=180`。
   zones 配置文件缺席时 Z 取 1,行尾多一个 `zones_config=missing`。
-- **超限**:任一份峰值大于 `max_connections` 时打一条 WARNING,文本以 `MySQL连接总账超限:` 开头(这一段刻意不留空格:控制台会按窗口宽度在空格处折行,留了就 grep 不到)。**只警告、不阻断部署**(是否升级为门禁待拍板)。两条出路:
+- **超限**:任一份峰值大于 `max_connections` 时打一条英文 WARNING,文本以 `[MySQLConnectionLedger]OverLimit:` 开头(这一段刻意不留空格:控制台会按窗口宽度在空格处折行,留了就 grep 不到)。**只警告、不阻断部署**(是否升级为门禁待拍板)。两条出路:
   1. 先完成 TiDB Phase 1(`docs/design/tidb-phase1-and-launch-readiness.md`);
   2. 重做 `Get-MysqlConnectionPlan`,并同步 `mysql.yaml` 的 `max_connections` 与内存 limits。不要只把 `max_connections` 调大:
      内存按每条连接约 1MiB 常驻估算(待实测),limits 不跟上就是把 1040 换成 OOMKill,整台 MySQL 重启。

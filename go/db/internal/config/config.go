@@ -134,7 +134,33 @@ type DatabaseConfig struct {
 
 	// Migration 是迁移入口(cmd/migrate)的超时与锁参数,业务服务不读。
 	Migration MigrationConfig `json:"Migration,optional"`
+
+	// 以下五个是业务连接池(本 zone 库与按需打开的落点库)的驱动级超时与会话级锁等待上限
+	// (docs/design/db-task-store-unavailable-deferral.md §8)。迁移入口与建库不用这组值:DDL 可能合法地跑几分钟。
+	//
+	// 写 0 或不写取默认值;写负数表示不设(驱动不加超时 / 不发对应的 SET)。
+	//
+	// 为什么要求会话级锁等待短于读超时:客户端读超时只关掉自己这一侧的连接,已经发给 MySQL 的语句不会被撤回,
+	// 可能在之后才生效,而此时排序锁已经释放、任务已经进了重试队列,先后顺序就乱了。让服务端先以 1205
+	// 自行中止排队中的语句,超时之后就不会留下在途语句(条件写落地之前,这是唯一能关掉这个窗口的办法)。
+	DialTimeoutSeconds  int `json:"DialTimeoutSeconds,optional"`
+	ReadTimeoutSeconds  int `json:"ReadTimeoutSeconds,optional"`
+	WriteTimeoutSeconds int `json:"WriteTimeoutSeconds,optional"`
+	// SessionLockWaitSeconds 对应 MySQL 的 lock_wait_timeout(元数据锁等待,默认一年)。
+	// TiDB 是否接受这个会话变量没有核实;切 TiDB 时若连接因它失败,写 -1 关掉。
+	SessionLockWaitSeconds int `json:"SessionLockWaitSeconds,optional"`
+	// SessionInnodbLockWaitSeconds 对应 innodb_lock_wait_timeout(行锁等待,MySQL 默认 50 秒)。
+	SessionInnodbLockWaitSeconds int `json:"SessionInnodbLockWaitSeconds,optional"`
 }
+
+// 业务连接池的超时与锁等待默认值(秒)。会话级锁等待必须短于读超时,理由见 DatabaseConfig 的注释。
+const (
+	DefaultDatabaseDialTimeoutSeconds           = 5
+	DefaultDatabaseReadTimeoutSeconds           = 30
+	DefaultDatabaseWriteTimeoutSeconds          = 30
+	DefaultDatabaseSessionLockWaitSeconds       = 10
+	DefaultDatabaseSessionInnodbLockWaitSeconds = 10
+)
 
 // MigrationConfig 是 DDL 迁移的安全阀参数。
 //
@@ -294,6 +320,24 @@ func (c *Config) Normalize() {
 	}
 	if m.AdvisoryLockSeconds <= 0 {
 		m.AdvisoryLockSeconds = DefaultMigrationAdvisoryLockSeconds
+	}
+
+	// 业务连接池:0 取默认,负数保留(表示不设),所以这里只补 0。
+	d := &c.ServerConfig.Database
+	if d.DialTimeoutSeconds == 0 {
+		d.DialTimeoutSeconds = DefaultDatabaseDialTimeoutSeconds
+	}
+	if d.ReadTimeoutSeconds == 0 {
+		d.ReadTimeoutSeconds = DefaultDatabaseReadTimeoutSeconds
+	}
+	if d.WriteTimeoutSeconds == 0 {
+		d.WriteTimeoutSeconds = DefaultDatabaseWriteTimeoutSeconds
+	}
+	if d.SessionLockWaitSeconds == 0 {
+		d.SessionLockWaitSeconds = DefaultDatabaseSessionLockWaitSeconds
+	}
+	if d.SessionInnodbLockWaitSeconds == 0 {
+		d.SessionInnodbLockWaitSeconds = DefaultDatabaseSessionInnodbLockWaitSeconds
 	}
 
 	b := &c.ServerConfig.BlobGuard

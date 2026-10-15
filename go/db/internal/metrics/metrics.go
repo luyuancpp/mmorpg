@@ -124,6 +124,45 @@ var (
 		Help:      "Placement stores (MySQL databases) currently open in this db process, including the zone's own database.",
 	})
 
+	// 以下五个是 L-04(docs/design/db-task-store-unavailable-deferral.md §3.7)的观测面:任务为什么没落库、
+	// 多少进了死信、重试队列有多长、哪类库在冷却。label 全是封闭集合,不含 player_id(AGENTS.md §9)。
+
+	// taskDeferredTotal 在 deferFailedTask 一处计数,覆盖所有延后原因。
+	taskDeferredTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Subsystem: subsystem,
+		Name:      "task_deferred_total",
+		Help:      "Tasks pushed back to the retry queue instead of completing. op: read | write | unknown. reason: conn_refused | conn_lost | store_readonly | store_busy | store_cooldown | store_open_failed | ordering_lock_busy | lease_lost | placement_frozen | placement_moved | expand_lock_busy | redis_unavailable | other.",
+	}, []string{"op", "reason"})
+
+	// taskDeadLetterTotal 在每个死信写入点成功写入后计数。
+	taskDeadLetterTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Subsystem: subsystem,
+		Name:      "task_dead_letter_total",
+		Help:      "Tasks moved into kafka:dead:queue:{topic}. reason: budget_exhausted | malformed_payload | legacy_payload | invalid_partition | ordering_incomparable | stale_topic | missing_required | poison.",
+	}, []string{"reason"})
+
+	// taskReadAbandonedTotal 记读任务被放弃的次数:读不改数据,不进死信。
+	taskReadAbandonedTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Subsystem: subsystem,
+		Name:      "task_read_abandoned_total",
+		Help:      "Read tasks answered with a failure or dropped instead of retried / dead-lettered. reason: store_unavailable (failure receipt sent at once) | budget_exhausted (dropped after the retry budget).",
+	}, []string{"reason"})
+
+	// retryQueueLength 是重试链路三个列表的长度,重试循环每拍采样一次。ready 与 dead 是同一 topic 所有实例共用的
+	// 列表,每个副本报的是同一个数,告警里取 max;processing 是本实例自己的列表。
+	retryQueueLength = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Subsystem: subsystem,
+		Name:      "retry_queue_length",
+		Help:      "Length of the retry lists, sampled every retry tick. queue: ready (shared by the topic) | processing (this instance) | dead (shared by the topic).",
+	}, []string{"queue"})
+
+	// storeCooldownStores 是此刻处于库级冷却(确认整库不可达)的库个数,按连接池类别分。
+	storeCooldownStores = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Subsystem: subsystem,
+		Name:      "store_cooldown_stores",
+		Help:      "Databases currently cooling down after a probe confirmed they are unreachable. pool: home | extra_zone | extra_non_zone.",
+	}, []string{"pool"})
+
 	registerOnce sync.Once
 )
 
@@ -141,8 +180,108 @@ func register() {
 	registerOnce.Do(func() {
 		prometheus.MustRegister(taskStageSeconds, taskResultTotal, blobBytes, blobRowBytes, blobGuardTotal,
 			ownerEpochGuardTotal, staleOwnerWriteRejectedTotal,
-			placementGuardTotal, placementStoreOpenTotal, placementOpenStores)
+			placementGuardTotal, placementStoreOpenTotal, placementOpenStores,
+			taskDeferredTotal, taskDeadLetterTotal, taskReadAbandonedTotal, retryQueueLength, storeCooldownStores)
+		// 计数器序列从无到 1 时 increase() 会漏掉第一次(deploy/k8s/owner-epoch-alerts.yaml 记过这条经验),
+		// 所以告警要用到的取值先以 0 建出序列。
+		for _, op := range []string{"read", "write"} {
+			for _, reason := range deferReasons {
+				taskDeferredTotal.WithLabelValues(op, reason).Add(0)
+			}
+		}
+		for _, reason := range deadLetterReasons {
+			taskDeadLetterTotal.WithLabelValues(reason).Add(0)
+		}
+		for _, reason := range []string{ReadAbandonedStoreUnavailable, ReadAbandonedBudgetExhausted} {
+			taskReadAbandonedTotal.WithLabelValues(reason).Add(0)
+		}
+		for _, pool := range []string{PoolHome, PoolExtraZone, PoolExtraNonZone} {
+			storeCooldownStores.WithLabelValues(pool).Set(0)
+		}
 	})
+}
+
+// 延后原因(db_task_deferred_total 的 reason)。前四个与 storeerr.Kind.Reason() 的取值一一对应。
+const (
+	DeferConnRefused      = "conn_refused"       // 连接数满(1040 / 1203 / 1226):服务端在应答,只拒新连接
+	DeferConnLost         = "conn_lost"          // 连接断开或连不上
+	DeferStoreReadOnly    = "store_readonly"     // 库只读(主从切换期间)
+	DeferStoreBusy        = "store_busy"         // 锁等待超时、死锁、TiDB 写冲突
+	DeferStoreCooldown    = "store_cooldown"     // 库在冷却期内(已确认不可达),选库时直接挡回
+	DeferStoreOpenFailed  = "store_open_failed"  // 按需打开落点库失败
+	DeferOrderingLockBusy = "ordering_lock_busy" // 排序锁被上一任持有者占着
+	DeferLeaseLost        = "lease_lost"         // 写完之后发现排序锁已失租
+	DeferPlacementFrozen  = "placement_frozen"   // 搬库冻结中
+	DeferPlacementMoved   = "placement_moved"    // 落库后复核发现落点变了
+	DeferExpandLockBusy   = "expand_lock_busy"   // 扩容锁被占
+	DeferRedisUnavailable = "redis_unavailable"  // Redis 侧的网络错误或超时(守卫、选库、复核、缓存)
+	DeferOther            = "other"              // 其它:SQL 的非存储侧错误、编程错误等,照旧耗预算
+)
+
+var deferReasons = []string{
+	DeferConnRefused, DeferConnLost, DeferStoreReadOnly, DeferStoreBusy, DeferStoreCooldown, DeferStoreOpenFailed,
+	DeferOrderingLockBusy, DeferLeaseLost, DeferPlacementFrozen, DeferPlacementMoved, DeferExpandLockBusy,
+	DeferRedisUnavailable, DeferOther,
+}
+
+// 进死信的原因(db_task_dead_letter_total 的 reason)。
+const (
+	DeadLetterBudgetExhausted      = "budget_exhausted"      // 写任务的重试次数用完
+	DeadLetterMalformedPayload     = "malformed_payload"     // 重试载荷解不出来
+	DeadLetterLegacyPayload        = "legacy_payload"        // 旧格式重试载荷,没有可信的原始分区
+	DeadLetterInvalidPartition     = "invalid_partition"     // 原始分区越界或为负
+	DeadLetterOrderingIncomparable = "ordering_incomparable" // 游标不可比(跨分区等)
+	DeadLetterStaleTopic           = "stale_topic"           // 写所在 topic 的 zone 不是玩家的 home_zone
+	DeadLetterMissingRequired      = "missing_required"      // Placement.Required=true 且无落点记录的写
+	DeadLetterPoison               = "poison"                // Kafka 消息解不出 DBTask
+)
+
+var deadLetterReasons = []string{
+	DeadLetterBudgetExhausted, DeadLetterMalformedPayload, DeadLetterLegacyPayload, DeadLetterInvalidPartition,
+	DeadLetterOrderingIncomparable, DeadLetterStaleTopic, DeadLetterMissingRequired, DeadLetterPoison,
+}
+
+// 读任务被放弃的原因(db_task_read_abandoned_total 的 reason)。
+const (
+	ReadAbandonedStoreUnavailable = "store_unavailable" // 库打不开或在冷却期内:立即回失败回执
+	ReadAbandonedBudgetExhausted  = "budget_exhausted"  // 重试次数用完:丢弃,不进死信
+)
+
+// 重试链路的三个列表(db_retry_queue_length 的 queue)。
+const (
+	RetryQueueReady      = "ready"
+	RetryQueueProcessing = "processing"
+	RetryQueueDead       = "dead"
+)
+
+// CountTaskDeferred 记一次延后。op 为 read / write / unknown,reason 用 Defer* 常量。
+func CountTaskDeferred(op, reason string) {
+	register()
+	taskDeferredTotal.WithLabelValues(op, reason).Inc()
+}
+
+// CountTaskDeadLetter 记一次进死信,reason 用 DeadLetter* 常量。
+func CountTaskDeadLetter(reason string) {
+	register()
+	taskDeadLetterTotal.WithLabelValues(reason).Inc()
+}
+
+// CountReadAbandoned 记一次读任务被放弃,reason 用 ReadAbandoned* 常量。
+func CountReadAbandoned(reason string) {
+	register()
+	taskReadAbandonedTotal.WithLabelValues(reason).Inc()
+}
+
+// SetRetryQueueLength 更新一个重试列表的长度,queue 用 RetryQueue* 常量。
+func SetRetryQueueLength(queue string, n int64) {
+	register()
+	retryQueueLength.WithLabelValues(queue).Set(float64(n))
+}
+
+// SetStoreCooldown 更新某类库此刻在冷却的个数,pool 用 Pool* 常量。
+func SetStoreCooldown(pool string, n int) {
+	register()
+	storeCooldownStores.WithLabelValues(pool).Set(float64(n))
 }
 
 // 落点选库的 outcome label 取值(player-storage-placement.md §6.2 表的 outcome 列 + §14 的 recheck_moved)。

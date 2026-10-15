@@ -323,15 +323,17 @@ var (
 	removeObserverFn = removeObserverRPC
 )
 
-// addObserverRPC 是 addObserverFn 的生产实现。
-func addObserverRPC(endpoint string, req *battlepb.AddObserverRequest) (*battlepb.AddObserverResponse, error) {
+// addObserverRPC 是 addObserverFn 的生产实现。截止时间取「调用方 ctx 的剩余时间」与 addObserverTimeout
+// 二者中较早的那个:WatchBattle 传请求 ctx,请求截止之后不再挂观众。客户端那时已经收到超时,gate 也已放行
+// 同一会话的下一条请求,截止之后才绑上的观战会让顺序乱掉(docs/design/client-request-ordering.md §6.1)。
+func addObserverRPC(ctx context.Context, endpoint string, req *battlepb.AddObserverRequest) (*battlepb.AddObserverResponse, error) {
 	conn, err := discovery.DialEndpoint(endpoint)
 	if err != nil {
 		return nil, fmt.Errorf("连接 battle 节点失败: %w", err)
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), addObserverTimeout)
+	callCtx, cancel := context.WithTimeout(ctx, addObserverTimeout)
 	defer cancel()
-	return battlepb.NewBattleNodeClient(conn).AddObserver(ctx, req)
+	return battlepb.NewBattleNodeClient(conn).AddObserver(callCtx, req)
 }
 
 // removeObserverRPC 是 removeObserverFn 的生产实现。
@@ -348,15 +350,18 @@ func removeObserverRPC(endpoint string, req *battlepb.RemoveObserverRequest) err
 
 // addObserver 调 battle 节点挂观众。返回 roomMissing=true 表示 battle 回
 // "房间不存在"(战斗已收尾),调用方据此懒剔除索引;其余错误(节点定位失败/
-// RPC 失败/满员/观众是参战者/签不出票)不动索引。
-func addObserver(svcCtx *svc.ServiceContext, battleNodeId uint32, battleId, observerId uint64,
+// RPC 失败/满员/观众是参战者/签不出票)不动索引。ctx 是请求 ctx,见 addObserverRPC。
+func addObserver(ctx context.Context, svcCtx *svc.ServiceContext, battleNodeId uint32, battleId, observerId uint64,
 	observerName string, routing *battlepb.BattleRouting,
 ) (roomMissing bool, err error) {
 	endpoint, err := svcCtx.BattleNodes.EndpointOfNode(battleNodeId)
 	if err != nil {
 		return false, fmt.Errorf("定位 battle 节点失败(node=%d): %w", battleNodeId, err)
 	}
-	resp, err := addObserverFn(endpoint, &battlepb.AddObserverRequest{
+	if err := ctx.Err(); err != nil {
+		return false, fmt.Errorf("请求已截止,不再挂观众: %w", err)
+	}
+	resp, err := addObserverFn(ctx, endpoint, &battlepb.AddObserverRequest{
 		BattleId:         battleId,
 		ObserverPlayerId: observerId,
 		Routing:          routing,

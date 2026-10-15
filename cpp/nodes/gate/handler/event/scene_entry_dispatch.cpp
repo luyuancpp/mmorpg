@@ -85,8 +85,8 @@ int64_t ElapsedMs(const Clock::time_point from, const Clock::time_point to)
 //     会被丢掉(player_message_utils.cpp)。所以要求"已连上,且在**当前**连接上握过手"。
 // 这些都是"本地确定没发出去",调用方可以安全地补发(I1);一旦返回 kSent 就不再重发。
 //
-// playerId / homeZoneId / ownerEpoch 一律从会话取:路由到达时已把最新决策写进会话,BindSession 晚到的补发
-// 读不到路由事件,只能从会话取。sceneId 显式传入:会话的 sceneId 只在转发成功后才提交,调用时还是旧图。
+// playerId / homeZoneId / ownerEpoch / loginGeneration 一律从会话取:路由到达时已把最新决策写进会话,BindSession
+// 晚到的补发读不到路由事件,只能从会话取。sceneId 显式传入:会话的 sceneId 只在转发成功后才提交,调用时还是旧图。
 SceneForwardResult ForwardPlayerToScene(const SessionId sessionId, const uint32_t enterGsType,
                                         const uint64_t sceneNodeEntityId, const SessionInfo &session,
                                         const uint64_t sceneId)
@@ -128,13 +128,17 @@ SceneForwardResult ForwardPlayerToScene(const SessionId sessionId, const uint32_
     // 0 也照发——它是 scene 侧"兼容窗口/未知"的信号,gate 擅自填进程 zone 会把 fail-closed 变成静默落错库。
     req.set_home_zone_id(session.homeZoneId);
     req.set_owner_epoch(session.ownerEpoch);
+    // 登录代次盖章(scene-enter-session-fence.md §4):会话上记的是本会话、本角色见过的最高值,scene 自发的
+    // 换图路由(0)也由它盖章。0 同样照发 —— 上游未带代次,由 scene 栅栏按版本 0 规则处理,gate 不补值。
+    req.set_login_generation(session.loginGeneration);
 
     (*rpcClient)->CallRemoteMethod(ScenePlayerEnterGameNodeMessageId, req);
 
     LOG_DEBUG << "ForwardPlayerToScene: sent PlayerEnterGameNode to scene_node=" << sceneNodeEntityId
               << " player=" << playerId << " session=" << sessionId
               << " scene_id=" << sceneId << " enter_gs_type=" << enterGsType
-              << " home_zone_id=" << session.homeZoneId << " owner_epoch=" << session.ownerEpoch;
+              << " home_zone_id=" << session.homeZoneId << " owner_epoch=" << session.ownerEpoch
+              << " login_generation=" << session.loginGeneration;
     return SceneForwardResult::kSent;
 }
 
@@ -211,8 +215,9 @@ void AttemptAndSettle(const SessionId sessionId, SessionInfo &session, const Clo
 
     // 客户端连接不可用(断开中、被顶号 kick 的 shutdown、LeaseExpired 的 forceClose、我们自己放弃之后):
     // 撤销欠账,不转发、不提交。对每一次尝试都生效,包括路由刚到时那一次 —— 给一条正在关闭的连接转发进场
-    // 只会制造一个马上要退出的实体,还可能把在用实体从新会话手里抢走(scene 侧 PlayerEnterGameNode
-    // 在任何 epoch 判定之前先摘会话)。
+    // 只会制造一个马上要退出的实体。跨会话抢绑定现在由 scene 的登录代次栅栏拦在入口(代次更旧、同代异会话、
+    // 对方有代次而本请求没有都拒,scene-enter-session-fence.md §5),但当前身份没有代次(经旧版上游登录)时
+    // scene 仍放行,所以这里照旧不发,作为第一道防线。
     const auto clientConn = session.conn.lock();
     if (!clientConn || !clientConn->connected())
     {

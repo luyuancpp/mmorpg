@@ -10,6 +10,7 @@
 #include <set>
 #include <string>
 #include <tuple>
+#include <utility>
 #include <vector>
 
 #include "network/broadcast_target_codec.h"
@@ -1269,6 +1270,214 @@ TEST(SceneEntryLateLogin, LoginBoundWhileDebtPendingDoesNotBuildASecondEntry)
     session.lastSceneRoute = SceneRouteTarget{42, 7, 1001};
     session.pendingSceneEntry = gate_scene_route::BeginPendingSceneEntry(SceneRouteTarget{42, 7, 1001}, kT0);
     EXPECT_FALSE(gate_scene_route::EntryForLateLoginBinding(session, kT0).has_value());
+}
+
+// ===========================================================================
+// 登录代次盖章(docs/design/scene-enter-session-fence.md §4):gate 只抬高、不丢弃。
+//
+// 会话上记的是"本会话、本角色见过的最高代次",ForwardPlayerToScene 转发时从会话取值盖章。
+// 被测的是 scene_route_helper.h 的纯函数;"Bind 先到、按旧路由补发"用 EntryForLateLoginBinding +
+// AttemptPendingSceneEntry 复现 OnLoginTypeBound 的调用序,转发器在转发那一刻读会话上的代次,
+// 与生产转发器从会话取值同形。判新旧是 scene 栅栏的事,不在本组范围(cross_zone_test 的 EnterFence*)。
+// ===========================================================================
+
+namespace
+{
+    using gate_scene_route::PlayerChange;
+
+    // 两条登录链铸出的代次(毫秒下限量级):上一次登录 < 本次登录。
+    constexpr uint64_t kPreviousLoginGeneration = 1790000000000ull;
+    constexpr uint64_t kNewLoginGeneration = 1790000005000ull;
+    constexpr uint32_t kLoginReplace = 3; // LOGIN_REPLACE
+
+    // (enterType, 转发那一刻会话上的代次)
+    using StampedForward = std::pair<uint32_t, uint64_t>;
+} // namespace
+
+// 同一角色只抬高:迟到的低代次、旧版 login 与 scene 自发路由带的 0,都不能把会话拉低。
+TEST(LoginGeneration, MergeWithinSamePlayerOnlyRaises)
+{
+    EXPECT_EQ(kNewLoginGeneration, gate_scene_route::MergeLoginGeneration(kPreviousLoginGeneration, kNewLoginGeneration,
+                                                                          PlayerChange::kSamePlayer));
+    EXPECT_EQ(kNewLoginGeneration, gate_scene_route::MergeLoginGeneration(kNewLoginGeneration, kPreviousLoginGeneration,
+                                                                          PlayerChange::kSamePlayer));
+    EXPECT_EQ(kNewLoginGeneration,
+              gate_scene_route::MergeLoginGeneration(kNewLoginGeneration, 0, PlayerChange::kSamePlayer));
+}
+
+// 换了角色以新角色的值为准,哪怕更小:上一个角色的代次与新角色无关。
+TEST(LoginGeneration, MergeAcrossPlayersTakesIncoming)
+{
+    EXPECT_EQ(kPreviousLoginGeneration,
+              gate_scene_route::MergeLoginGeneration(kNewLoginGeneration, kPreviousLoginGeneration,
+                                                     PlayerChange::kAnotherPlayer));
+    EXPECT_EQ(0u, gate_scene_route::MergeLoginGeneration(kNewLoginGeneration, 0, PlayerChange::kAnotherPlayer));
+}
+
+// 同一条连接上换了角色:上一个角色更高的代次不能沿用,否则新角色的入场盖着别人的章。
+TEST(LoginGeneration, BindingAnotherPlayerResetsToIncomingGeneration)
+{
+    SessionInfo session;
+    session.playerId = kPlayerA;
+    session.sessionVersion = 3;
+    session.loginGeneration = kNewLoginGeneration;
+
+    EXPECT_TRUE(gate_scene_route::ApplyLoginBinding(session, kPlayerB, 1, kPreviousLoginGeneration, kLoginReplace));
+    EXPECT_EQ(kPlayerB, session.playerId);
+    EXPECT_EQ(1u, session.sessionVersion);
+    EXPECT_EQ(kPreviousLoginGeneration, session.loginGeneration);
+    EXPECT_EQ(kLoginReplace, session.pendingEnterGsType);
+}
+
+// 同一角色只抬高;不带代次的 Bind(旧版 login 的空 payload)不把已知代次抹成 0。
+// 会话版本号照旧无条件写入,enterGsType 为 0 时不动待入场的登录类型、也不要求调用方补发。
+TEST(LoginGeneration, BindingSamePlayerOnlyRaises)
+{
+    SessionInfo session;
+    session.playerId = kPlayerA;
+    session.loginGeneration = kPreviousLoginGeneration;
+
+    EXPECT_TRUE(gate_scene_route::ApplyLoginBinding(session, kPlayerA, 4, kNewLoginGeneration, kLoginReplace));
+    EXPECT_EQ(kNewLoginGeneration, session.loginGeneration);
+    EXPECT_EQ(4u, session.sessionVersion);
+
+    EXPECT_FALSE(gate_scene_route::ApplyLoginBinding(session, kPlayerA, 5, 0, 0));
+    EXPECT_EQ(kNewLoginGeneration, session.loginGeneration);
+    EXPECT_EQ(5u, session.sessionVersion);
+    EXPECT_EQ(kLoginReplace, session.pendingEnterGsType);
+}
+
+// 会话还没绑角色(kInvalidGuid)按同一角色处理:不带玩家的路由先记下的代次不被 Bind 拉低。
+TEST(LoginGeneration, BindingUnboundSessionCountsAsSamePlayer)
+{
+    SessionInfo session;
+    gate_scene_route::ApplyRouteIdentity(session, /*routePlayerId=*/0, 1, 5, kNewLoginGeneration);
+    ASSERT_EQ(kInvalidGuid, session.playerId);
+
+    EXPECT_TRUE(gate_scene_route::ApplyLoginBinding(session, kPlayerA, 1, kPreviousLoginGeneration, kLoginReplace));
+    EXPECT_EQ(kPlayerA, session.playerId);
+    EXPECT_EQ(kNewLoginGeneration, session.loginGeneration);
+}
+
+// 设计 §4"为什么 Bind 也要带":在进过场的连接上重登,Bind 先于本次路由到达,gate 立即按上一次的
+// lastSceneRoute 补发并消费登录类型;随后本次路由同场景同节点,判重复、不再转发。所以那次补发在转发的那一刻
+// 就必须已带本次登录的代次 —— ApplyLoginBinding 先于 OnLoginTypeBound 写会话。若顺序反了,下面盖的是上一代,
+// 中间被别的设备顶过号时 scene 会判陈旧,合法重登进不了场。
+TEST(LoginGeneration, LateBindingResendCarriesNewGenerationAtForwardTime)
+{
+    SessionInfo session;
+    session.playerId = kPlayerA;
+    session.loginGeneration = kPreviousLoginGeneration;
+    session.sceneId = 1001;
+    session.SetEntityId(eNodeType::SceneNodeService, 9);
+    session.lastSceneRoute = SceneRouteTarget{kPlayerA, 7, 1001};
+
+    ASSERT_TRUE(gate_scene_route::ApplyLoginBinding(session, kPlayerA, 2, kNewLoginGeneration, kLoginReplace));
+
+    // OnLoginTypeBound 的纯逻辑:没有欠账时按 lastSceneRoute 建一笔并立即尝试。
+    auto entry = gate_scene_route::EntryForLateLoginBinding(session, kT0);
+    ASSERT_TRUE(entry.has_value());
+    session.pendingSceneEntry = *entry;
+
+    std::vector<StampedForward> stamped;
+    auto resolve = [](uint32_t) { return std::optional<uint64_t>{9}; };
+    auto forward = [&](const uint32_t enterType, uint64_t, uint64_t)
+    {
+        stamped.emplace_back(enterType, session.loginGeneration);
+        return SceneForwardResult::kSent;
+    };
+    EXPECT_EQ(SceneEntryAttempt::kApplied,
+              gate_scene_route::AttemptPendingSceneEntry(session, kT0, resolve, forward));
+    EXPECT_EQ((std::vector<StampedForward>{StampedForward{kLoginReplace, kNewLoginGeneration}}), stamped);
+
+    // 本次登录的路由随后才到:同场景同节点判重复、不再转发;代次取 max,不回退。
+    gate_scene_route::ApplyRouteIdentity(session, kPlayerA, 1, 5, kNewLoginGeneration);
+    session.pendingSceneEntry = gate_scene_route::BeginPendingSceneEntry(SceneRouteTarget{kPlayerA, 7, 1001}, kT0);
+    EXPECT_EQ(SceneEntryAttempt::kApplied,
+              gate_scene_route::AttemptPendingSceneEntry(session, kT0, resolve, forward));
+    EXPECT_EQ(1u, stamped.size());
+    EXPECT_EQ(kNewLoginGeneration, session.loginGeneration);
+}
+
+// 路由属于别的角色(同连接已换角色,这条路由随后被玩家围栏撤销):代次与玩家都不动;
+// 归属 zone 与 epoch 仍按原语义无条件覆盖。
+TEST(LoginGeneration, ForeignRouteLeavesGenerationAlone)
+{
+    SessionInfo session;
+    session.playerId = kPlayerB;
+    session.loginGeneration = kPreviousLoginGeneration;
+    session.homeZoneId = 1;
+    session.ownerEpoch = 5;
+
+    gate_scene_route::ApplyRouteIdentity(session, kPlayerA, 2, 9, kNewLoginGeneration);
+    EXPECT_EQ(kPlayerB, session.playerId);
+    EXPECT_EQ(kPreviousLoginGeneration, session.loginGeneration);
+    EXPECT_EQ(2u, session.homeZoneId);
+    EXPECT_EQ(9u, session.ownerEpoch);
+}
+
+// 本角色的路由:代次取 max;homeZoneId / ownerEpoch 是"本次路由决策",照旧整体覆盖(可以变小)。
+// 不带玩家(0)的路由按本角色处理。
+TEST(LoginGeneration, OwnRouteRaisesGenerationAndStillOverwritesZoneAndEpoch)
+{
+    SessionInfo session;
+    session.playerId = kPlayerA;
+    session.loginGeneration = kPreviousLoginGeneration;
+
+    gate_scene_route::ApplyRouteIdentity(session, kPlayerA, 2, 9, kNewLoginGeneration);
+    EXPECT_EQ(kNewLoginGeneration, session.loginGeneration);
+    EXPECT_EQ(2u, session.homeZoneId);
+    EXPECT_EQ(9u, session.ownerEpoch);
+
+    gate_scene_route::ApplyRouteIdentity(session, kPlayerA, 3, 4, kPreviousLoginGeneration);
+    EXPECT_EQ(kNewLoginGeneration, session.loginGeneration);
+    EXPECT_EQ(3u, session.homeZoneId);
+    EXPECT_EQ(4u, session.ownerEpoch);
+
+    gate_scene_route::ApplyRouteIdentity(session, 0, 3, 4, kNewLoginGeneration + 1);
+    EXPECT_EQ(kPlayerA, session.playerId);
+    EXPECT_EQ(kNewLoginGeneration + 1, session.loginGeneration);
+}
+
+// 会话还没绑角色时采用路由的玩家与代次(BindSession 可能尚未到达);已绑角色后不改写玩家(原语义)。
+TEST(LoginGeneration, RouteOnUnboundSessionAdoptsPlayerAndGeneration)
+{
+    SessionInfo session;
+    gate_scene_route::ApplyRouteIdentity(session, kPlayerA, 2, 9, kNewLoginGeneration);
+    EXPECT_EQ(kPlayerA, session.playerId);
+    EXPECT_EQ(kNewLoginGeneration, session.loginGeneration);
+
+    gate_scene_route::ApplyRouteIdentity(session, kPlayerB, 2, 9, kNewLoginGeneration + 1);
+    EXPECT_EQ(kPlayerA, session.playerId);
+    EXPECT_EQ(kNewLoginGeneration, session.loginGeneration);
+}
+
+// 只抬高、不丢弃(设计 §4"为什么 gate 不据此丢路由"):一次失败的重登已把会话代次抬高,之后同连接上
+// scene 自发的换图路由带 0,仍照常转发,盖的是会话上的较高值。
+TEST(LoginGeneration, LowerGenerationRouteIsStillForwarded)
+{
+    SessionInfo session;
+    session.playerId = kPlayerA;
+    session.loginGeneration = kNewLoginGeneration;
+    session.sceneId = 1001;
+    session.SetEntityId(eNodeType::SceneNodeService, 9);
+
+    const SceneRouteTarget travel{kPlayerA, 7, 2001};
+    gate_scene_route::ApplyRouteIdentity(session, travel.playerId, 1, 5, /*loginGeneration=*/0);
+    EXPECT_EQ(kNewLoginGeneration, session.loginGeneration);
+
+    session.pendingSceneEntry = gate_scene_route::BeginPendingSceneEntry(travel, kT0);
+    std::vector<StampedForward> stamped;
+    auto resolve = [](uint32_t) { return std::optional<uint64_t>{9}; };
+    auto forward = [&](const uint32_t enterType, uint64_t, uint64_t)
+    {
+        stamped.emplace_back(enterType, session.loginGeneration);
+        return SceneForwardResult::kSent;
+    };
+    EXPECT_EQ(SceneEntryAttempt::kApplied,
+              gate_scene_route::AttemptPendingSceneEntry(session, kT0, resolve, forward));
+    EXPECT_EQ((std::vector<StampedForward>{StampedForward{0u, kNewLoginGeneration}}), stamped);
+    EXPECT_EQ(2001u, session.sceneId);
 }
 
 int main(int argc, char **argv)

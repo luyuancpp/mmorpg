@@ -11,8 +11,8 @@ package store_test
 //  5. 锁等待封顶(innodb_lock_wait_timeout=1):ctx 超时的请求不会把同一围栏分片上的建角拖成 50s;
 //  6. 围栏分片生效 / 过期、懒建分片行;meta 缺失 / 不可写一律 fail-closed;
 //  7. 导入的分类、幂等与 rev 规则;沿聚簇键 (route_shard, player_id) 的键集翻页无漏无重;
-//  8. G1a:建池探针 P4 拒绝 chk_route_shard 不生效的库;错片行只有 ScanRoutes 看得见;按键读走 PRIMARY range;
-//     可选的真 TiDB 用例(聚簇、P4、tidb-prepare 预切与幂等)。
+//  8. G1a:建池探针 P4 拒绝 chk_route_shard 不生效的库、P5 拒绝按另一个模数建的表;错片行只有 ScanRoutes 看得见;
+//     按键读走 PRIMARY range;可选的真 TiDB 用例(聚簇、P4 / P5、tidb-prepare 预切与幂等)。
 //
 // 前提:P4 让所有建 route store 的用例要求 MySQL ≥ 8.0.16(更老的版本上是 FAIL 不是 SKIP)。
 //
@@ -856,6 +856,44 @@ func TestRouteStore_ProbeRejectsUnenforcedShardCheck(t *testing.T) {
 	newRouteStore(t, db)
 }
 
+// TestRouteStore_ProbeRejectsTableBuiltWithAnotherShardModulus:按另一个模数建的 player_route(手工把建表语句里
+// chk_route_shard 的模数换成 16 / 128 重建,模拟跑过 d5cbb8a8e 迁移的库)过得了迁移的形状守卫与 P4,建池时的正向
+// 探针 P5 必须认出来 → ErrRouteShardModulusMismatch,探针行必须已回滚。两个模数各撞一行:16 拒 (63, 63)
+// (63 % 16 = 15),128 拒 (0, 64)(64 % 128 = 64)。最后换回按本二进制模数建的表,建池通过(对照:正确的库上不误报)。
+func TestRouteStore_ProbeRejectsTableBuiltWithAnotherShardModulus(t *testing.T) {
+	db := storetest.NewMigratedDB(t)
+	skipUnlessMySQLEnforcesCheck(t, db)
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
+
+	modulusExpr := func(modulus uint32) string {
+		return "`player_id` % " + strconv.FormatUint(uint64(modulus), 10) + ")"
+	}
+	current := modulusExpr(placement.RouteRowShards)
+	require.Equalf(t, 1, strings.Count(store.PlayerRouteBootstrapDDLForTest, current),
+		"建表语句里找不到唯一一处 %q:用例没法按别的模数重建", current)
+	rebuild := func(t *testing.T, modulus uint32) {
+		t.Helper()
+		_, err := db.Raw.ExecContext(ctx, "DROP TABLE player_route")
+		require.NoError(t, err)
+		_, err = db.Raw.ExecContext(ctx, strings.Replace(store.PlayerRouteBootstrapDDLForTest, current, modulusExpr(modulus), 1))
+		require.NoError(t, err)
+	}
+
+	for _, modulus := range []uint32{16, 128} {
+		rebuild(t, modulus)
+		// 迁移照样通过(CREATE TABLE IF NOT EXISTS 不碰已有的表,形状守卫只查列名与主键):这正是要靠探针认出来的原因。
+		require.NoErrorf(t, store.MigrateSchema(ctx, db.Cfg, store.MigrateOptions{}), "按 %% %d 建的表,迁移不该报错", modulus)
+		_, err := store.NewRouteStore(db.Cfg, routeTestOpts())
+		require.ErrorIsf(t, err, store.ErrRouteShardModulusMismatch, "按 %% %d 建的表必须被建池探针 P5 认出", modulus)
+		assert.EqualValuesf(t, 0, db.Count(t, store.PlayerRouteTableName, ""), "按 %% %d 建的表:探针行必须已回滚", modulus)
+	}
+
+	rebuild(t, placement.RouteRowShards)
+	newRouteStore(t, db)
+	assert.EqualValues(t, 0, db.Count(t, store.PlayerRouteTableName, ""), "模数一致时 P5 的两行真的插进去过,必须已回滚")
+}
+
 // TestRouteStore_ShardMismatchRowFailsClosed(评审 M1):CHECK 关掉期间被写进来的错片行 (3, 6) ——
 //
 //	① 全表键集扫描 ScanRoutes 看得见它,报 ErrRouteShardMismatch;
@@ -1055,7 +1093,9 @@ func TestRouteStore_TiDBClusteredShardsAndPresplit(t *testing.T) {
 	rows.Close()
 	assert.Equal(t, map[string]string{"player_route": "CLUSTERED", "zone_merge_fence": "CLUSTERED"}, pkTypes)
 
-	st := newRouteStore(t, db) // P4 在 TiDB 上同样要拿到 3819 + chk_route_shard
+	// P4 在 TiDB 上同样要拿到 3819 + chk_route_shard;P5 接着在同一个事务里插两行合法行 —— TiDB 在 P4 的语句失败
+	// 之后事务能否继续用【未核实】,这里就是取证:建池失败时原样回报报错文本。
+	st := newRouteStore(t, db)
 
 	const zone uint32 = 7
 	for i := uint64(0); i < 40; i++ {

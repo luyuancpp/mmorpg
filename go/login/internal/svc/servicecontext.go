@@ -578,10 +578,11 @@ func (c *ServiceContext) SetNodeId(nodeId int64) {
 //
 // 寻址与两道 fail-closed 守卫都在 buildGateCommandMessage 里(gate_command.go),
 // 这里只负责组业务字段并把算好的 (topic, partition) 原样交给生产者。
+// loginGeneration 是本条登录链铸出的代次,随 BindSessionEvent 下发给 gate(scene-enter-session-fence.md §4)。
 func (s *ServiceContext) SendBindSessionToGate(gateID string, gateInstanceID string,
-	sessionID uint32, playerID uint64, sessionVersion uint32, enterGsType uint32) error {
+	sessionID uint32, playerID uint64, sessionVersion uint32, enterGsType uint32, loginGeneration uint64) error {
 
-	msg, err := buildBindSessionCommand(gateID, gateInstanceID, sessionID, playerID, enterGsType)
+	msg, err := buildBindSessionCommand(gateID, gateInstanceID, sessionID, playerID, sessionVersion, enterGsType, loginGeneration)
 	if err != nil {
 		return err
 	}

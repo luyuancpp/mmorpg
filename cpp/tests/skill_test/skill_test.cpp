@@ -11,6 +11,10 @@
 #include "table/proto/tip/skill_error_tip.pb.h"
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "player/system/player_skill.h"
+#include "player/comp/player_frozen_comp.h"
+#include "modules/scene/comp/scene_comp.h"
+#include "proto/common/component/player_comp.pb.h"
+#include "macros/return_define.h"
 #include <thread_context/ecs_context.h>
 #include "../test_config_helper.h"
 
@@ -39,6 +43,22 @@ protected:
 
     void TearDown() override {
         tlsEcs.actorRegistry.clear(); // Clean up the thread-local storage after each test
+        tlsEcs.sceneRegistry.clear();
+    }
+
+    // 放进指定场景的玩家:ResolveSkillTarget 要求目标是 Player/Npc 且与施法者同场景。
+    static entt::entity CreatePlayerInScene(entt::entity scene) {
+        const auto player = tlsEcs.actorRegistry.create();
+        tlsEcs.actorRegistry.emplace<Player>(player);
+        tlsEcs.actorRegistry.emplace<SceneEntityComp>(player, SceneEntityComp{ scene });
+        return player;
+    }
+
+    static ::ReleaseSkillRequest TargetedRequest(entt::entity target) {
+        ::ReleaseSkillRequest request;
+        request.set_skill_table_id(1); // 1 号技能是指定目标类(targeting_mode 首项为 1 → kTargetedSkill)
+        request.set_target_id(entt::to_integral(target));
+        return request;
     }
 
     std::unique_ptr<SkillSystem> skillUtil;
@@ -54,7 +74,8 @@ TEST_F(SkillUtilTest, ValidateTarget_InvalidTarget_ReturnsError) {
     EXPECT_CALL(*mockSkillTable, GetSkillTable(request.skill_table_id()))
         .WillRepeatedly(Return(nullptr)); // Mock implementation
 
-    uint32_t result = skillUtil->ValidateTarget(&request);
+    const entt::entity caster = tlsEcs.actorRegistry.create();
+    uint32_t result = skillUtil->ValidateTarget(caster, &request);
     EXPECT_EQ(result, kSkillInvalidTargetId);
 }
 
@@ -71,8 +92,89 @@ TEST_F(SkillUtilTest, ValidateTarget_ValidTarget_ReturnsOk) {
     EXPECT_CALL(*mockSkillTable, GetSkillTable(request.skill_table_id()))
         .WillRepeatedly(Return(&tableSkill));
 
-    uint32_t result = skillUtil->ValidateTarget(&request);
+    const entt::entity caster = tlsEcs.actorRegistry.create();
+    uint32_t result = skillUtil->ValidateTarget(caster, &request);
     EXPECT_EQ(result, kSuccess);
+}
+
+// actorRegistry 由本节点所有场景共用:客户端填别的场景里玩家的实体整数,
+// valid() 照样为真。指定目标类技能必须拒绝不在施法者场景里的目标。
+TEST_F(SkillUtilTest, ValidateTarget_TargetInAnotherScene_ReturnsError) {
+    const auto casterScene = tlsEcs.sceneRegistry.create();
+    const auto otherScene = tlsEcs.sceneRegistry.create();
+    const auto caster = CreatePlayerInScene(casterScene);
+    const auto sameSceneTarget = CreatePlayerInScene(casterScene);
+    const auto otherSceneTarget = CreatePlayerInScene(otherScene);
+
+    auto sameSceneRequest = TargetedRequest(sameSceneTarget);
+    EXPECT_EQ(kSuccess, skillUtil->ValidateTarget(caster, &sameSceneRequest));
+
+    auto otherSceneRequest = TargetedRequest(otherSceneTarget);
+    EXPECT_EQ(kSkillInvalidTargetId, skillUtil->ValidateTarget(caster, &otherSceneRequest));
+}
+
+TEST_F(SkillUtilTest, ValidateTarget_FrozenTarget_ReturnsError) {
+    const auto scene = tlsEcs.sceneRegistry.create();
+    const auto caster = CreatePlayerInScene(scene);
+    const auto target = CreatePlayerInScene(scene);
+    tlsEcs.actorRegistry.emplace<PlayerFrozenComp>(target);
+
+    auto request = TargetedRequest(target);
+    EXPECT_EQ(kSkillInvalidTargetId, skillUtil->ValidateTarget(caster, &request));
+}
+
+// 对自己施放的技能结束时,施法者表里的这一条只能删一次(以前先按 key 删、再用失效迭代器删)。
+TEST_F(SkillUtilTest, HandleSkillFinish_SelfTargetedContextIsErasedOnce) {
+    const auto caster = tlsEcs.actorRegistry.create();
+    auto& contexts = tlsEcs.actorRegistry.emplace<SkillContextCompMap>(caster);
+    auto context = std::make_shared<SkillContextComp>();
+    context->set_skillid(42);
+    context->set_caster(entt::to_integral(caster));
+    context->set_target(entt::to_integral(caster));
+    contexts.emplace(context->skillid(), context);
+
+    SkillSystem::HandleSkillFinish(caster, 42);
+
+    EXPECT_TRUE(tlsEcs.actorRegistry.get<SkillContextCompMap>(caster).empty());
+}
+
+// 冷却表缺失时必须拒绝施法;以前静默放行,冷却从未生效。
+TEST_F(SkillUtilTest, CheckCooldown_MissingCooldownComp_ReturnsError) {
+    const entt::entity caster = tlsEcs.actorRegistry.create();
+    SkillTable tableSkill;
+    tableSkill.set_cooldown_id(1);
+
+    EXPECT_EQ(kServiceUnavailable, skillUtil->CheckCooldown(caster, &tableSkill));
+}
+
+// handler 直接写进 response 的拒绝码(ReleaseSkill 就是这么写的)不能被空的 TLS tip 覆盖成「成功」。
+TEST(TransferErrorMessageTest, KeepsDirectResponseErrorWhenTlsTipIsEmpty) {
+    tlsEcs.globalRegistry.get_or_emplace<TipInfoMessage>(tlsEcs.GlobalEntity()).Clear();
+    ::ReleaseSkillResponse response;
+    response.mutable_error_message()->set_id(kSkillInvalidTargetId);
+
+    TRANSFER_ERROR_MESSAGE(&response);
+
+    EXPECT_EQ(kSkillInvalidTargetId, response.error_message().id());
+}
+
+TEST(TransferErrorMessageTest, MovesTlsTipIntoResponseAndClearsIt) {
+    tlsEcs.globalRegistry.get_or_emplace<TipInfoMessage>(tlsEcs.GlobalEntity()).set_id(kSkillCooldownNotReady);
+    ::ReleaseSkillResponse response;
+
+    TRANSFER_ERROR_MESSAGE(&response);
+
+    EXPECT_EQ(kSkillCooldownNotReady, response.error_message().id());
+    EXPECT_EQ(0u, tlsEcs.globalRegistry.get<TipInfoMessage>(tlsEcs.GlobalEntity()).id());
+}
+
+// 全新 EcsContext 的 actorRegistry 已让 0 号句柄退役(协议里 0 表示「没有目标」),
+// 第一个 actor 不能再是整数 0。用局部对象而不是 tlsEcs,结果不受其它用例执行顺序影响。
+TEST(EcsContextTest, FirstActorEntityIntegralIsNotZero) {
+    EcsContext fresh;
+    const auto first = fresh.actorRegistry.create();
+    EXPECT_NE(0u, entt::to_integral(first));
+    EXPECT_FALSE(fresh.actorRegistry.valid(entt::entity{ 0 }));
 }
 
 TEST_F(SkillUtilTest, CheckCooldown_CooldownActive_ReturnsError) {

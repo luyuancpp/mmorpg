@@ -106,6 +106,15 @@ protected:
         Inventory().ForEachItem([&count](Guid, const ItemComp& item) { count += item.size(); });
         return count;
     }
+    // 销毁后立刻重建:entt 复用刚释放的槽位并把 version 加一,得到一个高 32 位非 0 的句柄。
+    void RecreatePlayerOnRecycledSlot() {
+        tlsEcs.actorRegistry.destroy(player);
+        player = tlsEcs.actorRegistry.create();
+        tlsEcs.actorRegistry.emplace<Guid>(player, Guid{424242});
+        auto& bags = tlsEcs.actorRegistry.emplace<PlayerBagsComp>(player);
+        for (auto& bag : bags.bags) bag.SetPlayerGuid(Guid{424242});
+        ASSERT_EQ(kSuccess, PlayerMissionSystem::Initialize(player));
+    }
     entt::entity player{entt::null};
 };
 
@@ -216,6 +225,33 @@ TEST_F(PlayerMissionSystemTest, AutoRewardFailureRemainsClaimableAndDoesNotRepea
     retry.set_entity(entt::to_integral(player));
     retry.set_mission_id(4);
     MissionEventHandler::OnMissionAwardEventHandler(retry);
+    EXPECT_EQ(4u, ItemCount());
+}
+
+// 生产代码里没有任何地方调用 dispatcher.update():任务完成的副作用必须在完成的那一次
+// 调用里落地。以前三类事件全部 enqueue,线上永远不派发,自动发奖与任务链全部失效。
+TEST_F(PlayerMissionSystemTest, AutoRewardIsGrantedWithoutDispatcherUpdate) {
+    Inventory().SetCapacityForRestore(4);
+    ASSERT_EQ(kSuccess, PlayerMissionSystem::Accept(player, 0, 4, 1000));
+    Progress(1);
+    ASSERT_TRUE(Missions().IsComplete(4));
+    EXPECT_FALSE(Missions().IsClaimable(4));
+    EXPECT_EQ(4u, ItemCount());
+    EXPECT_EQ(0u, tlsEcs.dispatcher.size<OnMissionAwardEvent>());
+    EXPECT_EQ(0u, tlsEcs.dispatcher.size<AcceptMissionEvent>());
+    EXPECT_EQ(0u, tlsEcs.dispatcher.size<ConditionEvent>());
+}
+
+// 任务事件里的实体整数曾被截成 uint32,丢掉 version:槽位复用过的玩家在 handler 里
+// valid() 判否,自动发奖被静默丢弃。
+TEST_F(PlayerMissionSystemTest, AutoRewardReachesPlayerOnRecycledEntitySlot) {
+    RecreatePlayerOnRecycledSlot();
+    ASSERT_NE(0u, entt::to_version(player));
+    Inventory().SetCapacityForRestore(4);
+    ASSERT_EQ(kSuccess, PlayerMissionSystem::Accept(player, 0, 4, 1000));
+    Progress(1);
+    ASSERT_TRUE(Missions().IsComplete(4));
+    EXPECT_FALSE(Missions().IsClaimable(4));
     EXPECT_EQ(4u, ItemCount());
 }
 

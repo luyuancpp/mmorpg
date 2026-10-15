@@ -1000,6 +1000,122 @@ function Assert-GrpcClientDeadlineBudget {
 	Write-Host ("GrpcClient deadline budget OK (C++ deadline >= Go zrpc Timeout + 2000): {0}{1}" -f ($targetSources.Keys -join ', '), $exemptedNote)
 }
 
+<#
+.SYNOPSIS
+	路由服预算链的纯判定:每个路由目标 Go 服务的 zrpc Timeout + 1000 ≤ 路由服 ForwardTimeoutMs
+	(docs/design/client-request-ordering.md §5.2 不变式 I1)。返回违例文本数组,空 = 通过。
+
+.DESCRIPTION
+	为什么要这条:gate 对同一会话的路由类请求单飞,上一条「观察到完成」才放下一条。路由服在 ForwardTimeoutMs 时
+	回超时信封,如果目标服务的 handler 那时还没超时,它会继续跑完并提交,晚于 gate 已经放行的下一条落地,顺序就乱了。
+	目标 Timeout 比 ForwardTimeoutMs 至少短 1000,路由服回超时的时候目标 handler 的 ctx 已经取消,不会再发出新的写。
+
+	-ForwardTimeoutMsRaw:路由服 yaml 的 ForwardTimeoutMs 原文。
+	-Targets:有序字典,键 = 路由目标 ENodeType 枚举名,值 = @{ Source = 来源描述; Scalars = 服务 yaml 拍平表 }。
+	未写 Timeout 按 go-zero 默认 2000 计;Timeout 0 / 非正整数一律违例(0 = 不装超时拦截器,服务端没有上界)。
+	出现 MethodTimeouts 一律违例:本判定不逐方法核对,个别方法可能高于 ForwardTimeoutMs,宁可拒绝也不静默放行。
+#>
+function Get-RouterForwardBudgetViolations {
+	param(
+		[Parameter(Mandatory = $true)][AllowEmptyString()][string]$ForwardTimeoutMsRaw,
+		[Parameter(Mandatory = $true)][System.Collections.IDictionary]$Targets
+	)
+
+	# 余量与 go-zero 默认值是契约本身(client-request-ordering.md §5.2),不是调参旋钮,所以不开参数。
+	$marginMs = 1000
+	$goZeroDefaultServerTimeoutMs = 2000
+
+	$violations = New-Object System.Collections.Generic.List[string]
+	$forward = [long]0
+	if (-not [long]::TryParse($ForwardTimeoutMsRaw, [ref]$forward) -or $forward -le 0) {
+		$violations.Add("路由服 ForwardTimeoutMs='$ForwardTimeoutMsRaw' 必须是正整数毫秒(fail-closed:不替你猜一个超时)")
+		return $violations.ToArray()
+	}
+
+	foreach ($target in $Targets.Keys) {
+		$source = $Targets[$target].Source
+		$serviceScalars = $Targets[$target].Scalars
+
+		# -like 不分大小写:go-zero 的配置键同样不分大小写。
+		$methodKeys = @($serviceScalars.Keys | Where-Object { $_ -like 'MethodTimeouts*' })
+		if ($methodKeys.Count -gt 0) {
+			$violations.Add("${target}:$source 出现 MethodTimeouts($($methodKeys -join ', ')),本门禁不逐方法核对,个别方法可能高于路由服 ForwardTimeoutMs $forward;先扩展 Get-RouterForwardBudgetViolations 再部署")
+			continue
+		}
+
+		$serverTimeout = [long]$goZeroDefaultServerTimeoutMs
+		$serverTimeoutText = "未写 Timeout(go-zero 默认 $goZeroDefaultServerTimeoutMs)"
+		if ($serviceScalars.Contains('Timeout')) {
+			$timeoutRaw = [string]$serviceScalars['Timeout']
+			if (-not [long]::TryParse($timeoutRaw, [ref]$serverTimeout) -or $serverTimeout -le 0) {
+				$violations.Add("${target}:$source 的 Timeout='$timeoutRaw' 必须是正整数(0 = go-zero 不装超时拦截器,服务端没有上界,路由服回超时之后 handler 仍可能提交)")
+				continue
+			}
+			$serverTimeoutText = "Timeout $serverTimeout"
+		}
+
+		$requiredForward = $serverTimeout + $marginMs
+		if ($forward -lt $requiredForward) {
+			$violations.Add("${target}:路由服 ForwardTimeoutMs $forward < $source $serverTimeoutText + $marginMs = $requiredForward(调小该服务的 Timeout;调大 ForwardTimeoutMs 要连带核对路由服 Timeout 与 gate deadline,见 client-request-ordering.md §5.2)")
+		}
+	}
+	return $violations.ToArray()
+}
+
+<#
+.SYNOPSIS
+	部署门禁:读路由服 yaml 与各路由目标 Go 服务的 yaml,按 Get-RouterForwardBudgetViolations 核对,不满足即 throw 并逐项点名。
+
+.DESCRIPTION
+	与 Assert-GrpcClientDeadlineBudget 同一位置调用(写路径入口、先于任何集群写操作)。K8s 上这些服务的 go-svc ConfigMap
+	都从服务 yaml 镜像 Timeout / ForwardTimeoutMs,所以核对服务 yaml 就是核对集群里生效的值。
+
+	路由目标 = 路由表里客户端协议、非 Battle 的目标节点类型(go/client_rpc_router/internal/svc TargetNodeTypes)。
+	TeamNodeService 寄宿在 match 进程里,与 MatchNodeService 共用 match_service.yaml 的 Timeout,单列一行便于点名。
+	新增一个路由目标服务时,要在下面的表里加一行;漏加只会少核对一个服务,不会误拒。
+#>
+function Assert-RouterForwardBudget {
+	$routerYaml = 'go/client_rpc_router/etc/client_rpc_router.yaml'
+	$targetSources = [ordered]@{
+		LoginNodeService  = 'go/login/etc/login.yaml'
+		MatchNodeService  = 'go/match/etc/match_service.yaml'
+		TeamNodeService   = 'go/match/etc/match_service.yaml'
+		ChatNodeService   = 'go/chat/etc/chat.yaml'
+		FriendNodeService = 'go/friend/etc/friend.yaml'
+		GuildNodeService  = 'go/guild/etc/guild.yaml'
+		TradeNodeService  = 'go/trade/etc/trade.yaml'
+	}
+
+	# 与 Assert-GrpcClientDeadlineBudget 同一条纪律:文件缺席就 throw,不替你猜一个超时。
+	$readText = {
+		param([string]$RelativePath)
+		$full = Join-Path $RepoRoot ($RelativePath -replace '/', [System.IO.Path]::DirectorySeparatorChar)
+		if (-not (Test-Path -LiteralPath $full)) {
+			throw "路由服预算核对失败:找不到 $RelativePath(fail-closed:不替你猜一个超时)"
+		}
+		return [string](Get-Content -LiteralPath $full -Raw)
+	}
+
+	$routerScalars = (ConvertFrom-YamlToFlatMap -Text (& $readText $routerYaml)).Scalars
+	$forwardRaw = ''
+	if ($routerScalars.Contains('ForwardTimeoutMs')) { $forwardRaw = [string]$routerScalars['ForwardTimeoutMs'] }
+
+	$targets = [ordered]@{}
+	foreach ($target in $targetSources.Keys) {
+		$source = $targetSources[$target]
+		$targets[$target] = @{
+			Source  = $source
+			Scalars = (ConvertFrom-YamlToFlatMap -Text (& $readText $source)).Scalars
+		}
+	}
+	$violations = @(Get-RouterForwardBudgetViolations -ForwardTimeoutMsRaw $forwardRaw -Targets $targets)
+	if ($violations.Count -gt 0) {
+		throw ("路由服预算链不成立,拒绝部署(目标 zrpc Timeout + 1000 ≤ 路由服 ForwardTimeoutMs," +
+			"docs/design/client-request-ordering.md §5.2 I1):`n  - " + ($violations -join "`n  - "))
+	}
+	Write-Host ("Router forward budget OK (Go zrpc Timeout + 1000 <= router ForwardTimeoutMs {0}): {1}" -f $forwardRaw, ($targetSources.Keys -join ', '))
+}
+
 # ─────────────────────────────────────────────────────────────────
 # MySQL 连接总账(G2b;docs/PROGRESS.md 2026-10-12「落点多库连接拓扑核算」)
 # ─────────────────────────────────────────────────────────────────
@@ -1652,6 +1768,11 @@ function Show-PeakShavingPlan {
 	$gw = if ($script:GatewayRateLimitOn) { 'on' } else { 'off' }
 	$lq = if ($script:LoginQueueOn) { 'on' } else { 'off' }
 	Write-Host "PeakShaving: gateway_rate_limit=${gw}(-GatewayRateLimit $GatewayRateLimit) login_queue=${lq}(-LoginQueue $LoginQueue) profile=$ReleaseProfile initial values (pending stress-test validation) zone=$($t.ZoneDefaultRps)/s burst=$($t.ZoneDefaultBurst) ip=$($t.IpRps)/s burst=$($t.IpBurst) cooldown=$($t.AccountCooldownMs)ms queue_capacity=$($t.LoginQueueZoneCapacity)/zone"
+	# 常量表自检提前到这里(本函数先于 Initialize-InjectedSecrets 与任何 kubectl 写操作):Get-GatewayRateLimitSettings 的
+	# 「rps ≥ 1、burst ≥ rps、冷却非负」本来要到生成 gateway ConfigMap 时才求值,那时同一 zone 的 node ConfigMap / gate 等已经 apply 过了。
+	if ($script:GatewayRateLimitOn -and (Test-ZoneGatewayDeployed)) {
+		$null = Get-GatewayRateLimitSettings
+	}
 	if ($ReleaseProfile -ne 'dev' -and -not $script:GatewayRateLimitOn -and (Test-ZoneGatewayDeployed)) {
 		Write-Warning "[PeakShaving]GatewayRateLimit=off(ReleaseProfile=${ReleaseProfile}):gateway rate limiting disabled. Use only for incident mitigation or baseline stress tests; this flag is not persistent and the next deployment enables it unless overridden."
 	}
@@ -6639,13 +6760,16 @@ if ($Command -in @("zone-up", "all-up", "infra-up")) {
 	# 集群外入口的组合校验(含 -LoginDevPasswordAuth 只许 dev 档)排在密钥解析之前:非 dev 档传该开关时,
 	# 报的是门禁原因,而不是"缺环境变量"。battle 工作负载渲染与集群现状预检(只读 kubectl)也在这里,早于任何写操作。
 	Assert-ClientEntryDeployPreflight
-	# 削峰(G4b)的开关与起步值打一行,关着 / 没配可信代理时告警;只打印、不阻断。排在密钥解析之前:
+	# 削峰(G4b)的开关与起步值打一行,关着 / 没配可信代理时告警;只打印、不阻断(唯一例外:常量表被改坏时 throw)。排在密钥解析之前:
 	# 缺 MMORPG_LOGIN_QUEUE_TOKEN_SECRET 被拒时,输出里已经有「login_queue=on」这一行可对照。
 	Show-PeakShavingPlan
 	Initialize-InjectedSecrets
 	# C++ gRPC deadline ≥ 目标 Go 服务 zrpc Timeout + 2000(上游比下游宽)。放在任何集群写操作之前:
 	# 不成立就整条拒绝,不留半截部署(见 Assert-GrpcClientDeadlineBudget)。
 	Assert-GrpcClientDeadlineBudget
+	# 路由服预算链:路由目标 Go 服务 zrpc Timeout + 1000 ≤ 路由服 ForwardTimeoutMs(client-request-ordering.md §5.2 I1)。
+	# 不成立时 gate 放行同一会话的下一条请求后,上一条仍可能晚落地;同样先于任何集群写操作。
+	Assert-RouterForwardBudget
 	# MySQL 连接池(G2b),同样放在任何集群写操作之前:
 	#   - Assert-MysqlPoolMirror:ConfigMap 要镜像的池参数不合格(非正整数 / idle > open)就整条拒绝,不留半截部署;
 	#   - Write-MysqlConnectionLedger:打印 "MySQL connection ledger" 一行;峰值超过 max_connections 只告警、不阻断。

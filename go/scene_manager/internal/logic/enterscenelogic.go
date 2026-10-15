@@ -98,14 +98,21 @@ func errResp(code uint32, msg string) *scene_manager.EnterSceneResponse {
 }
 
 func enterSceneRequestFingerprint(in *scene_manager.EnterSceneRequest) (string, error) {
-	// correlation_id 不参与去重:它是"这一次发送"的标识,每次发送都不同;若进指纹,同一
-	// request_id 的合法重试会被判成 IdempotencyConflict。只对副本清零,不改入参(外层 defer
-	// 还要从 in 回显它)。为 0 时直接序列化——proto3 不序列化零值,不带它的请求(login)
-	// 指纹与加字段之前逐字节相同。
+	// correlation_id 与 login_generation 都不参与去重,进指纹都会把同一 request_id 的合法重试
+	// 判成 IdempotencyConflict:
+	//   - correlation_id 是"这一次发送"的标识,每次发送都不同;
+	//   - login_generation 是 login 每条登录链铸一次的值(scene-enter-session-fence.md §3.3),
+	//     login 对同一 request_id 的重试会重走登录链、铸出新值。命中缓存时重放首次应答、不补发
+	//     路由是安全的:scene 上已放行的代次允许落后于会话记录(§3.1 G4),新代次已由 Bind 带给
+	//     gate、由 gate 盖章转发(§4)。
+	// 只对副本清零,不改入参(外层 defer 还要从 in 回显 correlation_id,路由事件要原样带
+	// login_generation)。两者都为 0 时直接序列化 —— proto3 不序列化零值,不带它们的请求
+	// 指纹与加字段之前逐字节相同,滚动升级期间新旧实例写下的去重条目互认。
 	target := in
-	if in.CorrelationId != 0 {
+	if in.CorrelationId != 0 || in.LoginGeneration != 0 {
 		clone := proto.Clone(in).(*scene_manager.EnterSceneRequest)
 		clone.CorrelationId = 0
+		clone.LoginGeneration = 0
 		target = clone
 	}
 	payload, err := (proto.MarshalOptions{Deterministic: true}).Marshal(target)
@@ -1324,6 +1331,11 @@ func defaultWorldConfID() (uint64, bool) {
 // homeZoneID 与 ownerEpoch 必须随事件走,不能让 C++ 节点自己去 Redis / data_service
 // 读:两次改派挨得近时,先派的节点若在后一次推进之后才读,会读到后一次的值并与
 // 后派的节点一样自认为最新 —— 双主。事件里带的值才是「这一次路由决策」的值。
+//
+// login_generation 原样取 in.LoginGeneration,scene_manager 不校验、不补值
+// (scene-enter-session-fence.md §4):裁决在 scene 的入场栅栏;scene 自发的 EnterScene
+// 不带代次(0),由 gate 按会话见过的最高值盖章。同节点顶号时 owner_epoch 不变,
+// 这个值是 scene 区分新旧两次登录的唯一依据,所以同一落点重连那条路由也必须带本次请求的值。
 func (l *EnterSceneLogic) routePlayerToGate(in *scene_manager.EnterSceneRequest, nodeId string, sceneId uint64,
 	homeZoneID uint32, ownerEpoch uint64) error {
 	targetNodeId, err := strconv.ParseUint(nodeId, 10, 32)
@@ -1336,12 +1348,13 @@ func (l *EnterSceneLogic) routePlayerToGate(in *scene_manager.EnterSceneRequest,
 	}
 
 	event := &kafkacontracts.RoutePlayerEvent{
-		SessionId:    in.SessionId,
-		TargetNodeId: uint32(targetNodeId),
-		SceneId:      sceneId,
-		PlayerId:     in.PlayerId,
-		HomeZoneId:   homeZoneID,
-		OwnerEpoch:   ownerEpoch,
+		SessionId:       in.SessionId,
+		TargetNodeId:    uint32(targetNodeId),
+		SceneId:         sceneId,
+		PlayerId:        in.PlayerId,
+		HomeZoneId:      homeZoneID,
+		OwnerEpoch:      ownerEpoch,
+		LoginGeneration: in.LoginGeneration,
 	}
 	payload, err := proto.Marshal(event)
 	if err != nil {
@@ -1372,7 +1385,7 @@ func (l *EnterSceneLogic) routePlayerToGate(in *scene_manager.EnterSceneRequest,
 		return fmt.Errorf("push to Kafka topic %s partition %d: %w", msg.Topic, msg.Partition, err)
 	}
 
-	l.Logger.Infof("Pushed RoutePlayer to Kafka %s/%d for player %d (gate %s) -> node %s home_zone=%d owner_epoch=%d",
-		msg.Topic, msg.Partition, in.PlayerId, in.GateId, nodeId, homeZoneID, ownerEpoch)
+	l.Logger.Infof("Pushed RoutePlayer to Kafka %s/%d for player %d (gate %s) -> node %s home_zone=%d owner_epoch=%d login_generation=%d",
+		msg.Topic, msg.Partition, in.PlayerId, in.GateId, nodeId, homeZoneID, ownerEpoch, in.LoginGeneration)
 	return nil
 }

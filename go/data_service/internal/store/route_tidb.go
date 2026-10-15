@@ -159,9 +159,12 @@ const (
 	routeTiDBPrefixSplitStride = placement.RouteRowShards / routeTiDBPrefixSplitPoints
 )
 
-// 编译期断言:行片数必须能被切点间隔整除,否则最后一段比别的段窄、切点数也不再是 routeTiDBPrefixSplitPoints。
-// 不整除时下标不是 0,是「常量下标越界」的编译错误;切点数比行片数还多时间隔为 0,是「除以零」的编译错误。
-var _ = [1]struct{}{}[placement.RouteRowShards%routeTiDBPrefixSplitStride]
+// 编译期断言:切点数必须整除行片数。整除时「间隔 × 切点数 = 行片数」,每段恰好 routeTiDBPrefixSplitStride 片、
+// 切点恰好 routeTiDBPrefixSplitPoints 个;不整除时要么最后一段比别的段窄(切点数取 7:间隔 9,最后一段只剩 1 片),
+// 要么切点数对不上(切点数取 24:间隔 2,循环切出 32 个点 —— 只断言「间隔整除行片数」拦不住这一种)。
+// 不整除时下标不是 0,是「常量下标越界」的编译错误(切点数比行片数还多时余数就是行片数本身,同样越界);
+// 切点数为 0 时上面的间隔是「除以零」的编译错误。
+var _ = [1]struct{}{}[placement.RouteRowShards%routeTiDBPrefixSplitPoints]
 
 // routeTiDBPrepareStatements 是纯函数:zones / storages 已规范化(去重升序、范围合法)。顺序即执行顺序:
 //

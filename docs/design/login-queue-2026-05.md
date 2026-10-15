@@ -196,6 +196,11 @@ queue_token = base64url( JSON{kind:"queue", q:queueId, z:zoneId, e:expireTs} | "
 ```
 
 - **HMAC 用什么 secret**:复用 `GateTokenSecret`。理由:queue token 和 gate token 的 wire-format 完全不同(JSON+HMAC vs proto-marshalled GateTokenPayload),不可能互相 confuse;一个 secret 旋转就同时换两套,运维更简。
+- **(2026-10-14 事实更正,上一条已过时、原文保留)**:代码早已按用途拆出独立的 `Secrets.QueueToken`,**不再复用 `GateTokenSecret`**(`go/login/internal/config/secrets.go` 包注释与 `SecretsConf.QueueToken`;拆开的理由是「任何一侧泄露,另一侧同时失守」)。规则以 `ResolveSecrets` 为准:
+  - 生产模式(`Mode` 不是 dev / test,空串也按生产)下 `Queue.Enabled=true` 就必须配 QueueToken,主密钥与附加密钥都要 ≥32 字节、不是占位串,且主密钥不得与 GateToken、InternalAuth 相同,否则 login 拒绝启动;
+  - 只有宽松档(dev / test)在没配 QueueToken 时回落 GateToken 的密钥,并打一条 WARN;
+  - 每把密钥是「主密钥 + 只验不签的 `Additional`」,支持三段式不停服轮换(新密钥先进 Additional → 提升为主密钥 → 摘掉旧密钥)。
+  - K8s 上由环境变量 `MMORPG_LOGIN_QUEUE_TOKEN_SECRET` 注入,见 §10「K8s 上的取值」。
 - **过期检查**:`ParseAndVerifyQueueToken` 看 `e` 字段,过期立返 EXPIRED,不查 Redis。
 - **伪造防御**:HMAC + 1h TTL。即使攻击者拿到队列容量信息,也无法伪造 queueId 跳过排队(签名匙在服务端)。
 
@@ -217,7 +222,9 @@ if lock.IsLocked() {
 
 - 同 zone 的非 leader 副本每 10s `TryLock` 重试,被动备份
 - Lost lease(Redis 抖动 / 手动 kill)→ heartbeat 触发 `drainCancel`,goroutine 退出
-- 新 leader 在 ≤ TTL(30s)内接管。期间 admit 暂停,客户端继续轮询不报错(只是 rank 不动)
+- 新 leader 在 ≤ TTL + TTL/3(约 40s)内接管:leader 被 kill -9 时锁剩余 TTL 在 20~30s 之间(心跳每 10s 续到 30s),键过期后备机最多再等一个 10s 重试周期。期间 admit 暂停,客户端继续轮询不报错(只是 rank 不动)
+- 任期内 panic(出队路径的代码缺陷,2026-10-14 起):一个任期(`leadOneTerm`)的收尾——停心跳、leader 指标归 0、放锁——全走 defer,panic 展开时照样执行;safego 按任期接住(点位 `login.queue_dispatcher_term`)后本副本退避 10s 再参选,同 zone 备机可以接手。此前收尾是直线代码,panic 后心跳 goroutine 还在续期,副本成了「持锁不出队」的僵尸 leader,该 zone 队列只进不出
+- leader 指标按电平重发:leader 每拍重发 1,备机每轮抢锁失败重发 0。login 起服时 dispatcher 早于 go-zero 指标开关打开就已当选,那时写的样本被丢弃,只在边沿写一次的话冷启动后整个任期没有这条序列
 
 **为什么不用 etcd 选举**:RedisLocker 已在项目里跑了几个月没翻车,加 etcd lease 是重复造轮子。RedisLocker 唯一弱点是 Redis 主从切换时短暂双 leader,但本场景下双 leader 的最坏情况是 admit 多发一批(玩家更早进游戏),不是数据损坏。
 
@@ -250,7 +257,7 @@ if lock.IsLocked() {
 
 **zone-down 与合服后旧 zone 的队列**:本修复不产生新的残留。源 zone S 的 login 下线后不再有人 ZADD,`queue:zone:S` 在最后一次入队后 `QueueEntryTTL`(1h)内过期,`admit:*` 与 `admitted:zone:S` 在 `AdmitTTL`(60s)内过期,锁键 30s 内过期。目标 zone T 的 leader 只出 `queue:zone:T`;S 的排队玩家重新走 AssignGate 时按角色列表给出的归属 zone 进 T 的队,排队位次不迁移(§14 第 4 条)。合服回退把 S 拉起来后,S 的新 leader 自然接手。要立即清理见 §15。
 
-**停机空窗(未核实,既有行为)**:SIGTERM 路径能否走到 `Dispatcher.Stop()` 主动释放锁尚未核实(login 与 scene_manager 的注释说法冲突)。最坏情况是锁按 TTL 过期,滚动升级时该 zone 约 30s 没有 leader,期间不放行、不丢人。修复前(全服锁)也是这样,不是 G1b 引入的回归。
+**停机空窗(未核实,既有行为)**:SIGTERM 路径能否走到 `Dispatcher.Stop()` 主动释放锁尚未核实(login 与 scene_manager 的注释说法冲突)。最坏情况是锁按 TTL 过期,滚动升级时该 zone 最长约 40s(TTL + 备机重试周期 TTL/3)没有 leader,期间不放行、不丢人。修复前(全服锁)也是这样,不是 G1b 引入的回归。
 
 ---
 
@@ -300,6 +307,23 @@ Queue:
     "1": 5000
     "2": 5000
 ```
+
+**K8s 上的取值(G4b,2026-10-14;已落码,未编译、未测试,待 Codex 验证)**:`tools/scripts/k8s_deploy.ps1` 按 `-LoginQueue auto|on|off` 决定 login ConfigMap 写不写本段。
+缺省 `auto` 跟随 `-ReleaseProfile`:dev 不写(go-zero 零值 `Enabled=false`,产物与 G4b 之前逐字相同),staging / prod 写。写的时候:
+
+- `Enabled: true`;`DispatchInterval` / `AdmitTTL` / `QueueEntryTTL` / `SoftCapMultiplier` / `DefaultRetryAfterMs` / `DispatcherLockTTL` 从 `go/login/etc/login.yaml` 原样镜像。
+- `DispatcherLockKey: "dispatcher:lock:login_queue:zone:<本 zone>"`:写进 ConfigMap 的前缀已经带本 zone,login 再按 §7.1 拼一次 `:zone:<Node.ZoneId>`,
+  所以 **K8s 上本 zone 的实际锁键是 `dispatcher:lock:login_queue:zone:<id>:zone:<id>`**,选主日志 `[loginqueue] elected dispatcher leader zone=<id> key=…` 里打的也是它。
+  每个 zone 仍恰好一把锁;§3、§15 与 `docs/ops/login-queue-stress-runbook.md` 写的 `dispatcher:lock:login_queue:zone:<id>` 是本地 / compose 默认配置下的键名,在 K8s 上排查时按带两段 zone 的键查。
+  显式带 zone 是纵深防御:`kubectl rollout undo` 把 login 退回 §7.1 之前的镜像、而 ConfigMap 仍是开排队的这一份时,旧镜像原样使用配置值,照样按 zone 隔离,
+  不会退回「全集群一个 leader、其它 zone 只进不出」。login 若改成「一个 leader 覆盖全部 zone」,这一行必须删掉,否则 N 个 leader 同时出队。
+- `ZoneCapacityOverride` 只写本 zone 一项,开服档起步值 `5000`(**待压测确认**;单一来源是 `k8s_deploy.ps1` 的 `$script:PeakShavingLaunchTier.LoginQueueZoneCapacity`)。
+  每个 zone 的 login 只出队本 zone,用不到别的 zone 的值。必须配:不配会落到 `max(online, 1) × SoftCapMultiplier` 的回落公式,代码里是向下取整
+  (`loginqueue/capacity.go`),在线 0 / 1 人时容量只有 1,队列非空后可能长期放不出人。它是**同时在线上限**,不是速率:对已在运行的 zone 首次打开排队前,
+  先核对该 zone 当前在线(各 gate 自报的 `player_count` 之和)低于这个值,否则新登录全部入队,直到在线降下来。
+- `Secrets.QueueToken.Value` = 环境变量 `MMORPG_LOGIN_QUEUE_TOKEN_SECRET`(staging / prod 必填:≥32、非占位、与 `MMORPG_GATE_TOKEN_SECRET` / `MMORPG_INTERNAL_AUTH_SECRET` 不同,
+  不满足在部署的任何写操作之前拒绝;dev 可不设,此时不写、login 回落 GateToken,见 §6 更正)。写明文 `Value` 而不是 `secrets.go` 建议的 `Env`,与兄弟项 `InternalAuth` 一致。
+- 开关、`Queue` 段与排队密钥都进 login Pod 模板的 `mmorpg.io/peak-shaving-hash` 注解,任一变化 login 自动滚动。参数与运维要点见 `deploy/k8s/README.md` Optional Flags「削峰(G4b)」。
 
 ---
 
@@ -375,6 +399,22 @@ q_entered=4080 q_admitted=920 q_expired=3 q_avg_wait=28s q_max_rank=4078
 ## 15. 故障应急
 
 **关闭排队(秒级回滚)**:`login.yaml` 改 `Queue.Enabled: false`,所有玩家立刻走 fast path。
+
+**K8s 上关闭排队(G4b 止血,2026-10-14;已落码,未编译、未测试,待 Codex 验证)**:不要手改 ConfigMap(进程只在启动时读,Pod 模板不变就不会滚动),也不要 `kubectl rollout undo`
+(它只退 Pod 模板、不退 ConfigMap,排队照旧开着)。直接调 `k8s_deploy.ps1` 重跑该 zone 的部署,其余参数与上一次部署一致,加上 `-LoginQueue off`:
+
+```powershell
+# 先加 -DryRun 核对 "PeakShaving:" 那一行是 login_queue=off,再去掉 -DryRun 执行;完整参数说明见 deploy/k8s/README.md Optional Flags「削峰(G4b)」
+pwsh -File tools/scripts/k8s_deploy.ps1 -Command zone-up -ZoneName <zone> -ZoneId <id> -ReleaseProfile prod `
+  <该 zone 上一次部署的其余参数照传(镜像 tag 显式给线上那一版)> -LoginQueue off
+```
+
+- `dev_tools.ps1`、`k8s_image.ps1`、`k8s_zone_rollback.ps1` **不透传** `-LoginQueue`,包装入口上找不到这个参数。
+- 关闭后 login Pod 模板上的 `mmorpg.io/peak-shaving-hash` 注解消失,login 自动滚动;所以 K8s 上的「秒级」是一次 login 滚动的时间。新 Pod 起来后,在排玩家轮询
+  `/api/queue-status` 拿到 EXPIRED(gateway 回 410),丢掉 token 重走 `/api/assign-gate` 快速通道。关排队时部署不要求 `MMORPG_LOGIN_QUEUE_TOKEN_SECRET`。
+- 参数不粘滞:下一次部署(含回档 Step 6、合服后的 zone-up)不传 `-LoginQueue off`,staging / prod 就按档位恢复为开。原因排除前每次部署都要照传。
+- 遗留的 `queue:*` / `admit*` 键按 TTL 自然过期,要立即清理见下面「清空堆积」。K8s 上锁键是 `dispatcher:lock:login_queue:zone:<id>:zone:<id>`(§10),
+  下面命令里的锁键在 K8s 上要换成它。
 
 **清空堆积**:
 

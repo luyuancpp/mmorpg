@@ -19,6 +19,9 @@ message RoutePlayerEvent {
   // 必须随事件下发,节点不得自行读 Redis:两次改派挨近时后到者才持有最新值。
   // 见 scene-owner-reentry-barrier.md §3.3。
   uint64 owner_epoch = 6;
+  // 发起这次路由的登录代次(EnterSceneRequest.login_generation 原样透传)。scene 节点自发的路由为 0。
+  // gate 只用它抬高会话上记的代次,不据此丢弃路由(docs/design/scene-enter-session-fence.md §4)。
+  uint64 login_generation = 7;
 }
 
 message KickPlayerEvent {
@@ -46,11 +49,15 @@ message PlayerLeaseExpiredEvent {
 }
 
 // Sent by Login/player_locator to bind a session to Gate.
+// login 经 GateCommand.payload 下发(信封字段照填);payload 为空的旧版 login 只带得到前两个字段与 enter_gs_type。
 message BindSessionEvent {
   uint32 session_id = 1;
   uint64 player_id = 2;
   uint32 session_version = 3;
   uint32 enter_gs_type = 4;  // LOGIN_FIRST / LOGIN_RECONNECT / LOGIN_REPLACE
+  // 本次登录链铸造的登录代次。gate 在按 lastSceneRoute 补发登录进场之前写进会话:Bind 先于本次路由
+  // 到达时,补发带的必须是本次登录的代次(docs/design/scene-enter-session-fence.md §4)。
+  uint64 login_generation = 5;
 }
 
 // Sent by SceneManager to Gate when a player requests a cross-zone scene.

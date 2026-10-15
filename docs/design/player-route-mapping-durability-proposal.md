@@ -814,7 +814,7 @@ gRPC code 的集合与今天相同:OK、AlreadyExists、FailedPrecondition、Una
 | 1b 全量预热 | 即 R12(`ScanRoutes`) | `RouteScanCursor` |
 | 按 id 回源(第 3 批) | R5 的不加锁形态;批量即 R13 | — |
 
-**`player_id` 唯一性与探针 P4**。主键 `(route_shard, player_id)` 只在 `route_shard` 由 `player_id` 唯一决定时才等价于「`player_id` 唯一」,所以唯一性现在靠 `chk_route_shard`。CHECK 不生效(TiDB 默认 `tidb_enable_check_constraint=OFF`、MySQL < 8.0.16)时,一个绕过 store 或算错片的写者能给同一 `player_id` 写出两行,而 R5 / R8 / R13 都按「正确片 + id」点查,**错片行对它们不可见、表现为缺席**,导入还会再插一条正确片的行。读路径兜不住,所以:建池探针第 4 步 P4 在必然回滚的事务里插一行只违反 `chk_route_shard` 的行,必须收到 3819 且报错点名该约束,否则 `ErrRouteCheckNotEnforced` 拒建 store(db_first 的 data_service、debugutil、route_tool 都经过它);全表键集扫描(`ScanRoutes`,即 audit 方向 A / 1b 全量预热)校验每行的片,错片即 `ErrRouteShardMismatch`;不另加 `UNIQUE(player_id)`(那正是要消掉的单调尾部)。P4 只证明 CHECK 生效,不证明模数是 64(由 DDL 契约测试钉住;探针行对 `% 16` 与 `% 64` 同样违例,按旧模数 16 建的表也过得了 P4,见下「行片 16 → 64」的前置)。
+**`player_id` 唯一性与探针 P4**。主键 `(route_shard, player_id)` 只在 `route_shard` 由 `player_id` 唯一决定时才等价于「`player_id` 唯一」,所以唯一性现在靠 `chk_route_shard`。CHECK 不生效(TiDB 默认 `tidb_enable_check_constraint=OFF`、MySQL < 8.0.16)时,一个绕过 store 或算错片的写者能给同一 `player_id` 写出两行,而 R5 / R8 / R13 都按「正确片 + id」点查,**错片行对它们不可见、表现为缺席**,导入还会再插一条正确片的行。读路径兜不住,所以:建池探针第 4 步 P4 在必然回滚的事务里插一行只违反 `chk_route_shard` 的行,必须收到 3819 且报错点名该约束,否则 `ErrRouteCheckNotEnforced` 拒建 store(db_first 的 data_service、debugutil、route_tool 都经过它);全表键集扫描(`ScanRoutes`,即 audit 方向 A / 1b 全量预热)校验每行的片,错片即 `ErrRouteShardMismatch`;不另加 `UNIQUE(player_id)`(那正是要消掉的单调尾部)。P4 只证明 CHECK 生效,不证明模数是 64(由 DDL 契约测试钉住;探针行对 `% 16` 与 `% 64` 同样违例,按旧模数 16 建的表也过得了 P4,见下「行片 16 → 64」的前置)。2026-10-14 起建池探针第 5 步 P5 在同一个回滚事务里再插两行按 64 合法的行核对模数,见下「正向探针 P5」。
 
 **对 §5.4 / 第 1b 批的约束**
 
@@ -824,7 +824,7 @@ gRPC code 的集合与今天相同:OK、AlreadyExists、FailedPrecondition、Una
 - `route_meta` 设成 TiDB 缓存表之后(S2 起必选,见「TiDB 运维步骤」第 6 条),冻结写 `UPDATE route_meta SET writable=0` 最长阻塞一个读租约(`tidb_table_cache_lease`,默认 3s【未核实】),1b 的冻结步骤超时要 ≥ 租约 + 余量;在途事务仍按「仍未解决的风险」第 3 条处理。
 - 增量推送按片循环 `s = 0..63`(见上表;每拍 64 条查询、64 个游标,上界取 `placement.RouteRowShards`);全量预热即 `ScanRoutes`。
 - `route_tool tidb-prepare` 要随第 1b 批并进主程序入口(同偏离第 8 条)。
-- **新的 `player_route` 写者**(第 2 批 merge_zone 等):直接调 `placement.RouteRowShard`(merge_zone 已 import `shared/placement`),并在开写前过与 P4 同等的 CHECK 实测(或复用 `RouteStore`)。CHECK 不生效的库上,任何绕过探针的写者都能给同一 `player_id` 写出两行,点读看不到。
+- **新的 `player_route` 写者**(第 2 批 merge_zone 等):直接调 `placement.RouteRowShard`(merge_zone 已 import `shared/placement`),并在开写前过与 P4 / P5 同等的 CHECK 实测与模数核对(或复用 `RouteStore`)。CHECK 不生效的库上,任何绕过探针的写者都能给同一 `player_id` 写出两行,点读看不到。
 
 **TiDB 运维步骤**
 
@@ -849,13 +849,14 @@ gRPC code 的集合与今天相同:OK、AlreadyExists、FailedPrecondition、Una
 | H7 | 新增 `route_tool tidb-prepare`(§7 与偏离第 8 条之外的新入口) | 预切要真实 zone 清单,迁移拿不到;运维可重放 | 多一个要记得跑的步骤;K8s 上依赖第 1b 批并进主程序;漏跑只影响性能 |
 | H8 | 对 `player_route` 也预切(原任务只点了围栏) | 不预切,片前缀在首日不生效 | Region 数 ≈ 63 + 63 + 8·Z + 8·S + Z(2026-10-13 行片改 64 之后:行数据与 `idx_route_updated` 每片一段;`idx_route_home` / `idx_route_storage` 每个 zone / 落点值只切 8 个点,即每 8 片一段,见下「行片 16 → 64」。16 片时是 15 + 15 + 16·Z + 16·S + Z),空 Region 靠 `merge_option=deny` 永久留住;Z 上百时 `idx_route_home` 的空 Region 仍以千计,届时可把语句生成改成每 zone 只切 `(z,0,0)`(只改 `route_tidb.go`) |
 | H9 | 显式排序规则(`utf8mb4_bin` / `ascii_bin`;`route_reconcile.leader` 由 utf8mb4 改 ascii) | 两种引擎默认不同,建表前改最便宜 | 与 MySQL 现状默认的 `utf8mb4_0900_ai_ci` 不同;这些列都是标识符,逐字节比较是正确语义 |
+| H10 | 建池探针 P5(2026-10-14,P4 的同一个回滚事务里再插两行按当前模数合法的行) | 模数建表后改不了,按另一个模数建的表能一路通过迁移、形状守卫与 P4 | 每次建池再多 2 条 `INSERT`;正确的库上这两行真的插入(未提交)、持锁到回滚,63 / 64 号玩家的 W1 与并发建池会短暂排队;redis 模式不建 store、认不出。详见下「正向探针 P5」 |
 
 **风险(HR)**
 
 1. **HR1 TiDB 细节大量未核实**(本批无法联网对照官方文档):SPLIT 元组写法、重复 SPLIT 是否幂等、`ATTRIBUTES` 是否覆盖索引 Region、所需权限、`TIDB_PK_TYPE` 列、缓存表语义、TiDB 的 3819 文案、行构造器 IN 的计划。缓解:真 TiDB 用例 `TestRouteStore_TiDBClusteredShardsAndPresplit` 与验证增量第 8 步;任何一项不成立,改 `route_tidb.go` 的语句生成或探针判据,DDL 不动。
 2. **HR2 CHECK 是唯一性的一部分**:P4 只在建池时证一次;运行期有人 `ALTER … NOT ENFORCED`、DROP CHECK 或把 `tidb_enable_check_constraint` 改回 OFF,要到下次重启才发现;其间写进来的错片行只有 `ScanRoutes`(audit 方向 A)看得见。runbook 写明不许关这条 CHECK,改过 DDL / 全局变量之后必跑 audit。
 3. **HR3 存量 snowflake 号偏向片 0**:bwmarrin 布局最低 9 位是同毫秒序号,低速铸号时多为 0(AGENTS §7.1),`% 64` 几乎都落片 0(同毫秒序号占最低 9 位,模 64 只看最低 6 位)。只影响一次性导入与冷读的分布,不影响新号(号段稠密、均匀)。
-4. **HR4 本机旧形状表**:G1a 之前跑过第 1a 批迁移的库,`player_route` 会让迁移失败(fail-closed,带处理提示)。确认路由表里没有要保留的数据后手工 `DROP TABLE player_route, zone_merge_fence, zone_merged_into, route_meta;`(`route_reconcile` 若存在一并 DROP)再 `-migrate`;**只 DROP `player_route` 不够**(旧 `route_meta` 与旧排序规则守卫查不出来)。代码不自动 DROP。**2026-10-13 补:按模数 16 建过表的库(跑过 HEAD `d5cbb8a8e` 的迁移或启动过那一版 data_service)同样要这样 DROP,而且这一种迁移不会报错**,见下「行片 16 → 64」的前置。
+4. **HR4 本机旧形状表**:G1a 之前跑过第 1a 批迁移的库,`player_route` 会让迁移失败(fail-closed,带处理提示)。确认路由表里没有要保留的数据后手工 `DROP TABLE player_route, zone_merge_fence, zone_merged_into, route_meta;`(`route_reconcile` 若存在一并 DROP)再 `-migrate`;**只 DROP `player_route` 不够**(旧 `route_meta` 与旧排序规则守卫查不出来)。代码不自动 DROP。**2026-10-13 补:按模数 16 建过表的库(跑过 HEAD `d5cbb8a8e` 的迁移或启动过那一版 data_service)同样要这样 DROP,而且这一种迁移不会报错**,见下「行片 16 → 64」的前置。2026-10-14 补:db_first 的 data_service 与 route_tool 建池时由 P5 认出(`ErrRouteShardModulusMismatch`),redis 模式认不出(见下「正向探针 P5」)。
 5. **HR5 `idx_route_storage` 的 NULL 段没切**:`PinOnCreate=false` 时新号 storage 为 NULL,这 64 条尾部仍在一个 Region;`SPLIT … BY (NULL, …)` 的写法未核实。打开 `PinOnCreate` 后按 `-storages=1000000` 切。
 6. **HR6 围栏仍是每 zone 一个 Region**:单 zone 开服尖峰时,该 zone 的全部 W1 在一个 Region leader 上加锁 / 提交。缓解梯子见 §12「万一目录还是成了瓶颈」第 ③ 步。
 7. **HR7 TRUNCATE / BR / TiCDC 丢预切与属性**:两份清库脚本只连本机 MySQL;TiDB 环境每个恢复 / 清库步骤后重跑 `tidb-prepare`。漏跑 = 回到单尾,只有性能后果。
@@ -902,7 +903,7 @@ gRPC code 的集合与今天相同:OK、AlreadyExists、FailedPrecondition、Una
 | `go/shared/placement/route.go` | `RouteRowShards` 16 → 64;注释写明模数建表后不可改、按 16 建过表的库要先 DROP 五张路由表 |
 | `store/schema.go` | `chk_route_shard` 的 `% 16` → `% 64` |
 | `store/route_store.go`、`routetool/auditor.go`、`cmd/route_tool/main.go` | 只改注释与一条错误文案(`ErrRouteShardMismatch` 不再写模数字面量);逻辑一律经 `placement.RouteRowShard`,没有别处写死模数 |
-| `store/route_tidb.go` | 预切密度见下;新增具名常量 `routeTiDBPrefixSplitPoints = 8`、`routeTiDBPrefixSplitStride = RouteRowShards / 8`,以及「间隔整除行片数」的编译期断言 |
+| `store/route_tidb.go` | 预切密度见下;新增具名常量 `routeTiDBPrefixSplitPoints = 8`、`routeTiDBPrefixSplitStride = RouteRowShards / 8`,以及「切点数整除行片数」的编译期断言(2026-10-14 由「间隔整除行片数」收紧:后者在切点数取 24 时间隔为 2、照样整除,循环却切出 32 个点) |
 | 测试 | 钉 16 的向量全部换成 64 下仍测得到原意图的值:「同片」的 id 从相差 16 换成相差 64(17 / 33 → 65 / 129 等);导入契约用例的 id 换成 100..300(行片 36 / 22 / 8 / 58 / 44,键序 ≠ id 序);`TestRegisterHomeBindsRowShardNotFenceShard` 的行片 10 → 26;`TestRouteTiDBPrepareStatements` 的 8 条语句按新密度重写 |
 | `etc/data_service.yaml` | `RouteStore.FenceShards` 8 → 16(MySQL 档;TiDB 档 64)。只是配置,代码默认值仍是 8;K8s ConfigMap 不镜像这个键,仍取默认 8,切 db_first 前按档位补 |
 
@@ -922,7 +923,7 @@ Region 总数 ≈ 63 + 63 + 8·Z + 8·S + Z。行数据与 `idx_route_updated` �
 2. 是 `% 16`:确认五张路由表里没有要保留的数据后,按 HR4 手工 `DROP TABLE player_route, zone_merge_fence, zone_merged_into, route_meta, route_reconcile;`,再 `data_service -f <yaml> -migrate`;不确定就停下来问负责人;
 3. TiDB 上 DROP 重建之后重跑 `route_tool tidb-prepare`(预切与 `merge_option` 不跟着新表)。
 
-代码不自动 DROP;本步只做机械改动,还没有「建池时认出旧模数」的正向探针(留作下一步),在那之前只能靠上面的人工核对。
+代码不自动 DROP;本步只做机械改动,还没有「建池时认出旧模数」的正向探针(留作下一步),在那之前只能靠上面的人工核对。**2026-10-14 补**:正向探针 P5 已落码(见下)。上文「按 16 建的表会一路通过迁移与建池」里的「建池」从此不成立(建池时 P5 认得出),「迁移」仍成立 —— P5 只在建 route store 时跑,redis 模式的 data_service 不建 store,所以上面的人工核对保留。
 
 **连带修正(容量模型 §4.1,本步只改文档与配置)**
 
@@ -941,6 +942,67 @@ Region 总数 ≈ 63 + 63 + 8·Z + 8·S + Z。行数据与 `idx_route_updated` �
 5. 可选真 TiDB:同上面「验证增量」的做法,只跑 `-run "TiDB"`;回报 `SHOW TABLE player_route REGIONS`(期望 ≥ 64)与 `SHOW TABLE player_route INDEX idx_route_home REGIONS`(1 个 zone,期望 ≥ 8)的行数。
 
 **Java 版(AGENTS.md §12)**:不涉及客户端契约,不需要同批改;Java 版的 D1 仍是「待做」。
+
+---
+
+**正向探针 P5:建池时认出按另一个行片模数建的表(2026-10-14)**
+
+> 状态:**已落码,未编译、未测试**(AGENTS.md §10.1,待 Codex 按下面的验证执行)。负责人 2026-10-13 拍板加机械守卫;评审曾建议把模数写进约束名(`chk_route_shard_mod64`),未采纳,DDL 契约不变。
+
+**起因**。上面「前置」:按 16 建过的表,迁移(`CREATE TABLE IF NOT EXISTS`)、形状守卫(只查列名与主键)、P4(违例行 `(1, 0)` 对任何模数都违例)全都通过,要到运行期 W1 / 导入对 `player_id % 64 ≥ 16` 的新号大面积撞 3819、建角 Unavailable 才暴露,启动期没有任何信号。
+
+**做法**(`store/route_store.go` 的 `probeRouteShardModulus`)。P4 收到「3819 且点名 `chk_route_shard`」之后,在**同一个必然回滚的事务**里按聚簇键升序再插两行「按 N = `placement.RouteRowShards` = 64 合法」的行。其余列与 P4 相同:home / 落点 / 冻结全 NULL、`rev=1`、`updated_by='route-probe'`、两个时间戳 0。已逐条对过 `player_route` 的六条 CHECK 与全部 NOT NULL,正确的库上不会误报。表的模数为 M 时:
+
+| 探针行 `(route_shard, player_id)` | 被接受的条件 |
+|---|---|
+| `(0, N)` = `(0, 64)` | `N % M = 0`,即 M 整除 N(于是 M ≤ N) |
+| `(N−1, N−1)` = `(63, 63)` | `(N−1) % M = N−1`,即 M ≥ N |
+
+两行都被接受 ⇔ M = N,对任何 M ≥ 1 成立。N = 64 的判别表(`TestRouteShardModulusProbeDiscriminates` 钉住,并对 M = 1..256 穷举):
+
+| M | `(0, 64)` | `(63, 63)` | 结论 |
+|---|---|---|---|
+| 16 | 收 | 拒 | 不一致 |
+| 32 | 收 | 拒 | 不一致 |
+| 64 | 收 | 收 | 一致 |
+| 128 | 拒 | 收 | 不一致 |
+| 192 | 拒 | 收 | 不一致 |
+| 256 | 拒 | 收 | 不一致 |
+
+设计时设想过的第三行 `(1, N+1)` 不需要:它要补的 M = 128 已经被 `(0, 64)` 拒(64 % 128 = 64 ≠ 0),上面两行对全部 M 已经完备。
+
+逐行判定(所有分支都回滚):
+
+- 成功或 1062 → 该行被接受。1062 = 库里已有这一行。CHECK 生效的表上已有的行都满足它,所以撞键同样说明该行在表的模数下合法,与引擎先判 CHECK 还是先判撞键无关(CHECK 被关掉期间写进来的行除外,属 HR2)。号段从 1 发号,63 / 64 号是开服后最早的真实玩家,撞键在生产上是常态;
+- 3819 且点名 `chk_route_shard` → `ErrRouteShardModulusMismatch`,拒建 store。文案:表的行片模数与二进制不一致;确认无数据后按 HR4 DROP 五张路由表再 `-migrate`;不要改常量迁就旧表;
+- 1142 → 与 P4 同一条权限提示(两步都是回滚的 INSERT,不新增权限要求);
+- 3819 点名别的约束、1205、其它任何错误 → 原样包装,拒建 store(fail-closed)。
+
+**作用范围**。只在建 route store 时跑:db_first 的 data_service(失败只记 ERROR、store 不装配,`Store.Required=true` 时拒启)、debugutil、route_tool(退出码 2,stderr 提示「只重跑 -migrate 修不好」)。**redis 模式的 data_service 不建这个 store**,它启动期的迁移照样会建出(或留着)旧模数的表而 P5 挡不住,所以上面「前置」的人工 `SHOW CREATE TABLE player_route` 核对保留,runbook §9.3 前置第 1 条同步。
+
+**风险与未核实项**
+
+- 锁:模数一致时两行真的插入(未提交),撞键时在已有行上取共享锁(InnoDB 的行为,凭记忆、未核实),都持到回滚(毫秒级)。63 / 64 号玩家的 W1 可能短暂排队;反过来他们的 W1 持锁超过会话锁等待 1s 时,这次建池以 1205 失败,重启即可。多副本同时建池在这两行上排队,各副本按同一顺序插,不成环。
+- TiDB:P4 的语句失败之后同一事务能否继续用(语句级回滚)【未核实】,`TestRouteStore_TiDBClusteredShardsAndPresplit` 的建池就是取证。不成立时建池会以 P5 原样包装的错误失败(fail-closed),届时改成 P5 另开一个回滚事务,判别表不变。
+- 1062 的语义依赖「已有行都满足当前 CHECK」:CHECK 关掉期间写进来的错片行恰好占了探针键时会漏判,检测仍靠 audit 方向 A(HR2)。
+
+**改了什么**
+
+| 位置 | 要点 |
+|---|---|
+| `store/route_store.go` | 新 SQL `routeProbeShardModulusSQL`、纯函数 `routeShardModulusProbeKeys`、`probeRouteShardModulus`(P4 通过的分支接着调);新哨兵 `ErrRouteShardModulusMismatch`;P4 / P5 共用的约束名判据 `namesRouteShardCheck`,1142 提示 `routeProbeInsertDenied`(文案改为覆盖两步) |
+| `cmd/route_tool/main.go` | 建池失败的提示按原因分流(`openRouteStoreHint`):模数不一致时不再提示「先跑迁移」;退出码仍是 2;探针步骤注释补全为五步 |
+| 测试 | 纯函数判别表 `TestRouteShardModulusProbeDiscriminates`;契约 `TestNewRouteStoreShardModulusProbeContract`(全接受 / 撞键 / 每一行各自 3819 / 3819 点名别的约束 / 1205 / 1142 / 非 MySQL 错误);`TestNewRouteStoreProbeFailClosed` 的三个通过用例跟上 P5 的两条语句,另补 P4 的 1142 / 1062 文案用例;真库 `TestRouteStore_ProbeRejectsTableBuiltWithAnotherShardModulus`(按 `% 16` / `% 128` 手工重建 → 新哨兵,换回 `% 64` 建池通过);`TestOpenRouteStoreHintByCause` |
+| 文档 | 本段、H10、HR4 补注;runbook §9.3 前置、退出码表与 tidb-prepare 小节 |
+
+**交 Codex 的验证**(工作目录以仓库根为起点;不写死 Go 版本;串行,前一步红了就停下归因)
+
+1. `cd go/data_service`:`gofmt -l ./internal/store ./cmd/route_tool`(期望无输出)、`go vet ./internal/store/... ./cmd/route_tool/...`、`go test -count=1 -v ./internal/store/... ./cmd/route_tool/... -run "ShardModulus|NewRouteStore|RouteSQL|RouteBootstrapDDL|NoPlayerRouteWrites|OpenRouteStoreHint"`,再不带 `-run` 跑一次 `go test -count=1 ./internal/store/... ./internal/routetool/... ./cmd/route_tool/...`。
+2. 真库(MySQL ≥ 8.0.16,环境变量同上面第 4 步):`go test -tags=integration -count=1 -v ./internal/store/... -run "Route"`,`TestRouteStore_ProbeRejectsTableBuiltWithAnotherShardModulus` 必须 PASS,其余建 route store 的真库用例(都经过 P5)不许因 P5 变红;第 1a 批验证里 routing 带 integration 的那一步按原样跑,`TestDBFirstRegister_RealStores` 必须 PASS(它经过 P5)。
+3. 可选真 TiDB:同「验证增量」,只跑 `-run "TiDB"`;建池失败时原样回报报错文本(P4 失败后事务是否可用未核实)。
+4. 前置纪律不变:任何可能建过路由表的库仍先 `SHOW CREATE TABLE player_route`。
+
+**Java 版(AGENTS.md §12)**:服务端内部存储的启动探针,不涉及客户端契约,不需要同批改;Java 版的 D1 仍是「待做」。做等价的「库为真源」目录时若同样用片前缀 + CHECK,建议在启动时同样实测模数。
 
 ---
 

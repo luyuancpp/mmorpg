@@ -1,5 +1,7 @@
 #include "buff_impl.h"
 
+#include <vector>
+
 #include "table/code/buff_table.h"
 #include "combat/buff/system/buff.h"
 #include "combat_state/constants/combat_state.h"
@@ -31,12 +33,28 @@ void BuffImplSystem::OnBeforeGiveDamage(entt::entity caster, entt::entity target
     UInt64Set buffsToRemove;
     defer(BuffSystem::RemoveBuff(caster, buffsToRemove));
 
-    ECS_GET_OR_VOID(buffList, BuffListComp, caster);
-    for (auto& buff : *buffList | std::views::values) {
-        LookupBuffOrContinue(buff.buffPb.buff_table_id());
-        if (buffRow->buff_type() == kBuffTypeNextBasicAttack) {
-            ApplyNextBasicAttackBonus(caster, target, buff, buffRow, damageEvent, buffsToRemove);
+    // 先收集、再逐个按 id 重查:ApplyNextBasicAttackBonus 会经 AddSubBuffs → AddOrUpdateBuff
+    // 往同一张 BuffListComp(unordered_map)里插入子 buff(可能 rehash),也可能顺着
+    // DispelBuffsOnAwake 删掉条目 —— 边遍历边改会让 range-for 的迭代器失效。
+    std::vector<uint64_t> bonusBuffIds;
+    {
+        ECS_GET_OR_VOID(buffList, BuffListComp, caster);
+        for (const auto& [buffId, buff] : *buffList) {
+            LookupBuffOrContinue(buff.buffPb.buff_table_id());
+            if (buffRow->buff_type() == kBuffTypeNextBasicAttack) {
+                bonusBuffIds.push_back(buffId);
+            }
         }
+    }
+
+    for (const uint64_t buffId : bonusBuffIds) {
+        ECS_GET_OR_VOID(buffList, BuffListComp, caster);
+        const auto buffIt = buffList->find(buffId);
+        if (buffIt == buffList->end()) {
+            continue;  // 已被前一条加成带出的子 buff 驱散
+        }
+        LookupBuffOrContinue(buffIt->second.buffPb.buff_table_id());
+        ApplyNextBasicAttackBonus(caster, target, buffIt->second, buffRow, damageEvent, buffsToRemove);
     }
 }
 
@@ -107,6 +125,8 @@ void BuffImplSystem::ApplyNextBasicAttackBonus(entt::entity caster, entt::entity
 
     buffsToRemove.emplace(buff.buffPb.buff_id());
 
+    // AddSubBuffs 之后 buff 可能已被驱散删除,先把要用的上下文强引用拷出来。
+    const SkillContextPtrComp skillContext = buff.skillContext;
     BuffSystem::AddSubBuffs(caster, buffTable, buff);
-    BuffSystem::AddTargetSubBuffs(target, buffTable, buff.skillContext);
+    BuffSystem::AddTargetSubBuffs(target, buffTable, skillContext);
 }

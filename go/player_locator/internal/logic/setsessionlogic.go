@@ -59,13 +59,22 @@ func (l *SetSessionLogic) SetSession(in *pb.SetSessionRequest) (*common.Empty, e
 		if s.SceneNodeId == "" {
 			s.SceneNodeId = current.SceneNodeId
 		}
+		// LoginGeneration 刻意不继承:请求为 0(旧版 login)时如实写 0,表示这条会话没有代次;
+		// 继承旧值会让无代次的会话冒用上一次登录的代次,scene 栅栏会把它当成已放行的那次登录。
 
+		// 重放判断必须排在代次栅栏之前:重放请求的代次与记录相等,先判栅栏会把丢包重试误拒成 stale。
 		if proto.Equal(s, current) {
 			// RPC 响应丢失后的同请求重放：允许幂等地清掉残留 lease 状态。
 		} else if s.SessionVersion != current.SessionVersion+1 {
 			return nil, fmt.Errorf(
 				"stale session update for player %d: current version=%d incoming=%d",
 				s.PlayerId, current.SessionVersion, s.SessionVersion,
+			)
+		} else if !loginGenerationAdvances(current.LoginGeneration, s.LoginGeneration) {
+			// 与版本不匹配同一 stale 语义:调用方按登录失败处理,不重放读改写。
+			return nil, fmt.Errorf(
+				"stale session update for player %d: current login_generation=%d incoming=%d",
+				s.PlayerId, current.LoginGeneration, s.LoginGeneration,
 			)
 		}
 	}
@@ -89,4 +98,15 @@ func (l *SetSessionLogic) SetSession(in *pb.SetSessionRequest) (*common.Empty, e
 	}
 
 	return &common.Empty{}, nil
+}
+
+// loginGenerationAdvances 是会话提交点的登录代次栅栏(docs/design/scene-enter-session-fence.md §3.4)。
+//
+// 记录与请求都非 0 时要求严格递增:失锁后两条并发登录链里只有一条能提交,记录代次不回退(G1),
+// 两条会话也不会共用同一个非 0 代次(G2)。任一方为 0 不校验:0 是旧版 login 写入或发出的无代次会话,
+// 混版窗口内照旧放行,由 scene 栅栏的判定表兜底(§6)。
+// 只比较请求值与记录值,不读铸造键(G3):铸了没提交的号直接作废,不影响这里的判定。
+// 判定读的是 CAS 的 expected 字节,与写入同属一次整字节 CAS,不存在先判后写的窗口。
+func loginGenerationAdvances(current, incoming uint64) bool {
+	return current == 0 || incoming == 0 || incoming > current
 }

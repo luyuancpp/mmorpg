@@ -61,7 +61,9 @@ func (l *CancelQueueLogic) CancelQueue(in *matchpb.CancelQueueRequest) (*base.Em
 		return &base.Empty{}, nil
 	}
 
-	deleted, err := cancelTicketIfQueued(l.svcCtx, playerId, ticket.Ticket)
+	// 删票与出队都用请求 ctx:gate 对同一会话单飞,路由服回超时就放行下一条请求;截止之后才落地的
+	// 删票 / 出队会晚于下一条 JoinQueue 生效,把新入队的玩家摘掉(docs/design/client-request-ordering.md §6.1)。
+	deleted, err := cancelTicketIfQueuedCtx(l.ctx, l.svcCtx, playerId, ticket.Ticket)
 	if err != nil {
 		l.Errorf("[match] CancelQueue failed to delete ticket player=%d: %v", playerId, err)
 		return nil, err
@@ -77,7 +79,7 @@ func (l *CancelQueueLogic) CancelQueue(in *matchpb.CancelQueueRequest) (*base.Em
 	// 同 slot Lua 原子摘出(§11),旧格式 key 单 key LREM,集群安全。
 	queueKeys := ticketQueueKeys(ticket)
 	for _, queueKey := range queueKeys {
-		if err := dequeueMember(l.svcCtx, queueKey, playerId); err != nil {
+		if err := dequeueMemberCtx(l.ctx, l.svcCtx, queueKey, playerId); err != nil {
 			// 出队失败留下的残留队列项会被 matcher 的票据校验丢弃,只记日志。
 			l.Errorf("[match] CancelQueue failed to dequeue (matcher ticket validation will handle remnants) player=%d queue=%s: %v",
 				playerId, queueKey, err)

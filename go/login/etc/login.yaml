@@ -4,13 +4,19 @@ Name: login.rpc
 # 生产部署走 deploy/ 下的受管配置,不复用本文件。
 Mode: dev
 ListenOn: 127.0.0.1:53000
-# zrpc 服务端超时(毫秒)。2026-09-29 由 100000 改为 10000:原值与本行旧注释「(10s)」不符,确认是多写了一个 0。
-# 下限:同步路径里最慢的 CreatePlayer 持锁后串行三次跨进程 gRPC,各 3s = 9s(见下方 Locker 注释),常态 Redis
-# 毫秒级,10s 装得下;EnterGame 的预加载链在 RPC 返回之后后台跑(chainBudget 5min),不受本值约束。
+# zrpc 服务端超时(毫秒)。2026-09-29 由笔误 100000 改为 10000;2026-10-14 再改为 4000
+# (docs/design/client-request-ordering.md O10 / §5,用户拍板 Q2=B)。
+# 为什么是 4000:生产走路由模式,路由服以 ForwardTimeoutMs(5000)调 login,deadline 经 gRPC 传播,
+# 10000 在路由模式下本来就不生效,handler 实际只有约 5s。预算链要求「目标 Timeout + 1000 ≤ ForwardTimeoutMs」,
+# 这样路由服回超时的时候 login handler 的 ctx 已经取消、不会再发出新的写;否则 gate 放行同一会话的下一条请求后,
+# 这一条仍可能晚落地,顺序就乱了。由 tools/scripts/k8s_deploy.ps1 的 Assert-RouterForwardBudget 在部署前核对。
+# 代价:CreatePlayer 持锁后串行三次跨进程 gRPC(发号 / 名字登记 / player:zone 登记,各自子预算 3s,见下方 Locker
+# 注释)合计必须在 4s 内完成;常态各是毫秒级,任何一步拖慢时整体在 4s 处失败,建角失败可重试(名字注册表幂等)。
+# EnterGame 的预加载链在 RPC 返回之后后台跑(chainBudget 5min),不受本值约束。
 # 上限约束(上游比下游宽):gate 直连 login 的 C++ deadline = bin/etc/base_deploy_config.yaml 的
-# GrpcClient.CallDeadlineMs.LoginNodeService(12000),必须 >= 本值 + 2000,由 tools/scripts/k8s_deploy.ps1 的
-# Assert-GrpcClientDeadlineBudget 在部署前核对。K8s ConfigMap 从这里镜像;deploy/login-stack.linux/login.yaml 另有一份,同步改。
-Timeout: 10000
+# GrpcClient.CallDeadlineMs.LoginNodeService(12000),必须 >= 本值 + 2000,由 Assert-GrpcClientDeadlineBudget 核对。
+# K8s ConfigMap 从这里镜像;deploy/login-stack.linux/login.yaml 另有一份,同步改。
+Timeout: 4000
 
 # Canonical go-zero RPC registration/discovery settings.
 Etcd:
@@ -69,9 +75,9 @@ Locker:
   #   - 三次 Redis:读 blob、围栏写 blob、写未确认时的回读。常态是毫秒级;Redis 变慢但每次
   #     回包都还在 3s 以内时,三步合计 < 9s。
   #   - 开 NewPlayerSeed 时多一次 Redis(新号种子;代码里的 1s ctx 预算只掐重发,单次最坏仍是 3s 读超时)。
-  #     各步预算直接相加是 gRPC 9s + Redis 4×3s = 21s,但在现行 zrpc Timeout(本文件顶部,10s)下到不了:
-  #     除回读、名字补偿释放与建角锁释放外,每一步的 ctx 都派生自 handler ctx,10s 一到 gRPC 立即失败、
-  #     go-redis 不再发新命令,围栏写最晚在 handler 起算 10s 内发出,Redis 还在 3s 内回包时约 13s 前执行,
+  #     各步预算直接相加是 gRPC 9s + Redis 4×3s = 21s,但在现行 zrpc Timeout(本文件顶部,4s)下到不了:
+  #     除回读、名字补偿释放与建角锁释放外,每一步的 ctx 都派生自 handler ctx,4s 一到 gRPC 立即失败、
+  #     go-redis 不再发新命令,围栏写最晚在 handler 起算 4s 内发出,Redis 还在 3s 内回包时约 7s 前执行,
   #     下面的 20 仍盖得住。种子在慢 Redis 下的真实代价:多吃最多 3s 的 handler 预算,围栏写可能来不及发出,
   #     本次建角失败(名字释放,player:zone 映射与孤儿种子留下)。把 Timeout 调到约 17s 以上时 21s 才可达,
   #     届时重算(docs/design/new-player-first-enter-no-cold-read.md §10 P6)。

@@ -113,7 +113,7 @@ func TestGateCommandAddressingMatchesSharedVectors(t *testing.T) {
 
 		gateID := strconv.FormatUint(c.NodeID, 10)
 
-		bind, err := buildBindSessionCommand(gateID, instanceID, 7, 1001, 2)
+		bind, err := buildBindSessionCommand(gateID, instanceID, 7, 1001, 1, 2, 1_760_000_000_000)
 		if err != nil {
 			t.Fatalf("%s: buildBindSessionCommand(%s): %v", c.Name, gateID, err)
 		}
@@ -172,7 +172,7 @@ func TestGateCommandTargetFieldsArePopulated(t *testing.T) {
 		{
 			name: "bind session",
 			build: func() (gateCommandMessage, error) {
-				return buildBindSessionCommand(gateID, instanceID, sessionID, playerID, 3)
+				return buildBindSessionCommand(gateID, instanceID, sessionID, playerID, 5, 3, 1_760_000_000_000)
 			},
 			wantEventID:  uint32(game.ContractsKafkaBindSessionEventEventId),
 			wantEnterGs:  3,
@@ -290,7 +290,7 @@ func TestGateCommandFailsClosed(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			err := sc.SendBindSessionToGate(tc.gateID, tc.instanceID, 1, 2, 0, 0)
+			err := sc.SendBindSessionToGate(tc.gateID, tc.instanceID, 1, 2, 0, 0, 0)
 			if err == nil {
 				t.Fatal("SendBindSessionToGate: want error, got nil (command would be unroutable/unfilterable)")
 			}
@@ -371,6 +371,74 @@ func TestPushTipCommandPayloadLayers(t *testing.T) {
 	}
 	if len(tip.GetParameters()) != 0 {
 		t.Errorf("tip parameters = %v, want none", tip.GetParameters())
+	}
+}
+
+// TestBindSessionCommandPayloadCarriesEvent 拆开 Bind 的 payload:必须能解成 BindSessionEvent,且五个
+// 业务字段齐全(scene-enter-session-fence.md §4「Bind 修通」)。
+//
+// gate 的生成路由对非空 payload 只解 payload、不再看信封业务字段,所以这里任何一个字段丢了都是静默的:
+// login_generation 丢 → gate 按旧路由补发时带旧代次,中间被顶过号的合法重登会被 scene 判陈旧;
+// session_version 丢 → 回到"收了却没往下传"的老问题。信封字段同时保持不变:分区 key 取自信封
+// PlayerId,ValidateCommandTarget 读信封上的目标字段。
+func TestBindSessionCommandPayloadCarriesEvent(t *testing.T) {
+	requireDefaultContract(t)
+
+	const (
+		gateID          = "300"
+		instanceID      = "b0a1-uuid"
+		sessionID       = uint32(4242)
+		playerID        = uint64(90001)
+		sessionVersion  = uint32(17)
+		enterGsType     = uint32(2)
+		loginGeneration = uint64(1_760_000_000_123)
+	)
+
+	msg, err := buildBindSessionCommand(gateID, instanceID, sessionID, playerID, sessionVersion, enterGsType, loginGeneration)
+	if err != nil {
+		t.Fatalf("build: %v", err)
+	}
+
+	var cmd kafkapb.GateCommand
+	if err := proto.Unmarshal(msg.Payload, &cmd); err != nil {
+		t.Fatalf("unmarshal GateCommand: %v", err)
+	}
+	if cmd.GetEventId() != uint32(game.ContractsKafkaBindSessionEventEventId) {
+		t.Fatalf("event_id = %d, want BindSessionEvent(%d)", cmd.GetEventId(), game.ContractsKafkaBindSessionEventEventId)
+	}
+	// 信封:与改动前逐项相同。
+	if cmd.GetSessionId() != sessionID || cmd.GetPlayerId() != playerID || cmd.GetEnterGsType() != enterGsType {
+		t.Errorf("envelope session_id=%d player_id=%d enter_gs_type=%d, want %d/%d/%d",
+			cmd.GetSessionId(), cmd.GetPlayerId(), cmd.GetEnterGsType(), sessionID, playerID, enterGsType)
+	}
+	if cmd.GetTargetGateId() != 300 || cmd.GetTargetInstanceId() != instanceID {
+		t.Errorf("envelope target gate=%d instance=%q, want 300/%q", cmd.GetTargetGateId(), cmd.GetTargetInstanceId(), instanceID)
+	}
+	if msg.PartitionKey != strconv.FormatUint(playerID, 10) {
+		t.Errorf("partition key = %q, want %q", msg.PartitionKey, strconv.FormatUint(playerID, 10))
+	}
+
+	if len(cmd.GetPayload()) == 0 {
+		t.Fatal("GateCommand.payload is empty; gate would rebuild the event from the envelope and drop session_version / login_generation")
+	}
+	var event kafkapb.BindSessionEvent
+	if err := proto.Unmarshal(cmd.GetPayload(), &event); err != nil {
+		t.Fatalf("unmarshal BindSessionEvent: %v", err)
+	}
+	if event.GetSessionId() != sessionID {
+		t.Errorf("BindSessionEvent.session_id = %d, want %d", event.GetSessionId(), sessionID)
+	}
+	if event.GetPlayerId() != playerID {
+		t.Errorf("BindSessionEvent.player_id = %d, want %d", event.GetPlayerId(), playerID)
+	}
+	if event.GetSessionVersion() != sessionVersion {
+		t.Errorf("BindSessionEvent.session_version = %d, want %d", event.GetSessionVersion(), sessionVersion)
+	}
+	if event.GetEnterGsType() != enterGsType {
+		t.Errorf("BindSessionEvent.enter_gs_type = %d, want %d", event.GetEnterGsType(), enterGsType)
+	}
+	if event.GetLoginGeneration() != loginGeneration {
+		t.Errorf("BindSessionEvent.login_generation = %d, want %d", event.GetLoginGeneration(), loginGeneration)
 	}
 }
 

@@ -6,12 +6,12 @@
 //
 // Six metrics, mapping 1:1 onto the runbook's "待补 Prometheus 指标" table:
 //
-//   login_queue_size              Gauge       per zone     ZCARD snapshot
-//   login_queue_admitted_inflight Gauge       per zone     in-flight placeholders (ZCARD after dropping expired)
-//   login_queue_wait_seconds      Histogram   per zone     time from Enqueue to Lookup-admit
-//   login_queue_admit_total       Counter     per zone     dispatcher PopAdmit results
-//   login_queue_expired_total     Counter     per zone+reason  EXPIRED responses (token invalid / meta gone / etc.)
-//   login_queue_dispatcher_is_leader  Gauge   per pod+zone  1 = this pod leads its zone, 0 = standby
+//	login_queue_size              Gauge       per zone     ZCARD snapshot
+//	login_queue_admitted_inflight Gauge       per zone     in-flight placeholders (ZCARD after dropping expired)
+//	login_queue_wait_seconds      Histogram   per zone     time from Enqueue to Lookup-admit
+//	login_queue_admit_total       Counter     per zone     dispatcher PopAdmit results
+//	login_queue_expired_total     Counter     per zone+reason  EXPIRED responses (token invalid / meta gone / etc.)
+//	login_queue_dispatcher_is_leader  Gauge   per pod+zone  1 = this pod leads its zone, 0 = standby
 //
 // Why only these six (and not, say, "rank histogram" or "per-gate admit
 // distribution"):

@@ -190,7 +190,10 @@ func (l *WatchBattleLogic) WatchBattle(in *matchpb.WatchBattleRequest) (*matchpb
 		if beforeAcquireWatchingHook != nil {
 			beforeAcquireWatchingHook(playerId)
 		}
-		acquired, err := l.svcCtx.MatchRedis.SetnxEx(spectateWatchingKey(playerId),
+		// 抢占标记与挂观众是 WatchBattle 的提交点,都受请求 ctx 约束:截止之后不再发出,否则会在客户端
+		// 收到超时、gate 放行同一会话的下一条请求之后才把观战绑上(docs/design/client-request-ordering.md §6.1)。
+		// 失败回滚(deleteSpectateWatching / removeObserver)是补偿,仍走独立 ctx。
+		acquired, err := l.svcCtx.MatchRedis.SetnxExCtx(l.ctx, spectateWatchingKey(playerId),
 			strconv.FormatUint(battleId, 10), spectateTTLSeconds(l.svcCtx))
 		if err != nil {
 			return internalErr("写观战标记", err)
@@ -201,7 +204,7 @@ func (l *WatchBattleLogic) WatchBattle(in *matchpb.WatchBattleRequest) (*matchpb
 				ErrorMessage: tipErr(constants.ErrAlreadyWatching, "已在观战另一场战斗"),
 			}, nil
 		}
-		roomMissing, err := addObserver(l.svcCtx, record.GetBattleNodeId(), battleId,
+		roomMissing, err := addObserver(l.ctx, l.svcCtx, record.GetBattleNodeId(), battleId,
 			playerId, session.Account, routing)
 		if err == nil {
 			// double-check 收尾:关『检查→写标记』TOCTOU 的另一半窗口——上方

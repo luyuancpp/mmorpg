@@ -4,6 +4,7 @@ import (
 	"context"
 	"db/internal/logic/pkg/proto_sql"
 	"db/internal/metrics"
+	"db/internal/storeerr"
 	"errors"
 	"fmt"
 	db_proto "proto/db"
@@ -284,7 +285,7 @@ func (w *worker) routeTask(task *workerTask, dbTask *db_proto.DBTask) (*placemen
 
 	switch decision.outcome {
 	case metrics.PlacementStaleTopic:
-		w.quarantineOrderingConflict(task, dbTask, fmt.Sprintf(
+		w.quarantineOrderingConflict(task, dbTask, metrics.DeadLetterStaleTopic, fmt.Sprintf(
 			"PLACEMENT stale_topic (P-6): topic zone %d != player home_zone %d; the write predates a home_zone change and must not land in any database (%s)",
 			router.zone, snap.home, snap))
 		return nil, false
@@ -299,7 +300,7 @@ func (w *worker) routeTask(task *workerTask, dbTask *db_proto.DBTask) (*placemen
 		reason := fmt.Sprintf("PLACEMENT missing_required: player %d has no player:placement record and Placement.Required=true (%s)",
 			dbTask.Key, snap)
 		if op == "write" {
-			w.quarantineOrderingConflict(task, dbTask, reason)
+			w.quarantineOrderingConflict(task, dbTask, metrics.DeadLetterMissingRequired, reason)
 		} else {
 			w.failReadTask(task, dbTask, reason)
 		}
@@ -311,6 +312,13 @@ func (w *worker) routeTask(task *workerTask, dbTask *db_proto.DBTask) (*placemen
 		err = errors.New("store resolver returned no store")
 	}
 	if err != nil {
+		if op == "read" {
+			// 读不改数据,等待它的 login 最多等 8 秒:库打不开或在冷却期内时立即回失败回执,不进重试队列(L-04 §3.6)。
+			// 第一次在已打开的库上撞到连接类错误的读不走这里,它照常重试,秒级抖动仍能被吸收。
+			metrics.CountReadAbandoned(metrics.ReadAbandonedStoreUnavailable)
+			w.failRead(task, dbTask, fmt.Sprintf("placement store %d unavailable: %v", decision.storageID, err), true)
+			return nil, false
+		}
 		w.deferFailedTask(task, dbTask, fmt.Errorf("%w: storage=%d key=%d msgType=%s: %w",
 			errPlacementStoreUnavailable, decision.storageID, dbTask.Key, dbTask.MsgType, err))
 		return nil, false
@@ -330,6 +338,12 @@ func (w *worker) routeTask(task *workerTask, dbTask *db_proto.DBTask) (*placemen
 // 读不改数据,进死信没有可保全的东西,重试也等不来记录;立即给等待方(login 预加载)回 Success=false,
 // 让它秒级失败而不是等满超时。回执写失败时按普通 Redis 故障延后重试。
 func (w *worker) failReadTask(task *workerTask, dbTask *db_proto.DBTask, reason string) {
+	w.failRead(task, dbTask, reason, false)
+}
+
+// failRead 是 failReadTask 的实现。quiet 为 true 时(存储不可用,L-04)每条只打 DEBUG,按原因限速打一行 ERROR,
+// 否则一次 MySQL 重启期间每一次冷登录都会刷一行 ERROR。
+func (w *worker) failRead(task *workerTask, dbTask *db_proto.DBTask, reason string, quiet bool) {
 	if dbTask.TaskId != "" {
 		failure := &db_proto.TaskResult{Success: false, Error: reason}
 		if err := publishTaskResult(w.ctx, w.redisClient, dbTask.TaskId, failure); err != nil {
@@ -337,7 +351,12 @@ func (w *worker) failReadTask(task *workerTask, dbTask *db_proto.DBTask, reason 
 			return
 		}
 	}
-	logx.Errorf("%s: read answered with a failure result: taskID=%s msgType=%s", reason, dbTask.TaskId, dbTask.MsgType)
+	if quiet {
+		logx.Debugf("%s: read answered with a failure result: taskID=%s msgType=%s", reason, dbTask.TaskId, dbTask.MsgType)
+		logStoreDeferral(dbTask, metrics.ReadAbandonedStoreUnavailable, errors.New(reason))
+	} else {
+		logx.Errorf("%s: read answered with a failure result: taskID=%s msgType=%s", reason, dbTask.TaskId, dbTask.MsgType)
+	}
 	if task.fromRetry {
 		if err := ackRetryReceipt(w.ctx, w.redisClient, w.retryProcessingKey, task.retryReceipt); err != nil {
 			logx.Errorf("ack rejected read retry receipt failed; it remains recoverable: taskID=%s err=%v", dbTask.TaskId, err)
@@ -353,14 +372,19 @@ func (w *worker) failReadTask(task *workerTask, dbTask *db_proto.DBTask, reason 
 // 几次重试后推进没有消费者的死信队列 —— 等于丢盘。
 //
 // 落点库打不开只对写豁免:读不改数据,等待方(login 预加载)早已超时,库长期打不开时无限期重排只会让
-// 每次登录尝试都往重试队列里加一条永远排不完的读,挤占真正需要重试的写。读照常耗预算,几次后进死信。
+// 每次登录尝试都往重试队列里加一条永远排不完的读,挤占真正需要重试的写。读照常耗预算,用完后丢弃、不进死信
+// (L-04 §3.6;选库时就发现库打不开的读不进重试队列,见 routeTask)。
+//
+// SQL 调用点打了存储侧标记的错误(storeerr:连接数满、连接断开、只读、忙)同样只对写豁免(L-04 §3.3)。
+// 只认标记,不对 cause 跑类型判断:Redis 侧的超时也是 net.Error,不能算成存储不可用。
 func retryBudgetExempt(dbTask *db_proto.DBTask, cause error) bool {
 	switch {
 	case errors.Is(cause, errOrderingLockBusy),
 		errors.Is(cause, errPlacementFrozen),
 		errors.Is(cause, errPlacementMoved):
 		return true
-	case errors.Is(cause, errPlacementStoreUnavailable):
+	case errors.Is(cause, errPlacementStoreUnavailable),
+		storeerr.KindOf(cause) != storeerr.KindNone:
 		return dbTask.Op == "write"
 	}
 	return false

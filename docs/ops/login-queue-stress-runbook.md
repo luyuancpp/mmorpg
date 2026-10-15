@@ -69,6 +69,8 @@ Queue:
 - 无 leader 日志 = `dispatcher:lock:login_queue:zone:<id>` 抢锁失败,看 Redis 连接。多 zone 共用 Redis 时每个 zone 各有一把锁(2026-10-12 G1b 起),某个 zone 没有锁键 = 该 zone 没有打开 Queue 的 login 副本
 - 有 leader 但无 admitted 日志 = `FreeSlots` 永远返回 0,查 `GateWatcher.FetchAllNodes()` 和 ZoneCapacityOverride
 - 有 leader、日志里持续出现 `[loginqueue] freeSlots zone=<id> queueLen=<n> err=no gates for zone` = 有人在排,但本 zone 一台可用 gate 都没有(G1b 之前这种情况是静默跳过的)
+- 有 leader、日志里持续出现 `[loginqueue] queueLen zone=<id> err=...` = 读不出队列键(WRONGTYPE / ACL / 单键异常),锁照常续期但每拍都不出队(2026-10-14 之前这种情况零日志)
+- 日志里有 `goroutine_panic` 且 `point=login.queue_dispatcher_term`(指标 `safego_panic_total{point="login.queue_dispatcher_term"}` 在涨)= 出队路径有代码缺陷。该任期已放锁,本副本退避 TTL/3 后再参选,同 zone 备机可以接手;每个副本都 panic 就是每轮当选即 panic,队列照样不出,按栈修代码
 
 ### 模式 2:over-issue(超发 gate token)
 ```
@@ -134,7 +136,9 @@ gate 机器 sysctl net.ipv4.ip_local_port_range 内 TIME_WAIT 占满
 ### 1. 单元 + 集成测试都过
 ```bash
 cd go/login && go test ./internal/logic/pkg/loginqueue/... -count=1
-# 期望:11 个 PASS,~1s
+# 期望:全部 PASS,耗时数秒(主备切换类用例要等 1s 的备机重试周期)。
+#       个数不写死:2026-10-14 为 59 个顶层用例,以后增删用例以 -v 实际列出的为准。
+#       G1b 的验收命令与通过标准见 docs/handoff/launch-readiness-20261013/spec_G1b.md §7.2
 ```
 
 ### 2. 单 robot 冒烟(zone 不饱和)
@@ -152,8 +156,9 @@ cd go/login && go test ./internal/logic/pkg/loginqueue/... -count=1
 ### 4. dispatcher 杀掉再起(故障演练)
 ```bash
 # 跑 5000 robot,排队中途 kill -9 该 zone 当前的 leader login pod
-# 期望:30s 内同 zone 的备份接管,q_admitted 短暂停顿后继续上涨,q_avg_wait 略升但无饿死;
-#       只有这个 zone 的放行暂停(≤ TTL),其它 zone 不受影响
+# 期望:约 20~40s 内同 zone 的备份接管(锁剩余 TTL 在 20~30s 之间,心跳每 TTL/3=10s 续到 30s;
+#       再加备机重试周期 TTL/3=10s),q_admitted 短暂停顿后继续上涨,q_avg_wait 略升但无饿死;
+#       只有这个 zone 的放行暂停(≤ TTL + TTL/3 ≈ 40s),其它 zone 不受影响
 ```
 
 ### 5. Redis 重启(灾难演练)
@@ -178,13 +183,22 @@ login 进程通过 go-zero 内置 `/metrics` endpoint(`login.yaml` 第 119 行 `
 | `login_queue_wait_seconds` | Histogram | zone | 入队到 admit 的端到端等待(buckets: 0.5/1/2/5/10/20/30/60/120/300/600s)|
 | `login_queue_admit_total` | Counter | zone | dispatcher 累计 admit 数,`rate(...[1m])` = drain QPS |
 | `login_queue_expired_total` | Counter | zone, reason | reason ∈ `bad_signature` / `ttl` / `meta_gone` / `queue_disabled` |
-| `login_queue_dispatcher_is_leader` | Gauge | pod, zone | 1=leader,0=standby;`sum by (zone) (...) == 1` 是稳态不变量(每 zone 一个 leader) |
+| `login_queue_dispatcher_is_leader` | Gauge | pod, zone | 1=leader,0=standby;`sum by (zone) (...) == 1` 是稳态不变量(每 zone 一个 leader)。leader 每拍重发 1、备机每轮抢锁失败重发 0(2026-10-14 起),指标开关打开前写丢的样本下一拍就补上。**序列缺失不等于 0**:整 zone 没有副本上报时 `sum by (zone)` 根本不出这一组,发现不了整 zone 缺席,见下方 `absent` 告警 |
 
 ### 推荐告警(PromQL)
 
 ```promql
-# 某个 zone 没有 leader 或双 leader (Redis flap / 该 zone 全副本挂 / 同 zone 锁键配得不一样)
+# 某个 zone 双 leader,或有副本在上报但没有 leader(Redis flap / 同 zone 锁键配得不一样)。
+# 建规则时 for: 1m,盖过 leader 交接窗口:kill -9 时锁剩余 TTL ≤ 30s + 备机重试周期 10s ≈ 40s,
+# 优雅停机最长 10s;不带 for 的话每次滚动重启 / 切主都会响。
+# 「该 zone 全副本挂」这条发现不了:没有序列时 sum by (zone) 不出这一组,!= 1 永远不命中。
 sum by (zone) (login_queue_dispatcher_is_leader) != 1
+
+# 某个开了排队的 zone 一条序列都没有(全副本挂 / 没开排队 / 没抓到),只有这条能报。for: 2m。
+# absent 不能按标签自动分组,必须按开了排队的 zone 清单逐个写(下面是 zone 1)。
+# 也可以与上一条合成「sum by (zone) (...) > 1」加「absent(login_queue_dispatcher_is_leader{zone="<id>"} == 1)」
+# (后者同时覆盖全 0 与无序列),两种写法二选一。都依赖 leader / 备机按拍重发,否则冷启动后会一直报。
+absent(login_queue_dispatcher_is_leader{zone="1"})
 
 # 队列在涨但 admit 不涨(dispatcher 卡死)
 deriv(login_queue_size[5m]) > 0 and rate(login_queue_admit_total[5m]) == 0

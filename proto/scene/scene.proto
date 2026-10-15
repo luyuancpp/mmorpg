@@ -14,12 +14,16 @@ option (OptionFileDefaultNode) = NODE_SCENE;
 
 message PlayerEnterGameNodeRequest
 {
+  reserved 3;                  // 原 uint32 centre_node_id,2026-04-18(dcb1e2a68)删除,不复用
   uint64 player_id = 1;
   uint32 session_id = 2;
   uint32 enter_gs_type = 4;    // LOGIN_FIRST / LOGIN_RECONNECT / LOGIN_REPLACE
   uint64 scene_id = 5;         // Target scene instance GUID from SceneManager
   uint32 home_zone_id = 6;     // 玩家归属 zone,gate 从 RoutePlayerEvent 透传;0=未知(fail-closed 落进程 zone)
   uint64 owner_epoch = 7;      // 本次路由的归属 epoch,gate 从 RoutePlayerEvent 透传;0=旧版 Go 未铸造(存盘不校验)
+  // 登录代次:gate 用本会话、本角色见过的最高代次盖章(Bind 与 Route 取大),scene 入场栅栏据此
+  // 拒绝跨会话的陈旧入场(docs/design/scene-enter-session-fence.md)。0 = 上游未带(旧版)。
+  uint64 login_generation = 8;
 }
 
 message ProcessClientPlayerMessageRequest

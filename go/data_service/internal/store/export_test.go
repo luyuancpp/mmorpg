@@ -123,6 +123,10 @@ const (
 // RouteSelectRowsSQLForTest 返回 n 个 id 的批量读(R8 / R13;forUpdate 即 R8 的加锁形态),EXPLAIN 回归用。
 func RouteSelectRowsSQLForTest(n int, forUpdate bool) string { return routeSelectRowsSQL(n, forUpdate) }
 
+// PlayerRouteBootstrapDDLForTest 是 player_route 的建表语句:真库用例把其中 chk_route_shard 的模数换掉,
+// 手工建出「按另一个模数建过的表」,证明建池探针 P5 认得出来(TestRouteStore_ProbeRejectsTableBuiltWithAnotherShardModulus)。
+const PlayerRouteBootstrapDDLForTest = playerRouteBootstrapDDL
+
 // RouteTiDBPrefixSplitPointsForTest 是 tidb-prepare 在 idx_route_home / idx_route_storage 上每个前缀值的切点数
 // (真 TiDB 用例按它断言预切后的 Region 数,不写字面量)。
 const RouteTiDBPrefixSplitPointsForTest = routeTiDBPrefixSplitPoints

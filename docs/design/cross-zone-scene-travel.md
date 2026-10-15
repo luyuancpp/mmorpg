@@ -1261,6 +1261,7 @@ C-5(客户端收到 34 是否一定断线)已由 §12.5.4 解除。
 - **L2**:kSent 之后被 scene 拒绝(A2′、载入失败、场景不存在),只推 tip、不踢线,会话已提交到新节点。
 - **L3**:一条已投递、之后又被 scene_manager 回滚的路由,会在 ≤3s(找不到节点)或 ≤20s(连不上 / 未握手)内被补发,会话改绑到新节点 X,随后被 X 的 A2′ 拒建。若源端已凭回滚回执解冻,活实体会失去输入和 ExitGame,变成卡死加僵尸;不会双主。这一条已交给 GO-2,GO-2 定稿把它列为可接受结局(见 §13.7 残余"gate 迟到改绑"一条)。
 - **L4**:跨会话乱序。旧会话还在重试时玩家顶号进了同一个 X,旧会话的迟到转发可能抢走新会话的实体。连接检查把窗口限定在"KickPlayer 迟到"之内。根治在 scene 侧:`PlayerEnterGameNode` 不应无条件摘掉在用会话,遇到过期 epoch 应直接拒绝。本轮不做。
+  - **2026-10-14 更正**:已由 [scene-enter-session-fence.md](scene-enter-session-fence.md) 处理,但判据不是 epoch:同一节点上顶号两次路由的 owner_epoch 相同(R1),比 epoch 修不了。改为登录代次(login 持锁铸造,随 Bind / 路由带到 gate,gate 盖章后进 `PlayerEnterGameNodeRequest`),scene 入口第一步零副作用判定,跨会话且代次更旧即拒。
 - **L5**:20s 只盖得住短重连。gate→X 单向分区、X 在 etcd 里却仍健康时,会形成"每 20s 被踢一次"的循环。
 - **L6**:就绪标记依赖握手应答路径;写不上的话 20s 后全员被踢。防线是每条链路的 `scene link ready` 日志,加上基线 login-test 必须零 give-up。
 - **L7**:行为变化五处:
@@ -1877,6 +1878,7 @@ C++(`cpp/libs/services/scene/player/` 下,另有两个 handler 文件):
 - 疏散中被保留的票据,消费它的是"他的下一次退出",不一定是节点最后的退出收尾:票据判定不看退出原因,疏散期间由 scene_manager 的 ReleasePlayer 或 s2s LeaveScene 发起的退出同样会按票据派发改派(客户端断线的走作废)。生产配置下这条路是否可达没有证实(活着且不在交接中的实体收到 ReleasePlayer,需要 scene_manager 不经换手门就跨节点落点);后果只是多发一次由 owner_epoch 条件写把关的改派。
 - 带票据的退出实体被废黜销毁时不踢(`ticket_dropped_deposed`)。
 - `PlayerEnterGameNode` 没有 epoch 栅栏,陈旧路由带不同会话到达会把条目误结成 `superseded`(加栅栏时 `ReconcileRelocateOnReentry` 要挪到放行之后,见 §13.9)。
+  - **2026-10-14**:已由登录代次栅栏收口([scene-enter-session-fence.md](scene-enter-session-fence.md) §5):`ReconcileRelocateOnReentry` 挪到栅栏放行之后;待确认条目记下派发时的登录代次,实体销毁后陈旧入场也会被它拒掉。
 - 普通换图传输失败后一个 settle 窗口内被排空时,"更早请求可能被放行"漏报(在途组件已被摘掉);收口要改 gRPC 第二批的代码,本轮只登记。
 - 盲踢的拒绝码白名单是手抄的静态表,依赖这八个码在 `enterscenelogic.go` 的每个出处都早于落点写;scene_manager 以后新增或挪动拒绝点要复核它(`player_lifecycle.h` 的注释写明了复核义务)。
 - dev 旁路的"跳过补写"在默认本地栈里不生效(P8);生产口径(scene_manager 旁路关)不受影响。
@@ -1908,6 +1910,7 @@ C++(`cpp/libs/services/scene/player/` 下,另有两个 handler 文件):
 
 **其余推迟项**(只登记,不落):
 - scene 侧会话栅栏:`PlayerEnterGameNode` 在 epoch 判定之前就无条件摘会话;EnterScene 遇到过期 epoch 只打 WARN。需要单独设计,与 CPP-3 的挂点、GO-2 协调:加栅栏时 `ReconcileRelocateOnReentry`(现在排在 `PlayerEnterGameNode` 守护段最前面)要挪到放行之后,否则一条陈旧路由带着别的会话到达,会把待确认条目误结成 `superseded`、玩家不被踢。
+  - **2026-10-14**:已落,设计见 [scene-enter-session-fence.md](scene-enter-session-fence.md)(未编译、未测试,待 Codex 验证)。
 - robot 的 travel-smoke 预算改为可配置(≥75s),用于自动验收 §13.2 的 H 场景。归 robot 属主。
 - `SendTipAndKickToClient`(按实体)收敛到 CPP-3 的按会话推送,属于 DRY 重构,本轮不做。
 - `handleWatchEvent` 在同一个 etcd 键换了 zone 时,直接 Zrem 旧 zone、不写 death_at,本轮只登记。

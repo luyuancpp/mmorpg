@@ -51,6 +51,7 @@ python tools/scripts/gen_docs_index.py
 
 - [auth-provider-framework.md](design/auth-provider-framework.md) — Auth Provider Framework
 - [client-access-band-routing.md](design/client-access-band-routing.md) — 客户端接入的标准形态，与 gate 按号段整体转发给路由服（client-rpc-router 续篇，D51–D64）
+- [client-request-ordering.md](design/client-request-ordering.md) — 客户端请求按会话保序:路由服水平扩展下的乱序修复(gate 路由 lane)
 - [client-rpc-router.md](design/client-rpc-router.md) — 客户端 RPC 路由服(client_rpc_router):gate 唯一的 gRPC 目标
 - [dual-token-authentication.md](design/dual-token-authentication.md) — Dual Token Authentication Design (Access + Refresh)
 - [gate-connection-admission-control.md](design/gate-connection-admission-control.md) — gate 连接准入控制：muduo 无条件 accept 的业界解法与本仓落地 (2026-09-03)
@@ -84,6 +85,7 @@ python tools/scripts/gen_docs_index.py
 - [enter-scene-zone-routing.md](design/enter-scene-zone-routing.md) — EnterScene Zone Routing Design (updated 2026-08-03; handoff-gate, login-side and merge sections re-verified against code 2026-09-20)
 - [nav-spawn-fix-2026-09-05.md](design/nav-spawn-fix-2026-09-05.md) — 客户端/服务端导航数据、出生点与位置纠正契约统一(2026-09-05)
 - [scene-creation-architecture.md](design/scene-creation-architecture.md) — Scene Creation Architecture
+- [scene-enter-session-fence.md](design/scene-enter-session-fence.md) — 入场会话栅栏:登录代次(login_generation)
 - [scene-grpc-server-design.md](design/scene-grpc-server-design.md) — Scene Node gRPC Server Design
 - [scene-navmesh-pipeline.md](design/scene-navmesh-pipeline.md) — 场景导航网格管线(Recast 烘焙 + 服务器寻路阻挡校验)
 - [scene-node-threading-model.md](design/scene-node-threading-model.md) — Scene Node 线程模型决策
@@ -243,6 +245,7 @@ python tools/scripts/gen_docs_index.py
 
 - [incident-friend-lock-order-deadlock-2026-09-21.md](ops/incident-friend-lock-order-deadlock-2026-09-21.md) — 事故报告:friend 锁定读被规划成索引全扫描,锁集越出守卫,真死锁 1213
 - [incident-gate-tcpconnection-dtor-assert-2026-09-13.md](ops/incident-gate-tcpconnection-dtor-assert-2026-09-13.md) — 事故报告:gate 在 `~TcpConnection` 断言崩溃(thread_local 持有连接强引用)
+- [incident-scene-ecs-gameplay-20261014.md](ops/incident-scene-ecs-gameplay-20261014.md) — 严重事故记录：任务、实时技能、Buff 与节点生命周期缺陷（2026-10-14）
 
 #### 运维手册
 
@@ -267,6 +270,7 @@ python tools/scripts/gen_docs_index.py
 #### 其他
 
 - [deferred-clawback-bypass-audit-2026-05.md](ops/deferred-clawback-bypass-audit-2026-05.md) — 补缴系统(Deferred Clawback)旁路审计报告
+- [godb-pipeline-launch-todo.md](ops/godb-pipeline-launch-todo.md) — 存盘管线（go/db）上线待做
 - [pr-templates.md](ops/pr-templates.md) — PR Templates — HTTP /api/login Migration
 - [scene-node-role-split.md](ops/scene-node-role-split.md) — Scene Node Role Split Runbook
 

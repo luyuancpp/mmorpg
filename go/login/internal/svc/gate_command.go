@@ -101,14 +101,33 @@ func buildGateCommandMessage(kind string, gateID string, gateInstanceID string,
 // buildBindSessionCommand / buildKickPlayerCommand / buildPushTipCommand 是各条命令各自的组装入口。
 // 单独拆出来是为了让单测能盯住**生产路径本身**(事件号、目标字段、topic、分区),
 // 而不是在测试里再抄一遍字段字面量 —— 抄一遍的测试只能证明抄得对。
+//
+// Bind 的业务字段整份序列化成 BindSessionEvent 放进 payload:gate 的生成路由
+// (gate_kafka_command_router.cpp)对非空 payload 走 DispatchProtoEvent,信封路径只拼得出
+// session_id / player_id / enter_gs_type,带不到 session_version 与 login_generation。
+// login_generation 必须随 Bind 到 gate:Bind 先于本次路由到达时,gate 会立即按上一次的
+// lastSceneRoute 补发登录进场,补发要带本次登录的代次(scene-enter-session-fence.md §4)。
+// 新旧 gate 都认得 payload 里的 BindSessionEvent(事件已在注册表里,未知字段原样跳过)。
+// 信封字段照填(与 PushTip 同做法):分区 key 取自信封 PlayerId,broker 侧排障也读信封。
 func buildBindSessionCommand(gateID string, gateInstanceID string,
-	sessionID uint32, playerID uint64, enterGsType uint32,
+	sessionID uint32, playerID uint64, sessionVersion uint32, enterGsType uint32, loginGeneration uint64,
 ) (gateCommandMessage, error) {
+	eventPayload, err := proto.Marshal(&kafkapb.BindSessionEvent{
+		SessionId:       sessionID,
+		PlayerId:        playerID,
+		SessionVersion:  sessionVersion,
+		EnterGsType:     enterGsType,
+		LoginGeneration: loginGeneration,
+	})
+	if err != nil {
+		return gateCommandMessage{}, fmt.Errorf("marshal BindSessionEvent (session=%d): %w", sessionID, err)
+	}
 	return buildGateCommandMessage("bind session", gateID, gateInstanceID, &kafkapb.GateCommand{
 		SessionId:   sessionID,
 		PlayerId:    playerID,
 		EventId:     uint32(game.ContractsKafkaBindSessionEventEventId),
 		EnterGsType: enterGsType,
+		Payload:     eventPayload,
 	})
 }
 

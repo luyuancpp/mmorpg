@@ -406,8 +406,10 @@ void BuffSystem::OnBeforeTakeDamage(const entt::entity casterEntity, const entt:
 
 void BuffSystem::OnAfterTakeDamage(const entt::entity casterEntity, const entt::entity targetEntity, DamageEventComp& damageEvent)
 {
-    // casterEntity is the entity that just took damage -> reset its combat-idle buff.
-    BuffImplSystem::ResetCombatIdleBuff(entt::to_entity(damageEvent.attacker_id()), casterEntity);
+    // 受击方是 targetEntity(唯一调用方 skill.cpp TriggerAfterDamageEvents 传的是 攻击者, 受击者)。
+    // 以前误把 casterEntity 当受击者,重置的是攻击者自己的脱战加成;攻击者也不必再从
+    // damageEvent.attacker_id 绕一圈 uint64 → entity 取回。
+    BuffImplSystem::ResetCombatIdleBuff(casterEntity, targetEntity);
 }
 
 void BuffSystem::OnBeforeDead(entt::entity parent)

@@ -112,6 +112,15 @@
 //                                 the has_equip() presence both survive, in the
 //                                 player_database record and in the legacy top-level
 //                                 mirror alike.
+//   16. EnterFence              — scene enter session fence (login_generation,
+//                                 docs/design/scene-enter-session-fence.md §5):
+//                                 the enter_fence::Decide table cell by cell and
+//                                 DecideAll's merge rule, plus ECS-level seams that
+//                                 drive PlayerLifecycleSystem::HandleEnterGameNode in a
+//                                 host without Redis (stale cross-session enters are
+//                                 rejected on the entity / pending / relocate-entry
+//                                 paths, same-session merges, owned-only SessionMap
+//                                 erasure, the bind-time re-check in EnterScene).
 //
 // History: these cases were written for the player_migrate data-moving chain
 // (Kafka PlayerMigrationEvent + ACK + CrossZoneReaper). That chain was
@@ -156,6 +165,9 @@
 //       * HandleRelocateVerifyReply, including the glue that drops stale verify replies;
 //       * the conditional credential write;
 //       * the kSent path of PushToSessionViaGate.
+//   - Enter fence (section 16) pieces outside the scene library: the node-level
+//     handlers (SceneHandler::PlayerEnterGameNode's AsyncLoad, UpdateSessionDetail's
+//     fence call) and the [EnterFence] 30s summary line in RedisSystem.
 // ---------------------------------------------------------------------------
 
 namespace
@@ -4555,6 +4567,678 @@ TEST(CrossZoneBagMarshal, EquipInstanceDataSurvivesThePlayerAllDataHop)
     {
         EXPECT_TRUE(bag.IsLayerConsistent());
     }
+}
+
+// ============================================================================
+// 16. EnterFence —— 入场会话栅栏:登录代次(docs/design/scene-enter-session-fence.md §5、§10)。
+//     EnterFence.*    enter_fence.h 的纯判定:Decide 判定表逐格、DecideAll 的合并规则、名表与放行集合。
+//     EnterFenceEcs.* 无 Redis 宿主里直接驱动 PlayerLifecycleSystem::HandleEnterGameNode(AsyncLoad 留在节点层,
+//                     这里不发):陈旧的跨会话入场在实体 / 待入场 / 改派待确认条目三条路径上都被拒、且不碰任何状态;
+//                     同一会话合并;SessionMap 只擦属于自己的映射;EnterScene 的绑定时复核。
+//     缺陷复现形状(§1):同一角色两台设备落在同一个 scene 节点,同节点顶号两次路由的 owner_epoch 相同(都取 5),
+//     先登录那一方(A)的入场晚于顶号方(B)到达。修复前 A 的入场会擦掉 B 的会话、把会话绑回 sA。
+// ============================================================================
+#include "services/scene/player/system/enter_fence.h"
+#include "proto/common/component/player_login_comp.pb.h" // PlayerEnterGameStateComp、LOGIN_*
+#include "proto/common/event/player_event.pb.h"          // PlayerLoginEvent
+
+// 让 gtest 在断言失败时打出结论名,而不是「1-byte object <04>」。只影响失败输出。
+namespace enter_fence
+{
+inline void PrintTo(Verdict value, std::ostream *os) { *os << VerdictName(value); }
+} // namespace enter_fence
+
+namespace
+{
+namespace ef = enter_fence;
+
+constexpr SessionId kFenceSessionOld = 262144; // 更早的一次登录(A 的入场从没被处理过,本节点上留着的是它)
+constexpr SessionId kFenceSessionA = 262145;   // 先登录、已被踢的设备
+constexpr SessionId kFenceSessionB = 262146;   // 顶号的设备
+// login 铸的代次带毫秒时间下限(设计 §3.2),取一个毫秒时间戳量级的值;只比大小。
+constexpr uint64_t kGenOld = 1760400000000;
+constexpr uint64_t kGenA = kGenOld + 1;
+constexpr uint64_t kGenB = kGenOld + 2;
+constexpr uint64_t kFenceOwnerEpoch = 5;       // 同节点顶号不铸造 epoch:各次路由都带同一个值
+constexpr uint64_t kFenceScene = 88;
+constexpr Guid kFenceOtherPlayerId = 950500001; // 与本玩家先后占同一会话号的另一名玩家
+
+constexpr ef::Verdict kAllEnterVerdicts[] = {
+    ef::Verdict::kAdmitFresh,  ef::Verdict::kAdmitSameSession, ef::Verdict::kAdmitNewer,
+    ef::Verdict::kAdmitLegacy, ef::Verdict::kRejectStale,      ef::Verdict::kRejectConflict,
+    ef::Verdict::kRejectUnversioned,
+};
+static_assert(std::size(kAllEnterVerdicts) == ef::kVerdictCount, "新增结论时补进这张表,并补判定表用例");
+
+constexpr ef::Identity FenceIdentity(SessionId session, uint64_t generation)
+{
+    return ef::Identity{true, session, generation};
+}
+
+constexpr ef::Identity kNoIdentity{};
+
+uint64_t FenceCount(ef::Verdict verdict)
+{
+    return enter_fence_stats::Read().verdicts[static_cast<std::size_t>(verdict)];
+}
+} // namespace
+
+TEST(EnterFence, DecideTableEveryCell)
+{
+    struct Row
+    {
+        ef::Identity current;
+        SessionId requestSession;
+        uint64_t requestGeneration;
+        ef::Verdict expected;
+        const char *why;
+    };
+    const Row rows[] = {
+        // 不存在:任意请求放行。
+        {kNoIdentity, kFenceSessionA, 0, ef::Verdict::kAdmitFresh, "no identity, unversioned request"},
+        {kNoIdentity, kFenceSessionA, kGenA, ef::Verdict::kAdmitFresh, "no identity, versioned request"},
+        // 同一会话(有效):任意代次放行。
+        {FenceIdentity(kFenceSessionB, kGenB), kFenceSessionB, kGenB, ef::Verdict::kAdmitSameSession, "same session, equal"},
+        {FenceIdentity(kFenceSessionB, kGenB), kFenceSessionB, kGenA, ef::Verdict::kAdmitSameSession, "same session, lower"},
+        {FenceIdentity(kFenceSessionB, kGenB), kFenceSessionB, 0, ef::Verdict::kAdmitSameSession, "same session, unversioned"},
+        {FenceIdentity(kFenceSessionB, 0), kFenceSessionB, kGenA, ef::Verdict::kAdmitSameSession, "same session, current 0"},
+        // 当前代次 0。
+        {FenceIdentity(kFenceSessionA, 0), kFenceSessionB, 0, ef::Verdict::kAdmitLegacy, "both unversioned"},
+        {FenceIdentity(kFenceSessionA, 0), kFenceSessionB, kGenB, ef::Verdict::kAdmitNewer, "current unversioned"},
+        // 当前代次非 0。
+        {FenceIdentity(kFenceSessionB, kGenB), kFenceSessionA, 0, ef::Verdict::kRejectUnversioned, "request unversioned"},
+        {FenceIdentity(kFenceSessionA, kGenA), kFenceSessionB, kGenB, ef::Verdict::kAdmitNewer, "request newer"},
+        {FenceIdentity(kFenceSessionB, kGenB), kFenceSessionA, kGenA, ef::Verdict::kRejectStale, "request older"},
+        {FenceIdentity(kFenceSessionB, kGenB), kFenceSessionA, kGenB, ef::Verdict::kRejectConflict, "equal, other session"},
+        {FenceIdentity(kInvalidSessionId, kGenB), kFenceSessionA, kGenB, ef::Verdict::kAdmitSameSession,
+         "equal, current has no session (invalid)"},
+        {FenceIdentity(0, kGenB), kFenceSessionA, kGenB, ef::Verdict::kAdmitSameSession, "equal, current has no session (0)"},
+        // 会话 0 / kInvalidSessionId 不是会话:两边都没有会话时按代次裁决,不走"同一会话"。
+        {FenceIdentity(0, kGenB), 0, kGenA, ef::Verdict::kRejectStale, "session 0 is not a session"},
+        {FenceIdentity(kInvalidSessionId, 0), kInvalidSessionId, 0, ef::Verdict::kAdmitLegacy, "invalid is not a session"},
+    };
+    for (const Row &row : rows)
+    {
+        EXPECT_EQ(ef::Decide(row.current, row.requestSession, row.requestGeneration), row.expected) << row.why;
+    }
+}
+
+TEST(EnterFence, AdmitsOnlyTheFourAdmitVerdicts)
+{
+    for (const auto verdict : kAllEnterVerdicts)
+    {
+        const bool admit = verdict == ef::Verdict::kAdmitFresh || verdict == ef::Verdict::kAdmitSameSession ||
+                           verdict == ef::Verdict::kAdmitNewer || verdict == ef::Verdict::kAdmitLegacy;
+        EXPECT_EQ(ef::Admits(verdict), admit) << ef::VerdictName(verdict);
+    }
+    EXPECT_FALSE(ef::Admits(ef::Verdict::kCount)) << "越界按拒绝处理(fail-closed)";
+}
+
+TEST(EnterFence, NamesCoverEveryValue)
+{
+    for (const auto verdict : kAllEnterVerdicts)
+    {
+        EXPECT_STRNE(ef::VerdictName(verdict), "?");
+    }
+    EXPECT_STREQ(ef::VerdictName(ef::Verdict::kCount), "?") << "越界不能读出数组外";
+    EXPECT_STREQ(ef::IdentitySourceName(ef::IdentitySource::kEntity), "entity");
+    EXPECT_STREQ(ef::IdentitySourceName(ef::IdentitySource::kRelocateEntry), "relocate_entry");
+    EXPECT_STREQ(ef::IdentitySourceName(ef::IdentitySource::kCount), "?");
+}
+
+TEST(EnterFence, DecideAllStopsAtTheFirstRejection)
+{
+    // 实体放行(更新)、待入场拒(陈旧)、条目拒(冲突):返回第一处拒绝的结论。
+    const ef::Identity mixed[] = {FenceIdentity(kFenceSessionOld, kGenOld), FenceIdentity(kFenceSessionB, kGenB),
+                                  FenceIdentity(kFenceSessionOld, kGenA)};
+    EXPECT_EQ(ef::DecideAll(mixed, kFenceSessionA, kGenA), ef::Verdict::kRejectStale);
+
+    // 改派待确认条目那一格(§5.1 第 3 处):实体与待入场都不在,只有条目记着他 —— 照样挡下陈旧的异会话入场。
+    const ef::Identity onlyEntry[] = {kNoIdentity, kNoIdentity, FenceIdentity(kFenceSessionB, kGenB)};
+    EXPECT_EQ(ef::DecideAll(onlyEntry, kFenceSessionA, kGenA), ef::Verdict::kRejectStale);
+    EXPECT_EQ(ef::DecideAll(onlyEntry, kFenceSessionA, kGenB + 1), ef::Verdict::kAdmitNewer);
+}
+
+TEST(EnterFence, DecideAllReturnsTheFirstPresentVerdictWhenAllAdmit)
+{
+    const ef::Identity none[] = {kNoIdentity, kNoIdentity, kNoIdentity};
+    EXPECT_EQ(ef::DecideAll(none, kFenceSessionA, kGenA), ef::Verdict::kAdmitFresh) << "一处都没有";
+    EXPECT_EQ(ef::DecideAll(std::span<const ef::Identity>{}, kFenceSessionA, kGenA), ef::Verdict::kAdmitFresh);
+
+    // 实体不在:不存在的那一处不得盖掉真正比过的结论。
+    const ef::Identity pendingFirst[] = {kNoIdentity, FenceIdentity(kFenceSessionA, 0), FenceIdentity(kFenceSessionB, kGenOld)};
+    EXPECT_EQ(ef::DecideAll(pendingFirst, kFenceSessionB, kGenB), ef::Verdict::kAdmitNewer)
+        << "待入场那一处(当前代次 0、请求带代次)先比";
+
+    const ef::Identity entityFirst[] = {FenceIdentity(kFenceSessionA, 0), FenceIdentity(kFenceSessionB, kGenA), kNoIdentity};
+    EXPECT_EQ(ef::DecideAll(entityFirst, kFenceSessionB, kGenB), ef::Verdict::kAdmitNewer)
+        << "两处都放行(更新 / 同一会话):返回第一处的结论";
+    EXPECT_EQ(ef::DecideAll(entityFirst, kFenceSessionB, 0), ef::Verdict::kAdmitLegacy)
+        << "实体放行(双方无代次)、待入场同一会话放行:第一处是 legacy,计数靠它";
+}
+
+// ── ECS 级接缝:无 Redis 宿主里驱动 HandleEnterGameNode ──
+// 本节都用 kExitPlayerId(MakeOnlinePlayer / MakeExitingPlayer 写死的那一名)。待入场表、改派待确认表、SessionMap 都是
+// thread_local,不随用例复位:每条用例开头与结尾各调一次 ResetFenceHost。
+// 新载入分支在宿主里:A2′ 发不出去(zone Redis 为空)→ 记失败、等重发,待入场条目保留;AsyncLoad 在节点层,不发。
+// 被拒时给请求会话推的 tip 在宿主里推不出去(没有 gate),只留 WARN。
+namespace
+{
+void ResetFenceHost()
+{
+    tlsEcs.Clear();
+    SessionMap().clear();
+    DrainRelocateConfirms(); // 同时擦掉 kExitPlayerId 的待入场条目
+}
+
+// 一次入场请求(SceneHandler::PlayerEnterGameNode 组出来的形状)。scene_id 默认 0:复用实体时 EnterScene 在绑定会话、
+// 写身份之后因找不到场景而返回,不碰组队 / 战斗 / 登录事件。
+PlayerEnterContext FenceEnter(SessionId session, uint64_t generation, uint32_t enterGsType = LOGIN_REPLACE,
+                              uint64_t sceneId = 0)
+{
+    PlayerEnterContext ctx;
+    ctx.enterInfo.set_session_id(session);
+    ctx.enterInfo.set_enter_gs_type(enterGsType);
+    ctx.enterInfo.set_scene_id(sceneId);
+    ctx.ownerEpoch = kFenceOwnerEpoch;
+    ctx.loginGeneration = generation;
+    return ctx;
+}
+
+PlayerLifecycleSystem::EnterGameNodeOutcome EnterGameNode(const PlayerEnterContext &ctx)
+{
+    return PlayerLifecycleSystem::HandleEnterGameNode(kExitPlayerId, ctx);
+}
+
+// 本节点上一个在线实体:session 已绑定、映射到本玩家,缓存 owner_epoch 与路由相同。generation 非 0 时挂登录身份
+// (session, generation);0 = 不挂(旧版实体,栅栏退回快照会话、代次 0)。
+entt::entity MakeFencedPlayer(SessionId session, uint64_t generation)
+{
+    const auto player = MakeOnlinePlayer(session);
+    tlsEcs.actorRegistry.emplace<PlayerOwnerEpochComp>(player).epoch = kFenceOwnerEpoch;
+    if (generation != 0)
+    {
+        auto &identity = tlsEcs.actorRegistry.emplace<PlayerLoginIdentityComp>(player);
+        identity.sessionId = session;
+        identity.loginGeneration = generation;
+    }
+    return player;
+}
+
+// 断言实体的当前绑定:SessionMap、会话快照、登录身份三处一致地指向 (session, generation)。
+void ExpectBoundTo(entt::entity player, SessionId session, uint64_t generation)
+{
+    ASSERT_TRUE(tlsEcs.actorRegistry.valid(player));
+    ASSERT_EQ(SessionMap().count(session), 1u) << "session " << session;
+    EXPECT_EQ(SessionMap().at(session), kExitPlayerId);
+    EXPECT_EQ(tlsEcs.actorRegistry.get<PlayerSessionSnapshotComp>(player).gate_session_id(), session);
+    const auto *identity = tlsEcs.actorRegistry.try_get<PlayerLoginIdentityComp>(player);
+    ASSERT_NE(identity, nullptr);
+    EXPECT_EQ(identity->sessionId, session);
+    EXPECT_EQ(identity->loginGeneration, generation);
+}
+
+const PlayerEnterContext *PendingEnter()
+{
+    const auto &pending = PlayerLifecycleSystem::GetPendingEnterMap();
+    const auto it = pending.find(kExitPlayerId);
+    return it == pending.end() ? nullptr : &it->second;
+}
+
+int g_playerLoginEvents = 0;
+
+void CountPlayerLoginEvent(const PlayerLoginEvent &)
+{
+    ++g_playerLoginEvents;
+}
+
+// 作用域内数 PlayerLoginEvent。dispatcher 不随 tlsEcs.Clear() 清,离开作用域(含 ASSERT 提前返回)必须断开。
+struct ScopedPlayerLoginCounter
+{
+    ScopedPlayerLoginCounter()
+    {
+        g_playerLoginEvents = 0;
+        tlsEcs.dispatcher.sink<PlayerLoginEvent>().connect<&CountPlayerLoginEvent>();
+    }
+    ~ScopedPlayerLoginCounter() { tlsEcs.dispatcher.sink<PlayerLoginEvent>().disconnect<&CountPlayerLoginEvent>(); }
+    ScopedPlayerLoginCounter(const ScopedPlayerLoginCounter &) = delete;
+    ScopedPlayerLoginCounter &operator=(const ScopedPlayerLoginCounter &) = delete;
+};
+} // namespace
+
+TEST(EnterFenceEcs, StaleEnterAfterTakeoverIsRejected)
+{
+    // §1 的实体路径:本节点上是更早一次登录的实体;B 顶号的入场先到并绑定,A(已被踢)的入场后到。
+    // 两次路由的 owner_epoch 都是 5 —— 只靠 epoch 区分不了。
+    ASSERT_NO_FATAL_FAILURE(ResetFenceHost());
+    const auto player = MakeFencedPlayer(kFenceSessionOld, kGenOld);
+
+    const uint64_t newerBefore = FenceCount(ef::Verdict::kAdmitNewer);
+    ASSERT_EQ(EnterGameNode(FenceEnter(kFenceSessionB, kGenB)), PlayerLifecycleSystem::EnterGameNodeOutcome::kEnteredExisting);
+    EXPECT_EQ(FenceCount(ef::Verdict::kAdmitNewer), newerBefore + 1);
+    ASSERT_NO_FATAL_FAILURE(ExpectBoundTo(player, kFenceSessionB, kGenB));
+    EXPECT_EQ(SessionMap().count(kFenceSessionOld), 0u) << "顶号擦掉了上一次登录的映射(属于本玩家)";
+
+    const uint64_t staleBefore = FenceCount(ef::Verdict::kRejectStale);
+    EXPECT_EQ(EnterGameNode(FenceEnter(kFenceSessionA, kGenA)), PlayerLifecycleSystem::EnterGameNodeOutcome::kRejected);
+
+    EXPECT_EQ(FenceCount(ef::Verdict::kRejectStale), staleBefore + 1);
+    // 映射、快照、身份仍指向 B。
+    ASSERT_NO_FATAL_FAILURE(ExpectBoundTo(player, kFenceSessionB, kGenB));
+    EXPECT_EQ(SessionMap().count(kFenceSessionA), 0u)
+        << "没有 sA 映射:gateA 紧随其后代发的 ExitGame(sA) 在 \"session id not found\" 就结束,碰不到 B 的实体";
+    EXPECT_EQ(PendingEnter(), nullptr) << "被拒的请求不登记待入场上下文";
+    EXPECT_EQ(PlayerLifecycleSystem::GetPendingEnterMap().count(kExitPlayerId), 0u);
+
+    ASSERT_NO_FATAL_FAILURE(ResetFenceHost());
+}
+
+TEST(EnterFenceEcs, StaleEnterDuringLoadKeepsPending)
+{
+    // §1 的载入中变体:更早一次登录的载入在途,B 覆盖了待入场上下文,A 的旧入场才到。
+    ASSERT_NO_FATAL_FAILURE(ResetFenceHost());
+    ASSERT_EQ(EnterGameNode(FenceEnter(kFenceSessionOld, kGenOld, LOGIN_FIRST)),
+              PlayerLifecycleSystem::EnterGameNodeOutcome::kLoadRequired);
+    ASSERT_EQ(EnterGameNode(FenceEnter(kFenceSessionB, kGenB, LOGIN_REPLACE)),
+              PlayerLifecycleSystem::EnterGameNodeOutcome::kLoadRequired);
+    const PlayerEnterContext *pending = PendingEnter();
+    ASSERT_NE(pending, nullptr);
+    const uint64_t lifecycle = pending->inheritClear.lifecycle;
+    EXPECT_NE(lifecycle, 0u);
+    EXPECT_EQ(SessionMap().count(kFenceSessionOld), 0u) << "覆盖时擦掉上一次载入的预登记(属于本玩家)";
+
+    const uint64_t staleBefore = FenceCount(ef::Verdict::kRejectStale);
+    EXPECT_EQ(EnterGameNode(FenceEnter(kFenceSessionA, kGenA, LOGIN_REPLACE)),
+              PlayerLifecycleSystem::EnterGameNodeOutcome::kRejected);
+
+    EXPECT_EQ(FenceCount(ef::Verdict::kRejectStale), staleBefore + 1);
+    pending = PendingEnter();
+    ASSERT_NE(pending, nullptr) << "待入场上下文仍在";
+    EXPECT_EQ(pending->enterInfo.session_id(), kFenceSessionB);
+    EXPECT_EQ(pending->loginGeneration, kGenB);
+    EXPECT_EQ(pending->enterInfo.enter_gs_type(), static_cast<uint32_t>(LOGIN_REPLACE));
+    EXPECT_EQ(pending->inheritClear.lifecycle, lifecycle) << "仍是同一次载入";
+    ASSERT_EQ(SessionMap().count(kFenceSessionB), 1u) << "B 的预登记还在";
+    EXPECT_EQ(SessionMap().at(kFenceSessionB), kExitPlayerId);
+    EXPECT_EQ(SessionMap().count(kFenceSessionA), 0u);
+    EXPECT_EQ(tlsEcs.playerList.count(kExitPlayerId), 0u);
+
+    ASSERT_NO_FATAL_FAILURE(ResetFenceHost());
+}
+
+TEST(EnterFenceEcs, LoadCallbackBindsNewestAdmitted)
+{
+    // A 的载入在途时 B 覆盖了待入场上下文;载入回调(A 那一次发起的同一个载入)建出的实体绑的是 B。
+    ASSERT_NO_FATAL_FAILURE(ResetFenceHost());
+    ASSERT_EQ(EnterGameNode(FenceEnter(kFenceSessionA, kGenA, LOGIN_FIRST)),
+              PlayerLifecycleSystem::EnterGameNodeOutcome::kLoadRequired);
+    ASSERT_EQ(EnterGameNode(FenceEnter(kFenceSessionB, kGenB, LOGIN_REPLACE)),
+              PlayerLifecycleSystem::EnterGameNodeOutcome::kLoadRequired);
+    EXPECT_EQ(SessionMap().count(kFenceSessionA), 0u);
+    {
+        // 宿主里 A2′ 发不出去;手工把"针对本 owner_epoch 的清理已确认"写进去,让闸门放行(kProceed)。
+        auto &pending = PlayerLifecycleSystem::GetPendingEnterMap();
+        ASSERT_EQ(pending.count(kExitPlayerId), 1u);
+        auto &inheritClear = pending.at(kExitPlayerId).inheritClear;
+        ASSERT_EQ(inheritClear.targetEpoch, kFenceOwnerEpoch);
+        inheritClear.phase = erm::InheritClearPhase::kConfirmed;
+    }
+
+    PlayerLifecycleSystem::HandlePlayerAsyncLoaded(kExitPlayerId, PlayerAllData{});
+
+    EXPECT_EQ(PendingEnter(), nullptr) << "待入场上下文已消费";
+    ASSERT_EQ(tlsEcs.playerList.count(kExitPlayerId), 1u) << "建出了实体";
+    const auto player = tlsEcs.playerList.at(kExitPlayerId);
+    ASSERT_NO_FATAL_FAILURE(ExpectBoundTo(player, kFenceSessionB, kGenB));
+    EXPECT_EQ(SessionMap().count(kFenceSessionA), 0u);
+
+    // 实体建出来之后,A 的旧入场再到:走实体路径同样被拒。
+    EXPECT_EQ(EnterGameNode(FenceEnter(kFenceSessionA, kGenA)), PlayerLifecycleSystem::EnterGameNodeOutcome::kRejected);
+    ASSERT_NO_FATAL_FAILURE(ExpectBoundTo(player, kFenceSessionB, kGenB));
+
+    ASSERT_NO_FATAL_FAILURE(ResetFenceHost());
+}
+
+TEST(EnterFenceEcs, StaleEnterDoesNotCancelExit)
+{
+    // §1 的退出存盘在途变体:B 正在退出(UnregisterPlayer + 退出意图),A 的旧入场到达 —— 不得取消 B 的退出。
+    ASSERT_NO_FATAL_FAILURE(ResetFenceHost());
+    const auto player = MakeExitingPlayer(kFenceSessionB, kFenceSessionB);
+    auto &identity = tlsEcs.actorRegistry.emplace<PlayerLoginIdentityComp>(player);
+    identity.sessionId = kFenceSessionB;
+    identity.loginGeneration = kGenB;
+
+    EXPECT_EQ(EnterGameNode(FenceEnter(kFenceSessionA, kGenA)), PlayerLifecycleSystem::EnterGameNodeOutcome::kRejected);
+
+    ASSERT_TRUE(tlsEcs.actorRegistry.valid(player));
+    EXPECT_TRUE(tlsEcs.actorRegistry.any_of<UnregisterPlayer>(player)) << "退出没有被取消";
+    const auto *intent = tlsEcs.actorRegistry.try_get<PlayerExitIntentComp>(player);
+    ASSERT_NE(intent, nullptr) << "与 UnregisterPlayer 成对留着";
+    EXPECT_EQ(intent->sessionAtExit, kFenceSessionB);
+    ASSERT_NO_FATAL_FAILURE(ExpectBoundTo(player, kFenceSessionB, kGenB));
+    EXPECT_EQ(SessionMap().count(kFenceSessionA), 0u);
+
+    ASSERT_NO_FATAL_FAILURE(ResetFenceHost());
+}
+
+TEST(EnterFenceEcs, NewerSessionTakesOver)
+{
+    // 正常顶号:代次更大的异会话入场接管实体,旧会话的映射被擦掉。
+    ASSERT_NO_FATAL_FAILURE(ResetFenceHost());
+    const auto player = MakeFencedPlayer(kFenceSessionA, kGenA);
+    const uint64_t newerBefore = FenceCount(ef::Verdict::kAdmitNewer);
+
+    EXPECT_EQ(EnterGameNode(FenceEnter(kFenceSessionB, kGenB)), PlayerLifecycleSystem::EnterGameNodeOutcome::kEnteredExisting);
+
+    EXPECT_EQ(FenceCount(ef::Verdict::kAdmitNewer), newerBefore + 1);
+    ASSERT_NO_FATAL_FAILURE(ExpectBoundTo(player, kFenceSessionB, kGenB));
+    EXPECT_EQ(SessionMap().count(kFenceSessionA), 0u);
+
+    ASSERT_NO_FATAL_FAILURE(ResetFenceHost());
+}
+
+TEST(EnterFenceEcs, DuplicateEnterIsIdempotent)
+{
+    // gate 补发同一条路由(同一会话、同一代次):两次都放行,登录事件只触发一次,绑定不变。
+    ASSERT_NO_FATAL_FAILURE(ResetFenceHost());
+    const auto player = MakeFencedPlayer(kFenceSessionB, kGenB);
+    const auto scene = PlaceInScene(player, kFenceScene);
+    const ScopedPlayerLoginCounter loginCounter;
+    const uint64_t sameBefore = FenceCount(ef::Verdict::kAdmitSameSession);
+
+    EXPECT_EQ(EnterGameNode(FenceEnter(kFenceSessionB, kGenB, LOGIN_REPLACE, kFenceScene)),
+              PlayerLifecycleSystem::EnterGameNodeOutcome::kEnteredExisting);
+    EXPECT_EQ(EnterGameNode(FenceEnter(kFenceSessionB, kGenB, LOGIN_REPLACE, kFenceScene)),
+              PlayerLifecycleSystem::EnterGameNodeOutcome::kEnteredExisting);
+
+    EXPECT_EQ(g_playerLoginEvents, 1) << "重复投递不得让业务系统结算两次登录";
+    EXPECT_EQ(FenceCount(ef::Verdict::kAdmitSameSession), sameBefore + 2);
+    ASSERT_NO_FATAL_FAILURE(ExpectBoundTo(player, kFenceSessionB, kGenB));
+    const auto *enterState = tlsEcs.actorRegistry.try_get<PlayerEnterGameStateComp>(player);
+    ASSERT_NE(enterState, nullptr);
+    EXPECT_EQ(enterState->enter_gs_type(), static_cast<uint32_t>(LOGIN_REPLACE));
+    const auto *sceneComp = tlsEcs.actorRegistry.try_get<SceneEntityComp>(player);
+    ASSERT_NE(sceneComp, nullptr);
+    EXPECT_EQ(sceneComp->sceneEntity, scene) << "已在目标场景:HandleEnterScene 幂等早退";
+
+    ASSERT_NO_FATAL_FAILURE(ResetFenceHost());
+}
+
+TEST(EnterFenceEcs, PendingSameSessionKeepsLoginType)
+{
+    // 同一会话在载入完成前先后到达"登录类型"与"0 型换图路由":合并而不是整体替换(§5.5)。
+    ASSERT_NO_FATAL_FAILURE(ResetFenceHost());
+    PlayerEnterContext login = FenceEnter(kFenceSessionA, kGenA, LOGIN_FIRST);
+    login.homeZoneId = 1;
+    ASSERT_EQ(EnterGameNode(login), PlayerLifecycleSystem::EnterGameNodeOutcome::kLoadRequired);
+    ASSERT_NE(PendingEnter(), nullptr);
+    const uint64_t lifecycle = PendingEnter()->inheritClear.lifecycle;
+
+    PlayerEnterContext sceneChange = FenceEnter(kFenceSessionA, kGenA, LOGIN_NONE, kFenceScene);
+    sceneChange.homeZoneId = 2;
+    sceneChange.ownerEpoch = kFenceOwnerEpoch + 1;
+    EXPECT_EQ(EnterGameNode(sceneChange), PlayerLifecycleSystem::EnterGameNodeOutcome::kLoadRequired);
+
+    const PlayerEnterContext *pending = PendingEnter();
+    ASSERT_NE(pending, nullptr);
+    EXPECT_EQ(pending->enterInfo.enter_gs_type(), static_cast<uint32_t>(LOGIN_FIRST))
+        << "新值为 0 时保留旧的登录类型,否则载入后不置登录态、不触发 PlayerLoginEvent";
+    EXPECT_EQ(pending->enterInfo.session_id(), kFenceSessionA);
+    EXPECT_EQ(pending->enterInfo.scene_id(), kFenceScene) << "scene_id 取新值";
+    EXPECT_EQ(pending->homeZoneId, 2u) << "home_zone 取新值";
+    EXPECT_EQ(pending->ownerEpoch, kFenceOwnerEpoch + 1) << "owner_epoch 取新值";
+    EXPECT_EQ(pending->loginGeneration, kGenA);
+    EXPECT_EQ(pending->inheritClear.lifecycle, lifecycle) << "A2′ 状态原样沿用,载入仍是同一个";
+    ASSERT_EQ(SessionMap().count(kFenceSessionA), 1u) << "同一会话不擦自己的预登记";
+    EXPECT_EQ(SessionMap().at(kFenceSessionA), kExitPlayerId);
+
+    // 新值非 0 时取新值。
+    EXPECT_EQ(EnterGameNode(FenceEnter(kFenceSessionA, kGenA, LOGIN_RECONNECT)),
+              PlayerLifecycleSystem::EnterGameNodeOutcome::kLoadRequired);
+    ASSERT_NE(PendingEnter(), nullptr);
+    EXPECT_EQ(PendingEnter()->enterInfo.enter_gs_type(), static_cast<uint32_t>(LOGIN_RECONNECT));
+
+    ASSERT_NO_FATAL_FAILURE(ResetFenceHost());
+}
+
+TEST(EnterFenceEcs, EqualGenerationDifferentSessionRejected)
+{
+    // 代次相等、会话不同:违反"一登一号",只可能是并发冲突 —— 安全失败,两边都不动。
+    ASSERT_NO_FATAL_FAILURE(ResetFenceHost());
+    const auto player = MakeFencedPlayer(kFenceSessionB, kGenB);
+    const uint64_t conflictBefore = FenceCount(ef::Verdict::kRejectConflict);
+
+    EXPECT_EQ(EnterGameNode(FenceEnter(kFenceSessionA, kGenB)), PlayerLifecycleSystem::EnterGameNodeOutcome::kRejected);
+
+    EXPECT_EQ(FenceCount(ef::Verdict::kRejectConflict), conflictBefore + 1);
+    ASSERT_NO_FATAL_FAILURE(ExpectBoundTo(player, kFenceSessionB, kGenB));
+    EXPECT_EQ(SessionMap().count(kFenceSessionA), 0u);
+
+    // 载入中同样:待入场上下文这一处一样拦。
+    ASSERT_NO_FATAL_FAILURE(ResetFenceHost());
+    ASSERT_EQ(EnterGameNode(FenceEnter(kFenceSessionB, kGenB)), PlayerLifecycleSystem::EnterGameNodeOutcome::kLoadRequired);
+    EXPECT_EQ(EnterGameNode(FenceEnter(kFenceSessionA, kGenB)), PlayerLifecycleSystem::EnterGameNodeOutcome::kRejected);
+    ASSERT_NE(PendingEnter(), nullptr);
+    EXPECT_EQ(PendingEnter()->enterInfo.session_id(), kFenceSessionB);
+    EXPECT_EQ(SessionMap().count(kFenceSessionA), 0u);
+    EXPECT_EQ(SessionMap().count(kFenceSessionB), 1u);
+
+    ASSERT_NO_FATAL_FAILURE(ResetFenceHost());
+}
+
+TEST(EnterFenceEcs, UnversionedCannotDisplaceVersioned)
+{
+    // 当前有代次、请求没有(旧版 login 顶号 / 混版窗口)、会话不同:拒,不留默认放行的窗口(§6)。
+    ASSERT_NO_FATAL_FAILURE(ResetFenceHost());
+    const auto player = MakeFencedPlayer(kFenceSessionB, kGenB);
+    const uint64_t unversionedBefore = FenceCount(ef::Verdict::kRejectUnversioned);
+
+    EXPECT_EQ(EnterGameNode(FenceEnter(kFenceSessionA, 0)), PlayerLifecycleSystem::EnterGameNodeOutcome::kRejected);
+
+    EXPECT_EQ(FenceCount(ef::Verdict::kRejectUnversioned), unversionedBefore + 1);
+    ASSERT_NO_FATAL_FAILURE(ExpectBoundTo(player, kFenceSessionB, kGenB));
+    EXPECT_EQ(SessionMap().count(kFenceSessionA), 0u);
+
+    ASSERT_NO_FATAL_FAILURE(ResetFenceHost());
+}
+
+TEST(EnterFenceEcs, LegacyBothUnversionedKeepsOldBehavior)
+{
+    // 双方都没有代次(上游还没铸造):沿用旧行为 —— 后到者胜,并计 admit_legacy。
+    ASSERT_NO_FATAL_FAILURE(ResetFenceHost());
+    const auto player = MakeFencedPlayer(kFenceSessionA, 0); // 旧版实体:没有身份组件
+    const uint64_t legacyBefore = FenceCount(ef::Verdict::kAdmitLegacy);
+
+    EXPECT_EQ(EnterGameNode(FenceEnter(kFenceSessionB, 0)), PlayerLifecycleSystem::EnterGameNodeOutcome::kEnteredExisting);
+    ASSERT_NO_FATAL_FAILURE(ExpectBoundTo(player, kFenceSessionB, 0));
+    EXPECT_EQ(SessionMap().count(kFenceSessionA), 0u);
+
+    EXPECT_EQ(EnterGameNode(FenceEnter(kFenceSessionA, 0)), PlayerLifecycleSystem::EnterGameNodeOutcome::kEnteredExisting)
+        << "旧行为:晚到的那一条照样接管";
+    ASSERT_NO_FATAL_FAILURE(ExpectBoundTo(player, kFenceSessionA, 0));
+    EXPECT_EQ(SessionMap().count(kFenceSessionB), 0u);
+    EXPECT_EQ(FenceCount(ef::Verdict::kAdmitLegacy), legacyBefore + 2);
+
+    ASSERT_NO_FATAL_FAILURE(ResetFenceHost());
+}
+
+TEST(EnterFenceEcs, SameSessionLowerGenerationDoesNotLower)
+{
+    // 同一会话一律放行,但已放行的最高代次不得被拉低(实体与待入场两处)。
+    ASSERT_NO_FATAL_FAILURE(ResetFenceHost());
+    const auto player = MakeFencedPlayer(kFenceSessionB, kGenB);
+
+    EXPECT_EQ(EnterGameNode(FenceEnter(kFenceSessionB, kGenA)), PlayerLifecycleSystem::EnterGameNodeOutcome::kEnteredExisting);
+    ASSERT_NO_FATAL_FAILURE(ExpectBoundTo(player, kFenceSessionB, kGenB));
+    EXPECT_EQ(EnterGameNode(FenceEnter(kFenceSessionB, 0)), PlayerLifecycleSystem::EnterGameNodeOutcome::kEnteredExisting);
+    ASSERT_NO_FATAL_FAILURE(ExpectBoundTo(player, kFenceSessionB, kGenB));
+    EXPECT_EQ(EnterGameNode(FenceEnter(kFenceSessionA, kGenA)), PlayerLifecycleSystem::EnterGameNodeOutcome::kRejected)
+        << "代次没被拉低:更早的异会话入场仍被拒";
+
+    ASSERT_NO_FATAL_FAILURE(ResetFenceHost());
+    ASSERT_EQ(EnterGameNode(FenceEnter(kFenceSessionA, kGenA, LOGIN_FIRST)),
+              PlayerLifecycleSystem::EnterGameNodeOutcome::kLoadRequired);
+    EXPECT_EQ(EnterGameNode(FenceEnter(kFenceSessionA, 0, LOGIN_NONE)), PlayerLifecycleSystem::EnterGameNodeOutcome::kLoadRequired);
+    ASSERT_NE(PendingEnter(), nullptr);
+    EXPECT_EQ(PendingEnter()->loginGeneration, kGenA) << "待入场同一会话合并:代次取 max";
+    EXPECT_EQ(EnterGameNode(FenceEnter(kFenceSessionOld, kGenOld)), PlayerLifecycleSystem::EnterGameNodeOutcome::kRejected);
+
+    ASSERT_NO_FATAL_FAILURE(ResetFenceHost());
+}
+
+TEST(EnterFenceEcs, RemovePlayerSessionOnlyErasesOwnMapping)
+{
+    // gate 以同一 node_id 重启后会话序号从头发:玩家 Q 拿到了本玩家 P 旧会话的同号会话、映射已改成 Q。
+    // P 的任何擦除都不得擦掉 Q 的在线映射(§5.6)。
+    constexpr SessionId kShared = kFenceSessionA;
+
+    // ① RemovePlayerSession(实体):快照里的旧号已属于 Q。
+    ASSERT_NO_FATAL_FAILURE(ResetFenceHost());
+    auto player = MakeFencedPlayer(kShared, kGenA);
+    SessionMap()[kShared] = kFenceOtherPlayerId;
+    PlayerLifecycleSystem::RemovePlayerSession(player);
+    EXPECT_EQ(tlsEcs.actorRegistry.get<PlayerSessionSnapshotComp>(player).gate_session_id(), kInvalidSessionId)
+        << "自己的快照照样摘";
+    ASSERT_EQ(SessionMap().count(kShared), 1u);
+    EXPECT_EQ(SessionMap().at(kShared), kFenceOtherPlayerId) << "Q 的映射还在";
+
+    // ② 判据本身。
+    EXPECT_FALSE(PlayerLifecycleSystem::EraseSessionMappingIfOwned(kShared, kExitPlayerId));
+    EXPECT_FALSE(PlayerLifecycleSystem::EraseSessionMappingIfOwned(kFenceSessionB, kExitPlayerId)) << "没有映射";
+    EXPECT_TRUE(PlayerLifecycleSystem::EraseSessionMappingIfOwned(kShared, kFenceOtherPlayerId));
+    EXPECT_EQ(SessionMap().count(kShared), 0u);
+
+    // ③ P 经新会话重登通过栅栏:入口第 2 步摘旧会话时不擦 Q。
+    ASSERT_NO_FATAL_FAILURE(ResetFenceHost());
+    player = MakeFencedPlayer(kShared, kGenA);
+    SessionMap()[kShared] = kFenceOtherPlayerId;
+    EXPECT_EQ(EnterGameNode(FenceEnter(kFenceSessionB, kGenB)), PlayerLifecycleSystem::EnterGameNodeOutcome::kEnteredExisting);
+    ASSERT_NO_FATAL_FAILURE(ExpectBoundTo(player, kFenceSessionB, kGenB));
+    ASSERT_EQ(SessionMap().count(kShared), 1u);
+    EXPECT_EQ(SessionMap().at(kShared), kFenceOtherPlayerId);
+
+    // ④ EnterScene 第 1 步换会话时(快照里还挂着旧号)同样只擦自己的。
+    ASSERT_NO_FATAL_FAILURE(ResetFenceHost());
+    player = MakeFencedPlayer(kShared, kGenA);
+    SessionMap()[kShared] = kFenceOtherPlayerId;
+    PlayerLifecycleSystem::EnterScene(player, FenceEnter(kFenceSessionB, kGenB));
+    ASSERT_NO_FATAL_FAILURE(ExpectBoundTo(player, kFenceSessionB, kGenB));
+    EXPECT_EQ(SessionMap().at(kShared), kFenceOtherPlayerId);
+
+    // ⑤ 载入在途时覆盖待入场上下文:上一次的预登记号已属于 Q,不擦。
+    ASSERT_NO_FATAL_FAILURE(ResetFenceHost());
+    ASSERT_EQ(EnterGameNode(FenceEnter(kShared, kGenA)), PlayerLifecycleSystem::EnterGameNodeOutcome::kLoadRequired);
+    SessionMap()[kShared] = kFenceOtherPlayerId;
+    ASSERT_EQ(EnterGameNode(FenceEnter(kFenceSessionB, kGenB)), PlayerLifecycleSystem::EnterGameNodeOutcome::kLoadRequired);
+    EXPECT_EQ(SessionMap().at(kShared), kFenceOtherPlayerId);
+    EXPECT_EQ(SessionMap().at(kFenceSessionB), kExitPlayerId);
+
+    ASSERT_NO_FATAL_FAILURE(ResetFenceHost());
+}
+
+TEST(EnterFenceEcs, AbandonedLoadOnlyErasesOwnMapping)
+{
+    // 载入放弃的路径(RedisError、A2′ 重发耗尽 → 拒建实体)与载入回调的"会话已取消"判据,同样只认属于自己的映射。
+    using LoadFailureReason = MessageAsyncClient<Guid, PlayerAllData>::LoadFailureReason;
+    constexpr SessionId kShared = kFenceSessionA;
+
+    // ① RedisError。
+    ASSERT_NO_FATAL_FAILURE(ResetFenceHost());
+    ASSERT_EQ(EnterGameNode(FenceEnter(kShared, kGenA)), PlayerLifecycleSystem::EnterGameNodeOutcome::kLoadRequired);
+    SessionMap()[kShared] = kFenceOtherPlayerId;
+    PlayerLifecycleSystem::HandlePlayerAsyncLoadFailed(kExitPlayerId, LoadFailureReason::RedisError);
+    EXPECT_EQ(PendingEnter(), nullptr);
+    EXPECT_EQ(SessionMap().at(kShared), kFenceOtherPlayerId);
+
+    // ② A2′ 重发耗尽(RefuseInheritedEntry;截止拒绝走的是同一个函数)。
+    ASSERT_NO_FATAL_FAILURE(ResetFenceHost());
+    ASSERT_EQ(EnterGameNode(FenceEnter(kShared, kGenA)), PlayerLifecycleSystem::EnterGameNodeOutcome::kLoadRequired);
+    SessionMap()[kShared] = kFenceOtherPlayerId;
+    for (uint32_t i = 1; i < erm::kInheritClearMaxAttempts; ++i)
+    {
+        PlayerLifecycleSystem::RetryInheritedMarkClears(/*reconnected=*/true);
+    }
+    EXPECT_EQ(PendingEnter(), nullptr) << "重发耗尽:拒建实体";
+    EXPECT_EQ(SessionMap().at(kShared), kFenceOtherPlayerId);
+
+    // ③ 载入回调:预登记号已被 Q 占用 = 这次载入作废(§5.4),不建实体、不碰 Q 的映射。
+    ASSERT_NO_FATAL_FAILURE(ResetFenceHost());
+    ASSERT_EQ(EnterGameNode(FenceEnter(kShared, kGenA)), PlayerLifecycleSystem::EnterGameNodeOutcome::kLoadRequired);
+    PlayerLifecycleSystem::GetPendingEnterMap().at(kExitPlayerId).inheritClear.phase = erm::InheritClearPhase::kConfirmed;
+    SessionMap()[kShared] = kFenceOtherPlayerId;
+    PlayerLifecycleSystem::HandlePlayerAsyncLoaded(kExitPlayerId, PlayerAllData{});
+    EXPECT_EQ(PendingEnter(), nullptr);
+    EXPECT_EQ(tlsEcs.playerList.count(kExitPlayerId), 0u) << "不建实体";
+    EXPECT_EQ(SessionMap().at(kShared), kFenceOtherPlayerId);
+
+    ASSERT_NO_FATAL_FAILURE(ResetFenceHost());
+}
+
+TEST(EnterFenceEcs, BindRecheckRejectsStaleContext)
+{
+    // EnterScene 的绑定时复核(§5.4):绕过入口直接拿陈旧上下文调 EnterScene,同样什么都不碰 —— 排在取消退出之前。
+    ASSERT_NO_FATAL_FAILURE(ResetFenceHost());
+    const auto player = MakeExitingPlayer(kFenceSessionB, kFenceSessionB);
+    auto &identity = tlsEcs.actorRegistry.emplace<PlayerLoginIdentityComp>(player);
+    identity.sessionId = kFenceSessionB;
+    identity.loginGeneration = kGenB;
+    const auto before = enter_fence_stats::Read();
+
+    PlayerLifecycleSystem::EnterScene(player, FenceEnter(kFenceSessionA, kGenA));
+
+    const auto after = enter_fence_stats::Read();
+    EXPECT_EQ(after.bindRejected, before.bindRejected + 1);
+    EXPECT_TRUE(after.verdicts == before.verdicts) << "入口计数只由 HandleEnterGameNode 记";
+    EXPECT_TRUE(tlsEcs.actorRegistry.any_of<UnregisterPlayer>(player)) << "没有取消退出";
+    EXPECT_TRUE(tlsEcs.actorRegistry.any_of<PlayerExitIntentComp>(player));
+    ASSERT_NO_FATAL_FAILURE(ExpectBoundTo(player, kFenceSessionB, kGenB));
+    EXPECT_EQ(SessionMap().count(kFenceSessionA), 0u);
+
+    ASSERT_NO_FATAL_FAILURE(ResetFenceHost());
+}
+
+TEST(EnterFenceEcs, StaleEnterDoesNotSupersedeRelocateEntry)
+{
+    // §5.1 第 3 处:排空把他改派出去、实体已销毁,本节点上只剩改派待确认条目记着他。陈旧的异会话入场不得把条目
+    // 误结成 superseded(那会让本该核实后踢线的玩家不被踢);更新的入场照常接管并结清条目。
+    ASSERT_NO_FATAL_FAILURE(ResetFenceHost());
+    const auto player = MakeOnlinePlayer(kSessionAtExit);
+    tlsEcs.actorRegistry.emplace<PlayerOwnerEpochComp>(player).epoch = kFenceOwnerEpoch;
+    auto &identity = tlsEcs.actorRegistry.emplace<PlayerLoginIdentityComp>(player);
+    identity.sessionId = kSessionAtExit;
+    identity.loginGeneration = kGenA;
+    const auto scene = PlaceInScene(player, kRelocateSourceScene);
+    MarkPersisted(player); // 最后做:快照要与退出时再 marshal 出来的那一份逐字节相同
+    ASSERT_EQ(PlayerLifecycleSystem::BeginSceneDrain(scene), 1u);
+    ASSERT_FALSE(tlsEcs.actorRegistry.valid(player)) << "退出同步收敛,实体已销毁";
+    const auto entry = PlayerLifecycleSystem::PeekRelocateConfirm(kExitPlayerId);
+    ASSERT_TRUE(entry.has_value());
+    EXPECT_EQ(entry->sessionId, kSessionAtExit);
+    EXPECT_EQ(entry->loginGeneration, kGenA) << "登记时从实体的登录身份抄下代次";
+
+    // 只读判定不改任何状态、不计数。
+    const auto before = enter_fence_stats::Read();
+    EXPECT_EQ(PlayerLifecycleSystem::JudgeEnter(kExitPlayerId, kNewerSession, kGenOld), ef::Verdict::kRejectStale);
+    EXPECT_TRUE(enter_fence_stats::Read() == before);
+
+    EXPECT_EQ(EnterGameNode(FenceEnter(kNewerSession, kGenOld)), PlayerLifecycleSystem::EnterGameNodeOutcome::kRejected);
+    const auto kept = PlayerLifecycleSystem::PeekRelocateConfirm(kExitPlayerId);
+    ASSERT_TRUE(kept.has_value()) << "条目没有被误结清";
+    EXPECT_EQ(kept->seq, entry->seq);
+    EXPECT_EQ(kept->phase, entry->phase);
+    EXPECT_EQ(PendingEnter(), nullptr);
+    EXPECT_EQ(SessionMap().count(kNewerSession), 0u);
+    EXPECT_EQ(enter_fence_stats::Read().verdicts[static_cast<std::size_t>(ef::Verdict::kRejectStale)],
+              before.verdicts[static_cast<std::size_t>(ef::Verdict::kRejectStale)] + 1);
+
+    EXPECT_EQ(EnterGameNode(FenceEnter(kNewerSession, kGenB)), PlayerLifecycleSystem::EnterGameNodeOutcome::kLoadRequired);
+    EXPECT_FALSE(PlayerLifecycleSystem::PeekRelocateConfirm(kExitPlayerId).has_value())
+        << "更新的异会话入场:玩家已重登,条目按 superseded 结清";
+    ASSERT_NE(PendingEnter(), nullptr);
+    EXPECT_EQ(PendingEnter()->enterInfo.session_id(), kNewerSession);
+    EXPECT_EQ(PendingEnter()->loginGeneration, kGenB);
+
+    ASSERT_NO_FATAL_FAILURE(ResetFenceHost());
 }
 
 // ============================================================================

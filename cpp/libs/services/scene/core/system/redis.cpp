@@ -74,7 +74,8 @@ void RedisSystem::Initialize(muduo::net::EventLoop* loop)
     // a Redis stall (rising pending_loads / pending_saves) without enabling
     // per-call DEBUG logs. No output when all queues are empty.
     static constexpr double kQueueSnapshotIntervalSec = 30.0;
-    snapshotTimerId_ = loop->runEvery(kQueueSnapshotIntervalSec, [this]()
+    // lastEnterFence:上一次打出 [EnterFence] 时的计数(只在本定时器里读写,逻辑线程上;初值全 0 = 第一次有计数就打)。
+    snapshotTimerId_ = loop->runEvery(kQueueSnapshotIntervalSec, [this, lastEnterFence = enter_fence_stats::Snapshot{}]() mutable
                                       {
         if (playerRedis)
         {
@@ -101,6 +102,32 @@ void RedisSystem::Initialize(muduo::net::EventLoop* loop)
             LOG_WARN << "[OwnerEpoch] stale_owner_write_rejected=" << ownerStats.staleOwnerWriteRejected
                      << " home_zone_unknown=" << ownerStats.homeZoneUnknown
                      << " owner_epoch_unknown=" << ownerStats.ownerEpochUnknown;
+        }
+        // 入场会话栅栏的结论计数(enter_fence.h 的 enter_fence_stats;scene-enter-session-fence.md §5.7)。单独一行、单独前缀,
+        // 不动上面两行的解析格式。key=value 平铺、进程启动以来的累计值,有变化才打;这一拍里拒绝类计数有增长时升 WARN
+        // (挡下了跨会话的陈旧入场,或混版窗口里的无代次顶号),否则 INFO(admit_legacy 在 login 全量铸造后应恒为 0)。
+        const auto fenceStats = enter_fence_stats::Read();
+        if (fenceStats != lastEnterFence)
+        {
+            std::string line = "[EnterFence]";
+            for (std::size_t i = 0; i < fenceStats.verdicts.size(); ++i)
+            {
+                line += ' ';
+                line += enter_fence::kVerdictNames[i];
+                line += '=';
+                line += std::to_string(fenceStats.verdicts[i]);
+            }
+            line += " bind_rejected=" + std::to_string(fenceStats.bindRejected);
+            line += " session_update_rejected=" + std::to_string(fenceStats.sessionUpdateRejected);
+            if (fenceStats.Rejected() > lastEnterFence.Rejected())
+            {
+                LOG_WARN << line;
+            }
+            else
+            {
+                LOG_INFO << line;
+            }
+            lastEnterFence = fenceStats;
         } });
     snapshotTimerActive_ = true;
 

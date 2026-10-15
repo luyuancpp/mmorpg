@@ -89,6 +89,12 @@ type StoreRegistryOptions struct {
 	Now          func() time.Time
 	OpenTimeout  time.Duration
 	RetryBackoff time.Duration
+
+	// 以下四个是运行期失联的探活与冷却(store_health.go)。为零时用默认值;Ping 为 nil 时 PingContext 本库连接池。
+	ProbeTimeout time.Duration
+	Cooldown     time.Duration
+	Jitter       func(time.Duration) time.Duration
+	Ping         func(ctx context.Context, store *GameDB) error
 }
 
 // StoreRegistry 按落点编号给出已打开的库。并发安全:所有 worker 子分片共用一个实例。
@@ -106,9 +112,16 @@ type StoreRegistry struct {
 	// 用 go-zero 自带的实现,不为此引入 golang.org/x/sync。
 	flight syncx.SingleFlight
 
+	probeTimeout time.Duration
+	cooldown     time.Duration
+	jitter       func(time.Duration) time.Duration
+	ping         func(ctx context.Context, store *GameDB) error
+
 	mu       sync.RWMutex
 	stores   map[uint32]*GameDB
 	failures map[uint32]storeOpenFailure
+	// cooling 是已打开、但被探活确认不可达、正在冷却的库(store_health.go)。
+	cooling map[uint32]storeCooldown
 }
 
 type storeOpenFailure struct {
@@ -150,6 +163,22 @@ func NewStoreRegistry(opts StoreRegistryOptions) (*StoreRegistry, error) {
 	if retryBackoff <= 0 {
 		retryBackoff = defaultStoreOpenRetryBackoff
 	}
+	probeTimeout := opts.ProbeTimeout
+	if probeTimeout <= 0 {
+		probeTimeout = defaultStoreProbeTimeout
+	}
+	cooldown := opts.Cooldown
+	if cooldown <= 0 {
+		cooldown = defaultStoreCooldown
+	}
+	jitter := opts.Jitter
+	if jitter == nil {
+		jitter = defaultCooldownJitter
+	}
+	ping := opts.Ping
+	if ping == nil {
+		ping = pingStore
+	}
 	metrics.SetPlacementOpenStores(1)
 	return &StoreRegistry{
 		home:          opts.HomeStorageID,
@@ -159,9 +188,14 @@ func NewStoreRegistry(opts StoreRegistryOptions) (*StoreRegistry, error) {
 		now:           now,
 		openTimeout:   openTimeout,
 		retryBackoff:  retryBackoff,
+		probeTimeout:  probeTimeout,
+		cooldown:      cooldown,
+		jitter:        jitter,
+		ping:          ping,
 		flight:        syncx.NewSingleFlight(),
 		stores:        map[uint32]*GameDB{opts.HomeStorageID: opts.Home},
 		failures:      map[uint32]storeOpenFailure{},
+		cooling:       map[uint32]storeCooldown{},
 	}, nil
 }
 
@@ -281,8 +315,12 @@ func applyStorePool(handle *sql.DB, pool StorePoolOptions) {
 func (r *StoreRegistry) Store(_ context.Context, storageID uint32) (*GameDB, error) {
 	r.mu.RLock()
 	store := r.stores[storageID]
+	cooling, isCooling := r.cooling[storageID]
 	r.mu.RUnlock()
 	if store != nil {
+		if isCooling {
+			return r.storeAfterCooldown(storageID, store, cooling)
+		}
 		return store, nil
 	}
 
@@ -393,7 +431,7 @@ func OpenPlacementStore(ctx context.Context, dbName string, pool StorePoolOption
 	if err != nil {
 		return nil, err
 	}
-	mysqlConfig := newMysqlConfig()
+	mysqlConfig := newServiceMysqlConfig()
 	mysqlConfig.DBName = dbName
 	connector, err := mysql.NewConnector(mysqlConfig)
 	if err != nil {

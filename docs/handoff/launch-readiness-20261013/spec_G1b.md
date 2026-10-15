@@ -804,6 +804,8 @@ func TestG1bRepro_SharedRedisTwoZones_BothQueuesDrain(t *testing.T) {
 
 ### 7.1 红（推荐，用于证明复现）
 
+> **更正（2026-10-14，评审 G1b-spec-2）**：本规格写于修复提交之前，文中的 `HEAD` 均指 `73b852f32`（`d5cbb8a8e` 的父提交，修复前最后一个提交）；修复已随 `d5cbb8a8e` 进入 HEAD，在现在的 HEAD 上按 §5.4 的旧签名写复现用例会编译失败，拿不到 FAIL 证据。所以红用例要在 `73b852f32` 的临时 worktree 里跑：下面第一行命令执行时把末尾的 `HEAD` 换成 `73b852f32`，即 `git -C D:\luyuan\xuanming-server-mmo-cpp worktree add --detach D:\luyuan\g1b-red 73b852f32`，其余步骤与通过标准不变。§5.4 标题与正文、§7.2「先在 HEAD 上跑同一条命令做基线对比」里的 `HEAD` 同样按 `73b852f32` 理解（现在的 HEAD 已含整批改动，不能当基线）。正文不改。
+
 ```powershell
 git -C D:\luyuan\xuanming-server-mmo-cpp worktree add --detach D:\luyuan\g1b-red HEAD
 # 把本规格 §5.4 的代码写成 D:\luyuan\g1b-red\go\login\internal\logic\pkg\loginqueue\g1b_repro_test.go

@@ -1179,6 +1179,17 @@ void Node::FinalizeShutdownInLoop()
 	// Hiredis 持有 muduo Channel 和待回调命令;必须在 EventLoop 与 Scene
 	// MessageAsyncClient 回调目标都存活时释放。
 	tlsRedis.Shutdown();
+	// 节点 registry 里的出站 TCP 客户端必须趁 EventLoop 还活着释放:RpcClient 按值持有
+	// muduo::net::TcpClient,~TcpClient 会经 loop_ runInLoop / forceClose。以前没人清
+	// tlsNodeContextManager,它们要等 thread_local 析构才释放,那时 RunNodeMain 栈上的
+	// EventLoop 早已析构(use-after-free)。这里释放后排进队列的 forceCloseInLoop /
+	// connectDestroyed 由下面的两跳 queueInLoop 排空(AGENTS.md §11.7)。
+	// 只清 RpcClientPtr、不整体 Clear:同一批 registry 上还挂着 etcd / gRPC 的
+	// CompletionQueue、stub 与 watch 流,它们需要先 Shutdown 再排空才能析构,不能在这里顺手销毁。
+	for (auto &nodeRegistry : tlsNodeContextManager.GetAllRegistries())
+	{
+		nodeRegistry.clear<RpcClientPtr>();
+	}
 	// Cleared by tlsEcs.Clear() below.
 	tlsEcs.Clear();
 #ifdef WIN32

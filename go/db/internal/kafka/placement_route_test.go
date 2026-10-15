@@ -568,7 +568,9 @@ func TestPlacementLookupError_ConsumesTheRetryBudget(t *testing.T) {
 	assert.Empty(t, h.callsForKey(key))
 }
 
-func TestStoreUnavailable_WriteKeepsBudgetReadSpendsIt(t *testing.T) {
+// 写:落点库打不开不算一次失败的写,不耗预算。读:L-04 §3.6 起立即回失败回执、摘掉收据,不再进重试队列
+// (原来是耗预算重试,等待它的 login 只等 8 秒,重试成功时已无人在等)。
+func TestStoreUnavailable_WriteKeepsBudgetReadFailsFast(t *testing.T) {
 	const key uint64 = 9203
 	openErr := errors.New("dial tcp 10.0.0.9:3306: connect: connection refused")
 
@@ -603,8 +605,11 @@ func TestStoreUnavailable_WriteKeepsBudgetReadSpendsIt(t *testing.T) {
 		w.handleTask(rt, true)
 
 		assert.Empty(t, h.callsForKey(key))
-		assert.Equal(t, int32(3), oldestReadyTask(t, w).RetryCount,
-			"reads spend the budget: the waiter has long timed out and an endless read loop only crowds the retry queue")
+		assert.Zero(t, redisListLen(t, w, w.retryQueueKey), "the read is answered, not re-queued")
+		assert.Zero(t, redisListLen(t, w, w.retryProcessingKey), "the retry receipt is acked")
+		result, ok := readTaskResult(t, w, rt.dbTask.TaskId)
+		require.True(t, ok, "the waiter gets a failure receipt at once instead of timing out")
+		assert.False(t, result.Success)
 	})
 }
 

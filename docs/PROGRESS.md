@@ -7644,3 +7644,129 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
 - 抽取后再次完成受影响包 39 个顶层测试、`go vet`、生成器编译；用新二进制定向生成两次，两个 handler 与抽取前的正式输出逐字节一致，消息号、事件号与 scene gRPC 原始哈希保持不变。证据为同目录 `generator-*-tmpl.*`、`regen-tmpl-1.log` / `regen-tmpl-2.log`。
 - C++ 完整节点此前的 `boost/any.hpp` 编译阻塞仍未解决；本次生成文件字节未变，不重复该失败构建，也不提升为节点编译或联机验证通过。独立准入闸 7/7 的证据仍按上一条记录。
 - Java 版（AGENTS §12）：无新增版本号，仅 C++ 生成器模板整理，不适用；已登记的 PARITY 差异保持，Java 代码与客户端契约未变。未提交。
+
+## 2026-10-14 补充:开服瓶颈三视角评审(G1a / G1b / G2a / G3)与其中三项的修复(Claude,未编译、未测试,待 Codex 验证)
+
+- **来由**:[交接](handoff/handoff-launch-readiness-and-d1-20261013.md) §4 第 3 项。10-13 对已落码的 G1a、G1b、G2a、G3 各做三视角评审(规格符合度 / 编译正确性 / 一致性与并发),每条发现再经一名核实者逐条反驳。提出的问题经核实后确认 34 条:G1a 6、G1b 12、G2a 6、G3 10。本条记 G1a、G2a、G3 的修复;G1b 的修复与对新落码(G2b 后半、G4b、G4b-G)的评审另起条目。
+- **提交状态**:本条的修复都是 10-13 落的,已随 `e4ff1d165`(luyuan-cpp,10-14 03:07「提交部署连接预算、存盘改进与战斗回合上限等工作区改动」)入库。同一提交也带进了 10-13 两次被打断(额度、认证)时的半截改动:行片 16→64 做了一半、G4b-G 的 `queue.go` 改了一半(`queue_test.go` 只加了三个没用到的 import,HEAD 上该测试包编译不过)、契约测试仍断言已改成英文的总账警告。这几处由后续条目补完。
+- **负责人 10-13 拍板**(对话里的选择,原话):四条超出原规格的既有缺陷「G1b:panic 后僵尸 leader,G3:建角锁用请求 ctx 释放,G3:预加载池满没有指标,G2a:单分区积压告警盲区」全部并入本轮;`chainBudget`「改回 5 分钟」;分片模数「加正向探针守卫」(随第 4 项做)。
+- **G1a**(5 条修,1 条移交第 4 项):
+  - `docs/ops/merge-zone-runbook.md` §9.3:前置写明 route_tool 每个子命令建池都跑 P4 探针,要 player_route 的 INSERT 权限、`chk_route_shard` 生效(MySQL ≥ 8.0.16;TiDB 建表前开 `tidb_enable_check_constraint`),不能用只读账号、不要连只读副本;退出码 2 的成因补全。
+  - `route_store_contract_test.go`:`TestPrepareTiDBContract` 补 SPLIT 结果零列 / 零行 / 首列不是整数三条 fail-closed 分支的子用例。
+  - `route_store_integration_test.go`:doc 注释改成 gofmt 规范形;`TestRouteStore_KeyedReadsUsePrimaryRange` 夹具从 2000 行放大到 2 万行(1000 对行构造器在小表上本来就会全表扫描,原用例在真库上必红,倍数按 MySQL 8.0 成本公式推算,未实跑);TiDB 用例补 R12 键集翻页的 EXPLAIN 取证,先用一条必然全表扫描的对照语句校准算子名。
+  - 「模数没有运行期核对」移交第 4 项的正向探针守卫。
+- **G2a**(5 条修,1 条只修了一部分):
+  - 单分区积压告警盲区(负责人同意并入):`go/shared/kafkautil/group_lag.go` 的 `GroupLag` 加 `MaxPartitionLag`;data_service 新指标 `kafka_consumer_lag_max_partition_messages{consumer}`;`DataServiceAuditLagHigh` 改按单分区最大值比较。broker 的 `retention.bytes` 按分区执行,原来比合计值,积压集中在一个分区(毒丸行就是这样)时,换到 12 分区后告警在丢数据之前永远不响。
+  - kafka-go v0.4.47 保留期跳转日志:到 GitHub 对应 tag 核对源码后,注释、指标说明、告警与 runbook 不再把那一行日志称作「唯一精确记录」;`newReader` 加普通 Logger,白名单放行两行位点日志,覆盖(重新)初始化路径。
+  - worker 循环顶部 ctx 检查补回归用例 `TestSnapshotConsumer_CancelledBatchNeverLetsQueuedMessagesCommit`(50 轮,删掉那三行必红)。
+  - `DataServiceAuditConsumerStopped` 加 `for: 2m`(滤掉新 Pod 首个样本为 0 的抖动);`LagProbeBlind` 按 `(consumer, instance)` 聚合,点名失明的那个实例。
+  - 批量模式下坏消息「已跳过」计数的时机:只改告警说明与注释,没有把计数挪到提交时刻(两条消费者要一起改,另行立项)。告警仍是 8 条。
+  - 规格 §4.4 的 offset 不连续兜底没有落(核对后它的触发条件不成立,改用上面的 Logger 白名单)。`RetentionGap` 改单调计数器会改告警语义,待负责人定(规格 Q-1)。
+- **G3**(10 条全部处置):
+  - `chainBudget` 改回 5 分钟(它是 `d5cbb8a8e` 里误带的改动,任何规格都没有)。
+  - 预加载池满:`entergame_total` 加 `result="pool_saturated"`,起服预置为 0(`PrimeEnterGameMetrics`,超出 corrected_fix 的一步,理由:不预置时汇总表分不清「测到 0」与「旧版 login 不导出」);`stress_summarize.ps1` 的 EnterGame 表加一列,建角阶段表加 `seed` 列(原来写死四个阶段);`test_stress_summarize.ps1` 同步。
+  - 建角锁释放改用脱离请求 ctx 的 1s 超时(新常量 `createLockReleaseTimeout`);回归用例 `TestCreatePlayer_ReleasesLockAfterRequestCancelledMidCreate` 在持锁之后取消请求,修复前应红。`loginlogic.go` 的 `accountLock.Release(l.ctx)` 是同类问题,不在本项范围,待办。
+  - 种子日志与注释改成如实语义(error = 写入未确认;idempotent 单独打 INFO);设计文档 P2 的依据改正,「6c 之前只读探测」列为 P7 待拍板;login.yaml 账号锁预算注释改正(现行 zrpc Timeout 10s 下 21s 到不了,20s 的锁 TTL 仍盖得住);PreloadPool 旧注释(「池满丢任务、scene 侧重试补偿」)改为与代码一致;linux 栈那份 login.yaml 的 `NewPlayerSeed.Enabled` 也由用例钉为关;K8s 上打开种子要同批补 login 的 Prometheus 与 PreloadPool 配置(设计 §7 第 5 步)。
+- **文件**(都在 `e4ff1d165` 里):
+  - G1a:`docs/ops/merge-zone-runbook.md`,`go/data_service/internal/store/route_store_contract_test.go`、`route_store_integration_test.go`;
+  - G2a:`go/shared/kafkautil/group_lag.go`、`group_lag_test.go`,`go/data_service/internal/kafka/{consumer,lag_probe,snapshot_worker,snapshot_worker_test,fakes_test}.go`,`go/data_service/internal/metrics/{metrics,metrics_test}.go`,`deploy/k8s/data-service-audit-alerts.yaml`,`docs/ops/audit-topic-generation-bump-runbook.md`,`docs/design/data_service_role_and_scope.md`;
+  - G3:`go/login/internal/logic/clientplayerlogin/{metrics,createplayerlogic,createplayer_seed,entergamelogic,createplayer_name_test}.go`、新文件 `entergame_pool_saturated_test.go`,`go/login/internal/config/new_player_seed_conf_test.go`,`go/login/internal/logic/pkg/dataloader/new_player_seed.go`,`go/login/internal/svc/servicecontext.go`(只改注释),`go/login/login.go`(一行),`go/login/etc/login.yaml`,`docs/design/new-player-first-enter-no-cold-read.md`,`tools/scripts/{stress_summarize,test_stress_summarize}.ps1`。
+- **交 Codex**(仓库根 `D:\luyuan\xuanming-server-mmo-cpp`;不写死 Go 版本;不改 go.mod / go.sum;串行,前一步红了停下归因,不连续重试):
+  1. G1a,工作目录 `go/data_service`:`gofmt -l ./internal/store`(不得列出两个路由测试文件);`go vet ./internal/store/...` 与 `go vet -tags=integration ./internal/store/...`;`go test ./internal/store/... -count=1 -v -run TestPrepareTiDBContract`(9 个子用例 PASS,含三条新的)。真库(compose 的 MySQL ≥ 8.0.16;没有库记「未执行」):`go test -tags=integration ./internal/store/... -count=1 -v -run TestRouteStore_KeyedReadsUsePrimaryRange`(5 个子用例 PASS 不得 SKIP;R8 若仍是 index / ALL,连 `SELECT VERSION()` 与五份计划原样回报,不改 SQL)。真 TiDB 的取证要拉镜像,先征得负责人同意。**第 4 项(行片 16→64)落完后再跑这一步**,同一批文件还在改。
+  2. G2a,工作目录 `go/shared`:`go vet ./kafkautil/...`;`go test ./kafkautil/... -run TestComputeGroupLag -count=1 -v`。工作目录 `go/data_service`:`go build ./...`;`go vet ./internal/kafka/... ./internal/metrics/...`;`go vet -tags=integration ./internal/kafka/...`;`go test ./internal/kafka/... ./internal/metrics/... -count=1`;`go test ./internal/kafka/ -run "TestSnapshotConsumer_CancelledBatchNeverLetsQueuedMessagesCommit|TestIsReaderOffsetTraceLine" -count=1 -v`;有 CGO 时加 `-race`。可选红证据:临时注释掉 `snapshot_worker.go` run 循环顶部那三行 ctx 检查,新用例应 FAIL,恢复后应 PASS。告警:`deploy/k8s/data-service-audit-alerts.yaml` 里 `- alert:` 应为 8 条;有 promtool 就 `check rules`。
+  3. G3,工作目录 `go/login`:`gofmt -l` 本批新改的 5 个文件(零输出);`go vet ./internal/logic/clientplayerlogin/... ./internal/logic/pkg/dataloader/... ./internal/config/... ./internal/svc/... .`;`go build ./...`;`go test ./internal/logic/clientplayerlogin/... -run "TestCreatePlayer_ReleasesLockAfterRequestCancelledMidCreate|TestEnterGame_PoolSaturated|TestPrimeEnterGameMetrics" -count=10 -v`(各 10 遍 PASS);`go test ./internal/config/... -run "NewPlayerSeed|EtcYaml|LoginYaml" -count=1 -v`;再跑这四个包的全量。仓库根:`pwsh -NoProfile -File tools/scripts/test_stress_summarize.ps1`(末行 PASS;跑时不要起 scene,脚本会临时挪走 scene 日志)。
+  - 注意:**HEAD 上 `go/login/internal/logic/pkg/loginqueue` 的测试包当前编译不过**(G4b-G 半截),`go/login` 的 `go test ./...` 与 `go vet ./...` 会因此失败,等 G4b-G 补完的条目再跑全量;上面第 3 步只跑点名的包。
+  - 失败时保留:`go test -v` 的失败段与编译错误前 20 行;gofmt -d 输出;脚本的 `[FAIL]` 行与断言文本。按文件归因,别的会话的改动(日志英文化 `946ffd216` 等)引起的失败单独回报。
+- **未验证**:全部。
+- **Java 版(AGENTS.md §12)**:对应 Java 版本号:无。全部是服务端内部实现(路由表测试与运维文档、审计快照消费者与告警、login 建角与进场的指标和锁),不涉及客户端契约。Java 侧:审计快照 / Kafka 消费者「不适用」(Java 不经这条 Kafka 链);建角锁释放与池满指标属 Java 自己的实现,未核对,待 Java 版按自己的结构判断。`PARITY.md` 在文档收尾时统一登记。
+
+## 2026-10-14 路由服水平扩展下的玩家消息乱序:保序方案提案(Claude,纯文档)
+
+- 新增 [客户端请求按会话保序](design/client-request-ordering.md)。结论:乱序与路由服副本数无关:grpc-go 每个 stream 一个 goroutine,go-zero 超时拦截器又起一个,单副本、粘性路由、一致性哈希都保证不了串行。推荐三层方案:① gate 每会话一条路由 lane(全序、单飞、有界 32、排队等待上限 5s、gate 自己的 `gate_call_seq` 加 `session_incarnation` 认领、失败回执带请求 id、节点摘除快速失败、主动过期扫描);② 预算链与提交点(login、match 的 Timeout 降到 4000;match 票据读写改传请求 ctx);③ 业务栅栏(login 会话关闭栅栏、match JoinQueue 复核会话、guild expected_guild_id)。路由服保持无状态随机(D29 不变)。
+- 产出方式:两轮多代理工作流(7 路调研 + 起草 + 替代方案评审);另外三路评审因账号额度中断,由主会话读代码复核。复核与裁决记录在文档 §15。
+- 关键代码事实:match 票据读写用 `context.Background()` 与无 ctx 的 `Eval`(`go/match/internal/logic/queue.go:216,254,542` 等);match 拦截器不回写会话头(直连模式下 match 回包被 gate 丢弃);login `Timeout: 10000` 超出路由服 5s 转发预算,而且路由模式下实际已被截到约 5s。
+- 文件:`docs/design/client-request-ordering.md`(新)、`docs/README.md`(登记一行)、`tools/scripts/gen_docs_index.py`(接入层分类加一条文件名规则)。本机没有 Python,索引行按生成器格式手工写入,待 Codex 跑 `python tools/scripts/gen_docs_index.py --check` 确认。
+- 待用户拍板:lane 粒度与 Java 对齐方式、预算链修法、实施授权(约 60 个文件,跨两个仓库)、客户端行为确认(文档 §11)。
+- Java 版(AGENTS §12):本次未改动;Java gate 已有「每会话 × 每后端域单飞」,差距见文档 §10。无 Java 版本号,未登记 PARITY。未编译、未测试;未提交。
+
+## 2026-10-14 entt 误用审计:修复已复核的 high/medium 问题(Claude,未编译,待 Codex 验证)
+
+- 背景:同日只读审计(19 路查找 + 对抗复核;复核阶段因子代理周额度中断,45 条未复核)确认 51 条 entt 误用。本条只修已复核的 high/medium 项,外加一条因本批改动而变得可达的 low 项。
+- 修复:
+  1. **任务完成后的副作用线上从不执行**(F028),以及**事件里的实体句柄被截成 32 位**(F027)。`OnMissionCompletion` 原先 3 处 `dispatcher.enqueue`,生产代码里没有任何地方调 `update()`,导致自动发奖、任务链自动接取、「完成任务 X」条件推进全部失效,事件还在队列里无界堆积。现改为:先收集事件,等本轮所有任务的状态落定后再同步 `trigger`;实体值保留完整 64 位。**没有采用「补一句 `dispatcher.update()`」**:entt 3.13 的 `publish()` 把 `events[pos]` 的引用交给监听者,监听者若往同类型队列再 enqueue(ConditionEvent 完成任务后会再产生 ConditionEvent),`push_back` 扩容后这个引用就悬空。另外在 `EcsContext::Clear()` 里补了 `dispatcher.clear()`。
+  2. **客户端上报的 target_id 只做了 `valid()`**(F046/F049):`actorRegistry` 由本节点所有场景共用,填一个小整数就能作用到别的场景、冻结中或战斗中的玩家。现在 `skill.cpp` 新增 `ResolveSkillTarget`,要求目标有效、是 Player/Npc、与施法者同场景、不在冻结中。`ValidateTarget` 增加 caster 参数,指定目标类技能拒绝跨场景或冻结的目标。LookAt、技能上下文、`OnSkillHit`、落点阶段的 `HandleSkillSpell` / `TriggerSkillEffect` 都改走这个函数,落点时重新解析目标。**协议不变**:仍然下发 `to_integral(entity)`;把对外 actor ID 换成 Guid 或 net-id 属于客户端契约变更,本次没做。
+  3. **`TRANSFER_ERROR_MESSAGE` 用空 tip 覆盖了 handler 直接写进 response 的拒绝码**(F003),ReleaseSkill 的两处拒绝因此被抹成「成功」。现在 TLS tip 为空(id 为 0 且没有参数)时不再覆盖。
+  4. **`CooldownTimeListComp` / `SkillContextCompMap` 在生产代码里没有创建点**(F044/F050):当初把懒创建的 `get_or_emplace` 换成 `try_get` 时漏了初始化,`docs/design/ecs-component-access-rules.md` 本来就要求在 actor 创建时挂上。现在在 `ActorEventHandler::InitializeActorCompsEventHandler` 的守护段里挂上这两个组件;`CheckCooldown` 在组件缺失时 fail-closed,返回 `kServiceUnavailable`。**行为变化**:实时技能的冷却、伤害、buff 链路从此在生产环境真正执行(此前整条空转)。
+  5. **entt 第一个实体的整数值是 0,与协议里的「没有目标」冲突**(F048):`EcsContext` 构造时对 actorRegistry 执行一次 create + destroy,让 index 0 / version 0 这个句柄退役。之后任何 actor 的整数都不为 0,`valid(entity{0})` 恒为 false;`clear()` 只会继续抬高 version,不会破坏这条不变量。
+  6. **遍历 `BuffListComp` 时经 `AddSubBuffs` 修改同一个容器**(F040):`buff_impl.cpp` 改为先收集 id、再逐个按 id 重查;`ApplyNextBasicAttackBonus` 在 `AddSubBuffs` 之前先拷出 skillContext,防止 buff 被驱散后再读它。
+  7. **对自己施放的技能结束时重复释放**(F047):`HandleSkillFinish` 先删施法者表里的条目,target == caster 时不再删第二次;`AddSkillContext` 也不再把上下文镜像到施法者自己身上。
+  8. **停机时出站 TcpClient 在 EventLoop 析构之后才析构**(F022,只修了一部分):`Node::FinalizeShutdownInLoop` 在两跳 quit 之前清掉各节点 registry 上的 `RpcClientPtr`,让排进队列的 forceClose 被两跳排空。etcd / gRPC 的 CompletionQueue、stub 与 watch 流仍要等 thread_local 析构才释放:它们需要先 Shutdown 再排空,不能顺手销毁,另列待办。
+  9. **每帧 buff tick 路径无守卫 `get` 三个属性组件**(F041):`modifier_buff_impl.cpp` 改用 `try_get`;没有 LevelComp 时按 1 级计算。
+  10. 顺带修复(第 4 条使它变得可达,F039):`BuffSystem::OnAfterTakeDamage` 把攻击者当成了受击者,重置的是攻击者自己的脱战加成。
+- 推迟:
+  - F059/F060,存盘 Marshal 的 13 处 `get_or_emplace`:要改 `player_lifecycle.cpp` 的调用方,以及生成器模板 `player_data_loader.cpp.tmpl`。另一会话(旧入场请求覆盖新会话)正在大改入场链,已约定等它落地后再做。
+  - F001/F002,Kafka `DispatchProtoEvent` 对全部 47 个事件开放(包括载荷是进程内实体整数的事件):要先盘清 Go、Java 两版所有 SceneCommand / GateCommand 的生产者,包括正在新增的 login → `BindSessionEvent`,再定白名单。本次没改,生成器也没碰。
+  - 未复核的 45 条,例如:节点摘除时直接销毁 gRPC CQ、生成的 `Send*` 对 CQ/Stub 无守卫 `get`、`UpdateSessionDetail` 对 `PlayerSessionSnapshotComp` 无守卫 `get`(主会话抽查属实)、`SceneGridListComp` 只在热路径上懒建。
+- 文件(本条改动的全部文件):`cpp/libs/engine/thread_context/ecs_context.{h,cpp}`、`cpp/libs/modules/mission/system/mission.cpp`、`cpp/libs/services/scene/combat/skill/system/skill.{h,cpp}`、`cpp/libs/engine/core/macros/return_define.h`、`cpp/nodes/scene/handler/event/actor_event_handler.cpp`(只改守护段)、`cpp/libs/services/scene/combat/buff/system/{buff,buff_impl,modifier_buff_impl}.cpp`、`cpp/libs/engine/core/node/system/node/node.cpp`、`cpp/tests/skill_test/skill_test.cpp`、`cpp/tests/bag_test/player_mission_system_test.cpp`。没有新增源文件,工程文件无变化。
+- 新增回归用例:
+  - skill_test:`ValidateTarget_TargetInAnotherScene_ReturnsError`、`ValidateTarget_FrozenTarget_ReturnsError`、`HandleSkillFinish_SelfTargetedContextIsErasedOnce`、`CheckCooldown_MissingCooldownComp_ReturnsError`、`TransferErrorMessageTest.KeepsDirectResponseErrorWhenTlsTipIsEmpty`、`TransferErrorMessageTest.MovesTlsTipIntoResponseAndClearsIt`、`EcsContextTest.FirstActorEntityIntegralIsNotZero`;既有的两条 `ValidateTarget_*` 用例改为传入 caster。
+  - bag_test:`PlayerMissionSystemTest.AutoRewardIsGrantedWithoutDispatcherUpdate`、`PlayerMissionSystemTest.AutoRewardReachesPlayerOnRecycledEntitySlot`。
+- **给 Codex**(Debug x64,MSBuild 必须串行):
+  1. 仓库根执行 `msbuild game.sln /m:1 /nr:false /p:Configuration=Debug /p:Platform=x64`。主工作区里还有别的会话未编译的改动,报错时先按文件归因到上面的文件清单。
+  2. 依次执行 `pwsh tools/scripts/run_cpp_tests.ps1 -Build -Filter skill`、`-Filter missions`、`-Filter bag`、`-Filter buff`、`-Filter aoi`。要求:新增用例全部 PASS;missions_test 的既有用例保持通过。副作用改为同步派发后,测试里的 `dispatcher.update<...>()` 变成空操作;如果有用例依赖「update 之前尚未派发」,单独回报。
+  3. 可选红证据:只回退 `mission.cpp` 的改动,bag_test 的两条新用例应 FAIL;只回退 `return_define.h` 的改动,`KeepsDirectResponseErrorWhenTlsTipIsEmpty` 应 FAIL。
+  4. 失败时保留:编译错误前 20 行、gtest 失败段(断言文本)、`run_cpp_tests.ps1` 的汇总表。
+- 未验证:全部(没有编译,没有跑测试)。
+- Java 版(AGENTS.md §12):本批修的是 C++ 侧 entt 用法缺陷,Java 版不用 entt,这部分不适用。但其中两条是对客户端可见的服务端行为:技能目标必须与施法者同场景、技能冷却真正生效;Java 版有没有同等的校验未核对,待 Java 侧确认。没有 Java 版本号,未登记 PARITY。未提交。
+
+## 2026-10-14 存盘管线接手:核对、Codex 任务单、两份设计稿、§5 拍板记录、L-04 第 1 批落码(Claude,未编译、未测试)
+
+- **起因**:接手 [docs/handoff/godb-pipeline-handoff-20261013.md](handoff/godb-pipeline-handoff-20261013.md)(第 2 版)。本轮范围:核对交接 §2、整理 Codex 任务单、写条件写与 L-04 两份设计稿、逐条问 §5 拍板项;问完之后负责人要求「先实现代码,先不管测试,测试记录到上线待做里面」,于是落了 L-04 第 1 批的代码。
+- **核对结论**(详见交接新增的 §9):`d5cbb8a8e` 与 `0aa1027bc` 按本地跟踪引用均已推送(负责人确认是他推的,§5 第 8 项关闭);§2.1 的文件归属属实,交接第 2 版等订正在 `0aa1027bc`;G2b 的「已落 / 未落」判定属实(之后 G2b 已补完,HEAD 的 db ConfigMap 已写 `MetricsListenAddr`);B1 的 FLUSHALL 场景基本不触发(账号目录同时被清,旧 player_id 不再被写到),B2 原定的播种来源在常态下取不到值。
+- **文档**:
+  - [Codex 任务单](handoff/godb-pipeline-codex-tasksheet-20261013.md)第 2 版:在三个临时 worktree(基线 / 基线加本批 / 被验证提交)里跑,补了回环网络前置、失败也收尾、真库起库与建库的 pwsh 命令、竞态检测的判据。
+  - [db-write-fencing-mysql.md](design/db-write-fencing-mysql.md) v0.2:**评审结论尚未并入**(文首写的「已过一轮对抗评审」不准确)。据「玩家消息投递与位置管理」会话转告,负责人已在那边确认条件写由该会话落码,v0.3 由它并入评审结论;本会话不再改这份文档。
+  - [db-task-store-unavailable-deferral.md](design/db-task-store-unavailable-deferral.md) v0.3:并入 L-04 一路的对抗评审(10 条,核实后成立 6、部分成立 4),按此落码。
+  - 新建 [ops/godb-pipeline-launch-todo.md](ops/godb-pipeline-launch-todo.md)「存盘管线上线待做」:未执行的编译、单测、故障注入、上线前置与部署红线都记在这里。
+  - 同步:`player-storage-placement.md` §6.1 读任务口径加注;`tidb-phase1-and-launch-readiness.md` 的 L-04 行加状态注;`docs/README.md` 登记新文档。
+- **§5 拍板记录**(负责人 2026-10-13 在本会话逐条答复,原话摘要):
+  1. proto2mysql:全绿后「只合入 main」,不打 tag;go/db「用伪版本钉 main 的提交」;上一会话的 commit / push 授权「沿用,仅限功能分支」(推 main 前再确认)。
+  2. 条件写实现:「现在授权」;之后据另一会话转告,负责人在那边确认由它落码。
+  3. 开工授权:「L-04 第 1 批 + 读写超时」;大批次「授权 ① 和 ③」。
+  4. L-04 归属:「归本交接」(请负责人通知另两个会话)。
+  5. `kafka:expand:status` 死代码:「保留」。
+  6. 突发全量存盘的排空 SLO:「120 秒」;目标规模:「S3:同时在线 1000 万」。
+  7. 换代 topic(④B2):「要做,排在条件写之后」。
+  8. `d5cbb8a8e` 推送:「是我推的,这项关闭」。
+  9. ① 的行为变化(db 积压超过 8 秒时进场失败):「接受」。
+  10. ④ 与 TiDB 决策 D5:「先做 ④,修订 D5」。
+  11. G2b 的 `mysql.yaml` 何时 apply:答复是「你先实现代码,先不管测试,测试记录到上线待做里面」,具体窗口未定;约束照旧写在上线待做 §2.6。
+  12. 连接预算路线:「以抬上限为准」(附录 ② 批 B 作废);`SET PERSIST`:「允许」。
+  13. DBTask 9 号:「9 给 save_seq」,`reply_instance` 用 10(请负责人通知全局单点那个会话)。
+  14. AGENTS.md §6.2:「条件写落码时再加」。
+  15. 开服门槛:「要支持,③ 是开服门槛」。
+  16. Redis 分片 hash tag:「以按 player_id 分片为准」(瓶颈文档 §6.5 待修订)。
+  17. 重叠项归属:WAITAOF(go/db 部分)、scene 发送失败后的脏快照、Lua `tonumber`(go/db 一处)、db_task 的 retention **全部归本交接**。
+  - Codex 任务单的同意:Go「我自己安装」(已装 1.27.2);同意拉 MySQL 与 TiDB 镜像;Go 模块下载未明确,任务单按 `GOPROXY=off` 先跑、缺模块停下请示。
+- **L-04 第 1 批落码**(设计 v0.3;负责人授权见上):
+  - SQL 调用点给驱动错误打来源标记(新包 `go/db/internal/storeerr`),汇总处只认标记;写任务遇连接数满 / 连接断开 / 只读 / 忙延后,不耗重试预算;
+  - 已打开的库只在探活确认整库不可达时进冷却(1040 不冷却),5 秒 ±20%,到期单次探活;
+  - 读任务在库已知不可用时立即回失败回执,读重试用完丢弃,读永远不进死信;
+  - 重试循环每实例每拍对每条至多认领一次,主库冷却时整拍跳过;
+  - 业务连接池补拨号 5s / 读 30s / 写 30s 超时,会话级 `lock_wait_timeout` 与 `innodb_lock_wait_timeout` 10s(短于读超时,让服务端先中止排队语句);迁移入口不受影响;
+  - 新指标 `db_task_deferred_total{op,reason}`、`db_task_dead_letter_total{reason}`、`db_task_read_abandoned_total{reason}`、`db_retry_queue_length{queue}`、`db_store_cooldown_stores{pool}`;新告警文件 `deploy/k8s/db-task-retry-alerts.yaml`(五条)。
+  - `dbOpHandler` 最终签名:`func(ctx context.Context, store *proto2mysql.DB, task *db_proto.DBTask, msg proto.Message) error`。
+- **文件**(本会话的改动,提交时按此清单 add):
+  - 新增:`go/db/internal/storeerr/storeerr.go`、`storeerr_test.go`、`go/db/internal/kafka/store_failure.go`、`go/db/internal/logic/pkg/proto_sql/store_health.go`、`store_health_test.go`、`deploy/k8s/db-task-retry-alerts.yaml`、`docs/ops/godb-pipeline-launch-todo.md`;
+  - 修改:`go/db/internal/kafka/key_ordered_consumer.go`、`key_ordered_consumer_test.go`、`placement_route.go`、`placement_route_test.go`、`go/db/internal/logic/pkg/proto_sql/store_registry.go`、`db.go`、`go/db/internal/config/config.go`、`go/db/etc/db.yaml`、`go/db/internal/metrics/metrics.go`、`docs/design/db-task-store-unavailable-deferral.md`、`docs/handoff/godb-pipeline-codex-tasksheet-20261013.md`、`docs/handoff/godb-pipeline-handoff-20261013.md`(§9)、`docs/design/player-storage-placement.md`(§6.1 一条注)、`docs/design/tidb-phase1-and-launch-readiness.md`(L-04 行状态注)、`docs/README.md`(新文档登记)、本文件。
+- **未验证**:一条构建、测试都没跑。编译、单测、故障注入的命令与通过标准在上线待做 §2;第 0 批与 proto2mysql 的验证在 Codex 任务单。L-04 第 2 批(死信查看与重放工具)未做,L-04 仍未关闭。
+- **Java 版(AGENTS §12)**:对应 Java 版本号:无。L-04 不适用(Java 没有 Kafka 存盘链;等价缺口已在 PARITY.md 第 60 行登记为 Java 待做),本批提交后在 PARITY.md 追加「不适用」一行;条件写的 Java 结论见条件写设计 §13(不适用,另有同 epoch 重复进场一处待核)。
+
+## 2026-10-14 严重事故登记：任务、实时技能、Buff 与节点生命周期（Codex，纯文档）
+
+- 按负责人要求新增 [严重事故记录](ops/incident-scene-ecs-gameplay-20261014.md)，保留原审计 F 编号，记录 10 组已有代码改动（F022 仅部分处理）和 2 组暂缓问题的影响、根因、历史遗漏、验证现状与关闭条件。当前统一记为未关闭，不把上一会话的静态修复陈述提升为生产恢复证据。
+- 明确待办：存盘缺组件写默认值（F059/F060）、Kafka 全本地事件入口（F001/F002）、etcd / gRPC CQ 与 watch 排空；实时技能补齐组件后伤害与 Buff 路径可达性改变，死亡 / 复活边界仍须专项确认。ECS 访问文档中 Marshal 默认回退的历史例外也登记为后续需修正项。
+- 补记历史信号：实体 0 缺陷已有真实本地冒烟失败；旧目标为 1 的冒烟通过不能关闭它。错误码覆盖、Buff 回调期间容器失效均已有同类记录，后续须覆盖全部入口。原报告新增 9 条测试仅确认源码存在，本次未编译、未运行功能测试、未启动或部署服务。
+- 文档总索引按生成器刷新；保留 docs/README.md 和本文件原有未提交内容，本文件只追加。当前 PR / Issue 因本机无可用 gh 未能核对，未安装工具或登录账号。
+- Java 版（AGENTS.md §12）：只读核对实际 Java 仓库，现有版本 0.1.0-SNAPSHOT，无新增功能版本；PARITY.md 仅追加本次事故登记。Java 任务同步完成链和冷却已有实现，本次未复跑；指定目标同场景 / 冻结策略、实时伤害与 Buff 启用边界待对齐，不能写为双版本已完成。
+- 验证范围：文档索引、相对链接、空白检查，以及原进度内容保留核验；不改变本批业务修复尚待编译、回归和联机验收的状态。未提交。

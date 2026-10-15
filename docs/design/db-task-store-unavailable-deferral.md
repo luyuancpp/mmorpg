@@ -1,195 +1,208 @@
 # go/db 存盘任务：存储不可用时延后、不进死信（L-04）设计评审稿
 
-> **状态**：设计评审稿 v0.2（2026-10-13，Claude）。已过一轮对抗评审（§13），**待负责人授权；未落码、未编译、未测试**（AGENTS.md §10.1）。
-> **来源**：`tidb-phase1-and-launch-readiness.md` 的 L-04（「go/db 遇到 1040 或拿不到连接时改为延后，不消耗重试预算；死信加消费者和告警」）；[交接](../handoff/godb-pipeline-handoff-20261013.md) §4.1 第 1 项；[瓶颈文档](db-task-pipeline-bottlenecks.md) §4.4 的缺口 G2；全局单点交接的同名 P0。附录 A「mysql-connection-budget」批 A 是本文的起点，它没有经过独立复核，本文按 HEAD 重新核对后改写。
-> **证据口径**：[C] 在 HEAD `0aa1027bc` 读代码确认；[D] 文档记载；[I] 推断。全部是静态阅读，没有实测。
-> **缩写**：KOC = `go/db/internal/kafka/key_ordered_consumer.go`；PR = `go/db/internal/kafka/placement_route.go`；SR = `go/db/internal/logic/pkg/proto_sql/store_registry.go`。
+> **状态**：v0.3（2026-10-14，Claude）。第 1 批已获负责人授权（2026-10-13，「L-04 第 1 批 + 读写超时」），**代码已按本稿落码，未编译、未测试**（AGENTS.md §10.1）。负责人同时要求「先实现代码，先不管测试，测试记录到上线待做里面」，未执行的验证列在 [godb-pipeline-launch-todo.md](../ops/godb-pipeline-launch-todo.md)。
+> **来源**：`tidb-phase1-and-launch-readiness.md` 的 L-04（「go/db 遇到 1040 或拿不到连接时改为延后，不消耗重试预算；死信加消费者和告警」）；[交接](../handoff/godb-pipeline-handoff-20261013.md) §4.1 第 1 项；[瓶颈文档](db-task-pipeline-bottlenecks.md) §4.4 的缺口 G2；全局单点交接的同名 P0。附录 A「mysql-connection-budget」批 A 是起点，按 HEAD 重新核对后改写。
+> **归属**：负责人 2026-10-13 定为本交接做（交接 §5 第 4 项）。
+> **证据口径**：[C] 读代码确认；[D] 文档记载；[I] 推断。全部是静态阅读，没有实测。
+> **缩写**：KOC = `go/db/internal/kafka/key_ordered_consumer.go`；PR = `go/db/internal/kafka/placement_route.go`；SR = `go/db/internal/logic/pkg/proto_sql/store_registry.go`。行号按改动前的 HEAD `0aa1027bc`。
 
 ---
 
 ## 0. 结论速览
 
 1. **问题比「3 秒内耗尽重试」更紧。** 重试循环同一拍内可以反复认领同一条任务，MySQL 抖动不到 1 秒就可能把一笔存盘推进没有消费者的死信（§1）。
-2. **第 1 批**（约 9 个文件，不动 proto、不动 DDL）：
-   - handler 返回 `error`，保住驱动错误的类型；
-   - 把「存储此刻不可用」的错误单独分类，写任务延后且不耗预算；
-   - 已打开的库在运行期失联时进入冷却，复用现有的「落点库打不开」那条路；
-   - 重试循环每拍每条任务至多尝试一次；
-   - 加延后计数、死信计数、三个队列长度，以及三条告警。
-3. **第 2 批**（另行评审）：死信的查看与重新入队工具；主库不可用时是否改为原地等待、让 Kafka 承担积压。
-4. **L-04 管不到「MySQL 卡住不返回」**：连接没有读写超时，SQL 挂住时不产生任何错误。它要靠交接 §4.1 第 2 项里的读写超时补上，建议与本批同批或更早落地（§8）。
-5. 第 1 批在所有 zone 部署之前，交接 §2.4 的约束不变：不要在有真实存档的环境 apply 会触发 MySQL 重建的清单。
+2. **第 1 批（已落码）**：
+   - SQL 调用点给驱动错误打来源标记（新包 `go/db/internal/storeerr`），汇总处只认标记；
+   - 写任务遇到存储侧故障延后，不耗重试预算；
+   - 已打开的库只在**探活确认整库不可达**时才进入冷却（连接数满不算），冷却 5 秒 ±20%，到期只放一次探活；
+   - 读任务：库打不开或在冷却时立即回失败回执；其余情况照常重试，预算用完丢弃，读永远不进死信；
+   - 重试循环每实例每拍对每条至多认领一次，主库冷却时整拍跳过；
+   - 业务连接池补拨号 / 读 / 写超时，会话级锁等待短于读超时；
+   - 延后、死信、读放弃三个计数，三个队列长度，冷却库个数；五条告警。
+3. **第 1 批之后 L-04 仍未关闭**：死信的查看与重新入队工具在第 2 批（§4.1），未获授权。
+4. **管不到的窗口**：客户端超时撤不回已经发出的语句。会话级锁等待让服务端先中止排队中的语句，挡住了最常见的形态（排在锁后面）；网络在语句发出之后断开这类形态仍可能留下事后生效的写，条件写落地之前它是发版红线（§8）。
 
 ---
 
-## 1. 现状（HEAD 事实）
+## 1. 现状（改动前的 HEAD 事实）
 
 ### 1.1 一笔写失败之后
 
-- handler 返回的是字符串，不是 `error`：`handleDBWriteOp` 把驱动错误 `fmt.Sprintf` 成文本（KOC:829-830），`runDBOp` 再 `errors.New`（KOC:2040-2042）。到上层已经无法用 `errors.Is` / `errors.As` 判断是什么错 [C]。proto2mysql v0.2.0 自己是全程 `%w` 包装的，类型丢在 go/db 这三行。
-- 失败的任务进 `deferFailedTask`（KOC:2072-2125）：Kafka 来源的 LPUSH 到共享的 ready 列表后 ack；重试来源的把收据搬回 ready。
+- handler 返回的是字符串：`handleDBWriteOp` 把驱动错误 `fmt.Sprintf` 成文本（KOC:829-830），`runDBOp` 再 `errors.New`（KOC:2040-2042）。上层无法用 `errors.Is` / `errors.As` 判断是什么错 [C]。proto2mysql v0.2.0 自己全程 `%w` 包装，类型丢在 go/db 这三行。
+- 失败的任务进 `deferFailedTask`（KOC:2072-2125）：Kafka 来源的 LPUSH 到共享的 ready 列表后 ack；重试来源的把收据搬回 ready。Kafka 位点照常前进，ready 里那一份是唯一副本。
 - 重试预算在认领时判定（KOC:1177-1191）：`RetryCount >= 3` 进死信，否则加一。一笔写总共执行 4 次。
 - 死信 `kafka:dead:queue:{topic}` 没有消费者、没有重放工具、没有指标、没有告警；全仓唯一的读者是合服预检的 LLEN [C]。
 
 ### 1.2 哪些失败不耗预算
 
-`retryBudgetExempt`（PR:357-367）只豁免四种：排序锁被占、落点冻结、复核发现落点变了、落点库打不开（只对写）。
-
-**SQL 返回的任何错误都耗预算**，包括 1040、连接断开、MySQL 重启。
-
-「落点库打不开」的豁免实际只覆盖**从没打开过的额外库**：`StoreRegistry.Store` 对已打开的库直接返回缓存的句柄，不探活（SR:281-287）。本 zone 的主库在启动时就打开了，所以它任何时候都不在豁免里 [C]。
+`retryBudgetExempt`（PR:357-367）只豁免四种：排序锁被占、落点冻结、复核发现落点变了、落点库打不开（只对写）。SQL 返回的任何错误都耗预算。「落点库打不开」只覆盖从没打开过的额外库：`StoreRegistry.Store` 对已打开的库直接返回缓存的句柄，不探活（SR:281-287），所以主库任何时候都不在豁免里 [C]。
 
 ### 1.3 重试没有最小间隔
 
-- 重试循环是 1 秒一拍、每拍最多认领 200 条（KOC:49、:1141-1154）。
-- 搬回 ready 是 LPUSH 到队头，认领从队尾取，循环只在「队列空」或「满 200 次」时结束。队列里任务不多时，同一条任务可以在同一拍里被反复认领 [C]。
-- 所以「3 次重试」可以在远小于 3 秒的时间里用完；被豁免的任务则没有任何最小间隔，积压时退化成每实例每秒最多 200 次的空转，每次都是一串 Redis 往返，每条每轮打一行 ERROR（KOC:2105）。
+重试循环 1 秒一拍、每拍最多认领 200 条（KOC:49、:1141-1154）。搬回 ready 是 LPUSH 到队头、认领从队尾取，循环只在「队列空」或「满 200 次」时结束，同一条任务可以在同一拍里被反复认领 [C]。
 
-### 1.4 没有任何可观测
+### 1.4 MySQL 卡住时什么都不发生
 
-没有重试、延后、死信的计数，没有队列长度（`go/db/internal/metrics/metrics.go` 里只有 `frozen_deferred` 这一个相关的 label 值）[C]。仓库没有部署 redis_exporter。K8s 上 go/db 的指标端口目前没开：manifest 声明了 9160，但 ConfigMap 模板没写 `MetricsListenAddr`（`tools/scripts/k8s_deploy.ps1:3431-3474`）。
+`newMysqlConfig`（`proto_sql/db.go:108-121`）只设了 `sql_mode`，没有任何超时；handler 也不传 ctx。MySQL 卡住时 SQL 既不返回也不报错：子分片协程阻塞 → 通道堵到全实例唯一的重试协程 → `Stop()` 挂在等待上 [C]。
 
 ### 1.5 后果
 
-MySQL 连接数超限、主从切换、重建（`mysql.yaml` 是 `strategy: Recreate`）、TiDB 滚动，都会让在跑的 go/db 把存盘推进死信。在线玩家不受影响（在线数据以 Redis 父键为准），但 MySQL 落后；父键一丢就是回档。
+连接数超限、主从切换、MySQL 重建（`mysql.yaml` 是 `strategy: Recreate`）、TiDB 滚动，都会让在跑的 go/db 把存盘推进死信。在线玩家不受影响（在线数据以 Redis 父键为准），但 MySQL 落后；父键一丢就是回档。
 
 ---
 
 ## 2. 原则
 
-**重试预算只花在任务自身的问题上。** 数据超限、表结构不符、消息解不出来，重试多少次都不会好，耗完预算进死信等人处理是对的。存储此刻连不上、只读、忙，是环境问题，会随外部状态自己消失；为它耗预算，就是把一笔完好的存盘丢掉。
+**重试预算只花在任务自身的问题上。** 数据超限、表结构不符、消息解不出来，重试多少次都不会好。存储此刻连不上、连接数满、只读、忙，是环境问题，会随外部状态自己消失；为它耗预算，就是把一笔完好的存盘丢掉。这与现有豁免的理由一致（PR:349-356）。
 
-这与现有豁免的理由一致（PR:349-356 的注释），本文只是把同一条原则用到 SQL 错误上。
+**分类只在 SQL 调用点做。** Redis 侧的错误同样可能是 `net.Error`、`io.EOF`、超时。如果在重试豁免、延后计数这些汇总处对任意错误跑类型判断，一次 Redis 抖动就会被算成 MySQL 不可用（评审 F2）。
 
-**读任务不同**：读不改数据，等待它的 login 最多等 8 秒（`entergamelogic.go:380`）。读没有「不能丢」的东西，只需要尽快告诉等待方结果。
+**读任务不同。** 读不改数据，等待它的 login 最多等 8 秒（`entergamelogic.go:380`）。读没有「不能丢」的东西。
 
 ---
 
-## 3. 设计（第 1 批）
+## 3. 第 1 批设计（已落码）
 
 ### 3.1 handler 返回 `error`
 
-- `dbOpHandler`（KOC:327-332）的返回值由 `string` 改为 `error`；`handleDBWriteOp`、`handleDBReadOp` 用 `%w` 包住原始错误；`runDBOp` 直接返回，不再 `errors.New`。`publishDBOpResult` 一并改。
-- 测试替身 `recordingHarness` 按现签名整张替换 `dbOpHandlers`（`key_ordered_consumer_test.go:130-155`），要同步改，用例数不能减少。
-- 条件写之后会在这个基础上再扩成 `(writeOutcome, error)`（见 [db-write-fencing-mysql.md](db-write-fencing-mysql.md) §4.1）。两步分开做，避免互相返工。
+- `dbOpHandler` 改为返回 `error`；`handleDBWriteOp`、`handleDBReadOp` 用 `%w` 包住经 `storeerr.Tag` 打过标记的驱动错误；`runDBOp`、`publishDBOpResult` 一并改为 `error`。
+- 测试替身 `recordingHarness` 同步改签名。
+- 最终签名：
 
-### 3.2 错误分类
+  ```go
+  type dbOpHandler func(ctx context.Context, store *proto2mysql.DB, task *db_proto.DBTask, msg proto.Message) error
+  ```
 
-新增一个纯函数，把 SQL 错误归成四类。判定只用 `errors.Is` / `errors.As`，不匹配错误文本。
+  条件写之后会在这个基础上再扩展（见 [db-write-fencing-mysql.md](db-write-fencing-mysql.md)；据「玩家消息投递与位置管理」会话 2026-10-14 转告，负责人已在那边确认由它落码）。
 
-| 类 | 判定 | 指标 reason | 写任务 |
-|---|---|---|---|
-| 连接不可用 | `*mysql.MySQLError` 的 Number 为 1040（连接数满）、1203（用户连接数满）、1053（服务端正在关闭）；`driver.ErrBadConn`；`mysql.ErrInvalidConn`；`sql.ErrConnDone`；`net.Error`（拨号被拒、超时、连接重置）；`io.EOF` / `io.ErrUnexpectedEOF`；语句上下文超时（`context.DeadlineExceeded`）| `conn_unavailable` | 延后，不耗预算 |
-| 只读 | Number 为 1290、1836（主从切换期间旧主只读）| `store_readonly` | 延后，不耗预算 |
-| 忙 | Number 为 1205（锁等待超时）、1213（死锁）；TiDB 的 9007、8002（乐观事务写冲突）| `store_busy` | 延后，不耗预算 |
-| 其它 | 以上都不是 | `other` | 照旧耗预算 |
+### 3.2 错误分类（`go/db/internal/storeerr`）
 
-- **交接点名的范围是第一类。** 第二、三类按同一条原则应当一并豁免，但它们不在交接的原始范围里，请在评审时逐类确认（§11 第 2 条）。
-- 1205 / 1213 值得单独说：单行自动提交的写撞上它们几乎都是瞬时的；但如果某条 DDL 长时间拿着元数据锁，1205 会持续出现。豁免之后任务不会丢，告警会响（§3.6）；不豁免则是 3 次之后丢盘。
-- TiDB 的错误号以 proto2mysql 集成用例里的可重试集合为准（9007、1213、8002）；其余 TiDB 瞬时错误（9001~9005 一类）等 TiDB 阶段按官方文档核对后再加，本批不凭记忆写。
-- 驱动版本是 go-sql-driver v1.9.3（`go/db/go.mod:8`）。`*mysql.MySQLError` 的 `Number` 在本模块已有用法（`proto_sql/db.go:209-211`）；`mysql.ErrInvalidConn` 在同版本的 trade、data_service 测试里有用法。本机没有模块缓存，没有对着驱动源码核对，编译时由 Codex 确认。
-- 语句上下文超时目前不会出现（SQL 用的是 `context.Background()`）；交接 §4.1 第 2 项落地后才有，分类先写好。
-- 上下文被取消（`context.Canceled`：分区被收回、进程退出）不归入任何一类，走现有路径。
+| 类 | 判据 | 指标 reason | 写任务 | 库级冷却 |
+|---|---|---|---|---|
+| 连接数满 | MySQL 错误号 1040、1203、1226 | `conn_refused` | 延后，不耗预算 | **不进**：服务端在应答，池里已建立的连接照常可用 |
+| 连接断开 / 连不上 | 1053（服务端正在关闭）；`driver.ErrBadConn`；`mysql.ErrInvalidConn`；`sql.ErrConnDone`；`io.EOF` / `io.ErrUnexpectedEOF`；`context.DeadlineExceeded`；任何 `net.Error`（拨号被拒、拨号超时、连接重置、读写超时）| `conn_lost` | 延后，不耗预算 | 触发一次探活，探活也连不上才进 |
+| 只读 | 1290、1836 | `store_readonly` | 延后，不耗预算 | 不进 |
+| 忙 | 1205（锁等待超时，含会话级锁等待触发的）、1213（死锁）、TiDB 9007、8002 | `store_busy` | 延后，不耗预算 | 不进 |
+| 其它 | 以上都不是 | `other` 等 | 照旧耗预算 | — |
+
+- `context.Canceled`（分区被收回、进程退出）不归入任何一类，走原有路径。
+- 1226 是账号级资源上限：当前部署没有按账号限连接，不会出现，为附录选项 G「每个服务独立账号 + MAX_USER_CONNECTIONS」预留（评审 F9）。
+- 1129（来源被 `max_connect_errors` 拉黑）不纳入：K8s 上的 MySQL 开了 `skip-name-resolve`（`deploy/k8s/manifests/infra/mysql.yaml`），不走主机缓存，不会出现；TiDB 没有这个机制。
+- TiDB 错误号只收了 proto2mysql 集成用例里的可重试集合；其余 TiDB 瞬时错误（9001~9005 一类）等 TiDB 阶段按官方文档核对后再加。
+- **未知 MsgType**（发版顺序错位时旧 go/db 不认识新消息类型，瓶颈文档 G2 点名过）本批不处理：仍耗预算进死信，依赖瓶颈文档 §4.5 的发版顺序，重放等第 2 批工具（评审 F5）。
 
 ### 3.3 写任务：延后，不耗预算
 
-- `retryBudgetExempt` 增加一个分支：错误属于前三类且 `op == "write"` 时豁免。
-- 载荷格式不变（重试次数在 DBTask 的 `retry_count` 里，KOC:2074-2081 的「认领时加一、豁免时减回」机制不变）。新旧实例可以互相认领对方的重试收据；旧实例遇到连接错误照旧耗预算，混跑时最坏退回今天的行为。
-- 先后顺序仍然靠排序锁和游标：延后的旧写回来时，如果同一玩家更新的写已经落库，它会被游标判过期丢弃（KOC:1579-1588）。条件写落地后由围栏兜底。
+- `retryBudgetExempt` 增加一个分支：带存储侧标记的错误且 `op == "write"` 时豁免。只认标记。
+- 载荷格式不变，新旧实例可以互相认领对方的收据；旧实例遇到连接错误照旧耗预算，混跑时最坏退回今天的行为。
+- 先后顺序仍然靠排序锁和游标：延后的旧写回来时，如果同一玩家更新的写已经落库，它会被游标判过期丢弃（KOC:1579-1588）。超时引起的例外见 §8。
 
-### 3.4 运行期失联的库进入冷却
+### 3.4 库级冷却：只在确认整库不可达时进入
 
-`StoreRegistry` 已经有一套「打开失败后冷却」：失败时间记在 `failures` 里，冷却期内对同一个库的请求直接返回上次的错误，不再拨号（SR:49-54、:317-319）。它只管没打开过的库。
+`StoreRegistry` 原有一套「打开失败后冷却」（SR:49-54、:317-319），只管没打开过的库。本批给已打开的库补上同类机制（`proto_sql/store_health.go`），但进入条件更严（评审 F1，原稿的「任意一次连接类错误即冷却」会把 1040 这种局部故障放大成整个实例停写）：
 
-把同一套机制用到已打开的库上：
+- **进入**：`runDBOp` 只把 handler（SQL 这一步）的结果报给注册表。错误属于「连接断开 / 连不上」时，注册表对该库做一次有时限的探活（`PingContext`，2 秒，同一个库并发只做一次）；**探活本身也属于「连接断开 / 连不上」才进入冷却**。探活拿到 1040 一类的服务端应答说明库活着，不冷却。`PingContext` 优先复用池里的空闲连接，所以连接数满时探活通常直接成功。
+- **期间**：`Store()` 对该库返回同时包着 `ErrStoreUnavailable` 与 `ErrStoreCoolingDown` 的错误，之后的路径全部是现成的：`routeTask` 包成 `errPlacementStoreUnavailable`，写延后且不耗预算。
+- **退出**：冷却到期后只放一次探活（并发请求共享结果），成功才放行，失败就续上一个冷却期；冷却期内任何一条 SQL 成功也立即解除。
+- **时长**：5 秒 ±20% 抖动。短于登录的 8 秒等待（冷却期内的冷登录会立即失败）；抖动是为了所有 zone、所有副本不在同一刻到期、同时重连（评审 F7）。
+- 「忙」「只读」「连接数满」都不进冷却：它们是某条语句或某条新连接的事。
+- 注册表接口没有改，冷却通过 `StoreResolver` 的可选接口 `storeHealth` 接入（`internal/kafka/store_failure.go`）；测试替身不实现它就没有冷却。
 
-- handler 把错误归为「连接不可用」或「只读」时，调用注册表的新方法（例如 `ReportUnavailable(storageID, err)`），记下失败时间。
-- `Store()` 对已打开的库多看一眼冷却：冷却期内返回包着 `ErrStoreUnavailable` 的错误。之后的路径全部是现成的：`routeTask` 把它包成 `errPlacementStoreUnavailable`（PR:309-316），写任务延后且不耗预算。
-- 冷却到期后，下一条任务照常拿到句柄去执行，成功就清掉失败记录，失败就重新进入冷却。
-- 冷却时长沿用同一个常量（10 秒），不做指数退避。存盘是异步的，多等几秒玩家无感；固定值最容易推理。
+### 3.5 重试循环
 
-这样做的效果：
+- 每拍开始时读一次 ready 的长度 `n`，本拍最多认领 `min(n, 200)` 条。**每实例每拍对每条至多认领一次**；R 个实例共用 ready 时，3 次预算最短约 3/R 秒（K8s 上 2 副本，滚动发布时 3 个）。要真正保证全局间隔得把名额做成队列的属性，属于另一批（评审 F4）。LLEN 失败时回落到固定的 200。
+- 本 zone 主库在冷却期内时整拍跳过：此时每条任务都只会在选库处被挡回，认领只是白花 Redis 往返。**代价：主库整个不可用期间，落到其它库的重试任务也不排空**。冷却只在整库不可达时出现，所以这个耦合只在真正的停机里生效。
+- 每拍顺便采样三个列表的长度（ready、本实例的 processing、dead），喂给 §3.7 的指标。
 
-- 库不可用期间，绝大多数任务在选库这一步就被挡回去，不去拨号。没有冷却时，每条任务都要在 worker 上等到拨号失败；拨号卡住时同一个子分片里的任务会一起被拖住。
-- 「忙」这一类不进冷却：它是某一行、某一条语句的事，不代表整个库不可用。
+### 3.6 读任务
 
-### 3.5 重试循环：每拍每条至多一次，主库冷却时不排空
+| 情形 | 处理 | 理由 |
+|---|---|---|
+| 选库时库打不开或在冷却期内 | 立即 `failReadTask` 回失败回执并 ack，不进重试队列；计 `db_task_read_abandoned_total{reason="store_unavailable"}` | 库已知不可用，login 等满 8 秒也等不来结果 |
+| 已打开的库上第一次撞到连接类错误 | 照常重试（耗预算）| 秒级抖动仍能被 1 秒一拍的重试吸收（评审 F6）|
+| 重试次数用完 | 丢弃收据，计 `{reason="budget_exhausted"}`，**不进死信** | 读没有可保全的东西；读进死信会让死信告警失去判别力 |
 
-- 每拍开始时读一次 ready 的长度 `n`，本拍最多认领 `min(n, 200)` 条。这样无论因为什么原因被搬回去，一条任务在一拍里至多尝试一次，「重试间隔」才真的是 1 秒。多一次 LLEN，换掉空转。多实例共用 ready 时 `n` 是近似值，仍然能把每实例每拍的认领次数限制在 `n` 以内。
-- 本 zone 的主库在冷却期内时，这一拍直接跳过，不认领。否则每条任务都要走一遍「认领 → 取锁 → 读游标 → 选库失败 → 搬回 → 解锁」，全是白花的 Redis 往返。落到其它库的重试任务会因此多等一个冷却期，可以接受。
-- 这两条同时把「3 次重试最短可以在 1 秒内用完」改成至少 3 秒。
-
-### 3.6 读任务：立即回失败回执
-
-现状：读任务遇到落点库打不开时照常耗预算，3 次后进死信；不给 login 回失败回执，login 等满 8 秒超时（唯一的失败回执是 `failReadTask`，PR:332-347，只用于「必须有落点记录而没有」）。重试成功时通常已经没人在等了。
-
-改为：读任务遇到存储不可用（冷却期内选库失败，或 SQL 返回前两类错误）时，**立即调用 `failReadTask` 回失败回执，然后 ack**。不进重试队列，不进死信。
-
-- login 秒级失败而不是等满 8 秒，客户端可以立刻重试。
-- 死信里不再混入读任务。否则 MySQL 每次不可用，每一次登录尝试都会留下一条读死信，§3.8 的死信告警就失去判别力。
-- 这改变了 `player-storage-placement.md` §6.1 实现口径里「读照常耗预算，几次后进死信」的说法，落码时要同步改那份文档（它目前有另一个会话在改，先对齐）。
-- 这是登录路径上可见的行为变化（失败得更快），请负责人确认（§11 第 3 条）。如果不接受，退一步的做法是：读任务照旧重试，但预算用完时丢弃并计数，不进死信。
+对登录的影响：库已确认不可达期间，需要读库的冷登录（Redis 父键缺失的玩家）立即失败，而不是等满 8 秒后失败；当前 Unity 客户端收到失败后直接断开回选服（`entergamelogic.go:439-440`）。父键存在的玩家不读库，不受影响。这改变了 `player-storage-placement.md` §6.1 实现口径里「读照常耗预算，几次后进死信」的说法，那份文档已同步。
 
 ### 3.7 指标
 
-都是低基数，不带 player_id。
+都是低基数，不带 player_id。计数器在启动时以 0 建出全部 reason 的序列，`increase` 能抓到第一次。
 
-| 指标 | label | 说明 |
+| 指标 | label | 计数点 |
 |---|---|---|
-| `db_task_deferred_total` | `op`；`reason` ∈ conn_unavailable / store_readonly / store_busy / store_open_failed / ordering_lock_busy / placement_frozen / placement_moved / redis_unavailable / other | 在 `deferFailedTask` 一处计数，覆盖所有延后原因，一眼能看出任务为什么没落库 |
-| `db_task_dead_letter_total` | `reason` ∈ budget_exhausted / ordering_incomparable / stale_topic / missing_required / poison / legacy_payload / invalid_partition | 死信的每个入口各计一次（KOC:1123、:2127、:2145、:2180）|
-| `db_retry_queue_length` | `queue` ∈ ready / processing / dead | 每 15 秒 LLEN 采样一次。processing 取本实例自己的列表。采样失败保留上一个值并计错误数 |
-| `db_store_cooldown` | `pool` ∈ home / extra_zone / extra_non_zone | 该类库当前有多少个在冷却；类别沿用连接池指标的取值 |
+| `db_task_deferred_total` | `op`；`reason` ∈ conn_refused / conn_lost / store_readonly / store_busy / store_cooldown / store_open_failed / ordering_lock_busy / lease_lost / placement_frozen / placement_moved / expand_lock_busy / redis_unavailable / other | `deferFailedTask` 一处 |
+| `db_task_dead_letter_total` | `reason` ∈ budget_exhausted / malformed_payload / legacy_payload / invalid_partition / ordering_incomparable / stale_topic / missing_required / poison | 每个死信写入点写入成功之后；毒消息计在 `persistPoisonMessage` 里（`ConsumeClaim` 在分发前解码失败时直接调用它，评审 F10）|
+| `db_task_read_abandoned_total` | `reason` ∈ store_unavailable / budget_exhausted | §3.6 |
+| `db_retry_queue_length` | `queue` ∈ ready / processing / dead | 重试循环每拍采样。ready 与 dead 是 topic 共用的列表，每个副本报同一个数 |
+| `db_store_cooldown_stores` | `pool` ∈ home / extra_zone / extra_non_zone | 进出冷却时更新 |
 
-ready 和 dead 是同一个 topic 的所有实例共用的列表，每个副本报的是同一个数，告警里用 `max`。
-
-连接池本身的指标已经由另一会话的 G2b 导出（`mmorpg_sql_pool_*{sql_client="db", pool}`），本文不再注册第二个收集器。
+- `redis_unavailable` 的判定：没有存储侧标记、但错误链上有 `net.Error` 或 `context.DeadlineExceeded`。SQL 调用点的网络错误都打过标记，剩下的只可能来自 Redis（守卫、选库、复核、缓存）。这些失败本批仍耗预算（§4.3），只先数出来。
+- 连接池指标已由 G2b 导出（`mmorpg_sql_pool_*{sql_client="db", pool}`），本批没有注册第二个收集器。
 
 ### 3.8 告警
 
-新文件 `deploy/k8s/db-task-retry-alerts.yaml`，写法同 `owner-epoch-alerts.yaml`（`PrometheusRule`，手工 `kubectl apply`）。
+新文件 [`deploy/k8s/db-task-retry-alerts.yaml`](../../deploy/k8s/db-task-retry-alerts.yaml)，写法同 `owner-epoch-alerts.yaml`（`PrometheusRule`，手工 `kubectl apply`），按 namespace（即 zone）聚合：
 
-| 告警 | 条件 | 级别 | 含义 |
-|---|---|---|---|
-| `DbTaskDeadLetterNonEmpty` | `max(db_retry_queue_length{queue="dead"}) > 0` 持续 1 分钟 | critical | 有存盘或坏消息等人处理 |
-| `DbTaskDeferredByStore` | `conn_unavailable` / `store_readonly` / `store_busy` / `store_open_failed` 的延后速率大于 0 持续 2 分钟 | critical | 存盘正在因为存储问题延后，MySQL 在落后 |
-| `DbTaskRetryQueueGrowing` | `max(db_retry_queue_length{queue="ready"})` 持续 10 分钟上升，或超过阈值 | warning；阈值待压测确认 | 重试队列排不动，Redis 内存在涨 |
+| 告警 | 条件 | 级别 |
+|---|---|---|
+| `DbTaskDeferredByStore` | 写任务因存储类原因延后的速率大于 0，持续 2 分钟 | critical |
+| `DbStoreCoolingDown` | 有库在冷却，持续 1 分钟 | critical |
+| `DbTaskDeadLetterAdded` | 10 分钟内有新死信 | warning（工具落地前）|
+| `DbTaskDeadLetterNonEmpty` | 死信列表非空，持续 1 小时 | info |
+| `DbTaskRetryQueueGrowing` | ready 超过 1000 条持续 10 分钟 | warning，阈值待压测确认 |
 
-- `owner-epoch-alerts.yaml` 里记着一条经验：计数器序列从无到 1 时 `increase` 会漏第一次（:57-62）。死信告警用的是队列长度的绝对值，不受影响；延后告警用速率，持续条件能盖住这个问题。
-- **前提**：K8s 上 go/db 的指标端口要先能抓到（db ConfigMap 的 `MetricsListenAddr`，属于另一会话的 G2b，HEAD 上还没有）；仓库不部署 Prometheus，规则文件是手工 apply 的。这两条不满足时告警是哑的，要在发布检查里写明。
-- 另一会话正在写的 `deploy/k8s/mysql-connection-alerts.yaml` 在描述里提到「go/db 把 1040 当普通失败 → 进死信」和手工查死信长度的步骤。本批落地后那段描述会过时，两份文件的分工要先对齐（§9）。
+- **死信告警的处置**写在告警描述里：保留现场，不要清空；按日志归因；上报。**不要用 redis-cli 把条目搬回 ready**：预算耗尽的条目里重试次数已满，下一拍认领时会被立刻送回死信（评审 F5）。
+- 存量环境上线前先记录各 zone 的死信长度，否则 `DbTaskDeadLetterNonEmpty` 部署后常亮。
+- **前提**：K8s 上 go/db 的指标端口能抓到。HEAD 上 `k8s_deploy.ps1` 的 db ConfigMap 已写 `MetricsListenAddr: ":9160"`（G2b 补完，2026-10-14 的 HEAD），但仓库不部署 Prometheus，规则要手工 apply；前提不满足时告警是哑的。不依赖指标的等价观察办法：直接 LLEN 三个列表，加上 grep 冷却与延后日志。
+- 另一会话的 `deploy/k8s/mysql-connection-alerts.yaml` 在描述里写着「go/db 把 1040 当普通失败 → 进死信」。本批部署后那段描述会过时；分工上连接数与连接池归那份，重试、延后、死信归本批。那份文件归另一会话，本批没有改它。
 
 ### 3.9 日志
 
-- 存储不可用引起的延后打 WARN，并且限速（每个库每个冷却期一条汇总）。现在是每条每轮一行 ERROR，一次 MySQL 重启会刷出上万行，把真故障淹掉。
-- 进入和离开冷却各打一条，带库的类别和原因。
+- 存储不可用引起的延后：每个原因每 10 秒只打一行 ERROR，带上间隔内被压掉的条数（go-zero 的 logx 没有 WARN 级别）。原来是每条每轮一行 ERROR。
+- 落点库**打开失败**沿用原来的逐条 ERROR（`player-storage-placement.md` §6.1 v2.2 的口径，有用例钉住）。
+- 进入、续上、解除冷却各打一行。
+- 读任务因存储不可用回失败回执：逐条只打 DEBUG，同样限速打一行 ERROR。
+
+### 3.10 业务连接池的超时与会话级锁等待
+
+新增配置（`ServerConfig.Database`，写 0 或不写取默认，写负数表示不设）：
+
+| 键 | 默认 | 作用 |
+|---|---|---|
+| `DialTimeoutSeconds` | 5 | 拨号超时。对端不回包时（节点宕机而端点没摘、丢包），没有它拨号要等操作系统重试耗尽（评审 F8）|
+| `ReadTimeoutSeconds` | 30 | 读超时：MySQL 卡住时语句不再无限挂住 |
+| `WriteTimeoutSeconds` | 30 | 写超时 |
+| `SessionLockWaitSeconds` | 10 | 会话级 `lock_wait_timeout`（元数据锁等待，MySQL 默认一年）|
+| `SessionInnodbLockWaitSeconds` | 10 | 会话级 `innodb_lock_wait_timeout`（行锁等待，MySQL 默认 50 秒）|
+
+- 只用于业务连接池（本 zone 库与按需打开的落点库，`newServiceMysqlConfig`）。迁移入口（`cmd/migrate`）与建库仍用不带超时的配置：DDL 可能合法地跑几分钟，迁移 runner 在自己的会话上另设锁等待。
+- **会话级锁等待必须短于读超时**（评审 F3）：客户端读超时只关掉自己这一侧的连接，已经发给 MySQL 的语句不会被撤回。让服务端先以 1205 中止排在锁后面的语句，超时之后就不会留下事后生效的在途写。启动时打印一行生效值，并检查这个关系，不满足打 ERROR（不拒启：它削弱的是窗口保护，拒启等于停掉整个 zone 的存盘）。
+- TiDB 是否接受 `lock_wait_timeout` 这个会话变量没有核实；切 TiDB 时若连接因它失败，配置写 -1 关掉。
+- 本地打开 `AutoMigrateSchema` 时，启动期建表 / 补列也走业务池，大表上可能撞读超时（只影响 dev）。
+- K8s 的 db ConfigMap 不写这几项，走默认值；没有改 `k8s_deploy.ps1`。
 
 ---
 
-## 4. 第 2 批（另行评审，这里只列方向）
+## 4. 第 2 批（未授权，只列方向）
 
 ### 4.1 死信工具
 
-L-04 的原文是「死信加消费者和告警」。不建议做自动消费者：任务进死信都有原因，自动重放等于把分类白做。建议做一个命令行工具（例如 `go/db/cmd/deadletter`）：
+不建议做自动消费者：任务进死信都有原因，自动重放等于把分类白做。建议一个命令行工具（例如 `go/db/cmd/deadletter`）：
 
-- 列出：按格式、表、原因汇总。死信里现在混着四种格式（带分区的重试载荷、不带分区的旧载荷、裸 DBTask、带 `0x03` 前缀的毒消息 JSON）[C]，工具要都能解。
-- 查看：解出单条的内容。
-- 重新入队：搬回 ready，重试次数清零；默认只演练不执行。顺序安全靠现有的游标（以及将来的围栏）：重新入队的旧写如果已被更新的写超过，会被丢弃。
-- 新进死信的条目带上原因和时间（现在原因只在日志里）。死信没有任何程序读者，加一种新格式不影响兼容。
+- 列出：按格式、表、原因汇总。死信里混着四种格式（带分区的重试载荷、不带分区的旧载荷、裸 DBTask、带 `0x03` 前缀的毒消息 JSON）[C]。
+- 查看：解出单条。
+- 重新入队：搬回 ready，重试次数清零；默认只演练。顺序安全靠游标（以及将来的围栏）。
+- 新进死信的条目带上原因和时间。死信没有程序读者，加格式不影响兼容。
 
-条件写上线后 `stale_owner` / `legacy_after_seq` 也进死信，那份设计的处置步骤依赖这个工具。
+条件写上线后 `stale_owner` / `legacy_after_seq` 也进死信，那份设计的处置依赖这个工具。
 
 ### 4.2 主库不可用时原地等待
 
-第 1 批的做法是把失败的写搬进 Redis 的 ready 列表。库不可用期间，新到的写会以存盘速率持续流进这个列表（每条是整行数据），Kafka 的位点照常前进。Redis 是共享的单实例，登录也在用。
-
-另一种做法是 Kafka 来源的写在主库冷却期间不搬走、不 ack，在 worker 上等到冷却结束再重试。通道满了之后消费自然停下，积压留在 Kafka。好处是 Redis 不涨、顺序不乱、恢复时没有重放风暴；代价是消费整体停住（库不可用时本来也落不了库），以及额外库不可用时不能用这个办法（会拖住同一子分片里落主库的任务）。
-
-是否做、何时做，取决于「存盘速率 × 单条大小 × 可容忍的不可用时长」与 Redis 内存余量的比较，需要 R20 的数据。今天的行为同样是把载荷堆在 Redis（堆在死信里），所以第 1 批不会比现在更差。
+第 1 批把失败的写搬进 Redis 的 ready 列表：库不可用期间，新到的写以存盘速率持续流进这个列表（每条是整行数据），Redis 是共享的单实例。另一种做法是 Kafka 来源的写在主库冷却期间不搬走、不 ack，在 worker 上等冷却结束，积压留在 Kafka。是否做取决于「存盘速率 × 单条大小 × 可容忍的不可用时长」与 Redis 内存余量，需要 R20 的数据。今天这些载荷同样堆在 Redis（堆在死信里），第 1 批不比现在差；但 1040 这类局部故障下，第 1 批堆进 Redis 的也只是失败的那几条（冷却不因 1040 进入）。
 
 ### 4.3 Redis 侧的环境故障
 
-同一条原则也适用于这些现在耗预算的失败：落点查询失败（PR:274）、复核读失败（PR:246）、游标读失败（KOC:1575）、epoch 守卫读失败（KOC:661）、游标写失败（KOC:1639）、缓存发布失败（KOC:841）。它们多数只在「落点 Redis 与主 Redis 分开部署、且只有其中一个不可用」时才会真的耗到预算（主 Redis 不可用时重试队列本身也不可用）。dev 与 K8s 现在是同一台，所以排在第 2 批。指标里先用 `redis_unavailable` 把它们数出来。
+同一条原则也适用于这些现在耗预算的失败：落点查询失败、复核读失败、游标读失败、epoch 守卫读失败、游标写失败、缓存发布失败。它们多数只在「落点 Redis 与主 Redis 分开部署、且只有其中一个不可用」时才会真的耗到预算。本批只用 `redis_unavailable` 数出来。
 
 ---
 
@@ -198,82 +211,56 @@ L-04 的原文是「死信加消费者和告警」。不建议做自动消费者
 - 不改 proto、不改载荷格式、不改 Redis 键、不做 DDL。
 - 新旧实例并存：新实例对存储不可用的写不耗预算，旧实例照旧耗。最坏退回今天的行为。
 - 逐 zone 滚动，一次一个 Pod；每个 zone 观察 `db_task_deferred_total` 平时为 0、死信长度不变、`db_task_stage_seconds` 没有回归。
-- 回滚：换回旧镜像即可，没有需要清理的状态。
-- 发布纪律照瓶颈文档 §4.5（低峰、同窗口不重启 Redis / MySQL）。
-- 故障注入（暂停 MySQL、压低连接上限）只在 kind 或 staging 做。
+- 回滚：换回旧镜像即可，没有需要清理的状态。新加的配置键旧版本会忽略。
+- 发布纪律照瓶颈文档 §4.5。
+- 故障注入只在 kind 或 staging 做。
 
-**对交接 §2.4 的影响**：第 1 批在某个环境的所有 zone 部署之后，在那个环境 apply 会重建 MySQL 的清单不再丢盘，但仍是一次存储中断：期间的写堆在 Redis 的 ready 列表里。要在低峰做，并先确认 Redis 内存余量。部署之前，§2.4 的约束原样有效。
-
----
-
-## 6. 测试与 Codex 验证
-
-前提：Claude 没有编译、没有运行任何测试，下面由 Codex 执行；失败即停，不连续重试。
-
-**单测**（工作目录 `go/db`）：
-
-```sh
-gofmt -l .
-go vet ./...
-go test ./internal/kafka/... ./internal/logic/pkg/proto_sql/... ./internal/metrics/... -count=1
-```
-
-新增用例必须覆盖：
-
-- 分类函数（表驱动）：每一类的每个判据，以及它们被 `%w` 包了一层之后；不应命中的：1062、1406、大字段闸拒绝、`context.Canceled`、普通文本错误。
-- `retryBudgetExempt`：三类错误下写豁免、读不走这条路；原有四种豁免不变。
-- `deferFailedTask`：重试来源的写因连接不可用被延后时重试次数不变，连续超过 3 轮仍在 ready，不进死信；载荷逐字节不变；`db_task_deferred_total` 递增。
-- 冷却：用注册表现有的假时钟（`store_registry_test.go` 的 `fakeClock`）验证进入、期内直接返回、到期后重试、成功后清除；「忙」不进冷却。
-- 重试循环：ready 里有 3 条必失败的任务时，一拍只认领 3 次；主库冷却时一拍认领 0 次。
-- 读任务：存储不可用时立刻有失败回执，ready 与死信长度都不变。
-- handler 签名改动后原有用例全部保留。
-
-目前没有任何测试调用真实的 `handleDBWriteOp` / `handleDBReadOp`；`go/db/internal/dbtest/fakedriver.go` 可以注入任意错误，用它补上「驱动错误 → 分类 → 去向」这一段。
-
-**故障注入**（本地 compose 或 kind，一个 zone，用 robot 或 `cmd/data_stress` 产生写）：
-
-1. 暂停 MySQL 容器 30 秒再恢复。
-2. 把 `max_connections` 设成当前连接数，再杀掉 go/db 的空闲连接，逼它重连时撞 1040。
-
-两种情况都要满足：期间 `db_task_deferred_total{reason="conn_unavailable"}` 大于 0；死信长度不变；恢复后写入恢复，ready 排空；抽样玩家在库里的行等于最后一次写入。
-
-保留：go/db 日志里含冷却与延后的行、故障前中后三个时刻的 `/metrics`、三个队列的 LLEN。
-
-注意：第 1 种注入在没有读写超时的情况下，已经发出的语句会一直挂着不返回（§8），这本身就是要观察的现象，如实记录。
-
-**通过标准**：单测全绿、无 SKIP；两种注入下死信长度为 0。
+**对交接 §2.4 的影响**：本批在某个环境的所有 zone 部署之后，在那个环境 apply 会重建 MySQL 的清单不再丢盘，但仍是一次存储中断：期间的写堆在 Redis 的 ready 列表里，**这些存盘只在那里有一份，同一窗口不得重启或清空 Redis**。要在低峰做，并先确认 Redis 内存余量。部署之前，§2.4 的约束原样有效。
 
 ---
 
-## 7. 改动清单（第 1 批）
+## 6. 验证（未执行，见上线待做）
+
+负责人要求测试记入上线待做，本节只列要验证什么；命令与通过标准在 [godb-pipeline-launch-todo.md](../ops/godb-pipeline-launch-todo.md)。
+
+**已随代码写的单测**：
+
+- `go/db/internal/storeerr/storeerr_test.go`：分类表（每个判据及包一层之后）、`Tag` / `KindOf`、Redis 侧网络错误不被当成存储错误。
+- `go/db/internal/logic/pkg/proto_sql/store_health_test.go`：探活拿到服务端应答不冷却；探活连不上进入冷却、期内不再探活；到期单次探活决定放行或续期；语句成功解除冷却；没打开过的库不探活。
+- `placement_route_test.go` 的 `TestStoreUnavailable_WriteKeepsBudgetReadFailsFast`：读任务改为立即回失败回执（原用例断言读耗预算，已按新口径改写）。
+
+**还没写的单测**（上线前补）：`retryBudgetExempt` 新分支；`deferReason` 全表；重试循环每拍上限（含两个消费者共用一个 miniredis）；读任务预算用完丢弃；冷却期整拍跳过；死信与延后计数。
+
+**故障注入**：暂停 MySQL 30 秒；压低 `max_connections` 逼出 1040（通过标准加一条：池内已有连接的任务照常落库，ready 不按全量入流增长）；DDL 持元数据锁时的写（核对库内的行等于最后一次写入）。
+
+---
+
+## 7. 改动清单（第 1 批，已落码）
 
 | 文件 | 改动 |
 |---|---|
-| `go/db/internal/kafka/key_ordered_consumer.go` | handler 签名；`runDBOp`；`deferFailedTask` 的计数与日志；重试循环的每拍上限与冷却跳过；死信入口计数；队列长度采样 |
-| `go/db/internal/kafka/placement_route.go` | 豁免分支；读任务的失败回执路径 |
-| `go/db/internal/kafka/store_errors.go`（新）| 错误分类的纯函数 |
-| `go/db/internal/logic/pkg/proto_sql/store_registry.go` | 已打开的库的冷却 |
-| `go/db/internal/metrics/metrics.go` | 四个新指标 |
-| 测试 3~4 个 | `key_ordered_consumer_test.go`、`placement_route_test.go`、`store_registry_test.go`、新的分类测试 |
-| `deploy/k8s/db-task-retry-alerts.yaml`（新）| 三条告警 |
-| 文档 | `player-storage-placement.md` §6.1（读任务口径）、`tidb-phase1-and-launch-readiness.md` L-04 行的状态、`docs/PROGRESS.md` |
+| `go/db/internal/storeerr/storeerr.go`（新）+ `_test.go`（新）| 错误分类 |
+| `go/db/internal/kafka/store_failure.go`（新）| `storeHealth` 可选接口、冷却上报、延后原因、日志限速、队列采样、读任务丢弃 |
+| `go/db/internal/kafka/key_ordered_consumer.go` | handler 签名；`runDBOp` 上报；`deferFailedTask` 计数与日志；重试循环每拍上限与冷却跳过；读任务预算用完丢弃；死信计数；失租哨兵 |
+| `go/db/internal/kafka/placement_route.go` | 豁免分支；读任务快速失败；`failRead` 安静版；死信标签 |
+| `go/db/internal/kafka/key_ordered_consumer_test.go`、`placement_route_test.go` | 替身签名；读任务用例改口径 |
+| `go/db/internal/logic/pkg/proto_sql/store_health.go`（新）+ `_test.go`（新）| 已打开库的探活与冷却 |
+| `go/db/internal/logic/pkg/proto_sql/store_registry.go` | 冷却字段、选项、`Store()` 接入；落点库用业务池配置 |
+| `go/db/internal/logic/pkg/proto_sql/db.go` | `newServiceMysqlConfig`、启动时打印与检查 |
+| `go/db/internal/config/config.go`、`go/db/etc/db.yaml` | 五个新配置键与默认值 |
+| `go/db/internal/metrics/metrics.go` | 五个新指标 |
+| `deploy/k8s/db-task-retry-alerts.yaml`（新）| 五条告警 |
 
-约 9~10 个代码与清单文件，不动 proto、不动 DDL、不跨语言。动代码前请负责人授权（交接 §5 第 3 项）。
-
-`key_ordered_consumer.go` 是多条修复线共用的文件，合入顺序按瓶颈文档 §5.2：本批在子 shard 修复之后、读写分区对齐与条件写之前。
+不动 proto、不动 DDL、不跨语言。
 
 ---
 
-## 8. 管不到的：MySQL 卡住不返回
+## 8. 管不到的：超时撤不回已发出的语句
 
-`newMysqlConfig` 没有设读写超时（`proto_sql/db.go:108-121`），handler 也不传 ctx。MySQL 卡住时（例如排在一条 DDL 的元数据锁后面，或者进程被暂停）：
-
-- SQL 不返回，也不报错，本文的分类根本没机会运行。
-- 该子分片的协程永久阻塞 → 子通道满 → 分发协程阻塞 → 任务通道满 → 消费循环和**全实例唯一的重试协程**都阻塞（KOC:1217-1218）。本实例所有分区的重试停止，`Stop()` 挂在等待上直到被强杀 [C]。
-
-这要靠交接 §4.1 第 2 项里的两条来解决：DSN 补 ReadTimeout / WriteTimeout；handler 接 ctx。超时之后驱动返回的是连接类错误，正好落进本文的第一类。
-
-**建议**：把「DSN 读写超时」这一条从 G1 治标小 PR 里提出来，与本批同批或更早落地。没有它，「暂停 MySQL」这种最常见的故障形态下 L-04 不生效。请负责人定（§11 第 4 条）。
+- 读超时之后驱动返回连接类错误，任务按 §3.3 延后、排序锁释放、游标不动；但那条语句可能仍在 MySQL 里排队，之后才生效。如果同一玩家更新的写先提交、这条旧写后提交，库里会停在旧版本，且游标已推进、旧写的重试会被丢掉（评审 F3 给出了完整序列）。
+- 本批的处置：会话级锁等待（10 秒）短于读超时（30 秒），排在锁后面的语句会被服务端先以 1205 中止，不留在途语句。这是最常见的形态（DDL 元数据锁、长事务行锁）。
+- 残余：语句已在执行或网络在语句发出后断开时，客户端超时后语句仍可能完成。条件写落地之前，这是发版红线：**同一窗口不跑会阻塞 DML 的 DDL，不暂停 MySQL**（瓶颈文档 §4.5 已有这两条）。
+- 改动前没有超时，这类语句会一直占着协程和排序锁，顺序是保住的，但协程会永久卡死、拖死整个实例的重试（§1.4）。两害取其轻，加超时。
 
 ---
 
@@ -281,47 +268,40 @@ go test ./internal/kafka/... ./internal/logic/pkg/proto_sql/... ./internal/metri
 
 | 工作 | 关系 |
 |---|---|
-| 条件写（[db-write-fencing-mysql.md](db-write-fencing-mysql.md)）| 本批先落地。条件写在 `error` 签名上扩展；它的 `stale_owner` / `legacy_after_seq` 进死信，依赖本批的死信告警和第 2 批的工具 |
-| G1 治标小 PR（交接 §4.1 第 2 项）| 读写超时是本批的前置（§8）；其余几条互不依赖 |
-| G2b（另一会话）| 连接池指标已由它导出；db ConfigMap 的指标端口由它补；它新写的 `mysql-connection-alerts.yaml` 与本批的告警要对齐分工 |
-| WAITAOF（全局单点交接的 P0）| 改的是同一段代码（`pushPayloadDurably`、`moveRetryReceipt` 与四个死信写入点）。归属待定（交接 §5 第 17 项）。本批让更多的写在 ready 列表里停留更久，Redis 接高可用之前这一条更值得做 |
-| 重试只交给分区属主（④）| 同一段代码。本批不改重试的归属 |
-| 连接预算批 B | 无关 |
-
-L-04 的归属三份交接说法不一：全局单点交接把它列在自己的阶段 0，开服交接说「一起做」，本交接自行认领。请负责人定下后通知另外两个会话（交接 §5 第 4 项）。
+| 条件写（[db-write-fencing-mysql.md](db-write-fencing-mysql.md)，据「玩家消息投递与位置管理」会话 2026-10-14 转告，负责人已在那边确认由它落码）| 本批先落地。条件写在 `error` 签名上扩展；它的 `stale_owner` / `legacy_after_seq` 进死信，依赖本批的死信告警与第 2 批的工具 |
+| G1 治标小 PR（交接 §4.1 第 2 项）| 读写超时已并入本批；其余几条（handler 接 ctx、缓存回写挪到核锁之后、续租退避、失租计数）不在本批 |
+| G2b（另一会话）| 连接池指标与 db ConfigMap 的指标端口已由它补齐；它的 `mysql-connection-alerts.yaml` 与本批的告警分工见 §3.8 |
+| WAITAOF | 负责人 2026-10-13 定为归本交接（交接 §5 第 17 项）。改的是同一段代码（`pushPayloadDurably`、`moveRetryReceipt` 与各死信写入点）；本批让更多写在 ready 里停留更久，Redis 接高可用之前更值得做。未授权开工 |
+| 重试只交给分区属主（④）| 负责人定为先做并修订 TiDB 决策 D5。同一段代码，本批不改重试的归属 |
 
 ---
 
 ## 10. Java 版（AGENTS.md §12）
 
-**不适用**：Java 版没有 go/db 这样的消费进程，也没有重试队列和死信；存盘由 scene 进程内的存储线程池直接执行。
-
-等价的缺口是另一种形态：Java 的最终写回在 5 秒内重试 3 次后放弃，实例已移出内存，最新状态丢弃（`StoragePlayerRepository.java:459-465`）。这一条已经在 Java 仓库 `PARITY.md` 第 60 行登记为「Java 待做：最终写回失败后保留最新状态持续重试直到成功」，不需要新开一行。
-
-功能落码后在 `PARITY.md` 追加一行「不适用（Java 没有 Kafka 存盘链）」，备注指向第 60 行。设计阶段不登记。
+**不适用**：Java 版没有 go/db 这样的消费进程，没有重试队列和死信；存盘由 scene 进程内的存储线程池直接执行。等价的缺口是 Java 的最终写回在 5 秒内重试 3 次后放弃、最新状态丢弃（`StoragePlayerRepository.java:459-465`），已在 Java 仓库 `PARITY.md` 第 60 行登记为「Java 待做」。本批提交后在 `PARITY.md` 追加一行「不适用（Java 没有 Kafka 存盘链）」，备注指向第 60 行。
 
 ---
 
 ## 11. 待拍板与未核实
 
+**已拍板**（负责人 2026-10-13）：第 1 批开工；L-04 归本交接；读写超时与本批同批。
+
 **待拍板**：
 
 | # | 事项 | 建议 |
 |---|---|---|
-| 1 | 第 1 批开工授权；L-04 归本交接（交接 §5 第 3、4 项）| 归本交接，先于条件写 |
-| 2 | 「只读」「忙」两类是否与「连接不可用」一起豁免（§3.2）| 一起 |
-| 3 | 读任务改为立即回失败回执（§3.6）| 采纳；不接受时用退一步的做法 |
-| 4 | DSN 读写超时是否与本批同批（§8）| 同批或更早 |
-| 5 | 告警文件与另一会话的 `mysql-connection-alerts.yaml` 怎么分工（§3.8）| 连接数、连接池归那份；重试、延后、死信归本批 |
-| 6 | 第 2 批三项各自是否立项（§4）| 死信工具立项；原地等待等 R20 数据；Redis 侧故障等落点 Redis 独立部署时再做 |
+| 1 | 「只读」「忙」两类与「连接数满 / 断开」一起豁免（本批已按此落码）| 维持；不接受时删掉对应两行即可 |
+| 2 | 读任务在库已知不可用时立即回失败回执（本批已按此落码）| 维持 |
+| 3 | 告警文件与 `mysql-connection-alerts.yaml` 的分工（§3.8）| 连接数、连接池归那份；重试、延后、死信归本批 |
+| 4 | 第 2 批三项各自是否立项（§4）| 死信工具立项；原地等待等 R20 数据；Redis 侧故障等落点 Redis 独立部署时再做 |
 
 **未核实**：
 
-- go-sql-driver v1.9.3 把断连表现成哪种错误（`ErrInvalidConn`、`ErrBadConn` 还是网络错误），以及 `database/sql` 对 `ErrBadConn` 是否先内部重试。分类把三种都列了，不依赖这一点。
-- `database/sql` 在连接池耗尽时的等待行为。本批不改变它。
-- 1040 → 死信这条链路本身是读代码推断的，没有实测（PROGRESS.md:7190）。§6 的故障注入就是为了实测它。
-- TiDB 的瞬时错误号集合。
-- go-redis 对已取消上下文的行为：停机时在途任务失败会打 `retry reschedule failed` / `DATA-LOSS PREVENTED`，属于现状，本批不处理。
+- go-sql-driver v1.9.3 把断连表现成哪种错误，以及 `database/sql` 对 `ErrBadConn` 的内部重试。分类把三种都列了，不依赖这一点。
+- 各 MySQL / TiDB 错误号在真库上的实际取值（1226 可用 `ALTER USER … WITH MAX_USER_CONNECTIONS` 触发）。
+- TiDB 是否接受会话变量 `lock_wait_timeout`。
+- 1040 → 死信这条链路本身没有实测（PROGRESS.md:7190）。
+- go-redis 对已取消上下文的行为：停机时在途任务失败会打 `retry reschedule failed` / `DATA-LOSS PREVENTED`，属于现状。
 
 ---
 
@@ -329,19 +309,21 @@ L-04 的归属三份交接说法不一：全局单点交接把它列在自己的
 
 | 方案 | 不采用的原因 |
 |---|---|
-| 按错误文本匹配（`strings.Contains(err, "Too many connections")`）| 脆弱。login 的生产者就因为文本匹配误中而自锁过（瓶颈文档 G0）|
-| 只把预算从 3 调大 | 治不了根：重建一次 MySQL 是分钟级，调多大都会耗完 |
+| 按错误文本匹配 | 脆弱。login 的生产者就因为文本匹配误中而自锁过（瓶颈文档 G0）|
+| 在重试豁免处对任意错误跑类型判断 | Redis 侧的超时也是 `net.Error`，会被算成 MySQL 不可用（评审 F2）|
+| 任意一次连接类错误即进入库级冷却 | 1040 时服务端活着、池里已有连接可用，这样会让整个实例停写、写全量堆进 Redis（评审 F1）|
+| 只把预算从 3 调大 | 治不了根：重建一次 MySQL 是分钟级 |
 | 所有 SQL 错误都豁免 | 表结构不符、数据超限这类错误会无限重试，永远不会被人看到 |
-| 给载荷加「最早重试时刻」字段 | 要改载荷格式，新旧实例互认会出问题；库级冷却加每拍上限已经够用 |
-| 指数退避 | 固定冷却已经把拨号压到每个冷却期一轮，再退避只是让恢复变慢 |
+| 给载荷加「最早重试时刻」字段 | 要改载荷格式；每拍上限加冷却已经够用 |
+| 指数退避 | 固定冷却加抖动已经把拨号压到每个冷却期一轮 |
 | 自动重放死信 | 任务进死信都有原因，自动重放会把分类白做 |
-| 第 1 批就做原地等待 | 改变消费的整体行为，要有数据支撑；与现有「落点库打不开」的处理也不一致 |
+
+**对 AGENTS.md §11.3 的偏离**（「重试必须有超时、次数上限、退避与必要的抖动」）：存储不可用类的写**不设次数上限、固定间隔**。理由见 §2：为环境问题设上限就是丢盘。代价是库长期不可用时写会一直留在 Redis 的 ready 里，靠 `DbTaskDeferredByStore`、`DbStoreCoolingDown`、`DbTaskRetryQueueGrowing` 三条告警兜住。冷却本身有抖动。
 
 ---
 
 ## 13. 修订历史
 
 - v0.1（2026-10-13）：初稿。
-- v0.2（2026-10-13）：对抗评审后的修订，见下。
-
-评审记录待补（本稿提交评审后填写）。
+- v0.2（2026-10-13）：标注已评审（实际评审结论未并入）。
+- v0.3（2026-10-14）：并入对抗评审（L-04 一路 10 条，核实后成立 6 条、部分成立 4 条），按此落码。主要变化：冷却只在探活确认整库不可达时进入，1040 不冷却（F1）；分类只在 SQL 调用点做、汇总处只认标记（F2）；会话级锁等待短于读超时，并写明超时撤不回语句的残余窗口（F3）；重试间隔结论改为「每实例每拍一次」、冷却跳过的代价改为「整个不可用期间」（F4）；死信告警降为 warning 并写处置步骤、写明未知 MsgType 不处理（F5）；读任务只在库已知不可用时快速失败，首次连接错误照常重试（F6）；冷却加抖动、到期单次探活、补记对 §11.3 的偏离（F7）；补拨号超时、上线前置与「ready 是唯一副本」（F8）；加 1226、说明 1129 不纳入（F9）；毒消息计数点改到 `persistPoisonMessage`（F10）。

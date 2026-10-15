@@ -340,7 +340,7 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 		if applyErr != nil {
 			logx.Errorf("EnterGame apply session failed [PlayerId=%d]: %v", playerID, applyErr)
 			observeTotal(chainStart, ResultApplyFailed)
-			// applyLoadedPlayerSession 的每一个 error 返回点(GetSession / 身份补齐 / 会话落盘 /
+			// applyLoadedPlayerSession 的每一个 error 返回点(GetSession / 身份补齐 / 铸登录代次 / 会话落盘 /
 			// BindSession / EnterScene 调用失败 / EnterScene 被拒)都发生在 scene_manager 放行之前,
 			// 客户端都等不到 NotifyEnterScene;而它自行处置后返回 nil 的路径(跨区重定向已推给
 			// gate、ReplaceLogin 踢旧会话失败只记日志)走不到这里,不会误报。
@@ -699,22 +699,30 @@ func (l *EnterGameLogic) applyLoadedPlayerSession(ctx context.Context, state ent
 		return decision, err
 	}
 
+	// 登录代次:持锁、读到会话记录之后,踢线与写会话之前铸一次(scene-enter-session-fence.md §3.2 / §3.3)。
+	// 失败即链失败:带 0 继续会让 scene 按"旧版无代次"处理,已有代次的实体会拒掉这次合法登录。
+	loginGeneration, err := mintEnterLoginGeneration(ctx, l.svcCtx.RedisClient, state.playerID, existing, time.Now())
+	if err != nil {
+		return decision, err
+	}
+
 	// Stage observation: persistEnterGameSession (SetSession or Reconnect).
 	// Label by decision so the reconnect (CAS) tail doesn't get hidden by the
 	// first/replace (write) tail.
 	persistTimer := observeStage(applyPersistSessionSeconds, decisionLabel(decision))
-	version, err := l.persistEnterGameSession(ctx, decision, existing, state)
+	version, err := l.persistEnterGameSession(ctx, decision, existing, state, loginGeneration)
 	persistTimer()
 	if err != nil {
 		return decision, err
 	}
 
 	// Notify Gate: bind the session and carry the login decision so Gate can forward to Scene.
+	// 代次随 Bind 一起到 gate:Bind 先于本次路由到达时,gate 按旧路由补发也要带本次的代次(§4)。
 	enterGsType := sessionmanager.DecisionToEnterGsType(decision)
 	bindTimer := observeStage(applyBindGateSeconds)
 	bindErr := l.svcCtx.SendBindSessionToGate(
 		state.gateID, state.gateInstanceID,
-		state.sessionID, state.playerID, version, enterGsType,
+		state.sessionID, state.playerID, version, enterGsType, loginGeneration,
 	)
 	bindTimer()
 	if bindErr != nil {
@@ -736,16 +744,9 @@ func (l *EnterGameLogic) applyLoadedPlayerSession(ctx context.Context, state ent
 	// AssignScene + Kafka. If err25 root cause is "async chain stalls",
 	// this histogram is where the long tail will appear.
 	enterSceneTimer := observeStage(applyEnterSceneSeconds)
-	enterResp, err := l.svcCtx.SceneManagerClient.EnterScene(ctx, &smpb.EnterSceneRequest{
-		PlayerId:       state.playerID,
-		SceneId:        route.sceneID,
-		SessionId:      state.sessionID,
-		RequestId:      state.requestID,
-		GateId:         state.gateID,
-		GateInstanceId: state.gateInstanceID,
-		GateZoneId:     ownZone,
-		ZoneId:         route.zoneID,
-	}, zrpc.WithCallTimeout(smTimeout))
+	enterResp, err := l.svcCtx.SceneManagerClient.EnterScene(ctx,
+		buildEnterSceneRequest(state, route, ownZone, loginGeneration),
+		zrpc.WithCallTimeout(smTimeout))
 	enterSceneTimer()
 	if err != nil {
 		logx.Errorf("SceneManager.EnterScene failed for player %d: %v", state.playerID, err)
@@ -785,11 +786,15 @@ func (l *EnterGameLogic) applyLoadedPlayerSession(ctx context.Context, state ent
 }
 
 // persistEnterGameSession persists the session and returns the new session version.
+//
+// loginGeneration 是本链铸出的登录代次,随 SetSession / Reconnect 的整字节 CAS 一起提交;
+// player_locator 在记录与请求都非 0 时要求严格递增,失锁的并发登录链只有一条能提交(§3.4)。
 func (l *EnterGameLogic) persistEnterGameSession(
 	ctx context.Context,
 	decision sessionmanager.EnterGameDecision,
 	existing *sessionmanager.PlayerSession,
 	state enterGameSessionState,
+	loginGeneration uint64,
 ) (uint32, error) {
 	switch decision {
 	case sessionmanager.FirstLogin, sessionmanager.ReplaceLogin:
@@ -800,13 +805,14 @@ func (l *EnterGameLogic) persistEnterGameSession(
 		}
 
 		newSession := sessionmanager.NewOnlineSession(existing, sessionmanager.OnlineSessionInput{
-			PlayerID:       state.playerID,
-			SessionID:      state.sessionID,
-			GateID:         state.gateID,
-			GateInstanceID: state.gateInstanceID,
-			Account:        state.account,
-			RequestID:      state.requestID,
-			Now:            time.Now(),
+			PlayerID:        state.playerID,
+			SessionID:       state.sessionID,
+			GateID:          state.gateID,
+			GateInstanceID:  state.gateInstanceID,
+			Account:         state.account,
+			RequestID:       state.requestID,
+			Now:             time.Now(),
+			LoginGeneration: loginGeneration,
 		})
 		if err := sessionmanager.SetSession(ctx, l.svcCtx.PlayerLocatorClient, newSession); err != nil {
 			return 0, err
@@ -822,13 +828,54 @@ func (l *EnterGameLogic) persistEnterGameSession(
 			state.gateInstanceID,
 			state.account,
 			state.requestID,
+			loginGeneration,
 		)
 		if err != nil {
 			return 0, err
 		}
+		// 应答回带的是会话记录。旧版 locator 不认请求里的代次,会原样回出上一条会话的值;下游(Bind、
+		// EnterScene)一律用本链铸出的值,这里只留痕。go-zero logx 没有 WARN 级别,按仓库惯例取 ERROR
+		// 并带 WARN 前缀:升级顺序是 locator 先于 login,稳态下出现即说明混版或 locator 没写进去。
+		if updated.LoginGeneration != loginGeneration {
+			logx.Errorf("[login-generation] WARN reconnect reply generation mismatch: player=%d session=%d minted=%d reply=%d; downstream uses the minted value",
+				state.playerID, state.sessionID, loginGeneration, updated.LoginGeneration)
+		}
 		return updated.SessionVersion, nil
 	default:
 		return 0, nil
+	}
+}
+
+// mintEnterLoginGeneration 为本条 EnterGame 链铸登录代次:下限取锁内读到的会话记录代次
+// (没有记录为 0),now 由调用方给出(生产 time.Now(),测试可注入)。
+// 错误不在这里打日志:调用方作为链失败返回,由 onPreloadComplete 统一记 ERROR 并推 3023。
+func mintEnterLoginGeneration(ctx context.Context, rdb *redis.Client, playerID uint64,
+	existing *sessionmanager.PlayerSession, now time.Time,
+) (uint64, error) {
+	var sessionFloor uint64
+	if existing != nil {
+		sessionFloor = existing.LoginGeneration
+	}
+	return sessionmanager.MintLoginGeneration(ctx, rdb, playerID, sessionFloor, now)
+}
+
+// buildEnterSceneRequest 组装发给 scene_manager 的 EnterSceneRequest。纯函数,便于单测直接断言字段。
+//
+// 去向(ZoneId / SceneId)见 resolveEnterSceneRoute;GateZoneId 恒为 login 自己的 zone。
+// LoginGeneration 是本链铸出的代次,scene_manager 原样透传进 RoutePlayerEvent(不进 request_id 指纹),
+// gate 据此给 PlayerEnterGameNode 盖章,scene 入场栅栏据此拒绝跨会话的陈旧入场。
+// CorrelationId 留 0:login 不按请求对应答(见 proto 注释)。
+func buildEnterSceneRequest(state enterGameSessionState, route enterSceneRoute, ownZone uint32, loginGeneration uint64) *smpb.EnterSceneRequest {
+	return &smpb.EnterSceneRequest{
+		PlayerId:        state.playerID,
+		SceneId:         route.sceneID,
+		SessionId:       state.sessionID,
+		RequestId:       state.requestID,
+		GateId:          state.gateID,
+		GateInstanceId:  state.gateInstanceID,
+		GateZoneId:      ownZone,
+		ZoneId:          route.zoneID,
+		LoginGeneration: loginGeneration,
 	}
 }
 

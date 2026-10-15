@@ -152,14 +152,14 @@ func newHarness(t *testing.T) *recordingHarness {
 }
 
 func (h *recordingHarness) makeHandler(op string) dbOpHandler {
-	return func(_ context.Context, store *proto2mysql.DB, task *db_proto.DBTask, _ proto.Message) string {
+	return func(_ context.Context, store *proto2mysql.DB, task *db_proto.DBTask, _ proto.Message) error {
 		h.mu.Lock()
 
 		// Honor injected failure plan first.
 		if remaining, ok := h.failNextOf[task.TaskId]; ok && remaining > 0 {
 			h.failNextOf[task.TaskId] = remaining - 1
 			h.mu.Unlock()
-			return fmt.Sprintf("injected failure for taskID=%s op=%s", task.TaskId, op)
+			return fmt.Errorf("injected failure for taskID=%s op=%s", task.TaskId, op)
 		}
 
 		body := append([]byte(nil), task.Body...) // deep copy, defensive
@@ -180,7 +180,7 @@ func (h *recordingHarness) makeHandler(op string) dbOpHandler {
 		if hook != nil {
 			hook(call)
 		}
-		return ""
+		return nil
 	}
 }
 

@@ -115,8 +115,19 @@ func (l *ChallengeLogic) ChallengePlayer(in *matchpb.ChallengePlayerRequest) (*m
 	ttl := l.challengeTTL()
 	expiresAtMs := nowMs() + uint64(ttl)*1000
 
+	// 占坑与写记录是发起挑战的提交点,受请求 ctx 约束:先检查 ctx,再用请求 ctx 发出。截止之后才挂上的挑战
+	// 会晚于 gate 已放行的同一会话下一条请求生效(docs/design/client-request-ordering.md §6.1)。
+	// 失败时的 cleanup 是补偿,仍走独立 ctx。
+	if err := l.ctx.Err(); err != nil {
+		l.Errorf("[challenge] Request deadline passed before reserving target slot; not writing challenger=%d target=%d: %v",
+			challengerId, in.TargetPlayerId, err)
+		metrics.ObserveChallenge("invite", "internal")
+		return &matchpb.ChallengePlayerResponse{
+			ErrorMessage: tipErr(constants.ErrInternal, "服务器繁忙,请稍后再试"),
+		}, nil
+	}
 	// 同一目标同时只挂一个待应答挑战:SETNX 占坑,后来者拒绝。
-	acquired, err := l.svcCtx.MatchRedis.SetnxEx(challengeTargetKey(in.TargetPlayerId),
+	acquired, err := l.svcCtx.MatchRedis.SetnxExCtx(l.ctx, challengeTargetKey(in.TargetPlayerId),
 		strconv.FormatUint(challengeId, 10), ttl)
 	if err != nil {
 		l.Errorf("[challenge] Failed to reserve target slot target=%d: %v", in.TargetPlayerId, err)
@@ -137,7 +148,7 @@ func (l *ChallengeLogic) ChallengePlayer(in *matchpb.ChallengePlayerRequest) (*m
 	}
 
 	recordKey := challengeKey(challengeId)
-	if err := l.svcCtx.MatchRedis.Hmset(recordKey, map[string]string{
+	if err := l.svcCtx.MatchRedis.HmsetCtx(l.ctx, recordKey, map[string]string{
 		challengeFieldChallenger: strconv.FormatUint(challengerId, 10),
 		challengeFieldTarget:     strconv.FormatUint(in.TargetPlayerId, 10),
 		challengeFieldConfig:     strconv.FormatUint(uint64(in.BattleConfigId), 10),
@@ -150,6 +161,7 @@ func (l *ChallengeLogic) ChallengePlayer(in *matchpb.ChallengePlayerRequest) (*m
 			ErrorMessage: tipErr(constants.ErrInternal, "服务器繁忙,请稍后再试"),
 		}, nil
 	}
+	// 记录已写入,TTL 必须补上(否则记录永久残留),所以这一步不受请求 ctx 约束。
 	if err := l.svcCtx.MatchRedis.Expire(recordKey, ttl); err != nil {
 		l.Errorf("[challenge] Failed to set challenge record TTL challenge=%d: %v", challengeId, err)
 	}
@@ -220,6 +232,18 @@ func (l *ChallengeLogic) RespondChallenge(in *matchpb.RespondChallengeRequest) (
 		metrics.ObserveChallenge("respond", "not_target")
 		return &matchpb.RespondChallengeResponse{
 			ErrorMessage: tipErr(constants.ErrChallengeNotTarget, "该邀请不是发给你的"),
+		}, nil
+	}
+
+	// 下面是应答的决定点:消费记录、推结果、启动 gather。请求 ctx 已取消就不做决定:客户端此时已收到
+	// 超时,gate 已放行同一会话的下一条请求,截止之后才开局会让顺序乱掉(docs/design/client-request-ordering.md §6.1)。
+	// 决定一旦做出,消费与开局都走独立 ctx 执行到底,不半途而废。
+	if err := l.ctx.Err(); err != nil {
+		l.Errorf("[challenge] Request deadline passed before deciding; leaving challenge record unconsumed challenge=%d responder=%d: %v",
+			in.ChallengeId, responderId, err)
+		metrics.ObserveChallenge("respond", "internal")
+		return &matchpb.RespondChallengeResponse{
+			ErrorMessage: tipErr(constants.ErrInternal, "服务器繁忙,请稍后再试"),
 		}, nil
 	}
 

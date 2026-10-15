@@ -547,6 +547,32 @@ Test-Case '库:gate.rate-limit.trusted-proxies 片段接在 gate: 下,空列表�
     }
 }
 
+Test-Case '库:gate.rate-limit 片段 -Settings 在前、trusted-proxies 在后,共用一个 rate-limit: 键;只有阈值也写;值只收 bool / 整数,键必须 kebab-case' {
+    # G4b 削峰阈值与 D91 的 trusted-proxies 挂在同一个 gate.rate-limit 下:另起一个 rate-limit: 就是重复键,Spring 的 SnakeYAML 直接拒启。
+    # 设置按字典的迭代顺序写出;值按 Spring 绑定口径渲染(bool 小写、整数十进制)。逐字比较用 -ceq:Assert-Equal 不分大小写,True / true 分不出来。
+    $settings = [ordered]@{ 'enabled' = $true; 'zone-default-rps' = [long]2000; 'ip-burst' = [int]20 }
+    $expected = @('  rate-limit:', '    enabled: true', '    zone-default-rps: 2000', '    ip-burst: 20', '    trusted-proxies:', '      - "10.0.0.0/8"') -join "`n"
+    $actual = ConvertTo-LfText (New-GatewayRateLimitYaml -TrustedProxies '10.0.0.0/8' -Indent '  ' -Settings $settings)
+    Assert-True -Condition ($actual -ceq $expected) -Because "阈值在前、trusted-proxies 在后,共用一个 rate-limit: 键(实际:`n$actual)"
+
+    $onlySettings = @('  rate-limit:', '    enabled: false', '    ip-rps: 5') -join "`n"
+    $actual = ConvertTo-LfText (New-GatewayRateLimitYaml -TrustedProxies '' -Indent '  ' -Settings ([ordered]@{ 'enabled' = $false; 'ip-rps' = 5 }))
+    Assert-True -Condition ($actual -ceq $onlySettings) -Because "没有可信代理时只写阈值,不写空的 trusted-proxies(实际:`n$actual)"
+
+    Assert-Equal -Expected '' -Actual (New-GatewayRateLimitYaml -TrustedProxies '' -Settings $null) -Because '阈值与可信代理都没有 = 不写 rate-limit 键(限流关、dev 产物逐字不变)'
+    Assert-Equal -Expected '' -Actual (New-GatewayRateLimitYaml -TrustedProxies '' -Settings ([ordered]@{})) -Because '空字典与 $null 同义'
+
+    foreach ($bad in @(
+        @{ Why = '值是字符串'; Settings = [ordered]@{ 'zone-default-rps' = '2000' }; Pattern = '只收 bool / 整数' }
+        @{ Why = '值为空'; Settings = [ordered]@{ 'zone-default-rps' = $null }; Pattern = 'gate\.rate-limit\.zone-default-rps 的值为空' }
+        @{ Why = '键不是 kebab-case'; Settings = [ordered]@{ 'zoneDefaultRps' = 2000 }; Pattern = 'kebab-case' }
+    )) {
+        $err = $null
+        try { New-GatewayRateLimitYaml -TrustedProxies '' -Settings $bad.Settings | Out-Null } catch { $err = $_.Exception.Message }
+        Assert-Match -Text $err -Pattern $bad.Pattern -Because "$($bad.Why) 必须 throw:Spring 对类型不符或拼错的键不报错,只是不生效"
+    }
+}
+
 Test-Case '库:DevPasswordAuth 片段的键与值 == go/login/etc/login.yaml(跨文件一致)' {
     $devPasswordYaml = ConvertTo-LfText (New-LoginDevPasswordAuthYaml)
     $flat = (ConvertFrom-YamlToFlatMap -Text $devPasswordYaml).Scalars
