@@ -40,7 +40,6 @@
 | proto2mysql/tools/proto2sql | `github.com/bufbuild/protocompile v0.14.1`、`github.com/go-sql-driver/mysql v1.8.1`、`golang.org/x/sync v0.9.0` |
 
 go/login 在这两个提交上用 miniredis v2.35.0，缓存里有。`github.com/coreos/go-systemd/v22` 与 `github.com/prometheus/procfs` 也缺，但它们只在 Linux 上参与编译，Windows 上跑不到。核对按的是 go.mod 的 require 清单，以实际运行为准。
-| 同意 3 | 拉取 `mysql:8.4` 与 `pingcap/tidb:v8.5.1` 镜像 | **已同意** |
 
 ---
 

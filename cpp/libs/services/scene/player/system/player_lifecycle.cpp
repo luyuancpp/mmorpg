@@ -34,6 +34,7 @@
 #include "core/system/redis.h"
 #include "player_scene.h"
 #include "player_team.h"
+#include "player_landing.h"
 #include "hexagons_grid.h"  // Hex —— 退出场景时要和 SceneEntityComp 成对摘掉
 #include "generated/attribute/actorbaseattributess2c_attribute_sync.h" // StopMotionForExit:速度脏位
 #include "spatial/system/movement.h" // StopMotionForExit:停步广播
@@ -2742,6 +2743,10 @@ void PlayerLifecycleSystem::EnterScene(const entt::entity player, const PlayerEn
 	//    (turn-based §22 D72)。
 	//    放在场景绑定成功之后:会话快照与 gate 路由此时才可靠。
 	PlayerBattleSystem::OnPlayerEnterScene(player, enterInfo.enter_gs_type());
+
+	// 7. 落地恢复钩子(landing-recovery-sync-digest.md §5.1):唤醒资产通道立即重投该玩家的 PENDING 行。
+	//    放在结算补应用之后:战斗冻结若已在第 6 步解除,资产 RPC 此刻不会再因 kAssetInBattle 回 RETRY。
+	PlayerLandingSystem::OnEnteredScene(player, enterInfo.enter_gs_type());
 }
 
 

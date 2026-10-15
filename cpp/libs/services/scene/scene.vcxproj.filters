@@ -44,6 +44,7 @@
     <ClInclude Include="player\system\player_lifecycle.h" />
     <ClInclude Include="player\system\player_scene.h" />
     <ClInclude Include="player\system\player_team.h" />
+    <ClInclude Include="player\system\player_landing.h" />
     <ClInclude Include="player\system\player_skill.h" />
     <ClInclude Include="player\system\player_attribute.h" />
     <ClInclude Include="player\system\pet_rules.h" />
@@ -76,6 +77,7 @@
     <ClInclude Include="world\world.h" />
     <ClInclude Include="player\comp\afk_comp.h" />
     <ClInclude Include="player\comp\player_ownership_comp.h" />
+    <ClInclude Include="player\comp\player_landing_comp.h" />
     <ClInclude Include="player\system\afk.h" />
     <ClInclude Include="player\system\asset_op_auth.h" />
     <ClInclude Include="player\system\asset_op_ledger.h" />
@@ -105,6 +107,7 @@
     <ClCompile Include="player\system\player_scene.cpp" />
     <ClCompile Include="player\system\player_team.cpp" />
     <ClCompile Include="player\system\player_team_aoi.cpp" />
+    <ClCompile Include="player\system\player_landing.cpp" />
     <ClCompile Include="player\system\player_skill.cpp" />
     <ClCompile Include="player\system\player_attribute.cpp" />
     <ClCompile Include="player\system\player_pet.cpp" />
