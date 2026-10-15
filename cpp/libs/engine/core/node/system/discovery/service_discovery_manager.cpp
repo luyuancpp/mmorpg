@@ -55,6 +55,13 @@ void ServiceDiscoveryManager::AddServiceNode(const std::string &nodeJson, uint32
 				  << ", Error: " << parseResult.message().data();
 		return;
 	}
+	if (discoveredNode.node_type() != nodeType)
+	{
+		// etcd 前缀决定所属桶；value 不得把另一个服务的身份带进此桶或取消其摘除。
+		LOG_ERROR << "Service discovery node type mismatch: prefix_type=" << nodeType
+				  << ", value_type=" << discoveredNode.node_type();
+		return;
+	}
 
 	// Multi-zone safety guard:
 	//   Zone-scoped services (Gate / Scene / Login / PlayerLocator) register

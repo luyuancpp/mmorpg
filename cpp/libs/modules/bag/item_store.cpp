@@ -47,8 +47,7 @@ ItemComp *ItemStore::Insert(ItemComp proto)
     //   acquire_seq == 0  新实例 / 旧存档没盖过章 -> 盖当前水位;
     //   acquire_seq  > 0  快照带回来的章 -> 原样保留,并把水位抬到它之上。
     //
-    // 老档混合零序号与既有序号时仍按重放顺序补章,不在此批改写存档还原语义。
-    // 既有序号可能与补章相同,统一由 guid 打破平局。
+    // 加载边界先调用 RaiseAcquireSeq 扫全包水位，避免零章条目与后到的既有序号冲突。
     if (proto.acquire_seq() == 0)
     {
         proto.set_acquire_seq(nextAcquireSeq_++);
@@ -61,6 +60,14 @@ ItemComp *ItemStore::Insert(ItemComp proto)
     auto [it, inserted] = items_.emplace(guid, std::move(proto));
     assert(inserted); // 单线程所有权,上面的查重与插入之间没有回调。
     return &it->second;
+}
+
+void ItemStore::RaiseAcquireSeq(uint64_t sequence)
+{
+    if (sequence >= nextAcquireSeq_)
+    {
+        nextAcquireSeq_ = sequence + 1;
+    }
 }
 
 bool ItemStore::Erase(Guid guid)

@@ -372,6 +372,8 @@ MySQL connection ledger: zones=<Z> steady=<S> peak=<P> max_connections=<M> headr
 
 PowerShell 注意:字符串里变量后紧跟冒号要写 `${var}:`;`-f` 格式串里的中文括号不需要转义。
 
+> **更正(2026-10-15,负责人「按最标准的去做」)**:本节第一段的「zones 配置 ∪ `-ZoneId`,与 `Get-InfraZoneIds` 同一口径」「存在才调 `Get-InfraZoneIds`」与「传了不在 zones 配置里的 `-ZoneId` 时 Z 会多 1,这是保守方向,不另处理」作废。`all-up` / `infra-up` 不为 `-ZoneId` 部署 zone 级工作负载(db / data-service / gateway):`-ZoneId` 在这两条命令里用作全局 Go 服务与 battle 的 ZoneId、mysql-init-sql 预建库的输入,本身不产生每 zone 的 MySQL 连接;把它(缺省值 101 或显式传入)并入 Z 的话,zones 配置不含它时(如 `zones.10zones.yaml` 的 1..10)Z 凭空多 1,可能打出虚假的 `[MySQLConnectionLedger]OverLimit`。现行口径按命令计 Z(同一 zoneId 只算一次):`zone-up` = zones 配置 ∪ 本次 `-ZoneId`(不在配置里也并入,这个 zone 确实要部署);`all-up` / `infra-up` = 只数 zones 配置里的 zone。zones 配置直接用 `Get-ZonesFromJson` 读,不调 `Get-InfraZoneIds`(它为 mysql-init-sql 预建库服务,在那里并入 `-ZoneId` 是对的)。缺席分支不变:Z 取 1,行尾标 `zones_config=missing`(`all-up` 走不到这一支,更早的入口预检读 zones 配置时已报错)。实现见 `tools/scripts/k8s_deploy.ps1` 的 `Write-MysqlConnectionLedger`;契约测试是 `k8s_deploy_contract.tests.ps1`「MySQL 连接总账」一节新增的 all-up / infra-up / zone-up 三例(`zones.10zones.yaml`,zones=10 / zones=10 / zones=11);§6.1 表 A 行的 Z = 11 是 zone-up,不受影响。未编译、未测试。正文不改。
+
 #### 4.1.4 ConfigMap 镜像池参数(让总账输入 == 集群实际值)
 
 1. **db ConfigMap**(`k8s_deploy.ps1:3423-3465`):`RedisClient` 块之后加

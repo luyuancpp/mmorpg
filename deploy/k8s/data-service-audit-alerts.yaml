@@ -10,6 +10,9 @@
 #   - A ServiceMonitor or PodMonitor pointed at that port.
 #   - Kafka.LagProbeIntervalMs > 0(服务 yaml 默认 30000):不开探针,lag / lag_max_partition / retention_gap 三个 gauge 不出数,
 #     下面的积压与保留期告警全部是哑的(DataServiceAuditLagProbeBlind 也抓不到 —— 没有失败计数)。
+#   - ServiceMonitor / PodMonitor 的抓取间隔 ≤ Kafka.LagProbeIntervalMs(服务 yaml 与 ConfigMap 现为 30000):DataServiceAuditRetentionGap
+#     对单轮探针采到的缺口就要响,抓取更稀时只保持一轮探针的正值可能一个样本都抓不到(见该规则注释与 runbook §7 演练第 ① 步;
+#     监控栈不在本仓,取值未核实)。
 #   - data_service 须是带 lag_max_partition_messages 指标的版本(2026-10-13 G2a 评审修复起):规则先于新版本 apply 时
 #     DataServiceAuditLagHigh 没有数据、是哑的。
 #
@@ -61,15 +64,22 @@ spec:
         # 以前的 `for: 2m` 下,缺口存续不足 2 分钟(删除发生在 STOPPED 冷却后重建前不久,重建后一提交 gauge 就归零)时不响,只剩日志。
         # 窗口取 15m,依据如下(待压测 / 故障演练确认,做法见 runbook §7):
         #   - 下限 = 规则评估间隔 + 探针间隔:被抓到的正值样本至少要落进一次规则评估的回看范围(需 ≥ 评估间隔,外加抓取写入的延迟),
-        #     再加一个探针间隔,吸收探针、抓取、评估三者相位不同步的余量。本组 interval 30s;探针 Kafka.LagProbeIntervalMs 默认 30s、
-        #     可配上限 600000ms(10 分钟),下限最大约 10.5 分钟,15m 在整个可配范围内都满足。
+        #     再加一个探针间隔,吸收探针、抓取、评估三者相位不同步的余量。本组 interval 30s;探针 Kafka.LagProbeIntervalMs 在服务 yaml
+        #     与 K8s ConfigMap 里取 30000(30s),可配范围 [5000, 600000]ms,上限 10 分钟时下限约 10.5 分钟,15m 在整个可配范围内都满足。
         #   - 窗口同时决定缺口消失后告警还保持 firing 多久(约 15 分钟)。它要长于 Alertmanager 的 group_wait 与 group_interval
         #     (默认 30s / 5m,凭记忆、未核实;本仓不含 Alertmanager 配置):在 Alertmanager 下一次发送之前就 resolve 的告警可能不发通知。
         #   - 与本文件另一条「任何一次出现就响」的规则 DataServiceAuditMessagesSkipped 的 [15m] 一致。
         # 前提:抓取间隔 ≤ LagProbeIntervalMs(ServiceMonitor 不在本仓,取值未核实),否则只保持一轮探针的正值可能一个样本都没被抓到。
         # 代价:
-        #   - 探针先读 committed 后读 start 的瞬时假阳性不再被 for 滤掉,也会呼叫。它只在消费者正读着分区里最老的段、
-        #     该段恰在探针两次读之间被删时出现 —— 那一刻积压已经在删除线上;按丢数据处置,用下面的日志确认条数(可能为 0)。
+        #   - gauge 为正而实际没丢(日志条数为 0)的情形不再被 for 滤掉,也会呼叫。分两种,那一刻积压都已经在删除线上,
+        #     一律按丢数据处置,用下面的日志确认条数:
+        #     ① 瞬时:探针先读 committed 后读 start,消费者正读着分区里最老的段、该段恰在探针两次读之间被删(消费者其实已越过它),
+        #        只有一轮探针为正。
+        #     ② 更常见:消费者已读入、尚未提交的消息所在的段被删。读入在前、落库后才提交,读入未提交的量 = kafka-go Reader 的预取队列
+        #        (两个消费者共用的 newReader 未设 QueueCapacity,v0.4.47 默认 100 条,由本实例分到的各分区共用)+ 正在攒 / 落库的批
+        #        (player_snapshot 另有分区 worker 通道)+ 当前 fetch 响应的剩余部分。gauge 一直为正,直到下一次提交越过日志起点,可持续多轮探针(库慢时数秒到数分钟);
+        #        kafka-go 的 reader 位点在被删段之后,既不打 skipping 行、也不重新定位(没有 starting / seeking 两行),日志条数为 0。
+        #        消费者随后照常落库提交就没丢;提交之前停机 / 重建时,其中没落库的才真丢,看那次重建的 starting / seeking 两行。
         #   - 消费者越过缺口并提交后 gauge 自行归零,告警还会再挂约 15 分钟;resolve 只说明窗口里不再有正值,不代表数据找回。
         # 仍会漏的:缺口整段落在两次探针之间(短于一个探针间隔;多实例各自探测、相位不同时采样更密,但不保证)时 gauge 从未为正,
         # 本告警无从触发,只剩日志 —— 所以积压事故收尾时不论告警响没响都按下面的口径 grep 一遍。
@@ -93,6 +103,7 @@ spec:
               消费者运行中被追上时是 `skipping from offset X to Y (N messages)` 行;消费者停机 / 重启 / rebalance 后重建时
               kafka-go 静默跳到日志起点,没有那一行,看同一分区的 `starting at offset A` 与 `seeking to offset B` 两行
               (A 非负且 B 大于 A 时,两者之差即丢失条数)。
+              积压收尾时日志条数仍为 0,多为消费者已读入、尚未提交的消息所在段被删(没丢,但积压已在删除线上;见 runbook §7)。
               记录条数与时间段上报回档负责人。根因通常是积压超过了每分区 log.retention.bytes(prod 512MiB),
               见 runbook「保留期与积压」一节;放宽保留策略是负责人拍板项(G2a 规格 Q-1)。
 

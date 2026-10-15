@@ -226,6 +226,8 @@ protected:
     // 关机收尾分两段(docs/design/muduo-rpc-channel.md §6.5):阶段 0 关闭全部 RPC 通道、让在途调用以失败完成,
     // 再把拆除(FinalizeTeardownInLoop)排到这些失败回调之后。
     void FinalizeShutdownInLoop();
+    [[nodiscard]] bool PollGrpcClientsInLoop();
+    void DrainGrpcClientsInLoop();
     void FinalizeTeardownInLoop();
 
     void ReleaseNodeId();
@@ -234,6 +236,7 @@ protected:
     static void AsyncOutput(const char *msg, int len);
     void StartNodeRegistrationHealthMonitor();
     void ExecuteNodeRemoval(const NodeInfo &stoppedNode);
+    void CompleteNodeRemoval(uint32_t nodeType, entt::entity entity, const std::string &nodeUuid);
     void StartConflictDrainWatchdog();
     void StartShutdownDrainWatchdog();
     void MaybeFinalizeShutdownInLoop();
@@ -256,6 +259,7 @@ protected:
     // 纯粹是影子成员,读代码的人会以为取消它就停住了重试,其实什么也没停。已删除。
     TimerTaskComp conflictDrainTimer;
     TimerTaskComp shutdownDrainTimer;
+    TimerTaskComp grpcClientDrainTimer_;
     // Kafka consumption is driven by KafkaConsumer::startBackgroundPolling
     // (a dedicated thread that queueInLoop's callbacks back into eventLoop).
     // The producer is non-blocking and flushes via KafkaManager::Shutdown.

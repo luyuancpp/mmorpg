@@ -267,9 +267,11 @@ Pump(*it)
 
 gate 没有 Prometheus 出口。仿照 scene_entry 的汇总日志写法【码】`cpp/nodes/gate/handler/event/scene_entry_dispatch.cpp:414`,每 30s 打一行 `[lane]` 汇总:`admitted / sent / replied / failed / node_removed / expired / expired_in_queue / rejected_full / rejected_redirected / late_dropped / incarnation_mismatch / dropped_on_disconnect`,外加当前在途数和最大队长。本地截止进 error_reporter。不使用 player_id、session_id 或原始 message_id 作维度(AGENTS §9)。
 
+> 2026-10-15 订正(与实现对齐,以 `client_request_lane.cpp` 的 `LogSummaryIfDue` 为准):`dropped_on_disconnect` 实际叫 `dropped_on_close`,它同时覆盖断线与租约到期摘无连接会话两条路径;另有 `no_router`(没有可用路由服时回 1003)、`dropped_on_redirect`(重定向时丢弃的排队项)两个计数,以及 `in_flight`、`expiry_heap`、`max_depth_seen` 三个观测量。§4.5 伪码里的 `lane_mismatch++` 实现为 `LOG_ERROR`(防御性,正常不可达),不单独计数。`incarnation_mismatch` 自 2026-10-15 起同时包含 scene TCP(RPC0)回包路径(`FindLiveSession` 被两条路径共用)。
+
 ### 4.11 性能
 
-- 每条请求多一次 deque push/pop、一次哈希表插入与 extract、一次堆操作。在途索引 ≤ 会话数,堆 ≤ 会话数,每会话排队 ≤ 32。
+- 每条请求多一次 deque push/pop、一次哈希表插入与 extract、一次堆操作。在途索引 ≤ 会话数,每会话排队 ≤ 32。过期堆是惰性删除(§4.2),完成时不从堆里删,规模约为「路由类请求速率 ×(deadline + 1s)」,不是「≤ 会话数」(2026-10-15 订正,见 `inflight_index.h` 文件头)。
 - 健康时,同一会话内的并发请求从「并行 1 个往返」变成「N 个往返之和」,单个往返是毫秒级。打开帮会面板时的并发查询【文】`client-access-band-routing.md:350` 会受影响。按 AGENTS §6,上线前要压测对比 prev-summary;没有对比表之前不宣称任何性能结论。
 
 ### 4.12 放宽路径(第三阶段,凭数据)
@@ -600,3 +602,4 @@ go-zero 超时拦截器用 `context.WithTimeout` 派生 ctx 交给 handler,超�
 | E2 guild expected_guild_id | 推迟(2026-10-15 用户决定以后再做) | 不改。理由与残留窗口见 §11 的 2026-10-15 拍板记录;重启时按 §6.4 与 §12 E2 行实施,需要客户端仓授权(AGENTS §9),两版加客户端同批 | — |
 | C 与 RPC0 回包路径的协调 | 已合(2026-10-15,「C++ RPC 异步回调链式调用设计」会话改) | `router_lane.h` 的 `InflightIndex` 改为 `cpp/libs/engine/core/utils/data_structures/inflight_index.h` 的别名(语义逐行相同,多 `ExtractAll` / `Empty`;加了类型等同的 static_assert),`router_lane_test.cpp` 独立编译命令多 `-I cpp/libs/engine/core`(§13 第 2 步已注明);`SendEnvelope` / `FindLiveSession` 从匿名命名空间导出到 `gate_lane`,供 scene 的 TCP 回包路径复用,`[lane]` 汇总的 `incarnation_mismatch` 从此也包含该路径;`client_message_processor.cpp` 的 `HandleTcpNodeMessage` 改为非 Empty 走 `CallMethod`、超时 `kGateToSceneClientCallTimeout` 12s,新增不变式 I5(已登记 §5.2)。本文的三处评审修复对方确认未动 | 待 Codex |
 | C++ 完成度核对(2026-10-15) | 已跑完,结论待主会话逐条读复核意见 | 只读工作流 `wf_6fae7fc0-8f5`(4 个视角 + 各 1 个对抗复核),结果在会话 tasks 目录 `w3zah72i2.output` 与 journal。已读到的报告(复核结论尚未逐条核对):**C-1(major)** muduo_h2 传输下 gate 关机时断线通知走 `SendRawViaRouter` 的官方 gRPC 回退分支,对没有 CQ / Stub 的路由服实体 `registry.get`,可能崩溃(`client_message_processor.cpp:211-226`);**C-2(minor)** 顶号 `KickPlayerEventHandler` 只 shutdown,lane 排队项要等断开回调才丢弃(`gate_event_handler.cpp:113-128`);**C-3(minor)** battle / GM 闸门拒绝仍是不带 id 的 tip(O6 / 阶段 0d,客户端可见)。其余视角的报告被截断,未读 | 待续 |
+| C++ 完成度核对:复核结论与修复(2026-10-15) | 已改完,未编译 | 复核确认成立并已修:① `client_request_lane.cpp` Pump 里不加限定的 `eNodeType` 且没有 include `node_util.h`,gate 编不过 → 改为 `common::base::eNodeType::ClientRpcRouterNodeService`(与 `grpc_call_deadline.cpp` 同写法);② muduo_h2 + 路由模式下关机,断线通知经 `SendRawViaRouter` 落进官方 gRPC 分支,对没有 CQ / Stub 的实体 `registry.get` → `client_message_processor.cpp` 在官方分支前加 `all_of<grpc::CompletionQueue, ClientRpcRouterStubPtr>` 判断,两种传输都不可用时按「没有路由服」返回 nullopt(采样 WARN);③ O7 启动日志 → `main.cpp` 出口模式日志两支各补一句(路由模式注明 lane 已启用及上限,直连模式注明不保序);④ §4.10 / §4.11 文档漂移已订正。被复核否掉的:顶号只 shutdown(C-2 / F2)、直连模式 player_id 归一(C-5)、I4 无机械门禁(C-6)、非 lane 回包不核代次(F5)、inflight_index.h 未跟踪 / Release 链接清单(信息项)。**待决定**:C-3 battle / GM 闸门拒绝改成带 id 的信封,与 Java 版 scene-battle-spec D12(明确要求 23 推送、不是信封)冲突,属于客户端契约变更,未改,等用户拍板。生成物 7 / 8 号字段仍待 Codex 重生成 | 待 Codex:proto 重生成后 `msbuild game.sln /m:1 /p:Configuration=Debug /p:Platform=x64` |

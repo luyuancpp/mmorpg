@@ -1136,7 +1136,8 @@ namespace
 
 	// 拒建实体(M2 / M10)。写法照 HandlePlayerAsyncLoadFailed 的 RedisError 分支:回 kEnterSceneFailed、擦掉预登记
 	// 会话与待入场条目(之后到达的载入结果找不到条目,按"孤儿载入"跳过);随后按 M7 处理删掉过的标记。
-	void RefuseInheritedEntry(Guid playerId, const char *reason, const PlayerEnterContext& context)
+	void RefuseInheritedEntry(Guid playerId, const char *reason, const PlayerEnterContext& context,
+						 uint32_t tipId = kEnterSceneFailed)
 	{
 		const SessionId sessionId = context.enterInfo.session_id();
 		const uint64_t ownerEpoch = context.ownerEpoch;
@@ -1149,7 +1150,7 @@ namespace
 		if (sessionId != 0)
 		{
 			// Best-effort tip; safe even if the gate session is already gone.
-			SendTipToPendingSession(sessionId, playerId, kEnterSceneFailed);
+			SendTipToPendingSession(sessionId, playerId, tipId);
 			// 只擦仍属于本玩家的预登记映射(scene-enter-session-fence.md §5.6):同号会话可能已被别的玩家占用。
 			PlayerLifecycleSystem::EraseSessionMappingIfOwned(sessionId, playerId);
 		}
@@ -2458,6 +2459,18 @@ PlayerLifecycleSystem::EnterGameNodeOutcome PlayerLifecycleSystem::HandleEnterGa
 		return EnterGameNodeOutcome::kRejected;
 	}
 
+	// 场景与权限是纯预检,必须先于会话摘除、改派票据收敛以及旧实体处置。
+	const auto targetScene = PlayerSceneSystem::FindSceneById(ctx.enterInfo.scene_id());
+	const auto existingPlayer = tlsEcs.GetPlayer(playerId);
+	const uint32_t entryResult = existingPlayer != entt::null
+		? PlayerSceneSystem::CheckEnterScene(existingPlayer, targetScene)
+		: PlayerSceneSystem::CheckEnterScene(playerId, targetScene);
+	if (entryResult != kSuccess)
+	{
+		SendTipToPendingSession(sessionId, playerId, entryResult);
+		return EnterGameNodeOutcome::kRejected;
+	}
+
 	// 1. 进场路由把玩家派回了本节点:先让疏散 / 排空改派的待确认表(relocate_confirm.h)知道。
 	//    ① 他还没派发的改派票据作废 —— 这次进场要么复用实体并取消退出(EnterScene 第 0 步),要么在第 3 步把实体
 	//       按"被废黜"销毁后重载,那次退出都不会再正常收尾;留着票据只会在下一次、会话已换的退出里被误消费。
@@ -2502,8 +2515,8 @@ PlayerLifecycleSystem::EnterGameNodeOutcome PlayerLifecycleSystem::HandleEnterGa
 	//    (Go 给重连发的是当前值),否则实体会一直拿首登那次的 epoch 存盘。
 	if (playerIt != tlsEcs.playerList.end())
 	{
-		EnterScene(playerIt->second, ctx);
-		return EnterGameNodeOutcome::kEnteredExisting;
+		return EnterScene(playerIt->second, ctx)
+			? EnterGameNodeOutcome::kEnteredExisting : EnterGameNodeOutcome::kRejected;
 	}
 
 	// 5. Player not online — the caller kicks off a Redis-only async load (kLoadRequired).
@@ -2560,10 +2573,15 @@ PlayerLifecycleSystem::EnterGameNodeOutcome PlayerLifecycleSystem::HandleEnterGa
 }
 
 // CONSIDER: handle reentry into a different scene node while load is still in progress
-void PlayerLifecycleSystem::EnterScene(const entt::entity player, const PlayerEnterContext &ctx)
+bool PlayerLifecycleSystem::EnterScene(const entt::entity player, const PlayerEnterContext &ctx, bool* stillOwnsEntry)
 {
+	if (stillOwnsEntry != nullptr) *stillOwnsEntry = false;
 	const auto &enterInfo = ctx.enterInfo;
-	const auto playerId = tlsEcs.actorRegistry.get<PlayerGuidComp>(player).value;
+	if (!tlsEcs.actorRegistry.valid(player)) return false;
+	const auto* guid = tlsEcs.actorRegistry.try_get<PlayerGuidComp>(player);
+	if (guid == nullptr || guid->value == 0) return false;
+	const Guid playerId = guid->value;
+	if (tlsEcs.GetPlayer(playerId) != player) return false;
 	LOG_DEBUG << "EnterScene: Player " << playerId << " entering scene node"
 	         << " session=" << enterInfo.session_id()
 	         << " scene_id=" << enterInfo.scene_id()
@@ -2586,8 +2604,17 @@ void PlayerLifecycleSystem::EnterScene(const entt::entity player, const PlayerEn
 			LOG_ERROR << "[EnterFence] bind rejected player=" << playerId << " session=" << enterInfo.session_id()
 					  << " login_generation=" << ctx.loginGeneration << " verdict=" << enter_fence::VerdictName(verdict)
 					  << " entity=" << FormatEnterIdentity(current) << " (metric=bind_rejected)";
-			return;
+			return false;
 		}
+	}
+
+	if (stillOwnsEntry != nullptr) *stillOwnsEntry = true;
+	// 先验证目的地,被拒的入场不能取消退出或更改任何会话/归属状态。
+	const SceneEntity targetScene = PlayerSceneSystem::FindSceneById(enterInfo.scene_id());
+	if (const auto result = PlayerSceneSystem::CheckEnterScene(player, targetScene); result != kSuccess)
+	{
+		SendTipToPendingSession(enterInfo.session_id(), playerId, result);
+		return false;
 	}
 
 	// 0. Cancel any pending unregistration. If this player previously called
@@ -2598,8 +2625,7 @@ void PlayerLifecycleSystem::EnterScene(const entt::entity player, const PlayerEn
 	//    PlayerExitIntentComp 与 UnregisterPlayer 成对摘(player_exit_intent.h 的成对约定),见 CancelExitOnReconnect。
 	CancelExitOnReconnect(player);
 
-	// 0.5 归属:放在场景查找之前 —— 归属讲的是"这份数据归谁、谁持有",与放没放进场景无关,
-	//     实体只要在本节点存在、会被存盘,就必须带着 Go 这次路由决策给的值。
+	// 0.5 归属:场景与权限已预检通过,现在才采纳本次路由的归属值。
 	//     0 一律不覆盖(旧版 gate / scene_manager 未填,或首登时 Init 刚挂的零值组件);
 	//     epoch 取 max:见 PlayerOwnerEpochComp 的说明。
 	//     非 per-tick 路径,get_or_emplace 合规(AGENTS §7.5)。
@@ -2658,55 +2684,34 @@ void PlayerLifecycleSystem::EnterScene(const entt::entity player, const PlayerEn
 	// 登录身份与会话绑定同处写(§5.4):此后到达的陈旧入场拿它比。快照的会话会在下一次入场第 2 步被置无效,
 	// 身份组件不会,所以必须单独记。
 	RecordLoginIdentity(player, enterInfo.session_id(), ctx.loginGeneration);
-
-	// 2. Find the target scene entity by scene_id (allocated by SceneManager).
-	SceneEntity targetScene = entt::null;
-	if (enterInfo.scene_id() != 0)
+	const PlayerSceneSystem::EntryOwnershipGuard ownership(player, enterInfo.session_id());
+	const auto stopEntry = [&]
 	{
-		auto view = tlsEcs.sceneRegistry.view<SceneInfoComp>();
-		for (auto entity : view)
+		if (stillOwnsEntry != nullptr)
 		{
-			const auto &info = view.get<SceneInfoComp>(entity);
-			if (info.scene_id() == enterInfo.scene_id())
-			{
-				targetScene = entity;
-				break;
-			}
+			const auto* resident = tlsEcs.actorRegistry.try_get<SceneEntityComp>(player);
+			*stillOwnsEntry = ownership.IsCurrent() && tlsEcs.GetPlayer(playerId) == player &&
+				(resident == nullptr || resident->sceneEntity == targetScene);
 		}
-
-		if (targetScene == entt::null)
-		{
-			LOG_ERROR << "EnterScene: scene_id=" << enterInfo.scene_id()
-			          << " not found on this node for player " << playerId;
-		}
-	}
-
-	// 放不进场景就必须 fail-closed,不能继续往下走。
-	//
-	// 旧实现只打一条 ERROR 就接着执行第 4/5 步:玩家被标记成"已登录"、
-	// PlayerLoginEvent 照常触发(任务、每日奖励等业务系统开始结算),但他不在
-	// 任何场景里 —— 没有 AOI、收不到广播,客户端也没收到 NotifyEnterScene,
-	// 会永远停在加载界面。更糟的是 enter_gs_type 已被写入,玩家重试进场时
-	// `alreadyLoggedIn` 为真,登录事件**再也不会补触发**,这一次的登录结算
-	// 就永久丢了。
-	//
-	// 这里既不置登录态也不触发事件,只给客户端一个明确的失败提示,让它走
-	// 正常重试路径(与 HandlePlayerAsyncLoadFailed 的 RedisError 分支同款处理)。
-	if (targetScene == entt::null)
+		return false;
+	};
+	const auto canContinueEntry = [&]
 	{
-		SendTipToPendingSession(enterInfo.session_id(), playerId, kEnterSceneFailed);
-		LOG_ERROR << "EnterScene: aborting entry for player " << playerId
-		          << " (scene_id=" << enterInfo.scene_id()
-		          << " unavailable); login state NOT set so a retry can still fire PlayerLoginEvent.";
-		return;
-	}
+		if (!ownership.IsCurrent() || tlsEcs.GetPlayer(playerId) != player) return false;
+		const auto* resident = tlsEcs.actorRegistry.try_get<SceneEntityComp>(player);
+		return resident != nullptr && resident->sceneEntity == targetScene &&
+			PlayerSceneSystem::CheckEnterScene(player, targetScene) == kSuccess;
+	};
 
 	// 3. Enter the scene: bind player to scene entity and send client notification.
 	if (!PlayerSceneSystem::HandleEnterScene(player, targetScene))
 	{
 		LOG_ERROR << "EnterScene: scene transition interrupted, player_id=" << playerId;
-		return;
+		if (ownership.IsCurrent() && tlsEcs.GetPlayer(playerId) == player)
+			SendTipToPendingSession(enterInfo.session_id(), playerId, kEnterSceneFailed);
+		return stopEntry();
 	}
+	if (!canContinueEntry()) return stopEntry();
 
 	// 3.1 玩家已经被路由放进了场景:此前记下的"换图在途"(PlayerSceneChangeInFlightComp)到此兑现。
 	//     不等 scene_manager 的 gRPC 应答来摘:路由(Kafka → gate → 本节点)与应答(gRPC)是两条
@@ -2742,6 +2747,7 @@ void PlayerLifecycleSystem::EnterScene(const entt::entity player, const PlayerEn
 				 << ctx.ownerEpoch << " unchanged); verifying and settling the handoff in place";
 		ResolveTravelOutcome(playerId, travel->requestedAtMs, "placed on this node by route",
 							 travel_outcome::Evidence::kSucceeded);
+		if (!canContinueEntry()) return stopEntry();
 	}
 
 	// 3.5 组队:刷新 TeamId 并检查同节点跟随(team-system.md §F.2)。
@@ -2749,6 +2755,7 @@ void PlayerLifecycleSystem::EnterScene(const entt::entity player, const PlayerEn
 	//     会走到那个早退,放在里面就会漏刷新。战斗在途的判定在跟随链内部直接读 battle:lock,
 	//     不依赖第 6 步冻结重建与本链的回调先后。
 	PlayerTeamSystem::OnEnteredScene(player);
+	if (!canContinueEntry()) return stopEntry();
 
 	// 4. Set login state for downstream systems (reconnect, first-login logic, etc.).
 	if (enterInfo.enter_gs_type() != 0)
@@ -2765,6 +2772,7 @@ void PlayerLifecycleSystem::EnterScene(const entt::entity player, const PlayerEn
 			loginEvent.player = player;
 			loginEvent.enterGsType = enterInfo.enter_gs_type();
 			tlsEcs.dispatcher.trigger(loginEvent);
+			if (!canContinueEntry()) return stopEntry();
 		}
 	}
 
@@ -2773,10 +2781,12 @@ void PlayerLifecycleSystem::EnterScene(const entt::entity player, const PlayerEn
 	//    (turn-based §22 D72)。
 	//    放在场景绑定成功之后:会话快照与 gate 路由此时才可靠。
 	PlayerBattleSystem::OnPlayerEnterScene(player, enterInfo.enter_gs_type());
+	if (!canContinueEntry()) return stopEntry();
 
 	// 7. 落地恢复钩子(landing-recovery-sync-digest.md §5.1):唤醒资产通道立即重投该玩家的 PENDING 行。
 	//    放在结算补应用之后:战斗冻结若已在第 6 步解除,资产 RPC 此刻不会再因 kAssetInBattle 回 RETRY。
 	PlayerLandingSystem::OnEnteredScene(player, enterInfo.enter_gs_type());
+	return canContinueEntry() ? true : stopEntry();
 }
 
 
@@ -3832,6 +3842,13 @@ entt::entity PlayerLifecycleSystem::InitPlayerFromAllData(const PlayerAllData &p
 		return entt::null;
 	}
 
+	// 目的地权限无需实体,拒绝应先于创建/网络号分配,不消耗有限序号。
+	const auto targetScene = PlayerSceneSystem::FindSceneById(ctx.enterInfo.scene_id());
+	if (const auto result = PlayerSceneSystem::CheckEnterScene(playerId, targetScene); result != kSuccess)
+	{
+		RefuseInheritedEntry(playerId, "目标场景不存在或无入场权限", ctx, result);
+		return entt::null;
+	}
 	auto player = tlsEcs.actorRegistry.create();
 	// 先取得独立的客户端 actor 号,失败时还没有发布playerList或触发初始化副作用。
 	if (actor_net_id::Assign(tlsEcs.actorRegistry, player) == 0)
@@ -3841,16 +3858,31 @@ entt::entity PlayerLifecycleSystem::InitPlayerFromAllData(const PlayerAllData &p
 		RefuseInheritedEntry(playerId, "actor network id unavailable", ctx);
 		return entt::null;
 	}
-
 	// Register in global player-entity map
 	tlsEcs.playerList.emplace(playerId, player);
+	std::optional<PlayerSceneSystem::EntryOwnershipGuard> notificationOwnership;
 	// 通知允许同步销毁本次实体;每次返回后重验版本,且只清理仍属于旧实体的索引。
-	const auto canContinueInitialization = [player = player, playerId]()
+	const auto canContinueInitialization = [player = player, playerId, &ctx, &notificationOwnership]()
 	{
-		if (tlsEcs.actorRegistry.valid(player) && tlsEcs.GetPlayer(playerId) == player) return true;
+		if (tlsEcs.actorRegistry.valid(player) && tlsEcs.GetPlayer(playerId) == player &&
+			(!notificationOwnership || notificationOwnership->IsCurrent())) return true;
 		const auto found = tlsEcs.playerList.find(playerId);
-		if (found != tlsEcs.playerList.end() && found->second == player)
+		const auto* currentGuid = tlsEcs.actorRegistry.try_get<PlayerGuidComp>(player);
+		if (found != tlsEcs.playerList.end() && found->second == player &&
+			(!tlsEcs.actorRegistry.valid(player) || currentGuid == nullptr || currentGuid->value != playerId))
 			tlsEcs.playerList.erase(found);
+		const auto replacement = tlsEcs.GetPlayer(playerId);
+		if (replacement == entt::null)
+		{
+			// 同步通知销毁也会放弃本次载入,必须撤销预登记会话和继承清理凭证。
+			RefuseInheritedEntry(playerId, "初始化通知中断", ctx);
+		}
+		else if (const auto* snapshot = tlsEcs.actorRegistry.try_get<PlayerSessionSnapshotComp>(replacement);
+				 snapshot == nullptr || snapshot->gate_session_id() != ctx.enterInfo.session_id())
+		{
+			// 替身没有接管本次会话时只清理旧预登记号,不擦它的新会话。
+			EraseSessionMappingIfOwned(ctx.enterInfo.session_id(), playerId);
+		}
 		LOG_WARN << "玩家初始化在通知中中止 player_id=" << playerId
 		         << " entity=" << entt::to_integral(player);
 		return false;
@@ -3872,6 +3904,7 @@ entt::entity PlayerLifecycleSystem::InitPlayerFromAllData(const PlayerAllData &p
 	{
 		return entt::null;
 	}
+	notificationOwnership.emplace(player, ctx.enterInfo.session_id());
 
 	// First-time registration: initialize defaults
 	if (playerAllData.player_database_data().uint64_pb_component().registration_timestamp() <= 0)
@@ -3903,8 +3936,33 @@ entt::entity PlayerLifecycleSystem::InitPlayerFromAllData(const PlayerAllData &p
 	tlsEcs.dispatcher.trigger(initPlayerEvent);
 	if (!canContinueInitialization()) return entt::null;
 
-	EnterScene(player, ctx);
-	if (!canContinueInitialization()) return entt::null;
+	bool stillOwnsEntry = false;
+	if (!EnterScene(player, ctx, &stillOwnsEntry))
+	{
+		if (!stillOwnsEntry)
+		{
+			(void)canContinueInitialization();
+			return entt::null;
+		}
+		// 只撤销本次新建实体;通知中登记的同号替身及其会话必须保留。
+		if (tlsEcs.actorRegistry.valid(player))
+		{
+			if (tlsEcs.GetPlayer(playerId) == player)
+			{
+				RemovePlayerSession(player);
+				DestroyPlayer(playerId);
+			}
+			else
+			{
+				DetachFromScene(player);
+				DestroyEntity(tlsEcs.actorRegistry, player);
+			}
+		}
+		if (tlsEcs.GetPlayer(playerId) == entt::null)
+			RefuseInheritedEntry(playerId, "新建玩家入场未完成", ctx);
+		return entt::null;
+	}
+	if (!tlsEcs.actorRegistry.valid(player) || tlsEcs.GetPlayer(playerId) != player) return entt::null;
 
 	// Capture a login snapshot for rollback safety net.
 	SnapshotSystem::CaptureAndSend(player, SNAPSHOT_LOGIN);
@@ -4067,7 +4125,7 @@ PlayerLifecycleSystem::SaveResult PlayerLifecycleSystem::SavePlayerToRedisImpl(
 	}
 
 	// Send each sub-table as a separate DBTask (matching how login reads per-table)
-	const std::string playerIdStr = std::to_string(playerId);
+	const std::string playerIdStr = DbTaskKafkaKey(playerId); // Kafka key 与 Go 侧 kafkautil.DBTaskKey 逐字节相同(分区契约),task_id 前缀沿用同一串
 	// 世代号来自部署配置(DbTaskTopicGeneration,缺键 / 0 = 第一代,名字不带后缀),必须与 go/db、
 	// go/login 的 Kafka.TopicGeneration 相等:换代后仍按旧名写 = 存盘进了已排空、没人消费的旧 topic。
 	// 选哪个 zone 的 topic 仍只看 home_zone(上面的回落逻辑),世代号不改变路由。

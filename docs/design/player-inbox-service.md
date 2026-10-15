@@ -154,8 +154,8 @@ D3 已于 2026-10-15 拍板：独立进程 `go/player_inbox`，按 D-14 独占�
 - `node.proto` 加 `PlayerInboxNodeService=30`（空闲，见调研评审）。
 - `node_util.cpp:11-28` 的 nodeTypeNameMap 加一项。
 - scene 白名单（`cpp/nodes/scene/main.cpp:86`）加一项。
-- 两份 etcd 前缀表：`bin/etc/base_deploy_config.yaml` 的 `service_discovery_prefixes`（:39-49），以及 `k8s_deploy.ps1` 中 `New-NodeConfigMapYaml`（:2237 起）里的同名列表（当前约 :2352-2370）。
-- 调用 deadline：在 `base_deploy_config.yaml` 的 `GrpcClient.CallDeadlineMs`（:226 起）加 `PlayerInboxNodeService`；同步把 `Assert-GrpcClientDeadlineBudget`（`k8s_deploy.ps1:948`）的目标表，以及 `base_deploy_config.yaml:221-224` 注释里的「五个目标 / 这五项」改为六个。
+- 两份 etcd 前缀表：`bin/etc/base_deploy_config.yaml` 的 `service_discovery_prefixes`（:39-49），以及 `k8s_deploy.ps1` 中 `New-NodeConfigMapYaml`（当前 :2257 起）里的同名列表（当前约 :2395-2413；该脚本工作区有他人在改，以函数名为准）。
+- 调用 deadline：在 `base_deploy_config.yaml` 的 `GrpcClient.CallDeadlineMs`（:226 起）加 `PlayerInboxNodeService`；同步把 `Assert-GrpcClientDeadlineBudget`（当前 `k8s_deploy.ps1:951`）的目标表，以及 `base_deploy_config.yaml:222-224` 注释里的「五个目标 / 这五项」改为六个。
 - Go 侧照 trade 用 `shared/noderegistry` 注册（`go/trade/trade.go:238-247`）。
 - 生成器按「服务名 → 包名 → 目录」推导节点类型（`tools/proto_generator/protogen/internal/model.go:163-183`），`proto/player_inbox/`（`package player_inbox`）下的服务因此挂到 PlayerInboxNodeService 下；第 1 批第 6 步核对 `grpc_init_client.cpp`。
 
@@ -1218,7 +1218,7 @@ v1 的类型都不允许过期，也没有过期列，这里不做任何处理�
 
 **新建 `go/player_inbox/`**（骨架照 trade）：
 - 入口与配置：`player_inbox.go`、`go.mod`、`etc/player_inbox.yaml`（Etcd `Key: ""`，ZoneId 写在顶层，ListenOn 与 MetricsListenAddr 是顶层单行；端口 50950、指标 :9270，按 D14 待确认；显式写 zrpc `Timeout`，供 `CallDeadlineMs.PlayerInboxNodeService ≥ Timeout + 2000` 的部署门禁核对；`DataServiceRpc` 段照 trade）。
-- `internal/config/{config.go, config_test.go}`：Validate 拒绝非空 Key，断言库名；`AdminToken` 为空则运维接口停用；`EnqueueTypes`、连接池、核心 Redis、Kafka、scene 节点镜像、`DataServiceRpc`（Validate 要求必配，照 `go/trade/internal/config/config.go:295-296`）。
+- `internal/config/{config.go, config_test.go}`：Validate 拒绝非空 Key，断言库名；`AdminToken` 为空则运维接口停用；`EnqueueTypes`、连接池、核心 Redis、Kafka、scene 节点镜像、`DataServiceRpc`（Validate 要求必配，照 `go/trade/internal/config/config.go:440-441` 的 `HasRpcTarget` 判定）。
 - `internal/svc/servicecontext.go`、`internal/data/tables.go`、`internal/lifecycle/{lifecycle.go, lifecycle_unix.go, lifecycle_windows.go}`、`internal/metrics/metrics.go`。
 - `internal/constants/{constants.go, constants_test.go}`。
 - `internal/inbox/`：`registry.go`、`fence.go`、`seq.go`、`shard.go`、`store.go`、`notify.go`、`loops.go`（清理、补发、gauge、领导者），以及各自的 `_test.go`，另加 `store_integration_test.go`。

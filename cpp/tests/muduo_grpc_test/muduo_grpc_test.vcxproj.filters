@@ -23,6 +23,9 @@
     <ClCompile Include="codec_utils_test.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="etcd_transport_helpers_test.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
     <ClCompile Include="go_interop_test.cpp">
       <Filter>源文件</Filter>
     </ClCompile>

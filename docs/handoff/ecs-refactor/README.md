@@ -18,9 +18,9 @@
 
 | 批次 | 任务单 | 内容 | 状态 |
 |---|---|---|---|
-| 第 1 批 | [batch1-verify.md](batch1-verify.md) | 存盘与快照只读化、空间/AOI、actor 属性、战斗 buff 与技能、货币与结算账本、场景入口与节点 registry 边界 | **Codex 已继续修正三类初始化与错误传播**;[实施回执](batch1-codex-receipt.md)。依负责人指令未编译 / 测试,跨会话项仍待闭环 |
+| 第 1 批 | [batch1-verify.md](batch1-verify.md) | 存盘与快照只读化、空间/AOI、actor 属性、战斗 buff 与技能、货币与结算账本、场景入口与节点 registry 边界 | 源码收尾及跨会话补项已落盘；[实施回执](batch1-codex-receipt.md)与本文 §8。统一生成与运行验收待执行 |
 | 第 2 批 | [batch2-singletons.md](batch2-singletons.md) | 单例回到明确所有者，请求 tip 直接写 response，删除无调用的全局 registry | 源码完成；重生成、整批构建/测试与审查待执行 |
-| 第 3 批 | [batch3-bag.md](batch3-bag.md) | 背包普通字典、确定的实例顺序、删除物品句柄 API | 源码完成；18 条新增用例未运行 |
+| 第 3 批 | [batch3-bag.md](batch3-bag.md) | 背包普通字典、确定的实例顺序、删除物品句柄 API | 源码完成；原 18 条与追加 11 条用例未运行 |
 | 第 4 批 | [batch4-external-id.md](batch4-external-id.md) | Kafka 显式白名单、内部结构体事件、节点句柄类型、日志、ActorNetIds | 源码完成；默认兼容方案 A；统一生成及运行验收待执行 |
 | 第 5 批 | [batch5-lifecycle-types.md](batch5-lifecycle-types.md) | 生命周期、可搬移定时器、PlayerGuidComp、SceneEntity、死代码清理 | 源码完成；已补通知重入防护；运行验收待执行 |
 | 总评 | [ecs-fit-overview.md](ecs-fit-overview.md) | 逐个子系统判断用 ECS 是否合适，以及第 2–5 批之外还该做的结构性改动 | 参考 |
@@ -68,7 +68,9 @@
 | 会话 | 正在改的文件 | 与本改造的关系 |
 |---|---|---|
 | C++ RPC 异步回调链式调用设计 | `registration_manager.{h,cpp}`（已整段重写）、`node.{h,cpp}`（`FinalizeShutdownInLoop` 拆两段、`RegisterHandlers`）、`core/network/` 下的 `game_channel.*`（改名 `rpc_channel.*`）、`rpc_client.h`、`rpc_server.*`、`rpc_session.h`、`rpc_controller.h`、`node_message_utils.*`（整删）、`player_message_utils.*`（删零调用封装）、gate `client_message_processor.cpp` 的 `HandleTcpNodeMessage` 与断线 `ExitGame` 两段、`scene_handler.cpp` 与 `gate_service_handler.cpp` 的 `Route*` 函数（改为显式拒绝） | 本改造碰到这些文件时，先确认它已落地并重读。F007 已随它删除，C007 的握手同类已在它的重写里解决 |
-| C++ gRPC 迁移至 muduo HTTP/2 | gRPC 客户端模板、`node_connector.cpp`、`node.cpp` 的通道清理、CQ 轮询 | F010、F100、F006、F082、F011、F012/F022 的剩余部分、C008 **已移交给它**，作为迁移验收条件（见 `docs/design/grpc-muduo-transport.md` §10.1）。本改造**不改**这些点 |
+| C++ gRPC 迁移至 muduo HTTP/2 | gRPC 客户端模板、`node_connector.cpp`、`node.cpp` 的通道清理、CQ 轮询 | 原先移交的 ECS 资源寿命缺陷已在文件释放后由本会话补源码，见 §8；完整传输迁移、etcd 重连与 revision 恢复仍按独立设计实施 |
+
+2026-10-15 后续协调：ECS 任务单会话已释放其文件。本会话按分工收尾；并行好友会话的 Go/Java 好友逻辑、契约与局部生成不在本次修改范围。任何统一生成仍须先核对共享工作区，不能覆盖在途生成或手写守护段。
 
 ## 5. 交付与文档
 
@@ -113,13 +115,13 @@
 
 ### 静态证据和明确保留项
 
-各 owner 对自己范围做 diff 检查，并交叉只读复核背包、Timer/Anomaly、白名单和 SceneEntity。最终静态汇总见 PROGRESS；XML 解析只证明工程格式，不能代替编译。旧 `cpp/tests/scene_test` 已由正式 runner 排除，仍引用历史 API，本轮没有假装修好该废弃工程。
+各 owner 对自己范围做 diff 检查，并交叉只读复核背包、Timer/Anomaly、白名单和 SceneEntity。最终静态汇总见 PROGRESS；XML 解析只证明工程格式，不能代替编译。原废弃 `cpp/tests/scene_test` 的有效权限断言已迁入活跃测试，旧工程与 runner 废弃说明已删除，详见 §8。
 
-- C004 依任务单只记录业务决策：PlayerItemBlockList 没有生产写入口，本轮不新增 GM/持久化功能。
+- C004 已按负责人选择删除 `PlayerItemBlockList` 死接口及参数，沿用全服封禁；原业务失败测试改用真实全服入口。
 - C006 的 AOI 缺策略/压力/容量组件采用既定默认值，Npc 标签保留给未来生成入口。
 - 当时保留的 actor 必需派生初始化 sink 依赖已在后续补充中移除：创建流程直接调用 `ActorAttributeCalculatorSystem::InitializeOnCreate`，`InitializeActorCompsEvent` 仅通知，详见 [第 5 批补充回执](batch5-lifecycle-types.md#10-actor-必需派生初始化补充回执2026-10-15)。
 - 内部 SkillContext/Buff 尚以 uint64 本地句柄和 0 表示空，保留 EcsContext 的 0 号 actor 退役兼容；不再用于对外 actor 编号。ActorNetIds 是本进程运行期身份，不承诺进程重启后永久唯一，不落库。
-- gRPC CQ/Stub、RpcClientPtr/MuduoGrpcChannelPtr 等资源组件的既有例外继续交 `grpc-muduo-transport.md §10.1` 的迁移会话，本批未改传输销毁协议。
+- gRPC CQ/Stub、RpcClientPtr/MuduoGrpcChannelPtr 等存量资源组件仍不作为新增业务组件范式。官方 CQ 的调用保活、关闭排空和稳定流缓冲已补源码，须重生成后运行验收；完整迁移继续按独立设计。
 - 审计文档 HEAD 状态仍由审查方更新，未把源码落盘等同于全仓 110 条全部关闭。
 
 ### 恢复验证时的顺序（当前未执行）
@@ -131,4 +133,22 @@
 
 ### Java 状态
 
-现有版本 0.1.0-SNAPSHOT，无新增实现版本。Java 不用 EnTT，节点/场景使用领域对象，SceneWorld 已用独立 nextId 给 actor 发不透明号；本轮无需复制 C++ 存储机制。背包采用入包序/guid 比较器，本次与其正常操作顺序对齐；已有发号原子性、零堆、旧档 seq=0 补章和存档排列差异仍保留，不宣称全部两版背包一致。客户端字段编号/类型/消息号未改，proto 仅补 actor 语义注释；Java ContractSync 与两版生成/构建/测试均未执行。已在 Java PARITY.md 登记本轮范围与待验收项。
+现有版本 0.1.0-SNAPSHOT，无新增实现版本。Java 不用 EnTT，节点/场景使用领域对象，无需复制 C++ 存储机制。后续收尾补齐本任务列出的背包发号原子性、零堆、旧档补章及存档顺序，Java 比较器补为完整 uint64 无符号顺序，actor 发号失败在移除旧实例前拒入并补偿。客户端字段编号/类型/消息号未改；Java ContractSync 与两版生成/构建/测试均未执行。详见 §8 与 Java PARITY.md。
+
+## 8. 全部源码收尾补充（2026-10-15，仍暂缓构建）
+
+本节覆盖 §7 当时列出的源码待办，历史任务单中的“待拍板”“交其他会话”以本节后续处理为准。源码完成与运行验收分开记录，不能把静态审读称为测试通过。
+
+| 范围 | 本次收尾 |
+|---|---|
+| C004 | 删除单人物品封禁结构、服务参数及全部调用点；任务领奖、装备退宝石等拒绝与恢复断言保留，使用全服封禁入口 |
+| 背包事务与两版差异 | 先完成淘汰规划并铸齐 ID，在候选 ItemStore 与候选布局中合堆、初始化和放置，成功后一次发布及记流水；失败不改原包/槽位/回执。三种布局 Clone 保留完整动态行为，不引入领域依赖；成功写入后原实例借用失效。扣空当场释放，加载跳过零堆；每包先扫最大序号再补零章；固定包与动态包按包及槽位顺序写出 |
+| actor 必需数据 | `DerivedAttributesComp`、`MoveSpeedComp`、`CombatStateFlagsComp` 在加载/创建流程直接计算，首个通知前就绪；不依赖业务 sink，不预挂任何按需状态，详见第 5 批 §10 |
+| 场景权限与创建确认 | 公共场景允许合法身份，私有场景按 creators 的键判断；会话、归属和离场操作之前预检，通知后再验原 actor 所有权与目标权限。Go 创建 RPC 必须返回请求对应的非空 SceneInfo，空/零/错号走现有补偿，重平衡保留原映射 |
+| 旧测试清理 | 迁移 creator_ids 的有效权限断言并补通知重入回归；删除独立旧 scene_test 的源码与工程四文件及 runner 废弃说明，不修改其他测试工程 GUID |
+| 传输组件寿命 | 缺 CQ/stub/合法节点时异步失败一次；选点跳过无传输及关闭中的节点；入站握手类型和发现前缀/JSON 类型先校验。流的读写缓冲归稳定调用对象；关闭先取消在途调用、处理全部 tag 与本地回调，再销毁节点实体/CQ 或清池；回调重入也纳入排空门槛 |
+| Java | `SceneWorld` 在移除同会话旧实例之前处理发号异常/零号并释放本次归属；`BagItem.ACQUIRE_ORDER` 对序号与 guid 使用无符号比较。原有领域模型无需复制 EnTT 机制 |
+
+新增/强化测试源码已登记在现有工程：背包原子性与还原 11 例、全服封禁行为、私有场景/初始化与通知重入、官方 gRPC 真实入口及 CQ 排空 9 例、Go 创建应答与重平衡补偿、Java actor 拒入与无符号比较。传输门槛覆盖回调退栈、READ 缓冲借用及缺 runtime 的本地失败；后者由 loop 线程计数保护，不能依赖一个有效 ECS owner。修复前失败原因记录在相应测试和批次补充回执，**均未实际运行本轮红/绿**。
+
+当前剩余的是统一生成、串行重编、受影响测试及本地冒烟，负责人“先别编译”的限制尚未解除。完整 gRPC→muduo 迁移、etcd 自动重连/revision/compact 恢复与 LeaseRevoke 发送策略属于独立传输任务，不列为本任务已实现。审计 110 条的最终验收状态须由审查方结合运行证据更新。

@@ -154,24 +154,28 @@ void RedisManager::SendAuth()
 		[this](hiredis::Hiredis *me, redisReply *reply)
 		{ OnAuthReply(me, reply); },
 		"AUTH %b", options_.password.data(), options_.password.size());
-	if (ret != REDIS_OK)
+	if (ret == REDIS_OK)
 	{
-		// 连接回调里这条连接必然可用(hiredis 回调前已置 REDIS_CONNECTED,不会处在 DISCONNECTING / FREEING),
-		// 所以只在命令格式化失败或内存不足时发生。不移交,截止定时器到点重建。
-		LOG_ERROR << "Redis AUTH could not be sent to " << redisAddr_.toIpPort() << " (ret=" << ret
-				  << ") -- zone Redis stays unavailable, retrying every " << options_.reconnectIntervalSec
-				  << "s (metric=zone_redis_auth_failed)";
+		authAwaitingReply_ = true;
+		return;
 	}
+	// 连接回调里这条连接必然可用(hiredis 回调前已置 REDIS_CONNECTED,不会处在 DISCONNECTING / FREEING),
+	// 所以只在命令格式化失败或内存不足时发生。不移交,截止定时器到点重建。
+	LOG_ERROR << "Redis AUTH could not be sent to " << redisAddr_.toIpPort() << " (ret=" << ret
+			  << ") -- zone Redis stays unavailable, retrying every " << options_.reconnectIntervalSec
+			  << "s (metric=zone_redis_auth_failed)";
 }
 
 void RedisManager::OnAuthReply(hiredis::Hiredis *me, const redisReply *reply)
 {
-	// 空应答:这条连接正在释放或已断开,后续由断线回调 / 重连定时器负责。
+	// 空应答:这条连接正在释放或已断开,后续由断线回调 / 重连定时器负责;不移交,也不清 authAwaitingReply_ ——
+	// 应答前被服务端断开的握手由截止时的 DoReconnect 按 AUTH 超时报告。
 	// me 不是当前握手连接:被替换掉的旧握手连接的迟到回调。两种情况都不处理。
 	if (reply == nullptr || me != handshakeRedis_.get())
 	{
 		return;
 	}
+	authAwaitingReply_ = false; // 有了应答,这次握手的结局在下面当场报告,截止时不再按超时报
 	if (reply->type == REDIS_REPLY_STATUS)
 	{
 		LOG_INFO << "Redis AUTH ok to " << redisAddr_.toIpPort();
@@ -223,6 +227,16 @@ void RedisManager::CancelReconnectTimer()
 
 void RedisManager::DoReconnect()
 {
+	if (authAwaitingReply_)
+	{
+		// AUTH 已发出,截止前没有任何应答:服务端卡住、中间代理只接受连接不转发,或应答前连接就被关了
+		// (后者此前已有一条 "Redis disconnected" ERROR)。与被拒同样是握手失败、zone Redis 同样不可用,
+		// 必须带 metric 打 ERROR,不能只剩下面那条 INFO(按 metric 标记的告警会漏掉)。
+		LOG_ERROR << "Redis AUTH timed out on " << redisAddr_.toIpPort() << ": no reply within "
+				  << options_.reconnectIntervalSec << "s of connecting -- zone Redis stays unavailable, retrying every "
+				  << options_.reconnectIntervalSec << "s (metric=zone_redis_auth_failed)";
+		authAwaitingReply_ = false;
+	}
 	LOG_INFO << "Attempting Redis reconnect to " << redisAddr_.toIpPort();
 
 	// 只重建握手连接:建连失败、握手超时或 AUTH 被拒的旧握手连接在这里(回调栈外)销毁,
@@ -235,7 +249,8 @@ void RedisManager::DoReconnect()
 void RedisManager::ResetConnections()
 {
 	// 先拆握手连接(它的挂起 AUTH 以空应答回调,OnAuthReply 直接返回),再拆对业务可见的连接
-	// (挂起的业务命令以空应答回调,同改动前)。
+	// (挂起的业务命令以空应答回调,同改动前)。显式拆除不是握手失败,不报 AUTH 超时。
+	authAwaitingReply_ = false;
 	ReleaseConnection(handshakeRedis_);
 	ReleaseConnection(zoneRedis_);
 }

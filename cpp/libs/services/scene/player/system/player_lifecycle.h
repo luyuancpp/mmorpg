@@ -997,7 +997,9 @@ public:
 	// ctx.homeZoneId / ctx.ownerEpoch 非 0 时更新实体上的归属组件(重连 / 顶号复用实体的路径
 	// 靠这里拿到 Go 给的当前 epoch;首登路径 InitPlayerFromAllData 先挂零值组件再经这里赋值)。
 	// 最前面按实体自己的登录身份复核一次入场栅栏(设计 §5.4),拒绝时什么都不碰、计 bind_rejected。
-	static void EnterScene(const entt::entity player, const PlayerEnterContext& ctx);
+	// 只有真实入场及后置处理完成才返回 true;纯预检拒绝不改会话、归属或取消退出。
+	// stillOwnsEntry 可选:失败后是否仍由本次请求持有实体,供新建入口决定能否撤销实体。
+	[[nodiscard]] static bool EnterScene(entt::entity player, const PlayerEnterContext& ctx, bool* stillOwnsEntry = nullptr);
 	static void HandleBindPlayerToGateOK(entt::entity player);
 	static void RemovePlayerSession(Guid player_id);
 	static void RemovePlayerSession(entt::entity player);

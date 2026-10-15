@@ -42,6 +42,8 @@ public:
 
     // 当前水位(下一个会盖出的序号)。只读,给用例断言用。
     [[nodiscard]] uint64_t NextAcquireSeq() const { return nextAcquireSeq_; }
+    // 加载边界先抬到全包最大既有序号之后，零章条目随后由 Insert 按出现顺序补章。
+    void RaiseAcquireSeq(uint64_t sequence);
 
     // 存入整份实例并给 acquire_seq 盖章(0 则盖当前水位;非 0 则保留并抬高水位)。
     // guid 撞车时返回 nullptr,实例和入包水位都不改变。

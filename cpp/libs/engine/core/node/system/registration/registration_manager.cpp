@@ -177,6 +177,14 @@ void NodeHandshakeManager::OnNodeHandshake(
 	}
 
 	auto& peerNode = request.self_node();
+	// 生成的 IsTcpNodeType 包含可注册的全部服务，不等于拥有 RPC0 握手入口。
+	// 先拒绝纯 gRPC 服务，避免把只有 NodeInfo/RpcSession 的实体混进其出站通道池。
+	if (!IsHandshakeNodeType(peerNode.node_type()))
+	{
+		response.mutable_error_message()->set_id(kFailedToRegisterTheNode);
+		LOG_ERROR << "Invalid node type for registration: " << peerNode.node_type();
+		return;
+	}
 	response.mutable_peer_node()->CopyFrom(gNode->GetNodeInfo());
 	LOG_TRACE << "Node registration request: " << request.DebugString();
 
@@ -226,12 +234,6 @@ void NodeHandshakeManager::OnNodeHandshake(
 		return true;
 		};
 
-	if (!IsTcpNodeType(peerNode.node_type()))
-	{
-		response.mutable_error_message()->set_id(kFailedToRegisterTheNode);
-		LOG_ERROR << "Invalid node type for registration: " << peerNode.node_type();
-		return;
-	}
 	if (tryRegister(rpcConn, peerNode.node_type())) {
 		response.mutable_error_message()->set_id(kCommon_errorOK);
 		LOG_INFO << "Node registration succeeded: " << peerNode.DebugString();

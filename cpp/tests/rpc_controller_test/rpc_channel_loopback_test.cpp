@@ -3,9 +3,11 @@
 // 被锁定的契约:
 //   * 客户端:done 恰好一次,且永不在 CallMethod 返回之前执行(本地失败也经 queueInLoop 以 kNotSent 投递);
 //     回包按调用号 id 认领(同 message_id 并发、倒序回包各得其所);超时 / 断连 / 通道销毁 / Close 各以对应状态失败恰好一次;
-//     迟到、未知 id、id=0 的回包丢弃并计数;对端 RPC_ERROR 按错误码映射到 RpcStatus。
+//     迟到、未知 id、id=0 的回包丢弃并计数;对端 RPC_ERROR 按错误码映射到 RpcStatus;
+//     超时 / 排队失败的回调里可重入 CallMethod、可销毁 owner;channel 在 loop 之外释放时不碰 loop(唯一的「不调用」例外)。
 //   * 服务端:id≠0 的请求恰好回一帧(Empty / 0 字节 / handler 早返回也回),派发前的拒绝回显 id;SetFailed → HANDLER_FAILED;
-//     id=0 永不回包(同 zone 停服一次切换,没有旧规则兼容分支);RpcDoneCallback 的接管、重复完成、丢弃兜底与「连接已断」。
+//     id=0 永不回包(同 zone 停服一次切换,没有旧规则兼容分支);RpcDoneCallback 的接管、重复完成、丢弃兜底、
+//     「连接已断」与「在 loop 之外释放」。
 //
 // 三种端点,全部跑在同一个 EventLoopThread 上:
 //   * server_:原始 TcpServer。kRecorder 模式只记录收到的帧、由测试手工回包(观察被测客户端);
@@ -618,6 +620,15 @@ protected:
         // 顺序同 rpc_controller_test:先拆客户端(各自连接的唯一持有者 → forceClose → 对端 DOWN),
         // 等服务端每条连接都报过 DOWN,再在 loop 线程销毁 TcpServer(它的析构函数断言 in-loop)。
         RunInLoopAndWait([this] {
+            if (downProbeConnected_)
+            {
+                tlsEcs.dispatcher.sink<OnConnected2TcpServerEvent>().disconnect<&DownProbe::OnEvent>(downProbe_);
+                downProbeConnected_ = false;
+            }
+            if (ownerBox_)
+            {
+                ownerBox_->reset();   // 用例中途失败时 owner 还在盒子里:也在 loop 线程上销毁
+            }
             client_.reset();
             probe_.reset();
         });
@@ -728,6 +739,28 @@ protected:
         });
         ASSERT_TRUE(WaitUntil([this] { return client_->connected() && !serverConn_.expired(); }))
             << "RpcClient never connected";
+    }
+
+    // 开始记录 RpcClient 报 DOWN 那一刻已完成的调用数(TearDown 负责断开 sink,用例中途 ASSERT 返回也不会悬空)。
+    void WatchClientDown(std::shared_ptr<CallLog> log)
+    {
+        RunInLoopAndWait([this, log = std::move(log)]() mutable {
+            downProbe_.log = std::move(log);
+            downProbe_.completionsAtFirstDown.reset();
+            if (!downProbeConnected_)
+            {
+                tlsEcs.dispatcher.sink<OnConnected2TcpServerEvent>().connect<&DownProbe::OnEvent>(downProbe_);
+                downProbeConnected_ = true;
+            }
+        });
+    }
+
+    // 把 client_ 的唯一强引用移进一个盒子,回调里经 weak_ptr<盒子> 销毁它 == 业务在回调里摘掉节点实体。
+    // 回调只捕获盒子的 weak:不形成 client → channel → 在途 done → 盒子 → client 的环。
+    std::weak_ptr<RpcClientPtr> HandClientToOwnerBox()
+    {
+        RunInLoopAndWait([this] { ownerBox_ = std::make_shared<RpcClientPtr>(std::move(client_)); });
+        return ownerBox_;
     }
 
     // 只配 kChannel 模式:被测的是服务端。
@@ -847,6 +880,10 @@ protected:
     std::atomic<int> serverDowns_{0};
 
     RpcClientPtr client_;
+    // 以下三个只在 loop 线程上读写。
+    std::shared_ptr<RpcClientPtr> ownerBox_;
+    DownProbe downProbe_;
+    bool downProbeConnected_{false};
 
     std::unique_ptr<muduo::net::TcpClient> probe_;
     RpcChannelPtr probeChannel_;   // 只在 loop 线程上读写
@@ -1299,11 +1336,10 @@ TEST_F(RpcChannelLoopback, DisconnectFailsOutstandingCallsAfterTheDownCallbackRe
     ASSERT_NO_FATAL_FAILURE(ConnectRpcClient());
     auto& stats = GetRpcChannelStats();
     auto log = std::make_shared<CallLog>();
-    DownProbe probe{log, std::nullopt};
+    WatchClientDown(log);
     std::weak_ptr<RpcChannel> oldChannel;
 
     RunInLoopAndWait([&] {
-        tlsEcs.dispatcher.sink<OnConnected2TcpServerEvent>().connect<&DownProbe::OnEvent>(probe);
         oldChannel = client_->channel();
         for (uint32_t i = 1; i <= 3; ++i)
         {
@@ -1324,7 +1360,7 @@ TEST_F(RpcChannelLoopback, DisconnectFailsOutstandingCallsAfterTheDownCallbackRe
     std::optional<std::size_t> completionsAtDown;
     bool oldChannelExpired = false;
     RunInLoopAndWait([&] {
-        completionsAtDown = probe.completionsAtFirstDown;
+        completionsAtDown = downProbe_.completionsAtFirstDown;
         oldChannelExpired = oldChannel.expired();
     });
     ASSERT_TRUE(completionsAtDown.has_value()) << "RpcClient never reported DOWN";
@@ -1352,8 +1388,6 @@ TEST_F(RpcChannelLoopback, DisconnectFailsOutstandingCallsAfterTheDownCallbackRe
     RunInLoopAndWait([&] { SendFromServer(MakeResponseFrame(frame.id(), kProcessId, ProcessResponse(9))); });
     ASSERT_TRUE(log->WaitForCount(4));
     EXPECT_TRUE(log->Find("after_reconnect")->status.ok());
-
-    RunInLoopAndWait([&] { tlsEcs.dispatcher.sink<OnConnected2TcpServerEvent>().disconnect<&DownProbe::OnEvent>(probe); });
 }
 
 // 销毁最后一个 RpcClientPtr(节点摘除 / 同 uuid 重注册的形状):channel 立即析构(超时 tick 只持 weak),
@@ -1558,6 +1592,176 @@ TEST_F(RpcChannelLoopback, ReentrantCallMethodFromTimeoutDone)
     EXPECT_TRUE(entries[1].status.ok()) << entries[1].status.name();
 }
 
+// 超时扫描的回调里销毁 owner(业务在回调里摘掉节点实体):过期批次已整批摘出,同一批的其余调用照样恰好完成一次。
+// 生产上扫描由超时 tick 发起、tick 持有 self;这里由测试栈上的局部强引用扮演那个 self。
+// (RESPONSE / RPC_ERROR 的同步完成栈上不得销毁 owner —— 契约 (c),不测。)
+TEST_F(RpcChannelLoopback, TimeoutDoneMayDestroyTheOwnerWithoutLosingTheRestOfTheBatch)
+{
+    ASSERT_NO_FATAL_FAILURE(ConnectRpcClient());
+    auto log = std::make_shared<CallLog>();
+    const std::weak_ptr<RpcClientPtr> weakBox = HandClientToOwnerBox();
+
+    std::size_t completionsAfterSweep = 99;
+    bool ownerGoneAfterSweep = false;
+    std::weak_ptr<RpcChannel> weakChannel;
+    RunInLoopAndWait([&] {
+        const auto box = weakBox.lock();
+        const RpcChannelPtr channel = (box && *box) ? (*box)->channel() : RpcChannelPtr{};
+        if (!channel)
+        {
+            ADD_FAILURE() << "client has no channel";
+            return;
+        }
+        weakChannel = channel;
+        std::weak_ptr<RpcClient> weakClient = *box;
+        for (uint32_t i = 1; i <= 2; ++i)
+        {
+            (*box)->CallMethod(
+                kProcessId, ProcessRequest(i),
+                [log, weakBox, tag = "call" + std::to_string(i)](const RpcStatus& status, const MessagePtr& response)
+                {
+                    Completion completion;
+                    completion.tag = tag;
+                    completion.status = status;
+                    completion.hasResponse = response != nullptr;
+                    completion.callMethodReturned = true;
+                    log->Push(std::move(completion));
+                    if (const auto owner = weakBox.lock())
+                    {
+                        owner->reset();   // 第一次:销毁 RpcClient;第二次:空操作
+                    }
+                },
+                RpcCallOptions{kLongTimeout});
+        }
+        const auto t1 = RpcChannel::Clock::now();
+        channel->SweepTimeouts(t1 + kLongTimeout);
+        completionsAfterSweep = log->Count();
+        ownerGoneAfterSweep = weakClient.expired();
+    });
+    EXPECT_EQ(completionsAfterSweep, 2u) << "destroying the owner inside one timeout callback lost the rest of the batch";
+    EXPECT_TRUE(ownerGoneAfterSweep);
+    EXPECT_TRUE(weakChannel.expired()) << "the channel outlived its owner and the sweep";
+    for (const char* tag : {"call1", "call2"})
+    {
+        const auto entry = log->Find(tag);
+        ASSERT_TRUE(entry.has_value()) << tag;
+        EXPECT_EQ(entry->status.code(), RpcStatusCode::kTimeout) << tag << ": " << entry->status.name();
+        EXPECT_FALSE(entry->hasResponse) << tag;
+        EXPECT_EQ(log->CountOf(tag), 1u) << tag;
+    }
+    PumpLoop(3);
+    EXPECT_EQ(log->Count(), 2u) << "a timed-out call completed again after its owner was destroyed";
+}
+
+// 排队投递的失败(Close 的 kChannelClosed、本地 kNotSent)回调里重入 CallMethod 并销毁 owner:
+// 重入的调用照样恰好一次(通道已关闭 → kNotSent,仍经队列、不在当前回调里同步执行),销毁之后不再有任何回调。
+TEST_F(RpcChannelLoopback, QueuedFailureDoneMayReenterAndDestroyTheOwner)
+{
+    ASSERT_NO_FATAL_FAILURE(ConnectRpcClient());
+    auto log = std::make_shared<CallLog>();
+    const std::weak_ptr<RpcClientPtr> weakBox = HandClientToOwnerBox();
+    std::weak_ptr<RpcClient> weakClient;
+
+    std::size_t completionsAtClose = 99;
+    RunInLoopAndWait([&] {
+        const auto box = weakBox.lock();
+        if (!box || !*box)
+        {
+            ADD_FAILURE() << "owner box is empty";
+            return;
+        }
+        weakClient = *box;
+        (*box)->CallMethod(
+            kProcessId, ProcessRequest(1),
+            [log, weakBox, weakClient](const RpcStatus& status, const MessagePtr&)
+            {
+                Completion first;
+                first.tag = "first";
+                first.status = status;
+                first.callMethodReturned = true;
+                log->Push(std::move(first));
+                const auto client = weakClient.lock();
+                if (!client)
+                {
+                    return;
+                }
+                auto returned = std::make_shared<bool>(false);
+                client->CallMethod(
+                    kProcessId, ProcessRequest(2),
+                    [log, weakBox, returned](const RpcStatus& reentrantStatus, const MessagePtr&)
+                    {
+                        Completion second;
+                        second.tag = "second";
+                        second.status = reentrantStatus;
+                        second.callMethodReturned = *returned;
+                        log->Push(std::move(second));
+                        if (const auto owner = weakBox.lock())
+                        {
+                            owner->reset();   // 排队投递的回调栈上销毁 owner
+                        }
+                    },
+                    RpcCallOptions{kLongTimeout});
+                *returned = true;
+            },
+            RpcCallOptions{kLongTimeout});
+        (*box)->CloseChannel();
+        completionsAtClose = log->Count();
+    });
+    EXPECT_EQ(completionsAtClose, 0u) << "Close completed a call on its own stack";
+    ASSERT_TRUE(log->WaitForCount(2));
+
+    const auto entries = log->Entries();
+    ASSERT_EQ(entries.size(), 2u);
+    EXPECT_EQ(entries[0].tag, "first");
+    EXPECT_EQ(entries[0].status.code(), RpcStatusCode::kChannelClosed) << entries[0].status.name();
+    EXPECT_EQ(entries[1].tag, "second");
+    EXPECT_EQ(entries[1].status.code(), RpcStatusCode::kNotSent) << entries[1].status.name();
+    EXPECT_TRUE(entries[1].callMethodReturned) << "the re-entrant call completed inside its own CallMethod";
+    EXPECT_TRUE(WaitUntil([&] { return weakClient.expired(); })) << "destroying the owner from the queued callback failed";
+    EXPECT_TRUE(WaitUntil([this] { return serverDowns_.load() == serverUps_.load(); }))
+        << "the destroyed owner did not close its connection";
+    PumpLoop(3);
+    EXPECT_EQ(log->Count(), 2u);
+}
+
+// channel 在其 EventLoop 线程之外释放(关机收尾遗漏的形状,§6.4):不碰 loop、不排任何回调,
+// 在途调用的 done 随容器销毁而不调用(「恰好一次」的唯一例外),只计 dropped_without_loop。
+TEST_F(RpcChannelLoopback, ChannelReleasedOffItsLoopDropsCallsWithoutTouchingTheLoop)
+{
+    ASSERT_NO_FATAL_FAILURE(ConnectRpcClient());
+    const auto droppedBefore = Load(GetRpcChannelStats().droppedWithoutLoop);
+    auto log = std::make_shared<CallLog>();
+
+    RpcChannelPtr held;   // 测试线程持有最后一个强引用(生产代码不得这样做)
+    RunInLoopAndWait([&] {
+        Issue(*client_, log, "a", kProcessId, ProcessRequest(1));
+        Issue(*client_, log, "b", kProcessId, ProcessRequest(2));
+        held = client_->channel();
+        // ~RpcClient:连接 forceClose;它的 DOWN 回调只绑 weak_ptr<RpcClient>,lock 失败,channel 收不到 OnDisconnect。
+        client_.reset();
+    });
+    ASSERT_NE(held, nullptr);
+    PumpLoop(3);
+    std::size_t outstanding = 0;
+    RunInLoopAndWait([&] { outstanding = held->OutstandingCount(); });
+    EXPECT_EQ(outstanding, 2u);
+
+    // 超时 tick(只绑 weak)触发时会在 loop 线程上短暂 lock 住 channel;若恰在此刻放手,最后一个引用会在
+    // loop 线程上释放、走另一条路径。先把 loop 线程停在一个 functor 里,再在测试线程放手,保证析构确实发生在 loop 之外。
+    muduo::CountDownLatch loopParked(1);
+    muduo::CountDownLatch releaseLoop(1);
+    Loop().runInLoop([&] {
+        loopParked.countDown();
+        releaseLoop.wait();
+    });
+    loopParked.wait();
+    held.reset();   // 测试线程不是该 channel 的 loop 线程
+    releaseLoop.countDown();
+    PumpLoop(3);
+    EXPECT_EQ(log->Count(), 0u) << "a call completed although its channel died off the loop";
+    EXPECT_EQ(Load(GetRpcChannelStats().droppedWithoutLoop) - droppedBefore, 2u);
+}
+
 // ===========================================================================
 // 三、被测服务端(probe:原始帧 + 客户端侧 RpcChannel → 每连接 RpcChannel + 测试服务)
 // ===========================================================================
@@ -1724,13 +1928,16 @@ TEST_F(RpcChannelLoopback, AdoptedReplyReleasedWithoutRunRepliesReplyDroppedOnce
     EXPECT_EQ(first[0].message_id(), kPrepareId);
     EXPECT_EQ(first[0].error(), REPLY_DROPPED);
 
+    // 起点必须在释放副本之前取:释放即发帧,帧可能在测试线程再读 Count() 之前就已到达并被记录。
+    // 此刻第一道屏障的回包已到,之前的帧都已记录完,没有在途的帧。
+    const auto secondFrom = probeRecorder_.Count();
     std::size_t parked = 0;
     RunInLoopAndWait([&] {
         parked = service_.parked.size();
         service_.parked.clear();   // 在 loop 线程上释放全部副本
     });
     EXPECT_EQ(parked, 2u);
-    const auto second = FramesBeforeBarrier(probeRecorder_.Count(), kCraftedIdBase + 24);
+    const auto second = FramesBeforeBarrier(secondFrom, kCraftedIdBase + 24);
     ASSERT_EQ(second.size(), 1u) << "two copies of one reply must fall back only once: " << Describe(second);
     EXPECT_EQ(second[0].type(), RPC_ERROR);
     EXPECT_EQ(second[0].id(), kCraftedIdBase + 21);
@@ -1747,9 +1954,12 @@ TEST_F(RpcChannelLoopback, AdoptedReplyRunTwiceSendsOneFrame)
     RunInLoopAndWait([&] { SendFromProbe(MakeRequestFrame(kCraftedIdBase + 31, kPrepareId, PrepareBattleRequest{})); });
     ASSERT_TRUE(WaitUntil([this] { return service_.parked.size() == 1; }));
 
-    const auto runTwiceBefore = Load(GetRpcChannelStats().replyRunTwice);
+    auto& stats = GetRpcChannelStats();
+    const auto runTwiceBefore = Load(stats.replyRunTwice);
+    const auto handlerFailedBefore = Load(stats.handlerFailed);
     bool completedBefore = true;
     bool completedAfter = false;
+    uint64_t runTwiceAfterSecondRun = 0;
     RunInLoopAndWait([&] {
         const RpcDoneCallback reply = service_.parked.front();
         service_.parked.clear();
@@ -1758,12 +1968,15 @@ TEST_F(RpcChannelLoopback, AdoptedReplyRunTwiceSendsOneFrame)
         completedBefore = reply.IsCompleted();
         reply.Run();
         reply.Run();    // 第二次:吞掉并计数
-        reply.Fail();   // 完成之后的 Fail 同样吞掉
+        runTwiceAfterSecondRun = Load(stats.replyRunTwice);
+        reply.Fail();   // 完成之后的 Fail 同样吞掉,也不改写已发出的结果
         completedAfter = reply.IsCompleted();
     });
     EXPECT_FALSE(completedBefore);
     EXPECT_TRUE(completedAfter);
-    EXPECT_EQ(Load(GetRpcChannelStats().replyRunTwice) - runTwiceBefore, 2u);
+    EXPECT_EQ(runTwiceAfterSecondRun - runTwiceBefore, 1u) << "the second Run must be swallowed and counted once";
+    EXPECT_EQ(Load(stats.replyRunTwice) - runTwiceBefore, 2u) << "a Fail after completion is swallowed too";
+    EXPECT_EQ(Load(stats.handlerFailed) - handlerFailedBefore, 0u) << "a swallowed Fail must not count as a handler failure";
 
     const auto frames = FramesBeforeBarrier(from, kCraftedIdBase + 32);
     ASSERT_EQ(frames.size(), 1u) << Describe(frames);
@@ -1817,6 +2030,34 @@ TEST_F(RpcChannelLoopback, RunAfterTheCallerChannelIsGoneIsHarmless)
     }
 }
 
+// 接管的回复在 loop 线程之外释放最后一个副本(~EventLoop 丢弃闭包、thread_local 析构等任意栈的形状):
+// 不发 REPLY_DROPPED、不碰 loop,只计 reply_channel_gone。连接仍在,所以「没有回包」用屏障证明。
+TEST_F(RpcChannelLoopback, AdoptedReplyReleasedOffTheLoopSendsNothing)
+{
+    serverMode_ = ServerMode::kChannel;
+    ASSERT_NO_FATAL_FAILURE(ConnectProbe());
+    const auto from = probeRecorder_.Count();
+
+    RunInLoopAndWait([&] { SendFromProbe(MakeRequestFrame(kCraftedIdBase + 61, kPrepareId, PrepareBattleRequest{})); });
+    ASSERT_TRUE(WaitUntil([this] { return service_.parked.size() == 1; }));
+
+    auto& stats = GetRpcChannelStats();
+    const auto goneBefore = Load(stats.replyChannelGone);
+    const auto abandonedBefore = Load(stats.replyAbandoned);
+    std::optional<RpcDoneCallback> held;   // RpcDoneCallback 没有默认构造,用 optional 把副本带出 loop 线程
+    RunInLoopAndWait([&] {
+        held.emplace(service_.parked.front());
+        service_.parked.clear();
+    });
+    ASSERT_TRUE(held.has_value());
+    held.reset();   // 测试线程:最后一个副本在 loop 之外析构
+
+    EXPECT_EQ(Load(stats.replyChannelGone) - goneBefore, 1u);
+    EXPECT_EQ(Load(stats.replyAbandoned) - abandonedBefore, 0u) << "REPLY_DROPPED must only be sent from the loop thread";
+    const auto frames = FramesBeforeBarrier(from, kCraftedIdBase + 62);
+    EXPECT_TRUE(frames.empty()) << "a reply went out from a destructor off the loop: " << Describe(frames);
+}
+
 // 接管(Adopt)的共享状态只持 weak_ptr<RpcChannel>:派发返回后,连接的引用计数必须回到派发前(AGENTS §11.7)。
 TEST_F(RpcChannelLoopback, AdoptKeepsNoStrongConnectionReference)
 {
@@ -1863,6 +2104,25 @@ TEST(RpcChannelDeathTest, PublicEntryOffTheLoopThreadIsFatal)
             channel->OnDisconnect();   // 测试线程不是 loop 线程
         },
         "");
+}
+
+namespace
+{
+// 不是框架交给本次派发的那个 done。
+class ForeignClosure final : public ::google::protobuf::Closure
+{
+public:
+    void Run() override {}
+};
+} // namespace
+
+// Adopt 只接受框架交给本次派发的 done:nullptr 或别的 Closure 必须当场 LOG_FATAL(Release 下同样),
+// 而不是 static_cast 后在延后完成时写坏内存。
+TEST(RpcDoneCallbackDeathTest, AdoptRejectsNullAndForeignClosures)
+{
+    EXPECT_DEATH({ (void)RpcDoneCallback::Adopt(nullptr); }, "");
+    ForeignClosure foreign;
+    EXPECT_DEATH({ (void)RpcDoneCallback::Adopt(&foreign); }, "");
 }
 
 #endif // GTEST_HAS_DEATH_TEST

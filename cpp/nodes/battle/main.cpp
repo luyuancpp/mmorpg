@@ -2,6 +2,7 @@
 #include "muduo/base/Logging.h"
 
 #include "node/system/node/node_entry.h"
+#include "node/system/etcd/etcd_transport.h"
 #include "node/system/node/client_endpoint.h"
 #include "infra/agones/agones_client_endpoint_source.h"
 #include "infra/agones/agones_gameserver_lifecycle.h"
@@ -252,6 +253,8 @@ namespace
 
 int main(int argc, char *argv[])
 {
+    // etcd 传输(NODE_ETCD_TRANSPORT=grpc 默认 / muduo_h2)必须在 Node 构造前装好:EtcdService::Init 在 Node 构造函数里取工厂。
+    etcd_transport::InstallFromEnv();
     return node::entry::RunSimpleNodeMainWithOwnedContext<BattleHandler, BattleRuntimeContext, BattleNodeHooks>(
         common::base::BattleNodeService,
         // battle 无出站拨号:入站是 match 的 gRPC + 客户端直连 TCP,出站除直连外全走 Kafka producer,

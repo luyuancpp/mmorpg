@@ -21,9 +21,11 @@
 #include "proto/common/component/asset_op_ledger_comp.pb.h"
 #include "proto/common/component/battle_settlement_ledger_comp.pb.h"
 #include "proto/common/component/player_comp.pb.h"  // PlayerProfileComp
+#include "proto/common/component/player_network_comp.pb.h"
 #include "proto/common/component/player_skill_comp.pb.h"
 #include "proto/common/database/mysql_database_table.pb.h"
 #include "proto/scene/player_state_attribute_sync.pb.h"
+#include "proto/scene/scene_info.pb.h"
 #include "modules/mission/mission_events.h"
 #include "services/scene/player/comp/last_persisted_snapshot_comp.h"
 #include "services/scene/player/system/player_data_loader.h"
@@ -50,6 +52,78 @@
 #include "thread_context/ecs_context.h"
 
 namespace {
+
+// 真实加载成功必须落到合法场景;typed 句柄只在本作用域内持有并清理。
+struct ScopedInitializationScene
+{
+    SceneEntity scene{tlsEcs.sceneRegistry.create()};
+    ScopedInitializationScene()
+    {
+        tlsEcs.sceneRegistry.emplace<SceneInfoComp>(scene).set_scene_id(710001);
+    }
+    ~ScopedInitializationScene()
+    {
+        if (tlsEcs.sceneRegistry.valid(scene)) tlsEcs.sceneRegistry.destroy(scene);
+    }
+    PlayerEnterContext Context() const
+    {
+        PlayerEnterContext context;
+        context.enterInfo.set_scene_id(710001);
+        return context;
+    }
+};
+
+struct RevokeEntryDuringInitialization
+{
+    SceneEntity scene{entt::null};
+    entt::entity player{entt::null};
+    uint64_t actorNetId{0};
+    void OnPlayer(const InitializePlayerCompsEvent& event)
+    {
+        player = event.player;
+        actorNetId = actor_net_id::Of(tlsEcs.actorRegistry, player);
+        (*tlsEcs.sceneRegistry.get<SceneInfoComp>(scene).mutable_creators())[999999] = false;
+    }
+};
+
+struct TakeOverInitialization
+{
+    Guid playerId{0};
+    std::size_t phase{0};
+    bool replaceIndex{false};
+    SessionId initialSession{710005};
+    SessionId newSession{710006};
+    entt::entity player{entt::null};
+    entt::entity owner{entt::null};
+    ~TakeOverInitialization()
+    {
+        const auto found = tlsEcs.playerList.find(playerId);
+        if (found != tlsEcs.playerList.end() && (found->second == player || found->second == owner))
+            tlsEcs.playerList.erase(found);
+        PlayerLifecycleSystem::EraseSessionMappingIfOwned(initialSession, playerId);
+        PlayerLifecycleSystem::EraseSessionMappingIfOwned(newSession, playerId);
+    }
+    void OnRegister(const RegisterPlayerEvent& event) { Apply(0, event.player); }
+    void OnActor(const InitializeActorCompsEvent& event) { Apply(1, event.actor); }
+    void OnPlayer(const InitializePlayerCompsEvent& event) { Apply(2, event.player); }
+    void Apply(std::size_t notification, entt::entity actor)
+    {
+        if (notification != phase) return;
+        player = actor;
+        owner = actor;
+        if (replaceIndex)
+        {
+            owner = tlsEcs.actorRegistry.create();
+            EXPECT_NE(0, actor_net_id::Assign(tlsEcs.actorRegistry, owner));
+            tlsEcs.actorRegistry.emplace<PlayerGuidComp>(owner, playerId);
+            tlsEcs.playerList.insert_or_assign(playerId, owner);
+        }
+        auto& snapshot = tlsEcs.actorRegistry.get_or_emplace<PlayerSessionSnapshotComp>(owner);
+        snapshot.set_player_id(playerId);
+        snapshot.set_gate_session_id(newSession);
+        SessionMap().insert_or_assign(newSession, playerId);
+    }
+};
 
 // 可选功能未使用时应保持未激活,显式初始化不能把这些空表和相位预挂给每个玩家。
 // 不断言 AttributeDirtyFlagsComp 缺席:真实 Unmarshal 的 HP/MP 重算可以合法标脏。
@@ -151,6 +225,8 @@ public:
             tlsEcs.playerList.erase(mapped);
         for (const auto actor : {interrupted, replacement, returned})
             if (tlsEcs.actorRegistry.valid(actor)) tlsEcs.actorRegistry.destroy(actor);
+        PlayerLifecycleSystem::EraseSessionMappingIfOwned(initialSession, playerId_);
+        PlayerLifecycleSystem::EraseSessionMappingIfOwned(replacementSession, playerId_);
     }
 
     void OnRegister(const RegisterPlayerEvent& event) { OnNotification(0, event.player); }
@@ -162,6 +238,8 @@ public:
     entt::entity replacement{entt::null};
     entt::entity returned{entt::null};
     uint64_t previousNetId{0};
+    SessionId initialSession{0};
+    SessionId replacementSession{0};
 
 private:
     void OnNotification(std::size_t phase, entt::entity actor)
@@ -177,6 +255,10 @@ private:
         replacement = tlsEcs.actorRegistry.create();
         EXPECT_NE(0, actor_net_id::Assign(tlsEcs.actorRegistry, replacement));
         tlsEcs.actorRegistry.emplace<PlayerGuidComp>(replacement, playerId_);
+        auto& snapshot = tlsEcs.actorRegistry.emplace<PlayerSessionSnapshotComp>(replacement);
+        snapshot.set_player_id(playerId_);
+        snapshot.set_gate_session_id(replacementSession);
+        SessionMap().insert_or_assign(replacementSession, playerId_);
         tlsEcs.playerList.insert_or_assign(playerId_, replacement);
     }
 
@@ -728,6 +810,7 @@ TEST_F(PlayerFeaturePersistenceTest, SaveWithoutGuidIsRefused)
 // 修复前默认技能与 actor 投影依赖业务 sink;不注册它们时技能为空、MoveSpeed/Flags 缺失。
 TEST_F(PlayerFeaturePersistenceTest, NewPlayerInitializesDefaultSkillsAndMissionScopeWithoutPlayerEventSinks)
 {
+    const ScopedInitializationScene target;
     SkillTableManager::Instance().Load();
     uint32_t classId = 0;
     uint32_t defaultSkillId = 0;
@@ -762,7 +845,7 @@ TEST_F(PlayerFeaturePersistenceTest, NewPlayerInitializesDefaultSkillsAndMission
         .connect<&InitializationReadinessObserver::OnActor>(observer);
     const entt::scoped_connection playerConnection = tlsEcs.dispatcher.sink<InitializePlayerCompsEvent>()
         .connect<&InitializationReadinessObserver::OnPlayer>(observer);
-    const auto created = PlayerLifecycleSystem::InitPlayerFromAllData(data, PlayerEnterContext{});
+    const auto created = PlayerLifecycleSystem::InitPlayerFromAllData(data, target.Context());
     PlayerMapCleanup mapCleanup{kPlayerId, created};
     if (created != entt::null) players.push_back(created);
 
@@ -794,6 +877,7 @@ TEST_F(PlayerFeaturePersistenceTest, NewPlayerInitializesDefaultSkillsAndMission
 // 修复前没有 actor 业务 sink 时缺这两个组件;只改首登分支同样无法通过本例。
 TEST_F(PlayerFeaturePersistenceTest, RegisteredPlayerInitializesActorProjectionsWithoutBusinessEventSinks)
 {
+    const ScopedInitializationScene target;
     ASSERT_FALSE(tlsEcs.playerList.contains(kPlayerId));
     ASSERT_FALSE(tlsGuidSegmentRegistry.Get(GuidKind::kSnapshot).IsEnabled());
     const auto& classes = ClassTableManager::Instance().FindAll();
@@ -814,7 +898,7 @@ TEST_F(PlayerFeaturePersistenceTest, RegisteredPlayerInitializesActorProjections
         .connect<&InitializationReadinessObserver::OnActor>(observer);
     const entt::scoped_connection playerConnection = tlsEcs.dispatcher.sink<InitializePlayerCompsEvent>()
         .connect<&InitializationReadinessObserver::OnPlayer>(observer);
-    const auto created = PlayerLifecycleSystem::InitPlayerFromAllData(data, PlayerEnterContext{});
+    const auto created = PlayerLifecycleSystem::InitPlayerFromAllData(data, target.Context());
     PlayerMapCleanup mapCleanup{kPlayerId, created};
     if (created != entt::null) players.push_back(created);
 
@@ -945,15 +1029,114 @@ TEST_F(PlayerFeaturePersistenceTest, ActorCreationRejectsNullAndStaleWithoutChan
     ExpectLazyActorStateAbsent(replacement);
 }
 
+TEST_F(PlayerFeaturePersistenceTest, InitRejectsMissingOrRestrictedDestinationWithoutPublishingPlayerOrSession)
+{
+    const ScopedInitializationScene target;
+    for (const bool restricted : {false, true})
+    {
+        SCOPED_TRACE(restricted);
+        auto context = target.Context();
+        if (restricted)
+            (*tlsEcs.sceneRegistry.get<SceneInfoComp>(target.scene).mutable_creators())[kPlayerId + 1] = false;
+        else
+            context.enterInfo.set_scene_id(710002);
+        constexpr SessionId session = 710005;
+        context.enterInfo.set_session_id(session);
+        SessionMap().insert_or_assign(session, kPlayerId);
+        PlayerAllData data;
+        data.mutable_player_database_data()->set_player_id(kPlayerId);
+        const auto aliveBefore = tlsEcs.actorRegistry.storage<entt::entity>().free_list();
+
+        EXPECT_TRUE(PlayerLifecycleSystem::InitPlayerFromAllData(data, context) == entt::null);
+
+        EXPECT_EQ(aliveBefore, tlsEcs.actorRegistry.storage<entt::entity>().free_list());
+        EXPECT_FALSE(tlsEcs.playerList.contains(kPlayerId));
+        EXPECT_FALSE(SessionMap().contains(session));
+        ExpectNoMissionEvents();
+    }
+}
+
+TEST_F(PlayerFeaturePersistenceTest, InitRevokedAfterNotificationsCleansOnlyItsActorAndSession)
+{
+    const ScopedInitializationScene target;
+    auto context = target.Context();
+    constexpr SessionId session = 710005;
+    context.enterInfo.set_session_id(session);
+    SessionMap().insert_or_assign(session, kPlayerId);
+    PlayerAllData data;
+    data.mutable_player_database_data()->set_player_id(kPlayerId);
+    data.mutable_player_database_data()->mutable_uint64_pb_component()->set_registration_timestamp(1);
+    RevokeEntryDuringInitialization observer;
+    observer.scene = target.scene;
+    const entt::scoped_connection connection = tlsEcs.dispatcher.sink<InitializePlayerCompsEvent>()
+        .connect<&RevokeEntryDuringInitialization::OnPlayer>(observer);
+    const auto aliveBefore = tlsEcs.actorRegistry.storage<entt::entity>().free_list();
+
+    EXPECT_TRUE(PlayerLifecycleSystem::InitPlayerFromAllData(data, context) == entt::null);
+
+    ASSERT_NE(0, observer.actorNetId) << "必须先实际创建并通知,再在入场复核时拒绝";
+    EXPECT_FALSE(tlsEcs.actorRegistry.valid(observer.player));
+    EXPECT_TRUE(actor_net_id::Resolve(tlsEcs.actorRegistry, observer.actorNetId) == entt::null);
+    EXPECT_EQ(aliveBefore, tlsEcs.actorRegistry.storage<entt::entity>().free_list());
+    EXPECT_FALSE(tlsEcs.playerList.contains(kPlayerId));
+    EXPECT_FALSE(SessionMap().contains(session));
+    ExpectNoMissionEvents();
+}
+
+TEST_F(PlayerFeaturePersistenceTest, InitializationNotificationIndexOrSessionTakeoverPreservesNewOwner)
+{
+    SkillTableManager::Instance().Load();
+    ASSERT_FALSE(tlsGuidSegmentRegistry.Get(GuidKind::kSnapshot).IsEnabled());
+    for (std::size_t phase = 0; phase < 3; ++phase)
+    {
+        for (const bool replaceIndex : {false, true})
+        {
+            SCOPED_TRACE(testing::Message() << "phase=" << phase << " replaceIndex=" << replaceIndex);
+            const ScopedInitializationScene target;
+            TakeOverInitialization observer;
+            observer.playerId = kPlayerId;
+            observer.phase = phase;
+            observer.replaceIndex = replaceIndex;
+            const entt::scoped_connection registerConnection = tlsEcs.dispatcher.sink<RegisterPlayerEvent>()
+                .connect<&TakeOverInitialization::OnRegister>(observer);
+            const entt::scoped_connection actorConnection = tlsEcs.dispatcher.sink<InitializeActorCompsEvent>()
+                .connect<&TakeOverInitialization::OnActor>(observer);
+            const entt::scoped_connection playerConnection = tlsEcs.dispatcher.sink<InitializePlayerCompsEvent>()
+                .connect<&TakeOverInitialization::OnPlayer>(observer);
+            auto context = target.Context();
+            context.enterInfo.set_session_id(observer.initialSession);
+            SessionMap().insert_or_assign(observer.initialSession, kPlayerId);
+            PlayerAllData data;
+            data.mutable_player_database_data()->set_player_id(kPlayerId);
+
+            const auto created = PlayerLifecycleSystem::InitPlayerFromAllData(data, context);
+            if (observer.player != entt::null) players.push_back(observer.player);
+            if (observer.owner != entt::null) players.push_back(observer.owner);
+            if (created != entt::null) players.push_back(created);
+
+            EXPECT_TRUE(created == entt::null);
+            ASSERT_TRUE(tlsEcs.actorRegistry.valid(observer.player));
+            ASSERT_TRUE(tlsEcs.actorRegistry.valid(observer.owner));
+            EXPECT_EQ(observer.owner, tlsEcs.GetPlayer(kPlayerId));
+            EXPECT_EQ(observer.newSession,
+                      tlsEcs.actorRegistry.get<PlayerSessionSnapshotComp>(observer.owner).gate_session_id());
+            EXPECT_EQ(kPlayerId, SessionMap().at(observer.newSession));
+            EXPECT_FALSE(SessionMap().contains(observer.initialSession));
+            EXPECT_FALSE((tlsEcs.actorRegistry.any_of<SceneEntityComp, PlayerEnterGameStateComp>(observer.player)));
+        }
+    }
+}
+
 TEST_F(PlayerFeaturePersistenceTest, InitFromAllDataRejectsUnallocatedActorNodeWithoutPublishingPlayer)
 {
+    const ScopedInitializationScene target;
     ASSERT_FALSE(tlsEcs.playerList.contains(kPlayerId));
     const auto aliveBefore = tlsEcs.actorRegistry.storage<entt::entity>().free_list();
     PlayerAllData data;
     data.mutable_player_database_data()->set_player_id(kPlayerId);
     tlsIdGeneratorManager.SetNodeId(0);
 
-    const auto created = PlayerLifecycleSystem::InitPlayerFromAllData(data, PlayerEnterContext{});
+    const auto created = PlayerLifecycleSystem::InitPlayerFromAllData(data, target.Context());
 
     EXPECT_TRUE(created == entt::null);
     EXPECT_FALSE(tlsEcs.playerList.contains(kPlayerId));
@@ -973,7 +1156,13 @@ TEST_F(PlayerFeaturePersistenceTest, InitializationStopsAfterEachNotificationDes
             ASSERT_FALSE(tlsEcs.playerList.contains(kPlayerId));
             const auto aliveBefore = tlsEcs.actorRegistry.storage<entt::entity>().free_list();
             {
+                const ScopedInitializationScene target;
                 InitializationInterruption observer(kPlayerId, phase, replace);
+                observer.initialSession = 710005;
+                observer.replacementSession = 710006;
+                auto context = target.Context();
+                context.enterInfo.set_session_id(observer.initialSession);
+                SessionMap().insert_or_assign(observer.initialSession, kPlayerId);
                 // 连接先于 observer 析构,ASSERT 提前退出也不会把裸宿主留在 dispatcher 中。
                 entt::scoped_connection registerConnection = tlsEcs.dispatcher.sink<RegisterPlayerEvent>()
                     .connect<&InitializationInterruption::OnRegister>(observer);
@@ -986,12 +1175,13 @@ TEST_F(PlayerFeaturePersistenceTest, InitializationStopsAfterEachNotificationDes
                 database->set_player_id(kPlayerId);
                 database->mutable_uint64_pb_component()->set_registration_timestamp(0);
 
-                observer.returned = PlayerLifecycleSystem::InitPlayerFromAllData(data, PlayerEnterContext{});
+                observer.returned = PlayerLifecycleSystem::InitPlayerFromAllData(data, context);
 
                 EXPECT_TRUE(observer.returned == entt::null) << "通知销毁本次实体后必须中止初始化";
                 EXPECT_FALSE(tlsEcs.actorRegistry.valid(observer.interrupted));
                 ASSERT_NE(0, observer.previousNetId) << "必须进入真实初始化通知后再销毁";
                 EXPECT_TRUE(actor_net_id::Resolve(tlsEcs.actorRegistry, observer.previousNetId) == entt::null);
+                EXPECT_FALSE(SessionMap().contains(observer.initialSession)) << "中止后不能留下旧预登记会话";
                 for (std::size_t notified = 0; notified < observer.notifications.size(); ++notified)
                     EXPECT_EQ(notified <= phase ? 1u : 0u, observer.notifications[notified])
                         << "中止后不得继续派发后续初始化通知";
@@ -1006,6 +1196,7 @@ TEST_F(PlayerFeaturePersistenceTest, InitializationStopsAfterEachNotificationDes
                     ASSERT_NE(nullptr, guid);
                     EXPECT_EQ(kPlayerId, guid->value);
                     EXPECT_NE(0, actor_net_id::Of(tlsEcs.actorRegistry, observer.replacement));
+                    EXPECT_EQ(kPlayerId, SessionMap().at(observer.replacementSession)) << "保留回调新建替身的会话";
                     EXPECT_FALSE((tlsEcs.actorRegistry.any_of<Player, ViewRadius, PlayerUint64Comp>(observer.replacement)))
                         << "旧初始化不得继续向替身挂组件";
                 }

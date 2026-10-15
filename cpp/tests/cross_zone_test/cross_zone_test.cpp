@@ -1,5 +1,9 @@
 #include <gtest/gtest.h>
 #include <thread>
+#include "hexagons_grid.h"
+#include "grpc_client/grpc_init_client.h"
+#include <grpcpp/create_channel.h>
+#include <grpcpp/security/credentials.h>
 #include "actor/actor_net_id.h"
 #include "core/system/id_generator.h"
 #include "engine/core/type_define/player_guid_comp.h"
@@ -15,6 +19,10 @@
 #include "node/system/discovery/service_node_snapshot.h"
 #include "modules/scene/scene_events.h"
 #include "spatial/system/aoi.h"
+#include "spatial/comp/grid_comp.h"
+#include "player/system/player_scene.h"
+#include "table/proto/tip/common_error_tip.pb.h"
+#include "table/proto/tip/scene_error_tip.pb.h"
 #include "spatial/comp/scene_node_scene_comp.h"
 #include "entt/src/entt/signal/sigh.hpp"
 
@@ -1833,9 +1841,8 @@ void AttachSceneChange(entt::entity player, uint64_t sceneId, bool playerRequest
 }
 
 // StartTravelHandoff 在冻结之前预检 scene_manager 是否可达(冻结上限:SET 之后才发现没有 SM 只能销毁 + 踢线,
-// 所以要在改状态之前挡住)。宿主里没有 SM 节点,凡是要真正起交接的用例都得临时登记一个假的:只挂 NodeInfo,
-// 够 GetSceneManagerEntity 挑中即可。作用域结束即销毁 —— 假实体上没有 gRPC 客户端,别的用例若走到真的发送点,
-// 不能让它被挑中。这些用例都在 BeginTravelHandoff 的 epoch / Redis 检查处就地 Abort,走不到发送点。
+// 所以要在改状态之前挡住)。夹具安装真实客户端运行时与通道,满足生产筛选契约;
+// 这些用例在 epoch / Redis 检查处终止,不发真实 RPC。退出时关闭并排空空 CQ,不能裸销毁运行时。
 class ScopedFakeSceneManagerNode
 {
 public:
@@ -1843,11 +1850,18 @@ public:
     {
         auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::SceneManagerNodeService);
         entity_ = registry.create();
+        auto channel = grpc::CreateChannel("127.0.0.1:1", grpc::InsecureChannelCredentials());
+        registry.emplace<std::shared_ptr<grpc::Channel>>(entity_, channel);
+        InitGrpcNode(channel, registry, entity_);
         registry.emplace<NodeInfo>(entity_);
     }
     ~ScopedFakeSceneManagerNode()
     {
-        tlsNodeContextManager.GetRegistry(eNodeType::SceneManagerNodeService).destroy(entity_);
+        auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::SceneManagerNodeService);
+        BeginShutdownGrpcNode(registry, entity_);
+        const bool drained = PollGrpcNodeShutdown(registry, entity_);
+        EXPECT_TRUE(drained) << "夹具不得发起真实 RPC";
+        if (drained) registry.destroy(entity_);
     }
     ScopedFakeSceneManagerNode(const ScopedFakeSceneManagerNode&) = delete;
     ScopedFakeSceneManagerNode& operator=(const ScopedFakeSceneManagerNode&) = delete;
@@ -4021,8 +4035,7 @@ TEST(RelocateConfirmIntent, HandoffEnterSceneMayBeInFlightCoversBothExitWinsBran
 // 宿主里没有 scene_manager(GetSceneManagerEntity 返回 null:改派没发出去)、没有 gate(按会话推送 = push_gate_gone)、
 // 没有 zone Redis(改派标记不写;核实读发不出去 = verify_deferred)。所以这里走得到的是:登记 → 没发出去 → 核实推迟 →
 // 读不到时的处置,以及落回本节点的各条路径;kAwaitingReply 之后的路径只有上面的纯函数 / Table 用例(见文件头)。
-// 不得在这些用例里构造 ScopedFakeSceneManagerNode:假节点只挂 NodeInfo,会被 GetSceneManagerEntity 挑中,真正的发送点
-// 随后对它取 CompletionQueue 而断言。
+// 本节不构造 ScopedFakeSceneManagerNode:需要明确走"没有可派发节点"的分支,不能意外发起真实 RPC。
 // 时间:登记与 Reconcile 走真实的单调时钟,所以 SweepRelocateConfirms 的时刻以「现在」为基准加偏移注入;断言只依赖
 // 偏移量之间的关系(各预算都是秒级以上),不依赖用例本身跑了多久。
 namespace
@@ -5274,11 +5287,15 @@ void ResetFenceHost()
     DrainRelocateConfirms(); // 同时擦掉 kExitPlayerId 的待入场条目
 }
 
-// 一次入场请求(SceneHandler::PlayerEnterGameNode 组出来的形状)。scene_id 默认 0:复用实体时 EnterScene 在绑定会话、
-// 写身份之后因找不到场景而返回,不碰组队 / 战斗 / 登录事件。
+// 一次真实可入场请求。旧夹具用不存在的 scene_id=0 验会话绑定,掩盖了拒入发生在副作用之后的问题。
 PlayerEnterContext FenceEnter(SessionId session, uint64_t generation, uint32_t enterGsType = LOGIN_REPLACE,
-                              uint64_t sceneId = 0)
+                              uint64_t sceneId = kFenceScene)
 {
+    if (PlayerSceneSystem::FindSceneById(sceneId) == entt::null)
+    {
+        const auto scene = tlsEcs.sceneRegistry.create();
+        tlsEcs.sceneRegistry.emplace<SceneInfoComp>(scene).set_scene_id(sceneId);
+    }
     PlayerEnterContext ctx;
     ctx.enterInfo.set_session_id(session);
     ctx.enterInfo.set_enter_gs_type(enterGsType);
@@ -5349,6 +5366,272 @@ struct ScopedPlayerLoginCounter
 };
 } // namespace
 
+namespace
+{
+class SceneEntryPermissionTest : public testing::Test
+{
+protected:
+    void SetUp() override
+    {
+        player = MakeOnlinePlayer(kSessionAtExit);
+        auto& registry = tlsEcs.actorRegistry;
+        registry.emplace<Player>(player);
+        ASSERT_NE(0, actor_net_id::Assign(registry, player));
+        source = PlaceInScene(player, kRelocateSourceScene);
+        target = tlsEcs.sceneRegistry.create();
+        auto& info = tlsEcs.sceneRegistry.emplace<SceneInfoComp>(target);
+        info.set_scene_id(kRelocateSourceScene + 1);
+        watcher = registry.create();
+        registry.emplace<Player>(watcher);
+        registry.emplace<PlayerGuidComp>(watcher, kExitPlayerId + 1);
+        registry.emplace<Transform>(watcher);
+        registry.emplace<SceneEntityComp>(watcher, SceneEntityComp{source});
+        ASSERT_NE(0, actor_net_id::Assign(registry, watcher));
+        AoiSystem::Update(0);
+        ASSERT_TRUE(registry.all_of<Hex>(player));
+        const auto* interests = registry.try_get<AoiListComp>(watcher);
+        ASSERT_NE(nullptr, interests);
+        ASSERT_TRUE(interests->Contains(player));
+    }
+    void ExpectStillInSource()
+    {
+        ASSERT_TRUE(tlsEcs.actorRegistry.valid(player));
+        ASSERT_TRUE((tlsEcs.actorRegistry.all_of<SceneEntityComp, Hex>(player)));
+        EXPECT_EQ(source, tlsEcs.actorRegistry.get<SceneEntityComp>(player).sceneEntity);
+        const auto* interests = tlsEcs.actorRegistry.try_get<AoiListComp>(watcher);
+        ASSERT_NE(nullptr, interests);
+        EXPECT_TRUE(interests->Contains(player));
+        const auto* grids = tlsEcs.sceneRegistry.try_get<SceneGridListComp>(source);
+        ASSERT_NE(nullptr, grids);
+        EXPECT_TRUE(std::any_of(grids->begin(), grids->end(), [this](const auto& entry)
+            { return entry.second.entities.contains(player); }));
+    }
+    ScopedPersistedPlayerCleanup cleanup;
+    entt::entity player{entt::null};
+    entt::entity watcher{entt::null};
+    SceneEntity source{entt::null};
+    SceneEntity target{entt::null};
+};
+
+struct RevokeSceneAccessOnLeave
+{
+    SceneEntity target{entt::null};
+    unsigned notifications{0};
+    void OnLeave(const BeforeLeaveScene&)
+    {
+        ++notifications;
+        auto* info = tlsEcs.sceneRegistry.try_get<SceneInfoComp>(target);
+        ASSERT_NE(nullptr, info);
+        info->mutable_creators()->clear();
+        (*info->mutable_creators())[kExitPlayerId + 99] = true;
+    }
+};
+
+struct TakeOverEntryDuringNotification
+{
+    enum class Change : uint8_t { kIndex, kSession, kDestroy };
+    entt::entity player{entt::null};
+    entt::entity replacement{entt::null};
+    Change change{Change::kIndex};
+    unsigned notifications{0};
+    void OnLeave(const BeforeLeaveScene& event) { Apply(event.actor); }
+    void OnLogin(const PlayerLoginEvent& event) { Apply(event.player); }
+    void Apply(entt::entity actor)
+    {
+        ASSERT_EQ(player, actor);
+        ++notifications;
+        if (change == Change::kDestroy)
+        {
+            tlsEcs.actorRegistry.destroy(actor);
+            return;
+        }
+        replacement = actor;
+        if (change == Change::kIndex)
+        {
+            replacement = tlsEcs.actorRegistry.create();
+            tlsEcs.actorRegistry.emplace<PlayerGuidComp>(replacement, kExitPlayerId);
+            tlsEcs.playerList.insert_or_assign(kExitPlayerId, replacement);
+        }
+        auto& snapshot = tlsEcs.actorRegistry.get_or_emplace<PlayerSessionSnapshotComp>(replacement);
+        snapshot.set_player_id(kExitPlayerId);
+        snapshot.set_gate_session_id(kNewerSession);
+        SessionMap().insert_or_assign(kNewerSession, kExitPlayerId);
+        // 故意不更新 loginGeneration:低层会话改绑也必须让旧流程停止。
+    }
+};
+} // namespace
+
+// 没有注册 AOI 离场业务 sink,仍必须清理旧格子和观察关系,只保留新场景的唯一绑定。
+TEST_F(SceneEntryPermissionTest, PublicSceneSwitchesWithoutBusinessSinkAndCleansOldAoi)
+{
+    EXPECT_EQ(kSuccess, PlayerSceneSystem::CheckEnterScene(player, target));
+    ASSERT_TRUE(PlayerSceneSystem::HandleEnterScene(player, target));
+    EXPECT_EQ(target, tlsEcs.actorRegistry.get<SceneEntityComp>(player).sceneEntity);
+    EXPECT_FALSE(tlsEcs.actorRegistry.all_of<Hex>(player));
+    const auto* interests = tlsEcs.actorRegistry.try_get<AoiListComp>(watcher);
+    ASSERT_NE(nullptr, interests);
+    EXPECT_FALSE(interests->Contains(player));
+    const auto* grids = tlsEcs.sceneRegistry.try_get<SceneGridListComp>(source);
+    ASSERT_NE(nullptr, grids);
+    for (const auto& [id, grid] : *grids) EXPECT_FALSE(grid.entities.contains(player));
+    EXPECT_EQ(kExitPlayerId, SessionMap().at(kSessionAtExit));
+}
+
+TEST_F(SceneEntryPermissionTest, CreatorKeyAllowsEntryEvenWhenStoredFlagIsFalse)
+{
+    (*tlsEcs.sceneRegistry.get<SceneInfoComp>(target).mutable_creators())[kExitPlayerId] = false;
+    EXPECT_EQ(kSuccess, PlayerSceneSystem::CheckEnterScene(player, target));
+    ASSERT_TRUE(PlayerSceneSystem::HandleEnterScene(player, target));
+    EXPECT_EQ(target, tlsEcs.actorRegistry.get<SceneEntityComp>(player).sceneEntity);
+}
+
+TEST_F(SceneEntryPermissionTest, RestrictedSceneRejectsUnknownMissingAndZeroGuidWithoutMutation)
+{
+    (*tlsEcs.sceneRegistry.get<SceneInfoComp>(target).mutable_creators())[kExitPlayerId] = false;
+    const auto sessionsBefore = SessionMap();
+    const auto snapshotBefore = tlsEcs.actorRegistry.get<PlayerSessionSnapshotComp>(player).SerializeAsString();
+    for (const int identity : {0, 1, 2})
+    {
+        SCOPED_TRACE(identity);
+        tlsEcs.actorRegistry.remove<PlayerGuidComp>(player);
+        if (identity != 1)
+            tlsEcs.actorRegistry.emplace<PlayerGuidComp>(player, identity == 0 ? kExitPlayerId + 99 : Guid{0});
+        EXPECT_EQ(kCheckEnterSceneCreator, PlayerSceneSystem::CheckEnterScene(player, target));
+        EXPECT_FALSE(PlayerSceneSystem::HandleEnterScene(player, target));
+        ASSERT_NO_FATAL_FAILURE(ExpectStillInSource());
+        EXPECT_TRUE(SessionMap() == sessionsBefore);
+        EXPECT_EQ(snapshotBefore, tlsEcs.actorRegistry.get<PlayerSessionSnapshotComp>(player).SerializeAsString());
+    }
+}
+
+TEST_F(SceneEntryPermissionTest, LifecycleRejectsBeforeSessionOwnershipAndExitSideEffects)
+{
+    (*tlsEcs.sceneRegistry.get<SceneInfoComp>(target).mutable_creators())[kExitPlayerId + 99] = true;
+    tlsEcs.actorRegistry.emplace<PlayerHomeZoneComp>(player).homeZoneId = 3;
+    tlsEcs.actorRegistry.emplace<PlayerOwnerEpochComp>(player).epoch = 5;
+    tlsEcs.actorRegistry.emplace<UnregisterPlayer>(player);
+    tlsEcs.actorRegistry.emplace<PlayerExitIntentComp>(player).sessionAtExit = kSessionAtExit;
+    PlayerEnterContext context;
+    context.enterInfo.set_scene_id(kRelocateSourceScene + 1);
+    context.enterInfo.set_session_id(kNewerSession);
+    context.enterInfo.set_enter_gs_type(LOGIN_RECONNECT);
+    context.loginGeneration = 10;
+    context.homeZoneId = 4;
+    context.ownerEpoch = 6;
+    const auto sessionsBefore = SessionMap();
+    const auto snapshotBefore = tlsEcs.actorRegistry.get<PlayerSessionSnapshotComp>(player).SerializeAsString();
+
+    EXPECT_FALSE(PlayerLifecycleSystem::EnterScene(player, context));
+    EXPECT_EQ(PlayerLifecycleSystem::EnterGameNodeOutcome::kRejected,
+              PlayerLifecycleSystem::HandleEnterGameNode(kExitPlayerId, context));
+
+    ASSERT_NO_FATAL_FAILURE(ExpectStillInSource());
+    EXPECT_TRUE(SessionMap() == sessionsBefore);
+    EXPECT_EQ(snapshotBefore, tlsEcs.actorRegistry.get<PlayerSessionSnapshotComp>(player).SerializeAsString());
+    EXPECT_EQ(3u, tlsEcs.actorRegistry.get<PlayerHomeZoneComp>(player).homeZoneId);
+    EXPECT_EQ(5u, tlsEcs.actorRegistry.get<PlayerOwnerEpochComp>(player).epoch);
+    EXPECT_TRUE((tlsEcs.actorRegistry.all_of<UnregisterPlayer, PlayerExitIntentComp>(player)));
+    EXPECT_FALSE((tlsEcs.actorRegistry.any_of<PlayerLoginIdentityComp, PlayerEnterGameStateComp>(player)));
+}
+
+TEST_F(SceneEntryPermissionTest, AccessRevokedByLeaveNotificationIsRecheckedBeforeBinding)
+{
+    (*tlsEcs.sceneRegistry.get<SceneInfoComp>(target).mutable_creators())[kExitPlayerId] = false;
+    RevokeSceneAccessOnLeave observer;
+    observer.target = target;
+    const entt::scoped_connection connection = tlsEcs.dispatcher.sink<BeforeLeaveScene>()
+        .connect<&RevokeSceneAccessOnLeave::OnLeave>(observer);
+    EXPECT_FALSE(PlayerSceneSystem::HandleEnterScene(player, target));
+    EXPECT_EQ(1u, observer.notifications);
+    EXPECT_FALSE(tlsEcs.actorRegistry.all_of<SceneEntityComp>(player));
+    EXPECT_EQ(kCheckEnterSceneCreator, PlayerSceneSystem::CheckEnterScene(player, target));
+}
+
+TEST_F(SceneEntryPermissionTest, LeaveNotificationIndexTakeoverKeepsOldActorFromBindingTarget)
+{
+    TakeOverEntryDuringNotification observer;
+    observer.player = player;
+    const entt::scoped_connection connection = tlsEcs.dispatcher.sink<BeforeLeaveScene>()
+        .connect<&TakeOverEntryDuringNotification::OnLeave>(observer);
+    PlayerEnterContext context;
+    context.enterInfo.set_scene_id(kRelocateSourceScene + 1);
+    context.enterInfo.set_session_id(kSessionAtExit);
+    context.enterInfo.set_enter_gs_type(LOGIN_RECONNECT);
+
+    EXPECT_FALSE(PlayerLifecycleSystem::EnterScene(player, context));
+
+    EXPECT_EQ(1u, observer.notifications);
+    ASSERT_TRUE(tlsEcs.actorRegistry.valid(player));
+    EXPECT_FALSE(tlsEcs.actorRegistry.all_of<SceneEntityComp>(player));
+    EXPECT_FALSE(tlsEcs.actorRegistry.all_of<PlayerEnterGameStateComp>(player));
+    EXPECT_EQ(observer.replacement, tlsEcs.GetPlayer(kExitPlayerId));
+    EXPECT_EQ(kExitPlayerId, SessionMap().at(kNewerSession));
+}
+
+TEST_F(SceneEntryPermissionTest, LeaveNotificationSameActorSessionTakeoverStopsOldEntry)
+{
+    TakeOverEntryDuringNotification observer;
+    observer.player = player;
+    observer.change = TakeOverEntryDuringNotification::Change::kSession;
+    const entt::scoped_connection connection = tlsEcs.dispatcher.sink<BeforeLeaveScene>()
+        .connect<&TakeOverEntryDuringNotification::OnLeave>(observer);
+    PlayerEnterContext context;
+    context.enterInfo.set_scene_id(kRelocateSourceScene + 1);
+    context.enterInfo.set_session_id(kSessionAtExit);
+    context.enterInfo.set_enter_gs_type(LOGIN_RECONNECT);
+
+    EXPECT_FALSE(PlayerLifecycleSystem::EnterScene(player, context));
+
+    EXPECT_EQ(1u, observer.notifications);
+    ASSERT_TRUE(tlsEcs.actorRegistry.valid(player));
+    EXPECT_EQ(player, tlsEcs.GetPlayer(kExitPlayerId));
+    EXPECT_FALSE(tlsEcs.actorRegistry.all_of<SceneEntityComp>(player));
+    EXPECT_FALSE(tlsEcs.actorRegistry.all_of<PlayerEnterGameStateComp>(player));
+    EXPECT_EQ(kNewerSession, tlsEcs.actorRegistry.get<PlayerSessionSnapshotComp>(player).gate_session_id());
+    EXPECT_EQ(kExitPlayerId, SessionMap().at(kNewerSession));
+}
+
+TEST_F(SceneEntryPermissionTest, LoginNotificationDestructionDoesNotReportEnteredExisting)
+{
+    TakeOverEntryDuringNotification observer;
+    observer.player = player;
+    observer.change = TakeOverEntryDuringNotification::Change::kDestroy;
+    const entt::scoped_connection connection = tlsEcs.dispatcher.sink<PlayerLoginEvent>()
+        .connect<&TakeOverEntryDuringNotification::OnLogin>(observer);
+    PlayerEnterContext context;
+    context.enterInfo.set_scene_id(kRelocateSourceScene + 1);
+    context.enterInfo.set_session_id(kSessionAtExit);
+    context.enterInfo.set_enter_gs_type(LOGIN_RECONNECT);
+
+    EXPECT_EQ(PlayerLifecycleSystem::EnterGameNodeOutcome::kRejected,
+              PlayerLifecycleSystem::HandleEnterGameNode(kExitPlayerId, context));
+    EXPECT_EQ(1u, observer.notifications);
+    EXPECT_FALSE(tlsEcs.actorRegistry.valid(player));
+}
+
+TEST_F(SceneEntryPermissionTest, LoginNotificationSessionTakeoverPreservesNewIdentity)
+{
+    TakeOverEntryDuringNotification observer;
+    observer.player = player;
+    observer.change = TakeOverEntryDuringNotification::Change::kSession;
+    const entt::scoped_connection connection = tlsEcs.dispatcher.sink<PlayerLoginEvent>()
+        .connect<&TakeOverEntryDuringNotification::OnLogin>(observer);
+    PlayerEnterContext context;
+    context.enterInfo.set_scene_id(kRelocateSourceScene + 1);
+    context.enterInfo.set_session_id(kSessionAtExit);
+    context.enterInfo.set_enter_gs_type(LOGIN_RECONNECT);
+    bool stillOwned = true;
+
+    EXPECT_FALSE(PlayerLifecycleSystem::EnterScene(player, context, &stillOwned));
+
+    EXPECT_FALSE(stillOwned);
+    EXPECT_EQ(1u, observer.notifications);
+    ASSERT_TRUE(tlsEcs.actorRegistry.valid(player));
+    EXPECT_EQ(player, tlsEcs.GetPlayer(kExitPlayerId));
+    EXPECT_EQ(kNewerSession, tlsEcs.actorRegistry.get<PlayerSessionSnapshotComp>(player).gate_session_id());
+    EXPECT_EQ(kExitPlayerId, SessionMap().at(kNewerSession));
+}
+
 // 内层换场景在通知后停止还不够,外层入场也必须停止,不得向陈旧句柄写登录态或触发登录结算。
 TEST(PlayerLifecycleEcs, EnterSceneStopsAfterLeaveNotificationDestroysPlayer)
 {
@@ -5368,7 +5651,7 @@ TEST(PlayerLifecycleEcs, EnterSceneStopsAfterLeaveNotificationDestroysPlayer)
     context.enterInfo.set_scene_id(targetSceneId);
     context.enterInfo.set_enter_gs_type(LOGIN_RECONNECT);
 
-    PlayerLifecycleSystem::EnterScene(oldPlayer, context);
+    EXPECT_FALSE(PlayerLifecycleSystem::EnterScene(oldPlayer, context));
 
     EXPECT_EQ(observer.notifications, 1u);
     EXPECT_FALSE(tlsEcs.actorRegistry.valid(oldPlayer));
@@ -5695,7 +5978,7 @@ TEST(EnterFenceEcs, RemovePlayerSessionOnlyErasesOwnMapping)
     ASSERT_NO_FATAL_FAILURE(ResetFenceHost());
     player = MakeFencedPlayer(kShared, kGenA);
     SessionMap()[kShared] = kFenceOtherPlayerId;
-    PlayerLifecycleSystem::EnterScene(player, FenceEnter(kFenceSessionB, kGenB));
+    EXPECT_TRUE(PlayerLifecycleSystem::EnterScene(player, FenceEnter(kFenceSessionB, kGenB)));
     ASSERT_NO_FATAL_FAILURE(ExpectBoundTo(player, kFenceSessionB, kGenB));
     EXPECT_EQ(SessionMap().at(kShared), kFenceOtherPlayerId);
 
@@ -5758,7 +6041,7 @@ TEST(EnterFenceEcs, BindRecheckRejectsStaleContext)
     identity.loginGeneration = kGenB;
     const auto before = enter_fence_stats::Read();
 
-    PlayerLifecycleSystem::EnterScene(player, FenceEnter(kFenceSessionA, kGenA));
+    EXPECT_FALSE(PlayerLifecycleSystem::EnterScene(player, FenceEnter(kFenceSessionA, kGenA)));
 
     const auto after = enter_fence_stats::Read();
     EXPECT_EQ(after.bindRejected, before.bindRejected + 1);

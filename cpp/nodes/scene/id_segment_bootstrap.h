@@ -20,6 +20,6 @@ class Node;
 std::size_t ConfigureGuidSegmentClients(Node &node);
 
 // 注册 AllocateIdSegment 的响应 handler(进程级函数对象,注册与是否启用无关)。
-// ConfigureGuidSegmentClients 自己会调它;单独暴露只为了显式重装。**不要**把它挂进
-// rpc_replies/register_response_handler.cpp —— 那是 proto 生成器重写的文件。
+// ConfigureGuidSegmentClients 自己会调它;单独暴露只为了显式重装。它是 gRPC 应答 handler,在这里手写安装;
+// 节点间 RPC0 的按 message_id 回包表(InitReply / rpc_replies/register_response_handler.cpp)已退场。
 void InitDataServiceReply();

@@ -4,14 +4,13 @@ import (
 	"context"
 	"fmt"
 	"login/internal/config"
-	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
 
-	"login/internal/logic/pkg/consistent"
 	db_proto "proto/db"
 	"shared/kafkacmd"
+	"shared/kafkautil"
 	"shared/safego"
 
 	"github.com/IBM/sarama"
@@ -25,7 +24,10 @@ type ProducerMeta struct {
 	payload  []byte
 }
 
-// KeyOrderedKafkaProducer is a consistent-hash-based ordered Kafka producer using SyncProducer for idempotency.
+// KeyOrderedKafkaProducer 是 db_task 读请求的生产者(SyncProducer,幂等)。
+// 分区由 kafkautil.NewDBTaskPartitioner 决定:CRC-32(key) mod N,与 C++ scene 写存盘用的
+// librdkafka consistent_random 是同一个函数;同一玩家的读与写落在同一分区,go/db 的读后写屏障才成立
+// (docs/design/db-task-kafka-partition-contract.md)。
 type KeyOrderedKafkaProducer struct {
 	producer     sarama.SyncProducer
 	client       sarama.Client
@@ -34,54 +36,58 @@ type KeyOrderedKafkaProducer struct {
 	mu           sync.Mutex
 	ctx          context.Context
 	cancel       context.CancelFunc
-	consistent   *consistent.Consistent
 	closed       bool
 	payloadPool  sync.Pool // reuses []byte to reduce GC
 
 	successCount int64
 	errorCount   int64
-	// routingFenced is irreversible for this process. Broker partition drift
-	// changes consistent-hash ownership, so continuing would violate the
-	// per-player ordering cursor in db service.
+	// routingFenced 本进程一旦置位不可逆。broker 分区数漂移会改变 CRC-32(key) mod N 的映射,
+	// 继续发送就违反 go/db 按分区记录的 applied cursor 顺序。
 	routingFenced atomic.Bool
-
-	// fault-tolerance state
-	unavailablePartitions map[int32]time.Time // partition → time marked unavailable
-	retryInterval         time.Duration       // retry interval for unavailable partitions
 
 	// Separate non-transactional producer for cross-topic fire-and-forget sends (e.g. gate commands).
 	plainProducer sarama.SyncProducer
 }
 
+// newDBTaskProducerConfig 建 db_task 主生产者的 sarama 配置。
+//
+// Partitioner 必须在 sarama.NewClient 之前设:NewSyncProducerFromClient 用的是 client 上的配置。
+// sarama 默认的 NewHashPartitioner 是 FNV-1a,与 C++ 不是同一个函数,而且它会覆盖
+// ProducerMessage.Partition —— 这就是旧的一致性哈希环与「不可用分区重映射」从来没生效过的原因。
+func newDBTaskProducerConfig(cfg config.KafkaConfig) *sarama.Config {
+	saramaCfg := sarama.NewConfig()
+	saramaCfg.Version = sarama.V3_6_0_0 // requires Kafka >= 0.11.0.0
+	saramaCfg.Net.DialTimeout = cfg.DialTimeout
+	saramaCfg.Net.ReadTimeout = cfg.ReadTimeout
+	saramaCfg.Net.WriteTimeout = cfg.WriteTimeout
+	saramaCfg.Producer.Return.Successes = true
+	saramaCfg.Producer.Return.Errors = true
+	saramaCfg.Producer.Retry.Max = cfg.RetryMax
+	saramaCfg.Producer.Retry.Backoff = cfg.RetryBackoff
+	saramaCfg.Producer.RequiredAcks = sarama.WaitForAll
+	saramaCfg.ChannelBufferSize = cfg.ChannelBuffer
+	saramaCfg.Producer.Compression = cfg.CompressionType
+	saramaCfg.Producer.Idempotent = cfg.Idempotent
+	saramaCfg.Net.MaxOpenRequests = 1 // required by idempotency
+	// db_task 分区契约的唯一来源(go/shared/kafkautil/dbtask_partition.go)。
+	saramaCfg.Producer.Partitioner = kafkautil.NewDBTaskPartitioner
+	return saramaCfg
+}
+
 // NewKeyOrderedKafkaProducer creates an idempotent producer using SyncProducer.
 func NewKeyOrderedKafkaProducer(cfg config.KafkaConfig) (*KeyOrderedKafkaProducer, error) {
-	config := sarama.NewConfig()
-	config.Version = sarama.V3_6_0_0 // requires Kafka >= 0.11.0.0
-	config.Net.DialTimeout = cfg.DialTimeout
-	config.Net.ReadTimeout = cfg.ReadTimeout
-	config.Net.WriteTimeout = cfg.WriteTimeout
-	config.Producer.Return.Successes = true
-	config.Producer.Return.Errors = true
-	config.Producer.Retry.Max = cfg.RetryMax
-	config.Producer.Retry.Backoff = cfg.RetryBackoff
-	config.Producer.RequiredAcks = sarama.WaitForAll
-	config.ChannelBufferSize = cfg.ChannelBuffer
-	config.Producer.Compression = cfg.CompressionType
-	config.Producer.Idempotent = cfg.Idempotent
-	config.Net.MaxOpenRequests = 1 // required by idempotency
-
-	if err := config.Validate(); err != nil {
+	saramaCfg := newDBTaskProducerConfig(cfg)
+	if err := saramaCfg.Validate(); err != nil {
 		logx.Errorf("invalid Kafka config: %v", err)
 		return nil, err
 	}
 
-	client, err := sarama.NewClient(cfg.Brokers, config)
+	client, err := sarama.NewClient(cfg.Brokers, saramaCfg)
 	if err != nil {
 		logx.Errorf("failed to create Kafka client: %v", err)
 		return nil, fmt.Errorf("failed to create client: %w", err)
 	}
 
-	consistentHash := consistent.NewConsistent(20)
 	initialPartition := cfg.InitialPartition
 	if initialPartition <= 0 {
 		initialPartition = int(cfg.PartitionCnt)
@@ -108,9 +114,6 @@ func NewKeyOrderedKafkaProducer(cfg config.KafkaConfig) (*KeyOrderedKafkaProduce
 		logx.Errorf("failed to create Kafka sync producer: %v", err)
 		return nil, fmt.Errorf("failed to create producer: %w", err)
 	}
-	for i := int32(0); i < int32(initialPartition); i++ {
-		consistentHash.AddPartition(i)
-	}
 
 	// Create a separate non-transactional producer for cross-topic fire-and-forget sends.
 	plainCfg := sarama.NewConfig()
@@ -122,9 +125,10 @@ func NewKeyOrderedKafkaProducer(cfg config.KafkaConfig) (*KeyOrderedKafkaProduce
 	plainCfg.Producer.Return.Errors = true
 	plainCfg.Producer.RequiredAcks = sarama.WaitForAll
 	// 控制面命令必须落在 node_id % P 算出来的那一个分区上(消费端只 assign 那一个),
-	// 而 sarama 默认的哈希分区器会覆盖 ProducerMessage.Partition。只装在 plainCfg 上:
-	// 上面那个 config(db_task 的事务/幂等生产者)一个字都没动,行为不变。
-	// 非命令 topic 在 NewCommandAwarePartitioner 里仍然拿默认哈希分区器。
+	// 而 sarama 默认的哈希分区器会覆盖 ProducerMessage.Partition,所以 plainCfg 装 NewCommandAwarePartitioner。
+	// db_task 主生产者(上面的 newDBTaskProducerConfig)装的是分区契约分区器 kafkautil.NewDBTaskPartitioner;
+	// plainCfg 对 db_task_zone_ 前缀的 topic 也装契约分区器,而且 SendToTopic / SendToTopicPartition
+	// 都拒绝这类 topic。其余非命令 topic 仍用 sarama 默认哈希分区器。
 	plainCfg.Producer.Partitioner = NewCommandAwarePartitioner
 
 	plainProducer, err := sarama.NewSyncProducer(cfg.Brokers, plainCfg)
@@ -136,32 +140,25 @@ func NewKeyOrderedKafkaProducer(cfg config.KafkaConfig) (*KeyOrderedKafkaProduce
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	unavailableParts := make(map[int32]time.Time)
-	retryInterval := 10 * time.Second
-
 	kp := &KeyOrderedKafkaProducer{
-		producer:              producer,
-		client:                client,
-		topic:                 cfg.Topic,
-		partitionCnt:          initialPartition,
-		ctx:                   ctx,
-		cancel:                cancel,
-		consistent:            consistentHash,
-		closed:                false,
-		unavailablePartitions: unavailableParts,
-		retryInterval:         retryInterval,
-		plainProducer:         plainProducer,
+		producer:      producer,
+		client:        client,
+		topic:         cfg.Topic,
+		partitionCnt:  initialPartition,
+		ctx:           ctx,
+		cancel:        cancel,
+		closed:        false,
+		plainProducer: plainProducer,
 	}
 	kp.payloadPool.New = func() interface{} {
 		return make([]byte, 0, 1024)
 	}
 
-	// safego:这三条后台循环任意一条 panic,旧写法都会直接打死 login 进程,
+	// safego:这两条后台循环任意一条 panic,旧写法都会直接打死 login 进程,
 	// 而日志里只剩一段 runtime 栈。换成命名点位后,
 	// safego_panic_total{point="login.kafka_*"} 能直接指出是哪条。
 	safego.Go("login.kafka_sync_partitions", func() { kp.syncPartitions(cfg.SyncInterval) })
 	safego.Go("login.kafka_monitor_stats", func() { kp.monitorStats(cfg.StatsInterval) })
-	safego.Go("login.kafka_check_unavailable_partitions", kp.checkUnavailablePartitions)
 
 	return kp, nil
 }
@@ -178,16 +175,17 @@ func (p *KeyOrderedKafkaProducer) SendTasks(ctx context.Context, tasks []*db_pro
 		return fmt.Errorf("invalid params: taskCount=%d, key=%s", len(tasks), key)
 	}
 
-	partition, ok := p.getAvailablePartition(key)
-	if !ok {
-		return fmt.Errorf("no available partition: key=%s", key)
-	}
-
 	var msgs []*sarama.ProducerMessage
 	for _, task := range tasks {
 		if task.TaskId == "" {
 			p.recycleMessages(msgs)
 			return fmt.Errorf("empty task ID: %+v", task)
+		}
+		// 分区契约:Kafka key 必须是 DBTaskKey(task.Key),否则这条读会落到别的分区,
+		// 排不到本玩家待落库的写后面(go/db 的读后写屏障失效)。不符直接拒发。
+		if want := kafkautil.DBTaskKey(task.Key); key != want {
+			p.recycleMessages(msgs)
+			return fmt.Errorf("db_task kafka key %q does not match task key %d (want %q)", key, task.Key, want)
 		}
 
 		payload := p.payloadPool.Get().([]byte)
@@ -198,11 +196,11 @@ func (p *KeyOrderedKafkaProducer) SendTasks(ctx context.Context, tasks []*db_pro
 			return fmt.Errorf("failed to marshal task: %s, %w", task.TaskId, err)
 		}
 
+		// 不填 Partition:分区由装在配置上的 kafkautil.NewDBTaskPartitioner 按 key 算,sarama 会回填。
 		msgs = append(msgs, &sarama.ProducerMessage{
 			Topic:     p.topic,
 			Key:       sarama.StringEncoder(key),
 			Value:     sarama.ByteEncoder(payload),
-			Partition: partition,
 			Timestamp: time.Now(),
 			Metadata: &ProducerMeta{
 				producer: p,
@@ -214,18 +212,14 @@ func (p *KeyOrderedKafkaProducer) SendTasks(ctx context.Context, tasks []*db_pro
 	select {
 	case <-ctx.Done():
 		p.recycleMessages(msgs)
-		p.markPartitionUnavailable(partition)
 		return fmt.Errorf("batch send timeout: %v", ctx.Err())
 	default:
 		p.mu.Lock()
 		err := p.producer.SendMessages(msgs)
 		if err != nil {
 			atomic.AddInt64(&p.errorCount, int64(len(msgs)))
-			logx.Errorf("batch send failed: partition=%d, err=%v", partition, err)
-
-			if isPartitionUnavailableErr(err) {
-				p.markPartitionUnavailableLocked(partition) // 已持有 p.mu
-			}
+			logx.Errorf("batch send failed: topic=%s, partition=%d, key=%s, count=%d, err=%v",
+				p.topic, msgs[0].Partition, key, len(msgs), err)
 
 			if p.producer.IsTransactional() {
 				_ = p.producer.AbortTxn()
@@ -254,6 +248,8 @@ func (p *KeyOrderedKafkaProducer) SendTasks(ctx context.Context, tasks []*db_pro
 		}
 		p.mu.Unlock()
 
+		logx.Debugf("batch sent: topic=%s, partition=%d, firstOffset=%d, lastOffset=%d, count=%d",
+			p.topic, msgs[0].Partition, msgs[0].Offset, msgs[len(msgs)-1].Offset, len(msgs))
 		p.recycleMessages(msgs)
 		atomic.AddInt64(&p.successCount, int64(len(msgs)))
 		return nil
@@ -271,6 +267,10 @@ func (p *KeyOrderedKafkaProducer) SendTask(ctx context.Context, task *db_proto.D
 	if task.TaskId == "" || key == "" {
 		return fmt.Errorf("invalid params: taskID=%s, key=%s", task.TaskId, key)
 	}
+	// 分区契约:Kafka key 必须是 DBTaskKey(task.Key),理由同 SendTasks。
+	if want := kafkautil.DBTaskKey(task.Key); key != want {
+		return fmt.Errorf("db_task kafka key %q does not match task key %d (want %q)", key, task.Key, want)
+	}
 
 	payload := p.payloadPool.Get().([]byte)
 	payload, err := proto.MarshalOptions{}.MarshalAppend(payload[:0], task)
@@ -279,17 +279,11 @@ func (p *KeyOrderedKafkaProducer) SendTask(ctx context.Context, task *db_proto.D
 		return fmt.Errorf("failed to marshal task: %s, %w", task.TaskId, err)
 	}
 
-	partition, ok := p.getAvailablePartition(key)
-	if !ok {
-		p.payloadPool.Put(payload)
-		return fmt.Errorf("no available partition: key=%s, task=%s", key, task.TaskId)
-	}
-
+	// 不填 Partition:分区由装在配置上的 kafkautil.NewDBTaskPartitioner 按 key 算,sarama 会回填。
 	msg := &sarama.ProducerMessage{
 		Topic:     p.topic,
 		Key:       sarama.StringEncoder(key),
 		Value:     sarama.ByteEncoder(payload),
-		Partition: partition,
 		Timestamp: time.Now(),
 		Metadata: &ProducerMeta{
 			producer: p,
@@ -300,18 +294,13 @@ func (p *KeyOrderedKafkaProducer) SendTask(ctx context.Context, task *db_proto.D
 	select {
 	case <-ctx.Done():
 		p.payloadPool.Put(payload)
-		p.markPartitionUnavailable(partition)
 		return fmt.Errorf("send timeout: task=%s, %v", task.TaskId, ctx.Err())
 	default:
 		p.mu.Lock()
-		_, _, err := p.producer.SendMessage(msg)
+		partition, offset, err := p.producer.SendMessage(msg)
 		if err != nil {
 			atomic.AddInt64(&p.errorCount, 1)
-			logx.Errorf("send failed: task=%s, partition=%d, err=%v", task.TaskId, partition, err)
-
-			if isPartitionUnavailableErr(err) {
-				p.markPartitionUnavailableLocked(partition) // 已持有 p.mu
-			}
+			logx.Errorf("send failed: task=%s, topic=%s, partition=%d, err=%v", task.TaskId, p.topic, msg.Partition, err)
 
 			if p.producer.IsTransactional() {
 				_ = p.producer.AbortTxn()
@@ -342,7 +331,7 @@ func (p *KeyOrderedKafkaProducer) SendTask(ctx context.Context, task *db_proto.D
 
 		p.payloadPool.Put(payload)
 		atomic.AddInt64(&p.successCount, 1)
-		logx.Debugf("message sent: task=%s, partition=%d", task.TaskId, partition)
+		logx.Debugf("message sent: task=%s, partition=%d, offset=%d", task.TaskId, partition, offset)
 		return nil
 	}
 }
@@ -377,9 +366,16 @@ func (p *KeyOrderedKafkaProducer) verifyPartitionContract(partitions []int32) er
 // 从这里发会带着零值 Partition 落到 0 号分区 —— 0 号分区上坐着 node_id 是 P 的
 // 倍数的那些节点,它们读到后按 target_instance_id 丢弃,等于静默丢命令。
 // 所以这里 fail-closed,逼调用方走 SendToTopicPartition。
+//
+// db_task topic 同样拒绝:db_task 只能经 SendTask / SendTasks 发,那里校验 key 必须是
+// DBTaskKey(task.Key),分区由契约分区器决定;从这个通用口子发出去的 key 不受校验,
+// 同一玩家的读可能落到别的分区,go/db 的读后写屏障随之失效。
 func (p *KeyOrderedKafkaProducer) SendToTopic(topic string, data []byte, key string) error {
 	if kafkacmd.IsCommandTopic(topic) {
 		return fmt.Errorf("refusing to send to command topic %s without an explicit partition: use SendToTopicPartition", topic)
+	}
+	if kafkautil.IsDBTaskTopic(topic) {
+		return fmt.Errorf("refusing to send db_task topic %s through the plain producer: use SendTask/SendTasks (partition contract)", topic)
 	}
 	msg := &sarama.ProducerMessage{
 		Topic: topic,
@@ -398,7 +394,13 @@ func (p *KeyOrderedKafkaProducer) SendToTopic(topic string, data []byte, key str
 // topic 与分区号是一对不可分的东西(见 shared/kafkacmd):调用方必须由
 // kafkacmd 一次性把两者算出来再传进来,不许在这里或别处单独拼其中一个。
 // key 仍然填(玩家 id),它不再决定落点,只用于日志与 broker 侧的可读性。
+//
+// db_task topic 在这里也拒绝:plainProducer 对 db_task_zone_ 前缀装的是契约分区器,
+// 会按 key 覆盖调用方给的显式分区,"指定分区"在这类 topic 上本来就不成立;db_task 只能经 SendTask / SendTasks 发。
 func (p *KeyOrderedKafkaProducer) SendToTopicPartition(topic string, partition int32, data []byte, key string) error {
+	if kafkautil.IsDBTaskTopic(topic) {
+		return fmt.Errorf("refusing to send db_task topic %s through the plain producer: use SendTask/SendTasks (partition contract)", topic)
+	}
 	if partition < 0 {
 		return fmt.Errorf("send to %s rejected: negative partition %d", topic, partition)
 	}
@@ -509,9 +511,8 @@ func (p *KeyOrderedKafkaProducer) monitorStats(interval time.Duration) {
 		case <-ticker.C:
 			success := atomic.SwapInt64(&p.successCount, 0)
 			errs := atomic.SwapInt64(&p.errorCount, 0)
-			unavailableCnt := p.getUnavailablePartitionCount()
-			logx.Infof("message stats: topic=%s, interval=%v, success=%d, errors=%d, unavailablePartitions=%d",
-				p.topic, interval, success, errs, unavailableCnt)
+			logx.Infof("message stats: topic=%s, interval=%v, success=%d, errors=%d",
+				p.topic, interval, success, errs)
 		case <-p.ctx.Done():
 			logx.Debug("context done: exiting stats monitor")
 			return
@@ -526,100 +527,4 @@ func (p *KeyOrderedKafkaProducer) recycleMessages(msgs []*sarama.ProducerMessage
 			meta.producer.payloadPool.Put(meta.payload)
 		}
 	}
-}
-
-// markPartitionUnavailable marks a partition as unavailable.
-func (p *KeyOrderedKafkaProducer) markPartitionUnavailable(partition int32) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	p.markPartitionUnavailableLocked(partition)
-}
-
-// markPartitionUnavailableLocked 是调用方已持有 p.mu 时的版本。
-// SendTask / SendTasks 的发送失败分支本身就在 p.mu 里,以前在那里调 markPartitionUnavailable
-// 会对不可重入的 sync.Mutex 二次加锁:Kafka 选主期间 SendMessage 返回 ErrLeaderNotAvailable
-// (文案含 "partition" 与 "unavailable",命中 isPartitionUnavailableErr),发送 goroutine 当场卡死,
-// 之后本进程所有发送都排在这把锁后面,login 读档全部挂起,只能重启进程。
-func (p *KeyOrderedKafkaProducer) markPartitionUnavailableLocked(partition int32) {
-	p.unavailablePartitions[partition] = time.Now()
-	logx.Errorf("partition marked unavailable: topic=%s, partition=%d, retryInterval=%v",
-		p.topic, partition, p.retryInterval)
-}
-
-// getAvailablePartition returns an available partition for the given key.
-func (p *KeyOrderedKafkaProducer) getAvailablePartition(key string) (int32, bool) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	partition, ok := p.consistent.GetPartition(key)
-	if !ok {
-		return 0, false
-	}
-
-	if _, isUnavailable := p.unavailablePartitions[partition]; !isUnavailable {
-		return partition, true
-	}
-
-	allPartitions := p.consistent.GetPartitions()
-	for _, part := range allPartitions {
-		if _, isUnavailable := p.unavailablePartitions[part]; !isUnavailable {
-			logx.Errorf("original partition unavailable, remapped: key=%s, from=%d, to=%d",
-				key, partition, part)
-			return part, true
-		}
-	}
-
-	return 0, false
-}
-
-// checkUnavailablePartitions periodically re-enables recovered partitions.
-func (p *KeyOrderedKafkaProducer) checkUnavailablePartitions() {
-	ticker := time.NewTicker(p.retryInterval)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ticker.C:
-			p.mu.Lock()
-			now := time.Now()
-			for part, unavailableTime := range p.unavailablePartitions {
-				if now.Sub(unavailableTime) >= p.retryInterval {
-					delete(p.unavailablePartitions, part)
-					logx.Infof("partition recovered: topic=%s, partition=%d, downtime=%v",
-						p.topic, part, now.Sub(unavailableTime))
-				}
-			}
-			p.mu.Unlock()
-		case <-p.ctx.Done():
-			logx.Debug("context done: exiting unavailable partition check")
-			return
-		}
-	}
-}
-
-// isPartitionUnavailableErr checks if the error indicates a partition is unavailable.
-func isPartitionUnavailableErr(err error) bool {
-	if prodErr, ok := err.(*sarama.ProducerError); ok {
-		errMsg := prodErr.Error()
-		if strings.Contains(errMsg, "partition") {
-			switch prodErr.Err {
-			case sarama.ErrUnknownTopicOrPartition,
-				sarama.ErrLeaderNotAvailable,
-				sarama.ErrOffsetNotAvailable,
-				sarama.ErrReplicaNotAvailable:
-				return true
-			}
-			return strings.Contains(errMsg, "unavailable")
-		}
-	}
-
-	errMsg := err.Error()
-	return strings.Contains(errMsg, "partition") && strings.Contains(errMsg, "unavailable")
-}
-
-// getUnavailablePartitionCount returns the number of unavailable partitions.
-func (p *KeyOrderedKafkaProducer) getUnavailablePartitionCount() int {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	return len(p.unavailablePartitions)
 }

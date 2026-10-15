@@ -45,6 +45,7 @@
 #include "modules/currency/comp/player_currency_comp.h"
 #include "modules/currency/constants/currency.h"
 #include "modules/currency/system/currency_system.h"
+#include "modules/gain_block/gain_block_service.h"
 #include "modules/id_segment/guid_segment_registry.h"
 #include "proto/common/component/actor_attribute_state_comp.pb.h"
 #include "proto/common/component/actor_comp.pb.h"
@@ -78,6 +79,27 @@
 
 namespace
 {
+class ScopedGlobalItemBlock
+{
+public:
+	explicit ScopedGlobalItemBlock(uint32_t configId)
+		: configId_(configId), wasBlocked_(GainBlockService::IsGloballyBlocked(GainBlockService::GainType::kItem, configId))
+	{
+		GainBlockService::BlockGlobal(GainBlockService::GainType::kItem, configId_);
+	}
+	~ScopedGlobalItemBlock()
+	{
+		if (wasBlocked_) GainBlockService::BlockGlobal(GainBlockService::GainType::kItem, configId_);
+		else GainBlockService::UnblockGlobal(GainBlockService::GainType::kItem, configId_);
+	}
+	void Unblock() { GainBlockService::UnblockGlobal(GainBlockService::GainType::kItem, configId_); }
+	ScopedGlobalItemBlock(const ScopedGlobalItemBlock&) = delete;
+	ScopedGlobalItemBlock& operator=(const ScopedGlobalItemBlock&) = delete;
+private:
+	uint32_t configId_;
+	bool wasBlocked_;
+};
+
 
 // ── 夹具数据 ────────────────────────────────────────────────────────────────
 // 既有行(generated/tables/item.json、equipslot.json):
@@ -1179,12 +1201,11 @@ TEST_F(PlayerEquipTest, RollNewInstanceWithoutPoolOrRuleRollsNothing)
 
 TEST_F(PlayerEquipTest, InstalledInitializerRollsEquipmentGrantedThroughBagService)
 {
-	PlayerItemBlockList blockList;
 
 	// 没装回调时,入包的装备没有 equip 段 —— 属性确实是回调掷的,不是别处顺手写的。
 	ItemCountMap one;
 	one[kWeaponL80] = 1;
-	ASSERT_EQ(kSuccess, BagService::AddItems(player, Inventory(), blockList, one));
+	ASSERT_EQ(kSuccess, BagService::AddItems(player, Inventory(), one));
 	Inventory().ForEachItem([](Guid, const ItemComp &item) { EXPECT_FALSE(item.has_equip()); });
 	const BagState unrolled = Capture(Inventory());
 
@@ -1193,7 +1214,7 @@ TEST_F(PlayerEquipTest, InstalledInitializerRollsEquipmentGrantedThroughBagServi
 	batch[kWeaponL80] = 3;
 	batch[kPlainNonStack] = 1;
 	batch[kStackable] = 5;
-	ASSERT_EQ(kSuccess, BagService::AddItems(player, Inventory(), blockList, batch));
+	ASSERT_EQ(kSuccess, BagService::AddItems(player, Inventory(), batch));
 
 	uint32_t rolledWeapons = 0;
 	Inventory().ForEachItem(
@@ -1224,20 +1245,19 @@ TEST_F(PlayerEquipTest, InstalledInitializerRollsEquipmentGrantedThroughBagServi
 // 这条在单个用例里把「装 → 卸 → 再装」走完,单独过滤跑它也能发现。
 TEST_F(PlayerEquipTest, InstallItemInitializerReinstallsAfterTheCallbackWasRemoved)
 {
-	PlayerItemBlockList blockList;
 	ItemCountMap one;
 	one[kWeaponL80] = 1;
 
 	PlayerEquipSystem::InstallItemInitializer();
 	BagService::SetItemInstanceInitializer({}); // 卸载
-	ASSERT_EQ(kSuccess, BagService::AddItems(player, Inventory(), blockList, one));
+	ASSERT_EQ(kSuccess, BagService::AddItems(player, Inventory(), one));
 	Inventory().ForEachItem([](Guid, const ItemComp &item)
 							{ EXPECT_FALSE(item.has_equip()) << "the callback is really gone"; });
 	const BagState unrolled = Capture(Inventory());
 
 	PlayerEquipSystem::InstallItemInitializer(); // 卸掉之后再装:必须真的装上
 	PlayerEquipSystem::InstallItemInitializer(); // 连调两次无害
-	ASSERT_EQ(kSuccess, BagService::AddItems(player, Inventory(), blockList, one));
+	ASSERT_EQ(kSuccess, BagService::AddItems(player, Inventory(), one));
 
 	uint32_t rolledWeapons = 0;
 	Inventory().ForEachItem(
@@ -3520,13 +3540,13 @@ TEST_F(PlayerEquipTest, RemoveGemKeepsTheGemWhileItsGrantIsBlocked)
 	ItemComp weapon = MakeRolledInstance(kGuidA, kWeaponL1);
 	AddGem(weapon, kWeaponAttackSocket, kAttackGem);
 	Inventory().InsertItemForRestore(weapon, 5);
-	tlsEcs.actorRegistry.emplace<PlayerItemBlockList>(player).Block(kAttackGem);
+	ScopedGlobalItemBlock blocked(kAttackGem);
 	const ForgeState before = CaptureForge();
 
 	EXPECT_EQ(kEquipInternalError, PlayerEquipSystem::RemoveGem(player, kGuidA, kWeaponAttackSocket));
 	ExpectForgeUnchanged(before);
 
-	tlsEcs.actorRegistry.get<PlayerItemBlockList>(player).Unblock(kAttackGem);
+	blocked.Unblock();
 	EXPECT_EQ(kSuccess, PlayerEquipSystem::RemoveGem(player, kGuidA, kWeaponAttackSocket));
 	EXPECT_EQ(1u, CountOf(kAttackGem));
 }

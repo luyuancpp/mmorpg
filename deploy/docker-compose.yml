@@ -177,10 +177,9 @@ services:
         create_topic "scene-cmd_g$$cg" "$$cparts" "retention.ms=3600000"
         assert_partitions "scene-cmd_g$$cg" "$$cparts"
         ensure_retention "scene-cmd_g$$cg" 3600000
-        # Shared event topic referenced by base_deploy_config.yaml. It currently has no
-        # consumer (Kafka.GroupID is empty, so KafkaManager::Init skips the top-level
-        # subscribe), but declare the retention anyway so it never depends on whatever
-        # the broker default happens to be the day someone wires a consumer to it.
+        # base_deploy_config.yaml 的 Kafka.Topics 里列着的共享事件 topic。目前没有消费者:没有节点为它
+        # 注册消费回调,KafkaManager::Init 也不做任何顶层 subscribe(2026-10-15 起与 Kafka.GroupID 无关,
+        # 见 P0-B 批 1)。仍然显式声明保留期,免得哪天有人接上消费者时取决于 broker 默认值。
         create_topic "game-events" 1 "retention.ms=3600000"
         ensure_retention "game-events" 3600000
         # data_service audit topics (see the comment above): contracted partitions + 30d retention.

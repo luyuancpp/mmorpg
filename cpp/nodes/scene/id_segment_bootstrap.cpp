@@ -273,8 +273,8 @@ void InitDataServiceReply()
 
 std::size_t ConfigureGuidSegmentClients(Node & /*node*/)
 {
-    // 响应 handler 在这里装,不放进 rpc_replies/register_response_handler.cpp:那个文件是
-    // proto 生成器产出的(每次 proto-gen-run 都会重写),手写进去的调用会被下一次生成抹掉。
+    // 响应 handler 在这里装:它是 gRPC 应答 handler,不属于生成器产出的注册文件(节点间 RPC0 的
+    // InitReply / rpc_replies/register_response_handler.cpp 已退场,见 docs/design/muduo-rpc-channel.md §9.2)。
     // 幂等:重复赋同一个 lambda 无副作用。
     InitDataServiceReply();
 

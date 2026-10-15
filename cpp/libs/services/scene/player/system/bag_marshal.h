@@ -47,9 +47,8 @@
 namespace bag_marshal
 {
     // Read all bag/warehouse/equipment/temp items off the player's ECS
-    // representation, write them to `out`. Idempotent — calling twice
-    // produces equivalent BagAllData (modulo serialization order, which
-    // proto3 doesn't guarantee anyway).
+    // representation, write them to `out`.
+    // 固定包按 bag_type、槽位升序，动态包按 bag_id、槽位升序；零数量实例不写出。
     //
     // A player entity with no PlayerBagsComp yields an empty BagAllData
     // (that is the correct payload for an entity that hasn't been through
@@ -71,6 +70,7 @@ namespace bag_marshal
     // An entry whose recorded pos is unusable (out of range, or already
     // taken by another restored item) is relocated to a free slot rather
     // than dropped — position can change, the item must not vanish.
+    // 零数量条目跳过；先扫描每包最大 acquire_seq，再按原出现顺序给零章旧档补章。
     // See Bag::InsertItemForRestore.
     void Unmarshal(entt::entity player, const BagAllData& in);
 }

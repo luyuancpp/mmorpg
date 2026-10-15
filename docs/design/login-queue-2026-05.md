@@ -6,6 +6,7 @@
 > **关联**: 2026-05-08 [open-server-rate-limit-design.md](./open-server-rate-limit-design.md)(Bucket4j 限流);本文是其**互补层**,不是替代
 > **修订**: 2026-10-12 G1b — 出队 leader 锁改为每 zone 一把(§7.1)
 > **修订**: 2026-10-13 G4b-G — 在途占位改为逐个到期的 ZSET,交票后保留 15s(§5「在途占位的生命周期」)
+> **修订**: 2026-10-15 — 负责人按「最标准」拍板:交票后宽限 15s → 20s;在途占位键的整键 TTL 改为只延长不缩短;真实 Redis 首跑定为打开排队前的硬门槛(§5「在途占位的生命周期」、§14 第 8 条)。出队每个非空拍只取一次 gate 候选、批内按本拍已分人数轮转(§5 Dispatcher Loop)。均已落码,**未编译、未测试**,待 Codex 验证
 
 ---
 
@@ -164,7 +165,7 @@ admitted_inflight = 清掉过期成员后的 ZCARD admitted:zset:zone:{z}
 free         = max(0, capacity - online - admitted_inflight)
 ```
 
-**关键安全属性 — admitted_inflight 必须减**:dispatcher 写出 admit 后,该玩家从 ZSET 中 popped(不在 ZCARD)、从 gate.PlayerCount 中也未出现(他还没真连上),如果 FreeSlots 不算这部分,下一拍会再放出一批,**一秒内超发数倍 admit token**,gate 那边玩家 token 验证全失败。取走后占位再留 15s,覆盖「票已交出、gate 还没把人数报上来」这一段(G4b-G;此前取走即撤占位,这一段漏计,见下一小节)。
+**关键安全属性 — admitted_inflight 必须减**:dispatcher 写出 admit 后,该玩家从 ZSET 中 popped(不在 ZCARD)、从 gate.PlayerCount 中也未出现(他还没真连上),如果 FreeSlots 不算这部分,下一拍会再放出一批,**一秒内超发数倍 admit token**,gate 那边玩家 token 验证全失败。取走后占位再留 20s(2026-10-13 起为 15s,10-15 改 20s),覆盖「票已交出、gate 还没把人数报上来」这一段(G4b-G;此前取走即撤占位,这一段漏计,见下一小节)。
 
 ### 在途占位的生命周期(G4b-G,2026-10-13)
 
@@ -175,7 +176,7 @@ free         = max(0, capacity - online - admitted_inflight)
 
 G4b-G 换成新键 `admitted:zset:zone:{z}`(ZSET,分数 = 占位到期的 Unix 毫秒),每个成员按自己的分数到期。完整推导、测试与评审记录见 [spec_G4b-G.md](../handoff/launch-readiness-20261013/spec_G4b-G.md)。
 
-一个占位成员的一生(`G` = 交票后宽限 15s,`now` = login 进程时钟的 Unix 毫秒):
+一个占位成员的一生(`G` = 交票后宽限 20s,2026-10-15 起;10-13 至 10-15 为 15s。`now` = login 进程时钟的 Unix 毫秒):
 
 | 路径 | 成员 | 写入时的分数(到期毫秒) | 之后 | 何时消失 |
 |---|---|---|---|---|
@@ -184,31 +185,34 @@ G4b-G 换成新键 `admitted:zset:zone:{z}`(ZSET,分数 = 占位到期的 Unix �
 
 - 到点的成员在**下一次计数或占位**时被 `ZREMRANGEBYSCORE key -inf now` 清掉(分数 ≤ now 即过期),没有后台清理任务。计数 = 清掉过期成员之后的 `ZCARD`,清理与计数在同一段 Lua 里,所以计数是一条写命令。
 - 取走只发生一次(`GETDEL` 只成功一次)。重复轮询在改分数之前就返回,不会反复续期。`signFn` 失败、meta 读不到 zone 时不改分数,占位保持放行时的分数,最迟 `AdmitTTL` 到点。
-- 整键 TTL 只做垃圾回收:每次写占位都 `PEXPIRE` 到 `max(AdmitTTL, G) + 1min`(默认 2 分钟),成员是否有效只看分数。zone 下线或被合走后没人再来读,整键 TTL 负责把残留收走。前提是同一 zone 的副本 `AdmitTTL` 相同,所以排队开着时滚动调整 `AdmitTTL` 的幅度不超过 1min(runbook 模式 4)。
+- 整键 TTL 只做垃圾回收,成员是否有效只看分数。zone 下线或被合走后没人再来读,整键 TTL 负责把残留收走。**只延长不缩短**(2026-10-15 起):三条写路径(放行、取走、快速通道)都是先 `ZADD`,再看剩余 `PTTL`,小于 `W = max(AdmitTTL, G) + 1min`(默认 2 分钟)才 `PEXPIRE W`。
+  - 为什么:`W` 由各副本按自己的 `AdmitTTL` 算,排队开着时滚动调整 `AdmitTTL` 就有新旧两种 `W` 并存。10-13 版每次写入无条件 `PEXPIRE W`,小 `W` 副本的写入会把整键 TTL 压到大 `W` 副本写的占位之前,该 zone 随后一段时间没有写入(例如满员停放)时,整键连同未到期的占位一起消失,下一拍最多多放一批。只延长不缩短之后整键不会先于任何成员到期,`AdmitTTL` 可以在排队开着时滚动调整(此前「调整幅度不超过 1min」的约束作废)。代价:调小之后,已续上的较大整键 TTL 要自然走完才收敛,只影响 zone 下线后键多留多久。做法与 Java 版的「不足才续」一致。
+  - 为什么不用 `PEXPIRE … GT`:`GT` 把没有 TTL 的键当作 TTL 无限大,刚由 `ZADD` 建出的键就永远设不上过期(miniredis v2.35.0 已对源码核实;真实 Redis 7 凭记忆,未核实)。也必须先 `ZADD` 再读 `PTTL`:键不存在时 `PTTL` 回 −2,`PEXPIRE` 打空,随后 `ZADD` 建出的键没有 TTL。
+  - 放行与取走共用一段脚本(`queue.go` 的 `admittedHoldScript`):放行在原来的 MULTI 里 `SET` 放行槽后 `EVAL` 它,取走直接 `EVAL`;快速通道脚本里是同样的两行。只有 10-15 之前的 G4b-G 镜像(无条件续期)与本版在排队开着、`AdmitTTL` 不同时混跑,旧镜像的副本才仍会缩短整键 TTL;按下文「排队关着滚」的部署顺序不会出现。
 - 旧键 `admitted:zone:{z}` 新版本不读、不写、不删。最后一个旧版本停写后,它在 60s 内整键过期。
 
-**时钟:login 进程时钟,经 ARGV 传进脚本**。分数和「现在」都由 Go 用 login 的墙钟算好,不用 Redis `TIME`。理由:测试直接拨假时钟,脚本里没有时间运算;与 Java 版、本包既有做法(排队令牌、gate 票的过期都用 login 墙钟)一致。代价是多副本时钟偏差 δ 直接进占位寿命(± δ)。同一 zone 的副本间偏差按毫秒到几十毫秒估(假设,未测),达到宽限量级(≥ 15s)才有可见后果:
+**时钟:login 进程时钟,经 ARGV 传进脚本**。分数和「现在」都由 Go 用 login 的墙钟算好,不用 Redis `TIME`。理由:测试直接拨假时钟,脚本里没有时间运算;与 Java 版、本包既有做法(排队令牌、gate 票的过期都用 login 墙钟)一致。代价是多副本时钟偏差 δ 直接进占位寿命(± δ)。同一 zone 的副本间偏差按毫秒到几十毫秒估(假设,未测),达到宽限量级(≥ 20s)才有可见后果。2026-10-15 负责人确认维持 login 时钟:系统本来就依赖各节点时钟同步(gate 票与排队令牌的过期同样用 login 墙钟),**login 节点做 NTP 时钟同步是部署要求**;也不在脚本里加上界清理(时钟故障按运维故障处置,见下面的止血):
 
 - **故障副本还在跑时**:它读的时候按自己的钟清理,别人写的、其实还有效的占位被早清,多放。
-- **故障副本恢复(NTP 校回)或被摘掉之后,不会立刻自愈**:它最后 15s / 60s 内写的占位,分数停在「故障钟 + 15s / 60s」,还要再过 δ 才到期。这段时间该 zone 的有效容量少掉这些占位(≤ 当时的 `capacity − online`)。清理只有 `-inf … now` 一个方向,而每次写占位都把整键 TTL 续满,所以只要 zone 还有写入,整键 TTL 不兜底;整个 zone 完全停放时,最长约 `AdmitTTL` + 整键 TTL(默认 3 分钟)后自愈。旧实现没有「占位按某个副本的钟到期」这回事,这是新增的失败模式。
-- **判断与止血**:`redis-cli ZRANGE admitted:zset:zone:<z> 0 -1 WITHSCORES` 里有分数比当前毫秒时间戳大出 `max(AdmitTTL, 15s)` 以上的成员,就是这种残留。止血 `redis-cli DEL admitted:zset:zone:<z>`,代价是在途清零,最多多放一批 `capacity − online`(写在 runbook 模式 2)。
+- **故障副本恢复(NTP 校回)或被摘掉之后,不会立刻自愈**:它最后 20s / 60s 内写的占位,分数停在「故障钟 + 20s / 60s」,还要再过 δ 才到期。这段时间该 zone 的有效容量少掉这些占位(≤ 当时的 `capacity − online`)。清理只有 `-inf … now` 一个方向,而每次写占位都保证整键 TTL 至少剩 `W`,所以只要 zone 还有写入,整键 TTL 不兜底;整个 zone 完全停放时,最长约 `AdmitTTL` + 整键 TTL(默认 3 分钟)后自愈。旧实现没有「占位按某个副本的钟到期」这回事,这是新增的失败模式。
+- **判断与止血**:`redis-cli ZRANGE admitted:zset:zone:<z> 0 -1 WITHSCORES` 里有分数比当前毫秒时间戳大出 `max(AdmitTTL, 20s)` 以上的成员,就是这种残留。止血 `redis-cli DEL admitted:zset:zone:<z>`,代价是在途清零,最多多放一批 `capacity − online`(写在 runbook 模式 2)。
 - **退路**:偏差不可忽略时改用 Redis `TIME`。键、成员、分数含义都不变,新旧两种写法可以混跑。
 
-**15s 从哪来**:票交出去之后,这个人要「连上 gate(耗时 `c`)→ gate 下一次上报人数(C++ gate 每 10s 一次,`cpp/nodes/gate/main.cpp` 的 `playerCountReportTimer`)→ login 读 etcd(不缓存)」才出现在 `online` 里,最坏滞后 `c + 10s`。15s = 一个上报周期 + 5s 建连与传播余量。Java 版同为 15s,但它的 gate 每 5s 发布一次,余量 10s。
+**20s 从哪来**:票交出去之后,这个人要「连上 gate(耗时 `c`)→ gate 下一次上报人数(C++ gate 每 10s 一次,`cpp/nodes/gate/main.cpp` 的 `playerCountReportTimer`)→ login 读 etcd(不缓存)」才出现在 `online` 里,最坏滞后 `c + 10s`。20s = 两个上报周期 = 一个周期的上报滞后 + 10s 建连与传播余量。Java 版是 15s,它的 gate 每 5s 发布一次,余量同为 10s。2026-10-13 本仓库照搬 15s,余量只有 5s;10-15 负责人按「最标准」改为 20s,两版余量对齐,宽限值本身不再相同。
 
-- 15s 是代码常量 `loginqueue.defaultHandoffGrace`,不是配置。它与 gate 的上报周期没有机械关联,改上报周期时要同步核对它。数值待 L-14 测「交票 → gate 会话建立」的分布后确认。
-- 快速通道当场交票,等同排队路径的「已取走」,所以也取 15s,不取 `AdmitTTL`(Java 版取 60s,这一点两版有意不同)。
+- 20s 是代码常量 `loginqueue.defaultHandoffGrace`,不是配置。它与 gate 的上报周期没有机械关联,改上报周期时要同步核对它。数值待 L-14 测「交票 → gate 会话建立」的分布后确认。
+- 快速通道当场交票,等同排队路径的「已取走」,所以也取同一个宽限(20s,代码里是同一个字段),不取 `AdmitTTL`(Java 版取 60s,这一点两版有意不同)。
 
-**算式**:记 `C` 容量,`O` gate 上报的在线数,`A` 未到期的占位数,`free = max(0, C − O − A)`;`v = c + φ` 是交票后这个人出现在 `O` 里的时刻,`φ ∈ [0, 10s)` 是距下一次上报的相位。
+**算式**:记 `C` 容量,`O` gate 上报的在线数,`A` 未到期的占位数,`free = max(0, C − O − A)`;`v = c + φ` 是交票后这个人出现在 `O` 里的时刻,`φ ∈ [0, 10s)` 是距下一次上报的相位。以下按 `G` = 20s 算(10-13 版按 15s 算的数字见 spec_G4b-G.md §5.2 的括注)。
 
-- `v < G` 时,`[v, G)` 这段被算两遍(占位 + `O`),少放。`c` 取 1s 时双计 4~14s、平均约 9s;瞬时少放的名额 ≈ 交票速率 × 9s,最多 × 15s。
-- `v > G` 时,`[G, v)` 这段一遍都没算,多放。只在 `c + φ > 15s` 时出现,建连在 5s 以内时为 0。gate 迟迟不上报或建连普遍超过 5s 时,多放的节奏从修复前的约每 2~3s 一批降到约每 17~18s 一批,每批 ≤ `C − O`:有界改善,不是消除。
-- gate 票有效期 10 分钟,远大于宽限。拿了票超过 15s 才连上的人不在任何占位里,连上就是多 1 人(既有性质;gate 侧另有连接上限)。
+- `v < G` 时,`[v, G)` 这段被算两遍(占位 + `O`),少放。`c` 取 1s 时双计 9~19s、平均约 14s;瞬时少放的名额 ≈ 交票速率 × 14s,最多 × 20s。
+- `v > G` 时,`[G, v)` 这段一遍都没算,多放。只在 `c + φ > 20s` 时出现,建连在 10s 以内时为 0。gate 迟迟不上报或建连普遍超过 10s 时,多放的节奏从修复前的约每 2~3s 一批降到约每 22~23s 一批,每批 ≤ `C − O`:有界改善,不是消除。
+- gate 票有效期 10 分钟,远大于宽限。拿了票超过 20s 才连上的人不在任何占位里,连上就是多 1 人(既有性质;gate 侧另有连接上限)。
 
-**放行节奏的上界**(判读压测与 runbook 用):每次放行都以 `O + A ≤ C` 为界。一个名额被排队放行的人拿走后,最早要到「取走 + 15s」才可能放回,而且前提是这个人没有进 `O`。
+**放行节奏的上界**(判读压测与 runbook 用):每次放行都以 `O + A ≤ C` 为界。一个名额被排队放行的人拿走后,最早要到「取走 + 20s」才可能放回,而且前提是这个人没有进 `O`。
 
 - 放进去的人留在线上(正常玩家):名额从占位转给在线数,不放回。排队的长期放行速率 = 在线玩家的离开速率;`O + A` 顶到 `C` 之后 `q_admitted` 不涨是**正常回压**,不是 dispatcher 卡死。
-- 拿了票不连 gate,或连上很快就走:名额每约 17~18s(取走延迟 ≤ 轮询 2s + 一拍 1s,再加 15s)周转一次,任意这样一个窗口内经排队放行的人数 ≤ 窗口起点的 `C − O`。修复前这个周期是 2~3s(Q2)。
+- 拿了票不连 gate,或连上很快就走:名额每约 22~23s(取走延迟 ≤ 轮询 2s + 一拍 1s,再加 20s)周转一次,任意这样一个窗口内经排队放行的人数 ≤ 窗口起点的 `C − O`。修复前这个周期是 2~3s(Q2)。
 - §11 与 runbook 里写于 2026-05 的节奏数字没有按这个上界标定过,待 L-14 重新标定。
 
 **新旧版本混跑与部署顺序**:旧 Pod 读写 `admitted:zone:{z}`(SET),新 Pod 读写 `admitted:zset:zone:{z}`(ZSET)。键不同,不会 `WRONGTYPE`;但两边互相看不见对方的占位。
@@ -217,29 +221,41 @@ G4b-G 换成新键 `admitted:zset:zone:{z}`(ZSET,分数 = 占位到期的 Unix �
 - **排队开着滚**(只在本机或裸机有人手工打开过时可能),按谁经手逐格记账:
   - 旧 leader 放行、旧 Pod 取走:与 G4b-G 之前完全相同,取走即 SREM,Q2 照旧;
   - 旧 Pod 的快速通道:照旧写旧键的 `fast:<uuid>`,Q1 照旧;
-  - 旧 leader 放行、新 Pod 取走:旧 SET 里的成员没人删,按旧版 Q1 的方式残留(旧 leader 少放);新键里补一个 15s 的占位;
+  - 旧 leader 放行、新 Pod 取走:旧 SET 里的成员没人删,按旧版 Q1 的方式残留(旧 leader 少放);新键里补一个 20s 的占位;
   - 新 leader 放行、旧 Pod 取走:新键里的占位不被改分数,留到放行后 60s(少放,有界);
   - 新 leader 放行、新 Pod 取走,以及新 Pod 的快速通道:G4b-G 的行为;
   - 两种键互不可见带来的额外量:新旧两边的快速通道各自按自己的键判余量,任一时刻在途占位合计最多 2 ×(`C − O`);
   - 不丢人、不重复放行:`ZPOPMIN` 与 `GETDEL` 的原子性与占位键无关。
 - **结论**:相对各自版本单跑,混跑额外多放 ≤ 一个 `C − O`、少放有界,窗口等于滚动时长;**leader 或经手的副本是旧版期间 Q1 / Q2 仍在,不能把混跑窗口当作 G4b-G 已生效**。G4b-G 的两条修复只在放行方与取走方都是新版时才成立。可以接受,但不推荐。
-- **回滚(新 → 旧)**:窗口与上面对称,新键在最后一次写入后 2 分钟内整键过期。排队开着时不要用 `kubectl rollout undo` 退镜像:先用 `-LoginQueue off` 关排队,再退(§15)。
+- **回滚(新 → 旧)**:窗口与上面对称,新键在最后一次写入后 2 分钟内整键过期(有副本配过更大的 `AdmitTTL` 时,按其中最大的 `W`)。排队开着时不要用 `kubectl rollout undo` 退镜像:先用 `-LoginQueue off` 关排队,再退(§15)。
 
 ### Dispatcher Loop
 
 ```
 zoneId = Node.ZoneId  // 只出本 zone;队列空直接跳过
 if ZCARD queue:zone:{zoneId} == 0: return   // 先判空,空闲 zone 不碰 gate 目录
-free = FreeSlots(zoneId)                    // 再算容量
+candidates = CandidatesForZone(zoneId)      // 每个非空拍只取一次 gate 候选(2026-10-15 起)
+free = FreeSlots(candidates)                // 再算容量,与挑 gate 共用这一份候选
 if free <= 0: return
 batch = min(free, ZCARD)
 members = ZPOPMIN queue:zone:{zoneId} batch
+picker = 本拍的挑 gate 器(candidates)        // 负载 = PlayerCount + 本拍已分给它的人数
 for each queueId in members:
-    admit = PickAndSignGateToken(zoneId)  // 选 gate + 签 HMAC
-    SET admit:{queueId} <admit JSON> EX AdmitTTL
-    ZADD admitted:zset:zone:{zoneId} <now_ms + AdmitTTL> queueId     // 占位按自己的分数到期
-    PEXPIRE admitted:zset:zone:{zoneId} <整键垃圾回收 TTL>             // max(AdmitTTL, 15s) + 1min
+    gate = picker.pick()                    // 取负载最少、同负载 NodeID 最小,选中后本拍计数 +1
+    MULTI
+      SET admit:{queueId} <AdmitSlot JSON:选好的 gate> EX AdmitTTL   // gate 票在取走时才签
+      EVAL admittedHoldScript:              // 一段脚本(2026-10-15 起)
+        ZADD admitted:zset:zone:{zoneId} <now_ms + AdmitTTL> queueId   // 占位按自己的分数到期
+        if PTTL < W: PEXPIRE W              // W = max(AdmitTTL, 20s) + 1min,整键 TTL 只延长不缩短
+    EXEC
 ```
+
+**一拍的 gate 分配(2026-10-15 起;未编译、未测试)**:每个非空拍只调一次 `CandidatesForZone`(生产实现是一次 etcd 前缀读加一次排空标记 MGET,不缓存),算容量和批内挑 gate 共用这一份。批内按「gate 上报的 `PlayerCount` + 本拍已分给它的人数」挑最少的,同数取 NodeID 最小,选中后本拍计数 +1:一拍的放行先填最闲的 gate,填平之后在各台之间轮转。账只记在本拍,下一拍重新取候选、从 gate 上报的人数重新算起。
+
+- 改之前:每放一个人重取一次候选(一拍放 N 人就是 N 次串行目录读),而 `PlayerCount` 每 10s 才上报一次、一拍之内不变,只按它挑会让整批都落到同一台 gate。这批条目已被 `ZPOPMIN` 弹出、既不在队列也不在占位里,拍越长,进程中途退出时丢的越多。
+- 快速通道(assign-gate 当场签票)仍是一次 `FreeSlots` 加一次签票,各读一次目录,单次挑选规则不变(`PickGate`,与批内挑选共用同一份规则)。
+- 本拍没有候选时 `FreeSlots` 先报 `no gates for zone`,整拍不出队、条目原样留在队列(日志口径不变,见 runbook 模式 1)。
+- 与 Java 版「一轮按段挑 gate、把这一轮已分给它的人数算进负载」对齐(Java 仓库 `PARITY.md`「登录排队」行 ③)。
 
 2026-10-12(G1b)以前是 `for each zoneId in activeZones()`,且先 FreeSlots 后 ZCARD。`activeZones` 实际只含本 zone(见 §7.1),所以改成单 zone 不丢功能。改成先判空的代价:队列非空、本 zone 却一台 gate 都没有时,每拍一条 `[loginqueue] freeSlots zone=… queueLen=… err=…` ERROR(以前被静默跳过)。
 
@@ -358,7 +374,8 @@ Queue:
   Enabled: false                    # kill switch,默认关
   DispatchInterval: 1s              # dispatcher 出队节奏
   AdmitTTL: 60s                     # admit token 客户端要在此 TTL 内 GETDEL,也是没人来取时在途占位的寿命;
-                                    # 取走后占位只再留 15s(代码常量 loginqueue.defaultHandoffGrace,不是配置)
+                                    # 取走后占位只再留 20s(代码常量 loginqueue.defaultHandoffGrace,不是配置;10-15 前为 15s);
+                                    # 排队开着时也可以滚动调整(整键 TTL 只延长不缩短,§5)
   QueueEntryTTL: 1h                 # ZSET / meta / token-index 的 TTL 上限
   SoftCapMultiplier: 1.5            # 没配 ZoneCapacityOverride 时,用 max(online,1) * mult
   DefaultRetryAfterMs: 2000         # 客户端轮询间隔建议
@@ -401,7 +418,7 @@ q_entered=4080 q_admitted=920 q_expired=3 q_avg_wait=28s q_max_rank=4078
 
 | 指标 | 健康 | 红线 |
 |---|---|---|
-| q_admitted 增速 | 上界是在线玩家的离开速率,加上拿了票没留在线上的那部分名额每约 17s 周转一次(§5「放行节奏的上界」;数字待 L-14 标定) | `在线 + login_queue_admitted_inflight ≥ capacity` 时不涨是正常回压;停滞且同时满足 `在线 + 在途 < capacity` 才判 dispatcher 卡死 |
+| q_admitted 增速 | 上界是在线玩家的离开速率,加上拿了票没留在线上的那部分名额每约 22~23s 周转一次(§5「放行节奏的上界」;交票后宽限 20s,10-15 前按 15s 是约 17s;数字待 L-14 标定) | `在线 + login_queue_admitted_inflight ≥ capacity` 时不涨是正常回压;停滞且同时满足 `在线 + 在途 < capacity` 才判 dispatcher 卡死 |
 | q_expired / q_entered | < 1% | > 5% → AdmitTTL 太短或客户端轮询慢 |
 | q_avg_wait | < 60s(待 L-14 标定:放行速率受上一行的上界约束,不是固定的 admit 速率) | > 5min → dispatcher 落后 EnterGame |
 | q_max_rank | 早期升高,后期单调下降到 0 | 不下降 → 该玩家卡住 |
@@ -456,6 +473,7 @@ q_entered=4080 q_admitted=920 q_expired=3 q_avg_wait=28s q_max_rank=4078
 5. ~~**多 zone 公平性**:dispatcher 按 `activeZones` 顺序遍历,极端情况下前面 zone 抢光 admit 批次。~~ 已由 §7.1 消解:每个 zone 有独立的 leader,不存在 zone 之间互相抢批次。
 6. **取走后再轮询回「排队中、名次 0」**(2026-10-13 登记,G4b-G 不含):同一令牌取走之后再轮询,meta 与 token 索引还在、ZRANK 落空,回 QUEUEING、rank 0,直到 1h 过期;回包丢失时这张 gate 票找不回来。Java 版回 410。这是 `PARITY.md`「登录排队」行 ③ 的另一句(`spec_G4b-G.md` §5.8 第 1 条)。
 7. **`PopAdmit` 不是单段 Lua**(2026-10-13 登记,既有):「FreeSlots 读占位数 → ZPOPMIN → 逐条写占位」是多次往返,一批把队列弹空之后、占位逐条写完之前,快速通道看到「队列空、占位还没写全」可以再占进来,任一时刻在途 ≤ 2 ×(capacity − online)。`pickFn` 返回 `(nil, nil)`、Marshal 失败、MULTI 失败时条目丢失(G1b 规格 §4.5 第 1 条)。Java 版把弹出、算空位、写占位放在一段 Lua 里(`spec_G4b-G.md` §5.4、§5.8 第 2 条)。
+8. **在途占位脚本只有 miniredis 上的证据**(2026-10-15 登记):G4b-G 的计数、快速通道与 `admittedHoldScript` 三段脚本(含 10-15 的条件续期、MULTI 里的 `EVAL`)只有 miniredis 单测覆盖(单测本身也还待 Codex 执行),没有任何真实 Redis 上的运行证据。负责人 2026-10-15 定为**硬门槛**:G4b-2 打开排队之前,`spec_G4b-G.md` §8.4 的最小冒烟必须在真实 Redis 7.x 上跑通并记进 `docs/PROGRESS.md`,否则任何环境都不打开排队(`spec_G4b.md` §7 合入门槛)。
 
 ---
 

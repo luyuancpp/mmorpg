@@ -87,12 +87,12 @@ bool KafkaConsumer::init(const std::string &brokers, const std::string &groupId,
 	// 2026-10 起 KafkaManager::Init 不再订阅任何 topic,所以走到这里的空 group.id 只可能来自
 	// 直接调用 KafkaManager::Subscribe:调用方没给组名,Kafka.GroupID 也为空。旧路径按节点
 	// 拼组名的回落在 node_kafka_command_handler.h 的 RegisterKafkaCommandHandler 里。
-	// 这里显式拦下,免得失败表现为一条误导人的 librdkafka 报错。
+	// 这是调用方的真失败,没有「稍后再建」的路径:这里显式拦下并打一行 ERROR,
+	// 免得失败表现为一条误导人的 librdkafka 报错。
 	if (groupId.empty())
 	{
-		LOG_INFO << "KafkaConsumer::init skipped: empty group.id "
-				 << "(per-node group will be set up later via "
-				 << "RegisterKafkaCommandHandler).";
+		LOG_ERROR << "KafkaConsumer::init failed: empty group.id "
+				  << "(Subscribe called without a group and Kafka.GroupID is empty).";
 		return false;
 	}
 

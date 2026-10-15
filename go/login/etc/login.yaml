@@ -462,11 +462,11 @@ AuthProviders:
 # via etcd (cpp/nodes/gate/main.cpp playerCountReportTimer).
 #
 # AdmitTTL:放行槽等客户端来取的时限,也是没人来取时在途占位的寿命。取走之后(以及快速通道当场
-# 交票之后)占位只再留 15s —— 代码常量 loginqueue.defaultHandoffGrace,不是配置(G4b-G,2026-10-13)。
-# 排队开着时滚动调整 AdmitTTL,新旧值之差不要超过 1min(常量 loginqueue.admittedKeyGCSlack):占位键的整键 TTL
-# 由各副本按自己的 AdmitTTL 无条件续期,差得更多时小值副本会把整键 TTL 压到大值副本写的占位之前,该 zone
-# 随后若有一段时间没有写入,整键连同未到期的占位一起消失,最多多放一批(容量 − 在线)。更大的调整先用
-# k8s_deploy.ps1 -LoginQueue off 关掉排队,滚完再开(docs/handoff/launch-readiness-20261013/spec_G4b-G.md §5.5)。
+# 交票之后)占位只再留 20s —— 代码常量 loginqueue.defaultHandoffGrace,不是配置(G4b-G;2026-10-13 定 15s,
+# 10-15 改为 20s,即 gate 两个上报周期)。
+# 占位键的整键 TTL 只做垃圾回收、只增不减:各副本写占位时,剩余 TTL 不足自己的 max(AdmitTTL, 20s) + 1min
+# 才续上(2026-10-15 起;此前是无条件续期)。所以排队开着时也可以滚动调整 AdmitTTL,新旧值并存不会让整键
+# 先于未到期的占位消失;调小之后,已续上的较大整键 TTL 要自然走完才收敛(只影响 zone 下线后键多留多久)。
 #
 # Enabled=true 时 DispatchInterval、DispatcherLockTTL 必须为正(loginqueue.NewDispatcher 校验),否则起服失败;
 # 代码里的默认值(1s / 30s)只在键缺省时生效,显式写 0s 不会回落到默认值,也不是「关掉」。

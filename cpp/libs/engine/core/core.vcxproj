@@ -181,6 +181,9 @@
     <ClCompile Include="node\system\etcd\etcd_helper.cpp" />
     <ClCompile Include="node\system\etcd\etcd_manager.cpp" />
     <ClCompile Include="node\system\etcd\etcd_service.cpp" />
+    <ClCompile Include="node\system\etcd\etcd_transport.cpp" />
+    <ClCompile Include="node\system\etcd\grpc_etcd_transport.cpp" />
+    <ClCompile Include="node\system\etcd\muduo_etcd_transport.cpp" />
     <ClCompile Include="node\system\node\node.cpp" />
     <ClCompile Include="node\system\node\node_allocator.cpp" />
     <ClCompile Include="node\system\node\node_connector.cpp" />
@@ -383,6 +386,7 @@
     <ClInclude Include="network\network_constants.h" />
     <ClInclude Include="network\network_utils.h" />
     <ClInclude Include="network\node_utils.h" />
+    <ClInclude Include="network\grpc_client_runtime.h" />
     <ClInclude Include="network\player_message_utils.h" />
     <ClInclude Include="network\process_info.h" />
     <ClInclude Include="network\rpc_client.h" />
@@ -394,6 +398,12 @@
     <ClInclude Include="node\system\etcd\etcd_helper.h" />
     <ClInclude Include="node\system\etcd\etcd_manager.h" />
     <ClInclude Include="node\system\etcd\etcd_service.h" />
+    <ClInclude Include="node\system\etcd\etcd_transport.h" />
+    <ClInclude Include="node\system\etcd\grpc_etcd_transport.h" />
+    <ClInclude Include="node\system\etcd\muduo_etcd_transport.h" />
+    <ClInclude Include="node\system\etcd\etcd_endpoint.h" />
+    <ClInclude Include="node\system\etcd\etcd_stream_backoff.h" />
+    <ClInclude Include="node\system\discovery\discovery_key_index.h" />
     <ClInclude Include="node\system\grpc_channel_cache.h" />
     <ClInclude Include="node\system\grpc_call_deadline.h" />
     <ClInclude Include="node\system\node\node.h" />

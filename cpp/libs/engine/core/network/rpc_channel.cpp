@@ -282,7 +282,7 @@ private:
         if (controller_.Failed())
         {
             // 必回之后,SetFailed 不能再被忽略:否则调用方收到的是「成功 + 空响应」(fail-open)。
-            const auto n = Bump(GetRpcChannelStats().requestsRejected);
+            const auto n = Bump(GetRpcChannelStats().handlerFailed);
             if (ShouldLogRpcEvent(n))
             {
                 LOG_WARN << "[RpcChannel] handler failed: method=" << MethodNameOf(messageId_)
@@ -395,6 +395,10 @@ void RpcChannel::CompleteDeferred(RpcDoneCallback::State &state, GameErrorCode e
         return;
     }
     state.completed = true;
+    if (error == HANDLER_FAILED)
+    {
+        Bump(GetRpcChannelStats().handlerFailed);
+    }
 
     const auto locked = state.channel.lock();
     if (!locked)
@@ -455,7 +459,9 @@ void RpcChannel::FailNotSent(muduo::net::EventLoop &loop, uint32_t messageId, Cl
 {
     auto &stats = GetRpcChannelStats();
     Bump(stats.started);
-    if (ShouldLogRpcEvent(stats.notSent.load(std::memory_order_relaxed) + 1))
+    // 采样用同步递增的计数:notSent 要等排队的投递执行后才加,同一轮里一串本地失败会看到同一个值,采样形同虚设。
+    static std::atomic<uint64_t> notSentOccurrences{0};
+    if (ShouldLogRpcEvent(Bump(notSentOccurrences)))
     {
         LOG_WARN << "[RpcChannel] call not sent: reason=" << reason << ", method=" << MethodNameOf(messageId)
                  << ", message_id=" << messageId << ", peer=" << peer;
@@ -652,12 +658,11 @@ TcpConnectionPtr RpcChannel::LockConnectedConnection() const
     return locked;
 }
 
-bool RpcChannel::SendFrame(const TcpConnectionPtr &connection, const GameRpcMessage &message)
+void RpcChannel::SendFrame(const TcpConnectionPtr &connection, const GameRpcMessage &message)
 {
     const auto size = static_cast<uint32_t>(LogIfMessageTooLarge(message));
     codec_.send(connection, message);
     TrafficStatsCollector::Instance().RecordSend(message.message_id(), size);
-    return true;
 }
 
 void RpcChannel::FailAll(RpcStatus status)

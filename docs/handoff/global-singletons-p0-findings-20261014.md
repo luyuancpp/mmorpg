@@ -923,6 +923,12 @@ E8 专门找过、没有找到的保护
 
 ### 原报告:修复设计
 
+> **2026-10-15 落码说明(以此为准,下面的设计原文保留作推导记录)**:实际实现是「私有握手位 + 占位对象」,不是下文的「握手期间 `GetZoneRedis()` 为空」。
+> - `Connect` 先把 `zoneRedis_` 设成一个只构造、从不 `connect()` 的占位 Hiredis(`connected()` 恒假、`command()` 直接返回 `REDIS_ERR` 且不调回调),所以 `GetZoneRedis()` 在 Connect 之后恒非空,十几处直接 `GetZoneRedis()->` 的调用点不需要改。
+> - 每条新连接先放在私有的 `handshakeRedis_`;空口令连上即移交,有口令则第一条命令是 AUTH,回 `+OK` 才移交并同步调用重连回调。被拒、发不出去、一个重连间隔内无应答(超时)都不移交,各打一条带 `metric=zone_redis_auth_failed` 的 ERROR,到点在回调栈外重建握手再试。
+> - fail-closed 的直接理由:`BattleRoomManager::ProbeAndRetryOne` 把非预期应答当成「已销账」并删外发箱条目,放行未认证连接会让 NOAUTH 被误读成资产结论。
+> - 回归用例实际是 `RedisManagerAuth` 组 10 条(EmptyPasswordSendsNoAuth、AuthIsFirstCommandAndCallbackFollows、RejectedAuthKeepsZoneRedisUnavailableAndRetries、PasswordEchoedByServerIsRedacted、ReauthenticatesAfterServerDisconnect、ShutdownDuringHandshakeIsQuiet、AuthTimeoutRebuildsConnection、NonPositiveReconnectIntervalFallsBackToDefault、ServerClosingBeforeAuthReplyIsRetried、ServerClosingAfterRejectedAuthIsRetried)与配置测试 `ZoneRedisPasswordFromEnvOverridesYaml` / `ZoneRedisPasswordWithoutEnvKeepsYaml`。验证命令见 [Codex 任务单](global-singletons-p0-codex-tasksheet-20261014.md) §7。
+
 【总体】本设计未编译、未测试,待 Codex 验证;本机当前也无法编译(见 codex_measurement 的 B0)。
 - 不改两份 Hiredis.cc,不改 proto,不动 generated/。
 - AUTH 用现有 `command()` 发(`"AUTH %b"`,二进制安全)。
@@ -1754,6 +1760,12 @@ k8s_deploy.ps1 与契约测试的行号都是 HEAD blob 行号,磁盘上已后�
 - .github/copilot-instructions.md 仍按旧的 `{type}-{node_id}` topic 描述(另案,本轮未重读)。
 
 ### 原报告:修复设计
+
+> **2026-10-15 批 2 落码说明(以此为准,下面的设计原文保留作推导记录)**:负责人「全部做完给我」,批 2 与原列「另案」的第 13 条一起落码,未运行任何测试。
+> - `tools/scripts/k8s_deploy.ps1` 的 `New-NodeConfigMapYaml`:`GroupID` 改为 `Get-AuthoritativeScalar ... 'Kafka.GroupID'` 镜像 bin/etc(空串照常读出;另加字符集校验,值含引号 / 反斜杠 / 空白等直接 throw);Kafka 段新增 `DisableLegacyPerNodeTopic: true`(**模板常数,不镜像 bin/etc**,本机那份仍是 `false`、由运维显式翻)。两者同批,理由即第 10 条的副作用二:只改组名不关旧路径,旧路径换到没有位点的新组会从 earliest 重放旧 topic。
+> - 第 13 条的前提(无生产者写旧 topic)2026-10-15 全仓静态 grep 复核成立:C++ 只有 battle 发命令且走 `ResolveCommandRoute`,`LegacyPerNodeTopic()` 只剩单测引用;Go 的 login / scene_manager / player_locator / match / friend / guild 全部经 `shared/kafkacmd`、`shared/kafkautil`,chat / trade / team / client_rpc_router 不连 Kafka;`java/gateway_node` 不连 Kafka。核实依据与上线影响见 `deploy/k8s/README.md`「控制面命令 topic」一节的「K8s 已关老路径」条。取值待实测 / 压测复核。
+> - 契约测试:`k8s_deploy_contract.tests.ps1` 紧跟 `$battleInfraRun` 定义新增一例,对 node-config 与 battle-node-config 断言 GroupID == bin/etc、不含 `game-consumer-group`、`DisableLegacyPerNodeTopic` 为 `true`。修复前红、修复后绿,待 Codex 跑。
+> - 文档:README 迁移窗口条与保留期现状表的 `gate-<id>` / `game-events` 两行、bin/etc 的 GroupID / 迁移开关注释(只改注释)、`deploy/docker-compose.yml` 的 game-events 注释、`kafka_manager.cpp` 与 `kafka_manager_init_test.cpp` 里「至今写死」的注释。
 
 目标:生产端 broker 的登记不再依赖任何消费侧配置;Brokers 配置为空在启动时拒绝;K8s 模板不再自带与本机不同的 GroupID 常数。不改协议、不改持久化数据、不动 generated/、不新增宏;只多存一个字符串,不涉及连接或回调的生命周期(AGENTS §11.7 不适用)。
 
@@ -3246,6 +3258,8 @@ I7 触发面不限于 etcd 成员重启。E4 不区分原因,任何一次到 etc
 - 常驻 Redis 订阅(同类风险点):game-gate/.../presence/GatePushSubscriber.java:53;game-scene/.../ownership/OwnerTakeoverSubscriber.java:35;game-scene/.../SceneNode.java:850-851。
 
 ### 原报告:修复设计
+
+> **2026-10-15 去向(以此为准)**:本项不在旧的完成队列(CQ)模板上修。负责人 2026-10-14 拍板的 gRPC→muduo 迁移([grpc-muduo-transport.md](../design/grpc-muduo-transport.md))第 2 批就是「etcd 迁到新传输:流断重建、按 revision 续 watch、compact 处理」,第 3 批重写客户端生成模板;在旧模板上修会与迁移会话撞车,修好也会被替换(同 entt 审计「旧模板不在那边修」的先例)。迁移会话已把下面的结论与验收口径并入该文档 §10.2,作为第 2 批的验收条件,并同意「任何 etcd 滚动(含 P0-C 钉镜像、加压缩 env)排在这项验证通过之后」。第 2 批保留开关回退到旧 CQ 版,回退时这些缺陷仍在。下面的设计原文保留作推导与测试设计参考。
 
 前提:实测成立(或负责人按上面的「丙」破例)后再落码。以下全部未编译、未测试(AGENTS.md §10.1)。
 

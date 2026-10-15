@@ -77,6 +77,9 @@ public:
     };
     // 某个流的请求收完(END_STREAM)时调用;在 loop 线程上、nghttp2 回调栈之外。
     using RequestHandler = std::function<void(LoopbackH2Server &server, Connection &connection, int32_t streamId)>;
+    // 每次收到客户端字节(已喂给 peer、已派发收完的请求)之后、刷出应答之前调用:双向流用例在这里
+    // 按已收到的消息逐条应答,不必等请求 END_STREAM。
+    using ActivityHandler = std::function<void(LoopbackH2Server &server, Connection &connection)>;
 
     LoopbackH2Server(muduo::net::EventLoop &loop, uint16_t port) : loop_(loop), port_(port) {}
     ~LoopbackH2Server() { Stop(); }
@@ -110,11 +113,13 @@ public:
     }
 
     void SetHandler(RequestHandler handler) { handler_ = std::move(handler); }
+    void SetActivityHandler(ActivityHandler handler) { activityHandler_ = std::move(handler); }
 
     // 析构 TcpServer:它在 loop 线程上同步 connectDestroyed 所有连接。
     void Stop()
     {
         handler_ = nullptr;
+        activityHandler_ = nullptr;
         server_.reset();
     }
 
@@ -194,6 +199,10 @@ private:
                 handler_(*this, *connection, streamId);
             }
         }
+        if (activityHandler_)
+        {
+            activityHandler_(*this, *connection);
+        }
         Flush(*connection); // SETTINGS ACK / WINDOW_UPDATE / PING ACK / 应答
     }
 
@@ -206,6 +215,7 @@ private:
     muduo::net::EventLoop &loop_;
     const uint16_t port_;
     RequestHandler handler_;
+    ActivityHandler activityHandler_;
     std::vector<std::unique_ptr<Connection>> connections_; // 断开后保留,供用例检查
     std::map<std::string, size_t> indexByName_;
     size_t requestCount_{0};
@@ -314,6 +324,7 @@ protected:
         if (server_)
         {
             server_->SetHandler(nullptr);
+            server_->SetActivityHandler(nullptr);
         }
         muduo_grpc_test::RunLoopFor(loop_, drainAfterTest_);
         if (server_)
@@ -764,6 +775,272 @@ TEST_F(ChannelLoopbackTest, NoThreadIsCreatedForConnectionsOrCalls)
     EXPECT_TRUE(NewThreadIds(before, during).empty()) << NewThreadIds(before, during).size() << " new thread(s) while calls were in flight";
     EXPECT_TRUE(NewThreadIds(before, after).empty()) << NewThreadIds(before, after).size() << " new thread(s) after the channel was destroyed";
     EXPECT_LE(after.size(), before.size());
+}
+
+// ── 双向流与周期 keepalive(§13.2 / §13.3)─────────────────────────────────
+
+constexpr char kStreamMethod[] = "/etcdserverpb.Watch/Watch";
+
+// 流回调的记录。回调只捕获 shared_ptr(TearDown 之后队列里的回调仍可能执行)。
+struct StreamEvents
+{
+    int headers{0};
+    std::vector<std::string> messages;
+    int closes{0};
+    muduo_grpc::Status status;
+    Metadata trailing;
+};
+using StreamEventsPtr = std::shared_ptr<StreamEvents>;
+
+muduo_grpc::StreamCallbacks StreamRecorder(const StreamEventsPtr &events)
+{
+    muduo_grpc::StreamCallbacks callbacks;
+    callbacks.onHeaders = [events](const Metadata &) { ++events->headers; };
+    callbacks.onMessage = [events](std::string &&message) { events->messages.push_back(std::move(message)); };
+    callbacks.onClose = [events](const muduo_grpc::Status &status, const Metadata &trailing)
+    {
+        ++events->closes;
+        events->status = status;
+        events->trailing = trailing;
+    };
+    return callbacks;
+}
+
+// 服务端脚本:每个流上已收齐的消息逐条回显("echo:" + 负载,首条之前先发响应头);
+// 客户端半关闭且消息都回显完后回 trailers(grpc-status 0)。
+struct EchoStreamState
+{
+    std::map<int32_t, size_t> consumed; // 每个流的 body 已回显到哪个偏移
+    std::set<int32_t> headersSent;
+    std::set<int32_t> finished;
+};
+
+LoopbackH2Server::ActivityHandler EchoStreams(const std::shared_ptr<EchoStreamState> &state)
+{
+    return [state](LoopbackH2Server &, Connection &connection)
+    {
+        for (const int32_t streamId : connection.peer.StreamIds())
+        {
+            const ReceivedStream *stream = connection.peer.FindStream(streamId);
+            if (stream == nullptr || stream->closed || stream->rstReceived || state->finished.count(streamId) != 0)
+            {
+                continue;
+            }
+            size_t &offset = state->consumed[streamId];
+            while (stream->body.size() - offset >= 5)
+            {
+                const auto *prefix = reinterpret_cast<const unsigned char *>(stream->body.data() + offset);
+                const size_t length = (static_cast<size_t>(prefix[1]) << 24) | (static_cast<size_t>(prefix[2]) << 16) |
+                                      (static_cast<size_t>(prefix[3]) << 8) | static_cast<size_t>(prefix[4]);
+                if (stream->body.size() - offset - 5 < length)
+                {
+                    break;
+                }
+                const std::string payload = stream->body.substr(offset + 5, length);
+                offset += 5 + length;
+                if (state->headersSent.insert(streamId).second)
+                {
+                    EXPECT_TRUE(connection.peer.SendHeaders(
+                        streamId, {{":status", "200"}, {"content-type", "application/grpc"}}, false))
+                        << connection.peer.lastError();
+                }
+                EXPECT_TRUE(connection.peer.SendData(streamId, TestH2Peer::Frame("echo:" + payload), false))
+                    << connection.peer.lastError();
+            }
+            if (stream->requestEnded && offset == stream->body.size())
+            {
+                state->finished.insert(streamId);
+                if (state->headersSent.insert(streamId).second)
+                {
+                    EXPECT_TRUE(connection.peer.SendTrailersOnly(streamId, 0, "")) << connection.peer.lastError();
+                }
+                else
+                {
+                    EXPECT_TRUE(connection.peer.SendHeaders(streamId, {{"grpc-status", "0"}, {"grpc-message", ""}}, true))
+                        << connection.peer.lastError();
+                }
+            }
+        }
+    };
+}
+
+TEST_F(ChannelLoopbackTest, BidiStreamDeliversEachMessageInOrderAndClosesExactlyOnce)
+{
+    StartServer(&IgnoreRequest);
+    server_->SetActivityHandler(EchoStreams(std::make_shared<EchoStreamState>()));
+    const auto channel = MakeChannel();
+    ASSERT_NE(channel, nullptr);
+
+    const auto events = std::make_shared<StreamEvents>();
+    const auto stream = channel->StartStream(kStreamMethod, {{"x-trace", "t1"}}, StreamRecorder(events));
+    ASSERT_NE(stream, nullptr);
+    // 连上之前写:本端缓冲,开流后按序发出。
+    EXPECT_TRUE(stream->Write("a"));
+    EXPECT_TRUE(stream->Write("b"));
+    EXPECT_FALSE(stream->closed());
+    EXPECT_EQ(events->closes, 0) << "回调不得在 StartStream / Write 内同步执行";
+    EXPECT_TRUE(events->messages.empty());
+
+    ASSERT_TRUE(RunUntil([&] { return events->messages.size() >= 2; }, 5s));
+    // 开流之后再写:流的 DATA 已挂起(DEFERRED),这次写要把它唤醒。
+    EXPECT_TRUE(stream->Write("c"));
+    ASSERT_TRUE(RunUntil([&] { return events->messages.size() >= 3; }, 5s));
+    stream->WritesDone();
+    EXPECT_FALSE(stream->Write("late")) << "半关闭之后不能再写";
+    ASSERT_TRUE(RunUntil([&] { return events->closes > 0; }, 5s));
+    RunFor(200ms);
+
+    EXPECT_EQ(events->closes, 1) << "onClose 恰好一次";
+    EXPECT_TRUE(events->status.ok()) << events->status.ToString();
+    EXPECT_EQ(events->headers, 1);
+    EXPECT_EQ(events->messages, (std::vector<std::string>{"echo:a", "echo:b", "echo:c"}));
+    EXPECT_TRUE(stream->closed());
+
+    const ReceivedStream *serverStream = ServerStream(0, 0);
+    ASSERT_NE(serverStream, nullptr);
+    EXPECT_EQ(HeaderOf(*serverStream, ":path"), kStreamMethod);
+    EXPECT_EQ(HeaderOf(*serverStream, "x-trace"), "t1");
+    EXPECT_EQ(serverStream->FindHeader("grpc-timeout"), nullptr) << "流没有截止时间";
+    EXPECT_EQ(serverStream->body, TestH2Peer::Frame("a") + TestH2Peer::Frame("b") + TestH2Peer::Frame("c"));
+    EXPECT_TRUE(serverStream->requestEnded);
+}
+
+TEST_F(ChannelLoopbackTest, CancelledStreamIsResetWithCancelAndNeverCallsBackAgain)
+{
+    StartServer(&IgnoreRequest);
+    server_->SetActivityHandler(EchoStreams(std::make_shared<EchoStreamState>()));
+    const auto channel = MakeChannel();
+    ASSERT_NE(channel, nullptr);
+
+    const auto events = std::make_shared<StreamEvents>();
+    const auto stream = channel->StartStream(kStreamMethod, {}, StreamRecorder(events));
+    EXPECT_TRUE(stream->Write("first"));
+    ASSERT_TRUE(RunUntil([&] { return !events->messages.empty(); }, 5s));
+
+    stream->Cancel();
+    stream->Cancel(); // 幂等
+    EXPECT_TRUE(stream->closed());
+    EXPECT_FALSE(stream->Write("after-cancel"));
+    ASSERT_TRUE(RunUntil(
+        [&]
+        {
+            const ReceivedStream *serverStream = ServerStream(0, 0);
+            return serverStream != nullptr && serverStream->rstReceived;
+        },
+        5s));
+    RunFor(200ms);
+    EXPECT_EQ(ServerStream(0, 0)->rstErrorCode, h2::kCancel);
+    EXPECT_EQ(events->closes, 0) << "Cancel 之后不再有任何回调";
+    EXPECT_EQ(events->messages.size(), 1u);
+
+    // 取消只影响该流:同一连接上照样能开新流。
+    const auto second = std::make_shared<StreamEvents>();
+    const auto again = channel->StartStream(kStreamMethod, {}, StreamRecorder(second));
+    EXPECT_TRUE(again->Write("second"));
+    ASSERT_TRUE(RunUntil([&] { return !second->messages.empty(); }, 5s));
+    EXPECT_EQ(second->messages.front(), "echo:second");
+    EXPECT_EQ(server_->connectionCount(), 1u);
+}
+
+TEST_F(ChannelLoopbackTest, ChannelDestructionClosesStreamsWithUnavailableUnlessCancelled)
+{
+    StartServer(&IgnoreRequest); // 收下流,不应答
+    auto channel = MakeChannel();
+    ASSERT_NE(channel, nullptr);
+
+    const auto kept = std::make_shared<StreamEvents>();
+    const auto cancelled = std::make_shared<StreamEvents>();
+    const auto keptStream = channel->StartStream(kStreamMethod, {}, StreamRecorder(kept));
+    const auto cancelledStream = channel->StartStream(kStreamMethod, {}, StreamRecorder(cancelled));
+    EXPECT_TRUE(keptStream->Write("x"));
+    EXPECT_TRUE(cancelledStream->Write("y"));
+    ASSERT_TRUE(RunUntil([&] { return ServerStream(0, 1) != nullptr; }, 5s));
+
+    channel.reset();
+    // 通道析构时两个 onClose 都已排进队列;此刻再 Cancel 必须把其中一个压住(句柄只剩对流记录的弱引用)。
+    cancelledStream->Cancel();
+    ASSERT_TRUE(RunUntil([&] { return kept->closes > 0; }, 2s));
+    RunFor(200ms);
+
+    EXPECT_EQ(kept->closes, 1);
+    EXPECT_EQ(kept->status.code(), StatusCode::kUnavailable) << kept->status.ToString();
+    EXPECT_EQ(cancelled->closes, 0);
+    EXPECT_TRUE(keptStream->closed());
+    EXPECT_FALSE(keptStream->Write("after")) << "通道没了,句柄的操作一律失败、不崩";
+}
+
+TEST_F(ChannelLoopbackTest, StreamToUnreachableTargetClosesWithUnavailable)
+{
+    // 不起服务端:port_ 是刚释放的空闲端口,没人监听。
+    ChannelOptions options;
+    options.connectTimeout = 300ms;
+    options.backoff.initial = 10s; // 用例期间不触发后台重连
+    const auto channel = MakeChannel(options);
+    ASSERT_NE(channel, nullptr);
+    drainAfterTest_ = 1200ms;
+
+    const auto events = std::make_shared<StreamEvents>();
+    const auto stream = channel->StartStream(kStreamMethod, {}, StreamRecorder(events));
+    EXPECT_TRUE(stream->Write("buffered")) << "未连上时先在本端缓冲";
+    ASSERT_TRUE(RunUntil([&] { return events->closes > 0; }, 4s));
+    RunFor(100ms);
+    EXPECT_EQ(events->closes, 1);
+    EXPECT_EQ(events->status.code(), StatusCode::kUnavailable) << events->status.ToString();
+    EXPECT_EQ(channel->GetState(false), ConnectivityState::kTransientFailure);
+
+    // TRANSIENT_FAILURE 期间新开的流:不等连接,下一轮就以 UNAVAILABLE 结束(仍是异步)。
+    const auto late = std::make_shared<StreamEvents>();
+    const auto lateStream = channel->StartStream(kStreamMethod, {}, StreamRecorder(late));
+    EXPECT_EQ(late->closes, 0);
+    EXPECT_TRUE(lateStream->closed());
+    ASSERT_TRUE(RunUntil([&] { return late->closes > 0; }, 1s));
+    EXPECT_EQ(late->status.code(), StatusCode::kUnavailable) << late->status.ToString();
+}
+
+TEST_F(ChannelLoopbackTest, OversizedStreamWriteEndsTheStreamWithResourceExhausted)
+{
+    StartServer(&IgnoreRequest);
+    ChannelOptions options;
+    options.maxSendMessageBytes = 16;
+    const auto channel = MakeChannel(options);
+    ASSERT_NE(channel, nullptr);
+
+    const auto events = std::make_shared<StreamEvents>();
+    const auto stream = channel->StartStream(kStreamMethod, {}, StreamRecorder(events));
+    EXPECT_TRUE(stream->Write(std::string(16, 'x')));
+    EXPECT_FALSE(stream->Write(std::string(17, 'x')));
+    EXPECT_TRUE(stream->closed());
+    ASSERT_TRUE(RunUntil([&] { return events->closes > 0; }, 2s));
+    RunFor(100ms);
+    EXPECT_EQ(events->closes, 1);
+    EXPECT_EQ(events->status.code(), StatusCode::kResourceExhausted) << events->status.ToString();
+}
+
+TEST_F(ChannelLoopbackTest, PeriodicKeepalivePingsOnlyWhenEnabledAndAStreamIsActive)
+{
+    StartServer(&IgnoreRequest); // 流常开、服务端一字不回:连接上只有 PING 能证明对端还活着
+    ChannelOptions options;
+    options.keepaliveTime = 200ms;
+    options.keepaliveTimeout = 2s;
+    const auto channel = MakeChannel(options);
+    ASSERT_NE(channel, nullptr);
+
+    ASSERT_EQ(channel->GetState(true), ConnectivityState::kConnecting);
+    ASSERT_TRUE(RunUntil([&] { return channel->GetState(false) == ConnectivityState::kReady; }, 5s));
+    RunFor(600ms);
+    ASSERT_EQ(server_->connectionCount(), 1u);
+    EXPECT_EQ(server_->connection(0).peer.pingsReceived(), 0u) << "没有活跃流时不发周期 PING(grpc-go 不放行无流 PING)";
+
+    const auto events = std::make_shared<StreamEvents>();
+    const auto stream = channel->StartStream(kStreamMethod, {}, StreamRecorder(events));
+    EXPECT_TRUE(stream->Write("open"));
+    ASSERT_TRUE(RunUntil([&] { return server_->connection(0).peer.pingsReceived() >= 2; }, 5s));
+    // 服务端自动回 PING ACK:连接不因探测超时被判死,流仍开着。
+    RunFor(300ms);
+    EXPECT_EQ(channel->GetState(false), ConnectivityState::kReady);
+    EXPECT_EQ(events->closes, 0);
+    EXPECT_FALSE(stream->closed());
+    EXPECT_EQ(server_->connectionCount(), 1u);
 }
 
 } // namespace

@@ -30,6 +30,23 @@
 #include "thread_context/ecs_context.h"
 
 namespace {
+class ScopedGlobalItemBlock {
+public:
+    explicit ScopedGlobalItemBlock(uint32_t configId)
+        : configId_(configId), wasBlocked_(GainBlockService::IsGloballyBlocked(GainBlockService::GainType::kItem, configId)) {
+        GainBlockService::BlockGlobal(GainBlockService::GainType::kItem, configId_);
+    }
+    ~ScopedGlobalItemBlock() {
+        if (wasBlocked_) GainBlockService::BlockGlobal(GainBlockService::GainType::kItem, configId_);
+        else GainBlockService::UnblockGlobal(GainBlockService::GainType::kItem, configId_);
+    }
+    ScopedGlobalItemBlock(const ScopedGlobalItemBlock&) = delete;
+    ScopedGlobalItemBlock& operator=(const ScopedGlobalItemBlock&) = delete;
+private:
+    uint32_t configId_;
+    bool wasBlocked_;
+};
+
 // Tests temporarily alter already-owned snapshot rows/maps only; no table files are written.
 // Restore on every exit (including fatal assertions), before any later test sees the snapshot.
 template<class T>
@@ -75,7 +92,6 @@ protected:
         tlsEcs.dispatcher.clear<ConditionEvent>();
         tlsEcs.dispatcher.clear<OnAcceptedMissionEvent>();
         tlsEcs.dispatcher.clear<OnMissionAwardEvent>();
-        GainBlockService::UnblockGlobal(GainBlockService::GainType::kItem, 1);
         if (tlsEcs.actorRegistry.valid(player)) tlsEcs.actorRegistry.destroy(player);
         // 恢复其它背包测试使用的无 I/O 号段基线。
         EXPECT_TRUE(ArmMissionTestItemSegment(1, uint64_t{1} << 54));
@@ -180,18 +196,21 @@ TEST_F(PlayerMissionSystemTest, FullBagRetainsEntireRewardAndRetrySucceeds) {
 
 TEST_F(PlayerMissionSystemTest, BlockedRewardAndFrozenPlayerPreserveClaimAndBag) {
     ReadyReward();
-    GainBlockService::BlockGlobal(GainBlockService::GainType::kItem, 1);
-    EXPECT_NE(kSuccess, PlayerMissionSystem::ClaimReward(player, 0, 12));
-    GainBlockService::UnblockGlobal(GainBlockService::GainType::kItem, 1);
-    auto& block = tlsEcs.actorRegistry.emplace<PlayerItemBlockList>(player);
-    block.Block(1);
-    EXPECT_NE(kSuccess, PlayerMissionSystem::ClaimReward(player, 0, 12));
-    block.Unblock(1);
+    {
+        const ScopedGlobalItemBlock blocked(1);
+        EXPECT_NE(kSuccess, PlayerMissionSystem::ClaimReward(player, 0, 12));
+        EXPECT_TRUE(Missions().IsClaimable(12));
+        EXPECT_EQ(0u, ItemCount());
+    }
     tlsEcs.actorRegistry.emplace<PlayerFrozenComp>(player);
     EXPECT_NE(kSuccess, PlayerMissionSystem::ClaimReward(player, 0, 12));
     EXPECT_NE(kSuccess, PlayerMissionSystem::Accept(player, 0, 4, 1000));
     EXPECT_TRUE(Missions().IsClaimable(12));
     EXPECT_EQ(0u, ItemCount());
+    tlsEcs.actorRegistry.remove<PlayerFrozenComp>(player);
+    EXPECT_EQ(kSuccess, PlayerMissionSystem::ClaimReward(player, 0, 12));
+    EXPECT_EQ(4u, ItemCount());
+    EXPECT_FALSE(Missions().IsClaimable(12));
 }
 
 TEST_F(PlayerMissionSystemTest, SegmentTailCannotPartiallyGrantReward) {

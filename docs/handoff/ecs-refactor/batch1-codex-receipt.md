@@ -46,6 +46,8 @@
 
 ## 尚未闭环的边界
 
+以下是第 1 批交回时的历史状态。后续第 2–5 批、actor 直接初始化、Go 创建应答确认与传输资源寿命源码已继续实施，最新范围见 [总索引 §8](README.md#8-全部源码收尾补充2026-10-15仍暂缓构建)。统一生成和运行验收仍未执行，不将后续源码等同于运行证据。
+
 - RPC 会话占有的 `client_message_processor.cpp` 节点摘除外部 node_type 校验、`service_discovery_manager.cpp` 中 key 前缀类型与 JSON node_type 一致性校验,按总索引 §4 等该会话落地后处理;本轮不覆盖其文件。
 - 场景创建监听者撤掉 SceneInfo 后,C++ 虽已回滚,生成 gRPC 外层仍返回 OK;Go `RequestNodeCreateSceneWithOptions` 还需检查非空 SceneInfo 与请求 sceneId 一致才能触发已有回滚。该传输错误传播项随 gRPC 迁移会话处理,本轮未改 Go 或生成段。
 - F035 生成同步脏位的完整生命周期、F042 / F043 / F045 其余生命周期与上下文语义问题、F058 对外句柄等按原分批 / 移交继续处理。不能凭第 1 批这些改动宣称全部 110 条审计均已修复。

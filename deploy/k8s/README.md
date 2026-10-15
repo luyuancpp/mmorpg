@@ -767,9 +767,15 @@ friend 与 trade 同形:全局池服务(`$GoSvcCatalogue.friend`,`Global = $true
   ```text
   MySQL connection ledger: zones=<Z> steady=<稳态> peak=<峰值> max_connections=<上限> headroom=<余量>; plan zones=4 peak=<规划峰值> headroom=<规划余量>
   ```
-  分号前是**本次 zones 配置**的账(Z = zones 配置 ∪ `-ZoneId`,E_z 取 Z−1,其余取规划档),分号后是规划档。`headroom` 为负就是超限。
+  分号前是**本次部署**的账(E_z 取 Z−1,其余取规划档),分号后是规划档。`headroom` 为负就是超限。Z 按命令计,同一 zoneId 只算一次(2026-10-15 起):
+  - `zone-up`:zones 配置里的 zone ∪ 本次 `-ZoneId`(`-ZoneId` 不在配置里也算进去:这个 zone 确实要部署);
+  - `all-up` / `infra-up`:只数 zones 配置里的 zone。这两条命令不为 `-ZoneId` 部署 zone 级工作负载(db / data-service / gateway),
+    它在这里用作全局 Go 服务与 battle 的 ZoneId、预建库的输入,本身不产生每 zone 的连接,不论缺省值 101 还是显式传入都不并入 ——
+    以前并入,配置不含 101 时(例如 `zones.10zones.yaml` 的 1..10)Z 凭空多 1,可能打出虚假的超限告警。
+  这与 `infra-up` 预建 `zone_<id>_db` 的口径(`Get-InfraZoneIds`:zones 配置 ∪ `-ZoneId`)有意不同:那边是给之后的 `zone-up -ZoneId` 预建库,并入是对的。
   按仓库当前值手算(未运行):`zones.json` 两个 zone 时是 `zones=2 steady=592 peak=948 max_connections=1800 headroom=852; plan zones=4 peak=1620 headroom=180`。
-  zones 配置文件缺席时 Z 取 1,行尾多一个 `zones_config=missing`。
+  zones 配置文件缺席时 Z 取 1(`zone-up` 即 `-ZoneId` 那一个;`infra-up` 取总账允许的下限 1;`all-up` 在更早的入口预检读 zones 配置时就报错退出),
+  行尾多一个 `zones_config=missing`。
 - **超限**:任一份峰值大于 `max_connections` 时打一条英文 WARNING,文本以 `[MySQLConnectionLedger]OverLimit:` 开头(这一段刻意不留空格:控制台会按窗口宽度在空格处折行,留了就 grep 不到)。**只警告、不阻断部署**(是否升级为门禁待拍板)。两条出路:
   1. 先完成 TiDB Phase 1(`docs/design/tidb-phase1-and-launch-readiness.md`);
   2. 重做 `Get-MysqlConnectionPlan`,并同步 `mysql.yaml` 的 `max_connections` 与内存 limits。不要只把 `max_connections` 调大:
@@ -886,7 +892,33 @@ Go 服务侧的同一对值由 `k8s_deploy.ps1` 的 `Add-GoSvcCommandTopicEnv` �
   1 分区时不会静默降级,而是节点起不来 + Job 失败,两处都能看见。
 - **迁移窗口**:`Kafka.DisableLegacyPerNodeTopic` 默认 `false`,gate/scene 在消费新 topic 的同时
   继续用老的 group 订阅方式消费 `gate-{id}` / `scene-{id}`。全部生产者(含 Go login)切到新 topic 之后
-  才置 `true`;在那之前老路径上的 P1 仍然存在。
+  才置 `true`;在那之前老路径上的 P1 仍然存在。**本机**(`bin/etc/base_deploy_config.yaml`)至今仍是 `false`,由运维确认后显式翻。
+- **K8s 已关老路径(2026-10-15,P0-B 批 2,`docs/handoff/global-singletons-p0-findings-20261014.md`)**:
+  `New-NodeConfigMapYaml` 生成的 `node-config` 与 `battle-node-config` 写 `DisableLegacyPerNodeTopic: true`(模板常数,刻意不从
+  bin/etc 镜像,否则一次改动会同时翻本机与所有 K8s 环境);同批把 `Kafka.GroupID` 从写死的 `game-consumer-group` 改为镜像
+  bin/etc(本机是空串)。契约测试 `node ConfigMap 的 Kafka.GroupID 从 bin/etc 镜像、不再写死共享组名…` 钉住这两件事。
+  - **核实依据**(2026-10-15 全仓静态 grep,无运行证据):已没有任何生产者写 `<类型>-<node_id>`。
+    C++ 的 battle 发 GateCommand / SceneCommand 走 `ResolveCommandRoute`(`battle_room_manager.cpp`),scene 的生产点只写
+    `db_task` / 审计 / 告警 topic,`LegacyPerNodeTopic()` 只剩单测引用;Go 的 login(`gate_command.go`,2026-09-08 起)、
+    scene_manager、player_locator、match、friend、guild 全部经 `shared/kafkacmd` / `shared/kafkautil` 写 `<类型>-cmd_g<N>`,
+    chat / trade / team / client_rpc_router 不连 Kafka;Java gateway 不连 Kafka。`go/login/internal/svc/gate_command_test.go`
+    机械守住 login 不再写 `gate-<id>`。
+  - **为什么必须同批**:老路径的组名取 `Kafka.GroupID`(`node_kafka_command_handler.h` 的 `RegisterKafkaCommandHandler`,空串时
+    回落 `<类型>-group-<node_id>`)。只把 GroupID 改空、不关老路径,gate/scene 的老路径就换到没有已提交位点的新组,从 earliest
+    重放老 topic 里保留期内的消息(非空且不匹配的 `target_instance_id` 会被过滤,空实例号的不会)。关掉老路径后 GroupID 在
+    K8s 上已无 C++ 读者;battle 只生产,它在旧二进制上拿不到 broker 的缺陷随 GroupID 改空一并消除(新二进制已在批 1 修掉)。
+  - **上线影响**:
+    1. **改 ConfigMap 不会自动滚 Pod**:C++ 节点的 Pod 模板只带 `mmorpg.io/cpp-log-sidecar-config-hash`(只哈希 sidecar 配置),
+       不带 node-config 的哈希,`kubectl apply` 之后跑着的 gate / scene / battle 仍是旧配置,要手动 `kubectl rollout restart`
+       (Agones 编排的 scene / battle 不吃 rollout restart,要让 Fleet 换一批 GameServer)。
+    2. **重启 Deployment 形态的 battle 会作废正在打的局**;挑没有对局的窗口。battle 是 infra namespace 里的全局池,
+       `battle-node-config` 只由 `infra-up` / `all-up` 渲染,`zone-up` 不碰它。
+    3. **关老路径之前**确认两件事,任一条不满足就先把模板那一行改回 `false` 再部署(否则老版本生产者发的命令没人消费):
+       线上 login 及其它 Go 生产者的镜像都已是写新 topic 的版本(login 在 2026-09-08 的 `11ba15a0f` 切换);老 topic `gate-<id>` / `scene-<id>` 的写入速率与积压都为 0
+       (`kafka-consumer-groups.sh --describe --group game-consumer-group` 的 LAG 全 0,或老 topic 根本不存在)。
+    4. **回退**:把 `New-NodeConfigMapYaml` 里那一行改回 `false`,重新渲染并重启节点。注意回退时 GroupID 已是空串,老路径会用
+       `<类型>-group-<node_id>` 新组从 earliest 读老 topic,回退前先确认老 topic 里没有已被处理过的残留。
+    5. 取值待实测 / 压测复核:K8s 上的战斗链路仍是事后补验项(`deploy/k8s/AGENTS.md`),在那之前不要写「K8s 上 battle 已验证可用」。
 
 ## Local Trial on kind (2026-09-03 实跑记录)
 
@@ -1259,8 +1291,8 @@ C++ 节点(gate / scene / battle)发出的每次 unary gRPC 调用现在都带 d
 | `transaction_log_topic_g<N>` / `player_snapshot_topic_g<N>` | 同上 + data-service `EnsureTopics` | **显式 30d** | data-service | ✅ |
 | `db_task_zone_<N>` | login / db 启动时 `EnsureTopics` | **显式**,见下 | go/db | ✅(本轮修复) |
 | `match-results` | match `StartResultConsumer` | 显式 7d(match 侧常量) | match | ✅ |
-| `gate-<id>` / `scene-<id>`(迁移窗口残留) | broker auto-create | broker 默认值 | C++ legacy group 订阅 | ⚠️ 只能靠 broker 默认值兜底,本轮把它抬到 900s 以上 |
-| `game-events` | compose(K8s 侧从不建) | 本轮改为显式 1h | **无**(`Kafka.GroupID` 为空,`KafkaManager::Init` 跳过顶层 subscribe) | ✅ |
+| `gate-<id>` / `scene-<id>`(迁移窗口残留) | broker auto-create | broker 默认值 | C++ legacy group 订阅(只剩本机;K8s 自 2026-10-15 起 `DisableLegacyPerNodeTopic: true`,不再订阅也不再 auto-create) | ⚠️ 只能靠 broker 默认值兜底,本轮把它抬到 900s 以上 |
+| `game-events` | compose(K8s 侧从不建) | 本轮改为显式 1h | **无**(没有节点为它注册消费回调;`KafkaManager::Init` 自 2026-10-15 起不做任何顶层 subscribe,与 `Kafka.GroupID` 无关。K8s node ConfigMap 的 GroupID 同日改为镜像 bin/etc 的空串) | ✅ |
 | `__mmorpg_partition_contract_*` | `kafkautil.EnsureTopics` | `cleanup.policy=compact`,只是个标记 | 无 | ✅ 不受保留期影响 |
 
 ### 本轮改了什么

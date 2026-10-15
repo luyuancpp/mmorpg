@@ -1,5 +1,7 @@
 #include "bag_system.h"
 
+#include <limits>
+
 #include <algorithm>
 #include <unordered_set>
 #include <utility>
@@ -194,7 +196,7 @@ uint32_t Bag::CheckSpaceFor(const ItemCountMap &itemsToAdd, std::size_t *instanc
 	//
 	// **纯预测,刻意不问淘汰。** 它回答的是"照现在这样放得下吗",而不是"腾一腾
 	// 能不能放下" —— 后者会销毁玩家的东西,不能藏在一个名字里带 Check 的函数里。
-	// 真入包路径(AddItems)走 PlanInstances + ReserveOrEvict。
+	// 真入包路径(AddItems)走 PlanInstances + PlanEviction。
 	//
 	// 副作用:对会淘汰的包(临时格),这个函数会说"放不下",而实际 AddItems 能
 	// 成功。这是刻意的 —— 预测就该按不破坏现状回答。
@@ -216,158 +218,6 @@ uint32_t Bag::CheckSpaceFor(const ItemCountMap &itemsToAdd, std::size_t *instanc
 	return kSuccess;
 }
 
-uint32_t Bag::ReserveForBatchAdd(const ItemCountMap &itemsToAdd,
-								 std::vector<DestroyedInstance> *evictedOut)
-{
-	// ── 全部零副作用预检,必须在腾位之前 ─────────────────────────────────
-	// ① 零数量条目。CheckSpaceFor 对它宽容(预测,用例 CheckSpaceForEmptyRequest
-	//    要求如此),入包不宽容:逐件 AddItem 会拒它,拖到那时才拒就是半批 ——
-	//    而且拒不拒取决于 unordered_map 的哈希序,是个 heisenbug。
-	for (const auto &[configId, count] : itemsToAdd)
-	{
-		if (count == 0)
-		{
-			LOG_ERROR << "Bag::ReserveForBatchAdd: config " << configId
-				<< " requested with count 0; refusing the whole batch before touching anything. "
-				<< "player " << PlayerGuid();
-			return PrintStackAndReturnError(kBagAddItemInvalidParam);
-		}
-	}
-
-	// ② 配置表 / 准入 / 实例数。
-	ItemCountMap plannedByConfig;
-	std::size_t plannedInstances = 0;
-	RETURN_ON_ERROR(PlanInstances(itemsToAdd, &plannedByConfig, &plannedInstances));
-
-	// ③ 铸号。这个重载的调用方从不预设 guid,"要新建实例"就等价于"要铸号"。
-	//    plannedInstances == 0(纯并堆)时不会触发腾位(CanReserve 恒真),所以不必
-	//    担心"腾位后需求从 0 变正却铸不了号"。
-	//    按需求量问(CanMintGuids):号段是有限库存,段尾只剩几个号时"能铸一个"不等于
-	//    "能铸完整批",半批落地就是复制道具的温床。
-	if (plannedInstances > 0 && !ItemStore::CanMintGuids(plannedInstances))
-	{
-		LOG_ERROR << "Bag::ReserveForBatchAdd: item guid source unavailable (fenced, "
-			<< "uninitialised or segment exhausted), refusing the whole batch of " << itemsToAdd.size()
-			<< " config(s) needing " << plannedInstances << " new instance(s) for player "
-			<< PlayerGuid();
-		return PrintStackAndReturnError(kBagAddItemInvalidParam);
-	}
-
-	// ── 预检全过,现在才允许改状态 ──────────────────────────────────────
-	return ReserveBatch(itemsToAdd, nullptr, evictedOut);
-}
-
-uint32_t Bag::ReserveForBatchAdd(const std::vector<InitItemParam> &itemsToAdd,
-								 std::vector<DestroyedInstance> *evictedOut)
-{
-	// 带完整 ItemComp 的批量(邮件附件等)。四道预检全在腾位之前;顺序与
-	// ItemCountMap 重载一致,只是多了"预设 guid 撞车"这一道。
-
-	// ① 零数量 + 汇总成 config -> 单位数。
-	ItemCountMap requiredSpace;
-	for (const auto &param : itemsToAdd)
-	{
-		if (param.itemPBComp.size() == 0)
-		{
-			LOG_ERROR << "Bag::ReserveForBatchAdd: piece of config " << param.itemPBComp.config_id()
-				<< " has size 0; refusing the whole batch before touching anything. player "
-				<< PlayerGuid();
-			return PrintStackAndReturnError(kBagAddItemInvalidParam);
-		}
-		requiredSpace[param.itemPBComp.config_id()] += param.itemPBComp.size();
-	}
-
-	// ② 配置表 / 准入 / 实例数。PlanInstances 对装备(maxStack==1)同样正确 ——
-	//    每个单位各占一个实例、无现有堆叠可填。
-	ItemCountMap plannedByConfig;
-	std::size_t instancesNeeded = 0;
-	RETURN_ON_ERROR(PlanInstances(requiredSpace, &plannedByConfig, &instancesNeeded));
-
-	// ③ 预设 guid 不能撞车 —— 既不能撞背包里已有的,也不能在这一批内部自己撞自己。
-	//    邮件附件正是携带预设 guid 的典型场景,上游造数据出问题(重放 / 重复领取)时,
-	//    不预检就会变成"前几件已进包、第 N 件才发现",留下半批;在会淘汰的包上更糟:
-	//    先挤掉旧物、再失败。
-	std::unordered_set<Guid> batchGuids;
-	std::size_t preassignedInstances = 0;
-	for (const auto &param : itemsToAdd)
-	{
-		const auto &proto = param.itemPBComp;
-		LookupItemOrReturnError(proto.config_id());
-
-		// 只有"不可叠加 + 恰好一件 + guid 合法"这一种情形会沿用预设 guid,
-		// 其余一律铸号(判据与 AddNonStackableItem 里完全一致)。
-		if (itemRow->max_stack_size() != 1 || proto.size() != 1 || ItemStore::IsInvalidGuid(proto))
-		{
-			continue;
-		}
-		const Guid guid = proto.item_id();
-		if (store_.Contains(guid) || !batchGuids.insert(guid).second)
-		{
-			LOG_ERROR << "Bag::ReserveForBatchAdd: preassigned guid " << guid << " (config "
-				<< proto.config_id() << ") collides with an item already in the bag or with "
-				<< "another entry in the same batch; refusing the whole batch. player "
-				<< PlayerGuid();
-			return PrintStackAndReturnError(kBagDeleteItemAlreadyHasGuid);
-		}
-		++preassignedInstances;
-	}
-
-	// ④ 铸号。除去沿用预设 guid 的那些,剩下要新建的实例都得铸号。
-	//    按需求量问(CanMintGuids):号段是有限库存,"能铸一个"不等于"能铸完整批"。
-	//    全部沿用预设 guid(需求 0)时至少要问 1 个 —— 下面的腾位分支仍然依赖发号源可用。
-	const std::size_t mintedInstances =
-		instancesNeeded > preassignedInstances ? instancesNeeded - preassignedInstances : 0;
-	if (!ItemStore::CanMintGuids(mintedInstances > 0 ? mintedInstances : 1))
-	{
-		if (mintedInstances > 0)
-		{
-			LOG_ERROR << "Bag::ReserveForBatchAdd: item guid source unavailable (fenced, "
-				<< "uninitialised or segment exhausted), refusing the whole batch of " << itemsToAdd.size()
-				<< " piece(s) needing " << mintedInstances
-				<< " minted instance(s) for player " << PlayerGuid();
-			return PrintStackAndReturnError(kBagAddItemInvalidParam);
-		}
-		// 发号器不可用时**连腾位也不做**:腾位可能挤掉本批打算并进去的堆,让原本
-		// 纯并堆的那部分变成要铸号的溢出 —— 那就成了"先销毁、再铸不了号"。
-		// 全部沿用预设 guid 且现状放得下的批次(邮件附件的典型形状)仍然放行。
-		if (!CanReserve(plannedByConfig, instancesNeeded))
-		{
-			LOG_ERROR << "Bag::ReserveForBatchAdd: generator unavailable and the batch does not "
-				<< "fit without eviction; refusing rather than evicting (post-eviction replan "
-				<< "could require minting). player " << PlayerGuid();
-			return PrintStackAndReturnError(kBagAddItemInvalidParam);
-		}
-	}
-
-	// ── 预检全过,现在才允许改状态 ──────────────────────────────────────
-	return ReserveBatch(requiredSpace, nullptr, evictedOut);
-}
-
-uint32_t Bag::ReserveBatch(const ItemCountMap &itemsToAdd, std::size_t *totalInstancesOut,
-						   std::vector<DestroyedInstance> *evictedOut)
-{
-	// 先用 PlanInstances 拿**精确错误码**(配置表 / 准入);ReserveOrEvict 只回答 bool。
-	ItemCountMap instancesByConfig;
-	std::size_t instancesNeeded = 0;
-	RETURN_ON_ERROR(PlanInstances(itemsToAdd, &instancesByConfig, &instancesNeeded));
-
-	// 摆得下直接过;摆不下就先算到不动点再腾位;腾不够一件都不动。
-	if (!ReserveOrEvict(itemsToAdd, evictedOut))
-	{
-		return PrintStackAndReturnError(kBagItemNotStacked);
-	}
-
-	if (totalInstancesOut != nullptr)
-	{
-		// 腾位后需求可能已变(被挤掉的堆不再能并入),重算一次给调用方。
-		instancesByConfig.clear();
-		instancesNeeded = 0;
-		RETURN_ON_ERROR(PlanInstances(itemsToAdd, &instancesByConfig, &instancesNeeded));
-		*totalInstancesOut = instancesNeeded;
-	}
-	return kSuccess;
-}
-
 uint32_t Bag::CheckItemsAvailable(const ItemCountMap &requiredItems)
 {
 	// 纯实例层问题:有没有这些东西。跟摆在哪、还剩几格毫无关系。
@@ -381,8 +231,7 @@ uint32_t Bag::RemoveItems(const ItemCountMap &itemsToRemove,
 	// 事务语义:先确认每种物品都够扣,任何一种不够就整体失败,绝不做部分删除。
 	RETURN_ON_ERROR(CheckItemsAvailable(itemsToRemove));
 
-	// 扣数量是纯实例层操作:被抽光的堆 size 变 0 但实例保留,槽位也就跟着留着。
-	// 这与 RemoveItem(guid) 的"彻底销毁 + 释放槽位"是两回事。
+	// 数量扣光后由桥层立即成对释放实例与槽位，后续整理无需再回收零堆。
 	for (const auto &[configId, count] : SortedByConfigId(itemsToRemove))
 	{
 		DrainOneConfig(configId, count, drainedOut);
@@ -438,7 +287,7 @@ uint32_t Bag::ReserveForBatchRemove(const std::vector<Guid> &guids,
 			return PrintStackAndReturnError(kAssetInvalidBundle);
 		}
 
-		// ④ 只收不可叠加物品。可叠加物品的 guid 不是稳定身份 —— AddStackableItem
+		// ④ 只收不可叠加物品。可叠加物品的 guid 不是稳定身份 —— 可叠加入包
 		//    会把预设 guid 并进既有堆后重铸,发回来的 guid 指向的可能是别的堆。
 		if (itemRow->max_stack_size() != 1)
 		{
@@ -449,8 +298,8 @@ uint32_t Bag::ReserveForBatchRemove(const std::vector<Guid> &guids,
 			return PrintStackAndReturnError(kAssetInvalidBundle);
 		}
 
-		// ⑤ 不可叠加实例的 size 恒为 1。size==0 是僵尸堆(该被整理回收却还在),
-		//    size>1 是数据腐化 —— 两者都不该被当成"一件装备"托管出去。
+		// ⑤ 不可叠加实例的 size 恒为 1。正常扣空已立即移除，仍见 0 或 >1
+		//    都说明数据损坏，不能当成“一件装备”托管出去。
 		if (item->size() != 1)
 		{
 			LOG_ERROR << "Bag::ReserveForBatchRemove: guid " << guid << " (config "
@@ -484,28 +333,27 @@ uint32_t Bag::RemoveItemsClamped(const ItemCountMap &itemsToRemove,
 }
 
 void Bag::DrainOneConfig(uint32_t configId, uint32_t count,
-						 std::vector<DrainedInstance> *drainedOut)
+                         std::vector<DrainedInstance> *drainedOut)
 {
-	if (count == 0)
-	{
-		return;  // 0 数量的条目直接跳过,免得在回执里留一串 amount=0 的噪声
-	}
-	// 先扣槽位号最小的堆,同槽位按实例序;与 Java 战斗结算扣除规则一致。
-	// 只把中性的 rank 交给实例层,它不认识槽位。无槽位的异常实例排在最后。
-	const ItemStore::DrainRank bySlot = [this](Guid guid)
-		{ return static_cast<uint64_t>(layout_->SlotOf(guid)); };
-	if (drainedOut == nullptr)
-	{
-		store_.DrainStacks(configId, count, bySlot);
-		return;
-	}
-	// 实例层只知道 guid 与数量,config 由桥层补齐(分层:ItemStore 不向上暴露 config 语义)
-	std::vector<ItemStore::StackDrain> drains;
-	store_.DrainStacks(configId, count, bySlot, &drains);
-	for (const auto &drain : drains)
-	{
-		drainedOut->push_back(DrainedInstance{drain.guid, configId, drain.amount});
-	}
+    if (count == 0)
+    {
+        return;
+    }
+    const ItemStore::DrainRank bySlot = [this](Guid guid)
+        { return static_cast<uint64_t>(layout_->SlotOf(guid)); };
+    std::vector<ItemStore::StackDrain> drains;
+    store_.DrainStacks(configId, count, bySlot, &drains);
+    for (const auto &drain : drains)
+    {
+        if (drainedOut != nullptr)
+        {
+            drainedOut->push_back({drain.guid, configId, drain.amount});
+        }
+        if (const auto *item = store_.Find(drain.guid); item != nullptr && item->size() == 0)
+        {
+            DestroyItem(drain.guid);
+        }
+    }
 }
 
 uint32_t Bag::RemoveItemByPos(const RemoveItemByPosParam &param)
@@ -549,7 +397,11 @@ uint32_t Bag::RemoveItemByPos(const RemoveItemByPosParam &param)
 		return PrintStackAndReturnError(kBagItemDeletionSizeMismatch);
 	}
 
-	item->set_size(item->size() - param.size); // 校验全通过,扣减(扣光则 size=0,槽位保留)
+	item->set_size(item->size() - param.size);
+    if (item->size() == 0)
+    {
+        DestroyItem(param.item_guid);
+    }
 	AssertLayerConsistency();
 	return kSuccess;
 }
@@ -735,338 +587,200 @@ static void InitializeNewInstance(const ItemInstanceInitializer *instanceInitial
 	}
 }
 
-uint32_t Bag::AddNonStackableItem(ItemComp itemProto, std::vector<Guid> *writtenGuidsOut,
-								  std::vector<DestroyedInstance> *evictedOut,
-								  const ItemInstanceInitializer *instanceInitializer)
+uint32_t Bag::AddItem(const InitItemParam &param, std::vector<Guid> *writtenGuidsOut,
+                      std::vector<DestroyedInstance> *evictedOut,
+                      const ItemInstanceInitializer *instanceInitializer)
 {
-	// 不可叠加物品(装备等):每一件都是一个独立实例,size 即"要放几件"。
-	// 统一处理:把 itemProto 拆成 pieceCount 件、每件 size=1 单独入包。
-	//   * 单件 (pieceCount==1):若调用方预先指定了 guid 就沿用,否则铸一个新的。
-	//   * 多件 (pieceCount>1):每件都必须有各自唯一的 guid,所以一律铸新。
-	const uint32_t pieceCount = itemProto.size(); // 要放入的件数
-
-	// 只有"单件"才允许沿用调用方预设的 guid;多件无法共用一个 guid,必须各自铸新。
-	const bool honorPreassignedGuid = (pieceCount == 1);
-
-	// ── 纯预检必须全部跑在 ReserveOrEvict 之前 ──────────────────────────
-	// 本次会铸号(非"单件沿用预设 guid")而发号器已不可用:在写入任何一件之前整体拒绝。
-	// 见 ItemStore::CanMintGuid 注释——放行会把哨兵 guid 当 item_id 持久化。
-	//
-	// **顺序是硬要求,不是风格。** ReserveOrEvict 会为了腾位真的销毁实例;
-	// 任何一个零副作用的预检排在它后面,就会出现"已经挤掉了玩家最早那件东西,
-	// 然后整批拒绝"—— 东西白丢了。这条纪律与三段式同源:所有可能失败且不改
-	// 状态的判断,一律排在唯一会改状态的那一步之前。
-	// willMint 时每一件都铸号(pieceCount 件);号段是有限库存,按件数问,别问"能铸一个"。
-	const bool willMint = !honorPreassignedGuid || ItemStore::IsInvalidGuid(itemProto);
-	if (willMint && !ItemStore::CanMintGuids(pieceCount))
-	{
-		LOG_ERROR << "AddNonStackableItem: item guid source unavailable (fenced, uninitialised or "
-			<< "segment exhausted), refusing to add config " << itemProto.config_id() << " x" << pieceCount
-			<< " for player " << PlayerGuid();
-		return PrintStackAndReturnError(kBagAddItemInvalidParam);
-	}
-
-	// 预设 guid 撞包内已有实例 —— 零成本的纯预检,同样必须在腾位之前。
-	// AddItems(vector) 的批量入口对整批做过同样的事;单件路径此前漏了这一道,
-	// 于是同一预设 guid 的发放被重放时,临时格先挤掉旧物、再在 Insert 处撞 guid 失败。
-	if (honorPreassignedGuid && !ItemStore::IsInvalidGuid(itemProto) &&
-		store_.Contains(itemProto.item_id()))
-	{
-		LOG_ERROR << "AddNonStackableItem: preassigned guid " << itemProto.item_id()
-			<< " (config " << itemProto.config_id() << ") already exists in this bag; refusing "
-			<< "before touching anything. player " << PlayerGuid();
-		return PrintStackAndReturnError(kBagDeleteItemAlreadyHasGuid);
-	}
-
-	// reserve —— 拆分前这里是 items.size() 与 capacity 的减法,拆分后一度是
-	// IsSpaceInsufficient()(只数格子)。两者对具名槽都偏乐观:装备栏"还有 8 格"
-	// 不代表"还能再穿一只手镯"。CanReserve 会按部位问。
-	//
-	// 摆不下时按淘汰策略腾位(临时格 = 先进先出;其余包 = RejectWhenFull,
-	// 等价于拆分前那句 `// TODO: overflow to temp bag or mail` 底下的直接拒绝)。
-	// 入参是单位数;不可叠加物品 1 单位 = 1 实例,腾完也不会并堆,不需要重新规划。
-	if (!ReserveOrEvict({{itemProto.config_id(), pieceCount}}, evictedOut))
-	{
-		return PrintStackAndReturnError(kBagAddItemBagFull);
-	}
-
-	for (uint32_t i = 0; i < pieceCount; ++i) // 逐件创建并入包
-	{
-		ItemComp piece = itemProto; // 复制一份作为这一件
-		piece.set_size(1);          // 不可叠加:每件固定 size=1
-
-		// 沿用预设 guid 仅限单件且 guid 合法;其余情况一律铸新 guid。
-		if (!honorPreassignedGuid || ItemStore::IsInvalidGuid(piece))
-		{
-			piece.set_item_id(ItemStore::MintGuid());
-			// 入口门(willMint && !CanMintGuid)已挡掉可预见的失败;这里是最后防线,
-			// 铸出哨兵值绝不能落进实例仓库。tls 单线程下理论不可达,达了就是新 bug。
-			if (ItemStore::IsInvalidGuid(piece))
-			{
-				LOG_ERROR << "AddNonStackableItem: minted an invalid guid mid-loop (piece " << i
-					<< "), player " << PlayerGuid();
-				return PrintStackAndReturnError(kBagAddItemInvalidParam);
-			}
-		}
-		const auto guid = piece.item_id();
-
-		// 新铸实例初始化(装备掷属性)。**这里是所有玩法入包的唯一汇聚点**:单件、
-		// count = N、两个批量重载最终都落到这个逐件循环,所以每件各调一次、各拿各的
-		// ItemComp。放在铸号之后(回调看得到这一件的 guid)、进 ItemStore 之前(进去的
-		// 就是初始化完的整份实例,不存在"先入库再补属性"的中间态)。
-		// 已带 equip 段的(搬运 / 回流来的既有实例)与没传回调的调用方都直接跳过。
-		InitializeNewInstance(instanceInitializer, piece, PlayerGuid());
-
-		// commit:实例层建实例,布局层给位置。两步都在同一次迭代里完成,
-		// 保证不会出现"有实例没位置"或"有位置没实例"的中间态。
-		if (store_.Insert(std::move(piece)) == nullptr)
-		{
-			LOG_ERROR << "AddNonStackableItem: duplicate guid " << guid << " player " << PlayerGuid();
-			return PrintStackAndReturnError(kBagDeleteItemAlreadyHasGuid);
-		}
-
-		// 放置失败必须回滚这一件 —— 否则实例进了仓库却没有槽位,变成一件查不到、
-		// 删不掉、还占着容量的孤儿,而且零日志。入口的 IsSpaceInsufficient 已经挡掉
-		// 了可预见的失败,所以走到这里说明容量判定与布局层不一致,是真 bug,要吼。
-		if (PlaceInstance(guid, itemProto.config_id()) == kInvalidSlot)
-		{
-			store_.Erase(guid);
-			LOG_ERROR << "AddNonStackableItem: layout refused to place guid " << guid
-				<< " (config " << itemProto.config_id() << ", piece " << i << "/" << pieceCount
-				<< ", capacity " << layout_->Capacity() << ", occupied " << layout_->OccupiedSlotCount()
-				<< ") player " << PlayerGuid();
-			return PrintStackAndReturnError(kBagAddItemBagFull);
-		}
-
-		// 回执:无论 guid 是新铸的还是沿用调用方预设的,这一件都是本次真实写入的实例。
-		if (writtenGuidsOut != nullptr)
-		{
-			writtenGuidsOut->push_back(guid);
-		}
-	}
-	AssertLayerConsistency();
-	return kSuccess;
-}
-
-uint32_t Bag::SpillIntoNewInstances(ItemComp proto, uint32_t maxStackSize,
-									uint32_t remaining, std::size_t newInstanceCount,
-									std::vector<Guid> *writtenGuidsOut)
-{
-	for (std::size_t i = 0; i < newInstanceCount; ++i)
-	{
-		ItemComp piece = proto;
-		piece.set_item_id(ItemStore::MintGuid());
-		// 入口门(AddStackableItem 在 ApplyStackFill 前已查 CanMintGuid)挡掉可预见的
-		// 失败;这里是最后防线,哨兵 guid 绝不能落进实例仓库。
-		if (ItemStore::IsInvalidGuid(piece))
-		{
-			LOG_ERROR << "SpillIntoNewInstances: minted an invalid guid mid-loop (instance " << i
-				<< "), player " << PlayerGuid();
-			return PrintStackAndReturnError(kBagAddItemInvalidParam);
-		}
-		const uint32_t put = maxStackSize < remaining ? maxStackSize : remaining;
-		piece.set_size(put);
-		remaining -= put;
-		const auto guid = piece.item_id();
-
-		if (store_.Insert(std::move(piece)) == nullptr)
-		{
-			LOG_ERROR << "AddStackableItem: duplicate guid " << guid << " player " << PlayerGuid();
-			return PrintStackAndReturnError(kBagDeleteItemAlreadyHasGuid);
-		}
-
-		// 同 AddNonStackableItem:放置失败回滚这一堆,绝不留下没有槽位的孤儿实例。
-		if (PlaceInstance(guid, proto.config_id()) == kInvalidSlot)
-		{
-			store_.Erase(guid);
-			LOG_ERROR << "SpillIntoNewInstances: layout refused to place guid " << guid
-				<< " (config " << proto.config_id() << ", instance " << i << "/" << newInstanceCount
-				<< ", capacity " << layout_->Capacity() << ", occupied " << layout_->OccupiedSlotCount()
-				<< ") player " << PlayerGuid();
-			return PrintStackAndReturnError(kBagAddItemBagFull);
-		}
-
-		if (writtenGuidsOut != nullptr)
-		{
-			writtenGuidsOut->push_back(guid);
-		}
-	}
-	AssertLayerConsistency();
-	return kSuccess;
-}
-
-uint32_t Bag::AddStackableItem(ItemComp itemProto, uint32_t maxStackSize,
-							   std::vector<Guid> *writtenGuidsOut,
-							   std::vector<DestroyedInstance> *evictedOut)
-{
-	// 严格三段,顺序不能反 —— 一旦先改了堆才发现放不下,就会留下半完成的脏状态。
-	//
-	// plan(实例层,零副作用):进来的数量先尽量填进同 config 的既有堆叠,
-	//                          算出还剩多少必须新建实例。
-	std::vector<ItemStore::StackFill> fillPlan;
-	uint32_t remaining = store_.PlanStackIntoExistingStacks(itemProto, maxStackSize, fillPlan);
-
-	// reserve:那些新实例摆不摆得下;摆不下就问淘汰策略能不能腾。
-	std::size_t newInstanceCount = 0;
-	if (remaining > 0)
-	{
-		newInstanceCount = ItemStore::StacksNeededFor(remaining, maxStackSize);
-
-		// ── 纯预检排在 ReserveOrEvict 之前 ─────────────────────────────
-		// 溢出到新实例要铸号。发号器不可用时必须**在改动任何状态之前**拒绝:
-		// 既不能先灌旧堆(违反三段),更不能先为了腾位销毁实例然后再失败
-		// —— 那会把玩家最早那件东西白白弄丢。
-		//
-        // 放得下时 ReserveOrEvict 不会淘汰，精确新实例数与批量预检一致。
-        // 若在这里无条件要求整项数量的上界，部分合堆的批量可能先写入第一项、
-        // 再因第二项比实际需求更严的号段检查失败，留下可被重试重复发放的半批。
-        // 真需腾位时仍取保守上界：淘汰可能销毁计划合入的未满堆。
-        const bool fitsWithoutEviction = CanReserve(
-            {{itemProto.config_id(), static_cast<uint32_t>(newInstanceCount)}}, newInstanceCount);
-        const auto mintBudget = fitsWithoutEviction ? newInstanceCount :
-            ItemStore::StacksNeededFor(itemProto.size(), maxStackSize);
-        if (!ItemStore::CanMintGuids(mintBudget))
-		{
-			LOG_ERROR << "AddStackableItem: item guid source unavailable (fenced, uninitialised or "
-				<< "segment exhausted), refusing to add config " << itemProto.config_id() << " x" << itemProto.size()
-				<< " for player " << PlayerGuid();
-			return PrintStackAndReturnError(kBagAddItemInvalidParam);
-		}
-
-		// reserve(可腾位):入参是**单位数**,ReserveOrEvict 自己反复规划、先算到不动点
-		// 再销毁 —— 它返回 true 就意味着"腾位之后的需求"一定放得下,包括被挤掉的
-		// 恰是本次打算并进去的那个未满堆的情形。摆得下时它什么都不做。
-		if (!ReserveOrEvict({{itemProto.config_id(), itemProto.size()}}, evictedOut))
-		{
-			return PrintStackAndReturnError(kBagAddItemBagFull);
-		}
-
-		// **腾位之后必须重新规划。** 淘汰可能刚好销毁了本次打算并进去的那个未满堆
-		// (临时格里同 config 的旧堆恰恰是最早进包的),于是上面那份 fillPlan 里的
-		// guid 已经被销毁。不重算就会拿着失效的计划去 ApplyStackFill。
-		// 无淘汰时重算结果与第一次相同 —— 一次遍历,换一个不靠调用方记性的保证。
-		fillPlan.clear();
-		remaining = store_.PlanStackIntoExistingStacks(itemProto, maxStackSize, fillPlan);
-		newInstanceCount = remaining > 0 ? ItemStore::StacksNeededFor(remaining, maxStackSize) : 0;
-		if (remaining > 0 &&
-			!CanReserve({{itemProto.config_id(), static_cast<uint32_t>(newInstanceCount)}},
-						newInstanceCount))
-		{
-			// ReserveOrEvict 的不动点已经保证放得下;这里为假只可能是策略 / 布局不自洽
-			// 的编程错误。东西可能已经销毁、回不来了,必须吼。
-			LOG_ERROR << "AddStackableItem: cannot reserve " << newInstanceCount
-				<< " instance(s) for config " << itemProto.config_id()
-				<< " right after ReserveOrEvict succeeded; policy and layout disagree "
-				<< "(programming error). player " << PlayerGuid();
-			return PrintStackAndReturnError(kBagAddItemBagFull);
-		}
-	}
-
-	// commit:先灌既有堆(纯实例层,不占新格子)……
-	store_.ApplyStackFill(fillPlan, writtenGuidsOut);
-
-	if (remaining == 0)
-	{
-		return kSuccess;
-	}
-	// ……再把溢出量铺进新实例并各自要一个位置(两层)。
-	return SpillIntoNewInstances(std::move(itemProto), maxStackSize, remaining, newInstanceCount,
-								 writtenGuidsOut);
-}
-
-uint32_t Bag::AddItem(const InitItemParam &initItemParam, std::vector<Guid> *writtenGuidsOut,
-					  std::vector<DestroyedInstance> *evictedOut,
-					  const ItemInstanceInitializer *instanceInitializer)
-{
-	auto itemProto = initItemParam.itemPBComp;
-	// config_id / size 都是无符号:== 0 即"没指定物品"或"数量为 0",均属非法入参。
-	if (itemProto.config_id() == 0 || itemProto.size() == 0)
-	{
-		LOG_ERROR << "bag add item player:" << PlayerGuid();
-		return PrintStackAndReturnError(kBagAddItemInvalidParam);
-	}
-
-	LookupItemOrReturnError(itemProto.config_id());
-
-	if (itemRow->max_stack_size() == 0)
-	{
-		return PrintStackAndReturnError(kInvalidTableData);
-	}
-
-	// 准入:这个包收不收这种东西(节日包只收节日道具之类)。纯 config 判定,
-	// 零副作用,放在写入之前 —— 三段纪律的 reserve 段。
-	// 放在 AddItem 而不是两个 AddXxxItem 里,是因为它与堆不堆叠无关,
-	// 而这里是两条路径唯一的共同入口。
-	if (!admission_->Accepts(itemProto.config_id()))
-	{
-		LOG_ERROR << "Bag::AddItem: this bag does not admit config " << itemProto.config_id()
-			<< "; refusing. player " << PlayerGuid();
-		return PrintStackAndReturnError(kBagAddItemInvalidParam);
-	}
-
-	if (itemRow->max_stack_size() == 1)
-	{
-		return AddNonStackableItem(std::move(itemProto), writtenGuidsOut, evictedOut,
-								   instanceInitializer);
-	}
-
-	// 可叠加物品**不调**初始化回调:它们没有「一件一个实例」的身份,数量会并进既有堆,
-	// 实例数据(equip 段)挂上去也守不住 —— 装备被误配成可堆叠由 ItemStore::CanStack 兜底。
-	return AddStackableItem(std::move(itemProto), itemRow->max_stack_size(), writtenGuidsOut,
-							evictedOut);
+    std::vector<GuidVector> written;
+    const auto result = AddItems(std::vector<InitItemParam>{param}, evictedOut, &written,
+                                 instanceInitializer);
+    if (result == kSuccess && writtenGuidsOut != nullptr && !written.empty())
+    {
+        writtenGuidsOut->insert(writtenGuidsOut->end(), written.front().begin(), written.front().end());
+    }
+    return result == kBagItemNotStacked ? kBagAddItemBagFull : result;
 }
 
 uint32_t Bag::AddItems(const ItemCountMap &itemsToAdd,
-					   std::vector<DestroyedInstance> *evictedOut)
+                       std::vector<DestroyedInstance> *evictedOut,
+                       std::vector<GuidVector> *writtenByEntryOut,
+                       const ItemInstanceInitializer *instanceInitializer)
 {
-	// 事务语义:与 RemoveItems 完全对称。任何一项不满足就整体失败,
-	// 绝不做"前几种已进包、后一种失败"的部分添加。
-	//
-	// 全部纯预检(零数量 / 配置表 / 准入 / 铸号)与腾位都在 ReserveForBatchAdd 里,
-	// 且预检严格排在腾位之前。**这里不再自己做一遍** —— 两份预检会漂移:BagService
-	// 有另一套批量循环,第一版就因为它不经过这里而漏掉了预检,发号器被 fence 时
-	// 临时格先挤掉旧物、再整批失败。预检并进 reserve 入口之后,谁调都一样。
-	RETURN_ON_ERROR(ReserveForBatchAdd(itemsToAdd, evictedOut));
-
-	// 位已腾够、预检全过,逐个按配置发放。每个 config 复用单个 AddItem 的完整逻辑
-	// (堆叠/非堆叠分发、要位置等),主函数只表达"批量发放"的意图。
-	for (const auto &[configId, count] : SortedByConfigId(itemsToAdd))
-	{
-		InitItemParam param;
-		param.itemPBComp.set_config_id(configId);
-		param.itemPBComp.set_size(count);
-		// evictedOut 继续透传:ReserveBatch 已经腾够了位,这里正常不会再淘汰,
-		// 真淘汰了也必须留痕(那说明 ReserveBatch 的规划漏了什么,要能查)。
-		RETURN_ON_ERROR(AddItem(param, nullptr, evictedOut));
-	}
-	return kSuccess;
+    std::vector<InitItemParam> entries;
+    entries.reserve(itemsToAdd.size());
+    for (const auto &[configId, count] : SortedByConfigId(itemsToAdd))
+    {
+        InitItemParam param;
+        param.itemPBComp.set_config_id(configId);
+        param.itemPBComp.set_size(count);
+        entries.push_back(std::move(param));
+    }
+    return AddItems(entries, evictedOut, writtenByEntryOut, instanceInitializer);
 }
 
 uint32_t Bag::AddItems(const std::vector<InitItemParam> &itemsToAdd,
-					   std::vector<DestroyedInstance> *evictedOut)
+                       std::vector<DestroyedInstance> *evictedOut,
+                       std::vector<GuidVector> *writtenByEntryOut,
+                       const ItemInstanceInitializer *instanceInitializer)
 {
-	// 带完整 ItemComp 的批量发放(邮件附件等):列表里可同时混有装备和普通物品。
-	// 与 ItemCountMap 版的区别:每个 InitItemParam 携带各自完整的 ItemComp
-	//   (预设 guid、强化等级、随机词条、绑定状态……),逐件原样写入,绝不丢属性。
+    // 所有入口共用一次提交。按需铸出的号允许作废，玩家实例、槽位和回执只能整批发布。
+    if (itemsToAdd.empty())
+    {
+        return kSuccess;
+    }
+    ItemCountMap stackUnits;
+    ItemCountMap separateInstances;
+    std::unordered_set<Guid> preassigned;
+    for (const auto &param : itemsToAdd)
+    {
+        const auto &item = param.itemPBComp;
+        if (item.config_id() == 0 || item.size() == 0)
+        {
+            return PrintStackAndReturnError(kBagAddItemInvalidParam);
+        }
+        LookupItemOrReturnError(item.config_id());
+        const auto maxStack = itemRow->max_stack_size();
+        if (maxStack == 0)
+        {
+            return PrintStackAndReturnError(kInvalidTableData);
+        }
+        if (!admission_->Accepts(item.config_id()))
+        {
+            return PrintStackAndReturnError(kBagAddItemInvalidParam);
+        }
+        // 已带实例数据的物品不能合堆；单独计实例数，不拿普通材料的空余抵扣它。
+        auto &units = item.has_equip() ? separateInstances[item.config_id()] : stackUnits[item.config_id()];
+        const auto added = item.has_equip() ? ItemStore::StacksNeededFor(item.size(), maxStack) : item.size();
+        if (added > std::numeric_limits<uint32_t>::max() - units)
+        {
+            return PrintStackAndReturnError(kBagAddItemInvalidParam);
+        }
+        units += static_cast<uint32_t>(added);
+        if (maxStack == 1 && item.size() == 1 && !ItemStore::IsInvalidGuid(item))
+        {
+            if (store_.Contains(item.item_id()) || !preassigned.insert(item.item_id()).second)
+            {
+                return PrintStackAndReturnError(kBagDeleteItemAlreadyHasGuid);
+            }
+        }
+    }
 
-	// 事务语义:四道预检(零数量 / 配置表与准入 / 预设 guid 撞车 / 铸号)全过、
-	// 且位已腾够之后才开始写入;任何一道不过都整体失败,绝不做"前几件已进包、
-	// 后一件失败"的部分添加。邮件附件是这条路径的主要用户,半批发放会让调用方
-	// 以为整批失败而重发,变成复制道具。
-	//
-	// 预检与腾位都在 ReserveForBatchAdd(vector 重载)里,且预检严格排在腾位之前。
-	// **这里不再自己做一遍**(理由见 ItemCountMap 重载)。
-	//
-	// 剩下唯一还能中途失败的是"布局层说能放却放不下",那是编程错误,由
-	// AssertLayerConsistency 兜底,不是数据能触发的情形。
-	RETURN_ON_ERROR(ReserveForBatchAdd(itemsToAdd, evictedOut));
+    GuidVector victims;
+    std::size_t newInstanceCount = 0;
+    if (!PlanEviction(stackUnits, evictedOut != nullptr, victims, &newInstanceCount, &separateInstances))
+    {
+        return PrintStackAndReturnError(kBagItemNotStacked);
+    }
 
-	// 逐件发放,复用单个 AddItem 的完整逻辑(装备走非堆叠、普通物品走堆叠)。
-	for (const auto &param : itemsToAdd)
-	{
-		RETURN_ON_ERROR(AddItem(param, nullptr, evictedOut));
-	}
-	return kSuccess;
+    // 先铸齐最终规划所需的号，再执行初始化回调和任何玩家状态修改。预取/失效可在铸号中途发生。
+    if (newInstanceCount < preassigned.size())
+    {
+        return PrintStackAndReturnError(kInvalidTableData);
+    }
+    GuidVector minted;
+    minted.reserve(newInstanceCount - preassigned.size());
+    std::unordered_set<Guid> reserved = preassigned;
+    for (std::size_t i = preassigned.size(); i < newInstanceCount; ++i)
+    {
+        const Guid guid = ItemStore::MintGuid();
+        if (guid == 0 || guid == kInvalidGuid || store_.Contains(guid) || !reserved.insert(guid).second)
+        {
+            LOG_ERROR << "Bag::AddItems: item guid reservation failed; batch unchanged. player " << PlayerGuid();
+            return PrintStackAndReturnError(kBagAddItemInvalidParam);
+        }
+        minted.push_back(guid);
+    }
+
+    // 候选仓库隔离合堆、盖章和实例初始化；失败时原仓库及其入包水位保持不变。
+    ItemStore candidate = store_;
+    std::vector<DestroyedInstance> evicted;
+    for (const auto guid : victims)
+    {
+        const auto *item = candidate.Find(guid);
+        if (item == nullptr)
+        {
+            return PrintStackAndReturnError(kInvalidTableData);
+        }
+        evicted.push_back({guid, item->config_id(), item->size()});
+        candidate.Erase(guid);
+    }
+    std::vector<std::pair<Guid, uint32_t>> newItems;
+    std::vector<GuidVector> written(itemsToAdd.size());
+    std::size_t nextMint = 0;
+    for (std::size_t entry = 0; entry < itemsToAdd.size(); ++entry)
+    {
+        const auto &proto = itemsToAdd[entry].itemPBComp;
+        LookupItemOrReturnError(proto.config_id());
+        const auto maxStack = itemRow->max_stack_size();
+        std::vector<ItemStore::StackFill> fills;
+        uint32_t remaining = maxStack > 1 ? candidate.PlanStackIntoExistingStacks(proto, maxStack, fills) : proto.size();
+        candidate.ApplyStackFill(fills, &written[entry]);
+        while (remaining > 0)
+        {
+            ItemComp piece = proto;
+            const auto amount = std::min(maxStack, remaining);
+            piece.set_size(amount);
+            if (!(maxStack == 1 && proto.size() == 1 && !ItemStore::IsInvalidGuid(proto)))
+            {
+                if (nextMint == minted.size())
+                {
+                    LOG_ERROR << "Bag::AddItems: reserved guid count disagrees with plan; batch unchanged. player "
+                              << PlayerGuid();
+                    return PrintStackAndReturnError(kInvalidTableData);
+                }
+                piece.set_item_id(minted[nextMint++]);
+            }
+            if (maxStack == 1)
+            {
+                InitializeNewInstance(instanceInitializer, piece, PlayerGuid());
+            }
+            const auto guid = piece.item_id();
+            if (candidate.Insert(std::move(piece)) == nullptr)
+            {
+                return PrintStackAndReturnError(kBagDeleteItemAlreadyHasGuid);
+            }
+            newItems.emplace_back(guid, proto.config_id());
+            written[entry].push_back(guid);
+            remaining -= amount;
+        }
+    }
+    if (nextMint != minted.size())
+    {
+        return PrintStackAndReturnError(kInvalidTableData);
+    }
+
+    // 布局与仓库都在候选中完成，试放失败只丢弃副本，不依赖反向恢复或 Debug 断言。
+    auto candidateLayout = layout_->Clone();
+    if (candidateLayout == nullptr)
+    {
+        LOG_ERROR << "Bag::AddItems: layout cannot create a transaction candidate; batch unchanged. player "
+                  << PlayerGuid();
+        return PrintStackAndReturnError(kInvalidTableData);
+    }
+    for (const auto guid : victims)
+    {
+        candidateLayout->Remove(guid);
+    }
+    for (const auto &[guid, configId] : newItems)
+    {
+        if (PlaceInstance(guid, configId, candidateLayout.get()) == kInvalidSlot)
+        {
+            return PrintStackAndReturnError(kBagItemNotStacked);
+        }
+    }
+    // 单一场景逻辑线程，无回调的提交段同时发布两层候选。
+    store_ = std::move(candidate);
+    layout_ = std::move(candidateLayout);
+    if (evictedOut != nullptr)
+    {
+        evictedOut->insert(evictedOut->end(), evicted.begin(), evicted.end());
+    }
+    if (writtenByEntryOut != nullptr)
+    {
+        writtenByEntryOut->insert(writtenByEntryOut->end(), written.begin(), written.end());
+    }
+    AssertLayerConsistency();
+    return kSuccess;
 }
 
 uint32_t Bag::RemoveItem(Guid del_guid)
@@ -1142,8 +856,9 @@ static bool IsFreeSlotForEquipKind(const EquipSlotTable &slotRow, uint32_t kind,
 	return layout.At(static_cast<SlotId>(slotRow.id())) == kInvalidGuid; // 空着才算
 }
 
-SlotId Bag::FindFreeSlotForKind(uint32_t kind) const
+SlotId Bag::FindFreeSlotForKind(uint32_t kind, const IContainerLayout *target) const
 {
+    const auto &layout = target != nullptr ? *target : *layout_;
 	// 找的是**第一个空的**接受槽,不是唯一那个 —— 同一部位允许有多个槽
 	// (两个手镯位 = 表里两行 equip_kind 相同)。上一版模型把部位和槽号
 	// 混成了一个字段,根本表达不了这个需求。
@@ -1153,7 +868,7 @@ SlotId Bag::FindFreeSlotForKind(uint32_t kind) const
 	}
 	for (const auto &slotRow : EquipSlotTableManager::Instance().FindAll().data())
 	{
-		if (IsFreeSlotForEquipKind(slotRow, kind, *layout_))
+		if (IsFreeSlotForEquipKind(slotRow, kind, layout))
 		{
 			return static_cast<SlotId>(slotRow.id());
 		}
@@ -1181,13 +896,35 @@ std::size_t Bag::CountFreeSlotsForKind(uint32_t kind) const
 	return counted.size();
 }
 
-bool Bag::ReserveOrEvict(const ItemCountMap &unitsToAdd,
-						 std::vector<DestroyedInstance> *evictedOut)
+bool Bag::PlanEviction(const ItemCountMap &unitsToAdd, bool allowEviction,
+                       GuidVector &victimOrder, std::size_t *totalInstancesOut,
+                       const ItemCountMap *separateInstances)
 {
+    victimOrder.clear();
+    const auto plan = [&](ItemCountMap &need, std::size_t &total, const std::unordered_set<Guid> *excluded = nullptr)
+    {
+        if (PlanInstances(unitsToAdd, &need, &total, excluded) != kSuccess)
+        {
+            return false;
+        }
+        if (separateInstances != nullptr)
+        {
+            for (const auto &[configId, count] : *separateInstances)
+            {
+                need[configId] += count;
+                total += count;
+            }
+        }
+        if (totalInstancesOut != nullptr)
+        {
+            *totalInstancesOut = total;
+        }
+        return true;
+    };
 	// 第一问永远是"照现在这样放得下吗" —— 放得下就什么都不做,淘汰只在真放不下时发生。
 	ItemCountMap need;
 	std::size_t needTotal = 0;
-	if (PlanInstances(unitsToAdd, &need, &needTotal) != kSuccess)
+	if (!plan(need, needTotal))
 	{
 		return false; // 配置 / 准入问题;调用方在这之前已用 PlanInstances 拿过精确错误码
 	}
@@ -1211,9 +948,9 @@ bool Bag::ReserveOrEvict(const ItemCountMap &unitsToAdd,
 	// LogItemDestroy —— item_uuid 是外挂回收的关联键。此前这只是一句"生产代码请走
 	// BagService"的注释,任何直接调纯容器的调用方都能无声销毁玩家资产;现在是闸:
 	// 不带回执的调用在会淘汰的包上按 RejectWhenFull 处理。
-	if (evictedOut == nullptr)
+	if (!allowEviction)
 	{
-		LOG_ERROR << "Bag::ReserveOrEvict: eviction would be needed but no receipt sink was "
+		LOG_ERROR << "Bag::PlanEviction: eviction would be needed but no receipt sink was "
 			<< "given (evictedOut == nullptr); refusing to destroy anything. Route through "
 			<< "BagService. player " << PlayerGuid();
 		return false;
@@ -1238,13 +975,12 @@ bool Bag::ReserveOrEvict(const ItemCountMap &unitsToAdd,
 	// 先进先出是前缀稳定的(最早 k 个 ⊂ 最早 k+1 个),并集不改变它;对不前缀
 	// 稳定的未来策略,并集保证单调。
 	std::unordered_set<Guid> victimSet;
-	GuidVector victimOrder; // 保留策略给出的顺序,回执按它落流水
 	bool converged = false;
 	for (std::size_t round = 0; round <= store_.Size(); ++round)
 	{
 		ItemCountMap needIfEvicted;
 		std::size_t needIfEvictedTotal = 0;
-		if (PlanInstances(unitsToAdd, &needIfEvicted, &needIfEvictedTotal, &victimSet) != kSuccess)
+		if (!plan(needIfEvicted, needIfEvictedTotal, &victimSet))
 		{
 			return false;
 		}
@@ -1279,40 +1015,13 @@ bool Bag::ReserveOrEvict(const ItemCountMap &unitsToAdd,
 	}
 	if (!converged)
 	{
-		LOG_ERROR << "Bag::ReserveOrEvict: eviction planning did not converge within "
+		LOG_ERROR << "Bag::PlanEviction: eviction planning did not converge within "
 			<< store_.Size() << " round(s); refusing without destroying anything. player "
 			<< PlayerGuid();
 		return false;
 	}
 
-	// commit(腾位):这是一次**独立且完整**的提交,发生在本批写入任何东西之前。
-	// 于是三段纪律仍然成立:要么腾完再放,要么一件不动。
-	for (const Guid guid : victimOrder)
-	{
-		// 销毁前抓拍 —— item_uuid 是 transaction_log 做外挂回收的关联键,
-		// 由 BagService 落 LogItemDestroy。形状与 MergeAndCompact 的回执一致。
-		if (const auto *item = store_.Find(guid); item != nullptr)
-		{
-			evictedOut->push_back(DestroyedInstance{guid, item->config_id(), item->size()});
-		}
-		DestroyItem(guid); // 两层成对销毁,这是桥层的活
-	}
-	AssertLayerConsistency();
-
-	// 收尾核对:不动点已经保证放得下。这里为 false 只可能是策略 / 布局不自洽的
-	// 编程错误(例如策略返回了不在 store 里的 guid)。东西已经销毁、回不来,必须吼。
-	ItemCountMap after;
-	std::size_t afterTotal = 0;
-	if (PlanInstances(unitsToAdd, &after, &afterTotal) != kSuccess ||
-		!CanReserve(after, afterTotal))
-	{
-		LOG_ERROR << "Bag::ReserveOrEvict: evicted " << victimOrder.size()
-			<< " instance(s) but still cannot reserve " << afterTotal
-			<< "; eviction policy and layout disagree (programming error). player "
-			<< PlayerGuid();
-		return false;
-	}
-	return true;
+    return true;
 }
 
 bool Bag::CanReserve(const ItemCountMap &instancesByConfig, std::size_t totalInstances) const
@@ -1373,16 +1082,17 @@ bool Bag::CanReserve(const ItemCountMap &instancesByConfig, std::size_t totalIns
 	return true;
 }
 
-SlotId Bag::PlaceInstance(Guid guid, uint32_t configId)
+SlotId Bag::PlaceInstance(Guid guid, uint32_t configId, IContainerLayout *target)
 {
+    auto &layout = target != nullptr ? *target : *layout_;
 	const Footprint footprint = FootprintFor(configId);
 
 	// 槽位没有语义的布局(人物背包 / 仓库 / 临时格 / 格子背包):位置本身不表达
 	// 任何东西,first-fit 即可 —— 与拆分前完全一致。一件装备躺在人物背包里时
 	// 走的就是这条路,它不该被强行塞进"装备槽 3"。
-	if (!layout_->HasSlotSemantics())
+	if (!layout.HasSlotSemantics())
 	{
-		return layout_->Place(guid, footprint);
+		return layout.Place(guid, footprint);
 	}
 
 	// 具名槽布局(装备栏):物品声明**部位**,槽位表声明**每个槽接受哪个部位**。
@@ -1395,7 +1105,7 @@ SlotId Bag::PlaceInstance(Guid guid, uint32_t configId)
 			<< PlayerGuid();
 		return kInvalidSlot;
 	}
-	const SlotId slot = FindFreeSlotForKind(kind);
+	const SlotId slot = FindFreeSlotForKind(kind, &layout);
 	if (slot == kInvalidSlot)
 	{
 		// 该部位的槽全被占满了(或者槽位表压根没给这个部位开过槽)。
@@ -1403,10 +1113,10 @@ SlotId Bag::PlaceInstance(Guid guid, uint32_t configId)
 			<< " (config " << configId << "); refusing. player " << PlayerGuid();
 		return kInvalidSlot;
 	}
-	if (!layout_->PlaceAt(guid, slot, footprint))
+	if (!layout.PlaceAt(guid, slot, footprint))
 	{
 		LOG_ERROR << "Bag::PlaceInstance: equip slot " << slot << " for config " << configId
-			<< " is occupied or out of range (capacity " << layout_->Capacity()
+			<< " is occupied or out of range (capacity " << layout.Capacity()
 			<< "); refusing. player " << PlayerGuid();
 		return kInvalidSlot;
 	}
@@ -1475,8 +1185,8 @@ uint32_t Bag::TakeInstance(Guid guid, ItemComp &out)
 			<< "); only non-stackable instances can be carried. player " << PlayerGuid();
 		return PrintStackAndReturnError(kBagDelItemConfig);
 	}
-	// 不可叠加实例的 size 恒为 1。0 是该被整理回收的僵尸,>1 是数据腐化 ——
-	// 两者都不该被当成"一件装备"搬走。
+	// 不可叠加实例的 size 恒为 1。正常扣空已立即移除，仍见 0 或 >1
+	// 都说明数据损坏，不能当成“一件装备”搬走。
 	if (item->size() != 1)
 	{
 		LOG_ERROR << "Bag::TakeInstance: guid " << guid << " (config " << item->config_id()
@@ -1576,7 +1286,7 @@ uint32_t Bag::PutInstance(ItemComp item, std::optional<uint32_t> slot)
 	{
 		// 自动找位的 reserve:CanReserve 与下面 commit 用的 PlaceInstance 在同一个条件上
 		// 分叉(HasSlotSemantics),它说能放,PlaceInstance 就一定落得了位。
-		// **刻意不走 ReserveOrEvict**:搬运绝不为了腾位销毁东西,临时格也一样。
+		// **刻意不走 PlanEviction**:搬运绝不为了腾位销毁东西,临时格也一样。
 		if (!CanReserve({{configId, uint32_t{1}}}, 1))
 		{
 			return PrintStackAndReturnError(kBagAddItemBagFull);
@@ -1603,7 +1313,7 @@ uint32_t Bag::PutInstance(ItemComp item, std::optional<uint32_t> slot)
 	if (!placed)
 	{
 		// 预检已排除全部数据可触发的原因;到这里说明预检与布局层不一致,是真 bug。
-		// 回滚这一件 —— 绝不留下没有槽位的孤儿实例(同 AddNonStackableItem)。
+		// 回滚这一件 —— 绝不留下没有槽位的孤儿实例(同其他入包分支)。
 		store_.Erase(guid);
 		LOG_ERROR << "Bag::PutInstance: layout refused to place guid " << guid << " (config "
 			<< configId << ", capacity " << layout_->Capacity() << ", occupied "
@@ -1647,8 +1357,18 @@ void Bag::InsertItemForRestore(Guid guid, uint32_t configId, uint32_t stackSize,
 	InsertItemForRestore(std::move(proto), pos);
 }
 
+void Bag::RaiseAcquireSeqForRestore(uint64_t sequence)
+{
+    store_.RaiseAcquireSeq(sequence);
+}
+
 void Bag::InsertItemForRestore(ItemComp item, uint32_t pos)
 {
+    // 零数量不代表资产，也不应占槽或消耗旧档补章序号。
+    if (item.size() == 0)
+    {
+        return;
+    }
 	// 身份与模板先抄出来:item 下面会被 move 进实例层。
 	const Guid guid = item.item_id();
 	const uint32_t configId = item.config_id();

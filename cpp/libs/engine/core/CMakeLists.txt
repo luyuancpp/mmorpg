@@ -62,6 +62,9 @@ set(SOURCE_FILES
     node/system/etcd/etcd_helper.cpp
     node/system/etcd/etcd_manager.cpp
     node/system/etcd/etcd_service.cpp
+    node/system/etcd/etcd_transport.cpp
+    node/system/etcd/grpc_etcd_transport.cpp
+    node/system/etcd/muduo_etcd_transport.cpp
     node/system/node/node.cpp
     node/system/node/node_allocator.cpp
     node/system/node/node_connector.cpp

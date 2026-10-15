@@ -1,6 +1,7 @@
 # 节点间 muduo RPC:每次调用的回调、延后回包与完整的完成语义(RpcChannel 改造)
 
-> 状态:**设计定稿,未实施**(2026-10-15,Claude)。实施按 §13 分批,每批需用户授权(AGENTS §10.2:总量远超 30 个文件)。
+> 状态:**批 1–5 已实施,未编译,待 Codex 验证**(2026-10-15,Claude)。用户授权实施到第 5 批,升级口径选「同 zone 停服一次切换」;
+> 实施与本文的偏离、未做项与验证步骤见 §18。批 6(玩家回包死链)、批 7(收口)未授权、未做。
 > 本文不引用此前任何会话的方案为既定结论;`build/rpc-lambda-tools/`(被 .gitignore 忽略的早先尝试)不是本设计的一部分。
 > 事实核对基线:`54c9d775d`(2026-10-15 03:08)。行号以该提交为准,并发会话仍在改 gate 相关文件,动手前须重新核对。
 
@@ -295,7 +296,9 @@ void SomeHandler::Foo(::google::protobuf::RpcController* controller, const ::Foo
 gate 作为服务端延后回包时会用新连接回旧 id(对端新 channel 的 id 从 1 重来,可能静默错投)。改成与入站 RpcServer 对称:
 
 - UP:`channel_ = RpcChannel::Create(*client_.getLoop(), conn, services_ 的拷贝)`,并 `conn->setMessageCallback(...)` 绑 `weak_ptr<RpcChannel>`,lock 后派发。
-  消息回调里不得强持 RpcClient(否则回调期间销毁实体,`~TcpClient` 会在 use_count>1 时跳过 forceClose,重现 `TcpConnection.cc:71` 事故)。
+  消息回调只在取 channel 时持有 RpcClient,派发期间不强持它 —— 这只是为了不延长 RpcClient 的寿命;在连接 / 消息回调栈上同步销毁 RpcClient
+  仍然禁止(muduo 回调期间自己就持着连接的强引用:handleRead 的 shared_from_this 临时量 + Channel 的 tie guard,`~TcpClient` 必然看到 use_count>1、
+  跳过 forceClose,重现 `TcpConnection.cc:71` 事故),摘节点一律 queueInLoop(§4.3 契约 (c))。
 - DOWN:`channel_->OnDisconnect(); channel_.reset();`。`connected()` = `channel_ != nullptr`。
 - 服务表改为 channel 自持拷贝(1–3 项的 `std::map<std::string, Service*>`;Service 对象本身由节点长期持有),消除 `reference_wrapper` 借用
   ——那份借用在"channel 比 RpcClient 多活一会儿"(消息回调 lock 着)时会悬空(评审 R1)。
@@ -333,7 +336,10 @@ B 回 A 的包也还能发出。契约写明:关机期间 done 里再 queueInLoo
 可选:把"在途调用数 + 未完成的 RpcDoneCallback 数为 0"接进 `SetShutdownDrainComplete` 谓词,让 B 在拆除前把 A 的回复发完。
 
 已核实关机入口都在 loop 的安全栈上(admin RPC 经 queueInLoop、Linux 信号走 runEvery、Windows Ctrl 走跨线程 queueInLoop),两段式可行。
-Finalize 之后 acceptor 仍在监听,新连接会建出未关闭的 channel——这是既有问题,不在本轮扩大处理,只登记。
+阶段 0 到拆除之间 loop 仍在转(另一会话加的 gRPC CQ 排空 `DrainGrpcClientsInLoop` 会把这段拉长):出站 `RpcClient` 在阶段 0 被关闭后,
+enableRetry 重连建出的 channel 一出生就是关闭态(`RpcClient::CloseChannel` 置位),新连接上不会再登记在途调用。残余:这段窗口里对已关闭 channel
+发起的 `CallMethod` 以 kNotSent 经 queueInLoop 投递,若排在拆除之后执行,回调里只能做 weak / try_get 查找(契约 (b) 本来就要求),不得依赖 ECS 与日志;
+Finalize 之后 acceptor 仍在监听,新连入的入站连接会建出未关闭的 channel(今天 scene 侧只经它单向推送)——这是既有问题,只登记。
 
 ## 7. 迟到回包与身份
 
@@ -501,7 +507,7 @@ C++ 节点没有 Prometheus 出口(`dirty_save_stats.h:25-30`),沿用"relaxed �
 - **B `rpc_channel_loopback_test.cpp`(真实回环)**:全局 Environment 只调一次 `InitMessageInfo()`;对端装 PeerRecorder(用 RpcCodec 解码记录 type / id / message_id);计数断言比较前后差值。
   正常往返恰好一次且 done 运行时 CallMethod 已返回;同 message_id 并发两次倒序回包各得其所;超时(`SweepTimeouts(t1+T)`)后同 id 回包被丢弃且 late_reply +1;未知 id 与 id=0 回包丢弃计数;
   RPC_ERROR 映射;服务端拒绝回显 id;回包无法解析 → kInvalidResponse;id=0 兼容(用"屏障请求"证明没有回包:同连接 FIFO,下一帧必是屏障的回包,不用时间窗);
-  id≠0 打到 Empty handler / handler 早返回也必回;SetFailed → kRemoteFailed;断连时 N 个在途在 OnDisconnect 栈内回调数为 0、PumpLoop 后各 kDisconnected 一次,重连后 id 继续递增;
+  id≠0 打到 Empty handler / handler 早返回也必回;SetFailed → kRemoteFailed;断连时 N 个在途在 OnDisconnect 栈内回调数为 0、PumpLoop 后各 kDisconnected 一次,重连后新 channel 的 id 从 1 重新开始(每连接一个 channel,§6.1;旧连接的回包落不到新连接上);
   销毁最后一个 RpcClientPtr 后 channel 的 weak 立即 expired(定时器无强引用)、各 kChannelClosed 一次、对端再回包不进回调;done 内重入 CallMethod 与销毁 owner(三条完成路径各测);
   本地失败经队列投递、CallMethod 返回前计数为 0;非 loop 线程调用 EXPECT_DEATH;Adopt 后连接引用数不变;RpcDoneCallback:只 Adopt 不 Run → 线上 REPLY_DROPPED 同 id、Run 两次只一帧、
   同步 Run 后框架不再回、channel 销毁后 Run 不崩不出帧、拷贝共享状态兜底只触发一次;loop 析构时被丢弃闭包里的 done / State 析构不碰 loop;Close 的失败回调先于随后排入的标记 functor(对应关机阶段 0)。
@@ -542,6 +548,75 @@ C++ 节点没有 Prometheus 出口(`dirty_save_stats.h:25-30`),沿用"relaxed �
 4. 改 AGENTS.md §8 / §11.7 的规则与引用名。
 5. RoutePlayerMessage 一族 proto 方法何时删、message_id 是否先做墓碑。
 6. 在 Java 仓 `PARITY.md` 登记两行(跨仓写入)。
+
+## 18. 实施记录(2026-10-15,批 1–5,未编译)
+
+### 18.1 与上文设计的偏离
+
+1. **升级口径**:用户选「同 zone 停服一次切换」,所以 §4.1 / §11 的过渡期垫片没有实现:id == 0 的请求服务端永不回包;
+   收到 id == 0 的 RESPONSE / RPC_ERROR 计 `legacy_id0_reply` 后丢弃;R1–R3 合并为一次发布。新旧二进制混跑时握手应答无 id 被丢弃 →
+   握手 3s 超时重试、链路不就绪、gate 不把玩家交给该 scene(fail-closed),日志可见。
+2. **日志限频**:没有复用 `FailureLogThrottle`(它所在头文件 include `rdkafkacpp.h`,不宜拖进 RPC 层),改用 `ShouldLogRpcEvent`
+   采样(前 8 条逐条,之后每 1024 条一条),与 `codec.cpp` 的 1/1024 先例同口径;准确数量看 `[RpcChannel] summary`。
+3. **全局 tip**:并行的 ECS 整理已移除进程级全局 TipInfoMessage,§5.2 原先「Run() 检查并清理全局 tip」的兜底随之删除(现文以 §5.2 为准)。
+4. **关机**:`clear<MuduoGrpcChannelPtr>` 经 muduo_grpc 作者同意挪进阶段 0;另一会话随后在阶段 0 加入官方 gRPC CQ 的关闭与排空
+   (`DrainGrpcClientsInLoop`),拆除 `FinalizeTeardownInLoop` 仍经 `queueInLoop` 排在全部失败回调之后,§6.5 的 FIFO 论证不变。
+5. **计数**:服务端 handler 显式失败单独计 `handler_failed`,与派发前拒绝 `requests_rejected` 分开。
+6. **`SendRequest` 不看 closed**:关机阶段 0 之后单向推送仍可发出(拆除期间给客户端的推送不受影响);关闭只拒新的 `CallMethod`。
+7. **PlayerEnterGameNode**:仍是单向;`SendRequest` 返回 false(本地没发出)时按 `kNotConnected` 处理,修掉以前被当成 `kSent` 清掉欠账的假成功。
+8. **可观测性收尾**:`stress_summarize.ps1` 新增「RPC0 call outcomes」段,扫 `binogsp_nodes` 与 `runogsp_nodes` 下 gate / scene 日志的最后一行
+   `[RpcChannel] summary`;微基准只写了用例,数据待 Codex。
+
+### 18.2 已知行为变化(上线前需知)
+
+- gate 对**内层 Empty** 的客户端消息(移动类)单向发送:scene 对这类消息用 `SendErrorToClient` 填的错误应答(如玩家未载入)不再回到客户端,只在 scene 日志可见。
+- 内层非 Empty 的消息,scene 调用失败(12s 超时 / 断连 / 未发出 / 对端拒绝)时客户端收到带请求 id 的 1003;以前没有回执,只能等客户端自己的 15s 超时。
+- 握手应答丢失 3s 后重试(以前要等重连);对端自报身份与本端实体不一致时拒绝这次握手。
+- 外部 GM 工具调用 `GmGracefulShutdown` 必须带非 0 的调用 id 才能收到应答(`SECURITY.md`)。
+- Route 一族四个方法对调用方返回 `kRemoteFailed`(全仓无调用方)。
+
+### 18.3 改动清单
+
+- core network:`rpc_channel.{h,cpp}`(由 `game_channel.*` 改名)、新增 `rpc_status.h`、`rpc_done_callback.h`、`rpc_channel_stats.{h,cpp}`;
+  改 `rpc_client.h`、`rpc_session.h`、`rpc_server.{h,cc}`、`rpc_controller.h`、`player_message_utils.{h,cpp}`;
+  删 `node_message_utils.{h,cpp}`、`codec/message_response_dispatcher.h`、`game_rpc.proto`。
+- core 其它:新增 `utils/data_structures/inflight_index.h`;改 `node/system/registration/registration_manager.{h,cpp}`、`node/system/node/node.{h,cpp}`、
+  `node_util.{h,cpp}`、`core.vcxproj` / `.filters` / `CMakeLists.txt`。proto:`proto/common/base/rpc_message.proto`。
+- gate:`main.cpp`(握手成功钩子)、`handler/rpc/client_message_processor.cpp`、`client_request_lane.{h,cpp}`(导出 `SendEnvelope` / `FindLiveSession`)、
+  `handler/rpc/gate_service_handler.cpp`、`handler/event/scene_entry_dispatch.{h,cpp}`、`gate_security.h`、`SECURITY.md`、删 `rpc_replies/` 6 个文件、
+  `gate.vcxproj` / `.filters` / `CMakeLists.txt`;`libs/services/gate/session/comp/router_lane.h`、`pending_scene_entry_comp.h`;`nodes/gate/tests/router_lane_test.cpp`(注释与编译命令)。
+- scene:`handler/rpc/scene_handler.cpp`、`scene_admin_handler.cpp`、`main.cpp`、`id_segment_bootstrap.{h,cpp}`(注释)、删 `rpc_replies/` 5 个文件、
+  `scene.vcxproj` / `.filters` / `CMakeLists.txt`;`libs/services/scene/player/system/player_scene.cpp`、`afk.cpp`(注释)。
+- battle:删 `rpc_replies/register_response_handler.cpp`,`battle.vcxproj` / `.filters` / `CMakeLists.txt`。
+- 生成器 `tools/proto_generator/protogen/internal/`:`service_id_gen.go`、`service_id_gen_test.go`(新)、`template/service_metadata.h.tmpl`(新)、`handler_gen.go`、
+  `register_gen.go`、`replied_handler_gen.go`;`generator/cpp/` 下 `handlers.go`、`gen.go`、`generator_scene_node_util.go`、`generator_gate_node_util.go`、
+  `generator_filters_test.go`、`node_rpc_replies_test.go`(新)。
+- 测试 `cpp/tests/rpc_controller_test/`:新增 `inflight_index_test.cpp`、`rpc_channel_loopback_test.cpp`、`rpc_chain_test.cpp`(含 `DISABLED_` 微基准);
+  改 `rpc_controller_test.cpp`、`rpc_client_lifecycle_test.cpp`(删 InitReply 桩、按每连接 channel 改写断言)、`hiredis_command_lifecycle_test.cpp`、
+  `redis_manager_auth_test.cpp`(夹具裸指针成员改 `optional<reference_wrapper>`)、`rpc_controller_test.vcxproj`(登记三个新 TU)。
+- 规范与文档:`AGENTS.md` §8 / §11.7、`.github/copilot-instructions.md`、`docs/design/battle-transport-decision.md` §3.2 更正注、`docs/README.md`、
+  `tools/scripts/gen_docs_index.py`;Java 仓 `PARITY.md` 两行。
+
+### 18.4 交给 Codex 的验证顺序(在 §16 的基础上)
+
+1. 生成器源码已改:先 `proto-gen-build`,再 `proto-gen-run -UseBinary -ConfigPath tools/proto_generator/protogen/etc/proto_gen.no-unity.yaml`(AGENTS §4.1)。
+   通过标准:`rpc_message.pb.h` 有 `kIdFieldNumber = 6` 与 `HANDLER_FAILED` / `REPLY_DROPPED`;`scene` / `gate_service` / `scene_admin` 三个 metadata 头末尾共多 24 个
+   `<KeyName>Rpc` tag;三个节点级 handler 头各多一行类注释;已删除的节点级回包文件没有被重新生成;`message_id.txt` 不变;再跑一次无新 diff。
+2. protogen:`$env:GOTOOLCHAIN='local'`,`gofmt -l ./internal ./cmd` 无输出、`go vet ./internal/... ./cmd`、`go test -mod=readonly ./internal/... ./cmd`。
+3. robot 下 `go mod vendor`(刷新 vendor 里的 `rpc_message.pb.go`)。
+4. C++ 按 §16 第 2–3 步串行 `/m:1`;battle 的 `boost/any.hpp` C1083 是既有阻塞,单列。
+5. `py -3 tools\archived\vcxproj2cmake.py` 核对 core / gate / scene / battle 的 CMakeLists 只有本批的增删。
+6. 测试:`rpc_controller_test` Rebuild 后全量与 `--gtest_filter=InflightIndex*:RpcChannel*:RpcChain* --gtest_shuffle --gtest_repeat=50`;
+   `routing_identity`、`gate_security`;router_lane 独立 g++ 编译(命令已加 `-I cpp/libs/engine/core`)。
+7. 冒烟:`travel_smoke` 与 robot_smoke,gate / scene 日志里握手成功、`[RpcChannel] summary` 的 timeout / late_reply / legacy_id0_reply 为 0、
+   `Rejected deprecated RPC` 为 0、客户端请求类消息有回包。
+8. 微基准 `DISABLED_RpcChannelBench.*` 改动前后各跑一次出对比表;没有对比表不声称「无性能回退」(AGENTS §6)。
+
+### 18.5 遗留
+
+- 已处理:`docs/design/ecs-entt-misuse-audit-20261015.md` 的 C007 / F093 状态与 `routing_identity_test.cpp` 的注释已更正(entt 审计会话已结束,由本会话代改)。
+- GM 停机鉴权被拒时回的是正常 RESPONSE(`affected_count = 0`),是否改为 `SetFailed` 待定。
+- §14 的后续项不变。
 
 ## 附录 A:主要事实证据
 

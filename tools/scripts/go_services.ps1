@@ -9,6 +9,7 @@
 .PARAMETER Command
     start   – build & launch selected services (default: all)
     stop    – gracefully stop running services launched by this script
+              (Ctrl+C to each instance's console, force-kill the process tree on timeout)
     status  – show which services are currently running
     list    – print the available service catalogue
     build   – compile native binaries for selected services -> bin\go_services\
@@ -16,6 +17,14 @@
 .PARAMETER Services
     Comma-separated service names to start (e.g. "login,db").
     Defaults to all implemented services.
+
+.PARAMETER ForceStop
+    stop 时跳过 Ctrl+C,直接用 taskkill /T /F 强杀进程树(旧行为,对服务而言等同崩溃)。
+    默认不加:先向每个实例的控制台投递 Ctrl+C 让服务走自己的优雅停机,超时再强杀进程树。
+
+.PARAMETER StopTimeoutSeconds
+    stop 时 Ctrl+C 之后等待实例自行退出的秒数。>0 时覆盖所有服务;
+    默认 0 = 按服务取值(目录键 StopTimeoutSeconds,db 为 35,未写的服务为 25)。
 
 .EXAMPLE
     # Start every implemented Go service
@@ -29,6 +38,10 @@
 
     # Stop all services launched by this script
     pwsh -File tools/scripts/go_services.ps1 -Command stop
+
+    # 只停 db,Ctrl+C 后最多等 60 秒;或者跳过优雅停直接强杀
+    pwsh -File tools/scripts/go_services.ps1 -Command stop -Services db -StopTimeoutSeconds 60
+    pwsh -File tools/scripts/go_services.ps1 -Command stop -Services db -ForceStop
 #>
 param(
     [Parameter(Mandatory = $true)]
@@ -72,7 +85,13 @@ param(
 
     # Port offset between zones (Zone N port = base + (Zone-1) * ZonePortShift).
     # Default 1000 keeps zones cleanly separated even with PortStride=1.
-    [int]$ZonePortShift = 1000
+    [int]$ZonePortShift = 1000,
+
+    # stop:跳过 Ctrl+C 直接强杀进程树(旧行为)。见 Invoke-Stop 头注释。
+    [switch]$ForceStop,
+
+    # stop:Ctrl+C 后等待优雅退出的秒数,>0 时覆盖所有服务;0 = 按目录键 StopTimeoutSeconds(缺省 25)。
+    [int]$StopTimeoutSeconds = 0
 )
 
 $ErrorActionPreference = "Stop"
@@ -116,8 +135,13 @@ $GoBinDir   = Join-Path $RepoRoot "bin\go_services"
 #                        chat (只依赖 etcd + Redis,经路由服可达)
 #               Tier 2 = player_locator (depended by login)
 #               Tier 3 = login (top of the dial chain)
+#   StopTimeoutSeconds  可选。stop 时 Ctrl+C 之后等该服务自行退出的秒数,超时强杀进程树;不写取 25
+#               (盖住 chat / trade / friend / guild lifecycle 的 24s 硬截止)。-StopTimeoutSeconds >0 时整体覆盖。
+#               db 取 35:它的 Stop 先撤拉取、排空已分发任务并在会话释放时提交位点(上限 claimDrainTimeout 10s
+#               + 5s 余量),再离组、等 worker 收尾,比其它服务慢;K8s 侧对应 45s 宽限减 5s preStop。
+#               超时被强杀不丢数据(排序锁留到 TTL、重试收据租约过期后回收),只是失去优雅停的收益。
 $ServiceCatalogue = [ordered]@{
-    db              = @{ Dir = "db";              Entry = "db.go";                    Port = 6000;  Desc = "DB (Kafka consumer + MySQL)";       ConfigFlag = "-f";            ConfigFile = "etc/db.yaml";                    AllowMultiInstance = $true;  Tier = 0 }
+    db              = @{ Dir = "db";              Entry = "db.go";                    Port = 6000;  Desc = "DB (Kafka consumer + MySQL)";       ConfigFlag = "-f";            ConfigFile = "etc/db.yaml";                    AllowMultiInstance = $true;  Tier = 0; StopTimeoutSeconds = 35 }
     data_service    = @{ Dir = "data_service";    Entry = "data_service.go";          Port = 9000;  Desc = "Data Service (multi-zone Redis)"; ConfigFlag = "-f";            ConfigFile = "etc/data_service.yaml";          AllowMultiInstance = $true;  Tier = 0 }
     # Base ports for the zRPC services were originally 50000/50200 but Windows
     # reserves dynamic-port ranges that frequently land on 50000-50171 and a
@@ -681,6 +705,10 @@ function Start-ServiceInstance {
             Remove-Item Env:MMORPG_ASSET_OP_SECRET_TRADE -ErrorAction SilentlyContinue
         }
 
+        # 下面两处 Start-Process 必须保持每个实例一个独立(隐藏)控制台:-WindowStyle Hidden,且不得加 -NoNewWindow。
+        # 优雅停(Invoke-Stop)是往目标的控制台投递 Ctrl+C,而 Ctrl+C 会送到附着在同一控制台上的全部进程;
+        # 共用控制台时停一个服务会把同控制台的其它服务、甚至本脚本所在的终端一起打断。
+        # tools/scripts/tests/go_services_stop.tests.ps1 有契约用例钉住这一点。
         if ($UseExe) {
             $exePath = Resolve-GoExecutablePath -ServiceName $Name -ServiceDir $svcDir
             if (-not $exePath) {
@@ -845,6 +873,114 @@ function Invoke-Start {
     Write-Host "`nAll requested services launched. Use -Command status to check health." -ForegroundColor Green
 }
 
+# ── Helpers (graceful stop) ──────────────────────────────────────────
+# 下面几个函数只读参数与本脚本的 param(-StopTimeoutSeconds),不依赖其它脚本级变量;
+# 测试经 AST 只加载函数,并把 Send-ConsoleCtrlC / Wait-ProcessExit / Stop-ProcessTree / Get-StopClockSeconds 换成桩。
+
+# 某个实例 Ctrl+C 之后等多久:-StopTimeoutSeconds >0 优先,其次目录键 StopTimeoutSeconds,默认 25。
+# $Info 为 $null(PID 记录里的服务已不在目录中)时取默认值。
+function Get-GracefulStopSeconds {
+    param([hashtable]$Info)
+    if ($StopTimeoutSeconds -gt 0) { return [int]$StopTimeoutSeconds }
+    if ($null -ne $Info -and $Info.ContainsKey('StopTimeoutSeconds') -and [int]$Info.StopTimeoutSeconds -gt 0) {
+        return [int]$Info.StopTimeoutSeconds
+    }
+    return 25
+}
+
+# 辅助进程执行的脚本文本:脱离自己的控制台 → 附着到目标进程的控制台 → 让自己忽略 Ctrl+C →
+# 向该控制台的全部进程(进程组 0)投递 CTRL_C_EVENT。PID 以 [int] 形式嵌入文本,没有注入面。
+# 退出码:0 = 已投递;2 = AttachConsole 失败(目标已退出 / 没有控制台 / 权限不足);
+#        3 = GenerateConsoleCtrlEvent 失败;其它非 0(如 Add-Type 编译失败)同样视为没投递出去。
+function Get-ConsoleCtrlCHelperScript {
+    param([Parameter(Mandatory = $true)][int]$ProcessId)
+    return @"
+`$ErrorActionPreference = 'Stop'
+Add-Type -Namespace MmorpgConsole -Name Native -MemberDefinition @'
+[DllImport("kernel32.dll", SetLastError = true)] public static extern bool FreeConsole();
+[DllImport("kernel32.dll", SetLastError = true)] public static extern bool AttachConsole(uint dwProcessId);
+[DllImport("kernel32.dll", SetLastError = true)] public static extern bool SetConsoleCtrlHandler(IntPtr handlerRoutine, bool add);
+[DllImport("kernel32.dll", SetLastError = true)] public static extern bool GenerateConsoleCtrlEvent(uint dwCtrlEvent, uint dwProcessGroupId);
+'@
+[void][MmorpgConsole.Native]::FreeConsole()
+if (-not [MmorpgConsole.Native]::AttachConsole($ProcessId)) { exit 2 }
+[void][MmorpgConsole.Native]::SetConsoleCtrlHandler([IntPtr]::Zero, `$true)
+if (-not [MmorpgConsole.Native]::GenerateConsoleCtrlEvent(0, 0)) { exit 3 }
+exit 0
+"@
+}
+
+# 用当前宿主 exe(pwsh / powershell)起一个隐藏的短命辅助进程投递 Ctrl+C,返回是否投递成功。
+# 不能在本进程里做:AttachConsole 要先 FreeConsole,会把本脚本从用户的终端上摘下来。
+# 辅助进程正常 1~2 秒结束(主要是 Add-Type 编译);给 20 秒上限,超时杀掉辅助进程并按「没投递出去」处理,
+# 调用方随即强杀目标,不会让 stop 无限挂住。
+function Send-ConsoleCtrlC {
+    param([Parameter(Mandatory = $true)][int]$ProcessId)
+    $hostPath = (Get-Process -Id $PID).Path
+    if ([string]::IsNullOrWhiteSpace($hostPath)) {
+        Write-Warning "cannot resolve the current PowerShell executable; console interrupt for PID $ProcessId not sent"
+        return $false
+    }
+    $helperScript = Get-ConsoleCtrlCHelperScript -ProcessId $ProcessId
+    $encoded = [Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($helperScript))
+    try {
+        $helper = Start-Process -FilePath $hostPath `
+            -ArgumentList @('-NoProfile', '-NonInteractive', '-EncodedCommand', $encoded) `
+            -WindowStyle Hidden `
+            -PassThru
+        # 先取一次句柄:进程退出后 Process 对象才能读到 ExitCode(Start-Process -PassThru 的已知坑)。
+        $null = $helper.Handle
+        if (-not $helper.WaitForExit(20000)) {
+            Stop-Process -Id $helper.Id -Force -ErrorAction SilentlyContinue
+            Write-Warning "console interrupt helper for PID $ProcessId did not finish within 20s"
+            return $false
+        }
+        return ($helper.ExitCode -eq 0)
+    } catch {
+        Write-Warning "console interrupt helper for PID $ProcessId failed: $($_.Exception.Message)"
+        return $false
+    }
+}
+
+# 等进程退出,返回是否已退出。进程查不到(已退出)直接返回 $true。
+function Wait-ProcessExit {
+    param([Parameter(Mandatory = $true)][int]$ProcessId, [double]$TimeoutSeconds = 0)
+    $proc = Get-Process -Id $ProcessId -ErrorAction SilentlyContinue
+    if (-not $proc) { return $true }
+    $timeoutMs = [int][Math]::Min([double][int]::MaxValue, [Math]::Max(0.0, $TimeoutSeconds * 1000.0))
+    return [bool]$proc.WaitForExit($timeoutMs)
+}
+
+# 强杀整棵进程树。go run 模式下记录的 PID 是 go.exe,真正的服务是它的子进程,只杀 go.exe 不一定连带杀掉子进程。
+# taskkill 失败(进程已不在 / 权限)时退回只杀该 PID,保持旧行为的下限。
+function Stop-ProcessTree {
+    param([Parameter(Mandatory = $true)][int]$ProcessId)
+    $killed = $false
+    try {
+        $null = & taskkill.exe /PID $ProcessId /T /F 2>&1
+        $killed = ($LASTEXITCODE -eq 0)
+    } catch {
+        $killed = $false
+    }
+    if (-not $killed) {
+        Stop-Process -Id $ProcessId -Force -ErrorAction SilentlyContinue
+    }
+}
+
+# 单调时钟(秒),只用于算等待剩余时间;测试里替换成桩。
+function Get-StopClockSeconds {
+    return [double][System.Diagnostics.Stopwatch]::GetTimestamp() / [double][System.Diagnostics.Stopwatch]::Frequency
+}
+
+# 停止本脚本启动的实例。默认优雅停,分三段(G9,docs/design/db-task-pipeline-bottlenecks.md §4.4):
+#   1. 对全部存活目标投递 Ctrl+C(-ForceStop 时直接强杀);投递不出去的立刻强杀进程树。
+#   2. 按各自的截止时间逐个等退出(Ctrl+C 是一起发的,所以等待是并行计时的);超时强杀进程树。
+#   3. 已退出或查不到的实例照旧输出 [gone]。
+# 为什么是 Ctrl+C:go-zero 的 proc 包在 Windows 上是空实现,服务端也没有停机端点;Go 运行时把 CTRL_C_EVENT
+# 当作 os.Interrupt(= syscall.SIGINT)交给服务自己的 signal.Notify(如 go/db/db.go),这是唯一能走到
+# 服务自身收尾逻辑的办法。旧行为 Stop-Process -Force 对服务而言等同崩溃。
+# go run 模式下 go.exe 收到中断后不退出,等子进程(真正的服务)退出后才退出,所以等 go.exe 就是等服务。
+# 依赖每个实例有独立控制台,见 Start-ServiceInstance 里 Start-Process 处的注释。
 function Invoke-Stop {
     $pids = Read-PidFile
     if (@($pids.PSObject.Properties).Count -eq 0) {
@@ -869,22 +1005,52 @@ function Invoke-Stop {
         $instanceKeys = @($pids.PSObject.Properties.Name)
     }
 
+    # 第一段:先对全部目标投递 Ctrl+C,再统一等待 —— 逐个「发、等」会让总时长变成各服务等待之和。
+    $pending = @()
     foreach ($key in $instanceKeys) {
         if ($pids.PSObject.Properties.Name -notcontains $key) { continue }
         $entry = Read-InstanceEntry -RawValue $pids.$key -FallbackService $key -FallbackPort 0
         $procId = $entry.Pid
-        try {
-            $proc = Get-Process -Id $procId -ErrorAction Stop
-            if (-not $proc.HasExited) {
-                Stop-Process -Id $procId -Force
-                Write-Host "[stop]  $key (PID $procId)" -ForegroundColor Magenta
-            } else {
-                Write-Host "[gone]  $key (PID $procId already exited)" -ForegroundColor DarkGray
-            }
-        } catch {
+        $proc = $null
+        try { $proc = Get-Process -Id $procId -ErrorAction Stop } catch { $proc = $null }
+        if (-not $proc) {
             Write-Host "[gone]  $key (PID $procId not found)" -ForegroundColor DarkGray
+        } elseif ($proc.HasExited) {
+            Write-Host "[gone]  $key (PID $procId already exited)" -ForegroundColor DarkGray
+        } elseif ($ForceStop) {
+            Stop-ProcessTree -ProcessId $procId
+            Write-Host "[kill]  $key (PID $procId): -ForceStop; force-killed process tree" -ForegroundColor Magenta
+        } elseif (-not (Send-ConsoleCtrlC -ProcessId $procId)) {
+            Stop-ProcessTree -ProcessId $procId
+            Write-Host "[kill]  $key (PID $procId): console interrupt not deliverable; force-killed process tree" -ForegroundColor Red
+        } else {
+            # 等待时限按服务取:PID 记录里的 Service 优先;旧格式记录(只有 PID)从实例键里剥掉 z<N>_ 前缀与 _<i> 后缀。
+            $svcName = [string]$entry.Service
+            if (-not $ServiceCatalogue.Contains($svcName) -and $key -match '^(?:z\d+_)?(?<svc>.+?)(?:_\d+)?$' -and $ServiceCatalogue.Contains($Matches.svc)) {
+                $svcName = $Matches.svc
+            }
+            $svcInfo = if ($ServiceCatalogue.Contains($svcName)) { $ServiceCatalogue[$svcName] } else { $null }
+            $graceSeconds = Get-GracefulStopSeconds -Info $svcInfo
+            $sentAt = Get-StopClockSeconds
+            $pending += [pscustomobject]@{
+                Key = $key; Pid = $procId; GraceSeconds = $graceSeconds; SentAt = $sentAt; Deadline = $sentAt + $graceSeconds
+            }
         }
+        # 只改内存里的记录;PID 文件在最后统一写回。中途被打断时文件不变,下次 stop 仍能找到这些实例。
         $pids.PSObject.Properties.Remove($key)
+    }
+
+    # 第二段:按各自截止时间的剩余量逐个等待,超时强杀进程树。
+    foreach ($p in $pending) {
+        $remaining = [Math]::Max(0.0, $p.Deadline - (Get-StopClockSeconds))
+        if (Wait-ProcessExit -ProcessId $p.Pid -TimeoutSeconds $remaining) {
+            $elapsed = [Math]::Max(0.0, (Get-StopClockSeconds) - $p.SentAt)
+            $elapsedText = ([Math]::Round($elapsed, 1)).ToString([System.Globalization.CultureInfo]::InvariantCulture)
+            Write-Host "[stop]  $($p.Key) (PID $($p.Pid), exited in ${elapsedText}s)" -ForegroundColor Magenta
+        } else {
+            Stop-ProcessTree -ProcessId $p.Pid
+            Write-Host "[kill]  $($p.Key) (PID $($p.Pid)): no exit within $($p.GraceSeconds)s after Ctrl+C; force-killed process tree" -ForegroundColor Red
+        }
     }
 
     Write-PidFile $pids

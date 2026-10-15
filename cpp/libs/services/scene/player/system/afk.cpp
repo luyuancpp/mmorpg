@@ -42,8 +42,9 @@ void AfkSystem::Update(double delta)
     }
 
     // 2. Check AFK players: if they received new input, remove AFK.
-    //    Frozen players cannot receive client input (RoutePlayerStringMsg
-    //    drops them), so they cannot transition out of AFK while frozen.
+    //    Frozen players' client input is rejected by the business systems'
+    //    PlayerFrozenComp gates (player_frozen_comp.h), so they cannot transition
+    //    out of AFK while frozen.
     //    Excluding them here is defensive — the activeView gate above
     //    already prevents them entering AFK in the first place.
     auto afkView = registry.view<Player, AfkComp, LastActiveFrameComp>(

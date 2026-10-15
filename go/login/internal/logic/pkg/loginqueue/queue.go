@@ -13,8 +13,8 @@
 //	queue:zone:{zoneId}        ZSET   member=queueId, score=enqueue unix ms
 //	admit:{queueId}            STRING JSON{ip, port, payload, signature, deadline}
 //	admitted:zset:zone:{zoneId} ZSET member=queueId | fast:<uuid>, score=占位到期 unix ms
-//	                           (在途占位:成员逐个到期,计数前清掉。G4b-G 之前是
-//	                           SET admitted:zone:{zoneId} + 整键滑动 TTL,新版本不再读写旧键)
+//	                           (在途占位:成员逐个到期,计数前清掉;整键 TTL 只做垃圾回收、只增不减。
+//	                           G4b-G 之前是 SET admitted:zone:{zoneId} + 整键滑动 TTL,新版本不再读写旧键)
 //	queue:meta:{queueId}       HASH   {account, device, zoneId, createdAt}
 //	queue:token:{queueToken}   STRING queueId  (token → queueId reverse index)
 //
@@ -120,12 +120,14 @@ type QueueState struct {
 // 「连上 gate → gate 把人数报进 etcd」才出现在 online 里,这段时间只有占位替他占着名额。
 // C++ gate 每 10 秒上报一次 player_count(cpp/nodes/gate/main.cpp 的 playerCountReportTimer),
 // login 每次算容量都直接读 etcd(pkg/node/watcher.go FetchAllNodes,无缓存),最坏滞后 =
-// 建连耗时 + 10s。15s = 一个上报周期 + 5s 建连与传播余量。改 gate 的上报周期必须同步改这里。
+// 建连耗时 + 10s。20s = 两个上报周期:一个周期的上报滞后,再留 10s 建连与传播余量。
+// 改 gate 的上报周期必须同步改这里。
 //
 // 取小了:占位先于人数到期,空档里多放人(旧实现取走即撤占位,相当于 0s,开区时每拍都按
-// 「在线 0」再放一满批)。取大了:人已进 online、占位还在,同一个人算两遍,少放人。
-// 与 Java 版 LoginQueue.TAKEN_GRACE 同值(Java gate 每 5s 发布,余量更宽)。待压测确认(L-14)。
-const defaultHandoffGrace = 15 * time.Second
+// 「在线 0」再放一满批)。取大了:人已进 online、占位还在,同一个人算两遍,少放人(20s 时平均约 14s)。
+// Java 版 LoginQueue.TAKEN_GRACE 是 15s、Java gate 每 5s 发布,两版的建连余量同为 10s。
+// 2026-10-15 负责人定为 20s(spec_G4b-G §11 #1),待压测确认(L-14)。
+const defaultHandoffGrace = 20 * time.Second
 
 // admittedKeyGCSlack:在途占位 ZSET 的整键 TTL 比最长成员寿命多留的时间。
 // 成员是否有效只看分数;整键 TTL 只负责在本 zone 没有任何 login 再来清理时(下线 / 合服)
@@ -384,9 +386,7 @@ func (q *Queue) consumeAdmitAndSign(ctx context.Context, queueID string, signFn 
 		// 再放一批(旧实现在这里 SREM,开区时能放进几倍容量)。
 		// 用普通 ZADD 而不是 XX:占位若已按分数清掉(login 与 Redis 的时钟差),这个人照样要占名额。
 		// zone 读不到(meta 被淘汰)时走不到这里:占位保持放行时的分数,最迟 AdmitTTL 到期。
-		pipe := q.rdb.TxPipeline()
-		q.holdAdmitted(ctx, pipe, zoneID, queueID, q.handoffGrace)
-		if _, err := pipe.Exec(ctx); err != nil {
+		if err := q.holdAdmitted(ctx, q.rdb, zoneID, queueID, q.handoffGrace).Err(); err != nil {
 			logx.Errorf("[loginqueue] hold admitted placeholder after consume zone=%d queueId=%s err=%v",
 				zoneID, queueID, err)
 		}
@@ -465,6 +465,8 @@ func (q *Queue) PopAdmit(
 		pipe := q.rdb.TxPipeline()
 		pipe.Set(ctx, admitKey(queueID), blob, q.admitTTL)
 		// 在途占位:没人来取时与放行槽同寿(AdmitTTL),按自己的分数到期;取走时改成再留 handoffGrace。
+		// 占位与整键续期是一段脚本(见 holdAdmitted),和放行槽的 SET 一起排进同一个 MULTI。
+		// 任一条出错 Exec 即回 error,这个条目不计入放行数(既有的丢条目路径,spec_G4b-G §5.3)。
 		q.holdAdmitted(ctx, pipe, zoneID, queueID, q.admitTTL)
 		if _, err := pipe.Exec(ctx); err != nil {
 			continue
@@ -474,17 +476,51 @@ func (q *Queue) PopAdmit(
 	return admitted, nil
 }
 
-// admittedKeyTTL 是在途占位 ZSET 的整键 TTL。只做垃圾回收,见 admittedKeyGCSlack。
+// admittedKeyTTL 是本副本每次写在途占位之后,整键至少还要剩的 TTL(记作 W)。只做垃圾回收,
+// 见 admittedKeyGCSlack。
+//
+// 整键 TTL 只增不减:三条写路径(放行、取走、快速通道)都是「先 ZADD,剩余 PTTL < W 才 PEXPIRE W」。
+// W 由各副本按自己的 AdmitTTL 算,排队开着时滚动调整 AdmitTTL 就有新旧两种 W 并存;若无条件
+// PEXPIRE,小 W 副本的写入会把整键 TTL 压到大 W 副本写的占位之前,该 zone 随后一段时间没有写入时,
+// 整键连同未到期的占位一起消失,下一拍最多多放一批。只增不减之后,整键到期时刻不早于任何一次写入的
+// 「写入时刻 + 写入方的 W」,也就晚于那次写下的成员。代价:调小 AdmitTTL 之后,已续上的较大 TTL
+// 要自然走完才收敛,只影响 zone 下线后键多留多久。
+//
+// 改脚本时的两个陷阱。其一,不能用 PEXPIRE … GT:没有 TTL 的键按「无限 TTL」处理,GT 永不成立,
+// 刚由 ZADD 建出的键就永不过期。其二,必须先 ZADD 再读 PTTL:键不存在时 PTTL 回 -2,此时的
+// PEXPIRE 打空(回 0),随后 ZADD 建出的键没有 TTL。先 ZADD 之后键一定存在,PTTL 只会是 -1(无 TTL)
+// 或剩余毫秒,-1 < W 恒成立,新键一定被设上 TTL。
 func (q *Queue) admittedKeyTTL() time.Duration {
 	return max(q.admitTTL, q.handoffGrace) + admittedKeyGCSlack
 }
 
+// admittedHoldScript 把一个成员的在途占位记到给定的到期毫秒(成员已在则覆盖分数),并保证整键剩余
+// TTL 不少于 W(只增不减,见 admittedKeyTTL)。放行与取走共用,写法与 reserveFastPathSlotScript 的
+// 后两步相同,改一处要同步改另一处。
+//
+//	KEYS[1] = admitted:zset:zone:{zone}
+//	ARGV[1] = 占位到期毫秒   ARGV[2] = member(queueId)   ARGV[3] = W 毫秒
+//	返回 1。不能不返回:脚本回 nil 时 go-redis 记为 redis.Nil,排在 MULTI 里会让 Exec 回 error。
+var admittedHoldScript = redis.NewScript(`
+redis.call('ZADD', KEYS[1], ARGV[1], ARGV[2])
+if redis.call('PTTL', KEYS[1]) < tonumber(ARGV[3]) then
+	redis.call('PEXPIRE', KEYS[1], ARGV[3])
+end
+return 1
+`)
+
 // holdAdmitted 把 member 在 zoneID 的在途占位记到「现在 + hold」到期(成员已在则覆盖分数),
-// 并续上整键的垃圾回收 TTL。两条命令排进调用方的 pipeline,由调用方 Exec。
-func (q *Queue) holdAdmitted(ctx context.Context, pipe redis.Pipeliner, zoneID uint32, member string, hold time.Duration) {
-	key := admittedZSetKey(zoneID)
-	pipe.ZAdd(ctx, key, redis.Z{Score: float64(q.now().Add(hold).UnixMilli()), Member: member})
-	pipe.PExpire(ctx, key, q.admittedKeyTTL())
+// 并按只增不减续上整键的垃圾回收 TTL,两步在一段脚本里。
+//
+// c 传 q.rdb 时当场执行;传 MULTI 的 pipeline 时只是入队,结果由调用方的 Exec 给出。用 EVAL 而不是
+// Script.Run:Run 先发 EVALSHA,遇到 NOSCRIPT 才回退 EVAL,而排在 pipeline 里的命令要到 Exec 才知道
+// 结果,回退来不及;MULTI 里的 EVALSHA 若撞上 NOSCRIPT(Redis 重启、SCRIPT FLUSH 之后),放行槽照样
+// 写进去、占位却没写。脚本只有几行,每次带上全文的开销可以忽略。
+func (q *Queue) holdAdmitted(ctx context.Context, c redis.Scripter, zoneID uint32, member string, hold time.Duration) *redis.Cmd {
+	return admittedHoldScript.Eval(ctx, c,
+		[]string{admittedZSetKey(zoneID)},
+		q.now().Add(hold).UnixMilli(), member, q.admittedKeyTTL().Milliseconds(),
+	)
 }
 
 // admittedCountScript 清掉已到期的占位再计数,两步在同一段脚本里。
@@ -514,15 +550,20 @@ func (q *Queue) AdmittedCount(ctx context.Context, zoneID uint32) (uint32, error
 // 清理、判定、占位在同一段脚本里,并发的快速通道调用彼此可见,不会各读同一个 free>0
 // 快照后全部旁路队列签票。
 //
+// 占位之后的整键续期与 admittedHoldScript 相同:先 ZADD,剩余 PTTL < W 才 PEXPIRE W(只增不减,
+// 两个陷阱见 admittedKeyTTL)。
+//
 //	KEYS[1] = admitted:zset:zone:{zone}
 //	ARGV[1] = now_ms   ARGV[2] = budget   ARGV[3] = member(fast:<uuid>)
-//	ARGV[4] = 占位到期毫秒   ARGV[5] = 整键 TTL 毫秒(只做垃圾回收)
+//	ARGV[4] = 占位到期毫秒   ARGV[5] = W 毫秒(整键 TTL 下限,只做垃圾回收)
 //	返回 1 = 占到,0 = 已满
 var reserveFastPathSlotScript = redis.NewScript(`
 redis.call('ZREMRANGEBYSCORE', KEYS[1], '-inf', ARGV[1])
 if redis.call('ZCARD', KEYS[1]) >= tonumber(ARGV[2]) then return 0 end
 redis.call('ZADD', KEYS[1], ARGV[4], ARGV[3])
-redis.call('PEXPIRE', KEYS[1], ARGV[5])
+if redis.call('PTTL', KEYS[1]) < tonumber(ARGV[5]) then
+	redis.call('PEXPIRE', KEYS[1], ARGV[5])
+end
 return 1
 `)
 

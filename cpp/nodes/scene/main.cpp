@@ -3,6 +3,7 @@
 #include "muduo/base/Logging.h"
 
 #include "node/system/node/node_entry.h"
+#include "node/system/etcd/etcd_transport.h"
 #include "infra/agones/agones_gameserver_lifecycle.h"
 #include "handler/rpc/scene_handler.h"
 #include "rpc_replies/scene_manager_response_handler.h"
@@ -79,6 +80,8 @@ namespace
 
 int main(int argc, char *argv[])
 {
+    // etcd 传输(NODE_ETCD_TRANSPORT=grpc 默认 / muduo_h2)必须在 Node 构造前装好:EtcdService::Init 在 Node 构造函数里取工厂。
+    etcd_transport::InstallFromEnv();
     return node::entry::RunNodeMain([](EventLoop &loop)
                                     {
         node::entry::detail::ApplyPreConstructionHooks<SceneNodeHooks>();

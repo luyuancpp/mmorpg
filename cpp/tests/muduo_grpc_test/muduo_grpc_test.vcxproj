@@ -172,6 +172,7 @@
     <ClCompile Include="channel_test.cpp" />
     <ClCompile Include="client_session_test.cpp" />
     <ClCompile Include="codec_utils_test.cpp" />
+    <ClCompile Include="etcd_transport_helpers_test.cpp" />
     <ClCompile Include="go_interop_test.cpp" />
     <ClCompile Include="message_framing_test.cpp" />
     <ClCompile Include="muduo_test_loop.cpp" />

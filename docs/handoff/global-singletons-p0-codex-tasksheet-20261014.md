@@ -284,3 +284,79 @@ Claude 收到结果后写回三处:
 1. `docs/PROGRESS.md` 追加一条「全局单点 P0 实测结果」;
 2. 本文 §1 的表格后追加「实测结论」小节,逐项写成立 / 不成立 / 未取得;
 3. [全局单点交接](handoff-global-singletons-10m-ccu-20261013.md)文末追加订正小节,把 §3 对应行的状态从「静态推断」改为实测结论。
+
+---
+
+## 7. 修复落码后的验证(P0-A / P0-B,2026-10-15 追加)
+
+> P0-A(C++ zone Redis 认证)与 P0-B(battle Kafka 生产者 broker 登记)的 C++ 修复与回归用例已落码,**全部未编译、未测试**。P0-D 不在旧模板上修,已并入 gRPC→muduo 迁移第 2 批(见[调查记录](global-singletons-p0-findings-20261014.md) P0-D「去向」)。部署侧(K8s 模板给 C++ 口令、模板 `Kafka.GroupID` 改空)是第二批,等负责人拍板,本节不涉及。
+> 改动大部分已随其他会话的快照提交 `ab0f27907` 入库,之后的收尾在主工作区未提交:`redis_manager.{h,cpp}`、`redis_manager_auth_test.cpp`、`kafka_manager.cpp`、`kafka_consumer.cpp`。所以本节**在主工作区跑**,不要新建工作树。
+
+### 7.0 前置
+
+- 2026-10-15 主会话只读观察:`third_party/boost/boost/any.hpp`、`third_party/grpc/install_vs2026_dbg`、gRPC 嵌套的 googletest 都已存在,子模块全部初始化,`lib/` 下有 `hiredisd.lib`、`rdkafka.lib`、`rdkafka++.lib`、`yaml-cppd.lib`,`bin/` 下有 `rdkafka.dll`,还没有任何节点 exe。§0 说的构建阻塞可能已部分解除,以实际编译为准。
+- 主工作区有其他会话的在途改动(`node.cpp` 的停机与 RPC 段、`rpc_controller_test` 的 RpcChannel 改名、`kafka_command_test` 新增的 `kafka_command_whitelist_test.cpp` 等)。**第一条编译错误不在本项文件里时,记下文件名,视为其他会话的在途改动,不算本项失败**。本项文件:`redis_manager.{h,cpp}`、`config.cpp`、`node.cpp` 的 zone Redis 建连段 / `FatalStartupConfig` / `InitKafka`、`kafka_manager.{h,cpp}`、`kafka_producer.h`、`kafka_consumer.cpp`、两个新测试文件、`configuration_table_test.cpp`。
+- `kafka_command_whitelist_test.cpp`(其他会话的)引用的 `rpc/service_metadata/kafka_command_event_whitelist.h` 目前不存在,要先按那批工作的说明跑 proto-gen 生成;否则整个 `kafka_command_test` 工程报 C1083。不生成就只做 7.2 的单文件编译。
+- 清掉环境变量:`Remove-Item Env:ZONE_REDIS_PASSWORD -ErrorAction SilentlyContinue`。不需要真实 Redis / Kafka,不清任何数据。
+- MSBuild 路径以 `tools/scripts/run_cpp_tests.ps1` 里 `Resolve-MSBuild` 找到的为准;一律 `/m:1` 串行。
+
+### 7.1 库与节点
+
+`RedisManager` 的成员布局变了,包含 `redis_manager.h` 的旧 obj 不能复用,要串行重编:
+
+```powershell
+$msb = '<Resolve-MSBuild 找到的 MSBuild.exe>'
+& $msb cpp\libs\engine\config\config.vcxproj /m:1 /p:Configuration=Debug /p:Platform=x64 /nologo /v:minimal
+& $msb cpp\libs\engine\thread_context\thread_context.vcxproj /m:1 /p:Configuration=Debug /p:Platform=x64 /nologo /v:minimal
+& $msb cpp\libs\engine\infra\infra.vcxproj /m:1 /p:Configuration=Debug /p:Platform=x64 /nologo /v:minimal
+& $msb cpp\libs\engine\core\core.vcxproj /m:1 /p:Configuration=Debug /p:Platform=x64 /nologo /v:minimal
+& $msb game.sln /m:1 /p:Configuration=Debug /p:Platform=x64 /nologo /v:minimal
+```
+
+通过:本项文件里没有 `error C` / `LNK`;最好 `bin\` 下产出 gate / scene / battle 三个 exe。
+
+### 7.2 单测
+
+```powershell
+pwsh -NoProfile -File tools/scripts/run_cpp_tests.ps1 -Build -Filter configuration_table_test
+.\build\cpp\tests\configuration_table_test.exe --gtest_filter=GameConfigEnvOverride.*
+pwsh -NoProfile -File tools/scripts/run_cpp_tests.ps1 -Build -Filter rpc_controller_test
+.\build\cpp\tests\rpc_controller_test.exe --gtest_filter=RedisManagerAuth.* --gtest_repeat=20
+pwsh -NoProfile -File tools/scripts/run_cpp_tests.ps1 -Build -Filter kafka_command
+.\build\cpp\tests\kafka_command_test.exe --gtest_filter=KafkaManagerInit.*
+dumpbin /dependents build\cpp\tests\kafka_command_test.exe | Select-String rdkafka   # VS 开发者命令行
+```
+
+- `rpc_controller_test` 整个工程在本项以外的文件编不过时,只编新文件:`& $msb cpp\tests\rpc_controller_test\rpc_controller_test.vcxproj /t:ClCompile /p:SelectedFiles=redis_manager_auth_test.cpp /p:Configuration=Debug /p:Platform=x64 /m:1 /nologo /v:minimal`,0 error 即可,用例留待工程能链接后再跑。`kafka_command_test` 同理(`SelectedFiles=kafka_manager_init_test.cpp`)。
+- 不要加 `--gtest_catch_exceptions=0` 或 `--gtest_break_on_failure`:测试夹具的超时路径会 abort,Debug CRT 会弹框卡住无人值守的运行。
+- exe 启动即退出、没有任何 gtest 输出(0xC0000135):先查 `rdkafka.dll` / `zlibd.dll` 是否已被脚本同步到 `build\cpp\tests\`,不算用例失败。
+
+通过标准:
+
+- `GameConfigEnvOverride` 全绿(含新增 `ZoneRedisPasswordFromEnvOverridesYaml`、`ZoneRedisPasswordWithoutEnvKeepsYaml`)。
+- `RedisManagerAuth` 10 条重复 20 轮全绿,单轮约 2 秒以内。
+- `KafkaManagerInit` 4 条全绿;`dumpbin` 只列出 `rdkafka.dll`,没有 `rdkafka++.dll`。
+- 失败时保留:第一条 `error Cxxxx` / `LNKxxxx` 及前后 20 行;失败用例完整 gtest 输出(口令在输出里显示为 `<pw>`)。
+- 已知可能的环境性失败(照实报告,不算本项逻辑问题):用例只在等 `Redis disconnected` 时失败且日志刷 `Channel::handle_event() POLLHUP`(Windows 上 Hiredis 的 Channel 没装 close 回调,适配层原有缺口);撞上 `EventLoop.cc` 的 `removeChannel` 断言(同批事件释放的既有残余风险,已记在 `redis_manager.h` 的生命周期注释里)。
+
+### 7.3 修复前先红(可选,§11.4)
+
+在 `6281e4d27`(修复前)的新工作树里只拷入测试与 `kafka_producer.h` 的只读访问器,不拷修复:
+
+- P0-B:拷 `kafka_producer.h`、`kafka_manager_init_test.cpp`、`kafka_command_test.vcxproj`(删掉其中 whitelist 那一行),编测试工程后直接跑 `--gtest_filter=KafkaManagerInit.*`。期望恰好 `ProducerBrokersConfiguredWhenGroupIdIsSet`、`EmptyBrokersRejectedWhenGroupIdIsEmpty` 两条失败。
+- P0-A:修复前 `RedisManager::Connect` 没有 `RedisConnectOptions` 参数,`RedisManagerAuth` 无法编译(§11.4 的「无法先写」情形)。红态改用配置测试:修复前 `ZoneRedisPasswordFromEnvOverridesYaml` 应失败(没有环境变量覆盖)。
+- 新工作树的子模块与第三方库要另外准备,代价较高;不做就在回报里写「未取红态」。
+
+### 7.4 节点黑盒(有可运行的 scene / battle 时)
+
+- P0-A:沿用 §3 指向的步骤原文 B2~B6(一次性带口令 Redis 探针,口令经 `$env:ZONE_REDIS_PASSWORD` 传给 scene,不写进任何文件),分 6 组:
+  - 0)不设口令连带口令探针:`Zone Redis auth: off`,两条 `SCRIPT LOAD failed for PlayerAllData (reply`,errorstats 出现 NOAUTH(等价于修复前的红);
+  - 1)设对口令:`Zone Redis auth: on`、`Redis AUTH ok to 127.0.0.1:6390`、`Redis reconnected, retrying pending player loads`、两条 `SCRIPT LOAD ok`,NOAUTH 计数不再增长;
+  - 2)口令设错:约每 3 秒一条 `Redis AUTH rejected by 127.0.0.1:6390` 且带 `metric=zone_redis_auth_failed`,不出现 `Redis reconnected` 与任何 `SCRIPT LOAD`;
+  - 3)不设口令连无口令探针:与修复前一致,只多 `Zone Redis auth: off`;
+  - 4)设口令连无口令探针:`Redis AUTH rejected`(服务端没开口令也按失败处理);
+  - 5)第 1 组运行中 `docker --context desktop-linux restart p0a-redis-auth`:依次 `Redis disconnected`、`Redis connected to`、`Redis AUTH ok`、两条 `SCRIPT LOAD ok`。
+  - 全部日志里搜两个口令字符串,必须 0 命中。
+- P0-B:把本机 `bin/etc/base_deploy_config.yaml` 的 `Kafka.GroupID` 改成 `game-consumer-group` 后起 battle,本次启动日志应出现 `KafkaProducer: brokers stored for lazy init:`;把 `Kafka.Brokers` 清空后起 battle,stderr 日志应**区分大小写**命中 `FATAL Kafka config: Kafka.Brokers is empty`,进程非 0 退出。每项跑完用备份恢复,`git diff --quiet -- bin/etc/base_deploy_config.yaml` 退出码为 0。
+
+回报写回:`docs/PROGRESS.md` 追加「全局单点 P0-A / P0-B 的 Codex 验证结果」,并在本节末尾补一行「验证结论」。

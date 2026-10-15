@@ -487,6 +487,68 @@ if ($dirtySaveLines.Count -gt 0) {
     }
 }
 
+# ----- 2bc. 节点间 RPC0 调用结局(cpp gate / scene 日志的 [RpcChannel] summary) ----
+#
+# C++ 节点没有 Prometheus 出口,RpcChannelStats(cpp/libs/engine/core/network/rpc_channel_stats.h)每 30s、
+# 计数有变化时打一行 `[RpcChannel] summary k=v ...`,计数是进程级、单调累计的,所以每个日志文件取最后一行。
+# 字段名是与 FormatRpcChannelStats 之间的契约(docs/design/muduo-rpc-channel.md §12),改名要两边一起改。
+# 节点日志实际落在 bin\logs\cpp_nodes(start_game.ps1),旧路径 run\logs\cpp_nodes 也一并扫。
+# 一行都没有时保持沉默(老版本二进制没有这行)。
+
+$rpcChannelFields = @('started', 'ok', 'not_sent', 'remote_rejected', 'remote_failed', 'reply_dropped', 'timeout',
+                      'disconnected', 'channel_closed', 'invalid_response', 'late_reply', 'legacy_id0_reply',
+                      'max_in_flight', 'handler_failed', 'reply_abandoned')
+$rpcChannelLatest = [ordered]@{}
+foreach ($dir in @((Join-Path $RepoRoot "bin\logs\cpp_nodes"), $cppLogDir)) {
+    if (-not (Test-Path $dir)) { continue }
+    $nodeLogs = @(Get-ChildItem -Path $dir -Filter 'gate*.log' -ErrorAction SilentlyContinue) +
+                @(Get-ChildItem -Path $dir -Filter 'scene*.log' -ErrorAction SilentlyContinue)
+    foreach ($log in $nodeLogs) {
+        # 与上面 DirtySave 同理:节点进程运行中持有写句柄,必须以 FileShare.ReadWrite 打开。
+        $fs = $null
+        $sr = $null
+        $last = $null
+        try {
+            $fs = [System.IO.FileStream]::new(
+                $log.FullName,
+                [System.IO.FileMode]::Open,
+                [System.IO.FileAccess]::Read,
+                [System.IO.FileShare]::ReadWrite)
+            $sr = [System.IO.StreamReader]::new($fs)
+            while (-not $sr.EndOfStream) {
+                $line = $sr.ReadLine()
+                $idx = $line.IndexOf('[RpcChannel] summary ')
+                if ($idx -ge 0) { $last = $line.Substring($idx + '[RpcChannel] summary '.Length) }
+            }
+        } finally {
+            if ($sr) { $sr.Dispose() }
+            if ($fs) { $fs.Dispose() }
+        }
+        if ($null -ne $last) {
+            $values = @{}
+            foreach ($pair in ($last -split '\s+')) {
+                if ($pair -match '^(?<k>[a-z0-9_]+)=(?<v>\d+)$') { $values[$matches['k']] = [int64]$matches['v'] }
+            }
+            $rpcChannelLatest["$($log.Directory.Name)/$($log.Name)"] = $values
+        }
+    }
+}
+
+if ($rpcChannelLatest.Count -gt 0) {
+    Write-Host ""
+    Write-Host "=== RPC0 call outcomes (cpp gate/scene LOG_INFO [RpcChannel] summary, cumulative) ===" -ForegroundColor Yellow
+    Write-Host ""
+    foreach ($entry in $rpcChannelLatest.GetEnumerator()) {
+        $cells = foreach ($field in $rpcChannelFields) {
+            $v = if ($entry.Value.ContainsKey($field)) { $entry.Value[$field] } else { 'n/a' }
+            "$field=$v"
+        }
+        Write-Host ("  {0}" -f $entry.Key)
+        Write-Host ("    {0}" -f ($cells -join ' '))
+    }
+    Write-Host "  (after a same-zone cutover timeout / late_reply / legacy_id0_reply should stay 0)"
+}
+
 # ----- 2c. DB per-task stage breakdown (Round 16+) ----------------------
 
 if ($dbSnapshots.Count -gt 0) {

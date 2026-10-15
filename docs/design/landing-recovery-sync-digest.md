@@ -115,7 +115,9 @@ proto 枚举 `SyncDomain`，追加在 `proto/scene/player_scene.proto`（与读�
 - friend 对被动方的 bump 以 repo 在同一事务里报告的**实际效果**为准（好友边是否真被删、pending 是否真被改）。Block / Unblock 的目标可以是任意 player_id；如果无条件给被动方 bump，客户端循环拉黑不同目标，就能在核心 Redis 上为任意 id 造出 30 天的摘要键。
 - 按时间自然过期的状态（组队邀请 60 秒、申请 120 秒、帮会申请过期）**不 bump**：客户端按 `expire_at_ms` 自己算。
 - **追加新域的规则**：在枚举末尾追加；在本表追加一行（拉取 RPC、bump 点）；客户端在 `LandingSyncClient` 注册该域的消费者。邮件按此规则在落地时追加，号码届时分配。
-- **玩家收件箱 v1 不接摘要**：2026-10-15 用户拍板 D4，见 [player-inbox-service.md](player-inbox-service.md)。它的做法是落地时无条件拉一次，加 Kafka 提醒和有界兜底。将来要接入，再按上一条规则追加。
+- **玩家收件箱 v1 不接摘要**：2026-10-15 用户拍板 D4，见 [player-inbox-service.md](player-inbox-service.md)。它的做法是落地时无条件拉一次，加 Kafka 提醒和有界兜底。将来要接入，接法届时另行拍板：
+  - 不能直接按上一条规则追加。摘要会原样下发给客户端，收件箱域的计数一变，就等于提前告诉被 GM 处置的玩家「有处置待执行」。
+  - 真要接入，下发时必须把这个域过滤掉。见 player-inbox-service.md §7.14 / §13.3。
 
 ### 3.4 为什么 scene 持有的数据不进摘要
 
@@ -453,9 +455,11 @@ battle / scene 进程没有 Prometheus 端点 [C]，结算类信号只有结构�
 顺序：proto 生成 → 导表 → Go → C++ → 客户端 → 联机冒烟。C++ MSBuild 一律串行 `/m:1`。
 
 1. **proto 生成**（仓库根）：
-   - 先跑 `pwsh tools/scripts/dev_tools.ps1 -Command proto-gen-build`，再跑 `proto-gen-run -UseBinary`。
+   - 按 AGENTS.md §4.1：先跑 `pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-build`（生成器源码有变化，或还没有工具时），再跑 `pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-run`。
+   - `cd go && build.bat` 只重生成 db / login 的 go-zero 包装，不能代替完整的 proto 生成。
    - **不要用 `dev.bat proto`**：它失败时会 `pause` 卡住，见 scene-enter-session-fence.md §11。
-   - 本批已获客户端授权，所以用默认配置（`enable_unity_client: true`）。它会把新 handler 写进 `../mmorpg-client` 的 `Net/Generated/`，这是 E 批需要的。
+   - 本批已获客户端授权，所以用默认配置（会写同级客户端仓），把新 handler 写进 `../mmorpg-client` 的 `Net/Generated/`，这是 E 批需要的。
+   - 只想重生成服务端时，加 `-ConfigPath tools/proto_generator/protogen/etc/proto_gen.no-unity.yaml`。
    - 期望：
      - `proto/message_id.txt` 末尾新增 `SceneSceneClientPlayerGetSyncDigest`、`SceneSceneClientPlayerNotifySyncDigest` 两个号，原有号不变；
      - `player_scene_handler.{h,cpp}` 出现两个新方法，守护段内的手写代码原样保留、不重复；

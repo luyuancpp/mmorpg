@@ -1,4 +1,5 @@
 #include "node_utils.h"
+#include "grpc_client_runtime.h"
 #include <atomic>
 #include <chrono>
 #include <cstddef>
@@ -62,15 +63,9 @@ namespace
 	// wait_for_ready),有 ①② 时挑它等于白白失败;etcd 租约 60s 到期前死实例仍在注册表里,这正是要避开的窗口。
 	// 只有 ①② 全空时才兜底挑它,结果与改造前相同。
 	//
-	// 为什么 ③b 放在最末级:正常路径下通道先于 NodeInfo 挂上(ConnectToGrpcNode 先 emplace 通道、InitGrpcNode
-	// 挂 CompletionQueue 与 stub,最后才 emplace NodeInfo),经 gRPC 发现的实体不会缺通道。但生成的 IsTcpNodeType
-	// 白名单含 SceneManagerNodeService(cpp/generated/proto_helpers/proto_util.cpp),任何 TCP 对端握手时声明
-	// node_type=SceneManager,NodeHandshakeManager(registration_manager.cpp)就会在本注册表里建一个只有
-	// NodeInfo + RpcSession 的实体;之后同 uuid 的 gRPC 发现在 ConnectToGrpcNode 里按"already registered"
-	// 提前返回,永远补不上通道。这种实体被挑中后,生成的 SendSceneManager* 要 registry.get<grpc::CompletionQueue>
-	// / get<SceneManagerStubPtr>,取不到组件:Debug 断言,Release 未定义行为。所以它只在 ①②③a 全空时才会被选,
-	// 保留它只为与旧实现"有实体就挑得到"兼容,以及单测的假节点(cross_zone_test 的 ScopedFakeSceneManagerNode
-	// 只挂 NodeInfo)。不把它记成 SHUTDOWN 与 ③a 同级:同级取模会让它在"有 TF 实例可兜底"时也可能被挑中。
+	// 纯选择器仍能描述无通道输入，供独立排序用例使用；生产适配层只传有完整传输的候选。
+	// 无通道实体与真实连接暂时不可达不是同一状态：前者立即拒绝，后者仍走原有失败回调。
+	// 入站握手同时拒绝纯 gRPC 类型，防止其按 uuid 抢占出站实体。
 	//
 	// 残余窗口:实例刚崩、还没被踢过时它显示 IDLE。只有在一个 READY 都没有时它才可能被挑中,那一次请求
 	// 以 UNAVAILABLE 走失败处理器,之后它就是 TRANSIENT_FAILURE。对端主机整个消失(没有 RST)时,重连要等到
@@ -252,18 +247,24 @@ entt::entity GetSceneManagerEntity(Guid playerId)
 {
 	auto &smRegistry = tlsNodeContextManager.GetRegistry(eNodeType::SceneManagerNodeService);
 
-	// 候选 = 所有挂了 NodeInfo 的 SceneManager 实体,与旧实现(playerId % view<NodeInfo>().size())同一个集合,
-	// 所以"注册表非空就一定挑得出"与旧实现一致。没挂通道的实体也算进来,只是排在最末级(见上面分级说明)。
-	// 挂了通道组件但指针为空的,与没挂同样发不出去,一并记成"没有通道"。
+	// 仅把真正拥有传输、且尚未关闭的实例交给选择器。无通道的握手实体不代表服务可用。
 	// 实例数是个位数,每次现拼一张候选表;调用频率跟着玩家换图走,不是热路径。
 	std::vector<scene_manager_selector::Candidate> candidates;
 	for (const auto entity : smRegistry.view<NodeInfo>())
 	{
+		if (!HasUsableGrpcClient(smRegistry, entity))
+		{
+			continue;
+		}
 		scene_manager_selector::Candidate candidate{entity};
 		if (const auto *channel = smRegistry.try_get<std::shared_ptr<grpc::Channel>>(entity);
 			channel != nullptr && *channel != nullptr)
 		{
 			candidate.channelState = (*channel)->GetState(/*try_to_connect=*/true);
+		}
+		else
+		{
+			continue;
 		}
 		candidates.push_back(candidate);
 	}
@@ -271,7 +272,7 @@ entt::entity GetSceneManagerEntity(Guid playerId)
 	const auto picked = scene_manager_selector::Pick(candidates, playerId);
 	if (picked == entt::null)
 	{
-		// 一个 SceneManager 都没注册。调用方各记一行自己的上下文,这里不重复记。
+		// 没有具备完整传输的 SceneManager。调用方记录自己的上下文。
 		return entt::null;
 	}
 

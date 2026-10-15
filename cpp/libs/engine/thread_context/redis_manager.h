@@ -55,8 +55,10 @@ public:
 	// - 空口令连上即移交;非空口令只在 AUTH 回 +OK 后移交给 GetZoneRedis(),并在同一调用栈里同步调用重连回调。
 	//   所以重连回调补发的命令是这条连接上 AUTH 之后的第一批业务命令;scene 的 1s 重试定时器与各直发点在移交前
 	//   只看得到 connected()==false,抢不到它们前面。
-	// - AUTH 被拒(口令错、服务端没开口令、服务端在 AUTH 前报错等)、发不出去,或从连上起一个重连间隔内没有应答:
-	//   不移交,对业务等同于「Redis 不可用」;每个重连间隔在回调栈外重建握手连接再试一次,每次失败打一条 ERROR。
+	// - AUTH 被拒(口令错、服务端没开口令、服务端在 AUTH 前报错等)、发不出去,或从连上起一个重连间隔内没有应答
+	//   (含应答前连接就被关闭,那时另有一条断线 ERROR):不移交,对业务等同于「Redis 不可用」;每个重连间隔在回调栈外
+	//   重建握手连接再试一次。每次失败打一条带 metric=zone_redis_auth_failed 的 ERROR:被拒、发不出去当场打,
+	//   没有应答在截止时打("Redis AUTH timed out on ...")。告警按这个标记抓。
 	//   不能放行未认证的连接(fail-open):部分调用方把 ERROR 应答当业务结论处理,例如 battle 结算外发箱
 	//   (BattleRoomManager::ProbeAndRetryOne)把非预期应答当成已销账并删条目,NOAUTH 会被误读成玩家资产结论。
 	// - Hiredis::command() 在未连接时直接返回 REDIS_ERR,不会把命令缓存到连上之后,
@@ -70,6 +72,9 @@ public:
 
 	// 每次有连接完成握手、移交给 GetZoneRedis() 之后(首次建连与每次重连)在同一调用栈里同步调用。
 	// 配了口令时此刻 AUTH 已经成功,回调里发的命令排在 AUTH 之后。
+	// 回调运行在被移交连接自己的 hiredis 回调栈内(空口令时是连接回调,有口令时是 AUTH 的命令回调,都已置
+	// REDIS_IN_CALLBACK):回调里不得同步调用 Connect() / Shutdown(),也不得释放或替换 GetZoneRedis() ——
+	// 那会在 Hiredis 自己的回调栈里销毁它:redisAsyncFree 被推迟,随后的 cleanup 拿已析构的对象回调(释放后使用)。
 	void SetReconnectCallback(const ReconnectCallback &cb) { reconnectCb_ = cb; }
 
 private:
@@ -86,8 +91,19 @@ private:
 	// 生命周期(AGENTS.md §11.7):两个 Hiredis 都由本对象独占持有,它们上面的连接 / 断线 / 命令回调都捕获裸 this,
 	// 属于「与被绑对象同寿命」的例外。释放前先清连接与断线回调;释放时挂起的 AUTH 回调以空应答进来,
 	// OnAuthReply 开头就返回,不碰任何成员。
+	// 重连定时器(runEvery)同样捕获裸 this,但它归 EventLoop 的 TimerQueue 所有,不属于同寿命例外:只靠 Shutdown()
+	// (析构也会调它)取消,所以 Shutdown 必须在 EventLoop 析构前执行 —— tlsRedis 是 thread_local,析构可能晚于
+	// EventLoop,不能指望析构兜底。
 	// 不变量:重连定时器只在 zoneRedis_ 不可用时运行,所以移交时被替换掉的只会是占位对象或已断开的旧连接
 	// (二者 context 都已为空,析构不触发任何回调)。
+	//
+	// 已知残余风险(Linux 构建):DoReconnect 在定时器回调里同步销毁握手连接。Linux 的定时器走 timerfd,与 Hiredis 的
+	// socket Channel 同属一批 activeChannels_;截止定时器排在前面时,握手连接的 Channel 随后仍会在同一批里被 handleEvent,
+	// 而 Hiredis 的读写回调绑的是裸 this、没有 Channel::tie,结果是释放后使用(Debug 下先撞 EventLoop::removeChannel 的
+	// 断言)。触发需要握手连接的 I/O 事件(建连完成、AUTH 应答、服务端断开)恰与截止落在同一批。改动前「建连中被重连定时器
+	// 拆掉」就是同一类窗口,本次多了「AUTH 应答 / 被拒后断开恰在截止时刻」两种。Windows 先处理完 I/O 再跑定时器,
+	// 没有释放后使用,只剩 Debug 下同一断言的误报。根治在 Hiredis 适配层(shared_ptr 持有 + Channel::tie,连改动前的
+	// 建连窗口一并消除);不要在这里用裸 this 的 queueInLoop 推迟释放,那违反 §11.7。
 	HiredisPtr zoneRedis_;      // 对业务可见:已完成握手的连接、已断开的旧连接或占位对象
 	HiredisPtr handshakeRedis_; // 正在建连或等 AUTH 应答的连接;没有握手在进行时为空
 	// 不拥有 EventLoop。用 reference_wrapper 而非裸 EventLoop*,满足 no-raw-pointer-member 检查
@@ -97,6 +113,9 @@ private:
 	RedisConnectOptions options_;
 	muduo::net::TimerId reconnectTimerId_;
 	bool reconnectTimerActive_ = false;
+	// AUTH 已在当前握手连接上发出、还没有任何非空应答。SendAuth 成功时置位;收到非空应答、DoReconnect 报超时、
+	// ResetConnections 时清零。DoReconnect 看到它仍为真,就说明截止前没有应答,要按 AUTH 超时打 ERROR。
+	bool authAwaitingReply_ = false;
 	ReconnectCallback reconnectCb_;
 };
 

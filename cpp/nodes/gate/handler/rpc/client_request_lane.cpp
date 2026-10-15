@@ -144,7 +144,7 @@ void Pump(SessionId sessionId, SessionInfo &session)
 			continue;
 		}
 		lane.MarkSent(item->seq);
-		const auto deadline = grpc_call_deadline::Get(eNodeType::ClientRpcRouterNodeService);
+		const auto deadline = grpc_call_deadline::Get(common::base::eNodeType::ClientRpcRouterNodeService);
 		tlsInflight.Insert(item->seq, InflightCall{
 										  now + deadline + kInflightExpiryMargin,
 										  sessionId,

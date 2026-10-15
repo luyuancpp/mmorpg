@@ -2,6 +2,8 @@ package loginqueue
 
 import (
 	"context"
+	"maps"
+	"slices"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -50,7 +52,7 @@ func startIntegrationFixture(t *testing.T, prov *integrationProvider) (*Queue, *
 	secret := []byte("integration-test-secret")
 	q := New(rdb, time.Hour, 60*time.Second, secret)
 	// 这个 fixture 的两个用例(QueueDrainAdmits / DispatcherRespectsCapacity)里 PlayerCount 是写死的,
-	// 靠「取走即腾出名额」推进。交票后宽限(生产 15s)在这里设 0:取走时分数 = 现在,下一次计数就清掉,
+	// 靠「取走即腾出名额」推进。交票后宽限(生产 20s)在这里设 0:取走时分数 = 现在,下一次计数就清掉,
 	// 与 G4b-G 之前的行为等价。宽限本身由 TestConsume_* 与
 	// TestDispatchOnce_ConsumedAdmitsHoldCapacityForHandoffGrace 用假时钟钉住。
 	q.handoffGrace = 0
@@ -490,7 +492,8 @@ func (p *countingProvider) CandidatesForZone(ctx context.Context, zoneID uint32)
 }
 
 // G1b 之后本 zone 每拍都在出队范围内(以前要本 zone 有 gate 才进 activeZones)。
-// 先判空再算容量:空闲的 zone 不碰 gate 目录,非空才走 FreeSlots。
+// 先判空再算容量:空闲的 zone 不碰 gate 目录,非空才取候选、算容量并出队。
+// 非空那一拍恰好读一次 gate 目录:算容量与挑 gate 共用同一份候选(以前 FreeSlots 一次、每放一人再一次)。
 func TestDispatchOnce_EmptyQueueSkipsGateDirectory(t *testing.T) {
 	mr, err := miniredis.Run()
 	if err != nil {
@@ -521,11 +524,155 @@ func TestDispatchOnce_EmptyQueueSkipsGateDirectory(t *testing.T) {
 		t.Fatalf("enqueue: %v", err)
 	}
 	d.dispatchOnce(ctx)
-	if prov.candidateCalls.Load() == 0 {
-		t.Fatal("non-empty queue must compute capacity from the gate directory")
+	if n := prov.candidateCalls.Load(); n != 1 {
+		t.Fatalf("non-empty queue must read the gate directory exactly once per tick, CandidatesForZone called %d times", n)
 	}
 	if n, err := q.QueueLen(ctx, 1); err != nil || n != 0 {
 		t.Fatalf("queue should be drained after one pass: len=%d err=%v", n, err)
+	}
+}
+
+// G1b-compile-8 回归:一拍放 N 人,gate 的 PlayerCount 在这一拍里不变。以前每放一人重取一次候选、只按
+// PlayerCount 挑,整批都落到同一台 gate 上,目录读了 1 + N 次。现在一拍只取一次候选,批内按
+// 「PlayerCount + 本拍已分给它的人数」挑最少的、同数取 NodeID 最小,先填最闲的、填平之后轮流分。
+// 两种形状都断言:各台「在线 + 本拍分到的人数」之差不超过 1(在线相同时就是分到的人数之差不超过 1);
+// 规则是确定的,分法只有一种,所以再断言精确值。候选故意乱序,结果与顺序无关。
+// 修复前两种形状都红:10 人全落在最闲的那台上,CandidatesForZone 被调 11 次。
+func TestDispatchOnce_BatchSpreadsAcrossGatesWithOneCandidateRead(t *testing.T) {
+	cases := []struct {
+		name  string
+		gates []GateCandidate
+		want  map[string]int // gate IP → 本拍分到的人数
+	}{
+		{
+			// 三台一样闲:按 NodeID 轮流分,10 = 4 + 3 + 3。
+			name: "equal load",
+			gates: []GateCandidate{
+				{NodeID: 3, IP: "10.0.0.3", Port: 9000, PlayerCount: 0, ZoneID: 1},
+				{NodeID: 1, IP: "10.0.0.1", Port: 9000, PlayerCount: 0, ZoneID: 1},
+				{NodeID: 2, IP: "10.0.0.2", Port: 9000, PlayerCount: 0, ZoneID: 1},
+			},
+			want: map[string]int{"10.0.0.1": 4, "10.0.0.2": 3, "10.0.0.3": 3},
+		},
+		{
+			// 在线 5 / 3 / 0:先把 3 号填到 3,再在 2、3 号之间轮流填到 5,最后三台各一人,都到 6。
+			name: "unequal load",
+			gates: []GateCandidate{
+				{NodeID: 2, IP: "10.0.0.2", Port: 9000, PlayerCount: 3, ZoneID: 1},
+				{NodeID: 3, IP: "10.0.0.3", Port: 9000, PlayerCount: 0, ZoneID: 1},
+				{NodeID: 1, IP: "10.0.0.1", Port: 9000, PlayerCount: 5, ZoneID: 1},
+			},
+			want: map[string]int{"10.0.0.1": 1, "10.0.0.2": 3, "10.0.0.3": 6},
+		},
+	}
+	const entries = 10
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			mr, err := miniredis.Run()
+			if err != nil {
+				t.Fatalf("miniredis: %v", err)
+			}
+			defer mr.Close()
+			rdb := redis.NewClient(&redis.Options{Addr: mr.Addr()})
+			defer rdb.Close()
+			secret := []byte("g1b-spread")
+			q := New(rdb, time.Hour, 60*time.Second, secret)
+			ctx := context.Background()
+
+			// 容量 100,远大于本拍人数:一拍放完全部 10 人,分法只由挑 gate 的规则决定。
+			prov := &countingProvider{CapacityProvider: &integrationProvider{
+				caps:  map[uint32]uint32{1: 100},
+				cands: map[uint32][]GateCandidate{1: tc.gates},
+			}}
+			// 不 Start:直接调 dispatchOnce,没有 goroutine,结果确定。
+			d := mustNewDispatcher(t, q, prov, rdb, secret, "dispatcher:lock:spread", 1)
+
+			tokens := make([]string, 0, entries)
+			for range entries {
+				res, err := q.Enqueue(ctx, 1, "u", "d")
+				if err != nil {
+					t.Fatalf("enqueue: %v", err)
+				}
+				tokens = append(tokens, res.QueueToken)
+			}
+
+			d.dispatchOnce(ctx)
+			if n := prov.candidateCalls.Load(); n != 1 {
+				t.Fatalf("one tick admitting %d entries read the gate directory %d times, want exactly 1", entries, n)
+			}
+			if n, err := q.QueueLen(ctx, 1); err != nil || n != 0 {
+				t.Fatalf("queue len after one tick = %d err=%v, want 0", n, err)
+			}
+
+			// 客户端取走放行时拿到的 gate 地址,就是放行时挑中的那台。
+			got := make(map[string]int, len(tc.gates))
+			for _, token := range tokens {
+				st, err := q.Lookup(ctx, token, stubSignFn)
+				if err != nil || st.Status != StatusAdmitted {
+					t.Fatalf("lookup = (%+v, %v), want ADMITTED", st, err)
+				}
+				got[st.Admit.IP]++
+			}
+			minLoad, maxLoad := ^uint64(0), uint64(0)
+			for _, g := range tc.gates {
+				load := uint64(g.PlayerCount) + uint64(got[g.IP])
+				minLoad, maxLoad = min(minLoad, load), max(maxLoad, load)
+			}
+			if maxLoad-minLoad > 1 {
+				t.Fatalf("online + assigned per gate spans %d..%d (assigned %v), want within 1", minLoad, maxLoad, got)
+			}
+			if !maps.Equal(got, tc.want) {
+				t.Fatalf("assigned per gate = %v, want %v", got, tc.want)
+			}
+		})
+	}
+}
+
+// 批内挑 gate 的兜底:候选为空时挑不出 gate,条目不能丢。pickFn 回错误,PopAdmit 走既有的「以分数 0 放回队首」,
+// 不写放行槽、不写占位,与以前逐条重取候选取到空集时相同。dispatchOnce 里候选已判过非空(没有 gate 时整拍不出队,
+// 见 TestDispatchOnce_NonEmptyQueueWithoutGates_KeepsEntries),正常走不到这里;这条钉住万一走到时的语义。
+func TestBatchPickFn_NoCandidatesKeepsEntryQueued(t *testing.T) {
+	q, _, _, cleanup := newTestQueue(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	res, err := q.Enqueue(ctx, 1, "u", "d")
+	if err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+	if n, err := q.PopAdmit(ctx, 1, 1, newBatchPickFn(nil)); err != nil || n != 0 {
+		t.Fatalf("popadmit without candidates = (%d, %v), want (0, nil)", n, err)
+	}
+	if n, err := q.QueueLen(ctx, 1); err != nil || n != 1 {
+		t.Fatalf("queue len = %d err=%v, want 1: the entry must go back to the queue", n, err)
+	}
+	mustAdmittedCount(t, q, 0, "no gate picked")
+	if st, err := q.Lookup(ctx, res.QueueToken, stubSignFn); err != nil || st.Status != StatusQueueing {
+		t.Fatalf("lookup = (%+v, %v), want QUEUEING", st, err)
+	}
+}
+
+// 快速通道单次挑 gate 的行为不变(PickGate 现在委托给 gatePicker):人数最少、同数取 NodeID 最小,
+// 与候选顺序无关;每次调用都在新快照上挑,不跨调用记账(同一份候选连挑三次都是同一台);不改调用方的切片。
+func TestPickGate_SinglePickIsStatelessAndOrderIndependent(t *testing.T) {
+	cands := []GateCandidate{
+		{NodeID: 7, PlayerCount: 2},
+		{NodeID: 9, PlayerCount: 1},
+		{NodeID: 2, PlayerCount: 3},
+		{NodeID: 4, PlayerCount: 1},
+	}
+	orig := slices.Clone(cands)
+	for i := range 3 {
+		got, err := PickGate(cands)
+		if err != nil || got.NodeID != 4 {
+			t.Fatalf("pick #%d = (%+v, %v), want NodeID 4 (fewest players, then smallest NodeID)", i+1, got, err)
+		}
+	}
+	if !slices.Equal(cands, orig) {
+		t.Fatalf("PickGate mutated its input: %v, want %v", cands, orig)
+	}
+	if got, err := PickGate(nil); got != nil || err == nil {
+		t.Fatalf("PickGate(nil) = (%v, %v), want (nil, error)", got, err)
 	}
 }
 
@@ -737,7 +884,7 @@ func TestIntegration_PanickedTermReleasesLockForSameZoneStandby(t *testing.T) {
 	waitFor(t, 3*time.Second, "lock released by the panicked term", func() bool {
 		return !mr.Exists(lockKey)
 	})
-	// panic 发生在 FreeSlots 里、PopAdmit 之前:条目一个没动。
+	// panic 发生在每拍取 gate 候选那一步、PopAdmit 之前:条目一个没动。
 	if n, err := q.QueueLen(ctx, 1); err != nil || n != 3 {
 		t.Fatalf("queue len after panicked terms = %d err=%v, want 3", n, err)
 	}

@@ -6,32 +6,13 @@
 #include "player/system/player_lifecycle.h"
 #include "player/system/player_scene.h"
 #include "player/system/player_team.h"
+#include "player/system/player_tip.h"
+#include "table/proto/tip/common_error_tip.pb.h"
+#include "table/proto/tip/scene_error_tip.pb.h"
 #include "proto/scene/player_scene.pb.h"
 #include "modules/scene/comp/scene_comp.h"
 #include "rpc/service_metadata/player_scene_service_metadata.h"
 #include "network/player_message_utils.h"
-
-namespace
-{
-	// scene_id 是 SceneManager 发的 SnowFlake GUID,不是 sceneRegistry 的实体句柄,只能按 SceneInfoComp 反查。
-	// 找不到返回 entt::null。写法与 player_lifecycle.cpp 入场第 2 步、CreateScene 去重那几处一致。
-	SceneEntity FindSceneEntityBySceneId(uint64_t sceneId)
-	{
-		if (sceneId == 0)
-		{
-			return entt::null;
-		}
-		auto view = tlsEcs.sceneRegistry.view<SceneInfoComp>();
-		for (const auto entity : view)
-		{
-			if (view.get<SceneInfoComp>(entity).scene_id() == sceneId)
-			{
-				return entity;
-			}
-		}
-		return entt::null;
-	}
-} // namespace
 
 ///<<< END WRITING YOUR CODE
 
@@ -51,18 +32,21 @@ void SceneScenePlayerHandler::EnterScene(entt::entity player,const ::GsEnterScen
 	// 以前直接 entt::entity{scene_id} 当场景句柄:要么查不到任何场景,要么撞上一个无关场景;
 	// 而且不管进没进成功都会接着跑 OnEnteredScene(ecs-entt-misuse-audit-20261015 F091)。
 	// 现在场景不在本节点就拒绝,后面的入场副作用一个都不做。
-	const SceneEntity sceneEntity = FindSceneEntityBySceneId(request->scene_id());
-	if (sceneEntity == entt::null)
+	const SceneEntity sceneEntity = PlayerSceneSystem::FindSceneById(request->scene_id());
+	if (const auto result = PlayerSceneSystem::CheckEnterScene(player, sceneEntity); result != kSuccess)
 	{
 		const auto *guid = tlsEcs.actorRegistry.try_get<PlayerGuidComp>(player);
-		LOG_ERROR << "EnterScene rejected: scene_id=" << request->scene_id()
-				  << " not found on this node, player=" << (guid ? guid->value : 0)
+		LOG_ERROR << "拒绝入场 scene_id=" << request->scene_id() << " tip=" << result
+				  << " player=" << (guid ? guid->value : 0)
 				  << " entity=" << entt::to_integral(player);
+		PlayerTipSystem::SendToPlayer(player, result, {});
 		return;
 	}
 
 	if (!PlayerSceneSystem::HandleEnterScene(player, sceneEntity))
 	{
+		if (tlsEcs.actorRegistry.valid(player))
+			PlayerTipSystem::SendToPlayer(player, kEnterSceneFailed, {});
 		return;
 	}
 	// 组队刷新与同节点跟随放在 HandleEnterScene 之后(其幂等早退会漏刷新,team-system.md §F.2)

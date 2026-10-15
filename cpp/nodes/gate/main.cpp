@@ -10,6 +10,7 @@
 #include "muduo/net/EventLoopThreadPool.h"
 
 #include "node/system/node/node_entry.h"
+#include "node/system/etcd/etcd_transport.h"
 #include "handler/rpc/gate_service_handler.h"
 #include "handler/rpc/client_message_processor.h"
 #include "handler/rpc/client_request_lane.h"
@@ -229,6 +230,8 @@ int main(int argc, char *argv[])
         ? Node::CanConnectNodeTypeList{SceneNodeService, eNodeType::ClientRpcRouterNodeService}
         : Node::CanConnectNodeTypeList{SceneNodeService, LoginNodeService, SceneManagerNodeService, MatchNodeService};
 
+    // etcd 传输(NODE_ETCD_TRANSPORT=grpc 默认 / muduo_h2)必须在 Node 构造前装好:EtcdService::Init 在 Node 构造函数里取工厂。
+    etcd_transport::InstallFromEnv();
     return node::entry::RunSimpleNodeMainWithOwnedContext<GateHandler, GateRuntimeContext, GateNodeHooks>(
         GateNodeService,
         connectTo,
@@ -248,7 +251,9 @@ int main(int argc, char *argv[])
                          << ", outbound allowlist=" << Node::FormatNodeTypeNames(whitelistForLog)
                          << (routerMode
                                  ? ", router mode:gate has no stubs for Go business services;gRPC connection count equals router replica count;all battle messages rejected(direct connections only)"
-                                 : ", direct mode:non-battle behavior matches behavior before router introduction;all battle messages rejected(direct connections only)");
+                                   ";per-session router lane enabled(client gRPC requests ordered per session, depth limit " + std::to_string(gate_lane::kMaxLaneDepth) + ", max queue wait " + std::to_string(gate_lane::kMaxLaneWait.count()) + "ms)"
+                                 : ", direct mode:non-battle behavior matches behavior before router introduction;all battle messages rejected(direct connections only)"
+                                   ";client requests are NOT ordered per session(router lane is router-mode only, client-request-ordering.md O7; goes away with the direct path in D61)");
             }
 
             // CPP-2 链路就绪印章:TCP 连上 0.5s 后才发握手,scene 在收到握手时才为本 gate 挂 RpcSession,之前发出的
@@ -307,7 +312,40 @@ int main(int argc, char *argv[])
                 }
                 LOG_INFO << "All client sessions disconnected.";
             };
-            node.SetBeforeShutdown(disconnectAllClients);
+            // muduo_h2 路由传输:关机阶段 0(node.cpp FinalizeShutdownInLoop)会同步清掉路由通道。gate 没有 gRPC server,
+            // beforeShutdown 之后同一调用栈就会走到 Finalize,而被 forceClose 的会话要到下一轮才进断线处理 ——
+            // 那时通道已经没了,Login.Disconnect 通知发不出去,login 侧会话停在 ONLINE。所以在 muduo_h2 下先等
+            // beforeShutdown 关掉的会话都走完断线处理、路由通道上没有在途调用,再放行 Finalize;节点的 15s 排空预算兜底。
+            // 只等 beforeShutdown 当时的那批会话被移除;但「路由通道无在途调用」不区分调用属于谁,关机期间新连进来
+            // 的会话的请求同样会推迟放行,上限仍是 15s 预算。官方 gRPC 模式不加这道等待,行为与改前一致。
+            const bool muduoRouterTransport =
+                routerMode && gate_router_transport::ResolveOnce().transport == gate_router_transport::Transport::kMuduoH2;
+            if (muduoRouterTransport)
+            {
+                auto closingSessions = std::make_shared<std::vector<SessionId>>();
+                node.SetBeforeShutdown([disconnectAllClients, closingSessions](Node &n)
+                                       {
+                    for (const auto &entry : tlsSessionManager.sessions())
+                    {
+                        closingSessions->push_back(entry.first);
+                    }
+                    disconnectAllClients(n); });
+                node.SetShutdownDrainComplete([closingSessions](Node &)
+                                              {
+                    const auto &sessions = tlsSessionManager.sessions();
+                    for (const SessionId sessionId : *closingSessions)
+                    {
+                        if (sessions.contains(sessionId))
+                        {
+                            return false;
+                        }
+                    }
+                    return gate_router_muduo::AllChannelsIdle(); });
+            }
+            else
+            {
+                node.SetBeforeShutdown(disconnectAllClients);
+            }
             node.SetOnConflictShutdown([disconnectAllClients](Node &n, NodeIdConflictReason)
                                        { disconnectAllClients(n); });
 

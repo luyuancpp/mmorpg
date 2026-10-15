@@ -92,9 +92,9 @@ entt uses a **sparse-set** storage model. Each component type has its own packed
 
 `TimerTaskComp` 的调度闭包只弱持有内部 State，移动转移定时器，复制得到空定时器；回调开火时保活 State。外层 owner 若有业务回调捕获 `this`，该 owner 必须禁止移动。包装组件可保留 `in_place_delete` 维持指针稳定，但不再靠它保证定时器正确性。
 
-新增组件使用有业务含义的独立类型，不能用基础类型或通用 std 容器别名共享池。已有 `BuffListComp`、`BuffPendingRemoveBuffs`、`SkillContextCompMap`、`SceneGridListComp` 已改为具名类型，基类容器转换必须显式。传输侧 `RpcClientPtr`、`MuduoGrpcChannelPtr`、官方 gRPC Channel/CQ/Stub 等已有组件由 [gRPC 迁移验收](grpc-muduo-transport.md#101-来自-entt-审计的验收条件) 处理，属于明确存量边界，不能据此新增同类业务组件。
+新增组件使用有业务含义的独立类型，不能用基础类型或通用 std 容器别名共享池。已有 `BuffListComp`、`BuffPendingRemoveBuffs`、`SkillContextCompMap`、`SceneGridListComp` 已改为具名类型，基类容器转换必须显式。传输侧 `RpcClientPtr`、`MuduoGrpcChannelPtr`、官方 gRPC Channel/CQ/Stub 等已有组件属于明确存量边界，不能据此新增同类业务组件。ECS 收尾已补取消、稳定缓冲与非阻塞排空源码，排空须涵盖正在执行及排队的回调；完整替换按 [gRPC 迁移验收](grpc-muduo-transport.md#101-来自-entt-审计的验收条件) 处理，源码/生成/运行状态以任务总索引为准。
 
-内部 SkillContext/Buff 暂仍以 uint64 本地句柄及 0 表示空来源，因此保留 actor 的 0 号句柄退役兼容。该历史约束不再承担客户端编号职责。AOI 容量、压力和策略组件缺失时采用既定默认值，`Npc` 标签保留给未来生成入口；`PlayerItemBlockList` 无生产写入口，仍属待定业务能力，本批不新增 GM 或持久化契约。
+内部 SkillContext/Buff 暂仍以 uint64 本地句柄及 0 表示空来源，因此保留 actor 的 0 号句柄退役兼容。该历史约束不再承担客户端编号职责。AOI 容量、压力和策略组件缺失时采用既定默认值，`Npc` 标签保留给未来生成入口。负责人已选择删除无生产写入口的 `PlayerItemBlockList` 及死参数，物品封禁沿用全服机制，不新增单人 GM 或持久化契约。
 
 上述为第 2–5 批源码边界；生成器构建、统一重生成、编译及测试依用户要求暂缓，当前生成产物仍可能使用旧接口。实施和验收状态以 [任务总索引](../handoff/ecs-refactor/README.md) 为准。
 

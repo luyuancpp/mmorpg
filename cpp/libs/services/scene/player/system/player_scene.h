@@ -2,12 +2,49 @@
 
 #include "entt/src/entt/entity/entity.hpp"
 #include "engine/core/utils/registry/scene_entity.h"
+#include "engine/core/type_define/type_define.h"
 
 #include <cstdint>
+#include <optional>
 
 class PlayerSceneSystem
 {
 public:
+	// 同步通知不能把旧流程带进新的玩家/会话身份。未登记索引的独立 actor 允许保持未登记;
+	// 生产入口另要求索引归本实体。requestSession 用于加载尚未绑定快照时守住预登记会话。
+	class EntryOwnershipGuard
+	{
+	public:
+		explicit EntryOwnershipGuard(entt::entity player, SessionId requestSession = 0);
+		[[nodiscard]] bool IsCurrent() const;
+	private:
+		struct Snapshot
+		{
+			Guid playerId{0};
+			entt::entity indexedPlayer{entt::null};
+			SessionId sessionId{0};
+			Guid snapshotPlayerId{0};
+			std::optional<Guid> sessionOwner;
+			SessionId loginSession{0};
+			uint64_t loginGeneration{0};
+			uint32_t homeZoneId{0};
+			uint64_t ownerEpoch{0};
+			bool operator==(const Snapshot&) const = default;
+		};
+		static std::optional<Snapshot> Read(entt::entity player, SessionId requestSession);
+		entt::entity player_;
+		SessionId requestSession_;
+		std::optional<Snapshot> snapshot_;
+	};
+
+	// 只读解析业务场景号;不存在时返回 null,不把业务号当成本地句柄。
+	[[nodiscard]] static SceneEntity FindSceneById(uint64_t sceneId);
+	// 纯校验,不改会话、归属、AOI 或场景绑定。creators 为空表示公开场景;
+	// 非空时仅按玩家 GUID 的键判断权限,map 的 bool 值不承担权限语义。
+	// GUID 重载供尚未创建实体的加载入口预检,实体重载还要求真实有效且非零的玩家身份。
+	[[nodiscard]] static uint32_t CheckEnterScene(Guid playerId, SceneEntity scene);
+	[[nodiscard]] static uint32_t CheckEnterScene(entt::entity player, SceneEntity scene);
+
 	// true 表示已绑定目标场景(含幂等命中);通知中销毁/重绑或输入无效返回 false。
 	// 调用方只有成功后才可写登录态、触发后续落地逻辑。
 	[[nodiscard]] static bool HandleEnterScene(entt::entity player, SceneEntity scene);

@@ -1312,8 +1312,10 @@ function Get-MysqlConnectionLedger {
 	只在写路径(zone-up / infra-up / all-up)的入口调用;*-down / *-status 不经过这里。
 	本次部署那一份的 Z 按命令计(同一 zoneId 只算一次),E_z 取 max(0, Z−1),其余参数取规划档:
 	  - zone-up:zones 配置里的全部 zone ∪ 本次 -ZoneId(-ZoneId 不在 zones 配置里也并入:这个 zone 确实要部署);
-	  - all-up / infra-up:只取 zones 配置里的 zone。这两条命令不用 -ZoneId,而它有缺省值 101:并进来的话,zones 配置
-	    不含 101 时(例如 zones.10zones.yaml 的 1..10)Z 凭空多 1,可能打出一条虚假的 OverLimit。
+	  - all-up / infra-up:只取 zones 配置里的 zone。这两条命令不为 -ZoneId 部署 zone 级工作负载(db / data-service / gateway):
+	    -ZoneId 在这里用于基础设施阶段 —— 全局 Go 服务与 battle 节点配置里的 ZoneId(etcd 注册 zone)、mysql-init-sql 预建库的输入,
+	    本身不产生每 zone 的 MySQL 连接,所以不论缺省值 101 还是显式传入都不并入。以前并入过:zones 配置不含它时
+	    (例如 zones.10zones.yaml 的 1..10)Z 凭空多 1,可能打出一条虚假的 OverLimit。
 	zones 配置直接用 Get-ZonesFromJson 读(Get-InfraZoneIds 内部用的同一个),不调 Get-InfraZoneIds:它为 mysql-init-sql
 	预建库服务,在那里并入 -ZoneId 是对的,在这里会多算连接;它在 zones 配置缺席时那条 WARNING 讲的是
 	「mysql-init-sql 只预建 -ZoneId 的库」,出现在 zone-up 的输出里也是误导。
@@ -1335,7 +1337,8 @@ function Write-MysqlConnectionLedger {
 		foreach ($zone in (Get-ZonesFromJson -Path $zonesPath)) {
 			$null = $deployZoneIds.Add([int]$zone.zoneId)
 		}
-		# 只有 zone-up 部署 -ZoneId;all-up / infra-up 不用它,并入它的缺省值 101 会凭空多算一个 zone。
+		# 只有 zone-up 为 -ZoneId 部署 zone 级工作负载;all-up / infra-up 里的 -ZoneId 不带来每 zone 的连接(缺省或显式都一样),
+		# 并入会凭空多算一个 zone。
 		if ($Command -eq "zone-up") {
 			$null = $deployZoneIds.Add([int]$ZoneId)
 		}
@@ -2278,6 +2281,29 @@ function New-NodeConfigMapYaml {
 	if ([int]$commandTopicPartitions -le 0 -or [int]$commandTopicGeneration -le 0) {
 		throw "生成 node ConfigMap 失败:Kafka.CommandTopicPartitions / CommandTopicGeneration 必须为正数。"
 	}
+	# Kafka.GroupID 同样从 bin/etc 镜像,不在这里写常数(P0-B 批 2,docs/handoff/global-singletons-p0-findings-20261014.md)。
+	# 2026-10-15 之前模板写死 "game-consumer-group",而 bin/etc 自 2026-05-27 起就是空串 —— 这份 ConfigMap 整目录遮蔽
+	# 镜像里的 bin/etc,生成器自带的常数就是漂移来源。后果有二:
+	#   1) 旧二进制的 KafkaManager::Init 在 GroupID 非空时不给生产端登记 broker,只生产不消费的 battle 每次 send() 都被拒
+	#      (C++ 侧已在 P0-B 批 1 改为无条件登记;本处让旧二进制在新模板下也恢复);
+	#   2) gate / scene 的旧路径(一节点一 topic)用它当组名,全服挤进同一个消费组。
+	# 空串是合法值(本机就是空,C++ 旧路径据此回落 <类型>-group-<node_id>):Get-AuthoritativeScalar 只在键缺席时 throw,
+	# GroupID: "" 读出来就是空串。值要原样嵌进下面模板的双引号 YAML 标量,只放行 Kafka 名字常用的字符集,
+	# 引号、反斜杠、空白等会把 YAML 写坏或改变语义,当场拒绝(fail-closed)。
+	$kafkaGroupId = Get-AuthoritativeScalar -RelativePath 'bin/etc/base_deploy_config.yaml' -KeyPath 'Kafka.GroupID'
+	if ($kafkaGroupId -notmatch '^[A-Za-z0-9._-]*$') {
+		throw "生成 node ConfigMap 失败:bin/etc/base_deploy_config.yaml 的 Kafka.GroupID 只允许字母、数字、'.'、'_'、'-'(当前 '$kafkaGroupId')。"
+	}
+	# Kafka.DisableLegacyPerNodeTopic 在 K8s 上直接写 true(模板常数,刻意不从 bin/etc 镜像),与上面的 GroupID 镜像同批:
+	#   - 全仓已无旧 topic(<类型>-<node_id>)的生产者:C++ 走 ResolveCommandRoute,Go 走 shared/kafkacmd,Java gateway 不连 Kafka
+	#     (核实记录见 deploy/k8s/README.md「控制面命令 topic」一节的迁移窗口条);
+	#   - GroupID 改空后旧路径的组名从共享组变成 <类型>-group-<node_id>,新组没有已提交位点,旧路径开着就会从 earliest
+	#     重放旧 topic 里保留期内的消息(非空且不匹配的 target_instance_id 会被 ValidateCommandTarget 滤掉,空实例号的不会);
+	#     关掉旧路径则 GroupID 在 K8s 上再无 C++ 读者。
+	#   - 不镜像:bin/etc 那份是本机的迁移窗口开关,仍为 false,由运维确认旧 topic 写入与积压为 0 后显式翻;镜像会让一次改动
+	#     同时翻本机与所有 K8s 环境。
+	# 取值待实测 / 压测复核:上线前按 README 那一条确认线上 login 已写新 topic、旧 topic 无积压;回退 = 把下面这一行改回 false
+	# 并重启 gate / scene(改 ConfigMap 不会自动滚 Pod)。
 	# gate 客户端令牌 HMAC 密钥。缺这一项时 gate 在 prod 运行模式下会 LOG_FATAL
 	# 拒绝启动(cpp/nodes/gate/main.cpp::ValidateGateTokenSecretOrDie),而部署链
 	# 从不设置 GATE_RUN_MODE,ResolveRunModeOnce 默认就是 prod —— 也就是说这一项
@@ -2404,11 +2430,15 @@ Kafka:
     - "kafka.${InfraNamespace}:9092"
   Topics:
     - "game-events"
-  GroupID: "game-consumer-group"
+  # 从 bin/etc/base_deploy_config.yaml 的 Kafka.GroupID 镜像(本机为空串;只有旧的一节点一 topic 路径读它)。
+  GroupID: "${kafkaGroupId}"
   CommandTopicPartitions: ${commandTopicPartitions}
   CommandTopicGeneration: ${commandTopicGeneration}
   EnableAutoCommit: true
   AutoOffsetReset: "earliest"
+  # 迁移窗口开关:K8s 上关掉旧的一节点一 topic(<类型>-<node_id>)消费路径,命令只走 <类型>-cmd_g<N> 的 assign。
+  # 刻意不从 bin/etc 镜像(那份是本机开关,仍为 false);依据与回退见 k8s_deploy.ps1 New-NodeConfigMapYaml 的注释。
+  DisableLegacyPerNodeTopic: true
 # 永久 guid 号段(Leaf-segment,node-id-overhaul-plan §6 / §7.5):scene 经 DataService.AllocateIdSegment
 # 从全局库 id_segment 表按 Kind 领 [lo, hi) 双 buffer 发号;只有 scene 读,gate / battle 不铸这些 guid。
 #

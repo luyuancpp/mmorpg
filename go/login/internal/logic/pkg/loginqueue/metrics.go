@@ -60,14 +60,14 @@ var (
 	})
 
 	// admittedInflightGauge 是清掉过期成员之后 admitted:zset:zone:{zone} 的成员数:
-	// 已放行还没来取的,加上票已交出去、还在交票后宽限(15s)之内的(排队取走与快速通道)。
+	// 已放行还没来取的,加上票已交出去、还在交票后宽限(20s)之内的(排队取走与快速通道)。
 	// 容量记账用它(FreeSlots 减去这一项)。
 	admittedInflightGauge = metric.NewGaugeVec(&metric.GaugeVecOpts{
 		Namespace: metricNamespace,
 		Subsystem: "",
 		Name:      "admitted_inflight",
 		Help: "In-flight admission placeholders per zone: admits not yet picked up, plus gate " +
-			"tokens handed out within the last 15s handoff grace (queue consume and fast path). " +
+			"tokens handed out within the last 20s handoff grace (queue consume and fast path). " +
 			"ZCARD admitted:zset:zone:{zone} after dropping expired members. Sitting at " +
 			"(capacity - online) while login_queue_size > 0 is normal back-pressure; if gate " +
 			"PlayerCount does not grow at the same time, clients are not redeeming their admits.",

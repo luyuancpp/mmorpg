@@ -524,17 +524,12 @@ void ApplyCredit(entt::entity player, PlayerAssetOpLedgerComp& ledgerComp, const
 	if (!itemsToAdd.empty())
 	{
 		auto& bags = tlsEcs.actorRegistry.get<PlayerBagsComp>(player);
-		const PlayerItemBlockList emptyBlockList;
-		const auto* blockList = tlsEcs.actorRegistry.try_get<PlayerItemBlockList>(player);
-		// mutated 是 §4.11 给 BagService::AddItems 追加的出参:
-		//   AddItems(entity, bag, blockList, items, txType, correlationId, extra, bool* mutated)
-		// 语义 = "这次调用有没有真的动过包"(ReserveForBatchAdd 淘汰了实例,或任何一条 AddItem
-		// 写出了 guid)。设计稿写的是 7 参签名(那时还没有 extra),落码以工作区现签名为准:
-		// extra 是战斗掉落在用的参数,删掉会打断既有调用点。
+		// mutated 表示这次物品批量是否已提交；候选提交失败保持 false，
+		// 不因规划淘汰或已取号就宣称资产已变化。extra 保留既有流水关联。
 		bool mutated = false;
 		const uint32_t error =
 			BagService::AddItems(player, bags.bags[kInventory],
-								 blockList == nullptr ? emptyBlockList : *blockList, itemsToAdd, txType,
+								 itemsToAdd, txType,
 								 request.correlation_id(), /*extra=*/{}, &mutated);
 		if (error == kSuccess)
 		{

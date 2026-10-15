@@ -207,11 +207,9 @@ uint32_t PlayerMissionSystem::ClaimReward(entt::entity player, uint32_t scope, u
     if (row == nullptr) return kInvalidTableData;
     ItemCountMap items;
     if (const auto error = BuildRewardItems(row->reward_id(), items); error != kSuccess) return error;
-    const PlayerItemBlockList emptyBlockList;
-    const auto* blockList = tlsEcs.actorRegistry.try_get<PlayerItemBlockList>(player);
     // 人物背包不淘汰存量物品；整批预检失败时不改包，也不消耗领取权。
     const auto result = BagService::AddItems(player, bag,
-        blockList == nullptr ? emptyBlockList : *blockList, items, TX_QUEST_REWARD);
+        items, TX_QUEST_REWARD);
     if (result != kSuccess) return result;
     // scene EventLoop 内同步提交，无异步间隙；发奖成功后才消耗领取权。
     missions.ClearClaimable(missionId);

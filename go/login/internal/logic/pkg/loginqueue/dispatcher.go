@@ -37,7 +37,8 @@
 //	Stop()
 //	  └─ cancel ctx, wait for goroutine to exit, release lock if held.
 //
-// 每拍只看本 zone:队列为空直接跳过(不碰 gate 目录);非空才算 FreeSlots 并出队。
+// 每拍只看本 zone:队列为空直接跳过(不碰 gate 目录);非空才取一次 gate 候选,算容量与批内挑 gate
+// 共用这一份,批内按「PlayerCount + 本拍已分给它的人数」轮转,一拍的放行摊到各 gate 上。
 package loginqueue
 
 import (
@@ -318,7 +319,19 @@ func (d *Dispatcher) dispatchOnce(ctx context.Context) {
 	if queueLen == 0 {
 		return
 	}
-	free, _, _, _, err := FreeSlots(ctx, d.provider, d.queue, zoneID, d.softCapMultiplier)
+
+	// 每个非空拍只取一次 gate 候选,算容量与批内挑 gate 共用这一份。生产实现每次都是一次 etcd 前缀读
+	// 加一次排空标记 MGET;以前每放一个人重取一次,一拍放 N 人就是 N 次串行读,而这批条目已被 ZPOPMIN
+	// 弹出、既不在队列也不在占位里,拍越长,进程中途退出时丢的越多。gate 人数一拍之内不变,重取拿到的
+	// 也是同一份数据。
+	candidates, err := d.provider.CandidatesForZone(ctx, zoneID)
+	if err != nil {
+		// 与 FreeSlots 的错误同形(candidates: ...),日志检索口径不变。
+		logx.Errorf("[loginqueue] freeSlots zone=%d queueLen=%d err=candidates: %v", zoneID, queueLen, err)
+		return
+	}
+	// 没有候选时这里回「no gates for zone」:报 ERROR、不出队,条目原样留在队列里。
+	free, _, _, _, err := freeSlotsFromCandidates(ctx, candidates, d.provider, d.queue, zoneID, d.softCapMultiplier)
 	if err != nil {
 		logx.Errorf("[loginqueue] freeSlots zone=%d queueLen=%d err=%v", zoneID, queueLen, err)
 		return
@@ -329,17 +342,34 @@ func (d *Dispatcher) dispatchOnce(ctx context.Context) {
 
 	batch := min(free, queueLen)
 
-	// Pick a gate per entry but DO NOT sign the token here — the HMAC
-	// + expire happen at consume time inside consumeAdmitAndSign so
-	// the 5-min TTL window starts when the client redeems the admit,
-	// not when we picked the gate (R17 R1 fix). The dispatcher's job
-	// reduces to "decide which gate is least loaded right now".
-	pickFn := func(zoneID uint32, _ string) (*AdmitSlot, error) {
-		candidates, err := d.provider.CandidatesForZone(ctx, zoneID)
-		if err != nil {
-			return nil, err
-		}
-		gate, err := PickGate(candidates)
+	admitted, err := d.queue.PopAdmit(ctx, zoneID, int(batch), newBatchPickFn(candidates))
+	if err != nil {
+		logx.Errorf("[loginqueue] PopAdmit zone=%d err=%v", zoneID, err)
+		return
+	}
+	recordAdmit(zoneID, admitted)
+	if admitted > 0 {
+		logx.Infof("[loginqueue] zone=%d admitted=%d freeBefore=%d queueLen=%d",
+			zoneID, admitted, free, queueLen)
+	}
+}
+
+// newBatchPickFn 返回一拍的挑 gate 函数:在这一拍的候选副本上逐条挑,负载 = PlayerCount + 本拍已分给它的
+// 人数,取最少、同数取 NodeID 最小,选中后本地计数 +1(gatePicker)。只按 PlayerCount 挑的话,这个数一拍
+// 之内不变,整批都会落到同一台 gate 上。返回的函数只能用于一次 PopAdmit(它逐条串行调用),不能跨拍复用。
+//
+// Pick a gate per entry but DO NOT sign the token here — the HMAC
+// + expire happen at consume time inside consumeAdmitAndSign so
+// the 5-min TTL window starts when the client redeems the admit,
+// not when we picked the gate (R17 R1 fix). The dispatcher's job
+// reduces to "decide which gate is least loaded right now".
+//
+// 没有候选时回错误,PopAdmit 把条目以分数 0 放回队首、不写放行槽和占位,与逐条重取候选时取到空集的
+// 处理相同。dispatchOnce 传进来的候选已由 freeSlotsFromCandidates 判过非空,正常走不到这条。
+func newBatchPickFn(candidates []GateCandidate) PickAdmitSlotFn {
+	picker := newGatePicker(candidates)
+	return func(uint32, string) (*AdmitSlot, error) {
+		gate, err := picker.pick()
 		if err != nil {
 			return nil, err
 		}
@@ -349,16 +379,5 @@ func (d *Dispatcher) dispatchOnce(ctx context.Context) {
 			Port:   gate.Port,
 			ZoneID: gate.ZoneID,
 		}, nil
-	}
-
-	admitted, err := d.queue.PopAdmit(ctx, zoneID, int(batch), pickFn)
-	if err != nil {
-		logx.Errorf("[loginqueue] PopAdmit zone=%d err=%v", zoneID, err)
-		return
-	}
-	recordAdmit(zoneID, admitted)
-	if admitted > 0 {
-		logx.Infof("[loginqueue] zone=%d admitted=%d freeBefore=%d queueLen=%d",
-			zoneID, admitted, free, queueLen)
 	}
 }

@@ -1139,12 +1139,10 @@ uint32_t PlayerEquipSystem::GmGrantItem(entt::entity player, uint32_t configId, 
 
 	ItemCountMap items;
 	items[configId] = count;
-	const PlayerItemBlockList emptyBlockList;
-	const auto* blockList = tlsEcs.actorRegistry.try_get<PlayerItemBlockList>(player);
 	// 走正式发放入口:封禁闸、获得流水(TX_GM_GRANT,审计能一眼分出「GM 发的」)、异常检测都照常过;
 	// 新装备的掷属性挂在这条路上,不需要在这里再调 RollNewInstance。
 	const auto err = BagService::AddItems(player, bags->bags[kInventory],
-										  blockList == nullptr ? emptyBlockList : *blockList, items, TX_GM_GRANT);
+										  items, TX_GM_GRANT);
 	LOG_INFO << "[PlayerEquip] GM item grant: player_id=" << GuidForLog(player) << " config=" << configId
 			 << " count=" << count << " err=" << err;
 	return err;
@@ -1459,10 +1457,7 @@ uint32_t PlayerEquipSystem::RemoveGem(entt::entity player, Guid itemId, uint32_t
 	const std::string extra = "{\"socket\":" + std::to_string(socket) + "}";
 	ItemCountMap refund;
 	refund[gemConfigId] = 1;
-	const PlayerItemBlockList emptyBlockList;
-	const auto* blockList = tlsEcs.actorRegistry.try_get<PlayerItemBlockList>(player);
-	const auto addErr = BagService::AddItems(player, inventory, blockList == nullptr ? emptyBlockList : *blockList,
-											 refund, TX_EQUIP_GEM_REMOVE, itemId, extra);
+	const auto addErr = BagService::AddItems(player, inventory, refund, TX_EQUIP_GEM_REMOVE, itemId, extra);
 	if (addErr == kBagItemNotStacked || addErr == kBagAddItemBagFull) {
 		return kEquipGemBagFull;  // 同种宝石的堆都满了、又没有空格
 	}

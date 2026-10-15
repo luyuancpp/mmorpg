@@ -1,4 +1,4 @@
-﻿#include <gtest/gtest.h>
+#include <gtest/gtest.h>
 #include "engine/core/type_define/player_guid_comp.h"
 
 #include "engine/core/type_define/type_define.h"
@@ -39,6 +39,31 @@
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+namespace
+{
+// 封禁来自真实全服入口;即使 ASSERT 提前退出也恢复本用例改动的配置。
+class ScopedGlobalItemBlock
+{
+public:
+    explicit ScopedGlobalItemBlock(uint32_t configId)
+        : configId_(configId), wasBlocked_(GainBlockService::IsGloballyBlocked(GainBlockService::GainType::kItem, configId))
+    {
+        GainBlockService::BlockGlobal(GainBlockService::GainType::kItem, configId_);
+    }
+    ~ScopedGlobalItemBlock()
+    {
+        if (wasBlocked_) GainBlockService::BlockGlobal(GainBlockService::GainType::kItem, configId_);
+        else GainBlockService::UnblockGlobal(GainBlockService::GainType::kItem, configId_);
+    }
+    void Unblock() { GainBlockService::UnblockGlobal(GainBlockService::GainType::kItem, configId_); }
+    ScopedGlobalItemBlock(const ScopedGlobalItemBlock&) = delete;
+    ScopedGlobalItemBlock& operator=(const ScopedGlobalItemBlock&) = delete;
+private:
+    uint32_t configId_;
+    bool wasBlocked_;
+};
+}
 
 uint32_t MaxStack(uint32_t configId)
 {
@@ -569,10 +594,12 @@ TEST(BagTest, RemoveItemByPos)
     dp.size = maxStack - 1;
     EXPECT_EQ(kSuccess, bag.RemoveItemByPos(dp));
     EXPECT_EQ(0, bag.GetTotalItemCount(kStack10));
-    EXPECT_EQ(1, bag.OccupiedGridCount());
-    EXPECT_EQ(1, bag.GridSlotCount());
-    EXPECT_EQ(0, bag.GetItemCompByPos(0)->size());
-    EXPECT_EQ(0, bag.GetItemCompByGuid(addedGuid)->size());
+    EXPECT_EQ(0, bag.OccupiedGridCount());
+    EXPECT_EQ(0, bag.GridSlotCount());
+    EXPECT_EQ(nullptr, bag.GetItemCompByPos(0));
+    EXPECT_EQ(nullptr, bag.GetItemCompByGuid(addedGuid));
+    EXPECT_EQ(kInvalidSlot, bag.GetItemPosByGuid(addedGuid));
+    EXPECT_TRUE(bag.IsLayerConsistent());
 }
 
 /// Helper: fill `count` slots of `configId`, then reduce each to 1 unit.
@@ -910,64 +937,36 @@ TEST(BagTest, NeatenCanNotStack)
 }
 
 // ---------------------------------------------------------------------------
-// BlockItem / UnblockItem tests (via BagService + PlayerItemBlockList)
+// 全服物品封禁经正式发放入口生效
 // ---------------------------------------------------------------------------
 
-TEST(BagTest, BlockItemPreventsAdd)
+TEST(BagTest, GlobalBlockedItemPreventsAdd)
 {
     Bag bag;
     bag.ExpandCapacity(kBagMaxCapacity);
-    PlayerItemBlockList blockList;
-
-    // Block the non-stackable item config
-    blockList.Block(kNonStack1);
-    EXPECT_TRUE(blockList.IsBlocked(kNonStack1));
+    const ScopedGlobalItemBlock blocked(kNonStack1);
+    EXPECT_TRUE(GainBlockService::IsGloballyBlocked(GainBlockService::GainType::kItem, kNonStack1));
 
     // BagService::AddItem should fail for blocked config
-    EXPECT_NE(kSuccess, BagService::AddItem(entt::null, bag, blockList, MakeItem(kNonStack1)));
+    EXPECT_NE(kSuccess, BagService::AddItem(entt::null, bag, MakeItem(kNonStack1)));
     EXPECT_EQ(0, bag.OccupiedGridCount());
 
     // Other items unaffected
-    EXPECT_EQ(kSuccess, BagService::AddItem(entt::null, bag, blockList, MakeItem(kStack10, 1)));
+    EXPECT_EQ(kSuccess, BagService::AddItem(entt::null, bag, MakeItem(kStack10, 1)));
     EXPECT_EQ(1, bag.OccupiedGridCount());
 }
 
-TEST(BagTest, UnblockItemAllowsAdd)
+TEST(BagTest, GlobalUnblockedItemAllowsAdd)
 {
     Bag bag;
     bag.ExpandCapacity(kBagMaxCapacity);
-    PlayerItemBlockList blockList;
+    ScopedGlobalItemBlock blocked(kNonStack1);
+    EXPECT_NE(kSuccess, BagService::AddItem(entt::null, bag, MakeItem(kNonStack1)));
 
-    blockList.Block(kNonStack1);
-    EXPECT_NE(kSuccess, BagService::AddItem(entt::null, bag, blockList, MakeItem(kNonStack1)));
-
-    blockList.Unblock(kNonStack1);
-    EXPECT_FALSE(blockList.IsBlocked(kNonStack1));
-    EXPECT_EQ(kSuccess, BagService::AddItem(entt::null, bag, blockList, MakeItem(kNonStack1)));
+    blocked.Unblock();
+    EXPECT_FALSE(GainBlockService::IsGloballyBlocked(GainBlockService::GainType::kItem, kNonStack1));
+    EXPECT_EQ(kSuccess, BagService::AddItem(entt::null, bag, MakeItem(kNonStack1)));
     EXPECT_EQ(1, bag.OccupiedGridCount());
-}
-
-TEST(BagTest, BlockItemIdempotent)
-{
-    PlayerItemBlockList blockList;
-    blockList.Block(kNonStack1);
-    blockList.Block(kNonStack1); // duplicate — should not crash
-    EXPECT_TRUE(blockList.IsBlocked(kNonStack1));
-
-    blockList.Unblock(kNonStack1);
-    EXPECT_FALSE(blockList.IsBlocked(kNonStack1));
-}
-
-TEST(BagTest, BlockedItemsQuery)
-{
-    PlayerItemBlockList blockList;
-    EXPECT_TRUE(blockList.All().empty());
-
-    blockList.Block(kNonStack1);
-    blockList.Block(kStack10);
-    EXPECT_EQ(2, blockList.All().size());
-    EXPECT_TRUE(blockList.All().contains(kNonStack1));
-    EXPECT_TRUE(blockList.All().contains(kStack10));
 }
 
 // ===========================================================================
@@ -979,22 +978,21 @@ TEST(GainBlockServiceTest, GlobalItemBlockPreventsAdd)
     GainBlockService::ClearAllGlobalBlocks();
     Bag bag;
     bag.ExpandCapacity(kBagMaxCapacity);
-    PlayerItemBlockList blockList;
 
     // Before global block, item can be added
-    EXPECT_EQ(kSuccess, BagService::AddItem(entt::null, bag, blockList, MakeItem(kNonStack1)));
+    EXPECT_EQ(kSuccess, BagService::AddItem(entt::null, bag, MakeItem(kNonStack1)));
     EXPECT_EQ(1, bag.OccupiedGridCount());
 
     // Global block on kStack10
-    GainBlockService::BlockGlobal(GainBlockService::GainType::kItem, kStack10);
+    const ScopedGlobalItemBlock blocked(kStack10);
     EXPECT_TRUE(GainBlockService::IsGloballyBlocked(GainBlockService::GainType::kItem, kStack10));
 
     // AddItem should fail for globally blocked item
-    EXPECT_NE(kSuccess, BagService::AddItem(entt::null, bag, blockList, MakeItem(kStack10, 1)));
+    EXPECT_NE(kSuccess, BagService::AddItem(entt::null, bag, MakeItem(kStack10, 1)));
     EXPECT_EQ(1, bag.OccupiedGridCount()); // unchanged
 
     // Non-blocked items still work
-    EXPECT_EQ(kSuccess, BagService::AddItem(entt::null, bag, blockList, MakeItem(kNonStack2)));
+    EXPECT_EQ(kSuccess, BagService::AddItem(entt::null, bag, MakeItem(kNonStack2)));
     EXPECT_EQ(2, bag.OccupiedGridCount());
 
     GainBlockService::ClearAllGlobalBlocks();
@@ -1005,14 +1003,13 @@ TEST(GainBlockServiceTest, GlobalUnblockAllowsAdd)
     GainBlockService::ClearAllGlobalBlocks();
     Bag bag;
     bag.ExpandCapacity(kBagMaxCapacity);
-    PlayerItemBlockList blockList;
 
-    GainBlockService::BlockGlobal(GainBlockService::GainType::kItem, kNonStack1);
-    EXPECT_NE(kSuccess, BagService::AddItem(entt::null, bag, blockList, MakeItem(kNonStack1)));
+    ScopedGlobalItemBlock blocked(kNonStack1);
+    EXPECT_NE(kSuccess, BagService::AddItem(entt::null, bag, MakeItem(kNonStack1)));
 
-    GainBlockService::UnblockGlobal(GainBlockService::GainType::kItem, kNonStack1);
+    blocked.Unblock();
     EXPECT_FALSE(GainBlockService::IsGloballyBlocked(GainBlockService::GainType::kItem, kNonStack1));
-    EXPECT_EQ(kSuccess, BagService::AddItem(entt::null, bag, blockList, MakeItem(kNonStack1)));
+    EXPECT_EQ(kSuccess, BagService::AddItem(entt::null, bag, MakeItem(kNonStack1)));
 
     GainBlockService::ClearAllGlobalBlocks();
 }
@@ -1063,20 +1060,17 @@ TEST(GainBlockServiceTest, GlobalCurrencyBlockCheck)
     GainBlockService::ClearAllGlobalBlocks();
 }
 
-TEST(GainBlockServiceTest, GlobalAndPerPlayerBlockCombo)
+TEST(GainBlockServiceTest, MultipleGlobalBlocksRejectOnlyListedItems)
 {
     GainBlockService::ClearAllGlobalBlocks();
     Bag bag;
     bag.ExpandCapacity(kBagMaxCapacity);
-    PlayerItemBlockList blockList;
+    const ScopedGlobalItemBlock nonStackBlocked(kNonStack1);
+    const ScopedGlobalItemBlock stackBlocked(kStack10);
 
-    // Per-player block on kNonStack1, global block on kStack10
-    blockList.Block(kNonStack1);
-    GainBlockService::BlockGlobal(GainBlockService::GainType::kItem, kStack10);
-
-    EXPECT_NE(kSuccess, BagService::AddItem(entt::null, bag, blockList, MakeItem(kNonStack1)));  // per-player blocked
-    EXPECT_NE(kSuccess, BagService::AddItem(entt::null, bag, blockList, MakeItem(kStack10, 1))); // globally blocked
-    EXPECT_EQ(kSuccess, BagService::AddItem(entt::null, bag, blockList, MakeItem(kNonStack2)));  // neither blocked
+    EXPECT_NE(kSuccess, BagService::AddItem(entt::null, bag, MakeItem(kNonStack1)));
+    EXPECT_NE(kSuccess, BagService::AddItem(entt::null, bag, MakeItem(kStack10, 1)));
+    EXPECT_EQ(kSuccess, BagService::AddItem(entt::null, bag, MakeItem(kNonStack2)));
     EXPECT_EQ(1, bag.OccupiedGridCount());
 
     GainBlockService::ClearAllGlobalBlocks();
@@ -1314,9 +1308,8 @@ TEST(FlatLayoutTest, PlaceAtRejectsOutOfRangeAndOccupiedSlots)
     EXPECT_EQ(1u, flat.OccupiedSlotCount());
 }
 
-// §11(i):不可叠加物品被 RemoveItemByPos 扣到 0 之后,MergePartialStacks 永远
-// 碰不到它(那里跳过 max_stack_size() <= 1),于是它永久占着一个格子。
-TEST(BagTest, MergeAndCompactReclaimsDrainedNonStackableSlot)
+// 扣光立即成对释放实例和槽位;随后整理幂等,不能再报告一次销毁。
+TEST(BagTest, DrainedNonStackableReleasesSlotBeforeIdempotentCompaction)
 {
     ASSERT_EQ(1u, MaxStack(kNonStack1)) << "用例前提:该 config 不可叠加";
 
@@ -1327,19 +1320,21 @@ TEST(BagTest, MergeAndCompactReclaimsDrainedNonStackableSlot)
     auto dp = MakeRemoveParam(bag, 0, kNonStack1, 1);
     EXPECT_EQ(kSuccess, bag.RemoveItemByPos(dp));
 
-    // 扣光后实例与槽位都还在——这是 RemoveItemByPos 的既有语义,没有改。
-    EXPECT_EQ(1u, bag.OccupiedGridCount());
-    ASSERT_NE(nullptr, bag.GetItemCompByPos(0));
-    EXPECT_EQ(0u, bag.GetItemCompByPos(0)->size());
+    EXPECT_EQ(0u, bag.GetTotalItemCount(kNonStack1));
+    EXPECT_EQ(0u, bag.OccupiedGridCount());
+    EXPECT_EQ(0u, bag.GridSlotCount());
+    EXPECT_EQ(nullptr, bag.GetItemCompByPos(0));
+    EXPECT_EQ(nullptr, bag.GetItemCompByGuid(dp.item_guid));
+    EXPECT_EQ(kInvalidSlot, bag.GetItemPosByGuid(dp.item_guid));
+    EXPECT_TRUE(bag.IsLayerConsistent());
 
     std::vector<DestroyedInstance> destroyed;
-    EXPECT_TRUE(bag.MergeAndCompact(&destroyed));
+    EXPECT_FALSE(bag.MergeAndCompact(&destroyed));
+    EXPECT_FALSE(bag.MergeAndCompact(&destroyed));
 
-    EXPECT_EQ(0u, bag.OccupiedGridCount()) << "整理必须回收 size==0 的僵尸";
+    EXPECT_EQ(0u, bag.OccupiedGridCount());
     EXPECT_EQ(0u, bag.GridSlotCount());
-    ASSERT_EQ(1u, destroyed.size());
-    EXPECT_EQ(kNonStack1, destroyed.front().configId);
-    EXPECT_EQ(0u, destroyed.front().size);
+    EXPECT_TRUE(destroyed.empty()) << "整理不能重复报告已在扣除时释放的实例";
 }
 
 // §11(g):整理会退役一批 item_uuid,而那是 transaction_log 做外挂回收关联的键。
@@ -1883,9 +1878,8 @@ TEST(EvictionPolicyTest, CheckSpaceForStaysPureAndNeverEvicts)
     EXPECT_EQ(kept, evicted.front().guid);
 }
 
-// 批量路径也要能淘汰 —— 这正是编排层必须走 ReserveForBatchAdd 而不是
-// CheckSpaceFor 的原因:后者会抢在淘汰之前把整批拒掉。
-TEST(EvictionPolicyTest, BatchAddEvictsThroughTheReservePath)
+// 真实批量入口的候选提交也要能淘汰;纯空间预测不能抢先把可腾位的整批拒掉。
+TEST(EvictionPolicyTest, BatchAddEvictsOldestThroughPublicEntry)
 {
     Bag bag;
     bag.SetProfile(BagProfile::Temporary(2));
@@ -1905,8 +1899,8 @@ TEST(EvictionPolicyTest, BatchAddEvictsThroughTheReservePath)
     EXPECT_TRUE(bag.IsLayerConsistent());
 }
 
-// 公开的 reserve 入口本身:摆得下时什么都不做(不是"总是先腾一格")。
-TEST(EvictionPolicyTest, ReserveForBatchAddIsANoOpWhenItAlreadyFits)
+// 真实入包入口在尚有空位时保留旧实例,按确定顺序写入新物品,不单独暴露腾位副作用。
+TEST(EvictionPolicyTest, BatchAddPreservesExistingInstancesWhenItAlreadyFits)
 {
     Bag bag;
     bag.SetProfile(BagProfile::Temporary(4));
@@ -1915,10 +1909,16 @@ TEST(EvictionPolicyTest, ReserveForBatchAddIsANoOpWhenItAlreadyFits)
     ItemCountMap batch;
     batch[kNonStack2] = 1;
     std::vector<DestroyedInstance> evicted;
-    EXPECT_EQ(kSuccess, bag.ReserveForBatchAdd(batch, &evicted));
+    EXPECT_EQ(kSuccess, bag.AddItems(batch, &evicted));
     EXPECT_TRUE(evicted.empty()) << "还有空格,淘汰不该发生";
     EXPECT_NE(nullptr, bag.GetItemCompByGuid(kept));
-    EXPECT_EQ(1u, bag.OccupiedGridCount()) << "reserve 不写入任何物品";
+    EXPECT_EQ(2u, bag.OccupiedGridCount());
+    EXPECT_EQ(0u, bag.GetItemPosByGuid(kept));
+    ASSERT_NE(nullptr, bag.GetItemCompByPos(1));
+    EXPECT_EQ(kNonStack2, bag.GetItemCompByPos(1)->config_id());
+    EXPECT_EQ(1u, bag.GetTotalItemCount(kNonStack1));
+    EXPECT_EQ(1u, bag.GetTotalItemCount(kNonStack2));
+    EXPECT_TRUE(bag.IsLayerConsistent());
 }
 
 // ---------------------------------------------------------------------------
@@ -2069,7 +2069,7 @@ TEST(EvictionPolicyTest, NoReceiptSinkMeansNoEviction)
     EXPECT_EQ(kept, evicted.front().guid);
 }
 
-// 编排层(BagService)走的必须是 ReserveForBatchAdd 而不是纯预测的 CheckSpaceFor ——
+// 编排层(BagService)必须经过候选提交而不是纯预测的 CheckSpaceFor ——
 // 否则临时格的先进先出在生产唯一入口上永远不生效。回执落流水那一步在
 // TransactionLogSystem 里、单测没有可读侧,这里至少钉住"确实淘汰了、且 BagService
 // 的两条入包路径都能走完"。删掉 BagService 里的 LogEvictedInstances 调用这条用例
@@ -2080,25 +2080,24 @@ TEST(EvictionPolicyTest, ServiceLevelAddEvictsThroughTheReservePath)
 
     Bag bag;
     bag.SetProfile(BagProfile::Temporary(1));
-    PlayerItemBlockList blockList;
     const Guid oldest = AddItemAndGetLastWritten(bag, MakeItem(kNonStack1));
     ASSERT_TRUE(bag.IsFull());
 
     // 单件路径。
-    EXPECT_EQ(kSuccess, BagService::AddItem(entt::null, bag, blockList, MakeItem(kNonStack2)));
+    EXPECT_EQ(kSuccess, BagService::AddItem(entt::null, bag, MakeItem(kNonStack2)));
     EXPECT_EQ(nullptr, bag.GetItemCompByGuid(oldest)) << "最早那件被顶出去了";
     EXPECT_EQ(1u, bag.GetTotalItemCount(kNonStack2));
 
     // ItemCountMap 批量路径。
     ItemCountMap batch;
     batch[kNonStack1] = 1;
-    EXPECT_EQ(kSuccess, BagService::AddItems(entt::null, bag, blockList, batch));
+    EXPECT_EQ(kSuccess, BagService::AddItems(entt::null, bag, batch));
     EXPECT_EQ(0u, bag.GetTotalItemCount(kNonStack2)) << "批量路径同样淘汰";
     EXPECT_EQ(1u, bag.GetTotalItemCount(kNonStack1));
 
     // vector 批量路径。
     const std::vector<InitItemParam> pieces{MakeItem(kNonStack2, 1)};
-    EXPECT_EQ(kSuccess, BagService::AddItems(entt::null, bag, blockList, pieces));
+    EXPECT_EQ(kSuccess, BagService::AddItems(entt::null, bag, pieces));
     EXPECT_EQ(1u, bag.GetTotalItemCount(kNonStack2));
     EXPECT_EQ(0u, bag.GetTotalItemCount(kNonStack1));
     EXPECT_EQ(1u, bag.OccupiedGridCount());
@@ -2350,11 +2349,10 @@ TEST(BagProfileRegistryTest, FixedBagsCarryNoProfileId)
 // ---------------------------------------------------------------------------
 
 // 判据:**满了的临时格经 BagService 仍能入包**。
-// 这一条能区分编排层走的是 ReserveForBatchAdd(会腾位)还是纯预测的 CheckSpaceFor
+// 这一条能区分编排层走的是候选提交(会腾位)还是纯预测的 CheckSpaceFor
 // —— 后者会抢在淘汰之前把整批拒掉,先进先出在编排层就永远不生效。
 TEST(BagServiceEvictionTest, ServiceLevelAddEvictsOnAFullTemporaryBag)
 {
-    PlayerItemBlockList blockList;
     Bag bag;
     bag.SetProfile(BagProfile::Temporary(2));
     const Guid oldest = AddItemAndGetLastWritten(bag, MakeItem(kNonStack1));
@@ -2362,7 +2360,7 @@ TEST(BagServiceEvictionTest, ServiceLevelAddEvictsOnAFullTemporaryBag)
     ASSERT_TRUE(bag.IsFull());
 
     // 单件路径。
-    EXPECT_EQ(kSuccess, BagService::AddItem(entt::null, bag, blockList, MakeItem(kNonStack1)));
+    EXPECT_EQ(kSuccess, BagService::AddItem(entt::null, bag, MakeItem(kNonStack1)));
     EXPECT_EQ(nullptr, bag.GetItemCompByGuid(oldest)) << "最早那件被挤掉";
     EXPECT_NE(nullptr, bag.GetItemCompByGuid(newer));
     EXPECT_EQ(2u, bag.OccupiedGridCount());
@@ -2370,8 +2368,8 @@ TEST(BagServiceEvictionTest, ServiceLevelAddEvictsOnAFullTemporaryBag)
     // 批量路径(ItemCountMap):这条最能说明问题 —— 走 CheckSpaceFor 的话必然失败。
     ItemCountMap batch;
     batch[kNonStack2] = 1;
-    EXPECT_EQ(kSuccess, BagService::AddItems(entt::null, bag, blockList, batch))
-        << "编排层必须走 ReserveForBatchAdd,否则临时格的先进先出在批量路径上失效";
+    EXPECT_EQ(kSuccess, BagService::AddItems(entt::null, bag, batch))
+        << "编排层必须提交完整候选,否则临时格的先进先出在批量路径上失效";
     EXPECT_EQ(nullptr, bag.GetItemCompByGuid(newer)) << "轮到它了";
     EXPECT_EQ(2u, bag.OccupiedGridCount());
     EXPECT_TRUE(bag.IsLayerConsistent());
@@ -2380,12 +2378,11 @@ TEST(BagServiceEvictionTest, ServiceLevelAddEvictsOnAFullTemporaryBag)
 // 其余三个包在编排层同样不淘汰 —— 满了就拒。
 TEST(BagServiceEvictionTest, ServiceLevelAddNeverEvictsOnNonEvictingBags)
 {
-    PlayerItemBlockList blockList;
     Bag bag; // 默认 Flat + RejectWhenFull
     bag.SetProfile(BagProfile::Flat(1));
     const Guid kept = AddItemAndGetLastWritten(bag, MakeItem(kNonStack1));
 
-    EXPECT_NE(kSuccess, BagService::AddItem(entt::null, bag, blockList, MakeItem(kNonStack2)));
+    EXPECT_NE(kSuccess, BagService::AddItem(entt::null, bag, MakeItem(kNonStack2)));
     EXPECT_NE(nullptr, bag.GetItemCompByGuid(kept));
     EXPECT_EQ(1u, bag.OccupiedGridCount());
 }
@@ -2472,6 +2469,7 @@ class LyingLayout final : public FlatLayout
 {
 public:
     explicit LyingLayout(std::size_t capacity) : FlatLayout(capacity) {}
+	std::unique_ptr<IContainerLayout> Clone() const override { return std::make_unique<LyingLayout>(*this); }
 
     bool CanFit(std::size_t, Footprint) const override { return true; }
     SlotId Place(Guid, Footprint) override { return kInvalidSlot; }

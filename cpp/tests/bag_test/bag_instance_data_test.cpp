@@ -582,15 +582,21 @@ TEST_F(BagInstanceDataTest, PutInstanceRestampsAcquireSeq)
 	EXPECT_EQ(4u, next->acquire_seq());
 }
 
-TEST_F(BagInstanceDataTest, TakeInstanceRefusesStackablesMissingGuidsAndZombies)
+TEST_F(BagInstanceDataTest, TakeInstanceRefusesStackablesMissingGuidsAndSkippedZeroRestore)
 {
 	Bag bag;
 	std::vector<Guid> written;
 	ASSERT_EQ(kSuccess, bag.AddItem(MakeParam(kStackable, 5), &written));
 	ASSERT_EQ(1u, written.size());
 	const Guid stackGuid = written.front();
-	// 不可叠加却 size == 0:被扣光、还没被整理回收的僵尸实例。
+	// 旧存档的零数量实例在加载时跳过,不能留下槽位或变成可搬运资产。
 	bag.InsertItemForRestore(kGuidA, kEquipA, /*stackSize=*/0, /*pos=*/3);
+	EXPECT_EQ(nullptr, bag.GetItemCompByGuid(kGuidA));
+	EXPECT_EQ(nullptr, bag.GetItemCompByPos(3));
+	EXPECT_EQ(kInvalidSlot, bag.GetItemPosByGuid(kGuidA));
+	EXPECT_EQ(1u, bag.OccupiedGridCount());
+	EXPECT_EQ(1u, bag.GridSlotCount());
+	EXPECT_TRUE(bag.IsLayerConsistent());
 	const BagState before = Capture(bag);
 
 	ItemComp out = MakeInstance(kGuidD, kPlainNonStack); // 哨兵:失败不许动它
@@ -599,7 +605,7 @@ TEST_F(BagInstanceDataTest, TakeInstanceRefusesStackablesMissingGuidsAndZombies)
 	EXPECT_EQ(kBagDelItemConfig, bag.TakeInstance(stackGuid, out))
 		<< "a stackable guid is not a stable identity";
 	EXPECT_EQ(kBagDeleteItemFindGuid, bag.TakeInstance(kGuidB, out)) << "same code as RemoveItem";
-	EXPECT_EQ(kBagItemDeletionSizeMismatch, bag.TakeInstance(kGuidA, out));
+	EXPECT_EQ(kBagDeleteItemFindGuid, bag.TakeInstance(kGuidA, out));
 
 	EXPECT_EQ(sentinel, out.SerializeAsString()) << "a refused Take must not touch the out param";
 	ExpectUnchanged(before, bag);
@@ -642,10 +648,9 @@ TEST_F(BagInstanceDataTest, InitializerRunsOncePerNewNonStackableInstanceInABatc
 {
 	InstallCountingInitializer();
 	Bag bag;
-	PlayerItemBlockList blockList;
 	ItemCountMap batch;
 	batch[kEquipA] = 3;
-	ASSERT_EQ(kSuccess, BagService::AddItems(entt::null, bag, blockList, batch));
+	ASSERT_EQ(kSuccess, BagService::AddItems(entt::null, bag, batch));
 
 	EXPECT_EQ(3, initializerCalls);
 	EXPECT_FALSE(sawEquipOnEntry) << "a freshly minted instance arrives without an equip section";
@@ -679,18 +684,17 @@ TEST_F(BagInstanceDataTest, InitializerIsWiredIntoEveryBagServiceAddEntry)
 {
 	InstallCountingInitializer();
 	Bag bag;
-	PlayerItemBlockList blockList;
 
-	ASSERT_EQ(kSuccess, BagService::AddItem(entt::null, bag, blockList, MakeParam(kEquipA)));
+	ASSERT_EQ(kSuccess, BagService::AddItem(entt::null, bag, MakeParam(kEquipA)));
 	EXPECT_EQ(1, initializerCalls) << "AddItem(InitItemParam)";
 
 	ItemCountMap byCount;
 	byCount[kEquipB] = 2;
-	ASSERT_EQ(kSuccess, BagService::AddItems(entt::null, bag, blockList, byCount));
+	ASSERT_EQ(kSuccess, BagService::AddItems(entt::null, bag, byCount));
 	EXPECT_EQ(3, initializerCalls) << "AddItems(ItemCountMap)";
 
 	const std::vector<InitItemParam> pieces{MakeParam(kEquipA), MakeParam(kPlainNonStack)};
-	ASSERT_EQ(kSuccess, BagService::AddItems(entt::null, bag, blockList, pieces));
+	ASSERT_EQ(kSuccess, BagService::AddItems(entt::null, bag, pieces));
 	EXPECT_EQ(5, initializerCalls) << "AddItems(vector<InitItemParam>)";
 
 	ASSERT_EQ(5u, bag.OccupiedGridCount());
@@ -703,11 +707,10 @@ TEST_F(BagInstanceDataTest, InitializerSkipsInstancesThatAlreadyCarryEquip)
 {
 	InstallCountingInitializer();
 	Bag bag;
-	PlayerItemBlockList blockList;
 
 	InitItemParam returning;
 	returning.itemPBComp = MakeRolledInstance(kGuidA, kEquipA);
-	ASSERT_EQ(kSuccess, BagService::AddItem(entt::null, bag, blockList, returning));
+	ASSERT_EQ(kSuccess, BagService::AddItem(entt::null, bag, returning));
 	EXPECT_EQ(0, initializerCalls);
 	ASSERT_NO_FATAL_FAILURE(ExpectStoredInstance(bag, returning.itemPBComp));
 
@@ -715,7 +718,7 @@ TEST_F(BagInstanceDataTest, InitializerSkipsInstancesThatAlreadyCarryEquip)
 	emptyRolled.itemPBComp = MakeInstance(kGuidB, kEquipB);
 	emptyRolled.itemPBComp.mutable_equip(); // 已初始化,只是一条都没掷出
 	const std::vector<InitItemParam> pieces{emptyRolled, MakeParam(kEquipA)};
-	ASSERT_EQ(kSuccess, BagService::AddItems(entt::null, bag, blockList, pieces));
+	ASSERT_EQ(kSuccess, BagService::AddItems(entt::null, bag, pieces));
 	EXPECT_EQ(1, initializerCalls) << "only the fresh piece of the mixed batch is initialised";
 
 	const ItemComp *kept = bag.GetItemCompByGuid(kGuidB);
@@ -731,14 +734,13 @@ TEST_F(BagInstanceDataTest, InitializerSkipsStackableItems)
 {
 	InstallCountingInitializer();
 	Bag bag;
-	PlayerItemBlockList blockList;
 
-	ASSERT_EQ(kSuccess, BagService::AddItem(entt::null, bag, blockList, MakeParam(kStackable, 5)));
+	ASSERT_EQ(kSuccess, BagService::AddItem(entt::null, bag, MakeParam(kStackable, 5)));
 	ItemCountMap byCount;
 	byCount[kStackable] = 7;
-	ASSERT_EQ(kSuccess, BagService::AddItems(entt::null, bag, blockList, byCount));
+	ASSERT_EQ(kSuccess, BagService::AddItems(entt::null, bag, byCount));
 	const std::vector<InitItemParam> pieces{MakeParam(kStackable, 2)};
-	ASSERT_EQ(kSuccess, BagService::AddItems(entt::null, bag, blockList, pieces));
+	ASSERT_EQ(kSuccess, BagService::AddItems(entt::null, bag, pieces));
 
 	EXPECT_EQ(0, initializerCalls);
 	EXPECT_EQ(14u, bag.GetTotalItemCount(kStackable));
@@ -770,15 +772,14 @@ TEST_F(BagInstanceDataTest, UninstalledInitializerIsNotCalled)
 {
 	InstallCountingInitializer();
 	Bag bag;
-	PlayerItemBlockList blockList;
-	ASSERT_EQ(kSuccess, BagService::AddItem(entt::null, bag, blockList, MakeParam(kEquipA)));
+	ASSERT_EQ(kSuccess, BagService::AddItem(entt::null, bag, MakeParam(kEquipA)));
 	ASSERT_EQ(1, initializerCalls);
 
 	BagService::SetItemInstanceInitializer({}); // 传空 = 卸载
-	ASSERT_EQ(kSuccess, BagService::AddItem(entt::null, bag, blockList, MakeParam(kEquipB)));
+	ASSERT_EQ(kSuccess, BagService::AddItem(entt::null, bag, MakeParam(kEquipB)));
 	ItemCountMap byCount;
 	byCount[kEquipA] = 2;
-	ASSERT_EQ(kSuccess, BagService::AddItems(entt::null, bag, blockList, byCount));
+	ASSERT_EQ(kSuccess, BagService::AddItems(entt::null, bag, byCount));
 	EXPECT_EQ(1, initializerCalls);
 
 	uint32_t withoutEquip = 0;
@@ -834,8 +835,7 @@ TEST_F(BagInstanceDataTest, InitializerCannotRewriteContainerOwnedFields)
 			item.mutable_equip()->add_affixes()->set_value(5);
 		});
 	Bag bag;
-	PlayerItemBlockList blockList;
-	ASSERT_EQ(kSuccess, BagService::AddItem(entt::null, bag, blockList, MakeParam(kEquipA)));
+	ASSERT_EQ(kSuccess, BagService::AddItem(entt::null, bag, MakeParam(kEquipA)));
 
 	ASSERT_EQ(1u, bag.OccupiedGridCount());
 	EXPECT_EQ(nullptr, bag.GetItemCompByGuid(kGuidD)) << "the minted guid must win";

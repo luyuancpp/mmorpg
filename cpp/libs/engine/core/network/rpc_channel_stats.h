@@ -44,7 +44,8 @@ struct RpcChannelStats
 
     // 服务端。
     std::atomic<uint64_t> requestsDispatched{0};
-    std::atomic<uint64_t> requestsRejected{0};
+    std::atomic<uint64_t> requestsRejected{0};   // 派发前拒绝(无效号 / 无服务 / 无方法 / 坏包)
+    std::atomic<uint64_t> handlerFailed{0};      // handler 已运行并显式失败(SetFailed / RpcDoneCallback::Fail)
     std::atomic<uint64_t> adopted{0};
     std::atomic<uint64_t> replyRunTwice{0};
     std::atomic<uint64_t> replyChannelGone{0};

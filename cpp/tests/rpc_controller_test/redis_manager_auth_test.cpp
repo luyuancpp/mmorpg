@@ -7,9 +7,12 @@
 //     重连回调才被调用,所以回调里发出的命令排在 AUTH 之后;
 //  3. AUTH 被拒或一个重连间隔内没有应答:连接不对业务可见(GetZoneRedis() 非空但 connected()==false)、
 //     不调重连回调、握手连接上不出现 AUTH 以外的命令,并在回调栈外重建握手连接重试;
+//     被拒当场、没有应答在截止时各打一条带 metric=zone_redis_auth_failed 的 ERROR;
 //  4. 日志里永远不出现口令原文,服务端回显口令时只保留错误码、其余遮掉;
 //  5. 握手中 Shutdown:安静释放,不回调、不重连;
-//  6. 重连间隔非正数时回落到默认值并打 WARN。
+//  6. 重连间隔非正数时回落到默认值并打 WARN;
+//  7. 握手中服务端断开(AUTH 应答前,或回了拒绝之后):空应答不移交、不调回调,断线回调不打乱截止定时器,
+//     到点照常重建握手连接。
 //
 // 做法:被测的 RedisManager(测试自建,不用 tlsRedis)与假 Redis(muduo TcpServer)跑在同一个 loop 线程上。
 // 假 Redis 做最小 RESP 解析,按连接记下收到的命令序列,按用例配置对 AUTH 的应答。
@@ -17,7 +20,8 @@
 // 测试线程等 loop 线程一律用带截止时间的 future(单调时钟),不做无限期等待。
 //
 // 与 rpc_controller_test.cpp 同一工程、同一个 main(main 把日志级别设为 WARN,本夹具临时调到 INFO);
-// InitReply 等链接桩已由 rpc_client_lifecycle_test.cpp 定义,这里不要重复定义。
+// 链接桩(InitPlayerService / InitPlayerServiceReplied / InitServiceHandler)已由 rpc_client_lifecycle_test.cpp
+// 定义,这里不要重复定义。
 
 #include <gtest/gtest.h>
 
@@ -33,10 +37,12 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <functional>
 #include <future>
 #include <map>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <system_error>
@@ -275,13 +281,15 @@ enum class AuthReplyMode
     kWrongPass,     // -WRONGPASS invalid username-password pair(Redis 6+ 口令错时的原文)
     kEchoPassword,  // -ERR bad password <收到的口令>:模拟会把口令回显进错误文本的代理
     kSwallow,       // 压住不回;此后这条连接上的命令一律不回(真 Redis 按序应答,前一条不回后面都等着)
+    kCloseWithoutReply,    // 不回应答,直接半关写端:客户端在 AUTH 应答前读到 EOF
+    kWrongPassThenClose,   // 回 -WRONGPASS 后半关写端:客户端先处理拒绝,再读到 EOF
 };
 
 // 假 Redis 眼里的一条连接。
 struct FakeConnection
 {
     std::vector<RespCommand> commands;   // 按到达顺序记录
-    bool stalled = false;                // 已有一条 AUTH 被压住
+    bool stalled = false;                // 此后一律不回:AUTH 被压住,或服务端已半关这条连接
 };
 
 // 测试线程经 RunInLoopAndWait 拿到的一份状态拷贝。
@@ -311,13 +319,13 @@ protected:
         muduo::Logger::setOutput(&CaptureLogOutput);
 
         loopThread_ = std::make_unique<muduo::net::EventLoopThread>();
-        loop_ = loopThread_->startLoop();
+        loop_.emplace(*loopThread_->startLoop());
         port_ = FindFreeLoopbackPort();
         ASSERT_NE(port_, 0);
 
         RunInLoopAndWait([this] {
             server_ = std::make_unique<muduo::net::TcpServer>(
-                loop_, muduo::net::InetAddress(port_, /*loopbackOnly=*/true), "fake_redis");
+                &Loop(), muduo::net::InetAddress(port_, /*loopbackOnly=*/true), "fake_redis");
             // 回调只捕获夹具 this:server_ 在 TearDown 里先于夹具销毁,属于 AGENTS.md §11.7 的同寿命例外。
             // 服务端不保存任何 TcpConnectionPtr,按连接名索引自己的记录。
             server_->setConnectionCallback([this](const muduo::net::TcpConnectionPtr& conn) {
@@ -333,7 +341,7 @@ protected:
 
     void TearDown() override
     {
-        if (loop_ != nullptr)
+        if (loop_)
         {
             RunInLoopAndWait([this] {
                 if (manager_)
@@ -348,17 +356,19 @@ protected:
             RunInLoopAndWait([] {});
         }
         loopThread_.reset();   // quit + join:此后不再有线程写日志
-        loop_ = nullptr;
+        loop_.reset();
         muduo::Logger::setOutput(&StdoutLogOutput);
         muduo::Logger::setLogLevel(savedLogLevel_);
     }
+
+    muduo::net::EventLoop& Loop() { return loop_->get(); }
 
     template <typename F>
     void RunInLoopAndWait(F&& fn)
     {
         std::promise<void> done;
         std::future<void> finished = done.get_future();
-        loop_->runInLoop([&] { fn(); done.set_value(); });
+        Loop().runInLoop([&] { fn(); done.set_value(); });
         if (finished.wait_for(kSettleTimeout) != std::future_status::ready)
         {
             // 不能直接 return:loop 线程上的闭包按引用捕获了本栈帧,提前返回会让它访问已失效的栈。
@@ -428,7 +438,7 @@ protected:
             RedisConnectOptions options;
             options.password = password;
             options.reconnectIntervalSec = reconnectIntervalSec;
-            manager_->Connect(loop_, muduo::net::InetAddress("127.0.0.1", port_), std::move(options));
+            manager_->Connect(&Loop(), muduo::net::InetAddress("127.0.0.1", port_), std::move(options));
         });
     }
 
@@ -577,6 +587,16 @@ protected:
             case AuthReplyMode::kSwallow:
                 fake.stalled = true;
                 return;
+            case AuthReplyMode::kCloseWithoutReply:
+                fake.stalled = true;   // 此后这条连接上什么都不回
+                conn->shutdown();
+                return;
+            case AuthReplyMode::kWrongPassThenClose:
+                fake.stalled = true;
+                // 同 kOk 的断开:muduo 先把输出缓冲发完再发 FIN,客户端先处理拒绝、再读到 EOF。
+                conn->send("-WRONGPASS invalid username-password pair\r\n");
+                conn->shutdown();
+                return;
             }
             return;
         }
@@ -590,13 +610,14 @@ protected:
 
     // loopThread_ 排第一:最后析构。TearDown 已显式 reset 它,这里只是兜底顺序。
     std::unique_ptr<muduo::net::EventLoopThread> loopThread_;
-    muduo::net::EventLoop* loop_ = nullptr;
+    // 引用而非裸指针成员(裸指针成员门禁覆盖测试工程);SetUp 里绑定,TearDown 在 join 之后清空。
+    std::optional<std::reference_wrapper<muduo::net::EventLoop>> loop_;
     uint16_t port_ = 0;
     muduo::Logger::LogLevel savedLogLevel_ = muduo::Logger::WARN;
     std::unique_ptr<muduo::net::TcpServer> server_;
     std::unique_ptr<RedisManager> manager_;
 
-    // 以下只在 loop 线程上读写;测试线程经 RunInLoopAndWait 读取(latch 提供 happens-before)。
+    // 以下只在 loop 线程上读写;测试线程经 RunInLoopAndWait 读取(promise/future 提供 happens-before)。
     AuthReplyMode authMode_ = AuthReplyMode::kOk;
     bool disconnectAfterFirstAuthOk_ = false;   // 只对第一次 AUTH 成功生效
     bool disconnectDone_ = false;
@@ -828,12 +849,13 @@ TEST_F(RedisManagerAuth, ShutdownDuringHandshakeIsQuiet)
     EXPECT_FALSE(Contains(log, "Redis AUTH rejected by"));
     EXPECT_FALSE(Contains(log, "Redis disconnected")) << "Shutdown must not go through the disconnect/reconnect path";
     EXPECT_FALSE(Contains(log, "Attempting Redis reconnect"));
+    EXPECT_FALSE(Contains(log, "Redis AUTH timed out")) << "an explicit Shutdown is not an AUTH failure";
     EXPECT_FALSE(Contains(log, kTestPassword)) << "password leaked into the log";
 }
 
 // ---------------------------------------------------------------------------
 // 7. AUTH 一直没有应答:一个重连间隔后在回调栈外重建握手连接;全程不对业务可见、不调回调,
-//    每条连接上只有一条 AUTH。
+//    每条连接上只有一条 AUTH;截止时打带 metric 的超时 ERROR(不能只剩 INFO 级的重连日志)。
 // ---------------------------------------------------------------------------
 
 TEST_F(RedisManagerAuth, AuthTimeoutRebuildsConnection)
@@ -859,8 +881,12 @@ TEST_F(RedisManagerAuth, AuthTimeoutRebuildsConnection)
         EXPECT_EQ(DescribeCommands(cmds), "AUTH <pw>") << "connection #" << i;
     }
 
+    // 第 2 条收到 AUTH 的连接只能由截止定时器重建,而重建前上一条连接上的 AUTH 已发出且没有应答,
+    // 所以超时 ERROR 一定已经写出(与回环上的应答快慢无关)。
     const std::string log = CapturedLog();
     EXPECT_TRUE(Contains(log, "Attempting Redis reconnect")) << MaskPassword(log);
+    EXPECT_TRUE(Contains(log, "Redis AUTH timed out")) << "an unanswered AUTH must be reported: " << MaskPassword(log);
+    EXPECT_TRUE(Contains(log, "metric=zone_redis_auth_failed")) << MaskPassword(log);
     EXPECT_FALSE(Contains(log, "Redis AUTH ok to"));
     EXPECT_FALSE(Contains(log, "Redis AUTH rejected by"));
     EXPECT_FALSE(Contains(log, kTestPassword)) << "password leaked into the log";
@@ -881,4 +907,84 @@ TEST_F(RedisManagerAuth, NonPositiveReconnectIntervalFallsBackToDefault)
     const Snapshot snap = TakeSnapshot();
     EXPECT_EQ(snap.reconnectCalls, 1);
     EXPECT_TRUE(snap.zoneRedisConnected);
+}
+
+// ---------------------------------------------------------------------------
+// 9. 服务端收到 AUTH 后不回应答、直接断开:空应答不移交、不调回调;断线回调里的 ScheduleReconnect 不打乱截止定时器,
+//    到点按 AUTH 超时打 ERROR 并重建握手连接,新连接上的第一条也是唯一一条命令仍是 AUTH。
+// ---------------------------------------------------------------------------
+
+TEST_F(RedisManagerAuth, ServerClosingBeforeAuthReplyIsRetried)
+{
+    ConfigureServer(AuthReplyMode::kCloseWithoutReply, /*disconnectAfterFirstAuthOk=*/false);
+    StartManager(kTestPassword, kReconnectIntervalSec);
+    ASSERT_TRUE(WaitUntil([this] { return ConnectionsWithCommands() >= 2; }, kSettleTimeout))
+        << "a handshake connection closed before the AUTH reply was not rebuilt within the deadline";
+    // 断线日志单独等:它取决于客户端何时读到 EOF,与重建是否发生无关;失败时直接指向「断线没被察觉」。
+    EXPECT_TRUE(WaitUntil([] { return Contains(CapturedLog(), "Redis disconnected"); }, kSettleTimeout))
+        << "the server closing the handshake connection was never reported: " << MaskPassword(CapturedLog());
+
+    const Snapshot snap = TakeSnapshot();
+    EXPECT_EQ(snap.reconnectCalls, 0) << "a connection lost before the AUTH reply must never be handed to the business";
+    EXPECT_TRUE(snap.zoneRedisPresent) << "GetZoneRedis() must stay non-null after Connect";
+    EXPECT_FALSE(snap.zoneRedisConnected);
+    EXPECT_EQ(snap.pingSendFailures, 0);
+    EXPECT_EQ(snap.malformedFrames, 0);
+    for (std::size_t i = 0; i < snap.connections.size(); ++i)
+    {
+        const std::vector<RespCommand>& cmds = snap.connections[i].commands;
+        if (cmds.empty())
+        {
+            continue;
+        }
+        EXPECT_EQ(DescribeCommands(cmds), "AUTH <pw>") << "connection #" << i;
+    }
+
+    // 第 2 条收到 AUTH 的连接只能由截止定时器重建,而上一条连接上的 AUTH 始终没有非空应答,
+    // 所以重建时一定按超时报过 ERROR(与断线先于还是晚于截止无关)。
+    const std::string log = CapturedLog();
+    EXPECT_TRUE(Contains(log, "Redis AUTH timed out")) << MaskPassword(log);
+    EXPECT_TRUE(Contains(log, "metric=zone_redis_auth_failed")) << MaskPassword(log);
+    EXPECT_FALSE(Contains(log, "Redis AUTH ok to"));
+    EXPECT_FALSE(Contains(log, "Redis AUTH rejected by")) << "the server never replied, so nothing can be rejected";
+    EXPECT_FALSE(Contains(log, kTestPassword)) << "password leaked into the log";
+}
+
+// ---------------------------------------------------------------------------
+// 10. AUTH 被拒之后、截止之前服务端断开:拒绝当场打 ERROR;随后的断线不让连接移交、不调回调,
+//     断线回调里的 ScheduleReconnect 不打乱截止定时器,到点照常重建握手连接。
+// ---------------------------------------------------------------------------
+
+TEST_F(RedisManagerAuth, ServerClosingAfterRejectedAuthIsRetried)
+{
+    ConfigureServer(AuthReplyMode::kWrongPassThenClose, /*disconnectAfterFirstAuthOk=*/false);
+    StartManager(kTestPassword, kReconnectIntervalSec);
+    ASSERT_TRUE(WaitUntil(
+        [this] { return ConnectionsWithCommands() >= 2 && Contains(CapturedLog(), "Redis AUTH rejected by"); },
+        kSettleTimeout))
+        << "a rejected AUTH followed by a server close was not retried on a new connection within the deadline";
+    EXPECT_TRUE(WaitUntil([] { return Contains(CapturedLog(), "Redis disconnected"); }, kSettleTimeout))
+        << "the server closing the handshake connection was never reported: " << MaskPassword(CapturedLog());
+
+    const Snapshot snap = TakeSnapshot();
+    EXPECT_EQ(snap.reconnectCalls, 0) << "a connection whose AUTH was rejected must never be handed to the business";
+    EXPECT_TRUE(snap.zoneRedisPresent) << "GetZoneRedis() must stay non-null after Connect";
+    EXPECT_FALSE(snap.zoneRedisConnected);
+    EXPECT_EQ(snap.pingSendFailures, 0);
+    EXPECT_EQ(snap.malformedFrames, 0);
+    for (std::size_t i = 0; i < snap.connections.size(); ++i)
+    {
+        const std::vector<RespCommand>& cmds = snap.connections[i].commands;
+        if (cmds.empty())
+        {
+            continue;
+        }
+        EXPECT_EQ(DescribeCommands(cmds), "AUTH <pw>") << "connection #" << i;
+    }
+
+    const std::string log = CapturedLog();
+    EXPECT_TRUE(Contains(log, "WRONGPASS invalid username-password pair")) << MaskPassword(log);
+    EXPECT_TRUE(Contains(log, "metric=zone_redis_auth_failed")) << MaskPassword(log);
+    EXPECT_FALSE(Contains(log, "Redis AUTH ok to"));
+    EXPECT_FALSE(Contains(log, kTestPassword)) << "password leaked into the log";
 }

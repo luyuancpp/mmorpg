@@ -1,6 +1,11 @@
-# G4b-G 实现规格：登录排队在途占位逐个到期（新键 ZSET + 交票后保留 15s）
+# G4b-G 实现规格：登录排队在途占位逐个到期（新键 ZSET + 交票后保留 20s）
 
 > 状态：**规格，未落码、未编译、未测试**（AGENTS.md §10.1，待 Codex 验证）；负责人 2026-10-13 拍板走方案 A（`spec_G4b.md` §10 #11）。
+> **2026-10-15 修订（负责人对 §11 六条的指示原话是「按最标准的去做」，逐条结论见 §11）**：本批已按 10-13 的默认做法落码（未编译、未测试）；10-15 在其上改了两处行为，另外三条维持默认、一条定为硬门槛：
+> - **交票后宽限 15s → 20s**（§11 #1），快速通道占位寿命与取走后保留时长用同一个字段，随之为 20s（§11 #2）。正文的数字与算式已就地改为 20s（§0、§2、§4.2、§4.3、§5、§9、§10）；§4.4、§4.6、§6.3 的照写代码块与 §7.2 的 10-13 文档同步清单保留原文，按各处更正注理解。
+> - **整键 TTL 由无条件续期改为只延长不缩短**（§11 #6；§4.1、§4.5 已重写）。`AdmitTTL` 滚动调整不再有「幅度不超过 1min」的约束（§5.5）。
+> - 时间来源维持 login 进程时钟（§11 #3），不加 Lua 上界清理（§11 #4），真实 Redis 首跑定为 G4b-2 打开排队之前的**硬门槛**（§11 #5、§8.4）。
+> - 两处改动均**未编译、未测试**，待 Codex 验证（AGENTS.md §10.1）。§13 已补这两处用到的 miniredis / go-redis 行为的核实结果（U15–U17）。
 > 来由：`spec_G4b.md` §1.5（基线缺陷 Q1 / Q2）、R15、§10 #11、§11、§12；G1b 规格 §4.7 第 2、3 条。
 > **行号以 HEAD（`0aa1027bc`）为准**，G1b 已随 `d5cbb8a8e` 入库。工作区是几个会话共用的，评审这一轮期间它一直在变，所以下面的基线只是**快照（2026-10-13 09:07，只读重核）**：
 > - 本批要改的 7 个代码 / 配置文件里，6 个（`loginqueue/` 下的 `queue.go`、`capacity.go`、`metrics.go`、`queue_test.go`、`dispatcher_test.go`，以及 `config/config.go`）没有未提交改动，与 HEAD 一致。两份排队文档、拆 Redis 设计、`spec_G4b.md` 同样没有。
@@ -14,14 +19,14 @@
 
 ## 0. 结论速览
 
-- **做什么**：登录排队的「在途占位」从 `admitted:zone:{z}`（SET，整键滑动 TTL）换成新键 `admitted:zset:zone:{z}`（ZSET，分数 = 占位到期的 Unix 毫秒）。每个成员按自己的分数到期，计数前先清掉过期成员。客户端取走放行槽时不再撤占位，而是把它改成「现在 + 15s」到期。
+- **做什么**：登录排队的「在途占位」从 `admitted:zone:{z}`（SET，整键滑动 TTL）换成新键 `admitted:zset:zone:{z}`（ZSET，分数 = 占位到期的 Unix 毫秒）。每个成员按自己的分数到期，计数前先清掉过期成员。客户端取走放行槽时不再撤占位，而是把它改成「现在 + 20s」到期（10-13 定的是 15s，10-15 改为 20s，§11 #1）。
   - 修 Q1：快速通道的 `fast:<uuid>` 占位以前永远不会被单独删除，持续有人登录时余量被重复扣到 0。
   - 修 Q2：取走即撤占位，而 gate 的人数要等下一次上报才涨，开区时每拍都按「在线 0、在途 0」再放一满批。
 - **本规格在提纲之外自己定的四件事**（提纲没写，落码必须有结论；其中前三件列入 §11 #1–#3 待拍板，都给了默认做法；§11 #4、#5 是评审后补的两条）：
   1. **时间来源**：login 进程时钟，经 ARGV 传进脚本，`Queue` 上加一个可注入的 `now`。不用 Redis `TIME`（§4.2）。
-  2. **快速通道占位的寿命**：与「取走后」相同，取 15s，不取 `AdmitTTL`（60s）。快速通道是当场交票，等同已取走（§5.1、§11 #2）。
-  3. **交票后宽限**：代码常量 15s，不做成配置。C++ gate 实际每 **10 秒**上报一次人数（不是「每几秒」），15s 只留 5s 余量（§4.3、§11 #1）。
-  4. **整键 TTL 保留**，但只做垃圾回收：每次写占位都 `PEXPIRE` 到 `max(AdmitTTL, 15s) + 1min`。成员是否有效只看分数（§4.1）。
+  2. **快速通道占位的寿命**：与「取走后」相同，取交票后宽限（20s），不取 `AdmitTTL`（60s）。快速通道是当场交票，等同已取走（§5.1、§11 #2）。
+  3. **交票后宽限**：代码常量，不做成配置。C++ gate 实际每 **10 秒**上报一次人数（不是「每几秒」）：10-13 定 15s 只留 5s 余量，10-15 负责人改为 20s（两个上报周期，余量 10s，与 Java 版的余量相同；§4.3、§11 #1）。
+  4. **整键 TTL 保留**，但只做垃圾回收：每次写占位后保证整键至少还剩 `W = max(AdmitTTL, 20s) + 1min`，只延长不缩短（10-15 起；10-13 版是无条件 `PEXPIRE W`）。成员是否有效只看分数（§4.1）。
 - **不做**：不动 `Lookup` 的「取走后再轮询回排队中、名次 0」；不把 `PopAdmit` 改成单段 Lua；不新增配置键、指标、proto 字段（§5.8、§9）。
 - **规模**：Go 6 个文件（`queue.go` 是唯一的行为改动；`capacity.go`、`metrics.go`、`config.go` 只改注释和帮助文本；两个测试文件，新增 14 个用例）+ `login.yaml` 两段注释；文档 7 处由 Docs 阶段同步。本批不改 `go.mod` / `go.sum`（`go.mod` 上已有别的会话的 `go` 指令改动，本批不碰它），不改 C++、Java、PowerShell。
 - **Java 版**：已有同样的两点（Java 仓库 `LoginQueue.java`），本改动做完这两点即对齐，Java 代码不用改；`PARITY.md`「登录排队」行（2026-10-13 是第 **99** 行，不是 `spec_G4b.md` 写的 98）的措辞要改，原文与改法见 §12。本规格以下一律按行名引用这一行，不再写行号。
@@ -60,7 +65,7 @@
 
 ## 2. 目标行为
 
-一个占位成员的一生（`G` = 交票后宽限 15s，`now` = login 进程时钟的 Unix 毫秒）：
+一个占位成员的一生（`G` = 交票后宽限 20s（10-13 版为 15s），`now` = login 进程时钟的 Unix 毫秒）：
 
 | 路径 | 成员 | 写入时的分数（到期毫秒） | 之后 | 何时消失 |
 |---|---|---|---|---|
@@ -103,14 +108,17 @@
 | 成员 | 放行：`queueId`（UUID 字符串，`queue.go:163`）；快速通道：`fast:<uuid>` |
 | 分数 | 占位到期时刻，Unix **毫秒**，整数（约 1.8×10¹²，远小于 2⁵³，double 精确表示） |
 | 有效判据 | `score > now`。清理是闭区间：`ZREMRANGEBYSCORE key -inf now` 删掉 `score ≤ now` 的成员 |
-| 整键 TTL | 保留，但**只做垃圾回收**。每次写占位都 `PEXPIRE key W`，`W = max(AdmitTTL, G) + 1min`（默认 120000 ms） |
+| 整键 TTL | 保留，但**只做垃圾回收**，**只延长不缩短**（2026-10-15 起）：每次写占位都是先 `ZADD`，再看剩余 `PTTL`，小于 `W` 才 `PEXPIRE key W`。`W = max(AdmitTTL, G) + 1min`（默认 120000 ms），由写入的副本按自己的配置算 |
 | 为什么用新键名 | 新旧版本混跑时不会对同一个键做不同类型的操作（`WRONGTYPE`）。K8s 上排队从没开过，没有存量要迁移（F13） |
 
-**整键 TTL 为什么还要**：成员逐个到期靠「读的时候清」。zone 下线或被合走之后没有 login 再来读，剩下的成员没人清，键永久残留。有了整键 TTL，最后一次写入后 `W` 之内整键消失。
+**整键 TTL 为什么还要**：成员逐个到期靠「读的时候清」。zone 下线或被合走之后没有 login 再来读，剩下的成员没人清，键永久残留。有了整键 TTL，最后一次写入后整键在 `W` 之内消失（有副本配过更大的 `AdmitTTL` 时，按此前写入过的副本里最大的那个 `W`，见下）。
 
-**为什么可以无条件 `PEXPIRE W`**（Java 版是 `pttl < X 才 pexpire X`）：同一 zone 的所有副本配同一个 `AdmitTTL` 时，所有写入用同一个 `W`，而任何成员写入时的剩余寿命都 ≤ `max(AdmitTTL, G) < W`。后一次写入把整键到期时刻推到「那一刻 + W」，不会早于此前任何成员的到期时刻，所以不存在「把 TTL 缩短到某个成员之前」的情况。少一次 `PTTL`，脚本里也没有分支。
+**为什么只延长不缩短（2026-10-15 负责人定，§11 #6）**（10-13 版是每次写入无条件 `PEXPIRE W`）：`W` 由各副本按自己的 `AdmitTTL` 算（`queue.go` 的 `admittedKeyTTL`），而 `k8s_deploy.ps1` 从 `login.yaml` 读 `Queue.AdmitTTL` 写进 ConfigMap，排队开着时改值滚动，就有新旧两种 `W` 并存的窗口。无条件续期时，设大值副本的 `AdmitTTL` 为 `A₁`、小值副本为 `A₂`：小值副本的每次写入把整键到期**压回**「那一刻 + `max(A₂, G) + 1min`」，大值副本此前写的放行占位最长活到「写入时刻 + `A₁`」；`A₁ − A₂` 超过 1min，且小值副本写完后一段时间内该 zone 没有任何写入（例如满员：`free == 0` 时 dispatcher 不放行、快速通道不占位）时，整键会连同未到期的放行占位一起消失，下一拍按在途 0 最多多放一批 `C − O`。只延长不缩短之后，整键的到期时刻不早于任何一次写入的「写入时刻 + 写入方的 `W`」，而每个成员写入时的剩余寿命都 ≤ 写入方的 `max(AdmitTTL, G) <` 写入方的 `W`，所以整键不会先于任何成员到期，与各副本的 `AdmitTTL` 是否相同无关。这与 Java 版的做法（`pttl < X 才 pexpire X`）一致。
 
-**（评审后更正）「同一个 `W`」不是恒成立的**：`W` 由各副本按自己的 `AdmitTTL` 算（`queue.go` 的 `admittedKeyTTL`），而 `k8s_deploy.ps1` 从 `login.yaml` 读 `Queue.AdmitTTL` 写进 ConfigMap，排队开着时改值滚动，就有新旧 `AdmitTTL` 并存的窗口。设大值副本的 `AdmitTTL` 为 `A₁`、小值副本为 `A₂`：小值副本的每次写入把整键到期推到「那一刻 + `max(A₂, G) + 1min`」，大值副本此前写的放行占位最长活到「写入时刻 + `A₁`」。所以只要 `A₁ − A₂ ≤ 1min`（`admittedKeyGCSlack`），整键仍不会先于任何成员到期，只是给 login / Redis 时钟偏差留的余量被吃掉相应部分；超过 1min 时，小值副本写完后若 `max(A₂, G) + 1min` 之内该 zone 没有任何写入（例如满员：`free == 0` 时 dispatcher 不放行、快速通道不占位），整键会连同大值副本写的未到期放行占位一起消失，下一拍按在途 0 最多多放一批 `C − O`。后果与 §5.3「占位键被淘汰或误删」同类，触发条件窄，约束与处置写在 §5.5；代码改成条件续期留给负责人决定（§11 #6）。
+- **代价**：每次写入多一次 `PTTL` 与一个分支；`AdmitTTL` 调小之后，已续上的较大整键 TTL 要自然走完才收敛（只影响 zone 下线后键多留多久，不影响成员是否有效）；放行与取走原来是纯 MULTI 命令，现在要先读 `PTTL` 再决定，改为一段共用脚本 `admittedHoldScript`（§4.5）。
+- **为什么不用 `PEXPIRE … GT`**：`GT` 把没有 TTL 的键当作 TTL 无限大，「新 TTL 大于无限大」永不成立。刚由 `ZADD` 建出来的键没有 TTL，用 `GT` 就永远设不上过期，正好在「zone 下线后没人再来写」这个整键 TTL 唯一要兜底的场景里永久残留。miniredis v2.35.0 已对源码核实（`cmd_generic.go:154-159`，注释写明 `no exp == infinity`）；真实 Redis 7 的同一语义凭记忆，**未核实**（§13 U17）。所以脚本写成显式比较：`if PTTL < W then PEXPIRE W end`。
+- **为什么必须先 `ZADD` 再读 `PTTL`**：键不存在时 `PTTL` 回 −2，此时的 `PEXPIRE` 打在空键上什么也不做，随后 `ZADD` 建出的键就没有 TTL。先 `ZADD`，键一定存在，`PTTL` 只会是 −1（没有 TTL）或剩余毫秒，−1 < `W` 恒成立，新键一定被设上 TTL。
+- **两段脚本里同样的两行**：`reserveFastPathSlotScript`（快速通道）与 `admittedHoldScript`（放行、取走）的「`ZADD` + 条件续期」是重复的，两段脚本互相调不到，代码注释写明改一处要同步改另一处；`TestAdmittedKeyTTL_SmallerWindowNeverShortensIt` 与 `TestAdmittedKey_EveryWritePathSetsTTLWhenMissing` 对三条写路径逐条钉住（§6.2 T15、T16）。计数脚本不续期，不受影响。
 
 **多留的 1 分钟**（常量 `admittedKeyGCSlack`）：分数用 login 时钟，整键 TTL 用 Redis 时钟，两者有偏差时不能让整键先于成员消失；同时保证 `PEXPIRE` 的参数恒 ≥ 60000，不会因为配置了亚毫秒的 `AdmitTTL` 变成 `PEXPIRE key 0`（那等于删键）。
 
@@ -129,27 +137,36 @@
 | 与 Java 版 | 相同（`LoginQueue.java:159`、`:206-209`、`:238`） | 不同 |
 | 与本包既有做法 | 相同：排队令牌过期、入队分数、gate 票过期都用 login 墙钟（`queue.go:164`、`:169`；`gatetoken.go:118`、`:259`） | 本包没有先例 |
 
-**理由**：占位是 15s / 60s 量级的软状态，不是资产数据。同一 zone 的 login 副本跑在做了 NTP 同步的节点上，偏差按毫秒到几十毫秒估（**假设，未测**），相对 15s 可以忽略。login 的墙钟本来就是这条链路的时间基准（gate 票和排队令牌的过期都靠它），没有引入新的依赖种类。换来的是测试完全确定、脚本里没有时间运算、与 Java 版和本包既有做法一致。（两种做法都不用改 `go.mod`，这一点不构成取舍。）
+**理由**：占位是 20s / 60s 量级的软状态，不是资产数据。同一 zone 的 login 副本跑在做了 NTP 同步的节点上，偏差按毫秒到几十毫秒估（**假设，未测**），相对 20s 可以忽略（2026-10-15 负责人确认维持本选择，并把「login 节点做 NTP 时钟同步」明确为部署要求，§11 #3）。login 的墙钟本来就是这条链路的时间基准（gate 票和排队令牌的过期都靠它），没有引入新的依赖种类。换来的是测试完全确定、脚本里没有时间运算、与 Java 版和本包既有做法一致。（两种做法都不用改 `go.mod`，这一点不构成取舍。）
 
-**代价（如实写）**。记某个副本的钟比别人快 `δ`（慢则方向相反），偏差达到宽限量级（≥ 15s）才有可见后果：
+**代价（如实写）**。记某个副本的钟比别人快 `δ`（慢则方向相反），偏差达到宽限量级（≥ 20s）才有可见后果：
 
-- **故障副本还在跑的时候**：它每次来读（它经手的每个 assign-gate、它当 leader 时的每一拍）都用自己的「现在」清理，别人写的、其实还有效的占位（分数 ≤ 它的钟）全部被清掉，退化成 Q2 的旧行为，**多放**。它自己写的占位，由它自己读时按自己的钟清，真实寿命仍是 15s / 60s；但在别的副本看来这些占位要到「真实时间 + δ」才到期。钟慢的副本反过来：它写的占位在别人眼里一写下就过期（不占名额，多放），它读时清不掉别人已到期的占位（由别的副本来清）。
-- **故障副本恢复（NTP 校回）或被摘掉之后，不会立刻自愈**：它在最后 15s（快速通道、取走）/ 60s（放行未取）内写下的占位，分数停在「故障钟 + 15s / 60s」，要再过 **δ** 才到期。这段时间里该 zone 的有效容量少掉这些占位的个数，上界是它那一刻能写进去的 `C − O`。旧实现没有「占位按某个副本的钟到期」这回事，这是本改动**新增**的失败模式。
-- **整键 TTL 只在一种情况下兜底**：`ZREMRANGEBYSCORE` 只清 `-inf … now` 这一个方向，分数远在未来的成员没人清；而每次写占位都把整键 TTL 续到 `W`。所以只要这个 zone 还有名额在流转（有写入），这些成员就留满 `δ`。只有名额被它们占满、整个 zone 完全停放时才没有任何写入（计数脚本不续 TTL；`free == 0` 时 assign-gate 不调占位脚本，`assigngatelogic.go:109-110`，dispatcher 不放行，`dispatcher.go:278-280`；此前已放行的条目最迟 `AdmitTTL` 内取完），整键在最后一次写入后 `W` 过期，即完全停放最长约 `AdmitTTL + W`（默认 3 分钟）后自愈。
-- **止血命令**：`redis-cli DEL admitted:zset:zone:<z>`。代价是在途占位清零，最多多放一批 `C − O`（与「占位键被淘汰或误删」同一行，§5.3）。判断方法：`redis-cli ZRANGE admitted:zset:zone:<z> 0 -1 WITHSCORES` 里有分数比当前毫秒时间戳大出 `max(AdmitTTL, 15s)` 以上的成员，就是这种残留。写进 runbook 模式 2（§7.2）。
+- **故障副本还在跑的时候**：它每次来读（它经手的每个 assign-gate、它当 leader 时的每一拍）都用自己的「现在」清理，别人写的、其实还有效的占位（分数 ≤ 它的钟）全部被清掉，退化成 Q2 的旧行为，**多放**。它自己写的占位，由它自己读时按自己的钟清，真实寿命仍是 20s / 60s；但在别的副本看来这些占位要到「真实时间 + δ」才到期。钟慢的副本反过来：它写的占位在别人眼里一写下就过期（不占名额，多放），它读时清不掉别人已到期的占位（由别的副本来清）。
+- **故障副本恢复（NTP 校回）或被摘掉之后，不会立刻自愈**：它在最后 20s（快速通道、取走）/ 60s（放行未取）内写下的占位，分数停在「故障钟 + 20s / 60s」，要再过 **δ** 才到期。这段时间里该 zone 的有效容量少掉这些占位的个数，上界是它那一刻能写进去的 `C − O`。旧实现没有「占位按某个副本的钟到期」这回事，这是本改动**新增**的失败模式。
+- **整键 TTL 只在一种情况下兜底**：`ZREMRANGEBYSCORE` 只清 `-inf … now` 这一个方向，分数远在未来的成员没人清；而每次写占位都保证整键 TTL 至少还剩 `W`（2026-10-15 起只延长不缩短，各副本 `W` 相同时效果与此前的无条件续期一样）。所以只要这个 zone 还有名额在流转（有写入），这些成员就留满 `δ`。只有名额被它们占满、整个 zone 完全停放时才没有任何写入（计数脚本不续 TTL；`free == 0` 时 assign-gate 不调占位脚本，`assigngatelogic.go:109-110`，dispatcher 不放行，`dispatcher.go:278-280`；此前已放行的条目最迟 `AdmitTTL` 内取完），整键在最后一次写入后 `W` 过期（各副本 `W` 相同时；否则按写入过的副本里最大的 `W`），即完全停放最长约 `AdmitTTL + W`（默认 3 分钟）后自愈。
+- **止血命令**：`redis-cli DEL admitted:zset:zone:<z>`。代价是在途占位清零，最多多放一批 `C − O`（与「占位键被淘汰或误删」同一行，§5.3）。判断方法：`redis-cli ZRANGE admitted:zset:zone:<z> 0 -1 WITHSCORES` 里有分数比当前毫秒时间戳大出 `max(AdmitTTL, 20s)` 以上的成员，就是这种残留。写进 runbook 模式 2（§7.2）。
 - 这种副本签出的 gate 票过期时刻也同样是错的（`gatetoken.go:118`），属于同一个运维故障；但「恢复后还要再拖 δ」是占位独有的。是否在脚本里再加一道上界清理把它压到分钟级，见 §11 #4（默认不加）。
 - 放行槽 `admit:{id}` 的 TTL 走 Redis 时钟，占位分数走 login 时钟，两种时钟混用。偏差导致「放行槽还在、占位已被清」时，取走那一步用**普通 ZADD**（不是 `XX`）把占位补回来，见 §4.4 第 5 步。
 
-**退路**：L-14 压测或线上发现时钟偏差不可忽略时，改用 Redis `TIME`。改动面只有 §4.4 的两段 Lua 开头加两行取时间、`holdAdmitted` 改成 Lua、测试改用 `mr.SetTime`；键、成员、分数含义都不变，新旧两种写法可以混跑（分数都是 Unix 毫秒）。miniredis v2.35.0 支持（上表），不用动 `go.mod`；剩下没核实的只有真实 Redis 一侧（「`TIME` 之后允许写」）。
+**退路**：L-14 压测或线上发现时钟偏差不可忽略时，改用 Redis `TIME`。改动面只有 §4.4 的两段 Lua 开头加两行取时间、`holdAdmitted` 改成 Lua（2026-10-15 起它已经是一段脚本 `admittedHoldScript`，只需同样在开头取时间）、测试改用 `mr.SetTime`；键、成员、分数含义都不变，新旧两种写法可以混跑（分数都是 Unix 毫秒）。miniredis v2.35.0 支持（上表），不用动 `go.mod`；剩下没核实的只有真实 Redis 一侧（「`TIME` 之后允许写」）。
 
-### 4.3 交票后宽限：常量 15s
+### 4.3 交票后宽限：常量 20s（10-13 定 15s，2026-10-15 负责人改为 20s）
 
-- **是常量，不是配置**。`defaultHandoffGrace = 15 * time.Second`，写在 `queue.go`。理由：它由「gate 上报周期 + 建连时间」决定，不是运维该调的旋钮；Java 版同样是常量（`LoginQueue.java:37`）；不新增配置键，G4b-2 的 `New-LoginQueueYaml`（`spec_G4b.md` §4.5）与 `login_queue_wiring_test.go:16-26` 的结构体字面量都不用动。
+- **是常量，不是配置**。`defaultHandoffGrace = 20 * time.Second`，写在 `queue.go`。理由：它由「gate 上报周期 + 建连时间」决定，不是运维该调的旋钮；Java 版同样是常量（`LoginQueue.java:37`）；不新增配置键，G4b-2 的 `New-LoginQueueYaml`（`spec_G4b.md` §4.5）与 `login_queue_wiring_test.go:16-26` 的结构体字面量都不用动。
 - **`Queue.handoffGrace` 字段只为同包测试而设**：既有的两个集成用例靠「取走即腾出名额」推进（§6.4），要能把宽限设成 0。`New` 不收这个参数，生产路径拿不到别的值。
-- **依据**：票交出去之后，这个人要等「连上 gate（`c`）→ gate 下一次上报（周期 `T` = 10s，F10）→ login 读 etcd（无缓存，F9）」才出现在 `online` 里，最坏滞后 `c + T`。15s = 一个上报周期 + 5s 建连与传播余量。Java 版的 15s 对应的是它自己 5s 的发布周期（`GateNode.java:79`），余量 10s；本仓库照搬 15s，余量只有一半。是否调到 20s 见 §11 #1。数值**待压测确认**（L-14 要测「交票 → gate 会话建立」的分布）。
-- **与 gate 上报周期没有机械关联**：`cpp/nodes/gate/main.cpp:408` 的 `10.0` 改了，这里不会报错。常量注释里写明出处，`TestNew_DefaultsHandoffGraceAndClock` 把 15s 钉住（改它必须有意识地改测试与文档）。登记为风险 R4。
+- **依据**：票交出去之后，这个人要等「连上 gate（`c`）→ gate 下一次上报（周期 `T` = 10s，F10）→ login 读 etcd（无缓存，F9）」才出现在 `online` 里，最坏滞后 `c + T`。20s = 两个上报周期 = 一个上报周期的滞后 + 10s 建连与传播余量。Java 版的 15s 对应的是它自己 5s 的发布周期（`GateNode.java:79`），余量同为 10s。10-13 本仓库照搬 15s，余量只有 5s，是 Java 的一半；10-15 负责人按「最标准」改为 20s，让两版的建连余量相同（§11 #1）。数值仍**待压测确认**（L-14 要测「交票 → gate 会话建立」的分布）。
+- **与 gate 上报周期没有机械关联**：`cpp/nodes/gate/main.cpp:408` 的 `10.0` 改了，这里不会报错。常量注释里写明出处，`TestNew_DefaultsHandoffGraceAndClock` 把 20s 钉住（改它必须有意识地改测试与文档）。登记为风险 R4。
 
 ### 4.4 `loginqueue/queue.go`
+
+> **2026-10-15 更正（本节代码块是 10-13 的照写稿，保留原文；现行代码以 `queue.go` 为准，未编译、未测试）**。落码后有三处已与下面不同：
+> 1. `const defaultHandoffGrace = 20 * time.Second`，常量注释改写为「两个上报周期：一个周期的上报滞后，再留 10s 建连与传播余量；Java 15s / 5s 周期，余量同为 10s」（§4.3、§11 #1）。下文代码与注释里的 15s 一律按 20s 理解。
+> 2. 新增共用脚本 `admittedHoldScript`：`ZADD KEYS[1] ARGV[1] ARGV[2]`，然后 `if PTTL < tonumber(ARGV[3]) then PEXPIRE ARGV[3] end`，最后 `return 1`（`ARGV` = 占位到期毫秒、成员、`W` 毫秒）。`holdAdmitted` 的签名改为 `(ctx, c redis.Scripter, zoneID, member, hold) *redis.Cmd`，内部用 `admittedHoldScript.Eval`。第 6 步 `PopAdmit` 照旧在 MULTI 里先 `SET` 放行槽，再把这段 `EVAL` 排进同一个 MULTI，Exec 出错照旧 `continue`；第 5 步取走直接在 `q.rdb` 上执行这段脚本（单段脚本本身原子，不再包 `TxPipeline`），出错照旧只记那条 ERROR、这次取走照常成功。
+>    - 用 `Eval` 不用 `Script.Run`：`Run` 先发 `EVALSHA`，当场拿到 `NOSCRIPT` 才回退 `EVAL`；排在 pipeline 里的命令要到 `Exec` 才有结果，来不及回退，Redis 重启或 `SCRIPT FLUSH` 之后会出现「放行槽写进去了、占位没写」。代价是每次放行都带脚本全文（约 150 字节）。
+>    - 必须 `return 1`：脚本回 nil 时 go-redis 记为 `redis.Nil`，排在 MULTI 里会让 `Exec` 回 error，放行被当作失败。
+> 3. `reserveFastPathSlotScript` 里无条件的 `redis.call('PEXPIRE', KEYS[1], ARGV[5])` 换成与上面相同的条件续期，`ARGV[5]` 的含义改为 `W`（整键 TTL 下限）。`admittedKeyTTL` 的注释重写为「只增不减」的理由、代价与两个陷阱（不能用 `GT`、必须先 `ZADD` 后读 `PTTL`，§4.1）。
+>
+> 逐条依据见 §4.1、§4.5、§13 U15–U17。
 
 **import**：在现有 import 基础上加 `"github.com/zeromicro/go-zero/core/logx"`（go-zero 已是依赖，`dispatcher.go:51` 在用）。`uuid`、`json`、`errors`、`fmt`、`time`、`context` 继续使用。
 
@@ -377,15 +394,17 @@ func (q *Queue) TryReserveFastPathSlot(ctx context.Context, zoneID uint32, budge
 | 操作 | 形式 | KEYS / ARGV 或命令序列 | 原子范围 | 返回 | 键不存在 / 出错 |
 |---|---|---|---|---|---|
 | 计数 | Lua `admittedCountScript` | `KEYS[1]` 占位键；`ARGV[1]` now_ms | 清过期 + 计数 | 未到期成员数 | 键不存在回 0；Redis 出错回 error，调用方按 §5.3 处理 |
-| 快速通道占位 | Lua `reserveFastPathSlotScript` | `KEYS[1]` 占位键；`ARGV` = now_ms、budget、member、到期毫秒、整键 TTL 毫秒 | 清过期 + 判定 `< budget` + 占位 + 续整键 TTL | 1 / 0 | 键不存在按 0 个占位处理；出错回 `(false, err)`；`budget == 0` 不碰 Redis |
-| dispatcher 放行 | MULTI（`PopAdmit`） | `SET admit:{id} <slot>`（TTL = `AdmitTTL`，与现状同一行代码）；`ZADD 占位键 <now+AdmitTTL> <queueId>`；`PEXPIRE 占位键 W` | 三条一起成功或一起不执行（单条命令类型错误除外） | — | Exec 出错：`continue`，条目已弹出、未计入放行数（既有行为，§5.3） |
-| 取走后续期 | MULTI（`consumeAdmitAndSign`） | `ZADD 占位键 <now+G> <queueId>`；`PEXPIRE 占位键 W` | 两条一起 | — | 出错只记一条 ERROR，这次取走照常成功（§5.3） |
+| 快速通道占位 | Lua `reserveFastPathSlotScript` | `KEYS[1]` 占位键；`ARGV` = now_ms、budget、member、到期毫秒、`W` 毫秒 | 清过期 + 判定 `< budget` + 占位 + 整键 TTL 不足 `W` 才续（2026-10-15 起） | 1 / 0 | 键不存在按 0 个占位处理；出错回 `(false, err)`；`budget == 0` 不碰 Redis |
+| dispatcher 放行 | MULTI（`PopAdmit`） | `SET admit:{id} <slot>`（TTL = `AdmitTTL`，与现状同一行代码）；`EVAL admittedHoldScript`（`KEYS[1]` 占位键；`ARGV` = `now+AdmitTTL`、queueId、`W` 毫秒：`ZADD` + 不足 `W` 才 `PEXPIRE`）。10-13 版这里是 `ZADD` + 无条件 `PEXPIRE` 两条 | 两条（`SET` 与 `EVAL`）一起成功或一起不执行（单条命令类型错误除外） | — | Exec 出错：`continue`，条目已弹出、未计入放行数（既有行为，§5.3） |
+| 取走后续期 | Lua `admittedHoldScript`（`consumeAdmitAndSign`，直接在 `q.rdb` 上 `EVAL`） | `KEYS[1]` 占位键；`ARGV` = `now+G`、queueId、`W` 毫秒。10-13 版是 MULTI{`ZADD`, `PEXPIRE`} | `ZADD` + 条件续期在一段脚本里 | 1 | 出错只记一条 ERROR，这次取走照常成功（§5.3） |
 
-放行和取走这两处是「只写、不用先读再决定」，MULTI 就够，与 `PopAdmit` 既有写法一致，不需要 Lua。只有计数和快速通道要先读后判，才用 Lua。
+10-13 版放行和取走都是「只写、不用先读再决定」，用 MULTI，与 `PopAdmit` 既有写法一致。2026-10-15 改为整键 TTL 只延长不缩短后，这两处也要先读 `PTTL` 再决定是否续期，所以改用一段共用脚本 `admittedHoldScript`：放行仍是一个 MULTI（`SET` 放行槽 + `EVAL` 这段脚本），原子范围与失败语义与改动前的 MULTI{`SET`, `ZADD`, `PEXPIRE`} 逐条一致；取走只剩这一段脚本，本身原子。两处都用 `EVAL` 而不是 `EVALSHA`，理由见 §4.4 开头的更正注。计数脚本只清过期成员再计数、从不续期，没有改。
 
 go-redis 把 `int64` / `uint32` 参数编码成十进制字符串，`float64` 分数用 `strconv.AppendFloat(…, 'f', -1, 64)`（go-redis v9.16.0 模块缓存 `internal/proto/writer.go:103`、`:131`、`:232-233`，已对源码核实），毫秒时间戳不会变成科学计数法；`queue.go:172` 的入队分数是同一种写法。脚本里只对 `budget` 做 `tonumber`，时间戳原样透传，没有 Lua 侧的数字格式化问题。
 
 ### 4.6 `capacity.go`、`metrics.go`、`config.go`、`login.yaml`（只改注释与帮助文本）
+
+> **2026-10-15 更正（下面的代码块是 10-13 的照写稿，保留原文；现行文本以各文件为准）**：`metrics.go` 注释与帮助文本、`config.go` 的 `QueueConf` 注释、`login.yaml` 的 `Queue:` 段注释里的 15s 已改为 20s（`login.yaml` 注明 10-13 定 15s、10-15 改 20s）。10-15 上午曾在 `login.yaml` / `config.go` 补过「排队开着时 `AdmitTTL` 调整幅度不超过 1min，更大的先 `-LoginQueue off` 再滚」，随整键 TTL 改为只延长不缩短已删掉，换成「排队开着时也可以滚动调整；调小之后，已续上的较大整键 TTL 要自然走完才收敛」（§5.5）。`capacity.go` 另有 G1b 评审补漏的改动（`freeSlotsFromCandidates`，见设计稿 Dispatcher Loop），与本批无关。
 
 **`capacity.go:14-21`** 改为：
 
@@ -498,17 +517,17 @@ go-redis 把 `int64` / `uint32` 参数编码成十进制字符串，`float64` �
 ### 5.1 占位的生命周期与几个边角
 
 - **放行未取**：分数 = 放行时刻 + `AdmitTTL`，与放行槽 `admit:{id}` 的 TTL 同长。客户端始终不来取：放行槽 60s 后过期，占位在同一时刻（± 时钟偏差）到点，下一次计数时清掉。
-- **取走**：只发生一次（`GETDEL` 只成功一次）。取走时把分数改成「取走时刻 + 15s」。多数情况是缩短（轮询间隔 2s，放行后几秒就取走）；临到 60s 才取则是延长。
-- **重复轮询**：第二次 `Lookup` 的 `GETDEL` 回空，在改分数之前就返回，占位不会被反复续期。客户端看到的仍是「排队中、名次 0」（F6，本批不改），按协议它会每 2s 继续轮询直到 1h。所以 **`holdAdmitted` 只能留在 `consumeAdmitAndSign` 里、`GETDEL` 判空与 `signFn` 成功之后**：挪到判空之前或挪进 `Lookup`，每次轮询都会把占位续 15s，占位永不到期，Q1 换个形态复发。由 T13 钉住。
-- **取走时占位已被清**（login 钟比 Redis 快）：普通 ZADD 把它补回来，照样占 15s。Java 版这里用 `ZADD XX`、不补（`LoginQueue.java:138`）。本仓库不照抄：这个人确实马上要占一个名额，补回来只会多扣一个名额 15s，不补则会多放一个人；补回来也让新旧版本混跑时新版的计数更准（§5.5）。
+- **取走**：只发生一次（`GETDEL` 只成功一次）。取走时把分数改成「取走时刻 + 20s」。多数情况是缩短（轮询间隔 2s，放行后几秒就取走）；临到 60s 才取则是延长。
+- **重复轮询**：第二次 `Lookup` 的 `GETDEL` 回空，在改分数之前就返回，占位不会被反复续期。客户端看到的仍是「排队中、名次 0」（F6，本批不改），按协议它会每 2s 继续轮询直到 1h。所以 **`holdAdmitted` 只能留在 `consumeAdmitAndSign` 里、`GETDEL` 判空与 `signFn` 成功之后**：挪到判空之前或挪进 `Lookup`，每次轮询都会把占位续 20s，占位永不到期，Q1 换个形态复发。由 T13 钉住。
+- **取走时占位已被清**（login 钟比 Redis 快）：普通 ZADD 把它补回来，照样占 20s。Java 版这里用 `ZADD XX`、不补（`LoginQueue.java:138`）。本仓库不照抄：这个人确实马上要占一个名额，补回来只会多扣一个名额 20s，不补则会多放一个人；补回来也让新旧版本混跑时新版的计数更准（§5.5）。
 - **`signFn` 失败**：在改分数之前返回（与现状的「在 SREM 之前返回」位置相同）。放行槽已删，占位保持放行时的分数，最迟 `AdmitTTL` 到点。不主动回收：签票失败意味着密钥配置错或没有 gate，都不是多一个名额能解决的。由 T14 钉住。
 - **meta 读不到 zone**：跳过改分数（现状是跳过 SREM），占位最迟 `AdmitTTL` 到点。
-- **快速通道**：`fast:<uuid>` 从写入起 15s 到点。占位成功但随后 `signFastPath` 失败（没有候选 gate 或签名失败，`assigngatelogic.go:191-211`）时不回收，15s 后自己消失（现状是随整键 TTL，不确定多久）。
-- **快速通道为什么不取 `AdmitTTL`**：`AdmitTTL` 的含义是「放行槽等客户端来取的时限」。快速通道没有「等人来取」这一段，票在同一个应答里交出去，状态等同排队路径的「已取走」。若取 60s，每个快速通道玩家连上 gate 之后还要被重复扣约 50s：一批人涌入后名额要多停约 50s 才放回来，Q1 的现象（放一批、停一阵）只是从「不定期」变成「约 50s」，没有消除。数字见 §5.2。Java 版取的是 60s（`LoginQueue.java:206-209`），这一点两版不同，列入 §11 #2。
+- **快速通道**：`fast:<uuid>` 从写入起 20s 到点（与取走后同一个字段 `handoffGrace`）。占位成功但随后 `signFastPath` 失败（没有候选 gate 或签名失败，`assigngatelogic.go:191-211`）时不回收，20s 后自己消失（现状是随整键 TTL，不确定多久）。
+- **快速通道为什么不取 `AdmitTTL`**：`AdmitTTL` 的含义是「放行槽等客户端来取的时限」。快速通道没有「等人来取」这一段，票在同一个应答里交出去，状态等同排队路径的「已取走」。若取 60s，每个快速通道玩家连上 gate 之后还要被重复扣约 50s：一批人涌入后名额要多停约 50s 才放回来，Q1 的现象（放一批、停一阵）只是从「不定期」变成「约 50s」，没有消除。数字见 §5.2。Java 版取的是 60s（`LoginQueue.java:206-209`），这一点两版不同，列入 §11 #2（2026-10-15 负责人维持与取走后相同，即 20s）。
 
 ### 5.2 容量计算的变化（算式）
 
-记号：`C` 容量，`O` gate 上报的在线数（滞后），`A` 未到期的占位数，`free = max(0, C − O − A)`；`G` = 15s，`T` = 10s（gate 上报周期），`c` = 交票到 gate 上建立会话的耗时，`φ ∈ [0, T)` = 距下一次上报的相位，`v = c + φ` = 这个人出现在 `O` 里的时刻（相对交票）。
+记号：`C` 容量，`O` gate 上报的在线数（滞后），`A` 未到期的占位数，`free = max(0, C − O − A)`；`G` = 20s（2026-10-15 起；10-13 版按 15s 算的数字已全部按 20s 重算），`T` = 10s（gate 上报周期），`c` = 交票到 gate 上建立会话的耗时，`φ ∈ [0, T)` = 距下一次上报的相位，`v = c + φ` = 这个人出现在 `O` 里的时刻（相对交票）。
 
 **一个人被算了几遍**（交票之后）：
 
@@ -519,24 +538,24 @@ go-redis 把 `int64` / `uint32` 参数编码成十进制字符串，`float64` �
 | `v > G` 时的 `[G, v)` | **0 遍**，时长 `v − G` | 0 遍 | 1 遍（占位不走，人还没进 `O`） |
 | `max(v, G)` 之后 | 1 遍（`O`） | 1 遍 | **2 遍，直到整键闲置 60s** |
 
-**双计窗口**（少放的方向）：`G − v = 15 − c − φ` 秒。`c` 取 1s 时范围 (4s, 14s]，平均 9s。
+**双计窗口**（少放的方向）：`G − v = 20 − c − φ` 秒。`c` 取 1s 时范围 (9s, 19s]，平均 14s（10-13 版 `G` = 15s 时是 (4s, 14s]、平均 9s）。
 
-- 瞬时少放的名额数 ≈ 交票速率 `λ`（人/秒）× 平均双计时长。`λ = 3` 约 27 个；`λ = 100` 约 900 个，最多 `15λ`。
-- 一次涌入 `B` 人：最多 `B` 个名额多停 `15 − v` 秒（修复前快速通道是「直到整键闲置 60s」，持续有人登录时无上界）。
+- 瞬时少放的名额数 ≈ 交票速率 `λ`（人/秒）× 平均双计时长。`λ = 3` 约 42 个；`λ = 100` 约 1400 个，最多 `20λ`。
+- 一次涌入 `B` 人：最多 `B` 个名额多停 `20 − v` 秒（修复前快速通道是「直到整键闲置 60s」，持续有人登录时无上界）。
 - 放行后没人来取：1 个名额占 `AdmitTTL`（60s），与现状的设计意图相同。
-- 快速通道若取 `AdmitTTL`（§11 #2 的备选）：平均双计约 54s，瞬时少放 ≈ `54λ`，是默认做法的 6 倍。
+- 快速通道若取 `AdmitTTL`（§11 #2 的备选，未采用）：平均双计约 54s，瞬时少放 ≈ `54λ`，约为现行做法（`14λ`）的 4 倍。
 
-**漏计窗口**（多放的方向）：只在 `c + φ > 15s` 时出现，时长 `c + φ − 15`，最长 `c − 5` 秒。建连在 5s 以内时为 0。
+**漏计窗口**（多放的方向）：只在 `c + φ > 20s` 时出现，时长 `c + φ − 20`，最长不到 `c − 10` 秒（`φ < 10s`）。建连在 10s 以内时为 0（10-13 版是 5s 以内）。
 
 - 修复前（排队路径）每个人都有 `c + φ` 秒的漏计，平均 `c + 5` 秒。开区时 dispatcher 约每 2～3s 就能再放一满批（客户端轮询间隔 2s + 至多一拍 1s），gate 第一次上报前的 10s 内可放进 4～5 倍容量（推断，未实测）。
-- 修复后正常情况（`c ≤ 5s`）开区不超发。
-- gate 迟迟不上报或建连普遍超过 5s 时：任一时刻的在途占位仍 ≤ `C − O`（快速通道的判定是原子的，dispatcher 按 `free` 放），占位最快 15s 才放回，所以多放的节奏从「约每 2～3s 一批」降到「约每 17～18s 一批」（15s 宽限 + 轮询与一拍），每批 ≤ `C − O`。这是有界改善，不是消除。
-- gate 票有效期 10 分钟（F11），远大于任何宽限：拿了票超过 15s 才连上的人，名额已经放给别人，他连上就是多 1 人。上界 = 宽限之外才连上的人数；gate 侧另有连接上限（`bin/etc/base_deploy_config.yaml:126` 的 `GateMaxConnections`）。
+- 修复后正常情况（`c ≤ 10s`）开区不超发。
+- gate 迟迟不上报或建连普遍超过 10s 时：任一时刻的在途占位仍 ≤ `C − O`（快速通道的判定是原子的，dispatcher 按 `free` 放），占位最快 20s 才放回，所以多放的节奏从「约每 2～3s 一批」降到「约每 22～23s 一批」（20s 宽限 + 轮询与一拍），每批 ≤ `C − O`。这是有界改善，不是消除。
+- gate 票有效期 10 分钟（F11），远大于任何宽限：拿了票超过 20s 才连上的人，名额已经放给别人，他连上就是多 1 人。上界 = 宽限之外才连上的人数；gate 侧另有连接上限（`bin/etc/base_deploy_config.yaml:126` 的 `GateMaxConnections`）。
 
-**放行节奏的上界（修复后；判读压测与 runbook 用）**：每次放行都以 `O + A ≤ C` 为界；一个名额被排队放行的人拿走后，最早要到「取走 + 15s」才可能放回，而且前提是这个人没有进 `O`。所以：
+**放行节奏的上界（修复后；判读压测与 runbook 用）**：每次放行都以 `O + A ≤ C` 为界；一个名额被排队放行的人拿走后，最早要到「取走 + 20s」才可能放回，而且前提是这个人没有进 `O`。所以：
 
 - 放进去的人留在线上（正常玩家）：名额从占位转给在线数，不放回。排队的长期放行速率 = 在线玩家的离开速率；`O + A` 顶到 `C` 之后 `q_admitted` 不涨是**正常回压**，不是 dispatcher 卡死。
-- 拿了票不连 gate，或连上很快就走：名额每「取走延迟（≤ 轮询 2s + 一拍 1s）+ 15s」约 17～18s 周转一次，任意这样一个窗口内经排队放行的人数 ≤ 窗口起点的 `C − O`。修复前这个周转周期是 2～3s（Q2）。
+- 拿了票不连 gate，或连上很快就走：名额每「取走延迟（≤ 轮询 2s + 一拍 1s）+ 20s」约 22～23s 周转一次（10-13 版是约 17～18s），任意这样一个窗口内经排队放行的人数 ≤ 窗口起点的 `C − O`。修复前这个周转周期是 2～3s（Q2）。
 - runbook 与设计稿里「`q_admitted` 每 30s 涨一个 zone capacity」「增速接近 zone capacity / s」「100s 内涨到 100」这类节奏数字写于 2026-05，没有按这个上界标定过；它们成立的前提是放行的人不长期占着名额（robot 登录后是否保持在线，本规格**未核实**）。照现文判读，修好的行为会被判成「模式 1：dispatcher 卡死」，而 L-14 正是拿这份 runbook 判读，所以 §7.2 把这几处一并登记。
 
 **时钟偏差**：上面所有时长再加 [−δ, +δ]；故障副本恢复之后的残留见 §4.2「代价」。
@@ -551,12 +570,12 @@ go-redis 把 `int64` / `uint32` 参数编码成十进制字符串，`float64` �
 | dispatcher 一拍里 `FreeSlots` 出错 | 记 ERROR，这一拍不放行，条目留在队列（`dispatcher.go:273-277`） | 相同 | fail-closed，不变 |
 | gauge 快照读占位数出错 | 这一拍不更新 gauge，无日志（`metrics.go:204`） | 相同 | 不变 |
 | `PopAdmit` 的 MULTI 出错 | `continue`：条目已弹出、未计入放行数（既有丢条目路径，G1b 规格 §4.5 第 1 条已登记） | 相同，只是 MULTI 里的命令换了 | 不变 |
-| 取走时占位记账出错 | SREM 的错误被忽略，无日志；占位留到整键 TTL（少放） | ZADD / PEXPIRE 的错误记一条 ERROR，取走照常成功；占位保持放行时的分数，最迟 `AdmitTTL` 到点（少放） | 对玩家 fail-open、对容量偏保守，不变；多了一条日志 |
+| 取走时占位记账出错 | SREM 的错误被忽略，无日志；占位留到整键 TTL（少放） | 占位写入的错误（10-13 版是 MULTI{`ZADD`, `PEXPIRE`}，10-15 起是一段 `admittedHoldScript`）记一条 ERROR，取走照常成功；占位保持放行时的分数，最迟 `AdmitTTL` 到点（少放） | 对玩家 fail-open、对容量偏保守，不变；多了一条日志 |
 | 取走时 meta 读不到 zone | 跳过 SREM | 跳过改分数 | 不变 |
 | `signFn` 失败 | 回 error，客户端 500；占位留到整键 TTL | 回 error；占位最迟 `AdmitTTL` 到点 | 不变，残留从不定期变成有界 |
 | 占位键被 Redis 淘汰或误删 | 计数归 0，下一批最多多放 `C − O` | 相同 | 不变 |
 | `Queue.Enabled=false` | 不构造 `Queue`，不碰任何排队键 | 相同 | 不变 |
-| 某副本时钟严重偏差（偏差量 δ ≥ 宽限量级） | 不影响占位（占位不看时钟） | 故障期间：该副本每次读都早清别人的占位（多放）。**恢复或摘掉之后不会立刻自愈**：它最后 15s / 60s 内写的占位要再过 δ 才到期，期间有效容量少掉这些占位（≤ 当时的 `C − O`）；只有 zone 完全停放时整键 TTL 才兜底（最长约 `AdmitTTL + W`，默认 3 分钟）。止血：`redis-cli DEL admitted:zset:zone:<z>`，代价是最多多放一批 `C − O` | **新增的失败模式**，见 §4.2 代价、R2、§11 #4 |
+| 某副本时钟严重偏差（偏差量 δ ≥ 宽限量级） | 不影响占位（占位不看时钟） | 故障期间：该副本每次读都早清别人的占位（多放）。**恢复或摘掉之后不会立刻自愈**：它最后 20s / 60s 内写的占位要再过 δ 才到期，期间有效容量少掉这些占位（≤ 当时的 `C − O`）；只有 zone 完全停放时整键 TTL 才兜底（最长约 `AdmitTTL + W`，默认 3 分钟）。止血：`redis-cli DEL admitted:zset:zone:<z>`，代价是最多多放一批 `C − O` | **新增的失败模式**，见 §4.2 代价、R2、§11 #4 |
 
 计数从只读的 `SCARD` 变成带清理的写脚本后，「Redis 只读」（主从切换瞬间的 `READONLY`）也会让 `FreeSlots` 报错。此时快速通道占位、入队这些本来就是写的操作同样会失败，结果仍是不放行，没有新增方向。
 
@@ -568,7 +587,7 @@ go-redis 把 `int64` / `uint32` 参数编码成十进制字符串，`float64` �
   1. assign-gate 里「`QueueLen == 0`」与「占位」是两次往返（`assigngatelogic.go:109-119`）。
   2. dispatcher 里「`FreeSlots` 读占位数 → `ZPOPMIN` → 逐条写占位」不在一段脚本里（`dispatcher.go:273-306`；`queue.go:396-436`）。一批把队列弹空之后、占位逐条写完之前，快速通道看到「队列空、占位还没写全」，可以再占进来。任一时刻在途占位 ≤ 2 ×（`C − O`），与 G1b 规格 §4.5 的双 leader 上界同形。Java 版把弹出、算空位、写占位放在一段 Lua 里（`LoginQueue.java:100-126`），这一点仍是两版的有意差异。
 - 取走：`GETDEL` → 签票 → `HMGET` → 改分数，是多次往返（既有）。进程在 `GETDEL` 之后、改分数之前崩溃：占位保持放行时的分数，最迟 `AdmitTTL` 到点。
-- go-redis 超时重发（F16）：占位成员名在 Go 侧生成，脚本重跑是同一个成员、同一个分数，幂等；最坏情况是第一次已占到最后一个名额、重跑回 0，多出一个 15s 的空占位。计数脚本重跑无副作用。
+- go-redis 超时重发（F16）：占位成员名在 Go 侧生成，脚本重跑是同一个成员、同一个分数，幂等；最坏情况是第一次已占到最后一个名额、重跑回 0，多出一个 20s 的空占位。计数脚本重跑无副作用。`admittedHoldScript` 重跑是同一个成员、同一个分数，整键 TTL 只延长不缩短，同样幂等。
 
 ### 5.5 新旧版本混跑（滚动发布）与部署顺序
 
@@ -582,7 +601,7 @@ go-redis 把 `int64` / `uint32` 参数编码成十进制字符串，`float64` �
 - **排队开着滚（本机或裸机有人手工打开过时才可能）**。一个条目按谁经手它来记账，逐格列出：
   - **旧 leader 放行、旧 Pod 取走**：与 G4b-G 之前完全相同，取走即 SREM，**Q2 照旧**（开区每拍再放一满批，不以 `C − O` 为界）。
   - **旧 Pod 的快速通道**：照旧写旧键的 `fast:<uuid>`，**Q1 照旧**。
-  - 旧 leader 放行、新 Pod 取走：旧 SET 里的成员没人删，按旧版 Q1 的方式残留（旧 leader 少放）；新键里补一个 15s 的占位（新 Pod 的快速通道计数准）。
+  - 旧 leader 放行、新 Pod 取走：旧 SET 里的成员没人删，按旧版 Q1 的方式残留（旧 leader 少放）；新键里补一个 20s 的占位（新 Pod 的快速通道计数准）。
   - 新 leader 放行、旧 Pod 取走：新键里的占位不被改分数，留到放行后 60s（少放，有界）。
   - 新 leader 放行、新 Pod 取走，新 Pod 的快速通道：G4b-G 的行为。
   - 两种键互不可见带来的**额外**量：新旧两边的快速通道各自按自己的键判 `< budget`，任一时刻在途占位合计最多 2 ×（`C − O`）；每 zone 仍只有一个 leader（锁键本批不动），它只数自己那种键，看不到另一种键上的快速通道占位。
@@ -590,16 +609,17 @@ go-redis 把 `int64` / `uint32` 参数编码成十进制字符串，`float64` �
   - **结论**：相对各自版本单跑，混跑额外多放 ≤ 一个 `C − O`、少放有界，窗口等于滚动时长；**leader 或经手的副本是旧版期间 Q1 / Q2 仍在，不能把混跑窗口当作 G4b-G 已生效**。G4b-G 的两条修复只在放行方与取走方都是新版时才成立。可以接受，但不推荐。
 - **旧键**：新版本不再写。最后一个旧 Pod 停写后，旧键在 `AdmitTTL`（60s）内整键过期，不需要清理步骤。要立即清：`redis-cli DEL admitted:zone:<z>`。
 - **新键的止血命令**：`redis-cli DEL admitted:zset:zone:<z>`（时钟故障残留，§4.2；或任何怀疑占位记账卡住的时候）。代价是最多多放一批 `C − O`。
-- **回滚（新 → 旧）**：窗口与上面对称。新键在最后一次写入后 `W`（默认 2 分钟）内整键过期。排队开着时不要用 `kubectl rollout undo` 退镜像（`spec_G4b.md` §12 已写）：先用 `-LoginQueue off` 关排队，再退。
-- **（评审后补）同版本内滚动调整 `AdmitTTL`**：整键 TTL 由各副本按自己的 `AdmitTTL` 无条件续期，新旧值并存的窗口里「所有写入用同一个 `W`」不成立（§4.1 更正）。约束：**排队开着时，`AdmitTTL` 的调整幅度不超过 `admittedKeyGCSlack`（1min）**；更大的调整先用 `-LoginQueue off` 关掉排队，滚完再开。不遵守时的上界：整键可能提前消失、最多多放一批 `C − O`，与 §5.3「占位键被 Redis 淘汰或误删」同一行。这条约束同步写在 `login.yaml` 的 `Queue:` 段注释、`config.go` `QueueConf` 注释与 runbook 模式 4。
+- **回滚（新 → 旧）**：窗口与上面对称。新键在最后一次写入后 `W`（默认 2 分钟；有副本配过更大的 `AdmitTTL` 时按其中最大的 `W`）内整键过期。排队开着时不要用 `kubectl rollout undo` 退镜像（`spec_G4b.md` §12 已写）：先用 `-LoginQueue off` 关排队，再退。
+- **同版本内滚动调整 `AdmitTTL`（2026-10-15 改写）**：10-13 版整键 TTL 由各副本无条件续期，新旧 `AdmitTTL` 并存时小值副本会把整键 TTL 压到大值副本写的占位之前，10-15 上午因此在这里、`login.yaml`、`config.go` 与 runbook 模式 4 写过「排队开着时调整幅度不超过 1min，更大的先关排队」。整键 TTL 改为只延长不缩短（§4.1、§11 #6）之后，这条约束**作废**：排队开着时也可以滚动调整 `AdmitTTL`，新旧 `W` 并存不会让整键先于未到期的占位消失。代价：调小之后，已续上的较大整键 TTL 要自然走完才收敛，只影响 zone 下线后键多留多久。上述三处已同步改写。
+  - **唯一的例外**：10-15 之前的 G4b-G 镜像（无条件续期）与本版混跑，且排队开着、两边 `AdmitTTL` 又不同时，旧镜像的副本仍会把整键 TTL 缩短，后果同上（最多多放一批 `C − O`）。排队在所有环境都关着（F13），按本节的部署顺序（排队关着滚完再开）不会出现。
 
 ### 5.6 zone-down 与合服后旧 zone 的残留
 
-源 zone S 的 login 全部下线后，不再有人写 `admitted:zset:zone:S`，它在最后一次写入后 `W`（默认 2 分钟）内整键过期。设计稿 `login-queue-2026-05.md:251` 写的「`admitted:zone:S` 在 `AdmitTTL`（60s）内过期」要改成这个时长。合服工具与回档脚本的键清单本来就不含排队键，不用登记新键（§7.3）。
+源 zone S 的 login 全部下线后，不再有人写 `admitted:zset:zone:S`，它在最后一次写入后 `W`（默认 2 分钟；有副本配过更大的 `AdmitTTL` 时按其中最大的 `W`，整键 TTL 只延长不缩短）内整键过期。设计稿 `login-queue-2026-05.md:251` 写的「`admitted:zone:S` 在 `AdmitTTL`（60s）内过期」要改成这个时长。合服工具与回档脚本的键清单本来就不含排队键，不用登记新键（§7.3）。
 
 ### 5.7 指标
 
-- `login_queue_admitted_inflight` **不改名、不改标签**。口径变宽：以前是「已放行还没取走的 + 永不单独回收的快速通道占位」，现在是「已放行还没取走的 + 票已交出去 15s 之内的（排队取走与快速通道）」。稳态约等于 `交票速率 × 15s + 等轮询的放行数`。帮助文本里的 `SCARD` 与「> 100」阈值删掉（§4.6）。
+- `login_queue_admitted_inflight` **不改名、不改标签**。口径变宽：以前是「已放行还没取走的 + 永不单独回收的快速通道占位」，现在是「已放行还没取走的 + 票已交出去 20s 之内的（排队取走与快速通道）」。稳态约等于 `交票速率 × 20s + 等轮询的放行数`（10-13 版按 15s；帮助文本已同步为 20s）。帮助文本里的 `SCARD` 与「> 100」阈值删掉（§4.6）。
 - 读这个 gauge 的那次 `AdmittedCount` 带清理副作用。它只由 leader 每拍调用一次，清理本身幂等，没有问题。
 - **不新增指标**。理由：仓库里没有任何告警或面板消费它（F14）；把「没来取」与「已取走等上报」拆成两个 gauge 需要每拍多一次按前缀或分数段的统计；L-14 排查时可以直接 `redis-cli ZRANGE admitted:zset:zone:<z> 0 -1 WITHSCORES` 看成员与到期时刻。YAGNI。
 - 仓库里没有引用旧阈值的告警规则；runbook 里的文字阈值由 Docs 阶段同步（§7.2）。
@@ -615,6 +635,8 @@ go-redis 把 `int64` / `uint32` 参数编码成十进制字符串，`float64` �
 ---
 
 ## 6. 测试清单
+
+> **2026-10-15 更正（未编译、未测试）**：§6.2 表里的 15s 已就地改为 20s（T1 钉 `handoffGrace == 20s`；T3、T5、T6、T13 的期望写的是 `q.handoffGrace` 符号，数值随之为 20s；T4 的上限是 `handoffGrace / 1s` 即 20；T12 拨的是 `q.handoffGrace`）。§6.3、§6.4 的照写代码块保留 10-13 原文，代码与注释里的 15s 按 20s 理解，现行文本以测试文件为准。为整键 TTL 只延长不缩短新增 T15、T16（§6.2 表末）；这两条要控制**整键 TTL**，用的是 `mr.FastForward`（miniredis 的 TTL 只在 `FastForward` 里递减，见下一段），占位分数仍走假时钟，断言都是等式，结果确定。下一段「不调用 `mr.FastForward`」只对 T1–T14 成立。
 
 全部在 `go/login/internal/logic/pkg/loginqueue/`（`package loginqueue`），只依赖 **miniredis（进程内）**，不需要任何外部依赖。
 
@@ -707,20 +729,22 @@ func mustLegacyKeyUntouched(t *testing.T, rdb *redis.Client) {
 
 | # | 用例名 | 文件 | 断言要点 | 修复前 |
 |---|---|---|---|---|
-| T1 | `TestNew_DefaultsHandoffGraceAndClock` | queue_test | `New` 出来的 `handoffGrace == 15s`、`now != nil`、`admittedKeyTTL() == 2min` | — |
+| T1 | `TestNew_DefaultsHandoffGraceAndClock` | queue_test | `New` 出来的 `handoffGrace == 20s`（10-13 版钉 15s）、`now != nil`、`admittedKeyTTL() == 2min` | — |
 | T2 | `TestPopAdmit_HoldsPlaceholderInZSetUntilAdmitTTL` | queue_test | 放行后新键类型是 `zset`；成员分数 = 放行时刻 + `AdmitTTL` 的毫秒；整键 PTTL 在 (`AdmitTTL`, `AdmitTTL + 1min`]；不取走，拨到 `AdmitTTL − 1ms` 计数仍是 1，再拨 1ms 计数为 0；旧键不存在 | 红（旧键是 SET，没有逐成员到期） |
-| T3 | `TestTryReserveFastPathSlot_BudgetAndPerMemberExpiry` | queue_test | `budget=2`：true、true、false；`budget=0`：false；两个成员都以 `fast:` 开头、分数 = 现在 + 15s；拨到 15s − 1ms 仍占满，再拨 1ms 计数为 0、可以再占；旧键不存在 | 红（占位不会逐个到期） |
-| T4 | `TestFastPath_SustainedLoginsDoNotStarveBudget` | queue_test | **Q1 回归**。容量 100，每秒 1 人走快速通道，10s 后进 `PlayerCount`，连续 60s：每一秒 `free > 0` 且占位都成功；结束时占位数 ≤ 15 | **红**：第 55 秒 `free` 归零（§6.5 Q1） |
-| T5 | `TestConsume_KeepsPlaceholderForHandoffGraceThenReleases` | queue_test | **Q2 回归**。容量 2、`PlayerCount` 恒 0、入队 6 人：放行 2 人并取走后，两个成员仍在、分数 = 取走时刻 + 15s，`free == 0`；拨到 15s − 1ms 仍是 0；再拨 1ms，占位数 0、`free == 2` | **红**：取走后 `free` 立刻回到 2（§6.5 Q2） |
-| T6 | `TestConsume_HoldsPlaceholderEvenIfAlreadyExpired` | queue_test | 放行后把假时钟拨过 `AdmitTTL`（占位被清，放行槽在 miniredis 里还在）：取走仍回 ADMITTED，占位数回到 1，分数 = 取走时刻 + 15s。钉住「普通 ZADD，不是 XX」 | — |
+| T3 | `TestTryReserveFastPathSlot_BudgetAndPerMemberExpiry` | queue_test | `budget=2`：true、true、false；`budget=0`：false；两个成员都以 `fast:` 开头、分数 = 现在 + 20s；拨到 20s − 1ms 仍占满，再拨 1ms 计数为 0、可以再占；旧键不存在 | 红（占位不会逐个到期） |
+| T4 | `TestFastPath_SustainedLoginsDoNotStarveBudget` | queue_test | **Q1 回归**。容量 100，每秒 1 人走快速通道，10s 后进 `PlayerCount`，连续 60s：每一秒 `free > 0` 且占位都成功；结束时占位数 ≤ 20（`handoffGrace / 1s`；20s 下稳态最多 19 个占位，第 59 秒 `free` = 32 > 0） | **红**：第 55 秒 `free` 归零（§6.5 Q1） |
+| T5 | `TestConsume_KeepsPlaceholderForHandoffGraceThenReleases` | queue_test | **Q2 回归**。容量 2、`PlayerCount` 恒 0、入队 6 人：放行 2 人并取走后，两个成员仍在、分数 = 取走时刻 + 20s，`free == 0`；拨到 20s − 1ms 仍是 0；再拨 1ms，占位数 0、`free == 2` | **红**：取走后 `free` 立刻回到 2（§6.5 Q2） |
+| T6 | `TestConsume_HoldsPlaceholderEvenIfAlreadyExpired` | queue_test | 放行后把假时钟拨过 `AdmitTTL`（占位被清，放行槽在 miniredis 里还在）：取走仍回 ADMITTED，占位数回到 1，分数 = 取走时刻 + 20s。钉住「普通 ZADD，不是 XX」 | — |
 | T7 | `TestAdmittedCount_DropsOnlyExpiredMembers` | queue_test | 键不存在时计数 0、无错误；直接 ZADD 三个成员（分数 now−1、now、now+1）：计数 1，剩下的只有 now+1 那个。钉住闭区间 | 红（旧实现不清） |
 | T8 | `TestTryReserveFastPathSlot_ConcurrentNeverExceedsBudget` | queue_test | 64 个 goroutine 同时占位、`budget=8`：恰好 8 个成功，`ZCARD == 8` | 绿（旧 Lua 同样原子；这是 F15 欠的覆盖） |
 | T9 | `TestLegacyAdmittedSetKey_NeverWritten` | queue_test | 走一遍快速通道占位、入队、`FreeSlots`、放行、取走、计数之后，`KEYS admitted:*` 只有 `admitted:zset:zone:1` | 红 |
 | T10 | `TestAdmittedAccounting_RedisDown_FailsClosed` | queue_test | 关掉 miniredis 后：`AdmittedCount` 回 error；`FreeSlots` 回 error 且 `free == 0`；`TryReserveFastPathSlot(budget=5)` 回 `(false, err)`；`budget=0` 回 `(false, nil)`（不碰 Redis）。客户端关掉命令重试与拨号重试，真实等待 ≤ 3 × `DialTimeout` | 绿（方向没变，钉住它） |
 | T11 | `TestConsume_PlaceholderWriteFailureDoesNotFailAdmit` | queue_test | 放行后把占位键换成 STRING：取走仍回 ADMITTED（记账失败不让取走作废）；随后 `AdmittedCount` 回 error、快速通道占位回 `(false, err)`（读不出记账就不放行） | — |
-| T12 | `TestDispatchOnce_ConsumedAdmitsHoldCapacityForHandoffGrace` | dispatcher_test | **Q2 回归（dispatcher 层）**。不 Start，直接调 `dispatchOnce`：容量 2、入队 6：第一拍后队列剩 4；取走 2 人；每拍拨 1s 连跑 5 拍，队列仍是 4；拨过 15s 再跑一拍，队列剩 2 | **红**：取走后的每一拍都再放 2 人 |
-| T13 | `TestConsume_RepeatPollDoesNotExtendPlaceholder` | queue_test | 取走后 5s 再拿同一令牌轮询：不是 ADMITTED；占位分数仍是「第一次取走时刻 + 15s」，没有被续期；占位数仍是 1；拨到取走后 15s，占位数为 0。钉住「`holdAdmitted` 在 `GETDEL` 判空之后」（§5.1） | —（防落码时放错位置：每次轮询续 15s，占位永不到期） |
+| T12 | `TestDispatchOnce_ConsumedAdmitsHoldCapacityForHandoffGrace` | dispatcher_test | **Q2 回归（dispatcher 层）**。不 Start，直接调 `dispatchOnce`：容量 2、入队 6：第一拍后队列剩 4；取走 2 人；每拍拨 1s 连跑 5 拍，队列仍是 4；再拨一个宽限（20s）后跑一拍，队列剩 2 | **红**：取走后的每一拍都再放 2 人 |
+| T13 | `TestConsume_RepeatPollDoesNotExtendPlaceholder` | queue_test | 取走后 5s 再拿同一令牌轮询：不是 ADMITTED；占位分数仍是「第一次取走时刻 + 20s」，没有被续期；占位数仍是 1；拨到取走后 20s，占位数为 0。钉住「`holdAdmitted` 在 `GETDEL` 判空之后」（§5.1）。要求宽限大于 5s，20s 满足 | —（防落码时放错位置：每次轮询续 20s，占位永不到期） |
 | T14 | `TestConsume_SignFailureKeepsAdmitTimeScore` | queue_test | `signFn` 返回 error：`Lookup` 回 error；占位分数仍是「放行时刻 + `AdmitTTL`」；再轮询拿不到票；拨到放行后 `AdmitTTL − 1ms` 占位数仍是 1，再拨 1ms 为 0 | —（钉住 §5.1 的 `signFn` 失败语义） |
+| T15（10-15 补） | `TestAdmittedKeyTTL_SmallerWindowNeverShortensIt` | queue_test | 两个 `Queue` 共用一个 miniredis，`AdmitTTL` 分别 60s（`W` = 2min）与 5min（`W` = 6min）。大 `W` 副本先放行两人，整键 PTTL == 6min；小 `W` 副本随后走快速通道、放行、取走三条写路径，每条之后 PTTL 仍 == 6min。再 `mr.FastForward` 到整键只剩 `2min − 1s`，三条路径各写一次，都续回 2min（防「有 TTL 就不动」的写错）；最后大 `W` 副本再写一次，回到 6min | **红**：无条件 `PEXPIRE W` 在「smaller window: fast path」一步把 PTTL 压到 2min |
+| T16（10-15 补） | `TestAdmittedKey_EveryWritePathSetsTTLWhenMissing` | queue_test | 三条写路径 × 两种键形状（键不存在；键在但被 `PERSIST` 掉了 TTL，种子成员分数取 4e12，不会被快速通道的清理删掉），共 6 个子用例：写入前 PTTL < 0，写入后 PTTL == `W` | —（防换成 `PEXPIRE … GT`、或把读 `PTTL` 挪到 `ZADD` 之前：两种写错写完 PTTL 都是 −1） |
 | 改 | `TestIntegration_QueueDrainAdmits`、`TestIntegration_DispatcherRespectsCapacity` | dispatcher_test | 断言不变；fixture 把宽限设 0（§6.4） | 不改的话前者必然超时 |
 | 改 | `TestIntegration_DualLeadersSameZone_NoLossBoundedOverAdmit` | dispatcher_test | 断言不变；`:411` 改读新键（§6.4） | 不改则编译失败 |
 | 不动 | 其余既有用例 | — | `TestPopAdmitWritesAdmitToken`、`TestFreeSlotsAccountsForAdmittedInFlight`（放行后占位数仍是 1）、`TestIntegration_LeaderElectionSerializesDispatch`、`TestIntegration_TwoZonesSharedRedis_BothQueuesDrain`、`TestDispatchOnce_EmptyQueueSkipsGateDirectory`、svc 包的 `TestInitLoginQueue_*` 都不依赖「取走即撤占位」或占位键的类型 | 绿 |
@@ -1193,7 +1217,7 @@ T14 的失败签名器沿用既有用例的写法（`queue_test.go:313-315` 用 
 	q.handoffGrace = 0
 ```
 
-为什么不保留生产宽限：`TestIntegration_QueueDrainAdmits`（`:110-160`）容量 2、`PlayerCount` 恒 0、要在 3s 内放完 5 人，取走后占位再留 15s 就必然超时。`TestIntegration_DispatcherRespectsCapacity`（`:209-222`）每轮把计数清零重数，某一轮恰好只看到 1 个已放行时，旧语义靠「取走即释放、再放一批」凑够 2 个；保留 15s 的话这种交错下会偶发超时。设 0 之后这两个用例的时序与今天完全相同，不引入新的偶发性。
+为什么不保留生产宽限：`TestIntegration_QueueDrainAdmits`（`:110-160`）容量 2、`PlayerCount` 恒 0、要在 3s 内放完 5 人，取走后占位再留 20s（10-13 版 15s）就必然超时。`TestIntegration_DispatcherRespectsCapacity`（`:209-222`）每轮把计数清零重数，某一轮恰好只看到 1 个已放行时，旧语义靠「取走即释放、再放一批」凑够 2 个；保留生产宽限的话这种交错下会偶发超时。设 0 之后这两个用例的时序与今天完全相同，不引入新的偶发性。
 
 **2）`TestIntegration_QueueDrainAdmits` 的注释**（`:135-136`）改为：
 
@@ -1393,6 +1417,8 @@ HEAD 上的预期：Q1 在 `sec=55` 以 `free hit 0 with 45 online of 100 (admit
 
 ### 7.2 文档阶段同步（由主会话的 Docs 阶段做）
 
+> **2026-10-15 更正**：本节是 10-13 的同步清单，已执行，保留原文。清单里的「15s」「约 17s 周转」「交票速率 × 15s」按 20s、约 22～23s、× 20s 理解；第 2 项要求 runbook 模式 4 写的「`AdmitTTL` 调整不超过 1min」已随 §11 #6 作废。10-15 的第二轮同步：设计稿「在途占位的生命周期」与 §5 Dispatcher Loop、§10、§11、§14、§15，runbook 的放行节奏、模式 1 / 2 / 4、指标表与推荐告警，`spec_G4b.md` 合入门槛（真实 Redis 首跑定为硬门槛），Java 仓库 `PARITY.md`「登录排队」行（改写依据见 §12 末尾的 10-15 更正）。
+
 1. **`docs/design/login-queue-2026-05.md`**
    - 头部 `:7` 之后加一行：`> **修订**: 2026-10-13 G4b-G — 在途占位改为逐个到期的 ZSET,交票后保留 15s(§5「在途占位的生命周期」)`。
    - `:73` 键布局改为 `admitted:zset:zone:{zoneId}  ZSET member=queueId | fast:<uuid>, score=占位到期毫秒(逐个到期;整键 TTL 只做垃圾回收)`。
@@ -1560,12 +1586,14 @@ Remove-Item Env:GOTOOLCHAIN, Env:GOPROXY -ErrorAction SilentlyContinue
 
 - 双副本时钟偏差、L-14 压测（交票到 gate 会话建立的分布、`redis-queue` 的写 ops、runbook 节奏数字的重新标定）都不在本批。没有压测对比，不宣称任何性能结论（AGENTS §6）。
 - **本批的全部运行证据都在 miniredis 上**。runbook 写着「验证清单（每次改 loginqueue 都跑一遍）」（`login-queue-stress-runbook.md:132`），其中第 1 步是单测（8.2 覆盖），第 2–5 步要起整套服务（robot 冒烟、杀 leader、重启 Redis）。**第 2–5 步本批不执行**，登记为对这条既有门禁的偏离（§9 #11），PROGRESS 条目里如实写明（§7.2 第 6 项）。
-- **真实 Redis 首跑归 G4b-2**：排队在所有环境都关着（F13），不登记的话，新脚本第一次碰真实 Redis 就是 G4b-2 在 staging / prod 打开排队的那一刻。所以在 `spec_G4b.md` 合入门槛处登记「打开排队之前至少跑过一次下面的冒烟」（§7.2 第 4 项）；是否作为硬门槛、要不要提前到本批跑，见 §11 #5。
-- **最小冒烟步骤**（可选，口径同 G1b 规格 §7.3：由负责人决定是否跑，不属于压测；需要起本地栈，命令由 Codex 或负责人执行；需要拉镜像或装东西时先问用户）：
+- **真实 Redis 首跑是 G4b-2 打开排队之前的硬门槛（2026-10-15 负责人定，§11 #5）**：排队在所有环境都关着（F13），不设门槛的话，新脚本第一次碰真实 Redis 就是 G4b-2 在 staging / prod 打开排队的那一刻。`spec_G4b.md` 合入门槛处已写明：下面的冒烟没有在真实 Redis 上跑通并留下记录，G4b-2 不合、任何环境都不打开排队。本批仍不跑（要起本地栈）；也不能用 miniredis 的结果顶替。
+- **最小冒烟步骤**（必做，作为上一条的门槛；口径同 G1b 规格 §7.3，不属于压测；需要起本地栈，命令由 Codex 或负责人执行；需要拉镜像或装东西时先问用户）：
   1. 本机已有的 Redis 7.x + etcd + gate + login；login 的配置按 G1b 规格 §7.3 的办法用 scratchpad 里的副本（`Queue.Enabled=true`，`ZoneCapacityOverride` 取小值，例如 `"1": 100`），**不改 `go/login/etc/login.yaml`**。
   2. 跑 runbook 验证清单第 2、3 步（`RobotCount=5` 与 `RobotCount=200`）。
-  3. 期间用 `redis-cli` 核对五件事：`TYPE admitted:zset:zone:1` 是 `zset`；`ZRANGE admitted:zset:zone:1 0 -1 WITHSCORES` 的分数是 13 位的到期毫秒，快速通道成员以 `fast:` 开头；成员在取走（或快速通道占位）后约 15s 消失；`PTTL admitted:zset:zone:1` 不超过 120000；`EXISTS admitted:zone:1` 为 0。
-  4. 判读第 3 步的 `q_admitted` 时按 §5.2「放行节奏的上界」，不按 runbook 现文的「100s 内涨到 100」。
+  3. 期间用 `redis-cli` 核对：`TYPE admitted:zset:zone:1` 是 `zset`；`ZRANGE admitted:zset:zone:1 0 -1 WITHSCORES` 的分数是 13 位的到期毫秒，快速通道成员以 `fast:` 开头；成员在取走（或快速通道占位）后约 20s 消失；`PTTL admitted:zset:zone:1` 在 (0, 120000] 内（**不能是 −1**：−1 说明整键没设上 TTL，条件续期写坏了）；`EXISTS admitted:zone:1` 为 0；第 3 步的放行确有发生（`q_admitted` 涨过），说明 MULTI 里的 `EVAL` 在真实 Redis 上能执行。
+  4. （10-15 补，验证只延长不缩短）排队中途手工 `redis-cli PEXPIRE admitted:zset:zone:1 600000`，等下一次放行、取走或快速通道写入之后再看 `PTTL`：应仍大于 120000、并随时间递减，而不是被压回 120000。做完后不用恢复，整键 TTL 自然走完即可。
+  5. 判读第 3 步的 `q_admitted` 时按 §5.2「放行节奏的上界」，不按 runbook 现文的「100s 内涨到 100」。
+  6. 结果（命令原文与输出摘要）写进 `docs/PROGRESS.md` 的新条目；任一项不符就停下报告，不打开排队。
 
 ---
 
@@ -1574,16 +1602,16 @@ Remove-Item Env:GOTOOLCHAIN, Env:GOPROXY -ErrorAction SilentlyContinue
 | # | 偏离 | 原设计 / Java 版 | 理由 | 代价 |
 |---|---|---|---|---|
 | 1 | 在途占位换键换类型 | `admitted:zone:{z}` SET + 整键滑动 TTL（设计稿 `:73`、`:180-181`） | 负责人已拍板的方案 A | 新旧版本混跑时两边计数互不可见（§5.5）；运维手册里的排查命令要换 |
-| 2 | 取走不撤占位、再留 15s | 取走即 SREM（设计稿 `:166` 的安全属性只覆盖到「取走之前」） | 方案 A | 每个取走的人被重复计平均约 9s（§5.2） |
+| 2 | 取走不撤占位、再留 20s（10-13 版 15s） | 取走即 SREM（设计稿 `:166` 的安全属性只覆盖到「取走之前」）；Java 再留 15s | 方案 A；20s 见 §11 #1 | 每个取走的人被重复计平均约 14s（§5.2）；与 Java 的 15s 不同（两版建连余量同为 10s） |
 | 3 | 计数变成写脚本 | `SCARD`，只读 | 清理与计数必须原子，否则读到已到期的成员 | 每次非重入的 assign-gate 里那次 `SCARD` 变成一次 EVAL 写；dispatcher 每拍两次。没有成员可清时是否产生复制 / AOF 流量**未核实**，L-14 看 `redis-queue` 的写 ops |
-| 4 | 快速通道占位寿命取 15s | 现状：整键 `AdmitTTL`；Java：`now + admitTtl`（60s） | 快速通道当场交票，等同已取走；取 60s 时 Q1 的现象只是变短、没有消除（§5.1） | 与 Java 不同；建连超过 5s 的快速通道玩家与排队玩家一样会漏计（§5.2）。列入 §11 #2 |
-| 5 | 取走时用普通 ZADD | Java 用 `ZADD XX`（成员不在就不补） | 两种时钟混用时不漏人；混跑时新版计数更准 | 占位已被清的边角下，多扣一个名额 15s |
-| 6 | 整键 TTL 无条件 `PEXPIRE W`，`W` 多留 1 分钟 | Java：`pttl < X 才 pexpire X`，`X` = `admit_ttl` 或 15s | 同一 zone 全部副本 `AdmitTTL` 相同（即同一个 `W`）时，无条件续期不会缩短任何成员的寿命，少一次 `PTTL` 与一个分支 | zone 下线后占位键多留 1 分钟（共 2 分钟）才消失；**（评审后补）**排队开着时滚动调整 `AdmitTTL` 超过 1min，新旧 `W` 并存，整键可能先于大值副本写的占位消失，最多多放一批 `C − O`（§4.1 更正、§5.5）。是否改成条件续期见 §11 #6 |
-| 7 | 时间取 login 墙钟 | 仓库里 `go/match`、`go/db` 的新代码取 Redis `TIME`；Java 排队取客户端时钟 | §4.2 | 多副本时钟偏差直接进占位寿命（± δ）；钟快的副本恢复或摘掉之后，它留下的占位还要再拖 δ 才到期（§4.2 代价）。列入 §11 #3、#4 |
+| 4 | 快速通道占位寿命取交票后宽限（20s，10-13 版 15s） | 现状：整键 `AdmitTTL`；Java：`now + admitTtl`（60s） | 快速通道当场交票，等同已取走；取 60s 时 Q1 的现象只是变短、没有消除（§5.1） | 与 Java 不同；建连超过 10s 的快速通道玩家与排队玩家一样会漏计（§5.2）。§11 #2 已定 |
+| 5 | 取走时用普通 ZADD | Java 用 `ZADD XX`（成员不在就不补） | 两种时钟混用时不漏人；混跑时新版计数更准 | 占位已被清的边角下，多扣一个名额 20s |
+| 6 | 整键 TTL 只延长不缩短（先 `ZADD`，剩余 `PTTL` < `W` 才 `PEXPIRE W`），`W` 多留 1 分钟。10-13 版是无条件 `PEXPIRE W`，10-15 按 §11 #6 改 | Java：`pttl < X 才 pexpire X`，`X` = `admit_ttl` 或 15s。做法与 Java 相同，阈值不同 | 滚动调整 `AdmitTTL` 时新旧 `W` 并存，无条件续期会把整键 TTL 压到大值副本写的占位之前（§4.1）；只延长不缩短与各副本配置是否一致无关 | zone 下线后占位键多留 1 分钟（共 2 分钟）才消失；每次写多一次 `PTTL` 与一个分支，放行与取走从纯 MULTI 命令改为一段共用脚本（MULTI 里只能用 `EVAL`，每次带脚本全文）；`AdmitTTL` 调小后，已续上的较大整键 TTL 要自然走完才收敛 |
+| 7 | 时间取 login 墙钟 | 仓库里 `go/match`、`go/db` 的新代码取 Redis `TIME`；Java 排队取客户端时钟 | §4.2 | 多副本时钟偏差直接进占位寿命（± δ）；钟快的副本恢复或摘掉之后，它留下的占位还要再拖 δ 才到期（§4.2 代价）。§11 #3、#4 已定：维持 login 时钟、要求 login 节点 NTP 同步，不加上界清理 |
 | 8 | `Queue` 新增两个未导出字段，只有测试会改 | — | 既有集成用例需要宽限为 0；占位到期需要可控时钟（AGENTS §11.2 显式依赖） | 包内多一处「测试可改」的状态；`New` 不暴露它，生产路径改不到 |
 | 9 | `AdmitTTL` 的含义收窄 | 既是放行槽 TTL，也是占位整键 TTL（间接决定快速通道占位的寿命） | 取走后与快速通道改由常量决定 | 运维调 `AdmitTTL` 不再影响快速通道占位；注释与设计稿同步写明 |
 | 10 | 不做方案 A 提纲之外的 Java 对齐（取走后再轮询回 410、单段 Lua 放行、请求号防重发） | Java 已做 | 提纲没有，回归面大 | 仍是有意差异（§5.8、§12） |
-| 11 | runbook「验证清单（每次改 loginqueue 都跑一遍）」的第 2–5 步本批不执行 | `login-queue-stress-runbook.md:132-166`：单测 + 单 / 多 robot 冒烟 + 杀 leader + 重启 Redis | 第 2–5 步要起整套服务，Claude 不跑（AGENTS §10.1）；排队在所有环境都关着，本批也不打开 | 新脚本在真实 Redis 上没有任何运行证据，直到 G4b-2 打开排队之前的那次冒烟（§8.4、§11 #5） |
+| 11 | runbook「验证清单（每次改 loginqueue 都跑一遍）」的第 2–5 步本批不执行 | `login-queue-stress-runbook.md:132-166`：单测 + 单 / 多 robot 冒烟 + 杀 leader + 重启 Redis | 第 2–5 步要起整套服务，Claude 不跑（AGENTS §10.1）；排队在所有环境都关着，本批也不打开 | 新脚本在真实 Redis 上没有任何运行证据，直到 G4b-2 打开排队之前的那次冒烟（§8.4；2026-10-15 起是硬门槛，§11 #5） |
 
 ---
 
@@ -1591,46 +1619,55 @@ Remove-Item Env:GOTOOLCHAIN, Env:GOPROXY -ErrorAction SilentlyContinue
 
 | # | 风险 | 依据 | 缓解 |
 |---|---|---|---|
-| R1 | 15s 对 C++ gate 只留 5s 余量。建连普遍超过 5s 时（开服洪峰、gate 过载）漏计重新出现，多放的节奏约每 17s 一批 | F10；`assigngatelogic.go:19-27` 记着 Round 18 在 7.8 万并发下「签票到 gate 验票」平均 66s、最大 403s（那是极端过载，任何宽限都盖不住） | §11 #1；L-14 测「交票 → gate 会话建立」的分布后定值；上游的 gateway 限流（G4b-1）先把洪峰压住 |
-| R2 | 某个 login 副本时钟偏差 δ 达到宽限量级：故障期间它早清别人的占位（多放）；**它恢复或被摘掉之后不立刻自愈**，它最后 15s / 60s 内写的占位要再过 δ 才到期，期间有效容量少掉这些占位（≤ 当时的 `C − O`）。只要 zone 还有写入，整键 TTL 一直被续上、不兜底；完全停放时最长约 `AdmitTTL + W`（3 分钟）后自愈。旧实现没有这种模式 | §4.2 代价；清理只有 `-inf … now` 一个方向；每次写都无条件 `PEXPIRE W` | 节点 NTP（偏差按毫秒级估是假设，未测）；**止血 `redis-cli DEL admitted:zset:zone:<z>`**，代价是最多多放一批 `C − O`，写进 runbook 模式 2；脚本里加上界清理见 §11 #4（默认不加）；彻底的退路是改用 Redis `TIME`（§4.2） |
+| R1 | 20s 对 C++ gate 留 10s 建连余量（10-13 版 15s 只留 5s，10-15 按 §11 #1 调大）。建连普遍超过 10s 时（开服洪峰、gate 过载）漏计重新出现，多放的节奏约每 22～23s 一批 | F10；`assigngatelogic.go:19-27` 记着 Round 18 在 7.8 万并发下「签票到 gate 验票」平均 66s、最大 403s（那是极端过载，任何宽限都盖不住） | §11 #1 已定 20s；L-14 测「交票 → gate 会话建立」的分布后再确认；上游的 gateway 限流（G4b-1）先把洪峰压住 |
+| R2 | 某个 login 副本时钟偏差 δ 达到宽限量级：故障期间它早清别人的占位（多放）；**它恢复或被摘掉之后不立刻自愈**，它最后 20s / 60s 内写的占位要再过 δ 才到期，期间有效容量少掉这些占位（≤ 当时的 `C − O`）。只要 zone 还有写入，整键 TTL 一直被续上、不兜底；完全停放时最长约 `AdmitTTL + W`（3 分钟）后自愈。旧实现没有这种模式 | §4.2 代价；清理只有 `-inf … now` 一个方向；每次写都保证整键 TTL 至少剩 `W` | login 节点 NTP 同步是部署要求（§11 #3；偏差按毫秒级估是假设，未测）；**止血 `redis-cli DEL admitted:zset:zone:<z>`**，代价是最多多放一批 `C − O`，写进 runbook 模式 2；不加上界清理（§11 #4 已定）；彻底的退路是改用 Redis `TIME`（§4.2） |
 | R3 | 新旧版本在排队开着时混跑：两种键互不可见，在途占位合计最多 2 ×（`C − O`）；**leader 或经手的副本是旧版期间 Q1 / Q2 原样存在**，G4b-G 只在放行方与取走方都是新版时才生效 | §5.5 | 部署顺序：排队关着滚完再开（现状就是关的），写进 `login.yaml` 上线清单第 0 步与 runbook；G4b-2 契约用例 15 的机械门禁已登记到 `spec_G4b.md`（§7.2 第 4 项）；不能把混跑窗口当作 G4b-G 已生效 |
-| R4 | gate 的上报周期（`main.cpp:408`）与常量 15s 没有机械关联，改一边不会报错 | §4.3 | 常量注释写明出处；T1 钉住 15s；设计稿新小节写明两者的关系 |
-| R5 | 双计让有效容量在高交票速率下打折：瞬时少放 ≈ `9λ`，最多 `15λ` | §5.2 | 有界、自愈；`ZoneCapacityOverride` 定值时把它算进去（G4b-2 / L-14） |
+| R4 | gate 的上报周期（`main.cpp:408`）与常量 20s 没有机械关联，改一边不会报错 | §4.3 | 常量注释写明出处（20s = 两个上报周期）；T1 钉住 20s；设计稿新小节写明两者的关系 |
+| R5 | 双计让有效容量在高交票速率下打折：瞬时少放 ≈ `14λ`，最多 `20λ`（10-13 版 15s 时是 `9λ` / `15λ`） | §5.2 | 有界、自愈；`ZoneCapacityOverride` 定值时把它算进去（G4b-2 / L-14） |
 | R6 | 计数变成写命令后 `redis-queue` 的写 ops 上升 | §9 #3 | L-14 测；必要时把 dispatcher 每拍的两次计数并成一次（G1b 评审 N2 当时未采纳的微优化） |
-| R7 | 测试替身与真实 Redis 的差异。miniredis v2.35.0 / go-redis v9.16.0 一侧已对模块缓存源码核实（§13 U1–U4），用例因替身行为而红的可能性很低；剩下的风险在另一头：**真实 Redis 上没有任何运行证据**（§13 U5） | §13；§9 #11 | §8.2 的兜底说明（出现不符就停下报告，不自行升级依赖）；真实 Redis 首跑归 G4b-2 打开排队之前（§8.4、§11 #5） |
+| R7 | 测试替身与真实 Redis 的差异。miniredis v2.35.0 / go-redis v9.16.0 一侧已对模块缓存源码核实（§13 U1–U4），用例因替身行为而红的可能性很低；剩下的风险在另一头：**真实 Redis 上没有任何运行证据**（§13 U5） | §13；§9 #11 | §8.2 的兜底说明（出现不符就停下报告，不自行升级依赖）；真实 Redis 首跑是 G4b-2 打开排队之前的硬门槛（§8.4、§11 #5，2026-10-15 定）；10-15 的条件续期另用到 MULTI 里的 `EVAL` 与 Lua 里的 `PTTL`，miniredis 一侧已核（§13 U15、U16），真实 Redis 一侧由 §8.4 第 3、4 步看 |
 | R8 | gate 票有效期 10 分钟远大于宽限：拿了票很晚才连上的人不在任何占位里 | F11 | 既有性质，不是本批引入；gate 侧有连接上限 |
 | R9 | 指标口径变了但名字没变，看历史曲线时 2026-10-13 前后不可比 | §5.7 | 帮助文本与 runbook 写明；仓库里没有依赖旧阈值的告警 |
 | R10 | runbook 与设计稿的放行节奏判读（「`q_admitted` 不涨 = dispatcher 卡死」「每 30s 涨一个 capacity」）没有按修复后的上界标定；照现文，正常回压会被判成模式 1，L-14 拿它判读会误报 | §5.2「放行节奏的上界」；`login-queue-stress-runbook.md:39-44`、`:55`、`:70`、`:149`、`:189-190`；`login-queue-2026-05.md:319-321` | §7.2 第 1、2 项逐处登记；数字待 L-14 重新标定 |
 | R11 | 工作区里 `go/login` 有别的会话的未提交改动，而且评审这一轮期间还在增加（04:41 只有 `go.mod` 的 `go` 指令；09:07 已有 14 个已跟踪文件，含本批要改的 `etc/login.yaml`）：红（HEAD worktree）与绿（工作区）不在同一基线上；其它包的失败容易被错记到本批头上；落码时可能覆盖别人对 `login.yaml` 的改动；工具链不匹配时 go 可能去下载 | 文件头的基线说明；`git status --short -- go/login`；`.github/workflows/login-path-tests.yml:81`（CI 的 Go 版本跟 `go/login/go.mod` 走） | §8.0(a) 落码前快照（排队代码已被别人动过就停）；`login.yaml` 按内容锚点改（§4.6）；§8.0(b) 禁止自动下载；§8.2 的范围判据与归因规则；这些改动的归属由主会话向用户确认 |
+| R12（10-15 补） | 整键条件续期在两段脚本里各写一遍（`reserveFastPathSlotScript`、`admittedHoldScript`），改一处漏另一处不会编译报错；10-15 之前的 G4b-G 镜像（无条件续期）与本版在排队开着、`AdmitTTL` 不同时混跑，旧镜像的副本仍会缩短整键 TTL | §4.1、§5.5 | 两边注释互相点名；T15、T16 对三条写路径逐条钉住；部署顺序（排队关着滚完再开），现状所有环境排队都关着（F13） |
 
 ---
 
-## 11. 待负责人拍板
+## 11. 负责人拍板（2026-10-15 已定）
 
 只列会改变线上行为或验证口径、且本规格无法靠读代码定下来的六条（#1–#3 是原有的，#4、#5 是评审后补的，#6 是落码后评审补的）。每条都给了默认做法，本规格的代码与用例按默认写；落码前要不要先等负责人回复，由主会话按用户的约定判断。#1–#4 都只影响常量或一两行代码，落码后再改的成本很低；#5 不改代码；#6 选备选时要改两段脚本并新增一段脚本。
 
+**2026-10-15 结论**：负责人对这六条的指示原话是「按最标准的去做」。主会话据此逐条定下做法，写在每条的第一个子项；#1、#6 已改代码（#2 与 #1 是同一个字段，不另改代码，数值随之变为 20s），#3、#4 维持原代码，#5 只改门槛文档。代码改动**未编译、未测试**，待 Codex 验证。下面各条里的「默认」「备选」是 10-13 的原文，保留作取舍记录。
+
 1. **交票后宽限取多少**。
-   - **默认：15s**（方案 A 提纲写的值，与 Java 同值）。
+   - **2026-10-15 负责人按「最标准」定为：20s（即 10-13 的备选）**。理由：宽限要盖住的是「一个完整上报周期的滞后 + 建连与传播」，标准做法是至少留满一个周期再加余量；C++ gate 每 10s 上报，20s 是两个上报周期，建连余量 10s，与 Java 版（15s 宽限、5s 发布周期）的余量相同。代价照下面「备选」一行：平均双计约 14s、瞬时少放 ≈ `14λ`；数值仍待 L-14 确认。已改：`defaultHandoffGrace`、T1、`metrics.go` / `config.go` / `login.yaml` 注释与本规格正文、设计稿、runbook。
+   - **默认（10-13）：15s**（方案 A 提纲写的值，与 Java 同值）。
    - 备选：20s（两个上报周期，建连余量 10s，与 Java 的余量相同）。代价：平均双计从约 9s 升到约 14s，瞬时少放 ≈ `14λ`。
    - 提纲写「覆盖 gate 每几秒发布一次人数的滞后」，而代码里 C++ gate 是每 10s（F10），15s 的余量只有 Java 版的一半，所以单独提出来。最终值待 L-14。改法：`defaultHandoffGrace` 一个常量 + T1 的期望值 + 文档。
 2. **快速通道占位的寿命**。
-   - **默认：与取走后相同（15s）**。理由见 §5.1。
+   - **2026-10-15 负责人按「最标准」定为：维持默认，与取走后相同，即交票后宽限（随 #1 为 20s）**。理由：快速通道在同一个应答里交票，状态等同排队路径的「已取走」，按同一语义取同一个值，代码里也是同一个字段 `handoffGrace`（一处定义）；照 Java 取 60s 时 T4 的形状下 Q1 没有修掉（第 55 秒余量仍归零）。与 Java 的 60s 仍不同，`PARITY.md` 照写为差异。代码不用另改（`TryReserveFastPathSlot` 本来就读 `q.handoffGrace`）。
+   - **默认（10-13）：与取走后相同（15s）**。理由见 §5.1。
    - 备选：照 Java 取 `AdmitTTL`（60s）。代价：每个快速通道玩家平均重复计约 54s；T4 的场景（容量 100、每秒 1 人）在第 55 秒余量仍会归零，等于 Q1 在这个形状下没修掉，T4 的参数要跟着放宽。
    - 改法：`TryReserveFastPathSlot` 里 `q.handoffGrace` 换成 `q.admitTTL`，T3、T4 的期望值跟着改。
 3. **时间来源**。
-   - **默认：login 进程时钟经 ARGV 传入**（§4.2，与 Java 排队相同）。
+   - **2026-10-15 负责人按「最标准」定为：维持默认，login 进程时钟经 ARGV 传入；login 节点做 NTP 时钟同步是部署要求**。理由：这条链路本来就以 login 墙钟为时间基准（gate 票与排队令牌的过期都靠它：`gatetoken.go` 的 `SignGateToken`、`queue.go` 的 `Enqueue`），系统已经依赖各节点时钟同步；改用 Redis `TIME` 去不掉这层依赖，反而让占位与 gate 票各用一种时钟，脚本里还要做毫秒运算。标准做法是把时钟同步作为部署前提并纳入监控，时钟故障按运维故障处置（R2 的止血命令）。代码不改。
+   - **默认（10-13）：login 进程时钟经 ARGV 传入**（§4.2，与 Java 排队相同）。
    - 备选：Redis `TIME`。消除多副本时钟偏差，也就没有 R2「故障副本恢复后残留 δ」这回事。代价：两段 Lua 里要做毫秒运算与格式化，`holdAdmitted` 也要改成 Lua（放行与取走各多一段脚本）；与 Java 版、本包既有做法不一致；Redis 一侧要求「`TIME` 之后允许写」（Redis 7.2，凭记忆，**未核实**）。**不需要升级 miniredis、不用改 `go.mod`**：v2.35.0 的 `TIME` 跟随 `SetTime`，已对源码核实（§4.2 表、§13 U7）。
 4. **（评审后补）要不要在两段 Lua 里加一道上界清理**，把 R2 的残留从「δ」压到分钟级。
-   - **默认：不加**。只按 §4.2 / R2 如实写明持续时间，并把止血命令写进 runbook。
+   - **2026-10-15 负责人按「最标准」定为：维持默认，不加**。理由即下面「不默认加的理由」①–④：它为一种运维故障（时钟偏差到分钟级）在业务脚本里加一条静默纠正，又引入「排队开着时上调 `AdmitTTL` 超过 1 分钟会误删新配置副本的占位」这条新耦合；标准做法是从根上保证前提（#3 的 NTP 要求）并保留现场与止血手段。代码不改。
+   - **默认（10-13）：不加**。只按 §4.2 / R2 如实写明持续时间，并把止血命令写进 runbook。
    - 备选：两段脚本在第一条 `ZREMRANGEBYSCORE` 之后各加一行 `redis.call('ZREMRANGEBYSCORE', KEYS[1], '(' .. ARGV[n], '+inf')`，`ARGV[n]` 由 Go 算好传入，等于 `q.now().Add(q.admittedKeyTTL()).UnixMilli()`（计数脚本是 `ARGV[2]`，快速通道脚本是 `ARGV[6]`）；T7 加两个成员，分数 `now + W` 的保留、`now + W + 1` 的被清。合法分数 ≤ 写入方的「现在」+ `max(AdmitTTL, 15s)`，偏差小于 1 分钟时不会被误删；分数超出「读方的现在 + `W`」的成员在下一次读时就被清掉，所以任何残留最长留约 `W`（2 分钟），与 δ 无关。
    - 不默认加的理由：① 它引入一条新的耦合：排队开着时把 `AdmitTTL` 滚动上调超过 1 分钟（例如 60s → 300s），旧配置的副本会把新配置副本写的占位当成越界清掉，滚动期间多放；② 完全停放的情形整键 TTL 已经兜底（约 3 分钟），其余情形是有效容量打折而不是停服，且有一条命令的止血办法；③ 钟偏到分钟级的副本同时在签错过期时刻的 gate 票，本来就要靠 NTP 告警发现，脚本里悄悄删掉「不该存在」的成员反而少了一个现场；④ 旧实现的 Q1 是无故障时就恒在的同类残留，本改动把它收窄到只有时钟故障时才出现，已经是改善。
    - 改法（选备选时）：`queue.go` 两段脚本各 1 行 + 两处 `Run` 各多传 1 个参数 + 脚本注释；T7 的期望；本规格 §4.5 的 ARGV 表。
 5. **（评审后补）真实 Redis 上的首跑放在哪一步、算不算硬门槛**。
-   - **默认：登记为 G4b-2 打开排队之前要做的一步**（写进 `spec_G4b.md` 合入门槛处，§7.2 第 4 项），本批不跑；步骤见 §8.4。本批的运行证据只有 miniredis，runbook 验证清单第 2–5 步未执行（§9 #11）。
+   - **2026-10-15 负责人按「最标准」定为：G4b-2 打开排队之前的硬门槛**（不选备选 B「只当建议」）。理由：新的存储脚本在上线前至少要在与生产同类的存储上跑过一次，miniredis 的结果只说明测试替身的行为，不是真实 Redis 的证据（§13 U5）；排队在所有环境都关着，不设门槛的话第一次真实运行就是 staging / prod 打开排队那一刻。门槛的内容是 §8.4 的最小冒烟（10-15 补了条件续期的两项检查），已写进 `spec_G4b.md` 合入门槛：没跑通、没留记录，G4b-2 不合、任何环境都不打开排队。本批仍不跑（备选 A 要起本地栈，Claude 不跑，AGENTS §10.1），由 Codex 或负责人在 G4b-2 之前执行。
+   - **默认（10-13）：登记为 G4b-2 打开排队之前要做的一步**（写进 `spec_G4b.md` 合入门槛处，§7.2 第 4 项），本批不跑；步骤见 §8.4。本批的运行证据只有 miniredis，runbook 验证清单第 2–5 步未执行（§9 #11）。
    - 备选 A：本批就按 §8.4 跑一次最小冒烟（要起本地栈；需要拉镜像或装东西时先问用户）。
    - 备选 B：只当建议，不作为 G4b-2 的门槛。代价：新脚本第一次碰真实 Redis 可能就是 staging / prod 打开排队的那一刻。
-6. **（落码后评审补）整键 TTL 要不要改成条件续期**，消掉「滚动调整 `AdmitTTL` 时新旧 `W` 并存」的耦合（§4.1 更正、§5.5、§9 #6）。
-   - **默认：不改代码**。约束「排队开着时 `AdmitTTL` 调整幅度不超过 1min，更大的先 `-LoginQueue off` 再滚」写进 `login.yaml` / `config.go` 注释与 runbook；不遵守时的上界是最多多放一批 `C − O`，与 §5.3「占位键被淘汰或误删」同类。
+6. **（落码后评审补）整键 TTL 要不要改成条件续期**，消掉「滚动调整 `AdmitTTL` 时新旧 `W` 并存」的耦合（§4.1、§5.5、§9 #6）。
+   - **2026-10-15 负责人按「最标准」定为：采用备选，整键 TTL 只延长不缩短**（先 `ZADD`，剩余 `PTTL` < `W` 才 `PEXPIRE W`），**不用 `PEXPIRE … GT`**。理由：多个写者共用的键，其 TTL 不应被任何一个写者缩短；正确性不该依赖「运维记得调整幅度不超过 1min」这种约束，应由代码保证；与 Java 版的做法一致。不用 `GT` 是因为它把没有 TTL 的键当作无限期，刚由 `ZADD` 建出的键永远设不上过期（§4.1；miniredis 已核，真实 Redis 凭记忆、**未核实**，§13 U17）。实现：新增共用脚本 `admittedHoldScript`（放行在 MULTI 里 `EVAL`、取走直接 `EVAL`），快速通道脚本的 `PEXPIRE` 改为同样的条件续期；新增 T15、T16；「`AdmitTTL` 调整不超过 1min」的约束从 `login.yaml`、`config.go`、runbook 模式 4 与本规格 §5.5 删掉。代价见 §9 #6。
+   - **默认（10-13 落码后评审）：不改代码**。约束「排队开着时 `AdmitTTL` 调整幅度不超过 1min，更大的先 `-LoginQueue off` 再滚」写进 `login.yaml` / `config.go` 注释与 runbook；不遵守时的上界是最多多放一批 `C − O`，与 §5.3「占位键被淘汰或误删」同类。
    - 备选：照 Java 版改成条件续期：两段 Lua 里把无条件 `PEXPIRE` 换成 `if redis.call('PTTL', KEYS[1]) < tonumber(W) then redis.call('PEXPIRE', KEYS[1], W) end`；`holdAdmitted` 的 `ZADD + PEXPIRE` 也改成同样的一段脚本（`PopAdmit` 的 MULTI 里可以 `EVAL`）。代价：推翻 §9 #6 的取舍（多一次 `PTTL` 与一个分支）；整键 TTL 只增不减，配置调小后旧的大 TTL 要自然走完才收敛；T2、T3 的整键 PTTL 断言在单副本下仍成立，另要补一条「预先设了更大 TTL 的键，写入后 TTL 不被缩短」的用例。不要直接换成 `PEXPIRE … GT`：刚由 `ZADD` 建出、还没有 TTL 的键会被 `GT` 当作无限期而不设过期（Redis 7 语义，凭记忆，**未核实**）。
 
 不需要拍板、已按 YAGNI 定下的：不新增配置键；不新增指标；不动 `Lookup` 的重复轮询行为；`PopAdmit` 不改单段 Lua；`shared-redis-split-by-purpose.md` 本轮只改两处。
@@ -1641,15 +1678,15 @@ Remove-Item Env:GOTOOLCHAIN, Env:GOPROXY -ErrorAction SilentlyContinue
 
 - **Java 已做，本改动落码并验证后这两点与之相同，Java 代码不用改**。Java 的排队在 game-gateway 里（`D:\luyuan\xuanming-server-mmo\game-gateway\src\main\java\com\game\gateway\queue\LoginQueue.java`，批次 3.4b 提交 `554405f` 引入，版本号 `0.1.0-SNAPSHOT`）：
   - 占位是 ZSET、分数 = 到期毫秒、计数前清掉（`:76-79`、`:82-92`、`:100-126`）：对应本规格的主体。
-  - 取走后占位改为再留 15s（`TAKEN_GRACE`，`:37`、`:134-141`）：对应 Q2。
+  - 取走后占位改为再留 15s（`TAKEN_GRACE`，`:37`、`:134-141`）：对应 Q2。本仓库 10-15 起取 20s（§11 #1），「取走后不撤、再留一段」这一机制相同，时长不同（下面第 5 条）。
 - **`PARITY.md` 的行号**：「登录排队」现在是第 **99** 行，「开服限流」是第 100 行，第 98 行是「区服白名单」（2026-10-13 只读核对，HEAD 与工作区一致）。`spec_G4b.md`、G1b 规格 §4.7 / §10、交接 §4 第 6 项写的行号都比现状小 1：它们用 98 指排队、用 99 指限流。`spec_G4b.md` 的订正见 §7.2 第 4 项；G1b 规格是历史快照，不回改。Java 仓库的 `PARITY.md` 工作区里还有别的会话未提交的一行追加（在 `:150` 之后，不影响这两行），行号以后还会漂，所以下文与所有新写的文字都按行名引用。
-- **③ 不能整条写成已对齐**：「登录排队」行的 ③ 是个复合条目，只有「取走后占位不撤、再留 15 s」一句对应 Q2。其余各句（放行槽超时没取或取走后再轮询回 410、弹出与放行同一段 Lua、元数据过期不放行、请求号防重发、按段挑 gate）方案 A 没有包含，G4b-G 之后仍是有意差异。`spec_G4b.md` §11 写的「②③ 做完即对齐」对 ③ 说宽了。
-- **两版仍然不同、且是本规格有意为之的**（服务端内部实现，不涉及客户端契约，AGENTS §12 允许）：
-  1. 快速通道占位寿命：Java 60s，本仓库 15s（§11 #2）。Java 版在「一批人从快速通道涌入」后同样会多停约 50s，是否跟进由 Java 负责人定，本规格不要求。
+- **③ 不能整条写成已对齐**：「登录排队」行的 ③ 是个复合条目，只有「取走后占位不撤、再留 15 s」一句对应 Q2。其余各句（放行槽超时没取或取走后再轮询回 410、弹出与放行同一段 Lua、元数据过期不放行、请求号防重发、按段挑 gate）方案 A 没有包含，G4b-G 之后仍是有意差异。`spec_G4b.md` §11 写的「②③ 做完即对齐」对 ③ 说宽了。（2026-10-15 补：其中「按段挑 gate」一句由 G1b 评审补漏的出队改动对齐——每个非空拍只取一次 gate 候选，批内按「`PlayerCount` + 本拍已分给它的人数」轮转；不属于 G4b-G，未提交、未编译、待 Codex 验证。③ 的另一句「取走后再留」时长两版不同，见下面第 5 条。）
+- **两版仍然不同、且是本规格有意为之的**（服务端内部实现，不涉及客户端契约，AGENTS §12 允许；2026-10-15 按 §11 的结论更新）：
+  1. 快速通道占位寿命：Java 60s，本仓库 20s（10-13 版 15s；§11 #2）。Java 版在「一批人从快速通道涌入」后同样会多停约 50s，是否跟进由 Java 负责人定，本规格不要求。
   2. 取走时占位已被清：本仓库补回（普通 ZADD），Java 不补（`ZADD XX`）。
-  3. 整键 TTL：本仓库无条件续到 `max(AdmitTTL, 15s) + 1min`，Java 是「不足才续」。
+  3. ~~整键 TTL：本仓库无条件续到 `max(AdmitTTL, 15s) + 1min`，Java 是「不足才续」。~~ 2026-10-15 起**已对齐**：两版都只延长不缩短（不足才续）；续到的值各按自己的寿命算（本仓库 `max(AdmitTTL, 20s) + 1min`），不构成差异。
   4. 键名：本仓库 `admitted:zset:zone:{z}`，Java `<ns>:login-queue-admitted:{zone}`。两版不共用 Redis 键。
-  5. gate 上报周期：本仓库 10s，Java 5s，所以同样的 15s 余量不同。
+  5. 交票后宽限（取走后保留时长）：本仓库 20s、Java 15s，不再相同；因为 gate 上报周期本仓库 10s、Java 5s，两版的建连余量同为 10s（10-13 版本仓库照搬 15s，余量只有 5s）。
 - **`PARITY.md`「登录排队」行要改成什么**（文档阶段由主会话改；Java 仓库只动这一个文件、只动这一行的备注列；改之前重读，不覆盖别的会话在该文件里的未提交改动）。文档阶段时本仓库的 G4b-G **还没提交、没编译、没测试**（AGENTS §9：commit 只在用户明确要求时执行，本轮不提交；§10.1：没有 Codex 结果前不得写成已验证），所以措辞不写「已对齐」，也不留填不出来的 commit 占位：
   - ② 原文：`② 已放行占位用 ZSET（分数 = 到期毫秒）逐个过期，计数前清掉——基线 SET + 整体 TTL，每次 SADD 都续上，持续有人登录时占位只增不减、空位归零；`
     改为：`② 已放行占位逐个过期：mmorpg 自 G4b-G 起同样是 ZSET（分数 = 到期毫秒）、计数前清掉过期成员，键 `admitted:zset:zone:{z}`（2026-10-13 落码，未提交、未编译，待 Codex 验证；提交后回填 commit）。仍不同：快速通道占位寿命 Java = `admit-ttl`（60 s）、mmorpg = 15 s（快速通道当场交票，等同已取走）；整键 TTL Java 不足才续、mmorpg 每次写入续到 max(AdmitTTL, 15 s) + 1 min；`
@@ -1657,7 +1694,8 @@ Remove-Item Env:GOTOOLCHAIN, Env:GOPROXY -ErrorAction SilentlyContinue
     改为：`取走后占位不撤、再留 15 s（客户端连上 gate、gate 每 5 s 发布人数之前它不在任何在线数里）——mmorpg 自 G4b-G 起相同（2026-10-13 落码，未提交、待 Codex 验证；它的 gate 每 10 s 上报，余量 5 s；取走时占位已被清掉的话 mmorpg 补回、Java `ZADD XX` 不补）；`
   - ③ 的其余各句、①、④–⑧ 都不动。**「mmorpg commit」列（现为 `26ceb70ca`）与状态列「已对齐（行为有意不同）」也不动**；等 Codex 跑绿、用户发话提交之后，再把两处括号里的「未提交、…待 Codex 验证」换成 commit 号，那时才更新「mmorpg commit」列。
   - §11 #2 若选备选（快速通道也取 60s），② 的「仍不同」里去掉快速通道那一句。
-- **本仓库 `PROGRESS.md` 条目要写的 Java 状态**：对应 Java 版本号 `0.1.0-SNAPSHOT`；状态「已做（Java 批次 3.4b 已实现占位逐个到期与取走后保留 15s）；本仓库 G4b-G 落码后这两点与之相同，未提交、未编译、待 Codex 验证；快速通道占位寿命等五处内部实现差异见 `spec_G4b-G.md` §12」。
+- **本仓库 `PROGRESS.md` 条目要写的 Java 状态**：对应 Java 版本号 `0.1.0-SNAPSHOT`；状态「已做（Java 批次 3.4b 已实现占位逐个到期与取走后保留 15s）；本仓库 G4b-G 落码后这两点与之相同，未提交、未编译、待 Codex 验证；快速通道占位寿命等五处内部实现差异见 `spec_G4b-G.md` §12」。（2026-10-15 更正：取走后保留时长两版不再相同，本仓库 20s、Java 15s；整键 TTL 已对齐。10-15 的 PROGRESS 条目按此写。）
+- **2026-10-15 对 `PARITY.md`「登录排队」行的第二次改写**（上面两段「改为」是 10-13 的文本，此前已写进该行，括号里的「未提交」也已改成「已随本仓库 `e4ff1d165`、`ebccaf04d` 提交，未编译、待 Codex 验证」；本次仍只动这一行的备注列，commit 列、状态列不动）：② 的「仍不同」改为「快速通道占位寿命 Java = `admit-ttl`（60 s）、mmorpg = 20 s」，删掉整键 TTL 那条差异，改写为两版都只延长不缩短（Java「不足才续」）；③ 里「取走后再留」一句改为 mmorpg 留 20 s（gate 每 10 s 上报，留两个上报周期），与 Java 的 15 s 不同、写成差异；「一轮按段挑 gate」一句补「mmorpg 自 2026-10-15 起也按批内计数轮转（未提交、未编译、待 Codex 验证）」，行尾 10-14 补的「mmorpg 的『一轮按段挑 gate』仍未做……③ 里这一句仍是差异」随之改写。10-15 的两处行为改动同样未编译、待 Codex 验证。
 - 客户端契约（assign-gate / queue-status 的回包码、queue token、proto、tip）不变，两版都不需要同批改协议。
 
 ---
@@ -1672,7 +1710,7 @@ Remove-Item Env:GOTOOLCHAIN, Env:GOPROXY -ErrorAction SilentlyContinue
 | U2 | miniredis 里键的 TTL 不随墙钟走，只随 `FastForward` | §6.5 的 Q1 红用例（`mr.FastForward`）；`TestIntegration_DualLeadersSameZone_…` 的既有注释 | **已对源码核实**：递减 TTL 的只有 `db.go:711-718` 的 `fastForward`，全包没有定时器。**T6 不依赖它**：用例真实耗时毫秒级，60s 的放行槽在真实 Redis 上也不会过期 | 不影响 T6；只影响 §6.5 Q1 红用例的写法 |
 | U3 | miniredis：`ZREMRANGEBYSCORE` 对不存在的键回 0、对非 ZSET 键回 `WRONGTYPE`，`-inf` 可解析、上界是闭区间；`ZADD` 打到非 ZSET 键回 `WRONGTYPE`，`EXEC` 逐条执行；删掉最后一个成员即删键；`TYPE` 对 ZSET 回 `zset`；`PTTL` 回存下的毫秒数；`KEYS` 支持通配 | T2、T7、T9、T11 | **已对源码核实**：`cmd_sorted_set.go:1065-1073`、`:1168-1186`、`:1207-1217`、`:145-148`；`cmd_transactions.go:90-93`；`db.go:506-515`；`redis.go:21` 与 `cmd_generic.go:396-402`；`cmd_generic.go:302-308`；`cmd_generic.go:41`、`:490` | 对应用例红，报告，不改实现 |
 | U4 | go-redis v9.16.0：`TxPipeline()` 返回 `Pipeliner`、`PExpire`、`Cmd.Int64`、`Script.Run`（先 EVALSHA，`NOSCRIPT` 再 EVAL；miniredis 的文案以 `NOSCRIPT` 开头，能命中）、`MaxRetries: -1` 只关命令重试、拨号另有 `DialerRetries`（缺省 5 次）/ `DialerRetryTimeout`（缺省 100ms）、`float64` 用 `'f'` 格式编码 | §4.4、§4.5、T10 | **已对源码核实**：`redis.go:1098`、`generic_commands.go:195`、`command.go:331`、`script.go:68-74`（miniredis `redis.go:58`）、`options.go:331-336`、`options.go:115-123` 与 `:286-291`、`internal/pool/pool.go:335-360`、`internal/proto/writer.go:103`、`:131`、`:232-233` | 编译报错，按报错改调用 |
-| U5 | **真实 Redis**：`ZREMRANGEBYSCORE key -inf x` 是闭区间；最后一个成员删掉后空 ZSET 自动消失；`PEXPIRE` 覆盖已有 TTL；没有成员可删的写脚本不产生复制 / AOF 流量 | §4.1、§9 #3 | **未核实**（凭记忆）。miniredis 上的同名行为已核（U3），但那不是真实 Redis 的证据 | 前三条是 Redis 的基本语义，由 §8.4 的冒烟在真实 Redis 上看一次；最后一条只影响 R6 的估算 |
+| U5 | **真实 Redis**：`ZREMRANGEBYSCORE key -inf x` 是闭区间；最后一个成员删掉后空 ZSET 自动消失；`PEXPIRE` 覆盖已有 TTL；没有成员可删的写脚本不产生复制 / AOF 流量；（10-15 补）MULTI 里的 `EVAL` 在 `EXEC` 时执行、Lua 里 `PTTL` 回 −2 / −1 / 剩余毫秒 | §4.1、§4.5、§9 #3 | **未核实**（凭记忆）。miniredis 上的同名行为已核（U3、U15），但那不是真实 Redis 的证据 | 除复制 / AOF 一条外都是 Redis 的基本语义，由 §8.4 的冒烟（10-15 起是硬门槛，第 3、4 步）在真实 Redis 上看一次；复制 / AOF 一条只影响 R6 的估算 |
 | U6 | 同一 zone 的 login 副本之间时钟偏差在毫秒到几十毫秒 | §4.2 的取舍 | **未核实**（假设，无旁证） | 走 §4.2 的退路；偏差大时的后果见 §4.2 代价、R2 |
 | U7 | (a) miniredis v2.35.0 的 Lua 内 `TIME` 可用并跟随 `SetTime`；(b) Redis 7.2 允许脚本在 `TIME` 之后写 | 只有 §11 #3 选备选时才用到 | (a) **已对源码核实**：`cmd_server.go:167-176`、`miniredis.go:446-450`、`:673-678`、`lua.go:57-60`。(b) **未核实**（凭记忆；仓库旁证 `go/match/internal/team/scripts.go:8-10`、`go/db/internal/kafka/retry_ownership.go:108-112`） | (b) 不成立则备选不可行 |
 | U8 | etcd 写入到 login 读到的延迟是毫秒级 | §4.3、§5.2 的 `v = c + φ` | 无 | 宽限的余量再减去这一段 |
@@ -1682,10 +1720,15 @@ Remove-Item Env:GOTOOLCHAIN, Env:GOPROXY -ErrorAction SilentlyContinue
 | U12 | gofmt 会把文档注释里三空格缩进的块改成 tab；`metrics.go` 在 HEAD 上因此不是 gofmt 干净的；Go 1.27 的 gofmt / vet 相对 1.24 有没有行为变化 | §4.7、§8.2 的 gofmt 规则 | **未核实**（没有运行 gofmt；旁证 `PROGRESS.md:5948`） | §8.0 的基线会给出实际情况；规则本身（基线内的文件不 `gofmt -w`）不依赖这个猜测 |
 | U13 | Windows 回环上被拒绝的 TCP 连接多久返回 | T10 的真实等待 | **未核实**；所以 §6 只写上界 3 × `DialTimeout` | 不影响通过与否 |
 | U14 | robot 登录后保持在线（不主动下线） | §5.2「放行节奏的上界」对 runbook 样例的判读 | **未核实** | 只影响 runbook 节奏数字怎么重写，不影响代码；L-14 标定 |
+| U15（10-15 补） | miniredis v2.35.0：MULTI 里的 `EVAL` 先入队、`EXEC` 时执行；Lua 里能调 `PTTL`，键不存在回 −2、没有 TTL 回 −1 | §4.4 更正注、§4.5（放行的 MULTI{`SET`, `EVAL`}）；T15、T16 | **已对源码核实**：`cmd_scripting.go:152-180`（`cmdEval` 走 `withTx`）、`redis.go:96-120`（`withTx`：事务中入队并回 `QUEUED`，Lua 内嵌套调用直接执行），自带用例 `cmd_scripting_test.go:511` 的 `TestLuaTX`；`PTTL` 注册 `cmd_generic.go:48`、实现 `:276-310` | 对应用例红，停下报告（§8.2 兜底） |
+| U16（10-15 补） | go-redis v9.16.0：`Pipeliner` 经 `Cmdable` 嵌入 `ScriptingFunctionsCmdable`，满足 `Scripter`，所以 `Script.Eval` 能把脚本排进 MULTI；`Script.Run` 先 `EVALSHA`、只在当场拿到 `NOSCRIPT` 时回退 `EVAL`；`Exec` 返回第一个出错命令的错误（含 `redis.Nil`） | §4.4 更正注（用 `Eval` 不用 `Run`、脚本必须 `return 1`） | **已对源码核实**：`commands.go:230`、`scripting_commands.go:5-13`、`script.go:10-16`（`Scripter`）、`:50-52`（`Eval`）、`:68-74`（`Run`）、`command.go:105-112`（`cmdsFirstErr`）。「Lua 返回 nil 时客户端收到的是 nil 回复、go-redis 记为 `redis.Nil`」真实 Redis 一侧凭记忆，**未核实**；脚本固定 `return 1`，不依赖它 | 编译报错按报错改调用；`Exec` 行为不符时停下报告 |
+| U17（10-15 补） | `PEXPIRE … GT` 把没有 TTL 的键当作 TTL 无限大，对这种键永不生效 | §4.1「为什么不用 `GT`」、§11 #6 | miniredis v2.35.0 **已对源码核实**（`cmd_generic.go:154-159`，注释 `no exp == infinity`）；**真实 Redis 7 凭记忆，未核实**。实现不用 `GT`，这条只是不用它的理由 | 不影响实现；即使真实 Redis 语义不同，显式 `PTTL` 比较的写法照样正确 |
 
 ---
 
 ## 14. 对三路摸底的核对结果
+
+> §14、§15 是 2026-10-13 的历史记录，保留原文：其中的「15s」按 20s、「无条件 `PEXPIRE`」按「只延长不缩短」理解（2026-10-15，§11 #1、#6）。
 
 逐条回到代码核过，下面是与摸底不一致、以代码为准的地方：
 

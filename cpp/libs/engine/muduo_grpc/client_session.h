@@ -76,6 +76,11 @@ public:
         virtual void OnPingAck() = 0;
         // 一个流结束;每个成功提交的流恰好回调一次。
         virtual void OnStreamClosed(int32_t streamId, StreamOutcome outcome) = 0;
+        // 以下两项只对 SubmitStream 开的流回调(unary 流的头部与消息随 OnStreamClosed 一次给出)。
+        // 收到响应头(初始 metadata,-bin 已解掉线上那层);trailers-only 时不回调。
+        virtual void OnStreamHeaders(int32_t /*streamId*/, const Metadata & /*initialMetadata*/) {}
+        // 收到一条完整消息(不含 5 字节前缀),按到达顺序。
+        virtual void OnStreamMessage(int32_t /*streamId*/, std::string /*message*/) {}
     };
 
     struct SubmitResult
@@ -95,6 +100,19 @@ public:
     Status Start();
 
     SubmitResult SubmitUnary(const UnaryRequestSpec &spec);
+
+    // 开一个双向流(§13.2):只发请求头;消息之后用 AppendStreamMessage 逐条追加,HalfCloseStream 半关闭。
+    // 不带 grpc-timeout(流没有截止时间)。结果:消息经 OnStreamMessage 逐条到达,结束经 OnStreamClosed。
+    SubmitResult SubmitStream(const std::string &path, const Metadata &metadata);
+
+    // 往流上追加一条已带 5 字节前缀的消息。流不存在 / 已半关闭返回 false。真正写出要 DrainOutput。
+    bool AppendStreamMessage(int32_t streamId, std::string_view framedMessage);
+
+    // 半关闭:已追加的消息发完后带 END_STREAM。
+    void HalfCloseStream(int32_t streamId);
+
+    // 流上还没交给 nghttp2 的待发字节数(背压用);流不存在返回 0。
+    size_t PendingStreamBytes(int32_t streamId) const;
 
     // 本端终止一个流:发 RST_STREAM(http2ErrorCode);之后的 OnStreamClosed 以 status 报告(若对端结果先到,以先到者为准)。
     void ResetStream(int32_t streamId, uint32_t http2ErrorCode, Status status);
@@ -124,9 +142,16 @@ private:
     {
         explicit StreamState(size_t maxMessageBytes) : deframer(maxMessageBytes) {}
 
-        std::shared_ptr<const std::string> framedRequest;
+        std::shared_ptr<const std::string> framedRequest;  // unary:整个请求
         size_t sentOffset{0};
         bool requestHeadersSent{false};
+
+        // 双向流(SubmitStream):待发字节在 pendingSend 里,数据提供者没数据时返回 DEFERRED 挂起,追加后 resume。
+        bool streaming{false};
+        std::string pendingSend;
+        size_t pendingSendOffset{0};
+        bool writesDone{false};
+        bool dataDeferred{false};
 
         // 当前正在读的头部块
         enum class Block
@@ -163,6 +188,10 @@ private:
     StreamOutcome BuildOutcome(StreamState &stream, uint32_t http2ErrorCode) const;
     void SetLocalErrorAndReset(int32_t streamId, StreamState &stream, Status status, uint32_t http2ErrorCode);
     StreamState *FindStream(int32_t streamId);
+    const StreamState *FindStream(int32_t streamId) const;
+    // unary 与双向流共用:拼请求头、提交给 nghttp2、登记流。grpcTimeout 为空则不发该头。
+    SubmitResult SubmitRequest(const std::string &path, const Metadata &metadata, const std::string &grpcTimeout,
+                               std::unique_ptr<StreamState> stream);
 
     struct SessionDeleter
     {

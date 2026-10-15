@@ -132,12 +132,20 @@ Go 侧没有任何服务配置 `KeepaliveEnforcementPolicy`,即 grpc-go 默认:�
 服务端写过 HEADERS / DATA 之后到达的下一个 PING 清零 strike。现有 C++ 通道的 30s、空闲也 ping 的设置
 已在日志里触发过 `too_many_pings`,新实现不照搬。
 
-新实现的规则(对 Go 服务端**永远不会产生 strike**):
+新实现的规则(对 Go 服务端**正常情况下不产生 strike**,例外与上限见下):
 
 - 默认不做周期 keepalive(`keepalive_time = 0`)。
 - 存活探测只在「某个调用的截止时间到期、而这条连接自该调用发出以来**一个帧都没收到**」时发一次 PING,且只在下列之一成立时发:
-  这条连接还没发过 PING;或在上一次 PING 的 ACK **之后**收到过 HEADERS / DATA(说明服务端在处理我们上个 PING 之后写过数据,
-  按 grpc-go 逻辑下一个 PING 清零)。
+  1. 这条连接还没发过 PING;
+  2. 在上一次 PING 的 ACK **之后**收到过 HEADERS / DATA(服务端在处理我们上个 PING 之后写过数据,按 grpc-go 逻辑下一个 PING 清零);
+  3. 距上一次 PING 已超过 grpc-go 默认 MinTime 加余量(5min + 10s;探测发出时该调用的流仍活跃,不记 strike);
+  4. 以上都不满足时,至多再放行 **1 次**「无法确认已清零」的探测。没有这一条,一次探测被 ACK 后紧接着网络黑洞,
+     这条连接就再也探测不到,只能等内核 TCP 重传放弃(Linux 约 15 分钟)。
+- 例外:grpc-go `handlePing` 先排 ACK、后做 CAS,与写协程有竞态;`writeEarlyAbort` 的 trailers-only HEADERS 也不清零 strike。
+  这两种情况下第 2 条放行的探测可能记 1 次 strike。第 4 条只给一次额度,这条路径累计的 strike 最多到 1~2,低于 grpc-go
+  `>2` 才 GOAWAY 的阈值;万一触发,后果也只是这条连接被优雅 GOAWAY、重连一次。
+- 已知盲区:连续两次探测都被 ACK、却始终没有 HEADERS / DATA 时,静默断链仍要等 5min 后第 3 条放行的探测,或 TCP 重传放弃、
+  etcd 摘除节点。
 - 探测在 `keepalive_timeout`(默认 20s,与 grpc-go 服务端的 ACK 超时一致)内收不到 ACK:判连接已死,关连接、
   在途调用以 UNAVAILABLE 结束、通道重连。
 - 对端的所有 PING(含 BDP ping、GOAWAY 后的 ping)由 nghttp2 自动 ACK。
@@ -199,6 +207,9 @@ Go 侧没有任何服务配置 `KeepaliveEnforcementPolicy`,即 grpc-go 默认:�
   (通道在 `queueInLoop` 里释放 draining / 失败的连接)。
 - nghttp2 回调里不调用业务回调、不销毁任何对象(只记状态),避免重入 nghttp2。
 - 截止时间用 `steady_clock`;muduo 定时器是墙钟,只作唤醒提示,到点用 steady_clock 复核,未到期就重新 arm。
+  **已知限制**:复核只兜得住墙钟前跳(定时器早到);墙钟**回拨** N 秒时,截止 / 建连 / 探测定时器都会晚 N 秒触发
+  (muduo 的 `runAfter` 与 Windows `TimerQueue::nextTimeoutMs` 都按 `Timestamp::now()` 算,这是 muduo 的系统性限制,
+  不是本模块引入)。要根治需给 muduo 加单调时钟定时器,与 Windows `wakeup()` 空操作一起放到第 3 批处理。
 - 节点摘除:通道是节点实体上的组件(`MuduoGrpcChannelPtr`),`ExecuteNodeRemoval` 的 `DestroyEntity` 析构它;
   析构把在途调用以 UNAVAILABLE 投递失败回调(gate 据此回客户端 1003 —— 旧路径这里是静默丢失)。
 - 关机:关机分两段(2026-10-15 由「C++ RPC 异步回调链式调用设计」会话改成两段式,见 muduo-rpc-channel.md)。
@@ -224,6 +235,10 @@ Go 侧没有任何服务配置 `KeepaliveEnforcementPolicy`,即 grpc-go 默认:�
   共用 `SendViaRouter` 这一个接缝(`client_message_processor.cpp`)。
 - 开关 `GATE_ROUTER_TRANSPORT`,启动时读一次:`grpc`(默认,旧实现)| `muduo_h2`(新实现)。不认识的值按 `grpc`
   并 WARN。它与 `GATE_CLIENT_RPC_ROUTER`(业务拓扑:直连还是经路由服)是两回事;直连模式下这个开关不生效。
+- **地址要求**:`muduo_h2` 要求路由服在 `NodeInfo.grpc_endpoint.ip` 里登记 **IPv4 字面量**(K8s 注入的 POD_IP、
+  或配置的具体 IP;仓库交付的配置都满足)。路由服 `ListenOn` 写主机名又没有 POD_IP 时不能用 `muduo_h2`:
+  建通道失败、节点不进候选,服务发现每 2s 重试一次并记 ERROR。不在 loop 线程上做阻塞 DNS 解析,也不为这种节点
+  回落官方通道(同一进程里同一类节点不混用两种实现)。IPv6 官方路径同样拨不通(`FormatIpAndPort` 不加方括号),不是新差异。
 - `muduo_h2` 时 gate 在 `ClientRpcRouterNodeService` 的节点 registry 上下文里装一个通道工厂,`NodeConnector::ConnectToGrpcNode`
   看到工厂就建 `muduo_grpc::Channel`,**不再创建官方 `grpc::Channel`、Stub 与 CompletionQueue**。
   同一进程内其余 gRPC(etcd)仍走官方运行时 —— **不能据第 1 批宣称 gate 已经没有 gRPC 线程**。
@@ -272,6 +287,8 @@ Go 侧没有任何服务配置 `KeepaliveEnforcementPolicy`,即 grpc-go 默认:�
 | F012 / F022 | `tlsNodeContextManager` 从不 Clear;RunNodeMain 兜底路径与 CQ / stub 未处理 | 关机在两跳排空前清掉所有传输组件;兜底路径同样处理 | 1(部分)/ 2 / 3 | `FinalizeShutdownInLoop` 已清 `MuduoGrpcChannelPtr`;兜底路径与 CQ / stub 待第 2、3 批 |
 | C008 | 流式客户端把 registry 里可移动的 protobuf 响应组件地址交给异步 Read(swap-and-pop 后悬空) | 流的响应缓冲放进不可移动的通道 / 调用对象,不作为 entt 组件 | 2(etcd 双向流) | 不涉及(第 1 批只有 unary;调用状态存在 Channel 内部的节点式容器里,地址稳定) |
 
+2026-10-15 ECS 源码收尾补充：上表的“第 1 批状态”为迁移当时记录。文件释放后，Codex 已在官方 CQ 源模板补齐缺传输的异步拒绝、稳定调用缓冲、取消与非阻塞排空，并在节点最终清池前等待在途标签及本地业务回调（包括重入）。同时前置握手类型与发现前缀一致性校验；真实入口回归已加入现有 rpc_controller_test。按负责人“先别编译”要求，尚未重生成、编译或运行，因此不能将这些源码当作本迁移已验收，更不能据此关闭下节 etcd 重连/revision/compact 条目。最新执行范围见 [ECS 总索引 §8](../handoff/ecs-refactor/README.md#8-全部源码收尾补充2026-10-15仍暂缓构建)。
+
 ### 10.2 第 2 批(etcd)的验收条件:P0-D「etcd 双向流断开后不重建」
 
 2026-10-15 并行会话「全局单例扩容交接」移交,不在旧 CQ 模板上修。证据与测试设计见
@@ -302,7 +319,7 @@ Go 侧没有任何服务配置 `KeepaliveEnforcementPolicy`,即 grpc-go 默认:�
 
 ## 11. 第 1 批验证(交 Codex,未执行)
 
-见 `docs/PROGRESS.md` 2026-10-14 本批条目的「交 Codex」一节:依赖构建 → 单测(不链 grpc、线程检查)→
+见 `docs/PROGRESS.md`「2026-10-15 C++ gRPC 传输改由 muduo 驱动·第 1 批」条目的「交 Codex」一节:依赖构建 → 单测(不链 grpc、线程检查)→
 对真实 Go 路由服的互通用例 → gate 两种传输分别跑登录 / 进场 / 断线通知 → 新旧实现**分别**用隔离输入,
 不对同一有副作用请求双发。
 
@@ -310,3 +327,88 @@ Go 侧没有任何服务配置 `KeepaliveEnforcementPolicy`,即 grpc-go 默认:�
 
 本改动只换 C++ 服务端内部传输,线上协议、客户端帧格式、proto、tip 码、配置表都不变,不属于两版共享的客户端契约;
 Java 版用 Java gRPC,**不适用**。PARITY.md 不登记功能行。
+
+## 13. 第 2 批:etcd 迁到新传输(设计,2026-10-15)
+
+负责人 10-15「做完之后开始落地代码」:第 1 批交付后继续落第 2 批。第 2 批**同样未编译**,与第 1 批一起交 Codex。
+验收条件见 §10.1(C008)与 §10.2(P0-D 全部条目)。
+
+### 13.1 范围
+
+- `muduo_grpc` 增加客户端**双向流**与按通道配置的**周期 keepalive**。
+- C++ 节点的 etcd 访问(KV.Range / Put / Txn / DeleteRange、Lease.Grant / Revoke、Watch 与 LeaseKeepAlive 两条双向流)
+  可改走新传输;开关 `NODE_ETCD_TRANSPORT=grpc(默认)| muduo_h2`,进程启动时读一次,不认识的值按 grpc 并 WARN。
+- 注册链(Range → Watch → Grant → 端口 CAS → 分配键 CAS → 起 RPC → 发布)、key 布局、CAS 形态、单槽 pending + 10s 看门狗
+  **一律不变**;两种传输共用 `EtcdService` 的同一套应答处理(从生成层的全局 handler lambda 抽成 `EtcdService` 的方法)。
+- 不在本批:Windows `wakeup()`、删除 5ms CQ 轮询(其余官方 gRPC 客户端仍依赖它,第 3 批);etcd 多 endpoint 切换。
+
+### 13.2 双向流 API(`muduo_grpc::Channel::StartStream`)
+
+- 返回 `std::shared_ptr<ClientStream>`;回调 `onHeaders`(可选)、`onMessage`(每条消息一次)、`onClose(Status, trailing)`
+  **恰好一次**。全部经 `queueInLoop` 投递、保持到达顺序,永不在 `StartStream` / `Write` 内同步执行。
+- `Write(message)`:未连上时先在本端缓冲;单流待发上限 1 MiB,超出以 RESOURCE_EXHAUSTED 结束该流(不丢消息、不覆盖旧消息——
+  旧 CQ 实现的 circular_buffer(200) 满了会覆盖最旧的 create_request,静默丢 watch)。
+- `WritesDone()` 半关闭;`Cancel()` 发 RST_STREAM(CANCEL) 且**之后不再回调**(重建流时用,免得旧流的结束事件再触发一次重建)。
+  句柄析构 = Cancel。流没有截止时间。
+- 通道 TRANSIENT_FAILURE / SHUTDOWN 时立即 `onClose(UNAVAILABLE)`;IDLE / CONNECTING 时排队,连上再开流。
+- 连接断开、对端 RST / trailers、GOAWAY 未处理:`onClose` 给出对应状态;**流不透明重试**,由上层(etcd)按 §13.5 退避重建。
+- 流的响应缓冲在流对象内部(不可移动,非 entt 组件),对应 §10.1 C008。
+
+### 13.3 周期 keepalive
+
+- `ChannelOptions::keepaliveTime`(0 = 关,Go 服务通道默认关)。>0 时:连接 READY、有活跃流、且距最近收到的帧已满
+  `keepaliveTime` 时发 PING,`keepaliveTimeout` 内无 ACK 判连接死。
+- 只给 etcd 通道开:30s / 10s。etcd 的 grpc-go 服务端默认 `--grpc-keepalive-min-time=5s`,Watch / KeepAlive 流常驻,
+  30s 一次远高于下限,不会被 `too_many_pings`。Go 业务服务通道仍走 §4.4 的截止触发探测。
+
+### 13.4 etcd 传输接缝
+
+```
+EtcdHelper(唯一出口,EtcdManager 的 keepalive 也收进来)
+   │ etcd_transport::Get()  —— 进程级、Node 构造前装好
+   ├── GrpcEtcdTransport(官方生成客户端 + CQ;回退路径,行为与改前完全一致)
+   └── MuduoEtcdTransport(muduo_grpc 通道;本批新增)
+            │ 每次调用的完成回调 / 流事件
+            ▼
+      EtcdResponseSink(由 EtcdService 实现):OnRange / OnPut / OnTxn / OnLeaseGrant / OnWatch / OnKeepAlive
+                                         + OnWatchStreamOpened / OnKeepAliveStreamOpened(仅新传输)
+```
+
+- core 只认接口(`etcd/etcd_transport.h`)与官方实现;`MuduoEtcdTransport` 也在 core,但只被各节点 main 的
+  `etcd_transport::InstallFromEnv()` 引用 —— 静态库按需取目标文件,不引用它的测试工程不需要链 muduo_grpc / nghttp2。
+  gate / scene / battle 三个节点工程链 `muduo_grpc.lib` + `nghttp2.lib`。
+- `OnRange` 带上原请求(新传输知道是哪个前缀;官方实现传空 —— 生成层的成功回调拿不到请求,所以对账只在新传输上做)。
+- unary 失败(新传输能拿到,官方实现拿不到):只记日志,恢复仍靠既有的 txn / lease 10s 看门狗与 2s 全量 Range,语义不变。
+
+### 13.5 流重建与对账(落实 §10.2)
+
+- 流结束(任何原因)→ 按退避重建:0.2s 起、×2、封顶 5s、±20% 抖动、流稳定 10s 后清零、**不设次数上限**(偏离理由见 §10.2)。
+- **KeepAlive 流**重开后立刻补发一拍(当前 lease 存在时),不等 1s 定时器。
+- **Watch 流**重开后逐前缀「Range → 对账 → 从 R+1 watch」:
+  - 本地索引 `key → {node_type, uuid, mod_revision}`(由 PUT 维护,DELETE / 对账删除时清理)。
+  - 对账:前缀下本地有、Range 结果里没有、且本地 `mod_revision ≤ R`(Range 的 header.revision)的 key 视为已删除,
+    走原有 `HandleServiceNodeStop`(含宽限期)。`mod_revision > R` 的是 Range 之后经 watch 才到的新键,不删。
+  - 快照不完整一律不删:`more == true`、任一 kv 值解析失败、kv 的 key 不属于该前缀。
+  - 每 2s 的全量 Range 走同一对账(新传输上;它本来就要推进 revision,顺带补回漏掉的删除)。
+- watch `canceled`(含 `compact_revision != 0`):该前缀按上一条重新 Range → 对账 → 从 R+1 重建 watch,不再在同一流上
+  重发全部前缀(旧实现会给每个前缀叠一个重复 watcher)。`created` 应答按发送顺序把 `watch_id` 对回前缀。
+- DELETE 事件**不依赖 prev_kv**:先用 prev_kv;没有时按 key 查本地索引拿到 NodeInfo 再走 `HandleServiceNodeStop`。
+- 注册链的触发点不变:第一个 watch `created` 应答触发 LeaseGrant;重建后的 `created` 不再触发。
+
+### 13.6 地址解析
+
+- `Etcd.Hosts` 第一个地址(与旧实现相同)。IPv4 字面量直接用;主机名(K8s 的 `etcd.<ns>:2379`)在 **Node 构造期**
+  (loop 尚未运行)用 `getaddrinfo` 解析一次,失败每秒重试、最多 10 次,仍失败则 LOG_FATAL 拒绝启动。
+- 解析结果在进程生命周期内固定:K8s Service 的 ClusterIP 在 Service 存续期间不变;Service 被删除重建需要滚动节点。
+  运行中不做 DNS(loop 线程不得阻塞;无线程的异步 DNS 要引入 c-ares,不在本批)。
+
+### 13.7 关机
+
+- `FinalizeShutdownInLoop` 里 `ReleaseNodeId()` 发 LeaseRevoke 之后,新传输的通道随 `EtcdService::Shutdown` 释放:
+  先 Flush,让 LeaseRevoke 的字节尽量写出(输出缓冲为空时 send 直接写 socket),再关连接。应答不等(与旧实现一致)。
+- 流句柄 Cancel、退避定时器取消;通道析构走 §6 的排队释放。
+
+### 13.8 回退
+
+`NODE_ETCD_TRANSPORT` 不设或设 `grpc` 即回到旧实现;**回退时 §10.2 列出的缺陷依然存在**(启动日志写明当前选择)。
+任何 etcd 滚动(钉镜像版本、加压缩参数)要等新实现验证通过之后再做(§10.2 第 7 条)。

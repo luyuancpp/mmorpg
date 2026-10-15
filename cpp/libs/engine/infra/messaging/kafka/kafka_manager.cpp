@@ -3,11 +3,8 @@
 #include <muduo/base/Logging.h>
 #include <muduo/net/EventLoop.h>
 #include <boost/algorithm/string/join.hpp>
-#include "thread_context/redis_manager.h"
 #include "messaging/kafka/kafka_consumer.h"
 #include "messaging/kafka/kafka_producer.h"
-
-#include <node_config_manager.h>
 
 namespace {
 std::string JoinBrokers(const KafkaConfig& config) {
@@ -33,8 +30,8 @@ bool KafkaManager::Init(const KafkaConfig& config) {
 	// 2026-10 之前这里只在 Kafka.GroupID 为空时登记;非空时走一次不带回调的 Subscribe,
 	// 那次调用必然在登记 broker 之前返回 false(返回值又被 Node::InitKafka 丢掉)。只生产不消费的
 	// 节点(battle)因此在 GroupID 非空的部署里拿不到 broker,每次 send() 都被拒 —— K8s 的 node
-	// ConfigMap 至今写死 GroupID: "game-consumer-group"(k8s_deploy.ps1 的 New-NodeConfigMapYaml,
-	// 改为从 bin/etc 镜像是 P0-B 批 2,尚未落地)。见 docs/handoff/global-singletons-p0-findings-20261014.md P0-B。
+	// ConfigMap 曾写死 GroupID: "game-consumer-group"(k8s_deploy.ps1 的 New-NodeConfigMapYaml;
+	// 2026-10-15 的 P0-B 批 2 改为从 bin/etc 镜像)。见 docs/handoff/global-singletons-p0-findings-20261014.md P0-B。
 	const std::string brokers = JoinBrokers(config);
 	if (brokers.empty()) {
 		LOG_ERROR << "KafkaManager::Init failed: Kafka.Brokers is empty.";

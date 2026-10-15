@@ -2,7 +2,8 @@
 #include <chrono>
 #include <functional>
 #include <memory>
-#include <boost/circular_buffer.hpp>
+#include <deque>
+#include "core/network/grpc_client_runtime.h"
 #include "entt/src/entt/entity/registry.hpp"
 #include "grpc_client/grpc_call_tag.h"
 {{.GrpcIncludeHeadName}}
@@ -26,19 +27,22 @@ using {{ $svc.Service }}StubPtr = std::unique_ptr<{{ $svc.Service }}::Stub>;
 {{ if $method.ClientStreaming }}
 
 struct Async{{ $svc.Service }}{{ $method.Method }}GrpcClient {
+    // context 不可移动；显式固定池地址，Read/Write/Finish 均只借用此对象内的缓冲。
+    static constexpr bool in_place_delete = true;
     uint32_t messageId{ {{ $svc.Service }}{{ $method.Method }}MessageId };
     ClientContext context;
     Status status;
     {{ $method.CppResponse }} reply;
+    {{ $method.CppRequest }} writingRequest;
+    std::deque<{{ $method.CppRequest }}> pendingWrites;
     std::unique_ptr<grpc::ClientAsyncReaderWriter<{{ $method.CppRequest }}, {{ $method.CppResponse }}>> stream;
-};
-
-struct {{ $method.RequestName }}Buffer {
-    boost::circular_buffer<{{ $method.CppRequest }}> pendingWritesBuffer{200};
-};
-
-struct {{ $method.RequestName }}WriteInProgress {
-    bool isInProgress{false};
+    GrpcClientRuntimePtr runtime;
+    bool initializing{true};
+    bool reading{false};
+    bool writing{false};
+    bool closing{false};
+    bool finishing{false};
+    bool finished{false};
 };
 
 {{ else }}
@@ -53,6 +57,7 @@ struct Async{{ $svc.Service }}{{ $method.Method }}GrpcClient {
     // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
     {{ $method.CppRequest }} request;
     GrpcSentMetadata sentMetadata;
+    GrpcClientRuntimePtr runtime;
 };
 
 {{ end }}
@@ -86,7 +91,7 @@ void Set{{$svc.FileBaseNameCamel}}FailedHandler(const std::function<void(const G
 void Set{{$svc.FileBaseNameCamel}}IfEmptyFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler);
 // 本文件所有 unary 调用此后使用的 deadline;启动时由 SetGrpcCallDeadline 按目标节点类型调用。流式调用不设。
 void Set{{$svc.FileBaseNameCamel}}CallDeadline(std::chrono::milliseconds deadline);
-void Handle{{$svc.FileBaseNameCamel}}CompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, GrpcTag* grpcTag);
+void Handle{{$svc.FileBaseNameCamel}}CompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, bool ok, GrpcTag* grpcTag);
 void Init{{$svc.FileBaseNameCamel}}GrpcNode(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity);
   {{- end }}
 {{- end }}

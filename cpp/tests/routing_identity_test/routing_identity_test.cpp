@@ -339,8 +339,10 @@ TEST(NodeEntityLookup, ZoneScopedLookupDoesNotAliasAcrossZones)
 // 对端带来的 node_type 越界(docs/design/ecs-entt-misuse-audit-20261015.md F093 / C007)
 // ===========================================================================
 //
-// gate RoutePlayerMessage、scene RoutePlayerStringMsg、NodeHandshakeManager 的握手应答处理
-// 都拿对端带来的 node_type 选 registry。以前 NodeContextManager::GetRegistry 只有 assert,
+// 审计时 gate RoutePlayerMessage、scene RoutePlayerStringMsg、NodeHandshakeManager 的握手应答处理
+// 都拿对端带来的 node_type 选 registry(2026-10-15 起这三处都已不再这样做:Route 一族改为显式拒绝,
+// 握手应答按本端发起时的 nodeType 选 registry,见 docs/design/muduo-rpc-channel.md §8.3 / §9.3;
+// 下面的用例锁的是 NodeContextManager 本身的边界,不依赖这些入口)。以前 NodeContextManager::GetRegistry 只有 assert,
 // Release 下 NDEBUG 抹掉它,越界读写 registries_ 之外的内存。
 // 现在分两类:外部输入走 TryGetRegistry(越界返回 nullptr,由入口拒绝);GetRegistry 只给可信内部调用方,
 // 越界是编程错误,任何构建下都 LOG_FATAL。

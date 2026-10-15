@@ -759,6 +759,8 @@ func runLagProbe(ctx context.Context, brokers []string, interval time.Duration, 
 
 ### 4.7 告警规则(新文件 `deploy/k8s/data-service-audit-alerts.yaml`,PrometheusRule,格式照 `deploy/k8s/owner-epoch-alerts.yaml:1-40`)
 
+> **更正(2026-10-15,负责人「按最标准的去做」;正文不改)**:`DataServiceAuditRetentionGap` 已改为 `max by (consumer) (max_over_time(data_service_kafka_consumer_retention_gap_messages[15m])) > 0`、`for: 0m`,仍为 critical —— 丢数据类告警对探针采到的任何一次缺口都呼叫,不再要求缺口持续 2 分钟。下面代码块里该条的 `for: 2m`、「瞬时假阳性靠 for 滤掉」「消费者跳过并提交后告警随之 resolve」,以及 §4.5 注释、R-13、评审 I-2 里同一条告警的 `for: 2m`,一律按本注理解:瞬时假阳性现在也会呼叫,按丢数据处置后用日志确认条数(可能为 0);日志条数为 0 时多为消费者已读入、尚未提交的消息所在段被删(gauge 可持续多轮探针为正,积压已在删除线上,见 runbook §7);缺口消失后告警还会保持约 15 分钟;缺口整段短于一个探针间隔时仍可能漏,丢失条数仍以日志为准。窗口取值依据(≥ 规则评估间隔 + 探针间隔,待故障演练确认)见规则注释与 runbook §7。规则总数仍为 8 条。
+
 ```yaml
 spec:
   groups:
@@ -1152,6 +1154,8 @@ data-service 先切到 g2 后不再消费 g1,而 scene 未滚完前仍在写 g1 
 | Q-7 | 批量开关何时打开(yaml 1→16 等) | Codex §9 全绿 + 压测对比后 | 否 | 按证据打开;前置:G2a-2 的 stress_summarize 审计段(§7)与 Q-9 |
 | Q-8 | 一个分区停机是否只停该分区 | 维持全停 / 分区隔离 | 否 | 维持 |
 | Q-9 | 【评审补】data-service 内存护栏:Deployment 加 `GOMEMLIMIT` / 提 `limits.memory`(现 512Mi,`data-service.yaml:105-111`) | 加 GOMEMLIMIT(如 limits 的 80%)/ 提 limits / 都不做(批量保持关) | 否(但 OOMKill 会中断 Load/Save) | 按 §9 第 8 步实测 RSS 峰值定;不拍板就不打开批量 |
+
+> **更正(2026-10-15,针对 Q-1;正文不改)**:选项 c「维持 + 只告警」里的保留期丢失告警已按负责人「按最标准的去做」改口径(见 §4.7 更正注):探针采到的任何一次缺口都立即 critical 呼叫,原 `for: 2m` 的漏报窗口没有了。这只让丢失更难被漏看,不减少丢失;Q-1 的保留策略本身(retention.bytes 与 Kafka 盘量)不因此改变,开服速率下选 c 仍等于接受丢审计。
 
 ---
 

@@ -1,6 +1,6 @@
 # XuanMing-Server → mmorpg/go 移植可行性定谳（2026-09-02）
 
-> **2026-10-15 范围更新：读本文末 §13 与 [最新决定 D-15](xuanming-port-decisions-20260910.md#d-15-八域对比选型与容量目标2026-10-15用户最终范围)。** 本轮为 friend / chat / guild / mail / leaderboard / login / auction / trade 八域，目标 DAU 1 亿 / CCU 2000 万，独立客户端同步已授权。最新准则为逐域比较两仓并选择更可扩展实现，正确性/一致性/兼容不降级；排除 dialogue / player / inventory / mission / scene_manager。静态推断与实测证据分开。
+> **2026-10-15 范围更新：读本文末 §13（含 §13.5、§13.6）及决定 D-15、D-16。** friend / chat / guild / mail / leaderboard / login / auction / trade 八域继续，随后加入全球匹配的区域优先与超时扩区；商城框架仅比较并沿用已找到的评估记录。目标 DAU 1 亿 / CCU 2000 万，独立客户端同步已授权。逐域比较并选择更可扩展实现，正确性/一致性/兼容不降级；排除 dialogue / player / inventory / mission / scene_manager。静态推断与实测证据分开。
 
 > 范围：`F:\XuanMing-Server`（下称 **A**，Kratos + go.work，Pandora/玄冥 UE5 后端）→ `D:\luyuan\mmorpg\go`（下称 **B**，go-zero + C++ 场景服）。
 > 用户三问：① A 是不是没有单点？② 除 DS 外全搬可以吗？③ B 原来有的模块不搬可以吗？

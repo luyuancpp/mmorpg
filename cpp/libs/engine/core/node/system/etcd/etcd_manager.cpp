@@ -192,8 +192,7 @@ void EtcdManager::StartLeaseKeepAlive()
 {
 	leaseKeepAliveTimer.RunEvery(tlsNodeConfigManager.GetBaseDeployConfig().keep_alive_interval(), []()
 								 {
-		etcdserverpb::LeaseKeepAliveRequest req;
-		req.set_id(gNode->GetLeaseId());
-		SendLeaseLeaseKeepAlive(tlsNodeContextManager.GetRegistry(EtcdNodeService), tlsNodeContextManager.GetGlobalEntity(EtcdNodeService), req);
+		// 与其他 etcd 请求一样只经 EtcdHelper 发出(传输接缝,docs/design/grpc-muduo-transport.md §13.4)。
+		EtcdHelper::KeepAliveLease(gNode->GetLeaseId());
 		LOG_DEBUG << "Keeping node alive, lease_id: " << gNode->GetLeaseId(); });
 }

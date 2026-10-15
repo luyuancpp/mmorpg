@@ -23,6 +23,10 @@
 #include "spatial/system/scene_spawn.h"
 #include "spatial/system/view.h"
 #include "spatial/system/aoi.h"
+#include "player/comp/player_ownership_comp.h"
+#include "player/system/enter_fence.h"
+#include "table/proto/tip/common_error_tip.pb.h"
+#include "table/proto/tip/scene_error_tip.pb.h"
 #include <thread_context/ecs_context.h>
 // 以下几个头只为 SendSceneInfo 的分线目录转发:zone Redis 的异步 GET(tlsRedis)、hiredis 应答类型
 // (redisReply / REDIS_REPLY_* / REDIS_OK)、长度保护与命令拼接。
@@ -139,15 +143,78 @@ bool ParseChannelDirectoryReply(const redisReply* reply, uint32_t sceneConfigId,
 
 }  // namespace
 
+std::optional<PlayerSceneSystem::EntryOwnershipGuard::Snapshot>
+PlayerSceneSystem::EntryOwnershipGuard::Read(entt::entity player, SessionId requestSession)
+{
+	if (!tlsEcs.actorRegistry.valid(player)) return std::nullopt;
+	const auto* guid = tlsEcs.actorRegistry.try_get<PlayerGuidComp>(player);
+	if (guid == nullptr || guid->value == 0) return std::nullopt;
+	Snapshot state;
+	state.playerId = guid->value;
+	state.indexedPlayer = tlsEcs.GetPlayer(state.playerId);
+	if (state.indexedPlayer != entt::null && state.indexedPlayer != player) return std::nullopt;
+	if (const auto* session = tlsEcs.actorRegistry.try_get<PlayerSessionSnapshotComp>(player))
+	{
+		state.sessionId = session->gate_session_id();
+		state.snapshotPlayerId = session->player_id();
+	}
+	const auto session = SessionMap().find(requestSession != 0 ? requestSession : state.sessionId);
+	if (session != SessionMap().end()) state.sessionOwner = session->second;
+	if (const auto* identity = tlsEcs.actorRegistry.try_get<PlayerLoginIdentityComp>(player))
+	{
+		state.loginSession = identity->sessionId;
+		state.loginGeneration = identity->loginGeneration;
+	}
+	if (const auto* home = tlsEcs.actorRegistry.try_get<PlayerHomeZoneComp>(player)) state.homeZoneId = home->homeZoneId;
+	if (const auto* epoch = tlsEcs.actorRegistry.try_get<PlayerOwnerEpochComp>(player)) state.ownerEpoch = epoch->epoch;
+	return state;
+}
+
+PlayerSceneSystem::EntryOwnershipGuard::EntryOwnershipGuard(entt::entity player, SessionId requestSession)
+	: player_(player), requestSession_(requestSession), snapshot_(Read(player, requestSession)) {}
+
+bool PlayerSceneSystem::EntryOwnershipGuard::IsCurrent() const
+{
+	return snapshot_.has_value() && snapshot_ == Read(player_, requestSession_);
+}
+
+SceneEntity PlayerSceneSystem::FindSceneById(uint64_t sceneId)
+{
+	if (sceneId == 0) return entt::null;
+	auto view = tlsEcs.sceneRegistry.view<SceneInfoComp>();
+	for (const auto scene : view)
+		if (view.get<SceneInfoComp>(scene).scene_id() == sceneId) return scene;
+	return entt::null;
+}
+
+uint32_t PlayerSceneSystem::CheckEnterScene(Guid playerId, SceneEntity scene)
+{
+	if (!tlsEcs.sceneRegistry.valid(scene)) return kEnterSceneNotFound;
+	const auto* info = tlsEcs.sceneRegistry.try_get<SceneInfoComp>(scene);
+	if (info == nullptr) return kEnterSceneNotFound;
+	if (!info->creators().empty() && (playerId == 0 || !info->creators().contains(playerId)))
+		return kCheckEnterSceneCreator;
+	return playerId != 0 ? kSuccess : kInvalidParameter;
+}
+
+uint32_t PlayerSceneSystem::CheckEnterScene(entt::entity player, SceneEntity scene)
+{
+	if (!tlsEcs.actorRegistry.valid(player)) return kInvalidParameter;
+	const auto* guid = tlsEcs.actorRegistry.try_get<PlayerGuidComp>(player);
+	return CheckEnterScene(guid != nullptr ? guid->value : Guid{0}, scene);
+}
+
 // 组队跟随(原第 5 步 OnGetTeamInfo / OnGetLeaderLocation)已迁到 PlayerTeamSystem
 // (player_team.{h,cpp},team-system.md §F.2):调用点改为 HandleEnterScene 之后,
 // 因为本函数开头的"已在目标场景"幂等早退会让同场景重连漏掉刷新。
 
 bool PlayerSceneSystem::HandleEnterScene(entt::entity player, SceneEntity scene)
 {
-	if (!tlsEcs.actorRegistry.valid(player) || !tlsEcs.sceneRegistry.valid(scene))
+	const EntryOwnershipGuard ownership(player);
+	if (!ownership.IsCurrent()) return false;
+	if (const auto result = CheckEnterScene(player, scene); result != kSuccess)
 	{
-		LOG_ERROR << "HandleEnterScene: invalid player or scene, entity=" << entt::to_integral(player);
+		LOG_ERROR << "入场预检拒绝 entity=" << entt::to_integral(player) << " tip=" << result;
 		return false;
 	}
 	const auto sceneInfo = tlsEcs.sceneRegistry.try_get<SceneInfoComp>(scene);
@@ -157,7 +224,7 @@ bool PlayerSceneSystem::HandleEnterScene(entt::entity player, SceneEntity scene)
 		return false;
 	}
 	// 通知可以同步搬移组件存储;回包和日志使用值副本,不跨通知保留场景组件指针。
-	const SceneInfoComp targetSceneInfo(*sceneInfo);
+	SceneInfoComp targetSceneInfo(*sceneInfo);
 
 	// 0. Idempotency: if player is already in the target scene, skip.
 	auto *oldSceneComp = tlsEcs.actorRegistry.try_get<SceneEntityComp>(player);
@@ -190,7 +257,7 @@ bool PlayerSceneSystem::HandleEnterScene(entt::entity player, SceneEntity scene)
 		}
 		tlsEcs.actorRegistry.remove<SceneEntityComp, Hex>(player);
 		tlsEcs.dispatcher.trigger(leaveEvent);
-		if (!tlsEcs.actorRegistry.valid(player) || !tlsEcs.sceneRegistry.valid(scene))
+		if (!ownership.IsCurrent() || CheckEnterScene(player, scene) != kSuccess)
 		{
 			return false;
 		}
@@ -198,6 +265,8 @@ bool PlayerSceneSystem::HandleEnterScene(entt::entity player, SceneEntity scene)
 		{
 			return false; // 通知中已经完成了另一次入场,不覆盖其新绑定。
 		}
+		// 重新取得值副本,允许通知合法更新仍可入场的目标元数据,不使用旧借用。
+		targetSceneInfo.CopyFrom(*tlsEcs.sceneRegistry.try_get<SceneInfoComp>(scene));
 	}
 
 	// 2. Bind player to the new scene entity.

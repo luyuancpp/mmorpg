@@ -13,8 +13,8 @@ struct SceneRouteTarget;
 // gate 侧 RoutePlayerEvent 进场转发的补发与收口(CPP-2;设计与残余见 cross-zone-scene-travel.md 的
 // "CPP-2 gate 侧进场转发补发"一节)。
 //
-// 生成式 handler 的守护段(gate_event_handler.cpp 的 RoutePlayer / BindSession、
-// rpc_replies/scene_response_handler.cpp 的 SceneNodeHandshake 应答)只放一行委托,逻辑集中在本手写文件,
+// 生成式 handler 的守护段(gate_event_handler.cpp 的 RoutePlayer / BindSession)与 gate/main.cpp 装的握手成功钩子
+// (NodeHandshakeManager::SetHandshakeSucceededHook,原先写在已删除的 rpc_replies/scene_response_handler.cpp)只放一行委托,逻辑集中在本手写文件,
 // 重生成时不受影响(守护段只放委托的惯例)。判定逻辑本身是 scene_route_helper.h 里的纯函数,
 // 本文件只负责接注册表、连接、定时器与日志。
 //

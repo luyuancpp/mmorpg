@@ -225,6 +225,10 @@ struct ClientSessionCallbacks
                 if (!informational)
                 {
                     stream->responseHeadersReceived = true;
+                    if (stream->streaming && !stream->localStatus)
+                    {
+                        self.observer_.OnStreamHeaders(frame->hd.stream_id, stream->initialMetadata);
+                    }
                 }
                 break;
             case Block::kTrailersOnly:
@@ -294,6 +298,16 @@ struct ClientSessionCallbacks
             self.SetLocalErrorAndReset(streamId, *stream, std::move(status), NGHTTP2_CANCEL);
             return 0;
         }
+        if (stream->streaming)
+        {
+            // 双向流:每条完整消息立即交出去,不在会话里攒(长流上消息数没有上限)。
+            for (auto &message : stream->messages)
+            {
+                self.observer_.OnStreamMessage(streamId, std::move(message));
+            }
+            stream->messages.clear();
+            return 0;
+        }
         if (stream->messages.size() > 1)
         {
             self.SetLocalErrorAndReset(
@@ -329,6 +343,34 @@ struct ClientSessionCallbacks
                                          uint32_t *dataFlags, nghttp2_data_source *, void *userData)
     {
         auto *stream = Self(userData).FindStream(streamId);
+        if (stream != nullptr && stream->streaming)
+        {
+            const size_t available = stream->pendingSend.size() - stream->pendingSendOffset;
+            if (available == 0)
+            {
+                if (stream->writesDone)
+                {
+                    *dataFlags |= NGHTTP2_DATA_FLAG_EOF; // 已半关闭且发完:END_STREAM
+                    return 0;
+                }
+                // 暂时没有数据:挂起,AppendStreamMessage / HalfCloseStream 里 resume。
+                stream->dataDeferred = true;
+                return NGHTTP2_ERR_DEFERRED;
+            }
+            const size_t chunk = std::min(available, length);
+            std::memcpy(buf, stream->pendingSend.data() + stream->pendingSendOffset, chunk);
+            stream->pendingSendOffset += chunk;
+            if (stream->pendingSendOffset == stream->pendingSend.size())
+            {
+                stream->pendingSend.clear();
+                stream->pendingSendOffset = 0;
+                if (stream->writesDone)
+                {
+                    *dataFlags |= NGHTTP2_DATA_FLAG_EOF;
+                }
+            }
+            return static_cast<nghttp2_ssize>(chunk);
+        }
         if (stream == nullptr || !stream->framedRequest)
         {
             *dataFlags |= NGHTTP2_DATA_FLAG_EOF;
@@ -423,39 +465,57 @@ Status ClientSession::Start()
 
 ClientSession::SubmitResult ClientSession::SubmitUnary(const UnaryRequestSpec &spec)
 {
+    if (!spec.framedMessage)
+    {
+        SubmitResult result;
+        result.error = Status(StatusCode::kInternal, "request message missing");
+        return result;
+    }
+    auto stream = std::make_unique<StreamState>(options_.maxReceiveMessageBytes);
+    stream->framedRequest = spec.framedMessage;
+    return SubmitRequest(spec.path, spec.metadata, spec.grpcTimeout, std::move(stream));
+}
+
+ClientSession::SubmitResult ClientSession::SubmitStream(const std::string &path, const Metadata &metadata)
+{
+    auto stream = std::make_unique<StreamState>(options_.maxReceiveMessageBytes);
+    stream->streaming = true;
+    return SubmitRequest(path, metadata, std::string(), std::move(stream));
+}
+
+ClientSession::SubmitResult ClientSession::SubmitRequest(const std::string &path, const Metadata &metadata,
+                                                         const std::string &grpcTimeout,
+                                                         std::unique_ptr<StreamState> stream)
+{
     SubmitResult result;
     if (!session_)
     {
         result.error = Status(StatusCode::kInternal, "http2 session not started");
         return result;
     }
-    if (goawayReceived_)
+    if (goawayReceived_ || nghttp2_session_check_request_allowed(session_.get()) == 0)
     {
-        result.error = Status(StatusCode::kUnavailable, "connection is draining (GOAWAY received)");
+        // 收到 GOAWAY,或会话已被本端终止(GOAWAY 还没刷出去):新请求在这条连接上必被 REFUSED,直接换连接。
+        result.error = Status(StatusCode::kUnavailable, "connection is draining or closing");
         result.retryOnNewConnection = true;
-        return result;
-    }
-    if (!spec.framedMessage)
-    {
-        result.error = Status(StatusCode::kInternal, "request message missing");
         return result;
     }
 
     // 先把全部头部拼成稳定的字符串,再建 nghttp2_nv 引用它们(vector 不再扩容,指针稳定)。
     std::vector<std::pair<std::string, std::string>> headers;
-    headers.reserve(8 + spec.metadata.size());
+    headers.reserve(8 + metadata.size());
     headers.emplace_back(":method", "POST");
     headers.emplace_back(":scheme", "http");
-    headers.emplace_back(":path", spec.path);
+    headers.emplace_back(":path", path);
     headers.emplace_back(":authority", options_.authority);
     headers.emplace_back("te", "trailers");
-    if (!spec.grpcTimeout.empty())
+    if (!grpcTimeout.empty())
     {
-        headers.emplace_back("grpc-timeout", spec.grpcTimeout);
+        headers.emplace_back("grpc-timeout", grpcTimeout);
     }
     headers.emplace_back("content-type", std::string(kGrpcContentType));
     headers.emplace_back("user-agent", options_.userAgent);
-    for (const auto &[key, value] : spec.metadata)
+    for (const auto &[key, value] : metadata)
     {
         if (!IsValidCustomMetadataKey(key))
         {
@@ -484,9 +544,6 @@ ClientSession::SubmitResult ClientSession::SubmitUnary(const UnaryRequestSpec &s
         nva.push_back(MakeNv(name, value));
     }
 
-    auto stream = std::make_unique<StreamState>(options_.maxReceiveMessageBytes);
-    stream->framedRequest = spec.framedMessage;
-
     nghttp2_data_provider2 provider;
     provider.source.ptr = nullptr;
     provider.read_callback = &ClientSessionCallbacks::ReadRequestBody;
@@ -508,6 +565,43 @@ ClientSession::SubmitResult ClientSession::SubmitUnary(const UnaryRequestSpec &s
     streams_.emplace(streamId, std::move(stream));
     result.streamId = streamId;
     return result;
+}
+
+bool ClientSession::AppendStreamMessage(int32_t streamId, std::string_view framedMessage)
+{
+    auto *stream = FindStream(streamId);
+    if (stream == nullptr || !stream->streaming || stream->writesDone || stream->localStatus || !session_)
+    {
+        return false;
+    }
+    stream->pendingSend.append(framedMessage.data(), framedMessage.size());
+    if (stream->dataDeferred)
+    {
+        stream->dataDeferred = false;
+        nghttp2_session_resume_data(session_.get(), streamId);
+    }
+    return true;
+}
+
+void ClientSession::HalfCloseStream(int32_t streamId)
+{
+    auto *stream = FindStream(streamId);
+    if (stream == nullptr || !stream->streaming || stream->writesDone || !session_)
+    {
+        return;
+    }
+    stream->writesDone = true;
+    if (stream->dataDeferred)
+    {
+        stream->dataDeferred = false;
+        nghttp2_session_resume_data(session_.get(), streamId);
+    }
+}
+
+size_t ClientSession::PendingStreamBytes(int32_t streamId) const
+{
+    const auto *stream = FindStream(streamId);
+    return stream == nullptr ? 0 : stream->pendingSend.size() - stream->pendingSendOffset;
 }
 
 void ClientSession::ResetStream(int32_t streamId, uint32_t http2ErrorCode, Status status)
@@ -585,10 +679,13 @@ void ClientSession::SubmitGoaway(uint32_t http2ErrorCode)
 
 void ClientSession::FailAllStreams(const Status &status)
 {
-    auto streams = std::move(streams_);
-    streams_.clear();
-    for (auto &[streamId, stream] : streams)
+    // 逐个摘除再回调:回调里看到的 ActiveStreamCount() 就是真实剩余的流数。
+    while (!streams_.empty())
     {
+        const auto it = streams_.begin();
+        const int32_t streamId = it->first;
+        const std::unique_ptr<StreamState> stream = std::move(it->second);
+        streams_.erase(it);
         StreamOutcome outcome;
         if (stream->localStatus)
         {
@@ -605,6 +702,12 @@ void ClientSession::FailAllStreams(const Status &status)
 }
 
 ClientSession::StreamState *ClientSession::FindStream(int32_t streamId)
+{
+    const auto it = streams_.find(streamId);
+    return it == streams_.end() ? nullptr : it->second.get();
+}
+
+const ClientSession::StreamState *ClientSession::FindStream(int32_t streamId) const
 {
     const auto it = streams_.find(streamId);
     return it == streams_.end() ? nullptr : it->second.get();
@@ -667,6 +770,10 @@ StreamOutcome ClientSession::BuildOutcome(StreamState &stream, uint32_t http2Err
             if (stream.deframer.HasPartialMessage())
             {
                 outcome.status = Status(StatusCode::kInternal, "response ended in the middle of a message");
+            }
+            else if (stream.streaming)
+            {
+                // 双向流:消息已经逐条交出,条数不限。
             }
             else if (stream.messages.size() != 1)
             {

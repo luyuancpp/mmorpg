@@ -74,6 +74,23 @@ bool KafkaProducer::createProducer(const std::string& brokers) {
 		LOG_ERROR << "Kafka producer: failed to set enable.idempotence, falling back to non-idempotent delivery"
 			<< " (per-key ordering is NOT guaranteed across internal retries): " << errstr;
 	}
+	// 显式钉住分区器 = 玩家存盘 DBTask 的分区契约:partition = CRC-32/IEEE(key) mod N(按 uint32 取模),
+	// key 为玩家 id 的十进制 ASCII(见 player.h DbTaskKafkaKey)。login 发读请求用的是同一个函数
+	// (go/shared/kafkautil/dbtask_partition.go),同一玩家的读与写落同一分区,go/db 的读后写屏障才成立;
+	// 契约全文见 docs/design/db-task-kafka-partition-contract.md「分区函数契约」。
+	//
+	// 值与 vendored librdkafka 2.14.0 的默认值相同,运行时零变化;显式写出来是为了把契约钉在代码里:
+	// librdkafka 升级改了默认值、或者有人在这里换了 partitioner,同一玩家的写就会在新旧 scene 之间换分区,
+	// 被 go/db 判为 orderingIncomparable 送进死信。**换函数 = 换 TopicGeneration(离线排空)**,不能原地改。
+	//
+	// 这是 topic 级属性,设在 CONF_GLOBAL 上时 librdkafka 会落到默认 topic conf(rd_kafka_conf_set 的
+	// fallthru),对本实例所有 topic 生效:battle 命令显式传分区不受影响,审计 / 告警 topic 本来就走默认分区器。
+	// 设置失败不阻止建实例:拒绝建实例会让本节点所有 Kafka 发送(包括存盘和命令)全部失败,
+	// 这里只大声报出来(默认值本身就是契约值),由 go/db 的分区契约观测与告警兜底。
+	if (conf->set("partitioner", "consistent_random", errstr) != RdKafka::Conf::CONF_OK) {
+		LOG_ERROR << "Kafka producer: failed to pin partitioner=consistent_random (db_task partition contract): "
+			<< errstr;
+	}
 
 	std::unique_ptr<RdKafka::Producer> producer(RdKafka::Producer::create(conf.get(), errstr));
 	if (!producer) {

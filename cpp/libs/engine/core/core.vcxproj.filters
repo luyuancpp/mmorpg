@@ -7,6 +7,9 @@
     <ClCompile Include="node\system\etcd\etcd_helper.cpp" />
     <ClCompile Include="node\system\etcd\etcd_manager.cpp" />
     <ClCompile Include="node\system\etcd\etcd_service.cpp" />
+    <ClCompile Include="node\system\etcd\etcd_transport.cpp" />
+    <ClCompile Include="node\system\etcd\grpc_etcd_transport.cpp" />
+    <ClCompile Include="node\system\etcd\muduo_etcd_transport.cpp" />
     <ClCompile Include="node\system\node\node.cpp" />
     <ClCompile Include="node\system\node\node_allocator.cpp" />
     <ClCompile Include="node\system\node\node_connector.cpp" />
@@ -53,6 +56,12 @@
     <ClInclude Include="node\system\etcd\etcd_helper.h" />
     <ClInclude Include="node\system\etcd\etcd_manager.h" />
     <ClInclude Include="node\system\etcd\etcd_service.h" />
+    <ClInclude Include="node\system\etcd\etcd_transport.h" />
+    <ClInclude Include="node\system\etcd\grpc_etcd_transport.h" />
+    <ClInclude Include="node\system\etcd\muduo_etcd_transport.h" />
+    <ClInclude Include="node\system\etcd\etcd_endpoint.h" />
+    <ClInclude Include="node\system\etcd\etcd_stream_backoff.h" />
+    <ClInclude Include="node\system\discovery\discovery_key_index.h" />
     <ClInclude Include="node\system\node\node.h" />
     <ClInclude Include="node\system\node\node_allocator.h" />
     <ClInclude Include="node\system\node\node_connector.h" />

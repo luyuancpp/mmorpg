@@ -1,5 +1,7 @@
 #include "http2_transport.h"
 
+#include <algorithm>
+
 #include "muduo/base/Logging.h"
 #include "muduo/net/Buffer.h"
 #include "muduo/net/EventLoop.h"
@@ -15,9 +17,9 @@ namespace
 constexpr uint8_t kFrameTypeData = 0x0;
 constexpr uint8_t kFrameTypeHeaders = 0x1;
 
-double ToSeconds(std::chrono::milliseconds duration)
+double ToSeconds(std::chrono::steady_clock::duration duration)
 {
-    return static_cast<double>(duration.count()) / 1000.0;
+    return std::max(0.0, std::chrono::duration<double>(duration).count());
 }
 
 } // namespace
@@ -94,14 +96,36 @@ void Http2Transport::Connect()
             self->FlushOutput();
         } });
 
-    connectTimer_ = loop_.runAfter(ToSeconds(options_.connectTimeout), [weakSelf]
+    connectDeadline_ = std::chrono::steady_clock::now() + options_.connectTimeout;
+    ArmConnectTimer();
+    client_.connect();
+}
+
+void Http2Transport::ArmConnectTimer()
+{
+    // muduo 定时器按墙钟走,只当唤醒提示;到点按 steady_clock 复核(HandleConnectTimeout),墙钟前跳不会误判超时。
+    std::weak_ptr<Http2Transport> weakSelf = weak_from_this();
+    const auto remaining = connectDeadline_ - std::chrono::steady_clock::now();
+    connectTimer_ = loop_.runAfter(ToSeconds(remaining) + 0.001, [weakSelf]
                                    {
         if (const auto self = weakSelf.lock())
         {
             self->HandleConnectTimeout();
         } });
     connectTimerArmed_ = true;
-    client_.connect();
+}
+
+void Http2Transport::ArmProbeTimer(uint64_t generation)
+{
+    std::weak_ptr<Http2Transport> weakSelf = weak_from_this();
+    const auto remaining = probeDeadline_ - std::chrono::steady_clock::now();
+    probeTimer_ = loop_.runAfter(ToSeconds(remaining) + 0.001, [weakSelf, generation]
+                                 {
+        if (const auto self = weakSelf.lock())
+        {
+            self->HandleProbeTimeout(generation);
+        } });
+    probeTimerArmed_ = true;
 }
 
 ClientSession::SubmitResult Http2Transport::StartUnaryStream(const UnaryRequestSpec &spec)
@@ -158,6 +182,12 @@ void Http2Transport::FlushOutput()
     {
         // 发送过程中又有新帧被提交(例如流结束回调里提交了 RST):再刷一轮。
         FlushOutput();
+        return;
+    }
+    // writeComplete 路径也要看一眼:会话可能在上次收包时被 nghttp2 终止、而 GOAWAY 直到这次才刷出去。
+    if (!closed_ && session_->ShouldClose())
+    {
+        CloseWithError(Status(StatusCode::kUnavailable, "http2 session terminated"));
     }
 }
 
@@ -181,29 +211,119 @@ void Http2Transport::OnCallDeadlineExpired(std::chrono::steady_clock::time_point
     {
         return; // 连接有动静,只是这个调用慢
     }
-    // §4.4:只在「从没发过 PING」或「上个 PING 的 ACK 之后收到过 HEADERS / DATA」时发,
-    // 这样按 grpc-go 默认的强制策略永远不会记 strike。
-    if (pingEverSent_ && !headersOrDataAfterLastPingAck_)
+    // §4.4 放行条件(对 grpc-go 默认 keepalive 强制策略,正常情况下不记 strike):
+    //   1. 这条连接从没发过 PING(第一个 PING 不记);
+    //   2. 上个 PING 的 ACK 之后收到过 HEADERS / DATA(服务端写过数据,下一个 PING 清零 strike);
+    //   3. 距上个 PING 已超过 grpc-go 默认 MinTime(5min)加余量(有活跃流时不记 strike);
+    //   4. 以上都不满足时,至多再放行 1 次「无法确认已清零」的探测 —— 否则一次探测被 ACK 后紧接着网络黑洞,
+    //      这条连接就再也探测不到,只能等内核 TCP 重传放弃(Linux 约 15 分钟)。
+    // 1/2 也有例外(grpc-go handlePing 先排 ACK 后做 CAS 的竞态、writeEarlyAbort 的 trailers-only 不清零),
+    // 所以 4 只给一次额度:这条路径累计的 strike 最多到 1~2,低于 grpc-go 的 >2 才 GOAWAY 的阈值。
+    constexpr auto kGrpcGoMinPingInterval = std::chrono::minutes(5) + std::chrono::seconds(10);
+    const auto now = std::chrono::steady_clock::now();
+    const bool confirmed = !pingEverSent_ || headersOrDataAfterLastPingAck_ ||
+                           now - lastPingSentAt_ >= kGrpcGoMinPingInterval;
+    if (!confirmed && unconfirmedProbes_ >= 1)
     {
         return;
     }
+    if (!SendProbePing(now))
+    {
+        return;
+    }
+    unconfirmedProbes_ = confirmed ? 0 : unconfirmedProbes_ + 1;
+}
+
+bool Http2Transport::SendProbePing(std::chrono::steady_clock::time_point now)
+{
     if (!session_->SubmitPing())
     {
-        return;
+        return false;
     }
     pingEverSent_ = true;
+    lastPingSentAt_ = now;
     probeOutstanding_ = true;
     headersOrDataAfterLastPingAck_ = false;
-    const uint64_t generation = ++probeGeneration_;
+    probeDeadline_ = now + options_.keepaliveTimeout;
+    ArmProbeTimer(++probeGeneration_);
+    FlushOutput();
+    return true;
+}
+
+void Http2Transport::ScheduleKeepalive()
+{
+    if (options_.keepaliveTime.count() <= 0 || keepaliveTimerArmed_ || closed_)
+    {
+        return;
+    }
     std::weak_ptr<Http2Transport> weakSelf = weak_from_this();
-    probeTimer_ = loop_.runAfter(ToSeconds(options_.keepaliveTimeout), [weakSelf, generation]
-                                 {
+    keepaliveTimer_ = loop_.runAfter(ToSeconds(options_.keepaliveTime), [weakSelf]
+                                     {
         if (const auto self = weakSelf.lock())
         {
-            self->HandleProbeTimeout(generation);
+            self->HandleKeepaliveTimer();
         } });
-    probeTimerArmed_ = true;
+    keepaliveTimerArmed_ = true;
+}
+
+void Http2Transport::HandleKeepaliveTimer()
+{
+    keepaliveTimerArmed_ = false;
+    if (closed_)
+    {
+        return;
+    }
+    // §13.3:有活跃流、且这段时间一个帧都没收到才发;按 steady_clock 判,墙钟跳变只影响检查频率。
+    const auto now = std::chrono::steady_clock::now();
+    if (ready() && session_ && ActiveStreamCount() > 0 && !probeOutstanding_ &&
+        now - lastFrameReceivedAt_ >= options_.keepaliveTime)
+    {
+        SendProbePing(now);
+    }
+    ScheduleKeepalive();
+}
+
+ClientSession::SubmitResult Http2Transport::StartBidiStream(const std::string &path, const Metadata &metadata)
+{
+    loop_.assertInLoopThread();
+    if (!ready() || draining_ || !session_)
+    {
+        ClientSession::SubmitResult result;
+        result.error = Status(StatusCode::kUnavailable, "connection is not ready for new streams");
+        result.retryOnNewConnection = true;
+        return result;
+    }
+    auto result = session_->SubmitStream(path, metadata);
+    if (result.retryOnNewConnection)
+    {
+        draining_ = true;
+    }
+    return result;
+}
+
+bool Http2Transport::WriteStreamMessage(int32_t streamId, std::string_view framedMessage)
+{
+    if (closed_ || !session_ || !session_->AppendStreamMessage(streamId, framedMessage))
+    {
+        return false;
+    }
     FlushOutput();
+    return true;
+}
+
+void Http2Transport::HalfCloseStream(int32_t streamId)
+{
+    if (closed_ || !session_)
+    {
+        return;
+    }
+    session_->HalfCloseStream(streamId);
+    FlushOutput();
+}
+
+size_t Http2Transport::PendingStreamBytes(int32_t streamId) const
+{
+    return session_ ? session_->PendingStreamBytes(streamId) : 0;
 }
 
 void Http2Transport::Shutdown()
@@ -230,7 +350,9 @@ void Http2Transport::HandleConnection(const muduo::net::TcpConnectionPtr &conn)
         }
         connection_ = conn;
         conn->setTcpNoDelay(true);
-        session_ = std::make_unique<ClientSession>(options_.session, *this);
+        // 先在成员函数里转成私有基类引用:make_unique 内部看不到这个私有基类,直接传 *this 编不过。
+        ClientSession::Observer &observer = *this;
+        session_ = std::make_unique<ClientSession>(options_.session, observer);
         const Status started = session_->Start();
         if (!started.ok())
         {
@@ -286,6 +408,11 @@ void Http2Transport::HandleConnectTimeout()
     {
         return;
     }
+    if (std::chrono::steady_clock::now() < connectDeadline_)
+    {
+        ArmConnectTimer(); // 墙钟前跳让定时器早到:按单调钟剩余时间重新上弦
+        return;
+    }
     LOG_WARN << "muduo_grpc connect to " << target_ << " timed out after " << options_.connectTimeout.count()
              << "ms (no HTTP/2 SETTINGS from peer)";
     CloseWithError(Status(StatusCode::kUnavailable,
@@ -301,6 +428,11 @@ void Http2Transport::HandleProbeTimeout(uint64_t probeGeneration)
     probeTimerArmed_ = false;
     if (!probeOutstanding_ || closed_)
     {
+        return;
+    }
+    if (std::chrono::steady_clock::now() < probeDeadline_)
+    {
+        ArmProbeTimer(probeGeneration); // 墙钟前跳让定时器早到:按单调钟剩余时间重新上弦
         return;
     }
     LOG_WARN << "muduo_grpc connection to " << target_ << " did not acknowledge a liveness PING within "
@@ -385,6 +517,7 @@ void Http2Transport::CancelTimers()
     {
         connectTimerArmed_ = false;
         probeTimerArmed_ = false;
+        keepaliveTimerArmed_ = false;
         return;
     }
     if (connectTimerArmed_)
@@ -397,6 +530,11 @@ void Http2Transport::CancelTimers()
         loop_.cancel(probeTimer_);
         probeTimerArmed_ = false;
     }
+    if (keepaliveTimerArmed_)
+    {
+        loop_.cancel(keepaliveTimer_);
+        keepaliveTimerArmed_ = false;
+    }
 }
 
 void Http2Transport::OnSessionReady()
@@ -407,6 +545,7 @@ void Http2Transport::OnSessionReady()
         loop_.cancel(connectTimer_);
         connectTimerArmed_ = false;
     }
+    ScheduleKeepalive();
     if (const auto listener = listener_.lock())
     {
         listener->OnTransportReady(*this);
@@ -428,6 +567,7 @@ void Http2Transport::OnFrameReceived(uint8_t frameType)
     if ((frameType == kFrameTypeData || frameType == kFrameTypeHeaders) && pingEverSent_ && !probeOutstanding_)
     {
         headersOrDataAfterLastPingAck_ = true;
+        unconfirmedProbes_ = 0;
     }
 }
 
@@ -451,6 +591,22 @@ void Http2Transport::OnStreamClosed(int32_t streamId, StreamOutcome outcome)
     if (const auto listener = listener_.lock())
     {
         listener->OnTransportStreamClosed(*this, streamId, std::move(outcome));
+    }
+}
+
+void Http2Transport::OnStreamHeaders(int32_t streamId, const Metadata &initialMetadata)
+{
+    if (const auto listener = listener_.lock())
+    {
+        listener->OnTransportStreamHeaders(*this, streamId, initialMetadata);
+    }
+}
+
+void Http2Transport::OnStreamMessage(int32_t streamId, std::string message)
+{
+    if (const auto listener = listener_.lock())
+    {
+        listener->OnTransportStreamMessage(*this, streamId, std::move(message));
     }
 }
 

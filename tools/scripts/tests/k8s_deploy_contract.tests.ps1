@@ -1633,6 +1633,23 @@ Test-Case 'node ConfigMap 的 Kafka 命令 topic 世代和分区数必须与预�
 $BattleInfraArgs = @('-Command', 'infra-up', '-DryRun', '-SkipPreflight', '-SkipGoSvc', '-SkipJavaSvc', '-WaitReady', '-InfraNamespace', 'contract-battle-infra', '-NodeImage', 'registry.invalid/test/mmorpg-node:0123456789ab')
 $BattleTestEnv = @{ MMORPG_BATTLE_TOKEN_SECRET = 'contract-battle-ticket-0123456789abcdef012345'; MMORPG_GATE_TOKEN_SECRET = 'contract-gate-ticket-0123456789abcdef012345' }
 $battleInfraRun = Invoke-DeployDryRun -Arguments $BattleInfraArgs -Env $BattleTestEnv
+# P0-B 批 2(docs/handoff/global-singletons-p0-findings-20261014.md):node ConfigMap 的 Kafka.GroupID 从 bin/etc 镜像,不再由
+# 生成器自带常数;K8s 上同批关掉旧的一节点一 topic 消费路径。紧跟上一条命令 topic 用例,只是要等 $battleInfraRun 就位,
+# 好同时核 battle-node-config —— battle 只生产不消费,旧二进制在 GroupID 非空时拿不到生产端 broker,出事的正是它。
+# DisableLegacyPerNodeTopic 是 K8s 模板常数(本机 bin/etc 那份仍是 false、由运维显式翻),所以断言字面值 true,不与 bin/etc 比。
+Test-Case 'node ConfigMap 的 Kafka.GroupID 从 bin/etc 镜像、不再写死共享组名,K8s 上关闭旧的一节点一 topic 路径(node-config 与 battle-node-config)' {
+    $expectedGroupId = Get-EtcValue -RelativePath 'bin/etc/base_deploy_config.yaml' -KeyPath 'Kafka.GroupID'
+    foreach ($target in @(
+        @{ Name = 'node-config'; Output = $devOut },
+        @{ Name = 'battle-node-config'; Output = $battleInfraRun.Output }
+    )) {
+        $block = Select-ManifestByName -Output $target.Output -Name $target.Name
+        $flat = ConvertTo-FlatManifest -Block $block
+        Assert-Equal -Expected $expectedGroupId -Actual (Get-FlatValue -Flat $flat -KeyPath 'data.base_deploy_config.yaml.Kafka.GroupID') -Because "$($target.Name) 整目录遮蔽镜像里的 bin/etc,GroupID 必须等于 bin/etc 的权威值(允许空串)。以前写死共享组名:旧二进制的 battle 拿不到生产端 broker,gate / scene 的旧路径全服挤进同一个消费组"
+        Assert-NotMatch -Text $block -Pattern 'game-consumer-group' -Because "$($target.Name) 不得再出现生成器自带的共享组名常数(2026-05-27 本机改空后模板一直没跟)"
+        Assert-Equal -Expected 'true' -Actual (Get-FlatValue -Flat $flat -KeyPath 'data.base_deploy_config.yaml.Kafka.DisableLegacyPerNodeTopic') -Because "$($target.Name) 必须关掉旧路径:与 GroupID 镜像同批,否则旧路径换到新消费组后会从 earliest 重放旧 topic"
+    }
+}
 Test-Case 'infra-up 默认部署一个 battle 并等待 rollout；zone-up 不重复部署全局池' {
     Assert-Equal -Expected 0 -Actual $battleInfraRun.ExitCode -Because 'battle 全局装配 DryRun 必须成功'
     $battle = ConvertTo-FlatManifest -Block (Select-ManifestByName -Output $battleInfraRun.Output -Name 'battle')
@@ -2143,10 +2160,89 @@ Test-Case '负向:zones.10zones.yaml 时打 [MySQLConnectionLedger]OverLimit 警
     Assert-Equal -Expected 0 -Actual $run.ExitCode -Because "连接总账超限只告警、不阻断部署。输出: $($run.Output)"
     # 只断警告开头不含空格的那一段:Write-Warning 若被 ConsoleHost 按窗口宽度折行,折点在空格处(先例见下面 gateway 管理面口令的占位警告)。
     Assert-Match -Text $run.Output -Pattern '\[MySQLConnectionLedger\]OverLimit:' -Because '峰值超过 max_connections 时必须明说,不能只留一个负的 headroom 让人自己看'
-    # Z = 配置里的 10 个 zone ∪ 本次 -ZoneId 101(不在配置里,多算一个,偏保守)= 11。
+    # $BaseArgs 是 zone-up:Z = 配置里的 10 个 zone ∪ 本次 -ZoneId 101(不在配置里也并入:这个 zone 确实要部署)= 11。
     Assert-Match -Text $run.Output -Pattern 'MySQL connection ledger: zones=11 steady=\d+ peak=\d+ max_connections=\d+ headroom=-\d+;' -Because '本次部署那一份按 11 个 zone 算,余量为负'
     Assert-Match -Text $run.Output -Pattern '--- BEGIN MANIFEST ---' -Because '不阻断:告警之后清单照常生成'
     Assert-NotMatch -Text $devOut -Pattern '\[MySQLConnectionLedger\]OverLimit:' -Because '对照:仓库 zones.json 与规划档都在上限内,基线 DryRun 不该打这条警告(否则本条区分不出「超限才告警」)'
+}
+
+# 下面三例共用 zones.10zones.yaml 及其 zoneId。本套测试不带 YAML 解析器:按 Get-ZonesFromJson 的 YAML 回退解析的写法
+# (键独占一行、行尾不带注释)读 zone 级 zoneId 行。-ZonesConfigPath 给绝对路径,理由同上。
+# 文件读不到时得到空列表,由各例的夹具前提点名失败,不在脚本顶层 throw 掉整套测试。
+$tenZonesConfigPath = Join-Path (Get-RepoRoot) 'deploy/k8s/zones.10zones.yaml'
+$tenZonesRaw = [string](Get-Content -LiteralPath $tenZonesConfigPath -Raw -ErrorAction SilentlyContinue)
+$tenZoneIds = @([regex]::Matches($tenZonesRaw, '(?m)^[ \t]+zoneId:[ \t]*(\d+)[ \t]*\r?$') | ForEach-Object { [int]$_.Groups[1].Value } | Sort-Object -Unique)
+
+Test-Case 'all-up(zones.10zones.yaml):总账只数 zones 配置,zones=10 不并入 -ZoneId,峰值仍超限并打 [MySQLConnectionLedger]OverLimit' {
+    # all-up / infra-up 不为 -ZoneId 部署 zone 级工作负载(db / data-service / gateway):-ZoneId 在这两条命令里用作全局 Go 服务与
+    # battle 的 ZoneId、mysql-init-sql 预建库的输入,本身不产生每 zone 的 MySQL 连接,不论缺省值 101 还是显式传入都不并入。
+    # 以前按 Get-InfraZoneIds 的口径把它并进来,zones 配置不含它时 Z 凭空多 1,可能打出虚假的 OverLimit
+    # (见 Write-MysqlConnectionLedger 注释)。这里显式传一个不在配置里的 -ZoneId(取缺省值 101):
+    # all-up 不论缺省还是显式都不并入它;显式传是为了不依赖脚本缺省值 —— 缺省值哪天改成配置里已有的 zone,不传就区分不出新旧口径。
+    # 只部署 C++ 节点:-SkipInfra(不装配 battle 全局池,免得还要 battle 密钥)、-SkipGoSvc、-SkipJavaSvc;dev 档不走发布预检。
+    Assert-Equal -Expected 10 -Actual $tenZoneIds.Count -Because "夹具前提:zones.10zones.yaml 应当有 10 个互不相同的 zoneId(实际 $($tenZoneIds -join ','))"
+    Assert-True -Condition ($tenZoneIds -notcontains 101) -Because '夹具前提:zones.10zones.yaml 不含 101,否则并不并入 -ZoneId 结果相同,本例区分不出新旧口径'
+    $plan = Get-MysqlConnectionPlan
+    $deployLedger = Get-RepoMysqlConnectionLedger -Plan $plan -ZoneCount $tenZoneIds.Count -ExtraZoneStores ($tenZoneIds.Count - 1)
+    Assert-True -Condition ($deployLedger.Peak -gt $deployLedger.MaxConnections) -Because ("夹具前提:10 个 zone 的峰值必须超过 max_connections,否则「仍打 OverLimit」无从谈起。分项:{0}" -f (Format-MysqlConnectionLedger -Ledger $deployLedger))
+
+    $allUpArgs = @('-Command', 'all-up', '-DryRun', '-SkipInfra', '-SkipGoSvc', '-SkipJavaSvc', '-ZonesConfigPath', $tenZonesConfigPath, '-ZoneId', '101')
+    Assert-True -Condition ($allUpArgs -contains '-DryRun') -Because '夹具前提:all-up 必须是 DryRun(不带它会对本机当前 kubectl context 真执行 apply)'
+    $run = Invoke-DeployDryRun -Arguments $allUpArgs
+    Assert-Equal -Expected 0 -Actual $run.ExitCode -Because "连接总账超限只告警、不阻断 all-up。输出: $($run.Output)"
+    $ledgerLines = @($run.Output -split "`r?`n" | Where-Object { $_ -match '^\s*MySQL connection ledger: zones=' })
+    Assert-Equal -Expected 1 -Actual $ledgerLines.Count -Because 'all-up 写路径入口必须恰好打印一行 MySQL connection ledger'
+    $deployPart = 'MySQL connection ledger: zones={0} steady={1} peak={2} max_connections={3} headroom={4};' -f $tenZoneIds.Count, $deployLedger.Steady, $deployLedger.Peak, $deployLedger.MaxConnections, $deployLedger.Headroom
+    Assert-Match -Text ([string]$ledgerLines[0]) -Pattern ('^\s*' + [regex]::Escape($deployPart)) -Because 'all-up 本次部署那一份只数 zones 配置的 10 个 zone(E_z = 9),不是并入 -ZoneId 101 之后的 11 个'
+    Assert-NotMatch -Text ([string]$ledgerLines[0]) -Pattern 'zones_config=missing' -Because 'zones 配置在场,行尾不该带缺席标记'
+    # 只断警告开头不含空格的那一段(理由同上例)。
+    Assert-Match -Text $run.Output -Pattern '\[MySQLConnectionLedger\]OverLimit:' -Because '10 个 zone 的峰值仍超过 max_connections,修口径不能顺手把真实超限的告警也去掉'
+    Assert-Match -Text $run.Output -Pattern '--- BEGIN MANIFEST ---' -Because '不阻断:告警之后清单照常生成'
+}
+
+Test-Case '对照 zone-up(zones.10zones.yaml):-ZoneId 不在配置里也并入总账,zones=11' {
+    # 与上例同一份 zones 配置,只换命令:zone-up 部署的就是 -ZoneId 那个 zone,不在配置里(例如新开的区还没登记)也要算进去。
+    # 取 11 而不是缺省值 101:上面「负向:zones.10zones.yaml…」那例用的是 $BaseArgs 的 101(同样 zones=11),
+    # 两例合起来说明并入的是本次 -ZoneId,不是认 101 这个值。
+    $outsideZoneId = 11
+    Assert-True -Condition ($tenZoneIds.Count -gt 0 -and $tenZoneIds -notcontains $outsideZoneId) -Because "夹具前提:zones.10zones.yaml 读得出 zoneId,且不含 $outsideZoneId(实际 $($tenZoneIds -join ','))"
+    $plan = Get-MysqlConnectionPlan
+    $zoneCount = $tenZoneIds.Count + 1
+    $deployLedger = Get-RepoMysqlConnectionLedger -Plan $plan -ZoneCount $zoneCount -ExtraZoneStores ($zoneCount - 1)
+
+    $zoneUpArgs = @('-Command', 'zone-up', '-ZoneName', 'contract-test', '-ZoneId', [string]$outsideZoneId, '-DryRun', '-SkipGoSvc', '-SkipJavaSvc', '-ZonesConfigPath', $tenZonesConfigPath)
+    $run = Invoke-DeployDryRun -Arguments $zoneUpArgs
+    Assert-Equal -Expected 0 -Actual $run.ExitCode -Because "连接总账超限只告警、不阻断 zone-up。输出: $($run.Output)"
+    $ledgerLines = @($run.Output -split "`r?`n" | Where-Object { $_ -match '^\s*MySQL connection ledger: zones=' })
+    Assert-Equal -Expected 1 -Actual $ledgerLines.Count -Because 'zone-up 写路径入口必须恰好打印一行 MySQL connection ledger'
+    $deployPart = 'MySQL connection ledger: zones={0} steady={1} peak={2} max_connections={3} headroom={4};' -f $zoneCount, $deployLedger.Steady, $deployLedger.Peak, $deployLedger.MaxConnections, $deployLedger.Headroom
+    Assert-Match -Text ([string]$ledgerLines[0]) -Pattern ('^\s*' + [regex]::Escape($deployPart)) -Because "zone-up 本次部署那一份 = zones 配置的 $($tenZoneIds.Count) 个 zone ∪ -ZoneId $outsideZoneId = $zoneCount 个(E_z = $($zoneCount - 1))"
+}
+
+Test-Case 'infra-up(zones.10zones.yaml):总账只数 zones 配置,zones=10 不并入 -ZoneId;预建库照旧并入 -ZoneId' {
+    # 与 all-up 例同一口径,但走 infra-up 那一支(all-up 例带 -SkipInfra,覆盖不到这里)。现有的 $battleInfraRun 读默认 zones.json(101、102),
+    # 而 -ZoneId 缺省也是 101,并不并入结果都是 zones=2,区分不出新旧口径;所以换成不含 101 的 zones.10zones.yaml,并显式传 -ZoneId 101
+    # (理由同 all-up 例)。复用 $BattleInfraArgs / $BattleTestEnv:infra-up 要装配 battle 全局池,需要 battle / gate 票据密钥。
+    Assert-Equal -Expected 10 -Actual $tenZoneIds.Count -Because "夹具前提:zones.10zones.yaml 应当有 10 个互不相同的 zoneId(实际 $($tenZoneIds -join ','))"
+    Assert-True -Condition ($tenZoneIds -notcontains 101) -Because '夹具前提:zones.10zones.yaml 不含 101,否则并不并入 -ZoneId 结果相同,本例区分不出新旧口径'
+    Assert-True -Condition (($BattleInfraArgs -contains '-DryRun') -and -not ($BattleInfraArgs -contains '-ZoneId') -and -not ($BattleInfraArgs -contains '-ZonesConfigPath')) -Because '夹具前提:infra-up 必须是 DryRun(不带它会对本机当前 kubectl context 真执行 apply),且 $BattleInfraArgs 自己不带 -ZoneId / -ZonesConfigPath(重复传参会让子进程直接失败)'
+    $plan = Get-MysqlConnectionPlan
+    $deployLedger = Get-RepoMysqlConnectionLedger -Plan $plan -ZoneCount $tenZoneIds.Count -ExtraZoneStores ($tenZoneIds.Count - 1)
+    Assert-True -Condition ($deployLedger.Peak -gt $deployLedger.MaxConnections) -Because ("夹具前提:10 个 zone 的峰值必须超过 max_connections,否则「仍打 OverLimit」无从谈起。分项:{0}" -f (Format-MysqlConnectionLedger -Ledger $deployLedger))
+
+    $run = Invoke-DeployDryRun -Arguments ($BattleInfraArgs + @('-ZonesConfigPath', $tenZonesConfigPath, '-ZoneId', '101')) -Env $BattleTestEnv
+    Assert-Equal -Expected 0 -Actual $run.ExitCode -Because "连接总账超限只告警、不阻断 infra-up。输出: $($run.Output)"
+    $ledgerLines = @($run.Output -split "`r?`n" | Where-Object { $_ -match '^\s*MySQL connection ledger: zones=' })
+    Assert-Equal -Expected 1 -Actual $ledgerLines.Count -Because 'infra-up 写路径入口必须恰好打印一行 MySQL connection ledger'
+    $deployPart = 'MySQL connection ledger: zones={0} steady={1} peak={2} max_connections={3} headroom={4};' -f $tenZoneIds.Count, $deployLedger.Steady, $deployLedger.Peak, $deployLedger.MaxConnections, $deployLedger.Headroom
+    Assert-Match -Text ([string]$ledgerLines[0]) -Pattern ('^\s*' + [regex]::Escape($deployPart)) -Because 'infra-up 本次部署那一份只数 zones 配置的 10 个 zone(E_z = 9),不是并入 -ZoneId 101 之后的 11 个'
+    Assert-NotMatch -Text ([string]$ledgerLines[0]) -Pattern 'zones_config=missing' -Because 'zones 配置在场,行尾不该带缺席标记'
+    # 只断警告开头不含空格的那一段(理由同上面「负向:zones.10zones.yaml…」例)。
+    Assert-Match -Text $run.Output -Pattern '\[MySQLConnectionLedger\]OverLimit:' -Because '10 个 zone 的峰值仍超过 max_connections,修口径不能顺手把真实超限的告警也去掉'
+    # 对照:mysql-init-sql 预建库的口径(Get-InfraZoneIds = zones 配置 ∪ -ZoneId)有意不同,照旧预建 -ZoneId 的库,留给之后的 zone-up -ZoneId。
+    # 仓库静态的 deploy/mysql-init/00_init_zone_dbs.sql 只建 zone_1_db / zone_2_db,且 CREATE 里库名不带反引号,不会冒充这一行。
+    $initSql = Select-ManifestByName -Output $run.Output -Name 'mysql-init-sql'
+    Assert-Match -Text $initSql -Pattern ([regex]::Escape('CREATE DATABASE IF NOT EXISTS `zone_101_db`;')) -Because 'infra-up 的 mysql-init-sql 仍要预建 -ZoneId 101 的库:总账不并入 -ZoneId,不等于预建库也不并入'
 }
 
 Test-Case 'zones 配置缺席(zone-up DryRun):总账按 zones=1 算、行尾标 zones_config=missing,不打 Get-InfraZoneIds 的 WARNING' {

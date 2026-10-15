@@ -416,11 +416,11 @@ func mustLegacyKeyUntouched(t *testing.T, rdb *redis.Client) {
 	}
 }
 
-// 15s 与 gate 的上报周期(10s)配套,见 defaultHandoffGrace 的注释;改它要同步改设计稿与 runbook。
+// 20s 是 gate 上报周期(10s)的两倍,见 defaultHandoffGrace 的注释;改它要同步改设计稿与 runbook。
 func TestNew_DefaultsHandoffGraceAndClock(t *testing.T) {
 	q := New(nil, time.Hour, 60*time.Second, nil)
-	if q.handoffGrace != 15*time.Second {
-		t.Fatalf("handoffGrace = %v, want 15s", q.handoffGrace)
+	if q.handoffGrace != 20*time.Second {
+		t.Fatalf("handoffGrace = %v, want 20s", q.handoffGrace)
 	}
 	if q.now == nil {
 		t.Fatal("Queue.now must default to time.Now")
@@ -504,7 +504,8 @@ func TestTryReserveFastPathSlot_BudgetAndPerMemberExpiry(t *testing.T) {
 		}
 	}
 	// 快速通道脚本给整键续的垃圾回收 TTL(ARGV[5])。miniredis 的 TTL 不随墙钟走、只在 FastForward 里递减,
-	// 单位传错(比如 .Seconds() 变成 PEXPIRE 120ms)或者漏掉这条 PEXPIRE,只有这里能发现;
+	// 单位传错(比如 .Seconds() 变成 PEXPIRE 120ms)或者漏掉这条 PEXPIRE,要靠这里(以及
+	// TestAdmittedKey_EveryWritePathSetsTTLWhenMissing)发现;
 	// 到了真实 Redis 上,整键会在 120ms 后连同未到期的占位一起消失(或永不过期)。
 	if ttl, err := rdb.PTTL(ctx, admittedZSetKey(1)).Result(); err != nil || ttl <= q.admitTTL || ttl > q.admittedKeyTTL() {
 		t.Fatalf("fast-path whole-key PTTL = %v err=%v, want (%v, %v]", ttl, err, q.admitTTL, q.admittedKeyTTL())
@@ -618,7 +619,7 @@ func TestConsume_KeepsPlaceholderForHandoffGraceThenReleases(t *testing.T) {
 }
 
 // login 的钟比 Redis 快时,占位(login 钟)可能先于放行槽(Redis TTL)到期被清掉。
-// 这时取走仍要给这个人占 15s:他确实马上要连 gate。所以是普通 ZADD,不是 XX。
+// 这时取走仍要给这个人占一个交票后宽限:他确实马上要连 gate。所以是普通 ZADD,不是 XX。
 func TestConsume_HoldsPlaceholderEvenIfAlreadyExpired(t *testing.T) {
 	q, rdb, clk := newClockedQueue(t)
 	ctx := context.Background()
@@ -800,7 +801,7 @@ func TestConsume_PlaceholderWriteFailureDoesNotFailAdmit(t *testing.T) {
 }
 
 // 取走只发生一次。取走之后客户端按协议还会每 2s 轮询(回「排队中、名次 0」,直到条目 1h 过期),
-// 这些轮询不能给占位续期:否则每次续 15s,占位永不到期,名额一直被扣着。
+// 这些轮询不能给占位续期:否则每次续一个交票后宽限,占位永不到期,名额一直被扣着。
 func TestConsume_RepeatPollDoesNotExtendPlaceholder(t *testing.T) {
 	q, rdb, clk := newClockedQueue(t)
 	ctx := context.Background()
@@ -870,4 +871,183 @@ func TestConsume_SignFailureKeepsAdmitTimeScore(t *testing.T) {
 	mustAdmittedCount(t, q, 1, "1ms before AdmitTTL")
 	clk.Advance(time.Millisecond)
 	mustAdmittedCount(t, q, 0, "at AdmitTTL after a failed sign")
+}
+
+// 整键 TTL 只增不减(spec_G4b-G §11 #6):排队开着时滚动调整 AdmitTTL,新旧两种 W 的副本交替写同一个 zone。
+// AdmitTTL 小的副本后写,不能把 AdmitTTL 大的副本续上的整键 TTL 缩短:否则整键先于大值副本写的放行占位
+// 消失,下一拍按在途 0 多放一批。三条写路径(快速通道、放行、取走)逐一钉住。
+// 反过来,剩余 TTL 不足自己的 W 时照常续上(只增不减不等于「有 TTL 就不动」),三条路径也逐一钉住。
+// miniredis 的 TTL 不随墙钟走、只在 FastForward 里递减,两次写之间 PTTL 不会自己变,所以断言写成等式;
+// 占位分数走假时钟,FastForward 不影响它们。
+// 无条件 PEXPIRE W 的写法在「smaller window: fast path」处红:PTTL 从 6min 被压到 2min。
+func TestAdmittedKeyTTL_SmallerWindowNeverShortensIt(t *testing.T) {
+	small, rdb, mr, cleanup := newTestQueue(t) // AdmitTTL 60s
+	defer cleanup()
+	big := New(rdb, time.Hour, 5*time.Minute, []byte("test-secret"))
+	clk := newFakeClock()
+	small.now, big.now = clk.Now, clk.Now
+	ctx := context.Background()
+
+	smallW, bigW := small.admittedKeyTTL(), big.admittedKeyTTL()
+	if smallW != 2*time.Minute || bigW != 6*time.Minute {
+		t.Fatalf("windows = (%v, %v), want (2m0s, 6m0s): max(AdmitTTL, handoffGrace) + 1min", smallW, bigW)
+	}
+	key := admittedZSetKey(1)
+	mustPTTL := func(want time.Duration, when string) {
+		t.Helper()
+		got, err := rdb.PTTL(ctx, key).Result()
+		if err != nil || got != want {
+			t.Fatalf("whole-key PTTL (%s) = %v err=%v, want %v", when, got, err, want)
+		}
+	}
+	enqueue := func(q *Queue) string {
+		t.Helper()
+		res, err := q.Enqueue(ctx, 1, "u", "d")
+		if err != nil {
+			t.Fatalf("enqueue: %v", err)
+		}
+		return res.QueueToken
+	}
+	admit := func(q *Queue, n int) {
+		t.Helper()
+		if got, err := q.PopAdmit(ctx, 1, n, pickZone1Gate); err != nil || got != n {
+			t.Fatalf("popadmit = (%d, %v), want (%d, nil)", got, err, n)
+		}
+	}
+	consume := func(q *Queue, token string) {
+		t.Helper()
+		if st, err := q.Lookup(ctx, token, stubSignFn); err != nil || st.Status != StatusAdmitted {
+			t.Fatalf("lookup = (%+v, %v), want ADMITTED", st, err)
+		}
+	}
+	reserve := func(q *Queue) {
+		t.Helper()
+		if ok, err := q.TryReserveFastPathSlot(ctx, 1, 100); err != nil || !ok {
+			t.Fatalf("reserve = (%v, %v), want (true, nil)", ok, err)
+		}
+	}
+
+	// AdmitTTL 大的副本先放行两人。tokB 没人来取,它的占位要活到放行后 5min,整键 TTL 必须盖得住它。
+	tokA, tokB := enqueue(big), enqueue(big)
+	admit(big, 2)
+	mustPTTL(bigW, "larger window admits first")
+
+	// AdmitTTL 小的副本随后走三条写路径,每一条都不能把整键 TTL 缩到 smallW。
+	reserve(small)
+	mustPTTL(bigW, "smaller window: fast path")
+	enqueue(small)
+	admit(small, 1)
+	mustPTTL(bigW, "smaller window: admit")
+	consume(small, tokA) // 取走的是大值副本放行的条目
+	mustPTTL(bigW, "smaller window: consume")
+
+	// 拨到整键只剩 smallW − 1s:三条路径各写一次,都要续回 smallW。每段之前再拨 1s。
+	// FastForward 同时让小值副本 60s 的放行槽过期;tokB 的放行槽是大值副本写的(5min),还在。
+	mr.FastForward(bigW - smallW + time.Second)
+	mustPTTL(smallW-time.Second, "fast-forwarded below the smaller window")
+	reserve(small)
+	mustPTTL(smallW, "renewed by the fast path")
+	mr.FastForward(time.Second)
+	mustPTTL(smallW-time.Second, "1s after the fast-path renewal")
+	enqueue(small)
+	admit(small, 1)
+	mustPTTL(smallW, "renewed by admit")
+	mr.FastForward(time.Second)
+	mustPTTL(smallW-time.Second, "1s after the admit renewal")
+	consume(small, tokB)
+	mustPTTL(smallW, "renewed by consume")
+
+	// 大值副本再写一次,整键 TTL 延长回 bigW。
+	reserve(big)
+	mustPTTL(bigW, "larger window extends it again")
+}
+
+// 占位键不存在、或者在但没有 TTL 时,任何一条写路径写完都一定有整键 TTL:否则 zone 下线之后键永久残留。
+// 钉住 admittedKeyTTL 注释里的两个陷阱:换成 PEXPIRE … GT,没有 TTL 的键永远设不上;先读 PTTL 再 ZADD,
+// 键不存在时 PEXPIRE 打空,随后 ZADD 建出的键没有 TTL。两种写错都在这里红(写完 PTTL = -1)。
+// 「键不存在」覆盖首次写入与止血 DEL 之后;「键在但没有 TTL」用 PERSIST 造(例如有人手工 ZADD 过)。
+func TestAdmittedKey_EveryWritePathSetsTTLWhenMissing(t *testing.T) {
+	ctx := context.Background()
+	key := admittedZSetKey(1)
+
+	shapes := []struct {
+		name  string
+		apply func(t *testing.T, rdb *redis.Client)
+	}{
+		{"key missing", func(t *testing.T, rdb *redis.Client) {
+			t.Helper()
+			if err := rdb.Del(ctx, key).Err(); err != nil {
+				t.Fatalf("del: %v", err)
+			}
+		}},
+		{"key without TTL", func(t *testing.T, rdb *redis.Client) {
+			t.Helper()
+			// 分数远在未来:快速通道脚本先清过期成员,种子若已过期会被清掉、键随之消失,就测不到这种形状。
+			if err := rdb.ZAdd(ctx, key, redis.Z{Score: 4e12, Member: "seed"}).Err(); err != nil {
+				t.Fatalf("seed: %v", err)
+			}
+			if err := rdb.Persist(ctx, key).Err(); err != nil {
+				t.Fatalf("persist: %v", err)
+			}
+		}},
+	}
+	// 每条路径先做自己的准备,再调 shape 把占位键摆成要测的形状,最后做被测的那一次写。
+	paths := []struct {
+		name string
+		run  func(t *testing.T, q *Queue, shape func())
+	}{
+		{"fast path", func(t *testing.T, q *Queue, shape func()) {
+			t.Helper()
+			shape()
+			if ok, err := q.TryReserveFastPathSlot(ctx, 1, 10); err != nil || !ok {
+				t.Fatalf("reserve = (%v, %v), want (true, nil)", ok, err)
+			}
+		}},
+		{"admit", func(t *testing.T, q *Queue, shape func()) {
+			t.Helper()
+			if _, err := q.Enqueue(ctx, 1, "u", "d"); err != nil {
+				t.Fatalf("enqueue: %v", err)
+			}
+			shape()
+			if n, err := q.PopAdmit(ctx, 1, 1, pickZone1Gate); err != nil || n != 1 {
+				t.Fatalf("popadmit = (%d, %v), want (1, nil)", n, err)
+			}
+		}},
+		{"consume", func(t *testing.T, q *Queue, shape func()) {
+			t.Helper()
+			res, err := q.Enqueue(ctx, 1, "u", "d")
+			if err != nil {
+				t.Fatalf("enqueue: %v", err)
+			}
+			if n, err := q.PopAdmit(ctx, 1, 1, pickZone1Gate); err != nil || n != 1 {
+				t.Fatalf("popadmit = (%d, %v), want (1, nil)", n, err)
+			}
+			shape()
+			if st, err := q.Lookup(ctx, res.QueueToken, stubSignFn); err != nil || st.Status != StatusAdmitted {
+				t.Fatalf("lookup = (%+v, %v), want ADMITTED", st, err)
+			}
+		}},
+	}
+
+	for _, p := range paths {
+		t.Run(p.name, func(t *testing.T) {
+			for _, s := range shapes {
+				t.Run(s.name, func(t *testing.T) {
+					q, rdb, _ := newClockedQueue(t)
+					p.run(t, q, func() {
+						t.Helper()
+						s.apply(t, rdb)
+						// go-redis 把 PTTL 的 -1(无 TTL)/ -2(键不存在)原样放进 Duration,两者都 < 0。
+						if ttl, err := rdb.PTTL(ctx, key).Result(); err != nil || ttl >= 0 {
+							t.Fatalf("shape %q: PTTL = %v err=%v, want no TTL (-1 or -2)", s.name, ttl, err)
+						}
+					})
+					if ttl, err := rdb.PTTL(ctx, key).Result(); err != nil || ttl != q.admittedKeyTTL() {
+						t.Fatalf("whole-key PTTL after the write = %v err=%v, want %v: a placeholder key must never be left without a TTL",
+							ttl, err, q.admittedKeyTTL())
+					}
+				})
+			}
+		})
+	}
 }

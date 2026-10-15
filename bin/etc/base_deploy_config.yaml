@@ -57,8 +57,9 @@ Kafka:
   # Kafka consumer group ID.
   #
   # Empty string on purpose: when blank, the cpp engine falls back to
-  # `<groupPrefix>-<node_id>` per instance (see
-  # cpp/libs/engine/core/node/system/node/node_kafka_command_handler.h:150).
+  # `<groupPrefix>-<node_id>` per instance (see the legacy-path branch of
+  # RegisterKafkaCommandHandler in
+  # cpp/libs/engine/core/node/system/node/node_kafka_command_handler.h).
   # Sharing one group across the entire fleet (every gate + scene + ...) was
   # the original behavior, but it made Kafka rebalance happily hand a
   # `gate-{N}` partition to a process that wasn't actually gate-N — so a
@@ -72,6 +73,11 @@ Kafka:
   # its own topic, which is what we always wanted: gate-N's group consumes
   # gate-N. ValidateCommandTarget then only ever sees correctly-routed
   # commands.
+  #
+  # 现状(2026-10-15):本键只剩旧的一节点一 topic 消费路径在读(上面那个回落);新路径 assign 分区、
+  # 不进 group,KafkaManager::Init 也不再读它(P0-B 批 1:生产端 broker 无条件登记,与本键无关)。
+  # K8s 的 node-config / battle-node-config 由 tools/scripts/k8s_deploy.ps1 的 New-NodeConfigMapYaml
+  # 从这里镜像(P0-B 批 2;以前那边写死一个全服共享的组名,与这里分家),改这里就是同时改 K8s。
   GroupID: ""
   EnableAutoCommit: true
   AutoOffsetReset: "earliest"
@@ -101,6 +107,11 @@ Kafka:
   # 滚更全部完成、且旧 topic 的写入速率与积压都读到 0 之后,由运维显式翻。
   # 滚更窗口里提前翻 = 老版本生产者发出的命令没人消费。
   # 顺序见 docs/design/control-plane-topic-partitioning-20260908.md §迁移顺序 第 4 步。
+  #
+  # 2026-10-15 复核:生产者侧结论仍成立(LegacyPerNodeTopic() 现在只剩单测引用,消费端自己拼旧 topic 名)。
+  # K8s 已翻:k8s_deploy.ps1 的 New-NodeConfigMapYaml 给 node-config / battle-node-config 直接写 true
+  # (模板常数,**不镜像本键**),与上面 GroupID 改为镜像同批 —— 旧路径开着时换组名会让新组从 earliest 重放旧 topic。
+  # 本机这一份仍是 false,照上一段由运维确认旧 topic 写入与积压为 0 后显式翻。
   DisableLegacyPerNodeTopic: false
 
 # Gate 连接令牌 HMAC 共享密钥（Login 签发，Gate 验证）

@@ -99,6 +99,9 @@ func RequestNodeCreateSceneWithOptions(
 	mirrorConfigId uint32,
 	creatorIds []uint64,
 ) (*scenepb.CreateSceneResponse, error) {
+	if sceneId == 0 {
+		return nil, fmt.Errorf("CreateScene refused: scene id must be nonzero")
+	}
 	conn, err := getOrDialNode(ctx, svcCtx, zoneId, nodeId)
 	if err != nil {
 		return nil, fmt.Errorf("dial scene node %s: %w", nodeId, err)
@@ -113,6 +116,12 @@ func RequestNodeCreateSceneWithOptions(
 	})
 	if err != nil {
 		return nil, fmt.Errorf("CreateScene RPC to node %s: %w", nodeId, err)
+	}
+	// RPC 的 OK 只代表传输完成;C++ 创建监听者可能回滚实体并留下空应答。
+	// 在发布/切换场景归属之前确认实际创建的是本次请求的实例,失败沿调用方原有补偿收尾。
+	if resp == nil || resp.SceneInfo == nil || resp.SceneInfo.SceneId != sceneId {
+		return nil, fmt.Errorf("CreateScene node %s did not confirm requested scene %d (received %d)",
+			nodeId, sceneId, resp.GetSceneInfo().GetSceneId())
 	}
 
 	return resp, nil

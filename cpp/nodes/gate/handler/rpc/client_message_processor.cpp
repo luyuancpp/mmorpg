@@ -37,6 +37,7 @@
 #include "thread_context/node_context_manager.h"
 #include <session/manager/session_manager.h>
 #include <network/node_utils.h>
+#include "core/network/grpc_client_runtime.h"
 #include <node_config_manager.h>
 
 // BytesToHex / HmacSha256Hex 原来是本文件匿名 namespace 里的两个静态函数,
@@ -108,6 +109,11 @@ static std::optional<entt::entity> PickRandomNode(uint32_t nodeType)
 	const auto selfZoneId = GetNodeInfo().zone_id();
 	for (auto entity : view)
 	{
+		const auto *muduoChannel = registry.try_get<MuduoGrpcChannelPtr>(entity);
+		if (!(muduoChannel != nullptr && *muduoChannel) && !HasUsableGrpcClient(registry, entity))
+		{
+			continue;
+		}
 		const auto &node = view.get<NodeInfo>(entity);
 		if (globalPool || node.zone_id() == selfZoneId)
 		{
@@ -209,6 +215,23 @@ static std::optional<entt::entity> SendRawViaRouter(const ClientRequest &request
 	{
 		gate_router_muduo::SendForward(**muduoChannel, forwardRequest, sessionDetailsBin);
 		return *routerNode;
+	}
+	// 两种传输都不可用时按「没有路由服」处理(fail-closed)。muduo_h2 下 FinalizeShutdownInLoop 清掉 MuduoGrpcChannelPtr、
+	// NodeInfo 要到 Teardown 才清,这段时间 PickRandomNode 仍会选中这个实体;它从没建过官方 gRPC 的 CQ / Stub,
+	// 落进官方实现就是对不存在的组件 registry.get(Debug 断言,Release 未定义行为)。正常关机有排空门
+	// (main.cpp 的 SetShutdownDrainComplete:beforeShutdown 记下的会话都走完断线处理、通道都空闲才 Finalize),
+	// 本守卫兜的是剩下的窗口:排空预算到期后强行 Finalize、Finalize 之后才断开的会话、没走同一判定的关机路径。
+	// 返回 nullopt 后 lane 回带 id 的 1003,断线通知只留痕、由 login 租约兜底。
+	if (!routerRegistry.all_of<grpc::CompletionQueue, client_rpc_router::ClientRpcRouterStubPtr>(*routerNode))
+	{
+		static uint64_t noTransportCount = 0;
+		if ((noTransportCount++ & 0x3FF) == 0)
+		{
+			LOG_WARN << "Router instance has neither a muduo channel nor a gRPC stub;message not forwarded(sampled)"
+					 << ", router_entity=" << entt::to_integral(*routerNode)
+					 << ", latest_message_id=" << request.message_id() << ", no_transport_total=" << noTransportCount;
+		}
+		return std::nullopt;
 	}
 	client_rpc_router::SendClientRpcRouterForward(
 		routerRegistry,
@@ -1006,10 +1029,11 @@ void RpcClientSessionHandler::DispatchClientRpcMessage(const muduo::net::TcpConn
 				  << " message_id=" << request->message_id()
 				  << " session_id=" << sessionId
 				  << " player_id=" << session.playerId;
-		// 回 tip 而不是静默丢:本地把 GATE_RUN_MODE 忘了设时,robot 冒烟要能立刻
+		// 回执而不是静默丢:本地把 GATE_RUN_MODE 忘了设时,robot 冒烟要能立刻
 		// 看出"是被闸拦了",而不是超时到一半去猜。kFeatureUnavailable 是既有码,
 		// 新增 tip 要改 data/tip/Tip.xlsx(二进制文件,多个并行会话在排队改它)。
-		SendTipToClient(conn, kFeatureUnavailable);
+		// 回执带请求 id 与原消息号(client-request-ordering.md O6,2026-10-15 起;原为 23 号 tip),理由同下方 battle 拒绝。
+		gate_lane::SendEnvelope(session, request->id(), request->message_id(), kFeatureUnavailable);
 		if (IllegalPacketCounter::RegisterAndShouldKill(session.illegalPacketCount))
 		{
 			LOG_WARN << "Session illegal-packet threshold exceeded (GM message in prod) — forceClose."
@@ -1029,11 +1053,14 @@ void RpcClientSessionHandler::DispatchClientRpcMessage(const muduo::net::TcpConn
 	// 同时覆盖直连模式与路由模式,HandleGrpcNodeMessage / HandleRouterForward 都见不到它们。
 	// 回 kServiceUnavailable、不计非法包、不断连:这是合法协议号(旧客户端或误走大厅),
 	// 踢线会把大厅连接一起拆掉。逐条只打 DEBUG,与上面几道闸的明细日志同一口径。
+	// 回执是带请求 id 与原消息号的信封(client-request-ordering.md O6、band-routing 阶段 0d):它排在 lane 之前、
+	// 可能先于更早排队请求的回包到达,不带 id 的 23 号 tip 会被客户端当成别的请求的失败。2026-10-15 两版同批改
+	// (原为 23 {1003},Java scene-battle-spec D12 同步修订)。
 	if (messageInfo.targetNodeType == eNodeType::BattleNodeService)
 	{
 		LOG_DEBUG << "Battle message through gate rejected(battle uses client direct connections only), session_id=" << sessionId
 				  << ", message_id=" << request->message_id();
-		SendTipToClient(conn, kServiceUnavailable);
+		gate_lane::SendEnvelope(session, request->id(), request->message_id(), kServiceUnavailable);
 		return;
 	}
 

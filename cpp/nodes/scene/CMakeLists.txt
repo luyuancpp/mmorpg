@@ -151,6 +151,8 @@ target_link_libraries(scene
     -lrpc
     -lproto
     -lthird_party
+    # muduo_h2 etcd 传输(core 的 muduo_etcd_transport,NODE_ETCD_TRANSPORT 选择;docs/design/grpc-muduo-transport.md §13.4)
+    -lmuduo_grpc
     -Wl,--end-group
     gRPC::grpc++
     gRPC::grpc++_reflection
@@ -158,6 +160,7 @@ target_link_libraries(scene
     gRPC::gpr
     CURL::libcurl
     protobuf::libprotobuf
+    nghttp2
     muduo_net
     muduo_base
     rdkafka++

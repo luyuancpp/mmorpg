@@ -183,7 +183,7 @@ data-service 的分区契约随即永久失败。最好也晚于 2.6(先看到�
 | 告警 | 级别 | 先看什么 |
 |---|---|---|
 | `DataServiceAuditConsumerStopped` | warning | data_service 日志 `STOPPED:`(点名 guid / offset);修库后自动续消费。带 `for: 2m`,只为滤掉新 Pod 启动时首个样本为 0 的抖动 |
-| `DataServiceAuditRetentionGap` | critical | **数据已丢**。日志 `AUDIT DATA LOST`(采样下界)与 `[kafka-go]` 的 `skipping from offset` 行;消费者重建过的看 `starting at offset` / `seeking to offset` 两行之差(见表后说明);上报负责人 |
+| `DataServiceAuditRetentionGap` | critical | **数据已丢**。探针在 15 分钟内采到过一次缺口就响(`max_over_time(...[15m]) > 0`、`for: 0m`),缺口消失后约 15 分钟才 resolve,resolve 不代表数据找回。日志 `AUDIT DATA LOST`(采样下界)与 `[kafka-go]` 的 `skipping from offset` 行;消费者重建过的看 `starting at offset` / `seeking to offset` 两行之差(见表后说明);上报负责人 |
 | `DataServiceAuditLagHigh` | critical | 某个分区逼近删除线(比的是单分区最大积压,§4);先分清库慢(FlushSlow)还是消费者停了(ConsumerStopped);合计 `lag_messages` 与它接近 = 积压集中在一个分区 |
 | `DataServiceTxLogLagHigh` | warning | 流水落后;`[transaction_log] STOPPED:` |
 | `DataServiceAuditLagProbeBlind` | warning | 按实例触发:该实例的探针 15 分钟没成功过,它的 lag / retention_gap 是陈值(照样参与积压类告警的 max,先按 instance 展开指标排除);所有实例都在报时积压类告警都不可信;日志 `lag probe failed` |
@@ -203,9 +203,27 @@ data-service 的分区契约随即永久失败。最好也晚于 2.6(先看到�
     「DB 故障 → 停机 → 冷却 60s → 重建」这条主要的丢失路径走的正是这里:DB 持续故障期间每次重建都会打一对,
     位点没提交时 A 不变、B 随保留期推进逐次变大 —— 同一个 A 取 B 最大的那一对,A 变过(中途有过提交)的各段相加。
     两行是 Info 级,日志级别高于 info 时看不到。
-  - 探针的 `AUDIT DATA LOST` 行是每轮(默认 30s)的采样值,只是下界,消费者越过缺口并提交后不再出现。
-  - `DataServiceAuditRetentionGap` 带 `for: 2m`:缺口存续不足 2 分钟(删除发生在消费者重建前不久)时告警不会响,只剩上面的日志。
-    所以积压事故收尾时,不论告警响没响都按 `[kafka-go]` grep 一遍。把告警改成不带 `for` 的单调计数器是负责人拍板项(与 Q-1 相关),未做。
+  - 探针的 `AUDIT DATA LOST` 行是每轮(默认 30s)的采样值,只是下界,消费者越过缺口并提交后不再出现;
+    消费者已读入未提交的消息所在段被删、其实没丢时也会出现(见下一条 ②),丢没丢以 `[kafka-go]` 行为准。
+  - `DataServiceAuditRetentionGap` 对探针采到的任何一次缺口都立即呼叫(2026-10-15 按负责人「按最标准的去做」改定,取代原来的 `for: 2m`;
+    窗口 15m 的取值依据写在规则注释里)。代价:gauge 为正而实际没丢(日志条数为 0)的情形也会呼叫。分两种,那一刻积压都已经在
+    删除线上,一律按丢数据处置,用上面的日志确认条数:
+    - ① 瞬时:探针先读 committed 后读 start,消费者正读着分区最老的段、该段恰在两次读之间被删(消费者其实已越过它),只有一轮探针为正。
+    - ② 更常见:消费者已读入、尚未提交的消息所在的段被删。读入在前、落库后才提交,读入未提交的量 = kafka-go Reader 的预取队列
+      (两个消费者共用的 `newReader` 未设 `QueueCapacity`,v0.4.47 默认 100 条,由本实例分到的各分区共用)+ 正在攒 / 落库的批
+      (player_snapshot 另有分区 worker 通道)+ 当前 fetch 响应的剩余部分。gauge 一直为正,直到下一次提交越过日志起点,
+      可持续多轮探针(库慢时数秒到数分钟);reader 位点在被删段之后,kafka-go 既不打 `skipping from offset` 行、
+      也不重新定位(没有 `starting at offset` / `seeking to offset` 两行),日志条数为 0。消费者随后照常落库提交就没丢;
+      提交之前停机 / 重建时,其中没落库的才真丢,看那次重建的两行位点日志。
+  - 仍会漏的:缺口整段落在两次探针之间(短于一个探针间隔,默认 30s)时 gauge 从未为正,`DataServiceAuditRetentionGap` 无从触发。
+    所以积压事故收尾时,不论告警响没响都按 `[kafka-go]` grep 一遍。
+  - 窗口 15m 待故障演练确认(dev 环境,开服前做一次):① 核对 ServiceMonitor / PodMonitor 的抓取间隔 ≤ `LagProbeIntervalMs`
+    (监控栈不在本仓,未核实),否则只保持一轮探针的正值可能一个样本都没被抓到;② 断库让 player_snapshot 消费者停机,
+    等积压越过单分区删除线、日志出现 `AUDIT DATA LOST`,再恢复库让消费者越过缺口并提交(可临时调小该审计 topic 的
+    `retention.bytes` / `retention.ms` 加快触发,演练后改回);③ 在 Prometheus 查 `ALERTS{alertname="DataServiceAuditRetentionGap"}`:
+    第一条 `AUDIT DATA LOST` 之后约「抓取间隔 + 30s 评估间隔」内进入 firing,最后一条之后约 15 分钟才 resolve,其间 Alertmanager
+    至少发出一次通知。不满足时先对照 ① 查抓取与探针间隔,确是窗口不够再按规则注释里的下限公式(评估间隔 + 探针间隔)重新取窗口;
+    演练结果写进规则注释,替换「待压测 / 故障演练确认」。
 
 ## 8. 消息大小链路(核对结论,本次不改)
 
@@ -238,3 +256,7 @@ data-service 的分区契约随即永久失败。最好也晚于 2.6(先看到�
   `lag_max_partition_messages`;§4 按条数的公式去掉「× P」,§2.1 不再要求换代后重算阈值);`DataServiceAuditLagProbeBlind` 改为按实例触发;
   `DataServiceAuditConsumerStopped` 加 `for: 2m`;保留期丢失的日志口径按 kafka-go v0.4.47 源码核对后重写(§2.3 / §7,
   reader 重建路径是静默的,改看新接出的两行位点日志);补充坏消息计数在停机重放时会重复累加的说明(§7)。
+- 2026-10-15(负责人「按最标准的去做」,未经运行验证):`DataServiceAuditRetentionGap` 改为
+  `max by (consumer) (max_over_time(...[15m])) > 0`、`for: 0m`,对任何一次采到的缺口都呼叫;§7 告警表与表后说明同步,补窗口的演练确认步骤。
+- 2026-10-15(上一条的评审修复,未经运行验证):§7 把「gauge 为正而实际没丢」拆成两种 —— 探针两次读之间删段的瞬时情形,
+  与更常见的「消费者已读入未提交的消息所在段被删」(可持续多轮探针、日志条数为 0);规则文件头的抓取前提补「抓取间隔 ≤ LagProbeIntervalMs」。

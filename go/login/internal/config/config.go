@@ -255,11 +255,10 @@ type HomeZoneConf struct {
 //   - DispatchInterval too low burns Redis QPS for no benefit (gate
 //     PlayerCount only refreshes every 10s via etcd anyway).
 //   - AdmitTTL 是放行槽等客户端来取的时限,也是没人来取时在途占位的寿命(默认 60s)。
-//     取走之后、以及快速通道当场交票之后,占位只再留 15s:那是代码常量
+//     取走之后、以及快速通道当场交票之后,占位只再留 20s:那是代码常量
 //     loginqueue.defaultHandoffGrace,不是配置,依据见该常量的注释(G4b-G)。
-//     排队开着时滚动调整它,新旧值之差不要超过 1min(loginqueue.admittedKeyGCSlack):占位键的
-//     整键 TTL 由各副本按自己的 AdmitTTL 无条件续期,差得更多时可能提前收走未到期的占位,
-//     最多多放一批。更大的调整先关排队、滚完再开(见 login.yaml Queue 段注释)。
+//     占位键的整键 TTL 只增不减(剩余不足本副本的 max(AdmitTTL, 20s) + 1min 才续),排队开着时
+//     也可以滚动调整它;调小之后,已续上的较大整键 TTL 要自然走完才收敛(见 loginqueue.admittedKeyTTL)。
 //   - SoftCapMultiplier (e.g. 1.5) is the headroom factor applied to the
 //     largest observed PlayerCount when no explicit ZoneCapacityOverride is
 //     set, so freshly-deployed zones aren't capped at "current load".

@@ -62,8 +62,8 @@ public:
         return client_.connection()->peerAddress();
     }
 
-    // 当前有可用的 channel(TCP 已连上)。握手是否完成由节点注册流程另外判定。
-    inline bool connected()const { return channel_ != nullptr; }
+    // 当前有可用的 channel(TCP 已连上、且未在关机阶段 0 关闭)。握手是否完成由节点注册流程另外判定。
+    inline bool connected()const { return channel_ != nullptr && !channel_->IsClosed(); }
 
     // 必须在 connect() 之前调用:每次连上时把服务表拷进新的 RpcChannel。
     void registerService(google::protobuf::Service* service)
@@ -93,8 +93,10 @@ public:
         client_.setMessageCallback([weakSelf](const muduo::net::TcpConnectionPtr& conn,
                                               muduo::net::Buffer* buf, muduo::Timestamp ts)
         {
-            // 只在取 channel 的这一行持有 RpcClient,派发期间不强持它:回调里若销毁了节点实体,
-            // ~RpcClient 立即执行(~TcpClient 的 use_count 判断不被本闭包带偏)。channel 由局部强引用保活到派发结束。
+            // 只在取 channel 的这一行持有 RpcClient,派发期间不强持它 —— 这只是为了不延长 RpcClient 的寿命。
+            // 在任何连接回调 / 消息回调栈上同步销毁 RpcClient 仍然禁止:muduo 自己在回调期间就持着这条连接的强引用
+            // (handleRead 的 shared_from_this 临时量 + Channel 的 tie guard),~TcpClient 必然看到 use_count>1 而跳过
+            // forceClose。摘节点一律 queueInLoop(rpc_channel.h ClientDoneCallback 契约 (c))。channel 由局部强引用保活到派发结束。
             RpcChannelPtr channel;
             if (const auto self = weakSelf.lock())
             {
@@ -163,8 +165,11 @@ public:
     }
 
     // 节点关机阶段 0(NodeUtils::CloseAllRpcChannels):在途调用以 kChannelClosed 失败,之后拒收新调用。
+    // 之后 enableRetry 重连建出的 channel 一出生就是关闭态:阶段 0 到拆除之间 loop 仍在转(gRPC CQ 排空可能拉长这段),
+    // 不能让新连接上再登记出在途调用 —— 它们会拖到拆除之后才由 ~RpcChannel 失败。
     void CloseChannel()
     {
+        channelsClosed_ = true;
         if (channel_)
         {
             channel_->Close();
@@ -216,6 +221,10 @@ private:
                 channel_->OnDisconnect();
             }
             channel_ = RpcChannel::Create(*conn->getLoop(), conn, services_);
+            if (channelsClosed_)
+            {
+                channel_->Close();   // 节点已进入关机阶段 0(见 CloseChannel)
+            }
             if (connectedAt_ == muduo::Timestamp::invalid())
             {
                 connectedAt_ = muduo::Timestamp::now();
@@ -253,6 +262,7 @@ private:
     muduo::net::TcpClient client_;
     muduo::net::InetAddress serverAddr_;
     RpcServiceMap services_;
+    bool channelsClosed_{false};
     // 声明在 client_ 之后:析构时先于 client_ 释放(~RpcChannel 在 loop 还活着时把在途调用排进队列)。
     RpcChannelPtr channel_;
 };

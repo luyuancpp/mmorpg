@@ -297,9 +297,8 @@ TEST_F(BagSelectionOrderTest, CountMapBatchPlacesConfigsInAscendingConfigOrder)
     {
         SCOPED_TRACE(throughService);
         Bag bag;
-        const PlayerItemBlockList blockList;
         const auto result = throughService
-            ? BagService::AddItems(entt::null, bag, blockList, requested)
+            ? BagService::AddItems(entt::null, bag, requested)
             : bag.AddItems(requested);
         ASSERT_EQ(kSuccess, result);
         for (const auto &[slot, configId] : std::vector<std::pair<uint32_t, uint32_t>>{{0, 10}, {1, 11}, {2, 15}})

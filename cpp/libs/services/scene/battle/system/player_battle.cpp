@@ -812,11 +812,6 @@ namespace
 			}
 			if (!gained.empty())
 			{
-				const PlayerItemBlockList emptyBlockList;
-				const auto* blockList = tlsEcs.actorRegistry.try_get<PlayerItemBlockList>(player);
-				const auto& effectiveBlockList =
-					blockList == nullptr ? emptyBlockList : *blockList;
-
 				// 入包前抓一份各 config 的持有量:BagService::AddItems 返回失败**不代表包没变**
 				// (bag_service.h 的原子性口径明写:临时格可能已经淘汰了旧物)。直接把整批重投
 				// 临时格会把已经进了主包的那部分再发一遍 —— 凭空复制道具。
@@ -826,7 +821,7 @@ namespace
 					beforeCounts[configId] = inventory.GetTotalItemCount(configId);
 				}
 
-				auto result = BagService::AddItems(player, inventory, effectiveBlockList, gained,
+				auto result = BagService::AddItems(player, inventory, gained,
 												   TX_ITEM_AWARD, battleId, extra);
 				if (result != kSuccess)
 				{
@@ -848,7 +843,7 @@ namespace
 					if (!remainder.empty())
 					{
 						result = BagService::AddItems(player, bags->bags[kTemporary],
-													  effectiveBlockList, remainder, TX_ITEM_AWARD,
+													  remainder, TX_ITEM_AWARD,
 													  battleId, extra);
 					}
 					else

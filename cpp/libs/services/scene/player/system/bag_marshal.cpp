@@ -4,6 +4,9 @@
 
 #include <muduo/base/Logging.h>
 
+#include <algorithm>
+#include <vector>
+
 #include "modules/bag/comp/player_bags_comp.h"
 #include "modules/bag/bag_profile_registry.h"
 #include "modules/bag/bag_system.h"
@@ -78,13 +81,34 @@ ItemComp ItemFromEntry(const ItemEntry& entry)
     item.set_item_id(entry.item_uuid());
     item.set_config_id(entry.config_id());
     item.set_size(entry.stack_size());
-    // 0 = 旧存档没盖过章,由 ItemStore::Insert 按重放顺序补盖;非 0 原样保留。
+    // 零章旧档在全包最大序号之后按出现顺序补盖；非零章原样保留。
     item.set_acquire_seq(entry.acquire_seq());
     if (entry.has_equip())  // presence 原样带回,理由同 ItemToEntry
     {
         item.mutable_equip()->CopyFrom(entry.equip());
     }
     return item;
+}
+
+// 写盘顺序属于布局：固定包按 bag_type，包内按槽位，动态包另按 bag_id 排序。
+void MarshalItems(const Bag &bag, uint32_t bagType, google::protobuf::RepeatedPtrField<ItemEntry> &out)
+{
+    std::vector<std::pair<uint32_t, const ItemComp *>> ordered;
+    bag.ForEachItem([&](Guid guid, const ItemComp &item)
+    {
+        if (item.size() > 0)
+        {
+            ordered.emplace_back(bag.GetItemPosByGuid(guid), &item);
+        }
+    });
+    std::sort(ordered.begin(), ordered.end(), [](const auto &left, const auto &right)
+    {
+        return left.first != right.first ? left.first < right.first : left.second->item_id() < right.second->item_id();
+    });
+    for (const auto &[slot, item] : ordered)
+    {
+        ItemToEntry(*item, slot, bagType, *out.Add());
+    }
 }
 
 }  // namespace
@@ -120,27 +144,29 @@ void Marshal(entt::entity player, BagAllData& out)
     for (uint32_t bagType = 0; bagType < static_cast<uint32_t>(kBagTypeCount); ++bagType)
     {
         const auto& bag = bags->bags[bagType];
-        bag.ForEachItem([&out, bagType, &bag](Guid guid, const ItemComp& item) {
-            ItemToEntry(item, bag.GetItemPosByGuid(guid), bagType, *out.add_items());
-        });
+        MarshalItems(bag, bagType, *out.mutable_items());
     }
 
     // Transient runtime bags (event bags / per-pet bags). Each gets its
     // own DynamicBagData carrying bag_id + capacity + items. Empty for
     // most players, so this loop usually does nothing.
-    for (const auto& [bagId, bag] : bags->dynamicBags_)
+    std::vector<uint64_t> dynamicIds;
+    dynamicIds.reserve(bags->dynamicBags_.size());
+    for (const auto &entry : bags->dynamicBags_)
     {
+        dynamicIds.push_back(entry.first);
+    }
+    std::sort(dynamicIds.begin(), dynamicIds.end());
+    for (const auto bagId : dynamicIds)
+    {
+        const auto &bag = bags->dynamicBags_.at(bagId);
         BagAllData::DynamicBagData* dyn = out.add_dynamic_bags();
         dyn->set_bag_id(bagId);
         dyn->set_capacity(static_cast<uint32_t>(bag.Capacity()));
         // **规则本身不进快照,进快照的只是"这个包是哪套规则"这一个 id。**
         // 不带它,节日包跨服回来会退化成默认的自由格 + 什么都收 —— 规则静默消失。
         dyn->set_profile_id(bag.ProfileId());
-        bag.ForEachItem([dyn, &bag](Guid guid, const ItemComp& item) {
-            // bag_type is meaningless for dynamic bags (identified by
-            // bag_id); pass the proto default 0 so nothing goes on the wire.
-            ItemToEntry(item, bag.GetItemPosByGuid(guid), /*bagType=*/0, *dyn->add_items());
-        });
+        MarshalItems(bag, 0, *dyn->mutable_items());
     }
 }
 
@@ -172,6 +198,15 @@ void Unmarshal(entt::entity player, const BagAllData& in)
         {
             bags.bags[bagType].SetCapacityForRestore(
                 static_cast<std::size_t>(in.capacities(static_cast<int>(bagType))));
+        }
+    }
+
+    // 先扫描本包所有已有章，再重放零章条目；源列表先出现零章也不会盖出重复序号。
+    for (const auto &entry : in.items())
+    {
+        if (entry.bag_type() < static_cast<uint32_t>(kBagTypeCount) && entry.stack_size() > 0)
+        {
+            bags.bags[entry.bag_type()].RaiseAcquireSeqForRestore(entry.acquire_seq());
         }
     }
 
@@ -211,6 +246,13 @@ void Unmarshal(entt::entity player, const BagAllData& in)
         bag.SetProfile(BagProfileRegistry::Instance().Make(
             dyn.profile_id(), static_cast<std::size_t>(dyn.capacity())));
         bag.SetCapacityForRestore(static_cast<std::size_t>(dyn.capacity()));
+        for (const auto &entry : dyn.items())
+        {
+            if (entry.stack_size() > 0)
+            {
+                bag.RaiseAcquireSeqForRestore(entry.acquire_seq());
+            }
+        }
         for (const auto& entry : dyn.items())
         {
             bag.InsertItemForRestore(ItemFromEntry(entry), entry.pos());

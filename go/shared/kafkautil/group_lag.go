@@ -19,7 +19,9 @@ type GroupLag struct {
 	// 合计 Lag 还远没到线,那个分区已经开始被删 —— 「离删除线还有多远」只能拿它比,不能拿合计比。
 	MaxPartitionLag int64
 	// RetentionGap = Σ max(0, start − committed),只算提交过的分区:保留期(retention.ms 或 retention.bytes)
-	// 已经删掉、而这个组还没消费到的消息条数 —— 这些数据已经丢了。
+	// 已经删掉、而这个组还没提交到的消息条数 —— 通常意味着这些数据已经丢了。也含已被消费者读入、尚未提交的消息
+	// 所在段被删的情形(消费者预取在前、处理完才提交):此时未必丢,消费者照常处理并提交越过 start 后它自行归零,
+	// 提交之前停机 / 重建时其中没处理完的才真丢。丢没丢、丢了多少以 [kafka-go] 日志为准。
 	RetentionGap int64
 	// Uncommitted 是还没提交过 offset 的分区数(新组 / 新一代 topic 刚建)。
 	Uncommitted int
@@ -36,7 +38,9 @@ type groupOffsetReader interface {
 // **读取顺序是正确性要求**:先读组的已提交 offset,再逐分区读 end / start。反过来(先 end 后 committed)时,
 // 消费者在两次读之间提交一次就会出现 committed > end,繁忙 topic 上探针会周期性误报;先读 committed,
 // end 单调不减,committed <= end 恒成立(除非 topic 真被删了重建)。代价:start 也是后读的,保留期恰在两次读之间推进、
-// 而消费者其实已越过它时,会算出一个**瞬时**的 RetentionGap > 0 —— 所以对应告警带 for,不单点触发。
+// 而消费者其实已越过它时,会算出一个**瞬时**的 RetentionGap > 0 —— 对应告警 DataServiceAuditRetentionGap 自 2026-10-15
+// 起不带 for(max_over_time[15m]、for: 0m),这种正值也会呼叫,按丢数据处置后以 `[kafka-go]` 日志确认条数(可能为 0),
+// 见 deploy/k8s/data-service-audit-alerts.yaml 与 docs/ops/audit-topic-generation-bump-runbook.md §7。
 //
 // 任何一处读失败、响应顶层 Err(OffsetFetch v2+)或某分区 block 缺失 / 带错,都返回 error;
 // committed > end(topic 被删了重建过)时该分区 lag 记 0,并返回 error 让调用方看见,不静默当 0。

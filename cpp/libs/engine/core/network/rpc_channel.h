@@ -210,7 +210,7 @@ private:
     void ArmTimeoutTick();
     void OnTimeoutTick();
 
-    bool SendFrame(const TcpConnectionPtr& connection, const GameRpcMessage& message);
+    void SendFrame(const TcpConnectionPtr& connection, const GameRpcMessage& message);
     TcpConnectionPtr LockConnectedConnection() const;
 
     muduo::net::EventLoop& loop_;

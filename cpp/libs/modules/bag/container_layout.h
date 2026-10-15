@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include <memory>
 #include <unordered_map>
 #include <vector>
 
@@ -55,6 +56,10 @@ class IContainerLayout
 {
 public:
     virtual ~IContainerLayout() = default;
+
+    // 事务候选必须保留完整动态类型、容量、几何与占用，且修改副本不影响原对象。
+    // 改变布局行为的派生类必须覆盖本接口，禁止把派生类型切片成父类。
+    [[nodiscard]] virtual std::unique_ptr<IContainerLayout> Clone() const = 0;
 
     // ── 容量 ──────────────────────────────────────────────────────────
     // 这里的 capacity **只有"格子数"一个含义**。拆分前它同时兼任"最多能有
@@ -142,6 +147,10 @@ public:
     // 刻意不给默认容量 —— "背包默认几格"是背包域的常量(bag_system.h 的
     // kDefaultCapacity),布局层不该知道。
     explicit FlatLayout(std::size_t capacity) : capacity_(capacity) {}
+    [[nodiscard]] std::unique_ptr<IContainerLayout> Clone() const override
+    {
+        return std::make_unique<FlatLayout>(*this);
+    }
 
     [[nodiscard]] std::size_t Capacity() const override { return capacity_; }
     void Resize(std::size_t newCapacity) override { capacity_ = newCapacity; }
@@ -204,6 +213,10 @@ class FixedSlotLayout final : public FlatLayout
 {
 public:
     explicit FixedSlotLayout(std::size_t slotCount) : FlatLayout(slotCount) {}
+    [[nodiscard]] std::unique_ptr<IContainerLayout> Clone() const override
+    {
+        return std::make_unique<FixedSlotLayout>(*this);
+    }
 
     // ⚠ **刻意不覆盖 `CanFit()`。** 看起来这里最该覆盖它 —— 继承来的
     // `FlatLayout::CanFit`(`FreeCells() >= count`)对具名槽是偏乐观的,
@@ -240,6 +253,10 @@ class GridLayout final : public IContainerLayout
 {
 public:
     GridLayout(uint32_t width, uint32_t height);
+    [[nodiscard]] std::unique_ptr<IContainerLayout> Clone() const override
+    {
+        return std::make_unique<GridLayout>(*this);
+    }
 
     [[nodiscard]] uint32_t Width() const { return width_; }
     [[nodiscard]] uint32_t Height() const { return height_; }

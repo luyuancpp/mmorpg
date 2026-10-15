@@ -80,7 +80,7 @@
 - **修 F010 / F012 / F022 时，先 `TryCancel`、Shutdown CQ 并排空，再销毁或 clear 节点实体。** 生成的流式 gRPC 客户端把 registry 里 protobuf 响应组件的地址交给了异步 `Read`（C008）。这个组件可以移动，按 swap-and-pop 存储；指针目前稳定，只是因为恰好每个 registry 只有一个实体挂它，直接销毁会打破这个前提。修法应改在模板里：把响应缓冲挪进不可移动的 `Async*GrpcClient` 结构。
 - **收窄 Kafka 白名单（F001 / F002）之前，先盘清 Go 和 Java 两版里所有往这个入口发事件的地方。** 漏掉一个，合法事件就会被静默丢弃。
 - **F059 要改 `player_lifecycle.cpp`。** 2026-10-15 时入场链正在被另一个会话大改，等它落地后再做。存盘侧应改为只读加 fail-closed，同时修改生成器模板。
-- `NodeContextManager::GetRegistry` 只有 `assert` 边界检查。几处入口直接拿对端传来的 `node_type` 选 registry（F093、C007、`registration_manager.cpp:151`），Release 下会越界，应加上 Release 也生效的检查。
+- `NodeContextManager::GetRegistry` 只有 `assert` 边界检查。几处入口直接拿对端传来的 `node_type` 选 registry（F093、C007、`registration_manager.cpp:151`），Release 下会越界，应加上 Release 也生效的检查。（2026-10-15：这三处都已不再用对端的 node_type 选 registry —— Route 一族改为显式拒绝，握手应答改为按本端发起时的 nodeType 选 registry、对端自报值只核对，见 muduo-rpc-channel.md §8.3 / §9.3。）
 
 ## 查过、没有问题的
 
@@ -200,13 +200,13 @@ F 开头的是查找阶段的发现，C 开头的是补漏阶段的发现。「�
 | F084 | low | 确认 | `cpp/nodes/gate/handler/rpc/client_message_processor.cpp:405` | 把 entt 实体整数当成 scene_node_id 打日志,而且截断到 uint32,只剩 index |  |
 | F085 | low | 确认 | `cpp/nodes/gate/handler/rpc/client_message_processor.cpp:413` | gate 把 SceneNodeService 节点 registry 命名为 sceneRegistry,并把节点 entity 整数截成 uint32 当 scene_node_id 打日志 |  |
 | F082 | low | 确认 | `cpp/nodes/gate/handler/rpc/client_message_processor.cpp:57` | PickRandomNode 只按 view<NodeInfo> 选节点,生成的 sender 随后无守卫地 get<CompletionQueue>/get<StubPtr> |  |
-| C007 | low | 确认 | `cpp/nodes/gate/handler/rpc/gate_service_handler.cpp:193` | 另外几处入口把对端或跨进程消息里的 node_type 未经校验直接交给 NodeContextManager::GetRegistry(只有 assert),Release 下数组越界（F093 的同类） |  |
+| C007 | low | 确认 | `cpp/nodes/gate/handler/rpc/gate_service_handler.cpp:193` | 另外几处入口把对端或跨进程消息里的 node_type 未经校验直接交给 NodeContextManager::GetRegistry(只有 assert),Release 下数组越界（F093 的同类） | 2026-10-15 不再存在：Route 一族（Gate.RoutePlayerMessage / RouteNodeMessage、Scene.RoutePlayerStringMsg / RouteNodeStringMsg）守护段已改为显式拒绝，不再按对端 node_type 选 registry、不再转发（muduo-rpc-channel.md §9.3） |
 | F086 | low | 确认 | `cpp/nodes/scene/handler/event/player_event_handler.cpp:32` | 进程内 entt 事件用 protobuf + uint64 entity 字段传句柄，类型安全和所属 registry 信息都丢了 |  |
 | F087 | low | 确认 | `cpp/nodes/scene/handler/grpc/scene_node_service.cpp:41` | HandleCreateScene 持有 SceneInfoComp& 跨过 dispatcher.trigger,靠「监听者不删场景」才不悬空 |  |
 | F088 | low | 降级 | `cpp/nodes/scene/handler/grpc/scene_node_service.cpp:56` | 组件引用/指针跨越同步 dispatcher.trigger 继续使用，只有订阅者删除同 pool 组件(swap_and_pop)时才会悬空;emplace 不会使其失效 |  |
 | F089 | low | 确认 | `cpp/nodes/scene/handler/rpc/player/player_lifecycle_handler.cpp:28` | 日志用 entt::to_integral(player) 冒充玩家身份 |  |
 | F092 | low | 确认 | `cpp/nodes/scene/handler/rpc/scene_handler.cpp:556` | 把请求级单例（TipInfoMessage、SessionList）挂在 GlobalEntity 上，每条消息都 get_or_emplace |  |
-| F093 | low | 降级 | `cpp/nodes/scene/handler/rpc/scene_handler.cpp:808` | NodeContextManager::GetRegistry 只有 assert 边界检查，RoutePlayerStringMsg 用对端传来的 node_type 选 registry（Release 下可越界；当前仓内没有发起方） |  |
+| F093 | low | 降级 | `cpp/nodes/scene/handler/rpc/scene_handler.cpp:808` | NodeContextManager::GetRegistry 只有 assert 边界检查，RoutePlayerStringMsg 用对端传来的 node_type 选 registry（Release 下可越界；当前仓内没有发起方） | 2026-10-15 不再存在：Route 一族（Gate.RoutePlayerMessage / RouteNodeMessage、Scene.RoutePlayerStringMsg / RouteNodeStringMsg）守护段已改为显式拒绝，不再按对端 node_type 选 registry、不再转发（muduo-rpc-channel.md §9.3） |
 | F094 | low | 降级 | `cpp/nodes/scene/handler/rpc/scene_handler.cpp:856` | UpdateSessionDetail 对可缺失的 PlayerSessionSnapshotComp 无守卫 get（当前无发送方）；472 行 LastActiveFrameComp 的 get 无实害 |  |
 | F095 | low | 确认 | `cpp/nodes/scene/handler/rpc/scene_handler.cpp:893` | scene_id→场景实体靠全表扫描 view<SceneInfoComp>，同一段查找复制了多份 |  |
 | F096 | low | 降级 | `cpp/nodes/scene/handler/rpc/scene_handler.cpp:912` | CreateScene 持有 SceneInfoComp& 跨越同步 dispatcher.trigger（只有监听者删除 SceneInfoComp 时才会失效） |  |

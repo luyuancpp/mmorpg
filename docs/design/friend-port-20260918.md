@@ -305,3 +305,4 @@ Go 已落地申请代次、按 ID/会话主体处理、同操作终态幂等与 
 验证原始材料在 ignored build/friend-* 下，包括 proto-run.log、两次正规迁移日志、由 proto 生成的当前/旧表/索引DDL、C++隔离脚本/日志和部署契约摘要。客户端 Unity 原始 XML/日志位于系统临时目录 friend-client-requestid-20261015。Java 最终证据另追加；源码/客户端均未提交，无生产发布/数据迁移/账号登录。
 
 部署必要条件仍未自动完成：先停旧 friend 写者，审阅补索引并迁移到 exit0，预播种 friend_request 号段，使用同一全服 TiDB 事务域及不可回退的号源水位，配齐客户端协议；生产 TiDB 的备份/恢复和故障预算另验。提交后推送/摘要仍是通知旁路，没有与好友事务同提交的 outbox，漏通知由权威补拉恢复，不宣称可靠事件全链路零丢失或整游强一致。DAU1亿/CCU2000万尚无压测证据。
+Java最终回执（0.1.0-SNAPSHOT，对应并行保存d57d11f）：完整隔离11模块构建成功，friend上一快照完整MySQL/Redis97项中96通过/1跳过、robot616项执行通过；最终忽略from兼容字段的源码编译及15项FriendServiceTest通过。Java真实TiDB与最终全量真库因Docker引擎停止未执行，已在PARITY和既有friend-spec登记，不以Go真TiDB结果代替Java。机器人smoke也已改为保留/核对代次与时间、按ID接受及按权威列表清理；主树构建受其他域vendor绑定滞后阻断，完整新生成绑定的只读overlay编译通过，未覆盖其他域vendor且未执行真实冒烟。期间工作区被其他操作保存为ab0f27907，前文“未提交”为当时状态；本AI没有执行commit/push/tag。

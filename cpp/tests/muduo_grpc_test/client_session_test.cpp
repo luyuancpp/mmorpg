@@ -195,9 +195,19 @@ TEST(ClientSessionHandshake, ReadyOnlyAfterPeerSettings)
     peerOptions.sendInitialSettings = false;
     SessionHarness h(MakeOptions(), peerOptions);
     ASSERT_TRUE(h.client.Start().ok());
-    ASSERT_TRUE(h.peer.Pump(h.client)) << h.peer.lastError();
-    // 只收到对端对我方 SETTINGS 的 ACK:不算握手完成。
-    EXPECT_EQ(h.observer.readyCount, 0);
+    std::string preface;
+    ASSERT_TRUE(h.client
+                    .DrainOutput([&preface](std::string_view chunk)
+                                 {
+                                     preface.append(chunk.data(), chunk.size());
+                                     return true;
+                                 })
+                    .ok());
+    ASSERT_TRUE(h.peer.Receive(preface)) << h.peer.lastError();
+    // 服务端此刻只产出对我方 SETTINGS 的 ACK。RFC 9113 §3.4 与 nghttp2 的严格前言要求对端首帧是非 ACK 的
+    // SETTINGS(先收到 ACK 会被当成协议违约直接终止会话),所以先扣住这帧 ACK,不回灌给客户端。
+    const std::string settingsAck = h.peer.TakeOutput();
+    EXPECT_EQ(h.observer.readyCount, 0); // 没收到对端 SETTINGS,不算 READY
 
     // 本端 SETTINGS 与连接级窗口(§4.7):ENABLE_PUSH=0、INITIAL_WINDOW_SIZE=1MiB、MAX_HEADER_LIST_SIZE=16KiB,
     // 连接级接收窗口放大到 16MiB。
@@ -211,8 +221,11 @@ TEST(ClientSessionHandshake, ReadyOnlyAfterPeerSettings)
     EXPECT_EQ(h.peer.RemoteConnectionWindow(), 16 * 1024 * 1024);
 
     ASSERT_TRUE(h.peer.SendSettings({{h2::kSettingsMaxConcurrentStreams, 100}}));
-    ASSERT_TRUE(h.peer.Pump(h.client)) << h.peer.lastError();
+    ASSERT_TRUE(h.peer.Pump(h.client)) << h.peer.lastError(); // 先交付服务端 SETTINGS
     EXPECT_EQ(h.observer.readyCount, 1);
+    // 再交付扣住的 ACK:握手已完成,ACK 是合法帧,会话不应被终止。
+    ASSERT_TRUE(h.client.Receive(reinterpret_cast<const uint8_t *>(settingsAck.data()), settingsAck.size()).ok());
+    EXPECT_FALSE(h.client.ShouldClose());
     bool sawSettings = false;
     for (const uint8_t type : h.observer.framesReceived)
     {

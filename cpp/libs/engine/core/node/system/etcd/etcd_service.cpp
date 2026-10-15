@@ -1,6 +1,7 @@
 #include "etcd_service.h"
 #include "etcd_helper.h"
 #include "etcd_manager.h"
+#include <unordered_set>
 #include <google/protobuf/util/json_util.h>
 #include <boost/algorithm/string.hpp>
 #include "node/system/node/node.h"
@@ -12,24 +13,24 @@
 #include <node_config_manager.h>
 
 void EtcdService::Init() {
-	InitHandlers();
-
 	const std::string& etcdAddr = *tlsNodeConfigManager.GetBaseDeployConfig().etcd_hosts().begin();
-	auto& grpcChannelCache = gNode->GetGrpcChannelCache();
-	auto channel = grpcChannelCache.GetOrCreateChannel(etcdAddr);
-	LOG_INFO << "gRPC client config: ResourceQuota max threads=" << grpcChannelCache.ConfiguredMaxThreads()
-		<< ", backup poll interval ms=" << grpcChannelCache.ConfiguredBackupPollIntervalMs();
+	// 传输在 Node 构造期建好(loop 线程,loop 尚未运行);新传输的地址解析也在这里做完(§13.6)。
+	transport_ = etcd_transport::Create(*gNode->GetLoop(), etcdAddr, *this);
+	streamAware_ = transport_->RebuildsStreams();
+	if (streamAware_)
+	{
+		LOG_INFO << "etcd transport=" << transport_->Name()
+				 << ": watch / keepalive streams are rebuilt with backoff, each prefix re-ranged and reconciled"
+				 << " (docs/design/grpc-muduo-transport.md §13.5)";
+	}
+	else
+	{
+		LOG_INFO << "etcd transport=" << transport_->Name()
+				 << ": official CQ client; watch / keepalive streams are NOT rebuilt after a break"
+				 << " (known defect, docs/design/grpc-muduo-transport.md §10.2). Set NODE_ETCD_TRANSPORT=muduo_h2 to switch.";
+	}
 
-	// GetOrCreateGlobalEntity(不是 GetGlobalEntity):etcd 客户端的全部状态
-	// (CompletionQueue / KV / Watch / Lease stub / watch 流)都挂在这个全局
-	// 实体上,它必须真正经 registry.create() 诞生。此前配合 globalEntities_
-	// 未初始化的 bug,这里拿到的是零残留的幽灵 entity 0,从未 create 过,
-	// 全靠 EnTT 池语义宽容才能跑;修掉初始化后若仍用 GetGlobalEntity,
-	// 拿到的会是 entt::null,emplace 直接 UB。后续 etcd_helper / etcd_manager
-	// 的发送路径都在 Init 之后执行,继续用 GetGlobalEntity 拿的就是这里
-	// 创建好的实体。
-	InitGrpcNode(channel, tlsNodeContextManager.GetRegistry(EtcdNodeService), tlsNodeContextManager.GetOrCreateGlobalEntity(EtcdNodeService));
-
+	// 驱动进程里全部官方 gRPC 客户端的 CQ,与 etcd 用哪种传输无关。
 	grpcHandlerTimer.RunEvery(0.005, [] {
 		for (auto& registry : tlsNodeContextManager.GetAllRegistries()) {
 			HandleCompletedQueueMessage(registry);
@@ -39,93 +40,299 @@ void EtcdService::Init() {
 	LOG_INFO << "EtcdService initialized with etcd: " << etcdAddr;
 }
 
-void EtcdService::InitHandlers() {
-	InitKVHandlers();
-	InitWatchHandlers();
-	InitLeaseHandlers();
-	InitTxnHandlers();
+void EtcdService::OnRange(const etcdserverpb::RangeRequest* request, const etcdserverpb::RangeResponse& reply)
+{
+	if (!streamAware_ || request == nullptr)
+	{
+		OnLegacyRange(reply);
+		return;
+	}
+	OnPrefixRange(request->key(), reply);
 }
 
-void EtcdService::InitKVHandlers() {
-	etcdserverpb::AsyncKVRangeHandler = [this](const ClientContext& ctx, const etcdserverpb::RangeResponse& reply) {
-		int64_t nextRevision = reply.header().revision() + 1;
-		std::unordered_map<std::string, bool> prefixSeen;
+void EtcdService::OnLegacyRange(const etcdserverpb::RangeResponse& reply)
+{
+	int64_t nextRevision = reply.header().revision() + 1;
+	std::unordered_map<std::string, bool> prefixSeen;
 
-		for (const auto& prefix : tlsNodeConfigManager.GetBaseDeployConfig().service_discovery_prefixes()) {
-			prefixSeen[prefix] = false;
-		}
+	for (const auto& prefix : tlsNodeConfigManager.GetBaseDeployConfig().service_discovery_prefixes()) {
+		prefixSeen[prefix] = false;
+	}
 
-		for (const auto& kv : reply.kvs()) {
-			HandlePutEvent(kv.key(), kv.value());
-			for (auto& [prefix, seen] : prefixSeen) {
-				if (kv.key().rfind(prefix, 0) == 0) {
-					seen = true;
-				}
+	for (const auto& kv : reply.kvs()) {
+		HandlePutEvent(kv.key(), kv.value());
+		for (auto& [prefix, seen] : prefixSeen) {
+			if (kv.key().rfind(prefix, 0) == 0) {
+				seen = true;
 			}
 		}
+	}
 
-		for (const auto& [prefix, _] : prefixSeen) {
-			revision[prefix] = nextRevision;
-		}
+	for (const auto& [prefix, _] : prefixSeen) {
+		revision[prefix] = nextRevision;
+	}
 
-		if (!hasSentRange) {
-			StartWatchingPrefixes();
-			hasSentRange = true;
-		}
-		};
-
-	etcdserverpb::AsyncKVPutHandler = [this](const ClientContext &context, const etcdserverpb::PutResponse &reply)
-	{
-		LOG_TRACE << "Put response: " << reply.DebugString();
-	};
-
-	etcdserverpb::AsyncKVDeleteRangeHandler = [](const ClientContext& context, const etcdserverpb::DeleteRangeResponse& reply) {};
-
-	auto emptyHandler = [](const ClientContext& context, const ::google::protobuf::Message& reply) {};
-	if (!etcdserverpb::AsyncKVCompactHandler) {
-		etcdserverpb::AsyncKVCompactHandler = emptyHandler;
+	if (!hasSentRange) {
+		StartWatchingPrefixes();
+		hasSentRange = true;
 	}
 }
 
-void EtcdService::InitWatchHandlers() {
-	etcdserverpb::AsyncWatchWatchHandler = [this](const ClientContext& ctx, const etcdserverpb::WatchResponse& response) {
-		OnWatchResponse(response);
-		};
+bool EtcdService::IsAllocationKey(const std::string& key)
+{
+	// 与 HandleServiceNodeStart / Node::HandleServiceNodeStop 的过滤同一口径:值是裸 uuid,不是发现数据。
+	return key.find("/allocated/") != std::string::npos;
 }
 
-void EtcdService::InitLeaseHandlers() {
-	etcdserverpb::AsyncLeaseLeaseGrantHandler = [this](const ClientContext& context, const etcdserverpb::LeaseGrantResponse& reply) {
-		OnLeaseGranted(reply);
-		};
-
-	etcdserverpb::AsyncLeaseLeaseKeepAliveHandler = [this](const ClientContext& context, const etcdserverpb::LeaseKeepAliveResponse& reply) {
-		OnKeepAliveResponse(reply);
-		};
-}
-
-void EtcdService::InitTxnHandlers() {
-	etcdserverpb::AsyncKVTxnHandler = [this](const ClientContext &context, const etcdserverpb::TxnResponse &reply)
+void EtcdService::OnPrefixRange(const std::string& prefix, const etcdserverpb::RangeResponse& reply)
+{
+	const int64_t snapshotRevision = reply.header().revision();
+	// 快照不完整一律不删(§10.2 第 3 条):截断、值解析失败、key 不属于前缀。
+	bool complete = !reply.more();
+	if (reply.more())
 	{
-		LOG_TRACE << "Txn response: " << reply.DebugString();
+		LOG_WARN << "etcd range for prefix " << prefix << " is truncated (more=true, count=" << reply.count()
+				 << "); skip reconcile for this round";
+	}
 
-		std::string key = gNode->GetEtcdManager().TakePendingTxnKey();
-		if (key.empty())
+	google::protobuf::util::JsonParseOptions parseOptions;
+	parseOptions.ignore_unknown_fields = true;
+	std::unordered_set<std::string> snapshotKeys;
+	for (const auto& kv : reply.kvs())
+	{
+		const std::string& key = kv.key();
+		if (!boost::algorithm::starts_with(key, prefix))
 		{
-			LOG_WARN << "Ignore txn response: no CAS is currently pending.";
-			return;
+			complete = false;
+			LOG_WARN << "etcd range for prefix " << prefix << " returned foreign key " << key << "; skip reconcile";
+			HandlePutEvent(key, kv.value());
+			continue;
 		}
-		// 超时定时器已由 TakePendingTxnKey 一并取消(两者成对维护)。
-
-		// 重注册用的是"不存在或已是我的"嵌套 txn,外层 succeeded 只反映"不存在"那一半。
-		if (EtcdHelper::TxnClaimSucceeded(reply))
+		if (IsAllocationKey(key))
 		{
-			OnTxnSucceeded(key);
+			HandlePutEvent(key, kv.value()); // 与旧路径一致:交给发现层,由它跳过
+			continue;
+		}
+		NodeInfo probe;
+		if (!google::protobuf::util::JsonStringToMessage(kv.value(), &probe, parseOptions).ok())
+		{
+			complete = false; // AddServiceNode 会打出具体解析错误
+		}
+		snapshotKeys.insert(key);
+		if (!discoveryKeys_.ApplyPut(key, kv.value(), kv.mod_revision()))
+		{
+			// Range 与 watch 走不同的流:这条快照比已经处理过的 watch 事件(更新的 PUT 或删除)旧。
+			LOG_DEBUG << "Skip stale range entry " << key << " mod_revision=" << kv.mod_revision();
+			continue;
+		}
+		HandlePutEvent(key, kv.value());
+	}
+
+	for (auto& removed : discoveryKeys_.ApplySnapshot(prefix, snapshotKeys, snapshotRevision, complete))
+	{
+		LOG_INFO << "etcd reconcile: " << removed.key << " is absent from the range snapshot of " << prefix
+				 << " at revision " << snapshotRevision << "; handling it as deleted";
+		HandleDeleteEvent(removed.key, removed.value);
+	}
+	revision[prefix] = snapshotRevision + 1;
+
+	// 这个前缀在当前流上还没有 watch:从快照之后的第一个 revision 建,快照与 watch 之间不漏事件。
+	auto& watch = prefixWatches_[prefix];
+	if (!watch.createSent)
+	{
+		watch.createSent = true;
+		pendingWatchCreates_.push_back(prefix);
+		EtcdHelper::StartWatchingPrefix(prefix, snapshotRevision + 1);
+		LOG_INFO << "Watching prefix: " << prefix << " from revision " << snapshotRevision + 1;
+	}
+}
+
+void EtcdService::OnPut(const etcdserverpb::PutResponse& reply)
+{
+	LOG_TRACE << "Put response: " << reply.DebugString();
+}
+
+void EtcdService::OnDeleteRange(const etcdserverpb::DeleteRangeResponse&)
+{
+}
+
+void EtcdService::OnTxn(const etcdserverpb::TxnResponse& reply)
+{
+	LOG_TRACE << "Txn response: " << reply.DebugString();
+
+	std::string key = gNode->GetEtcdManager().TakePendingTxnKey();
+	if (key.empty())
+	{
+		LOG_WARN << "Ignore txn response: no CAS is currently pending.";
+		return;
+	}
+	// 超时定时器已由 TakePendingTxnKey 一并取消(两者成对维护)。
+
+	// 重注册用的是"不存在或已是我的"嵌套 txn,外层 succeeded 只反映"不存在"那一半。
+	if (EtcdHelper::TxnClaimSucceeded(reply))
+	{
+		OnTxnSucceeded(key);
+	}
+	else
+	{
+		OnTxnFailed(key);
+	}
+}
+
+void EtcdService::OnLeaseGrant(const etcdserverpb::LeaseGrantResponse& reply)
+{
+	OnLeaseGranted(reply);
+}
+
+void EtcdService::OnKeepAlive(const etcdserverpb::LeaseKeepAliveResponse& reply)
+{
+	OnKeepAliveResponse(reply);
+}
+
+void EtcdService::OnWatch(const etcdserverpb::WatchResponse& reply)
+{
+	if (streamAware_)
+	{
+		OnStreamWatchResponse(reply);
+		return;
+	}
+	OnWatchResponse(reply);
+}
+
+void EtcdService::OnStreamWatchResponse(const etcdserverpb::WatchResponse& response)
+{
+	// 注册链的触发点不变:第一个 watch 应答(即第一个 created)触发 LeaseGrant;重建后的 created 不再触发。
+	if (!hasSentWatch)
+	{
+		RequestNodeLease();
+		hasSentWatch = true;
+	}
+
+	if (response.created())
+	{
+		// etcd 在一条流上按收到 create 的顺序逐个回 created(创建失败也回,只是同时带 canceled)。
+		if (pendingWatchCreates_.empty())
+		{
+			LOG_WARN << "etcd watch created (watch_id=" << response.watch_id() << ") without a pending create request";
 		}
 		else
 		{
-			OnTxnFailed(key);
+			std::string prefix = std::move(pendingWatchCreates_.front());
+			pendingWatchCreates_.pop_front();
+			prefixWatches_[prefix].watchId = response.watch_id();
+			watchIdToPrefix_[response.watch_id()] = prefix;
+			LOG_INFO << "etcd watch created: prefix=" << prefix << " watch_id=" << response.watch_id();
 		}
-	};
+	}
+
+	ApplyWatchEvents(response);
+
+	if (!response.canceled())
+	{
+		return;
+	}
+	const auto mapped = watchIdToPrefix_.find(response.watch_id());
+	if (mapped == watchIdToPrefix_.end())
+	{
+		LOG_WARN << "etcd watch canceled for unknown watch_id=" << response.watch_id()
+				 << " reason=" << response.cancel_reason();
+		return;
+	}
+	const std::string prefix = mapped->second;
+	LOG_WARN << "etcd watch canceled: prefix=" << prefix << " watch_id=" << response.watch_id()
+			 << " compact_revision=" << response.compact_revision() << " reason=" << response.cancel_reason();
+	// 只重建这一个前缀,不在同一流上重发全部前缀(旧实现会给每个前缀叠一个重复 watcher)。
+	ResetPrefixWatch(prefix);
+	if (response.compact_revision() != 0)
+	{
+		// 起点已被压缩:立刻重新 Range → 对账 → 从新快照的 R+1 建 watch(新起点必然在压缩点之后,不会再被拒)。
+		EtcdHelper::RangeQuery(prefix);
+	}
+	// 其他原因的取消等每 2s 的全量 Range 重建:对端持续拒绝时不空转。
+}
+
+void EtcdService::ApplyWatchEvents(const etcdserverpb::WatchResponse& response)
+{
+	for (const auto& event : response.events())
+	{
+		const std::string& key = event.kv().key();
+		if (event.type() == mvccpb::Event_EventType::Event_EventType_PUT)
+		{
+			if (!IsAllocationKey(key) && !discoveryKeys_.ApplyPut(key, event.kv().value(), event.kv().mod_revision()))
+			{
+				LOG_DEBUG << "Skip stale watch PUT " << key << " mod_revision=" << event.kv().mod_revision();
+				continue;
+			}
+			HandlePutEvent(key, event.kv().value());
+			continue;
+		}
+		if (event.type() != mvccpb::Event_EventType::Event_EventType_DELETE)
+		{
+			continue;
+		}
+		if (IsAllocationKey(key))
+		{
+			HandleDeleteEvent(key, event.prev_kv().value()); // 发现层按 /allocated/ 跳过,与旧路径一致
+			continue;
+		}
+		// 删除事件的 kv.mod_revision 就是删除发生的 revision;缺省时退回应答头的 revision。
+		const int64_t deletedAt =
+			event.kv().mod_revision() != 0 ? event.kv().mod_revision() : response.header().revision();
+		auto outcome = discoveryKeys_.ApplyDelete(key, deletedAt);
+		if (outcome.result == DiscoveryKeyIndex::DeleteResult::kStale)
+		{
+			LOG_INFO << "Ignore stale watch DELETE " << key << " at revision " << deletedAt
+					 << ": a newer PUT of this key was already applied";
+			continue;
+		}
+		// 不依赖 prev_kv(§10.2 第 4 条):有就用,没有按 key 取本地记录。
+		std::string value = event.has_prev_kv() && !event.prev_kv().value().empty() ? event.prev_kv().value()
+																					  : std::move(outcome.value);
+		if (value.empty())
+		{
+			LOG_WARN << "etcd watch DELETE " << key << " carries no prev_kv and the key is not in the local index;"
+					 << " nothing to remove";
+			continue;
+		}
+		HandleDeleteEvent(key, value);
+	}
+}
+
+void EtcdService::ResetPrefixWatch(const std::string& prefix)
+{
+	const auto it = prefixWatches_.find(prefix);
+	if (it == prefixWatches_.end())
+	{
+		return;
+	}
+	watchIdToPrefix_.erase(it->second.watchId);
+	it->second = PrefixWatch{};
+}
+
+void EtcdService::OnWatchStreamRestarted()
+{
+	// 新流上一个 watch 都没有:旧流上的 watch_id、待回的 created 全部作废。逐前缀重新 Range,
+	// 应答到了再对账、再从 R+1 建 watch(OnPrefixRange)。流断期间下线的对端在对账里补删。
+	const auto& prefixes = tlsNodeConfigManager.GetBaseDeployConfig().service_discovery_prefixes();
+	LOG_WARN << "etcd watch stream rebuilt; re-ranging " << prefixes.size() << " prefixes before re-creating watches";
+	prefixWatches_.clear();
+	pendingWatchCreates_.clear();
+	watchIdToPrefix_.clear();
+	for (const auto& prefix : prefixes)
+	{
+		EtcdHelper::RangeQuery(prefix);
+	}
+}
+
+void EtcdService::OnKeepAliveStreamRestarted()
+{
+	// §10.2 第 2 条:重建后立刻补一拍,不等下一次 keepalive 定时器。
+	if (leaseId <= 0)
+	{
+		return;
+	}
+	LOG_INFO << "etcd keepalive stream rebuilt; sending an immediate keepalive for lease " << leaseId;
+	EtcdHelper::KeepAliveLease(leaseId);
 }
 
 const char* EtcdService::RegistrationModeName(RegistrationMode mode) const {
@@ -459,6 +666,17 @@ void EtcdService::Shutdown()
 
 	EtcdHelper::StopAllWatching();
 	gNode->GetEtcdManager().Shutdown();
+
+	// 传输最后释放(§13.7):调用方 FinalizeShutdownInLoop 已在前面经 ReleaseNodeId 发出 LeaseRevoke;
+	// 新传输的通道在这里析构(loop 仍在运行,阶段 0),在途调用以失败投递、不再回调本对象。
+	if (transport_)
+	{
+		transport_->Shutdown();
+		transport_.reset();
+	}
+	prefixWatches_.clear();
+	pendingWatchCreates_.clear();
+	watchIdToPrefix_.clear();
 }
 
 void EtcdService::RequestReRegistration(const char *reason)

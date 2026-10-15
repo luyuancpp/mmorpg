@@ -4,6 +4,8 @@
 > **本版性质**：设计稿加挑战者意见的原样整理，还没有细化到「改前/改后代码片段」。Claude 的额度恢复后会出第 2 版（补丁级）。**先读 §8 挑战意见**：标为 high/medium 的问题，实施时必须按其中的修法修正设计。凡与 README §2 三类初始化规则冲突的地方，一律以 README 为准。
 > **行号**：设计时取自当时的 HEAD，此后第 1 批和其他会话都改过代码，实施前请按函数名重新定位。
 
+> **后续完成口径**：源码及额外原子性修正见文末 §10；早期设计列出的 C004 业务决策和 Java 历史差异已继续处理。统一生成、构建和运行测试仍按负责人指令暂缓。
+
 ## 1. 目标
 
 第 3 批：背包实例层（cpp/libs/modules/bag）彻底去掉 entt。ItemStore 不再为每个 Bag 私有一个 entt::registry，改成以 guid 为键的单一确定性容器。对外 API 不再暴露 entt::entity。「并堆填哪一堆 / 扣哪一堆 / 合并留哪一堆 / 回收顺序 / 整理平局 / 批量按 config 的写入次序」全部改成写死、可测的规则，并与 Java 版 Bag.java 同一操作的客户端可见结果对齐。覆盖 F024（私有 registry 嵌在组件里、句柄外泄）、F023（选堆取决于 entt pool 的逆序与 swap-and-pop 重排）、F021（itemRegistry 是死的、registry 划分与用法不符）。不改 proto、不改生成产物、不动布局层（container_layout.*），遵守 AGENTS §11.6 与 docs/design/bag-instance-layout-split.md 的接缝。
@@ -321,3 +323,15 @@ ReserveForBatchAdd 里的零数量预检、CanReserve 里的部位汇总只影�
 §8 挑战通过代码和用例处理：不借 ForEach 隐式顺序做 FIFO，不把排序比较器变成重复布局查询；保留已紧凑早退及实例/布局成对删除；批量配置升序覆盖预检和写入；C004 单人封禁没有新增写入口，仍按业务待定记录。Java 正常实例选择与现有 BagItem.ACQUIRE_ORDER 对齐，但发号原子、零堆、老档seq0补章及存档排列的历史差异保留，不宣称两版完全一致。
 
 定向 diff 检查和工程XML解析通过，18条用例未运行，无本轮红/绿证据。Bag 布局变化后必须重编 modules/scene/相关测试，不能混链旧库。完整验证边界与 Java 0.1.0-SNAPSHOT 状态见 README §7；未 commit/push。
+
+## 10. 全部源码收尾：原子提交、还原与 C004（2026-10-15）
+
+本节接续 §9，覆盖当时保留的相关源码差异。`Bag::AddItem`、计数批量和完整实例批量共用候选提交：先校验并算出淘汰不动点，按最终所需实例数铸齐 ID，再复制仓库完成合堆、初始化及插入。预设 guid、equip presence 和每项真实写入回执保留；任何拒绝都不改原包、布局、入包序号或资产流水，允许已取号作废。
+
+为保证布局试放失败也不破坏原包，最小扩展 `IContainerLayout::Clone() const -> std::unique_ptr<IContainerLayout>`；Flat/FixedSlot/Grid 及测试故障布局均保留动态类型与独立占用。在副本放置成功后，仓库和布局在无回调提交段一起发布。布局层仍不认识配置、ItemComp 或 entt。所有成功入包，包括只合堆，都会使原 `ItemComp*` 借用失效；公开契约已注明，活跃装备入口按 guid 重取。删除无调用的旧 ReserveForBatchAdd/ReserveBatch/ReserveOrEvict 旁路，旧测试改走真实批量入口。
+
+扣到零当场删除实例与槽位；加载跳过零堆；每包先扫描非零最大 acquire_seq，再按存档顺序补旧零章。存盘固定包按 bag_type/slot，动态包按 bag_id/slot，保留布局。Java `BagItem.ACQUIRE_ORDER` 补为 `Long.compareUnsigned`，覆盖 uint64 跨符号位的序号与 guid；不新增协议字段。上述为本任务相关行为对齐，未扩展既有入包序号耗尽协议。
+
+负责人选择 C004 删除方案：删除 PlayerItemBlockList 类型、服务参数和全部调用，使用现有全服封禁；任务奖励、装备退宝石等失败原子性与解除封禁后的成功断言保留。新增 `BagJavaParityTest` 11 例，覆盖最终规划后发号耗尽、服务 mutated=false、无空间早拒、回调前铸齐 ID、逐项回执、候选布局试放失败、三种布局 Clone、扣空释放、零章补盖、零堆还原和写盘顺序；Java 新增两项高位顺序回归。原有 18 项选择顺序测试仍保留。
+
+静态替代证据：源签名/全部调用点、布局接缝与派生布局 Clone 已交叉核对，定向 diff 和工程 XML 检查通过。未实际编译或运行任何新旧测试，没有红/绿证据；生成后应串行重编 modules/scene/bag_test，运行整个 bag_test（含任务、装备、初始化用例），再执行 Java 对应 BagTest。完整验证命令与日志要求沿 README §7。Java 仍为 0.1.0-SNAPSHOT，本轮变化及未验收项已登记 PARITY。

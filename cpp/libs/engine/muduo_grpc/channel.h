@@ -77,6 +77,10 @@ struct ChannelOptions
     size_t maxPendingOutputBytes{1024 * 1024};
     std::chrono::milliseconds connectTimeout{20000};
     std::chrono::milliseconds keepaliveTimeout{20000};
+    // 周期 keepalive(§13.3):0 = 关(Go 业务服务通道);etcd 通道设 30s。
+    std::chrono::milliseconds keepaliveTime{0};
+    // 单个双向流还没交给 nghttp2 的待发字节上限;超出以 RESOURCE_EXHAUSTED 结束该流(§13.2)。
+    size_t maxStreamPendingSendBytes{1024 * 1024};
     BackoffOptions backoff;
 };
 
@@ -98,6 +102,65 @@ struct UnaryCallResult
 
 using UnaryCallback = std::function<void(UnaryCallResult &&result)>;
 
+// 双向流的回调(§13.2)。全部经 queueInLoop 投递、保持到达顺序;onClose 恰好一次;Cancel 之后一个都不再回调。
+struct StreamCallbacks
+{
+    std::function<void(const Metadata &initialMetadata)> onHeaders;                      // 可空
+    std::function<void(std::string &&message)> onMessage;                               // 可空;每条消息一次
+    std::function<void(const Status &status, const Metadata &trailingMetadata)> onClose; // 必填
+};
+
+class Channel;
+
+namespace detail
+{
+// 一个双向流的通道侧记录;ClientStream 只弱持有它,用来在 Cancel 时就地压住还在队列里的回调。
+struct StreamRecord
+{
+    uint64_t id{0};
+    std::string path;
+    Metadata metadata;
+    StreamCallbacks callbacks;
+    std::vector<std::string> pendingFramed;  // 开流之前写的消息(已带前缀)
+    size_t pendingBytes{0};
+    bool writesDone{false};
+    bool active{false};
+    uint64_t transportId{0};
+    int32_t streamId{0};
+    bool cancelled{false};
+    bool closed{false};
+};
+} // namespace detail
+
+// 双向流句柄。只能在通道的 EventLoop 线程使用;析构等于 Cancel。通道先没了,句柄的操作一律失败、不崩。
+class ClientStream
+{
+public:
+    ~ClientStream();
+    ClientStream(const ClientStream &) = delete;
+    ClientStream &operator=(const ClientStream &) = delete;
+
+    // 追加一条已序列化的消息。流已结束 / 已取消 / 已半关闭返回 false;待发超过上限时流以 RESOURCE_EXHAUSTED
+    // 结束(经 onClose 报告)并返回 false。连上之前写的消息先缓冲,开流后按顺序发出。
+    bool Write(std::string message);
+    // 半关闭:已写的消息发完后带 END_STREAM。
+    void WritesDone();
+    // 取消:发 RST_STREAM(CANCEL),之后不再有任何回调(包括已在队列里的 onClose)。幂等;通道没了也照样生效。
+    void Cancel();
+    bool closed() const;
+
+private:
+    friend class Channel;
+    ClientStream(std::weak_ptr<Channel> channel, std::weak_ptr<detail::StreamRecord> record, uint64_t id)
+        : channel_(std::move(channel)), record_(std::move(record)), id_(id)
+    {
+    }
+
+    std::weak_ptr<Channel> channel_;
+    std::weak_ptr<detail::StreamRecord> record_;
+    uint64_t id_;
+};
+
 class Channel : public std::enable_shared_from_this<Channel>, public Http2TransportListener
 {
     struct PrivateTag
@@ -116,6 +179,10 @@ public:
     Channel &operator=(const Channel &) = delete;
 
     void StartUnaryCall(UnaryCallRequest request, UnaryCallback done);
+
+    // 开一个双向流(§13.2)。method 是 ":path"。总是返回句柄;通道不可用时句柄已处于关闭状态,
+    // onClose(UNAVAILABLE) 会在下一轮投递。流不做透明重试,断了由调用方决定是否重建。
+    std::shared_ptr<ClientStream> StartStream(std::string method, Metadata metadata, StreamCallbacks callbacks);
 
     // 与 grpc::Channel::GetState 同义:tryToConnect 且处于 IDLE 时开始连接。
     ConnectivityState GetState(bool tryToConnect);
@@ -139,11 +206,27 @@ private:
         bool transparentRetried{false};
     };
 
+    using StreamRecord = detail::StreamRecord;
+    using StreamRecordPtr = std::shared_ptr<StreamRecord>;
+
+    friend class ClientStream;
+    bool StreamWrite(uint64_t id, std::string message);
+    void StreamWritesDone(uint64_t id);
+    void StreamCancel(uint64_t id);
+    bool StreamIsClosed(uint64_t id) const;
+
+    void DispatchStream(uint64_t id);
+    void OpenStreamOnCurrentTransport(const StreamRecordPtr &record);
+    void CloseStream(const StreamRecordPtr &record, Status status, Metadata trailingMetadata);
+    void StreamCancelForError(const StreamRecordPtr &record, Status status);
+
     // Http2TransportListener
     void OnTransportReady(Http2Transport &transport) override;
     void OnTransportGoaway(Http2Transport &transport, int32_t lastStreamId, uint32_t errorCode,
                            std::string_view debugData) override;
     void OnTransportStreamClosed(Http2Transport &transport, int32_t streamId, StreamOutcome outcome) override;
+    void OnTransportStreamHeaders(Http2Transport &transport, int32_t streamId, const Metadata &initialMetadata) override;
+    void OnTransportStreamMessage(Http2Transport &transport, int32_t streamId, std::string message) override;
     void OnTransportClosed(Http2Transport &transport, const Status &reason) override;
 
     void Dispatch(uint64_t callId);
@@ -188,6 +271,9 @@ private:
     std::deque<uint64_t> pending_;                            // 等连接 READY 的调用(可能含已完成的残留 id)
     std::set<std::pair<std::chrono::steady_clock::time_point, uint64_t>> deadlines_;
     std::map<std::pair<uint64_t, int32_t>, uint64_t> streamToCall_;  // (连接, 流) → 调用
+    std::unordered_map<uint64_t, StreamRecordPtr> streams_;           // 所有未结束的双向流
+    std::deque<uint64_t> pendingStreams_;                             // 等连接 READY 的双向流
+    std::map<std::pair<uint64_t, int32_t>, uint64_t> streamToBidi_;   // (连接, 流) → 双向流
     bool flushPendingQueued_{false};
 
     muduo::net::TimerId deadlineTimer_;

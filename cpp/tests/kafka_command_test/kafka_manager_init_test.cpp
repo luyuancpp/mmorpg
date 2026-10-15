@@ -32,7 +32,7 @@
 namespace {
 
 constexpr const char *kUnreachableBroker = "127.0.0.1:1";
-// K8s node ConfigMap 至今写死的组名(P0-B 批 2 落地前一直如此),即触发缺陷的形态。
+// K8s node ConfigMap 在 P0-B 批 2(2026-10-15 改为从 bin/etc 镜像)之前写死的组名,即触发缺陷的形态。
 constexpr const char *kLegacyK8sGroupId = "game-consumer-group";
 
 struct InitOutcome
