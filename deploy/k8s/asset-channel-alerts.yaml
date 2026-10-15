@@ -1,0 +1,170 @@
+# Prometheus alert rules for the asset channel (通用资产通道) and guild trial results (帮会历练结果).
+#
+# 来源:docs/design/landing-recovery-sync-digest.md §6.5(超窗处置与对账);
+#       资产通道本身见 docs/design/guild-phase2/04-asset-channel.md(§4.38 的原三条规则在此按类别重写)。
+#
+# Install as a PrometheusRule CR (kube-prometheus stack),与 owner-epoch-alerts.yaml 同法:
+#   kubectl apply -n observability -f deploy/k8s/asset-channel-alerts.yaml
+#
+# Scrape prerequisites:
+#   - guild / trade 的指标端口已开放并有 ServiceMonitor / PodMonitor 指向它。
+#     guild 目前在 K8s 上没有部署清单;trade 的资产通道默认关闭(AssetOp.Enabled=false)。
+#     这两件事落地之前,本文件里 assetop_* 与 guild_trial_* 规则不会触发。
+#   - assetop_* 的 service 是 ConstLabel(guild / trade),按服务区分时用 by (service)。
+#
+# 为什么「最老年龄」只看 online_retry 类:离线玩家的 PENDING 行会把不分类的
+# assetop_pending_oldest_age_seconds 永久推高(停放档 30 分钟一次、180 天后才放弃),
+# 按 04 §4.38 的原规则会常响。按类拆分的 gauge 由每日对账(Auditor,leader 副本)刷新。
+#
+# battle / scene 进程没有 Prometheus 端点,结算类信号只存在于结构化日志(metric=...),
+# 而 Loki ruler 目前没有挂载规则目录、也没有 alertmanager_url。下列 LogQL 先作为值班固定查询,
+# ruler 接线(上线批 BK8s)之后转为规则:
+#   critical: count_over_time({app="battle"} |= "metric=battle_settlement_not_durable" [10m]) > 0
+#   critical: count_over_time({app="scene"}  |= "metric=battle_settlement_ledger_evicted" [10m]) > 0
+#   warning : count_over_time({app="battle"} |= "metric=battle_settlement_undelivered" |= "reason=not_acked" [10m]) > 5
+#   warning : 最近一条 {app="battle"} |= "metric=battle_settlement_pending_backlog" 的 oldest_age_s > 86400
+#   critical: count_over_time({app="battle"} |= "metric=battle_activity_result_not_durable" [10m]) > 0
+#   critical: count_over_time({app="battle"} |= "metric=battle_activity_result_serialize_failed" [10m]) > 0
+#
+# Severity conventions(与 scene-manager-alerts.yaml 相同):
+#   critical = pager, someone wakes up
+#   warning  = next-business-hours channel
+#   info     = dashboard annotation / trend signal
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: asset-channel-alerts
+  labels:
+    app: guild
+    prometheus: kube-prometheus
+    role: alert-rules
+spec:
+  groups:
+    - name: asset-channel.correctness
+      interval: 30s
+      rules:
+        # scene 回 UNKNOWN:配置不一致 / 纪元过期 / 跳号 / 验签失败。该行每 MaxBackoff 重排一次、永不终结,
+        # 必须有人看。处置见 04-asset-channel.md 第 10 部分 4.38 与 cmd/assetopfix。
+        - alert: AssetOpUnknownOutcome
+          expr: |
+            sum by (service) (increase(assetop_unknown_total[10m])) > 0
+          for: 0m
+          labels:
+            severity: critical
+          annotations:
+            summary: "{{ $labels.service }} 的资产指令收到 UNKNOWN 结局"
+            description: >-
+              过去 10 分钟 {{ $labels.service }} 收到约 {{ $value | printf "%.0f" }} 次 scene 回 UNKNOWN。
+              这类行不会自动终结。按 docs/design/guild-phase2/04-asset-channel.md 第 10 部分 4.38 排查
+              (配置 / 纪元 / 跳号 / 验签),必要时用 assetopfix 人工终结(须凭 scene 流水 correlation_id)。
+
+        # 同一 seq 两次查询给出不同终结结局,违反不变量 I2。
+        - alert: AssetOpOutcomeFlip
+          expr: |
+            sum by (service) (increase(assetop_outcome_flip_total[10m])) > 0
+          for: 0m
+          labels:
+            severity: critical
+          annotations:
+            summary: "{{ $labels.service }} 的资产指令结局发生翻转(违反 I2)"
+            description: >-
+              同一 (player, stream, seq) 先后得到不同的终结结局。可能是 Redis 回退到旧 blob(C5)
+              或旧持有者覆盖存盘(K1)。保留现场,对照 scene 流水与 guild_asset_op 行,不要人工终结。
+
+        # 部分发放:不做对侧账,转人工补偿(X-15)。
+        - alert: AssetOpAppliedPartial
+          expr: |
+            sum by (service) (increase(assetop_partial_total[1h])) > 0
+          for: 0m
+          labels:
+            severity: warning
+          annotations:
+            summary: "{{ $labels.service }} 出现部分发放的资产指令"
+            description: >-
+              过去 1 小时有 {{ $value | printf "%.0f" }} 条资产指令以 APPLIED_PARTIAL 终结,
+              需要人工补偿(帮会侧对侧账不做)。
+
+        # payload 解不开(毒行):每次推迟 1 小时,无限次。
+        - alert: AssetOpPayloadDecodeError
+          expr: |
+            sum by (service) (increase(assetop_store_errors_total{op="decode"}[1h])) > 0
+          for: 0m
+          labels:
+            severity: warning
+          annotations:
+            summary: "{{ $labels.service }} 有解不开的资产指令 payload"
+            description: >-
+              毒行会每小时重试一次且永不终结。多半是新旧版本的 payload 格式不兼容,按 op_id 查行后人工处置。
+
+    - name: asset-channel.backlog
+      interval: 60s
+      rules:
+        # 在线重试类的最老未决行超过 1 小时:玩家在线却一直结算不掉。
+        # 由每日对账(Auditor)刷新,两次对账之间数值不变;for 只防抖动。
+        - alert: AssetOpOnlineRetryStuck
+          expr: |
+            max by (service, stream) (assetop_pending_class_oldest_age_seconds{class="online_retry"}) > 3600
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "{{ $labels.service }}/{{ $labels.stream }} 有在线重试超过 1 小时的资产指令"
+            description: >-
+              最老的 online_retry 类 PENDING 行已存在 {{ $value | printf "%.0f" }} 秒。
+              玩家在线时正常 1 分钟内应当终结;检查该玩家是否长期处于战斗 / 冻结 / 加载未完成,
+              以及 scene 的资产 RPC 拒绝原因(assetop_rpc_total)。
+
+        - alert: AssetOpAlertClassRows
+          expr: |
+            max by (service, stream) (assetop_pending_rows{class="alert"}) > 0
+          for: 30m
+          labels:
+            severity: warning
+          annotations:
+            summary: "{{ $labels.service }}/{{ $labels.stream }} 有告警类资产指令未处置"
+            description: >-
+              {{ $value | printf "%.0f" }} 行处于 UNKNOWN / 结局翻转 / 毒行状态,不会自动终结。
+
+        # 自动放弃是不可逆的业务处置(奖励作废,帮会侧退回限购与帮贡),每天提醒一次以便审计与人工补偿。
+        - alert: AssetOpAbandoned
+          expr: |
+            sum by (service, stream) (increase(assetop_abandoned_total[1d])) > 0
+          for: 0m
+          labels:
+            severity: info
+          annotations:
+            summary: "{{ $labels.service }}/{{ $labels.stream }} 有资产指令被自动放弃"
+            description: >-
+              过去 1 天有 {{ $value | printf "%.0f" }} 条 PENDING 超过 180 天且玩家仍不在线的资产指令
+              被终结为 ABANDONED(docs/design/landing-recovery-sync-digest.md §6.3)。
+              如需补偿,以审计行与 scene 流水为依据人工处理。
+
+    - name: guild-trial.results
+      interval: 60s
+      rules:
+        # 只有持巡检租约的副本报真实值,其余副本为 0,所以用 max。
+        - alert: GuildTrialResultOverdue
+          expr: |
+            max(guild_trial_result_overdue) > 0
+          for: 30m
+          labels:
+            severity: warning
+          annotations:
+            summary: "帮会历练有超时未结算的对局"
+            description: >-
+              {{ $value | printf "%.0f" }} 局登记超过阈值仍未拿到结果。检查 battle 的
+              battle:activity_result:{battle_id} 记录、Kafka match-results 消费与 guild 巡检器日志。
+              guild 停机超过 7 天的胜场不补发,属已接受偏差。
+
+        - alert: GuildTrialOwedBacklog
+          expr: |
+            max(guild_trial_owed_rows) > 1000
+          for: 1h
+          labels:
+            severity: warning
+          annotations:
+            summary: "帮会历练奖励待入队积压超过 1000 行"
+            description: >-
+              guild_trial_reward_owed 积压 {{ $value | printf "%.0f" }} 行(计到 10000 封顶)。
+              说明得奖者的资产指令窗口(MaxPending=16)长期占满,检查这些玩家的 PENDING 行是否卡在离线停放档。

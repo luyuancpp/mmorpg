@@ -1288,7 +1288,7 @@ namespace
     // 两条登录链铸出的代次(毫秒下限量级):上一次登录 < 本次登录。
     constexpr uint64_t kPreviousLoginGeneration = 1790000000000ull;
     constexpr uint64_t kNewLoginGeneration = 1790000005000ull;
-    constexpr uint32_t kLoginReplace = 3; // LOGIN_REPLACE
+    constexpr uint32_t kLoginReplace = 2; // LOGIN_REPLACE(player_login_comp.proto 的 EnterGsType)
 
     // (enterType, 转发那一刻会话上的代次)
     using StampedForward = std::pair<uint32_t, uint64_t>;

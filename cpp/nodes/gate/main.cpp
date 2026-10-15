@@ -12,8 +12,12 @@
 #include "node/system/node/node_entry.h"
 #include "handler/rpc/gate_service_handler.h"
 #include "handler/rpc/client_message_processor.h"
+#include "handler/rpc/client_request_lane.h"
+#include "handler/rpc/router_muduo_forward.h"
+#include "handler/rpc/rpc_reply_bridge.h"
 #include "gate_codec.h"
 #include "gate_router_mode.h"
+#include "gate_router_transport.h"
 #include "gate_security.h"
 #include "gate_version.h"
 #include "node_config_manager.h"
@@ -142,6 +146,9 @@ namespace
         // CPP-2 进场转发欠账的到期补发(handler/event/scene_entry_dispatch.cpp)。回调不捕获任何对象;
         // TimerTaskComp 自带存活令牌(AGENTS.md §11.7)。定时器只负责唤醒,截止判断用 steady_clock。
         TimerTaskComp sceneEntryRetryTimer;
+        // 路由 lane 在途调用的本地截止扫描(handler/rpc/client_request_lane.cpp)。回调不捕获任何对象;
+        // 必须主动扫:队头卡住时客户端在等回包,不会再发新请求触发惰性清理(client-request-ordering.md §4.5)。
+        TimerTaskComp routerLaneExpiryTimer;
 
         GateRuntimeContext()
             : protobufDispatcher([](const TcpConnectionPtr &conn, const MessagePtr &msg, Timestamp)
@@ -240,6 +247,33 @@ int main(int argc, char *argv[])
                                  : ", direct mode:non-battle behavior matches behavior before router introduction;all battle messages rejected(direct connections only)");
             }
 
+            // gate → 路由服的 gRPC 实现(GATE_ROUTER_TRANSPORT,docs/design/grpc-muduo-transport.md §8)。
+            // muduo_h2 时在路由服节点 registry 上装通道工厂:必须早于服务发现建连(那要等 loop 跑起来之后的 etcd 应答)。
+            {
+                const auto &transport = gate_router_transport::ResolveOnce();
+                if (!transport.recognized)
+                {
+                    LOG_WARN << "Unrecognized " << gate_router_transport::kTransportEnv << "='" << transport.raw
+                             << "', falling back to grpc. Valid values: grpc|muduo_h2.";
+                }
+                const bool useMuduo = routerMode && transport.transport == gate_router_transport::Transport::kMuduoH2;
+                if (useMuduo)
+                {
+                    gate_router_muduo::InstallChannelFactory(*node.GetLoop());
+                }
+                else if (transport.transport == gate_router_transport::Transport::kMuduoH2)
+                {
+                    LOG_WARN << gate_router_transport::kTransportEnv << "=muduo_h2 is ignored in direct mode: "
+                             << "the gate does not connect to the router.";
+                }
+                LOG_INFO << "gate router transport="
+                         << gate_router_transport::TransportName(useMuduo ? gate_router_transport::Transport::kMuduoH2
+                                                                          : gate_router_transport::Transport::kOfficialGrpc)
+                         << (useMuduo ? " (muduo_grpc over nghttp2: router nodes get no grpc::Channel/CQ;"
+                                        " etcd still uses the official gRPC runtime)"
+                                      : " (official gRPC C++ runtime)");
+            }
+
             // Override the default Kafka dispatch with GateCommand-specific routing
             // that handles empty-payload events via fallback field mapping.
             node.SetKafkaHandlers([](Node &n)
@@ -267,87 +301,29 @@ int main(int argc, char *argv[])
 
             InitGateCodec(context.codec);
 
-            // Build reverse map: response proto full_name -> message_id
-            // Used to wrap gRPC replies in MessageContent for the client.
-            static std::unordered_map<std::string, uint32_t> sResponseTypeToMsgId;
-            for (uint32_t i = 0; i < kMaxRpcMethodCount; ++i)
-            {
-                const auto &meta = gRpcMethodRegistry[i];
-                if (meta.responseProto)
-                {
-                    sResponseTypeToMsgId[std::string(meta.responseProto->GetDescriptor()->full_name())] = i;
-                }
-            }
-
-            // gRPC response -> client TCP bridge (wrap in MessageContent)
+            // gRPC response -> client TCP bridge(官方 gRPC 运行时的成功回调)。
             //
-            // 路由服 ClientRpcRouter.Forward 的响应类型就是 MessageContent
-            // (client-rpc-router.md D30):走下面第一个分支原样下发,路由模式不需要
-            // 在这里加任何代码。上面的反查表因此会多一条
-            // "MessageContent -> ClientRpcRouterForwardMessageId(176)",但那张表只在
-            // reply **不是** MessageContent 时才查,这一条永远不会被命中;全表也只有
-            // Forward 一条以 MessageContent 应答,不会挤掉别的回包类型的映射。
-            SetIfEmptyHandler([&context](const ClientContext &ctx, const ::google::protobuf::Message &reply)
+            // 回包怎样落到客户端(路由 lane 认领、MessageContent 原样下发、其余类型包一层)只有一份实现:
+            // handler/rpc/rpc_reply_bridge.cpp。muduo_grpc 路由路径(GATE_ROUTER_TRANSPORT=muduo_h2)调的是同一个函数,
+            // 两种传输对客户端的可见行为因此逐条相同(docs/design/grpc-muduo-transport.md §8)。
+            SetIfEmptyHandler([](const ClientContext &ctx, const ::google::protobuf::Message &reply)
                               {
                 auto sd = GetSessionDetailsByClientContext(ctx);
                 if (!sd) return;
-                auto it = tlsSessionManager.sessions().find(sd->session_id());
-                if (it == tlsSessionManager.sessions().end()) return;
-                const auto clientConn = it->second.conn.lock();
-                if (!clientConn) return;   // 会话记录还在但连接已释放(仅关机窗口可能):当断开处理
-
-                // If reply is already MessageContent, send directly.
-                if (reply.GetDescriptor() == MessageContent::descriptor()) {
-                    context.rpcClientHandler.SendMessageToClient(clientConn, reply);
-                    return;
-                }
-
-                // Otherwise, wrap in MessageContent envelope for the client.
-                std::string typeName(reply.GetDescriptor()->full_name());
-                auto typeIt = sResponseTypeToMsgId.find(typeName);
-                if (typeIt == sResponseTypeToMsgId.end()) {
-                    LOG_ERROR << "No message_id mapping for gRPC response type: " << typeName.c_str();
-                    return;
-                }
-                MessageContent mc;
-                mc.set_serialized_message(reply.SerializeAsString());
-                mc.set_message_id(typeIt->second);
-                context.rpcClientHandler.SendMessageToClient(clientConn, mc); });
+                gate_rpc_reply_bridge::DeliverReply(*sd, reply); });
 
             // gRPC 调用失败 -> 客户端(docs/design/grpc-client-deadline-failure-callback.md §5 #8/#9)。
             //
-            // 失败时服务端没有回写 initial metadata,上面按 GetSessionDetailsByClientContext 找会话的路走不通;
+            // 失败时服务端没有回写 initial metadata,按 GetSessionDetailsByClientContext 找会话的路走不通;
             // 会话从本次**发出**的 x-session-detail-bin 找回(生成的客户端保存了 Send 传入的原值,未经 Base64)。
             // 回 kServiceUnavailable 而不是具体业务码:传输失败 = 结果未知,下游可能已经执行(有副作用的 C2S
-            // 靠 Go 侧幂等键兜重试)。会话已不在(断线通知 Login.Disconnect、客户端已断开)就只留日志。
-            // 不带会话 metadata 的调用(gate 自己的 etcd 请求)与生成代码的默认行为一致:记 ERROR。
-            // 下游整体不可用时失败频率 = 在线玩家的 gRPC 消息频率,日志按 1024 条采样(同 SendViaRouter)。
+            // 靠 Go 侧幂等键兜重试)。采样日志、路由 lane 认领、找会话回 tip 的细节同样只在 rpc_reply_bridge 里。
             SetIfEmptyFailedHandler([](const GrpcCallFailure &failure, const ::google::protobuf::Message & /*request*/)
                                     {
-                const std::string *sessionBin = failure.FindSentMetadata(kSessionBinMetaKey);
-                if (sessionBin == nullptr) {
-                    LOG_ERROR << "gRPC " << failure.method << " failed: code=" << static_cast<int>(failure.status.error_code())
-                              << " msg=" << failure.status.error_message();
-                    return;
-                }
-                SessionDetails sessionDetails;
-                if (!sessionDetails.ParseFromString(*sessionBin)) {
-                    LOG_ERROR << "gRPC " << failure.method << " failed and its session metadata does not parse; client not notified";
-                    return;
-                }
-                static uint64_t failedCount = 0;
-                if ((failedCount++ & 0x3FF) == 0) {
-                    LOG_WARN << "gRPC client call failed (sampled): method=" << failure.method
-                             << " code=" << static_cast<int>(failure.status.error_code())
-                             << " msg=" << failure.status.error_message()
-                             << " latest_session_id=" << sessionDetails.session_id()
-                             << " failed_total=" << failedCount;
-                }
-                const auto it = tlsSessionManager.sessions().find(sessionDetails.session_id());
-                if (it == tlsSessionManager.sessions().end()) return;
-                const auto clientConn = it->second.conn.lock();
-                if (!clientConn) return;
-                RpcClientSessionHandler::SendTipToClient(clientConn, kServiceUnavailable); });
+                gate_rpc_reply_bridge::NotifyCallFailure(failure.method,
+                                                         static_cast<int>(failure.status.error_code()),
+                                                         failure.status.error_message(),
+                                                         failure.FindSentMetadata(kSessionBinMetaKey)); });
 
             // Post-startup: attach client TCP callbacks + initialize session ID generator.
             // Override connection/message callbacks BEFORE WaitAndRun so that any
@@ -395,6 +371,10 @@ int main(int argc, char *argv[])
                         // 正常情况下欠账索引为空,每轮只做一次 empty()。
                         context.sceneEntryRetryTimer.RunEvery(gate_scene_entry::kSweepIntervalSeconds, [] {
                             gate_scene_entry::RetryDueSceneEntries(std::chrono::steady_clock::now());
+                        });
+                        // 路由 lane 的在途过期扫描同理:客户端连进来之后就可能有在途调用。在途索引为空时每轮只做一次堆顶比较。
+                        context.routerLaneExpiryTimer.RunEvery(gate_lane::kSweepIntervalSeconds, [] {
+                            gate_lane::ExpireDue(std::chrono::steady_clock::now());
                         });
 
                         // 依赖门:路由模式下等的是路由服而不是 login —— gate 这时根本不连

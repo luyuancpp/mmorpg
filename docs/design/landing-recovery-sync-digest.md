@@ -269,7 +269,7 @@ message SyncDigestS2C {
 | `alert` | UNKNOWN、结局翻转、毒行 | 立即告警 |
 | `abandon_candidate` | 满足 §6.3 的时间条件 | 由 §6.3 处理，计数供观察 |
 
-- 指标：`assetop_pending_rows{service,stream,class}`（gauge）、`assetop_pending_oldest_age_seconds{service,stream,class}`（gauge，按类拆分；原有不分类的 gauge 保留）。
+- 指标：`assetop_pending_rows{service,stream,class}`（gauge）、`assetop_pending_class_oldest_age_seconds{service,stream,class}`（gauge，按类拆分）。原有的 `assetop_pending_oldest_age_seconds{service,stream}` 保留不动；同一个指标名不能有两套 label，所以按类拆分的 gauge 必须用新名字。
 - guild 与 trade 都运行；多副本时用 `go/shared/leader` 选一个副本执行，其余副本不报这组 gauge。
 
 ### 6.3 自动放弃（ABANDONED）
@@ -333,7 +333,7 @@ trade 的资产通道默认关闭、P3 未开工，但为避免两份实现分�
 | `increase(assetop_outcome_flip_total[10m]) > 0` | critical |
 | `increase(assetop_partial_total[1h]) > 0` | warning |
 | `increase(assetop_store_errors_total{op="decode"}[1h]) > 0` | warning |
-| `max(assetop_pending_oldest_age_seconds{class="online_retry"}) > 3600` 持续 10m | warning |
+| `max(assetop_pending_class_oldest_age_seconds{class="online_retry"}) > 3600` 持续 10m | warning |
 | `max(assetop_pending_rows{class="alert"}) > 0` 持续 30m | warning |
 | `increase(assetop_abandoned_total[1d]) > 0` | info（审计提醒） |
 | `max(guild_trial_result_overdue) > 0` 持续 30m | warning |

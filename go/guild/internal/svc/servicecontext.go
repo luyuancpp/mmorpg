@@ -21,7 +21,11 @@ import (
 	"shared/idsegment"
 	"shared/kafkacmd"
 	"shared/kafkautil"
+	"shared/playersync"
 )
+
+// playerSyncServiceName 是本服务在落地恢复摘要指标 player_sync_bump_total 里的 service label。
+const playerSyncServiceName = "guild"
 
 type ServiceContext struct {
 	Config                   config.Config
@@ -49,6 +53,16 @@ type ServiceContext struct {
 	// 没配 MatchRpc 目标时是 **nil 接口** = 历练未开放;guild.go 把它原样赋给 logic.ActivityDeps.Match
 	// (接口赋接口,nil 仍是 nil),并在 !Config.TrialResultActive() 时改传 nil —— 没有结算就不许开战。
 	MatchInternal matchpb.MatchInternalClient
+	// PlayerSyncBumper 给玩家的落地恢复摘要 player:{id}:sync_digest 按域 +1
+	// (docs/design/landing-recovery-sync-digest.md §3;guild 负责 GUILD / GUILD_APPLICATION / GUILD_ECONOMY /
+	// GUILD_ACTIVITY 四个域)。guild.go 经 logic.WithSyncBumper(logic.NewGuildSyncBumper(...)) 交给 logic,
+	// 由它在提交之后异步调用。
+	//
+	// 摘要必须写在 C++ scene 读得到的那个 Redis 上(scene 只连 zone Redis,且不发 AUTH / SELECT,只读得到 DB 0),
+	// 也就是与 scene / scene_manager 写 player:{id}:location 的**同一实例同一 DB**:
+	// 本服务里就是 PlayerLocatorRedisClient(本地缺省回落到 RedisClient 的 DB 0;K8s 指向 SharedRedis)。
+	// 指错的表现是 scene 读到的摘要永不变化 —— 客户端退化为"打开帮会界面才拉",且不报错。
+	PlayerSyncBumper *playersync.Bumper
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
@@ -135,6 +149,9 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		KafkaWriter:              w,
 		GateCommandBuilder:       guildkafka.NewGateCommandBuilder(),
 		MergeMarkerRedisClient:   newMergeMarkerRedis(c),
+		// 服务名 "guild" 只作 player_sync_bump_total 的 service label(有界常量,不带任何 id)。
+		// 与 PlayerLocatorRedisClient 共用连接:bump 是提交后异步的单键 Lua,量级远低于在线查询。
+		PlayerSyncBumper: playersync.NewBumper(playersync.NewGoRedisEvaler(plRdb), playerSyncServiceName),
 	}
 	sc.initDataServiceClient()
 	sc.initGuildIDSegment()

@@ -702,8 +702,9 @@ func TestRouteAuditExitCodes(t *testing.T) {
 }
 
 // TestRouteAuditPagesAcrossShards:方向 A 沿聚簇键翻页(G1a),游标是 (route_shard, player_id) 而不是 player_id。
-// id {1, 65, 129, 2, 66, 63, 127} 的行片是 1,1,1,2,2,63,63(64 片:相差 64 才落同一片),Batch=2 时页边界落在片中间、
-// 也落在片之间:按 player_id 当游标会漏掉 2 / 63 之后的行,按片当游标会漏掉同片的后续行。两边一致时差异为 0;
+// id {1, 65, 129, 2, 66, 63, 127} 的行片是 1,1,1,2,2,63,63(64 片:相差 64 才落同一片),Batch=2 时三处页边界
+// (1, 65) | (1, 129)、(2, 2) | (2, 66)、(63, 63) | (63, 127) 都落在片中间,第 2、3 页各跨一次片:按 player_id
+// 当游标会漏掉 2 / 63 之后的行,按片当游标会漏掉同片的后续行。两边一致时差异为 0;
 // 删掉其中一名玩家的 Redis 键,恰好多出 1 个差异 —— 证明每一行都被比到了一次,不漏不重。
 func TestRouteAuditPagesAcrossShards(t *testing.T) {
 	mr, rd := newMappingRedis(t)

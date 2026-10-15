@@ -1,6 +1,6 @@
 # go/db 存盘任务：存储不可用时延后、不进死信（L-04）设计评审稿
 
-> **状态**：v0.3（2026-10-14，Claude）。第 1 批已获负责人授权（2026-10-13，「L-04 第 1 批 + 读写超时」），**代码已按本稿落码，未编译、未测试**（AGENTS.md §10.1）。负责人同时要求「先实现代码，先不管测试，测试记录到上线待做里面」，未执行的验证列在 [godb-pipeline-launch-todo.md](../ops/godb-pipeline-launch-todo.md)。
+> **状态**：v0.3.1（2026-10-14，Claude）。第 1 批已获负责人授权（2026-10-13，「L-04 第 1 批 + 读写超时」），**代码已按本稿落码，未编译、未测试**（AGENTS.md §10.1）。负责人同时要求「先实现代码，先不管测试，测试记录到上线待做里面」，未执行的验证列在 [godb-pipeline-launch-todo.md](../ops/godb-pipeline-launch-todo.md)。
 > **来源**：`tidb-phase1-and-launch-readiness.md` 的 L-04（「go/db 遇到 1040 或拿不到连接时改为延后，不消耗重试预算；死信加消费者和告警」）；[交接](../handoff/godb-pipeline-handoff-20261013.md) §4.1 第 1 项；[瓶颈文档](db-task-pipeline-bottlenecks.md) §4.4 的缺口 G2；全局单点交接的同名 P0。附录 A「mysql-connection-budget」批 A 是起点，按 HEAD 重新核对后改写。
 > **归属**：负责人 2026-10-13 定为本交接做（交接 §5 第 4 项）。
 > **证据口径**：[C] 读代码确认；[D] 文档记载；[I] 推断。全部是静态阅读，没有实测。
@@ -101,9 +101,10 @@
 
 `StoreRegistry` 原有一套「打开失败后冷却」（SR:49-54、:317-319），只管没打开过的库。本批给已打开的库补上同类机制（`proto_sql/store_health.go`），但进入条件更严（评审 F1，原稿的「任意一次连接类错误即冷却」会把 1040 这种局部故障放大成整个实例停写）：
 
-- **进入**：`runDBOp` 只把 handler（SQL 这一步）的结果报给注册表。错误属于「连接断开 / 连不上」时，注册表对该库做一次有时限的探活（`PingContext`，2 秒，同一个库并发只做一次）；**探活本身也属于「连接断开 / 连不上」才进入冷却**。探活拿到 1040 一类的服务端应答说明库活着，不冷却。`PingContext` 优先复用池里的空闲连接，所以连接数满时探活通常直接成功。
+- **进入**：`runDBOp` 只把 handler（SQL 这一步）的结果报给注册表。错误属于「连接断开 / 连不上」时，注册表对该库做一次有时限的探活（2 秒，同一个库并发只做一次）；**探活本身也属于「连接断开 / 连不上」才进入冷却**。探活拿到 1040 一类的服务端应答说明库活着，不冷却。
+- **探活不经过连接池**：用建池时的连接器新建一条连接、Ping、关掉（`GameDB.Connector`）。经过连接池会误判：池里的空闲连接可能早已失效（Windows 上 go-sql-driver 不做空闲连接活性检查，本地重启 MySQL 后每次探活都会拿到一条死连接），池满时取连接还要排队到超时。握手阶段被 1040 拒绝时驱动返回 `*mysql.MySQLError`，照样识别成「服务端在应答」（复核意见 1）。
 - **期间**：`Store()` 对该库返回同时包着 `ErrStoreUnavailable` 与 `ErrStoreCoolingDown` 的错误，之后的路径全部是现成的：`routeTask` 包成 `errPlacementStoreUnavailable`，写延后且不耗预算。
-- **退出**：冷却到期后只放一次探活（并发请求共享结果），成功才放行，失败就续上一个冷却期；冷却期内任何一条 SQL 成功也立即解除。
+- **退出**：冷却到期后只放一次探活（并发请求共享结果），成功才放行，失败就续上一个冷却期；冷却期内任何一条 SQL 成功也立即解除。进入 SingleFlight 之后先按最新状态复查：别的请求刚续上冷却或刚解除，就直接用那个结论，不再探活（复核意见 2）。
 - **时长**：5 秒 ±20% 抖动。短于登录的 8 秒等待（冷却期内的冷登录会立即失败）；抖动是为了所有 zone、所有副本不在同一刻到期、同时重连（评审 F7）。
 - 「忙」「只读」「连接数满」都不进冷却：它们是某条语句或某条新连接的事。
 - 注册表接口没有改，冷却通过 `StoreResolver` 的可选接口 `storeHealth` 接入（`internal/kafka/store_failure.go`）；测试替身不实现它就没有冷却。
@@ -134,7 +135,7 @@
 | `db_task_dead_letter_total` | `reason` ∈ budget_exhausted / malformed_payload / legacy_payload / invalid_partition / ordering_incomparable / stale_topic / missing_required / poison | 每个死信写入点写入成功之后；毒消息计在 `persistPoisonMessage` 里（`ConsumeClaim` 在分发前解码失败时直接调用它，评审 F10）|
 | `db_task_read_abandoned_total` | `reason` ∈ store_unavailable / budget_exhausted | §3.6 |
 | `db_retry_queue_length` | `queue` ∈ ready / processing / dead | 重试循环每拍采样。ready 与 dead 是 topic 共用的列表，每个副本报同一个数 |
-| `db_store_cooldown_stores` | `pool` ∈ home / extra_zone / extra_non_zone | 进出冷却时更新 |
+| `db_store_cooldown_stores` | `pool` ∈ home / extra_zone / extra_non_zone | 每次抓取时按注册表现算，只数没到期的冷却（自定义收集器）。不在进出冷却时设值：冷却到期后要等下一次选库探活才删记录，某个库到期后再也没有流量时设值式的指标会一直挂着（复核意见 3）|
 
 - `redis_unavailable` 的判定：没有存储侧标记、但错误链上有 `net.Error` 或 `context.DeadlineExceeded`。SQL 调用点的网络错误都打过标记，剩下的只可能来自 Redis（守卫、选库、复核、缓存）。这些失败本批仍耗预算（§4.3），只先数出来。
 - 连接池指标已由 G2b 导出（`mmorpg_sql_pool_*{sql_client="db", pool}`），本批没有注册第二个收集器。
@@ -226,7 +227,7 @@
 **已随代码写的单测**：
 
 - `go/db/internal/storeerr/storeerr_test.go`：分类表（每个判据及包一层之后）、`Tag` / `KindOf`、Redis 侧网络错误不被当成存储错误。
-- `go/db/internal/logic/pkg/proto_sql/store_health_test.go`：探活拿到服务端应答不冷却；探活连不上进入冷却、期内不再探活；到期单次探活决定放行或续期；语句成功解除冷却；没打开过的库不探活。
+- `go/db/internal/logic/pkg/proto_sql/store_health_test.go`：探活拿到服务端应答不冷却；探活连不上进入冷却、期内不再探活；到期单次探活决定放行或续期；语句成功解除冷却；没打开过的库不探活；冷却计数只数没到期的；到期时晚到的放行请求不再探活。
 - `placement_route_test.go` 的 `TestStoreUnavailable_WriteKeepsBudgetReadFailsFast`：读任务改为立即回失败回执（原用例断言读耗预算，已按新口径改写）。
 
 **还没写的单测**（上线前补）：`retryBudgetExempt` 新分支；`deferReason` 全表；重试循环每拍上限（含两个消费者共用一个 miniredis）；读任务预算用完丢弃；冷却期整拍跳过；死信与延后计数。
@@ -246,7 +247,8 @@
 | `go/db/internal/kafka/key_ordered_consumer_test.go`、`placement_route_test.go` | 替身签名；读任务用例改口径 |
 | `go/db/internal/logic/pkg/proto_sql/store_health.go`（新）+ `_test.go`（新）| 已打开库的探活与冷却 |
 | `go/db/internal/logic/pkg/proto_sql/store_registry.go` | 冷却字段、选项、`Store()` 接入；落点库用业务池配置 |
-| `go/db/internal/logic/pkg/proto_sql/db.go` | `newServiceMysqlConfig`、启动时打印与检查 |
+| `go/db/internal/logic/pkg/proto_sql/db.go` | `newServiceMysqlConfig`、启动时打印与检查；`GameDB.Connector`（探活用）|
+| `go/db/db.go` | 注册冷却计数收集器 `metrics.RegisterStoreCooldown` |
 | `go/db/internal/config/config.go`、`go/db/etc/db.yaml` | 五个新配置键与默认值 |
 | `go/db/internal/metrics/metrics.go` | 五个新指标 |
 | `deploy/k8s/db-task-retry-alerts.yaml`（新）| 五条告警 |
@@ -261,6 +263,7 @@
 - 本批的处置：会话级锁等待（10 秒）短于读超时（30 秒），排在锁后面的语句会被服务端先以 1205 中止，不留在途语句。这是最常见的形态（DDL 元数据锁、长事务行锁）。
 - 残余：语句已在执行或网络在语句发出后断开时，客户端超时后语句仍可能完成。条件写落地之前，这是发版红线：**同一窗口不跑会阻塞 DML 的 DDL，不暂停 MySQL**（瓶颈文档 §4.5 已有这两条）。
 - 改动前没有超时，这类语句会一直占着协程和排序锁，顺序是保住的，但协程会永久卡死、拖死整个实例的重试（§1.4）。两害取其轻，加超时。
+- 另一个残余（复核意见 6）：如果某条写本身就会撞上 30 秒读超时（例如极大的一行在慢链路上），它每次都被归为「连接断开」、不耗预算，会无限期重试，每轮占一条连接最长 30 秒，并触发一次探活（结果是库可达）。本批不改：为它设上限会在服务端短暂卡顿时丢盘。可观察到的信号是 `DbTaskDeferredByStore`（reason=conn_lost）持续在响而 `DbStoreCoolingDown` 不响；遇到时按单条任务排查。
 
 ---
 
@@ -327,3 +330,4 @@
 - v0.1（2026-10-13）：初稿。
 - v0.2（2026-10-13）：标注已评审（实际评审结论未并入）。
 - v0.3（2026-10-14）：并入对抗评审（L-04 一路 10 条，核实后成立 6 条、部分成立 4 条），按此落码。主要变化：冷却只在探活确认整库不可达时进入，1040 不冷却（F1）；分类只在 SQL 调用点做、汇总处只认标记（F2）；会话级锁等待短于读超时，并写明超时撤不回语句的残余窗口（F3）；重试间隔结论改为「每实例每拍一次」、冷却跳过的代价改为「整个不可用期间」（F4）；死信告警降为 warning 并写处置步骤、写明未知 MsgType 不处理（F5）；读任务只在库已知不可用时快速失败，首次连接错误照常重试（F6）；冷却加抖动、到期单次探活、补记对 §11.3 的偏离（F7）；补拨号超时、上线前置与「ready 是唯一副本」（F8）；加 1226、说明 1129 不纳入（F9）；毒消息计数点改到 `persistPoisonMessage`（F10）。
+- v0.3.1（2026-10-14）：落码后一轮只读代码复核（未发现编译错误与 gofmt 问题），按意见改：探活改为新建连接、不经过连接池；到期探活进入 SingleFlight 后复查最新状态；`db_store_cooldown_stores` 改为抓取时现算、只数没到期的；读放弃计数挪到回执发出之后；锁等待写负数时只提示不报错；超时引起的写可能无限期豁免记为残余（§8）。

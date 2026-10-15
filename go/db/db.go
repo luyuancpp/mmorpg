@@ -111,6 +111,8 @@ func main() {
 	// 连接池指标(mmorpg_sql_pool_*{sql_client="db"},G2b):按本 zone 库 / 额外 zone 家族库 / 非 zone 落点库三类聚合,
 	// 每次抓取时现取 sql.DBStats。必须在 metrics.Start 之前注册;注册失败只记日志,不挡落库。
 	metrics.RegisterSQLPools(stores.PoolSamples)
+	// 库级冷却(L-04):db_store_cooldown_stores 在每次抓取时按注册表现算,同样必须在 metrics.Start 之前注册。
+	metrics.RegisterStoreCooldown(stores.CooldownCounts)
 
 	// 装配大字段三档闸(必须在消费者启动之前:第一条消息落到 worker 就要过闸)
 	kafka.InitBlobGuard(config.AppConfig.ServerConfig.BlobGuard)

@@ -33,6 +33,7 @@
 #include "node/system/etcd/etcd_service.h"
 #include "node/system/grpc_call_deadline.h"
 #include "node/system/node/node_connector.h"
+#include "node/system/node/muduo_grpc_channel_slot.h"
 #include "node/system/node/client_endpoint.h"
 #include "thread_context/node_context_manager.h"
 #include <node_config_manager.h>
@@ -1189,6 +1190,9 @@ void Node::FinalizeShutdownInLoop()
 	for (auto &nodeRegistry : tlsNodeContextManager.GetAllRegistries())
 	{
 		nodeRegistry.clear<RpcClientPtr>();
+		// muduo_grpc 通道同理(按值持有 TcpClient);析构时把在途调用以 UNAVAILABLE 排进队列,
+		// 也由下面的两跳覆盖。docs/design/grpc-muduo-transport.md §6。
+		nodeRegistry.clear<MuduoGrpcChannelPtr>();
 	}
 	// Cleared by tlsEcs.Clear() below.
 	tlsEcs.Clear();

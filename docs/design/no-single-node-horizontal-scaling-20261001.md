@@ -249,6 +249,8 @@ kind 上:`zone-up` 后 `data-service-migrate` Job Complete、两个 Pod Ready;`k
 约束:C++ 侧 hiredis 没有集群客户端;`player:session:{id}` 等跨运行时契约 key 多方共写。
 方向待定(Sentinel 主从切换 vs. 按用途拆库后分别集群化),需要先盘点所有客户端的连接方式。
 
+> 2026-10-14 注:本节的后续设计已转到 [shared-redis-split-by-purpose.md](./shared-redis-split-by-purpose.md)(G4a,按用途拆共享 Redis,只出设计、未落码),以那份为准。[容量模型](./capacity-model-hok-scale.md) §4.2 判定「按用途拆」只够到 S1,在 S3 目标下要改为集群化或单元化,修订项见 [交接](../handoff/handoff-launch-readiness-and-d1-20261013.md) §4 第 5 项。
+
 ## 6. MySQL:单实例 → TiDB(方向已定,待做)
 
 见 `docs/design/global-data-layer-tidb-decision.md`。deploy 里目前没有任何 TiDB 清单。

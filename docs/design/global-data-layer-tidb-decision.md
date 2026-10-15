@@ -121,7 +121,7 @@ CREATE TABLE IF NOT EXISTS `player_database` (
 > - `PRE_SPLIT_REGIONS` 只预切行数据,每条索引建表时只有 1 个 Region。
 > - Load Base Split 只按读流量触发,化解不了写热点。
 > - 仓库里没有任何 `SPLIT TABLE … INDEX`,也没有对 player_id 做打散。
-> - 同类单调索引还有:`player_name.uk_player_name_owner(player_id)`;`transaction_log`、`player_snapshot` 的时间类联合索引;以及 [player-route-mapping-durability-proposal.md](./player-route-mapping-durability-proposal.md) 里 `player_route` 的 PK / `idx_route_storage` / `idx_route_updated`。(2026-10-12 G1a:`player_route` 改为聚簇 `(route_shard, player_id)` + 16 片前缀索引,`route_meta` 拆出 `route_reconcile`,`player_route` 与 `zone_merge_fence` 的预切与防合并由 `route_tool tidb-prepare` 执行,见提案 §11.2「第 1a 批热点修复」。)
+> - 同类单调索引还有:`player_name.uk_player_name_owner(player_id)`;`transaction_log`、`player_snapshot` 的时间类联合索引;以及 [player-route-mapping-durability-proposal.md](./player-route-mapping-durability-proposal.md) 里 `player_route` 的 PK / `idx_route_storage` / `idx_route_updated`。(2026-10-12 G1a:`player_route` 改为聚簇 `(route_shard, player_id)` + 16 片前缀索引(2026-10-14 起为 64 片,见提案 §11.2「行片 16 → 64」),`route_meta` 拆出 `route_reconcile`,`player_route` 与 `zone_merge_fence` 的预切与防合并由 `route_tool tidb-prepare` 执行,见提案 §11.2「第 1a 批热点修复」。)
 >
 > **3. Phase 2 会把热点放大。** 原来每个 zone 各有一组玩家表,也就是 Z 条索引尾部;合进全局库后只剩 1 条。在 MySQL 上单调追加是 B+ 树最友好的写法,不构成热点,瓶颈是整台实例;在 TiDB 上这是真实的扩展瓶颈,加机器解决不了。
 >
@@ -210,7 +210,7 @@ TiDB 方言在 proto2mysql 侧新增表选项(生成 §D3 的 DDL 形态):
 | 8 | PITR 真空期(runbook 未改就迁移) | P0 | D8 前置条件卡死发布 |
 | 9 | 借迁移之机误动 topic/partition | P0 | D5 明令禁止;code review 检查项 |
 | 10 | 死信队列无消费者(既有问题) | P2 | 与本决策正交,单独立项,不因换 TiDB 消失 |
-| 11 | 映射持久化路由表的热点(2026-10-12 登记,[player-route-mapping-durability-proposal.md](./player-route-mapping-durability-proposal.md) §11.2 风险第 1 条):`zone_merge_fence` 只有「zone 数 × 分片数」行,必落同一个 Region,悲观事务的 `FOR UPDATE` 让全服每次建角都在同一个 Region Leader 上加锁 / 解锁;`player_route` 的主键唯一索引与 `idx_route_updated` 单调递增,`idx_route_home(home_zone, player_id)` 在单个 zone 内也是尾部热点(NONCLUSTERED + SHARD_ROW_ID_BITS 只打散行数据);`route_meta` 单行是读热点 | P1 | `zone_merge_fence` 已建成 `CLUSTERED`,上线前按 zone `SPLIT TABLE`(§6 Phase 1 第 8 条);`player_route` 的热点纳入 TiDB 压测,用 Key Visualizer 区分 index 与 record 流量。2026-10-12 G1a:`player_route` 改为聚簇 `(route_shard, player_id)` + 16 片前缀索引,`route_meta` 拆出 `route_reconcile`,`player_route` 与 `zone_merge_fence` 的预切与防合并由 `route_tool tidb-prepare` 执行,见提案 §11.2「第 1a 批热点修复」 |
+| 11 | 映射持久化路由表的热点(2026-10-12 登记,[player-route-mapping-durability-proposal.md](./player-route-mapping-durability-proposal.md) §11.2 风险第 1 条):`zone_merge_fence` 只有「zone 数 × 分片数」行,必落同一个 Region,悲观事务的 `FOR UPDATE` 让全服每次建角都在同一个 Region Leader 上加锁 / 解锁;`player_route` 的主键唯一索引与 `idx_route_updated` 单调递增,`idx_route_home(home_zone, player_id)` 在单个 zone 内也是尾部热点(NONCLUSTERED + SHARD_ROW_ID_BITS 只打散行数据);`route_meta` 单行是读热点 | P1 | `zone_merge_fence` 已建成 `CLUSTERED`,上线前按 zone `SPLIT TABLE`(§6 Phase 1 第 8 条);`player_route` 的热点纳入 TiDB 压测,用 Key Visualizer 区分 index 与 record 流量。2026-10-12 G1a:`player_route` 改为聚簇 `(route_shard, player_id)` + 16 片前缀索引(2026-10-14 起为 64 片,见提案 §11.2「行片 16 → 64」),`route_meta` 拆出 `route_reconcile`,`player_route` 与 `zone_merge_fence` 的预切与防合并由 `route_tool tidb-prepare` 执行,见提案 §11.2「第 1a 批热点修复」 |
 
 ## 5. 验收标准(Phase 1)
 
@@ -230,7 +230,7 @@ TiDB 方言在 proto2mysql 侧新增表选项(生成 §D3 的 DDL 形态):
 5. 迁移工具: 开发环境直接重建;有存量数据的环境用 Dumpling + Lightning(逻辑库对逻辑库)
 6. 验收: §5 全项
 7. 文档: 回档 runbook TiDB 版(§D8)
-8. 映射持久化路由表(2026-10-12 追加,风险 #11):data_service 全局库随 Phase 1 迁 TiDB 之前,`SPLIT TABLE zone_merge_fence BY (2,0),(3,0),…` 按 zone 预切(表已是 `CLUSTERED`,建表后不能再改聚簇属性);`player_route` 的主键 / `idx_route_home` / `idx_route_updated` 尾部热点与围栏表的加锁热点纳入 Phase 1 压测。TiDB 上还要确认 `tidb_txn_mode=pessimistic`(route store 建池时探针会拒绝 optimistic)与 `tidb_enable_check_constraint`(默认关,CHECK 不生效,应用层校验兜底)。2026-10-12 G1a:`player_route` 改为聚簇 `(route_shard, player_id)` + 16 片前缀索引,`route_meta` 拆出 `route_reconcile`,`player_route` 与 `zone_merge_fence` 的预切与防合并由 `route_tool tidb-prepare` 执行,见提案 §11.2「第 1a 批热点修复」;`tidb_enable_check_constraint` 从此是**必须**(`chk_route_shard` 关系到 `player_id` 唯一性,建池探针实测它生效,不生效就拒建 store),且要在建表前打开
+8. 映射持久化路由表(2026-10-12 追加,风险 #11):data_service 全局库随 Phase 1 迁 TiDB 之前,`SPLIT TABLE zone_merge_fence BY (2,0),(3,0),…` 按 zone 预切(表已是 `CLUSTERED`,建表后不能再改聚簇属性);`player_route` 的主键 / `idx_route_home` / `idx_route_updated` 尾部热点与围栏表的加锁热点纳入 Phase 1 压测。TiDB 上还要确认 `tidb_txn_mode=pessimistic`(route store 建池时探针会拒绝 optimistic)与 `tidb_enable_check_constraint`(默认关,CHECK 不生效,应用层校验兜底)。2026-10-12 G1a:`player_route` 改为聚簇 `(route_shard, player_id)` + 16 片前缀索引(2026-10-14 起为 64 片,见提案 §11.2「行片 16 → 64」),`route_meta` 拆出 `route_reconcile`,`player_route` 与 `zone_merge_fence` 的预切与防合并由 `route_tool tidb-prepare` 执行,见提案 §11.2「第 1a 批热点修复」;`tidb_enable_check_constraint` 从此是**必须**(`chk_route_shard` 关系到 `player_id` 唯一性,建池探针实测它生效,不生效就拒建 store),且要在建表前打开
 
 **明确未做(本次)**: Phase 2 全部(全局表收敛、home_zone 字段落表、topic 按 home_zone 路由、解除跨区 fail-closed)、应用级回档通电、死信队列消费者。
 

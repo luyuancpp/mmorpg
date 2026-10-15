@@ -45,6 +45,7 @@ import (
 	base "proto/common/base"
 	rollbackpb "proto/common/rollback"
 	pb "proto/guild"
+	scenepb "proto/scene"
 	"shared/assetop"
 	tablepb "shared/generated/pb/table"
 )
@@ -454,7 +455,7 @@ func (l *GuildLogic) activityTxTip(ctx context.Context, a activityActor, pre act
 
 // ── 提交之后 ──────────────────────────────────────────────────
 
-// afterActivityCommit 做提交之后的三件事:同步投递物品一次、计指标、达阈值时推送。全部 best-effort(纪律 3)。
+// afterActivityCommit 做提交之后的四件事:同步投递物品一次、计指标、达阈值时推送、摘要 bump。全部 best-effort(纪律 3)。
 func (l *GuildLogic) afterActivityCommit(ctx context.Context, d *ActivityDeps, a activityActor, rw activityReward, res data.ActivityTxResult, typeLabel string) {
 	if res.Enqueued && rw.op != nil {
 		guildActivityRewardTotal.Inc(typeLabel, activityRewardEnqueued)
@@ -482,6 +483,14 @@ func (l *GuildLogic) afterActivityCommit(ctx context.Context, d *ActivityDeps, a
 	if res.ReachedNow {
 		l.notify(pb.GuildChangeKind_GUILD_CHANGE_KIND_ACTIVITY_CHANGED, a.guild.GuildID, a.playerID, 0, membersExcept(a.guild, a.playerID))
 	}
+	// 摘要(landing-recovery-sync-digest.md §3.3 表第 9 行):本人的活动页总会变(今日次数、待发奖励);
+	// 本档期首次达阈值时全帮的活动页都变了(进度锁存),扇出给快照全体 + 本人。未达阈值时的每盏灯只改帮会级进度,
+	// 不扇出(§3.3:帮会级数值由打开活动页时的拉取覆盖)。收件人取缓存快照,口径同上面的推送。
+	players := []uint64{a.playerID}
+	if res.ReachedNow {
+		players = membersPlus(a.guild, a.playerID)
+	}
+	l.bumpSync(players, scenepb.SyncDomain_SYNC_DOMAIN_GUILD_ACTIVITY)
 }
 
 // deliverActivityReward 在事务提交之后同步投一次,让玩家当场看到物品到账(06 §6.6,预算按裁决 K)。

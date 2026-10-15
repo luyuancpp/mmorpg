@@ -2,7 +2,7 @@ package proto_sql
 
 import (
 	"context"
-	"db/internal/metrics"
+	"database/sql/driver"
 	"db/internal/storeerr"
 	"errors"
 	"fmt"
@@ -50,9 +50,26 @@ func defaultCooldownJitter(d time.Duration) time.Duration {
 	return time.Duration(float64(d) * (0.8 + 0.4*rand.Float64()))
 }
 
-// pingStore 是生产的探活实现。没有连接池的库(单测里只带库名的模型)视为可用。
+// pingStore 是生产的探活实现:用连接器新建一条连接、Ping、关掉,不经过连接池。
+// 经过连接池会误判:池里的空闲连接可能早已失效(Windows 上驱动不做空闲连接活性检查),
+// 池满时 PingContext 还要排队到超时。握手阶段被 1040 拒绝时驱动返回 *mysql.MySQLError,照样能识别成「服务端在应答」。
+// 没有连接器时退回连接池;连接池也没有(单测里只带库名的模型)视为可用。
 func pingStore(ctx context.Context, store *GameDB) error {
-	if store == nil || store.DB == nil {
+	if store == nil {
+		return nil
+	}
+	if store.Connector != nil {
+		conn, err := store.Connector.Connect(ctx)
+		if err != nil {
+			return err
+		}
+		defer func() { _ = conn.Close() }()
+		if pinger, ok := conn.(driver.Pinger); ok {
+			return pinger.Ping(ctx)
+		}
+		return nil
+	}
+	if store.DB == nil {
 		return nil
 	}
 	return store.DB.PingContext(ctx)
@@ -68,7 +85,7 @@ func (r *StoreRegistry) ReportConnLost(storageID uint32, cause error) {
 	if store == nil || cooling {
 		return
 	}
-	r.probe(storageID, store, cause)
+	r.probe(storageID, store, cause, false)
 }
 
 // ReportHealthy 由 SQL 调用点在语句成功后调用:库显然是通的,解除可能残留的冷却。
@@ -94,7 +111,7 @@ func (r *StoreRegistry) storeAfterCooldown(storageID uint32, store *GameDB, c st
 	if r.now().Before(c.until) {
 		return nil, coolingDownError(storageID, c)
 	}
-	if r.probe(storageID, store, c.cause) {
+	if r.probe(storageID, store, c.cause, true) {
 		return store, nil
 	}
 	r.mu.RLock()
@@ -105,8 +122,20 @@ func (r *StoreRegistry) storeAfterCooldown(storageID uint32, store *GameDB, c st
 
 // probe 对库做一次有时限的探活,返回库是否可用。不可达则进入(或续上)冷却;可用则解除已有的冷却。
 // 同一个库的并发探活共享一次结果(与打开共用一个 SingleFlight,键加前缀区分)。
-func (r *StoreRegistry) probe(storageID uint32, store *GameDB, cause error) bool {
+//
+// atExpiry 表示调用方是在冷却到期时来放行的(storeAfterCooldown)。调用方读冷却状态与进入 SingleFlight 之间,
+// 上一次探活可能刚结束,所以进来之后先按最新状态复查一次,避免多探一次、把冷却白白往后延。
+func (r *StoreRegistry) probe(storageID uint32, store *GameDB, cause error, atExpiry bool) bool {
 	v, _ := r.flight.Do("probe:"+strconv.FormatUint(uint64(storageID), 10), func() (any, error) {
+		r.mu.RLock()
+		current, cooling := r.cooling[storageID]
+		r.mu.RUnlock()
+		switch {
+		case cooling && r.now().Before(current.until):
+			return false, nil // 上一次探活刚确认不可达并续上了冷却
+		case !cooling && atExpiry:
+			return true, nil // 上一次探活刚确认可用并解除了冷却
+		}
 		ctx, cancel := context.WithTimeout(context.Background(), r.probeTimeout)
 		defer cancel()
 		pingErr := r.ping(ctx, store)
@@ -130,13 +159,10 @@ func (r *StoreRegistry) beginCooldown(storageID uint32, cause, probeErr error) {
 		cause = probeErr
 	}
 	until := r.now().Add(r.jitter(r.cooldown))
-	pool := r.poolClassOf(storageID)
 	r.mu.Lock()
 	_, again := r.cooling[storageID]
 	r.cooling[storageID] = storeCooldown{until: until, cause: cause}
-	count := r.coolingCountLocked(pool)
 	r.mu.Unlock()
-	metrics.SetStoreCooldown(pool, count)
 	if again {
 		logx.Errorf("[placement] store still unreachable, cooling down again until %s: storage=%d probe=%v",
 			until.Format(time.RFC3339Nano), storageID, probeErr)
@@ -147,28 +173,30 @@ func (r *StoreRegistry) beginCooldown(storageID uint32, cause, probeErr error) {
 }
 
 func (r *StoreRegistry) endCooldown(storageID uint32, why string) {
-	pool := r.poolClassOf(storageID)
 	r.mu.Lock()
 	if _, cooling := r.cooling[storageID]; !cooling {
 		r.mu.Unlock()
 		return
 	}
 	delete(r.cooling, storageID)
-	count := r.coolingCountLocked(pool)
 	r.mu.Unlock()
-	metrics.SetStoreCooldown(pool, count)
 	logx.Infof("[placement] store reachable again (%s), cooldown cleared: storage=%d", why, storageID)
 }
 
-// coolingCountLocked 数某类库里有几个带冷却记录。调用方持有 r.mu。
-func (r *StoreRegistry) coolingCountLocked(pool string) int {
-	n := 0
-	for storageID := range r.cooling {
-		if r.poolClassOf(storageID) == pool {
-			n++
+// CooldownCounts 按连接池类别数此刻仍在冷却期内的库(db_store_cooldown_stores,抓取时现算)。
+// 只数没到期的记录:到期之后要等下一次 Store() 探活才会删掉记录,某个库到期后再也没有流量时,
+// 按记录数会让指标与告警一直挂着。
+func (r *StoreRegistry) CooldownCounts() map[string]int {
+	now := r.now()
+	counts := map[string]int{}
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	for storageID, c := range r.cooling {
+		if now.Before(c.until) {
+			counts[r.poolClassOf(storageID)]++
 		}
 	}
-	return n
+	return counts
 }
 
 func coolingDownError(storageID uint32, c storeCooldown) error {

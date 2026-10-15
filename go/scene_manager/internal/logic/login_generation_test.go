@@ -72,9 +72,9 @@ func TestEnterScene_RouteEventCarriesRequestLoginGenerationAcrossSamePlacementTa
 		"同节点顶号不换持有节点,owner_epoch 不变 —— 它区分不了两次登录,这正是要带登录代次的原因")
 	assert.Equal(t, "1", ownerEpochRaw(t, sc, playerID))
 
-	assert.Equal(t, uint64(11), eventA.SessionId)
+	assert.Equal(t, uint32(11), eventA.SessionId)
 	assert.Equal(t, genA, eventA.LoginGeneration, "首次落点的路由必须原样带请求的代次")
-	assert.Equal(t, uint64(22), eventB.SessionId)
+	assert.Equal(t, uint32(22), eventB.SessionId)
 	assert.Equal(t, genB, eventB.LoginGeneration, "同一落点重连的路由必须原样带本次请求的代次,而不是上一次的")
 	assert.Equal(t, uint64(0), eventC.LoginGeneration, "请求不带代次时原样发 0,scene_manager 不补值")
 }

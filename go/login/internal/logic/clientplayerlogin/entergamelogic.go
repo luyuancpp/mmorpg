@@ -12,6 +12,7 @@ import (
 	"login/internal/logic/pkg/locker"
 	"login/internal/logic/pkg/loginsession"
 	"login/internal/logic/pkg/playernamereg"
+	"login/internal/logic/pkg/sessionfence"
 	"login/internal/logic/pkg/sessionmanager"
 	"login/internal/svc"
 	login_proto_common "proto/common/base"
@@ -53,7 +54,19 @@ type enterGameSessionState struct {
 	// playerName 是要补进 PlayerProfileComp 的角色名副本,由 resolveEnterName 在入场前定好;
 	// "" = 账号记录与名字注册表里都拿不到(旧角色 / 注册表不可用),本次入场不补名字。
 	playerName string
+	// gate 连接会话栅栏(docs/design/client-request-ordering.md §6.2):fenced = 发起本次 EnterGame 的 gate
+	// 带了会话代次(旧版 gate 为 false,沿用旧行为);fenceGen 是入口处读到的 LeaveGame 计数,
+	// 后台链绑定 / 进场前复查据此识别「期间已离开游戏」。
+	fenced   bool
+	fenceKey sessionfence.Key
+	fenceGen uint64
 }
+
+// enterGameChainBudget 是 EnterGame 后台链(预加载 → 写会话 → 绑 gate → 进场)的总预算。
+// gate 连接会话栅栏记录的寿命由它派生:记录必须比所有还可能读它的操作活得久(sessionfence.TTLFor)。
+const enterGameChainBudget = 5 * time.Minute
+
+var sessionFenceTTL = sessionfence.TTLFor(enterGameChainBudget)
 
 func NewEnterGameLogic(ctx context.Context, svcCtx *svc.ServiceContext) *EnterGameLogic {
 	return &EnterGameLogic{
@@ -94,6 +107,31 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 		return resp, nil
 	}
 
+	// 2b. gate 连接会话栅栏(docs/design/client-request-ordering.md §6.2):连接已断开就不再受理;
+	//     这条连接已经绑定了别的角色(连发两次 EnterGame / 换角没先 LeaveGame)也拒绝,否则一个会话会绑两个角色。
+	//     记下入口时的 LeaveGame 计数,后台链据此识别「受理之后已离开游戏」。在加玩家锁之前判,拒绝不留任何残留。
+	fenceKey, fenced := sessionfence.KeyOf(sessionDetails)
+	var fenceGen uint64
+	if fenced {
+		outcome, gen, fenceErr := sessionfence.CheckEnterGame(ctx, l.svcCtx.RedisClient, fenceKey, in.PlayerId)
+		if fenceErr != nil {
+			logx.Errorf("EnterGame session fence check failed: playerId=%d session=%d err=%v", in.PlayerId, sessionDetails.SessionId, fenceErr)
+			resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginRedisError)}
+			return resp, nil
+		}
+		switch outcome {
+		case sessionfence.OutcomeClosed:
+			// 回包也送不到(连接已断),复用既有码。
+			resp.ErrorMessage.Id = uint32(table.LoginError_kLoginSessionNotFound)
+			return resp, nil
+		case sessionfence.OutcomeOtherPlayer:
+			logx.Infof("EnterGame rejected: another role is already bound on this connection playerId=%d session=%d", in.PlayerId, sessionDetails.SessionId)
+			resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginInProgress)}
+			return resp, nil
+		}
+		fenceGen = gen
+	}
+
 	// 3. Lock to prevent concurrent login for the same player.
 	//    Single attempt — NO retry/sleep loop. The RPC handler must never
 	//    block. On contention we return kLoginInProgress immediately and the
@@ -116,6 +154,9 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 	flowState := buildEnterGameSessionState(in, sessionDetails, account)
 	flowState.playerLockKey = tryLocker.Key
 	flowState.playerLockToken = tryLocker.Value
+	flowState.fenced = fenced
+	flowState.fenceKey = fenceKey
+	flowState.fenceGen = fenceGen
 
 	// Lock release is deferred until either the early-return paths below run
 	// (validation failure / pool reject) or the background goroutine finishes
@@ -249,7 +290,7 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 	// Background context for the whole chain — independent of gRPC ctx (which
 	// is cancelled the instant we return below). chainCancel both stops the
 	// timeout and cancels manually from the lost-lock heartbeat path.
-	const chainBudget = 5 * time.Minute
+	const chainBudget = enterGameChainBudget
 	chainCtx, chainCancel := context.WithTimeout(context.Background(), chainBudget)
 
 	// chainStart is the t0 for the total / preload latency histograms.
@@ -716,6 +757,13 @@ func (l *EnterGameLogic) applyLoadedPlayerSession(ctx context.Context, state ent
 		return decision, err
 	}
 
+	// gate 连接会话栅栏的绑定点(docs/design/client-request-ordering.md §6.2):会话已写入、还没通知 gate 绑定。
+	// 与 Disconnect 的 sessionfence.Close 构成双边握手 —— 先关闭的,这里看到 closed;先绑定的,Close 读到玩家。
+	// 两种顺序都收敛到「带租约的 DISCONNECTING」,玩家不会因为「受理之后、绑定之前断线」永久卡在 ONLINE。
+	if err := l.bindSessionFence(ctx, state); err != nil {
+		return decision, err
+	}
+
 	// Notify Gate: bind the session and carry the login decision so Gate can forward to Scene.
 	// 代次随 Bind 一起到 gate:Bind 先于本次路由到达时,gate 按旧路由补发也要带本次的代次(§4)。
 	enterGsType := sessionmanager.DecisionToEnterGsType(decision)
@@ -739,6 +787,18 @@ func (l *EnterGameLogic) applyLoadedPlayerSession(ctx context.Context, state ent
 	route := resolveEnterSceneRoute(ctx, state, decision, existing, ownZone,
 		config.AppConfig.HomeZone.RedirectOnEnterEnabled, l.svcCtx.HomeZone)
 	smTimeout := time.Duration(config.AppConfig.SceneManagerRpc.Timeout) * time.Millisecond
+	// 进场前复查栅栏:绑定之后连接断开了(Disconnect 已读到绑定的玩家、自己挂了断线租约),或离开了游戏
+	// (LeaveGame 已删会话),就不再进场,免得在 DISCONNECTING / 已离线之后又写入位置与实例人数。
+	if state.fenced {
+		outcome, fenceErr := sessionfence.Recheck(ctx, l.svcCtx.RedisClient, state.fenceKey, state.fenceGen)
+		if fenceErr != nil {
+			return decision, fmt.Errorf("session fence recheck before EnterScene for player %d: %w", state.playerID, fenceErr)
+		}
+		if outcome != sessionfence.OutcomeOK {
+			return decision, fmt.Errorf("session fence %s before EnterScene for player %d session %d; not entering scene",
+				outcome, state.playerID, state.sessionID)
+		}
+	}
 	// Stage observation: SceneManager.EnterScene RPC. This is the prime
 	// suspect under load — it routes through SceneManager → Scene
 	// AssignScene + Kafka. If err25 root cause is "async chain stalls",
@@ -783,6 +843,33 @@ func (l *EnterGameLogic) applyLoadedPlayerSession(ctx context.Context, state ent
 	}
 
 	return decision, nil
+}
+
+// bindSessionFence 在会话写入之后、通知 gate 绑定之前,把本连接登记为「绑定了 state.playerID」
+// (docs/design/client-request-ordering.md §6.2)。旧版 gate(没有会话代次)不做。
+// 绑定失败时由本函数补偿,并返回 error 让后台链按失败收尾(不发 BindSession、不进场):
+//   - 连接已断开:Disconnect 先到时这条连接还没绑定玩家(它带的 player_id 为 0),没能挂断线租约 → 这里补挂;
+//   - 期间离开了游戏 / 连接上已绑定别的角色:删掉本次写入的会话(MarkOffline 按 session_id + version CAS)。
+func (l *EnterGameLogic) bindSessionFence(ctx context.Context, state enterGameSessionState) error {
+	if !state.fenced {
+		return nil
+	}
+	outcome, err := sessionfence.BindPlayer(ctx, l.svcCtx.RedisClient, state.fenceKey, state.playerID, state.fenceGen, sessionFenceTTL)
+	if err != nil {
+		return fmt.Errorf("session fence bind for player %d: %w", state.playerID, err)
+	}
+	switch outcome {
+	case sessionfence.OutcomeOK:
+		return nil
+	case sessionfence.OutcomeClosed:
+		markPlayerSessionDisconnecting(ctx, l.svcCtx, state.playerID, state.sessionID)
+		return fmt.Errorf("gate connection closed before binding player %d session %d; disconnect lease placed by the enter chain",
+			state.playerID, state.sessionID)
+	default:
+		deletePlayerSession(ctx, l.svcCtx, state.playerID, state.sessionID)
+		return fmt.Errorf("session fence %s when binding player %d session %d; session record removed",
+			outcome, state.playerID, state.sessionID)
+	}
 }
 
 // persistEnterGameSession persists the session and returns the new session version.

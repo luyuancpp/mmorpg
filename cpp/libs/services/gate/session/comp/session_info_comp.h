@@ -7,6 +7,7 @@
 #include "engine/core/type_define/type_define.h"
 #include "message_limiter/message_limiter.h"
 #include "pending_scene_entry_comp.h"
+#include "router_lane_item.h"
 
 struct SessionInfo
 {
@@ -79,6 +80,15 @@ struct SessionInfo
 	// 写入只经 scene_route_helper.h 的 ApplyLoginBinding / ApplyRouteIdentity,且都必须先于转发:
 	// 转发从会话取值盖章。会话销毁即随之消失。
 	uint64_t loginGeneration{0};
+
+	// 会话代次(docs/design/client-request-ordering.md §4.2):建连时由 gate_lane::NextIncarnation() 分配,
+	// 进程内单调、会话存续期间不变,与 gate_instance_id 合起来全局唯一。随 SessionDetails.session_incarnation 发出:
+	// gate 认领回包时用它挡住 session_id 被新连接复用后迟到的旧回包,login 会话栅栏用它建键。0 = 未分配。
+	uint64_t incarnation{0};
+	// 路由 lane:本会话经路由服转发的 gRPC 类请求按收包顺序单飞(client-request-ordering.md §4)。
+	// 放在会话里 = 会话 erase 即取消,也不怕 session_id 复用(与 pendingSceneEntry 同一先例);
+	// 只由 nodes/gate/handler/rpc/client_request_lane.cpp 读写。
+	gate_lane::SessionRouterLane routerLane;
 
 	// 最近一次 RoutePlayerEvent 的决策(CPP-2);每次到达无条件覆盖,与是否转发成功无关。
 	// 只供 BindSession 晚到时按 node_id 重建欠账(scene_route_helper.h EntryForLateLoginBinding):

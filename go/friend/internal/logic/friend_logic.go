@@ -53,6 +53,7 @@ import (
 	"friend/internal/svc"
 	base "proto/common/base"
 	pb "proto/friend"
+	scenepb "proto/scene"
 )
 
 func tipErr(id uint32, msg string) *base.TipInfoMessage {
@@ -241,6 +242,46 @@ func (l *FriendLogic) storageFailure(ctx context.Context, method string, err err
 	return tipErr(constants.ErrStorage, "storage unavailable")
 }
 
+// bumpSyncDigest 给 playerIDs 里每个玩家的落地摘要 bump 同一组域
+// (docs/design/landing-recovery-sync-digest.md §3.3 friend 三行)。
+//
+// 只许在 repo 返回成功之后调:repo 的写方法在提交之后已经失效了缓存(invalidateCachesAfterCommit),
+// 正好满足「先失效缓存、再 bump」(§3.5 第 2 条);失效失败时照样 bump,残余风险见设计 §12 第 2 条。
+// 用本次请求的 ctx(整请求预算):至多两人、一条 Lua,不值得另起异步上下文。
+// 失败由 playersync 记 WARN 与 player_sync_bump_total{service="friend",result="error"},
+// **不影响** RPC 结果(§3.5 第 5 条):事务已经提交,漏掉的一次由打开面板时的拉取兜底。
+func (l *FriendLogic) bumpSyncDigest(ctx context.Context, playerIDs []uint64, domains ...scenepb.SyncDomain) {
+	_ = l.deps.SvcCtx.SyncDigest.BumpAll(ctx, playerIDs, domains...)
+}
+
+// listedAsFriend 报告 target 是否在 me 的好友列表里,只给 RemoveFriend 决定「要不要 bump」用。
+//
+// 为什么需要它:repo 的 RemoveFriend 对非好友是幂等成功、什么都不写,返回值区分不了「删了」与「本来就没有」。
+// 不加区分地 bump,客户端就能用任意 target_player_id 在核心 Redis 上凭空造出 player:{target}:sync_digest
+// (TTL 30 天)—— 与 F2-15 挡 friend_capacity 空行是同一类增长,而 RemoveFriend 没有任何频率配额。
+//
+// 这一读**不参与任何权威判定**(删不删由 repo 的事务决定),只决定给谁发提示,所以拿不准时一律回 true:
+// 读失败、列表被硬上限截断都按「可能是好友」处理 —— 多 bump 只是多拉一次,漏 bump 才违反 L-1。
+// 残余:①读与删之间对方恰好被 Accept 成好友、随即被这次删掉 —— Accept 已 bump 过双方,漏掉的只是删除这一次;
+// ②只剩 target→me 一条单边残留时,me 的列表里没有 target,同样判成非好友(单边残留本身是该由修复流程处理的异常态)。
+// 两者都要等下一次变化或打开面板才恢复,与缓存陈旧同量级。repo 若改为回报「是否真的删了边」,这一读即可删掉。
+func (l *FriendLogic) listedAsFriend(ctx context.Context, me, target uint64) bool {
+	friends, err := l.deps.Repo.GetFriendList(ctx, me)
+	if err != nil {
+		logx.WithContext(ctx).Errorf("[friend] RemoveFriend failed to read friend list before removal; bumping sync digest conservatively: %v", err)
+		return true
+	}
+	if limit := l.deps.SvcCtx.Config.Friend.ListReadHardLimit; limit > 0 && uint32(len(friends)) >= limit {
+		return true
+	}
+	for _, f := range friends {
+		if f.FriendPlayerID == target {
+			return true
+		}
+	}
+	return false
+}
+
 // onlineStatuses 用于好友邀请列表：存储故障或坏会话必须显式返回错误，
 // 否则客户端会把未知在线状态标成离线并禁邀。只有确实不存在的会话才算离线。
 func (l *FriendLogic) onlineStatuses(ctx context.Context, playerIDs []uint64) (map[uint64]data.OnlineStatus, error) {
@@ -314,6 +355,11 @@ func (l *FriendLogic) AddFriend(ctx context.Context, req *pb.AddFriendRequest) (
 		return reject(l.storageFailure(ctx, method, err))
 	}
 
+	// 落地摘要:申请落在接收方的收件箱(GetPendingRequests 只列入站),申请人这边的拉取结果不变。
+	// repo 没有「对方已向我申请时直接成为好友」的分支(反向 pending 原样保留,由 AcceptFriend 一并收敛),
+	// 所以只有接收方的 FRIEND_REQUEST 会变。接收方本来就会收到推送,这里不涉及被动方隐私。
+	l.bumpSyncDigest(ctx, []uint64{target}, scenepb.SyncDomain_SYNC_DOMAIN_FRIEND_REQUEST)
+
 	// 推送在提交之后、事务之外(§3.5),失败只打日志计指标,不影响本次 RPC 的结果:
 	// 好友申请已经落库了,客户端拉 GetPendingRequests 一定能看到它。
 	l.pushFriendEvent(ctx, target, pb.FriendEventReason_FRIEND_EVENT_REASON_REQUEST_RECEIVED, me)
@@ -362,6 +408,12 @@ func (l *FriendLogic) AcceptFriend(ctx context.Context, req *pb.AcceptFriendRequ
 		return reject(l.storageFailure(ctx, method, err))
 	}
 
+	// 落地摘要:双方好友列表都多了一条边;双方的申请列表都可能变(me 收件箱里这条申请转 accepted,
+	// from 收件箱里的反向 pending 也被一并收敛,repo 失效的正是这四个键)。
+	// 操作者本人也要 bump:推送不发给他,而他的回包可能在断线时丢失(§3.5 第 3 条)。
+	l.bumpSyncDigest(ctx, []uint64{me, from},
+		scenepb.SyncDomain_SYNC_DOMAIN_FRIEND_LIST, scenepb.SyncDomain_SYNC_DOMAIN_FRIEND_REQUEST)
+
 	// 推给**原申请人**(from),不推给操作者本人:他自己刚点的按钮,响应里已经有结果了。
 	l.pushFriendEvent(ctx, from, pb.FriendEventReason_FRIEND_EVENT_REASON_REQUEST_ACCEPTED, me)
 	logx.WithContext(ctx).Infof("[friend] player %d accepted friend request from %d", me, from)
@@ -399,6 +451,10 @@ func (l *FriendLogic) RejectFriend(ctx context.Context, req *pb.RejectFriendRequ
 	default:
 		return reject(l.storageFailure(ctx, method, err))
 	}
+	// 落地摘要只给拒绝方本人:申请从他的收件箱里消失。申请人那边的拉取结果不变
+	// (GetPendingRequests 只列入站),所以不给申请人 bump —— 也就不存在把"被拒"泄露给他的问题。
+	l.bumpSyncDigest(ctx, []uint64{me}, scenepb.SyncDomain_SYNC_DOMAIN_FRIEND_REQUEST)
+
 	// 刻意**不推送**(照 A 仓):把"你被拒绝了"实时弹到申请人脸上只会制造社交尴尬,
 	// 而且拒绝方会因此暴露自己"刚刚在线并处理了申请"。客户端下次拉列表自然发现申请没了。
 	logx.WithContext(ctx).Infof("[friend] player %d rejected friend request from %d", me, from)
@@ -424,8 +480,17 @@ func (l *FriendLogic) RemoveFriend(ctx context.Context, req *pb.RemoveFriendRequ
 		return reject(tipErr(constants.ErrInvalidParameter, "target_player_id required"))
 	}
 
+	// 删之前判一次「是不是好友」,只决定事后要不要 bump 落地摘要(理由见 listedAsFriend)。
+	wasFriend := l.listedAsFriend(ctx, me, target)
 	if err := l.deps.Repo.RemoveFriend(ctx, me, target); err != nil {
 		return reject(l.storageFailure(ctx, method, err))
+	}
+	if wasFriend {
+		// 双方的好友列表都少了一条边。
+		// ⚠ 被动方隐私(设计 §3.5 第 4 条):删好友刻意不推送给对方,但对方的摘要照样会变 ——
+		// 客户端**不得**把「FRIEND_LIST 版本变了」直接显示成红点或提示,只能如实刷新拉回的列表,
+		// 否则就等于把"我把你删了"送到他屏幕上。
+		l.bumpSyncDigest(ctx, []uint64{me, target}, scenepb.SyncDomain_SYNC_DOMAIN_FRIEND_LIST)
 	}
 	// 不推送:删好友是单方面动作,通知对方等于把"我把你删了"送到他屏幕上。
 	logx.WithContext(ctx).Infof("[friend] player %d removed friend %d", me, target)
@@ -542,6 +607,16 @@ func (l *FriendLogic) Block(ctx context.Context, req *pb.BlockRequest) (*pb.Bloc
 	default:
 		return reject(l.storageFailure(ctx, method, err))
 	}
+	// 落地摘要(repo 提交后失效的正是下面这些视图):拉黑者的黑名单多一条;
+	// 双方的好友边被删、两个方向的 pending 被置 rejected,所以双方的好友列表与申请列表都可能变。
+	// 重复拉黑(幂等命中)repo 照样提交并失效缓存,这里也照样 bump —— 多拉一次,不会漏。
+	l.bumpSyncDigest(ctx, []uint64{me}, scenepb.SyncDomain_SYNC_DOMAIN_FRIEND_BLOCK,
+		scenepb.SyncDomain_SYNC_DOMAIN_FRIEND_LIST, scenepb.SyncDomain_SYNC_DOMAIN_FRIEND_REQUEST)
+	// ⚠ 被动方隐私(设计 §3.5 第 4 条):被拉黑者不该知道自己被拉黑了,而他的摘要照样会变。
+	// 客户端**不得**把摘要变化直接显示成红点或提示,红点只能来自拉回的内容;
+	// 被拉黑者的 FRIEND_BLOCK 不变(那是他自己的黑名单),所以这里也不给他 bump 那个域。
+	l.bumpSyncDigest(ctx, []uint64{target},
+		scenepb.SyncDomain_SYNC_DOMAIN_FRIEND_LIST, scenepb.SyncDomain_SYNC_DOMAIN_FRIEND_REQUEST)
 	logx.WithContext(ctx).Infof("[friend] player %d blocked %d", me, target)
 	return &pb.BlockResponse{}, nil
 }
@@ -570,6 +645,10 @@ func (l *FriendLogic) Unblock(ctx context.Context, req *pb.UnblockRequest) (*pb.
 	if err := l.deps.Repo.Unblock(ctx, me, target); err != nil {
 		return reject(l.storageFailure(ctx, method, err))
 	}
+	// 落地摘要只给本人的黑名单:Unblock 不碰好友边与申请,对方的任何拉取结果都不变。
+	// 黑名单不进缓存(ListBlocks 直读 MySQL),所以没有"先失效缓存"这一步。
+	// 没拉黑过也回成功(幂等),这里照样 bump 本人 —— 只多拉一次,而且只会写调用者自己的键。
+	l.bumpSyncDigest(ctx, []uint64{me}, scenepb.SyncDomain_SYNC_DOMAIN_FRIEND_BLOCK)
 	// 解除拉黑**不会**自动恢复好友关系:拉黑时那条边已经删了,想加回来要重新走 AddFriend。
 	logx.WithContext(ctx).Infof("[friend] player %d unblocked %d", me, target)
 	return &pb.UnblockResponse{}, nil

@@ -19,7 +19,7 @@
 
 ## 2. L-04 第 1 批（存储不可用时延后、不进死信；业务池读写超时）
 
-代码已落（2026-10-14，未提交），文件清单见 [L-04 设计](../design/db-task-store-unavailable-deferral.md) §7。
+代码已落：第 1 批随 2026-10-14 的提交 `ebccaf04d`（已推送）入库；之后的复核修订在工作区未提交。文件清单见 [L-04 设计](../design/db-task-store-unavailable-deferral.md) §7。
 
 ### 2.1 编译与静态检查
 
@@ -33,7 +33,7 @@ go build ./...
 
 通过标准：`gofmt -l` 无输出；vet 与 build 退出码 0。失败时保留第一条 error 及其前后 20 行。
 
-状态：待 Codex。
+状态：2026-10-14 提交 `ebccaf04d` 的说明记录「已检查范围的 Go 格式检查通过」（范围未写明；vet 与 build 未记录）。之后的复核修订（未提交）需要重跑。
 
 ### 2.2 已随代码写的单测
 
@@ -43,12 +43,12 @@ go build ./...
 go test ./internal/storeerr/... ./internal/logic/pkg/proto_sql/... ./internal/kafka/... ./internal/config/... ./internal/metrics/... -count=1 -v
 ```
 
-- 新增：`internal/storeerr/storeerr_test.go`（4 个用例）、`internal/logic/pkg/proto_sql/store_health_test.go`（5 个用例）。
+- 新增：`internal/storeerr/storeerr_test.go`（4 个用例）、`internal/logic/pkg/proto_sql/store_health_test.go`（7 个用例）。
 - 改写：`internal/kafka/placement_route_test.go` 的 `TestStoreUnavailable_WriteKeepsBudgetReadFailsFast`（读任务改为立即回失败回执）；`key_ordered_consumer_test.go` 的 `recordingHarness`（handler 签名改为返回 error）。
 - 基线：在改动前的提交上跑同一条命令对比失败集合（L-04 提交之前就是当前 HEAD；提交之后用它的父提交建临时 worktree）。`internal/kafka` 的既有用例依赖 miniredis 监听 127.0.0.1，沙箱拦回环时先申请放行。
 - 通过标准：新增用例全部 PASS；既有用例的失败集合是基线失败集合的子集。
 
-状态：待 Codex。
+状态：2026-10-14 提交 `ebccaf04d` 的说明记录「storeerr、proto_sql、config、metrics 定向单测通过」；`internal/kafka` 包未跑（本机缺 `miniredis/v2 v2.36.1` 模块且离线模式阻止下载）。这是复核修订之前的代码；修订改了 `proto_sql`（探活、冷却计数，新增 2 条用例）、`metrics`、`internal/kafka/placement_route.go`，需要重跑；`internal/kafka` 需要先解决模块下载（Go 模块下载的同意仍未明确）。
 
 ### 2.3 还没写的单测（上线前补）
 
@@ -63,6 +63,8 @@ go test ./internal/storeerr/... ./internal/logic/pkg/proto_sql/... ./internal/ka
 | 计数 | `db_task_deferred_total`、`db_task_dead_letter_total`（含毒消息经 `persistPoisonMessage` 计数）按原因递增 |
 | `runDBOp` 上报 | handler 返回 `conn_lost` 时调用 `ReportConnLost`，成功时调用 `ReportHealthy`，复核或缓存回写失败时都不调用 |
 | 业务池配置 | `newServiceMysqlConfig` 设了三个超时与两个会话变量；负数不设；`NewMysqlConfig`（迁移用）不带它们 |
+| 探活不经过连接池 | `pingStore` 有连接器时新建连接 Ping 后关闭；池里只有死连接时不误判；池满时不误判 |
+| 冷却指标收集器 | `NewStoreCooldownCollector` 按 source 输出三类 pool 的序列 |
 
 状态：未写。
 

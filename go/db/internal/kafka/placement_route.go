@@ -315,7 +315,6 @@ func (w *worker) routeTask(task *workerTask, dbTask *db_proto.DBTask) (*placemen
 		if op == "read" {
 			// 读不改数据,等待它的 login 最多等 8 秒:库打不开或在冷却期内时立即回失败回执,不进重试队列(L-04 §3.6)。
 			// 第一次在已打开的库上撞到连接类错误的读不走这里,它照常重试,秒级抖动仍能被吸收。
-			metrics.CountReadAbandoned(metrics.ReadAbandonedStoreUnavailable)
 			w.failRead(task, dbTask, fmt.Sprintf("placement store %d unavailable: %v", decision.storageID, err), true)
 			return nil, false
 		}
@@ -352,6 +351,8 @@ func (w *worker) failRead(task *workerTask, dbTask *db_proto.DBTask, reason stri
 		}
 	}
 	if quiet {
+		// 只在回执发出之后计「放弃」:回执写失败时上面已转去延后重试,不能两头都算。
+		metrics.CountReadAbandoned(metrics.ReadAbandonedStoreUnavailable)
 		logx.Debugf("%s: read answered with a failure result: taskID=%s msgType=%s", reason, dbTask.TaskId, dbTask.MsgType)
 		logStoreDeferral(dbTask, metrics.ReadAbandonedStoreUnavailable, errors.New(reason))
 	} else {

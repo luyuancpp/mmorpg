@@ -14,6 +14,7 @@ import (
 
 	base "proto/common/base"
 	teampb "proto/team"
+	"shared/playersync"
 
 	"github.com/google/uuid"
 	"github.com/zeromicro/go-zero/core/logx"
@@ -86,22 +87,26 @@ type Service struct {
 	homeZones HomeZoneLookup
 	ids       IdGenerator
 	starter   BattleStarter
+	// syncDigest 名册提交后 bump 落地摘要(syncdigest.go);nil 时 bump 是无操作。
+	syncDigest *playersync.Bumper
 }
 
 // NewService 装配组队服务。
 //   - svcCtx.SharedRedis:权威存储与在线态(§C.2);
 //   - homeZones:为 nil 时需要 home zone 的请求一律回 ErrInternal(fail-closed);
 //   - starter:logic.NewTeamBattleStarter(svcCtx);为 nil 时 StartTeamMatch 回 ErrInternal;
-//   - team_id 发号器取 svcCtx.BattleIDGen,为 nil 时建队回 ErrInternal。
+//   - team_id 发号器取 svcCtx.BattleIDGen,为 nil 时建队回 ErrInternal;
+//   - 落地摘要取 svcCtx.SyncDigest(SharedRedis 上的 Bumper),为 nil 时不 bump。
 func NewService(svcCtx *svc.ServiceContext, homeZones HomeZoneLookup, starter BattleStarter) *Service {
 	presence := presenceReader{rds: svcCtx.SharedRedis}
 	cfg := RuleConfig{AllowCrossZone: svcCtx.Config.Team.AllowCrossZone}
 	s := &Service{
-		svcCtx:    svcCtx,
-		store:     NewStore(svcCtx.SharedRedis, presence.loadSessions, cfg),
-		presence:  presence,
-		homeZones: homeZones,
-		starter:   starter,
+		svcCtx:     svcCtx,
+		store:      NewStore(svcCtx.SharedRedis, presence.loadSessions, cfg),
+		presence:   presence,
+		homeZones:  homeZones,
+		starter:    starter,
+		syncDigest: svcCtx.SyncDigest,
 	}
 	if svcCtx.BattleIDGen != nil { // 避免把 nil 指针包成非 nil 接口
 		s.ids = svcCtx.BattleIDGen

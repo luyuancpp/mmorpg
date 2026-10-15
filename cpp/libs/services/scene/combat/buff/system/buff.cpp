@@ -379,9 +379,28 @@ void BuffSystem::OnIntervalThink(entt::entity parent, uint64_t buffId)
     const auto buffTableId = buffIt->second.buffPb.buff_table_id();
     LookupBuffOrReturnVoid(buffTableId);
 
-    BuffImplSystem::OnIntervalThink(parent, buffIt->second, buffRow);
-    ModifierBuffImplSystem::OnIntervalThink(parent, buffIt->second, buffRow);
-    MotionModifierBuffImplSystem::OnIntervalThink(parent, buffIt->second, buffRow);
+    // 三路回调之间不能端着 buffIt / BuffEntry& 一路传下去,每一路之前都按 id 重查:
+    // BuffImplSystem 会顺着 TickCombatIdleBuff -> AddSubBuffs -> AddOrUpdateBuff 往同一张
+    // buffList 里 emplace 子 buff(unordered_map 扩容,迭代器失效),子 buff 的
+    // DispelBuffsOnAwake -> OnBuffExpire 还可能把这条 buff 自己 erase 掉(引用悬空)。
+    // 与 UpdatePeriodicBuff 每轮重查同理;buff 在前一路里没了,后面几路就不再回调。
+    using IntervalThinkHandler = void (*)(entt::entity, BuffEntry&, const BuffTable*);
+    constexpr IntervalThinkHandler kIntervalThinkHandlers[] = {
+        &BuffImplSystem::OnIntervalThink,
+        &ModifierBuffImplSystem::OnIntervalThink,
+        &MotionModifierBuffImplSystem::OnIntervalThink,
+    };
+    for (const auto handler : kIntervalThinkHandlers) {
+        auto *liveBuffList = tlsEcs.actorRegistry.try_get<BuffListComp>(parent);
+        if (liveBuffList == nullptr) {
+            return;
+        }
+        const auto liveIt = liveBuffList->find(buffId);
+        if (liveIt == liveBuffList->end()) {
+            return;  // 前一路回调里被驱散 / 移除,后面什么都不能再碰
+        }
+        handler(parent, liveIt->second, buffRow);
+    }
 }
 void BuffSystem::OnSkillExecuted(SkillExecutedEvent& event)
 {

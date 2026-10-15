@@ -118,6 +118,18 @@
 
 两版对齐：独立 Java 服已有不同的存储与进场围栏，本次由其仓库文档独立记录，不按 C++ 的未完成清单判定 Java 状态。独立 Go 主服亦已有邮件与推送重同步，不能套用本节缺口。
 
+### 5.3 第 1、4 项的设计入口（2026-10-14 追加）
+
+- 第 1 项「落地恢复」与第 4 项「超窗处置与对账」的详细设计见 [landing-recovery-sync-digest.md](landing-recovery-sync-digest.md)：
+  - 每玩家按域版本摘要（核心 Redis `player:{id}:sync_digest`）；
+  - 客户端落地后主动取摘要、只拉变化的域；
+  - scene 进场完成时唤醒资产通道；
+  - 资产待办的离线停放、日对账与 180 天自动放弃；
+  - 战斗结算待办去掉到期删除。
+- 它没有新建投递器：摘要只索引现有业务的权威数据，唤醒只加速现有资产通道。
+- 第 2 项 MySQL 行内围栏见 [db-write-fencing-mysql.md](db-write-fencing-mysql.md)（v0.3 修订中）。
+- 第 3 项进场门禁由 [scene-enter-session-fence.md](scene-enter-session-fence.md) 以登录代次实现。该文论证了单靠 owner_epoch 修不了同节点顶号，因此不再按 owner_epoch 拒绝进场。
+
 ## 6. 来源与记录边界
 
 主体来源为用户在 2026-10-14 提供的完整调研结论；原文中的 `claude.ai/epitaxy/...` 代码地址在此改为仓库相对链接，避免把聊天跳转地址当代码事实源。未提供原始出处的数值与事故细节仍按“用户调研快照”记录。

@@ -35,6 +35,7 @@ import (
 	base "proto/common/base"
 	rollbackpb "proto/common/rollback"
 	pb "proto/guild"
+	scenepb "proto/scene"
 	"shared/assetop"
 	"shared/gameday"
 	tablepb "shared/generated/pb/table"
@@ -673,7 +674,13 @@ func pendingViewLimit() int { return int(assetop.DefaultLimits.MaxPending) }
 //     客户端会去拉错的页面。
 //
 // 推送至多一次、失败不影响终结(push.go 纪律);它跑在 Store 提交之后,不能 panic。
+//
+// 摘要 bump(landing-recovery-sync-digest.md §3.3 表第 8 行)排在同步投递判断**之前**:同步投递的回包同样可能在
+// 断线时丢失,摘要必须覆盖这条路径。GuildAssetStore.terminate 在事务提交、缓存失效之后才调 OnFinalized,
+// 满足"先提交、先失效、再 bump"(§3.5 第 1、2 条),所以不必在 asset_store.go 里另开一个挂点。
+// 只 bump 本人;域按 kind 选(assetFinalizedSyncDomains)。
 func (l *GuildLogic) OnAssetFinalized(ctx context.Context, op data.FinalizedOp) {
+	l.bumpSync([]uint64{op.PlayerID}, assetFinalizedSyncDomains(op.Kind)...)
 	if isSyncDelivery(ctx) {
 		return
 	}
@@ -776,6 +783,9 @@ func (l *GuildLogic) donateToGuild(ctx context.Context, req *pb.DonateToGuildReq
 		}
 		return &pb.DonateToGuildResponse{ErrorMessage: rejectTip}, result, nil
 	}
+	// 预留已提交:捐献页的待结算列表与今日次数变了。紧接着的同步投递若当场终结,OnAssetFinalized 会再 bump 一次,
+	// 两次都只是"去拉一次"的提示;这一次不能省 —— scene 不可达时行停在 PENDING,终结可能在玩家下线之后才发生。
+	l.bumpSync([]uint64{playerID}, scenepb.SyncDomain_SYNC_DOMAIN_GUILD_ECONOMY)
 
 	l.deliverNow(ctx, eco, assetop.Op{
 		OpID:          opID,
@@ -852,6 +862,8 @@ func (l *GuildLogic) upgradeGuild(ctx context.Context, req *pb.UpgradeGuildReque
 	if res.Changed {
 		result = resultOK
 		l.notify(pb.GuildChangeKind_GUILD_CHANGE_KIND_LEVEL_UP, g.GuildID, playerID, 0, exceptPlayer(res.MemberIDs, playerID))
+		// 等级、成员上限、资金对全帮可见:MemberIDs(含操作者本人)全体 bump GUILD。Changed=false 时库里没变,不 bump。
+		l.bumpSync(res.MemberIDs, scenepb.SyncDomain_SYNC_DOMAIN_GUILD)
 	}
 	// Changed=false(expected_level 与库里不符 = 已被别人升过)同样回成功 + 最新 GuildInfo,不再扣资金。
 	return &pb.UpgradeGuildResponse{Guild: l.freshGuildInfo(ctx, g.GuildID, playerID)}, result, nil
@@ -956,6 +968,8 @@ func (l *GuildLogic) buyGuildShopGoods(ctx context.Context, req *pb.BuyGuildShop
 		}
 		return &pb.BuyGuildShopGoodsResponse{ErrorMessage: rejectTip}, result, nil
 	}
+	// 预留已提交(帮贡已扣、限购已占、PENDING 行已建):商店页变了。理由同捐献。
+	l.bumpSync([]uint64{playerID}, scenepb.SyncDomain_SYNC_DOMAIN_GUILD_ECONOMY)
 
 	l.deliverNow(ctx, eco, assetop.Op{
 		OpID:          opID,

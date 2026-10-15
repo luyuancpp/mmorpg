@@ -17,6 +17,7 @@
 #include "rpc/service_metadata/player_scene_service_metadata.h"
 #include "player/system/player_scene.h"
 #include "player/system/player_lifecycle.h"
+#include "player/system/player_landing.h"
 #include "battle/system/player_battle.h"
 
 namespace
@@ -255,6 +256,27 @@ void SceneSceneClientPlayerHandler::TravelToZone(entt::entity player,const ::Tra
 	{
 		SetTip(tip);
 	}
+///<<< END WRITING YOUR CODE
+
+}
+
+void SceneSceneClientPlayerHandler::GetSyncDigest(entt::entity player,const ::GetSyncDigestRequest* request,
+	::Empty* response)
+{
+///<<< BEGIN WRITING YOUR CODE
+	// 落地恢复取摘要(docs/design/landing-recovery-sync-digest.md §4.2)。handler 只委托:读 Redis、解析、
+	// 推 NotifySyncDigest 都在系统层。应答类型是 Empty,禁止 SetTip(全局 tip 会污染同节点下一条非 Empty 请求),
+	// 所有失败都由系统层推一条 status = UNAVAILABLE 的 NotifySyncDigest。
+	PlayerLandingSystem::SendSyncDigest(player);
+///<<< END WRITING YOUR CODE
+
+}
+
+void SceneSceneClientPlayerHandler::NotifySyncDigest(entt::entity player,const ::SyncDigestS2C* request,
+	::Empty* response)
+{
+///<<< BEGIN WRITING YOUR CODE
+SendMessageToClientViaGate(SceneSceneClientPlayerNotifySyncDigestMessageId, *request, player);
 ///<<< END WRITING YOUR CODE
 
 }

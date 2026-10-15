@@ -1,0 +1,121 @@
+#include "router_muduo_forward.h"
+
+#include <chrono>
+#include <cstdint>
+#include <optional>
+#include <string>
+#include <utility>
+
+#include "muduo/base/Logging.h"
+#include "muduo/net/EventLoop.h"
+
+#include "core/utils/encode/base64.h"
+#include "muduo_grpc/channel.h"
+#include "network/network_utils.h"
+#include "node/system/grpc_call_deadline.h"
+#include "node/system/node/muduo_grpc_channel_slot.h"
+#include "proto/client_rpc_router/client_rpc_router.pb.h"
+#include "proto/common/base/message.pb.h"
+#include "proto/common/base/node.pb.h"
+#include "proto/common/base/session.pb.h"
+#include "rpc_reply_bridge.h"
+#include "session/system/session.h"
+#include "thread_context/node_context_manager.h"
+
+namespace gate_router_muduo
+{
+
+namespace
+{
+
+// 与 protoc 生成的 client_rpc_router.grpc.pb.cc 里的方法路径逐字一致(proto package client_rpc_router)。
+constexpr char kForwardPath[] = "/client_rpc_router.ClientRpcRouter/Forward";
+// 与官方路径 GrpcCallFailure.method 同形,两种传输的失败日志可以对照。
+constexpr char kForwardMethodName[] = "ClientRpcRouter.Forward";
+
+void LogMissingSessionEchoSampled()
+{
+    // 路由服对成功与信封错误都会在响应头回显 x-session-detail-bin(client-rpc-router.md D30);
+    // 缺了说明对端不是预期的路由服版本。官方路径在这里静默丢包,这里多留一行采样证据。
+    static uint64_t missingCount = 0;
+    if ((missingCount++ & 0x3FF) == 0)
+    {
+        LOG_WARN << "Router Forward reply has no " << kSessionBinMetaKey
+                 << " echo in initial metadata; reply dropped (sampled), dropped_total=" << missingCount;
+    }
+}
+
+} // namespace
+
+void InstallChannelFactory(muduo::net::EventLoop &loop)
+{
+    auto &registry = tlsNodeContextManager.GetRegistry(eNodeType::ClientRpcRouterNodeService);
+    MuduoGrpcChannelFactory factory;
+    // loop 是节点的主 EventLoop,寿命覆盖整个节点 registry;工厂只在服务发现建连时被调用。
+    factory.create = [&loop](const std::string &ip, uint32_t port) -> MuduoGrpcChannelPtr
+    {
+        if (port == 0 || port > UINT16_MAX)
+        {
+            return nullptr;
+        }
+        auto channel = muduo_grpc::Channel::Create(loop, ip, static_cast<uint16_t>(port));
+        if (channel)
+        {
+            // 发现即建连(与官方通道首个调用才拨号不同):首个客户端请求不必付握手延迟。
+            channel->GetState(/*tryToConnect=*/true);
+        }
+        return channel;
+    };
+    registry.ctx().insert_or_assign(std::move(factory));
+}
+
+void SendForward(muduo_grpc::Channel &channel, const client_rpc_router::ForwardRequest &request,
+                 const std::string &sessionDetailsBin)
+{
+    muduo_grpc::UnaryCallRequest call;
+    call.method = kForwardPath;
+    call.message = request.SerializeAsString();
+    call.deadline = std::chrono::steady_clock::now() +
+                    grpc_call_deadline::Get(eNodeType::ClientRpcRouterNodeService);
+    // 应用层值 = 标准 base64(带 padding)的 SessionDetails 原始字节 —— 与生成客户端
+    // grpc_async_client.cpp.tmpl:155 的 Base64Encode 同一层;线上的 -bin 编码由传输层再做一层。
+    // 两层都不能省(§4.2);字节本身原样转发,不解析、不重新序列化(路由 lane 的字段要原值往返)。
+    call.metadata.emplace_back(kSessionBinMetaKey, Base64Encode(sessionDetailsBin));
+
+    channel.StartUnaryCall(
+        std::move(call),
+        [sentSessionDetails = sessionDetailsBin](muduo_grpc::UnaryCallResult &&result)
+        {
+            if (!result.status.ok())
+            {
+                gate_rpc_reply_bridge::NotifyCallFailure(kForwardMethodName,
+                                                         static_cast<int>(result.status.code_value()),
+                                                         result.status.message(), &sentSessionDetails);
+                return;
+            }
+            MessageContent reply;
+            if (!reply.ParseFromString(result.response))
+            {
+                // 官方生成客户端反序列化失败时 gRPC 报 INTERNAL 并走失败分支,这里保持一致。
+                gate_rpc_reply_bridge::NotifyCallFailure(
+                    kForwardMethodName, static_cast<int>(muduo_grpc::StatusCode::kInternal),
+                    "failed to parse MessageContent from Forward response", &sentSessionDetails);
+                return;
+            }
+            // 与官方路径一致:按**响应头回显**的会话交成功桥(不是本地保存的那份)。
+            const std::string *echoed = muduo_grpc::FindMetadata(result.initialMetadata, kSessionBinMetaKey);
+            if (echoed == nullptr)
+            {
+                LogMissingSessionEchoSampled();
+                return;
+            }
+            const auto replySession = ParseSessionDetailsMetadataValue(*echoed);
+            if (!replySession)
+            {
+                return;
+            }
+            gate_rpc_reply_bridge::DeliverReply(*replySession, reply);
+        });
+}
+
+} // namespace gate_router_muduo

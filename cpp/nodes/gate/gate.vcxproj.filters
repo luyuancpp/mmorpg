@@ -36,6 +36,15 @@
     <ClCompile Include="handler\rpc\client_message_processor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="handler\rpc\client_request_lane.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="handler\rpc\router_muduo_forward.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="handler\rpc\rpc_reply_bridge.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="handler\rpc\gate_service_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -81,6 +90,18 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="handler\rpc\client_message_processor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="handler\rpc\client_request_lane.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="handler\rpc\router_muduo_forward.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="handler\rpc\rpc_reply_bridge.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="gate_router_transport.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="handler\rpc\gate_service_handler.h">

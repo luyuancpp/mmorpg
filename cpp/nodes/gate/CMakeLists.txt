@@ -65,6 +65,9 @@ set(SOURCE_FILES
     handler/event/gate_kafka_command_router.cpp
     handler/event/player_event_handler.cpp
     handler/rpc/client_message_processor.cpp
+    handler/rpc/client_request_lane.cpp
+    handler/rpc/router_muduo_forward.cpp
+    handler/rpc/rpc_reply_bridge.cpp
     handler/rpc/gate_service_handler.cpp
     handler/rpc/player/player_service_interface.cpp
     main.cpp
@@ -106,12 +109,14 @@ target_link_libraries(gate
     -lrpc
     -lproto
     -lthird_party
+    -lmuduo_grpc
     -Wl,--end-group
     gRPC::grpc++
     gRPC::grpc++_reflection
     gRPC::grpc
     gRPC::gpr
     protobuf::libprotobuf
+    nghttp2
     muduo_protobuf_codec
     muduo_hiredis
     muduo_net

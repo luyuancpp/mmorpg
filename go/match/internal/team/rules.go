@@ -164,6 +164,13 @@ type Decision struct {
 
 	InvitesAdded   []InviteIndexAdd
 	InvitesRemoved []uint64
+	// InvitesExpired InvitesRemoved 里按 Redis 时钟已过期的那些被邀请人(⊆ InvitesRemoved)。
+	// 落地摘要不为它们 bump TEAM_INVITE:客户端按 expire_at_ms 自己算(landing-recovery-sync-digest.md §3.3)。
+	// 只是标注,不进 S_COMMIT 的集合校验与 Lua 参数。
+	InvitesExpired []uint64
+	// ExpiryOnly 本次变更只是按 Redis 时钟清理过期的申请 / 邀请:没有操作变更,也没有惰性转让队长。
+	// 推送照常;落地摘要不为它 bump(理由同上)。
+	ExpiryOnly bool
 
 	// Reason / Actor 供推送(TeamSnapshotS2C.reason / actor_id)。
 	Reason teampb.TeamChangeReason
@@ -758,6 +765,8 @@ func (c *ruleCtx) finish(orig *teampb.TeamRecord) Decision {
 		return d
 	}
 	d.Changed = true
+	// 走到这里 opChanged || housekeeping 必有其一;两者都不是操作 / 转让,剩下的只能是过期清理。
+	d.ExpiryOnly = !c.opChanged && !c.transferred
 	switch {
 	case c.opChanged:
 		d.Reason, d.Actor = c.reason, c.actor
@@ -806,6 +815,14 @@ func (c *ruleCtx) finish(orig *teampb.TeamRecord) Decision {
 	for _, inv := range c.rec.GetInvites() {
 		newInvitees[inv.GetInviteeId()] = true
 	}
+	// 原记录里还有未过期邀请的被邀请人:被移除的邀请里不在此集合的,就是纯按时过期的(InvitesExpired)。
+	// 与 pruneExpired 同口径:expire_at_ms <= now 即过期。
+	liveBefore := map[uint64]bool{}
+	for _, inv := range orig.GetInvites() {
+		if inv.GetExpireAtMs() > c.now {
+			liveBefore[inv.GetInviteeId()] = true
+		}
+	}
 	seen := map[uint64]bool{}
 	for _, inv := range orig.GetInvites() {
 		id := inv.GetInviteeId()
@@ -814,6 +831,9 @@ func (c *ruleCtx) finish(orig *teampb.TeamRecord) Decision {
 		}
 		seen[id] = true
 		d.InvitesRemoved = append(d.InvitesRemoved, id)
+		if !liveBefore[id] {
+			d.InvitesExpired = append(d.InvitesExpired, id)
+		}
 	}
 	return d
 }

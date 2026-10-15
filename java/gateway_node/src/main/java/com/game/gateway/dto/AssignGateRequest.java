@@ -9,7 +9,8 @@ public class AssignGateRequest {
     private int zoneId;
 
     /** Optional account hint, used by the limiter for cooldown keying
-     *  AND by go-zero for reconnect-bypass detection. */
+     *  AND by go-zero for reconnect-bypass detection.
+     *  带 queue_token 的重入不把 account 交给限流器做冷却(G4b-J0),account 仍原样转给 login。 */
     private String account;
 
     /** Stable client device identifier. Threaded through to the queue
@@ -25,6 +26,10 @@ public class AssignGateRequest {
      * dropped /api/queue-status poll: hitting AssignGate with the saved
      * token resumes the in-flight queue entry rather than enqueueing
      * twice (which would push the player further back in line).
+     *
+     * G4b-J0 之后,带 token 重调 assign-gate 照样过波次、zone 桶和 IP 桶。被波次或 zone 桶挡住时
+     * 回 code=100、queue_source="ratelimit",且不带新 token;IP 桶耗尽时回 code=429(IP_RATE_LIMIT)。
+     * 两种情况客户端都应保留原 token,按 retry_after_ms(429 时按客户端退避)重试,不要当成排位丢失。
      */
     private String queueToken;
 

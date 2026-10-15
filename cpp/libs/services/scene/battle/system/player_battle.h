@@ -77,7 +77,8 @@ public:
 	// 然后摘组件 + DEL 锁 + 推 BattleEndS2C;InBattleComp 存在但 id 不匹配丢弃并告警;
 	// 在线但无 InBattleComp -> 锁值==battle_id 才应用(下线再登录 / 备战到期后的迟到结算),
 	// 否则按 at-least-once 重复投递丢弃;
-	// 玩家实体不在 -> 校验锁值后写 battle:settlement:pending:{player_id}(TTL 7 天)。
+	// 玩家实体不在 -> 校验锁值后写 battle:settlement:pending:{player_id}(不过期,并进积压索引;
+	// landing-recovery-sync-digest.md §7)。
 	static void ApplySettlement(const ::BattleSettlementEvent& event);
 
 	// 登录/重连后置钩子(player_lifecycle.cpp EnterScene 末尾调用):
@@ -93,7 +94,8 @@ public:
 
 	// reaper:30s 低频定时器,扫描 InBattleComp:PREPARING 按 prepare_deadline_ms 过期只摘组件、
 	// 锁保留到 TTL(prepare_deadline+60s)自然过期给迟到确认留重建余量;FIGHTING 按 deadline_ms
-	// 过期摘组件 + 条件删锁。结构化日志 metric=battle_prepare_expired / battle_freeze_expired。
+	// 过期摘组件 + 条件删锁,并对仍在本节点的实体补读一次待结算记录(RecoverPendingSettlementAfterFreezeExpiry)。
+	// 结构化日志 metric=battle_prepare_expired / battle_freeze_expired。
 	// 不进 20FPS 帧循环;在 main.cpp 里随节点启动注册、随节点停止注销。
 	static void StartReaper(muduo::net::EventLoop* loop);
 	static void StopReaper();
@@ -115,8 +117,8 @@ public:
 	// kSettlementRetryMaxAttempts 12 = 120s)+ 60s 余量。发件箱窗口改了这里要跟着改。
 	// 正常路径下锁在落盘后一次 Redis 往返内就被删掉,这个值只在「应用后、落盘前进程崩溃」时起作用。
 	static constexpr uint32_t kSettlementLockHoldSec = 180;
-	// 离线挂起结算 TTL:7 天(设计文档 §6)。
-	static constexpr uint32_t kPendingSettlementTtlSec = 7 * 24 * 3600;
+	// 待结算记录不再过期(landing-recovery-sync-digest.md §7):原来的 kPendingSettlementTtlSec
+	// (与 battle 侧同值的 7 天)随 TTL 一起删除。记录一直保留到应用并销账为止,积压由 battle 节点报数。
 
 private:
 	friend class PlayerBattleSettlementTestAccess; // 内存测试共用应用入口，无网络测试钩子
@@ -137,8 +139,15 @@ private:
 	// 客户端凭 battle_id 经 MatchService.RequestBattleTicket 补签并重建直连。无 InBattleComp 时 no-op。
 	static void NotifyBattleReconnectToClient(entt::entity player);
 
-	// 应用挂起结算并清理 pending key + 锁(登录钩子的 Redis 回调侧)。
+	// 应用挂起结算并清理 pending key + 锁(登录钩子 / reaper 补读的 Redis 回调侧)。
 	static void ApplyPendingSettlement(entt::entity player, const ::BattleSettlementEvent& event);
+
+	// reaper 判定 FIGHTING 到期、只解冻之后,对仍在本节点的实体补读一次待结算记录(设计 §7)。
+	// 改造前这类奖励要等玩家下一次 EnterScene 才补:battle 发件箱只重投 120 秒,
+	// 玩家一直在线就一直等不到登录钩子。命中走 ApplyPendingSettlement —— 与 OnPlayerEnterScene
+	// 同一个函数、同一种身份复核(回调里实体仍有效且 Guid 仍是这个 player_id);未命中什么都不做。
+	// 解不开的记录不在这里删:留给登录钩子按原有规则清理,补读路径不扩大删除面。
+	static void RecoverPendingSettlementAfterFreezeExpiry(entt::entity player, uint64_t playerId);
 
 	// 按锁值匹配重建 FIGHTING 冻结(迟到确认 / 在线无组件路径):锁值==battleId 才读 ctx 重建
 	// InBattleComp、条件续期并覆写 ctx;deadlineMsHint 非 0 时覆盖 ctx 的 deadline。reason 只进日志。

@@ -3,6 +3,7 @@ package proto_sql
 import (
 	"context"
 	"database/sql"
+	"database/sql/driver"
 	"db/internal/config"
 	"db/internal/dbguard"
 	"db/internal/migrate"
@@ -27,6 +28,10 @@ import (
 type GameDB struct {
 	SqlModel *proto2mysql.DB
 	DB       *sql.DB
+	// Connector 是建这个连接池用的连接器。探活(store_health.go)用它绕过连接池新建一条连接:
+	// 池里的空闲连接可能早已失效(Windows 上驱动不做空闲连接活性检查),池满时取连接还要排队,
+	// 两种情况都会把活着的库误判成不可达。为 nil(单测里只带库名的模型)时退回连接池的 PingContext。
+	Connector driver.Connector
 }
 
 // DB 是本 zone 库(zone_{ZoneId}_db),由 InitDB 在启动期打开并过全部断言。
@@ -171,7 +176,12 @@ func logServicePoolTimeouts() {
 		"SessionLockWaitSeconds":       db.SessionLockWaitSeconds,
 		"SessionInnodbLockWaitSeconds": db.SessionInnodbLockWaitSeconds,
 	} {
-		if wait <= 0 || wait >= db.ReadTimeoutSeconds {
+		if wait <= 0 {
+			// 写负数是有意关掉(例如 TiDB 不接受 lock_wait_timeout),只提示,不当错误。
+			logx.Infof("Database.%s is disabled (%d): the server-side lock wait stays at its server default", name, wait)
+			continue
+		}
+		if wait >= db.ReadTimeoutSeconds {
 			logx.Errorf("Database.%s=%d is not below ReadTimeoutSeconds=%d: a statement queued on a lock can outlive the client timeout and take effect after the task was rescheduled",
 				name, wait, db.ReadTimeoutSeconds)
 		}
@@ -310,8 +320,9 @@ func openDB(policy DDLPolicy) error {
 	}
 
 	DB = &GameDB{
-		DB:       databaseHandle,
-		SqlModel: proto2mysql.NewDB(),
+		DB:        databaseHandle,
+		SqlModel:  proto2mysql.NewDB(),
+		Connector: conn,
 	}
 
 	DB.DB.SetMaxOpenConns(config.AppConfig.ServerConfig.Database.MaxOpenConn)

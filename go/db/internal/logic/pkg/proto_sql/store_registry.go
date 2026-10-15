@@ -444,6 +444,7 @@ func OpenPlacementStore(ctx context.Context, dbName string, pool StorePoolOption
 		_ = handle.Close()
 		return nil, err
 	}
+	store.Connector = connector
 	return store, nil
 }
 

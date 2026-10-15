@@ -18,6 +18,7 @@
 #include "network/broadcast_target_codec.h"
 #include <session/manager/session_manager.h>
 #include <session/system/session_identity_fence.h>
+#include "handler/event/scene_route_helper.h"
 
 #include <algorithm>
 #include <string>
@@ -332,8 +333,11 @@ void GateHandler::BindSessionToGate(::google::protobuf::RpcController* controlle
 		return;
 	}
 
-	sessionIt->second.playerId = request->player_id();
-	sessionIt->second.sessionVersion = request->session_version();
+	// 与 Kafka 侧 BindSessionEventHandler 走同一个写入口:换了角色时登录代次必须重置,否则新角色的入场会
+	// 盖上上一个角色的代次(scene-enter-session-fence.md §4)。这条 RPC 不带代次(当前无发送方,login 已改走
+	// Kafka),按 0 写入:同一角色时取 max 不变,换角色时清零,由 scene 按版本 0 规则裁决;也不带登录类型。
+	gate_scene_route::ApplyLoginBinding(sessionIt->second, request->player_id(), request->session_version(),
+										/*loginGeneration=*/0, /*enterGsType=*/0);
 
 	response->set_session_id(request->session_id());
 	response->set_session_version(request->session_version());

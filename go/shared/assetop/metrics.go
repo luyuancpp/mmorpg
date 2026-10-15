@@ -34,6 +34,13 @@ type Metrics struct {
 	manualResolveTotal  *prometheus.CounterVec
 	storeErrorsTotal    *prometheus.CounterVec
 	pendingOldestAge    *prometheus.GaugeVec
+
+	// 以下为落地恢复追加(docs/design/landing-recovery-sync-digest.md §5.3、§6.2、§6.3)。
+	wakeTotal             *prometheus.CounterVec
+	pendingRows           *prometheus.GaugeVec
+	pendingClassOldestAge *prometheus.GaugeVec
+	abandonedTotal        *prometheus.CounterVec
+	abandonSkippedTotal   *prometheus.CounterVec
 }
 
 // NewMetrics 在 reg 上注册本包的全部指标。
@@ -65,7 +72,7 @@ func NewMetrics(reg prometheus.Registerer, service string) *Metrics {
 		}, []string{"stream", "status"}),
 		rescheduleTotal: f.NewCounterVec(prometheus.CounterOpts{
 			Name:        "assetop_reschedule_total",
-			Help:        "重排次数:await_durable / retry / alert",
+			Help:        "重排次数:await_durable / retry / offline(离线停放档)/ alert",
 			ConstLabels: labels,
 		}, []string{"stream", "reason"}),
 		// 与 reschedule_total 分开而不是给它加一个 reason:那边数的是「排好了下一次」,
@@ -106,8 +113,9 @@ func NewMetrics(reg prometheus.Registerer, service string) *Metrics {
 			ConstLabels: labels,
 		}, []string{"status"}),
 		storeErrorsTotal: f.NewCounterVec(prometheus.CounterOpts{
-			Name:        "assetop_store_errors_total",
-			Help:        "业务存储出错次数:list / claim / decode / finalize / reschedule / ledger_read / pending_age / manual_resolve",
+			Name: "assetop_store_errors_total",
+			Help: "业务存储出错次数:list / claim / decode / finalize / reschedule / ledger_read / pending_age / manual_resolve" +
+				" / wake_list / audit / abandon_list / abandon / abandon_release",
 			ConstLabels: labels,
 		}, []string{"op"}),
 		pendingOldestAge: f.NewGaugeVec(prometheus.GaugeOpts{
@@ -115,6 +123,35 @@ func NewMetrics(reg prometheus.Registerer, service string) *Metrics {
 			Help:        "最老未决行的年龄;超过业务截止时间很久就是卡死行",
 			ConstLabels: labels,
 		}, []string{"stream"}),
+		wakeTotal: f.NewCounterVec(prometheus.CounterOpts{
+			Name:        "assetop_wake_total",
+			Help:        "落地唤醒的结果:received / deduped / dropped / woke / none / error(唤醒只是提示,丢了退回原退避)",
+			ConstLabels: labels,
+		}, []string{"result"}),
+		// 下面两个按类拆分的 gauge 刻意**不**与 assetop_pending_oldest_age_seconds 同名:同一注册表里
+		// 同名指标必须同一组 label,给它加 class 会改掉原序列,原有按 stream 的告警与看板跟着失效。
+		// 由日对账(AuditOnce)刷新,只有执行对账的那个副本报这组值。
+		pendingRows: f.NewGaugeVec(prometheus.GaugeOpts{
+			Name:        "assetop_pending_rows",
+			Help:        "日对账时各类未决行的行数:online_retry / offline / alert / abandon_candidate",
+			ConstLabels: labels,
+		}, []string{"stream", "class"}),
+		pendingClassOldestAge: f.NewGaugeVec(prometheus.GaugeOpts{
+			Name:        "assetop_pending_class_oldest_age_seconds",
+			Help:        "日对账时各类未决行中最老一行的年龄;卡死告警只看 class=online_retry",
+			ConstLabels: labels,
+		}, []string{"stream", "class"}),
+		abandonedTotal: f.NewCounterVec(prometheus.CounterOpts{
+			Name:        "assetop_abandoned_total",
+			Help:        "自动放弃(ABANDONED)的行数。每一行都是人工补偿的依据,增长即应审计",
+			ConstLabels: labels,
+		}, []string{"stream"}),
+		abandonSkippedTotal: f.NewCounterVec(prometheus.CounterOpts{
+			Name: "assetop_abandon_skipped_total",
+			Help: "放弃候选被跳过的次数:located / locate_error / recent / ledger_seen / ledger_error / ledger_unknown" +
+				" / lease_lost / store_error / not_candidate",
+			ConstLabels: labels,
+		}, []string{"reason"}),
 	}
 }
 
@@ -256,4 +293,82 @@ func (m *Metrics) setPendingOldestAge(stream assetpb.AssetOpStream, seconds floa
 		return
 	}
 	m.pendingOldestAge.WithLabelValues(StreamLabel(stream)).Set(seconds)
+}
+
+// WakeResult 是 assetop_wake_total 的 result label(docs/design/landing-recovery-sync-digest.md §5.3)。
+//
+// 两处计数,各管一段,不重复:
+//   - shared/assetopwake(订阅端)计 received / deduped / dropped,以及消息本身非法、去重键写失败的 error;
+//   - Loop.WakePlayer 计 woke(至少处理了一行)/ none(该玩家没有可领的行,或 Store 不支持按玩家列出)
+//     / error(列出失败)。
+type WakeResult uint8
+
+const (
+	// WakeReceived 收到一条唤醒消息(在任何判断之前计)。
+	WakeReceived WakeResult = iota + 1
+	// WakeDeduped 别的副本已经领走这次唤醒(去重键已存在)。
+	WakeDeduped
+	// WakeDropped 本副本的唤醒并发已满,直接丢弃(唤醒只是提示)。
+	WakeDropped
+	// WakeWoke 至少一行走完了 Claim + ProcessOne。
+	WakeWoke
+	// WakeNone 没有可处理的行。
+	WakeNone
+	// WakeError 消息非法、去重键写失败或列出失败。
+	WakeError
+
+	wakeResultCount
+)
+
+var wakeResultNames = [...]string{"invalid", "received", "deduped", "dropped", "woke", "none", "error"}
+
+var _ = [1]struct{}{}[len(wakeResultNames)-int(wakeResultCount)]
+
+// String 返回 label 值;越界回 "invalid"。
+func (r WakeResult) String() string {
+	if r >= wakeResultCount {
+		return wakeResultNames[0]
+	}
+	return wakeResultNames[r]
+}
+
+// IncWake 记一次唤醒结果。导出是给 shared/assetopwake 用的:同一个指标只能注册一次,
+// 订阅端与 Loop 共用这一份(nil 接收者安全)。
+func (m *Metrics) IncWake(r WakeResult) {
+	if m == nil {
+		return
+	}
+	m.wakeTotal.WithLabelValues(r.String()).Inc()
+}
+
+func (m *Metrics) setPendingClass(stream assetpb.AssetOpStream, class PendingClass, rows uint64, oldestAgeSeconds float64) {
+	if m == nil {
+		return
+	}
+	m.pendingRows.WithLabelValues(StreamLabel(stream), class.String()).Set(float64(rows))
+	m.pendingClassOldestAge.WithLabelValues(StreamLabel(stream), class.String()).Set(oldestAgeSeconds)
+}
+
+// resetPendingClass 清掉按类的两组 gauge。只在对账执行者卸任(RunMaintenance 退出)时调:
+// 卸任副本的旧值若一直挂在 /metrics 上,会和新执行者的值一起被 max() 取到。
+func (m *Metrics) resetPendingClass() {
+	if m == nil {
+		return
+	}
+	m.pendingRows.Reset()
+	m.pendingClassOldestAge.Reset()
+}
+
+func (m *Metrics) incAbandoned(stream assetpb.AssetOpStream) {
+	if m == nil {
+		return
+	}
+	m.abandonedTotal.WithLabelValues(StreamLabel(stream)).Inc()
+}
+
+func (m *Metrics) incAbandonSkipped(reason abandonSkip) {
+	if m == nil {
+		return
+	}
+	m.abandonSkippedTotal.WithLabelValues(reason.String()).Inc()
 }

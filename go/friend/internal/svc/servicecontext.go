@@ -20,6 +20,7 @@ import (
 
 	"shared/kafkacmd"
 	"shared/kafkautil"
+	"shared/playersync"
 
 	// database/sql 只认注册过的驱动名;这个空导入就是注册 "mysql" 的唯一动作,删了它
 	// sql.Open("mysql", ...) 会在运行期报 unknown driver,而编译期一声不响。
@@ -86,6 +87,15 @@ type ServiceContext struct {
 	// 两套超时与断路器语义,排障时对不上账。
 	SharedRedis *redis.Redis
 	FriendRedis *redis.Redis
+
+	// SyncDigest 在好友写提交之后给受影响玩家的落地摘要 bump 好友三个域
+	// (docs/design/landing-recovery-sync-digest.md §3.3 friend 行)。
+	// 句柄必须是 SharedRedis:player:{id}:sync_digest 是 C++ scene 读的核心契约键,
+	// C++ 只连核心实例,FriendRedis(可能是 Cluster)它读不到。
+	// 指标 player_sync_bump_total 由 shared/playersync 自己注册在默认 registry 上(叶子包,不与本包成环)。
+	// 手工构造的 ServiceContext(logic 单测)不填时为 nil,bump 全部是无操作。
+	SyncDigest *playersync.Bumper
+
 	// 在线组队目录按权威 home zone 过滤；映射库不一定与 SharedRedis 同库。
 	DataService   dspb.DataServiceClient
 	directoryConn *grpc.ClientConn
@@ -139,6 +149,7 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		SQLDialect:         dialect,
 		SharedRedis:        sharedRds,
 		FriendRedis:        friendRds,
+		SyncDigest:         playersync.NewBumper(playersync.NewGoZeroEvaler(sharedRds), "friend"),
 		DataService:        directoryClient,
 		directoryConn:      directoryConn,
 		FriendRedisTarget:  target,

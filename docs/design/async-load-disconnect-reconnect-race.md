@@ -1,54 +1,52 @@
-# Async Load Race Conditions: Disconnect & Reconnect During Redis Load
+# 异步加载竞态：Redis 加载期间的断线与重连
 
-## Overview
+## 概述
 
-When a player enters a Scene node, their data is loaded asynchronously from Redis
-(`MessageAsyncClient::AsyncLoad`). During this async window (typically 1-20ms),
-two race conditions can occur:
+玩家进入 Scene 节点时，其数据通过 `MessageAsyncClient::AsyncLoad` 从 Redis 异步加载。
+在这段异步窗口内（通常为 1–20 毫秒），可能发生两种竞态：
 
-1. **Disconnect during load** -- ExitGame arrives before load completes
-2. **Disconnect + immediate reconnect** -- a second PlayerEnterGameNode arrives
-   while the first load is still in flight
+1. **加载期间断线**：加载完成前收到 `ExitGame`。
+2. **断线后立即重连**：第一次加载尚未完成时，又收到第二次 `PlayerEnterGameNode`。
 
-Both must be handled to prevent ghost entities, stuck players, and Gate WARN logs.
+这两种情况都必须处理，避免出现幽灵实体、玩家卡住以及 Gate 的 WARN 日志。
 
-## Architecture: PendingEnterMap
+## 架构：PendingEnterMap
 
-Session/scene context for in-flight loads is stored in a `thread_local PendingEnterMap`
-(`unordered_map<Guid, PlayerGameNodeEntryInfoComp>`), owned by `PlayerLifecycleSystem`.
+尚未完成的加载所需的会话和场景上下文，保存在由 `PlayerLifecycleSystem` 管理的
+`thread_local PendingEnterMap`（`unordered_map<Guid, PlayerGameNodeEntryInfoComp>`）中。
 
-Previously this used `std::any extra_data` on `MessageAsyncClient`. The new design:
-- **No business logic in the generic Redis client** -- `MessageAsyncClient` is a pure
-  key->value async loader
-- **Reconnect = overwrite** -- `PendingEnterMap[player_id] = newInfo` naturally handles
-  the reconnect case without any `UpdateExtraData()` API
-- **No type erasure** -- eliminates `std::any_cast` branches and the dead
-  `PlayerSceneEnterContext` struct
+此前，这些信息保存在 `MessageAsyncClient` 的 `std::any extra_data` 中。新设计如下：
 
-Two external maps collaborate:
-- `SessionMap` (`unordered_map<SessionId, Guid>`) -- routing + cancellation token
-- `PendingEnterMap` (`unordered_map<Guid, PlayerGameNodeEntryInfoComp>`) -- load context
+- **通用 Redis 客户端不包含业务逻辑**：`MessageAsyncClient` 只负责按键异步加载值。
+- **重连即覆盖**：`PendingEnterMap[player_id] = newInfo` 自然覆盖为重连后的上下文，
+  无需提供 `UpdateExtraData()` 接口。
+- **不再使用类型擦除**：移除 `std::any_cast` 分支和不再使用的 `PlayerSceneEnterContext` 结构。
 
-## Flow 1: Normal Async Load (no race)
+Redis 客户端之外的两张映射表协同工作：
+
+- `SessionMap`（`unordered_map<SessionId, Guid>`）：用于路由，并以映射是否存在表达取消状态。
+- `PendingEnterMap`（`unordered_map<Guid, PlayerGameNodeEntryInfoComp>`）：保存加载上下文。
+
+## 流程 1：正常异步加载（无竞态）
 
 ```
 t0  PlayerEnterGameNode(session_A, player_id)
-    -> RemovePlayerSessionSilently(player_id)         // no-op (player not online)
-    -> SessionMap[session_A] = player_id              // pre-register for routing
-    -> PendingEnterMap[player_id] = enterInfo_A       // store context
-    -> AsyncLoad(player_id)                           // fire Redis GET
+    -> RemovePlayerSessionSilently(player_id)         // 无操作（玩家尚未在线）
+    -> SessionMap[session_A] = player_id              // 预先登记路由
+    -> PendingEnterMap[player_id] = enterInfo_A       // 保存上下文
+    -> AsyncLoad(player_id)                           // 发起 Redis GET
 
-t1  Redis responds
+t1  Redis 返回结果
     -> HandlePlayerAsyncLoaded(player_id, data)
-    -> PendingEnterMap.find(player_id) -> enterInfo_A // consume & erase from map
-    -> SessionMap.find(session_A) -> found            // session still valid
+    -> PendingEnterMap.find(player_id) -> enterInfo_A // 取出上下文并从映射表中删除
+    -> SessionMap.find(session_A) -> 找到             // 会话仍然有效
     -> InitPlayerFromAllData(data, enterInfo_A)
       -> EnterScene -> HandleEnterScene
-        -> bind player to scene, add to ScenePlayers, add to AOI grid
-        -> SendMessageToClientViaGate(EnterSceneS2C)  // CLIENT GETS RESPONSE
+        -> 将玩家绑定到场景，加入 ScenePlayers 和 AOI 网格
+        -> SendMessageToClientViaGate(EnterSceneS2C)  // 客户端收到响应
 ```
 
-## Flow 2: Disconnect During Async Load (cancel)
+## 流程 2：异步加载期间断线（取消）
 
 ```
 t0  PlayerEnterGameNode(session_A)
@@ -56,129 +54,126 @@ t0  PlayerEnterGameNode(session_A)
     -> PendingEnterMap[player_id] = enterInfo_A
     -> AsyncLoad(player_id)
 
-t1  Client disconnects -> Gate sends ExitGame(session_A)
+t1  客户端断线 -> Gate 发送 ExitGame(session_A)
     -> ProcessClientPlayerMessage
-    -> SessionMap.find(session_A) -> found, but player entity == null
-    -> msg == ExitGame -> SessionMap.erase(session_A)  // CANCELLATION SIGNAL
+    -> SessionMap.find(session_A) -> 找到，但玩家实体 == null
+    -> msg == ExitGame -> SessionMap.erase(session_A)  // 发出取消信号
 
-t2  Redis responds
+t2  Redis 返回结果
     -> HandlePlayerAsyncLoaded(player_id, data)
-    -> PendingEnterMap.find(player_id) -> enterInfo_A  // found
-    -> SessionMap.find(session_A) -> NOT FOUND         // cancelled!
-    -> log + return                                    // no entity created
+    -> PendingEnterMap.find(player_id) -> enterInfo_A  // 找到上下文
+    -> SessionMap.find(session_A) -> 未找到            // 已取消
+    -> 记录日志并返回                                 // 不创建实体
 ```
 
-**Result**: No ghost entity. No message sent to deleted Gate session.
+**结果**：不会产生幽灵实体，也不会向已经删除的 Gate 会话发送消息。
 
-## Flow 3: Disconnect + Immediate Reconnect During Async Load
+## 流程 3：异步加载期间断线后立即重连
 
-This is the critical race condition. The key insight is that `AsyncLoad` deduplicates
-by key -- if a load is already in flight for the same `player_id`, the second call
-is silently dropped. But `PendingEnterMap` overwrite ensures the callback uses the
-latest session info.
+这是关键竞态。核心在于 `AsyncLoad` 按键去重：同一 `player_id` 的加载尚未完成时，
+第二次调用会被静默忽略。而覆盖 `PendingEnterMap` 可以确保回调使用最新的会话信息。
 
 ```
 t0  PlayerEnterGameNode(session_A, player_id)
     -> SessionMap[session_A] = player_id
     -> PendingEnterMap[player_id] = enterInfo_A
-    -> AsyncLoad(player_id)                           // Redis GET starts
+    -> AsyncLoad(player_id)                           // 开始 Redis GET
 
-t1  Client disconnects -> ExitGame(session_A)
-    -> SessionMap.erase(session_A)                    // cancel signal for session_A
+t1  客户端断线 -> ExitGame(session_A)
+    -> SessionMap.erase(session_A)                    // 取消 session_A
 
-t2  Client reconnects -> PlayerEnterGameNode(session_B, player_id)
-    -> RemovePlayerSessionSilently(player_id)         // no-op (no entity yet)
-    -> SessionMap[session_B] = player_id              // NEW session registered
-    -> PendingEnterMap[player_id] = enterInfo_B       // OVERWRITES enterInfo_A
-    -> AsyncLoad(player_id)                           // DEDUP: silently skipped
-                                                      // (loading_queue_ already has key)
+t2  客户端重连 -> PlayerEnterGameNode(session_B, player_id)
+    -> RemovePlayerSessionSilently(player_id)         // 无操作（尚未创建实体）
+    -> SessionMap[session_B] = player_id              // 登记新会话
+    -> PendingEnterMap[player_id] = enterInfo_B       // 覆盖 enterInfo_A
+    -> AsyncLoad(player_id)                           // 去重：静默跳过
+                                                      // （loading_queue_ 已包含该键）
 
-t3  Redis responds (from t0's GET -- data is the same regardless)
+t3  Redis 返回结果（对应 t0 发起的 GET；无论会话如何变化，加载的数据相同）
     -> HandlePlayerAsyncLoaded(player_id, data)
-    -> PendingEnterMap.find(player_id) -> enterInfo_B // LATEST info (session_B!)
-    -> SessionMap.find(session_B) -> FOUND            // valid!
+    -> PendingEnterMap.find(player_id) -> enterInfo_B // 最新信息（session_B）
+    -> SessionMap.find(session_B) -> 找到             // 会话有效
     -> InitPlayerFromAllData(data, enterInfo_B)
       -> EnterScene(session_B) -> HandleEnterScene
-        -> bind player to scene with session_B
-        -> SendMessageToClientViaGate(EnterSceneS2C)  // CLIENT B GETS RESPONSE
+        -> 使用 session_B 将玩家绑定到场景
+        -> SendMessageToClientViaGate(EnterSceneS2C)  // 客户端 B 收到响应
 ```
 
-**Result**: The reconnected client successfully enters the scene. No second Redis
-GET is needed -- the single in-flight GET serves both requests. The `PendingEnterMap`
-overwrite is the mechanism that "redirects" the load result to the new session.
+**结果**：重连后的客户端成功进入场景。无需再次发起 Redis GET，尚未完成的同一次 GET
+即可服务这两次请求。覆盖 `PendingEnterMap` 正是将加载结果“转交”给新会话的机制。
 
-## Why PendingEnterMap Overwrite Works
+## 为什么覆盖 PendingEnterMap 能生效
 
-`AsyncLoad` deduplicates by `player_id` (translated to a Redis key). When the
-second `PlayerEnterGameNode` arrives during an in-flight load:
+`AsyncLoad` 按 `player_id` 对应的 Redis 键去重。加载尚未完成时，
+第二次 `PlayerEnterGameNode` 到达后的处理如下：
 
-1. `PendingEnterMap[player_id] = enterInfo_B` overwrites the old entry
-2. `AsyncLoad(player_id)` finds the key in `loading_queue_` and returns immediately
-3. When the Redis GET callback fires, it calls `HandlePlayerAsyncLoaded(player_id, data)`
-4. The handler looks up `PendingEnterMap[player_id]` and finds `enterInfo_B`
-5. `SessionMap.find(session_B)` succeeds, so the entity is created with session_B
+1. `PendingEnterMap[player_id] = enterInfo_B` 覆盖旧条目。
+2. `AsyncLoad(player_id)` 发现 `loading_queue_` 已有该键，立即返回。
+3. Redis GET 回调触发时，调用 `HandlePlayerAsyncLoaded(player_id, data)`。
+4. 处理函数查询 `PendingEnterMap[player_id]`，得到 `enterInfo_B`。
+5. `SessionMap.find(session_B)` 成功，因此使用 `session_B` 创建实体。
 
-The `PendingEnterMap` and `loading_queue_` are decoupled:
-- `loading_queue_` gates Redis network calls (one GET per player)
-- `PendingEnterMap` carries the latest session context (updated on each reconnect)
+`PendingEnterMap` 与 `loading_queue_` 相互解耦：
 
-## Robot Test
+- `loading_queue_` 控制 Redis 网络调用，同一玩家同时只发起一次 GET。
+- `PendingEnterMap` 保存最新会话上下文，每次重连都会更新。
 
-`testRapidDisconnectReconnect` in `robot/login_test_scenarios.go`:
+## 机器人测试
 
-1. Setup: full login + clean leave (ensures player exists in Redis)
-2. 3 cycles of:
-   - Login + EnterGame (triggers async load on Scene)
-   - Abrupt close (no LeaveGame) -- triggers ExitGame on server
-   - Immediate reconnect (zero delay) -- may hit async load window
-   - Login + EnterGame -- must succeed, client must receive EnterSceneS2C
-   - Clean leave
-3. All 3 cycles must complete without STUCK timeout
+`robot/login_test_scenarios.go` 中的 `testRapidDisconnectReconnect`：
 
-## Files Changed
+1. 准备：完成一次登录并正常退出，确保 Redis 中已有玩家数据。
+2. 循环执行 3 次：
+   - 登录并调用 `EnterGame`，触发 Scene 上的异步加载。
+   - 直接断开连接，不发送 `LeaveGame`，触发服务端的 `ExitGame`。
+   - 立即重连，不加延迟，可能命中异步加载窗口。
+   - 再次登录并调用 `EnterGame`，必须成功，且客户端必须收到 `EnterSceneS2C`。
+   - 正常退出。
+3. 三轮循环都必须完成，不能出现 STUCK 超时。
 
-| File | Change |
+## 修改文件
+
+| 文件 | 改动 |
 |------|--------|
-| `redis_client.h` | Removed `std::any extra_data`, `UpdateExtraData()`, `EventCallbackWithExtra`, `load_callback_with_extra_`. `AsyncLoad` takes only `key`. |
-| `player_lifecycle.h` | Added `PendingEnterMap` typedef + `GetPendingEnterMap()`. `HandlePlayerAsyncLoaded` takes `(Guid, PlayerAllData&)` only. |
-| `player_lifecycle.cpp` | `HandlePlayerAsyncLoaded` reads from `PendingEnterMap`. Removed dead `PlayerSceneEnterContext`. |
-| `redis.cpp` | `SetLoadCallback` instead of `SetLoadCallbackWithExtra`. |
-| `scene_handler.cpp` | `PlayerEnterGameNode`: cleans stale session from PendingEnterMap before overwrite + `AsyncLoad(player_id)`. `ProcessClientPlayerMessage`, `SendMessageToPlayer`, `InvokePlayerService`: all three message dispatch paths have defensive session mismatch guard. |
-| `login_test_scenarios.go` | New `testRapidDisconnectReconnect` scenario. |
+| `redis_client.h` | 移除 `std::any extra_data`、`UpdateExtraData()`、`EventCallbackWithExtra`、`load_callback_with_extra_`。`AsyncLoad` 只接收 `key`。 |
+| `player_lifecycle.h` | 新增 `PendingEnterMap` 类型别名和 `GetPendingEnterMap()`。`HandlePlayerAsyncLoaded` 只接收 `(Guid, PlayerAllData&)`。 |
+| `player_lifecycle.cpp` | `HandlePlayerAsyncLoaded` 从 `PendingEnterMap` 读取上下文。移除不再使用的 `PlayerSceneEnterContext`。 |
+| `redis.cpp` | 用 `SetLoadCallback` 替代 `SetLoadCallbackWithExtra`。 |
+| `scene_handler.cpp` | `PlayerEnterGameNode`：覆盖 `PendingEnterMap` 前清理其中记录的旧会话，再调用 `AsyncLoad(player_id)`。`ProcessClientPlayerMessage`、`SendMessageToPlayer`、`InvokePlayerService` 三条消息分发路径均增加会话不匹配的防御检查。 |
+| `login_test_scenarios.go` | 新增 `testRapidDisconnectReconnect` 测试场景。 |
 
-## Flow 4: Late ExitGame After Reconnect Completes
+## 流程 4：重连完成后旧 ExitGame 才到达
 
-Without the session mismatch guard, a late ExitGame from the old connection can
-kill the reconnected player:
+如果没有会话不匹配检查，旧连接迟到的 `ExitGame` 可能让已经重连的玩家被下线：
 
 ```
 t0  PlayerEnterGameNode(session_A)
     -> SessionMap[A]=pid, PendingEnterMap[pid]=infoA, AsyncLoad(pid)
 
-t2  PlayerEnterGameNode(session_B)  (reconnect, ExitGame not yet arrived)
-    -> RemovePlayerSessionSilently(pid) -> no-op (player not in playerList)
-    -> SessionMap[B]=pid              // now SessionMap has BOTH {A:pid, B:pid}
-    -> PendingEnterMap: erase old session_A from SessionMap  <-- FIX (proactive)
-    -> PendingEnterMap[pid]=infoB     // overwrite
-    -> AsyncLoad(pid)                 // dedup
+t2  PlayerEnterGameNode(session_B)  （重连，ExitGame 尚未到达）
+    -> RemovePlayerSessionSilently(pid) -> 无操作（玩家尚不在 playerList 中）
+    -> SessionMap[B]=pid              // 此时 SessionMap 同时包含 {A:pid, B:pid}
+    -> PendingEnterMap: 从 SessionMap 删除旧 session_A  <-- 修复点（主动清理）
+    -> PendingEnterMap[pid]=infoB     // 覆盖
+    -> AsyncLoad(pid)                 // 去重
 
-t3  Redis responds -> create entity with session_B
+t3  Redis 返回结果 -> 使用 session_B 创建实体
 
-t1  Late ExitGame(session_A) arrives
+t1  迟到的 ExitGame(session_A) 到达
     -> SessionMap.find(A) -> pid
-    -> player entity exists
-    -> snapshot.gate_session_id()==session_B != session_A  <-- FIX (defensive)
-    -> stale session, erase SessionMap[A], drop message
-    -> player survives
+    -> 玩家实体已存在
+    -> snapshot.gate_session_id()==session_B != session_A  <-- 修复点（防御检查）
+    -> 识别为旧会话，删除 SessionMap[A]，丢弃消息
+    -> 玩家实体保留
 ```
 
-Two-layer defense:
-1. **Proactive** (`PlayerEnterGameNode`): Before overwriting PendingEnterMap, check
-   if old entry has a different session_id and erase it from SessionMap.
-2. **Defensive** (all three message dispatch paths in `scene_handler.cpp`): After
-   finding the player entity, verify `PlayerSessionSnapshotComp.gate_session_id()
-   == sessionId`. If mismatch, it's from a superseded connection -- erase stale
-   SessionMap entry and drop. Applied to:
-   - `ProcessClientPlayerMessage` (Kafka-routed client messages)
-   - `SendMessageToPlayer` (gRPC-routed gate relay)
-   - `InvokePlayerService` (gRPC player service invocation)
+两层防护：
+
+1. **主动清理**（`PlayerEnterGameNode`）：覆盖 `PendingEnterMap` 前，检查旧条目的
+   `session_id` 是否不同；若不同，则从 `SessionMap` 中删除旧会话。
+2. **防御检查**（`scene_handler.cpp` 中的三条消息分发路径）：找到玩家实体后，校验
+   `PlayerSessionSnapshotComp.gate_session_id() == sessionId`。不匹配说明消息来自已被替换的连接，
+   删除过期的 `SessionMap` 条目并丢弃消息。覆盖以下入口：
+   - `ProcessClientPlayerMessage`：经 Kafka 路由的客户端消息。
+   - `SendMessageToPlayer`：经 gRPC 路由的 Gate 转发消息。
+   - `InvokePlayerService`：gRPC 玩家服务调用。

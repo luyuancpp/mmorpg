@@ -17,6 +17,7 @@ import (
 	"guild/internal/session"
 	base "proto/common/base"
 	pb "proto/guild"
+	scenepb "proto/scene"
 )
 
 // IDMinter 是 guild_id 的发号入口(*shared/idsegment.Minter 满足;单测用假实现)。
@@ -46,6 +47,9 @@ type GuildLogic struct {
 	notifier GuildNotifier
 	// applyPushGate 见 ApplyPushGate;默认"总是放行"。
 	applyPushGate ApplyPushGate
+	// syncBumper 是落地恢复摘要 bump 的唯一出口(push.go 的 GuildSyncBumper),默认 NoopSyncBumper{}。
+	// 与 notifier 同一纪律:只在 MySQL 提交之后被调用,失败绝不影响 RPC 结果。
+	syncBumper GuildSyncBumper
 	// playerNames 批量取成员 / 帮主的展示名(player_name_resolver.go)。
 	// nil = 没配 DataServiceRpc 或单测:名字一律留空,不 panic。只经 resolveNames 访问。
 	playerNames PlayerNameResolver
@@ -71,6 +75,17 @@ func WithNotifier(n GuildNotifier) Option {
 	return func(l *GuildLogic) {
 		if n != nil {
 			l.notifier = n
+		}
+	}
+}
+
+// WithSyncBumper 注入落地恢复摘要的 bump 实现;不传 = NoopSyncBumper(单测与未接摘要 Redis 的环境)。
+// 传 nil 被忽略而不是覆盖成 nil:bumpSync 在提交之后被调用,那里不该出现 nil 解引用。
+// 生产由 guild.go 传 NewGuildSyncBumper(svcCtx.PlayerSyncBumper)。
+func WithSyncBumper(b GuildSyncBumper) Option {
+	return func(l *GuildLogic) {
+		if b != nil {
+			l.syncBumper = b
 		}
 	}
 }
@@ -109,6 +124,7 @@ func NewGuildLogic(repo *data.GuildRepo, ids IDMinter, onlineResolver *OnlineSta
 		repo: repo, ids: ids, onlineResolver: onlineResolver,
 		mergeFence: mergeFence, homeZones: homeZones,
 		notifier:      NoopNotifier{},
+		syncBumper:    NoopSyncBumper{},
 		applyPushGate: func(context.Context, uint64, uint64) bool { return true },
 	}
 	for _, opt := range opts {
@@ -287,6 +303,10 @@ func (l *GuildLogic) CreateGuild(ctx context.Context, req *pb.CreateGuildRequest
 	}
 
 	// 建帮不推送:此刻帮里只有建帮者自己,而他手上这个响应就是最新状态。
+	// 但要 bump 本人(摘要纪律 2:回包可能在断线时丢):GUILD 变了,建帮事务还清掉了他的全部申请(I2),
+	// 所以 GUILD_APPLICATION 也变了。那些申请所在帮会的审批人待审数同样变了,但事务不回这组人
+	// (改 data 层不在本批范围),由他们打开帮会界面时的拉取覆盖。
+	l.bumpSync([]uint64{who.playerID}, scenepb.SyncDomain_SYNC_DOMAIN_GUILD, scenepb.SyncDomain_SYNC_DOMAIN_GUILD_APPLICATION)
 	return &pb.CreateGuildResponse{Guild: l.guildInfoFor(ctx, guild, viewerOf(who))}, nil
 }
 
@@ -462,6 +482,8 @@ func (l *GuildLogic) LeaveGuild(ctx context.Context, req *pb.LeaveGuildRequest) 
 	}
 	// 快照已不含退帮者,所以"剩余全体"就是收件人;他自己拿的是这次响应,不必再推。
 	l.notify(pb.GuildChangeKind_GUILD_CHANGE_KIND_MEMBER_LEFT, guildID, who.playerID, who.playerID, membersExcept(res.Guild))
+	// 摘要要把退帮者本人算进去(他的 GetPlayerGuild 从"在帮"变成"未入帮")。
+	l.bumpSync(membersPlus(res.Guild, who.playerID), scenepb.SyncDomain_SYNC_DOMAIN_GUILD)
 	return &pb.LeaveGuildResponse{}, nil
 }
 
@@ -516,6 +538,10 @@ func (l *GuildLogic) DisbandGuild(ctx context.Context, req *pb.DisbandGuildReque
 	// target 取 0:解散没有"被作用的那个人"。只提交过申请的玩家不通知(他们的申请行已被删,
 	// 下次打开申请列表自然就没了)。
 	l.notify(pb.GuildChangeKind_GUILD_CHANGE_KIND_DISBANDED, guildID, who.playerID, 0, recipients)
+	// 摘要给解散前的全体成员(MemberIDs 含操作者本人)。申请人的 GUILD_APPLICATION 同样变了(申请行被删),
+	// 但 DisbandResult 不回这组人(改 data 层不在本批范围):他们的申请列表由打开界面时的拉取覆盖,
+	// 列表里的残留行本来也按"帮会已不存在"过滤掉(myApplicationViews)。
+	l.bumpSync(res.MemberIDs, scenepb.SyncDomain_SYNC_DOMAIN_GUILD)
 	return &pb.DisbandGuildResponse{}, nil
 }
 
@@ -552,6 +578,8 @@ func (l *GuildLogic) SetAnnouncement(ctx context.Context, req *pb.SetAnnouncemen
 	// 玩家会以为自己没改成功而反复重试。
 	l.notify(pb.GuildChangeKind_GUILD_CHANGE_KIND_ANNOUNCEMENT_CHANGED, req.GuildId, who.playerID, 0,
 		membersExcept(snapshot, who.playerID))
+	// 快照含操作者本人(他是 officer / leader 才过得了事务),全体即 bump 集合。
+	l.bumpSync(membersPlus(snapshot), scenepb.SyncDomain_SYNC_DOMAIN_GUILD)
 	return &pb.SetAnnouncementResponse{Guild: l.guildInfoFor(ctx, snapshot, viewerOf(who))}, nil
 }
 

@@ -22,6 +22,7 @@ import static org.mockito.Mockito.*;
  * <p>只验控制器自己的承诺:带 {@code queue_token} 的重入不再整个绕过限流 —— 照样把 zone 与客户端 IP
  * 交给限流器(zone 桶 + IP 桶照过),只是把 account 传成 null 以跳过账号冷却;不带 token 的首次请求把
  * account 原样交给限流器。gateway 验不了 token(密钥在 login),所以「带了 token」不能当作放行依据。
+ * 重入被挡时按判决映射回包:QUEUE → code=100、queue_source="ratelimit"、不带新 token;DENY → 429。
  *
  * <p>限流器内部各层怎么判由 {@code AssignGateRateLimiterTest} 验;login 拿到 token 之后怎么处理不在这里。
  * 纯 Mockito,不起 Spring 上下文。
@@ -57,6 +58,22 @@ class AssignGateControllerTest {
         verify(assignGateService, never()).assignGate(any());
         assertEquals(429, resp.getCode());
         assertEquals("IP_RATE_LIMIT", resp.getError());
+    }
+
+    @Test
+    void reentryWithQueueToken_zoneBucketEmpty_returnsRatelimitQueueWithoutToken() {
+        // J0 之前带 token 的请求走不到这条路。客户端契约(spec_G4b §4.10 J0、§11.5):重入被 zone 桶 / 波次
+        // 挡住时回 code=100、queue_source="ratelimit",不带新 token,请求不进 login;客户端保留原 token
+        // 按 retry_after_ms 重试。回显 token、改走 login、换成别的码都会破坏这个契约。
+        when(limiter.check(anyLong(), anyString(), any())).thenReturn(RateLimitDecision.queue(2500, 0));
+
+        AssignGateResponse resp = controller.assignGate(request("tok"), http);
+
+        verify(assignGateService, never()).assignGate(any());
+        assertEquals(100, resp.getCode());
+        assertEquals("ratelimit", resp.getQueueSource());
+        assertNull(resp.getQueueToken());
+        assertEquals(2500L, resp.getRetryAfterMs());
     }
 
     @Test

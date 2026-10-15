@@ -175,6 +175,8 @@ GrpcClient:
 | 7 | `id_segment_bootstrap.cpp:156` 领号段 | AllocateIdSegment | 立即按退避重试,不必等 fetchTimeout | 失败处理器按发出的 `x-idseg-seq` 精确归属:命中在途 → `GuidSegmentClient::OnTransportFailure`;命中已放弃的那次 → 只清归属(客户端已由 fetchTimeout 判过);`fetchTimeoutSec` 从 deadline 派生,降为兜底 | 一 |
 | 8 | `client_message_processor.cpp:163` 路由模式转发 | ClientRpcRouter.Forward | 告诉客户端"服务不可用" | gate 装通用 `SetIfEmptyFailedHandler`:从发出的 `x-session-detail-bin` 找回会话 → `SendTipToClient(kServiceUnavailable)`;日志按 1024 条采样(同 `SendViaRouter`) | 一 |
 | 9 | `client_message_processor.cpp:480` 直连断线通知 | Login.Disconnect | 客户端已断,无处可回 | 同一通用处理器,会话已不在 → 只记日志;login 侧会话状态由其自身 TTL 收口 | 一 |
+
+> **2026-10-15 修订(#8)**:路由模式下经会话路由 lane 发出的调用(SessionDetails 的 `gate_call_seq != 0`)改由 lane 认领:失败桥先调 `gate_lane::OnRouterCallFailed`,回**带请求 id 与原 message_id 的信封 1003**,并放行同一会话的下一条。不再是不带 id 的 `SendTipToClient(23)`。成功桥同理先交给 `gate_lane::OnRouterReply`。gate 合成的断线通知(seq = 0)与直连模式照旧走本表的通用处理。见 [client-request-ordering.md](./client-request-ordering.md) §4.5 / §4.7(未编译、未验证)。
 | + | gate 直连模式通用路径 `client_message_processor.cpp:792` `rpcHandlerMeta.sender` | 任意客户端 gRPC 消息 | 同 #8 | 同 #8,调用点不改 | 一 |
 | + | etcd 一元调用(`etcd_helper.cpp`) | Range / Put / Txn / LeaseGrant / LeaseRevoke | 见下 | **不装失败处理器**,保持"只打日志 + 既有 10s 看门狗 / 2s 周期重发";deadline 5000 < 看门狗 10000,反而消除了"旧调用的迟到应答被记到新 pending key 上"的错位 | 一(只 deadline) |
 

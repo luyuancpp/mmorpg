@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"db/internal/metrics"
+
 	"github.com/go-sql-driver/mysql"
 )
 
@@ -169,5 +171,43 @@ func TestReportConnLost_UnopenedStoreIsIgnored(t *testing.T) {
 	}
 	if registry.CoolingDown(102) {
 		t.Fatal("an unopened store must not enter the runtime cooldown")
+	}
+}
+
+// 冷却库个数在抓取时现算,只数没到期的:到期后再也没有流量的库不能让指标与告警一直挂着(复核意见 3)。
+func TestCooldownCounts_OnlyCountsUnexpiredCooldowns(t *testing.T) {
+	clock := &fakeClock{now: time.Unix(1_800_000_000, 0)}
+	ping := &fakePing{}
+	ping.set(errDialRefused)
+	registry := newHealthTestRegistry(t, clock, ping)
+
+	registry.ReportConnLost(1, mysql.ErrInvalidConn)
+	if got := registry.CooldownCounts()[metrics.PoolHome]; got != 1 {
+		t.Fatalf("home pool cooling count = %d, want 1", got)
+	}
+	clock.advance(6 * time.Second)
+	if got := registry.CooldownCounts()[metrics.PoolHome]; got != 0 {
+		t.Fatalf("an expired cooldown must not be counted, got %d", got)
+	}
+}
+
+// 到期时并发进来的放行请求只探活一次:前一个探活刚续上冷却,后来者不再探活(复核意见 2)。
+func TestProbeAtExpiry_SkipsWhenAnotherProbeJustReArmed(t *testing.T) {
+	clock := &fakeClock{now: time.Unix(1_800_000_000, 0)}
+	ping := &fakePing{}
+	ping.set(errDialRefused)
+	registry := newHealthTestRegistry(t, clock, ping)
+
+	registry.ReportConnLost(1, mysql.ErrInvalidConn) // 第 1 次探活,冷却到 +5s
+	clock.advance(6 * time.Second)
+	expired := registry.cooling[1]                    // 模拟一个调用方在锁外读到了已到期的记录
+	_, err := registry.Store(context.Background(), 1) // 第 2 次探活:仍不通,续到 +11s
+	assertCoolingError(t, err)
+
+	// 那个调用方拿着旧记录进来,必须看到冷却已被续上而不再探活。
+	_, err = registry.storeAfterCooldown(1, storeNamed("zone_1_db"), expired)
+	assertCoolingError(t, err)
+	if got := ping.count(); got != 2 {
+		t.Fatalf("a late caller must not probe again, got %d probes", got)
 	}
 }

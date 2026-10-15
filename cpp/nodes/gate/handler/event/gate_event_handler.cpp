@@ -16,6 +16,7 @@
 #include "node/system/node/node_util.h"
 #include "scene_route_helper.h"
 #include "scene_entry_dispatch.h"
+#include "handler/rpc/client_request_lane.h"
 
 #include <chrono>
 
@@ -248,6 +249,11 @@ void GateEventHandler::RedirectToGateEventHandler(const contracts::kafka::Redire
         LOG_DEBUG << "RedirectToGate: connection already closed, session_id=" << sessionId;
         return;
     }
+
+    // 路由 lane(docs/design/client-request-ordering.md O9):会话转去别的 gate,丢弃还没发出的排队项,
+    // 之后到达的路由类请求回带请求 id 的 1003;在途那一条的回包照常下发。不这样做,旧连接上排着的请求会继续发出,
+    // 与目标 zone 新 gate 上的新会话请求交错执行。与 Java 版 ClientDispatcher.enterRedirected 一致。
+    gate_lane::OnSessionRedirected(it->second);
 
     // Build client-facing redirect message.
     RedirectToGateNotify notify;

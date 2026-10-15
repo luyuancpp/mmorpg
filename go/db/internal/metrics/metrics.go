@@ -124,8 +124,8 @@ var (
 		Help:      "Placement stores (MySQL databases) currently open in this db process, including the zone's own database.",
 	})
 
-	// 以下五个是 L-04(docs/design/db-task-store-unavailable-deferral.md §3.7)的观测面:任务为什么没落库、
-	// 多少进了死信、重试队列有多长、哪类库在冷却。label 全是封闭集合,不含 player_id(AGENTS.md §9)。
+	// 以下四个是 L-04(docs/design/db-task-store-unavailable-deferral.md §3.7)的观测面:任务为什么没落库、
+	// 多少进了死信、重试队列有多长(哪类库在冷却见 storeCooldownCollector)。label 全是封闭集合,不含 player_id(AGENTS.md §9)。
 
 	// taskDeferredTotal 在 deferFailedTask 一处计数,覆盖所有延后原因。
 	taskDeferredTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
@@ -156,13 +156,6 @@ var (
 		Help:      "Length of the retry lists, sampled every retry tick. queue: ready (shared by the topic) | processing (this instance) | dead (shared by the topic).",
 	}, []string{"queue"})
 
-	// storeCooldownStores 是此刻处于库级冷却(确认整库不可达)的库个数,按连接池类别分。
-	storeCooldownStores = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Subsystem: subsystem,
-		Name:      "store_cooldown_stores",
-		Help:      "Databases currently cooling down after a probe confirmed they are unreachable. pool: home | extra_zone | extra_non_zone.",
-	}, []string{"pool"})
-
 	registerOnce sync.Once
 )
 
@@ -181,7 +174,7 @@ func register() {
 		prometheus.MustRegister(taskStageSeconds, taskResultTotal, blobBytes, blobRowBytes, blobGuardTotal,
 			ownerEpochGuardTotal, staleOwnerWriteRejectedTotal,
 			placementGuardTotal, placementStoreOpenTotal, placementOpenStores,
-			taskDeferredTotal, taskDeadLetterTotal, taskReadAbandonedTotal, retryQueueLength, storeCooldownStores)
+			taskDeferredTotal, taskDeadLetterTotal, taskReadAbandonedTotal, retryQueueLength)
 		// 计数器序列从无到 1 时 increase() 会漏掉第一次(deploy/k8s/owner-epoch-alerts.yaml 记过这条经验),
 		// 所以告警要用到的取值先以 0 建出序列。
 		for _, op := range []string{"read", "write"} {
@@ -194,9 +187,6 @@ func register() {
 		}
 		for _, reason := range []string{ReadAbandonedStoreUnavailable, ReadAbandonedBudgetExhausted} {
 			taskReadAbandonedTotal.WithLabelValues(reason).Add(0)
-		}
-		for _, pool := range []string{PoolHome, PoolExtraZone, PoolExtraNonZone} {
-			storeCooldownStores.WithLabelValues(pool).Set(0)
 		}
 	})
 }
@@ -278,10 +268,37 @@ func SetRetryQueueLength(queue string, n int64) {
 	retryQueueLength.WithLabelValues(queue).Set(float64(n))
 }
 
-// SetStoreCooldown 更新某类库此刻在冷却的个数,pool 用 Pool* 常量。
-func SetStoreCooldown(pool string, n int) {
+// storeCooldownCollector 在每次抓取时现算 db_store_cooldown_stores:此刻仍在库级冷却期内(探活确认整库不可达)的库个数,
+// 按连接池类别分。不用 Gauge 在进出冷却时设值:冷却到期后要等下一次选库探活才删记录,某个库到期后再也没有流量时
+// 设值式的指标会一直挂着,告警跟着常亮。
+type storeCooldownCollector struct {
+	source func() map[string]int
+	desc   *prometheus.Desc
+}
+
+func (c *storeCooldownCollector) Describe(ch chan<- *prometheus.Desc) { ch <- c.desc }
+
+func (c *storeCooldownCollector) Collect(ch chan<- prometheus.Metric) {
+	counts := c.source()
+	for _, pool := range []string{PoolHome, PoolExtraZone, PoolExtraNonZone} {
+		ch <- prometheus.MustNewConstMetric(c.desc, prometheus.GaugeValue, float64(counts[pool]), pool)
+	}
+}
+
+// NewStoreCooldownCollector 只构造不注册(单测用自己的注册表)。
+func NewStoreCooldownCollector(source func() map[string]int) prometheus.Collector {
+	desc := prometheus.NewDesc(prometheus.BuildFQName("", subsystem, "store_cooldown_stores"),
+		"Databases currently cooling down after a probe confirmed they are unreachable. pool: home | extra_zone | extra_non_zone.",
+		[]string{"pool"}, nil)
+	return &storeCooldownCollector{source: source, desc: desc}
+}
+
+// RegisterStoreCooldown 把落点库注册表的冷却计数接到默认注册表。进程内调一次;注册失败只记日志,不挡落库。
+func RegisterStoreCooldown(source func() map[string]int) {
 	register()
-	storeCooldownStores.WithLabelValues(pool).Set(float64(n))
+	if err := prometheus.Register(NewStoreCooldownCollector(source)); err != nil {
+		logx.Errorf("[metrics] register store cooldown collector failed (db_store_cooldown_stores unavailable): %v", err)
+	}
 }
 
 // 落点选库的 outcome label 取值(player-storage-placement.md §6.2 表的 outcome 列 + §14 的 recheck_moved)。

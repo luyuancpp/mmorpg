@@ -60,6 +60,14 @@ const (
 	// StatusAppliedPartial scene 应用了**一部分**。对侧账一律不做,转人工补偿
 	// (规格 §4.33:错误不得伪装成功)。
 	StatusAppliedPartial
+	// StatusAbandoned 自动放弃(docs/design/landing-recovery-sync-digest.md §6.3):
+	// PENDING 超过 LoopConfig.AbandonAfter、持租约、玩家无位置、距最后一次可能的发送超过
+	// AbandonSafetyGap、已落盘账本确认 scene 从未见过这个 seq 时,由 Loop.AbandonOnce 终结。
+	// 对侧账同 REJECTED / ABORTED(退限购、退帮贡、退捐献次数;活动奖励作废、留审计行)。
+	//
+	// 它**只能**经 Abandoner.Abandon 写入:Decide / FinalStatus 永远不会给出它,人工终结也不接受它
+	// (ManualResolution.validate)。为什么它是不变量 I7 的窄例外而不破坏 I7,见 abandon.go 文件头。
+	StatusAbandoned
 
 	// statusCount 只用于「枚举与名字表不脱节」的编译期检查,不是合法状态。
 	statusCount
@@ -68,7 +76,7 @@ const (
 // statusNames 是 Status 的平铺名字表,下标 0 空出来对应「零值不是合法状态」。
 // 它同时是指标 label 的唯一出处(AGENTS §11.2:平铺常量表 + 编译期长度检查,
 // 不用宏 / 代码生成)。
-var statusNames = [...]string{"invalid", "pending", "applied", "rejected", "aborted", "applied_partial"}
+var statusNames = [...]string{"invalid", "pending", "applied", "rejected", "aborted", "applied_partial", "abandoned"}
 
 // 编译期断言:名字表长度必须等于枚举项个数。不等时这行会报 index out of range,
 // 等价于 C++ 侧的 static_assert(数组长度 == kCount)。
@@ -215,6 +223,14 @@ type Op struct {
 	LeaseToken uint64
 	// LastReason 是上一次答复留下的 tip 码。它唯一的用途见 ReasonPartialApplied 的注释。
 	LastReason uint32
+	// CreatedMs 是行的创建时刻(created_ms 列,毫秒)。只有自动放弃读它:持租约之后再复核一次
+	// 「确实早于放弃截止时刻」。0 = Store 没填,放弃路径一律跳过(fail-closed)。
+	CreatedMs uint64
+	// LastSendMs 是「此前任何一次投递请求**可能**发出的最晚时刻」(毫秒,last_send_ms 列),
+	// 由 Store.Claim 回读。只有自动放弃读它(abandon.go 的条件 4);它为什么不能用 updated_ms 代替、
+	// Store 必须怎样维护它,见 abandon.go 文件头「LastSendMs 契约」。
+	// 0 = Store 没维护,放弃路径一律跳过(fail-closed)。
+	LastSendMs uint64
 }
 
 // Request 把一行待办拼成 scene 请求。**不带 Auth**:签名由 Caller 在每次实际发包前

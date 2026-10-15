@@ -1708,3 +1708,17 @@ type ManualResolver interface {
 4. **新批次 B4c**(存盘属主围栏)需用户单独授权;建议列为"任何共享/预发环境开放帮会资产操作"的硬前置。(**2026-09-21 订正**:已被 [08-save-owner-fence.md](./08-save-owner-fence.md) 取代,不造 token 围栏;共享环境门禁见 08 §8.3)。
 5. **契约 §6** 建议补一行:`robot_95xx` 归资产通道冒烟。
 6. **上线项**:K8s 注入两把资产密钥(`Resolve-InjectedSecret -MinLength 32`,不得与其它密钥复用);scene gRPC 端口 NetworkPolicy 只放行 scene_manager / match / guild / trade。
+
+---
+
+# 第 12 部分：落地唤醒、离线停放与自动放弃（2026-10-14 追加）
+
+> 详细设计见 [landing-recovery-sync-digest.md](../landing-recovery-sync-digest.md) §5–§6，本节只登记对本通道契约的增补。未落码前以该文为准；落码后以代码为准。
+
+- **落地唤醒**：scene 在玩家进场完成时 `PUBLISH assetop:wake <player_id>`；guild / trade 订阅后对该玩家的 PENDING 行走与退避重投**完全相同**的 `Claim` + `ProcessOne`（`Loop.WakePlayer`）。唤醒没有新的状态迁移，丢了只退回原退避。不变量 I1–I10 不变。
+- **离线停放档**：本地合成 NOT_HERE 且 `Attempts ≥ OfflineAfterAttempts`（默认 5）时，下次重投推迟 `OfflineBackoff`（默认 30 分钟，±20% 抖动）。玩家上线由唤醒立即处理。
+- **日对账**：`Auditor` 按 online_retry / offline / alert / abandon_candidate 分类计数，只读不改。本部分第 4.38 节的「最老年龄」告警改为只看 online_retry 类，规则见 `deploy/k8s/asset-channel-alerts.yaml`。
+- **自动放弃（ABANDONED）**：PENDING 超过 `AbandonAfter`（默认 180 天）、持租约、无位置、距最后一次发送超过 1 小时、已落盘账本确认未见时，终结为 `ABANDONED`；对侧账同 REJECTED / ABORTED（退回限购、帮贡、捐献次数），活动奖励作废并留审计行。
+  - 这是 **I7「Go 不得自判中止」的窄例外**：上述条件保证 scene 不可能再收到这条 seq。证明见设计 §6.3。
+  - 每个 (玩家, 流) 一次最多放弃 16 条（I5），对第 8 部分 4.29 的跳号上限（累计 511）影响可忽略。人工终结与放弃的累计仍按 4.31 抬纪元处置。
+- **状态值**：`assetop.Status` 追加 `StatusAbandoned`；`GuildAssetOpStatus` / `TradeAssetOpStatus` 追加 `ABANDONED = 6`（库内状态）；客户端视图映射为已有的 `GUILD_ASSET_ORDER_STATUS_ABORTED`，不改客户端契约。

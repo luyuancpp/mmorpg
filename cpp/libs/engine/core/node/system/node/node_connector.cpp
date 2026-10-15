@@ -10,6 +10,7 @@
 #include "network/network_utils.h"
 #include "thread_context/node_context_manager.h"
 #include "node/system/grpc_channel_cache.h"
+#include "node/system/node/muduo_grpc_channel_slot.h"
 
 void NodeConnector::ConnectToNode(const NodeInfo &nodeInfo)
 {
@@ -67,6 +68,29 @@ void NodeConnector::ConnectToGrpcNode(const NodeInfo &nodeInfo)
 		targetRegistry.destroy(createdId);
 		return;
 	}
+	// 迁移期接缝(docs/design/grpc-muduo-transport.md §8):进程为这个节点类型装了 muduo 传输的工厂,
+	// 就只建 muduo_grpc 通道,不创建官方 grpc::Channel / Stub / CompletionQueue。NodeInfo 照旧最后挂。
+	if (const auto *factory = targetRegistry.ctx().find<MuduoGrpcChannelFactory>(); factory != nullptr && factory->create)
+	{
+		auto channel = factory->create(ep.ip(), ep.port());
+		if (!channel)
+		{
+			LOG_ERROR << "Cannot create muduo_grpc channel for GRPC node, ID: " << nodeInfo.node_id()
+					  << ", NodeType: " << nodeInfo.node_type()
+					  << ", IP: " << ep.ip() << ", Port: " << ep.port();
+			targetRegistry.destroy(createdId);
+			return;
+		}
+		targetRegistry.emplace<MuduoGrpcChannelPtr>(createdId, std::move(channel));
+		targetRegistry.emplace<NodeInfo>(createdId, nodeInfo);
+		LOG_INFO << "Connecting to GRPC node over muduo_grpc transport, ID: " << nodeInfo.node_id()
+				 << ", IP: " << ep.ip()
+				 << ", Port: " << ep.port()
+				 << ", NodeType: " << nodeInfo.node_type()
+				 << ", Entity: " << entt::to_integral(createdId);
+		return;
+	}
+
 	const auto target = ::FormatIpAndPort(ep.ip(), ep.port());
 	auto cachedChannel = gNode->GetGrpcChannelCache().GetOrCreateChannel(target);
 	const auto &grpcChannel = targetRegistry.emplace<std::shared_ptr<grpc::Channel>>(createdId, std::move(cachedChannel));
