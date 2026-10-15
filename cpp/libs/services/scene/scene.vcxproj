@@ -65,6 +65,8 @@
     <ClInclude Include="player\system\relocate_confirm.h" />
     <ClInclude Include="player\system\enter_fence.h" />
     <ClInclude Include="player\system\player_data_loader.h" />
+    <ClInclude Include="player\system\db_task_dispatch_ledger.h" />
+    <ClInclude Include="player\system\db_task_dispatch_system.h" />
     <ClInclude Include="player\system\player_exit_intent.h" />
     <ClInclude Include="player\system\player_lifecycle.h" />
     <ClInclude Include="player\system\player_scene.h" />
@@ -126,6 +128,8 @@
     <ClCompile Include="player\system\player_database_loader.cpp" />
     <ClCompile Include="player\system\player_database_1_loader.cpp" />
     <ClCompile Include="battle\system\player_battle.cpp" />
+    <ClCompile Include="player\system\db_task_dispatch_ledger.cpp" />
+    <ClCompile Include="player\system\db_task_dispatch_system.cpp" />
     <ClCompile Include="player\system\player_lifecycle.cpp" />
     <ClCompile Include="player\system\player_scene.cpp" />
     <ClCompile Include="player\system\player_team.cpp" />

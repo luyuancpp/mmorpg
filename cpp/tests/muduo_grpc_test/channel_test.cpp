@@ -1043,4 +1043,86 @@ TEST_F(ChannelLoopbackTest, PeriodicKeepalivePingsOnlyWhenEnabledAndAStreamIsAct
     EXPECT_EQ(server_->connectionCount(), 1u);
 }
 
+TEST_F(ChannelLoopbackTest, NoPeriodicPingWhenKeepaliveIsDisabledEvenWithAnActiveStream)
+{
+    StartServer(&IgnoreRequest);
+    const auto channel = MakeChannel(); // keepaliveTime 默认 0:Go 业务服务通道的配置
+    ASSERT_NE(channel, nullptr);
+
+    const auto events = std::make_shared<StreamEvents>();
+    const auto stream = channel->StartStream(kStreamMethod, {}, StreamRecorder(events));
+    EXPECT_TRUE(stream->Write("open"));
+    ASSERT_TRUE(RunUntil([&] { return ServerStream(0, 0) != nullptr; }, 5s));
+    RunFor(800ms);
+    EXPECT_EQ(server_->connection(0).peer.pingsReceived(), 0u)
+        << "关掉周期 keepalive 的通道只在调用截止时探测(§4.4),流上不发 PING";
+    EXPECT_EQ(events->closes, 0);
+}
+
+TEST_F(ChannelLoopbackTest, PeerTrailersWithoutRstStillCloseTheStreamWithThePeerStatus)
+{
+    // 服务端回完 trailers(END_STREAM)就停,不补 RST_STREAM;客户端还没 WritesDone,本端方向开着。
+    // 不处理的话 nghttp2 只把流置为 half-closed(remote),onClose 永远不来。
+    StartServer(&IgnoreRequest);
+    const auto answered = std::make_shared<std::set<int32_t>>(); // 状态随用例走,--gtest_repeat 也不串
+    server_->SetActivityHandler(
+        [answered](LoopbackH2Server &, Connection &connection)
+        {
+            for (const int32_t streamId : connection.peer.StreamIds())
+            {
+                const ReceivedStream *stream = connection.peer.FindStream(streamId);
+                if (stream == nullptr || stream->closed || stream->requestEnded || stream->body.size() < 5 + 1 ||
+                    !answered->insert(streamId).second)
+                {
+                    continue;
+                }
+                EXPECT_TRUE(connection.peer.SendHeaders(streamId, {{":status", "200"}, {"content-type", "application/grpc"}},
+                                                        false));
+                EXPECT_TRUE(connection.peer.SendData(streamId, TestH2Peer::Frame("echo:x"), false));
+                EXPECT_TRUE(connection.peer.SendHeaders(streamId, {{"grpc-status", "5"}, {"grpc-message", "gone"}}, true));
+            }
+        });
+    const auto channel = MakeChannel();
+    ASSERT_NE(channel, nullptr);
+
+    const auto events = std::make_shared<StreamEvents>();
+    const auto stream = channel->StartStream(kStreamMethod, {}, StreamRecorder(events));
+    EXPECT_TRUE(stream->Write("x"));
+    ASSERT_TRUE(RunUntil([&] { return events->closes > 0; }, 5s)) << "对端 trailers 之后 onClose 必须到达";
+    RunFor(200ms);
+
+    EXPECT_EQ(events->closes, 1);
+    EXPECT_EQ(events->status.code(), StatusCode::kNotFound) << events->status.ToString();
+    EXPECT_EQ(events->status.message(), "gone");
+    EXPECT_EQ(events->messages, (std::vector<std::string>{"echo:x"}));
+    EXPECT_FALSE(stream->Write("after")) << "流已结束";
+    const ReceivedStream *serverStream = ServerStream(0, 0);
+    ASSERT_NE(serverStream, nullptr);
+    EXPECT_TRUE(serverStream->rstReceived) << "客户端补 RST_STREAM 关掉自己这一侧";
+    EXPECT_EQ(serverStream->rstErrorCode, h2::kNoError);
+    EXPECT_FALSE(serverStream->requestEnded);
+}
+
+TEST_F(ChannelLoopbackTest, SingleLargeMessageFitsAnEmptyStreamBufferButABacklogIsCapped)
+{
+    StartServer(&IgnoreRequest);
+    ChannelOptions options;
+    options.maxStreamPendingSendBytes = 64;
+    options.maxSendMessageBytes = 1024;
+    const auto channel = MakeChannel(options);
+    ASSERT_NE(channel, nullptr);
+
+    const auto events = std::make_shared<StreamEvents>();
+    const auto stream = channel->StartStream(kStreamMethod, {}, StreamRecorder(events));
+    // 还没连上:消息在本端缓冲。缓冲为空时总放行一条,哪怕它大于待发上限(单条只受 maxSendMessageBytes 约束)。
+    EXPECT_TRUE(stream->Write(std::string(200, 'a')));
+    // 已有积压再写就超限:以 RESOURCE_EXHAUSTED 结束这个流。
+    EXPECT_FALSE(stream->Write("b"));
+    EXPECT_TRUE(stream->closed());
+    ASSERT_TRUE(RunUntil([&] { return events->closes > 0; }, 2s));
+    RunFor(100ms);
+    EXPECT_EQ(events->closes, 1);
+    EXPECT_EQ(events->status.code(), StatusCode::kResourceExhausted) << events->status.ToString();
+}
+
 } // namespace

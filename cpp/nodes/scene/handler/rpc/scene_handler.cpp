@@ -746,7 +746,6 @@ void SceneHandler::CreateScene(::google::protobuf::RpcController* controller, co
 		}
 	}
 
-
 	OnSceneCreated event;
 	event.scene = sceneEntity;
 	tlsEcs.dispatcher.trigger(event);

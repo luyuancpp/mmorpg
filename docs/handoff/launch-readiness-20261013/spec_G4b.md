@@ -675,6 +675,9 @@ try { ./mvnw.cmd -q test "-Dtest=AssignGateRateLimiterTest,AssignGateControllerT
   - 2026-10-13 已选方案 A：「或负责人书面接受」这一支作废，只剩「G4b-G 由 Codex 跑绿」这一条。
   - 打开排队之前，G4b-G 的新脚本至少在真实 Redis 上跑过一次（`spec_G4b-G.md` §8.4 的最小冒烟）；是否作为硬门槛见该规格 §11 #5。
   - **（2026-10-15 负责人按「最标准」定为硬门槛，`spec_G4b-G.md` §11 #5）真实 Redis 首跑**：`spec_G4b-G.md` §8.4 的最小冒烟（含 10-15 补的两项：整键 `PTTL` 在 (0, 120000] 内、手工调大的整键 TTL 不被后续写入压回）由 Codex 或负责人在真实 Redis 7.x 上跑通，命令原文与输出摘要记进 `docs/PROGRESS.md`。没有这份记录，G4b-2 不合，任何环境都不打开排队（含 `-LoginQueue on` 与手改 `Queue.Enabled`）；miniredis 上的单测结果不能顶替。与上面三条并列，缺一不合。
+  - **（2026-10-15 更正：G4b-2 实际已越序入库，改为机械拦截）** 上面写的是「门槛不满足 G4b-2 就不合」，但 G4b-2（login 段、排队密钥、login 指纹、契约用例 3/7/8/9–13/15）实际已先于门槛随快照提交 `e4ff1d165` / `ebccaf04d` 入库，此后 `k8s_deploy.ps1` 在 staging / prod 的缺省 `auto` 下会打开排队，而三项门槛一项都还没满足，仓库里也没有拦截（契约用例 15 只检查 G1b / G4b-G 的代码形状，证明不了门槛）。现改为由 `tools/scripts/k8s_deploy.ps1` 的脚本常量 `$script:LoginQueueMergeGateCleared`（当前 `$false`）机械拦截：门槛未清时 `-LoginQueue auto` 在 dev / staging / prod 都解析为关，非 dev 档部署 login 时打 `[PeakShaving]LoginQueueGate=closed` 警告；`-LoginQueue on` 在参数解析后、任何 kubectl 之前拒绝。即三项门槛满足之前所有环境的排队都关着；手改 login ConfigMap 或 `go/login/etc/login.yaml` 的 `Queue.Enabled` 同样违规（文档约束，脚本拦不住）。三项都满足、`docs/PROGRESS.md` 有记录之后，由负责人在同一提交里把常量改为 `$true`，并在常量注释里写上那条 PROGRESS 条目的标题；契约测试里断「门槛未清」产物的用例 19 / 20 随之改写（纯函数与源码形状的用例 21 / 22 不随常量变）。
+    - 测试接缝：契约测试经环境变量 `MMORPG_TEST_LOGIN_QUEUE_GATE_CLEARED=1` 让依赖「排队开」的 DryRun 用例在门槛清掉之前照旧运行。它只在 `-DryRun` 下生效；不带 `-DryRun` 时只要设置了它，`k8s_deploy.ps1` 就在任何写操作之前拒绝，所以它放不开任何真实部署。
+    - 清门槛本身要跑的真实 Redis 冒烟（`spec_G4b-G.md` §8.4）用本地栈 + scratchpad 里的 login 配置副本，不经过 `k8s_deploy.ps1`，不受这道门禁影响。
 
 **真实环境（可选，不作为合入门槛，需要外部依赖：kind 集群、gateway / login / node 三套镜像，以及上面那组 MMORPG_* 环境变量）**：
 

@@ -1,5 +1,8 @@
 #pragma once
 
+#include <type_traits>
+#include <utility>
+
 #include "proto/scene/player_pet.pb.h"
 
 #include "rpc/player_service_interface.h"
@@ -48,58 +51,65 @@ public:
         {
         case 0:
 			{
+            static_assert(std::is_same_v<decltype(std::declval<::GetPetListResponse&>().mutable_error_message()), ::TipInfoMessage*>,
+                "玩家 RPC 非 Empty 应答必须提供 TipInfoMessage error_message");
             GetPetList(player,
                 static_cast<const ::GetPetListRequest*>(request),
                 static_cast<::GetPetListResponse*>(response));
-            TRANSFER_ERROR_MESSAGE(static_cast<::GetPetListResponse*>(response));
 			}
             break;
         case 1:
 			{
+            static_assert(std::is_same_v<decltype(std::declval<::SummonPetResponse&>().mutable_error_message()), ::TipInfoMessage*>,
+                "玩家 RPC 非 Empty 应答必须提供 TipInfoMessage error_message");
             SummonPet(player,
                 static_cast<const ::SummonPetRequest*>(request),
                 static_cast<::SummonPetResponse*>(response));
-            TRANSFER_ERROR_MESSAGE(static_cast<::SummonPetResponse*>(response));
 			}
             break;
         case 2:
 			{
+            static_assert(std::is_same_v<decltype(std::declval<::RecallPetResponse&>().mutable_error_message()), ::TipInfoMessage*>,
+                "玩家 RPC 非 Empty 应答必须提供 TipInfoMessage error_message");
             RecallPet(player,
                 static_cast<const ::RecallPetRequest*>(request),
                 static_cast<::RecallPetResponse*>(response));
-            TRANSFER_ERROR_MESSAGE(static_cast<::RecallPetResponse*>(response));
 			}
             break;
         case 3:
 			{
+            static_assert(std::is_same_v<decltype(std::declval<::AllocatePetPointsResponse&>().mutable_error_message()), ::TipInfoMessage*>,
+                "玩家 RPC 非 Empty 应答必须提供 TipInfoMessage error_message");
             AllocatePetPoints(player,
                 static_cast<const ::AllocatePetPointsRequest*>(request),
                 static_cast<::AllocatePetPointsResponse*>(response));
-            TRANSFER_ERROR_MESSAGE(static_cast<::AllocatePetPointsResponse*>(response));
 			}
             break;
         case 4:
 			{
+            static_assert(std::is_same_v<decltype(std::declval<::ResetPetPointsResponse&>().mutable_error_message()), ::TipInfoMessage*>,
+                "玩家 RPC 非 Empty 应答必须提供 TipInfoMessage error_message");
             ResetPetPoints(player,
                 static_cast<const ::ResetPetPointsRequest*>(request),
                 static_cast<::ResetPetPointsResponse*>(response));
-            TRANSFER_ERROR_MESSAGE(static_cast<::ResetPetPointsResponse*>(response));
 			}
             break;
         case 5:
 			{
+            static_assert(std::is_same_v<decltype(std::declval<::AutoAllocatePetPointsResponse&>().mutable_error_message()), ::TipInfoMessage*>,
+                "玩家 RPC 非 Empty 应答必须提供 TipInfoMessage error_message");
             AutoAllocatePetPoints(player,
                 static_cast<const ::AutoAllocatePetPointsRequest*>(request),
                 static_cast<::AutoAllocatePetPointsResponse*>(response));
-            TRANSFER_ERROR_MESSAGE(static_cast<::AutoAllocatePetPointsResponse*>(response));
 			}
             break;
         case 6:
 			{
+            static_assert(std::is_same_v<decltype(std::declval<::RenamePetResponse&>().mutable_error_message()), ::TipInfoMessage*>,
+                "玩家 RPC 非 Empty 应答必须提供 TipInfoMessage error_message");
             RenamePet(player,
                 static_cast<const ::RenamePetRequest*>(request),
                 static_cast<::RenamePetResponse*>(response));
-            TRANSFER_ERROR_MESSAGE(static_cast<::RenamePetResponse*>(response));
 			}
             break;
         case 7:
@@ -111,10 +121,11 @@ public:
             break;
         case 8:
 			{
+            static_assert(std::is_same_v<decltype(std::declval<::GmGrantPetResponse&>().mutable_error_message()), ::TipInfoMessage*>,
+                "玩家 RPC 非 Empty 应答必须提供 TipInfoMessage error_message");
             GmGrantPet(player,
                 static_cast<const ::GmGrantPetRequest*>(request),
                 static_cast<::GmGrantPetResponse*>(response));
-            TRANSFER_ERROR_MESSAGE(static_cast<::GmGrantPetResponse*>(response));
 			}
             break;
         default:

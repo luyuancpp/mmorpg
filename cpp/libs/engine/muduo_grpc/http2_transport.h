@@ -146,7 +146,8 @@ private:
     void OnStreamHeaders(int32_t streamId, const Metadata &initialMetadata) override;
     void OnStreamMessage(int32_t streamId, std::string message) override;
 
-    void ScheduleKeepalive();
+    // delay 之后检查一次是否该发周期 PING(§13.3)。已上弦则不动。
+    void ScheduleKeepalive(std::chrono::steady_clock::duration delay);
     void HandleKeepaliveTimer();
     // 发一个存活 PING 并上弦 ACK 超时;调用方已判断过放行条件。
     bool SendProbePing(std::chrono::steady_clock::time_point now);

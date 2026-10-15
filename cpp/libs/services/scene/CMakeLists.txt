@@ -110,6 +110,10 @@ set(SOURCE_FILES
     player/system/asset_op_system.cpp
     player/system/player_database_loader.cpp
     player/system/player_database_1_loader.cpp
+    # DBTask 投递账本(纯数据结构)与它的粘合层;player_lifecycle.cpp 与 core/system/redis.cpp 都调它,
+    # 漏登记会在 scene 静态库里缺定义,链接期报 undefined reference。
+    player/system/db_task_dispatch_ledger.cpp
+    player/system/db_task_dispatch_system.cpp
     player/system/player_lifecycle.cpp
     player/system/player_scene.cpp
     player/system/player_team.cpp

@@ -88,7 +88,9 @@ void RedisSystem::Initialize(muduo::net::EventLoop* loop)
     // per-call DEBUG logs. No output when all queues are empty.
     static constexpr double kQueueSnapshotIntervalSec = 30.0;
     // lastEnterFence:上一次打出 [EnterFence] 时的计数(只在本定时器里读写,逻辑线程上;初值全 0 = 第一次有计数就打)。
-    snapshotTimerId_ = loop->runEvery(kQueueSnapshotIntervalSec, [this, lastEnterFence = enter_fence_stats::Snapshot{}]() mutable
+    // lastDbTaskDispatch:上一次打出 [DbTaskDispatch] 时的计数(同上,只在本定时器里读写)。
+    snapshotTimerId_ = loop->runEvery(kQueueSnapshotIntervalSec, [this, lastEnterFence = enter_fence_stats::Snapshot{},
+                                                                  lastDbTaskDispatch = db_task_dispatch_stats::Snapshot{}]() mutable
                                       {
         if (playerRedis)
         {
@@ -147,6 +149,33 @@ void RedisSystem::Initialize(muduo::net::EventLoop* loop)
                 LOG_INFO << line;
             }
             lastEnterFence = fenceStats;
+        }
+        // DBTask 投递记账(db_task_dispatch_system.h 的 db_task_dispatch_stats)。单独一行、单独前缀,不动上面几行的
+        // 解析格式。key=value 平铺、进程启动以来的累计值;计数有变化或还有未落定玩家时才打。这一拍里出现「MySQL 可能
+        // 落后」的增长(AlarmingIncreaseSince)升 WARN,否则 INFO。玩家号不进这一行。
+        const auto dispatchStats = db_task_dispatch_stats::Read();
+        const std::size_t unsettledPlayers = DbTaskDispatchSystem::UnsettledPlayerCount();
+        if (dispatchStats != lastDbTaskDispatch || unsettledPlayers > 0)
+        {
+            std::string line = "[DbTaskDispatch]";
+            for (std::size_t i = 0; i < dispatchStats.values.size(); ++i)
+            {
+                line += ' ';
+                line += db_task_dispatch_stats::kCounterNames[i];
+                line += '=';
+                line += std::to_string(dispatchStats.values[i]);
+            }
+            line += " unsettled_players=" + std::to_string(unsettledPlayers);
+            line += " in_flight_tickets=" + std::to_string(DbTaskDispatchSystem::InFlightTickets());
+            if (dispatchStats.AlarmingIncreaseSince(lastDbTaskDispatch))
+            {
+                LOG_WARN << line;
+            }
+            else
+            {
+                LOG_INFO << line;
+            }
+            lastDbTaskDispatch = dispatchStats;
         } });
     snapshotTimerActive_ = true;
 
@@ -250,6 +279,14 @@ void RedisSystem::Shutdown()
             loop.cancel(snapshotTimerId_);
             snapshotTimerActive_ = false;
         }
+        if (dbTaskPumpTimerActive_)
+        {
+            loop.cancel(dbTaskPumpTimerId_);
+            dbTaskPumpTimerActive_ = false;
+        }
+        // 先停 Pump 再注销监听器;未落定的玩家在这里打一行 ERROR 留证。放在 loop_ 有值的分支里:析构里的
+        // 第二次 Shutdown 走不到这里(Shutdown 自身也幂等),不会在 thread_local 析构期间再碰 KafkaProducer。
+        DbTaskDispatchSystem::Shutdown();
     }
 	tlsRedis.SetReconnectCallback({});
     playerRedis.reset();

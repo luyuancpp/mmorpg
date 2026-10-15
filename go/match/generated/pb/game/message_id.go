@@ -253,3 +253,5 @@ const SceneBagClientPlayerEquipItemMessageId = 249
 const SceneBagClientPlayerInlayGemMessageId = 250
 const SceneBagClientPlayerEnhanceEquipMessageId = 251
 const SceneBagClientPlayerRemoveGemMessageId = 252
+const SceneSceneClientPlayerGetSyncDigestMessageId = 253
+const SceneSceneClientPlayerNotifySyncDigestMessageId = 254

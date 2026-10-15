@@ -31,9 +31,19 @@ using AsyncKVRangeHandlerFunctionType =
 AsyncKVRangeHandlerFunctionType AsyncKVRangeHandler;
 AsyncKVRangeFailedHandlerFunctionType AsyncKVRangeFailedHandler;
 
-void AsyncCompleteGrpcKVRange(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
-    auto call(
-        static_cast<AsyncKVRangeGrpcClient*>(got_tag));
+void CompleteKVRange(AsyncKVRangeGrpcClient* call) {
+    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
+    const auto release = [](AsyncKVRangeGrpcClient* completed) {
+        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
+        KVRangePool.destroy(completed);
+    };
+    const std::unique_ptr<AsyncKVRangeGrpcClient, decltype(release)> owner(call, release);
+    if (call->done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
+        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
+        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+        return;
+    }
     if (call->status.ok()) {
         if (AsyncKVRangeHandler) {
             AsyncKVRangeHandler(call->context, call->reply);
@@ -55,36 +65,64 @@ void AsyncCompleteGrpcKVRange(entt::registry& registry, entt::entity nodeEntity,
                   << " msg=" << call->status.error_message();
     }
 
-	KVRangePool.destroy(call);
+}
+
+void AsyncCompleteGrpcKVRange(entt::registry&, entt::entity,
+                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
+    auto* call = static_cast<AsyncKVRangeGrpcClient*>(got_tag);
+    if (!ok && call->status.ok()) {
+        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
+    }
+    CompleteKVRange(call);
+}
+
+// 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
+void StartKVRangeCall(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::RangeRequest& request,
+                                             GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
+                                             GrpcDone<::etcdserverpb::RangeResponse> done) {
+    auto call(KVRangePool.construct());
+    for (const auto& [key, value] : metadata) {
+        call->context.AddMetadata(key, Base64Encode(value));
+    }
+    call->sentMetadata = std::move(metadata);
+    call->request = request;
+    call->done = std::move(done);
+    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
+    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
+    auto* stub = registry.valid(nodeEntity) ? registry.try_get<KVStubPtr>(nodeEntity) : nullptr;
+    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
+    if (runtime != nullptr) call->runtime = *runtime;
+    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
+        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
+        QueueGrpcClientCompletion(call->runtime, [call] { CompleteKVRange(call); });
+        return;
+    }
+    call->runtime->calls.insert(&call->context);
+    call->response_reader = (*stub)->PrepareAsyncRange(&call->context, call->request, cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(KVRangeMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+}
+
+void SendKVRange(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::RangeRequest& request,
+                                            GrpcDone<::etcdserverpb::RangeResponse> done, const GrpcCallOptions& options) {
+    StartKVRangeCall(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
 }
 
 void SendKVRange(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::RangeRequest& request) {
-
-    SendKVRange(registry, nodeEntity, request, {}, {});
-
+    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    SendKVRange(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
 void SendKVRange(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::RangeRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 
-    auto call(KVRangePool.construct());
-    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
-
     const size_t count = std::min(metaKeys.size(), metaValues.size());
-    call->sentMetadata.reserve(count);
+    GrpcSentMetadata metadata;
+    metadata.reserve(count);
     for (size_t i = 0; i < count; ++i) {
-        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
-        call->sentMetadata.emplace_back(metaKeys[i], metaValues[i]);
+        metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
-    call->request = request;
-    call->context.set_deadline(NextCallDeadline());
-
-    call->response_reader = registry
-        .get<KVStubPtr>(nodeEntity)
-        ->PrepareAsyncRange(&call->context, call->request,
-                                           &cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(KVRangeMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    StartKVRangeCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
 
 }
 
@@ -100,9 +138,19 @@ using AsyncKVPutHandlerFunctionType =
 AsyncKVPutHandlerFunctionType AsyncKVPutHandler;
 AsyncKVPutFailedHandlerFunctionType AsyncKVPutFailedHandler;
 
-void AsyncCompleteGrpcKVPut(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
-    auto call(
-        static_cast<AsyncKVPutGrpcClient*>(got_tag));
+void CompleteKVPut(AsyncKVPutGrpcClient* call) {
+    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
+    const auto release = [](AsyncKVPutGrpcClient* completed) {
+        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
+        KVPutPool.destroy(completed);
+    };
+    const std::unique_ptr<AsyncKVPutGrpcClient, decltype(release)> owner(call, release);
+    if (call->done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
+        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
+        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+        return;
+    }
     if (call->status.ok()) {
         if (AsyncKVPutHandler) {
             AsyncKVPutHandler(call->context, call->reply);
@@ -124,36 +172,64 @@ void AsyncCompleteGrpcKVPut(entt::registry& registry, entt::entity nodeEntity, g
                   << " msg=" << call->status.error_message();
     }
 
-	KVPutPool.destroy(call);
+}
+
+void AsyncCompleteGrpcKVPut(entt::registry&, entt::entity,
+                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
+    auto* call = static_cast<AsyncKVPutGrpcClient*>(got_tag);
+    if (!ok && call->status.ok()) {
+        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
+    }
+    CompleteKVPut(call);
+}
+
+// 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
+void StartKVPutCall(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::PutRequest& request,
+                                             GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
+                                             GrpcDone<::etcdserverpb::PutResponse> done) {
+    auto call(KVPutPool.construct());
+    for (const auto& [key, value] : metadata) {
+        call->context.AddMetadata(key, Base64Encode(value));
+    }
+    call->sentMetadata = std::move(metadata);
+    call->request = request;
+    call->done = std::move(done);
+    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
+    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
+    auto* stub = registry.valid(nodeEntity) ? registry.try_get<KVStubPtr>(nodeEntity) : nullptr;
+    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
+    if (runtime != nullptr) call->runtime = *runtime;
+    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
+        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
+        QueueGrpcClientCompletion(call->runtime, [call] { CompleteKVPut(call); });
+        return;
+    }
+    call->runtime->calls.insert(&call->context);
+    call->response_reader = (*stub)->PrepareAsyncPut(&call->context, call->request, cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(KVPutMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+}
+
+void SendKVPut(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::PutRequest& request,
+                                            GrpcDone<::etcdserverpb::PutResponse> done, const GrpcCallOptions& options) {
+    StartKVPutCall(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
 }
 
 void SendKVPut(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::PutRequest& request) {
-
-    SendKVPut(registry, nodeEntity, request, {}, {});
-
+    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    SendKVPut(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
 void SendKVPut(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::PutRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 
-    auto call(KVPutPool.construct());
-    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
-
     const size_t count = std::min(metaKeys.size(), metaValues.size());
-    call->sentMetadata.reserve(count);
+    GrpcSentMetadata metadata;
+    metadata.reserve(count);
     for (size_t i = 0; i < count; ++i) {
-        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
-        call->sentMetadata.emplace_back(metaKeys[i], metaValues[i]);
+        metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
-    call->request = request;
-    call->context.set_deadline(NextCallDeadline());
-
-    call->response_reader = registry
-        .get<KVStubPtr>(nodeEntity)
-        ->PrepareAsyncPut(&call->context, call->request,
-                                           &cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(KVPutMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    StartKVPutCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
 
 }
 
@@ -169,9 +245,19 @@ using AsyncKVDeleteRangeHandlerFunctionType =
 AsyncKVDeleteRangeHandlerFunctionType AsyncKVDeleteRangeHandler;
 AsyncKVDeleteRangeFailedHandlerFunctionType AsyncKVDeleteRangeFailedHandler;
 
-void AsyncCompleteGrpcKVDeleteRange(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
-    auto call(
-        static_cast<AsyncKVDeleteRangeGrpcClient*>(got_tag));
+void CompleteKVDeleteRange(AsyncKVDeleteRangeGrpcClient* call) {
+    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
+    const auto release = [](AsyncKVDeleteRangeGrpcClient* completed) {
+        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
+        KVDeleteRangePool.destroy(completed);
+    };
+    const std::unique_ptr<AsyncKVDeleteRangeGrpcClient, decltype(release)> owner(call, release);
+    if (call->done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
+        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
+        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+        return;
+    }
     if (call->status.ok()) {
         if (AsyncKVDeleteRangeHandler) {
             AsyncKVDeleteRangeHandler(call->context, call->reply);
@@ -193,36 +279,64 @@ void AsyncCompleteGrpcKVDeleteRange(entt::registry& registry, entt::entity nodeE
                   << " msg=" << call->status.error_message();
     }
 
-	KVDeleteRangePool.destroy(call);
+}
+
+void AsyncCompleteGrpcKVDeleteRange(entt::registry&, entt::entity,
+                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
+    auto* call = static_cast<AsyncKVDeleteRangeGrpcClient*>(got_tag);
+    if (!ok && call->status.ok()) {
+        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
+    }
+    CompleteKVDeleteRange(call);
+}
+
+// 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
+void StartKVDeleteRangeCall(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::DeleteRangeRequest& request,
+                                             GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
+                                             GrpcDone<::etcdserverpb::DeleteRangeResponse> done) {
+    auto call(KVDeleteRangePool.construct());
+    for (const auto& [key, value] : metadata) {
+        call->context.AddMetadata(key, Base64Encode(value));
+    }
+    call->sentMetadata = std::move(metadata);
+    call->request = request;
+    call->done = std::move(done);
+    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
+    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
+    auto* stub = registry.valid(nodeEntity) ? registry.try_get<KVStubPtr>(nodeEntity) : nullptr;
+    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
+    if (runtime != nullptr) call->runtime = *runtime;
+    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
+        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
+        QueueGrpcClientCompletion(call->runtime, [call] { CompleteKVDeleteRange(call); });
+        return;
+    }
+    call->runtime->calls.insert(&call->context);
+    call->response_reader = (*stub)->PrepareAsyncDeleteRange(&call->context, call->request, cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(KVDeleteRangeMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+}
+
+void SendKVDeleteRange(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::DeleteRangeRequest& request,
+                                            GrpcDone<::etcdserverpb::DeleteRangeResponse> done, const GrpcCallOptions& options) {
+    StartKVDeleteRangeCall(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
 }
 
 void SendKVDeleteRange(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::DeleteRangeRequest& request) {
-
-    SendKVDeleteRange(registry, nodeEntity, request, {}, {});
-
+    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    SendKVDeleteRange(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
 void SendKVDeleteRange(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::DeleteRangeRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 
-    auto call(KVDeleteRangePool.construct());
-    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
-
     const size_t count = std::min(metaKeys.size(), metaValues.size());
-    call->sentMetadata.reserve(count);
+    GrpcSentMetadata metadata;
+    metadata.reserve(count);
     for (size_t i = 0; i < count; ++i) {
-        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
-        call->sentMetadata.emplace_back(metaKeys[i], metaValues[i]);
+        metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
-    call->request = request;
-    call->context.set_deadline(NextCallDeadline());
-
-    call->response_reader = registry
-        .get<KVStubPtr>(nodeEntity)
-        ->PrepareAsyncDeleteRange(&call->context, call->request,
-                                           &cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(KVDeleteRangeMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    StartKVDeleteRangeCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
 
 }
 
@@ -238,9 +352,19 @@ using AsyncKVTxnHandlerFunctionType =
 AsyncKVTxnHandlerFunctionType AsyncKVTxnHandler;
 AsyncKVTxnFailedHandlerFunctionType AsyncKVTxnFailedHandler;
 
-void AsyncCompleteGrpcKVTxn(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
-    auto call(
-        static_cast<AsyncKVTxnGrpcClient*>(got_tag));
+void CompleteKVTxn(AsyncKVTxnGrpcClient* call) {
+    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
+    const auto release = [](AsyncKVTxnGrpcClient* completed) {
+        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
+        KVTxnPool.destroy(completed);
+    };
+    const std::unique_ptr<AsyncKVTxnGrpcClient, decltype(release)> owner(call, release);
+    if (call->done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
+        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
+        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+        return;
+    }
     if (call->status.ok()) {
         if (AsyncKVTxnHandler) {
             AsyncKVTxnHandler(call->context, call->reply);
@@ -262,36 +386,64 @@ void AsyncCompleteGrpcKVTxn(entt::registry& registry, entt::entity nodeEntity, g
                   << " msg=" << call->status.error_message();
     }
 
-	KVTxnPool.destroy(call);
+}
+
+void AsyncCompleteGrpcKVTxn(entt::registry&, entt::entity,
+                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
+    auto* call = static_cast<AsyncKVTxnGrpcClient*>(got_tag);
+    if (!ok && call->status.ok()) {
+        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
+    }
+    CompleteKVTxn(call);
+}
+
+// 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
+void StartKVTxnCall(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::TxnRequest& request,
+                                             GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
+                                             GrpcDone<::etcdserverpb::TxnResponse> done) {
+    auto call(KVTxnPool.construct());
+    for (const auto& [key, value] : metadata) {
+        call->context.AddMetadata(key, Base64Encode(value));
+    }
+    call->sentMetadata = std::move(metadata);
+    call->request = request;
+    call->done = std::move(done);
+    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
+    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
+    auto* stub = registry.valid(nodeEntity) ? registry.try_get<KVStubPtr>(nodeEntity) : nullptr;
+    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
+    if (runtime != nullptr) call->runtime = *runtime;
+    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
+        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
+        QueueGrpcClientCompletion(call->runtime, [call] { CompleteKVTxn(call); });
+        return;
+    }
+    call->runtime->calls.insert(&call->context);
+    call->response_reader = (*stub)->PrepareAsyncTxn(&call->context, call->request, cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(KVTxnMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+}
+
+void SendKVTxn(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::TxnRequest& request,
+                                            GrpcDone<::etcdserverpb::TxnResponse> done, const GrpcCallOptions& options) {
+    StartKVTxnCall(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
 }
 
 void SendKVTxn(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::TxnRequest& request) {
-
-    SendKVTxn(registry, nodeEntity, request, {}, {});
-
+    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    SendKVTxn(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
 void SendKVTxn(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::TxnRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 
-    auto call(KVTxnPool.construct());
-    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
-
     const size_t count = std::min(metaKeys.size(), metaValues.size());
-    call->sentMetadata.reserve(count);
+    GrpcSentMetadata metadata;
+    metadata.reserve(count);
     for (size_t i = 0; i < count; ++i) {
-        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
-        call->sentMetadata.emplace_back(metaKeys[i], metaValues[i]);
+        metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
-    call->request = request;
-    call->context.set_deadline(NextCallDeadline());
-
-    call->response_reader = registry
-        .get<KVStubPtr>(nodeEntity)
-        ->PrepareAsyncTxn(&call->context, call->request,
-                                           &cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(KVTxnMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    StartKVTxnCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
 
 }
 
@@ -307,9 +459,19 @@ using AsyncKVCompactHandlerFunctionType =
 AsyncKVCompactHandlerFunctionType AsyncKVCompactHandler;
 AsyncKVCompactFailedHandlerFunctionType AsyncKVCompactFailedHandler;
 
-void AsyncCompleteGrpcKVCompact(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
-    auto call(
-        static_cast<AsyncKVCompactGrpcClient*>(got_tag));
+void CompleteKVCompact(AsyncKVCompactGrpcClient* call) {
+    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
+    const auto release = [](AsyncKVCompactGrpcClient* completed) {
+        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
+        KVCompactPool.destroy(completed);
+    };
+    const std::unique_ptr<AsyncKVCompactGrpcClient, decltype(release)> owner(call, release);
+    if (call->done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
+        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
+        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+        return;
+    }
     if (call->status.ok()) {
         if (AsyncKVCompactHandler) {
             AsyncKVCompactHandler(call->context, call->reply);
@@ -331,36 +493,64 @@ void AsyncCompleteGrpcKVCompact(entt::registry& registry, entt::entity nodeEntit
                   << " msg=" << call->status.error_message();
     }
 
-	KVCompactPool.destroy(call);
+}
+
+void AsyncCompleteGrpcKVCompact(entt::registry&, entt::entity,
+                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
+    auto* call = static_cast<AsyncKVCompactGrpcClient*>(got_tag);
+    if (!ok && call->status.ok()) {
+        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
+    }
+    CompleteKVCompact(call);
+}
+
+// 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
+void StartKVCompactCall(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::CompactionRequest& request,
+                                             GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
+                                             GrpcDone<::etcdserverpb::CompactionResponse> done) {
+    auto call(KVCompactPool.construct());
+    for (const auto& [key, value] : metadata) {
+        call->context.AddMetadata(key, Base64Encode(value));
+    }
+    call->sentMetadata = std::move(metadata);
+    call->request = request;
+    call->done = std::move(done);
+    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
+    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
+    auto* stub = registry.valid(nodeEntity) ? registry.try_get<KVStubPtr>(nodeEntity) : nullptr;
+    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
+    if (runtime != nullptr) call->runtime = *runtime;
+    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
+        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
+        QueueGrpcClientCompletion(call->runtime, [call] { CompleteKVCompact(call); });
+        return;
+    }
+    call->runtime->calls.insert(&call->context);
+    call->response_reader = (*stub)->PrepareAsyncCompact(&call->context, call->request, cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(KVCompactMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+}
+
+void SendKVCompact(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::CompactionRequest& request,
+                                            GrpcDone<::etcdserverpb::CompactionResponse> done, const GrpcCallOptions& options) {
+    StartKVCompactCall(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
 }
 
 void SendKVCompact(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::CompactionRequest& request) {
-
-    SendKVCompact(registry, nodeEntity, request, {}, {});
-
+    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    SendKVCompact(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
 void SendKVCompact(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::CompactionRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 
-    auto call(KVCompactPool.construct());
-    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
-
     const size_t count = std::min(metaKeys.size(), metaValues.size());
-    call->sentMetadata.reserve(count);
+    GrpcSentMetadata metadata;
+    metadata.reserve(count);
     for (size_t i = 0; i < count; ++i) {
-        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
-        call->sentMetadata.emplace_back(metaKeys[i], metaValues[i]);
+        metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
-    call->request = request;
-    call->context.set_deadline(NextCallDeadline());
-
-    call->response_reader = registry
-        .get<KVStubPtr>(nodeEntity)
-        ->PrepareAsyncCompact(&call->context, call->request,
-                                           &cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(KVCompactMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    StartKVCompactCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
 
 }
 
@@ -375,80 +565,122 @@ using AsyncWatchWatchHandlerFunctionType =
     std::function<void(const ClientContext&, const ::etcdserverpb::WatchResponse&)>;
 AsyncWatchWatchHandlerFunctionType AsyncWatchWatchHandler;
 
-void TryWriteNextNextWatchWatch(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
-    auto& writeInProgress = registry.get<WatchRequestWriteInProgress>(nodeEntity);
-    auto& pendingWritesBuffer = registry.get<WatchRequestBuffer>(nodeEntity).pendingWritesBuffer;
-
-    if (writeInProgress.isInProgress || pendingWritesBuffer.empty()) {
+void TryFinishWatchWatch(AsyncWatchWatchGrpcClient& client) {
+    if (!(client.closing || client.runtime->closing) || client.initializing || client.reading ||
+        client.writing || client.finishing || client.finished) {
         return;
     }
-
-    auto& client = registry.get<AsyncWatchWatchGrpcClient>(nodeEntity);
-    auto& request = pendingWritesBuffer.front();
-
-    writeInProgress.isInProgress = true;
-    GrpcTag* got_tag(tagPool.construct(WatchWatchMessageId,  (void*)GrpcOperation::WRITE));
-    client.stream->Write(request, (void*)(got_tag));
+    client.finishing = true;
+    GrpcTag* tag = tagPool.construct(WatchWatchMessageId, (void*)GrpcOperation::FINISH);
+    client.stream->Finish(&client.status, tag);
 }
-void AsyncCompleteGrpcWatchWatch(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
-    auto& client = registry.get<AsyncWatchWatchGrpcClient>(nodeEntity);
-    auto& writeInProgress = registry.get<WatchRequestWriteInProgress>(nodeEntity);
 
-    switch (static_cast<GrpcOperation>(reinterpret_cast<intptr_t>(got_tag))) {
-        case GrpcOperation::WRITE: {
-            auto& pendingWritesBuffer = registry.get<WatchRequestBuffer>(nodeEntity).pendingWritesBuffer;
-            if (!pendingWritesBuffer.empty()) {
-                pendingWritesBuffer.pop_front();
-            }
-            writeInProgress.isInProgress = false;
-            TryWriteNextNextWatchWatch(registry, nodeEntity, cq);
-            break;
-        }
-        case GrpcOperation::WRITES_DONE: {
-            GrpcTag* got_tag(tagPool.construct(WatchWatchMessageId,  (void*)GrpcOperation::READ));
-            client.stream->Finish(&client.status, (void*)(got_tag));
-            break;
-        }
-        case GrpcOperation::FINISH:
-            cq.Shutdown();
+void TryWriteNextNextWatchWatch(AsyncWatchWatchGrpcClient& client) {
+    if (client.initializing || client.writing || client.closing || client.runtime->closing ||
+        client.finishing || client.finished || client.pendingWrites.empty()) {
+        return;
+    }
+    // 不把可淘汰的队列元素地址交给异步 Write。
+    client.writingRequest.Swap(&client.pendingWrites.front());
+    client.pendingWrites.pop_front();
+    client.writing = true;
+    GrpcTag* tag = tagPool.construct(WatchWatchMessageId, (void*)GrpcOperation::WRITE);
+    client.stream->Write(client.writingRequest, tag);
+}
+
+void AsyncCompleteGrpcWatchWatch(entt::registry& registry, entt::entity nodeEntity,
+                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
+    auto* client = registry.try_get<AsyncWatchWatchGrpcClient>(nodeEntity);
+    if (client == nullptr) {
+        LOG_ERROR << "gRPC stream owner disappeared before completion";
+        return;
+    }
+    const auto operation = static_cast<GrpcOperation>(reinterpret_cast<intptr_t>(got_tag));
+    if (!ok && operation != GrpcOperation::FINISH) {
+        client->closing = true;
+        client->context.TryCancel();
+    }
+    switch (operation) {
+        case GrpcOperation::WRITE:
+            client->writing = false;
+            client->writingRequest.Clear();
             break;
         case GrpcOperation::READ: {
-            auto& response = registry.get<::etcdserverpb::WatchResponse>(nodeEntity);
-            if (AsyncWatchWatchHandler) {
-                AsyncWatchWatchHandler(client.context, response);
+            // Read 已完成，但业务 handler 仍借用 reply；保持 reading，禁止重入 WRITE 再排 Read/Finish。
+            struct ReadBorrow {
+                entt::registry& registry;
+                entt::entity entity;
+                ~ReadBorrow() {
+                    if (!registry.valid(entity)) return;
+                    if (auto* owner = registry.try_get<AsyncWatchWatchGrpcClient>(entity)) {
+                        owner->reading = false;
+                    }
+                }
+            };
+            try {
+                const ReadBorrow borrow{registry, nodeEntity};
+                if (ok && !client->closing && !client->runtime->closing && AsyncWatchWatchHandler) {
+                    AsyncWatchWatchHandler(client->context, client->reply);
+                }
+            } catch (...) {
+                if (registry.valid(nodeEntity)) {
+                    if (auto* owner = registry.try_get<AsyncWatchWatchGrpcClient>(nodeEntity)) {
+                        owner->closing = true;
+                        owner->context.TryCancel();
+                        TryFinishWatchWatch(*owner);
+                    }
+                }
+                throw;
             }
-            GrpcTag* got_tag(tagPool.construct(WatchWatchMessageId, (void*)GrpcOperation::READ));
-            client.stream->Read(&response, (void*)got_tag);
-            TryWriteNextNextWatchWatch(registry, nodeEntity, cq);
+            // 应答处理器可能重入关闭节点，借用结束后重取句柄再继续。
+            if (!registry.valid(nodeEntity)) return;
+            client = registry.try_get<AsyncWatchWatchGrpcClient>(nodeEntity);
+            if (client == nullptr) return;
             break;
         }
-        case GrpcOperation::INIT: {
-            GrpcTag* got_tag(tagPool.construct(WatchWatchMessageId, (void*)GrpcOperation::READ));
-            auto& response = registry.get<::etcdserverpb::WatchResponse>(nodeEntity);
-            client.stream->Read(&response, (void*)got_tag);
-            TryWriteNextNextWatchWatch(registry, nodeEntity, cq);
+        case GrpcOperation::INIT:
+            client->initializing = false;
             break;
-        }
+        case GrpcOperation::FINISH:
+            client->finished = true;
+            client->runtime->calls.erase(&client->context);
+            client->pendingWrites.clear();
+            if (!client->status.ok() && !client->runtime->closing) {
+                LOG_ERROR << "gRPC Watch.Watch stream ended: " << client->status.error_message();
+            }
+            return;
         default:
             break;
     }
+    if (!client->initializing && !client->reading && !client->closing && !client->runtime->closing) {
+        client->reply.Clear();
+        client->reading = true;
+        GrpcTag* tag = tagPool.construct(WatchWatchMessageId, (void*)GrpcOperation::READ);
+        client->stream->Read(&client->reply, tag);
+    }
+    TryWriteNextNextWatchWatch(*client);
+    TryFinishWatchWatch(*client);
 }
 
 void SendWatchWatch(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::WatchRequest& request) {
-
-    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
-    auto& pendingWritesBuffer = registry.get<WatchRequestBuffer>(nodeEntity).pendingWritesBuffer;
-    pendingWritesBuffer.push_back(request);
-    TryWriteNextNextWatchWatch(registry, nodeEntity, cq);
-
+    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    SendWatchWatch(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
 void SendWatchWatch(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::WatchRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 
-    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
-    auto& pendingWritesBuffer = registry.get<WatchRequestBuffer>(nodeEntity).pendingWritesBuffer;
-    pendingWritesBuffer.push_back(request);
-    TryWriteNextNextWatchWatch(registry, nodeEntity, cq);
+    if (!HasUsableGrpcClient(registry, nodeEntity)) {
+        LOG_ERROR << "gRPC Watch.Watch rejected: node missing or closing";
+        return;
+    }
+    auto* client = registry.try_get<AsyncWatchWatchGrpcClient>(nodeEntity);
+    if (client == nullptr || !client->stream || client->closing || client->finished || client->finishing ||
+        client->pendingWrites.size() >= 200) {
+        LOG_ERROR << "gRPC Watch.Watch rejected: stream unavailable or write queue full";
+        return;
+    }
+    client->pendingWrites.push_back(request);
+    TryWriteNextNextWatchWatch(*client);
 
 }
 
@@ -464,9 +696,19 @@ using AsyncLeaseLeaseGrantHandlerFunctionType =
 AsyncLeaseLeaseGrantHandlerFunctionType AsyncLeaseLeaseGrantHandler;
 AsyncLeaseLeaseGrantFailedHandlerFunctionType AsyncLeaseLeaseGrantFailedHandler;
 
-void AsyncCompleteGrpcLeaseLeaseGrant(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
-    auto call(
-        static_cast<AsyncLeaseLeaseGrantGrpcClient*>(got_tag));
+void CompleteLeaseLeaseGrant(AsyncLeaseLeaseGrantGrpcClient* call) {
+    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
+    const auto release = [](AsyncLeaseLeaseGrantGrpcClient* completed) {
+        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
+        LeaseLeaseGrantPool.destroy(completed);
+    };
+    const std::unique_ptr<AsyncLeaseLeaseGrantGrpcClient, decltype(release)> owner(call, release);
+    if (call->done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
+        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
+        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+        return;
+    }
     if (call->status.ok()) {
         if (AsyncLeaseLeaseGrantHandler) {
             AsyncLeaseLeaseGrantHandler(call->context, call->reply);
@@ -488,36 +730,64 @@ void AsyncCompleteGrpcLeaseLeaseGrant(entt::registry& registry, entt::entity nod
                   << " msg=" << call->status.error_message();
     }
 
-	LeaseLeaseGrantPool.destroy(call);
+}
+
+void AsyncCompleteGrpcLeaseLeaseGrant(entt::registry&, entt::entity,
+                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
+    auto* call = static_cast<AsyncLeaseLeaseGrantGrpcClient*>(got_tag);
+    if (!ok && call->status.ok()) {
+        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
+    }
+    CompleteLeaseLeaseGrant(call);
+}
+
+// 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
+void StartLeaseLeaseGrantCall(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseGrantRequest& request,
+                                             GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
+                                             GrpcDone<::etcdserverpb::LeaseGrantResponse> done) {
+    auto call(LeaseLeaseGrantPool.construct());
+    for (const auto& [key, value] : metadata) {
+        call->context.AddMetadata(key, Base64Encode(value));
+    }
+    call->sentMetadata = std::move(metadata);
+    call->request = request;
+    call->done = std::move(done);
+    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
+    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
+    auto* stub = registry.valid(nodeEntity) ? registry.try_get<LeaseStubPtr>(nodeEntity) : nullptr;
+    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
+    if (runtime != nullptr) call->runtime = *runtime;
+    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
+        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
+        QueueGrpcClientCompletion(call->runtime, [call] { CompleteLeaseLeaseGrant(call); });
+        return;
+    }
+    call->runtime->calls.insert(&call->context);
+    call->response_reader = (*stub)->PrepareAsyncLeaseGrant(&call->context, call->request, cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(LeaseLeaseGrantMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+}
+
+void SendLeaseLeaseGrant(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseGrantRequest& request,
+                                            GrpcDone<::etcdserverpb::LeaseGrantResponse> done, const GrpcCallOptions& options) {
+    StartLeaseLeaseGrantCall(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
 }
 
 void SendLeaseLeaseGrant(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseGrantRequest& request) {
-
-    SendLeaseLeaseGrant(registry, nodeEntity, request, {}, {});
-
+    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    SendLeaseLeaseGrant(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
 void SendLeaseLeaseGrant(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseGrantRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 
-    auto call(LeaseLeaseGrantPool.construct());
-    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
-
     const size_t count = std::min(metaKeys.size(), metaValues.size());
-    call->sentMetadata.reserve(count);
+    GrpcSentMetadata metadata;
+    metadata.reserve(count);
     for (size_t i = 0; i < count; ++i) {
-        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
-        call->sentMetadata.emplace_back(metaKeys[i], metaValues[i]);
+        metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
-    call->request = request;
-    call->context.set_deadline(NextCallDeadline());
-
-    call->response_reader = registry
-        .get<LeaseStubPtr>(nodeEntity)
-        ->PrepareAsyncLeaseGrant(&call->context, call->request,
-                                           &cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(LeaseLeaseGrantMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    StartLeaseLeaseGrantCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
 
 }
 
@@ -533,9 +803,19 @@ using AsyncLeaseLeaseRevokeHandlerFunctionType =
 AsyncLeaseLeaseRevokeHandlerFunctionType AsyncLeaseLeaseRevokeHandler;
 AsyncLeaseLeaseRevokeFailedHandlerFunctionType AsyncLeaseLeaseRevokeFailedHandler;
 
-void AsyncCompleteGrpcLeaseLeaseRevoke(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
-    auto call(
-        static_cast<AsyncLeaseLeaseRevokeGrpcClient*>(got_tag));
+void CompleteLeaseLeaseRevoke(AsyncLeaseLeaseRevokeGrpcClient* call) {
+    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
+    const auto release = [](AsyncLeaseLeaseRevokeGrpcClient* completed) {
+        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
+        LeaseLeaseRevokePool.destroy(completed);
+    };
+    const std::unique_ptr<AsyncLeaseLeaseRevokeGrpcClient, decltype(release)> owner(call, release);
+    if (call->done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
+        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
+        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+        return;
+    }
     if (call->status.ok()) {
         if (AsyncLeaseLeaseRevokeHandler) {
             AsyncLeaseLeaseRevokeHandler(call->context, call->reply);
@@ -557,36 +837,64 @@ void AsyncCompleteGrpcLeaseLeaseRevoke(entt::registry& registry, entt::entity no
                   << " msg=" << call->status.error_message();
     }
 
-	LeaseLeaseRevokePool.destroy(call);
+}
+
+void AsyncCompleteGrpcLeaseLeaseRevoke(entt::registry&, entt::entity,
+                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
+    auto* call = static_cast<AsyncLeaseLeaseRevokeGrpcClient*>(got_tag);
+    if (!ok && call->status.ok()) {
+        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
+    }
+    CompleteLeaseLeaseRevoke(call);
+}
+
+// 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
+void StartLeaseLeaseRevokeCall(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseRevokeRequest& request,
+                                             GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
+                                             GrpcDone<::etcdserverpb::LeaseRevokeResponse> done) {
+    auto call(LeaseLeaseRevokePool.construct());
+    for (const auto& [key, value] : metadata) {
+        call->context.AddMetadata(key, Base64Encode(value));
+    }
+    call->sentMetadata = std::move(metadata);
+    call->request = request;
+    call->done = std::move(done);
+    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
+    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
+    auto* stub = registry.valid(nodeEntity) ? registry.try_get<LeaseStubPtr>(nodeEntity) : nullptr;
+    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
+    if (runtime != nullptr) call->runtime = *runtime;
+    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
+        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
+        QueueGrpcClientCompletion(call->runtime, [call] { CompleteLeaseLeaseRevoke(call); });
+        return;
+    }
+    call->runtime->calls.insert(&call->context);
+    call->response_reader = (*stub)->PrepareAsyncLeaseRevoke(&call->context, call->request, cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(LeaseLeaseRevokeMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+}
+
+void SendLeaseLeaseRevoke(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseRevokeRequest& request,
+                                            GrpcDone<::etcdserverpb::LeaseRevokeResponse> done, const GrpcCallOptions& options) {
+    StartLeaseLeaseRevokeCall(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
 }
 
 void SendLeaseLeaseRevoke(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseRevokeRequest& request) {
-
-    SendLeaseLeaseRevoke(registry, nodeEntity, request, {}, {});
-
+    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    SendLeaseLeaseRevoke(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
 void SendLeaseLeaseRevoke(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseRevokeRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 
-    auto call(LeaseLeaseRevokePool.construct());
-    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
-
     const size_t count = std::min(metaKeys.size(), metaValues.size());
-    call->sentMetadata.reserve(count);
+    GrpcSentMetadata metadata;
+    metadata.reserve(count);
     for (size_t i = 0; i < count; ++i) {
-        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
-        call->sentMetadata.emplace_back(metaKeys[i], metaValues[i]);
+        metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
-    call->request = request;
-    call->context.set_deadline(NextCallDeadline());
-
-    call->response_reader = registry
-        .get<LeaseStubPtr>(nodeEntity)
-        ->PrepareAsyncLeaseRevoke(&call->context, call->request,
-                                           &cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(LeaseLeaseRevokeMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    StartLeaseLeaseRevokeCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
 
 }
 
@@ -601,80 +909,122 @@ using AsyncLeaseLeaseKeepAliveHandlerFunctionType =
     std::function<void(const ClientContext&, const ::etcdserverpb::LeaseKeepAliveResponse&)>;
 AsyncLeaseLeaseKeepAliveHandlerFunctionType AsyncLeaseLeaseKeepAliveHandler;
 
-void TryWriteNextNextLeaseLeaseKeepAlive(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
-    auto& writeInProgress = registry.get<LeaseKeepAliveRequestWriteInProgress>(nodeEntity);
-    auto& pendingWritesBuffer = registry.get<LeaseKeepAliveRequestBuffer>(nodeEntity).pendingWritesBuffer;
-
-    if (writeInProgress.isInProgress || pendingWritesBuffer.empty()) {
+void TryFinishLeaseLeaseKeepAlive(AsyncLeaseLeaseKeepAliveGrpcClient& client) {
+    if (!(client.closing || client.runtime->closing) || client.initializing || client.reading ||
+        client.writing || client.finishing || client.finished) {
         return;
     }
-
-    auto& client = registry.get<AsyncLeaseLeaseKeepAliveGrpcClient>(nodeEntity);
-    auto& request = pendingWritesBuffer.front();
-
-    writeInProgress.isInProgress = true;
-    GrpcTag* got_tag(tagPool.construct(LeaseLeaseKeepAliveMessageId,  (void*)GrpcOperation::WRITE));
-    client.stream->Write(request, (void*)(got_tag));
+    client.finishing = true;
+    GrpcTag* tag = tagPool.construct(LeaseLeaseKeepAliveMessageId, (void*)GrpcOperation::FINISH);
+    client.stream->Finish(&client.status, tag);
 }
-void AsyncCompleteGrpcLeaseLeaseKeepAlive(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
-    auto& client = registry.get<AsyncLeaseLeaseKeepAliveGrpcClient>(nodeEntity);
-    auto& writeInProgress = registry.get<LeaseKeepAliveRequestWriteInProgress>(nodeEntity);
 
-    switch (static_cast<GrpcOperation>(reinterpret_cast<intptr_t>(got_tag))) {
-        case GrpcOperation::WRITE: {
-            auto& pendingWritesBuffer = registry.get<LeaseKeepAliveRequestBuffer>(nodeEntity).pendingWritesBuffer;
-            if (!pendingWritesBuffer.empty()) {
-                pendingWritesBuffer.pop_front();
-            }
-            writeInProgress.isInProgress = false;
-            TryWriteNextNextLeaseLeaseKeepAlive(registry, nodeEntity, cq);
-            break;
-        }
-        case GrpcOperation::WRITES_DONE: {
-            GrpcTag* got_tag(tagPool.construct(LeaseLeaseKeepAliveMessageId,  (void*)GrpcOperation::READ));
-            client.stream->Finish(&client.status, (void*)(got_tag));
-            break;
-        }
-        case GrpcOperation::FINISH:
-            cq.Shutdown();
+void TryWriteNextNextLeaseLeaseKeepAlive(AsyncLeaseLeaseKeepAliveGrpcClient& client) {
+    if (client.initializing || client.writing || client.closing || client.runtime->closing ||
+        client.finishing || client.finished || client.pendingWrites.empty()) {
+        return;
+    }
+    // 不把可淘汰的队列元素地址交给异步 Write。
+    client.writingRequest.Swap(&client.pendingWrites.front());
+    client.pendingWrites.pop_front();
+    client.writing = true;
+    GrpcTag* tag = tagPool.construct(LeaseLeaseKeepAliveMessageId, (void*)GrpcOperation::WRITE);
+    client.stream->Write(client.writingRequest, tag);
+}
+
+void AsyncCompleteGrpcLeaseLeaseKeepAlive(entt::registry& registry, entt::entity nodeEntity,
+                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
+    auto* client = registry.try_get<AsyncLeaseLeaseKeepAliveGrpcClient>(nodeEntity);
+    if (client == nullptr) {
+        LOG_ERROR << "gRPC stream owner disappeared before completion";
+        return;
+    }
+    const auto operation = static_cast<GrpcOperation>(reinterpret_cast<intptr_t>(got_tag));
+    if (!ok && operation != GrpcOperation::FINISH) {
+        client->closing = true;
+        client->context.TryCancel();
+    }
+    switch (operation) {
+        case GrpcOperation::WRITE:
+            client->writing = false;
+            client->writingRequest.Clear();
             break;
         case GrpcOperation::READ: {
-            auto& response = registry.get<::etcdserverpb::LeaseKeepAliveResponse>(nodeEntity);
-            if (AsyncLeaseLeaseKeepAliveHandler) {
-                AsyncLeaseLeaseKeepAliveHandler(client.context, response);
+            // Read 已完成，但业务 handler 仍借用 reply；保持 reading，禁止重入 WRITE 再排 Read/Finish。
+            struct ReadBorrow {
+                entt::registry& registry;
+                entt::entity entity;
+                ~ReadBorrow() {
+                    if (!registry.valid(entity)) return;
+                    if (auto* owner = registry.try_get<AsyncLeaseLeaseKeepAliveGrpcClient>(entity)) {
+                        owner->reading = false;
+                    }
+                }
+            };
+            try {
+                const ReadBorrow borrow{registry, nodeEntity};
+                if (ok && !client->closing && !client->runtime->closing && AsyncLeaseLeaseKeepAliveHandler) {
+                    AsyncLeaseLeaseKeepAliveHandler(client->context, client->reply);
+                }
+            } catch (...) {
+                if (registry.valid(nodeEntity)) {
+                    if (auto* owner = registry.try_get<AsyncLeaseLeaseKeepAliveGrpcClient>(nodeEntity)) {
+                        owner->closing = true;
+                        owner->context.TryCancel();
+                        TryFinishLeaseLeaseKeepAlive(*owner);
+                    }
+                }
+                throw;
             }
-            GrpcTag* got_tag(tagPool.construct(LeaseLeaseKeepAliveMessageId, (void*)GrpcOperation::READ));
-            client.stream->Read(&response, (void*)got_tag);
-            TryWriteNextNextLeaseLeaseKeepAlive(registry, nodeEntity, cq);
+            // 应答处理器可能重入关闭节点，借用结束后重取句柄再继续。
+            if (!registry.valid(nodeEntity)) return;
+            client = registry.try_get<AsyncLeaseLeaseKeepAliveGrpcClient>(nodeEntity);
+            if (client == nullptr) return;
             break;
         }
-        case GrpcOperation::INIT: {
-            GrpcTag* got_tag(tagPool.construct(LeaseLeaseKeepAliveMessageId, (void*)GrpcOperation::READ));
-            auto& response = registry.get<::etcdserverpb::LeaseKeepAliveResponse>(nodeEntity);
-            client.stream->Read(&response, (void*)got_tag);
-            TryWriteNextNextLeaseLeaseKeepAlive(registry, nodeEntity, cq);
+        case GrpcOperation::INIT:
+            client->initializing = false;
             break;
-        }
+        case GrpcOperation::FINISH:
+            client->finished = true;
+            client->runtime->calls.erase(&client->context);
+            client->pendingWrites.clear();
+            if (!client->status.ok() && !client->runtime->closing) {
+                LOG_ERROR << "gRPC Lease.LeaseKeepAlive stream ended: " << client->status.error_message();
+            }
+            return;
         default:
             break;
     }
+    if (!client->initializing && !client->reading && !client->closing && !client->runtime->closing) {
+        client->reply.Clear();
+        client->reading = true;
+        GrpcTag* tag = tagPool.construct(LeaseLeaseKeepAliveMessageId, (void*)GrpcOperation::READ);
+        client->stream->Read(&client->reply, tag);
+    }
+    TryWriteNextNextLeaseLeaseKeepAlive(*client);
+    TryFinishLeaseLeaseKeepAlive(*client);
 }
 
 void SendLeaseLeaseKeepAlive(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseKeepAliveRequest& request) {
-
-    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
-    auto& pendingWritesBuffer = registry.get<LeaseKeepAliveRequestBuffer>(nodeEntity).pendingWritesBuffer;
-    pendingWritesBuffer.push_back(request);
-    TryWriteNextNextLeaseLeaseKeepAlive(registry, nodeEntity, cq);
-
+    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    SendLeaseLeaseKeepAlive(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
 void SendLeaseLeaseKeepAlive(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseKeepAliveRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 
-    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
-    auto& pendingWritesBuffer = registry.get<LeaseKeepAliveRequestBuffer>(nodeEntity).pendingWritesBuffer;
-    pendingWritesBuffer.push_back(request);
-    TryWriteNextNextLeaseLeaseKeepAlive(registry, nodeEntity, cq);
+    if (!HasUsableGrpcClient(registry, nodeEntity)) {
+        LOG_ERROR << "gRPC Lease.LeaseKeepAlive rejected: node missing or closing";
+        return;
+    }
+    auto* client = registry.try_get<AsyncLeaseLeaseKeepAliveGrpcClient>(nodeEntity);
+    if (client == nullptr || !client->stream || client->closing || client->finished || client->finishing ||
+        client->pendingWrites.size() >= 200) {
+        LOG_ERROR << "gRPC Lease.LeaseKeepAlive rejected: stream unavailable or write queue full";
+        return;
+    }
+    client->pendingWrites.push_back(request);
+    TryWriteNextNextLeaseLeaseKeepAlive(*client);
 
 }
 
@@ -690,9 +1040,19 @@ using AsyncLeaseLeaseTimeToLiveHandlerFunctionType =
 AsyncLeaseLeaseTimeToLiveHandlerFunctionType AsyncLeaseLeaseTimeToLiveHandler;
 AsyncLeaseLeaseTimeToLiveFailedHandlerFunctionType AsyncLeaseLeaseTimeToLiveFailedHandler;
 
-void AsyncCompleteGrpcLeaseLeaseTimeToLive(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
-    auto call(
-        static_cast<AsyncLeaseLeaseTimeToLiveGrpcClient*>(got_tag));
+void CompleteLeaseLeaseTimeToLive(AsyncLeaseLeaseTimeToLiveGrpcClient* call) {
+    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
+    const auto release = [](AsyncLeaseLeaseTimeToLiveGrpcClient* completed) {
+        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
+        LeaseLeaseTimeToLivePool.destroy(completed);
+    };
+    const std::unique_ptr<AsyncLeaseLeaseTimeToLiveGrpcClient, decltype(release)> owner(call, release);
+    if (call->done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
+        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
+        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+        return;
+    }
     if (call->status.ok()) {
         if (AsyncLeaseLeaseTimeToLiveHandler) {
             AsyncLeaseLeaseTimeToLiveHandler(call->context, call->reply);
@@ -714,36 +1074,64 @@ void AsyncCompleteGrpcLeaseLeaseTimeToLive(entt::registry& registry, entt::entit
                   << " msg=" << call->status.error_message();
     }
 
-	LeaseLeaseTimeToLivePool.destroy(call);
+}
+
+void AsyncCompleteGrpcLeaseLeaseTimeToLive(entt::registry&, entt::entity,
+                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
+    auto* call = static_cast<AsyncLeaseLeaseTimeToLiveGrpcClient*>(got_tag);
+    if (!ok && call->status.ok()) {
+        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
+    }
+    CompleteLeaseLeaseTimeToLive(call);
+}
+
+// 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
+void StartLeaseLeaseTimeToLiveCall(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseTimeToLiveRequest& request,
+                                             GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
+                                             GrpcDone<::etcdserverpb::LeaseTimeToLiveResponse> done) {
+    auto call(LeaseLeaseTimeToLivePool.construct());
+    for (const auto& [key, value] : metadata) {
+        call->context.AddMetadata(key, Base64Encode(value));
+    }
+    call->sentMetadata = std::move(metadata);
+    call->request = request;
+    call->done = std::move(done);
+    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
+    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
+    auto* stub = registry.valid(nodeEntity) ? registry.try_get<LeaseStubPtr>(nodeEntity) : nullptr;
+    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
+    if (runtime != nullptr) call->runtime = *runtime;
+    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
+        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
+        QueueGrpcClientCompletion(call->runtime, [call] { CompleteLeaseLeaseTimeToLive(call); });
+        return;
+    }
+    call->runtime->calls.insert(&call->context);
+    call->response_reader = (*stub)->PrepareAsyncLeaseTimeToLive(&call->context, call->request, cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(LeaseLeaseTimeToLiveMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+}
+
+void SendLeaseLeaseTimeToLive(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseTimeToLiveRequest& request,
+                                            GrpcDone<::etcdserverpb::LeaseTimeToLiveResponse> done, const GrpcCallOptions& options) {
+    StartLeaseLeaseTimeToLiveCall(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
 }
 
 void SendLeaseLeaseTimeToLive(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseTimeToLiveRequest& request) {
-
-    SendLeaseLeaseTimeToLive(registry, nodeEntity, request, {}, {});
-
+    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    SendLeaseLeaseTimeToLive(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
 void SendLeaseLeaseTimeToLive(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseTimeToLiveRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 
-    auto call(LeaseLeaseTimeToLivePool.construct());
-    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
-
     const size_t count = std::min(metaKeys.size(), metaValues.size());
-    call->sentMetadata.reserve(count);
+    GrpcSentMetadata metadata;
+    metadata.reserve(count);
     for (size_t i = 0; i < count; ++i) {
-        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
-        call->sentMetadata.emplace_back(metaKeys[i], metaValues[i]);
+        metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
-    call->request = request;
-    call->context.set_deadline(NextCallDeadline());
-
-    call->response_reader = registry
-        .get<LeaseStubPtr>(nodeEntity)
-        ->PrepareAsyncLeaseTimeToLive(&call->context, call->request,
-                                           &cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(LeaseLeaseTimeToLiveMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    StartLeaseLeaseTimeToLiveCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
 
 }
 
@@ -759,9 +1147,19 @@ using AsyncLeaseLeaseLeasesHandlerFunctionType =
 AsyncLeaseLeaseLeasesHandlerFunctionType AsyncLeaseLeaseLeasesHandler;
 AsyncLeaseLeaseLeasesFailedHandlerFunctionType AsyncLeaseLeaseLeasesFailedHandler;
 
-void AsyncCompleteGrpcLeaseLeaseLeases(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
-    auto call(
-        static_cast<AsyncLeaseLeaseLeasesGrpcClient*>(got_tag));
+void CompleteLeaseLeaseLeases(AsyncLeaseLeaseLeasesGrpcClient* call) {
+    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
+    const auto release = [](AsyncLeaseLeaseLeasesGrpcClient* completed) {
+        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
+        LeaseLeaseLeasesPool.destroy(completed);
+    };
+    const std::unique_ptr<AsyncLeaseLeaseLeasesGrpcClient, decltype(release)> owner(call, release);
+    if (call->done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
+        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
+        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+        return;
+    }
     if (call->status.ok()) {
         if (AsyncLeaseLeaseLeasesHandler) {
             AsyncLeaseLeaseLeasesHandler(call->context, call->reply);
@@ -783,36 +1181,64 @@ void AsyncCompleteGrpcLeaseLeaseLeases(entt::registry& registry, entt::entity no
                   << " msg=" << call->status.error_message();
     }
 
-	LeaseLeaseLeasesPool.destroy(call);
+}
+
+void AsyncCompleteGrpcLeaseLeaseLeases(entt::registry&, entt::entity,
+                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
+    auto* call = static_cast<AsyncLeaseLeaseLeasesGrpcClient*>(got_tag);
+    if (!ok && call->status.ok()) {
+        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
+    }
+    CompleteLeaseLeaseLeases(call);
+}
+
+// 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
+void StartLeaseLeaseLeasesCall(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseLeasesRequest& request,
+                                             GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
+                                             GrpcDone<::etcdserverpb::LeaseLeasesResponse> done) {
+    auto call(LeaseLeaseLeasesPool.construct());
+    for (const auto& [key, value] : metadata) {
+        call->context.AddMetadata(key, Base64Encode(value));
+    }
+    call->sentMetadata = std::move(metadata);
+    call->request = request;
+    call->done = std::move(done);
+    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
+    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
+    auto* stub = registry.valid(nodeEntity) ? registry.try_get<LeaseStubPtr>(nodeEntity) : nullptr;
+    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
+    if (runtime != nullptr) call->runtime = *runtime;
+    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
+        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
+        QueueGrpcClientCompletion(call->runtime, [call] { CompleteLeaseLeaseLeases(call); });
+        return;
+    }
+    call->runtime->calls.insert(&call->context);
+    call->response_reader = (*stub)->PrepareAsyncLeaseLeases(&call->context, call->request, cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(LeaseLeaseLeasesMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+}
+
+void SendLeaseLeaseLeases(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseLeasesRequest& request,
+                                            GrpcDone<::etcdserverpb::LeaseLeasesResponse> done, const GrpcCallOptions& options) {
+    StartLeaseLeaseLeasesCall(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
 }
 
 void SendLeaseLeaseLeases(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseLeasesRequest& request) {
-
-    SendLeaseLeaseLeases(registry, nodeEntity, request, {}, {});
-
+    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    SendLeaseLeaseLeases(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
 void SendLeaseLeaseLeases(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseLeasesRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 
-    auto call(LeaseLeaseLeasesPool.construct());
-    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
-
     const size_t count = std::min(metaKeys.size(), metaValues.size());
-    call->sentMetadata.reserve(count);
+    GrpcSentMetadata metadata;
+    metadata.reserve(count);
     for (size_t i = 0; i < count; ++i) {
-        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
-        call->sentMetadata.emplace_back(metaKeys[i], metaValues[i]);
+        metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
-    call->request = request;
-    call->context.set_deadline(NextCallDeadline());
-
-    call->response_reader = registry
-        .get<LeaseStubPtr>(nodeEntity)
-        ->PrepareAsyncLeaseLeases(&call->context, call->request,
-                                           &cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(LeaseLeaseLeasesMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    StartLeaseLeaseLeasesCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
 
 }
 
@@ -822,51 +1248,42 @@ void SendLeaseLeaseLeases(entt::registry& registry, entt::entity nodeEntity, con
 }
 #pragma endregion
 
-void HandleEtcdCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, GrpcTag* grpcTag) {
+void HandleEtcdCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, bool ok, GrpcTag* grpcTag) {
+        const auto releaseTag = [](GrpcTag* tag) { tagPool.destroy(tag); };
+        const std::unique_ptr<GrpcTag, decltype(releaseTag)> owner(grpcTag, releaseTag);
         switch (grpcTag->messageId) {
         case KVRangeMessageId:
-            AsyncCompleteGrpcKVRange(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
-			tagPool.destroy(grpcTag);
+            AsyncCompleteGrpcKVRange(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
             break;
         case KVPutMessageId:
-            AsyncCompleteGrpcKVPut(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
-			tagPool.destroy(grpcTag);
+            AsyncCompleteGrpcKVPut(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
             break;
         case KVDeleteRangeMessageId:
-            AsyncCompleteGrpcKVDeleteRange(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
-			tagPool.destroy(grpcTag);
+            AsyncCompleteGrpcKVDeleteRange(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
             break;
         case KVTxnMessageId:
-            AsyncCompleteGrpcKVTxn(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
-			tagPool.destroy(grpcTag);
+            AsyncCompleteGrpcKVTxn(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
             break;
         case KVCompactMessageId:
-            AsyncCompleteGrpcKVCompact(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
-			tagPool.destroy(grpcTag);
+            AsyncCompleteGrpcKVCompact(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
             break;
         case WatchWatchMessageId:
-            AsyncCompleteGrpcWatchWatch(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
-			tagPool.destroy(grpcTag);
+            AsyncCompleteGrpcWatchWatch(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
             break;
         case LeaseLeaseGrantMessageId:
-            AsyncCompleteGrpcLeaseLeaseGrant(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
-			tagPool.destroy(grpcTag);
+            AsyncCompleteGrpcLeaseLeaseGrant(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
             break;
         case LeaseLeaseRevokeMessageId:
-            AsyncCompleteGrpcLeaseLeaseRevoke(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
-			tagPool.destroy(grpcTag);
+            AsyncCompleteGrpcLeaseLeaseRevoke(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
             break;
         case LeaseLeaseKeepAliveMessageId:
-            AsyncCompleteGrpcLeaseLeaseKeepAlive(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
-			tagPool.destroy(grpcTag);
+            AsyncCompleteGrpcLeaseLeaseKeepAlive(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
             break;
         case LeaseLeaseTimeToLiveMessageId:
-            AsyncCompleteGrpcLeaseLeaseTimeToLive(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
-			tagPool.destroy(grpcTag);
+            AsyncCompleteGrpcLeaseLeaseTimeToLive(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
             break;
         case LeaseLeaseLeasesMessageId:
-            AsyncCompleteGrpcLeaseLeaseLeases(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
-			tagPool.destroy(grpcTag);
+            AsyncCompleteGrpcLeaseLeaseLeases(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
             break;
         default:
             break;
@@ -980,10 +1397,8 @@ void InitEtcdGrpcNode(const std::shared_ptr<::grpc::ChannelInterface>& channel, 
         GrpcTag* got_tag(tagPool.construct(WatchWatchMessageId, (void*)GrpcOperation::INIT));
 
         auto& client = registry.emplace<AsyncWatchWatchGrpcClient>(nodeEntity);
-        registry.emplace<WatchRequestBuffer>(nodeEntity);
-        registry.emplace<WatchRequestWriteInProgress>(nodeEntity);
-        registry.emplace<::etcdserverpb::WatchResponse>(nodeEntity);
-        registry.emplace<::etcdserverpb::WatchRequest>(nodeEntity);
+        client.runtime = registry.get<GrpcClientRuntimePtr>(nodeEntity);
+        client.runtime->calls.insert(&client.context);
 
         client.stream = registry
             .get<WatchStubPtr>(nodeEntity)
@@ -995,10 +1410,8 @@ void InitEtcdGrpcNode(const std::shared_ptr<::grpc::ChannelInterface>& channel, 
         GrpcTag* got_tag(tagPool.construct(LeaseLeaseKeepAliveMessageId, (void*)GrpcOperation::INIT));
 
         auto& client = registry.emplace<AsyncLeaseLeaseKeepAliveGrpcClient>(nodeEntity);
-        registry.emplace<LeaseKeepAliveRequestBuffer>(nodeEntity);
-        registry.emplace<LeaseKeepAliveRequestWriteInProgress>(nodeEntity);
-        registry.emplace<::etcdserverpb::LeaseKeepAliveResponse>(nodeEntity);
-        registry.emplace<::etcdserverpb::LeaseKeepAliveRequest>(nodeEntity);
+        client.runtime = registry.get<GrpcClientRuntimePtr>(nodeEntity);
+        client.runtime->calls.insert(&client.context);
 
         client.stream = registry
             .get<LeaseStubPtr>(nodeEntity)

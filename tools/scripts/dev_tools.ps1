@@ -429,17 +429,20 @@ function Invoke-ProtoGenRun {
 
         if ($UseGoRun) {
             go run ./cmd
+            if ($LASTEXITCODE -ne 0) { throw "协议生成器执行失败（退出码 $LASTEXITCODE）；生成未完成，停止后续构建。" }
             return
         }
 
         if ($UseBinary) {
             if (Test-Path $primaryProtoGenExePath) {
                 & $primaryProtoGenExePath
+                if ($LASTEXITCODE -ne 0) { throw "协议生成器执行失败（退出码 $LASTEXITCODE）；生成未完成，停止后续构建。" }
                 return
             }
 
             if (Test-Path $legacyProtoGenExePath) {
                 & $legacyProtoGenExePath
+                if ($LASTEXITCODE -ne 0) { throw "协议生成器执行失败（退出码 $LASTEXITCODE）；生成未完成，停止后续构建。" }
                 return
             }
 
@@ -456,6 +459,8 @@ function Invoke-ProtoGenRun {
         else {
             go run ./cmd
         }
+        # 外部命令非零退出不会自动抛异常；必须在 finally 清理之前把失败传给调用者。
+        if ($LASTEXITCODE -ne 0) { throw "协议生成器执行失败（退出码 $LASTEXITCODE）；生成未完成，停止后续构建。" }
     }
     finally {
         if ($null -ne $previousConfigPath) {

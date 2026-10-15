@@ -251,3 +251,5 @@
 250=SceneBagClientPlayerInlayGem
 251=SceneBagClientPlayerEnhanceEquip
 252=SceneBagClientPlayerRemoveGem
+253=SceneSceneClientPlayerGetSyncDigest
+254=SceneSceneClientPlayerNotifySyncDigest

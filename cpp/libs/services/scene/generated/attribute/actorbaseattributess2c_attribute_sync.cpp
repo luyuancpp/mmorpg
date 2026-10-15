@@ -4,7 +4,9 @@
 #include "actorbaseattributess2c_attribute_sync.h"
 
 #include "thread_context/ecs_context.h"
+#include "engine/core/type_define/player_guid_comp.h"
 #include "network/player_message_utils.h"
+#include "muduo/base/Logging.h"
 
 // ============================================================================
 // Core template function: attribute sync for different player list types
@@ -12,14 +14,15 @@
 template <typename PlayerContainer>
 void ActorBaseAttributesS2CSyncAttributesCore(entt::entity entity, uint32_t message_id, const PlayerContainer& targetPlayers)
 {
-    if (entity == entt::null || targetPlayers.empty()) {
+    // 没有接收者时保留脏位,下一次有观察者再发送;无效句柄不访问组件池。
+    if (!tlsEcs.actorRegistry.valid(entity) || targetPlayers.empty()) {
         return;
     }
 
     auto& actorRegistry = tlsEcs.actorRegistry;
 
     auto* dirtyMaskComp = actorRegistry.try_get<ActorBaseAttributesS2CDirtyMaskComp>(entity);
-    if (dirtyMaskComp == nullptr || dirtyMaskComp->dirtyMask.none()) {
+    if (dirtyMaskComp == nullptr) {
         return;
     }
 
@@ -28,9 +31,9 @@ void ActorBaseAttributesS2CSyncAttributesCore(entt::entity entity, uint32_t mess
 
     if (dirtyMaskComp->dirtyMask.test(ActorBaseAttributesS2C::kEntityIdFieldNumber))
     {
-        auto* fieldValue = actorRegistry.try_get<uint64_t>(entity);
+        auto* fieldValue = actorRegistry.try_get<PlayerGuidComp>(entity);
         if (fieldValue != nullptr) {
-            syncMsg.set_entity_id(*fieldValue);
+            syncMsg.set_entity_id(fieldValue->value);
             hasDirtyField = true;
         }
         dirtyMaskComp->dirtyMask.reset(ActorBaseAttributesS2C::kEntityIdFieldNumber);
@@ -66,6 +69,9 @@ void ActorBaseAttributesS2CSyncAttributesCore(entt::entity entity, uint32_t mess
         dirtyMaskComp->dirtyMask.reset(ActorBaseAttributesS2C::kCombatStateFlagsFieldNumber);
     }
 
+    // 存在即脏:本轮消费完就摘除,没有有效字段也不遗留空壳。
+    // 发送前摘除,避免发送边界若同步标出新脏位却被本轮收尾清掉。
+    actorRegistry.remove<ActorBaseAttributesS2CDirtyMaskComp>(entity);
     if (!hasDirtyField) {
         return;
     }
@@ -85,6 +91,15 @@ void ActorBaseAttributesS2CSyncAttributes(entt::entity entity, uint32_t message_
 
 void SetActorBaseAttributesS2CAttrDirtyBit(entt::entity entity, std::size_t bitIdx)
 {
+    if (bitIdx >= ActorBaseAttributesS2CDirtyMaskComp{}.dirtyMask.size()) {
+        LOG_ERROR << "属性脏位越界: bit=" << bitIdx;
+        return;
+    }
+    if (!tlsEcs.actorRegistry.valid(entity)) {
+        LOG_ERROR << "属性脏位写入无效实体: entity=" << entt::to_integral(entity);
+        return;
+    }
+    // 此处延迟创建:实际标脏是本按需状态的唯一写入口。
     auto& dirtyMaskComp = tlsEcs.actorRegistry.get_or_emplace<ActorBaseAttributesS2CDirtyMaskComp>(entity);
     dirtyMaskComp.dirtyMask.set(bitIdx);
 }

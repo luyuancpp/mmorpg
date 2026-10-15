@@ -266,3 +266,56 @@ GrpcClient:
 4. ~~`SendMessageToPlayerOnGrpcNode`(`player_message_utils.cpp:270-315`)无调用方,且发的是 `*requestProto` 而非入参。~~ 分工会话 09-29 删除(§8)。
 5. ~~login Timeout 待拍板(§4.3)~~ 09-29 已改;CreateScene 错误应答回显 `creator_ids`(§7)。
 6. 生成器自动注册(§6)。
+
+## 11. 每次调用回调(2026-10-15)
+
+> 状态:模板与 `grpc_call_tag.h` 已改,**未 regen、未编译**(regen 与编译交 Codex / 用户,见 §11.4)。
+> 接口与 muduo HTTP/2 gRPC 会话(`docs/design/grpc-muduo-transport.md`)共同商定;RPC0 侧的同类能力见
+> `docs/design/muduo-rpc-channel.md`(`RpcChannel::CallMethod` 的每次调用 lambda)。
+
+### 11.1 为什么要
+
+全局 `Async<Svc><Method>Handler` / `FailedHandler` 是"每个方法一个回调":调用方要认领应答,只能把上下文塞进请求
+回显字段或 metadata,再到全局处理器里按会话号 / 请求号反查(gate 的 `rpc_reply_bridge`、号段传输都这么做)。
+同一方法有两类调用方时还会互相抢处理器。每次调用回调把"这次调用要接着做什么"直接捕获进闭包,与 RPC0 对齐。
+
+### 11.2 形状(每个 unary 方法多一个重载,既有 API 一律不动)
+
+```cpp
+// grpc_call_tag.h(手工维护)
+struct GrpcCallOutcome { uint32_t code{0}; std::string message; bool ok() const { return code == 0; } };
+template <typename Reply> using GrpcDone = std::function<void(const GrpcCallOutcome&, const Reply* reply)>;
+struct GrpcCallOptions { std::chrono::milliseconds deadline{0}; GrpcSentMetadata metadata; };
+
+// 生成物
+void Send<Svc><Method>(entt::registry&, entt::entity nodeEntity, const Request&, GrpcDone<Reply> done,
+                       const GrpcCallOptions& options = {});
+```
+
+`code` 与 `grpc::StatusCode` 同值;`deadline <= 0` 用该文件默认 deadline(§4);`metadata` 填原值,生成代码发出前做 Base64。
+三参 `Send`、`metaKeys/metaValues` 重载、`Message&` 重载、全局处理器与 `Set*Handler` / `Set*CallDeadline` / `InitGrpcNode`
+全部保留;流式方法不生成该重载。
+
+### 11.3 契约
+
+- `done` **恰好调用一次**,只在节点所属 EventLoop 线程调用,**从不在 `Send` 栈内同步调用**:缺组件 / 节点关闭的本地拒绝
+  与真实 CQ 完成一样经 `QueueGrpcClientCompletion` 延后(UNAVAILABLE)。
+- `reply` 只在 `ok()` 时非空,只在回调期间有效。
+- 带 `done` 的调用**不再**触发该方法的全局应答 / 失败处理器;`done` 为空等同于不带回调的 `Send`。
+- 节点摘除 / 停机:`BeginShutdownGrpcNode` 取消在途调用,`done` 以非 OK(官方 CQ 为 CANCELLED)在拆节点之前完成;
+  `PollGrpcNodeShutdown` 的排空判据不变(调用对象与本地完成都计数),所以停机阶段 0 的 FIFO 保证照旧成立。
+- 每次调用状态在 `boost::object_pool` 的调用对象里(地址不移动),不进 ECS 组件(ECS 审计 C008)。
+- 非 OK 仍是**结果未知**(§3.3)。
+
+实现上三个 unary 重载都汇到生成的 `Start<Svc><Method>Call`(唯一发送入口);`Complete<Svc><Method>` 先看 `done`,
+有就只交给它。生成代码没有 muduo_grpc 分支:两种传输都在 `grpc::ChannelInterface` 之下。
+
+### 11.4 regen 与验证(交 Codex / 用户)
+
+1. 仓库根:`pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-build`,再
+   `pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-run -ConfigPath tools/proto_generator/protogen/etc/proto_gen.no-unity.yaml`。
+2. 期望:`cpp/generated/grpc_client/**/*_grpc_client.{h,cpp}` 每个 unary 方法多出 `Start...Call` 与 `GrpcDone` 重载;
+   三参 `Send` 改为显式传空 `std::vector<std::string>{}`(避免与新重载的 `{}` 二义)。
+3. 串行编译(`/m:1`)所有启用 gRPC 客户端的工程:scene、gate、battle 与 `rpc_controller_test`。
+4. 单测建议:在 `cpp/tests/rpc_controller_test/grpc_client_lifecycle_test.cpp` 里补"带 done 的调用:成功一次、本地拒绝
+   异步一次、`BeginShutdownGrpcNode` 后以非 OK 一次、不触发全局处理器"四条。

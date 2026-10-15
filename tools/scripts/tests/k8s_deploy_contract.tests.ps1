@@ -1065,6 +1065,222 @@ Test-Case "login 的 go-zero Mode:dev 档必须写且 == go/login/etc/login.yaml
 }
 
 # ─────────────────────────────────────────────────────────────────
+# 3a. C++ 节点的 zone Redis 口令(P0-A 第二批,方案 A)
+# ─────────────────────────────────────────────────────────────────
+# 设计:docs/handoff/global-singletons-p0-findings-20261014.md「P0-A」修复设计第 6、7 条与 8(c)。口令明文进 node-config /
+# battle-node-config 的 game_config.yaml(zoneredis.password);挂 /app/bin/etc 的 C++ 工作负载 Pod 模板带只哈希口令的指纹注解
+# mmorpg.io/zone-redis-auth-hash(C++ 只在启动时读配置,口令一变要靠它滚动)。dev 不注入口令时两者都与改动前逐字相同。
+# 复用 $prodRun / $devOut / $agonesOut,另起 4 个 DryRun 子进程:换口令、external gate + Agones scene(dev 档注入口令)与两个负向;
+# battle 的两个在下文 battle 段($battleInfraRun 之后)。生成期保护与指纹函数按 AST 抽出来直接调用(同上文 deadline 守卫)。
+# 断言一律不回显口令值(比较用 -ceq / Contains,不用会把文本打进失败信息的 Assert-Equal / Assert-Match)。
+$zoneRedisFunctionNames = @('Assert-RedisPasswordYamlSafe', 'Get-CppZoneRedisPassword', 'Get-CppZoneRedisAuthAnnotations', 'Get-InjectedSecretFingerprint')
+foreach ($zoneRedisFnAst in $deadlineDeployAst.FindAll({ param($a) $a -is [System.Management.Automation.Language.FunctionDefinitionAst] }, $false)) {
+    if ($zoneRedisFunctionNames -contains $zoneRedisFnAst.Name) {
+        Set-Item -Path "Function:script:$($zoneRedisFnAst.Name)" -Value $zoneRedisFnAst.Body.GetScriptBlock()
+    }
+}
+foreach ($zoneRedisFnName in $zoneRedisFunctionNames) {
+    if (-not (Test-Path "Function:$zoneRedisFnName")) { throw "k8s_deploy.ps1 缺少函数 $zoneRedisFnName(zone Redis 口令的生成期保护 / 指纹被删了?后续断言无意义)" }
+}
+$ZoneRedisAuthHashKey = 'mmorpg.io/zone-redis-auth-hash'
+
+# 期望的指纹:只用口令算(调抽出来的 Get-CppZoneRedisAuthAnnotations)。DryRun 里各工作负载的指纹等于它,就说明指纹输入只有口令,
+# 与 node-config 的其余内容无关 —— 哈希整份 node-config 会让 P0-B 这类无关改动也滚动 gate(踢人)与 battle(作废在打的局)。
+# 两个脚本级变量是被抽函数的输入,用完即删;$ReleaseProfile 按动态作用域给。
+function Get-ExpectedZoneRedisAuthHash {
+    param([Parameter(Mandatory = $true)][string]$Password)
+    try {
+        $script:RedisPassword = $Password
+        $script:ZoneRedisAuthHashAnnotation = $ZoneRedisAuthHashKey
+        $ReleaseProfile = 'prod'
+        $annotations = Get-CppZoneRedisAuthAnnotations
+        if ($annotations.Count -ne 1) { throw "非空口令应当恰好得到 1 条指纹注解,实际 $($annotations.Count) 条" }
+        return [string]$annotations[$ZoneRedisAuthHashKey]
+    }
+    finally {
+        Remove-Variable -Name RedisPassword, ZoneRedisAuthHashAnnotation -Scope Script -ErrorAction SilentlyContinue
+    }
+}
+
+# 按 kind + metadata.name 取唯一一份 manifest(external 下 gate 的 StatefulSet 与 PDB 同名,Select-ManifestByName 只按名字取第一份)。
+# 找不到、多于一份、或不挂 /app/bin/etc(不是 C++ 节点工作负载)一律 throw。
+function Select-CppWorkloadBlock {
+    param(
+        [Parameter(Mandatory = $true)][AllowEmptyString()][string]$Output,
+        [Parameter(Mandatory = $true)][string]$Kind,
+        [Parameter(Mandatory = $true)][string]$Name,
+        [Parameter(Mandatory = $true)][string]$Label
+    )
+    $found = @(Get-ManifestBlocks -Output $Output | Where-Object {
+        $_ -match ('(?m)^kind:[ ]*' + [regex]::Escape($Kind) + '[ ]*\r?$') -and $_ -match ('(?m)^  name:[ ]*' + [regex]::Escape($Name) + '[ ]*\r?$')
+    })
+    if ($found.Count -ne 1) { throw "${Label}:DryRun 输出里 kind=$Kind name=$Name 的 manifest 应恰好 1 份,实际 $($found.Count) 份" }
+    if ($found[0] -notmatch 'mountPath: /app/bin/etc') { throw "${Label}:$Kind/$Name 不挂 /app/bin/etc,不是 C++ 节点工作负载(夹具前提)" }
+    return $found[0]
+}
+
+# Pod 模板上的 zone Redis 口令指纹。没有该注解返回 $null;有则必须恰好 1 处、在某个 annotations: 段里(前面只能是同段的其它注解)、
+# 值是加双引号的 12 位小写十六进制,否则 throw。
+function Get-ZoneRedisAuthHash {
+    param(
+        [Parameter(Mandatory = $true)][string]$Block,
+        [Parameter(Mandatory = $true)][string]$Label
+    )
+    $count = [regex]::Matches($Block, [regex]::Escape($ZoneRedisAuthHashKey)).Count
+    if ($count -eq 0) { return $null }
+    if ($count -ne 1) { throw "${Label}:zone Redis 口令指纹注解应恰好 1 处,实际 $count 处" }
+    $pattern = '(?m)^(?<ind>[ ]+)annotations:[ ]*\r?\n(?:\k<ind>  [a-z0-9./-]+: "[^"\r\n]*"[ ]*\r?\n)*\k<ind>  ' + [regex]::Escape($ZoneRedisAuthHashKey) + ': "(?<hash>[0-9a-f]{12})"[ ]*\r?$'
+    $m = [regex]::Match($Block, $pattern)
+    if (-not $m.Success) { throw "${Label}:zone Redis 口令指纹必须在 Pod 模板的 annotations: 段里,值为加双引号的 12 位小写十六进制" }
+    return $m.Groups['hash'].Value
+}
+
+# 换口令:只换 MMORPG_REDIS_PASSWORD,其余与 $prodRun 相同;-SkipGoSvc / -SkipJavaSvc:本次只看 C++ 节点。
+$ZoneRedisRotatedPassword = 'contract-test-zone-redis-rotated-03'
+$zoneRedisRotEnv = @{} + $ProdEnv
+$zoneRedisRotEnv['MMORPG_REDIS_PASSWORD'] = $ZoneRedisRotatedPassword
+$zoneRedisRotRun = Invoke-DeployDryRun -Arguments ($ProdArgs + @('-SkipGoSvc', '-SkipJavaSvc')) -Env $zoneRedisRotEnv
+# dev 档注入口令(dev 档非空即采用,release_common.ps1 Resolve-InjectedSecret):gate 走 lib 的 StatefulSet、scene 走 Agones Fleet,
+# 覆盖另外两套模板。参数同 k8s_client_entry_contract.tests.ps1 的 $ExternalArgs。
+$ZoneRedisDevPassword = 'contract-test-zone-redis-dev-04'
+$zoneRedisEntryRun = Invoke-DeployDryRun -Arguments ($BaseArgs + @('-SkipGoSvc', '-SkipJavaSvc', '-SceneOrchestrator', 'agones',
+    '-ClientEntryMode', 'external', '-GateServiceType', 'NodePort', '-GateNodePortBase', '30000', '-ClientPublicHost', '127.0.0.1')) -Env @{ MMORPG_REDIS_PASSWORD = $ZoneRedisDevPassword }
+
+Test-Case 'zone Redis 口令生成期保护:未解析 / 非 dev 档为空 / 含引号、反斜杠或控制字符一律 throw 且不回显值;dev 档为空写空串、不写指纹' {
+    try {
+        $script:ZoneRedisAuthHashAnnotation = $ZoneRedisAuthHashKey
+        $ReleaseProfile = 'prod'
+        $script:RedisPassword = $null
+        $message = ''
+        try { Get-CppZoneRedisPassword | Out-Null } catch { $message = $_.Exception.Message }
+        Assert-Match -Text $message -Pattern 'zone Redis 口令未解析' -Because '没跑 Initialize-InjectedSecrets 就生成 C++ 配置必须 throw,不能把「没解析」当成「没口令」写出空串'
+
+        $script:RedisPassword = ''
+        $message = ''
+        try { Get-CppZoneRedisPassword | Out-Null } catch { $message = $_.Exception.Message }
+        Assert-Match -Text $message -Pattern ([regex]::Escape('ReleaseProfile=prod 要求 zone Redis 口令非空(MMORPG_REDIS_PASSWORD)')) -Because '非 dev 档空口令必须在生成期 throw(该档 Redis 开 requirepass,C++ 不带口令全线 NOAUTH);这是 Resolve-InjectedSecret 之后的纵深防御'
+
+        foreach ($bad in @(
+            @{ Why = '双引号'; Value = 'contract-zr"pw-0001' }
+            @{ Why = '反斜杠'; Value = 'contract-zr\npw-0001' }
+            @{ Why = '换行'; Value = "contract-zr`npw-0001" }
+            @{ Why = '回车'; Value = "contract-zr`rpw-0001" }
+            @{ Why = '制表符'; Value = "contract-zr`tpw-0001" }
+        )) {
+            $script:RedisPassword = $bad.Value
+            # 两个入口:Get-CppZoneRedisPassword(生成 node-config 时)与 Assert-RedisPasswordYamlSafe(Initialize-InjectedSecrets 里、任何写操作之前)。
+            foreach ($probe in @(
+                @{ Name = 'Get-CppZoneRedisPassword'; Call = { Get-CppZoneRedisPassword | Out-Null } }
+                @{ Name = 'Assert-RedisPasswordYamlSafe'; Call = { Assert-RedisPasswordYamlSafe -Password $script:RedisPassword } }
+            )) {
+                $message = ''
+                try { & $probe.Call } catch { $message = $_.Exception.Message }
+                Assert-Match -Text $message -Pattern '含双引号、反斜杠、换行或其它控制字符' -Because "$($bad.Why) / $($probe.Name):值要原样嵌进 YAML 双引号标量,会把 YAML 写坏或被转义静默改写,必须 throw"
+                Assert-Match -Text $message -Pattern 'MMORPG_REDIS_PASSWORD' -Because "$($bad.Why) / $($probe.Name):报错要点名变量"
+                Assert-True -Condition (-not $message.Contains($bad.Value)) -Because "$($bad.Why) / $($probe.Name):拒绝路径只点变量名,不回显口令值"
+            }
+        }
+
+        $ReleaseProfile = 'dev'
+        $script:RedisPassword = ''
+        Assert-Equal -Expected '' -Actual (Get-CppZoneRedisPassword) -Because 'dev 档未注入:写空串,C++ 不发 AUTH,与改动前相同'
+        Assert-Equal -Expected 0 -Actual (Get-CppZoneRedisAuthAnnotations).Count -Because 'dev 档无口令:不写指纹注解,Pod 模板与改动前逐字相同'
+        $script:RedisPassword = 'contract-zr-pw-0001'
+        $first = Get-CppZoneRedisAuthAnnotations
+        Assert-Equal -Expected $ZoneRedisAuthHashKey -Actual (@($first.Keys) -join ',') -Because 'dev 档注入了口令同样要写指纹(dev 非空即采用,C++ 会发 AUTH)'
+        Assert-Match -Text ([string]$first[$ZoneRedisAuthHashKey]) -Pattern '^[0-9a-f]{12}$' -Because '指纹是 12 位小写十六进制(Get-InjectedSecretFingerprint)'
+        $script:RedisPassword = 'contract-zr-pw-0002'
+        Assert-True -Condition ([string](Get-CppZoneRedisAuthAnnotations)[$ZoneRedisAuthHashKey] -ne [string]$first[$ZoneRedisAuthHashKey]) -Because '口令变了指纹必须变,否则换口令不会滚动 C++ Pod'
+    }
+    finally {
+        Remove-Variable -Name RedisPassword, ZoneRedisAuthHashAnnotation -Scope Script -ErrorAction SilentlyContinue
+    }
+}
+
+Test-Case 'zone Redis 口令(prod):node-config 的 zoneredis.password == MMORPG_REDIS_PASSWORD;gate / scene 带只哈希口令的指纹,与 sidecar 注解同在一个 annotations 段' {
+    Assert-Equal -Expected 0 -Actual $prodRun.ExitCode -Because "prod 基线 DryRun 应当成功。输出: $($prodRun.Output)"
+    $flat = ConvertTo-FlatManifest -Block (Select-ManifestByName -Output $prodRun.Output -Name 'node-config')
+    $password = Get-FlatValue -Flat $flat -KeyPath 'data.game_config.yaml.zoneredis.password'
+    Assert-True -Condition ($password -ceq $ProdEnv.MMORPG_REDIS_PASSWORD) -Because 'C++ 的 zone Redis 口令必须来自 MMORPG_REDIS_PASSWORD(与 Go 服务 / gateway 的 ConfigMap 同一个值)'
+    Assert-Equal -Expected '0' -Actual (Get-FlatValue -Flat $flat -KeyPath 'data.game_config.yaml.zoneredis.db') -Because 'C++ 不发 SELECT,库号钉在 0(跨运行时契约)'
+    $expected = Get-ExpectedZoneRedisAuthHash -Password $ProdEnv.MMORPG_REDIS_PASSWORD
+    foreach ($name in @('gate', 'scene')) {
+        $block = Select-CppWorkloadBlock -Output $prodRun.Output -Kind 'Deployment' -Name $name -Label "prod $name"
+        Assert-Equal -Expected $expected -Actual (Get-ZoneRedisAuthHash -Block $block -Label "prod $name") -Because "${name}:指纹必须只由口令决定(期望值只用口令算出)"
+        Assert-Match -Text $block -Pattern '(?m)^      annotations:[ ]*\r?\n        mmorpg\.io/cpp-log-sidecar-config-hash: "[0-9a-f]{12}"[ ]*\r?\n        mmorpg\.io/zone-redis-auth-hash: "[0-9a-f]{12}"[ ]*\r?\n      labels:' -Because "${name}:两条注解必须同在 Pod 模板的一个 annotations 段(sidecar 在前);重复的 annotations: 键各解析器行为不一"
+        Assert-True -Condition (-not $block.Contains($ProdEnv.MMORPG_REDIS_PASSWORD)) -Because "${name}:工作负载里只有指纹,不出现口令明文"
+    }
+}
+
+Test-Case 'zone Redis 口令(dev 基线,不注入):node-config 写空串,C++ 工作负载不带指纹,注解段与改动前逐字相同' {
+    # 跑测进程不设 MMORPG_REDIS_PASSWORD(CI 与本机约定同全文件的 dev 基线);设了的话下面会红,而不是静默放过。
+    foreach ($case in @(@{ Label = 'dev Deployment'; Output = $devOut }, @{ Label = 'dev Agones'; Output = $agonesOut })) {
+        $block = Select-ManifestByName -Output $case.Output -Name 'node-config'
+        $flat = ConvertTo-FlatManifest -Block $block
+        Assert-Equal -Expected '' -Actual (Get-FlatValue -Flat $flat -KeyPath 'data.game_config.yaml.zoneredis.password') -Because "$($case.Label):不注入口令时 C++ 不发 AUTH,与改动前相同"
+        Assert-Match -Text $block -Pattern '(?m)^    zoneredis:[ ]*\r?\n      host: "redis\.[^"\r\n]+"[ ]*\r?\n      port: 6379[ ]*\r?\n      password: ""[ ]*\r?\n      db: 0[ ]*\r?$' -Because "$($case.Label):zoneredis 段与改动前逐字相同"
+        Assert-NotMatch -Text $case.Output -Pattern 'zone-redis-auth-hash' -Because "$($case.Label):口令为空不写指纹注解"
+    }
+    $gate = Select-CppWorkloadBlock -Output $devOut -Kind 'Deployment' -Name 'gate' -Label 'dev gate'
+    Assert-Match -Text $gate -Pattern '(?m)^    metadata:[ ]*\r?\n      annotations:[ ]*\r?\n        mmorpg\.io/cpp-log-sidecar-config-hash: "[0-9a-f]{12}"[ ]*\r?\n      labels:[ ]*\r?\n        app: gate[ ]*\r?$' -Because 'Deployment 模板的注解段改由 New-CppPodAnnotationBlock 渲染,dev 无口令时与改动前逐字相同(只有 sidecar 一条)'
+    $fleet = Select-CppWorkloadBlock -Output $agonesOut -Kind 'Fleet' -Name 'scene' -Label 'dev scene Fleet'
+    Assert-Match -Text $fleet -Pattern '(?m)^        metadata:[ ]*\r?\n          annotations:[ ]*\r?\n            mmorpg\.io/cpp-log-sidecar-config-hash: "[0-9a-f]{12}"[ ]*\r?\n          labels:[ ]*\r?\n            app: scene[ ]*\r?$' -Because 'Fleet 模板同上(Pod 模板 metadata 子键在第 10 列)'
+}
+
+Test-Case 'zone Redis 口令换了,gate / scene 的指纹跟着变(换口令自动滚动),sidecar 指纹不变,node-config 写新值' {
+    Assert-Equal -Expected 0 -Actual $zoneRedisRotRun.ExitCode -Because "只换 Redis 口令的 prod DryRun 应当成功。输出: $($zoneRedisRotRun.Output)"
+    $flat = ConvertTo-FlatManifest -Block (Select-ManifestByName -Output $zoneRedisRotRun.Output -Name 'node-config')
+    Assert-True -Condition ((Get-FlatValue -Flat $flat -KeyPath 'data.game_config.yaml.zoneredis.password') -ceq $ZoneRedisRotatedPassword) -Because 'node-config 里必须是换过的新口令(与指纹同一份输入)'
+    $expected = Get-ExpectedZoneRedisAuthHash -Password $ZoneRedisRotatedPassword
+    foreach ($name in @('gate', 'scene')) {
+        $rotatedBlock = Select-CppWorkloadBlock -Output $zoneRedisRotRun.Output -Kind 'Deployment' -Name $name -Label "换口令 $name"
+        $baselineBlock = Select-CppWorkloadBlock -Output $prodRun.Output -Kind 'Deployment' -Name $name -Label "prod $name"
+        $rotated = Get-ZoneRedisAuthHash -Block $rotatedBlock -Label "换口令 $name"
+        $baseline = Get-ZoneRedisAuthHash -Block $baselineBlock -Label "prod $name"
+        Assert-Equal -Expected $expected -Actual $rotated -Because "${name}:换口令后的指纹必须是新口令算出的值"
+        Assert-True -Condition ($rotated -ne $baseline) -Because "${name}:口令变了指纹必须变(两者都是 $baseline),否则只改 ConfigMap 不会滚动,C++ 一直拿旧口令"
+        $sidecarPattern = 'mmorpg\.io/cpp-log-sidecar-config-hash: "(?<h>[0-9a-f]{12})"'
+        Assert-Equal -Expected ([regex]::Match($baselineBlock, $sidecarPattern).Groups['h'].Value) -Actual ([regex]::Match($rotatedBlock, $sidecarPattern).Groups['h'].Value) -Because "${name}:sidecar 配置没变,它的指纹不该跟着口令变(两条注解各管各的输入)"
+    }
+}
+
+Test-Case 'zone Redis 口令(dev 档注入):external gate StatefulSet 与 Agones scene Fleet 同样带指纹,node-config 写注入值' {
+    Assert-Equal -Expected 0 -Actual $zoneRedisEntryRun.ExitCode -Because "external + Agones 的 dev DryRun 应当成功。输出: $($zoneRedisEntryRun.Output)"
+    $flat = ConvertTo-FlatManifest -Block (Select-ManifestByName -Output $zoneRedisEntryRun.Output -Name 'node-config')
+    Assert-True -Condition ((Get-FlatValue -Flat $flat -KeyPath 'data.game_config.yaml.zoneredis.password') -ceq $ZoneRedisDevPassword) -Because 'dev 档注入了口令就写进 node-config(dev 非空即采用)'
+    $expected = Get-ExpectedZoneRedisAuthHash -Password $ZoneRedisDevPassword
+    foreach ($target in @(@{ Kind = 'StatefulSet'; Name = 'gate' }, @{ Kind = 'Fleet'; Name = 'scene' })) {
+        $label = "dev 注入 $($target.Kind)/$($target.Name)"
+        $block = Select-CppWorkloadBlock -Output $zoneRedisEntryRun.Output -Kind $target.Kind -Name $target.Name -Label $label
+        Assert-Equal -Expected $expected -Actual (Get-ZoneRedisAuthHash -Block $block -Label $label) -Because "${label}:lib 模板与本脚本模板必须写同一个指纹"
+        Assert-Equal -Expected 1 -Actual ([regex]::Matches($block, '(?m)^[ ]+annotations:[ ]*\r?$').Count) -Because "${label}:一个 Pod 模板只能有一个 annotations: 段"
+    }
+}
+
+Test-Case '负向:prod 缺 MMORPG_REDIS_PASSWORD 在任何写操作之前拒绝并点名变量(C++ 不会拿空口令去连开了 requirepass 的 Redis)' {
+    $env2 = @{} + $ProdEnv
+    $env2['MMORPG_REDIS_PASSWORD'] = ''
+    $run = Invoke-DeployDryRun -Arguments $ProdArgs -Env $env2
+    Assert-True -Condition ($run.ExitCode -ne 0) -Because "非 dev 档空口令必须阻断。输出: $($run.Output)"
+    # 其余生产密钥都已给齐,拒绝只能来自这一把;CLI 路径上先拒的是 Resolve-InjectedSecret,生成期那道(Get-CppZoneRedisPassword)由上面的 AST 用例覆盖。
+    Assert-Match -Text $run.Output -Pattern 'ReleaseProfile=prod 要求从环境变量 MMORPG_REDIS_PASSWORD' -Because '错误必须点名缺哪个环境变量,且说清是注入缺失'
+    Assert-NotMatch -Text $run.Output -Pattern '\[dry-run\] kubectl [^\r\n]*\b(apply|create|delete|patch|replace)\b' -Because '密钥解析(Initialize-InjectedSecrets)先于任何写操作,不留半截部署'
+    Assert-NotMatch -Text $run.Output -Pattern 'zone-redis-auth-hash' -Because '被拒时不该渲染出任何 C++ 工作负载'
+}
+
+Test-Case '负向:MMORPG_REDIS_PASSWORD 含双引号时在任何写操作之前拒绝,只点变量名不回显值' {
+    $badPassword = 'contract-test-zone"redis-05'
+    $env2 = @{} + $ProdEnv
+    $env2['MMORPG_REDIS_PASSWORD'] = $badPassword
+    $run = Invoke-DeployDryRun -Arguments $ProdArgs -Env $env2
+    Assert-True -Condition ($run.ExitCode -ne 0) -Because '口令含双引号必须阻断:它要原样写进多份 YAML 双引号标量'
+    Assert-Match -Text $run.Output -Pattern '含双引号、反斜杠、换行或其它控制字符' -Because '错误要说清是字符集问题'
+    Assert-Match -Text $run.Output -Pattern 'MMORPG_REDIS_PASSWORD' -Because '错误要点名变量'
+    Assert-True -Condition (-not ([string]$run.Output).Contains($badPassword)) -Because '拒绝路径不回显口令值'
+    Assert-NotMatch -Text $run.Output -Pattern '\[dry-run\] kubectl [^\r\n]*\b(apply|create|delete|patch|replace)\b' -Because '字符集检查在 Initialize-InjectedSecrets 里,先于任何写操作'
+}
+
+# ─────────────────────────────────────────────────────────────────
 # 3b. 削峰(G4b:docs/handoff/launch-readiness-20261013/spec_G4b.md §2、§6):gateway Bucket4j 限流 / login 登录排队
 # ─────────────────────────────────────────────────────────────────
 # k8s_deploy.ps1 按 -ReleaseProfile 生成:dev 两项都关(产物与 G4b 之前逐字相同),staging / prod 两项都开;阈值只有一份

@@ -256,7 +256,8 @@ public:
 		}
 		// 先释放通道再释放流句柄:~Channel 把在途调用(含刚发出的 LeaseRevoke)以失败投递 —— 那些回调只绑
 		// weak_ptr<Core> 且看到 shutdown_,不再回调 sink;句柄随后析构只是给流记录置取消标记。
-		// LeaseRevoke 的字节在发出时(READY、输出缓冲为空)已直接写进 socket,这里关连接不等应答(§13.7)。
+		// LeaseRevoke 只是「尽量送达」(§13.7):通道 READY 且 muduo 输出缓冲为空时,发出那一刻字节已写进 socket;
+		// 否则还留在用户态缓冲里,随 forceClose 丢弃,lease 等 TTL 到期才被 etcd 回收(与旧实现同样不等应答)。
 		channel_.reset();
 		watch_.stream.reset();
 		keepAlive_.stream.reset();

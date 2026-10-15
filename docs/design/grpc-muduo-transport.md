@@ -410,8 +410,10 @@ EtcdHelper(唯一出口,EtcdManager 的 keepalive 也收进来)
 
 ### 13.7 关机
 
-- `FinalizeShutdownInLoop` 里 `ReleaseNodeId()` 发 LeaseRevoke 之后,新传输的通道随 `EtcdService::Shutdown` 释放:
-  先 Flush,让 LeaseRevoke 的字节尽量写出(输出缓冲为空时 send 直接写 socket),再关连接。应答不等(与旧实现一致)。
+- `FinalizeShutdownInLoop` 里 `ReleaseNodeId()` 发 LeaseRevoke 之后,新传输的通道随 `EtcdService::Shutdown` 释放。
+  LeaseRevoke 只是**尽量送达**:通道 READY 且 muduo 输出缓冲为空时,提交那一刻 `send` 已把字节直接写进 socket;
+  否则字节还在用户态输出缓冲里,随 `forceClose` 丢弃,lease 等 TTL 到期由 etcd 回收。应答不等(与旧实现一致)。
+  (落地时核实:库里没有单独的「关前排空」步骤;要保证送达需让连接在关机两跳里多活到写完,收益不抵复杂度,不做。)
 - 流句柄 Cancel、退避定时器取消;通道析构走 §6 的排队释放。
 
 ### 13.8 回退

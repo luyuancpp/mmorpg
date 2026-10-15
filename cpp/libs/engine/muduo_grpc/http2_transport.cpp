@@ -250,14 +250,14 @@ bool Http2Transport::SendProbePing(std::chrono::steady_clock::time_point now)
     return true;
 }
 
-void Http2Transport::ScheduleKeepalive()
+void Http2Transport::ScheduleKeepalive(std::chrono::steady_clock::duration delay)
 {
     if (options_.keepaliveTime.count() <= 0 || keepaliveTimerArmed_ || closed_)
     {
         return;
     }
     std::weak_ptr<Http2Transport> weakSelf = weak_from_this();
-    keepaliveTimer_ = loop_.runAfter(ToSeconds(options_.keepaliveTime), [weakSelf]
+    keepaliveTimer_ = loop_.runAfter(ToSeconds(delay), [weakSelf]
                                      {
         if (const auto self = weakSelf.lock())
         {
@@ -273,14 +273,19 @@ void Http2Transport::HandleKeepaliveTimer()
     {
         return;
     }
-    // §13.3:有活跃流、且这段时间一个帧都没收到才发;按 steady_clock 判,墙钟跳变只影响检查频率。
+    // §13.3:有活跃流、且距最近收到的帧已满 keepaliveTime 才发;按 steady_clock 判,墙钟跳变只影响检查时机。
     const auto now = std::chrono::steady_clock::now();
-    if (ready() && session_ && ActiveStreamCount() > 0 && !probeOutstanding_ &&
-        now - lastFrameReceivedAt_ >= options_.keepaliveTime)
+    const auto idle = now - lastFrameReceivedAt_;
+    if (ready() && session_ && ActiveStreamCount() > 0 && !probeOutstanding_ && idle >= options_.keepaliveTime)
     {
         SendProbePing(now);
+        ScheduleKeepalive(options_.keepaliveTime);
+        return;
     }
-    ScheduleKeepalive();
+    // 下一次检查按「最近收到的帧 + keepaliveTime」上弦(与 grpc-go 一致),而不是固定周期:
+    // 否则最坏要多等一整个周期才发 PING。没有活跃流 / 探测在途时按整周期再看。
+    const bool idleCountdown = ready() && ActiveStreamCount() > 0 && !probeOutstanding_ && idle < options_.keepaliveTime;
+    ScheduleKeepalive(idleCountdown ? options_.keepaliveTime - idle : options_.keepaliveTime);
 }
 
 ClientSession::SubmitResult Http2Transport::StartBidiStream(const std::string &path, const Metadata &metadata)
@@ -545,7 +550,7 @@ void Http2Transport::OnSessionReady()
         loop_.cancel(connectTimer_);
         connectTimerArmed_ = false;
     }
-    ScheduleKeepalive();
+    ScheduleKeepalive(options_.keepaliveTime);
     if (const auto listener = listener_.lock())
     {
         listener->OnTransportReady(*this);

@@ -2,7 +2,8 @@
 #include <chrono>
 #include <functional>
 #include <memory>
-#include <boost/circular_buffer.hpp>
+#include <deque>
+#include "core/network/grpc_client_runtime.h"
 #include "entt/src/entt/entity/registry.hpp"
 #include "grpc_client/grpc_call_tag.h"
 #include "proto/login/login.grpc.pb.h"
@@ -27,6 +28,10 @@ struct AsyncClientPlayerLoginLoginGrpcClient {
     // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
     ::loginpb::LoginRequest request;
     GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncClientPlayerLoginLoginHandler / FailedHandler。
+    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
+    GrpcDone<::loginpb::LoginResponse> done;
+    GrpcClientRuntimePtr runtime;
 };
 
 using AsyncClientPlayerLoginLoginHandlerFunctionType =
@@ -41,6 +46,9 @@ extern AsyncClientPlayerLoginLoginFailedHandlerFunctionType AsyncClientPlayerLog
 void SendClientPlayerLoginLogin(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::LoginRequest& request);
 void SendClientPlayerLoginLogin(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::LoginRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendClientPlayerLoginLogin(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
+// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
+void SendClientPlayerLoginLogin(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::LoginRequest& request, GrpcDone<::loginpb::LoginResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region ClientPlayerLoginCreatePlayer
 
@@ -54,6 +62,10 @@ struct AsyncClientPlayerLoginCreatePlayerGrpcClient {
     // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
     ::loginpb::CreatePlayerRequest request;
     GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncClientPlayerLoginCreatePlayerHandler / FailedHandler。
+    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
+    GrpcDone<::loginpb::CreatePlayerResponse> done;
+    GrpcClientRuntimePtr runtime;
 };
 
 using AsyncClientPlayerLoginCreatePlayerHandlerFunctionType =
@@ -68,6 +80,9 @@ extern AsyncClientPlayerLoginCreatePlayerFailedHandlerFunctionType AsyncClientPl
 void SendClientPlayerLoginCreatePlayer(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::CreatePlayerRequest& request);
 void SendClientPlayerLoginCreatePlayer(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::CreatePlayerRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendClientPlayerLoginCreatePlayer(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
+// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
+void SendClientPlayerLoginCreatePlayer(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::CreatePlayerRequest& request, GrpcDone<::loginpb::CreatePlayerResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region ClientPlayerLoginEnterGame
 
@@ -81,6 +96,10 @@ struct AsyncClientPlayerLoginEnterGameGrpcClient {
     // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
     ::loginpb::EnterGameRequest request;
     GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncClientPlayerLoginEnterGameHandler / FailedHandler。
+    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
+    GrpcDone<::loginpb::EnterGameResponse> done;
+    GrpcClientRuntimePtr runtime;
 };
 
 using AsyncClientPlayerLoginEnterGameHandlerFunctionType =
@@ -95,6 +114,9 @@ extern AsyncClientPlayerLoginEnterGameFailedHandlerFunctionType AsyncClientPlaye
 void SendClientPlayerLoginEnterGame(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::EnterGameRequest& request);
 void SendClientPlayerLoginEnterGame(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::EnterGameRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendClientPlayerLoginEnterGame(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
+// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
+void SendClientPlayerLoginEnterGame(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::EnterGameRequest& request, GrpcDone<::loginpb::EnterGameResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region ClientPlayerLoginLeaveGame
 
@@ -108,6 +130,10 @@ struct AsyncClientPlayerLoginLeaveGameGrpcClient {
     // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
     ::loginpb::LeaveGameRequest request;
     GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncClientPlayerLoginLeaveGameHandler / FailedHandler。
+    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
+    GrpcDone<::loginpb::LoginEmptyResponse> done;
+    GrpcClientRuntimePtr runtime;
 };
 
 using AsyncClientPlayerLoginLeaveGameHandlerFunctionType =
@@ -122,6 +148,9 @@ extern AsyncClientPlayerLoginLeaveGameFailedHandlerFunctionType AsyncClientPlaye
 void SendClientPlayerLoginLeaveGame(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::LeaveGameRequest& request);
 void SendClientPlayerLoginLeaveGame(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::LeaveGameRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendClientPlayerLoginLeaveGame(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
+// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
+void SendClientPlayerLoginLeaveGame(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::LeaveGameRequest& request, GrpcDone<::loginpb::LoginEmptyResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region ClientPlayerLoginDisconnect
 
@@ -135,6 +164,10 @@ struct AsyncClientPlayerLoginDisconnectGrpcClient {
     // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
     ::loginpb::LoginNodeDisconnectRequest request;
     GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncClientPlayerLoginDisconnectHandler / FailedHandler。
+    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
+    GrpcDone<::loginpb::LoginEmptyResponse> done;
+    GrpcClientRuntimePtr runtime;
 };
 
 using AsyncClientPlayerLoginDisconnectHandlerFunctionType =
@@ -149,6 +182,9 @@ extern AsyncClientPlayerLoginDisconnectFailedHandlerFunctionType AsyncClientPlay
 void SendClientPlayerLoginDisconnect(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::LoginNodeDisconnectRequest& request);
 void SendClientPlayerLoginDisconnect(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::LoginNodeDisconnectRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendClientPlayerLoginDisconnect(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
+// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
+void SendClientPlayerLoginDisconnect(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::LoginNodeDisconnectRequest& request, GrpcDone<::loginpb::LoginEmptyResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region ClientPlayerLoginRefreshToken
 
@@ -162,6 +198,10 @@ struct AsyncClientPlayerLoginRefreshTokenGrpcClient {
     // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
     ::loginpb::RefreshTokenRequest request;
     GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncClientPlayerLoginRefreshTokenHandler / FailedHandler。
+    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
+    GrpcDone<::loginpb::RefreshTokenResponse> done;
+    GrpcClientRuntimePtr runtime;
 };
 
 using AsyncClientPlayerLoginRefreshTokenHandlerFunctionType =
@@ -176,6 +216,9 @@ extern AsyncClientPlayerLoginRefreshTokenFailedHandlerFunctionType AsyncClientPl
 void SendClientPlayerLoginRefreshToken(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::RefreshTokenRequest& request);
 void SendClientPlayerLoginRefreshToken(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::RefreshTokenRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendClientPlayerLoginRefreshToken(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
+// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
+void SendClientPlayerLoginRefreshToken(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::RefreshTokenRequest& request, GrpcDone<::loginpb::RefreshTokenResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 using LoginPreGateStubPtr = std::unique_ptr<LoginPreGate::Stub>;
 #pragma region LoginPreGateAssignGate
@@ -190,6 +233,10 @@ struct AsyncLoginPreGateAssignGateGrpcClient {
     // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
     ::loginpb::AssignGateRequest request;
     GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncLoginPreGateAssignGateHandler / FailedHandler。
+    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
+    GrpcDone<::loginpb::AssignGateResponse> done;
+    GrpcClientRuntimePtr runtime;
 };
 
 using AsyncLoginPreGateAssignGateHandlerFunctionType =
@@ -204,6 +251,9 @@ extern AsyncLoginPreGateAssignGateFailedHandlerFunctionType AsyncLoginPreGateAss
 void SendLoginPreGateAssignGate(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::AssignGateRequest& request);
 void SendLoginPreGateAssignGate(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::AssignGateRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendLoginPreGateAssignGate(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
+// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
+void SendLoginPreGateAssignGate(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::AssignGateRequest& request, GrpcDone<::loginpb::AssignGateResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region LoginPreGateQueryQueueStatus
 
@@ -217,6 +267,10 @@ struct AsyncLoginPreGateQueryQueueStatusGrpcClient {
     // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
     ::loginpb::QueryQueueStatusRequest request;
     GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncLoginPreGateQueryQueueStatusHandler / FailedHandler。
+    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
+    GrpcDone<::loginpb::QueryQueueStatusResponse> done;
+    GrpcClientRuntimePtr runtime;
 };
 
 using AsyncLoginPreGateQueryQueueStatusHandlerFunctionType =
@@ -231,6 +285,9 @@ extern AsyncLoginPreGateQueryQueueStatusFailedHandlerFunctionType AsyncLoginPreG
 void SendLoginPreGateQueryQueueStatus(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::QueryQueueStatusRequest& request);
 void SendLoginPreGateQueryQueueStatus(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::QueryQueueStatusRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendLoginPreGateQueryQueueStatus(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
+// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
+void SendLoginPreGateQueryQueueStatus(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::QueryQueueStatusRequest& request, GrpcDone<::loginpb::QueryQueueStatusResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 using LoginAdminStubPtr = std::unique_ptr<LoginAdmin::Stub>;
 #pragma region LoginAdminRemovePlayersFromAccounts
@@ -245,6 +302,10 @@ struct AsyncLoginAdminRemovePlayersFromAccountsGrpcClient {
     // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
     ::loginpb::RemovePlayersFromAccountsRequest request;
     GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncLoginAdminRemovePlayersFromAccountsHandler / FailedHandler。
+    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
+    GrpcDone<::loginpb::RemovePlayersFromAccountsResponse> done;
+    GrpcClientRuntimePtr runtime;
 };
 
 using AsyncLoginAdminRemovePlayersFromAccountsHandlerFunctionType =
@@ -259,6 +320,9 @@ extern AsyncLoginAdminRemovePlayersFromAccountsFailedHandlerFunctionType AsyncLo
 void SendLoginAdminRemovePlayersFromAccounts(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::RemovePlayersFromAccountsRequest& request);
 void SendLoginAdminRemovePlayersFromAccounts(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::RemovePlayersFromAccountsRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendLoginAdminRemovePlayersFromAccounts(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
+// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
+void SendLoginAdminRemovePlayersFromAccounts(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::RemovePlayersFromAccountsRequest& request, GrpcDone<::loginpb::RemovePlayersFromAccountsResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 void SetLoginHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
 void SetLoginIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
@@ -266,7 +330,7 @@ void SetLoginFailedHandler(const std::function<void(const GrpcCallFailure&, cons
 void SetLoginIfEmptyFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler);
 // 本文件所有 unary 调用此后使用的 deadline;启动时由 SetGrpcCallDeadline 按目标节点类型调用。流式调用不设。
 void SetLoginCallDeadline(std::chrono::milliseconds deadline);
-void HandleLoginCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, GrpcTag* grpcTag);
+void HandleLoginCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, bool ok, GrpcTag* grpcTag);
 void InitLoginGrpcNode(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity);
 
 }// namespace loginpb

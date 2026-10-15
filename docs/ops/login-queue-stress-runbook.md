@@ -28,6 +28,8 @@ Queue:
     "1": 1000   # 强制 1000,5000 robot 一定会触发排队
 ```
 
+> **合入门槛(2026-10-15)**:在 `docs/handoff/launch-readiness-20261013/spec_G4b.md` §7「合入门槛」的三项都满足、`docs/PROGRESS.md` 有记录之前,上面的 `Queue.Enabled: true` 只在本机验证时用(清门槛所需的真实 Redis 冒烟即下方「验证清单」第 2、3 步与 `spec_G4b-G.md` §8.4),写在 scratchpad 里的配置副本上,不改 `go/login/etc/login.yaml`。部署环境一律不打开排队:K8s 由 `tools/scripts/k8s_deploy.ps1` 的 `$script:LoginQueueMergeGateCleared` 机械拦截(未清时各档位排队都关、`-LoginQueue on` 拒绝),手改 ConfigMap 或 login.yaml 的 `Queue.Enabled` 同样违规。
+
 先按当前启动脚本或 [K8s 开服手册](k8s-open-server-runbook_zh.md) 启动完整依赖链,确认 login、gate 与 Java gateway 就绪后再起 robot;路由模式还要求先有 client-rpc-router。本页是判读清单,不替代根 AGENTS.md §6 的每轮基线、数据清理与三阶段采样门禁。
 
 ---
@@ -158,6 +160,7 @@ gate 机器 sysctl net.ipv4.ip_local_port_range 内 TIME_WAIT 占满
 ## 验证清单(每次改 loginqueue 都跑一遍)
 
 > **打开排队前的硬门槛(2026-10-15 负责人定)**:G4b-G 起的在途占位脚本(含 10-15 的条件续期)只有 miniredis 上的证据。G4b-2 打开排队之前,下面第 2、3 步必须在真实 Redis 7.x 上跑通一次,同时按 `docs/handoff/launch-readiness-20261013/spec_G4b-G.md` §8.4 核对 `admitted:zset:zone:1`(类型、分数、约 20s 消失、`PTTL` 在 (0, 120000] 内且不是 −1、手工调大的整键 TTL 不被后续写入压回),结果记进 `docs/PROGRESS.md`。没有这份记录,任何环境都不打开排队。
+> (2026-10-15 补)部署侧的机械拦截是 `tools/scripts/k8s_deploy.ps1` 的 `$script:LoginQueueMergeGateCleared`:三项门槛(见 `spec_G4b.md` §7「合入门槛」)都满足、PROGRESS 有记录之后,由负责人把它改为 `$true`,K8s 上才会按档位打开排队。
 
 ### 1. 单元 + 集成测试都过
 ```bash

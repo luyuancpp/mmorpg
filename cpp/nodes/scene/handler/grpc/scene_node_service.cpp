@@ -53,7 +53,6 @@ void SceneNodeGrpcImpl::HandleCreateScene(const ::CreateSceneRequest* request,
         }
     }
 
-
     OnSceneCreated event;
     event.scene = sceneEntity;
     tlsEcs.dispatcher.trigger(event);
@@ -280,52 +279,79 @@ grpc::Status SceneNodeGrpcImpl::CreateScene(grpc::ServerContext* /*context*/,
         return grpc::Status(grpc::StatusCode::UNAVAILABLE, "agones allocate not confirmed");
     }
 ///<<< END WRITING YOUR CODE
-    std::promise<void> promise;
+    std::promise<grpc::Status> promise;
     auto future = promise.get_future();
 
-    loop_.runInLoop([request, response, &promise]
+    // future.get() 覆盖整个任务寿命；自定义段需要的成员引用应在投递前绑定，避免捕获 this。
+    loop_.runInLoop([&]
                     {
-        HandleCreateScene(request, response);
-        promise.set_value(); });
+        grpc::Status dispatchStatus = grpc::Status::OK;
+        ///<<< BEGIN WRITING YOUR CODE: grpc.CreateScene.in_loop
+        ///<<< END WRITING YOUR CODE
+        if (dispatchStatus.ok())
+        {
+            HandleCreateScene(request, response);
+        }
+        promise.set_value(dispatchStatus); });
 
-    future.get();
-    return grpc::Status::OK;
+    auto status = future.get();
+    ///<<< BEGIN WRITING YOUR CODE: grpc.CreateScene.post_dispatch
+    ///<<< END WRITING YOUR CODE
+    return status;
 }
 
 grpc::Status SceneNodeGrpcImpl::DestroyScene(grpc::ServerContext* /*context*/,
     const ::DestroySceneRequest* request,
-    ::Empty* response)
+    ::Empty* /*response*/)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-    std::promise<void> promise;
+    std::promise<grpc::Status> promise;
     auto future = promise.get_future();
 
-    loop_.runInLoop([request, &promise]
+    // future.get() 覆盖整个任务寿命；自定义段需要的成员引用应在投递前绑定，避免捕获 this。
+    loop_.runInLoop([&]
                     {
-        HandleDestroyScene(request);
-        promise.set_value(); });
+        grpc::Status dispatchStatus = grpc::Status::OK;
+        ///<<< BEGIN WRITING YOUR CODE: grpc.DestroyScene.in_loop
+        ///<<< END WRITING YOUR CODE
+        if (dispatchStatus.ok())
+        {
+            HandleDestroyScene(request);
+        }
+        promise.set_value(dispatchStatus); });
 
-    future.get();
-    return grpc::Status::OK;
+    auto status = future.get();
+    ///<<< BEGIN WRITING YOUR CODE: grpc.DestroyScene.post_dispatch
+    ///<<< END WRITING YOUR CODE
+    return status;
 }
 
 grpc::Status SceneNodeGrpcImpl::ReleasePlayer(grpc::ServerContext* /*context*/,
     const ::scene_node::ReleasePlayerRequest* request,
-    ::Empty* response)
+    ::Empty* /*response*/)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-    std::promise<void> promise;
+    std::promise<grpc::Status> promise;
     auto future = promise.get_future();
 
-    loop_.runInLoop([request, &promise]
+    // future.get() 覆盖整个任务寿命；自定义段需要的成员引用应在投递前绑定，避免捕获 this。
+    loop_.runInLoop([&]
                     {
-        HandleReleasePlayer(request);
-        promise.set_value(); });
+        grpc::Status dispatchStatus = grpc::Status::OK;
+        ///<<< BEGIN WRITING YOUR CODE: grpc.ReleasePlayer.in_loop
+        ///<<< END WRITING YOUR CODE
+        if (dispatchStatus.ok())
+        {
+            HandleReleasePlayer(request);
+        }
+        promise.set_value(dispatchStatus); });
 
-    future.get();
-    return grpc::Status::OK;
+    auto status = future.get();
+    ///<<< BEGIN WRITING YOUR CODE: grpc.ReleasePlayer.post_dispatch
+    ///<<< END WRITING YOUR CODE
+    return status;
 }
 
 grpc::Status SceneNodeGrpcImpl::PrepareBattle(grpc::ServerContext* /*context*/,
@@ -334,34 +360,52 @@ grpc::Status SceneNodeGrpcImpl::PrepareBattle(grpc::ServerContext* /*context*/,
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-    std::promise<void> promise;
+    std::promise<grpc::Status> promise;
     auto future = promise.get_future();
 
-    loop_.runInLoop([request, response, &promise]
+    // future.get() 覆盖整个任务寿命；自定义段需要的成员引用应在投递前绑定，避免捕获 this。
+    loop_.runInLoop([&]
                     {
-        HandlePrepareBattle(request, response);
-        promise.set_value(); });
+        grpc::Status dispatchStatus = grpc::Status::OK;
+        ///<<< BEGIN WRITING YOUR CODE: grpc.PrepareBattle.in_loop
+        ///<<< END WRITING YOUR CODE
+        if (dispatchStatus.ok())
+        {
+            HandlePrepareBattle(request, response);
+        }
+        promise.set_value(dispatchStatus); });
 
-    future.get();
-    return grpc::Status::OK;
+    auto status = future.get();
+    ///<<< BEGIN WRITING YOUR CODE: grpc.PrepareBattle.post_dispatch
+    ///<<< END WRITING YOUR CODE
+    return status;
 }
 
 grpc::Status SceneNodeGrpcImpl::CancelBattlePrepare(grpc::ServerContext* /*context*/,
     const ::CancelBattlePrepareRequest* request,
-    ::Empty* response)
+    ::Empty* /*response*/)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-    std::promise<void> promise;
+    std::promise<grpc::Status> promise;
     auto future = promise.get_future();
 
-    loop_.runInLoop([request, &promise]
+    // future.get() 覆盖整个任务寿命；自定义段需要的成员引用应在投递前绑定，避免捕获 this。
+    loop_.runInLoop([&]
                     {
-        HandleCancelBattlePrepare(request);
-        promise.set_value(); });
+        grpc::Status dispatchStatus = grpc::Status::OK;
+        ///<<< BEGIN WRITING YOUR CODE: grpc.CancelBattlePrepare.in_loop
+        ///<<< END WRITING YOUR CODE
+        if (dispatchStatus.ok())
+        {
+            HandleCancelBattlePrepare(request);
+        }
+        promise.set_value(dispatchStatus); });
 
-    future.get();
-    return grpc::Status::OK;
+    auto status = future.get();
+    ///<<< BEGIN WRITING YOUR CODE: grpc.CancelBattlePrepare.post_dispatch
+    ///<<< END WRITING YOUR CODE
+    return status;
 }
 
 grpc::Status SceneNodeGrpcImpl::AssetDebit(grpc::ServerContext* /*context*/,
@@ -370,16 +414,25 @@ grpc::Status SceneNodeGrpcImpl::AssetDebit(grpc::ServerContext* /*context*/,
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-    std::promise<void> promise;
+    std::promise<grpc::Status> promise;
     auto future = promise.get_future();
 
-    loop_.runInLoop([request, response, &promise]
+    // future.get() 覆盖整个任务寿命；自定义段需要的成员引用应在投递前绑定，避免捕获 this。
+    loop_.runInLoop([&]
                     {
-        HandleAssetDebit(request, response);
-        promise.set_value(); });
+        grpc::Status dispatchStatus = grpc::Status::OK;
+        ///<<< BEGIN WRITING YOUR CODE: grpc.AssetDebit.in_loop
+        ///<<< END WRITING YOUR CODE
+        if (dispatchStatus.ok())
+        {
+            HandleAssetDebit(request, response);
+        }
+        promise.set_value(dispatchStatus); });
 
-    future.get();
-    return grpc::Status::OK;
+    auto status = future.get();
+    ///<<< BEGIN WRITING YOUR CODE: grpc.AssetDebit.post_dispatch
+    ///<<< END WRITING YOUR CODE
+    return status;
 }
 
 grpc::Status SceneNodeGrpcImpl::AssetAbortDebit(grpc::ServerContext* /*context*/,
@@ -388,16 +441,25 @@ grpc::Status SceneNodeGrpcImpl::AssetAbortDebit(grpc::ServerContext* /*context*/
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-    std::promise<void> promise;
+    std::promise<grpc::Status> promise;
     auto future = promise.get_future();
 
-    loop_.runInLoop([request, response, &promise]
+    // future.get() 覆盖整个任务寿命；自定义段需要的成员引用应在投递前绑定，避免捕获 this。
+    loop_.runInLoop([&]
                     {
-        HandleAssetAbortDebit(request, response);
-        promise.set_value(); });
+        grpc::Status dispatchStatus = grpc::Status::OK;
+        ///<<< BEGIN WRITING YOUR CODE: grpc.AssetAbortDebit.in_loop
+        ///<<< END WRITING YOUR CODE
+        if (dispatchStatus.ok())
+        {
+            HandleAssetAbortDebit(request, response);
+        }
+        promise.set_value(dispatchStatus); });
 
-    future.get();
-    return grpc::Status::OK;
+    auto status = future.get();
+    ///<<< BEGIN WRITING YOUR CODE: grpc.AssetAbortDebit.post_dispatch
+    ///<<< END WRITING YOUR CODE
+    return status;
 }
 
 grpc::Status SceneNodeGrpcImpl::AssetCredit(grpc::ServerContext* /*context*/,
@@ -406,14 +468,23 @@ grpc::Status SceneNodeGrpcImpl::AssetCredit(grpc::ServerContext* /*context*/,
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-    std::promise<void> promise;
+    std::promise<grpc::Status> promise;
     auto future = promise.get_future();
 
-    loop_.runInLoop([request, response, &promise]
+    // future.get() 覆盖整个任务寿命；自定义段需要的成员引用应在投递前绑定，避免捕获 this。
+    loop_.runInLoop([&]
                     {
-        HandleAssetCredit(request, response);
-        promise.set_value(); });
+        grpc::Status dispatchStatus = grpc::Status::OK;
+        ///<<< BEGIN WRITING YOUR CODE: grpc.AssetCredit.in_loop
+        ///<<< END WRITING YOUR CODE
+        if (dispatchStatus.ok())
+        {
+            HandleAssetCredit(request, response);
+        }
+        promise.set_value(dispatchStatus); });
 
-    future.get();
-    return grpc::Status::OK;
+    auto status = future.get();
+    ///<<< BEGIN WRITING YOUR CODE: grpc.AssetCredit.post_dispatch
+    ///<<< END WRITING YOUR CODE
+    return status;
 }

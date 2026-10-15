@@ -25,7 +25,7 @@ struct RpcMethodMeta {
 	)> sender;
 };
 
-constexpr uint32_t kMaxRpcMethodCount = 253;
+constexpr uint32_t kMaxRpcMethodCount = 255;
 constexpr uint32_t kMaxEventCount = 49;
 
 extern std::array<RpcMethodMeta, kMaxRpcMethodCount> gRpcMethodRegistry;
@@ -33,4 +33,6 @@ extern std::array<RpcMethodMeta, kMaxRpcMethodCount> gRpcMethodRegistry;
 void InitMessageInfo();
 bool IsValidEventId(uint32_t eventId);
 bool IsClientMessageId(uint32_t messageId);
-bool DispatchProtoEvent(uint32_t eventId, const std::string& payload);
+enum class KafkaEventDispatchResult : uint8_t { kDispatched, kNotAllowed, kDecodeFailed, kCount };
+KafkaEventDispatchResult DispatchSceneCommandEvent(uint32_t eventId, const std::string& payload);
+KafkaEventDispatchResult DispatchGateCommandEvent(uint32_t eventId, const std::string& payload);
