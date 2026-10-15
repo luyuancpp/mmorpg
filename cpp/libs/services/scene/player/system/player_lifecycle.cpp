@@ -2875,6 +2875,14 @@ void PlayerLifecycleSystem::DestroyPlayer(Guid playerId)
 	{
 		tlsEcs.playerList.erase(playerIt);
 	}
+
+	// DBTask 投递账本按玩家号记账:本节点上已没有这名玩家时回收条目(还有在途票据就等回执到了再回收;
+	// 离开时仍欠 MySQL 一次写的计 orphan_unsynced)。通知里重建出的新实体沿用同一条目 —— 它的下一次存盘
+	// 就是那次要补的整份写,条目不能在这里被擦掉。
+	if (tlsEcs.playerList.find(playerId) == tlsEcs.playerList.end())
+	{
+		DbTaskDispatchSystem::OnPlayerGone(playerId);
+	}
 }
 
 void PlayerLifecycleSystem::DetachFromScene(entt::entity player)
@@ -2994,11 +3002,29 @@ void PlayerLifecycleSystem::HandleExitGameNode(entt::entity player, ExitCause ca
 					!HasUnsettledPlayerSave(retainedPlayerId))
 				{
 					// 没写盘(快路径判"盘上已是同一份",或交接已发起不得再写)且没有未落地的存盘:
-					// 盘上就是当前内存,直接收尾。intent / g 此后悬空,不再使用。
+					// 盘上就是当前内存,过 DBTask 回执闸门收尾。intent / g 此后悬空,不再使用。
 					LOG_INFO << "Player marked for unregistration: " << retainedPlayerId
 							 << " (converged on exhausted re-kick)";
-					FinishExitAfterPersist(retainedPlayerId);
+					FinishExitOrAwaitDbTaskAck(retainedPlayerId);
 				}
+			}
+			// 因 DBTask 投递失败重存到上限、被闸门保留的实体:再来一次退出请求时轮次清零、重新开始重存
+			// (停机时周期存盘已取消,exitAllPlayers 这一次就是它最后的重存机会)。有在途 DBTask / 未落地的
+			// Redis 存盘时不插手,等它们落定由闸门照常判定。
+			else if (exitingPlayerId != kInvalidGuid &&
+					 player_exit::ShouldRekickDbTaskExhausted(
+						 intent->awaitingDbTaskAck, intent->dbTaskResaveRounds, player_exit::kMaxExitDbTaskResaveRounds,
+						 DbTaskDispatchSystem::InFlight(exitingPlayerId), DbTaskDispatchSystem::NeedsResave(exitingPlayerId),
+						 HasUnsettledPlayerSave(exitingPlayerId)))
+			{
+				const Guid retainedPlayerId = exitingPlayerId;
+				intent->dbTaskResaveRounds = 0;
+				db_task_dispatch_stats::Inc(db_task_dispatch_stats::Counter::kExitRekick);
+				LOG_WARN << "HandleExitGameNode: player " << retainedPlayerId
+						 << " was retained with undelivered DB write tasks; re-saving once more"
+						 << " (incoming cause=" << player_exit::ExitCauseName(cause) << ", metric=exit_db_task_rekick)";
+				// intent / g 此后不再使用:闸门可能已销毁实体。
+				FinishExitOrAwaitDbTaskAck(retainedPlayerId);
 			}
 		}
 		else
@@ -3094,11 +3120,12 @@ void PlayerLifecycleSystem::HandleExitGameNode(entt::entity player, ExitCause ca
 		// 重连时还得靠别的兜底路径。AFK 踢下线是最容易命中的场景:玩家挂机不动,
 		// 数据与上一次周期存盘逐字节相同,快路径必然跳过。
 		//
-		// 数据已经在盘上,直接跑与存盘回调相同的收尾。
+		// 数据已经在盘上,直接跑与存盘回调相同的收尾(同样先过 DBTask 回执闸门:更早一次存盘的 DBTask
+		// 可能还在途,MySQL 那一份确认送达才销毁)。
 		LOG_INFO << "HandleExitGameNode: player " << exitingPlayerId
 				 << " persistence prerequisite established; finishing exit inline"
 				 << " handoff_already_requested=" << (saveResult == SaveResult::kHandoffAlreadyRequested);
-		FinishExitAfterPersist(exitingPlayerId);
+		FinishExitOrAwaitDbTaskAck(exitingPlayerId);
 		return;
 	}
 
@@ -3233,6 +3260,189 @@ void PlayerLifecycleSystem::FinishExitAfterPersist(Guid playerId)
 	RemovePlayerSession(playerId);
 	LOG_INFO << "Player session removed";
 	DestroyPlayer(playerId);
+}
+
+// ── 下线收尾的 DBTask 回执闸门(S5a:scene 发 DBTask 失败后的脏快照)───────────────────────────────
+// Redis 落地只证明 Redis 有了当前内存;MySQL 那一份走 DBTask(Kafka → go/db)。旧实现落地即销毁实体,DBTask 同步被拒或
+// 回执失败时 MySQL 永久落后,而能补写的内存已经没了。这里让收尾等本玩家所有在途 DBTask 的 acks=all 回执;投递失败时按
+// 当前内存有界重存(绝不重放旧载荷),超限保留实体。所有退出原因统一走这道闸门。
+bool PlayerLifecycleSystem::FinishExitOrAwaitDbTaskAck(Guid playerId)
+{
+	const auto playerEntity = tlsEcs.GetPlayer(playerId);
+	if (!tlsEcs.actorRegistry.valid(playerEntity))
+	{
+		// 没有实体可以等:沿用旧行为,收尾函数自己对无效实体幂等(改派 / 摘会话 / 销毁)。
+		FinishExitAfterPersist(playerId);
+		return true;
+	}
+	auto *intent = tlsEcs.actorRegistry.try_get<PlayerExitIntentComp>(playerEntity);
+	if (intent == nullptr)
+	{
+		// 成对约定被破坏(UnregisterPlayer 在、意图组件不在):闸门的状态无处可记,沿用旧行为直接收尾。
+		LOG_WARN << "FinishExitOrAwaitDbTaskAck: exiting player " << playerId
+				 << " has no PlayerExitIntentComp; finishing exit without waiting for DB write task acknowledgements";
+		FinishExitAfterPersist(playerId);
+		return true;
+	}
+
+	const uint32_t inFlight = DbTaskDispatchSystem::InFlight(playerId);
+	const bool needsResave = DbTaskDispatchSystem::NeedsResave(playerId);
+	switch (player_exit::DecideDbTaskGate(inFlight, needsResave, intent->dbTaskResaveRounds,
+										  player_exit::kMaxExitDbTaskResaveRounds))
+	{
+	case player_exit::DbTaskGateDecision::kFinish:
+		intent->awaitingDbTaskAck = false;
+		FinishExitAfterPersist(playerId);
+		return true;
+	case player_exit::DbTaskGateDecision::kAwaitAck:
+		if (!intent->awaitingDbTaskAck)
+		{
+			// 每次退出只计 / 只打一次(之后的重存、再次落地都会再进闸门)。
+			db_task_dispatch_stats::Inc(db_task_dispatch_stats::Counter::kExitAwaitAck);
+			LOG_INFO << "FinishExitOrAwaitDbTaskAck: exiting player " << playerId << " has " << inFlight
+					 << " DB write task(s) in flight; finishing exit after Kafka acknowledges them"
+					 << " (metric=exit_db_task_await_ack)";
+		}
+		intent->awaitingDbTaskAck = true;
+		return false;
+	case player_exit::DbTaskGateDecision::kResave:
+	{
+		++intent->dbTaskResaveRounds;
+		intent->awaitingDbTaskAck = true;
+		const uint32_t round = intent->dbTaskResaveRounds;
+		db_task_dispatch_stats::Inc(db_task_dispatch_stats::Counter::kExitResave);
+		LOG_WARN << "FinishExitOrAwaitDbTaskAck: exiting player " << playerId
+				 << " has an undelivered DB write task; re-saving the current state before destroying, round " << round
+				 << "/" << static_cast<uint32_t>(player_exit::kMaxExitDbTaskResaveRounds)
+				 << " (in_flight=" << inFlight << ", metric=exit_db_task_resave)";
+		// 不走 dirty-save 快路径:要的就是按当前内存整份重发(新代号、新票据)。intent 此后不再使用。
+		const auto saveResult = SavePlayerToRedisImpl(playerEntity, /*allowSkipWhenPersisted=*/false);
+		if (saveResult == SaveResult::kQueued)
+		{
+			return false; // 等这次存盘的 Redis 落地回调与 DBTask 回执,再回到闸门
+		}
+		if (saveResult == SaveResult::kRejected)
+		{
+			// 持久组件缺失:缺组件拒存不是已落盘证据,不得据此销毁实体(ecs-component-access-rules.md)。
+			// fail-closed 保留实体与退出意图,停机由看门狗裁决;拒存本身已计 save_marshal_refused。
+			LOG_ERROR << "FinishExitOrAwaitDbTaskAck: re-save refused for exiting player " << playerId
+					  << " (persisted component missing); keeping the entity, MySQL lags Redis";
+			return false;
+		}
+		if (HasUnsettledPlayerSave(playerId))
+		{
+			// 交接已发起不得再写,但还有一笔未落地的 Redis 存盘:等它落地,由退出分支照常判定。
+			LOG_INFO << "FinishExitOrAwaitDbTaskAck: exiting player " << playerId
+					 << " cannot re-save now but has an unsettled save; deciding again when it lands";
+			return false;
+		}
+		// 交接已发起(本节点不得再写)且 Redis 已是当前内存:没法再补 MySQL。带着落后收尾,由新属主的首存补写。
+		db_task_dispatch_stats::Inc(db_task_dispatch_stats::Counter::kExitUnsynced);
+		LOG_ERROR << "FinishExitOrAwaitDbTaskAck: could not re-save exiting player " << playerId
+				  << "; finishing exit with MySQL lagging Redis (metric=exit_db_task_unsynced)";
+		FinishExitAfterPersist(playerId);
+		return true;
+	}
+	case player_exit::DbTaskGateDecision::kRetainExhausted:
+	case player_exit::DbTaskGateDecision::kCount:
+	default:
+		// 重存到上限仍投递失败:Kafka 多半不可用,再试也是失败。fail-closed 保留实体与两件退出标记(不销毁、不丢差额),
+		// IsSaveInFlight 保持为真。出口:周期存盘(欠账时强制真写)、再来一次退出请求(HandleExitGameNode 的 rekick)、
+		// 停机看门狗。每次判定都计数(一次判定对应一次新的投递失败),不只计第一次。
+		db_task_dispatch_stats::Inc(db_task_dispatch_stats::Counter::kExitResaveCapped);
+		LOG_ERROR << "FinishExitOrAwaitDbTaskAck: exiting player " << playerId << " still has undelivered DB write tasks after "
+				  << static_cast<uint32_t>(intent->dbTaskResaveRounds)
+				  << " re-save round(s); keeping the entity until Kafka recovers, a new exit request re-kicks it,"
+				  << " or the node drain watchdog decides (metric=exit_db_task_resave_capped)";
+		intent->awaitingDbTaskAck = true;
+		return false;
+	}
+}
+
+void PlayerLifecycleSystem::OnDbTaskDispatchSettled(Guid playerId)
+{
+	const auto playerEntity = tlsEcs.GetPlayer(playerId);
+	if (!tlsEcs.actorRegistry.valid(playerEntity))
+	{
+		// 实体已离开本节点(退出收尾 / 被废黜 / 交接放行):回收账本条目,欠账时计 orphan_unsynced。
+		DbTaskDispatchSystem::OnPlayerGone(playerId);
+		return;
+	}
+	// 在线玩家:欠账由下一次存盘消化(NeedsResave 让 dirty-save 快路径失效,强制整份重写)。
+	if (!tlsEcs.actorRegistry.any_of<UnregisterPlayer>(playerEntity))
+	{
+		return;
+	}
+	auto *intent = tlsEcs.actorRegistry.try_get<PlayerExitIntentComp>(playerEntity);
+	if (intent == nullptr || !intent->awaitingDbTaskAck)
+	{
+		return; // 收尾还没走到闸门:Redis 落地回调会自己走过来
+	}
+	if (HasUnsettledPlayerSave(playerId))
+	{
+		return; // 还有未落地的 Redis 存盘:落地回调会按收敛规则再进闸门
+	}
+	const bool needsResave = DbTaskDispatchSystem::NeedsResave(playerId);
+	if (DbTaskDispatchSystem::InFlight(playerId) > 0 && !needsResave)
+	{
+		return; // 还有在途回执,也没有确定的失败:接着等
+	}
+
+	// 等回执期间实体是否又被改过:闸门之前的收敛判定是在 Redis 落地那一刻做的。与退出分支同一把尺子
+	// (IsPersistedPayloadCurrent,剔除压测探针),比的是 Redis 里的那份(落地快照)与此刻的内存。
+	PlayerAllData current;
+	if (!MarshalPlayerForSave(playerEntity, playerId, current))
+	{
+		// 缺组件拒存不是收敛证据:保留实体与退出意图,不宣称收敛(与落地回调同一处理)。
+		LOG_ERROR << "OnDbTaskDispatchSettled: persisted component missing for exiting player " << playerId
+				  << "; keeping the entity and exit intent without declaring convergence";
+		return;
+	}
+	const auto *snap = tlsEcs.actorRegistry.try_get<PlayerLastPersistedSnapshotComp>(playerEntity);
+	const bool payloadCurrent =
+		snap != nullptr && snap->HasSnapshot() && player_exit::IsPersistedPayloadCurrent(*snap->snapshot, current);
+	if (!payloadCurrent)
+	{
+		// 不收敛:与落地回调的退出分支共用轮次上限(resaveRounds / kMaxExitResaveRounds),避免"等回执 → 发现变了 →
+		// 重存 → 又等回执"无界循环。
+		switch (player_exit::DecideAfterPersist(/*payloadCurrent=*/false, /*hasUnsettledSave=*/false,
+												intent->resaveRounds, player_exit::kMaxExitResaveRounds))
+		{
+		case player_exit::AfterPersistDecision::kResave:
+		{
+			++intent->resaveRounds;
+			exit_persist_stats::Inc(exit_persist_stats::Get().resave);
+			LOG_INFO << "OnDbTaskDispatchSettled: exiting player " << playerId
+					 << " changed while waiting for its DB write task acknowledgements; re-saving before destroying, round "
+					 << static_cast<uint32_t>(intent->resaveRounds) << "/"
+					 << static_cast<uint32_t>(player_exit::kMaxExitResaveRounds) << " (metric=exit_resave)";
+			const auto saveResult = SavePlayerToRedisImpl(playerEntity, /*allowSkipWhenPersisted=*/false);
+			if (saveResult == SaveResult::kQueued)
+			{
+				return; // 等这次存盘落地,由退出分支照常判定
+			}
+			if (saveResult == SaveResult::kRejected)
+			{
+				LOG_ERROR << "OnDbTaskDispatchSettled: re-save refused for exiting player " << playerId
+						  << "; keeping the entity and exit intent";
+				return;
+			}
+			// 交接已发起不得再写:Redis 停在交接前落下的那一份,交给闸门按欠账情况收尾。
+			break;
+		}
+		case player_exit::AfterPersistDecision::kRetainExhausted:
+		case player_exit::AfterPersistDecision::kFinish:
+		case player_exit::AfterPersistDecision::kCount:
+		default:
+			exit_persist_stats::Inc(exit_persist_stats::Get().resaveExhausted);
+			LOG_ERROR << "OnDbTaskDispatchSettled: exiting player " << playerId << " did not converge after "
+					  << static_cast<uint32_t>(intent->resaveRounds)
+					  << " re-save round(s); keeping the entity, the node drain watchdog decides (metric=exit_resave_capped)";
+			return;
+		}
+	}
+
+	FinishExitOrAwaitDbTaskAck(playerId);
 }
 
 // 抄一份改派票据并把玩家推进退出流程。
@@ -4221,7 +4431,7 @@ void PlayerLifecycleSystem::HandlePlayerSaveRejected(Guid playerId, const std::s
 			{
 				LOG_INFO << "Player marked for unregistration: " << playerId
 						 << " (exit save re-issued after a stale-epoch rejection was already persisted)";
-				FinishExitAfterPersist(playerId);
+				FinishExitOrAwaitDbTaskAck(playerId);
 			}
 			return;
 		}

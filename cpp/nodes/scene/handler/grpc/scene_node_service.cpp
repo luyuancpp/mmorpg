@@ -213,7 +213,7 @@ void SceneNodeGrpcImpl::HandlePrepareBattle(const ::PrepareBattleRequest* reques
     // match -> scene 备战冻结(外层已 runInLoop 投递到 loop 线程,可直接同步访问 ECS;
     // 失败原因经 response.error_message 返回,gRPC status 恒为 OK)
     PlayerBattleSystem::PrepareBattle(*request, *response);
-///<<< END WRITING YOUR CODE}
+///<<< END WRITING YOUR CODE
 }
 
 void SceneNodeGrpcImpl::HandleCancelBattlePrepare(const ::CancelBattlePrepareRequest* request)
@@ -221,7 +221,7 @@ void SceneNodeGrpcImpl::HandleCancelBattlePrepare(const ::CancelBattlePrepareReq
 ///<<< BEGIN WRITING YOUR CODE
     // gather 失败补偿解冻:battle_id 匹配才摘 InBattleComp + DEL battle:lock,幂等
     PlayerBattleSystem::CancelBattlePrepare(*request);
-///<<< END WRITING YOUR CODE}
+///<<< END WRITING YOUR CODE
 }
 
 void SceneNodeGrpcImpl::HandleAssetDebit(const ::AssetOpRequest* request,

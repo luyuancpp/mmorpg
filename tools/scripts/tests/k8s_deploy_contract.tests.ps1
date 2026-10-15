@@ -1685,7 +1685,8 @@ Test-Case '合入门槛源码形状:$script:LoginQueueOn 只由 Resolve-LoginQue
     }
     $topLevel = @($deadlineDeployAst.EndBlock.Statements)
 
-    $queueAssigns = & $assignmentsTo '$script:LoginQueueOn'
+    # 外层再包 @():脚本块返回的数组经管道会被展开,只有一个元素时就不再是数组。
+    $queueAssigns = @(& $assignmentsTo '$script:LoginQueueOn')
     Assert-Equal -Expected 1 -Actual $queueAssigns.Count -Because 'k8s_deploy.ps1 里 $script:LoginQueueOn 只能有一处赋值(多一处就可能绕过合入门槛)'
     $queueAssign = $queueAssigns[0]
     Assert-True -Condition ($topLevel -contains $queueAssign) -Because '$script:LoginQueueOn 必须在脚本顶层赋值(参数解析后算一次)'
@@ -1711,7 +1712,7 @@ Test-Case '合入门槛源码形状:$script:LoginQueueOn 只由 Resolve-LoginQue
     Assert-Equal -Expected 0 -Actual $nameLiterals.Count -Because '不得以字符串字面量(GetEnvironmentVariable / Env: 路径)另读接缝变量'
 
     # 门槛常量:恰好一处、顶层、字面量 $true / $false,先于 $script:LoginQueueOn 的赋值。不断言它当前的值(放开门槛只改这一处)。
-    $gateAssigns = & $assignmentsTo '$script:LoginQueueMergeGateCleared'
+    $gateAssigns = @(& $assignmentsTo '$script:LoginQueueMergeGateCleared')
     Assert-Equal -Expected 1 -Actual $gateAssigns.Count -Because '$script:LoginQueueMergeGateCleared 只能有一处赋值'
     Assert-True -Condition ($topLevel -contains $gateAssigns[0]) -Because '门槛常量必须在脚本顶层赋值'
     Assert-Match -Text $gateAssigns[0].Right.Extent.Text -Pattern '^\$(true|false)$' -Because "门槛常量只能是字面量 `$true / `$false,不能改成读参数或环境变量(实际:$($gateAssigns[0].Right.Extent.Text))"
@@ -1726,7 +1727,7 @@ Test-Case '合入门槛源码形状:$script:LoginQueueOn 只由 Resolve-LoginQue
     Assert-True -Condition ($queueAssign.Extent.StartOffset -lt $writeGates[0].Extent.StartOffset) -Because '$script:LoginQueueOn 的赋值(-LoginQueue on 的拒绝点)必须先于写路径门禁块'
 
     # 限流不受合入门槛影响:仍由 Resolve-PeakShavingSwitch 按档位算。
-    $gatewayAssigns = & $assignmentsTo '$script:GatewayRateLimitOn'
+    $gatewayAssigns = @(& $assignmentsTo '$script:GatewayRateLimitOn')
     Assert-Equal -Expected 1 -Actual $gatewayAssigns.Count -Because '$script:GatewayRateLimitOn 只能有一处赋值'
     $gatewayCalls = @($gatewayAssigns[0].Right.FindAll({ param($a) $a -is [System.Management.Automation.Language.CommandAst] }, $true))
     Assert-True -Condition ($gatewayCalls.Count -eq 1 -and $gatewayCalls[0].GetCommandName() -eq 'Resolve-PeakShavingSwitch') -Because '$script:GatewayRateLimitOn 仍只由 Resolve-PeakShavingSwitch 算出(合入门槛只管登录排队)'

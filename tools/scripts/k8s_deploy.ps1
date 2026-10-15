@@ -2784,7 +2784,7 @@ spec:
 	matchLabels:
 	  app: $NodeName
   template:
-	metadata:$sidecarAnnotationBlock
+	metadata:$podAnnotationBlock
 	  labels:
 		app: $NodeName
 	spec:
@@ -3242,15 +3242,14 @@ function New-SceneFleetYaml {
 	# 不写这行 Fleet 会被 Agones 拒掉 —— 所以保留,别顺手删。
 	$sidecarInitBlock = ""
 	$sidecarVolumeBlock = ""
-	$sidecarAnnotationBlock = ""
 	$gameServerContainerLine = ""
 	if ($script:CppLogSidecarEnabled) {
 		$sidecarInitBlock = "`n          initContainers:`n" + (New-CppLogSidecarContainerYaml -ItemIndent "            " -CurrentZoneName $ZoneLabel -AsNativeSidecar)
 		$sidecarVolumeBlock = "`n" + (New-CppLogSidecarVolumeYaml -ItemIndent "            ")
-		# 哈希加引号,理由同 New-NodeDeploymentYaml 的同名注解。
-		$sidecarAnnotationBlock = "`n          annotations:`n            mmorpg.io/cpp-log-sidecar-config-hash: `"$(Get-CppLogSidecarConfigHash)`""
 		$gameServerContainerLine = "      container: $FleetName`n"
 	}
+	# Pod 模板注解(sidecar 配置指纹 + zone Redis 口令指纹),同 New-NodeDeploymentYaml;Fleet 的 Pod 模板 metadata 子键在第 10 列。
+	$podAnnotationBlock = New-CppPodAnnotationBlock -KeyIndent "          "
 
 	$countersBlock = ""
 	if ($AgonesHighDensity) {
@@ -3313,7 +3312,7 @@ $gameServerContainerLine      ports:
         periodSeconds: $AgonesHealthPeriodSeconds
         failureThreshold: $AgonesHealthFailureThreshold$countersBlock
       template:
-        metadata:$sidecarAnnotationBlock
+        metadata:$podAnnotationBlock
           labels:
             app: $FleetName
             mmorpg.io/role: $RoleLabel
@@ -3522,8 +3521,30 @@ spec:
 
 <#
 .SYNOPSIS
-	把本脚本的 C++ 节点公共参数(镜像、拉取策略、发号槽缓存、日志卷与清理循环、gRPC poller、日志 sidecar)
-	打包成 lib/k8s_client_entry.ps1 生成器要的 PodCommon。与 New-NodeDeploymentYaml 同一组脚本变量,一处取值。
+	本脚本自己的两个 C++ 节点模板(New-NodeDeploymentYaml、New-SceneFleetYaml)的 Pod 模板 annotations 段:
+	日志 sidecar 配置指纹(开 sidecar 时)在前,zone Redis 口令指纹(有口令时,Get-CppZoneRedisAuthAnnotations)在后。
+	两条都没有时返回空串,模板与不带注解时逐字相同。lib 的三个模板经 New-CppNodePodCommon 拿到同样的两条、按同样的顺序写出。
+	KeyIndent = Pod 模板 metadata 子键所在的列(Deployment 换算后第 6 列,Fleet 第 10 列)。渲染与校验在 lib 的
+	ConvertTo-ClientEntryPodAnnotationBlock(值加双引号:12 位十六进制可能全是数字或形如 1e5,裸写会被解析成数字,API server 拒收)。
+#>
+function New-CppPodAnnotationBlock {
+	param([Parameter(Mandatory = $true)][string]$KeyIndent)
+
+	$annotations = [ordered]@{}
+	if ($script:CppLogSidecarEnabled) {
+		$annotations['mmorpg.io/cpp-log-sidecar-config-hash'] = Get-CppLogSidecarConfigHash
+	}
+	$zoneRedisAuth = Get-CppZoneRedisAuthAnnotations
+	foreach ($key in $zoneRedisAuth.Keys) { $annotations[$key] = $zoneRedisAuth[$key] }
+	return ConvertTo-ClientEntryPodAnnotationBlock -Annotations $annotations -KeyIndent $KeyIndent
+}
+
+<#
+.SYNOPSIS
+	把本脚本的 C++ 节点公共参数(镜像、拉取策略、发号槽缓存、日志卷与清理循环、gRPC poller、日志 sidecar、
+	zone Redis 口令指纹注解)打包成 lib/k8s_client_entry.ps1 生成器要的 PodCommon。与 New-NodeDeploymentYaml 同一组脚本变量,一处取值。
+	口令指纹要求 Initialize-InjectedSecrets 已经跑过(Get-CppZoneRedisPassword 对未解析 fail-closed),所以只在写路径入口之后调用:
+	Apply-Zone(New-ExternalGateManifests)与 Apply-Infra(New-BattleWorkloadManifest)。
 
 .PARAMETER SidecarZoneLabel
 	日志 sidecar 的 zone 标签:zone 内节点传 zone 名,battle 这类全局池传 "global"(同 New-NodeDeploymentYaml)。
@@ -3540,7 +3561,7 @@ function New-CppNodePodCommon {
 	}
 	return New-ClientEntryPodCommon -Image $NodeImage -ImagePullPolicy $ImagePullPolicy -SnowflakeCacheDir $SnowflakeCacheDir `
 		-LogVolumeSizeLimit $script:CppLogVolumeSizeLimit -LogPrunerCommand $script:CppLogPrunerCommand `
-		-GrpcServerMaxPollers $GrpcServerMaxPollers @sidecar
+		-GrpcServerMaxPollers $GrpcServerMaxPollers -PodAnnotations (Get-CppZoneRedisAuthAnnotations) @sidecar
 }
 
 <#
@@ -6692,8 +6713,10 @@ function Apply-KafkaTopicInitJob {
 .DESCRIPTION
 	客户端必须连房间所在的那个 battle 实例,不能由一个 Service 随机分流。podip 下是 POD_IP:20000(只有集群内可达);
 	external 下 battle 自报逐实例的客户端地址:Agones Fleet 取 Dynamic 端口(D81),Deployment 形态取 hostPort 20000(D86)。
-	由写路径入口(Assert-ClientEntryDeployPreflight)调用、结果存 $script:BattleWorkload:health 推导(Resolve-BattleFleetHealth)
+	由 Apply-Infra 开头调用(与 battle-node-config 一起生成),结果交给 Apply-BattlePool:health 推导(Resolve-BattleFleetHealth)
 	与生成器的参数校验都可能 throw,必须早于任何基础设施写操作,更不能删了旧 battle 才发现新的生成不出来。
+	不在写路径入口(Assert-ClientEntryDeployPreflight)渲染:Pod 模板要带 zone Redis 口令指纹(Get-CppZoneRedisAuthAnnotations),
+	口令到 Initialize-InjectedSecrets 才解析,而入口预检排在密钥解析之前。
 #>
 function New-BattleWorkloadManifest {
 	$health = $null
@@ -6718,15 +6741,15 @@ function New-BattleWorkloadManifest {
 }
 
 function Apply-BattlePool {
-	param([Parameter(Mandatory = $true)][string]$ConfigMapYaml)
+	param(
+		[Parameter(Mandatory = $true)][string]$ConfigMapYaml,
+		# New-BattleWorkloadManifest 的结果:Apply-Infra 在任何基础设施写操作之前已渲染并校验。
+		[Parameter(Mandatory = $true)]$Workload
+	)
 
-	# 工作负载已在写路径入口渲染并校验(New-BattleWorkloadManifest),集群现状(换 kind / 同 kind 换入口)也已在那里判定。
-	$workload = $script:BattleWorkload
-	if ($null -eq $workload) {
-		throw "内部错误:battle 工作负载未在写路径入口渲染(Assert-ClientEntryDeployPreflight 未调用?),拒绝部署 battle。"
-	}
-	$battleHealth = $workload.Health
-	$battleYaml = $workload.Yaml
+	# 集群现状(换 kind / 同 kind 换入口)已在写路径入口判定(Assert-ClientEntryClusterState)。
+	$battleHealth = $Workload.Health
+	$battleYaml = $Workload.Yaml
 
 	# 模式切换:再删另一种编排的 battle(Deployment 与 Fleet 同名不同 kind,apply 不会互相回收,两套 battle 会同时注册)。
 	# 在打的局会作废,所以集群里确实存在另一种形态而没给 -AllowDisruptiveSwitch 时整条拒绝、一个都不删。
@@ -6766,11 +6789,15 @@ function Apply-BattlePool {
 }
 
 function Apply-Infra {
-	# 先生成并校验 battle 配置，密钥/契约错误必须发生在任何基础设施写操作之前。
+	# 先生成并校验 battle 配置与工作负载，密钥/契约错误必须发生在任何基础设施写操作之前。
+	# 工作负载也在这里渲染(不在写路径入口):Pod 模板要带 zone Redis 口令指纹,口令到 Initialize-InjectedSecrets 才解析;
+	# 这里仍早于任何基础设施写操作,Resolve-BattleFleetHealth 与生成器的参数校验照样在 etcd / kafka / redis / mysql apply 之前 throw。
 	$battleConfigMapYaml = $null
+	$battleWorkload = $null
 	if ($BattleReplicas -gt 0) {
 		$battleConfigMapYaml = New-NodeConfigMapYaml -CurrentZoneId $ZoneId -CurrentClusterId $ClusterId `
 			-ConfigName 'battle-node-config' -IncludeBattleSettings
+		$battleWorkload = New-BattleWorkloadManifest
 	}
 	Write-Host "Deploying shared infrastructure to namespace $InfraNamespace"
 	Write-Host "Kafka profile: $KafkaProfile (broker_retention_ms=$KafkaBrokerRetentionMs db_task_retention_ms=$KafkaDbTaskRetentionMs)"
@@ -7058,4 +7085,3 @@ switch ($Command) {
 		throw "Unsupported command: $Command"
 	}
 }
-                                                                                                                                                      
