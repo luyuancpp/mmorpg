@@ -8594,3 +8594,10 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
 - **部分生成产物已写入，均保留现场**：恰好 29 个预期内部事件号转墓碑，原有活跃事件号不变；原有 message_id 不变，新增落地摘要的 253/254 两号。RPC id=6、HANDLER_FAILED/REPLY_DROPPED 等绑定已更新，但完整生成流水线未完成（白名单等后续产物尚未完成），不能据此启动新版服务。已有手写改动未回退。
 - **证据目录**：`C:/Users/luyua/AppData/Local/Temp/codex-server-build-20261015-104726/`；包含生成器构建/运行日志、生成前工作区 patch、29 个带守护段 cpp 备份、编号前后核对及状态快照。
 - **未执行**：C++ game.sln、Go 微服务、Java 网关及独立 Java 版的构建/测试，robot vendor 刷新、本地启动、迁移和压测。Java 状态：本轮没有新增功能或 Java 修改；相关既有两版变更仍待各自构建验证。新版 go/db/scene 启动前还须遵守 G-03 的各 zone/落点库先 plan/up/SHOW COLUMNS 门禁，本轮未启动服务。
+
+## 2026-10-15 补充:闸门拒绝回执改形的复核收尾(Claude,只改诊断文案、注释与文档,未编译、未测试)
+
+- 复核工作流 `wf_5b962971-3bb` 没有发现编译或语义问题;确认的 9 条轻微问题(旧「23 推送」表述残留,以及 Go robot travel_smoke 会把 GM 闸拒绝误报成限流)已全部修掉,清单见 [client-request-ordering.md](design/client-request-ordering.md) §16 最后一行。
+- 本仓改动:`robot/travel_smoke_scenario.go`(新增 `tiptable` 导入,`replyRejection` 对 1006 单独提示)、`robot/etc/travel_smoke.yaml`、`docs/design/turn-based-battle-server.md`(D66 订正注)、`docs/design/client-request-ordering.md`(§4.1 清单)。
+- **Codex 验证**:工作目录 `robot`,`go build ./... && go vet ./...`;C++ 与 Java 的命令同上一条。
+- **Java 版(AGENTS §12)**:同批改了 game-gate / game-robot 的注释与帮助文本、4 份文档(未提交);不涉及新的契约变更。

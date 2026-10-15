@@ -4279,18 +4279,32 @@ PlayerLifecycleSystem::SaveResult PlayerLifecycleSystem::SavePlayerToRedisImpl(
 	// when the in-memory state diverged from Redis during a load path
 	// we don't fully trust.
 	//
-	// allowSkipWhenPersisted = false:不走快路径,一定写盘。只有三处这么传:退出流程的 M4 分支
-	// (exit_fastpath_deferred)、StartTravelHandoff 的快路径补写(handoff_fastpath_forced),以及跨 zone 交接
-	// 被回滚到本节点后的采纳(JudgeTravelOutcomeReply B5,rolled_back_adopted)。
-	if (auto* snap = tlsEcs.actorRegistry.try_get<PlayerLastPersistedSnapshotComp>(player);
-		allowSkipWhenPersisted && snap != nullptr && snap->HasSnapshot() &&
-		dirty_save::IsEqual(*message, *snap->snapshot))
+	// allowSkipWhenPersisted = false:不走快路径,一定写盘。这么传的有:退出流程的 M4 分支
+	// (exit_fastpath_deferred)、StartTravelHandoff 的快路径补写(handoff_fastpath_forced)、跨 zone 交接
+	// 被回滚到本节点后的采纳(JudgeTravelOutcomeReply B5,rolled_back_adopted),以及下线收尾的 DBTask 回执闸门
+	// (FinishExitOrAwaitDbTaskAck / OnDbTaskDispatchSettled 的重存)。
+	//
+	// 快照只证明「这份字节已进 Redis」,不证明 MySQL 也有:某次存盘的 DBTask 同步被拒 / 投递回执失败时,
+	// DbTaskDispatchSystem 记着这笔欠账(NeedsResave),快路径必须让路、强制真写 —— 重新 marshal 当前内存整份重发,
+	// 绝不重放旧载荷。快照本身不作废:战斗结算 / 资产通道拿它判「已进 Redis」销账,Redis 落地回调也会把它写回。
+	const auto *snap = tlsEcs.actorRegistry.try_get<PlayerLastPersistedSnapshotComp>(player);
+	const bool snapshotMatches = allowSkipWhenPersisted && snap != nullptr && snap->HasSnapshot() &&
+								 dirty_save::IsEqual(*message, *snap->snapshot);
+	// 只在快照相等时才查账本:不相等本来就要写,查了也不改结论。
+	const bool dbTaskNeedsResave = snapshotMatches && DbTaskDispatchSystem::NeedsResave(playerId);
+	if (db_task_dispatch::AllowsDirtySaveSkip(allowSkipWhenPersisted, snapshotMatches, dbTaskNeedsResave))
 	{
 		dirty_save_stats::IncSkipped();
 		LOG_DEBUG << "[SavePlayerToRedis] no-op for player " << playerId
 				  << " -- proto-compare clean, last_save_ms=" << snap->saved_at_ms;
 		// 已有相等证据,本次没有写盘,调用方不能再指望 HandlePlayerAsyncSaved 回调。
 		return SaveResult::kAlreadyPersisted;
+	}
+	if (dbTaskNeedsResave)
+	{
+		db_task_dispatch_stats::Inc(db_task_dispatch_stats::Counter::kForcedResave);
+		LOG_INFO << "[SavePlayerToRedis] forcing a real save for player " << playerId
+				 << ": an earlier DB write task was not delivered (metric=db_task_forced_resave)";
 	}
 
 	// Stamp the data-consistency stress probe (no-op when STRESS_TEST_PROBE

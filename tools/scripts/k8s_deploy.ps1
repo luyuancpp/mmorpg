@@ -6949,7 +6949,7 @@ stringData:
 	}
 
 	if ($BattleReplicas -gt 0) {
-		Apply-BattlePool -ConfigMapYaml $battleConfigMapYaml
+		Apply-BattlePool -ConfigMapYaml $battleConfigMapYaml -Workload $battleWorkload
 	}
 
 	# 全局池服务(match)与基础设施同命运:一份、放 infra namespace、所有 zone 共用

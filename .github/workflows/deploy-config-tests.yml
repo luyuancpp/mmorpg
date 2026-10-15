@@ -39,6 +39,7 @@ on:
       - "deploy/k8s/*.json"
       - "go/login/internal/config/config.go"
       - "go/login/internal/logic/pkg/loginqueue/dispatcher.go"
+      - "go/login/internal/logic/pkg/loginqueue/queue.go"
       - "go/login/internal/svc/servicecontext.go"
       - "java/gateway_node/src/main/java/com/game/gateway/ratelimit/RateLimitProperties.java"
       - ".github/workflows/deploy-config-tests.yml"
@@ -65,8 +66,12 @@ on:
       - "deploy/k8s/*.json"
       # 削峰(G4b)契约用例直接读的源码:login 排队配置结构体的 json tag 与缺省值、锁键按 zone 派生(G1b → G4b-2 门禁)、
       # gateway 限流总开关缺省。改这几个文件也要重跑,否则锁键改回「全服一个 leader」或 tag 改名(ConfigMap 写的键被静默忽略)都不会报红
+      # 2026-10-15 补 queue.go:用例 15 自当天起还读它(在途占位必须是 G4b-G 的 ZSET 新键)。用例 15 只检查 G1b / G4b-G 的代码形状,
+      # 上面「门禁」指代码形状;真正挡住打开排队的是 tools/scripts/k8s_deploy.ps1 的 $script:LoginQueueMergeGateCleared(用例 19–22,
+      # 已在 tools/scripts/** 内)
       - "go/login/internal/config/config.go"
       - "go/login/internal/logic/pkg/loginqueue/dispatcher.go"
+      - "go/login/internal/logic/pkg/loginqueue/queue.go"
       - "go/login/internal/svc/servicecontext.go"
       - "java/gateway_node/src/main/java/com/game/gateway/ratelimit/RateLimitProperties.java"
       - ".github/workflows/deploy-config-tests.yml"
