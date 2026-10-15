@@ -141,3 +141,24 @@ func TestSendToTopicPartitionRejectsNegativePartition(t *testing.T) {
 		t.Fatal("negative partition must be rejected before reaching the broker")
 	}
 }
+
+// db_task 只能经 SendTask / SendTasks 发(那里校验 key 契约)。plainProducer 为 nil,
+// 所以能返回 error 而不 panic 也证明了拒绝发生在触碰生产者之前。
+func TestSendToTopicRefusesDBTaskTopics(t *testing.T) {
+	p := &KeyOrderedKafkaProducer{}
+	for _, topic := range []string{"db_task_zone_1", "db_task_zone_1_g2"} {
+		if err := p.SendToTopic(topic, []byte("x"), "1001"); err == nil {
+			t.Fatalf("SendToTopic must refuse db_task topic %q", topic)
+		}
+	}
+}
+
+// 显式分区在 db_task topic 上不成立(plainProducer 的契约分区器会按 key 覆盖它),同样拒绝。
+func TestSendToTopicPartitionRefusesDBTaskTopics(t *testing.T) {
+	p := &KeyOrderedKafkaProducer{}
+	for _, topic := range []string{"db_task_zone_1", "db_task_zone_1_g2"} {
+		if err := p.SendToTopicPartition(topic, 3, []byte("x"), "1001"); err == nil {
+			t.Fatalf("SendToTopicPartition must refuse db_task topic %q", topic)
+		}
+	}
+}

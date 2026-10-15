@@ -23,6 +23,16 @@
        name_orphan 在「有 stage 序列但无孤儿序列」时打印 0(规则见该段注释)]
           when | mint | name | register | seed | account_write | name_orphan
 
+      [DB write path(Round 20+,*_db 快照):db 新 stage 均值、子 shard 批大小、排序守卫 / 失租 / 释放计数、
+       go-redis 连接池等待与超时;缺序列打印 n/a]
+          when | w_sql w_task w_queue w_e2e | r_sql r_task | batch | no_cursor lease_lost rel_notown | rpool_wait rpool_tmo
+
+      [DB Redis steps(Round 20+,*_db 快照):写任务 11 个 Redis 往返的均值与合计;缺序列打印 n/a]
+          when | lock_acq cur_get ep_get plc_lkp exp_get plc_rck verify cache cur_set ep_mark lock_rel | sum
+
+      [DB retry routing(*_db 快照):重试路由模式、四个重试列表长度、路由动作计数;缺序列打印 n/a]
+          when | mode | q_ready q_part q_proc q_dead | exec nonowner fwd revoked misrouted rt_dead
+
       [optional: Kafka consumer lag (final)]
           partition | current | log_end | lag
 
@@ -593,6 +603,183 @@ if ($dbSnapshots.Count -gt 0) {
             $name, $readTotalAvg, $readHdlrAvg, $readCacheAvg, $publishAvg, $writeTotalAvg, $writeHdlrAvg, `
             (Format-Number $okCnt 7), (Format-Number $errCnt 4)
         Write-Host $line
+    }
+}
+
+# ----- 2d / 2e / 2f. DB 写路径打点、Redis 分步、重试路由(Round 20+) ----
+#
+# 指标来源(那边改名或加取值,这里与 test_stress_summarize.ps1 必须同改,否则整列静默变成 n/a):
+#   - db_task_stage_seconds 的 stage=sql / task_total / queue_wait / kafka_e2e:go/db/internal/metrics/metrics.go;
+#   - db_task_redis_step_seconds、db_ordering_guard_total、db_subshard_batch_size、db_ordering_lease_lost_total、
+#     db_ordering_lock_release_total、db_redis_pool_*:go/db/internal/metrics/pipeline.go;
+#   - db_retry_routing_mode、db_retry_route_total、db_retry_queue_length(含 queue="partitioned"):
+#     go/db/internal/metrics/metrics.go(重试只交给分区属主,docs/design/db-retry-owner-routing.md)。
+# 缺序列一律打印 n/a,不折成 0:Round 20 之前的 db 没有这些序列,显示成 0 会被读成「测过了,是 0」。
+# histogram 的 sum / count 都有序列但 count=0 时打印 "-"(同 Format-Avg)。
+# 键按 client_golang 输出时的 label 字母序写(op < stage < step;action < mode),原因见 2c 段注释。
+
+# 一条序列的精确匹配正则;$Labels 为空表示无 label 的序列。
+function Get-SeriesPattern {
+    param([string]$Name, [string]$Labels = "")
+    if ($Labels) { return '^' + [regex]::Escape($Name) + '\{' + [regex]::Escape($Labels) + '\}$' }
+    return '^' + [regex]::Escape($Name) + '$'
+}
+
+# histogram 均值(秒)。sum / count 任一序列缺失返回 $null(→ n/a);count 为 0 返回 NaN(→ "-")。
+function Get-HistogramAvgOrNull {
+    param([hashtable]$M, [string]$Name, [string]$Labels = "")
+    $sumV = Get-MetricSumOrNull $M (Get-SeriesPattern "${Name}_sum" $Labels)
+    $cntV = Get-MetricSumOrNull $M (Get-SeriesPattern "${Name}_count" $Labels)
+    if ($null -eq $sumV -or $null -eq $cntV) { return $null }
+    if ($cntV -le 0) { return [double]::NaN }
+    return $sumV / $cntV
+}
+
+# 秒 → 毫秒文本;≥10s 改用秒(同 Format-Avg)。
+function Format-AvgCell {
+    param($AvgSeconds, [int]$Decimals = 1)
+    if ($null -eq $AvgSeconds) { return "n/a" }
+    if ([double]::IsNaN([double]$AvgSeconds)) { return "-" }
+    $ms = [double]$AvgSeconds * 1000.0
+    if ($ms -ge 10000) { return "{0:N1}s" -f ($ms / 1000.0) }
+    return "{0:N$Decimals}ms" -f $ms
+}
+
+# 计数文本;$null(缺序列)→ n/a。
+function Format-CountCell {
+    param($Value)
+    if ($null -eq $Value) { return "n/a" }
+    return "{0:N0}" -f [double]$Value
+}
+
+if ($dbSnapshots.Count -gt 0) {
+
+    # ----- 2d. DB write path ---------------------------------------------
+    # 列含义:
+    #   w_sql / r_sql      runDBOp 里 handler 的耗时(写含大字段闸 + Save,读是 SELECT)
+    #   w_task / r_task    handleTask 整段
+    #   w_queue            入 worker 通道到 handleTask 开始(排队)
+    #   w_e2e              生产者 CreateTime 到 handleTask 结束,只统计 Kafka 来源;有跨机时钟偏差,只看趋势
+    #                      (超过 5s 落 +Inf 桶,但 sum/count 的均值仍准)
+    #   batch              子 shard 每批合并的任务数均值(db_subshard_batch_size 的 sum/count)
+    #   no_cursor          db_ordering_guard_total{outcome="apply_no_cursor"}:没有 applied 游标、按首写放行的次数
+    #   lease_lost         db_ordering_lease_lost_total 各 reason 之和(排序锁失租,应接近 0)
+    #   rel_notown         db_ordering_lock_release_total{outcome="not_owner"}(释放时锁已不归本实例,应为 0)
+    #   rpool_wait / rpool_tmo
+    #                      go-redis 连接池等待次数 / 取连接超时次数(db_redis_pool_wait_total / timeouts_total),
+    #                      跨 redis_client 求和;placement 与 main 是同一个 client 时只导出 main 一份,不会重复计数。
+    #                      注意 wait_total 与 wait_seconds_total 是两条指标,正则锚到 "_wait_total{" 不会串。
+    $wpFmt = "  {0,-30} {1,-8} {2,-8} {3,-8} {4,-8} | {5,-8} {6,-8} | {7,-6} | {8,-9} {9,-10} {10,-10} | {11,-10} {12}"
+    Write-Host ""
+    Write-Host "=== DB write path (db_task_stage_seconds sql/task_total/queue_wait/kafka_e2e, Round 20+) ===" -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host ($wpFmt -f 'snapshot', 'w_sql', 'w_task', 'w_queue', 'w_e2e', 'r_sql', 'r_task', 'batch',
+        'no_cursor', 'lease_lost', 'rel_notown', 'rpool_wait', 'rpool_tmo')
+    Write-Host ($wpFmt -f '--------', '-----', '------', '-------', '-----', '-----', '------', '-----',
+        '---------', '----------', '----------', '----------', '---------')
+
+    foreach ($snap in $dbSnapshots) {
+        $m = Read-PromSnapshot $snap.FullName
+        $stageName = 'db_task_stage_seconds'
+
+        $wSql   = Format-AvgCell (Get-HistogramAvgOrNull $m $stageName 'op="write",stage="sql"')
+        $wTask  = Format-AvgCell (Get-HistogramAvgOrNull $m $stageName 'op="write",stage="task_total"')
+        $wQueue = Format-AvgCell (Get-HistogramAvgOrNull $m $stageName 'op="write",stage="queue_wait"')
+        $wE2e   = Format-AvgCell (Get-HistogramAvgOrNull $m $stageName 'op="write",stage="kafka_e2e"')
+        $rSql   = Format-AvgCell (Get-HistogramAvgOrNull $m $stageName 'op="read",stage="sql"')
+        $rTask  = Format-AvgCell (Get-HistogramAvgOrNull $m $stageName 'op="read",stage="task_total"')
+
+        $batchAvg = Get-HistogramAvgOrNull $m 'db_subshard_batch_size'
+        $batchCell = if ($null -eq $batchAvg) { "n/a" } elseif ([double]::IsNaN($batchAvg)) { "-" } else { "{0:N1}" -f $batchAvg }
+
+        $noCursor  = Format-CountCell (Get-MetricSumOrNull $m (Get-SeriesPattern 'db_ordering_guard_total' 'outcome="apply_no_cursor"'))
+        $leaseLost = Format-CountCell (Get-MetricSumOrNull $m '^db_ordering_lease_lost_total\{')
+        $relNotOwn = Format-CountCell (Get-MetricSumOrNull $m (Get-SeriesPattern 'db_ordering_lock_release_total' 'outcome="not_owner"'))
+        $rpoolWait = Format-CountCell (Get-MetricSumOrNull $m '^db_redis_pool_wait_total\{')
+        $rpoolTmo  = Format-CountCell (Get-MetricSumOrNull $m '^db_redis_pool_timeouts_total\{')
+
+        Write-Host ($wpFmt -f $snap.BaseName, $wSql, $wTask, $wQueue, $wE2e, $rSql, $rTask, $batchCell,
+            $noCursor, $leaseLost, $relNotOwn, $rpoolWait, $rpoolTmo)
+    }
+
+    # ----- 2e. DB Redis steps --------------------------------------------
+    # 写任务每个 Redis 往返的均值。11 个 step 的名字与顺序同 go/db/internal/metrics/pipeline.go 的 RedisSteps
+    # (按写路径顺序),一一对应;那边改名 / 合并 step 时,这里、test_stress_summarize.ps1 与 TestRedisStepNamesPinned 同改。
+    # 只读 op="write";读任务只有 placement_lookup / expand_get / placement_recheck / cache_set 四步,不进本表。
+    # 均值保留两位小数(Redis 往返常在 0.1ms 量级,一位小数分不开)。sum = 有序列的各步均值之和,
+    # 近似一条写任务花在 Redis 往返上的时间;某步没有序列时不计入,全部没有打印 n/a。
+    $redisSteps = @('lock_acquire', 'cursor_get', 'epoch_get', 'placement_lookup', 'expand_get', 'placement_recheck',
+                    'lease_verify', 'cache_set', 'cursor_set', 'epoch_mark', 'lock_release')
+    $rsFmt = "  {0,-30} {1,-8} {2,-8} {3,-8} {4,-8} {5,-8} {6,-8} {7,-8} {8,-8} {9,-8} {10,-8} {11,-8} {12}"
+    Write-Host ""
+    Write-Host "=== DB Redis steps (db_task_redis_step_seconds{op=`"write`"} avg, Round 20+) ===" -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host ($rsFmt -f 'snapshot', 'lock_acq', 'cur_get', 'ep_get', 'plc_lkp', 'exp_get', 'plc_rck', 'verify', 'cache',
+        'cur_set', 'ep_mark', 'lock_rel', 'sum')
+    Write-Host ($rsFmt -f '--------', '--------', '-------', '------', '-------', '-------', '-------', '------', '-----',
+        '-------', '-------', '--------', '---')
+
+    foreach ($snap in $dbSnapshots) {
+        $m = Read-PromSnapshot $snap.FullName
+        $cells = @()
+        $sumSeconds = 0.0
+        $anySeries = $false
+        $anyValue = $false
+        foreach ($step in $redisSteps) {
+            $avg = Get-HistogramAvgOrNull $m 'db_task_redis_step_seconds' "op=`"write`",step=`"$step`""
+            $cells += (Format-AvgCell $avg 2)
+            if ($null -eq $avg) { continue }
+            $anySeries = $true
+            if (-not [double]::IsNaN($avg)) { $sumSeconds += $avg; $anyValue = $true }
+        }
+        $sumCell = if (-not $anySeries) { "n/a" } elseif (-not $anyValue) { "-" } else { Format-AvgCell $sumSeconds 2 }
+        $rowArgs = @($snap.BaseName) + $cells + @($sumCell)
+        Write-Host ($rsFmt -f $rowArgs)
+    }
+
+    # ----- 2f. DB retry routing ------------------------------------------
+    # 重试只交给分区属主(docs/design/db-retry-owner-routing.md)的观测面。列:
+    #   mode       db_retry_routing_mode 中值为 1 的那个(shared / owner);旧版 db 没有该序列 → n/a
+    #   q_ready / q_part / q_proc / q_dead
+    #              db_retry_queue_length{queue=ready|partitioned|processing|dead}:共享收件箱、按分区的 p* 之和、
+    #              本实例 processing、死信。ready / partitioned / dead 是 topic 级共享列表,每个实例报的是同一个数;
+    #              q_part 在 shared 模式下应为 0;旧版 db 没有 partitioned → n/a,其余三列照常有数
+    #   exec / nonowner / fwd / revoked / misrouted / rt_dead
+    #              db_retry_route_total{action=executed|executed_nonowner|forwarded|requeued_revoked|misrouted|dead}
+    #              跨 mode 求和,是本实例的累计;owner 模式的 zone 里 nonowner 应为 0
+    # 快照是单个 db 实例(:9160)的抓取;多实例时各实例的计数不在这里合并。
+    $rtFmt = "  {0,-30} {1,-7} | {2,-7} {3,-7} {4,-7} {5,-7} | {6,-7} {7,-8} {8,-7} {9,-7} {10,-9} {11}"
+    Write-Host ""
+    Write-Host "=== DB retry routing (db_retry_routing_mode, db_retry_queue_length, db_retry_route_total) ===" -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host ($rtFmt -f 'snapshot', 'mode', 'q_ready', 'q_part', 'q_proc', 'q_dead',
+        'exec', 'nonowner', 'fwd', 'revoked', 'misrouted', 'rt_dead')
+    Write-Host ($rtFmt -f '--------', '----', '-------', '------', '------', '------',
+        '----', '--------', '---', '-------', '---------', '-------')
+
+    $retryQueues = @('ready', 'partitioned', 'processing', 'dead')
+    $retryActions = @('executed', 'executed_nonowner', 'forwarded', 'requeued_revoked', 'misrouted', 'dead')
+    foreach ($snap in $dbSnapshots) {
+        $m = Read-PromSnapshot $snap.FullName
+
+        $ownerV  = Get-MetricSumOrNull $m (Get-SeriesPattern 'db_retry_routing_mode' 'mode="owner"')
+        $sharedV = Get-MetricSumOrNull $m (Get-SeriesPattern 'db_retry_routing_mode' 'mode="shared"')
+        $modeCell = if ($null -eq $ownerV -and $null -eq $sharedV) { "n/a" }
+                    elseif ($ownerV -gt 0 -and $sharedV -gt 0) { "both?" }
+                    elseif ($ownerV -gt 0) { "owner" }
+                    elseif ($sharedV -gt 0) { "shared" }
+                    else { "none" }
+
+        $queueCells = foreach ($q in $retryQueues) {
+            Format-CountCell (Get-MetricSumOrNull $m (Get-SeriesPattern 'db_retry_queue_length' "queue=`"$q`""))
+        }
+        # action 在 mode 之前(字母序);action="executed" 带上右引号,不会把 executed_nonowner 算进来。
+        $actionCells = foreach ($a in $retryActions) {
+            Format-CountCell (Get-MetricSumOrNull $m ('^db_retry_route_total\{action="' + [regex]::Escape($a) + '",'))
+        }
+
+        $rowArgs = @($snap.BaseName, $modeCell) + @($queueCells) + @($actionCells)
+        Write-Host ($rtFmt -f $rowArgs)
     }
 }
 

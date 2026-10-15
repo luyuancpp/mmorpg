@@ -12,9 +12,9 @@ import (
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
-// ExpandMonitor detects external partition drift and fences the producer.
-// It deliberately never mutates the hash ring: online expansion cannot
-// preserve the db service's per-player partition cursor.
+// ExpandMonitor 只探测外部分区漂移并 fence 生产者。CRC-32(key) mod N 的映射由分区契约固定
+// (kafkautil.DBTaskPartition),在线扩分区保不住 go/db 按分区记录的 applied cursor,
+// 所以一旦漂移只 fence,不做任何重映射。
 type ExpandMonitor struct {
 	client            sarama.Client
 	topic             string
