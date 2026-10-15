@@ -9,6 +9,7 @@ package event
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	_ "proto/common/options"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -72,9 +73,9 @@ var File_proto_common_event_team_event_proto protoreflect.FileDescriptor
 
 const file_proto_common_event_team_event_proto_rawDesc = "" +
 	"\n" +
-	"#proto/common/event/team_event.proto\"5\n" +
+	"#proto/common/event/team_event.proto\x1a/proto/common/options/event_ingress_option.proto\"<\n" +
 	"\x16PlayerTeamRefreshEvent\x12\x1b\n" +
-	"\tplayer_id\x18\x01 \x01(\x04R\bplayerIdB\x14Z\x12proto/common/eventb\x06proto3"
+	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId:\x05\x88\xe6\xd5\x02\x01B\x14Z\x12proto/common/eventb\x06proto3"
 
 var (
 	file_proto_common_event_team_event_proto_rawDescOnce sync.Once

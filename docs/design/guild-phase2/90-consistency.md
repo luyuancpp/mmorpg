@@ -305,6 +305,10 @@ S6 `ActivityDeps` 删 `Notifier`(用 `l.notify`),`OpIDs` 类型改 `data.OpIDMin
   但 plan 必须只含这几条 ADD COLUMN。
 - 两批各自在生成物落地后、任何新 go/db / scene 启动前,对每份 zone 的 db 配置跑 `cmd/migrate plan → up → SHOW COLUMNS`(S3 §3.15a、S4 4.42 第 1b 步);若两批同一天连续落地,可合并为一次迁移。`-command up` 按 plan 整条执行、不能挑列,所以 15 / 16 / 17 这三列的迁移(B3a-1、B4a-1、回合制战斗 §9.3,不论哪一方先跑),plan 允许出现的只有 `profile_component` / `asset_op_ledger` / `settlement_ledger` 三条 ADD COLUMN 中尚未迁移的那几条(后者见上一条,属回合制战斗);三列都已迁移过时 plan 为空,up 可跳过。SHOW COLUMNS 三列各返回 1 行;出现这三条之外的任何语句先停下核对。
 - 上一条的放行清单截至 17 号。之后任何批次给 `player_database` 新增字段(18 起),须在同一次改动里把新列追加进上一条、03 §3.15a 与 92 步骤 4 的放行清单,否则那一批的 operator 会按上一条在自己的新列上停下。
+- **2026-10-15:MySQL 行内围栏占用 `player_database` 的 18 / 19 号**:`fence_owner_epoch = 18`、`fence_save_seq = 19`;同批给 `player_database_1` 加 `fence_owner_epoch = 3`、`fence_save_seq = 4`。来源是 [db-write-fencing-mysql.md](../db-write-fencing-mysql.md) §3.2。字段先于条件写落码声明,目的是让后续加列(玩家收件箱 `inbox_ledger` 取 20)保持新老库列序一致。在 go/db 条件写上线之前,这几列只被原样读写。**此后取号从 20 起**(20 已由玩家收件箱预定)。因此上一条的放行清单扩为:
+  - `player_database` 的 `profile_component` / `asset_op_ledger` / `settlement_ledger` / `fence_owner_epoch` / `fence_save_seq` 五条 ADD COLUMN;
+  - `player_database_1` 的 `fence_owner_epoch` / `fence_save_seq` 两条 ADD COLUMN。
+  - 只放行其中尚未迁移的那几条;SHOW COLUMNS 两张表的新列各查一次,各 1 行。
 - 两处较早写下的单列清单作废,以上面的三列清单为准(原文暂未改):S4 4.42 第 1b 步"计划只含 `player_database` 加列 `asset_op_ledger`"及其只查 `asset_op_ledger` 一列的 SHOW COLUMNS;[turn-battle-gap-closure.md](../turn-battle-gap-closure.md) §9.3 验证清单第 1 步"计划应只含 `player_database` 加列 `settlement_ledger`"及其只查 `settlement_ledger` 一列的 SHOW COLUMNS。两边照三列清单放行、三列都查。
 - B3a-2 的 merge_zone"按列名拷贝"必须先于任何带新列的合服演练。
 

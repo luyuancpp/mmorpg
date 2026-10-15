@@ -529,11 +529,11 @@ constexpr PlayerEnterGameNodeRequest::ParseTableT_ PlayerEnterGameNodeRequest::I
     {
       PROTOBUF_FIELD_OFFSET(PlayerEnterGameNodeRequest, _impl_._has_bits_),
       0, // no _extensions_
-      7, 56,  // max_field_number, fast_idx_mask
+      8, 56,  // max_field_number, fast_idx_mask
       offsetof(ParseTableT_, field_lookup_table),
-      4294967172,  // skipmap
+      4294967044,  // skipmap
       offsetof(ParseTableT_, field_entries),
-      6,  // num_field_entries
+      7,  // num_field_entries
       0,  // num_aux_entries
       offsetof(ParseTableT_, field_names),  // no aux_entries
       class_data,
@@ -543,7 +543,10 @@ constexpr PlayerEnterGameNodeRequest::ParseTableT_ PlayerEnterGameNodeRequest::I
       ::_pbi::TcParser::GetTable<::PlayerEnterGameNodeRequest>(),  // to_prefetch
       #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
     }, {{
-      {::_pbi::TcParser::MiniParse, {}},
+      // uint64 login_generation = 8;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(PlayerEnterGameNodeRequest, _impl_.login_generation_), 5>(),
+       {64, 5, 0,
+        PROTOBUF_FIELD_OFFSET(PlayerEnterGameNodeRequest, _impl_.login_generation_)}},
       // uint64 player_id = 1;
       {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(PlayerEnterGameNodeRequest, _impl_.player_id_), 0>(),
        {8, 0, 0,
@@ -562,8 +565,8 @@ constexpr PlayerEnterGameNodeRequest::ParseTableT_ PlayerEnterGameNodeRequest::I
        {40, 3, 0,
         PROTOBUF_FIELD_OFFSET(PlayerEnterGameNodeRequest, _impl_.scene_id_)}},
       // uint32 home_zone_id = 6;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(PlayerEnterGameNodeRequest, _impl_.home_zone_id_), 5>(),
-       {48, 5, 0,
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(PlayerEnterGameNodeRequest, _impl_.home_zone_id_), 6>(),
+       {48, 6, 0,
         PROTOBUF_FIELD_OFFSET(PlayerEnterGameNodeRequest, _impl_.home_zone_id_)}},
       // uint64 owner_epoch = 7;
       {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(PlayerEnterGameNodeRequest, _impl_.owner_epoch_), 4>(),
@@ -581,9 +584,11 @@ constexpr PlayerEnterGameNodeRequest::ParseTableT_ PlayerEnterGameNodeRequest::I
       // uint64 scene_id = 5;
       {PROTOBUF_FIELD_OFFSET(PlayerEnterGameNodeRequest, _impl_.scene_id_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
       // uint32 home_zone_id = 6;
-      {PROTOBUF_FIELD_OFFSET(PlayerEnterGameNodeRequest, _impl_.home_zone_id_), _Internal::kHasBitsOffset + 5, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      {PROTOBUF_FIELD_OFFSET(PlayerEnterGameNodeRequest, _impl_.home_zone_id_), _Internal::kHasBitsOffset + 6, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
       // uint64 owner_epoch = 7;
       {PROTOBUF_FIELD_OFFSET(PlayerEnterGameNodeRequest, _impl_.owner_epoch_), _Internal::kHasBitsOffset + 4, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      // uint64 login_generation = 8;
+      {PROTOBUF_FIELD_OFFSET(PlayerEnterGameNodeRequest, _impl_.login_generation_), _Internal::kHasBitsOffset + 5, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
     }},
     // no aux_entries
     {{
@@ -601,6 +606,7 @@ inline constexpr PlayerEnterGameNodeRequest::Impl_::Impl_(
         enter_gs_type_{0u},
         scene_id_{::uint64_t{0u}},
         owner_epoch_{::uint64_t{0u}},
+        login_generation_{::uint64_t{0u}},
         home_zone_id_{0u} {}
 
 template <typename>
@@ -1959,19 +1965,21 @@ const ::uint32_t
         protodesc_cold) = {
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::PlayerEnterGameNodeRequest, _impl_._has_bits_),
-        9, // hasbit index offset
+        10, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::PlayerEnterGameNodeRequest, _impl_.player_id_),
         PROTOBUF_FIELD_OFFSET(::PlayerEnterGameNodeRequest, _impl_.session_id_),
         PROTOBUF_FIELD_OFFSET(::PlayerEnterGameNodeRequest, _impl_.enter_gs_type_),
         PROTOBUF_FIELD_OFFSET(::PlayerEnterGameNodeRequest, _impl_.scene_id_),
         PROTOBUF_FIELD_OFFSET(::PlayerEnterGameNodeRequest, _impl_.home_zone_id_),
         PROTOBUF_FIELD_OFFSET(::PlayerEnterGameNodeRequest, _impl_.owner_epoch_),
+        PROTOBUF_FIELD_OFFSET(::PlayerEnterGameNodeRequest, _impl_.login_generation_),
         0,
         1,
         2,
         3,
-        5,
+        6,
         4,
+        5,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::ProcessClientPlayerMessageRequest, _impl_._has_bits_),
         6, // hasbit index offset
@@ -2064,17 +2072,17 @@ const ::uint32_t
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, sizeof(::PlayerEnterGameNodeRequest)},
-        {15, sizeof(::ProcessClientPlayerMessageRequest)},
-        {24, sizeof(::ProcessClientPlayerMessageResponse)},
-        {31, sizeof(::SessionDisconnectRequest)},
-        {36, sizeof(::GameNodeConnectRequest)},
-        {43, sizeof(::RegisterPlayerSessionRequest)},
-        {50, sizeof(::CreateSceneRequest)},
-        {63, sizeof(::CreateSceneResponse)},
-        {68, sizeof(::DestroySceneRequest)},
-        {73, sizeof(::PrepareBattleRequest)},
-        {86, sizeof(::PrepareBattleResponse)},
-        {95, sizeof(::CancelBattlePrepareRequest)},
+        {17, sizeof(::ProcessClientPlayerMessageRequest)},
+        {26, sizeof(::ProcessClientPlayerMessageResponse)},
+        {33, sizeof(::SessionDisconnectRequest)},
+        {38, sizeof(::GameNodeConnectRequest)},
+        {45, sizeof(::RegisterPlayerSessionRequest)},
+        {52, sizeof(::CreateSceneRequest)},
+        {65, sizeof(::CreateSceneResponse)},
+        {70, sizeof(::DestroySceneRequest)},
+        {75, sizeof(::PrepareBattleRequest)},
+        {88, sizeof(::PrepareBattleResponse)},
+        {97, sizeof(::CancelBattlePrepareRequest)},
 };
 static const ::_pbi::MessageGlobalsBase* PROTOBUF_NONNULL const
     file_message_globals[] = {
@@ -2099,57 +2107,57 @@ const char descriptor_table_protodef_proto_2fscene_2fscene_2eproto[] ABSL_ATTRIB
     "roto/common/base/message.proto\032\033proto/co"
     "mmon/base/tip.proto\032\034proto/scene/scene_i"
     "nfo.proto\032\036proto/battle/battle_data.prot"
-    "o\"\227\001\n\032PlayerEnterGameNodeRequest\022\021\n\tplay"
+    "o\"\267\001\n\032PlayerEnterGameNodeRequest\022\021\n\tplay"
     "er_id\030\001 \001(\004\022\022\n\nsession_id\030\002 \001(\r\022\025\n\renter"
     "_gs_type\030\004 \001(\r\022\020\n\010scene_id\030\005 \001(\004\022\024\n\014home"
-    "_zone_id\030\006 \001(\r\022\023\n\013owner_epoch\030\007 \001(\004\"t\n!P"
-    "rocessClientPlayerMessageRequest\022(\n\017mess"
-    "age_content\030\001 \001(\0132\017.MessageContent\022\022\n\nse"
-    "ssion_id\030\002 \001(\r\022\021\n\tplayer_id\030\003 \001(\004\"b\n\"Pro"
-    "cessClientPlayerMessageResponse\022(\n\017messa"
-    "ge_content\030\001 \001(\0132\017.MessageContent\022\022\n\nses"
-    "sion_id\030\002 \001(\r\"-\n\030SessionDisconnectReques"
-    "t\022\021\n\tplayer_id\030\001 \001(\004\"S\n\026GameNodeConnectR"
-    "equest\022#\n\nrpc_client\030\001 \001(\0132\017.NetworkAddr"
-    "ess\022\024\n\014gate_node_id\030\002 \001(\r\"E\n\034RegisterPla"
-    "yerSessionRequest\022\022\n\nsession_id\030\001 \001(\r\022\021\n"
-    "\tplayer_id\030\002 \001(\004\"\203\001\n\022CreateSceneRequest\022"
-    "\021\n\tconfig_id\030\001 \001(\r\022\020\n\010scene_id\030\002 \001(\004\022\030\n\020"
-    "mirror_config_id\030\003 \001(\r\022\031\n\021dungeon_config"
-    "_id\030\004 \001(\r\022\023\n\013creator_ids\030\005 \003(\004\"9\n\023Create"
-    "SceneResponse\022\"\n\nscene_info\030\001 \001(\0132\016.Scen"
-    "eInfoComp\"\'\n\023DestroySceneRequest\022\020\n\010scen"
-    "e_id\030\001 \001(\004\"\206\001\n\024PrepareBattleRequest\022\021\n\tp"
-    "layer_id\030\001 \001(\004\022\021\n\tbattle_id\030\002 \001(\004\022\026\n\016bat"
-    "tle_node_id\030\003 \001(\r\022\023\n\013deadline_ms\030\004 \001(\004\022\033"
-    "\n\023prepare_deadline_ms\030\005 \001(\004\"\203\001\n\025PrepareB"
-    "attleResponse\022&\n\rerror_message\030\001 \001(\0132\017.T"
-    "ipInfoMessage\022\'\n\010snapshot\030\002 \001(\0132\025.Battle"
-    "PlayerSnapshot\022\031\n\021table_fingerprint\030\003 \001("
-    "\t\"B\n\032CancelBattlePrepareRequest\022\021\n\tplaye"
-    "r_id\030\001 \001(\004\022\021\n\tbattle_id\030\002 \001(\0042\277\006\n\005Scene\022"
-    ":\n\023PlayerEnterGameNode\022\033.PlayerEnterGame"
-    "NodeRequest\032\006.Empty\022J\n\023SendMessageToPlay"
-    "er\022\030.NodeRouteMessageRequest\032\031.NodeRoute"
-    "MessageResponse\022e\n\032ProcessClientPlayerMe"
-    "ssage\022\".ProcessClientPlayerMessageReques"
-    "t\032#.ProcessClientPlayerMessageResponse\022J"
-    "\n\023InvokePlayerService\022\030.NodeRouteMessage"
-    "Request\032\031.NodeRouteMessageResponse\022A\n\022Ro"
-    "uteNodeStringMsg\022\024.RouteMessageRequest\032\025"
-    ".RouteMessageResponse\022V\n\024RoutePlayerStri"
-    "ngMsg\022\032.RoutePlayerMessageRequest\032\033.Rout"
-    "ePlayerMessageResponse\"\005\200\231\310\001\001\022<\n\023UpdateS"
-    "essionDetail\022\035.RegisterPlayerSessionRequ"
-    "est\032\006.Empty\0228\n\013CreateScene\022\023.CreateScene"
-    "Request\032\024.CreateSceneResponse\022,\n\014Destroy"
-    "Scene\022\024.DestroySceneRequest\032\006.Empty\022>\n\rP"
-    "repareBattle\022\025.PrepareBattleRequest\032\026.Pr"
-    "epareBattleResponse\022:\n\023CancelBattlePrepa"
-    "re\022\033.CancelBattlePrepareRequest\032\006.Empty\022"
-    ">\n\rNodeHandshake\022\025.NodeHandshakeRequest\032"
-    "\026.NodeHandshakeResponseB\016Z\005scene\200\001\001\230\324a\003b"
-    "\006proto3"
+    "_zone_id\030\006 \001(\r\022\023\n\013owner_epoch\030\007 \001(\004\022\030\n\020l"
+    "ogin_generation\030\010 \001(\004J\004\010\003\020\004\"t\n!ProcessCl"
+    "ientPlayerMessageRequest\022(\n\017message_cont"
+    "ent\030\001 \001(\0132\017.MessageContent\022\022\n\nsession_id"
+    "\030\002 \001(\r\022\021\n\tplayer_id\030\003 \001(\004\"b\n\"ProcessClie"
+    "ntPlayerMessageResponse\022(\n\017message_conte"
+    "nt\030\001 \001(\0132\017.MessageContent\022\022\n\nsession_id\030"
+    "\002 \001(\r\"-\n\030SessionDisconnectRequest\022\021\n\tpla"
+    "yer_id\030\001 \001(\004\"S\n\026GameNodeConnectRequest\022#"
+    "\n\nrpc_client\030\001 \001(\0132\017.NetworkAddress\022\024\n\014g"
+    "ate_node_id\030\002 \001(\r\"E\n\034RegisterPlayerSessi"
+    "onRequest\022\022\n\nsession_id\030\001 \001(\r\022\021\n\tplayer_"
+    "id\030\002 \001(\004\"\203\001\n\022CreateSceneRequest\022\021\n\tconfi"
+    "g_id\030\001 \001(\r\022\020\n\010scene_id\030\002 \001(\004\022\030\n\020mirror_c"
+    "onfig_id\030\003 \001(\r\022\031\n\021dungeon_config_id\030\004 \001("
+    "\r\022\023\n\013creator_ids\030\005 \003(\004\"9\n\023CreateSceneRes"
+    "ponse\022\"\n\nscene_info\030\001 \001(\0132\016.SceneInfoCom"
+    "p\"\'\n\023DestroySceneRequest\022\020\n\010scene_id\030\001 \001"
+    "(\004\"\206\001\n\024PrepareBattleRequest\022\021\n\tplayer_id"
+    "\030\001 \001(\004\022\021\n\tbattle_id\030\002 \001(\004\022\026\n\016battle_node"
+    "_id\030\003 \001(\r\022\023\n\013deadline_ms\030\004 \001(\004\022\033\n\023prepar"
+    "e_deadline_ms\030\005 \001(\004\"\203\001\n\025PrepareBattleRes"
+    "ponse\022&\n\rerror_message\030\001 \001(\0132\017.TipInfoMe"
+    "ssage\022\'\n\010snapshot\030\002 \001(\0132\025.BattlePlayerSn"
+    "apshot\022\031\n\021table_fingerprint\030\003 \001(\t\"B\n\032Can"
+    "celBattlePrepareRequest\022\021\n\tplayer_id\030\001 \001"
+    "(\004\022\021\n\tbattle_id\030\002 \001(\0042\277\006\n\005Scene\022:\n\023Playe"
+    "rEnterGameNode\022\033.PlayerEnterGameNodeRequ"
+    "est\032\006.Empty\022J\n\023SendMessageToPlayer\022\030.Nod"
+    "eRouteMessageRequest\032\031.NodeRouteMessageR"
+    "esponse\022e\n\032ProcessClientPlayerMessage\022\"."
+    "ProcessClientPlayerMessageRequest\032#.Proc"
+    "essClientPlayerMessageResponse\022J\n\023Invoke"
+    "PlayerService\022\030.NodeRouteMessageRequest\032"
+    "\031.NodeRouteMessageResponse\022A\n\022RouteNodeS"
+    "tringMsg\022\024.RouteMessageRequest\032\025.RouteMe"
+    "ssageResponse\022V\n\024RoutePlayerStringMsg\022\032."
+    "RoutePlayerMessageRequest\032\033.RoutePlayerM"
+    "essageResponse\"\005\200\231\310\001\001\022<\n\023UpdateSessionDe"
+    "tail\022\035.RegisterPlayerSessionRequest\032\006.Em"
+    "pty\0228\n\013CreateScene\022\023.CreateSceneRequest\032"
+    "\024.CreateSceneResponse\022,\n\014DestroyScene\022\024."
+    "DestroySceneRequest\032\006.Empty\022>\n\rPrepareBa"
+    "ttle\022\025.PrepareBattleRequest\032\026.PrepareBat"
+    "tleResponse\022:\n\023CancelBattlePrepare\022\033.Can"
+    "celBattlePrepareRequest\032\006.Empty\022>\n\rNodeH"
+    "andshake\022\025.NodeHandshakeRequest\032\026.NodeHa"
+    "ndshakeResponseB\016Z\005scene\200\001\001\230\324a\003b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fscene_2fscene_2eproto_deps[7] = {
@@ -2165,7 +2173,7 @@ static ::absl::once_flag descriptor_table_proto_2fscene_2fscene_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fscene_2fscene_2eproto = {
     false,
     false,
-    2247,
+    2279,
     descriptor_table_protodef_proto_2fscene_2fscene_2eproto,
     "proto/scene/scene.proto",
     &descriptor_table_proto_2fscene_2fscene_2eproto_once,
@@ -2262,7 +2270,7 @@ PROTOBUF_NOINLINE void PlayerEnterGameNodeRequest::Clear() {
   (void) cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000003fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000007fU)) {
     ::memset(&_impl_.player_id_, 0, static_cast<::size_t>(
         reinterpret_cast<char*>(&_impl_.home_zone_id_) -
         reinterpret_cast<char*>(&_impl_.player_id_)) + sizeof(_impl_.home_zone_id_));
@@ -2327,7 +2335,7 @@ PROTOBUF_NOINLINE void PlayerEnterGameNodeRequest::Clear() {
   }
 
   // uint32 home_zone_id = 6;
-  if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000040U)) {
     if (this_._internal_home_zone_id() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
@@ -2341,6 +2349,15 @@ PROTOBUF_NOINLINE void PlayerEnterGameNodeRequest::Clear() {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
           7, this_._internal_owner_epoch(), target);
+    }
+  }
+
+  // uint64 login_generation = 8;
+  if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+    if (this_._internal_login_generation() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          8, this_._internal_login_generation(), target);
     }
   }
 
@@ -2369,7 +2386,7 @@ PROTOBUF_NOINLINE void PlayerEnterGameNodeRequest::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000003fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000007fU)) {
     // uint64 player_id = 1;
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       if (this_._internal_player_id() != 0) {
@@ -2405,8 +2422,15 @@ PROTOBUF_NOINLINE void PlayerEnterGameNodeRequest::Clear() {
             this_._internal_owner_epoch());
       }
     }
-    // uint32 home_zone_id = 6;
+    // uint64 login_generation = 8;
     if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+      if (this_._internal_login_generation() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_login_generation());
+      }
+    }
+    // uint32 home_zone_id = 6;
+    if (CheckHasBit(cached_has_bits, 0x00000040U)) {
       if (this_._internal_home_zone_id() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_home_zone_id());
@@ -2430,7 +2454,7 @@ void PlayerEnterGameNodeRequest::MergeImpl(::google::protobuf::MessageLite& to_m
   (void)cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000003fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000007fU)) {
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       if (from._internal_player_id() != 0) {
         _this->_impl_.player_id_ = from._impl_.player_id_;
@@ -2457,6 +2481,11 @@ void PlayerEnterGameNodeRequest::MergeImpl(::google::protobuf::MessageLite& to_m
       }
     }
     if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+      if (from._internal_login_generation() != 0) {
+        _this->_impl_.login_generation_ = from._impl_.login_generation_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000040U)) {
       if (from._internal_home_zone_id() != 0) {
         _this->_impl_.home_zone_id_ = from._impl_.home_zone_id_;
       }

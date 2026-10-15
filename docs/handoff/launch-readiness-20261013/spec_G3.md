@@ -952,6 +952,15 @@ python tools/scripts/gen_docs_index.py --check
 - `metric.CounterVec` 的 `Add(0, label)` 签名:同文件里 `createPlayerNameOrphanTotal.Add(0)` 是先例。
 - miniredis 在 Lua 里对 list 执行 `redis.call("GET", …)` 会抛 WRONGTYPE,`EVAL` 整体回错误。`TestCreatePlayer_SeedErrorDoesNotFailCreate` 依赖这一点;如果它没走到 `error` 分支,先查这一点。
 
+> **核对结论(2026-10-15;正文不改)**:本机模块缓存有与 `go/login/go.mod` 同版本的 miniredis v2.35.0(`:7`)、go-redis v9.16.0(`:13`)、go-zero v1.9.2(`:15`)和 miniredis 用的 gopher-lua v1.1.1(`:79`,indirect),目录 `C:\Users\luyua\go\pkg\mod\github.com\alicebob\miniredis\v2@v2.35.0`、`…\github.com\redis\go-redis\v9@v9.16.0`、`…\github.com\zeromicro\go-zero@v1.9.2`、`…\github.com\yuin\gopher-lua@v1.1.1`,下文路径相对各自目录。对照落地后的脚本 `go/login/internal/logic/pkg/dataloader/new_player_seed.go:74-87` 与调用 `:110`,上面四条**都与源码一致**,用例依赖的假设成立。**这是只读源码的静态核对,不是运行证据**:用例过没过仍以 Codex 按本节第 3 步跑出的结果为准。
+> - **Lua 里 `SET key val PX ms` 设上 TTL**:成立。go-redis 把种子 `[]byte` 原样编成 bulk、把 `int64` 编成十进制字符串(`internal/proto/writer.go:73-74`、`:103-104`、`:227-229`);miniredis 把 ARGV 作为 Lua 字符串放进表(`cmd_scripting.go:82-86`),`redis.call` 把字符串参数原样交给 `Dispatch`(`lua.go:43-44`、`:57-59`);`cmdSet` 的 `PX` 分支按毫秒解析(`cmd_string.go:84-86`、`:99-114`,≤ 0 报错 `:105-109`),先删旧值连同旧 TTL(`:171`)再写值(`:174`)并写 `db.ttl`(`:176-178`)。`mr.TTL` 直接返回 `db.ttl[k]`(`direct.go:401-413`),不随墙钟递减(spec_G4b-G.md §13 U2),所以 `new_player_seed_test.go:106` 与 `createplayer_seed_test.go:125` 的 `(0, 24h]` 断言拿到的正好是 24h。
+> - **`GET` 缺键在 Lua 里是 false**:成立。`cmdGet` 缺键写 null(`cmd_string.go:402-404`);`redis.call` 用的是新建的 peer(`lua.go:57`),`server.NewPeer` 不设 `Resp3`(`server/server.go:259-263`、`:293-297`),null 按 RESP2 写成 `$-1`(`server/server.go:464-470`),`ParseReply` 解成 nil(`server/proto.go:124-127`),再转成 Lua `false`(`lua.go:78-79`)—— 与客户端连接是不是 RESP3 无关。脚本里 `cur == ARGV[1]` 的比较也成立:bulk 回复解成 Go string(`server/proto.go:128-139`)转 `LString`(`lua.go:92-93`),gopher-lua 的字符串相等是 Go 字符串逐字节相等(`vm.go:2421-2422`;类型不同直接不等,`:2407-2408`),`TestSeedNewPlayerAllData_RerunIsIdempotent`(`new_player_seed_test.go:112-125`)依赖的「第二次看到自己写的种子回 2」成立。
+> - **`EVALSHA` → `NOSCRIPT` → `EVAL` 回退**:成立,与 spec_G4b-G.md §13 U4 同版本的结论相同。`Script.Run` 见 go-redis `script.go:66-74`;`HasErrorPrefix` 先 `errors.As` 成 `redis.Error`、去掉 `ERR ` 前缀再比前缀(`error.go:32-40`);miniredis 对没缓存的 sha 回 `NOSCRIPT No matching script. Please use EVAL.`(`cmd_scripting.go:202-206`,文案 `redis.go:58`)。`EVAL` 成功后按 sha 缓存脚本(`cmd_scripting.go:175-178`),同一 miniredis 上第二次调用直接由 `EVALSHA` 执行(`:209`)。
+> - **`metric.CounterVec` 的 `Add(0, label)`**:成立。go-zero v1.9.2 `core/metric/counter.go:13-19` 的接口含 `Add(v float64, labels ...string)`(`:17`),实现在 `:49-53`;同包 `metrics.go:328-331` 已这样用。
+> - **对 list 执行 `GET` 回 WRONGTYPE,`EVAL` 整体回 error**:成立,机理与 spec_G4b-G.md §13 U1 同版本的结论相同。非 string 键回 `msgWrongType`(`cmd_string.go:406-408`,文案 `redis.go:26`);错误回复被 `ParseReply` 解成 Go error(`server/proto.go:104-106`),`redis.call` 是 failFast 模式(`lua.go:106`),据此抛 Lua error(`lua.go:63-71`);`doScript` 把运行期错误也包成 error 返回(`cmd_scripting.go:129-132`),`runLuaScript` 写错误回复(`:106-108`),出错的脚本**不进缓存**(`:175-178`),所以这个用例里是 `EVALSHA` 先回 `NOSCRIPT`、`EVAL` 再回错误,两条路都落到 `SeedError`(go-redis `Cmd.Int()` 在有错时直接返回该错误,`command.go:316-318`;`new_player_seed.go:110-113`)。注意:错误文案是 `ERR Error compiling script (new function): …WRONGTYPE…`(`redis.go:78-80` 对运行期错误也套这个前缀),不以 `WRONGTYPE` 开头;`TestCreatePlayer_SeedErrorDoesNotFailCreate`(`createplayer_seed_test.go:239-264`)只断言 `seed_total{error}` +1 和 `mr.Type(key)=="list"`,不比文案,不受影响。脚本在 `GET` 处就出错,`SET` 不会执行,`h.mr.Lpush`(`direct.go:190-192`)预置的 list 原样保留,`mr.Type` 回 `"list"`(`direct.go:431-441`,`redis.go:18`)。
+> - 顺带(不在上面四条里):`TestEnterGame_SeededNewPlayerTakesFastPath` 的 PTTL 断言(`createplayer_seed_test.go:306`)依赖身份补齐脚本的 `SET … KEEPTTL`(`player_class_backfill.go:190`)保留种子 TTL。miniredis `cmdSet` 的 `KEEPTTL` 先取旧 TTL、写入后写回(`cmd_string.go:80-83`、`:157-161`、`:171-178`),成立;Lua 内 `PTTL` 的实现见 spec_G4b-G.md §13 U15。
+> - 以上只说明 miniredis / go-redis 的实现与用例假设一致;真实 Redis 上的同名行为不在本注范围(本节「可选冒烟」覆盖一部分)。
+
 ### 可选冒烟(需要本地全栈,不是压测,不下性能结论)
 
 1. 按 AGENTS §6.2 清空 Redis / MySQL / etcd,重置 Kafka offset。
@@ -1020,6 +1029,7 @@ python tools/scripts/gen_docs_index.py --check
 ## B12 未核实项
 
 1. **miniredis v2.35 的 Lua 行为**:`SET … PX` 设 TTL、`GET` 缺键返回 false、EVALSHA 回退。按经验应该成立,需要 Codex 跑用例确认。
+   - 2026-10-15 结论注:已对本机模块缓存里同版本的 miniredis v2.35.0 / go-redis v9.16.0 源码逐条核过,这三点和 B6 列的「对 list 执行 `GET` 回 WRONGTYPE、`EVAL` 整体回错」都成立,文件:行依据见 B6「重点核对」后的核对结论注。「按经验应该成立」以该注为准;它是静态读源码,不是运行证据,仍需 Codex 跑用例确认。
 2. **收益量级**:Part A §2.7 只是按代码数出的推算,没有计数和压测。要看 L-14。
 3. **TTL 边界窗口**:「进场链耗时百毫秒级」是按链路结构推断的,没有实测分布。
 4. **客户端行为**:「客户端 60s 进场超时兜底」取自 `entergamelogic.go:301` 的注释,没有核对 Unity 客户端代码(未授权读客户端仓库,AGENTS §9)。

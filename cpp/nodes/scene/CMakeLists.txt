@@ -160,6 +160,9 @@ target_link_libraries(scene
     gRPC::gpr
     CURL::libcurl
     protobuf::libprotobuf
+    # 静态链入的 nghttp2(1.70)不得导出到动态符号表:系统 libcurl.so 依赖旧版 libnghttp2.so,
+    # 导出后 libcurl 的 nghttp2_* 调用会绑到我们的副本、两个版本混用(docs/design/grpc-muduo-transport.md §9)。
+    -Wl,--exclude-libs,libnghttp2.a
     nghttp2
     muduo_net
     muduo_base

@@ -1,5 +1,8 @@
 #pragma once
 
+#include <type_traits>
+#include <utility>
+
 #include "proto/scene/s2s_player_scene.pb.h"
 
 #include "rpc/player_service_interface.h"
@@ -30,6 +33,8 @@ public:
         {
         case 0:
 			{
+            static_assert(std::is_same_v<decltype(std::declval<::google::protobuf::Empty&>().mutable_error_message()), ::TipInfoMessage*>,
+                "玩家 RPC 非 Empty 应答必须提供 TipInfoMessage error_message");
             EnterScene(player,
                 static_cast<const ::GsEnterSceneRequest*>(request),
                 static_cast<::google::protobuf::Empty*>(response));
@@ -37,6 +42,8 @@ public:
             break;
         case 1:
 			{
+            static_assert(std::is_same_v<decltype(std::declval<::google::protobuf::Empty&>().mutable_error_message()), ::TipInfoMessage*>,
+                "玩家 RPC 非 Empty 应答必须提供 TipInfoMessage error_message");
             LeaveScene(player,
                 static_cast<const ::GsLeaveSceneRequest*>(request),
                 static_cast<::google::protobuf::Empty*>(response));
@@ -44,10 +51,11 @@ public:
             break;
         case 2:
 			{
+            static_assert(std::is_same_v<decltype(std::declval<::EnterSceneS2CResponse&>().mutable_error_message()), ::TipInfoMessage*>,
+                "玩家 RPC 非 Empty 应答必须提供 TipInfoMessage error_message");
             EnterSceneS2C(player,
                 static_cast<const ::EnterSceneS2CRequest*>(request),
                 static_cast<::EnterSceneS2CResponse*>(response));
-            TRANSFER_ERROR_MESSAGE(static_cast<::EnterSceneS2CResponse*>(response));
 			}
             break;
         default:

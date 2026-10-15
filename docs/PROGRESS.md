@@ -8487,3 +8487,110 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
   - 纯文档，没有编译或测试。
   - 本机没有 Python，未运行文档索引生成器。请 Codex 在仓库根目录执行 `python tools/scripts/gen_docs_index.py --check`，期望退出码 0。
 - **下一步**：第 1 批（契约与生成）的文件清单报用户，授权后再动手。
+
+## 2026-10-15 补充:gate 闸门拒绝回执改为带请求 id 的信封(两版同批,Claude,未编译、未测试,待 Codex 验证)
+
+- 用户拍板:battle 与 GM 闸门的拒绝回执由 23 号 tip(不带 id)改为 `MessageContent{id, message_id, error}`,落实 [client-request-ordering.md](design/client-request-ordering.md) O6 与 band-routing 阶段 0d;Java 版 scene-battle-spec D12 同步修订。客户端可见。清单见该文 §16 最后一行;§4.1、§4.7 已订正(白名单拒绝有意不回执;scene 未就绪、直连模式找不到节点仍是 23,本轮未改)。
+- 另:`SendRawViaRouter` 守卫的注释按 muduo 传输会话的更正改准(正常关机有排空门,守卫兜的是剩余窗口)。
+- **Codex 验证**(顺序执行):
+  1. 本仓:proto 重生成之后 `msbuild game.sln /m:1 /p:Configuration=Debug /p:Platform=x64`,0 error。
+  2. Java 仓(`D:\luyuan\xuanming-server-mmo`,口径以该仓 AGENTS.md 为准):`mvn -pl game-gate,game-robot -am test`。通过标准:`BattleUplinkRejectedTest`、`ClientDispatcherTest` 全绿,game-robot 编译通过。
+  3. 冒烟(可选,需要 prod 运行模式):Java robot `attribute` / `currency` 加 `--expect-gm deny`,`battle` / `battle-settle` 第 2 步;本仓 robot 无需改动。
+- **Java 版(AGENTS §12)**:同批已改(未提交),PARITY「客户端请求按会话保序」一行已追加说明。
+
+## 2026-10-15 玩家持久收件箱：第 1 批文件清单只读核实（Claude，纯文档，未开工）
+
+- 精确清单写进 [player-inbox-service.md](design/player-inbox-service.md) 附录 E，§11.3 加了指向说明。清单靠两路只读实证（照 trade 域、team 事件、equip tip 段、settlement_ledger 加列的历史提交）汇总得出。
+- **规模**：手写 36–38 个（新建 5、修改 31、待定 0–2），超过 30 个文件，需要用户授权；生成约 117–129 个。
+- **原估算漏掉的项**：`proto_gen.no-unity.yaml`、`node_util.h`、`rpc.vcxproj.filters`；新事件必须标 `OptionKafkaIngress`；新 proto 不能照抄 `OptionFileDefaultNode`。
+- **开工阻塞**（HEAD `592d7e718` 复核）：
+  - P1：`player_database` 仍止于 17，收件箱取 20 之前，围栏须先落 18/19。
+  - P2：HEAD 上有已提交、未生成的积压（例如 `rpc_message.proto` 的 `HANDLER_FAILED`、缺失的 `kafka_command_event_whitelist.h`），墓碑闸会中止 proto-gen-run，须由所属会话先清掉。
+  - 原 P3（他人未提交的生成器模板）已解除。
+- **待用户定**：P6，`config.proto` 是否移到第 3 批，与 `config.cpp` 同改；P7，D9 的 `player_debt` 弃用注释是否随本批。
+- **验证边界**：只读核实，未改代码，未生成，未编译。
+- **Java 版（AGENTS §12）**：对应 Java 版本号无；Java 待做，没有新增改动。
+
+## 2026-10-15 玩家持久收件箱：第 1 批获授权、D5–D14 拍板，等阻塞解除（Claude，纯文档，未开工）
+
+- **用户拍板**：
+  - 授权第 1 批清单（[player-inbox-service.md](design/player-inbox-service.md) 附录 E），定为手写 37 个，条件是 P1、P2 都解除后才开工。
+  - P1 选「等围栏会话先落 18/19」。
+  - P6：`config.proto` 移到第 3 批，与 `config.cpp` 的 `readGameConfig` 同改；键缺失时显式取默认值，不依赖 proto3 的 0。
+  - D5–D14 按推荐口径拍板，其中 D9 的 `player_debt` 弃用注释随第 1 批落。
+- **设计稿同步**：状态行、§0、§11 开头、§11.3、§11.5、§13.2（改为「按推荐口径拍板」）、附录 E 结论都已更新。
+- **阻塞现状**（HEAD `592d7e718`）：
+  - P1 仍在：`player_database` 止于 17。已请「玩家消息投递与位置管理」会话在 18/19 落进 proto 时通知本会话。
+  - P2 仍在：已提交、未生成的积压，要等一次完整的 proto 生成。生成时会一次烧掉 29 个事件号墓碑，这一步不可逆，需要设 `PROTOGEN_ALLOW_MASS_EVENT_TOMBSTONE=1`。ECS 收尾条目还记着负责人「先别编译」。因此由谁、何时执行这次生成，需要负责人决定，本会话不代为执行。
+- **验证边界**：纯文档，未生成、未编译。
+- **Java 版（AGENTS §12）**：对应 Java 版本号无；Java 待做，没有新增改动。
+
+## 2026-10-15 给 Codex：积压全量 proto 生成（收件箱第 1 批的前置 P2；Claude 起草，未执行）
+
+- **授权**：用户 2026-10-15 原话：「同意这次全量 proto 生成按积压改动作废 29 个事件号（设 PROTOGEN_ALLOW_MASS_EVENT_TOMBSTONE=1），由 Codex 单独执行并单独提交，不夹带收件箱改动；完成后通知收件箱会话开工第 1 批。」
+- **背景**：HEAD 上已提交、未生成的积压，例如 `rpc_message.proto` 的 `HANDLER_FAILED`、缺失的 `kafka_command_event_whitelist.h`、ECS 第 4 批删掉的 29 个事件。详见 [player-inbox-service.md](design/player-inbox-service.md) 附录 E 的 P2。
+- **工作目录**：仓库根目录 `D:\luyuan\xuanming-server-mmo-cpp`，PowerShell。
+
+**0. 前置条件**（任一不满足就停下报告）
+- 跑 `git status --porcelain -- proto/ data/ tools/proto_generator/`，输出里只允许出现 `proto/common/database/mysql_database_table.proto`。这是围栏的字段声明：player_database 18/19、player_database_1 3/4，归「玩家消息投递与位置管理」会话。
+- 建议先由用户把这处声明连同它的放行清单文档单独提交，再执行本生成；若用户决定并入本次提交，提交说明里写明。
+- 出现其他未提交的 proto / data / 生成器改动，一律停下。
+- 收件箱会话在本生成提交之前不写任何 proto。
+
+**1. 识别墓碑清单**（此步不落墓碑）
+1. 跑 `pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-build`。
+2. 不设放行变量，跑 `pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-run -ConfigPath tools/proto_generator/protogen/etc/proto_gen.no-unity.yaml`。
+   - 预期以 Fatal `refusing to tombstone event IDs` 中止，报错里列出 `号=名`，原样保存这段输出。
+   - 中止前可能已写出部分产物，下一步会覆盖。
+3. 核对清单：
+   - 数量应为 29。
+   - 每个名字跑 `git grep -n "message <名>\b" -- proto/`，应无结果。
+   - 每个名字都能用 `git log -S "message <名>" --oneline -- proto/` 找到删除它的提交。
+   - 任一不符（数量不同、名字仍在源里、找不到删除来源），停下报告，**不设放行变量**。墓碑一经写入就永久生效。
+
+**2. 全量生成**
+1. 跑 `$env:PROTOGEN_ALLOW_MASS_EVENT_TOMBSTONE='1'; pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-run -ConfigPath tools/proto_generator/protogen/etc/proto_gen.no-unity.yaml; Remove-Item Env:PROTOGEN_ALLOW_MASS_EVENT_TOMBSTONE`
+2. 核对 `git diff -- proto/event_id.txt`：只新增墓碑，且恰为第 1 步的清单；已有活事件号一个不变。
+3. 核对 `git diff -- proto/message_id.txt`：只追加，不改已有号。
+4. 不设变量再跑一次 proto-gen-run，两次的 `git status --porcelain` 应相同（幂等）。
+5. 确认积压已补齐：
+   - `cpp/generated/rpc/service_metadata/kafka_command_event_whitelist.h` 存在。
+   - `HANDLER_FAILED` 出现在 `cpp/generated`、`go/proto`。
+   - scene 的 `event_handler.cpp` 不再 include 已删除的 handler 头文件。
+   - 带守护段的生成 handler，其自定义代码保留。重点比对 `cpp/nodes/scene/handler/rpc/player/s2s_player_scene_handler.cpp` 生成前后的守护段。
+
+**3. 编译验证**
+1. 跑 `pwsh -File tools/scripts/dev_tools.ps1 -Command go-svc-build`。
+2. 跑 `msbuild game.sln /m:1 /nr:false /p:Configuration=Debug /p:Platform=x64`。
+3. 失败的处理：
+   - 错误在生成文件里：停下，不提交。
+   - 错误在他人在途的手写代码里：记录前 20 行和文件路径。它不阻塞提交生成产物，但要列进提交说明。
+
+**4. 提交**（用户已授权本次提交；不 push）
+- 逐路径 `git add` 生成产物，不用 `git add -A`。
+- 不提交收件箱的文档改动，也不提交他人其他在途改动。
+- 提交说明写明三件事：这是积压全量生成；29 个墓碑的清单；用户授权放行变量，以及编译结果。
+
+**5. 不在本提交里、需另行跟进**
+- 客户端可见契约（新消息号、SyncDigest 等）由所属会话安排：客户端仓重新生成，Java 跑 ContractSync（AGENTS §12）。
+- 生成后的 go/db 按描述符写全部列：本地或任何环境启动新的 go/db 前，各 zone 库先跑 `go/db/cmd/migrate`（`-command plan` 后再 `up`），加上 18/19 两列。
+- 完成后通知「玩家收件箱服务设计」会话开工第 1 批。
+
+## 2026-10-15 补充：给 Codex 的积压全量 proto 生成指令，硬约束与客户端口径（Claude）
+
+- 本条补充上一条「给 Codex：积压全量 proto 生成」的第 5 步，执行时两条一起看。约束来自「玩家消息投递与位置管理」会话。
+- **硬约束：先迁移，再启动。** 生成之后，新版 go/db 按描述符写全部列，包括 `fence_owner_epoch`、`fence_save_seq`。按 G-03，任何新版 go/db 或 scene 启动之前，必须先对**每个 zone 库和每个落点库**依次跑 `go/db/cmd/migrate` 的 `-command plan`、`-command up`，再 `SHOW COLUMNS`。
+  - plan 的放行清单只认这 7 列：player_database 5 列（G-03 原有 3 列 + 18/19），player_database_1 2 列（3/4）。清单见 `docs/design/guild-phase2/90-consistency.md` G-03、`03-names.md` §3.15a、`92-handoff.md` 步骤 4。
+  - 缺列的后果：全部玩家存盘都会因 unknown column 失败。
+- **这次生成还会一并带进**已提交的 `player_scene.proto`（SyncDomain 与两个 RPC），以及 `guild_db.proto`、`trade_table.proto`（ABANDONED、`last_send_ms`）。落地恢复的代码正等着这次生成。
+- **客户端口径**：指令按 AGENTS §4 用 `proto_gen.no-unity.yaml`，不写同级客户端仓。客户端的 SyncDigest handler 由持有客户端授权的「玩家消息投递与位置管理」会话事后补生成，不在本次提交里。
+
+## 2026-10-15 服务器编译启动：生成器通过，协议生成遇既有守护段损坏而停止（Codex）
+
+- 用户本轮授权开始编译，解除此前暂缓构建。完成工作区、近期交接、工具链检查；已有 VS 18、Go 1.27.2、Boost、gRPC/GoogleTest 和 nghttp2 v1.70.0，无需安装。公开 GitHub API 返回当前无打开的 PR/Issue；未登录、未提交或推送，未读取或修改独立客户端。
+- `GOTOOLCHAIN=local`、`GOPROXY=off` 下，`pwsh -NoProfile -File tools/scripts/dev_tools.ps1 -Command proto-gen-build` 退出 0。随后依 ECS 恢复交接，仅对子进程放行 `PROTOGEN_ALLOW_MASS_EVENT_TOMBSTONE=1`，使用 `proto_gen.no-unity.yaml` 运行 `proto-gen-run -UseBinary`。
+- **生成实际失败**：`cpp/nodes/scene/handler/grpc/scene_node_service.cpp` 第 216、224 行原有 `///<<< END WRITING YOUR CODE}`，末尾多出的 `}` 使严格解析器无法识别结束标记，遇下一 BEGIN 后 panic「守护段内不能嵌套守护段」。两行源于历史提交 `2610f1b1da`；该 cpp 与生成前备份相同，生成器在写入它之前拒绝，并非本轮覆盖业务逻辑。最小修复为两行结束标记去掉末尾多余 `}`，保留其下一行函数闭括号；尚未修改。
+- 包装脚本返回 0，但日志有 panic，**不能记为生成成功**。`Invoke-ProtoGenRun` 调二进制后未传播失败；后续需修正退出码传播。依 AGENTS.md §10.2 停止，不重试，不继续构建。
+- **部分生成产物已写入，均保留现场**：恰好 29 个预期内部事件号转墓碑，原有活跃事件号不变；原有 message_id 不变，新增落地摘要的 253/254 两号。RPC id=6、HANDLER_FAILED/REPLY_DROPPED 等绑定已更新，但完整生成流水线未完成（白名单等后续产物尚未完成），不能据此启动新版服务。已有手写改动未回退。
+- **证据目录**：`C:/Users/luyua/AppData/Local/Temp/codex-server-build-20261015-104726/`；包含生成器构建/运行日志、生成前工作区 patch、29 个带守护段 cpp 备份、编号前后核对及状态快照。
+- **未执行**：C++ game.sln、Go 微服务、Java 网关及独立 Java 版的构建/测试，robot vendor 刷新、本地启动、迁移和压测。Java 状态：本轮没有新增功能或 Java 修改；相关既有两版变更仍待各自构建验证。新版 go/db/scene 启动前还须遵守 G-03 的各 zone/落点库先 plan/up/SHOW COLUMNS 门禁，本轮未启动服务。

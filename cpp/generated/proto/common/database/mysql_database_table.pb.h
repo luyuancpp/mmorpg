@@ -1465,6 +1465,8 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED player_database_1 final : public ::
   enum : int {
     kStressTestProbeFieldNumber = 2,
     kPlayerIdFieldNumber = 1,
+    kFenceOwnerEpochFieldNumber = 3,
+    kFenceSaveSeqFieldNumber = 4,
   };
   // .PlayerStressTestProbe stress_test_probe = 2;
   [[nodiscard]] bool has_stress_test_probe()
@@ -1492,11 +1494,31 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED player_database_1 final : public ::
   void _internal_set_player_id(::uint64_t value);
 
   public:
+  // uint64 fence_owner_epoch = 3;
+  void clear_fence_owner_epoch() ;
+  [[nodiscard]] ::uint64_t fence_owner_epoch() const;
+  void set_fence_owner_epoch(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_fence_owner_epoch() const;
+  void _internal_set_fence_owner_epoch(::uint64_t value);
+
+  public:
+  // uint64 fence_save_seq = 4;
+  void clear_fence_save_seq() ;
+  [[nodiscard]] ::uint64_t fence_save_seq() const;
+  void set_fence_save_seq(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_fence_save_seq() const;
+  void _internal_set_fence_save_seq(::uint64_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:player_database_1)
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<1, 2,
+      ::google::protobuf::internal::TcParseTable<2, 4,
                           1, 0,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
@@ -1527,6 +1549,8 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED player_database_1 final : public ::
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::PlayerStressTestProbe* PROTOBUF_NULLABLE stress_test_probe_;
     ::uint64_t player_id_;
+    ::uint64_t fence_owner_epoch_;
+    ::uint64_t fence_save_seq_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -2159,6 +2183,8 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED player_database final : public ::go
     kAssetOpLedgerFieldNumber = 16,
     kSettlementLedgerFieldNumber = 17,
     kPlayerIdFieldNumber = 1,
+    kFenceOwnerEpochFieldNumber = 18,
+    kFenceSaveSeqFieldNumber = 19,
   };
   // .Transform transform = 2;
   [[nodiscard]] bool has_transform()
@@ -2426,11 +2452,31 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED player_database final : public ::go
   void _internal_set_player_id(::uint64_t value);
 
   public:
+  // uint64 fence_owner_epoch = 18;
+  void clear_fence_owner_epoch() ;
+  [[nodiscard]] ::uint64_t fence_owner_epoch() const;
+  void set_fence_owner_epoch(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_fence_owner_epoch() const;
+  void _internal_set_fence_owner_epoch(::uint64_t value);
+
+  public:
+  // uint64 fence_save_seq = 19;
+  void clear_fence_save_seq() ;
+  [[nodiscard]] ::uint64_t fence_save_seq() const;
+  void set_fence_save_seq(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_fence_save_seq() const;
+  void _internal_set_fence_save_seq(::uint64_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:player_database)
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<5, 17,
+      ::google::protobuf::internal::TcParseTable<5, 19,
                           16, 0,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
@@ -2476,6 +2522,8 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED player_database final : public ::go
     ::PlayerAssetOpLedgerComp* PROTOBUF_NULLABLE asset_op_ledger_;
     ::BattleSettlementLedgerComp* PROTOBUF_NULLABLE settlement_ledger_;
     ::uint64_t player_id_;
+    ::uint64_t fence_owner_epoch_;
+    ::uint64_t fence_save_seq_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -5000,6 +5048,54 @@ inline void player_database::set_allocated_settlement_ledger(::BattleSettlementL
   // @@protoc_insertion_point(field_set_allocated:player_database.settlement_ledger)
 }
 
+// uint64 fence_owner_epoch = 18;
+inline void player_database::clear_fence_owner_epoch() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.fence_owner_epoch_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00020000U);
+}
+inline ::uint64_t player_database::fence_owner_epoch() const {
+  // @@protoc_insertion_point(field_get:player_database.fence_owner_epoch)
+  return _internal_fence_owner_epoch();
+}
+inline void player_database::set_fence_owner_epoch(::uint64_t value) {
+  _internal_set_fence_owner_epoch(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00020000U);
+  // @@protoc_insertion_point(field_set:player_database.fence_owner_epoch)
+}
+inline ::uint64_t player_database::_internal_fence_owner_epoch() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.fence_owner_epoch_;
+}
+inline void player_database::_internal_set_fence_owner_epoch(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.fence_owner_epoch_ = value;
+}
+
+// uint64 fence_save_seq = 19;
+inline void player_database::clear_fence_save_seq() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.fence_save_seq_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00040000U);
+}
+inline ::uint64_t player_database::fence_save_seq() const {
+  // @@protoc_insertion_point(field_get:player_database.fence_save_seq)
+  return _internal_fence_save_seq();
+}
+inline void player_database::set_fence_save_seq(::uint64_t value) {
+  _internal_set_fence_save_seq(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00040000U);
+  // @@protoc_insertion_point(field_set:player_database.fence_save_seq)
+}
+inline ::uint64_t player_database::_internal_fence_save_seq() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.fence_save_seq_;
+}
+inline void player_database::_internal_set_fence_save_seq(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.fence_save_seq_ = value;
+}
+
 // -------------------------------------------------------------------
 
 // player_database_1
@@ -5119,6 +5215,54 @@ inline void player_database_1::set_allocated_stress_test_probe(::PlayerStressTes
 
   _impl_.stress_test_probe_ = reinterpret_cast<::PlayerStressTestProbe*>(value);
   // @@protoc_insertion_point(field_set_allocated:player_database_1.stress_test_probe)
+}
+
+// uint64 fence_owner_epoch = 3;
+inline void player_database_1::clear_fence_owner_epoch() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.fence_owner_epoch_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+}
+inline ::uint64_t player_database_1::fence_owner_epoch() const {
+  // @@protoc_insertion_point(field_get:player_database_1.fence_owner_epoch)
+  return _internal_fence_owner_epoch();
+}
+inline void player_database_1::set_fence_owner_epoch(::uint64_t value) {
+  _internal_set_fence_owner_epoch(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  // @@protoc_insertion_point(field_set:player_database_1.fence_owner_epoch)
+}
+inline ::uint64_t player_database_1::_internal_fence_owner_epoch() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.fence_owner_epoch_;
+}
+inline void player_database_1::_internal_set_fence_owner_epoch(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.fence_owner_epoch_ = value;
+}
+
+// uint64 fence_save_seq = 4;
+inline void player_database_1::clear_fence_save_seq() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.fence_save_seq_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+}
+inline ::uint64_t player_database_1::fence_save_seq() const {
+  // @@protoc_insertion_point(field_get:player_database_1.fence_save_seq)
+  return _internal_fence_save_seq();
+}
+inline void player_database_1::set_fence_save_seq(::uint64_t value) {
+  _internal_set_fence_save_seq(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  // @@protoc_insertion_point(field_set:player_database_1.fence_save_seq)
+}
+inline ::uint64_t player_database_1::_internal_fence_save_seq() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.fence_save_seq_;
+}
+inline void player_database_1::_internal_set_fence_save_seq(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.fence_save_seq_ = value;
 }
 
 #ifdef __GNUC__

@@ -114,6 +114,11 @@ class-3 在现行代码里很难走到：scene_manager 的路由一律带观察�
 | `player_database_1` | `uint64 fence_owner_epoch = 3;`、`uint64 fence_save_seq = 4;` | `stress_test_probe = 2`（:170）|
 
 - 都声明在 message 末尾（加列纪律，:139-145）。18 / 19 目前没有被占用 [C]，落码前再 grep 一次。
+- **2026-10-15 已先行声明**（未提交、未生成）：
+  - 四个字段先于条件写落进 proto。原因是玩家收件箱要接着取 20 号（`inbox_ledger`），必须先占住 18 / 19，新老库的列序才一致。
+  - G-03 放行清单已同批更新：`90-consistency.md`、`03-names.md` §3.15a、`92-handoff.md` 步骤 4。
+  - 在 go/db 条件写上线之前，这四列只被原样读写，不参与判定。迁移照 G-03 纪律，先于任何新版 go/db 和 scene 启动。
+  - 本节其余内容（DBTask `save_seq`、PlayerAllData `last_save_seq`、go/db 与 C++ 逻辑）仍按原计划在前置满足后落码。
 - 注释写明：存储版本元数据，只由 go/db 按 DBTask 写入；C++ 只在加载时读来播种（§7.2），存盘时不写。
 - **为什么必须是 proto 字段**：`SaveConditional` 的 `FenceFields` 只认该表 message 的顶层 uint32 / uint64 字段，栅栏值从消息字段读，没有「外部传入栅栏值」的入口（P2M:200-208、:264）[C]。另外三个好处是附带的：`cmd/migrate` 的 Drift 自动生成 ADD COLUMN；启动闸 `assertSchemaUpToDate` 缺列拒启；读路径会把围栏一起读回。
 - **「先 DDL 后代码」由机器保证只限本 zone 库**：启动闸只核对配置里的 `DBName`。其它落点库在第一次被指向时才按需打开，打开时过同一道只读 schema 闸，失败包成 `ErrStoreUnavailable`（`store_registry.go`）[C]。所以漏迁的落点库不会拒启，表现为写不耗预算地延后（`db_task_deferred_total{reason="store_open_failed"}`，被 L-04 的 critical 告警 `DbTaskDeferredByStore` 覆盖）和冷读立即失败。补完 DDL 后按需打开在 10 秒退避后自动成功，不用重启；期间写只在 ready 里有一份，压在 noeviction 的 Redis 上。兜底靠 §8.1 的库清单穷举与 §8.2 的观察项。

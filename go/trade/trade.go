@@ -145,12 +145,14 @@ func runTrade(c config.Config) (runErr error) {
 
 	// 收尾所有权从这里开始:之后任何 return 都会 注销(若已注册)→ 排空(若已起服)→ 关资源 → 框架收尾。
 	stopKillSwitch := func() {}
+	stopAssetOpCleanup := func() {}
 	var serverSlot lifecycle.ServerSlot
 	shutdown := &lifecycle.Shutdown{
 		DrainTimeout:  lifecycle.DrainTimeout,
 		FinishTimeout: lifecycle.FinishTimeout,
-		// killswitch watch 与注销共用 svcCtx 的 etcd 客户端,必须在 svcCtx.Stop 关连接之前停。
-		CloseResources:  func() { stopKillSwitch(); svcCtx.Stop() },
+		// killswitch watch 与注销共用 svcCtx 的 etcd 客户端,必须在 svcCtx.Stop 关连接之前停;
+		// 终态资产指令清理跑在 MySQL 上,同样必须在 svcCtx.Stop 关库之前停(stop 会等 goroutine 退出)。
+		CloseResources:  func() { stopKillSwitch(); stopAssetOpCleanup(); svcCtx.Stop() },
 		FinishFramework: proc.Shutdown,
 	}
 	defer func() {
@@ -176,9 +178,20 @@ func runTrade(c config.Config) (runErr error) {
 	svcCtx.WarmListingIDSegment()
 	svcCtx.Assets.WarmAssetOpIDSegment()
 
-	// 资产通道:scene 节点镜像 + outbox 重投循环。先于 gRPC 起,把上一轮留下的未决指令尽早投出去;
-	// ctx 取消(收到退出信号)即两者退出,连接在 svcCtx.Stop() 里关。
+	// 资产通道:scene 节点镜像 + outbox 重投循环,以及落地恢复的唤醒订阅与选主维护(日对账 + 自动放弃)。
+	// 先于 gRPC 起,把上一轮留下的未决指令尽早投出去;ctx 取消(收到退出信号)即全部退出,连接在 svcCtx.Stop() 里关。
 	svcCtx.StartAssetChannel(ctx)
+
+	// 终态资产指令清理(trade.asset_op_cleanup,保留期外的终态行逐行删):与 AssetOp.Enabled 独立(同 guild),
+	// 通道关着时历史终态行照样要清。必须在 ensureSchema 之后(表一定在)。装配失败即拒启:配置说要清却没在清,
+	// 表会无界增长且没有任何报错。
+	if c.AssetOp.CleanupEnabled {
+		stop, err := svc.StartAssetOpCleanup(svcCtx.DB, c.AssetOp)
+		if err != nil {
+			return err
+		}
+		stopAssetOpCleanup = stop
+	}
 
 	// Prometheus /metrics(MetricsListenAddr 为空则不开)。
 	svc.StartMetrics(c.MetricsListenAddr)

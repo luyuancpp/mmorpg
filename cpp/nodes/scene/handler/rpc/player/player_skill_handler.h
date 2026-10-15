@@ -1,5 +1,8 @@
 #pragma once
 
+#include <type_traits>
+#include <utility>
+
 #include "proto/scene/player_skill.pb.h"
 
 #include "rpc/player_service_interface.h"
@@ -33,10 +36,11 @@ public:
         {
         case 0:
 			{
+            static_assert(std::is_same_v<decltype(std::declval<::ReleaseSkillResponse&>().mutable_error_message()), ::TipInfoMessage*>,
+                "玩家 RPC 非 Empty 应答必须提供 TipInfoMessage error_message");
             ReleaseSkill(player,
                 static_cast<const ::ReleaseSkillRequest*>(request),
                 static_cast<::ReleaseSkillResponse*>(response));
-            TRANSFER_ERROR_MESSAGE(static_cast<::ReleaseSkillResponse*>(response));
 			}
             break;
         case 1:
@@ -55,10 +59,11 @@ public:
             break;
         case 3:
 			{
+            static_assert(std::is_same_v<decltype(std::declval<::ListSkillsResponse&>().mutable_error_message()), ::TipInfoMessage*>,
+                "玩家 RPC 非 Empty 应答必须提供 TipInfoMessage error_message");
             ListSkills(player,
                 static_cast<const ::ListSkillsRequest*>(request),
                 static_cast<::ListSkillsResponse*>(response));
-            TRANSFER_ERROR_MESSAGE(static_cast<::ListSkillsResponse*>(response));
 			}
             break;
         default:

@@ -80,8 +80,6 @@ internal::EnumTraitsT<::GameMessageType_internal_data_>
 enum GameMessageType : int {
   REQUEST = 0,
   RESPONSE = 1,
-  RPC_CLIENT_REQUEST = 2,
-  NODE_ROUTE = 3,
   RPC_ERROR = 4,
   GameMessageType_INT_MIN_SENTINEL_DO_NOT_USE_ =
       ::std::numeric_limits<::int32_t>::min(),
@@ -95,7 +93,7 @@ inline constexpr GameMessageType GameMessageType_MIN =
 inline constexpr GameMessageType GameMessageType_MAX =
     static_cast<GameMessageType>(4);
 [[nodiscard]] inline bool GameMessageType_IsValid(int value) {
-  return 0 <= value && value <= 4;
+  return 0 <= value && value <= 4 && ((19u >> value) & 1) != 0;
 }
 inline constexpr int GameMessageType_ARRAYSIZE = 4 + 1;
 [[nodiscard]] const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL
@@ -128,6 +126,8 @@ enum GameErrorCode : int {
   INVALID_REQUEST = 4,
   INVALID_RESPONSE = 5,
   TIMEOUT = 6,
+  HANDLER_FAILED = 7,
+  REPLY_DROPPED = 8,
   GameErrorCode_INT_MIN_SENTINEL_DO_NOT_USE_ =
       ::std::numeric_limits<::int32_t>::min(),
   GameErrorCode_INT_MAX_SENTINEL_DO_NOT_USE_ =
@@ -138,11 +138,11 @@ extern const uint32_t GameErrorCode_internal_data_[];
 inline constexpr GameErrorCode GameErrorCode_MIN =
     static_cast<GameErrorCode>(0);
 inline constexpr GameErrorCode GameErrorCode_MAX =
-    static_cast<GameErrorCode>(6);
+    static_cast<GameErrorCode>(8);
 [[nodiscard]] inline bool GameErrorCode_IsValid(int value) {
-  return 0 <= value && value <= 6;
+  return 0 <= value && value <= 8;
 }
-inline constexpr int GameErrorCode_ARRAYSIZE = 6 + 1;
+inline constexpr int GameErrorCode_ARRAYSIZE = 8 + 1;
 [[nodiscard]] const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL
 GameErrorCode_descriptor();
 [[nodiscard]] inline auto ProtobufInternalGetEnumDescriptor(GameErrorCode) {
@@ -157,7 +157,7 @@ template <typename T>
 }
 template <>
 [[nodiscard]] inline const ::std::string& GameErrorCode_Name(GameErrorCode value) {
-  return ::google::protobuf::internal::NameOfDenseEnum<GameErrorCode_descriptor, 0, 6>(
+  return ::google::protobuf::internal::NameOfDenseEnum<GameErrorCode_descriptor, 0, 8>(
       static_cast<int>(value));
 }
 [[nodiscard]] inline bool GameErrorCode_Parse(
@@ -325,6 +325,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GameRpcMessage final : public ::goo
     kResponseFieldNumber = 3,
     kTypeFieldNumber = 1,
     kErrorFieldNumber = 4,
+    kIdFieldNumber = 6,
     kMessageIdFieldNumber = 5,
   };
   // bytes request = 2;
@@ -377,6 +378,16 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GameRpcMessage final : public ::goo
   void _internal_set_error(::GameErrorCode value);
 
   public:
+  // uint64 id = 6;
+  void clear_id() ;
+  [[nodiscard]] ::uint64_t id() const;
+  void set_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_id() const;
+  void _internal_set_id(::uint64_t value);
+
+  public:
   // uint32 message_id = 5;
   void clear_message_id() ;
   [[nodiscard]] ::uint32_t message_id() const;
@@ -391,7 +402,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GameRpcMessage final : public ::goo
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<3, 5,
+      ::google::protobuf::internal::TcParseTable<3, 6,
                           0, 0,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
@@ -424,6 +435,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GameRpcMessage final : public ::goo
     ::google::protobuf::internal::ArenaStringPtr response_;
     int type_;
     int error_;
+    ::uint64_t id_;
     ::uint32_t message_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -627,7 +639,7 @@ inline void GameRpcMessage::_internal_set_error(::GameErrorCode value) {
 inline void GameRpcMessage::clear_message_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.message_id_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
 }
 inline ::uint32_t GameRpcMessage::message_id() const {
   // @@protoc_insertion_point(field_get:GameRpcMessage.message_id)
@@ -635,7 +647,7 @@ inline ::uint32_t GameRpcMessage::message_id() const {
 }
 inline void GameRpcMessage::set_message_id(::uint32_t value) {
   _internal_set_message_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
   // @@protoc_insertion_point(field_set:GameRpcMessage.message_id)
 }
 inline ::uint32_t GameRpcMessage::_internal_message_id() const {
@@ -645,6 +657,30 @@ inline ::uint32_t GameRpcMessage::_internal_message_id() const {
 inline void GameRpcMessage::_internal_set_message_id(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.message_id_ = value;
+}
+
+// uint64 id = 6;
+inline void GameRpcMessage::clear_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.id_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+}
+inline ::uint64_t GameRpcMessage::id() const {
+  // @@protoc_insertion_point(field_get:GameRpcMessage.id)
+  return _internal_id();
+}
+inline void GameRpcMessage::set_id(::uint64_t value) {
+  _internal_set_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  // @@protoc_insertion_point(field_set:GameRpcMessage.id)
+}
+inline ::uint64_t GameRpcMessage::_internal_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.id_;
+}
+inline void GameRpcMessage::_internal_set_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.id_ = value;
 }
 
 #ifdef __GNUC__

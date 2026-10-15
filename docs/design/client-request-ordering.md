@@ -150,6 +150,8 @@
 lane 准入放在 `PROTOCOL_GRPC` 分支里、路由模式下,取代现在直接调用 `HandleRouterForward` 的做法(`:956-964`)。
 
 - 限流、体积、白名单、GM、battle 这些拒绝仍然排在 lane 之前,立即回执,不占 lane 名额。它们的回执可能先于更早排队请求的回包到达客户端。这是允许的:本文保证的是**执行顺序**,不保证拒绝回执的到达顺序;拒绝回执带 id,客户端能对上号。
+
+> 2026-10-15 订正(用户拍板两版同批):体积、限流原本就是带 id 的信封;GM 闸(1006)与 battle 拒绝(1003)由 23 号 tip 改为带 id 与原 message_id 的信封,Java 版同批修订 scene-battle-spec D12。**白名单拒绝有意不回执**:它计非法包,回执会把「无凭证刷不存在的消息号」变成回包放大面,所以不在「拒绝回执带 id」之列。仍是 23 号 tip、不带 id 的同类 gate 级失败还有两处,本轮未改:scene 未就绪 / RpcClient 未挂(`HandleTcpNodeMessage`,两种模式都走)与直连模式找不到业务节点(O7 维持现状,随 D61 删除)。
 - `loginStarted` 改在**发出时**置位(现在路由模式下就是发出之后置位【码】`client_message_processor.cpp:821-826`)。排队中、断线时作废的 Login 从没到达 login,不需要通知,这样也不会被「发 Login 后立刻断开」用来放大断线 RPC(`:439-451` 的注释)。
 
 ### 4.2 数据结构
@@ -239,6 +241,8 @@ Pump(*it)
 | lane 满(排队 + 在途 ≥ 32) | `MessageContent{id, message_id, error}` | 否 | `kRateLimitExceeded = 1008`【码】`generated/code/proto/tip/common_error_tip.proto:28` |
 | 排队超时、无路由服、gRPC 失败、节点摘除、本地截止、已重定向 | 同上 | 否 | `kServiceUnavailable = 1003`【码】`common_error_tip.proto:18`(fault=1) |
 | 业务回包与路由服拒绝 | 路由服信封原样下发(已带 id) | — | — |
+| GM 闸拒绝(lane 之前,2026-10-15 起) | `MessageContent{id, message_id, error}`(原为 23 号 tip) | 是 | `kFeatureUnavailable = 1006` |
+| battle 拒绝(lane 之前,2026-10-15 起) | 同上(原为 23 号 tip) | 否 | `kServiceUnavailable = 1003` |
 
 **客户端可见的变化**:gate 级失败从「23 号 tip、不带 id」改成「带请求 id 和原 message_id 的错误信封」;新增 1008 拒绝;同一会话的路由类回包按请求顺序到达。第一项与路由服现有的拒绝信封形状相同,客户端本来就要处理【推】;robot 按 message_id 认领,也兼容【码】`robot/chat_smoke_scenario.go:367-368,402`。按 AGENTS §12,这一批要与 Java 同批对齐(§10)。
 
@@ -603,3 +607,4 @@ go-zero 超时拦截器用 `context.WithTimeout` 派生 ctx 交给 handler,超�
 | C 与 RPC0 回包路径的协调 | 已合(2026-10-15,「C++ RPC 异步回调链式调用设计」会话改) | `router_lane.h` 的 `InflightIndex` 改为 `cpp/libs/engine/core/utils/data_structures/inflight_index.h` 的别名(语义逐行相同,多 `ExtractAll` / `Empty`;加了类型等同的 static_assert),`router_lane_test.cpp` 独立编译命令多 `-I cpp/libs/engine/core`(§13 第 2 步已注明);`SendEnvelope` / `FindLiveSession` 从匿名命名空间导出到 `gate_lane`,供 scene 的 TCP 回包路径复用,`[lane]` 汇总的 `incarnation_mismatch` 从此也包含该路径;`client_message_processor.cpp` 的 `HandleTcpNodeMessage` 改为非 Empty 走 `CallMethod`、超时 `kGateToSceneClientCallTimeout` 12s,新增不变式 I5(已登记 §5.2)。本文的三处评审修复对方确认未动 | 待 Codex |
 | C++ 完成度核对(2026-10-15) | 已跑完,结论待主会话逐条读复核意见 | 只读工作流 `wf_6fae7fc0-8f5`(4 个视角 + 各 1 个对抗复核),结果在会话 tasks 目录 `w3zah72i2.output` 与 journal。已读到的报告(复核结论尚未逐条核对):**C-1(major)** muduo_h2 传输下 gate 关机时断线通知走 `SendRawViaRouter` 的官方 gRPC 回退分支,对没有 CQ / Stub 的路由服实体 `registry.get`,可能崩溃(`client_message_processor.cpp:211-226`);**C-2(minor)** 顶号 `KickPlayerEventHandler` 只 shutdown,lane 排队项要等断开回调才丢弃(`gate_event_handler.cpp:113-128`);**C-3(minor)** battle / GM 闸门拒绝仍是不带 id 的 tip(O6 / 阶段 0d,客户端可见)。其余视角的报告被截断,未读 | 待续 |
 | C++ 完成度核对:复核结论与修复(2026-10-15) | 已改完,未编译 | 复核确认成立并已修:① `client_request_lane.cpp` Pump 里不加限定的 `eNodeType` 且没有 include `node_util.h`,gate 编不过 → 改为 `common::base::eNodeType::ClientRpcRouterNodeService`(与 `grpc_call_deadline.cpp` 同写法);② muduo_h2 + 路由模式下关机,断线通知经 `SendRawViaRouter` 落进官方 gRPC 分支,对没有 CQ / Stub 的实体 `registry.get` → `client_message_processor.cpp` 在官方分支前加 `all_of<grpc::CompletionQueue, ClientRpcRouterStubPtr>` 判断,两种传输都不可用时按「没有路由服」返回 nullopt(采样 WARN);③ O7 启动日志 → `main.cpp` 出口模式日志两支各补一句(路由模式注明 lane 已启用及上限,直连模式注明不保序);④ §4.10 / §4.11 文档漂移已订正。被复核否掉的:顶号只 shutdown(C-2 / F2)、直连模式 player_id 归一(C-5)、I4 无机械门禁(C-6)、非 lane 回包不核代次(F5)、inflight_index.h 未跟踪 / Release 链接清单(信息项)。**待决定**:C-3 battle / GM 闸门拒绝改成带 id 的信封,与 Java 版 scene-battle-spec D12(明确要求 23 推送、不是信封)冲突,属于客户端契约变更,未改,等用户拍板。生成物 7 / 8 号字段仍待 Codex 重生成 | 待 Codex:proto 重生成后 `msbuild game.sln /m:1 /p:Configuration=Debug /p:Platform=x64` |
+| C-3 闸门拒绝回执带 id(两版同批,2026-10-15) | 已改完,未编译、未测试 | 用户拍板「改成带 id 的信封」。**C++**:`client_message_processor.cpp` 的 GM 闸(1006)与 battle 拒绝(1003)由 `SendTipToClient` 改为 `gate_lane::SendEnvelope(session, request->id(), request->message_id(), tip)`;GM 闸照旧计非法包与踢线阈值。白名单拒绝有意不回执(§4.1 订正注);scene 未就绪与直连模式找不到节点仍是 23,未改。**Java**:`ClientDispatcher` 两处改 `envelopeError`,类注释同步;测试 `BattleUplinkRejectedTest`(新 `expectRejected`,`expectTip1003` 只留给「没进场景」那条)、`ClientDispatcherTest`(新 `envelopeTipOf`,战斗上行 7 处、GM 2 处);robot `BattleSupport.lobbyRejection`(新)、`BattleScenario` / `BattleSettleScenario` 第 2 步、`AttributeScenario` / `CurrencyScenario` 的 deny 分支,以及 `RobotOptions` / `BattleIds` / `GuildEconomyScenario` 说明;文档 `scene-battle-spec.md` D12 与 :1222、`battle-node-spec.md` :364 / :1688、`architecture.md` :788、`data-tools-spec.md` :766 / :949、`inventory/contract-robot.md` :110。Go robot 已在上一轮改为读信封错误,本仓不需要再改 | 待 Codex:gate `msbuild game.sln /m:1`;Java `mvn -pl game-gate,game-robot -am test` |

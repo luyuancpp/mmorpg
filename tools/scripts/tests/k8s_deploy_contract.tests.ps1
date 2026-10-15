@@ -991,6 +991,12 @@ $ProdEnv = @{
     # ≥32 位;与上面各值都不同(login 拒绝跨用途复用主密钥,部署侧对 GATE / INTERNAL_AUTH 两把同样拒绝);
     # 也不以 go/login/internal/config/secrets.go placeholderPrefixes 里的前缀开头(Go 侧按前缀判占位,比部署侧严)。
     MMORPG_LOGIN_QUEUE_TOKEN_SECRET = 'contract-test-queue-token-0123456789abcdef'
+    # 登录排队合入门槛的测试接缝(2026-10-15,k8s_deploy.ps1 Resolve-LoginQueueSwitch):门槛未清($script:LoginQueueMergeGateCleared
+    # 为 $false)时 staging / prod 的 auto 解析为关。设为 1 只在 -DryRun 下视为门槛已清,让下面依赖「排队开」的 DryRun
+    # ($prodRun、$peakStagingRun、$peakAllUpRun,以及用例 10 / 11 由本表拷贝出的 $env2)照旧拿到排队开的产物;
+    # 不带 -DryRun 时 k8s_deploy.ps1 见到它就拒绝,所以它放不开任何真实部署。本文件所有部署子进程都带 -DryRun。
+    # 断「门槛未清」的用例 19 / 20 与不依赖排队的 $peakProdOffRun 在各自的拷贝里显式置空。
+    MMORPG_TEST_LOGIN_QUEUE_GATE_CLEARED = '1'
 }
 $ProdArgs = $BaseArgs + @(
     "-ReleaseProfile", "prod",
@@ -1063,8 +1069,10 @@ Test-Case "login 的 go-zero Mode:dev 档必须写且 == go/login/etc/login.yaml
 # ─────────────────────────────────────────────────────────────────
 # k8s_deploy.ps1 按 -ReleaseProfile 生成:dev 两项都关(产物与 G4b 之前逐字相同),staging / prod 两项都开;阈值只有一份
 # ($script:PeakShavingLaunchTier,全部待压测确认)。-GatewayRateLimit / -LoginQueue 取 auto|on|off(auto = 跟随档位),
-# off 只用于止血与基线压测。复用上面的 $devOut(dev 缺省)与 $prodRun(prod 缺省),另起 9 个 DryRun 子进程:下面 6 个,
-# 用例 10 一个、用例 11 两个在用例里起。部署子进程一律带 -DryRun($BaseArgs / $ProdArgs 已带),不碰任何集群。
+# off 只用于止血与基线压测。复用上面的 $devOut(dev 缺省)与 $prodRun(prod 缺省),另起 11 个 DryRun 子进程:下面 6 个,
+# 用例 10 一个、用例 11 两个、用例 19 / 20 各一个在用例里起。部署子进程一律带 -DryRun($BaseArgs / $ProdArgs 已带),不碰任何集群。
+# 2026-10-15 起排队还要过合入门槛(k8s_deploy.ps1 的 $script:LoginQueueMergeGateCleared):未清时任何档位都不开排队。下面断「排队开」
+# 的 DryRun 经 $ProdEnv 或显式给的 MMORPG_TEST_LOGIN_QUEUE_GATE_CLEARED=1(只在 -DryRun 生效的测试接缝)视为门槛已清;门槛本身见用例 19–22。
 # 计划行与警告是 Show-PeakShavingPlan 打的英文原文;警告只断开头不含空格的「[PeakShaving]Xxx=yyy」一段
 # (Write-Warning 可能在空格处折行,同下文 MySQL 连接总账、gateway 管理面口令两节的说明)。
 $PeakNodeImage = 'ghcr.io/luyuancpp/mmorpg-node:0123456789ab'
@@ -1072,9 +1080,12 @@ $peakStagingRun = Invoke-DeployDryRun -Arguments ($BaseArgs + @('-ReleaseProfile
 # 两项都显式关,排队密钥置空:关排队时不该要求它。拷贝用 @{} + 再按键赋值(+ 合并同名键会抛异常)。
 $peakProdOffEnv = @{} + $ProdEnv
 $peakProdOffEnv['MMORPG_LOGIN_QUEUE_TOKEN_SECRET'] = ''
+# 显式 off 不依赖排队开,不带合入门槛的测试接缝:顺带覆盖「门槛未清 + 显式 off」仍打原来的 LoginQueue=off 警告(用例 9)。
+$peakProdOffEnv['MMORPG_TEST_LOGIN_QUEUE_GATE_CLEARED'] = ''
 $peakProdOffRun = Invoke-DeployDryRun -Arguments ($ProdArgs + @('-GatewayRateLimit', 'off', '-LoginQueue', 'off')) -Env $peakProdOffEnv
 # dev 档显式开两项(联调用法)。两个变量显式置空,结论不受跑测机器上残留的同名环境变量影响。
-$peakDevOnRun = Invoke-DeployDryRun -Arguments ($BaseArgs + @('-GatewayRateLimit', 'on', '-LoginQueue', 'on')) -Env @{ MMORPG_LOGIN_QUEUE_TOKEN_SECRET = ''; MMORPG_REDIS_PASSWORD = '' }
+# -LoginQueue on 在门槛未清时直接拒绝,所以带上只在 -DryRun 生效的测试接缝(见 $ProdEnv 的说明)。
+$peakDevOnRun = Invoke-DeployDryRun -Arguments ($BaseArgs + @('-GatewayRateLimit', 'on', '-LoginQueue', 'on')) -Env @{ MMORPG_LOGIN_QUEUE_TOKEN_SECRET = ''; MMORPG_REDIS_PASSWORD = ''; MMORPG_TEST_LOGIN_QUEUE_GATE_CLEARED = '1' }
 # 多 zone:zones.sample.json 的全部 zone。-ZonesConfigPath 给绝对路径(子进程的工作目录不保证是仓库根);
 # -SkipInfra 不装配 battle 全局池(否则还要 battle 密钥),-SkipJavaSvc:本次只看 login。
 $PeakAllUpArgs = @(
@@ -1336,9 +1347,12 @@ Test-Case '-GatewayRateLimit off -LoginQueue off(prod):两段不写、不要求�
     Assert-Match -Text $peakProdOffRun.Output -Pattern 'PeakShaving: gateway_rate_limit=off\(-GatewayRateLimit off\) login_queue=off\(-LoginQueue off\) profile=prod ' -Because '计划行要打出显式 off 的解析结果'
     Assert-Match -Text $peakProdOffRun.Output -Pattern '\[PeakShaving\]GatewayRateLimit=off' -Because '非 dev 档关限流必须告警(只用于止血 / 基线压测,参数不粘滞)'
     Assert-Match -Text $peakProdOffRun.Output -Pattern '\[PeakShaving\]LoginQueue=off' -Because '非 dev 档关排队必须告警'
+    # $peakProdOffRun 不带合入门槛的测试接缝(门槛未清):显式 off 的结论与门槛无关,仍打上面那条,不打门槛警告。
+    Assert-NotMatch -Text $peakProdOffRun.Output -Pattern '\[PeakShaving\]LoginQueueGate=closed' -Because '显式 -LoginQueue off 时维持原来的 LoginQueue=off 警告,不改打合入门槛警告'
     Assert-NotMatch -Text $peakProdOffRun.Output -Pattern '\[PeakShaving\]GatewayTrustedProxies=unset' -Because '限流关着时不打「未配置可信代理」警告'
     # 对照:prod 缺省(两项都开、未给 -GatewayTrustedProxies)不打两条关闭警告,只打可信代理那一条 —— 否则区分不出「关了才告警」。
     Assert-NotMatch -Text $prodRun.Output -Pattern '\[PeakShaving\](GatewayRateLimit|LoginQueue)=off' -Because '对照:两项都开时不该打关闭警告'
+    Assert-NotMatch -Text $prodRun.Output -Pattern '\[PeakShaving\]LoginQueueGate=closed' -Because '对照:$prodRun 带测试接缝(视为门槛已清),排队按档位开,不该打合入门槛警告'
     Assert-Match -Text $prodRun.Output -Pattern '\[PeakShaving\]GatewayTrustedProxies=unset' -Because '对照:限流开、部署 gateway 却没给 -GatewayTrustedProxies 时要告警(IP 桶按 socket 对端分)'
 }
 
@@ -1436,15 +1450,18 @@ Test-Case 'staging 与 prod 的削峰产物逐字相同(档位只决定开关,�
 
 Test-Case 'G4b-2 前置:G1b 与 G4b-G 已合入(DispatcherLockKey 是前缀,锁键按 zone 派生;在途占位是新键 ZSET)' {
     # 生成器给每个 zone 显式写 <基名>:zone:<id>,前提是 login 把配置值当前缀、只出队本 zone(G1b)。login 若改成「一个 leader
-    # 覆盖全部 zone」,显式分 zone 键就变成 N 个 leader 同时出队所有 zone、超发准入 —— 这条把「G1b → G4b-2」钉成机械门禁。
+    # 覆盖全部 zone」,显式分 zone 键就变成 N 个 leader 同时出队所有 zone、超发准入 —— 这条只检查 G1b 的代码形状还在。
+    # 2026-10-15 更正:此前这里与下面都写「钉成机械门禁」,不准确。本例只看 G1b / G4b-G 的代码形状,证明不了合入门槛
+    # (G1b 多 zone 用例、G4b-G 由 Codex 跑绿,spec_G4b-G.md §8.4 真实 Redis 冒烟记进 PROGRESS);真正挡住打开排队的是
+    # k8s_deploy.ps1 的 $script:LoginQueueMergeGateCleared(用例 19–22)。
     $dispatcherGo = Get-Content -LiteralPath (Join-Path (Get-RepoRoot) 'go/login/internal/logic/pkg/loginqueue/dispatcher.go') -Raw
     Assert-True -Condition ($dispatcherGo -cmatch 'func ZoneDispatcherLockKey\(') -Because 'loginqueue.ZoneDispatcherLockKey 必须存在(G1b:锁键 = 配置前缀 + 本 zone)'
     Assert-True -Condition ($dispatcherGo.Contains('"%s:zone:%d"')) -Because '锁键派生格式必须是 <前缀>:zone:<id>(生成器显式写的键与排查时要查的键都按它推)'
     $svcGo = Get-Content -LiteralPath (Join-Path (Get-RepoRoot) 'go/login/internal/svc/servicecontext.go') -Raw
     Assert-True -Condition (-not $svcGo.Contains('activeZones := func')) -Because 'G1b 之前「一个 leader 遍历 activeZones 出队」的实现必须已删除'
     # G4b-G:在途占位改成逐个到期的 admitted:zset:zone:{z}。G4b-2 一打开排队,G4b-G 之前的 SET 版本就把 Q1(快速通道占位被重复
-    # 扣减、放一批停最长 60s)与 Q2(取走即撤占位、开区超发数倍容量)带上线 —— 下面两条把「G4b-G → G4b-2」也钉成机械门禁
-    # (docs/handoff/launch-readiness-20261013/spec_G4b-G.md §5.5)。
+    # 扣减、放一批停最长 60s)与 Q2(取走即撤占位、开区超发数倍容量)带上线 —— 下面两条只检查 G4b-G 的代码形状还在
+    # (docs/handoff/launch-readiness-20261013/spec_G4b-G.md §5.5;不是对合入门槛的拦截,见上面 2026-10-15 更正)。
     $queueGo = Get-Content -LiteralPath (Join-Path (Get-RepoRoot) 'go/login/internal/logic/pkg/loginqueue/queue.go') -Raw
     Assert-True -Condition ($queueGo.Contains('admitted:zset:zone:%d')) -Because '在途占位键必须是 admitted:zset:zone:<id>(G4b-G:ZSET,成员按分数逐个到期)'
     Assert-True -Condition (-not $queueGo.Contains('"admitted:zone:%d"')) -Because 'G4b-G 之前的 SET 键 "admitted:zone:%d" 必须已不再使用(新版本不读不写旧键)'

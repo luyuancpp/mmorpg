@@ -121,8 +121,104 @@ db_task_stage_seconds_sum{op="write",stage="op_handler"} 0.9
 db_task_stage_seconds_count{op="write",stage="op_handler"} 100
 db_task_result_total{op="read",result="ok"} 50
 db_task_result_total{op="write",result="ok"} 100
+# TYPE db_retry_queue_length gauge
+db_retry_queue_length{queue="dead"} 1
+db_retry_queue_length{queue="processing"} 0
+db_retry_queue_length{queue="ready"} 2
 "@
 Set-Content -Path (Join-Path $snapDirForTest "t18m_db.txt") -Value $fakeDbSnapshot -Encoding utf8
+
+# 1c. Round 20+ 的 db 快照(S4 测量打点 + S1 重试路由)。t18m_db 扮演旧版 db:没有这些新序列,
+#     新段里除 snapshot 外必须全是 n/a(旧快照不能折成 0);它只有 L-04 的三个重试列表长度,没有 partitioned。
+#     取值约定(列串位、求和口径写错都会变红):
+#     - stage 与 step 的 count 都取 2,打印 sum 而不是均值会变红;各 step 均值互不相同;
+#     - op="read" 的 step 序列不能混进 Redis steps 表(该表只读 op="write");
+#     - db_redis_pool_wait_seconds_total 不能被当成 wait_total 加进 rpool_wait;只有 redis_client="main"
+#       一份(placement 与 main 共用 client 时 go/db 只导出 main),rpool_wait 必须是 5 而不是翻倍;
+#     - db_retry_route_total 跨 mode 求和,action="executed" 不能把 executed_nonowner 算进去。
+$fakeDbSnapshotR20 = @"
+# TYPE db_task_stage_seconds histogram
+db_task_stage_seconds_bucket{op="write",stage="sql",le="0.005"} 2
+db_task_stage_seconds_sum{op="write",stage="sql"} 0.004
+db_task_stage_seconds_count{op="write",stage="sql"} 2
+db_task_stage_seconds_sum{op="write",stage="task_total"} 0.04
+db_task_stage_seconds_count{op="write",stage="task_total"} 2
+db_task_stage_seconds_sum{op="write",stage="queue_wait"} 0.002
+db_task_stage_seconds_count{op="write",stage="queue_wait"} 2
+db_task_stage_seconds_sum{op="write",stage="kafka_e2e"} 0.1
+db_task_stage_seconds_count{op="write",stage="kafka_e2e"} 2
+db_task_stage_seconds_sum{op="read",stage="sql"} 0.006
+db_task_stage_seconds_count{op="read",stage="sql"} 2
+db_task_stage_seconds_sum{op="read",stage="task_total"} 0.012
+db_task_stage_seconds_count{op="read",stage="task_total"} 2
+# TYPE db_task_redis_step_seconds histogram
+db_task_redis_step_seconds_sum{op="read",step="cache_set"} 0.009
+db_task_redis_step_seconds_count{op="read",step="cache_set"} 1
+db_task_redis_step_seconds_sum{op="write",step="cache_set"} 0.00096
+db_task_redis_step_seconds_count{op="write",step="cache_set"} 2
+db_task_redis_step_seconds_sum{op="write",step="cursor_get"} 0.00024
+db_task_redis_step_seconds_count{op="write",step="cursor_get"} 2
+db_task_redis_step_seconds_sum{op="write",step="cursor_set"} 0.00038
+db_task_redis_step_seconds_count{op="write",step="cursor_set"} 2
+db_task_redis_step_seconds_sum{op="write",step="epoch_get"} 0.00026
+db_task_redis_step_seconds_count{op="write",step="epoch_get"} 2
+db_task_redis_step_seconds_sum{op="write",step="epoch_mark"} 0.0005
+db_task_redis_step_seconds_count{op="write",step="epoch_mark"} 2
+db_task_redis_step_seconds_sum{op="write",step="expand_get"} 0.0003
+db_task_redis_step_seconds_count{op="write",step="expand_get"} 2
+db_task_redis_step_seconds_sum{op="write",step="lease_verify"} 0.00054
+db_task_redis_step_seconds_count{op="write",step="lease_verify"} 2
+db_task_redis_step_seconds_sum{op="write",step="lock_acquire"} 0.00042
+db_task_redis_step_seconds_count{op="write",step="lock_acquire"} 2
+db_task_redis_step_seconds_sum{op="write",step="lock_release"} 0.00022
+db_task_redis_step_seconds_count{op="write",step="lock_release"} 2
+db_task_redis_step_seconds_sum{op="write",step="placement_lookup"} 0.00068
+db_task_redis_step_seconds_count{op="write",step="placement_lookup"} 2
+db_task_redis_step_seconds_sum{op="write",step="placement_recheck"} 0.00072
+db_task_redis_step_seconds_count{op="write",step="placement_recheck"} 2
+# TYPE db_subshard_batch_size histogram
+db_subshard_batch_size_bucket{le="1"} 2
+db_subshard_batch_size_bucket{le="+Inf"} 10
+db_subshard_batch_size_sum 30
+db_subshard_batch_size_count 10
+# TYPE db_ordering_guard_total counter
+db_ordering_guard_total{outcome="apply"} 90
+db_ordering_guard_total{outcome="apply_no_cursor"} 4
+db_ordering_guard_total{outcome="error"} 0
+db_ordering_guard_total{outcome="incomparable"} 0
+db_ordering_guard_total{outcome="stale"} 6
+db_ordering_lease_lost_total{reason="owner_changed"} 1
+db_ordering_lease_lost_total{reason="renew_deadline"} 2
+db_ordering_lease_lost_total{reason="renew_exhausted"} 0
+db_ordering_lease_lost_total{reason="verify_error"} 0
+db_ordering_lease_renew_retry_total 7
+db_ordering_lock_release_total{outcome="error"} 0
+db_ordering_lock_release_total{outcome="not_owner"} 1
+db_ordering_lock_release_total{outcome="released"} 95
+db_ordering_lock_release_total{outcome="skipped_sql_abandoned"} 0
+db_redis_pool_hits_total{redis_client="main"} 900
+db_redis_pool_wait_total{redis_client="main"} 5
+db_redis_pool_wait_seconds_total{redis_client="main"} 0.5
+db_redis_pool_timeouts_total{redis_client="main"} 0
+db_redis_pool_conns{redis_client="main"} 12
+# TYPE db_retry_routing_mode gauge
+db_retry_routing_mode{mode="owner"} 1
+db_retry_routing_mode{mode="shared"} 0
+db_retry_queue_length{queue="dead"} 0
+db_retry_queue_length{queue="partitioned"} 7
+db_retry_queue_length{queue="processing"} 1
+db_retry_queue_length{queue="ready"} 3
+db_retry_route_total{action="dead",mode="owner"} 9
+db_retry_route_total{action="dead",mode="shared"} 0
+db_retry_route_total{action="executed",mode="owner"} 40
+db_retry_route_total{action="executed",mode="shared"} 2
+db_retry_route_total{action="executed_nonowner",mode="owner"} 0
+db_retry_route_total{action="executed_nonowner",mode="shared"} 5
+db_retry_route_total{action="forwarded",mode="owner"} 11
+db_retry_route_total{action="misrouted",mode="owner"} 8
+db_retry_route_total{action="requeued_revoked",mode="owner"} 6
+"@
+Set-Content -Path (Join-Path $snapDirForTest "t20m_db.txt") -Value $fakeDbSnapshotR20 -Encoding utf8
 
 # 2. The dirty-save scan walks run/logs/cpp_nodes under the *real*
 #    repo root (not RunDir) — that's the production layout. We back up
@@ -231,20 +327,6 @@ Assert-Contains -Haystack $outputLines `
     -Needle "5m0s" `
     -Reason "robot stats parser regressed — fake [stats 5m0s] line did not produce a row"
 
-# DB 分段:按真实 label 顺序造的快照必须算出平均值,而不是 "-"。
-# read: op_total 4.0 / handler 3.0 / cache_write 0.5 / publish 0.7;write: op_total 12.5 / handler 9.0(ms)。
-$dbRow = @($outputLines | Where-Object { $_ -match '^\s*t18m_db\s' })
-if ($dbRow.Count -ne 1) {
-    Write-Host "FAIL: expected exactly one t18m_db row in the DB task stages section, got $($dbRow.Count)" -ForegroundColor Red
-    $outputLines | ForEach-Object { Write-Host "  $_" -ForegroundColor DarkGray }
-    if (-not $KeepArtifacts) { Remove-Item -Recurse -Force $tmpRoot -ErrorAction SilentlyContinue }
-    exit 1
-}
-foreach ($expected in @('4.0ms', '3.0ms', '0.5ms', '0.7ms', '12.5ms', '9.0ms')) {
-    Assert-Contains -Haystack $dbRow -Needle $expected `
-        -Reason "DB task stages row must show $expected — label order {op,stage} not matched?"
-}
-
 # login 三个段(EnterGame / Dataloader / CreatePlayer)的行都以同一个快照名开头,只按行首匹配分不清是哪一段,
 # 所以先按段标题定位,再取该段里指定快照的那一行。段标题只做子串匹配,不锚行首。
 function Get-SectionRow {
@@ -326,6 +408,61 @@ Assert-SectionRow -Lines $outputLines -SectionMarker 'CreatePlayer stages' -Snap
 Assert-SectionRow -Lines $outputLines -SectionMarker 'CreatePlayer stages' -SnapshotName 't5m_login' `
     -Pattern '^\s*t5m_login\s+1\.0ms\s+2\.0ms\s+3\.0ms\s+n/a\s+5\.0ms\s+0\s*$' `
     -Reason "with NewPlayerSeed off the seed column must print n/a and the other columns must not shift"
+
+# DB 各段的行同样都以 t18m_db / t20m_db 开头(2c / 2d / 2e / 2f 各一行),一律按段标题定位,
+# 不能再用「全量输出里恰好一行 t18m_db」。
+# 2c DB task stages:按真实 label 顺序造的快照必须算出平均值,而不是 "-"。
+# read: op_total 4.0 / handler 3.0 / cache_write 0.5 / publish 0.7;write: op_total 12.5 / handler 9.0(ms)。
+$dbStagesRow = Get-SectionRow -Lines $outputLines -SectionMarker 'DB task stages' -SnapshotName 't18m_db'
+if (-not $dbStagesRow) {
+    Write-Host "FAIL: no t18m_db row in the DB task stages section" -ForegroundColor Red
+    $outputLines | ForEach-Object { Write-Host "  $_" -ForegroundColor DarkGray }
+    if (-not $KeepArtifacts) { Remove-Item -Recurse -Force $tmpRoot -ErrorAction SilentlyContinue }
+    exit 1
+}
+foreach ($expected in @('4.0ms', '3.0ms', '0.5ms', '0.7ms', '12.5ms', '9.0ms')) {
+    Assert-Contains -Haystack @($dbStagesRow) -Needle $expected `
+        -Reason "DB task stages row must show $expected — label order {op,stage} not matched?"
+}
+
+# 2d DB write path:列顺序 w_sql w_task w_queue w_e2e | r_sql r_task | batch | no_cursor lease_lost rel_notown | rpool_wait rpool_tmo。
+Assert-HeaderMatches -Lines $outputLines `
+    -Pattern 'w_sql\s+w_task\s+w_queue\s+w_e2e\s+\|\s+r_sql\s+r_task\s+\|\s+batch\s+\|\s+no_cursor\s+lease_lost\s+rel_notown\s+\|\s+rpool_wait\s+rpool_tmo\s*$' `
+    -Reason "DB write path table must keep its column order"
+# t20m:stage 均值 2.0 / 20.0 / 1.0 / 50.0、读 3.0 / 6.0 ms;batch 30/10 = 3.0;no_cursor 4;lease_lost = 1 + 2;
+# rel_notown 1;rpool_wait 只有 main 一份 = 5(不翻倍,也没把 wait_seconds_total 的 0.5 加进来);rpool_tmo 0。
+Assert-SectionRow -Lines $outputLines -SectionMarker 'DB write path' -SnapshotName 't20m_db' `
+    -Pattern '^\s*t20m_db\s+2\.0ms\s+20\.0ms\s+1\.0ms\s+50\.0ms\s+\|\s+3\.0ms\s+6\.0ms\s+\|\s+3\.0\s+\|\s+4\s+3\s+1\s+\|\s+5\s+0\s*$' `
+    -Reason "new stage averages / batch / guard counters / redis pool sums must land in their own columns"
+# t18m(旧版 db):没有任何新序列 → 除 snapshot 外全是 n/a。
+Assert-SectionRow -Lines $outputLines -SectionMarker 'DB write path' -SnapshotName 't18m_db' `
+    -Pattern '^\s*t18m_db\s+n/a\s+n/a\s+n/a\s+n/a\s+\|\s+n/a\s+n/a\s+\|\s+n/a\s+\|\s+n/a\s+n/a\s+n/a\s+\|\s+n/a\s+n/a\s*$' `
+    -Reason "a pre-Round-20 db snapshot must print n/a, not 0"
+
+# 2e DB Redis steps:11 个 step 按 go/db/internal/metrics/pipeline.go RedisSteps 的顺序,最后一列是均值之和。
+Assert-HeaderMatches -Lines $outputLines `
+    -Pattern 'lock_acq\s+cur_get\s+ep_get\s+plc_lkp\s+exp_get\s+plc_rck\s+verify\s+cache\s+cur_set\s+ep_mark\s+lock_rel\s+sum\s*$' `
+    -Reason "DB Redis steps table must list the 11 steps in write-path order plus sum"
+# t20m:0.21 0.12 0.13 0.34 0.15 0.36 0.27 0.48 0.19 0.25 0.11,合计 2.61(ms)。cache 列是 0.48 而不是混进读任务的 9ms。
+Assert-SectionRow -Lines $outputLines -SectionMarker 'DB Redis steps' -SnapshotName 't20m_db' `
+    -Pattern '^\s*t20m_db\s+0\.21ms\s+0\.12ms\s+0\.13ms\s+0\.34ms\s+0\.15ms\s+0\.36ms\s+0\.27ms\s+0\.48ms\s+0\.19ms\s+0\.25ms\s+0\.11ms\s+2\.61ms\s*$' `
+    -Reason "each write-path Redis step avg must sit in its RedisSteps column and sum must add them up"
+Assert-SectionRow -Lines $outputLines -SectionMarker 'DB Redis steps' -SnapshotName 't18m_db' `
+    -Pattern '^\s*t18m_db(\s+n/a){12}\s*$' `
+    -Reason "a pre-Round-20 db snapshot must print n/a for all 11 steps and the sum"
+
+# 2f DB retry routing(S1 的 db_retry_* 列由 S4 测量批输出)。
+Assert-HeaderMatches -Lines $outputLines `
+    -Pattern 'mode\s+\|\s+q_ready\s+q_part\s+q_proc\s+q_dead\s+\|\s+exec\s+nonowner\s+fwd\s+revoked\s+misrouted\s+rt_dead\s*$' `
+    -Reason "DB retry routing table must keep its column order"
+# t20m:owner 模式;队列 3 / 7 / 1 / 0;executed 跨 mode 40 + 2 = 42,executed_nonowner 5 单独一列,其余 11 / 6 / 8 / 9。
+Assert-SectionRow -Lines $outputLines -SectionMarker 'DB retry routing' -SnapshotName 't20m_db' `
+    -Pattern '^\s*t20m_db\s+owner\s+\|\s+3\s+7\s+1\s+0\s+\|\s+42\s+5\s+11\s+6\s+8\s+9\s*$' `
+    -Reason "routing mode, queue lengths and route actions must land in their own columns"
+# t18m(L-04 版 db):有 ready / processing / dead,没有 partitioned、路由计数与模式 → 这些打印 n/a,已有的照常出数。
+Assert-SectionRow -Lines $outputLines -SectionMarker 'DB retry routing' -SnapshotName 't18m_db' `
+    -Pattern '^\s*t18m_db\s+n/a\s+\|\s+2\s+n/a\s+0\s+1\s+\|\s+n/a\s+n/a\s+n/a\s+n/a\s+n/a\s+n/a\s*$' `
+    -Reason "an older db without retry routing must print n/a for the new series and real values for the old ones"
 
 # ── Cleanup ─────────────────────────────────────────────────────────────
 

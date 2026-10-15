@@ -1,5 +1,6 @@
 syntax = "proto3";
 option go_package = "proto/common/event";
+import "proto/common/options/event_ingress_option.proto";
 
 // 组队事件(设计文档 docs/design/team-system.md §B.2、§F.2/§F.3)。
 // 经 SceneCommand{DispatchEvent} 进 scene 节点进程内分发(scene 侧生成 handler/event/team_event_handler)。
@@ -11,5 +12,6 @@ option go_package = "proto/common/event";
 // (HMGET team:player:<id> tid epoch → GET team:<tid>)。
 // 载荷只是"去刷新一下"的信号,不携带权威数据:乱序、重复、丢失都安全(下次进场会再拉,§F.2)。
 message PlayerTeamRefreshEvent {
+  option (OptionKafkaIngress) = true;
   uint64 player_id = 1;
 }

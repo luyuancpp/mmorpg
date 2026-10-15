@@ -941,6 +941,8 @@ Region 总数 ≈ 63 + 63 + 8·Z + 8·S + Z。行数据与 `idx_route_updated` �
 4. 真库(需要 `DATA_SERVICE_IT_MYSQL_*`,MySQL ≥ 8.0.16):`go test -tags=integration -count=1 -v ./internal/store/... -run "Route|MigrateSchema"` 与 `go test -tags=integration -count=1 -v ./internal/routetool/...`;`TestRouteStore_KeyedReadsUsePrimaryRange` 的五份 EXPLAIN 原样保留。
 5. 可选真 TiDB:同上面「验证增量」的做法,只跑 `-run "TiDB"`;回报 `SHOW TABLE player_route REGIONS`(期望 ≥ 64)与 `SHOW TABLE player_route INDEX idx_route_home REGIONS`(1 个 zone,期望 ≥ 8)的行数。
 
+(2026-10-15 补)上面各步失败时保留什么,见下「正向探针 P5」段末的「2026-10-15 补登」;命令不变。
+
 **Java 版(AGENTS.md §12)**:不涉及客户端契约,不需要同批改;Java 版的 D1 仍是「待做」。
 
 ---
@@ -1014,6 +1016,36 @@ Region 总数 ≈ 63 + 63 + 8·Z + 8·S + Z。行数据与 `idx_route_updated` �
 另补契约用例 `TestNewRouteStoreProbeRetriesLockConflict`:首行 / 次行 1213 重跑后建池,语句序列与实参逐条钉住;连续 `routeTxAttempts` 次 1213 建池失败、关池,`errors.As` 取得出 1213;退避途中 ctx 结束即停、不再开事务。
 
 验证增量(接在上面「交 Codex 的验证」之后,口径不变):第 1 步的 `-run` 已覆盖新用例(`NewRouteStore`、`OpenRouteStoreHint`);不带 `-run` 的那一次加上 `./internal/svc/... ./cmd/debugutil/...`,`go vet` 也加上这两处(它们改了调用)。第 2 步 `TestRouteStore_ProbeKeysHeldByRealPlayers` 必须 PASS,原样回报它日志里的耗时。第 3 步真 TiDB 上建第二个 store 失败时,原样回报报错文本。
+
+**2026-10-15 补登:两段验证的「失败时保留」,与 FenceShards TiDB 档的配置载体**(只补文档;上面所有命令、期望与顺序都不变;AGENTS.md §10.1)
+
+*失败时保留*。适用于「行片 16 → 64」的「交 Codex 的验证」第 1~5 步,以及本段「交 Codex 的验证」第 1~4 步与其「验证增量」。任何一步红了就停下归因,按下表原样回报;不连续重试,不改代码或用例迁就,不 `gofmt -w`。回报里不得出现 `DATA_SERVICE_IT_MYSQL_PASSWORD` 或 TiDB 测试账号的口令(AGENTS.md §9)。
+
+| 哪一步红 | 保留什么 |
+|---|---|
+| `gofmt -l` 有输出 | 列出的文件清单,以及对每个文件 `gofmt -d <文件>` 的完整输出(只看差异,不改文件) |
+| `go build` / `go vet` | 第一条错误的原文(`文件:行:列` 与报错文本,不改写、不摘要),并注明该文件在不在本步改动范围内(模块级命令会带上工作区别的在途改动,见「行片 16 → 64」验证第 3 步) |
+| 单测 `go test` | 失败用例的完整 `go test -v` 输出:不带 `-v` 的那一次红了,对失败的包用 `go test -count=1 -v -run '^<失败用例名>$' <包>` 重跑一次,保留从 `=== RUN` 到 `--- FAIL` 与包尾 `FAIL` 行的全部输出,不截断 |
+| 真库用例(`-tags=integration`) | 同上的完整 `-v` 输出;报错原文(含 MySQL 错误号、约束名,以及 `ErrRouteCheckNotEnforced` / `ErrRouteShardModulusMismatch` 等哨兵的文案);`SELECT VERSION()` 的结果;`SHOW CREATE TABLE player_route` 的完整输出。真库用例的临时库在 `t.Cleanup` 里 DROP(`storetest/mysql.go`),失败后看不到它的表,所以这份 `SHOW CREATE TABLE` 取自本机常驻库(`etc/data_service.yaml` 指向的、「前置」核对过的那个库),写明库名。`TestRouteStore_KeyedReadsUsePrimaryRange` 的 EXPLAIN 与 `TestRouteStore_ProbeKeysHeldByRealPlayers` 的耗时照原要求保留 |
+| 「前置」核对 | 每个库的 `SHOW CREATE TABLE player_route` 完整输出;是 `% 16` 就停下等负责人,不自行 DROP |
+| 可选真 TiDB 一步 | 报错原文(建池时 P4 / P5 的原始报错、SPLIT / ATTRIBUTES 的报错、8028 / 1213 等,不改写);原要求回报的 Region 行数、`TOTAL_SPLIT_REGION` 与建第二个 store 的结果照常保留。拉 `pingcap/*` 镜像属于下载,仍先征得用户同意 |
+
+*FenceShards 的 TiDB 档 64 没有配置载体*。2026-10-15 按仓库 grep 核对:
+
+- `go/data_service/etc/` 下只有 `data_service.yaml` 一份,即 MySQL 档,`RouteStore.FenceShards: 16`(:179,注释 :172-177)。仓库里没有 TiDB 档的服务 yaml,64 只写在文档里(上面「改了什么」表 `etc/data_service.yaml` 一行、「连带修正」第 1 条;容量模型 §4.1「连带修正」)。
+- `tools/scripts/k8s_deploy.ps1` 生成 data-service ConfigMap 的 `RouteStore:` 段(2026-10-15 在 :4294-4297)只写固定的 `Mode: redis` 与从服务 yaml 镜像来的 `MaxOpenConn` / `MaxIdleConn`;`tools/`、`deploy/` 下没有任何 `FenceShards`。所以 K8s 上的 data-service 取代码默认 8(`placement.DefaultRouteFenceShards`;`internal/config/config.go:321-322` 在键缺省为 0 时回落),MySQL 档的 16 也没有到 K8s 上。
+- 契约测试 `tools/scripts/tests/k8s_deploy_contract.tests.ps1` 没有钉这个键;`internal/config/config_test.go` 只钉了本地 yaml 的 16。
+- 眼下没有运行期后果:K8s 各档位的 `Mode` 固定 redis,route store 不装配,FenceShards 用不上。切 db_first 之后,K8s 上的建角按 8 把围栏行锁分摊,低于两档的设计值(16 / 64);只影响建角吞吐,不影响正确性(围栏持有者总是锁满 0..63)。
+
+性质:这是实现方在 2026-10-13「行片 16 → 64」那一步、在文档与 yaml 注释里登记的**延后**(上面「改了什么」表 `etc/data_service.yaml` 一行写的「切 db_first 前按档位补」、yaml :175-177),**不是负责人拍板**;负责人没有对「K8s 上先取默认 8」或「TiDB 档 64 暂不落配置」做过决定。
+
+前置条件:切 db_first(§7 P2)之前必须做完,与 `k8s_deploy.ps1` 注释里切 db_first 时要补的 WaitAOF 两项、镜像里要有 route_tool 并列。未做完不切。
+
+1. 按档位把 `RouteStore.FenceShards` 补进 `k8s_deploy.ps1` 的 data-service ConfigMap:MySQL 档 16,TiDB 档 64。取值来源(镜像服务 yaml,还是按后端档位单独给)由改脚本的人定,并在脚本注释里写明;
+2. 在 `k8s_deploy_contract.tests.ps1` 加契约用例,钉住生成的 ConfigMap 里 `RouteStore.FenceShards` 等于该档位的值,且落在 [1, `placement.MaxRouteFenceShards`];
+3. 若为 TiDB 档另起服务 yaml,`config_test.go` 同样钉住 64。
+
+tidb-phase1-and-launch-readiness.md §5.1 单行热点一行与 §7 L-12 已加同口径的更正注。
 
 **Java 版(AGENTS.md §12)**:服务端内部存储的启动探针,不涉及客户端契约,不需要同批改;Java 版的 D1 仍是「待做」。做等价的「库为真源」目录时若同样用片前缀 + CHECK,建议在启动时同样实测模数。
 

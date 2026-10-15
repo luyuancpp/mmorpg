@@ -111,6 +111,8 @@ func TestStatusToRecordMapsEverySemanticStatus(t *testing.T) {
 		{assetop.StatusRejected, tradepb.TradeAssetOpStatus_TRADE_ASSET_OP_STATUS_REJECTED},
 		{assetop.StatusAborted, tradepb.TradeAssetOpStatus_TRADE_ASSET_OP_STATUS_ABORTED},
 		{assetop.StatusAppliedPartial, tradepb.TradeAssetOpStatus_TRADE_ASSET_OP_STATUS_APPLIED_PARTIAL},
+		// 自动放弃(落地恢复 §6.3)。只能经 Abandoner.Abandon 写入,但映射仍在这一处。
+		{assetop.StatusAbandoned, tradepb.TradeAssetOpStatus_TRADE_ASSET_OP_STATUS_ABANDONED},
 	}
 	for _, tc := range cases {
 		t.Run(fmt.Sprintf("status_%d", tc.in), func(t *testing.T) {

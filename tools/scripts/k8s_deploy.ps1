@@ -246,6 +246,8 @@ param(
 	# login 排队开时 staging / prod 必须注入 MMORPG_LOGIN_QUEUE_TOKEN_SECRET(≥32,与 GATE / INTERNAL_AUTH 两把不同)。
 	# 排队的出队 leader 锁按 zone 拆(G1b,login 把 Queue.DispatcherLockKey 当前缀再拼本 zone);本脚本另在 ConfigMap 里显式写
 	# 带本 zone 的 DispatcherLockKey 作纵深防御(见 New-LoginQueueYaml)。
+	# 合入门槛(2026-10-15):$script:LoginQueueMergeGateCleared 为 $false 时,auto 在任何档位都解析为关,on 在任何写操作之前拒绝
+	# (三项门槛与出处见该常量的注释)。上面「staging / prod 开」在门槛清掉之前只对 -GatewayRateLimit 成立。
 	[ValidateSet("auto", "on", "off")]
 	[string]$LoginQueue = "auto",
 	# 确认本次就是要切换形态(-ClientEntryMode / -BattleOrchestrator 换了取值)或改 gate / battle 的客户端地址来源,
@@ -325,8 +327,11 @@ $script:GatewayAdminApiKeyEnv = "ADMIN_APIKEY"
 $script:GatewayAdminApiKeyHashAnnotation = "mmorpg.io/gateway-admin-api-key-hash"
 # 由 Initialize-InjectedSecrets 解析(只在本次部署 gateway 时)。
 $script:GatewayAdminApiKey = ""
-# battle 全局池的工作负载,由写路径入口 Assert-ClientEntryDeployPreflight 渲染(New-BattleWorkloadManifest),Apply-BattlePool 只 apply。
-$script:BattleWorkload = $null
+# 共享 Redis 口令(MMORPG_REDIS_PASSWORD),由 Initialize-InjectedSecrets 解析:dev 档未注入时是空串。$null = 还没解析,
+# C++ 节点配置的生成器(Get-CppZoneRedisPassword)据此拒绝生成,不把「没解析」当成「没口令」写出空串。
+$script:RedisPassword = $null
+# C++ 节点(gate / scene / battle)Pod 模板上的 zone Redis 口令指纹注解,见 Get-CppZoneRedisAuthAnnotations。
+$script:ZoneRedisAuthHashAnnotation = 'mmorpg.io/zone-redis-auth-hash'
 
 # 削峰(G4b)开服档起步值。单一来源:ConfigMap 生成、Pod 指纹、部署打印都只读这里。全部「待压测确认」(L-14)。
 #   ZoneDefaultRps/Burst   docs/design/open-server-rate-limit-design.md「Layer 1 配额参考」的「开服日 / 大版本回归」档
@@ -348,7 +353,20 @@ $script:PeakShavingHashAnnotation = 'mmorpg.io/peak-shaving-hash'
 # 由 Initialize-InjectedSecrets 解析(只在本次部署 login 且排队开时)。
 $script:LoginQueueTokenSecret = ""
 
+# 登录排队(G4b-2)合入门槛的机械门禁(2026-10-15)。出处:docs/handoff/launch-readiness-20261013/spec_G4b.md §7「合入门槛」
+# 与 §12 合入顺序。G4b-2 的 login 段已先于门槛随 e4ff1d165 / ebccaf04d 入库(越序),所以由这个常量挡住打开排队。三项门槛:
+#   ① G1b 规格指定的多 zone 用例(L-01 验收标准:每个 zone 的队列都能出队;spec_G1b.md T3 / T8a)由 Codex 跑绿;
+#   ② G4b-G(spec_G4b-G.md,在途占位逐个到期)由 Codex 跑绿;
+#   ③ spec_G4b-G.md §8.4 的真实 Redis 最小冒烟跑通,命令原文与输出摘要记进 docs/PROGRESS.md(miniredis 的结果不能顶替)。
+# 三项都满足、docs/PROGRESS.md 有记录之后,由负责人在同一提交里把它改为 $true,并在这里写上那条 PROGRESS 条目的标题。
+# 为 $false 时(Resolve-LoginQueueSwitch):-LoginQueue auto 在任何档位都解析为关,-LoginQueue on 在参数解析后、任何 kubectl 之前拒绝。
+# 本脚本只拦得住经它的部署:门槛未清时手改 login ConfigMap 或 go/login/etc/login.yaml 的 Queue.Enabled 同样违规(文档约束,脚本拦不住)。
+# 清门槛本身要跑的真实 Redis 冒烟用本地栈 + scratchpad 里的 login 配置副本(Queue.Enabled=true),不经过本脚本,不受这道门禁影响。
+# 只能写字面量 $true / $false(契约测试按 AST 核对):不要改成读参数或环境变量,否则门禁就成了一个开关。
+$script:LoginQueueMergeGateCleared = $false
+
 # -GatewayRateLimit / -LoginQueue 的取值规则:on / off 为显式覆盖,auto 跟随发布档位(dev 关,其余开)。
+# -LoginQueue 另经 Resolve-LoginQueueSwitch 套一层合入门槛;门槛已清时两者结论相同。
 function Resolve-PeakShavingSwitch {
 	param(
 		[Parameter(Mandatory = $true)][string]$Value,
@@ -361,9 +379,43 @@ function Resolve-PeakShavingSwitch {
 		default { return ($ReleaseProfileName -ne 'dev') }
 	}
 }
+# -LoginQueue 的最终取值:在 Resolve-PeakShavingSwitch 之上套合入门槛(见 $script:LoginQueueMergeGateCleared 的注释)。
+# 纯函数,只看参数:契约测试按 AST 把它和 Resolve-PeakShavingSwitch 一起抽出来逐组合调用。
+#   门槛已清(-MergeGateCleared,或 -DryRunMode 下 -TestOverride 为 1):结论与 Resolve-PeakShavingSwitch 完全相同;
+#   门槛未清:auto / off 在任何档位都是关;on 直接 throw。
+# -TestOverride 是契约测试专用接缝(环境变量 MMORPG_TEST_LOGIN_QUEUE_GATE_CLEARED),只在 -DryRun 下生效,让依赖「排队开」的
+# DryRun 用例在门槛清掉之前也能跑。不带 -DryRun 时只要设置了它就 throw,常量为 $true 时也一样(fail-closed:它放不开真实部署,
+# 也不让人误以为能放开);值不是 1 也 throw(不猜 0 / true 之类的含义)。
+function Resolve-LoginQueueSwitch {
+	param(
+		[Parameter(Mandatory = $true)][string]$Value,
+		[Parameter(Mandatory = $true)][string]$ReleaseProfileName,
+		[Parameter(Mandatory = $true)][bool]$MergeGateCleared,
+		[Parameter(Mandatory = $true)][bool]$DryRunMode,
+		[Parameter(Mandatory = $true)][AllowNull()][AllowEmptyString()][string]$TestOverride
+	)
+	$testOverrideSet = -not [string]::IsNullOrEmpty($TestOverride)
+	if ($testOverrideSet -and -not $DryRunMode) {
+		throw '环境变量 MMORPG_TEST_LOGIN_QUEUE_GATE_CLEARED 是契约测试专用接缝,只在 -DryRun 下生效;不带 -DryRun 时设置了它即拒绝(fail-closed:它放不开登录排队的合入门槛)。清除该变量后重跑;合入门槛见 k8s_deploy.ps1 的 $script:LoginQueueMergeGateCleared。'
+	}
+	if ($testOverrideSet -and $TestOverride -cne '1') {
+		throw '环境变量 MMORPG_TEST_LOGIN_QUEUE_GATE_CLEARED 只接受 1(契约测试专用,只在 -DryRun 下生效),当前值不是 1,拒绝猜测其含义。'
+	}
+	if ($MergeGateCleared -or ($DryRunMode -and $testOverrideSet)) {
+		return (Resolve-PeakShavingSwitch -Value $Value -ReleaseProfileName $ReleaseProfileName)
+	}
+	if ($Value -eq 'on') {
+		throw '-LoginQueue on 被拒绝:登录排队(G4b-2)的合入门槛未清($script:LoginQueueMergeGateCleared = $false)。三项门槛须全部满足:① G1b 规格指定的多 zone 用例由 Codex 跑绿;② G4b-G 由 Codex 跑绿;③ spec_G4b-G.md §8.4 的真实 Redis 最小冒烟跑通,命令原文与输出摘要记进 docs/PROGRESS.md。出处:docs/handoff/launch-readiness-20261013/spec_G4b.md §7「合入门槛」。在此之前任何环境都不打开排队(含手改 Queue.Enabled);三项都满足后由负责人把该常量改为 $true。'
+	}
+	return $false
+}
 # 两个开关的解析结果。脚本级、参数绑定后算一次:生成器、指纹与部署打印读的是同一个布尔值。
 $script:GatewayRateLimitOn = Resolve-PeakShavingSwitch -Value $GatewayRateLimit -ReleaseProfileName $ReleaseProfile
-$script:LoginQueueOn = Resolve-PeakShavingSwitch -Value $LoginQueue -ReleaseProfileName $ReleaseProfile
+# 登录排队另套合入门槛。门槛未清时 -LoginQueue on 在这里 throw,早于加载 release_common.ps1 与任何 kubectl;*-down / *-status 同样拒绝
+# (门槛未清时 on 本身就是违规输入,与命令无关;不带 -DryRun 却设置了测试接缝变量同理)。测试接缝变量只在这里读一次,
+# 生效与否由 -DryRunMode 决定 —— 契约测试核对这里绑的是本脚本的 -DryRun,且 $script:LoginQueueOn 只在这一处赋值。
+$script:LoginQueueOn = Resolve-LoginQueueSwitch -Value $LoginQueue -ReleaseProfileName $ReleaseProfile `
+	-MergeGateCleared $script:LoginQueueMergeGateCleared -DryRunMode $DryRun.IsPresent -TestOverride $env:MMORPG_TEST_LOGIN_QUEUE_GATE_CLEARED
 
 . (Join-Path $ScriptDir "lib\release_common.ps1")
 # 集群外客户端入口(D76–D93)的生成器、preflight、就绪等待与模式切换清理。库函数不读本脚本的任何变量,
@@ -504,6 +556,9 @@ function Initialize-InjectedSecrets {
 		-DevFallback "Mmorpg#2026db" -ReleaseProfile $ReleaseProfile -Purpose "MySQL 密码" -MinLength 12
 	$script:RedisPassword = Resolve-InjectedSecret -EnvName "MMORPG_REDIS_PASSWORD" `
 		-DevFallback "" -ReleaseProfile $ReleaseProfile -Purpose "Redis 密码" -MinLength 12
+	# 同一个口令要原样写进多份 YAML 双引号标量(C++ 的 node-config / battle-node-config、各 Go 服务与 gateway 的 ConfigMap、
+	# infra 的 Secret redis-auth)。字符集在这里、任何写操作之前查一次,坏值不留半截部署。
+	Assert-RedisPasswordYamlSafe -Password $script:RedisPassword
 	# Java 网关数据源。dev 回落值以 deploy/docker-compose.yml + gateway_node
 	# application.yaml 的口径为准(appuser/apppass123):mysql.yaml 用 MYSQL_USER 建的
 	# 就是这个账号,且 MYSQL_DATABASE=mmorpg 会自动授权给它。以前回落 root/123456,
@@ -1779,8 +1834,9 @@ function Test-ZoneGatewayDeployed {
 	return (($Command -in @("zone-up", "all-up")) -and -not $SkipJavaSvc -and -not [string]::IsNullOrWhiteSpace($JavaSvcRegistry))
 }
 
-# 削峰(G4b)的部署计划:写路径入口打一行「两个开关的解析结果 + 起步值」,并对三种容易被忽略的状态告警(都不阻断)。
-# 警告只在本次确实部署对应服务时打(infra-up 不部署 gateway / login)。警告文本以不含空格、三条互不相同的「[PeakShaving]Xxx=yyy」开头:
+# 削峰(G4b)的部署计划:写路径入口打一行「两个开关的解析结果 + 起步值」,并对四种容易被忽略的状态告警(都不阻断)。
+# 警告只在本次确实部署对应服务时打(infra-up 不部署 gateway / login)。警告文本以不含空格、四条互不相同且互不为前缀的
+# 「[PeakShaving]Xxx=yyy」开头(GatewayRateLimit=off / LoginQueue=off / LoginQueueGate=closed / GatewayTrustedProxies=unset):
 # Write-Warning 可能在空格处折行,契约测试只匹配这个开头,改措辞要同步改测试。控制台输出用英文,与本脚本其余 Write-Host / Write-Warning 一致。
 # 已有 Ingress 却不给 -GatewayTrustedProxies 的情形由入口预检直接拒绝(Assert-ClientEntryDeployPreflight),这里不重复。
 function Show-PeakShavingPlan {
@@ -1803,7 +1859,14 @@ function Show-PeakShavingPlan {
 	if ($ReleaseProfile -ne 'dev' -and -not $script:GatewayRateLimitOn -and (Test-ZoneGatewayDeployed)) {
 		Write-Warning "[PeakShaving]GatewayRateLimit=off(ReleaseProfile=${ReleaseProfile}):gateway rate limiting disabled. Use only for incident mitigation or baseline stress tests; this flag is not persistent and the next deployment enables it unless overridden."
 	}
-	if ($ReleaseProfile -ne 'dev' -and -not $script:LoginQueueOn -and (Test-ZoneLoginDeployed)) {
+	# 合入门槛把本来要开的排队关掉了:Resolve-PeakShavingSwitch 是不看门槛时的结论(非 dev 档 auto = 开),$script:LoginQueueOn 是
+	# 套上门槛之后的结论(Resolve-LoginQueueSwitch)。门槛未清时 on 已在参数解析后 throw,所以这里只会是非 dev 档的 auto。
+	# 这时打 LoginQueueGate=closed、不打下面的 LoginQueue=off:那条说的「不粘滞、下次部署按档位恢复」在门槛未清时不成立。显式 -LoginQueue off 仍打那条。
+	$loginQueueClosedByGate = (Resolve-PeakShavingSwitch -Value $LoginQueue -ReleaseProfileName $ReleaseProfile) -and -not $script:LoginQueueOn
+	if ($ReleaseProfile -ne 'dev' -and $loginQueueClosedByGate -and (Test-ZoneLoginDeployed)) {
+		Write-Warning "[PeakShaving]LoginQueueGate=closed(ReleaseProfile=${ReleaseProfile}):login queue disabled because its merge gate has not been cleared (`$script:LoginQueueMergeGateCleared = `$false in tools/scripts/k8s_deploy.ps1). The queue stays off in every profile until all three gate items in docs/handoff/launch-readiness-20261013/spec_G4b.md section 7 are met (G1b multi-zone tests green, G4b-G green, real-Redis smoke from spec_G4b-G.md section 8.4 recorded in docs/PROGRESS.md) and the owner sets that constant to `$true. Do not set Queue.Enabled by hand meanwhile."
+	}
+	if ($ReleaseProfile -ne 'dev' -and -not $script:LoginQueueOn -and -not $loginQueueClosedByGate -and (Test-ZoneLoginDeployed)) {
 		Write-Warning "[PeakShaving]LoginQueue=off(ReleaseProfile=${ReleaseProfile}):login queue disabled; queued players retry the fast path after their queue_token becomes EXPIRED. This flag is not persistent."
 	}
 	if ($script:GatewayRateLimitOn -and (Test-ZoneGatewayDeployed) -and (ConvertTo-ClientEntryCidrList -CommaSeparated $GatewayTrustedProxies).Count -eq 0) {
@@ -1813,10 +1876,11 @@ function Show-PeakShavingPlan {
 
 <#
 .SYNOPSIS
-	集群外客户端入口的部署前校验,写操作入口调用,早于任何集群写操作。三步,任何一步失败都 throw:
+	集群外客户端入口的部署前校验,写操作入口调用,早于任何集群写操作。两步,任何一步失败都 throw:
 	  1. 参数组合:lib Test-ClientEntryPreflight,并入本脚本 -RequireClientEndpoint 的矛盾检查,一次报全;
-	  2. 渲染 battle 工作负载(New-BattleWorkloadManifest,DryRun 同样渲染),结果存 $script:BattleWorkload 给 Apply-BattlePool;
-	  3. 集群现状(Assert-ClientEntryClusterState,DryRun 跳过):会踢人、会静默改写入口的情形,battle 与各 zone 一次判定完。
+	  2. 集群现状(Assert-ClientEntryClusterState,DryRun 跳过):会踢人、会静默改写入口的情形,battle 与各 zone 一次判定完。
+	battle 工作负载的渲染(New-BattleWorkloadManifest)不在这里,而在 Apply-Infra 开头(仍早于任何基础设施写操作):
+	Pod 模板要带 zone Redis 口令指纹,口令到 Initialize-InjectedSecrets 才解析,而本函数排在密钥解析之前。
 
 .DESCRIPTION
 	必须在 Apply-OpsProfileDefaults 之后调用:GateServiceType 可能已被 OpsProfile 改写。
@@ -1879,13 +1943,6 @@ function Assert-ClientEntryDeployPreflight {
 
 	if ($LoginDevPasswordAuth -and -not $deploysLogin) {
 		Write-Warning "[client-entry] -LoginDevPasswordAuth supplied, but login is not deployed in this run (only generated with Go services during zone-up / all-up; requires -GoSvcRegistry without -SkipGoSvc); flag has no effect."
-	}
-
-	# battle 工作负载在这里渲染(Apply-Infra 开头"battle 配置在任何基础设施写操作之前生成并校验"的同一约定):
-	# Resolve-BattleFleetHealth 与生成器的参数校验都可能 throw,不能等 etcd / kafka / redis / mysql 都 apply 完才发现。
-	$script:BattleWorkload = $null
-	if ($deploysBattle) {
-		$script:BattleWorkload = New-BattleWorkloadManifest
 	}
 
 	if ($DryRun) {

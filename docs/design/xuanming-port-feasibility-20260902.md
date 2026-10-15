@@ -573,3 +573,15 @@ mall 核查版本：[dcaa93b3150352e5044708d7211b5bed0af4509f](https://github.co
 
 当前判断：维持不引入整套电商运行时的方向，按职责择取功能与设计；商城和拍卖分别适配唯一资产权威。此结论不宣称已有轻量商城完整实现，不证明任何候选满足 DAU 1 亿 / CCU 2000 万，也不把本地 SQL 事务误称整游跨服务强一致。
 用户最后澄清：本次追问重点是“此前已经评估过 mall”，而非仅因体量大而排除。后续沿已找到的拍卖选型记录继续，新增比较用于核验实际适配与版本变化，不把候选提及视作重新选型或引入框架授权。
+
+### 13.7 全部游戏买卖、存储与开源维护复核（2026-10-15，只读选型）
+
+用户继续询问所有游戏道具买卖、拍卖行、存储规模、mall更新频率及替代方案。本轮未采用新框架、未改游戏业务，不能把候选介绍变成采用决定。
+
+- 玩法分清：NPC/官方固定价商店、唯一装备/宠物的一口价寄售、限时竞价、同质材料买卖盘撮合、人民币聚宝斋是不同交易规则。原Go auction的FindBestActiveOrder/ReserveMatch按价格时间撮合、成交价取被动单；不是限时最高价中标。其settlement_client只传item_config_id+quantity，未传唯一装备GUID/词条快照，不能原样覆盖所有独立装备、宠物与角色。聚宝斋已有实例托管与角色过户设计接缝，P6竞价尚未实现。
+- 存储要分别评估部署资源、权威订单/资产快照的数据量、历史流水与索引增长、热点写入吞吐。框架仓库的Git大小不代表数据容量，也没有由Star推导的玩家上限。假设1000万单/天、每单订单/流水/索引共5KB、保留90天，约4.5TB逻辑数据，三副本13.5TB，快照/MVCC/备份另计；这是显式假设量级，不是任一候选实测。原Go auction/budgets.go仍以DAU1万、5万单/天预算，retention默认report_only仅告警不删除，不能据此认定90天清理已自动有界。
+- 当前GitHub实际提交：mall master最新dcaa93b31503为2026-09-15（支付金额改取DB订单），前一9bfc2fd2c4aa为09-14（禁用账号旧Token修复），再前0504e86b1f1b为05-14；更新节奏较疏，不等于已经停维，也不能据频率单独证明质量。Medusa develop在10-15有工作流补偿修复396aa3f510be；Vendure master在10-15有队列修复344ae77b5d86。
+- 新增重点比较候选：[Medusa+Mercur](https://github.com/mercurjs/mercur)。[官方架构](https://github.com/mercurjs/mercur/blob/main/docs/ARCHITECTURE.md)有seller/offer/commission/payout/order-group与卖家/运营后台，业务模型比单商家商城更接近玩家寄售；Mercur主干10-12有e63729233941提交。主要Node/TypeScript、PostgreSQL+Redis，已列Stripe Connect结算提供者，不是TiDB或人民币渠道的即插即用实现。核心MIT、另有Enterprise模块；Medusa核心与其Enterprise材料也分别核授权。只确认功能/维护事实，尚未做与mall同深度的并发、授权、支付或容量审计，不能因更贴合就宣称更安全、更成熟或支撑2000万在线。
+- [Vendure](https://github.com/vendurehq/vendure)继续作模块/插件与运营后台候选，默认GPLv3、另有商业许可，按官方LICENSE与具体用法核对；它也不是开箱即用的游戏拍卖。Java路线可进一步比较mall4j（10-14有提交，当前AGPL-3.0），本轮只粗筛，无采用或性能判断。较早的exchange-core原仓主干最新实质提交在2022年，其README还将clustering/settlement列TODO，不因单机微基准宣传就升级为本游戏全局交易底座。
+
+当前方向是优先复用成熟开源模块，按真实游戏规则与唯一资产权威接入；对聚宝斋应把多卖家市场模型纳入对比，原Go游戏撮合也按真实边界验收。限时竞价、唯一实例交付、角色过户和全球一致性须单独闭环；没有任何新候选在本轮完成运行/故障/容量验证。

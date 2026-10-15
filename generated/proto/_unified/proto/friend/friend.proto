@@ -73,6 +73,7 @@ message FriendRequest {
   uint64 to_player_id   = 2;
   int64  request_time_ms = 3;
   FriendRequestStatus status = 4;
+  uint64 request_id = 5; // 本次申请的唯一代次；终态后重新申请必须换号。
 }
 
 // ── 请求 / 响应 ──────────────────────────────────────────────────────
@@ -91,12 +92,14 @@ message AddFriendRequest {
 
 message AddFriendResponse {
   TipInfoMessage error_message = 1;
+  uint64 request_id = 2; // 重复的待处理申请返回同一代次。
 }
 
 message AcceptFriendRequest {
   reserved 1;
   reserved "player_id";
   uint64 from_player_id   = 2;
+  uint64 request_id = 3; // 必填；操作者身份仅取当前会话。
 }
 
 message AcceptFriendResponse {
@@ -107,6 +110,7 @@ message RejectFriendRequest {
   reserved 1;
   reserved "player_id";
   uint64 from_player_id   = 2;
+  uint64 request_id = 3; // 必填；保留 from_player_id 兼容字段但不将其用作身份。
 }
 
 message RejectFriendResponse {

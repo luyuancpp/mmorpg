@@ -10,6 +10,7 @@ import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	battle "proto/battle"
+	_ "proto/common/options"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -24,7 +25,8 @@ const (
 
 // battle -> scene:战斗结算。scene 是唯一应用者:
 // 校验 InBattleComp.battle_id 匹配 -> 应用 -> 摘 InBattleComp + DEL battle:lock;
-// 不匹配丢弃并告警;玩家不在场 -> 写 battle:settlement:pending:{player_id}(TTL 7d)。
+// 不匹配丢弃并告警;玩家不在场 -> 写 battle:settlement:pending:{player_id}(不过期,并进积压索引
+// battle:settlement:pending:index,见 docs/design/landing-recovery-sync-digest.md §7)。
 type BattleSettlementEvent struct {
 	state         protoimpl.MessageState       `protogen:"open.v1"`
 	Settlement    *battle.BattleSettlementData `protobuf:"bytes,1,opt,name=settlement,proto3" json:"settlement,omitempty"`
@@ -137,16 +139,16 @@ var File_proto_common_event_battle_event_proto protoreflect.FileDescriptor
 
 const file_proto_common_event_battle_event_proto_rawDesc = "" +
 	"\n" +
-	"%proto/common/event/battle_event.proto\x1a\x1eproto/battle/battle_data.proto\"N\n" +
+	"%proto/common/event/battle_event.proto\x1a\x1eproto/battle/battle_data.proto\x1a/proto/common/options/event_ingress_option.proto\"U\n" +
 	"\x15BattleSettlementEvent\x125\n" +
 	"\n" +
 	"settlement\x18\x01 \x01(\v2\x15.BattleSettlementDataR\n" +
-	"settlement\"q\n" +
+	"settlement:\x05\x88\xe6\xd5\x02\x01\"x\n" +
 	"\x14BattleConfirmedEvent\x12\x1b\n" +
 	"\tbattle_id\x18\x01 \x01(\x04R\bbattleId\x12\x1b\n" +
 	"\tplayer_id\x18\x02 \x01(\x04R\bplayerId\x12\x1f\n" +
 	"\vdeadline_ms\x18\x03 \x01(\x04R\n" +
-	"deadlineMsB\x14Z\x12proto/common/eventb\x06proto3"
+	"deadlineMs:\x05\x88\xe6\xd5\x02\x01B\x14Z\x12proto/common/eventb\x06proto3"
 
 var (
 	file_proto_common_event_battle_event_proto_rawDescOnce sync.Once

@@ -23,7 +23,10 @@ const (
 )
 
 // 与 assetop.Status 语义一一映射;数值由本枚举定(1 基:0 留给"漏写状态列的行",它不会被当成未决行领走)。
-// guild.proto 的 GuildAssetOrderStatus 是它的客户端镜像,数值逐项相同,新增状态两边同加。
+// guild.proto 的 GuildAssetOrderStatus 是它的客户端镜像,1..5 数值逐项相同。
+// 例外:ABANDONED(6)只是库内状态,**不**进客户端枚举 —— 客户端视图把它映射成已有的 ABORTED("超时或人工撤销"),
+// 映射只在 logic.orderViewOf 一处(docs/design/landing-recovery-sync-digest.md §6.3「状态与展示」)。
+// 其余新增状态仍按"两边同加"处理。
 type GuildAssetOpStatus int32
 
 const (
@@ -33,6 +36,11 @@ const (
 	GuildAssetOpStatus_GUILD_ASSET_OP_STATUS_REJECTED        GuildAssetOpStatus = 3
 	GuildAssetOpStatus_GUILD_ASSET_OP_STATUS_ABORTED         GuildAssetOpStatus = 4
 	GuildAssetOpStatus_GUILD_ASSET_OP_STATUS_APPLIED_PARTIAL GuildAssetOpStatus = 5 // 只终结:不做对侧账、不自动清理,转人工补偿(X-15)
+	// 自动放弃(落地恢复 §6.3):PENDING 超过 AbandonAfterDays、玩家无位置、距最后一次可能的发送超过安全间隔、
+	// 已落盘账本确认 scene 从未见过这个 seq 时,由 assetop.Loop.AbandonOnce 经 GuildAssetStore.Abandon 终结。
+	// 对侧账同 REJECTED / ABORTED(捐献退次数、兑换退帮贡与限购、活动发奖只留审计行);不置 durable、不改 last_outcome;
+	// 终态清理与 APPLIED / REJECTED / ABORTED 同等对待(30 天后删)。人工终结(assetopfix)不写这个状态。
+	GuildAssetOpStatus_GUILD_ASSET_OP_STATUS_ABANDONED GuildAssetOpStatus = 6
 )
 
 // Enum value maps for GuildAssetOpStatus.
@@ -44,6 +52,7 @@ var (
 		3: "GUILD_ASSET_OP_STATUS_REJECTED",
 		4: "GUILD_ASSET_OP_STATUS_ABORTED",
 		5: "GUILD_ASSET_OP_STATUS_APPLIED_PARTIAL",
+		6: "GUILD_ASSET_OP_STATUS_ABANDONED",
 	}
 	GuildAssetOpStatus_value = map[string]int32{
 		"GUILD_ASSET_OP_STATUS_UNSPECIFIED":     0,
@@ -52,6 +61,7 @@ var (
 		"GUILD_ASSET_OP_STATUS_REJECTED":        3,
 		"GUILD_ASSET_OP_STATUS_ABORTED":         4,
 		"GUILD_ASSET_OP_STATUS_APPLIED_PARTIAL": 5,
+		"GUILD_ASSET_OP_STATUS_ABANDONED":       6,
 	}
 )
 
@@ -742,8 +752,15 @@ type GuildAssetOpRecord struct {
 	StreamEpoch       uint64                 `protobuf:"varint,26,opt,name=stream_epoch,json=streamEpoch,proto3" json:"stream_epoch,omitempty"`      // = 分号时 guild_player_op_seq.epoch
 	ResolvedBy        string                 `protobuf:"bytes,27,opt,name=resolved_by,json=resolvedBy,proto3" json:"resolved_by,omitempty"`          // 人工终结(assetopfix)写:操作人,代码侧限 ≤64
 	ResolveReason     string                 `protobuf:"bytes,28,opt,name=resolve_reason,json=resolveReason,proto3" json:"resolve_reason,omitempty"` // 人工终结原因,代码侧限 ≤191
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	// 此前任何一次投递请求**可能**发出的最晚时刻(毫秒),自动放弃的安全依据(落地恢复 §6.3「last_send_ms 契约」,
+	// 实现以 go/shared/assetop/abandon.go 文件头为准)。插行写 created_ms;Claim 的 CAS 在改 lease_until_ms 之前把旧租约折进来;
+	// Reschedule 只在本次确实可能发出过请求(非本地 NOT_HERE)时推进到 now;毒行推迟 / 归还租约不动它。
+	// 不能用 updated_ms 代替:领取与停放档的本地重排都写 updated_ms。
+	// 存量行懒初始化,不做单独回填:schemamigrate ADD COLUMN 后存量行为 0,Claim 时先取 GREATEST(created_ms, updated_ms) 作初值。
+	// 0 = 未维护,放弃路径一律跳过。
+	LastSendMs    uint64 `protobuf:"varint,29,opt,name=last_send_ms,json=lastSendMs,proto3" json:"last_send_ms,omitempty"` // 追加区:从 30 起。
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GuildAssetOpRecord) Reset() {
@@ -970,6 +987,13 @@ func (x *GuildAssetOpRecord) GetResolveReason() string {
 		return x.ResolveReason
 	}
 	return ""
+}
+
+func (x *GuildAssetOpRecord) GetLastSendMs() uint64 {
+	if x != nil {
+		return x.LastSendMs
+	}
+	return 0
 }
 
 type GuildDailyCounterRecord struct {
@@ -1448,7 +1472,7 @@ const file_proto_guild_guild_db_proto_rawDesc = "" +
 	"\bnext_seq\x18\x03 \x01(\x04R\anextSeq\x12\x1d\n" +
 	"\n" +
 	"updated_ms\x18\x04 \x01(\x04R\tupdatedMs\x12\x14\n" +
-	"\x05epoch\x18\x05 \x01(\x04R\x05epoch:<\x8a\x92\xf4\x01\x13guild_player_op_seq\x92\x92\xf4\x01\x10player_id,stream\xa8\x93\xf4\x01\x01\xb0\x93\xf4\x01\x04\xb8\x93\xf4\x01\x04\"\xc4\b\n" +
+	"\x05epoch\x18\x05 \x01(\x04R\x05epoch:<\x8a\x92\xf4\x01\x13guild_player_op_seq\x92\x92\xf4\x01\x10player_id,stream\xa8\x93\xf4\x01\x01\xb0\x93\xf4\x01\x04\xb8\x93\xf4\x01\x04\"\xe6\b\n" +
 	"\x12GuildAssetOpRecord\x12\x13\n" +
 	"\x05op_id\x18\x01 \x01(\x04R\x04opId\x12\x1b\n" +
 	"\tplayer_id\x18\x02 \x01(\x04R\bplayerId\x12\x16\n" +
@@ -1486,7 +1510,9 @@ const file_proto_guild_guild_db_proto_rawDesc = "" +
 	"\fstream_epoch\x18\x1a \x01(\x04R\vstreamEpoch\x12\x1f\n" +
 	"\vresolved_by\x18\x1b \x01(\tR\n" +
 	"resolvedBy\x12%\n" +
-	"\x0eresolve_reason\x18\x1c \x01(\tR\rresolveReason:\xa5\x01\x8a\x92\xf4\x01\x0eguild_asset_op\x92\x92\xf4\x01\x05op_idڒ\xf4\x01Nstatus,next_attempt_ms;guild_id,op_id;player_id,stream,stream_epoch,status,seq\xe2\x92\xf4\x01!player_id,stream,stream_epoch,seq\xa8\x93\xf4\x01\x01\xb0\x93\xf4\x01\x04\xb8\x93\xf4\x01\x04\"\xd2\x02\n" +
+	"\x0eresolve_reason\x18\x1c \x01(\tR\rresolveReason\x12 \n" +
+	"\flast_send_ms\x18\x1d \x01(\x04R\n" +
+	"lastSendMs:\xa5\x01\x8a\x92\xf4\x01\x0eguild_asset_op\x92\x92\xf4\x01\x05op_idڒ\xf4\x01Nstatus,next_attempt_ms;guild_id,op_id;player_id,stream,stream_epoch,status,seq\xe2\x92\xf4\x01!player_id,stream,stream_epoch,seq\xa8\x93\xf4\x01\x01\xb0\x93\xf4\x01\x04\xb8\x93\xf4\x01\x04\"\xd2\x02\n" +
 	"\x17GuildDailyCounterRecord\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12A\n" +
 	"\fcounter_kind\x18\x02 \x01(\x0e2\x1e.guildpb.GuildDailyCounterKindR\vcounterKind\x12\x15\n" +
@@ -1538,14 +1564,15 @@ const file_proto_guild_guild_db_proto_rawDesc = "" +
 	"\battempts\x18\a \x01(\rR\battempts\x12\x1d\n" +
 	"\n" +
 	"created_ms\x18\b \x01(\x04R\tcreatedMs:R\x8a\x92\xf4\x01\x17guild_trial_reward_owed\x92\x92\xf4\x01\x13player_id,battle_idڒ\xf4\x01\n" +
-	"created_ms\xa8\x93\xf4\x01\x01\xb0\x93\xf4\x01\x04\xb8\x93\xf4\x01\x04*\xf3\x01\n" +
+	"created_ms\xa8\x93\xf4\x01\x01\xb0\x93\xf4\x01\x04\xb8\x93\xf4\x01\x04*\x98\x02\n" +
 	"\x12GuildAssetOpStatus\x12%\n" +
 	"!GUILD_ASSET_OP_STATUS_UNSPECIFIED\x10\x00\x12!\n" +
 	"\x1dGUILD_ASSET_OP_STATUS_PENDING\x10\x01\x12!\n" +
 	"\x1dGUILD_ASSET_OP_STATUS_APPLIED\x10\x02\x12\"\n" +
 	"\x1eGUILD_ASSET_OP_STATUS_REJECTED\x10\x03\x12!\n" +
 	"\x1dGUILD_ASSET_OP_STATUS_ABORTED\x10\x04\x12)\n" +
-	"%GUILD_ASSET_OP_STATUS_APPLIED_PARTIAL\x10\x05*\x9e\x01\n" +
+	"%GUILD_ASSET_OP_STATUS_APPLIED_PARTIAL\x10\x05\x12#\n" +
+	"\x1fGUILD_ASSET_OP_STATUS_ABANDONED\x10\x06*\x9e\x01\n" +
 	"\x10GuildAssetOpKind\x12#\n" +
 	"\x1fGUILD_ASSET_OP_KIND_UNSPECIFIED\x10\x00\x12\x1e\n" +
 	"\x1aGUILD_ASSET_OP_KIND_DONATE\x10\x01\x12\x1c\n" +

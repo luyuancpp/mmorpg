@@ -66,11 +66,11 @@ constexpr RoutePlayerEvent::ParseTableT_ RoutePlayerEvent::InternalGenerateParse
     {
       PROTOBUF_FIELD_OFFSET(RoutePlayerEvent, _impl_._has_bits_),
       0, // no _extensions_
-      6, 56,  // max_field_number, fast_idx_mask
+      7, 56,  // max_field_number, fast_idx_mask
       offsetof(ParseTableT_, field_lookup_table),
-      4294967232,  // skipmap
+      4294967168,  // skipmap
       offsetof(ParseTableT_, field_entries),
-      6,  // num_field_entries
+      7,  // num_field_entries
       0,  // num_aux_entries
       offsetof(ParseTableT_, field_names),  // no aux_entries
       class_data,
@@ -98,14 +98,17 @@ constexpr RoutePlayerEvent::ParseTableT_ RoutePlayerEvent::InternalGenerateParse
        {32, 3, 0,
         PROTOBUF_FIELD_OFFSET(RoutePlayerEvent, _impl_.player_id_)}},
       // uint32 home_zone_id = 5;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RoutePlayerEvent, _impl_.home_zone_id_), 5>(),
-       {40, 5, 0,
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(RoutePlayerEvent, _impl_.home_zone_id_), 6>(),
+       {40, 6, 0,
         PROTOBUF_FIELD_OFFSET(RoutePlayerEvent, _impl_.home_zone_id_)}},
       // uint64 owner_epoch = 6;
       {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(RoutePlayerEvent, _impl_.owner_epoch_), 4>(),
        {48, 4, 0,
         PROTOBUF_FIELD_OFFSET(RoutePlayerEvent, _impl_.owner_epoch_)}},
-      {::_pbi::TcParser::MiniParse, {}},
+      // uint64 login_generation = 7;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(RoutePlayerEvent, _impl_.login_generation_), 5>(),
+       {56, 5, 0,
+        PROTOBUF_FIELD_OFFSET(RoutePlayerEvent, _impl_.login_generation_)}},
     }}, {{
       65535, 65535
     }}, {{
@@ -118,9 +121,11 @@ constexpr RoutePlayerEvent::ParseTableT_ RoutePlayerEvent::InternalGenerateParse
       // uint64 player_id = 4;
       {PROTOBUF_FIELD_OFFSET(RoutePlayerEvent, _impl_.player_id_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
       // uint32 home_zone_id = 5;
-      {PROTOBUF_FIELD_OFFSET(RoutePlayerEvent, _impl_.home_zone_id_), _Internal::kHasBitsOffset + 5, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      {PROTOBUF_FIELD_OFFSET(RoutePlayerEvent, _impl_.home_zone_id_), _Internal::kHasBitsOffset + 6, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
       // uint64 owner_epoch = 6;
       {PROTOBUF_FIELD_OFFSET(RoutePlayerEvent, _impl_.owner_epoch_), _Internal::kHasBitsOffset + 4, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      // uint64 login_generation = 7;
+      {PROTOBUF_FIELD_OFFSET(RoutePlayerEvent, _impl_.login_generation_), _Internal::kHasBitsOffset + 5, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
     }},
     // no aux_entries
     {{
@@ -138,6 +143,7 @@ inline constexpr RoutePlayerEvent::Impl_::Impl_(
         scene_id_{::uint64_t{0u}},
         player_id_{::uint64_t{0u}},
         owner_epoch_{::uint64_t{0u}},
+        login_generation_{::uint64_t{0u}},
         home_zone_id_{0u} {}
 
 template <typename>
@@ -937,11 +943,11 @@ constexpr BindSessionEvent::ParseTableT_ BindSessionEvent::InternalGenerateParse
     {
       PROTOBUF_FIELD_OFFSET(BindSessionEvent, _impl_._has_bits_),
       0, // no _extensions_
-      4, 24,  // max_field_number, fast_idx_mask
+      5, 56,  // max_field_number, fast_idx_mask
       offsetof(ParseTableT_, field_lookup_table),
-      4294967280,  // skipmap
+      4294967264,  // skipmap
       offsetof(ParseTableT_, field_entries),
-      4,  // num_field_entries
+      5,  // num_field_entries
       0,  // num_aux_entries
       offsetof(ParseTableT_, field_names),  // no aux_entries
       class_data,
@@ -951,10 +957,7 @@ constexpr BindSessionEvent::ParseTableT_ BindSessionEvent::InternalGenerateParse
       ::_pbi::TcParser::GetTable<::contracts::kafka::BindSessionEvent>(),  // to_prefetch
       #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
     }, {{
-      // uint32 enter_gs_type = 4;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(BindSessionEvent, _impl_.enter_gs_type_), 3>(),
-       {32, 3, 0,
-        PROTOBUF_FIELD_OFFSET(BindSessionEvent, _impl_.enter_gs_type_)}},
+      {::_pbi::TcParser::MiniParse, {}},
       // uint32 session_id = 1;
       {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(BindSessionEvent, _impl_.session_id_), 1>(),
        {8, 1, 0,
@@ -967,6 +970,16 @@ constexpr BindSessionEvent::ParseTableT_ BindSessionEvent::InternalGenerateParse
       {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(BindSessionEvent, _impl_.session_version_), 2>(),
        {24, 2, 0,
         PROTOBUF_FIELD_OFFSET(BindSessionEvent, _impl_.session_version_)}},
+      // uint32 enter_gs_type = 4;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(BindSessionEvent, _impl_.enter_gs_type_), 4>(),
+       {32, 4, 0,
+        PROTOBUF_FIELD_OFFSET(BindSessionEvent, _impl_.enter_gs_type_)}},
+      // uint64 login_generation = 5;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(BindSessionEvent, _impl_.login_generation_), 3>(),
+       {40, 3, 0,
+        PROTOBUF_FIELD_OFFSET(BindSessionEvent, _impl_.login_generation_)}},
+      {::_pbi::TcParser::MiniParse, {}},
+      {::_pbi::TcParser::MiniParse, {}},
     }}, {{
       65535, 65535
     }}, {{
@@ -977,7 +990,9 @@ constexpr BindSessionEvent::ParseTableT_ BindSessionEvent::InternalGenerateParse
       // uint32 session_version = 3;
       {PROTOBUF_FIELD_OFFSET(BindSessionEvent, _impl_.session_version_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
       // uint32 enter_gs_type = 4;
-      {PROTOBUF_FIELD_OFFSET(BindSessionEvent, _impl_.enter_gs_type_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      {PROTOBUF_FIELD_OFFSET(BindSessionEvent, _impl_.enter_gs_type_), _Internal::kHasBitsOffset + 4, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      // uint64 login_generation = 5;
+      {PROTOBUF_FIELD_OFFSET(BindSessionEvent, _impl_.login_generation_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
     }},
     // no aux_entries
     {{
@@ -993,6 +1008,7 @@ inline constexpr BindSessionEvent::Impl_::Impl_(
         player_id_{::uint64_t{0u}},
         session_id_{0u},
         session_version_{0u},
+        login_generation_{::uint64_t{0u}},
         enter_gs_type_{0u} {}
 
 template <typename>
@@ -1728,19 +1744,21 @@ const ::uint32_t
         protodesc_cold) = {
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::contracts::kafka::RoutePlayerEvent, _impl_._has_bits_),
-        9, // hasbit index offset
+        10, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::contracts::kafka::RoutePlayerEvent, _impl_.session_id_),
         PROTOBUF_FIELD_OFFSET(::contracts::kafka::RoutePlayerEvent, _impl_.target_node_id_),
         PROTOBUF_FIELD_OFFSET(::contracts::kafka::RoutePlayerEvent, _impl_.scene_id_),
         PROTOBUF_FIELD_OFFSET(::contracts::kafka::RoutePlayerEvent, _impl_.player_id_),
         PROTOBUF_FIELD_OFFSET(::contracts::kafka::RoutePlayerEvent, _impl_.home_zone_id_),
         PROTOBUF_FIELD_OFFSET(::contracts::kafka::RoutePlayerEvent, _impl_.owner_epoch_),
+        PROTOBUF_FIELD_OFFSET(::contracts::kafka::RoutePlayerEvent, _impl_.login_generation_),
         0,
         1,
         2,
         3,
-        5,
+        6,
         4,
+        5,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::contracts::kafka::KickPlayerEvent, _impl_._has_bits_),
         4, // hasbit index offset
@@ -1774,14 +1792,16 @@ const ::uint32_t
         2,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::contracts::kafka::BindSessionEvent, _impl_._has_bits_),
-        7, // hasbit index offset
+        8, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::contracts::kafka::BindSessionEvent, _impl_.session_id_),
         PROTOBUF_FIELD_OFFSET(::contracts::kafka::BindSessionEvent, _impl_.player_id_),
         PROTOBUF_FIELD_OFFSET(::contracts::kafka::BindSessionEvent, _impl_.session_version_),
         PROTOBUF_FIELD_OFFSET(::contracts::kafka::BindSessionEvent, _impl_.enter_gs_type_),
+        PROTOBUF_FIELD_OFFSET(::contracts::kafka::BindSessionEvent, _impl_.login_generation_),
         1,
         0,
         2,
+        4,
         3,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::contracts::kafka::RedirectToGateEvent, _impl_._has_bits_),
@@ -1835,15 +1855,15 @@ const ::uint32_t
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, sizeof(::contracts::kafka::RoutePlayerEvent)},
-        {15, sizeof(::contracts::kafka::KickPlayerEvent)},
-        {20, sizeof(::contracts::kafka::PlayerDisconnectedEvent)},
-        {31, sizeof(::contracts::kafka::PlayerLeaseExpiredEvent)},
-        {46, sizeof(::contracts::kafka::BindSessionEvent)},
-        {57, sizeof(::contracts::kafka::RedirectToGateEvent)},
-        {74, sizeof(::contracts::kafka::PushToPlayerEvent)},
-        {81, sizeof(::contracts::kafka::BroadcastToPlayersEvent)},
-        {92, sizeof(::contracts::kafka::BroadcastToSceneEvent)},
-        {99, sizeof(::contracts::kafka::BroadcastToAllEvent)},
+        {17, sizeof(::contracts::kafka::KickPlayerEvent)},
+        {22, sizeof(::contracts::kafka::PlayerDisconnectedEvent)},
+        {33, sizeof(::contracts::kafka::PlayerLeaseExpiredEvent)},
+        {48, sizeof(::contracts::kafka::BindSessionEvent)},
+        {61, sizeof(::contracts::kafka::RedirectToGateEvent)},
+        {78, sizeof(::contracts::kafka::PushToPlayerEvent)},
+        {85, sizeof(::contracts::kafka::BroadcastToPlayersEvent)},
+        {96, sizeof(::contracts::kafka::BroadcastToSceneEvent)},
+        {103, sizeof(::contracts::kafka::BroadcastToAllEvent)},
 };
 static const ::_pbi::MessageGlobalsBase* PROTOBUF_NONNULL const
     file_message_globals[] = {
@@ -1862,50 +1882,55 @@ const char descriptor_table_protodef_proto_2fcontracts_2fkafka_2fgate_5fevent_2e
     protodesc_cold) = {
     "\n&proto/contracts/kafka/gate_event.proto"
     "\022\017contracts.kafka\032\037proto/common/base/mes"
-    "sage.proto\"\216\001\n\020RoutePlayerEvent\022\022\n\nsessi"
-    "on_id\030\001 \001(\r\022\026\n\016target_node_id\030\002 \001(\r\022\020\n\010s"
-    "cene_id\030\003 \001(\004\022\021\n\tplayer_id\030\004 \001(\004\022\024\n\014home"
-    "_zone_id\030\005 \001(\r\022\023\n\013owner_epoch\030\006 \001(\004\"%\n\017K"
-    "ickPlayerEvent\022\022\n\nsession_id\030\001 \001(\r\"k\n\027Pl"
-    "ayerDisconnectedEvent\022\022\n\nsession_id\030\001 \001("
-    "\r\022\021\n\tplayer_id\030\002 \001(\004\022\017\n\007gate_id\030\003 \001(\t\022\030\n"
-    "\020gate_instance_id\030\004 \001(\t\"\224\001\n\027PlayerLeaseE"
-    "xpiredEvent\022\021\n\tplayer_id\030\001 \001(\004\022\022\n\nsessio"
-    "n_id\030\002 \001(\r\022\025\n\rscene_node_id\030\003 \001(\t\022\020\n\010sce"
-    "ne_id\030\004 \001(\004\022\017\n\007gate_id\030\005 \001(\t\022\030\n\020gate_ins"
-    "tance_id\030\006 \001(\t\"i\n\020BindSessionEvent\022\022\n\nse"
-    "ssion_id\030\001 \001(\r\022\021\n\tplayer_id\030\002 \001(\004\022\027\n\017ses"
-    "sion_version\030\003 \001(\r\022\025\n\renter_gs_type\030\004 \001("
-    "\r\"\266\001\n\023RedirectToGateEvent\022\021\n\tplayer_id\030\001"
-    " \001(\004\022\022\n\nsession_id\030\002 \001(\r\022\026\n\016target_gate_"
-    "ip\030\003 \001(\t\022\030\n\020target_gate_port\030\004 \001(\r\022\025\n\rto"
-    "ken_payload\030\005 \001(\014\022\027\n\017token_signature\030\006 \001"
-    "(\014\022\026\n\016token_deadline\030\007 \001(\003\"Q\n\021PushToPlay"
-    "erEvent\022\022\n\nsession_id\030\001 \001(\r\022(\n\017message_c"
-    "ontent\030\002 \001(\0132\017.MessageContent\"\216\001\n\027Broadc"
-    "astToPlayersEvent\022\024\n\014session_list\030\001 \003(\r\022"
-    "(\n\017message_content\030\002 \001(\0132\017.MessageConten"
-    "t\022\033\n\023session_bitmap_base\030\003 \001(\r\022\026\n\016sessio"
-    "n_bitmap\030\004 \001(\014\"S\n\025BroadcastToSceneEvent\022"
-    "\020\n\010scene_id\030\001 \001(\004\022(\n\017message_content\030\002 \001"
-    "(\0132\017.MessageContent\"\?\n\023BroadcastToAllEve"
-    "nt\022(\n\017message_content\030\001 \001(\0132\017.MessageCon"
-    "tentB\021Z\017contracts/kafkab\006proto3"
+    "sage.proto\032/proto/common/options/event_i"
+    "ngress_option.proto\"\257\001\n\020RoutePlayerEvent"
+    "\022\022\n\nsession_id\030\001 \001(\r\022\026\n\016target_node_id\030\002"
+    " \001(\r\022\020\n\010scene_id\030\003 \001(\004\022\021\n\tplayer_id\030\004 \001("
+    "\004\022\024\n\014home_zone_id\030\005 \001(\r\022\023\n\013owner_epoch\030\006"
+    " \001(\004\022\030\n\020login_generation\030\007 \001(\004:\005\210\346\325\002\001\",\n"
+    "\017KickPlayerEvent\022\022\n\nsession_id\030\001 \001(\r:\005\210\346"
+    "\325\002\001\"k\n\027PlayerDisconnectedEvent\022\022\n\nsessio"
+    "n_id\030\001 \001(\r\022\021\n\tplayer_id\030\002 \001(\004\022\017\n\007gate_id"
+    "\030\003 \001(\t\022\030\n\020gate_instance_id\030\004 \001(\t\"\233\001\n\027Pla"
+    "yerLeaseExpiredEvent\022\021\n\tplayer_id\030\001 \001(\004\022"
+    "\022\n\nsession_id\030\002 \001(\r\022\025\n\rscene_node_id\030\003 \001"
+    "(\t\022\020\n\010scene_id\030\004 \001(\004\022\017\n\007gate_id\030\005 \001(\t\022\030\n"
+    "\020gate_instance_id\030\006 \001(\t:\005\210\346\325\002\001\"\212\001\n\020BindS"
+    "essionEvent\022\022\n\nsession_id\030\001 \001(\r\022\021\n\tplaye"
+    "r_id\030\002 \001(\004\022\027\n\017session_version\030\003 \001(\r\022\025\n\re"
+    "nter_gs_type\030\004 \001(\r\022\030\n\020login_generation\030\005"
+    " \001(\004:\005\210\346\325\002\001\"\275\001\n\023RedirectToGateEvent\022\021\n\tp"
+    "layer_id\030\001 \001(\004\022\022\n\nsession_id\030\002 \001(\r\022\026\n\016ta"
+    "rget_gate_ip\030\003 \001(\t\022\030\n\020target_gate_port\030\004"
+    " \001(\r\022\025\n\rtoken_payload\030\005 \001(\014\022\027\n\017token_sig"
+    "nature\030\006 \001(\014\022\026\n\016token_deadline\030\007 \001(\003:\005\210\346"
+    "\325\002\001\"X\n\021PushToPlayerEvent\022\022\n\nsession_id\030\001"
+    " \001(\r\022(\n\017message_content\030\002 \001(\0132\017.MessageC"
+    "ontent:\005\210\346\325\002\001\"\225\001\n\027BroadcastToPlayersEven"
+    "t\022\024\n\014session_list\030\001 \003(\r\022(\n\017message_conte"
+    "nt\030\002 \001(\0132\017.MessageContent\022\033\n\023session_bit"
+    "map_base\030\003 \001(\r\022\026\n\016session_bitmap\030\004 \001(\014:\005"
+    "\210\346\325\002\001\"Z\n\025BroadcastToSceneEvent\022\020\n\010scene_"
+    "id\030\001 \001(\004\022(\n\017message_content\030\002 \001(\0132\017.Mess"
+    "ageContent:\005\210\346\325\002\001\"F\n\023BroadcastToAllEvent"
+    "\022(\n\017message_content\030\001 \001(\0132\017.MessageConte"
+    "nt:\005\210\346\325\002\001B\021Z\017contracts/kafkab\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
-    descriptor_table_proto_2fcontracts_2fkafka_2fgate_5fevent_2eproto_deps[1] = {
+    descriptor_table_proto_2fcontracts_2fkafka_2fgate_5fevent_2eproto_deps[2] = {
         &::descriptor_table_proto_2fcommon_2fbase_2fmessage_2eproto,
+        &::descriptor_table_proto_2fcommon_2foptions_2fevent_5fingress_5foption_2eproto,
 };
 static ::absl::once_flag descriptor_table_proto_2fcontracts_2fkafka_2fgate_5fevent_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcontracts_2fkafka_2fgate_5fevent_2eproto = {
     false,
     false,
-    1231,
+    1396,
     descriptor_table_protodef_proto_2fcontracts_2fkafka_2fgate_5fevent_2eproto,
     "proto/contracts/kafka/gate_event.proto",
     &descriptor_table_proto_2fcontracts_2fkafka_2fgate_5fevent_2eproto_once,
     descriptor_table_proto_2fcontracts_2fkafka_2fgate_5fevent_2eproto_deps,
-    1,
+    2,
     10,
     schemas,
     file_message_globals,
@@ -1999,7 +2024,7 @@ PROTOBUF_NOINLINE void RoutePlayerEvent::Clear() {
   (void) cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000003fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000007fU)) {
     ::memset(&_impl_.session_id_, 0, static_cast<::size_t>(
         reinterpret_cast<char*>(&_impl_.home_zone_id_) -
         reinterpret_cast<char*>(&_impl_.session_id_)) + sizeof(_impl_.home_zone_id_));
@@ -2064,7 +2089,7 @@ PROTOBUF_NOINLINE void RoutePlayerEvent::Clear() {
   }
 
   // uint32 home_zone_id = 5;
-  if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000040U)) {
     if (this_._internal_home_zone_id() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
@@ -2078,6 +2103,15 @@ PROTOBUF_NOINLINE void RoutePlayerEvent::Clear() {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
           6, this_._internal_owner_epoch(), target);
+    }
+  }
+
+  // uint64 login_generation = 7;
+  if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+    if (this_._internal_login_generation() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          7, this_._internal_login_generation(), target);
     }
   }
 
@@ -2106,7 +2140,7 @@ PROTOBUF_NOINLINE void RoutePlayerEvent::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000003fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000007fU)) {
     // uint32 session_id = 1;
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       if (this_._internal_session_id() != 0) {
@@ -2142,8 +2176,15 @@ PROTOBUF_NOINLINE void RoutePlayerEvent::Clear() {
             this_._internal_owner_epoch());
       }
     }
-    // uint32 home_zone_id = 5;
+    // uint64 login_generation = 7;
     if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+      if (this_._internal_login_generation() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_login_generation());
+      }
+    }
+    // uint32 home_zone_id = 5;
+    if (CheckHasBit(cached_has_bits, 0x00000040U)) {
       if (this_._internal_home_zone_id() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_home_zone_id());
@@ -2167,7 +2208,7 @@ void RoutePlayerEvent::MergeImpl(::google::protobuf::MessageLite& to_msg,
   (void)cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000003fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000007fU)) {
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       if (from._internal_session_id() != 0) {
         _this->_impl_.session_id_ = from._impl_.session_id_;
@@ -2194,6 +2235,11 @@ void RoutePlayerEvent::MergeImpl(::google::protobuf::MessageLite& to_msg,
       }
     }
     if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+      if (from._internal_login_generation() != 0) {
+        _this->_impl_.login_generation_ = from._impl_.login_generation_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000040U)) {
       if (from._internal_home_zone_id() != 0) {
         _this->_impl_.home_zone_id_ = from._impl_.home_zone_id_;
       }
@@ -3190,7 +3236,7 @@ PROTOBUF_NOINLINE void BindSessionEvent::Clear() {
   (void) cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000001fU)) {
     ::memset(&_impl_.player_id_, 0, static_cast<::size_t>(
         reinterpret_cast<char*>(&_impl_.enter_gs_type_) -
         reinterpret_cast<char*>(&_impl_.player_id_)) + sizeof(_impl_.enter_gs_type_));
@@ -3246,11 +3292,20 @@ PROTOBUF_NOINLINE void BindSessionEvent::Clear() {
   }
 
   // uint32 enter_gs_type = 4;
-  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000010U)) {
     if (this_._internal_enter_gs_type() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
           4, this_._internal_enter_gs_type(), target);
+    }
+  }
+
+  // uint64 login_generation = 5;
+  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+    if (this_._internal_login_generation() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          5, this_._internal_login_generation(), target);
     }
   }
 
@@ -3279,7 +3334,7 @@ PROTOBUF_NOINLINE void BindSessionEvent::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000001fU)) {
     // uint64 player_id = 2;
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       if (this_._internal_player_id() != 0) {
@@ -3301,8 +3356,15 @@ PROTOBUF_NOINLINE void BindSessionEvent::Clear() {
             this_._internal_session_version());
       }
     }
-    // uint32 enter_gs_type = 4;
+    // uint64 login_generation = 5;
     if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (this_._internal_login_generation() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_login_generation());
+      }
+    }
+    // uint32 enter_gs_type = 4;
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
       if (this_._internal_enter_gs_type() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_enter_gs_type());
@@ -3326,7 +3388,7 @@ void BindSessionEvent::MergeImpl(::google::protobuf::MessageLite& to_msg,
   (void)cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000001fU)) {
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       if (from._internal_player_id() != 0) {
         _this->_impl_.player_id_ = from._impl_.player_id_;
@@ -3343,6 +3405,11 @@ void BindSessionEvent::MergeImpl(::google::protobuf::MessageLite& to_msg,
       }
     }
     if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (from._internal_login_generation() != 0) {
+        _this->_impl_.login_generation_ = from._impl_.login_generation_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
       if (from._internal_enter_gs_type() != 0) {
         _this->_impl_.enter_gs_type_ = from._impl_.enter_gs_type_;
       }

@@ -80,20 +80,10 @@ set(SOURCE_FILES
     common/database/player_cache.pb.cc
     common/database/rollback_database_table.pb.cc
     common/database/bag_quest_mail_data.pb.cc
-    common/event/actor_combat_state_event.pb.cc
-    common/event/actor_event.pb.cc
-    common/event/buff_event.pb.cc
-    common/event/combat_event.pb.cc
-    common/event/mission_event.pb.cc
-    common/event/node_event.pb.cc
-    common/event/npc_event.pb.cc
-    common/event/player_event.pb.cc
     common/event/player_migration_event.pb.cc
-    common/event/scene_event.pb.cc
-    common/event/server_event.pb.cc
-    common/event/skill_event.pb.cc
     common/event/team_event.pb.cc
     common/options/attribute_sync_option.pb.cc
+    common/options/event_ingress_option.pb.cc
     common/rollback/player_snapshot.pb.cc
     common/rollback/transaction_log.pb.cc
     contracts/kafka/gate_command.pb.cc

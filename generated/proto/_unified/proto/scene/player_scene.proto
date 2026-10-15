@@ -90,7 +90,7 @@ enum ActorType
 
 message ActorCreateS2C
 {
-	uint64 entity = 1;
+	uint64 entity = 1; // 不透明 actor 网络号；不持久化，不是玩家 GUID 或本地 ECS 句柄。
 	Transform transform = 2;
 	ActorType actor_type = 3;
 	uint64 guid = 4;
@@ -102,7 +102,7 @@ message ActorCreateS2C
 
 message ActorDestroyS2C
 {
-	uint64 entity = 1;
+	uint64 entity = 1; // 需要移除的不透明 actor 网络号。
 }
 
 message ActorListCreateS2C
@@ -112,7 +112,7 @@ message ActorListCreateS2C
 
 message ActorListDestroyS2C
 {
-	repeated uint64 entity = 1;
+	repeated uint64 entity = 1; // 需要移除的不透明 actor 网络号列表。
 }
 
 // 跨 zone 场景传送(docs/design/cross-zone-scene-travel.md CZ-7)。
@@ -132,6 +132,45 @@ message TravelToZoneResponse
 	TipInfoMessage error_message = 1; // 同步拒绝码(CZ-6 校验不过);生成的 handler 头会调 mutable_error_message()
 }
 
+// 落地恢复:按域版本摘要(docs/design/landing-recovery-sync-digest.md)。
+// 域号是客户端契约:只追加,上线后不复用;hash 字段名 = 域号十进制。
+enum SyncDomain
+{
+	SYNC_DOMAIN_UNSPECIFIED = 0;
+	SYNC_DOMAIN_FRIEND_LIST = 1;
+	SYNC_DOMAIN_FRIEND_REQUEST = 2;
+	SYNC_DOMAIN_FRIEND_BLOCK = 3;
+	SYNC_DOMAIN_TEAM = 4;
+	SYNC_DOMAIN_TEAM_INVITE = 5;
+	SYNC_DOMAIN_GUILD = 6;
+	SYNC_DOMAIN_GUILD_APPLICATION = 7;
+	SYNC_DOMAIN_GUILD_ECONOMY = 8;
+	SYNC_DOMAIN_GUILD_ACTIVITY = 9;
+}
+
+enum SyncDigestStatus
+{
+	SYNC_DIGEST_STATUS_OK = 0;
+	SYNC_DIGEST_STATUS_UNAVAILABLE = 1;  // 读不到摘要(Redis 不可用 / 命令未发出 / 应答畸形):客户端按全量拉处理
+}
+
+message SyncDigestEntry
+{
+	SyncDomain domain = 1;
+	uint64 version = 2;
+}
+
+message GetSyncDigestRequest
+{
+}
+
+message SyncDigestS2C
+{
+	SyncDigestStatus status = 1;
+	uint64 generation = 2;                 // 摘要代次 g;0 = 摘要不存在(从未 bump 或已过期)
+	repeated SyncDigestEntry entries = 3;  // 只含出现过的域;缺席的域版本按 0 处理。顺序无业务含义
+}
+
 service SceneSceneClientPlayer
 {
   option (OptionIsPlayerService) = true;
@@ -147,4 +186,8 @@ service SceneSceneClientPlayer
   rpc NotifyActorListDestroy (ActorListDestroyS2C) returns (Empty);
   // 只能追加在末尾:CallMethod 按 method index 分发,插到中间会让后面所有方法移位。
   rpc TravelToZone (TravelToZoneRequest) returns (TravelToZoneResponse);
+  // 落地恢复(docs/design/landing-recovery-sync-digest.md §4.1):客户端落地后取摘要。应答是 Empty,
+  // 数据走 NotifySyncDigest 推送;handler 里禁止 SetTip,所有失败都推 status = UNAVAILABLE。
+  rpc GetSyncDigest (GetSyncDigestRequest) returns (Empty);
+  rpc NotifySyncDigest (SyncDigestS2C) returns (Empty);
 }

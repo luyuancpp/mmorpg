@@ -103,8 +103,8 @@ echo "reason=${REASON}"
 > `printf` 用 `%s` 拼而不是 `echo`:`echo` 会多加一个尾随换行,canonical 串
 > 差一个字节签名就对不上。
 
-拒绝时 gate 只打一条 `GM graceful shutdown REJECTED, reason=<原因>` 的
-`LOG_ERROR`,不回错误码(响应 proto 里没有错误字段)。可能的 `reason`:
+拒绝时节点打一条 `GM graceful shutdown REJECTED, reason=<原因>` 的 `LOG_ERROR`,并以
+`RPC_ERROR(HANDLER_FAILED)` 回给调用方(2026-10-15 起;线上只带错误码,不回拒绝原因,不给探测者提示)。可能的 `reason`:
 `secret_not_configured` / `malformed_envelope` / `timestamp_out_of_window` /
 `signature_mismatch` / `replayed_nonce`。
 
@@ -114,13 +114,13 @@ echo "reason=${REASON}"
 是否回包由**调用方**按次声明,不再由响应内容决定:
 
 - `id != 0`:服务端恰好回一帧。handler 同步返回后框架立即回 `RESPONSE`(同 `id`、同 `message_id`),
-  **`affected_count` 为 0 也回包**(鉴权被拒、没有在线会话 / 玩家时都是 0);handler 显式失败时回 `RPC_ERROR`。
+  **`affected_count` 为 0 也回包**(鉴权通过但没有在线会话 / 玩家时为 0);鉴权被拒回 `RPC_ERROR(HANDLER_FAILED)`。
 - `id == 0`:单向调用,服务端**永不回包**。
 
 所以外部 GM 停机工具调用 `Gate.GmGracefulShutdown` 与 `SceneScene.GmGracefulShutdown`(scene 侧的 proto
 服务名是 `SceneScene`;canonical 串里的 method 名见下一节)时,**必须带非 0 的调用 id 才能收到应答**,
-并按 `id` 认领回包。鉴权被拒与"确实没有可关闭的对象"在应答上都表现为 `affected_count == 0`,
-区分两者要看节点日志里的 `REJECTED` 行。两条 handler 都不接管 `done`,回包先于排队的停机动作发出。
+并按 `id` 认领回包。鉴权被拒(`RPC_ERROR`,error = `HANDLER_FAILED`)与"确实没有可关闭的对象"
+(`RESPONSE`,`affected_count == 0`)在应答上可以直接区分;拒绝的具体原因看节点日志里的 `REJECTED` 行。两条 handler 都不接管 `done`,回包先于排队的停机动作发出。
 仓库内没有这条 RPC 的发送方,上述约定由外部工具自行遵守。
 
 ### scene 节点用同一套机制,但 method 名不同

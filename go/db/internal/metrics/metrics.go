@@ -156,6 +156,16 @@ var (
 		Help:      "Length of the retry lists, sampled every retry tick. queue: ready (shared by the topic) | processing (this instance) | dead (shared by the topic).",
 	}, []string{"queue"})
 
+	// producerPartitionTotal 是 db_task 分区契约(docs/design/db-task-kafka-partition-contract.md「分区函数契约」)
+	// 的消费端观测:ConsumeClaim 解码成功后,对每条消息按契约重算应在的分区并核对 Kafka key。只计数,不拒绝。
+	// 写的 verdict!=ok 说明有生产者破坏契约(critical);读的不符说明还有旧版 login 在跑。
+	// label 是封闭集合(3×4=12 条序列),不含 player_id(AGENTS.md §9)。
+	producerPartitionTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Subsystem: subsystem,
+		Name:      "task_producer_partition_total",
+		Help:      "Kafka db_task messages checked against the producer partition contract (CRC-32(key) mod N, docs/design/db-task-kafka-partition-contract.md). op: read | write | other. verdict: ok | partition_mismatch | key_mismatch | invalid. Observation only: no message is rejected.",
+	}, []string{"op", "verdict"})
+
 	registerOnce sync.Once
 )
 
@@ -187,6 +197,13 @@ func register() {
 		}
 		for _, reason := range []string{ReadAbandonedStoreUnavailable, ReadAbandonedBudgetExhausted} {
 			taskReadAbandonedTotal.WithLabelValues(reason).Add(0)
+		}
+		// db_task 分区契约观测:12 条序列全部以 0 建出,写不符的 critical 告警才能抓到第一次。
+		prometheus.MustRegister(producerPartitionTotal)
+		for _, op := range producerPartitionOps {
+			for _, verdict := range producerPartitionVerdicts {
+				producerPartitionTotal.WithLabelValues(op, verdict).Add(0)
+			}
 		}
 	})
 }
@@ -266,6 +283,33 @@ func CountReadAbandoned(reason string) {
 func SetRetryQueueLength(queue string, n int64) {
 	register()
 	retryQueueLength.WithLabelValues(queue).Set(float64(n))
+}
+
+// db_task_producer_partition_total 的 op 取值:DBTask.op 为 read / write 原样记,其余一律 other。
+const (
+	ProducerPartitionOpRead  = "read"
+	ProducerPartitionOpWrite = "write"
+	ProducerPartitionOpOther = "other"
+)
+
+// db_task_producer_partition_total 的 verdict 取值。
+const (
+	ProducerPartitionOK          = "ok"                 // Kafka key == DBTaskKey(task.key),且分区 == CRC-32(key) mod N
+	ProducerPartitionMismatch    = "partition_mismatch" // key 合规,但消息所在分区不是契约分区
+	ProducerPartitionKeyMismatch = "key_mismatch"       // Kafka key 不是 DBTaskKey(task.key)(含 nil / 空 key)
+	ProducerPartitionInvalid     = "invalid"            // 无法判定:消息或任务为空,或本消费者的分区数非正
+)
+
+var producerPartitionOps = []string{ProducerPartitionOpRead, ProducerPartitionOpWrite, ProducerPartitionOpOther}
+
+var producerPartitionVerdicts = []string{
+	ProducerPartitionOK, ProducerPartitionMismatch, ProducerPartitionKeyMismatch, ProducerPartitionInvalid,
+}
+
+// CountProducerPartition 记一次分区契约核对结果。op 用 ProducerPartitionOp* 常量,verdict 用 ProducerPartition* 常量。
+func CountProducerPartition(op, verdict string) {
+	register()
+	producerPartitionTotal.WithLabelValues(op, verdict).Inc()
 }
 
 // storeCooldownCollector 在每次抓取时现算 db_store_cooldown_stores:此刻仍在库级冷却期内(探活确认整库不可达)的库个数,

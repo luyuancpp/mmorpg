@@ -275,6 +275,11 @@ Go 侧没有任何服务配置 `KeepaliveEnforcementPolicy`,即 grpc-go 默认:�
 
 每批完成后交 Codex 编译与验证,通过再开下一批。
 
+第 3 批的前置(2026-10-15 与「C++ RPC 异步回调链式调用设计」会话约定):生成客户端的**每次调用回调**(`done` + 可选 deadline,
+签名不含 grpc 类型,向后兼容现有全局 handler)由该会话先在官方 CQ 模板上落地,设计见 [muduo-rpc-channel.md](muduo-rpc-channel.md) §8.4 / §14;
+第 3 批以它为唯一出口、只把底下的传输换成 `muduo_grpc::Channel::StartUnaryCall`,调用方不改。在那边宣布完成前,本迁移不碰
+`tools/proto_generator` 的 gRPC 客户端模板、`grpc_process.go` 与 `grpc_call_tag.h`。
+
 ### 10.1 来自 entt 审计的验收条件
 
 2026-10-15 并行会话「代码中的 entt 使用问题」移交,原文见 [ecs-entt-misuse-audit-20261015.md](ecs-entt-misuse-audit-20261015.md)
@@ -392,6 +397,7 @@ EtcdHelper(唯一出口,EtcdManager 的 keepalive 也收进来)
   - 每 2s 的全量 Range 走同一对账(新传输上;它本来就要推进 revision,顺带补回漏掉的删除)。
 - watch `canceled`(含 `compact_revision != 0`):该前缀按上一条重新 Range → 对账 → 从 R+1 重建 watch,不再在同一流上
   重发全部前缀(旧实现会给每个前缀叠一个重复 watcher)。`created` 应答按发送顺序把 `watch_id` 对回前缀。
+  (落地时细化:只有压缩取消立即重新 Range,其他取消等下一次 2s 全量 Range,见 §13.9。)
 - DELETE 事件**不依赖 prev_kv**:先用 prev_kv;没有时按 key 查本地索引拿到 NodeInfo 再走 `HandleServiceNodeStop`。
 - 注册链的触发点不变:第一个 watch `created` 应答触发 LeaseGrant;重建后的 `created` 不再触发。
 
@@ -412,3 +418,33 @@ EtcdHelper(唯一出口,EtcdManager 的 keepalive 也收进来)
 
 `NODE_ETCD_TRANSPORT` 不设或设 `grpc` 即回到旧实现;**回退时 §10.2 列出的缺陷依然存在**(启动日志写明当前选择)。
 任何 etcd 滚动(钉镜像版本、加压缩参数)要等新实现验证通过之后再做(§10.2 第 7 条)。
+
+### 13.9 落地记录(2026-10-15,未编译)
+
+代码与上面的设计一致,以下是实现时定下、设计里没写细或有调整的点:
+
+- **文件**:接口 `core/node/system/etcd/etcd_transport.{h,cpp}`(含进程级工厂 `SetFactory` / `Create`);
+  官方实现 `grpc_etcd_transport.{h,cpp}`;新实现 `muduo_etcd_transport.{h,cpp}`(`InstallFromEnv` 也在这里);
+  纯函数头 `etcd_endpoint.h`(地址拆分)、`etcd_stream_backoff.h`(流重建退避)、`discovery/discovery_key_index.h`(发现键索引)。
+- **5ms CQ 轮询留在 `EtcdService`**:它驱动的是进程里**全部**官方 gRPC 客户端的 CQ(不只 etcd),两种 etcd 传输下都要跑,
+  第 3 批删 CQ 时一并删。
+- **`OnWatchStreamRestarted` / `OnKeepAliveStreamRestarted` 在每次重建开流后立即回调**(首条流不回调)。etcd 的 watch
+  流在收到第一个 create 之前不发响应头,无法以「对端已确认」为准;重建开流时通道若仍不可用,流会再次以 UNAVAILABLE 结束,
+  重新 Range 失败只记日志,下一次重建再来一遍。
+- **watch 取消**:`compact_revision != 0` 立即对该前缀重新 Range;其他原因的取消(含创建失败的 created+canceled)等每 2s 的
+  全量 Range 重建,对端持续拒绝时不空转。`created` 按 create 的发送顺序对回前缀(etcd 在一条流上串行处理 create)。
+- **发现键索引带墓碑**,比设计多挡了两类乱序(Range 与 watch 走不同的流):比已处理的删除更旧的快照条目不再把下线节点加回来;
+  比已知 PUT 更旧的 DELETE 事件忽略。对账删除也在快照 revision 处记墓碑。墓碑由之后的快照清理(快照 revision ≥ 墓碑即清)。
+- **只有发现键进索引**:`/allocated/` 占位键(值是裸 uuid)照旧交给发现层由它跳过,不参与「值解析失败 → 快照不完整」判定。
+- **新传输的通道**:周期 keepalive 30s / 10s;连接级重连退避封顶 5s(默认 120s,etcd 恢复后要几秒内连回);unary 截止时间
+  取 `grpc_call_deadline::Get(EtcdNodeService)`,与官方客户端同一配置;同一方法的失败日志 10s 限频。不发 `hasleader`
+  元数据(与旧实现一致;成员失去 leader 的探测与多 endpoint 切换同属后续)。
+- **`ClientStream` 弱持有流记录**:`Cancel()` 先就地置取消标记,通道已析构、`onClose` 已在队列里时也能压住(重建流时防止旧流的
+  结束事件再触发一次重建)。
+- **工程**:core 加 3 个 .cpp / 6 个头;scene / battle 的 Debug|x64 与 Linux CMake 链 `muduo_grpc` + `nghttp2`,`game.sln`
+  给两者加对 muduo_grpc 的依赖。Release 配置与 gate 第 1 批一样没动(那几份 Release 链接清单本来就不全)。
+  顺带补上 §9 写了、但手工维护的节点 CMakeLists 里一直缺的 `-Wl,--exclude-libs,libnghttp2.a`(gate / scene / battle 三处;
+  第 1 批时它只进了已归档的 `vcxproj2cmake.py`)。
+- **用例**:`muduo_grpc_test` 的 channel_test 末尾 6 条(双向流顺序 / 恰好一次、Cancel、通道析构、目标不可达、超限、
+  周期 keepalive);新增 `etcd_transport_helpers_test.cpp`(索引、地址拆分、退避,共 14 条)。EtcdService 上的整合行为依赖
+  Node 全局状态,按 PROGRESS 条目里的 etcd 故障注入步骤验证。

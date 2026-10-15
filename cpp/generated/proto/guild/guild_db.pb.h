@@ -175,6 +175,7 @@ enum GuildAssetOpStatus : int {
   GUILD_ASSET_OP_STATUS_REJECTED = 3,
   GUILD_ASSET_OP_STATUS_ABORTED = 4,
   GUILD_ASSET_OP_STATUS_APPLIED_PARTIAL = 5,
+  GUILD_ASSET_OP_STATUS_ABANDONED = 6,
   GuildAssetOpStatus_INT_MIN_SENTINEL_DO_NOT_USE_ =
       ::std::numeric_limits<::int32_t>::min(),
   GuildAssetOpStatus_INT_MAX_SENTINEL_DO_NOT_USE_ =
@@ -185,11 +186,11 @@ extern const uint32_t GuildAssetOpStatus_internal_data_[];
 inline constexpr GuildAssetOpStatus GuildAssetOpStatus_MIN =
     static_cast<GuildAssetOpStatus>(0);
 inline constexpr GuildAssetOpStatus GuildAssetOpStatus_MAX =
-    static_cast<GuildAssetOpStatus>(5);
+    static_cast<GuildAssetOpStatus>(6);
 [[nodiscard]] inline bool GuildAssetOpStatus_IsValid(int value) {
-  return 0 <= value && value <= 5;
+  return 0 <= value && value <= 6;
 }
-inline constexpr int GuildAssetOpStatus_ARRAYSIZE = 5 + 1;
+inline constexpr int GuildAssetOpStatus_ARRAYSIZE = 6 + 1;
 [[nodiscard]] const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL
 GuildAssetOpStatus_descriptor();
 [[nodiscard]] inline auto ProtobufInternalGetEnumDescriptor(GuildAssetOpStatus) {
@@ -204,7 +205,7 @@ template <typename T>
 }
 template <>
 [[nodiscard]] inline const ::std::string& GuildAssetOpStatus_Name(GuildAssetOpStatus value) {
-  return ::google::protobuf::internal::NameOfDenseEnum<GuildAssetOpStatus_descriptor, 0, 5>(
+  return ::google::protobuf::internal::NameOfDenseEnum<GuildAssetOpStatus_descriptor, 0, 6>(
       static_cast<int>(value));
 }
 [[nodiscard]] inline bool GuildAssetOpStatus_Parse(
@@ -2509,6 +2510,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GuildAssetOpRecord final : public :
     kLastOutcomeFieldNumber = 24,
     kLastReasonFieldNumber = 25,
     kStreamEpochFieldNumber = 26,
+    kLastSendMsFieldNumber = 29,
   };
   // bytes payload = 12;
   void clear_payload() ;
@@ -2805,11 +2807,21 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GuildAssetOpRecord final : public :
   void _internal_set_stream_epoch(::uint64_t value);
 
   public:
+  // uint64 last_send_ms = 29;
+  void clear_last_send_ms() ;
+  [[nodiscard]] ::uint64_t last_send_ms() const;
+  void set_last_send_ms(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_last_send_ms() const;
+  void _internal_set_last_send_ms(::uint64_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:guildpb.GuildAssetOpRecord)
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<5, 28,
+      ::google::protobuf::internal::TcParseTable<5, 29,
                           0, 84,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
@@ -2866,6 +2878,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GuildAssetOpRecord final : public :
     ::uint32_t last_outcome_;
     ::uint32_t last_reason_;
     ::uint64_t stream_epoch_;
+    ::uint64_t last_send_ms_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -5024,6 +5037,30 @@ inline void GuildAssetOpRecord::set_allocated_resolve_reason(::std::string* PROT
     _impl_.resolve_reason_.Set("", GetArena());
   }
   // @@protoc_insertion_point(field_set_allocated:guildpb.GuildAssetOpRecord.resolve_reason)
+}
+
+// uint64 last_send_ms = 29;
+inline void GuildAssetOpRecord::clear_last_send_ms() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.last_send_ms_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x10000000U);
+}
+inline ::uint64_t GuildAssetOpRecord::last_send_ms() const {
+  // @@protoc_insertion_point(field_get:guildpb.GuildAssetOpRecord.last_send_ms)
+  return _internal_last_send_ms();
+}
+inline void GuildAssetOpRecord::set_last_send_ms(::uint64_t value) {
+  _internal_set_last_send_ms(value);
+  SetHasBit(_impl_._has_bits_[0], 0x10000000U);
+  // @@protoc_insertion_point(field_set:guildpb.GuildAssetOpRecord.last_send_ms)
+}
+inline ::uint64_t GuildAssetOpRecord::_internal_last_send_ms() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.last_send_ms_;
+}
+inline void GuildAssetOpRecord::_internal_set_last_send_ms(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.last_send_ms_ = value;
 }
 
 // -------------------------------------------------------------------

@@ -1,5 +1,8 @@
 #pragma once
 
+#include <type_traits>
+#include <utility>
+
 #include "proto/scene/player_currency.pb.h"
 
 #include "rpc/player_service_interface.h"
@@ -36,42 +39,47 @@ public:
         {
         case 0:
 			{
+            static_assert(std::is_same_v<decltype(std::declval<::GmAddCurrencyResponse&>().mutable_error_message()), ::TipInfoMessage*>,
+                "玩家 RPC 非 Empty 应答必须提供 TipInfoMessage error_message");
             GmAddCurrency(player,
                 static_cast<const ::GmAddCurrencyRequest*>(request),
                 static_cast<::GmAddCurrencyResponse*>(response));
-            TRANSFER_ERROR_MESSAGE(static_cast<::GmAddCurrencyResponse*>(response));
 			}
             break;
         case 1:
 			{
+            static_assert(std::is_same_v<decltype(std::declval<::GmDeductCurrencyResponse&>().mutable_error_message()), ::TipInfoMessage*>,
+                "玩家 RPC 非 Empty 应答必须提供 TipInfoMessage error_message");
             GmDeductCurrency(player,
                 static_cast<const ::GmDeductCurrencyRequest*>(request),
                 static_cast<::GmDeductCurrencyResponse*>(response));
-            TRANSFER_ERROR_MESSAGE(static_cast<::GmDeductCurrencyResponse*>(response));
 			}
             break;
         case 2:
 			{
+            static_assert(std::is_same_v<decltype(std::declval<::GetCurrencyListResponse&>().mutable_error_message()), ::TipInfoMessage*>,
+                "玩家 RPC 非 Empty 应答必须提供 TipInfoMessage error_message");
             GetCurrencyList(player,
                 static_cast<const ::GetCurrencyListRequest*>(request),
                 static_cast<::GetCurrencyListResponse*>(response));
-            TRANSFER_ERROR_MESSAGE(static_cast<::GetCurrencyListResponse*>(response));
 			}
             break;
         case 3:
 			{
+            static_assert(std::is_same_v<decltype(std::declval<::GmBlockCurrencyResponse&>().mutable_error_message()), ::TipInfoMessage*>,
+                "玩家 RPC 非 Empty 应答必须提供 TipInfoMessage error_message");
             GmBlockCurrency(player,
                 static_cast<const ::GmBlockCurrencyRequest*>(request),
                 static_cast<::GmBlockCurrencyResponse*>(response));
-            TRANSFER_ERROR_MESSAGE(static_cast<::GmBlockCurrencyResponse*>(response));
 			}
             break;
         case 4:
 			{
+            static_assert(std::is_same_v<decltype(std::declval<::GmUnblockCurrencyResponse&>().mutable_error_message()), ::TipInfoMessage*>,
+                "玩家 RPC 非 Empty 应答必须提供 TipInfoMessage error_message");
             GmUnblockCurrency(player,
                 static_cast<const ::GmUnblockCurrencyRequest*>(request),
                 static_cast<::GmUnblockCurrencyResponse*>(response));
-            TRANSFER_ERROR_MESSAGE(static_cast<::GmUnblockCurrencyResponse*>(response));
 			}
             break;
         default:

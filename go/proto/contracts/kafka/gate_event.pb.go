@@ -10,6 +10,7 @@ import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	base "proto/common/base"
+	_ "proto/common/options"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -36,9 +37,12 @@ type RoutePlayerEvent struct {
 	// 本次路由决策铸造的归属 epoch(scene_manager INCR player:{id}:owner_epoch 得到)。
 	// 必须随事件下发,节点不得自行读 Redis:两次改派挨近时后到者才持有最新值。
 	// 见 scene-owner-reentry-barrier.md §3.3。
-	OwnerEpoch    uint64 `protobuf:"varint,6,opt,name=owner_epoch,json=ownerEpoch,proto3" json:"owner_epoch,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	OwnerEpoch uint64 `protobuf:"varint,6,opt,name=owner_epoch,json=ownerEpoch,proto3" json:"owner_epoch,omitempty"`
+	// 发起这次路由的登录代次(EnterSceneRequest.login_generation 原样透传)。scene 节点自发的路由为 0。
+	// gate 只用它抬高会话上记的代次,不据此丢弃路由(docs/design/scene-enter-session-fence.md §4)。
+	LoginGeneration uint64 `protobuf:"varint,7,opt,name=login_generation,json=loginGeneration,proto3" json:"login_generation,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *RoutePlayerEvent) Reset() {
@@ -109,6 +113,13 @@ func (x *RoutePlayerEvent) GetHomeZoneId() uint32 {
 func (x *RoutePlayerEvent) GetOwnerEpoch() uint64 {
 	if x != nil {
 		return x.OwnerEpoch
+	}
+	return 0
+}
+
+func (x *RoutePlayerEvent) GetLoginGeneration() uint64 {
+	if x != nil {
+		return x.LoginGeneration
 	}
 	return 0
 }
@@ -314,14 +325,18 @@ func (x *PlayerLeaseExpiredEvent) GetGateInstanceId() string {
 }
 
 // Sent by Login/player_locator to bind a session to Gate.
+// login 经 GateCommand.payload 下发(信封字段照填);payload 为空的旧版 login 只带得到前两个字段与 enter_gs_type。
 type BindSessionEvent struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	SessionId      uint32                 `protobuf:"varint,1,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
 	PlayerId       uint64                 `protobuf:"varint,2,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
 	SessionVersion uint32                 `protobuf:"varint,3,opt,name=session_version,json=sessionVersion,proto3" json:"session_version,omitempty"`
 	EnterGsType    uint32                 `protobuf:"varint,4,opt,name=enter_gs_type,json=enterGsType,proto3" json:"enter_gs_type,omitempty"` // LOGIN_FIRST / LOGIN_RECONNECT / LOGIN_REPLACE
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// 本次登录链铸造的登录代次。gate 在按 lastSceneRoute 补发登录进场之前写进会话:Bind 先于本次路由
+	// 到达时,补发带的必须是本次登录的代次(docs/design/scene-enter-session-fence.md §4)。
+	LoginGeneration uint64 `protobuf:"varint,5,opt,name=login_generation,json=loginGeneration,proto3" json:"login_generation,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *BindSessionEvent) Reset() {
@@ -378,6 +393,13 @@ func (x *BindSessionEvent) GetSessionVersion() uint32 {
 func (x *BindSessionEvent) GetEnterGsType() uint32 {
 	if x != nil {
 		return x.EnterGsType
+	}
+	return 0
+}
+
+func (x *BindSessionEvent) GetLoginGeneration() uint64 {
+	if x != nil {
+		return x.LoginGeneration
 	}
 	return 0
 }
@@ -705,7 +727,7 @@ var File_proto_contracts_kafka_gate_event_proto protoreflect.FileDescriptor
 
 const file_proto_contracts_kafka_gate_event_proto_rawDesc = "" +
 	"\n" +
-	"&proto/contracts/kafka/gate_event.proto\x12\x0fcontracts.kafka\x1a\x1fproto/common/base/message.proto\"\xd2\x01\n" +
+	"&proto/contracts/kafka/gate_event.proto\x12\x0fcontracts.kafka\x1a\x1fproto/common/base/message.proto\x1a/proto/common/options/event_ingress_option.proto\"\x84\x02\n" +
 	"\x10RoutePlayerEvent\x12\x1d\n" +
 	"\n" +
 	"session_id\x18\x01 \x01(\rR\tsessionId\x12$\n" +
@@ -715,16 +737,17 @@ const file_proto_contracts_kafka_gate_event_proto_rawDesc = "" +
 	"\fhome_zone_id\x18\x05 \x01(\rR\n" +
 	"homeZoneId\x12\x1f\n" +
 	"\vowner_epoch\x18\x06 \x01(\x04R\n" +
-	"ownerEpoch\"0\n" +
+	"ownerEpoch\x12)\n" +
+	"\x10login_generation\x18\a \x01(\x04R\x0floginGeneration:\x05\x88\xe6\xd5\x02\x01\"7\n" +
 	"\x0fKickPlayerEvent\x12\x1d\n" +
 	"\n" +
-	"session_id\x18\x01 \x01(\rR\tsessionId\"\x98\x01\n" +
+	"session_id\x18\x01 \x01(\rR\tsessionId:\x05\x88\xe6\xd5\x02\x01\"\x98\x01\n" +
 	"\x17PlayerDisconnectedEvent\x12\x1d\n" +
 	"\n" +
 	"session_id\x18\x01 \x01(\rR\tsessionId\x12\x1b\n" +
 	"\tplayer_id\x18\x02 \x01(\x04R\bplayerId\x12\x17\n" +
 	"\agate_id\x18\x03 \x01(\tR\x06gateId\x12(\n" +
-	"\x10gate_instance_id\x18\x04 \x01(\tR\x0egateInstanceId\"\xd7\x01\n" +
+	"\x10gate_instance_id\x18\x04 \x01(\tR\x0egateInstanceId\"\xde\x01\n" +
 	"\x17PlayerLeaseExpiredEvent\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x1d\n" +
 	"\n" +
@@ -732,13 +755,14 @@ const file_proto_contracts_kafka_gate_event_proto_rawDesc = "" +
 	"\rscene_node_id\x18\x03 \x01(\tR\vsceneNodeId\x12\x19\n" +
 	"\bscene_id\x18\x04 \x01(\x04R\asceneId\x12\x17\n" +
 	"\agate_id\x18\x05 \x01(\tR\x06gateId\x12(\n" +
-	"\x10gate_instance_id\x18\x06 \x01(\tR\x0egateInstanceId\"\x9b\x01\n" +
+	"\x10gate_instance_id\x18\x06 \x01(\tR\x0egateInstanceId:\x05\x88\xe6\xd5\x02\x01\"\xcd\x01\n" +
 	"\x10BindSessionEvent\x12\x1d\n" +
 	"\n" +
 	"session_id\x18\x01 \x01(\rR\tsessionId\x12\x1b\n" +
 	"\tplayer_id\x18\x02 \x01(\x04R\bplayerId\x12'\n" +
 	"\x0fsession_version\x18\x03 \x01(\rR\x0esessionVersion\x12\"\n" +
-	"\renter_gs_type\x18\x04 \x01(\rR\venterGsType\"\x96\x02\n" +
+	"\renter_gs_type\x18\x04 \x01(\rR\venterGsType\x12)\n" +
+	"\x10login_generation\x18\x05 \x01(\x04R\x0floginGeneration:\x05\x88\xe6\xd5\x02\x01\"\x9d\x02\n" +
 	"\x13RedirectToGateEvent\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x1d\n" +
 	"\n" +
@@ -747,21 +771,21 @@ const file_proto_contracts_kafka_gate_event_proto_rawDesc = "" +
 	"\x10target_gate_port\x18\x04 \x01(\rR\x0etargetGatePort\x12#\n" +
 	"\rtoken_payload\x18\x05 \x01(\fR\ftokenPayload\x12'\n" +
 	"\x0ftoken_signature\x18\x06 \x01(\fR\x0etokenSignature\x12%\n" +
-	"\x0etoken_deadline\x18\a \x01(\x03R\rtokenDeadline\"l\n" +
+	"\x0etoken_deadline\x18\a \x01(\x03R\rtokenDeadline:\x05\x88\xe6\xd5\x02\x01\"s\n" +
 	"\x11PushToPlayerEvent\x12\x1d\n" +
 	"\n" +
 	"session_id\x18\x01 \x01(\rR\tsessionId\x128\n" +
-	"\x0fmessage_content\x18\x02 \x01(\v2\x0f.MessageContentR\x0emessageContent\"\xcd\x01\n" +
+	"\x0fmessage_content\x18\x02 \x01(\v2\x0f.MessageContentR\x0emessageContent:\x05\x88\xe6\xd5\x02\x01\"\xd4\x01\n" +
 	"\x17BroadcastToPlayersEvent\x12!\n" +
 	"\fsession_list\x18\x01 \x03(\rR\vsessionList\x128\n" +
 	"\x0fmessage_content\x18\x02 \x01(\v2\x0f.MessageContentR\x0emessageContent\x12.\n" +
 	"\x13session_bitmap_base\x18\x03 \x01(\rR\x11sessionBitmapBase\x12%\n" +
-	"\x0esession_bitmap\x18\x04 \x01(\fR\rsessionBitmap\"l\n" +
+	"\x0esession_bitmap\x18\x04 \x01(\fR\rsessionBitmap:\x05\x88\xe6\xd5\x02\x01\"s\n" +
 	"\x15BroadcastToSceneEvent\x12\x19\n" +
 	"\bscene_id\x18\x01 \x01(\x04R\asceneId\x128\n" +
-	"\x0fmessage_content\x18\x02 \x01(\v2\x0f.MessageContentR\x0emessageContent\"O\n" +
+	"\x0fmessage_content\x18\x02 \x01(\v2\x0f.MessageContentR\x0emessageContent:\x05\x88\xe6\xd5\x02\x01\"V\n" +
 	"\x13BroadcastToAllEvent\x128\n" +
-	"\x0fmessage_content\x18\x01 \x01(\v2\x0f.MessageContentR\x0emessageContentB\x17Z\x15proto/contracts/kafkab\x06proto3"
+	"\x0fmessage_content\x18\x01 \x01(\v2\x0f.MessageContentR\x0emessageContent:\x05\x88\xe6\xd5\x02\x01B\x17Z\x15proto/contracts/kafkab\x06proto3"
 
 var (
 	file_proto_contracts_kafka_gate_event_proto_rawDescOnce sync.Once

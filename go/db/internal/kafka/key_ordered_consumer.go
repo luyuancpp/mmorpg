@@ -722,9 +722,11 @@ const retryPayloadMagicV2 byte = 0x02
 // on-wire retry payload. Format: [magic 1B][seq 8B BE][partition 4B BE][dbTask bytes].
 //
 // partition 必须随载荷携带:重试任务只有回到**原始 Kafka 分区**的 worker,
-// 才能和同一 key 的新消息保持串行。生产端分区是一致性哈希(分区不可用时还会
-// 临时重映射),消费端拿 Key%N 重算通常得到另一个分区 —— 旧实现因此把同一
+// 才能和同一 key 的新消息保持串行。生产端分区按 kafkautil.DBTaskPartition
+// (CRC-32(key) mod N)决定,消费端拿 Key%N 重算得到的通常是另一个分区 —— 旧实现因此把同一
 // 玩家的重试与新写并发跑在两个 goroutine 里,旧 seq 可以覆盖新 seq。
+// 原始分区一律以载荷里记的为准,不用契约函数重算:载荷记的是消息实际所在的分区,
+// 契约被破坏时两者会不一样。
 func wrapRetryPayload(seq uint64, partition int32, taskBytes []byte) []byte {
 	buf := make([]byte, 1+8+4+len(taskBytes))
 	buf[0] = retryPayloadMagicV2
@@ -848,7 +850,7 @@ func publishDBWriteResult(ctx context.Context, redisClient redis.Cmdable, task *
 }
 
 func writeBackDBCache(ctx context.Context, redisClient redis.Cmdable, task *db_proto.DBTask, msg proto.Message) error {
-	// Write-back: update Redis cache after MySQL write (serial per key via Kafka partition)
+	// 写回 Redis 缓存。同一 key 的写在同一分区、同一子 shard 内串行,跨实例由排序锁兜底(见 handleTask)。
 	cacheKey := buildCacheKey(task)
 	data, err := proto.Marshal(msg)
 	if err != nil {
@@ -1209,9 +1211,8 @@ func (c *KeyOrderedKafkaConsumer) consumeOneRetryTask() bool {
 		return true
 	}
 	if !hasPartition {
-		// v1/raw legacy payloads have no trustworthy producer partition. Key%N
-		// is not equivalent to Sarama's hash partitioner, so dispatching them can
-		// race or regress fresh writes. Preserve the payload for operator repair.
+		// v1/raw 遗留载荷没有可信的来源分区。Key%N 不是生产端的分区函数;按契约重算也只能得到
+		// 应在的分区,证明不了原消息实际在的分区。按猜测派发会与新写竞争或回退新写,保留载荷交运维修复。
 		c.moveClaimedRetryToDead(msgBytes, msgBytes, metrics.DeadLetterLegacyPayload,
 			fmt.Sprintf("ORDERING: legacy retry has no proven origin partition taskID=%s key=%d", task.TaskId, task.Key))
 		return true
@@ -1219,8 +1220,8 @@ func (c *KeyOrderedKafkaConsumer) consumeOneRetryTask() bool {
 
 	task.RetryCount++
 
-	// 重试必须路由回**原始 Kafka 分区**的 worker:同 key 的新消息在生产端
-	// 一致性哈希指定的分区上串行,重试只有回到同一个 worker 才不会和新写
+	// 重试必须路由回**原始 Kafka 分区**的 worker:同 key 的新消息在生产端按分区契约
+	// (kafkautil.DBTaskPartition)落到的分区上串行,重试只有回到同一个 worker 才不会和新写
 	// 并发。旧格式没有原始分区,已在上方 fail-closed 隔离,不再用 Key%N 猜测。
 	partition := storedPartition
 	if partition < 0 {
@@ -1275,9 +1276,8 @@ func (w *worker) start(isOfflineExpand bool) {
 		go w.runSubShard(s, isOfflineExpand, &subWg)
 	}
 
-	// Router loop: drain w.taskCh and fan each task out to the right
-	// sub-shard by hash(task.Key). On shutdown, close all sub-channels
-	// so the sub-workers exit.
+	// 路由循环:从 w.taskCh 取任务,按 spreadKey(task.Key) % subShardCount 分发到子 shard(见 subShardIndex)。
+	// 停机时关闭所有子 channel,让子 worker 退出。
 	for {
 		select {
 		case <-w.ctx.Done():
@@ -1415,6 +1415,25 @@ type writeCoalesceKey struct {
 //
 // Every safely completed Kafka message (including superseded ones) is handed
 // to claimAcker; Sarama only receives the contiguous completed prefix.
+//
+// 读屏障的前提(docs/design/db-task-kafka-partition-contract.md「屏障覆盖范围与剩余缺口」):
+//   - 两侧生产者都守分区契约(kafkautil.DBTaskPartition:C++ scene 的写与 login 的读同一个函数);
+//   - 两侧 topic 名相同(login 的 DbTaskTopicForGeneration(登录 zone) == C++ 的 GetDbTaskTopic(home_zone));
+//   - 读发出时,本玩家的写已经进了 Kafka(旧会话还在断线租约内未存盘、或写还滞留在 librdkafka 本地队列时,
+//     读会排在写之前)。
+//
+// 满足前提时,同一玩家的读与写进同一 worker、同一子 shard,按 offset 串行。以下情形不在屏障覆盖范围内:
+//  1. 访客或合服后跨 topic:读走登录 zone 的 topic,写走 home_zone 的 topic。
+//  2. 写已转进 Redis 重试队列,读不会等它。
+//  3. 重试被非属主实例执行。
+//  4. 父键缺失但子表缓存还在(login ensure_player_all_data_async):命中的子表直接用缓存,不发读;
+//     部分命中时拼出来的是新旧混合档。
+//  5. 再平衡排空超时后旧实例仍在执行的写(G1)。
+//
+// 放大效应:publishDBReadResult 会把读结果回写子表缓存({MsgType}:{key},TTL 为 cacheTTL,默认 24h),
+// 上面 1/2/3/5 里读到的旧值因此会延续到缓存过期,并经情形 4 在后续冷登录里被直接复用。
+// 触发条件:父键全量丢失、FLUSH、运维删键会走冷读,屏障有效;AOF 部分回退时父键回到旧值、
+// 走 EXISTS 快路径不发读,与屏障无关,属于 Redis 持久化的范畴。
 func (w *worker) processTaskBatch(batch []*workerTask, isOfflineExpand bool) {
 	if len(batch) == 1 {
 		w.handleTask(batch[0], isOfflineExpand)
@@ -1789,6 +1808,10 @@ func (h *consumerGroupHandler) ConsumeClaim(session sarama.ConsumerGroupSession,
 				}
 				continue
 			}
+
+			// 分区契约观测(db-task-kafka-partition-contract.md「分区函数契约」):只计数、限量打日志,
+			// 不拒绝消息,不改 ack、游标、重试。写不符说明有生产者破坏契约(critical 告警);读不符说明还有旧版 login 在跑。
+			observeProducerPartition(msg, &dbTask, h.consumer.partitionCount)
 
 			// 绝不允许「查不到 worker → MarkMessage 丢弃」:那是把 offset 提交掉
 			// 之后静默丢玩家写入。分区超出配置时按需建 worker(见 ensureWorker)。

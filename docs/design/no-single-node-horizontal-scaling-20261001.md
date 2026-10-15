@@ -173,6 +173,7 @@
   > - 总账写成可执行函数 `Get-MysqlConnectionPlan` / `Get-MysqlConnectionLedger`(`tools/scripts/k8s_deploy.ps1`),输入从服务 yaml 与 manifest 读,部署写路径打印一行 `MySQL connection ledger: …`,超限打 `[MySQLConnectionLedger]OverLimit:` 开头的英文警告(开头这一段不含空格,按它 grep;只警告、不阻断)。
   >   规划档(4 个 zone、每个 go/db 实例打开其余 3 个 zone 的库、Phase 2 未开、route store 按 db_first 计入、运维余量 20)峰值 1620,对 1800 留 180;
   > - 契约测试 `tools/scripts/tests/k8s_deploy_contract.tests.ps1` 新增 9 例(批 A 7、批 B 2),当前文件 89 → 98:钉住「规划峰值 ≤ `max_connections`」、公式自检(复现上面的 920 / 500)、ConfigMap 镜像值与服务 yaml 一致等;
+  >   (2026-10-15 更正注,原句不改)「89 → 98」只是 2026-10-13 落码当时的用例数,之后该文件又加了用例,总数还会变。复验时不按用例数比对,判据以套件末尾汇总行 `total=… pass=… fail=0`(退出码 0)为准;
   > - 池指标 `mmorpg_sql_pool_*{sql_client,pool}`(`go/shared/sqlpoolstats`,label 只有池类别):go/db 在 K8s 上打开 `:9160`,data_service 在 `:9260`;告警文件 `deploy/k8s/mysql-connection-alerts.yaml`;
   > - 额外落点库池拆成 `Placement.ZoneStore*` / `NonZoneStore*` 两组旋钮,加 `ExtraStoreConnMaxIdleSeconds`(默认 60),旧键 `ExtraStore*` 只作回落;`db.yaml` / `config.go` 里「151」的过时注释已更正。
   >

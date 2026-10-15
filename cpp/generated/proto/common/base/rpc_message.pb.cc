@@ -46,11 +46,11 @@ constexpr GameRpcMessage::ParseTableT_ GameRpcMessage::InternalGenerateParseTabl
     {
       PROTOBUF_FIELD_OFFSET(GameRpcMessage, _impl_._has_bits_),
       0, // no _extensions_
-      5, 56,  // max_field_number, fast_idx_mask
+      6, 56,  // max_field_number, fast_idx_mask
       offsetof(ParseTableT_, field_lookup_table),
-      4294967264,  // skipmap
+      4294967232,  // skipmap
       offsetof(ParseTableT_, field_entries),
-      5,  // num_field_entries
+      6,  // num_field_entries
       0,  // num_aux_entries
       offsetof(ParseTableT_, field_names),  // no aux_entries
       class_data,
@@ -78,10 +78,13 @@ constexpr GameRpcMessage::ParseTableT_ GameRpcMessage::InternalGenerateParseTabl
        {32, 3, 0,
         PROTOBUF_FIELD_OFFSET(GameRpcMessage, _impl_.error_)}},
       // uint32 message_id = 5;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GameRpcMessage, _impl_.message_id_), 4>(),
-       {40, 4, 0,
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GameRpcMessage, _impl_.message_id_), 5>(),
+       {40, 5, 0,
         PROTOBUF_FIELD_OFFSET(GameRpcMessage, _impl_.message_id_)}},
-      {::_pbi::TcParser::MiniParse, {}},
+      // uint64 id = 6;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(GameRpcMessage, _impl_.id_), 4>(),
+       {48, 4, 0,
+        PROTOBUF_FIELD_OFFSET(GameRpcMessage, _impl_.id_)}},
       {::_pbi::TcParser::MiniParse, {}},
     }}, {{
       65535, 65535
@@ -95,7 +98,9 @@ constexpr GameRpcMessage::ParseTableT_ GameRpcMessage::InternalGenerateParseTabl
       // .GameErrorCode error = 4;
       {PROTOBUF_FIELD_OFFSET(GameRpcMessage, _impl_.error_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
       // uint32 message_id = 5;
-      {PROTOBUF_FIELD_OFFSET(GameRpcMessage, _impl_.message_id_), _Internal::kHasBitsOffset + 4, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      {PROTOBUF_FIELD_OFFSET(GameRpcMessage, _impl_.message_id_), _Internal::kHasBitsOffset + 5, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      // uint64 id = 6;
+      {PROTOBUF_FIELD_OFFSET(GameRpcMessage, _impl_.id_), _Internal::kHasBitsOffset + 4, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
     }},
     // no aux_entries
     {{
@@ -116,6 +121,7 @@ inline constexpr GameRpcMessage::Impl_::Impl_(
             ::_pbi::ConstantInitialized()),
         type_{static_cast< ::GameMessageType >(0)},
         error_{static_cast< ::GameErrorCode >(0)},
+        id_{::uint64_t{0u}},
         message_id_{0u} {}
 
 template <typename>
@@ -219,16 +225,18 @@ const ::uint32_t
         protodesc_cold) = {
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::GameRpcMessage, _impl_._has_bits_),
-        8, // hasbit index offset
+        9, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::GameRpcMessage, _impl_.type_),
         PROTOBUF_FIELD_OFFSET(::GameRpcMessage, _impl_.request_),
         PROTOBUF_FIELD_OFFSET(::GameRpcMessage, _impl_.response_),
         PROTOBUF_FIELD_OFFSET(::GameRpcMessage, _impl_.error_),
         PROTOBUF_FIELD_OFFSET(::GameRpcMessage, _impl_.message_id_),
+        PROTOBUF_FIELD_OFFSET(::GameRpcMessage, _impl_.id_),
         2,
         0,
         1,
         3,
+        5,
         4,
 };
 
@@ -242,23 +250,25 @@ static const ::_pbi::MessageGlobalsBase* PROTOBUF_NONNULL const
 };
 const char descriptor_table_protodef_proto_2fcommon_2fbase_2frpc_5fmessage_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
-    "\n#proto/common/base/rpc_message.proto\"\206\001"
+    "\n#proto/common/base/rpc_message.proto\"\222\001"
     "\n\016GameRpcMessage\022\036\n\004type\030\001 \001(\0162\020.GameMes"
     "sageType\022\017\n\007request\030\002 \001(\014\022\020\n\010response\030\003 "
     "\001(\014\022\035\n\005error\030\004 \001(\0162\016.GameErrorCode\022\022\n\nme"
-    "ssage_id\030\005 \001(\r*c\n\017GameMessageType\022\013\n\007REQ"
-    "UEST\020\000\022\014\n\010RESPONSE\020\001\022\026\n\022RPC_CLIENT_REQUE"
-    "ST\020\002\022\016\n\nNODE_ROUTE\020\003\022\r\n\tRPC_ERROR\020\004*\211\001\n\r"
-    "GameErrorCode\022\020\n\014RPC_NO_ERROR\020\000\022\017\n\013WRONG"
-    "_PROTO\020\001\022\016\n\nNO_SERVICE\020\002\022\r\n\tNO_METHOD\020\003\022"
-    "\023\n\017INVALID_REQUEST\020\004\022\024\n\020INVALID_RESPONSE"
-    "\020\005\022\013\n\007TIMEOUT\020\006B\rZ\013common/baseb\006proto3"
+    "ssage_id\030\005 \001(\r\022\n\n\002id\030\006 \001(\004*g\n\017GameMessag"
+    "eType\022\013\n\007REQUEST\020\000\022\014\n\010RESPONSE\020\001\022\r\n\tRPC_"
+    "ERROR\020\004\"\004\010\002\020\002\"\004\010\003\020\003*\022RPC_CLIENT_REQUEST*"
+    "\nNODE_ROUTE*\260\001\n\rGameErrorCode\022\020\n\014RPC_NO_"
+    "ERROR\020\000\022\017\n\013WRONG_PROTO\020\001\022\016\n\nNO_SERVICE\020\002"
+    "\022\r\n\tNO_METHOD\020\003\022\023\n\017INVALID_REQUEST\020\004\022\024\n\020"
+    "INVALID_RESPONSE\020\005\022\013\n\007TIMEOUT\020\006\022\022\n\016HANDL"
+    "ER_FAILED\020\007\022\021\n\rREPLY_DROPPED\020\010B\rZ\013common"
+    "/baseb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fbase_2frpc_5fmessage_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fbase_2frpc_5fmessage_2eproto = {
     false,
     false,
-    438,
+    493,
     descriptor_table_protodef_proto_2fcommon_2fbase_2frpc_5fmessage_2eproto,
     "proto/common/base/rpc_message.proto",
     &descriptor_table_proto_2fcommon_2fbase_2frpc_5fmessage_2eproto_once,
@@ -277,14 +287,14 @@ GameMessageType_descriptor() {
   return file_level_enum_descriptors_proto_2fcommon_2fbase_2frpc_5fmessage_2eproto[0];
 }
 PROTOBUF_CONSTINIT const uint32_t GameMessageType_internal_data_[] = {
-    327680u, 0u, };
+    131072u, 32u, 4u, };
 [[nodiscard]] const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL
 GameErrorCode_descriptor() {
   ::google::protobuf::internal::AssignDescriptors(&descriptor_table_proto_2fcommon_2fbase_2frpc_5fmessage_2eproto);
   return file_level_enum_descriptors_proto_2fcommon_2fbase_2frpc_5fmessage_2eproto[1];
 }
 PROTOBUF_CONSTINIT const uint32_t GameErrorCode_internal_data_[] = {
-    458752u, 0u, };
+    589824u, 0u, };
 // ===================================================================
 
 GameRpcMessage::GameRpcMessage(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
@@ -403,7 +413,7 @@ PROTOBUF_NOINLINE void GameRpcMessage::Clear() {
       _impl_.response_.ClearNonDefaultToEmpty();
     }
   }
-  if (BatchCheckHasBit(cached_has_bits, 0x0000001cU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000003cU)) {
     ::memset(&_impl_.type_, 0, static_cast<::size_t>(
         reinterpret_cast<char*>(&_impl_.message_id_) -
         reinterpret_cast<char*>(&_impl_.type_)) + sizeof(_impl_.message_id_));
@@ -466,11 +476,20 @@ PROTOBUF_NOINLINE void GameRpcMessage::Clear() {
   }
 
   // uint32 message_id = 5;
-  if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000020U)) {
     if (this_._internal_message_id() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
           5, this_._internal_message_id(), target);
+    }
+  }
+
+  // uint64 id = 6;
+  if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+    if (this_._internal_id() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          6, this_._internal_id(), target);
     }
   }
 
@@ -499,7 +518,7 @@ PROTOBUF_NOINLINE void GameRpcMessage::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000001fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000003fU)) {
     // bytes request = 2;
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       if (!this_._internal_request().empty()) {
@@ -528,8 +547,15 @@ PROTOBUF_NOINLINE void GameRpcMessage::Clear() {
                       ::_pbi::WireFormatLite::EnumSize(this_._internal_error());
       }
     }
-    // uint32 message_id = 5;
+    // uint64 id = 6;
     if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+      if (this_._internal_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_id());
+      }
+    }
+    // uint32 message_id = 5;
+    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
       if (this_._internal_message_id() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_message_id());
@@ -553,7 +579,7 @@ void GameRpcMessage::MergeImpl(::google::protobuf::MessageLite& to_msg,
   (void)cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000001fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000003fU)) {
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       if (!from._internal_request().empty()) {
         _this->_internal_set_request(from._internal_request());
@@ -583,6 +609,11 @@ void GameRpcMessage::MergeImpl(::google::protobuf::MessageLite& to_msg,
       }
     }
     if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+      if (from._internal_id() != 0) {
+        _this->_impl_.id_ = from._impl_.id_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
       if (from._internal_message_id() != 0) {
         _this->_impl_.message_id_ = from._impl_.message_id_;
       }

@@ -499,8 +499,15 @@ type PlayerDatabase struct {
 	// currency / bag_component 同记录同一次落盘 —— 标记和它产生的资产要么一起在盘上,
 	// 要么一起没有,不允许"资产落了标记没落"(重复发奖)或"标记落了资产没落"(白丢奖励)。
 	SettlementLedger *component.BattleSettlementLedgerComp `protobuf:"bytes,17,opt,name=settlement_ledger,json=settlementLedger,proto3" json:"settlement_ledger,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	// MySQL 行内围栏(docs/design/db-write-fencing-mysql.md §3.2):存储版本元数据,按 (fence_owner_epoch, fence_save_seq)
+	// 字典序比较。只由 go/db 按 DBTask 的 (owner_epoch, save_seq) 盖章写入;C++ 只在加载时读来给存盘发号器播种(§7.2),
+	// 存盘时不以它为业务数据。存量行默认 (0,0) 表示"还没见过带版本的写",不回填。
+	// 2026-10-15 先于条件写落码声明(只占号、加列),让后续加列(收件箱 inbox_ledger 取 20)保持新老库列序一致;
+	// 在 go/db 条件写上线前,这两列只被原样读写,不参与任何判定。
+	FenceOwnerEpoch uint64 `protobuf:"varint,18,opt,name=fence_owner_epoch,json=fenceOwnerEpoch,proto3" json:"fence_owner_epoch,omitempty"`
+	FenceSaveSeq    uint64 `protobuf:"varint,19,opt,name=fence_save_seq,json=fenceSaveSeq,proto3" json:"fence_save_seq,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *PlayerDatabase) Reset() {
@@ -652,12 +659,29 @@ func (x *PlayerDatabase) GetSettlementLedger() *component.BattleSettlementLedger
 	return nil
 }
 
+func (x *PlayerDatabase) GetFenceOwnerEpoch() uint64 {
+	if x != nil {
+		return x.FenceOwnerEpoch
+	}
+	return 0
+}
+
+func (x *PlayerDatabase) GetFenceSaveSeq() uint64 {
+	if x != nil {
+		return x.FenceSaveSeq
+	}
+	return 0
+}
+
 type PlayerDatabase_1 struct {
 	state    protoimpl.MessageState `protogen:"open.v1"`
 	PlayerId uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
 	// Same instrumentation surface as player_database; the data_stress driver
 	// and robot data-stress mode write to whichever table the test addresses.
 	StressTestProbe *component.PlayerStressTestProbe `protobuf:"bytes,2,opt,name=stress_test_probe,json=stressTestProbe,proto3" json:"stress_test_probe,omitempty"`
+	// MySQL 行内围栏,语义同 player_database 的 18 / 19 号(db-write-fencing-mysql.md §3.2)。
+	FenceOwnerEpoch uint64 `protobuf:"varint,3,opt,name=fence_owner_epoch,json=fenceOwnerEpoch,proto3" json:"fence_owner_epoch,omitempty"`
+	FenceSaveSeq    uint64 `protobuf:"varint,4,opt,name=fence_save_seq,json=fenceSaveSeq,proto3" json:"fence_save_seq,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -706,6 +730,20 @@ func (x *PlayerDatabase_1) GetStressTestProbe() *component.PlayerStressTestProbe
 	return nil
 }
 
+func (x *PlayerDatabase_1) GetFenceOwnerEpoch() uint64 {
+	if x != nil {
+		return x.FenceOwnerEpoch
+	}
+	return 0
+}
+
+func (x *PlayerDatabase_1) GetFenceSaveSeq() uint64 {
+	if x != nil {
+		return x.FenceSaveSeq
+	}
+	return 0
+}
+
 var File_proto_common_database_mysql_database_table_proto protoreflect.FileDescriptor
 
 const file_proto_common_database_mysql_database_table_proto_rawDesc = "" +
@@ -750,7 +788,7 @@ const file_proto_common_database_mysql_database_table_proto_rawDesc = "" +
 	"\x16player_centre_database\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x126\n" +
 	"\n" +
-	"scene_info\x18\x02 \x01(\v2\x17.PlayerSceneContextCompR\tsceneInfo:F\x8a\x92\xf4\x01\x16player_centre_database\x92\x92\xf4\x01\tplayer_id\xb2\x92\xf4\x01\tplayer_id\xa8\x93\xf4\x01\x01\xb0\x93\xf4\x01\x04\xb8\x93\xf4\x01\x04\"\xc3\b\n" +
+	"scene_info\x18\x02 \x01(\v2\x17.PlayerSceneContextCompR\tsceneInfo:F\x8a\x92\xf4\x01\x16player_centre_database\x92\x92\xf4\x01\tplayer_id\xb2\x92\xf4\x01\tplayer_id\xa8\x93\xf4\x01\x01\xb0\x93\xf4\x01\x04\xb8\x93\xf4\x01\x04\"\x95\t\n" +
 	"\x0fplayer_database\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12(\n" +
 	"\ttransform\x18\x02 \x01(\v2\n" +
@@ -773,10 +811,14 @@ const file_proto_common_database_mysql_database_table_proto_rawDesc = "" +
 	"\x11mission_component\x18\x0e \x01(\v2\r.QuestAllDataR\x10missionComponent\x12?\n" +
 	"\x11profile_component\x18\x0f \x01(\v2\x12.PlayerProfileCompR\x10profileComponent\x12@\n" +
 	"\x0fasset_op_ledger\x18\x10 \x01(\v2\x18.PlayerAssetOpLedgerCompR\rassetOpLedger\x12H\n" +
-	"\x11settlement_ledger\x18\x11 \x01(\v2\x1b.BattleSettlementLedgerCompR\x10settlementLedger:D\x8a\x92\xf4\x01\x0fplayer_database\x92\x92\xf4\x01\tplayer_id\xb2\x92\xf4\x01\tplayer_id\xe8\x92\xf4\x01\x01\xa8\x93\xf4\x01\x01\xb0\x93\xf4\x01\x04\xb8\x93\xf4\x01\x04\"\xbc\x01\n" +
+	"\x11settlement_ledger\x18\x11 \x01(\v2\x1b.BattleSettlementLedgerCompR\x10settlementLedger\x12*\n" +
+	"\x11fence_owner_epoch\x18\x12 \x01(\x04R\x0ffenceOwnerEpoch\x12$\n" +
+	"\x0efence_save_seq\x18\x13 \x01(\x04R\ffenceSaveSeq:D\x8a\x92\xf4\x01\x0fplayer_database\x92\x92\xf4\x01\tplayer_id\xb2\x92\xf4\x01\tplayer_id\xe8\x92\xf4\x01\x01\xa8\x93\xf4\x01\x01\xb0\x93\xf4\x01\x04\xb8\x93\xf4\x01\x04\"\x8e\x02\n" +
 	"\x11player_database_1\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12B\n" +
-	"\x11stress_test_probe\x18\x02 \x01(\v2\x16.PlayerStressTestProbeR\x0fstressTestProbe:F\x8a\x92\xf4\x01\x11player_database_1\x92\x92\xf4\x01\tplayer_id\xb2\x92\xf4\x01\tplayer_id\xe8\x92\xf4\x01\x01\xa8\x93\xf4\x01\x01\xb0\x93\xf4\x01\x04\xb8\x93\xf4\x01\x04B\x17Z\x15proto/common/databaseb\x06proto3"
+	"\x11stress_test_probe\x18\x02 \x01(\v2\x16.PlayerStressTestProbeR\x0fstressTestProbe\x12*\n" +
+	"\x11fence_owner_epoch\x18\x03 \x01(\x04R\x0ffenceOwnerEpoch\x12$\n" +
+	"\x0efence_save_seq\x18\x04 \x01(\x04R\ffenceSaveSeq:F\x8a\x92\xf4\x01\x11player_database_1\x92\x92\xf4\x01\tplayer_id\xb2\x92\xf4\x01\tplayer_id\xe8\x92\xf4\x01\x01\xa8\x93\xf4\x01\x01\xb0\x93\xf4\x01\x04\xb8\x93\xf4\x01\x04B\x17Z\x15proto/common/databaseb\x06proto3"
 
 var (
 	file_proto_common_database_mysql_database_table_proto_rawDescOnce sync.Once

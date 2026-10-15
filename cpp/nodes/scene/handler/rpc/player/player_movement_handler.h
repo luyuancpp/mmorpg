@@ -1,5 +1,8 @@
 #pragma once
 
+#include <type_traits>
+#include <utility>
+
 #include "proto/scene/player_movement.pb.h"
 
 #include "rpc/player_service_interface.h"
@@ -66,10 +69,11 @@ public:
             break;
         case 3:
 			{
+            static_assert(std::is_same_v<decltype(std::declval<::TeleportRequestC2SResponse&>().mutable_error_message()), ::TipInfoMessage*>,
+                "玩家 RPC 非 Empty 应答必须提供 TipInfoMessage error_message");
             TeleportRequest(player,
                 static_cast<const ::TeleportRequestC2S*>(request),
                 static_cast<::TeleportRequestC2SResponse*>(response));
-            TRANSFER_ERROR_MESSAGE(static_cast<::TeleportRequestC2SResponse*>(response));
 			}
             break;
         case 4:

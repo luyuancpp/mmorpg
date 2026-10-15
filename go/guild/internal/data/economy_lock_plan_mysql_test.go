@@ -52,7 +52,8 @@ package data
 //     SQL 在 assetop 里按表名运行期拼接、没有导出常量,在这里另抄一份反而会与生产漂移。
 //     guild 自己对同一行的守卫点锁(终结退款分支的 sqlLockSeqGuard,死锁复核 C6)是本包常量,已纳入下面的 EXPLAIN 回归。
 //   - 各条**候选普通读**(提前截止的 sqlSelectAccelerateCandidates*、清理的 sqlListCleanupTerminalOps /
-//     sqlListCleanupCounters、事务内建 seq 行前的 sqlSeqRowExists):不加锁,走哪个索引只影响性能不影响锁集。"不带锁定子句"由
+//     sqlListCleanupCounters、事务内建 seq 行前的 sqlSeqRowExists,以及落地恢复的 sqlListPendingByPlayer /
+//     sqlListPendingFactsPage / sqlListAbandonCandidates):不加锁,走哪个索引只影响性能不影响锁集。"不带锁定子句"由
 //     economy_repo_test.go 的 TestEconomyCandidateReadsTakeNoLocks 钉着;真实数据量下的性能计划另行 EXPLAIN。
 //   - 重排 / 毒行自 2026-09-21(G-C2)起包进显式 RC 事务:SQL 常量没变,下面的 sqlRescheduleAssetOp / sqlPoisonAssetOp
 //     断言照旧有效;"是否在事务里"是 TiDB 上的提交方式问题,EXPLAIN 看不出来,由 economy_repo_test.go 的
@@ -139,6 +140,7 @@ func TestEconomyLockingStatementsArePrimaryKeyPointLookups(t *testing.T) {
 	applied := int32(pb.GuildAssetOpStatus_GUILD_ASSET_OP_STATUS_APPLIED)
 	rejected := int32(pb.GuildAssetOpStatus_GUILD_ASSET_OP_STATUS_REJECTED)
 	aborted := int32(pb.GuildAssetOpStatus_GUILD_ASSET_OP_STATUS_ABORTED)
+	abandoned := int32(pb.GuildAssetOpStatus_GUILD_ASSET_OP_STATUS_ABANDONED)
 	outcomeApplied := uint32(assetpb.AssetOpOutcome_ASSET_OP_OUTCOME_APPLIED)
 	outcomeRetry := uint32(assetpb.AssetOpOutcome_ASSET_OP_OUTCOME_RETRY)
 	outcomeUnknown := uint32(assetpb.AssetOpOutcome_ASSET_OP_OUTCOME_UNKNOWN)
@@ -162,11 +164,19 @@ func TestEconomyLockingStatementsArePrimaryKeyPointLookups(t *testing.T) {
 		{"sqlRefundContribution", sqlRefundContribution, []any{uint64(10), guildID, member}, "guild_member", pointWrite},
 		{"sqlDebitContribution", sqlDebitContribution, []any{debit, guildID, member, debit}, "guild_member", pointWrite},
 
-		// guild_asset_op(锁序位置 6):领取 / 重排 / 毒行 / 终结 / 人工终结全是主键 CAS。
+		// guild_asset_op(锁序位置 6):领取 / 重排 / 毒行 / 终结 / 人工终结 / 自动放弃 / 放弃后归还租约全是主键 CAS。
+		// 领取的 last_send_ms 一项不带参数(LastSendMs 契约,见 sqlClaimAssetOp),参数个数不变;
+		// 重排末尾多两个参数 (mayHaveSentFlag, nowMs)。
 		{"sqlClaimAssetOp", sqlClaimAssetOp,
 			[]any{testNowMs + econLeaseMs, token + 1, testNowMs, opID, pending, testNowMs}, guildAssetOpTable, pointWrite},
 		{"sqlRescheduleAssetOp", sqlRescheduleAssetOp,
-			[]any{testNowMs + 5000, uint32(0), outcomeRetry, uint32(0), testNowMs, opID, pending, token}, guildAssetOpTable, pointWrite},
+			[]any{testNowMs + 5000, uint32(0), outcomeRetry, uint32(0), testNowMs, uint32(1), testNowMs, opID, pending, token},
+			guildAssetOpTable, pointWrite},
+		// 自动放弃(落地恢复 §6.3)与放弃判定后的归还租约:以 (op_id, PENDING, lease_token) 为条件,夹具行的令牌就是 token。
+		{"sqlAbandonAssetOp", sqlAbandonAssetOp,
+			[]any{abandoned, testNowMs, testNowMs, opID, pending, token}, guildAssetOpTable, pointWrite},
+		{"sqlReleaseLeaseAssetOp", sqlReleaseLeaseAssetOp,
+			[]any{testNowMs, opID, pending, token}, guildAssetOpTable, pointWrite},
 		{"sqlPoisonAssetOp", sqlPoisonAssetOp,
 			[]any{outcomeUnknown, testNowMs + 3_600_000, testNowMs, opID, token, pending}, guildAssetOpTable, pointWrite},
 		{"sqlFinalizeAssetOp", sqlFinalizeAssetOp,
@@ -183,7 +193,7 @@ func TestEconomyLockingStatementsArePrimaryKeyPointLookups(t *testing.T) {
 		// 清理:终态行的逐行短事务 —— 先点锁(C5)、再点删(单表 DELETE 不接受索引提示,只能靠这里钉住它确实走主键)。
 		{"sqlLockAssetOp(终态行)", sqlLockAssetOp, []any{oldOpID}, guildAssetOpTable, lockRead},
 		{"sqlCleanupTerminalOp", sqlCleanupTerminalOp,
-			[]any{oldOpID, applied, rejected, aborted, testNowMs}, guildAssetOpTable, pointWrite},
+			[]any{oldOpID, applied, rejected, aborted, abandoned, testNowMs}, guildAssetOpTable, pointWrite},
 
 		// guild_player_op_seq(锁序位置 5):终结退款分支的计数行守卫(C6)。
 		{"sqlLockSeqGuard", sqlLockSeqGuard, []any{member, creditStream}, guildPlayerOpSeqTable, lockRead},

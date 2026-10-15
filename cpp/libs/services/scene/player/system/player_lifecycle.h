@@ -1358,6 +1358,10 @@ public:
 	// player_locator 30s lease. This method exposes the saving state for callers
 	// that want to log / reject / wait when the save outruns those mechanisms.
 	//
+	// 「在途」现在也包括 Redis 已落地、但下线收尾还在等本玩家 DBTask 的 Kafka 回执(或因投递失败重存 / 超限保留)
+	// 的那段时间(FinishExitOrAwaitDbTaskAck 的闸门):这期间 UnregisterPlayer 一直挂着,本函数照常返回 true,
+	// 停机 drain 据此继续等待。
+	//
 	// THREADING (Review O3, 2026-05-17): MUST be called from the ECS thread
 	// only. Internally does tlsEcs.GetPlayer(playerId) +
 	// tlsEcs.actorRegistry.any_of<UnregisterPlayer>(...), both of which touch
@@ -1367,6 +1371,23 @@ public:
 	// If you need cross-thread access, post a task to the EventLoop and read
 	// the result back via a future / channel.
 	static bool IsSaveInFlight(Guid playerId);
+
+	// 下线收尾的 DBTask 回执闸门(player_exit::DecideDbTaskGate)。退出存盘已收敛(Redis 已是当前内存)之后,原来直接调
+	// FinishExitAfterPersist 的五个收尾口(落地回调的收敛 / 重存收敛、HandleExitGameNode 的快路径与 rekick、
+	// HandlePlayerSaveRejected)一律改走这里:
+	//   没有在途 DBTask、也不欠 MySQL → FinishExitAfterPersist,返回 true(实体已销毁);
+	//   只有在途 DBTask              → 置 awaitingDbTaskAck,返回 false,等 OnDbTaskDispatchSettled 恢复;
+	//   有投递失败、未到上限          → 按当前内存重存一次(SavePlayerToRedisImpl 不走快路径),返回 false;
+	//                                  无法再重存时(交接已发起)带着 MySQL 落后收尾(exit_unsynced),返回 true;
+	//                                  拒存(持久组件缺失)时 fail-closed 保留实体,返回 false;
+	//   有投递失败、已到上限          → 保留实体,返回 false。
+	// 实体无效或意图组件缺失时沿用旧行为直接收尾、返回 true。返回 true 之后调用方不得再用实体上的任何组件指针。
+	static bool FinishExitOrAwaitDbTaskAck(Guid playerId);
+
+	// DbTaskDispatchSystem::Pump 的回调(只能在 loop 顶层调用):该玩家的 DBTask 落定了(在途归零,或出现了需要重存的失败)。
+	// 实体已不在 → 回收账本条目;实体停在闸门上(awaitingDbTaskAck)且没有未落地的 Redis 存盘 → 核对收敛后
+	// 回到 FinishExitOrAwaitDbTaskAck。只用 GetPlayer / valid / try_get,不改实体的组件集合。
+	static void OnDbTaskDispatchSettled(Guid playerId);
 
 private:
 	// 仅供内存回归驱动真实取证应答入口,不增加产品调用面或替换归属判定。

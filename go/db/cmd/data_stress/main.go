@@ -2,8 +2,11 @@
 // SavePlayerToRedis pipeline (cpp/libs/services/scene/player/system/player_lifecycle.cpp).
 //
 // It produces N monotonically-versioned `player_database` writes per player to
-// the same Kafka topic the production consumer reads from, with the same key
-// (player_id stringified) so the per-key partition affinity is preserved.
+// the same Kafka topic the production consumer reads from.
+//
+// 分区契约:key 用 kafkautil.DBTaskKey(玩家 id 的十进制),分区器用 kafkautil.NewDBTaskPartitioner
+// (CRC-32(key) mod N),与生产 C++ scene 写存盘(librdkafka consistent_random)是同一个函数,
+// 所以同一玩家的压测写与生产 scene 的写落在同一分区(docs/design/db-task-kafka-partition-contract.md)。
 //
 // SEQ ENCODING
 //
@@ -38,7 +41,6 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"strconv"
 	"sync"
 	"sync/atomic"
 	"syscall"
@@ -48,6 +50,7 @@ import (
 	"db/internal/stresstest"
 	dbpb "proto/common/database"
 	taskpb "proto/db"
+	"shared/kafkautil"
 
 	"github.com/IBM/sarama"
 	"github.com/redis/go-redis/v9"
@@ -108,6 +111,9 @@ func main() {
 		cfg.Producer.Retry.Backoff = 200 * time.Millisecond
 		// Idempotent producer requires this:
 		cfg.Net.MaxOpenRequests = 1
+		// 与 C++ scene 写存盘用的是同一个分区函数。不设就是 sarama 默认的 FNV,同一玩家会落到别的分区,
+		// go/db 比较写游标时会把它判为 orderingIncomparable 送进死信。
+		cfg.Producer.Partitioner = kafkautil.NewDBTaskPartitioner
 		cfg.ClientID = "data_stress"
 
 		brokers := splitCSV(*kafkaAddrs)
@@ -186,7 +192,7 @@ func driveOnePlayer(
 	failed *atomic.Int64,
 	dryRun bool,
 ) {
-	playerKey := strconv.FormatUint(playerID, 10)
+	playerKey := kafkautil.DBTaskKey(playerID)
 
 	for seq := uint64(1); seq <= uint64(writesN); seq++ {
 		select {

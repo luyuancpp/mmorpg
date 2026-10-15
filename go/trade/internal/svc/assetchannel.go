@@ -17,7 +17,9 @@ import (
 	dspb "proto/data_service"
 
 	"shared/assetop"
+	"shared/assetopwake"
 	"shared/idsegment"
+	"shared/leader"
 	"shared/safego"
 	"shared/scenenode"
 
@@ -61,6 +63,18 @@ const (
 
 	// assetOpIDWarmTimeout 启动时同步领第一段 op_id 的预算,与 listingIDWarmTimeout 同值。
 	assetOpIDWarmTimeout = 5 * time.Second
+
+	// persistedLedgerReadTimeout 离线读已落盘账本(data_service.GetPlayerAssetOpLedger)的单次上限,与 guild 同值
+	// (docs/design/guild-phase2/07-rollback-fail-closed.md §7.8.3)。调用方传入的是投递预算的剩余部分,
+	// 读账本只是"可能省一次卡死"的优化,不值得吃掉其中的大头;data_service 一次 Redis GET 远小于它。
+	persistedLedgerReadTimeout = 300 * time.Millisecond
+
+	// maintenanceLeaderKey 是"资产通道维护(日对账 + 自动放弃)"选主锁的键,放在 SharedRedis(全体副本共享),
+	// 与 guild 的 guild:assetop:maintenance:leader 同一个命名风格。值是竞选者标识 + 随机串,排障时 GET 一眼看出谁在跑。
+	maintenanceLeaderKey = "trade:assetop:maintenance:leader"
+
+	// assetOpCleanupPoint 是终态行清理 goroutine 的 safego 点位名(safego_panic_total 的 label,必须是常量)。
+	assetOpCleanupPoint = "trade.asset_op_cleanup"
 )
 
 // ErrAssetSecretMissing:没配 AssetOpSecretEnv,或密钥短于 32 字节。
@@ -87,10 +101,25 @@ type AssetChannel struct {
 	OpIDs *idsegment.Client
 	// Pipeline 入队 + 重投循环的门面;密钥缺失时为 nil。
 	Pipeline *reconcile.Pipeline
+	// Wake 落地唤醒订阅(shared/assetopwake,设计 §5.3):订 SharedRedis 上的 assetop:wake,
+	// 把玩家落地交给 Pipeline.WakePlayer。AssetOp.Wake 显式关闭时为 nil(nil 接收者的 Start / Stop 安全)。
+	Wake *assetopwake.Subscriber
+
+	// maintenance 是"日对账 + 自动放弃"(Pipeline.RunMaintenance,设计 §6.2 / §6.3)的选主器;
+	// 对账与放弃都关着时为 nil(不竞选,省一把锁)。构造后只读。
+	maintenance *leader.Elector
 
 	startOnce sync.Once
 	stopOnce  sync.Once
 	stopLoops context.CancelFunc
+
+	// mu 只保护 closed 与 Start 里的 wg.Add:让 Start 与 Close 无论怎么交错都不会在 wg.Wait 之后再 wg.Add
+	// (WaitGroup 不允许 Add 与 Wait 并发)。closed 之后 Start 是空操作。
+	mu     sync.Mutex
+	closed bool
+	// wg 记维护 goroutine(选主 + RunMaintenance)。Close 必须等它:放弃那一行的提交走 assetop 的落库预留,
+	// 卸任时的释放锁也要用 SharedRedis,两者都必须早于关 Redis / 关 DB。
+	wg sync.WaitGroup
 }
 
 // Enabled 报告资产通道是否可用(能签名 = 能真的发出资产 RPC)。
@@ -171,25 +200,169 @@ func newAssetChannel(c config.Config, db *sql.DB, ds dspb.DataServiceClient) (*A
 		Caller:  ch.Caller,
 		OpIDs:   opIDs,
 		Metrics: assetMetrics,
+		// 落地恢复(docs/design/landing-recovery-sync-digest.md §6.4,与 guild 同口径):
+		//   - Ledger:离线读已落盘账本,也是自动放弃"账本确定未见"那条证据的唯一来源;
+		//   - Locator:自动放弃前重新解析位置,与 Caller 同一个 Locator(同一份位置键、同一份节点镜像,
+		//     "有没有位置"与投递看到的是同一件事);
+		//   - Recovery:停放档 / 自动放弃 / 日对账的参数。
+		// 三者都只能在这里(任何 goroutine 读 Loop 之前)交给 reconcile.New。
+		Ledger:   persistedLedger(ds),
+		Locator:  locator,
+		Recovery: recoveryFrom(c.AssetOp),
 	})
 	if err != nil {
-		// 到这里只剩"循环参数非法"一种可能,那是代码里的常量写错了,必须炸在启动。
+		// 循环常量写错,或落地恢复参数越过 assetop 的硬边界(config.Validate 已先拦一道),都必须炸在启动。
 		ch.Close()
 		return nil, err
 	}
 	ch.Pipeline = pipeline
+
+	// 落地唤醒(设计 §5.3)。订的是 SharedRedis:scene 在玩家进场完成时向同一实例 PUBLISH assetop:wake <player_id>
+	// (位置键 player:{id}:location 也在这里)。实例指错的表现是永远收不到唤醒、只剩原退避,且不报错。
+	// counter 必须是 Loop 用的同一个 assetop.Metrics:assetop_wake_total 在一个注册表里只能注册一次,
+	// 订阅端与 Loop.WakePlayer 各管一段 result。去重键 assetop:wake:trade:{player_id},与 guild 互不去重。
+	if c.AssetOp.Wake.On() {
+		wake, err := assetopwake.New(rdb, wakeConfigFrom(c.AssetOp.Wake), pipeline, assetMetrics)
+		if err != nil {
+			ch.Close()
+			return nil, fmt.Errorf("trade: 落地唤醒订阅参数非法(AssetOp.Wake): %w", err)
+		}
+		ch.Wake = wake
+	} else {
+		logx.Info("[trade] AssetOp.Wake.Enabled=false: landing wake not subscribed; pending rows of returning players " +
+			"wait for their own backoff (up to OfflineBackoffMs when parked)")
+	}
+
+	// 日对账 + 自动放弃只在选主当选的一个副本上跑(设计 §6.2):对账只读、放弃靠 Claim CAS 与令牌互斥,
+	// 多副本同时跑不会出错,但按类 gauge 会有多份、候选扫描会重复,告警 max(...) 的口径也会被搅乱。
+	if pipeline.MaintenanceEnabled() {
+		id := maintenanceLeaderID()
+		ch.maintenance = leader.New(leader.NewGoRedisStore(rdb), maintenanceLeaderKey, leader.Options{
+			ID: id,
+			OnStateChange: func(leading bool) {
+				if leading {
+					logx.Infof("[trade] Asset channel maintenance leader acquired (pending audit + automatic abandon run on this replica) id=%s", id)
+					return
+				}
+				logx.Infof("[trade] Asset channel maintenance leader released id=%s", id)
+			},
+		})
+	} else {
+		logx.Info("[trade] Asset channel maintenance disabled (AssetOp.AuditIntervalMs=0 and AssetOp.AbandonAfterDays=0): " +
+			"no leader election, no pending audit, no automatic abandon")
+	}
 	return ch, nil
 }
 
-// Start 起 etcd 节点镜像与重投循环。ctx 取消即两者退出;重复调用只生效一次。
+// persistedLedger 建离线读账本(assetop.DataServiceLedger)。没有 data_service 客户端时回 **nil 接口**
+// (不是装着 nil 指针的接口):reconcile.New 据此不挂 Loop.Ledger,离线读账本与自动放弃都不运行(fail-closed);
+// 长期离线玩家的行照常退避重投,玩家上线后由在线投递终结(不变量 I7)。
+// trade 的 NewServiceContext 无条件拨 data_service(号段也要它),生产上走不到 nil 分支。
+func persistedLedger(ds dspb.DataServiceClient) assetop.LedgerReader {
+	if ds == nil {
+		logx.Info("[trade] data_service client absent: asset redelivery loop will not read persisted ledger (Loop.Ledger=nil); " +
+			"automatic abandon will not run")
+		return nil
+	}
+	return &assetop.DataServiceLedger{Client: ds, Timeout: persistedLedgerReadTimeout}
+}
+
+// recoveryFrom 把 AssetOp 的落地恢复参数换算成 reconcile.Recovery(停放档 / 自动放弃 / 日对账),
+// 与 guild 的 svc.LoopConfigFrom 对应的那几项逐项同形;0 = 关闭的语义两边一致。
+// 合法性由 assetop.NewLoop 校验;config.Validate 已在 Enabled 时按同形约束先拦一道。
+func recoveryFrom(c config.AssetOpConf) reconcile.Recovery {
+	return reconcile.Recovery{
+		OfflineAfterAttempts: uint32(max(c.OfflineAfterAttempts, 0)),
+		OfflineBackoff:       msToDuration(c.OfflineBackoffMs),
+		AbandonAfter:         time.Duration(c.AbandonAfterDays) * 24 * time.Hour,
+		AbandonSafetyGap:     msToDuration(c.AbandonSafetyGapMs),
+		AbandonBatch:         c.AbandonBatch,
+		AbandonInterval:      msToDuration(c.AbandonIntervalMs),
+		AuditInterval:        msToDuration(c.AuditIntervalMs),
+	}
+}
+
+// wakeConfigFrom 把 AssetOp.Wake 换算成 assetopwake.Config。并发与超时取生效值(没写 = assetopwake 默认);
+// 去重窗口不开放配置,留 0 让 assetopwake 取 DefaultDedupTTL(同 guild)。Service 进去重键,取本服务的调用方名。
+func wakeConfigFrom(w config.AssetOpWakeConf) assetopwake.Config {
+	return assetopwake.Config{
+		Service:     AssetOpCaller,
+		Concurrency: w.EffectiveConcurrency(),
+		WakeTimeout: w.EffectiveTimeout(),
+	}
+}
+
+// cleanupConfFrom 把 AssetOp 的清理参数换算成 data.CleanupConf(配置名与 guild 相同)。
+func cleanupConfFrom(c config.AssetOpConf) data.CleanupConf {
+	return data.CleanupConf{
+		Interval:          time.Duration(c.CleanupIntervalMinutes) * time.Minute,
+		TerminalRetention: time.Duration(c.TerminalRetentionDays) * 24 * time.Hour,
+	}
+}
+
+func msToDuration(ms int) time.Duration {
+	return time.Duration(ms) * time.Millisecond
+}
+
+// maintenanceLeaderID 是维护选主的竞选者标识,只进锁值前缀与日志(leader.Options.ID)。
+// trade 在注册 etcd 之前就要起维护(node_uuid 还没有),所以用主机名(K8s 下即 Pod 名);取不到时退回调用方名 ——
+// 锁值里另有每次竞选新生成的随机串,标识重复不影响属主校验。
+func maintenanceLeaderID() string {
+	if host, err := os.Hostname(); err == nil && host != "" {
+		return host
+	}
+	return AssetOpCaller
+}
+
+// StartAssetOpCleanup 起终态行清理 goroutine(trade.asset_op_cleanup,对齐 guild 的 startAssetOpCleanup),
+// 返回的 stop 取消它并**等它退出**:清理语句跑在 MySQL 上,必须在 svcCtx.Stop 关库之前停下。
+//
+// 与 AssetOp.Enabled 独立(同 guild):通道关着时历史终态行照样要清,所以它自己建一个只用于清理的 AssetOpRepo
+// (不拨共享 Redis、不建节点镜像)。只删保留期外的 APPLIED / REJECTED / ABORTED / ABANDONED,
+// PENDING 与 APPLIED_PARTIAL 永不删(data.AssetOpRepo.CleanupTerminalOps)。调用方只在 AssetOp.CleanupEnabled 时调用,
+// 且必须在建表(ensureSchema)之后。
+func StartAssetOpCleanup(db *sql.DB, c config.AssetOpConf) (stop func(), err error) {
+	if db == nil {
+		return nil, errors.New("trade: 终态资产指令清理缺 MySQL 连接池")
+	}
+	repo, err := data.NewAssetOpRepo(db, constants.StoreOpTimeout)
+	if err != nil {
+		return nil, fmt.Errorf("trade: 终态资产指令清理装配失败: %w", err)
+	}
+	conf := cleanupConfFrom(c)
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan struct{})
+	safego.Go(assetOpCleanupPoint, func() {
+		// close 放在 defer 里:safego 兜住 panic 时它照样执行,stop 不会永远等下去。
+		defer close(done)
+		repo.RunCleanup(ctx, conf)
+	})
+	logx.Infof("[trade] Asset cleanup started: goroutine %s interval=%v terminal_retention=%v",
+		assetOpCleanupPoint, conf.Interval, conf.TerminalRetention)
+	return func() {
+		cancel()
+		<-done
+	}, nil
+}
+
+// Start 起 etcd 节点镜像与重投循环,以及(装配了的话)维护选主与落地唤醒订阅。ctx 取消即全部退出;
+// 重复调用只生效一次;Close 之后再调是空操作。
 //
 // 顺序:先起 watcher 再起循环。反过来也能工作(镜像没同步时 Resolve 回 node_unknown,
-// 循环按退避重来),只是白跑一轮。
+// 循环按退避重来),只是白跑一轮。唤醒订阅最后起:它调的 Loop.WakePlayer 与 Tick 共用 Workers 预算,
+// 早起晚起都不改变任何正确性论证(设计 L-4)。
+// 维护在当选时以领导权 ctx 跑 RunMaintenance(启动先对账一轮,之后按间隔对账 / 放弃),丢锁或 ctx 取消即返回、
+// 带属主校验释放锁(leader.Elector.Run 的收尾,自带 2s 预算 —— 所以 Close 必须等它、且早于关 Redis)。
 func (a *AssetChannel) Start(ctx context.Context, etcd *clientv3.Client) {
 	if a == nil {
 		return
 	}
 	a.startOnce.Do(func() {
+		a.mu.Lock()
+		defer a.mu.Unlock()
+		if a.closed {
+			return
+		}
 		loopCtx, cancel := context.WithCancel(ctx)
 		a.stopLoops = cancel
 		safego.Go("trade.scenenode.watcher", func() { a.Watcher.Run(loopCtx, etcd) })
@@ -202,10 +375,25 @@ func (a *AssetChannel) Start(ctx context.Context, etcd *clientv3.Client) {
 			return
 		}
 		a.Pipeline.Start(loopCtx)
+		if a.maintenance != nil {
+			a.wg.Add(1)
+			// wg.Done 放在 fn 自己的 defer 里:safego 兜住 panic 时 defer 照样执行,Close 不会永远等下去。
+			safego.Go("trade.asset_op_maintenance", func() {
+				defer a.wg.Done()
+				a.maintenance.Run(loopCtx, a.Pipeline.RunMaintenance)
+			})
+		}
+		a.Wake.Start(loopCtx) // nil 接收者安全:Wake 关闭时什么都不做
+		logx.Infof("[trade] Asset channel started: maintenance_election=%t landing_wake=%t",
+			a.maintenance != nil, a.Wake != nil)
 	})
 }
 
-// Close 停循环并关连接。幂等;调用方须保证它先于 etcd 客户端的关闭。
+// Close 停循环并关连接。幂等;调用方须保证它先于 etcd 客户端、MySQL 的关闭。
+//
+// 落地唤醒订阅与维护 goroutine 会被**等到退出**才往下关连接:在途唤醒用的是 Loop 与连接缓存,最坏再等
+// WakeTimeout 加落库预留(assetopwake.Subscriber.Stop);放弃那一行的提交走 assetop 的落库预留;
+// 维护卸任时带属主校验释放锁(≤ 2s)要用 SharedRedis。重投循环与节点镜像仍是取消即走、不等(既有行为)。
 //
 // 在途的资产 RPC 被连接关闭打断不会丢数据:那一行仍是 PENDING,下次循环照常重投,
 // scene 见过的 seq 只会把原结局再答一遍(不变量 I2)。
@@ -214,9 +402,15 @@ func (a *AssetChannel) Close() {
 		return
 	}
 	a.stopOnce.Do(func() {
-		if a.stopLoops != nil {
-			a.stopLoops()
+		a.mu.Lock()
+		a.closed = true
+		stopLoops := a.stopLoops
+		a.mu.Unlock()
+		if stopLoops != nil {
+			stopLoops()
 		}
+		a.Wake.Stop() // 等在途唤醒结束;nil 接收者与没 Start 过都安全
+		a.wg.Wait()   // 等维护 goroutine 卸任、释放选主锁
 		if a.OpIDs != nil {
 			a.OpIDs.Close()
 		}

@@ -16,6 +16,7 @@ import (
 
 	tradepb "proto/trade"
 
+	"shared/assetopwake"
 	"shared/idsegment"
 
 	"github.com/zeromicro/go-zero/core/service"
@@ -195,17 +196,44 @@ type AssetOpConf struct {
 	TerminalRetentionDays int `json:",default=30"`
 }
 
-// AssetOpWakeConf 是落地唤醒订阅的参数(shared/assetopwake.Config)。三项都可缺失,0 = 取 assetopwake 的默认值
-// (并发 4、去重 5 秒、单次唤醒 10 秒)—— 默认值只在 assetopwake 一处,这里不抄字面量,整段缺失与写 0 同义。
+// AssetOpWakeConf 是落地唤醒订阅的参数(shared/assetopwake.Config),与 guild 的同名结构同键同默认。
+//
+// 三个键都是 optional、默认值走方法(理由同 guild):整段可选的嵌套结构缺失时 go-zero 不下钻、不回填 default,
+// 要做到"Wake 段没写 = 开、并发 4、超时 10s",默认值只能由读取方法给出;Enabled 用 *bool 区分"没写"(nil = 开)
+// 与"显式写 false"(关)。默认值的唯一来源是 shared/assetopwake 的 DefaultConcurrency / DefaultWakeTimeout,
+// 这里不另抄数字。跨副本去重窗口不开放配置(固定 assetopwake.DefaultDedupTTL,对齐 scene 侧 5 秒合并窗口,同 guild)。
 // 订阅只在 AssetOp.Enabled 时装配(svc.newAssetChannel),订的是 SharedRedis 那一个实例(scene 发布在同一实例)。
 type AssetOpWakeConf struct {
-	// Concurrency 本副本同时在跑的唤醒数上限;满了直接丢(唤醒只是提示)。[0, 64]。
+	// Enabled:nil(没写)或 true = 订阅;显式 false = 不订阅,PENDING 行只按原退避 / 停放档重投(只慢不错)。
+	Enabled *bool `json:",optional"`
+	// Concurrency 本副本同时在跑的唤醒数上限,满了直接丢(唤醒只是提示);0(没写)= assetopwake.DefaultConcurrency(4),
+	// 否则 [1, 64]。
 	Concurrency int `json:",optional"`
-	// DedupTTLMs 跨副本去重键的存活时间;0 或 [1000, 60000]。
-	DedupTTLMs int `json:",optional"`
-	// TimeoutMs 每次唤醒的独立超时;0 或 [5000, 60000]。下限必须大于单行预算 OpBudget(2500ms,reconcile 常量):
-	// 剩余预算不够一整个 OpBudget 时唤醒不再开始新行,配得比它小则每次唤醒都回错误、静默退化成"从不唤醒"。
+	// TimeoutMs 每次唤醒的独立超时;0(没写)= assetopwake.DefaultWakeTimeout(10s),否则 [5000, 60000]。
+	// 下限必须大于单行预算 OpBudget(2500ms,reconcile 常量):剩余预算不够一整个 OpBudget 时唤醒不再开始新行,
+	// 配得比它小则每次唤醒都回错误、静默退化成"从不唤醒";上限是关停时最坏要等的时长。
 	TimeoutMs int `json:",optional"`
+}
+
+// On 报告是否订阅落地唤醒:没写 = 开。
+func (w AssetOpWakeConf) On() bool {
+	return w.Enabled == nil || *w.Enabled
+}
+
+// EffectiveConcurrency 是生效的并发上限;0(没写)取 assetopwake 的默认值。
+func (w AssetOpWakeConf) EffectiveConcurrency() int {
+	if w.Concurrency == 0 {
+		return assetopwake.DefaultConcurrency
+	}
+	return w.Concurrency
+}
+
+// EffectiveTimeout 是生效的单次唤醒预算;0(没写)取 assetopwake 的默认值。
+func (w AssetOpWakeConf) EffectiveTimeout() time.Duration {
+	if w.TimeoutMs == 0 {
+		return assetopwake.DefaultWakeTimeout
+	}
+	return time.Duration(w.TimeoutMs) * time.Millisecond
 }
 
 // 落地恢复与清理参数的合法区间。来历:
@@ -227,8 +255,6 @@ const (
 	minAuditIntervalMs        = 60000
 	maxAuditIntervalMs        = 7 * 86400000
 	maxWakeConcurrency        = 64
-	minWakeDedupTTLMs         = 1000
-	maxWakeDedupTTLMs         = 60000
 	minWakeTimeoutMs          = 5000
 	maxWakeTimeoutMs          = 60000
 	minCleanupIntervalMinutes = 1
@@ -270,12 +296,12 @@ func (a AssetOpConf) validateRecovery() error {
 			a.AuditIntervalMs, minAuditIntervalMs, maxAuditIntervalMs)
 	}
 	w := a.Wake
-	if w.Concurrency < 0 || w.Concurrency > maxWakeConcurrency {
-		return fmt.Errorf("AssetOp.Wake.Concurrency(%d)必须在 [0, %d] 内(0 = 默认)", w.Concurrency, maxWakeConcurrency)
+	if !w.On() {
+		return nil // 不订阅时其余两项没有消费者,不校验(同 guild)
 	}
-	if w.DedupTTLMs != 0 && (w.DedupTTLMs < minWakeDedupTTLMs || w.DedupTTLMs > maxWakeDedupTTLMs) {
-		return fmt.Errorf("AssetOp.Wake.DedupTTLMs(%d)必须为 0(默认)或在 [%d, %d] 内",
-			w.DedupTTLMs, minWakeDedupTTLMs, maxWakeDedupTTLMs)
+	if w.Concurrency < 0 || w.Concurrency > maxWakeConcurrency {
+		return fmt.Errorf("AssetOp.Wake.Concurrency(%d)必须为 0(默认 %d)或在 [1, %d] 内",
+			w.Concurrency, assetopwake.DefaultConcurrency, maxWakeConcurrency)
 	}
 	if w.TimeoutMs != 0 && (w.TimeoutMs < minWakeTimeoutMs || w.TimeoutMs > maxWakeTimeoutMs) {
 		return fmt.Errorf("AssetOp.Wake.TimeoutMs(%d)必须为 0(默认)或在 [%d, %d] 内:必须大于单行预算 OpBudget",

@@ -91,6 +91,9 @@ bool KafkaProducer::createProducer(const std::string& brokers) {
 		LOG_ERROR << "Kafka producer: failed to pin partitioner=consistent_random (db_task partition contract): "
 			<< errstr;
 	}
+	// message.timeout.ms 刻意保持 librdkafka 缺省 300000(本仓任何地方都没有覆盖它)。scene 的 DBTask 投递账本
+	// 用 330s 的票据超时兜底「回执始终不来」(db_task_dispatch_system.cpp 的 kTicketTimeout),它依赖这个值:
+	// 改这里必须同步改那边,且那边必须严格大于这里 —— 否则迟到的成功回执会被先判成失败(只多一次重存,不丢数据)。
 
 	std::unique_ptr<RdKafka::Producer> producer(RdKafka::Producer::create(conf.get(), errstr));
 	if (!producer) {
@@ -111,9 +114,16 @@ bool KafkaProducer::ensureInitialized() {
 }
 
 KafkaProducer::~KafkaProducer() {
+	// 第一件事是注销监听器:本对象是 thread_local,监听器背后的记账状态(scene 的 DbTaskDispatch 账本)
+	// 也是 thread_local,两者的析构顺序不归这里管。注销之后下面 flush 派发的回执只计数、记日志,不再回调。
+	deliveryListener_ = nullptr;
 	// broker 不可用时不允许进程析构无限挂起;正常停机的
 	// KafkaManager 也复用同一条有界 flush 路径。
 	flush(std::chrono::seconds(5));
+	if (const std::size_t unresolved = deliveryTracker_.Size(); unresolved > 0) {
+		LOG_ERROR << "[Kafka] producer destroyed with " << unresolved
+			<< " tracked messages still awaiting delivery reports";
+	}
 	// 收尾:本线程再也不会有 send() 来驱动补报了。析构里的 flush() 本来就会打日志,这里再打一行是安全的。
 	if (const std::uint64_t suppressed = failureLogThrottle_.TakeSuppressed(); suppressed > 0) {
 		logSuppressedSummary(suppressed);
@@ -121,7 +131,7 @@ KafkaProducer::~KafkaProducer() {
 }
 
 RdKafka::ErrorCode KafkaProducer::produceOnce(const std::string& topic, const std::string& message,
-	const std::string& key, int32_t partition) {
+	const std::string& key, int32_t partition, void* msgOpaque) {
 	if (!producer_) {
 		return RdKafka::ERR__STATE;
 	}
@@ -135,12 +145,39 @@ RdKafka::ErrorCode KafkaProducer::produceOnce(const std::string& topic, const st
 		key.empty() ? nullptr : const_cast<char*>(key.c_str()),
 		key.size(),
 		0,
-		nullptr, nullptr);
+		nullptr, msgOpaque);
 }
 
 RdKafka::ErrorCode KafkaProducer::send(const std::string& topic, const std::string& message,
 	const std::string& key, int32_t partition) {
+	return sendImpl(topic, message, key, partition, /*correlationId=*/0);
+}
+
+RdKafka::ErrorCode KafkaProducer::sendTracked(const std::string& topic, const std::string& message,
+	const std::string& key, std::uint64_t correlationId, int32_t partition) {
+	return sendImpl(topic, message, key, partition, correlationId);
+}
+
+void KafkaProducer::setDeliveryListener(DeliveryListener listener) {
+	deliveryListener_ = std::move(listener);
+}
+
+std::size_t KafkaProducer::trackedInFlight() const {
+	return deliveryTracker_.Size();
+}
+
+void KafkaProducer::notifyDelivery(const DeliveryReport& report) {
+	if (deliveryListener_) {
+		deliveryListener_(report);
+	}
+}
+
+RdKafka::ErrorCode KafkaProducer::sendImpl(const std::string& topic, const std::string& message,
+	const std::string& key, int32_t partition, std::uint64_t correlationId) {
 	using kafka_producer_policy::ProduceAction;
+
+	// 关联号编码在指针值里,不指向任何对象;0 = nullptr = 不跟踪(与改动前的 send() 逐字节相同)。
+	void* const msgOpaque = reinterpret_cast<void*>(static_cast<std::uintptr_t>(correlationId));
 
 	// 上一次 poll() 里的投递回执报告了 fatal:先把作废的实例换掉再发,别把这一条也搭进去。
 	if (fatalPending_) {
@@ -154,20 +191,21 @@ RdKafka::ErrorCode KafkaProducer::send(const std::string& topic, const std::stri
 		return RdKafka::ERR__STATE;
 	}
 
-	RdKafka::ErrorCode resp = produceOnce(topic, message, key, partition);
+	RdKafka::ErrorCode resp = produceOnce(topic, message, key, partition, msgOpaque);
 	switch (kafka_producer_policy::ClassifyProduceResult(resp)) {
 	case ProduceAction::kAccepted:
 		break;
 	case ProduceAction::kRetryAfterPoll:
 		// 队列满:非阻塞地取走已有结果的回执腾位置,再原样重试一次(见 kafka_producer_policy.h)。
+		// 这次 poll 派发的是**别的**消息的回执:本条还没入队,关联号也还没登记。
 		producer_->poll(0);
-		resp = produceOnce(topic, message, key, partition);
+		resp = produceOnce(topic, message, key, partition, msgOpaque);
 		break;
 	case ProduceAction::kRebuildProducer:
 		// 这个实例已经作废。重建成功就把当前这条在新实例上重试一次;
 		// 处于重建冷却期或重建失败时 resp 保持 ERR__FATAL,由调用方按失败处理。
 		if (rebuildAfterFatal("produce")) {
-			resp = produceOnce(topic, message, key, partition);
+			resp = produceOnce(topic, message, key, partition, msgOpaque);
 		}
 		break;
 	case ProduceAction::kReject:
@@ -181,6 +219,9 @@ RdKafka::ErrorCode KafkaProducer::send(const std::string& topic, const std::stri
 			+ " bytes=" + std::to_string(message.size()) + " err=" + RdKafka::err2str(resp));
 	}
 	else {
+		// 入队成功才登记关联号,而且**必须在下面的 poll() 之前**:这条消息的回执最早就在那次 poll 里派发,
+		// 登记晚了 dr_cb 里 Resolve 不到,回执就丢了(调用方只能等超时兜底)。
+		deliveryTracker_.Accept(correlationId);
 		// Producer ack per message — fires at steady-state Kafka write rate
 		// (stress-1zone-45k saw 200+/s, which would burn ~17M INFO lines/day
 		// on dev hosts). Keep the breadcrumb at DEBUG so it's available when
@@ -190,8 +231,8 @@ RdKafka::ErrorCode KafkaProducer::send(const std::string& topic, const std::stri
 
 	poll(); // Ensure delivery callbacks are dispatched
 
-	// 限流压掉的条数,在「窗口过期、之后不再失败」时靠这里补报:本线程没有独立的生产端轮询,
-	// send() 是唯一的驱动点,回执也只在上面这次 poll() 里派发。放在 poll() 之后,
+	// 限流压掉的条数,在「窗口过期、之后不再失败」时靠这里补报:send() 是唯一的补报驱动点
+	// (scene 的 DbTaskDispatchSystem::Pump 也会定时 poll() 派发回执,但不补报限流)。放在 poll() 之后,
 	// 让本次派发的回执先计完数。先用 PendingSuppressed() 预检,无失败时不必每条消息取一次时钟。
 	if (failureLogThrottle_.PendingSuppressed() > 0) {
 		const std::uint64_t suppressed =
@@ -260,6 +301,17 @@ bool KafkaProducer::rebuildAfterFatal(const char* trigger) {
 		if (const std::uint64_t suppressed = failureLogThrottle_.TakeSuppressed(); suppressed > 0) {
 			logSuppressedSummary(suppressed);
 		}
+		// 被跟踪的消息要「恰好一次回执」:purge 之后已经逐条经 dr_cb 回执的在上面的 flush 里 Resolve 掉了;
+		// 剩下的(drain 预算用完还没派发的)在销毁旧实例时会被静默丢弃 —— rd_kafka_destroy 不回调 dr_cb。
+		// 这里为它们合成失败回执(ERR__PURGE_QUEUE,synthesized = true),必须在 reset 之前:之后再也没有
+		// 任何回执能对上这些关联号,调用方就只能干等超时兜底。DeliveryFailed 已由上面的 outq_len 补记,这里不重复计。
+		if (const auto orphaned = deliveryTracker_.TakeAll(); !orphaned.empty()) {
+			LOG_ERROR << "[Kafka] " << orphaned.size() << " tracked messages lost their delivery report when the fatal"
+				<< " producer instance was purged; reported as synthesized failures.";
+			for (const std::uint64_t correlationId : orphaned) {
+				notifyDelivery(DeliveryReport{correlationId, RdKafka::ERR__PURGE_QUEUE, /*synthesized=*/true});
+			}
+		}
 		const auto destroyStart = RebuildClock::now();
 		producer_.reset();
 		destroyMs = elapsedMs(destroyStart, RebuildClock::now());
@@ -316,12 +368,19 @@ void KafkaProducer::logSuppressedSummary(std::uint64_t suppressed) {
 
 void KafkaProducer::dr_cb(RdKafka::Message& message) {
 	const RdKafka::ErrorCode err = message.err();
+	// 关联号从 msg_opaque 解出来(sendImpl 编码进去的,0 = 未跟踪)。只有之前登记过、这一次才摘掉的才通知:
+	// 重建合成过失败回执之后原回执迟到、或同一 id 的重复回执,Resolve 都返回 false,不会二次通知。
+	const auto correlationId = static_cast<std::uint64_t>(reinterpret_cast<std::uintptr_t>(message.msg_opaque()));
+	const bool tracked = correlationId != 0 && deliveryTracker_.Resolve(correlationId);
 	if (err == RdKafka::ERR_NO_ERROR) {
 		// Per-message delivery breadcrumb — same volume as send() success.
 		// Demote to DEBUG; failures surface at ERROR below.
 		LOG_DEBUG << "[Kafka] Delivered message to topic " << message.topic_name()
 			<< " [" << message.partition() << "] at offset "
 			<< message.offset();
+		if (tracked) {
+			notifyDelivery(DeliveryReport{correlationId, RdKafka::ERR_NO_ERROR, /*synthesized=*/false});
+		}
 		return;
 	}
 
@@ -345,6 +404,10 @@ void KafkaProducer::dr_cb(RdKafka::Message& message) {
 		+ " err=" + RdKafka::err2str(err) + " (" + message.errstr() + ")"
 		+ (kafka_producer_policy::IsPurgeDeliveryError(err)
 			? " [purged: the producer instance went fatal or is being rebuilt]" : ""));
+	// 计数与日志之后再通知:监听器只记账(见 kafka_producer.h「逐条回执契约」),补救由调用方重发当前状态。
+	if (tracked) {
+		notifyDelivery(DeliveryReport{correlationId, err, /*synthesized=*/false});
+	}
 }
 
 void KafkaProducer::poll() {

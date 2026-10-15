@@ -1,6 +1,6 @@
 # 玩家持久收件箱服务（player_inbox）设计
 
-> **状态**：设计 v1.0（2026-10-15）。D1–D4 已由用户拍板（见 §13）；D5–D14 为推荐口径、待第 1 批前确认。未落码、未编译、未测试。第 1 批开始前须向用户报文件清单并获授权（AGENTS §10.2）。
+> **状态**：设计 v1.0（2026-10-15）。D1–D14 均已由用户拍板（见 §13）。第 1 批文件清单（附录 E）已于同日获授权，但须等 P1（MySQL 围栏先落 18、19 号字段）与 P2（HEAD 上的生成积压由所属会话先清掉）都解除后才开工。未落码、未编译、未测试。
 > **版本历史**：v0.1 综合稿；v0.2 对抗评审修订（consistency / repo-fit / ops 三份评审的逐条处置见文末「评审记录」）；v1.0 用户拍板定稿（相对 v0.2 的改动见附录 D）。
 >
 > **与 [reliable-player-inbox-20261014.md](reliable-player-inbox-20261014.md) 的关系**
@@ -60,7 +60,7 @@
    - 独立进程方案：本仓手写约 121 个文件（第 1 至第 4 批分别约 27 / 40 / 30 / 24，第 1 批另有约 7 处放行清单文档）。
    - 生成产物约 110 个，集中在第 1 批，Java 另计。
    - 远超 30 个文件的门槛，分第 0 到第 5 批落地；第 1 批开始前须向用户报文件清单并获授权。
-10. **拍板状态**：D1–D4 已于 2026-10-15 由用户拍板（§13.1）：立项并收窄修订、首域 GM 处置含挂欠款、独立进程、v1 不接摘要。D5–D14 为推荐口径，第 1 批前与文件清单一并确认（§13.2）。
+10. **拍板状态**：D1–D4 已于 2026-10-15 由用户拍板（§13.1）：立项并收窄修订、首域 GM 处置含挂欠款、独立进程、v1 不接摘要。D5–D14 也于同日按推荐口径拍板（§13.2）。第 1 批清单已授权，阻塞解除后开工（附录 E）。
 
 ---
 
@@ -1129,7 +1129,7 @@ v1 的类型都不允许过期，也没有过期列，这里不做任何处理�
 
 ## 11. 分批落地计划
 
-**第 1 批开始前，须把该批文件清单报给用户，与 D5–D14 一并确认并获授权（AGENTS §10.2）。** 每一批完成后都停下来，等 Codex 验证。下面的清单都按独立进程形态（D3）。
+**每一批开始前，须把该批文件清单报给用户并获授权（AGENTS §10.2）。** 第 1 批已于 2026-10-15 获授权（附录 E），条件是 P1、P2 解除后再开工；第 2–4 批仍按此办理。每一批完成后都停下来，等 Codex 验证。下面的清单都按独立进程形态（D3）。
 
 ### 11.1 与其他会话的协调项
 
@@ -1169,6 +1169,8 @@ v1 的类型都不允许过期，也没有过期列，这里不做任何处理�
 
 ### 11.3 第 1 批：契约与生成（手写约 27 个，生成约 110 个）
 
+> **以附录 E 为准**（2026-10-15 只读核实）：精确清单是手写 36–38 个、生成约 117–129 个。本节漏了 `proto_gen.no-unity.yaml`、`node_util.h`、`rpc.vcxproj.filters`、新事件的 `OptionKafkaIngress`，还有「不要照抄 `OptionFileDefaultNode`」。开工阻塞是 P1（18/19 先由围栏落码）和 P2（HEAD 上的生成积压先由所属会话清掉）。下面保留原估算，供对照。
+
 **新建（手写）**：
 - `proto/player_inbox/player_inbox.proto`
 - `proto/player_inbox/player_inbox_admin.proto`
@@ -1179,8 +1181,8 @@ v1 的类型都不允许过期，也没有过期列，这里不做任何处理�
 **修改（手写）**：
 - `proto/common/base/node.proto`：加 `PlayerInboxNodeService = 30`。
 - `proto/common/database/mysql_database_table.proto`：import，加字段（字段号按 C4）。
-- `proto/common/database/rollback_database_table.proto`：给 `player_debt`（:119-140）加弃用注释，不再接读写（D9，待确认；注释会进生成产物，随本批生成）。
-- `proto/common/base/config.proto`：`GameConfig` 加 `player_inbox` 段，含 `consumer_enabled`、`periodic_fetch_minutes`。
+- `proto/common/database/rollback_database_table.proto`：给 `player_debt`（:119-140）加弃用注释，不再接读写（D9 已拍板随本批落；注释会进生成产物，随本批生成）。
+- ~~`proto/common/base/config.proto`~~：用户 2026-10-15 拍板移到第 3 批，与 `config.cpp` 加载器同改（附录 E P6、§11.5）。
 - `proto/data_service/data_service.proto`：加 `GetPlayerInboxLedger`。
 - `tools/proto_generator/protogen/etc/proto_gen.yaml`：`domain_meta` 加 player_inbox 一块，照 trade（`:425`）。
 - `data/tip/Tip.xlsx`：组头加 15 行码。
@@ -1267,6 +1269,7 @@ v1 的类型都不允许过期，也没有过期列，这里不做任何处理�
 - `cpp/nodes/scene/handler/event/player_inbox_event_handler.cpp`：只改守护段。
 - `player_landing.cpp`、`player_battle.cpp`：各加一行（C1）。
 - `bin/etc/base_deploy_config.yaml`：前缀和 deadline。`bin/etc/game_config.yaml`：`player_inbox` 段，`consumer_enabled: false`。这两个文件工作区里已有他人改动，只追加，不动别人的内容。
+- `proto/common/base/config.proto` 与 `cpp/libs/engine/config/config.cpp`（`readGameConfig` 手工逐键解析，`:235`；`configuration_table_test.cpp:493` 有加载用例可照着补）：`GameConfig` 加 `player_inbox` 段（`consumer_enabled`、`periodic_fetch_minutes`），并同改加载器。键缺失时，加载器显式取默认值 30 分钟，不依赖 proto3 的 0。用户 2026-10-15 拍板把这两项从第 1 批移到本批（附录 E P6）；`config.proto` 的生成产物（约 6 个）随本批生成。
 - 工程文件：`cpp/libs/services/scene/{CMakeLists.txt, scene.vcxproj, .filters}`、`cpp/nodes/scene/{CMakeLists.txt, scene.vcxproj, .filters}`、`currency_test.vcxproj` 及其 CMake。
 
 **Codex 命令**：
@@ -1369,7 +1372,9 @@ Codex 跑 `pwsh -File tools/scripts/tests/*.tests.ps1` 里受影响的几个文�
 | D3 | 服务形态 | **独立进程 `go/player_inbox`**，按 D-14 独占库 `mmorpg_player_inbox`；接入要求见 §1.4 | 用户原话；落地拉取量级需要与号段隔离；不触发 D-13、生产方同进程不需要发件箱。代价多约 18 个文件和一个库（§1.4） |
 | D4 | 是否接版本摘要 | **甲：v1 不接**。落地无条件拉一次，在线靠 Kafka 提醒加有界兜底（§7.3）；将来接入见 §7.14 | 不动客户端契约、不动 playersync、不给核心 Redis 加负载，也没有「AOF 丢掉 bump」的漏洞 |
 
-### 13.2 待确认（推荐口径，第 1 批前与文件清单一并确认）
+### 13.2 按推荐口径拍板（2026-10-15，用户）
+
+用户原话：「D5–D14 按推荐口径，D9 的 player_debt 弃用注释随本批落。」下表的「推荐」列即为结论。D14 的参数按表内默认值执行。
 
 按重要性排序。
 
@@ -1527,3 +1532,220 @@ Codex 跑 `pwsh -File tools/scripts/tests/*.tests.ps1` 里受影响的几个文�
 | 10 | 30 天告警常亮，gauge 重复上报，没有存在校验，没有批量接口 | **采纳（部分）** | 告警改为「已投递未确认」，离线积压只进看板；gauge 由领导者产出、按 max 聚合；加存在校验；告警的安装步骤登记进 README。批量接口没有新增，改为写明调用侧限速和重试规范，触发条件写进第 5 批 |
 | 11 | 毫秒 CAS 有 ABA | **采纳** | 同 consistency #4 |
 | 12 | 字符串长度只写在注释里，覆盖 gm_operator 与大小校验的先后没有定义 | **采纳** | 显式限长；先覆盖 gm_operator，再校验最终载荷；审计字段同样限长（§3.4） |
+
+---
+
+## 附录 E：第 1 批精确文件清单（2026-10-15 只读核实）
+
+**第 1 批还没开工。** 这次只核实了文件清单：只读，没改文件，没编译，也没跑生成器。基线是当前 HEAD `ab0f27907`（2026-10-15 08:27）加当前工作区。
+
+两份核实报告的基线都早于 `ab0f27907`（报告二是 `6281e4d27`）。这次提交一共 560 个文件，把报告里列的大部分“他人未提交改动”都提交了，所以冲突部分是按当前工作区重新核过的。报告之间的矛盾和过时结论，统一放在第九节更正。
+
+### 一、结论
+
+- **手写 36–38 个**：A 组新建 5 个，B 组修改 31 个，另有 0–2 个待定。超过 AGENTS §10.2 的 30 个门槛，开工前需要你明确授权这份清单。
+- **本批自身的生成产物约 117–129 个**：新增约 56 个，修改约 61–73 个。另外 HEAD 上积压了一大批**已提交但没生成**的产物，不应该混进本批（见 P2）。
+- **有 3 个阻塞，解决前不建议开工**：P1 字段号前提不成立；P2 HEAD 有生成积压，生成器还有墓碑闸会直接中止；P3 有他人未提交的生成器模板改动。
+- **主会话复核（2026-10-15，HEAD `592d7e718`）**：P1、P2 仍成立（`player_database` 仍止于 17；`rpc_message.proto:24` 的 `HANDLER_FAILED` 仍未进 `cpp/generated` / `go/proto`，`kafka_command_event_whitelist.h` 仍不存在）。P3 已解除：`tools/proto_generator` 下已无未提交改动。
+- **用户拍板与授权（2026-10-15）**：
+  - 本清单获授权，但须 P1、P2 都解除后才开工。P1 的处理选①：等围栏会话先落 18、19 号字段。
+  - P6：`config.proto` 移到第 3 批，与 `config.cpp` 同改。
+  - P7：D9 的 `player_debt` 弃用注释随本批落。
+  - 本批手写定为 **37 个**：A 组 5 个，B 组 31 个，另加 `rollback_database_table.proto`。生成约 120–135 个，含 D9 注释的产物，不含 `config.proto`。
+- **阻塞进展（2026-10-15）**：
+  - P1：围栏会话已把 `fence_owner_epoch = 18`、`fence_save_seq = 19`（以及 `player_database_1` 的 3、4）写进工作区，尚未提交，并按 G-03 纪律更新了 90-consistency G-03、03-names §3.15a、92-handoff 步骤 4，注明「20 已由玩家收件箱预定」。本批取 20 时，照同一纪律把 20 追加进这三处清单。
+  - P2：用户同意由 Codex 单独执行积压全量生成，并单独提交；放行变量 `PROTOGEN_ALLOW_MASS_EVENT_TOMBSTONE=1` 只用于这一次，用来作废 29 个事件号。执行指令见 PROGRESS「2026-10-15 给 Codex：积压全量 proto 生成」。在那次生成提交之前，本会话不写任何 proto，避免被卷进去。
+- **有 2 处要你定**：`config.proto` 是否推到第 3 批（P6）；D9 的 `player_debt` 弃用注释是否随本批落（P7）。
+
+### 二、开工前置条件与冲突
+
+| # | 问题 | 证据 | 结论 / 处理 |
+|---|---|---|---|
+| **P1 阻塞** | 字段号 20 的前提不成立 | HEAD 上 `player_database` 最后一个字段是 `settlement_ledger = 17`（`mysql_database_table.proto:154`），18/19 只在 `db-write-fencing-mysql.md:113` 里预订。围栏设计还有两个落码前置条件没满足：L-04 第 1 批合入，proto2mysql 的 `SaveConditional` 合入（同文件第 3 行）。现行设计 §4.4 写的是「18、19 已声明之后落码……不先占 18」。 | 收件箱如果先落 20、围栏后补 18/19，老库列序会是 17,20,18,19，新库建表是 17,18,19,20，违反 `:139-145` 的加列纪律。三种做法：① 等围栏会话先落 18/19（设计口径，推荐）；② 请围栏会话同意先单独落 18/19 两个字段声明（要它和你同意）；③ 改设计。另外 `plan.go:187` 会对 ADD COLUMN 做 `sort.Strings`；`fence_*` 按字母排在 `inbox_ledger` 前面，和 18/19/20 一致，所以三列同一次 migrate 不会乱序。 |
+| **P2 阻塞** | HEAD 有生成积压，生成器会被墓碑闸中止 | `ab0f27907` 提交了 24 个 proto 和生成器改动，但只生成了 friend 和 `go/proto/scene/player_scene.pb.go`。具体缺口见下面的列表。 | 应由所属会话（ECS 第 4 批 / RPC 通道 / 入场栅栏）先完成全量生成并单独提交，再开第 1 批。否则第 1 批的生成 diff 会带进 29 个事件墓碑和客户端可见的新消息号；按 AGENTS §12，客户端和 Java 就得同批跟进。不要用环境变量绕过墓碑闸。 |
+| **P3（已解除）** | 他人未提交的生成器模板（HEAD `592d7e718` 复核：已提交，`git status --porcelain -- tools/proto_generator` 为空） | `git status` 显示 `grpc_async_client.{cpp,h}.tmpl` 和 `grpc_init_total.{cpp,h}.tmpl` 有改动。模板依赖一个未跟踪的头文件 `core/network/grpc_client_runtime.h`（`grpc_async_client.h.tmpl` 的 diff 第 6 行）。 | 一跑生成，36 个 `*_grpc_client.{cpp,h}` 和 `grpc_init_client.{cpp,h}` 都会按别人的半成品重写。要等那个会话提交（推断是 grpc-muduo-transport，它的设计文档和 `muduo_grpc/*` 也在未提交改动里），不动别人的改动。 |
+| P4 | 手写目标和他人未提交改动重叠 | 当前只剩两处：`node_util.cpp`（他人改的是 `:223`，本批改 `:11-28`，不是同一个 hunk）和 `docs/PROGRESS.md`（`merge=union`）。报告列的 `node_util.h`、`config.cpp`、`cpp/nodes/scene` 的三个工程文件、`merge-zone-runbook.md`、`battle_event.proto`、`rpc_message.proto` 都已在 `ab0f27907` 提交，工作区是干净的。 | 只追加，不碰别人的内容；提交时按文件分清归属。 |
+| P5 | 生成器会重写带他人改动的半生成文件 | `cpp/nodes/scene/handler/rpc/player/s2s_player_scene_handler.cpp` 有未提交改动（36 行）。 | 生成后核对守护段里的内容还在。 |
+| P6 待定 | `config.proto` 单改不起作用 | `GameConfig` 由 `config.cpp:235 readGameConfig` 手工逐键解析。proto3 的 uint32 默认值是 0（等于关闭），和设计默认 30 冲突。设计 §11.5 第 3 批只列了 `game_config.yaml`（设计 :1269），任何批次都没列 `config.cpp`。 | **建议把 `config.proto` 移到第 3 批**，和 `config.cpp`、yaml 一起改，并回填设计 §11.3/§11.5。如果留在第 1 批：手写数不变，生成产物多约 6 个。 |
+| P7 待定 | D9 的 `player_debt` 弃用注释 | 设计 §11.3（:1182）列了 `rollback_database_table.proto`（`player_debt` 在 :119-140），但 D9 还在 §13.2 待确认；你这次给的计划里没有这一项。 | D9 定了就手写加 1 个，生成多约 3–6 个。 |
+| P8 | 部署前置 | go/db 按 descriptor 写全部列，缺列会让全部玩家回写失败（`04-asset-channel.md:1643`）。 | 第 1 批合入后，任何环境启动新的 go/db 之前，都要先对各 zone 库跑 migrate。 |
+| P9 | 客户端仓 | `dev.bat gen` 会调 `:proto`，它固定用 `proto_gen.yaml`（`dev.bat:560`），而该文件开着 `enable_unity_client: true`（`:244`），会写 `../mmorpg-client`。 | 只用 no-unity 配置（AGENTS §4.1、`tools/proto_generator/README.md:54`）；导表单独跑 `dev.bat export`。 |
+
+P2 的积压缺口（都在 HEAD 上核过）：
+- `rpc_message.proto` 新加的 `HANDLER_FAILED` 和 `id = 6`，没有出现在 `cpp/generated` 和 `go/proto` 里。
+- `guild_db.proto` 新加的 `last_send_ms = 29`，没有出现在 `go/proto` 里。
+- 入场栅栏（`ebccaf04d`）加的 `session_incarnation` 和 `login_generation` 一直没生成；SyncDigest 不在 C++ 产物里，也不在 `proto/message_id.txt` 里。
+- scene 的 `event_handler.cpp` 还在 include 10 个已经删掉的 handler 头文件，所以 HEAD 上的 scene 现在编不过。
+- `kafka_command_event_whitelist.h` 不存在，但 `kafka_command_whitelist_test.cpp:8` 在 include 它。
+- 墓碑闸：一次新增墓碑超过 4 个就 Fatal（`event_id.go:384-407`），而这次积压会一次删 29 个事件；放行要设 `PROTOGEN_ALLOW_MASS_EVENT_TOMBSTONE=1`。PROGRESS「2026-10-15 ECS 第 4 批源码」和好友条目都记录了 proto-gen-run 因此被拒。
+
+### 三、A 组：手写新建（5 个）
+
+| 路径 | 做什么 | 先例 / 要点 |
+|---|---|---|
+| `proto/player_inbox/player_inbox.proto` | `service PlayerInbox`（scene 调用：Fetch/Ack 等，设计 §5.1） | 写 `package player_inbox;`。**不要**抄 `trade_admin.proto:11` 的 `OptionFileDefaultNode`：`proto_option.proto` 的 NodeType 里没有收件箱这一项，写了编不过。照 `friend.proto:16` 和 `guild_internal.proto:8` 省略。服务名会直接解析到 `PlayerInboxNodeService`（`model.go:166-184`）。 |
+| `proto/player_inbox/player_inbox_admin.proto` | `service PlayerInboxAdmin`（运维接口，§5.2） | 按 package 解析到 PlayerInbox（`model.go` 第 2 级回落）。 |
+| `proto/player_inbox/player_inbox_table.proto` | 收件箱库建表的事实源（§4.1） | 照 `trade_table.proto`。没有 service，不会生成 grpc_client。 |
+| `proto/common/component/player_inbox_ledger_comp.proto` | `PlayerInboxDecision`、`PlayerInboxDomainCursor`、`PlayerInboxLedgerComp`（§4.4） | 照 `asset_op_ledger_comp.proto:1-2`：不写 package，`go_package="common/component"`。 |
+| `proto/common/event/player_inbox_event.proto` | 在线提醒事件，经 Kafka 进 scene（§7.13） | 照**当前** `team_event.proto`：要 `import "proto/common/options/event_ingress_option.proto"`，并在每条消息上写 `option (OptionKafkaIngress) = true;`；不加就不能经 Kafka 派发（`event_ingress_option.proto:7-10`）。字段名不能是 `entity` 或以 `_entity` 结尾，否则生成直接报错（`event_ingress.go:39-43`）。 |
+
+### 四、B 组：手写修改（31 个，另有 0–2 个待定）
+
+**契约与生成配置（7 个）**
+
+| 路径 | 做什么 | 插入点 / 先例 |
+|---|---|---|
+| `proto/common/base/node.proto` | 加 `PlayerInboxNodeService = 30;` | 插在 `:34`（`ClientRpcRouterNodeService = 29`）后、`:35` 的 `};` 前，tab 缩进。30 空闲。 |
+| `proto/common/database/mysql_database_table.proto` | 加 import，并在末尾加 `PlayerInboxLedgerComp inbox_ledger = 20;` | import 区 `:4-15`，可放在 `:7` 后；字段放在 `:154` 后、`:155` 的 `}` 前，要求 P1 已满足。纪律注释在 `:139-145`，I3 在 `:147-154`。 |
+| `proto/data_service/data_service.proto` | 加 `GetPlayerInboxLedger` | import 放在 `:8` 后（`:5-7` 有注释先例）；rpc 放在 `:65` 后，照 `:60-65`；message 放在 `:521` 后，照 `:505-521`。 |
+| `tools/proto_generator/protogen/etc/proto_gen.yaml` | domain_meta 加 `player_inbox` 块 | 照 trade 块 `:421-433`，新块放在 `:433` 后。 |
+| **`tools/proto_generator/protogen/etc/proto_gen.no-unity.yaml`**（两份报告都漏了） | 同上，加同样的块 | 这份副本在 `ab0f27907` 纳入跟踪，和默认配置只差 `:244` 一行。漏改的话，用它生成时整个域不会被解析，消息号也会丢（`:512` 的 DV-5 注释）。 |
+| `data/tip/Tip.xlsx` | 加组头 `//player_inbox_error base=29000 width=1000`，后面接 15 个码 | 最后一个组头在 A314（`//equip_error base=28000`），数据范围是 A1:C336，新内容从第 337 行起。只有 `kPlayerInboxStoreUnavailable` 的 fault 列填 1（设计 §5.3）。`segments.go:30-50` 最高到 28000，表里也没有 29000。 |
+| `.gitignore` | 加 `go/player_inbox/generated/` | 放在 `:163` 后，照 `:162-163`。 |
+
+**C++ 源码（2 个）**
+
+| 路径 | 做什么 | 插入点 / 先例 |
+|---|---|---|
+| `cpp/libs/engine/core/node/system/node/node_util.cpp` | 在 nodeTypeNameMap 里加一项 | 把 `:28` 末尾的 `}};` 改成 `},`，再加一行收尾。不进 `IsGlobalPoolNodeType`（`:131-143`）。 |
+| `cpp/libs/engine/core/node/system/node/node_util.h` | 加 `using common::base::PlayerInboxNodeService;` | 放在 `:39`（Payment）和 `:40`（PlayerLocator）之间。必须加：map 里用的是不带限定的 `eNodeType_Name(X)`（`.cpp:12-28`）。 |
+
+**C++ 工程登记（14 个；生成器只会删除已退役事件的条目，不会替你登记新文件）**
+
+| 路径 | 登记内容 | 锚点（当前行号） |
+|---|---|---|
+| `cpp/generated/proto/CMakeLists.txt` | `player_inbox/player_inbox{,_admin,_table}.{pb,grpc.pb}.cc`、`common/component/player_inbox_ledger_comp.pb.cc`、`common/event/player_inbox_event.pb.cc` | component 在 `:54-55`，event 在 `:83-95`，trade 在 `:125-130`，`)` 在 `:174` |
+| `cpp/generated/proto/proto.vcxproj` | 上面这些文件的 `.cc` 和 `.h` | component 在 `:35-36` / `:178-179`，event 在 `:39` / `:220` |
+| `cpp/generated/proto/proto.vcxproj.filters` | 同上 | component 在 `:87` / `:437`，event 在 `:198` / `:548`，trade 在 `:306-321` / `:656` 起 |
+| `cpp/generated/grpc_client/CMakeLists.txt` | `player_inbox/player_inbox{,_admin}_grpc_client.cpp` | `:48-49` |
+| `cpp/generated/grpc_client/grpc_client.vcxproj` | 上面两个文件的 `.cpp` 和 `.h` | `:33-34`、`:55-56` |
+| `cpp/generated/grpc_client/grpc_client.vcxproj.filters` | 同上 | `:12-13`、`:30-31` |
+| `cpp/generated/table/CMakeLists.txt` | `proto/tip/player_inbox_error_tip.pb.cc` | equip 在 `:166` |
+| `cpp/generated/table/table.vcxproj` | 上面文件的 `.h` 和 `.cc` | `:175`、`:299` |
+| `cpp/generated/table/table.vcxproj.filters` | 同上 | `:498`、`:851` |
+| `cpp/generated/rpc/rpc.vcxproj` | `player_inbox{,_admin}_service_metadata.h`、`common_event_player_inbox_event_event_id.h` | `:35`、`:48-49` |
+| `cpp/generated/rpc/rpc.vcxproj.filters`（§11.3 漏列） | 同上 | `:102`、`:123-126` |
+| `cpp/nodes/scene/CMakeLists.txt` | `handler/event/player_inbox_event_handler.cpp` | team 在 `:90`（当前位置，之前报告的行号已过时） |
+| `cpp/nodes/scene/scene.vcxproj` | 上面文件的 `.cpp` 和 `.h` | team 在 `:203` / `:235` |
+| `cpp/nodes/scene/scene.vcxproj.filters` | 同上 | team 在 `:6` / `:37` |
+
+**文档（8 个）**
+
+前 6 个是放行清单：每处追加 `inbox_ledger`（20）及其来源。如果围栏已经落码，同时核对它的两列也已经在清单里。
+
+| 路径 | 改哪里 |
+|---|---|
+| `docs/design/guild-phase2/90-consistency.md` | G-03 `:306`（放行和 SHOW COLUMNS 的条数）、`:307`（「截至 17 号」）、`:302`（取号起点，围栏落码后会改成从 20 起，本批再改成从 21 起），以及 G-05 `:327`（「共三条」） |
+| `docs/design/guild-phase2/03-names.md` | §3.15a `:598-609`、§3.20 `:708-709` |
+| `docs/design/guild-phase2/92-handoff.md` | 步骤 4 `:305-315` |
+| `docs/design/guild-phase2/04-asset-channel.md` | §4.42 第 1b 步 `:1643` |
+| `docs/design/turn-battle-gap-closure.md` | §9.3 `:355-361` |
+| `docs/ops/merge-zone-runbook.md` | §4.4 `:202-219`（在 `:219` 的 `asset_op_ledger` 后补上） |
+| `docs/PROGRESS.md` | 追加本批条目，并注明 Java 状态 |
+| `docs/design/player-inbox-service.md` | 回填 §11.3：清单和计数、`no-unity.yaml`、`node_util.h`、filters、`OptionKafkaIngress`；以及 P6 的结论 |
+
+**待定（0–2 个）**：`proto/common/base/config.proto`（P6，建议移到第 3 批）；`proto/common/database/rollback_database_table.proto`（P7，看 D9）。
+
+`db-write-fencing-mysql.md` 归围栏会话维护，本批不改。
+
+### 五、C 组：生成产物（不得手改）
+
+所有数量都是估计，以生成后的 `git status` 为准。前提是 P2、P3 已解决，否则还会混进积压。
+
+| 类别 | 路径模式 | 估计 |
+|---|---|---|
+| 新增：域 proto | `go/proto/player_inbox/*.go`；`cpp/generated/proto/player_inbox/*.{pb,grpc.pb}.{cc,h}`；`generated/proto/{_unified,db,login}/proto/player_inbox/*` | 5 + 12 + 9 |
+| 新增：C++ 客户端和元数据 | `cpp/generated/grpc_client/player_inbox/*_grpc_client.{cpp,h}`；`cpp/generated/rpc/service_metadata/player_inbox{,_admin}_service_metadata.h` | 4 + 2 |
+| 新增：账本组件 | cpp `.pb.{cc,h}`、go `.pb.go`、3 份镜像 | 6 |
+| 新增：事件 | cpp 2、go 1、镜像 3、`common_event_player_inbox_event_event_id.h`、scene 的 `handler/event/player_inbox_event_handler.{h,cpp}`（带守护段的空壳） | 9 |
+| 新增：tip | `generated/code/proto/tip/…proto`、`generated/code/proto/cpp/tip/×2`、`cpp/generated/table/proto/tip/×2`、`go/shared/generated/pb/table/…pb.go`、java 生成 1 个、python 1 个、`java/config_node/.../PlayerInboxErrorTip.java` | 9 |
+| 修改：node | `node.pb.{cc,h}`、`node.pb.go`、3 份镜像、`cpp/generated/proto_helpers/proto_util.cpp` | 7 |
+| 修改：mysql_database_table | cpp 2、go 1、镜像 3 | 6 |
+| 修改：data_service | `.pb` 和 `.grpc.pb` 的 `.cc/.h` 共 4、go 2、grpc_client 2、metadata 1、镜像 3 | 12 |
+| 修改：注册与路由 | `grpc_init_client.cpp`、`rpc_event_registry.{cpp,h}`、scene 的 `event_handler.cpp`；`route_table.go` 可能改 0–1 个 | 4–5 |
+| 修改：号表 | `proto/{message_id,event_id}.txt` 加 6 份镜像；9 个 Go 服务加 robot 的 `message_id.go`（10 个）；9 个 `event_id.go` | 27 |
+| 修改：tip 汇总 | `go/shared/generated/tip/{segments,faults}.go`、`tip_text.json`、`tip_enum_ids.json` | 4 |
+| 待定 | `config.proto` 的产物 / D9 注释的产物 | +6 / +3–6 |
+| 不进版本库 | `go/player_inbox/generated/**`（被 `.gitignore` 忽略） | — |
+
+另外几点：
+- 生成器不写 `robot/vendor`（protogen 源码里搜不到 vendor）。`generated/robot/proto` 从 2026-08-04 起没更新过。两者都不计入。
+- `player_database_loader.cpp` 是手写文件。生成器只把 loader 写到临时目录，真正写进仓库的只有 `player_data_loader.h`（`player_data.go:94-123`，`proto_gen.no-unity.yaml:40,77`），而且这个头文件是按表生成的，加字段不会改变它。
+
+### 六、数量汇总
+
+| 组 | 数量 |
+|---|---|
+| A 手写新建 | 5 |
+| B 手写修改 | 31（另有 0–2 个待定） |
+| **手写合计** | **36–38，超过 30，需要授权** |
+| C 生成：新增 | 约 56 |
+| C 生成：修改 | 约 61–73 |
+| **生成合计** | **约 117–129**（不含 P2 积压） |
+
+### 七、本批不做
+
+- **第 2 批**：`go/player_inbox/**` 服务代码、`constants.go` 里的 `ErrX = uint32(table.PlayerInboxError_kX)` 和 `TestNoHandWrittenTipCodes`、GM 生产方、收件箱库的 schemamigrate。
+- **第 3 批**：C++ scene 消费端，具体是：
+  - 手写 `player_database_loader.cpp` 里账本的 load/save
+  - 事件 handler 守护段里的逻辑
+  - C1 的两处一行调用
+  - `config.cpp` 加载器
+  - `base_deploy_config.yaml` 的发现前缀和 deadline，`game_config.yaml`
+- **第 4 批**：k8s 部署、告警、库预切。
+- **Java 功能实现**：第 1 批只在合入后做契约同步（下一节第 7 步）。
+- **不夹带的已有缺口**：`proto.vcxproj.filters` 缺 `battle_settlement_ledger_comp`；robot vendor 缺 `equip_error_tip.pb.go`。
+
+### 八、Codex 验证步骤（在设计 §11.3 的 6 步基础上修正）
+
+按 AGENTS §10.1，以下由 Codex 执行；Claude 不跑。所有命令在仓库根目录执行，C++ 串行编译。
+
+0. **前置检查**，任一项不满足就停下报告：
+   - `git status --porcelain -- tools/proto_generator` 为空（P3）。
+   - `git grep -n "fence_owner_epoch = 18" -- proto/common/database/mysql_database_table.proto` 有结果（P1）。
+   - `cpp/generated/rpc/service_metadata/kafka_command_event_whitelist.h` 存在，`rpc_message.pb.h` 里能搜到 `HANDLER_FAILED`（P2）。
+1. **生成**：
+   ```
+   pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-build
+   pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-run -ConfigPath tools/proto_generator/protogen/etc/proto_gen.no-unity.yaml
+   ```
+   记下 `git status --porcelain`，再跑一次 run，第二次之后 `git diff` 应为空。
+   - 不设 `PROTOGEN_ALLOW_MASS_EVENT_TOMBSTONE`；如果报 `refusing to tombstone`，说明 P2 没解决，停下。
+   - 不用 `dev.bat proto` 或 `dev.bat gen`。
+   - 核对 `s2s_player_scene_handler.cpp` 的守护段还在。
+2. **导表**：`dev.bat export`（需要 `PYTHON_EXE` 或 `py -3`，见 `dev.bat:582-629`）。
+   - `segments.go` 里应出现 `player_inbox_error`、Base 29000 的段。
+   - `faults.go` 的新段只有 StoreUnavailable 一个码。
+   - 然后跑 `cd go/shared && go test ./serverbase/...`（`tipcode_test.go`，含 `TestTipSegmentsDisjointAndSorted`）。
+3. **Go**：`pwsh -File tools/scripts/dev_tools.ps1 -Command go-svc-build`（全部服务；`message_id.go` 都会变）。
+4. **C++**：`msbuild game.sln /m:1 /nr:false /p:Configuration=Debug /p:Platform=x64`。PROGRESS 里已登记的阻塞单独列出，不算本批失败。
+5. **迁移**：本地每份 zone 的 db 配置都跑一遍：
+   ```
+   cd go/db && go run ./cmd/migrate -f <db.yaml> -command plan
+   ```
+   - plan 里只允许出现 `inbox_ledger`，以及还没迁移过的 `fence_owner_epoch`、`fence_save_seq` 和 G-03 那三列的 ADD COLUMN。语句按字母排序（`plan.go:187`），`fence_*` 应在 `inbox_ledger` 前面。
+   - 确认后跑 `-command up`，不加 `-allow-modify`；退出码 4 表示成功但有 NEEDS-REVIEW（`04-asset-channel.md:1643`）。
+   - 最后 `SHOW COLUMNS FROM player_database`，确认 `inbox_ledger` 是最后一列。
+6. **检查产物**：
+   - `grpc_init_client.cpp` 里，PlayerInboxNodeService 节点挂了 PlayerInbox 的 Stub。
+   - `kafka_command_event_whitelist.h` 的 `IsSceneCommandEvent` 包含新事件号。
+   - scene 的 `event_handler.cpp` 注册了 `PlayerInboxEventHandler`。
+   - `proto_util.cpp` 里有 `PlayerInboxNodeService`。
+7. **合入后做 Java 契约同步**（AGENTS §12，设计 §11.3）：
+   ```
+   java tools/ContractSync.java --mmorpg <本仓>
+   ./mvnw -B clean install
+   ```
+   要求 `ContractSync --check` 通过；PARITY 记「Java 待做」。
+
+需要保留的证据：每次生成的输出末尾和 `git status --porcelain`、msbuild 的第一条错误、migrate plan 的原文输出。
+
+### 九、对两份报告的更正
+
+- **`node_util.h` 必须改**：报告一说只有全局池才要改，不对。map 里用的是不带限定的枚举名，不加 using 编不过（`.h:22-49`，`.cpp:12-28`）。
+- **冲突清单已过时**：两份报告列的 `node_util.h`、`config.cpp`、scene 工程文件、`merge-zone-runbook`、两个 proto，都已在 `ab0f27907` 提交。现在真正的风险是 P2 和 P3。
+- **两份都漏了 `proto_gen.no-unity.yaml`**，也都漏了新事件必须标 `OptionKafkaIngress`。
+- **生成器现在会写 `cpp/generated/proto` 的 3 个工程文件**（`local_event_cleanup.go:61-115`），但只删已退役事件的条目、补登 `event_ingress_option`，新文件仍要手工登记。报告一说「生成器不写任何工程文件」已不成立。
+- **字段号规则以现行设计 §4.4 为准**：「不先占 18」。报告一引用的是旧稿的「先落取 18」。报告二担心的字母序问题，只在收件箱取 18 时才会出现；按现在 20 的方案，三列字母序和字段号一致。
+- **robot vendor 不由 protogen 生成**：报告一把它算进了生成产物，不对。
+- **D9 的 `rollback_database_table.proto` 在设计 §11.3 里有**，你这次给的计划漏了，已列为待定。

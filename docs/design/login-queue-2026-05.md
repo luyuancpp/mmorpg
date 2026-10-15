@@ -78,6 +78,8 @@ Client ── POST ───►│ /api/assign-gate                             
                    ─ dispatcher:lock:login_queue:zone:{zoneId}  STRING uuid, TTL=30s(本 zone leader 锁)
 ```
 
+> **(2026-10-15 更正,上图原文保留)** 上图键表里 `admit:{queueId}` 一行的值格式早已过时。R17 R1 修复(2026-06-04)起,放行槽只存 `AdmitSlot`:JSON `{"node_id","ip","port","zone_id"}`,即 dispatcher 挑中的 gate 端点及其 zone,**不含** `token_payload`、签名与 deadline(`go/login/internal/logic/pkg/loginqueue/queue.go:77-98`)。放行时写入:`SET admit:{queueId} <AdmitSlot JSON>`,TTL 仍为 `AdmitTTL`(默认 60s),与在途占位的 `EVAL admittedHoldScript` 排进同一个 MULTI(`queue.go:465-473`)。gate 票在客户端取走时才签:`Lookup` → `consumeAdmitAndSign` 先 `GETDEL admit:{queueId}`,再用调用方传入的 `SignAdmitFn` 现签(`queue.go:331-361`;签票实现是 `gatetoken.go` 的 `SignGateToken`),所以 gate 票的有效期从取走那一刻起算。同图 Dispatcher 框里「签 gate token → SET admit:{queueId}」也按此读:出队只挑 gate、不签票(§5 Dispatcher Loop 已是现行写法)。另:`queue:meta:{queueId}` 的字段名是 `zone_id`,不是 `zoneId`(`queue.go:207-212`)。
+
 ---
 
 ## 4. 协议(proto/login/login.proto)

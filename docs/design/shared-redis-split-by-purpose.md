@@ -68,6 +68,19 @@
 
 排队默认关闭:`login.yaml:428-429`;K8s 的 login ConfigMap 不写 Queue 段,取缺省值 false。
 
+> **(2026-10-15 更正,上表与上一句原文保留)** A 表的原子性说法与行号已过时。以下按当前 `go/login/internal/logic/pkg/loginqueue/queue.go` 核对,行号均指该文件(另注明的除外):
+>
+> - **第 2 行「多键原子」一格作废**,现状是:
+>   - **放行**:每个出队条目一个 MULTI,里面是 `SET admit:{qid} <AdmitSlot JSON>`(TTL = `AdmitTTL`)加一段 `EVAL admittedHoldScript`(`:465-473`),两键都在排队族内。MULTI 只保证这两条连着执行、中间不插入别的命令,**不回滚**:EXEC 里一条运行期出错,另一条照样生效;`Exec` 回 error,该条目不计入放行数(`:467-469` 注释)。`ZPOPMIN`(`:433`)在 MULTI 之外:弹出之后、写入之前进程退出,这些条目既不在队列里,也不在占位里。
+>   - **取走**:`GETDEL admit:{qid}`(`:335`)→ 现签 gate 票 → `HMGET queue:meta`(`:368`)→ 单段 `EVAL admittedHoldScript`(`:389`),把占位改为「现在 + 20s」到期。这几步各是独立命令,不在一个事务里,也不是 MULTI。最后那段 EVAL 只碰 `admitted:zset:zone:{z}` 一个键;它失败只记日志,占位保持放行时的分数,最迟 `AdmitTTL` 到期。
+>   - **计数**:`admittedCountScript` 一段 Lua(`:531-534`),先 `ZREMRANGEBYSCORE` 清掉过期成员再 `ZCARD`。单键,而且是写命令。
+>   - **快速通道**:`reserveFastPathSlotScript` 一段 Lua(`:560-568`),清过期、判 `ZCARD < budget`、`ZADD`、续整键 TTL 都在这一段里。单键。
+>   - `admittedHoldScript` 定义在 `:504-510`,由 `holdAdmitted`(`:519-524`)带脚本全文以 `EVAL` 调用:排在 MULTI 里的 EVALSHA 撞上 NOSCRIPT 时来不及回退(`:515-518`)。计数与快速通道用 `Script.Run`。
+> - **整键 TTL**:是 `W = max(AdmitTTL, 20s) + 1min`(`admittedKeyTTL`,`:493-495`;默认仍是 2 分钟),不是 `AdmitTTL + 1min`。放行、取走、快速通道三条写路径都先 `ZADD`,剩余 `PTTL < W` 时才 `PEXPIRE W`,**只延长不缩短**;计数不碰 TTL。20s 是交票后宽限,代码常量 `defaultHandoffGrace`(`:130`),不是配置。成员是否有效只看分数:放行时为 `now + AdmitTTL`,取走后与快速通道为 `now + 20s`。§5.8 回退里「等 `admitted:*` 过期(AdmitTTL + 1min)」同样按此读:有副本配过更大的 `AdmitTTL` 时,按其中最大的 `W` 等。
+> - **第 1 行行号**:键名函数 `:171-175`;Enqueue 的 MULTI `:204-216`(写 `queue:zone`、`queue:meta`、`queue:token` 三键);Lookup `:258-317`。
+> - **第 3 行(`dispatcher:lock:login_queue`)作废**:G1b(2026-10-12,对应 L-01,见 `docs/handoff/launch-readiness-20261013/spec_G1b.md`)起锁按 zone 分。实际锁键是 `dispatcher:lock:login_queue:zone:{z}`,配置项 `Queue.DispatcherLockKey` 只是前缀(`loginqueue/dispatcher.go:137-142`;`go/login/internal/config/config.go:265-271`、`:282`;`go/login/etc/login.yaml:481-484`)。同一 zone 的 login 副本抢同一把,不同 zone 互不相干,不再是全服一把键。表中「1/s」是出队拍的频率;锁键本身只在抢锁退避与心跳时读写,每个副本约 `DispatcherLockTTL/3`(默认 10s)一次(`dispatcher.go:206`、`:252`)。
+> - 上一句「排队默认关闭」引的 `login.yaml:428-429`,现为 `:473-474`。
+
 **B. 开服限流(Java gateway)**
 
 | 键 | 写 / 读 | TTL | 证据 |
@@ -160,6 +173,8 @@ merge_zone 合服与撤销时会按玩家删缓存(`tools/merge_zone/player_rows
 | go/db 重试收据 | `retry_ownership.go:107-146`;`key_ordered_consumer.go:1089-1104` | `kafka:retry*` | 控制面内部 |
 | data_service 删除时的双锁 | `router.go:545` 起(`AcquirePlayerLock`) | `lock:player`(映射)+ `player:{id}:__lock`(DevRedis) | **本来就按跨实例设计**,不依赖原子性 |
 
+> **(2026-10-15 更正,上表原文保留)**「login 排队」一行的行号已漂移。当前 `queue.go`:入队 MULTI `:204-216`;放行 MULTI `:465-473`(`SET` 放行槽 + `EVAL admittedHoldScript`);取走后的单段 `EVAL` `:389`;计数与快速通道各一段 Lua,`:531-534`、`:560-568`。这些都只碰排队族的键,「排队族内部」的结论不变。原子性细节见 §2.2 A 表后的更正注。
+
 **结论**:
 - 父键、`owner_epoch`、`handoff`、`location`、`player:session`、`player_locker`、`account`、`account_lock`、场景路由这一组键,通过上表的脚本两两相连,构成一个闭包。它们只能整体留在同一个实例。
 - 排队、映射、控制面、子表缓存与读结果这几族,多键操作都只在自己族内。它们各自可以独立成实例。
@@ -235,6 +250,7 @@ merge_zone 合服与撤销时会按玩家删缓存(`tools/merge_zone/player_rows
 - **约束**:
   1. 同一个 zone 的 login 与 `k8s_gate_drain.ps1` 必须看同一个实例:MarkScript 会同时检查本台和同 zone 其它台的 draining(`k8s_gate_drain.ps1:150-158`)。
   2. **切换期间所有 zone 的排队必须关着**。zone-up 是逐 zone 执行的,做不到「同一拍」;放行循环的锁是全局键(`config.go:253`),排队开着时,切换窗口里两个实例上会各有一个 leader、各有一套队列,准入翻倍。所以部署闸要读线上 login ConfigMap 的 `Queue.Enabled`,为 true 就拒绝切换(§4.4)。
+     - **(2026-10-15 更正,上句原文保留)**「放行循环的锁是全局键(`config.go:253`)」已过时:G1b(2026-10-12)起每个 zone 一把锁,锁键 `<Queue.DispatcherLockKey>:zone:<Node.ZoneId>`(`loginqueue/dispatcher.go:137-142`;`config.go:265-271`、`:282`),不同 zone 不再抢同一把。结论与部署闸不变,只是理由换了:同一 zone 的 login 滚动重启时新旧副本并存、各连一个实例(§5.3),两边各在自己的实例上抢 `…:zone:{z}`,这个 zone 就有两个 leader、两套队列、两份在途占位,准入最多翻倍。
   3. 从第一个 zone 的 login 开始滚动,到最后一个 zone 滚完为止,不许执行 `k8s_gate_drain.ps1`,也不许滚动 gate:脚本按新 ConfigMap 往 `redis-queue` 写 draining,还没滚到的旧 login 读核心,看不到标记,会继续往正在排空的 gate 分人。
 - **与 L-01 / L-02 的关系**:
   - L-01(排队 leader 锁)的修复与本拆分无关。

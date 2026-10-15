@@ -346,6 +346,9 @@ void GateHandler::GmGracefulShutdown(::google::protobuf::RpcController* controll
 				  << gate_security::GmAuthResultName(gmAuth.result)
 				  << " raw_operator=" << loggedOperator
 				  << " request_reason=" << loggedReason;
+		// 被拒以 RPC_ERROR(HANDLER_FAILED) 回给调用方(调用方得到 kRemoteFailed),与「鉴权通过但没有可关的会话」
+		// (affected_count = 0 的正常应答)区分开。线上只带错误码,不回拒绝原因(不给探测者提示),原因只在本地日志。
+		controller->SetFailed("GM graceful shutdown rejected");
 		return;
 	}
 

@@ -97,7 +97,10 @@ message GuildApplicationRecord {
 // 业务 SQL 一律绑定下面三个枚举的生成常量,不写数字字面量(`status = 1` 这类写法评审直接拒)。
 
 // 与 assetop.Status 语义一一映射;数值由本枚举定(1 基:0 留给"漏写状态列的行",它不会被当成未决行领走)。
-// guild.proto 的 GuildAssetOrderStatus 是它的客户端镜像,数值逐项相同,新增状态两边同加。
+// guild.proto 的 GuildAssetOrderStatus 是它的客户端镜像,1..5 数值逐项相同。
+// 例外:ABANDONED(6)只是库内状态,**不**进客户端枚举 —— 客户端视图把它映射成已有的 ABORTED("超时或人工撤销"),
+// 映射只在 logic.orderViewOf 一处(docs/design/landing-recovery-sync-digest.md §6.3「状态与展示」)。
+// 其余新增状态仍按"两边同加"处理。
 enum GuildAssetOpStatus {
   GUILD_ASSET_OP_STATUS_UNSPECIFIED = 0;
   GUILD_ASSET_OP_STATUS_PENDING = 1;
@@ -105,6 +108,11 @@ enum GuildAssetOpStatus {
   GUILD_ASSET_OP_STATUS_REJECTED = 3;
   GUILD_ASSET_OP_STATUS_ABORTED = 4;
   GUILD_ASSET_OP_STATUS_APPLIED_PARTIAL = 5;  // 只终结:不做对侧账、不自动清理,转人工补偿(X-15)
+  // 自动放弃(落地恢复 §6.3):PENDING 超过 AbandonAfterDays、玩家无位置、距最后一次可能的发送超过安全间隔、
+  // 已落盘账本确认 scene 从未见过这个 seq 时,由 assetop.Loop.AbandonOnce 经 GuildAssetStore.Abandon 终结。
+  // 对侧账同 REJECTED / ABORTED(捐献退次数、兑换退帮贡与限购、活动发奖只留审计行);不置 durable、不改 last_outcome;
+  // 终态清理与 APPLIED / REJECTED / ABORTED 同等对待(30 天后删)。人工终结(assetopfix)不写这个状态。
+  GUILD_ASSET_OP_STATUS_ABANDONED = 6;
 }
 
 enum GuildAssetOpKind {
@@ -144,7 +152,8 @@ message GuildAssetOpRecord {                  // 锁序位置 6
   option(OptionUniqueKey) = "player_id,stream,stream_epoch,seq";  // 生成 uk_guild_asset_op;同一序号只可能有一条指令
   // idx_guild_asset_op_0 = 到期领取 / 终态清理 / 回档前检查(B5d);
   // idx_guild_asset_op_1 = 按帮查;
-  // idx_guild_asset_op_2 = AllocateSeq 对未决行加锁读、离帮提前截止、本人待结算列表(只扫未决行)。
+  // idx_guild_asset_op_2 = AllocateSeq 对未决行加锁读、离帮提前截止、本人待结算列表(只扫未决行)、
+  //   落地唤醒按玩家列未决行(GuildAssetStore.ListPendingByPlayer,非加锁读)。
   // 索引名从 0 起编号,组只能追加到末尾、不得调序(见文件头改表纪律)。
   option(OptionIndex) = "status,next_attempt_ms;guild_id,op_id;player_id,stream,stream_epoch,status,seq";
   option(OptionTiDBNonclusteredPK) = true;
@@ -179,7 +188,14 @@ message GuildAssetOpRecord {                  // 锁序位置 6
   uint64 stream_epoch = 26;      // = 分号时 guild_player_op_seq.epoch
   string resolved_by = 27;       // 人工终结(assetopfix)写:操作人,代码侧限 ≤64
   string resolve_reason = 28;    // 人工终结原因,代码侧限 ≤191
-  // 追加区:从 29 起。
+  // 此前任何一次投递请求**可能**发出的最晚时刻(毫秒),自动放弃的安全依据(落地恢复 §6.3「last_send_ms 契约」,
+  // 实现以 go/shared/assetop/abandon.go 文件头为准)。插行写 created_ms;Claim 的 CAS 在改 lease_until_ms 之前把旧租约折进来;
+  // Reschedule 只在本次确实可能发出过请求(非本地 NOT_HERE)时推进到 now;毒行推迟 / 归还租约不动它。
+  // 不能用 updated_ms 代替:领取与停放档的本地重排都写 updated_ms。
+  // 存量行懒初始化,不做单独回填:schemamigrate ADD COLUMN 后存量行为 0,Claim 时先取 GREATEST(created_ms, updated_ms) 作初值。
+  // 0 = 未维护,放弃路径一律跳过。
+  uint64 last_send_ms = 29;
+  // 追加区:从 30 起。
 }
 
 message GuildDailyCounterRecord {             // 锁序位置 7

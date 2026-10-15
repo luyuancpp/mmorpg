@@ -153,6 +153,10 @@ const (
 	TradeAssetOpStatus_TRADE_ASSET_OP_STATUS_REJECTED        TradeAssetOpStatus = 3 // scene 判拒(终局)
 	TradeAssetOpStatus_TRADE_ASSET_OP_STATUS_ABORTED         TradeAssetOpStatus = 4 // 中止占位(AssetAbortDebit 回 REJECTED 且 reason=0)
 	TradeAssetOpStatus_TRADE_ASSET_OP_STATUS_APPLIED_PARTIAL TradeAssetOpStatus = 5 // 部分发放:不入账、不退款,转人工补偿(§4.33)
+	// 自动放弃(docs/design/landing-recovery-sync-digest.md §6.3):PENDING 超过 AbandonAfterDays、玩家无位置、
+	// 距最后一次可能的发送超过安全间隔、已落盘账本确认 scene 从未见过这个 seq。只能由 Abandoner.Abandon 写入。
+	// 对侧账尚未实现(P3,见 AssetOpRepo.Abandon 的 TODO),v1 只终结并留痕。库内状态,不是客户端契约。
+	TradeAssetOpStatus_TRADE_ASSET_OP_STATUS_ABANDONED TradeAssetOpStatus = 6
 )
 
 // Enum value maps for TradeAssetOpStatus.
@@ -164,6 +168,7 @@ var (
 		3: "TRADE_ASSET_OP_STATUS_REJECTED",
 		4: "TRADE_ASSET_OP_STATUS_ABORTED",
 		5: "TRADE_ASSET_OP_STATUS_APPLIED_PARTIAL",
+		6: "TRADE_ASSET_OP_STATUS_ABANDONED",
 	}
 	TradeAssetOpStatus_value = map[string]int32{
 		"TRADE_ASSET_OP_STATUS_UNSPECIFIED":     0,
@@ -172,6 +177,7 @@ var (
 		"TRADE_ASSET_OP_STATUS_REJECTED":        3,
 		"TRADE_ASSET_OP_STATUS_ABORTED":         4,
 		"TRADE_ASSET_OP_STATUS_APPLIED_PARTIAL": 5,
+		"TRADE_ASSET_OP_STATUS_ABANDONED":       6,
 	}
 )
 
@@ -598,8 +604,8 @@ type TradeAssetOpRecord struct {
 	Status        TradeAssetOpStatus     `protobuf:"varint,7,opt,name=status,proto3,enum=trade.TradeAssetOpStatus" json:"status,omitempty"`
 	Durable       bool                   `protobuf:"varint,8,opt,name=durable,proto3" json:"durable,omitempty"` // 终局是否已被 scene 确认落盘(APPLIED/REJECTED 都要 durable 才终结)
 	Attempts      uint32                 `protobuf:"varint,9,opt,name=attempts,proto3" json:"attempts,omitempty"`
-	NextAttemptMs uint64                 `protobuf:"varint,10,opt,name=next_attempt_ms,json=nextAttemptMs,proto3" json:"next_attempt_ms,omitempty"`
-	DeadlineMs    uint64                 `protobuf:"varint,11,opt,name=deadline_ms,json=deadlineMs,proto3" json:"deadline_ms,omitempty"` // 到期后改发 AssetAbortDebit;0 = 永不中止(交付类不设截止)
+	NextAttemptMs uint64                 `protobuf:"varint,10,opt,name=next_attempt_ms,json=nextAttemptMs,proto3" json:"next_attempt_ms,omitempty"` // 未决行:下一次投递时刻;终态行:终结时刻(终结 / 人工终结 / 放弃同写,清理按它判龄)
+	DeadlineMs    uint64                 `protobuf:"varint,11,opt,name=deadline_ms,json=deadlineMs,proto3" json:"deadline_ms,omitempty"`            // 到期后改发 AssetAbortDebit;0 = 永不中止(交付类不设截止)
 	LeaseUntilMs  uint64                 `protobuf:"varint,12,opt,name=lease_until_ms,json=leaseUntilMs,proto3" json:"lease_until_ms,omitempty"`
 	LeaseToken    uint64                 `protobuf:"varint,13,opt,name=lease_token,json=leaseToken,proto3" json:"lease_token,omitempty"`
 	TxType        uint32                 `protobuf:"varint,14,opt,name=tx_type,json=txType,proto3" json:"tx_type,omitempty"` // TransactionType 数值,进 scene 的 transaction_log
@@ -618,6 +624,13 @@ type TradeAssetOpRecord struct {
 	// (operator ≤64 字、reason ≤191 字)。
 	ResolvedBy    string `protobuf:"bytes,22,opt,name=resolved_by,json=resolvedBy,proto3" json:"resolved_by,omitempty"`          // 操作人;空 = 这一行不是人工终结的
 	ResolveReason string `protobuf:"bytes,23,opt,name=resolve_reason,json=resolveReason,proto3" json:"resolve_reason,omitempty"` // 人工判定依据
+	// 此前任何一次投递请求**可能**发出的最晚时刻(毫秒),自动放弃的安全依据
+	// (docs/design/landing-recovery-sync-digest.md §6.3「last_send_ms 契约」,实现以
+	// go/shared/assetop/abandon.go 文件头为准)。不能用 updated_ms 代替:领取与本地 NOT_HERE 的重排都写 updated_ms。
+	// 维护规则(go/trade/internal/data/asset_op_repo.go):插行写 created_ms;领取的 CAS 先把旧租约折进来;
+	// 重排只在确实发过请求(非本地 NOT_HERE)时推进;毒行推迟与归还租约不动它。
+	// 存量行(加列前插入)是 0,由领取时懒初始化为 GREATEST(created_ms, updated_ms),不做单独回填。
+	LastSendMs    uint64 `protobuf:"varint,24,opt,name=last_send_ms,json=lastSendMs,proto3" json:"last_send_ms,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -813,6 +826,13 @@ func (x *TradeAssetOpRecord) GetResolveReason() string {
 	return ""
 }
 
+func (x *TradeAssetOpRecord) GetLastSendMs() uint64 {
+	if x != nil {
+		return x.LastSendMs
+	}
+	return 0
+}
+
 var File_proto_trade_trade_table_proto protoreflect.FileDescriptor
 
 const file_proto_trade_trade_table_proto_rawDesc = "" +
@@ -857,7 +877,7 @@ const file_proto_trade_trade_table_proto_rawDesc = "" +
 	"\bnext_seq\x18\x03 \x01(\x04R\anextSeq\x12\x14\n" +
 	"\x05epoch\x18\x04 \x01(\x04R\x05epoch\x12\x1d\n" +
 	"\n" +
-	"updated_ms\x18\x05 \x01(\x04R\tupdatedMs:<\x8a\x92\xf4\x01\x13trade_player_op_seq\x92\x92\xf4\x01\x10player_id,stream\xa8\x93\xf4\x01\x01\xb0\x93\xf4\x01\x04\xb8\x93\xf4\x01\x04\"\xad\a\n" +
+	"updated_ms\x18\x05 \x01(\x04R\tupdatedMs:<\x8a\x92\xf4\x01\x13trade_player_op_seq\x92\x92\xf4\x01\x10player_id,stream\xa8\x93\xf4\x01\x01\xb0\x93\xf4\x01\x04\xb8\x93\xf4\x01\x04\"\xcf\a\n" +
 	"\x12TradeAssetOpRecord\x12\x13\n" +
 	"\x05op_id\x18\x01 \x01(\x04R\x04opId\x12\x1b\n" +
 	"\tplayer_id\x18\x02 \x01(\x04R\bplayerId\x12\x16\n" +
@@ -888,7 +908,9 @@ const file_proto_trade_trade_table_proto_rawDesc = "" +
 	"updated_ms\x18\x15 \x01(\x04R\tupdatedMs\x12\x1f\n" +
 	"\vresolved_by\x18\x16 \x01(\tR\n" +
 	"resolvedBy\x12%\n" +
-	"\x0eresolve_reason\x18\x17 \x01(\tR\rresolveReason:\xa6\x01\x8a\x92\xf4\x01\x0etrade_asset_op\x92\x92\xf4\x01\x05op_idڒ\xf4\x01Ostatus,next_attempt_ms;player_id,stream,stream_epoch,status,seq;ref_kind,ref_id\xe2\x92\xf4\x01!player_id,stream,stream_epoch,seq\xa8\x93\xf4\x01\x01\xb0\x93\xf4\x01\x04\xb8\x93\xf4\x01\x04*\xfb\x01\n" +
+	"\x0eresolve_reason\x18\x17 \x01(\tR\rresolveReason\x12 \n" +
+	"\flast_send_ms\x18\x18 \x01(\x04R\n" +
+	"lastSendMs:\xa6\x01\x8a\x92\xf4\x01\x0etrade_asset_op\x92\x92\xf4\x01\x05op_idڒ\xf4\x01Ostatus,next_attempt_ms;player_id,stream,stream_epoch,status,seq;ref_kind,ref_id\xe2\x92\xf4\x01!player_id,stream,stream_epoch,seq\xa8\x93\xf4\x01\x01\xb0\x93\xf4\x01\x04\xb8\x93\xf4\x01\x04*\xfb\x01\n" +
 	"\rListingStatus\x12\x1e\n" +
 	"\x1aLISTING_STATUS_UNSPECIFIED\x10\x00\x12\x1c\n" +
 	"\x18LISTING_STATUS_ESCROWING\x10\x01\x12\x19\n" +
@@ -902,14 +924,15 @@ const file_proto_trade_trade_table_proto_rawDesc = "" +
 	"\x1fTRADE_ASSET_OP_KIND_UNSPECIFIED\x10\x00\x12$\n" +
 	" TRADE_ASSET_OP_KIND_ESCROW_DEBIT\x10\x01\x12&\n" +
 	"\"TRADE_ASSET_OP_KIND_DELIVER_CREDIT\x10\x02\x12%\n" +
-	"!TRADE_ASSET_OP_KIND_RETURN_CREDIT\x10\x03*\xf3\x01\n" +
+	"!TRADE_ASSET_OP_KIND_RETURN_CREDIT\x10\x03*\x98\x02\n" +
 	"\x12TradeAssetOpStatus\x12%\n" +
 	"!TRADE_ASSET_OP_STATUS_UNSPECIFIED\x10\x00\x12!\n" +
 	"\x1dTRADE_ASSET_OP_STATUS_PENDING\x10\x01\x12!\n" +
 	"\x1dTRADE_ASSET_OP_STATUS_APPLIED\x10\x02\x12\"\n" +
 	"\x1eTRADE_ASSET_OP_STATUS_REJECTED\x10\x03\x12!\n" +
 	"\x1dTRADE_ASSET_OP_STATUS_ABORTED\x10\x04\x12)\n" +
-	"%TRADE_ASSET_OP_STATUS_APPLIED_PARTIAL\x10\x05*\x86\x01\n" +
+	"%TRADE_ASSET_OP_STATUS_APPLIED_PARTIAL\x10\x05\x12#\n" +
+	"\x1fTRADE_ASSET_OP_STATUS_ABANDONED\x10\x06*\x86\x01\n" +
 	"\x13TradeAssetOpRefKind\x12'\n" +
 	"#TRADE_ASSET_OP_REF_KIND_UNSPECIFIED\x10\x00\x12#\n" +
 	"\x1fTRADE_ASSET_OP_REF_KIND_LISTING\x10\x01\x12!\n" +

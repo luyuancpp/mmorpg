@@ -13,7 +13,7 @@ option (OptionFileDefaultNode) = NODE_SCENE;
 
 message ReleaseSkillRequest {
   uint32 skill_table_id = 1;
-  uint64 target_id = 2;
+  uint64 target_id = 2; // 服务端下发的不透明 actor 网络号；0 表示无目标，不得填玩家 GUID 或本地 ECS 句柄。
   Vector3 position = 3;  
   Rotation rotation = 4;
 }
@@ -24,8 +24,8 @@ message ReleaseSkillResponse {
 
 message SkillInterruptedS2C
 {
-  uint64 entity = 1;
-  uint64 target_entity = 2;
+  uint64 entity = 1; // 施法者的不透明 actor 网络号。
+  uint64 target_entity = 2; // 目标的不透明 actor 网络号；0 表示无目标。
   uint32 skill_table_id = 3;
   uint32 reason_code = 4;
   uint64 skill_id = 5;
@@ -33,8 +33,8 @@ message SkillInterruptedS2C
 
 message SkillUsedS2C
 {
-  uint64 entity = 1;
-  repeated uint64 target_entity = 2;
+  uint64 entity = 1; // 施法者的不透明 actor 网络号。
+  repeated uint64 target_entity = 2; // 目标的不透明 actor 网络号列表，不是玩家 GUID 或本地 ECS 句柄。
   uint32 skill_table_id = 3;
   Vector3 position = 4;
   uint64 time_stamp = 5;

@@ -31,6 +31,7 @@
 #include "google/protobuf/extension_set.h"  // IWYU pragma: export
 #include "google/protobuf/unknown_field_set.h"
 #include "proto/common/base/message.pb.h"
+#include "proto/common/options/event_ingress_option.pb.h"
 // @@protoc_insertion_point(includes)
 
 // Must be included last.
@@ -304,6 +305,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED RoutePlayerEvent final : public ::g
     kSceneIdFieldNumber = 3,
     kPlayerIdFieldNumber = 4,
     kOwnerEpochFieldNumber = 6,
+    kLoginGenerationFieldNumber = 7,
     kHomeZoneIdFieldNumber = 5,
   };
   // uint32 session_id = 1;
@@ -356,6 +358,16 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED RoutePlayerEvent final : public ::g
   void _internal_set_owner_epoch(::uint64_t value);
 
   public:
+  // uint64 login_generation = 7;
+  void clear_login_generation() ;
+  [[nodiscard]] ::uint64_t login_generation() const;
+  void set_login_generation(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_login_generation() const;
+  void _internal_set_login_generation(::uint64_t value);
+
+  public:
   // uint32 home_zone_id = 5;
   void clear_home_zone_id() ;
   [[nodiscard]] ::uint32_t home_zone_id() const;
@@ -370,7 +382,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED RoutePlayerEvent final : public ::g
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<3, 6,
+      ::google::protobuf::internal::TcParseTable<3, 7,
                           0, 0,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
@@ -404,6 +416,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED RoutePlayerEvent final : public ::g
     ::uint64_t scene_id_;
     ::uint64_t player_id_;
     ::uint64_t owner_epoch_;
+    ::uint64_t login_generation_;
     ::uint32_t home_zone_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -1575,6 +1588,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED BindSessionEvent final : public ::g
     kPlayerIdFieldNumber = 2,
     kSessionIdFieldNumber = 1,
     kSessionVersionFieldNumber = 3,
+    kLoginGenerationFieldNumber = 5,
     kEnterGsTypeFieldNumber = 4,
   };
   // uint64 player_id = 2;
@@ -1607,6 +1621,16 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED BindSessionEvent final : public ::g
   void _internal_set_session_version(::uint32_t value);
 
   public:
+  // uint64 login_generation = 5;
+  void clear_login_generation() ;
+  [[nodiscard]] ::uint64_t login_generation() const;
+  void set_login_generation(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_login_generation() const;
+  void _internal_set_login_generation(::uint64_t value);
+
+  public:
   // uint32 enter_gs_type = 4;
   void clear_enter_gs_type() ;
   [[nodiscard]] ::uint32_t enter_gs_type() const;
@@ -1621,7 +1645,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED BindSessionEvent final : public ::g
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<2, 4,
+      ::google::protobuf::internal::TcParseTable<3, 5,
                           0, 0,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
@@ -1653,6 +1677,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED BindSessionEvent final : public ::g
     ::uint64_t player_id_;
     ::uint32_t session_id_;
     ::uint32_t session_version_;
+    ::uint64_t login_generation_;
     ::uint32_t enter_gs_type_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -2680,7 +2705,7 @@ inline void RoutePlayerEvent::_internal_set_player_id(::uint64_t value) {
 inline void RoutePlayerEvent::clear_home_zone_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.home_zone_id_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000040U);
 }
 inline ::uint32_t RoutePlayerEvent::home_zone_id() const {
   // @@protoc_insertion_point(field_get:contracts.kafka.RoutePlayerEvent.home_zone_id)
@@ -2688,7 +2713,7 @@ inline ::uint32_t RoutePlayerEvent::home_zone_id() const {
 }
 inline void RoutePlayerEvent::set_home_zone_id(::uint32_t value) {
   _internal_set_home_zone_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
   // @@protoc_insertion_point(field_set:contracts.kafka.RoutePlayerEvent.home_zone_id)
 }
 inline ::uint32_t RoutePlayerEvent::_internal_home_zone_id() const {
@@ -2722,6 +2747,30 @@ inline ::uint64_t RoutePlayerEvent::_internal_owner_epoch() const {
 inline void RoutePlayerEvent::_internal_set_owner_epoch(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.owner_epoch_ = value;
+}
+
+// uint64 login_generation = 7;
+inline void RoutePlayerEvent::clear_login_generation() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.login_generation_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
+}
+inline ::uint64_t RoutePlayerEvent::login_generation() const {
+  // @@protoc_insertion_point(field_get:contracts.kafka.RoutePlayerEvent.login_generation)
+  return _internal_login_generation();
+}
+inline void RoutePlayerEvent::set_login_generation(::uint64_t value) {
+  _internal_set_login_generation(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  // @@protoc_insertion_point(field_set:contracts.kafka.RoutePlayerEvent.login_generation)
+}
+inline ::uint64_t RoutePlayerEvent::_internal_login_generation() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.login_generation_;
+}
+inline void RoutePlayerEvent::_internal_set_login_generation(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.login_generation_ = value;
 }
 
 // -------------------------------------------------------------------
@@ -3280,7 +3329,7 @@ inline void BindSessionEvent::_internal_set_session_version(::uint32_t value) {
 inline void BindSessionEvent::clear_enter_gs_type() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.enter_gs_type_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
 }
 inline ::uint32_t BindSessionEvent::enter_gs_type() const {
   // @@protoc_insertion_point(field_get:contracts.kafka.BindSessionEvent.enter_gs_type)
@@ -3288,7 +3337,7 @@ inline ::uint32_t BindSessionEvent::enter_gs_type() const {
 }
 inline void BindSessionEvent::set_enter_gs_type(::uint32_t value) {
   _internal_set_enter_gs_type(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
   // @@protoc_insertion_point(field_set:contracts.kafka.BindSessionEvent.enter_gs_type)
 }
 inline ::uint32_t BindSessionEvent::_internal_enter_gs_type() const {
@@ -3298,6 +3347,30 @@ inline ::uint32_t BindSessionEvent::_internal_enter_gs_type() const {
 inline void BindSessionEvent::_internal_set_enter_gs_type(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.enter_gs_type_ = value;
+}
+
+// uint64 login_generation = 5;
+inline void BindSessionEvent::clear_login_generation() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.login_generation_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+}
+inline ::uint64_t BindSessionEvent::login_generation() const {
+  // @@protoc_insertion_point(field_get:contracts.kafka.BindSessionEvent.login_generation)
+  return _internal_login_generation();
+}
+inline void BindSessionEvent::set_login_generation(::uint64_t value) {
+  _internal_set_login_generation(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  // @@protoc_insertion_point(field_set:contracts.kafka.BindSessionEvent.login_generation)
+}
+inline ::uint64_t BindSessionEvent::_internal_login_generation() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.login_generation_;
+}
+inline void BindSessionEvent::_internal_set_login_generation(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.login_generation_ = value;
 }
 
 // -------------------------------------------------------------------

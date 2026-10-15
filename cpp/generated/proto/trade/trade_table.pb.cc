@@ -678,11 +678,11 @@ constexpr TradeAssetOpRecord::ParseTableT_ TradeAssetOpRecord::InternalGenerateP
     {
       PROTOBUF_FIELD_OFFSET(TradeAssetOpRecord, _impl_._has_bits_),
       0, // no _extensions_
-      23, 248,  // max_field_number, fast_idx_mask
+      24, 248,  // max_field_number, fast_idx_mask
       offsetof(ParseTableT_, field_lookup_table),
-      4286578688,  // skipmap
+      4278190080,  // skipmap
       offsetof(ParseTableT_, field_entries),
-      23,  // num_field_entries
+      24,  // num_field_entries
       0,  // num_aux_entries
       offsetof(ParseTableT_, field_names),  // no aux_entries
       class_data,
@@ -767,7 +767,7 @@ constexpr TradeAssetOpRecord::ParseTableT_ TradeAssetOpRecord::InternalGenerateP
         PROTOBUF_FIELD_OFFSET(TradeAssetOpRecord, _impl_.last_outcome_)}},
       // uint32 last_reason = 19;
       {::_pbi::TcParser::FastV32S2,
-       {408, 22, 0,
+       {408, 23, 0,
         PROTOBUF_FIELD_OFFSET(TradeAssetOpRecord, _impl_.last_reason_)}},
       // uint64 created_ms = 20;
       {::_pbi::TcParser::FastV64S2,
@@ -785,7 +785,10 @@ constexpr TradeAssetOpRecord::ParseTableT_ TradeAssetOpRecord::InternalGenerateP
       {::_pbi::TcParser::FastUS2,
        {442, 2, 0,
         PROTOBUF_FIELD_OFFSET(TradeAssetOpRecord, _impl_.resolve_reason_)}},
-      {::_pbi::TcParser::MiniParse, {}},
+      // uint64 last_send_ms = 24;
+      {::_pbi::TcParser::FastV64S2,
+       {448, 22, 0,
+        PROTOBUF_FIELD_OFFSET(TradeAssetOpRecord, _impl_.last_send_ms_)}},
       {::_pbi::TcParser::MiniParse, {}},
       {::_pbi::TcParser::MiniParse, {}},
       {::_pbi::TcParser::MiniParse, {}},
@@ -833,7 +836,7 @@ constexpr TradeAssetOpRecord::ParseTableT_ TradeAssetOpRecord::InternalGenerateP
       // uint32 last_outcome = 18;
       {PROTOBUF_FIELD_OFFSET(TradeAssetOpRecord, _impl_.last_outcome_), _Internal::kHasBitsOffset + 19, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
       // uint32 last_reason = 19;
-      {PROTOBUF_FIELD_OFFSET(TradeAssetOpRecord, _impl_.last_reason_), _Internal::kHasBitsOffset + 22, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      {PROTOBUF_FIELD_OFFSET(TradeAssetOpRecord, _impl_.last_reason_), _Internal::kHasBitsOffset + 23, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
       // uint64 created_ms = 20;
       {PROTOBUF_FIELD_OFFSET(TradeAssetOpRecord, _impl_.created_ms_), _Internal::kHasBitsOffset + 20, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
       // uint64 updated_ms = 21;
@@ -842,10 +845,12 @@ constexpr TradeAssetOpRecord::ParseTableT_ TradeAssetOpRecord::InternalGenerateP
       {PROTOBUF_FIELD_OFFSET(TradeAssetOpRecord, _impl_.resolved_by_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
       // string resolve_reason = 23;
       {PROTOBUF_FIELD_OFFSET(TradeAssetOpRecord, _impl_.resolve_reason_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+      // uint64 last_send_ms = 24;
+      {PROTOBUF_FIELD_OFFSET(TradeAssetOpRecord, _impl_.last_send_ms_), _Internal::kHasBitsOffset + 22, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
     }},
     // no aux_entries
     {{
-      "\30\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\13\16"
+      "\30\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\13\16\0\0\0\0\0\0\0\0"
       "trade.TradeAssetOpRecord"
       "resolved_by"
       "resolve_reason"
@@ -886,6 +891,7 @@ inline constexpr TradeAssetOpRecord::Impl_::Impl_(
         last_outcome_{0u},
         created_ms_{::uint64_t{0u}},
         updated_ms_{::uint64_t{0u}},
+        last_send_ms_{::uint64_t{0u}},
         last_reason_{0u} {}
 
 template <typename>
@@ -1053,7 +1059,7 @@ const ::uint32_t
         3,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::trade::TradeAssetOpRecord, _impl_._has_bits_),
-        26, // hasbit index offset
+        27, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::trade::TradeAssetOpRecord, _impl_.op_id_),
         PROTOBUF_FIELD_OFFSET(::trade::TradeAssetOpRecord, _impl_.player_id_),
         PROTOBUF_FIELD_OFFSET(::trade::TradeAssetOpRecord, _impl_.stream_),
@@ -1077,6 +1083,7 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::trade::TradeAssetOpRecord, _impl_.updated_ms_),
         PROTOBUF_FIELD_OFFSET(::trade::TradeAssetOpRecord, _impl_.resolved_by_),
         PROTOBUF_FIELD_OFFSET(::trade::TradeAssetOpRecord, _impl_.resolve_reason_),
+        PROTOBUF_FIELD_OFFSET(::trade::TradeAssetOpRecord, _impl_.last_send_ms_),
         3,
         4,
         6,
@@ -1095,11 +1102,12 @@ const ::uint32_t
         17,
         0,
         19,
-        22,
+        23,
         20,
         21,
         1,
         2,
+        22,
 };
 
 static const ::_pbi::MigrationSchema
@@ -1144,7 +1152,7 @@ const char descriptor_table_protodef_proto_2ftrade_2ftrade_5ftable_2eproto[] ABS
     "\001 \001(\004\022\016\n\006stream\030\002 \001(\r\022\020\n\010next_seq\030\003 \001(\004\022"
     "\r\n\005epoch\030\004 \001(\004\022\022\n\nupdated_ms\030\005 \001(\004:<\212\222\364\001"
     "\023trade_player_op_seq\222\222\364\001\020player_id,strea"
-    "m\250\223\364\001\001\260\223\364\001\004\270\223\364\001\004\"\302\005\n\022TradeAssetOpRecord\022"
+    "m\250\223\364\001\001\260\223\364\001\004\270\223\364\001\004\"\330\005\n\022TradeAssetOpRecord\022"
     "\r\n\005op_id\030\001 \001(\004\022\021\n\tplayer_id\030\002 \001(\004\022\016\n\006str"
     "eam\030\003 \001(\r\022\024\n\014stream_epoch\030\004 \001(\004\022\013\n\003seq\030\005"
     " \001(\004\022%\n\004kind\030\006 \001(\0162\027.trade.TradeAssetOpK"
@@ -1157,32 +1165,34 @@ const char descriptor_table_protodef_proto_2ftrade_2ftrade_5ftable_2eproto[] ABS
     "ef_id\030\020 \001(\004\022\017\n\007payload\030\021 \001(\014\022\024\n\014last_out"
     "come\030\022 \001(\r\022\023\n\013last_reason\030\023 \001(\r\022\022\n\ncreat"
     "ed_ms\030\024 \001(\004\022\022\n\nupdated_ms\030\025 \001(\004\022\023\n\013resol"
-    "ved_by\030\026 \001(\t\022\026\n\016resolve_reason\030\027 \001(\t:\246\001\212"
-    "\222\364\001\016trade_asset_op\222\222\364\001\005op_id\332\222\364\001Ostatus,"
-    "next_attempt_ms;player_id,stream,stream_"
-    "epoch,status,seq;ref_kind,ref_id\342\222\364\001!pla"
-    "yer_id,stream,stream_epoch,seq\250\223\364\001\001\260\223\364\001\004"
-    "\270\223\364\001\004*\373\001\n\rListingStatus\022\036\n\032LISTING_STATU"
-    "S_UNSPECIFIED\020\000\022\034\n\030LISTING_STATUS_ESCROW"
-    "ING\020\001\022\031\n\025LISTING_STATUS_LISTED\020\002\022\031\n\025LIST"
-    "ING_STATUS_LOCKED\020\003\022\027\n\023LISTING_STATUS_SO"
-    "LD\020\004\022\034\n\030LISTING_STATUS_RETURNING\020\005\022\033\n\027LI"
-    "STING_STATUS_RETURNED\020\006\022\"\n\036LISTING_STATU"
-    "S_ESCROW_REJECTED\020\007*\254\001\n\020TradeAssetOpKind"
-    "\022#\n\037TRADE_ASSET_OP_KIND_UNSPECIFIED\020\000\022$\n"
-    " TRADE_ASSET_OP_KIND_ESCROW_DEBIT\020\001\022&\n\"T"
-    "RADE_ASSET_OP_KIND_DELIVER_CREDIT\020\002\022%\n!T"
-    "RADE_ASSET_OP_KIND_RETURN_CREDIT\020\003*\363\001\n\022T"
-    "radeAssetOpStatus\022%\n!TRADE_ASSET_OP_STAT"
-    "US_UNSPECIFIED\020\000\022!\n\035TRADE_ASSET_OP_STATU"
-    "S_PENDING\020\001\022!\n\035TRADE_ASSET_OP_STATUS_APP"
-    "LIED\020\002\022\"\n\036TRADE_ASSET_OP_STATUS_REJECTED"
-    "\020\003\022!\n\035TRADE_ASSET_OP_STATUS_ABORTED\020\004\022)\n"
-    "%TRADE_ASSET_OP_STATUS_APPLIED_PARTIAL\020\005"
-    "*\206\001\n\023TradeAssetOpRefKind\022\'\n#TRADE_ASSET_"
-    "OP_REF_KIND_UNSPECIFIED\020\000\022#\n\037TRADE_ASSET"
-    "_OP_REF_KIND_LISTING\020\001\022!\n\035TRADE_ASSET_OP"
-    "_REF_KIND_ORDER\020\002B\007Z\005tradeb\006proto3"
+    "ved_by\030\026 \001(\t\022\026\n\016resolve_reason\030\027 \001(\t\022\024\n\014"
+    "last_send_ms\030\030 \001(\004:\246\001\212\222\364\001\016trade_asset_op"
+    "\222\222\364\001\005op_id\332\222\364\001Ostatus,next_attempt_ms;pl"
+    "ayer_id,stream,stream_epoch,status,seq;r"
+    "ef_kind,ref_id\342\222\364\001!player_id,stream,stre"
+    "am_epoch,seq\250\223\364\001\001\260\223\364\001\004\270\223\364\001\004*\373\001\n\rListingS"
+    "tatus\022\036\n\032LISTING_STATUS_UNSPECIFIED\020\000\022\034\n"
+    "\030LISTING_STATUS_ESCROWING\020\001\022\031\n\025LISTING_S"
+    "TATUS_LISTED\020\002\022\031\n\025LISTING_STATUS_LOCKED\020"
+    "\003\022\027\n\023LISTING_STATUS_SOLD\020\004\022\034\n\030LISTING_ST"
+    "ATUS_RETURNING\020\005\022\033\n\027LISTING_STATUS_RETUR"
+    "NED\020\006\022\"\n\036LISTING_STATUS_ESCROW_REJECTED\020"
+    "\007*\254\001\n\020TradeAssetOpKind\022#\n\037TRADE_ASSET_OP"
+    "_KIND_UNSPECIFIED\020\000\022$\n TRADE_ASSET_OP_KI"
+    "ND_ESCROW_DEBIT\020\001\022&\n\"TRADE_ASSET_OP_KIND"
+    "_DELIVER_CREDIT\020\002\022%\n!TRADE_ASSET_OP_KIND"
+    "_RETURN_CREDIT\020\003*\230\002\n\022TradeAssetOpStatus\022"
+    "%\n!TRADE_ASSET_OP_STATUS_UNSPECIFIED\020\000\022!"
+    "\n\035TRADE_ASSET_OP_STATUS_PENDING\020\001\022!\n\035TRA"
+    "DE_ASSET_OP_STATUS_APPLIED\020\002\022\"\n\036TRADE_AS"
+    "SET_OP_STATUS_REJECTED\020\003\022!\n\035TRADE_ASSET_"
+    "OP_STATUS_ABORTED\020\004\022)\n%TRADE_ASSET_OP_ST"
+    "ATUS_APPLIED_PARTIAL\020\005\022#\n\037TRADE_ASSET_OP"
+    "_STATUS_ABANDONED\020\006*\206\001\n\023TradeAssetOpRefK"
+    "ind\022\'\n#TRADE_ASSET_OP_REF_KIND_UNSPECIFI"
+    "ED\020\000\022#\n\037TRADE_ASSET_OP_REF_KIND_LISTING\020"
+    "\001\022!\n\035TRADE_ASSET_OP_REF_KIND_ORDER\020\002B\007Z\005"
+    "tradeb\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2ftrade_2ftrade_5ftable_2eproto_deps[2] = {
@@ -1193,7 +1203,7 @@ static ::absl::once_flag descriptor_table_proto_2ftrade_2ftrade_5ftable_2eproto_
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2ftrade_2ftrade_5ftable_2eproto = {
     false,
     false,
-    2594,
+    2653,
     descriptor_table_protodef_proto_2ftrade_2ftrade_5ftable_2eproto,
     "proto/trade/trade_table.proto",
     &descriptor_table_proto_2ftrade_2ftrade_5ftable_2eproto_once,
@@ -1227,7 +1237,7 @@ TradeAssetOpStatus_descriptor() {
   return file_level_enum_descriptors_proto_2ftrade_2ftrade_5ftable_2eproto[2];
 }
 PROTOBUF_CONSTINIT const uint32_t TradeAssetOpStatus_internal_data_[] = {
-    393216u, 0u, };
+    458752u, 0u, };
 [[nodiscard]] const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL
 TradeAssetOpRefKind_descriptor() {
   ::google::protobuf::internal::AssignDescriptors(&descriptor_table_proto_2ftrade_2ftrade_5ftable_2eproto);
@@ -2596,7 +2606,7 @@ PROTOBUF_NOINLINE void TradeAssetOpRecord::Clear() {
         reinterpret_cast<char*>(&_impl_.lease_until_ms_) -
         reinterpret_cast<char*>(&_impl_.seq_)) + sizeof(_impl_.lease_until_ms_));
   }
-  if (BatchCheckHasBit(cached_has_bits, 0x007f0000U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x00ff0000U)) {
     ::memset(&_impl_.lease_token_, 0, static_cast<::size_t>(
         reinterpret_cast<char*>(&_impl_.last_reason_) -
         reinterpret_cast<char*>(&_impl_.lease_token_)) + sizeof(_impl_.last_reason_));
@@ -2786,7 +2796,7 @@ PROTOBUF_NOINLINE void TradeAssetOpRecord::Clear() {
   }
 
   // uint32 last_reason = 19;
-  if (CheckHasBit(cached_has_bits, 0x00400000U)) {
+  if (CheckHasBit(cached_has_bits, 0x00800000U)) {
     if (this_._internal_last_reason() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
@@ -2829,6 +2839,15 @@ PROTOBUF_NOINLINE void TradeAssetOpRecord::Clear() {
       ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
           _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "trade.TradeAssetOpRecord.resolve_reason");
       target = stream->WriteStringMaybeAliased(23, _s, target);
+    }
+  }
+
+  // uint64 last_send_ms = 24;
+  if (CheckHasBit(cached_has_bits, 0x00400000U)) {
+    if (this_._internal_last_send_ms() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          24, this_._internal_last_send_ms(), target);
     }
   }
 
@@ -2972,7 +2991,7 @@ PROTOBUF_NOINLINE void TradeAssetOpRecord::Clear() {
       }
     }
   }
-  if (BatchCheckHasBit(cached_has_bits, 0x007f0000U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x00ff0000U)) {
     // uint64 lease_token = 13;
     if (CheckHasBit(cached_has_bits, 0x00010000U)) {
       if (this_._internal_lease_token() != 0) {
@@ -3015,8 +3034,15 @@ PROTOBUF_NOINLINE void TradeAssetOpRecord::Clear() {
                                         this_._internal_updated_ms());
       }
     }
-    // uint32 last_reason = 19;
+    // uint64 last_send_ms = 24;
     if (CheckHasBit(cached_has_bits, 0x00400000U)) {
+      if (this_._internal_last_send_ms() != 0) {
+        total_size += 2 + ::_pbi::WireFormatLite::UInt64Size(
+                                        this_._internal_last_send_ms());
+      }
+    }
+    // uint32 last_reason = 19;
+    if (CheckHasBit(cached_has_bits, 0x00800000U)) {
       if (this_._internal_last_reason() != 0) {
         total_size += 2 + ::_pbi::WireFormatLite::UInt32Size(
                                         this_._internal_last_reason());
@@ -3136,7 +3162,7 @@ void TradeAssetOpRecord::MergeImpl(::google::protobuf::MessageLite& to_msg,
       }
     }
   }
-  if (BatchCheckHasBit(cached_has_bits, 0x007f0000U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x00ff0000U)) {
     if (CheckHasBit(cached_has_bits, 0x00010000U)) {
       if (from._internal_lease_token() != 0) {
         _this->_impl_.lease_token_ = from._impl_.lease_token_;
@@ -3168,6 +3194,11 @@ void TradeAssetOpRecord::MergeImpl(::google::protobuf::MessageLite& to_msg,
       }
     }
     if (CheckHasBit(cached_has_bits, 0x00400000U)) {
+      if (from._internal_last_send_ms() != 0) {
+        _this->_impl_.last_send_ms_ = from._impl_.last_send_ms_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00800000U)) {
       if (from._internal_last_reason() != 0) {
         _this->_impl_.last_reason_ = from._impl_.last_reason_;
       }

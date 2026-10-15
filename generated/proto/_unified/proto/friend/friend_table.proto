@@ -47,15 +47,15 @@ message FriendEdgeRecord {
   uint64 since_ms = 3;            // 结为好友的时刻
 }
 
-// 好友请求。一对 (from,to) 只留一行,靠主键做幂等:重复点"加好友"是 REPLACE 语义,
-// 不会堆出多行待处理请求。
+// 好友请求。一对 (from,to) 保留当前代次；重复 pending 不刷新，终态重发换 request_id。
 message FriendRequestRecord {
   option(OptionTableName) = "friend_request";
   option(OptionPrimaryKey) = "from_player_id,to_player_id";
   // 两条索引各有其查询:
   // (to_player_id,status) —— 拉"我收到的待处理请求"(GetPendingRequests 的主路径);
   // (status,updated_ms)   —— sweep 扫"已处理且过期"的行做清理,没有这条索引就得全表扫。
-  option(OptionIndex) = "to_player_id,status;status,updated_ms";
+  // request_id 只设普通索引：升级前的历史行都是 0，不能因唯一索引拒绝安全迁移。
+  option(OptionIndex) = "to_player_id,status;status,updated_ms;request_id";
   option(OptionTiDBNonclusteredPK) = true;
   option(OptionTiDBShardRowIDBits) = 4;
   option(OptionTiDBPreSplitRegions) = 4;
@@ -85,6 +85,9 @@ message FriendRequestRecord {
   // SQL 侧已有保险:go/friend/internal/data/sweep_repo.go 的 SweepTerminalRequests 发现
   // "终态且 updated_ms=0"的行时只统计不删,并打一条带存量修法 SQL 的错误日志。
   uint64 updated_ms = 5;
+  // 唯一号源 data_service 的 friend_request 号段。历史 pending=0 由服务在同一容量守卫内
+  // 按需补号；补号保留请求时刻，已有非零代次不轮换。0 永远不能被客户端接受或拒绝。
+  uint64 request_id = 6;
 }
 
 // 好友上限的显式计数行。AcceptFriend 事务里锁双方的 capacity 行来判上限,

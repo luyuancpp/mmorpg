@@ -276,8 +276,11 @@ func (s *ServiceContext) QueueCapacityProvider() loginqueue.CapacityProvider {
 }
 
 // gateWatcherCapacityProvider adapts NodeWatcher to the loginqueue.CapacityProvider
-// interface. Filtering by zone happens here; sorting (least-loaded first) is the
-// caller's job in PickAndSignGateToken so the dispatcher and the fast path agree.
+// interface. 这里只产出本 zone 的候选集(按 zone 过滤、去重、剔除排空中的 gate,见 candidatesFromNodes),
+// 不排序、不挑 gate。挑 gate 的规则只有一份,在 loginqueue 的 gatePicker:
+// 负载 = 在线人数(PlayerCount)+ 本拍已分给它的人数,取最少,同数取 NodeID 最小。
+// 快速通道经 PickAndSignGateToken → PickGate 在一份新候选上挑一次;dispatcher 每个非空拍取一次候选,
+// 由 newBatchPickFn 在这一份上逐条挑并记账。
 type gateWatcherCapacityProvider struct {
 	watcher *node.NodeWatcher
 	caps    map[string]uint32 // zone_id (decimal string) → capacity ceiling

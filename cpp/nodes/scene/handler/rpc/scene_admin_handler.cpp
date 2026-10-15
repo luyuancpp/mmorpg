@@ -65,6 +65,9 @@ void SceneSceneHandler::GmGracefulShutdown(::google::protobuf::RpcController* co
 				  << gate_security::GmAuthResultName(gmAuth.result)
 				  << " raw_operator=" << request->operator_().substr(0, kMaxLoggedFieldLength)
 				  << " request_reason=" << request->reason().substr(0, kMaxLoggedFieldLength);
+		// 被拒以 RPC_ERROR(HANDLER_FAILED) 回给调用方(kRemoteFailed),与「鉴权通过但没有可关的对象」区分开;
+		// 线上只带错误码,不回拒绝原因,原因只在本地日志。与 Gate.GmGracefulShutdown 同一口径。
+		controller->SetFailed("GM graceful shutdown rejected");
 		return;
 	}
 

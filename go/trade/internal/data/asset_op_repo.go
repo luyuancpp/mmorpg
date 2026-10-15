@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"math/rand/v2"
 	"slices"
 	"time"
 
@@ -13,10 +14,12 @@ import (
 	tradepb "proto/trade"
 
 	"shared/assetop"
+	"shared/safego"
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/zeromicro/go-zero/core/logx"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -1177,6 +1180,43 @@ var cleanupDeletedTotal = promauto.With(prometheus.DefaultRegisterer).NewCounter
 
 // recordCleanupDeleted:生产实现计指标;单测可替换为记录器(同 guild 的惯例,不去读全局注册表)。
 var recordCleanupDeleted = func(n int64) { cleanupDeletedTotal.Add(float64(n)) }
+
+// cleanupPoint 是清理 goroutine 与每一轮 recover 的 safego 点位名(safego_panic_total 的 label,必须是常量)。
+const cleanupPoint = "trade.asset_op_cleanup"
+
+// RunCleanup 阻塞运行终态行清理循环,ctx 取消即返回;调用方用 safego.Go(cleanupPoint 同名点位)启动,
+// 形状与 guild 的 GuildAssetStore.RunCleanup 相同。
+//
+// 每个副本都跑:删除幂等,多副本同时跑无害;随机初始延迟 [0, Interval) 只是把各副本错开,少抢同一批行锁。
+// 每一轮各自 recover:单轮 panic 只丢那一轮,清理不会从此静默停摆。
+// Interval 或 TerminalRetention 非正时不启动(打 ERROR):config.Validate 在 CleanupEnabled 时已拦,这里只防绕过装配层。
+func (r *AssetOpRepo) RunCleanup(ctx context.Context, c CleanupConf) {
+	if c.Interval <= 0 || c.TerminalRetention <= 0 {
+		logx.Errorf("[TradeAsset] Invalid cleanup config (interval=%v terminal_retention=%v); cleanup task not started",
+			c.Interval, c.TerminalRetention)
+		return
+	}
+	timer := time.NewTimer(time.Duration(rand.Int64N(int64(c.Interval))))
+	defer timer.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-timer.C:
+		}
+		safego.Run(cleanupPoint, func() {
+			deleted, err := r.CleanupTerminalOps(ctx, time.Now(), c.TerminalRetention)
+			if err != nil && ctx.Err() == nil {
+				logx.Errorf("[TradeAsset] Terminal asset op cleanup failed (deleted %d before the error): %v", deleted, err)
+				return
+			}
+			if deleted > 0 {
+				logx.Infof("[TradeAsset] Terminal asset op cleanup deleted %d row(s) older than %v", deleted, c.TerminalRetention)
+			}
+		})
+		timer.Reset(c.Interval)
+	}
+}
 
 // CleanupTerminalOps 跑一轮终态行清理(可测:时刻由调用方给),返回本轮删掉的行数。
 // retention <= 0 拒绝执行(删光所有终态行不可能是有意的配置);时钟早于保留期时没有可删的行。

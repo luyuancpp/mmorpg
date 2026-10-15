@@ -159,12 +159,14 @@ AssetOp:
   # 日对账(§6.2,只读):每 24 小时把 PENDING 行按 online_retry / offline / alert / abandon_candidate 计数,
   # 刷 assetop_pending_rows{class} 与 assetop_pending_class_oldest_age_seconds{class}。0 = 不跑。
   AuditIntervalMs: 86400000
-  # 落地唤醒订阅(§5.3)。不写或写 0 取 shared/assetopwake 的默认值(并发 4、去重 5000ms、单次唤醒 10000ms);
-  # TimeoutMs 必须大于单行预算 2500ms(写 0 或 [5000, 60000])。
+  # 落地唤醒订阅(§5.3),键与默认值同 guild 的 AssetOp.Wake:订阅 SharedRedis 上的 assetop:wake,玩家进场完成后
+  # 立即重投他的 PENDING 行,不再等退避 / 停放档。唤醒只是提示,丢了退回原退避,只慢不错。
+  # Enabled 不写 = 开;Concurrency 不写 = 4([1, 64],满了直接丢);TimeoutMs 不写 = 10000
+  # (必须大于单行预算 2500ms:写 0 或 [5000, 60000])。跨副本去重窗口固定 5 秒(对齐 scene 的合并窗口),不开放配置。
   Wake:
-    Concurrency: 0
-    DedupTTLMs: 0
-    TimeoutMs: 0
+    Enabled: true
+    Concurrency: 4
+    TimeoutMs: 10000
   # 终态行清理(每个副本都跑,删除幂等,PENDING 与 APPLIED_PARTIAL 永不删;ABANDONED 与其它终态一样 30 天后删)。
   CleanupEnabled: true
   CleanupIntervalMinutes: 10
