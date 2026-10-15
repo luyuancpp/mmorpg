@@ -1386,7 +1386,7 @@ public:
 
 	// DbTaskDispatchSystem::Pump 的回调(只能在 loop 顶层调用):该玩家的 DBTask 落定了(在途归零,或出现了需要重存的失败)。
 	// 实体已不在 → 回收账本条目;实体停在闸门上(awaitingDbTaskAck)且没有未落地的 Redis 存盘 → 核对收敛后
-	// 回到 FinishExitOrAwaitDbTaskAck。只用 GetPlayer / valid / try_get,不改实体的组件集合。
+	// 回到 FinishExitOrAwaitDbTaskAck。自身只用 GetPlayer / valid / try_get 读组件、不 get_or_emplace;重存与收尾交给既有入口。
 	static void OnDbTaskDispatchSettled(Guid playerId);
 
 private:
@@ -1395,6 +1395,7 @@ private:
 
 	// 存盘确实落地之后的统一收尾:紧急疏散改派(如果在疏散中)-> 断线释放标记(A1′,条件满足才写)
 	// -> 摘会话 -> 销毁实体。异步存盘回调与"快路径没写盘"两条路径都走这里,避免两份收尾逻辑漂移。
+	// 退出收尾口不要直接调它:先过 FinishExitOrAwaitDbTaskAck 的 DBTask 回执闸门(MySQL 那一份确认送达才销毁)。
 	static void FinishExitAfterPersist(Guid playerId);
 
 	// 向 SceneManager 请求把该玩家改派到大世界频道。只在疏散票据存在时生效,

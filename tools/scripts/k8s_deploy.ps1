@@ -2311,6 +2311,87 @@ metadata:
 	Invoke-KubectlWithInputFile -Args @("apply") -InputContent $nsYaml
 }
 
+<#
+.SYNOPSIS
+	MMORPG_REDIS_PASSWORD 的字符集保护:口令要原样嵌进 YAML 双引号标量,含双引号、反斜杠、换行或其它控制字符就 throw。
+
+.DESCRIPTION
+	同一个值写进 C++ 的 node-config / battle-node-config(zoneredis.password)、各 Go 服务与 gateway 的 ConfigMap、infra 的
+	Secret redis-auth,全部是 `"<值>"` 形式:双引号会提前结束标量,把 YAML 写坏;反斜杠是转义起始,`\n` 之类会被解析成别的字符,
+	口令被静默改掉;换行与其它控制字符不能原样出现在双引号标量里;制表符还会被 Invoke-KubectlWithInputFile 换成 4 个空格。
+	拒绝而不是转义:C++(yaml-cpp)、Go、Java 三边对转义序列的支持不必逐一核对,口令由运维生成,换一个不含这些字符的值即可。
+	报错只点变量名,不回显值。空串放行:dev 档未注入 = 不认证;非 dev 档的空值由 Resolve-InjectedSecret 与 Get-CppZoneRedisPassword 拒绝。
+	由 Initialize-InjectedSecrets 在任何写操作之前调用一次,Get-CppZoneRedisPassword 生成 C++ 配置时再查一次(纵深防御)。
+#>
+function Assert-RedisPasswordYamlSafe {
+	param([Parameter(Mandatory = $true)][AllowEmptyString()][AllowNull()][string]$Password)
+
+	if ([string]::IsNullOrEmpty($Password)) { return }
+	if ($Password -match '["\\\p{Cc}  ]') {
+		throw "MMORPG_REDIS_PASSWORD 含双引号、反斜杠、换行或其它控制字符:该口令要原样写进 node-config 等 ConfigMap 与 Secret redis-auth 的 YAML 双引号标量,会把 YAML 写坏或被转义改写。请换一个不含这些字符的口令(值不回显)。"
+	}
+}
+
+<#
+.SYNOPSIS
+	C++ 节点(gate / scene / battle)连 zone Redis 的口令,带生成期保护。New-NodeConfigMapYaml 写 zoneredis.password 与
+	Get-CppZoneRedisAuthAnnotations 算 Pod 模板指纹都从这里取,两边不可能取到不同的值。
+
+.DESCRIPTION
+	P0-A 第二批,方案 A(负责人 2026-10-15 定;docs/handoff/global-singletons-p0-findings-20261014.md「P0-A」修复设计第 6 条):
+	口令明文进 node ConfigMap,与各 Go 服务 / gateway 的 ConfigMap 同一做法。改走 Secret 不缩小暴露面:同 namespace 能读这份
+	ConfigMap 的人也能读那几份 Go / Java ConfigMap 里的同一个口令(G4b 给 gateway 写口令时的同一结论,见 New-JavaSvcConfigMapYaml)。
+	C++ 第一批已认 game_config.yaml 的 zoneredis.password(环境变量 ZONE_REDIS_PASSWORD 可覆盖):非空即每条新连接先 AUTH,
+	认证失败 fail-closed(zone Redis 对业务保持不可用,不放行未认证连接);空口令不发 AUTH。
+	两道保护,写法仿 New-NodeConfigMapYaml 里 GateTokenSecret 的生成期 throw(宁可在生成期炸,也不产出一份连不上 Redis 的 ConfigMap):
+	  1. 非 dev 档口令为空:该档 Redis 开 --requirepass(Apply-Infra 建 Secret redis-auth),C++ 不带口令就全线 NOAUTH。
+	     写路径入口的 Resolve-InjectedSecret 已先拒绝,这里是纵深防御;
+	  2. 字符集(Assert-RedisPasswordYamlSafe):值要原样嵌进 `password: "<值>"`。
+	dev 档未注入时返回空串:node-config 写 `password: ""`、不写指纹注解,与 P0-A 第二批之前逐字相同。
+	DryRun 会把整份 ConfigMap 连口令一起打出来,与 Go 服务 ConfigMap、Secret redis-auth 的既有行为相同。
+#>
+function Get-CppZoneRedisPassword {
+	$password = $script:RedisPassword
+	if ($null -eq $password) {
+		throw "生成 C++ 节点配置失败:zone Redis 口令未解析。请先调用 Initialize-InjectedSecrets(写操作路径会自动调用)。"
+	}
+	if ($password.Length -eq 0 -and $ReleaseProfile -ne 'dev') {
+		throw "生成 C++ 节点配置失败:ReleaseProfile=$ReleaseProfile 要求 zone Redis 口令非空(MMORPG_REDIS_PASSWORD):该档 Redis 开了 requirepass,C++ 节点不带口令会全线 NOAUTH。"
+	}
+	Assert-RedisPasswordYamlSafe -Password $password
+	return $password
+}
+
+<#
+.SYNOPSIS
+	C++ 节点 Pod 模板上的 zone Redis 口令指纹注解({ 注解名 = 指纹 })。有口令时一条,口令为空(dev 未注入)时是空表 → 模板不写该注解,
+	与 P0-A 第二批之前逐字相同。New-CppPodAnnotationBlock(gate / scene / battle 的 Deployment、scene 的 Agones Fleet)与
+	New-CppNodePodCommon(lib 的 gate StatefulSet、battle Fleet、battle hostPort Deployment)共用这一处,覆盖全部挂 /app/bin/etc 的工作负载。
+
+.DESCRIPTION
+	为什么要指纹:口令在 node-config / battle-node-config 里,而 C++ 只在进程启动时读一次配置(config.cpp readGameConfig)。
+	只改 ConfigMap 时 Pod 模板逐字节没变,kubectl apply 是 no-op —— 开口令或换口令后,旧 Pod 拿旧值(或空口令)连 Redis,
+	一直 NOAUTH / 认证被拒,直到有人手动滚动。指纹进模板后,口令一变模板就变,apply 自然滚动。
+	**只哈希口令,不哈希整份 node-config**:node-config 里还有 Kafka / etcd / 号段等与口令无关的键(P0-B 等改动会动它们),
+	哈希整份会让每一次无关改动都滚动 gate(踢人)与 battle(作废在打的局)。
+	改口令会滚动 C++ Pod,这是期望行为(C++ 只在启动时读配置,不滚就一直用旧口令):
+	  - gate / scene / battle 的 Deployment:apply 即滚动;gate 滚动 = 断开该 Pod 上的玩家,scene 滚动 = 玩家被迁走,
+	    battle 滚动 = 作废该 Pod 上在打的局;
+	  - Agones Fleet(scene / battle):新建 GameServerSet,已 Allocated 的实例不被打断,空闲后才退场(battle 另有排空标签);
+	  - external 的 gate StatefulSet 是 OnDelete:模板换了不自动重建,按 k8s_gate_drain.ps1 逐个排空删 Pod 才换上新口令。
+	所以开口令 / 换口令要进维护窗口,步骤见 deploy/k8s/README.md「C++ 节点的 zone Redis 口令」。
+	指纹用 Get-InjectedSecretFingerprint(用途串 zone-redis/cpp-node 做域分隔、只截 48 位),暴露面同该函数的说明;
+	口令本身已在同 namespace 的 ConfigMap 里明文可读,指纹不扩大暴露面。
+#>
+function Get-CppZoneRedisAuthAnnotations {
+	$annotations = [ordered]@{}
+	$password = Get-CppZoneRedisPassword
+	if ($password.Length -gt 0) {
+		$annotations[$script:ZoneRedisAuthHashAnnotation] = Get-InjectedSecretFingerprint -SecretName 'zone-redis/cpp-node' -Value $password
+	}
+	return $annotations
+}
+
 function New-NodeConfigMapYaml {
 	param(
 		[Parameter(Mandatory = $true)][int]$CurrentZoneId,
@@ -2372,6 +2453,9 @@ function New-NodeConfigMapYaml {
 		# CrashLoopBackOff 才看得见),throw 是当场可读的错误。
 		throw "生成 node ConfigMap 失败:GateTokenSecret 为空。请先调用 Initialize-InjectedSecrets(写操作路径会自动调用),或注入 MMORPG_GATE_TOKEN_SECRET。"
 	}
+	# zone Redis 口令(P0-A 第二批,方案 A:明文进 ConfigMap;取值与两道生成期保护见 Get-CppZoneRedisPassword)。C++ 只在启动时
+	# 读这份配置:只改 ConfigMap 不会让进程重读,口令变了靠 Pod 模板上的指纹注解(Get-CppZoneRedisAuthAnnotations)滚动。
+	$zoneRedisPassword = Get-CppZoneRedisPassword
 
 	$battleSettingsBlock = ''
 	if ($IncludeBattleSettings) {
@@ -2530,7 +2614,7 @@ ZoneId: $CurrentZoneId
 zoneredis:
   host: "redis.${InfraNamespace}"
   port: 6379
-  password: ""
+  password: "${zoneRedisPassword}"
   db: 0
   timeout: 3000
   max_connections: 100
@@ -2575,16 +2659,15 @@ function New-NodeDeploymentYaml {
 	# 这里的片段直接按字面空格拼(6 / 8),不能再用制表符,否则会被再乘 4。
 	$sidecarInitBlock = ""
 	$sidecarVolumeBlock = ""
-	$sidecarAnnotationBlock = ""
 	if ($script:CppLogSidecarEnabled) {
 		$zoneLabelForSidecar = if ([string]::IsNullOrWhiteSpace($CurrentZoneName)) { "global" } else { $CurrentZoneName }
 		# 放 initContainers + restartPolicy: Always(原生 sidecar),理由见 New-CppLogSidecarContainerYaml。
 		# initContainers 与 containers 共用同一个 spec.volumes,所以卷片段不动。
 		$sidecarInitBlock = "`n      initContainers:`n" + (New-CppLogSidecarContainerYaml -ItemIndent "        " -CurrentZoneName $zoneLabelForSidecar -AsNativeSidecar)
 		$sidecarVolumeBlock = "`n" + (New-CppLogSidecarVolumeYaml -ItemIndent "        ")
-		# 哈希加引号:12 位十六进制可能全是数字(如 123456789012)或是 12345678e123 这类科学计数法,裸写会被 YAML 解析成数字,annotation 值必须是字符串,API server 拒收。
-		$sidecarAnnotationBlock = "`n      annotations:`n        mmorpg.io/cpp-log-sidecar-config-hash: `"$(Get-CppLogSidecarConfigHash)`""
 	}
+	# Pod 模板注解:sidecar 配置指纹(开 sidecar 时)+ zone Redis 口令指纹(有口令时),同一个 annotations: 段,列位置同上(6 / 8)。
+	$podAnnotationBlock = New-CppPodAnnotationBlock -KeyIndent "      "
 
 	# 用数组逐行拼,最后 join 换行。
 	# 旧写法是 `$block += @"..."@` 连续追加两个 here-string —— here-string 内容不含
@@ -6975,3 +7058,4 @@ switch ($Command) {
 		throw "Unsupported command: $Command"
 	}
 }
+                                                                                                                                                      

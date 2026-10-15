@@ -25,6 +25,7 @@
 #include "player/comp/last_persisted_snapshot_comp.h"
 #include "player/comp/player_frozen_comp.h"
 #include "player/comp/player_ownership_comp.h"
+#include "player/system/db_task_dispatch_system.h"
 #include "player/system/dirty_save_stats.h"
 #include "player/system/handoff_mark_withdraw.h"
 #include "player/system/player_data_loader.h"
@@ -2239,8 +2240,14 @@ void PlayerLifecycleSystem::HandlePlayerAsyncSaved(Guid playerId, PlayerAllData 
 				LOG_INFO << "Player marked for unregistration: " << playerId
 						 << " (cause=" << player_exit::ExitCauseName(exitIntent->cause)
 						 << ", resave_rounds=" << static_cast<uint32_t>(exitIntent->resaveRounds) << ")";
-				FinishExitAfterPersist(playerId);
-				return; // 实体已销毁,快照无处可挂
+				// Redis 已收敛;MySQL 那一份还要过 DBTask 回执闸门。exitIntent 此后不再使用(闸门可能已销毁实体)。
+				if (FinishExitOrAwaitDbTaskAck(playerId))
+				{
+					return; // 实体已销毁,快照无处可挂
+				}
+				// 在等 DBTask 回执 / 已为投递失败重存 / 超限保留:实体还在,走到函数末尾照常更新快照
+				// (这份字节确实已在 Redis)。
+				break;
 			case player_exit::AfterPersistDecision::kResave:
 			{
 				// 4. 不收敛:先把快照更新为刚落地的这份(它确实已在盘上),再存一次当前内存;保留
@@ -2275,7 +2282,8 @@ void PlayerLifecycleSystem::HandlePlayerAsyncSaved(Guid playerId, PlayerAllData 
 				}
 				LOG_INFO << "Player marked for unregistration: " << playerId
 						 << " (converged on re-save, cause=" << player_exit::ExitCauseName(exitIntent->cause) << ")";
-				FinishExitAfterPersist(playerId);
+				// 快照在上面已 Replace 过;是否立即销毁由 DBTask 回执闸门决定。
+				FinishExitOrAwaitDbTaskAck(playerId);
 				return;
 			}
 			case player_exit::AfterPersistDecision::kRetainExhausted:

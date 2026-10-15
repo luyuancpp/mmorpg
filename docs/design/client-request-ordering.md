@@ -151,7 +151,7 @@ lane 准入放在 `PROTOCOL_GRPC` 分支里、路由模式下,取代现在直接
 
 - 限流、体积、白名单、GM、battle 这些拒绝仍然排在 lane 之前,立即回执,不占 lane 名额。它们的回执可能先于更早排队请求的回包到达客户端。这是允许的:本文保证的是**执行顺序**,不保证拒绝回执的到达顺序;拒绝回执带 id,客户端能对上号。
 
-> 2026-10-15 订正(用户拍板两版同批):体积、限流原本就是带 id 的信封;GM 闸(1006)与 battle 拒绝(1003)由 23 号 tip 改为带 id 与原 message_id 的信封,Java 版同批修订 scene-battle-spec D12。**白名单拒绝有意不回执**:它计非法包,回执会把「无凭证刷不存在的消息号」变成回包放大面,所以不在「拒绝回执带 id」之列。仍是 23 号 tip、不带 id 的同类 gate 级失败还有两处,本轮未改:scene 未就绪 / RpcClient 未挂(`HandleTcpNodeMessage`,两种模式都走)与直连模式找不到业务节点(O7 维持现状,随 D61 删除)。
+> 2026-10-15 订正(用户拍板两版同批):体积、限流原本就是带 id 的信封;GM 闸(1006)与 battle 拒绝(1003)由 23 号 tip 改为带 id 与原 message_id 的信封,Java 版同批修订 scene-battle-spec D12。**白名单拒绝有意不回执**:它计非法包,回执会把「无凭证刷不存在的消息号」变成回包放大面,所以不在「拒绝回执带 id」之列。仍是 23 号 tip、不带 id 的同类 gate 级失败本轮未改,完整清单(复核核实):两种模式都走的 `HandleTcpNodeMessage` 两处(scene 未就绪、RpcClient 未挂);只在直连模式发生的三处(`HandleGrpcNodeMessage` 请求体解析失败 `kRequestMessageParseError`、找不到业务节点,以及 `rpc_reply_bridge.cpp` 里 lane 不认领时的 gRPC 失败桥),后三处随 O7 / D61 删除直连路径时一并处理。`scene_entry_dispatch.cpp` 的 `kEnterSceneFailed` 是推送、不是请求回执,不在此列。
 - `loginStarted` 改在**发出时**置位(现在路由模式下就是发出之后置位【码】`client_message_processor.cpp:821-826`)。排队中、断线时作废的 Login 从没到达 login,不需要通知,这样也不会被「发 Login 后立刻断开」用来放大断线 RPC(`:439-451` 的注释)。
 
 ### 4.2 数据结构

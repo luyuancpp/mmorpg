@@ -1555,6 +1555,183 @@ Test-Case 'gateway 削峰指纹随 rate-limit 段文本变化(只改 -GatewayTru
     Assert-Equal -Expected $baseline.AdminKey -Actual $withProxies.AdminKey -Because '管理面口令没变,口令指纹必须不变(两条注解各管各的输入)'
 }
 
+# 登录排队合入门槛(用例 19–22,2026-10-15;docs/handoff/launch-readiness-20261013/spec_G4b.md §7「合入门槛」)。
+# G4b-2 的 login 段已先于门槛入库,k8s_deploy.ps1 用常量 $script:LoginQueueMergeGateCleared 挡住打开排队;未清时 Resolve-LoginQueueSwitch
+# 把 auto 一律解析为关、把 on 拒在任何写操作之前。测试接缝 MMORPG_TEST_LOGIN_QUEUE_GATE_CLEARED=1 只在 -DryRun 下视为门槛已清。
+# 「不带 -DryRun + 接缝变量 → 拒绝」只在用例 21 里对纯函数断言:不带 -DryRun 起部署子进程,万一没拒绝就会对本机当前 kubectl context
+# 真执行,所以本文件不起这种子进程。用例 19 / 20 断的是门槛未清时的产物,负责人把常量改为 $true 的同一提交里要随之改写这两例
+# (届时 staging auto = 开、-LoginQueue on 放行);刻意不写「常量必须为 $false」的断言,那会把放开门槛本身挡在测试上。
+# 用例 21 按 AST 抽出下面两个函数直接调用(与上文 deadline 守卫、常量表自检同一做法)。
+$loginQueueGateFunctionNames = @('Resolve-PeakShavingSwitch', 'Resolve-LoginQueueSwitch')
+foreach ($loginQueueGateFnAst in $deadlineDeployAst.FindAll({ param($a) $a -is [System.Management.Automation.Language.FunctionDefinitionAst] }, $false)) {
+    if ($loginQueueGateFunctionNames -contains $loginQueueGateFnAst.Name) {
+        Set-Item -Path "Function:script:$($loginQueueGateFnAst.Name)" -Value $loginQueueGateFnAst.Body.GetScriptBlock()
+    }
+}
+foreach ($loginQueueGateFnName in $loginQueueGateFunctionNames) {
+    if (-not (Test-Path "Function:$loginQueueGateFnName")) { throw "k8s_deploy.ps1 缺少函数 $loginQueueGateFnName(登录排队的合入门槛被删了?后续断言无意义)" }
+}
+
+Test-Case '合入门槛未清(不带测试接缝):staging zone-up 的 -LoginQueue auto 解析为关,打 LoginQueueGate=closed,login 不写 Queue 段、不要求排队密钥,限流照开' {
+    # 用例 19。门槛清掉后本例要随常量一起改(见上方说明)。
+    # 显式置空接缝变量:不受跑测机器上残留的同名环境变量影响。排队密钥也置空:门槛未清时排队关,不该要求它。
+    $env2 = @{} + $ProdEnv
+    $env2['MMORPG_TEST_LOGIN_QUEUE_GATE_CLEARED'] = ''
+    $env2['MMORPG_LOGIN_QUEUE_TOKEN_SECRET'] = ''
+    $run = Invoke-DeployDryRun -Arguments ($BaseArgs + @('-ReleaseProfile', 'staging', '-SkipPreflight', '-NodeImage', $PeakNodeImage)) -Env $env2
+    Assert-Equal -Expected 0 -Actual $run.ExitCode -Because "门槛未清时 staging 排队关,缺 MMORPG_LOGIN_QUEUE_TOKEN_SECRET 也必须能部署。输出: $($run.Output)"
+    Assert-Match -Text $run.Output -Pattern 'PeakShaving: gateway_rate_limit=on\(-GatewayRateLimit auto\) login_queue=off\(-LoginQueue auto\) profile=staging ' -Because '计划行:限流仍按档位开,排队因门槛未清解析为关'
+    Assert-Match -Text $run.Output -Pattern '\[PeakShaving\]LoginQueueGate=closed' -Because '门槛把本该开的排队关掉时,要用专门的警告点明原因与放开方法'
+    Assert-NotMatch -Text $run.Output -Pattern '\[PeakShaving\]LoginQueue=off' -Because '门槛未清时不打 LoginQueue=off:它说的「不粘滞、下次部署按档位恢复」在门槛未清时不成立'
+    $loginFlat = ConvertTo-FlatManifest -Block (Select-ManifestByName -Output $run.Output -Name 'go-svc-login-config')
+    $queueKeys = @(@(Get-FlatSubtreeKeys -Flat $loginFlat -Path 'data.login.yaml.Queue') + @(Get-FlatSubtreeKeys -Flat $loginFlat -Path 'data.login.yaml.Secrets.QueueToken'))
+    Assert-True -Condition ($queueKeys.Count -eq 0) -Because "门槛未清时 login ConfigMap 不得写 Queue / Secrets.QueueToken(实际出现:$($queueKeys -join ', '))"
+    # 按「kind: Deployment + metadata 里的名字」挑 login 的 Deployment(同上文命令 topic 用例的挑法)。
+    $loginDeployment = @(Get-ManifestBlocks -Output $run.Output | Where-Object {
+        $_ -cmatch '(?m)^kind: Deployment\s*$' -and $_ -cmatch '(?m)^  name: login\s*$'
+    }) | Select-Object -First 1
+    Assert-True -Condition ($null -ne $loginDeployment) -Because 'DryRun 输出里应当有 login 的 Deployment(本例断它不带削峰指纹的前提)'
+    Assert-NotMatch -Text $loginDeployment -Pattern 'peak-shaving-hash' -Because '排队关 = login 的 Pod 模板不带削峰指纹'
+    $gatewayFlat = ConvertTo-FlatManifest -Block (Select-ManifestByName -Output $run.Output -Name 'java-svc-gateway-config')
+    Assert-Equal -Expected 'true' -Actual (Get-FlatValue -Flat $gatewayFlat -KeyPath 'data.application.yaml.gate.rate-limit.enabled') -Because '合入门槛只管登录排队,gateway 限流仍按档位开'
+    $null = Get-PeakShavingAnnotation -Output $run.Output -Workload 'gateway' -Label '门槛未清 staging'
+}
+
+Test-Case '合入门槛未清(不带测试接缝):prod -LoginQueue on 在参数解析后、任何 kubectl 之前拒绝并点名门槛' {
+    # 用例 20。门槛清掉后本例要随常量一起改(见上方说明)。其余生产密钥都给齐:门槛已清时这次 DryRun 会成功,拒绝只能来自门槛。
+    $env2 = @{} + $ProdEnv
+    $env2['MMORPG_TEST_LOGIN_QUEUE_GATE_CLEARED'] = ''
+    $run = Invoke-DeployDryRun -Arguments ($ProdArgs + @('-LoginQueue', 'on')) -Env $env2
+    Assert-True -Condition ($run.ExitCode -ne 0) -Because "门槛未清时 -LoginQueue on 必须拒绝。输出: $($run.Output)"
+    Assert-Match -Text $run.Output -Pattern '-LoginQueue on 被拒绝' -Because '错误要说清是哪个参数值被拒'
+    Assert-Match -Text $run.Output -Pattern '合入门槛未清' -Because '错误要说清拒绝原因是合入门槛'
+    Assert-Match -Text $run.Output -Pattern 'LoginQueueMergeGateCleared' -Because '错误要点名放开门槛要改的常量'
+    Assert-NotMatch -Text $run.Output -Pattern '\[dry-run\] kubectl' -Because '门槛在参数解析后就拒绝,早于任何 kubectl(含只读)'
+    # Release: 行与削峰计划行都在写路径入口才打,拒绝发生在它们之前 = 拒绝点在参数解析后(Resolve-LoginQueueSwitch 的调用处)。
+    Assert-NotMatch -Text $run.Output -Pattern '(?m)^Release: profile=' -Because '拒绝必须早于 Release: 行(参数解析后、加载库之前)'
+    Assert-NotMatch -Text $run.Output -Pattern '(?m)^PeakShaving: ' -Because '拒绝必须早于削峰计划行'
+}
+
+Test-Case '合入门槛纯函数:Resolve-LoginQueueSwitch 全组合(未清时 auto / off 恒关、on 拒绝;已清时与 Resolve-PeakShavingSwitch 逐格一致;测试接缝只在 DryRun 生效)' {
+    # 用例 21。不依赖常量当前的值:常量以 -MergeGateCleared 参数传入。
+    $profiles = @('dev', 'staging', 'prod')
+    # 对照表本身先钉住:Resolve-PeakShavingSwitch 被改坏时,下面「与它一致」就失去意义。
+    foreach ($profileName in $profiles) {
+        Assert-Equal -Expected ($profileName -ne 'dev') -Actual (Resolve-PeakShavingSwitch -Value 'auto' -ReleaseProfileName $profileName) -Because "Resolve-PeakShavingSwitch:auto 在 $profileName 档应为 $($profileName -ne 'dev')(dev 关,其余开)"
+        Assert-Equal -Expected $true -Actual (Resolve-PeakShavingSwitch -Value 'on' -ReleaseProfileName $profileName) -Because "Resolve-PeakShavingSwitch:on 在 $profileName 档应为开"
+        Assert-Equal -Expected $false -Actual (Resolve-PeakShavingSwitch -Value 'off' -ReleaseProfileName $profileName) -Because "Resolve-PeakShavingSwitch:off 在 $profileName 档应为关"
+    }
+
+    # 门槛未清(常量 $false、不带接缝):DryRun 与否结论相同。'ON':ValidateSet 不分大小写,大写的 on 也必须被拒。
+    foreach ($dryRunMode in @($false, $true)) {
+        foreach ($profileName in $profiles) {
+            foreach ($value in @('auto', 'off')) {
+                $actual = Resolve-LoginQueueSwitch -Value $value -ReleaseProfileName $profileName -MergeGateCleared $false -DryRunMode $dryRunMode -TestOverride ''
+                Assert-Equal -Expected $false -Actual $actual -Because "门槛未清时 -LoginQueue $value 在 $profileName 档必须解析为关(DryRun=$dryRunMode)"
+            }
+            foreach ($value in @('on', 'ON')) {
+                $message = ''
+                try { $null = Resolve-LoginQueueSwitch -Value $value -ReleaseProfileName $profileName -MergeGateCleared $false -DryRunMode $dryRunMode -TestOverride '' }
+                catch { $message = $_.Exception.Message }
+                Assert-Match -Text $message -Pattern '合入门槛未清' -Because "门槛未清时 -LoginQueue $value 在 $profileName 档必须 throw(DryRun=$dryRunMode)"
+                Assert-Match -Text $message -Pattern 'LoginQueueMergeGateCleared' -Because '错误要点名放开门槛要改的常量'
+                Assert-Match -Text $message -Pattern 'spec_G4b\.md §7' -Because '错误要给出三项门槛的出处'
+                Assert-Match -Text $message -Pattern 'spec_G4b-G\.md §8\.4' -Because '错误要点名真实 Redis 冒烟那一项的出处'
+            }
+        }
+    }
+
+    # 门槛已清的三种来源,结论都与 Resolve-PeakShavingSwitch 逐格一致。
+    foreach ($cleared in @(
+        @{ Label = '常量 $true、非 DryRun'; MergeGateCleared = $true; DryRunMode = $false; TestOverride = '' }
+        @{ Label = '常量 $true、DryRun'; MergeGateCleared = $true; DryRunMode = $true; TestOverride = '' }
+        @{ Label = '常量 $false、DryRun + 接缝 1'; MergeGateCleared = $false; DryRunMode = $true; TestOverride = '1' }
+    )) {
+        foreach ($profileName in $profiles) {
+            foreach ($value in @('auto', 'on', 'off', 'ON')) {
+                $expected = Resolve-PeakShavingSwitch -Value $value -ReleaseProfileName $profileName
+                $actual = Resolve-LoginQueueSwitch -Value $value -ReleaseProfileName $profileName -MergeGateCleared $cleared.MergeGateCleared -DryRunMode $cleared.DryRunMode -TestOverride $cleared.TestOverride
+                Assert-Equal -Expected $expected -Actual $actual -Because "$($cleared.Label):-LoginQueue $value 在 $profileName 档必须与 Resolve-PeakShavingSwitch 一致"
+            }
+        }
+    }
+
+    # 接缝不带 -DryRun:只要设置了就 throw,常量为 $true 时也一样(fail-closed,它放不开真实部署)。
+    foreach ($mergeGateCleared in @($false, $true)) {
+        foreach ($override in @('1', '0', 'true')) {
+            $message = ''
+            try { $null = Resolve-LoginQueueSwitch -Value 'auto' -ReleaseProfileName 'prod' -MergeGateCleared $mergeGateCleared -DryRunMode $false -TestOverride $override }
+            catch { $message = $_.Exception.Message }
+            Assert-Match -Text $message -Pattern 'MMORPG_TEST_LOGIN_QUEUE_GATE_CLEARED' -Because "不带 -DryRun 时设置了接缝变量(值 '$override',常量 $mergeGateCleared)必须 throw 并点名变量"
+            Assert-Match -Text $message -Pattern '只在 -DryRun 下生效' -Because '错误要说清接缝只在 -DryRun 下生效'
+        }
+    }
+    # 接缝在 DryRun 下只接受 1,其它值不猜含义。
+    foreach ($override in @('0', 'true', ' 1')) {
+        $message = ''
+        try { $null = Resolve-LoginQueueSwitch -Value 'auto' -ReleaseProfileName 'prod' -MergeGateCleared $false -DryRunMode $true -TestOverride $override }
+        catch { $message = $_.Exception.Message }
+        Assert-Match -Text $message -Pattern '只接受 1' -Because "DryRun 下接缝变量为 '$override' 必须 throw(只接受 1)"
+    }
+    # 未设置:子进程里没设的环境变量读出来是 $null,与空串同样视为未设置。
+    Assert-Equal -Expected $false -Actual (Resolve-LoginQueueSwitch -Value 'auto' -ReleaseProfileName 'prod' -MergeGateCleared $false -DryRunMode $false -TestOverride $null) -Because '接缝变量未设置($null)且门槛未清时,prod auto 解析为关、不 throw'
+}
+
+Test-Case '合入门槛源码形状:$script:LoginQueueOn 只由 Resolve-LoginQueueSwitch 赋值,门槛常量只能是字面量,测试接缝只读一处且绑本脚本的 -DryRun' {
+    # 用例 22。用例 21 证明了纯函数本身;这里证明脚本真的经它取值、门槛参数绑的是常量与 -DryRun,不留绕过的路。
+    $assignmentsTo = {
+        param([string]$Target)
+        @($deadlineDeployAst.FindAll({ param($a) $a -is [System.Management.Automation.Language.AssignmentStatementAst] -and $a.Left.Extent.Text -ieq $Target }, $true))
+    }
+    $topLevel = @($deadlineDeployAst.EndBlock.Statements)
+
+    $queueAssigns = & $assignmentsTo '$script:LoginQueueOn'
+    Assert-Equal -Expected 1 -Actual $queueAssigns.Count -Because 'k8s_deploy.ps1 里 $script:LoginQueueOn 只能有一处赋值(多一处就可能绕过合入门槛)'
+    $queueAssign = $queueAssigns[0]
+    Assert-True -Condition ($topLevel -contains $queueAssign) -Because '$script:LoginQueueOn 必须在脚本顶层赋值(参数解析后算一次)'
+    $calls = @($queueAssign.Right.FindAll({ param($a) $a -is [System.Management.Automation.Language.CommandAst] }, $true))
+    Assert-True -Condition ($calls.Count -eq 1 -and $calls[0].GetCommandName() -eq 'Resolve-LoginQueueSwitch') -Because "`$script:LoginQueueOn 必须只由 Resolve-LoginQueueSwitch 算出(实际:$($queueAssign.Right.Extent.Text))"
+    $callText = $calls[0].Extent.Text
+    Assert-Match -Text $callText -Pattern '-MergeGateCleared[:\s]\s*\$script:LoginQueueMergeGateCleared(\s|$)' -Because '-MergeGateCleared 必须绑门槛常量 $script:LoginQueueMergeGateCleared'
+    Assert-Match -Text $callText -Pattern '-DryRunMode[:\s]\s*\$DryRun\.IsPresent(\s|$)' -Because '-DryRunMode 必须绑本脚本的 -DryRun(测试接缝只在 DryRun 下生效的前提)'
+    Assert-Match -Text $callText -Pattern '-TestOverride[:\s]\s*\$env:MMORPG_TEST_LOGIN_QUEUE_GATE_CLEARED(\s|$)' -Because '-TestOverride 必须读测试接缝变量本身'
+    Assert-Match -Text $callText -Pattern '-Value[:\s]\s*\$LoginQueue(\s|$)' -Because '-Value 必须是 -LoginQueue 参数'
+
+    # $DryRun 必须就是参数块里的 [switch]$DryRun,脚本里没有别处给它赋值。
+    $dryRunParams = @($deadlineDeployAst.ParamBlock.Parameters | Where-Object { $_.Name.VariablePath.UserPath -eq 'DryRun' })
+    Assert-True -Condition ($dryRunParams.Count -eq 1 -and $dryRunParams[0].StaticType -eq [System.Management.Automation.SwitchParameter]) -Because 'k8s_deploy.ps1 的参数块里应当有 [switch]$DryRun'
+    $dryRunAssigns = @($deadlineDeployAst.FindAll({ param($a) $a -is [System.Management.Automation.Language.AssignmentStatementAst] -and $a.Left.Extent.Text -match '(?i)\$(script:)?DryRun$' }, $true))
+    Assert-Equal -Expected 0 -Actual $dryRunAssigns.Count -Because '脚本里不得给 $DryRun 赋值(否则接缝的生效条件就不再是调用方给的 -DryRun)'
+
+    # 测试接缝变量只在上面那一处调用里读,也没有经 GetEnvironmentVariable / Env: 路径之类的字面量另读一次。
+    $envReads = @($deadlineDeployAst.FindAll({ param($a) $a -is [System.Management.Automation.Language.VariableExpressionAst] -and $a.VariablePath.UserPath -ieq 'env:MMORPG_TEST_LOGIN_QUEUE_GATE_CLEARED' }, $true))
+    Assert-Equal -Expected 1 -Actual $envReads.Count -Because '$env:MMORPG_TEST_LOGIN_QUEUE_GATE_CLEARED 只能读一处'
+    Assert-True -Condition ($envReads[0].Extent.StartOffset -ge $calls[0].Extent.StartOffset -and $envReads[0].Extent.EndOffset -le $calls[0].Extent.EndOffset) -Because '接缝变量唯一的读取点必须在 Resolve-LoginQueueSwitch 的调用里'
+    $nameLiterals = @($deadlineDeployAst.FindAll({ param($a) $a -is [System.Management.Automation.Language.StringConstantExpressionAst] -and $a.Value -imatch '^(env:)?MMORPG_TEST_LOGIN_QUEUE_GATE_CLEARED$' }, $true))
+    Assert-Equal -Expected 0 -Actual $nameLiterals.Count -Because '不得以字符串字面量(GetEnvironmentVariable / Env: 路径)另读接缝变量'
+
+    # 门槛常量:恰好一处、顶层、字面量 $true / $false,先于 $script:LoginQueueOn 的赋值。不断言它当前的值(放开门槛只改这一处)。
+    $gateAssigns = & $assignmentsTo '$script:LoginQueueMergeGateCleared'
+    Assert-Equal -Expected 1 -Actual $gateAssigns.Count -Because '$script:LoginQueueMergeGateCleared 只能有一处赋值'
+    Assert-True -Condition ($topLevel -contains $gateAssigns[0]) -Because '门槛常量必须在脚本顶层赋值'
+    Assert-Match -Text $gateAssigns[0].Right.Extent.Text -Pattern '^\$(true|false)$' -Because "门槛常量只能是字面量 `$true / `$false,不能改成读参数或环境变量(实际:$($gateAssigns[0].Right.Extent.Text))"
+    Assert-True -Condition ($gateAssigns[0].Extent.StartOffset -lt $queueAssign.Extent.StartOffset) -Because '门槛常量必须先于 $script:LoginQueueOn 的赋值'
+
+    # 早于任何写操作:排在顶层写路径门禁块 if ($Command -in @("zone-up", "all-up", "infra-up")) 之前(Show-PeakShavingPlan、密钥解析与 kubectl 都在它之后)。
+    $writeGates = @($topLevel | Where-Object {
+        $_ -is [System.Management.Automation.Language.IfStatementAst] -and
+        $_.Clauses[0].Item1.Extent.Text -match '^\$Command\s+-in\s+@\(\s*"zone-up"\s*,\s*"all-up"\s*,\s*"infra-up"\s*\)$'
+    })
+    Assert-Equal -Expected 1 -Actual $writeGates.Count -Because 'k8s_deploy.ps1 顶层应当恰好有一个写路径门禁块'
+    Assert-True -Condition ($queueAssign.Extent.StartOffset -lt $writeGates[0].Extent.StartOffset) -Because '$script:LoginQueueOn 的赋值(-LoginQueue on 的拒绝点)必须先于写路径门禁块'
+
+    # 限流不受合入门槛影响:仍由 Resolve-PeakShavingSwitch 按档位算。
+    $gatewayAssigns = & $assignmentsTo '$script:GatewayRateLimitOn'
+    Assert-Equal -Expected 1 -Actual $gatewayAssigns.Count -Because '$script:GatewayRateLimitOn 只能有一处赋值'
+    $gatewayCalls = @($gatewayAssigns[0].Right.FindAll({ param($a) $a -is [System.Management.Automation.Language.CommandAst] }, $true))
+    Assert-True -Condition ($gatewayCalls.Count -eq 1 -and $gatewayCalls[0].GetCommandName() -eq 'Resolve-PeakShavingSwitch') -Because '$script:GatewayRateLimitOn 仍只由 Resolve-PeakShavingSwitch 算出(合入门槛只管登录排队)'
+}
+
 # ─────────────────────────────────────────────────────────────────
 # 4. 负向用例 —— 断错误文本,不只断退出码
 # ─────────────────────────────────────────────────────────────────
