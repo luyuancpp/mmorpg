@@ -179,7 +179,7 @@ func runUnmerge(o options) {
 	}, preflightParams{
 		zone:            dst,
 		scope:           "target",
-		kafkaGroup:      o.kafkaGroup,
+		kafkaGroups:     kafkaGroupCandidates(o.kafkaGroup, o.kafkaLegacyGroup, dst),
 		topicGeneration: uint32(o.kafkaTopicGen),
 		playerIDs:       m.PlayerIDs,
 	}); err != nil {

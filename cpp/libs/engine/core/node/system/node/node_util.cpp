@@ -25,7 +25,10 @@ const std::unordered_map<eNodeType, std::string> nodeTypeNameMap = {
 	{eNodeType::MatchNodeService, eNodeType_Name(MatchNodeService)},
 	// 客户端 RPC 路由服:etcd 前缀 ClientRpcRouterNodeService.rpc;gate 唯一的 gRPC 目标
 	// (docs/design/client-rpc-router.md),Go-Zero 实现,全局池。
-	{eNodeType::ClientRpcRouterNodeService, eNodeType_Name(ClientRpcRouterNodeService)}};
+	{eNodeType::ClientRpcRouterNodeService, eNodeType_Name(ClientRpcRouterNodeService)},
+	// 玩家持久收件箱:etcd 前缀 PlayerInboxNodeService.rpc;scene 调 FetchItems / AckItems
+	// (docs/design/player-inbox-service.md §1.4),Go-Zero 实现。不进 IsGlobalPoolNodeType。
+	{eNodeType::PlayerInboxNodeService, eNodeType_Name(PlayerInboxNodeService)}};
 
 eNodeType NodeUtils::GetServiceTypeFromPrefix(const std::string &prefix)
 {

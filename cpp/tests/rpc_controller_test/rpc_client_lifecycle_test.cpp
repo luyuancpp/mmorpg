@@ -71,12 +71,11 @@ using namespace std::chrono_literals;
 
 // 链接桩(整个测试工程只在这里定义一次)。本文件调用 NodeHandshakeManager::TryRegisterNodeSession,
 // 于是把 core.lib 里的 registration_manager.obj 链进来;它的其他方法引用全局 gNode,又把 node.obj 拉进来;
-// 而 Node::RegisterHandlers 引用的下面三个注册入口是**各节点可执行工程的生成代码**才定义的
-// (gate / scene / battle 各一份),任何 lib 里都没有 —— 不给就 LNK2019 ×3。
+// 而 Node::RegisterHandlers 引用的下面两个注册入口是**各节点可执行工程的生成代码**才定义的
+// (gate / scene / battle 各一份),任何 lib 里都没有 —— 不给就 LNK2019 ×2。
 // 按 message_id 的全局回包表(InitReply)已随 RpcChannel 改造退场,Node 不再要求它(muduo-rpc-channel.md §9.2)。
 // 本测试永远不会构造 Node,给空实现即可。若日后再报同类未解析符号,按同样方式补。
 void InitPlayerService() {}
-void InitPlayerServiceReplied() {}
 void InitServiceHandler() {}
 
 namespace

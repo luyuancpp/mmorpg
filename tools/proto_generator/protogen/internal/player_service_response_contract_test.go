@@ -64,6 +64,30 @@ func TestPlayerResponseContract_AllNonEmptyResponsesHaveCompileTimeGuard(t *test
 	}
 }
 
+func TestPlayerResponseContract_ProtobufEmptyDoesNotRequireErrorMessage(t *testing.T) {
+	// 真实玩家生命周期 RPC 使用标准 Empty；近似名字仍是业务应答，不能按后缀放行。
+	methods := playerResponseContractMethods(t, ".google.protobuf.Empty", ".google.protobuf.EmptyResult", ".domain.Empty")
+	header, err := GetPlayerServiceHeadStr(methods)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := strings.Count(header, "static_assert("); got != 2 {
+		t.Fatalf("标准 Empty 不要求错误字段，其余两个业务应答必须保留编译期守卫,实际=%d\n%s", got, header)
+	}
+	if strings.Contains(header, "std::declval<::google::protobuf::Empty&>") {
+		t.Fatalf("标准 Empty 应答不能被要求提供 error_message\n%s", header)
+	}
+	for _, response := range []string{"::google::protobuf::EmptyResult", "::domain::Empty"} {
+		guard := "static_assert(std::is_same_v<decltype(std::declval<" + response + "&>().mutable_error_message()), ::TipInfoMessage*>"
+		if !strings.Contains(header, guard) {
+			t.Fatalf("业务应答 %s 必须保留 TipInfoMessage 类型约束\n%s", response, header)
+		}
+	}
+	if call := methods[0].Method() + "(player,"; strings.Count(header, call) != 1 {
+		t.Fatalf("标准 Empty 方法必须恰好派发一次\n%s", header)
+	}
+}
+
 func TestPlayerResponseContract_DispatchDoesNotTransferOrCreateErrors(t *testing.T) {
 	methods := playerResponseContractMethods(t, ".Reply", ".Empty")
 	header, err := GetPlayerServiceHeadStr(methods)

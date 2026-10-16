@@ -28,6 +28,7 @@
   3. **交票后宽限**：代码常量，不做成配置。C++ gate 实际每 **10 秒**上报一次人数（不是「每几秒」）：10-13 定 15s 只留 5s 余量，10-15 负责人改为 20s（两个上报周期，余量 10s，与 Java 版的余量相同；§4.3、§11 #1）。
   4. **整键 TTL 保留**，但只做垃圾回收：每次写占位后保证整键至少还剩 `W = max(AdmitTTL, 20s) + 1min`，只延长不缩短（10-15 起；10-13 版是无条件 `PEXPIRE W`）。成员是否有效只看分数（§4.1）。
 - **不做**：不动 `Lookup` 的「取走后再轮询回排队中、名次 0」；不把 `PopAdmit` 改成单段 Lua；不新增配置键、指标、proto 字段（§5.8、§9）。
+  - **2026-10-15 更正（原文保留）**：「取走后再轮询回名次 0」已由 G4b-G 之后的另一批修掉（未编译、未测试），见 §5.8 末尾的更正；那一批给 `login_queue_expired_total` 新增了 `reason="admit_window_passed"` 一个取值，没有新增指标名、配置键或 proto 字段。
 - **规模**：Go 6 个文件（`queue.go` 是唯一的行为改动；`capacity.go`、`metrics.go`、`config.go` 只改注释和帮助文本；两个测试文件，新增 14 个用例）+ `login.yaml` 两段注释；文档 7 处由 Docs 阶段同步。本批不改 `go.mod` / `go.sum`（`go.mod` 上已有别的会话的 `go` 指令改动，本批不碰它），不改 C++、Java、PowerShell。
 - **Java 版**：已有同样的两点（Java 仓库 `LoginQueue.java`），本改动做完这两点即对齐，Java 代码不用改；`PARITY.md`「登录排队」行（2026-10-13 是第 **99** 行，不是 `spec_G4b.md` 写的 98）的措辞要改，原文与改法见 §12。本规格以下一律按行名引用这一行，不再写行号。
 
@@ -55,6 +56,8 @@
 | F14 | 指标 `login_queue_admitted_inflight` 的帮助文本写死 `SCARD admitted:zone:{zone}` 和「Sustained > 100」。仓库里没有任何告警规则或面板用到它 | `metrics.go:62-73`；全仓 grep `admitted_inflight` |
 | F15 | `TryReserveFastPathSlot` 没有任何单测；`loginpregate` 目录没有测试文件。`PROGRESS.md` 2026-08-10 那条曾建议补并发占位单测 | `docs/PROGRESS.md:2472-2474` |
 | F16 | login 的 go-redis 客户端用缺省选项（缺省 `MaxRetries` 为 3，超时会重发命令，包括 EVAL 与 GETDEL） | `svc/servicecontext.go:111-116`；go-redis v9.16.0（login 的 `go.mod` 所用版本，本机模块缓存）`options.go:331-336`：`MaxRetries` 为 0 时取 3、为 −1 时取 0 |
+
+> **2026-10-15 更正（F6 已修，本表原文保留；已落码，未编译、未测试，待 Codex 验证）**：负责人 2026-10-15 按「最标准」定，F6 不再是既有边角。`PopAdmit` 在写放行槽的同一个 MULTI 里给 meta 记 `admitted_at`（只在 meta 还在时写）；`Lookup` 取不到放行槽时一次 `HMGET zone_id admitted_at`，有 `admitted_at` 就复用 `consumeAdmitAndSign` 再取一次，仍取不到即回 EXPIRED（新原因 `admit_window_passed`），没有才走原来的 ZRANK（在途窗口仍回名次 0）。于是取走后再查、放行槽按 `AdmitTTL` 过期后再查都回 EXPIRED，`querystatuslogic.go` 那段注释与行为一致了。逐条见 §5.8 末尾的更正与 `login-queue-2026-05.md` §5 决策树后的更正。
 
 **两条缺陷的成因**（与 `spec_G4b.md` §1.5 一致，逐行核过）：
 
@@ -519,6 +522,7 @@ go-redis 把 `int64` / `uint32` 参数编码成十进制字符串，`float64` �
 - **放行未取**：分数 = 放行时刻 + `AdmitTTL`，与放行槽 `admit:{id}` 的 TTL 同长。客户端始终不来取：放行槽 60s 后过期，占位在同一时刻（± 时钟偏差）到点，下一次计数时清掉。
 - **取走**：只发生一次（`GETDEL` 只成功一次）。取走时把分数改成「取走时刻 + 20s」。多数情况是缩短（轮询间隔 2s，放行后几秒就取走）；临到 60s 才取则是延长。
 - **重复轮询**：第二次 `Lookup` 的 `GETDEL` 回空，在改分数之前就返回，占位不会被反复续期。客户端看到的仍是「排队中、名次 0」（F6，本批不改），按协议它会每 2s 继续轮询直到 1h。所以 **`holdAdmitted` 只能留在 `consumeAdmitAndSign` 里、`GETDEL` 判空与 `signFn` 成功之后**：挪到判空之前或挪进 `Lookup`，每次轮询都会把占位续 20s，占位永不到期，Q1 换个形态复发。由 T13 钉住。
+  - **2026-10-15 更正（F6 已修，原文保留）**：客户端现在看到的是 EXPIRED（410），不再是名次 0，收到后丢掉令牌，不会每 2s 轮询到 1h。`Lookup` 看到 meta 的 `admitted_at` 时会复用 `consumeAdmitAndSign` 再取一次放行槽，`holdAdmitted` 仍只在 `GETDEL` 取到且 `signFn` 成功之后执行，所以「不续期」的结论不变。见 §5.8 末尾的更正。
 - **取走时占位已被清**（login 钟比 Redis 快）：普通 ZADD 把它补回来，照样占 20s。Java 版这里用 `ZADD XX`、不补（`LoginQueue.java:138`）。本仓库不照抄：这个人确实马上要占一个名额，补回来只会多扣一个名额 20s，不补则会多放一个人；补回来也让新旧版本混跑时新版的计数更准（§5.5）。
 - **`signFn` 失败**：在改分数之前返回（与现状的「在 SREM 之前返回」位置相同）。放行槽已删，占位保持放行时的分数，最迟 `AdmitTTL` 到点。不主动回收：签票失败意味着密钥配置错或没有 gate，都不是多一个名额能解决的。由 T14 钉住。
 - **meta 读不到 zone**：跳过改分数（现状是跳过 SREM），占位最迟 `AdmitTTL` 到点。
@@ -631,6 +635,12 @@ go-redis 把 `int64` / `uint32` 参数编码成十进制字符串，`float64` �
 3. 「账号已有在线会话就绕过排队」的分支直接签票、不占位（`assigngatelogic.go:83-88`），这批人在 gate 上报之前不在任何计数里。Java 版没有这条路径（`PARITY.md`「登录排队」行 ①）。
 4. go-redis 超时重发 `GETDEL` 时，第二次回空，客户端看到「排队中、名次 0」（F16、F6 合起来的后果）。Java 版为此给取走加了请求号。
 5. `ZoneCapacityOverride` 不配时的回落公式（`capacity.go:76-87`）与本批无关，由 G4b-2 负责写配置。
+
+> **2026-10-15 更正（第 1、4 条，原文保留；已落码，未编译、未测试，待 Codex 验证）**：负责人 2026-10-15 按「最标准」定为修复（另一批，不属于 G4b-G）。
+> - **第 1 条已修**：取走后再拿同一令牌查，回 EXPIRED（gateway 410），不再回「排队中、名次 0」。放行槽没人来取、按 `AdmitTTL` 过期之后再查同样回 EXPIRED（此前同样停在名次 0，本表没有单列）。判据是 `PopAdmit` 与放行槽同一个 MULTI 写进 meta 的 `admitted_at`；`Lookup` 看到它而放行槽已不在，就是终态，记 `login_queue_expired_total{reason="admit_window_passed"}`。回包丢失时 gate 票仍找不回来，客户端从队尾重新排；与 Java 版的 410 一致。
+> - **第 4 条部分修**：go-redis 超时重发 `GETDEL`、第二次回空时，客户端现在看到 EXPIRED（410）而不是名次 0，会重新排队；但那张票仍然丢了。Java 版的取走请求号（让重发拿回同一张票）本仓库没有做。
+> - **第 2 条不变**：`PopAdmit` 在写放行槽之前丢掉的条目没有 `admitted_at`，与在途窗口无法区分，仍停在名次 0 直到 meta 过期。
+> - §5.1「重复轮询」一条的结论不变：第二次 `GETDEL` 回空，在改分数之前就返回，占位不续期；只是客户端看到的由名次 0 变为 EXPIRED。T13（`TestConsume_RepeatPollDoesNotExtendPlaceholder`）的断言随之收紧为 EXPIRED，§6.3 的照写代码块保留 10-13 原文。
 
 ---
 

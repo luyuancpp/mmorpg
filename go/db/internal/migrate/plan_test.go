@@ -211,8 +211,8 @@ func TestDriftReportsTypeMismatchInsteadOfModifying(t *testing.T) {
 }
 
 func TestDriftReportsMissingPrimaryKeyAndExtraColumns(t *testing.T) {
-	// 缺主键会让 INSERT ... ON DUPLICATE KEY UPDATE 的幂等语义整个失效
-	// (每次存盘追加新行),但补主键在有重复行时会失败,只能人工处理。
+	// 缺主键时存盘(Save:按主键 UPDATE,0 行再 INSERT)不会撞 1062,内容未变或并发首写
+	// 都会追加新行;但补主键在有重复行时会失败,只能人工处理。
 	src := newTestSource(t, false)
 	db, _ := dbtest.Open(t, driftHandler(
 		[][]driver.Value{
@@ -253,8 +253,8 @@ func TestAdvisoryLockNameIsPerDatabase(t *testing.T) {
 // 这条不是形式检查:proto2mysql v0.0.18 的 GetCreateTableSQL 对 player_database
 // 不输出 PRIMARY KEY,而 go/db/model/mysql_database_table.sql 里它是
 // PRIMARY KEY (player_id)。若原样拿生成的 DDL 建表,玩家数据表会没有主键,
-// 而存盘走 INSERT ... ON DUPLICATE KEY UPDATE —— 没有唯一键就永远不命中
-// "duplicate",每次存盘追加一行新记录,表无限膨胀且读回来的是任意一行。
+// 而存盘(Save:按主键 UPDATE,0 行再 INSERT)没有唯一键就永远不会撞 1062,
+// 内容未变或并发首写都会追加一行新记录,表无限膨胀且读回来的是任意一行。
 func TestBaselineAlwaysEmitsDeclaredPrimaryKey(t *testing.T) {
 	src := newTestSource(t, false)
 	m, err := src.Baseline()
@@ -263,7 +263,7 @@ func TestBaselineAlwaysEmitsDeclaredPrimaryKey(t *testing.T) {
 	}
 	for _, stmt := range m.Statements {
 		if !strings.Contains(stmt, "PRIMARY KEY") {
-			t.Fatalf("建表语句缺主键,会让存盘的 ON DUPLICATE KEY UPDATE 失效:\n%s", stmt)
+			t.Fatalf("建表语句缺主键,存盘(按主键 UPDATE,0 行再 INSERT)会追加重复行:\n%s", stmt)
 		}
 	}
 	// player_database 只标了 OptionIsPlayerDatabase、没标 OptionPrimaryKey,

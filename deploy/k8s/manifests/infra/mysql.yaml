@@ -71,12 +71,14 @@ data:
     collation-server = utf8mb4_unicode_ci
 
     # ── 连接上限(2026-10-12 G2b;数值待压测确认)───────────────────────
-    # 共用这台 MySQL 的是全部 zone 的 go/db、data_service、Java gateway,外加全局的 friend、trade。
+    # 共用这台 MySQL 的是全部 zone 的 go/db、data_service、Java gateway,外加全局的 friend、trade、player-inbox。
     # 总账公式与规划参数在 tools/scripts/k8s_deploy.ps1(Get-MysqlConnectionPlan / Get-MysqlConnectionLedger),
     # 部署写路径打印 "MySQL connection ledger" 一行;契约测试钉住「规划峰值 ≤ 本值」。
     # 规划档:4 个 zone、每个 go/db 实例打开其余 3 个 zone 的库(最坏)、Phase 2 未开、route store 按 db_first 计入,
     # 峰值 1620(含一个 zone 滚动发布 —— 每个 Deployment 多 1 个新 Pod + 1 个仍在优雅退出的旧 Pod —— 与运维余量 20),
     # 本值留约 10% 余量。
+    # 2026-10-15 加入玩家收件箱 player-inbox(2 副本 × 池 20,全局)后,按公式手算峰值 1700、余量约 6%(未运行,
+    # 池上限以 go/player_inbox/etc/player_inbox.yaml 为准,契约测试复核);再加全局池前先重做规划档。
     # 以前的 500 只够 2 个 zone 的稳态(恰好 500,零余量);4 个 zone 稳态就要 920(docs/PROGRESS.md 2026-10-12)。
     # 超限的后果不只是变慢:go/db 把 1040 当普通错误,耗尽重试后进没有消费者的死信(读代码推断,未实测)。
     # 改本值必须同步改下面 Deployment 的内存 limits(按每条连接约 1MiB 常驻估,待实测)。

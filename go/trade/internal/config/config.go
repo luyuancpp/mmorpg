@@ -1,7 +1,17 @@
 // Package config 是 trade 服务的配置结构与启动期校验。
 //
-// 键名与 etc/trade.yaml、tools/scripts/k8s_deploy.ps1 的 trade ConfigMap 三处逐字一致;
-// 改名必须三处同改,否则 ConfigMap 里的值会被 go-zero 当未知键静默忽略。
+// 键名与 etc/trade.yaml 逐字一致;tools/scripts/k8s_deploy.ps1 的 trade ConfigMap 里**写出来的键**也与这里逐字一致。
+// 改名必须几处同改,否则 ConfigMap 里的值会被 go-zero 当未知键静默忽略。
+//
+// ConfigMap 并不镜像全部键。**刻意不镜像**的(K8s 上取 json default / 缺省值):
+//   - AssetOp 段只写 Enabled(所有档位固定 false,上线前置见 k8s_deploy.ps1 那段注释)与 SecretEnv;
+//   - 落地恢复的键(OfflineAfterAttempts / OfflineBackoffMs / Abandon* / AuditIntervalMs / Wake.*)不写:
+//     Enabled 固定 false 时它们没有消费者(validateRecovery 也只在 Enabled 时校验),段在、键缺时 go-zero 回填的 default
+//     与 etc/trade.yaml 同值;
+//   - 终态行清理的键(CleanupEnabled / CleanupIntervalMinutes / TerminalRetentionDays)不写:CleanupEnabled 缺省 false,
+//     K8s 上通道从未开过、trade_asset_op 没有行可清。
+// 打开 K8s 资产通道时,要把上面两组键连同 Enabled=true 一起补进 ConfigMap(与 etc/trade.yaml 逐字一致),
+// 否则清理在 K8s 上一直不跑、落地恢复的取值也只能靠代码默认值。
 package config
 
 import (
@@ -93,9 +103,11 @@ type Config struct {
 	// Market:市场范围、分页与收藏上限。
 	Market MarketConf `json:"Market"`
 
-	// SharedRedis:**共享单库** Redis,只读一类跨运行时契约键 —— player:{id}:location
-	// (scene_manager 写,值是 PlayerLocation protobuf)。资产通道靠它找到玩家当前所在的
-	// scene 节点(go/shared/scenenode.Locator),没有它就发不出 AssetDebit / AssetCredit。
+	// SharedRedis:**共享单库** Redis。资产通道在这一实例上:
+	//   - 读跨运行时契约键 player:{id}:location(scene_manager 写,值是 PlayerLocation protobuf),据此找到玩家当前所在的
+	//     scene 节点(go/shared/scenenode.Locator),没有它就发不出 AssetDebit / AssetCredit;
+	//   - 订阅 scene 发布的落地唤醒频道 assetop:wake,另写两类本服务自己的键:唤醒的跨副本去重键
+	//     assetop:wake:trade:{player_id}(shared/assetopwake)与维护选主锁 trade:assetop:maintenance:leader(shared/leader)。
 	//
 	// 字段名**不能**叫 Redis:嵌入的 zrpc.RpcServerConf 已经有一个 Redis 字段
 	// (go-zero 的 RedisKeyConf,给 Auth 用),同名会在 conf.MustLoad 阶段直接报
@@ -136,7 +148,7 @@ type Config struct {
 // 停放档 / 自动放弃 / 日对账 / 落地唤醒 / 终态行清理,键名与默认值与 guild 的 AssetOpConf 同名同值,
 // 默认值的唯一事实源是 assetop.DefaultLoopConfig() 与 shared/assetopwake 的 Default*(config_test.go 守住相等)。
 // 消费者:svc 的 recoveryFrom / wakeConfigFrom / cleanupConfFrom(换算成 reconcile.Recovery、assetopwake.Config、
-// data.CleanupConf)。
+// data.CleanupConf)。这些键**刻意不镜像**进 k8s_deploy.ps1 的 trade ConfigMap(理由与打开通道时要补的内容见包头注释)。
 type AssetOpConf struct {
 	// Enabled 打开资产通道:拨共享 Redis、建 scene 节点镜像、起 outbox 重投循环。
 	//
@@ -171,7 +183,8 @@ type AssetOpConf struct {
 	OfflineBackoffMs int `json:",default=1800000"`
 	// AbandonAfterDays 自动放弃的年龄门槛(§6.3):PENDING 且创建早于 now − 本值才是候选。0 = 关闭;非 0 时 ≥ 30。
 	// **滚动升级**:新二进制全量上线之前必须写 0(混版窗口内旧实例的发送不推进 last_send_ms),全量之后再改回 180。
-	// trade 的对侧账尚未实现(P3),放弃只终结并留痕,见 data.AssetOpRepo.Abandon 的 TODO。
+	// trade 的对侧账尚未实现(P3),放弃只终结并留痕,且只处理 TRADE_DEBIT 行(CREDIT 由存储层挡在候选之外),
+	// 见 data.AssetOpRepo 的 abandonableStream 与 Abandon 的 TODO。
 	AbandonAfterDays int `json:",default=180"`
 	// AbandonSafetyGapMs 距该行最后一次**可能**的发送必须超过的安全间隔;自动放弃开启时 ≥ 600000(10 分钟,
 	// 且远大于 trade 的租约 10s)。

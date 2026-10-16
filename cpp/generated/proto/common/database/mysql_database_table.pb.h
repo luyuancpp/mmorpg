@@ -34,6 +34,7 @@
 #include "proto/common/base/user_accounts.pb.h"
 #include "proto/common/component/asset_op_ledger_comp.pb.h"
 #include "proto/common/component/battle_settlement_ledger_comp.pb.h"
+#include "proto/common/component/player_inbox_ledger_comp.pb.h"
 #include "proto/common/component/player_attribute_comp.pb.h"
 #include "proto/common/component/player_pet_comp.pb.h"
 #include "proto/common/component/player_scene_comp.pb.h"
@@ -2182,6 +2183,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED player_database final : public ::go
     kProfileComponentFieldNumber = 15,
     kAssetOpLedgerFieldNumber = 16,
     kSettlementLedgerFieldNumber = 17,
+    kInboxLedgerFieldNumber = 20,
     kPlayerIdFieldNumber = 1,
     kFenceOwnerEpochFieldNumber = 18,
     kFenceSaveSeqFieldNumber = 19,
@@ -2442,6 +2444,22 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED player_database final : public ::go
   ::BattleSettlementLedgerComp* PROTOBUF_NONNULL _internal_mutable_settlement_ledger();
 
   public:
+  // .PlayerInboxLedgerComp inbox_ledger = 20;
+  [[nodiscard]] bool has_inbox_ledger()
+      const;
+  void clear_inbox_ledger() ;
+  [[nodiscard]] const ::PlayerInboxLedgerComp& inbox_ledger() const;
+  [[nodiscard]] ::PlayerInboxLedgerComp* PROTOBUF_NULLABLE release_inbox_ledger();
+  ::PlayerInboxLedgerComp* PROTOBUF_NONNULL mutable_inbox_ledger();
+  void set_allocated_inbox_ledger(::PlayerInboxLedgerComp* PROTOBUF_NULLABLE value);
+  void unsafe_arena_set_allocated_inbox_ledger(::PlayerInboxLedgerComp* PROTOBUF_NULLABLE value);
+  ::PlayerInboxLedgerComp* PROTOBUF_NULLABLE unsafe_arena_release_inbox_ledger();
+
+  private:
+  const ::PlayerInboxLedgerComp& _internal_inbox_ledger() const;
+  ::PlayerInboxLedgerComp* PROTOBUF_NONNULL _internal_mutable_inbox_ledger();
+
+  public:
   // uint64 player_id = 1;
   void clear_player_id() ;
   [[nodiscard]] ::uint64_t player_id() const;
@@ -2476,8 +2494,8 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED player_database final : public ::go
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<5, 19,
-                          16, 0,
+      ::google::protobuf::internal::TcParseTable<5, 20,
+                          17, 0,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
       const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
@@ -2521,6 +2539,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED player_database final : public ::go
     ::PlayerProfileComp* PROTOBUF_NULLABLE profile_component_;
     ::PlayerAssetOpLedgerComp* PROTOBUF_NULLABLE asset_op_ledger_;
     ::BattleSettlementLedgerComp* PROTOBUF_NULLABLE settlement_ledger_;
+    ::PlayerInboxLedgerComp* PROTOBUF_NULLABLE inbox_ledger_;
     ::uint64_t player_id_;
     ::uint64_t fence_owner_epoch_;
     ::uint64_t fence_save_seq_;
@@ -3540,7 +3559,7 @@ inline void player_centre_database::set_allocated_scene_info(::PlayerSceneContex
 inline void player_database::clear_player_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.player_id_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00010000U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00020000U);
 }
 inline ::uint64_t player_database::player_id() const {
   // @@protoc_insertion_point(field_get:player_database.player_id)
@@ -3548,7 +3567,7 @@ inline ::uint64_t player_database::player_id() const {
 }
 inline void player_database::set_player_id(::uint64_t value) {
   _internal_set_player_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00010000U);
+  SetHasBit(_impl_._has_bits_[0], 0x00020000U);
   // @@protoc_insertion_point(field_set:player_database.player_id)
 }
 inline ::uint64_t player_database::_internal_player_id() const {
@@ -5052,7 +5071,7 @@ inline void player_database::set_allocated_settlement_ledger(::BattleSettlementL
 inline void player_database::clear_fence_owner_epoch() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.fence_owner_epoch_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00020000U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00040000U);
 }
 inline ::uint64_t player_database::fence_owner_epoch() const {
   // @@protoc_insertion_point(field_get:player_database.fence_owner_epoch)
@@ -5060,7 +5079,7 @@ inline ::uint64_t player_database::fence_owner_epoch() const {
 }
 inline void player_database::set_fence_owner_epoch(::uint64_t value) {
   _internal_set_fence_owner_epoch(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00020000U);
+  SetHasBit(_impl_._has_bits_[0], 0x00040000U);
   // @@protoc_insertion_point(field_set:player_database.fence_owner_epoch)
 }
 inline ::uint64_t player_database::_internal_fence_owner_epoch() const {
@@ -5076,7 +5095,7 @@ inline void player_database::_internal_set_fence_owner_epoch(::uint64_t value) {
 inline void player_database::clear_fence_save_seq() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.fence_save_seq_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00040000U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00080000U);
 }
 inline ::uint64_t player_database::fence_save_seq() const {
   // @@protoc_insertion_point(field_get:player_database.fence_save_seq)
@@ -5084,7 +5103,7 @@ inline ::uint64_t player_database::fence_save_seq() const {
 }
 inline void player_database::set_fence_save_seq(::uint64_t value) {
   _internal_set_fence_save_seq(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00040000U);
+  SetHasBit(_impl_._has_bits_[0], 0x00080000U);
   // @@protoc_insertion_point(field_set:player_database.fence_save_seq)
 }
 inline ::uint64_t player_database::_internal_fence_save_seq() const {
@@ -5094,6 +5113,99 @@ inline ::uint64_t player_database::_internal_fence_save_seq() const {
 inline void player_database::_internal_set_fence_save_seq(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.fence_save_seq_ = value;
+}
+
+// .PlayerInboxLedgerComp inbox_ledger = 20;
+inline bool player_database::has_inbox_ledger() const {
+  bool value = CheckHasBit(_impl_._has_bits_[0], 0x00010000U);
+  PROTOBUF_ASSUME(!value || _impl_.inbox_ledger_ != nullptr);
+  return value;
+}
+inline const ::PlayerInboxLedgerComp& player_database::_internal_inbox_ledger() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  const ::PlayerInboxLedgerComp* p = _impl_.inbox_ledger_;
+  return p != nullptr ? *p : *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<::PlayerInboxLedgerComp>(&::PlayerInboxLedgerComp_globals_);
+}
+inline const ::PlayerInboxLedgerComp& player_database::inbox_ledger() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:player_database.inbox_ledger)
+  return _internal_inbox_ledger();
+}
+inline void player_database::unsafe_arena_set_allocated_inbox_ledger(
+    ::PlayerInboxLedgerComp* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.inbox_ledger_);
+  }
+  _impl_.inbox_ledger_ = reinterpret_cast<::PlayerInboxLedgerComp*>(value);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00010000U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00010000U);
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:player_database.inbox_ledger)
+}
+inline ::PlayerInboxLedgerComp* PROTOBUF_NULLABLE player_database::release_inbox_ledger() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00010000U);
+  ::PlayerInboxLedgerComp* released = _impl_.inbox_ledger_;
+  _impl_.inbox_ledger_ = nullptr;
+  if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
+    auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    if (GetArena() == nullptr) {
+      delete old;
+    }
+  } else {
+    if (GetArena() != nullptr) {
+      released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    }
+  }
+  return released;
+}
+inline ::PlayerInboxLedgerComp* PROTOBUF_NULLABLE player_database::unsafe_arena_release_inbox_ledger() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:player_database.inbox_ledger)
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00010000U);
+  ::PlayerInboxLedgerComp* temp = _impl_.inbox_ledger_;
+  _impl_.inbox_ledger_ = nullptr;
+  return temp;
+}
+inline ::PlayerInboxLedgerComp* PROTOBUF_NONNULL player_database::_internal_mutable_inbox_ledger() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.inbox_ledger_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::PlayerInboxLedgerComp>(GetArena());
+    _impl_.inbox_ledger_ = reinterpret_cast<::PlayerInboxLedgerComp*>(p);
+  }
+  return _impl_.inbox_ledger_;
+}
+inline ::PlayerInboxLedgerComp* PROTOBUF_NONNULL player_database::mutable_inbox_ledger()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00010000U);
+  ::PlayerInboxLedgerComp* _msg = _internal_mutable_inbox_ledger();
+  // @@protoc_insertion_point(field_mutable:player_database.inbox_ledger)
+  return _msg;
+}
+inline void player_database::set_allocated_inbox_ledger(::PlayerInboxLedgerComp* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (message_arena == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.inbox_ledger_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = reinterpret_cast<::google::protobuf::Message*>(value)->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    SetHasBit(_impl_._has_bits_[0], 0x00010000U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00010000U);
+  }
+
+  _impl_.inbox_ledger_ = reinterpret_cast<::PlayerInboxLedgerComp*>(value);
+  // @@protoc_insertion_point(field_set_allocated:player_database.inbox_ledger)
 }
 
 // -------------------------------------------------------------------

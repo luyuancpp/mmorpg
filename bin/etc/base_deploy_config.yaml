@@ -47,6 +47,7 @@ service_discovery_prefixes:
   - "ClientRpcRouterNodeService.rpc" # 客户端 RPC 路由服(Go-Zero,全局池):GATE_CLIENT_RPC_ROUTER=1 时 gate 唯一的 gRPC 目标,客户端消息按 message_id 经它不透明转发到 login/match/… (docs/design/client-rpc-router.md)
   - "MatchNodeService.rpc" # 匹配服务（Go-Zero gRPC，全局池不分 zone：不在 IsZoneScopedNodeType，gate 连全 zone 的 match 实例随机路由；排队池全服共享，见 docs/design/cross-zone-matchmaking.md）：gate 按 NODE_MATCH 路由 JoinQueue/WatchBattle 等客户端消息，缺此前缀会报 "Node not found ... message id: 157"（2026-09-01 冒烟补）
   - "DataServiceNodeService.rpc" # 全局数据服务（Go-Zero gRPC，全局池不分 zone）：scene 经它的 AllocateIdSegment 领 item / txlog / snapshot 三种永久 guid 的号段（IdSegments 里启用的种类领到首段是启动硬依赖）。前提：data_service 须按 C++ 约定把 NodeInfo 注册到本前缀下（同 scene_manager 的 noderegistry），只注册 go-zero 的 dataservice.rpc 是发现不到的
+  - "PlayerInboxNodeService.rpc" # 玩家持久收件箱（Go-Zero gRPC，全服一份、多副本，不分 zone）：scene 经它的 FetchItems / AckItems 拉取并确认 GM 处置等待办（docs/design/player-inbox-service.md §1.4）。弱依赖：不进 DependencyGate，发现不到只退避、不阻断进场（IB-7）。前提：player_inbox 按 C++ 约定经 shared/noderegistry 注册到本前缀下
 
 # Kafka 配置（分布式消息队列，用于异步通信、日志收集、事件分发等）
 Kafka:
@@ -230,9 +231,9 @@ IdSegments:
 #   2. 依赖调用结果的 C++ 看门狗 > deadline:号段 fetchTimeout、换图在途 TTL 都从这里派生,不另写常数。
 # 没列出的类型用内置默认 10000(grpc_client/grpc_call_tag.h kDefaultGrpcCallDeadlineMs);
 # 不认识的键、0(= 不限时)被忽略并记 ERROR。改服务端超时时同步改这里。流式调用(etcd Watch / KeepAlive)不设。
-# 第 1 条对下面有 Go 服务端的五个目标(SceneManager / DataService / ClientRpcRouter / Match / Login)是部署门禁:
+# 第 1 条对下面有 Go 服务端的六个目标(SceneManager / DataService / ClientRpcRouter / Match / Login / PlayerInbox)是部署门禁:
 # k8s_deploy.ps1 的 Assert-GrpcClientDeadlineBudget 在 zone-up / infra-up / all-up 写集群之前核对
-# deadline ≥ 对应服务 yaml 的 zrpc Timeout + 2000(没写 Timeout 按 go-zero 默认 2000),这五项必须显式列出,
+# deadline ≥ 对应服务 yaml 的 zrpc Timeout + 2000(没写 Timeout 按 go-zero 默认 2000),这六项必须显式列出,
 # 不满足就拒绝部署并点名是哪一项。本块由 k8s_deploy.ps1 原样搬进 node ConfigMap(Get-AuthoritativeYamlBlock)。
 GrpcClient:
   CallDeadlineMs:
@@ -243,3 +244,4 @@ GrpcClient:
     LoginNodeService: 12000            # login.yaml Timeout 4000(10-14 由 10000 降,同上;gate 直连模式,仍 ≥ +2000。09-29 由笔误 100000 改正,原 deadline 102000)
     BattleNodeService: 5000            # C++ battle gRPC 同步处理,无服务端超时(gate 直连模式)
     EtcdNodeService: 5000              # etcd 无服务端超时;须 < etcd_service 的 Txn 看门狗 / LeaseGrant 重试 10s
+    PlayerInboxNodeService: 6000       # go/player_inbox/etc/player_inbox.yaml 显式写的 zrpc Timeout(≤ 4000)+2000;scene 的 Fetch / Ack 失败只退避,不阻断进场(player-inbox-service.md IB-7)

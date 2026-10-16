@@ -324,17 +324,24 @@ bool CurrencySystem::CanAfford(entt::entity player, CurrencyType type, int64_t a
 // AttachDebt (补缴)
 // ---------------------------------------------------------------------------
 
-void CurrencySystem::AttachDebt(entt::entity player, CurrencyType type, int64_t oweAmount,
-                                const std::string &reason,
-                                const std::string &gmOperator,
-                                uint64_t expiresAt)
+uint32_t CurrencySystem::AttachDebt(entt::entity player, CurrencyType type, int64_t oweAmount,
+                                    const std::string &reason,
+                                    const std::string &gmOperator,
+                                    uint64_t expiresAt)
 {
     if (oweAmount <= 0)
     {
         LOG_ERROR << "CurrencySystem::AttachDebt: oweAmount must be > 0, got "
                   << oweAmount << " CurrencyType=" << static_cast<uint32_t>(type)
                   << " entity=" << entt::to_integral(player);
-        return;
+        return kInvalidParameter;
+    }
+    // 越界币种是调用方写错了:不能让它在 debts 里落下一条任何货币都对不上的欠款(以前会)。
+    if (!IsKnownCurrencyType(type))
+    {
+        LOG_ERROR << "CurrencySystem::AttachDebt: invalid CurrencyType=" << static_cast<uint32_t>(type)
+                  << " entity=" << entt::to_integral(player);
+        return kInvalidParameter;
     }
 
     uint64_t debtToAdd = static_cast<uint64_t>(oweAmount);
@@ -344,7 +351,7 @@ void CurrencySystem::AttachDebt(entt::entity player, CurrencyType type, int64_t 
     {
         LOG_ERROR << "CurrencySystem::AttachDebt: PlayerCurrencyComp missing on entity "
                   << entt::to_integral(player);
-        return;
+        return kInvalidParameter;
     }
 
     auto &debt = comp->debts[static_cast<uint32_t>(type)];
@@ -354,7 +361,7 @@ void CurrencySystem::AttachDebt(entt::entity player, CurrencyType type, int64_t 
                   << " add=" << debtToAdd
                   << " CurrencyType=" << static_cast<uint32_t>(type)
                   << " entity=" << entt::to_integral(player);
-        return;
+        return kInvalidParameter;
     }
     debt.owed += debtToAdd;
     debt.reason = reason;
@@ -371,6 +378,7 @@ void CurrencySystem::AttachDebt(entt::entity player, CurrencyType type, int64_t 
              << " paid=" << debt.paid
              << " CurrencyType=" << static_cast<uint32_t>(type)
              << " entity=" << entt::to_integral(player);
+    return kSuccess;
 }
 
 // ---------------------------------------------------------------------------

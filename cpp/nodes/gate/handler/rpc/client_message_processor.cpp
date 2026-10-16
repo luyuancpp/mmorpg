@@ -763,6 +763,21 @@ void RpcClientSessionHandler::HandleConnectionEstablished(const muduo::net::TcpC
 	}
 }
 
+// gate 级失败回执:带请求 id 与原 message_id 的错误信封(client-request-ordering.md O6、§4.7),
+// 形状与 CheckMessageLimit / gate_lane::SendEnvelope 相同。不用 SendEnvelope 是因为它要 SessionInfo&
+// 去 lock 会话里的弱连接,而 HandleTcpNodeMessage 只拿到 const SessionInfo&;这里的 conn 是本次收包回调
+// 上的连接,调用期间必然有效,直接用它,不为一次 lock 去 const_cast。
+// 不带 id 的 23 号 tip 会被客户端当成别的请求的失败(同一会话可能还有其他请求在等回包),所以请求回执一律走信封;
+// 推送类的 23(进场失败、被踢等)不是请求回执,不走这里。
+static void SendRequestErrorEnvelope(const muduo::net::TcpConnectionPtr &conn, const ClientRequest &request, uint32_t tipId)
+{
+	MessageContent envelope;
+	envelope.set_id(request.id());
+	envelope.set_message_id(request.message_id());
+	envelope.mutable_error_message()->set_id(tipId);
+	GetGateCodec().send(conn, envelope);
+}
+
 // Handle messages related to the game node
 void HandleTcpNodeMessage(const SessionInfo &session, const RpcClientMessagePtr &request, SessionId sessionId, const muduo::net::TcpConnectionPtr &conn)
 {
@@ -778,7 +793,8 @@ void HandleTcpNodeMessage(const SessionInfo &session, const RpcClientMessagePtr 
 				 << ", session_id: " << sessionId
 				 << ", node_type: " << handlerMeta.targetNodeType;
 
-		RpcClientSessionHandler::SendTipToClient(conn, kServiceUnavailable);
+		// 确定未发出:回带请求 id 的 1003(2026-10-15 起;原为 23 号 tip),客户端重试安全。不计非法包、不断连。
+		SendRequestErrorEnvelope(conn, *request, kServiceUnavailable);
 		return;
 	}
 
@@ -796,7 +812,8 @@ void HandleTcpNodeMessage(const SessionInfo &session, const RpcClientMessagePtr 
 				 << ", session_id: " << sessionId
 				 << ", node_type: " << handlerMeta.targetNodeType;
 
-		RpcClientSessionHandler::SendTipToClient(conn, kServiceUnavailable);
+		// 同上:确定未发出,回带请求 id 的 1003(原为 23 号 tip)。
+		SendRequestErrorEnvelope(conn, *request, kServiceUnavailable);
 		return;
 	}
 
@@ -844,7 +861,8 @@ void HandleGrpcNodeMessage(SessionId sessionId, const RpcClientMessagePtr &reque
 	if (!ParseMessageFromRequestBody(*rpcHandlerMeta.requestProto, request, sessionId))
 	{
 		// 坏包不转发。共享原型已被清空,不会把残留数据递给后端。
-		RpcClientSessionHandler::SendTipToClient(conn, kRequestMessageParseError);
+		// 回带请求 id 的信封(client-request-ordering.md O6,2026-10-15 起;原为 23 号 tip)。不计非法包、不断连,与改前一致。
+		SendRequestErrorEnvelope(conn, *request, kRequestMessageParseError);
 		return;
 	}
 
@@ -892,7 +910,8 @@ void HandleGrpcNodeMessage(SessionId sessionId, const RpcClientMessagePtr &reque
 		if (!node)
 		{
 			LOG_ERROR << "Node not found for session id: " << sessionId << ", message id: " << request->message_id();
-			RpcClientSessionHandler::SendTipToClient(conn, kServiceUnavailable);
+			// 确定未发出:回带请求 id 的 1003(原为 23 号 tip)。
+			SendRequestErrorEnvelope(conn, *request, kServiceUnavailable);
 			return;
 		}
 

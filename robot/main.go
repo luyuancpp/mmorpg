@@ -241,6 +241,15 @@ func main() {
 		return
 	}
 
+	// Sync-smoke 模式:机器人 A 被观测、机器人 B 触发 bump,验证「落地恢复」的按域版本摘要
+	// (登录取摘要 → B 的好友申请只让 A 的 FRIEND_REQUEST +1、g 不变 → 短重连后摘要原样延续 → 可选跨 zone 落地
+	//  → 实体就绪前发请求不致崩溃)。跨 zone 腿开启时会用「按 player_id 严格重登」覆盖上面注册的通用重登(本模式独占进程)。
+	// 见 sync_smoke_scenario.go 与 docs/design/landing-recovery-sync-digest.md §10 第 6 步;前置条件写在 etc/sync_smoke.yaml 文件头。
+	if cfg.Mode == "sync-smoke" {
+		RunSyncSmoke(cfg)
+		return
+	}
+
 	stopReport := make(chan struct{})
 	reportInterval := time.Duration(cfg.ReportInterval) * time.Second
 	if reportInterval <= 0 {
@@ -614,16 +623,13 @@ func resolveZoneIDLocal(gatewayAddr string) (uint32, error) {
 
 // assignGateHTTPLocal drives one queue-aware AssignGate flow.
 //
-// On code=100 it sleeps RetryAfterMs and polls /api/queue-status
-// (or re-calls /api/assign-gate when the queue source is Bucket4j ratelimit,
-// which has no queue token). The caller's outer retry loop handles network
-// errors and 4xx; this function only returns when the server says
-// "admitted, here's a gate token" or after the queue-aware budget elapses.
+// 排队状态机在 AssignGateWithQueue(http_assign_gate.go),按 2026-10-15 的客户端契约推进:持有 queue_token
+// 时轮询 /api/queue-status,恢复用的 assign-gate 重入被限流时回到轮询,410 丢 token 重来。网关放行并给出
+// gate 票时返回结果;排队预算用完、网络错误或不可恢复的回包码都以错误返回,由外层
+// resolveGateViaHTTPLocal 的重试循环处理。
 //
-// Per-robot queue stats (entered / admitted-after-wait / expired / wait
-// duration / max rank) are pushed into Stats so the periodic report can
-// surface them — that's how we tell "queue worked but is slow" apart from
-// "dispatcher hung".
+// 每个 robot 的排队统计(entered / admitted-after-wait / expired / 等待时长 / 最大名次)由状态机写进
+// Stats,周期报表据此区分「排队正常但慢」与「dispatcher 卡住」。
 func assignGateHTTPLocal(cfg *config.Config, zoneId uint32) (*gateAssignmentLocal, error) {
 	// Total budget for queue-aware polling. Generous on purpose: a real
 	// queue under load can take minutes to drain. The outer
@@ -636,99 +642,21 @@ func assignGateHTTPLocal(cfg *config.Config, zoneId uint32) (*gateAssignmentLoca
 		ZoneID:  zoneId,
 		Account: "", // robot doesn't have a stable account at this stage
 	}
+	api := httpGatewayQueueAPI{gatewayAddr: cfg.GatewayAddr, perCallTimeout: 5 * time.Second}
 
-	stats := robotStatsRef // pkg-level handle set in main()
-	var firstQueueAt time.Time
-	var maxRankSeen int64 = -1
-	enteredQueue := false
-
-	rsp, err := httpAssignGate(cfg.GatewayAddr, req, 5*time.Second)
+	// robotStatsRef 在 main() 里赋值;为 nil 时状态机不记统计。
+	rsp, err := AssignGateWithQueue(ctx, api, req, robotStatsRef, sleepCtx)
 	if err != nil {
 		return nil, err
 	}
-	for {
-		switch rsp.Code {
-		case 0:
-			// Admitted. If we ever queued, record wait time.
-			if enteredQueue && stats != nil {
-				stats.QueueAdmittedAfterWait()
-				stats.QueueWait(time.Since(firstQueueAt))
-				if maxRankSeen >= 0 {
-					stats.QueueRankSeen(maxRankSeen)
-				}
-			}
-			if rsp.GateIP == "" || rsp.GatePort == 0 {
-				return nil, fmt.Errorf("AssignGate admitted but returned empty address")
-			}
-			return &gateAssignmentLocal{
-				addr:      fmt.Sprintf("%s:%d", rsp.GateIP, rsp.GatePort),
-				payload:   rsp.TokenPayload,
-				signature: rsp.TokenSignature,
-			}, nil
-
-		case 100:
-			if !enteredQueue {
-				enteredQueue = true
-				firstQueueAt = time.Now()
-				if stats != nil {
-					stats.QueueEntered()
-				}
-			}
-			if rsp.QueueRank > maxRankSeen {
-				maxRankSeen = rsp.QueueRank
-			}
-			// Stash the token on req so a subsequent /assign-gate retry (e.g.
-			// after a transient network blip in the polling loop) goes down
-			// the server's reentry path instead of creating a duplicate
-			// queue entry. AssignGate handler verifies queue_token and
-			// reuses the existing queueId.
-			if rsp.QueueSource == "login" && rsp.QueueToken != "" {
-				req.QueueToken = rsp.QueueToken
-			}
-
-			wait := time.Duration(rsp.RetryAfterMs) * time.Millisecond
-			if wait <= 0 {
-				wait = 2 * time.Second
-			}
-			select {
-			case <-ctx.Done():
-				return nil, fmt.Errorf("queue budget exceeded (rank=%d, source=%s)", rsp.QueueRank, rsp.QueueSource)
-			case <-time.After(wait):
-			}
-
-			// Real-queue path: keep the queue_token and poll /queue-status.
-			// Bucket4j-ratelimit path: no token, re-call /assign-gate so a
-			// fresh limiter check decides whether we're allowed through now.
-			if rsp.QueueSource == "login" && rsp.QueueToken != "" {
-				rsp, err = httpQueueStatus(cfg.GatewayAddr, rsp.QueueToken, req.ZoneID, 5*time.Second)
-			} else {
-				rsp, err = httpAssignGate(cfg.GatewayAddr, req, 5*time.Second)
-			}
-			if err != nil {
-				return nil, err
-			}
-
-		case 410:
-			// Queue token expired (we polled too slowly, or the dispatcher
-			// admitted us but our admit:{queueId} TTL'd before we polled).
-			// Restart from /assign-gate without the token — backend will
-			// either fast-path us through or re-enqueue with a new token.
-			if stats != nil {
-				stats.QueueExpiredToken()
-			}
-			req.QueueToken = ""
-			rsp, err = httpAssignGate(cfg.GatewayAddr, req, 5*time.Second)
-			if err != nil {
-				return nil, err
-			}
-
-		case 429:
-			return nil, fmt.Errorf("rate-limited: %s", rsp.Error)
-
-		default:
-			return nil, fmt.Errorf("AssignGate code=%d err=%q", rsp.Code, rsp.Error)
-		}
+	if rsp.GateIP == "" || rsp.GatePort == 0 {
+		return nil, fmt.Errorf("AssignGate admitted but returned empty address")
 	}
+	return &gateAssignmentLocal{
+		addr:      fmt.Sprintf("%s:%d", rsp.GateIP, rsp.GatePort),
+		payload:   rsp.TokenPayload,
+		signature: rsp.TokenSignature,
+	}, nil
 }
 
 const defaultLoginTimeoutLocal = 15 * time.Second

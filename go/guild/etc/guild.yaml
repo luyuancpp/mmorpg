@@ -6,6 +6,10 @@ ListenOn: 127.0.0.1:50300
 # + 500(回包余量);config.Validate 强制。
 Timeout: 4000
 
+# 每玩家的入帮申请尝试配额：固定 60 秒，重复刷新和业务拒绝也消耗；有效范围 1–600。
+# Redis 配额故障时放行并计 error；SQL 内的申请数量与成员上限仍严格校验。
+ApplicationQuotaPerMinute: 10
+
 # 刻意不写 go-zero 的 Etcd.Key(port-decisions D-13):guild 是全局服务,客户端经 gate → client_rpc_router
 # 按 GuildNodeService.rpc/ 前缀的 NodeInfo 找到它(internal/node),没有任何 Go 服务按 go-zero key 发现 guild;
 # 写了反而会被本地 go_services.ps1 -Zone 加上 .z<N> 后缀,把同一个全局服务切成按 zone 的碎片。
@@ -152,7 +156,10 @@ AssetOp:
   #   活动发奖作废只留审计行)。不可逆:AbandonAfterDays 写 0 = 关闭,非 0 时 ≥ 30。
   # !! 滚动升级:旧版实例的发送不推进 last_send_ms。从不认识 last_send_ms 的旧版本升级时,先把 AbandonAfterDays 写 0
   #   全量上线新二进制,确认没有旧实例在跑之后再改回 180(设计 §6.3「滚动升级」)。本项目尚未上线,首发直接开启。
-  # 另需 DataServiceRpc(离线读账本)与 scene 节点镜像(重新定位),缺一则放弃不运行(只打一条 INFO)。
+  # 另需 DataServiceRpc(离线读账本;Enabled=true 时 config.Validate 已强制),缺了放弃不运行(只打一条 INFO)。
+  # 「玩家无位置」只看上面 PlayerLocatorRedis 里的 player:{id}:location 是否存在,不依赖 scene 节点镜像(etcd):
+  #   etcd 缺失或镜像未同步时,有位置记录的玩家投递发不出去、行留在 PENDING,但放弃仍按其余条件照常进行。
+  #   要停掉放弃只能把 AbandonAfterDays 写 0。
   # AbandonSafetyGapMs ≥ 600000 且 ≥ LeaseMs;AbandonBatch 是每轮候选上限 [1, 1000];AbandonIntervalMs ∈ [60000, 86400000]。
   AbandonAfterDays: 180
   AbandonSafetyGapMs: 3600000
@@ -164,7 +171,8 @@ AssetOp:
   AuditIntervalMs: 86400000
   # 落地唤醒:订阅核心 Redis(上面的 PlayerLocatorRedis,scene 在同一实例上 PUBLISH assetop:wake <player_id>),
   #   玩家进场完成后立即重投他的 PENDING 行,不再等退避 / 停放档。唤醒只是提示,丢了退回原退避,只慢不错。
-  # Enabled 不写 = 开;Concurrency 不写 = 4([1, 64],满了直接丢);TimeoutMs 不写 = 10000(必须 > OpBudgetMs,≤ 60000)。
+  # Enabled 不写 = 开;Concurrency 不写 = 4([1, 64],满了直接丢);TimeoutMs 不写 = 10000(必须 ≥ 2 × OpBudgetMs、≤ 60000:
+  #   唤醒先列出该玩家的未决行,剩余预算够一整个 OpBudget 才领下一行,下界再小就会一行不领、静默退化)。
   Wake:
     Enabled: true
     Concurrency: 4

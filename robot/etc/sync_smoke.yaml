@@ -1,0 +1,67 @@
+# sync-smoke 配置:对「落地恢复」的按域版本摘要做端到端冒烟
+# (docs/design/landing-recovery-sync-digest.md §4 落地取摘要 / §10 第 6 步;场景实现见 robot/sync_smoke_scenario.go)
+#
+# 流程:S1 A(robot_9911)、B(robot_9912)并发登录;A 取摘要 GetSyncDigest(253)→ NotifySyncDigest(254),status 必须 OK
+#       → S2 预清理 A、B 的好友关系(幂等、不断言),A 解除拉黑 B(必须受理:Unblock 无条件给本人 bump FRIEND_BLOCK,
+#          保证 A 的摘要 hash 存在),再取摘要作基线:g ≠ 0、FRIEND_BLOCK 变大、g 不变(S1 已有摘要时)
+#       → S3 B 向 A 发好友申请 → A 再取:只有 FRIEND_REQUEST 恰好 +1、g 不变,客户端规则算出的待拉取域只有 FRIEND_REQUEST
+#       → S4 短重连:A 不发 LeaveGame 直接断开,50ms 后发起新连接、按 player_id 严格重登 → 再取:g 与计数与 S3 完全一致
+#       → S5(cross_zone=true 才做)A 传送到 visit_zone 落地取摘要 → 传送回 zone_id 再取,两次都与 S4 一致
+#       → S6 负向:A 正常下线、等 1s 再重登,在 EnterGame 回包之后、NotifyEnterScene 处理之前立刻发 253。
+#          探针结局只记录(OBSERVE 行),硬断言只有"没被踢"与"进场后再取摘要 OK 且不变"(scene 没被打崩)
+#       → S7 收尾:A 拒掉 B 的申请(尽力而为)。
+#
+# 前置(缺一条就会失败,原因写进 SYNC_SMOKE_FAIL 的 reason):
+#   1. dev 环境:本机 dev-start(pwsh -File tools/scripts/dev_tools.ps1 -Command dev-start)起全套。gate 以 GATE_CLIENT_RPC_ROUTER=1
+#      启动(路由服模式,start_game.ps1 默认已开),client_rpc_router 与 friend 在跑(friend 只承诺路由服模式可达);
+#      库 mmorpg_friend 已建、表已迁移(同 etc/friend_smoke.yaml 前置 3)。
+#   2. 核心 Redis:friend.yaml 的 Redis 段(SharedRedis,写 player:session:{id} 的共享库)与 scene 的 zone Redis 必须是
+#      **同一个实例、同一个库(DB 0)** —— friend 往 player:{id}:sync_digest 写 bump,scene 用 HGETALL 读同一个键。
+#      指错库不会报错,只会让 S2 报"g=0"。本机单 Redis 默认满足。手工核对:redis-cli HGETALL player:<A 的 player_id>:sync_digest
+#      冒烟运行期间不要 FLUSHALL / 删摘要键(S3 / S4 会报"g 变了");跑之前清过库没关系,S2 的播种会重建摘要。
+#   3. 二进制:scene 换上带 PlayerLandingSystem 的版本(player_scene_handler.cpp 的 GetSyncDigest 委托 SendSyncDigest,设计批次 D1);
+#      gate 换上认识消息号 253 / 254 的版本(proto 重生成之后重编);friend 换上带落地摘要 bump 的版本(设计批次 A);
+#      robot/vendor/proto/scene/player_scene.pb.go 已与 go/proto 同步(含 SyncDigestS2C),robot 重新编译过。
+#   4. 限流行:截至 2026-10-15 data/MessageLimiter.xlsx 还没有 GetSyncDigest(253)的行(设计 §10 第 2 步,发号后由 Codex 按方法名查号追加,
+#      档位同 SceneInfoC2S —— 而 43 本身也不在表里,即 gate 默认档:每个消息号滑动窗口内最多 3 次)。本冒烟按默认档设计:
+#      同一机器人相邻请求 ≥ 1.1s、两次 253 ≥ 1.1s;加了限流行之后不用改。被限流时 reason 里会带 kRateLimitExceeded。
+#   5. 账号段:robot_9911(A,被观测方)、robot_9912(B,触发方),99xx 段内与 ordering-smoke 的 robot_9901 错开,
+#      与其它冒烟的账号段(90xx~98xx)都不撞。首次运行自动建角。前缀必须是 robot_ 才会命中 login 侧 DevPasswordAuth。
+#      这两个账号**不得**被别的冒烟或客户端同时使用:S3 / S4 / S6 要求期间没有任何业务给 A bump。A 不在任何队伍里、不在战斗中。
+#   6. 跨 zone 腿(cross_zone=true)另需:robot_9911 **首次在 zone_id 建角**(home zone 在建角时登记);
+#      两个 zone 的 scene 读同一个核心 Redis(摘要键在里面);其余前置与 etc/travel_smoke.yaml 文件头相同
+#      (CZ-2 两 zone 共享 Redis、GateTokenSecret 非空、zone_config 里有 visit_zone 那一行等)。
+#   7. 好友申请配额:friend 的 Friend.RequestQuotaPerMinute 默认 10 次/分钟,B 每轮只发 1 次,连跑不会撞。
+#   8. 从 robot/ 目录运行(table_dir 是相对路径)。
+#
+# 用法(robot/ 目录下):
+#   .\robot.exe -c etc/sync_smoke.yaml
+# 退出码 0 = 全部断言通过(日志有 SYNC_SMOKE_OK player_a=… g=… friend_request=…->… probe=… cross_zone=… 一行);
+# 退出码 1 = 任一步失败(SYNC_SMOKE_FAIL step=… reason=…)。每步通过另有一行 [sync-smoke] PASS step=…;
+#   S6 的探针行为是一行 [sync-smoke] OBSERVE step=S6-probe outcome=…(dropped = scene 丢弃了实体就绪前的请求,符合设计 §4.2;
+#   replied_ok = 实体已就绪或被复用;envelope_rejected = gate 在会话路由到 scene 之前就拒了)。
+# 不开跨 zone 腿时跑一轮约 30 秒;开了再加两跳传送(各几秒到几十秒)。
+#
+# 可重复运行:S2 每轮都会把 A、B 的好友关系清回原状;S7 也会拒掉 B 的申请。上一轮死在跨 zone 腿中途时,
+#   A 的位置可能还指向访客区,等票据 / 待落地记录过期(300s)再跑。
+
+gateway_addr: "http://127.0.0.1:8081" # Gateway HTTP endpoint(/api/assign-gate)
+zone_id: 1 # A 与 B 登录的 zone;cross_zone=true 时也是跨 zone 腿的出发与回家 zone,必须非 0
+robot_count: 2 # 语义占位:本模式固定 A / B 两个机器人
+account_fmt: "robot_%04d" # 保留骨架字段;本模式用固定账号 robot_9911 / robot_9912
+password: "123456"
+skill_ids: [] # 本模式不放技能
+table_dir: "../generated/tables"
+action_interval: 3 # 本模式不跑场景 AI 循环,保留默认
+report_interval: 5
+
+mode: "sync-smoke"
+
+# 子开关(见 config.SyncSmokeConfig / sync_smoke_scenario.go)。整块可缺省。
+sync_smoke:
+  cross_zone: false # true = 做 S5 跨 zone 落地腿(前置 6);缺省关
+  visit_zone: 2 # 仅 cross_zone=true 时使用;必须与 zone_id 不同
+  scene_config_id: 0 # 两次 TravelToZone 的目标地图;0 = 由目标 zone 的 scene_manager 挑默认大世界
+
+# 认证:password 模式(robot_ 前缀账号走 DevPasswordAuth)
+auth_type: "password"

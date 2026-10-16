@@ -1,6 +1,7 @@
 #include "etcd_service.h"
 #include "etcd_helper.h"
 #include "etcd_manager.h"
+#include <algorithm>
 #include <unordered_set>
 #include <google/protobuf/util/json_util.h>
 #include <boost/algorithm/string.hpp>
@@ -84,66 +85,136 @@ bool EtcdService::IsAllocationKey(const std::string& key)
 	return key.find("/allocated/") != std::string::npos;
 }
 
+namespace
+{
+// 发现键的值是 NodeInfo JSON;解析失败返回空串(调用方按「无法判断」处理)。
+std::string NodeUuidOf(const std::string& nodeJson)
+{
+	google::protobuf::util::JsonParseOptions parseOptions;
+	parseOptions.ignore_unknown_fields = true;
+	NodeInfo node;
+	if (!google::protobuf::util::JsonStringToMessage(nodeJson, &node, parseOptions).ok())
+	{
+		return {};
+	}
+	return node.node_uuid();
+}
+} // namespace
+
+void EtcdService::ApplyDiscoveryPut(const std::string& key, const std::string& value, int64_t modRevision,
+									std::vector<PendingRemoval>& removals)
+{
+	const std::string currentUuid = NodeUuidOf(value);
+	auto outcome = discoveryKeys_.ApplyPut(key, value, modRevision, currentUuid);
+	if (!outcome.accepted)
+	{
+		// Range 与 watch 走不同的流:这条比已经处理过的事件(更新的 PUT 或删除)旧。
+		LOG_DEBUG << "Skip stale discovery PUT " << key << " mod_revision=" << modRevision;
+		return;
+	}
+	if (outcome.replacedValue && !outcome.replacedHolder.empty() && !currentUuid.empty() &&
+		outcome.replacedHolder != currentUuid)
+	{
+		// 同一个键换了持有者:对端重启后按「最小空闲 id」拿回同一 node_id、以新 uuid 写回。发现快照按 uuid 区分节点,
+		// 旧持有者此后再不会有指向它的事件(它的 DELETE 可能在流断期间错过,或因比这次快照旧被判过时),
+		// 不摘就永久留成幽灵。两边 uuid 都解析得出且不同才考虑摘;真正摘不摘留到整批应用完再看(FlushPendingRemovals):
+		// 旧持有者可能只是换了号、还挂在别的键上(Go 侧 ReallocateNewID 保留 uuid 换 node_id)。
+		removals.push_back({key, std::move(*outcome.replacedValue), outcome.replacedHolder,
+							"now held by node " + currentUuid});
+	}
+	HandlePutEvent(key, value);
+}
+
+void EtcdService::FlushPendingRemovals(std::vector<PendingRemoval>& removals)
+{
+	// 发现层按 uuid 摘节点(Node::ExecuteNodeRemoval),所以只摘已经不再挂在任何发现键上的 uuid:
+	// 同一 uuid 可能同时(或在同一批里先后)挂在两个键上 —— 换号的 Go 节点、同一批里先 DELETE 后重新 PUT 的节点。
+	// uuid 解析不了(空串)时无法判断,照旧交给发现层。
+	for (auto& removal : removals)
+	{
+		if (discoveryKeys_.HoldsAnyKey(removal.uuid))
+		{
+			LOG_INFO << "etcd key " << removal.key << " no longer belongs to node " << removal.uuid << " ("
+					 << removal.reason << "), but the node is still registered under another key; keeping it";
+			continue;
+		}
+		LOG_INFO << "etcd key " << removal.key << " no longer belongs to node "
+				 << (removal.uuid.empty() ? std::string("<unparsed>") : removal.uuid) << " (" << removal.reason
+				 << "); removing it";
+		HandleDeleteEvent(removal.key, removal.value);
+	}
+	removals.clear();
+}
+
 void EtcdService::OnPrefixRange(const std::string& prefix, const etcdserverpb::RangeResponse& reply)
 {
 	const int64_t snapshotRevision = reply.header().revision();
-	// 快照不完整一律不删(§10.2 第 3 条):截断、值解析失败、key 不属于前缀。
-	bool complete = !reply.more();
-	if (reply.more())
+	// 不持有 map 元素的引用:下面的 HandlePutEvent / HandleDeleteEvent 可能经冲突关机重入本对象。
+	const int64_t appliedRevision = appliedSnapshotRevision_[prefix];
+	if (snapshotRevision < appliedRevision)
 	{
-		LOG_WARN << "etcd range for prefix " << prefix << " is truncated (more=true, count=" << reply.count()
-				 << "); skip reconcile for this round";
+		// 比已经应用过的快照旧(同一前缀多个 Range 同时在途、乱序到达):整条丢弃,不应用 PUT、不对账 ——
+		// 否则它会把已删节点加回来(墓碑已被更新的快照清掉)。watch 若还没建,下面仍从已应用快照之后建。
+		LOG_DEBUG << "Drop out-of-order etcd range for prefix " << prefix << " at revision " << snapshotRevision
+				  << " (already applied " << appliedRevision << ")";
+	}
+	else
+	{
+		// 快照不完整一律不删(§10.2 第 3 条):截断、值解析失败、key 不属于前缀。
+		bool complete = !reply.more();
+		if (reply.more())
+		{
+			LOG_WARN << "etcd range for prefix " << prefix << " is truncated (more=true, count=" << reply.count()
+					 << "); skip reconcile for this round";
+		}
+
+		std::unordered_set<std::string> snapshotKeys;
+		std::vector<PendingRemoval> removals;
+		for (const auto& kv : reply.kvs())
+		{
+			const std::string& key = kv.key();
+			if (!boost::algorithm::starts_with(key, prefix))
+			{
+				complete = false;
+				LOG_WARN << "etcd range for prefix " << prefix << " returned foreign key " << key << "; skip reconcile";
+				HandlePutEvent(key, kv.value());
+				continue;
+			}
+			if (IsAllocationKey(key))
+			{
+				HandlePutEvent(key, kv.value()); // 与旧路径一致:交给发现层,由它跳过
+				continue;
+			}
+			if (NodeUuidOf(kv.value()).empty())
+			{
+				complete = false; // 值解析不了(或没有 uuid):AddServiceNode 会打出具体错误
+			}
+			snapshotKeys.insert(key);
+			ApplyDiscoveryPut(key, kv.value(), kv.mod_revision(), removals);
+		}
+
+		for (auto& removed : discoveryKeys_.ApplySnapshot(prefix, snapshotKeys, snapshotRevision, complete))
+		{
+			removals.push_back({std::move(removed.key), std::move(removed.value), std::move(removed.holder),
+								"absent from the range snapshot of " + prefix + " at revision " +
+									std::to_string(snapshotRevision)});
+		}
+		appliedSnapshotRevision_[prefix] = snapshotRevision;
+		// 整个快照应用完再摘:同一快照里旧持有者可能已经出现在另一个键上(换号的 Go 节点)。
+		FlushPendingRemovals(removals);
 	}
 
-	google::protobuf::util::JsonParseOptions parseOptions;
-	parseOptions.ignore_unknown_fields = true;
-	std::unordered_set<std::string> snapshotKeys;
-	for (const auto& kv : reply.kvs())
-	{
-		const std::string& key = kv.key();
-		if (!boost::algorithm::starts_with(key, prefix))
-		{
-			complete = false;
-			LOG_WARN << "etcd range for prefix " << prefix << " returned foreign key " << key << "; skip reconcile";
-			HandlePutEvent(key, kv.value());
-			continue;
-		}
-		if (IsAllocationKey(key))
-		{
-			HandlePutEvent(key, kv.value()); // 与旧路径一致:交给发现层,由它跳过
-			continue;
-		}
-		NodeInfo probe;
-		if (!google::protobuf::util::JsonStringToMessage(kv.value(), &probe, parseOptions).ok())
-		{
-			complete = false; // AddServiceNode 会打出具体解析错误
-		}
-		snapshotKeys.insert(key);
-		if (!discoveryKeys_.ApplyPut(key, kv.value(), kv.mod_revision()))
-		{
-			// Range 与 watch 走不同的流:这条快照比已经处理过的 watch 事件(更新的 PUT 或删除)旧。
-			LOG_DEBUG << "Skip stale range entry " << key << " mod_revision=" << kv.mod_revision();
-			continue;
-		}
-		HandlePutEvent(key, kv.value());
-	}
-
-	for (auto& removed : discoveryKeys_.ApplySnapshot(prefix, snapshotKeys, snapshotRevision, complete))
-	{
-		LOG_INFO << "etcd reconcile: " << removed.key << " is absent from the range snapshot of " << prefix
-				 << " at revision " << snapshotRevision << "; handling it as deleted";
-		HandleDeleteEvent(removed.key, removed.value);
-	}
-	revision[prefix] = snapshotRevision + 1;
-
-	// 这个前缀在当前流上还没有 watch:从快照之后的第一个 revision 建,快照与 watch 之间不漏事件。
+	// 这个前缀在当前流上还没有 watch:从已应用快照之后的第一个 revision 建,快照与 watch 之间不漏事件,
+	// 也不从更旧的 revision 回放(重建前发出的旧 Range 晚到时同样如此)。
+	const int64_t watchFrom = std::max(snapshotRevision, appliedRevision) + 1;
+	revision[prefix] = watchFrom;
 	auto& watch = prefixWatches_[prefix];
 	if (!watch.createSent)
 	{
 		watch.createSent = true;
 		pendingWatchCreates_.push_back(prefix);
-		EtcdHelper::StartWatchingPrefix(prefix, snapshotRevision + 1);
-		LOG_INFO << "Watching prefix: " << prefix << " from revision " << snapshotRevision + 1;
+		EtcdHelper::StartWatchingPrefix(prefix, watchFrom);
+		LOG_INFO << "Watching prefix: " << prefix << " from revision " << watchFrom;
 	}
 }
 
@@ -253,17 +324,20 @@ void EtcdService::OnStreamWatchResponse(const etcdserverpb::WatchResponse& respo
 
 void EtcdService::ApplyWatchEvents(const etcdserverpb::WatchResponse& response)
 {
+	// 一个应答里的事件全部应用完再摘节点(FlushPendingRemovals):同一批里先 DELETE 后重新 PUT 的节点
+	// (失租重挂、换号)不必先摘再加。跨应答的先后照旧按到达顺序处理。
+	std::vector<PendingRemoval> removals;
 	for (const auto& event : response.events())
 	{
 		const std::string& key = event.kv().key();
 		if (event.type() == mvccpb::Event_EventType::Event_EventType_PUT)
 		{
-			if (!IsAllocationKey(key) && !discoveryKeys_.ApplyPut(key, event.kv().value(), event.kv().mod_revision()))
+			if (IsAllocationKey(key))
 			{
-				LOG_DEBUG << "Skip stale watch PUT " << key << " mod_revision=" << event.kv().mod_revision();
+				HandlePutEvent(key, event.kv().value());
 				continue;
 			}
-			HandlePutEvent(key, event.kv().value());
+			ApplyDiscoveryPut(key, event.kv().value(), event.kv().mod_revision(), removals);
 			continue;
 		}
 		if (event.type() != mvccpb::Event_EventType::Event_EventType_DELETE)
@@ -282,7 +356,7 @@ void EtcdService::ApplyWatchEvents(const etcdserverpb::WatchResponse& response)
 		if (outcome.result == DiscoveryKeyIndex::DeleteResult::kStale)
 		{
 			LOG_INFO << "Ignore stale watch DELETE " << key << " at revision " << deletedAt
-					 << ": a newer PUT of this key was already applied";
+					 << ": a newer PUT of this key was applied, or this delete was already handled";
 			continue;
 		}
 		// 不依赖 prev_kv(§10.2 第 4 条):有就用,没有按 key 取本地记录。
@@ -294,8 +368,12 @@ void EtcdService::ApplyWatchEvents(const etcdserverpb::WatchResponse& response)
 					 << " nothing to remove";
 			continue;
 		}
-		HandleDeleteEvent(key, value);
+		std::string uuid = outcome.result == DiscoveryKeyIndex::DeleteResult::kRemoved ? std::move(outcome.holder)
+																						 : NodeUuidOf(value);
+		removals.push_back({key, std::move(value), std::move(uuid),
+							"deleted at revision " + std::to_string(deletedAt)});
 	}
+	FlushPendingRemovals(removals);
 }
 
 void EtcdService::ResetPrefixWatch(const std::string& prefix)

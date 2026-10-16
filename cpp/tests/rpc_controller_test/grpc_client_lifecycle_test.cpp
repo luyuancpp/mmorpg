@@ -27,6 +27,7 @@ class GrpcClientLifecycleTest : public ::testing::Test
 protected:
     void SetUp() override
     {
+        oldLoad_ = std::move(data_service::AsyncDataServiceLoadPlayerDataHandler);
         oldLoadFailure_ = std::move(data_service::AsyncDataServiceLoadPlayerDataFailedHandler);
         oldWatch_ = std::move(etcdserverpb::AsyncWatchWatchHandler);
     }
@@ -55,8 +56,20 @@ protected:
                 if (registry.valid(entity)) registry.destroy(entity);
             }
         }
+        data_service::AsyncDataServiceLoadPlayerDataHandler = std::move(oldLoad_);
         data_service::AsyncDataServiceLoadPlayerDataFailedHandler = std::move(oldLoadFailure_);
         etcdserverpb::AsyncWatchWatchHandler = std::move(oldWatch_);
+    }
+
+    // 每次调用回调测试共用:全局应答 / 失败处理器只计数,带 done 的调用不得触发它们。
+    std::shared_ptr<int> CountGlobalLoadPlayerDataHandlers()
+    {
+        const auto calls = std::make_shared<int>(0);
+        data_service::AsyncDataServiceLoadPlayerDataHandler =
+            [calls](const grpc::ClientContext &, const data_service::LoadPlayerDataResponse &) { ++*calls; };
+        data_service::AsyncDataServiceLoadPlayerDataFailedHandler =
+            [calls](const GrpcCallFailure &, const data_service::LoadPlayerDataRequest &) { ++*calls; };
+        return calls;
     }
 
     bool RunUntil(const std::function<bool()> &done)
@@ -99,6 +112,7 @@ protected:
 
     muduo::net::EventLoop loop_;
     std::vector<std::pair<uint32_t, entt::entity>> entities_;
+    data_service::AsyncDataServiceLoadPlayerDataHandlerFunctionType oldLoad_;
     data_service::AsyncDataServiceLoadPlayerDataFailedHandlerFunctionType oldLoadFailure_;
     etcdserverpb::AsyncWatchWatchHandlerFunctionType oldWatch_;
 };
@@ -268,11 +282,11 @@ TEST_F(GrpcClientLifecycleTest, SceneManagerSelectionRejectsSnapshotOnlyAndClosi
     auto &registry = tlsNodeContextManager.GetRegistry(type);
     const auto snapshotOnly = EmptyNode(type);
     registry.emplace<NodeInfo>(snapshotOnly).set_node_type(type);
-    EXPECT_EQ(GetSceneManagerEntity(77), entt::null);
+    EXPECT_EQ(GetSceneManagerEntity(77), static_cast<entt::entity>(entt::null));
     const auto connected = InitNode(type);
     EXPECT_EQ(GetSceneManagerEntity(77), connected);
     BeginShutdownGrpcNode(registry, connected);
-    EXPECT_EQ(GetSceneManagerEntity(77), entt::null);
+    EXPECT_EQ(GetSceneManagerEntity(77), static_cast<entt::entity>(entt::null));
 }
 
 class WatchService final : public etcdserverpb::Watch::Service
@@ -419,6 +433,151 @@ TEST_F(GrpcClientLifecycleTest, ReentrantWriteCompletionCannotReuseReplyBorrowed
     BeginShutdownGrpcNode(registry, entity);
     EXPECT_TRUE(RunUntil([&] { return PollGrpcNodeShutdown(registry, entity); }));
     server->Shutdown(std::chrono::system_clock::now() + std::chrono::seconds(1));
+}
+
+class LoadPlayerDataService final : public data_service::DataService::Service
+{
+public:
+    std::atomic<int> calls{0};
+    std::atomic<bool> sawMetadata{false};
+
+private:
+    grpc::Status LoadPlayerData(grpc::ServerContext *context, const data_service::LoadPlayerDataRequest *request,
+                                data_service::LoadPlayerDataResponse *response) override
+    {
+        ++calls;
+        sawMetadata = context->client_metadata().count("x-test") != 0;
+        response->set_version(request->player_id() + 1);
+        return grpc::Status::OK;
+    }
+};
+
+// 每次调用回调的结果记录。回调只在 loop 线程执行,不需要原子量。
+struct PerCallDoneState
+{
+    int calls{0};
+    uint32_t code{~0u};
+    bool hadReply{false};
+    uint64_t version{0};
+};
+
+GrpcDone<data_service::LoadPlayerDataResponse> RecordInto(const std::shared_ptr<PerCallDoneState> &state)
+{
+    return [state](const GrpcCallOutcome &outcome, const data_service::LoadPlayerDataResponse *reply)
+    {
+        ++state->calls;
+        state->code = outcome.code;
+        state->hadReply = reply != nullptr;
+        if (reply != nullptr) state->version = reply->version();
+    };
+}
+
+// 每次调用回调(grpc-client-deadline-failure-callback.md §11):成功时恰好一次、拿到 reply、不在 Send 栈内同步调用,
+// options 的 deadline 与 metadata 生效,且不触发该方法的全局应答 / 失败处理器。
+TEST_F(GrpcClientLifecycleTest, PerCallDoneReceivesReplyOnceAndBypassesGlobalHandlers)
+{
+    LoadPlayerDataService service;
+    grpc::ServerBuilder builder;
+    int port = 0;
+    builder.AddListeningPort("127.0.0.1:0", grpc::InsecureServerCredentials(), &port);
+    builder.RegisterService(&service);
+    auto server = builder.BuildAndStart();
+    ASSERT_NE(server, nullptr);
+    ASSERT_GT(port, 0);
+    const auto type = common::base::DataServiceNodeService;
+    const auto entity = InitNode(type, "127.0.0.1:" + std::to_string(port));
+    auto &registry = tlsNodeContextManager.GetRegistry(type);
+    const auto globalCalls = CountGlobalLoadPlayerDataHandlers();
+    const auto state = std::make_shared<PerCallDoneState>();
+
+    data_service::LoadPlayerDataRequest request;
+    request.set_player_id(41);
+    GrpcCallOptions options;
+    options.deadline = std::chrono::milliseconds(5000);
+    options.metadata.emplace_back("x-test", "snapshot");
+    data_service::SendDataServiceLoadPlayerData(registry, entity, request, RecordInto(state), options);
+    request.set_player_id(99); // 调用对象持有请求副本,发出后改调用方的请求不影响本次调用
+    EXPECT_EQ(state->calls, 0) << "done 不得在 Send 栈内同步调用";
+
+    EXPECT_TRUE(RunUntil([&]
+    {
+        (void)PollGrpcNodeShutdown(registry, entity);
+        return state->calls == 1;
+    }));
+    EXPECT_EQ(state->code, 0u);
+    EXPECT_TRUE(state->hadReply);
+    EXPECT_EQ(state->version, 42u);
+    EXPECT_EQ(service.calls.load(), 1);
+    EXPECT_TRUE(service.sawMetadata.load()) << "options.metadata 要随请求发出";
+
+    BeginShutdownGrpcNode(registry, entity);
+    EXPECT_TRUE(RunUntil([&] { return PollGrpcNodeShutdown(registry, entity); }));
+    EXPECT_EQ(state->calls, 1) << "排空后也不能有第二次完成";
+    EXPECT_EQ(*globalCalls, 0) << "带 done 的调用不得再触发全局处理器";
+    server->Shutdown(std::chrono::system_clock::now() + std::chrono::seconds(1));
+}
+
+// 缺 runtime / CQ / stub 的本地拒绝:done 以 UNAVAILABLE 异步完成一次,reply 为空。
+TEST_F(GrpcClientLifecycleTest, PerCallDoneLocalRejectIsAsynchronousOnceWithUnavailable)
+{
+    const auto type = common::base::DataServiceNodeService;
+    auto &registry = tlsNodeContextManager.GetRegistry(type);
+    const auto entity = EmptyNode(type);
+    const auto globalCalls = CountGlobalLoadPlayerDataHandlers();
+    const auto state = std::make_shared<PerCallDoneState>();
+
+    data_service::LoadPlayerDataRequest request;
+    data_service::SendDataServiceLoadPlayerData(registry, entity, request, RecordInto(state));
+    EXPECT_EQ(state->calls, 0) << "本地拒绝也不得在 Send 栈内同步回调";
+    EXPECT_FALSE(GrpcClientLocalCompletionsDrained()) << "排队中的本地完成要计入排空判据";
+
+    EXPECT_TRUE(RunUntil([&] { return state->calls == 1 && GrpcClientLocalCompletionsDrained(); }));
+    EXPECT_EQ(state->code, static_cast<uint32_t>(grpc::StatusCode::UNAVAILABLE));
+    EXPECT_FALSE(state->hadReply);
+    EXPECT_EQ(*globalCalls, 0);
+}
+
+// 停机:在途调用经 BeginShutdownGrpcNode 取消后以非 OK 完成一次,关闭后的新调用以 UNAVAILABLE 完成一次;
+// done 执行期间节点不得被宣告排空(拆节点排在全部 done 之后)。
+TEST_F(GrpcClientLifecycleTest, PerCallDoneCompletesNonOkOnShutdownBeforeQueueIsReleased)
+{
+    const auto type = common::base::DataServiceNodeService;
+    const auto entity = InitNode(type);
+    auto &registry = tlsNodeContextManager.GetRegistry(type);
+    const auto runtime = registry.get<GrpcClientRuntimePtr>(entity);
+    const auto globalCalls = CountGlobalLoadPlayerDataHandlers();
+    const auto outstanding = std::make_shared<PerCallDoneState>();
+    const auto rejected = std::make_shared<PerCallDoneState>();
+
+    data_service::LoadPlayerDataRequest request;
+    request.set_player_id(45);
+    data_service::SendDataServiceLoadPlayerData(
+        registry, entity, request,
+        [outstanding, &registry, entity](const GrpcCallOutcome &outcome, const data_service::LoadPlayerDataResponse *reply)
+        {
+            ++outstanding->calls;
+            outstanding->code = outcome.code;
+            outstanding->hadReply = reply != nullptr;
+            EXPECT_TRUE(registry.valid(entity));
+            EXPECT_FALSE(PollGrpcNodeShutdown(registry, entity)) << "done 执行期间不能宣告排空";
+        });
+    EXPECT_EQ(runtime->calls.size(), 1u);
+    BeginShutdownGrpcNode(registry, entity);
+    data_service::SendDataServiceLoadPlayerData(registry, entity, request, RecordInto(rejected));
+    EXPECT_EQ(runtime->calls.size(), 1u) << "关闭后的调用不得向 CQ 追加网络操作";
+
+    ASSERT_TRUE(RunUntil([&] { return PollGrpcNodeShutdown(registry, entity); }));
+    EXPECT_EQ(outstanding->calls, 1);
+    EXPECT_NE(outstanding->code, 0u);
+    EXPECT_FALSE(outstanding->hadReply);
+    EXPECT_EQ(rejected->calls, 1);
+    EXPECT_EQ(rejected->code, static_cast<uint32_t>(grpc::StatusCode::UNAVAILABLE));
+    EXPECT_FALSE(rejected->hadReply);
+    EXPECT_TRUE(runtime->calls.empty());
+    EXPECT_TRUE(PollGrpcNodeShutdown(registry, entity)) << "重复轮询不能再次完成";
+    EXPECT_EQ(outstanding->calls, 1);
+    EXPECT_EQ(rejected->calls, 1);
+    EXPECT_EQ(*globalCalls, 0);
 }
 
 } // namespace

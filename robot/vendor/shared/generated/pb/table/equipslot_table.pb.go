@@ -25,6 +25,7 @@ type EquipSlotTable struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            uint32                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	EquipKind     uint32                 `protobuf:"varint,2,opt,name=equip_kind,json=equipKind,proto3" json:"equip_kind,omitempty"`
+	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -71,6 +72,13 @@ func (x *EquipSlotTable) GetEquipKind() uint32 {
 		return x.EquipKind
 	}
 	return 0
+}
+
+func (x *EquipSlotTable) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
 }
 
 type EquipSlotTableData struct {
@@ -121,11 +129,12 @@ var File_equipslot_table_proto protoreflect.FileDescriptor
 
 const file_equipslot_table_proto_rawDesc = "" +
 	"\n" +
-	"\x15equipslot_table.proto\"?\n" +
+	"\x15equipslot_table.proto\"S\n" +
 	"\x0eEquipSlotTable\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\rR\x02id\x12\x1d\n" +
 	"\n" +
-	"equip_kind\x18\x02 \x01(\rR\tequipKind\"9\n" +
+	"equip_kind\x18\x02 \x01(\rR\tequipKind\x12\x12\n" +
+	"\x04name\x18\x03 \x01(\tR\x04name\"9\n" +
 	"\x12EquipSlotTableData\x12#\n" +
 	"\x04data\x18\x01 \x03(\v2\x0f.EquipSlotTableR\x04dataB@\n" +
 	"\x0ecom.game.tableB\x18EquipSlotTableOuterClassP\x01Z\x12generated/pb/tableb\x06proto3"

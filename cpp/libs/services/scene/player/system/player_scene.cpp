@@ -1,6 +1,7 @@
 #include "player_scene.h"
 #include "engine/core/utils/registry/actor_log.h"
 #include "engine/core/type_define/player_guid_comp.h"
+#include "type_alias/player_session_type_alias.h"
 #include "actor/actor_net_id.h"
 
 #include "muduo/base/Logging.h"

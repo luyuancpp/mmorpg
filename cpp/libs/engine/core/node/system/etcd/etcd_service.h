@@ -5,6 +5,7 @@
 #include <chrono>
 #include <deque>
 #include <memory>
+#include <vector>
 
 #include "proto/etcd/etcd.pb.h"
 #include "time/comp/timer_task_comp.h"
@@ -115,6 +116,17 @@ private:
     // 新传输的 watch 应答:created 按发送顺序对回前缀;canceled(含 compact)只重建那一个前缀。
     void OnStreamWatchResponse(const etcdserverpb::WatchResponse& response);
     void ApplyWatchEvents(const etcdserverpb::WatchResponse& response);
+    // 一批(一个 Range 快照 / 一个 watch 应答)里待摘的发现节点。整批应用完才摘,且只摘不再挂在任何发现键上的 uuid。
+    struct PendingRemoval {
+        std::string key;
+        std::string value;   // 删除前的 NodeInfo JSON,交给 HandleServiceNodeStop
+        std::string uuid;    // 空 = 解析不了,无法判断是否还挂在别的键上
+        std::string reason;  // 日志用
+    };
+    // 一条发现键 PUT(来自 Range 快照或 watch):过时的丢弃;同一个键换了持有者(uuid 不同)时把旧持有者记进 removals。
+    void ApplyDiscoveryPut(const std::string& key, const std::string& value, int64_t modRevision,
+                           std::vector<PendingRemoval>& removals);
+    void FlushPendingRemovals(std::vector<PendingRemoval>& removals);
     void ResetPrefixWatch(const std::string& prefix);
     static bool IsAllocationKey(const std::string& key);
 
@@ -157,6 +169,8 @@ private:
     std::deque<std::string> pendingWatchCreates_;
     std::unordered_map<int64_t, std::string> watchIdToPrefix_;
     DiscoveryKeyIndex discoveryKeys_;
+    // 每个前缀已经应用过的最新 Range 快照的 revision:更旧的应答整条丢弃,watch 从它之后建(跨流重建保留)。
+    std::unordered_map<std::string, int64_t> appliedSnapshotRevision_;
     // 驱动进程里**全部**官方 gRPC 客户端的 CQ(不只 etcd),两种 etcd 传输下都要跑;第 3 批删 CQ 时一并删。
     TimerTaskComp grpcHandlerTimer;
     TimerTaskComp acquireNodeTimer;

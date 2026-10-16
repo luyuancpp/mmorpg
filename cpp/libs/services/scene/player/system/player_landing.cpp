@@ -19,6 +19,7 @@
 
 #include "player/comp/player_frozen_comp.h"
 #include "player/comp/player_landing_comp.h"
+#include "player/system/player_inbox_system.h" // OnEnteredScene:收件箱落地拉取(C1)
 
 namespace
 {
@@ -205,7 +206,9 @@ void PlayerLandingSystem::OnEnteredScene(entt::entity player, uint32_t enterGsTy
 	PublishAssetWake(player, AssetWakeReason::kEnteredScene);
 
 	// 后续落地钩子挂在这里,每个一行、互不依赖,顺序无业务含义:
-	//   - 统一玩家收件箱服务在 scene 侧的消费触发(由该会话提供一行调用,设计 §5.1)。
+	//   - 统一玩家收件箱服务在 scene 侧的消费触发(player-inbox-service.md §7.3 第 1 条,协调项 C1):
+	//     由收件箱系统自己判断是不是"新落地"(实体在本节点新建 / owner_epoch 变了),是就无条件拉一次。
+	PlayerInboxSystem::OnPlayerLanded(player);
 	// 版本摘要不在这里推:客户端在收到 NotifyEnterScene 之后主动发 GetSyncDigest(设计 §4.3),
 	// 同 zone 换图连接不变、不算落地,服务端无从判断"这次进场是不是一次落地"。
 }

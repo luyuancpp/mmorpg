@@ -1070,6 +1070,12 @@ if (const char *envPassword = GetNonEmptyEnv("ZONE_REDIS_PASSWORD"))
 - 必须与第 1 条同批:否则修复后本机节点会拿占位口令去认证,本机无口令 Redis 会拒绝(外部常识,未实测;黑盒第 4 组验证)。
 
 【6. 第二批:口令怎样到达 K8s 上的 C++(需负责人二选一;第一批对两种都兼容)】
+
+> **2026-10-15 第二批落码说明(以此为准,下面的设计原文保留;未经 Codex 运行验证)**:负责人定方案 A。
+> - `tools/scripts/k8s_deploy.ps1`:`New-NodeConfigMapYaml` 的 `zoneredis.password` 取 `Get-CppZoneRedisPassword`(读 `$script:RedisPassword`;未解析 / 非 dev 档为空 / 含 `"`、`\`、控制字符一律 throw,只点 `MMORPG_REDIS_PASSWORD`)。字符集另在 `Initialize-InjectedSecrets` 里、任何写操作之前查一次(`Assert-RedisPasswordYamlSafe`,同一个值也进 Go / gateway ConfigMap 与 Secret `redis-auth`)。
+> - 指纹注解 `mmorpg.io/zone-redis-auth-hash`(`Get-CppZoneRedisAuthAnnotations`,只哈希口令,用途串 `zone-redis/cpp-node`,口令为空不写):本脚本的 Deployment / scene Fleet 模板经 `New-CppPodAnnotationBlock`,lib 的三个模板经 `New-ClientEntryPodCommon -PodAnnotations`;两边共用 lib 新增的 `ConvertTo-ClientEntryPodAnnotationBlock`,与 sidecar 指纹写进同一个 `annotations:` 段。没有复用 `Add-PodTemplateAnnotation`:它要求恰好一处 `template:`→`metadata:` 且缩进是空格,Fleet 有两层 template、Deployment 模板用制表符缩进。
+> - battle 工作负载的渲染从 `Assert-ClientEntryDeployPreflight` 挪到 `Apply-Infra` 开头(仍早于任何基础设施写操作),结果显式传给 `Apply-BattlePool -Workload`,删掉了 `$script:BattleWorkload`:入口预检排在密钥解析之前,在那里渲染拿不到口令。
+> - 契约测试:`k8s_deploy_contract.tests.ps1` 3a 节 7 条 + battle 段 1 条,`k8s_client_entry_contract.tests.ps1` 1 条;文档 `deploy/k8s/README.md`「C++ 节点的 zone Redis 口令」、`deploy/k8s/AGENTS.md`、`docs/design/shared-redis-split-by-purpose.md` §2.5 / §12 / §13。
 - 方案 A(明文进 node ConfigMap):
   - New-NodeConfigMapYaml 里把 `password: ""` 改成取 $script:RedisPassword。
   - 加两道生成期保护,仿 GateTokenSecret(:1708-1714):

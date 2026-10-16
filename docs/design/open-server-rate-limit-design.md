@@ -332,6 +332,12 @@ zone 级配额 2000 RPS:
   `dev_tools.ps1` / `k8s_image.ps1` / `k8s_zone_rollback.ps1` 不透传这两个参数,止血要直接调 `k8s_deploy.ps1`。
 - 只改 ConfigMap 不会让进程重读配置,所以开关、阈值、可信代理网段、Redis 口令(gateway)、排队密钥(login)都进 Pod 模板的指纹注解,任一变化即自动滚动。
   不要用 `kubectl rollout undo` 关限流或排队:它只退 Pod 模板,不退 ConfigMap。
+- **(2026-10-15 更正,上面的矩阵与各条原文保留)** login 排队受 `k8s_deploy.ps1` 的脚本常量 `$script:LoginQueueMergeGateCleared`(当前 `$false`)机械拦截:
+  门槛未清时 `-LoginQueue auto` 在 dev / staging / prod 都解析为关(非 dev 档部署 login 时打 `[PeakShaving]LoginQueueGate=closed` 警告),
+  `-LoginQueue on` 在参数解析后、任何 kubectl 之前拒绝;login ConfigMap 不写 `Queue` 段与 `Secrets.QueueToken`,login 不带 `mmorpg.io/peak-shaving-hash`,
+  也不要求 `MMORPG_LOGIN_QUEUE_TOKEN_SECRET`。矩阵里 login `Queue` 段、`Secrets.QueueToken` 两行的 staging / prod 列与显式 `on` 列,以及上面「参数不粘滞」一条的
+  「按档位恢复为开」(就 login 排队而言),都只在门槛清掉之后成立;`-GatewayRateLimit` 不受影响。出处 `docs/handoff/launch-readiness-20261013/spec_G4b.md` §7「合入门槛」,
+  放开步骤见 `deploy/k8s/README.md` Optional Flags「削峰(G4b)」的「登录排队的合入门槛」。
 
 ### 11.2 起步值与出处
 
@@ -362,6 +368,14 @@ zone 级配额 2000 RPS:
 | 8 | 开服波次(§四)不打开 | 需要开服时刻,属运营决策 | 开服 0 秒的整体洪峰只靠令牌桶挡 |
 | 9 | J0:带 `queue_token` 的 assign-gate 在排队**开着**时也过 zone / IP 桶(Java 版只在其排队关闭时限流这类请求) | 本仓库的 gateway 与排队分属两个进程,gateway 不知道 login 排队开没开、也验不了 token,只能二选一,选 fail-closed | 网络抖动后带 token 重调 assign-gate 偶尔多扣一个令牌,可能先拿到一次 `ratelimit` 排队;正常轮询走 `/api/queue-status`,不受影响 |
 
+> **#9 的 2026-10-15 更正(代价漏算 429 与 AdmitTTL;上表原文保留)**:上表「代价」只算了多扣一个令牌、先拿到一次 `ratelimit` 排队。
+> 按当时的客户端口径(§11.5 原第 2、4 条:带 token 重调 assign-gate,吃 `code=429` 时按 30/60/120s 退避),CGNAT / 网吧后的玩家连吃两次 429 就是 90s,
+> 超过 login 的 `Queue.AdmitTTL` 60s。已被放行的玩家放行槽随之过期,此前 login 对这枚 token 一直回「排队中、名次 0」,最长约 1h(`QueueEntryTTL`)。
+> **负责人 2026-10-15 按「最标准」定**:J0 的 fail-closed 取舍与服务端回包格式都不变,改客户端契约。持有 `queue_token` 一律轮询 `/api/queue-status`(不过限流器);
+> 带 token 重调 assign-gate 只作为 queue-status 本身失败后的恢复手段;重入被限流就回到 queue-status 轮询。逐条见 §11.5 的 2026-10-15 更正。
+> login 侧同批改为放行窗口过后对该 token 回 EXPIRED(gateway 回 410;另一项改动,落在 `go/login/internal/logic/pkg/loginqueue/queue.go`,本注未核对其实现)。
+> 所以仍按旧口径退避重调的客户端,窗口过后也会拿到确定的 410、重新入队,不会再卡在名次 0 一小时。链条与依据见规格 `spec_G4b.md` §4.10 J0「客户端契约」与 §8 #10 的 2026-10-15 注。
+
 ### 11.4 gateway 代码改动(G4b-J)
 
 三条都是限流关着时不可达、一打开就生效的问题。
@@ -380,6 +394,24 @@ zone 级配额 2000 RPS:
 - (J0 之后)带 `queue_token` 重调 assign-gate 拿到 `code=100, queue_source="ratelimit"`(不带新 token)时,保留原 token,按 `retry_after_ms` 重试,不要当成排位丢失。
 
 客户端契约(回包码集合、帧、proto、tip 码)不变。独立客户端是否已按上述口径退避:未核实(另仓,本批未读取)。
+
+> **(2026-10-15 更正:持有 `queue_token` 时的口径。负责人 2026-10-15 按「最标准」定;上面四条原文保留)**
+> 原则:状态查询走专用的状态端点,入口端点只管入场;限流不该让已被放行的玩家错过 login 的放行窗口(`AdmitTTL` 60s)。
+> 按上面第 2、4 条,持 token 的玩家连吃两次 429 就退避 90s,窗口必然错过(§11.3 #9 更正)。
+> 上面第 2 条(429 按 30/60/120s 退避)从此只适用于**不持有** `queue_token` 的请求;第 4 条(带 token 拿到 `ratelimit` 排队时重调 assign-gate)作废。
+> 本节第 1 条与 §三「客户端行为」对持 token 的客户端同样按下面执行。现行口径:
+>
+> - 持有 `queue_token` 时,一律用 `/api/queue-status` 轮询排位与取票,间隔取 `retry_after_ms`,为 0 时取 2s。该端点不过限流器(`QueueStatusController`)。
+>   排队开着时它与 assign-gate 重入走同一个 `Lookup`,能取走放行票;排队关着时回 EXPIRED → `410`。
+> - 带 token 重调 `/api/assign-gate` 只作为 `/api/queue-status` 本身失败(网络错误 / 5xx)后的恢复手段。重入回 `code=100, queue_source="ratelimit"` 或 `code=429` 时,
+>   保留 token、回到 `/api/queue-status` 轮询(间隔同上),**不**按 30/60/120s 退避重调 assign-gate。
+> - 任一端点回 `410`:丢掉 `queue_token`,不带 token 重调 assign-gate,此后按不持 token 的口径处理。
+> - 服务端回包格式与回包码集合不变。这里的 `429` 指回包 `code=429`(HTTP 200 承载,见 §5.4 更正)。伪造的 token 过不了 login 的 HMAC 校验,J0 不因此削弱。
+> - 旧客户端兼容:login 侧同批改为放行窗口过后对该 token 回 EXPIRED(见 §11.3 #9 更正),仍按旧口径退避的客户端最坏在窗口过后拿到确定的 410,不会卡在名次 0。
+>   但它仍会错过这一次放行、重新排队,所以客户端要按上面的口径改。
+> - 落地状态:gateway 只改注释(`AssignGateRequest.java` 的 `queueToken`、`AssignGateController.java`),代码不变。
+>   本仓库 robot 已按此实现(`robot/http_assign_gate.go` 的 `AssignGateWithQueue`,用例 `robot/http_assign_gate_test.go`),**未编译、未运行**,待 Codex 验证。
+>   独立客户端 `../mmorpg-client` 待客户端任务跟进(本批未读取);Java 版的对齐由主会话登记 `PARITY.md`(AGENTS §12)。
 
 ### 11.6 运行期改阈值要清桶
 

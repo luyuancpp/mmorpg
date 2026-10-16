@@ -127,7 +127,8 @@ bool ActorAttributeCalculatorSystem::InitializeOnCreate(entt::entity actorEntity
     }
 
     // 必需派生组件只在这个显式创建入口建立;可选来源缺失代表无加成/无状态。
-    registry.get_or_emplace<MoveSpeedComp>(actorEntity);
+    // 这里只确保组件存在，移速统一由下方 UpdateMoveSpeed 重算。
+    static_cast<void>(registry.get_or_emplace<MoveSpeedComp>(actorEntity));
     auto& stateFlags = registry.get_or_emplace<CombatStateFlagsComp>(actorEntity);
     UpdateMoveSpeed(actorEntity);
     ProjectCombatStateFlags(stateFlags, registry.try_get<CombatStateCollectionComp>(actorEntity));

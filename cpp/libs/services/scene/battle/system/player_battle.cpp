@@ -49,6 +49,8 @@
 #include "player/system/player_team.h"
 // PublishAssetWake:战斗冻结解除后唤醒资产通道(landing-recovery-sync-digest.md §5.2)。
 #include "player/system/player_landing.h"
+// OnBattleFreezeCleared:因战斗延后的收件箱处置立即重查(player-inbox-service.md §7.3 第 4 条,C1)。
+#include "player/system/player_inbox_system.h"
 
 // 时间->回合换算与回合常量的权威定义在回合引擎库(scene 可以依赖 battle 常量,反向禁止)。
 #include "services/battle/constants/turn_battle_constants.h"
@@ -189,6 +191,7 @@ namespace
 		tlsEcs.actorRegistry.remove<InBattleComp>(player);
 		PlayerTeamSystem::OnBattleFreezeCleared(player);
 		PlayerLandingSystem::PublishAssetWake(player, PlayerLandingSystem::AssetWakeReason::kBattleFreezeCleared);
+		PlayerInboxSystem::OnBattleFreezeCleared(player);
 		return true;
 	}
 

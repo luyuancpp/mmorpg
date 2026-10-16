@@ -1,5 +1,6 @@
 #include "muduo/net/EventLoop.h"
 
+#include "node/system/etcd/etcd_transport.h"
 #include "node/system/node/node_entry.h"
 
 #include "handler/rpc/your_node_handler.h"
@@ -20,6 +21,10 @@ struct YourNodeContext {};
 
 int main(int argc, char* argv[])
 {
+    // Pick the etcd transport (NODE_ETCD_TRANSPORT=grpc default | muduo_h2) before the Node is constructed:
+    // EtcdService::Init reads the installed factory inside the Node constructor.
+    // See docs/design/grpc-muduo-transport.md section 13.4.
+    etcd_transport::InstallFromEnv();
     return node::entry::RunSimpleNodeMainWithOwnedContext<YourNodeHandler, YourNodeContext, YourNodeHooks>(
         YourNodeService,
         Node::CanConnectNodeTypeList{ /* SceneNodeService, LoginNodeService, ... */ },

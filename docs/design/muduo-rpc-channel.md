@@ -1,7 +1,7 @@
 # 节点间 muduo RPC:每次调用的回调、延后回包与完整的完成语义(RpcChannel 改造)
 
 > 状态:**批 1–5 已实施,未编译,待 Codex 验证**(2026-10-15,Claude)。用户授权实施到第 5 批,升级口径选「同 zone 停服一次切换」;
-> 实施与本文的偏离、未做项与验证步骤见 §18。批 6(玩家回包死链)、批 7(收口)未授权、未做。
+> 实施与本文的偏离、未做项与验证步骤见 §18。批 6(玩家回包死链)与 gRPC 每次调用回调见 §19(2026-10-15 续,未编译);批 7 见 §19 后续小节。
 > 本文不引用此前任何会话的方案为既定结论;`build/rpc-lambda-tools/`(被 .gitignore 忽略的早先尝试)不是本设计的一部分。
 > 事实核对基线:`54c9d775d`(2026-10-15 03:08)。行号以该提交为准,并发会话仍在改 gate 相关文件,动手前须重新核对。
 
@@ -615,8 +615,38 @@ C++ 节点没有 Prometheus 出口(`dirty_save_stats.h:25-30`),沿用"relaxed �
 ### 18.5 遗留
 
 - 已处理:`docs/design/ecs-entt-misuse-audit-20261015.md` 的 C007 / F093 状态与 `routing_identity_test.cpp` 的注释已更正(entt 审计会话已结束,由本会话代改)。
-- GM 停机鉴权被拒时回的是正常 RESPONSE(`affected_count = 0`),是否改为 `SetFailed` 待定。
-- §14 的后续项不变。
+- ~~GM 停机鉴权被拒时回的是正常 RESPONSE(`affected_count = 0`),是否改为 `SetFailed` 待定。~~ 已改,见 §19.3。
+- §14 的后续项:gRPC 每次调用回调已做(§19.2),其余不变。
+
+## 19. 实施记录(续,2026-10-15,用户授权「全部做完」,未编译)
+
+### 19.1 批 6:玩家回包死链
+
+`PlayerServiceReplied` / `gPlayerServiceReplied` 从无读者(`ProcessClientPlayerMessage` 只查 `gPlayerService`),整条删除:
+
+- 删 `cpp/libs/services/player/rpc/player_rpc_response_handler.h`;scene `rpc_replies/player/` 9 个文件;gate、battle 的
+  `rpc_replies/player/player_rpc_response_handler.cpp`。四个工程的 vcxproj / filters / CMakeLists 同步去掉。
+- `Node::RegisterHandlers` 不再调 `InitPlayerServiceReplied`,节点二进制的链接义务从三个降为两个(`InitPlayerService` / `InitServiceHandler`);
+  `rpc_controller_test` 的桩同步删除。
+- 生成器:删 `replied_handler_gen.go`、`template/player_service_replied_instance.cpp.tmpl`、`IsSceneNodeReceivedPlayerResponseHandler`、
+  `HandlerConfig.IsRepliedHandler`、`MethodInfo.CppRepliedHandler*`、`generateRepliedInstanceData`;`config.go` 去掉只服务于回包链的 10 个字段,
+  两份 `etc/proto_gen*.yaml` 去掉对应键(yaml 未知键本就被忽略,`gate_node_replied` 保留:gate 的空 `InitServiceHandler` 仍生成在 `rpc_replies/`)。
+- 生成器测试:`TestPlayerReplyChainStillGenerated` 改为 `TestPlayerServiceGeneratesNoReplyChain`(整棵输出树不得出现 `*_response_handler.*` 或
+  `PlayerServiceReplied`);删 `TestSceneNodeReceivedPlayerResponseFilter`。
+- 生成器从不删除过期文件,所以本批的删除必须随源码一起提交;regen 后不应重新出现上述文件。
+
+### 19.2 gRPC 生成客户端的每次调用回调(§14 第 2 项)
+
+见 `docs/design/grpc-client-deadline-failure-callback.md` §11:每个 unary 方法多一个
+`Send<Svc><Method>(registry, entity, req, GrpcDone<Resp>, GrpcCallOptions = {})`,`done` 恰好一次、从不同步、不触发全局处理器;
+既有 API 全部保留。模板与 `grpc_call_tag.h` 已随用户快照提交并 regen;`grpc_client_lifecycle_test.cpp` 补 `PerCallDone*` 三条用例。
+§8.4「关联号 → RpcDoneCallback」过渡写法从此不再必要:B 的 gRPC 下游直接把 `RpcDoneCallback` 捕获进 `GrpcDone`。
+
+### 19.3 GM 停机鉴权被拒返回失败
+
+`GateHandler::GmGracefulShutdown` 与 `SceneSceneHandler::GmGracefulShutdown` 的拒绝分支调 `controller->SetFailed`,调用方得到
+`RPC_ERROR(HANDLER_FAILED)`(`kRemoteFailed`),与「鉴权通过但没有可关的对象」(`RESPONSE`,`affected_count == 0`)可直接区分;
+线上只带错误码,拒绝原因只在本地日志。`cpp/nodes/gate/SECURITY.md` 已同步。
 
 ## 附录 A:主要事实证据
 

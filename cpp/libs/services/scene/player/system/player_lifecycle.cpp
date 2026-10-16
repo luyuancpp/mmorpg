@@ -30,6 +30,7 @@
 #include "player/system/handoff_mark_withdraw.h"
 #include "player/system/player_data_loader.h"
 #include "engine/core/type_define/type_define.h"
+#include "table/proto/tip/common_error_tip.pb.h"
 #include "table/proto/tip/cross_server_error_tip.pb.h"
 #include "node/system/grpc_call_deadline.h"      // 在途换图 TTL 从 SceneManager 的 gRPC deadline 派生
 #include "player_tip.h"

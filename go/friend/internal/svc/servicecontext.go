@@ -232,8 +232,11 @@ func BuildDSN(c config.MySQLConf, requireTiDB bool) string {
 		c.User, c.Password, c.Host, c.DBName)
 	if requireTiDB {
 		// 驱动在每条新建物理连接上初始化会话，不能只在当前Ping连接SET一次。
-		// 仅TiDB池设置此变量，MySQL开发池不发送它；禁止改服务器全局模式。
-		dsn += "&tidb_txn_mode=%27pessimistic%27"
+		// 权威列表是自动提交普通读；悲观事务模式不会关闭历史快照、缓存TSO或跳锁弱读。
+		// 仅TiDB池设置这些变量，MySQL开发池不发送它们；禁止改服务器全局模式。
+		dsn += "&tidb_txn_mode=%27pessimistic%27&tidb_read_staleness=0" +
+			"&tidb_low_resolution_tso=OFF&tidb_replica_read=%27leader%27" +
+			"&tidb_read_consistency=%27strict%27&tidb_snapshot=%27%27"
 	}
 	return dsn
 }
@@ -270,10 +273,14 @@ func OpenMySQL(c config.MySQLConf, requireTiDB bool) (*sql.DB, error) {
 			_ = db.Close()
 			return nil, fmt.Errorf("好友权威池必须连接TiDB: %w", errors.Join(err, errors.New("后端校验未通过")))
 		}
-		var mode string
-		if err := db.QueryRowContext(ctx, "SELECT @@tidb_txn_mode").Scan(&mode); err != nil || mode != "pessimistic" {
+		var mode, isolation, replica, consistency, snapshot string
+		var staleness, lowResolution int64
+		err = db.QueryRowContext(ctx,
+			"SELECT @@tidb_txn_mode,@@transaction_isolation,@@tidb_read_staleness,@@tidb_low_resolution_tso,@@tidb_replica_read,@@tidb_read_consistency,@@tidb_snapshot").
+			Scan(&mode, &isolation, &staleness, &lowResolution, &replica, &consistency, &snapshot)
+		if err != nil || mode != "pessimistic" || isolation != "READ-COMMITTED" || staleness != 0 || lowResolution != 0 || replica != "leader" || consistency != "strict" || snapshot != "" {
 			_ = db.Close()
-			return nil, fmt.Errorf("TiDB好友权威池必须使用pessimistic会话: %w", errors.Join(err, errors.New("事务模式校验未通过")))
+			return nil, fmt.Errorf("TiDB好友权威池必须使用RC悲观强读会话: %w", errors.Join(err, errors.New("权威会话参数校验未通过")))
 		}
 	}
 	return db, nil

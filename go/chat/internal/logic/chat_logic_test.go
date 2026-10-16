@@ -16,6 +16,7 @@ import (
 	"chat/internal/constants"
 	"chat/internal/session"
 	"chat/internal/svc"
+	"chat/internal/textfilter"
 
 	chatpb "proto/chat"
 	base "proto/common/base"
@@ -138,6 +139,47 @@ func TestWorldSendThenPullVisibleWithSenderOverridden(t *testing.T) {
 	require.Greater(t, got.GetSendTimeMs(), int64(1))
 
 	require.Equal(t, 604800*time.Second, mr.TTL(worldLogKey))
+}
+
+func TestSensitiveWordsStoredBeforeWorldAndPrivateHistory(t *testing.T) {
+	svcCtx, mr := newTestSvcCtx(t)
+	filter, err := textfilter.New([]string{"广告", "Spam", "😀"})
+	require.NoError(t, err)
+	svcCtx.ContentFilter = filter
+
+	for _, channel := range []chatpb.ChatChannelType{world, private} {
+		t.Run(channel.String(), func(t *testing.T) {
+			target := uint64(0)
+			peer := uint64(0)
+			if channel == private {
+				target, peer = playerB, playerA
+			}
+			rid := "filtered-" + channel.String()
+			require.Zero(t, sendAs(t, svcCtx, playerA, channel, target, "  广告 Spam spam 😀  ", rid))
+			require.Zero(t, sendAs(t, svcCtx, playerA, channel, target, "  广告 Spam spam 😀  ", rid))
+			code, messages := pullAs(t, svcCtx, playerB, channel, peer, 20)
+			require.Zero(t, code)
+			require.Len(t, messages, 1, "重复请求仍只能写入一条")
+			require.Equal(t, "** **** spam *", messages[0].GetContent())
+			require.Equal(t, playerA, messages[0].GetSenderPlayerId())
+		})
+	}
+	require.True(t, mr.Exists(worldLogKey))
+	code, messages := pullAs(t, svcCtx, playerC, private, playerB, 20)
+	require.Zero(t, code)
+	require.Empty(t, messages, "屏蔽不能绕过私聊参与者边界")
+}
+
+func TestSensitiveMaskCannotBypassOriginalContentByteLimit(t *testing.T) {
+	svcCtx, mr := newTestSvcCtx(t)
+	filter, err := textfilter.New([]string{"广"})
+	require.NoError(t, err)
+	svcCtx.ContentFilter = filter
+	require.Equal(t, constants.ErrMessageTooLong,
+		sendAs(t, svcCtx, playerA, world, 0, strings.Repeat("广", 171), "oversized-filtered"))
+	require.False(t, mr.Exists(worldLogKey))
+	require.False(t, mr.Exists(requestIdKey(playerA, "oversized-filtered")))
+	require.False(t, mr.Exists(rateLimitKey(playerA)))
 }
 
 // PRIVATE:A→B 与 B→A 写同一把排序 key,双方都能拉到全部两条;第三者拉不到。

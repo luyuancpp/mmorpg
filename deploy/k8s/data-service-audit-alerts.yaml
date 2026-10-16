@@ -161,7 +161,9 @@ spec:
               `data_service_kafka_consumer_lag_messages` / `data_service_kafka_consumer_retention_gap_messages`)按 instance 展开:
               只有它偏高即为陈值。所有实例都在报本告警时,积压与保留期丢失告警此刻都不可信。
               查该实例 data_service 日志 `lag probe failed` / `lag probe cannot connect`
-              (broker 不可达、消费组 offset 拉取失败、或 committed 越过 log end = topic 被删了重建)。
+              (broker 不可达、消费组 offset 拉取失败、或 committed 越过 log end = topic 被删了重建;
+              或 topic 不存在:日志含 `does not exist on this broker`,lag 探针自 2026-10-15 起不再自动建 topic,
+              先 `kafka-topics.sh --describe` 核对,见 audit-topic-generation-bump-runbook.md §2.7 末补注)。
 
         # 落库变慢:单次 DB 尝试 p99 > 2s 持续 15 分钟(全局库开始排队的早期信号)。
         # flush_seconds 只计单次 DB 尝试,不含本实例的落库名额排队与重试退避,所以它慢 = 库慢。

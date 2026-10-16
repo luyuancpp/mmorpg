@@ -506,8 +506,14 @@ type PlayerDatabase struct {
 	// 在 go/db 条件写上线前,这两列只被原样读写,不参与任何判定。
 	FenceOwnerEpoch uint64 `protobuf:"varint,18,opt,name=fence_owner_epoch,json=fenceOwnerEpoch,proto3" json:"fence_owner_epoch,omitempty"`
 	FenceSaveSeq    uint64 `protobuf:"varint,19,opt,name=fence_save_seq,json=fenceSaveSeq,proto3" json:"fence_save_seq,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	// 玩家收件箱消费端账本(docs/design/player-inbox-service.md §4.4):每域「已按 seq 处理到哪」+ 最近 32 条结局。
+	// 与 asset_op_ledger 同一条不变量 I3(收件箱侧记作 IB-3):必须与 currency / bag_component 同记录同一次落盘 ——
+	// GM 处置的效果(封锁 / 欠款随 CurrencyComp 落盘)和它的账本要么一起在盘上,要么一起没有;
+	// 否则「效果落了账本没落」会让不幂等的 AttachDebt 被重复执行,「账本落了效果没落」会把没生效的处置确认成已执行。
+	// 按加列纪律取 18/19 之后的下一个空闲号 20,声明在末尾、不留空洞;下一个新字段从 21 起。
+	InboxLedger   *component.PlayerInboxLedgerComp `protobuf:"bytes,20,opt,name=inbox_ledger,json=inboxLedger,proto3" json:"inbox_ledger,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *PlayerDatabase) Reset() {
@@ -673,6 +679,13 @@ func (x *PlayerDatabase) GetFenceSaveSeq() uint64 {
 	return 0
 }
 
+func (x *PlayerDatabase) GetInboxLedger() *component.PlayerInboxLedgerComp {
+	if x != nil {
+		return x.InboxLedger
+	}
+	return nil
+}
+
 type PlayerDatabase_1 struct {
 	state    protoimpl.MessageState `protogen:"open.v1"`
 	PlayerId uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
@@ -748,7 +761,7 @@ var File_proto_common_database_mysql_database_table_proto protoreflect.FileDescr
 
 const file_proto_common_database_mysql_database_table_proto_rawDesc = "" +
 	"\n" +
-	"0proto/common/database/mysql_database_table.proto\x1a\x1bproto/db/proto_option.proto\x1a%proto/common/base/user_accounts.proto\x1a1proto/common/component/asset_op_ledger_comp.proto\x1a:proto/common/component/battle_settlement_ledger_comp.proto\x1a2proto/common/component/player_attribute_comp.proto\x1a,proto/common/component/player_pet_comp.proto\x1a.proto/common/component/player_scene_comp.proto\x1a'proto/common/component/actor_comp.proto\x1a(proto/common/component/player_comp.proto\x1a.proto/common/component/player_skill_comp.proto\x1a*proto/common/component/currency_comp.proto\x1a/proto/common/database/bag_quest_mail_data.proto\"\xb5\x01\n" +
+	"0proto/common/database/mysql_database_table.proto\x1a\x1bproto/db/proto_option.proto\x1a%proto/common/base/user_accounts.proto\x1a1proto/common/component/asset_op_ledger_comp.proto\x1a:proto/common/component/battle_settlement_ledger_comp.proto\x1a5proto/common/component/player_inbox_ledger_comp.proto\x1a2proto/common/component/player_attribute_comp.proto\x1a,proto/common/component/player_pet_comp.proto\x1a.proto/common/component/player_scene_comp.proto\x1a'proto/common/component/actor_comp.proto\x1a(proto/common/component/player_comp.proto\x1a.proto/common/component/player_skill_comp.proto\x1a*proto/common/component/currency_comp.proto\x1a/proto/common/database/bag_quest_mail_data.proto\"\xb5\x01\n" +
 	"\x04user\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12!\n" +
 	"\fdisplay_name\x18\x02 \x01(\tR\vdisplayName\x12\x19\n" +
@@ -788,7 +801,7 @@ const file_proto_common_database_mysql_database_table_proto_rawDesc = "" +
 	"\x16player_centre_database\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x126\n" +
 	"\n" +
-	"scene_info\x18\x02 \x01(\v2\x17.PlayerSceneContextCompR\tsceneInfo:F\x8a\x92\xf4\x01\x16player_centre_database\x92\x92\xf4\x01\tplayer_id\xb2\x92\xf4\x01\tplayer_id\xa8\x93\xf4\x01\x01\xb0\x93\xf4\x01\x04\xb8\x93\xf4\x01\x04\"\x95\t\n" +
+	"scene_info\x18\x02 \x01(\v2\x17.PlayerSceneContextCompR\tsceneInfo:F\x8a\x92\xf4\x01\x16player_centre_database\x92\x92\xf4\x01\tplayer_id\xb2\x92\xf4\x01\tplayer_id\xa8\x93\xf4\x01\x01\xb0\x93\xf4\x01\x04\xb8\x93\xf4\x01\x04\"\xd0\t\n" +
 	"\x0fplayer_database\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12(\n" +
 	"\ttransform\x18\x02 \x01(\v2\n" +
@@ -813,7 +826,8 @@ const file_proto_common_database_mysql_database_table_proto_rawDesc = "" +
 	"\x0fasset_op_ledger\x18\x10 \x01(\v2\x18.PlayerAssetOpLedgerCompR\rassetOpLedger\x12H\n" +
 	"\x11settlement_ledger\x18\x11 \x01(\v2\x1b.BattleSettlementLedgerCompR\x10settlementLedger\x12*\n" +
 	"\x11fence_owner_epoch\x18\x12 \x01(\x04R\x0ffenceOwnerEpoch\x12$\n" +
-	"\x0efence_save_seq\x18\x13 \x01(\x04R\ffenceSaveSeq:D\x8a\x92\xf4\x01\x0fplayer_database\x92\x92\xf4\x01\tplayer_id\xb2\x92\xf4\x01\tplayer_id\xe8\x92\xf4\x01\x01\xa8\x93\xf4\x01\x01\xb0\x93\xf4\x01\x04\xb8\x93\xf4\x01\x04\"\x8e\x02\n" +
+	"\x0efence_save_seq\x18\x13 \x01(\x04R\ffenceSaveSeq\x129\n" +
+	"\finbox_ledger\x18\x14 \x01(\v2\x16.PlayerInboxLedgerCompR\vinboxLedger:D\x8a\x92\xf4\x01\x0fplayer_database\x92\x92\xf4\x01\tplayer_id\xb2\x92\xf4\x01\tplayer_id\xe8\x92\xf4\x01\x01\xa8\x93\xf4\x01\x01\xb0\x93\xf4\x01\x04\xb8\x93\xf4\x01\x04\"\x8e\x02\n" +
 	"\x11player_database_1\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12B\n" +
 	"\x11stress_test_probe\x18\x02 \x01(\v2\x16.PlayerStressTestProbeR\x0fstressTestProbe\x12*\n" +
@@ -861,6 +875,7 @@ var file_proto_common_database_mysql_database_table_proto_goTypes = []any{
 	(*component.PlayerProfileComp)(nil),          // 24: PlayerProfileComp
 	(*component.PlayerAssetOpLedgerComp)(nil),    // 25: PlayerAssetOpLedgerComp
 	(*component.BattleSettlementLedgerComp)(nil), // 26: BattleSettlementLedgerComp
+	(*component.PlayerInboxLedgerComp)(nil),      // 27: PlayerInboxLedgerComp
 }
 var file_proto_common_database_mysql_database_table_proto_depIdxs = []int32{
 	9,  // 0: user_accounts.simple_players:type_name -> AccountSimplePlayerList
@@ -881,12 +896,13 @@ var file_proto_common_database_mysql_database_table_proto_depIdxs = []int32{
 	24, // 15: player_database.profile_component:type_name -> PlayerProfileComp
 	25, // 16: player_database.asset_op_ledger:type_name -> PlayerAssetOpLedgerComp
 	26, // 17: player_database.settlement_ledger:type_name -> BattleSettlementLedgerComp
-	18, // 18: player_database_1.stress_test_probe:type_name -> PlayerStressTestProbe
-	19, // [19:19] is the sub-list for method output_type
-	19, // [19:19] is the sub-list for method input_type
-	19, // [19:19] is the sub-list for extension type_name
-	19, // [19:19] is the sub-list for extension extendee
-	0,  // [0:19] is the sub-list for field type_name
+	27, // 18: player_database.inbox_ledger:type_name -> PlayerInboxLedgerComp
+	18, // 19: player_database_1.stress_test_probe:type_name -> PlayerStressTestProbe
+	20, // [20:20] is the sub-list for method output_type
+	20, // [20:20] is the sub-list for method input_type
+	20, // [20:20] is the sub-list for extension type_name
+	20, // [20:20] is the sub-list for extension extendee
+	0,  // [0:20] is the sub-list for field type_name
 }
 
 func init() { file_proto_common_database_mysql_database_table_proto_init() }

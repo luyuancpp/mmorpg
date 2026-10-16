@@ -16,6 +16,9 @@ import (
 // MaxRpcTimeoutMs:帮会二期契约 §2,Timeout ≤ 路由服 ForwardTimeoutMs(5000)− 1000。
 const MaxRpcTimeoutMs int64 = 4000
 
+// MaxApplicationQuotaPerMinute 防止误配置实质关闭入帮申请频率保护。
+const MaxApplicationQuotaPerMinute uint32 = 600
+
 // InBandReplyReserve:整请求业务预算相对 Timeout 预留的回包余量(同 go/trade)。
 const InBandReplyReserve = 500 * time.Millisecond
 
@@ -47,6 +50,8 @@ type Config struct {
 	Cache              CacheConf    `json:"Cache"`
 	Kafka              KafkaConf    `json:"Kafka"`
 	TableDir           string       `json:",default=../../generated/tables"`
+	// 入帮申请尝试的每玩家固定 60 秒配额，包含重复刷新与仓储拒绝；不能用待审总量代替。
+	ApplicationQuotaPerMinute uint32 `json:"ApplicationQuotaPerMinute,default=10"`
 
 	// MergeMarkerRedis 指向 data_service 的 **mapping Redis**(player:zone:{id} 所在的
 	// 那个实例/DB),guild 只从里面读一把键:merge:in_progress:{zone}。
@@ -356,8 +361,8 @@ type AssetOpWakeConf struct {
 	Enabled *bool `json:",optional"`
 	// Concurrency 本副本同时在跑的唤醒数上限,满了直接丢;0(没写)= assetopwake.DefaultConcurrency(4),否则 [1, 64]。
 	Concurrency int `json:",optional"`
-	// TimeoutMs 每次唤醒的总预算;0(没写)= assetopwake.DefaultWakeTimeout(10s)。生效值必须 > OpBudgetMs
-	// (剩余预算不够一整个 OpBudget 就不再领行,配小了每次唤醒都回错误),且 ≤ 60000(关停最坏要等它)。
+	// TimeoutMs 每次唤醒的总预算;0(没写)= assetopwake.DefaultWakeTimeout(10s)。生效值必须 ≥ 2 × OpBudgetMs
+	// (先列出该玩家的未决行,之后剩余预算够一整个 OpBudget 才领下一行;理由见 validateLanding),且 ≤ 60000(关停最坏要等它)。
 	TimeoutMs int `json:",optional"`
 }
 
@@ -426,6 +431,8 @@ const (
 	maxAuditIntervalMs      = 7 * 86400000
 	maxWakeConcurrency      = 64
 	maxWakeTimeoutMs        = 60000
+	// minWakeTimeoutOpBudgets:唤醒超时下界 = 它 × OpBudgetMs,理由见 validateLanding。
+	minWakeTimeoutOpBudgets = 2
 )
 
 // validateLoop 校验重投循环参数;只在 Enabled 时调用。
@@ -508,11 +515,18 @@ func (a AssetOpConf) validateLanding() error {
 		return fmt.Errorf("AssetOp.Wake.Concurrency(%d)必须为 0(默认 %d)或在 [1, %d] 内",
 			a.Wake.Concurrency, assetopwake.DefaultConcurrency, maxWakeConcurrency)
 	}
+	// 唤醒超时下界取 2 × OpBudgetMs。Loop.WakePlayer 先用一次 Store 读列出该玩家的 PENDING 行
+	// (GuildAssetStore.ListPendingByPlayer,子预算 storeReadBudget = 1000ms),之后每开始一行都要求剩余预算
+	// ≥ 一整个 OpBudget。旧下界"> OpBudgetMs"只保证进门那一次预算检查能过:超时只比 OpBudget 多一点时,
+	// 列完行剩下的不足一个 OpBudget,一行都不领、回 (0, nil) 计 none —— 每次唤醒都静默退化成"什么也没做"。
+	// 取 2 × OpBudgetMs 而不是 OpBudgetMs + 1000 + 余量:OpBudgetMs ≥ minOpBudgetMs(1000)≥ 列行子预算,所以它总装得下
+	// "一次列行 + 一整个 OpBudget",多出的 OpBudgetMs − 1000 留给等 Workers 名额与调度;也不必在这里另抄一份 data 层的子预算数字。
 	timeout := a.Wake.EffectiveTimeout()
-	if timeout <= time.Duration(a.OpBudgetMs)*time.Millisecond || timeout > time.Duration(maxWakeTimeoutMs)*time.Millisecond {
-		return fmt.Errorf("AssetOp.Wake.TimeoutMs(生效值 %d)必须大于 OpBudgetMs(%d)且不超过 %d:"+
-			"剩余预算不够一整个 OpBudget 时唤醒一行也不领,每次都回错误",
-			timeout.Milliseconds(), a.OpBudgetMs, maxWakeTimeoutMs)
+	minTimeout := minWakeTimeoutOpBudgets * time.Duration(a.OpBudgetMs) * time.Millisecond
+	if timeout < minTimeout || timeout > time.Duration(maxWakeTimeoutMs)*time.Millisecond {
+		return fmt.Errorf("AssetOp.Wake.TimeoutMs(生效值 %d)必须在 [%d × OpBudgetMs = %d, %d] 内:"+
+			"唤醒先列出该玩家的未决行,剩余预算不够一整个 OpBudget 时一行也不领,唤醒静默退化",
+			timeout.Milliseconds(), minWakeTimeoutOpBudgets, minTimeout.Milliseconds(), maxWakeTimeoutMs)
 	}
 	return nil
 }
@@ -558,6 +572,9 @@ func (c Config) RequestBudget() time.Duration {
 func (c *Config) Validate() error {
 	if err := c.RpcServerConf.Validate(); err != nil {
 		return err
+	}
+	if c.ApplicationQuotaPerMinute < 1 || c.ApplicationQuotaPerMinute > MaxApplicationQuotaPerMinute {
+		return fmt.Errorf("ApplicationQuotaPerMinute(%d)必须在 [1, %d] 内", c.ApplicationQuotaPerMinute, MaxApplicationQuotaPerMinute)
 	}
 	if c.Timeout <= 0 || c.Timeout > MaxRpcTimeoutMs {
 		return fmt.Errorf("Timeout(%d ms)必须在 (0, %d] 内:上限 = 路由服 ForwardTimeoutMs(5000)− 1000",

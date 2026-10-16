@@ -98,6 +98,13 @@ g N 的 data-service 保持运行。
 data-service 的分区契约随即永久失败。最好也晚于 2.6(先看到消费者起来,排障时少一个变量)。
 `zone-up` 会把 scene 与 data-service 一起滚动:只要 2.5 已完成就是安全的。
 
+> 补注(2026-10-15,未经运行验证):data-service 的 lag 探针不再可能自动建 topic(sarama `Metadata.AllowAutoTopicCreation = false`,
+> 负责人 2026-10-15 按「最标准」定)。它指着的 topic 不存在时只会探测失败:日志 `lag probe failed`(broker 回 UNKNOWN_TOPIC_OR_PARTITION
+> 时错误文本含 `does not exist on this broker`;broker 侧回哪个码未实测)、`lag_probe_total{result="error"}`,
+> 持续 15 分钟即 `DataServiceAuditLagProbeBlind`,不再可能把它误建成 1 分区。
+> 探针在 data-service 启动的 `EnsureTopics` 成功之后才起,按本流程(2.5 预建在先)碰不到不存在的 topic;换代期间若见到这条失明,
+> 先 `kafka-topics.sh --describe` 查该 topic 是否被删 / 未建。预建(2.5)仍是前置步骤:scene 生产者与 broker 的 auto.create 不受这项改动影响。
+
 ### 2.8 验证
 
 - 一个账号登录 / 登出 → `player_snapshot` 表出现 2 行新 guid(source=1)。
@@ -260,3 +267,5 @@ data-service 的分区契约随即永久失败。最好也晚于 2.6(先看到�
   `max by (consumer) (max_over_time(...[15m])) > 0`、`for: 0m`,对任何一次采到的缺口都呼叫;§7 告警表与表后说明同步,补窗口的演练确认步骤。
 - 2026-10-15(上一条的评审修复,未经运行验证):§7 把「gauge 为正而实际没丢」拆成两种 —— 探针两次读之间删段的瞬时情形,
   与更常见的「消费者已读入未提交的消息所在段被删」(可持续多轮探针、日志条数为 0);规则文件头的抓取前提补「抓取间隔 ≤ LagProbeIntervalMs」。
+- 2026-10-15(负责人按「最标准」定,未经运行验证):lag 探针关掉 sarama 的自动建 topic(`go/shared/kafkautil/group_lag.go`
+  `newGroupLagProberConfig`),topic 不存在时报失明而不是可能把它建成 1 分区;§2.7 末补注。依据见 G2a 规格 §4.5 的「已定」注。

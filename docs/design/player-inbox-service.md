@@ -365,7 +365,8 @@ message player_inbox_stream {
   uint64 updated_ms    = 9;
 }
 
-message player_inbox_item {
+// 表消息加 row 后缀，避免与 RPC 的 PlayerInboxItem 生成同名 Go 类型；SQL 表名不变。
+message player_inbox_item_row {
   option(OptionTableName)  = "player_inbox_item";
   option(OptionPrimaryKey) = "shard,player_id,domain,seq";
   option(OptionUniqueKey)  = "shard,player_id,producer_kind,request_id"; // 全表唯一的 UNIQUE = 幂等键

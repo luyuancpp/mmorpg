@@ -5,6 +5,7 @@ import (
 
 	messageoption "github.com/luyuancpp/protooption"
 )
+
 func checkFirstMethod(methodList *internal.RPCMethods, conditions ...func(*internal.MethodInfo) bool) bool {
 	first := (*methodList)[0]
 	for _, cond := range conditions {

@@ -75,10 +75,16 @@ public:
 
     // Attach a deferred-clawback debt.  Future AddCurrency calls will
     // automatically deduct from gains until the debt is repaid.
-    static void AttachDebt(entt::entity player, CurrencyType type, int64_t oweAmount,
-                           const std::string &reason = {},
-                           const std::string &gmOperator = {},
-                           uint64_t expiresAt = 0);
+    //
+    // 返回 tip 码(docs/design/player-inbox-service.md §7.6):玩家收件箱的执行器要据此判断
+    // 这一条是 APPLIED 还是 REJECTED,原先的 void 只能记日志,调用方分不出是否生效。
+    //   成功 -> kSuccess
+    //   oweAmount<=0 / 类型越界 / 缺 PlayerCurrencyComp / owed 溢出 -> kInvalidParameter(未改动任何状态)
+    // 判定顺序同 AddCurrency:零副作用的纯参数校验(oweAmount、类型)排在组件查找之前。
+    static uint32_t AttachDebt(entt::entity player, CurrencyType type, int64_t oweAmount,
+                               const std::string &reason = {},
+                               const std::string &gmOperator = {},
+                               uint64_t expiresAt = 0);
 
     // Write off all remaining debt for the given currency type.
     static uint64_t WaiveDebt(entt::entity player, CurrencyType type,

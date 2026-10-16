@@ -104,7 +104,11 @@ param(
     # 或直接调 k8s_deploy.ps1。
     # 追加在末尾,理由同上方"新参数一律追加在末尾"。
     [ValidateSet("", "auto", "true", "false")]
-    [string]$RequireClientEndpoint = ""
+    [string]$RequireClientEndpoint = "",
+    # 确认本次可以重启共享 Redis(redis-0,全服登录中断并重放 AOF),透传给 k8s_deploy.ps1 同名参数(P0-E 重启闸,语义见那边参数注释);
+    # switch 只在被指定时透传,只在维护窗口里显式加。只有 release-all(不带 -SkipInfra)会 infra-up,release-zone 用不到它。
+    # 追加在末尾,理由同上方"新参数一律追加在末尾"。
+    [switch]$ConfirmRedisCoreRestart
 )
 
 $ErrorActionPreference = "Stop"
@@ -419,6 +423,7 @@ function Invoke-K8sDeploy {
     if (-not [string]::IsNullOrWhiteSpace($GateExternalTrafficPolicy)) { $args.GateExternalTrafficPolicy = $GateExternalTrafficPolicy }
     if (-not [string]::IsNullOrWhiteSpace($BattleOrchestrator)) { $args.BattleOrchestrator = $BattleOrchestrator }
     if ($AllowDisruptiveSwitch) { $args.AllowDisruptiveSwitch = $true }
+    if ($ConfirmRedisCoreRestart) { $args.ConfirmRedisCoreRestart = $true }
     # 同一口径留空不透传。本函数从不传 -GoSvcRegistry,k8s_deploy.ps1 因此不部署 login / scene_manager,
     # 这个值只进它的组合预检、不写进 ConfigMap;"不生效"的告警在脚本入口打(见 switch ($Command) 之前),这里只透传。
     if (-not [string]::IsNullOrWhiteSpace($RequireClientEndpoint)) { $args.RequireClientEndpoint = $RequireClientEndpoint }

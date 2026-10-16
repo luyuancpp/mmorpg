@@ -20,6 +20,7 @@ import (
 type itemSnapshot struct {
     data   []*pb.ItemTable
     kvData map[uint32]*pb.ItemTable
+    idxAffixRule map[uint32][]*pb.ItemTable
 }
 
 type ItemTableManager struct {
@@ -40,6 +41,7 @@ func NewItemTableManager() *ItemTableManager {
     m := &ItemTableManager{}
     m.snap.Store(&itemSnapshot{
         kvData: make(map[uint32]*pb.ItemTable),
+        idxAffixRule: make(map[uint32][]*pb.ItemTable),
     })
     return m
 }
@@ -69,10 +71,12 @@ func (m *ItemTableManager) Load(configDir string, useBinary bool) error {
 
     snap := &itemSnapshot{
         kvData: make(map[uint32]*pb.ItemTable, len(container.Data)),
+        idxAffixRule: make(map[uint32][]*pb.ItemTable),
     }
 
     for _, row := range container.Data {
         snap.kvData[row.Id] = row
+        snap.idxAffixRule[row.AffixRule] = append(snap.idxAffixRule[row.AffixRule], row)
     }
 
     snap.data = container.Data
@@ -92,6 +96,12 @@ func (m *ItemTableManager) FindById(id uint32) (*pb.ItemTable, bool) {
 }
 
 
+func (m *ItemTableManager) GetByAffixRule(key uint32) []*pb.ItemTable {
+    snap := m.snap.Load()
+    return snap.idxAffixRule[key]
+}
+
+
 
 // ---- Exists ----
 
@@ -108,6 +118,12 @@ func (m *ItemTableManager) Exists(id uint32) bool {
 func (m *ItemTableManager) Count() int {
     snap := m.snap.Load()
     return len(snap.data)
+}
+
+
+func (m *ItemTableManager) CountByAffixRuleIndex(key uint32) int {
+    snap := m.snap.Load()
+    return len(snap.idxAffixRule[key])
 }
 
 
@@ -159,6 +175,8 @@ func (m *ItemTableManager) First(pred func(*pb.ItemTable) bool) (*pb.ItemTable, 
     }
     return nil, false
 }
+// FK: affix_rule → EquipAffixRule.id
+
 
 // ---- Composite Key ----
 

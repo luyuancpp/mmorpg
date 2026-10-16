@@ -88,6 +88,7 @@ set(SOURCE_FILES
     handler/local_event/scene_local_events.cpp
     handler/event/player_migration_event_handler.cpp
     handler/event/team_event_handler.cpp
+    handler/event/player_inbox_event_handler.cpp
     handler/rpc/scene_admin_handler.cpp
     handler/rpc/player/player_currency_handler.cpp
     handler/rpc/player/player_attribute_handler.cpp
@@ -104,11 +105,6 @@ set(SOURCE_FILES
     handler/rpc/register_handler.cpp
     main.cpp
     rpc_replies/scene_manager_response_handler.cpp
-    rpc_replies/player/player_lifecycle_response_handler.cpp
-    rpc_replies/player/s2s_player_scene_response_handler.cpp
-    rpc_replies/player/player_rollback_response_handler.cpp
-    rpc_replies/player/player_rpc_response_handler.cpp
-    rpc_replies/player/player_state_attribute_sync_response_handler.cpp
     # 2026-09-18 补登记:这 7 个在 scene.vcxproj 里都有,只有 Linux CMake 清单漏了。
     handler/event/battle_event_handler.cpp
     handler/grpc/scene_node_service.cpp

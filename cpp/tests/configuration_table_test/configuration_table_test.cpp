@@ -13,6 +13,9 @@
 
 #include <cstdlib>
 #include <cstring>
+#include <filesystem>
+#include <fstream>
+#include <system_error>
 
 void LoadTables();
 
@@ -562,6 +565,80 @@ TEST(GameConfigEnvOverride, ZoneRedisPasswordWithoutEnvKeepsYaml)
     // 用 EXPECT_TRUE 而不是 EXPECT_EQ:失败时不把 yaml 里的口令值打进测试输出(AGENTS.md §11.3)。
     EXPECT_TRUE(cfg.zone_redis().password().empty())
         << "the shipped yaml must keep zoneredis.password empty; inject real passwords via ZONE_REDIS_PASSWORD";
+}
+
+// ---------------------------------------------------------------------------
+// GameConfig.player_inbox(docs/design/player-inbox-service.md §3.3、§7.3、§11.7)
+// 加载器对缺键显式取默认:consumer_enabled = false、periodic_fetch_minutes = 30。
+// 不能依赖 proto3 的 0 —— periodic_fetch_minutes = 0 的含义是"关闭在线兜底"。
+// ---------------------------------------------------------------------------
+
+namespace
+{
+    // 写一份只含必需段(zoneredis)的临时 yaml,extra 追加在末尾;返回路径。用例结束时删除。
+    std::filesystem::path WriteTempGameConfig(const char *fileName, const std::string &extra)
+    {
+        const auto path = std::filesystem::temp_directory_path() / fileName;
+        std::ofstream out(path, std::ios::trunc);
+        out << "SceneNodeType: 0\n"
+            << "ZoneId: 1\n"
+            << "zoneredis:\n"
+            << "  host: \"127.0.0.1\"\n"
+            << "  port: 6379\n"
+            << extra;
+        return path;
+    }
+
+    void RemoveTempGameConfig(const std::filesystem::path &path)
+    {
+        std::error_code ec;
+        std::filesystem::remove(path, ec);
+    }
+} // namespace
+
+TEST(GameConfigPlayerInbox, ShippedYamlKeepsConsumerDisabled)
+{
+    GameConfig cfg;
+    ASSERT_TRUE(readGameConfig("etc/game_config.yaml", cfg));
+    // 随仓库发布的配置必须是回滚下限:消费关闭,只往返账本字段(§11.7 第 4 步)。
+    EXPECT_FALSE(cfg.player_inbox().consumer_enabled());
+    EXPECT_EQ(cfg.player_inbox().periodic_fetch_minutes(), 30u);
+}
+
+TEST(GameConfigPlayerInbox, MissingSectionFallsBackToDefaults)
+{
+    const auto path = WriteTempGameConfig("game_config_player_inbox_missing.yaml", "");
+    GameConfig cfg;
+    const bool loaded = readGameConfig(path.string(), cfg);
+    RemoveTempGameConfig(path);
+    ASSERT_TRUE(loaded);
+    EXPECT_FALSE(cfg.player_inbox().consumer_enabled());
+    EXPECT_EQ(cfg.player_inbox().periodic_fetch_minutes(), 30u)
+        << "缺键必须显式取 30,不能落到 proto3 的 0(= 关闭兜底)";
+}
+
+TEST(GameConfigPlayerInbox, MissingKeyInsideSectionFallsBackToDefault)
+{
+    const auto path = WriteTempGameConfig("game_config_player_inbox_partial.yaml",
+                                          "player_inbox:\n  consumer_enabled: true\n");
+    GameConfig cfg;
+    const bool loaded = readGameConfig(path.string(), cfg);
+    RemoveTempGameConfig(path);
+    ASSERT_TRUE(loaded);
+    EXPECT_TRUE(cfg.player_inbox().consumer_enabled());
+    EXPECT_EQ(cfg.player_inbox().periodic_fetch_minutes(), 30u);
+}
+
+TEST(GameConfigPlayerInbox, ExplicitValuesWinIncludingZero)
+{
+    const auto path = WriteTempGameConfig("game_config_player_inbox_explicit.yaml",
+                                          "player_inbox:\n  consumer_enabled: true\n  periodic_fetch_minutes: 0\n");
+    GameConfig cfg;
+    const bool loaded = readGameConfig(path.string(), cfg);
+    RemoveTempGameConfig(path);
+    ASSERT_TRUE(loaded);
+    EXPECT_TRUE(cfg.player_inbox().consumer_enabled());
+    EXPECT_EQ(cfg.player_inbox().periodic_fetch_minutes(), 0u) << "显式写 0 = 关闭兜底,必须原样保留";
 }
 
 // ---------------------------------------------------------------------------

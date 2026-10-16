@@ -215,7 +215,7 @@ func sameRoute(selected, current placementSnapshot, zone uint32) bool {
 //	无记录        无记录(有效落点不变)  通过                  通过
 //
 // 写在复核时看到冻结必须重试:搬库工具可能已在排序锁过期后拷完源库,不能确定这笔写被拷走了。
-// 重投时冻结中 → 延后;已切换 → 落新库;源库那份按 P-1 是冷副本。整行 REPLACE,重复落地幂等。
+// 重投时冻结中 → 延后;已切换 → 落新库;源库那份按 P-1 是冷副本。整行 Save(按主键 UPDATE,0 行再 INSERT),重复落地幂等。
 func recheckPasses(op string, selected, current placementSnapshot, zone uint32) bool {
 	if !sameRoute(selected, current, zone) {
 		return false
@@ -236,12 +236,15 @@ type placementRoute struct {
 	selected  placementSnapshot
 }
 
-// confirm 执行落库后复核(§6.3)。调用点固定在 runDBOp 里「SQL 之后、共享缓存回写 / 读结果发布之前」,
-// 游标与 applied epoch 又在 runDBOp 返回之后才推进,所以复核不通过时这三样都不会动。
+// confirm 执行落库后复核(§6.3)。调用点固定在 runDBOp 里「SQL 之后、共享缓存回写 / 读结果发布之前」
+// (写任务在复核与缓存回写之间还有一次核锁),游标与 applied epoch 又在 runDBOp 返回之后才推进,
+// 所以复核不通过时这三样都不会动。
 //
 // 复核读失败按普通 Redis 故障处理(耗重试次数):此时 SQL 已执行,但没有复核就不能确认它落在真源上。
 func (r *placementRoute) confirm(ctx context.Context) error {
+	recheckStart := time.Now()
 	current, err := r.router.lookup(ctx, r.key)
+	metrics.ObserveRedisStep(r.op, metrics.RedisStepPlacementRecheck, time.Since(recheckStart))
 	if err != nil {
 		metrics.CountPlacementGuard(r.op, metrics.PlacementLookupError)
 		return fmt.Errorf("placement recheck unavailable: %w", err)
@@ -269,7 +272,9 @@ func (w *worker) routeTask(task *workerTask, dbTask *db_proto.DBTask) (*placemen
 		return nil, false
 	}
 
+	lookupStart := time.Now()
 	snap, err := router.lookup(w.ctx, dbTask.Key)
+	metrics.ObserveRedisStep(op, metrics.RedisStepPlacementLookup, time.Since(lookupStart))
 	if err != nil {
 		metrics.CountPlacementGuard(op, metrics.PlacementLookupError)
 		w.deferFailedTask(task, dbTask, fmt.Errorf("placement lookup failed: %w", err))

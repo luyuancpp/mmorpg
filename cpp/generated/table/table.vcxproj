@@ -173,6 +173,7 @@
     <ClInclude Include="proto\tip\attribute_error_tip.pb.h" />
     <ClInclude Include="proto\tip\pet_error_tip.pb.h" />
     <ClInclude Include="proto\tip\equip_error_tip.pb.h" />
+    <ClInclude Include="proto\tip\player_inbox_error_tip.pb.h" />
     <ClInclude Include="proto\tip\common_error_tip.pb.h" />
     <ClInclude Include="proto\tip\cross_server_error_tip.pb.h" />
     <ClInclude Include="proto\tip\entity_error_tip.pb.h" />
@@ -297,6 +298,7 @@
     <ClCompile Include="proto\tip\attribute_error_tip.pb.cc" />
     <ClCompile Include="proto\tip\pet_error_tip.pb.cc" />
     <ClCompile Include="proto\tip\equip_error_tip.pb.cc" />
+    <ClCompile Include="proto\tip\player_inbox_error_tip.pb.cc" />
     <ClCompile Include="proto\tip\common_error_tip.pb.cc" />
     <ClCompile Include="proto\tip\cross_server_error_tip.pb.cc" />
     <ClCompile Include="proto\tip\entity_error_tip.pb.cc" />

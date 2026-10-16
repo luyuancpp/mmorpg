@@ -686,7 +686,7 @@ TEST_F(AssetOpSystemTest, CreditUnknownItemRejected)
 TEST_F(AssetOpSystemTest, CreditWithDebtClawback)
 {
 	// 补缴:欠款先扣属于正常应用,记 APPLIED。
-	CurrencySystem::AttachDebt(player_, kCurrencyGold, 50, "test", "gm");
+	ASSERT_EQ(static_cast<uint32_t>(kSuccess), CurrencySystem::AttachDebt(player_, kCurrencyGold, 50, "test", "gm"));
 
 	const auto request = MakeCurrencyRequest(ASSET_OP_STREAM_GUILD_CREDIT, 1, 30, TX_GUILD_SHOP);
 	const auto response = CallCredit(request);

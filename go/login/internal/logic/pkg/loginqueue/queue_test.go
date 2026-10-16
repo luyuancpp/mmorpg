@@ -2,6 +2,7 @@ package loginqueue
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -9,7 +10,9 @@ import (
 	"time"
 
 	"github.com/alicebob/miniredis/v2"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/redis/go-redis/v9"
+	gzprom "github.com/zeromicro/go-zero/core/prometheus"
 )
 
 // newTestQueue spins up an in-process miniredis + go-redis client and a
@@ -154,15 +157,17 @@ func TestPopAdmitWritesAdmitToken(t *testing.T) {
 		t.Errorf("admit token mismatch: got %+v", state.Admit)
 	}
 
-	// Second Lookup: admit was consumed → EXPIRED-equivalent (still
-	// QUEUEING with rank 0 in our impl because the meta key is alive but
-	// the ZSET member is gone). Either way, NOT a second ADMITTED.
+	// Second Lookup: admit was consumed → EXPIRED, NOT a second ADMITTED.
+	// (2026-10-15 更正)此前这里回的是 QUEUEING、名次 0(meta 还在、ZSET 成员已不在),本用例只断言
+	// 「不是第二次 ADMITTED」;现在 meta 里的 admitted_at 让 Lookup 回终态 EXPIRED,断言随之收紧。
 	state, err = q.Lookup(ctx, res.QueueToken, stubSign)
 	if err != nil {
 		t.Fatalf("lookup after consume: %v", err)
 	}
 	if state.Status == StatusAdmitted {
 		t.Errorf("admit was consumed twice — leaks gate tokens")
+	} else if state.Status != StatusExpired {
+		t.Errorf("status after consume = %d, want %d (EXPIRED)", state.Status, StatusExpired)
 	}
 }
 
@@ -800,8 +805,10 @@ func TestConsume_PlaceholderWriteFailureDoesNotFailAdmit(t *testing.T) {
 	}
 }
 
-// 取走只发生一次。取走之后客户端按协议还会每 2s 轮询(回「排队中、名次 0」,直到条目 1h 过期),
-// 这些轮询不能给占位续期:否则每次续一个交票后宽限,占位永不到期,名额一直被扣着。
+// 取走只发生一次。取走之后同一令牌还可能再查(回包丢失后的重试、go-redis 超时重发),这些查询不能给占位续期:
+// 否则每次续一个交票后宽限,占位永不到期,名额一直被扣着。
+// (2026-10-15 更正)此前这里写的是「客户端按协议还会每 2s 轮询(回『排队中、名次 0』,直到条目 1h 过期)」;
+// 现在再查回 EXPIRED(见 TestLookup_PollAfterConsume_ReturnsExpired),客户端随即丢掉令牌,但单次再查同样不能续期。
 func TestConsume_RepeatPollDoesNotExtendPlaceholder(t *testing.T) {
 	q, rdb, clk := newClockedQueue(t)
 	ctx := context.Background()
@@ -825,6 +832,9 @@ func TestConsume_RepeatPollDoesNotExtendPlaceholder(t *testing.T) {
 	}
 	if st.Status == StatusAdmitted {
 		t.Fatal("admit was consumed twice")
+	}
+	if st.Status != StatusExpired {
+		t.Fatalf("repeat lookup status = %d, want %d (EXPIRED since 2026-10-15)", st.Status, StatusExpired)
 	}
 	score, err := rdb.ZScore(ctx, admittedZSetKey(1), res.QueueID).Result()
 	if err != nil || score != want {
@@ -1049,5 +1059,222 @@ func TestAdmittedKey_EveryWritePathSetsTTLWhenMissing(t *testing.T) {
 				})
 			}
 		})
+	}
+}
+
+// ── 放行窗口已过:给终态 EXPIRED,不停在名次 0(2026-10-15) ─────────────────
+
+// expiredTotalValue 从默认 registry 读 login_queue_expired_total{zone, reason} 的当前值,序列还没出现时回 0。
+// 计数器是进程级的,用例读前后差值,不依赖绝对值。
+func expiredTotalValue(t *testing.T, zone, reason string) float64 {
+	t.Helper()
+	families, err := prometheus.DefaultGatherer.Gather()
+	if err != nil {
+		t.Fatalf("gather metrics: %v", err)
+	}
+	for _, mf := range families {
+		if mf.GetName() != "login_queue_expired_total" {
+			continue
+		}
+		for _, m := range mf.GetMetric() {
+			var z, r string
+			for _, l := range m.GetLabel() {
+				switch l.GetName() {
+				case "zone":
+					z = l.GetValue()
+				case "reason":
+					r = l.GetValue()
+				}
+			}
+			if z == zone && r == reason {
+				return m.GetCounter().GetValue()
+			}
+		}
+	}
+	return 0
+}
+
+// signMustNotRun:没有放行槽可取时 signFn 不该被调用。
+func signMustNotRun(t *testing.T) SignAdmitFn {
+	return func(*AdmitSlot) (*AdmitToken, error) {
+		t.Fatal("signFn called although there is no admit slot to take")
+		return nil, nil
+	}
+}
+
+// (i) 放行后没人来取,放行槽按 AdmitTTL 过期:再查回 EXPIRED(gateway 映射 410,客户端丢掉 token 重走
+// /assign-gate),记一次 admit_window_passed。
+// 修复前红:回「排队中、名次 0」(meta 与 token 索引还在、ZRANK 落空),客户端一直轮询到 meta 1h 过期,也不计数。
+// miniredis 的 TTL 只在 FastForward 里递减,拨 AdmitTTL 正好让放行槽过期,meta 与 token 索引(1h)还在。
+// 计数器要指标开关打开才写(go-zero metric.update);开关是进程级、打开后关不回去,本包其余用例不依赖它关着
+// (dispatcher_test 的 leader gauge 用例自己也会打开它)。
+func TestLookup_AdmitSlotExpiredUnclaimed_ReturnsExpired(t *testing.T) {
+	gzprom.Enable()
+	q, rdb, mr, cleanup := newTestQueue(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	res, err := q.Enqueue(ctx, 1, "alice", "dev1")
+	if err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+	if v, err := rdb.HGet(ctx, metaKey(res.QueueID), metaFieldAdmittedAt).Result(); !errors.Is(err, redis.Nil) {
+		t.Fatalf("meta %s before admit = (%q, %v), want absent", metaFieldAdmittedAt, v, err)
+	}
+	if n, err := q.PopAdmit(ctx, 1, 1, pickZone1Gate); err != nil || n != 1 {
+		t.Fatalf("popadmit = (%d, %v), want (1, nil)", n, err)
+	}
+	if v, err := rdb.HGet(ctx, metaKey(res.QueueID), metaFieldAdmittedAt).Result(); err != nil || v == "" {
+		t.Fatalf("meta %s after admit = (%q, %v), want the admit time", metaFieldAdmittedAt, v, err)
+	}
+	metaTTL, err := rdb.TTL(ctx, metaKey(res.QueueID)).Result()
+	if err != nil || metaTTL <= 0 || metaTTL > q.entryTTL {
+		t.Fatalf("meta TTL after admit = %v err=%v, want (0, %v]: writing admitted_at must keep the entry TTL", metaTTL, err, q.entryTTL)
+	}
+
+	mr.FastForward(q.admitTTL)
+	if n, err := rdb.Exists(ctx, admitKey(res.QueueID)).Result(); err != nil || n != 0 {
+		t.Fatalf("admit slot exists=%d err=%v after AdmitTTL, want gone", n, err)
+	}
+
+	before := expiredTotalValue(t, "1", ExpireReasonAdmitWindowPassed)
+	st, err := q.Lookup(ctx, res.QueueToken, signMustNotRun(t))
+	if err != nil || st.Status != StatusExpired {
+		t.Fatalf("lookup after the admit slot expired = (%+v, %v), want EXPIRED, not QUEUEING rank 0 until the 1h meta TTL", st, err)
+	}
+	if got := expiredTotalValue(t, "1", ExpireReasonAdmitWindowPassed) - before; got != 1 {
+		t.Fatalf(`login_queue_expired_total{zone="1",reason="admit_window_passed"} grew by %v, want 1`, got)
+	}
+}
+
+// (ii) 取走之后同一令牌再查(回包丢失后的重试):EXPIRED,记一次 admit_window_passed;签票只在第一次。
+// 修复前红:第二次回「排队中、名次 0」,直到 meta 1h 过期。
+func TestLookup_PollAfterConsume_ReturnsExpired(t *testing.T) {
+	gzprom.Enable() // 见 TestLookup_AdmitSlotExpiredUnclaimed_ReturnsExpired
+	q, _, _ := newClockedQueue(t)
+	ctx := context.Background()
+
+	res, err := q.Enqueue(ctx, 1, "alice", "dev1")
+	if err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+	if n, err := q.PopAdmit(ctx, 1, 1, pickZone1Gate); err != nil || n != 1 {
+		t.Fatalf("popadmit = (%d, %v), want (1, nil)", n, err)
+	}
+	signs := 0
+	countingSign := func(slot *AdmitSlot) (*AdmitToken, error) {
+		signs++
+		return stubSignFn(slot)
+	}
+	if st, err := q.Lookup(ctx, res.QueueToken, countingSign); err != nil || st.Status != StatusAdmitted {
+		t.Fatalf("first lookup = (%+v, %v), want ADMITTED", st, err)
+	}
+
+	before := expiredTotalValue(t, "1", ExpireReasonAdmitWindowPassed)
+	st, err := q.Lookup(ctx, res.QueueToken, countingSign)
+	if err != nil || st.Status != StatusExpired {
+		t.Fatalf("lookup after consume = (%+v, %v), want EXPIRED, not QUEUEING rank 0 until the 1h meta TTL", st, err)
+	}
+	if got := expiredTotalValue(t, "1", ExpireReasonAdmitWindowPassed) - before; got != 1 {
+		t.Fatalf(`login_queue_expired_total{zone="1",reason="admit_window_passed"} grew by %v, want 1`, got)
+	}
+	if signs != 1 {
+		t.Fatalf("signFn ran %d times, want exactly 1 (only the first lookup takes the slot)", signs)
+	}
+}
+
+// (iii) 在途窗口:dispatcher 已 ZPOPMIN、写放行槽的 MULTI 还没落地。手工模拟:只从队列 ZSET 删掉成员,
+// 不写放行槽、不写 admitted_at。仍回「排队中、名次 0」,让客户端照常再查,不能判成 EXPIRED。
+// 修复前后都绿:钉住修复没有把在途窗口一并判成终态。
+func TestLookup_InFlightPop_StillQueueingRankZero(t *testing.T) {
+	q, rdb, _ := newClockedQueue(t)
+	ctx := context.Background()
+
+	res, err := q.Enqueue(ctx, 1, "alice", "dev1")
+	if err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+	if n, err := rdb.ZRem(ctx, zoneZSetKey(1), res.QueueID).Result(); err != nil || n != 1 {
+		t.Fatalf("zrem = (%d, %v), want (1, nil)", n, err)
+	}
+
+	st, err := q.Lookup(ctx, res.QueueToken, signMustNotRun(t))
+	if err != nil || st.Status != StatusQueueing || st.Rank != 0 {
+		t.Fatalf("lookup in the in-flight window = (%+v, %v), want QUEUEING rank 0", st, err)
+	}
+}
+
+// (iv) 竞态:第一次 GETDEL 落空之后、读 meta 之前,dispatcher 的 MULTI 才落地。用注入点在这两步之间跑一次
+// 真实的 PopAdmit(ZPOPMIN + 写放行槽、admitted_at 与占位的 MULTI)。Lookup 看到 admitted_at,再取一次:
+// 回 ADMITTED、只签一次票,占位改为「取走时刻 + handoffGrace」。
+// 修复前红(注入点照样放进旧代码):读 meta 只拿 zone_id,ZRANK 落空回「排队中、名次 0」。只加 admitted_at
+// 判定、不做二次 GETDEL 的写法也红:把一个刚放行、还没取走的条目判成 EXPIRED,放行槽白白等到 AdmitTTL。
+func TestLookup_AdmitLandsBetweenGetDelAndMetaRead_Admits(t *testing.T) {
+	q, rdb, clk := newClockedQueue(t)
+	ctx := context.Background()
+
+	res, err := q.Enqueue(ctx, 1, "alice", "dev1")
+	if err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+	hookCalls := 0
+	q.afterAdmitMiss = func(queueID string) {
+		hookCalls++
+		if queueID != res.QueueID {
+			t.Fatalf("afterAdmitMiss(%q), want %q", queueID, res.QueueID)
+		}
+		if n, err := q.PopAdmit(ctx, 1, 1, pickZone1Gate); err != nil || n != 1 {
+			t.Fatalf("popadmit inside the window = (%d, %v), want (1, nil)", n, err)
+		}
+	}
+	signs := 0
+	countingSign := func(slot *AdmitSlot) (*AdmitToken, error) {
+		signs++
+		return stubSignFn(slot)
+	}
+
+	st, err := q.Lookup(ctx, res.QueueToken, countingSign)
+	if err != nil || st.Status != StatusAdmitted || st.Admit == nil || st.Admit.IP != "10.0.0.1" {
+		t.Fatalf("lookup = (%+v, %v), want ADMITTED with the gate picked at admit time", st, err)
+	}
+	if hookCalls != 1 {
+		t.Fatalf("afterAdmitMiss ran %d times, want 1: the race window was not exercised", hookCalls)
+	}
+	if signs != 1 {
+		t.Fatalf("signFn ran %d times, want exactly 1", signs)
+	}
+	if n, err := rdb.Exists(ctx, admitKey(res.QueueID)).Result(); err != nil || n != 0 {
+		t.Fatalf("admit slot exists=%d err=%v after lookup, want taken", n, err)
+	}
+	score, err := rdb.ZScore(ctx, admittedZSetKey(1), res.QueueID).Result()
+	if want := float64(clk.Now().Add(q.handoffGrace).UnixMilli()); err != nil || score != want {
+		t.Fatalf("placeholder score = %.0f err=%v, want %.0f (consume time + handoff grace, not admit time + AdmitTTL)",
+			score, err, want)
+	}
+}
+
+// 写 admitted_at 不凭空建出 meta:meta 已不在(在队里待满 QueueEntryTTL 或被内存淘汰)时 PopAdmit 照常写放行槽,
+// 但不建出一个没有 TTL、永不过期的 meta。直接 HSET 的写法在这里红(meta 存在且 TTL = -1)。
+// 修复前也绿(那时不写 meta),钉住的是新写入的安全性。
+func TestPopAdmit_MetaGone_DoesNotRecreateMeta(t *testing.T) {
+	q, rdb, _ := newClockedQueue(t)
+	ctx := context.Background()
+
+	res, err := q.Enqueue(ctx, 1, "alice", "dev1")
+	if err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+	if err := rdb.Del(ctx, metaKey(res.QueueID)).Err(); err != nil {
+		t.Fatalf("del meta: %v", err)
+	}
+	if n, err := q.PopAdmit(ctx, 1, 1, pickZone1Gate); err != nil || n != 1 {
+		t.Fatalf("popadmit = (%d, %v), want (1, nil)", n, err)
+	}
+	if n, err := rdb.Exists(ctx, metaKey(res.QueueID)).Result(); err != nil || n != 0 {
+		t.Fatalf("meta exists=%d err=%v after admit, want still gone", n, err)
+	}
+	// 放行槽照常可取:第一次 GETDEL 不依赖 meta。
+	if st, err := q.Lookup(ctx, res.QueueToken, stubSignFn); err != nil || st.Status != StatusAdmitted {
+		t.Fatalf("lookup = (%+v, %v), want ADMITTED", st, err)
 	}
 }

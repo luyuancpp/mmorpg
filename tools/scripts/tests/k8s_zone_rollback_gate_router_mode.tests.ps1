@@ -28,6 +28,10 @@
       - 第 0 步静态预检:-Apply 时把 Step 6 的同一份参数加 -DryRun 交给 dev_tools.ps1 k8s-zone-up 执行一遍,
         throw 或非 0 退出码都在停服之前拒绝(参数组合规则只在 k8s_deploy.ps1 一处,回滚脚本不复制)。
       - -ReleaseProfile / -LoginDevPasswordAuth 只透传到 Step 6(以前 Step 6 恒为 dev 档、开发口令认证被拒绝转发)。
+      - go/db 存盘消费组按 zone 拆分(2026-10-15,docs/design/db-consumer-group-per-zone.md §6):组名基名与分区数现读
+        go/db/etc/db.yaml(读不到即拒);回档一律落到 zone 组 —— Step 5 带 Group=<基名>_z<id>、RetireGroup=<基名>、Partitions,
+        Step 6 带 -DbConsumerGroup zone;Step 2 排空等待已删除;第 0 步 c 的 LAG 快照只告警、只计本 topic;第 0 步 d 在
+        zone 组没有位点时以 dry-run 预演 Step 5,预演失败或 describe 判不出都在停服之前拒绝;-KafkaGroup 与 legacy 组相同时入口即拒。
       - dev_tools.ps1 的 k8s-zone-rollback 入口:全部入口参数与 -KubeContext / -KubeConfig 真正转到回滚脚本
         (以前 -KubeContext 被静默吞掉,回滚落到 kubectl 当前 context);-AllowDisruptiveSwitch 同样转给回滚脚本,
         由它只透传到 Step 6、不下传 Step 1;Invoke-K8sImage 拒绝 -LoginDevPasswordAuth(k8s_image.ps1 不部署 login),
@@ -292,19 +296,31 @@ function New-KubectlReply {
 
 <#
 .SYNOPSIS
-    在进程内的沙箱里跑一遍 k8s_zone_rollback.ps1,返回 @{ Error; Output; KubectlCalls; DevToolsCalls }。
+    在进程内的沙箱里跑一遍 k8s_zone_rollback.ps1,返回 @{ Error; Output; KubectlCalls; DevToolsCalls; DevToolsBound; KafkaCliCalls; KafkaResetBound }。
 
 .DESCRIPTION
-    预检只在 -Apply 下读集群,子进程 dry-run 覆盖不到,所以在进程内跑:把被测脚本复制进临时「脚本目录」,
-    旁边放真 lib/release_common.ps1、lib/k8s_client_entry.ps1 与假的 dev_tools.ps1 / kafka_offset_reset.ps1 / k8s_deploy.ps1;
-    kubectl 与 kafka-consumer-groups.sh 用本函数作用域里的同名函数顶替(函数先于外部命令解析,被测脚本在
+    预检只在 -Apply 下读集群,子进程 dry-run 覆盖不到,所以在进程内跑:沙箱是 <tmp>/<guid>/tools/scripts(被测脚本、
+    真 lib/release_common.ps1、lib/k8s_client_entry.ps1、lib/kafka_consumer_groups.ps1 与假的 dev_tools.ps1 / kafka_offset_reset.ps1 /
+    k8s_deploy.ps1),外加 <tmp>/<guid>/go/db/etc/db.yaml(缺省拷仓库那份):被测脚本在入口按 <脚本目录>/../.. 读它推导消费组名与分区数,
+    读不到就拒绝。kubectl 与 kafka-consumer-groups.sh 用本函数作用域里的同名函数顶替(函数先于外部命令解析,被测脚本在
     子作用域里按动态作用域找到它们)。于是即使预检有 bug 没拦住,-Apply 的每一步也只落在假下游上:
       第 0 步静态预检 / Step 1 / Step 6 → 假 dev_tools.ps1(记下命令与收到的 GateRouterMode,另记一行全部具名参数;
       带 -DryRun 的调用记成 "<命令>/dry-run",与 Step 6 的真实调用区分开);
-      Step 2 → 假 kafka-consumer-groups.sh(无输出 = 无 LAG);Step 3 → -SkipMySqlPause;
-      Step 4 → 不给 -RedisHost 即跳过;Step 5 → 假 kafka_offset_reset.ps1。
+      第 0 步 c / d → 假 kafka-consumer-groups.sh(缺省对每个组回「组不存在」,-KafkaCliOutput 可注入输出或异常);
+      第 0 步 d 的预演与 Step 5 → 假 kafka_offset_reset.ps1(每次调用记一行具名参数);Step 3 → -SkipMySqlPause;
+      Step 4 → 不给 -RedisHost 即跳过。
     不碰任何集群、Redis、Kafka。DevToolsCalls 按调用顺序;DevToolsBound 每次调用一行 "<命令> 参数=值;…"
-    (按参数名排序,不含 Command 与 DryRun)。
+    (按参数名排序,不含 Command 与 DryRun);KafkaResetBound 每次调用一行 "参数=值;…"(按参数名排序)。
+
+.PARAMETER KafkaCliOutput
+    假 kafka-consumer-groups.sh 的回应:@{ Lines; ExitCode } 对每次调用都原样返回;@{ Throw = <消息> } 模拟 CLI 不在 PATH;
+    缺省 = 对 --group 后面的组回 "Error: Consumer group '<g>' does not exist."(从未切过组的 zone 的常态)。
+
+.PARAMETER KafkaResetDryRunExit
+    假 kafka_offset_reset.ps1 在不带 -Apply 的调用(第 0 步 d 的预演)上的退出码;0 = 成功。
+
+.PARAMETER DbYamlContent
+    给了就用它作沙箱里的 go/db/etc/db.yaml,不拷仓库那份;-OmitDbYaml 则不放这个文件。
 
 .PARAMETER DryRunFailure
     假 dev_tools.ps1 在 -DryRun 调用上的失败方式:none = 成功;throw = 抛出 -DryRunFailMessage(k8s_deploy.ps1 的惯例);
@@ -333,10 +349,16 @@ function Invoke-RollbackInSandbox {
         [hashtable]$ExtraArgs = @{},
         [ValidateSet('none', 'throw', 'exit')][string]$DryRunFailure = 'none',
         [string]$DryRunFailMessage = 'k8s_deploy.ps1 静态预检失败(假)',
+        [hashtable]$KafkaCliOutput = @{},
+        [int]$KafkaResetDryRunExit = 0,
+        [string[]]$DbYamlContent = $null,
+        [switch]$OmitDbYaml,
         [switch]$Apply
     )
 
-    $sandboxDir = Join-Path ([IO.Path]::GetTempPath()) ('mmorpg-rollback-preflight-' + [guid]::NewGuid().ToString('N'))
+    # 沙箱是一棵最小的仓库树:被测脚本按 <脚本目录>/../.. 找 go/db/etc/db.yaml。
+    $sandboxRoot = Join-Path ([IO.Path]::GetTempPath()) ('mmorpg-rollback-preflight-' + [guid]::NewGuid().ToString('N'))
+    $sandboxDir = Join-Path $sandboxRoot 'tools' 'scripts'
     New-Item -ItemType Directory -Path (Join-Path $sandboxDir 'lib') -Force | Out-Null
     try {
         $toolsDir = Get-ToolsScriptsDir
@@ -344,6 +366,18 @@ function Invoke-RollbackInSandbox {
         Copy-Item -LiteralPath (Join-Path $toolsDir 'lib' 'release_common.ps1') -Destination (Join-Path $sandboxDir 'lib')
         # 被测脚本在 $ErrorActionPreference = "Stop" 下 dot-source 它(取 Get-ClientEntryContract);不拷则启动即终止,沙箱用例全部跑不到被测逻辑。
         Copy-Item -LiteralPath (Join-Path $toolsDir 'lib' 'k8s_client_entry.ps1') -Destination (Join-Path $sandboxDir 'lib')
+        # 同上:第 0 步 c / d 用它解析 describe 输出。
+        Copy-Item -LiteralPath (Join-Path $toolsDir 'lib' 'kafka_consumer_groups.ps1') -Destination (Join-Path $sandboxDir 'lib')
+        if (-not $OmitDbYaml) {
+            $dbYamlDir = Join-Path $sandboxRoot 'go' 'db' 'etc'
+            New-Item -ItemType Directory -Path $dbYamlDir -Force | Out-Null
+            if ($null -ne $DbYamlContent) {
+                Set-Content -LiteralPath (Join-Path $dbYamlDir 'db.yaml') -Encoding utf8 -Value $DbYamlContent
+            }
+            else {
+                Copy-Item -LiteralPath (Join-Path (Get-RepoRoot) 'go' 'db' 'etc' 'db.yaml') -Destination $dbYamlDir
+            }
+        }
         if ($DeployDefault -eq 'real') {
             Copy-Item -LiteralPath (Join-Path $toolsDir 'k8s_deploy.ps1') -Destination $sandboxDir
         }
@@ -367,7 +401,7 @@ function Invoke-RollbackInSandbox {
 param($Command, $ZoneName, $ZoneId, $NodeImage, $NamespacePrefix, [switch]$WaitReady, $GateRouterMode = "<unset>", $ReleaseProfile,
     $ClientEntryMode, $ClientPublicHost, $GateClientHostTemplate, $GateNodePortBase, $GateExternalTrafficPolicy, $GateServiceType,
     $RequireClientEndpoint, [switch]$LoginDevPasswordAuth, [switch]$AllowDisruptiveSwitch, $GatewayIngressHost, $GatewayIngressClassName,
-    $GatewayIngressTlsSecret, $GatewayTrustedProxies, $KubeContext, $KubeConfig, [switch]$DryRun)
+    $GatewayIngressTlsSecret, $GatewayTrustedProxies, $KubeContext, $KubeConfig, $DbConsumerGroup, [switch]$DryRun)
 $label = if ($DryRun) { "$Command/dry-run" } else { $Command }
 Add-Content -LiteralPath '__CALLS__' -Encoding utf8 -Value "$label GateRouterMode=$GateRouterMode"
 $boundParameters = $PSBoundParameters
@@ -384,7 +418,20 @@ exit 0
         }
         $fakeDevTools = $fakeDevTools.Replace('__CALLS__', $devToolsRecord.Replace("'", "''")).Replace('__BOUND__', $devToolsBound.Replace("'", "''")).Replace('__DRYRUN_FAIL__', $dryRunFailCode)
         Set-Content -LiteralPath (Join-Path $sandboxDir 'dev_tools.ps1') -Encoding utf8 -Value $fakeDevTools
-        Set-Content -LiteralPath (Join-Path $sandboxDir 'kafka_offset_reset.ps1') -Encoding utf8 -Value 'exit 0'
+        # 假 kafka_offset_reset.ps1 同样声明全部参数并关掉位置绑定:数组 splatting 之类的错位会直接报错,而不是静默记错账。
+        $kafkaResetBound = Join-Path $sandboxDir 'kafka_offset_reset.bound.txt'
+        $fakeKafkaReset = @'
+[CmdletBinding(PositionalBinding = $false)]
+param($BootstrapServer, $Group, $RetireGroup, $Topic, $ToDatetime, [switch]$ToEarliest, [switch]$ToLatest, [switch]$DeleteAndRecreateTopic,
+    [switch]$FinalizeHandoff, $Partitions, $ReplicationFactor, $KafkaBin, [switch]$Apply)
+$boundParameters = $PSBoundParameters
+$bound = @($boundParameters.Keys | Sort-Object | ForEach-Object { "$_=$($boundParameters[$_])" }) -join ';'
+Add-Content -LiteralPath '__RESET__' -Encoding utf8 -Value $bound
+if (-not $Apply -and __DRYRUN_EXIT__ -ne 0) { Write-Host 'fake kafka_offset_reset: incomplete reset plan'; exit __DRYRUN_EXIT__ }
+exit 0
+'@
+        $fakeKafkaReset = $fakeKafkaReset.Replace('__RESET__', $kafkaResetBound.Replace("'", "''")).Replace('__DRYRUN_EXIT__', [string]$KafkaResetDryRunExit)
+        Set-Content -LiteralPath (Join-Path $sandboxDir 'kafka_offset_reset.ps1') -Encoding utf8 -Value $fakeKafkaReset
 
         $fakeKubectlCalls = [System.Collections.Generic.List[string]]::new()
         function kubectl {
@@ -395,7 +442,22 @@ exit 0
             $global:LASTEXITCODE = $KubectlReply.ExitCode
             return $KubectlReply.Output
         }
-        Set-Item -Path 'Function:kafka-consumer-groups.sh' -Value { }
+        $fakeKafkaCliCalls = [System.Collections.Generic.List[string]]::new()
+        Set-Item -Path 'Function:kafka-consumer-groups.sh' -Value {
+            $fakeKafkaCliCalls.Add(($args -join ' '))
+            if ($KafkaCliOutput.ContainsKey('Throw')) {
+                throw [System.Management.Automation.CommandNotFoundException]::new($KafkaCliOutput.Throw)
+            }
+            if ($KafkaCliOutput.ContainsKey('Lines')) {
+                $global:LASTEXITCODE = if ($KafkaCliOutput.ContainsKey('ExitCode')) { $KafkaCliOutput.ExitCode } else { 0 }
+                return $KafkaCliOutput.Lines
+            }
+            $argList = @($args | ForEach-Object { "$_" })
+            $groupIndex = [array]::IndexOf($argList, '--group')
+            $groupName = if ($groupIndex -ge 0 -and $groupIndex + 1 -lt $argList.Count) { $argList[$groupIndex + 1] } else { '?' }
+            $global:LASTEXITCODE = 0
+            return "Error: Consumer group '$groupName' does not exist."
+        }
 
         $rollbackArgs = @{
             ZoneName             = 'contract-test'
@@ -403,7 +465,6 @@ exit 0
             TargetTime           = '2026-05-15T14:23:00Z'
             NodeImage            = 'ghcr.io/luyuancpp/mmorpg-node:0123456789ab'
             SkipMySqlPause       = $true
-            KafkaDrainTimeoutSec = 5
         }
         if ($GateRouterMode -ne '') { $rollbackArgs.GateRouterMode = $GateRouterMode }
         foreach ($key in $ExtraArgs.Keys) { $rollbackArgs[$key] = $ExtraArgs[$key] }
@@ -418,15 +479,17 @@ exit 0
             $errorText = $_.Exception.Message
         }
         return [pscustomobject]@{
-            Error         = $errorText
-            Output        = $captured.ToString()
-            KubectlCalls  = @($fakeKubectlCalls)
-            DevToolsCalls = @(if (Test-Path -LiteralPath $devToolsRecord) { Get-Content -LiteralPath $devToolsRecord -Encoding utf8 })
-            DevToolsBound = @(if (Test-Path -LiteralPath $devToolsBound) { Get-Content -LiteralPath $devToolsBound -Encoding utf8 })
+            Error           = $errorText
+            Output          = $captured.ToString()
+            KubectlCalls    = @($fakeKubectlCalls)
+            DevToolsCalls   = @(if (Test-Path -LiteralPath $devToolsRecord) { Get-Content -LiteralPath $devToolsRecord -Encoding utf8 })
+            DevToolsBound   = @(if (Test-Path -LiteralPath $devToolsBound) { Get-Content -LiteralPath $devToolsBound -Encoding utf8 })
+            KafkaCliCalls   = @($fakeKafkaCliCalls)
+            KafkaResetBound = @(if (Test-Path -LiteralPath $kafkaResetBound) { Get-Content -LiteralPath $kafkaResetBound -Encoding utf8 })
         }
     }
     finally {
-        Remove-Item -LiteralPath $sandboxDir -Recurse -Force -ErrorAction SilentlyContinue
+        Remove-Item -LiteralPath $sandboxRoot -Recurse -Force -ErrorAction SilentlyContinue
     }
 }
 
@@ -693,6 +756,147 @@ Test-Case 'dry-run:只预告静态预检,不执行' {
 }
 
 # ─────────────────────────────────────────────────────────────────
+# go/db 存盘消费组按 zone 拆分(2026-10-15,docs/design/db-consumer-group-per-zone.md §6):
+# 回档一律落到 zone 组;Step 2 排空等待删除;第 0 步 c 只读快照、d 预演 Step 5;Step 5 重置 zone 组并退役 legacy 组位点
+# ─────────────────────────────────────────────────────────────────
+
+# 组名基名与分区数取仓库 go/db/etc/db.yaml(被测脚本同样现读,测试不抄常量)。
+$RepoDbYaml = Join-Path (Get-RepoRoot) 'go' 'db' 'etc' 'db.yaml'
+$DbGroupBase = (Get-YamlScalar -Path $RepoDbYaml -KeyPath 'ServerConfig.Kafka.GroupID').Value
+$DbPartitionCnt = (Get-YamlScalar -Path $RepoDbYaml -KeyPath 'ServerConfig.Kafka.PartitionCnt').Value
+$ZoneGroup = "${DbGroupBase}_z101"
+$SandboxTopic = 'db_task_zone_101'
+# 三项入口参数都显式、不读集群,只看 Kafka 相关的步骤。
+$KafkaCaseArgs = @{ ClientEntryMode = 'podip'; ConfirmNoGatewayIngress = $true }
+
+# 断言一行 "参数=值;…" 里有某个键值对(值按字面匹配)。
+function Assert-BoundPair {
+    param(
+        [Parameter(Mandatory = $true)][AllowEmptyString()][string]$Line,
+        [Parameter(Mandatory = $true)][string]$Pair,
+        [Parameter(Mandatory = $true)][string]$Because
+    )
+    Assert-Match -Text $Line -Pattern "(^| |;)$([regex]::Escape($Pair))(;|$)" -Because $Because
+}
+
+Test-Case '前提:仓库 go/db/etc/db.yaml 的 GroupID 基名与 PartitionCnt 读得到' {
+    Assert-True -Condition (-not [string]::IsNullOrWhiteSpace($DbGroupBase)) -Because '回滚脚本按它推导 zone 组 / legacy 组,读不到就拒绝执行'
+    Assert-Match -Text $DbPartitionCnt -Pattern '^[1-9]\d*$' -Because 'Step 5 按它逐分区复核位点,必须是正整数'
+}
+
+Test-Case '-Apply 全程通过:Step 5 重置 zone 组并退役 legacy 组位点,Step 6 显式 -DbConsumerGroup zone,不再有 Step 2 排空' {
+    $run = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs $KafkaCaseArgs
+    Assert-True -Condition ($null -eq $run.Error) -Because "全流程不该失败。错误: $($run.Error)"
+    foreach ($command in @('k8s-zone-up/dry-run', 'k8s-zone-up')) {
+        Assert-BoundPair -Line (Get-BoundLine -Run $run -Command $command) -Pair 'DbConsumerGroup=zone' -Because "$command 必须显式带 -DbConsumerGroup zone:回档后永远落到 zone 组,静态预检与 Step 6 用同一份参数"
+    }
+    Assert-NotMatch -Text (Get-BoundLine -Run $run -Command 'k8s-zone-down') -Pattern 'DbConsumerGroup' -Because 'zone-down 与消费组无关,不传'
+    Assert-True -Condition ($run.KafkaResetBound.Count -ge 1) -Because "Step 5 必须真正调 kafka_offset_reset.ps1。实际: $($run.KafkaResetBound -join ' | ')"
+    $step5 = $run.KafkaResetBound[-1]
+    foreach ($pair in @("Group=$ZoneGroup", "RetireGroup=$DbGroupBase", "Partitions=$DbPartitionCnt", 'ToDatetime=2026-05-15T14:23:00Z', 'Apply=True', "Topic=$SandboxTopic")) {
+        Assert-BoundPair -Line $step5 -Pair $pair -Because "Step 5 必须带 ${pair}:重置 zone 组(Empty,重置能生效),逐分区复核后再删 legacy 组在本 topic 上的位点"
+    }
+    Assert-NotMatch -Text $run.Output -Pattern 'Step 2: drain|waiting for LAG|proceeding anyway' -Because 'zone-down 之后等 LAG 排空必然超时,Step 2 已删除'
+}
+
+Test-Case 'zone 组不存在:第 0 步 d 先以 dry-run 预演 Step 5(不带 -Apply / -RetireGroup),早于 Step 1' {
+    $run = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs $KafkaCaseArgs
+    Assert-True -Condition ($null -eq $run.Error) -Because "预演成功时全流程不该失败。错误: $($run.Error)"
+    Assert-Equal -Expected 2 -Actual $run.KafkaResetBound.Count -Because "第 0 步 d 预演一次、Step 5 执行一次。实际: $($run.KafkaResetBound -join ' | ')"
+    $rehearsal = $run.KafkaResetBound[0]
+    foreach ($pair in @("Group=$ZoneGroup", "Partitions=$DbPartitionCnt", 'ToDatetime=2026-05-15T14:23:00Z')) {
+        Assert-BoundPair -Line $rehearsal -Pair $pair -Because "预演必须用 Step 5 的同一组重置参数($pair)"
+    }
+    Assert-NotMatch -Text $rehearsal -Pattern '(^|;)(Apply|RetireGroup)=' -Because '预演只能是 dry-run,且不能删任何位点'
+    Assert-True -Condition (@($run.KafkaCliCalls | Where-Object { $_ -match "--describe --group $([regex]::Escape($ZoneGroup))(\s|$)" }).Count -ge 1) -Because '预演前要先 describe zone 组,判断它在本 topic 上有没有位点'
+}
+
+Test-Case '第 0 步 d 预演失败(Kafka 生成不出完整计划):停服之前拒绝,Step 5 不执行' {
+    $run = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs $KafkaCaseArgs -KafkaResetDryRunExit 3
+    Assert-RefusedBeforeStop -Run $run -Label '预演失败' -HintPattern 'Step 5 预演失败'
+    Assert-Match -Text $run.Error -Pattern '退出码 3' -Because '要带上预演失败的原因'
+    Assert-Equal -Expected 1 -Actual $run.KafkaResetBound.Count -Because "只执行过预演,Step 5 一次都不该被调。实际: $($run.KafkaResetBound -join ' | ')"
+}
+
+Test-Case 'zone 组已有位点:跳过预演;LAG 快照只告警、合计只含本 topic,照常走到 Step 6' {
+    $header = 'GROUP  TOPIC  PARTITION  CURRENT-OFFSET  LOG-END-OFFSET  LAG  CONSUMER-ID  HOST  CLIENT-ID'
+    $lines = @(
+        "Consumer group '$ZoneGroup' has no active members.",
+        $header,
+        "$ZoneGroup  $SandboxTopic  0  10  15  5  -  -  -",
+        "$ZoneGroup  $SandboxTopic  1  20  27  7  -  -  -",
+        "$ZoneGroup  db_task_zone_102  0  0  100  100  -  -  -"
+    )
+    $run = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs $KafkaCaseArgs -KafkaCliOutput @{ Lines = $lines; ExitCode = 0 }
+    Assert-True -Condition ($null -eq $run.Error) -Because "LAG > 0 只是快照,不该拦住回档。错误: $($run.Error)"
+    Assert-Match -Text $run.Output -Pattern 'Step 5 rehearsal skipped' -Because 'zone 组已有位点 = 组已存在,不必预演'
+    Assert-Equal -Expected 1 -Actual $run.KafkaResetBound.Count -Because "只有 Step 5 调了 kafka_offset_reset.ps1。实际: $($run.KafkaResetBound -join ' | ')"
+    Assert-Match -Text $run.Output -Pattern "total lag=12(\s|$)" -Because '合计只含本 topic 的 5 + 7'
+    Assert-NotMatch -Text $run.Output -Pattern 'total lag=112' -Because '别的 topic(db_task_zone_102)的 LAG 不得计入'
+    Assert-True -Condition (@($run.DevToolsCalls | Where-Object { $_ -like 'k8s-zone-up GateRouterMode=*' }).Count -eq 1) -Because 'Step 6 照常执行'
+}
+
+Test-Case 'Kafka CLI 不可用:第 0 步 c 只告警,第 0 步 d 判不出即停服之前拒绝' {
+    $run = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs $KafkaCaseArgs `
+        -KafkaCliOutput @{ Throw = "The term 'kafka-consumer-groups.sh' is not recognized" }
+    Assert-Match -Text $run.Output -Pattern 'Kafka LAG snapshot unavailable' -Because '快照失败只告警,不能自己拦住回档'
+    Assert-RefusedBeforeStop -Run $run -Label 'CLI 不可用' -HintPattern 'Step 5 预演读不到'
+    Assert-Equal -Expected 0 -Actual $run.KafkaResetBound.Count -Because 'describe 都读不到,预演与 Step 5 都不该执行'
+}
+
+Test-Case '-KafkaGroup 显式等于 legacy 组:入口即拒,不读集群、不调任何下游' {
+    $run = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -ExtraArgs @{ KafkaGroup = $DbGroupBase }
+    Assert-True -Condition ($null -ne $run.Error) -Because '重置并退役同一个组会让它在本 topic 上一个位点都不剩,必须拒绝'
+    Assert-Match -Text $run.Error -Pattern '-KafkaGroup 与 -KafkaLegacyGroup 都是' -Because '错误文本要点明两组相同'
+    Assert-Equal -Expected 0 -Actual $run.DevToolsCalls.Count -Because '入口校验早于任何步骤'
+    Assert-Equal -Expected 0 -Actual $run.KubectlCalls.Count -Because '入口校验早于预检读集群'
+    Assert-Equal -Expected 0 -Actual $run.KafkaCliCalls.Count -Because '入口校验早于读 Kafka'
+}
+
+Test-Case '组名与分区数取自 go/db/etc/db.yaml,不在回滚脚本里写死;读不到即拒绝' {
+    $custom = @('ServerConfig:', '  Kafka:', '    GroupID: "custom_db_group" # 测试用基名', '    TopicGeneration: 1', '    PartitionCnt: 4')
+    $run = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs $KafkaCaseArgs -DbYamlContent $custom
+    Assert-True -Condition ($null -eq $run.Error) -Because "自定义 db.yaml 下全流程不该失败。错误: $($run.Error)"
+    $step5 = $run.KafkaResetBound[-1]
+    foreach ($pair in @('Group=custom_db_group_z101', 'RetireGroup=custom_db_group', 'Partitions=4')) {
+        Assert-BoundPair -Line $step5 -Pair $pair -Because "组名基名与分区数必须现读 db.yaml($pair)"
+    }
+
+    $missing = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs $KafkaCaseArgs -OmitDbYaml
+    Assert-True -Condition ($null -ne $missing.Error) -Because '读不到 db.yaml 就无法推导组名,必须拒绝(fail-closed)'
+    Assert-Match -Text $missing.Error -Pattern 'ServerConfig\.Kafka\.GroupID' -Because '错误文本要点明读不到哪个键'
+    Assert-Equal -Expected 0 -Actual $missing.DevToolsCalls.Count -Because '入口校验早于任何步骤'
+
+    $badCount = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs $KafkaCaseArgs `
+        -DbYamlContent @('ServerConfig:', '  Kafka:', '    GroupID: "custom_db_group"', '    PartitionCnt: 0')
+    Assert-Match -Text $badCount.Error -Pattern 'PartitionCnt' -Because '分区数不是正整数时无法逐分区复核,必须拒绝'
+}
+
+Test-Case 'dry-run:不调 Kafka CLI 与 kafka_offset_reset,只预告快照与 Step 5 预演' {
+    $run = Invoke-RollbackInSandbox -DeployDefault '1' -GateRouterMode '1' -ExtraArgs $KafkaCaseArgs
+    Assert-True -Condition ($null -eq $run.Error) -Because "dry-run 不该失败。错误: $($run.Error)"
+    Assert-Equal -Expected 0 -Actual $run.KafkaCliCalls.Count -Because 'dry-run 不读 Kafka'
+    Assert-Equal -Expected 0 -Actual $run.KafkaResetBound.Count -Because 'dry-run 连预演也不执行'
+    foreach ($group in @($ZoneGroup, $DbGroupBase)) {
+        Assert-Match -Text $run.Output -Pattern ("kafka-consumer-groups\.sh --bootstrap-server kafka:9092 --describe --group " + [regex]::Escape($group) + '(\r?\n|$)') -Because "dry-run 要预告快照会 describe $group"
+    }
+    Assert-Match -Text $run.Output -Pattern "Step 5 rehearsal: describe $([regex]::Escape($ZoneGroup))" -Because 'dry-run 要预告 -Apply 时的 Step 5 预演'
+}
+
+Test-Case '子进程 dry-run:Step 5 打印 zone 组与 RetireGroup,Step 6 带 -DbConsumerGroup zone,摘要列出两组' {
+    $run = Invoke-RollbackDryRun
+    Assert-Equal -Expected 0 -Actual $run.ExitCode -Because "dry-run 不该失败。输出: $($run.Output)"
+    $step5 = @([regex]::Matches($run.Output, '(?m)^[ \t]*kafka_offset_reset\.ps1 [^\r\n]*') | ForEach-Object { $_.Value })
+    Assert-Equal -Expected 1 -Actual $step5.Count -Because "应当恰有一行 Step 5 参数。输出: $($run.Output)"
+    Assert-Match -Text $step5[0] -Pattern ('(^|\s)-Group ' + [regex]::Escape($ZoneGroup) + '(\s|$)') -Because 'Step 5 重置的是 zone 组'
+    Assert-Match -Text $step5[0] -Pattern ('(^|\s)-RetireGroup ' + [regex]::Escape($DbGroupBase) + '(\s|$)') -Because 'Step 5 退役 legacy 组在本 topic 上的位点'
+    Assert-Match -Text $step5[0] -Pattern "(^|\s)-Partitions $DbPartitionCnt(\s|$)" -Because 'Step 5 按 db.yaml 的分区数逐分区复核'
+    Assert-Match -Text (Get-ZoneUpArgsLine -Output $run.Output) -Pattern '(^|\s)-DbConsumerGroup zone(\s|$)' -Because 'Step 6 显式落到 zone 组'
+    Assert-Match -Text $run.Output -Pattern ("group=" + [regex]::Escape($ZoneGroup) + " retire=" + [regex]::Escape($DbGroupBase) + '(\s|$)') -Because '摘要要写明重置哪个组、退役哪个组'
+    Assert-NotMatch -Text $run.Output -Pattern 'Step 2: drain' -Because 'Step 2 已删除'
+}
+
+# ─────────────────────────────────────────────────────────────────
 # 回滚脚本入口:-ReleaseProfile / -LoginDevPasswordAuth / -ConfirmNoGatewayIngress(子进程 dry-run)
 # ─────────────────────────────────────────────────────────────────
 
@@ -789,6 +993,18 @@ Test-Case 'dev_tools k8s-zone-rollback:-AllowDisruptiveSwitch 转给回滚脚本
     $downLine = @([regex]::Matches($run.Output, '(?m)^[ \t]*dev_tools\.ps1 [^\r\n]*k8s-zone-down[^\r\n]*') | ForEach-Object { $_.Value })
     Assert-Equal -Expected 1 -Actual $downLine.Count -Because "应当恰有一行 Step 1 参数。输出: $($run.Output)"
     Assert-NotMatch -Text $downLine[0] -Pattern 'AllowDisruptiveSwitch' -Because 'Step 1 只删 namespace,切换确认闸不下传给 k8s-zone-down'
+}
+
+Test-Case 'dev_tools k8s-zone-rollback:消费组留空由回滚脚本按 db.yaml 推导;-RollbackKafkaGroup / -RollbackKafkaLegacyGroup 非空才转发' {
+    # 以前 dev_tools.ps1 缺省转发 legacy 共享组 db_rpc_consumer_group 与 -KafkaDrainTimeoutSec;回滚脚本删掉了 Step 2 与该参数,
+    # 再转发就会以「找不到参数」失败。
+    $derived = Invoke-DevToolsRollbackDryRun
+    Assert-Equal -Expected 0 -Actual $derived.ExitCode -Because "经 dev_tools.ps1 的回滚 dry-run 不该失败。输出: $($derived.Output)"
+    Assert-Match -Text $derived.Output -Pattern ("group=" + [regex]::Escape($ZoneGroup) + " retire=" + [regex]::Escape($DbGroupBase) + '(\s|$)') -Because '留空时由回滚脚本推导 zone 组与 legacy 组'
+
+    $explicit = Invoke-DevToolsRollbackDryRun -ExtraArguments @('-RollbackKafkaGroup', 'zone_override', '-RollbackKafkaLegacyGroup', 'legacy_override')
+    Assert-Equal -Expected 0 -Actual $explicit.ExitCode -Because "显式组名的 dry-run 不该失败。输出: $($explicit.Output)"
+    Assert-Match -Text $explicit.Output -Pattern 'group=zone_override retire=legacy_override(\s|$)' -Because '显式值必须原样转给回滚脚本'
 }
 
 # dev_tools.ps1 Invoke-K8sImage:按 AST 取出函数,$ScriptDir 指到假 k8s_image.ps1 所在的临时目录(照 k8s_deploy_contract.tests.ps1)。

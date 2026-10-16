@@ -20,7 +20,6 @@ type HandlerConfig struct {
 	CppDir                   string
 	HeaderExt                string
 	CppExt                   string
-	IsRepliedHandler         bool
 	IsGrpcHandler            bool
 }
 
@@ -70,24 +69,10 @@ func writeHandlerCppFile(wg *sync.WaitGroup, methodList internal.RPCMethods, cfg
 	fullPath := cfg.CppDir + fileName
 
 	data := cfg.GenerateCppDataFunc(fullPath, methodList,
-		getCppClassName(*first, cfg),
-		getCppIncludeName(*first, cfg))
+		first.CppHandlerClassName(),
+		first.CppHandlerIncludeName())
 
 	if err := utils2.WriteFileIfChanged(fullPath, []byte(data)); err != nil {
 		logger.Global.Fatal("Failed to write handler implementation file", zap.String("file_path", fullPath), zap.Error(err))
 	}
-}
-
-func getCppClassName(info internal.MethodInfo, cfg HandlerConfig) string {
-	if cfg.IsRepliedHandler {
-		return info.CppRepliedHandlerClassName()
-	}
-	return info.CppHandlerClassName()
-}
-
-func getCppIncludeName(info internal.MethodInfo, cfg HandlerConfig) string {
-	if cfg.IsRepliedHandler {
-		return info.CppRepliedHandlerIncludeName()
-	}
-	return info.CppHandlerIncludeName()
 }

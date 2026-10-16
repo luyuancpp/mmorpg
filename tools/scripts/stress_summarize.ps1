@@ -57,11 +57,20 @@
     Docker container name (default 'kafka'). Set to '' to skip Kafka lag
     section.
 
+.PARAMETER Zone
+    本机启动 go/db 时用的 -Zone(dev_tools.ps1 dev-start-zones / go_services.ps1 -Zone N)。默认 0 = 单 zone 默认启动
+    (start_game / dev-start / go-svc-start 不带 -Zone):topic 与组名用下面两个参数的缺省值。
+    > 0 时,未显式传 -KafkaTopic / -KafkaConsumerGroup 的那一项按 zone 推导:topic 为 db_task_zone_<Zone>,
+    组名为 db_rpc_consumer_group_z<Zone>(go_services.ps1 只在 -Zone > 0 时给 GroupID 追加 _z<Zone>)。
+    显式传的值一律优先。
+
 .PARAMETER KafkaTopic
-    Topic to inspect for consumer lag. Default 'db_task_zone_1'.
+    Topic to inspect for consumer lag. Default 'db_task_zone_1' (db.yaml ZoneId=1);
+    derived as 'db_task_zone_<Zone>' when -Zone > 0 and this parameter is not passed.
 
 .PARAMETER KafkaConsumerGroup
-    Consumer group to inspect. Default 'db_rpc_consumer_group'.
+    Consumer group to inspect. Default 'db_rpc_consumer_group' (single-zone default start);
+    derived as 'db_rpc_consumer_group_z<Zone>' when -Zone > 0 and this parameter is not passed.
 
 .EXAMPLE
     # Standard post-run summary
@@ -82,10 +91,19 @@ param(
 
     [string]$KafkaContainer = "kafka",
     [string]$KafkaTopic = "db_task_zone_1",
-    [string]$KafkaConsumerGroup = "db_rpc_consumer_group"
+    [string]$KafkaConsumerGroup = "db_rpc_consumer_group",
+    # 见 .PARAMETER Zone:0 = 单 zone 默认启动(裸名组);> 0 时推导未显式传入的 topic / 组名。
+    [int]$Zone = 0
 )
 
 $ErrorActionPreference = "Stop"
+
+# 本机组名规则以 go_services.ps1 为准:只有 -Zone N(N > 0)启动时 GroupID 才追加 _zN,单 zone 默认启动是裸名。
+# 只推导调用方没有显式传的那一项,显式值优先。
+if ($Zone -gt 0) {
+    if (-not $PSBoundParameters.ContainsKey('KafkaTopic')) { $KafkaTopic = "db_task_zone_$Zone" }
+    if (-not $PSBoundParameters.ContainsKey('KafkaConsumerGroup')) { $KafkaConsumerGroup = "db_rpc_consumer_group_z$Zone" }
+}
 
 # ----- helpers ---------------------------------------------------------
 

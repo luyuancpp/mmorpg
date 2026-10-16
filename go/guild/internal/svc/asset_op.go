@@ -339,8 +339,11 @@ func (p *AssetPipeline) AttachPersistedLedger(client dspb.DataServiceClient) {
 // ctx 取消或 Stop 都会让它们退出;重复调用、Stop 之后再调都是空操作;nil 接收者安全。
 //
 // 先起 watcher 再起循环:反过来也能工作(镜像没同步时定位回 node_unknown,循环按退避重来),只是白跑一轮。
-// etcdCli 为 nil 时 watcher 打 ERROR 后直接返回,定位一律失败(fail-closed),循环照跑但行都留在 PENDING;
-// 放弃判定拿不到"没有位置"的证据(locate_error),同样一行也不放弃。
+// etcdCli 为 nil 时 watcher 打 ERROR 后直接返回、节点镜像永不同步:有位置记录的玩家一律定位成 node_unknown,
+// 投递发不出去(fail-closed),循环照跑但这些行都留在 PENDING。
+// 注意这**不会**停掉自动放弃:「位置键不存在」(scenenode.ErrNotOnline)的判定只读 player:{id}:location,
+// 不经过节点镜像,所以无位置玩家的行仍按其余条件(年龄、安全间隔、已落盘账本确认未见)照常放弃;
+// 有位置记录的玩家按「有位置」跳过(located)。要停掉放弃只能把 AssetOp.AbandonAfterDays 写 0。
 // 唤醒订阅最后起:它调的 Loop.WakePlayer 与 Tick 共用 Workers 预算,早起晚起都不改变任何正确性论证(设计 L-4)。
 func (p *AssetPipeline) Start(ctx context.Context, etcdCli *clientv3.Client) {
 	if p == nil {

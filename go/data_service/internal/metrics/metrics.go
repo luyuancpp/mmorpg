@@ -227,6 +227,16 @@ var (
 		Help:      "GetPlayerAssetOpLedger outcomes: found (blob read, ledger returned) | absent (no PlayerAllData blob) | error (routing, Redis or corrupt blob).",
 	}, []string{"result"})
 
+	// ── 玩家收件箱:已落盘账本读取(docs/design/player-inbox-service.md §9.3)──
+	//
+	// 调用方是 go/player_inbox 的对账(领导者每小时一轮 + 运维 ReconcilePlayer),GM 域量很小。
+	// result 集合与上面的资产账本相同;absent 由对账计为 unknown、不告警;error 非零看同一时刻的 ERROR 日志。
+	playerInboxLedgerReadTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Subsystem: subsystem,
+		Name:      "player_inbox_ledger_read_total",
+		Help:      "GetPlayerInboxLedger outcomes: found (blob read, ledger returned) | absent (no PlayerAllData blob) | error (routing, Redis or corrupt blob).",
+	}, []string{"result"})
+
 	// ── 回档的帮会资产闸(docs/design/guild-phase2/07-rollback-fail-closed.md §7.9.1)──
 	//
 	// 告警口径(07 §7.9.2):divergent_accepted → 通知(有人放行了,必须有人认领补偿单);
@@ -393,6 +403,7 @@ func register() {
 			idSegmentAllocateTotal,
 			playerNameOpsTotal, playerNameOpSeconds, playerNameCacheTotal,
 			assetOpLedgerReadTotal,
+			playerInboxLedgerReadTotal,
 			rollbackGuildCheckTotal, rollbackGuildDivergenceRows, rollbackGuildCheckSeconds,
 			routeRegisterTotal, routePublishTotal,
 		)
@@ -629,6 +640,14 @@ func ObservePlayerNameCache(result string, n int) {
 func ObserveAssetOpLedgerRead(result string) {
 	register()
 	assetOpLedgerReadTotal.WithLabelValues(result).Inc()
+}
+
+// ObservePlayerInboxLedgerRead 记一次 GetPlayerInboxLedger 的结果。
+// result 是 "found" | "absent" | "error",取值集合由调用方(logic 的 inboxLedgerRead* 常量)封闭,
+// 本函数不做校验。**不要**把 player_id 加成 label(AGENTS.md §9),排障信息进日志。
+func ObservePlayerInboxLedgerRead(result string) {
+	register()
+	playerInboxLedgerReadTotal.WithLabelValues(result).Inc()
 }
 
 // ── Observe helpers ─────────────────────────────────────────────────

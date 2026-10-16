@@ -81,6 +81,12 @@
     <ClInclude Include="player\system\asset_op_auth.h" />
     <ClInclude Include="player\system\asset_op_ledger.h" />
     <ClInclude Include="player\system\asset_op_system.h" />
+    <ClInclude Include="player\comp\player_inbox_runtime_comp.h" />
+    <ClInclude Include="player\system\player_mutability.h" />
+    <ClInclude Include="player\system\player_inbox_rules.h" />
+    <ClInclude Include="player\system\player_inbox_registry.h" />
+    <ClInclude Include="player\system\gm_sanction_inbox_executor.h" />
+    <ClInclude Include="player\system\player_inbox_system.h" />
     <ClInclude Include="spatial\constants\aoi_priority.h" />
   </ItemGroup>
   <ItemGroup>
@@ -133,6 +139,10 @@
     <ClCompile Include="player\system\asset_op_auth.cpp" />
     <ClCompile Include="player\system\asset_op_ledger.cpp" />
     <ClCompile Include="player\system\asset_op_system.cpp" />
+    <ClCompile Include="player\system\player_inbox_rules.cpp" />
+    <ClCompile Include="player\system\player_inbox_registry.cpp" />
+    <ClCompile Include="player\system\gm_sanction_inbox_executor.cpp" />
+    <ClCompile Include="player\system\player_inbox_system.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="player\system\player_feature_snapshot.cpp" />

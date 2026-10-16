@@ -68,4 +68,18 @@ GRANT ALL PRIVILEGES ON `mmorpg_guild`.* TO 'appuser'@'%';
 CREATE DATABASE IF NOT EXISTS mmorpg_friend DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 GRANT ALL PRIVILEGES ON `mmorpg_friend`.* TO 'appuser'@'%';
 
+-- mmorpg_player_inbox:玩家持久收件箱 player_inbox 服务独占库(go/player_inbox/etc/player_inbox.yaml 的 MySQL.DBName;
+-- docs/design/player-inbox-service.md §1.4、D-14:不借 data_service 的全局库)。与上面 mmorpg_trade 同一套规矩:
+-- **这里只建库 + 授权**;表(player_inbox_stream / player_inbox_item / player_inbox_audit)以
+-- proto/player_inbox/player_inbox_table.proto 为源,由 go/schemamigrate 建(启动期 Schema.AutoMigrate,
+-- 或 `player_inbox -f etc/player_inbox.yaml -migrate`),不要往 mysql-init 里加业务表。
+-- appuser 没有全局 CREATE 权限,库必须在 player_inbox 启动前就存在。
+-- 注意:已初始化过的本地 MySQL 数据卷不会重跑 initdb,存量卷需要用 root 手工执行下面两句(再 FLUSH PRIVILEGES),
+-- 或重建数据卷。本机一键启动(tools/scripts/start_game.ps1)在 MySQL 就绪后预检本库,库不在或 appuser 无权时
+-- 跳过 player_inbox 并打印补建命令,不拖垮整个启动。
+-- K8s:mysql-init-sql ConfigMap 原样带入本文件,新 PVC 首次 initdb 建库;已有数据的 PVC 不会重跑,
+-- 手工补建步骤见 deploy/k8s/README.md「玩家收件箱 player-inbox」(D-14 第 5 条:只登记这一处)。
+CREATE DATABASE IF NOT EXISTS mmorpg_player_inbox DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+GRANT ALL PRIVILEGES ON `mmorpg_player_inbox`.* TO 'appuser'@'%';
+
 FLUSH PRIVILEGES;

@@ -1,6 +1,7 @@
 #include "event_handler.h"
 
 #include "battle_event_handler.h"
+#include "player_inbox_event_handler.h"
 #include "player_migration_event_handler.h"
 #include "team_event_handler.h"
 
@@ -9,6 +10,7 @@ void RegisterNodeEvents() { EventHandler::Register(); }
 void EventHandler::Register()
 {
 BattleEventHandler::Register();
+PlayerInboxEventHandler::Register();
 PlayerMigrationEventHandler::Register();
 TeamEventHandler::Register();
 
@@ -17,6 +19,7 @@ TeamEventHandler::Register();
 void EventHandler::UnRegister()
 {
 BattleEventHandler::UnRegister();
+PlayerInboxEventHandler::UnRegister();
 PlayerMigrationEventHandler::UnRegister();
 TeamEventHandler::UnRegister();
 

@@ -47,6 +47,8 @@ type GuildLogic struct {
 	notifier GuildNotifier
 	// applyPushGate 见 ApplyPushGate;默认"总是放行"。
 	applyPushGate ApplyPushGate
+	// applicationQuota 在任何申请仓储访问之前消费；nil 仅供未装配的单测。
+	applicationQuota *ApplicationQuota
 	// syncBumper 是落地恢复摘要 bump 的唯一出口(push.go 的 GuildSyncBumper),默认 NoopSyncBumper{}。
 	// 与 notifier 同一纪律:只在 MySQL 提交之后被调用,失败绝不影响 RPC 结果。
 	syncBumper GuildSyncBumper
@@ -98,6 +100,11 @@ func WithApplyPushGate(g ApplyPushGate) Option {
 			l.applyPushGate = g
 		}
 	}
+}
+
+// WithApplicationQuota 注入跨副本共享的入帮申请尝试配额。
+func WithApplicationQuota(q *ApplicationQuota) Option {
+	return func(l *GuildLogic) { l.applicationQuota = q }
 }
 
 // WithPlayerNames 注入展示名解析器;不传或传 nil = 名字一律留空(90-consistency.md Y-02:
@@ -442,6 +449,7 @@ func (l *GuildLogic) GetPlayerGuild(ctx context.Context, req *pb.GetPlayerGuildR
 
 // LeaveGuild:主动退帮。帮主不能退(先转让或解散),判定在事务内按权威 role + leader_id 做,
 // 不再看缓存里的 LeaderID —— 那个值在降权 / 转让之后会说谎整整一个 TTL。
+// expected_guild_id 非 0 时只退该帮,不在该帮回 kGuildNotInGuild(expected_guild.go)。
 func (l *GuildLogic) LeaveGuild(ctx context.Context, req *pb.LeaveGuildRequest) (*pb.LeaveGuildResponse, error) {
 	who := callerOf(ctx, req.PlayerId)
 	if who.fromClient {
@@ -457,12 +465,19 @@ func (l *GuildLogic) LeaveGuild(ctx context.Context, req *pb.LeaveGuildRequest) 
 		}
 	}
 
-	guildID, tip, err := l.operatorGuild(ctx, who.playerID)
+	expected := req.GetExpectedGuildId()
+	guildID, tip, err := l.bindExpectedGuild(ctx, who, expected, expectedGuildMethodLeave)
+	if expectedGuildLost(expected, err) {
+		return &pb.LeaveGuildResponse{ErrorMessage: l.rejectExpectedGuild(ctx, who.playerID, expected, expectedGuildMethodLeave, err)}, nil
+	}
 	if err != nil || tip != nil {
 		return &pb.LeaveGuildResponse{ErrorMessage: tip}, err
 	}
 	// now 显式传入(B5):事务内要把本人未结算捐献的截止时间提前到"现在",时钟归调用方(§11.2 显式依赖)。
 	res, err := l.repo.LeaveGuild(ctx, guildID, who.playerID, nowMs())
+	if expectedGuildLost(expected, err) {
+		return &pb.LeaveGuildResponse{ErrorMessage: l.rejectExpectedGuild(ctx, who.playerID, expected, expectedGuildMethodLeave, err)}, nil
+	}
 	if errors.Is(err, data.ErrNotGuildMember) || errors.Is(err, data.ErrGuildGone) {
 		// 缓存指的帮会里没有他:以 MySQL 复核。真的不在任何帮 = 这次退帮本来就无事可做(幂等成功);
 		// 在别的帮 = 缓存过期,让客户端刷新后重来,**绝不**按旧 guild_id 去删别的帮的成员行。
@@ -489,6 +504,7 @@ func (l *GuildLogic) LeaveGuild(ctx context.Context, req *pb.LeaveGuildRequest) 
 
 // DisbandGuild:解散帮会。授权改读 MySQL(事务内 FOR UPDATE 的 leader_id),
 // 原实现按缓存 LeaderID 判帮主 —— 转让之后那个值在一个 TTL 内还是旧帮主,等于把解散权多发一份。
+// expected_guild_id 非 0 时只解散该帮,不在该帮回 kGuildNotInGuild(expected_guild.go)。
 func (l *GuildLogic) DisbandGuild(ctx context.Context, req *pb.DisbandGuildRequest) (*pb.DisbandGuildResponse, error) {
 	who := callerOf(ctx, req.PlayerId)
 	if who.fromClient {
@@ -504,7 +520,11 @@ func (l *GuildLogic) DisbandGuild(ctx context.Context, req *pb.DisbandGuildReque
 		}
 	}
 
-	guildID, tip, err := l.operatorGuild(ctx, who.playerID)
+	expected := req.GetExpectedGuildId()
+	guildID, tip, err := l.bindExpectedGuild(ctx, who, expected, expectedGuildMethodDisband)
+	if expectedGuildLost(expected, err) {
+		return &pb.DisbandGuildResponse{ErrorMessage: l.rejectExpectedGuild(ctx, who.playerID, expected, expectedGuildMethodDisband, err)}, nil
+	}
 	if err != nil || tip != nil {
 		return &pb.DisbandGuildResponse{ErrorMessage: tip}, err
 	}
@@ -513,9 +533,16 @@ func (l *GuildLogic) DisbandGuild(ctx context.Context, req *pb.DisbandGuildReque
 	// 与合服置闸之间有检查到使用的窗口,内部调用路径更是完全不查;repo 锁住 guild 行后按行里的 zone_id 调它,
 	// 拒绝回 data.ErrZoneMerging,由 mapWriteErr 翻成 kGuildZoneMerging。
 	res, err := l.repo.DisbandGuild(ctx, guildID, who.playerID, nowMs(), l.economyFence)
+	// 事务在锁住的 guild 行上复核:预期帮会已不存在(ErrGuildGone),或操作者已不是它的成员(ErrNotGuildMember:
+	// 预检之后才转让并离帮,repo 的 disbandRefusal 区分)→ kGuildNotInGuild。两种情况事务都已回滚,没有写。
+	if expectedGuildLost(expected, err) {
+		return &pb.DisbandGuildResponse{ErrorMessage: l.rejectExpectedGuild(ctx, who.playerID, expected, expectedGuildMethodDisband, err)}, nil
+	}
 	// 解散是唯一一处 ErrRankTooLow 不回 kGuildRankTooLow 的地方:解散只有帮主能做,
 	// 沿用既有的"只有会长可以执行该操作"文案比"职位不足"更贴合玩家看到的按钮。
-	if errors.Is(err, data.ErrRankTooLow) {
+	// ErrNotGuildMember 是 repo 为 expected_guild_id 才区分出来的(以前同样回 ErrRankTooLow):旧客户端(expected = 0)
+	// 照旧答 kGuildNotLeader,答复与映射自愈行为都不变。
+	if errors.Is(err, data.ErrRankTooLow) || errors.Is(err, data.ErrNotGuildMember) {
 		return &pb.DisbandGuildResponse{ErrorMessage: tipErr(constants.ErrNotLeader, "not guild leader")}, nil
 	}
 	if tip, err := l.mapWriteErr(ctx, who.playerID, guildID, guildID, err); err != nil || tip != nil {

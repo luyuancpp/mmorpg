@@ -24,24 +24,416 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// 实例与布局分离；显示信息不写入玩家持久化记录。
-type BagItemInfo struct {
+// 装备 tooltip 的一行属性(设计文档 docs/design/equipment-attributes.md §3.2)。
+// 客户端零配表:名称、上限、是否百分比全部由服务器下发。
+type EquipAttrLineInfo struct {
+	state   protoimpl.MessageState `protogen:"open.v1"`
+	AttrId  uint32                 `protobuf:"varint,1,opt,name=attr_id,json=attrId,proto3" json:"attr_id,omitempty"` // EquipAttribute 表 id
+	Name    string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Tier    uint32                 `protobuf:"varint,3,opt,name=tier,proto3" json:"tier,omitempty"`       // 0 基础属性 / 1 蓝 / 2 粉 / 3 黄 / 4 绿(预留)
+	Value   uint64                 `protobuf:"varint,4,opt,name=value,proto3" json:"value,omitempty"`     // 当前值(已按当前表上限夹取)
+	Cap     uint64                 `protobuf:"varint,5,opt,name=cap,proto3" json:"cap,omitempty"`         // 上限;基础属性行为 0,客户端不显示「/上限」
+	Percent bool                   `protobuf:"varint,6,opt,name=percent,proto3" json:"percent,omitempty"` // true = 显示成 N%
+	Seq     uint32                 `protobuf:"varint,7,opt,name=seq,proto3" json:"seq,omitempty"`         // 档内序号;显示顺序 = (tier, seq)
+	// ── 以下两项只在装备的基础属性行(BagItemInfo.base_attrs)上有意义(docs/design/equipment-enhance-inlay.md §3.3)──
+	EnhanceBonus     uint64 `protobuf:"varint,8,opt,name=enhance_bonus,json=enhanceBonus,proto3" json:"enhance_bonus,omitempty"`               // 强化带来的增量,**已含在 value 内**(value − enhance_bonus = 表值);未强化为 0
+	EnhanceNextValue uint64 `protobuf:"varint,9,opt,name=enhance_next_value,json=enhanceNextValue,proto3" json:"enhance_next_value,omitempty"` // 仅该装备带 enhance_next 时:强化到下一级后这一行的 value(预览);否则为 0
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *EquipAttrLineInfo) Reset() {
+	*x = EquipAttrLineInfo{}
+	mi := &file_proto_scene_player_bag_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EquipAttrLineInfo) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EquipAttrLineInfo) ProtoMessage() {}
+
+func (x *EquipAttrLineInfo) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_scene_player_bag_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EquipAttrLineInfo.ProtoReflect.Descriptor instead.
+func (*EquipAttrLineInfo) Descriptor() ([]byte, []int) {
+	return file_proto_scene_player_bag_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *EquipAttrLineInfo) GetAttrId() uint32 {
+	if x != nil {
+		return x.AttrId
+	}
+	return 0
+}
+
+func (x *EquipAttrLineInfo) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *EquipAttrLineInfo) GetTier() uint32 {
+	if x != nil {
+		return x.Tier
+	}
+	return 0
+}
+
+func (x *EquipAttrLineInfo) GetValue() uint64 {
+	if x != nil {
+		return x.Value
+	}
+	return 0
+}
+
+func (x *EquipAttrLineInfo) GetCap() uint64 {
+	if x != nil {
+		return x.Cap
+	}
+	return 0
+}
+
+func (x *EquipAttrLineInfo) GetPercent() bool {
+	if x != nil {
+		return x.Percent
+	}
+	return false
+}
+
+func (x *EquipAttrLineInfo) GetSeq() uint32 {
+	if x != nil {
+		return x.Seq
+	}
+	return 0
+}
+
+func (x *EquipAttrLineInfo) GetEnhanceBonus() uint64 {
+	if x != nil {
+		return x.EnhanceBonus
+	}
+	return 0
+}
+
+func (x *EquipAttrLineInfo) GetEnhanceNextValue() uint64 {
+	if x != nil {
+		return x.EnhanceNextValue
+	}
+	return 0
+}
+
+// 装备栏的一个槽位定义(含空槽),客户端据此画出全部栏位。
+type EquipSlotInfo struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ItemId        uint64                 `protobuf:"varint,1,opt,name=item_id,json=itemId,proto3" json:"item_id,omitempty"`
-	ConfigId      uint32                 `protobuf:"varint,2,opt,name=config_id,json=configId,proto3" json:"config_id,omitempty"`
-	Count         uint32                 `protobuf:"varint,3,opt,name=count,proto3" json:"count,omitempty"`
-	MaxStack      uint32                 `protobuf:"varint,4,opt,name=max_stack,json=maxStack,proto3" json:"max_stack,omitempty"`
-	EquipKind     uint32                 `protobuf:"varint,5,opt,name=equip_kind,json=equipKind,proto3" json:"equip_kind,omitempty"`
-	Name          string                 `protobuf:"bytes,6,opt,name=name,proto3" json:"name,omitempty"` // 当前物品表尚无展示字段，缺配时为空。
-	Description   string                 `protobuf:"bytes,7,opt,name=description,proto3" json:"description,omitempty"`
-	IconKey       string                 `protobuf:"bytes,8,opt,name=icon_key,json=iconKey,proto3" json:"icon_key,omitempty"`
+	Slot          uint32                 `protobuf:"varint,1,opt,name=slot,proto3" json:"slot,omitempty"`
+	EquipKind     uint32                 `protobuf:"varint,2,opt,name=equip_kind,json=equipKind,proto3" json:"equip_kind,omitempty"`
+	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"` // 部位名(武器 / 帽子 …);只有「没配名字却被占着」的槽才会为空
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
+func (x *EquipSlotInfo) Reset() {
+	*x = EquipSlotInfo{}
+	mi := &file_proto_scene_player_bag_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EquipSlotInfo) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EquipSlotInfo) ProtoMessage() {}
+
+func (x *EquipSlotInfo) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_scene_player_bag_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EquipSlotInfo.ProtoReflect.Descriptor instead.
+func (*EquipSlotInfo) Descriptor() ([]byte, []int) {
+	return file_proto_scene_player_bag_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *EquipSlotInfo) GetSlot() uint32 {
+	if x != nil {
+		return x.Slot
+	}
+	return 0
+}
+
+func (x *EquipSlotInfo) GetEquipKind() uint32 {
+	if x != nil {
+		return x.EquipKind
+	}
+	return 0
+}
+
+func (x *EquipSlotInfo) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+// 装备上的一个宝石孔(设计文档 docs/design/equipment-enhance-inlay.md §3.3)。
+// 「占用」与「生效」是两件事:占用只看 gem_config_id(与服务器判「该孔已镶」同口径),
+// 生效看带不带 attr(与属性加成同口径)。
+type EquipGemSocketInfo struct {
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	Socket      uint32                 `protobuf:"varint,1,opt,name=socket,proto3" json:"socket,omitempty"`                                // 孔位号(0 起)
+	GemType     uint32                 `protobuf:"varint,2,opt,name=gem_type,json=gemType,proto3" json:"gem_type,omitempty"`               // 该孔接纳的宝石类型,0 = 任意
+	GemConfigId uint32                 `protobuf:"varint,3,opt,name=gem_config_id,json=gemConfigId,proto3" json:"gem_config_id,omitempty"` // 占着这个孔的宝石 config;0 = 空孔。**「是否占用」只看它**
+	GemName     string                 `protobuf:"bytes,4,opt,name=gem_name,json=gemName,proto3" json:"gem_name,omitempty"`                // 宝石名(空孔为空;宝石的 Item 行查不到时也为空)
+	GemIconKey  string                 `protobuf:"bytes,5,opt,name=gem_icon_key,json=gemIconKey,proto3" json:"gem_icon_key,omitempty"`     // 宝石图标(规则同 gem_name)
+	// 宝石**当前生效**的属性。gem_config_id != 0 却不带 attr = 已镶但当前不生效(仍可取下)。
+	// tier 恒 0、cap 恒 0、seq 恒 0。
+	Attr          *EquipAttrLineInfo `protobuf:"bytes,6,opt,name=attr,proto3" json:"attr,omitempty"`
+	Name          string             `protobuf:"bytes,7,opt,name=name,proto3" json:"name,omitempty"` // 孔位显示名(可为空,客户端空名时显示「孔位 N」)
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EquipGemSocketInfo) Reset() {
+	*x = EquipGemSocketInfo{}
+	mi := &file_proto_scene_player_bag_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EquipGemSocketInfo) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EquipGemSocketInfo) ProtoMessage() {}
+
+func (x *EquipGemSocketInfo) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_scene_player_bag_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EquipGemSocketInfo.ProtoReflect.Descriptor instead.
+func (*EquipGemSocketInfo) Descriptor() ([]byte, []int) {
+	return file_proto_scene_player_bag_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *EquipGemSocketInfo) GetSocket() uint32 {
+	if x != nil {
+		return x.Socket
+	}
+	return 0
+}
+
+func (x *EquipGemSocketInfo) GetGemType() uint32 {
+	if x != nil {
+		return x.GemType
+	}
+	return 0
+}
+
+func (x *EquipGemSocketInfo) GetGemConfigId() uint32 {
+	if x != nil {
+		return x.GemConfigId
+	}
+	return 0
+}
+
+func (x *EquipGemSocketInfo) GetGemName() string {
+	if x != nil {
+		return x.GemName
+	}
+	return ""
+}
+
+func (x *EquipGemSocketInfo) GetGemIconKey() string {
+	if x != nil {
+		return x.GemIconKey
+	}
+	return ""
+}
+
+func (x *EquipGemSocketInfo) GetAttr() *EquipAttrLineInfo {
+	if x != nil {
+		return x.Attr
+	}
+	return nil
+}
+
+func (x *EquipGemSocketInfo) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+// 下一次强化的预览(客户端零配表)。金币 / 材料成败都扣。
+type EquipEnhancePreview struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	NextLevel        uint32                 `protobuf:"varint,1,opt,name=next_level,json=nextLevel,proto3" json:"next_level,omitempty"`       // 强化成功后的等级(= 当前等级 + 1)
+	SuccessRate      uint32                 `protobuf:"varint,2,opt,name=success_rate,json=successRate,proto3" json:"success_rate,omitempty"` // 万分比
+	CostGold         uint64                 `protobuf:"varint,3,opt,name=cost_gold,json=costGold,proto3" json:"cost_gold,omitempty"`
+	MaterialConfigId uint32                 `protobuf:"varint,4,opt,name=material_config_id,json=materialConfigId,proto3" json:"material_config_id,omitempty"` // 0 = 不要材料
+	MaterialName     string                 `protobuf:"bytes,5,opt,name=material_name,json=materialName,proto3" json:"material_name,omitempty"`                // 材料的 Item 行查不到时为空
+	MaterialCount    uint32                 `protobuf:"varint,6,opt,name=material_count,json=materialCount,proto3" json:"material_count,omitempty"`
+	BonusPermyriad   uint32                 `protobuf:"varint,7,opt,name=bonus_permyriad,json=bonusPermyriad,proto3" json:"bonus_permyriad,omitempty"` // 升到 next_level 后基础属性的总加成(万分比)
+	FailLevelLoss    uint32                 `protobuf:"varint,8,opt,name=fail_level_loss,json=failLevelLoss,proto3" json:"fail_level_loss,omitempty"`  // 失败时掉几级,0 = 不掉
+	MaterialIconKey  string                 `protobuf:"bytes,9,opt,name=material_icon_key,json=materialIconKey,proto3" json:"material_icon_key,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *EquipEnhancePreview) Reset() {
+	*x = EquipEnhancePreview{}
+	mi := &file_proto_scene_player_bag_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EquipEnhancePreview) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EquipEnhancePreview) ProtoMessage() {}
+
+func (x *EquipEnhancePreview) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_scene_player_bag_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EquipEnhancePreview.ProtoReflect.Descriptor instead.
+func (*EquipEnhancePreview) Descriptor() ([]byte, []int) {
+	return file_proto_scene_player_bag_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *EquipEnhancePreview) GetNextLevel() uint32 {
+	if x != nil {
+		return x.NextLevel
+	}
+	return 0
+}
+
+func (x *EquipEnhancePreview) GetSuccessRate() uint32 {
+	if x != nil {
+		return x.SuccessRate
+	}
+	return 0
+}
+
+func (x *EquipEnhancePreview) GetCostGold() uint64 {
+	if x != nil {
+		return x.CostGold
+	}
+	return 0
+}
+
+func (x *EquipEnhancePreview) GetMaterialConfigId() uint32 {
+	if x != nil {
+		return x.MaterialConfigId
+	}
+	return 0
+}
+
+func (x *EquipEnhancePreview) GetMaterialName() string {
+	if x != nil {
+		return x.MaterialName
+	}
+	return ""
+}
+
+func (x *EquipEnhancePreview) GetMaterialCount() uint32 {
+	if x != nil {
+		return x.MaterialCount
+	}
+	return 0
+}
+
+func (x *EquipEnhancePreview) GetBonusPermyriad() uint32 {
+	if x != nil {
+		return x.BonusPermyriad
+	}
+	return 0
+}
+
+func (x *EquipEnhancePreview) GetFailLevelLoss() uint32 {
+	if x != nil {
+		return x.FailLevelLoss
+	}
+	return 0
+}
+
+func (x *EquipEnhancePreview) GetMaterialIconKey() string {
+	if x != nil {
+		return x.MaterialIconKey
+	}
+	return ""
+}
+
+// 实例与布局分离；显示信息不写入玩家持久化记录。
+type BagItemInfo struct {
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	ItemId      uint64                 `protobuf:"varint,1,opt,name=item_id,json=itemId,proto3" json:"item_id,omitempty"`
+	ConfigId    uint32                 `protobuf:"varint,2,opt,name=config_id,json=configId,proto3" json:"config_id,omitempty"`
+	Count       uint32                 `protobuf:"varint,3,opt,name=count,proto3" json:"count,omitempty"`
+	MaxStack    uint32                 `protobuf:"varint,4,opt,name=max_stack,json=maxStack,proto3" json:"max_stack,omitempty"`
+	EquipKind   uint32                 `protobuf:"varint,5,opt,name=equip_kind,json=equipKind,proto3" json:"equip_kind,omitempty"`
+	Name        string                 `protobuf:"bytes,6,opt,name=name,proto3" json:"name,omitempty"` // 来自物品表;缺配时为空,客户端不许编造。
+	Description string                 `protobuf:"bytes,7,opt,name=description,proto3" json:"description,omitempty"`
+	IconKey     string                 `protobuf:"bytes,8,opt,name=icon_key,json=iconKey,proto3" json:"icon_key,omitempty"`
+	// ── 以下仅装备(equip_kind != 0)有意义 ──
+	EquipLevel     uint32               `protobuf:"varint,9,opt,name=equip_level,json=equipLevel,proto3" json:"equip_level,omitempty"`               // 佩戴等级
+	EquipClass     uint32               `protobuf:"varint,10,opt,name=equip_class,json=equipClass,proto3" json:"equip_class,omitempty"`              // 职业要求,0 = 不限
+	EquipClassName string               `protobuf:"bytes,11,opt,name=equip_class_name,json=equipClassName,proto3" json:"equip_class_name,omitempty"` // 职业名;职业表无名称列时为空
+	BaseAttrs      []*EquipAttrLineInfo `protobuf:"bytes,12,rep,name=base_attrs,json=baseAttrs,proto3" json:"base_attrs,omitempty"`                  // 基础属性,seq 升序
+	Affixes        []*EquipAttrLineInfo `protobuf:"bytes,13,rep,name=affixes,proto3" json:"affixes,omitempty"`                                       // 随机属性,已按 (tier, seq) 排好
+	// ── 强化与镶嵌(docs/design/equipment-enhance-inlay.md §3.3)。14–17、20 仅装备;18、19 仅宝石物品 ──
+	EnhanceLevel          uint32                `protobuf:"varint,14,opt,name=enhance_level,json=enhanceLevel,proto3" json:"enhance_level,omitempty"`                              // 装备:当前强化等级(已按表上限夹取)
+	EnhanceMaxLevel       uint32                `protobuf:"varint,15,opt,name=enhance_max_level,json=enhanceMaxLevel,proto3" json:"enhance_max_level,omitempty"`                   // 装备:强化上限;0 = 强化未开放
+	EnhanceNext           *EquipEnhancePreview  `protobuf:"bytes,16,opt,name=enhance_next,json=enhanceNext,proto3" json:"enhance_next,omitempty"`                                  // 装备:下一级预览;已满级 / 未开放 / 实例未初始化 / 下一级的行不可用时不带
+	GemSockets            []*EquipGemSocketInfo `protobuf:"bytes,17,rep,name=gem_sockets,json=gemSockets,proto3" json:"gem_sockets,omitempty"`                                     // 装备:该部位的全部孔位(含空孔),按 socket 升序;实例未初始化时不带
+	GemType               uint32                `protobuf:"varint,18,opt,name=gem_type,json=gemType,proto3" json:"gem_type,omitempty"`                                             // 宝石物品:宝石类型(≥ 1);不是宝石 = 0
+	GemAttr               *EquipAttrLineInfo    `protobuf:"bytes,19,opt,name=gem_attr,json=gemAttr,proto3" json:"gem_attr,omitempty"`                                              // 宝石物品:这颗宝石提供的属性(不是宝石、或属性行不可用时不带)。tier / cap / seq 恒 0
+	EnhanceBonusPermyriad uint32                `protobuf:"varint,20,opt,name=enhance_bonus_permyriad,json=enhanceBonusPermyriad,proto3" json:"enhance_bonus_permyriad,omitempty"` // 装备:当前有效等级的基础属性总加成(万分比);0 级为 0,满级也写
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
+}
+
 func (x *BagItemInfo) Reset() {
 	*x = BagItemInfo{}
-	mi := &file_proto_scene_player_bag_proto_msgTypes[0]
+	mi := &file_proto_scene_player_bag_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -53,7 +445,7 @@ func (x *BagItemInfo) String() string {
 func (*BagItemInfo) ProtoMessage() {}
 
 func (x *BagItemInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_player_bag_proto_msgTypes[0]
+	mi := &file_proto_scene_player_bag_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -66,7 +458,7 @@ func (x *BagItemInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BagItemInfo.ProtoReflect.Descriptor instead.
 func (*BagItemInfo) Descriptor() ([]byte, []int) {
-	return file_proto_scene_player_bag_proto_rawDescGZIP(), []int{0}
+	return file_proto_scene_player_bag_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *BagItemInfo) GetItemId() uint64 {
@@ -125,6 +517,90 @@ func (x *BagItemInfo) GetIconKey() string {
 	return ""
 }
 
+func (x *BagItemInfo) GetEquipLevel() uint32 {
+	if x != nil {
+		return x.EquipLevel
+	}
+	return 0
+}
+
+func (x *BagItemInfo) GetEquipClass() uint32 {
+	if x != nil {
+		return x.EquipClass
+	}
+	return 0
+}
+
+func (x *BagItemInfo) GetEquipClassName() string {
+	if x != nil {
+		return x.EquipClassName
+	}
+	return ""
+}
+
+func (x *BagItemInfo) GetBaseAttrs() []*EquipAttrLineInfo {
+	if x != nil {
+		return x.BaseAttrs
+	}
+	return nil
+}
+
+func (x *BagItemInfo) GetAffixes() []*EquipAttrLineInfo {
+	if x != nil {
+		return x.Affixes
+	}
+	return nil
+}
+
+func (x *BagItemInfo) GetEnhanceLevel() uint32 {
+	if x != nil {
+		return x.EnhanceLevel
+	}
+	return 0
+}
+
+func (x *BagItemInfo) GetEnhanceMaxLevel() uint32 {
+	if x != nil {
+		return x.EnhanceMaxLevel
+	}
+	return 0
+}
+
+func (x *BagItemInfo) GetEnhanceNext() *EquipEnhancePreview {
+	if x != nil {
+		return x.EnhanceNext
+	}
+	return nil
+}
+
+func (x *BagItemInfo) GetGemSockets() []*EquipGemSocketInfo {
+	if x != nil {
+		return x.GemSockets
+	}
+	return nil
+}
+
+func (x *BagItemInfo) GetGemType() uint32 {
+	if x != nil {
+		return x.GemType
+	}
+	return 0
+}
+
+func (x *BagItemInfo) GetGemAttr() *EquipAttrLineInfo {
+	if x != nil {
+		return x.GemAttr
+	}
+	return nil
+}
+
+func (x *BagItemInfo) GetEnhanceBonusPermyriad() uint32 {
+	if x != nil {
+		return x.EnhanceBonusPermyriad
+	}
+	return 0
+}
+
 type BagSlotInfo struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Slot          uint32                 `protobuf:"varint,1,opt,name=slot,proto3" json:"slot,omitempty"`
@@ -137,7 +613,7 @@ type BagSlotInfo struct {
 
 func (x *BagSlotInfo) Reset() {
 	*x = BagSlotInfo{}
-	mi := &file_proto_scene_player_bag_proto_msgTypes[1]
+	mi := &file_proto_scene_player_bag_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -149,7 +625,7 @@ func (x *BagSlotInfo) String() string {
 func (*BagSlotInfo) ProtoMessage() {}
 
 func (x *BagSlotInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_player_bag_proto_msgTypes[1]
+	mi := &file_proto_scene_player_bag_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -162,7 +638,7 @@ func (x *BagSlotInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BagSlotInfo.ProtoReflect.Descriptor instead.
 func (*BagSlotInfo) Descriptor() ([]byte, []int) {
-	return file_proto_scene_player_bag_proto_rawDescGZIP(), []int{1}
+	return file_proto_scene_player_bag_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *BagSlotInfo) GetSlot() uint32 {
@@ -194,18 +670,21 @@ func (x *BagSlotInfo) GetHeight() uint32 {
 }
 
 type BagLayoutInfo struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	BagType       uint32                 `protobuf:"varint,1,opt,name=bag_type,json=bagType,proto3" json:"bag_type,omitempty"` // 0 人物背包 / 1 仓库 / 2 装备栏 / 3 临时格。
-	Capacity      uint32                 `protobuf:"varint,2,opt,name=capacity,proto3" json:"capacity,omitempty"`
-	Slots         []*BagSlotInfo         `protobuf:"bytes,3,rep,name=slots,proto3" json:"slots,omitempty"` // 顺序无语义，位置只认 slot。
-	CanSort       bool                   `protobuf:"varint,4,opt,name=can_sort,json=canSort,proto3" json:"can_sort,omitempty"`
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	BagType  uint32                 `protobuf:"varint,1,opt,name=bag_type,json=bagType,proto3" json:"bag_type,omitempty"` // 0 人物背包 / 1 仓库 / 2 装备栏 / 3 临时格。
+	Capacity uint32                 `protobuf:"varint,2,opt,name=capacity,proto3" json:"capacity,omitempty"`
+	Slots    []*BagSlotInfo         `protobuf:"bytes,3,rep,name=slots,proto3" json:"slots,omitempty"` // 顺序无语义，位置只认 slot。
+	CanSort  bool                   `protobuf:"varint,4,opt,name=can_sort,json=canSort,proto3" json:"can_sort,omitempty"`
+	// 仅装备栏(bag_type = 2):槽位定义,slot 升序。服务器只下发容量内的槽;
+	// 没配部位名的槽(不对玩家展示)只在被占用时才下发。
+	EquipSlots    []*EquipSlotInfo `protobuf:"bytes,5,rep,name=equip_slots,json=equipSlots,proto3" json:"equip_slots,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *BagLayoutInfo) Reset() {
 	*x = BagLayoutInfo{}
-	mi := &file_proto_scene_player_bag_proto_msgTypes[2]
+	mi := &file_proto_scene_player_bag_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -217,7 +696,7 @@ func (x *BagLayoutInfo) String() string {
 func (*BagLayoutInfo) ProtoMessage() {}
 
 func (x *BagLayoutInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_player_bag_proto_msgTypes[2]
+	mi := &file_proto_scene_player_bag_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -230,7 +709,7 @@ func (x *BagLayoutInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BagLayoutInfo.ProtoReflect.Descriptor instead.
 func (*BagLayoutInfo) Descriptor() ([]byte, []int) {
-	return file_proto_scene_player_bag_proto_rawDescGZIP(), []int{2}
+	return file_proto_scene_player_bag_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *BagLayoutInfo) GetBagType() uint32 {
@@ -261,6 +740,13 @@ func (x *BagLayoutInfo) GetCanSort() bool {
 	return false
 }
 
+func (x *BagLayoutInfo) GetEquipSlots() []*EquipSlotInfo {
+	if x != nil {
+		return x.EquipSlots
+	}
+	return nil
+}
+
 type BagInfo struct {
 	state         protoimpl.MessageState  `protogen:"open.v1"`
 	Items         []*BagItemInfo          `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"` // 顺序无语义，布局通过 item_id 关联。
@@ -272,7 +758,7 @@ type BagInfo struct {
 
 func (x *BagInfo) Reset() {
 	*x = BagInfo{}
-	mi := &file_proto_scene_player_bag_proto_msgTypes[3]
+	mi := &file_proto_scene_player_bag_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -284,7 +770,7 @@ func (x *BagInfo) String() string {
 func (*BagInfo) ProtoMessage() {}
 
 func (x *BagInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_player_bag_proto_msgTypes[3]
+	mi := &file_proto_scene_player_bag_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -297,7 +783,7 @@ func (x *BagInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BagInfo.ProtoReflect.Descriptor instead.
 func (*BagInfo) Descriptor() ([]byte, []int) {
-	return file_proto_scene_player_bag_proto_rawDescGZIP(), []int{3}
+	return file_proto_scene_player_bag_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *BagInfo) GetItems() []*BagItemInfo {
@@ -330,7 +816,7 @@ type GetBagRequest struct {
 
 func (x *GetBagRequest) Reset() {
 	*x = GetBagRequest{}
-	mi := &file_proto_scene_player_bag_proto_msgTypes[4]
+	mi := &file_proto_scene_player_bag_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -342,7 +828,7 @@ func (x *GetBagRequest) String() string {
 func (*GetBagRequest) ProtoMessage() {}
 
 func (x *GetBagRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_player_bag_proto_msgTypes[4]
+	mi := &file_proto_scene_player_bag_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -355,7 +841,7 @@ func (x *GetBagRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetBagRequest.ProtoReflect.Descriptor instead.
 func (*GetBagRequest) Descriptor() ([]byte, []int) {
-	return file_proto_scene_player_bag_proto_rawDescGZIP(), []int{4}
+	return file_proto_scene_player_bag_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *GetBagRequest) GetBagType() uint32 {
@@ -375,7 +861,7 @@ type GetBagResponse struct {
 
 func (x *GetBagResponse) Reset() {
 	*x = GetBagResponse{}
-	mi := &file_proto_scene_player_bag_proto_msgTypes[5]
+	mi := &file_proto_scene_player_bag_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -387,7 +873,7 @@ func (x *GetBagResponse) String() string {
 func (*GetBagResponse) ProtoMessage() {}
 
 func (x *GetBagResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_player_bag_proto_msgTypes[5]
+	mi := &file_proto_scene_player_bag_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -400,7 +886,7 @@ func (x *GetBagResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetBagResponse.ProtoReflect.Descriptor instead.
 func (*GetBagResponse) Descriptor() ([]byte, []int) {
-	return file_proto_scene_player_bag_proto_rawDescGZIP(), []int{5}
+	return file_proto_scene_player_bag_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *GetBagResponse) GetErrorMessage() *base.TipInfoMessage {
@@ -426,7 +912,7 @@ type SortBagRequest struct {
 
 func (x *SortBagRequest) Reset() {
 	*x = SortBagRequest{}
-	mi := &file_proto_scene_player_bag_proto_msgTypes[6]
+	mi := &file_proto_scene_player_bag_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -438,7 +924,7 @@ func (x *SortBagRequest) String() string {
 func (*SortBagRequest) ProtoMessage() {}
 
 func (x *SortBagRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_player_bag_proto_msgTypes[6]
+	mi := &file_proto_scene_player_bag_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -451,7 +937,7 @@ func (x *SortBagRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SortBagRequest.ProtoReflect.Descriptor instead.
 func (*SortBagRequest) Descriptor() ([]byte, []int) {
-	return file_proto_scene_player_bag_proto_rawDescGZIP(), []int{6}
+	return file_proto_scene_player_bag_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *SortBagRequest) GetBagType() uint32 {
@@ -472,7 +958,7 @@ type SortBagResponse struct {
 
 func (x *SortBagResponse) Reset() {
 	*x = SortBagResponse{}
-	mi := &file_proto_scene_player_bag_proto_msgTypes[7]
+	mi := &file_proto_scene_player_bag_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -484,7 +970,7 @@ func (x *SortBagResponse) String() string {
 func (*SortBagResponse) ProtoMessage() {}
 
 func (x *SortBagResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_scene_player_bag_proto_msgTypes[7]
+	mi := &file_proto_scene_player_bag_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -497,7 +983,7 @@ func (x *SortBagResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SortBagResponse.ProtoReflect.Descriptor instead.
 func (*SortBagResponse) Descriptor() ([]byte, []int) {
-	return file_proto_scene_player_bag_proto_rawDescGZIP(), []int{7}
+	return file_proto_scene_player_bag_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *SortBagResponse) GetErrorMessage() *base.TipInfoMessage {
@@ -521,11 +1007,721 @@ func (x *SortBagResponse) GetChanged() bool {
 	return false
 }
 
+// 穿上:物品必须在人物背包里。取接受该部位的槽位里第一个空槽;都占着就替换
+// 槽号最小的那个,旧装备回背包。成功回两个包的全量,客户端整体覆盖。
+type EquipItemRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ItemId        uint64                 `protobuf:"varint,1,opt,name=item_id,json=itemId,proto3" json:"item_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EquipItemRequest) Reset() {
+	*x = EquipItemRequest{}
+	mi := &file_proto_scene_player_bag_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EquipItemRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EquipItemRequest) ProtoMessage() {}
+
+func (x *EquipItemRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_scene_player_bag_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EquipItemRequest.ProtoReflect.Descriptor instead.
+func (*EquipItemRequest) Descriptor() ([]byte, []int) {
+	return file_proto_scene_player_bag_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *EquipItemRequest) GetItemId() uint64 {
+	if x != nil {
+		return x.ItemId
+	}
+	return 0
+}
+
+type EquipItemResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ErrorMessage  *base.TipInfoMessage   `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	Bag           *BagInfo               `protobuf:"bytes,2,opt,name=bag,proto3" json:"bag,omitempty"`             // 人物背包
+	Equipment     *BagInfo               `protobuf:"bytes,3,opt,name=equipment,proto3" json:"equipment,omitempty"` // 装备栏
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EquipItemResponse) Reset() {
+	*x = EquipItemResponse{}
+	mi := &file_proto_scene_player_bag_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EquipItemResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EquipItemResponse) ProtoMessage() {}
+
+func (x *EquipItemResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_scene_player_bag_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EquipItemResponse.ProtoReflect.Descriptor instead.
+func (*EquipItemResponse) Descriptor() ([]byte, []int) {
+	return file_proto_scene_player_bag_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *EquipItemResponse) GetErrorMessage() *base.TipInfoMessage {
+	if x != nil {
+		return x.ErrorMessage
+	}
+	return nil
+}
+
+func (x *EquipItemResponse) GetBag() *BagInfo {
+	if x != nil {
+		return x.Bag
+	}
+	return nil
+}
+
+func (x *EquipItemResponse) GetEquipment() *BagInfo {
+	if x != nil {
+		return x.Equipment
+	}
+	return nil
+}
+
+// 卸下:物品必须在装备栏里,回到人物背包(背包满则拒绝)。
+type UnequipItemRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ItemId        uint64                 `protobuf:"varint,1,opt,name=item_id,json=itemId,proto3" json:"item_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UnequipItemRequest) Reset() {
+	*x = UnequipItemRequest{}
+	mi := &file_proto_scene_player_bag_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UnequipItemRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UnequipItemRequest) ProtoMessage() {}
+
+func (x *UnequipItemRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_scene_player_bag_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UnequipItemRequest.ProtoReflect.Descriptor instead.
+func (*UnequipItemRequest) Descriptor() ([]byte, []int) {
+	return file_proto_scene_player_bag_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *UnequipItemRequest) GetItemId() uint64 {
+	if x != nil {
+		return x.ItemId
+	}
+	return 0
+}
+
+type UnequipItemResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ErrorMessage  *base.TipInfoMessage   `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	Bag           *BagInfo               `protobuf:"bytes,2,opt,name=bag,proto3" json:"bag,omitempty"`
+	Equipment     *BagInfo               `protobuf:"bytes,3,opt,name=equipment,proto3" json:"equipment,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UnequipItemResponse) Reset() {
+	*x = UnequipItemResponse{}
+	mi := &file_proto_scene_player_bag_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UnequipItemResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UnequipItemResponse) ProtoMessage() {}
+
+func (x *UnequipItemResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_scene_player_bag_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UnequipItemResponse.ProtoReflect.Descriptor instead.
+func (*UnequipItemResponse) Descriptor() ([]byte, []int) {
+	return file_proto_scene_player_bag_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *UnequipItemResponse) GetErrorMessage() *base.TipInfoMessage {
+	if x != nil {
+		return x.ErrorMessage
+	}
+	return nil
+}
+
+func (x *UnequipItemResponse) GetBag() *BagInfo {
+	if x != nil {
+		return x.Bag
+	}
+	return nil
+}
+
+func (x *UnequipItemResponse) GetEquipment() *BagInfo {
+	if x != nil {
+		return x.Equipment
+	}
+	return nil
+}
+
+// 开发 / 测试用发物(prod 关闭,不是鉴权,见 cpp/nodes/gate/SECURITY.md)。
+type GmGrantItemRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ConfigId      uint32                 `protobuf:"varint,1,opt,name=config_id,json=configId,proto3" json:"config_id,omitempty"`
+	Count         uint32                 `protobuf:"varint,2,opt,name=count,proto3" json:"count,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GmGrantItemRequest) Reset() {
+	*x = GmGrantItemRequest{}
+	mi := &file_proto_scene_player_bag_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GmGrantItemRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GmGrantItemRequest) ProtoMessage() {}
+
+func (x *GmGrantItemRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_scene_player_bag_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GmGrantItemRequest.ProtoReflect.Descriptor instead.
+func (*GmGrantItemRequest) Descriptor() ([]byte, []int) {
+	return file_proto_scene_player_bag_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *GmGrantItemRequest) GetConfigId() uint32 {
+	if x != nil {
+		return x.ConfigId
+	}
+	return 0
+}
+
+func (x *GmGrantItemRequest) GetCount() uint32 {
+	if x != nil {
+		return x.Count
+	}
+	return 0
+}
+
+type GmGrantItemResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ErrorMessage  *base.TipInfoMessage   `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	Bag           *BagInfo               `protobuf:"bytes,2,opt,name=bag,proto3" json:"bag,omitempty"` // 人物背包
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GmGrantItemResponse) Reset() {
+	*x = GmGrantItemResponse{}
+	mi := &file_proto_scene_player_bag_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GmGrantItemResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GmGrantItemResponse) ProtoMessage() {}
+
+func (x *GmGrantItemResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_scene_player_bag_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GmGrantItemResponse.ProtoReflect.Descriptor instead.
+func (*GmGrantItemResponse) Descriptor() ([]byte, []int) {
+	return file_proto_scene_player_bag_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *GmGrantItemResponse) GetErrorMessage() *base.TipInfoMessage {
+	if x != nil {
+		return x.ErrorMessage
+	}
+	return nil
+}
+
+func (x *GmGrantItemResponse) GetBag() *BagInfo {
+	if x != nil {
+		return x.Bag
+	}
+	return nil
+}
+
+// 强化:装备可以在人物背包里,也可以穿在身上(仓库 / 临时格里的不行)。消耗金币与材料,**成败都扣**。
+// 只要请求被受理(error_message 为空)就回两个包的全量,客户端整体覆盖 —— 掷骰没过的那一次也一样。
+type EnhanceEquipRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ItemId        uint64                 `protobuf:"varint,1,opt,name=item_id,json=itemId,proto3" json:"item_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EnhanceEquipRequest) Reset() {
+	*x = EnhanceEquipRequest{}
+	mi := &file_proto_scene_player_bag_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EnhanceEquipRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EnhanceEquipRequest) ProtoMessage() {}
+
+func (x *EnhanceEquipRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_scene_player_bag_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EnhanceEquipRequest.ProtoReflect.Descriptor instead.
+func (*EnhanceEquipRequest) Descriptor() ([]byte, []int) {
+	return file_proto_scene_player_bag_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *EnhanceEquipRequest) GetItemId() uint64 {
+	if x != nil {
+		return x.ItemId
+	}
+	return 0
+}
+
+type EnhanceEquipResponse struct {
+	state        protoimpl.MessageState `protogen:"open.v1"`
+	ErrorMessage *base.TipInfoMessage   `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	Bag          *BagInfo               `protobuf:"bytes,2,opt,name=bag,proto3" json:"bag,omitempty"`             // 人物背包全量(金币、材料变化)
+	Equipment    *BagInfo               `protobuf:"bytes,3,opt,name=equipment,proto3" json:"equipment,omitempty"` // 装备栏全量
+	// 本次强化是否成功。**失败不是错误**:掷骰没过时 error_message 为空、两份快照照常带回
+	// (金币与材料已扣,客户端有 tip 就会保留旧快照,所以不能走 tip)。
+	Success       bool   `protobuf:"varint,4,opt,name=success,proto3" json:"success,omitempty"`
+	EnhanceLevel  uint32 `protobuf:"varint,5,opt,name=enhance_level,json=enhanceLevel,proto3" json:"enhance_level,omitempty"` // 操作后的强化等级
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EnhanceEquipResponse) Reset() {
+	*x = EnhanceEquipResponse{}
+	mi := &file_proto_scene_player_bag_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EnhanceEquipResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EnhanceEquipResponse) ProtoMessage() {}
+
+func (x *EnhanceEquipResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_scene_player_bag_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EnhanceEquipResponse.ProtoReflect.Descriptor instead.
+func (*EnhanceEquipResponse) Descriptor() ([]byte, []int) {
+	return file_proto_scene_player_bag_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *EnhanceEquipResponse) GetErrorMessage() *base.TipInfoMessage {
+	if x != nil {
+		return x.ErrorMessage
+	}
+	return nil
+}
+
+func (x *EnhanceEquipResponse) GetBag() *BagInfo {
+	if x != nil {
+		return x.Bag
+	}
+	return nil
+}
+
+func (x *EnhanceEquipResponse) GetEquipment() *BagInfo {
+	if x != nil {
+		return x.Equipment
+	}
+	return nil
+}
+
+func (x *EnhanceEquipResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *EnhanceEquipResponse) GetEnhanceLevel() uint32 {
+	if x != nil {
+		return x.EnhanceLevel
+	}
+	return 0
+}
+
+// 镶嵌:把人物背包里的一颗宝石嵌进装备的指定孔位。按宝石的 config 消耗 1 颗(不指定哪一堆);
+// 孔里已有宝石要先取下。
+type InlayGemRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ItemId        uint64                 `protobuf:"varint,1,opt,name=item_id,json=itemId,proto3" json:"item_id,omitempty"`                  // 装备
+	Socket        uint32                 `protobuf:"varint,2,opt,name=socket,proto3" json:"socket,omitempty"`                                // 孔位号(0 起,0 是合法值)
+	GemConfigId   uint32                 `protobuf:"varint,3,opt,name=gem_config_id,json=gemConfigId,proto3" json:"gem_config_id,omitempty"` // 宝石的 Item 表 id
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *InlayGemRequest) Reset() {
+	*x = InlayGemRequest{}
+	mi := &file_proto_scene_player_bag_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *InlayGemRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*InlayGemRequest) ProtoMessage() {}
+
+func (x *InlayGemRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_scene_player_bag_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use InlayGemRequest.ProtoReflect.Descriptor instead.
+func (*InlayGemRequest) Descriptor() ([]byte, []int) {
+	return file_proto_scene_player_bag_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *InlayGemRequest) GetItemId() uint64 {
+	if x != nil {
+		return x.ItemId
+	}
+	return 0
+}
+
+func (x *InlayGemRequest) GetSocket() uint32 {
+	if x != nil {
+		return x.Socket
+	}
+	return 0
+}
+
+func (x *InlayGemRequest) GetGemConfigId() uint32 {
+	if x != nil {
+		return x.GemConfigId
+	}
+	return 0
+}
+
+type InlayGemResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ErrorMessage  *base.TipInfoMessage   `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	Bag           *BagInfo               `protobuf:"bytes,2,opt,name=bag,proto3" json:"bag,omitempty"`             // 人物背包
+	Equipment     *BagInfo               `protobuf:"bytes,3,opt,name=equipment,proto3" json:"equipment,omitempty"` // 装备栏
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *InlayGemResponse) Reset() {
+	*x = InlayGemResponse{}
+	mi := &file_proto_scene_player_bag_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *InlayGemResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*InlayGemResponse) ProtoMessage() {}
+
+func (x *InlayGemResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_scene_player_bag_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use InlayGemResponse.ProtoReflect.Descriptor instead.
+func (*InlayGemResponse) Descriptor() ([]byte, []int) {
+	return file_proto_scene_player_bag_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *InlayGemResponse) GetErrorMessage() *base.TipInfoMessage {
+	if x != nil {
+		return x.ErrorMessage
+	}
+	return nil
+}
+
+func (x *InlayGemResponse) GetBag() *BagInfo {
+	if x != nil {
+		return x.Bag
+	}
+	return nil
+}
+
+func (x *InlayGemResponse) GetEquipment() *BagInfo {
+	if x != nil {
+		return x.Equipment
+	}
+	return nil
+}
+
+// 取下:孔里的宝石原样退回 1 颗到人物背包(背包放不下则拒绝),免费。
+type RemoveGemRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ItemId        uint64                 `protobuf:"varint,1,opt,name=item_id,json=itemId,proto3" json:"item_id,omitempty"` // 装备
+	Socket        uint32                 `protobuf:"varint,2,opt,name=socket,proto3" json:"socket,omitempty"`               // 孔位号
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RemoveGemRequest) Reset() {
+	*x = RemoveGemRequest{}
+	mi := &file_proto_scene_player_bag_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RemoveGemRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RemoveGemRequest) ProtoMessage() {}
+
+func (x *RemoveGemRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_scene_player_bag_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RemoveGemRequest.ProtoReflect.Descriptor instead.
+func (*RemoveGemRequest) Descriptor() ([]byte, []int) {
+	return file_proto_scene_player_bag_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *RemoveGemRequest) GetItemId() uint64 {
+	if x != nil {
+		return x.ItemId
+	}
+	return 0
+}
+
+func (x *RemoveGemRequest) GetSocket() uint32 {
+	if x != nil {
+		return x.Socket
+	}
+	return 0
+}
+
+type RemoveGemResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ErrorMessage  *base.TipInfoMessage   `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	Bag           *BagInfo               `protobuf:"bytes,2,opt,name=bag,proto3" json:"bag,omitempty"`             // 人物背包
+	Equipment     *BagInfo               `protobuf:"bytes,3,opt,name=equipment,proto3" json:"equipment,omitempty"` // 装备栏
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RemoveGemResponse) Reset() {
+	*x = RemoveGemResponse{}
+	mi := &file_proto_scene_player_bag_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RemoveGemResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RemoveGemResponse) ProtoMessage() {}
+
+func (x *RemoveGemResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_scene_player_bag_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RemoveGemResponse.ProtoReflect.Descriptor instead.
+func (*RemoveGemResponse) Descriptor() ([]byte, []int) {
+	return file_proto_scene_player_bag_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *RemoveGemResponse) GetErrorMessage() *base.TipInfoMessage {
+	if x != nil {
+		return x.ErrorMessage
+	}
+	return nil
+}
+
+func (x *RemoveGemResponse) GetBag() *BagInfo {
+	if x != nil {
+		return x.Bag
+	}
+	return nil
+}
+
+func (x *RemoveGemResponse) GetEquipment() *BagInfo {
+	if x != nil {
+		return x.Equipment
+	}
+	return nil
+}
+
 var File_proto_scene_player_bag_proto protoreflect.FileDescriptor
 
 const file_proto_scene_player_bag_proto_rawDesc = "" +
 	"\n" +
-	"\x1cproto/scene/player_bag.proto\x1a\x1bproto/db/proto_option.proto\x1a\x1bproto/common/base/tip.proto\x1a*proto/common/component/currency_comp.proto\"\xe6\x01\n" +
+	"\x1cproto/scene/player_bag.proto\x1a\x1bproto/db/proto_option.proto\x1a\x1bproto/common/base/tip.proto\x1a*proto/common/component/currency_comp.proto\"\xfb\x01\n" +
+	"\x11EquipAttrLineInfo\x12\x17\n" +
+	"\aattr_id\x18\x01 \x01(\rR\x06attrId\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
+	"\x04tier\x18\x03 \x01(\rR\x04tier\x12\x14\n" +
+	"\x05value\x18\x04 \x01(\x04R\x05value\x12\x10\n" +
+	"\x03cap\x18\x05 \x01(\x04R\x03cap\x12\x18\n" +
+	"\apercent\x18\x06 \x01(\bR\apercent\x12\x10\n" +
+	"\x03seq\x18\a \x01(\rR\x03seq\x12#\n" +
+	"\renhance_bonus\x18\b \x01(\x04R\fenhanceBonus\x12,\n" +
+	"\x12enhance_next_value\x18\t \x01(\x04R\x10enhanceNextValue\"V\n" +
+	"\rEquipSlotInfo\x12\x12\n" +
+	"\x04slot\x18\x01 \x01(\rR\x04slot\x12\x1d\n" +
+	"\n" +
+	"equip_kind\x18\x02 \x01(\rR\tequipKind\x12\x12\n" +
+	"\x04name\x18\x03 \x01(\tR\x04name\"\xe4\x01\n" +
+	"\x12EquipGemSocketInfo\x12\x16\n" +
+	"\x06socket\x18\x01 \x01(\rR\x06socket\x12\x19\n" +
+	"\bgem_type\x18\x02 \x01(\rR\agemType\x12\"\n" +
+	"\rgem_config_id\x18\x03 \x01(\rR\vgemConfigId\x12\x19\n" +
+	"\bgem_name\x18\x04 \x01(\tR\agemName\x12 \n" +
+	"\fgem_icon_key\x18\x05 \x01(\tR\n" +
+	"gemIconKey\x12&\n" +
+	"\x04attr\x18\x06 \x01(\v2\x12.EquipAttrLineInfoR\x04attr\x12\x12\n" +
+	"\x04name\x18\a \x01(\tR\x04name\"\xeb\x02\n" +
+	"\x13EquipEnhancePreview\x12\x1d\n" +
+	"\n" +
+	"next_level\x18\x01 \x01(\rR\tnextLevel\x12!\n" +
+	"\fsuccess_rate\x18\x02 \x01(\rR\vsuccessRate\x12\x1b\n" +
+	"\tcost_gold\x18\x03 \x01(\x04R\bcostGold\x12,\n" +
+	"\x12material_config_id\x18\x04 \x01(\rR\x10materialConfigId\x12#\n" +
+	"\rmaterial_name\x18\x05 \x01(\tR\fmaterialName\x12%\n" +
+	"\x0ematerial_count\x18\x06 \x01(\rR\rmaterialCount\x12'\n" +
+	"\x0fbonus_permyriad\x18\a \x01(\rR\x0ebonusPermyriad\x12&\n" +
+	"\x0ffail_level_loss\x18\b \x01(\rR\rfailLevelLoss\x12*\n" +
+	"\x11material_icon_key\x18\t \x01(\tR\x0fmaterialIconKey\"\xf5\x05\n" +
 	"\vBagItemInfo\x12\x17\n" +
 	"\aitem_id\x18\x01 \x01(\x04R\x06itemId\x12\x1b\n" +
 	"\tconfig_id\x18\x02 \x01(\rR\bconfigId\x12\x14\n" +
@@ -535,17 +1731,36 @@ const file_proto_scene_player_bag_proto_rawDesc = "" +
 	"equip_kind\x18\x05 \x01(\rR\tequipKind\x12\x12\n" +
 	"\x04name\x18\x06 \x01(\tR\x04name\x12 \n" +
 	"\vdescription\x18\a \x01(\tR\vdescription\x12\x19\n" +
-	"\bicon_key\x18\b \x01(\tR\aiconKey\"h\n" +
+	"\bicon_key\x18\b \x01(\tR\aiconKey\x12\x1f\n" +
+	"\vequip_level\x18\t \x01(\rR\n" +
+	"equipLevel\x12\x1f\n" +
+	"\vequip_class\x18\n" +
+	" \x01(\rR\n" +
+	"equipClass\x12(\n" +
+	"\x10equip_class_name\x18\v \x01(\tR\x0eequipClassName\x121\n" +
+	"\n" +
+	"base_attrs\x18\f \x03(\v2\x12.EquipAttrLineInfoR\tbaseAttrs\x12,\n" +
+	"\aaffixes\x18\r \x03(\v2\x12.EquipAttrLineInfoR\aaffixes\x12#\n" +
+	"\renhance_level\x18\x0e \x01(\rR\fenhanceLevel\x12*\n" +
+	"\x11enhance_max_level\x18\x0f \x01(\rR\x0fenhanceMaxLevel\x127\n" +
+	"\fenhance_next\x18\x10 \x01(\v2\x14.EquipEnhancePreviewR\venhanceNext\x124\n" +
+	"\vgem_sockets\x18\x11 \x03(\v2\x13.EquipGemSocketInfoR\n" +
+	"gemSockets\x12\x19\n" +
+	"\bgem_type\x18\x12 \x01(\rR\agemType\x12-\n" +
+	"\bgem_attr\x18\x13 \x01(\v2\x12.EquipAttrLineInfoR\agemAttr\x126\n" +
+	"\x17enhance_bonus_permyriad\x18\x14 \x01(\rR\x15enhanceBonusPermyriad\"h\n" +
 	"\vBagSlotInfo\x12\x12\n" +
 	"\x04slot\x18\x01 \x01(\rR\x04slot\x12\x17\n" +
 	"\aitem_id\x18\x02 \x01(\x04R\x06itemId\x12\x14\n" +
 	"\x05width\x18\x03 \x01(\rR\x05width\x12\x16\n" +
-	"\x06height\x18\x04 \x01(\rR\x06height\"\x85\x01\n" +
+	"\x06height\x18\x04 \x01(\rR\x06height\"\xb6\x01\n" +
 	"\rBagLayoutInfo\x12\x19\n" +
 	"\bbag_type\x18\x01 \x01(\rR\abagType\x12\x1a\n" +
 	"\bcapacity\x18\x02 \x01(\rR\bcapacity\x12\"\n" +
 	"\x05slots\x18\x03 \x03(\v2\f.BagSlotInfoR\x05slots\x12\x19\n" +
-	"\bcan_sort\x18\x04 \x01(\bR\acanSort\"\x80\x01\n" +
+	"\bcan_sort\x18\x04 \x01(\bR\acanSort\x12/\n" +
+	"\vequip_slots\x18\x05 \x03(\v2\x0e.EquipSlotInfoR\n" +
+	"equipSlots\"\x80\x01\n" +
 	"\aBagInfo\x12\"\n" +
 	"\x05items\x18\x01 \x03(\v2\f.BagItemInfoR\x05items\x12&\n" +
 	"\x06layout\x18\x02 \x01(\v2\x0e.BagLayoutInfoR\x06layout\x12)\n" +
@@ -560,10 +1775,57 @@ const file_proto_scene_player_bag_proto_rawDesc = "" +
 	"\x0fSortBagResponse\x124\n" +
 	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\x12\x1a\n" +
 	"\x03bag\x18\x02 \x01(\v2\b.BagInfoR\x03bag\x12\x18\n" +
-	"\achanged\x18\x03 \x01(\bR\achanged2{\n" +
+	"\achanged\x18\x03 \x01(\bR\achanged\"+\n" +
+	"\x10EquipItemRequest\x12\x17\n" +
+	"\aitem_id\x18\x01 \x01(\x04R\x06itemId\"\x8d\x01\n" +
+	"\x11EquipItemResponse\x124\n" +
+	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\x12\x1a\n" +
+	"\x03bag\x18\x02 \x01(\v2\b.BagInfoR\x03bag\x12&\n" +
+	"\tequipment\x18\x03 \x01(\v2\b.BagInfoR\tequipment\"-\n" +
+	"\x12UnequipItemRequest\x12\x17\n" +
+	"\aitem_id\x18\x01 \x01(\x04R\x06itemId\"\x8f\x01\n" +
+	"\x13UnequipItemResponse\x124\n" +
+	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\x12\x1a\n" +
+	"\x03bag\x18\x02 \x01(\v2\b.BagInfoR\x03bag\x12&\n" +
+	"\tequipment\x18\x03 \x01(\v2\b.BagInfoR\tequipment\"G\n" +
+	"\x12GmGrantItemRequest\x12\x1b\n" +
+	"\tconfig_id\x18\x01 \x01(\rR\bconfigId\x12\x14\n" +
+	"\x05count\x18\x02 \x01(\rR\x05count\"g\n" +
+	"\x13GmGrantItemResponse\x124\n" +
+	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\x12\x1a\n" +
+	"\x03bag\x18\x02 \x01(\v2\b.BagInfoR\x03bag\".\n" +
+	"\x13EnhanceEquipRequest\x12\x17\n" +
+	"\aitem_id\x18\x01 \x01(\x04R\x06itemId\"\xcf\x01\n" +
+	"\x14EnhanceEquipResponse\x124\n" +
+	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\x12\x1a\n" +
+	"\x03bag\x18\x02 \x01(\v2\b.BagInfoR\x03bag\x12&\n" +
+	"\tequipment\x18\x03 \x01(\v2\b.BagInfoR\tequipment\x12\x18\n" +
+	"\asuccess\x18\x04 \x01(\bR\asuccess\x12#\n" +
+	"\renhance_level\x18\x05 \x01(\rR\fenhanceLevel\"f\n" +
+	"\x0fInlayGemRequest\x12\x17\n" +
+	"\aitem_id\x18\x01 \x01(\x04R\x06itemId\x12\x16\n" +
+	"\x06socket\x18\x02 \x01(\rR\x06socket\x12\"\n" +
+	"\rgem_config_id\x18\x03 \x01(\rR\vgemConfigId\"\x8c\x01\n" +
+	"\x10InlayGemResponse\x124\n" +
+	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\x12\x1a\n" +
+	"\x03bag\x18\x02 \x01(\v2\b.BagInfoR\x03bag\x12&\n" +
+	"\tequipment\x18\x03 \x01(\v2\b.BagInfoR\tequipment\"C\n" +
+	"\x10RemoveGemRequest\x12\x17\n" +
+	"\aitem_id\x18\x01 \x01(\x04R\x06itemId\x12\x16\n" +
+	"\x06socket\x18\x02 \x01(\rR\x06socket\"\x8d\x01\n" +
+	"\x11RemoveGemResponse\x124\n" +
+	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\x12\x1a\n" +
+	"\x03bag\x18\x02 \x01(\v2\b.BagInfoR\x03bag\x12&\n" +
+	"\tequipment\x18\x03 \x01(\v2\b.BagInfoR\tequipment2\xc5\x03\n" +
 	"\x14SceneBagClientPlayer\x12)\n" +
 	"\x06GetBag\x12\x0e.GetBagRequest\x1a\x0f.GetBagResponse\x12,\n" +
-	"\aSortBag\x12\x0f.SortBagRequest\x1a\x10.SortBagResponse\x1a\n" +
+	"\aSortBag\x12\x0f.SortBagRequest\x1a\x10.SortBagResponse\x122\n" +
+	"\tEquipItem\x12\x11.EquipItemRequest\x1a\x12.EquipItemResponse\x128\n" +
+	"\vUnequipItem\x12\x13.UnequipItemRequest\x1a\x14.UnequipItemResponse\x128\n" +
+	"\vGmGrantItem\x12\x13.GmGrantItemRequest\x1a\x14.GmGrantItemResponse\x12;\n" +
+	"\fEnhanceEquip\x12\x14.EnhanceEquipRequest\x1a\x15.EnhanceEquipResponse\x12/\n" +
+	"\bInlayGem\x12\x10.InlayGemRequest\x1a\x11.InlayGemResponse\x122\n" +
+	"\tRemoveGem\x12\x11.RemoveGemRequest\x1a\x12.RemoveGemResponse\x1a\n" +
 	"\x80\xa8\xc3\x01\x01\x88\xa8\xc3\x01\x01B\x14\x98\xd4a\x03Z\vproto/scene\x80\x01\x01b\x06proto3"
 
 var (
@@ -578,37 +1840,89 @@ func file_proto_scene_player_bag_proto_rawDescGZIP() []byte {
 	return file_proto_scene_player_bag_proto_rawDescData
 }
 
-var file_proto_scene_player_bag_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_proto_scene_player_bag_proto_msgTypes = make([]protoimpl.MessageInfo, 24)
 var file_proto_scene_player_bag_proto_goTypes = []any{
-	(*BagItemInfo)(nil),            // 0: BagItemInfo
-	(*BagSlotInfo)(nil),            // 1: BagSlotInfo
-	(*BagLayoutInfo)(nil),          // 2: BagLayoutInfo
-	(*BagInfo)(nil),                // 3: BagInfo
-	(*GetBagRequest)(nil),          // 4: GetBagRequest
-	(*GetBagResponse)(nil),         // 5: GetBagResponse
-	(*SortBagRequest)(nil),         // 6: SortBagRequest
-	(*SortBagResponse)(nil),        // 7: SortBagResponse
-	(*component.CurrencyComp)(nil), // 8: CurrencyComp
-	(*base.TipInfoMessage)(nil),    // 9: TipInfoMessage
+	(*EquipAttrLineInfo)(nil),      // 0: EquipAttrLineInfo
+	(*EquipSlotInfo)(nil),          // 1: EquipSlotInfo
+	(*EquipGemSocketInfo)(nil),     // 2: EquipGemSocketInfo
+	(*EquipEnhancePreview)(nil),    // 3: EquipEnhancePreview
+	(*BagItemInfo)(nil),            // 4: BagItemInfo
+	(*BagSlotInfo)(nil),            // 5: BagSlotInfo
+	(*BagLayoutInfo)(nil),          // 6: BagLayoutInfo
+	(*BagInfo)(nil),                // 7: BagInfo
+	(*GetBagRequest)(nil),          // 8: GetBagRequest
+	(*GetBagResponse)(nil),         // 9: GetBagResponse
+	(*SortBagRequest)(nil),         // 10: SortBagRequest
+	(*SortBagResponse)(nil),        // 11: SortBagResponse
+	(*EquipItemRequest)(nil),       // 12: EquipItemRequest
+	(*EquipItemResponse)(nil),      // 13: EquipItemResponse
+	(*UnequipItemRequest)(nil),     // 14: UnequipItemRequest
+	(*UnequipItemResponse)(nil),    // 15: UnequipItemResponse
+	(*GmGrantItemRequest)(nil),     // 16: GmGrantItemRequest
+	(*GmGrantItemResponse)(nil),    // 17: GmGrantItemResponse
+	(*EnhanceEquipRequest)(nil),    // 18: EnhanceEquipRequest
+	(*EnhanceEquipResponse)(nil),   // 19: EnhanceEquipResponse
+	(*InlayGemRequest)(nil),        // 20: InlayGemRequest
+	(*InlayGemResponse)(nil),       // 21: InlayGemResponse
+	(*RemoveGemRequest)(nil),       // 22: RemoveGemRequest
+	(*RemoveGemResponse)(nil),      // 23: RemoveGemResponse
+	(*component.CurrencyComp)(nil), // 24: CurrencyComp
+	(*base.TipInfoMessage)(nil),    // 25: TipInfoMessage
 }
 var file_proto_scene_player_bag_proto_depIdxs = []int32{
-	1,  // 0: BagLayoutInfo.slots:type_name -> BagSlotInfo
-	0,  // 1: BagInfo.items:type_name -> BagItemInfo
-	2,  // 2: BagInfo.layout:type_name -> BagLayoutInfo
-	8,  // 3: BagInfo.currency:type_name -> CurrencyComp
-	9,  // 4: GetBagResponse.error_message:type_name -> TipInfoMessage
-	3,  // 5: GetBagResponse.bag:type_name -> BagInfo
-	9,  // 6: SortBagResponse.error_message:type_name -> TipInfoMessage
-	3,  // 7: SortBagResponse.bag:type_name -> BagInfo
-	4,  // 8: SceneBagClientPlayer.GetBag:input_type -> GetBagRequest
-	6,  // 9: SceneBagClientPlayer.SortBag:input_type -> SortBagRequest
-	5,  // 10: SceneBagClientPlayer.GetBag:output_type -> GetBagResponse
-	7,  // 11: SceneBagClientPlayer.SortBag:output_type -> SortBagResponse
-	10, // [10:12] is the sub-list for method output_type
-	8,  // [8:10] is the sub-list for method input_type
-	8,  // [8:8] is the sub-list for extension type_name
-	8,  // [8:8] is the sub-list for extension extendee
-	0,  // [0:8] is the sub-list for field type_name
+	0,  // 0: EquipGemSocketInfo.attr:type_name -> EquipAttrLineInfo
+	0,  // 1: BagItemInfo.base_attrs:type_name -> EquipAttrLineInfo
+	0,  // 2: BagItemInfo.affixes:type_name -> EquipAttrLineInfo
+	3,  // 3: BagItemInfo.enhance_next:type_name -> EquipEnhancePreview
+	2,  // 4: BagItemInfo.gem_sockets:type_name -> EquipGemSocketInfo
+	0,  // 5: BagItemInfo.gem_attr:type_name -> EquipAttrLineInfo
+	5,  // 6: BagLayoutInfo.slots:type_name -> BagSlotInfo
+	1,  // 7: BagLayoutInfo.equip_slots:type_name -> EquipSlotInfo
+	4,  // 8: BagInfo.items:type_name -> BagItemInfo
+	6,  // 9: BagInfo.layout:type_name -> BagLayoutInfo
+	24, // 10: BagInfo.currency:type_name -> CurrencyComp
+	25, // 11: GetBagResponse.error_message:type_name -> TipInfoMessage
+	7,  // 12: GetBagResponse.bag:type_name -> BagInfo
+	25, // 13: SortBagResponse.error_message:type_name -> TipInfoMessage
+	7,  // 14: SortBagResponse.bag:type_name -> BagInfo
+	25, // 15: EquipItemResponse.error_message:type_name -> TipInfoMessage
+	7,  // 16: EquipItemResponse.bag:type_name -> BagInfo
+	7,  // 17: EquipItemResponse.equipment:type_name -> BagInfo
+	25, // 18: UnequipItemResponse.error_message:type_name -> TipInfoMessage
+	7,  // 19: UnequipItemResponse.bag:type_name -> BagInfo
+	7,  // 20: UnequipItemResponse.equipment:type_name -> BagInfo
+	25, // 21: GmGrantItemResponse.error_message:type_name -> TipInfoMessage
+	7,  // 22: GmGrantItemResponse.bag:type_name -> BagInfo
+	25, // 23: EnhanceEquipResponse.error_message:type_name -> TipInfoMessage
+	7,  // 24: EnhanceEquipResponse.bag:type_name -> BagInfo
+	7,  // 25: EnhanceEquipResponse.equipment:type_name -> BagInfo
+	25, // 26: InlayGemResponse.error_message:type_name -> TipInfoMessage
+	7,  // 27: InlayGemResponse.bag:type_name -> BagInfo
+	7,  // 28: InlayGemResponse.equipment:type_name -> BagInfo
+	25, // 29: RemoveGemResponse.error_message:type_name -> TipInfoMessage
+	7,  // 30: RemoveGemResponse.bag:type_name -> BagInfo
+	7,  // 31: RemoveGemResponse.equipment:type_name -> BagInfo
+	8,  // 32: SceneBagClientPlayer.GetBag:input_type -> GetBagRequest
+	10, // 33: SceneBagClientPlayer.SortBag:input_type -> SortBagRequest
+	12, // 34: SceneBagClientPlayer.EquipItem:input_type -> EquipItemRequest
+	14, // 35: SceneBagClientPlayer.UnequipItem:input_type -> UnequipItemRequest
+	16, // 36: SceneBagClientPlayer.GmGrantItem:input_type -> GmGrantItemRequest
+	18, // 37: SceneBagClientPlayer.EnhanceEquip:input_type -> EnhanceEquipRequest
+	20, // 38: SceneBagClientPlayer.InlayGem:input_type -> InlayGemRequest
+	22, // 39: SceneBagClientPlayer.RemoveGem:input_type -> RemoveGemRequest
+	9,  // 40: SceneBagClientPlayer.GetBag:output_type -> GetBagResponse
+	11, // 41: SceneBagClientPlayer.SortBag:output_type -> SortBagResponse
+	13, // 42: SceneBagClientPlayer.EquipItem:output_type -> EquipItemResponse
+	15, // 43: SceneBagClientPlayer.UnequipItem:output_type -> UnequipItemResponse
+	17, // 44: SceneBagClientPlayer.GmGrantItem:output_type -> GmGrantItemResponse
+	19, // 45: SceneBagClientPlayer.EnhanceEquip:output_type -> EnhanceEquipResponse
+	21, // 46: SceneBagClientPlayer.InlayGem:output_type -> InlayGemResponse
+	23, // 47: SceneBagClientPlayer.RemoveGem:output_type -> RemoveGemResponse
+	40, // [40:48] is the sub-list for method output_type
+	32, // [32:40] is the sub-list for method input_type
+	32, // [32:32] is the sub-list for extension type_name
+	32, // [32:32] is the sub-list for extension extendee
+	0,  // [0:32] is the sub-list for field type_name
 }
 
 func init() { file_proto_scene_player_bag_proto_init() }
@@ -622,7 +1936,7 @@ func file_proto_scene_player_bag_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_scene_player_bag_proto_rawDesc), len(file_proto_scene_player_bag_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   8,
+			NumMessages:   24,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -3,6 +3,8 @@ package clientplayerloginlogic
 import (
 	"context"
 	"login/internal/logic/pkg/dataloader"
+	login_proto_common "proto/common/base"
+	"shared/generated/pb/table"
 	"time"
 
 	"github.com/zeromicro/go-zero/core/logx"
@@ -13,26 +15,77 @@ import (
 // 真正限制的是 go-redis 的内部重发(默认 MaxRetries=3)。种子只是优化,不值得在账号锁里多等几轮。
 const newPlayerSeedTimeout = time.Second
 
+// mintedIDProbeTimeout 是 6b' 只读探测的 ctx 预算,含义同 newPlayerSeedTimeout:只掐 go-redis 的内部重发,
+// 单次往返最坏仍可等满约 3s 读超时。它派生自请求 ctx,所以同样被 zrpc Timeout 截住(login.yaml Locker 注释)。
+const mintedIDProbeTimeout = time.Second
+
+// probeMintedID 是 CreatePlayer 的 6b' 步:在登记名字(6c)之前,只读探测新铸 id 上是否已有既有状态
+// (dataloader.ProbeMintedPlayerState:PlayerAllData 父键、player:{id}:owner_epoch;
+// docs/design/new-player-first-enter-no-cold-read.md §10 P7,负责人 2026-10-15 按「最标准」定为采用)。
+//
+// 返回 nil = 两把键都不在,可以继续;返回 tip = 必须拒绝建角。命中(id 复用)与探测出错一律拒绝(fail-closed):
+// 号段 id 不复用(设计 I1),新铸 id 上有状态说明发号器把在役 id 又发了一次,或 id_segment 表被重置而 Redis 没清,
+// 把它交给新账号就是串档;探不清时放行,同样可能把一个在役 id 交出去。拒绝发生在任何持久写之前:名字、
+// player:zone 都还没登记,只烧掉这一个 id,不需要补偿。玩家重试会铸出下一个 id。
+//
+// 与种子开关无关,每次建角都探:关着种子时,id 复用同样会让新账号首次入场读到那份旧缓存。
+// 探测与 6d' 种子写之间仍有窗口,种子脚本的条件判断保留为写时的原子复核(见 seedNewPlayer)。
+//
+// tip 复用 6c / 6d 故障时返回的 kLoginDataSerializeFailed(「服务端此刻建不了角,稍后重试」),理由同
+// registerHomeZone:不为一个分支申请新码,Tip 码轴由导表器发号。
+func (l *CreatePlayerLogic) probeMintedID(account string, playerID uint64) *login_proto_common.TipInfoMessage {
+	// 发出之前先查请求 ctx:截止之后不再发任何命令(docs/design/client-request-ordering.md §6.1)。
+	// 此刻名字、映射都还没登记,直接拒绝、无需补偿;不计探测指标、不打 ERROR —— 探测没有发生,
+	// 也不是 Redis 故障。不查的话,go-redis 会以 ctx 错误原地拒掉 pipeline,被误记成一次探测出错。
+	if err := l.ctx.Err(); err != nil {
+		logx.Infof("[minted-id-probe] request ctx done before probing, nothing sent player_id=%d account=%s: %v",
+			playerID, account, err)
+		return loginTip(table.LoginError_kLoginDataSerializeFailed)
+	}
+	ctx, cancel := context.WithTimeout(l.ctx, mintedIDProbeTimeout)
+	defer cancel()
+	result, err := dataloader.ProbeMintedPlayerState(ctx, l.svcCtx.RedisClient, playerID)
+	createPlayerIDProbeTotal.Inc(result.String())
+	switch result {
+	case dataloader.MintedIDClear:
+		return nil
+	case dataloader.MintedIDParentExists, dataloader.MintedIDOwnerEpochExists:
+		// 与名字登记的 FailedPrecondition 同属 ID 安全事件:运维据此排查发号器 / id_segment 表。
+		logx.Errorf("[minted-id-probe] freshly minted player_id=%d already has %s — id reuse? "+
+			"refusing to create before reserving the name or registering player:zone (account=%s)",
+			playerID, result, account)
+	default:
+		// MintedIDProbeError,以及将来新增而这里还不认识的结论:探不清,按拒绝处理。
+		logx.Errorf("[minted-id-probe] probe failed, refusing to create (fail-closed) player_id=%d account=%s: %v",
+			playerID, account, err)
+	}
+	return loginTip(table.LoginError_kLoginDataSerializeFailed)
+}
+
 // seedNewPlayer 是 CreatePlayer 的 6d' 步:写新号的 PlayerAllData 父键种子
 // (dataloader.SeedNewPlayerAllData;docs/design/new-player-first-enter-no-cold-read.md)。
 //
-// 尽力而为,**不返回错误、不改变建角结果**:种子是首次入场的缓存优化,不是任何数据的真源。没写成时,
-// 首次 EnterGame 照旧冷读数据库,读到空就是真值(号段 id 不复用)。
+// 返回 nil = 继续建角;返回 tip = 必须拒绝建角(只有下面两种 id 复用结局)。调用方负责补偿(释放 6c 的名字)。
 //
-// parent_exists / owner_epoch_exists 对新铸的 id 不该出现。出现即说明这个 id 上已有既有状态(发号器把在役 id
+// 种子本身尽力而为:written / idempotent / error 都不改变建角结果。种子是首次入场的缓存优化,不是任何数据的
+// 真源;没写成时,首次 EnterGame 照旧冷读数据库,读到空就是真值(号段 id 不复用)。
+//
+// parent_exists / owner_epoch_exists 对新铸的 id 不该出现:6b' 的只读探测已经确认过这两把键都不在,
+// 走到这里还看到,说明它们恰好在探测与种子写之间的窗口里出现 —— 这个 id 上已有既有状态(发号器把在役 id
 // 又发了一次,或 id_segment 表被重置而 Redis 没清),与名字登记的 FailedPrecondition 同属 ID 安全事件。
-// 现状**只告警**:记 ERROR 并计数,不在这里拒绝建角。是否升级为拒绝待负责人拍板(设计 §10 P2),取舍的事实是:
-//   - 旧持有者若经现行建角流程创建,它的 player:zone 映射早已存在:同 zone 时 6d 是幂等空操作,此时拒绝
-//     不会新增映射;不同 zone 在 6d 就已被拒,到不了这里。只有旧持有者没有映射时,拒绝才会留下一条,
-//     与第 7 步失败留下的那条同类,不是这里特有的代价;
-//   - 只告警的代价:已确知这个 id 上有既有状态,仍把它交给新账号,首次入场读到那份缓存(与关着种子时
-//     相同,但此刻本可拦下);
-//   - 若改为拒绝,要像 6d 失败分支一样先释放 6c 登记的名字。
+// 负责人 2026-10-15 按「最标准」把它从「只告警」升级为**拒绝建角**(设计 §10 P2;此前的现状是记 ERROR、计数,
+// 仍把 id 交给新账号,让首次入场读到那份既有缓存)。拒绝时的残留与第 7 步失败同类:
+//   - 6c 登记的名字由调用方按「确定已登记」释放一次;
+//   - 6d 登记的 player:zone 映射**撤不掉**:它是 SET NX、无 TTL,login 没有删除入口(data_service 的
+//     DeletePlayerData 会连同该 id 的玩家数据一起删,id 复用时删的正是旧持有者的数据,绝不能用)。
+//     旧持有者若经现行建角流程创建,映射本来就在(同 zone 时 6d 是幂等空操作,不新增);只有旧持有者没有
+//     映射时才会留下一条,与第 7 步失败留下的那条同类,ERROR 日志带 player_id 供核对。
 //
 // idempotent(父键已是这份种子)单独记一条 INFO:本调用点的 1s ctx 预算掐掉了读超时(3s)之后的重发,
-// 所以它只会来自连接层快速失败(EOF / 连接被重置)后的重发,或者这个 id 以前铸出过、那份种子还没过期。
-// 稳态应接近 0,持续出现要按 id 复用排查。
-func (l *CreatePlayerLogic) seedNewPlayer(account string, playerID uint64) {
+// 所以它只会来自连接层快速失败(EOF / 连接被重置)后的重发,或者这个 id 以前铸出过、那份种子恰好在探测之后
+// 才落地(滞留的旧请求)。稳态应接近 0,持续出现要按 id 复用排查。它不拒绝:本次 EVAL 被重发时看到的正是
+// 自己写的种子,拒绝就会把正常建角判死。
+func (l *CreatePlayerLogic) seedNewPlayer(account string, playerID uint64) *login_proto_common.TipInfoMessage {
 	ctx, cancel := context.WithTimeout(l.ctx, newPlayerSeedTimeout)
 	defer cancel()
 	result, err := dataloader.SeedNewPlayerAllData(ctx, l.svcCtx.RedisClient, playerID)
@@ -44,15 +97,16 @@ func (l *CreatePlayerLogic) seedNewPlayer(account string, playerID uint64) {
 		logx.Infof("[new-player-seed] parent key already holds this exact seed (EVAL re-sent after a transport error, "+
 			"or this id was minted before and never entered) player_id=%d account=%s", playerID, account)
 	case dataloader.SeedParentExists, dataloader.SeedOwnerEpochExists:
-		// 这里首次入场**不一定**冷读:父键已在时走快路径,读到的是那份已有缓存;只有 owner_epoch 在、
-		// 父键不在时才冷读(设计 §6 第 1 行)。
 		logx.Errorf("[new-player-seed] freshly minted player_id=%d already has %s — id reuse? "+
-			"seed not written; first EnterGame uses the existing cache, or the DB read if there is none (account=%s)",
+			"seed not written; refusing to create (releasing the reserved name; the player:zone mapping, "+
+			"if this attempt created it, cannot be removed and is left behind) (account=%s)",
 			playerID, result, account)
+		return loginTip(table.LoginError_kLoginDataSerializeFailed)
 	default:
 		// SeedError = 写入未确认:读超时的 EVAL 可能已经在服务端执行,不能写成「没写成」。
 		logx.Errorf("[new-player-seed] seed write not confirmed (it may or may not have landed); "+
 			"first EnterGame takes the fast path if it did, otherwise the DB read (player_id=%d account=%s): %v",
 			playerID, account, err)
 	}
+	return nil
 }

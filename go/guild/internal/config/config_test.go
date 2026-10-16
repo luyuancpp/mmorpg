@@ -362,8 +362,8 @@ func TestAssetOpLoopBounds(t *testing.T) {
 		{"批过大", func(a *AssetOpConf) { a.ReconcileBatch = 1001 }, "ReconcileBatch"},
 		{"预算下界", func(a *AssetOpConf) { a.OpBudgetMs = 1000 }, ""},
 		{"预算过小", func(a *AssetOpConf) { a.OpBudgetMs = 999 }, "OpBudgetMs"},
-		// 预算顶到上界时,落地唤醒的生效超时(默认 10000)不再大于 OpBudgetMs,必须一起调大(validateLanding)。
-		{"预算上界", func(a *AssetOpConf) { a.OpBudgetMs, a.LeaseMs, a.Wake.TimeoutMs = 10000, 12000, 12000 }, ""},
+		// 预算顶到上界时,落地唤醒的生效超时(默认 10000)不足 2 × OpBudgetMs,必须一起调大(validateLanding)。
+		{"预算上界", func(a *AssetOpConf) { a.OpBudgetMs, a.LeaseMs, a.Wake.TimeoutMs = 10000, 12000, 20000 }, ""},
 		{"预算上界而唤醒超时仍取默认", func(a *AssetOpConf) { a.OpBudgetMs, a.LeaseMs = 10000, 12000 }, "Wake.TimeoutMs"},
 		{"预算过大", func(a *AssetOpConf) { a.OpBudgetMs, a.LeaseMs = 10001, 20000 }, "OpBudgetMs"},
 		{"租约恰好等于预算加余量", func(a *AssetOpConf) { a.OpBudgetMs, a.LeaseMs = 2500, 4500 }, ""},
@@ -516,7 +516,7 @@ func TestEtcYamlAssetOpBlock(t *testing.T) {
 
 // TestAssetOpLandingBounds:落地恢复四组参数(停放档 / 自动放弃 / 日对账 / 唤醒)越界各一例,以及每条边界的合法端点。
 // 边界与 assetop.LoopConfig.validate / validateAbandon、assetopwake 的约束同形(停放间隔 ∈ [MaxBackoff, 24h]、
-// 放弃门槛 0 或 ≥ 30 天、安全间隔 ≥ 10 分钟且 ≥ 租约、批 [1, 1000]、唤醒超时 > OpBudget),这里放过的配置不该在
+// 放弃门槛 0 或 ≥ 30 天、安全间隔 ≥ 10 分钟且 ≥ 租约、批 [1, 1000]、唤醒超时 ≥ 2 × OpBudget),这里放过的配置不该在
 // assetop.NewLoop 里才炸。每组都是"0 = 关闭"时从属参数不校验 —— 否则"改一个 0 止血"会因为别的键越界而起不来。
 func TestAssetOpLandingBounds(t *testing.T) {
 	cases := []struct {
@@ -570,8 +570,16 @@ func TestAssetOpLandingBounds(t *testing.T) {
 		{"唤醒并发上界", func(a *AssetOpConf) { a.Wake.Concurrency = 64 }, ""},
 		{"唤醒并发过大", func(a *AssetOpConf) { a.Wake.Concurrency = 65 }, "Wake.Concurrency"},
 		{"唤醒并发为负", func(a *AssetOpConf) { a.Wake.Concurrency = -1 }, "Wake.Concurrency"},
+		// 唤醒超时下界 = 2 × OpBudgetMs:先列行(Store 子预算 1000ms),剩余预算还要够一整个 OpBudget 才领行。
+		// 只比 OpBudget 多 1ms 的旧合法值必须拒绝 —— 列完行就不够一个 OpBudget,每次唤醒一行不领、静默退化。
 		{"唤醒超时恰好等于单行预算", func(a *AssetOpConf) { a.Wake.TimeoutMs = a.OpBudgetMs }, "Wake.TimeoutMs"},
-		{"唤醒超时比单行预算多 1ms", func(a *AssetOpConf) { a.Wake.TimeoutMs = a.OpBudgetMs + 1 }, ""},
+		{"唤醒超时比单行预算多 1ms", func(a *AssetOpConf) { a.Wake.TimeoutMs = a.OpBudgetMs + 1 }, "Wake.TimeoutMs"},
+		{"唤醒超时比两倍单行预算少 1ms", func(a *AssetOpConf) { a.Wake.TimeoutMs = 2*a.OpBudgetMs - 1 }, "Wake.TimeoutMs"},
+		{"唤醒超时恰好两倍单行预算", func(a *AssetOpConf) { a.Wake.TimeoutMs = 2 * a.OpBudgetMs }, ""},
+		{"预算下界时唤醒超时取两倍", func(a *AssetOpConf) { a.OpBudgetMs, a.Wake.TimeoutMs = 1000, 2000 }, ""},
+		{"预算下界时唤醒超时不足两倍", func(a *AssetOpConf) { a.OpBudgetMs, a.Wake.TimeoutMs = 1000, 1999 }, "Wake.TimeoutMs"},
+		{"预算上界时唤醒超时取两倍", func(a *AssetOpConf) { a.OpBudgetMs, a.LeaseMs, a.Wake.TimeoutMs = 10000, 12000, 20000 }, ""},
+		{"预算上界时唤醒超时不足两倍", func(a *AssetOpConf) { a.OpBudgetMs, a.LeaseMs, a.Wake.TimeoutMs = 10000, 12000, 19999 }, "Wake.TimeoutMs"},
 		{"唤醒超时上界", func(a *AssetOpConf) { a.Wake.TimeoutMs = 60000 }, ""},
 		{"唤醒超时过大", func(a *AssetOpConf) { a.Wake.TimeoutMs = 60001 }, "Wake.TimeoutMs"},
 		{"唤醒超时为负", func(a *AssetOpConf) { a.Wake.TimeoutMs = -1 }, "Wake.TimeoutMs"},
@@ -871,5 +879,33 @@ func TestShouldAutoMigrateDefaults(t *testing.T) {
 	c.Schema.AutoMigrate = &no
 	if c.ShouldAutoMigrate() {
 		t.Error("显式 false 时只做只读核对")
+	}
+}
+
+func TestApplicationQuotaConfig(t *testing.T) {
+	c := loadMinimal(t)
+	if c.ApplicationQuotaPerMinute != 10 {
+		t.Fatalf("省略配额配置时应默认 10，得到 %d", c.ApplicationQuotaPerMinute)
+	}
+	for _, limit := range []uint32{0, 1, 600, 601} {
+		c.ApplicationQuotaPerMinute = limit
+		err := c.Validate()
+		valid := limit >= 1 && limit <= MaxApplicationQuotaPerMinute
+		if valid != (err == nil) {
+			t.Errorf("阈值 %d，合法=%v，校验错误=%v", limit, valid, err)
+		}
+	}
+	var checked Config
+	if err := conf.Load("../../etc/guild.yaml", &checked); err != nil {
+		t.Fatal(err)
+	}
+	if checked.ApplicationQuotaPerMinute != 10 {
+		t.Fatalf("主配置应启用 10 次配额，得到 %d", checked.ApplicationQuotaPerMinute)
+	}
+	for _, raw := range []string{"0", "601", "-1"} {
+		var invalid Config
+		if err := conf.LoadFromYamlBytes([]byte(minimalGuildYaml+"\nApplicationQuotaPerMinute: "+raw+"\n"), &invalid); err == nil {
+			t.Errorf("显式配置阈值 %s 不得被默认值掩盖", raw)
+		}
 	}
 }

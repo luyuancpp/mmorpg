@@ -1446,7 +1446,7 @@ void BattleRoomManager::AbortAllRooms(const std::string &reason)
 muduo::net::TcpConnectionPtr BattleRoomManager::LiveDirectConnOf(const BattleRoom &room,
                                                                  const uint64_t playerId) const
 {
-    if (edge_ == nullptr)
+    if (!edge_)
     {
         return nullptr;
     }
@@ -1485,7 +1485,7 @@ void BattleRoomManager::PushBattleFrame(const BattleRoom &room, const uint64_t p
     switch (battle_push_policy::Decide(battle_push_policy::PushCategory::kBattleFrame, conn != nullptr))
     {
     case battle_push_policy::PushRoute::kDirect:
-        SendOverDirect(*edge_, conn, messageId, message);
+        SendOverDirect(edge_->get(), conn, messageId, message);
         return;
     case battle_push_policy::PushRoute::kViaGate:
         // 战斗帧的判定不会产出 kViaGate(tests/battle_push_policy_test.cpp 钉住);
@@ -1505,7 +1505,7 @@ void BattleRoomManager::PushLobbyAnnouncement(const BattleRoom &room, const uint
                                        conn != nullptr))
     {
     case battle_push_policy::PushRoute::kDirect:
-        SendOverDirect(*edge_, conn, messageId, message);
+        SendOverDirect(edge_->get(), conn, messageId, message);
         return;
     case battle_push_policy::PushRoute::kViaGate:
         PushMessageViaGate(routing, playerId, messageId, message);

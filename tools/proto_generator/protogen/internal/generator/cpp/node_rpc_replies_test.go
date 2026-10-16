@@ -20,9 +20,17 @@ import (
 // 节点间 RPC0 的回包改在调用点的每次调用 lambda 里完成(docs/design/muduo-rpc-channel.md §9.2):
 // 生成器不得再为 Gate / Scene / SceneScene 产出 rpc_replies 回包文件与 InitReply 注册文件。
 // 生成器从不删除过期文件,一旦恢复生成,下一次运行就会把已删除的回包空壳与全局回包表注册写回来。
-// 玩家回包链(rpc_replies/player)本批保留,gate 的 rpc_replies/register_handler.cpp 照旧生成。
+// 玩家回包链(rpc_replies/player 的 <Svc>Reply 与 InitPlayerServiceReplied)从无读者,已随第 6 批删除(§13),同样不得恢复;
+// gate 的 rpc_replies/register_handler.cpp(空 InitServiceHandler)照旧生成。
 
-func setupNodeRepliesGeneration(t *testing.T) _config.MethodHandlerDirs {
+// nodeRepliesDirs 是生成器配置的输出目录,外加两个**不再有配置项**的旧回包目录:断言它们保持为空。
+type nodeRepliesDirs struct {
+	_config.MethodHandlerDirs
+	Root         string
+	SceneReplied string // 旧 scene_node_replied:scene/rpc_replies/
+}
+
+func setupNodeRepliesGeneration(t *testing.T) nodeRepliesDirs {
 	t.Helper()
 	originalConfig, originalLogger, originalServices := _config.Global, logger.Global, internal.GlobalRPCServiceList
 	t.Cleanup(func() {
@@ -37,20 +45,21 @@ func setupNodeRepliesGeneration(t *testing.T) _config.MethodHandlerDirs {
 		return filepath.ToSlash(filepath.Join(append([]string{root}, parts...)...)) + "/"
 	}
 	// 每个输出目录都指到临时根下:目录为空串时生成器会写进当前工作目录。
-	dirs := _config.MethodHandlerDirs{
-		Robot:                  dir("robot"),
-		SceneNode:              dir("scene", "handler", "rpc"),
-		SceneNodePlayer:        dir("scene", "handler", "rpc", "player"),
-		SceneNodeReplied:       dir("scene", "rpc_replies"),
-		SceneNodePlayerReplied: dir("scene", "rpc_replies", "player"),
-		SceneNodeGrpc:          dir("scene", "handler", "grpc"),
-		BattleNodeGrpc:         dir("battle", "handler", "grpc"),
-		GateNode:               dir("gate", "handler", "rpc"),
-		GateNodeReplied:        dir("gate", "rpc_replies"),
-		GateNodePlayer:         dir("gate", "handler", "rpc", "player"),
-		GateNodePlayerReplied:  dir("gate", "rpc_replies", "player"),
+	dirs := nodeRepliesDirs{
+		MethodHandlerDirs: _config.MethodHandlerDirs{
+			Robot:           dir("robot"),
+			SceneNode:       dir("scene", "handler", "rpc"),
+			SceneNodePlayer: dir("scene", "handler", "rpc", "player"),
+			SceneNodeGrpc:   dir("scene", "handler", "grpc"),
+			BattleNodeGrpc:  dir("battle", "handler", "grpc"),
+			GateNode:        dir("gate", "handler", "rpc"),
+			GateNodeReplied: dir("gate", "rpc_replies"),
+			GateNodePlayer:  dir("gate", "handler", "rpc", "player"),
+		},
+		Root:         root,
+		SceneReplied: dir("scene", "rpc_replies"),
 	}
-	_config.Global.PathLists.MethodHandlerDirectories = dirs
+	_config.Global.PathLists.MethodHandlerDirectories = dirs.MethodHandlerDirs
 
 	// 取值与 etc/proto_gen.yaml 一致。
 	extensions := &_config.Global.FileExtensions
@@ -58,22 +67,17 @@ func setupNodeRepliesGeneration(t *testing.T) _config.MethodHandlerDirs {
 	extensions.PbH = ".pb.h"
 	extensions.HandlerH = "_handler.h"
 	extensions.HandlerCpp = "_handler.cpp"
-	extensions.RepliedHandlerHeaderExtension = "_response_handler.h"
-	extensions.CppRepliedHandlerEx = "_response_handler.cpp"
 	extensions.RegisterHandlerCppExtension = "register_handler.cpp"
-	extensions.RegisterRepliedHandlerCppExtension = "register_response_handler.cpp"
 
 	naming := &_config.Global.Naming
 	naming.MessageId = "MessageId"
 	naming.HandlerFile = "Handler"
-	naming.RepliedHandlerFile = "Reply"
 	naming.EmptyResponse = "Empty"
 	naming.IncludeBegin = "#include \""
 	naming.IncludeEndLine = "\"\n"
 	naming.GoogleMethodController = "::google::protobuf::RpcController* controller, "
 	naming.PlayerMethodController = "entt::entity player,"
 	naming.PlayerServiceIncludeName = "#include \"rpc/player_service_interface.h\"\n"
-	naming.PlayerServiceRepliedIncludeName = "#include \"rpc/player_rpc_response_handler.h\"\n"
 	naming.YourCodeBegin = "///<<< BEGIN WRITING YOUR CODE"
 	naming.YourCodeEnd = "///<<< END WRITING YOUR CODE"
 	naming.YourCodePair = naming.YourCodeBegin + "\n" + naming.YourCodeEnd
@@ -153,25 +157,36 @@ func TestNodeLevelServicesGenerateNoMuduoReplyHandlers(t *testing.T) {
 	// rpc_replies 不再出现节点级回包:gate 的 scene_response_handler / scene_admin_response_handler、
 	// scene 的 gate_service_response_handler。
 	assertGeneratedFiles(t, dirs.GateNodeReplied)
-	assertGeneratedFiles(t, dirs.SceneNodeReplied)
+	assertGeneratedFiles(t, dirs.SceneReplied)
 }
 
-func TestPlayerReplyChainStillGenerated(t *testing.T) {
+// 玩家服务只生成 handler/rpc/player 下的 <Svc>Handler;整棵输出树里不得出现玩家回包链的任何产物
+// (*_response_handler.h/.cpp、PlayerServiceReplied)。
+func TestPlayerServiceGeneratesNoReplyChain(t *testing.T) {
 	dirs := setupNodeRepliesGeneration(t)
+	player := nodeServiceMethods("proto/scene/player_lifecycle.proto", messageoption.NodeType_NODE_SCENE, "ScenePlayer", true, "ExitGame")
+	internal.GlobalRPCServiceList = internal.RPCServiceInfoList{{ProtoFileInfo: player[0].ProtoFileInfo, Methods: player}}
 	var wg sync.WaitGroup
-	ProcessAllHandlers(&wg, nodeServiceMethods("proto/scene/player_lifecycle.proto", messageoption.NodeType_NODE_SCENE, "ScenePlayer", true, "ExitGame"))
+	ProcessAllHandlers(&wg, player)
+	WriteMethodFile(&wg)
 	wg.Wait()
 
-	assertGeneratedFiles(t, dirs.SceneNodePlayerReplied, "player_lifecycle_response_handler.cpp", "player_lifecycle_response_handler.h")
-	header := readGeneratedFile(t, dirs.SceneNodePlayerReplied+"player_lifecycle_response_handler.h")
-	if !strings.Contains(header, "class ScenePlayerReply : public ::PlayerServiceReplied") {
-		t.Fatalf("player reply header changed:\n%s", header)
+	err := filepath.WalkDir(dirs.Root, func(path string, entry os.DirEntry, walkErr error) error {
+		if walkErr != nil || entry.IsDir() {
+			return walkErr
+		}
+		if strings.HasSuffix(entry.Name(), "_response_handler.h") || strings.HasSuffix(entry.Name(), "_response_handler.cpp") {
+			t.Errorf("player reply chain file generated again: %s", path)
+		}
+		if content := readGeneratedFile(t, path); strings.Contains(content, "PlayerServiceReplied") {
+			t.Errorf("generated file references the deleted PlayerServiceReplied: %s", path)
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
 	}
-	cpp := readGeneratedFile(t, dirs.SceneNodePlayerReplied+"player_lifecycle_response_handler.cpp")
-	if !strings.Contains(cpp, "ScenePlayerReply::ExitGame(") {
-		t.Fatalf("player reply cpp lost the method body:\n%s", cpp)
-	}
-	assertGeneratedFiles(t, dirs.SceneNodeReplied)
+	assertGeneratedFiles(t, dirs.SceneReplied)
 }
 
 func TestWriteMethodFileStopsNodeReplyRegistration(t *testing.T) {
@@ -189,7 +204,7 @@ func TestWriteMethodFileStopsNodeReplyRegistration(t *testing.T) {
 
 	// gate 的 rpc_replies 只剩生成的空 InitServiceHandler;两边都不再有 register_response_handler.cpp(InitReply)。
 	assertGeneratedFiles(t, dirs.GateNodeReplied, "register_handler.cpp")
-	assertGeneratedFiles(t, dirs.SceneNodeReplied)
+	assertGeneratedFiles(t, dirs.SceneReplied)
 	gateRegister := readGeneratedFile(t, dirs.GateNodeReplied+"register_handler.cpp")
 	if !strings.Contains(gateRegister, "void InitServiceHandler()") || strings.Contains(gateRegister, "emplace") {
 		t.Fatalf("gate rpc_replies/register_handler.cpp must stay an empty InitServiceHandler:\n%s", gateRegister)

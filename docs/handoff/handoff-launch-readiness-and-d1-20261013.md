@@ -11,6 +11,20 @@
 > - 仍未做:§4 第 5 项(拆 Redis 设计按 S3 修订);第 7~10 项(第 7 项归全局单点交接、D1 后续批、TiDB Phase 1 拍板、其他登记问题)。
 > - 新增的待负责人拍板项(§6 未列):G4b-G 规格 §11 六条(已按默认落码);G1b 修复里两条英文错误文案;连接总账在 all-up 时并入缺省 `-ZoneId 101` 的口径;出队整批落同一台 gate(打开排队前的第三条排队基线问题)。
 >
+> **2026-10-15 再更正**(上面一段写于 10-15 上午,以下以本段为准):
+> - **上一条列的四个待拍板项已结案**:负责人 10-15「按最标准的去做」,结论见 [PROGRESS.md](../PROGRESS.md)「2026-10-15 补充:按负责人「按最标准的去做」落实开服瓶颈的待拍板项」。同一轮也结案了收尾汇总里另外三项:G2a `RetentionGap` 不改单调计数器,改为 `max_over_time[15m]`、`for: 0m`;契约用例 15 的名称按默认保留;输出语言约定为日志 / 控制台英文,错误文案跟随所在文件。上一条漏列了这三项。
+> - **G4b-2 越过了合入门槛,已补机械拦截**:登录排队的 login 段先于 `spec_G4b.md` §7 的三项门槛随快照入库。三项门槛是:G1b 多 zone 用例由 Codex 跑绿、G4b-G 由 Codex 跑绿、真实 Redis 首跑记进 PROGRESS。入库后 staging / prod 缺省就会打开排队。现由 `tools/scripts/k8s_deploy.ps1` 的 `$script:LoginQueueMergeGateCleared = $false` 拦住:门槛清掉前,所有部署环境的排队都关,`-LoginQueue on` 直接拒绝。三项满足后,由负责人在同一提交里改为 `$true` 并注明 PROGRESS 条目。
+> - **仍待负责人定**(详见上面那条 PROGRESS 之后的补充条目):
+>   - G3 设计 P2 / P7:id 复用信号是否升级为拒绝建角;是否在 6c 之前加只读探测。见 `new-player-first-enter-no-cold-read.md` §10「待拍板」。
+>   - J0 之后持有 `queue_token` 被限流时的客户端回退口径。这是客户端契约,打开排队前必须定。
+>   - 网关 Hikari `connection-timeout` 与探针端口。前者即 `spec_G2b.md` §10 #5。
+>   - sarama lag 探针是否关掉自动建 topic。
+> - **登记为后续、尚未立项**:
+>   - G2a 批量模式下坏消息「已跳过」计数的时机。两条消费者要一起改。
+>   - `go/login/internal/logic/clientplayerlogin/loginlogic.go` 的 `accountLock.Release(l.ctx)` 仍用请求 ctx 释放账号锁,与 G3 已修的建角锁同类。
+>   - `RouteStore.FenceShards` 的 TiDB 档 64 没有配置载体。这是实现方登记的延后,不是负责人拍板;切 db_first 前要补进 ConfigMap。
+> - **提交状态**:10-15「按最标准」及之后补缺口的改动,一部分已被别的会话的整区快照带进 HEAD,其余仍在工作区。以各 PROGRESS 条目的文件清单为准。**全部未编译、未测试。**
+>
 > **会话产物位置**:原会话的 scratchpad 在本机临时目录,新会话读不到。需要的规格都已复制到 [launch-readiness-20261013/](launch-readiness-20261013/)。
 
 ## 0. 一句话

@@ -8,7 +8,7 @@
 // 修复前前三个用例红(use_count==2 / 哨兵未释放),对照组绿。取红态时只构建本测试工程、链接修复前的
 // lib/muduo.lib,不重建 muduo。
 //
-// 与 rpc_controller_test.cpp 同一工程、同一个 main;链接桩(InitPlayerService / InitPlayerServiceReplied /
+// 与 rpc_controller_test.cpp 同一工程、同一个 main;链接桩(InitPlayerService /
 // InitServiceHandler)已由 rpc_client_lifecycle_test.cpp 定义,这里不要重复定义。
 
 #include <gtest/gtest.h>

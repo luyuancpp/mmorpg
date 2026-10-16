@@ -798,6 +798,40 @@ void SendDataServiceGetPlayerAssetOpLedger(entt::registry& registry, entt::entit
 // 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
 void SendDataServiceGetPlayerAssetOpLedger(entt::registry& registry, entt::entity nodeEntity, const ::data_service::GetPlayerAssetOpLedgerRequest& request, GrpcDone<::data_service::GetPlayerAssetOpLedgerResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
+#pragma region DataServiceGetPlayerInboxLedger
+
+struct AsyncDataServiceGetPlayerInboxLedgerGrpcClient {
+    uint32_t messageId{ DataServiceGetPlayerInboxLedgerMessageId };
+    ClientContext context;
+    Status status;
+    ::data_service::GetPlayerInboxLedgerResponse reply;
+    std::unique_ptr<ClientAsyncResponseReader<::data_service::GetPlayerInboxLedgerResponse>> response_reader;
+    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
+    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+    ::data_service::GetPlayerInboxLedgerRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncDataServiceGetPlayerInboxLedgerHandler / FailedHandler。
+    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
+    GrpcDone<::data_service::GetPlayerInboxLedgerResponse> done;
+    GrpcClientRuntimePtr runtime;
+};
+
+using AsyncDataServiceGetPlayerInboxLedgerHandlerFunctionType =
+    std::function<void(const ClientContext&, const ::data_service::GetPlayerInboxLedgerResponse&)>;
+extern AsyncDataServiceGetPlayerInboxLedgerHandlerFunctionType AsyncDataServiceGetPlayerInboxLedgerHandler;
+// 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
+// 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
+using AsyncDataServiceGetPlayerInboxLedgerFailedHandlerFunctionType =
+    std::function<void(const GrpcCallFailure&, const ::data_service::GetPlayerInboxLedgerRequest&)>;
+extern AsyncDataServiceGetPlayerInboxLedgerFailedHandlerFunctionType AsyncDataServiceGetPlayerInboxLedgerFailedHandler;
+
+void SendDataServiceGetPlayerInboxLedger(entt::registry& registry, entt::entity nodeEntity, const ::data_service::GetPlayerInboxLedgerRequest& request);
+void SendDataServiceGetPlayerInboxLedger(entt::registry& registry, entt::entity nodeEntity, const ::data_service::GetPlayerInboxLedgerRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+void SendDataServiceGetPlayerInboxLedger(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
+// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
+void SendDataServiceGetPlayerInboxLedger(entt::registry& registry, entt::entity nodeEntity, const ::data_service::GetPlayerInboxLedgerRequest& request, GrpcDone<::data_service::GetPlayerInboxLedgerResponse> done, const GrpcCallOptions& options = {});
+#pragma endregion
 void SetDataServiceHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
 void SetDataServiceIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
 void SetDataServiceFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler);

@@ -386,11 +386,22 @@ func (l *GuildLogic) SetGuildMemberRole(ctx context.Context, req *pb.SetGuildMem
 		return &pb.SetGuildMemberRoleResponse{ErrorMessage: tipErr(constants.ErrNoPermission, "role not assignable")}, nil
 	}
 
-	guildID, tip, err := l.operatorGuild(ctx, actor)
+	// expected_guild_id 非 0 时只在该帮任免,不在该帮回 kGuildNotInGuild + 当前帮会快照(expected_guild.go)。
+	expected := req.GetExpectedGuildId()
+	who := caller{playerID: actor, fromClient: true}
+	guildID, tip, err := l.bindExpectedGuild(ctx, who, expected, expectedGuildMethodSetRole)
+	if expectedGuildLost(expected, err) {
+		tip, view := l.rejectExpectedGuildWithView(ctx, actor, expected, expectedGuildMethodSetRole, err)
+		return &pb.SetGuildMemberRoleResponse{ErrorMessage: tip, Guild: view}, nil
+	}
 	if err != nil || tip != nil {
 		return &pb.SetGuildMemberRoleResponse{ErrorMessage: tip}, err
 	}
 	res, err := l.repo.SetMemberRole(ctx, guildID, actor, target, req.GetRole(), officerCapFromTable)
+	if expectedGuildLost(expected, err) {
+		tip, view := l.rejectExpectedGuildWithView(ctx, actor, expected, expectedGuildMethodSetRole, err)
+		return &pb.SetGuildMemberRoleResponse{ErrorMessage: tip, Guild: view}, nil
+	}
 	if tip, err := l.mapWriteErr(ctx, actor, guildID, guildID, err); err != nil || tip != nil {
 		return &pb.SetGuildMemberRoleResponse{ErrorMessage: tip}, err
 	}
@@ -416,12 +427,24 @@ func (l *GuildLogic) KickGuildMember(ctx context.Context, req *pb.KickGuildMembe
 		return &pb.KickGuildMemberResponse{ErrorMessage: tip}, nil
 	}
 
-	guildID, tip, err := l.operatorGuild(ctx, actor)
+	// expected_guild_id 非 0 时只在该帮踢人,不在该帮回 kGuildNotInGuild + 当前帮会快照(expected_guild.go)。
+	// 预检在 KickMember 的 G4 预读与事务外建行之前:不在预期帮的人碰不到那个帮的任何行。
+	expected := req.GetExpectedGuildId()
+	who := caller{playerID: actor, fromClient: true}
+	guildID, tip, err := l.bindExpectedGuild(ctx, who, expected, expectedGuildMethodKick)
+	if expectedGuildLost(expected, err) {
+		tip, view := l.rejectExpectedGuildWithView(ctx, actor, expected, expectedGuildMethodKick, err)
+		return &pb.KickGuildMemberResponse{ErrorMessage: tip, Guild: view}, nil
+	}
 	if err != nil || tip != nil {
 		return &pb.KickGuildMemberResponse{ErrorMessage: tip}, err
 	}
 	// now 显式传入(B5):事务内把被踢者未结算捐献的截止时间提前到"现在"。
 	res, err := l.repo.KickMember(ctx, guildID, actor, target, nowMs())
+	if expectedGuildLost(expected, err) {
+		tip, view := l.rejectExpectedGuildWithView(ctx, actor, expected, expectedGuildMethodKick, err)
+		return &pb.KickGuildMemberResponse{ErrorMessage: tip, Guild: view}, nil
+	}
 	if tip, err := l.mapWriteErr(ctx, actor, guildID, guildID, err); err != nil || tip != nil {
 		return &pb.KickGuildMemberResponse{ErrorMessage: tip}, err
 	}
@@ -448,11 +471,22 @@ func (l *GuildLogic) TransferGuildLeader(ctx context.Context, req *pb.TransferGu
 		return &pb.TransferGuildLeaderResponse{ErrorMessage: tip}, nil
 	}
 
-	guildID, tip, err := l.operatorGuild(ctx, actor)
+	// expected_guild_id 非 0 时只转让该帮,不在该帮回 kGuildNotInGuild + 当前帮会快照(expected_guild.go)。
+	expected := req.GetExpectedGuildId()
+	who := caller{playerID: actor, fromClient: true}
+	guildID, tip, err := l.bindExpectedGuild(ctx, who, expected, expectedGuildMethodTransfer)
+	if expectedGuildLost(expected, err) {
+		tip, view := l.rejectExpectedGuildWithView(ctx, actor, expected, expectedGuildMethodTransfer, err)
+		return &pb.TransferGuildLeaderResponse{ErrorMessage: tip, Guild: view}, nil
+	}
 	if err != nil || tip != nil {
 		return &pb.TransferGuildLeaderResponse{ErrorMessage: tip}, err
 	}
 	res, err := l.repo.TransferLeader(ctx, guildID, actor, target, officerCapFromTable)
+	if expectedGuildLost(expected, err) {
+		tip, view := l.rejectExpectedGuildWithView(ctx, actor, expected, expectedGuildMethodTransfer, err)
+		return &pb.TransferGuildLeaderResponse{ErrorMessage: tip, Guild: view}, nil
+	}
 	if tip, err := l.mapWriteErr(ctx, actor, guildID, guildID, err); err != nil || tip != nil {
 		return &pb.TransferGuildLeaderResponse{ErrorMessage: tip}, err
 	}
@@ -473,6 +507,13 @@ func (l *GuildLogic) ApplyJoinGuild(ctx context.Context, req *pb.ApplyJoinGuildR
 	guildID := req.GetGuildId()
 	if guildID == 0 {
 		return &pb.ApplyJoinGuildResponse{ErrorMessage: tipErr(constants.ErrGuildNotFound, "guild id is zero")}, nil
+	}
+	allowed, err := l.applicationQuota.Allow(ctx, actor)
+	if err != nil {
+		return nil, status.FromContextError(err).Err()
+	}
+	if !allowed {
+		return &pb.ApplyJoinGuildResponse{ErrorMessage: tipErr(uint32(tablepb.CommonError_kRateLimitExceeded), "too many guild applications, retry later")}, nil
 	}
 
 	// 缓存预检只是省一次事务,不是判据:缓存说他入了帮时先用 MySQL 复核,

@@ -427,6 +427,10 @@ PowerShell 注意:字符串里变量后紧跟冒号要写 `${var}:`;`-f` 格式�
 
 `connection-timeout` 不改(Hikari 默认 30s;池更小后排队更可能,是否改 3s 见 §10 第 5 条)。
 
+> **2026-10-15 更正**:`connection-timeout` 已按 3000 毫秒落码(未编译、未测试,待 Codex 验证),理由与连带改动见 §9 第 7 条的更正注。jar 内 `application.yaml`、`New-JavaSvcConfigMapYaml` 的镜像(`Get-MysqlPoolMirror` 按下限 250 核对:HikariCP 5.1.0 把 0 当无限等、低于 250 抛异常)、契约测试的镜像用例与负向夹具、`GatewayDataSourcePoolConfigTest` 一起改。§10 第 5 条原为待拍板项,负责人如不接受,改回时这几处要同批改。
+>
+> **2026-10-15 已定**:负责人按「最标准」定为 3000 毫秒,见 §10 第 5 条的「已定」注;上面「负责人如不接受」一句保留作历史。
+
 #### 4.1.6 过时注释更正
 
 `go/db/etc/db.yaml:68-79`(保留英文历史,删掉两处「151」论断,追加中文更正):
@@ -927,6 +931,10 @@ AST 抽取名单:`Get-AuthoritativeScalar`、`Get-MysqlConnectionPlan`、`Get-My
 6. Phase 2 打开(E_n ≥ 1 且非 zone 池调大)不经重做规划就上线,会直接击穿 1800;`DbExtraStorePoolsBeyondPlan` 会报警,但只是事后。
 6a. 批 C 的回退口径:只 `kubectl rollout undo deploy/db` 会留下批 C 的 ConfigMap(只有新键),旧二进制不认新键、按默认 8/2 开池。若新键已被调到 8 以下(例如为抑制 Z² 把 `ZoneStoreMaxOpenConn` 降到 4),回退后实际池大于总账。回退批 C 必须用旧 commit 重跑 `k8s_deploy.ps1 zone-up`(ConfigMap 随之重生成),不能只 undo Deployment;写进批 C 的交付说明与 README 短节。
 7. gateway 池 5:服务器列表与公告不缓存,开服登录潮时可能排队,Hikari 默认 30s 超时会占住 Tomcat 线程。
+   - **2026-10-15 更正(补探针连锁)**:上面只写到「占住 Tomcat 线程」,漏了后果。K8s 探针原先打业务端口 8081,与业务共用 Tomcat 的 200 个平台线程(没开虚拟线程、没配 `server.tomcat.threads`、没配 `management.server.port`)。MySQL 不可达时每个碰库的请求等满 30s,每秒约 7 个这样的请求就能占满线程(`/api/server-list` 每次 `findAll` 不缓存;`/api/queue-status` 不限流,随机 `zone_id` 每次都 `findById`;assign-gate 同 zone 的并发请求 join 在准入缓存 loader 上、没有超时),liveness(period 20s、默认 timeout 1s、failureThreshold 3)约 60s 内连续失败,两个副本被一起杀;重启时 `ddl-auto: validate` 要连上 MySQL,MySQL 没恢复就进 CrashLoopBackOff,恢复后还要再等一段退避。这与 `application.yaml` management 段注释「MySQL 故障时 assign-gate 自己回 5xx,恢复后立即可用」正好相反。池大小在「MySQL 不可达」这一形态下无关,属 A3 之前就有的缺陷;A3 只让「MySQL 变慢」或「被刷」时更早耗尽连接池。
+   - 修复(未编译、未测试,待 Codex 验证):① 根治:三个探针改打独立管理端口 8082(gateway ConfigMap 写 `management.server.port: 8082`,`deploy/k8s/manifests/java-svc/gateway.yaml` 三个探针同步改,契约测试钉住两边一致),actuator 用独立的连接器与线程池;jar 内不写,因为本机 `start_game.ps1` 按 8081 取 `/actuator/health`。代价:探针不再反映业务连接器能否接新连接;跨越本改动做 `kubectl rollout undo` 会让探针退回 8081 而 ConfigMap 仍是 8082,回退必须用旧 commit 重跑 `k8s_deploy.ps1`。② `connection-timeout: 3000`(§10 第 5 条),只把触发阈值抬高约 10 倍,单靠它消除不了连锁。③ 未做(可选):server-list 1s 短缓存;queue-status 先用缓存的 zone 目录判断 `zone_id` 是否存在再决定查不查库。
+   - **2026-10-15 待负责人确认**:上面的 ①② 是评审直接落码,没有经过负责人拍板。现象、触发条件与依据见本条前两条更正注,要拍板的事项统一登记在 §10 第 5 条的待拍板注。
+   - **2026-10-15 已定(负责人按「最标准」定)**:①② 照上面落码保留,③ 的两项一做一不做。具体:探针走独立管理端口 8082;`connection-timeout` 取 3000 毫秒;server-list 加短缓存;queue-status 不加 zone 目录前置校验。理由与改动位置见 §10 第 5 条的「已定」注。上面「待负责人确认」注保留作历史。
 8. Collector 依赖「池不被移除」才保证 counter 单调;以后若给注册表加回收,要同时改聚合口径。
 9. 契约测试的阈值提取依赖告警文件「一行一个阈值」的写法;有人把表达式改成多行会让用例红(有意为之,失败信息要写清)。
 10. 凭记忆、未在本机核实的外部事实:Hikari 默认值、Spring Boot `./config/` 加载顺序、MySQL 8.0 默认 `innodb_buffer_pool_size` / `temptable_max_ram`、mysqld_exporter 指标名、go-zero 对未知配置键的处理、promhttp 对 Collect panic 的处理、K8s Deployment 滚动时不计退出中 Pod 的行为(§1.3)。
@@ -942,6 +950,18 @@ AST 抽取名单:`Get-AuthoritativeScalar`、`Get-MysqlConnectionPlan`、`Get-My
 3. MySQL 内存:base manifest requests 1Gi / limits 5Gi;生产是否用 overlay 设 requests = limits(Guaranteed),需要的节点规格。
 4. 总账超限是否升级为部署门禁(建议:staging / prod 档 throw,dev 只 WARN);10 个 zone 的配置在单台 MySQL 上是否直接禁止。
 5. Java gateway:池 5 / 2 是否接受;`connection-timeout` 是否从默认 30s 改为 3s(更快失败,5xx 语义提前)。
+   - **2026-10-15 更正**:评审修复已按 3000 毫秒落码(见 §4.1.5 末尾与 §9 第 7 条的更正注),原因是 30s 叠加探针与业务共用线程池会让 MySQL 故障演变成全部副本被 liveness 杀掉。负责人仍可推翻;推翻时 jar、ConfigMap 镜像与两处测试同批改回。
+   - **2026-10-15 待负责人拍板(补:探针端口与可选缓存)**:§9 第 7 条修复 ① 让三个探针改打独立管理端口 8082,这同样是评审直接落码,而且本条原文没有列这一项。请负责人一并定三件事:
+     - (a)探针走 8082 及其代价:探针不再反映业务连接器能否接新连接;不能跨越这次改动做 `kubectl rollout undo`,回退只能用旧 commit 重跑 `k8s_deploy.ps1`。
+     - (b)`connection-timeout` 取 3000 毫秒还是 2000 毫秒(评审建议 2–3s)。
+     - (c)两项可选优化做不做:server-list 短缓存,以及 queue-status 先判 zone 是否存在。
+     - 为什么要负责人定:(a)改的是 K8s 部署形态与回退口径;(b)本来就是本条的待拍板项;(c)新增缓存语义,服务器列表会最多旧一个缓存周期。
+     - 不论怎么定,有两点不变。「MySQL 不可达时两副本被 liveness 一起杀掉、重启时 `ddl-auto: validate` 又要连库」是 A3 之前就有的缺陷,在这一形态下与池大小无关,A3 只让「MySQL 变慢 / 被不限流端点刷」时更早触发。只定 (b)、不定 (a),消除不了这条连锁。
+   - **2026-10-15 已定**:负责人按「最标准」定为以下四项。上面的待拍板注保留作历史。全部未编译、未测试,待 Codex 验证。
+     - (a)探针走独立管理端口 8082。这是根治连锁重启的做法,代价与回退口径照上面写的接受。回退只能用旧 commit 重跑 `k8s_deploy.ps1`,不跨这次改动做 `kubectl rollout undo`;这条已写进 `deploy/k8s/README.md` 的「gateway 探针、管理端口与回退口径」一节。
+     - (b)`connection-timeout` 取 3000 毫秒。取连接的等待远短于 30s 默认值,又给瞬时抖动留了余量。2000 与 3000 没有实质差别,沿用已落码的值,待压测确认。
+     - (c1)server-list 加短缓存。它是只读的公开列表,每次请求都查库是放大面。实现:`ServerListService` 只缓存 zone_config 的行,TTL 1 秒,与 `AssignGateService` 准入缓存同口径;过期瞬间的并发请求合并成一次 `findAll`(single-flight);查库失败不缓存,异常原样抛出,错误语义不变;探测态与「新服」判定仍按请求现算。用例见 `ServerListServiceZoneRowsCacheTest`。
+     - (c2)queue-status **不加** zone 目录前置校验(有意不做)。开区瞬间,新 zone 刚写进 zone_config,还没进目录快照,前置校验会把真实排队玩家判成 `zone_not_found`(404),而本来这次轮询应当照常推进队列。这个正确性代价大于收益。探针隔离、取连接有 3 秒上限之后,刷这个端点只会让碰库的请求回 5xx,不再连带重启。随机 `zone_id` 撑大负缓存的问题,`AssignGateService` 已有 4096 条上限兜住。
 6. mysqld_exporter:是否部署(建议 MySQL Pod 的 sidecar,镜像钉版本与 digest,独立账号只给 `PROCESS, REPLICATION CLIENT, SELECT ON performance_schema.*` 并设 `MAX_USER_CONNECTIONS 3`,口令走 Secret;部署后它的连接计入运维余量)。
 7. 批 A 应用到共享环境的维护窗口与执行顺序(先停服 / 排空写入,再 infra-up)。
 8. 是否下调 `ZoneStoreMaxOpenConn`(访客读不需要 8 条)以抑制 Z² 增长 —— 要先确认合服 pin 后源区库的写流量是否也走这个池(会走:那是整个被合 zone 的存盘)。

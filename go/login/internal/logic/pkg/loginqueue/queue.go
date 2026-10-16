@@ -11,24 +11,32 @@
 // Redis layout (per zone):
 //
 //	queue:zone:{zoneId}        ZSET   member=queueId, score=enqueue unix ms
-//	admit:{queueId}            STRING JSON{ip, port, payload, signature, deadline}
+//	admit:{queueId}            STRING JSON AdmitSlot{node_id, ip, port, zone_id},TTL = AdmitTTL
+//	                           (只记放行时选好的 gate,不含签名;PopAdmit 把它与在途占位排进同一个 MULTI 写入,
+//	                           gate 票在取走时由 consumeAdmitAndSign 现签。R17 R1(2026-06-04)之前存的是
+//	                           已签好的 {ip, port, payload, signature, deadline},票在 Redis 里就开始耗有效期)
 //	admitted:zset:zone:{zoneId} ZSET member=queueId | fast:<uuid>, score=占位到期 unix ms
 //	                           (在途占位:成员逐个到期,计数前清掉;整键 TTL 只做垃圾回收、只增不减。
 //	                           G4b-G 之前是 SET admitted:zone:{zoneId} + 整键滑动 TTL,新版本不再读写旧键)
-//	queue:meta:{queueId}       HASH   {account, device, zoneId, createdAt}
+//	queue:meta:{queueId}       HASH   {account, device, zone_id, createdAt, admitted_at}
+//	                           (admitted_at:放行时刻 unix 毫秒,PopAdmit 与放行槽同一个 MULTI 写入,
+//	                           入队时没有;Lookup 靠它区分「放行窗口已过」与「在途窗口」,2026-10-15 起)
 //	queue:token:{queueToken}   STRING queueId  (token → queueId reverse index)
 //
 // Lifecycle:
 //
 //	Enqueue   → ZADD + meta + token mapping (one Redis round-trip via pipeline)
 //	Rank      → ZRANK + ZCARD               (cheap, hot path for QueryQueueStatus)
-//	Admit     → ZPOPMIN N → write admit:{queueId} + 占位(到期 = 现在 + AdmitTTL) (dispatcher)
+//	Admit     → ZPOPMIN N → write admit:{queueId} + meta.admitted_at + 占位(到期 = 现在 + AdmitTTL) (dispatcher)
 //	Consume   → GETDEL admit:{queueId}, 签 gate 票, 占位改为「现在 + handoffGrace」到期(不撤)
 //	FastPath  → 一段 Lua:清过期 + 计数 < budget + 占位(到期 = 现在 + handoffGrace)
 //
-// All operations are designed so a missing intermediate state is recoverable:
-// dropped admit:{queueId} just means the client re-enqueues (small UX hiccup,
-// not a stuck game). queue:meta TTL is the global ceiling.
+// 放行之后客户端拿到的是确定的终态:放行槽被取走一次即 ADMITTED;之后再查(重复轮询、回包丢失后重试),
+// 或放行槽没人来取、按 AdmitTTL 过期之后再查,Lookup 看到 meta.admitted_at 而放行槽已不在,回 EXPIRED
+// (gateway 映射 410),客户端丢掉 token 重走 /assign-gate。2026-10-15 之前这里写的是「dropped admit
+// 只是让客户端重新入队」,实际 Lookup 回的是「排队中、名次 0」,客户端一直轮询到 meta 按 QueueEntryTTL
+// (1h)过期。PopAdmit 在写放行槽之前丢掉的条目(写放行槽的 MULTI 失败等)没有 admitted_at,仍回名次 0
+// 直到 meta 过期,这是既有边角(login-queue-2026-05.md §14 第 7 条)。queue:meta TTL is the global ceiling.
 package loginqueue
 
 import (
@@ -148,6 +156,10 @@ type Queue struct {
 	// now 是在途占位记账用的时钟:占位的到期分数、清过期成员时的「现在」都读它。
 	// 生产是 time.Now;同包测试换成可拨的假时钟。排队令牌、入队分数等其它时间不走它。
 	now func() time.Time
+
+	// afterAdmitMiss:只给同包测试用的注入点,生产恒为 nil(New 不设它)。Lookup 第一次取放行槽落空之后、
+	// 读 meta 之前调用,用来确定地模拟「dispatcher 写放行槽的 MULTI 恰好落在这两步之间」。
+	afterAdmitMiss func(queueID string)
 }
 
 // New constructs a Queue. hmacSecret is used to sign opaque queue tokens —
@@ -173,6 +185,9 @@ func admittedZSetKey(zoneID uint32) string { return fmt.Sprintf("admitted:zset:z
 func admitKey(queueID string) string       { return "admit:" + queueID }
 func metaKey(queueID string) string        { return "queue:meta:" + queueID }
 func tokenIndexKey(token string) string    { return "queue:token:" + token }
+
+// metaFieldAdmittedAt 是 meta 里的放行时刻字段(unix 毫秒)。PopAdmit 写、Lookup 读,只看有没有,不看值。
+const metaFieldAdmittedAt = "admitted_at"
 
 // ── Enqueue ────────────────────────────────────────────────────────────
 
@@ -255,6 +270,15 @@ type SignAdmitFn func(slot *AdmitSlot) (*AdmitToken, error)
 // Lookup translates a queue token to its current state. The signFn is
 // invoked iff admit:{queueId} is present, so callers always pass a
 // non-nil function — see queuestatuslogic / assigngatelogic.
+//
+// 判定顺序(2026-10-15 起):
+//   - 取到放行槽:现签 gate 票,StatusAdmitted。GETDEL 只成功一次。
+//   - 没取到、meta 有 admitted_at:放行过,再取一次(覆盖「第一次 GETDEL 早于放行的 MULTI」);
+//     仍取不到 = 放行槽已被取走或已按 AdmitTTL 过期,这个条目不会再被放行,回 StatusExpired
+//     (原因 admit_window_passed)。
+//   - 没取到、没有 admitted_at:ZRANK 命中回名次;落空是在途窗口(dispatcher 已 ZPOPMIN、写放行槽的
+//     MULTI 还没落地,亚秒级),回 StatusQueueing、名次 0,客户端照常再查。
+//   - token 索引或 meta 不在、meta 损坏:StatusExpired(原因 meta_gone)。
 func (q *Queue) Lookup(ctx context.Context, token string, signFn SignAdmitFn) (*QueueState, error) {
 	queueID, err := q.rdb.Get(ctx, tokenIndexKey(token)).Result()
 	if errors.Is(err, redis.Nil) {
@@ -282,18 +306,52 @@ func (q *Queue) Lookup(ctx context.Context, token string, signFn SignAdmitFn) (*
 		return &QueueState{Status: StatusAdmitted, Admit: admit}, nil
 	}
 
-	// Still queueing — fetch zone_id from meta to know which ZSET to query.
-	zoneIDStr, err := q.rdb.HGet(ctx, metaKey(queueID), "zone_id").Result()
-	if errors.Is(err, redis.Nil) {
+	if q.afterAdmitMiss != nil {
+		q.afterAdmitMiss(queueID)
+	}
+
+	// 没取到放行槽:一次 HMGET 读出 zone_id(查哪个队列)与 admitted_at(放行过没有),往返数与原来的 HGET 相同。
+	fields, err := q.rdb.HMGet(ctx, metaKey(queueID), "zone_id", metaFieldAdmittedAt).Result()
+	if err != nil {
+		return nil, fmt.Errorf("lookup meta: %w", err)
+	}
+	if len(fields) != 2 {
+		return nil, fmt.Errorf("lookup meta: HMGET returned %d fields, want 2", len(fields))
+	}
+	zoneIDStr, hasZone := fields[0].(string)
+	admittedAt, _ := fields[1].(string)
+	var zoneID uint32
+	if hasZone {
+		if n, _ := fmt.Sscanf(zoneIDStr, "%d", &zoneID); n != 1 {
+			zoneID = 0
+		}
+	}
+
+	if admittedAt != "" {
+		// 放行过。PopAdmit 把放行槽与 admitted_at 写在同一个 MULTI 里,对其它客户端同时可见,所以看得到
+		// admitted_at 就说明放行槽写过;第一次 GETDEL 落空可能只是它早于那个 MULTI,再取一次。
+		// 复用 consumeAdmitAndSign:签票与改占位只有一份实现,取到时与第一次取到完全相同。
+		admit, err := q.consumeAdmitAndSign(ctx, queueID, signFn)
+		if err != nil {
+			return nil, err
+		}
+		if admit != nil {
+			return &QueueState{Status: StatusAdmitted, Admit: admit}, nil
+		}
+		// 仍取不到:放行槽已被取走(之前的轮询、go-redis 超时重发的 GETDEL)或已按 AdmitTTL 过期。
+		// 给终态,不回「名次 0」让客户端空等到 meta 过期(1h)。没取到就不改占位,它按已有的分数到期
+		// (没人来取或取走时签票失败:放行时刻 + AdmitTTL;取走并签票成功:取走时刻 + handoffGrace),
+		// 重复轮询不会给它续期。
+		recordExpired(zoneID, ExpireReasonAdmitWindowPassed)
+		return &QueueState{Status: StatusExpired}, nil
+	}
+
+	if !hasZone {
 		// Meta TTL expired faster than token TTL — treat as expired.
 		recordExpired(0, ExpireReasonMetaGone)
 		return &QueueState{Status: StatusExpired}, nil
 	}
-	if err != nil {
-		return nil, fmt.Errorf("lookup meta zone: %w", err)
-	}
-	var zoneID uint32
-	if n, _ := fmt.Sscanf(zoneIDStr, "%d", &zoneID); n != 1 || zoneID == 0 {
+	if zoneID == 0 {
 		// Meta payload is corrupt — should never happen since Enqueue
 		// writes zone_id under the same pipeline that creates the entry.
 		// Surface as EXPIRED so the client restarts cleanly rather than
@@ -307,6 +365,9 @@ func (q *Queue) Lookup(ctx context.Context, token string, signFn SignAdmitFn) (*
 	if errors.Is(err, redis.Nil) {
 		// Member vanished — likely just popped by dispatcher; advise client to
 		// retry rather than mark expired.
+		// (2026-10-15)走到这里时 meta 没有 admitted_at:dispatcher 已 ZPOPMIN、写放行槽的 MULTI 还没落地
+		// (亚秒级在途窗口),下一次轮询就能取到。放行槽被取走或过期之后不会再走到这里(上面回 EXPIRED)。
+		// 例外是 PopAdmit 在写放行槽之前丢掉的条目(MULTI 失败等,既有边角),它仍停在名次 0 直到 meta 过期。
 		return &QueueState{Status: StatusQueueing, Rank: 0}, nil
 	}
 	if err != nil {
@@ -395,9 +456,11 @@ func (q *Queue) consumeAdmitAndSign(ctx context.Context, queueID string, signFn 
 			recordWait(zoneID, time.Duration(waitMs)*time.Millisecond)
 		}
 	}
-	// We deliberately keep meta + token index alive for their TTL window so a
-	// duplicate poll (client retried mid-network) sees StatusExpired rather
-	// than re-enqueueing under a fresh queueId.
+	// meta 与 token 索引不删,留到各自的 TTL(QueueEntryTTL)。之后同一令牌再查(回包丢失后重试、go-redis
+	// 超时重发 GETDEL),Lookup 靠 meta 里的 admitted_at 认出「放行过、放行槽已不在」,回 StatusExpired
+	// (原因 admit_window_passed),客户端按 410 丢掉 token 重走 /assign-gate。
+	// (2026-10-15 更正)此前这里的英文注释就说重复轮询看到 StatusExpired,但 Lookup 实际回的是
+	// 「排队中、名次 0」,直到 meta 过期;现在注释与行为一致。
 	return admit, nil
 }
 
@@ -464,6 +527,10 @@ func (q *Queue) PopAdmit(
 
 		pipe := q.rdb.TxPipeline()
 		pipe.Set(ctx, admitKey(queueID), blob, q.admitTTL)
+		// 放行时刻记进 meta(admitted_at),与放行槽在同一个 MULTI 里:对其它客户端两者同时可见,Lookup 据此
+		// 把「放行槽已被取走或已过期」(回 EXPIRED)与「在途窗口」(回名次 0)分开。脚本只在 meta 还在时写,
+		// 不凭空建出没有 TTL 的 meta(见 markAdmittedScript)。值用墙钟,与 meta 的 createdAt 同源。
+		markAdmitted(ctx, pipe, queueID, time.Now())
 		// 在途占位:没人来取时与放行槽同寿(AdmitTTL),按自己的分数到期;取走时改成再留 handoffGrace。
 		// 占位与整键续期是一段脚本(见 holdAdmitted),和放行槽的 SET 一起排进同一个 MULTI。
 		// 任一条出错 Exec 即回 error,这个条目不计入放行数(既有的丢条目路径,spec_G4b-G §5.3)。
@@ -520,6 +587,31 @@ func (q *Queue) holdAdmitted(ctx context.Context, c redis.Scripter, zoneID uint3
 	return admittedHoldScript.Eval(ctx, c,
 		[]string{admittedZSetKey(zoneID)},
 		q.now().Add(hold).UnixMilli(), member, q.admittedKeyTTL().Milliseconds(),
+	)
+}
+
+// markAdmittedScript 在 meta 里记下放行时刻,只在 meta 还在时写。
+//
+// 不能直接 HSET:HSET 遇到不存在的键会建出一个新 hash,而 meta 的 TTL 只由 Enqueue 设一次,这样建出的键
+// 没有 TTL、永不过期。meta 先于队列成员消失是走得到的:成员在队里待满 QueueEntryTTL(整个队列键的 TTL
+// 每次入队都续,meta 不续),或 meta 被内存淘汰。meta 不在时 Lookup 本来就回 EXPIRED(meta_gone),
+// 不需要这个字段。键在时 HSET 不改它的 TTL,meta 仍按入队时的 QueueEntryTTL 过期。
+//
+//	KEYS[1] = queue:meta:{queueId}
+//	ARGV[1] = 字段名(metaFieldAdmittedAt)   ARGV[2] = 放行时刻 unix 毫秒
+//	返回 1 = 已写,0 = meta 不在。不能回 nil:排在 MULTI 里会让 Exec 回 error(同 admittedHoldScript)。
+var markAdmittedScript = redis.NewScript(`
+if redis.call('EXISTS', KEYS[1]) == 0 then return 0 end
+redis.call('HSET', KEYS[1], ARGV[1], ARGV[2])
+return 1
+`)
+
+// markAdmitted 把放行时刻记进 queueID 的 meta(见 markAdmittedScript)。只由 PopAdmit 排进写放行槽的
+// MULTI;用 EVAL 而不是 Script.Run 的理由同 holdAdmitted。
+func markAdmitted(ctx context.Context, c redis.Scripter, queueID string, at time.Time) *redis.Cmd {
+	return markAdmittedScript.Eval(ctx, c,
+		[]string{metaKey(queueID)},
+		metaFieldAdmittedAt, at.UnixMilli(),
 	)
 }
 

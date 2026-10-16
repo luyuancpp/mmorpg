@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -276,5 +277,102 @@ func TestEnsurePlayerAllData_SeededParentTakesFastPath(t *testing.T) {
 	}
 	if parent, _ := readSeedParent(t, rdb, seedTestPlayerID); !proto.Equal(parent, newPlayerAllDataSkeleton(seedTestPlayerID)) {
 		t.Fatalf("parent after the fast path = %v, want the untouched seed", parent)
+	}
+}
+
+// 建角 6b' 的只读探测(设计 §10 P7):四种结论,且一个键都不改。键名独立拼(seedParentKey / ownerepoch),
+// 不复用被测的 newPlayerStateKeys。两把都在时归 owner_epoch_exists,与种子脚本先判 owner_epoch 的顺序一致。
+func TestProbeMintedPlayerState_Verdicts(t *testing.T) {
+	plantParent := func(t *testing.T, rdb *redis.Client) {
+		t.Helper()
+		if err := rdb.Set(context.Background(), seedParentKey(seedTestPlayerID), "existing", 0).Err(); err != nil {
+			t.Fatalf("plant parent key: %v", err)
+		}
+	}
+	plantOwnerEpoch := func(t *testing.T, rdb *redis.Client) {
+		t.Helper()
+		if err := rdb.Set(context.Background(), ownerepoch.OwnerEpochKey(seedTestPlayerID), "3", 0).Err(); err != nil {
+			t.Fatalf("plant owner_epoch: %v", err)
+		}
+	}
+	cases := []struct {
+		name  string
+		plant []func(*testing.T, *redis.Client)
+		want  MintedIDProbe
+		label string
+	}{
+		{"两把键都不在", nil, MintedIDClear, "clear"},
+		{"父键已在", []func(*testing.T, *redis.Client){plantParent}, MintedIDParentExists, "parent_exists"},
+		{"owner_epoch 已在", []func(*testing.T, *redis.Client){plantOwnerEpoch}, MintedIDOwnerEpochExists, "owner_epoch_exists"},
+		{"两把都在", []func(*testing.T, *redis.Client){plantParent, plantOwnerEpoch}, MintedIDOwnerEpochExists, "owner_epoch_exists"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			mr, rdb := newSeedTestRedis(t)
+			for _, plant := range tc.plant {
+				plant(t, rdb)
+			}
+			keysBefore := mr.Keys()
+
+			got, err := ProbeMintedPlayerState(context.Background(), rdb, seedTestPlayerID)
+
+			if got != tc.want || err != nil {
+				t.Fatalf("ProbeMintedPlayerState = %v / err %v, want %v / nil", got, err, tc.want)
+			}
+			// label 值是告警表达式的契约,单独钉住字面量。
+			if got.String() != tc.label {
+				t.Fatalf("label = %q, want %q", got.String(), tc.label)
+			}
+			if keysAfter := mr.Keys(); !slices.Equal(keysBefore, keysAfter) {
+				t.Fatalf("keys %v -> %v: the probe must not write", keysBefore, keysAfter)
+			}
+			if ttl := mr.TTL(seedParentKey(seedTestPlayerID)); ttl != 0 {
+				t.Fatalf("parent TTL = %v after the probe, want none", ttl)
+			}
+		})
+	}
+}
+
+// 探测与种子判的是同一组键:种子写下之后,探测必须看见它(否则探测放行的 id 只能在种子那一步才被拦下)。
+func TestProbeMintedPlayerState_SeesTheSeedsParentKey(t *testing.T) {
+	_, rdb := newSeedTestRedis(t)
+	ctx := context.Background()
+	got, err := SeedNewPlayerAllData(ctx, rdb, seedTestPlayerID)
+	requireSeedResult(t, got, err, SeedWritten)
+
+	probe, err := ProbeMintedPlayerState(ctx, rdb, seedTestPlayerID)
+	if probe != MintedIDParentExists || err != nil {
+		t.Fatalf("ProbeMintedPlayerState after a seed = %v / err %v, want parent_exists / nil", probe, err)
+	}
+}
+
+// 探不清的三种来源:零 id、未接线的客户端、Redis 不可用。结论一律 error 且带 err(建角据此 fail-closed),不写任何键。
+func TestProbeMintedPlayerState_ErrorsAreNotClear(t *testing.T) {
+	mr, rdb := newSeedTestRedis(t)
+	ctx := context.Background()
+
+	if got, err := ProbeMintedPlayerState(ctx, rdb, 0); got != MintedIDProbeError || err == nil {
+		t.Fatalf("zero id: ProbeMintedPlayerState = %v / err %v, want error with a non-nil err", got, err)
+	}
+	if got, err := ProbeMintedPlayerState(ctx, nil, seedTestPlayerID); got != MintedIDProbeError || err == nil {
+		t.Fatalf("nil client: ProbeMintedPlayerState = %v / err %v, want error with a non-nil err", got, err)
+	}
+
+	// 先把连接建好,让注入的错误只打在探测上,而不是握手上(同 TestSeedNewPlayerAllData_RedisDownIsError)。
+	if err := rdb.Ping(ctx).Err(); err != nil {
+		t.Fatalf("ping: %v", err)
+	}
+	mr.SetError("simulated outage")
+	t.Cleanup(func() { mr.SetError("") })
+	if got, err := ProbeMintedPlayerState(ctx, rdb, seedTestPlayerID); got != MintedIDProbeError || err == nil {
+		t.Fatalf("redis down: ProbeMintedPlayerState = %v / err %v, want error with a non-nil err", got, err)
+	}
+	if got := MintedIDProbeError.String(); got != "error" {
+		t.Fatalf("label = %q, want error", got)
+	}
+
+	mr.SetError("")
+	if keys := mr.Keys(); len(keys) != 0 {
+		t.Fatalf("failed probes left keys behind: %v", keys)
 	}
 }

@@ -1,0 +1,452 @@
+package inbox
+
+import (
+	"context"
+	"database/sql"
+	"errors"
+	"fmt"
+
+	"player_inbox/internal/constants"
+	"player_inbox/internal/metrics"
+
+	base "proto/common/base"
+	inboxpb "proto/player_inbox"
+
+	"shared/assetop"
+
+	"github.com/zeromicro/go-zero/core/logx"
+)
+
+// errFenceBoundMissing:锁内的 fence 比快照小(需要 R 却没读)。fence 只升不降,只可能是缺陷或库被动过;
+// fail-closed 按故障返回,不在没有上界的情况下推进围栏。
+var errFenceBoundMissing = errors.New("inbox: stream fence_epoch went backwards between snapshot and lock")
+
+const (
+	fetchPathFast   = "fast"
+	fetchPathLocked = "locked"
+
+	// ackLabelSettledUnknown:以 UNKNOWN 收尾为 SETTLED_UNKNOWN 的那一类 FINALIZED,单列一个 result 标签。
+	ackLabelSettledUnknown = "finalized_settled_unknown"
+)
+
+func tipOf(code uint32) *base.TipInfoMessage {
+	if code == 0 {
+		return nil
+	}
+	return &base.TipInfoMessage{Id: code}
+}
+
+// fenceRejectTip 是围栏拒绝结局对应的 tip(STALE / EPOCH_REQUIRED / EPOCH_AHEAD;其余为 0)。
+func fenceRejectTip(v inboxpb.PlayerInboxFenceVerdict) uint32 {
+	switch v {
+	case inboxpb.PlayerInboxFenceVerdict_PLAYER_INBOX_FENCE_STALE:
+		return constants.ErrStaleOwner
+	case inboxpb.PlayerInboxFenceVerdict_PLAYER_INBOX_FENCE_EPOCH_REQUIRED:
+		return constants.ErrEpochRequired
+	case inboxpb.PlayerInboxFenceVerdict_PLAYER_INBOX_FENCE_EPOCH_AHEAD:
+		return constants.ErrEpochAhead
+	default:
+		return 0
+	}
+}
+
+// readEpochBound 在事务外读一次 R。失败 = 故障(kPlayerInboxStoreUnavailable),不改任何状态。
+func (s *Store) readEpochBound(ctx context.Context, playerID uint64) (uint64, error) {
+	readCtx, cancel := context.WithTimeout(ctx, constants.OwnerEpochReadTimeout)
+	defer cancel()
+	r, err := s.epochs.OwnerEpoch(readCtx, playerID)
+	if err != nil {
+		return 0, fmt.Errorf("inbox: read owner_epoch player=%d: %w", playerID, err)
+	}
+	return r, nil
+}
+
+// reportFenceReject 记录围栏拒绝的日志与指标。STALE 返回前再读一次 R 做分类(设计 §7.8):
+// R ≤ req 记 fence_regressed(critical),否则 zombie;分类读失败只记 unclassified,不改变 STALE 本身。
+func (s *Store) reportFenceReject(ctx context.Context, rpc string, v inboxpb.PlayerInboxFenceVerdict,
+	playerID uint64, domain inboxpb.PlayerInboxDomain, req, fence uint64) {
+	log := logx.WithContext(ctx)
+	switch v {
+	case inboxpb.PlayerInboxFenceVerdict_PLAYER_INBOX_FENCE_STALE:
+		kind := StaleUnclassified
+		if r, err := s.readEpochBound(ctx, playerID); err == nil {
+			kind = ClassifyStale(req, r)
+		}
+		if kind == StaleFenceRegressed {
+			metrics.IncFenceRegressed()
+			log.Errorf("[player_inbox] %s STALE classified fence_regressed player=%d domain=%d req_epoch=%d fence=%d: "+
+				"core Redis owner_epoch went backwards; run epoch-raise per db-write-fencing-mysql.md §9.1 (inbox max_fence_epoch "+
+				"is a max source); never reset the fence", rpc, playerID, domain, req, fence)
+			return
+		}
+		log.Infof("[player_inbox] %s STALE (%s) player=%d domain=%d req_epoch=%d fence=%d", rpc, kind, playerID, domain, req, fence)
+	case inboxpb.PlayerInboxFenceVerdict_PLAYER_INBOX_FENCE_EPOCH_AHEAD:
+		metrics.IncEpochAhead()
+		log.Errorf("[player_inbox] %s EPOCH_AHEAD player=%d domain=%d req_epoch=%d fence=%d: request epoch exceeds core Redis "+
+			"owner_epoch (defect or forgery); no state changed", rpc, playerID, domain, req, fence)
+	case inboxpb.PlayerInboxFenceVerdict_PLAYER_INBOX_FENCE_EPOCH_REQUIRED:
+		log.Errorf("[player_inbox] %s EPOCH_REQUIRED player=%d domain=%d: owner_epoch=0 rejected (fail-closed)", rpc, playerID, domain)
+	}
+}
+
+// Fetch 按 seq 升序拉 PENDING 条目并推进围栏(设计 §7.8 Fetch)。业务拒绝走响应里的 fence / tip,
+// 基础设施故障走 error(调用方回 kPlayerInboxStoreUnavailable)。
+//
+//  0. 快路径(不加锁):普通读流行。不存在 → NO_STREAM(绝大多数玩家,结束);open_count == 0 且没有
+//     CursorAhead → 按快照算围栏结局、直接返回空,**不写任何东西**。不写围栏是安全的:围栏保护的是「投递」
+//     与「确认」,两者都走加锁路径;僵尸 scene 即使拿到条目,存盘也会被 Redis 的 Lua CAS 拒绝。
+//  1. 否则开事务,流行 FOR UPDATE,DecideFence;STALE / EPOCH_REQUIRED / EPOCH_AHEAD 不写直接返回。
+//  2. CursorAhead:consumer_decided_through ≥ next_seq → 告警并 next_seq = max(next_seq, 水位+1),照常投递。
+//  3. 普通读 PENDING 行:主键范围扫描、seq 升序、LIMIT max+1。
+//  4. 对返回的每一行按主键条件写 delivery_count+1、last_delivered_epoch、last_delivered_ms(条件 state=PENDING)。
+//  5. FIRST / ADVANCE 写回 fence_epoch;6. 提交。
+func (s *Store) Fetch(ctx context.Context, req *inboxpb.FetchPlayerInboxRequest) (*inboxpb.FetchPlayerInboxResponse, error) {
+	resp := &inboxpb.FetchPlayerInboxResponse{
+		PlayerId: req.GetPlayerId(), Domain: req.GetDomain(), CorrelationId: req.GetCorrelationId(),
+	}
+	domain := req.GetDomain()
+	dl := DomainLabel(domain)
+	if _, ok := s.registry.Domain(domain); !ok || req.GetPlayerId() == 0 {
+		resp.ErrorMessage = tipOf(constants.ErrInvalidParameter)
+		return resp, nil
+	}
+	reqEpoch := req.GetOwnerEpoch()
+	if reqEpoch == 0 {
+		resp.Fence = inboxpb.PlayerInboxFenceVerdict_PLAYER_INBOX_FENCE_EPOCH_REQUIRED
+		resp.ErrorMessage = tipOf(constants.ErrEpochRequired)
+		s.reportFenceReject(ctx, "Fetch", resp.Fence, req.GetPlayerId(), domain, reqEpoch, 0)
+		metrics.ObserveFetch(dl, FenceLabel(resp.Fence), fetchPathFast)
+		return resp, nil
+	}
+
+	playerID := req.GetPlayerId()
+	shard := RowShard(playerID)
+	snap, err := readStream(ctx, s.db, shard, playerID, domain)
+	if err != nil {
+		return nil, err
+	}
+	if snap == nil {
+		resp.Fence = inboxpb.PlayerInboxFenceVerdict_PLAYER_INBOX_FENCE_NO_STREAM
+		metrics.ObserveFetch(dl, FenceLabel(resp.Fence), fetchPathFast)
+		return resp, nil
+	}
+
+	var r uint64
+	rRead := false
+	if NeedsEpochBound(reqEpoch, snap.GetFenceEpoch()) {
+		if r, err = s.readEpochBound(ctx, playerID); err != nil {
+			return nil, err
+		}
+		rRead = true
+	}
+
+	decidedThrough := req.GetConsumerDecidedThrough()
+	if snap.GetOpenCount() == 0 && !IsCursorAhead(snap.GetNextSeq(), decidedThrough) {
+		v := DecideFence(reqEpoch, snap.GetFenceEpoch(), r)
+		resp.Fence = v
+		if !FenceAllows(v) {
+			resp.ErrorMessage = tipOf(fenceRejectTip(v))
+			s.reportFenceReject(ctx, "Fetch", v, playerID, domain, reqEpoch, snap.GetFenceEpoch())
+		}
+		metrics.ObserveFetch(dl, FenceLabel(v), fetchPathFast)
+		return resp, nil
+	}
+
+	// ── 加锁路径 ──
+	maxItems := clampFetchItems(req.GetMaxItems(), constants.FetchDefaultItems, constants.FetchMaxItems)
+	var (
+		verdict     inboxpb.PlayerInboxFenceVerdict
+		lockedFence uint64
+		items       []*inboxpb.PlayerInboxItem
+		hasMore     bool
+		cursorAhead bool
+		raisedTo    uint64
+		scanned     int
+	)
+	err = assetop.WithTxRetryConfig(ctx, s.db, s.txCfg, func(tx *sql.Tx) error {
+		verdict, lockedFence, items, hasMore, cursorAhead, raisedTo, scanned =
+			inboxpb.PlayerInboxFenceVerdict_PLAYER_INBOX_FENCE_UNSPECIFIED, 0, nil, false, false, 0, 0
+		st, err := lockStream(ctx, tx, shard, playerID, domain)
+		if err != nil {
+			return err
+		}
+		if st == nil {
+			// 流行永不删除:快照看得见、锁内看不见只可能是库被动过。
+			return errStreamVanished
+		}
+		lockedFence = st.GetFenceEpoch()
+		if NeedsEpochBound(reqEpoch, lockedFence) && !rRead {
+			return errFenceBoundMissing
+		}
+		verdict = DecideFence(reqEpoch, lockedFence, r)
+		if !FenceAllows(verdict) {
+			return nil // 不写任何东西
+		}
+
+		nowMs := s.nowMs()
+		nextSeq, raised := RaiseNextSeq(st.GetNextSeq(), decidedThrough)
+		cursorAhead, raisedTo = raised, nextSeq
+
+		pending, err := queryItems(ctx, tx, "SELECT "+itemColumns+" FROM "+itemTable+
+			" WHERE `shard` = ? AND `player_id` = ? AND `domain` = ? AND `state` = ? ORDER BY `seq` ASC LIMIT ?",
+			shard, playerID, uint32(domain), uint32(inboxpb.PlayerInboxItemState_PLAYER_INBOX_ITEM_PENDING), maxItems+1)
+		if err != nil {
+			return fmt.Errorf("inbox: scan pending player=%d domain=%d: %w", playerID, domain, err)
+		}
+		scanned = len(pending)
+		if len(pending) > maxItems {
+			hasMore = true
+			pending = pending[:maxItems]
+		}
+		for _, row := range pending {
+			upd, err := tx.ExecContext(ctx, "UPDATE "+itemTable+
+				" SET `delivery_count` = `delivery_count` + 1, `last_delivered_epoch` = ?, `last_delivered_ms` = ?, `updated_ms` = ?"+
+				" WHERE "+itemPK+" AND `state` = ?",
+				reqEpoch, nowMs, nowMs, shard, playerID, uint32(domain), row.GetSeq(),
+				uint32(inboxpb.PlayerInboxItemState_PLAYER_INBOX_ITEM_PENDING))
+			if err != nil {
+				return fmt.Errorf("inbox: mark delivered player=%d seq=%d: %w", playerID, row.GetSeq(), err)
+			}
+			if err := requireOneRow(upd, "mark delivered"); err != nil {
+				return err
+			}
+			items = append(items, deliveredItem(row))
+		}
+		if FenceWrites(verdict) || raised {
+			newFence := lockedFence
+			if FenceWrites(verdict) {
+				newFence = reqEpoch
+			}
+			upd, err := tx.ExecContext(ctx, "UPDATE "+streamTable+
+				" SET `fence_epoch` = ?, `next_seq` = ?, `updated_ms` = ? WHERE "+streamPK,
+				newFence, nextSeq, nowMs, shard, playerID, uint32(domain))
+			if err != nil {
+				return fmt.Errorf("inbox: write fence player=%d: %w", playerID, err)
+			}
+			if err := requireOneRow(upd, "write fence"); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	resp.Fence = verdict
+	if !FenceAllows(verdict) {
+		resp.ErrorMessage = tipOf(fenceRejectTip(verdict))
+		s.reportFenceReject(ctx, "Fetch", verdict, playerID, domain, reqEpoch, lockedFence)
+		metrics.ObserveFetch(dl, FenceLabel(verdict), fetchPathLocked)
+		return resp, nil
+	}
+	resp.Items = items
+	resp.HasMore = hasMore
+	metrics.ObserveFetch(dl, FenceLabel(verdict), fetchPathLocked)
+	metrics.ObserveFetchScanned(scanned)
+	log := logx.WithContext(ctx)
+	if cursorAhead {
+		metrics.IncCursorAhead()
+		log.Errorf("[player_inbox] CursorAhead player=%d domain=%d consumer_decided_through=%d raised next_seq to %d: "+
+			"inbox DB was restored from backup; old rows below the watermark are reconciled by IB-9 replay checks",
+			playerID, domain, decidedThrough, raisedTo)
+	}
+	for _, it := range items {
+		if it.GetDeliveryCount() >= constants.DeliveryWarnThreshold {
+			log.Errorf("[player_inbox] Item delivered %d times without ack player=%d domain=%d seq=%d msg_type=%d scene_node=%d: "+
+				"possible poison message; consider VoidItem(QUARANTINED)",
+				it.GetDeliveryCount(), playerID, domain, it.GetSeq(), it.GetMsgType(), req.GetSceneNodeId())
+		}
+	}
+	return resp, nil
+}
+
+// deliveredItem 把一行折成 Fetch 回包条目。directive != NONE 时**不带载荷**:作废路径不解码载荷
+// (即使载荷会让 scene 崩溃,作废也不会再触发崩溃,设计 §7.9)。delivery_count 含本次。
+func deliveredItem(row *inboxpb.PlayerInboxItemRow) *inboxpb.PlayerInboxItem {
+	it := &inboxpb.PlayerInboxItem{
+		Seq:           row.GetSeq(),
+		MsgType:       inboxpb.PlayerInboxMessageType(row.GetMsgType()),
+		Directive:     inboxpb.PlayerInboxDirective(row.GetDirective()),
+		VoidReason:    inboxpb.PlayerInboxVoidReason(row.GetVoidReason()),
+		RequestId:     row.GetRequestId(),
+		DeliveryCount: row.GetDeliveryCount() + 1,
+		CreatedMs:     row.GetCreatedMs(),
+	}
+	if it.Directive == inboxpb.PlayerInboxDirective_PLAYER_INBOX_DIRECTIVE_NONE {
+		it.Payload = row.GetPayload()
+	}
+	return it
+}
+
+// Ack 登记消费方**已落盘**的结局(设计 §7.7、§7.8 Ack 表)。锁流行、DecideFence(同样的 R 规则),
+// 然后按 seq 升序逐条判定(decideAck),终结时用主键条件写;最后写回 open_count、需要时写回 fence_epoch。
+func (s *Store) Ack(ctx context.Context, req *inboxpb.AckPlayerInboxRequest) (*inboxpb.AckPlayerInboxResponse, error) {
+	resp := &inboxpb.AckPlayerInboxResponse{
+		PlayerId: req.GetPlayerId(), Domain: req.GetDomain(), CorrelationId: req.GetCorrelationId(),
+	}
+	domain := req.GetDomain()
+	dl := DomainLabel(domain)
+	if _, ok := s.registry.Domain(domain); !ok || req.GetPlayerId() == 0 ||
+		!validateAckReports(req.GetDecisions(), constants.AckMaxDecisions) {
+		resp.ErrorMessage = tipOf(constants.ErrInvalidParameter)
+		return resp, nil
+	}
+	reqEpoch := req.GetOwnerEpoch()
+	playerID := req.GetPlayerId()
+	if reqEpoch == 0 {
+		resp.Fence = inboxpb.PlayerInboxFenceVerdict_PLAYER_INBOX_FENCE_EPOCH_REQUIRED
+		resp.ErrorMessage = tipOf(constants.ErrEpochRequired)
+		s.reportFenceReject(ctx, "Ack", resp.Fence, playerID, domain, reqEpoch, 0)
+		metrics.ObserveAck(dl, FenceLabel(resp.Fence))
+		return resp, nil
+	}
+
+	shard := RowShard(playerID)
+	snap, err := readStream(ctx, s.db, shard, playerID, domain)
+	if err != nil {
+		return nil, err
+	}
+	if snap == nil {
+		// 没有流就不可能有投递过的条目:逐条回 UNKNOWN_SEQ(协议异常,消费方 halt 并告警)。
+		resp.Fence = inboxpb.PlayerInboxFenceVerdict_PLAYER_INBOX_FENCE_NO_STREAM
+		for _, d := range req.GetDecisions() {
+			resp.Results = append(resp.Results, &inboxpb.PlayerInboxAckItem{
+				Seq: d.GetSeq(), Result: inboxpb.PlayerInboxAckResult_PLAYER_INBOX_ACK_UNKNOWN_SEQ,
+			})
+		}
+		s.reportAckResults(ctx, playerID, domain, req, resp.Results)
+		return resp, nil
+	}
+
+	var r uint64
+	rRead := false
+	if NeedsEpochBound(reqEpoch, snap.GetFenceEpoch()) {
+		if r, err = s.readEpochBound(ctx, playerID); err != nil {
+			return nil, err
+		}
+		rRead = true
+	}
+
+	seqs := make([]uint64, 0, len(req.GetDecisions()))
+	for _, d := range req.GetDecisions() {
+		seqs = append(seqs, d.GetSeq())
+	}
+	var (
+		verdict     inboxpb.PlayerInboxFenceVerdict
+		lockedFence uint64
+		results     []*inboxpb.PlayerInboxAckItem
+	)
+	err = assetop.WithTxRetryConfig(ctx, s.db, s.txCfg, func(tx *sql.Tx) error {
+		verdict, lockedFence, results = inboxpb.PlayerInboxFenceVerdict_PLAYER_INBOX_FENCE_UNSPECIFIED, 0, nil
+		st, err := lockStream(ctx, tx, shard, playerID, domain)
+		if err != nil {
+			return err
+		}
+		if st == nil {
+			return errStreamVanished
+		}
+		lockedFence = st.GetFenceEpoch()
+		if NeedsEpochBound(reqEpoch, lockedFence) && !rRead {
+			return errFenceBoundMissing
+		}
+		verdict = DecideFence(reqEpoch, lockedFence, r)
+		if !FenceAllows(verdict) {
+			return nil
+		}
+		rows, err := readItemsBySeq(ctx, tx, shard, playerID, domain, seqs)
+		if err != nil {
+			return err
+		}
+		nowMs := s.nowMs()
+		var finalized uint32
+		for _, report := range req.GetDecisions() {
+			d := decideAck(rows[report.GetSeq()], report)
+			if d.finalize {
+				upd, err := tx.ExecContext(ctx, "UPDATE "+itemTable+
+					" SET `state` = ?, `finalized_by` = ?, `decided_epoch` = ?, `outcome_reason` = ?, `updated_ms` = ?"+
+					" WHERE "+itemPK+" AND `state` = ?",
+					uint32(d.newState), uint32(inboxpb.PlayerInboxFinalizer_PLAYER_INBOX_FINALIZER_CONSUMER), reqEpoch,
+					ackOutcomeReason(report), nowMs, shard, playerID, uint32(domain), report.GetSeq(),
+					uint32(inboxpb.PlayerInboxItemState_PLAYER_INBOX_ITEM_PENDING))
+				if err != nil {
+					return fmt.Errorf("inbox: finalize player=%d seq=%d: %w", playerID, report.GetSeq(), err)
+				}
+				if err := requireOneRow(upd, "finalize item"); err != nil {
+					return err
+				}
+				finalized++
+			}
+			results = append(results, &inboxpb.PlayerInboxAckItem{Seq: report.GetSeq(), Result: d.result, State: d.state})
+		}
+		if finalized == 0 && !FenceWrites(verdict) {
+			return nil
+		}
+		openCount := st.GetOpenCount()
+		if finalized > openCount {
+			// open_count 与实际 PENDING 行不一致只可能是缺陷;它只影响满箱判定与快路径,钳到 0 并大声记录。
+			logx.WithContext(ctx).Errorf("[player_inbox] open_count underflow player=%d domain=%d open_count=%d finalized=%d; clamping to 0",
+				playerID, domain, openCount, finalized)
+			openCount = finalized
+		}
+		newFence := lockedFence
+		if FenceWrites(verdict) {
+			newFence = reqEpoch
+		}
+		upd, err := tx.ExecContext(ctx, "UPDATE "+streamTable+
+			" SET `open_count` = ?, `fence_epoch` = ?, `updated_ms` = ? WHERE "+streamPK,
+			openCount-finalized, newFence, nowMs, shard, playerID, uint32(domain))
+		if err != nil {
+			return fmt.Errorf("inbox: update stream after ack player=%d: %w", playerID, err)
+		}
+		return requireOneRow(upd, "update stream after ack")
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	resp.Fence = verdict
+	if !FenceAllows(verdict) {
+		resp.ErrorMessage = tipOf(fenceRejectTip(verdict))
+		s.reportFenceReject(ctx, "Ack", verdict, playerID, domain, reqEpoch, lockedFence)
+		metrics.ObserveAck(dl, FenceLabel(verdict))
+		return resp, nil
+	}
+	resp.Results = results
+	s.reportAckResults(ctx, playerID, domain, req, results)
+	return resp, nil
+}
+
+// reportAckResults 记 Ack 逐条结果的指标;协议异常与 SETTLED_UNKNOWN 都记 ERROR(logx 没有 WARN 级;
+// 告警分级由第 4 批的规则按 ack_total{result} 区分 critical / warning)。
+func (s *Store) reportAckResults(ctx context.Context, playerID uint64, domain inboxpb.PlayerInboxDomain,
+	req *inboxpb.AckPlayerInboxRequest, results []*inboxpb.PlayerInboxAckItem) {
+	dl := DomainLabel(domain)
+	log := logx.WithContext(ctx)
+	for i, res := range results {
+		label := AckResultLabel(res.GetResult())
+		if res.GetResult() == inboxpb.PlayerInboxAckResult_PLAYER_INBOX_ACK_FINALIZED &&
+			res.GetState() == inboxpb.PlayerInboxItemState_PLAYER_INBOX_ITEM_SETTLED_UNKNOWN {
+			label = ackLabelSettledUnknown // warning 告警单列(设计 §9.4)
+		}
+		metrics.ObserveAck(dl, label)
+		var report *inboxpb.PlayerInboxDecisionReport
+		if i < len(req.GetDecisions()) {
+			report = req.GetDecisions()[i]
+		}
+		switch res.GetResult() {
+		case inboxpb.PlayerInboxAckResult_PLAYER_INBOX_ACK_FINALIZED:
+			if res.GetState() == inboxpb.PlayerInboxItemState_PLAYER_INBOX_ITEM_SETTLED_UNKNOWN {
+				log.Errorf("[player_inbox] Item settled as SETTLED_UNKNOWN player=%d domain=%d seq=%d request_id=%d epoch=%d: "+
+					"consumer watermark passed it but its outcome left the recent ring; verify via reconcile",
+					playerID, domain, res.GetSeq(), report.GetRequestId(), req.GetOwnerEpoch())
+			}
+		case inboxpb.PlayerInboxAckResult_PLAYER_INBOX_ACK_ALREADY_SAME:
+		default:
+			log.Errorf("[player_inbox] Ack protocol anomaly result=%s player=%d domain=%d seq=%d reported_outcome=%d "+
+				"reported_request_id=%d row_state=%d epoch=%d: row unchanged; consumer halts this domain",
+				AckResultLabel(res.GetResult()), playerID, domain, res.GetSeq(), report.GetOutcome(),
+				report.GetRequestId(), res.GetState(), req.GetOwnerEpoch())
+		}
+	}
+}

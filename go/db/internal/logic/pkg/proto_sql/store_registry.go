@@ -417,7 +417,7 @@ func (r *StoreRegistry) recordFailure(storageID uint32, err error) {
 // OpenPlacementStore 按需打开一个落点库:独立 *sql.DB(DSN 默认库 = dbName)+ 独立 proto2mysql 模型。
 //
 // 为什么每个库必须有自己的连接池:proto2mysql 生成的 SQL 都是不带库名的裸表名
-// (REPLACE INTO `player_database` …),落到哪个库完全取决于连接的当前库;而 USE 是会话级的,
+// (UPDATE `player_database` … / INSERT INTO `player_database` …,Save 按主键先 UPDATE、0 行再 INSERT),落到哪个库完全取决于连接的当前库;而 USE 是会话级的,
 // 只切换池里当场借到的**一条**连接。f3b308f 版的 OpenDB 正是靠一次 USE「切库」,池里其余连接
 // 仍落在 DSN 的默认库;proto2mysql main(83fed85 起)的 OpenDB 已改为不 USE、只校验 DSN 的库。
 // 两种实现下「库由 DSN 默认库决定」都成立,所以每个落点库一个连接池,DSN 的库名就是落点库名。

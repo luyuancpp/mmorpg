@@ -377,6 +377,17 @@ namespace
 	{
 		return endpoint.ip() + ":" + std::to_string(endpoint.port());
 	}
+
+	// 指针入参保留原接口，先拒绝空值，再建立不会改变所有权的必需借用。
+	muduo::net::EventLoop &RequireEventLoop(muduo::net::EventLoop *loop)
+	{
+		if (loop == nullptr)
+		{
+			LOG_FATAL << "Node requires a valid EventLoop pointer.";
+			std::abort();
+		}
+		return *loop;
+	}
 }
 
 std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> gNodeService;
@@ -384,13 +395,8 @@ std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> gN
 Node *gNode;
 
 Node::Node(muduo::net::EventLoop *loop, const std::string &logFilePath)
-	: eventLoop(loop), logSystem(logFilePath, kMaxLogFileRollSize, 1)
+	: eventLoop(RequireEventLoop(loop)), logSystem(logFilePath, kMaxLogFileRollSize, 1)
 {
-	if (eventLoop == nullptr)
-	{
-		LOG_FATAL << "Node requires a valid EventLoop pointer.";
-	}
-
 	// Start async log system early so all constructor logs have correct formatting/colors.
 	muduo::Logger::setOutput(AsyncOutput);
 	logSystem.start();
@@ -417,13 +423,16 @@ Node::Node(muduo::net::EventLoop *loop,
 		   ::google::protobuf::Service *replyService)
 	: Node(loop, "logs/cpp_nodes/" + NodeUtils::NodeTypeToShortName(nodeType))
 {
-	replyService_ = replyService;
+	if (replyService != nullptr)
+	{
+		replyService_ = std::ref(*replyService);
+	}
 	MutableNodeInfo().set_node_type(nodeType);
 	targetNodeTypeWhitelist = std::move(connectTo);
 	Initialize();
-	node::observability::RegisterThreadObservability(*eventLoop, "logs/" + NodeUtils::NodeTypeToShortName(nodeType));
-	RegisterTrafficStatsReporter(*eventLoop);
-	RegisterRpcChannelStatsReporter(*eventLoop);
+	node::observability::RegisterThreadObservability(eventLoop, "logs/" + NodeUtils::NodeTypeToShortName(nodeType));
+	RegisterTrafficStatsReporter(eventLoop);
+	RegisterRpcChannelStatsReporter(eventLoop);
 }
 
 Node::~Node()
@@ -435,9 +444,9 @@ Node::~Node()
 	// 但已经退出的 loop 不会再消费 worker 投递回来的完成回调。此时重新驱动
 	// 同一个 loop,直到既有 finalizer 调 quit(),避免析构 joinable thread 或让
 	// 捕获 this 的完成回调落到已销毁对象上。
-	if (eventLoop != nullptr && eventLoop->isInLoopThread())
+	if (eventLoop.isInLoopThread())
 	{
-		eventLoop->assertInLoopThread();
+		eventLoop.assertInLoopThread();
 		bool fallbackLogged = false;
 		for (;;)
 		{
@@ -452,13 +461,12 @@ Node::~Node()
 				LOG_WARN << "EventLoop exited before node shutdown completed; running fallback drain loop";
 				fallbackLogged = true;
 			}
-			eventLoop->loop();
+			eventLoop.loop();
 		}
 	}
 
 	// EventLoop 外销毁时,Shutdown() 的公开等待预算只用于向调用方报告卡顿;
 	// 析构本身不能在仍有捕获 this 的回调/worker 时继续释放成员。
-	if (eventLoop != nullptr)
 	{
 		std::unique_lock<std::mutex> lock(shutdownCompletionMutex_);
 		shutdownCompletionCv_.wait(lock, [this]
@@ -484,13 +492,13 @@ int64_t Node::GetLeaseId() const
 
 NodeInfo &Node::MutableNodeInfo()
 {
-	assert(eventLoop == nullptr || eventLoop->isInLoopThread());
+	assert(eventLoop.isInLoopThread());
 	return localNodeInfo_;
 }
 
 void Node::Initialize()
 {
-	eventLoop->assertInLoopThread();
+	eventLoop.assertInLoopThread();
 	LOG_DEBUG << "Node initializing...";
 	build_info::LogStartupBanner();
 	InstallDiagnosticSignalHandlerOnce();
@@ -500,7 +508,7 @@ void Node::Initialize()
 	// signal handlers (Review R1 fix). 250 ms cadence is fast enough that
 	// ops doesn't notice the latency between sending SIGUSR1/SIGUSR2 and
 	// the dump file appearing, slow enough to be free CPU overhead.
-	eventLoop->runEvery(0.25, &DrainPendingDiagnosticWork);
+	eventLoop.runEvery(0.25, &DrainPendingDiagnosticWork);
 	RegisterHandlers();
 	RegisterEventHandlers();
 	LoadConfigs();
@@ -582,7 +590,7 @@ void Node::InitRpcServer()
 	LOG_INFO << "Zone Redis auth: " << (zoneRedisConfig.password().empty() ? "off" : "on");
 	RedisConnectOptions redisOptions;
 	redisOptions.password = zoneRedisConfig.password();
-	tlsRedis.Connect(eventLoop, zoneRedisAddress, std::move(redisOptions));
+	tlsRedis.Connect(&eventLoop, zoneRedisAddress, std::move(redisOptions));
 
 	LOG_DEBUG << "Node info: " << localNodeInfo.DebugString();
 }
@@ -682,7 +690,7 @@ void Node::StartKafkaPolling()
 	// queueInLoop preserves the single-threaded callback invariant the rest
 	// of the codebase relies on — the consumer thread never touches ECS or
 	// node state directly, only enqueues the existing callback.
-	kafkaManager.StartBackgroundPolling(eventLoop);
+	kafkaManager.StartBackgroundPolling(&eventLoop);
 }
 
 bool Node::RegisterKafkaMessageHandler(const std::vector<std::string> &topics,
@@ -813,7 +821,7 @@ void Node::StartGrpcServer()
 
 void Node::ShutdownGrpcServer()
 {
-	eventLoop->assertInLoopThread();
+	eventLoop.assertInLoopThread();
 	if (!grpcServer_)
 	{
 		shutdownGrpcDrainComplete_ = true;
@@ -841,9 +849,9 @@ void Node::ShutdownGrpcServer()
 		server->Shutdown(std::chrono::system_clock::now() + kGrpcDrainTimeout);
 		const auto drainElapsed = std::chrono::steady_clock::now() - drainStart;
 
-		eventLoop->queueInLoop([this, drainElapsed]
+		eventLoop.queueInLoop([this, drainElapsed]
 							   {
-			eventLoop->assertInLoopThread();
+			eventLoop.assertInLoopThread();
 
 			// gRPC 不返回"是否打到 grace deadline"的布尔值。耗时达到预算时只能
 			// 诚实记录为"预算已耗尽或 handler 自身退场更慢",不能断言取消一定发生。
@@ -945,7 +953,7 @@ void Node::StartConflictDrainWatchdog()
 
 void Node::StartRpcServer()
 {
-	eventLoop->assertInLoopThread();
+	eventLoop.assertInLoopThread();
 	if (rpcServer)
 	{
 		LOG_TRACE << "RPC server already started, skipping.";
@@ -967,7 +975,7 @@ void Node::StartRpcServer()
 	LOG_INFO << "RPC server listen addr=" << rpcListenAddress.toIpPort()
 			 << " registered endpoint=" << localNodeInfo.endpoint().ip() << ":" << listenPort;
 
-	rpcServer = std::make_unique<RpcServerPtr::element_type>(eventLoop, rpcListenAddress);
+	rpcServer = std::make_unique<RpcServerPtr::element_type>(&eventLoop, rpcListenAddress);
 	rpcServer->start();
 	auto *nodeReplyService = GetNodeReplyService();
 	if (nodeReplyService != nullptr)
@@ -1080,30 +1088,20 @@ void Node::RequestShutdown()
 		return;
 	}
 
-	if (eventLoop == nullptr)
-	{
-		return;
-	}
-
-	if (eventLoop->isInLoopThread())
+	if (eventLoop.isInLoopThread())
 	{
 		ShutdownInLoop();
 		return;
 	}
 
-	eventLoop->queueInLoop([this]
+	eventLoop.queueInLoop([this]
 						   { ShutdownInLoop(); });
 }
 
 void Node::Shutdown()
 {
-	if (eventLoop == nullptr)
-	{
-		return;
-	}
-
 	RequestShutdown();
-	if (eventLoop->isInLoopThread())
+	if (eventLoop.isInLoopThread())
 	{
 		return;
 	}
@@ -1120,7 +1118,7 @@ void Node::Shutdown()
 
 void Node::ShutdownInLoop()
 {
-	eventLoop->assertInLoopThread();
+	eventLoop.assertInLoopThread();
 	if (shutdownStarted.exchange(true, std::memory_order_acq_rel))
 	{
 		return;
@@ -1148,7 +1146,7 @@ void Node::ShutdownInLoop()
 
 void Node::StartShutdownDrainWatchdog()
 {
-	eventLoop->assertInLoopThread();
+	eventLoop.assertInLoopThread();
 
 	if (!shutdownDrainCompleteFn_)
 	{
@@ -1168,7 +1166,7 @@ void Node::StartShutdownDrainWatchdog()
 
 void Node::MaybeFinalizeShutdownInLoop()
 {
-	eventLoop->assertInLoopThread();
+	eventLoop.assertInLoopThread();
 	if (shutdownFinalizationStarted_)
 	{
 		return;
@@ -1198,7 +1196,7 @@ void Node::MaybeFinalizeShutdownInLoop()
 
 void Node::FinalizeShutdownInLoop()
 {
-	eventLoop->assertInLoopThread();
+	eventLoop.assertInLoopThread();
 	// 先发既有的租约释放与取消 watch，再封住全部官方客户端写入口。
 	// 释放请求也属于在途调用：关闭时仍由相同完成路径回收，不留下 CQ/tag。
 	ReleaseNodeId();
@@ -1233,7 +1231,7 @@ void Node::FinalizeShutdownInLoop()
 
 bool Node::PollGrpcClientsInLoop()
 {
-	eventLoop->assertInLoopThread();
+	eventLoop.assertInLoopThread();
 	bool drained = true;
 	for (auto &registry : tlsNodeContextManager.GetAllRegistries())
 	{
@@ -1267,7 +1265,7 @@ bool Node::PollGrpcClientsInLoop()
 
 void Node::DrainGrpcClientsInLoop()
 {
-	eventLoop->assertInLoopThread();
+	eventLoop.assertInLoopThread();
 	if (!PollGrpcClientsInLoop())
 	{
 		// 保持 loop 可运行；不在析构栈阻塞等 CQ，也不在未排空时强制释放。
@@ -1275,7 +1273,7 @@ void Node::DrainGrpcClientsInLoop()
 		return;
 	}
 	grpcClientDrainTimer_.Cancel();
-	eventLoop->queueInLoop([this]
+	eventLoop.queueInLoop([this]
 	{
 		FinalizeTeardownInLoop();
 	});
@@ -1283,7 +1281,7 @@ void Node::DrainGrpcClientsInLoop()
 
 void Node::FinalizeTeardownInLoop()
 {
-	eventLoop->assertInLoopThread();
+	eventLoop.assertInLoopThread();
 
 	// node_id / 端口的重试定时器由 serviceDiscoveryManager.Shutdown() -> EtcdService::Shutdown()
 	// 取消,不在这里。
@@ -1339,7 +1337,7 @@ void Node::FinalizeTeardownInLoop()
 	// EventLoop 外的析构也可能提前释放仍被这两跳捕获的 Node。notify 在锁内完成,
 	// 等待方取得锁时已没有后续 Node 访问;解锁后不得再访问任何成员。
 	// 见 docs/ops/incident-gate-tcpconnection-dtor-assert-2026-09-13.md §7.11。
-	auto *const loop = eventLoop;
+	auto *const loop = &eventLoop;
 	loop->queueInLoop([this, loop]
 	{
 		loop->queueInLoop([this, loop]
@@ -1412,16 +1410,14 @@ void Node::ReleaseNodeId()
 }
 
 // These functions are provided by each node binary; the linker resolves them.
-// 每个节点二进制都要提供下面三个链接符号。按 message_id 的全局回包表(InitReply)已退场:节点间 RPC0 的回包
+// 每个节点二进制都要提供下面两个链接符号(玩家回包链 InitPlayerServiceReplied 已随第 6 批删除)。按 message_id 的全局回包表(InitReply)已退场:节点间 RPC0 的回包
 // 在调用点的每次调用回调里处理(docs/design/muduo-rpc-channel.md §9.2)。
 void InitPlayerService();
-void InitPlayerServiceReplied();
 void InitServiceHandler();
 void Node::RegisterHandlers()
 {
 	InitMessageInfo();
 	InitPlayerService();
-	InitPlayerServiceReplied();
 	InitServiceHandler();
 }
 
@@ -1444,7 +1440,7 @@ bool Node::IsCurrentNode(const NodeInfo &candidateNode) const
 
 void Node::HandleServiceNodeStop(const std::string &key, const std::string &nodeJson)
 {
-	eventLoop->assertInLoopThread();
+	eventLoop.assertInLoopThread();
 	LOG_INFO << "Service node stop, key: " << key << ", value: " << nodeJson;
 
 	// Mirror HandleServiceNodeStart: allocation-slot keys store a raw uuid,
@@ -1642,7 +1638,7 @@ void Node::CompleteNodeRemoval(uint32_t nodeType, entt::entity entity, const std
 
 void Node::OnServerConnected(const OnConnected2TcpServerEvent &connectedEvent)
 {
-	eventLoop->assertInLoopThread();
+	eventLoop.assertInLoopThread();
 	if (rpcServer == nullptr)
 	{
 		return;

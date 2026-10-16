@@ -17,6 +17,8 @@
 #include "proto/login/login.pb.h"
 #include "proto/match/match_internal.pb.h"
 #include "proto/match/match_service.pb.h"
+#include "proto/player_inbox/player_inbox.pb.h"
+#include "proto/player_inbox/player_inbox_admin.pb.h"
 #include "proto/scene/client_player_common.pb.h"
 #include "proto/scene/player_activity.pb.h"
 #include "proto/scene/player_attribute.pb.h"
@@ -52,6 +54,8 @@
 #include "rpc/service_metadata/login_service_metadata.h"
 #include "rpc/service_metadata/match_internal_service_metadata.h"
 #include "rpc/service_metadata/match_service_service_metadata.h"
+#include "rpc/service_metadata/player_inbox_service_metadata.h"
+#include "rpc/service_metadata/player_inbox_admin_service_metadata.h"
 #include "rpc/service_metadata/client_player_common_service_metadata.h"
 #include "rpc/service_metadata/player_activity_service_metadata.h"
 #include "rpc/service_metadata/player_attribute_service_metadata.h"
@@ -76,11 +80,13 @@
 
 #include "proto/common/event/battle_event.pb.h"
 #include "proto/contracts/kafka/gate_event.pb.h"
+#include "proto/common/event/player_inbox_event.pb.h"
 #include "proto/common/event/team_event.pb.h"
 #include "common_event_battle_event_event_id.h"
 #include "contracts_kafka_match_event_event_id.h"
 #include "contracts_kafka_gate_event_event_id.h"
 #include "contracts_kafka_player_event_event_id.h"
+#include "common_event_player_inbox_event_event_id.h"
 #include "common_event_player_migration_event_event_id.h"
 #include "common_event_team_event_event_id.h"
 
@@ -145,6 +151,7 @@ namespace data_service{void SendDataServiceReservePlayerName(entt::registry& , e
 namespace data_service{void SendDataServiceReleasePlayerName(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace data_service{void SendDataServiceBatchGetPlayerName(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace data_service{void SendDataServiceGetPlayerAssetOpLedger(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace data_service{void SendDataServiceGetPlayerInboxLedger(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace etcdserverpb{void SendKVRange(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace etcdserverpb{void SendKVPut(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace etcdserverpb{void SendKVDeleteRange(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
@@ -216,6 +223,14 @@ namespace match{void SendMatchServiceNotifyChallengeResult(entt::registry& , ent
 namespace match{void SendMatchServiceWatchBattle(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace match{void SendMatchServiceRequestBattleTicket(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace match{void SendMatchServiceListWatchableBattles(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace player_inbox{void SendPlayerInboxFetchItems(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace player_inbox{void SendPlayerInboxAckItems(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace player_inbox{void SendPlayerInboxAdminGmSanctionPlayer(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace player_inbox{void SendPlayerInboxAdminGetSummary(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace player_inbox{void SendPlayerInboxAdminListItems(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace player_inbox{void SendPlayerInboxAdminLookupByRequest(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace player_inbox{void SendPlayerInboxAdminVoidItem(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace player_inbox{void SendPlayerInboxAdminReconcilePlayer(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace scene_manager{void SendSceneManagerCreateScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace scene_manager{void SendSceneManagerDestroyScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace scene_manager{void SendSceneManagerEnterScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
@@ -252,7 +267,7 @@ namespace trade{void SendTradeAdminSeedListing(entt::registry& , entt::entity , 
 // 容量以 rpc_event_registry.h 的 kMaxRpcMethodCount 为准;static_assert 把
 // "半途 regen 导致头文件容量落后于本轮 message id 数"的事故(2026-09-01,
 // InitMessageInfo 越界写导致节点启动断言)变成编译错误而不是运行期崩溃。
-static_assert(kMaxRpcMethodCount == 255,
+static_assert(kMaxRpcMethodCount == 264,
     "kMaxRpcMethodCount out of sync with this generation run - rerun the full proto generator");
 std::array<RpcMethodMeta, kMaxRpcMethodCount> gRpcMethodRegistry;
 
@@ -482,6 +497,11 @@ void InitMessageInfo()
         std::make_unique<::data_service::GetPlayerAssetOpLedgerRequest>(),
         std::make_unique<::data_service::GetPlayerAssetOpLedgerResponse>(),
         nullptr, 1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceGetPlayerAssetOpLedger};
+    gRpcMethodRegistry[DataServiceGetPlayerInboxLedgerMessageId] = RpcMethodMeta{
+        "DataService", "GetPlayerInboxLedger",
+        std::make_unique<::data_service::GetPlayerInboxLedgerRequest>(),
+        std::make_unique<::data_service::GetPlayerInboxLedgerResponse>(),
+        nullptr, 1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceGetPlayerInboxLedger};
 
     // --- KV ---
     gRpcMethodRegistry[KVRangeMessageId] = RpcMethodMeta{
@@ -911,6 +931,50 @@ void InitMessageInfo()
         std::make_unique<::match::ListWatchableBattlesRequest>(),
         std::make_unique<::match::ListWatchableBattlesResponse>(),
         nullptr, 1, common::base::eNodeType::MatchNodeService, match::SendMatchServiceListWatchableBattles};
+
+    // --- PlayerInbox ---
+    gRpcMethodRegistry[PlayerInboxFetchItemsMessageId] = RpcMethodMeta{
+        "PlayerInbox", "FetchItems",
+        std::make_unique<::player_inbox::FetchPlayerInboxRequest>(),
+        std::make_unique<::player_inbox::FetchPlayerInboxResponse>(),
+        nullptr, 1, common::base::eNodeType::PlayerInboxNodeService, player_inbox::SendPlayerInboxFetchItems};
+    gRpcMethodRegistry[PlayerInboxAckItemsMessageId] = RpcMethodMeta{
+        "PlayerInbox", "AckItems",
+        std::make_unique<::player_inbox::AckPlayerInboxRequest>(),
+        std::make_unique<::player_inbox::AckPlayerInboxResponse>(),
+        nullptr, 1, common::base::eNodeType::PlayerInboxNodeService, player_inbox::SendPlayerInboxAckItems};
+
+    // --- PlayerInboxAdmin ---
+    gRpcMethodRegistry[PlayerInboxAdminGmSanctionPlayerMessageId] = RpcMethodMeta{
+        "PlayerInboxAdmin", "GmSanctionPlayer",
+        std::make_unique<::player_inbox::GmSanctionPlayerRequest>(),
+        std::make_unique<::player_inbox::GmSanctionPlayerResponse>(),
+        nullptr, 1, common::base::eNodeType::PlayerInboxNodeService, player_inbox::SendPlayerInboxAdminGmSanctionPlayer};
+    gRpcMethodRegistry[PlayerInboxAdminGetSummaryMessageId] = RpcMethodMeta{
+        "PlayerInboxAdmin", "GetSummary",
+        std::make_unique<::player_inbox::GetPlayerInboxSummaryRequest>(),
+        std::make_unique<::player_inbox::GetPlayerInboxSummaryResponse>(),
+        nullptr, 1, common::base::eNodeType::PlayerInboxNodeService, player_inbox::SendPlayerInboxAdminGetSummary};
+    gRpcMethodRegistry[PlayerInboxAdminListItemsMessageId] = RpcMethodMeta{
+        "PlayerInboxAdmin", "ListItems",
+        std::make_unique<::player_inbox::ListPlayerInboxItemsRequest>(),
+        std::make_unique<::player_inbox::ListPlayerInboxItemsResponse>(),
+        nullptr, 1, common::base::eNodeType::PlayerInboxNodeService, player_inbox::SendPlayerInboxAdminListItems};
+    gRpcMethodRegistry[PlayerInboxAdminLookupByRequestMessageId] = RpcMethodMeta{
+        "PlayerInboxAdmin", "LookupByRequest",
+        std::make_unique<::player_inbox::LookupPlayerInboxRequest>(),
+        std::make_unique<::player_inbox::LookupPlayerInboxResponse>(),
+        nullptr, 1, common::base::eNodeType::PlayerInboxNodeService, player_inbox::SendPlayerInboxAdminLookupByRequest};
+    gRpcMethodRegistry[PlayerInboxAdminVoidItemMessageId] = RpcMethodMeta{
+        "PlayerInboxAdmin", "VoidItem",
+        std::make_unique<::player_inbox::VoidPlayerInboxItemRequest>(),
+        std::make_unique<::player_inbox::VoidPlayerInboxItemResponse>(),
+        nullptr, 1, common::base::eNodeType::PlayerInboxNodeService, player_inbox::SendPlayerInboxAdminVoidItem};
+    gRpcMethodRegistry[PlayerInboxAdminReconcilePlayerMessageId] = RpcMethodMeta{
+        "PlayerInboxAdmin", "ReconcilePlayer",
+        std::make_unique<::player_inbox::ReconcilePlayerInboxRequest>(),
+        std::make_unique<::player_inbox::ReconcilePlayerInboxResponse>(),
+        nullptr, 1, common::base::eNodeType::PlayerInboxNodeService, player_inbox::SendPlayerInboxAdminReconcilePlayer};
 
     // --- SceneClientPlayerCommon ---
     gRpcMethodRegistry[SceneClientPlayerCommonSendTipToClientMessageId] = RpcMethodMeta{
@@ -1782,6 +1846,14 @@ KafkaEventDispatchResult DispatchSceneCommandEvent(uint32_t eventId, const std::
 	}
 	case BattleSettlementEventEventId: {
 		BattleSettlementEvent event;
+		if (!event.ParseFromString(payload)) {
+			return KafkaEventDispatchResult::kDecodeFailed;
+		}
+		tlsEcs.dispatcher.trigger(event);
+		return KafkaEventDispatchResult::kDispatched;
+	}
+	case PlayerInboxNotifyEventEventId: {
+		PlayerInboxNotifyEvent event;
 		if (!event.ParseFromString(payload)) {
 			return KafkaEventDispatchResult::kDecodeFailed;
 		}

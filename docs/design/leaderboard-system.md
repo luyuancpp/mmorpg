@@ -574,3 +574,23 @@ rank 与 match 的 stdout / stderr 摘要、`:9250/metrics` 与 `:9170/metrics` 
 10. **K8s 上 rank 默认对客户端不可达**(`GateRouterMode="0"`),不能拿 K8s 当验收环境(§5.3、§8.2)。(2026-09-29 更正原因:现为 rank 未登记进 K8s 部署,不再是路由模式默认值;K8s 默认已为 `"1"`)
 
 其余已定稿:错误码 `kInvalidParameter`(1005,非故障)/ `kServiceUnavailable`(1003,故障)(§4.5);Tier = 1、进 `$optionalServices`(§5.2);K8s ConfigMap 形状补全(§5.2 #3);发布顺序不再依赖部署先后、开关改为 `k8s_deploy.ps1` 显式参数(§5.4);合服无关结论(§3.4);offset 重放恢复 runbook(§3.5、R9);告警文件(§3.7、L-21);事件删 `match_mode`、响应删 `server_now_ms`(§2.4、§4.2);R0 验收改为"§9.1 全部拍板";R2b 端口判据改为限定范围的精确集合;R1 / R2a 文件数按逐文件清单重估并拆分。
+
+## 11. 2026-10-15 三仓调用链核对与既有帮会榜读取快照
+
+本节记录 D-15 八域继续移植期间完成的已有帮会榜修复。通用榜的 §7 R1p/R1/R2 仍未落地；当前主仓没有 `go/leaderboard` 或 `go/rank`，Java 版没有 `game-leaderboard`。两版实际可达的是帮会榜：Go `GuildServer.GetGuildRank/GetGuildRankByGuild` → `GuildLogic` → `GuildRepo`；Java `GuildRankService` → `GuildRanks` → `RedissonGuildRankRedis`。读入口继续使用既有 27/52 消息号、本区归属及页长限制，不改 proto、生成物或写榜路径。
+
+### 11.1 源仓能力与迁移边界
+
+核对源仓 `xuanming-server@b1f6c1ebf4583b45a9370ad0522c64196dc792b2`：`services/runtime/leaderboard/cmd/leaderboard/main.go` 实际装配 Redis 实时榜、MySQL 结算、inventory 发奖与补扫；`internal/service/leaderboard.go` 提供七个 RPC。不过对非生成、非测试 Go 源码搜索 `NewLeaderboardServiceClient`、`SubmitScoreRequest{`、`SettleBoardRequest{` 未找到业务调用者，不能把 README 的 battle/DS 调用方描述当成已接通的写分来源。本仓仍须按 §2 由 match 发布带代次的评分快照，不能重新计算第二份 Elo。
+
+源仓结算存在需要另批封闭的静态恢复窗口，未在本轮做运行复现，也未修改源仓：`internal/biz/leaderboard.go:SettleBoard` 依次独立调用 `ClaimSettlement`、`SaveSnapshot`、逐名次 `ClaimReward`；`internal/data/leaderboard_repo.go` 三者分别使用 `db.ExecContext`，没有同一个事务。若批次头写成后、快照或奖励意图写全前中止，同键重试会走 `AlreadySettled` 回放，补扫又只扫描已有 reward_log，缺失意图无法靠补扫生成。其后 Kafka 失败与 `Clear` 失败只告警，且读 Top-N 至清榜之间没有冻结写入口。未来奖励迁移必须先定义冻结榜及同 TiDB 事务内的快照、奖励意图、可靠事件；资产发放仍走现有唯一权威。
+
+### 11.2 已有帮会榜的单次读取契约
+
+Go 原实现 `GuildRepo.GetGuildRankPage` 分开执行 `ZCARD` 与 `ZREVRANGE WITHSCORES`，`GetGuildRank` 分开执行 `ZREVRANK` 与 `ZSCORE`。另一个连接可在两条命令间解散帮会或改分，使同一回包出现旧总数配新页、旧名次配新分，或把正常删榜误报为 `redis.Nil` 故障。源仓通用榜 `internal/data/board_store.go:Rank` 也有同类分段读取，不能直接作为更强的实现复用。
+
+Java 版已有更完整的接缝：`game-guild/.../rank/RedissonGuildRankRedis.java` 的 `PAGE`、`RANK` 各用一段 Lua 同时读取相关字段。本批 Go 对齐此行为：每个脚本只传一个榜键，Redis Cluster 下天然同槽；页总数与本页、单帮名次与分数取自同一脚本快照。页码/页长按 uint64 计算起点，超大起点在调用范围查询前判空；缺榜、未上榜仍返回原来的空页/零值，同分顺序与 double 转 int64 语义保持。脚本不写键、不续 TTL，也不持有排行维护锁。Redis 是排行的派生缓存，这个读取快照不等于 SQL 与 Redis 跨存储强一致。
+
+新增 `go/guild/internal/data/rank_read_snapshot_test.go` 在第一次成功的榜读取响应后，由独立连接立即删成员或改分，确定复现三种交错。默认使用 miniredis；设置 `GUILD_RANK_TEST_REDIS` 则走真实 Redis，所有榜键在测试传输边界映射到每例随机的 `guild-rank-it:{UUID}:rank`，只清理本例键，不使用 FLUSH。红回归在两种后端均实际得到三条失败；最终验证证据见 `build/guild-rank-read-20261015/`，完整命令与结果由本轮交付记录列出。
+
+本批实际验证：Go 新增三条交错与既有全服/分区 16 个分页边界在 miniredis、真实 Redis `13379` 均通过，`internal/data` 全部默认测试、该包 build/vet 退出 0；Java 独立 HEAD 快照执行 `GuildRanksTest` 18 项及 `GuildRanksRedisIntegrationTest` 10 项，共 28/28、无跳过、10 reactor 成功。Java 排行生产和测试的七个文件与当前工作树按 UTF-8/LF 比对一致；该证据不覆盖并行配额改动。Go 整服测试及 Java 其他域的整合结果另按本轮进度记录，不能由这组局部证据推断。

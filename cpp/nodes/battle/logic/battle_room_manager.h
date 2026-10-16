@@ -1,8 +1,10 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -92,7 +94,15 @@ public:
 
     // ---- 客户端直连面(main.cpp 装配;BattleClientEdge 生命周期由 main 的运行时上下文持有) ----
 
-    void SetClientEdge(BattleClientEdge *edge) { edge_ = edge; }
+    void SetClientEdge(BattleClientEdge *edge)
+    {
+        if (edge == nullptr)
+        {
+            edge_.reset();
+            return;
+        }
+        edge_ = std::ref(*edge);
+    }
 
     // 票据握手通过后把直连挂到房间上。校验"房间仍存在 + 该玩家按 role 确在名单上";
     // 同一玩家已有直连(重连)则关闭旧连接、换成新的。成功时回填该玩家的 gate 会话号
@@ -419,7 +429,8 @@ private:
     // "只绑 weak_ptr<自己>"写的防线,不是在修某个已知的悬垂路径。R07 结算发件箱沿用裸 this,本批不动。
     std::weak_ptr<BattleRoomManager> WeakSelf() { return std::shared_ptr<BattleRoomManager>(lifeToken_, this); }
 
-    BattleClientEdge *edge_ = nullptr;
+    // 仅借用运行时上下文持有的直连面；清空借用不销毁对象。
+    std::optional<std::reference_wrapper<BattleClientEdge>> edge_;
 
     // 房间表:增删与生命周期回调(SetRoomLifecycleHooks)绑死在 RoomTable 里,本类只经
     // EmplaceRoom / EraseRoom 调它的 Emplace / Erase,其余路径只读(FindRoom / AbortAllRooms 抄 id)。

@@ -4,8 +4,10 @@ package data
 //
 // 被测对象是 AssetOpRepo 的三个可选能力(PlayerPendingLister / PendingClassCounter / Abandoner)、
 // last_send_ms 契约(go/shared/assetop/abandon.go 文件头)的五处 SQL 写法,以及 ABANDONED 的状态映射与终态清理口径。
-// 真库行为(InnoDB / TiDB 上的 CAS 与锁)不在这里;这里钉的是"发了什么语句、带了什么条件、
-// 结果怎么解释"这些纯 SQL 层的事实 —— 它们写错了在编译期与单元测试之外都不会报错,只会让放弃"永远不发生"或"不该发生时发生"。
+// 真库行为(UPDATE 的求值顺序、IF(?, …) 绑 bool 的结果、落空的 CAS 一个字不写、端到端接线)在
+// asset_op_landing_integration_test.go(integration 标签,TRADE_TEST_MYSQL_DSN 门控);这里钉的是"发了什么语句、什么顺序、
+// 带了什么条件、结果怎么解释"这些纯 SQL 层的事实 —— 它们写错了在编译期与单元测试之外都不会报错,
+// 只会让放弃"永远不发生"或"不该发生时发生"。本文件不依赖 MySQL,任何环境的 go test 都跑。
 
 import (
 	"context"
@@ -426,22 +428,45 @@ func TestAbandonRefusesZeroToken(t *testing.T) {
 	}
 }
 
-// TestAbandonCommitsWithTokenAndReportsLeaseLost:RowsAffected==1 → 在一个事务里提交;
-// RowsAffected==0 → 必须回 ErrLeaseLost(租约被接管,别人可能已经发出请求),并回滚。
+// lockRowsFor 是录制驱动的结果集:sqlLockAssetOp(op 行主键点锁)按 present 回"有这一行 / 没有";其余查询回空。
+func lockRowsFor(present bool) func(string, []driver.Value) ([]string, [][]driver.Value) {
+	return func(query string, args []driver.Value) ([]string, [][]driver.Value) {
+		if !present || query != collapseSpaces(sqlLockAssetOp) {
+			return nil, nil
+		}
+		return []string{"op_id"}, [][]driver.Value{{args[0]}}
+	}
+}
+
+// callSQLs 只取录音带上的语句文本,便于整段比对顺序。
+func callSQLs(calls []recovCall) []string {
+	out := make([]string, 0, len(calls))
+	for _, c := range calls {
+		out = append(out, c.sql)
+	}
+	return out
+}
+
+// TestAbandonCommitsWithTokenAndReportsLeaseLost:先主键点锁 → RowsAffected==1 → 在一个事务里提交;
+// RowsAffected==0 或点锁读不到行(已被清理)→ 必须回 ErrLeaseLost(租约被接管,别人可能已经发出请求),并回滚。
 func TestAbandonCommitsWithTokenAndReportsLeaseLost(t *testing.T) {
-	op := assetop.Op{OpID: 11, LeaseToken: 22}
+	op := assetop.Op{OpID: 11, LeaseToken: 22, Stream: assetpb.AssetOpStream_ASSET_OP_STREAM_TRADE_DEBIT}
 
 	t.Run("提交", func(t *testing.T) {
-		s := &recovScript{affected: 1}
+		s := &recovScript{affected: 1, rowsFor: lockRowsFor(true)}
 		repo := s.repo(t)
 		if err := repo.Abandon(context.Background(), op, 3_000); err != nil {
 			t.Fatalf("Abandon: %v", err)
 		}
 		calls := s.recordedCalls()
-		if len(calls) != 3 || calls[0].sql != "BEGIN" || calls[2].sql != "COMMIT" {
-			t.Fatalf("放弃应是 BEGIN → CAS → COMMIT,录到 %+v", calls)
+		want := []string{"BEGIN", collapseSpaces(sqlLockAssetOp), collapseSpaces(sqlAbandonAssetOp), "COMMIT"}
+		if !reflect.DeepEqual(callSQLs(calls), want) {
+			t.Fatalf("放弃应是 BEGIN → 主键点锁 → CAS → COMMIT,录到 %+v", callSQLs(calls))
 		}
-		args := calls[1].args
+		if lockArgs := calls[1].args; len(lockArgs) != 1 || argInt(t, lockArgs[0]) != op.OpID {
+			t.Errorf("点锁实参 = %v, want (op_id=%d)", lockArgs, op.OpID)
+		}
+		args := calls[2].args
 		// 实参顺序:status, next_attempt_ms, updated_ms, op_id, PENDING, token。
 		if len(args) != 6 {
 			t.Fatalf("放弃 CAS 实参数 = %d, want 6", len(args))
@@ -458,16 +483,155 @@ func TestAbandonCommitsWithTokenAndReportsLeaseLost(t *testing.T) {
 	})
 
 	t.Run("租约丢失", func(t *testing.T) {
-		s := &recovScript{affected: 0}
+		s := &recovScript{affected: 0, rowsFor: lockRowsFor(true)}
 		repo := s.repo(t)
 		err := repo.Abandon(context.Background(), op, 3_000)
 		if !errors.Is(err, assetop.ErrLeaseLost) {
 			t.Fatalf("RowsAffected==0 时 err = %v, want errors.Is(..., ErrLeaseLost)", err)
 		}
-		if len(s.callsWithPrefix("COMMIT")) != 0 {
-			t.Error("租约丢失时不得提交")
+		if len(s.callsWithPrefix("COMMIT")) != 0 || len(s.callsWithPrefix("ROLLBACK")) != 1 {
+			t.Errorf("租约丢失时必须回滚、不得提交,录到 %+v", callSQLs(s.recordedCalls()))
 		}
 	})
+
+	t.Run("行已被清理", func(t *testing.T) {
+		s := &recovScript{affected: 1, rowsFor: lockRowsFor(false)}
+		repo := s.repo(t)
+		err := repo.Abandon(context.Background(), op, 3_000)
+		if !errors.Is(err, assetop.ErrLeaseLost) {
+			t.Fatalf("点锁读不到行时 err = %v, want errors.Is(..., ErrLeaseLost)", err)
+		}
+		want := []string{"BEGIN", collapseSpaces(sqlLockAssetOp), "ROLLBACK"}
+		if got := callSQLs(s.recordedCalls()); !reflect.DeepEqual(got, want) {
+			t.Errorf("行已不存在时不得发 CAS,录到 %+v, want %+v", got, want)
+		}
+	})
+}
+
+// TestLockAssetOpIsPrimaryKeyPointLock:op 行的点锁只许是完整主键等值 + FOR UPDATE、不带任何复核条件 ——
+// TiDB 只有这种形状走 Point_Get 快路径("PRIMARY key → 行 key"两次独立加锁);带上 `status = ?` 之类的复核条件,
+// 它就退化成语句末尾并行批锁的那一种,先点锁这一步也就失去了意义(与 guild 的同名语句逐字同形)。
+func TestLockAssetOpIsPrimaryKeyPointLock(t *testing.T) {
+	want := "SELECT `op_id` FROM " + AssetOpTableName + " WHERE `op_id` = ? FOR UPDATE"
+	if got := collapseSpaces(sqlLockAssetOp); got != want {
+		t.Errorf("sqlLockAssetOp = %q, want %q", got, want)
+	}
+}
+
+// TestTerminalWritersLockRowBeforeCAS:终结 / 人工终结 / 放弃在同一个事务里**先**主键点锁、**再**带复核谓词的 CAS
+// (asset_op_repo.go"op 行的写者:先主键点锁再 CAS")。点锁读不到行(已被清理)时一条 CAS 都不发:
+// 终结与人工终结回 (false, nil)(与 CAS 落空同义,不做对侧账),放弃回 ErrLeaseLost。
+func TestTerminalWritersLockRowBeforeCAS(t *testing.T) {
+	const opID = 31
+	debit := assetpb.AssetOpStream_ASSET_OP_STREAM_TRADE_DEBIT
+	cases := []struct {
+		name string
+		cas  string
+		// run 执行被测写者,回报"是否本次终结"与错误。
+		run func(repo *AssetOpRepo) (bool, error)
+		// missingErr 是点锁读不到行时应满足的错误判定(nil = 应无错误)。
+		missingErr error
+	}{
+		{
+			name: "Finalize",
+			cas:  sqlFinalizeAssetOp,
+			run: func(repo *AssetOpRepo) (bool, error) {
+				return repo.Finalize(context.Background(), assetop.Op{OpID: opID, LeaseToken: 5, Stream: debit},
+					assetop.StatusApplied, assetop.Result{Outcome: assetpb.AssetOpOutcome_ASSET_OP_OUTCOME_APPLIED, Durable: true}, 9_000)
+			},
+		},
+		{
+			name: "ResolveManually",
+			cas:  sqlResolveAssetOp,
+			run: func(repo *AssetOpRepo) (bool, error) {
+				return repo.ResolveManually(context.Background(),
+					assetop.ManualResolution{OpID: opID, Final: assetop.StatusAborted, Operator: "ops", Reason: "test"}, 9_000)
+			},
+		},
+		{
+			name: "Abandon",
+			cas:  sqlAbandonAssetOp,
+			run: func(repo *AssetOpRepo) (bool, error) {
+				err := repo.Abandon(context.Background(), assetop.Op{OpID: opID, LeaseToken: 5, Stream: debit}, 9_000)
+				return err == nil, err
+			},
+			missingErr: assetop.ErrLeaseLost,
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name+"/行在", func(t *testing.T) {
+			s := &recovScript{affected: 1, rowsFor: lockRowsFor(true)}
+			done, err := tc.run(s.repo(t))
+			if err != nil || !done {
+				t.Fatalf("= (%v, %v), want (true, nil)", done, err)
+			}
+			calls := s.recordedCalls()
+			want := []string{"BEGIN", collapseSpaces(sqlLockAssetOp), collapseSpaces(tc.cas), "COMMIT"}
+			if got := callSQLs(calls); !reflect.DeepEqual(got, want) {
+				t.Fatalf("语句序列 = %+v\nwant %+v", got, want)
+			}
+			if lockArgs := calls[1].args; len(lockArgs) != 1 || argInt(t, lockArgs[0]) != opID {
+				t.Errorf("点锁实参 = %v, want (op_id=%d)", lockArgs, opID)
+			}
+		})
+		t.Run(tc.name+"/行已被清理", func(t *testing.T) {
+			s := &recovScript{affected: 1, rowsFor: lockRowsFor(false)}
+			done, err := tc.run(s.repo(t))
+			if done {
+				t.Fatal("点锁读不到行时不得报告本次终结")
+			}
+			if tc.missingErr == nil && err != nil {
+				t.Fatalf("err = %v, want nil(与 CAS 落空同义)", err)
+			}
+			if tc.missingErr != nil && !errors.Is(err, tc.missingErr) {
+				t.Fatalf("err = %v, want errors.Is(..., %v)", err, tc.missingErr)
+			}
+			for _, c := range s.recordedCalls() {
+				if strings.HasPrefix(c.sql, "UPDATE ") {
+					t.Errorf("点锁读不到行时不得发 CAS,录到 %s", c.sql)
+				}
+			}
+		})
+	}
+}
+
+// TestAbandonOnlyTouchesDebitStream:trade 的对侧账没有实现(P3),放弃 DELIVER_CREDIT 会让买家钱货两空。
+// 自动放弃只碰 TRADE_DEBIT:候选读按流过滤、绑定的流就是 TRADE_DEBIT;Abandon 对非 DEBIT 的行在碰库之前拒绝,
+// 且不回 ErrLeaseLost(那是"租约被接管",这里是调用方越界)。对侧账落地、放开 CREDIT 时同改本用例。
+func TestAbandonOnlyTouchesDebitStream(t *testing.T) {
+	if abandonableStream != assetpb.AssetOpStream_ASSET_OP_STREAM_TRADE_DEBIT {
+		t.Fatalf("abandonableStream = %v:对侧账落地之前只许放弃 TRADE_DEBIT", abandonableStream)
+	}
+	if !strings.Contains(collapseSpaces(sqlListAbandonCandidates), "`stream` = ?") {
+		t.Fatalf("放弃候选读必须按流过滤: %s", sqlListAbandonCandidates)
+	}
+
+	s := &recovScript{}
+	repo := s.repo(t)
+	if _, err := repo.ListAbandonCandidates(context.Background(), 100, 0, 5); err != nil {
+		t.Fatalf("ListAbandonCandidates: %v", err)
+	}
+	calls := s.recordedCalls()
+	if len(calls) != 1 {
+		t.Fatalf("候选读应恰一条,录到 %+v", calls)
+	}
+	if got := argInt(t, calls[0].args[1]); got != uint64(assetpb.AssetOpStream_ASSET_OP_STREAM_TRADE_DEBIT) {
+		t.Errorf("候选读绑定的流 = %d, want TRADE_DEBIT(%d)", got, assetpb.AssetOpStream_ASSET_OP_STREAM_TRADE_DEBIT)
+	}
+
+	s = &recovScript{affected: 1, rowsFor: lockRowsFor(true)}
+	repo = s.repo(t)
+	credit := assetop.Op{OpID: 12, LeaseToken: 22, Stream: assetpb.AssetOpStream_ASSET_OP_STREAM_TRADE_CREDIT}
+	err := repo.Abandon(context.Background(), credit, 3_000)
+	if err == nil {
+		t.Fatal("非 TRADE_DEBIT 的行必须拒绝放弃")
+	}
+	if errors.Is(err, assetop.ErrLeaseLost) {
+		t.Errorf("err = %v:流越界不是租约被接管,不得回 ErrLeaseLost", err)
+	}
+	if n := len(s.recordedCalls()); n != 0 {
+		t.Errorf("流越界必须在碰库之前拒绝,录到 %d 条: %+v", n, callSQLs(s.recordedCalls()))
+	}
 }
 
 // TestReleaseLeaseReportsLeaseLost:归还租约落空(行已被接管或已终结)必须回 ErrLeaseLost,成功回 nil。
@@ -521,10 +685,15 @@ func TestListAbandonCandidatesArgs(t *testing.T) {
 	if len(calls) != 1 || strings.Contains(calls[0].sql, "FOR UPDATE") {
 		t.Fatalf("候选读必须是一条非锁读,录到 %+v", calls)
 	}
-	// 实参顺序:PENDING, createdBefore, afterOpID, limit。
+	// 实参顺序:PENDING, stream(TRADE_DEBIT), createdBefore, afterOpID, limit。
 	args := calls[0].args
-	if argInt(t, args[0]) != uint64(PendingStatus()) || argInt(t, args[1]) != 100 || argInt(t, args[2]) != 7 || argInt(t, args[3]) != 2 {
-		t.Errorf("候选读实参 = %v, want (PENDING, 100, 7, 2)", args)
+	if len(args) != 5 {
+		t.Fatalf("候选读实参数 = %d, want 5", len(args))
+	}
+	if argInt(t, args[0]) != uint64(PendingStatus()) ||
+		argInt(t, args[1]) != uint64(assetpb.AssetOpStream_ASSET_OP_STREAM_TRADE_DEBIT) ||
+		argInt(t, args[2]) != 100 || argInt(t, args[3]) != 7 || argInt(t, args[4]) != 2 {
+		t.Errorf("候选读实参 = %v, want (PENDING, TRADE_DEBIT, 100, 7, 2)", args)
 	}
 }
 
@@ -722,5 +891,163 @@ func TestRunCleanupReturnsOnCancel(t *testing.T) {
 	case <-done:
 	case <-time.After(time.Second):
 		t.Fatal("ctx 取消后 RunCleanup 没有返回")
+	}
+}
+
+// ── 终态行清理的语句序列 ──────────────────────────────────────
+
+// cleanupTestNow / cleanupTestRetention 是清理用例的固定时刻与保留期;截止 = now − retention(毫秒)。
+var (
+	cleanupTestNow       = time.UnixMilli(1_800_000_000_000)
+	cleanupTestRetention = 30 * 24 * time.Hour
+	cleanupTestCutoffMs  = uint64(cleanupTestNow.UnixMilli() - cleanupTestRetention.Milliseconds())
+)
+
+// captureCleanupDeleted 把 recordCleanupDeleted 换成记录器(用例结束时还原),断言不去读全局注册表。
+func captureCleanupDeleted(t *testing.T) func() []int64 {
+	t.Helper()
+	var got []int64
+	prev := recordCleanupDeleted
+	recordCleanupDeleted = func(n int64) { got = append(got, n) }
+	t.Cleanup(func() { recordCleanupDeleted = prev })
+	return func() []int64 { return got }
+}
+
+// cleanupRowsFor 是清理用例的结果集:候选读按调用次数依次回 batches[i](超出回空),点锁按 lockPresent 回"有 / 没有"。
+// reads 记候选读次数 —— 清理在同一个 goroutine 里串行发语句,不需要加锁。
+func cleanupRowsFor(batches [][]uint64, lockPresent bool, reads *int) func(string, []driver.Value) ([]string, [][]driver.Value) {
+	return func(query string, args []driver.Value) ([]string, [][]driver.Value) {
+		switch query {
+		case collapseSpaces(sqlListCleanupTerminalOps):
+			i := *reads
+			*reads++
+			if i >= len(batches) {
+				return []string{"op_id"}, nil
+			}
+			data := make([][]driver.Value, 0, len(batches[i]))
+			for _, id := range batches[i] {
+				data = append(data, []driver.Value{int64(id)})
+			}
+			return []string{"op_id"}, data
+		case collapseSpaces(sqlLockAssetOp):
+			if !lockPresent {
+				return []string{"op_id"}, nil
+			}
+			return []string{"op_id"}, [][]driver.Value{{args[0]}}
+		}
+		return nil, nil
+	}
+}
+
+// TestCleanupTerminalOpsStatementOrder:每个候选一个 RC 短事务,事务里**先**主键点锁(不带复核条件)、**再**带复核条件的主键点删
+// (BEGIN → SELECT … FOR UPDATE → DELETE → COMMIT,见 asset_op_repo.go"op 行的写者:先主键点锁再 CAS");
+// 候选读与点删的 IN (?, ?, ?, ?) 都按 cleanupStatuses 的顺序绑四个终态,截止时刻 = now − 保留期;
+// 候选不足一批(cleanupBatchSize)时只读这一批就收工。
+func TestCleanupTerminalOpsStatementOrder(t *testing.T) {
+	const opID = 4242
+	reads := 0
+	s := &recovScript{affected: 1, rowsFor: cleanupRowsFor([][]uint64{{opID}}, true, &reads)}
+	deletedRec := captureCleanupDeleted(t)
+	repo := s.repo(t)
+
+	n, err := repo.CleanupTerminalOps(context.Background(), cleanupTestNow, cleanupTestRetention)
+	if err != nil || n != 1 {
+		t.Fatalf("CleanupTerminalOps = (%d, %v), want (1, nil)", n, err)
+	}
+	if !reflect.DeepEqual(deletedRec(), []int64{1}) {
+		t.Errorf("清理计数 = %v, want [1]", deletedRec())
+	}
+	if reads != 1 {
+		t.Errorf("候选不足一批时应只读一批,读了 %d 次", reads)
+	}
+
+	calls := s.recordedCalls()
+	want := []string{
+		collapseSpaces(sqlListCleanupTerminalOps),
+		"BEGIN", collapseSpaces(sqlLockAssetOp), collapseSpaces(sqlCleanupTerminalOp), "COMMIT",
+	}
+	if got := callSQLs(calls); !reflect.DeepEqual(got, want) {
+		t.Fatalf("语句序列 = %+v\nwant %+v", got, want)
+	}
+
+	st := cleanupStatuses()
+	// 候选读:四个终态, cutoff, 批大小。
+	listArgs := calls[0].args
+	if len(listArgs) != 6 {
+		t.Fatalf("候选读实参数 = %d, want 6", len(listArgs))
+	}
+	for i := 0; i < 4; i++ {
+		if argInt(t, listArgs[i]) != uint64(st[i]) {
+			t.Errorf("候选读第 %d 个实参 = %v, want 终态 %d", i+1, listArgs[i], st[i])
+		}
+	}
+	if argInt(t, listArgs[4]) != cleanupTestCutoffMs || argInt(t, listArgs[5]) != cleanupBatchSize {
+		t.Errorf("候选读 (cutoff, limit) = (%v, %v), want (%d, %d)", listArgs[4], listArgs[5], cleanupTestCutoffMs, cleanupBatchSize)
+	}
+	// 点锁:只有完整主键。
+	if lockArgs := calls[2].args; len(lockArgs) != 1 || argInt(t, lockArgs[0]) != opID {
+		t.Errorf("点锁实参 = %v, want (op_id=%d)", lockArgs, opID)
+	}
+	// 点删:op_id, 四个终态, cutoff。
+	delArgs := calls[3].args
+	if len(delArgs) != 6 || argInt(t, delArgs[0]) != opID || argInt(t, delArgs[5]) != cleanupTestCutoffMs {
+		t.Fatalf("点删实参 = %v, want (op_id=%d, 四个终态, cutoff=%d)", delArgs, opID, cleanupTestCutoffMs)
+	}
+	for i := 0; i < 4; i++ {
+		if argInt(t, delArgs[i+1]) != uint64(st[i]) {
+			t.Errorf("点删第 %d 个实参 = %v, want 终态 %d", i+2, delArgs[i+1], st[i])
+		}
+	}
+}
+
+// TestCleanupTerminalOpsRollsBackMultiRowDelete:点删影响超过 1 行只可能是 WHERE 写坏了(不再是完整主键等值),
+// 必须整体回滚并报错,删除数不计入(那一行事务已回滚,什么都没删)。
+func TestCleanupTerminalOpsRollsBackMultiRowDelete(t *testing.T) {
+	reads := 0
+	s := &recovScript{affected: 2, rowsFor: cleanupRowsFor([][]uint64{{77}}, true, &reads)}
+	deletedRec := captureCleanupDeleted(t)
+	repo := s.repo(t)
+
+	n, err := repo.CleanupTerminalOps(context.Background(), cleanupTestNow, cleanupTestRetention)
+	if err == nil {
+		t.Fatal("点删影响 2 行必须报错")
+	}
+	if n != 0 || len(deletedRec()) != 0 {
+		t.Errorf("回滚的事务不得计删除:n=%d 计数=%v", n, deletedRec())
+	}
+	want := []string{
+		collapseSpaces(sqlListCleanupTerminalOps),
+		"BEGIN", collapseSpaces(sqlLockAssetOp), collapseSpaces(sqlCleanupTerminalOp), "ROLLBACK",
+	}
+	if got := callSQLs(s.recordedCalls()); !reflect.DeepEqual(got, want) {
+		t.Errorf("语句序列 = %+v\nwant %+v", got, want)
+	}
+}
+
+// TestCleanupTerminalOpsContinuesWhileBatchIsFull:"还有没有下一批"看候选数,不看删除数。
+// 一整批(cleanupBatchSize 个)候选全部复核落空(点锁读不到 = 已被别的副本删掉)时删除数为 0,
+// 但候选满批说明后面可能还有,必须再读一批;第二批不足一批才收工。按删除数判会在这里提前收工。
+func TestCleanupTerminalOpsContinuesWhileBatchIsFull(t *testing.T) {
+	full := make([]uint64, 0, cleanupBatchSize)
+	for i := 1; i <= cleanupBatchSize; i++ {
+		full = append(full, uint64(i))
+	}
+	reads := 0
+	s := &recovScript{affected: 1, rowsFor: cleanupRowsFor([][]uint64{full}, false, &reads)}
+	captureCleanupDeleted(t)
+	repo := s.repo(t)
+
+	n, err := repo.CleanupTerminalOps(context.Background(), cleanupTestNow, cleanupTestRetention)
+	if err != nil || n != 0 {
+		t.Fatalf("CleanupTerminalOps = (%d, %v), want (0, nil)", n, err)
+	}
+	if reads != 2 {
+		t.Errorf("满批之后应再读一批,共读 %d 次, want 2", reads)
+	}
+	if got := len(s.callsWithPrefix("DELETE ")); got != 0 {
+		t.Errorf("点锁读不到行时不得发点删,录到 %d 条", got)
+	}
+	if got := len(s.callsWithPrefix(collapseSpaces(sqlLockAssetOp))); got != cleanupBatchSize {
+		t.Errorf("每个候选各点锁一次:录到 %d 次, want %d", got, cleanupBatchSize)
 	}
 }

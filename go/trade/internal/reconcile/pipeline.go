@@ -29,7 +29,6 @@ import (
 	tradepb "proto/trade"
 
 	"shared/assetop"
-	"shared/safego"
 
 	"github.com/zeromicro/go-zero/core/logx"
 	"google.golang.org/protobuf/proto"
@@ -251,20 +250,27 @@ func loopConfig(r Recovery) assetop.LoopConfig {
 	}
 }
 
-// Start 起后台重投循环。ctx 取消即退出;调用方负责在停机收尾里取消它。
+// Run **阻塞**运行后台重投循环,直到 ctx 结束才返回。调用方(svc.AssetChannel.Start)用 safego.Go 起它,
+// 并在 WaitGroup 里记下这个 goroutine:停机时必须等 Run 返回之后才能关 scene 连接缓存、共享 Redis 与 MySQL。
 //
-// 空接收者直接返回:密钥缺失时 svc 把 Pipeline 留成 nil,启动路径照常调到这里。
-func (p *Pipeline) Start(ctx context.Context) {
+// 为什么必须等(与 guild 的 AssetPipeline.Stop 同一理由):assetop.Loop.Run 在 ctx 取消后要等当前这一轮 Tick 的 worker
+// 全部结束才返回,而每一行落库那一步用的是不继承取消的 settleContext(assetop)—— 取消 ctx 拦不住它。不等就去关连接,
+// 终局写不回 outbox,行留在 PENDING、下一轮再投一次:钱不丢(scene 对同一 seq 只读答复,不变量 I2),但 Finalize 报错、白投一轮。
+// 所以本方法不自己起 goroutine:"起"与"等"都归装配层,两者才对得上同一个 WaitGroup。
+//
+// 空接收者打 ERROR 后立刻返回:密钥缺失时 svc 把 Pipeline 留成 nil,启动路径照常调到这里。
+func (p *Pipeline) Run(ctx context.Context) {
 	if p == nil {
 		logx.Error("[trade] Asset channel disabled (missing key); redelivery loop not started")
 		return
 	}
-	safego.Go("trade.assetop.loop", func() { p.loop.Run(ctx) })
 	logx.Infof("[trade] Asset redelivery loop started: interval=%v batch=%d workers=%d lease=%v "+
 		"offline_after_attempts=%d offline_backoff=%v abandon_after=%v audit_interval=%v ledger=%t",
 		loopInterval, loopBatch, loopWorkers, loopLease,
 		p.recovery.OfflineAfterAttempts, p.recovery.OfflineBackoff, p.recovery.AbandonAfter, p.recovery.AuditInterval,
 		p.loop.Ledger != nil)
+	p.loop.Run(ctx)
+	logx.Info("[trade] Asset redelivery loop stopped")
 }
 
 // WakePlayer 立即重投某个玩家的全部 PENDING 行(落地唤醒,docs/design/landing-recovery-sync-digest.md §5.3),

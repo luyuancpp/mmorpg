@@ -93,6 +93,8 @@ type ServiceContext struct {
 
 	// gateDrainStop 取消 startGateDrainMonitor 起的 gate 排空判定循环;nil = 没起。
 	gateDrainStop context.CancelFunc
+	// authCleanup 只拥有生产口令的专用 Redis 池与只读 SQL 连接。
+	authCleanup func()
 }
 
 func NewServiceContext() *ServiceContext {
@@ -101,7 +103,13 @@ func NewServiceContext() *ServiceContext {
 	table.LoadTables(config.AppConfig.TableDir, false)
 
 	// Register auth providers based on config
-	InitAuthProviders()
+	authCleanup := InitAuthProviders()
+	initialized := false
+	defer func() {
+		if !initialized {
+			authCleanup()
+		}
+	}()
 
 	// Initialize Redis client
 	redisHost := config.AppConfig.Node.RedisClient.Host
@@ -191,6 +199,7 @@ func NewServiceContext() *ServiceContext {
 	}
 
 	sc := &ServiceContext{
+		authCleanup:          authCleanup,
 		RedisClient:          redisClient,
 		KafkaClient:          kafkaClient,
 		ExpandMonitor:        monitor,
@@ -205,6 +214,7 @@ func NewServiceContext() *ServiceContext {
 	sc.initPlayerIDMinter()
 	sc.initHomeZoneResolver() // 依赖 initPlayerIDMinter 可能已拨好的 DataServiceClient
 	sc.initPlayerNames()      // 依赖 initHomeZoneResolver 兜底拨好的 DataServiceClient
+	initialized = true
 	return sc
 }
 
@@ -634,6 +644,9 @@ func (s *ServiceContext) PushTipToSession(gateID string, gateInstanceID string, 
 }
 
 func (s *ServiceContext) Stop() {
+	if s.authCleanup != nil {
+		defer s.authCleanup()
+	}
 	s.ExpandMonitor.Stop()
 	if s.PlayerIDSegment != nil {
 		s.PlayerIDSegment.Close()

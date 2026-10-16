@@ -46,6 +46,9 @@ constexpr std::chrono::milliseconds kKeepaliveTime{30000};
 constexpr std::chrono::milliseconds kKeepaliveTimeout{10000};
 // 连接级退避封顶 5s(默认 120s):etcd 恢复后几秒内就要连回去,lease TTL 不等人。与流重建的封顶一致。
 constexpr std::chrono::milliseconds kReconnectBackoffMax{5000};
+// 接收上限放到 64MiB(默认 4MiB):一个前缀的 Range 应答装着该类全部节点的 NodeInfo,约 4000 个就会超 4MiB;
+// 超了每次都失败,该前缀就永远建不了 watch(新传输只在本前缀 Range 成功后才建)。etcd clientv3 默认不设上限。
+constexpr size_t kMaxReceiveMessageBytes = 64 * 1024 * 1024;
 // 同一方法的 unary 失败日志限频:etcd 不可用期间每 2s 九个前缀的 Range 都会失败。
 constexpr std::chrono::seconds kFailureLogInterval{10};
 // §13.6:主机名解析的重试预算。
@@ -155,6 +158,7 @@ public:
 		options.keepaliveTime = kKeepaliveTime;
 		options.keepaliveTimeout = kKeepaliveTimeout;
 		options.backoff.max = kReconnectBackoffMax;
+		options.maxReceiveMessageBytes = kMaxReceiveMessageBytes;
 		channel_ = muduo_grpc::Channel::Create(loop_, ip, parsed.port, options);
 		if (!channel_)
 		{

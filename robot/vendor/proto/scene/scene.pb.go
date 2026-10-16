@@ -25,15 +25,18 @@ const (
 )
 
 type PlayerEnterGameNodeRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	PlayerId      uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
-	SessionId     uint32                 `protobuf:"varint,2,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
-	EnterGsType   uint32                 `protobuf:"varint,4,opt,name=enter_gs_type,json=enterGsType,proto3" json:"enter_gs_type,omitempty"` // LOGIN_FIRST / LOGIN_RECONNECT / LOGIN_REPLACE
-	SceneId       uint64                 `protobuf:"varint,5,opt,name=scene_id,json=sceneId,proto3" json:"scene_id,omitempty"`               // Target scene instance GUID from SceneManager
-	HomeZoneId    uint32                 `protobuf:"varint,6,opt,name=home_zone_id,json=homeZoneId,proto3" json:"home_zone_id,omitempty"`    // 玩家归属 zone,gate 从 RoutePlayerEvent 透传;0=未知(fail-closed 落进程 zone)
-	OwnerEpoch    uint64                 `protobuf:"varint,7,opt,name=owner_epoch,json=ownerEpoch,proto3" json:"owner_epoch,omitempty"`      // 本次路由的归属 epoch,gate 从 RoutePlayerEvent 透传;0=旧版 Go 未铸造(存盘不校验)
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	PlayerId    uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	SessionId   uint32                 `protobuf:"varint,2,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	EnterGsType uint32                 `protobuf:"varint,4,opt,name=enter_gs_type,json=enterGsType,proto3" json:"enter_gs_type,omitempty"` // LOGIN_FIRST / LOGIN_RECONNECT / LOGIN_REPLACE
+	SceneId     uint64                 `protobuf:"varint,5,opt,name=scene_id,json=sceneId,proto3" json:"scene_id,omitempty"`               // Target scene instance GUID from SceneManager
+	HomeZoneId  uint32                 `protobuf:"varint,6,opt,name=home_zone_id,json=homeZoneId,proto3" json:"home_zone_id,omitempty"`    // 玩家归属 zone,gate 从 RoutePlayerEvent 透传;0=未知(fail-closed 落进程 zone)
+	OwnerEpoch  uint64                 `protobuf:"varint,7,opt,name=owner_epoch,json=ownerEpoch,proto3" json:"owner_epoch,omitempty"`      // 本次路由的归属 epoch,gate 从 RoutePlayerEvent 透传;0=旧版 Go 未铸造(存盘不校验)
+	// 登录代次:gate 用本会话、本角色见过的最高代次盖章(Bind 与 Route 取大),scene 入场栅栏据此
+	// 拒绝跨会话的陈旧入场(docs/design/scene-enter-session-fence.md)。0 = 上游未带(旧版)。
+	LoginGeneration uint64 `protobuf:"varint,8,opt,name=login_generation,json=loginGeneration,proto3" json:"login_generation,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *PlayerEnterGameNodeRequest) Reset() {
@@ -104,6 +107,13 @@ func (x *PlayerEnterGameNodeRequest) GetHomeZoneId() uint32 {
 func (x *PlayerEnterGameNodeRequest) GetOwnerEpoch() uint64 {
 	if x != nil {
 		return x.OwnerEpoch
+	}
+	return 0
+}
+
+func (x *PlayerEnterGameNodeRequest) GetLoginGeneration() uint64 {
+	if x != nil {
+		return x.LoginGeneration
 	}
 	return 0
 }
@@ -541,7 +551,7 @@ type PrepareBattleRequest struct {
 	state             protoimpl.MessageState `protogen:"open.v1"`
 	PlayerId          uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
 	BattleId          uint64                 `protobuf:"varint,2,opt,name=battle_id,json=battleId,proto3" json:"battle_id,omitempty"`
-	BattleNodeId      uint32                 `protobuf:"varint,3,opt,name=battle_node_id,json=battleNodeId,proto3" json:"battle_node_id,omitempty"`                // 写进 InBattleComp,重连重挂绑定用
+	BattleNodeId      uint32                 `protobuf:"varint,3,opt,name=battle_node_id,json=battleNodeId,proto3" json:"battle_node_id,omitempty"`                // 写进 InBattleComp(日志/排障用)
 	DeadlineMs        uint64                 `protobuf:"varint,4,opt,name=deadline_ms,json=deadlineMs,proto3" json:"deadline_ms,omitempty"`                        // 战斗作废期限(Unix 毫秒),scene reaper 依据
 	PrepareDeadlineMs uint64                 `protobuf:"varint,5,opt,name=prepare_deadline_ms,json=prepareDeadlineMs,proto3" json:"prepare_deadline_ms,omitempty"` // 备战作废期限(Unix 毫秒):CreateBattle 确认前 reaper 按它解冻(二期,设计 cross-zone-matchmaking.md §10);0 = 沿用 deadline_ms
 	unknownFields     protoimpl.UnknownFields
@@ -729,7 +739,7 @@ var File_proto_scene_scene_proto protoreflect.FileDescriptor
 
 const file_proto_scene_scene_proto_rawDesc = "" +
 	"\n" +
-	"\x17proto/scene/scene.proto\x1a\x1bproto/db/proto_option.proto\x1a\x1dproto/common/base/empty.proto\x1a\x1eproto/common/base/common.proto\x1a\x1fproto/common/base/message.proto\x1a\x1bproto/common/base/tip.proto\x1a\x1cproto/scene/scene_info.proto\x1a\x1eproto/battle/battle_data.proto\"\xda\x01\n" +
+	"\x17proto/scene/scene.proto\x1a\x1bproto/db/proto_option.proto\x1a\x1dproto/common/base/empty.proto\x1a\x1eproto/common/base/common.proto\x1a\x1fproto/common/base/message.proto\x1a\x1bproto/common/base/tip.proto\x1a\x1cproto/scene/scene_info.proto\x1a\x1eproto/battle/battle_data.proto\"\x8b\x02\n" +
 	"\x1aPlayerEnterGameNodeRequest\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x1d\n" +
 	"\n" +
@@ -739,7 +749,8 @@ const file_proto_scene_scene_proto_rawDesc = "" +
 	"\fhome_zone_id\x18\x06 \x01(\rR\n" +
 	"homeZoneId\x12\x1f\n" +
 	"\vowner_epoch\x18\a \x01(\x04R\n" +
-	"ownerEpoch\"\x99\x01\n" +
+	"ownerEpoch\x12)\n" +
+	"\x10login_generation\x18\b \x01(\x04R\x0floginGenerationJ\x04\b\x03\x10\x04\"\x99\x01\n" +
 	"!ProcessClientPlayerMessageRequest\x128\n" +
 	"\x0fmessage_content\x18\x01 \x01(\v2\x0f.MessageContentR\x0emessageContent\x12\x1d\n" +
 	"\n" +

@@ -80,6 +80,8 @@ Client ── POST ───►│ /api/assign-gate                             
 
 > **(2026-10-15 更正,上图原文保留)** 上图键表里 `admit:{queueId}` 一行的值格式早已过时。R17 R1 修复(2026-06-04)起,放行槽只存 `AdmitSlot`:JSON `{"node_id","ip","port","zone_id"}`,即 dispatcher 挑中的 gate 端点及其 zone,**不含** `token_payload`、签名与 deadline(`go/login/internal/logic/pkg/loginqueue/queue.go:77-98`)。放行时写入:`SET admit:{queueId} <AdmitSlot JSON>`,TTL 仍为 `AdmitTTL`(默认 60s),与在途占位的 `EVAL admittedHoldScript` 排进同一个 MULTI(`queue.go:465-473`)。gate 票在客户端取走时才签:`Lookup` → `consumeAdmitAndSign` 先 `GETDEL admit:{queueId}`,再用调用方传入的 `SignAdmitFn` 现签(`queue.go:331-361`;签票实现是 `gatetoken.go` 的 `SignGateToken`),所以 gate 票的有效期从取走那一刻起算。同图 Dispatcher 框里「签 gate token → SET admit:{queueId}」也按此读:出队只挑 gate、不签票(§5 Dispatcher Loop 已是现行写法)。另:`queue:meta:{queueId}` 的字段名是 `zone_id`,不是 `zoneId`(`queue.go:207-212`)。
 
+> **(2026-10-15 更正,上图 AssignGate 第 4 步;原文保留)** 第 4 步「FreeSlots>0 且队列空 → 直接签 gate token」漏了占位:签票之前先调 `TryReserveFastPathSlot`(`go/login/internal/logic/loginpregate/assigngatelogic.go:110-129`;脚本与函数见 `go/login/internal/logic/pkg/loginqueue/queue.go:563-593`),一段 Lua 先清掉 `admitted:zset:zone:{z}` 里已到期的成员,未到期成员数 < `budget`(= `capacity − online`,注意不是 `free`)才写入成员 `fast:<uuid>`、分数 = 现在 + 交票宽限 20s(`defaultHandoffGrace`),并按「只增不减」续整键 TTL;返回 1 才签票。占不到(名额被并发请求占满)或脚本出错(Redis 抖动,fail-closed)都改走第 5 步入队,不签票。这个占位不撤,20s 后按分数自然到期,期间与排队路径的在途占位一起计入 `FreeSlots` 的 `admitted_inflight`,所以快速通道同样受容量约束,不是旁路。第 3 步(`Queue.Enabled=false`)与第 2 步(重连豁免)才是真正「直接签票」,不读不写任何排队键。占位的生命周期见 §5「在途占位的生命周期」表的「快速通道占位」一行。
+
 ---
 
 ## 4. 协议(proto/login/login.proto)
@@ -157,6 +159,16 @@ service LoginPreGate {
      → Enqueue:ZADD queue:zone:{id} + 写 meta + token 反查索引
      → 返回 status=QUEUEING + queue_token + rank
 ```
+
+> **(2026-10-15 更正,上图第 1 步「未命中 → status=QUEUEING + 当前 rank」;原文保留;已落码,未编译、未测试,待 Codex 验证)** 负责人 2026-10-15 按「最标准」定:放行之后客户端拿到确定的终态,不再停在名次 0。此前「未命中」一律回 QUEUEING,放行槽没人来取、按 `AdmitTTL` 过期之后再查,或已经取走过一次之后再查(回包丢失后重试、go-redis 超时重发 `GETDEL`),ZRANK 都落空,回「排队中、名次 0」,客户端一直轮询到 meta 按 `QueueEntryTTL`(1h)过期(§14 第 6 条)。现行判定(`go/login/internal/logic/pkg/loginqueue/queue.go` 的 `Lookup`,`:282` 起):
+>
+> - dispatcher 放行时在写放行槽的同一个 MULTI 里给 meta 记 `admitted_at`(放行时刻 unix 毫秒,`markAdmittedScript`,`queue.go:603`;只在 meta 还在时写,不凭空建出没有 TTL 的 meta;`HSET` 不改 meta 的 TTL)。MULTI 里各命令对其它客户端同时可见,所以「看得到 `admitted_at`」⇒「放行槽也已写过」。
+> - `Lookup` 先 `GETDEL` 放行槽,取到即签票回 ADMITTED(不变)。取不到时一次 `HMGET meta zone_id admitted_at`(替换原来的 `HGET zone_id`,往返数不变)。
+> - 有 `admitted_at`:再 `GETDEL` 一次(复用 `consumeAdmitAndSign`,覆盖「第一次 `GETDEL` 早于放行的 MULTI」的竞态),取到照常签票回 ADMITTED;仍取不到 = 放行槽已被取走或已过期,回 **EXPIRED**,`login_queue_expired_total` 记新原因 `admit_window_passed`(带 zone 标签)。gateway 对 assign-gate 重入与 queue-status 的 EXPIRED 都回 410,客户端丢掉 token 重走 `/api/assign-gate`(§4 表)。
+> - 没有 `admitted_at`:维持原逻辑。ZRANK 命中回名次;落空是在途窗口(已 `ZPOPMIN`、写放行槽的 MULTI 还没落地,亚秒级),仍回 QUEUEING、名次 0,下一次轮询就能取到。
+> - token 索引或 meta 不在、meta 损坏:EXPIRED(`meta_gone`),不变。
+>
+> 仍会停在名次 0 的只剩 `PopAdmit` 在写放行槽之前丢掉的条目(`pickFn` 返回 `(nil, nil)`、Marshal 失败、写放行槽的 MULTI 失败,§14 第 7 条),这类条目没有 `admitted_at`,与在途窗口无法区分。回包丢失时那张 gate 票仍找不回来,客户端收到 410 后从队尾重新排;Java 版对取走后再查同样回 410,另给取走加了请求号,让 go-redis 超时重发能拿回同一张票(`spec_G4b-G.md` §5.8 第 4 条),本仓库没有做。`queue:meta:{queueId}` 的字段因此多一个 `admitted_at`(§3 键表未列)。
 
 ### FreeSlots 公式
 
@@ -405,6 +417,8 @@ Queue:
   不满足在部署的任何写操作之前拒绝;dev 可不设,此时不写、login 回落 GateToken,见 §6 更正)。写明文 `Value` 而不是 `secrets.go` 建议的 `Env`,与兄弟项 `InternalAuth` 一致。
 - 开关、`Queue` 段与排队密钥都进 login Pod 模板的 `mmorpg.io/peak-shaving-hash` 注解,任一变化 login 自动滚动。参数与运维要点见 `deploy/k8s/README.md` Optional Flags「削峰(G4b)」。
 
+> **(2026-10-15 更正,本块原文保留)** 上面「staging / prod 写」只在登录排队的合入门槛清掉之后成立。`k8s_deploy.ps1` 用脚本常量 `$script:LoginQueueMergeGateCleared`(当前 `$false`)机械拦截:门槛未清时 `-LoginQueue auto` 在 dev / staging / prod 都解析为关,不写本段与 `Secrets.QueueToken`,也不要求 `MMORPG_LOGIN_QUEUE_TOKEN_SECRET`(非 dev 档部署 login 时打 `[PeakShaving]LoginQueueGate=closed` 警告);`-LoginQueue on` 在参数解析后、任何 kubectl 之前拒绝。三项门槛(G1b 多 zone 用例跑绿、G4b-G 跑绿、`spec_G4b-G.md` §8.4 真实 Redis 冒烟记进 `docs/PROGRESS.md`)见 `docs/handoff/launch-readiness-20261013/spec_G4b.md` §7「合入门槛」与 `deploy/k8s/README.md`「登录排队的合入门槛」;§14 第 8 条的「任何环境都不打开排队」就是由这道门禁执行的。
+
 ---
 
 ## 11. 观测与压测
@@ -474,6 +488,7 @@ q_entered=4080 q_admitted=920 q_expired=3 q_avg_wait=28s q_max_rank=4078
 4. **Queue token 转移**:玩家换设备重登拿到新 token,丢失原位置。目前可接受。
 5. ~~**多 zone 公平性**:dispatcher 按 `activeZones` 顺序遍历,极端情况下前面 zone 抢光 admit 批次。~~ 已由 §7.1 消解:每个 zone 有独立的 leader,不存在 zone 之间互相抢批次。
 6. **取走后再轮询回「排队中、名次 0」**(2026-10-13 登记,G4b-G 不含):同一令牌取走之后再轮询,meta 与 token 索引还在、ZRANK 落空,回 QUEUEING、rank 0,直到 1h 过期;回包丢失时这张 gate 票找不回来。Java 版回 410。这是 `PARITY.md`「登录排队」行 ③ 的另一句(`spec_G4b-G.md` §5.8 第 1 条)。
+   - **(2026-10-15 更正:已修;已落码,未编译、未测试,待 Codex 验证)** 取走之后再查,以及放行槽没人来取、按 `AdmitTTL` 过期之后再查,都回 EXPIRED(gateway 410,原因 `admit_window_passed`),判据是 meta 里的 `admitted_at`,见 §5 决策树后的更正。回包丢失时 gate 票仍找不回来,客户端从队尾重新排。PopAdmit 写放行槽之前丢掉的条目仍停在名次 0 直到 meta 过期(第 7 条)。
 7. **`PopAdmit` 不是单段 Lua**(2026-10-13 登记,既有):「FreeSlots 读占位数 → ZPOPMIN → 逐条写占位」是多次往返,一批把队列弹空之后、占位逐条写完之前,快速通道看到「队列空、占位还没写全」可以再占进来,任一时刻在途 ≤ 2 ×(capacity − online)。`pickFn` 返回 `(nil, nil)`、Marshal 失败、MULTI 失败时条目丢失(G1b 规格 §4.5 第 1 条)。Java 版把弹出、算空位、写占位放在一段 Lua 里(`spec_G4b-G.md` §5.4、§5.8 第 2 条)。
 8. **在途占位脚本只有 miniredis 上的证据**(2026-10-15 登记):G4b-G 的计数、快速通道与 `admittedHoldScript` 三段脚本(含 10-15 的条件续期、MULTI 里的 `EVAL`)只有 miniredis 单测覆盖(单测本身也还待 Codex 执行),没有任何真实 Redis 上的运行证据。负责人 2026-10-15 定为**硬门槛**:G4b-2 打开排队之前,`spec_G4b-G.md` §8.4 的最小冒烟必须在真实 Redis 7.x 上跑通并记进 `docs/PROGRESS.md`,否则任何环境都不打开排队(`spec_G4b.md` §7 合入门槛)。
 
@@ -496,6 +511,7 @@ pwsh -File tools/scripts/k8s_deploy.ps1 -Command zone-up -ZoneName <zone> -ZoneI
 - 关闭后 login Pod 模板上的 `mmorpg.io/peak-shaving-hash` 注解消失,login 自动滚动;所以 K8s 上的「秒级」是一次 login 滚动的时间。新 Pod 起来后,在排玩家轮询
   `/api/queue-status` 拿到 EXPIRED(gateway 回 410),丢掉 token 重走 `/api/assign-gate` 快速通道。关排队时部署不要求 `MMORPG_LOGIN_QUEUE_TOKEN_SECRET`。
 - 参数不粘滞:下一次部署(含回档 Step 6、合服后的 zone-up)不传 `-LoginQueue off`,staging / prod 就按档位恢复为开。原因排除前每次部署都要照传。
+  - **(2026-10-15 更正,上一条原文保留)** 「按档位恢复为开」只在登录排队的合入门槛清掉之后成立:门槛未清时(`k8s_deploy.ps1` 的 `$script:LoginQueueMergeGateCleared` 为 `$false`),不传 `-LoginQueue` 在任何档位都是关,`-LoginQueue on` 被拒,本节的止血场景也就不会出现。见 §10 末尾的更正与 `docs/handoff/launch-readiness-20261013/spec_G4b.md` §7「合入门槛」。
 - 遗留的 `queue:*` / `admit*` 键按 TTL 自然过期,要立即清理见下面「清空堆积」。K8s 上锁键是 `dispatcher:lock:login_queue:zone:<id>:zone:<id>`(§10),
   下面命令里的锁键在 K8s 上要换成它。
 

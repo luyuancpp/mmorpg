@@ -967,8 +967,8 @@ func (c *ctxProbeClient) ReleasePlayerName(ctx context.Context, in *dspb.Release
 }
 
 // 回归:建角锁的释放同样必须丢掉请求 ctx 的取消信号。请求 ctx 在**持锁之后**才取消(这里在 Reserve 回调里
-// 取消,模拟 zrpc 服务端 Timeout / 客户端断开落在建角中途):此后围栏写因 ctx 已取消发不出去
-// (go-redis 取连接前先看 ctx),回读走 WithoutCancel、确认 blob 里没有新角色,建角以 tip 失败 ——
+// 取消,模拟 zrpc 服务端 Timeout / 客户端断开落在建角中途):此后建角在 6c'' 的截止检查处放弃
+// (2026-10-15 起;此前是围栏写因 ctx 已取消发不出去、回读确认没写之后才失败),名字释放,建角以 tip 失败 ——
 // 返回时锁必须已经删掉。修复前释放用的是请求 ctx,释放命令同样发不出去,锁要等 AccountLockTTL
 // 自然过期(miniredis 不随墙钟过期,所以键会一直在),期间同账号重试建角一律 kLoginInProgress。
 // 不能一开始就传已取消的 ctx:那样第 2 步 GetAccount 先失败,根本走不到 TryLock。
@@ -987,8 +987,8 @@ func TestCreatePlayer_ReleasesLockAfterRequestCancelledMidCreate(t *testing.T) {
 
 	resp := n.create(t, "云中君")
 
-	// 先钉住前提:围栏写确实没发出去、建角是以「写未确认 + 回读不含」失败的。前提不成立时下面的断言说明不了问题。
-	requireTip(t, resp, table.LoginError_kLoginRedisSetFailed)
+	// 先钉住前提:建角是在持锁之后因请求 ctx 取消而放弃的,围栏写没有发出。前提不成立时下面的断言说明不了问题。
+	requireTip(t, resp, table.LoginError_kLoginDataSerializeFailed)
 	if players := storedPlayers(t, n.ctx, n.rdb); len(players) != 0 {
 		t.Fatalf("account blob persisted %d player(s) although the request ctx was cancelled before the fenced write", len(players))
 	}

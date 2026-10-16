@@ -31,7 +31,7 @@ func TestProductionPasswordProviderAcceptsOnlyMatchingArgon2idHash(t *testing.T)
 		t.Fatalf("HashPassword: %v", err)
 	}
 	store := &fakePasswordHashStore{canonical: "Alice", hash: encoded, found: true}
-	provider, err := NewProductionPasswordProvider(store)
+	provider, err := NewProductionPasswordProvider(store, passPasswordQuota{})
 	if err != nil {
 		t.Fatalf("NewProductionPasswordProvider: %v", err)
 	}
@@ -51,7 +51,7 @@ func TestProductionPasswordProviderAcceptsOnlyMatchingArgon2idHash(t *testing.T)
 
 func TestProductionPasswordProviderFailsClosedForUnknownEmptyAndLegacyPlaintext(t *testing.T) {
 	providerWith := func(store *fakePasswordHashStore) *ProductionPasswordProvider {
-		provider, err := NewProductionPasswordProvider(store)
+		provider, err := NewProductionPasswordProvider(store, passPasswordQuota{})
 		if err != nil {
 			t.Fatalf("NewProductionPasswordProvider: %v", err)
 		}
@@ -67,12 +67,12 @@ func TestProductionPasswordProviderFailsClosedForUnknownEmptyAndLegacyPlaintext(
 	}
 
 	empty := &fakePasswordHashStore{canonical: "alice", found: true}
-	if _, err := providerWith(empty).ValidatePassword(context.Background(), "alice", "password"); !errors.Is(err, ErrInvalidCredentials) {
+	if _, err := providerWith(empty).ValidatePassword(context.Background(), "alice", "password"); !errors.Is(err, ErrPasswordCredentialUnavailable) {
 		t.Fatalf("empty hash error = %v, want ErrInvalidCredentials", err)
 	}
 
 	legacy := &fakePasswordHashStore{canonical: "alice", hash: "old-plaintext-password", found: true}
-	if _, err := providerWith(legacy).ValidatePassword(context.Background(), "alice", "old-plaintext-password"); !errors.Is(err, ErrInvalidCredentials) {
+	if _, err := providerWith(legacy).ValidatePassword(context.Background(), "alice", "old-plaintext-password"); !errors.Is(err, ErrPasswordCredentialUnavailable) {
 		t.Fatalf("legacy plaintext error = %v, want ErrInvalidCredentials", err)
 	}
 
@@ -87,7 +87,7 @@ func TestProductionPasswordProviderFailsClosedForUnknownEmptyAndLegacyPlaintext(
 
 func TestProductionPasswordProviderPropagatesStoreOutageWithoutAuthenticating(t *testing.T) {
 	store := &fakePasswordHashStore{err: errors.New("db unavailable")}
-	provider, err := NewProductionPasswordProvider(store)
+	provider, err := NewProductionPasswordProvider(store, passPasswordQuota{})
 	if err != nil {
 		t.Fatalf("NewProductionPasswordProvider: %v", err)
 	}
@@ -117,6 +117,7 @@ func TestProductionPasswordProviderBoundsConcurrentKDFWork(t *testing.T) {
 	var maximum atomic.Int32
 	provider := &ProductionPasswordProvider{
 		store:          store,
+		quota:          passPasswordQuota{},
 		dummyHash:      "dummy",
 		kdfSlots:       make(chan struct{}, 2),
 		kdfWaitTimeout: 2 * time.Second,
@@ -179,6 +180,7 @@ func TestProductionPasswordProviderBoundsConcurrentKDFWork(t *testing.T) {
 func TestProductionPasswordProviderKDFWaitIsContextBoundAndFailsClosed(t *testing.T) {
 	provider := &ProductionPasswordProvider{
 		store:          &fakePasswordHashStore{},
+		quota:          passPasswordQuota{},
 		dummyHash:      "dummy",
 		kdfSlots:       make(chan struct{}, 1),
 		kdfWaitTimeout: 20 * time.Millisecond,
@@ -211,10 +213,10 @@ func TestProductionPasswordProviderKDFWaitIsContextBoundAndFailsClosed(t *testin
 
 func TestProductionPasswordProviderRejectsUnsafeKDFLimits(t *testing.T) {
 	store := &fakePasswordHashStore{}
-	if _, err := NewProductionPasswordProviderWithLimits(store, MaxPasswordKDFConcurrency+1, time.Second); err == nil {
+	if _, err := NewProductionPasswordProviderWithLimits(store, passPasswordQuota{}, MaxPasswordKDFConcurrency+1, time.Second); err == nil {
 		t.Fatal("KDF concurrency above hard limit was accepted")
 	}
-	if _, err := NewProductionPasswordProviderWithLimits(store, 1, MaxPasswordKDFWaitTimeout+time.Nanosecond); err == nil {
+	if _, err := NewProductionPasswordProviderWithLimits(store, passPasswordQuota{}, 1, MaxPasswordKDFWaitTimeout+time.Nanosecond); err == nil {
 		t.Fatal("KDF wait timeout above hard limit was accepted")
 	}
 }
@@ -256,4 +258,14 @@ func TestSQLPasswordHashStoreIntegrationReadOnly(t *testing.T) {
 		t.Fatalf("authoritative row is not migrated: found=%v account=%q hash_prefix=%q",
 			found, canonical, fmt.Sprintf("%.10s", encoded))
 	}
+}
+
+// passPasswordQuota 仅隔离既有 KDF 单测；生产构造器仍要求显式依赖。
+type passPasswordQuota struct{}
+
+func (passPasswordQuota) Begin(context.Context, PasswordAccountKind, string) (PasswordAttempt, error) {
+	return PasswordAttempt{}, nil
+}
+func (passPasswordQuota) Finish(context.Context, PasswordAttempt, PasswordAttemptOutcome) error {
+	return nil
 }

@@ -94,3 +94,7 @@ constexpr uint32_t DataServiceBatchGetPlayerNameIndex = 21;
 constexpr uint32_t DataServiceGetPlayerAssetOpLedgerMessageId = 248;
 constexpr uint32_t DataServiceGetPlayerAssetOpLedgerIndex = 22;
 #define DataServiceGetPlayerAssetOpLedgerMethod  ::DataService_Stub::descriptor()->method(22)
+
+constexpr uint32_t DataServiceGetPlayerInboxLedgerMessageId = 258;
+constexpr uint32_t DataServiceGetPlayerInboxLedgerIndex = 23;
+#define DataServiceGetPlayerInboxLedgerMethod  ::DataService_Stub::descriptor()->method(23)

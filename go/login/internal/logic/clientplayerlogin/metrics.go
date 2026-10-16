@@ -244,8 +244,11 @@ var createPlayerStageBuckets = []float64{
 // createPlayerStageSeconds 的 stage 取值。建角持着账号锁串行跑这几步(开 NewPlayerSeed 时多一步 seed),
 // 锁 TTL 是按它们的耗时之和估的(login.yaml Locker.AccountLockTTL;不是硬上界,理由见那边的注释),
 // 哪一步拖长了要能直接看出来。
+// id_probe 是 2026-10-15 加的(设计 new-player-first-enter-no-cold-read.md §10 P7):每次建角都有,不看种子开关;
+// tools/scripts/stress_summarize.ps1 的 CreatePlayer stages 表还没有这一列。
 const (
 	createStageMint         = "mint"          // 发号(号段 / snowflake)
+	createStageIDProbe      = "id_probe"      // 新铸 id 的只读探测(父键 / owner_epoch,一次 Redis 往返)
 	createStageName         = "name"          // 名字登记(含同名重试、生成名换名重试)
 	createStageRegister     = "register"      // player:zone 归属登记
 	createStageSeed         = "seed"          // 新号父键种子(NewPlayerSeed.Enabled 时才有,一次 Redis)
@@ -266,7 +269,7 @@ var (
 		Subsystem: createPlayerMetricSubsystem,
 		Name:      "stage_seconds",
 		Help: "CreatePlayer per-stage latency while holding the account lock. " +
-			"Stage: mint | name | register | seed | account_write.",
+			"Stage: mint | id_probe | name | register | seed | account_write.",
 		Labels:  []string{"stage"},
 		Buckets: createPlayerStageBuckets,
 	})
@@ -300,13 +303,31 @@ var (
 	// (`[new-player-seed] freshly minted ...`),意味着 id 复用,按 ID 安全事件处理。error 表示种子写入未确认
 	// (可能已落地,也可能没有):首次入场命中则走快路径,否则退回冷读,结果相同,不影响正确性。
 	// idempotent 在建角侧稳态应接近 0(成因见 seedNewPlayer),每 +1 对应一条带 player_id 的 INFO 日志。
+	// 2026-10-15 起(设计 §10 P2):parent_exists / owner_epoch_exists 每 +1 还对应一次**被拒绝的建角**;
+	// 6b' 的只读探测(id_probe_total)已先拦下建角前就在的状态,这里只剩探测与种子写之间窗口里冒出来的。
 	createPlayerSeedTotal = metric.NewCounterVec(&metric.CounterVecOpts{
 		Namespace: createPlayerMetricNamespace,
 		Subsystem: createPlayerMetricSubsystem,
 		Name:      "seed_total",
 		Help: "New-player PlayerAllData seed writes by CreatePlayer (NewPlayerSeed.Enabled). " +
 			"Result: written | idempotent | parent_exists | owner_epoch_exists | error. " +
-			"parent_exists / owner_epoch_exists on a freshly minted id mean id reuse (see the ERROR log).",
+			"parent_exists / owner_epoch_exists on a freshly minted id mean id reuse (see the ERROR log); " +
+			"the create is refused.",
+		Labels: []string{"result"},
+	})
+
+	// 建角在登记名字之前对新铸 id 的只读探测(createplayer_seed.go 的 probeMintedID;设计 §10 P7),
+	// 每次探测记一条,不看 NewPlayerSeed 开关。result 取 dataloader.MintedIDProbe.String():
+	// clear | parent_exists | owner_epoch_exists | error。除 clear 外每 +1 都对应一次被拒绝的建角和一条带
+	// player_id 的 ERROR 日志(`[minted-id-probe] ...`):parent_exists / owner_epoch_exists 意味着 id 复用,
+	// 按 ID 安全事件处理;error 是 Redis 探不清,建角 fail-closed。请求 ctx 截止之后不探、不计。
+	createPlayerIDProbeTotal = metric.NewCounterVec(&metric.CounterVecOpts{
+		Namespace: createPlayerMetricNamespace,
+		Subsystem: createPlayerMetricSubsystem,
+		Name:      "id_probe_total",
+		Help: "Read-only probe of a freshly minted player_id before CreatePlayer reserves the name. " +
+			"Result: clear | parent_exists | owner_epoch_exists | error. Anything but clear refuses the create; " +
+			"parent_exists / owner_epoch_exists mean id reuse (see the ERROR log).",
 		Labels: []string{"result"},
 	})
 )
@@ -324,11 +345,16 @@ var (
 //
 // 只预置孤儿与种子的两个 id 复用结局:name_release_total 带 label、且不用于"出现即告警",不值得为它预铺四条序列。
 // 开关(NewPlayerSeed.Enabled)关着时种子的两条 0 序列照样预置:无害,`increase(...) > 0` 恒为假,不必按开关区分。
+// 2026-10-15 起再预置 id_probe_total 的三个拒绝结局(parent_exists / owner_epoch_exists / error):它们每 +1
+// 都是一次被拒绝的建角,同样用于「出现即告警」;clear 是常态,不预置。
 func PrimeCreatePlayerMetrics() {
 	createPlayerNameOrphanTotal.Add(0)
 	// 种子的两个 id 复用结局同样用于「出现即告警」,理由同上。
 	createPlayerSeedTotal.Add(0, dataloader.SeedParentExists.String())
 	createPlayerSeedTotal.Add(0, dataloader.SeedOwnerEpochExists.String())
+	createPlayerIDProbeTotal.Add(0, dataloader.MintedIDParentExists.String())
+	createPlayerIDProbeTotal.Add(0, dataloader.MintedIDOwnerEpochExists.String())
+	createPlayerIDProbeTotal.Add(0, dataloader.MintedIDProbeError.String())
 }
 
 // PrimeEnterGameMetrics 把 entergame_total{result="pool_saturated"} 预置成 0,让这条序列从起服起就存在。

@@ -17,7 +17,8 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
  * 网关 MySQL 连接池大小的配置钉子(G2b 连接预算)。
  *
  * <p>钉的是:主配置 {@code src/main/resources/application.yaml} 里 {@code spring.datasource.hikari} 的
- * {@code maximum-pool-size: 5}、{@code minimum-idle: 2},经 Spring Boot 属性绑定真的落到了运行时的
+ * {@code maximum-pool-size: 5}、{@code minimum-idle: 2}、{@code connection-timeout: 3000}(2026-10-15 补),
+ * 经 Spring Boot 属性绑定真的落到了运行时的
  * {@link HikariDataSource} 上。读的是池对象的 getter,不是把 yaml 当文本再解析一遍 —— 键名 Spring 认不认、
  * 值有没有被别的配置源盖掉,只有看池对象才知道。
  *
@@ -56,5 +57,9 @@ class GatewayDataSourcePoolConfigTest {
                 "maximum-pool-size 应为 application.yaml 写的 5;不是 5 说明 hikari 段没绑到池上,或改了数值没同步连接总账");
         assertEquals(2, hikari.getMinimumIdle(),
                 "minimum-idle 应为 application.yaml 写的 2;不是 2 说明 hikari 段没绑到池上,或改了数值没同步 ConfigMap 镜像");
+        // 2026-10-15(G2b §10 #5):取不到连接时的等待上限。退回 Hikari 默认 30s 时,MySQL 不可达期间每个碰库的请求
+        // 占住一个 Tomcat 线程 30s,线程池很快耗尽(见 application.yaml 该键注释)。
+        assertEquals(3000L, hikari.getConnectionTimeout(),
+                "connection-timeout 应为 application.yaml 写的 3000 毫秒;30000 说明键没绑上、落回了 Hikari 默认值");
     }
 }

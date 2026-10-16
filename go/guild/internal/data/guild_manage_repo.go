@@ -2263,7 +2263,9 @@ func (r *GuildRepo) ReviewApplication(ctx context.Context, guildID, actorID, app
 // 解散要删 guild 行(连同 idx_guild_0(zone_id) 的项),与合服按 zone 整区改写同一批行,事务内再判一次才从调用关系上
 // 消除并发。nil = 不设闸(单测与未配闸门的环境)。
 // 输入约束:now 为服务进程时钟毫秒(> 0,由 logic 传入),用于建状态行与把全体成员在本帮的未决捐献截止时间提前到 now。
-// 错误语义:ErrGuildGone / ErrRankTooLow(logic 映射为 kGuildNotLeader)/ ErrZoneMerging / ErrWriteConflict。
+// 错误语义:ErrGuildGone / ErrRankTooLow(仍是本帮成员、但不是帮主)/ ErrNotGuildMember(已不是本帮成员,见 disbandRefusal)/
+// ErrZoneMerging / ErrWriteConflict。logic 对旧客户端(expected_guild_id = 0)把 ErrRankTooLow 与 ErrNotGuildMember 都答成
+// kGuildNotLeader,与区分之前一致。
 // 幂等:重放得到 ErrGuildGone。
 // 扩展点:B5(捐献提前截止,已落)、B6a(活动进度,已落)、B6b(历练对局行,已落,接在删进度之后)按表序插在提前截止之后、
 // 删帮会行之前(90-consistency X-14 原写"删申请之后、删成员之前",删成员已按上文前移,见交付说明)。
@@ -2289,7 +2291,7 @@ func (r *GuildRepo) DisbandGuild(ctx context.Context, guildID, actorID, now uint
 			return err
 		}
 		if guild.LeaderID != actorID {
-			return ErrRankTooLow
+			return disbandRefusal(ctx, tx, guildID, actorID)
 		}
 		if err := checkFence(ctx, fence, guild.ZoneID); err != nil {
 			return err
@@ -2364,6 +2366,28 @@ func (r *GuildRepo) DisbandGuild(ctx context.Context, guildID, actorID, now uint
 	}
 	r.invalidateAfterCommit(ctx, opDisband, guildID, out.MemberIDs...)
 	return out, nil
+}
+
+// disbandRefusal 区分解散被拒的两种原因:操作者仍是本帮成员、只是不是帮主 → ErrRankTooLow;操作者已不是本帮成员 → ErrNotGuildMember。
+//
+// 为什么要区分(docs/design/client-request-ordering.md O14 / §6.4):带 expected_guild_id 的解散可能在预检之后、锁住 guild 行之前
+// 已经转让并离帮(超时后晚到的旧请求),这时该答「你不在该帮」(kGuildNotInGuild),而不是「你不是帮主」。
+// 区分之前这里一律回 ErrRankTooLow;logic 对 expected_guild_id = 0 的旧客户端仍把两者都答成 kGuildNotLeader。
+//
+// 判据是事务内的普通读,不另加锁:调用方已持有 guild 行锁,而给本帮增删成员行的事务都先锁 guild 行(见 DisbandGuild 函数头),
+// 所以这次读到的就是提交点的成员关系,与「不写」在同一把锁下成立。这一支随即回滚,不取新锁、不改锁序。
+// 读失败按内部错误返回,不猜成任何一种拒绝。
+func disbandRefusal(ctx context.Context, tx *sql.Tx, guildID, actorID uint64) error {
+	var role uint32
+	err := tx.QueryRowContext(ctx, sqlSelectMemberRole, guildID, actorID).Scan(&role)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return ErrNotGuildMember
+	case err != nil:
+		return fmt.Errorf("read role of disbanding actor %d in guild %d: %w", actorID, guildID, err)
+	default:
+		return ErrRankTooLow
+	}
 }
 
 // lockAllMembers 锁住该帮全体成员的状态行与成员行,返回 player_id 升序列表。前置:已持有该帮 guild 行锁。

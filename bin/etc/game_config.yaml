@@ -27,3 +27,10 @@ zoneredis:
   timeout: 3000            # 连接 Redis 的超时时间（毫秒）
   max_connections: 100     # 最大连接数
   retry_interval: 1000     # 连接重试间隔时间（毫秒）
+
+# 玩家持久收件箱的 scene 消费端(docs/design/player-inbox-service.md §3.3、§7.3、§11.7)。
+#   consumer_enabled        false = 不发 Fetch,账本字段照常随存档往返(回滚下限);上线顺序第 5 步才统一打开。
+#   periodic_fetch_minutes  在线有界兜底周期(分钟,±20% 抖动),0 = 关闭。整段或此键缺失时加载器取 30。
+player_inbox:
+  consumer_enabled: false
+  periodic_fetch_minutes: 30

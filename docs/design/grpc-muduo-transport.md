@@ -438,6 +438,27 @@ EtcdHelper(唯一出口,EtcdManager 的 keepalive 也收进来)
 - **发现键索引带墓碑**,比设计多挡了两类乱序(Range 与 watch 走不同的流):比已处理的删除更旧的快照条目不再把下线节点加回来;
   比已知 PUT 更旧的 DELETE 事件忽略。对账删除也在快照 revision 处记墓碑。墓碑由之后的快照清理(快照 revision ≥ 墓碑即清)。
 - **只有发现键进索引**:`/allocated/` 占位键(值是裸 uuid)照旧交给发现层由它跳过,不参与「值解析失败 → 快照不完整」判定。
+- **同一个键换了持有者**(评审补):对端重启按「最小空闲 id」拿回同一 node_id、以新 uuid 写回同一个键时,快照里键还在,
+  只删「快照里没有的键」的对账摘不掉旧 uuid;它的 DELETE 又可能因比快照旧被判过时。索引的 PUT 返回被覆盖的旧值与旧持有者,
+  新旧 uuid 都解析得出且不同就把旧持有者记为待摘。Range 与 watch 两条路径都做。
+- **按 uuid 判「还在不在」**(回归评审补):发现层按 uuid 摘节点,而同一 uuid 可能同时挂在两个键上 —— Go 侧
+  `ReallocateNewID`(friend / match)失租换号时保留 uuid、换 node_id,match 的注册表也可能把自己的旧键误判成被占而换号。
+  所以三种摘除来源(换持有者、对账删除、watch DELETE)一律先记为待摘,**整批**(一个 Range 快照 / 一个 watch 应答)应用完后,
+  只摘索引里已不再挂任何键的 uuid(索引按持有者计数)。同一批里先 DELETE 后重新 PUT 的节点也因此不再先摘再加。
+  uuid 解析不了时无法判断,照旧交给发现层。跨应答的先后仍按到达顺序处理(先收到 DELETE、下一个应答才收到新键的 PUT 时,
+  节点会被摘一下再加回,与旧实现相同)。
+- **前提:etcd revision 单调递增**(etcd API 不变量)。水位、墓碑、`mod_revision` 判过时都依赖它。用 `etcdutl snapshot restore`
+  恢复时必须带 `--bump-revision` / `--mark-compacted`;换成一套全新的 etcd(数据清空、revision 从 1 重计)时所有节点都要重启
+  (deploy/k8s/README 已有此要求)。压测清库用 `etcdctl del --prefix`,不会让 revision 回退。
+- **每前缀已应用快照水位**(评审补):同一前缀多个 Range 同时在途、乱序到达时,比已应用快照旧的应答整条丢弃(不应用 PUT、
+  不对账);watch 一律从 `max(R, 水位) + 1` 建,重建前发出的旧 Range 晚到也不会从更旧的 revision 回放。水位跨流重建保留。
+  索引把「本地无记录、墓碑不早于它」的 DELETE 判为重放,不再交给发现层(否则宽限期被重置一遍)。
+- **etcd 通道接收上限 64MiB**(评审补,默认 4MiB):单类约 4000 个节点的 Range 应答就会超 4MiB,超了每次失败、该前缀永远建不了 watch。
+- **双向流评审补**:对端带 END_STREAM 结束流而本端方向还开着时补 RST_STREAM(NO_ERROR)(否则 nghttp2 只置 half-closed,
+  onClose 永远不来);待发缓冲里已交给 nghttp2 的前缀及时挪掉(否则内存随累计发送量增长);待发上限只在已有积压时生效
+  (缓冲为空总放行一条);周期 keepalive 按「最近收到的帧 + keepaliveTime」上弦;拆包出错前已完整的消息先交付;
+  onHeaders 只对 200 + application/grpc 回调;StartStream 拒绝缺 onClose;loop 线程外的 Cancel 只置标记不动表。
+- **节点模板**:`cpp/nodes/_template/main.{simple,with_context}.cpp.example` 也在 main 开头调用 `etcd_transport::InstallFromEnv()`。
 - **新传输的通道**:周期 keepalive 30s / 10s;连接级重连退避封顶 5s(默认 120s,etcd 恢复后要几秒内连回);unary 截止时间
   取 `grpc_call_deadline::Get(EtcdNodeService)`,与官方客户端同一配置;同一方法的失败日志 10s 限频。不发 `hasleader`
   元数据(与旧实现一致;成员失去 leader 的探测与多 endpoint 切换同属后续)。

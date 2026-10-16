@@ -328,7 +328,7 @@
 | # | 事项 | 本稿默认 |
 |---|---|---|
 | P1 | 采用方案 A(种子只带 player_id,不带身份) | 采用 |
-| P2 | id 复用信号是否升级为拒绝建角 | **只告警**。走到种子这一步时 `player:zone` 已登记;此时拒绝,会留下永久的幽灵映射(`createplayerlogic.go:257-263`) |
+| P2 | id 复用信号是否升级为拒绝建角 | **只告警**。走到种子这一步时 `player:zone` 已登记;此时拒绝,会留下永久的幽灵映射(`createplayerlogic.go:257-263`)。**负责人 2026-10-15 按『最标准』定为:采用 P7 且 P2 升级为拒绝**(本规格没有 P7 一行,P7 是设计文档 §10 在 2026-10-13 评审后补的「6c 之前只读探测」)。建角在名字登记之前对新铸 id 探测父键与 owner_epoch,命中或探测出错都拒绝,不留任何持久状态;种子脚本在探测之后的窗口里仍报 `parent_exists` / `owner_epoch_exists` 时同样拒绝,释放名字,`player:zone` 映射撤不掉、留下一条,与第 7 步失败同类(上面「幽灵映射」的代价只剩这个窗口)。以设计文档 `docs/design/new-player-first-enter-no-cold-read.md` §10 P2 / P7 的结论注与 §13.2 为准 |
 | P3 | 何时在 K8s / 开服档打开 | L-14 对比表出来、告警就位之后;另起一批改 `k8s_deploy.ps1` |
 | P4 | TTL 边界加固:快路径命中、且父键剩余 TTL 低于阈值时续期 | **不做**。窗口极小,且能自愈 |
 | P5 | `missing_required` 与 `db_placement_store_open_total{result=~"error|rejected"}` 两类告警是否作为硬门禁 | 是 |
@@ -1013,6 +1013,8 @@ python tools/scripts/gen_docs_index.py --check
 ## B10 待负责人拍板
 
 见 Part A §10 的 P1–P6。本规格按默认值落码:采用 A;id 复用只告警;K8s 不打开;不做 TTL 续期加固;`missing_required` 与 `db_placement_store_open_total{result=~"error|rejected"}` 两类告警作为打开前置;`AccountLockTTL` 不调。
+
+> **2026-10-15 结论注**:负责人按『最标准』定为:采用 P7 且 P2 升级为拒绝。上面「id 复用只告警」不再适用:新铸 id 上已有父键或 owner_epoch 时建角在名字登记之前就拒绝(探测不看种子开关),种子在窗口里报出的同样拒绝并释放名字。B2.3 / B5.2 里 `seedNewPlayer` 只告警的代码与 `TestCreatePlayer_SeedNeverOverwritesExistingParent` / `TestCreatePlayer_SeedRefusedAfterOwnerEpochMinted`「建角成功」的期望已过时,现行实现、改写后的用例与验证命令见设计文档 `docs/design/new-player-first-enter-no-cold-read.md` §13.2。
 
 ## B11 Java 版(AGENTS §12)
 

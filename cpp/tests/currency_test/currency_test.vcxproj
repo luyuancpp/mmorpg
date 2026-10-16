@@ -127,7 +127,7 @@
       <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
       <EnableParallelCodeGeneration>false</EnableParallelCodeGeneration>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
     </ClCompile>
@@ -164,6 +164,8 @@
     <ClCompile Include="asset_op_ledger_test.cpp" />
     <ClCompile Include="asset_op_system_test.cpp" />
     <ClCompile Include="client_gm_gate_test.cpp" />
+    <ClCompile Include="player_inbox_rules_test.cpp" />
+    <ClCompile Include="gm_sanction_inbox_executor_test.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets"></ImportGroup>

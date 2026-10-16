@@ -43,6 +43,13 @@
     </ClCompile>
   </ItemDefinitionGroup>
 
+  <!-- 生成的 gRPC 客户端复用 muduo 运行时，需要与现有 Windows 工程相同的兼容头。 -->
+  <ItemDefinitionGroup Condition="'$(OS)' == 'Windows_NT' and '$(MSBuildProjectExtension)' == '.vcxproj' and '$(MSBuildProjectName)' == 'grpc_client'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)third_party\muduo\contrib\windows\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+
   <!--
     裸指针成员检查只管本仓库自己的代码。按完整目录边界排除第三方工程，
     包括内嵌的 cpp\libs\engine\muduo_windows，兼容路径大小写和两种分隔符。

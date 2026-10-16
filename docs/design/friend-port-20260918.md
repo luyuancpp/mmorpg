@@ -306,3 +306,25 @@ Go 已落地申请代次、按 ID/会话主体处理、同操作终态幂等与 
 
 部署必要条件仍未自动完成：先停旧 friend 写者，审阅补索引并迁移到 exit0，预播种 friend_request 号段，使用同一全服 TiDB 事务域及不可回退的号源水位，配齐客户端协议；生产 TiDB 的备份/恢复和故障预算另验。提交后推送/摘要仍是通知旁路，没有与好友事务同提交的 outbox，漏通知由权威补拉恢复，不宣称可靠事件全链路零丢失或整游强一致。DAU1亿/CCU2000万尚无压测证据。
 Java最终回执（0.1.0-SNAPSHOT，对应并行保存d57d11f）：完整隔离11模块构建成功，friend上一快照完整MySQL/Redis97项中96通过/1跳过、robot616项执行通过；最终忽略from兼容字段的源码编译及15项FriendServiceTest通过。Java真实TiDB与最终全量真库因Docker引擎停止未执行，已在PARITY和既有friend-spec登记，不以Go真TiDB结果代替Java。机器人smoke也已改为保留/核对代次与时间、按ID接受及按权威列表清理；主树构建受其他域vendor绑定滞后阻断，完整新生成绑定的只读overlay编译通过，未覆盖其他域vendor且未执行真实冒烟。期间工作区被其他操作保存为ab0f27907，前文“未提交”为当时状态；本AI没有执行commit/push/tag。
+
+### 9.7 Java 真 TiDB 迁移修复与最终回归（2026-10-15，续验）
+
+Docker 恢复后补齐上一节未执行的 Java 真库证据。首轮原样 14 项真 TiDB 回归为 13 通过、1 错误：TiDB 8.5.2 不接受同一 `ALTER TABLE` 同时新增 `request_id` 与引用该列的普通索引。没有过滤失败用例；`game-pbmysql` 规划器现按普通列、主键、二级索引分步执行，索引阶段失败可由下次迁移继续。新增自增列及其必需支撑键仍同句，避免破坏 MySQL 对非主键/联合主键非首列自增的约束。只改该模块的规划、执行与两组测试，不手写好友专用 DDL、不更改生成契约或旧行数据。
+
+最终验证：`game-pbmysql` 在隔离 MySQL `13316` 上 132/132；好友完整 MySQL `13316`＋Redis `13379`＋实际 TiDB 生产门禁 98/98，package 成功；原失败选择器的相同 14 项在 TiDB `4000` 上 14/14，含旧表补列/补索引，全部零失败、零错误、零跳过。旧表迁移日志明确分两句执行成功。构建快照 2287 个输入逐文件 SHA 一致，好友主树 46 文件及迁移器主树 4 文件与被测快照一致；好友 jar 内也核实嵌入修复后的迁移器。摘要为主仓 ignored `build/friend-final-verification-20261015.json`，内含原红、最终日志和快照位置；专用随机测试库剩余为零。
+
+Java 版本仍 `0.1.0-SNAPSHOT`，本轮没有发布或运行真实 gate/客户端跨区冒烟；通知 outbox、生产迁移停写和整游强一致的边界仍按上一节，不因真 TiDB 测试通过而扩大结论。
+
+### 9.8 每个物理连接的强读策略与生产拒关（2026-10-15）
+
+权威列表在事务外执行普通 SELECT，只有 RC 与悲观事务仍不够。TiDB 的低精度 TSO 可经全局默认被新连接继承，历史 snapshot、陈旧读与 weak 也可通过 JDBC 会话设置启用；不能让服务通过后端类型门禁后悄悄读旧关系。Go DSN 与 Java 生产 Druid 初始化现逐个物理连接固定：`READ-COMMITTED`、`pessimistic`、空 `tidb_snapshot`、`tidb_read_staleness=0`、`tidb_low_resolution_tso=OFF`、`tidb_read_consistency='strict'`、`tidb_replica_read='leader'`。启动复核不符即拒绝，不回旧缓存；本批只设 SESSION，没有修改 GLOBAL。陈旧读和低精度 TSO 的作用域不同，不把两者都描述为全局继承。正常 follower ReadIndex 也能提供一致读，固定 leader 是本项目显式策略，不是将 follower 一律判为旧数据。
+
+Java 在配置属性绑定之后、Druid 初始化之前追加强制语句，覆盖 URL 或自定义 init SQL 中的弱策略；物理连接淘汰后重新创建仍执行。生产拒绝已提前初始化或无法保证策略的其他连接池。本地 MySQL 不注入 TiDB 专用变量。独立审查发现 `application-prod.yaml` 的默认 true 仍可被命令行关闭，新增真实 Spring 配置回归先复现旧代码错误放行，再在实际静态策略工厂用 `Environment` 检查 active `prod` 并拒绝 `require-tidb=false`，包括 `nacos,prod` 组合；Go 已有等价生产拒关。开发模式保留原 MySQL 兼容路径，没有新增并行运行模式。
+
+本轮最终运行证据：
+
+- Go svc 5/5、零跳过，真实 MySQL 兼容/生产拒绝及 TiDB 8.5.2 同时持有三个不同 CONNECTION_ID 的七项策略均执行；`go build ./...`、`go vet ./internal/svc`、gofmt/diff 检查通过。摘要为 `build/friend-authority-session-20261015/strict-snapshot/final-verification.json`，两处源码与被测输入一致。全好友业务的先前完整真库证据仍见 §9.6，不将这五项称为重跑了全域。
+- Java 最终 104/104、零失败、零错误、零跳过，9 reactor package 成功。真实 MySQL `13316`、Redis `13379`、TiDB `4000` 均启用。TiDB 池测试采用实际 Druid 自动装配/属性绑定，在 prod 下分别注入弱读 URL 和历史 snapshot URL，同时借用三连接、强制淘汰、再借三连接，核对每次七项和新连接 ID；逐项污染强读变量的门禁负例也实际执行。测试装配最初缺少 Spring 占位符解析导致两项失败，补入正式自动配置后通过，原失败日志保留；未把该夹具失败解释为业务故障。
+- Java 原样 TiDB 核心选择器的旧 14 个用例全部保留，加一项数据库门禁后 15/15、零跳过；独立 9 reactor package 成功。此轮未选择新池测试，新池及后补 prod 拒关由上一条最终 104 项覆盖；不把旧选择器日志拼成同一次执行。
+
+最终 Java 摘要为 `build/friend-strong-read-java-20261015/final-verification.json`，536 个构建输入运行期间零漂移，当前主树好友 45 个输入及迁移器 4 文件与快照一致；jar SHA-256 为 `70239BC2AC63E49A06CAA526E466EA69E9CA57A0F3821C288071B2DD656829D4`，实际含新连接策略类。原选择器证据为 `build/friend-strong-read-tidb-core-20261015/final-verification.json`。随机好友测试库和 Redis DB13 测试键只读审计剩余零。Java 版本 `0.1.0-SNAPSHOT`，无发布、真实 gate 或跨洲故障/容量验收；全球同服仍要求所有写者实际接入同一逻辑 TiDB 权威域，推送 outbox 等 §9.6 未完事项继续保留。

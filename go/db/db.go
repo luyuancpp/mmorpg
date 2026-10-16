@@ -113,6 +113,9 @@ func main() {
 	metrics.RegisterSQLPools(stores.PoolSamples)
 	// 库级冷却(L-04):db_store_cooldown_stores 在每次抓取时按注册表现算,同样必须在 metrics.Start 之前注册。
 	metrics.RegisterStoreCooldown(stores.CooldownCounts)
+	// go-redis 连接池(db_redis_pool_*{redis_client=main|placement}):每次抓取时现取 PoolStats。Placement.Redis 缺省时
+	// PlacementRedis 就是 RedisClient 本身,按指针身份判断,同一对象只导出 main 一份(汇总脚本跨 redis_client 求和不翻倍)。
+	metrics.RegisterRedisPools(ctx.RedisClient, ctx.PlacementRedis)
 
 	// 装配大字段三档闸(必须在消费者启动之前:第一条消息落到 worker 就要过闸)
 	kafka.InitBlobGuard(config.AppConfig.ServerConfig.BlobGuard)
@@ -241,6 +244,10 @@ func main() {
 	fmt.Printf("  kafka topic: %s\n", config.AppConfig.ServerConfig.Kafka.Topic)
 	fmt.Printf("  mysql:       %s@%s/%s\n", config.AppConfig.ServerConfig.Database.User, config.AppConfig.ServerConfig.Database.Hosts, config.AppConfig.ServerConfig.Database.DBName)
 	fmt.Println("=============================================================")
+	// 不要对 quit 调 signal.Stop / signal.Reset:Linux 上 go-zero 收到 SIGTERM 后会在约 5.5 秒后向自身重发一次
+	// (core/proc 的 gracefulStop)。quit 仍在注册时信号只进这个通道,不会走默认处理杀掉进程;一旦摘掉,第二次
+	// SIGTERM 会在 kafkaConsumer.Stop 排空途中直接结束进程(Stop 的顺序与上限见 KeyOrderedKafkaConsumer.Stop)。
+	// Windows 上 go-zero 的 proc 是空实现,本机 go_services.ps1 发的 Ctrl+C 以 os.Interrupt(SIGINT)到达这里。
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit

@@ -105,6 +105,9 @@ var (
 	//   "ttl"           — body.ExpireTS in the past
 	//   "meta_gone"     — Lookup found token but meta TTL'd before admit
 	//   "queue_disabled" — Queue.Enabled=false but client polled QueryQueueStatus
+	//   "admit_window_passed" — 放行过(meta 有 admitted_at),放行槽却已被取走或已按 AdmitTTL 过期(2026-10-15 起;
+	//                     此前这两种情况回「排队中、名次 0」,不计数)。持续升高 = 客户端轮询慢于 AdmitTTL,
+	//                     或取走的回包在丢、客户端在重试。
 	expiredTotal = metric.NewCounterVec(&metric.CounterVecOpts{
 		Namespace: metricNamespace,
 		Subsystem: "",
@@ -137,6 +140,9 @@ const (
 	ExpireReasonTTL           = "ttl"
 	ExpireReasonMetaGone      = "meta_gone"
 	ExpireReasonQueueDisabled = "queue_disabled"
+
+	// ExpireReasonAdmitWindowPassed:放行槽已被取走或已过期之后再查(见 Queue.Lookup)。
+	ExpireReasonAdmitWindowPassed = "admit_window_passed"
 )
 
 // labelZone formats a uint32 zone id for use as a Prometheus label.

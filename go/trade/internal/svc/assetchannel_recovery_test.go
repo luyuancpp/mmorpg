@@ -19,6 +19,7 @@ import (
 
 	"shared/assetop"
 	"shared/assetopwake"
+	"shared/scenenode"
 )
 
 // recoveryDefaults 是 AssetOp 段落地恢复与清理键的默认值(与 etc/trade.yaml、guild 的同名键同值)。
@@ -197,6 +198,45 @@ func TestStartAssetOpCleanupStopWaits(t *testing.T) {
 	case <-time.After(2 * time.Second):
 		t.Fatal("stop 没有在取消后返回")
 	}
+}
+
+// TestAssetChannelStartThenCloseReturns:Start 起的节点镜像与重投循环都记进 wg,Close 取消之后等它们退出才去关连接
+// (与 guild 的 AssetPipeline.Stop 同序)。每个 wg.Add 都必须有对应的 Done —— 漏一个,Close 就永远等下去,这里限时判红;
+// Pipeline.Run 若不阻塞(自己另起 goroutine 立刻返回),wg 会等了个空,那一条由 reconcile 的 TestRunBlocksUntilCancel 守住。
+// etcd 客户端为 nil 时镜像打 ERROR 后直接返回;重投循环第一轮要等满 Interval(2s),本用例在那之前就关,不会碰没有连接池的仓库。
+func TestAssetChannelStartThenCloseReturns(t *testing.T) {
+	repo, err := data.NewAssetOpRepo(nil, time.Second)
+	if err != nil {
+		t.Fatalf("NewAssetOpRepo: %v", err)
+	}
+	signer, err := assetop.NewSigner(AssetOpCaller, testSecret32)
+	if err != nil {
+		t.Fatalf("NewSigner: %v", err)
+	}
+	p, err := reconcile.New(reconcile.Deps{Ops: repo, Caller: &assetop.Caller{Signer: signer}, OpIDs: fakeOpIDs{}})
+	if err != nil {
+		t.Fatalf("reconcile.New: %v", err)
+	}
+	ch := &AssetChannel{
+		Conns:    scenenode.NewConnCache(),
+		Watcher:  scenenode.NewWatcher(sceneWatcherName, scenenode.SceneNodeRpcPrefix, nil, nil),
+		Pipeline: p,
+	}
+	ch.Start(context.Background(), nil)
+	if ch.stopLoops == nil {
+		t.Fatal("Start 应当起了后台 goroutine")
+	}
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		ch.Close()
+	}()
+	select {
+	case <-done:
+	case <-time.After(3 * time.Second):
+		t.Fatal("Close 没有返回:Start 里有 wg.Add 没配上 Done,或某个后台 goroutine 不响应取消")
+	}
+	ch.Close() // 幂等
 }
 
 // TestAssetChannelStartAfterCloseIsNoop:Close 之后的 Start 是空操作 —— 否则会在 wg.Wait 之后再 wg.Add,

@@ -231,7 +231,7 @@ TEST(CurrencyTest, DebtDeductsFromGain)
     auto player = CreateTestPlayer();
 
     // Attach a debt of 60 gold.
-    CurrencySystem::AttachDebt(player, kCurrencyGold, 60);
+    EXPECT_EQ(kSuccess, CurrencySystem::AttachDebt(player, kCurrencyGold, 60));
 
     // Add 100 gold — 60 goes to debt, 40 is credited.
     EXPECT_EQ(kSuccess, CurrencySystem::AddCurrency(player, kCurrencyGold, 100));
@@ -244,7 +244,7 @@ TEST(CurrencyTest, DebtPartialRepayment)
 {
     auto player = CreateTestPlayer();
 
-    CurrencySystem::AttachDebt(player, kCurrencyGold, 100);
+    EXPECT_EQ(kSuccess, CurrencySystem::AttachDebt(player, kCurrencyGold, 100));
 
     // First gain: 30 gold — all goes to debt.
     EXPECT_EQ(kSuccess, CurrencySystem::AddCurrency(player, kCurrencyGold, 30));
@@ -265,7 +265,7 @@ TEST(CurrencyTest, DebtDoesNotAffectOtherTypes)
 {
     auto player = CreateTestPlayer();
 
-    CurrencySystem::AttachDebt(player, kCurrencyGold, 100);
+    EXPECT_EQ(kSuccess, CurrencySystem::AttachDebt(player, kCurrencyGold, 100));
 
     // Diamond has no debt — full credit.
     EXPECT_EQ(kSuccess, CurrencySystem::AddCurrency(player, kCurrencyDiamond, 50));
@@ -300,11 +300,42 @@ TEST(CurrencyTest, DebtIncreaseRejectsUint64Overflow)
     auto &debt = comp.debts[static_cast<uint32_t>(kCurrencyGold)];
     debt.owed = std::numeric_limits<uint64_t>::max() - 5;
 
-    CurrencySystem::AttachDebt(player, kCurrencyGold, 10);
+    EXPECT_EQ(kInvalidParameter, CurrencySystem::AttachDebt(player, kCurrencyGold, 10))
+        << "溢出拒绝必须如实回码,收件箱执行器据此记 REJECTED";
     EXPECT_EQ(std::numeric_limits<uint64_t>::max() - 5, debt.owed);
 
     CurrencySystem::AdjustDebt(player, kCurrencyGold, 10);
     EXPECT_EQ(std::numeric_limits<uint64_t>::max() - 5, debt.owed);
+
+    DestroyTestPlayer(player);
+}
+
+// AttachDebt 改为返回 tip 码(docs/design/player-inbox-service.md §7.6):纯参数错误与缺组件都回
+// kInvalidParameter,且不留下任何欠款条目。
+TEST(CurrencyTest, AttachDebtReportsInvalidParametersWithoutSideEffects)
+{
+    auto player = CreateTestPlayer();
+    const auto &comp = tlsEcs.actorRegistry.get<PlayerCurrencyComp>(player);
+
+    EXPECT_EQ(kInvalidParameter, CurrencySystem::AttachDebt(player, kCurrencyGold, 0));
+    EXPECT_EQ(kInvalidParameter, CurrencySystem::AttachDebt(player, kCurrencyGold, -5));
+    EXPECT_EQ(kInvalidParameter, CurrencySystem::AttachDebt(player, kCurrencyMax, 10)) << "越界币种";
+    EXPECT_TRUE(comp.debts.empty()) << "拒绝路径不得落下欠款条目";
+
+    EXPECT_EQ(kSuccess, CurrencySystem::AttachDebt(player, kCurrencyGold, 7, "audit", "gm"));
+    ASSERT_EQ(1u, comp.debts.count(static_cast<uint32_t>(kCurrencyGold)));
+    EXPECT_EQ(7u, comp.debts.at(static_cast<uint32_t>(kCurrencyGold)).owed);
+
+    DestroyTestPlayer(player);
+}
+
+TEST(CurrencyTest, AttachDebtWithoutRuntimeCurrencyCompIsRejected)
+{
+    auto player = CreateTestPlayer();
+    tlsEcs.actorRegistry.remove<PlayerCurrencyComp>(player);
+
+    EXPECT_EQ(kInvalidParameter, CurrencySystem::AttachDebt(player, kCurrencyGold, 10));
+    EXPECT_FALSE(tlsEcs.actorRegistry.all_of<PlayerCurrencyComp>(player)) << "只取不建";
 
     DestroyTestPlayer(player);
 }
@@ -839,26 +870,18 @@ struct LeakConnectionOnExit
 // 同步连接,只用来布置与核对键。
 struct SyncRedisForTest
 {
-    redisContext* context{nullptr};
-
-    ~SyncRedisForTest()
-    {
-        if (context != nullptr)
-        {
-            redisFree(context);
-        }
-    }
+    std::unique_ptr<redisContext, decltype(&redisFree)> context{nullptr, &redisFree};
 
     bool Connect(const std::string& host, uint16_t port)
     {
-        context = redisConnect(host.c_str(), port);
+        context.reset(redisConnect(host.c_str(), port));
         return context != nullptr && context->err == 0;
     }
 
     // 键不存在时返回 "(nil)"。
     std::string Get(const std::string& key)
     {
-        auto* reply = static_cast<redisReply*>(redisCommand(context, "GET %b", key.data(), key.size()));
+        auto* reply = static_cast<redisReply*>(redisCommand(context.get(), "GET %b", key.data(), key.size()));
         std::string value = "(nil)";
         if (reply != nullptr && reply->type == REDIS_REPLY_STRING)
         {
@@ -873,14 +896,14 @@ struct SyncRedisForTest
 
     void Set(const std::string& key, const std::string& value)
     {
-        Run(redisCommand(context, "SET %b %b", key.data(), key.size(), value.data(), value.size()));
+        Run(redisCommand(context.get(), "SET %b %b", key.data(), key.size(), value.data(), value.size()));
     }
 
-    void Del(const std::string& key) { Run(redisCommand(context, "DEL %b", key.data(), key.size())); }
+    void Del(const std::string& key) { Run(redisCommand(context.get(), "DEL %b", key.data(), key.size())); }
 
     void SRem(const std::string& set, const std::string& member)
     {
-        Run(redisCommand(context, "SREM %b %b", set.data(), set.size(), member.data(), member.size()));
+        Run(redisCommand(context.get(), "SREM %b %b", set.data(), set.size(), member.data(), member.size()));
     }
 
 private:

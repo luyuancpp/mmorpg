@@ -138,6 +138,7 @@ merge_zone 合服与撤销时会按玩家删缓存(`tools/merge_zone/player_rows
 | 战斗:`battle:lock:{id}`、`battle:ctx:{id}`、`battle:settlement:pending[:id]:{id}`、`battle:activity_result:*` | C++ scene;battle 节点 | match、C++ | 有;**2026-10-15 起 `battle:settlement:pending[:id]:{id}` 不再过期**(去掉 7 天 TTL,保留到应用为止,每玩家单槽) | `cpp/libs/services/scene/battle/system/player_battle.cpp:94-95`;`cpp/libs/services/battle/settlement/settlement_outbox.h:98-111`;`battle/system/battle_result_activity.h:30`;保留期改动见 [landing-recovery-sync-digest.md](landing-recovery-sync-digest.md) §7 |
 | `battle:settlement:pending:index`(2026-10-15 新增,全局一把 ZSET) | battle 节点、C++ scene(与写入 / 销账同一段 Lua 内 ZADD / ZREM) | battle 节点报数(积压数、最老年龄)与孤儿清理 | 无;**可丢**:只用于监控,丢了只影响报数,不影响结算 | `cpp/libs/services/battle/settlement/settlement_outbox.h`;设计见 [landing-recovery-sync-digest.md](landing-recovery-sync-digest.md) §7 |
 | `player:{id}:sync_digest`(2026-10-15 新增,hash) | friend / match(team)/ guild 在业务提交后 bump(一段单键 Lua) | C++ scene(`HGETALL`,`player_landing.cpp`) | 30 天,每次 bump 续期;**可丢**:丢失或过期即代次 `g` 改变,客户端全量拉一次;不必进清库 / 回档 / 合服清单,但回档 Go 域权威数据(friend / guild 库)的工具应删除受影响玩家的这把键 | `go/shared/playersync/digest.go`;`cpp/libs/services/scene/player/system/player_landing.h`;设计见 [landing-recovery-sync-digest.md](landing-recovery-sync-digest.md) §3 |
+| trade 资产通道维护选主锁 `trade:assetop:maintenance:leader`(2026-10-15 新增;guild 的同类锁在它自己的全局 Redis,不在本实例) | trade(`go/shared/leader`,SET NX EX + 属主校验) | trade | 30 秒,续租;**可丢**:丢了只是重新选主,日对账 / 自动放弃本身靠 Claim CAS 防重 | `go/trade/internal/svc/assetchannel.go`;设计见 [landing-recovery-sync-digest.md](landing-recovery-sync-digest.md) §6.2 / §6.3 |
 | 资产唤醒:频道 `assetop:wake`(Pub/Sub,不落键)、去重键 `assetop:wake:{service}:{id}`(2026-10-15 新增) | C++ scene `PUBLISH`;guild / trade 订阅后 `SET NX EX 5` | guild / trade | 去重键 5 秒;**可丢** | `cpp/libs/services/scene/player/system/player_landing.cpp`;`go/shared/assetopwake/`;设计见 [landing-recovery-sync-digest.md](landing-recovery-sync-digest.md) §5 |
 | 组队:`team:rec:{tid}`、`team:{tid}`、`team:player:{pid}`、`team:invite:{pid}` | match 的 team 模块(S_COMMIT 一段 Lua 写四类) | C++(`player_team.cpp:43-45`、`:202`、`:291`、`:355`) | — | `go/match/internal/team/keys.go:9`、`:38-53` |
 | data_service 玩家数据 `player:{%d}:*`(含 `__lock`、`__version`) | data_service | data_service | — | `go/data_service/internal/logic/data_logic.go:20-25`;`router.go:531-533`。Load / Save 这两个 RPC 在仓库里 grep 不到生产调用方 |
@@ -215,6 +216,9 @@ merge_zone 合服与撤销时会按玩家删缓存(`tools/merge_zone/player_rows
    - 现状:`node.cpp:541-557` 建连时不发;`config.cpp:295-301` 读了 password / db,但没有任何代码使用;K8s 写的是空串(`k8s_deploy.ps1:1869`)。
    - 冲突:release 档注入 ≥12 位密码(`:452-453`),`redis.yaml:93-97` 随之开 requirepass。这时 C++ 节点的所有命令都会 NOAUTH。
    - `docs/PROGRESS.md:5440` 的 release 实测清单也没有列 C++ 和 Java。
+   - **(2026-10-15 更正,上面三行原文保留)AUTH 已落码,两批都未经 Codex 编译 / 测试**(P0-A,`docs/handoff/global-singletons-p0-findings-20261014.md`):
+     - 第一批(C++):`RedisManager` 每条新连接先 AUTH,回 `+OK` 才对业务可见;认证被拒 / 超时 fail-closed(zone Redis 保持不可用,按重连间隔重试)。口令来自 `zoneredis.password`,环境变量 `ZONE_REDIS_PASSWORD` 可覆盖;空口令不发 AUTH。SELECT 仍不发,库号钉在 0。
+     - 第二批(K8s,方案 A):`k8s_deploy.ps1` 的 `New-NodeConfigMapYaml` 把 `MMORPG_REDIS_PASSWORD` 明文写进 `node-config` / `battle-node-config` 的 `zoneredis.password`(与 Go 服务 / gateway 的 ConfigMap 同一做法);C++ 工作负载 Pod 模板带只哈希口令的指纹注解 `mmorpg.io/zone-redis-auth-hash`,换口令即滚动。上线顺序见 `deploy/k8s/README.md`「C++ 节点的 zone Redis 口令」。
 4. **Java gateway 的 K8s ConfigMap 没写 `spring.data.redis.password`**(`k8s_deploy.ps1:4935-4938`)。release 档一开限流就 NOAUTH,限流按设计 fail-open。
 5. 9 处代码注释仍写「共享库是 allkeys-lfu」(D1 §11.2 已登记)。
 6. `redis-ha.yaml:3` 提到的 `-RedisReplicas` 参数在部署脚本里不存在(`tidb-phase1-and-launch-readiness.md:727`)。
@@ -464,9 +468,9 @@ type CacheRedisConfig = PlacementRedisConfig // 同一形状:Hosts 必填,Passwo
 |---|---|---|
 | `-RedisSplit` | string[];ValidateSet `queue`、`mapping`、`dbctl`、`cache`;所有档位缺省 `@()` | 空 = 生成的 ConfigMap 与 infra 与今天逐字节相同 |
 | `-RedisQueueMaxMemory` / `-RedisMappingMaxMemory` / `-RedisCacheMaxMemory` | string,形如 `512mb`;dev 档缺省 `128mb` / `256mb` / `256mb` | release 档(ReleaseProfile 不是 dev,或 OpsProfile 不是 custom)启用了对应用途却没给 → 拒绝部署 |
-| `-RedisCoreMaxMemory` | string;缺省空 = 核心清单不变 | 给了就改核心 StatefulSet 的命令行,会重启 redis-0,必须同时给 `-ConfirmRedisCoreRestart` |
+| `-RedisCoreMaxMemory` | string;缺省空 = 核心清单不变 | 给了就改核心 StatefulSet 的命令行,会重启 redis-0,必须同时给 `-ConfirmRedisCoreRestart`(**2026-10-15:这条「必须同时给」已由 P0-E 的重启闸按更宽语义覆盖,本参数本身仍未实现**) |
 | `-ConfirmRedisSplitSwitch` | string[] | 线上已有 ConfigMap 的用途要改地址时必须列出,并通过 §4.4 的迁移标记检查 |
-| `-ConfirmRedisCoreRestart` | switch | 见上 |
+| `-ConfirmRedisCoreRestart` | switch | 见上。**2026-10-15 已由 P0-E 按更宽语义实现**(`tools/scripts/k8s_deploy.ps1` 的 `Assert-RedisCoreRestartConfirmed`):不论原因,本次 apply 会改变线上 `sts/redis` 的 Pod 模板(或线上 StatefulSet 还没有模板摘要注解)就必须给;`dev_tools.ps1` / `k8s_image.ps1` 已透传。本稿以后接 `-RedisCoreMaxMemory` 时直接复用这道闸,不另做一套。见 `deploy/k8s/README.md`「Redis 连接上限与总账」 |
 
 **`-RedisSplit` 是每次调用都要带的参数,漏带 = 想回到共享拓扑**。部署闸(§4.4)会把这种「地址要变」拦下来,不会静默切回;但下面这些包装入口必须原样转发,否则会在半路被闸拒绝:
 - `dev_tools.ps1` 的 `k8s-infra-up`、`k8s-zone-up`、`k8s-all-up`、`k8s-release-zone`、`k8s-release-all`;
@@ -513,6 +517,7 @@ function Get-RedisTopologyFor { param([string[]]$Split, [string]$InfraNamespace)
     - 占位必须**行内**放置:命令行里两处 `exec redis-server --appendonly yes`(有口令、无口令两个分支,`redis.yaml:93-97`)都要加,写成 `--appendonly yes__REDIS_CORE_ARGS__`,替换值以空格开头;`__REDIS_CORE_LIMITS__` 接在 `memory: 512Mi` 行尾,替换值以换行开头。单独占一行的占位替换成空串后会留下空行,golden 比对就不再逐字节相同。
   - 不重启的过渡做法(供 §13 第 4 条参考):Redis 缺省就是 noeviction(核心命令行没传 `--maxmemory-policy`),`maxmemory` 可以先用 `CONFIG SET` 在线设上,不动 Pod 模板。代价是重启后丢失,要等下一次计划内维护窗口再把清单改成显式值。
 - **`redis-ha.yaml` 不动**:它的 apply 路径在脚本里不存在(`tidb-phase1-and-launch-readiness.md` §9.5)。
+- **连接上限(2026-10-15 补,P0-E)**:每个拆出的实例(`redis-purpose.yaml` 的模板)都要像核心 `redis.yaml` 那样显式 `--maxclients` 并在启动时打印 fd 限值,按用途在 `k8s_deploy.ps1` 的「Redis 连接总账」里各自重算(每个服务对每个实例各开一个池,单实例连接数下降、进程总连接数上升;C++ 是每进程一条,不是 §2.1 写的「每个线程一条」)。核心 `redis.yaml` 已经显式 `MAXCLIENTS=40000`,§4.3「缺省渲染与今天逐字节相同」的基准要以 P0-E 之后的清单为准,`__REDIS_CORE_ARGS__` 接在 `--maxclients "$MAXCLIENTS"` 之后。
 
 ### 4.4 部署脚本的安全闸
 
@@ -1022,6 +1027,7 @@ kind 上两个 zone 按 §5.5 逐个 zone 迁移。zone 号要选成一个是另
 2. **killswitch 是 fail-open 的**:由 delta 兜住;delta 发现冲突就交给人处理。
 3. **核心内存没有上界**(§2.5 第 1、2 条)。这与拆分无关,但决定了 maxmemory 能不能设:设了 noeviction + maxmemory 之后,满了就拒写,全服存盘和登录都会失败。
 4. **C++ 不发 AUTH**:release 档核心一开 requirepass,C++ 全线 NOAUTH。本稿的新实例都没有 C++ 客户端,可以开密码;核心怎么处理待拍板。
+   **(2026-10-15 结论,上句原文保留)** 已拍板为「给 `RedisManager` 加 AUTH」(§13 第 7 条),C++ 与 K8s 两批都已落码、未经 Codex 编译 / 测试,详见 §2.5 第 3 条的更正。剩余风险:口令配错时 C++ 节点 fail-closed(zone Redis 不可用、Pod 仍 Ready),「zone Redis 已认证」的就绪条件另起一项,不在本次最小修复内。
 5. **实例变多,运维面变大**:PVC、备份都要多管几份。Redis 今天没有任何备份,AOF 只在 PVC 上。映射在 D1 之后有库里的真源,控制面在库侧没有备份。
 6. **第 2 批逐 zone 停 go/db**:存盘暂停期间,新号首次进场冷读会失败(8s 超时)。而且在 L-09 之前,每次缩容与扩回都会让**全服**存盘停几秒(共用消费组的 rebalance),Z 个 zone 一共 2Z 次。
 7. **迁移期间必须禁用 merge_zone 和 relocate,第 2 批期间还要全服禁止在线扩分区**,目前只靠运维纪律和手册约束;墓碑只能拦住「连错实例」,拦不住「在窗口里运行」。
@@ -1043,6 +1049,8 @@ kind 上两个 zone 按 §5.5 逐个 zone 迁移。zone 号要选成一个是另
 5. 核心内存无上界怎么处理:另写一份冷玩家卸载设计,还是按累计玩家规模配内存。
 6. Redis 监控:先做 INFO 快照(不引入新镜像),还是直接上 redis_exporter sidecar。
 7. C++ AUTH:给 `RedisManager` 加 AUTH,还是核心不开 requirepass、改用 NetworkPolicy 限制访问。
+   **(2026-10-15 已拍板,原文保留)结论:选 AUTH,已落码**(P0-A,`docs/handoff/global-singletons-p0-findings-20261014.md`)。理由:release 档已强制 Redis 口令,Go 与 Java 也已接线;不开 requirepass 等于把核心交给同网段任何 Pod。
+   K8s 侧选方案 A(口令明文进 `node-config`,与 Go 服务 / gateway 的 ConfigMap 同一做法;C++ 工作负载带只哈希口令的指纹注解)。两批都未经 Codex 编译 / 测试;取值与上线步骤待实测复核,见 `deploy/k8s/README.md`「C++ 节点的 zone Redis 口令」。
 8. AGENTS §6.2 中 Redis 清库口径的改写(由负责人改 AGENTS.md)。
 9. `stress_summarize` 增加 Redis 表(会改 §6.1 规定的输出口径)。
 10. 拆分与 L-02 的先后。建议先拆 queue,再打开排队与限流。

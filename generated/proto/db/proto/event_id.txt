@@ -47,3 +47,4 @@
 46=ContractsKafkaBattleResultEvent
 47=ContractsKafkaBattleResultTeam
 48=PlayerTeamRefreshEvent
+49=PlayerInboxNotifyEvent

@@ -39,8 +39,9 @@ struct GrpcCallOutcome {
 // - 恰好调用一次;只在节点所属 EventLoop 线程调用,从不在 Send 栈内同步调用(本地拒绝也延后投递)。
 // - reply 只在 outcome.ok() 时非空,只在回调期间有效;要留用就拷贝。
 // - 带 done 的调用不再触发该方法的全局 Async<Svc><Method>Handler / FailedHandler。
-// - 节点摘除 / 停机先以非 OK 完成在途调用(官方 CQ 取消为 CANCELLED,本地拒绝为 UNAVAILABLE),
-//   再拆节点;回调里不要假设节点仍可用。
+// - 节点摘除 / 停机先以非 OK 完成在途调用,再拆节点;回调里不要假设节点仍可用。
+// - 不要按 code 区分「停机」与「传输失败」:同一停机场景官方 CQ 给 CANCELLED、muduo_grpc 通道给 UNAVAILABLE,
+//   换传输后会变。非 OK 一律当结果未知,只释放本地在途状态。
 template <typename Reply>
 using GrpcDone = std::function<void(const GrpcCallOutcome&, const Reply* reply)>;
 

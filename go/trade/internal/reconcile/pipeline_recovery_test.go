@@ -190,6 +190,32 @@ func TestRunMaintenanceReturnsOnCancel(t *testing.T) {
 	}
 }
 
+// TestRunBlocksUntilCancel:Run 阻塞到 ctx 结束才返回 —— svc.AssetChannel 把它记进 WaitGroup,Close 在 wg.Wait() 之后才关
+// scene 连接、共享 Redis 与 MySQL;Run 若自己另起 goroutine 立刻返回,wg 就等了个空,停机时落库会撞上已关的连接。
+// 仓库没有连接池,但循环第一轮要等满 Interval(2s)才开始,本用例在那之前就取消,不会碰库。
+func TestRunBlocksUntilCancel(t *testing.T) {
+	p := newTestPipeline(t, &fakeIDs{})
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		p.Run(ctx)
+	}()
+	// 只能证"没有提前返回"的反例:这里等不到 done 说明 Run 仍在阻塞;等到了就是 Run 没把循环跑在自己身上。
+	select {
+	case <-done:
+		t.Fatal("ctx 未取消 Run 就返回了:svc 的 WaitGroup 将等不到真正的重投循环")
+	case <-time.After(50 * time.Millisecond):
+	}
+	cancel()
+	select {
+	case <-done:
+	case <-time.After(time.Second):
+		t.Fatal("ctx 取消后 Run 没有返回")
+	}
+}
+
 // TestNewEscrowRecordWritesLastSendMs:LastSendMs 契约第 1 条 —— 插行即持租约、提交后的同步投递紧接着就可能发出,
 // 所以新行的 last_send_ms 必须不小于 created_ms(这里取同一时刻)。写 0 会让这一行在第一次被领取之前没有任何安全依据。
 func TestNewEscrowRecordWritesLastSendMs(t *testing.T) {

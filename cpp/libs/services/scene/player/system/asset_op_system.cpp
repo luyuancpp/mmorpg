@@ -22,6 +22,7 @@
 #include "player/comp/player_ownership_comp.h"
 #include "player/system/asset_op_ledger.h"
 #include "player/system/player_lifecycle.h"
+#include "player/system/player_mutability.h" // HasFencedOwnership / IsPlayerMutable(与玩家收件箱共用,D12)
 #include "proto/common/component/player_comp.pb.h" // UnregisterPlayer
 #include "table/code/item_table.h"
 #include "table/proto/tip/asset_error_tip.pb.h"
@@ -146,37 +147,14 @@ void Answer(::AssetOpResponse& response, ::AssetOpOutcome outcome, uint32_t tipI
 
 // ── 可改判定 ────────────────────────────────────────────────────────────────
 
-// 本实体的存盘是否受 owner_epoch 围栏保护(docs/design/guild-phase2/08-save-owner-fence.md §8.2.1)。
+// HasFencedOwnership / IsPlayerMutable 已原样抽到 player/system/player_mutability.h(D12,与玩家收件箱共用,
+// 行为零变化)。判定依据、"为什么刻意不复用 IsCrossZoneFrozen"的论证都在那个头文件里。
 //
-// epoch 由 scene_manager 铸造、随路由事件下发(PlayerOwnerEpochComp)。epoch == 0 是滚动升级的兼容窗口:
-// SavePlayerToRedis 走**无守卫**的旧 Save,db 侧按 legacy_zero 放行。此时若记账并上报 durable,
-// 旧节点晚到的退出存盘能原样盖掉这笔改动 —— 帮会已据 durable 记了资金,玩家侧的扣款却被抹掉(04 K1)。
-// 所以资产通道在无围栏的实体上不引发任何写入。组件缺失与 epoch == 0 一律按无围栏处理(fail-closed)。
-bool HasFencedOwnership(entt::entity player)
-{
-	const auto* ownerEpoch = tlsEcs.actorRegistry.try_get<PlayerOwnerEpochComp>(player);
-	return ownerEpoch != nullptr && ownerEpoch->epoch != 0;
-}
-
-// 该实体此刻能不能被改(不变量 I1 单写者的本地一侧)。
-//
-// **刻意不复用 PlayerLifecycleSystem::IsCrossZoneFrozen**:它只看 PlayerFrozenComp,
-// 漏掉"归属交接已挂但存盘还没落地"的窗口。而 SavePlayerToRedis 在
-// `PlayerTravelHandoffComp.requestedAtMs != 0` 时直接跳过写盘并返回 false
-// (player_lifecycle.cpp 的 SavePlayerToRedis 开头,日志 "skip: zone travel handoff already
-// requested" 那一支;不写行号,该文件改动频繁)—— 与"脏比较相等、盘上已是最新"共用同一个返回值。
-// 若在交接在途时记账,这个 false 会被误当成"结局已在盘上",把没落地的结局报成 durable,
-// Go 随即终结,而这份内存态马上会随实体销毁一起丢。所以交接一挂上就必须在**记账之前**
-// 回 RETRY。UnregisterPlayer(退出存盘在途)同理:退出优先,不接受新改动。
-// 另一条:本实体的存盘必须带归属围栏(HasFencedOwnership,见上)。
-//
-// 调用点只有 AnswerSeenSeq 的补存。Decide 第 5 步的改动闸**不**调用它,而是逐条内联同样的判定
-// (为了按原因回不同的 reason:kAssetFrozen / kAssetPlayerNotHere);新增可改判定时两处要同改。
-bool IsPlayerMutable(entt::entity player)
-{
-	return !tlsEcs.actorRegistry.any_of<PlayerFrozenComp, PlayerTravelHandoffComp, UnregisterPlayer>(player) &&
-		   HasFencedOwnership(player);
-}
+// IsPlayerMutable 在本文件的调用点只有 AnswerSeenSeq 的补存。Decide 第 5 步的改动闸**不**调用它,而是逐条
+// 内联同样的判定(为了按原因回不同的 reason:kAssetFrozen / kAssetPlayerNotHere);新增可改判定时,
+// player_mutability.h 与 Decide 第 5 步两处要同改。
+using player_mutability::HasFencedOwnership;
+using player_mutability::IsPlayerMutable;
 
 // ── durable 判定(§4.6)─────────────────────────────────────────────────────
 

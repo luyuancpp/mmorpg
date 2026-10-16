@@ -11,3 +11,4 @@
 // - node::entry::RunSimpleNodeMain...
 // - SimpleNode auto thread observability
 // - unified Kafka handler registration pattern
+// - etcd_transport::InstallFromEnv() as the first statement of main()

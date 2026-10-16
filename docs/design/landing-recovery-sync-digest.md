@@ -254,7 +254,7 @@ message SyncDigestS2C {
 - 新包 `assetopwake`（依赖 go-redis，`assetop` 包按约定不引 Redis 客户端）：
   - 订阅 `assetop:wake`，解析 player_id；
   - `SET assetop:wake:{service}:{player_id} 1 NX EX 5` 做跨副本去重，每次落地每个服务只有一个副本去查 MySQL；
-  - 拿到的副本在独立超时内调 `Loop.WakePlayer`。超时默认 10 秒，必须大于 `OpBudget`（2.5 秒）。父 ctx 只决定「还要不要开始下一行」：剩余预算不足一个 `OpBudget` 就不再领取，已经开始的行不会被中途截断。没轮到的停放行，最多再等一个 `OfflineBackoff`；
+  - 拿到的副本在独立超时内调 `Loop.WakePlayer`。超时默认 10 秒，配置下界是 2 × `OpBudget`（默认 OpBudget 2.5 秒）。只比 `OpBudget` 略大不够：WakePlayer 先要列一次行（一次库往返，≤1 秒），之后剩余预算不足一整个 `OpBudget` 就一行也领不到，静默退化成从不唤醒。父 ctx 只决定「还要不要开始下一行」：剩余预算不足一个 `OpBudget` 就不再领取，已经开始的行不会被中途截断。没轮到的停放行，最多再等一个 `OfflineBackoff`；
   - 有界并发，默认 4，超出直接丢（唤醒只是提示）；
   - go-redis 的 PubSub 自动重连，重连期间丢的唤醒退回原退避。
 - 指标：`assetop_wake_total{service,result}`，result ∈ received / deduped / dropped / woke / none / error。

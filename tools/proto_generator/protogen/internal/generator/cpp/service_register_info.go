@@ -474,51 +474,6 @@ func generateInstanceData(serviceList []string, isPlayerHandlerFunc func(*intern
 	return ""
 }
 
-// Helper function to generate instance data for player services.
-func generateRepliedInstanceData(serviceList []string, isPlayerHandlerFunc func(*internal.RPCMethods) bool, handlerDir string, serviceName string) string {
-	type PlayerServiceRepliedInstanceData struct {
-		SelfHeader     string
-		Includes       []string
-		HandlerClasses []string
-		InitLines      []string
-	}
-
-	fileNameWithoutExt := serviceName[:len(serviceName)-len(filepath.Ext(serviceName))]
-
-	var includes, handlerClasses, initLines []string
-
-	for _, service := range internal.GlobalRPCServiceList {
-		if !isPlayerHandlerFunc(&service.Methods) {
-			continue
-		}
-
-		method := service.Methods[0]
-		className := method.Service() + "Impl"
-
-		includes = append(includes, fmt.Sprintf(`#include "%s%s"`, method.FileBaseNameNoEx(), _config.Global.FileExtensions.RepliedHandlerH))
-		handlerClasses = append(handlerClasses, fmt.Sprintf("class %s : public %s {};", className, method.Service()))
-		initLines = append(initLines, fmt.Sprintf(`gPlayerServiceReplied.emplace("%s", std::make_unique<%s%s>(std::make_unique<%s>()));`,
-			method.Service(), method.Service(), _config.Global.Naming.RepliedHandlerFile, className))
-	}
-
-	templateData := PlayerServiceRepliedInstanceData{
-		SelfHeader:     _config.Global.DirectoryNames.GeneratedRpcName + fileNameWithoutExt + ".h",
-		Includes:       includes,
-		HandlerClasses: handlerClasses,
-		InitLines:      initLines,
-	}
-
-	outputPath := handlerDir + serviceName
-	if err := utils2.RenderTemplateToFile("internal/template/player_service_replied_instance.cpp.tmpl", outputPath, templateData); err != nil {
-		logger.Global.Fatal("Failed to generate player replied service instance",
-			zap.String("template_path", "internal/template/player_service_replied_instance.cpp.tmpl"),
-			zap.String("output_path", outputPath),
-			zap.Error(err),
-		)
-	}
-	return ""
-}
-
 func writePlayerServiceInstanceFiles(wg *sync.WaitGroup, serviceType string, isPlayerHandlerFunc func(*internal.RPCMethods) bool, handlerDir, serviceName string) {
 	defer wg.Done()
 	ServiceList := make([]string, 0, len(internal.GlobalRPCServiceList))
@@ -531,8 +486,6 @@ func writePlayerServiceInstanceFiles(wg *sync.WaitGroup, serviceType string, isP
 
 	if serviceType == "instance" {
 		generatorFunc = generateInstanceData
-	} else if serviceType == "repliedInstance" {
-		generatorFunc = generateRepliedInstanceData
 	} else {
 		logger.Global.Warn("Unknown service instance type, skipping generation",
 			zap.String("service_type", serviceType),
@@ -558,9 +511,5 @@ func WriteServiceRegisterInfoFile(wg *sync.WaitGroup) {
 	wg.Add(1)
 	go writePlayerServiceInstanceFiles(wg, "instance", IsSceneNodeHostedPlayerProtocolHandler, _config.Global.PathLists.MethodHandlerDirectories.SceneNodePlayer, _config.Global.Naming.PlayerService)
 	wg.Add(1)
-	go writePlayerServiceInstanceFiles(wg, "repliedInstance", IsSceneNodeReceivedPlayerResponseHandler, _config.Global.PathLists.MethodHandlerDirectories.SceneNodePlayerReplied, _config.Global.Naming.PlayerRepliedService)
-	wg.Add(1)
 	go writePlayerServiceInstanceFiles(wg, "instance", IsNoOpHandler, _config.Global.PathLists.MethodHandlerDirectories.GateNodePlayer, _config.Global.Naming.PlayerService)
-	wg.Add(1)
-	go writePlayerServiceInstanceFiles(wg, "repliedInstance", IsNoOpHandler, _config.Global.PathLists.MethodHandlerDirectories.GateNodePlayerReplied, _config.Global.Naming.PlayerRepliedService)
 }

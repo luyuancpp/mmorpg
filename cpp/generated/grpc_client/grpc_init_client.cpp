@@ -143,6 +143,26 @@ namespace match {
     void HandleMatchServiceCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, bool ok, GrpcTag* grpcTag);
 }
 
+namespace player_inbox {
+    void SetPlayerInboxHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
+    void SetPlayerInboxIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
+    void SetPlayerInboxFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler);
+    void SetPlayerInboxIfEmptyFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler);
+    void SetPlayerInboxCallDeadline(std::chrono::milliseconds deadline);
+    void InitPlayerInboxGrpcNode(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity);
+    void HandlePlayerInboxCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, bool ok, GrpcTag* grpcTag);
+}
+
+namespace player_inbox {
+    void SetPlayerInboxAdminHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
+    void SetPlayerInboxAdminIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
+    void SetPlayerInboxAdminFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler);
+    void SetPlayerInboxAdminIfEmptyFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler);
+    void SetPlayerInboxAdminCallDeadline(std::chrono::milliseconds deadline);
+    void InitPlayerInboxAdminGrpcNode(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity);
+    void HandlePlayerInboxAdminCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, bool ok, GrpcTag* grpcTag);
+}
+
 namespace scene_manager {
     void SetSceneManagerServiceHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
     void SetSceneManagerServiceIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
@@ -219,6 +239,10 @@ void SetIfEmptyHandler(const std::function<void(const ClientContext&, const ::go
 
     match::SetMatchServiceIfEmptyHandler(handler);
 
+    player_inbox::SetPlayerInboxIfEmptyHandler(handler);
+
+    player_inbox::SetPlayerInboxAdminIfEmptyHandler(handler);
+
     scene_manager::SetSceneManagerServiceIfEmptyHandler(handler);
 
     scene_node::SetSceneNodeServiceIfEmptyHandler(handler);
@@ -256,6 +280,10 @@ void SetHandler(const std::function<void(const ClientContext&, const ::google::p
     match::SetMatchInternalHandler(handler);
 
     match::SetMatchServiceHandler(handler);
+
+    player_inbox::SetPlayerInboxHandler(handler);
+
+    player_inbox::SetPlayerInboxAdminHandler(handler);
 
     scene_manager::SetSceneManagerServiceHandler(handler);
 
@@ -295,6 +323,10 @@ void SetIfEmptyFailedHandler(const std::function<void(const GrpcCallFailure&, co
 
     match::SetMatchServiceIfEmptyFailedHandler(handler);
 
+    player_inbox::SetPlayerInboxIfEmptyFailedHandler(handler);
+
+    player_inbox::SetPlayerInboxAdminIfEmptyFailedHandler(handler);
+
     scene_manager::SetSceneManagerServiceIfEmptyFailedHandler(handler);
 
     scene_node::SetSceneNodeServiceIfEmptyFailedHandler(handler);
@@ -332,6 +364,10 @@ void SetFailedHandler(const std::function<void(const GrpcCallFailure&, const ::g
     match::SetMatchInternalFailedHandler(handler);
 
     match::SetMatchServiceFailedHandler(handler);
+
+    player_inbox::SetPlayerInboxFailedHandler(handler);
+
+    player_inbox::SetPlayerInboxAdminFailedHandler(handler);
 
     scene_manager::SetSceneManagerServiceFailedHandler(handler);
 
@@ -381,6 +417,12 @@ void SetGrpcCallDeadline(uint32_t nodeType, std::chrono::milliseconds deadline){
     }
     if (static_cast<uint32_t>(common::base::eNodeType::MatchNodeService) == nodeType) {
         match::SetMatchServiceCallDeadline(deadline);
+    }
+    if (static_cast<uint32_t>(common::base::eNodeType::PlayerInboxNodeService) == nodeType) {
+        player_inbox::SetPlayerInboxCallDeadline(deadline);
+    }
+    if (static_cast<uint32_t>(common::base::eNodeType::PlayerInboxNodeService) == nodeType) {
+        player_inbox::SetPlayerInboxAdminCallDeadline(deadline);
     }
     if (static_cast<uint32_t>(common::base::eNodeType::SceneManagerNodeService) == nodeType) {
         scene_manager::SetSceneManagerServiceCallDeadline(deadline);
@@ -461,7 +503,7 @@ bool PollGrpcNodeShutdown(entt::registry& registry, entt::entity e) {
                 client_rpc_router::HandleClientRpcRouterCompletedQueueMessage(registry, e, completeQueueComp, ok, grpcTag);
             }
             else if (common::base::eNodeType::DataServiceNodeService == nodeType &&
-                (messageId == 86u || messageId == 87u || messageId == 88u || messageId == 89u || messageId == 90u || messageId == 91u || messageId == 92u || messageId == 93u || messageId == 96u || messageId == 97u || messageId == 98u || messageId == 99u || messageId == 100u || messageId == 101u || messageId == 105u || messageId == 108u || messageId == 114u || messageId == 129u || messageId == 180u || messageId == 229u || messageId == 231u || messageId == 237u || messageId == 248u)) {
+                (messageId == 86u || messageId == 87u || messageId == 88u || messageId == 89u || messageId == 90u || messageId == 91u || messageId == 92u || messageId == 93u || messageId == 96u || messageId == 97u || messageId == 98u || messageId == 99u || messageId == 100u || messageId == 101u || messageId == 105u || messageId == 108u || messageId == 114u || messageId == 129u || messageId == 180u || messageId == 229u || messageId == 231u || messageId == 237u || messageId == 248u || messageId == 258u)) {
                 data_service::HandleDataServiceCompletedQueueMessage(registry, e, completeQueueComp, ok, grpcTag);
             }
             else if (common::base::eNodeType::EtcdNodeService == nodeType &&
@@ -491,6 +533,14 @@ bool PollGrpcNodeShutdown(entt::registry& registry, entt::entity e) {
             else if (common::base::eNodeType::MatchNodeService == nodeType &&
                 (messageId == 148u || messageId == 151u || messageId == 152u || messageId == 153u || messageId == 154u || messageId == 156u || messageId == 157u || messageId == 163u || messageId == 164u || messageId == 179u)) {
                 match::HandleMatchServiceCompletedQueueMessage(registry, e, completeQueueComp, ok, grpcTag);
+            }
+            else if (common::base::eNodeType::PlayerInboxNodeService == nodeType &&
+                (messageId == 255u || messageId == 257u)) {
+                player_inbox::HandlePlayerInboxCompletedQueueMessage(registry, e, completeQueueComp, ok, grpcTag);
+            }
+            else if (common::base::eNodeType::PlayerInboxNodeService == nodeType &&
+                (messageId == 256u || messageId == 259u || messageId == 260u || messageId == 261u || messageId == 262u || messageId == 263u)) {
+                player_inbox::HandlePlayerInboxAdminCompletedQueueMessage(registry, e, completeQueueComp, ok, grpcTag);
             }
             else if (common::base::eNodeType::SceneManagerNodeService == nodeType &&
                 (messageId == 16u || messageId == 44u || messageId == 46u || messageId == 85u)) {
@@ -562,6 +612,12 @@ void InitGrpcNode(const std::shared_ptr< ::grpc::ChannelInterface>& channel, ent
     }
     if (common::base::eNodeType::MatchNodeService == nodeType) {
         match::InitMatchServiceGrpcNode(channel, registry, nodeEntity);
+    }
+    if (common::base::eNodeType::PlayerInboxNodeService == nodeType) {
+        player_inbox::InitPlayerInboxGrpcNode(channel, registry, nodeEntity);
+    }
+    if (common::base::eNodeType::PlayerInboxNodeService == nodeType) {
+        player_inbox::InitPlayerInboxAdminGrpcNode(channel, registry, nodeEntity);
     }
     if (common::base::eNodeType::SceneManagerNodeService == nodeType) {
         scene_manager::InitSceneManagerServiceGrpcNode(channel, registry, nodeEntity);

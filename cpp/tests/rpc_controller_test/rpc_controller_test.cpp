@@ -12,7 +12,7 @@
 // 走完 kConnected → kDisconnected 才能安全析构,所以只能让 TcpServer + TcpClient 在
 // EventLoopThread 上真连一次,server 侧连接就是被测对象。
 //
-// 本文件提供整个测试工程唯一的 main。链接桩(InitPlayerService / InitPlayerServiceReplied /
+// 本文件提供整个测试工程唯一的 main。链接桩(InitPlayerService /
 // InitServiceHandler)在 rpc_client_lifecycle_test.cpp;消息号注册表由 rpc_channel_loopback_test.cpp
 // 的全局 Environment 在任何用例之前填充一次。
 

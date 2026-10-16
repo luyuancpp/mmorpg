@@ -209,16 +209,8 @@ func (info *MethodInfo) CppHandlerIncludeName() string {
 	return _config.Global.Naming.IncludeBegin + info.FileBaseNameNoEx() + _config.Global.FileExtensions.HandlerH + _config.Global.Naming.IncludeEndLine
 }
 
-func (info *MethodInfo) CppRepliedHandlerIncludeName() string {
-	return _config.Global.Naming.IncludeBegin + info.FileBaseNameNoEx() + _config.Global.FileExtensions.RepliedHandlerHeaderExtension + _config.Global.Naming.IncludeEndLine
-}
-
 func (info *MethodInfo) CppHandlerClassName() string {
 	return info.Service() + _config.Global.Naming.HandlerFile
-}
-
-func (info *MethodInfo) CppRepliedHandlerClassName() string {
-	return info.Service() + _config.Global.Naming.RepliedHandlerFile
 }
 
 func (info *MethodInfo) GetServiceFullNameWithColon() string {

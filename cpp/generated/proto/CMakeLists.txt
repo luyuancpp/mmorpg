@@ -64,6 +64,7 @@ set(SOURCE_FILES
     common/component/npc_comp.pb.cc
     common/component/player_async_comp.pb.cc
     common/component/player_comp.pb.cc
+    common/component/player_inbox_ledger_comp.pb.cc
     common/component/player_login_comp.pb.cc
     common/component/player_network_comp.pb.cc
     common/component/player_scene_comp.pb.cc
@@ -80,6 +81,7 @@ set(SOURCE_FILES
     common/database/player_cache.pb.cc
     common/database/rollback_database_table.pb.cc
     common/database/bag_quest_mail_data.pb.cc
+    common/event/player_inbox_event.pb.cc
     common/event/player_migration_event.pb.cc
     common/event/team_event.pb.cc
     common/options/attribute_sync_option.pb.cc
@@ -118,6 +120,12 @@ set(SOURCE_FILES
     trade/trade_admin.pb.cc
     trade/trade_table.grpc.pb.cc
     trade/trade_table.pb.cc
+    player_inbox/player_inbox.grpc.pb.cc
+    player_inbox/player_inbox.pb.cc
+    player_inbox/player_inbox_admin.grpc.pb.cc
+    player_inbox/player_inbox_admin.pb.cc
+    player_inbox/player_inbox_table.grpc.pb.cc
+    player_inbox/player_inbox_table.pb.cc
     login/login.grpc.pb.cc
     login/login.pb.cc
     scene/client_player_common.pb.cc

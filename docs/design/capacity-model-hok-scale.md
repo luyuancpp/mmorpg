@@ -416,6 +416,7 @@
    - scene_manager fullSync 的 `SCAN scene_nodes:zone:*:load`（`load_reporter.go:750`）改成显式的 zone 注册集合。
    - friend 在线目录的 SCAN（`online_directory.go:23-26`）改走索引。
    - 显式设置 go-redis / go-zero 的 PoolSize 和 Redis 的 maxclients，按 Z 记总账。
+     - （2026-10-15 补，P0-E）maxclients 与总账已落码、未经 Codex 验证：`redis.yaml` 显式 `MAXCLIENTS=40000`，总账在 `tools/scripts/k8s_deploy.ps1`「Redis 连接总账」（C++ 每进程一条，G 按 2 记，待实测），§2.5「连接数」一行的现有上限以它为准；PoolSize 仍未做。按用途拆分后，每个拆出的实例都要显式 `--maxclients`，并按用途重算总账。
 5. **task:result 按 login 实例分频道**：直接用 SPUBLISH 形态，便于日后上集群。
 6. **新号**：NewPlayerSeed 默认打开，K8s ConfigMap 渲染这个键；同一批让新号首登不再发 LOGIN 快照（§4.4）。
 7. **gate 分配**：

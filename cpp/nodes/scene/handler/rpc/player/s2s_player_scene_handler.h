@@ -33,8 +33,6 @@ public:
         {
         case 0:
 			{
-            static_assert(std::is_same_v<decltype(std::declval<::google::protobuf::Empty&>().mutable_error_message()), ::TipInfoMessage*>,
-                "玩家 RPC 非 Empty 应答必须提供 TipInfoMessage error_message");
             EnterScene(player,
                 static_cast<const ::GsEnterSceneRequest*>(request),
                 static_cast<::google::protobuf::Empty*>(response));
@@ -42,8 +40,6 @@ public:
             break;
         case 1:
 			{
-            static_assert(std::is_same_v<decltype(std::declval<::google::protobuf::Empty&>().mutable_error_message()), ::TipInfoMessage*>,
-                "玩家 RPC 非 Empty 应答必须提供 TipInfoMessage error_message");
             LeaveScene(player,
                 static_cast<const ::GsLeaveSceneRequest*>(request),
                 static_cast<::google::protobuf::Empty*>(response));

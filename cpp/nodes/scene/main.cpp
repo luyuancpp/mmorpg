@@ -7,6 +7,7 @@
 #include "infra/agones/agones_gameserver_lifecycle.h"
 #include "handler/rpc/scene_handler.h"
 #include "rpc_replies/scene_manager_response_handler.h"
+#include "rpc_replies/player_inbox_response_handler.h"
 #include "handler/grpc/scene_node_service.h"
 #include "core/config/config.h"
 #include "world/world.h"
@@ -14,6 +15,7 @@
 #include "frame/manager/frame_time.h"
 #include "player/system/player_lifecycle.h"
 #include "player/system/player_equip.h"
+#include "player/system/player_inbox_system.h"
 #include "battle/system/player_battle.h"
 #include "services/battle/data/battle_table_fingerprint.h"
 #include "proto/contracts/kafka/scene_command.pb.h"
@@ -36,6 +38,9 @@ namespace
     struct SceneRuntimeContext
     {
         TimerTaskComp worldTimer;
+        // 玩家持久收件箱的 1 秒 tick(PlayerInboxSystem::Tick)。刻意不挂在 DependencyGate 之后:
+        // 收件箱不可用不得阻断进场(IB-7),它自己按退避处理"没有 READY 节点"。
+        TimerTaskComp playerInboxTimer;
         DependencyGate dependencyGate;
         SceneNodeGrpcImpl grpcService;
         std::unordered_set<Guid> shutdownPlayerIds;
@@ -92,8 +97,11 @@ int main(int argc, char *argv[])
 		{
         // DataServiceNodeService:永久 guid 号段经它的 AllocateIdSegment 领取(全局池 gRPC 节点,
         // 在 DataServiceNodeService.rpc 前缀下发现)。不在白名单里发现了也不会建连。
+        // PlayerInboxNodeService:玩家持久收件箱的 FetchItems / AckItems(全局 gRPC 服务,
+        // 在 PlayerInboxNodeService.rpc 前缀下发现;docs/design/player-inbox-service.md §1.4)。
         Node node(&loop, SceneNodeService,
-                  Node::CanConnectNodeTypeList{ SceneManagerNodeService, DataServiceNodeService },
+                  Node::CanConnectNodeTypeList{ SceneManagerNodeService, DataServiceNodeService,
+                                                PlayerInboxNodeService },
                   &handler);
 
         node::entry::detail::ApplyPostConstructionHooks<SceneNodeHooks>(node);
@@ -129,6 +137,10 @@ int main(int argc, char *argv[])
         // 手写引导代码自己装自己的 gRPC 应答处理器。
         // 只是给两个全局 std::function 赋值,没有前置依赖,放在发出任何请求之前即可。
         InitSceneManagerReply();
+        // 玩家持久收件箱:同理手写装 FetchItems / AckItems 的应答与失败处理器(设计 §7.11),
+        // 再做一次注册表自检并打印生效配置(GameConfig 已在 Node 构造时加载)。
+        InitPlayerInboxReply();
+        PlayerInboxSystem::Initialize();
 
         tlsRedisSystem.Initialize(&loop);
         World::InitializeSystemBeforeConnect();
@@ -157,6 +169,9 @@ int main(int argc, char *argv[])
             agones::GameServerLifecycle::Instance().Stop();
 			context->dependencyGate.probeTimer.Cancel();
 			context->worldTimer.Cancel();
+			// 收件箱 tick 一并停:停机期间不再拉取 / 确认。已应用、未确认的结局随退出存盘落地,
+			// 下次落地时由账本补确认(设计 §7.7)。
+			context->playerInboxTimer.Cancel();
 			PlayerBattleSystem::StopReaper();
 			tlsRedisSystem.BeginShutdown();
 
@@ -344,6 +359,10 @@ int main(int argc, char *argv[])
             // 过期即作废解冻(battle 节点崩溃 / match 断链的补偿路径,
             // turn-based-battle-server.md §3.2)。不进 20FPS World::Update。
             PlayerBattleSystem::StartReaper(n.GetLoop());
+
+            // 玩家持久收件箱的 tick(docs/design/player-inbox-service.md §7.4):每秒处理到期的检查、在线兜底、
+            // 等落盘与补确认。不进 DependencyGate(IB-7):收件箱没连上时 tick 只会按退避记一次延后。
+            context->playerInboxTimer.RunEvery(PlayerInboxSystem::kTickIntervalSec, PlayerInboxSystem::Tick);
 
             // 号段首段是启动硬依赖:每个启用的种类领到第一段 [lo, hi) 之前不放玩家进来 ——
             // 拾取 / 交易流水 / 快照都要铸永久 guid,没段时一律 fail-closed(kInvalidGuid),

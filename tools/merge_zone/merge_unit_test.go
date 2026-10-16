@@ -6,12 +6,17 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/redis/go-redis/v9"
 )
 
 // ── Kafka lag 解析 ────────────────────────────────────────────
@@ -96,7 +101,7 @@ func TestDbTaskTopicAndQueueKeys(t *testing.T) {
 
 // P4 / 审计必须把每个 go/db 实例各自的 processing 列表都查到:只查旧的共享键,多实例下门禁恒为 0。
 func TestDbTaskQueueKeysCoverEveryInstance(t *testing.T) {
-	got := dbTaskQueueKeysFor("t", []string{"db-0:6000", "db-1:6000"})
+	got := dbTaskQueueKeysFor("t", []string{"db-0:6000", "db-1:6000"}, nil)
 	want := []string{
 		"kafka:retry:queue:t",
 		"kafka:retry:processing:t",
@@ -112,8 +117,402 @@ func TestDbTaskQueueKeysCoverEveryInstance(t *testing.T) {
 			t.Fatalf("queue keys[%d]=%q, want %q (all: %v)", i, got[i], want[i], got)
 		}
 	}
-	if legacyOnly := dbTaskQueueKeysFor("t", nil); len(legacyOnly) != 3 {
+	if legacyOnly := dbTaskQueueKeysFor("t", nil, nil); len(legacyOnly) != 3 {
 		t.Fatalf("with no registered instance the three shared keys must still be checked, got %v", legacyOnly)
+	}
+}
+
+// S1 ④:按原始分区拆开的 ready 列表 kafka:retry:queue:{topic}:p{N} 也必须为空;它们排序去重后追加在最后。
+func TestDbTaskQueueKeysIncludePartitionedReadyLists(t *testing.T) {
+	scanned := []string{
+		"kafka:retry:queue:t:p3",
+		"kafka:retry:queue:t:p0",
+		"kafka:retry:queue:t:p3", // SCAN 跨页可能重复返回同一键
+	}
+	got := dbTaskQueueKeysFor("t", []string{"db-0:6000"}, scanned)
+	want := []string{
+		"kafka:retry:queue:t",
+		"kafka:retry:processing:t",
+		"kafka:dead:queue:t",
+		"kafka:retry:processing:t:db-0:6000",
+		"kafka:retry:queue:t:p0",
+		"kafka:retry:queue:t:p3",
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("queue keys=%v, want %v", got, want)
+	}
+	// 纯函数不改调用方的切片(排序在副本上做)。
+	if scanned[0] != "kafka:retry:queue:t:p3" || scanned[1] != "kafka:retry:queue:t:p0" {
+		t.Fatalf("dbTaskQueueKeysFor mutated the caller's slice: %v", scanned)
+	}
+}
+
+func TestDbRetryPartitionQueuePattern(t *testing.T) {
+	const topic = "db_task_zone_1"
+	if got := dbRetryPartitionQueuePrefix(topic); got != "kafka:retry:queue:db_task_zone_1:p" {
+		t.Fatalf("prefix=%q", got)
+	}
+	pattern := dbRetryPartitionQueuePattern(topic)
+	if pattern != "kafka:retry:queue:db_task_zone_1:p*" {
+		t.Fatalf("pattern=%q", pattern)
+	}
+	// path.Match 与 Redis glob 在不含 '/' 的键上口径一致(* ? [] 与反斜杠转义),用它核对 MATCH 的边界。
+	mustMatch := func(key string, want bool) {
+		t.Helper()
+		ok, err := path.Match(pattern, key)
+		if err != nil {
+			t.Fatalf("path.Match(%q, %q): %v", pattern, key, err)
+		}
+		if ok != want {
+			t.Fatalf("pattern %q matching %q = %v, want %v", pattern, key, ok, want)
+		}
+	}
+	mustMatch(dbRetryPartitionQueuePrefix(topic)+"0", true)
+	mustMatch(dbRetryPartitionQueuePrefix(topic)+"9", true)
+	// 别的 zone(zone_11)、别的世代(_g2)、共享收件箱本身都不能被扫进来。
+	mustMatch(dbRetryPartitionQueuePrefix("db_task_zone_11")+"0", false)
+	mustMatch(dbRetryPartitionQueuePrefix("db_task_zone_1_g2")+"0", false)
+	mustMatch(dbRetryQueueKey(topic), false)
+	if strings.HasPrefix(dbRetryPartitionQueuePrefix("db_task_zone_11"), dbRetryPartitionQueuePrefix(topic)) ||
+		strings.HasPrefix(dbRetryPartitionQueuePrefix("db_task_zone_1_g2"), dbRetryPartitionQueuePrefix(topic)) {
+		t.Fatal("zone_1's partitioned prefix must not be a prefix of zone_11 / zone_1_g2 keys")
+	}
+
+	// glob 元字符原样转义:* ? [ ] \。
+	if got := escapeRedisGlob(`a*b?c[d]e\f`); got != `a\*b\?c\[d\]e\\f` {
+		t.Fatalf("escapeRedisGlob=%q", got)
+	}
+	// topic 名里带元字符时,模式只匹配字面量本身,不会扩大到别的键。
+	odd := dbRetryPartitionQueuePattern("t*")
+	if ok, _ := path.Match(odd, "kafka:retry:queue:t*:p0"); !ok {
+		t.Fatalf("escaped pattern %q must match the literal topic's key", odd)
+	}
+	if ok, _ := path.Match(odd, "kafka:retry:queue:tX:p0"); ok {
+		t.Fatalf("escaped pattern %q must not match another topic's key", odd)
+	}
+}
+
+// queueKeyReaderStub 回放 ZRANGE / SCAN 的回复(merge_zone 不引 miniredis,见 gap_fixes_test.go 头注释)。
+type queueKeyReaderStub struct {
+	members   []string
+	zrangeErr error
+	// pages[cursor] 是该游标的一页回复;scanErr 非 nil 时第 failAtCall 次(从 1 起)SCAN 返回它。
+	pages      map[uint64]queueKeyScanPage
+	scanErr    error
+	failAtCall int
+	scanCalls  []queueKeyScanCall
+}
+
+type queueKeyScanPage struct {
+	keys []string
+	next uint64
+}
+
+type queueKeyScanCall struct {
+	cursor uint64
+	match  string
+	count  int64
+}
+
+func (s *queueKeyReaderStub) ZRange(_ context.Context, _ string, _, _ int64) *redis.StringSliceCmd {
+	return redis.NewStringSliceResult(s.members, s.zrangeErr)
+}
+
+func (s *queueKeyReaderStub) Scan(_ context.Context, cursor uint64, match string, count int64) *redis.ScanCmd {
+	s.scanCalls = append(s.scanCalls, queueKeyScanCall{cursor: cursor, match: match, count: count})
+	if s.scanErr != nil && len(s.scanCalls) == s.failAtCall {
+		return redis.NewScanCmdResult(nil, 0, s.scanErr)
+	}
+	page, ok := s.pages[cursor]
+	if !ok {
+		return redis.NewScanCmdResult(nil, 0, fmt.Errorf("stub: unexpected cursor %d", cursor))
+	}
+	return redis.NewScanCmdResult(page.keys, page.next, nil)
+}
+
+func TestDbTaskQueueKeysScanPagesAggregated(t *testing.T) {
+	const topic = "db_task_zone_901"
+	p := dbRetryPartitionQueuePrefix(topic)
+	stub := &queueKeyReaderStub{
+		members: []string{"db-0:6000"},
+		pages: map[uint64]queueKeyScanPage{
+			0:  {keys: []string{p + "3", p + "1"}, next: 17},
+			17: {keys: []string{p + "1", p + "0"}, next: 0}, // 跨页重复的 p1 去重
+		},
+	}
+	got, err := dbTaskQueueKeys(context.Background(), stub, topic)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []string{
+		dbRetryQueueKey(topic),
+		dbRetryProcessingKey(topic),
+		dbDeadQueueKey(topic),
+		dbRetryInstanceProcessingKey(topic, "db-0:6000"),
+		p + "0", p + "1", p + "3",
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("queue keys=%v, want %v", got, want)
+	}
+	if len(stub.scanCalls) != 2 {
+		t.Fatalf("SCAN must iterate until the cursor returns to 0, calls=%v", stub.scanCalls)
+	}
+	for i, c := range stub.scanCalls {
+		if c.match != dbRetryPartitionQueuePattern(topic) || c.count != dbRetryPartitionScanCount {
+			t.Fatalf("scan call %d = %+v, want match=%q count=%d", i, c, dbRetryPartitionQueuePattern(topic), dbRetryPartitionScanCount)
+		}
+	}
+	if stub.scanCalls[1].cursor != 17 {
+		t.Fatalf("second SCAN must continue from cursor 17, got %d", stub.scanCalls[1].cursor)
+	}
+}
+
+// SCAN 任一页失败、或登记表读不到,都必须报错 —— 「没扫完」不能当成「没有 p 列表」放行。
+func TestDbTaskQueueKeysScanFailureFailsClosed(t *testing.T) {
+	const topic = "db_task_zone_901"
+	p := dbRetryPartitionQueuePrefix(topic)
+	pages := map[uint64]queueKeyScanPage{
+		0: {keys: []string{p + "0"}, next: 5},
+		5: {keys: []string{p + "1"}, next: 0},
+	}
+	for _, failAt := range []int{1, 2} {
+		stub := &queueKeyReaderStub{pages: pages, scanErr: errors.New("connection reset"), failAtCall: failAt}
+		keys, err := dbTaskQueueKeys(context.Background(), stub, topic)
+		if err == nil {
+			t.Fatalf("SCAN failure on call %d must fail closed, got keys %v", failAt, keys)
+		}
+		if keys != nil {
+			t.Fatalf("SCAN failure on call %d must not return a partial key list, got %v", failAt, keys)
+		}
+	}
+	stub := &queueKeyReaderStub{zrangeErr: errors.New("READONLY"), pages: pages}
+	if _, err := dbTaskQueueKeys(context.Background(), stub, topic); err == nil {
+		t.Fatal("a failed ZRANGE of the instance registry must fail closed")
+	}
+}
+
+// ── P3 唯一权威组(S2 ③,go/db 消费组按 zone 拆分)──────────────────
+
+// 两个候选组的 describe 输出样例。列与 Kafka 3.x/4.x 的 --describe 一致;CLI 原文由 Codex 在钉版 4.3.1 上实测后补 fixture。
+const (
+	zoneGroupDescribe = `
+GROUP                       TOPIC             PARTITION  CURRENT-OFFSET  LOG-END-OFFSET  LAG  CONSUMER-ID  HOST      CLIENT-ID
+db_rpc_consumer_group_z901  db_task_zone_901  0          120             123             3    c-1          /1.2.3.4  db-z901-a
+db_rpc_consumer_group_z901  db_task_zone_901  1          77              77              0    c-1          /1.2.3.4  db-z901-a
+`
+	// legacy 组仍被别的 zone 使用(Stable),但本 topic 已收尾:只有别的 topic 的行。
+	legacyGroupOtherTopicOnly = `
+GROUP                  TOPIC             PARTITION  CURRENT-OFFSET  LOG-END-OFFSET  LAG  CONSUMER-ID  HOST      CLIENT-ID
+db_rpc_consumer_group  db_task_zone_902  0          10              15              5    c-2          /1.2.3.5  db-z902-b
+`
+	// legacy 组在本 topic 上还留着冻结的位点,而且比 zone 组更高(没收尾就切回来又切走的典型形状)。
+	legacyGroupHigherStale = `
+Consumer group 'db_rpc_consumer_group' has no active members.
+
+GROUP                  TOPIC             PARTITION  CURRENT-OFFSET  LOG-END-OFFSET  LAG  CONSUMER-ID  HOST  CLIENT-ID
+db_rpc_consumer_group  db_task_zone_901  0          123             123             0    -            -     -
+db_rpc_consumer_group  db_task_zone_901  1          77              77              0    -            -     -
+`
+	groupMissingKafka3 = "Error: Consumer group 'db_rpc_consumer_group' does not exist.\n"
+)
+
+func TestResolveAuthoritativeLag_PicksOnlyGroupWithOffsets(t *testing.T) {
+	const topic = "db_task_zone_901"
+	cases := []struct {
+		name   string
+		legacy groupDescribeResult
+	}{
+		{"legacy group does not exist", groupDescribeResult{group: defaultKafkaGroup, output: groupMissingKafka3}},
+		// 有的版本对不存在的组以非 0 退出:命中白名单就不算 CLI 失败。
+		{"legacy missing with non-zero exit", groupDescribeResult{group: defaultKafkaGroup,
+			output: "Error: Executing consumer group command failed due to org.apache.kafka.common.errors.GroupIdNotFoundException: " +
+				"The group id does not exist.\n", runErr: errors.New("exit status 1")}},
+		{"legacy holds only other topics", groupDescribeResult{group: defaultKafkaGroup, output: legacyGroupOtherTopicOnly}},
+		{"legacy empty without header", groupDescribeResult{group: defaultKafkaGroup,
+			output: "\nConsumer group 'db_rpc_consumer_group' has no active members.\n"}},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			lag, group, err := resolveAuthoritativeLag(topic, []groupDescribeResult{
+				{group: dbConsumerGroupForZone(901), output: zoneGroupDescribe},
+				c.legacy,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if group != "db_rpc_consumer_group_z901" || lag != 3 {
+				t.Fatalf("got group=%q lag=%d, want db_rpc_consumer_group_z901 lag=3", group, lag)
+			}
+		})
+	}
+}
+
+// F7 指定:非活跃组(legacy)的位点更高时,不能拿它的 LAG=0 替 zone 组担保,必须拒绝并提示先收尾。
+func TestResolveAuthoritativeLag_InactiveGroupHigherIsRefused(t *testing.T) {
+	_, _, err := resolveAuthoritativeLag("db_task_zone_901", []groupDescribeResult{
+		{group: "db_rpc_consumer_group_z901", output: zoneGroupDescribe},
+		{group: defaultKafkaGroup, output: legacyGroupHigherStale},
+	})
+	if err == nil {
+		t.Fatal("two groups holding offsets on the topic must be refused (the stale one reports lag 0)")
+	}
+	for _, want := range []string{"FinalizeHandoff", "db_rpc_consumer_group_z901", defaultKafkaGroup, "-kafka-group"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Errorf("refusal must mention %q: %v", want, err)
+		}
+	}
+}
+
+func TestResolveAuthoritativeLag_BothEqualIsRefused(t *testing.T) {
+	same := strings.ReplaceAll(zoneGroupDescribe, "db_rpc_consumer_group_z901 ", "db_rpc_consumer_group      ")
+	_, _, err := resolveAuthoritativeLag("db_task_zone_901", []groupDescribeResult{
+		{group: "db_rpc_consumer_group_z901", output: zoneGroupDescribe},
+		{group: defaultKafkaGroup, output: same},
+	})
+	if err == nil || !strings.Contains(err.Error(), "FinalizeHandoff") {
+		t.Fatalf("equal offsets in both groups must still be refused with the FinalizeHandoff hint, got %v", err)
+	}
+}
+
+func TestResolveAuthoritativeLag_NoGroupHasOffsetsIsRefused(t *testing.T) {
+	dashOnly := `GROUP TOPIC PARTITION CURRENT-OFFSET LOG-END-OFFSET LAG
+db_rpc_consumer_group_z901 db_task_zone_901 0 - 120 -`
+	cases := map[string][]groupDescribeResult{
+		"both missing": {
+			{group: "db_rpc_consumer_group_z901", output: "Error: Consumer group 'db_rpc_consumer_group_z901' does not exist.\n"},
+			{group: defaultKafkaGroup, output: groupMissingKafka3},
+		},
+		"only dash rows": {
+			{group: "db_rpc_consumer_group_z901", output: dashOnly},
+			{group: defaultKafkaGroup, output: groupMissingKafka3},
+		},
+		"other topics only": {
+			{group: "db_rpc_consumer_group_z901", output: "Consumer group 'db_rpc_consumer_group_z901' has no active members.\n"},
+			{group: defaultKafkaGroup, output: legacyGroupOtherTopicOnly},
+		},
+		"no candidates": nil,
+	}
+	for name, results := range cases {
+		t.Run(name, func(t *testing.T) {
+			if _, _, err := resolveAuthoritativeLag("db_task_zone_901", results); err == nil {
+				t.Fatal("no group holding offsets on the topic must be refused — nothing proves the backlog is drained")
+			}
+		})
+	}
+}
+
+func TestResolveAuthoritativeLag_CLIFailureIsRefused(t *testing.T) {
+	cases := map[string]groupDescribeResult{
+		"non-zero exit with an unrelated error": {group: defaultKafkaGroup,
+			output: "Error: Executing consumer group command failed due to Timed out waiting for a node assignment.\n",
+			runErr: errors.New("exit status 1")},
+		"Error line with zero exit": {group: defaultKafkaGroup,
+			output: "Error: Executing consumer group command failed due to org.apache.kafka.common.errors.CoordinatorNotAvailableException\n"},
+		"unparseable output": {group: defaultKafkaGroup, output: "something unexpected\n"},
+		"empty output":       {group: defaultKafkaGroup, output: ""},
+	}
+	for name, legacy := range cases {
+		t.Run(name, func(t *testing.T) {
+			// zone 组本身是好的:另一个候选组读不出来也不能放行(读不到 ≠ 没有位点)。
+			_, _, err := resolveAuthoritativeLag("db_task_zone_901", []groupDescribeResult{
+				{group: "db_rpc_consumer_group_z901", output: zoneGroupDescribe},
+				legacy,
+			})
+			if err == nil {
+				t.Fatal("an unreadable candidate group must fail closed")
+			}
+		})
+	}
+}
+
+func TestResolveAuthoritativeLag_DashLagOnAuthoritativeGroupIsRefused(t *testing.T) {
+	out := `GROUP TOPIC PARTITION CURRENT-OFFSET LOG-END-OFFSET LAG
+db_rpc_consumer_group_z901 db_task_zone_901 0 120 120 0
+db_rpc_consumer_group_z901 db_task_zone_901 1 - 50 -`
+	_, _, err := resolveAuthoritativeLag("db_task_zone_901", []groupDescribeResult{
+		{group: "db_rpc_consumer_group_z901", output: out},
+		{group: defaultKafkaGroup, output: groupMissingKafka3},
+	})
+	if err == nil {
+		t.Fatal("a '-' LAG row on the authoritative group must fail closed (that partition has no committed offset)")
+	}
+}
+
+func TestCommittedOffsetPresent_ColumnOrderFromHeader(t *testing.T) {
+	// 列顺序被打乱(不同 Kafka 版本会插列):按表头名定位 TOPIC / CURRENT-OFFSET,不按下标。
+	shuffled := `LAG CURRENT-OFFSET TOPIC GROUP PARTITION
+3 120 db_task_zone_902 g 0
+- - db_task_zone_901 g 0`
+	if present, err := committedOffsetPresent(shuffled, "db_task_zone_901"); err != nil || present {
+		t.Fatalf("only '-' rows for this topic: present=%v err=%v, want false nil", present, err)
+	}
+	if present, err := committedOffsetPresent(shuffled, "db_task_zone_902"); err != nil || !present {
+		t.Fatalf("numeric row for this topic: present=%v err=%v, want true nil", present, err)
+	}
+	if present, err := committedOffsetPresent(legacyGroupHigherStale, "db_task_zone_901"); err != nil || !present {
+		t.Fatalf("'has no active members' followed by a table: present=%v err=%v, want true nil", present, err)
+	}
+	if present, err := committedOffsetPresent("Consumer group 'g' has no active members.\n", "db_task_zone_901"); err != nil || present {
+		t.Fatalf("empty group without header: present=%v err=%v, want false nil", present, err)
+	}
+	if present, err := committedOffsetPresent(groupMissingKafka3, "db_task_zone_901"); err != nil || present {
+		t.Fatalf("missing group: present=%v err=%v, want false nil", present, err)
+	}
+	if _, err := committedOffsetPresent("no header and no keyword", "db_task_zone_901"); err == nil {
+		t.Fatal("output without a header and without a known keyword must be an error")
+	}
+	if _, err := committedOffsetPresent("Error: Timed out waiting for a node assignment.\n", "db_task_zone_901"); err == nil {
+		t.Fatal("an Error: line that is not a missing-group message must be an error")
+	}
+	bad := `TOPIC PARTITION CURRENT-OFFSET
+db_task_zone_901 0 abc`
+	if _, err := committedOffsetPresent(bad, "db_task_zone_901"); err == nil {
+		t.Fatal("a CURRENT-OFFSET that is neither an integer nor '-' must be an error")
+	}
+}
+
+// 「组不存在」白名单与 tools/scripts/lib/kafka_consumer_groups.ps1 的 Get-KafkaGroupMissingPatterns 同一份。
+func TestConsumerGroupMissing_Whitelist(t *testing.T) {
+	for _, out := range []string{
+		"Error: Consumer group 'db_rpc_consumer_group' does not exist.",
+		"The consumer group 'db_rpc_consumer_group' does not exist.",
+		"org.apache.kafka.common.errors.GroupIdNotFoundException: The group id does not exist.",
+		"Error: GROUP_ID_NOT_FOUND",
+	} {
+		if !consumerGroupMissing(out) {
+			t.Errorf("must be recognized as a missing group: %q", out)
+		}
+	}
+	for _, out := range []string{
+		"Consumer group 'db_rpc_consumer_group' has no active members.",
+		zoneGroupDescribe,
+		"Error: Timed out waiting for a node assignment.",
+	} {
+		if consumerGroupMissing(out) {
+			t.Errorf("must not be recognized as a missing group: %q", out)
+		}
+	}
+}
+
+func TestKafkaGroupCandidates(t *testing.T) {
+	if got := dbConsumerGroupForZone(901); got != "db_rpc_consumer_group_z901" {
+		t.Fatalf("zone group=%q", got)
+	}
+	cases := []struct {
+		name     string
+		explicit string
+		legacy   string
+		want     []string
+	}{
+		{"default: zone group plus legacy", "", defaultKafkaGroup, []string{"db_rpc_consumer_group_z901", defaultKafkaGroup}},
+		{"explicit override only", "custom_group", defaultKafkaGroup, []string{"custom_group"}},
+		{"legacy disabled", "", "", []string{"db_rpc_consumer_group_z901"}},
+		{"legacy equal to zone group is deduped", "", "db_rpc_consumer_group_z901", []string{"db_rpc_consumer_group_z901"}},
+	}
+	for _, c := range cases {
+		if got := kafkaGroupCandidates(c.explicit, c.legacy, 901); !reflect.DeepEqual(got, c.want) {
+			t.Errorf("%s: got %v, want %v", c.name, got, c.want)
+		}
 	}
 }
 

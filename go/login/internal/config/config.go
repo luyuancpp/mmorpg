@@ -377,6 +377,17 @@ type PasswordAuthConf struct {
 	KDFConcurrency int `json:"KDFConcurrency,default=2"`
 	// 只约束等待 semaphore 的时间；调用方 context 更早取消时立即失败。
 	KDFWaitTimeout time.Duration `json:"KDFWaitTimeout,default=500ms"`
+	FailureLimit   int           `json:"FailureLimit,default=5"`
+	FailureWindow  time.Duration `json:"FailureWindow,default=15m"`
+	FailureLock    time.Duration `json:"FailureLock,default=5m"`
+}
+
+// ValidateFailureQuota 禁止关闭或截断配额参数；副本间参数由 Redis 指纹复核。
+func (c PasswordAuthConf) ValidateFailureQuota() error {
+	if c.FailureLimit < 1 || c.FailureLimit > 100 || c.FailureWindow < time.Second || c.FailureWindow > time.Hour || c.FailureLock < time.Second || c.FailureLock > time.Hour || c.FailureWindow%time.Millisecond != 0 || c.FailureLock%time.Millisecond != 0 {
+		return fmt.Errorf("PasswordAuth requires FailureLimit 1..100 and whole-millisecond FailureWindow/FailureLock within 1s..1h")
+	}
+	return nil
 }
 
 // DevPasswordAuthConf 是唯一允许“不接账号库口令体系”的开发登录路径。
@@ -456,8 +467,12 @@ type RedisConf struct {
 // KafkaConfig holds Kafka producer and consumer settings.
 type KafkaConfig struct {
 	Brokers []string `json:"Brokers"`
-	GroupID string   `json:"GroupID"`
-	Topic   string   `json:"Topic,optional"` // Derived from Node.ZoneId at startup
+	// GroupID 已废弃:login 只生产不消费,代码不读它,也不是 go/db 的消费组(go/db 按 zone 拆组与它无关)。
+	// 保留为可选只是为了让带这个键的旧 ConfigMap / login.yaml 仍能加载;先放宽、全部 login 跑上本版本之后再删,
+	// 三处配置(go/login/etc/login.yaml、k8s_deploy.ps1 的 login 模板、deploy/login-stack.linux/login.yaml)的
+	// 删除顺序见 docs/design/db-consumer-group-per-zone.md §8 Step 7。
+	GroupID string `json:"GroupID,optional"`
+	Topic   string `json:"Topic,optional"` // Derived from Node.ZoneId at startup
 	// TopicGeneration is part of the immutable routing identity. Keep 1 for
 	// db_task_zone_{ZoneId}; a partition-count change requires an offline drain
 	// and a higher generation, which creates a new topic namespace.

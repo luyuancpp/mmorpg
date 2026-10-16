@@ -193,6 +193,8 @@ func (l *ChatLogic) SendChat(in *chatpb.SendChatRequest) (*chatpb.SendChatRespon
 	if content == "" {
 		return reject(rejectTooLong)
 	}
+	// 过滤后再入历史，所有拉取者看到同一正文；原始字节上限仍在过滤前校验，不能靠屏蔽绕过。
+	content = l.svcCtx.ContentFilter.Mask(content)
 
 	requestId := in.GetRequestId()
 	if len(requestId) > maxRequestIdBytes {

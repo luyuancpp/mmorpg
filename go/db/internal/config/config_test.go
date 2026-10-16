@@ -1,6 +1,7 @@
 package config
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/zeromicro/go-zero/core/conf"
@@ -210,5 +211,222 @@ func TestPlacementSplitPoolsNewKeysWin(t *testing.T) {
 	c.Normalize()
 	if c.Placement != before {
 		t.Fatal("Normalize must be idempotent when legacy and new keys are mixed")
+	}
+}
+
+// ── 消费组按 zone 拆(docs/design/db-consumer-group-per-zone.md §2)──────────────────────────
+
+// kafkaServerConfigHolder / kafkaHolder 只含 ServerConfig.Kafka 一段,标签与 Config 上的相同,
+// 用来单独钉住 go-zero 对这一段的解析语义(同 placementHolder 的做法)。
+type kafkaServerConfigHolder struct {
+	Kafka KafkaConfig `json:"Kafka"`
+}
+
+type kafkaHolder struct {
+	ServerConfig kafkaServerConfigHolder `json:"ServerConfig"`
+}
+
+// preHandoffKafkaConfig 与交接闸之前(HEAD 旧版)的 KafkaConfig 同形:GroupID 是必填的 `json:"GroupID"`。
+// 只保留会影响「加载成不成功」的必填键(Brokers / GroupID / PartitionCnt / IsOfflineExpand),
+// 用来在单测里代表旧二进制。
+type preHandoffKafkaConfig struct {
+	Brokers         []string `json:"Brokers"`
+	GroupID         string   `json:"GroupID"`
+	PartitionCnt    int32    `json:"PartitionCnt"`
+	IsOfflineExpand bool     `json:"IsOfflineExpand"`
+}
+
+type preHandoffServerConfigHolder struct {
+	Kafka preHandoffKafkaConfig `json:"Kafka"`
+}
+
+type preHandoffHolder struct {
+	ServerConfig preHandoffServerConfigHolder `json:"ServerConfig"`
+}
+
+// 交接形状 handoff(Z←L):只写 ConsumerGroup + GroupHandoffFrom,不写 GroupID。
+const handoffShapedKafkaYaml = "ServerConfig:\n" +
+	"  Kafka:\n" +
+	"    Brokers:\n" +
+	"      - \"127.0.0.1:9092\"\n" +
+	"    ConsumerGroup: \"db_rpc_consumer_group_z101\"\n" +
+	"    GroupHandoffFrom: \"db_rpc_consumer_group\"\n" +
+	"    PartitionCnt: 10\n" +
+	"    IsOfflineExpand: false\n"
+
+// 最终形状 final(Z):只写 GroupID。
+const finalZoneShapedKafkaYaml = "ServerConfig:\n" +
+	"  Kafka:\n" +
+	"    Brokers:\n" +
+	"      - \"127.0.0.1:9092\"\n" +
+	"    GroupID: \"db_rpc_consumer_group_z101\"\n" +
+	"    PartitionCnt: 10\n" +
+	"    IsOfflineExpand: false\n"
+
+// normalizedKafka 把一段 KafkaConfig 装进 Config 走一遍 Normalize,返回回填后的值。
+func normalizedKafka(k KafkaConfig) KafkaConfig {
+	c := Config{}
+	c.ServerConfig.Kafka = k
+	c.Normalize()
+	return c.ServerConfig.Kafka
+}
+
+// 三个超时键不写时取 sarama 默认值(行为与引入之前相同);显式值原样保留;Normalize 可重复调用。
+func TestKafkaTimeoutDefaults(t *testing.T) {
+	k := normalizedKafka(KafkaConfig{GroupID: "g"})
+	if k.SessionTimeoutMs != DefaultKafkaSessionTimeoutMs || k.HeartbeatIntervalMs != DefaultKafkaHeartbeatIntervalMs ||
+		k.RebalanceTimeoutMs != DefaultKafkaRebalanceTimeoutMs {
+		t.Fatalf("timeouts = %d/%d/%d, want %d/%d/%d", k.SessionTimeoutMs, k.HeartbeatIntervalMs, k.RebalanceTimeoutMs,
+			DefaultKafkaSessionTimeoutMs, DefaultKafkaHeartbeatIntervalMs, DefaultKafkaRebalanceTimeoutMs)
+	}
+	if DefaultKafkaSessionTimeoutMs != 10000 || DefaultKafkaHeartbeatIntervalMs != 3000 || DefaultKafkaRebalanceTimeoutMs != 60000 {
+		t.Fatal("defaults must equal sarama v1.43.1's NewConfig defaults (10s / 3s / 60s)")
+	}
+
+	explicit := normalizedKafka(KafkaConfig{GroupID: "g", SessionTimeoutMs: 30000, HeartbeatIntervalMs: 5000, RebalanceTimeoutMs: 90000})
+	if explicit.SessionTimeoutMs != 30000 || explicit.HeartbeatIntervalMs != 5000 || explicit.RebalanceTimeoutMs != 90000 {
+		t.Fatalf("explicit timeouts must survive Normalize, got %d/%d/%d",
+			explicit.SessionTimeoutMs, explicit.HeartbeatIntervalMs, explicit.RebalanceTimeoutMs)
+	}
+	if again := normalizedKafka(explicit); again.SessionTimeoutMs != 30000 || again.HeartbeatIntervalMs != 5000 ||
+		again.RebalanceTimeoutMs != 90000 {
+		t.Fatal("Normalize must be idempotent for Kafka timeouts")
+	}
+}
+
+func TestValidateConsumerGroup(t *testing.T) {
+	for _, tc := range []struct {
+		name    string
+		k       KafkaConfig
+		wantErr string // 空 = 必须通过;否则错误文本须包含它
+	}{
+		{name: "只有 GroupID(最终形状)", k: KafkaConfig{GroupID: "db_rpc_consumer_group_z101"}},
+		{name: "ConsumerGroup + GroupHandoffFrom(交接形状)",
+			k: KafkaConfig{ConsumerGroup: "db_rpc_consumer_group_z101", GroupHandoffFrom: "db_rpc_consumer_group"}},
+		{name: "GroupID 与 ConsumerGroup 同时出现",
+			k:       KafkaConfig{GroupID: "a", ConsumerGroup: "b"},
+			wantErr: "set only one of"},
+		{name: "两者都空", k: KafkaConfig{}, wantErr: "must be set"},
+		{name: "GroupID + GroupHandoffFrom(旧二进制会错误接受的形状)",
+			k:       KafkaConfig{GroupID: "db_rpc_consumer_group_z101", GroupHandoffFrom: "db_rpc_consumer_group"},
+			wantErr: "requires Kafka.ConsumerGroup"},
+		{name: "GroupHandoffFrom 等于组名",
+			k:       KafkaConfig{ConsumerGroup: "db_rpc_consumer_group", GroupHandoffFrom: "db_rpc_consumer_group"},
+			wantErr: "must differ"},
+		{name: "heartbeat 4000 × 3 > session 10000",
+			k:       KafkaConfig{GroupID: "g", HeartbeatIntervalMs: 4000, SessionTimeoutMs: 10000},
+			wantErr: "HeartbeatIntervalMs"},
+		{name: "rebalance 14999 < 15000",
+			k:       KafkaConfig{GroupID: "g", RebalanceTimeoutMs: 14999},
+			wantErr: "RebalanceTimeoutMs"},
+		{name: "rebalance 恰好 15000", k: KafkaConfig{GroupID: "g", RebalanceTimeoutMs: 15000}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			err := normalizedKafka(tc.k).ValidateConsumerGroup()
+			if tc.wantErr == "" {
+				if err != nil {
+					t.Fatalf("must pass, got %v", err)
+				}
+				return
+			}
+			if err == nil || !strings.Contains(err.Error(), tc.wantErr) {
+				t.Fatalf("err = %v, want it to contain %q", err, tc.wantErr)
+			}
+		})
+	}
+}
+
+func TestEffectiveGroupID(t *testing.T) {
+	if got := (KafkaConfig{GroupID: "db_rpc_consumer_group"}).EffectiveGroupID(); got != "db_rpc_consumer_group" {
+		t.Fatalf("final shape: got %q", got)
+	}
+	if got := (KafkaConfig{ConsumerGroup: "db_rpc_consumer_group_z7", GroupHandoffFrom: "db_rpc_consumer_group"}).EffectiveGroupID(); got != "db_rpc_consumer_group_z7" {
+		t.Fatalf("handoff shape: got %q", got)
+	}
+	if got := (KafkaConfig{}).EffectiveGroupID(); got != "" {
+		t.Fatalf("empty config: got %q", got)
+	}
+}
+
+// 能力证明(F5 / F9,修订稿 R1):交接形状不写 GroupID,交接闸之前的二进制(GroupID 必填)在加载时就拒启,
+// 而当前结构能加载同一份 YAML。go-zero「缺必填键报错」这一行为由本用例钉住,升级 go-zero 时它先红。
+func TestPreHandoffBinaryRefusesZoneShapedConfig(t *testing.T) {
+	var old preHandoffHolder
+	err := conf.LoadFromYamlBytes([]byte(handoffShapedKafkaYaml), &old)
+	if err == nil {
+		t.Fatal("a pre-handoff binary must refuse the handoff-shaped config (missing required GroupID)")
+	}
+	if !strings.Contains(err.Error(), "GroupID") {
+		t.Fatalf("the refusal must name GroupID, got %v", err)
+	}
+
+	var cur kafkaHolder
+	if err := conf.LoadFromYamlBytes([]byte(handoffShapedKafkaYaml), &cur); err != nil {
+		t.Fatalf("the current binary must load the handoff-shaped config: %v", err)
+	}
+	k := cur.ServerConfig.Kafka
+	if k.ConsumerGroup != "db_rpc_consumer_group_z101" || k.GroupHandoffFrom != "db_rpc_consumer_group" || k.GroupID != "" {
+		t.Fatalf("loaded ConsumerGroup=%q GroupHandoffFrom=%q GroupID=%q", k.ConsumerGroup, k.GroupHandoffFrom, k.GroupID)
+	}
+	if err := normalizedKafka(k).ValidateConsumerGroup(); err != nil {
+		t.Fatalf("the handoff shape must validate: %v", err)
+	}
+}
+
+// 修订稿 R1:最终形状 final(Z) 只写 GroupID,回档 Step 6 与全新 namespace 只渲染它 —— 任何版本的二进制都必须能加载。
+func TestPreHandoffBinaryLoadsFinalZoneShape(t *testing.T) {
+	var old preHandoffHolder
+	if err := conf.LoadFromYamlBytes([]byte(finalZoneShapedKafkaYaml), &old); err != nil {
+		t.Fatalf("a pre-handoff binary must load final(Z): %v", err)
+	}
+	if old.ServerConfig.Kafka.GroupID != "db_rpc_consumer_group_z101" {
+		t.Fatalf("old binary GroupID = %q", old.ServerConfig.Kafka.GroupID)
+	}
+
+	var cur kafkaHolder
+	if err := conf.LoadFromYamlBytes([]byte(finalZoneShapedKafkaYaml), &cur); err != nil {
+		t.Fatalf("the current binary must load final(Z): %v", err)
+	}
+	k := normalizedKafka(cur.ServerConfig.Kafka)
+	if err := k.ValidateConsumerGroup(); err != nil {
+		t.Fatalf("final(Z) must validate: %v", err)
+	}
+	if k.EffectiveGroupID() != "db_rpc_consumer_group_z101" || k.GroupHandoffFrom != "" {
+		t.Fatalf("final(Z) must join db_rpc_consumer_group_z101 without a handoff, got %q handoff=%q",
+			k.EffectiveGroupID(), k.GroupHandoffFrom)
+	}
+}
+
+// 旧形状 YAML 多带新增的超时键时,旧结构仍能加载:记录 go-zero 忽略未知键这一事实(F9)。
+// 这条事实决定了「往最终形状里加超时键」不会让旧二进制拒启。
+func TestPreHandoffBinaryIgnoresUnknownKeys(t *testing.T) {
+	yaml := finalZoneShapedKafkaYaml +
+		"    SessionTimeoutMs: 10000\n" +
+		"    HeartbeatIntervalMs: 3000\n" +
+		"    RebalanceTimeoutMs: 60000\n"
+	var old preHandoffHolder
+	if err := conf.LoadFromYamlBytes([]byte(yaml), &old); err != nil {
+		t.Fatalf("a pre-handoff binary must ignore unknown keys, got %v", err)
+	}
+	if old.ServerConfig.Kafka.GroupID != "db_rpc_consumer_group_z101" {
+		t.Fatalf("old binary GroupID = %q", old.ServerConfig.Kafka.GroupID)
+	}
+}
+
+// etc/db.yaml 是本地默认配置,也是 k8s_deploy / 回档 / merge_zone 推导组名的基名来源:
+// 必须是最终形状(只写 GroupID)、基名为 db_rpc_consumer_group、不带交接键,且能通过校验。
+func TestEtcYamlConsumerGroupIsFinalShape(t *testing.T) {
+	var c Config
+	if err := conf.Load("../../etc/db.yaml", &c); err != nil {
+		t.Fatalf("load etc/db.yaml: %v", err)
+	}
+	c.Normalize()
+	k := c.ServerConfig.Kafka
+	if k.GroupID != "db_rpc_consumer_group" || k.ConsumerGroup != "" || k.GroupHandoffFrom != "" {
+		t.Fatalf("etc/db.yaml GroupID=%q ConsumerGroup=%q GroupHandoffFrom=%q, want the bare final shape",
+			k.GroupID, k.ConsumerGroup, k.GroupHandoffFrom)
+	}
+	if err := k.ValidateConsumerGroup(); err != nil {
+		t.Fatalf("etc/db.yaml must validate: %v", err)
 	}
 }

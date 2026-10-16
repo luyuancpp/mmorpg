@@ -443,7 +443,7 @@ TEST_F(PlayerMissionSystemTest, OwnedLevelFactsReplaceProgressInsteadOfAccumulat
     ASSERT_TRUE(Missions().IsAccepted(4));
     EXPECT_EQ(20u, Missions().GetMissionList().missions().at(4).progress(0));
     level.amount = 40;
-    level.conditionIds = 0, 40;
+    level.conditionIds[0] = 40;
     MissionSystem::HandleConditionEvent(level, Missions(), config);
     EXPECT_TRUE(Missions().IsComplete(4));
 }

@@ -18,9 +18,16 @@ spring:
     # (AssignGateService),健康探测每 5s 一次 findAll(ZoneHealthProbeService),管理接口偶发;都是单表小查询。
     # 5 条按每次 1–2ms 推算每副本约 2500–5000 QPS(推算,未实测)。minimum-idle 2:空闲时不白占 5 条。
     # K8s ConfigMap(tools/scripts/k8s_deploy.ps1 New-JavaSvcConfigMapYaml)镜像这两个值,契约测试钉住两边一致。
+    # connection-timeout(2026-10-15,G2b §10 #5 定为 3000 毫秒):取不到连接时最多等多久。不写是 Hikari 默认 30s ——
+    # MySQL 不可达时每个碰库的请求占住一个 Tomcat 线程 30s,每秒约 7 个这样的请求就能占满 200 个线程。3s 把这个阈值抬高约
+    # 10 倍,但消除不了连锁;根治是 K8s 上探针走独立管理端口(见下面 management 段注释)。Hikari 把 0 当成无限等、低于 250 拒启,
+    # 部署侧镜像时按下限 250 核对。同样由 ConfigMap 镜像、契约测试与 GatewayDataSourcePoolConfigTest 钉住。
+    # 2026-10-15 更正:上面「服务器列表与公告每次请求查一次(不缓存)」对服务器列表已过时 —— ServerListService 改为 zone_config
+    # 行 1s 短缓存,过期瞬间的并发请求合并成一次 findAll,查库失败不缓存(G2b §9 第 7 条);公告仍每次查库。
     hikari:
       maximum-pool-size: 5
       minimum-idle: 2
+      connection-timeout: 3000
   jpa:
     hibernate:
       ddl-auto: validate
@@ -129,6 +136,11 @@ management:
   #             Redis 更不该进来:网关只拿它做限流(gate.rate-limit 默认关,且 fail-open)。
   # /actuator/health 保持原样不动:本机 start_game.ps1 与人工排障仍靠它看 db / redis 的真实状态。
   # probes.enabled 显式写 true:Spring 只在检测到 K8s 环境时才自动开,写死后本机也能 curl 到这两个端点。
+  # 管理端口(2026-10-15):K8s 的 gateway ConfigMap 写 management.server.port: 8082,三个探针打 8082
+  # (deploy/k8s/manifests/java-svc/gateway.yaml)。actuator 因此用独立的连接器与线程池:MySQL 慢 / 不可达、Redis 卡住或
+  # 被不限流的端点刷时,业务线程耗尽不再连带 liveness 超时、把所有副本一起杀掉。这里(jar 内)刻意不写:本机只跑一个进程、
+  # 没有 liveness,start_game.ps1 与排障文档都按 8081 取 /actuator/health,改端口只会把它们弄坏。
+  # 代价:探针不再反映业务连接器是否还能接新连接 —— 业务线程卡死时 liveness 仍是 UP,要靠日志与上游错误率发现。
   endpoint:
     health:
       probes:

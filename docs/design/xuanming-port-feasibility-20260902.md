@@ -1,6 +1,6 @@
 # XuanMing-Server → mmorpg/go 移植可行性定谳（2026-09-02）
 
-> **2026-10-15 范围更新：读本文末 §13（含 §13.5、§13.6）及决定 D-15、D-16。** friend / chat / guild / mail / leaderboard / login / auction / trade 八域继续，随后加入全球匹配的区域优先与超时扩区；商城框架仅比较并沿用已找到的评估记录。目标 DAU 1 亿 / CCU 2000 万，独立客户端同步已授权。逐域比较并选择更可扩展实现，正确性/一致性/兼容不降级；排除 dialogue / player / inventory / mission / scene_manager。静态推断与实测证据分开。
+> **2026-10-15 范围更新：读本文末 §13 及决定 D-15、D-16、D-17。** friend / chat / guild / mail / leaderboard / login / auction / trade 八域与区域优先、等待扩区的全球匹配继续；用户最新授权采用 macrozheng/mall 适配聚宝斋、游戏买卖和拍卖，D-17 覆盖本文 §13.6 / §13.7 的历史“仅比较、未采用”结论。目标 DAU 1 亿 / CCU 2000 万，独立客户端同步已授权。逐域比较并选择更可扩展实现，正确性/一致性/兼容不降级；排除 dialogue / player / inventory / mission / scene_manager。静态推断与实测证据分开。
 
 > 范围：`F:\XuanMing-Server`（下称 **A**，Kratos + go.work，Pandora/玄冥 UE5 后端）→ `D:\luyuan\mmorpg\go`（下称 **B**，go-zero + C++ 场景服）。
 > 用户三问：① A 是不是没有单点？② 除 DS 外全搬可以吗？③ B 原来有的模块不搬可以吗？
@@ -585,3 +585,19 @@ mall 核查版本：[dcaa93b3150352e5044708d7211b5bed0af4509f](https://github.co
 - [Vendure](https://github.com/vendurehq/vendure)继续作模块/插件与运营后台候选，默认GPLv3、另有商业许可，按官方LICENSE与具体用法核对；它也不是开箱即用的游戏拍卖。Java路线可进一步比较mall4j（10-14有提交，当前AGPL-3.0），本轮只粗筛，无采用或性能判断。较早的exchange-core原仓主干最新实质提交在2022年，其README还将clustering/settlement列TODO，不因单机微基准宣传就升级为本游戏全局交易底座。
 
 当前方向是优先复用成熟开源模块，按真实游戏规则与唯一资产权威接入；对聚宝斋应把多卖家市场模型纳入对比，原Go游戏撮合也按真实边界验收。限时竞价、唯一实例交付、角色过户和全球一致性须单独闭环；没有任何新候选在本轮完成运行/故障/容量验证。
+
+### 13.8 继续执行检查点（2026-10-15，不代表八域完成）
+
+| 域 | 本批已落地或核实 | 尚待完整闭环 |
+|---|---|---|
+| friend | 两版申请代次、权威 SQL、TiDB 七项物理连接策略及生产拒关；Java迁移器132项、后续完整104项/原核心15项真库通过，详见friend设计§9.7–9.8 | 可靠通知生产侧outbox、授权客户端/真实gate跨区冒烟和逐能力剩余验收 |
+| chat | 两版配置词表接入真实发送/历史路径并验证；复用原Go大小写敏感、按词表顺序替换的实际行为 | TEAM/GUILD/GROUP、完整可靠推送与跨区端到端 |
+| guild | 补源每玩家申请尝试配额；Go帮会榜单Lua快照与Java对齐；Java96项真库/Redis、客户端140项行为验证通过 | 完整源接口/部署对账、申请独立代次等仍未完成；本批不是通用排行榜 |
+| mail | 两版均无完整运行模块；源多副本最大ID游标与无界读取/N+1已定位 | 有界个人/系统/公会收件、提交序不漏信、附件持久交付/恢复及客户端 |
+| leaderboard | 两版均无通用榜服务（本仓设计工程名go/rank）；源7RPC有装配，但未找到真实业务写分/结算调用方 | 版本化写分事件、冻结榜、同TiDB事务的结算快照/奖意图、发奖与客户端 |
+| login | 保留当前登录/会话/进场模型；两版生产密码新增canonical账号失败配额、单账号租约及原子结算，真实工厂/Redis验证通过；Go完整346项、Java所选88项，详见auth-provider-framework末节 | 完整行为映射、可信IP/全局入口预算、真实gate跨区、Redis故障切换及容量；Java本批SQL查询为替身，传输取消未贯通 |
+| auction / trade | 已核源订单簿/交易与现聚宝斋差异；采用mall的后续决定已落D-17 | 唯一实例持久托管、结算/可靠交付、P2P/竞价/订单簿与真实调用 |
+| 全球匹配 | 用户已定区域优先、等待后跨区兜底；原仓逻辑区与放置只日志的缺口明确 | 每成员可信RTT、硬上限、原子成局/取消、实际battle放置与结果未知恢复 |
+| mall适配 | 两版官方SKU订单首批与七项连接强读；主仓真TiDB16项+HTTP1项、Java完整21项通过，来源/许可证/模型复用可追溯 | 完整后台、gate/客户端、支付渠道/退款、资产到账和市场扩展 |
+
+登录补充核对：Go `PasswordHashStore.LookupPasswordHash` 和Java `PlayerStore.findAccountPassword` 都可先返回权威canonical账号；两版数据库的账号等价规则不同，不能照抄源lowercase/trim散列。当前失败门按权威canonical原始UTF-8完整SHA-256建键，同一账号的等价别名不分摊配额，未知账号另域；5次/15分钟失败窗/5分钟锁默认沿源。单键Lua预留一个30秒在途尝试并按success/mismatch/abort结算，坏PHC/DB错/KDF满/可观察取消不记错密，旧/迟到完成不能认证，命令结果未知失败关闭。不同账号并行，跨副本严格性以前文同Redis主且状态未丢失为前提，不宣称故障切换下不可回退。Go真实MySQL unicode_ci别名及Redis生产工厂已验；Java工厂+真Redis已验，SQL替身与无传输取消事实单列。可信IP、全局KDF/入口预算、完整跨区登录和部署验收仍未完成，不迁移被排除的owner/locator/scene_manager来回避该接缝。

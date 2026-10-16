@@ -27,9 +27,13 @@ public class AssignGateRequest {
      * token resumes the in-flight queue entry rather than enqueueing
      * twice (which would push the player further back in line).
      *
-     * G4b-J0 之后,带 token 重调 assign-gate 照样过波次、zone 桶和 IP 桶。被波次或 zone 桶挡住时
-     * 回 code=100、queue_source="ratelimit",且不带新 token;IP 桶耗尽时回 code=429(IP_RATE_LIMIT)。
-     * 两种情况客户端都应保留原 token,按 retry_after_ms(429 时按客户端退避)重试,不要当成排位丢失。
+     * 客户端契约(负责人 2026-10-15 定):持有 queue_token 时一律轮询 /api/queue-status 查排位、取放行票,
+     * 该端点不过限流器;带 token 重调 assign-gate 只作为 /api/queue-status 本身失败(网络错误 / 5xx)后的恢复手段。
+     * G4b-J0 之后这类重入照样过波次、zone 桶和 IP 桶:被波次或 zone 桶挡住时回 code=100、queue_source="ratelimit",
+     * 且不带新 token;IP 桶耗尽时回 code=429(IP_RATE_LIMIT)。两种情况客户端都保留原 token、回到 /api/queue-status
+     * 轮询(间隔取 retry_after_ms,为 0 时取 2s),不要当成排位丢失,也不要按 429 的 30/60/120s 退避重调 assign-gate:
+     * 退避会让已被放行的玩家错过 login 的放行窗口(AdmitTTL)。任一端点回 410 时才丢掉 token、不带 token 重调 assign-gate。
+     * 服务端回包格式不变。出处:docs/design/open-server-rate-limit-design.md §11.5 的 2026-10-15 更正。
      */
     private String queueToken;
 

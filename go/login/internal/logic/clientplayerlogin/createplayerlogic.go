@@ -53,6 +53,9 @@ const (
 	// 所以自带上界。含义同 accountBlobReadBackTimeout:掐掉的是 go-redis 的内部重发,
 	// 单次 EVAL 最长仍会等满约 3s 的 socket 读超时。
 	createLockReleaseTimeout = time.Second
+	// reverseMappingWriteTimeout:第 7b 步写反查映射的预算。这一步排在提交点之后、不跟请求 ctx 走
+	// (理由见 writeReverseMapping),所以自带上界;含义同上,掐掉的是 go-redis 的内部重发。
+	reverseMappingWriteTimeout = time.Second
 )
 
 // writeAccountBlobScript 以建角锁为围栏写账号 blob:只有锁里仍是**本次**建角的令牌才写。
@@ -238,8 +241,20 @@ func (l *CreatePlayerLogic) CreatePlayer(in *login_proto.CreatePlayerRequest) (*
 		return resp, nil
 	}
 
+	// 6b'. 新铸 id 的只读探测(docs/design/new-player-first-enter-no-cold-read.md §10 P7,负责人 2026-10-15 定):
+	// PlayerAllData 父键或 player:{id}:owner_epoch 已在 = 这个 id 上已有既有状态(id 复用),探测出错 = 探不清,
+	// 两者都拒绝建角(fail-closed)。排在 6c 之前:拒绝发生在任何持久写之前,只烧掉这一个 id,名字与 player:zone
+	// 都不登记,无需补偿。与种子开关无关,每次建角都探;它只是预检,6d' 的种子脚本仍在写时原子复核。
+	stageDone = observeStage(createPlayerStageSeconds, createStageIDProbe)
+	tip = l.probeMintedID(account, newPlayerId)
+	stageDone()
+	if tip != nil {
+		resp.ErrorMessage = tip
+		return resp, nil
+	}
+
 	// 6c. 登记名字(全服唯一,真源是 data_service 的 player_name 表),**fail-closed**:
-	// 登记不成功就不建角。顺序固定为 mint → 名字 → player:zone → 账号 blob:
+	// 登记不成功就不建角。顺序固定为 mint → 探测(6b')→ 名字 → player:zone → 账号 blob:
 	// 名字排在 player:zone 之前,是因为撞名是玩家侧的常态失败,而 player:zone 映射是
 	// SET NX 且没有 TTL、也没有删除入口 —— 先登记映射再撞名,每次撞名都会留下一条永久的
 	// 幽灵映射,回档孤儿报告与合服重映射都会扫到它。名字登记失败只烧掉一个号段 id,
@@ -261,6 +276,31 @@ func (l *CreatePlayerLogic) CreatePlayer(in *login_proto.CreatePlayerRequest) (*
 			return resp, nil
 		}
 		resp.ErrorMessage = tip
+		return resp, nil
+	}
+
+	// 6c''. 从这里起每一次写之前都先查请求 ctx(docs/design/client-request-ordering.md §6.1 / O11)。
+	// 请求一过截止,go-zero 超时拦截器立刻给路由服回 DeadlineExceeded,路由服转成带 id 的 1003,
+	// gate 随即放行同一会话的下一条请求,而本 handler 的 goroutine 还在跑:它此后再发出的写都可能
+	// 晚于下一条落地,所以截止之后不再发任何新的写,只做补偿。走到这里名字已确定登记成功,
+	// 放弃时按「确定已登记」释放一次(补偿走 WithoutCancel,见 releaseName)。
+	// 不只靠 go-redis / grpc-go 在发命令前看 ctx:那是传输层的实现细节,而且 go-redis 那条路会
+	// 先把围栏写当成「未确认」去回读一次;这里显式查,保证与结论都收在本函数里。
+	// 放弃点在 6d 之后时,player:zone 映射会留下一条(SET NX、无 TTL),与第 7 步失败留下的同类,见 6d 注释。
+	// tip 复用「服务端此刻建不了角,稍后重试」那条 kLoginDataSerializeFailed:截止之后这份回包
+	// 已经没有接收方(拦截器早已返回),不为它申请新码。
+	abandonAfterDeadline := func(nextStep string) bool {
+		err := l.ctx.Err()
+		if err == nil {
+			return false
+		}
+		logx.Infof("[create-player] request ctx done before %s, sending no further writes "+
+			"(account=%s player_id=%d): %v", nextStep, account, newPlayerId, err)
+		l.releaseName(account, newPlayerId, name, false)
+		resp.ErrorMessage = loginTip(table.LoginError_kLoginDataSerializeFailed)
+		return true
+	}
+	if abandonAfterDeadline("player:zone registration") {
 		return resp, nil
 	}
 
@@ -288,10 +328,22 @@ func (l *CreatePlayerLogic) CreatePlayer(in *login_proto.CreatePlayerRequest) (*
 	// EnterGame 只认账号 blob 或反查索引(7 / 7b 才写),所以种子落地之前没有任何人能拿这个 id 进场,
 	// 首次 EnterGame 看到的父键只可能是这份种子,或者缺席(缺席 = 走冷读老路,结果相同)。
 	// 尽力而为:种子没写成不影响建角,结论只进日志与计数(seedNewPlayer)。
+	// 例外(设计 §10 P2,负责人 2026-10-15 定为拒绝):种子脚本报 parent_exists / owner_epoch_exists = 6b' 探测之后
+	// 这个 id 上冒出了既有状态(id 复用),拒绝建角。补偿与 6d 失败分支相同:名字确定已登记,释放一次;
+	// 6d 刚登记的 player:zone 映射撤不掉(无删除入口),留下一条,与第 7 步失败同类(理由见 seedNewPlayer)。
 	if config.AppConfig.NewPlayerSeed.Enabled {
+		// 截止之后不写种子:后面的围栏写反正不会再发,写下的只会是一份没有角色对应的孤儿种子。
+		if abandonAfterDeadline("new-player seed") {
+			return resp, nil
+		}
 		stageDone = observeStage(createPlayerStageSeconds, createStageSeed)
-		l.seedNewPlayer(account, newPlayerId)
+		tip = l.seedNewPlayer(account, newPlayerId)
 		stageDone()
+		if tip != nil {
+			l.releaseName(account, newPlayerId, name, false)
+			resp.ErrorMessage = tip
+			return resp, nil
+		}
 	}
 
 	// 6e. Name 是登记表的只读副本(真源 data_service player_name);读侧遇到空名会回源。
@@ -313,6 +365,10 @@ func (l *CreatePlayerLogic) CreatePlayer(in *login_proto.CreatePlayerRequest) (*
 		logx.Errorf("Failed to marshal user account, err: %v", err)
 		return resp, nil
 	}
+	// 提交点之前最后一次查 ctx:截止之后不发围栏写,名字按「确定已登记」释放,不必再回读 blob。
+	if abandonAfterDeadline("account blob write") {
+		return resp, nil
+	}
 	stageDone = observeStage(createPlayerStageSeconds, createStageAccountWrite)
 	tip = l.writeAccountBlob(account, accountDataKey, createLock, dataBytes, newPlayerId, name)
 	stageDone()
@@ -322,17 +378,30 @@ func (l *CreatePlayerLogic) CreatePlayer(in *login_proto.CreatePlayerRequest) (*
 	}
 
 	// 7b. Write reverse mapping: player_id → account (for rollback orphan cleanup)
-	reverseKey := constants.PlayerToAccountKey(newPlayerId)
-	if err := l.svcCtx.RedisClient.Set(l.ctx, reverseKey, account, 0).Err(); err != nil {
-		logx.Errorf("Failed to set player-to-account reverse mapping, playerId: %d, account: %s, err: %v", newPlayerId, account, err)
-		// Non-fatal: player can still play, only rollback cleanup is affected
-	}
+	l.writeReverseMapping(account, newPlayerId)
 
 	// 8. Return player info
 	appendRoleList(resp, userAccount)
 
 	logx.Infof("Player created successfully, account: %s, playerId: %d, name: %q", account, newPlayerId, name)
 	return resp, nil
+}
+
+// writeReverseMapping 是第 7b 步:写 player_id → account 反查映射(EnterGame 自愈与回档孤儿清理用)。
+//
+// 它排在提交点(第 7 步围栏写确认落地)之后,记录的是已经成立的事实,不是新的决定,所以不跟请求
+// ctx 走,与补偿一样用 WithoutCancel 派生、自带上界:请求恰好在围栏写之后截止时,用请求 ctx 写
+// 会被 go-redis 原地拒掉,留下「账号里有、反查里没有」的永久缺口(这条映射没有 TTL,也没有别的写入点),
+// 回档孤儿清理就找不到这个角色。晚到的这次 SET 不会改变任何后续请求的结论:同值幂等;EnterGame
+// 只在账号 blob 里找不到角色时才读它,而此刻 blob 里已经有了。
+// 失败只记日志,不改变建角结果(角色照常可玩,只影响回档清理),与原行为相同。
+func (l *CreatePlayerLogic) writeReverseMapping(account string, playerID uint64) {
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(l.ctx), reverseMappingWriteTimeout)
+	defer cancel()
+	reverseKey := constants.PlayerToAccountKey(playerID)
+	if err := l.svcCtx.RedisClient.Set(ctx, reverseKey, account, 0).Err(); err != nil {
+		logx.Errorf("Failed to set player-to-account reverse mapping, playerId: %d, account: %s, err: %v", playerID, account, err)
+	}
 }
 
 // appendRoleList 是第 8 步:把账号当前的全量角色列表放进响应。
@@ -479,6 +548,15 @@ func (l *CreatePlayerLogic) reservePlayerName(account string, playerID uint64, r
 //     若连接被杀、语句回滚,重试直接插入;重试得到「被占」则说明先前那次必未插入
 //     (否则占用者就是自己,会得到成功)。重试后仍未知才放弃,并按 uncertain 补偿释放。
 func (l *CreatePlayerLogic) tryReserveName(ctx context.Context, account string, playerID uint64, name string) (nameReserveOutcome, uint64) {
+	// 发出之前先查 ctx(请求截止 / 名字总预算用完 / 已取消):此刻一个 RPC 都没发,是「确定没写」,
+	// 不补偿。不查的话,grpc-go 会以 Canceled / DeadlineExceeded 拒掉这次调用,而这两个码在下面
+	// 归入「结果未知」,于是对一个根本没发出的登记补发立即 + 延迟两次释放,还记一条误导的
+	// uncertain reservation ERROR。截止之后不再发写,见 client-request-ordering.md §6.1。
+	if err := ctx.Err(); err != nil {
+		logx.Infof("[player-name] request ctx done before reserving, nothing sent player_id=%d account=%s: %v",
+			playerID, account, err)
+		return nameReserveFailed, 0
+	}
 	res, err := l.reserveNameOnce(ctx, playerID, name)
 	if err != nil && isReserveOutcomeUnknown(err) && hasBudget(ctx, playernamereg.DefaultReserveTimeout) {
 		logx.Infof("[player-name] reserve outcome unknown, retrying the same name once player_id=%d name=%q account=%s: %v",

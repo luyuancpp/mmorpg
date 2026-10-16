@@ -6,6 +6,8 @@ import "google/protobuf/empty.proto";
 // 生成链能解析:Go 统一生成把整棵 proto/ 拷进暂存区、以其父目录为 --proto_path;C++ 以仓库根为
 // --proto_path,且 asset_op_ledger_comp.pb.cc 早已登记在 cpp/generated/proto 工程里。
 import "proto/common/component/asset_op_ledger_comp.proto";
+// 玩家收件箱对账读已落盘账本(docs/design/player-inbox-service.md §5.1、§9.3);生成链口径同上一行。
+import "proto/common/component/player_inbox_ledger_comp.proto";
 
 option go_package = "db/proto/data_service";
 
@@ -63,6 +65,12 @@ service DataService {
   // BatchGetPlayerName 同级)。实现 go/shared/assetop 的 LedgerReader。
   // 设计见 docs/design/guild-phase2/07-rollback-fail-closed.md §7.8。
   rpc GetPlayerAssetOpLedger(GetPlayerAssetOpLedgerRequest) returns (GetPlayerAssetOpLedgerResponse) {}
+
+  // ── 玩家收件箱:已落盘账本只读 ───────────────────────────────
+  // 读同一份 PlayerAllData blob 的 inbox_ledger 子字段,读法与错误语义照 GetPlayerAssetOpLedger。
+  // 调用方是 go/player_inbox 的对账(定时作业与运维 ReconcilePlayer),不是 scene。
+  // 设计见 docs/design/player-inbox-service.md §5.1、§9.3。
+  rpc GetPlayerInboxLedger(GetPlayerInboxLedgerRequest) returns (GetPlayerInboxLedgerResponse) {}
 }
 
 // ── Load / Save ────────────────────────────────────────────────
@@ -518,4 +526,18 @@ message GetPlayerAssetOpLedgerRequest { uint64 player_id = 1; }
 message GetPlayerAssetOpLedgerResponse {
   bool found = 1;                          // false = 该玩家在 zone Redis 里没有 blob(从未入场,或 Redis 丢数据)
   PlayerAssetOpLedgerComp ledger = 2;      // found=true 且玩家从未有过资产操作时为空消息(不是缺席)
+}
+
+// ── 玩家收件箱:已落盘账本 ─────────────────────────────────────
+//
+// 语义与错误口径同上面的资产通道账本:读 scene 存盘写的 `<PlayerAllData 全名>:{player_id}` blob 的
+// inbox_ledger,不回退读 MySQL;读不成一律走 gRPC 错误(Unavailable / Internal / InvalidArgument),
+// **绝不**用 found=false 顶替。响应形状同 GetPlayerAssetOpLedgerResponse:只有 found 与 ledger,
+// 不带 error_code 也不带 tip(设计 §1.4 注)。
+
+message GetPlayerInboxLedgerRequest { uint64 player_id = 1; }
+
+message GetPlayerInboxLedgerResponse {
+  bool found = 1;                          // false = 该玩家在 zone Redis 里没有 blob(从未入场,或 Redis 丢数据)
+  PlayerInboxLedgerComp ledger = 2;        // found=true 且玩家从未消费过收件箱时为空消息(不是缺席)
 }

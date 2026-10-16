@@ -47,6 +47,8 @@ set(SOURCE_FILES
     guild/guild_internal_grpc_client.cpp
     trade/jubaozhai_grpc_client.cpp
     trade/trade_admin_grpc_client.cpp
+    player_inbox/player_inbox_grpc_client.cpp
+    player_inbox/player_inbox_admin_grpc_client.cpp
     login/login_grpc_client.cpp
     scene_manager/scene_manager_service_grpc_client.cpp
     scene_manager/scene_node_service_grpc_client.cpp

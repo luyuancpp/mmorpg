@@ -37,6 +37,7 @@
 #include "google/protobuf/unknown_field_set.h"
 #include "google/protobuf/empty.pb.h"
 #include "proto/common/component/asset_op_ledger_comp.pb.h"
+#include "proto/common/component/player_inbox_ledger_comp.pb.h"
 // @@protoc_insertion_point(includes)
 
 // Must be included last.
@@ -250,6 +251,22 @@ extern GetPlayerHomeZoneResponseGlobalsTypeInternal GetPlayerHomeZoneResponse_gl
 extern const ::google::protobuf::internal::ClassDataFull GetPlayerHomeZoneResponse_class_data_;
 #else
 extern const GetPlayerHomeZoneResponseGlobalsTypeInternal GetPlayerHomeZoneResponse_globals_;
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+class GetPlayerInboxLedgerRequest;
+struct GetPlayerInboxLedgerRequestGlobalsTypeInternal;
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+extern GetPlayerInboxLedgerRequestGlobalsTypeInternal GetPlayerInboxLedgerRequest_globals_;
+extern const ::google::protobuf::internal::ClassDataFull GetPlayerInboxLedgerRequest_class_data_;
+#else
+extern const GetPlayerInboxLedgerRequestGlobalsTypeInternal GetPlayerInboxLedgerRequest_globals_;
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+class GetPlayerInboxLedgerResponse;
+struct GetPlayerInboxLedgerResponseGlobalsTypeInternal;
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+extern GetPlayerInboxLedgerResponseGlobalsTypeInternal GetPlayerInboxLedgerResponse_globals_;
+extern const ::google::protobuf::internal::ClassDataFull GetPlayerInboxLedgerResponse_class_data_;
+#else
+extern const GetPlayerInboxLedgerResponseGlobalsTypeInternal GetPlayerInboxLedgerResponse_globals_;
 #endif  // PROTOBUF_MESSAGE_GLOBALS
 class GetPlayerSnapshotDiffRequest;
 struct GetPlayerSnapshotDiffRequestGlobalsTypeInternal;
@@ -5760,6 +5777,207 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GetPlayerSnapshotDiffRequest final 
     ::uint64_t player_id_;
     ::uint64_t snapshot_id_;
     ::uint64_t target_time_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fdata_5fservice_2fdata_5fservice_2eproto;
+};
+// -------------------------------------------------------------------
+
+class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GetPlayerInboxLedgerRequest final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:data_service.GetPlayerInboxLedgerRequest) */ {
+ public:
+  inline GetPlayerInboxLedgerRequest() : GetPlayerInboxLedgerRequest(nullptr) {}
+  ~GetPlayerInboxLedgerRequest() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(GetPlayerInboxLedgerRequest* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(GetPlayerInboxLedgerRequest));
+  }
+#endif
+
+  template <typename = void>
+  explicit constexpr GetPlayerInboxLedgerRequest(::google::protobuf::internal::ConstantInitialized,
+                           const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+                               class_data);
+
+  inline GetPlayerInboxLedgerRequest(const GetPlayerInboxLedgerRequest& from) : GetPlayerInboxLedgerRequest(nullptr, from) {}
+  inline GetPlayerInboxLedgerRequest(GetPlayerInboxLedgerRequest&& from) noexcept : GetPlayerInboxLedgerRequest(nullptr, ::std::move(from)) {}
+  inline GetPlayerInboxLedgerRequest& operator=(const GetPlayerInboxLedgerRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline GetPlayerInboxLedgerRequest& operator=(GetPlayerInboxLedgerRequest&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  [[nodiscard]] inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  [[nodiscard]] inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL
+  mutable_unknown_fields() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL
+  GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  [[nodiscard]] static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  [[nodiscard]] static const GetPlayerInboxLedgerRequest& default_instance() {
+    return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<GetPlayerInboxLedgerRequest>(&GetPlayerInboxLedgerRequest_globals_);
+  }
+  static constexpr int kIndexInFileMessages = 53;
+  friend void swap(GetPlayerInboxLedgerRequest& a, GetPlayerInboxLedgerRequest& b) { a.Swap(&b); }
+  inline void Swap(GetPlayerInboxLedgerRequest* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(GetPlayerInboxLedgerRequest* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  [[nodiscard]] GetPlayerInboxLedgerRequest* PROTOBUF_NONNULL
+  New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<GetPlayerInboxLedgerRequest>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const GetPlayerInboxLedgerRequest& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const GetPlayerInboxLedgerRequest& from) { GetPlayerInboxLedgerRequest::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  [[nodiscard]] bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  [[nodiscard]] static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  [[nodiscard]] static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  [[nodiscard]] ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] ::size_t ByteSizeLong() const final;
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] int GetCachedSize() const {
+    return _impl_._cached_size_.Get();
+  }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(GetPlayerInboxLedgerRequest* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "data_service.GetPlayerInboxLedgerRequest"; }
+
+  explicit GetPlayerInboxLedgerRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  GetPlayerInboxLedgerRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const GetPlayerInboxLedgerRequest& from);
+  GetPlayerInboxLedgerRequest(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, GetPlayerInboxLedgerRequest&& from) noexcept
+      : GetPlayerInboxLedgerRequest(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_(
+      const MessageLite& prototype,
+      const ::google::protobuf::internal::TcParseTableBase* PROTOBUF_NULLABLE tc_table = nullptr);
+
+  [[nodiscard]] ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kPlayerIdFieldNumber = 1,
+  };
+  // uint64 player_id = 1;
+  void clear_player_id() ;
+  [[nodiscard]] ::uint64_t player_id() const;
+  void set_player_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_player_id() const;
+  void _internal_set_player_id(::uint64_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:data_service.GetPlayerInboxLedgerRequest)
+ private:
+  class _Internal;
+  using ParseTableT_ =
+      ::google::protobuf::internal::TcParseTable<0, 1,
+                          0, 0,
+                          2>;
+  static constexpr ParseTableT_ InternalGenerateParseTable_(
+      const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
+  friend class ::google::protobuf::internal::TcParser;
+  #ifndef PROTOBUF_MESSAGE_GLOBALS
+  static const ParseTableT_ _table_;
+  #endif
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  friend ::google::protobuf::internal::PrivateAccess;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                                    ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const GetPlayerInboxLedgerRequest& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::uint64_t player_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -12505,6 +12723,225 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED BatchGetPlayerHomeZoneResponse fina
 };
 // -------------------------------------------------------------------
 
+class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GetPlayerInboxLedgerResponse final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:data_service.GetPlayerInboxLedgerResponse) */ {
+ public:
+  inline GetPlayerInboxLedgerResponse() : GetPlayerInboxLedgerResponse(nullptr) {}
+  ~GetPlayerInboxLedgerResponse() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(GetPlayerInboxLedgerResponse* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(GetPlayerInboxLedgerResponse));
+  }
+#endif
+
+  template <typename = void>
+  explicit constexpr GetPlayerInboxLedgerResponse(::google::protobuf::internal::ConstantInitialized,
+                           const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+                               class_data);
+
+  inline GetPlayerInboxLedgerResponse(const GetPlayerInboxLedgerResponse& from) : GetPlayerInboxLedgerResponse(nullptr, from) {}
+  inline GetPlayerInboxLedgerResponse(GetPlayerInboxLedgerResponse&& from) noexcept : GetPlayerInboxLedgerResponse(nullptr, ::std::move(from)) {}
+  inline GetPlayerInboxLedgerResponse& operator=(const GetPlayerInboxLedgerResponse& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline GetPlayerInboxLedgerResponse& operator=(GetPlayerInboxLedgerResponse&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  [[nodiscard]] inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  [[nodiscard]] inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL
+  mutable_unknown_fields() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL
+  GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  [[nodiscard]] static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  [[nodiscard]] static const GetPlayerInboxLedgerResponse& default_instance() {
+    return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<GetPlayerInboxLedgerResponse>(&GetPlayerInboxLedgerResponse_globals_);
+  }
+  static constexpr int kIndexInFileMessages = 54;
+  friend void swap(GetPlayerInboxLedgerResponse& a, GetPlayerInboxLedgerResponse& b) { a.Swap(&b); }
+  inline void Swap(GetPlayerInboxLedgerResponse* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(GetPlayerInboxLedgerResponse* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  [[nodiscard]] GetPlayerInboxLedgerResponse* PROTOBUF_NONNULL
+  New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<GetPlayerInboxLedgerResponse>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const GetPlayerInboxLedgerResponse& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const GetPlayerInboxLedgerResponse& from) { GetPlayerInboxLedgerResponse::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  [[nodiscard]] bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  [[nodiscard]] static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  [[nodiscard]] static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  [[nodiscard]] ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] ::size_t ByteSizeLong() const final;
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] int GetCachedSize() const {
+    return _impl_._cached_size_.Get();
+  }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(GetPlayerInboxLedgerResponse* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "data_service.GetPlayerInboxLedgerResponse"; }
+
+  explicit GetPlayerInboxLedgerResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  GetPlayerInboxLedgerResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const GetPlayerInboxLedgerResponse& from);
+  GetPlayerInboxLedgerResponse(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, GetPlayerInboxLedgerResponse&& from) noexcept
+      : GetPlayerInboxLedgerResponse(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_(
+      const MessageLite& prototype,
+      const ::google::protobuf::internal::TcParseTableBase* PROTOBUF_NULLABLE tc_table = nullptr);
+
+  [[nodiscard]] ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kLedgerFieldNumber = 2,
+    kFoundFieldNumber = 1,
+  };
+  // .PlayerInboxLedgerComp ledger = 2;
+  [[nodiscard]] bool has_ledger()
+      const;
+  void clear_ledger() ;
+  [[nodiscard]] const ::PlayerInboxLedgerComp& ledger() const;
+  [[nodiscard]] ::PlayerInboxLedgerComp* PROTOBUF_NULLABLE release_ledger();
+  ::PlayerInboxLedgerComp* PROTOBUF_NONNULL mutable_ledger();
+  void set_allocated_ledger(::PlayerInboxLedgerComp* PROTOBUF_NULLABLE value);
+  void unsafe_arena_set_allocated_ledger(::PlayerInboxLedgerComp* PROTOBUF_NULLABLE value);
+  ::PlayerInboxLedgerComp* PROTOBUF_NULLABLE unsafe_arena_release_ledger();
+
+  private:
+  const ::PlayerInboxLedgerComp& _internal_ledger() const;
+  ::PlayerInboxLedgerComp* PROTOBUF_NONNULL _internal_mutable_ledger();
+
+  public:
+  // bool found = 1;
+  void clear_found() ;
+  [[nodiscard]] bool found() const;
+  void set_found(bool value);
+
+  private:
+  bool _internal_found() const;
+  void _internal_set_found(bool value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:data_service.GetPlayerInboxLedgerResponse)
+ private:
+  class _Internal;
+  using ParseTableT_ =
+      ::google::protobuf::internal::TcParseTable<1, 2,
+                          1, 0,
+                          2>;
+  static constexpr ParseTableT_ InternalGenerateParseTable_(
+      const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
+  friend class ::google::protobuf::internal::TcParser;
+  #ifndef PROTOBUF_MESSAGE_GLOBALS
+  static const ParseTableT_ _table_;
+  #endif
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  friend ::google::protobuf::internal::PrivateAccess;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                                    ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const GetPlayerInboxLedgerResponse& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::PlayerInboxLedgerComp* PROTOBUF_NULLABLE ledger_;
+    bool found_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fdata_5fservice_2fdata_5fservice_2eproto;
+};
+// -------------------------------------------------------------------
+
 class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GetPlayerAssetOpLedgerResponse final : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:data_service.GetPlayerAssetOpLedgerResponse) */ {
  public:
@@ -19160,6 +19597,155 @@ inline void GetPlayerAssetOpLedgerResponse::set_allocated_ledger(::PlayerAssetOp
 
   _impl_.ledger_ = reinterpret_cast<::PlayerAssetOpLedgerComp*>(value);
   // @@protoc_insertion_point(field_set_allocated:data_service.GetPlayerAssetOpLedgerResponse.ledger)
+}
+
+// -------------------------------------------------------------------
+
+// GetPlayerInboxLedgerRequest
+
+// uint64 player_id = 1;
+inline void GetPlayerInboxLedgerRequest::clear_player_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.player_id_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+}
+inline ::uint64_t GetPlayerInboxLedgerRequest::player_id() const {
+  // @@protoc_insertion_point(field_get:data_service.GetPlayerInboxLedgerRequest.player_id)
+  return _internal_player_id();
+}
+inline void GetPlayerInboxLedgerRequest::set_player_id(::uint64_t value) {
+  _internal_set_player_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  // @@protoc_insertion_point(field_set:data_service.GetPlayerInboxLedgerRequest.player_id)
+}
+inline ::uint64_t GetPlayerInboxLedgerRequest::_internal_player_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.player_id_;
+}
+inline void GetPlayerInboxLedgerRequest::_internal_set_player_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.player_id_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// GetPlayerInboxLedgerResponse
+
+// bool found = 1;
+inline void GetPlayerInboxLedgerResponse::clear_found() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.found_ = false;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+}
+inline bool GetPlayerInboxLedgerResponse::found() const {
+  // @@protoc_insertion_point(field_get:data_service.GetPlayerInboxLedgerResponse.found)
+  return _internal_found();
+}
+inline void GetPlayerInboxLedgerResponse::set_found(bool value) {
+  _internal_set_found(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  // @@protoc_insertion_point(field_set:data_service.GetPlayerInboxLedgerResponse.found)
+}
+inline bool GetPlayerInboxLedgerResponse::_internal_found() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.found_;
+}
+inline void GetPlayerInboxLedgerResponse::_internal_set_found(bool value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.found_ = value;
+}
+
+// .PlayerInboxLedgerComp ledger = 2;
+inline bool GetPlayerInboxLedgerResponse::has_ledger() const {
+  bool value = CheckHasBit(_impl_._has_bits_[0], 0x00000001U);
+  PROTOBUF_ASSUME(!value || _impl_.ledger_ != nullptr);
+  return value;
+}
+inline const ::PlayerInboxLedgerComp& GetPlayerInboxLedgerResponse::_internal_ledger() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  const ::PlayerInboxLedgerComp* p = _impl_.ledger_;
+  return p != nullptr ? *p : *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<::PlayerInboxLedgerComp>(&::PlayerInboxLedgerComp_globals_);
+}
+inline const ::PlayerInboxLedgerComp& GetPlayerInboxLedgerResponse::ledger() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:data_service.GetPlayerInboxLedgerResponse.ledger)
+  return _internal_ledger();
+}
+inline void GetPlayerInboxLedgerResponse::unsafe_arena_set_allocated_ledger(
+    ::PlayerInboxLedgerComp* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.ledger_);
+  }
+  _impl_.ledger_ = reinterpret_cast<::PlayerInboxLedgerComp*>(value);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:data_service.GetPlayerInboxLedgerResponse.ledger)
+}
+inline ::PlayerInboxLedgerComp* PROTOBUF_NULLABLE GetPlayerInboxLedgerResponse::release_ledger() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::PlayerInboxLedgerComp* released = _impl_.ledger_;
+  _impl_.ledger_ = nullptr;
+  if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
+    auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    if (GetArena() == nullptr) {
+      delete old;
+    }
+  } else {
+    if (GetArena() != nullptr) {
+      released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    }
+  }
+  return released;
+}
+inline ::PlayerInboxLedgerComp* PROTOBUF_NULLABLE GetPlayerInboxLedgerResponse::unsafe_arena_release_ledger() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:data_service.GetPlayerInboxLedgerResponse.ledger)
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::PlayerInboxLedgerComp* temp = _impl_.ledger_;
+  _impl_.ledger_ = nullptr;
+  return temp;
+}
+inline ::PlayerInboxLedgerComp* PROTOBUF_NONNULL GetPlayerInboxLedgerResponse::_internal_mutable_ledger() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.ledger_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::PlayerInboxLedgerComp>(GetArena());
+    _impl_.ledger_ = reinterpret_cast<::PlayerInboxLedgerComp*>(p);
+  }
+  return _impl_.ledger_;
+}
+inline ::PlayerInboxLedgerComp* PROTOBUF_NONNULL GetPlayerInboxLedgerResponse::mutable_ledger()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::PlayerInboxLedgerComp* _msg = _internal_mutable_ledger();
+  // @@protoc_insertion_point(field_mutable:data_service.GetPlayerInboxLedgerResponse.ledger)
+  return _msg;
+}
+inline void GetPlayerInboxLedgerResponse::set_allocated_ledger(::PlayerInboxLedgerComp* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (message_arena == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.ledger_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = reinterpret_cast<::google::protobuf::Message*>(value)->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+
+  _impl_.ledger_ = reinterpret_cast<::PlayerInboxLedgerComp*>(value);
+  // @@protoc_insertion_point(field_set_allocated:data_service.GetPlayerInboxLedgerResponse.ledger)
 }
 
 #ifdef __GNUC__

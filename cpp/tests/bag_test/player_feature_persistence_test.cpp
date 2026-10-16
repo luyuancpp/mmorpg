@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include "actor/actor_net_id.h"
 #include "core/system/id_generator.h"
+#include "core/type_alias/player_session_type_alias.h"
 #include "engine/core/type_define/player_guid_comp.h"
 
 #include <array>
@@ -14,13 +15,16 @@
 #include "modules/currency/comp/player_currency_comp.h"
 #include "modules/mission/comp/mission_comp.h"
 #include "modules/id_segment/guid_segment_registry.h"
+#include "modules/scene/comp/scene_comp.h"
 #include "proto/common/component/actor_comp.pb.h"
 #include "proto/common/component/actor_attribute_state_comp.pb.h"
 #include "proto/common/component/actor_combat_state_comp.pb.h"
 #include "proto/common/component/time_comp.pb.h"
 #include "proto/common/component/asset_op_ledger_comp.pb.h"
 #include "proto/common/component/battle_settlement_ledger_comp.pb.h"
+#include "proto/common/component/player_inbox_ledger_comp.pb.h"
 #include "proto/common/component/player_comp.pb.h"  // PlayerProfileComp
+#include "proto/common/component/player_login_comp.pb.h"
 #include "proto/common/component/player_network_comp.pb.h"
 #include "proto/common/component/player_skill_comp.pb.h"
 #include "proto/common/database/mysql_database_table.pb.h"
@@ -206,6 +210,7 @@ void CompletePersistedComps(entt::entity player)
     EmplaceIfAbsent<MissionsContainerComp>(player);
     EmplaceIfAbsent<PlayerAssetOpLedgerComp>(player);
     EmplaceIfAbsent<BattleSettlementLedgerComp>(player);
+    EmplaceIfAbsent<PlayerInboxLedgerComp>(player);
     EmplaceIfAbsent<CurrencyComp>(player);
     EmplaceIfAbsent<PlayerCurrencyComp>(player);
 }
@@ -764,6 +769,7 @@ TEST_F(PlayerFeaturePersistenceTest, MarshalRefusesWhenAnyPersistedComponentIsMi
     ExpectMarshalRefusedWithout<MissionsContainerComp>("MissionsContainerComp");
     ExpectMarshalRefusedWithout<PlayerAssetOpLedgerComp>("PlayerAssetOpLedgerComp");
     ExpectMarshalRefusedWithout<BattleSettlementLedgerComp>("BattleSettlementLedgerComp");
+    ExpectMarshalRefusedWithout<PlayerInboxLedgerComp>("PlayerInboxLedgerComp");
     ExpectMarshalRefusedWithout<CurrencyComp>("CurrencyComp");
     ExpectMarshalRefusedWithout<PlayerCurrencyComp>("PlayerCurrencyComp");
 }

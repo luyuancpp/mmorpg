@@ -8,8 +8,12 @@ package main
 // 检查清单(顺序即执行顺序)。「那个 zone」合服时是源区,撤销时是目标区(见 preflightParams.zone):
 //   P1 源 / 目标 zone 库存在              —— 目标 zone 从没部署过就不是合服目标(MySQL 侧,调用方先做)
 //   P2 那个 zone 的场景节点全下线          —— scene_nodes:zone:{zone}:load 必须空
-//   P3 go/db 对那个 zone topic 的积压 = 0   —— 还有没落库的存盘任务就动 = 动的是一份旧的
-//   P4 kafka:retry / kafka:dead 队列为空    —— 同上,而且这两个是**已经失败**的任务
+//   P3 go/db 对那个 zone topic 的积压 = 0   —— 还有没落库的存盘任务就动 = 动的是一份旧的。
+//                                            只对「唯一权威组」算积压:候选组(按 zone 推导的 db_rpc_consumer_group_z<zone>
+//                                            加 legacy 共享组,或 -kafka-group 显式指定的一个)里恰好一个在本 topic 上有已提交位点;
+//                                            两个都有 / 都没有 / CLI 读不出,一律拒绝(见 resolveAuthoritativeLag)
+//   P4 kafka:retry / kafka:dead 队列为空    —— 同上,而且这两个是**已经失败**的任务;含按原始分区拆开的
+//                                            ready 列表 kafka:retry:queue:{topic}:p*(经 SCAN 发现,见 dbTaskQueueKeys)
 //   P5 本次涉及的玩家没有任何在持的锁      —— lock:player:* / player:{id}:__lock
 //   P6 本次涉及的玩家没有在线会话          —— player:session:*
 //   P7 本次涉及的玩家不在任何活队伍里      —— team:player:* 的 tid 非 0 且 team:rec:<tid> 仍在
@@ -19,10 +23,17 @@ package main
 //
 // P3 的可注入性:Kafka 在开发机上根本不跑,而这条检查又不能省(它保护的是
 // 「玩家最后一次存盘有没有落库」)。所以 lag 的来源是一个接口:
-//   - kafkaCLILagSource   跑 kafka-consumer-groups(.sh|.bat) 解析 LAG 列 —— 生产用法
+//   - kafkaCLILagSource   对每个候选组跑一次 kafka-consumer-groups(.sh|.bat) --describe,
+//                         认定唯一权威组后解析它的 LAG 列 —— 生产用法
 //   - attestedLagSource   运维显式声明「我已经确认排空了」—— 本地 / 无 CLI 环境
 //   - fakeLagSource       测试注入
 // 三者都没有 = 拒绝。默认不能是「查不到就当 0」。
+//
+// P3 为什么是「唯一权威组」(2026-10-15,docs/design/db-consumer-group-per-zone.md §7):
+// go/db 的存盘消费组正从全 zone 共用的 db_rpc_consumer_group 逐 zone 交接到 db_rpc_consumer_group_z<zone>。
+// 交接收尾(kafka_offset_reset.ps1 -FinalizeHandoff)之前,两个组在本 topic 上可能都有位点,其中一个是冻结的旧位点。
+// 「逐组 / 逐分区取 LAG 最小值」是 fail-open:冻结在高位的那一组 LAG 可以是 0,而真正在消费的组还有积压。
+// 所以只认在本 topic 上有已提交位点的那一个组;判不出唯一的一个就拒绝,让运维先收尾或用 -kafka-group 显式指定。
 
 import (
 	"bufio"
@@ -31,6 +42,8 @@ import (
 	"fmt"
 	"log"
 	"os/exec"
+	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -39,11 +52,15 @@ import (
 
 // ── Kafka 消费积压 ────────────────────────────────────────────
 
-// kafkaLagSource 报告某 consumer group 在某 topic 上的总积压。
+// kafkaLagSource 报告候选 consumer group 里「唯一权威组」在某 topic 上的总积压。
 type kafkaLagSource interface {
-	// TotalLag 返回该 group 在该 topic 上所有分区的 LAG 之和。
-	// 返回 (0, nil) 才算通过;任何错误都让 preflight 失败。
-	TotalLag(ctx context.Context, topic, group string) (int64, error)
+	// TotalLag 在 groups(候选组,见 kafkaGroupCandidates)里认定唯一权威组 —— 恰好一个组在该 topic 上
+	// 有数值已提交位点 —— 只返回它在该 topic 上所有分区的 LAG 之和,以及它的组名(进日志与拒绝文案)。
+	// 返回 (0, group, nil) 才算通过;任何错误都让 preflight 失败。
+	//
+	// 不取各组 / 各分区 LAG 的最小值:交接收尾之前,冻结在高位的旧组 LAG 可以是 0,
+	// 而真正在消费的组还有积压 —— 取最小值等于拿旧组的 0 替新组担保,是 fail-open。
+	TotalLag(ctx context.Context, topic string, groups []string) (lag int64, group string, err error)
 	// Describe 一行说明,进日志与审计记录 —— 运维必须能看出这次的 0 是
 	// 「真查的」还是「人肉声明的」。
 	Describe() string
@@ -61,14 +78,197 @@ func (s kafkaCLILagSource) Describe() string {
 	return fmt.Sprintf("kafka-consumer-groups CLI (%s, bootstrap=%s)", s.cmdPath, s.bootstrap)
 }
 
-func (s kafkaCLILagSource) TotalLag(ctx context.Context, topic, group string) (int64, error) {
-	cmd := exec.CommandContext(ctx, s.cmdPath,
-		"--bootstrap-server", s.bootstrap, "--describe", "--group", group)
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return 0, fmt.Errorf("run %s: %w (output: %s)", s.cmdPath, err, truncateForLog(string(out), 500))
+// TotalLag 对每个候选组各跑一次 describe,把输出与退出状态原样交给 resolveAuthoritativeLag 判定。
+// 退出码非 0 在这里不直接失败:有的 Kafka 版本对「组不存在」以非 0 退出,而不存在的候选组是合法情形
+// (例如从没切过组的 zone 没有 _z 组),由 resolveAuthoritativeLag 按白名单文案区分。
+func (s kafkaCLILagSource) TotalLag(ctx context.Context, topic string, groups []string) (int64, string, error) {
+	results := make([]groupDescribeResult, 0, len(groups))
+	for _, group := range groups {
+		cmd := exec.CommandContext(ctx, s.cmdPath,
+			"--bootstrap-server", s.bootstrap, "--describe", "--group", group)
+		out, runErr := cmd.CombinedOutput()
+		results = append(results, groupDescribeResult{group: group, output: string(out), runErr: runErr})
 	}
-	return parseConsumerGroupLag(string(out), topic)
+	return resolveAuthoritativeLag(topic, results)
+}
+
+// groupDescribeResult 是一个候选组一次 kafka-consumer-groups --describe 的原始结果(stdout+stderr 合并)。
+type groupDescribeResult struct {
+	group  string
+	output string
+	runErr error
+}
+
+// consumerGroupMissingPatterns 是「消费组不存在」的文案白名单。
+// 与 tools/scripts/lib/kafka_consumer_groups.ps1 的 Get-KafkaGroupMissingPatterns 是同一份,改一边必须同步另一边:
+//   - Kafka 3.x:"Error: Consumer group 'g' does not exist." / "The consumer group 'g' does not exist."
+//   - 新 group coordinator 可能给出的 GroupIdNotFoundException / GROUP_ID_NOT_FOUND
+//
+// 后两条是按版本行为推定的;钉版 apache/kafka:4.3.1 上的原文由 Codex 实测(设计文档 §11 的 V3 (b)(h)(i)),
+// 拿到后两边同步补正则,并把原文追加为 merge_unit_test.go 的 fixture。原文一条都不命中时这里已是 fail-closed
+// (组不存在会落到「无表头 → 报错」),只是会把合法的「legacy 组不存在」误报成失败。
+var consumerGroupMissingPatterns = []*regexp.Regexp{
+	regexp.MustCompile(`(?i)consumer group '[^']*' does not exist`),
+	regexp.MustCompile(`GroupIdNotFoundException`),
+	regexp.MustCompile(`GROUP_ID_NOT_FOUND`),
+}
+
+// consumerGroupNoActiveMembersPattern:Empty 组(没有成员)一个已提交位点都没有时,CLI 只打这一行、不打表头。
+// 与 lib/kafka_consumer_groups.ps1 的 Test-KafkaGroupNoActiveMembersText 同一份。
+var consumerGroupNoActiveMembersPattern = regexp.MustCompile(`(?i)consumer group '[^']*' has no active members`)
+
+// consumerGroupMissing 报告 describe 输出是否表明「消费组不存在」(命中任一白名单正则)。
+func consumerGroupMissing(out string) bool {
+	for _, re := range consumerGroupMissingPatterns {
+		if re.MatchString(out) {
+			return true
+		}
+	}
+	return false
+}
+
+// committedOffsetPresent 报告该组在 topic 上是否至少有一行数值 CURRENT-OFFSET。
+//
+// 判定(与 lib/kafka_consumer_groups.ps1 的 Resolve-KafkaGroupTopicOffsets 同口径):
+//   - 命中「组不存在」白名单 → (false, nil);
+//   - 有行首 "Error:" 的行 → 报错(读不到不等于没有);
+//   - 找到表头(同一行含 TOPIC 与 CURRENT-OFFSET,按列名定位,不按下标)→ 只看 TOPIC==topic 的行:
+//     有一行是整数即 true;"-" 表示该分区没有已提交位点;既不是整数也不是 "-" 就报错(不猜);
+//   - 没有表头但有 "has no active members" → (false, nil)(Empty 组一个位点都没有时 CLI 不打表头);
+//   - 其余(无表头、无关键字)一律报错。
+func committedOffsetPresent(out, topic string) (bool, error) {
+	if consumerGroupMissing(out) {
+		return false, nil
+	}
+	sc := bufio.NewScanner(strings.NewReader(out))
+	sc.Buffer(make([]byte, 0, 64*1024), 4*1024*1024)
+	topicCol, offsetCol := -1, -1
+	headerFound := false
+	present := false
+	for sc.Scan() {
+		line := strings.TrimSpace(sc.Text())
+		if line == "" {
+			continue
+		}
+		if strings.HasPrefix(line, "Error:") {
+			return false, fmt.Errorf("kafka-consumer-groups reported an error: %s", truncateForLog(line, 300))
+		}
+		fields := strings.Fields(line)
+		if !headerFound {
+			t, o := -1, -1
+			for i, f := range fields {
+				switch strings.ToUpper(f) {
+				case "TOPIC":
+					t = i
+				case "CURRENT-OFFSET":
+					o = i
+				}
+			}
+			if t >= 0 && o >= 0 {
+				topicCol, offsetCol, headerFound = t, o, true
+			}
+			continue
+		}
+		if len(fields) <= topicCol || len(fields) <= offsetCol || fields[topicCol] != topic {
+			continue
+		}
+		cell := fields[offsetCol]
+		if cell == "-" {
+			continue
+		}
+		if _, err := strconv.ParseInt(cell, 10, 64); err != nil {
+			return false, fmt.Errorf("topic %s row has CURRENT-OFFSET %q (neither an integer nor '-')", topic, cell)
+		}
+		present = true
+	}
+	if err := sc.Err(); err != nil {
+		return false, err
+	}
+	if headerFound {
+		return present, nil
+	}
+	if consumerGroupNoActiveMembersPattern.MatchString(out) {
+		return false, nil
+	}
+	return false, fmt.Errorf("could not parse kafka-consumer-groups output (no TOPIC/CURRENT-OFFSET header, not a missing group, "+
+		"not an empty group): %s", truncateForLog(out, 300))
+}
+
+// resolveAuthoritativeLag 从各候选组的 describe 结果里认定唯一权威组,并只对它算 LAG(纯函数,merge_unit_test.go 覆盖)。
+//
+//   - 命中「组不存在」白名单的组视为不存在(不论退出码);
+//   - 其余组退出码非 0、或输出读不出(committedOffsetPresent 报错)→ 直接报错(fail-closed);
+//   - 恰好一个组在本 topic 上有数值位点 → 用 parseConsumerGroupLag 对它算 LAG(沿用对 "-" 的 fail-closed);
+//   - 多于一个 → 报错:上一次交接没收尾(冻结的旧位点与新位点并存),哪个是真的不由这里猜;
+//   - 一个都没有 → 报错:没有任何组能证明本 topic 已排空。
+func resolveAuthoritativeLag(topic string, results []groupDescribeResult) (int64, string, error) {
+	if len(results) == 0 {
+		return 0, "", errors.New("no candidate consumer group to check")
+	}
+	var holders []groupDescribeResult
+	checked := make([]string, 0, len(results))
+	for _, r := range results {
+		if consumerGroupMissing(r.output) {
+			checked = append(checked, r.group+"=missing")
+			continue
+		}
+		if r.runErr != nil {
+			return 0, "", fmt.Errorf("describe consumer group %s: %w (output: %s)", r.group, r.runErr, truncateForLog(r.output, 500))
+		}
+		present, err := committedOffsetPresent(r.output, topic)
+		if err != nil {
+			return 0, "", fmt.Errorf("describe consumer group %s: %w", r.group, err)
+		}
+		if !present {
+			checked = append(checked, r.group+"=no-offsets")
+			continue
+		}
+		checked = append(checked, r.group+"=offsets")
+		holders = append(holders, r)
+	}
+	switch len(holders) {
+	case 1:
+		h := holders[0]
+		lag, err := parseConsumerGroupLag(h.output, topic)
+		if err != nil {
+			return 0, h.group, fmt.Errorf("authoritative consumer group %s: %w", h.group, err)
+		}
+		return lag, h.group, nil
+	case 0:
+		return 0, "", fmt.Errorf("no candidate group holds committed offsets on topic %s (%s) — cannot prove the backlog is drained; "+
+			"pass -kafka-group with the go/db consumer group that actually consumes this topic", topic, strings.Join(checked, ", "))
+	default:
+		names := make([]string, 0, len(holders))
+		for _, h := range holders {
+			names = append(names, h.group)
+		}
+		return 0, "", fmt.Errorf("more than one candidate group holds committed offsets on topic %s (%s): a consumer group handoff "+
+			"was not finalized, so one of them is a frozen stale position and the lag of either cannot be trusted. Finalize it first "+
+			"(tools/scripts/kafka_offset_reset.ps1 -FinalizeHandoff -Topic %s -Group <current group> -RetireGroup <stale group> "+
+			"-Partitions <N>, dry-run then -Apply). If this machine mixed the single-zone default start (bare group name) with "+
+			"-Zone N starts (_zN), pass -kafka-group (dev_tools: -MergeKafkaGroup) naming the group that is actually running",
+			topic, strings.Join(names, ", "), topic)
+	}
+}
+
+// dbConsumerGroupForZone 是按 zone 推导的 go/db 消费组名:db_rpc_consumer_group_z<zone>。
+// 与 tools/scripts/k8s_deploy.ps1(K8s 切组后的 ConfigMap)和 tools/scripts/go_services.ps1(本机 -Zone N 启动)同名。
+func dbConsumerGroupForZone(zone uint32) string {
+	return defaultKafkaGroup + "_z" + strconv.FormatUint(uint64(zone), 10)
+}
+
+// kafkaGroupCandidates 给出 P3 的候选组:explicit(-kafka-group)非空时只看它;
+// 否则是 zone 组,再加上非空且与 zone 组不同的 legacy(-kafka-legacy-group,缺省 db_rpc_consumer_group,传空则只看 zone 组)。
+func kafkaGroupCandidates(explicit, legacy string, zone uint32) []string {
+	if explicit != "" {
+		return []string{explicit}
+	}
+	zoneGroup := dbConsumerGroupForZone(zone)
+	groups := []string{zoneGroup}
+	if legacy != "" && legacy != zoneGroup {
+		groups = append(groups, legacy)
+	}
+	return groups
 }
 
 // parseConsumerGroupLag 解析 kafka-consumer-groups --describe 的表格输出。
@@ -140,16 +340,21 @@ func (attestedLagSource) Describe() string {
 	return "OPERATOR ATTESTATION (-assume-kafka-drained): no lag was actually measured"
 }
 
-func (attestedLagSource) TotalLag(context.Context, string, string) (int64, error) { return 0, nil }
-
-// fakeLagSource 只给测试用。
-type fakeLagSource struct {
-	lag int64
-	err error
+func (attestedLagSource) TotalLag(context.Context, string, []string) (int64, string, error) {
+	return 0, "(attested)", nil
 }
 
-func (f fakeLagSource) Describe() string                                        { return "fake" }
-func (f fakeLagSource) TotalLag(context.Context, string, string) (int64, error) { return f.lag, f.err }
+// fakeLagSource 只给测试用。group 是假装认定的权威组名(可省略)。
+type fakeLagSource struct {
+	lag   int64
+	group string
+	err   error
+}
+
+func (f fakeLagSource) Describe() string { return "fake" }
+func (f fakeLagSource) TotalLag(context.Context, string, []string) (int64, string, error) {
+	return f.lag, f.group, f.err
+}
 
 // dbTaskTopic 镜像 go/db/internal/config.DbTaskTopicForGeneration。
 // 改一处必须同步另一处(merge_zone 是独立 module,不引主工程包)。
@@ -179,24 +384,101 @@ func dbRetryInstanceProcessingKey(topic, instanceID string) string {
 	return dbRetryProcessingKey(topic) + ":" + instanceID
 }
 
-// dbTaskQueueKeysFor 列出"必须为空"的全部 db_task 队列键:ready、旧版共享 processing、死信,
-// 再加登记表里每个实例各自的 processing(纯函数,键名镜像由 merge_unit_test.go 钉住)。
-func dbTaskQueueKeysFor(topic string, instanceIDs []string) []string {
+// 2026-10-15 起(S1 ④ 重试只交给分区属主,docs/design/db-retry-owner-routing.md)ready 再拆一层,
+// 镜像 go/db/internal/kafka 的 retryPartitionReadyKey(topic, p):
+//   - dbRetryQueueKey(topic) 变成共享「未分拣收件箱」(回收、停机归还、旧版实例、人工重投都进这里);
+//   - RetryRouting=owner 时按载荷里的原始分区分拣到 kafka:retry:queue:{topic}:p{N},N∈[0, PartitionCnt)。
+//
+// p* 只按 SCAN MATCH 发现,不按 p0..p{N-1} 枚举:
+//   - 同一个 Redis 上一次完整的 SCAN 迭代保证返回迭代期间一直存在的键,足以证明「没有非空的 p 列表」;
+//   - merge_zone 不知道 PartitionCnt,再写一份常数就违反「契约值单一来源」,而且越界 / 换代残留的 p 键枚举不到;
+//   - SCAN 任一页出错整体报错(fail-closed),不能把「没扫完」当成「没有」。
+func dbRetryPartitionQueuePrefix(topic string) string { return dbRetryQueueKey(topic) + ":p" }
+
+// dbRetryPartitionQueuePattern 是 SCAN MATCH 用的 glob:topic 先做 glob 转义,再接 "*"。
+// db_task_zone_1 的模式是 kafka:retry:queue:db_task_zone_1:p*,不会匹配 db_task_zone_11 / db_task_zone_1_g2 的键
+// (前缀里紧跟 topic 的是 ":p")。
+func dbRetryPartitionQueuePattern(topic string) string {
+	return escapeRedisGlob(dbRetryPartitionQueuePrefix(topic)) + "*"
+}
+
+// escapeRedisGlob 转义 Redis glob 的元字符 * ? [ ] \,让字面量原样参与 MATCH。
+// 现网 topic 名不含这些字符;转义是为了让「topic 名里出现元字符」时不至于扫到别的 zone 的键或漏扫。
+func escapeRedisGlob(s string) string {
+	var b strings.Builder
+	b.Grow(len(s))
+	for _, r := range s {
+		switch r {
+		case '*', '?', '[', ']', '\\':
+			b.WriteByte('\\')
+		}
+		b.WriteRune(r)
+	}
+	return b.String()
+}
+
+// dbRetryPartitionScanCount 是 SCAN 每页的 COUNT 提示(只影响往返次数,不影响结果完整性)。
+const dbRetryPartitionScanCount = 1000
+
+// queueKeyReader 是 dbTaskQueueKeys 需要的最小 Redis 能力(*redis.Client 天然满足,
+// 调用点 runPreflight / auditKafkaQueues 不用改);单测用假实现注入 ZRANGE / SCAN 的回复。
+type queueKeyReader interface {
+	ZRange(ctx context.Context, key string, start, stop int64) *redis.StringSliceCmd
+	Scan(ctx context.Context, cursor uint64, match string, count int64) *redis.ScanCmd
+}
+
+// dbTaskQueueKeysFor 列出"必须为空"的全部 db_task 队列键:ready(共享收件箱)、旧版共享 processing、死信,
+// 再加登记表里每个实例各自的 processing,最后是按原始分区拆开的 ready 列表(partitionedKeys 排序去重后追加)。
+// 纯函数,键名镜像由 merge_unit_test.go 钉住。
+func dbTaskQueueKeysFor(topic string, instanceIDs, partitionedKeys []string) []string {
 	keys := []string{dbRetryQueueKey(topic), dbRetryProcessingKey(topic), dbDeadQueueKey(topic)}
 	for _, id := range instanceIDs {
 		keys = append(keys, dbRetryInstanceProcessingKey(topic, id))
 	}
+	parts := append([]string(nil), partitionedKeys...) // 不改调用方的切片
+	sort.Strings(parts)
+	for i, k := range parts {
+		if i > 0 && k == parts[i-1] {
+			continue
+		}
+		keys = append(keys, k)
+	}
 	return keys
 }
 
-// dbTaskQueueKeys 读登记表,返回 dbTaskQueueKeysFor 的结果。登记表读不到即报错(fail-closed):
-// 不知道有哪些实例,就不能宣称 processing 是空的。
-func dbTaskQueueKeys(ctx context.Context, rdb *redis.Client, topic string) ([]string, error) {
+// dbTaskQueueKeys 读登记表、SCAN 按分区的 ready 列表,返回 dbTaskQueueKeysFor 的结果。
+// 任一读不到即报错(fail-closed):不知道有哪些实例 / 哪些 p 列表,就不能宣称它们是空的。
+func dbTaskQueueKeys(ctx context.Context, rdb queueKeyReader, topic string) ([]string, error) {
 	instanceIDs, err := rdb.ZRange(ctx, dbRetryInstancesKey(topic), 0, -1).Result()
 	if err != nil && !errors.Is(err, redis.Nil) {
 		return nil, fmt.Errorf("zrange %s: %w", dbRetryInstancesKey(topic), err)
 	}
-	return dbTaskQueueKeysFor(topic, instanceIDs), nil
+	partitioned, err := scanAllKeys(ctx, rdb, dbRetryPartitionQueuePattern(topic))
+	if err != nil {
+		return nil, err
+	}
+	return dbTaskQueueKeysFor(topic, instanceIDs, partitioned), nil
+}
+
+// scanAllKeys 用 SCAN MATCH 迭代到 cursor 回到 0,汇总全部页(页间可能重复,去重交给 dbTaskQueueKeysFor)。
+// 任一页出错整体返回错误,不返回半截结果。
+func scanAllKeys(ctx context.Context, rdb queueKeyReader, match string) ([]string, error) {
+	var keys []string
+	var cursor uint64
+	for {
+		if err := ctx.Err(); err != nil {
+			return nil, fmt.Errorf("scan %s: %w", match, err)
+		}
+		page, next, err := rdb.Scan(ctx, cursor, match, dbRetryPartitionScanCount).Result()
+		if err != nil {
+			return nil, fmt.Errorf("scan %s (cursor %d): %w", match, cursor, err)
+		}
+		keys = append(keys, page...)
+		if next == 0 {
+			return keys, nil
+		}
+		cursor = next
+	}
 }
 
 // ── preflight 主体 ────────────────────────────────────────────
@@ -221,8 +503,10 @@ type preflightParams struct {
 	// 撤销是目标区:合服后这批玩家的存盘走目标 topic,没落库就改回路由、删目标行 = 把这些存盘丢掉。
 	zone uint32
 	// scope 只进日志与拒绝文案("source" / "target"),让运维一眼看出拦住的是哪一侧。
-	scope           string
-	kafkaGroup      string
+	scope string
+	// kafkaGroups 是 P3 的候选消费组(kafkaGroupCandidates):-kafka-group 显式时只有它,
+	// 否则是 db_rpc_consumer_group_z<zone> 加 legacy 组。P3 只对其中唯一的权威组算积压。
+	kafkaGroups     []string
 	topicGeneration uint32
 	// playerIDs 是本次要动的玩家(合服 = 收集到的源区玩家;撤销 = 清单),P5~P7 逐个查。
 	playerIDs []uint64
@@ -245,16 +529,19 @@ func runPreflight(ctx context.Context, d preflightDeps, p preflightParams) error
 		return errors.New("preflight P3: no Kafka lag source configured — pass -kafka-consumer-groups-cmd, " +
 			"or -assume-kafka-drained if you have verified the backlog by other means")
 	}
+	if len(p.kafkaGroups) == 0 {
+		return errors.New("preflight P3: no candidate consumer group (internal error: kafkaGroups is empty)")
+	}
 	topic := dbTaskTopic(p.zone, p.topicGeneration)
-	lag, err := d.lag.TotalLag(ctx, topic, p.kafkaGroup)
+	lag, group, err := d.lag.TotalLag(ctx, topic, p.kafkaGroups)
 	if err != nil {
-		return fmt.Errorf("preflight P3 (%s): %w", d.lag.Describe(), err)
+		return fmt.Errorf("preflight P3 (%s, candidates %v): %w", d.lag.Describe(), p.kafkaGroups, err)
 	}
 	if lag != 0 {
-		return fmt.Errorf("preflight P3: consumer group %q still has lag %d on topic %s — "+
-			"the last saves on the %s zone's topic are not in zone_%d_db yet", p.kafkaGroup, lag, topic, p.scope, p.zone)
+		return fmt.Errorf("preflight P3: authoritative consumer group %q still has lag %d on topic %s — "+
+			"the last saves on the %s zone's topic are not in zone_%d_db yet", group, lag, topic, p.scope, p.zone)
 	}
-	log.Printf("preflight P3 OK: %s lag=0 on %s [%s]", p.kafkaGroup, topic, d.lag.Describe())
+	log.Printf("preflight P3 OK: authoritative group %s lag=0 on %s [%s]", group, topic, d.lag.Describe())
 
 	// P4 retry / dead / processing 队列必须空。
 	if d.sharedRdb == nil {
@@ -274,7 +561,7 @@ func runPreflight(ctx context.Context, d preflightDeps, p preflightParams) error
 				"those writes never reached zone_%d_db. Drain or triage them before touching these players", k, n, p.zone)
 		}
 	}
-	log.Printf("preflight P4 OK: kafka retry/processing/dead queues for %s are empty (%d keys incl. per-instance processing lists)", topic, len(queueKeys))
+	log.Printf("preflight P4 OK: kafka retry/processing/dead queues for %s are empty (%d keys incl. per-instance processing lists and partitioned ready lists)", topic, len(queueKeys))
 
 	// P5 玩家锁。lock:player:{id} 在 mapping Redis(data_service router.go),
 	// player:{id}:__lock 在 data Redis —— 后者的地址由 -source-data-redis 决定,

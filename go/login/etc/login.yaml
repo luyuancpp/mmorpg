@@ -12,6 +12,12 @@ ListenOn: 127.0.0.1:53000
 # 这一条仍可能晚落地,顺序就乱了。由 tools/scripts/k8s_deploy.ps1 的 Assert-RouterForwardBudget 在部署前核对。
 # 代价:CreatePlayer 持锁后串行三次跨进程 gRPC(发号 / 名字登记 / player:zone 登记,各自子预算 3s,见下方 Locker
 # 注释)合计必须在 4s 内完成;常态各是毫秒级,任何一步拖慢时整体在 4s 处失败,建角失败可重试(名字注册表幂等)。
+# 子预算没有按 4s 重分(2026-10-15 核对):名义之和 = 发号 3s + 名字 3s + player:zone 3s(开种子再 +1s)= 9~10s > 4s,
+# 但每一步的 ctx 都派生自 handler ctx,实际一律截在 4s;截止之后建角不再发出任何写、只做补偿(createplayerlogic.go
+# 6c''),所以超出的名义预算只影响「慢在哪一步、以哪一步失败」,不影响提交语义。要不要按 4s 重分、怎么分(名字那步
+# 还牵连同名重试的 1s 门槛),由 login 负责人定(client-request-ordering.md §5.3)。
+# 2026-10-15 补:名字登记之前还有一次新铸 id 的只读探测(6b',1s ctx 预算,见下方 Locker 注释),上面的名义之和
+# 再 +1s(10~11s);它同样派生自 handler ctx,结论不变。
 # EnterGame 的预加载链在 RPC 返回之后后台跑(chainBudget 5min),不受本值约束。
 # 上限约束(上游比下游宽):gate 直连 login 的 C++ deadline = bin/etc/base_deploy_config.yaml 的
 # GrpcClient.CallDeadlineMs.LoginNodeService(12000),必须 >= 本值 + 2000,由 Assert-GrpcClientDeadlineBudget 核对。
@@ -76,11 +82,18 @@ Locker:
   #     回包都还在 3s 以内时,三步合计 < 9s。
   #   - 开 NewPlayerSeed 时多一次 Redis(新号种子;代码里的 1s ctx 预算只掐重发,单次最坏仍是 3s 读超时)。
   #     各步预算直接相加是 gRPC 9s + Redis 4×3s = 21s,但在现行 zrpc Timeout(本文件顶部,4s)下到不了:
-  #     除回读、名字补偿释放与建角锁释放外,每一步的 ctx 都派生自 handler ctx,4s 一到 gRPC 立即失败、
-  #     go-redis 不再发新命令,围栏写最晚在 handler 起算 4s 内发出,Redis 还在 3s 内回包时约 7s 前执行,
-  #     下面的 20 仍盖得住。种子在慢 Redis 下的真实代价:多吃最多 3s 的 handler 预算,围栏写可能来不及发出,
-  #     本次建角失败(名字释放,player:zone 映射与孤儿种子留下)。把 Timeout 调到约 17s 以上时 21s 才可达,
-  #     届时重算(docs/design/new-player-first-enter-no-cold-read.md §10 P6)。
+  #     除回读、名字补偿释放、建角锁释放与提交后的反查映射写(7b)外,每一步的 ctx 都派生自 handler ctx,
+  #     4s 一到 gRPC 立即失败、go-redis 不再发新命令(建角在每次写之前也显式查 ctx,见 createplayerlogic.go 6c''),
+  #     围栏写最晚在 handler 起算 4s 内发出,Redis 还在 3s 内回包时约 7s 前执行;围栏写确认之后的 7b 走独立 ctx,
+  #     单次最多再等约 3s 读超时,锁在它之后才释放,合计约 10s,下面的 20 仍盖得住。
+  #     种子在慢 Redis 下的真实代价:多吃最多 3s 的 handler 预算,围栏写可能来不及发出,本次建角失败
+  #     (名字释放,player:zone 映射与孤儿种子留下)。把 Timeout 调到约 17s 以上时 21s 才可达,届时重算
+  #     (docs/design/new-player-first-enter-no-cold-read.md §10 P6)。
+  #   - 2026-10-15 起名字登记之前多一次只读探测(6b':新铸 id 的父键 / owner_epoch,两条 EXISTS 走一个 pipeline、
+  #     一次往返;1s ctx 预算同样只掐重发,单次最坏仍是 3s 读超时),不看种子开关。Redis 因此是 4 次(开种子 5 次),
+  #     各步预算直接相加是 21s(开种子 24s)。探测的 ctx 派生自 handler ctx、排在围栏写之前,所以上面「围栏写最晚在
+  #     handler 起算 4s 内发出、合计约 10s、20 仍盖得住」的推导不变;上调 Timeout 按 P6 重算时把这一次算进去
+  #     (同文 §10 P7)。
   # 原值 10 是名字登记加入之前定的,已经盖不住;20 盖住「gRPC 三步全部拖满 + Redis 慢但还在回包」。
   # **20 不是硬上界**,不要把它读成「有余量的保证」:
   #   - Redis 那个 3s 是 go-redis 默认的**单次** socket 读超时。svc/servicecontext.go 构造客户端时
@@ -384,6 +397,10 @@ PasswordAuth:
   KDFConcurrency: 2
   # Waiting for a KDF slot is bounded and context-aware; overload fails closed.
   KDFWaitTimeout: 500ms
+  # 跨副本账号失败门，必须共用不可淘汰的 Redis；单账号在途租期固定 30s。
+  FailureLimit: 5
+  FailureWindow: 15m
+  FailureLock: 5m
 
 # Local robots and the Unity dev client use this explicit development-only
 # gate: the shared secret must come from an environment variable and only the

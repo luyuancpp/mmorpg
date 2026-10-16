@@ -688,6 +688,20 @@ func (s *DataServiceServer) GetPlayerAssetOpLedger(ctx context.Context, req *dat
 	return &data_service.GetPlayerAssetOpLedgerResponse{Found: found, Ledger: ledger}, nil
 }
 
+// GetPlayerInboxLedger 读玩家**已落盘**的收件箱账本(docs/design/player-inbox-service.md §5.1、§9.3),
+// 供 go/player_inbox 的对账(定时作业与运维 ReconcilePlayer)比对 decided_through_seq。
+//
+// 只读、不鉴权,与 GetPlayerAssetOpLedger 同级:账本只有 seq 水位与最近 32 条结局(seq / outcome / tip id /
+// request_id / msg_type),不含载荷与资产数额。读法、错误语义与形状都照 GetPlayerAssetOpLedger:
+// 没有 in-band error_code,契约就是 gRPC code;logic 返回的 error 已经是 status,这里只做搬运。
+func (s *DataServiceServer) GetPlayerInboxLedger(ctx context.Context, req *data_service.GetPlayerInboxLedgerRequest) (*data_service.GetPlayerInboxLedgerResponse, error) {
+	ledger, found, err := logic.GetPlayerInboxLedger(ctx, s.svcCtx, req.GetPlayerId())
+	if err != nil {
+		return nil, err
+	}
+	return &data_service.GetPlayerInboxLedgerResponse{Found: found, Ledger: ledger}, nil
+}
+
 // hasAdminTokenMetadata 只判"这次调用**声称**自己是运维调用",不做任何校验。
 // 校验一律交给 authorizeAdmin(常数时间比较 + 未配置即停用)。
 //

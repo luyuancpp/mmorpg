@@ -21,7 +21,7 @@
 // 用例超时设 1h,真实的 100ms tick 永远不会误触发。RpcChannelStats 是进程级计数,一律比较前后差值。
 // 「没有回包」用屏障证明:同一连接 FIFO,紧接着发一个 id≠0 的请求,它的回包之前出现的帧就是全部回包。
 //
-// 与 rpc_controller_test.cpp 同一工程、同一个 main;链接桩(InitPlayerService / InitPlayerServiceReplied /
+// 与 rpc_controller_test.cpp 同一工程、同一个 main;链接桩(InitPlayerService /
 // InitServiceHandler)由 rpc_client_lifecycle_test.cpp 定义,这里不要重复定义。
 
 #include <gtest/gtest.h>

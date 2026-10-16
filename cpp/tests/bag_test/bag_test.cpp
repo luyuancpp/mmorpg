@@ -3862,6 +3862,7 @@ TEST(GuidSourcePolicyTest, SnapshotIsSkippedUntilItsOwnKindHasARange)
     tlsEcs.actorRegistry.emplace<MissionsContainerComp>(player);
     tlsEcs.actorRegistry.emplace<PlayerAssetOpLedgerComp>(player);
     tlsEcs.actorRegistry.emplace<BattleSettlementLedgerComp>(player);
+    tlsEcs.actorRegistry.emplace<PlayerInboxLedgerComp>(player); // 经 mysql_database_table.pb.h 可见
     tlsEcs.actorRegistry.emplace<CurrencyComp>(player);
     tlsEcs.actorRegistry.emplace<PlayerCurrencyComp>(player);
 

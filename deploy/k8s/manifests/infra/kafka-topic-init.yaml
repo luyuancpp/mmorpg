@@ -58,7 +58,8 @@ spec:
       containers:
         - name: topic-init
           # 与 kafka.yaml 同一个镜像,自带 kafka-topics.sh / kafka-broker-api-versions.sh。
-          image: apache/kafka:latest
+          # 钉版引用的 tag 与 digest 都必须与 kafka.yaml、deploy/docker-compose.yml 两处相同(见 kafka.yaml 该行注释)。
+          image: apache/kafka:4.3.1@sha256:77e3df9054047a88b520d0cc46e16696d3b22022e1d580aeccd2632df6532837
           imagePullPolicy: IfNotPresent
           env:
             - name: BOOTSTRAP

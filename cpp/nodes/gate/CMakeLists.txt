@@ -71,7 +71,6 @@ set(SOURCE_FILES
     handler/rpc/gate_service_handler.cpp
     handler/rpc/player/player_service_interface.cpp
     main.cpp
-    rpc_replies/player/player_rpc_response_handler.cpp
     rpc_replies/register_handler.cpp
     # 2026-09-18 补登记:gate.vcxproj 有、Linux CMake 清单漏了。
     handler/event/match_event_handler.cpp

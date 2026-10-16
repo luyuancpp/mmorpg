@@ -212,7 +212,10 @@ GrpcClient:
 - 行为变化 2:gate 客户端请求在下游失败时收到 `kServiceUnavailable`(fault=1)。有副作用的 C2S 靠 Go 侧幂等键兜重试(契约 §3)。
 - 行为变化 3(第二批):scene_manager 卡住时,玩家换图最长被挡 deadline + 1s(11s,原 5s),但到 deadline 一定收到提示;原来 5s 后放行、第一条的迟到应答被丢弃的残余随之消失。
 - 协议 / 存储:无。`config.proto` 只新增字段 21,旧 yaml 不写该块照常启动。
-- CreateScene 的**业务**失败(`error_code != 0`)应答不回显 `creator_ids`(`go/scene_manager/internal/logic/createscenelogic.go` 各错误返回),C++ 仍无法告诉创建者;要修需 scene_manager 在错误应答里也回显 `CreatorIds`(Go 侧一行,另立项)。
+- ~~CreateScene 的**业务**失败(`error_code != 0`)应答不回显 `creator_ids`(`go/scene_manager/internal/logic/createscenelogic.go` 各错误返回),C++ 仍无法告诉创建者;要修需 scene_manager 在错误应答里也回显 `CreatorIds`(Go 侧一行,另立项)。~~
+  **已关闭(2026-10-15,未编译)**:镜像 CreateScene 改用每次调用回调(§11),回调按值捕获 playerId 与在途令牌,成功 / 业务失败 / 传输失败三路都能定位创建者,
+  不再依赖应答回显;scene 节点不再安装 CreateScene 的全局处理器,Go 侧无需改。由镜像建场景会话实现(worktree 分支 `claude/blissful-morse-969d44`,基线 `526780b4e`,
+  合并前以该分支为准),记录见 `docs/design/client-request-ordering.md` §7.2 第 7 条、`docs/design/scene-creation-architecture.md`「C++ caller」与 PROGRESS 同日条目。
 
 ## 8. 分批落地(多会话协作)
 
@@ -264,7 +267,7 @@ GrpcClient:
 2. etcd 一元调用若要接失败处理器:传输失败必须走与 `OnTxnTimeout` 等价的"取出 pending key 重发",**不能**走 `OnTxnFailed`(在 `kReRegisterExisting` 下会让节点因一次 etcd 抖动自杀),且要用请求里的 key 核对 `pendingTxnKey`。
 3. 纯服务端流方法会被模板误生成成 unary(今天 proto 里没有此类方法)。
 4. ~~`SendMessageToPlayerOnGrpcNode`(`player_message_utils.cpp:270-315`)无调用方,且发的是 `*requestProto` 而非入参。~~ 分工会话 09-29 删除(§8)。
-5. ~~login Timeout 待拍板(§4.3)~~ 09-29 已改;CreateScene 错误应答回显 `creator_ids`(§7)。
+5. ~~login Timeout 待拍板(§4.3)~~ 09-29 已改;~~CreateScene 错误应答回显 `creator_ids`(§7)~~ 已由每次调用回调关闭(§7、§11)。
 6. 生成器自动注册(§6)。
 
 ## 11. 每次调用回调(2026-10-15)
@@ -305,7 +308,9 @@ void Send<Svc><Method>(entt::registry&, entt::entity nodeEntity, const Request&,
 - 节点摘除 / 停机:`BeginShutdownGrpcNode` 取消在途调用,`done` 以非 OK(官方 CQ 为 CANCELLED)在拆节点之前完成;
   `PollGrpcNodeShutdown` 的排空判据不变(调用对象与本地完成都计数),所以停机阶段 0 的 FIFO 保证照旧成立。
 - 每次调用状态在 `boost::object_pool` 的调用对象里(地址不移动),不进 ECS 组件(ECS 审计 C008)。
-- 非 OK 仍是**结果未知**(§3.3)。
+- 非 OK 仍是**结果未知**(§3.3)。**调用方不得按 `code` 区分「停机」与「传输失败」**:同一停机场景,官方 CQ 取消给
+  CANCELLED,`muduo_grpc::Channel` 析构给 UNAVAILABLE("channel shut down"),muduo HTTP/2 传输换上后 code 会变。
+  非 OK 一律只释放本地在途状态,需要裁决对端的仍走各自的看门狗 / 权威数据。
 
 实现上三个 unary 重载都汇到生成的 `Start<Svc><Method>Call`(唯一发送入口);`Complete<Svc><Method>` 先看 `done`,
 有就只交给它。生成代码没有 muduo_grpc 分支:两种传输都在 `grpc::ChannelInterface` 之下。
@@ -317,5 +322,6 @@ void Send<Svc><Method>(entt::registry&, entt::entity nodeEntity, const Request&,
 2. 期望:`cpp/generated/grpc_client/**/*_grpc_client.{h,cpp}` 每个 unary 方法多出 `Start...Call` 与 `GrpcDone` 重载;
    三参 `Send` 改为显式传空 `std::vector<std::string>{}`(避免与新重载的 `{}` 二义)。
 3. 串行编译(`/m:1`)所有启用 gRPC 客户端的工程:scene、gate、battle 与 `rpc_controller_test`。
-4. 单测建议:在 `cpp/tests/rpc_controller_test/grpc_client_lifecycle_test.cpp` 里补"带 done 的调用:成功一次、本地拒绝
-   异步一次、`BeginShutdownGrpcNode` 后以非 OK 一次、不触发全局处理器"四条。
+4. 单测(已写,未跑):`cpp/tests/rpc_controller_test/grpc_client_lifecycle_test.cpp` 的 `PerCallDone*` 三条 ——
+   成功一次且 options 生效、本地拒绝异步 UNAVAILABLE 一次、`BeginShutdownGrpcNode` 后在途与新调用各以非 OK 完成一次;
+   三条都断言不触发全局处理器。跑法同 `rpc_controller_test` 其余用例(`--gtest_filter=GrpcClientLifecycleTest.*`)。

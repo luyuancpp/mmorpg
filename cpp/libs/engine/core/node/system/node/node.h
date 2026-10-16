@@ -15,6 +15,7 @@
 #include <condition_variable>
 #include <functional>
 #include <mutex>
+#include <optional>
 #include <network/node_utils.h>
 #include <thread>
 #include "entt/src/entt/signal/sigh.hpp"
@@ -76,7 +77,7 @@ public:
 
     // Basic information accessors
     int64_t GetLeaseId() const;
-    muduo::net::EventLoop *GetLoop() { return eventLoop; }
+    muduo::net::EventLoop *GetLoop() { return &eventLoop; }
     NodeId GetNodeId() const { return GetNodeInfo().node_id(); }
     uint32_t GetNodeType() const { return GetNodeInfo().node_type(); }
     // 身份由本节点独占持有;读写均限所属 loop 线程,不能跨线程借用引用。
@@ -84,7 +85,7 @@ public:
     // 仅供启动、注册链路与 gate 人数上报写入;不会向 ECS 补默认组件。
     NodeInfo &MutableNodeInfo();
     KafkaManager &GetKafkaManager() { return kafkaManager; }
-    virtual google::protobuf::Service *GetNodeReplyService() { return replyService_; }
+    virtual google::protobuf::Service *GetNodeReplyService() { return replyService_ ? &replyService_->get() : nullptr; }
     muduo::AsyncLogging &Log() { return logSystem; }
     CanConnectNodeTypeList &GetTargetNodeTypeWhitelist() { return targetNodeTypeWhitelist; }
     NodeHandshakeManager &GetNodeRegistrationManager() { return nodeRegistrationManager; }
@@ -249,7 +250,8 @@ protected:
     // Member variables
     // 本节点身份的唯一所有者,最先构造、最后析构;ECS Clear 不影响身份。
     NodeInfo localNodeInfo_;
-    muduo::net::EventLoop *eventLoop;
+    // 入口拥有 EventLoop，必须活过 Node 析构中的全部排空与网络资源释放。
+    muduo::net::EventLoop &eventLoop;
     muduo::AsyncLogging logSystem;
     RpcServerPtr rpcServer;
     TimerTaskComp grpcHandlerTimer;
@@ -288,7 +290,8 @@ protected:
     // When etcd fires DELETE, removal is deferred; a subsequent PUT cancels it.
     std::unordered_map<std::string, std::unique_ptr<PendingNodeRemoval>> pendingNodeRemovals_;
 
-    ::google::protobuf::Service *replyService_{nullptr};
+    // 调用者拥有服务，必须活过 Node 及其注册通道；空值表示不额外注册该服务。
+    std::optional<std::reference_wrapper<::google::protobuf::Service>> replyService_;
     AfterStartFn afterStartFn_;
     KafkaHandlersFn kafkaHandlersFn_;
     BeforeShutdownFn beforeShutdownFn_;

@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/redis/go-redis/v9"
 	"github.com/zeromicro/go-zero/core/conf"
 	"github.com/zeromicro/go-zero/core/logx"
 	"github.com/zeromicro/go-zero/core/service"
@@ -394,7 +395,20 @@ func main() {
 	// WithSyncBumper:落地恢复摘要(docs/design/landing-recovery-sync-digest.md §3)。guild 的所有 bump 点(含资产终结的
 	// OnAssetFinalized)都经 logic 的 syncBumper 发出,**不接这一项,guild 四个域的 bump 全不生效**(静默退化为 Noop)。
 	// svcCtx.PlayerSyncBumper 由 NewServiceContext 无条件建好(指向核心 Redis DB 0 的专用客户端),NewGuildSyncBumper 自己判 nil。
+	// 配额不能挤占正常仓储池；go-redis 必须启用 context 截止及短套接字/取连接预算。
+	quotaRedis := redis.NewClient(&redis.Options{
+		Addr: config.AppConfig.RedisClient.Host, Password: config.AppConfig.RedisClient.Password, DB: config.AppConfig.RedisClient.DB,
+		PoolSize: 4, MaxActiveConns: 4, MaxRetries: -1, DialerRetries: 1, ContextTimeoutEnabled: true,
+		DialTimeout: logic.ApplicationQuotaBudget, ReadTimeout: logic.ApplicationQuotaBudget,
+		WriteTimeout: logic.ApplicationQuotaBudget, PoolTimeout: logic.ApplicationQuotaBudget,
+	})
+	defer quotaRedis.Close()
+	applicationQuota, err := logic.NewApplicationQuota(quotaRedis, config.AppConfig.ApplicationQuotaPerMinute)
+	if err != nil {
+		logx.Must(err)
+	}
 	guildLogic := logic.NewGuildLogic(repo, guildIDs, onlineResolver, mergeFence, homeZones,
+		logic.WithApplicationQuota(applicationQuota),
 		logic.WithNotifier(logic.NewGuildNotifier(svcCtx.KafkaWriter, svcCtx.GateCommandBuilder, svcCtx.PlayerLocatorRedisClient)),
 		logic.WithApplyPushGate(repo.TryMarkApplyPush),
 		logic.WithPlayerNames(playerNames),

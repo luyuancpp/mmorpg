@@ -3478,11 +3478,107 @@ func (x *GetPlayerAssetOpLedgerResponse) GetLedger() *component.PlayerAssetOpLed
 	return nil
 }
 
+type GetPlayerInboxLedgerRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PlayerId      uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetPlayerInboxLedgerRequest) Reset() {
+	*x = GetPlayerInboxLedgerRequest{}
+	mi := &file_proto_data_service_data_service_proto_msgTypes[49]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetPlayerInboxLedgerRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetPlayerInboxLedgerRequest) ProtoMessage() {}
+
+func (x *GetPlayerInboxLedgerRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_data_service_data_service_proto_msgTypes[49]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetPlayerInboxLedgerRequest.ProtoReflect.Descriptor instead.
+func (*GetPlayerInboxLedgerRequest) Descriptor() ([]byte, []int) {
+	return file_proto_data_service_data_service_proto_rawDescGZIP(), []int{49}
+}
+
+func (x *GetPlayerInboxLedgerRequest) GetPlayerId() uint64 {
+	if x != nil {
+		return x.PlayerId
+	}
+	return 0
+}
+
+type GetPlayerInboxLedgerResponse struct {
+	state         protoimpl.MessageState           `protogen:"open.v1"`
+	Found         bool                             `protobuf:"varint,1,opt,name=found,proto3" json:"found,omitempty"`  // false = 该玩家在 zone Redis 里没有 blob(从未入场,或 Redis 丢数据)
+	Ledger        *component.PlayerInboxLedgerComp `protobuf:"bytes,2,opt,name=ledger,proto3" json:"ledger,omitempty"` // found=true 且玩家从未消费过收件箱时为空消息(不是缺席)
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetPlayerInboxLedgerResponse) Reset() {
+	*x = GetPlayerInboxLedgerResponse{}
+	mi := &file_proto_data_service_data_service_proto_msgTypes[50]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetPlayerInboxLedgerResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetPlayerInboxLedgerResponse) ProtoMessage() {}
+
+func (x *GetPlayerInboxLedgerResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_data_service_data_service_proto_msgTypes[50]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetPlayerInboxLedgerResponse.ProtoReflect.Descriptor instead.
+func (*GetPlayerInboxLedgerResponse) Descriptor() ([]byte, []int) {
+	return file_proto_data_service_data_service_proto_rawDescGZIP(), []int{50}
+}
+
+func (x *GetPlayerInboxLedgerResponse) GetFound() bool {
+	if x != nil {
+		return x.Found
+	}
+	return false
+}
+
+func (x *GetPlayerInboxLedgerResponse) GetLedger() *component.PlayerInboxLedgerComp {
+	if x != nil {
+		return x.Ledger
+	}
+	return nil
+}
+
 var File_proto_data_service_data_service_proto protoreflect.FileDescriptor
 
 const file_proto_data_service_data_service_proto_rawDesc = "" +
 	"\n" +
-	"%proto/data_service/data_service.proto\x12\fdata_service\x1a\x1bgoogle/protobuf/empty.proto\x1a1proto/common/component/asset_op_ledger_comp.proto\"L\n" +
+	"%proto/data_service/data_service.proto\x12\fdata_service\x1a\x1bgoogle/protobuf/empty.proto\x1a1proto/common/component/asset_op_ledger_comp.proto\x1a5proto/common/component/player_inbox_ledger_comp.proto\"L\n" +
 	"\x15LoadPlayerDataRequest\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x16\n" +
 	"\x06fields\x18\x02 \x03(\tR\x06fields\"\xce\x01\n" +
@@ -3776,7 +3872,12 @@ const file_proto_data_service_data_service_proto_rawDesc = "" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\"h\n" +
 	"\x1eGetPlayerAssetOpLedgerResponse\x12\x14\n" +
 	"\x05found\x18\x01 \x01(\bR\x05found\x120\n" +
-	"\x06ledger\x18\x02 \x01(\v2\x18.PlayerAssetOpLedgerCompR\x06ledger*\x87\x01\n" +
+	"\x06ledger\x18\x02 \x01(\v2\x18.PlayerAssetOpLedgerCompR\x06ledger\":\n" +
+	"\x1bGetPlayerInboxLedgerRequest\x12\x1b\n" +
+	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\"d\n" +
+	"\x1cGetPlayerInboxLedgerResponse\x12\x14\n" +
+	"\x05found\x18\x01 \x01(\bR\x05found\x12.\n" +
+	"\x06ledger\x18\x02 \x01(\v2\x16.PlayerInboxLedgerCompR\x06ledger*\x87\x01\n" +
 	"\fSnapshotType\x12\x13\n" +
 	"\x0fSNAPSHOT_MANUAL\x10\x00\x12\x15\n" +
 	"\x11SNAPSHOT_PERIODIC\x10\x01\x12\x1c\n" +
@@ -3791,7 +3892,7 @@ const file_proto_data_service_data_service_proto_rawDesc = "" +
 	"\x0eEVENT_RECHARGE\x10\x01\x12\x19\n" +
 	"\x15EVENT_PRE_MAINTENANCE\x10\x02\x12\x12\n" +
 	"\x0eEVENT_LEVEL_UP\x10\x03\x12\x15\n" +
-	"\x11EVENT_FIRST_LOGIN\x10\x042\xc5\x12\n" +
+	"\x11EVENT_FIRST_LOGIN\x10\x042\xb6\x13\n" +
 	"\vDataService\x12]\n" +
 	"\x0eLoadPlayerData\x12#.data_service.LoadPlayerDataRequest\x1a$.data_service.LoadPlayerDataResponse\"\x00\x12]\n" +
 	"\x0eSavePlayerData\x12#.data_service.SavePlayerDataRequest\x1a$.data_service.SavePlayerDataResponse\"\x00\x12]\n" +
@@ -3815,7 +3916,8 @@ const file_proto_data_service_data_service_proto_rawDesc = "" +
 	"\x11ReservePlayerName\x12&.data_service.ReservePlayerNameRequest\x1a'.data_service.ReservePlayerNameResponse\"\x00\x12U\n" +
 	"\x11ReleasePlayerName\x12&.data_service.ReleasePlayerNameRequest\x1a\x16.google.protobuf.Empty\"\x00\x12i\n" +
 	"\x12BatchGetPlayerName\x12'.data_service.BatchGetPlayerNameRequest\x1a(.data_service.BatchGetPlayerNameResponse\"\x00\x12u\n" +
-	"\x16GetPlayerAssetOpLedger\x12+.data_service.GetPlayerAssetOpLedgerRequest\x1a,.data_service.GetPlayerAssetOpLedgerResponse\"\x00B\x14Z\x12proto/data_serviceb\x06proto3"
+	"\x16GetPlayerAssetOpLedger\x12+.data_service.GetPlayerAssetOpLedgerRequest\x1a,.data_service.GetPlayerAssetOpLedgerResponse\"\x00\x12o\n" +
+	"\x14GetPlayerInboxLedger\x12).data_service.GetPlayerInboxLedgerRequest\x1a*.data_service.GetPlayerInboxLedgerResponse\"\x00B\x14Z\x12proto/data_serviceb\x06proto3"
 
 var (
 	file_proto_data_service_data_service_proto_rawDescOnce sync.Once
@@ -3830,7 +3932,7 @@ func file_proto_data_service_data_service_proto_rawDescGZIP() []byte {
 }
 
 var file_proto_data_service_data_service_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_proto_data_service_data_service_proto_msgTypes = make([]protoimpl.MessageInfo, 53)
+var file_proto_data_service_data_service_proto_msgTypes = make([]protoimpl.MessageInfo, 55)
 var file_proto_data_service_data_service_proto_goTypes = []any{
 	(SnapshotType)(0),                         // 0: data_service.SnapshotType
 	(RollbackScope)(0),                        // 1: data_service.RollbackScope
@@ -3884,17 +3986,20 @@ var file_proto_data_service_data_service_proto_goTypes = []any{
 	(*BatchGetPlayerNameResponse)(nil),        // 49: data_service.BatchGetPlayerNameResponse
 	(*GetPlayerAssetOpLedgerRequest)(nil),     // 50: data_service.GetPlayerAssetOpLedgerRequest
 	(*GetPlayerAssetOpLedgerResponse)(nil),    // 51: data_service.GetPlayerAssetOpLedgerResponse
-	nil,                                       // 52: data_service.LoadPlayerDataResponse.DataEntry
-	nil,                                       // 53: data_service.SavePlayerDataRequest.DataEntry
-	nil,                                       // 54: data_service.BatchGetPlayerHomeZoneResponse.PlayerZoneMapEntry
-	nil,                                       // 55: data_service.BatchGetPlayerNameResponse.NamesEntry
-	(*component.PlayerAssetOpLedgerComp)(nil), // 56: PlayerAssetOpLedgerComp
-	(*emptypb.Empty)(nil),                     // 57: google.protobuf.Empty
+	(*GetPlayerInboxLedgerRequest)(nil),       // 52: data_service.GetPlayerInboxLedgerRequest
+	(*GetPlayerInboxLedgerResponse)(nil),      // 53: data_service.GetPlayerInboxLedgerResponse
+	nil,                                       // 54: data_service.LoadPlayerDataResponse.DataEntry
+	nil,                                       // 55: data_service.SavePlayerDataRequest.DataEntry
+	nil,                                       // 56: data_service.BatchGetPlayerHomeZoneResponse.PlayerZoneMapEntry
+	nil,                                       // 57: data_service.BatchGetPlayerNameResponse.NamesEntry
+	(*component.PlayerAssetOpLedgerComp)(nil), // 58: PlayerAssetOpLedgerComp
+	(*component.PlayerInboxLedgerComp)(nil),   // 59: PlayerInboxLedgerComp
+	(*emptypb.Empty)(nil),                     // 60: google.protobuf.Empty
 }
 var file_proto_data_service_data_service_proto_depIdxs = []int32{
-	52, // 0: data_service.LoadPlayerDataResponse.data:type_name -> data_service.LoadPlayerDataResponse.DataEntry
-	53, // 1: data_service.SavePlayerDataRequest.data:type_name -> data_service.SavePlayerDataRequest.DataEntry
-	54, // 2: data_service.BatchGetPlayerHomeZoneResponse.player_zone_map:type_name -> data_service.BatchGetPlayerHomeZoneResponse.PlayerZoneMapEntry
+	54, // 0: data_service.LoadPlayerDataResponse.data:type_name -> data_service.LoadPlayerDataResponse.DataEntry
+	55, // 1: data_service.SavePlayerDataRequest.data:type_name -> data_service.SavePlayerDataRequest.DataEntry
+	56, // 2: data_service.BatchGetPlayerHomeZoneResponse.player_zone_map:type_name -> data_service.BatchGetPlayerHomeZoneResponse.PlayerZoneMapEntry
 	0,  // 3: data_service.CreatePlayerSnapshotRequest.type:type_name -> data_service.SnapshotType
 	0,  // 4: data_service.SnapshotInfo.type:type_name -> data_service.SnapshotType
 	23, // 5: data_service.ListPlayerSnapshotsResponse.snapshots:type_name -> data_service.SnapshotInfo
@@ -3906,59 +4011,62 @@ var file_proto_data_service_data_service_proto_depIdxs = []int32{
 	36, // 11: data_service.BatchRecallItemsResponse.results:type_name -> data_service.RecallResult
 	39, // 12: data_service.QueryTransactionLogResponse.rows:type_name -> data_service.TransactionLogRow
 	2,  // 13: data_service.CreateEventSnapshotRequest.event_type:type_name -> data_service.SnapshotEventType
-	55, // 14: data_service.BatchGetPlayerNameResponse.names:type_name -> data_service.BatchGetPlayerNameResponse.NamesEntry
-	56, // 15: data_service.GetPlayerAssetOpLedgerResponse.ledger:type_name -> PlayerAssetOpLedgerComp
-	3,  // 16: data_service.DataService.LoadPlayerData:input_type -> data_service.LoadPlayerDataRequest
-	5,  // 17: data_service.DataService.SavePlayerData:input_type -> data_service.SavePlayerDataRequest
-	7,  // 18: data_service.DataService.GetPlayerField:input_type -> data_service.GetPlayerFieldRequest
-	9,  // 19: data_service.DataService.SetPlayerField:input_type -> data_service.SetPlayerFieldRequest
-	11, // 20: data_service.DataService.RegisterPlayerZone:input_type -> data_service.RegisterPlayerZoneRequest
-	12, // 21: data_service.DataService.GetPlayerHomeZone:input_type -> data_service.GetPlayerHomeZoneRequest
-	14, // 22: data_service.DataService.BatchGetPlayerHomeZone:input_type -> data_service.BatchGetPlayerHomeZoneRequest
-	16, // 23: data_service.DataService.RemapHomeZoneForMerge:input_type -> data_service.RemapHomeZoneForMergeRequest
-	18, // 24: data_service.DataService.DeletePlayerData:input_type -> data_service.DeletePlayerDataRequest
-	20, // 25: data_service.DataService.CreatePlayerSnapshot:input_type -> data_service.CreatePlayerSnapshotRequest
-	22, // 26: data_service.DataService.ListPlayerSnapshots:input_type -> data_service.ListPlayerSnapshotsRequest
-	25, // 27: data_service.DataService.GetPlayerSnapshotDiff:input_type -> data_service.GetPlayerSnapshotDiffRequest
-	29, // 28: data_service.DataService.RollbackPlayer:input_type -> data_service.RollbackPlayerRequest
-	31, // 29: data_service.DataService.RollbackZone:input_type -> data_service.RollbackZoneRequest
-	33, // 30: data_service.DataService.RollbackAll:input_type -> data_service.RollbackAllRequest
-	35, // 31: data_service.DataService.BatchRecallItems:input_type -> data_service.BatchRecallItemsRequest
-	38, // 32: data_service.DataService.QueryTransactionLog:input_type -> data_service.QueryTransactionLogRequest
-	41, // 33: data_service.DataService.CreateEventSnapshot:input_type -> data_service.CreateEventSnapshotRequest
-	43, // 34: data_service.DataService.AllocateIdSegment:input_type -> data_service.AllocateIdSegmentRequest
-	45, // 35: data_service.DataService.ReservePlayerName:input_type -> data_service.ReservePlayerNameRequest
-	47, // 36: data_service.DataService.ReleasePlayerName:input_type -> data_service.ReleasePlayerNameRequest
-	48, // 37: data_service.DataService.BatchGetPlayerName:input_type -> data_service.BatchGetPlayerNameRequest
-	50, // 38: data_service.DataService.GetPlayerAssetOpLedger:input_type -> data_service.GetPlayerAssetOpLedgerRequest
-	4,  // 39: data_service.DataService.LoadPlayerData:output_type -> data_service.LoadPlayerDataResponse
-	6,  // 40: data_service.DataService.SavePlayerData:output_type -> data_service.SavePlayerDataResponse
-	8,  // 41: data_service.DataService.GetPlayerField:output_type -> data_service.GetPlayerFieldResponse
-	10, // 42: data_service.DataService.SetPlayerField:output_type -> data_service.SetPlayerFieldResponse
-	57, // 43: data_service.DataService.RegisterPlayerZone:output_type -> google.protobuf.Empty
-	13, // 44: data_service.DataService.GetPlayerHomeZone:output_type -> data_service.GetPlayerHomeZoneResponse
-	15, // 45: data_service.DataService.BatchGetPlayerHomeZone:output_type -> data_service.BatchGetPlayerHomeZoneResponse
-	17, // 46: data_service.DataService.RemapHomeZoneForMerge:output_type -> data_service.RemapHomeZoneForMergeResponse
-	19, // 47: data_service.DataService.DeletePlayerData:output_type -> data_service.DeletePlayerDataResponse
-	21, // 48: data_service.DataService.CreatePlayerSnapshot:output_type -> data_service.CreatePlayerSnapshotResponse
-	24, // 49: data_service.DataService.ListPlayerSnapshots:output_type -> data_service.ListPlayerSnapshotsResponse
-	27, // 50: data_service.DataService.GetPlayerSnapshotDiff:output_type -> data_service.GetPlayerSnapshotDiffResponse
-	30, // 51: data_service.DataService.RollbackPlayer:output_type -> data_service.RollbackPlayerResponse
-	32, // 52: data_service.DataService.RollbackZone:output_type -> data_service.RollbackZoneResponse
-	34, // 53: data_service.DataService.RollbackAll:output_type -> data_service.RollbackAllResponse
-	37, // 54: data_service.DataService.BatchRecallItems:output_type -> data_service.BatchRecallItemsResponse
-	40, // 55: data_service.DataService.QueryTransactionLog:output_type -> data_service.QueryTransactionLogResponse
-	42, // 56: data_service.DataService.CreateEventSnapshot:output_type -> data_service.CreateEventSnapshotResponse
-	44, // 57: data_service.DataService.AllocateIdSegment:output_type -> data_service.AllocateIdSegmentResponse
-	46, // 58: data_service.DataService.ReservePlayerName:output_type -> data_service.ReservePlayerNameResponse
-	57, // 59: data_service.DataService.ReleasePlayerName:output_type -> google.protobuf.Empty
-	49, // 60: data_service.DataService.BatchGetPlayerName:output_type -> data_service.BatchGetPlayerNameResponse
-	51, // 61: data_service.DataService.GetPlayerAssetOpLedger:output_type -> data_service.GetPlayerAssetOpLedgerResponse
-	39, // [39:62] is the sub-list for method output_type
-	16, // [16:39] is the sub-list for method input_type
-	16, // [16:16] is the sub-list for extension type_name
-	16, // [16:16] is the sub-list for extension extendee
-	0,  // [0:16] is the sub-list for field type_name
+	57, // 14: data_service.BatchGetPlayerNameResponse.names:type_name -> data_service.BatchGetPlayerNameResponse.NamesEntry
+	58, // 15: data_service.GetPlayerAssetOpLedgerResponse.ledger:type_name -> PlayerAssetOpLedgerComp
+	59, // 16: data_service.GetPlayerInboxLedgerResponse.ledger:type_name -> PlayerInboxLedgerComp
+	3,  // 17: data_service.DataService.LoadPlayerData:input_type -> data_service.LoadPlayerDataRequest
+	5,  // 18: data_service.DataService.SavePlayerData:input_type -> data_service.SavePlayerDataRequest
+	7,  // 19: data_service.DataService.GetPlayerField:input_type -> data_service.GetPlayerFieldRequest
+	9,  // 20: data_service.DataService.SetPlayerField:input_type -> data_service.SetPlayerFieldRequest
+	11, // 21: data_service.DataService.RegisterPlayerZone:input_type -> data_service.RegisterPlayerZoneRequest
+	12, // 22: data_service.DataService.GetPlayerHomeZone:input_type -> data_service.GetPlayerHomeZoneRequest
+	14, // 23: data_service.DataService.BatchGetPlayerHomeZone:input_type -> data_service.BatchGetPlayerHomeZoneRequest
+	16, // 24: data_service.DataService.RemapHomeZoneForMerge:input_type -> data_service.RemapHomeZoneForMergeRequest
+	18, // 25: data_service.DataService.DeletePlayerData:input_type -> data_service.DeletePlayerDataRequest
+	20, // 26: data_service.DataService.CreatePlayerSnapshot:input_type -> data_service.CreatePlayerSnapshotRequest
+	22, // 27: data_service.DataService.ListPlayerSnapshots:input_type -> data_service.ListPlayerSnapshotsRequest
+	25, // 28: data_service.DataService.GetPlayerSnapshotDiff:input_type -> data_service.GetPlayerSnapshotDiffRequest
+	29, // 29: data_service.DataService.RollbackPlayer:input_type -> data_service.RollbackPlayerRequest
+	31, // 30: data_service.DataService.RollbackZone:input_type -> data_service.RollbackZoneRequest
+	33, // 31: data_service.DataService.RollbackAll:input_type -> data_service.RollbackAllRequest
+	35, // 32: data_service.DataService.BatchRecallItems:input_type -> data_service.BatchRecallItemsRequest
+	38, // 33: data_service.DataService.QueryTransactionLog:input_type -> data_service.QueryTransactionLogRequest
+	41, // 34: data_service.DataService.CreateEventSnapshot:input_type -> data_service.CreateEventSnapshotRequest
+	43, // 35: data_service.DataService.AllocateIdSegment:input_type -> data_service.AllocateIdSegmentRequest
+	45, // 36: data_service.DataService.ReservePlayerName:input_type -> data_service.ReservePlayerNameRequest
+	47, // 37: data_service.DataService.ReleasePlayerName:input_type -> data_service.ReleasePlayerNameRequest
+	48, // 38: data_service.DataService.BatchGetPlayerName:input_type -> data_service.BatchGetPlayerNameRequest
+	50, // 39: data_service.DataService.GetPlayerAssetOpLedger:input_type -> data_service.GetPlayerAssetOpLedgerRequest
+	52, // 40: data_service.DataService.GetPlayerInboxLedger:input_type -> data_service.GetPlayerInboxLedgerRequest
+	4,  // 41: data_service.DataService.LoadPlayerData:output_type -> data_service.LoadPlayerDataResponse
+	6,  // 42: data_service.DataService.SavePlayerData:output_type -> data_service.SavePlayerDataResponse
+	8,  // 43: data_service.DataService.GetPlayerField:output_type -> data_service.GetPlayerFieldResponse
+	10, // 44: data_service.DataService.SetPlayerField:output_type -> data_service.SetPlayerFieldResponse
+	60, // 45: data_service.DataService.RegisterPlayerZone:output_type -> google.protobuf.Empty
+	13, // 46: data_service.DataService.GetPlayerHomeZone:output_type -> data_service.GetPlayerHomeZoneResponse
+	15, // 47: data_service.DataService.BatchGetPlayerHomeZone:output_type -> data_service.BatchGetPlayerHomeZoneResponse
+	17, // 48: data_service.DataService.RemapHomeZoneForMerge:output_type -> data_service.RemapHomeZoneForMergeResponse
+	19, // 49: data_service.DataService.DeletePlayerData:output_type -> data_service.DeletePlayerDataResponse
+	21, // 50: data_service.DataService.CreatePlayerSnapshot:output_type -> data_service.CreatePlayerSnapshotResponse
+	24, // 51: data_service.DataService.ListPlayerSnapshots:output_type -> data_service.ListPlayerSnapshotsResponse
+	27, // 52: data_service.DataService.GetPlayerSnapshotDiff:output_type -> data_service.GetPlayerSnapshotDiffResponse
+	30, // 53: data_service.DataService.RollbackPlayer:output_type -> data_service.RollbackPlayerResponse
+	32, // 54: data_service.DataService.RollbackZone:output_type -> data_service.RollbackZoneResponse
+	34, // 55: data_service.DataService.RollbackAll:output_type -> data_service.RollbackAllResponse
+	37, // 56: data_service.DataService.BatchRecallItems:output_type -> data_service.BatchRecallItemsResponse
+	40, // 57: data_service.DataService.QueryTransactionLog:output_type -> data_service.QueryTransactionLogResponse
+	42, // 58: data_service.DataService.CreateEventSnapshot:output_type -> data_service.CreateEventSnapshotResponse
+	44, // 59: data_service.DataService.AllocateIdSegment:output_type -> data_service.AllocateIdSegmentResponse
+	46, // 60: data_service.DataService.ReservePlayerName:output_type -> data_service.ReservePlayerNameResponse
+	60, // 61: data_service.DataService.ReleasePlayerName:output_type -> google.protobuf.Empty
+	49, // 62: data_service.DataService.BatchGetPlayerName:output_type -> data_service.BatchGetPlayerNameResponse
+	51, // 63: data_service.DataService.GetPlayerAssetOpLedger:output_type -> data_service.GetPlayerAssetOpLedgerResponse
+	53, // 64: data_service.DataService.GetPlayerInboxLedger:output_type -> data_service.GetPlayerInboxLedgerResponse
+	41, // [41:65] is the sub-list for method output_type
+	17, // [17:41] is the sub-list for method input_type
+	17, // [17:17] is the sub-list for extension type_name
+	17, // [17:17] is the sub-list for extension extendee
+	0,  // [0:17] is the sub-list for field type_name
 }
 
 func init() { file_proto_data_service_data_service_proto_init() }
@@ -3972,7 +4080,7 @@ func file_proto_data_service_data_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_data_service_data_service_proto_rawDesc), len(file_proto_data_service_data_service_proto_rawDesc)),
 			NumEnums:      3,
-			NumMessages:   53,
+			NumMessages:   55,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

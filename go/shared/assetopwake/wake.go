@@ -87,8 +87,10 @@ type Config struct {
 	Concurrency int
 	// DedupTTL 是去重键的存活时间(SET NX EX)。默认 5 秒。
 	DedupTTL time.Duration
-	// WakeTimeout 是每次 WakePlayer 的独立超时。默认 10 秒。必须大于 Loop 的 OpBudget:
-	// 剩余预算不够一整个 OpBudget 时 WakePlayer 不再开始新行,配得比它小则每次唤醒都回错误。
+	// WakeTimeout 是每次 WakePlayer 的独立超时。默认 10 秒。实际应不小于 2 × Loop 的 OpBudget:
+	// WakePlayer 先列行(约一次库往返,≤ 1 秒),之后剩余预算要够一整个 OpBudget 才领下一行。
+	// 配得比 OpBudget 小,每次唤醒都回错误;只比 OpBudget 略大,列完行后一行也领不到,静默退化成从不唤醒。
+	// 本包只校验非负,下界由装配方的配置校验负责(guild 的 validateLanding 要求 ≥ 2 × OpBudgetMs)。
 	WakeTimeout time.Duration
 }
 

@@ -57,7 +57,6 @@ set(SOURCE_FILES
     handler/rpc/player/player_service_interface.cpp
     logic/battle_room_manager.cpp
     main.cpp
-    rpc_replies/player/player_rpc_response_handler.cpp
     rpc_replies/register_handler.cpp
 )
 

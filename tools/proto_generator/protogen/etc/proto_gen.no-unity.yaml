@@ -107,8 +107,6 @@ file_extensions:
   cpp: ".cpp"
   handler_h: "_handler.h"
   handler_cpp: "_handler.cpp"
-  replied_handler_h: "_response_handler.h"
-  replied_handler_cpp: "_response_handler.cpp"
 
   grpc_client: "_grpc_client"
   grpc_client_h: "_grpc_client.h"
@@ -118,13 +116,10 @@ file_extensions:
   loader_cpp: "_loader.cpp"
 
   # Original config extensions
-  replied_handler_header_extension: "_response_handler.h"
-  cpp_replied_handler_ex: "_response_handler.cpp"
   model_sql_extension: "mysql_database_table.sql"
   message_id_go_file: "message_id.go"
   event_id_go_file: "event_id.go"
   service_info_extension: "_service_metadata"
-  register_replied_handler_cpp_extension: "register{{cpp_replied_handler_ex}}"
   register_handler_cpp_extension: "register{{handler_cpp}}"
 
 # Naming convention configuration (business logic naming constants)
@@ -133,12 +128,10 @@ naming:
   event_id: "EventId"
   method_index: "Index"
   handler_file: "Handler"
-  replied_handler_file: "Reply"
   event_handler_base: "event_handler"
   empty_response: "Empty"
   mysql_name: "mysql"
   player_service: "player_service_interface.cpp"
-  player_replied_service: "player_rpc_response_handler.cpp"
   complete_queue: "CompleteQueue"
   database_prefix: "db"
   db_proto_file: "db_base.proto"
@@ -149,7 +142,6 @@ naming:
 
   # Original config naming constants
   player_service_include_name: "#include \"rpc/player_service_interface.h\"\n"
-  player_service_replied_include_name: "#include \"rpc/player_rpc_response_handler.h\"\n"
   macro_return_include_name: '#include "macros/return_define.h"'
   node_enum_name: "eNodeType"
   node_service_suffix: "nodeservice"
@@ -196,14 +188,11 @@ path_lists:
     robot: "{{output_root}}{{robot}}logic/handler/"
     scene_node: "{{scene_node_dir}}handler/rpc/"
     scene_node_player: "{{scene_node_dir}}handler/rpc/player/"
-    scene_node_replied: "{{scene_node_dir}}rpc_replies/"
-    scene_node_player_replied: "{{scene_node_dir}}rpc_replies/player/"
     scene_node_grpc: "{{scene_node_dir}}handler/grpc/"
     battle_node_grpc: "{{node_cpp_dir}}nodes/battle/handler/grpc/"
     gate_node: "{{gate_node_dir}}handler/rpc/"
     gate_node_replied: "{{gate_node_dir}}rpc_replies/"
     gate_node_player: "{{gate_node_dir}}handler/rpc/player/"
-    gate_node_player_replied: "{{gate_node_dir}}rpc_replies/player/"
 
   # Node type configuration
   node_types:
@@ -431,6 +420,21 @@ domain_meta:
         proto: "go/generated/trade/proto"
         handler: "go/generated/trade/handler"
         grpc: "go/generated/trade/grpc"
+
+  # 玩家持久收件箱(docs/design/player-inbox-service.md §1.4、§5):Go 服务 go/player_inbox 实现
+  # PlayerInbox(scene 调 FetchItems / AckItems)与 PlayerInboxAdmin(运维,x-admin-token)。
+  # 形状照 trade:只出 Go outputs;C++ 的 pb / grpc_client(scene 调用方)由全量生成照常产出,与 trade 相同。
+  # player_inbox_table.proto 同目录,是 go/schemamigrate 建独占库 mmorpg_player_inbox 的事实源(port-decisions D-14)。
+  # 漏掉本块 = 整个域不被解析,消息号也会丢(DV-5);proto_gen.yaml 必须同步加同样一块。
+  player_inbox:
+    source: "{{proto_dir}}player_inbox/"
+    rpc:
+      type: grpc
+    outputs:
+      go:
+        proto: "go/generated/player_inbox/proto"
+        handler: "go/generated/player_inbox/handler"
+        grpc: "go/generated/player_inbox/grpc"
 
   friend:
     source: "{{proto_dir}}friend/"

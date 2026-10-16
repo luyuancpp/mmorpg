@@ -100,6 +100,43 @@ type KeyOrderedKafkaConsumer struct {
 
 	// placement 是按玩家落点选库的依赖(player-storage-placement.md §6),所有 worker 共用。
 	placement *placementRouter
+
+	// handoff 是消费组交接闸(group_handoff.go);只有交接形状(配置了 Kafka.GroupHandoffFrom)时非 nil,
+	// 最终形状下为 nil,行为与引入之前相同。
+	handoff *groupHandoff
+	// handoffDone 在守望 goroutine 退出后关闭;在 Start 里创建,没 Start 过(或没有 handoff)时为 nil。
+	handoffDone chan struct{}
+	// gap 量再平衡空窗(db_consumer_group_rebalance_gap_seconds)。
+	gap rebalanceGapTracker
+	// now 缺省 time.Now(nil 时由 nowTime 回落),单测可注入。
+	now func() time.Time
+
+	// 停机(Stop)用的状态,见 Stop 的注释。
+	// pullStop 在 Stop 第①步关闭(只关一次,pullStopOnce):消费循环、各 claim、重试循环据此停止取新任务。
+	// 直接拼结构体的单测里为 nil,此时 pullStopped 恒为 false、select 里的这一路永不就绪,行为与引入之前相同。
+	pullStop     chan struct{}
+	pullStopOnce sync.Once
+	// consumeDone 在消费循环退出时关闭(最后一个 session 已释放、位点已最后一次提交),Stop 第②步等它。
+	consumeDone chan struct{}
+	stopOnce    sync.Once
+	// shutdownDrainTimeout 是停机时每个 claim 等在途任务做完的上限(≤0 时取 claimDrainTimeout);
+	// Stop 第②步最多等它加 consumerShutdownGrace。
+	shutdownDrainTimeout time.Duration
+}
+
+const (
+	// consumerShutdownGrace 是停机时在 claim 排空上限之外,留给 sarama 释放会话、最后一次提交位点的余量。
+	consumerShutdownGrace = 5 * time.Second
+	// consumeRetryBackoff 是 Consume 返回错误后、重新入组之前的等待。
+	consumeRetryBackoff = 1 * time.Second
+)
+
+// nowTime 返回当前时间;now 未注入(直接拼结构体的单测)时用 time.Now。
+func (c *KeyOrderedKafkaConsumer) nowTime() time.Time {
+	if c.now != nil {
+		return c.now()
+	}
+	return time.Now()
 }
 
 type worker struct {
@@ -166,6 +203,9 @@ type workerTask struct {
 	// It is removed only after success/stale-drop, or atomically moved back to
 	// ready/dead on failure. Empty for Kafka-origin tasks.
 	retryReceipt []byte
+	// enqueuedAt 是任务交给 worker 通道的时刻(ConsumeClaim / consumeOneRetryTask 赋值),用于
+	// db_task_stage_seconds{stage="queue_wait"};零值(单测直接拼的任务)不记。
+	enqueuedAt time.Time
 }
 
 // claimAcker prevents Sarama's high-water MarkMessage semantics from skipping
@@ -340,13 +380,15 @@ var dbOpHandlers = map[string]dbOpHandler{
 	"write": handleDBWriteOp,
 }
 
+// handleDBReadOp 的 ctx 是调用方的 ctx(Kafka 来源即 claimCtx):claim 被收回、停机超时时读随之取消,排空更快;
+// 读不改数据,取消没有回档风险。取消导致的失败不报注册表(见 runDBOp)。
 func handleDBReadOp(
-	_ context.Context,
+	ctx context.Context,
 	store *proto2mysql.DB,
 	task *db_proto.DBTask,
 	msg proto.Message,
 ) error {
-	if err := store.FindOneByWhereClause(msg, task.WhereCase); err != nil && !errors.Is(err, proto2mysql.ErrNoRowsFound) {
+	if err := store.WithContext(ctx).FindOneByWhereClause(msg, task.WhereCase); err != nil && !errors.Is(err, proto2mysql.ErrNoRowsFound) {
 		return fmt.Errorf("db read failed: %w", storeerr.Tag(err))
 	}
 	return nil
@@ -373,7 +415,9 @@ func publishDBReadResult(ctx context.Context, redisClient redis.Cmdable, task *d
 	if err := redisClient.Set(ctx, cacheKey, resultData, cacheTTL()).Err(); err != nil {
 		logx.Errorf("cache write-back failed on read: key=%s, taskID=%s, err=%v", cacheKey, task.TaskId, err)
 	}
-	metrics.ObserveStage(metrics.StageCacheWrite, "read", time.Since(cacheStart))
+	cacheCost := time.Since(cacheStart)
+	metrics.ObserveStage(metrics.StageCacheWrite, "read", cacheCost)
+	metrics.ObserveRedisStep("read", metrics.RedisStepCacheSet, cacheCost)
 
 	// Write result to Redis (read ops only)
 	if task.TaskId != "" {
@@ -473,40 +517,56 @@ func parseAppliedCursor(raw string) (appliedCursor, error) {
 // from another partition is never applied automatically: Kafka offsets provide
 // no cross-partition causal order, so either direction could overwrite the
 // newer full player snapshot. The caller must durably quarantine that task.
+//
+// 每个判定都计入 db_ordering_guard_total(只计写任务)。apply_no_cursor 单独成类:游标被清空(FLUSH / 回档)之后
+// 它会成片出现,说明这道防线此刻形同虚设。
 func orderingForTask(ctx context.Context, rc redis.Cmdable, topic string, dbTask *db_proto.DBTask, task *workerTask) (orderingDecision, error) {
 	// Legacy retry payloads do not prove their source partition. Quarantine them
 	// even when this key has no marker: Key%N is not the producer's partitioner,
 	// and executing the task could race a fresh write on another worker.
 	if task.fromRetry && (task.seq == 0 || !task.hasOriginPartition) {
+		if dbTask.Op == "write" {
+			metrics.CountOrderingGuard(metrics.OrderingIncomparable)
+		}
 		return orderingIncomparable, nil
 	}
 	if dbTask.Op != "write" {
 		return orderingApply, nil
 	}
+	getStart := time.Now()
 	raw, err := rc.Get(ctx, appliedSeqKey(topic, dbTask.Key, dbTask.MsgType)).Result()
+	metrics.ObserveRedisStep("write", metrics.RedisStepCursorGet, time.Since(getStart))
 	if errors.Is(err, redis.Nil) {
+		metrics.CountOrderingGuard(metrics.OrderingApplyNoCursor)
 		return orderingApply, nil
 	}
 	if err != nil {
+		metrics.CountOrderingGuard(metrics.OrderingError)
 		return orderingIncomparable, fmt.Errorf("read applied cursor: %w", err)
 	}
 	previous, err := parseAppliedCursor(raw)
 	if err != nil {
+		metrics.CountOrderingGuard(metrics.OrderingError)
 		return orderingIncomparable, err
 	}
 
 	if task.seq == 0 || !task.hasOriginPartition {
+		metrics.CountOrderingGuard(metrics.OrderingIncomparable)
 		return orderingIncomparable, nil
 	}
 	if !previous.hasPartition {
+		metrics.CountOrderingGuard(metrics.OrderingIncomparable)
 		return orderingIncomparable, nil
 	}
 	if previous.partition != task.originPartition {
+		metrics.CountOrderingGuard(metrics.OrderingIncomparable)
 		return orderingIncomparable, nil
 	}
 	if task.seq <= previous.seq {
+		metrics.CountOrderingGuard(metrics.OrderingStale)
 		return orderingStale, nil
 	}
+	metrics.CountOrderingGuard(metrics.OrderingApply)
 	return orderingApply, nil
 }
 
@@ -519,7 +579,10 @@ func markAppliedSeq(ctx context.Context, rc redis.Cmdable, topic string, dbTask 
 		return nil
 	}
 	cursor := appliedCursor{seq: task.seq, partition: task.originPartition, hasPartition: task.hasOriginPartition}
-	return rc.Set(ctx, appliedSeqKey(topic, dbTask.Key, dbTask.MsgType), encodeAppliedCursor(cursor), 0).Err()
+	setStart := time.Now()
+	err := rc.Set(ctx, appliedSeqKey(topic, dbTask.Key, dbTask.MsgType), encodeAppliedCursor(cursor), 0).Err()
+	metrics.ObserveRedisStep("write", metrics.RedisStepCursorSet, time.Since(setStart))
+	return err
 }
 
 // ───────────────────────── 归属 epoch 守卫(reentry-barrier §6.3)─────────────────────────
@@ -551,13 +614,55 @@ func appliedEpochKey(topic string, key uint64, msgType string) string {
 	return fmt.Sprintf("consumer:applied_epoch:%s:%d:%s", topic, key, msgType)
 }
 
+// luaDecimalGreaterFn 是 Lua 里比较两个无符号十进制串大小的函数定义,拼在需要它的脚本前面用。
+//
+// 为什么不用 tonumber:Redis Lua 的数字是 double,大于 2^53 的相邻整数会舍入成同一个数,更大的值推不进去;
+// owner_epoch 等 uint64 计数一旦越过 2^53(或被写成雪花一类的大数),只升不降的比较就会静默失效。
+// 规范十进制串(无前导 0)先比长度、再逐字节比,与数值大小一致;用 string.byte 而不是 < 比较字符串,
+// 不受 strcoll / locale 影响。
+//
+// is_dec(s):s 是 "0" 或不以 0 开头的纯数字串。dec_gt(a, b):a、b 都是规范十进制串时 a > b。
+// 复用约定:条件写等后续脚本要比较 uint64 时直接拼这一段,不要再写 tonumber。
+const luaDecimalGreaterFn = `
+local function is_dec(s)
+    return type(s) == 'string' and (s == '0' or string.match(s, '^[1-9]%d*$') ~= nil)
+end
+local function dec_gt(a, b)
+    if #a ~= #b then
+        return #a > #b
+    end
+    for i = 1, #a do
+        local x, y = string.byte(a, i), string.byte(b, i)
+        if x ~= y then
+            return x > y
+        end
+    end
+    return false
+end
+`
+
 // luaMarkAppliedEpoch 只升不降地记录已落库的 epoch。同一 key 的写在单个 worker 内
 // 串行,但重试队列可以让更老的任务晚于更新的任务成功,所以必须取 max 而不是直接 SET。
-// epoch 是从 1 起的小计数器,远小于 2^53,Lua 的 double 比较是精确的。
-const luaMarkAppliedEpoch = `
-local cur = tonumber(redis.call("GET", KEYS[1]) or "0")
-if tonumber(ARGV[1]) > cur then
-    redis.call("SET", KEYS[1], ARGV[1])
+// 比较按十进制串做(luaDecimalGreaterFn),uint64 全范围精确;Redis 里的值格式不变,仍是规范十进制。
+// 参数或存量值不是规范十进制时返回错误(调用方 markAppliedOwnerEpoch 只记日志),不改存量值;
+// 返回值只有整数 1 或错误,不向客户端返回 Lua 布尔。
+const luaMarkAppliedEpoch = luaDecimalGreaterFn + `
+local new = ARGV[1]
+if not is_dec(new) then
+    return redis.error_reply('applied owner epoch argument is not a canonical decimal: ' .. tostring(new))
+end
+local cur = redis.call('GET', KEYS[1])
+if not cur then
+    if new ~= '0' then
+        redis.call('SET', KEYS[1], new)
+    end
+    return 1
+end
+if not is_dec(cur) then
+    return redis.error_reply('stored applied owner epoch is not a canonical decimal: ' .. cur)
+end
+if dec_gt(new, cur) then
+    redis.call('SET', KEYS[1], new)
 end
 return 1
 `
@@ -580,7 +685,9 @@ type redisAppliedEpochStore struct {
 }
 
 func (r redisAppliedEpochStore) ReadAppliedEpoch(ctx context.Context, topic string, key uint64, msgType string) (uint64, bool, error) {
+	getStart := time.Now()
 	raw, err := r.rc.Get(ctx, appliedEpochKey(topic, key, msgType)).Result()
+	metrics.ObserveRedisStep("write", metrics.RedisStepEpochGet, time.Since(getStart))
 	if errors.Is(err, redis.Nil) {
 		return 0, false, nil
 	}
@@ -597,8 +704,11 @@ func (r redisAppliedEpochStore) ReadAppliedEpoch(ctx context.Context, topic stri
 }
 
 func (r redisAppliedEpochStore) MarkAppliedEpoch(ctx context.Context, topic string, key uint64, msgType string, epoch uint64) error {
-	return r.rc.Eval(ctx, luaMarkAppliedEpoch, []string{appliedEpochKey(topic, key, msgType)},
+	markStart := time.Now()
+	err := r.rc.Eval(ctx, luaMarkAppliedEpoch, []string{appliedEpochKey(topic, key, msgType)},
 		strconv.FormatUint(epoch, 10)).Err()
+	metrics.ObserveRedisStep("write", metrics.RedisStepEpochMark, time.Since(markStart))
+	return err
 }
 
 // ownerEpochVerdict 是一次守卫判定。outcome 直接就是 metrics 的 label 取值。
@@ -813,8 +923,12 @@ func InitBlobGuard(cfg db_config.BlobGuardConfig) {
 		limits.MaxColumnBytes, limits.MaxRowBytes, limits.WarnRatio, limits.ReportOnly, len(limits.PerTable))
 }
 
+// handleDBWriteOp 的 ctx 来自排序锁租约(runDBOp → orderingLease.beginSQL):只在失租时取消,claim 收回、停机都不取消
+// 正在跑的写 SQL。取消之后锁随任务一起释放,而服务端可能还在执行这条语句,可能在别的实例写入新版本之后才提交 ——
+// 所以只有锁已经(或快要)不归本实例时才取消,且取消后锁留给 TTL(ordering_lease.go)。这不是栅栏:驱动取消只关
+// 客户端连接、不发 KILL QUERY,已经到了 MySQL 的语句可能照样提交。
 func handleDBWriteOp(
-	_ context.Context,
+	ctx context.Context,
 	store *proto2mysql.DB,
 	task *db_proto.DBTask,
 	msg proto.Message,
@@ -832,7 +946,8 @@ func handleDBWriteOp(
 		return fmt.Errorf("db write rejected by blob size gate: %w", guardErr)
 	}
 
-	if err := store.Save(msg); err != nil {
+	// Save 的实际语句:按主键 UPDATE → 0 行则 INSERT → 撞 1062 再 UPDATE → 仍 0 行用 FOR UPDATE 归类(proto2mysql v0.2.0)。
+	if err := store.WithContext(ctx).Save(msg); err != nil {
 		return fmt.Errorf("db write failed: %w", storeerr.Tag(err))
 	}
 	return nil
@@ -850,18 +965,21 @@ func publishDBWriteResult(ctx context.Context, redisClient redis.Cmdable, task *
 }
 
 func writeBackDBCache(ctx context.Context, redisClient redis.Cmdable, task *db_proto.DBTask, msg proto.Message) error {
-	// 写回 Redis 缓存。同一 key 的写在同一分区、同一子 shard 内串行,跨实例由排序锁兜底(见 handleTask)。
+	// 写回 Redis 缓存。同一 key 的写在单进程内经同一子 shard 串行,跨实例靠排序锁:runDBOp 在这之前刚核过锁
+	// (ordering_lease.go 的 verify),失租的写走不到这里。
 	cacheKey := buildCacheKey(task)
 	data, err := proto.Marshal(msg)
 	if err != nil {
 		return fmt.Errorf("marshal key=%s taskID=%s: %w", cacheKey, task.TaskId, err)
 	}
 	cacheStart := time.Now()
-	if err := redisClient.Set(ctx, cacheKey, data, cacheTTL()).Err(); err != nil {
-		metrics.ObserveStage(metrics.StageCacheWrite, "write", time.Since(cacheStart))
-		return fmt.Errorf("set key=%s taskID=%s: %w", cacheKey, task.TaskId, err)
+	setErr := redisClient.Set(ctx, cacheKey, data, cacheTTL()).Err()
+	cacheCost := time.Since(cacheStart)
+	metrics.ObserveStage(metrics.StageCacheWrite, "write", cacheCost)
+	metrics.ObserveRedisStep("write", metrics.RedisStepCacheSet, cacheCost)
+	if setErr != nil {
+		return fmt.Errorf("set key=%s taskID=%s: %w", cacheKey, task.TaskId, setErr)
 	}
-	metrics.ObserveStage(metrics.StageCacheWrite, "write", time.Since(cacheStart))
 	return nil
 }
 
@@ -889,18 +1007,45 @@ func NewKeyOrderedKafkaConsumer(
 		return nil, err
 	}
 
+	// 对本地副本再 Normalize 一次(幂等):防止调用方漏调时消费组超时键为 0、校验必然失败。
+	cfg.Normalize()
+	kcfg := cfg.ServerConfig.Kafka
+	if err := kcfg.ValidateConsumerGroup(); err != nil {
+		return nil, fmt.Errorf("invalid Kafka consumer group config: %w", err)
+	}
+	// 组名一律来自配置字面量(最终形状 GroupID / 交接形状 ConsumerGroup),运行时不拼 _z 后缀。
+	groupID := kcfg.EffectiveGroupID()
+
+	// 排序锁失租后被取消的 SQL 在服务端最多还能活两个会话锁等待之和;租约的本地截止时间余量必须盖得住它
+	// (ordering_lease.go)。不满足只打 ERROR 不拒启:削弱的是失租之后的保护,拒启等于停掉整个 zone 的存盘。
+	if err := leaseMarginCoversLockWaits(cfg.ServerConfig.Database.SessionLockWaitSeconds,
+		cfg.ServerConfig.Database.SessionInnodbLockWaitSeconds, orderingLeaseSafetyMargin); err != nil {
+		logx.Errorf("ordering lease safety margin check failed (startup allowed): %v", err)
+	}
+
 	config := sarama.NewConfig()
-	config.Version = sarama.V3_5_0_0
+	config.Version = consumerKafkaVersion
+	config.ClientID = consumerClientID(cfg.ZoneId, hostname)
 	config.Consumer.Return.Errors = true
+	config.Consumer.Group.Session.Timeout = time.Duration(kcfg.SessionTimeoutMs) * time.Millisecond
+	config.Consumer.Group.Heartbeat.Interval = time.Duration(kcfg.HeartbeatIntervalMs) * time.Millisecond
+	config.Consumer.Group.Rebalance.Timeout = time.Duration(kcfg.RebalanceTimeoutMs) * time.Millisecond
+	// 保持 OffsetOldest:按 zone 拆组时新组的起点由交接闸在 Setup 里用对方组的已提交位点播种(group_handoff.go),
+	// 不靠改这里 —— 改成 OffsetNewest 会让真正的全新 topic 丢掉第一个 session 之前写入的消息。
 	config.Consumer.Offsets.Initial = sarama.OffsetOldest
 
-	consumerGroup, err := sarama.NewConsumerGroup(
-		cfg.ServerConfig.Kafka.Brokers,
-		cfg.ServerConfig.Kafka.GroupID,
-		config,
-	)
+	consumerGroup, err := sarama.NewConsumerGroup(kcfg.Brokers, groupID, config)
 	if err != nil {
-		return nil, fmt.Errorf("create consumer group failed: groupID=%s, err=%w", cfg.ServerConfig.Kafka.GroupID, err)
+		return nil, fmt.Errorf("create consumer group failed: groupID=%s, err=%w", groupID, err)
+	}
+
+	// 交接形状才建交接闸;最终形状下返回 nil,不连 admin、不依赖对方组。inspector 懒建,出错即重建。
+	handoff, err := newGroupHandoffFromConfig(kcfg, groupID, func() (groupInspector, error) {
+		return newSaramaGroupInspector(kcfg.Brokers, consumerKafkaVersion, config.ClientID)
+	})
+	if err != nil {
+		_ = consumerGroup.Close()
+		return nil, fmt.Errorf("group handoff config: %w", err)
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -923,7 +1068,7 @@ func NewKeyOrderedKafkaConsumer(
 		consumer:             consumerGroup,
 		redisClient:          redisClient,
 		topic:                cfg.ServerConfig.Kafka.Topic,
-		groupID:              cfg.ServerConfig.Kafka.GroupID,
+		groupID:              groupID,
 		partitionCount:       cfg.ServerConfig.Kafka.PartitionCnt,
 		subShardCount:        subShardCount,
 		isOfflineExpand:      cfg.ServerConfig.Kafka.IsOfflineExpand,
@@ -944,6 +1089,12 @@ func NewKeyOrderedKafkaConsumer(
 			required: cfg.Placement.Required,
 			stores:   stores,
 		},
+		handoff: handoff,
+		now:     time.Now,
+
+		pullStop:             make(chan struct{}),
+		consumeDone:          make(chan struct{}),
+		shutdownDrainTimeout: claimDrainTimeout,
 	}
 	for i := int32(0); i < cfg.ServerConfig.Kafka.PartitionCnt; i++ {
 		c.workers[i] = c.buildWorker(i)
@@ -1039,21 +1190,64 @@ func (c *KeyOrderedKafkaConsumer) Start() error {
 
 	c.StartRetryConsumer()
 
+	// 交接形状下起守望:放行之后每 5s 看一次对方组,只凭正面证据让出(group_handoff.go)。
+	if c.handoff != nil {
+		c.handoffDone = make(chan struct{})
+		go c.handoff.watch(c.ctx, c.handoffDone)
+	}
+
+	// 消费循环。退出时关闭 consumeDone:Stop 第②步等它,意味着最后一个 session 已经释放、位点已最后一次提交。
+	consumeDone := c.consumeDone
 	go func() {
-		for {
-			if err := c.consumer.Consume(c.ctx, []string{c.topic}, &consumerGroupHandler{consumer: c}); err != nil {
+		if consumeDone != nil {
+			defer close(consumeDone)
+		}
+		// consumeCtx 随撤拉取(Stop 第①步)一起取消,交接闸等待与 Consume 都用它:
+		//   - 交接闸前的等待不会把 Stop 卡住;
+		//   - 没有分到分区的成员(副本数多于分区数)没有 claim 可返回,sarama 只在 ctx 取消或 Close 时结束它的
+		//     session,不随 pullStop 取消的话 Stop 第②步要白等满超时。
+		// 取消 Consume 的 ctx 会让 sarama 取消会话,但停机时 claim 的收尾不看会话 ctx(drainClaimForShutdown),
+		// 已派发的任务照常做完;sarama 的心跳持续到会话释放、释放时最后一次提交位点,先提交、后离组的顺序不变。
+		consumeCtx, cancelConsume := context.WithCancel(c.ctx)
+		defer cancelConsume()
+		go func() {
+			select {
+			case <-c.pullStop:
+				cancelConsume()
+			case <-consumeCtx.Done():
+			}
+		}()
+		for !c.pullStopped() {
+			// 交接闸在每次 Consume(入组)之前判定:被闸住时本进程根本不入组、不持有分配。已放行时立即返回,
+			// 所以之后的再平衡不再依赖对方组;只有守望让出后才会重新等待。
+			if c.handoff != nil {
+				if err := c.handoff.await(consumeCtx); err != nil {
+					logx.Infof("consumer group stopped while waiting for group handoff: groupID=%s peer=%s topic=%s",
+						c.groupID, c.handoff.peer, c.topic)
+					return
+				}
+			}
+			if err := c.consumer.Consume(consumeCtx, []string{c.topic}, &consumerGroupHandler{consumer: c}); err != nil {
 				logx.Errorf("consumer group consume failed: groupID=%s, topic=%s, err=%v", c.groupID, c.topic, err)
-				time.Sleep(1 * time.Second)
+				select {
+				case <-c.pullStop:
+				case <-c.ctx.Done():
+				case <-time.After(consumeRetryBackoff):
+				}
 			}
 			if c.ctx.Err() != nil {
-				logx.Infof("consumer group stopped: groupID=%s, topic=%s", c.groupID, c.topic)
-				return
+				break
 			}
 		}
+		logx.Infof("consumer group stopped: groupID=%s, topic=%s", c.groupID, c.topic)
 	}()
 
-	logx.Infof("consumer started successfully: groupID=%s, topic=%s, partitionCount=%d, isOfflineExpand=%v",
-		c.groupID, c.topic, c.partitionCount, c.isOfflineExpand)
+	handoffFrom := ""
+	if c.handoff != nil {
+		handoffFrom = c.handoff.peer
+	}
+	logx.Infof("consumer started successfully: groupID=%s, handoffFrom=%s, topic=%s, partitionCount=%d, isOfflineExpand=%v",
+		c.groupID, handoffFrom, c.topic, c.partitionCount, c.isOfflineExpand)
 	return nil
 }
 
@@ -1066,6 +1260,10 @@ func (c *KeyOrderedKafkaConsumer) StartRetryConsumer() {
 			select {
 			case <-c.ctx.Done():
 				logx.Infof("retry consumer stopped: topic=%s, retryQueueKey=%s", c.topic, c.retryQueueKey)
+				return
+			case <-c.pullStop:
+				// 停机撤拉取:不再认领新的重试收据;已派发的由 worker 做完,留在本实例 processing 里的由 Stop 第⑤步归还。
+				logx.Infof("retry consumer stopped pulling for shutdown: topic=%s, retryQueueKey=%s", c.topic, c.retryQueueKey)
 				return
 			case <-ticker.C:
 				c.consumeRetryQueue()
@@ -1167,6 +1365,9 @@ func (c *KeyOrderedKafkaConsumer) consumeRetryQueue() {
 		select {
 		case <-c.ctx.Done():
 			return
+		case <-c.pullStop:
+			// 停机撤拉取之后不再认领(Stop 第①步)。
+			return
 		default:
 		}
 		if !c.consumeOneRetryTask() {
@@ -1243,11 +1444,16 @@ func (c *KeyOrderedKafkaConsumer) consumeOneRetryTask() bool {
 		hasOriginPartition: hasPartition,
 		fromRetry:          true,
 		retryReceipt:       append([]byte(nil), msgBytes...),
+		enqueuedAt:         time.Now(),
 	}
 	select {
 	case w.taskCh <- retryTask:
 		logx.Debugf("retry task routed to worker: taskID=%s, partition=%d, retryCount=%d", task.TaskId, partition, task.RetryCount)
 	case <-c.ctx.Done():
+		return false
+	case <-c.pullStop:
+		// 停机撤拉取时 worker 通道还满着:不再派发。收据已认领进本实例的 processing 列表,
+		// 由 Stop 第⑤步(releaseRetryOwnership)原样还回 ready,不丢、不耗重试次数。
 		return false
 	}
 	return true
@@ -1308,6 +1514,9 @@ func (w *worker) start(isOfflineExpand bool) {
 // Same routing key always lands in the same sub-shard, so two tasks
 // for the same player can never run concurrently in different goroutines,
 // preserving read-after-write semantics.
+//
+// 这只覆盖进了同一个 worker 的任务:同 key 的读只有与写落在同一分区时,读屏障才成立;前提与剩余缺口见
+// processTaskBatch 的「读屏障的前提」与 db-task-kafka-partition-contract.md。
 func (w *worker) routeToSubShard(task *workerTask) {
 	if w.subShardCount <= 1 {
 		// Legacy: only one sub-shard, no routing needed.
@@ -1395,6 +1604,7 @@ func (w *worker) runSubShard(shardIdx int, isOfflineExpand bool, subWg *sync.Wai
 				}
 			}
 
+			metrics.ObserveSubShardBatch(len(batch))
 			w.processTaskBatch(batch, isOfflineExpand)
 		}
 	}
@@ -1555,6 +1765,7 @@ func (w *worker) processTaskBatch(batch []*workerTask, isOfflineExpand bool) {
 }
 
 func (w *worker) handleTask(task *workerTask, isOfflineExpand bool) {
+	taskStart := time.Now()
 	// Per-message panic recovery: a single bad message won't kill the partition worker
 	defer func() {
 		if r := recover(); r != nil {
@@ -1574,6 +1785,11 @@ func (w *worker) handleTask(task *workerTask, isOfflineExpand bool) {
 	}()
 	if task == nil {
 		return
+	}
+	// 注册在 recover 之后:先于 recover 执行,panic 的任务也记一次整段耗时。
+	defer observeTaskTiming(task, taskStart)
+	if !task.enqueuedAt.IsZero() {
+		metrics.ObserveStage(metrics.StageQueueWait, taskOpLabel(task.dbTask), taskStart.Sub(task.enqueuedAt))
 	}
 	if task.claimCtx != nil {
 		select {
@@ -1662,9 +1878,18 @@ func (w *worker) handleTask(task *workerTask, isOfflineExpand bool) {
 	if task.claimCtx != nil {
 		processCtx = task.claimCtx
 	}
-	err := processDBTask(processCtx, w, dbTask, route, w.partition, task.seq, isOfflineExpand)
+	// 只把非 nil 的租约装进接口:nil 指针装进接口后接口本身不为 nil,runDBOp 的「写必须持锁」检查会被绕过。
+	var lease writeLease
+	if orderingLock != nil {
+		lease = orderingLock
+	}
+	err := processDBTask(processCtx, w, dbTask, route, lease, w.partition, task.seq, isOfflineExpand)
 
 	if err != nil {
+		if orderingLock != nil && orderingLock.lost() != nil && !errors.Is(err, errOrderingLeaseLost) {
+			// 这次失败期间看门狗已经判了失租(例如复核读失败的同时续租也放弃了):按失租记延后原因。
+			err = fmt.Errorf("%w: %w", errOrderingLeaseLost, err)
+		}
 		// 存储不可用(L-04)时每条任务都会失败一次,逐条 ERROR 会刷屏;由 deferFailedTask 按原因限速记录。
 		if !logsAsStoreOutage(err) {
 			logx.Errorf("worker process task failed: partition=%d, cost=%v, err=%v",
@@ -1675,15 +1900,7 @@ func (w *worker) handleTask(task *workerTask, isOfflineExpand bool) {
 	} else {
 		logx.Debugf("worker process task success: partition=%d, cost=%v",
 			w.partition, time.Since(startTime))
-		// A long DB call must still own the cross-instance guard before it can
-		// publish its cursor. The watchdog renews the lease while MySQL is busy;
-		// verify() performs one final token-checked Lua extension before SET.
-		if orderingLock != nil {
-			if verifyErr := orderingLock.verify(w.ctx); verifyErr != nil {
-				w.deferFailedTask(task, dbTask, fmt.Errorf("%w: %w", errOrderingLeaseLost, verifyErr))
-				return
-			}
-		}
+		// 核锁已在 runDBOp 内、共享缓存回写之前完成(ordering_lease.go 的 verify):走到这里说明持锁写完、缓存已发布。
 		// Update applied seq ONLY after a successful write so that a failed
 		// write does not falsely block its own retry.
 		if markErr := markAppliedSeq(w.ctx, w.redisClient, w.topic, dbTask, task); markErr != nil {
@@ -1704,13 +1921,52 @@ func (w *worker) handleTask(task *workerTask, isOfflineExpand bool) {
 	ackKafkaTask(task)
 }
 
+// observeTaskTiming 在 handleTask 结束时记 task_total,以及 Kafka 来源任务的 kafka_e2e。
+//
+// kafka_e2e 用的是生产者写进消息的 CreateTime(Kafka 0.10+ 的 Timestamp),跨机有时钟偏差:差值为负时丢弃;
+// 重试源没有 kafkaMsg,不计。它只用来看趋势,不能拿来和本进程内的阶段耗时逐项相加。
+func observeTaskTiming(task *workerTask, start time.Time) {
+	end := time.Now()
+	op := taskOpLabel(task.dbTask)
+	metrics.ObserveStage(metrics.StageTaskTotal, op, end.Sub(start))
+	if task.kafkaMsg == nil || task.kafkaMsg.Timestamp.IsZero() {
+		return
+	}
+	if e2e := end.Sub(task.kafkaMsg.Timestamp); e2e >= 0 {
+		metrics.ObserveStage(metrics.StageKafkaE2E, op, e2e)
+	}
+}
+
+// consumerGroupHandler 每次 Consume 新建一个,对应一个 session。yield* 只在 Setup 里写、Cleanup 里清,
+// ConsumeClaim goroutine 在 Setup 返回之后才启动、在 Cleanup 之前全部返回,所以读写不需要额外加锁。
 type consumerGroupHandler struct {
 	consumer *KeyOrderedKafkaConsumer
+
+	// yieldCtx 派生自 session.Context(),交接闸的守望让出时被取消(只在 handoff 非 nil 时创建)。
+	yieldCtx    context.Context
+	yieldCancel context.CancelFunc
+	// setupDone 只有 Setup 成功才置位:Setup 失败后的 Cleanup 不算一次 session 结束(再平衡空窗从上一个真实 session 算起)。
+	setupDone bool
+}
+
+// sessionScope 返回本 session 派发任务用的父 ctx 与让出信号:有交接闸时是 yieldCtx 与它的 Done();
+// 否则是 session.Context() 与 nil channel(select 里永不就绪,行为与引入之前相同)。
+func (h *consumerGroupHandler) sessionScope(session sarama.ConsumerGroupSession) (context.Context, <-chan struct{}) {
+	if h.yieldCtx != nil {
+		return h.yieldCtx, h.yieldCtx.Done()
+	}
+	return session.Context(), nil
+}
+
+// yielded 报告本 session 是否已被交接闸让出(或 session 本身已结束;yieldCtx 派生自 session ctx)。
+func (h *consumerGroupHandler) yielded() bool {
+	return h.yieldCtx != nil && h.yieldCtx.Err() != nil
 }
 
 func (h *consumerGroupHandler) Setup(session sarama.ConsumerGroupSession) error {
 	claims := session.Claims()
-	if partitions, ok := claims[h.consumer.topic]; ok {
+	partitions, assigned := claims[h.consumer.topic]
+	if assigned {
 		partitionIDs := make([]int32, 0, len(partitions))
 		for _, partition := range partitions {
 			partitionIDs = append(partitionIDs, partition)
@@ -1723,6 +1979,28 @@ func (h *consumerGroupHandler) Setup(session sarama.ConsumerGroupSession) error 
 			h.consumer.groupID, h.consumer.topic, partitionIDs)
 	} else {
 		logx.Errorf("no partitions assigned: groupID=%s, topic=%s", h.consumer.groupID, h.consumer.topic)
+	}
+
+	// 交接闸(group_handoff.go):先给本 session 分到的未落定分区播种,再登记让出函数。
+	// 播种失败让 Setup 报错:sarama 释放本 session、Consume 返回错误,消费循环 1s 后重新入组;
+	// 此时已经放行(released),不会再过闸,只会用重建的 inspector 再播种一次。
+	if hf := h.consumer.handoff; hf != nil {
+		if err := hf.seed(session, partitions); err != nil {
+			return fmt.Errorf("group handoff seeding failed: %w", err)
+		}
+		if h.yieldCancel != nil {
+			h.yieldCancel()
+		}
+		h.yieldCtx, h.yieldCancel = context.WithCancel(session.Context())
+		if !hf.setSessionYield(h.yieldCancel) {
+			// 守望在播种与登记之间已经让出:本 session 立即停止派发。
+			h.yieldCancel()
+		}
+	}
+
+	h.setupDone = true
+	if d, ok := h.consumer.gap.sessionStarted(h.consumer.nowTime()); ok {
+		metrics.ObserveRebalanceGap(d)
 	}
 	return nil
 }
@@ -1737,6 +2015,16 @@ func (h *consumerGroupHandler) Cleanup(session sarama.ConsumerGroupSession) erro
 		logx.Infof("consumer group releasing partitions: groupID=%s, topic=%s, partitions=%v",
 			h.consumer.groupID, h.consumer.topic, partitionIDs)
 	}
+	// 也要容忍 Setup 失败之后的 Cleanup(sarama 会调):此时 yieldCancel 可能为 nil、setupDone 为 false。
+	if h.yieldCancel != nil {
+		h.yieldCancel()
+	}
+	if hf := h.consumer.handoff; hf != nil {
+		hf.clearSessionYield()
+	}
+	if h.setupDone {
+		h.consumer.gap.sessionEnded(h.consumer.nowTime())
+	}
 	return nil
 }
 
@@ -1748,8 +2036,27 @@ func (h *consumerGroupHandler) ConsumeClaim(session sarama.ConsumerGroupSession,
 			claim.Partition(), h.consumer.partitionCount, h.consumer.topic)
 	}
 
-	claimCtx, cancelClaim := context.WithCancel(session.Context())
+	// 有交接闸时父 ctx 是 yieldCtx(守望让出即取消,在途任务随 claimCtx 一起被撤);否则就是 session ctx。
+	//
+	// claimCtx 不直接继承父 ctx(停机顺序,docs/design/db-task-pipeline-bottlenecks.md G6):sarama 在任一
+	// ConsumeClaim 返回时就取消整个会话,停机排空时先排空完的兄弟 claim 一返回,其余 claim 的在途任务就会随会话
+	// 一起被撤,只能等新属主从已提交位点重放。所以 claimCtx 由 WithoutCancel 派生,另起一个观察 goroutine:
+	// 只在没有撤拉取(不是停机)时随父 ctx 取消 —— 再平衡与交接闸让出的语义与之前相同;停机时由
+	// drainClaimForShutdown 按自己的时限收尾。
+	parentCtx, yieldDone := h.sessionScope(session)
+	claimCtx, cancelClaim := context.WithCancel(context.WithoutCancel(parentCtx))
 	defer cancelClaim()
+	stopWatch := make(chan struct{})
+	defer close(stopWatch)
+	go func() {
+		select {
+		case <-parentCtx.Done():
+			if !h.consumer.pullStopped() {
+				cancelClaim()
+			}
+		case <-stopWatch:
+		}
+	}()
 	acker := newClaimAcker(session, claim.InitialOffset(), cancelClaim)
 
 	drainAfterStop := func(reason string) {
@@ -1761,15 +2068,40 @@ func (h *consumerGroupHandler) ConsumeClaim(session sarama.ConsumerGroupSession,
 	}
 
 	for {
+		// 停机撤拉取之后不再取新消息:已派发的任务做完并标记位点,再返回(drainClaimForShutdown)。
+		if h.consumer.pullStopped() {
+			return h.drainClaimForShutdown(claim, acker)
+		}
 		select {
 		case err := <-acker.failureCh:
 			drainAfterStop("offset durability failure")
 			return err
+		case <-h.consumer.pullStop:
+			return h.drainClaimForShutdown(claim, acker)
 		case <-session.Context().Done():
+			// 停机时会话被取消多半是兄弟 claim 先排空返回了,不能按再平衡撤掉本 claim 的在途任务。
+			if h.consumer.pullStopped() {
+				return h.drainClaimForShutdown(claim, acker)
+			}
 			drainAfterStop("session canceled")
+			return nil
+		case <-yieldDone:
+			if h.consumer.pullStopped() {
+				return h.drainClaimForShutdown(claim, acker)
+			}
+			// 交接闸守望发现对方组正在消费本 topic:停止派发、按原有收尾路径排空,返回 nil 让 sarama 结束本 session;
+			// 消费循环下一轮重新过闸。yieldCtx 派生自 session ctx,两者同时结束时按 session 结束记。
+			if session.Context().Err() != nil {
+				drainAfterStop("session canceled")
+			} else {
+				drainAfterStop("handoff peer reclaimed partition")
+			}
 			return nil
 		case msg, ok := <-claim.Messages():
 			if !ok {
+				if h.consumer.pullStopped() {
+					return h.drainClaimForShutdown(claim, acker)
+				}
 				done := acker.wait()
 				timer := time.NewTimer(claimDrainTimeout)
 				defer timer.Stop()
@@ -1782,6 +2114,9 @@ func (h *consumerGroupHandler) ConsumeClaim(session sarama.ConsumerGroupSession,
 				case <-session.Context().Done():
 					drainAfterStop("session canceled while draining")
 					return nil
+				case <-yieldDone:
+					drainAfterStop("handoff peer reclaimed partition while draining")
+					return nil
 				case <-timer.C:
 					drainAfterStop("messages closed with pending work")
 					return fmt.Errorf("claim pending work did not drain within %v: topic=%s partition=%d",
@@ -1789,6 +2124,10 @@ func (h *consumerGroupHandler) ConsumeClaim(session sarama.ConsumerGroupSession,
 				}
 			}
 
+			if h.consumer.pullStopped() {
+				// 撤拉取之后才取到的消息:不 track、不派发,已标记的位点不会越过它,由下一任属主从已提交位点重放。
+				return h.drainClaimForShutdown(claim, acker)
+			}
 			logx.Debugf("fetched message: topic=%s, partition=%d, offset=%d, key=%s",
 				msg.Topic, msg.Partition, msg.Offset, string(msg.Key))
 			acker.track(msg)
@@ -1833,6 +2172,7 @@ func (h *consumerGroupHandler) ConsumeClaim(session sarama.ConsumerGroupSession,
 				originPartition:    msg.Partition,
 				hasOriginPartition: true,
 				claimCtx:           claimCtx,
+				enqueuedAt:         time.Now(),
 			}
 
 			// Block until worker accepts the task or context is canceled.
@@ -1847,7 +2187,8 @@ func (h *consumerGroupHandler) ConsumeClaim(session sarama.ConsumerGroupSession,
 			case <-claimCtx.Done():
 				acker.fail(msg, fmt.Errorf("claim canceled before dispatch: %w", claimCtx.Err()))
 				drainAfterStop("claim canceled before dispatch")
-				if session.Context().Err() != nil {
+				// session 结束或交接闸让出都是正常收尾,返回 nil;其它原因的取消照旧作为错误返回。
+				if session.Context().Err() != nil || h.yielded() {
 					return nil
 				}
 				return claimCtx.Err()
@@ -1862,20 +2203,59 @@ func (h *consumerGroupHandler) ConsumeClaim(session sarama.ConsumerGroupSession,
 	}
 }
 
-func processDBTask(ctx context.Context, w *worker, task *db_proto.DBTask, route *placementRoute, partition int32, seq uint64, isOfflineExpand bool) error {
+// drainClaimForShutdown 是停机(Stop 第①步撤拉取之后)时 claim 的收尾:不再取消息,等已派发的任务全部做完、
+// 由 claimAcker 标记连续完成的前缀,然后返回 nil,让 sarama 在会话释放时把这些位点最后一次提交(Stop 第②步),
+// 之后才离组(第③步)—— 先提交、后离组。
+//
+// 不看会话 ctx:兄弟 claim 先排空返回会取消整个会话,这不代表本 claim 该放弃在途任务。等待有上限
+// (shutdownDrainTimeout):超时后作废剩余任务(acker.stop 取消 claimCtx,排队中的任务不再碰库),它们由下一任属主
+// 从已提交位点重放;已经在跑的写 SQL 不被取消,由排序锁兜底。只等一次,不二次等待。
+func (h *consumerGroupHandler) drainClaimForShutdown(claim sarama.ConsumerGroupClaim, acker *claimAcker) error {
+	timeout := h.consumer.shutdownDrainTimeout
+	if timeout <= 0 {
+		timeout = claimDrainTimeout
+	}
+	timer := time.NewTimer(timeout)
+	defer timer.Stop()
+	var consumerDone <-chan struct{}
+	if h.consumer.ctx != nil {
+		consumerDone = h.consumer.ctx.Done()
+	}
+	select {
+	case <-acker.wait():
+		logx.Infof("claim drained for shutdown: topic=%s partition=%d", h.consumer.topic, claim.Partition())
+		return nil
+	case err := <-acker.failureCh:
+		acker.stop()
+		return err
+	case <-consumerDone:
+		// Stop 的等待已经超时、worker 正在被取消:不再等。
+		acker.stop()
+		return nil
+	case <-timer.C:
+		acker.stop()
+		logx.Errorf("shutdown drain timed out; remaining tasks replay from the committed offset: topic=%s partition=%d timeout=%v",
+			h.consumer.topic, claim.Partition(), timeout)
+		return nil
+	}
+}
+
+func processDBTask(ctx context.Context, w *worker, task *db_proto.DBTask, route *placementRoute, lease writeLease, partition int32, seq uint64, isOfflineExpand bool) error {
 	key := strconv.FormatUint(task.Key, 10)
 	logx.Debugf("received db task: taskID=%s, key=%s, partition=%d, seq=%d, isOfflineExpand=%v",
 		task.TaskId, key, partition, seq, isOfflineExpand)
 
 	if isOfflineExpand {
 		logx.Debugf("offline expand mode: skip lock/status check, taskID=%s", task.TaskId)
-		return processTaskWithoutLock(ctx, w.redisClient, task, route)
+		return processTaskWithoutLock(ctx, w.redisClient, task, route, lease)
 	}
 
+	expandStart := time.Now()
 	expandStatus, err := kafkautil.GetExpandStatus(ctx, w.redisClient, w.topic)
+	metrics.ObserveRedisStep(taskOpLabel(task), metrics.RedisStepExpandGet, time.Since(expandStart))
 	if err != nil {
 		logx.Errorf("get expand status failed: key=%s, taskID=%s, err=%v", key, task.TaskId, err)
-		return tryLockAndProcess(ctx, w, key, task, seq, route)
+		return tryLockAndProcess(ctx, w, key, task, seq, route, lease)
 	}
 
 	currentTime := time.Now().UnixMilli()
@@ -1889,128 +2269,29 @@ func processDBTask(ctx context.Context, w *worker, task *db_proto.DBTask, route 
 
 	if expandStatus.Status == kafkautil.ExpandStatusExpanding {
 		logx.Debugf("expanding mode: try lock for task: taskID=%s, key=%s", task.TaskId, key)
-		return tryLockAndProcess(ctx, w, key, task, seq, route)
+		return tryLockAndProcess(ctx, w, key, task, seq, route, lease)
 	}
 
-	return processTaskWithoutLock(ctx, w.redisClient, task, route)
+	return processTaskWithoutLock(ctx, w.redisClient, task, route, lease)
 }
 
-const orderingLockTTL = 2 * time.Minute
-const orderingLockRenewInterval = 30 * time.Second
-
+// 排序锁的租约(取锁、续租、核锁、释放)在 ordering_lease.go。
 var (
 	errTaskDeferred     = errors.New("task deferred because per-key expansion lock is occupied")
 	errOrderingLockBusy = errors.New("task deferred because cross-instance ordering lock is occupied")
 )
 
-func orderingLockKey(topic string, task *db_proto.DBTask) string {
-	return fmt.Sprintf("kafka:ordering:%s:%d:%s", topic, task.Key, task.MsgType)
+// writeLease 是 runDBOp 对排序锁租约的全部要求,生产实现是 *orderingLease(ordering_lease.go)。
+// 抽成接口只为单测能注入替身,钉住 runDBOp 的执行顺序与上报口径。
+type writeLease interface {
+	// beginSQL 在发出写 SQL 之前调用一次:已失租或已过本地截止时间时返回错误(一条 SQL 都不发);
+	// 否则交出只随失租取消的 ctx,以及 SQL 结束后必须调用一次的 finish。
+	beginSQL() (ctx context.Context, finish func(handlerErr error), err error)
+	// verify 在共享缓存回写之前做一次带 token 的核锁;失租时返回包着 errOrderingLeaseLost 的错误。
+	verify(ctx context.Context) error
 }
 
-type orderingLease struct {
-	result *locker.TryLockResult
-	stop   chan struct{}
-	done   chan struct{}
-
-	mu      sync.Mutex
-	lostErr error
-}
-
-func (l *orderingLease) setLost(err error) {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-	if l.lostErr == nil {
-		l.lostErr = err
-	}
-}
-
-func (l *orderingLease) lost() error {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-	return l.lostErr
-}
-
-func (l *orderingLease) verify(ctx context.Context) error {
-	if err := l.lost(); err != nil {
-		return err
-	}
-	owned, err := l.result.Extend(ctx, orderingLockTTL)
-	if err != nil {
-		l.setLost(err)
-		return err
-	}
-	if !owned {
-		err = errors.New("ordering lease token is no longer the Redis lock owner")
-		l.setLost(err)
-		return err
-	}
-	return nil
-}
-
-func acquireOrderingLock(ctx context.Context, w *worker, task *db_proto.DBTask) (*orderingLease, error) {
-	result, err := w.locker.TryLock(ctx, orderingLockKey(w.topic, task), orderingLockTTL)
-	if err != nil {
-		return nil, fmt.Errorf("acquire cross-instance ordering lock: taskID=%s: %w", task.TaskId, err)
-	}
-	if !result.IsLocked() {
-		return nil, fmt.Errorf("%w: taskID=%s key=%d msgType=%s", errOrderingLockBusy, task.TaskId, task.Key, task.MsgType)
-	}
-
-	lease := &orderingLease{
-		result: result,
-		stop:   make(chan struct{}),
-		done:   make(chan struct{}),
-	}
-	go func() {
-		defer close(lease.done)
-		ticker := time.NewTicker(orderingLockRenewInterval)
-		defer ticker.Stop()
-		for {
-			select {
-			case <-lease.stop:
-				return
-			case <-w.ctx.Done():
-				lease.setLost(w.ctx.Err())
-				return
-			case <-ticker.C:
-				owned, extendErr := result.Extend(w.ctx, orderingLockTTL)
-				if extendErr != nil {
-					lease.setLost(fmt.Errorf("ordering lease renewal failed: %w", extendErr))
-					return
-				}
-				if !owned {
-					lease.setLost(errors.New("ordering lease renewal found a different owner"))
-					return
-				}
-			}
-		}
-	}()
-	return lease, nil
-}
-
-// orderingLockReleaseTimeout bounds the lock release issued while shutting down or after a canceled claim.
-const orderingLockReleaseTimeout = 2 * time.Second
-
-func releaseOrderingLock(ctx context.Context, lease *orderingLease, task *db_proto.DBTask) {
-	if lease == nil {
-		return
-	}
-	close(lease.stop)
-	<-lease.done
-	// Release must still run after the caller's context is canceled: the worker context is canceled by
-	// Stop() before in-flight tasks unwind, and releasing with it would always fail, leaving the lock to
-	// expire by TTL (2 minutes) while every other instance queues behind it. So detach from the
-	// cancellation and bound the call instead. Token-checked Lua prevents this owner from deleting a
-	// successor's lock after TTL expiry.
-	releaseCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), orderingLockReleaseTimeout)
-	defer cancel()
-	if _, err := lease.result.Release(releaseCtx); err != nil {
-		logx.Errorf("release cross-instance ordering lock failed: taskID=%s key=%d msgType=%s err=%v",
-			task.TaskId, task.Key, task.MsgType, err)
-	}
-}
-
-func tryLockAndProcess(ctx context.Context, worker *worker, key string, task *db_proto.DBTask, seq uint64, route *placementRoute) error {
+func tryLockAndProcess(ctx context.Context, worker *worker, key string, task *db_proto.DBTask, seq uint64, route *placementRoute, lease writeLease) error {
 	lockKey := fmt.Sprintf("kafka:consumer:lock:%s", key)
 	lockTTL := 5 * time.Second
 
@@ -2033,10 +2314,10 @@ func tryLockAndProcess(ctx context.Context, worker *worker, key string, task *db
 		}
 	}()
 
-	return processTaskWithoutLock(ctx, worker.redisClient, task, route)
+	return processTaskWithoutLock(ctx, worker.redisClient, task, route, lease)
 }
 
-func processTaskWithoutLock(ctx context.Context, redisClient redis.Cmdable, task *db_proto.DBTask, route *placementRoute) error {
+func processTaskWithoutLock(ctx context.Context, redisClient redis.Cmdable, task *db_proto.DBTask, route *placementRoute, lease writeLease) error {
 	totalStart := time.Now()
 	opLabel := task.Op
 	if opLabel != "read" && opLabel != "write" {
@@ -2062,9 +2343,10 @@ func processTaskWithoutLock(ctx context.Context, redisClient redis.Cmdable, task
 	if handler, ok := dbOpHandlers[task.Op]; !ok {
 		opErr = fmt.Errorf("unsupported op: %s", task.Op)
 	} else {
-		// op_handler 口径与改动前一致:覆盖 SQL + 共享缓存回写(+ 读结果发布),另外多了夹在中间的复核读。
+		// op_handler(写)= SQL + 落库后复核 + 核锁 + 缓存回写;(读)= SQL + 复核 + 缓存回写 + 结果发布。
+		// 写比 S4 之前多了一次核锁往返(原来在 handleTask 里、缓存回写之后),与 R19 对比时按这个口径。
 		handlerStart := time.Now()
-		opErr = runDBOp(ctx, redisClient, task, msg, handler, route)
+		opErr = runDBOp(ctx, redisClient, task, msg, handler, route, lease)
 		metrics.ObserveStage(metrics.StageOpHandler, opLabel, time.Since(handlerStart))
 	}
 
@@ -2083,23 +2365,67 @@ func processTaskWithoutLock(ctx context.Context, redisClient redis.Cmdable, task
 	return nil
 }
 
-// runDBOp 按固定顺序执行一条任务:选中的落点库上跑 SQL → 落库后复核(§6.3)→ 共享缓存回写 / 读结果发布。
+// runDBOp 按固定顺序执行一条任务。
 //
-// 复核不通过时返回包着 errPlacementMoved 的错误:共享缓存不写、读结果不发,调用方也就不会推进游标与
-// applied epoch —— 这正是「可重试,不标记游标」。route 缺失是装配错误,fail-closed,绝不回落到某个默认库。
+//	写:beginSQL → 在选中的落点库上跑 SQL(ctx 来自租约,只随失租取消)→ finish → 落库后复核(§6.3)
+//	    → 核锁(verify)→ 共享缓存回写
+//	读:在选中的落点库上跑 SQL(ctx 即调用方的 ctx)→ 落库后复核 → 缓存回写 + 结果发布
+//
+// 复核不通过时返回包着 errPlacementMoved 的错误;核锁失败时返回包着 errOrderingLeaseLost 的错误(或 ctx 被取消时的
+// 普通错误)。两者都发生在共享缓存回写之前:缓存不写、读结果不发,调用方也就不会推进游标与 applied epoch ——
+// 这正是「可重试,不标记游标」。核锁原来在 handleTask 里、缓存回写之后,失租的写会先把缓存写出去(G1 ③)。
+//
+// route 缺失是装配错误,写任务缺租约也是:都 fail-closed,一条 SQL 都不发,绝不回落到某个默认库或无锁执行。
+// lease 只对写生效;handleTask 只在真的持锁时才把租约装进接口(nil 指针装进接口后接口本身不为 nil)。
 func runDBOp(ctx context.Context, redisClient redis.Cmdable, task *db_proto.DBTask, msg proto.Message,
-	handler dbOpHandler, route *placementRoute) error {
+	handler dbOpHandler, route *placementRoute, lease writeLease) error {
 	if route == nil || route.store == nil {
 		return fmt.Errorf("no placement route for op=%s taskID=%s; refusing to guess a database", task.Op, task.TaskId)
 	}
-	handlerErr := handler(ctx, route.store, task, msg)
-	// 只把 SQL 这一步的结果报给注册表(L-04 §3.4):复核与缓存回写的错误来自 Redis,不能拿来判断库通不通。
-	route.reportStoreResult(handlerErr)
+	isWrite := task.Op == "write"
+	sqlCtx := ctx
+	finish := func(error) {}
+	if isWrite {
+		if lease == nil {
+			return fmt.Errorf("no ordering lease for write taskID=%s; refusing to run SQL", task.TaskId)
+		}
+		var err error
+		if sqlCtx, finish, err = lease.beginSQL(); err != nil {
+			// 已失租或已过本地截止时间:一条 SQL 都没发。
+			return err
+		}
+	}
+
+	sqlStart := time.Now()
+	handlerErr := handler(sqlCtx, route.store, task, msg)
+	metrics.ObserveStage(metrics.StageSQL, taskOpLabel(task), time.Since(sqlStart))
+	finish(handlerErr)
+
+	if sqlCtx.Err() != nil {
+		// SQL 的 ctx 被本进程取消了(写:失租;读:claim 收回或停机),失败不是库的问题,成功也说明不了什么,
+		// 都不报注册表。失败时按取消原因返回(写即包着 errOrderingLeaseLost 的失租错误):驱动这时常给出
+		// 「连接已关」一类错误,带着 storeerr 标记原样返回会被记成 conn_lost、写还会豁免重试预算,
+		// 所以原错误只作文本附上,不进错误链。
+		if handlerErr != nil {
+			return fmt.Errorf("%w (SQL error: %v)", context.Cause(sqlCtx), handlerErr)
+		}
+	} else {
+		// 只把 SQL 这一步的结果报给注册表(L-04 §3.4):复核、核锁与缓存回写的错误来自 Redis,不能拿来判断库通不通。
+		route.reportStoreResult(handlerErr)
+	}
 	if handlerErr != nil {
 		return handlerErr
 	}
 	if err := route.confirm(ctx); err != nil {
 		return err
+	}
+	if isWrite {
+		if err := lease.verify(ctx); err != nil {
+			if errors.Is(err, errOrderingLeaseLost) {
+				return err
+			}
+			return fmt.Errorf("verify ordering lease before cache publication: %w", err)
+		}
 	}
 	return publishDBOpResult(ctx, redisClient, task, msg)
 }
@@ -2294,14 +2620,109 @@ func saveToRetryQueue(ctx context.Context, redisClient redis.Cmdable, retryQueue
 	return pushPayloadDurably(ctx, redisClient, retryQueueKey, payload)
 }
 
+// Stop 优雅停机,可重复调用(只执行一次)。顺序(docs/design/db-task-pipeline-bottlenecks.md G6):
+//
+//	① 撤拉取:不再从 Kafka 与重试队列取新任务;
+//	② 等消费循环退出:各 claim 把已派发的任务做完并标记位点(drainClaimForShutdown),sarama 等全部 claim 返回后
+//	   释放会话,释放时最后一次提交位点;
+//	③ 离组(consumer.Close → LeaveGroup);
+//	④ 取消 worker 并等它们退出;
+//	⑤ 归还本实例 processing 里没做完的重试收据;最后收掉交接闸。
+//
+// 先提交、后离组:离组会立刻触发其余成员的再平衡,新属主从已提交位点开始;位点在离组之前提交完,新属主就不必
+// 重放本实例已经落库的任务。旧顺序是先取消 worker:在途任务既不 ack 也不 fail,每个 claim 都要等满 10s 排空超时,
+// 已完成的位点也随之作废。
 func (c *KeyOrderedKafkaConsumer) Stop() {
-	c.cancel()
-	c.wg.Wait()
+	c.stopOnce.Do(c.stop)
+}
+
+func (c *KeyOrderedKafkaConsumer) stop() {
+	started := time.Now()
+
+	// ① 撤拉取。
+	c.stopPulling()
+
+	// ② 等消费循环退出(上限 = claim 排空上限 + 会话释放与提交的余量)。超时说明有 claim 排空卡住或 sarama 迟迟
+	// 不释放会话:照常往下走,离组后由新属主从已提交位点重放,写 SQL 由排序锁兜底。没 Start 过的不等。
+	if c.isStarted() && c.consumeDone != nil {
+		drain := c.shutdownDrainTimeout
+		if drain <= 0 {
+			drain = claimDrainTimeout
+		}
+		timer := time.NewTimer(drain + consumerShutdownGrace)
+		select {
+		case <-c.consumeDone:
+		case <-timer.C:
+			logx.Errorf("consumer loop did not exit within %v after pulling stopped; leaving the group anyway (uncommitted offsets replay from the last commit): groupID=%s topic=%s",
+				drain+consumerShutdownGrace, c.groupID, c.topic)
+		}
+		timer.Stop()
+	}
+
+	// ③ 离组:位点已在会话释放时提交。
+	if c.consumer != nil {
+		if err := c.consumer.Close(); err != nil {
+			logx.Errorf("close consumer group failed: groupID=%s, err=%v", c.groupID, err)
+		} else {
+			logx.Infof("consumer group closed: groupID=%s, topic=%s", c.groupID, c.topic)
+		}
+	}
+
+	// ④ 取消 worker 并等它们退出。在途的写 SQL 不随之取消(租约只在失租时取消它),受业务池读超时约束。
+	if c.cancel != nil {
+		c.cancel()
+	}
+	if c.wg != nil {
+		c.wg.Wait()
+	}
+
+	// ⑤ 归还重试收据(worker 已全部停下,不会再认领);最后收掉交接闸(守望 goroutine 随 c.ctx 退出)。
 	c.releaseRetryOwnership()
-	if err := c.consumer.Close(); err != nil {
-		logx.Errorf("close consumer group failed: groupID=%s, err=%v", c.groupID, err)
-	} else {
-		logx.Infof("consumer group closed: groupID=%s, topic=%s", c.groupID, c.topic)
+	c.closeHandoff()
+
+	logx.Infof("db consumer stopped: groupID=%s topic=%s took=%v", c.groupID, c.topic, time.Since(started))
+}
+
+// stopPulling 撤拉取(Stop 第①步):关闭 pullStop,只关一次;没有 pullStop 的(直接拼结构体的单测)什么都不做。
+func (c *KeyOrderedKafkaConsumer) stopPulling() {
+	c.pullStopOnce.Do(func() {
+		if c.pullStop != nil {
+			close(c.pullStop)
+		}
+	})
+}
+
+// pullStopped 报告是否已经撤拉取;pullStop 为 nil 时恒为 false。
+func (c *KeyOrderedKafkaConsumer) pullStopped() bool {
+	if c.pullStop == nil {
+		return false
+	}
+	select {
+	case <-c.pullStop:
+		return true
+	default:
+		return false
+	}
+}
+
+// isStarted 报告 Start 是否已经跑过(拉起 worker 与消费循环)。
+func (c *KeyOrderedKafkaConsumer) isStarted() bool {
+	c.workersMu.RLock()
+	defer c.workersMu.RUnlock()
+	return c.started
+}
+
+// closeHandoff 在消费组关闭之后收掉交接闸:先等守望 goroutine 退出(c.ctx 已取消,最多等一次在途 admin 调用),
+// 再关 inspector。失败只记日志:admin 连接是观测用的,关不掉不影响已提交的位点。
+func (c *KeyOrderedKafkaConsumer) closeHandoff() {
+	if c.handoff == nil {
+		return
+	}
+	if c.handoffDone != nil {
+		<-c.handoffDone
+	}
+	if err := c.handoff.Close(); err != nil {
+		logx.Errorf("close group handoff inspector failed: groupID=%s peer=%s err=%v", c.groupID, c.handoff.peer, err)
 	}
 }
 

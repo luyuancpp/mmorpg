@@ -20,7 +20,7 @@
 // 测试线程等 loop 线程一律用带截止时间的 future(单调时钟),不做无限期等待。
 //
 // 与 rpc_controller_test.cpp 同一工程、同一个 main(main 把日志级别设为 WARN,本夹具临时调到 INFO);
-// 链接桩(InitPlayerService / InitPlayerServiceReplied / InitServiceHandler)已由 rpc_client_lifecycle_test.cpp
+// 链接桩(InitPlayerService / InitServiceHandler)已由 rpc_client_lifecycle_test.cpp
 // 定义,这里不要重复定义。
 
 #include <gtest/gtest.h>

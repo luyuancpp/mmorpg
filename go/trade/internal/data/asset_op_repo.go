@@ -23,13 +23,10 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-// 编译前置(写下本文件时未满足):本文件用到 TradeAssetOpRecord 的 resolved_by(22)/
-// resolve_reason(23)。这两个字段只在 proto/trade/trade_table.proto 里,生成物还停在
-// 字段 21 —— 直接 go build 会报 `rec.ResolvedBy undefined`,那不是代码写错,是**没跑
-// 生成**。先跑仓库既有的 proto 生成(dev.bat proto),再 build/vet/test。
-// 生成会改到:go/proto/trade/trade_table.pb.go、cpp/generated/proto/trade/trade_table.pb.{h,cc}、
-// generated/proto/{_unified,db,login}/proto/trade/trade_table.proto;robot/vendor/proto/trade/
-// trade_table.pb.go 是 `replace proto => ../go/proto` 的 vendor 副本,按仓库惯例一并同步。
+// 行结构的事实源是 proto/trade/trade_table.proto 的 TradeAssetOpRecord(assetOpColumns 与它逐字段同序,
+// asset_op_repo_test.go 守住)。改 proto 之后按 AGENTS §4.1 在仓库根重生成:
+// `pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-run`(生成器源码有变化或还没有工具时先跑 proto-gen-build;
+// 未获客户端任务授权时加 `-ConfigPath tools/proto_generator/protogen/etc/proto_gen.no-unity.yaml`),再编译本模块。
 
 // 表名。唯一事实源仍是 proto/trade/trade_table.proto 的 OptionTableName;这里是手写 SQL
 // 需要的字面量,两边必须一致。改表名要同改这两处(schemamigrate 会按 proto 的名字建表,
@@ -128,8 +125,11 @@ func (r *AssetOpRepo) bounded(ctx context.Context) (context.Context, context.Can
 //     与 InsertOp。事务 B 里没有任何语句提到哨兵键。
 //   - EnsureSeqGuardRow(启动期 bootstrap):自动提交的单条 INSERT IGNORE,只碰哨兵行本身,
 //     跑在任何业务事务之外。
-//   - Finalize / ResolveManually / Abandon:事务里只有一条 trade_asset_op 的主键 CAS,不碰 seq 表。
+//   - Finalize / ResolveManually / Abandon:RC 事务{trade_asset_op 主键点锁(sqlLockAssetOp)→ 带复核谓词的主键 CAS},
+//     不碰 seq 表;点锁读不到行(只可能已被清理)按 CAS 落空处理。为什么先点锁见下方"op 行的写者:先主键点锁再 CAS"。
 //   - Claim / Reschedule / markPoison / ReleaseLease:自动提交的单行主键 UPDATE(RC,见 svc.BuildDSN)。
+//     ⚠ 与 guild 不同:guild 的重排 / 毒行推迟已进 RC 事务并先点锁(它们改 idx_0 的 next_attempt_ms,G-C2 / V1),
+//     trade 这两条仍是自动提交 —— MySQL 下无环;迁 TiDB 之前必须对齐 guild,理由同下一节。
 //   - CleanupTerminalOps:逐行 RC 短事务{trade_asset_op 主键点锁 → 带复核条件的主键点删},只删终态行,
 //     不碰 seq 表(seq 表的"永不删除"前提不受影响,见 TestSeqTableRowsAreNeverDeleted)。
 //   - ListDue / OldestPendingCreatedMs / getOp / ListPendingByPlayer / CountPendingByClass /
@@ -571,7 +571,27 @@ func insertLastSendMs(rec *tradepb.TradeAssetOpRecord) uint64 {
 //
 // 列是 schemamigrate 按 proto 自动 ADD COLUMN 加出来的(bigint unsigned NOT NULL DEFAULT 0),
 // 存量行的 0 正是第 5 条要处理的形态,所以不需要额外迁移步骤。
+//
+// # op 行的写者:先主键点锁再 CAS(终结 / 人工终结 / 放弃 / 清理点删)
+//
+// 与 guild asset_store.go 文件头"TiDB 附加规则"同一条规则(死锁复核 V1),写法也同形:这四类写者都在 RC 事务里,
+// **先**跑 sqlLockAssetOp(完整主键等值 FOR UPDATE,不带任何复核条件),**再**跑带复核谓词
+// (`status = PENDING` / 令牌 / 保留期)的主键点改或点删。
+//   - 为什么:TiDB 悲观事务里带复核谓词的 UPDATE / DELETE 不走 Point_Get 快路径,执行期间只读不锁,到语句末尾才把
+//     {行 key, PRIMARY key(本表是非聚簇主键), 唯一键 (player_id, stream, stream_epoch, seq) 的 key} 按 region **并行**加锁
+//     (tidb_lock_unchanged_keys 默认 ON,没改的唯一 key 也锁)。两个这样的写者(终结 ‖ 人工终结、过期租约持有者的终结 ‖ 放弃)
+//     在此之前没有更早取到的公共锁时,可能各拿到一部分 key 再互等 —— 检测器看得见的 1213,会被重试吸收,但仍是死锁。
+//     先点锁:Point_Get 的加锁顺序固定为"PRIMARY key → 行 key",同一 op 行的全部悲观写者先在 PRIMARY key 上排成一列。
+//   - MySQL 下点锁与随后的主键写锁的是同一条聚簇记录,锁集与顺序都不变(聚簇 → 被改列所在的二级索引项),只多一次往返。
+//   - 点锁读不到行 = 行已被清理(清理只删保留期外的终态行),与 CAS 影响 0 行同义:终结 / 人工终结回"本次没终结",
+//     放弃回 ErrLeaseLost,清理计 0 行。
+//   - 领取(Claim)与归还租约(ReleaseLease)只改无索引列,保留自动提交,不在此列(理由同 guild 文件头"领取"一条)。
 const (
+	// sqlLockAssetOp:op 行的主键点锁。**只许**是完整主键等值 + FOR UPDATE、不带任何复核条件
+	// (TiDB 只有这种形状才走 Point_Get 快路径;复核条件留在随后的点改 / 点删里)。用在终结、人工终结、放弃与清理点删之前,
+	// 理由见上方"op 行的写者:先主键点锁再 CAS"。与 guild 的同名语句同形。
+	sqlLockAssetOp = "SELECT `op_id` FROM " + AssetOpTableName + " WHERE `op_id` = ? FOR UPDATE"
+
 	// sqlClaimAssetOp:单行主键 CAS 领取。SET 子句的顺序是正确性的一部分:
 	//   - last_send_ms 写在 lease_until_ms 与 updated_ms **之前**。MySQL 单表 UPDATE 按从左到右求值、
 	//     后面的赋值看得见前面赋过的新值;写在最前面,"从左到右"与"一律用旧值"两种实现读到的都是**上一个**
@@ -770,10 +790,11 @@ func (r *AssetOpRepo) markPoison(ctx context.Context, opID, token, nowMs, poison
 //
 // 锁序:全序的唯一事实源在本文件上方"seq 行的建行守卫"一节(含哨兵守卫行那一段),
 // 与 guild 的 guild → guild_member → seq → op 同形。本方法本身只锁一行 trade_asset_op
-// (主键 CAS),不碰 seq 表,所以它是全序的最后一段。
+// (先 sqlLockAssetOp 主键点锁、再主键 CAS,见"op 行的写者:先主键点锁再 CAS"),不碰 seq 表,所以它是全序的最后一段。
+// 点锁读不到行(只可能已被清理)与 CAS 影响 0 行同义:回 (false, nil),不做对侧账。
 //
 // 本批没有订单与卖家账,所以事务里只有 outbox 一张表;对侧账的位置留在下面的 TODO 注释处,
-// 由 P3 在**同一个事务**里补(拆成两个事务就会出现"发了货没改状态")。
+// 由 P3 在**同一个事务**里补(拆成两个事务就会出现"发了货没改状态");商品 / 订单行的锁按全序排在 op 行点锁之前。
 //
 // 只接受四个终态(isFinalizableRecord):PENDING / UNSPECIFIED 写进去等于没终结或查不到结局;
 // ABANDONED 只能经 Abandon(带令牌、六条证据齐全)写入。重投循环本来就只会传这四个,这道闸防的是绕过循环的调用者。
@@ -788,6 +809,13 @@ func (r *AssetOpRepo) Finalize(ctx context.Context, op assetop.Op, status asseto
 	finalized := false
 	err := assetop.WithTxRetry(ctx, r.db, txRetryAttempts, IsRetryableTxError, func(tx *sql.Tx) error {
 		finalized = false
+		found, err := lockAssetOpRow(ctx, tx, op.OpID)
+		if err != nil {
+			return fmt.Errorf("finalize %s %d: %w", AssetOpTableName, op.OpID, err)
+		}
+		if !found {
+			return nil // 行已被清理:与 CAS 落空同义,不做对侧账
+		}
 		result, err := tx.ExecContext(ctx, sqlFinalizeAssetOp,
 			int32(final), uint32(res.Outcome), res.Reason, nowMs, nowMs, op.OpID, PendingStatus())
 		if err != nil {
@@ -818,8 +846,9 @@ func (r *AssetOpRepo) Finalize(ctx context.Context, op assetop.Op, status asseto
 // 并留下操作人与依据。它**不查证据、不猜结论** —— 调用方(管理入口)已经按 scene 流水的
 // correlation_id = op_id 判定过,本方法只负责落库 + 留痕 + 与自动路径同一把 CAS。
 //
-// 与 Finalize 完全同形:同一个事务、同一条 `status = PENDING` 的 CAS、RowsAffected == 1
-// 才算本次终结并做对侧账。两条路径共用这个条件,人工与循环同时下手也只会有一个赢家。
+// 与 Finalize 完全同形:同一个事务、先主键点锁(sqlLockAssetOp)、同一条 `status = PENDING` 的 CAS、
+// RowsAffected == 1 才算本次终结并做对侧账。两条路径共用这个条件,人工与循环同时下手也只会有一个赢家;
+// 共用点锁则让两者在 TiDB 上先在 PRIMARY key 上排队,不在语句末尾的并行批锁里各持一半。
 //
 // durable 刻意**不**置 1:这一行的终局来自人工判定,不是 scene 确认的落盘结局,
 // 把它标成 durable 会让事后对账分不清"scene 真的答过"和"人写上去的"。
@@ -837,6 +866,13 @@ func (r *AssetOpRepo) ResolveManually(ctx context.Context, m assetop.ManualResol
 	resolved := false
 	err := assetop.WithTxRetry(ctx, r.db, txRetryAttempts, IsRetryableTxError, func(tx *sql.Tx) error {
 		resolved = false
+		found, err := lockAssetOpRow(ctx, tx, m.OpID)
+		if err != nil {
+			return fmt.Errorf("manual resolve %s %d: %w", AssetOpTableName, m.OpID, err)
+		}
+		if !found {
+			return nil // 行不存在或已被清理:与 CAS 落空同义,不做对侧账
+		}
 		result, err := tx.ExecContext(ctx, sqlResolveAssetOp,
 			int32(final), m.Operator, m.Reason, nowMs, nowMs, m.OpID, PendingStatus())
 		if err != nil {
@@ -927,8 +963,9 @@ const (
 		AssetOpTableName + " WHERE `status` = ? AND `op_id` > ? ORDER BY `op_id` ASC LIMIT ?"
 
 	// sqlListAbandonCandidates:自动放弃的候选(非加锁读,按 op_id 翻页)。只给候选,判定在持租约之后逐行复核。
+	// 只列 abandonableStream(TRADE_DEBIT)的行,理由见 abandonableStream。
 	sqlListAbandonCandidates = "SELECT `op_id` FROM " + AssetOpTableName +
-		" WHERE `status` = ? AND `created_ms` < ? AND `op_id` > ? ORDER BY `op_id` ASC LIMIT ?"
+		" WHERE `status` = ? AND `stream` = ? AND `created_ms` < ? AND `op_id` > ? ORDER BY `op_id` ASC LIMIT ?"
 
 	// sqlAbandonAssetOp:放弃 CAS,以 (op_id, status=PENDING, lease_token) 为条件(assetop.Abandoner 契约)。
 	// 不置 durable(不是 scene 确认的结局)、不改 last_outcome(保留最后一次真实答复作证据);
@@ -946,6 +983,19 @@ const (
 
 // auditPageSize 是日对账每页读多少行。按主键分页,不让一条大查询长时间占着连接(PendingClassCounter 契约)。
 const auditPageSize = 500
+
+// abandonableStream 是自动放弃**唯一**允许处理的流:TRADE_DEBIT(上架托管,从卖家扣出)。
+//
+// 为什么不放开 TRADE_CREDIT:trade 的对侧账还没有实现(P3,见 Abandon 的 TODO)。放弃一条 ESCROW_DEBIT 只是"scene 从未扣过
+// 卖家",没有钱要退,只终结并留痕不会让任何人吃亏;放弃一条 DELIVER_CREDIT 却意味着"这次交付作废" —— 买家已付的款不按订单
+// 退回,就是钱货两空。通道一开自动放弃默认就开着(AbandonAfterDays 默认 180),只靠 TODO 注释提醒"P3 上线 CREDIT 生产者
+// 之前先补对侧账"拦不住漏补,所以在存储层把 CREDIT 挡在候选之外(玩家资产路径 fail-closed),Abandon 自己再按流拒一次。
+// **对侧账在 Abandon 里与 Finalize 的 REJECTED / ABORTED 分支同一份逻辑落地之后**,再把 TRADE_CREDIT 加进来(改这里与两处用法,
+// 并改 asset_op_recovery_test.go 的 TestAbandonOnlyTouchesDebitStream)。
+//
+// 日对账(CountPendingByClass)不按流区分放弃候选:超龄的 CREDIT 行仍会计进 abandon_candidate 类(口径在 assetop,本表只喂列)。
+// v1 没有任何 CREDIT 生产者,这种行不存在;P3 若先上 CREDIT 生产者、后补对侧账,这一类的计数会多出"永远不会被放弃"的行。
+const abandonableStream = assetpb.AssetOpStream_ASSET_OP_STREAM_TRADE_DEBIT
 
 // ListPendingByPlayer 实现 assetop.PlayerPendingLister:列出某玩家的 PENDING 行主键,条数 <= limit。
 // 没有 PENDING 行时回 (nil, nil)。limit <= 0 直接回空,不发 SQL。
@@ -1020,15 +1070,17 @@ func (r *AssetOpRepo) tallyPendingPage(ctx context.Context, tally *assetop.Pendi
 	return n, lastID, nil
 }
 
-// ListAbandonCandidates 实现 assetop.Abandoner:status=PENDING 且 created_ms < createdBeforeMs 且 op_id > afterOpID,
-// 按 op_id 升序,只回主键,条数 <= limit。非加锁读;真正的判定在持租约之后由 assetop 逐行复核。
+// ListAbandonCandidates 实现 assetop.Abandoner:status=PENDING 且 stream=TRADE_DEBIT 且 created_ms < createdBeforeMs
+// 且 op_id > afterOpID,按 op_id 升序,只回主键,条数 <= limit。非加锁读;真正的判定在持租约之后由 assetop 逐行复核。
+// 只列 TRADE_DEBIT(abandonableStream):CREDIT 流的对侧账未落地之前一行都不进候选。
 func (r *AssetOpRepo) ListAbandonCandidates(ctx context.Context, createdBeforeMs, afterOpID uint64, limit int) ([]uint64, error) {
 	if limit <= 0 {
 		return nil, nil
 	}
 	ctx, cancel := r.bounded(ctx)
 	defer cancel()
-	ids, err := r.queryOpIDs(ctx, sqlListAbandonCandidates, PendingStatus(), createdBeforeMs, afterOpID, limit)
+	ids, err := r.queryOpIDs(ctx, sqlListAbandonCandidates,
+		PendingStatus(), uint32(abandonableStream), createdBeforeMs, afterOpID, limit)
 	if err != nil {
 		return nil, fmt.Errorf("list abandon candidates %s: %w", AssetOpTableName, err)
 	}
@@ -1039,17 +1091,32 @@ func (r *AssetOpRepo) ListAbandonCandidates(ctx context.Context, createdBeforeMs
 // RowsAffected == 0 → assetop.ErrLeaseLost(租约在判定期间被别人接管,别人可能已经发出请求,此时绝不能放弃)。
 //
 // 放弃的六条证据(持租约、玩家无位置、距最后一次可能的发送超过安全间隔、已落盘账本确定未见……)由
-// assetop.Loop.AbandonOnce 在调用之前逐条拿到;本方法只负责"带令牌的终结"这最后一步。令牌为 0 时直接报错:
-// 0 是"没有租约"的形态,拿它做 CAS 不能证明"这一刻租约在我手里",而放弃不可逆。
+// assetop.Loop.AbandonOnce 在调用之前逐条拿到;本方法只负责"带令牌的终结"这最后一步。碰库之前拒绝两种入参(都不是租约
+// 被接管,所以不回 ErrLeaseLost):
+//   - 令牌为 0:0 是"没有租约"的形态,拿它做 CAS 不能证明"这一刻租约在我手里",而放弃不可逆;
+//   - 流不是 TRADE_DEBIT:CREDIT 流的对侧账未落地,放弃交付会让买家钱货两空(abandonableStream)。候选读已按流过滤,
+//     这里再拒一次,挡住绕过候选读的调用者。
 //
-// 与 Finalize 同形:一个事务(WithTxRetry,RC),事务里只有这一条 trade_asset_op 的主键 CAS。
+// 与 Finalize 同形:一个事务(WithTxRetry,RC),先 sqlLockAssetOp 主键点锁、再这一条 trade_asset_op 的主键 CAS
+// (见"op 行的写者:先主键点锁再 CAS")。点锁读不到行(已被清理,只删终态行)同样回 ErrLeaseLost。
 func (r *AssetOpRepo) Abandon(ctx context.Context, op assetop.Op, nowMs uint64) error {
 	if op.LeaseToken == 0 {
 		return fmt.Errorf("abandon %s %d: 缺领取令牌,不放弃", AssetOpTableName, op.OpID)
 	}
+	if op.Stream != abandonableStream {
+		return fmt.Errorf("abandon %s %d: 流 %d 不允许自动放弃(对侧账未落地之前只放弃 TRADE_DEBIT)",
+			AssetOpTableName, op.OpID, int32(op.Stream))
+	}
 	ctx, cancel := r.bounded(ctx)
 	defer cancel()
 	return assetop.WithTxRetry(ctx, r.db, txRetryAttempts, IsRetryableTxError, func(tx *sql.Tx) error {
+		found, err := lockAssetOpRow(ctx, tx, op.OpID)
+		if err != nil {
+			return fmt.Errorf("abandon %s %d: %w", AssetOpTableName, op.OpID, err)
+		}
+		if !found {
+			return fmt.Errorf("%w: abandon op_id=%d(行已不存在)", assetop.ErrLeaseLost, op.OpID)
+		}
 		result, err := tx.ExecContext(ctx, sqlAbandonAssetOp,
 			int32(tradepb.TradeAssetOpStatus_TRADE_ASSET_OP_STATUS_ABANDONED), nowMs, nowMs,
 			op.OpID, PendingStatus(), op.LeaseToken)
@@ -1068,7 +1135,8 @@ func (r *AssetOpRepo) Abandon(ctx context.Context, op assetop.Op, nowMs uint64) 
 		//   ESCROW_DEBIT   → 商品 ESCROWING → ESCROW_REJECTED(scene 从未扣过卖家,没有钱要退);
 		//   DELIVER_CREDIT → 买家已付的款按订单退回(放弃意味着这次交付作废,不退就是买家钱货两空);
 		//   RETURN_CREDIT  → 商品 RETURNING 停在原地,转人工(物品仍在托管里)。
-		// **P3 的 TRADE_CREDIT 生产者上线之前必须先补齐这里**;v1 没有任何 CREDIT 生产者,放弃只终结并留痕
+		// 在那之前 CREDIT 流由 abandonableStream 挡在候选与本方法之外(存储层 fail-closed,不靠这段注释);
+		// 补齐 CREDIT 两行之后再放开 abandonableStream。v1 只放弃 ESCROW_DEBIT,只终结并留痕
 		// (审计依据:本行的 op_id / ref_id、assetop_abandoned_total 与 assetop 打的放弃日志)。
 		return nil
 	})
@@ -1150,12 +1218,10 @@ const (
 	cleanupStmtBudget = 2 * time.Second
 )
 
+// 清理点删之前的主键点锁与终结类写者共用 sqlLockAssetOp(同一形状,见"op 行的写者:先主键点锁再 CAS")。
 const (
 	sqlListCleanupTerminalOps = "SELECT `op_id` FROM " + AssetOpTableName +
 		" WHERE `status` IN (?, ?, ?, ?) AND `next_attempt_ms` < ? ORDER BY `op_id` ASC LIMIT ?"
-	// sqlLockAssetOp:清理点删前的主键点锁。只许是完整主键等值 + FOR UPDATE、不带任何复核条件
-	// (TiDB 只有这种形状才走 Point_Get 快路径;复核条件留在随后的点删里),理由同 guild 的同名语句。
-	sqlLockAssetOp       = "SELECT `op_id` FROM " + AssetOpTableName + " WHERE `op_id` = ? FOR UPDATE"
 	sqlCleanupTerminalOp = "DELETE FROM " + AssetOpTableName +
 		" WHERE `op_id` = ? AND `status` IN (?, ?, ?, ?) AND `next_attempt_ms` < ?"
 )
@@ -1287,12 +1353,12 @@ func (r *AssetOpRepo) deleteTerminalOp(ctx context.Context, opID, cutoffMs uint6
 	var deleted int64
 	err := assetop.WithTxRetry(ctx, r.db, 1, IsRetryableTxError, func(tx *sql.Tx) error {
 		deleted = 0 // 重试契约:结果只在成功返回前写到外层
-		var locked uint64
-		switch err := tx.QueryRowContext(ctx, sqlLockAssetOp, opID).Scan(&locked); {
-		case errors.Is(err, sql.ErrNoRows):
-			return nil
-		case err != nil:
-			return fmt.Errorf("lock: %w", err)
+		found, err := lockAssetOpRow(ctx, tx, opID)
+		if err != nil {
+			return err
+		}
+		if !found {
+			return nil // 已被别的副本删掉
 		}
 		result, err := tx.ExecContext(ctx, sqlCleanupTerminalOp, opID, st[0], st[1], st[2], st[3], cutoffMs)
 		if err != nil {
@@ -1312,6 +1378,22 @@ func (r *AssetOpRepo) deleteTerminalOp(ctx context.Context, opID, cutoffMs uint6
 		return 0, err
 	}
 	return deleted, nil
+}
+
+// lockAssetOpRow 在调用方的事务里跑 sqlLockAssetOp(op 行的主键点锁),报告行是否存在。
+// 必须是该事务里碰 trade_asset_op 的**第一条**语句,随后才是带复核谓词的点改 / 点删(见"op 行的写者:先主键点锁再 CAS")。
+// 读不到行 = 已被清理(清理只删保留期外的终态行),回 (false, nil),由调用方按各自的"落空"语义处理。
+// 错误原样 %w 包一层:1213 / 1205 / 9007 要能被 IsRetryableTxError 认出来,整事务重跑。
+func lockAssetOpRow(ctx context.Context, tx *sql.Tx, opID uint64) (bool, error) {
+	var locked uint64
+	switch err := tx.QueryRowContext(ctx, sqlLockAssetOp, opID).Scan(&locked); {
+	case err == nil:
+		return true, nil
+	case errors.Is(err, sql.ErrNoRows):
+		return false, nil
+	default:
+		return false, fmt.Errorf("lock %s %d: %w", AssetOpTableName, opID, err)
+	}
 }
 
 // getOp 按主键取全列。

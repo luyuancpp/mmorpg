@@ -37,6 +37,7 @@ on:
       - "java/gateway_node/src/main/resources/application.yaml"
       - "deploy/k8s/*.yaml"
       - "deploy/k8s/*.json"
+      - "deploy/docker-compose.yml"
       - "go/login/internal/config/config.go"
       - "go/login/internal/logic/pkg/loginqueue/dispatcher.go"
       - "go/login/internal/logic/pkg/loginqueue/queue.go"
@@ -64,6 +65,9 @@ on:
       - "java/gateway_node/src/main/resources/application.yaml"
       - "deploy/k8s/*.yaml"
       - "deploy/k8s/*.json"
+      # 本机 / 预发 compose:etcd 的压缩与配额 env 必须与 K8s CronJob 同值、三处 etcd 镜像逐字相同
+      # (tools/scripts/tests/etcd_maintenance_contract.tests.ps1)
+      - "deploy/docker-compose.yml"
       # 削峰(G4b)契约用例直接读的源码:login 排队配置结构体的 json tag 与缺省值、锁键按 zone 派生(G1b → G4b-2 门禁)、
       # gateway 限流总开关缺省。改这几个文件也要重跑,否则锁键改回「全服一个 leader」或 tag 改名(ConfigMap 写的键被静默忽略)都不会报红
       # 2026-10-15 补 queue.go:用例 15 自当天起还读它(在途占位必须是 G4b-G 的 ZSET 新键)。用例 15 只检查 G1b / G4b-G 的代码形状,

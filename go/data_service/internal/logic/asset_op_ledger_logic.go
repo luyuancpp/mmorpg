@@ -2,19 +2,12 @@ package logic
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"data_service/internal/metrics"
 	"data_service/internal/svc"
 	componentpb "proto/common/component"
 	dbpb "proto/common/database"
-
-	goredis "github.com/redis/go-redis/v9"
-	"github.com/zeromicro/go-zero/core/logx"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/proto"
 )
 
 // GetPlayerAssetOpLedger 的实现(docs/design/guild-phase2/07-rollback-fail-closed.md §7.8.2)。
@@ -69,49 +62,15 @@ func GetPlayerAssetOpLedger(ctx context.Context, svcCtx *svc.ServiceContext, pla
 	result := assetOpLedgerReadError
 	defer func() { metrics.ObserveAssetOpLedgerRead(result) }()
 
-	if playerID == 0 {
-		return nil, false, status.Error(codes.InvalidArgument, "GetPlayerAssetOpLedger: player_id is required")
-	}
-	if svcCtx == nil || svcCtx.Router == nil {
-		return nil, false, status.Error(codes.Unavailable, "GetPlayerAssetOpLedger: router not configured")
-	}
-
-	client, err := svcCtx.Router.ClientForPlayer(ctx, playerID)
+	// 读路径与语义表的实现在 readPersistedPlayerDatabase(persisted_player_database.go),与 GetPlayerInboxLedger 共用;
+	// 上面的语义表仍是两者的契约说明。调用方(guild 适配器自带 300ms 上限)取消时如实回 Canceled / DeadlineExceeded。
+	player, found, err := readPersistedPlayerDatabase(ctx, svcCtx, playerID, "GetPlayerAssetOpLedger", "asset-op-ledger")
 	if err != nil {
-		if ctxErr := ctx.Err(); ctxErr != nil {
-			return nil, false, status.FromContextError(ctxErr).Err()
-		}
-		// 不打日志:这条路径的调用方(guild)自己会打 ERROR,映射缺席 / 映射库故障在
-		// GetPlayerHomeZone 等入口也是同一口径(只回 status)。
-		return nil, false, status.Errorf(codes.Unavailable, "GetPlayerAssetOpLedger: resolve home zone: %v", err)
+		return nil, false, err
 	}
-
-	raw, err := client.Get(ctx, playerAllDataKey(playerID)).Bytes()
-	if errors.Is(err, goredis.Nil) {
+	if !found {
 		result = assetOpLedgerReadAbsent
 		return nil, false, nil
-	}
-	if err != nil {
-		if ctxErr := ctx.Err(); ctxErr != nil {
-			// 调用方(guild 适配器自带 300ms 上限)已放弃:如实回它的取消原因,不记成本服务故障。
-			return nil, false, status.FromContextError(ctxErr).Err()
-		}
-		logx.Errorf("[asset-op-ledger] zone redis GET failed: player_id=%d: %v", playerID, err)
-		return nil, false, status.Errorf(codes.Internal, "GetPlayerAssetOpLedger: read player blob: %v", err)
-	}
-
-	data := &dbpb.PlayerAllData{}
-	if err := proto.Unmarshal(raw, data); err != nil {
-		logx.Errorf("[asset-op-ledger] corrupt PlayerAllData blob: player_id=%d bytes=%d: %v", playerID, len(raw), err)
-		return nil, false, status.Errorf(codes.Internal, "GetPlayerAssetOpLedger: decode player blob: %v", err)
-	}
-	player := data.GetPlayerDatabaseData()
-	// player_database_data 缺席时 GetPlayerId() 为 0,而请求的 id 已保证非 0,同样落进这一支。
-	if got := player.GetPlayerId(); got != playerID {
-		logx.Errorf("[asset-op-ledger] PlayerAllData blob belongs to another player: key player_id=%d, blob player_id=%d",
-			playerID, got)
-		return nil, false, status.Errorf(codes.Internal,
-			"GetPlayerAssetOpLedger: blob player_id=%d does not match requested player_id=%d", got, playerID)
 	}
 
 	ledger := player.GetAssetOpLedger()

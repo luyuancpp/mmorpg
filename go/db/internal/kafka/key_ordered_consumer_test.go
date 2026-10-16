@@ -89,12 +89,25 @@ type recordingSession struct {
 	claims        map[string][]int32
 	mu            sync.Mutex
 	markedOffsets []int64
+	// markOffsetCalls 记下 MarkOffset 的每次调用(交接闸播种用例断言「原值、不加 1、只对 claims 里的分区」)。
+	markOffsetCalls []markOffsetCall
 }
 
-func (s *recordingSession) Claims() map[string][]int32               { return s.claims }
-func (s *recordingSession) MemberID() string                         { return "test-member" }
-func (s *recordingSession) GenerationID() int32                      { return 1 }
-func (s *recordingSession) MarkOffset(string, int32, int64, string)  {}
+// markOffsetCall 是一次 session.MarkOffset 调用。
+type markOffsetCall struct {
+	topic     string
+	partition int32
+	offset    int64
+}
+
+func (s *recordingSession) Claims() map[string][]int32 { return s.claims }
+func (s *recordingSession) MemberID() string           { return "test-member" }
+func (s *recordingSession) GenerationID() int32        { return 1 }
+func (s *recordingSession) MarkOffset(topic string, partition int32, offset int64, _ string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.markOffsetCalls = append(s.markOffsetCalls, markOffsetCall{topic: topic, partition: partition, offset: offset})
+}
 func (s *recordingSession) Commit()                                  {}
 func (s *recordingSession) ResetOffset(string, int32, int64, string) {}
 func (s *recordingSession) MarkMessage(msg *sarama.ConsumerMessage, _ string) {
@@ -112,6 +125,11 @@ func (s *recordingSession) marked() []int64 {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return append([]int64(nil), s.markedOffsets...)
+}
+func (s *recordingSession) markOffsetCallsSnapshot() []markOffsetCall {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return append([]markOffsetCall(nil), s.markOffsetCalls...)
 }
 
 // recordingHarness installs replacement dbOpHandlers and lets the test inject
@@ -862,6 +880,61 @@ func TestOrderingGuard_ExistingP0QuarantinesFirstP5Delivery(t *testing.T) {
 	deadLen, err := w.redisClient.LLen(w.ctx, w.retryDeadQueueKey).Result()
 	require.NoError(t, err)
 	assert.Equal(t, int64(1), deadLen, "first delivery on a new partition needs an explicit migration epoch")
+}
+
+// TestReplayAfterSeed_WritesAreOrderingStale 是消费组交接的回归(docs/design/db-consumer-group-per-zone.md §3):
+// 交接闸播种之后,新组可能从比游标更早的位置重放同一分区(播种值落后、或守望让出后重新入组)。同一分区先应用到
+// offset S,再从 S−k 起重新投递:每条写都必须判为 orderingStale —— 不调用 SQL、游标值不变、共享缓存不被改写,
+// 且 offset 照常 ACK(重放能走过去,不卡分区)。游标按 topic 拼键,与消费组无关,所以换组不影响这道守卫。
+func TestReplayAfterSeed_WritesAreOrderingStale(t *testing.T) {
+	w, _, h := newTestWorker(t, 0)
+	const msgType = "taskpb.TaskResult"
+	const appliedOffset = int64(200) // S
+	const replayBack = int64(3)      // k
+	keys := []uint64{5500, 5501, 5502}
+
+	// 先把每个 key 应用到 offset S(seq = S+1),再放一个哨兵缓存值代表「S 之后的最新状态」。
+	for _, key := range keys {
+		applied := makeWriteTask(t, key, msgType, uint64(appliedOffset)+1)
+		attachKafkaClaim(t, w, applied)
+		w.handleTask(applied, true)
+		require.Len(t, h.callsForKey(key), 1, "the write at offset S must apply once")
+		require.NoError(t, w.redisClient.Set(w.ctx, buildCacheKey(applied.dbTask), "state-after-S", 0).Err())
+	}
+	cursorBefore := map[uint64]string{}
+	for _, key := range keys {
+		raw, err := w.redisClient.Get(w.ctx, appliedSeqKey(w.topic, key, msgType)).Result()
+		require.NoError(t, err)
+		require.Equal(t, fmt.Sprintf("v2:0:%d", appliedOffset+1), raw)
+		cursorBefore[key] = raw
+	}
+
+	// 从 S−k 到 S(含 S 本身的重复投递)整段重放。
+	for _, key := range keys {
+		for offset := appliedOffset - replayBack; offset <= appliedOffset; offset++ {
+			replayed := makeWriteTask(t, key, msgType, uint64(offset)+1)
+			session := attachKafkaClaim(t, w, replayed)
+			w.handleTask(replayed, true)
+			assert.Equal(t, []int64{offset}, session.marked(),
+				"a stale replay must still ACK its offset so the partition moves past it")
+		}
+	}
+
+	for _, key := range keys {
+		assert.Len(t, h.callsForKey(key), 1, "replayed writes must be dropped as ordering-stale, never reach SQL")
+		raw, err := w.redisClient.Get(w.ctx, appliedSeqKey(w.topic, key, msgType)).Result()
+		require.NoError(t, err)
+		assert.Equal(t, cursorBefore[key], raw, "the ordering cursor must not move backwards on replay")
+		cached, err := w.redisClient.Get(w.ctx, fmt.Sprintf("%s:%d", msgType, key)).Result()
+		require.NoError(t, err)
+		assert.Equal(t, "state-after-S", cached, "a stale replay must not rewrite the shared cache")
+	}
+	deadLen, err := w.redisClient.LLen(w.ctx, w.retryDeadQueueKey).Result()
+	require.NoError(t, err)
+	assert.Zero(t, deadLen, "same-partition stale replays are dropped, not quarantined")
+	readyLen, err := w.redisClient.LLen(w.ctx, w.retryQueueKey).Result()
+	require.NoError(t, err)
+	assert.Zero(t, readyLen, "same-partition stale replays must not enter the retry queue")
 }
 
 func TestRetryConsumer_LegacyPayloadWithoutPartitionGoesToDeadQueue(t *testing.T) {

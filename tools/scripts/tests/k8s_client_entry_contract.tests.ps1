@@ -518,6 +518,56 @@ Test-Case '库:battle hostPort Deployment —— 只有客户端口 20000 占 ho
     Assert-Equal -Expected '127.0.0.1' -Actual (Get-EnvLiteral -Text $withHost -Name 'CLIENT_ENDPOINT_HOST') -Because '给了 -ClientPublicHost 就用它(kind 填 127.0.0.1)'
 }
 
+Test-Case '库:-PodAnnotations 与 sidecar 配置指纹写进同一个 annotations 段(sidecar 在前);都不给时不写 annotations,只给 sidecar 时与之前逐字相同' {
+    # k8s_deploy.ps1 经 -PodAnnotations 传 zone Redis 口令指纹(P0-A 第二批,Get-CppZoneRedisAuthAnnotations)。同一个 Pod 模板只能有一个
+    # annotations: 段(重复键的 YAML 各解析器行为不一),所以它与 sidecar 指纹必须由 Get-ClientEntryPodAnnotationBlock 一次写出。
+    $commonArgs = @{ Image = $NodeImageRef; ImagePullPolicy = 'IfNotPresent'; SnowflakeCacheDir = '/app/snowflake-cache'; LogVolumeSizeLimit = '2Gi' }
+    $sidecarArgs = @{
+        SidecarContainerYaml = "- name: log-sidecar`n  image: registry.invalid/test/alloy:v0"
+        SidecarVolumeYaml    = "- name: alloy-config`n  configMap:`n    name: cpp-log-sidecar-config"
+        SidecarConfigHash    = 'abcdefabcdef'
+    }
+    $extra = [ordered]@{ 'mmorpg.io/zone-redis-auth-hash' = '0123456789ab' }
+    $commons = [ordered]@{
+        none        = New-ClientEntryPodCommon @commonArgs
+        sidecarOnly = New-ClientEntryPodCommon @commonArgs @sidecarArgs
+        extraOnly   = New-ClientEntryPodCommon @commonArgs -PodAnnotations $extra
+        both        = New-ClientEntryPodCommon @commonArgs @sidecarArgs -PodAnnotations $extra
+    }
+    # 拷贝语义:打包之后再改调用方的字典,不影响已打包的 PodCommon(下面断言里仍是 0123456789ab)。
+    $extra['mmorpg.io/zone-redis-auth-hash'] = 'ffffffffffff'
+    $renderers = @(
+        @{ Name = 'gate StatefulSet'; Indent = '      '; Render = { param($pc) New-GateStatefulSetYaml -PodCommon $pc -Plan $LibNodePortPlan -RpcPort 18000 -StartCommand './gate' -ConfigMapName 'node-config' -GateRouterMode '1' } }
+        @{ Name = 'battle Fleet'; Indent = '          '; Render = { param($pc) New-BattleFleetYaml -PodCommon $pc -Replicas 2 -RpcPort 20000 -StartCommand 'exec ./battle' -ConfigMapName 'battle-node-config' -ClientEntryMode podip -Health $LibFleetHealth -BuildLabel '0123456789ab' } }
+        @{ Name = 'battle hostPort'; Indent = '      '; Render = { param($pc) New-BattleHostPortDeploymentYaml -PodCommon $pc -Replicas 1 -RpcPort 20000 -StartCommand 'exec ./battle' -ConfigMapName 'battle-node-config' } }
+    )
+    $sidecarLine = '  mmorpg\.io/cpp-log-sidecar-config-hash: "abcdefabcdef"\n'
+    $extraLine = '  mmorpg\.io/zone-redis-auth-hash: "0123456789ab"\n'
+    foreach ($r in $renderers) {
+        $ind = $r.Indent
+        $docs = @{}
+        foreach ($k in $commons.Keys) { $docs[$k] = ConvertTo-LfText (& $r.Render $commons[$k]) }
+        Assert-NotMatch -Text $docs['none'] -Pattern 'annotations:' -Because "$($r.Name):没有 sidecar 也没有附加注解时不写 annotations 段"
+        Assert-Match -Text $docs['sidecarOnly'] -Pattern ("(?m)^${ind}annotations:\n${ind}" + $sidecarLine + "${ind}labels:") -Because "$($r.Name):只有 sidecar 时与改为统一渲染之前逐字相同"
+        Assert-Match -Text $docs['extraOnly'] -Pattern ("(?m)^${ind}annotations:\n${ind}" + $extraLine + "${ind}labels:") -Because "$($r.Name):关 sidecar 时附加注解照样写出"
+        Assert-Match -Text $docs['both'] -Pattern ("(?m)^${ind}annotations:\n${ind}" + $sidecarLine + $ind + $extraLine + "${ind}labels:") -Because "$($r.Name):两条同在一个段,sidecar 在前、附加注解按序在后"
+        Assert-Equal -Expected 1 -Actual ([regex]::Matches($docs['both'], '(?m)^[ ]+annotations:[ ]*$').Count) -Because "$($r.Name):一个 Pod 模板只能有一个 annotations: 段"
+    }
+
+    foreach ($bad in @(
+        @{ Why = '附加注解与 sidecar 注解重名'; Args = $sidecarArgs; Extra = [ordered]@{ 'mmorpg.io/cpp-log-sidecar-config-hash' = '0123456789ab' }; Pattern = '重名' }
+        @{ Why = '值含换行'; Args = @{}; Extra = [ordered]@{ 'mmorpg.io/zone-redis-auth-hash' = "0123`n456789ab" }; Pattern = '控制字符' }
+        @{ Why = '值为空'; Args = @{}; Extra = [ordered]@{ 'mmorpg.io/zone-redis-auth-hash' = '' }; Pattern = '值为空' }
+        @{ Why = '键不是 DNS 前缀/名字形状'; Args = @{}; Extra = [ordered]@{ 'Zone Redis Hash' = '0123456789ab' }; Pattern = '小写 DNS 前缀/名字' }
+    )) {
+        $badArgs = $bad.Args
+        $pc = New-ClientEntryPodCommon @commonArgs @badArgs -PodAnnotations $bad.Extra
+        $err = $null
+        try { New-GateStatefulSetYaml -PodCommon $pc -Plan $LibNodePortPlan -RpcPort 18000 -StartCommand './gate' -ConfigMapName 'node-config' -GateRouterMode '1' | Out-Null } catch { $err = $_.Exception.Message }
+        Assert-Match -Text $err -Pattern $bad.Pattern -Because "$($bad.Why):必须在渲染时 throw,不能写出坏的 YAML 或重复键"
+    }
+}
+
 Test-Case '库:gateway Ingress 只路由 /api(Prefix),{zone} 生成期渲染,TLS 可选;/admin 与 /actuator 不出集群' {
     $ing = ConvertTo-LfText (New-GatewayIngressYaml -IngressHost 'play.{zone}.example.com' -ZoneName 'z1' -TlsSecret 'gw-tls')
     Assert-Match -Text $ing -Pattern '(?m)^apiVersion: networking\.k8s\.io/v1$' -Because 'Ingress v1'

@@ -425,7 +425,7 @@ func (x *MoveAckS2C) GetServerTimeMs() uint64 {
 // Sent on start / stop / direction change, NOT every tick.
 type ActorMoveS2C struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Entity        uint64                 `protobuf:"varint,1,opt,name=entity,proto3" json:"entity,omitempty"`                                   // actor entity id
+	Entity        uint64                 `protobuf:"varint,1,opt,name=entity,proto3" json:"entity,omitempty"`                                   // 不透明 actor 网络号，不是玩家 GUID 或本地 ECS 句柄。
 	Transform     *component.Transform   `protobuf:"bytes,2,opt,name=transform,proto3" json:"transform,omitempty"`                              // current transform (location + rotation + scale)
 	Velocity      *component.Velocity    `protobuf:"bytes,3,opt,name=velocity,proto3" json:"velocity,omitempty"`                                // current velocity (zero == stopped)
 	ServerTimeMs  uint64                 `protobuf:"varint,4,opt,name=server_time_ms,json=serverTimeMs,proto3" json:"server_time_ms,omitempty"` // server timestamp; clients use it for interpolation
@@ -550,7 +550,7 @@ func (x *ActorMoveListS2C) GetMoves() []*ActorMoveS2C {
 // pending predicted input <= input_seq.
 type TeleportS2C struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Entity        uint64                 `protobuf:"varint,1,opt,name=entity,proto3" json:"entity,omitempty"` // actor being teleported (usually self for the receiver)
+	Entity        uint64                 `protobuf:"varint,1,opt,name=entity,proto3" json:"entity,omitempty"` // 被传送角色的不透明 actor 网络号，通常为接收者自身。
 	Transform     *component.Transform   `protobuf:"bytes,2,opt,name=transform,proto3" json:"transform,omitempty"`
 	InputSeq      uint32                 `protobuf:"varint,3,opt,name=input_seq,json=inputSeq,proto3" json:"input_seq,omitempty"` // discard predictions up to and including this seq
 	Reason        uint32                 `protobuf:"varint,4,opt,name=reason,proto3" json:"reason,omitempty"`                     // 0=server_correction, 1=portal, 2=skill, 3=admin, 4=respawn

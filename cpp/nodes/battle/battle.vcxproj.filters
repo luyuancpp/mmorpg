@@ -25,9 +25,6 @@
     <Filter Include="rpc_replies">
       <UniqueIdentifier>{5e38c7f4-1a90-4d26-b7e8-d0c95f3a8162}</UniqueIdentifier>
     </Filter>
-    <Filter Include="rpc_replies\player">
-      <UniqueIdentifier>{c09b5e28-4f61-4a37-90d5-6b1e8f2c7a94}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
@@ -48,9 +45,6 @@
     </ClCompile>
     <ClCompile Include="logic\battle_room_manager.cpp">
       <Filter>logic</Filter>
-    </ClCompile>
-    <ClCompile Include="rpc_replies\player\player_rpc_response_handler.cpp">
-      <Filter>rpc_replies\player</Filter>
     </ClCompile>
     <ClCompile Include="rpc_replies\register_handler.cpp">
       <Filter>rpc_replies</Filter>

@@ -11,7 +11,20 @@ ServerConfig:
   Kafka:
     Brokers:
       - "127.0.0.1:9092" # Kafka broker address
-    GroupID: "db_rpc_consumer_group" # Kafka consumer group ID (must be unique)
+    GroupID: "db_rpc_consumer_group" # 消费组(最终形状键);本机 go_services.ps1 -Zone N 追加 _zN,K8s 见下方注释
+    # ── 消费组(docs/design/db-consumer-group-per-zone.md)────────────────────────
+    # 上面这一行保持「GroupID: "<名>"」加行尾注释的形状:go_services.ps1 按这个形状给本机 -Zone N 启动追加 _zN
+    # (不带 -Zone 的单 zone 默认启动保持裸名),dev_tools.ps1 / k8s_deploy.ps1 / k8s_zone_rollback.ps1 /
+    # merge_zone 都拿这个值当推导 zone 组名 db_rpc_consumer_group_z<ZoneId> 的基名。
+    # K8s 的 go-svc-db-config 由 k8s_deploy.ps1 渲染,只有四种形状:
+    #   最终形状 final(G):只写 GroupID: "G",G 为 db_rpc_consumer_group 或 db_rpc_consumer_group_z<ZoneId>,任何版本都能加载;
+    #   交接形状 handoff(X←Y):写 ConsumerGroup: "X" 与 GroupHandoffFrom: "Y",不写 GroupID(交接闸之前的二进制因此拒启)。
+    # 下面五个键默认不写;需要时取消注释:
+    # ConsumerGroup: "db_rpc_consumer_group_z1"  # 与 GroupID 二选一,只用于交接形状
+    # GroupHandoffFrom: "db_rpc_consumer_group"  # 只能和 ConsumerGroup 一起用,且不能等于本组名;非空即启用交接闸
+    # SessionTimeoutMs: 10000                    # 消费组会话超时;不写取 10000(sarama 默认)
+    # HeartbeatIntervalMs: 3000                  # 心跳间隔;约束 HeartbeatIntervalMs x 3 <= SessionTimeoutMs
+    # RebalanceTimeoutMs: 60000                  # 再平衡超时;约束 >= 15000(claim 收尾 10s + 提交余量 5s)
     # Topic and DBName are derived from ZoneId at startup (db_task_zone_{ZoneId}, zone_{ZoneId}_db)
     # Partition count is immutable within one generation. Expansion requires
     # an offline drain and a new generation in login/db together.

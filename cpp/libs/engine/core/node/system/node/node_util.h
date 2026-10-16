@@ -37,6 +37,7 @@ using common::base::LogNodeService;
 using common::base::MailNodeService;
 using common::base::MatchNodeService;
 using common::base::PaymentNodeService;
+using common::base::PlayerInboxNodeService;
 using common::base::PlayerLocatorNodeService;
 using common::base::RankNodeService;
 using common::base::RedisNodeService;

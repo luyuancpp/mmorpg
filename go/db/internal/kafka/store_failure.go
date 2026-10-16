@@ -23,11 +23,13 @@ import (
 // 分工:
 //   - SQL 调用点(handleDBWriteOp / handleDBReadOp)用 storeerr.Tag 给驱动错误打来源标记;
 //   - runDBOp 把 handler 这一步的结果报给落点库注册表(连接断开 → 探活 → 可能冷却;成功 → 解除冷却);
+//     SQL 的 ctx 被本进程取消(写:失租;读:claim 收回或停机)时不报;
 //   - retryBudgetExempt、deferReason 只认标记,不对任意错误跑类型判断(Redis 侧的超时不能算成 MySQL 不可用)。
 
-// errOrderingLeaseLost 表示写完之后核锁发现排序锁已经失租。只用于延后原因的计数(lease_lost),
-// 是否豁免重试预算不在 L-04 范围内(条件写设计另议),仍照旧耗预算。
-var errOrderingLeaseLost = errors.New("ordering lock ownership lost after DB write")
+// errOrderingLeaseLost 表示排序锁失租:续租放弃(次数用尽)、本地截止时间已过、或核锁发现锁已易主(ordering_lease.go)。
+// 可能发生在 SQL 之前(一条 SQL 都不发)、SQL 途中(SQL 被取消,锁留给 TTL)或 SQL 之后(不发布缓存、不推进游标)。
+// 用于延后原因的计数(lease_lost);是否豁免重试预算仍不在本批范围(条件写另议),照旧耗预算。
+var errOrderingLeaseLost = errors.New("ordering lock ownership lost")
 
 // storeHealth 是 StoreResolver 的可选能力:SQL 调用点把连接类故障与成功报给注册表,注册表据此进出库级冷却;
 // 重试循环据此判断主库是否在冷却。生产由 *proto_sql.StoreRegistry 实现;测试替身可以不实现,不实现即没有冷却。

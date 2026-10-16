@@ -98,11 +98,15 @@ func getPlayerMethodHandlerFunctions(methods RPCMethods) string {
 
 	var methodList []PlayerMethod
 	for _, method := range methods {
+		cppResponse := method.CppResponse()
+		// 标准 Empty 与配置的本地 Empty 都没有错误字段；业务包里的同名类型仍须满足契约。
+		hasErrorResponse := cppResponse != "::google::protobuf::Empty" &&
+			cppResponse != "::"+_config.Global.Naming.EmptyResponse
 		methodList = append(methodList, PlayerMethod{
 			Method:           method.Method(),
 			CppRequest:       method.CppRequest(),
-			CppResponse:      method.CppResponse(),
-			HasErrorResponse: method.CppResponse() != "::"+_config.Global.Naming.EmptyResponse,
+			CppResponse:      cppResponse,
+			HasErrorResponse: hasErrorResponse,
 		})
 	}
 

@@ -5,6 +5,7 @@ import "proto/db/proto_option.proto";
 import "proto/common/base/user_accounts.proto";
 import "proto/common/component/asset_op_ledger_comp.proto";
 import "proto/common/component/battle_settlement_ledger_comp.proto";
+import "proto/common/component/player_inbox_ledger_comp.proto";
 import "proto/common/component/player_attribute_comp.proto";
 import "proto/common/component/player_pet_comp.proto";
 import "proto/common/component/player_scene_comp.proto";
@@ -159,6 +160,12 @@ message player_database
   // 在 go/db 条件写上线前,这两列只被原样读写,不参与任何判定。
   uint64 fence_owner_epoch = 18;
   uint64 fence_save_seq = 19;
+  // 玩家收件箱消费端账本(docs/design/player-inbox-service.md §4.4):每域「已按 seq 处理到哪」+ 最近 32 条结局。
+  // 与 asset_op_ledger 同一条不变量 I3(收件箱侧记作 IB-3):必须与 currency / bag_component 同记录同一次落盘 ——
+  // GM 处置的效果(封锁 / 欠款随 CurrencyComp 落盘)和它的账本要么一起在盘上,要么一起没有;
+  // 否则「效果落了账本没落」会让不幂等的 AttachDebt 被重复执行,「账本落了效果没落」会把没生效的处置确认成已执行。
+  // 按加列纪律取 18/19 之后的下一个空闲号 20,声明在末尾、不留空洞;下一个新字段从 21 起。
+  PlayerInboxLedgerComp inbox_ledger = 20;
 }
 
 message player_database_1

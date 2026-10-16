@@ -75,6 +75,11 @@ const (
 
 	// assetOpCleanupPoint 是终态行清理 goroutine 的 safego 点位名(safego_panic_total 的 label,必须是常量)。
 	assetOpCleanupPoint = "trade.asset_op_cleanup"
+
+	// 资产通道后台 goroutine 的 safego 点位名(同上,必须是常量;名字沿用拆分前的取值,告警与看板不用改)。
+	sceneWatcherPoint       = "trade.scenenode.watcher"
+	assetOpLoopPoint        = "trade.assetop.loop"
+	assetOpMaintenancePoint = "trade.asset_op_maintenance"
 )
 
 // ErrAssetSecretMissing:没配 AssetOpSecretEnv,或密钥短于 32 字节。
@@ -85,7 +90,9 @@ var ErrAssetSecretMissing = errors.New("trade: 资产通道密钥未配置")
 // AssetChannel 是资产通道的一整套依赖。Pipeline 为 nil 表示通道未启用(密钥缺失),
 // 调用方必须判空:nil 管线上不存在"先写进 outbox 再说"的中间态。
 type AssetChannel struct {
-	// Redis 共享单库客户端,只读 player:{id}:location。
+	// Redis 共享单库客户端(SharedRedis)。读位置键 player:{id}:location(scenenode.Locator);另写两类本服务自己的键:
+	// 落地唤醒的跨副本去重键 assetop:wake:trade:{player_id}(SET NX EX,shared/assetopwake),
+	// 与维护选主锁 trade:assetop:maintenance:leader(shared/leader,值带属主校验)。唤醒订阅的 assetop:wake 频道也在这一实例上。
 	Redis *redis.Client
 	// Conns 到各 scene 节点的 gRPC 连接缓存(按 endpoint)。
 	Conns *scenenode.ConnCache
@@ -117,8 +124,11 @@ type AssetChannel struct {
 	// (WaitGroup 不允许 Add 与 Wait 并发)。closed 之后 Start 是空操作。
 	mu     sync.Mutex
 	closed bool
-	// wg 记维护 goroutine(选主 + RunMaintenance)。Close 必须等它:放弃那一行的提交走 assetop 的落库预留,
-	// 卸任时的释放锁也要用 SharedRedis,两者都必须早于关 Redis / 关 DB。
+	// wg 记 Start 起的全部后台 goroutine:节点镜像(Watcher.Run)、重投循环(Pipeline.Run)、维护(选主 + RunMaintenance)。
+	// Close 必须等它们全部退出之后才关 Conns / Redis(与 guild 的 AssetPipeline.Stop 同序):
+	//   - 重投循环每一行的落库走 assetop 不继承取消的落库预留,取消 ctx 拦不住它,投递还在用 Conns;
+	//   - 放弃那一行的提交同样走落库预留,卸任时带属主校验释放选主锁要用 SharedRedis;
+	//   - 节点镜像的回调会往 Conns 里删连接(节点下线时),关缓存之前它必须先停。
 	wg sync.WaitGroup
 }
 
@@ -353,6 +363,8 @@ func StartAssetOpCleanup(db *sql.DB, c config.AssetOpConf) (stop func(), err err
 // 早起晚起都不改变任何正确性论证(设计 L-4)。
 // 维护在当选时以领导权 ctx 跑 RunMaintenance(启动先对账一轮,之后按间隔对账 / 放弃),丢锁或 ctx 取消即返回、
 // 带属主校验释放锁(leader.Elector.Run 的收尾,自带 2s 预算 —— 所以 Close 必须等它、且早于关 Redis)。
+// 节点镜像、重投循环与维护三个 goroutine 都记进 wg(Close 等它们全部退出再关连接,与 guild 的 AssetPipeline 同形);
+// wg.Add 在 mu 内、closed 判断之后,Close 置 closed 之后才 wg.Wait,所以不会出现 Wait 之后再 Add。
 func (a *AssetChannel) Start(ctx context.Context, etcd *clientv3.Client) {
 	if a == nil {
 		return
@@ -365,7 +377,12 @@ func (a *AssetChannel) Start(ctx context.Context, etcd *clientv3.Client) {
 		}
 		loopCtx, cancel := context.WithCancel(ctx)
 		a.stopLoops = cancel
-		safego.Go("trade.scenenode.watcher", func() { a.Watcher.Run(loopCtx, etcd) })
+		a.wg.Add(1)
+		// wg.Done 一律放在 fn 自己的 defer 里:safego 兜住 panic 时 defer 照样执行,Close 不会永远等下去。
+		safego.Go(sceneWatcherPoint, func() {
+			defer a.wg.Done()
+			a.Watcher.Run(loopCtx, etcd)
+		})
 		if a.Pipeline == nil {
 			// 装配层已保证:AssetOp.Enabled=true 走到这里 Pipeline 必非 nil(密钥不可用会在
 			// NewServiceContext 就拒启),Enabled=false 则整个 AssetChannel 是 nil、上面就返回了。
@@ -374,11 +391,14 @@ func (a *AssetChannel) Start(ctx context.Context, etcd *clientv3.Client) {
 				"this should not happen; NewServiceContext switch and key validation were bypassed")
 			return
 		}
-		a.Pipeline.Start(loopCtx)
+		a.wg.Add(1)
+		safego.Go(assetOpLoopPoint, func() {
+			defer a.wg.Done()
+			a.Pipeline.Run(loopCtx) // 阻塞到 loopCtx 结束、本轮 Tick 的 worker 全部落库完
+		})
 		if a.maintenance != nil {
 			a.wg.Add(1)
-			// wg.Done 放在 fn 自己的 defer 里:safego 兜住 panic 时 defer 照样执行,Close 不会永远等下去。
-			safego.Go("trade.asset_op_maintenance", func() {
+			safego.Go(assetOpMaintenancePoint, func() {
 				defer a.wg.Done()
 				a.maintenance.Run(loopCtx, a.Pipeline.RunMaintenance)
 			})
@@ -391,9 +411,12 @@ func (a *AssetChannel) Start(ctx context.Context, etcd *clientv3.Client) {
 
 // Close 停循环并关连接。幂等;调用方须保证它先于 etcd 客户端、MySQL 的关闭。
 //
-// 落地唤醒订阅与维护 goroutine 会被**等到退出**才往下关连接:在途唤醒用的是 Loop 与连接缓存,最坏再等
-// WakeTimeout 加落库预留(assetopwake.Subscriber.Stop);放弃那一行的提交走 assetop 的落库预留;
-// 维护卸任时带属主校验释放锁(≤ 2s)要用 SharedRedis。重投循环与节点镜像仍是取消即走、不等(既有行为)。
+// 顺序与 guild 的 AssetPipeline.Stop 相同:取消 → 等落地唤醒订阅停下 → wg.Wait() 等节点镜像、重投循环、维护全部退出 →
+// 关号段客户端 / 连接缓存 / 共享 Redis。全部后台 goroutine 都被**等到退出**才往下关:
+//   - 在途唤醒用的是 Loop 与连接缓存,最坏再等 WakeTimeout 加落库预留(assetopwake.Subscriber.Stop);
+//   - 重投循环要等本轮 Tick 的 worker 结束,每行最多 OpBudget(投递 + 不继承取消的落库预留),Store 的每条 SQL 另有子预算;
+//   - 放弃那一行的提交同样走落库预留,维护卸任时带属主校验释放锁(≤ 2s)要用 SharedRedis;
+//   - 节点镜像取消即退出(etcd watch 随 ctx 结束)。
 //
 // 在途的资产 RPC 被连接关闭打断不会丢数据:那一行仍是 PENDING,下次循环照常重投,
 // scene 见过的 seq 只会把原结局再答一遍(不变量 I2)。
@@ -410,7 +433,7 @@ func (a *AssetChannel) Close() {
 			stopLoops()
 		}
 		a.Wake.Stop() // 等在途唤醒结束;nil 接收者与没 Start 过都安全
-		a.wg.Wait()   // 等维护 goroutine 卸任、释放选主锁
+		a.wg.Wait()   // 等节点镜像、重投循环(含在途行落库)与维护(卸任、释放选主锁)全部退出
 		if a.OpIDs != nil {
 			a.OpIDs.Close()
 		}

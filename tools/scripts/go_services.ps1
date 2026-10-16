@@ -205,6 +205,20 @@ $ServiceCatalogue = [ordered]@{
     # 均不在已观测的 Windows 保留区间内。friend.yaml 形状满足本脚本 -Zone 改写:顶层单行 ListenOn / MetricsListenAddr、
     # 顶层 ZoneId 写在所有嵌套段之前;它自己的 Etcd.Key 是空串(D-13),不会被 .z<N> 后缀规则碰到。
     friend            = @{ Dir = "friend"; Entry = "friend.go"; Port = 50400; Desc = "Friend (全局好友,路由服可达)"; ConfigFlag = "-f"; ConfigFile = "etc/friend.yaml"; AllowMultiInstance = $true;  Tier = 1 }
+    # 玩家持久收件箱 player_inbox(docs/design/player-inbox-service.md,D3 独立进程):全服一份(PlayerInboxNodeService),
+    # 按全局唯一的 player_id 存;调用方是 C++ scene(按 etcd 前缀 PlayerInboxNodeService.rpc 直连 FetchItems / AckItems)
+    # 与运维(PlayerInboxAdmin,x-admin-token),**不经路由服**,与 gate 的路由模式无关。
+    # 与 friend 一样本目录不写 Global:K8s 侧由 k8s_deploy.ps1 $GoSvcCatalogue 的 Global = $true 表达,本地双 zone 仍每 zone 起一份。
+    # Tier 1:依赖 MySQL 独占库 mmorpg_player_inbox(库由 deploy/mysql-init/00_init_zone_dbs.sql 预建,表由启动期
+    # schemamigrate 或 `player_inbox -f etc/player_inbox.yaml -migrate` 建,D-14)、共享 Redis(owner_epoch 上界 / location)、
+    # etcd、Kafka(在线提醒 scene-cmd)与 data_service(Tier 0;GetPlayerHomeZone / GetPlayerInboxLedger,NonBlock 拨号)。
+    # 弱依赖:scene 不等它(不进 DependencyGate,IB-7),起晚了只是收件箱晚生效。
+    # 多开安全:每个事务只碰一个 (player, domain) 的流行锁;清理 / 补发 / gauge / 对账四个后台循环只在领导者上跑。
+    # 端口 50950 / metrics 9270(D14)与 go/player_inbox/etc/player_inbox.yaml 的 ListenOn / MetricsListenAddr、k8s_deploy.ps1 的
+    # $GoSvcCatalogue 与 ConfigMap、manifests/go-svc/player-inbox.yaml 逐字一致;-Zone 2 位移后 51950 / 10270,均不在已观测的
+    # Windows 保留区间内。player_inbox.yaml 形状须满足本脚本 -Zone 改写:顶层单行 ListenOn / MetricsListenAddr、顶层 ZoneId
+    # 写在所有嵌套段之前;自己的 Etcd.Key 是空串(D-13),DataServiceRpc.Etcd.Key: dataservice.rpc 会被加 .z<N>(照 trade)。
+    player_inbox      = @{ Dir = "player_inbox"; Entry = "player_inbox.go"; Port = 50950; Desc = "Player Inbox (玩家持久收件箱,scene 直连)"; ConfigFlag = "-f"; ConfigFile = "etc/player_inbox.yaml"; AllowMultiInstance = $true; Tier = 1 }
 }
 
 # Derived per-instance config files live here so the source tree stays clean.

@@ -1,8 +1,10 @@
 #include <gtest/gtest.h>
 #include "engine/core/type_define/player_guid_comp.h"
+#include <functional>
 #include <limits>
 #include <map>
 #include <memory>
+#include <optional>
 #include <vector>
 
 #include "../../nodes/scene/handler/rpc/player/player_activity_handler.h"
@@ -572,13 +574,13 @@ protected:
         ASSERT_GE(row->level_cap(), kSavedLevel);
         const auto& pools = AttributePoolTableManager::Instance().GetByOwnerType(PetSystem::kPoolOwnerPet);
         ASSERT_FALSE(pools.empty());
-        pool = pools.front();
-        const auto& dimensions = AttributeDimensionTableManager::Instance().GetByPoolId(pool->id());
+        pool = std::cref(*pools.front());
+        const auto& dimensions = AttributeDimensionTableManager::Instance().GetByPoolId(pool->get().id());
         ASSERT_FALSE(dimensions.empty());
         dimensionId = dimensions.front()->id();
-        ASSERT_LE(pool->unlock_level(), kSavedLevel);
-        ASSERT_TRUE(pool->dimension_cap() == 0 || pool->dimension_cap() >= 101);
-        ASSERT_GT(pool->base_points() + pool->points_per_level() * (kSavedLevel - 1), 101u);
+        ASSERT_LE(pool->get().unlock_level(), kSavedLevel);
+        ASSERT_TRUE(pool->get().dimension_cap() == 0 || pool->get().dimension_cap() >= 101);
+        ASSERT_GT(pool->get().base_points() + pool->get().points_per_level() * (kSavedLevel - 1), 101u);
         auto& comp = tlsEcs.actorRegistry.emplace<PlayerPetComp>(player);
         auto* pet = comp.add_pets();
         pet->set_pet_id(kPetId);
@@ -592,7 +594,7 @@ protected:
     PlayerPetComp& Comp() { return tlsEcs.actorRegistry.get<PlayerPetComp>(player); }
     static constexpr uint64_t kPetId = 900001;
     static constexpr uint32_t kSavedLevel = 85;
-    const AttributePoolTable* pool{nullptr};
+    std::optional<std::reference_wrapper<const AttributePoolTable>> pool;
     uint32_t dimensionId{0};
 };
 
@@ -623,11 +625,11 @@ TEST_F(PetOwnerLevelTest, MissingOwnerLevelRejectsAllocationBeforeChangingPoints
 }
 
 TEST_F(PetOwnerLevelTest, MissingOwnerLevelRejectsResetBeforeChargingOrClearingPoints) {
-    ASSERT_GT(pool->reset_cost_gold(), 0u);
-    ASSERT_LE(pool->reset_free_below_level(), kSavedLevel);
+    ASSERT_GT(pool->get().reset_cost_gold(), 0u);
+    ASSERT_LE(pool->get().reset_free_below_level(), kSavedLevel);
     auto& currency = tlsEcs.actorRegistry.emplace<CurrencyComp>(player);
     for (uint32_t index = 0; index < kCurrencyMax; ++index) currency.add_values(index == kCurrencyGold ? 10000 : 0);
-    ASSERT_GT(currency.values(kCurrencyGold), pool->reset_cost_gold());
+    ASSERT_GT(currency.values(kCurrencyGold), pool->get().reset_cost_gold());
     auto& debt = tlsEcs.actorRegistry.emplace<PlayerCurrencyComp>(player);
     const auto petBefore = Comp().SerializeAsString();
     const auto currencyBefore = currency.SerializeAsString();

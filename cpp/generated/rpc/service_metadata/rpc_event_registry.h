@@ -25,8 +25,8 @@ struct RpcMethodMeta {
 	)> sender;
 };
 
-constexpr uint32_t kMaxRpcMethodCount = 255;
-constexpr uint32_t kMaxEventCount = 49;
+constexpr uint32_t kMaxRpcMethodCount = 264;
+constexpr uint32_t kMaxEventCount = 50;
 
 extern std::array<RpcMethodMeta, kMaxRpcMethodCount> gRpcMethodRegistry;
 

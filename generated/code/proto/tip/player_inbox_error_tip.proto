@@ -1,0 +1,42 @@
+
+syntax = "proto3";
+
+option go_package = "generated/pb/table";
+
+option java_package = "com.game.table";
+
+
+enum player_inbox_error {
+  kPlayer_inbox_errorOK = 0;
+
+  kPlayerInboxDisabled = 29000;
+
+  kPlayerInboxUnknownType = 29001;
+
+  kPlayerInboxPlayerNotFound = 29002;
+
+  kPlayerInboxPayloadInvalid = 29003;
+
+  kPlayerInboxPayloadTooLarge = 29004;
+
+  kPlayerInboxTextTooLong = 29005;
+
+  kPlayerInboxIssuedOutOfWindow = 29006;
+
+  kPlayerInboxFull = 29007;
+
+  kPlayerInboxIdempotencyConflict = 29008;
+
+  kPlayerInboxStaleOwner = 29009;
+
+  kPlayerInboxEpochRequired = 29010;
+
+  kPlayerInboxEpochAhead = 29011;
+
+  kPlayerInboxItemNotFound = 29012;
+
+  kPlayerInboxItemStateConflict = 29013;
+
+  kPlayerInboxStoreUnavailable = 29014;
+
+};

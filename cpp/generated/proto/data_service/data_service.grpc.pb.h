@@ -219,6 +219,17 @@ class DataService final {
     std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::GetPlayerAssetOpLedgerResponse>> PrepareAsyncGetPlayerAssetOpLedger(::grpc::ClientContext* context, const ::data_service::GetPlayerAssetOpLedgerRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::GetPlayerAssetOpLedgerResponse>>(PrepareAsyncGetPlayerAssetOpLedgerRaw(context, request, cq));
     }
+    // ── 玩家收件箱:已落盘账本只读 ───────────────────────────────
+    // 读同一份 PlayerAllData blob 的 inbox_ledger 子字段,读法与错误语义照 GetPlayerAssetOpLedger。
+    // 调用方是 go/player_inbox 的对账(定时作业与运维 ReconcilePlayer),不是 scene。
+    // 设计见 docs/design/player-inbox-service.md §5.1、§9.3。
+    virtual ::grpc::Status GetPlayerInboxLedger(::grpc::ClientContext* context, const ::data_service::GetPlayerInboxLedgerRequest& request, ::data_service::GetPlayerInboxLedgerResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::GetPlayerInboxLedgerResponse>> AsyncGetPlayerInboxLedger(::grpc::ClientContext* context, const ::data_service::GetPlayerInboxLedgerRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::GetPlayerInboxLedgerResponse>>(AsyncGetPlayerInboxLedgerRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::GetPlayerInboxLedgerResponse>> PrepareAsyncGetPlayerInboxLedger(::grpc::ClientContext* context, const ::data_service::GetPlayerInboxLedgerRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::data_service::GetPlayerInboxLedgerResponse>>(PrepareAsyncGetPlayerInboxLedgerRaw(context, request, cq));
+    }
     class async_interface {
      public:
       virtual ~async_interface() {}
@@ -287,6 +298,12 @@ class DataService final {
       // 设计见 docs/design/guild-phase2/07-rollback-fail-closed.md §7.8。
       virtual void GetPlayerAssetOpLedger(::grpc::ClientContext* context, const ::data_service::GetPlayerAssetOpLedgerRequest* request, ::data_service::GetPlayerAssetOpLedgerResponse* response, std::function<void(::grpc::Status)>) = 0;
       virtual void GetPlayerAssetOpLedger(::grpc::ClientContext* context, const ::data_service::GetPlayerAssetOpLedgerRequest* request, ::data_service::GetPlayerAssetOpLedgerResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      // ── 玩家收件箱:已落盘账本只读 ───────────────────────────────
+      // 读同一份 PlayerAllData blob 的 inbox_ledger 子字段,读法与错误语义照 GetPlayerAssetOpLedger。
+      // 调用方是 go/player_inbox 的对账(定时作业与运维 ReconcilePlayer),不是 scene。
+      // 设计见 docs/design/player-inbox-service.md §5.1、§9.3。
+      virtual void GetPlayerInboxLedger(::grpc::ClientContext* context, const ::data_service::GetPlayerInboxLedgerRequest* request, ::data_service::GetPlayerInboxLedgerResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void GetPlayerInboxLedger(::grpc::ClientContext* context, const ::data_service::GetPlayerInboxLedgerRequest* request, ::data_service::GetPlayerInboxLedgerResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
     };
     typedef class async_interface experimental_async_interface;
     virtual class async_interface* async() { return nullptr; }
@@ -338,6 +355,8 @@ class DataService final {
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::data_service::BatchGetPlayerNameResponse>* PrepareAsyncBatchGetPlayerNameRaw(::grpc::ClientContext* context, const ::data_service::BatchGetPlayerNameRequest& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::data_service::GetPlayerAssetOpLedgerResponse>* AsyncGetPlayerAssetOpLedgerRaw(::grpc::ClientContext* context, const ::data_service::GetPlayerAssetOpLedgerRequest& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::data_service::GetPlayerAssetOpLedgerResponse>* PrepareAsyncGetPlayerAssetOpLedgerRaw(::grpc::ClientContext* context, const ::data_service::GetPlayerAssetOpLedgerRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::data_service::GetPlayerInboxLedgerResponse>* AsyncGetPlayerInboxLedgerRaw(::grpc::ClientContext* context, const ::data_service::GetPlayerInboxLedgerRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::data_service::GetPlayerInboxLedgerResponse>* PrepareAsyncGetPlayerInboxLedgerRaw(::grpc::ClientContext* context, const ::data_service::GetPlayerInboxLedgerRequest& request, ::grpc::CompletionQueue* cq) = 0;
   };
   class Stub final : public StubInterface {
    public:
@@ -503,6 +522,13 @@ class DataService final {
     std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::GetPlayerAssetOpLedgerResponse>> PrepareAsyncGetPlayerAssetOpLedger(::grpc::ClientContext* context, const ::data_service::GetPlayerAssetOpLedgerRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::GetPlayerAssetOpLedgerResponse>>(PrepareAsyncGetPlayerAssetOpLedgerRaw(context, request, cq));
     }
+    ::grpc::Status GetPlayerInboxLedger(::grpc::ClientContext* context, const ::data_service::GetPlayerInboxLedgerRequest& request, ::data_service::GetPlayerInboxLedgerResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::GetPlayerInboxLedgerResponse>> AsyncGetPlayerInboxLedger(::grpc::ClientContext* context, const ::data_service::GetPlayerInboxLedgerRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::GetPlayerInboxLedgerResponse>>(AsyncGetPlayerInboxLedgerRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::GetPlayerInboxLedgerResponse>> PrepareAsyncGetPlayerInboxLedger(::grpc::ClientContext* context, const ::data_service::GetPlayerInboxLedgerRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::data_service::GetPlayerInboxLedgerResponse>>(PrepareAsyncGetPlayerInboxLedgerRaw(context, request, cq));
+    }
     class async final :
       public StubInterface::async_interface {
      public:
@@ -552,6 +578,8 @@ class DataService final {
       void BatchGetPlayerName(::grpc::ClientContext* context, const ::data_service::BatchGetPlayerNameRequest* request, ::data_service::BatchGetPlayerNameResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
       void GetPlayerAssetOpLedger(::grpc::ClientContext* context, const ::data_service::GetPlayerAssetOpLedgerRequest* request, ::data_service::GetPlayerAssetOpLedgerResponse* response, std::function<void(::grpc::Status)>) override;
       void GetPlayerAssetOpLedger(::grpc::ClientContext* context, const ::data_service::GetPlayerAssetOpLedgerRequest* request, ::data_service::GetPlayerAssetOpLedgerResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void GetPlayerInboxLedger(::grpc::ClientContext* context, const ::data_service::GetPlayerInboxLedgerRequest* request, ::data_service::GetPlayerInboxLedgerResponse* response, std::function<void(::grpc::Status)>) override;
+      void GetPlayerInboxLedger(::grpc::ClientContext* context, const ::data_service::GetPlayerInboxLedgerRequest* request, ::data_service::GetPlayerInboxLedgerResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
      private:
       friend class Stub;
       explicit async(Stub* stub): stub_(stub) { }
@@ -609,6 +637,8 @@ class DataService final {
     ::grpc::ClientAsyncResponseReader< ::data_service::BatchGetPlayerNameResponse>* PrepareAsyncBatchGetPlayerNameRaw(::grpc::ClientContext* context, const ::data_service::BatchGetPlayerNameRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::data_service::GetPlayerAssetOpLedgerResponse>* AsyncGetPlayerAssetOpLedgerRaw(::grpc::ClientContext* context, const ::data_service::GetPlayerAssetOpLedgerRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::data_service::GetPlayerAssetOpLedgerResponse>* PrepareAsyncGetPlayerAssetOpLedgerRaw(::grpc::ClientContext* context, const ::data_service::GetPlayerAssetOpLedgerRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::data_service::GetPlayerInboxLedgerResponse>* AsyncGetPlayerInboxLedgerRaw(::grpc::ClientContext* context, const ::data_service::GetPlayerInboxLedgerRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::data_service::GetPlayerInboxLedgerResponse>* PrepareAsyncGetPlayerInboxLedgerRaw(::grpc::ClientContext* context, const ::data_service::GetPlayerInboxLedgerRequest& request, ::grpc::CompletionQueue* cq) override;
     const ::grpc::internal::RpcMethod rpcmethod_LoadPlayerData_;
     const ::grpc::internal::RpcMethod rpcmethod_SavePlayerData_;
     const ::grpc::internal::RpcMethod rpcmethod_GetPlayerField_;
@@ -632,6 +662,7 @@ class DataService final {
     const ::grpc::internal::RpcMethod rpcmethod_ReleasePlayerName_;
     const ::grpc::internal::RpcMethod rpcmethod_BatchGetPlayerName_;
     const ::grpc::internal::RpcMethod rpcmethod_GetPlayerAssetOpLedger_;
+    const ::grpc::internal::RpcMethod rpcmethod_GetPlayerInboxLedger_;
   };
   static std::unique_ptr<Stub> NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options = ::grpc::StubOptions());
 
@@ -681,6 +712,11 @@ class DataService final {
     // BatchGetPlayerName 同级)。实现 go/shared/assetop 的 LedgerReader。
     // 设计见 docs/design/guild-phase2/07-rollback-fail-closed.md §7.8。
     virtual ::grpc::Status GetPlayerAssetOpLedger(::grpc::ServerContext* context, const ::data_service::GetPlayerAssetOpLedgerRequest* request, ::data_service::GetPlayerAssetOpLedgerResponse* response);
+    // ── 玩家收件箱:已落盘账本只读 ───────────────────────────────
+    // 读同一份 PlayerAllData blob 的 inbox_ledger 子字段,读法与错误语义照 GetPlayerAssetOpLedger。
+    // 调用方是 go/player_inbox 的对账(定时作业与运维 ReconcilePlayer),不是 scene。
+    // 设计见 docs/design/player-inbox-service.md §5.1、§9.3。
+    virtual ::grpc::Status GetPlayerInboxLedger(::grpc::ServerContext* context, const ::data_service::GetPlayerInboxLedgerRequest* request, ::data_service::GetPlayerInboxLedgerResponse* response);
   };
   template <class BaseClass>
   class WithAsyncMethod_LoadPlayerData : public BaseClass {
@@ -1142,7 +1178,27 @@ class DataService final {
       ::grpc::Service::RequestAsyncUnary(22, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
-  typedef WithAsyncMethod_LoadPlayerData<WithAsyncMethod_SavePlayerData<WithAsyncMethod_GetPlayerField<WithAsyncMethod_SetPlayerField<WithAsyncMethod_RegisterPlayerZone<WithAsyncMethod_GetPlayerHomeZone<WithAsyncMethod_BatchGetPlayerHomeZone<WithAsyncMethod_RemapHomeZoneForMerge<WithAsyncMethod_DeletePlayerData<WithAsyncMethod_CreatePlayerSnapshot<WithAsyncMethod_ListPlayerSnapshots<WithAsyncMethod_GetPlayerSnapshotDiff<WithAsyncMethod_RollbackPlayer<WithAsyncMethod_RollbackZone<WithAsyncMethod_RollbackAll<WithAsyncMethod_BatchRecallItems<WithAsyncMethod_QueryTransactionLog<WithAsyncMethod_CreateEventSnapshot<WithAsyncMethod_AllocateIdSegment<WithAsyncMethod_ReservePlayerName<WithAsyncMethod_ReleasePlayerName<WithAsyncMethod_BatchGetPlayerName<WithAsyncMethod_GetPlayerAssetOpLedger<Service > > > > > > > > > > > > > > > > > > > > > > > AsyncService;
+  template <class BaseClass>
+  class WithAsyncMethod_GetPlayerInboxLedger : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_GetPlayerInboxLedger() {
+      ::grpc::Service::MarkMethodAsync(23);
+    }
+    ~WithAsyncMethod_GetPlayerInboxLedger() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status GetPlayerInboxLedger(::grpc::ServerContext* /*context*/, const ::data_service::GetPlayerInboxLedgerRequest* /*request*/, ::data_service::GetPlayerInboxLedgerResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestGetPlayerInboxLedger(::grpc::ServerContext* context, ::data_service::GetPlayerInboxLedgerRequest* request, ::grpc::ServerAsyncResponseWriter< ::data_service::GetPlayerInboxLedgerResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(23, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  typedef WithAsyncMethod_LoadPlayerData<WithAsyncMethod_SavePlayerData<WithAsyncMethod_GetPlayerField<WithAsyncMethod_SetPlayerField<WithAsyncMethod_RegisterPlayerZone<WithAsyncMethod_GetPlayerHomeZone<WithAsyncMethod_BatchGetPlayerHomeZone<WithAsyncMethod_RemapHomeZoneForMerge<WithAsyncMethod_DeletePlayerData<WithAsyncMethod_CreatePlayerSnapshot<WithAsyncMethod_ListPlayerSnapshots<WithAsyncMethod_GetPlayerSnapshotDiff<WithAsyncMethod_RollbackPlayer<WithAsyncMethod_RollbackZone<WithAsyncMethod_RollbackAll<WithAsyncMethod_BatchRecallItems<WithAsyncMethod_QueryTransactionLog<WithAsyncMethod_CreateEventSnapshot<WithAsyncMethod_AllocateIdSegment<WithAsyncMethod_ReservePlayerName<WithAsyncMethod_ReleasePlayerName<WithAsyncMethod_BatchGetPlayerName<WithAsyncMethod_GetPlayerAssetOpLedger<WithAsyncMethod_GetPlayerInboxLedger<Service > > > > > > > > > > > > > > > > > > > > > > > > AsyncService;
   template <class BaseClass>
   class WithCallbackMethod_LoadPlayerData : public BaseClass {
    private:
@@ -1764,7 +1820,34 @@ class DataService final {
     virtual ::grpc::ServerUnaryReactor* GetPlayerAssetOpLedger(
       ::grpc::CallbackServerContext* /*context*/, const ::data_service::GetPlayerAssetOpLedgerRequest* /*request*/, ::data_service::GetPlayerAssetOpLedgerResponse* /*response*/)  { return nullptr; }
   };
-  typedef WithCallbackMethod_LoadPlayerData<WithCallbackMethod_SavePlayerData<WithCallbackMethod_GetPlayerField<WithCallbackMethod_SetPlayerField<WithCallbackMethod_RegisterPlayerZone<WithCallbackMethod_GetPlayerHomeZone<WithCallbackMethod_BatchGetPlayerHomeZone<WithCallbackMethod_RemapHomeZoneForMerge<WithCallbackMethod_DeletePlayerData<WithCallbackMethod_CreatePlayerSnapshot<WithCallbackMethod_ListPlayerSnapshots<WithCallbackMethod_GetPlayerSnapshotDiff<WithCallbackMethod_RollbackPlayer<WithCallbackMethod_RollbackZone<WithCallbackMethod_RollbackAll<WithCallbackMethod_BatchRecallItems<WithCallbackMethod_QueryTransactionLog<WithCallbackMethod_CreateEventSnapshot<WithCallbackMethod_AllocateIdSegment<WithCallbackMethod_ReservePlayerName<WithCallbackMethod_ReleasePlayerName<WithCallbackMethod_BatchGetPlayerName<WithCallbackMethod_GetPlayerAssetOpLedger<Service > > > > > > > > > > > > > > > > > > > > > > > CallbackService;
+  template <class BaseClass>
+  class WithCallbackMethod_GetPlayerInboxLedger : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_GetPlayerInboxLedger() {
+      ::grpc::Service::MarkMethodCallback(23,
+          new ::grpc::internal::CallbackUnaryHandler< ::data_service::GetPlayerInboxLedgerRequest, ::data_service::GetPlayerInboxLedgerResponse>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::data_service::GetPlayerInboxLedgerRequest* request, ::data_service::GetPlayerInboxLedgerResponse* response) { return this->GetPlayerInboxLedger(context, request, response); }));}
+    void SetMessageAllocatorFor_GetPlayerInboxLedger(
+        ::grpc::MessageAllocator< ::data_service::GetPlayerInboxLedgerRequest, ::data_service::GetPlayerInboxLedgerResponse>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(23);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::data_service::GetPlayerInboxLedgerRequest, ::data_service::GetPlayerInboxLedgerResponse>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_GetPlayerInboxLedger() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status GetPlayerInboxLedger(::grpc::ServerContext* /*context*/, const ::data_service::GetPlayerInboxLedgerRequest* /*request*/, ::data_service::GetPlayerInboxLedgerResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* GetPlayerInboxLedger(
+      ::grpc::CallbackServerContext* /*context*/, const ::data_service::GetPlayerInboxLedgerRequest* /*request*/, ::data_service::GetPlayerInboxLedgerResponse* /*response*/)  { return nullptr; }
+  };
+  typedef WithCallbackMethod_LoadPlayerData<WithCallbackMethod_SavePlayerData<WithCallbackMethod_GetPlayerField<WithCallbackMethod_SetPlayerField<WithCallbackMethod_RegisterPlayerZone<WithCallbackMethod_GetPlayerHomeZone<WithCallbackMethod_BatchGetPlayerHomeZone<WithCallbackMethod_RemapHomeZoneForMerge<WithCallbackMethod_DeletePlayerData<WithCallbackMethod_CreatePlayerSnapshot<WithCallbackMethod_ListPlayerSnapshots<WithCallbackMethod_GetPlayerSnapshotDiff<WithCallbackMethod_RollbackPlayer<WithCallbackMethod_RollbackZone<WithCallbackMethod_RollbackAll<WithCallbackMethod_BatchRecallItems<WithCallbackMethod_QueryTransactionLog<WithCallbackMethod_CreateEventSnapshot<WithCallbackMethod_AllocateIdSegment<WithCallbackMethod_ReservePlayerName<WithCallbackMethod_ReleasePlayerName<WithCallbackMethod_BatchGetPlayerName<WithCallbackMethod_GetPlayerAssetOpLedger<WithCallbackMethod_GetPlayerInboxLedger<Service > > > > > > > > > > > > > > > > > > > > > > > > CallbackService;
   typedef CallbackService ExperimentalCallbackService;
   template <class BaseClass>
   class WithGenericMethod_LoadPlayerData : public BaseClass {
@@ -2153,6 +2236,23 @@ class DataService final {
     }
     // disable synchronous version of this method
     ::grpc::Status GetPlayerAssetOpLedger(::grpc::ServerContext* /*context*/, const ::data_service::GetPlayerAssetOpLedgerRequest* /*request*/, ::data_service::GetPlayerAssetOpLedgerResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_GetPlayerInboxLedger : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_GetPlayerInboxLedger() {
+      ::grpc::Service::MarkMethodGeneric(23);
+    }
+    ~WithGenericMethod_GetPlayerInboxLedger() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status GetPlayerInboxLedger(::grpc::ServerContext* /*context*/, const ::data_service::GetPlayerInboxLedgerRequest* /*request*/, ::data_service::GetPlayerInboxLedgerResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -2615,6 +2715,26 @@ class DataService final {
     }
     void RequestGetPlayerAssetOpLedger(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
       ::grpc::Service::RequestAsyncUnary(22, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_GetPlayerInboxLedger : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_GetPlayerInboxLedger() {
+      ::grpc::Service::MarkMethodRaw(23);
+    }
+    ~WithRawMethod_GetPlayerInboxLedger() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status GetPlayerInboxLedger(::grpc::ServerContext* /*context*/, const ::data_service::GetPlayerInboxLedgerRequest* /*request*/, ::data_service::GetPlayerInboxLedgerResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestGetPlayerInboxLedger(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(23, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -3121,6 +3241,28 @@ class DataService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     virtual ::grpc::ServerUnaryReactor* GetPlayerAssetOpLedger(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_GetPlayerInboxLedger : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_GetPlayerInboxLedger() {
+      ::grpc::Service::MarkMethodRawCallback(23,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->GetPlayerInboxLedger(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_GetPlayerInboxLedger() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status GetPlayerInboxLedger(::grpc::ServerContext* /*context*/, const ::data_service::GetPlayerInboxLedgerRequest* /*request*/, ::data_service::GetPlayerInboxLedgerResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* GetPlayerInboxLedger(
       ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
   };
   template <class BaseClass>
@@ -3744,9 +3886,36 @@ class DataService final {
     // replace default version of method with streamed unary
     virtual ::grpc::Status StreamedGetPlayerAssetOpLedger(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::data_service::GetPlayerAssetOpLedgerRequest,::data_service::GetPlayerAssetOpLedgerResponse>* server_unary_streamer) = 0;
   };
-  typedef WithStreamedUnaryMethod_LoadPlayerData<WithStreamedUnaryMethod_SavePlayerData<WithStreamedUnaryMethod_GetPlayerField<WithStreamedUnaryMethod_SetPlayerField<WithStreamedUnaryMethod_RegisterPlayerZone<WithStreamedUnaryMethod_GetPlayerHomeZone<WithStreamedUnaryMethod_BatchGetPlayerHomeZone<WithStreamedUnaryMethod_RemapHomeZoneForMerge<WithStreamedUnaryMethod_DeletePlayerData<WithStreamedUnaryMethod_CreatePlayerSnapshot<WithStreamedUnaryMethod_ListPlayerSnapshots<WithStreamedUnaryMethod_GetPlayerSnapshotDiff<WithStreamedUnaryMethod_RollbackPlayer<WithStreamedUnaryMethod_RollbackZone<WithStreamedUnaryMethod_RollbackAll<WithStreamedUnaryMethod_BatchRecallItems<WithStreamedUnaryMethod_QueryTransactionLog<WithStreamedUnaryMethod_CreateEventSnapshot<WithStreamedUnaryMethod_AllocateIdSegment<WithStreamedUnaryMethod_ReservePlayerName<WithStreamedUnaryMethod_ReleasePlayerName<WithStreamedUnaryMethod_BatchGetPlayerName<WithStreamedUnaryMethod_GetPlayerAssetOpLedger<Service > > > > > > > > > > > > > > > > > > > > > > > StreamedUnaryService;
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_GetPlayerInboxLedger : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_GetPlayerInboxLedger() {
+      ::grpc::Service::MarkMethodStreamed(23,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::data_service::GetPlayerInboxLedgerRequest, ::data_service::GetPlayerInboxLedgerResponse>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::data_service::GetPlayerInboxLedgerRequest, ::data_service::GetPlayerInboxLedgerResponse>* streamer) {
+                       return this->StreamedGetPlayerInboxLedger(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_GetPlayerInboxLedger() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status GetPlayerInboxLedger(::grpc::ServerContext* /*context*/, const ::data_service::GetPlayerInboxLedgerRequest* /*request*/, ::data_service::GetPlayerInboxLedgerResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedGetPlayerInboxLedger(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::data_service::GetPlayerInboxLedgerRequest,::data_service::GetPlayerInboxLedgerResponse>* server_unary_streamer) = 0;
+  };
+  typedef WithStreamedUnaryMethod_LoadPlayerData<WithStreamedUnaryMethod_SavePlayerData<WithStreamedUnaryMethod_GetPlayerField<WithStreamedUnaryMethod_SetPlayerField<WithStreamedUnaryMethod_RegisterPlayerZone<WithStreamedUnaryMethod_GetPlayerHomeZone<WithStreamedUnaryMethod_BatchGetPlayerHomeZone<WithStreamedUnaryMethod_RemapHomeZoneForMerge<WithStreamedUnaryMethod_DeletePlayerData<WithStreamedUnaryMethod_CreatePlayerSnapshot<WithStreamedUnaryMethod_ListPlayerSnapshots<WithStreamedUnaryMethod_GetPlayerSnapshotDiff<WithStreamedUnaryMethod_RollbackPlayer<WithStreamedUnaryMethod_RollbackZone<WithStreamedUnaryMethod_RollbackAll<WithStreamedUnaryMethod_BatchRecallItems<WithStreamedUnaryMethod_QueryTransactionLog<WithStreamedUnaryMethod_CreateEventSnapshot<WithStreamedUnaryMethod_AllocateIdSegment<WithStreamedUnaryMethod_ReservePlayerName<WithStreamedUnaryMethod_ReleasePlayerName<WithStreamedUnaryMethod_BatchGetPlayerName<WithStreamedUnaryMethod_GetPlayerAssetOpLedger<WithStreamedUnaryMethod_GetPlayerInboxLedger<Service > > > > > > > > > > > > > > > > > > > > > > > > StreamedUnaryService;
   typedef Service SplitStreamedService;
-  typedef WithStreamedUnaryMethod_LoadPlayerData<WithStreamedUnaryMethod_SavePlayerData<WithStreamedUnaryMethod_GetPlayerField<WithStreamedUnaryMethod_SetPlayerField<WithStreamedUnaryMethod_RegisterPlayerZone<WithStreamedUnaryMethod_GetPlayerHomeZone<WithStreamedUnaryMethod_BatchGetPlayerHomeZone<WithStreamedUnaryMethod_RemapHomeZoneForMerge<WithStreamedUnaryMethod_DeletePlayerData<WithStreamedUnaryMethod_CreatePlayerSnapshot<WithStreamedUnaryMethod_ListPlayerSnapshots<WithStreamedUnaryMethod_GetPlayerSnapshotDiff<WithStreamedUnaryMethod_RollbackPlayer<WithStreamedUnaryMethod_RollbackZone<WithStreamedUnaryMethod_RollbackAll<WithStreamedUnaryMethod_BatchRecallItems<WithStreamedUnaryMethod_QueryTransactionLog<WithStreamedUnaryMethod_CreateEventSnapshot<WithStreamedUnaryMethod_AllocateIdSegment<WithStreamedUnaryMethod_ReservePlayerName<WithStreamedUnaryMethod_ReleasePlayerName<WithStreamedUnaryMethod_BatchGetPlayerName<WithStreamedUnaryMethod_GetPlayerAssetOpLedger<Service > > > > > > > > > > > > > > > > > > > > > > > StreamedService;
+  typedef WithStreamedUnaryMethod_LoadPlayerData<WithStreamedUnaryMethod_SavePlayerData<WithStreamedUnaryMethod_GetPlayerField<WithStreamedUnaryMethod_SetPlayerField<WithStreamedUnaryMethod_RegisterPlayerZone<WithStreamedUnaryMethod_GetPlayerHomeZone<WithStreamedUnaryMethod_BatchGetPlayerHomeZone<WithStreamedUnaryMethod_RemapHomeZoneForMerge<WithStreamedUnaryMethod_DeletePlayerData<WithStreamedUnaryMethod_CreatePlayerSnapshot<WithStreamedUnaryMethod_ListPlayerSnapshots<WithStreamedUnaryMethod_GetPlayerSnapshotDiff<WithStreamedUnaryMethod_RollbackPlayer<WithStreamedUnaryMethod_RollbackZone<WithStreamedUnaryMethod_RollbackAll<WithStreamedUnaryMethod_BatchRecallItems<WithStreamedUnaryMethod_QueryTransactionLog<WithStreamedUnaryMethod_CreateEventSnapshot<WithStreamedUnaryMethod_AllocateIdSegment<WithStreamedUnaryMethod_ReservePlayerName<WithStreamedUnaryMethod_ReleasePlayerName<WithStreamedUnaryMethod_BatchGetPlayerName<WithStreamedUnaryMethod_GetPlayerAssetOpLedger<WithStreamedUnaryMethod_GetPlayerInboxLedger<Service > > > > > > > > > > > > > > > > > > > > > > > > StreamedService;
 };
 
 }  // namespace data_service
