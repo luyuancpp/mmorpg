@@ -958,6 +958,8 @@ Codex 在 `0b40715d06` 上独立跑过同一组,也是 253 通过(见 `docs/PROG
 - **客户端**:没有在 Unity 里编过、跑过(EditMode 用例、窗口级用例、实机都没有);证据只有 §11.1 那次离线的 Roslyn + NUnit。
   强化 / 镶嵌的**界面入口没有做**(按分工是 Codex 的文件,接线说明在客户端 `Docs/EquipmentForge-20261009.md`)——
   所以现在进游戏点不到强化与镶嵌,只能靠 robot 冒烟走通这三条协议。
+  (10-16 更新:**按钮逻辑已经接好**,在客户端 main `db969ce4` 的 `EquipForgeUiState`;入口与面板画面交给 Codex,交接文档是客户端
+  `Docs/EquipmentForgeUI-handoff-20261015.md`。在 Codex 接上界面之前,进游戏仍然点不到。见 `docs/PROGRESS.md` 10-16 那一条。)
 - `AssetOpSystemTest.DebitBundleInvalidRecorded`:期望 `REJECTED` + `kAssetInvalidBundle`,实际 `RETRY` + 27006 ——
   `asset_op_system.cpp` 在校验 bundle 之前先查了 `PlayerBagsComp`。单独跑也失败,属于通用资产通道(帮会 / 聚宝斋)那条线,本线只登记、没有改。
 - §8 的已知缺口不变:强化石、宝石、装备本身都没有产出途径(只能 GM 发);洗练、宝石合成、强化保护没做。

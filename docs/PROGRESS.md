@@ -9022,3 +9022,18 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
 - **验证(交 Codex)**:`pwsh -NoProfile -File tools/scripts/tests/k8s_deploy_contract.tests.ps1`、`pwsh -NoProfile -File tools/scripts/tests/redis_maxclients_contract.tests.ps1`;
   有集群条件时在 staging 按 README 做一次 1 → 3 与删主 / 杀主进程。
 - **Java 版(AGENTS §12)**:不适用(纯部署形态,Java 版不共用本仓的 K8s 清单);本机没有 Java 仓库(`D:\luyuan\xuanming-server-mmo` 不存在),`PARITY.md` 未登记。
+
+## 2026-10-16 装备强化与镶嵌:客户端按钮逻辑接好,界面接入交给 Codex(Claude,客户端仓;未进 Unity)
+
+- **分工(用户 10-15 定)**:Claude 做强化 / 镶嵌的按钮逻辑,Codex 做客户端 UI 接入(入口、面板画面、布局、窗口互斥、窗口级用例)。
+  交接文档在客户端仓 `Docs/EquipmentForgeUI-handoff-20261015.md`。本服务器仓没有代码改动。
+- **客户端做了什么**(客户端仓 `db969ce4`,已快进进客户端本机 main):新类 `EquipForgeUiState`(`Assets/Scripts/UI/Ugui/Gameplay/`,不引用 UnityEngine)——
+  界面读它的呈现快照来画、按钮调它的意图方法;它负责每个按钮能不能点与置灰原因、点击前按同一份快照复核、选宝石与「失败会降级」确认两步
+  (降级数按当前等级封顶,与服务器 `LevelAfterFailure` 同口径)、在途文案、状态行(只认领本面板为这件装备发出的操作)、强化结果通知;
+  绝不自动重发。`GameplayUiRoot` 只加生命周期;数据层新增只读属性 `ForgeCooldownRemainingMs` / `EquipmentReadError`;
+  玩家看到的「金币」统一改叫「银两」(契约 §0-1)。
+- **验证**(离线,不是 Unity):运行时程序集 Roslyn 0 错误;Battle 测试程序集 0 错误;Unity 自带 NUnit 在 .NET 上跑装备相关六个用例类 308 / 308 全过
+  (`EquipForgeUiStateTests` 63);对面板逻辑做了 18 个单行变异,全部被用例抓到。实现后用五个独立视角做过一轮对抗评审,确认的 17 条已全部处理。
+- **还没做 / 没验证**:界面入口与面板画面(Codex);Unity 里编译与运行;实机点击。实机要点出一次真正的强化,得先在服务器侧给账号补强化石与银两
+  (客户端没有 GM 发物入口,`robot_9104` 跑完 equip_forge_smoke 后强化石为 0)。
+- **Java 版(AGENTS §12)**:不涉及(纯客户端改动,客户端契约不变);装备系统在 Java 版仍是待做。
