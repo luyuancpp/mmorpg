@@ -81,6 +81,14 @@ param(
 	# 1 ↔ ≥3 不能原地切换,脚本会拒绝(Assert-KafkaTopologyChangeIsSafe,流程见 README「Kafka:多 broker」)。
 	[ValidateRange(0, 99)]
 	[int]$KafkaBrokers = 0,
+	# 共享 Redis 的形态。0 = 按档位取默认(与 -KafkaBrokers 同一判据):-ReleaseProfile 不是 dev,或 -OpsProfile 不是 custom → 3;其余 → 1。
+	#   1:单实例(manifests/infra/redis.yaml),本机 kind / dev 档;
+	#   3:高可用(manifests/infra/redis-ha.yaml):1 主 2 从 + 每个 Pod 一个哨兵 + 2 个 haproxy 入口代理,客户端地址仍是 redis:6379。
+	# 1 → 3 可以原地切换(redis-0 带着数据当主,另外两个从它同步),但这是一次 Redis 重启,要 -ConfirmRedisCoreRestart;
+	# 3 → 1 拒绝(主可能不在 redis-0 上,直接缩容会丢数据)。见 Assert-RedisTopologyChangeIsSafe 与 README「共享 Redis:高可用形态」。
+	[ValidateRange(0, 3)]
+	[int]$RedisReplicas = 0,
+
 	[int]$CentreReplicas = 1,
 	[int]$GateReplicas = 2,
 	# battle 是不分 zone 的全局池，只由 infra-up / all-up 部署一次。
@@ -2149,6 +2157,184 @@ function Test-RedisLiveMaxClients {
 		return
 	}
 	Write-Host "Redis maxclients check OK: live=$liveMaxClients manifest MAXCLIENTS=$ExpectedMaxClients"
+}
+
+# ─────────────────────────────────────────────────────────────────
+# 共享 Redis 的拓扑:单实例(redis.yaml)或高可用(redis-ha.yaml)
+# (docs/design/no-single-node-horizontal-scaling-20261001.md §5;deploy/k8s/README.md「共享 Redis:高可用形态」)
+# ─────────────────────────────────────────────────────────────────
+# 高可用形态 = 1 主 2 从 + 每个 redis Pod 一个哨兵容器 + 2 个 haproxy 入口代理。Service redis 的名字与 ClusterIP 不变,
+# 只是 selector 从 redis Pod 换成代理;代理只把连接交给「自己答 role:master、且多数哨兵认它是主」的节点。
+# 所有客户端(C++ / Go / Java)零改动,仍连 redis.<infra>:6379。故障转移、滚动更新、整体停机再拉起、从单实例原地切换,
+# 2026-10-08 都在本机 kind 的隔离命名空间里实测过(数字见设计文档 §5)。
+# Get-RedisTopologyFor / Get-RedisTopologyChangeVerdict / Get-RedisHaLimits / Get-RedisHaScriptsDigest /
+# Assert-RedisPasswordSentinelSafe 是纯函数,契约测试按 AST 抽出直接调用;Get-RedisTopology 读脚本参数,
+# Assert-RedisTopologyChangeIsSafe 读集群(DryRun 不查,一律当全新集群)。
+
+# 代理 Pod 模板上的脚本摘要占位(redis-ha.yaml 的 Deployment redis-proxy),由 Apply-Infra 换成 Get-RedisHaScriptsDigest 的结果。
+$script:RedisHaScriptsDigestPlaceholder = '__REDIS_HA_SCRIPTS_DIGEST__'
+
+# 副本数 → 拓扑(纯函数)。只认 1 和 3:哨兵要凑多数派,两个节点挂一个就没有多数派,比单实例还脆;
+# 更多副本没有收益(读写都只走主),还会拖慢每次滚动。
+function Get-RedisTopologyFor {
+	param([Parameter(Mandatory = $true)][int]$Replicas)
+
+	if ($Replicas -ne 1 -and $Replicas -ne 3) {
+		throw "共享 Redis 的副本数只能是 1(单实例,redis.yaml)或 3(1 主 2 从 + 哨兵 + 代理,redis-ha.yaml),实际 $Replicas。两个节点的哨兵多数派挂一个就没了,比单实例还脆。"
+	}
+	$ha = ($Replicas -eq 3)
+	return [pscustomobject]@{
+		Replicas            = $Replicas
+		HighAvailability    = $ha
+		Manifest            = if ($ha) { 'redis-ha.yaml' } else { 'redis.yaml' }
+		PodManagementPolicy = if ($ha) { 'Parallel' } else { 'OrderedReady' }
+	}
+}
+
+# 按命令行与档位解析出本次部署的 Redis 拓扑。-RedisReplicas 0(缺省)= 按档位,判据与 Get-KafkaTopology 相同。
+function Get-RedisTopology {
+	$replicas = $RedisReplicas
+	if ($replicas -le 0) {
+		$replicas = if ($ReleaseProfile -ne 'dev' -or $OpsProfile -ne 'custom') { 3 } else { 1 }
+	}
+	return Get-RedisTopologyFor -Replicas $replicas
+}
+
+# 线上 sts/redis 的副本数 → 目标副本数,这次变更算哪一类(纯函数,契约测试直接喂值;写法同 Get-KafkaTopologyChangeVerdict):
+#   absent     线上没有 sts/redis(全新集群)
+#   unchanged  副本数不变
+#   upgrade    1 → 3:单实例原地切高可用。redis-0 带着 PVC 上的数据以主身份回来,redis-1 / redis-2 新建后从它全量同步
+#   refuse     其余一律拒绝 —— 3 → 1(主可能在 redis-1 / redis-2 上,缩到只剩 redis-0 = 丢掉主上的最新数据),
+#              以及线上是 0 / 2 这类本脚本从不产生的数量(不知道它经历过什么,不猜)
+function Get-RedisTopologyChangeVerdict {
+	param(
+		[AllowNull()]$LiveReplicas,
+		[Parameter(Mandatory = $true)][int]$DesiredReplicas
+	)
+
+	if ($null -eq $LiveReplicas) { return 'absent' }
+	$live = [int]$LiveReplicas
+	if ($live -eq $DesiredReplicas) { return 'unchanged' }
+	if ($live -eq 1 -and $DesiredReplicas -eq 3) { return 'upgrade' }
+	return 'refuse'
+}
+
+# apply 共享 Redis 之前调用(Apply-Infra 里,早于任何写操作)。拒绝的变更直接 throw;返回判定,upgrade 时 Apply-Infra 要先
+# 「只删 StatefulSet 对象、留下 Pod 与 PVC」(podManagementPolicy 创建后不可改,见 Apply-Infra 的 redis 分支)。
+function Assert-RedisTopologyChangeIsSafe {
+	param([Parameter(Mandatory = $true)]$Topology)
+
+	$live = Get-LiveStatefulSetReplicas -Namespace $InfraNamespace -Name 'redis'
+	$verdict = Get-RedisTopologyChangeVerdict -LiveReplicas $live -DesiredReplicas $Topology.Replicas
+	if ($verdict -eq 'upgrade') {
+		Write-Warning "[RedisTopology]Upgrade:shared Redis 1 -> 3 (single instance -> primary + 2 replicas + sentinels + 2 proxies). redis-0 restarts with its data and becomes the primary; redis-1 / redis-2 full-sync from it; Service redis switches to the proxies. Logins in all zones are interrupted while redis-0 restarts (maintenance window, needs -ConfirmRedisCoreRestart)."
+	}
+	if ($verdict -ne 'refuse') { return $verdict }
+	throw @"
+拒绝变更共享 Redis 的形态:线上 sts/redis 有 $live 个副本 → 目标 $($Topology.Replicas) 个(namespace=$InfraNamespace)。
+只支持 1 → 3(单实例原地切高可用)。3 → 1 不能原地做:主可能在 redis-1 / redis-2 上,缩到只剩 redis-0 会丢掉主上的最新数据;
+线上是 0 / 2 这类本脚本从不产生的副本数时,不知道它经历过什么,也不猜。本次未做任何写操作。
+确实要回到单实例:先在维护窗口里把主切回 redis-0(redis-cli -p 26379 SENTINEL FAILOVER mymaster,直到哨兵答 redis-0),
+停写后按 deploy/k8s/README.md「共享 Redis:高可用形态」的回退步骤做;只是这次不想改形态,显式传 -RedisReplicas $live。
+"@
+}
+
+# 高可用形态下口令的额外字符集限制(纯函数)。双引号、反斜杠与控制字符已由 Assert-RedisPasswordYamlSafe 拒绝;
+# 这里再拒绝空白与单引号:哨兵把口令**原样、不加引号**写回它自己的配置文件(sentinel auth-pass / sentinel-pass,Redis 自身的行为),
+# 下次重启按配置语法读回时,空白会把口令拆成两段、引号会被当成引号 —— 报 "Unbalanced quotes" 起不来(2026-10-08 实测)。
+# 报错只点变量名,不回显值。空串放行(dev 档不认证)。
+function Assert-RedisPasswordSentinelSafe {
+	param([AllowEmptyString()][AllowNull()][string]$Password)
+
+	if ([string]::IsNullOrEmpty($Password)) { return }
+	if ($Password -match "[\s']") {
+		throw "MMORPG_REDIS_PASSWORD 含空白或单引号:共享 Redis 的高可用形态(-RedisReplicas 3)里,哨兵会把口令原样、不加引号地写回它自己的配置文件,下次重启读不回来。请换一个只含字母、数字与 ._~@%+=:,^- 之类符号的口令。"
+	}
+}
+
+<#
+.SYNOPSIS
+	从 redis-ha.yaml 读连接上限并核对:PROXY_MAXCONN × (代理副本数 + maxSurge) + 预留 ≤ MAXCLIENTS,且 MAXCLIENTS 与 redis.yaml 同值。
+
+.DESCRIPTION
+	为什么要让代理先到线:Redis 一旦到线,代理对它的健康检查连接也会被拒,连续两次失败就把它判下线、踢掉全部会话,
+	客户端一起重连又撞线 —— 小故障被放大成全服断线;代理到线只是新连接排队。所以代理全部副本(含滚动时多出的那个)
+	加起来也不能把 Redis 用满,留出的预留给复制、哨兵、代理健康检查、探针与运维 redis-cli。
+	MAXCLIENTS 必须与 redis.yaml 相同:Redis 连接总账(Get-RedisConnectionLedgerInputs)只从 redis.yaml 读,两种形态共用一份账。
+	纯函数(不读文件):找不到恰好一处取值、Deployment redis-proxy 的 replicas / maxSurge 不是恰好一处、或不等式不成立即 throw。
+#>
+function Get-RedisHaLimits {
+	param(
+		[Parameter(Mandatory = $true)][string]$ManifestContent,
+		[Parameter(Mandatory = $true)][int]$SingleInstanceMaxClients
+	)
+
+	# 预留名额:复制 2 条、哨兵每个对主 / 对每个从各 2 条、两个代理的健康检查、探针与运维 redis-cli。估计值,取得宽裕。
+	$reserved = 1000
+	$text = $ManifestContent -replace "`r`n", "`n"
+	$readOne = {
+		param([string]$Name)
+		$found = [regex]::Matches($text, "(?m)^[ \t]*$Name=(\d+)[ \t]*$")
+		if ($found.Count -ne 1) {
+			throw "redis-ha.yaml:$Name=<数字> 应恰好出现 1 次,实际 $($found.Count) 次(fail-closed:不替你猜连接上限)"
+		}
+		$value = 0
+		if (-not [int]::TryParse($found[0].Groups[1].Value, [ref]$value) -or $value -le 0) {
+			throw "redis-ha.yaml:$Name='$($found[0].Groups[1].Value)' 必须是正整数"
+		}
+		return $value
+	}
+	$maxClients = & $readOne 'MAXCLIENTS'
+	$proxyMaxConn = & $readOne 'PROXY_MAXCONN'
+
+	$proxyDocs = @(($text -split '(?m)^---[ \t]*$') | Where-Object { $_ -cmatch '(?m)^kind:[ \t]*Deployment[ \t]*$' -and $_ -cmatch '(?m)^  name:[ \t]*redis-proxy[ \t]*$' })
+	if ($proxyDocs.Count -ne 1) {
+		throw "redis-ha.yaml:kind: Deployment、metadata.name 为 redis-proxy 的文档应恰好 1 份,实际 $($proxyDocs.Count) 份"
+	}
+	$replicaMatches = [regex]::Matches($proxyDocs[0], '(?m)^  replicas:[ \t]*(\d+)[ \t]*$')
+	$surgeMatches = [regex]::Matches($proxyDocs[0], '(?m)^[ \t]+maxSurge:[ \t]*(\d+)[ \t]*$')
+	if ($replicaMatches.Count -ne 1 -or $surgeMatches.Count -ne 1) {
+		throw "redis-ha.yaml:Deployment redis-proxy 的 spec.replicas 与 maxSurge 应各恰好一处(整数),实际 $($replicaMatches.Count) / $($surgeMatches.Count) 处"
+	}
+	$proxyReplicas = [int]$replicaMatches[0].Groups[1].Value
+	$proxyMaxSurge = [int]$surgeMatches[0].Groups[1].Value
+
+	if ($maxClients -ne $SingleInstanceMaxClients) {
+		throw "redis-ha.yaml 的 MAXCLIENTS=$maxClients 与 redis.yaml 的 $SingleInstanceMaxClients 不同:两种形态共用一份 Redis 连接总账(只从 redis.yaml 读),必须同值。"
+	}
+	$proxyTotal = $proxyMaxConn * ($proxyReplicas + $proxyMaxSurge)
+	if ($proxyTotal + $reserved -gt $maxClients) {
+		throw "redis-ha.yaml:PROXY_MAXCONN=$proxyMaxConn × (代理副本 $proxyReplicas + maxSurge $proxyMaxSurge) + 预留 $reserved = $($proxyTotal + $reserved) 超过 MAXCLIENTS=$maxClients。代理必须比 Redis 先到线(否则到线时代理的健康检查失败、踢掉全部会话),调小 PROXY_MAXCONN 或在维护窗口调大两份清单的 MAXCLIENTS。"
+	}
+	return [pscustomobject]@{
+		MaxClients    = $maxClients
+		ProxyMaxConn  = $proxyMaxConn
+		ProxyReplicas = $proxyReplicas
+		ProxyMaxSurge = $proxyMaxSurge
+		Reserved      = $reserved
+		ProxyTotal    = $proxyTotal
+	}
+}
+
+# 脚本 ConfigMap(redis-ha-scripts)内容的摘要,取 SHA-256 前 16 位(纯函数)。写进代理的 Pod 模板注解:代理只在启动时
+# 按脚本生成配置,内容一变模板就变、Deployment 自动滚动。整块文档原样参与(只统一换行),脚本里的注释改了也会滚动 ——
+# 代理是无状态的,多滚一次只是客户端重连一次,比漏滚一次(新脚本不生效)便宜。
+function Get-RedisHaScriptsDigest {
+	param([Parameter(Mandatory = $true)][string]$ManifestContent)
+
+	$documents = @(($ManifestContent -replace "`r`n", "`n") -split '(?m)^---[ \t]*$')
+	$configMaps = @($documents | Where-Object { $_ -cmatch '(?m)^kind:[ \t]*ConfigMap[ \t]*$' -and $_ -cmatch '(?m)^  name:[ \t]*redis-ha-scripts[ \t]*$' })
+	if ($configMaps.Count -ne 1) {
+		throw "redis-ha.yaml:kind: ConfigMap、metadata.name 为 redis-ha-scripts 的文档应恰好 1 份,实际 $($configMaps.Count) 份"
+	}
+	$sha256 = [System.Security.Cryptography.SHA256]::Create()
+	try {
+		$bytes = $sha256.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($configMaps[0].Trim()))
+	}
+	finally {
+		$sha256.Dispose()
+	}
+	return ((($bytes | ForEach-Object { $_.ToString('x2') }) -join '').Substring(0, 16))
 }
 
 # Go micro-service catalogue: name → { configMapName, manifestFile, port, configFlag, configFileName }
@@ -7698,13 +7884,33 @@ function Apply-Infra {
 			-ConfigName 'battle-node-config' -IncludeBattleSettings
 		$battleWorkload = New-BattleWorkloadManifest
 	}
-	# 共享 Redis 的重启闸(P0-E):先按下面循环里同一种渲染(只替换 __INFRA_NAMESPACE__)算出 redis.yaml 的 Pod 模板摘要,
-	# 本次 apply 会改变线上 sts/redis 的 Pod 模板(= 重启 redis-0)而没给 -ConfirmRedisCoreRestart 时,在下面任何写操作
-	# (Ensure-Namespace、删旧 Deployment、建 Secret redis-auth、apply)之前 throw。摘要随后写进 StatefulSet 自己的注解。
+	# 共享 Redis 的形态(-RedisReplicas,见 Get-RedisTopology):单实例 apply redis.yaml,高可用 apply redis-ha.yaml。两份清单里的
+	# 对象同名(Service redis / redis-headless、PDB redis-pdb、StatefulSet redis),所以同一时刻只 apply 其中一份。
+	# 下面三道检查都在任何写操作(Ensure-Namespace、删旧 Deployment、建 Secret redis-auth、apply)之前:
+	#   1. 拓扑变更闸:3 → 1 等拒绝的变更直接 throw(Assert-RedisTopologyChangeIsSafe);
+	#   2. 高可用前置:口令字符集(哨兵限制)、连接上限不等式(Get-RedisHaLimits);
+	#   3. 重启闸(P0-E):按下面循环里同一种渲染(只替换 __INFRA_NAMESPACE__)算出 Pod 模板摘要,本次 apply 会改变线上 sts/redis 的
+	#      Pod 模板(= 重启 redis Pod;1 → 3 必然属于这一类)而没给 -ConfirmRedisCoreRestart 时 throw。摘要随后写进 StatefulSet 自己的注解。
+	$redisTopology = Get-RedisTopology
+	$redisTopologyVerdict = $null
 	$redisPodTemplateDigest = $null
-	$redisManifestPath = Join-Path $InfraManifestsDir "redis.yaml"
+	$redisHaScriptsDigest = $null
+	$redisManifestPath = Join-Path $InfraManifestsDir $redisTopology.Manifest
+	if ($redisTopology.HighAvailability -and -not (Test-Path $redisManifestPath)) {
+		throw "共享 Redis 选的是高可用形态(-RedisReplicas $($redisTopology.Replicas)),但找不到 $redisManifestPath。fail-closed:不悄悄退回单实例。"
+	}
 	if (Test-Path $redisManifestPath) {
-		$redisPodTemplateDigest = Get-RedisPodTemplateDigest -ManifestContent ((Get-Content -Path $redisManifestPath -Raw).Replace("__INFRA_NAMESPACE__", $InfraNamespace))
+		$redisManifestRendered = (Get-Content -Path $redisManifestPath -Raw).Replace("__INFRA_NAMESPACE__", $InfraNamespace)
+		$redisTopologyVerdict = Assert-RedisTopologyChangeIsSafe -Topology $redisTopology
+		if ($redisTopology.HighAvailability) {
+			Assert-RedisPasswordSentinelSafe -Password $script:RedisPassword
+			$redisHaLimits = Get-RedisHaLimits -ManifestContent $redisManifestRendered -SingleInstanceMaxClients (Get-RedisMaxClientsFromManifest)
+			Write-Host ("Redis HA limits: maxclients={0} proxy_maxconn={1} proxies={2}+{3} reserved={4} (proxy total {5} + reserved <= maxclients)" -f
+				$redisHaLimits.MaxClients, $redisHaLimits.ProxyMaxConn, $redisHaLimits.ProxyReplicas, $redisHaLimits.ProxyMaxSurge,
+				$redisHaLimits.Reserved, $redisHaLimits.ProxyTotal)
+			$redisHaScriptsDigest = Get-RedisHaScriptsDigest -ManifestContent $redisManifestRendered
+		}
+		$redisPodTemplateDigest = Get-RedisPodTemplateDigest -ManifestContent $redisManifestRendered
 		Assert-RedisCoreRestartConfirmed -DesiredDigest $redisPodTemplateDigest
 	}
 	Write-Host "Deploying shared infrastructure to namespace $InfraNamespace"
@@ -7720,7 +7926,8 @@ function Apply-Infra {
 	# 紧跟 etcd.yaml。它只新增 ConfigMap + CronJob,不碰 StatefulSet etcd,apply 不会滚动 etcd;占位只有 __INFRA_NAMESPACE__,
 	# 走下面的通用替换。有真实存档的环境不要为了它跑 infra-up(会连带 apply mysql.yaml,L-04 约束见
 	# docs/handoff/godb-pipeline-handoff-20261013.md §2.4),按 runbook 单独 apply 这一个清单。
-	$infraManifests = @("etcd.yaml", "etcd-maintenance.yaml", "redis.yaml", "redis-match-cluster.yaml", "kafka.yaml", "mysql.yaml")
+	# 共享 Redis 那一项按拓扑取 redis.yaml 或 redis-ha.yaml(见上)。
+	$infraManifests = @("etcd.yaml", "etcd-maintenance.yaml", $redisTopology.Manifest, "redis-match-cluster.yaml", "kafka.yaml", "mysql.yaml")
 	if ($script:CppLogSidecarEnabled -and [string]::IsNullOrWhiteSpace($LokiPushUrl)) {
 		$infraManifests += "loki.yaml"
 	}
@@ -7763,7 +7970,7 @@ function Apply-Infra {
 			Assert-KafkaTopologyChangeIsSafe -Topology (Get-KafkaTopology)
 		}
 
-		if ($manifest -eq "redis.yaml") {
+		if ($manifest -eq $redisTopology.Manifest) {
 			# 密码走**可选** Secret:dev 档 MMORPG_REDIS_PASSWORD 回落为空串 → 删掉 Secret → redis.yaml 里
 			# secretKeyRef 的 optional:true 让容器以无密码启动(与改造前行为一致);release 档强制 ≥12 位
 			# (Resolve-InjectedSecret 的 -MinLength 12)→ 建 Secret → 服务端 --requirepass。
@@ -7795,6 +8002,14 @@ stringData:
 			# 旧 emptyDir 里的数据**不迁移**(它本来也活不过一次 Pod 重建)。切换 = 一次 Redis 重启:
 			# 在线玩家的会话与位置记录清空,需要重新登录。**这是一次有停机窗口的变更。**
 			Invoke-Kubectl -Args @("delete", "deployment", "redis", "-n", $InfraNamespace, "--ignore-not-found")
+
+			if ($redisTopologyVerdict -eq 'upgrade') {
+				# 单实例 → 高可用:podManagementPolicy 要从 OrderedReady 改成 Parallel,这个字段创建后不能改,直接 apply 会被 API server 拒绝。
+				# 所以先只删 StatefulSet 对象本身(--cascade=orphan:redis-0 这个 Pod 与它的 PVC 原样保留、继续服务),紧接着 apply 新的
+				# StatefulSet,它按同名、同标签接管 redis-0,再按滚动更新把它换成高可用模板,redis-1 / redis-2 新建后从它全量同步。
+				# 2026-10-08 在本机 kind 上实测:数据不丢,Service redis 的 ClusterIP 不变。
+				Invoke-Kubectl -Args @("delete", "statefulset", "redis", "-n", $InfraNamespace, "--cascade=orphan", "--ignore-not-found")
+			}
 		}
 
 		if ($manifest -eq "mysql.yaml") {
@@ -7828,10 +8043,14 @@ stringData:
 			$manifestContent = $manifestContent.Replace("__KAFKA_PDB_MIN_AVAILABLE__", [string]$kafkaTopology.PdbMinAvailable)
 		}
 
-		if ($manifest -eq "redis.yaml" -and $null -ne $redisPodTemplateDigest) {
+		if ($manifest -eq $redisTopology.Manifest -and $null -ne $redisPodTemplateDigest) {
 			# 重启闸(P0-E):函数开头算好的 Pod 模板摘要写进 StatefulSet redis 自己的注解(不在 Pod 模板里,改它不滚动 redis-0),
 			# 下一次 infra-up 由 Assert-RedisCoreRestartConfirmed 读回比较。摘要与这里 apply 的内容出自同一个文件、同一种渲染。
 			$manifestContent = $manifestContent.Replace($script:RedisPodTemplateDigestPlaceholder, $redisPodTemplateDigest)
+			if ($null -ne $redisHaScriptsDigest) {
+				# 高可用形态:脚本 ConfigMap 的摘要写进代理的 Pod 模板注解,脚本一改代理就滚动(见 Get-RedisHaScriptsDigest)。
+				$manifestContent = $manifestContent.Replace($script:RedisHaScriptsDigestPlaceholder, $redisHaScriptsDigest)
+			}
 		}
 
 		# fail-closed:任何 __XXX__ 形态的占位没被替换就拒绝 apply。以前只有 kafka.yaml
@@ -7860,6 +8079,10 @@ stringData:
 		# redis 现在也是 StatefulSet(见上面的 kind 变更)。它在**同步登录路径**上(login 拿不到锁即拒绝
 		# EnterGame),没起来就让后面的 zone 部署继续,只会把失败推迟到玩家进不去游戏时才暴露。
 		Wait-ForStatefulSetReady -Namespace $InfraNamespace -StatefulSetName "redis"
+		if ($redisTopology.HighAvailability) {
+			# 高可用形态下客户端连的是代理(Service redis 指向它):redis 节点就绪而代理没起来,照样连不上。
+			Wait-ForDeploymentReady -Namespace $InfraNamespace -DeploymentName "redis-proxy"
+		}
 		# 部署后核对(P0-E):生效的 maxclients 是否等于清单的 MAXCLIENTS。被容器 nofile 硬限下调时,到线之前只有这里能自动发现;
 		# 不等只告警,不阻断(redis.yaml 已经 apply 完了)。DryRun 只打一行说明,不连集群。
 		Test-RedisLiveMaxClients -ExpectedMaxClients (Get-RedisMaxClientsFromManifest)
@@ -7911,6 +8134,9 @@ Apply-KafkaProfileDefaults
 # zone-up 与 infra-up 的档位参数不一致时,从这一行就能看出两边的副本数对不上。
 $kafkaTopologyAtStart = Get-KafkaTopology
 Write-Host "Kafka topology: brokers=$($kafkaTopologyAtStart.Brokers) controllers=$($kafkaTopologyAtStart.ControllerCount) replication_factor=$($kafkaTopologyAtStart.ReplicationFactor) min_insync_replicas=$($kafkaTopologyAtStart.MinInsyncReplicas)"
+# -RedisReplicas 非法(例如 2)同样在这里拦下;打出本次用哪份清单,infra-up 的日志里一眼能看出共享 Redis 是不是高可用形态。
+$redisTopologyAtStart = Get-RedisTopology
+Write-Host "Redis topology: replicas=$($redisTopologyAtStart.Replicas) manifest=$($redisTopologyAtStart.Manifest) high_availability=$(([string]$redisTopologyAtStart.HighAvailability).ToLowerInvariant())"
 Show-ExposureProfileWarning
 
 Write-Host "Release: profile=$ReleaseProfile image=$NodeImage pullPolicy=$ImagePullPolicy go_tag=$GoSvcTag java_tag=$JavaSvcTag cluster_id=$ClusterId"

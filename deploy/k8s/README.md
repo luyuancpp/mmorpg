@@ -1022,13 +1022,123 @@ player-inbox 与 trade / friend 同形:全局池服务(`$GoSvcCatalogue['player-
     Go 侧多半只看到 EOF / 连接重置,release 档还可能是 `failed to authenticate`(容易与「C++ 不发 AUTH」那一项混淆);C++ 断连日志本来就不带原因。
   - **到线之后 redis-cli 自己也进不去**(Redis 不给管理连接留名额,外部常识,待实测),所以**在线调大必须在到线之前做**;已经到线时只能先停掉一部分客户端腾出名额,
     或重启 redis-0(回到清单值)。
-- **接入 redis-ha / 按用途拆分 / 分片时**:每个 redis-server 都要显式 `--maxclients` 并按用途重算总账;redis-ha 还要算 haproxy:节点上限 ≥(代理副本数 + maxSurge)× `maxconn` + 余量
+- **按用途拆分 / 分片时**:每个 redis-server 都要显式 `--maxclients` 并按用途重算总账。redis-ha(高可用形态)已经接入(2026-10-16,见下一节):`MAXCLIENTS` 与本清单同值、代理每副本 `PROXY_MAXCONN`,生成期核对 `PROXY_MAXCONN ×(代理副本数 + maxSurge)+ 预留 ≤ MAXCLIENTS`;以下原文保留备查:节点上限 ≥(代理副本数 + maxSurge)× `maxconn` + 余量
   (现在 3 × 20000,见 `redis-ha.yaml` 文件头)。按用途拆分后每个进程对每个实例各开一个池,单实例连接数下降、进程总连接数上升;按 player_id 分片后每片的连接数约等于今天单实例的总数。
 - **未做(第 3 批,另起)**:告警(connected_clients ÷ maxclients、rejected_connections 增量、生效值 < 清单值;依赖 redis_exporter,待拍板,届时照 `mysql-connection-alerts.yaml` 写);
   go-redis 直连客户端显式 `PoolSize`(让总账不再跟着 CPU limit 漂);C++ 断连日志带原因。在此之前只有部署后核对与 CPU limit 的输入钉子。
 - **验证(交 Codex,未运行)**:`pwsh -NoProfile -File tools/scripts/tests/redis_maxclients_contract.tests.ps1`(第 1 批静态契约);
   `pwsh -NoProfile -File tools/scripts/tests/k8s_deploy_contract.tests.ps1`(第 2 批:规划档 ≤ 80%、输入钉子、公式自检、写路径打印、重启闸三种判定与拒绝文本、
   摘要语义、infra-up DryRun 的注解、两个包装入口透传)。
+
+## 共享 Redis:高可用形态(2026-10-16,docs/design/no-single-node-horizontal-scaling-20261001.md §5)
+
+> 状态:清单 `manifests/infra/redis-ha.yaml` 2026-10-08 在本机 kind 的隔离命名空间里实测过(数字见下表);部署脚本接入(`-RedisReplicas`)2026-10-16 落码,
+> **契约测试未运行**,待 Codex。还没有在任何真实 staging / prod 集群上切换过。
+
+**一句话**:共享 Redis 从「一个实例」变成「三个实例(1 主 2 从)+ 三个哨兵 + 两个入口代理」。客户端地址不变(仍是 `redis.<infra>:6379`),
+主挂了由哨兵在几秒内提升一个从,代理把连接交给新主。所有客户端(C++ / Go / Java)**零改动**。
+
+```text
+客户端 ──▶ Service redis(名字与 ClusterIP 都不变)──▶ redis-proxy(haproxy ×2)──▶ 当前的主
+                                                        │  只把连接交给「自己答 role:master 且至少 2 个哨兵认它是主」的节点
+redis-0 / redis-1 / redis-2(StatefulSet,每个 Pod = redis 容器 + 哨兵容器,数据在各自 PVC 上)
+```
+
+- **开关**:`k8s_deploy.ps1 -RedisReplicas`。0(缺省)= 按档位,判据与 `-KafkaBrokers` 相同:`-ReleaseProfile` 不是 dev,或 `-OpsProfile` 不是 custom → **3(高可用)**,
+  其余 → 1(单实例,`redis.yaml`)。只接受 0 / 1 / 3。写路径入口打一行 `Redis topology: replicas=<1|3> manifest=<redis.yaml|redis-ha.yaml> high_availability=<true|false>`。
+  `dev_tools.ps1` / `k8s_image.ps1` 不透传这个参数(与 `-KafkaBrokers` 一样走档位缺省);要在 dev 档试高可用,直接调 `k8s_deploy.ps1 -RedisReplicas 3`。
+- **为什么不让客户端自己找哨兵、也不上 Redis Cluster**:go-zero 的 redis 封装只有 node / cluster 两种模式,C++ 的 hiredis 封装是单连接;
+  这个库里有大量多 key Lua、SCAN、事务与 RPOPLPUSH,没有统一的 hash tag。所以「找主」收口在服务端的代理上。
+- **代理的路由规则**(`redis-ha.yaml` 的 `proxy-start.sh`):节点 i 自己答 `role:master`,**并且**至少 2 个哨兵说主就是它,才把新连接交给它;
+  节点不再满足时代理主动掐断它上面的已有连接(`on-marked-down shutdown-sessions`),客户端重连即落到新主 —— C++ / Java 这类不认识 `READONLY` 的客户端不需要任何逻辑。
+  三个哨兵**全都**连不上时退回只看节点自述(不让哨兵故障连带打断 Redis)。
+- **数据安全的边界**:主从复制是异步的,主**崩溃**时可能丢最后一小段写入(通常毫秒级;单实例时期 AOF 每秒刷盘,本来也可能丢 1 秒)。
+  `min-replicas-to-write 1`:主身边一个在线的从都没有时**拒绝写入**(被隔离的旧主不再收会被丢弃的写)—— 代价是三个 Pod 同时坏两个时 Redis 只读、也无法自动切主。
+- **计划内的重启是无损的**:redis 容器的停机钩子(`redis-prestop.sh`)在「我是主」时先等别的 Pod 上的哨兵看清所有从 → 暂停写入(写命令被挂起,不是报错)→
+  等至少一个从追平 → 请哨兵切主 → 等哨兵都改口 → 请走客户端并自降为从。滚动更新、`kubectl drain` 都走这条路;PDB `maxUnavailable: 1`,一次只带走一个 redis Pod。
+- **崩溃后不会「以主身份重放 AOF」**:主进程被杀、容器原地重启时,启动脚本发现哨兵还认它是主、而别的节点一直在跑,就先不启动,等哨兵把主切走再以从的身份回来
+  (否则整段 AOF 重放期间全服不可用,哨兵还不会切 —— 它把 LOADING 当作活着)。整个集群一起断电再拉起时则相反:上一任主直接以主启动(它的数据最新)。
+
+### 连接上限
+
+- 每个 redis-server 显式 `--maxclients`,取值 `MAXCLIENTS` 写在 StatefulSet 的 **Pod 模板**里,**必须与 `redis.yaml` 同值**(Redis 连接总账只从 `redis.yaml` 读,两种形态共用一份账)。
+- 代理每副本的业务连接上限 `PROXY_MAXCONN` 写在 redis-proxy 的 Pod 模板里;生成期核对 `PROXY_MAXCONN ×(代理副本数 + maxSurge)+ 预留 1000 ≤ MAXCLIENTS`(`Get-RedisHaLimits`),
+  不成立就拒绝部署,写路径打一行 `Redis HA limits: maxclients=... proxy_maxconn=... proxies=2+1 reserved=1000 ...`。
+  **为什么要让代理先到线**:Redis 一旦到线,代理对它的健康检查也会被拒,连续两次失败就把它判下线、踢掉**全部**会话,客户端一起重连又撞线 —— 小故障被放大成全服断线;
+  代理到线只是新连接排队。现值:`MAXCLIENTS=40000`、`PROXY_MAXCONN=13000`(13000 × 3 + 1000 = 40000)。
+- 一个代理重启时,它的客户端全部重连到另一个代理,所以契约测试还钉住「规划档峰值 ≤ 80% × 单个代理的 `PROXY_MAXCONN`」(现在 1635 ≤ 10400)。
+- 两个取值都在 Pod 模板里:改 `MAXCLIENTS` 会改变 redis 的模板摘要(重启闸要 `-ConfirmRedisCoreRestart`,随后滚动更新,基本无损);改 `PROXY_MAXCONN` 直接滚动代理。
+
+### 口令
+
+与单实例同一个可选 Secret `redis-auth`;redis、哨兵(`requirepass` + 连节点用的 `auth-pass` + 哨兵互连的 `sentinel-pass`)、代理的健康检查(按协议编码成十六进制发送)都用它。
+**额外的字符集限制**:不能含空白或单引号(双引号、反斜杠、控制字符本来就被 `Assert-RedisPasswordYamlSafe` 拒绝)。原因:哨兵把口令**原样、不加引号**写回它自己的配置文件,
+下次重启读不回来、报 `Unbalanced quotes`(实测)。部署脚本(`Assert-RedisPasswordSentinelSafe`)与哨兵启动脚本两处都会拒绝,报错不回显口令。
+
+### 切换与回退
+
+- **全新集群**:直接 `infra-up`(staging / prod 档缺省就是高可用)。
+- **已有单实例 → 高可用**(维护窗口;AI 不碰集群,由负责人或运维执行):
+  1. 照上一节「上线顺序」第 2 步先停写,确认 db_task 积压、重试队列与死信都为 0;
+  2. `pwsh -File tools/scripts/k8s_deploy.ps1 -Command infra-up -WaitReady -ConfirmRedisCoreRestart -RedisReplicas 3 <其余照常的参数>`。
+     脚本判定为 1 → 3(打 `[RedisTopology]Upgrade:` 告警),先 `kubectl delete statefulset redis --cascade=orphan`(只删对象,redis-0 这个 Pod 与 PVC 原样保留、继续服务;
+     `podManagementPolicy` 创建后不可改,不这样 apply 会被拒),再 apply `redis-ha.yaml`:新 StatefulSet 接管 redis-0 并把它换成高可用模板,redis-1 / redis-2 新建后从它全量同步,
+     Service redis 改指向代理;最后等 redis 三个 Pod 与 `redis-proxy` 就绪。实测:数据不丢、Service 的 ClusterIP 不变,约 25 秒(数据量小时)。
+  3. 核对:见下面「运维」;输出里有 `Redis maxclients check OK`。
+- **高可用 → 单实例**:脚本拒绝 3 → 1(主可能不在 redis-0 上,直接缩容会丢掉主上的最新数据)。确实要回退时手工做,维护窗口内:
+  1. 把主切到 redis-0:`kubectl -n <infra> exec redis-1 -c sentinel -- redis-cli -p 26379 SENTINEL FAILOVER mymaster`,重复直到三个哨兵都答 redis-0(带口令时同样经 `REDISCLI_AUTH`);
+  2. 停写;`kubectl -n <infra> delete statefulset redis --cascade=orphan`;删 `deployment/redis-proxy`、`pdb/redis-proxy-pdb`、`configmap/redis-ha-scripts`;
+     删 `pod/redis-1`、`pod/redis-2` 与它们的 PVC(`redis-data-redis-1`、`redis-data-redis-2`);
+  3. `infra-up -RedisReplicas 1 -ConfirmRedisCoreRestart`:线上已经没有 StatefulSet,按全新部署 apply `redis.yaml`,接管 redis-0(数据仍在它的 PVC 上),Service redis 改回指向它。
+- **不要删了重建 Service redis**:C++ 节点启动时把它解析成 IP 存下来,重连用的是同一个 IP;重建会换 ClusterIP,所有 gate / scene / battle 都要重启才连得上。
+
+### 运维
+
+```bash
+# 现在谁是主(三个哨兵各答一次,应当一致;带口令时先 export REDISCLI_AUTH)
+for i in 0 1 2; do kubectl -n <infra> exec redis-$i -c sentinel -- redis-cli -p 26379 SENTINEL get-master-addr-by-name mymaster | head -1; done
+# 各节点角色与复制状态
+kubectl -n <infra> exec redis-0 -c redis -- redis-cli info replication
+# 手动切主(计划内,无损:先把要停的节点自己的写入暂停最稳妥,删 Pod 时停机钩子会自动做)
+kubectl -n <infra> exec redis-1 -c sentinel -- redis-cli -p 26379 SENTINEL FAILOVER mymaster
+# 代理眼里各后端的状态(本机诊断口,只在 Pod 内可达)
+kubectl -n <infra> exec deploy/redis-proxy -- sh -c 'echo "show servers state" | nc 127.0.0.1 9999'
+```
+
+### 实测记录(2026-10-08,本机 kind 单节点,隔离命名空间,haproxy 3.2;实验命名空间已删除)
+
+| 演练 | 写入中断 | 已答复成功的写入丢了几条 |
+|---|---|---|
+| 滚动重启全部 3 个 redis Pod(含 1~2 次主交接) | 1~3 次写超时(写被挂起约 2 秒) | 0 |
+| 正常删除主所在的 Pod | 约 2.5 秒挂起 | 0 |
+| SIGKILL 主的 redis-server 进程(真崩溃) | 约 6.7 秒 | 0(4 次) |
+| 用防火墙规则把主的网络黑洞掉(无 FIN / RST) | 约 6 秒 | 0 |
+| 杀哨兵容器 | 无 | 0 |
+| 全部停掉再整体拉起(上一任主是 redis-1) | 拉起约 6 秒,上一任主带着数据回来当主 | 0 |
+| 从单实例原地切换 | 约 25 秒,ClusterIP 不变 | 0 |
+| 带口令(含特殊字符的合规口令) | 以上滚动、崩溃两项复测通过 | 0 |
+
+长连接客户端(模拟 C++ 的单连接)在每一项里都能自动恢复。踩到并已修进清单的坑:haproxy **3.0.29** 在后端被判下线时会留下客户端侧不关闭的「僵尸会话」(长连接客户端卡死),
+换 3.2 后三次复测都没有;`tcp-check expect` 不带 `min-recv` 时每次「不是主」的结论都要等检查超时(2 秒);停机钩子不先暂停写入时,旧主会在失去一个从后继续接收写入约 1 秒,
+随后被丢弃(另一个从整个重新同步)。契约测试逐条钉住了这三处。**未测**:真实多节点集群的网络分区、节点整机故障(只在单节点 kind 上用防火墙规则近似)、大数据量下的同步耗时。
+
+### 已知限制
+
+- 代理多一跳(集群内通常 0.1 ms 量级,未压测);两个代理是无状态的,一个重启时它的客户端重连到另一个。
+- **残余风险(C++)**:代理 Pod 所在的机器整机消失时,C++ 节点那条唯一的 Redis 连接收不到 FIN / RST,而 `redis_manager` 没有应用层存活探测、hiredis 适配层没开 TCP keepalive,
+  这条连接会一直挂着直到进程重启(Go / Java 客户端有读超时,不受影响)。Redis 节点所在机器消失不受影响:代理会掐断客户端侧。修法单列为后续项
+  (Hiredis 适配层开 keepalive,或 RedisManager 加带截止时间的 PING)。
+- 脚本 ConfigMap 改了只滚动代理(注解 `mmorpg.io/redis-ha-scripts-digest`),redis Pod 的启动脚本要到下一次重启才生效 —— 为了改脚本去滚动 Redis 不值得。
+- 哨兵重新连上一个换了 IP 的 Pod 要约 15 秒(Redis 哨兵自身的重连节奏);停机钩子会等它看清所有从再交接,所以上一个 Pod 刚重启完时交接要多等十几秒。
+- 部署后等待用 `rollout status` 的 180 秒上限;数据量大时 1 → 3 的全量同步可能更久,超时只是等待失败,不影响已经 apply 的对象。
+- `-RedisReplicas` 只影响 `infra-up` / 不带 `-SkipInfra` 的 `all-up`;zone 侧客户端地址两种形态完全一样,不需要同步参数。
+- 存盘关键写的 WAITAOF 改造(`docs/handoff/godb-pipeline-handoff-20261013.md`)与本形态正交;data_service 的 `RouteStore.Mode` 切 `db_first` 时要按本形态补 `WaitAOF` 两项(NumReplicas=1),见 k8s_deploy.ps1 的 data-service ConfigMap 注释。
+
+### 验证(交 Codex,未运行)
+
+`pwsh -NoProfile -File tools/scripts/tests/k8s_deploy_contract.tests.ps1`(新增 6 条:拓扑与变更判定、连接上限不等式与单代理承载、实测教训的静态钉子、
+口令字符集与拒绝早于写操作、`-RedisReplicas 3` 的 DryRun 产物、dev 基线与 prod 缺省);`pwsh -NoProfile -File tools/scripts/tests/redis_maxclients_contract.tests.ps1`(不应受影响)。
+真实集群:在 staging 上按「切换」步骤做一次 1 → 3,再按上表做一遍删主 Pod 与杀主进程,用 robot 登录压测观察中断时长。
 
 ## Kafka 审计 topic 预建(kafka-topic-init,2026-09-08,node-id-overhaul-plan §2.0c)
 

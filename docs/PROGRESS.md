@@ -8961,3 +8961,27 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
 - **Java 版(AGENTS §12)**:对应 Java 版本号:无。**待做**(客户端可见契约清单见设计文档 §7.4;Java 版实现之前不要置
   `match_fill_supported`,客户端据此不给出目标人数选项)。这台机器上没有 Java 仓库(`D:/luyuan/xuanming-server-mmo` 不存在),
   `PARITY.md` **尚未登记**,需在有该仓库的机器上补登。
+## 2026-10-16 消除单节点(四):共享 Redis 高可用形态接进部署脚本(Claude,脚本与契约测试未运行,待 Codex 验证)
+
+总纲 `docs/design/no-single-node-horizontal-scaling-20261001.md` §5;运维说明在 `deploy/k8s/README.md`「共享 Redis:高可用形态」。
+
+- **结论先行**:共享 Redis 现在可以从「一个实例」切成「1 主 2 从 + 每个 Pod 一个哨兵 + 2 个 haproxy 入口代理」,客户端地址不变、零改动。
+  清单 `deploy/k8s/manifests/infra/redis-ha.yaml` 是 10-08 写好并在本机 kind 隔离命名空间实测过的(滚动 / 删主 / 杀主进程 / 网络黑洞 / 整体冷启动 / 单实例原地切换,
+  已答复成功的写入全部零丢失,崩溃类中断约 6~7 秒);这次补上部署脚本的接入,并按 P0-E 的要求补齐连接上限。
+- **部署脚本**:`k8s_deploy.ps1 -RedisReplicas`(0 = 按档位,与 `-KafkaBrokers` 同一判据:非 dev / 非 custom → 3;只认 0 / 1 / 3)。`Apply-Infra` 在任何写操作之前依次做:
+  拓扑变更闸(1 → 3 放行,3 → 1 与线上 0 / 2 拒绝)、高可用前置(口令不能含空白 / 单引号 —— 哨兵不加引号回写口令;连接上限不等式)、P0-E 重启闸(摘要按所选清单算)。
+  1 → 3 时先 `delete statefulset redis --cascade=orphan`(`podManagementPolicy` 不可改;Pod 与 PVC 保留),再 apply;代理 Pod 模板带脚本 ConfigMap 摘要(脚本改了代理自动滚动);
+  `-WaitReady` 额外等 `redis-proxy`。写路径入口多打一行 `Redis topology: ...`,高可用时再打一行 `Redis HA limits: ...`。
+- **连接上限**:`MAXCLIENTS=40000` 写进 redis 的 Pod 模板、与 `redis.yaml` 同值(连接总账只读那一份);代理每副本 `PROXY_MAXCONN=13000`,生成期核对
+  `13000 ×(2 + 1)+ 预留 1000 ≤ 40000` —— 代理必须比 Redis 先到线,否则 Redis 到线时代理健康检查失败、会把全部会话一起踢掉。
+- **契约测试**:`k8s_deploy_contract.tests.ps1` 新增 6 条(拓扑与变更判定、连接上限不等式与「单个代理扛住规划峰值」、实测教训的静态钉子(haproxy 3.2、expect 带 min-recv、
+  --maxclients、Parallel、哨兵口令检查)、口令字符集且拒绝早于写操作、`-RedisReplicas 3` 的 DryRun 产物、dev 基线与 prod 缺省)。
+- **已做的核对**:PowerShell 语法解析 0 错误;新增纯函数逐个直接调用核对;`infra-up -DryRun -RedisReplicas 3`(本机演练模式,不连集群)退出 0,产物里摘要注解已替换、
+  无残留占位、有 `rollout status deployment/redis-proxy`;口令含单引号时在任何 apply 之前拒绝且不回显;代理配置用同一份脚本在本机生成过。
+  **没有在 kind 上复测这次的连接上限改动**(当时本机 Docker Desktop 没在运行,我没有擅自启动)。契约测试未运行。
+- **与「按用途拆」的关系**:G4a(`shared-redis-split-by-purpose.md`)管容量与爆炸半径、本项管可用性,两者正交;本项补的正是 G4a §13 第 13 条列的 `-RedisReplicas` apply 路径。
+- **未做 / 残余风险**:C++ 那条唯一的 Redis 连接在「代理 Pod 所在机器整机消失」时收不到 FIN / RST,`redis_manager` 没有应用层存活探测,会一直挂着直到进程重启
+  (`redis_manager` 是 P0-A 刚重写的文件,本线没改,单列后续项);没在真实多节点集群上做过网络分区与整机故障;3 → 1 只能按 README 手工回退。
+- **验证(交 Codex)**:`pwsh -NoProfile -File tools/scripts/tests/k8s_deploy_contract.tests.ps1`、`pwsh -NoProfile -File tools/scripts/tests/redis_maxclients_contract.tests.ps1`;
+  有集群条件时在 staging 按 README 做一次 1 → 3 与删主 / 杀主进程。
+- **Java 版(AGENTS §12)**:不适用(纯部署形态,Java 版不共用本仓的 K8s 清单);本机没有 Java 仓库(`D:\luyuan\xuanming-server-mmo` 不存在),`PARITY.md` 未登记。
