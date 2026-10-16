@@ -37,7 +37,7 @@ DESIGN_RULES = [
         "robot-*", "login-test-anti-stuck-system.md", "data-consistency-stress-testing.md",
     ]),
     ("玩家数据与存储", [
-        "reliable-player-inbox-*", "player-inbox-service.md",
+        "reliable-player-inbox-*", "player-inbox-service.md", "landing-recovery-*",
         "player-async-save-loss-windows.md", "player-storage-placement.md",
         "player-route-mapping-*",
         "new-player-*",
@@ -82,7 +82,8 @@ DESIGN_RULES = [
     ]),
     ("基础设施与中间件", [
         "kafka-*", "infra-reconnect-overview.md", "go-zero-rpc-timeout-fix.md",
-        "grpc-client-deadline-failure-callback.md", "muduo-timer-cancellation-hazards.md",
+        "grpc-client-deadline-failure-callback.md", "grpc-muduo-transport.md",
+        "muduo-timer-cancellation-hazards.md",
         "muduo-rpc-*", "player-handler-deferred-reply.md",
         "hashed-timing-wheel.md", "double-buffer-queue-optimizations.md",
         "distributed-tracing.md", "error-reporting.md", "traffic-statistics-design.md",

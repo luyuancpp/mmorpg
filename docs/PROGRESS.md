@@ -7562,6 +7562,45 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
 - **提醒**:改写之后,凡是还停在旧历史上的本地目录,要先对齐到 `origin/main`(并把本地独有的提交带过去)再编译,否则编的不是最新代码。
 - **Java 版(AGENTS §12)**:对应 Java 版本号:无;本条只是文档,不涉及客户端契约,**不适用**。跨 zone 传送这条线的 Java 版仍是未做。
 
+## 2026-10-13 配表冒烟测试适配正式生成接口
+
+- 组队跟随重编前置复验发现手写 `go/shared/generated/table/table_test.go` 仍调用旧下划线接口和单值 `FindById`。按生成器保留的手写测试边界适配正式 CamelCase 与 `FindAllById`；原组件、索引及热重载断言保留，另验证重复主键返回全部行及缺失主键返回空结果，没有手改生成管理器。
+- Codex 在固定运行源 `898c803ea0`、以及包含新强化/镶嵌配表的主干 `1e3f9e1f68` 上分别执行 `go test -count=1 -json ./generated/table/...`，两次均 13 通过、0 失败、0 跳过。证据：`E:/work/output/team-follow-20261013/go-gateway-logs/shared-tables-test-fixed-result.json`、`main-shared-tables-test-result.json`。
+- 本条仅是配表测试适配与复验，不代表强化/镶嵌或组队跟随已经联机验收。Java 平行版新路径 `D:/luyuan/xuanming-server-mmo` 本机不存在，无法核对 `PARITY.md`；本修改不改变客户端契约。
+
+## 2026-10-13 装备强化与镶嵌:主干编译、单测与起栈冒烟通过(Claude,用户授权执行;界面入口仍未做)
+
+- **授权范围**:用户当日当面授权 Claude 在装备这条线上执行「生成 → 并入 main → 串行编译 → 改编译错误 → 单测与 robot 冒烟」,是 AGENTS §10.1 的一次性例外,
+  只限装备线。下面每一项都是实际跑出来的结果;完整记录在 `docs/design/equipment-enhance-inlay.md` §11。
+- **C++ 编译**(Debug x64,`/m:1`;主仓同一时间只能有一条编译链,由「组队跟随」会话统一执行,证据 `E:\work\output\team-follow-20261010\claude-build\run1`、`run2`):
+  装备的产品代码与三个大测试文件**首次编译即 0 error**,没有为了编过而改任何一行;`modules` / `battle` / `scene` 库在警告即错误下 0 warning。
+  run1 的 scene 节点链接失败(21 个 `agones::*`)是 `lib\infra.lib` 仍为 10-01 旧产物、编译链漏了 `infra.vcxproj`,与装备无关;
+  run2 补上后 gate / scene / battle 三个节点与五个测试工程共 16 个工程全部 Exit 0。
+- **C++ 单测**(证据 `E:\work\output\equip-forge-20261013\cpp-tests\`):`PlayerEquipTest` 151 / 151、`PlayerEquipAttributeTest` 37 / 37、
+  `BagInstanceDataTest` 31 / 31、`BagRemoveExactTest` 10 / 10、存档往返 1 / 1;`bag_test` 整套 488 / 488;`turn_battle_engine_test` 232 / 232(`Equip*` 56);
+  `cross_zone_test` 166 / 166;`currency_test` 的 `ClientGmGateTest` 6 / 6。
+- **测试夹具修复**(`697f5295b1`,只改 `cpp/tests/bag_test/bag_remove_by_guid_test.cpp`):`bag_test` 整套第一次是 482 / 488,
+  6 条 `BagRemoveByGuidTest` 因为排在「把物品号段置成未就绪」的 `BagSegmentNotReadyTest` 之后而失败;夹具改成自己投号段后 488 / 488。
+- **Go / robot**:`go mod vendor` 同步(`1e3f9e1f68`)后 `go build` / `go vet` 退出码 0;`go test -mod=vendor -run "TestEquip|TestFeature"` 三个包 `ok`,
+  `-v` 口径 253 条 PASS、0 FAIL。
+- **起栈冒烟**(栈由「组队跟随」会话用 `start_game.ps1` 从主仓起,一区;节点为 run2 产物、Go 服务与 Java 网关同日重编;
+  证据 `E:\work\output\equip-forge-20261013\smoke\`):scene 启动日志 `equipment table validation issues=0`,scene 与 battle 配表指纹一致。
+  一期 `equip_smoke`:`EQUIP_SMOKE_OK`(穿上后物攻 50 → 201、防御 60 → 72、速度 276 → 288,重登后仍在)。
+  二期 `equip_forge_smoke` 连跑两遍都是 `EQUIP_FORGE_SMOKE_OK`:第 1 遍 `granted_weapon=true enhance_level=0->1->2`、`physical_attack=102->132->102`;
+  第 2 遍复用同一把、`2->3->4`、`106->136->106`;7 条拒绝用例全中,重登后强化等级与宝石都在。scene 侧 4 次强化 / 2 次镶嵌 / 2 次取下的日志与之吻合,
+  没有 `[ENHANCE_PARTIAL]` / `[INSTANCE_LOST]` / `[GEM_LOST]`。
+- **客户端**(客户端仓 main `ba60401f`,离线、不是 Unity;证据 `E:\work\output\equip-forge-20261013\client-offline\`):`tools/client_compile_check.ps1`
+  运行时程序集 429 个文件 0 error;Battle 测试程序集 0 error;装备相关五个用例类 NUnit 244 / 244(这次用的是正式消息号 250 / 251 / 252 与正式 tip 枚举)。
+- **证据边界 / 没做的**:
+  - 没有在 Unity 里编译或运行;强化 / 镶嵌的**界面入口没有做**(Codex 的文件,接线说明在客户端 `Docs/EquipmentForge-20261009.md`),所以真实客户端现在点不到这两个功能。
+  - 强化的概率失败分支只有单测覆盖(两遍冒烟都掷成了)。
+  - 不属于本线、只登记没改:`currency_test` 的 `AssetOpSystemTest.DebitBundleInvalidRecorded` 稳定失败(期望 `REJECTED` + `kAssetInvalidBundle`,
+    实际 `RETRY` + 27006;通用资产通道那条线);`bag_test` 带 `--gtest_shuffle` 时还有同类顺序依赖(种子 7919 / 15838 / 4242 下 37 / 8 / 7 条,
+    装备用例组不受影响)。
+  - `[PlayerEquip] 强化 / 镶嵌 / 取下` 三条日志在 main 上仍是中文,与 10-13 的日志英文化不一致,未改(改了要重编 scene)。
+  - 已知缺口不变:强化石、宝石、装备没有产出途径(只能 GM 发);洗练、宝石合成、强化保护没做。
+  - 隔离工作树 `E:\work\xuanming-server-mmo-equip` 与 `E:\work\mmorpg-client-forge` 的分支停在历史改写前的旧历史上,已作废,不要合并;尚未清理。
+- **Java 版(AGENTS §12)**:待做;对应 Java 版本号:无。本条没有改客户端契约(契约已在 `0b40715d06` 定下)。
 ## 2026-10-13 friend 推荐:SQL 按方言渲染(MySQL / TiDB 各一份提示)+ 服务端语句超时 + TiDB 计划回归(Claude,未编译)
 
 - **背景**:2026-10-09「friend 推荐:随机兜底的候选带真实的共同好友数 + TiDB 计划核对」那一条把「TiDB 上两条推荐查询有界只靠代价估算、统计低估时整表扫描」
