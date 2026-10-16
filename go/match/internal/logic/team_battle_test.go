@@ -29,6 +29,10 @@ type teamBattlePort interface {
 	CreateMatchedTickets(ctx context.Context, battleConfigId uint32, teamId uint64,
 		roster []uint64, zones map[uint64]uint32) (map[uint64]string, uint64)
 	RunGather(battleConfigId uint32, roster []uint64, tickets map[uint64]string) bool
+	EnqueueParty(ctx context.Context, battleConfigId, targetSize uint32, teamId uint64,
+		roster []uint64, zones map[uint64]uint32) (uint64, error)
+	CancelParty(ctx context.Context, teamId uint64, candidates, keepIfRoster []uint64, reason uint32, culprit uint64) ([]uint64, error)
+	PartyQueueState(ctx context.Context, playerId, teamId uint64) (uint32, uint32, uint32, uint64, error)
 }
 
 var _ teamBattlePort = (*TeamBattleStarter)(nil)

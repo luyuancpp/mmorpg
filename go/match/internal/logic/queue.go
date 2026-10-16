@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"match/internal/constants"
 	"match/internal/pkg/ctxkeys"
 	"match/internal/playercontract"
 	"match/internal/svc"
@@ -44,6 +45,14 @@ const (
 	// ticketFieldTeamId 整队开战(team-system.md §E.1 第 7 步)建票时写入的 team_id,
 	// 只用于观测;非组队票据不写该字段(读回为 0)。
 	ticketFieldTeamId = "team_id"
+	// ticketFieldPartyId / ticketFieldPartyMembers 队伍补位票(team-backfill-matching.md §3.1)才写:
+	// 同一单的 uuid,以及这一单的名单(逗号分隔的十进制 player_id,队长在前,即进战斗的站位顺序)。
+	ticketFieldPartyId      = "party_id"
+	ticketFieldPartyMembers = "party_members"
+	// ticketFieldLastFailedBattle 上一局开局失败的 battle_id(gather 的失败出口回队首时写)。scene 的备战锁
+	// battle:lock 的值就是 battle_id:matcher 看到锁值等于它,就知道这是那一局没清掉的残留锁,而不是
+	// 「他进了别的战斗」(见 classifyBattleLock)。没经历过开局失败的票据没有该字段。
+	ticketFieldLastFailedBattle = "last_failed_battle_id"
 )
 
 // queueTicket 是 match:ticket:{player_id} 的内存镜像。
@@ -64,7 +73,15 @@ type queueTicket struct {
 	Rating float64
 	// TeamId 整队开战(ClientPlayerTeam.StartTeamMatch)建票时的队伍 id,只用于观测
 	// (team-system.md §C.1 / §E.5);单人排队 / PVE_SOLO 为 0,且不落盘该字段。
+	// 队伍补位票也写它:撤单 / 弹组前复核时拿它去问 team 域。
 	TeamId uint64
+	// PartyId 非空 = 队伍补位票(team-backfill-matching.md):同一单的全部成员相同,matcher 据此把他们
+	// 当成一个不可拆的单位。PartyMembers 是这一单的名单(队长在前、其余按 join_seq),含本人。
+	// 单人排队 / 整队直接开战 / 活动票都不写这两个字段。
+	PartyId      string
+	PartyMembers []uint64
+	// LastFailedBattleId 上一局开局失败的 battle_id;0 = 没有。
+	LastFailedBattleId uint64
 }
 
 // enqueueScript / requeueScript:注册集 SADD、队列 push 与评分镜像 ZADD 一条 Lua
@@ -216,9 +233,19 @@ func isPlayerBattleLocked(svcCtx *svc.ServiceContext, playerId uint64) (bool, er
 	return playercontract.IsBattleLocked(context.Background(), svcCtx, playerId)
 }
 
+// playerBattleLockValue 读 battle:lock:{player_id} 的值(battle_id;没有锁为空串),见 playercontract.BattleLockValue。
+func playerBattleLockValue(svcCtx *svc.ServiceContext, playerId uint64) (string, error) {
+	return playercontract.BattleLockValue(context.Background(), svcCtx, playerId)
+}
+
 // loadTicket 读取玩家 ticket;不存在返回 (nil, nil)。
 func loadTicket(svcCtx *svc.ServiceContext, playerId uint64) (*queueTicket, error) {
-	fields, err := svcCtx.MatchRedis.Hgetall(matchTicketKey(playerId))
+	return loadTicketCtx(context.Background(), svcCtx, playerId)
+}
+
+// loadTicketCtx 同 loadTicket,Redis 往返受调用方 ctx 约束(组队 RPC 的请求预算内读票)。
+func loadTicketCtx(ctx context.Context, svcCtx *svc.ServiceContext, playerId uint64) (*queueTicket, error) {
+	fields, err := svcCtx.MatchRedis.HgetallCtx(ctx, matchTicketKey(playerId))
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
 			return nil, nil
@@ -233,16 +260,20 @@ func loadTicket(svcCtx *svc.ServiceContext, playerId uint64) (*queueTicket, erro
 	enqueuedAt, _ := strconv.ParseUint(fields[ticketFieldEnqueuedAt], 10, 64)
 	zoneId, _ := strconv.ParseUint(fields[ticketFieldZoneId], 10, 32)
 	teamId, _ := strconv.ParseUint(fields[ticketFieldTeamId], 10, 64)
+	lastFailedBattle, _ := strconv.ParseUint(fields[ticketFieldLastFailedBattle], 10, 64)
 	return &queueTicket{
-		Ticket:       fields[ticketFieldTicket],
-		Mode:         int32(mode),
-		Config:       uint32(config),
-		State:        fields[ticketFieldState],
-		EnqueuedAtMs: enqueuedAt,
-		ZoneId:       uint32(zoneId),
-		QueueKey:     fields[ticketFieldQueueKey],
-		Rating:       parseRating(fields[ticketFieldRating]),
-		TeamId:       teamId,
+		Ticket:             fields[ticketFieldTicket],
+		Mode:               int32(mode),
+		Config:             uint32(config),
+		State:              fields[ticketFieldState],
+		EnqueuedAtMs:       enqueuedAt,
+		ZoneId:             uint32(zoneId),
+		QueueKey:           fields[ticketFieldQueueKey],
+		Rating:             parseRating(fields[ticketFieldRating]),
+		TeamId:             teamId,
+		PartyId:            fields[ticketFieldPartyId],
+		PartyMembers:       parsePartyMembers(fields[ticketFieldPartyMembers]),
+		LastFailedBattleId: lastFailedBattle,
 	}, nil
 }
 
@@ -256,7 +287,8 @@ func createTicketIfAbsent(svcCtx *svc.ServiceContext, playerId uint64, t *queueT
 
 // createTicketIfAbsentCtx 同 createTicketIfAbsent,Redis 往返受调用方 ctx 约束
 // (整队开战在请求预算内建票,team-system.md §A.3 第 7 条)。无 ctx 版本传 Background,
-// 与 go-zero Eval 行为完全一致。t.TeamId 非 0 才多写 team_id 字段,其余票据的字段集不变。
+// 与 go-zero Eval 行为完全一致。t.TeamId 非 0 才多写 team_id 字段,t.PartyId 非空才多写补位单的两个字段,
+// 其余票据的字段集不变。
 // 出错时服务端是否已写入未知(超时 / 断连 / 集群重试),调用方回滚时要把它算进去。
 func createTicketIfAbsentCtx(ctx context.Context, svcCtx *svc.ServiceContext, playerId uint64, t *queueTicket, ttl int) (bool, error) {
 	args := []any{
@@ -272,6 +304,9 @@ func createTicketIfAbsentCtx(ctx context.Context, svcCtx *svc.ServiceContext, pl
 	}
 	if t.TeamId != 0 {
 		args = append(args, ticketFieldTeamId, strconv.FormatUint(t.TeamId, 10))
+	}
+	if t.PartyId != "" {
+		args = append(args, ticketFieldPartyId, t.PartyId, ticketFieldPartyMembers, formatPartyMembers(t.PartyMembers))
 	}
 	res, err := svcCtx.MatchRedis.EvalCtx(ctx, ticketCreateScript, []string{matchTicketKey(playerId)}, args...)
 	if err != nil {
@@ -588,7 +623,13 @@ func deleteTicketIfOwnedCtx(ctx context.Context, svcCtx *svc.ServiceContext, pla
 // ticket id:当前票据与之不一致(matched TTL 到期后玩家已重排,或票据已过期)
 // 就整个人跳过 —— 既不写票据也不入队,否则会把已重排的玩家在队列里塞成两份。
 // 队列 key 优先用票据里的 QueueKey,缺失(旧票据)才用 fallbackQueueKey。
-// 逐个从末尾往前 LPUSH,最先弹出的成员最终仍在最前。
+//
+// 按「单位」逐个处理,从最后一个单位往前(最先弹出的成员最终仍在最前):
+//   - 单人:CAS 回 queued → 读一次战斗锁(上限 battleLockReadTimeout)→ LPUSH(一条 Lua)。做法与失败半径与加补位之前
+//     相同(1v1 / 5v5 全是单人);CAS 与 LPUSH 之间多了这一次读,「票据 queued 但人不在队列」的窗口相应变宽一点,
+//     窗口里落下的取消 / 重排由 matcher 的票据校验与 JoinQueue 自愈收尾,与此前同一形状;
+//   - 队伍补位单(相邻且同一 party_id 的成员):本单全员先 CAS 回 queued → 完整性与回队前复核 → 一条 Lua 整单压回
+//     → 逐人复读票据。
 //
 // 顺序必须是 **先 CAS 回 queued、再 LPUSH**:gather 不持凑单锁,反过来做的话
 // 别的实例的 matcher 可以在 LPUSH 与 CAS 之间 LPOP 到这个人,读到 state=matched
@@ -597,10 +638,37 @@ func deleteTicketIfOwnedCtx(ctx context.Context, svcCtx *svc.ServiceContext, pla
 // 则窗口内被弹出时票据已是 queued,会被正常凑组;LPUSH 失败再用 CAS 删票,不留
 // 反向孤儿(玩家可立即重排)。CAS 与 LPUSH 之间本实例崩溃的残留由 JoinQueue 的
 // isQueuedTicketInQueue 自愈。
+//
+// 队伍补位单不可拆(team-backfill-matching.md §4.2 / §4.4),规则都落在 requeueUnit 里,
+// matchQueueOnce 与 gather 的失败出口不需要认识补位单:
+//   - 完整性:名单里只要有一个人回不来(不在 members 里 —— 弹出后票据 CAS 失败的人、gather 的肇事者;
+//     票据已被替换 / 过期;或 CAS 回 queued 没成功),这一单其余人也不回队:按 ticket id 删票,并通知 team。
+//     「补位单要么全员进同一场战斗、要么全员出局」就落在这一条上。
+//   - 回队前复核:弹出到回队之间票据是 matched,那段时间的名单变化撤单按「太迟」不动;原样放回去就带着旧名单继续排。
+//     所以回队前再问 team 一次,不过的整单删票并通知;读不到的照常回队(弹组前复核与票据自愈还会再把关)。
+//     这一步必须在 CAS **之后**:名单变化的撤单只找 queued 的票(CancelParty),复核若放在 CAS 之前,
+//     落在「复核读完 → CAS 完成」之间的那次撤单会扑空,整单带着旧名单回队。先 CAS 后复核则没有窗口 ——
+//     提交早于复核的被复核读到,晚于复核的那次撤单此时已经找得到票。
+//   - 压回后复读:逐人 CAS 回 queued 的那几次往返里,先改回来的人已经可以被取消 —— 取消方删得掉他的票,
+//     却删不掉还是 matched 的队友(按「太迟」留给这里收尾,见 cancelParty)。所以整单压回之后逐人复读票据,
+//     有人的票不在了就整单撤掉;通知沿用取消方登记的原因。
+//
+// 回队前还要看一眼战斗锁(单人同样,见 dropMembersInOtherBattle):弹出到回队之间进了别的战斗的人不回队,
+// 他所在的补位单整单出局。
 func requeueFront(svcCtx *svc.ServiceContext, fallbackQueueKey string, members []uint64, tickets map[uint64]string) {
-	requeued := 0
-	for i := len(members) - 1; i >= 0; i-- {
-		playerId := members[i]
+	requeueFrontAfterBattle(svcCtx, fallbackQueueKey, members, tickets, 0)
+}
+
+// requeueFrontAfterBattle 同 requeueFront;failedBattleId 非 0 时(gather 的失败出口)把它记进每张回队票据的
+// last_failed_battle_id:这些人刚被那一局冻结过,scene 侧的解冻若丢了,备战锁会残留到自己过期,
+// matcher 靠这个字段把它和「真的进了别的战斗」区分开(classifyBattleLock)。
+// 没有发生过备战的回队(弹出后票据 CAS 不足)传 0,不写该字段。
+func requeueFrontAfterBattle(svcCtx *svc.ServiceContext, fallbackQueueKey string, members []uint64,
+	tickets map[uint64]string, failedBattleId uint64,
+) {
+	// 读票并核对 ticket id(只读,不改任何东西),按原序切成回队单位。
+	entries := make([]requeueEntry, 0, len(members))
+	for _, playerId := range members {
 		expected, known := tickets[playerId]
 		if !known {
 			logx.Errorf("[match] Missing ticket id captured when group was popped; skipping return to queue front player=%d", playerId)
@@ -619,29 +687,219 @@ func requeueFront(svcCtx *svc.ServiceContext, fallbackQueueKey string, members [
 		if ticket.QueueKey != "" {
 			queueKey = ticket.QueueKey
 		}
-		written, err := casTicketFields(svcCtx, playerId, expected, ticketTTLSeconds(svcCtx),
-			ticketFieldState, ticketStateQueued)
+		entries = append(entries, requeueEntry{playerId: playerId, ticket: ticket, queueKey: queueKey})
+	}
+	requeued := 0
+	units := requeueUnits(entries)
+	for i := len(units) - 1; i >= 0; i-- {
+		requeued += requeueUnit(svcCtx, units[i], failedBattleId)
+	}
+	logx.Infof("[match] %d/%d members returned to queue front queue=%s", requeued, len(members), fallbackQueueKey)
+}
+
+// requeueEntry 一名待回队的成员:票据已读到且 ticket id 与弹组时一致。
+type requeueEntry struct {
+	playerId uint64
+	ticket   *queueTicket // 回队前读到的票据(ticket id、评分、补位单信息)
+	queueKey string
+}
+
+// requeueUnits 把 entries 按原序切成回队单位:相邻且同一 party_id、同一队列的成员是一个单位,其余每人一个。
+// 进组时同单成员本来就相邻(popUnits 按单位拼的名单),这里不重排。
+func requeueUnits(entries []requeueEntry) [][]requeueEntry {
+	var units [][]requeueEntry
+	for _, entry := range entries {
+		if n := len(units); n > 0 && entry.ticket.PartyId != "" {
+			last := units[n-1]
+			if last[0].ticket.PartyId == entry.ticket.PartyId && last[0].queueKey == entry.queueKey {
+				units[n-1] = append(last, entry)
+				continue
+			}
+		}
+		units = append(units, []requeueEntry{entry})
+	}
+	return units
+}
+
+// requeueUnit 把一个回队单位送回队首,返回成功回队的人数(见 requeueFront 注释)。
+func requeueUnit(svcCtx *svc.ServiceContext, unit []requeueEntry, failedBattleId uint64) int {
+	seed := unit[0].ticket
+	queueKey := unit[0].queueKey
+	isParty := seed.PartyId != ""
+
+	// 1. 票据 CAS 回 queued。
+	restored := make([]requeueEntry, 0, len(unit))
+	for _, entry := range unit {
+		fields := []string{ticketFieldState, ticketStateQueued}
+		if failedBattleId != 0 {
+			fields = append(fields, ticketFieldLastFailedBattle, strconv.FormatUint(failedBattleId, 10))
+		}
+		written, err := casTicketFields(svcCtx, entry.playerId, entry.ticket.Ticket, ticketTTLSeconds(svcCtx), fields...)
 		if err != nil {
-			logx.Errorf("[match] Failed to restore ticket state before return to queue front; skipping player=%d: %v", playerId, err)
+			logx.Errorf("[match] Failed to restore ticket state before return to queue front; skipping player=%d: %v", entry.playerId, err)
 			continue
 		}
 		if !written {
 			// 读票与 CAS 之间被替换的极窄窗口:不入队,新票据自己已在队列里。
-			logx.Infof("[match] Ticket replaced before return to queue front; not enqueueing player=%d expected=%s", playerId, expected)
+			logx.Infof("[match] Ticket replaced before return to queue front; not enqueueing player=%d expected=%s",
+				entry.playerId, entry.ticket.Ticket)
 			continue
 		}
-		if requeueFrontHook != nil {
-			requeueFrontHook(playerId)
-		}
-		if err := pushFrontRegistered(svcCtx, queueKey, strconv.FormatUint(playerId, 10), ticket.Rating); err != nil {
-			// 票据已是 queued 但人不在队列:删票让玩家可立即重排,不留孤儿。
-			logx.Errorf("[match] Failed to return to queue front; deleting ticket to allow requeue player=%d queue=%s: %v", playerId, queueKey, err)
-			deleteTicketIfOwned(svcCtx, playerId, expected)
-			continue
-		}
-		requeued++
+		restored = append(restored, entry)
 	}
-	logx.Infof("[match] %d/%d members returned to queue front queue=%s", requeued, len(members), fallbackQueueKey)
+	if len(restored) == 0 {
+		return 0
+	}
+	// 1b. 战斗锁:弹出到回队之间进了别的战斗的人不回队(补位单整单出局)。
+	restored, inBattle := dropMembersInOtherBattle(svcCtx, restored, failedBattleId)
+	if inBattle != 0 && isParty {
+		evictRequeueParty(svcCtx, unit, constants.PartyEndMemberNotReady, inBattle)
+		return 0
+	}
+	if len(restored) == 0 {
+		return 0
+	}
+
+	// 2. 补位单:完整性 + 回队前复核,任一项不过整单出局。删票覆盖整个单位:CAS 出错的人状态未知
+	//    (可能已是 queued),一并按 ticket id 清掉。
+	if isParty {
+		if absent, incomplete := partyAbsentMember(seed, restored); incomplete {
+			evictRequeueParty(svcCtx, unit, constants.PartyEndMemberNotReady, absent)
+			return 0
+		}
+		if reason, culprit := recheckPartyBeforeRequeue(svcCtx, seed); reason != constants.PartyEndNone {
+			evictRequeueParty(svcCtx, unit, reason, culprit)
+			return 0
+		}
+	}
+
+	// 3. 一条 Lua 压回队首。
+	if requeueFrontHook != nil {
+		for i := len(restored) - 1; i >= 0; i-- {
+			requeueFrontHook(restored[i].playerId)
+		}
+	}
+	pushes := make([]queuePush, 0, len(restored))
+	ids := make([]uint64, 0, len(restored))
+	ticketIds := make(map[uint64]string, len(restored))
+	for _, entry := range restored {
+		pushes = append(pushes, queuePush{playerId: entry.playerId, rating: entry.ticket.Rating})
+		ids = append(ids, entry.playerId)
+		ticketIds[entry.playerId] = entry.ticket.Ticket
+	}
+	if err := pushMembersRegistered(context.Background(), svcCtx, queueKey, pushes, true); err != nil {
+		// 票据已是 queued 但人不在队列:删票让玩家可立即重排,不留孤儿。补位单整单删(不可拆)并通知。
+		logx.Errorf("[match] Failed to return to queue front; deleting tickets to allow requeue queue=%s members=%v: %v",
+			queueKey, ids, err)
+		for _, entry := range restored {
+			deleteTicketIfOwned(svcCtx, entry.playerId, entry.ticket.Ticket)
+		}
+		// 结果未知(超时时 Lua 可能已执行):把可能留下的队列项摘一次,不等下一次弹组校验才清。
+		if _, rmErr := removeQueueMembers(svcCtx, queueKey, ids); rmErr != nil {
+			logx.Errorf("[match] Failed to dequeue after return-to-front failure (matcher ticket validation will handle remnants) queue=%s: %v",
+				queueKey, rmErr)
+		}
+		if isParty {
+			notifyPartyEnded(svcCtx, seed, constants.PartyEndMemberNotReady, 0)
+		}
+		return 0
+	}
+
+	// 4. 补位单:压回之后逐人复读票据,第 1 步中途(以及第 2 步复核期间)落下的取消在这里收尾。
+	if isParty {
+		if absent, withdrawn := firstMissingPartyTicket(context.Background(), svcCtx, ids, ticketIds); withdrawn {
+			logx.Infof("[match] Party member's ticket vanished while the party was returning to queue front; withdrawing whole party team=%d party=%s absent=%d",
+				seed.TeamId, seed.PartyId, absent)
+			cancelParty(svcCtx, seed, constants.PartyEndMemberNotReady, absent)
+			return 0
+		}
+	}
+	return len(restored)
+}
+
+// partyAbsentMember 这一单的名单里第一个不在 present 里的人;都在返回 (0, false)。
+// 名单读不出来(损坏)按不完整处理,缺席者未知。
+func partyAbsentMember(seed *queueTicket, present []requeueEntry) (uint64, bool) {
+	if len(seed.PartyMembers) == 0 {
+		return 0, true
+	}
+	here := make(map[uint64]bool, len(present))
+	for _, entry := range present {
+		here[entry.playerId] = true
+	}
+	for _, pid := range seed.PartyMembers {
+		if !here[pid] {
+			return pid, true
+		}
+	}
+	return 0, false
+}
+
+// recheckPartyBeforeRequeue 回队首前向 team 复核一支补位单,返回失效原因(PartyEndNone = 可以回队)。
+// 复核读不到、端口未注入都按可以回队处理。两个调用场景:gather 的失败出口(不持凑单锁)与 matchQueueOnce
+// 票据推进不足时(持锁;每支补位单至多再花 partyCheckTimeout,不计入弹组那 3 秒复核预算 —— 这条路只在并发取消时走到)。
+func recheckPartyBeforeRequeue(svcCtx *svc.ServiceContext, seed *queueTicket) (uint32, uint64) {
+	port := svcCtx.PartyTeam()
+	if port == nil {
+		return constants.PartyEndNone, 0
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), partyCheckTimeout)
+	defer cancel()
+	reason, culprit, err := port.CheckParty(ctx, seed.TeamId, seed.PartyMembers)
+	if err != nil {
+		logx.Errorf("[match] Failed to verify party before return to queue front; requeueing as is team=%d: %v", seed.TeamId, err)
+		return constants.PartyEndNone, 0
+	}
+	return reason, culprit
+}
+
+// dropMembersInOtherBattle 回队首前逐人读一次战斗锁(与 matcher 校验排队成员同口径,见 classifyBattleLock),
+// 返回仍可回队的成员,以及第一个「在别的战斗里」的人(0 = 没有)。在别的战斗里的人票据按 ticket id 删掉 ——
+// 他已经不在排了。典型时序:组被弹出、票据 matched,他应战切磋并开打(leaveQueueForOtherBattle 不动 matched 票),
+// 随后这一局败在别人身上;不拦的话他人在切磋里、票据却回到 queued,人数不够凑满的队列 matcher 不扫,
+// 打完切磋就被直接拉进副本。
+// failedBattleId 非 0 时它就是刚失败的那一局:锁值等于它的是这一局没清掉的备战锁,照常回队。
+// 读锁失败的人照常回队(matcher 校验时还会再看)。
+func dropMembersInOtherBattle(svcCtx *svc.ServiceContext, restored []requeueEntry, failedBattleId uint64) ([]requeueEntry, uint64) {
+	kept := make([]requeueEntry, 0, len(restored))
+	var first uint64
+	for _, entry := range restored {
+		ctx, cancel := context.WithTimeout(context.Background(), battleLockReadTimeout)
+		lockValue, err := playercontract.BattleLockValue(ctx, svcCtx, entry.playerId)
+		cancel()
+		if err != nil {
+			logx.Errorf("[match] Failed to read battle lock before return to queue front; requeueing as is player=%d: %v", entry.playerId, err)
+			kept = append(kept, entry)
+			continue
+		}
+		ticket := *entry.ticket
+		if failedBattleId != 0 {
+			ticket.LastFailedBattleId = failedBattleId
+		}
+		if classifyBattleLock(lockValue, &ticket) != battleLockOther {
+			kept = append(kept, entry)
+			continue
+		}
+		logx.Infof("[match] Member entered another battle before returning to queue front; leaving queue player=%d battle=%s",
+			entry.playerId, lockValue)
+		deleteTicketIfOwned(svcCtx, entry.playerId, entry.ticket.Ticket)
+		if first == 0 {
+			first = entry.playerId
+		}
+	}
+	return kept, first
+}
+
+// evictRequeueParty 一支补位单不回队:entries 里的成员(人不在队列;票据刚改回 queued,CAS 出错的可能还是 matched)
+// 按 ticket id 删票,通知 team 一次。
+func evictRequeueParty(svcCtx *svc.ServiceContext, entries []requeueEntry, reason uint32, culprit uint64) {
+	seed := entries[0].ticket
+	for _, entry := range entries {
+		logx.Infof("[match] Party not returned to queue front; member leaves backfill queue team=%d party=%s player=%d reason=%d culprit=%d",
+			seed.TeamId, seed.PartyId, entry.playerId, reason, culprit)
+		deleteTicketIfOwned(svcCtx, entry.playerId, entry.ticket.Ticket)
+	}
+	notifyPartyEnded(svcCtx, seed, reason, culprit)
 }
 
 // nowMs 返回当前 Unix 毫秒。

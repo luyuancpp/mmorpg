@@ -209,6 +209,14 @@ var (
 		Name:      "cross_zone_allowed",
 		Help:      "Effective Team.AllowCrossZone on this instance (1 allowed, 0 denied); instances disagreeing means a rolling switch is in progress.",
 	})
+
+	// teamFillQueueDisabled 本实例生效的 Team.FillQueueDisabled(1=队伍补位匹配已关,0=开放)。
+	// 应急开关靠 yaml + 逐个重启生效,多实例取值不一致即切换中的混跑窗口。
+	teamFillQueueDisabled = prometheus.NewGauge(prometheus.GaugeOpts{
+		Subsystem: teamSubsystem,
+		Name:      "fill_queue_disabled",
+		Help:      "Effective Team.FillQueueDisabled on this instance (1 party backfill matching disabled, 0 enabled); instances disagreeing means a rolling switch is in progress.",
+	})
 )
 
 var registerOnce sync.Once
@@ -240,6 +248,7 @@ func register() {
 			teamSceneRefreshTotal,
 			teamMatchTotal,
 			teamCrossZoneAllowed,
+			teamFillQueueDisabled,
 		)
 	})
 }
@@ -404,6 +413,15 @@ func ObserveTeamSceneRefresh(outcome string) {
 // ObserveTeamMatch 记录一次整队开战的终态。
 func ObserveTeamMatch(outcome string) {
 	teamMatchTotal.WithLabelValues(outcome).Inc()
+}
+
+// SetTeamFillQueueDisabled 上报本实例生效的 Team.FillQueueDisabled(1 = 队伍补位匹配已关)。
+func SetTeamFillQueueDisabled(disabled bool) {
+	if disabled {
+		teamFillQueueDisabled.Set(1)
+		return
+	}
+	teamFillQueueDisabled.Set(0)
 }
 
 // SetTeamCrossZoneAllowed 上报本实例生效的 Team.AllowCrossZone。

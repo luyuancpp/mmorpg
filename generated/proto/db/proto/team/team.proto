@@ -99,6 +99,9 @@ message DisbandTeamRequest {
 message StartTeamMatchRequest {
   uint32 battle_config_id = 1;  // DungeonTable id;模式固定 PVE_TEAM
   uint64 expected_team_id = 2;
+  // 目标人数(team-backfill-matching.md):0 或等于当前队伍人数 = 有几个人就几个人直接开战(加字段前的行为);
+  // 大于当前人数 = 整队进该人数档的队列等补位,凑满后同场开战;小于当前人数或超过副本上限 → kTeamSizeExceeded。
+  uint32 target_team_size = 3;
 }
 
 // ---------------- 回包 / 显示层视图(AGENTS §11.6:在线态只出现在这里) ----------------
@@ -117,6 +120,9 @@ message ListMyInvitesResponse {
 enum TeamMatchState {
   TEAM_MATCH_STATE_IDLE = 0;
   TEAM_MATCH_STATE_STARTING = 1;  // 开战锁有效:gather 在途,名单冻结
+  // 接收者正随本队在人数档队列里等补位(team-backfill-matching.md)。按接收者自己的排队票据现算,
+  // 不进队伍记录、不改 version;名单不冻结 —— 名单一变整队自动退出匹配。
+  TEAM_MATCH_STATE_QUEUED = 2;
 }
 
 message TeamMemberView {
@@ -168,6 +174,16 @@ message TeamView {
   repeated TeamOutgoingInviteView pending_invites = 10;  // 只下发给队长
   uint32 application_count = 11;                         // 所有成员可见
   uint64 server_time_ms = 12;                            // 倒计时基准(SharedRedis TIME,§C.4),避免客户端时钟偏差
+  // 以下三项只在 match_state = QUEUED 时有值(team-backfill-matching.md)。
+  uint32 match_target_size = 13;       // 补位的目标人数
+  // 这一次补位排队的身份:客户端按 (team_id, 本字段) 识别「同一次排队」。QUEUED 时必非 0;同一单存续期间不变
+  // (含凑满后开局失败、整队回到队首);重新发起必定变化。取值是进队列时刻的毫秒墙钟,也可用来显示已等时长。
+  uint64 match_queued_at_ms = 14;
+  uint32 match_battle_config_id = 15;  // 排的副本
+  // 这台服务端支持队伍补位匹配且开关没关(team-backfill-matching.md §4.6)。客户端只在它为 true 时给出
+  // 「目标人数」选项:不认识 target_team_size 的服务端(旧版本 / 另一版服务端)会把它静默当成直接开战,
+  // 那些服务端的视图里这一位天然是 false。无队伍的空视图不填。
+  bool match_fill_supported = 16;
 }
 
 enum TeamChangeReason {
@@ -186,6 +202,8 @@ enum TeamChangeReason {
   TEAM_CHANGE_REASON_MATCH_ENDED = 12;               // 开战成功;客户端随后收到既有 BattleStartS2C
   TEAM_CHANGE_REASON_MATCH_FAILED = 13;              // tip 字段带原因
   TEAM_CHANGE_REASON_HEALED = 14;                    // 服务端自愈(索引/记录矛盾修复)
+  TEAM_CHANGE_REASON_MATCH_QUEUED = 15;              // 整队进队列等补位;actor_id = 队长
+  TEAM_CHANGE_REASON_MATCH_QUEUE_CANCELED = 16;      // 整队退出补位队列;actor_id = 主动取消者(0 = 系统撤单,原因在 tip)
 }
 
 message TeamSnapshotS2C {

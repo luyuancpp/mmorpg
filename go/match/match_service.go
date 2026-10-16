@@ -85,12 +85,30 @@ func main() {
 	metrics.Start(c.MetricsListenAddr)
 	// 本实例生效的组队跨区开关;多实例取值不一致 = 滚动切换中(team-system.md J-13a)。
 	metrics.SetTeamCrossZoneAllowed(c.Team.AllowCrossZone)
+	// 本实例是否关掉了队伍补位匹配(应急开关);多实例取值不一致 = 逐个重启中。
+	metrics.SetTeamFillQueueDisabled(c.Team.FillQueueDisabled)
 
 	// scene / battle 节点发现:etcd list-watch 内存镜像
 	// (gather 定位 PrepareBattle / CreateBattle 对端用,照 LoadReporter 模式;
 	// 组队给 scene 发 PlayerTeamRefreshEvent 也从这里取 NodeUuid)。
 	safego.Go("match.watch.scene", func() { svcCtx.SceneNodes.Run(ctx, svcCtx.Etcd) })
 	safego.Go("match.watch.battle", func() { svcCtx.BattleNodes.Run(ctx, svcCtx.Etcd) })
+
+	// 组队(team-system.md §A.3,port-decisions D-2 / feasibility D7):与 match 同进程、同一个
+	// zrpc server,协议独立(ClientPlayerTeam service + TeamNodeService 第二次节点注册)。
+	//   - home zone 查询走 data_service(DataServiceRpc 未配置时 DataServiceClient 为 nil,
+	//     team 需要 home zone 的请求一律回 TeamInternal,不拒绝起服);
+	//   - 整队开战的票据域端口由 logic.TeamBattleStarter 实现,这一行同时是
+	//     *logic.TeamBattleStarter 满足 team.BattleStarter 的编译期保证(team 与 logic 互不 import)。
+	teamService := team.NewService(svcCtx,
+		team.NewDataServiceHomeZone(svcCtx.DataServiceClient, team.DefaultHomeZoneLookupTimeout),
+		matchlogic.NewTeamBattleStarter(svcCtx))
+	// 队伍补位匹配的反向端口(team-backfill-matching.md §4):matcher 弹组前向 team 复核补位单、
+	// 撤单 / 开局后让 team 推送。这一行同时是 *team.Service 满足 svc.PartyTeamPort 的编译期保证。
+	// **必须在 matcher 循环启动之前注入**:进程重启时 Redis 里还留着存量补位单(票据 6 小时),
+	// 端口缺失期间 matcher 不会让补位单成组(见 logic.groupPicker.checkParty),但也就白等;
+	// 后面那段对局结果消费者的启动在 Kafka 慢时要等好几秒。
+	svcCtx.SetPartyTeam(teamService)
 
 	// matcher loop:定时扫队列凑单。多实例安全由每个 (mode, config) 队列的
 	// Redis SETNX 锁保证,match 服务本身无状态、可水平扩(设计文档 §5.4)。
@@ -133,16 +151,6 @@ func main() {
 			})
 		}
 	}
-
-	// 组队(team-system.md §A.3,port-decisions D-2 / feasibility D7):与 match 同进程、同一个
-	// zrpc server,协议独立(ClientPlayerTeam service + TeamNodeService 第二次节点注册)。
-	//   - home zone 查询走 data_service(DataServiceRpc 未配置时 DataServiceClient 为 nil,
-	//     team 需要 home zone 的请求一律回 TeamInternal,不拒绝起服);
-	//   - 整队开战的票据域端口由 logic.TeamBattleStarter 实现,这一行同时是
-	//     *logic.TeamBattleStarter 满足 team.BattleStarter 的编译期保证(team 与 logic 互不 import)。
-	teamService := team.NewService(svcCtx,
-		team.NewDataServiceHomeZone(svcCtx.DataServiceClient, team.DefaultHomeZoneLookupTimeout),
-		matchlogic.NewTeamBattleStarter(svcCtx))
 
 	s := zrpc.MustNewServer(c.RpcServerConf, func(grpcServer *grpc.Server) {
 		matchpb.RegisterMatchServiceServer(grpcServer, server.NewMatchServiceServer(svcCtx))

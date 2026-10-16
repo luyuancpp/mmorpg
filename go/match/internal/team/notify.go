@@ -74,6 +74,12 @@ func (s *Service) publish(caller uint64, commits []*CommitResult, healed []uint6
 	if len(commits) == 0 && len(healed) == 0 {
 		return
 	}
+	// 名单变了 → 本队在排的补位单整单撤出(team-backfill-matching.md §4.3)。用自己的后台任务与预算:
+	// 它要读排队票据所在的库,不能排在下面这批推送 / scene 信号前面占它们的时间 —— 票据库一慢,
+	// 离队 / 踢人的推送就会整批超时丢掉。撤单自己会给仍在队里的人推 MATCH_QUEUE_CANCELED。
+	for _, c := range commits {
+		s.cancelPartyOnRosterChange(c)
+	}
 	asyncFn("match.team.publish", func() {
 		ctx, cancel := context.WithTimeout(context.Background(), pushBatchBudget)
 		defer cancel()
@@ -120,6 +126,11 @@ func (s *Service) pushCommit(ctx context.Context, caller uint64, c *CommitResult
 		view, ok := viewFromCommit(c, pid, dc)
 		if !ok {
 			continue // 索引已指向别队(修复提交里被移出者):不拼视图,交给他自己的拉取
+		}
+		if rosterChanged(c) {
+			s.markFillSupported(view) // 名单变化的提交不做匹配态装饰,理由见 commitResponse
+		} else {
+			s.decorateQueueState(ctx, pid, view)
 		}
 		s.push(ctx, pid, uint32(game.ClientPlayerTeamNotifyTeamSnapshotMessageId), pushKindSnapshot,
 			&teampb.TeamSnapshotS2C{Team: view, Reason: d.Reason, ActorId: d.Actor, Tip: c.PushTip})
@@ -200,6 +211,7 @@ func (s *Service) pushOnlineRefresh(ctx context.Context, caller, teamId uint64, 
 		if !ok {
 			continue // 索引 tid ≠ 本队(已离队 / 索引缺失):不推,交给他自己的拉取自愈
 		}
+		s.decorateQueueState(ctx, pid, view)
 		s.push(ctx, pid, uint32(game.ClientPlayerTeamNotifyTeamSnapshotMessageId), pushKindSnapshot,
 			&teampb.TeamSnapshotS2C{
 				Team:    view,

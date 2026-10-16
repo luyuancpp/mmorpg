@@ -182,6 +182,17 @@ func matchTicketKey(playerId uint64) string {
 	return fmt.Sprintf("match:ticket:%d", playerId)
 }
 
+// matchPartyEndReasonKey / matchPartyEndNotifiedKey 一支队伍补位单「撤出队列」的两个短期标记
+// (SET NX + 短 TTL,见 party.go claimPartyEndReason / markPartyEndNotified):前者记下最先认定的撤单原因
+// (主动取消者是谁),后者保证全队只收到一条通知。单 key、按 party_id 分布,不进任何多 key Lua,集群安全。
+func matchPartyEndReasonKey(partyId string) string {
+	return "match:party:end:reason:" + partyId
+}
+
+func matchPartyEndNotifiedKey(partyId string) string {
+	return "match:party:end:notified:" + partyId
+}
+
 func challengeKey(challengeId uint64) string {
 	return fmt.Sprintf("challenge:%d", challengeId)
 }

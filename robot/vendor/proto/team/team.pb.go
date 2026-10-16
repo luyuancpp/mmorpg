@@ -28,6 +28,9 @@ type TeamMatchState int32
 const (
 	TeamMatchState_TEAM_MATCH_STATE_IDLE     TeamMatchState = 0
 	TeamMatchState_TEAM_MATCH_STATE_STARTING TeamMatchState = 1 // 开战锁有效:gather 在途,名单冻结
+	// 接收者正随本队在人数档队列里等补位(team-backfill-matching.md)。按接收者自己的排队票据现算,
+	// 不进队伍记录、不改 version;名单不冻结 —— 名单一变整队自动退出匹配。
+	TeamMatchState_TEAM_MATCH_STATE_QUEUED TeamMatchState = 2
 )
 
 // Enum value maps for TeamMatchState.
@@ -35,10 +38,12 @@ var (
 	TeamMatchState_name = map[int32]string{
 		0: "TEAM_MATCH_STATE_IDLE",
 		1: "TEAM_MATCH_STATE_STARTING",
+		2: "TEAM_MATCH_STATE_QUEUED",
 	}
 	TeamMatchState_value = map[string]int32{
 		"TEAM_MATCH_STATE_IDLE":     0,
 		"TEAM_MATCH_STATE_STARTING": 1,
+		"TEAM_MATCH_STATE_QUEUED":   2,
 	}
 )
 
@@ -87,6 +92,8 @@ const (
 	TeamChangeReason_TEAM_CHANGE_REASON_MATCH_ENDED                TeamChangeReason = 12 // 开战成功;客户端随后收到既有 BattleStartS2C
 	TeamChangeReason_TEAM_CHANGE_REASON_MATCH_FAILED               TeamChangeReason = 13 // tip 字段带原因
 	TeamChangeReason_TEAM_CHANGE_REASON_HEALED                     TeamChangeReason = 14 // 服务端自愈(索引/记录矛盾修复)
+	TeamChangeReason_TEAM_CHANGE_REASON_MATCH_QUEUED               TeamChangeReason = 15 // 整队进队列等补位;actor_id = 队长
+	TeamChangeReason_TEAM_CHANGE_REASON_MATCH_QUEUE_CANCELED       TeamChangeReason = 16 // 整队退出补位队列;actor_id = 主动取消者(0 = 系统撤单,原因在 tip)
 )
 
 // Enum value maps for TeamChangeReason.
@@ -107,6 +114,8 @@ var (
 		12: "TEAM_CHANGE_REASON_MATCH_ENDED",
 		13: "TEAM_CHANGE_REASON_MATCH_FAILED",
 		14: "TEAM_CHANGE_REASON_HEALED",
+		15: "TEAM_CHANGE_REASON_MATCH_QUEUED",
+		16: "TEAM_CHANGE_REASON_MATCH_QUEUE_CANCELED",
 	}
 	TeamChangeReason_value = map[string]int32{
 		"TEAM_CHANGE_REASON_UNSPECIFIED":                0,
@@ -124,6 +133,8 @@ var (
 		"TEAM_CHANGE_REASON_MATCH_ENDED":                12,
 		"TEAM_CHANGE_REASON_MATCH_FAILED":               13,
 		"TEAM_CHANGE_REASON_HEALED":                     14,
+		"TEAM_CHANGE_REASON_MATCH_QUEUED":               15,
+		"TEAM_CHANGE_REASON_MATCH_QUEUE_CANCELED":       16,
 	}
 )
 
@@ -723,6 +734,9 @@ type StartTeamMatchRequest struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	BattleConfigId uint32                 `protobuf:"varint,1,opt,name=battle_config_id,json=battleConfigId,proto3" json:"battle_config_id,omitempty"` // DungeonTable id;模式固定 PVE_TEAM
 	ExpectedTeamId uint64                 `protobuf:"varint,2,opt,name=expected_team_id,json=expectedTeamId,proto3" json:"expected_team_id,omitempty"`
+	// 目标人数(team-backfill-matching.md):0 或等于当前队伍人数 = 有几个人就几个人直接开战(加字段前的行为);
+	// 大于当前人数 = 整队进该人数档的队列等补位,凑满后同场开战;小于当前人数或超过副本上限 → kTeamSizeExceeded。
+	TargetTeamSize uint32 `protobuf:"varint,3,opt,name=target_team_size,json=targetTeamSize,proto3" json:"target_team_size,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -767,6 +781,13 @@ func (x *StartTeamMatchRequest) GetBattleConfigId() uint32 {
 func (x *StartTeamMatchRequest) GetExpectedTeamId() uint64 {
 	if x != nil {
 		return x.ExpectedTeamId
+	}
+	return 0
+}
+
+func (x *StartTeamMatchRequest) GetTargetTeamSize() uint32 {
+	if x != nil {
+		return x.TargetTeamSize
 	}
 	return 0
 }
@@ -1219,8 +1240,18 @@ type TeamView struct {
 	PendingInvites   []*TeamOutgoingInviteView `protobuf:"bytes,10,rep,name=pending_invites,json=pendingInvites,proto3" json:"pending_invites,omitempty"`        // 只下发给队长
 	ApplicationCount uint32                    `protobuf:"varint,11,opt,name=application_count,json=applicationCount,proto3" json:"application_count,omitempty"` // 所有成员可见
 	ServerTimeMs     uint64                    `protobuf:"varint,12,opt,name=server_time_ms,json=serverTimeMs,proto3" json:"server_time_ms,omitempty"`           // 倒计时基准(SharedRedis TIME,§C.4),避免客户端时钟偏差
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	// 以下三项只在 match_state = QUEUED 时有值(team-backfill-matching.md)。
+	MatchTargetSize uint32 `protobuf:"varint,13,opt,name=match_target_size,json=matchTargetSize,proto3" json:"match_target_size,omitempty"` // 补位的目标人数
+	// 这一次补位排队的身份:客户端按 (team_id, 本字段) 识别「同一次排队」。QUEUED 时必非 0;同一单存续期间不变
+	// (含凑满后开局失败、整队回到队首);重新发起必定变化。取值是进队列时刻的毫秒墙钟,也可用来显示已等时长。
+	MatchQueuedAtMs     uint64 `protobuf:"varint,14,opt,name=match_queued_at_ms,json=matchQueuedAtMs,proto3" json:"match_queued_at_ms,omitempty"`
+	MatchBattleConfigId uint32 `protobuf:"varint,15,opt,name=match_battle_config_id,json=matchBattleConfigId,proto3" json:"match_battle_config_id,omitempty"` // 排的副本
+	// 这台服务端支持队伍补位匹配且开关没关(team-backfill-matching.md §4.6)。客户端只在它为 true 时给出
+	// 「目标人数」选项:不认识 target_team_size 的服务端(旧版本 / 另一版服务端)会把它静默当成直接开战,
+	// 那些服务端的视图里这一位天然是 false。无队伍的空视图不填。
+	MatchFillSupported bool `protobuf:"varint,16,opt,name=match_fill_supported,json=matchFillSupported,proto3" json:"match_fill_supported,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *TeamView) Reset() {
@@ -1335,6 +1366,34 @@ func (x *TeamView) GetServerTimeMs() uint64 {
 		return x.ServerTimeMs
 	}
 	return 0
+}
+
+func (x *TeamView) GetMatchTargetSize() uint32 {
+	if x != nil {
+		return x.MatchTargetSize
+	}
+	return 0
+}
+
+func (x *TeamView) GetMatchQueuedAtMs() uint64 {
+	if x != nil {
+		return x.MatchQueuedAtMs
+	}
+	return 0
+}
+
+func (x *TeamView) GetMatchBattleConfigId() uint32 {
+	if x != nil {
+		return x.MatchBattleConfigId
+	}
+	return 0
+}
+
+func (x *TeamView) GetMatchFillSupported() bool {
+	if x != nil {
+		return x.MatchFillSupported
+	}
+	return false
 }
 
 type TeamSnapshotS2C struct {
@@ -1884,10 +1943,11 @@ const file_proto_team_team_proto_rawDesc = "" +
 	"\x10target_player_id\x18\x01 \x01(\x04R\x0etargetPlayerId\x12(\n" +
 	"\x10expected_team_id\x18\x02 \x01(\x04R\x0eexpectedTeamId\">\n" +
 	"\x12DisbandTeamRequest\x12(\n" +
-	"\x10expected_team_id\x18\x01 \x01(\x04R\x0eexpectedTeamId\"k\n" +
+	"\x10expected_team_id\x18\x01 \x01(\x04R\x0eexpectedTeamId\"\x95\x01\n" +
 	"\x15StartTeamMatchRequest\x12(\n" +
 	"\x10battle_config_id\x18\x01 \x01(\rR\x0ebattleConfigId\x12(\n" +
-	"\x10expected_team_id\x18\x02 \x01(\x04R\x0eexpectedTeamId\"j\n" +
+	"\x10expected_team_id\x18\x02 \x01(\x04R\x0eexpectedTeamId\x12(\n" +
+	"\x10target_team_size\x18\x03 \x01(\rR\x0etargetTeamSize\"j\n" +
 	"\fTeamResponse\x124\n" +
 	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\x12$\n" +
 	"\x04team\x18\x02 \x01(\v2\x10.teampb.TeamViewR\x04team\"\xad\x01\n" +
@@ -1924,7 +1984,7 @@ const file_proto_team_team_proto_rawDesc = "" +
 	"\fmember_count\x18\x04 \x01(\rR\vmemberCount\x12\x17\n" +
 	"\azone_id\x18\x05 \x01(\rR\x06zoneId\x12 \n" +
 	"\fexpire_at_ms\x18\x06 \x01(\x04R\n" +
-	"expireAtMs\"\x82\x04\n" +
+	"expireAtMs\"\xc2\x05\n" +
 	"\bTeamView\x12\x17\n" +
 	"\ateam_id\x18\x01 \x01(\x04R\x06teamId\x12\x1b\n" +
 	"\tleader_id\x18\x02 \x01(\x04R\bleaderId\x12\x1a\n" +
@@ -1939,7 +1999,11 @@ const file_proto_team_team_proto_rawDesc = "" +
 	"\x0fpending_invites\x18\n" +
 	" \x03(\v2\x1e.teampb.TeamOutgoingInviteViewR\x0ependingInvites\x12+\n" +
 	"\x11application_count\x18\v \x01(\rR\x10applicationCount\x12$\n" +
-	"\x0eserver_time_ms\x18\f \x01(\x04R\fserverTimeMs\"\xa7\x01\n" +
+	"\x0eserver_time_ms\x18\f \x01(\x04R\fserverTimeMs\x12*\n" +
+	"\x11match_target_size\x18\r \x01(\rR\x0fmatchTargetSize\x12+\n" +
+	"\x12match_queued_at_ms\x18\x0e \x01(\x04R\x0fmatchQueuedAtMs\x123\n" +
+	"\x16match_battle_config_id\x18\x0f \x01(\rR\x13matchBattleConfigId\x120\n" +
+	"\x14match_fill_supported\x18\x10 \x01(\bR\x12matchFillSupported\"\xa7\x01\n" +
 	"\x0fTeamSnapshotS2C\x12$\n" +
 	"\x04team\x18\x01 \x01(\v2\x10.teampb.TeamViewR\x04team\x120\n" +
 	"\x06reason\x18\x02 \x01(\x0e2\x18.teampb.TeamChangeReasonR\x06reason\x12\x19\n" +
@@ -1986,10 +2050,11 @@ const file_proto_team_team_proto_rawDesc = "" +
 	"\azone_id\x18\x03 \x01(\rR\x06zoneId\x12\"\n" +
 	"\rinvited_at_ms\x18\x04 \x01(\x04R\vinvitedAtMs\x12 \n" +
 	"\fexpire_at_ms\x18\x05 \x01(\x04R\n" +
-	"expireAtMs*J\n" +
+	"expireAtMs*g\n" +
 	"\x0eTeamMatchState\x12\x19\n" +
 	"\x15TEAM_MATCH_STATE_IDLE\x10\x00\x12\x1d\n" +
-	"\x19TEAM_MATCH_STATE_STARTING\x10\x01*\xcd\x04\n" +
+	"\x19TEAM_MATCH_STATE_STARTING\x10\x01\x12\x1b\n" +
+	"\x17TEAM_MATCH_STATE_QUEUED\x10\x02*\x9f\x05\n" +
 	"\x10TeamChangeReason\x12\"\n" +
 	"\x1eTEAM_CHANGE_REASON_UNSPECIFIED\x10\x00\x12\x1e\n" +
 	"\x1aTEAM_CHANGE_REASON_CREATED\x10\x01\x12$\n" +
@@ -2006,7 +2071,9 @@ const file_proto_team_team_proto_rawDesc = "" +
 	" TEAM_CHANGE_REASON_MATCH_STARTED\x10\v\x12\"\n" +
 	"\x1eTEAM_CHANGE_REASON_MATCH_ENDED\x10\f\x12#\n" +
 	"\x1fTEAM_CHANGE_REASON_MATCH_FAILED\x10\r\x12\x1d\n" +
-	"\x19TEAM_CHANGE_REASON_HEALED\x10\x0e*~\n" +
+	"\x19TEAM_CHANGE_REASON_HEALED\x10\x0e\x12#\n" +
+	"\x1fTEAM_CHANGE_REASON_MATCH_QUEUED\x10\x0f\x12+\n" +
+	"'TEAM_CHANGE_REASON_MATCH_QUEUE_CANCELED\x10\x10*~\n" +
 	"\rTeamEventType\x12\x1f\n" +
 	"\x1bTEAM_EVENT_TYPE_UNSPECIFIED\x10\x00\x12(\n" +
 	"$TEAM_EVENT_TYPE_APPLICATION_REJECTED\x10\x01\x12\"\n" +
