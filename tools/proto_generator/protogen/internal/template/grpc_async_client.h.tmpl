@@ -1,76 +1,33 @@
 #pragma once
 #include <chrono>
 #include <functional>
-#include <memory>
-#include <deque>
-#include "core/network/grpc_client_runtime.h"
+#include <string>
+#include <string_view>
+#include <vector>
 #include "entt/src/entt/entity/registry.hpp"
 #include "grpc_client/grpc_call_tag.h"
-{{.GrpcIncludeHeadName}}
+{{- /* 服务元数据头已包含消息类型的 .pb.h;不再需要 grpc_cpp_plugin 生成的 .grpc.pb.h(docs/design/grpc-muduo-transport.md §14)。 */}}
 {{ range $index, $m := .ServiceInfo }}
   {{- if eq $index 0 }}
 {{$m.ServiceInfoIncludeName}}
   {{- end }}
 {{- end }}
 
-using grpc::ClientContext;
-using grpc::Status;
-using grpc::ClientAsyncResponseReader;
-
 {{/* 空 package → 全局命名空间(匿名 namespace 进头文件会导致每个包含方各持一份声明,链接必炸) */}}
 {{if .Package}}namespace {{.Package}} {{"{"}}{{end}}
 {{- range $svc := .ServiceInfo }}
-using {{ $svc.Service }}StubPtr = std::unique_ptr<{{ $svc.Service }}::Stub>;
-
 {{- range $method := $svc.Methods }}
 #pragma region {{ $svc.Service }}{{ $method.Method }}
-{{ if $method.ClientStreaming }}
-
-struct Async{{ $svc.Service }}{{ $method.Method }}GrpcClient {
-    // context 不可移动；显式固定池地址，Read/Write/Finish 均只借用此对象内的缓冲。
-    static constexpr bool in_place_delete = true;
-    uint32_t messageId{ {{ $svc.Service }}{{ $method.Method }}MessageId };
-    ClientContext context;
-    Status status;
-    {{ $method.CppResponse }} reply;
-    {{ $method.CppRequest }} writingRequest;
-    std::deque<{{ $method.CppRequest }}> pendingWrites;
-    std::unique_ptr<grpc::ClientAsyncReaderWriter<{{ $method.CppRequest }}, {{ $method.CppResponse }}>> stream;
-    GrpcClientRuntimePtr runtime;
-    bool initializing{true};
-    bool reading{false};
-    bool writing{false};
-    bool closing{false};
-    bool finishing{false};
-    bool finished{false};
-};
-
-{{ else }}
-
-struct Async{{ $svc.Service }}{{ $method.Method }}GrpcClient {
-    uint32_t messageId{ {{ $svc.Service }}{{ $method.Method }}MessageId };
-    ClientContext context;
-    Status status;
-    {{ $method.CppResponse }} reply;
-    std::unique_ptr<ClientAsyncResponseReader<{{ $method.CppResponse }}>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    {{ $method.CppRequest }} request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 Async{{ $svc.Service }}{{ $method.Method }}Handler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<{{ $method.CppResponse }}> done;
-    GrpcClientRuntimePtr runtime;
-};
-
-{{ end }}
-
-{{- /* 不前置声明请求类型:CppRequest 是全限定名(::pkg::Type),"class ::pkg::Type;" 在标准 C++ 里非法,
-       MSVC 放行、clang 报错,会让 no-raw-pointer-member 检查解析失败;完整定义已由上方 GrpcIncludeHeadName 引入。 */}}
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view k{{ $svc.Service }}{{ $method.Method }}GrpcPath = "/{{ if $svc.Package }}{{ $svc.Package }}.{{ end }}{{ $svc.Service }}/{{ $method.Method }}";
+{{- if or $method.ClientStreaming $method.ServerStreaming }}
+// 流式方法不生成客户端:全仓唯一的流式服务 etcd 由 MuduoEtcdTransport 手写。下面三个重载只为 gRpcMethodRegistry
+// 的通用 sender 保留签名,调用即记 ERROR 拒绝。
+{{- else }}
+{{- /* 不前置声明请求类型:CppRequest 是全限定名(::pkg::Type),"class ::pkg::Type;" 在标准 C++ 里非法。 */}}
 using Async{{ $svc.Service }}{{ $method.Method }}HandlerFunctionType =
-    std::function<void(const ClientContext&, const {{ $method.CppResponse }}&)>;
+    std::function<void(const GrpcReplyContext&, const {{ $method.CppResponse }}&)>;
 extern Async{{ $svc.Service }}{{ $method.Method }}HandlerFunctionType Async{{ $svc.Service }}{{ $method.Method }}Handler;
-{{- if not $method.ClientStreaming }}
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
 using Async{{ $svc.Service }}{{ $method.Method }}FailedHandlerFunctionType =
@@ -81,7 +38,7 @@ extern Async{{ $svc.Service }}{{ $method.Method }}FailedHandlerFunctionType Asyn
 void Send{{ $svc.Service }}{{ $method.Method }}(entt::registry& registry, entt::entity nodeEntity, const {{ $method.CppRequest }}& request);
 void Send{{ $svc.Service }}{{ $method.Method }}(entt::registry& registry, entt::entity nodeEntity, const {{ $method.CppRequest }}& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void Send{{ $svc.Service }}{{ $method.Method }}(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
-{{- if not $method.ClientStreaming }}
+{{- if not (or $method.ClientStreaming $method.ServerStreaming) }}
 // 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
 // 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
 void Send{{ $svc.Service }}{{ $method.Method }}(entt::registry& registry, entt::entity nodeEntity, const {{ $method.CppRequest }}& request, GrpcDone<{{ $method.CppResponse }}> done, const GrpcCallOptions& options = {});
@@ -93,14 +50,12 @@ void Send{{ $svc.Service }}{{ $method.Method }}(entt::registry& registry, entt::
 
 {{- range $index, $svc := .ServiceInfo }}
   {{- if eq $index 0 }}
-void Set{{$svc.FileBaseNameCamel}}Handler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
-void Set{{$svc.FileBaseNameCamel}}IfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
+void Set{{$svc.FileBaseNameCamel}}Handler(const std::function<void(const GrpcReplyContext&, const ::google::protobuf::Message& reply)>& handler);
+void Set{{$svc.FileBaseNameCamel}}IfEmptyHandler(const std::function<void(const GrpcReplyContext&, const ::google::protobuf::Message& reply)>& handler);
 void Set{{$svc.FileBaseNameCamel}}FailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler);
 void Set{{$svc.FileBaseNameCamel}}IfEmptyFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler);
-// 本文件所有 unary 调用此后使用的 deadline;启动时由 SetGrpcCallDeadline 按目标节点类型调用。流式调用不设。
+// 本文件所有 unary 调用此后使用的 deadline;启动时由 SetGrpcCallDeadline 按目标节点类型调用。
 void Set{{$svc.FileBaseNameCamel}}CallDeadline(std::chrono::milliseconds deadline);
-void Handle{{$svc.FileBaseNameCamel}}CompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, bool ok, GrpcTag* grpcTag);
-void Init{{$svc.FileBaseNameCamel}}GrpcNode(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity);
   {{- end }}
 {{- end }}
 

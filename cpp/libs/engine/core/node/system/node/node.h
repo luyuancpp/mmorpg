@@ -24,7 +24,6 @@
 #include "node/system/etcd/etcd_manager.h"
 #include "node/system/registration/registration_manager.h"
 #include "node/system/discovery/service_discovery_manager.h"
-#include "node/system/grpc_channel_cache.h"
 #include <grpcpp/grpcpp.h>
 
 // Tracks a pending node removal that can be cancelled if the node re-registers.
@@ -91,7 +90,6 @@ public:
     NodeHandshakeManager &GetNodeRegistrationManager() { return nodeRegistrationManager; }
     ServiceDiscoveryManager &GetServiceDiscoveryManager() { return serviceDiscoveryManager; }
     EtcdManager &GetEtcdManager() { return etcdManager; }
-    grpc_channel_cache::GrpcChannelCache &GetGrpcChannelCache() { return grpcChannelCache; }
 
     // Only valid after StartRpcServer().
     muduo::net::TcpServer &GetTcpServer() { return rpcServer->GetTcpServer(); }
@@ -227,8 +225,6 @@ protected:
     // 关机收尾分两段(docs/design/muduo-rpc-channel.md §6.5):阶段 0 关闭全部 RPC 通道、让在途调用以失败完成,
     // 再把拆除(FinalizeTeardownInLoop)排到这些失败回调之后。
     void FinalizeShutdownInLoop();
-    [[nodiscard]] bool PollGrpcClientsInLoop();
-    void DrainGrpcClientsInLoop();
     void FinalizeTeardownInLoop();
 
     void ReleaseNodeId();
@@ -237,7 +233,6 @@ protected:
     static void AsyncOutput(const char *msg, int len);
     void StartNodeRegistrationHealthMonitor();
     void ExecuteNodeRemoval(const NodeInfo &stoppedNode);
-    void CompleteNodeRemoval(uint32_t nodeType, entt::entity entity, const std::string &nodeUuid);
     void StartConflictDrainWatchdog();
     void StartShutdownDrainWatchdog();
     void MaybeFinalizeShutdownInLoop();
@@ -254,14 +249,12 @@ protected:
     muduo::net::EventLoop &eventLoop;
     muduo::AsyncLogging logSystem;
     RpcServerPtr rpcServer;
-    TimerTaskComp grpcHandlerTimer;
     TimerTaskComp serviceHealthMonitorTimer;
     // 注意:node_id / 端口的重试定时器住在 EtcdService(它才是驱动注册流的那个类)。
     // Node 这里曾经有一份同名成员,但从来没被 RunAfter 过,只在 Shutdown 里被 Cancel ——
     // 纯粹是影子成员,读代码的人会以为取消它就停住了重试,其实什么也没停。已删除。
     TimerTaskComp conflictDrainTimer;
     TimerTaskComp shutdownDrainTimer;
-    TimerTaskComp grpcClientDrainTimer_;
     // Kafka consumption is driven by KafkaConsumer::startBackgroundPolling
     // (a dedicated thread that queueInLoop's callbacks back into eventLoop).
     // The producer is non-blocking and flushes via KafkaManager::Shutdown.
@@ -275,7 +268,6 @@ protected:
     EtcdManager etcdManager;
     NodeHandshakeManager nodeRegistrationManager;
     ServiceDiscoveryManager serviceDiscoveryManager;
-    grpc_channel_cache::GrpcChannelCache grpcChannelCache;
     std::atomic<bool> shutdownStarted{false};
     std::mutex shutdownCompletionMutex_;
     std::condition_variable shutdownCompletionCv_;

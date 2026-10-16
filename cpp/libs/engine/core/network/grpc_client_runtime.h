@@ -1,108 +1,47 @@
 #pragma once
 
-#include <cstddef>
+// 生成的 gRPC 客户端在节点实体上的运行期接缝(docs/design/grpc-muduo-transport.md §14)。
+//
+// 第 3 批起传输是 muduo_grpc::Channel(实体上的 MuduoGrpcChannelPtr 组件);官方 CompletionQueue、
+// GrpcClientRuntime 计数与 5ms 轮询都已删除。只在节点所属 EventLoop 线程使用。
+
 #include <functional>
 #include <memory>
-#include <unordered_set>
 #include <utility>
 
-#include <grpcpp/client_context.h>
-#include <grpcpp/completion_queue.h>
 #include "entt/src/entt/entity/registry.hpp"
 #include "muduo/base/Logging.h"
 #include "muduo/net/EventLoop.h"
+#include "muduo_grpc/channel.h"
+// 用 engine 根目录相对路径:生成的客户端(grpc_client 工程)只把 cpp/libs/engine 放进包含路径。
+#include "core/node/system/node/muduo_grpc_channel_slot.h"
 
-// 官方 gRPC 客户端的节点级寿命。只在节点所属 loop 线程访问；调用对象由对象池持有，
-// 这里只借用其 context，完成标签被处理前不得析构调用或节点实体。
-struct GrpcClientRuntime
-{
-    std::unordered_set<grpc::ClientContext *> calls;
-    size_t queuedCompletions{0};
-    size_t activeCompletions{0};
-    bool closing{false};
-    bool queueShutdown{false};
-    bool drained{false};
-};
-
-using GrpcClientRuntimePtr = std::shared_ptr<GrpcClientRuntime>;
-
-namespace grpc_client_runtime_detail
-{
-// 一个线程只拥有一个当前 EventLoop；计数覆盖尚无节点 runtime 的本地拒绝。
-// 不放进 ECS：失效实体、缺组件等失败恰恰不能依赖一个有效 ECS owner。
-inline thread_local size_t localCompletions{0};
-}
-
-[[nodiscard]] inline bool GrpcClientLocalCompletionsDrained()
-{
-    if (muduo::net::EventLoop::getEventLoopOfCurrentThread() == nullptr)
-    {
-        LOG_FATAL << "gRPC completion drain must be checked on its owning EventLoop thread";
-    }
-    return grpc_client_runtime_detail::localCompletions == 0;
-}
-
-// 覆盖整个标签派发栈，包括业务回调重入的内层轮询。
-class GrpcClientCompletionScope
-{
-public:
-    explicit GrpcClientCompletionScope(GrpcClientRuntimePtr runtime) : runtime_(std::move(runtime))
-    {
-        ++runtime_->activeCompletions;
-    }
-    ~GrpcClientCompletionScope() { --runtime_->activeCompletions; }
-    GrpcClientCompletionScope(const GrpcClientCompletionScope &) = delete;
-    GrpcClientCompletionScope &operator=(const GrpcClientCompletionScope &) = delete;
-
-private:
-    GrpcClientRuntimePtr runtime_;
-};
-
-inline bool HasUsableGrpcClient(const entt::registry &registry, entt::entity entity)
+// 实体上的通道;实体无效或没挂通道返回空。
+inline MuduoGrpcChannelPtr FindGrpcChannel(const entt::registry &registry, entt::entity entity)
 {
     if (!registry.valid(entity))
     {
-        return false;
+        return nullptr;
     }
-    const auto *runtime = registry.try_get<GrpcClientRuntimePtr>(entity);
-    return runtime != nullptr && *runtime && !(*runtime)->closing &&
-           registry.all_of<grpc::CompletionQueue>(entity);
+    const auto *slot = registry.try_get<MuduoGrpcChannelPtr>(entity);
+    return slot != nullptr ? *slot : nullptr;
 }
 
-// 缺组件与关闭期间的拒绝同真实 CQ 完成一样延后，避免发送栈内重入业务回调。
-// 捕获调用自己的副本，不再借用 registry / 节点实体；节点排空也等待这些本地完成。
-inline void QueueGrpcClientCompletion(GrpcClientRuntimePtr runtime, std::function<void()> complete)
+// 这个节点实体现在能不能发 gRPC:挂着通道且通道没关。不代表已经连上(选点按 ConnectivityState 分级另看)。
+inline bool HasUsableGrpcClient(const entt::registry &registry, entt::entity entity)
+{
+    const auto channel = FindGrpcChannel(registry, entity);
+    return channel && channel->GetState(false) != muduo_grpc::ConnectivityState::kShutdown;
+}
+
+// 本地就失败的调用(实体没有通道、请求序列化失败)与真实应答一样延后到下一轮投递:
+// 保持「完成回调永不在 Send 栈内同步执行」。complete 捕获调用自己的状态副本,不借用 registry / 节点实体。
+inline void QueueGrpcLocalCompletion(std::function<void()> complete)
 {
     auto *loop = muduo::net::EventLoop::getEventLoopOfCurrentThread();
     if (loop == nullptr)
     {
         LOG_FATAL << "gRPC client must be used on its owning EventLoop thread";
     }
-    if (runtime)
-    {
-        ++runtime->queuedCompletions;
-    }
-    ++grpc_client_runtime_detail::localCompletions;
-    try
-    {
-        loop->queueInLoop([runtime, complete = std::move(complete)]() mutable
-        {
-            struct CompletionFinished
-            {
-                GrpcClientRuntimePtr runtime;
-                ~CompletionFinished()
-                {
-                    if (runtime) --runtime->queuedCompletions;
-                    --grpc_client_runtime_detail::localCompletions;
-                }
-            } finished{runtime};
-            complete();
-        });
-    }
-    catch (...)
-    {
-        if (runtime) --runtime->queuedCompletions;
-        --grpc_client_runtime_detail::localCompletions;
-        throw;
-    }
+    loop->queueInLoop(std::move(complete));
 }

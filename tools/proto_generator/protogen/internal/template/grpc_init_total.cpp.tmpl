@@ -1,54 +1,32 @@
-#pragma once
+#include "grpc_init_client.h"
 
 #include <chrono>
 #include <cstdint>
 #include <functional>
-#include <vector>
-#include "core/network/grpc_client_runtime.h"
-#include "entt/src/entt/entity/registry.hpp"
-#include <grpcpp/grpcpp.h>
 #include <google/protobuf/message.h>
-#include "muduo/base/Logging.h"
-#include "grpc_client/grpc_call_tag.h"
 #include <proto/common/base/node.pb.h>
 #include <proto/common/base/common.pb.h>
-
-using grpc::ClientContext;
-using grpc::Status;
-using grpc::ClientAsyncResponseReader;
-
-namespace NodeUtils
-{
-	{{.NodeEnumCppType}} GetServiceTypeFromPrefix(const std::string& prefix);
-	entt::registry& GetRegistryForNodeType(uint32_t nodeType);
-	std::string GetRegistryName(const entt::registry& registry);
-	{{.NodeEnumCppType}} GetRegistryType(const entt::registry& registry);
-	bool IsSameNode(const std::string& uuid1, const std::string& uuid2);
-	bool IsNodeConnected(uint32_t nodeType, const {{.NodeInfoCppType}}& info);
-};
 
 {{ range .GrpcFiles }}
 {{/* 空 package 时不能包 namespace:`namespace  {}` 是匿名命名空间,跨编译单元不可见,
      会导致 LNK2019(先例:battle 域 proto 无 package)。空则落全局命名空间,
      与引用侧生成的 `::SetXxxHandler` 全局限定一致。*/}}
 {{if .CppPackage}}namespace {{.CppPackage}} {{"{"}}{{end}}
-    void Set{{.FileBaseNameCamel}}Handler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
-    void Set{{.FileBaseNameCamel}}IfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
+    void Set{{.FileBaseNameCamel}}Handler(const std::function<void(const GrpcReplyContext&, const ::google::protobuf::Message& reply)>& handler);
+    void Set{{.FileBaseNameCamel}}IfEmptyHandler(const std::function<void(const GrpcReplyContext&, const ::google::protobuf::Message& reply)>& handler);
     void Set{{.FileBaseNameCamel}}FailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler);
     void Set{{.FileBaseNameCamel}}IfEmptyFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler);
     void Set{{.FileBaseNameCamel}}CallDeadline(std::chrono::milliseconds deadline);
-    void Init{{.FileBaseNameCamel}}GrpcNode(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity);
-    void Handle{{.FileBaseNameCamel}}CompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, bool ok, GrpcTag* grpcTag);
 {{if .CppPackage}}{{"}"}}{{end}}
 {{ end }}
 
-void SetIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler){
+void SetIfEmptyHandler(const std::function<void(const GrpcReplyContext&, const ::google::protobuf::Message& reply)>& handler){
 {{ range .GrpcFiles }}
     {{.CppPackage}}::Set{{.FileBaseNameCamel}}IfEmptyHandler(handler);
 {{ end }}
 }
 
-void SetHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler){
+void SetHandler(const std::function<void(const GrpcReplyContext&, const ::google::protobuf::Message& reply)>& handler){
 {{ range .GrpcFiles }}
     {{.CppPackage}}::Set{{.FileBaseNameCamel}}Handler(handler);
 {{ end }}
@@ -66,95 +44,11 @@ void SetFailedHandler(const std::function<void(const GrpcCallFailure&, const ::g
 {{ end }}
 }
 
-{{/* 放在 HandleCompletedQueueMessage 之前:同一节点类型可能有多个 gRPC 文件(battle_node + player_battle),
-     与 InitGrpcNode 一样用互相独立的 if,不能写成 else if。 */}}
+{{/* 同一节点类型可能有多个 gRPC 文件(battle_node + player_battle):互相独立的 if,不能写成 else if。 */}}
 void SetGrpcCallDeadline(uint32_t nodeType, std::chrono::milliseconds deadline){
 {{- range $file := .GrpcFiles }}
     if (static_cast<uint32_t>({{$.NodeEnumCppType}}::{{$file.NodeServiceForCpp}}NodeService) == nodeType) {
         {{$file.CppPackage}}::Set{{$file.FileBaseNameCamel}}CallDeadline(deadline);
-    }
-{{- end }}
-}
-
-void BeginShutdownGrpcNode(entt::registry& registry, entt::entity entity) {
-    if (!registry.valid(entity) || !registry.all_of<grpc::CompletionQueue>(entity)) return;
-    auto* slot = registry.try_get<GrpcClientRuntimePtr>(entity);
-    if (slot == nullptr || !*slot) {
-        LOG_FATAL << "gRPC completion queue has no lifetime owner";
-    }
-    auto runtime = *slot;
-    if (runtime->closing) return;
-    runtime->closing = true;
-    for (auto* context : runtime->calls) context->TryCancel();
-}
-
-// 每次轮询都重取组件；业务完成回调可能重入关闭或改变注册表。
-// 关闭期间先消费取消后的 Read/Write，再发 Finish；全部调用结束后才 Shutdown CQ。
-bool PollGrpcNodeShutdown(entt::registry& registry, entt::entity e) {
-    if (!registry.valid(e)) return true;
-    const auto nodeType = NodeUtils::GetRegistryType(registry);
-    for (;;) {
-        if (!registry.valid(e)) return true;
-        auto* queue = registry.try_get<grpc::CompletionQueue>(e);
-        if (queue == nullptr) return true;
-        auto* slot = registry.try_get<GrpcClientRuntimePtr>(e);
-        if (slot == nullptr || !*slot) {
-            LOG_FATAL << "gRPC completion queue has no lifetime owner";
-        }
-        auto runtime = *slot;
-        const bool callbacksIdle = runtime->queuedCompletions == 0 && runtime->activeCompletions == 0;
-        if (runtime->drained) return runtime->calls.empty() && callbacksIdle;
-        if (runtime->closing && runtime->calls.empty() && callbacksIdle && !runtime->queueShutdown) {
-            runtime->queueShutdown = true;
-            queue->Shutdown();
-        }
-        void* got_tag = nullptr;
-        bool ok = false;
-        gpr_timespec tm = {0, 0, GPR_CLOCK_MONOTONIC};
-        const auto result = queue->AsyncNext(&got_tag, &ok, tm);
-        if (result == grpc::CompletionQueue::SHUTDOWN) {
-            runtime->drained = true;
-            return runtime->calls.empty() && callbacksIdle;
-        }
-        if (result != grpc::CompletionQueue::GOT_EVENT) return false;
-        auto* grpcTag = static_cast<GrpcTag*>(got_tag);
-        const auto messageId = grpcTag->messageId;
-        auto& completeQueueComp = *queue;
-        const GrpcClientCompletionScope dispatchScope(runtime);
-
-{{- range $index, $file := .GrpcFiles }}
-    {{- if eq $index 0 }}
-            if ({{$.NodeEnumCppType}}::{{$file.NodeServiceForCpp}}NodeService == nodeType &&
-                ({{range $methodIndex, $method := $file.Methods}}{{if ne $methodIndex 0}} || {{end}}messageId == {{$method.Id}}u{{else}}false{{end}})) {
-                {{$file.CppPackage}}::Handle{{$file.FileBaseNameCamel}}CompletedQueueMessage(registry, e, completeQueueComp, ok, grpcTag);
-            }
-    {{- else }}
-            else if ({{$.NodeEnumCppType}}::{{$file.NodeServiceForCpp}}NodeService == nodeType &&
-                ({{range $methodIndex, $method := $file.Methods}}{{if ne $methodIndex 0}} || {{end}}messageId == {{$method.Id}}u{{else}}false{{end}})) {
-                {{$file.CppPackage}}::Handle{{$file.FileBaseNameCamel}}CompletedQueueMessage(registry, e, completeQueueComp, ok, grpcTag);
-            }
-    {{- end }}
-{{- end }}
-    }
-}
-
-void HandleCompletedQueueMessage(entt::registry& registry) {
-    const auto view = registry.view<grpc::CompletionQueue>();
-    const std::vector<entt::entity> entities(view.begin(), view.end());
-    for (const auto entity : entities) {
-        (void)PollGrpcNodeShutdown(registry, entity);
-    }
-}
-
-
-
-void InitGrpcNode(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity){
-    auto nodeType = NodeUtils::GetRegistryType(registry);
-    registry.emplace<GrpcClientRuntimePtr>(nodeEntity, std::make_shared<GrpcClientRuntime>());
-    registry.emplace<grpc::CompletionQueue>(nodeEntity);
-{{- range $file := .GrpcFiles }}
-    if ({{$.NodeEnumCppType}}::{{$file.NodeServiceForCpp}}NodeService == nodeType) {
-        {{$file.CppPackage}}::Init{{$file.FileBaseNameCamel}}GrpcNode(channel, registry, nodeEntity);
     }
 {{- end }}
 }

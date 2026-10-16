@@ -4,12 +4,11 @@
 #include <muduo/base/Logging.h>
 #include <network/rpc_client.h>
 #include <network/node_utils.h>
-#include <grpc_client/grpc_init_client.h>
 #include <thread_context/redis_manager.h>
 #include "node.h"
 #include "network/network_utils.h"
 #include "thread_context/node_context_manager.h"
-#include "node/system/grpc_channel_cache.h"
+#include "muduo_grpc/channel.h"
 #include "node/system/node/muduo_grpc_channel_slot.h"
 
 void NodeConnector::ConnectToNode(const NodeInfo &nodeInfo)
@@ -68,34 +67,24 @@ void NodeConnector::ConnectToGrpcNode(const NodeInfo &nodeInfo)
 		targetRegistry.destroy(createdId);
 		return;
 	}
-	// 迁移期接缝(docs/design/grpc-muduo-transport.md §8):进程为这个节点类型装了 muduo 传输的工厂,
-	// 就只建 muduo_grpc 通道,不创建官方 grpc::Channel / Stub / CompletionQueue。NodeInfo 照旧最后挂。
-	if (const auto *factory = targetRegistry.ctx().find<MuduoGrpcChannelFactory>(); factory != nullptr && factory->create)
+	// 所有出站 gRPC 走 muduo 驱动的传输(docs/design/grpc-muduo-transport.md §14):一个节点一条 muduo_grpc::Channel,
+	// 挂成 MuduoGrpcChannelPtr 组件,生成的 Send<Svc><Method> 从这里取。通道只接受 IPv4 字面量(§8);
+	// 业务服务通道不开周期 keepalive(对端是 grpc-go 默认强制策略,§4.4),连接参数取 ChannelOptions 默认值。
+	auto channel = ep.port() <= 0xFFFF
+					   ? muduo_grpc::Channel::Create(*gNode->GetLoop(), ep.ip(), static_cast<uint16_t>(ep.port()))
+					   : nullptr;
+	if (!channel)
 	{
-		auto channel = factory->create(ep.ip(), ep.port());
-		if (!channel)
-		{
-			LOG_ERROR << "Cannot create muduo_grpc channel for GRPC node, ID: " << nodeInfo.node_id()
-					  << ", NodeType: " << nodeInfo.node_type()
-					  << ", IP: " << ep.ip() << ", Port: " << ep.port();
-			targetRegistry.destroy(createdId);
-			return;
-		}
-		targetRegistry.emplace<MuduoGrpcChannelPtr>(createdId, std::move(channel));
-		targetRegistry.emplace<NodeInfo>(createdId, nodeInfo);
-		LOG_INFO << "Connecting to GRPC node over muduo_grpc transport, ID: " << nodeInfo.node_id()
-				 << ", IP: " << ep.ip()
-				 << ", Port: " << ep.port()
-				 << ", NodeType: " << nodeInfo.node_type()
-				 << ", Entity: " << entt::to_integral(createdId);
+		LOG_ERROR << "Cannot create gRPC channel to node, ID: " << nodeInfo.node_id()
+				  << ", NodeType: " << nodeInfo.node_type()
+				  << ", IP: " << ep.ip() << ", Port: " << ep.port()
+				  << " (the grpc_endpoint must be an IPv4 literal with a valid port)";
+		targetRegistry.destroy(createdId);
 		return;
 	}
-
-	const auto target = ::FormatIpAndPort(ep.ip(), ep.port());
-	auto cachedChannel = gNode->GetGrpcChannelCache().GetOrCreateChannel(target);
-	const auto &grpcChannel = targetRegistry.emplace<std::shared_ptr<grpc::Channel>>(createdId, std::move(cachedChannel));
-
-	InitGrpcNode(grpcChannel, targetRegistry, createdId);
+	// 发现即预连:第一次调用不必再等一次建连握手(与旧官方通道的 GetState(true) 选点行为一致)。
+	channel->GetState(true);
+	targetRegistry.emplace<MuduoGrpcChannelPtr>(createdId, std::move(channel));
 	targetRegistry.emplace<NodeInfo>(createdId, nodeInfo);
 
 	LOG_INFO << "Connecting to GRPC node, ID: " << nodeInfo.node_id()

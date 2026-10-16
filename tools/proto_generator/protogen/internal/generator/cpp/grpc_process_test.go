@@ -115,31 +115,103 @@ func TestGrpcInitTemplateSupportsMultipleServicesForSameNodeType(t *testing.T) {
 		t.Fatal("expected both same-node gRPC clients to receive the call deadline")
 	}
 
-	// 完成队列分发由正常轮询与关机排空共用，实际分支位于 PollGrpcNodeShutdown。
-	completionOutput := functionOutput("bool PollGrpcNodeShutdown(")
-	if !strings.Contains(completionOutput, "messageId == 159u || messageId == 160u") {
-		t.Fatal("expected completion dispatch to aggregate methods from both services in battle_node.proto")
+	// 第 3 批起传输是 muduo_grpc::Channel(docs/design/grpc-muduo-transport.md §14):生成物里不得再有官方 CQ 的
+	// 初始化、轮询与排空,也不得再引用官方 gRPC 头。
+	for _, forbidden := range []string{"CompletionQueue", "InitGrpcNode", "PollGrpcNodeShutdown", "HandleCompletedQueueMessage",
+		"BeginShutdownGrpcNode", "grpcpp", "ClientContext"} {
+		if strings.Contains(output, forbidden) {
+			t.Fatalf("rendered grpc init must not contain %q any more", forbidden)
+		}
 	}
-	if !strings.Contains(completionOutput, "messageId == 162u") {
-		t.Fatal("expected completion dispatch for player_battle.proto")
+	for _, replySetter := range []string{"void SetIfEmptyHandler(", "void SetHandler("} {
+		if !strings.Contains(functionOutput(replySetter), "const GrpcReplyContext&") {
+			t.Fatalf("%s must take the transport-neutral GrpcReplyContext", replySetter)
+		}
 	}
-	if !strings.Contains(completionOutput, "::HandleBattleNodeCompletedQueueMessage") ||
-		!strings.Contains(completionOutput, "::HandlePlayerBattleCompletedQueueMessage") {
-		t.Fatal("expected both same-node completion handlers in rendered output")
+	for _, failureSetter := range []string{"void SetIfEmptyFailedHandler(", "void SetFailedHandler("} {
+		if !strings.Contains(functionOutput(failureSetter), "const GrpcCallFailure&") {
+			t.Fatalf("%s must take GrpcCallFailure", failureSetter)
+		}
 	}
-	if !strings.Contains(functionOutput("void HandleCompletedQueueMessage("), "PollGrpcNodeShutdown(registry, entity)") {
-		t.Fatal("正常轮询必须调用共用的完成队列分发函数")
+}
+
+func TestGrpcAsyncClientTemplatesUseMuduoChannelAndRejectStreaming(t *testing.T) {
+	originalConfig := _config.Global
+	t.Cleanup(func() { _config.Global = originalConfig })
+	_config.Global.FileExtensions.Proto = ".proto"
+
+	pkg := "scene_manager"
+	file := &descriptorpb.FileDescriptorProto{
+		Name:    strPtr("proto/scene_manager/scene_manager_service.proto"),
+		Package: &pkg,
+		Options: &descriptorpb.FileOptions{CcGenericServices: boolPtr(false)},
+	}
+	service := &descriptorpb.ServiceDescriptorProto{Name: strPtr("SceneManager")}
+	protoInfo := internal.ProtoFileInfo{Fd: file, ServiceDescriptorProto: service}
+	streaming := true
+	unary := &internal.MethodInfo{
+		ProtoFileInfo: protoInfo,
+		Id:            46,
+		MethodDescriptorProto: &descriptorpb.MethodDescriptorProto{
+			Name: strPtr("EnterScene"), InputType: strPtr(".scene_manager.EnterSceneRequest"),
+			OutputType: strPtr(".scene_manager.EnterSceneResponse"),
+		},
+	}
+	stream := &internal.MethodInfo{
+		ProtoFileInfo: protoInfo,
+		Id:            47,
+		MethodDescriptorProto: &descriptorpb.MethodDescriptorProto{
+			Name: strPtr("Watch"), InputType: strPtr(".scene_manager.WatchRequest"),
+			OutputType: strPtr(".scene_manager.WatchResponse"), ServerStreaming: &streaming,
+		},
+	}
+	services := []*internal.RPCServiceInfo{{ProtoFileInfo: protoInfo, Methods: internal.RPCMethods{unary, stream}}}
+	data := GrpcServiceTemplateData{
+		ServiceInfo:           services,
+		GeneratorGrpcFileName: "scene_manager_service_grpc_client",
+		Package:               "scene_manager",
+		FileBaseNameCamel:     "SceneManagerService",
 	}
 
-	initOutput := functionOutput("void InitGrpcNode(")
-	if strings.Contains(initOutput, "else if") {
-		t.Fatal("same-node gRPC clients must use independent initialization branches")
+	render := func(name string) string {
+		t.Helper()
+		tmpl, err := template.ParseFiles(filepath.Join("..", "..", "template", name))
+		if err != nil {
+			t.Fatalf("parse %s: %v", name, err)
+		}
+		var out bytes.Buffer
+		if err := tmpl.Execute(&out, data); err != nil {
+			t.Fatalf("render %s: %v", name, err)
+		}
+		return out.String()
 	}
-	if count := strings.Count(initOutput, "if (test::eNodeType::BattleNodeService == nodeType)"); count != 2 {
-		t.Fatalf("expected two independent Battle node initialization branches, got %d", count)
+
+	header := render("grpc_async_client.h.tmpl")
+	if !strings.Contains(header, `kSceneManagerEnterSceneGrpcPath = "/scene_manager.SceneManager/EnterScene"`) {
+		t.Fatal("unary method must carry the wire :path /<package>.<Service>/<Method>")
 	}
-	if !strings.Contains(initOutput, "::InitBattleNodeGrpcNode") ||
-		!strings.Contains(initOutput, "::InitPlayerBattleGrpcNode") {
-		t.Fatal("expected both same-node gRPC clients to be initialized")
+	if strings.Contains(header, "AsyncSceneManagerWatchHandler") {
+		t.Fatal("streaming methods must not get a generated client handler")
+	}
+	if !strings.Contains(header, "void SendSceneManagerWatch(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message") {
+		t.Fatal("streaming methods keep the Message& Send overload for gRpcMethodRegistry")
+	}
+	for _, forbidden := range []string{".grpc.pb.h", "ClientContext", "CompletionQueue", "StubPtr"} {
+		if strings.Contains(header, forbidden) {
+			t.Fatalf("generated client header must not reference %q", forbidden)
+		}
+	}
+
+	source := render("grpc_async_client.cpp.tmpl")
+	if !strings.Contains(source, "channel->StartUnaryCall(") || !strings.Contains(source, "Base64Encode(value)") {
+		t.Fatal("unary calls must go through muduo_grpc::Channel and keep the application-level Base64 layer")
+	}
+	if !strings.Contains(source, "is a streaming method; the generated client does not support it") {
+		t.Fatal("streaming Send overloads must reject loudly")
+	}
+	for _, forbidden := range []string{"CompletionQueue", "PrepareAsync", "object_pool", "GrpcTag"} {
+		if strings.Contains(source, forbidden) {
+			t.Fatalf("generated client source must not reference %q", forbidden)
+		}
 	}
 }

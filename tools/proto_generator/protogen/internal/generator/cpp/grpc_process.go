@@ -19,16 +19,15 @@ import (
 // GrpcServiceTemplateData holds data passed to gRPC templates.
 type GrpcServiceTemplateData struct {
 	ServiceInfo           []*internal.RPCServiceInfo
-	GrpcIncludeHeadName   string
 	GeneratorGrpcFileName string
 	Package               string
-	GrpcCompleteQueueName string
 	FileBaseNameCamel     string
 }
 
 // grpcInitFileInfo represents one generated async gRPC client translation unit.
 // A proto file can contain multiple services, so Methods contains the union of
-// all RPCs whose completion tags are consumed by that generated client.
+// all RPCs of that generated client (the transport is muduo_grpc::Channel since
+// batch 3 of docs/design/grpc-muduo-transport.md; there is no completion queue).
 type grpcInitFileInfo struct {
 	*internal.RPCServiceInfo
 	Methods internal.RPCMethods
@@ -96,10 +95,8 @@ func generateGrpcFile(fileName string, grpcServices []*internal.RPCServiceInfo, 
 
 	data := GrpcServiceTemplateData{
 		ServiceInfo:           grpcServices,
-		GrpcIncludeHeadName:   grpcServices[0].GrpcIncludeHeadName(),
 		GeneratorGrpcFileName: grpcServices[0].GeneratorGrpcFileName(),
 		Package:               grpcServices[0].CppPackage(),
-		GrpcCompleteQueueName: grpcServices[0].FileBaseNameCamel() + _config.Global.Naming.CompleteQueue,
 		FileBaseNameCamel:     grpcServices[0].FileBaseNameCamel(),
 	}
 

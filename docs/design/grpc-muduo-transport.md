@@ -471,3 +471,48 @@ EtcdHelper(唯一出口,EtcdManager 的 keepalive 也收进来)
 - **用例**:`muduo_grpc_test` 的 channel_test 末尾 6 条(双向流顺序 / 恰好一次、Cancel、通道析构、目标不可达、超限、
   周期 keepalive);新增 `etcd_transport_helpers_test.cpp`(索引、地址拆分、退避,共 14 条)。EtcdService 上的整合行为依赖
   Node 全局状态,按 PROGRESS 条目里的 etcd 故障注入步骤验证。
+
+## 14. 第 3 批:生成客户端全部改走 muduo_grpc、删 CQ(设计,2026-10-15)
+
+负责人 10-15「不用管验证,全部做完」:第 3–5 批不再等上一批验证,连续落地;全部**未编译、未重生成**,交负责人统一构建。
+现状调查(五个子系统只读调查)的结论按需引用,不另存文档。
+
+### 14.1 决定
+
+- **不再保留官方客户端分支**:生成的 `Send<Svc><Method>` 一律走节点实体上的 `MuduoGrpcChannelPtr`
+  (`muduo_grpc::Channel::StartUnaryCall`)。第 1、2 批的进程级开关(`GATE_ROUTER_TRANSPORT`、`NODE_ETCD_TRANSPORT=grpc`)
+  随之失效:留着开关就删不掉 CQ,而第 5 批本来就要删官方运行时。`NODE_ETCD_TRANSPORT=grpc` / `GATE_ROUTER_TRANSPORT=grpc`
+  改为打 WARN 后仍走 muduo_h2。
+- **全局处理器保留,但签名去 grpc 化**:`std::function<void(const GrpcReplyContext&, const Resp&)>`。
+  `GrpcReplyContext` 是 `GrpcCallOutcome` 的别名,带响应头 / trailers 的 metadata(`-bin` 已解掉线上那层,与官方
+  `GetServerInitialMetadata` 同义),所以按回显认领的调用方(gate 会话、号段 `x-idseg-seq`)只改一行。
+  `GrpcCallFailure` 里的 `grpc::ClientContext& / grpc::Status&` 换成 `const GrpcCallOutcome& outcome`。
+- **`GrpcDone` 不变**,`GrpcCallOutcome` 多带响应 metadata,纯增字段。
+- **调用状态不进 ECS**:请求副本、发出的 metadata 原值、done 放在 `shared_ptr` 里,随完成回调走;不再有对象池、tag、
+  `GrpcClientRuntime` 计数。本地拒绝(实体无通道 / 序列化失败)经 `queueInLoop` 延后投递,保持「永不在 Send 栈内回调」。
+- **线上字节不变**:`:path = "/<proto package>.<Service>/<Method>"`(无 package 时 `/<Service>/<Method>`,battle_node)由模板直接拼;
+  metadata 仍是应用层先 `Base64Encode` 一层、`-bin` 键再由传输层编一层(§4.2);截止时间按 steady_clock、线上 `grpc-timeout`。
+  应答解析失败报 INTERNAL(与官方客户端一致)。
+- **流式方法不生成客户端**:全仓只有 etcd 的 Watch / LeaseKeepAlive,已由 `MuduoEtcdTransport` 手写。为不打断
+  `gRpcMethodRegistry` 的通用 sender,流式方法仍生成三个旧 Send 重载,调用即记 ERROR 拒绝;纯服务端流同样处理
+  (修掉旧模板把它误生成成 unary 的问题)。
+- **CQ 与 5ms 轮询删除**:`InitGrpcNode`、`HandleCompletedQueueMessage`、`BeginShutdownGrpcNode`、`PollGrpcNodeShutdown`、
+  `GrpcClientRuntime`、`GrpcChannelCache`、`EtcdService` 的 5ms 定时器、`GrpcEtcdTransport` 一并删除。
+  关机阶段 0 清 `MuduoGrpcChannelPtr`(~Channel 把在途调用以 UNAVAILABLE 排队),拆除经 `queueInLoop` 排在它们之后;
+  节点摘除直接销毁实体,不再 5ms 轮询排空。
+- **建连**:`NodeConnector::ConnectToGrpcNode` 对所有 gRPC 节点类型直接建 `muduo_grpc::Channel`(IPv4 字面量,§8),
+  建好即 `GetState(true)` 预连。`MuduoGrpcChannelFactory` 与 gate 的 `InstallChannelFactory` 删除。
+- **选点**:`HasUsableGrpcClient` 改为「挂着通道且非 SHUTDOWN」;`GetSceneManagerEntity` / 号段 / 收件箱选点改按
+  `muduo_grpc::ConnectivityState` 分级。
+- **muduo**:补连接失败回调(Windows 编译树 `muduo_windows/src` + 使用方头文件副本 `third_party/muduo` 逐字同步 +
+  Linux overlay),`Http2Transport` 收到即进 TRANSIENT_FAILURE、不再等 20s;修 Windows `EventLoop::wakeup()` 空操作
+  (删 5ms 轮询后它不再被掩盖)。
+- **依赖面**:core 与 grpc_client 从此链 muduo_grpc + nghttp2;所有链 core / grpc_client 的工程在第 5 批统一改链接项
+  (同时去掉 grpc)。
+
+### 14.2 行为变化(调用方须知)
+
+- 停机 / 摘节点时在途调用一律 UNAVAILABLE(旧官方路径是 CANCELLED);`GrpcDone` 契约早已要求不按 code 区分。
+- 摘节点时 done 在实体销毁**之后**才执行:回调不得捕获实体句柄或组件指针(现有调用方都按值捕获,已核对)。
+- 官方通道「空闲 30 分钟回 IDLE」「空闲也 ping」消失,改为截止触发探测(§4.4)。
+- 对端拒连立即进 TRANSIENT_FAILURE(连接失败回调落地后),退避 1s ×1.6 封顶 120s,期间调用立即失败(与官方 gRPC 一致)。
