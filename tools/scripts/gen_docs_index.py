@@ -59,7 +59,7 @@ DESIGN_RULES = [
         "server_merge_design.md", "server-merge-gap-fixes.md", "merge-zone-overhaul-*",
         "single_player_rollback*", "zone_data_rollback*", "microservice-zone-contract-*",
     ]),
-    ("战斗", ["turn-*", "battle-*", "pve-*", "session-extractability-mmo-slg.md"]),
+    ("战斗", ["turn-*", "battle-*", "pve-*", "team-backfill-*", "session-extractability-mmo-slg.md"]),
     ("接入层:网关、gate 与登录", [
         "gate-*", "gate_*", "client-access-band-routing.md", "client-rpc-router.md",
         "client-request-ordering.md",

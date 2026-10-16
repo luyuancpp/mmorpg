@@ -4742,6 +4742,8 @@ function New-GoSvcConfigMapYaml {
 	# 组队(team-system.md §D.1):跨区开关与 data_service 客户端的超时 / NonBlock 从服务 yaml 取。
 	# NonBlock 必须为 true(data-service 没起不能拖垮 match 起服),Go 侧也会强制;这里照抄 yaml 便于一眼核对。
 	$matchTeamAllowCrossZone     = Get-AuthoritativeScalar -RelativePath $matchYaml -KeyPath 'Team.AllowCrossZone'
+	# 队伍补位匹配的应急开关(team-backfill-matching.md §4.6):不渲染的话 Pod 里永远是缺省值,开关按不动。
+	$matchTeamFillQueueDisabled  = Get-AuthoritativeScalar -RelativePath $matchYaml -KeyPath 'Team.FillQueueDisabled'
 	$matchDataServiceRpcTimeout  = Get-AuthoritativeScalar -RelativePath $matchYaml -KeyPath 'DataServiceRpc.Timeout'
 	$matchDataServiceRpcNonBlock = Get-AuthoritativeScalar -RelativePath $matchYaml -KeyPath 'DataServiceRpc.NonBlock'
 	# MatchedTicketTTLSeconds 是本轮新增项(cross-zone-matchmaking.md D5,Go 侧缺省 30)。
@@ -5528,8 +5530,10 @@ ${matchMatchedTicketTTLLine}
 # 组队整队开战也按它判副本人数上限,未配置的 id 回 TeamDungeonNotOpen。
 ${matchPveTeamSizeBlock}
 # 组队(docs/design/team-system.md §D.1)。AllowCrossZone 切换要重启所有 match 实例(J-13a)。
+# FillQueueDisabled 是队伍补位匹配的应急开关(docs/design/team-backfill-matching.md §4.6),同样要重启所有实例。
 Team:
   AllowCrossZone: ${matchTeamAllowCrossZone}
+  FillQueueDisabled: ${matchTeamFillQueueDisabled}
 # data_service 客户端:team 用 BatchGetPlayerHomeZone 查玩家 home zone,调用失败 fail-closed。
 # Etcd 指向集群 etcd,Key 与 data-service 自身注册一致(同 login 模板)。
 DataServiceRpc:

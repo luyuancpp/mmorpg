@@ -317,6 +317,10 @@ func healOrphanTicket(svcCtx *svc.ServiceContext, log logx.Logger, playerId uint
 	if err != nil {
 		return false, err
 	}
+	if existing.PartyId != "" {
+		// 队伍补位票:不在队列时撤的是整单(不只删自己这一张),在队列时还要问 team 这一单是否仍然有效。
+		return healPartyTicket(svcCtx, log, playerId, existing, inQueue)
+	}
 	if inQueue {
 		return false, nil
 	}

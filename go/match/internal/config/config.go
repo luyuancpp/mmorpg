@@ -174,6 +174,13 @@ type TeamConf struct {
 	// 各实例判定可能不一致(J-13a),用 team_cross_zone_allowed gauge 观察。
 	// 直接构造 Config 的测试取零值 false,与缺省一致。
 	AllowCrossZone bool `json:",default=false"`
+
+	// FillQueueDisabled:关闭队伍补位匹配(team-backfill-matching.md §4.6)。默认 false = 开放:
+	// StartTeamMatch 带大于当前人数的 target_team_size 时整队进人数档队列等补位。
+	// 置 true 后这类请求回 kTeamDungeonNotOpen;已经在队列里的补位单不受影响(照常可取消、可成组),
+	// 直接开战(不带目标人数或等于当前人数)也不受影响。用「Disabled」而不是「Enabled」是为了让
+	// 直接构造 Config 的测试取到的零值与缺省一致。
+	FillQueueDisabled bool `json:",default=false"`
 }
 
 // RatingDrawRoundCapFor 返回 battle_config_id 对应的"回合打满按平局"阈值:

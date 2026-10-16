@@ -928,6 +928,11 @@ ClientPlayerTeam.StartTeamMatch(battle_config_id, expected_team_id)
 
 ### E.6 v2 预留：补位装箱(本次不实现，只定方向)
 
+> **2026-10-13 更新**:补位已落地,权威设计见 [team-backfill-matching.md](team-backfill-matching.md)。
+> 实际方案与下面当时定的方向不同:队伍**不**作为一个元素进队列,而是每名成员各占一个 player_id 元素、
+> 票据上用同一个 `party_id` 绑定(队列三类 key 与全部 Lua 的格式不变);「匹配中」不写进队伍记录,由排队票据承载;
+> 没有 `MatchQueueFillEnabled` 这个开关(改用 `Team.FillQueueDisabled`,match 仍须整批替换)。下面五条保留作历史记录。
+
 "整队 + 陌生人补位"需要队伍作为一个元素进入 PVE_TEAM 队列。启用前必须满足:
 1. 配置 `MatchQueueFillEnabled` 开关，所有 match 实例升级完成后再打开。原因是旧实例会把非数字元素删掉(`matcher.go:438-441`)。
 2. 队伍票据用 `match:{mq}:tticket:<tid>`,与队列同 slot,和 index/queue/rank 放进同一条 Lua。

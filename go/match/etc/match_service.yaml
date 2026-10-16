@@ -141,8 +141,13 @@ RatingDrawRoundCap: 300
 # AllowCrossZone:是否允许不同 home zone 的玩家同队。默认 false:申请 / 审批 / 邀请 / 接受邀请
 #   比对对方 home zone 与队伍 zone,不一致回 TeamCrossZoneDenied。从 true 改回 false 只拦新增。
 #   靠改这里 + 重启所有 match 实例切换;混跑窗口看 team_cross_zone_allowed gauge(J-13a)。
+# FillQueueDisabled:关闭队伍补位匹配(docs/design/team-backfill-matching.md §4.6)。默认 false = 开放。
+#   置 true 并重启所有 match 实例后:带「目标人数 > 当前人数」的整队开战回 TeamDungeonNotOpen,
+#   客户端不再给出目标人数选项;已经在队列里的补位单不受影响(照常可取消、可成组),直接开战不受影响。
+#   混跑窗口看 team_fill_queue_disabled gauge。
 Team:
   AllowCrossZone: false
+  FillQueueDisabled: false
 
 # data_service gRPC 客户端(etcd 发现):team 用 BatchGetPlayerHomeZone 查玩家 home zone,
 # 查询失败组队 fail-closed(TeamInternal),查不到映射回 TeamHomeZoneUnknown。

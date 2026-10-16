@@ -161,6 +161,28 @@ func TestLoadLocation(t *testing.T) {
 	require.Error(t, err)
 }
 
+// BattleLockValue 读的是 scene 写锁的那个库(SharedRedis):读错库只会得到空串,等于永远「没锁」,
+// matcher 就再也认不出排队期间进了别的战斗的人。
+func TestBattleLockValueReadsSharedRedis(t *testing.T) {
+	svcCtx, shared, private := newSplitSvcCtx(t)
+	ctx := context.Background()
+
+	require.NoError(t, private.Set(BattleLockKey(7), "880002"))
+	value, err := BattleLockValue(ctx, svcCtx, 7)
+	require.NoError(t, err)
+	require.Empty(t, value, "只在 MatchRedis 的锁不算数")
+
+	require.NoError(t, shared.Set(BattleLockKey(7), "880002"))
+	value, err = BattleLockValue(ctx, svcCtx, 7)
+	require.NoError(t, err)
+	require.Equal(t, "880002", value)
+
+	shared.SetError("ERR injected failure")
+	_, err = BattleLockValue(ctx, svcCtx, 8)
+	require.Error(t, err, "读不到要报错,调用方 fail-closed 结束本轮")
+	shared.SetError("")
+}
+
 func TestIsBattleLocked(t *testing.T) {
 	svcCtx, shared, private := newSplitSvcCtx(t)
 	ctx := context.Background()

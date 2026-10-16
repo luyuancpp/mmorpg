@@ -8915,3 +8915,48 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
 - 客户端可见:scene 类请求(含应答为 Empty 的移动号)在 scene 未就绪时回错误信封,不再推 23;客户端仓未授权,未读未改,需要客户端负责人确认通用处理。
 - **Codex 验证**:proto 重生成之后 `msbuild game.sln /m:1 /p:Configuration=Debug /p:Platform=x64`(0 error);Java 仓 `./mvnw -B -pl game-gate,game-robot -am test`(重点 ClientDispatcherTest、ClientPipelineTest、BattleUplinkRejectedTest、ClientRedirectTest、MessageRoutesTest、GateConfigurationTest、MatchBackendForwardingTest,game-robot 的 TradeScenarioTest、GameConnectionTest、GameConnectionRedirectTest)。可选冒烟:路由模式一区下 `robot.exe -c etc/channel_smoke.yaml`、`etc/travel_smoke.yaml`。
 - **Java 版(AGENTS §12)**:同批已改(未提交),PARITY 已追加。
+
+## 2026-10-15 队伍补位匹配:已组好的队伍进人数档队列凑满 N 人(Claude)
+
+- **做了什么**:队长在「开始战斗」的确认框里选目标人数,大于当前人数时整队进 PVE 人数档队列,与路人、别的队伍凑满后同场开战。
+  队伍在队列里不可拆;任一队员取消、名单有任何变化、或有队员进了别的战斗(应战切磋并开打),整队退出匹配;
+  凑满后开局失败时,出问题的是本队则整队退出、是别人则整队回队首。2026-10-13 开工落码,10-15 收口。
+  权威设计与评审记录:[team-backfill-matching.md](design/team-backfill-matching.md)。
+- **方案要点**:队列格式不变(每名成员各占一个 player_id 元素),票据多记 `party_id` / `party_members`;matcher 的非评分选人改成
+  按「单位」凑(人数之和恰好等于 N,等待序字典序最小);排队票据是「是否在排」的唯一事实来源,队伍记录不加字段,
+  队伍视图的匹配态按接收者自己的票据现算。零新消息号、零新 tip;`team.proto` 加 1 个请求字段、4 个视图字段(含能力位
+  `match_fill_supported`)、3 个枚举值,生成物用 protoc 窄面重生成(先做基线逐字节比对)。
+  应急开关 `Team.FillQueueDisabled`(服务 yaml 与 K8s ConfigMap 模板都有),上线 / 回滚顺序见设计文档 §4.6。
+- **顺带改到的既有行为**(都有用例):
+  - `requeueFront` 改成按「单位」回队首:单人仍是「CAS 回 queued + 一条 Lua」,只多一次读战斗锁;补位单整单一条 Lua。
+    回队前看战斗锁:弹出到回队之间进了别的战斗的人不回队(单人删票;补位单整单出局)。
+  - 开局失败回队首的票据记下 `last_failed_battle_id`;matcher 校验排队成员时对战斗锁**只读一次锁值**(原来是 EXISTS):
+    锁值等于它的是上一局没清掉的备战锁,只搁置本轮、不再删票(此前单人会被静默踢出队列)。
+    match 因此依赖「`battle:lock` 的值是 battle_id」这条 scene 侧契约(C++ 注释仍写「match 只 EXISTS」,待改)。
+  - 切磋开局成功时,参战者若还挂着排队票据,立即退出排队(原来要等 matcher 扫到;人数不够的队列不扫,
+    单排的人打完切磋会被「已在排队」卡住)。
+  - matcher 持锁连续凑多组时用掉锁时长一半就收手;match 装配顺序调整为先注入 team 端口再启动 matcher。
+  - 客户端 `BattleClient` 的 `GetQueueStatus` 改成同一时刻至多一个在途,并按排队会话丢弃上一次排队迟到的回包(单排同样受益)。
+- **运行证据**(用户授权 Claude 对 `go\match` 执行,Go 1.26.5):`go build ./...`、`go vet ./...` 退出码 0;
+  `go test ./... -count=1` 7 个包全部 ok,新增 67 条用例(logic 45、team 21、playercontract 1),既有用例全过;
+  对 14 条服务端关键修订做了变异检查(逐个关掉,对应用例全部变红)。没有带 `-race` 跑(本机没有 cgo)。
+  **Go 版本**:主干 go.mod 已要求 1.27.2,这台机器只有 1.26.5、没有安装新版本;最终一轮是把 match / proto / shared 三个 go.mod 的
+  版本行临时改成 1.26.5、离线(`GOPROXY=off`、`-mod=readonly`)跑的,跑完原样改回。**待 Codex 用 1.27.2 复跑**(设计文档 §7.2)。
+  客户端:运行时与 Battle / Tianyong 两个 EditMode 测试程序集离线 Roslyn 编译 0 error;纯逻辑用例在 Unity 之外用反射执行器实跑,
+  队伍侧 87 条全过、战斗侧 115 条过 114(失败的 1 条是依赖引擎贴图接口的既有用例);5 条客户端新修订同样做了变异检查。
+  服务端以上结果是在合入时最新的 origin/main(`4f5dc4fdd7`)上跑的。
+- **客户端的提交方式**:客户端改动(含第三轮修订)已由另一个会话随 mmorpg-client `92e32bf0`(与神秘商人一起)合入主干;
+  收尾回归复核提出的 5 处客户端修订在其后另行提交(见下一条)。
+- **评审**(只读、逐条反驳核实):设计评审确认 15 条、驳回 3 条;落码评审 4 个视角 17 条全部确认;第三轮复查 6 条
+  (服务端 3 条因反驳子任务 403 失败由落码者逐条对代码核实,客户端 3 条由反驳者确认);收尾回归复核 8 条(服务端 3、客户端 5);
+  全部修订(设计文档 §8)。
+  设计评审里并发视角的子任务中途失败,没有算作已评审,由落码评审的并发视角补上。
+- **未做 / 未验证**:联机验收(设计文档 §7.3);robot 的 `go build -mod=vendor`;C++(只是 `team.pb.{h,cc}` 多了字段,随下次全量编译验证);
+  `k8s_deploy.ps1` 的契约测试;Unity 内的 EditMode 测试,以及 `TeamWindow` / 排队面板 / toast 这些界面改动的目视检查
+  (4 条 `TeamWindowTests` 只做了编译)。怪物数量成倍仍取决于 battle 节点重编(pve-team-size-matching.md)。
+  已知边界见设计文档 §6(重连恰逢读票熔断、三重故障叠加等,只登记)。
+- **基线说明**:origin/main 的历史在 2026-10-12 被整体改写过(提交号全部变化),本条对应的提交建立在改写后的历史上。
+  人数档匹配(本功能的前置)在旧历史上的提交号 `21d5b25120` / `f76d391071` 因此已失效,内容不变。
+- **Java 版(AGENTS §12)**:对应 Java 版本号:无。**待做**(客户端可见契约清单见设计文档 §7.4;Java 版实现之前不要置
+  `match_fill_supported`,客户端据此不给出目标人数选项)。这台机器上没有 Java 仓库(`D:/luyuan/xuanming-server-mmo` 不存在),
+  `PARITY.md` **尚未登记**,需在有该仓库的机器上补登。
