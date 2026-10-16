@@ -9105,3 +9105,32 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
 - **验证边界**:只跑了 gofmt;没有 `go build` / `go vet` / `go test` / `go mod tidy`(AGENTS §10.1 归构建方)。命令与通过标准在设计 §12.2。
 - **还没做(M1d)**:go_services.ps1 / go_svc_image.ps1 / k8s_deploy.ps1 / start_game.ps1 登记、令牌本机注入、K8s manifest 与 migrate Job、告警文件、robot `mail-smoke`、`data_consistency_check`、契约 §7 端口。在那之前 mail 只能手工起。
 - **Java 版(AGENTS §12)**:对应 Java 版本号:无;状态:待做(本机没有 Java 仓,同 M1a 条目)。
+
+## 2026-10-16 邮件 M1d:部署链 / 冒烟 / 一致性检查落码,分「部署件」与「启用」两个提交(Claude,Go 未编译)
+
+- **背景**:邮件 M1 的最后一批(设计 `docs/design/mail-system.md` §9 M1d、§12.3)。把 mail 接进本机起服、镜像、K8s 部署、robot 冒烟与一致性检查。
+- **为什么拆两个提交**:一旦进了 `go_services.ps1` / `go_svc_image.ps1` / `k8s_deploy.ps1` 的服务目录,所有不带 `-Services` 的构建(`dev.bat` start 等)、
+  `build-all` 与 K8s 部署都会带上 mail;在 mail 的 proto-gen 产物入库之前它一定编不过,会让所有人的一键起服以 `Build failed for: mail` 中止。所以:
+  - **部署件提交(本条,进 main)**:`tools/data_consistency_check` 加 `mail_system_state` 孤儿检查(`-mail-mysql-dsn`;按 `sys_mail_id` 去重后反连接,
+    大库也在单项 60s 预算内;连不上报 warn「NOT CHECKED」不退出);契约 §7 指标端口表补全(9230 trade / 9240 mail / 9260 data_service / 9270 player_inbox,
+    9250 预留排行榜);设计 §12.3 与 §2.3 / §7.2 / §10 ⑦ / 评审记录第 7 条的更正标注。
+  - **同批独立小提交(进 main)**:robot 既有缺陷 —— `robot/config/config.go` 的模式白名单漏了 `team-backfill-smoke` 与 `features-smoke`
+    (`main.go` 有分发,却在 `config.Load` 就以 unknown mode 退出);新加 `robot/config/config_test.go` 从 `main.go` 抽出全部分发模式逐个核对白名单(未运行)。
+  - **「M1d 启用」提交(分支 `feat/mail-m1d-enable`,等构建方合入)**:本机令牌库 `tools/scripts/lib/mail_admin_dev_token.ps1` 与测试、
+    `go_services.ps1` / `go_svc_image.ps1` / `start_game.ps1` 登记、K8s manifest 与 `mail-migrate` Job、`mail-alerts.yaml`、`k8s_deploy.ps1`(令牌 Secret 注入、
+    ConfigMap、MySQL / Redis 连接总账、路由服预算表)、MySQL `max_connections` 1800 → 2100、契约 / 迁移门禁 / 端口测试、README 邮件一节与总账数字、
+    `deploy/k8s/AGENTS.md` mail 一条、robot `mail-smoke`(场景、配置、模式登记)、CI 删掉 `go/mail` 排除条目并给部署契约 workflow 补路径过滤。合入前提与顺序在设计 §12.3「给构建方的顺序」。
+- **几处与设计不同**(详见 §12.3 十条):本机令牌改由 `go_services.ps1` 只给 mail 注入(库按自身位置定位仓库根,不像仓库根的目录拒绝生成);
+  K8s 令牌不写 `optional`、带指纹注解、未设令牌不挡 infra-up,Secret 写在建表门禁之后(门禁失败时保持旧值);mail 是 Kafka 命令主题生产者(设计漏写,
+  已登记进 `start_game.ps1` 的契约名单);加入 mail 后 MySQL 规划档峰值 1860 超过 1800,同批调到 2100,**运行中的 mysqld 要在维护窗口 rollout restart 或
+  `SET GLOBAL` 才拿到新值**;冒烟的未读数按两次列表之间的过期 / 新到逐封核账,另加「系统邮件按人删」。
+- **评审**:两轮只读评审。第一轮四视角(1 个 P1:测试对有序字典调了不存在的 `ContainsKey`;P2 七条、P3 若干),第二轮复审(P2 两条:CI 路径过滤、
+  两区起栈步骤缺前提),全部修完,逐条记在设计 §12.3「评审」一段。
+- **实际跑过的(Claude 执行)**:改动的全部 `.ps1` 过 `Parser::ParseFile`;`mail_admin_dev_token.tests.ps1` 9/9;`go_services_stop.tests.ps1` 13/13;
+  `go_services_ports.tests.ps1` 19/19;`start_game_command_contract.tests.ps1` 26/26;`k8s_migrate_gate.tests.ps1` 41 条中 40 过
+  (唯一失败的「trade 资产通道关着」在未改动的主干上同样失败:trade.yaml 文件头注释里写了注解名,用例对整份内容 NotMatch,BK8s 那批自带);
+  `k8s_deploy_contract.tests.ps1`:177 条中 173 过;失败的 4 条(zone Redis 口令 dev 基线 / all-up 多 zone prod 的 login 锁键 / guild ConfigMap 镜像 / 资产通道默认关)在未改动的主干上同样失败,新增的 6 条 mail 用例全过。staging `infra-up` DryRun 实测总账:MySQL 规划档 peak=1860 / headroom=240,Redis 规划档 peak=1991。
+  全部 `.go` 过 gofmt。**Go(go/mail、robot、data_consistency_check)一行未编译,`robot/config/config_test.go` 未运行,冒烟未跑**。
+- **下一步(构建方)**:proto-gen(§12.1)→ go/mail 编译与真库测试(§12.2)→ 合入 `feat/mail-m1d-enable` → 脚本测试 → `dev-start-zones` 两区起栈跑
+  `robot/etc/mail_smoke.yaml` → §10 ⑧ sweep 验证与孤儿检查。
+- **Java 版(AGENTS §12)**:对应 Java 版本号:无;状态:待做(本机没有 Java 仓 `D:\luyuan\xuanming-server-mmo`)。部署链是本仓专有,Java 版按自己的部署方式做。

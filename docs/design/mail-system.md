@@ -104,6 +104,8 @@
   - 比较用常量时间比较(`crypto/subtle.ConstantTimeCompare`);
   - 令牌值不进日志、指标、错误文本;
   - **没有 dev 放行**:本机由 `start_game.ps1` 按 `assetop_dev_secret.ps1` 的做法生成并注入(落 `run/secrets/`,`run/*` 已被 .gitignore),robot 从同一环境变量读。
+    〔2026-10-16 M1d 更正,以 §12.3 偏差第 1 条为准:注入点是 `go_services.ps1` 的 `Start-ServiceInstance`(只给 mail;`start_game.ps1` / `dev-start-zones` 都经它),
+    robot / CLI 在自己的 shell 里 dot-source `tools/scripts/lib/mail_admin_dev_token.ps1` 取同一把。〕
 - **为什么 M1 不上 HMAC**:M1 生产环境发不了附件(M-9),误用后果是"发一封信";HMAC 要新签名串、nonce 表与双端实现,成本不匹配。**M2 开附件时必须重评**(那时误用后果变成"发资产");届时升级为 HMAC 或 mTLS,在 §6 清单里列为解禁条件之一。
 - **"无会话 = 内部调用"不能当鉴权**:集群 gRPC 是 Insecure(`asset_op.proto` 的 `AssetBundle` 注释记载 scene `InsecureServerCredentials()`),任意进程可连。会话拦截器只负责把**客户端来源**挡在 `MailAdmin` 外,不负责认"谁是合法运维"。
 
@@ -710,12 +712,17 @@ Tip.xlsx 把预留注释行换成组头 `//mail_error base=17000 width=1000`(**`
 | ⑤ | `tools/scripts/start_game.ps1` | 照 friend 的形态**改四处**(交接文档说"三行",实际是三行 + 一个预检块):`$services += 'mail'`、`$optionalServices += 'mail'`、MySQL 健康后的 `mmorpg_mail` 库预检块(库缺或无权 → 跳过 mail 并打印补建命令,不拒启整个游戏)、单独一行 `if ('mail' -notin $skippedServices) { Start-LocalGoServices @('mail') }`。**必须放在 data_service 之后**(mail 依赖号段;trade 在第 576 行、data_service 在第 528 行已是这个顺序,mail 追加在 friend 那行之后即可)。只加 `$services` 不加单独启动行,服务根本不会被拉起。另:本机令牌注入(§2.3) |
 | 附 | `tools/scripts/tests/k8s_migrate_gate.tests.ps1` | 夹具里加一份 mail 条目副本(`ConfigFile = 'mail.yaml'; ImageName = 'mmorpg-mail'; Port = 50900; Global = $true`) |
 
+〔2026-10-16 M1d 落码更正,下面四步以 §12.3 偏差第 1、2 条为准:2026-10-15 起 player-inbox 已有现成的 Go 服务 Secret 注入做法
+(`Add-GoSvcSecretEnv` + Pod 模板令牌指纹 + 未注入时 Deployment 之后删残留 Secret),mail 照它做、不写 `optional: true`;
+第 1 步的无条件 `Resolve-InjectedSecret` 在 staging / prod 会把未设令牌的 infra-up 整条挡死,改为先判空;
+第 4 步作废 —— 本机令牌改由 `go_services.ps1` 的 `Start-ServiceInstance` 只给 mail 注入,单独起 mail、`dev-start-zones` 两区冒烟都拿得到。〕
+
 **令牌注入(已核实,定稿;原 U6)**:K8s 上**没有**给 Go 服务注入 Secret 的现成机制 —— `tools/scripts/lib/release_common.ps1` 的 `Resolve-InjectedSecret` 只返回字符串;`k8s_deploy.ps1` 里唯一建 Secret 对象的是 `redis-auth`(stringData + apply,值为空时 `delete --ignore-not-found`);`deploy/k8s/manifests` 下只有 `infra/redis.yaml` 用了 `secretKeyRef`,所有 Go 服务 Deployment 零引用;现役的 `GateTokenSecret` / `InternalAuthSecret` 是渲染进 ConfigMap 的。所以"令牌走 Secret + env"是**新增工作**:
 
 1. `k8s_deploy.ps1` 的 `Initialize-InjectedSecrets` 加 `$script:MailAdminToken = Resolve-InjectedSecret -EnvName MMORPG_MAIL_ADMIN_TOKEN -DevFallback "" -MinLength 32`;
 2. 照 `redis-auth` 在 apply mail 之前生成 `mail-admin-auth` Secret(stringData,key `token`);值为空时 `delete secret mail-admin-auth --ignore-not-found`;
 3. `mail.yaml` Deployment 加 `env: MMORPG_MAIL_ADMIN_TOKEN` ← `valueFrom.secretKeyRef {name: mail-admin-auth, key: token, optional: true}`。Secret 缺失 = 环境变量为空 = `MailAdmin` 停用,符合 fail-closed。**K8s 上默认不注入令牌,预期横幅 `mail_admin=disabled`、不期望能发信**。
-4. 本机令牌由 `start_game.ps1` 注入(§2.3);**单独用 `go_services.ps1` 起 mail 拿不到令牌**(与 §6.4 第 19 条资产密钥缺口同形),此时 `MailAdmin` 停用、`mail-smoke` 拿到 `PermissionDenied` —— 冒烟必须经 `start_game.ps1` 起栈,或先手工导出令牌。
+4. 本机令牌由 `start_game.ps1` 注入(§2.3);**单独用 `go_services.ps1` 起 mail 拿不到令牌**(与 §6.4 第 19 条资产密钥缺口同形),此时 `MailAdmin` 停用、`mail-smoke` 拿到 `PermissionDenied` —— 冒烟必须经 `start_game.ps1` 起栈,或先手工导出令牌。〔已作废,见上面的更正:注入改在 `go_services.ps1`,单独起 mail 也拿得到。〕
 
 以上计入 M1d 文件数(`k8s_deploy.ps1` 本就在清单内,`mail.yaml` 本就新建,增量是脚本内两段与 manifest 的 env 块,不新增文件)。若 §11 第 2 条选"M1 只为联调",这一整块连同 CLI 一起砍掉。
 
@@ -855,9 +862,9 @@ Tip.xlsx 把预留注释行换成组头 `//mail_error base=17000 width=1000`(**`
 | ⑤ | 空库 `-migrate` + 常驻启动 | 退出 0、恰好 4 表、主键全整数、唯一键恰 2 个(`uk_mail_personal` / `uk_mail_system`);**再跑一次 0 条语句**;删掉一条普通索引后启动:**按 §11 第 11 条的拍板结果** —— 拒启则被拒,WARN 则启动成功但日志恰有该索引名的 WARN(两种写法都能红);横幅恰有 `  MAIL SERVICE STARTED SUCCESSFULLY`、mysql 目标不含密码、`mail_admin=enabled/disabled` 与令牌状态一致、`sweep mode=report_only`;`:9240/metrics` 上 §2.5 / §4.5 / §4.6 的指标都有预建 0 值序列;`RetentionDays: 0` 的 yaml 被 `Validate` 拒启;etcd 值里 `endpoint` 与 `grpcEndpoint` 都填;Ctrl+C 先注销再排空、<24s | "再跑一次 0 条语句"若在同一进程内复用缓存,证明不了幂等 —— 两次独立进程 |
 | ⑥ | 令牌四态 | 不设 / 31 字节 / 错值 / 对值 → 前三者 `PermissionDenied`,日志**不出现令牌值** | 只测"对值成功"证明不了 fail-closed |
 | ⑥b | **Mode=pro 四态**(M-9 是 M1 唯一的防资产损失闸门) | pro + 附件 → `MailAttachmentNotOpen`,表中无新行、**号段无消耗**;pro + `sender_kind=ROBOT` → `kInvalidParameter`;dev + 附件 → 成功且 `claim_state=1`;pro + 无附件 `OPS_TOOL` → 成功 | 只在 dev 跑冒烟,pro 分支零覆盖 —— 必须单独起一个 `Mode: pro` 的进程或用 config 注入的单测 |
-| ⑦ | 两区 robot `mail-smoke`(两区 gate 都 `GATE_CLIENT_RPC_ROUTER=1`、`mmorpg_mail` 已建;**必须经 `start_game.ps1` 起栈或先手工导出令牌**,否则 `MailAdmin` 停用、冒烟拿到 `PermissionDenied`) | 输出一行 `MAIL_SMOKE_OK …`。逐步:CLI / robot 发一封系统 + 一封无附件定向 + **一封带 1 条货币附件的定向(dev)**;两区玩家都能在 `ListMails` 看到系统邮件,只有收件人看到定向邮件;带附件那封在 `ListMails` 里 `claim_state=UNCLAIMED`、`claimable_count=1`;定向邮件推送在 10s 内到达(**弱断言**:丢了不算失败,但要打印是否收到);`ReadMail` 后 `unread_count` 减 1;另一玩家 `ReadMail` 别人的定向邮件回 `MailNotFound`;`ClaimMailAttachments` 回 `MailClaimNotOpen`,**再 `ListMails` 该封仍是 `UNCLAIMED`**;`DeleteMails` 带附件那封 → 出现在 `protected_mail_ids`、`deleted_count=0`;`DeleteMails` 无附件那封删两次都成功,且之后 `ListMails` 看不到;**D-9 反向断言**:客户端发 `NotifyMailEvent` 与 `MailAdmin` 的消息号拿不到业务回包,**并在同窗口 mail 日志里看到拒绝记录**(信封不保留原始 gRPC code,只看机器人失败不能证明原因) | **冒烟数据集覆盖不到的断言**:冒烟里系统邮件只有 1 封,"有效集 LIMIT 截断"与"跨两表合并分页"在它上面恒绿 —— 这两条只能靠 ④ 的集成测试(构造 >page_size 的混合数据) |
+| ⑦ | 两区 robot `mail-smoke`(两区 gate 都 `GATE_CLIENT_RPC_ROUTER=1`、`mmorpg_mail` 已建;**必须经 `start_game.ps1` 起栈或先手工导出令牌**,否则 `MailAdmin` 停用、冒烟拿到 `PermissionDenied`) | 输出一行 `MAIL_SMOKE_OK …`。逐步:CLI / robot 发一封系统 + 一封无附件定向 + **一封带 1 条货币附件的定向(dev)**;两区玩家都能在 `ListMails` 看到系统邮件,只有收件人看到定向邮件;带附件那封在 `ListMails` 里 `claim_state=UNCLAIMED`、`claimable_count=1`;定向邮件推送在 10s 内到达(**弱断言**:丢了不算失败,但要打印是否收到);`ReadMail` 后 `unread_count` 减 1;另一玩家 `ReadMail` 别人的定向邮件回 `MailNotFound`;`ClaimMailAttachments` 回 `MailClaimNotOpen`,**再 `ListMails` 该封仍是 `UNCLAIMED`**;`DeleteMails` 带附件那封 → 出现在 `protected_mail_ids`、`deleted_count=0`;`DeleteMails` 无附件那封删两次都成功,且之后 `ListMails` 看不到;**D-9 反向断言**:客户端发 `NotifyMailEvent` 与 `MailAdmin` 的消息号拿不到业务回包,**并在同窗口 mail 日志里看到拒绝记录**(信封不保留原始 gRPC code,只看机器人失败不能证明原因)。〔2026-10-16 M1d 更正,以 §12.3 偏差第 1、7 条为准:`start_game.ps1` 与 `dev-start-zones` 起栈都会给 mail 注入令牌,跑 robot 的 shell 按 `robot/etc/mail_smoke.yaml` 前置 6 自己取同一把;`claimable_count` 断言为 ≥ 1;`unread_count` 按两次列表之间的过期 / 新到逐封核账;另加「系统邮件按人删」与「系统邮件同键重放」两条〕 | **冒烟数据集覆盖不到的断言**:冒烟里系统邮件只有 1 封,"有效集 LIMIT 截断"与"跨两表合并分页"在它上面恒绿 —— 这两条只能靠 ④ 的集成测试(构造 >page_size 的混合数据) |
 | ⑧ | 过期 sweep | API 造不出已过期的信(发件要求 `sent_ms < expire_ms`),所以**用 SQL 直接 INSERT 两行**:A `expire_ms = now − (RetentionDays+1) 天`、B `expire_ms = now − 1 天`,**`RetentionDays` 保持默认 7 不变**(不放开 0)。`report_only` 下 A、B 都在,`mail_sweep_candidate_rows` = 1,`mail_sweep_last_run_unixtime` 前进;切 `delete` 后只删 A、B 保留;`data_consistency_check` 孤儿数为 0 | 三种结果(都在 / 只删 A / 都删)必须可区分;`cutoff ≤ 0` 分支"什么都不做"会让"没删"看起来像"report_only 生效" —— 看日志里的模式与 cutoff 值 |
-| ⑨ | K8s(kind) | 按 §9.5 的顺序:data_service `-migrate` 后 `id_segment` 有 `mail` 行 → `mail-migrate` Job Complete 后 Deployment 才 apply;ConfigMap 里 `Etcd.Key: ""`、`Mode: pro`(staging/prod 档)、`Redis`、`DataServiceRpc`、`IgnoreContentMethods`、Sweep 四键都存在;未注入令牌时横幅恰为 `mail_admin=disabled`,**不期望能发信**;Pod 不 CrashLoop;**不期望**推送到达(g1/g2 存量缺口,§4.5);K8s 上 gate 默认直连,**玩家不可达是设计内的**(D-12)〔2026-09-29 更正原因:K8s gate 默认已是路由模式 `"1"`(D75);玩家仍不可达,原因改为 mail 尚未登记进 K8s 部署(无 `$GoSvcCatalogue` 条目、无 manifest / migrate Job),本行 ⑨ 须等部署登记补齐后才可执行〕 | 把"K8s 上推送没到 / 玩家到不了"当 mail 的缺陷去修 |
+| ⑨ | K8s(kind) | 按 §9.5 的顺序:data_service `-migrate` 后 `id_segment` 有 `mail` 行 → `mail-migrate` Job Complete 后 Deployment 才 apply;ConfigMap 里 `Etcd.Key: ""`、`Mode: pro`(staging/prod 档)、`Redis`、`DataServiceRpc`、`IgnoreContentMethods`、Sweep 四键都存在;未注入令牌时横幅恰为 `mail_admin=disabled`,**不期望能发信**;Pod 不 CrashLoop;**不期望**推送到达(g1/g2 存量缺口,§4.5);K8s 上 gate 默认直连,**玩家不可达是设计内的**(D-12)〔2026-09-29 更正原因:K8s gate 默认已是路由模式 `"1"`(D75);玩家仍不可达,原因改为 mail 尚未登记进 K8s 部署(无 `$GoSvcCatalogue` 条目、无 manifest / migrate Job),本行 ⑨ 须等部署登记补齐后才可执行〕〔2026-10-16:部署登记随「M1d 启用」提交补齐(§12.3)〕 | 把"K8s 上推送没到 / 玩家到不了"当 mail 的缺陷去修 |
 
 **失败时保留**:导表 / 生成日志;`go test -v` 全文;`SHOW ENGINE INNODB STATUS`;启动日志全文;robot 输出 + 两区 gate / 路由服 / mail 日志;`EXPLAIN` 原文。
 
@@ -1066,6 +1073,121 @@ try { go test -count=1 -v ./internal/data/ ./internal/logic/ } finally { Pop-Loc
 
 **还没做(M1d)**:`go_services.ps1` / `go_svc_image.ps1` / `k8s_deploy.ps1` / `start_game.ps1` 登记、令牌本机注入、K8s manifest 与 migrate Job、告警文件(按偏差第 10 条的新指标名)、robot `mail-smoke`、`data_consistency_check`、契约 §7 端口登记。在那之前 mail 只能手工起(归构建方)。
 
+### 12.3 M1d(2026-10-16,Claude;未编译、未跑 Go / robot 测试;PowerShell 解析与部分脚本测试已跑,见下)
+
+**为什么拆成两个提交**:把 mail 写进 `go_services.ps1` / `go_svc_image.ps1` / `k8s_deploy.ps1` 的服务目录之后,所有不带 `-Services` 的
+`go-svc-build`(`dev.bat` 的 start / start_multi / start_zones / start_go / restart / build)与 `go_svc_image.ps1 build-all` 都会编 mail;
+在 mail 的 proto-gen 产物(`go/proto/mail`、`go/mail/generated/pb/game`、robot 的 vendor 与消息号)入库之前它**一定**编不过,
+`Invoke-Build` 末尾 `throw "Build failed for: mail"`,所有人的一键起服随之中止;K8s 侧则会去拉一个不存在的 `mmorpg-mail` 镜像,
+建表 Job 门禁在 staging / prod 中断发布。所以 M1d 分成:
+
+- **部署件提交(进 main)**:与目录登记无关、现在就正确可用的部分 ——
+  `tools/data_consistency_check/main.go`(`mail_system_state` 孤儿检查)、契约 §7 指标端口表补全、本节、`docs/PROGRESS.md`。
+  (同批另有一个独立的小提交修 robot 既有缺陷:`robot/config/config.go` 的模式白名单漏了 `team-backfill-smoke` 与 `features-smoke`,
+  `main.go` 有分发却在 `config.Load` 阶段以 unknown mode 退出;新加 `robot/config/config_test.go` 从 `main.go` 抽出全部分发模式逐个核对白名单。)
+- **「M1d 启用」提交(分支 `feat/mail-m1d-enable`,等 proto-gen 产物入库、`go/mail` 编译变绿后由构建方合入)**:其余全部 ——
+  - 本机:`tools/scripts/lib/mail_admin_dev_token.ps1`(新)+ `tools/scripts/tests/mail_admin_dev_token.tests.ps1`(新);
+    `go_services.ps1`(目录条目 + `Start-ServiceInstance` 只给 mail 注入令牌);`go_svc_image.ps1`(目录条目);
+    `start_game.ps1`(可选服务、`mmorpg_mail` 库预检、单独一行启动、Kafka 命令契约生产者名单、直连模式提示文字);
+    `tests/start_game_command_contract.tests.ps1`、`tests/go_services_stop.tests.ps1`、`tests/go_services_ports.tests.ps1`(只给 mail 注入、启动后还原)。
+  - K8s:`deploy/k8s/manifests/go-svc/{mail,mail-migrate}.yaml`(新)、`deploy/k8s/mail-alerts.yaml`(新)、
+    `k8s_deploy.ps1`(目录条目、令牌常量与 `Initialize-InjectedSecrets`、ConfigMap 生成、`Apply-OneGoSvc` 令牌注入、MySQL / Redis 连接总账、
+    路由服预算表、注释)、`deploy/k8s/manifests/infra/mysql.yaml`(`max_connections` 1800 → 2100)、`deploy/k8s/README.md`(邮件一节与总账数字)、
+    `deploy/k8s/AGENTS.md`(mail 一条)、`tests/k8s_migrate_gate.tests.ps1`、`tests/k8s_deploy_contract.tests.ps1`。
+  - robot:`robot/mail_smoke_scenario.go`(新)、`robot/etc/mail_smoke.yaml`(新)、`robot/config/config.go`、`robot/main.go`、`robot/README.md`。
+  - CI:`.github/workflows/go-modules-ci.yml` 删掉 `go/mail` 的排除条目(恢复为 `EXCLUDED=()`);`.github/workflows/deploy-config-tests.yml` 路径过滤加 `go/mail/internal/metrics/**`(告警指标名核对用例读它)。
+
+**与本文设计的偏差**(以磁盘为准):
+
+1. **本机令牌注入在 `go_services.ps1`**(§7.2 第 4 条作废):`Start-ServiceInstance` 对 `mail` 一个服务调 `Initialize-MailAdminDevToken`,
+   finally 里还原;`start_game.ps1` 与 `dev-start-zones` 都经它起 mail,自动带上。值落在 `run/secrets/mail-admin-dev.env`(`run/*` 已被 .gitignore 覆盖),
+   首次随机生成 64 个十六进制字符;robot / `mailadmin` CLI 在自己的 shell 里 dot-source 同一个库取同一把(用法写在库文件头与 `robot/etc/mail_smoke.yaml`)。
+   库按自身位置定位仓库根(不传 `-RepoRoot`),与当前目录无关;显式传的 `-RepoRoot` 没有 `go/mail/etc/mail.yaml` 就报错、不生成 ——
+   `run/*` 的忽略规则只锚定仓库根,在 `robot/` 下生成会多出一把对不上的令牌,且写进不被忽略的 `robot/run/secrets/`。
+   调用方自己 export 了足够长的值时原样保留、不落盘。lib 调用放在 `$Name -eq 'mail'` 分支里:`go_services_ports.tests.ps1` 只按 AST 加载函数
+   (该测试另 dot-source 库,钉住「只给 mail 注入、启动后父进程还原」)。
+   **取过令牌的 shell 只用来跑 robot / CLI,不要在里面起栈**:令牌留在会话里,从它起的所有进程都会继承;而且 Initialize 看到环境里已有足够长的值就原样沿用、不再经文件。
+   也因为启动器总会兜底注入,§10 ⑥ 的「不设 / 31 字节」两态经启动器验证不了,要在一个没有该变量(或设成 31 字节)的 shell 里手工起 mail(`mail.exe -f etc/mail.yaml`)。
+2. **K8s 令牌照 player-inbox**(§7.2 第 1–3 条作废):Secret `mail-admin-auth`(key `token`)→ 容器同名变量 `MMORPG_MAIL_ADMIN_TOKEN`(Go 侧写死的名字);
+   `secretKeyRef` 不写 `optional`(Secret 先于 Deployment 落地);Secret 写在建表门禁之后、Deployment 之前(与 player-inbox 不同:门禁失败时 Secret 保持旧值,
+   否则轮换令牌那次只要建表失败,旧 Pod 重启就会读到新令牌、副本间令牌不一致);Pod 模板带 `mmorpg.io/mail-admin-token-hash` 指纹(只换令牌也会滚动);
+   未注入时不建 Secret、指纹写 `disabled`,Deployment apply 之后删残留 Secret(不粘滞)。`Initialize-InjectedSecrets` 先判空:各档位未设都只打一行
+   `mail: MMORPG_MAIL_ADMIN_TOKEN unset … MailAdmin stays disabled`,不挡 infra-up;设了则含空白 / 去空白后不足 32 字节 / 与其它口令相同一律在写操作之前拒绝
+   (Go 侧不足 32 字节是**静默**停用,部署侧必须提前拦)。mail 令牌同时进了资产通道签名密钥的「不得复用」名单。
+3. **MySQL `max_connections` 1800 → 2100**:guild 加入后规划档峰值已是 1780(余量 20),mail(2 副本 × 池 20)让稳态 +40、滚动余量 +40,峰值 1860 超限。
+   取 2100(余量 240,约 11%);内存按 `mysql.yaml` 的核算 +0.3Gi 仍在 5Gi limits 内,limits 不动。**运行中的 mysqld 不会自己变**:上线前在维护窗口
+   `rollout restart` 或 `SET GLOBAL max_connections = 2100`(见 `mysql.yaml` 注释)。总账公式自检用例的期望值按公式重算(`85/65/10/405/413/1628/229/7/1864/5000/3136`)。
+4. **Redis 连接总账加 mail 一行**(1 个 go-zero 池、无 Pub/Sub),**路由服预算表加 `MailNodeService`**(Timeout 4000 + 1000 = ForwardTimeoutMs 5000,边界成立);
+   C++ deadline 表**不加**(C++ 不调 mail)。
+5. **mail 是 Kafka 命令主题生产者**(本文漏写):`start_game.ps1` 的 `Test-UsesKafkaCommandContract` 加 `mail`,否则用旧代主题起来的 mail 会被启动器静默复用,
+   推送写进没人消费的旧主题。K8s 侧由 `Add-GoSvcCommandTopicEnv` 统一注入,manifest 不写(迁移门禁测试的命令 topic 循环已加 mail)。
+6. **manifest 加 `RollingUpdate maxSurge 1 / maxUnavailable 0`**(照 guild,与总账「滚动多 1 个实例」的前提一致);CPU limit 500m(Redis 总账按 GOMAXPROCS = 2 计)。
+7. **robot**:路径是 `robot/config/config.go`(§9 写的 `robot/config.go` 不对);账号 `robot_9811`(收件人,首次在 zone_b 建角)/ `robot_9812`(旁观者,zone_a);
+   比 §10 ⑦ 多一条「系统邮件同键重放 → duplicated=true、id 相同」;令牌从环境变量读、拨号前查长度、不打印值;`NotifyMailEvent` 的反向断言由旁观者发
+   (收件人发会把迟到的真推送误判成信封回包);两个 MailAdmin 消息号经 gate 各发一次、期望超时。
+   与 §10 ⑦ 的其余差异:`claimable_count` 断言为 ≥ 1(15 分钟内重跑会累积删不掉的带附件信);`unread_count` 不死板断言「恰好少 1」——
+   先断言被读那封自己的已读位 false → true,再按两次列表之间过期 / 新到的信逐封核账(两次都单页时是精确等式,多页时只能断言「没少扣」);
+   多一条「系统邮件按人删:收件人删后自己看不到、旁观者仍看得到」,顺带让收件人邮箱每轮只累积 1 封;跨区断言用当前连着的 gate 地址
+   (`GameClient.GateAddr`,login 开了归属区重定向时分配地址就不代表人在哪)。
+8. **`data_consistency_check` 的孤儿检查报 warn 不报 block**:孤儿 state 行玩家看不到(读路径以系统行为准),但没有任何自动清理路径;句柄缺失 / 表读不了 /
+   查询失败一律 warn「NOT CHECKED」。旧的「收件人是否存在」检查刻意不加回(mail 不校验收件人存在,那不是不变量)。§10 ⑧ 判的是这一行 `bad == 0`。
+   计数单位是 `sys_mail_id`(先 DISTINCT 再反连接),不是 state 行:state 行数 ≈ 玩家数 × 有效系统邮件数,大服逐行反连接 60s 内扫不完,只会报 NOT CHECKED。
+9. **契约 §7 指标端口表一并补全**:除 9240 mail 外,9230 trade / 9260 data_service / 9270 player_inbox 早已在用而表里漏登;9250 标为排行榜预留。
+10. **README 的总账数字按 staging `infra-up` DryRun 的实际输出更新**(「MySQL 连接总账」与「Redis 连接上限与总账」两节的规划档、公式与示例行;
+    旧的手算值保留为带日期的历史值):MySQL 规划档 peak=1860 / headroom=240,Redis 规划档 peak=1991(Redis 全局项加 mail 后为 341 条)。
+    `docs/design/tidb-phase1-and-launch-readiness.md` 里的 `max_connections=1800` 属于 TiDB 专项的文档,本批没动,以 `mysql.yaml` 为准。
+
+**本批实际跑过的**(Claude 执行,如实):PowerShell 解析(`Parser::ParseFile`)覆盖本批改的全部 `.ps1`;`tests/mail_admin_dev_token.tests.ps1` 9/9;
+`tests/go_services_stop.tests.ps1` 13/13;`tests/go_services_ports.tests.ps1` 19/19;`tests/start_game_command_contract.tests.ps1` 26/26;
+`tests/k8s_migrate_gate.tests.ps1` 41 条中 40 过,新增的 5 条 mail 用例全过(唯一失败的「trade 资产通道关着」在未改动的主干上同样失败:trade.yaml 文件头注释里
+写了注解名,该用例对整份内容做 NotMatch —— BK8s 那批自带,不是本批引入);`tests/k8s_deploy_contract.tests.ps1` 177 条中 173 过;失败的 4 条(zone Redis 口令 dev 基线 / all-up 多 zone prod 的 login 锁键 / guild ConfigMap 镜像 / 资产通道默认关)在未改动的主干上同样失败,新增的 6 条 mail 用例全过。
+gofmt 覆盖本批改的全部 `.go`。**Go(go/mail、robot、data_consistency_check)一行未编译,`robot/config/config_test.go` 未运行,robot / 两区冒烟未跑**。
+
+**评审**(两轮,只读):第一轮四视角,1 个 P1 —— `go_services_stop.tests.ps1` 对有序字典调了不存在的 `ContainsKey`,该用例必红且吞掉其后的既有断言,
+改成 `.Contains`;P2 七条:冒烟未读数"恰好少 1"会被别的信过期 / 新到误判(改成逐封核账 + 被读那封自己的已读位)、令牌库按当前目录定位仓库根
+(改成按自身位置,不像仓库根的目录拒绝生成)、`mail_smoke.yaml` 文件头与提交拆分矛盾、PROGRESS 占位、第 4 步不产出 `robot.exe`、第 5 步单区跑不了默认两区
+yaml、第 6 步在仓库根 `go run` 不了独立模块、staging / prod 分支零测试(补三条用例);P3 若干(跨区断言用实际连接的 gate、孤儿检查大库超时、Secret 写在门禁之前、
+告警阈值与指标名无测试、AGENTS 未登记、README 旧数字等),全部按上文各偏差条目修完。第二轮复审:Go 零问题;P2 两条 —— CI 路径过滤没登记新用例读的
+`go/mail/internal/metrics/**`(已补)、第 5 步两区起栈缺前提(已改写成下面的步骤);P3 三条(本段补记、README 示例口径、AGENTS 占位串措辞)已修。
+
+**给构建方的顺序**(前一步不过不做下一步):
+
+1. 拉到含部署件提交的 main,按 §12.1 跑 proto-gen(先 `proto-gen-build` 再 `proto-gen-run`;生成后钩子会自动 `register-cpp` / `vendor-robot`),提交全部产物。
+2. 按 §12.2 的命令在 `go/mail` 下 tidy / vet / build / test(含真库集成)。**不要手删** CI 排除清单里的 `go/mail`(§12.2 末尾那句以本条为准):
+   启用提交会把 `.github/workflows/go-modules-ci.yml` 恢复成 `EXCLUDED=()`,手删会与它冲突。
+3. robot:`cd robot; go build -mod=vendor ./... ; go test -count=1 ./config/`(此时还没有 mail-smoke 代码,先确认 vendor 同步后 robot 本身仍是绿的,
+   且模式白名单回归 `TestEveryDispatchedModePassesWhitelist` 通过)。
+4. 合入启用分支:`git merge --no-ff feat/mail-m1d-enable`(或 cherry-pick 它的唯一提交)。冲突只可能出现在别人同时改过的
+   `k8s_deploy.ps1` / 契约测试 / `robot/config/config.go` 的模式白名单 / `.github/workflows/go-modules-ci.yml` / `deploy/k8s/manifests/infra/mysql.yaml` /
+   `deploy/k8s/README.md`:一般两边都保留;**MySQL 连接总账与 `max_connections` 例外** —— 按 `Get-MysqlConnectionPlan` 的公式把两边新增的池一起重算,
+   只留一行 `max_connections =`(留两行会让 `Get-MysqlMaxConnectionsFromManifest` 抛错,两边各自加的余量直接相加会重复计算)。然后:
+   - `cd robot; go vet ./... ; go build -mod=vendor -o robot.exe . ; go test -count=1 ./...`(`-o robot.exe` 必须写:`./...` 多包时 go build 不写出可执行文件,
+     旧 `robot.exe` 的模式白名单里没有 mail-smoke,会以 unknown mode 退出);
+   - `cd tools/data_consistency_check; go build ./... ; go vet ./...`;
+   - 脚本测试(仓库根目录,逐个 `pwsh -NoProfile -File`):`tools/scripts/tests/mail_admin_dev_token.tests.ps1`、`start_game_command_contract.tests.ps1`、
+     `go_services_stop.tests.ps1`、`go_services_ports.tests.ps1`、`k8s_migrate_gate.tests.ps1`、`k8s_deploy_contract.tests.ps1`(约 20 分钟,要起上百次 DryRun)。
+     通过标准:除上面登记的既有失败外全绿;mail 相关用例(名字含 mail / 邮件)一条不许红。
+5. 本机起两区(默认 `mail_smoke.yaml` 要 zone 1、2;只起 zone 1 就得把 `mail_smoke.cross_zone` 改成 false,那只是同区弱验收、证明不了跨区推送)。
+   **照 `docs/handoff/friend-handoff-20260920.md`「第 9 步 —— 两区 robot friend-smoke」的前置条件第 1–10 条起栈**(09-25 实跑通过的两区流程),把其中的 friend 换成 mail:
+   - zone 1 用 `start_game.ps1` 起:它负责基础设施、Java 网关(8081,robot 的 assign-gate 要用)、`mmorpg_mail` 库预检、给 mail 注入令牌与命令主题契约
+     (`KAFKA_COMMAND_TOPIC_PARTITIONS` / `GENERATION`),gate 默认路由模式;
+   - zone 2 按该手册第 10 条单独补起 zone 级 Go 服务与 gate / scene(同一 PowerShell 会话里先设 `$env:GATE_CLIENT_RPC_ROUTER = '1'`、`-ZonePortShift 2000`、
+     gate / scene 各带 `RPC_PORT`;zone 2 的 db 迁移先跑,第 9 条;`zone_config` 补 zone 2 一行并重启网关,第 2 条)。**mail 全服一份,zone 2 不要再起 mail**:
+     `dev-start-zones` / `go_services.ps1` 不注入命令主题契约,在那里起的 mail 推送会写进旧代主题、静默丢失;
+   - 起栈前先编出 `bin/go_services/mail.exe` 与 C++ 节点(`start-exe` 缺 exe 只打一行 Skipping 警告,不报错)。
+   zone 1 的 mail 日志横幅恰有 `  MAIL SERVICE STARTED SUCCESSFULLY` 与 `mail_admin=enabled`。
+   另开一个 shell(不要在起栈的 shell 里取令牌,见偏差第 1 条):`cd robot; . ..\tools\scripts\lib\mail_admin_dev_token.ps1; Initialize-MailAdminDevToken | Out-Null;
+   .\robot.exe -c etc/mail_smoke.yaml`(robot.exe 是第 4 步 `-o robot.exe` 产出的那个),期望一行 `MAIL_SMOKE_OK …`(§10 ⑦),
+   同一时间窗口 mail 日志里有会话层拒绝 `/mailpb.ClientPlayerMail/NotifyMailEvent` 的记录。
+   **跨区推送以 OK 行里的 `push_received=true` 为准**(推送是弱断言,丢了冒烟照样 OK):为 false 时先查 mail 的命令主题代号 / 分区数是否与
+   `bin/etc/base_deploy_config.yaml` 的 `CommandTopicGeneration` / `CommandTopicPartitions` 一致。
+6. §10 ⑧ 的 sweep 验证;孤儿检查(该工具是独立模块,在仓库根 `go run ./tools/...` 会报找不到 go.mod):
+   `Push-Location tools/data_consistency_check; try { go run . -mail-mysql-dsn '<appuser>:<密码>@tcp(127.0.0.1:3306)/mmorpg_mail?charset=utf8mb4&parseTime=true&loc=Local' } finally { Pop-Location }`
+   (主库与 Redis 的参数按该工具 `-h` 补齐),期望 `mail_system_state.sys_mail_id` 那一行 severity=info、bad=0。
+7. 上 K8s 之前:维护窗口让 mysqld 拿到 `max_connections = 2100`(偏差第 3 条);`MMORPG_MAIL_ADMIN_TOKEN` 不设即停用发件,要发件再按偏差第 2 条注入。
+
+失败时保留:proto-gen 输出与 `git status`;`go test -v` 全文;脚本测试的完整输出;mail / gate / 路由服日志与 robot 输出。
+
 ## 评审记录(2026-09-20,三视角评审 → 回修)
 
 **做法**:correctness / ops / feasibility 三个视角共提 27 条。回修人先通读全文,再逐条对照磁盘核实(默认发现可能是错的),成立的就地改正文,不成立或部分成立的在此说明。本轮只改本文件;未运行任何构建 / 测试 / 生成命令。
@@ -1110,4 +1232,4 @@ try { go test -count=1 -v ./internal/data/ ./internal/logic/ } finally { Pop-Loc
 4. **推送要先读 SharedRedis 的 `player:session:{id}`**;mail.yaml / ConfigMap 必须有共享 Redis 段、`DataServiceRpc` 段与 `Mode`,缺前两者分别是"推不出去"与"领不到号、发件全失败"。
 5. **mail 的 proto-gen 是独立一次**,gate / 路由表 / robot / Unity 必须全部出自这一次;data_service 要先重编并 `-migrate` 出 `mail` 号段行。
 6. **附件协议推荐已从"import asset_op.proto"改为 mail 自有 message**(客户端不收 `common/asset` 已核实)。
-7. **K8s 上默认 `MailAdmin` 停用、玩家不可达**,都是设计内的;冒烟必须经 `start_game.ps1` 起栈。(2026-09-29 更正原因:玩家不可达现在是因为 mail 未登记进 K8s 部署,不再是 gate 默认直连 —— K8s 默认已为路由模式,见 §1.5 第 1 条)
+7. **K8s 上默认 `MailAdmin` 停用、玩家不可达**,都是设计内的;冒烟必须经 `start_game.ps1` 起栈〔2026-10-16 M1d 更正,以 §12.3 偏差第 1 条与「给构建方的顺序」第 5 步为准:令牌由 `go_services.ps1` 注入,任何经它起 mail 的路径都拿得到;两区冒烟的起栈步骤见第 5 步〕。(2026-09-29 更正原因:玩家不可达现在是因为 mail 未登记进 K8s 部署,不再是 gate 默认直连 —— K8s 默认已为路由模式,见 §1.5 第 1 条)
