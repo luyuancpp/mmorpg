@@ -1158,6 +1158,10 @@ U9 = "不可证明"可被合法放行覆盖、U10 = 静态 Endpoints(`127.0.0.1:
    `guild-migrate` Job、镜像登记已落码;data_service 的 K8s ConfigMap 已配 `GuildInternalRpc`(按 Service 名 `guild.<infra>:50300`)与三个 `Rollback*` 的 `MethodTimeouts`。
    同批改了 go/guild 两处:注册进 etcd 的地址改走 `advertisedHost`(K8s 上 `ListenOn` 是 0.0.0.0,原样写进 NodeInfo 路由服拨不通)、
    `MySQL.MaxOpenConn / MaxIdleConn`(以前不设上限)。NetworkPolicy 与资产通道开关在 BK8s 后续块。见 `deploy/k8s/README.md`「帮会 guild」。
+   **2026-10-16 第二块(同一会话,未编译未测试)**:`k8s_deploy.ps1 -AssetOps on|off`(签名密钥 `MMORPG_ASSET_OP_SECRET_GUILD/_TRADE` 经 Secret 注入 guild / trade / scene,
+   guild / trade 的 `AssetOp.Enabled` 跟随开关,三方 Pod 模板带密钥指纹并做跨命令核对)与 `-NetworkPolicies on|off`(scene 50000 / guild 50300 / match 50500 的 gRPC 口准入),
+   两者默认 off;`-AssetOps on` 必须同时 `-NetworkPolicies on`。放行名单按现在的代码重排,与 G-05 原文有三处出入(scene 加 player-inbox、match 加 gate 回退、guild 不放 match),
+   见 `deploy/k8s/README.md`「gRPC 口准入与资产通道」。告警与 Loki ruler 仍在后续块。
 
 ⑨ **Java 版(AGENTS §12)**:帮会二期整体**待做**。Java 仓不在机器 A,`PARITY.md` 没有登记;客户端可见契约(guild.proto 的活动消息、
    消息号 239–243、tip 14032–14041、GuildActivity 表)已在本仓主干,Java 版对齐时以这些为准。

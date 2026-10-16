@@ -113,6 +113,16 @@ function Reset-MigrateFixture {
     foreach ($name in @('Add-GoSvcSecretEnv', 'Get-InjectedSecretFingerprint')) {
         Restore-ProductionFunction $name
     }
+    # 通用资产通道(-AssetOps,trade 是调用方之一):同样是 k8s_deploy.ps1 顶层赋值的脚本级变量,照抄一份;默认关(= 不传 -AssetOps)。
+    $script:AssetOpsOn = $false
+    $script:NetworkPoliciesOn = $false
+    $script:AssetOpSecretKey = 'secret'
+    $script:AssetOpCallers = [ordered]@{
+        guild = [pscustomobject]@{ Env = 'MMORPG_ASSET_OP_SECRET_GUILD'; SecretName = 'asset-op-secret-guild'; HashAnnotation = 'mmorpg.io/asset-op-secret-guild-hash' }
+        trade = [pscustomobject]@{ Env = 'MMORPG_ASSET_OP_SECRET_TRADE'; SecretName = 'asset-op-secret-trade'; HashAnnotation = 'mmorpg.io/asset-op-secret-trade-hash' }
+    }
+    $script:AssetOpSecretHashPlaceholder = 'PLACEHOLDER_ASSET_OP_SECRET_HASH'
+    $script:AssetOpSecrets = @{}
     Set-Item Function:script:Apply-InjectedSecret {
         param($Namespace, $Name, $Key, $Value, $AppLabel)
         $script:Events.Add("apply:Secret:$Name")
@@ -271,6 +281,35 @@ Test-Case 'player-inbox 注入运维口令:先建 Secret 再 apply Deployment,en
     Assert-NotMatch -Text $content -Pattern 'PLACEHOLDER_' -Because '注入不能打乱原有占位替换'
 }
 
+
+# trade 是通用资产通道的调用方之一(-AssetOps):关着时指纹占位整行删掉、不注入密钥;打开时与 player-inbox 同一顺序(先 Secret 后 Deployment)。
+Test-Case 'trade 资产通道关着:指纹占位整行删掉,不引用签名密钥,不建 Secret' {
+    Reset-MigrateFixture
+    $script:JobAbsentBeforeApply = $true
+    Apply-OneGoSvc -SvcName trade -Namespace audit-infra -CurrentZoneId 0 -CurrentClusterId 0
+    $content = $script:DeploymentContent
+    Assert-NotMatch -Text $content -Pattern 'asset-op-secret-trade-hash|PLACEHOLDER_' -Because '关着时 Pod 模板与开关引入之前相同,不触发滚动'
+    Assert-NotMatch -Text $content -Pattern 'MMORPG_ASSET_OP_SECRET_TRADE' -Because '关着时不能引用一个不存在的 Secret'
+    Assert-True -Condition (-not ($script:Events | Where-Object { $_ -like 'apply:Secret:*' })) -Because '关着时不建 Secret'
+}
+
+Test-Case 'trade 资产通道打开:先建 Secret 再 apply Deployment,env 走 secretKeyRef,模板带指纹,密钥值不进 manifest' {
+    Reset-MigrateFixture
+    $script:JobAbsentBeforeApply = $true
+    $secret = 'audit-only-asset-op-trade-secret-0123456789abcdef'
+    $script:AssetOpsOn = $true
+    $script:AssetOpSecrets = @{ trade = $secret }
+    Apply-OneGoSvc -SvcName trade -Namespace audit-infra -CurrentZoneId 0 -CurrentClusterId 0
+    $events = @($script:Events)
+    $secretAt = [Array]::IndexOf($events, 'apply:Secret:asset-op-secret-trade')
+    Assert-True -Condition ($secretAt -ge 0) -Because '打开时必须建 Secret'
+    Assert-True -Condition ($secretAt -lt [Array]::IndexOf($events, 'apply:Deployment')) -Because 'secretKeyRef 不是 optional,Secret 必须先于 Deployment'
+    $content = $script:DeploymentContent
+    Assert-Match -Text $content -Pattern '- name: MMORPG_ASSET_OP_SECRET_TRADE\s+valueFrom:\s+secretKeyRef:\s+name: asset-op-secret-trade\s+key: secret' -Because '签名密钥只经 Secret 进容器'
+    Assert-Match -Text $content -Pattern 'mmorpg.io/asset-op-secret-trade-hash: "[0-9a-f]{12}"' -Because '模板带指纹,换密钥即滚动'
+    Assert-True -Condition (-not $content.Contains($secret)) -Because '密钥值绝不能出现在 manifest 里'
+    Assert-NotMatch -Text $content -Pattern 'PLACEHOLDER_' -Because '注入不能打乱原有占位替换'
+}
 
 # 控制面命令 topic 契约(KAFKA_COMMAND_TOPIC_*)统一注入。背景:go/shared/kafkacmd 不配这两个变量就回落到 256 / 1,
 # 而 C++ gate / scene 消费的是 base_deploy_config.yaml 的代号,不一致时 Go 发给 gate / scene 的命令静默丢失。

@@ -3461,7 +3461,7 @@ function Get-TopLevelYamlBlockText {
     return ($out -join "`n")
 }
 
-Test-Case 'guild 部署形态:全局池 2 副本滚动 + PDB + 反亲和 + POD_IP + 资产密钥 optional;迁移 Job 先于 Deployment' {
+Test-Case 'guild 部署形态:全局池 2 副本滚动 + PDB + 反亲和 + POD_IP;资产密钥默认不注入;迁移 Job 先于 Deployment' {
     Assert-Equal -Expected 0 -Actual $guildInfraRun.ExitCode -Because "带全局 Go 服务的 infra-up DryRun 必须成功。输出: $($guildInfraRun.Output)"
     $block = @(Get-ManifestBlocks -Output $guildInfraRun.Output | Where-Object {
         $_ -cmatch '(?m)^kind: Deployment\s*$' -and $_ -cmatch '(?m)^  name: guild\s*$'
@@ -3472,7 +3472,7 @@ Test-Case 'guild 部署形态:全局池 2 副本滚动 + PDB + 反亲和 + POD_I
     Assert-Match -Text $block -Pattern 'podAntiAffinity' -Because '两个副本不该落在同一个节点上'
     Assert-Match -Text $block -Pattern '(?s)kind: PodDisruptionBudget.*?name: guild-pdb.*?minAvailable: 1' -Because 'PDB 必须写在主 manifest 里'
     Assert-Match -Text $block -Pattern 'name: POD_IP\s+valueFrom:\s+fieldRef:\s+fieldPath: status\.podIP' -Because 'ListenOn 是 0.0.0.0,注册进 etcd 的必须是 Pod IP(go/guild/guild.go advertisedHost)'
-    Assert-Match -Text $block -Pattern 'name: MMORPG_ASSET_OP_SECRET_GUILD\s+valueFrom:\s+secretKeyRef:\s+name: asset-op-secrets\s+key: guild\s+optional: true' -Because '资产密钥只经 Secret 注入,通道关着时没有 Secret 也要能起'
+    Assert-NotMatch -Text $block -Pattern '(?m)^\s*- name: MMORPG_ASSET_OP_SECRET_GUILD' -Because '资产密钥只在 -AssetOps on 时由脚本注入(Add-GoSvcSecretEnv),manifest 不手写,默认关着不引用 Secret'
     Assert-Match -Text $block -Pattern 'containerPort: 9220\s+name: metrics' -Because 'metrics 端口与 ConfigMap 的 Prometheus.Port 一致'
     $jobIndex = $guildInfraRun.Output.IndexOf('name: guild-migrate')
     $deployIndex = $guildInfraRun.Output.IndexOf('name: guild-pdb')
@@ -3532,6 +3532,259 @@ Test-Case 'go_svc_image.ps1 与 k8s_deploy.ps1 的 guild 镜像名一致(否则�
     $deployName = [regex]::Match($deployScript, '(?m)^\s*guild\s*=\s*@\{[^}]*ImageName\s*=\s*"(?<n>[^"]+)"')
     Assert-True -Condition ($imageName.Success -and $deployName.Success) -Because '两个脚本的服务表里都应当有 guild 条目'
     Assert-Equal -Expected $deployName.Groups['n'].Value -Actual $imageName.Groups['n'].Value -Because 'ImageName 必须一致'
+}
+
+# ─────────────────────────────────────────────────────────────────
+# 资产通道开关 + gRPC 口准入(BK8s 第二块:-AssetOps / -NetworkPolicies;docs/design/guild-phase2/90-consistency.md G-05,2026-10-16)
+# ─────────────────────────────────────────────────────────────────
+# 默认两个开关都关,产物与开关引入之前相同(只多「不粘滞」的删除行);打开时 guild / trade / scene 拿签名密钥、三份 NetworkPolicy 落地。
+# 纯函数按 AST 抽出直接调用;DryRun 产物各起一次 zone-up(Deployment / Agones)与带全局 Go 服务的 infra-up,两个开关一起打开。
+$assetOpFunctionNames = @('Assert-AssetOpSecretShape', 'Get-AssetOpConsistencyVerdict', 'Get-ManifestContainerPorts', 'New-GrpcAllowListNetworkPolicyYaml', 'Get-InjectedSecretFingerprint')
+foreach ($assetOpFnAst in $deadlineDeployAst.FindAll({ param($a) $a -is [System.Management.Automation.Language.FunctionDefinitionAst] }, $false)) {
+    if ($assetOpFunctionNames -contains $assetOpFnAst.Name) {
+        Set-Item -Path "Function:script:$($assetOpFnAst.Name)" -Value $assetOpFnAst.Body.GetScriptBlock()
+    }
+}
+foreach ($assetOpFnName in $assetOpFunctionNames) {
+    if (-not (Test-Path "Function:$assetOpFnName")) { throw "k8s_deploy.ps1 缺少函数 $assetOpFnName(资产通道开关被删了?后续断言无意义)" }
+}
+$assetOpGuildSecret = 'contract-asset-op-guild-0123456789abcdef0123'
+$assetOpTradeSecret = 'contract-asset-op-trade-0123456789abcdef0123'
+$assetOpEnv = @{ MMORPG_ASSET_OP_SECRET_GUILD = $assetOpGuildSecret; MMORPG_ASSET_OP_SECRET_TRADE = $assetOpTradeSecret }
+$assetOpBoth = @('-AssetOps', 'on', '-NetworkPolicies', 'on')
+$assetZoneRun = Invoke-DeployDryRun -Arguments ($BaseArgs + $assetOpBoth) -Env $assetOpEnv
+$assetAgonesRun = Invoke-DeployDryRun -Arguments ($BaseArgs + @('-SceneOrchestrator', 'agones', '-SkipGoSvc', '-SkipJavaSvc') + $assetOpBoth) -Env $assetOpEnv
+$assetInfraEnv = @{}
+foreach ($k in $BattleTestEnv.Keys) { $assetInfraEnv[$k] = $BattleTestEnv[$k] }
+foreach ($k in $assetOpEnv.Keys) { $assetInfraEnv[$k] = $assetOpEnv[$k] }
+$assetInfraRun = Invoke-DeployDryRun -Arguments ($guildInfraArgs + $assetOpBoth) -Env $assetInfraEnv
+$tradeYamlTextForAssetOp = [IO.File]::ReadAllText((Join-Path (Get-RepoRoot) 'go/trade/etc/trade.yaml')) -replace "`r`n", "`n"
+
+# 工作负载清单在 DryRun 输出里的位置(kind 行 + metadata.name 行唯一定位;找不到返回 -1)。按块开头的前几十个字符找不行:各 Deployment 开头相同。
+function Get-WorkloadOffset {
+    param([Parameter(Mandatory = $true)][string]$Output, [Parameter(Mandatory = $true)][string]$Kind, [Parameter(Mandatory = $true)][string]$Name)
+    $m = [regex]::Match(($Output -replace "`r`n", "`n"), ('(?m)^kind: ' + $Kind + '[ \t]*\nmetadata:[ \t]*\n  name: ' + [regex]::Escape($Name) + '[ \t]*$'))
+    if ($m.Success) { return $m.Index }
+    return -1
+}
+
+# 去掉空行后比较(DryRun 采集里 CRLF here-string 的行间可能多出空行,与内容无关)。
+function ConvertTo-NonBlankLines {
+    param([Parameter(Mandatory = $true)][AllowEmptyString()][string]$Text)
+    return (@(($Text -replace "`r`n", "`n") -split "`n" | Where-Object { $_.Trim().Length -gt 0 } | ForEach-Object { $_.TrimEnd() }) -join "`n")
+}
+
+# NetworkPolicy 块 → 目标 app、对所有来源开放的端口、gRPC 口与放行名单(只认本脚本生成的两条 ingress 形状)。
+function Get-GrpcAllowListShape {
+    param([Parameter(Mandatory = $true)][string]$Block)
+    $text = $Block -replace "`r`n", "`n"
+    $target = [regex]::Match($text, '(?s)podSelector:\s*\n\s+matchExpressions:\s*\n\s+- key: app\s*\n\s+operator: In\s*\n\s+values: \[(?<v>[^\]]*)\]')
+    $fromIndex = $text.IndexOf('    - from:')
+    $ingressIndex = $text.IndexOf('  ingress:')
+    $openText = if ($fromIndex -gt $ingressIndex -and $ingressIndex -ge 0) { $text.Substring($ingressIndex, $fromIndex - $ingressIndex) } else { '' }
+    $open = @([regex]::Matches($openText, 'port: (\d+)') | ForEach-Object { [int]$_.Groups[1].Value } | Sort-Object)
+    $grpc = [regex]::Match($text.Substring([Math]::Max(0, $fromIndex)), '(?s)values: \[(?<v>[^\]]*)\]\s*\n\s+ports:\s*\n\s+- protocol: TCP\s*\n\s+port: (?<p>\d+)')
+    return [pscustomobject]@{
+        TargetApps  = if ($target.Success) { @($target.Groups['v'].Value -split ',\s*') } else { @() }
+        OpenPorts   = $open
+        GrpcPort    = if ($grpc.Success) { [int]$grpc.Groups['p'].Value } else { 0 }
+        AllowedApps = if ($grpc.Success) { @($grpc.Groups['v'].Value -split ',\s*') } else { @() }
+    }
+}
+
+Test-Case '资产通道默认关:scene / guild / trade 不带签名密钥与指纹,不生成 NetworkPolicy,只删以前留下的同名 Secret 与策略;trade 的 AssetOp 仍是两行' {
+    foreach ($out in @($devOut, $agonesOut, $guildInfraRun.Output)) {
+        Assert-Match -Text $out -Pattern 'AssetOps: off NetworkPolicies: off' -Because '入口要打出两个开关的取值'
+        Assert-NotMatch -Text $out -Pattern '(?m)^kind: NetworkPolicy' -Because '默认不生成准入策略'
+        Assert-NotMatch -Text $out -Pattern 'Secret asset-op-secret-' -Because '默认不建签名密钥 Secret'
+    }
+    $scene = Select-ManifestByName -Output $devOut -Name 'scene'
+    $fleet = Select-ManifestByName -Output $agonesOut -Name 'scene'
+    foreach ($block in @($scene, $fleet)) {
+        Assert-NotMatch -Text $block -Pattern 'MMORPG_ASSET_OP_SECRET_|asset-op-secret' -Because '关着时 scene 的 Pod 模板与开关引入之前逐字相同(不滚动)'
+    }
+    Assert-Match -Text $devOut -Pattern 'kubectl delete networkpolicy scene-grpc-allowlist -n mmorpg-zone-contract-test --ignore-not-found' -Because '开关不粘滞:以前开过留下的策略要删'
+    foreach ($secretName in @('asset-op-secret-guild', 'asset-op-secret-trade')) {
+        Assert-Match -Text $devOut -Pattern ('kubectl delete secret ' + $secretName + ' -n mmorpg-zone-contract-test --ignore-not-found') -Because 'zone 里的验签密钥同样不粘滞'
+        Assert-Match -Text $guildInfraRun.Output -Pattern ('kubectl delete secret ' + $secretName + ' -n contract-battle-infra --ignore-not-found') -Because 'infra 里的签名密钥同样不粘滞'
+    }
+    foreach ($policy in @('guild-grpc-allowlist', 'match-grpc-allowlist')) {
+        Assert-Match -Text $guildInfraRun.Output -Pattern ('kubectl delete networkpolicy ' + $policy + ' -n contract-battle-infra --ignore-not-found') -Because 'infra 的准入策略同样不粘滞'
+    }
+    foreach ($svc in @('guild', 'trade')) {
+        $deploy = @(Get-ManifestBlocks -Output $guildInfraRun.Output | Where-Object { $_ -cmatch '(?m)^kind: Deployment\s*$' -and $_ -cmatch ('(?m)^  name: ' + $svc + '\s*$') }) | Select-Object -First 1
+        Assert-True -Condition ($null -ne $deploy) -Because "infra-up 产物里应当有 $svc 的 Deployment"
+        Assert-NotMatch -Text $deploy -Pattern '(?m)^\s*- name: MMORPG_ASSET_OP_SECRET_' -Because "$svc 关着时不注入签名密钥(manifest 也不许手写,Add-GoSvcSecretEnv 会拒)"
+        Assert-NotMatch -Text $deploy -Pattern '(?m)^\s+mmorpg\.io/asset-op-secret-\w+-hash:|PLACEHOLDER_' -Because "$svc 关着时指纹占位整行删掉,Pod 模板与开关引入之前相同"
+    }
+    $tradeCm = Select-ManifestByName -Output $guildInfraRun.Output -Name 'go-svc-trade-config'
+    $tradeEmbedded = Get-ConfigMapEmbeddedText -Block $tradeCm -FileName 'trade.yaml'
+    Assert-Equal -Expected "AssetOp:`n  Enabled: false`n  SecretEnv: MMORPG_ASSET_OP_SECRET_TRADE" -Actual (ConvertTo-NonBlankLines -Text (Get-TopLevelYamlBlockText -Text $tradeEmbedded -Key 'AssetOp')) -Because 'trade 关着时只写 Enabled 与 SecretEnv 两行'
+}
+
+Test-Case 'Assert-AssetOpSecretShape:未设置 / 含空白 / 短于 32 字节一律拒绝,报错点名变量、不回显值' {
+    $cases = @(
+        @{ Value = ''; Pattern = '未设置' }
+        @{ Value = 'contract asset op 0123456789abcdef0123456'; Pattern = '空白' }
+        @{ Value = "contract-asset-op-0123456789abcdef0123456`t"; Pattern = '空白' }
+        @{ Value = ('x' * 31); Pattern = '< 32' }
+    )
+    foreach ($case in $cases) {
+        $message = ''
+        try { Assert-AssetOpSecretShape -EnvName 'MMORPG_ASSET_OP_SECRET_GUILD' -Value $case.Value } catch { $message = $_.Exception.Message }
+        Assert-Match -Text $message -Pattern $case.Pattern -Because "形状不对必须拒绝:$($case.Pattern)"
+        Assert-Match -Text $message -Pattern 'MMORPG_ASSET_OP_SECRET_GUILD' -Because '报错要点名变量'
+        if ($case.Value.Length -gt 0) { Assert-True -Condition (-not $message.Contains($case.Value.Trim())) -Because '报错不得回显密钥' }
+    }
+    Assert-AssetOpSecretShape -EnvName 'MMORPG_ASSET_OP_SECRET_GUILD' -Value ('x' * 32)
+}
+
+Test-Case 'Get-AssetOpConsistencyVerdict:调用方没开恒放行;开着时 scene 必须拿同一把' {
+    Assert-Equal -Expected 'ok' -Actual (Get-AssetOpConsistencyVerdict -CallerHash $null -SceneHash $null) -Because '两边都没开'
+    Assert-Equal -Expected 'ok' -Actual (Get-AssetOpConsistencyVerdict -CallerHash '' -SceneHash 'abcdef012345') -Because '打开顺序:先给 scene 密钥,调用方再开'
+    Assert-Equal -Expected 'scene-off-while-caller-on' -Actual (Get-AssetOpConsistencyVerdict -CallerHash 'abcdef012345' -SceneHash '') -Because '调用方开着而 scene 关:该 zone 的资产 RPC 全部被拒'
+    Assert-Equal -Expected 'key-mismatch' -Actual (Get-AssetOpConsistencyVerdict -CallerHash 'abcdef012345' -SceneHash 'abcdef012346') -Because '密钥不是同一把'
+    Assert-Equal -Expected 'ok' -Actual (Get-AssetOpConsistencyVerdict -CallerHash 'abcdef012345' -SceneHash 'abcdef012345') -Because '同一把密钥'
+}
+
+Test-Case 'New-GrpcAllowListNetworkPolicyYaml:逐个列端口(不用 endPort);gRPC 口不得同时对所有来源开放' {
+    $yaml = New-GrpcAllowListNetworkPolicyYaml -PolicyName 'p' -TargetApps @('a') -GrpcPort 50300 -OpenTcpPorts @(9220, 9220) -AllowedApps @('x', 'y')
+    Assert-NotMatch -Text $yaml -Pattern 'endPort' -Because '不支持 endPort 的网络插件只认起始端口,会把其余端口全拦掉'
+    $shape = Get-GrpcAllowListShape -Block $yaml
+    Assert-Equal -Expected '9220' -Actual ($shape.OpenPorts -join ',') -Because '开放端口去重'
+    Assert-Equal -Expected 50300 -Actual $shape.GrpcPort -Because 'gRPC 口单独一条'
+    Assert-Equal -Expected 'x,y' -Actual ($shape.AllowedApps -join ',') -Because '放行名单原样写出'
+    Assert-Match -Text $yaml -Pattern '- namespaceSelector: \{\}\s*\n\s+podSelector:' -Because '调用方分布在 infra 与各 zone namespace,两个选择器写在同一项里 = 任意 namespace 的这些 Pod'
+    $message = ''
+    try { $null = New-GrpcAllowListNetworkPolicyYaml -PolicyName 'p' -TargetApps @('a') -GrpcPort 50300 -OpenTcpPorts @(50300) -AllowedApps @('x') } catch { $message = $_.Exception.Message }
+    Assert-Match -Text $message -Pattern '形同虚设' -Because 'gRPC 口出现在开放端口里必须拒绝'
+    $ports = Get-ManifestContainerPorts -ManifestContent "ports:`n  - containerPort: 50300`n    name: grpc`n  - name: rpc`n    containerPort: 20000`n`t`t- containerPort: 9220`r`n"
+    Assert-Equal -Expected '9220,20000,50300' -Actual ($ports -join ',') -Because 'containerPort 不论写在列表项首行还是第二行、制表符缩进或 CRLF 都要认出来'
+}
+
+Test-Case '-AssetOps on 的组合与密钥校验都在任何写操作之前拒绝,报错不回显密钥' {
+    $noPolicy = Invoke-DeployDryRun -Arguments ($BaseArgs + @('-AssetOps', 'on')) -Env $assetOpEnv
+    Assert-True -Condition ($noPolicy.ExitCode -ne 0) -Because '资产通道打开而 scene 的 gRPC 口不设防必须拒绝'
+    Assert-Match -Text $noPolicy.Output -Pattern '-NetworkPolicies on' -Because '报错要说明缺哪个开关'
+    $missing = Invoke-DeployDryRun -Arguments ($BaseArgs + $assetOpBoth)
+    Assert-True -Condition ($missing.ExitCode -ne 0) -Because '没注入签名密钥必须拒绝(各档位都没有回落值)'
+    Assert-Match -Text $missing.Output -Pattern 'MMORPG_ASSET_OP_SECRET_GUILD' -Because '报错要点名变量'
+    $sameValue = 'contract-asset-op-same-0123456789abcdef01234'
+    $same = Invoke-DeployDryRun -Arguments ($BaseArgs + $assetOpBoth) -Env @{ MMORPG_ASSET_OP_SECRET_GUILD = $sameValue; MMORPG_ASSET_OP_SECRET_TRADE = $sameValue }
+    Assert-True -Condition ($same.ExitCode -ne 0) -Because '两个调用方共用一把密钥必须拒绝'
+    Assert-Match -Text $same.Output -Pattern 'MMORPG_ASSET_OP_SECRET_TRADE' -Because '报错点名两个变量'
+    $reuse = Invoke-DeployDryRun -Arguments ($BaseArgs + $assetOpBoth) -Env @{ MMORPG_GATE_TOKEN_SECRET = $assetOpGuildSecret; MMORPG_ASSET_OP_SECRET_GUILD = $assetOpGuildSecret; MMORPG_ASSET_OP_SECRET_TRADE = $assetOpTradeSecret }
+    Assert-True -Condition ($reuse.ExitCode -ne 0) -Because '与其它口令复用必须拒绝'
+    Assert-Match -Text $reuse.Output -Pattern 'MMORPG_GATE_TOKEN_SECRET' -Because '报错点名被复用的那一把'
+    foreach ($run in @($noPolicy, $missing, $same, $reuse)) {
+        Assert-NotMatch -Text $run.Output -Pattern '\[dry-run\] kubectl [^\r\n]*\b(apply|create|delete|patch|replace)\b' -Because '组合校验与密钥解析先于任何写操作,不留半截部署'
+    }
+    foreach ($run in @($same, $reuse)) {
+        Assert-True -Condition (-not $run.Output.Contains('0123456789abcdef0123')) -Because '报错不得回显密钥'
+    }
+}
+
+Test-Case 'zone-up -AssetOps on:scene(Deployment 与 Fleet)经 secretKeyRef 拿两把验签密钥、带指纹;Secret 与准入策略先于 scene;gate 不带' {
+    Assert-Equal -Expected 0 -Actual $assetZoneRun.ExitCode -Because "zone-up 打开两个开关必须成功。输出: $($assetZoneRun.Output)"
+    Assert-Equal -Expected 0 -Actual $assetAgonesRun.ExitCode -Because "Agones 形态打开两个开关必须成功。输出: $($assetAgonesRun.Output)"
+    $guildHash = Get-InjectedSecretFingerprint -SecretName 'asset-op-secret-guild' -Value $assetOpGuildSecret
+    $tradeHash = Get-InjectedSecretFingerprint -SecretName 'asset-op-secret-trade' -Value $assetOpTradeSecret
+    foreach ($pair in @(@{ Run = $assetZoneRun; Kind = 'Deployment' }, @{ Run = $assetAgonesRun; Kind = 'Fleet' })) {
+        $out = $pair.Run.Output -replace "`r`n", "`n"
+        $scene = Select-ManifestByName -Output $out -Name 'scene'
+        $sceneAt = Get-WorkloadOffset -Output $out -Kind $pair.Kind -Name 'scene'
+        Assert-True -Condition ($sceneAt -ge 0) -Because '夹具前提:找得到 scene 工作负载'
+        Assert-Match -Text $scene -Pattern ('(?m)^kind: ' + $pair.Kind) -Because "要核对的是 scene 的 $($pair.Kind)"
+        foreach ($caller in @(@{ Env = 'MMORPG_ASSET_OP_SECRET_GUILD'; Secret = 'asset-op-secret-guild'; Hash = $guildHash }, @{ Env = 'MMORPG_ASSET_OP_SECRET_TRADE'; Secret = 'asset-op-secret-trade'; Hash = $tradeHash })) {
+            Assert-Match -Text $scene -Pattern ('- name: ' + $caller.Env + '\s+valueFrom:\s+secretKeyRef:\s+name: ' + $caller.Secret + '\s+key: secret\s*\r?\n') -Because "scene 验签要 $($caller.Env),只经 Secret 注入、不写 optional"
+            Assert-Match -Text $scene -Pattern ('mmorpg\.io/' + $caller.Secret + '-hash: "' + $caller.Hash + '"') -Because '指纹与调用方同一算法、同一域分隔,换密钥即滚动、跨命令可核对'
+            $secretAt = $out.IndexOf("# Secret $($caller.Secret) (key secret; value hidden)")
+            Assert-True -Condition ($secretAt -ge 0 -and $secretAt -lt $sceneAt) -Because 'secretKeyRef 不是 optional,Secret 必须先于 scene 落地'
+        }
+        $policyAt = $out.IndexOf('name: scene-grpc-allowlist')
+        Assert-True -Condition ($policyAt -ge 0 -and $policyAt -lt $sceneAt) -Because '准入策略先到,新 scene Pod 从第一秒起受保护'
+        Assert-True -Condition (-not $out.Contains($assetOpGuildSecret) -and -not $out.Contains($assetOpTradeSecret)) -Because '密钥值绝不进产物'
+        Assert-NotMatch -Text $out -Pattern 'kubectl delete (secret asset-op-secret-|networkpolicy scene-grpc-allowlist)' -Because '开着时不删自己要用的 Secret 与策略'
+    }
+    $gate = Select-ManifestByName -Output $assetZoneRun.Output -Name 'gate'
+    Assert-NotMatch -Text $gate -Pattern 'MMORPG_ASSET_OP_SECRET_|asset-op-secret' -Because '只有 scene 验签,gate 不该拿资产密钥'
+}
+
+Test-Case 'scene 的 gRPC 口准入:目标 = 三种 scene 池,放行名单逐字钉住,开放端口覆盖 scene 清单(Deployment 与 Fleet)声明的其它全部端口' {
+    $policy = Select-ManifestByName -Output $assetZoneRun.Output -Name 'scene-grpc-allowlist'
+    Assert-True -Condition ($null -ne $policy) -Because '打开时 zone 里要有 scene-grpc-allowlist'
+    $shape = Get-GrpcAllowListShape -Block $policy
+    Assert-Equal -Expected 'scene,scene-world,scene-instance' -Actual ($shape.TargetApps -join ',') -Because 'legacy 单池与拆分两池都要被选中'
+    Assert-Equal -Expected 'scene-manager,match,player-inbox,guild,trade' -Actual ($shape.AllowedApps -join ',') -Because '调用方名单(k8s_deploy.ps1 $script:GrpcAllowLists 注释里的调用点);增删要同时改这里'
+    $scene = Select-ManifestByName -Output $devOut -Name 'scene'
+    $grpcDeclared = [regex]::Match($scene, 'containerPort: (?<p>\d+)\s+name: grpc')
+    Assert-True -Condition $grpcDeclared.Success -Because '夹具前提:scene Deployment 声明了 grpc 口'
+    Assert-Equal -Expected ([int]$grpcDeclared.Groups['p'].Value) -Actual $shape.GrpcPort -Because '受保护的必须是 scene 真正监听的 gRPC 口'
+    $fleet = Select-ManifestByName -Output $agonesOut -Name 'scene'
+    $declared = @(Get-ManifestContainerPorts -ManifestContent ($scene + "`n" + $fleet) | Where-Object { $_ -ne $shape.GrpcPort })
+    Assert-Equal -Expected ($declared -join ',') -Actual ($shape.OpenPorts -join ',') -Because '清单里声明的其它端口(节点口、日志 sidecar)都得对所有来源开放,漏一个就断(gate ↔ scene 走节点口)'
+}
+
+Test-Case 'infra-up -AssetOps on:guild / trade 各自只拿自己那把密钥、带指纹、ConfigMap 打开通道(trade 整块搬运);guild / match 的准入策略名单逐字钉住、开放端口覆盖清单' {
+    Assert-Equal -Expected 0 -Actual $assetInfraRun.ExitCode -Because "infra-up 打开两个开关必须成功。输出: $($assetInfraRun.Output)"
+    $out = $assetInfraRun.Output -replace "`r`n", "`n"
+    $specs = @(
+        @{ Svc = 'guild'; Env = 'MMORPG_ASSET_OP_SECRET_GUILD'; Other = 'MMORPG_ASSET_OP_SECRET_TRADE'; Secret = 'asset-op-secret-guild'; Value = $assetOpGuildSecret }
+        @{ Svc = 'trade'; Env = 'MMORPG_ASSET_OP_SECRET_TRADE'; Other = 'MMORPG_ASSET_OP_SECRET_GUILD'; Secret = 'asset-op-secret-trade'; Value = $assetOpTradeSecret }
+    )
+    foreach ($spec in $specs) {
+        $deploy = @(Get-ManifestBlocks -Output $out | Where-Object { $_ -cmatch '(?m)^kind: Deployment\s*$' -and $_ -cmatch ('(?m)^  name: ' + $spec.Svc + '\s*$') }) | Select-Object -First 1
+        Assert-True -Condition ($null -ne $deploy) -Because "infra-up 产物里应当有 $($spec.Svc) 的 Deployment"
+        Assert-Match -Text $deploy -Pattern ('- name: ' + $spec.Env + '\s+valueFrom:\s+secretKeyRef:\s+name: ' + $spec.Secret + '\s+key: secret\s*\r?\n') -Because "$($spec.Svc) 签名密钥只经 Secret 注入、不写 optional"
+        Assert-Equal -Expected 1 -Actual ([regex]::Matches($deploy, 'name: ' + $spec.Env).Count) -Because '只能注入一份'
+        Assert-NotMatch -Text $deploy -Pattern ('(?m)^\s*- name: ' + $spec.Other) -Because '每个调用方只拿自己那把(不变量 I6)'
+        $hash = Get-InjectedSecretFingerprint -SecretName $spec.Secret -Value $spec.Value
+        Assert-Match -Text $deploy -Pattern ('mmorpg\.io/' + $spec.Secret + '-hash: "' + $hash + '"') -Because '指纹与 scene 一侧同一算法,跨命令核对靠它'
+        Assert-NotMatch -Text $deploy -Pattern 'PLACEHOLDER_' -Because '占位必须全部替换'
+        $secretAt = $out.IndexOf("# Secret $($spec.Secret) (key secret; value hidden)")
+        Assert-True -Condition ($secretAt -ge 0 -and $secretAt -lt (Get-WorkloadOffset -Output $out -Kind 'Deployment' -Name $spec.Svc)) -Because 'Secret 必须先于引用它的 Deployment'
+    }
+    Assert-True -Condition (-not $out.Contains($assetOpGuildSecret) -and -not $out.Contains($assetOpTradeSecret)) -Because '密钥值绝不进产物'
+    $guildEmbedded = Get-ConfigMapEmbeddedText -Block (Select-ManifestByName -Output $out -Name 'go-svc-guild-config') -FileName 'guild.yaml'
+    $expectedGuild = (Get-TopLevelYamlBlockText -Text $guildYamlText -Key 'AssetOp') -replace '(?m)^  Enabled:.*$', '  Enabled: true'
+    Assert-Equal -Expected (ConvertTo-NonBlankLines -Text $expectedGuild) -Actual (ConvertTo-NonBlankLines -Text (Get-TopLevelYamlBlockText -Text $guildEmbedded -Key 'AssetOp')) -Because 'guild 打开:整块原样,第一层 Enabled 改 true(Wake 子块的 Enabled 不动)'
+    $tradeEmbedded = Get-ConfigMapEmbeddedText -Block (Select-ManifestByName -Output $out -Name 'go-svc-trade-config') -FileName 'trade.yaml'
+    $expectedTrade = (Get-TopLevelYamlBlockText -Text $tradeYamlTextForAssetOp -Key 'AssetOp') -replace '(?m)^  Enabled:.*$', '  Enabled: true'
+    Assert-Equal -Expected (ConvertTo-NonBlankLines -Text $expectedTrade) -Actual (ConvertTo-NonBlankLines -Text (Get-TopLevelYamlBlockText -Text $tradeEmbedded -Key 'AssetOp')) -Because 'trade 打开:落地恢复与 Cleanup* 键连同 Enabled=true 一起进 ConfigMap(go/trade/etc/trade.yaml 注释)'
+    Assert-Match -Text $tradeEmbedded -Pattern '(?m)^  SecretEnv: MMORPG_ASSET_OP_SECRET_TRADE\s*$' -Because 'SecretEnv 必须是部署侧注入的变量名'
+    $policies = @(
+        @{ Name = 'guild-grpc-allowlist'; Svc = 'guild'; Allowed = 'client-rpc-router,data-service'; Port = 50300 }
+        @{ Name = 'match-grpc-allowlist'; Svc = 'match'; Allowed = 'client-rpc-router,guild,gate'; Port = 50500 }
+    )
+    foreach ($p in $policies) {
+        $policy = Select-ManifestByName -Output $out -Name $p.Name
+        Assert-True -Condition ($null -ne $policy) -Because "打开时 infra 里要有 $($p.Name)"
+        $shape = Get-GrpcAllowListShape -Block $policy
+        Assert-Equal -Expected $p.Svc -Actual ($shape.TargetApps -join ',') -Because '策略只选中本服务'
+        Assert-Equal -Expected $p.Allowed -Actual ($shape.AllowedApps -join ',') -Because "$($p.Svc) 的 gRPC 调用方名单;增删要同时改这里"
+        Assert-Equal -Expected $p.Port -Actual $shape.GrpcPort -Because 'gRPC 口取 $GoSvcCatalogue 的 Port'
+        $manifest = [IO.File]::ReadAllText((Join-Path (Get-RepoRoot) "deploy/k8s/manifests/go-svc/$($p.Svc).yaml"))
+        $declared = @(Get-ManifestContainerPorts -ManifestContent $manifest | Where-Object { $_ -ne $p.Port })
+        Assert-Equal -Expected ($declared -join ',') -Actual ($shape.OpenPorts -join ',') -Because '清单里声明的其它端口(metrics)要对所有来源开放'
+        $policyAt = $out.IndexOf("name: $($p.Name)")
+        $deployAt = Get-WorkloadOffset -Output $out -Kind 'Deployment' -Name $p.Svc
+        Assert-True -Condition ($policyAt -ge 0 -and $deployAt -ge 0 -and $policyAt -lt $deployAt) -Because '策略先于 Deployment'
+    }
+}
+
+Test-Case 'gRPC 准入名单里的每个 app 标签都对应一个真实工作负载(写错一个字母 = 那个调用方被拦)' {
+    $knownCpp = @('gate', 'scene', 'scene-world', 'scene-instance')
+    $deployScript = [IO.File]::ReadAllText((Join-Path (Get-ToolsScriptsDir) 'k8s_deploy.ps1'))
+    $tableText = [regex]::Match($deployScript, '(?s)\$script:GrpcAllowLists = \[ordered\]@\{(?<t>.*?)\r?\n\}').Groups['t'].Value
+    Assert-True -Condition ($tableText.Length -gt 0) -Because '夹具前提:找得到 $script:GrpcAllowLists'
+    $apps = @([regex]::Matches($tableText, "'([a-z][a-z-]*)'") | ForEach-Object { $_.Groups[1].Value } | Where-Object { $_ -notmatch 'allowlist$' } | Sort-Object -Unique)
+    Assert-True -Condition ($apps.Count -ge 8) -Because '夹具前提:名单解析出来了'
+    foreach ($app in $apps) {
+        if ($knownCpp -contains $app) { continue }
+        $manifestPath = Join-Path (Get-RepoRoot) "deploy/k8s/manifests/go-svc/$app.yaml"
+        Assert-True -Condition (Test-Path $manifestPath) -Because "名单里的 $app 没有对应的 go-svc manifest"
+        Assert-Match -Text ([IO.File]::ReadAllText($manifestPath)) -Pattern ('(?m)^\s+app: ' + [regex]::Escape($app) + '\s*$') -Because "$app 的 Pod 标签必须是 app: $app"
+    }
 }
 
 Test-Case '普通 gate/scene Deployment 必须先创建被 emptyDir 遮蔽的日志父目录' {

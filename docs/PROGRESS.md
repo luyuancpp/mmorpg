@@ -9050,3 +9050,23 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
   两边主工作区中其他任务的未推送提交和 merchant 未提交生成物保持原样,不随本次补位交付发布。
 - 协议 / 配表 / 生成物未改;未重启服务、未清理数据库、未替换主仓二进制。Go -race、C++ 全量编译、Unity 内测试及三客户端联机尚未执行。
   Java 版仍待做,本机无约定 Java 仓库,PARITY 未登记(设计文档 §7.4)。
+## 2026-10-16 BK8s 第二块:资产通道开关 + gRPC 口准入(Claude,未编译、未测试,待 Codex 验证)
+
+接上一条(BK8s 第一块)。用户 10-16 拍板「BK8s 全部做完」(`docs/design/guild-phase2/90-consistency.md` G-05);运维说明 `deploy/k8s/README.md`「gRPC 口准入与资产通道」。
+
+- **`k8s_deploy.ps1 -AssetOps off|on`**(默认 off):on 时两把签名密钥 `MMORPG_ASSET_OP_SECRET_GUILD` / `_TRADE` 从环境变量读(各档位无回落值;≥32 字节、无空白、两把不同、不与其它口令相同),
+  写成 Secret `asset-op-secret-guild` / `asset-op-secret-trade`,经 secretKeyRef 注入 guild(只 GUILD)、trade(只 TRADE)、scene(Deployment 与 Fleet,两把都要);
+  guild ConfigMap `AssetOp.Enabled: true`,trade ConfigMap 的 `AssetOp` 整块从 trade.yaml 搬运、Enabled 改 true。三方 Pod 模板带密钥指纹注解(只换密钥也滚动)。
+- **跨命令核对** `Assert-AssetOpClusterConsistency`(非 DryRun、写操作之前、只读 kubectl):zone-up 时调用方开着而 scene 不开 / 指纹不同即拒;infra-up 打开时有 scene 没拿到同一把即拒。
+- **`-NetworkPolicies off|on`**(默认 off;`-AssetOps on` 必须同时 on):scene 50000 放 scene-manager / match / player-inbox / guild / trade,guild 50300 放 client-rpc-router / data-service,
+  match 50500 放 client-rpc-router / guild / gate;清单声明的其它端口对所有来源开放(逐个列端口,不用 endPort)。名单按代码重排,与 G-05 原文三处出入写进了 README 与 90 / 92。
+- **清单**:guild.yaml 删掉预留的 optional secretKeyRef(env 改由脚本注入,`Add-GoSvcSecretEnv` 拒手写);guild.yaml / trade.yaml 的 Pod 模板加指纹占位行(off 时整行删掉,模板与以前相同)。
+- **默认 off 的产物**:与改动前逐块对比,清单块只有注释与 guild 去掉 optional env 的差异;多出「AssetOps / NetworkPolicies 取值」一行与几条 `--ignore-not-found` 删除。
+- **契约测试**:`k8s_deploy_contract.tests.ps1` 新增 9 条(默认关、密钥形状、核对裁决矩阵、策略生成器、负向组合与密钥校验、zone-up 打开 Deployment / Fleet、scene 策略端口覆盖、
+  infra-up 打开、名单标签对应真实工作负载)、改 1 条(guild 部署形态不再断言 optional env);`k8s_migrate_gate.tests.ps1` 新增 2 条 trade 用例并补夹具变量。
+- **已做的核对**:PowerShell 解析 0 错误;zone-up(Deployment / Agones)与 infra-up 演练模式在开关关 / 开两种取值下退出 0;7 个负向组合都在任何写操作之前拒绝且不回显密钥;
+  新增用例的关键比对(指纹、顺序、端口覆盖、AssetOp 整块一致、名单)在真实演练输出上逐项算过。**契约测试本身没有运行**。
+- **验证(交 Codex)**:`pwsh -NoProfile -File tools/scripts/tests/k8s_deploy_contract.tests.ps1`、`pwsh -NoProfile -File tools/scripts/tests/k8s_migrate_gate.tests.ps1`;
+  有集群(网络插件支持 NetworkPolicy)时按 README 该节末尾的三项验收。
+- **后续块**:db migrate Job、scene 不设 `MMORPG_ALLOW_CLIENT_GM` 的契约断言、告警(G-07)与 Loki ruler;随后 TiDB 一期。
+- **Java 版(AGENTS §12)**:部署形态,Java 版不共用本仓 K8s 清单;帮会二期整体在 Java 版待做。本机没有 Java 仓库,`PARITY.md` 未登记。

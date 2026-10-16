@@ -20,6 +20,10 @@
 # turn-based §22 D75),默认部署下玩家经 gate → client-rpc-router 可达;以 -GateRouterMode 0 回退时这份 Deployment
 # 照样起得来、探针绿,但玩家够不着。
 #
+# 资产通道(上架托管 / 交付)默认关闭:k8s_deploy.ps1 -AssetOps on 才打开(ConfigMap AssetOp.Enabled: true),签名密钥经
+# Secret asset-op-secret-trade 注入成 MMORPG_ASSET_OP_SECRET_TRADE —— env 由脚本注入(Add-GoSvcSecretEnv),本文件不要手写。
+# Pod 模板上的 mmorpg.io/asset-op-secret-trade-hash 是密钥指纹占位:on 时换成指纹,off 时整行删掉(模板与开关引入之前相同)。
+#
 # 连接数:ConfigMap 的 MySQL.MaxOpenConn × replicas 要算进 MySQL 的 max_connections。
 apiVersion: v1
 kind: Service
@@ -62,6 +66,7 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/port: "9230"
         prometheus.io/path: "/metrics"
+        mmorpg.io/asset-op-secret-trade-hash: "PLACEHOLDER_ASSET_OP_SECRET_HASH"
     spec:
       affinity:
         podAntiAffinity:
