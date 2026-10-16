@@ -9070,3 +9070,27 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
   有集群(网络插件支持 NetworkPolicy)时按 README 该节末尾的三项验收。
 - **后续块**:db migrate Job、scene 不设 `MMORPG_ALLOW_CLIENT_GM` 的契约断言、告警(G-07)与 Loki ruler;随后 TiDB 一期。
 - **Java 版(AGENTS §12)**:部署形态,Java 版不共用本仓 K8s 清单;帮会二期整体在 Java 版待做。本机没有 Java 仓库,`PARITY.md` 未登记。
+## 2026-10-15 邮件 M1a:协议、Tip 段、号段与登记落地,proto-gen 交构建方(Claude,未编译)
+
+- **背景**:移植剩余服务的下一个是邮件(设计 `docs/design/mail-system.md`,2026-09-20 全部拍板,分 M1a–M1d 四批)。本条是 M1a。
+  10-13 曾在旧主干上做过一遍,两天里主干又进了几十个提交、试跑分到的消息号被别的服务用掉、生成器也大改,那次的产物全部作废没有进主干;本条是在新主干上重做的(10-16 按三视角评审修订后合入)。
+- **落了什么**:`proto/mail/{mail,mail_admin,mail_table}.proto`;生成器两份配置(带 / 不带客户端)的 `domain_meta` 加 mail;
+  `Tip.xlsx` 表尾开 `//mail_error base=17000 width=1000` 8 个码并已导表(17000–17007,无 fault 码),C++ table 工程已登记 `mail_error_tip.pb.{h,cc}`;
+  号段 tag `mail`(data_service 两处默认清单、服务 yaml、k8s ConfigMap,另两份文档副本顺带补上此前漏掉的 `friend_request`);`mmorpg_mail` 建库授权;
+  脚本 `tools/scripts/mail_xlsx_patch.py`(开段 / 限频行)与 `tools/scripts/mail_postgen.py`(生成后核对、四个 C++ 工程登记、robot vendor 同步);
+  `tools/scripts/dev_tools.ps1` 的 `proto-gen-run` 成功后自动跑后两步(`$ProtoGenPostHooks`,幂等),做统一重生成的人不必记得。
+  客户端仓:`gen_proto.ps1` 收录 mail 两份协议,`Mail.cs` / `MailErrorTip.cs` 已生成入库。
+- **没跑 proto-gen**:本机 `proto-gen.exe` 早于 10-15 改过的生成器源码,先要 `proto-gen-build`(`go build`),按 AGENTS §10.1 归构建方。
+  所以 mail 的 8 个消息号还没发,proto / grpc_client / rpc 三个 C++ 工程也故意没提前登记(登记不存在的文件会编不过)。
+  命令与通过标准在设计文档 §12.1「给构建方的命令」:proto-gen-build → proto-gen-run(no-unity)→ `mail_postgen.py verify` → `mail_xlsx_patch.py message-limiter` → 第二次导表 → `mail_postgen.py register-cpp` → `vendor-robot` → msbuild / Go 编译。
+- **验证边界**:三份 proto 用 protoc 35.1 解析通过;导表前先在未改动的主干上空跑一次导表,确认没有积压被顺带产出;
+  两个脚本的写路径在草稿区副本树上实跑(正常两遍第二遍零改动、缺文件中止不写盘、补回后无重复条目、未知产物中止、表被整表覆盖后补回与原表逐格相同);
+  副本树里的 mail 生成物来自 10-13 旧生成器那次作废的试跑,新生成器的真实产物要等构建方跑过才知道。
+  Go / C++ 一行都没编译。与设计文档的 10 条偏差(生成物路径、号段第 9 项、预留说明三行共用、两份生成器配置、MailAdmin 也占号、tip_message 口径、
+  cc_generic_services、C++ 要登记四个工程、robot vendor、消息号未定)登记在 §12.1。
+- **顺带发现、没有处理**:客户端有 6 个生成的 C# 落后于服务端协议(Guild / PlayerMovement / PlayerScene / PlayerSkill / RpcMessage / Session),
+  不属于邮件,本批没有提交它们的变化;下次跑客户端 `gen_proto.ps1` 时会一并刷新。
+- **两仓落地顺序**:客户端仓的 `gen_proto.ps1` mail 行与 `Mail.cs` / `MailErrorTip.cs` 与本条同时推到客户端 main(否则有人用默认配置跑 proto-gen 时客户端 CS0246)。
+- **下一步**:M1b + M1c(`go/mail` 服务全部代码)见下一条;编译要等 proto-gen 之后。
+- **Java 版(AGENTS §12)**:对应 Java 版本号:无;状态:待做。mail.proto 的客户端协议与 8 个 tip 码是客户端可见契约,按规矩两版同批改;
+  本机没有 Java 仓(`D:\luyuan\xuanming-server-mmo` 不存在),无法核对 `PARITY.md` 或改 Java 版,需在有 Java 仓的机器上补做并登记。

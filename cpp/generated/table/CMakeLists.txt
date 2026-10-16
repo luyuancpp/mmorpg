@@ -136,6 +136,7 @@ set(SOURCE_FILES
     proto/tip/cross_server_error_tip.pb.cc
     proto/tip/entity_error_tip.pb.cc
     proto/tip/friend_error_tip.pb.cc
+    proto/tip/mail_error_tip.pb.cc
     proto/tip/guild_error_tip.pb.cc
     proto/tip/login_error_tip.pb.cc
     proto/tip/match_error_tip.pb.cc

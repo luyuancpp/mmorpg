@@ -1,7 +1,7 @@
 # mail(邮件)M1:全局服务 + 系统邮件 / 定向邮件 + 领取短路
 
 **Created:** 2026-09-20
-**状态:** **本文只是设计,未落码、未编译、未运行任何测试;导表器与 proto-gen 都没跑过。** 本文提到的 `proto/mail/*`、`go/mail/*`、`mail_error` 段、`mmorpg_mail` 库、`biz_tag = mail` **今天全都不存在**。文中凡"应该 / 期望"都不是实测结论。§11.1 的各项已于 2026-09-20 全部由用户拍板(结果见 §11.1 拍板记录;§8 决策表里对应条目已改标〔已拍板〕)。2026-09-20 经三视角评审回修一轮,见文末「评审记录」。
+**状态:** 〔2026-10-15 补、10-16 按评审修订:M1a 已落码,随 M1a 提交进 main —— 协议、生成器配置、Tip 段(已导表)、号段 tag、独占库与两个脚本;proto-gen 尚未跑(归构建方),落码记录、与本文的偏差和构建命令见 §12;M1b–M1d 未开工。下面这句是 09-20 的原文。〕**状态:** **本文只是设计,未落码、未编译、未运行任何测试;导表器与 proto-gen 都没跑过。** 本文提到的 `proto/mail/*`、`go/mail/*`、`mail_error` 段、`mmorpg_mail` 库、`biz_tag = mail` **今天全都不存在**。文中凡"应该 / 期望"都不是实测结论。§11.1 的各项已于 2026-09-20 全部由用户拍板(结果见 §11.1 拍板记录;§8 决策表里对应条目已改标〔已拍板〕)。2026-09-20 经三视角评审回修一轮,见文末「评审记录」。
 **关联:** [friend-handoff-20260920.md](../handoff/friend-handoff-20260920.md) §4.1(mail 摸底)/ §4.4(A 仓对照)/ §5(坑);[friend-port-20260918.md](./friend-port-20260918.md)(结构样板);[leaderboard-system.md](./leaderboard-system.md)(发奖出口指向本服务);[microservice-zone-contract-20260914.md](./microservice-zone-contract-20260914.md)(契约 §2–§8);[xuanming-port-decisions-20260910.md](./xuanming-port-decisions-20260910.md) 的 D-9 / D-11 / D-12 / D-13 / D-14;[guild-phase2/04-asset-channel.md](./guild-phase2/04-asset-channel.md)(通用资产通道,I6 流独占);[tip-code-axis.md](./tip-code-axis.md);[snowflake-id-allocation.md](./snowflake-id-allocation.md);`AGENTS.md` §4 / §7 / §10.2 / §11(尤其 §11.6)。
 
 > **A 仓参考不可得,如实说明**:早期摸底稿(`port_plan_mail.json`,含 11 条待拍板)随会话临时目录丢失,A 仓 `services/social/mail` 的源码本轮也拿不到。本文**没有**参考 A 仓的任何做法,全部从 B 仓现有约束(D-14、契约、资产通道、friend / trade 先例、客户端现状)重新推导。凡是"A 仓怎么做的"一律不知道,也不编。
@@ -892,14 +892,14 @@ Tip.xlsx 把预留注释行换成组头 `//mail_error base=17000 width=1000`(**`
 
 ### 11.2 未核实(落码前自己核)
 
-- **U1**:复合唯一键(3 列)的列序是否被 proto2mysql 原样保留(option 名 `OptionUniqueKey` 已核实)—— 对照 guild `guild_db.proto` 的 `uk_guild` 与 proto2mysql v0.1.1 源码。
-- **U2**:`OptionIndex` 在单列时的写法(`"expire_ms"`)与 friend 多列写法同一语法 —— 以 friend / trade 表为准。
+- ~~**U1**~~ **已核实**(2026-10-10,对照 proto2mysql v0.2.0 源码,结论写在 `proto/mail/mail_table.proto` 头注释):`OptionUniqueKey` 按逗号拆、逐项去空白、按原顺序拼成 `UNIQUE KEY uk_<表名>`。M1b 的真库用例 `TestSchemaHasDesignedUniqueKeys` 在 MySQL 上再钉一次。
+- ~~**U2**~~ **已核实**(同上):`OptionIndex` 按 `;` 分组、组内逗号保留,单列一组与多列一组是同一语法。
 - ~~**U3**~~ **已核实**(评审第 11 条):`GetPlayerHomeZone` 无映射 → gRPC `NotFound`(文案 `no home zone mapping` 是滚动升级契约),Redis 故障 → `Unavailable`。它只证明"有 home zone 映射",不等于"玩家存在"。结论并入 §4.2 末段。
 - **U4**:gate **下行**单包上限(决定 `ListMails` page_size 上限与文本长度上限)。
-- ~~**U5**~~ **已核实**:`tip_message = 1000` = `kRateLimitExceeded`(`tools/scripts/friend_xlsx_patch.py` 的 `LIMITER_TIP_MESSAGE` 及其注释)。
+- ~~**U5**~~ **已核实,但当初的结论是错的**(2026-10-15 更正,见 §12.1 偏差第 6 条):1000 是 `kSuccess`,`kRateLimitExceeded` 是 1008;这一列目前没有读者(限流器硬编码回 `kRateLimitExceeded`)。新行照表内既有各行填 1000。`tools/scripts/friend_xlsx_patch.py` 的同一句注释也是错的(不属于本服务,未改)。
 - ~~**U6**~~ **已核实并定稿**(评审第 16 条):K8s 没有给 Go 服务注入 Secret 的现成机制,做法见 §7.2 "令牌注入"。
-- **U7**:`proto_gen.yaml` 里 `mail/` 两处占位在 `proto/mail` 不存在时对生成器有无副作用;`proto/mail` 建出来之后这两处与新 `domain_meta` 是否会让 mail 被处理两次。
-- **U8**:`Tip.xlsx` 里 `mail_error 17000` 预留注释行的原文(本轮沿用交接文档转述,未打开 xlsx);`grant_error 24000` 预留段是否本来就是给"系统发物 / 邮件附件"的独立域 —— 若是,M2 的发物类码要不要放那段,需要问预留它的人。
+- ~~**U7**~~ **已核实**(2026-10-15):生成器收集文件只走 `domain_meta`、按绝对路径去重,`proto_directories` / `proto_dirs` 里的 `mail/` 占位不会让 mail 被处理两次(`WriteSol2LuaFile` 没有调用方,`ProtoDirs.Mail` 没有读者)。结论写在两份生成器配置的 mail 块注释里。
+- **U8**:前半**已核实**(2026-10-15):预留说明是第 257–259 行三行共用的一块,不是一行(见 §12.1 偏差第 3 条);后半(`grant_error 24000` 是否给"系统发物 / 邮件附件"预留、M2 的发物类码放哪段)**仍未核实**,M2 开工前问预留它的人。
 - **U9**:TiDB 下 `GET_LOCK` / `KILL QUERY` 语义(`schemamigrate.go`"待验证"段),mail 继承同一风险。
 - **U10**:scene 是否有任何 M1 就需要发邮件的业务(活动排期结算、战斗结算奖励)—— 本轮只核实了任务领奖是同步直写背包,`player_activity_schedule.cpp` 与战斗结算的发奖出口未逐一核实。
 
@@ -912,6 +912,84 @@ Tip.xlsx 把预留注释行换成组头 `//mail_error base=17000 width=1000`(**`
 - `go/trade/internal/svc/assetchannel.go` 注释说资产密钥"由 go_services.ps1 注入",与磁盘不符(§6.4 第 19 条)。
 
 ---
+
+## 12. 落码记录
+
+### 12.1 M1a(2026-10-15,Claude;10-16 按三视角评审修订;未编译,proto-gen 未跑)
+
+**落了什么**(服务端仓):
+
+- 协议:`proto/mail/{mail,mail_admin,mail_table}.proto`,形状与 §3.6 / §5.2 / §5.3 一致;两份服务协议显式写 `option cc_generic_services = false;`(见下面偏差第 7 条)。三份文件已用 protoc 35.1 解析通过。
+- 生成器配置:`tools/proto_generator/protogen/etc/proto_gen.yaml` 与 `proto_gen.no-unity.yaml` 的 `domain_meta` 各加一块 `mail`(两份必须同步,见该块上方注释)。
+- Tip 段:`tools/scripts/mail_xlsx_patch.py tip-segment` 在 `data/tip/Tip.xlsx` 表尾追加组头 `//mail_error base=17000 width=1000` 与 §5.6 的 8 个码,fault 列全空;已导表,产物 `mail_error_tip.proto`(17000–17007)、`segments.go` 多一段、`faults.go` 无 17xxx、`tip_enum_ids.json` 只增不改、`tip_text.json` 多 8 条。C++ table 工程(`CMakeLists.txt` / `table.vcxproj` / `.filters`)已登记 `mail_error_tip.pb.{h,cc}`。导表前在未改动的主干上先空跑过一次导表,确认没有别人的积压被顺带产出。
+- 号段 tag `mail`:`go/data_service` 的两处 `DefaultIdSegmentBootstrapTags`、`etc/data_service.yaml`、`k8s_deploy.ps1` 的 data-service ConfigMap,以及 `deploy/k8s/README.md`、`data_service_role_and_scope.md` 两份文档副本。
+- 独占库:`deploy/mysql-init/00_init_zone_dbs.sql` 建 `mmorpg_mail` 并授权 appuser。
+- 工具:`tools/scripts/mail_xlsx_patch.py`(`tip-segment` / `message-limiter`)、`tools/scripts/mail_postgen.py`(`verify` 核对生成物;`register-cpp` 把 C++ 产物登记进 table / proto / grpc_client / rpc 四个工程;`vendor-robot` 同步 robot/vendor)。两个脚本都幂等、带 `--dry-run`,写之前先核对现状,中途失败不留下半套改动(`register-cpp` 两阶段:全部核对通过才写盘,逐条判断是否已登记;两张 xlsx 保存前比对载入时的哈希,防别的会话并发写)。
+  - 实测范围(如实):`register-cpp` / `vendor-robot` 在草稿区一棵副本树上跑过 —— 正常两遍(第二遍零改动,table 三个工程文件与本批提交的逐字节相同)、缺文件中止后补回再跑、`--allow-missing` 之后补全、出现不认识的 mail 产物、vendor 有多余文件五种情形。副本树里的 mail C++ / Go 产物来自 10-13 用**旧生成器**在旧主干上的那次试跑(已作废);10-15 的新生成器给 friend / player_inbox 出的文件名与之同形,但新生成器对 mail 的真实产物要等构建方跑过才知道 —— 有不认识的产物时 `register-cpp` 以非 0 退出并点名。`tip-segment` 另测了"导表后表被整表覆盖、mail 组丢失"的恢复(从 HEAD~1 的表补回,结果与本批的表逐格相同)。
+- **生成后钩子**:`tools/scripts/dev_tools.ps1` 的 `proto-gen-run`(含 `dev.bat proto`)在生成成功后自动跑 `mail_postgen.py register-cpp` 与 `vendor-robot`(`$ProtoGenPostHooks`;只在 `cpp/generated/proto/mail` 存在时动作,幂等)。原因:生成器不登记新域的 C++ 产物、也不同步 robot/vendor,做统一重生成的人未必读过本文 —— 漏了这两步,C++ 要到全量 msbuild 的链接期才报错,robot 直接编不过。绕开 dev_tools 直接跑 `proto-gen.exe` 时要手工补这两步。
+
+**客户端仓**(`mmorpg-client`,用户 2026-09-20 授权):`tools/gen_proto.ps1` 收录 `proto/mail/mail.proto` 与 `generated/code/proto/tip/mail_error_tip.proto`;已生成 `Assets/Scripts/Proto/Generated/Mail.cs`、`MailErrorTip.cs`(连同 `.meta`)。生成时发现 6 个**别的**协议的 C# 已经落后于服务端 proto(`Guild.cs`、`PlayerMovement.cs`、`PlayerScene.cs`、`PlayerSkill.cs`、`RpcMessage.cs`、`Session.cs`),不是本批的事,没有提交它们的变化。
+
+**两仓的落地顺序**:客户端的这一批与服务端 M1a **同时**推到各自的 main(客户端先推或同批)。服务端 main 一旦有 `proto/mail`,任何人用默认配置(`enable_unity_client: true`,`dev.bat proto` / `gen`)跑 proto-gen 都会往同级客户端仓写 `ClientPlayerMail*Handler.cs`(引用 `Mailpb.*`),客户端 main 若还没有 `Mail.cs` 与 `gen_proto.ps1` 的 mail 行就是 CS0246。两份生成器配置的 team 块门禁注释已把 mail 列为第四行必查项。客户端 `gen_proto.ps1` 在同一位置与主干新增的神秘商人两行冲突,变基时两边都保留。
+
+**与本文设计的偏差**(以磁盘为准,正文不改):
+
+1. Go 生成物不落 `go/generated/mail/*`:与 friend 一样落在 `go/proto/mail/` 与 `go/mail/generated/pb/game/`(§7.4 / §9 M1a 验收的路径写错了)。
+2. 号段现值已是 8 项(主干后来加了 `friend_request`),mail 是第 9 项。两份文档副本此前漏了 `friend_request`,本批一并补齐。
+3. Tip.xlsx 的预留说明是 3 行共用块(第 257–259 行),不能"整行换成组头"(§5.6):组头追加在表尾;第 258 行那条说明改写为把 `mail_error 17000` 划掉、保留 chat / auction 两个预留。脚本只在该格**逐字等于**旧文案时才改。
+4. 生成器从 2026-10-15 起有两份配置(带客户端 / 不带客户端),`domain_meta` 两份都要加。
+5. `MailAdmin` 两个方法也占消息号、也进路由表(`ClientProtocol: false`),mail 一共新增 **8** 个号(不是 6 个)。
+6. 限频表 `tip_message` 列填 1000,与表内既有 81 行一致。§5.5 说 1000 = `kRateLimitExceeded` 是错的:1000 是 `kSuccess`,`kRateLimitExceeded` 是 1008;但这一列目前没有读者(限流器硬编码回 `kRateLimitExceeded`),在有人给它接上读者、整表一次改对之前,新行不单独换口径。
+7. 两份服务协议显式写 `cc_generic_services = false`(未设置时同为 false),照 chat / trade / team / player_inbox:生成器据它决定注册形状与路由表收录,写成 true 会让三者对不上。
+8. C++ 登记不止 table 工程:proto-gen 还会给 mail 出 `cpp/generated/proto/mail/*`、`cpp/generated/grpc_client/mail/*` 与两个 `service_metadata` 头,`rpc_event_registry.cpp` 与 `grpc_init_client.cpp` 会引用它们,所以 proto / grpc_client / rpc 三个工程也要登记(照 friend)。`mail_table` 的 pb 照 `friend_table` 不登记(C++ 没有代码引用它)。
+9. robot 走 vendor:生成器给 robot 出的 6 个 handler 桩 import `proto/mail`,所以 `go/proto/mail` 要按字节同步进 `robot/vendor/proto/mail` 并在 `robot/vendor/modules.txt` 登记(`mail_postgen.py vendor-robot`)。
+10. 消息号还没定。2026-10-13 在旧主干上试跑分到的 253–260 已被别的服务用掉,那次的产物全部作废,没有进主干。
+
+**为什么本批没跑 proto-gen**:本机的 `proto-gen.exe` 早于生成器源码(二进制是 10-13 构建的,之后生成器源码又改了 52 个文件,其中 10-15 当天的 gRPC→muduo 改造 42 个),重新生成前必须先 `proto-gen-build`,也就是 `go build`,按 AGENTS §10.1 归构建方。生成之前主干上的状态是:`proto/mail` 与两份生成器配置已就位,下一次全量 proto-gen 会顺带给 mail 发 8 个号;mail 服务本身还没有代码(M1b 起),别的服务不受影响。proto / grpc_client / rpc 三个工程**故意没有**提前登记 —— 登记不存在的文件会让 C++ 直接编不过;下一次经 dev_tools 跑的全量生成会由上面的生成后钩子自动登记。
+
+**生成物入库**:`go/proto/mail/*`、`go/mail/generated/pb/game/{message_id.go,event_id.go}`、`cpp/generated/{proto,grpc_client}/mail/*` 与两个 `service_metadata` 头随那次生成一起提交。`go/mail/generated` 与 friend 一样**入库**(mail 的推送与 GateCommand 构建直接引用其中的常量;chat / trade / player_inbox 的同名目录被 `.gitignore` 忽略,是因为它们的代码不引用)。
+
+**给构建方的命令**(服务端仓 main 的根目录,PowerShell 7;与别的批次的统一重生成合并跑即可,mail 只是其中一个域)。
+
+前置:`git status --short data/ proto/` 没有别人的未提交改动(两张 xlsx 是二进制,不能 3-way 合并);`protoc` 与 `protoc-gen-go` 在 PATH(导表器生成 Go 枚举要用);导表器默认配置(`tools/data_table_exporter/exporter_config.yaml`)会往同级 `../mmorpg-client/Assets/Scripts/Table/Generated` 部署客户端表,不想动客户端仓就把配置复制一份、去掉 csharp 的 `deploy` 段,作为 `run.py` 的第一个参数传进去。Go 用仓库统一的 1.27.2 工具链;本机若只有模块缓存里的旧版本,按 AGENTS 的构建工具链说明设好 `GOTOOLCHAIN`。
+
+```powershell
+$ErrorActionPreference = 'Stop'
+$PSNativeCommandUseErrorActionPreference = $true   # pwsh 7.3+:任何外部命令非 0 退出即抛错(块里有多条命令时也不会漏)
+function Step([scriptblock]$b) { $global:LASTEXITCODE = 0; & $b; if ($LASTEXITCODE) { throw "失败(退出码 $LASTEXITCODE):$b" } }
+Step { pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-build }
+# 不带客户端(服务端统一重生成的默认口径)。成功后 dev_tools 自动跑 mail_postgen.py register-cpp / vendor-robot:
+Step { pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-run -ConfigPath tools/proto_generator/protogen/etc/proto_gen.no-unity.yaml }
+Step { python tools/scripts/mail_postgen.py verify }                 # 必须打印两行 [OK]
+Step { python tools/scripts/mail_xlsx_patch.py message-limiter }
+Step { python tools/data_table_exporter/run.py }                     # 第二次导表(MessageLimiter 多 5 行);见上面的客户端部署说明
+Step { python tools/scripts/mail_postgen.py register-cpp }           # 钩子已跑过时这里应全部 0 条;不带 --allow-missing
+Step { python tools/scripts/mail_postgen.py vendor-robot }           # 同上,应 copied 0
+# C++(串行,AGENTS 规定 /m:1):
+Step { msbuild game.sln /m:1 /p:Configuration=Debug /p:Platform=x64 }
+# Go:本批改动面 + 受生成物影响的模块(每条命令单独一步;Push / Pop 用 try / finally,中途失败也回到仓库根)
+foreach ($m in 'go/data_service', 'go/client_rpc_router') {
+    Push-Location $m
+    try { Step { go build ./... }; Step { go test -count=1 ./... } } finally { Pop-Location }
+}
+Push-Location robot
+try { Step { go build -mod=vendor ./... } } finally { Pop-Location }
+# Java:导表器部署的 MailErrorTip.java
+Push-Location java/config_node
+try { Step { ./mvnw.cmd -q -DskipTests package } } finally { Pop-Location }
+```
+
+通过标准:
+
+- `git diff proto/message_id.txt`:生成之前就有的方法号**一个不变**(`verify` 对照 `HEAD:proto/message_id.txt` 核对);新增号里 `ClientPlayerMail*` 恰 6 个、`MailAdmin*` 恰 2 个。mail 的号**不一定在末尾**:生成器会把被删方法让出的空号分给新方法(`service_register_info.go` 的 `InitMessageId`),文件里也可能留空洞,这都不算错。`verify` 两行 `[OK]`(它同时核对号不重复、路由表 6 条 `ClientProtocol: true` + 2 条 `false`、目标都是 `MailNodeService`,以及 `kMaxRpcMethodCount` = 最大号 + 1)。
+- `message-limiter` 追加 5 行,第二次导表后 `generated/tables/messagelimiter.json` 含这 5 个号。
+- `register-cpp` 以 0 退出、没有 `[SKIP]`(出现不认识的 mail 产物时它直接以非 0 退出并点名:生成器换了产物形状,先看清再改脚本,不要手补文件);`vendor-robot` 之后 `robot/vendor/proto/mail` 与 `go/proto/mail` 逐字节相同、`robot/vendor/shared/generated/pb/table/mail_error_tip.pb.go` 与 `go/shared` 的相同。
+- 编译:上面的命令全部 0 退出(C++ 重点是 table / proto / grpc_client / rpc 四个工程;Go 的 data_service 带测试,覆盖本批改的号段默认清单)。
+- 失败时保留:proto-gen 全量日志、`verify` / `register-cpp` 的输出、`git status --porcelain`。
+
+**客户端 handler 桩**:上面用的是不带客户端的配置,不会出 `ClientPlayerMail*Handler.cs`。要出桩,再用默认配置跑一次 `proto-gen-run`(用户 2026-09-20 已授权邮件改客户端仓)。前提:① 客户端仓已含本批的 `gen_proto.ps1` mail 行与 `Mail.cs`(见上面的落地顺序),否则 CS0246;② 第二次运行前后 `proto/message_id.txt` 与服务端生成物**零差异** —— 客户端桩与 gate / 路由表 / robot 必须出自同一套消息号(本文头部与 §9 闸门 1),有差异说明两次之间有人改了协议,停下来查。默认配置会把客户端所有落后的桩一起刷新,跑之前先看客户端仓的 `git status`。
+
+**Java 版(AGENTS §12)**:待做。mail.proto 的客户端协议与 8 个 tip 码属于客户端可见契约,按规矩要两版同批改;本机没有 Java 仓(`D:\luyuan\xuanming-server-mmo` 不存在,E:/work 下也找不到 `PARITY.md`),本批无法核对 `PARITY.md` 也无法改 Java 版,需要在有 Java 仓的机器上补做并登记 `PARITY.md`。服务端 C++/Go 版先行合入,是沿用本仓此前各功能"Java 版待做 + 原因"的交付口径;这一条是否要求暂缓合入,由用户定(已在交付说明里单列)。
 
 ## 评审记录(2026-09-20,三视角评审 → 回修)
 

@@ -129,6 +129,9 @@
     <ClInclude Include="proto\tip\friend_error_tip.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="proto\tip\mail_error_tip.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
     <ClInclude Include="proto\tip\guild_error_tip.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -627,6 +630,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="proto\tip\friend_error_tip.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="proto\tip\mail_error_tip.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="proto\tip\guild_error_tip.pb.cc">
