@@ -956,6 +956,7 @@ Codex 在 `0b40715d06` 上独立跑过同一组,也是 253 通过(见 `docs/PROG
 - 三条新日志(`[PlayerEquip] 强化:` / `镶嵌:` / `取下:`)在 main 上仍是中文,而仓库其余日志已在 10-13 统一成英文;不影响功能,
   下次动 `player_equip.cpp` 时顺手改(改了要重编 scene,所以这次没有为它单独动)。
 - **客户端**:没有在 Unity 里编过、跑过(EditMode 用例、窗口级用例、实机都没有);证据只有 §11.1 那次离线的 Roslyn + NUnit。
+  (10-16 更新:已在真 Unity 6000.6.0f1 里跑过 EditMode —— 副本工程 batchmode,客户端 main `db969ce4`,装备相关八个用例类全过(含真搭 uGUI 的 `EquipWindowTests` 29/29 与新面板逻辑 `EquipForgeUiStateTests` 63/63);同批另有 67 条美术资源用例失败,退回改动前同样失败,属既有问题。仍没有实机点过。)
   强化 / 镶嵌的**界面入口没有做**(按分工是 Codex 的文件,接线说明在客户端 `Docs/EquipmentForge-20261009.md`)——
   所以现在进游戏点不到强化与镶嵌,只能靠 robot 冒烟走通这三条协议。
   (10-16 更新:**按钮逻辑已经接好**,在客户端 main `db969ce4` 的 `EquipForgeUiState`;入口与面板画面交给 Codex,交接文档是客户端
