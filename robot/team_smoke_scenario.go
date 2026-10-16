@@ -1200,7 +1200,8 @@ func teamSmokeIsTeamPush(messageId uint32) bool {
 	return false
 }
 
-// teamSmokeIsRecordedMessage:需要按到达顺序留底的消息(组队推送 + 换场景 + 战斗 + JoinQueue 回包)。
+// teamSmokeIsRecordedMessage:需要按到达顺序留底的消息(组队推送 + 换场景 + 战斗 + 排队相关回包)。
+// CancelQueue / GetQueueStatus 回包是 team-backfill-smoke 用的(team_backfill_smoke_scenario.go)。
 // 战斗里的 NotifyBattleAssigned 是 connectBattle 按 battle_id 找直连落点用的。
 func teamSmokeIsRecordedMessage(messageId uint32) bool {
 	if teamSmokeIsTeamPush(messageId) {
@@ -1213,7 +1214,9 @@ func teamSmokeIsRecordedMessage(messageId uint32) bool {
 		game.BattleClientPlayerNotifyBattleStartMessageId,
 		game.BattleClientPlayerNotifyTurnResultMessageId,
 		game.BattleClientPlayerNotifyBattleEndMessageId,
-		game.MatchServiceJoinQueueMessageId:
+		game.MatchServiceJoinQueueMessageId,
+		game.MatchServiceCancelQueueMessageId,
+		game.MatchServiceGetQueueStatusMessageId:
 		return true
 	}
 	return false

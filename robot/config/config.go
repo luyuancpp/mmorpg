@@ -67,6 +67,9 @@ type Config struct {
 	// TeamFollowSmoke 是 "team-follow-smoke" 模式的子开关(见 TeamFollowSmokeConfig / team_follow_smoke_scenario.go)。
 	TeamFollowSmoke TeamFollowSmokeConfig `yaml:"team_follow_smoke"`
 
+	// TeamBackfillSmoke 是 "team-backfill-smoke" 模式的子开关(见 TeamBackfillSmokeConfig / team_backfill_smoke_scenario.go)。
+	TeamBackfillSmoke TeamBackfillSmokeConfig `yaml:"team_backfill_smoke"`
+
 	// TravelSmoke 是 "travel-smoke" 模式的子开关(见 TravelSmokeConfig / travel_smoke_scenario.go)。
 	TravelSmoke TravelSmokeConfig `yaml:"travel_smoke"`
 
@@ -431,6 +434,25 @@ type TeamSmokeConfig struct {
 	FollowSceneConfigIds []uint32 `yaml:"follow_scene_config_ids"`
 }
 
+// TeamBackfillSmokeConfig 配置 "team-backfill-smoke" 模式(docs/design/team-backfill-matching.md §7.3):
+// 三个机器人 A(队长)、B(队员)、C(路人)都登 zone;A、B 组队选「凑满 3 人」,C 单排同一副本的 3 人档。
+type TeamBackfillSmokeConfig struct {
+	// Zone 必须非 0:三人要在同一个 zone(0 会被 server-list 自动选区顶掉,不保证三人同区)。
+	Zone uint32 `yaml:"zone"`
+	// BattleConfigId 是补位开战用的 DungeonTable id,必须非 0,且 match 的 PveTeamSizeByConfigId 里它的人数上限 ≥ 3。
+	BattleConfigId uint32 `yaml:"battle_config_id"`
+}
+
+func (c *TeamBackfillSmokeConfig) validate() error {
+	if c.Zone == 0 {
+		return fmt.Errorf("zone must be set (non-zero)")
+	}
+	if c.BattleConfigId == 0 {
+		return fmt.Errorf("battle_config_id must be set (non-zero)")
+	}
+	return nil
+}
+
 // teamSmokeMinFollowSceneConfigs 是换图候选的最少个数(见 FollowSceneConfigIds 注释)。
 const teamSmokeMinFollowSceneConfigs = 3
 
@@ -704,6 +726,11 @@ func (c *Config) validate() error {
 	if c.Mode == "friend-smoke" {
 		if err := c.FriendSmoke.validate(); err != nil {
 			return fmt.Errorf("friend_smoke: %w", err)
+		}
+	}
+	if c.Mode == "team-backfill-smoke" {
+		if err := c.TeamBackfillSmoke.validate(); err != nil {
+			return fmt.Errorf("team_backfill_smoke: %w", err)
 		}
 	}
 	if c.Mode == "team-smoke" {

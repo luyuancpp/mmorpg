@@ -838,7 +838,7 @@ player-inbox 与 trade / friend 同形:全局池服务(`$GoSvcCatalogue['player-
 ## 帮会 guild:全局池 + 独占库 `mmorpg_guild` + `guild-migrate` Job(2026-10-16,K8s 上线批 BK8s 第一块)
 
 > 状态:清单、ConfigMap 生成、建表 Job、镜像登记、连接总账、data-service 回档帮会闸已落码;**未编译、未跑契约测试、未上集群**,待 Codex。
-> 依据:`docs/design/guild-phase2/90-consistency.md` G-05(BK8s 汇总)、`92-handoff.md` §13.2 ⑧。资产通道开关与密钥、NetworkPolicy、告警与 Loki ruler 是 BK8s 的后续几块,见文末。
+> 依据:`docs/design/guild-phase2/90-consistency.md` G-05(BK8s 汇总)、`92-handoff.md` §13.2 ⑧。资产通道开关与密钥、NetworkPolicy 见下一节「gRPC 口准入与资产通道」;告警与 Loki ruler 是后续块,见本节末。
 
 guild 与 trade / friend 同形:全局池服务(`$GoSvcCatalogue.guild`,`Global = $true`),`infra-up` / `all-up` 在基础设施阶段部署到 `mmorpg-infra` 一份,`zone-up` 跳过。
 共性(Job 门禁 / 等待预算 / 不删在途 Job / 退出码 / 重跑迁移)照「聚宝斋 trade」一节,这里只写不同的地方。
@@ -865,12 +865,59 @@ guild 与 trade / friend 同形:全局池服务(`$GoSvcCatalogue.guild`,`Global 
 - **上线顺序**(`92-handoff.md` §13.3):battle → match → 路由服与 gate → guild(match 新而 battle 旧时结果不带活动上下文,玩家白打)。
   首次上线前确认 data-service 已跑过一次 `-migrate`(号段 `guild`、`guild_asset_op` 两行,BootstrapTags 已含)。
 - **镜像**:`tools/scripts/go_svc_image.ps1` 登记 `guild`(ImageName `mmorpg-guild`,与本目录条目一致,契约测试钉住);与路由服成对发布。
-- **BK8s 后续块(未做,按批推进)**:资产通道开关 + 签名密钥 `MMORPG_ASSET_OP_SECRET_GUILD/_TRADE` 注入 guild / trade / scene(manifest 已预留 optional 的 secretKeyRef);
-  NetworkPolicy(scene 的资产 gRPC 只放 scene_manager / match / guild / trade,match 的内部服务只放路由服与 guild,guild 只放路由服 / match / data-service);
-  告警规则(G-07)与 Loki ruler 接线;TiDB 的 BR 按库恢复清单加 `mmorpg_guild`(随 TiDB 一期)。
+- **BK8s 第二块(2026-10-16 已落码)**:资产通道开关 `-AssetOps` + 签名密钥注入 guild / trade / scene、gRPC 口准入 `-NetworkPolicies`,见下一节「gRPC 口准入与资产通道」。
+  guild.yaml 原先预留的 optional secretKeyRef 已删(env 改由脚本在 on 时注入)。
+- **BK8s 后续块(未做,按批推进)**:告警规则(G-07)与 Loki ruler 接线;TiDB 的 BR 按库恢复清单加 `mmorpg_guild`(随 TiDB 一期)。
 - **验证(交 Codex,未运行)**:`cd go/guild && go build ./... && go vet ./... && go test -count=1 ./...`(新增 `TestValidateMySQLPool`、`TestAdvertisedHost`);
   `pwsh -NoProfile -File tools/scripts/tests/k8s_deploy_contract.tests.ps1`(新增 4 条帮会用例,并改了 deadline 用例、MySQL 总账自检与「连 MySQL 的 ConfigMap 名单」三条);
   集群上:guild 两个 Pod Ready、`kubectl logs job/guild-migrate` 迁移报告正常、robot `guild_smoke.yaml` 输出 `GUILD_SMOKE_OK`。
+
+## gRPC 口准入与资产通道(2026-10-16,K8s 上线批 BK8s 第二块:`-NetworkPolicies` / `-AssetOps`)
+
+> 状态:部署脚本、清单、契约测试已落码;**未跑契约测试、未上集群**,待 Codex。依据 `docs/design/guild-phase2/90-consistency.md` G-05。
+> 两个开关**默认都是 off**,off 时产物与开关引入之前相同(只多几条「删掉以前留下的同名策略 / Secret」的 `--ignore-not-found` 删除)。
+
+**`-NetworkPolicies on`**:给三个工作负载各生成一份 NetworkPolicy(`$script:GrpcAllowLists`)。规则只有两条:
+
+1. 工作负载清单里**声明了**的其它端口(节点口、metrics、日志 sidecar 12345)对任何来源开放;**没声明的端口一律不通**,所以给这些工作负载加监听口时要同时写 `containerPort`
+   (契约测试逐个核对「声明的端口 − gRPC 口 = 开放端口」);
+2. gRPC 口只放行名单里的 `app` 标签(任意 namespace)。本节点 kubelet 的探针不受 NetworkPolicy 约束(K8s 文档:被隔离的 Pod 仍接受本节点来的连接)。
+
+| 被保护 | gRPC 口 | 放行(`app` 标签) | 调用点(2026-10-16 按代码整理) |
+|---|---|---|---|
+| scene / scene-world / scene-instance(zone ns) | 50000(RPC_PORT 20000 + 30000) | scene-manager、match、player-inbox、guild、trade | `go/scene_manager` scene_node_client;`go/match` node_watcher;`go/player_inbox` notify;guild / trade 经 `go/shared/assetop` |
+| guild(infra ns) | 50300 | client-rpc-router、data-service | 路由表 `GuildNodeService`;data_service `GuildInternalRpc`(回档帮会闸) |
+| match(infra ns) | 50500 | client-rpc-router、guild、gate | 路由表 `MatchNodeService`;guild `MatchRpc`(历练开战);gate 只在 `-GateRouterMode 0` 回退时直连 |
+
+- 不经这些 gRPC 口的:gate ↔ scene 走 muduo 节点口 20000(开放);battle → scene 走 Kafka 命令;match → guild 的历练结果走 Kafka;路由表里没有 `SceneNodeService`。
+- 与 G-05 原文的出入:scene 多放了 player-inbox(收件箱上线晚于 G-05,`notify.go` 会拨 scene);match 多放了 gate(回退模式);guild 不放 match(代码里 match 不调 guild)。
+- **新增调用方要同时改名单**(`k8s_deploy.ps1` 的 `$script:GrpcAllowLists` 与契约测试里逐字钉住的名单),否则开了策略就断。名单里每个标签都必须对应一个真实工作负载(契约测试核对)。
+- 运维工具(如 `go/guild/cmd/assetopfix`)要连 scene 的 gRPC 口时,在名单内的 Pod 里跑(`kubectl exec` 进 guild),或临时以 off 重跑去掉策略。
+- 刻意不用 `endPort` 端口区间:不支持它的网络插件只认起始端口,其余端口会被全部拦下。集群网络插件要支持 NetworkPolicy(Calico / Cilium 等);
+  不支持的插件上策略不生效(不断流,也不设防)。
+
+**`-AssetOps on`**(必须同时 `-NetworkPolicies on`,否则在任何写操作之前拒绝):
+
+- 两把签名密钥从环境变量 `MMORPG_ASSET_OP_SECRET_GUILD` / `MMORPG_ASSET_OP_SECRET_TRADE` 读入,**各档位都没有回落值**(同一把要在 infra-up 与每一次 zone-up 之间保持同值;
+  本机 dev 的 `run/secrets/assetop-dev.env` 部署链不读)。校验:≥32 字节、不含任何空白(Go / C++ 去空白口径不同)、两把不同、不与其它口令相同;报错只点变量名。
+- 写成单键 Secret `asset-op-secret-guild` / `asset-op-secret-trade`(键 `secret`),经 secretKeyRef(非 optional)注入:guild 只拿 GUILD、trade 只拿 TRADE、scene 两把都拿(验签)。
+  Secret 先于引用它的工作负载落地;off 时删掉残留(放在工作负载 apply 之后)。
+- guild ConfigMap 的 `AssetOp.Enabled` 写 true;trade ConfigMap 的 `AssetOp` 整块从 `go/trade/etc/trade.yaml` 原样搬运(落地恢复与 `Cleanup*` 键随之生效)、Enabled 改 true。
+- 三方 Pod 模板都带密钥指纹注解(`mmorpg.io/asset-op-secret-guild-hash` / `-trade-hash`,SHA-256 前 12 位、以 Secret 名做域分隔):只换密钥也会滚动;
+  非 DryRun 时脚本据此做**跨命令核对**(`Assert-AssetOpClusterConsistency`,只读 kubectl,任何写操作之前):
+  - zone-up(及带 `-SkipInfra` 的 all-up):调用方(infra 里的 guild / trade Deployment)开着而本次 scene 不开,或两边指纹不同 → 拒绝;
+  - infra-up 打开时:全部 namespace 里副本数 > 0 的 scene 工作负载(Deployment;装了 Agones 时含 Fleet)只要有一个没拿到同一把 → 拒绝,并列出是哪些;
+  - 不带 `-SkipInfra` 的 all-up 不查(同一次运行里 infra 与各 zone 用同一组值重新部署;调用方先开,zone 部署完之前的资产 RPC 留在 PENDING 由重投补上,不丢东西)。
+- **顺序**:打开 = 先逐 zone `zone-up -AssetOps on -NetworkPolicies on`(scene 先拿验签密钥),再 `infra-up -AssetOps on -NetworkPolicies on`;
+  关闭 = 先 `infra-up -AssetOps off`,再逐 zone off;**换密钥** = 先关调用方、换值、再按打开的顺序开(在途的 PENDING 指令在重新打开后用新密钥重投)。
+- **切换会滚动整个 zone 的 scene**(Pod 模板的 env 与注解变了)= 在线玩家被换节点,只在维护窗口里做。
+- 不粘滞:两个开关每次部署按本次取值生成,包装入口(`dev_tools.ps1` / `k8s_image.ps1` / `k8s_zone_rollback.ps1` Step 6)不透传;以 on 运行的环境漏传就落回 off ——
+  调用方还开着时 zone-up 会被上面的核对拒绝,不会悄悄把 scene 的验签密钥摘掉。
+- **打开之前**还要满足 `docs/design/guild-phase2/08-save-owner-fence.md` §8.3 的六条门禁(运行期验证,脚本核不了)。
+
+**验证(交 Codex,未运行)**:`pwsh -NoProfile -File tools/scripts/tests/k8s_deploy_contract.tests.ps1`(本批新增 9 条、改 1 条)与
+`pwsh -NoProfile -File tools/scripts/tests/k8s_migrate_gate.tests.ps1`(新增 2 条 trade 用例)。集群上(装了支持 NetworkPolicy 的网络插件):
+打开后从 scene-manager / guild Pod 能连 scene 的 50000、从 gate Pod 连不上;guild / trade 两 Pod Ready;robot `guild_smoke.yaml` 的捐献 / 兑换不再回 `kGuildAssetPending`。
 
 ## MySQL 连接总账(2026-10-13,G2b:docs/handoff/launch-readiness-20261013/spec_G2b.md)
 

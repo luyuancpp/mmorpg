@@ -301,12 +301,14 @@ pwsh -NoProfile -File tools/scripts/tests/redis_maxclients_contract.tests.ps1
 
 见 `docs/design/global-data-layer-tidb-decision.md`。deploy 里目前没有任何 TiDB 清单。
 
-## 7. guild 的 K8s 清单(第一块已落码:部署本体;BK8s 其余块按批推进)
+## 7. guild 的 K8s 清单(第一、二块已落码:部署本体、资产通道与 gRPC 口准入;BK8s 其余块按批推进)
 
 > 2026-10-16:帮会二期全部批次 10-09 已进主干,用户同日拍板「BK8s 全部做完」(`docs/design/guild-phase2/90-consistency.md` G-05 原写「单独授权」)。
 > 第一块已落码:`manifests/go-svc/guild.yaml`(全局池 2 副本)+ `guild-migrate.yaml` + ConfigMap 生成 + 镜像登记 + 两本连接总账 + data-service 的回档帮会闸,
 > 并修了两处 go/guild 代码问题(注册地址取 `ListenOn` 在 K8s 上是 0.0.0.0;MySQL 池不设上限)。说明见 `deploy/k8s/README.md`「帮会 guild」。
-> 后续块:资产通道开关与签名密钥(guild / trade / scene)、NetworkPolicy、告警与 Loki ruler。以下为 10-01 的原约束,保留备查。
+> 第二块已落码:`-AssetOps`(签名密钥注入 guild / trade / scene,`AssetOp.Enabled` 跟随开关,跨命令指纹核对)与 `-NetworkPolicies`(scene / guild / match 的 gRPC 口准入),
+> 两者默认 off,见 `deploy/k8s/README.md`「gRPC 口准入与资产通道」。
+> 后续块:告警与 Loki ruler、db migrate Job。以下为 10-01 的原约束,保留备查。
 
 
 帮会二期会话 2026-10-01 答复:清单归本线补;ConfigMap 要等它通知 B6b-srv2 落完再照最终的 `guild.yaml` 写。
