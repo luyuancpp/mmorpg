@@ -105,6 +105,7 @@ set(SOURCE_FILES
     handler/rpc/register_handler.cpp
     main.cpp
     rpc_replies/scene_manager_response_handler.cpp
+    rpc_replies/player_inbox_response_handler.cpp
     # 2026-09-18 补登记:这 7 个在 scene.vcxproj 里都有,只有 Linux CMake 清单漏了。
     handler/event/battle_event_handler.cpp
     handler/grpc/scene_node_service.cpp

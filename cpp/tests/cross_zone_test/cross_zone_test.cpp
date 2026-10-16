@@ -4285,7 +4285,7 @@ TEST(PlayerLifecycleEcs, DestroyPlayerWithoutDetachLeavesNoAoiResidue)
     PlayerLifecycleSystem::DestroyPlayer(kExitPlayerId);
 
     EXPECT_FALSE(tlsEcs.actorRegistry.valid(target));
-    EXPECT_EQ(tlsEcs.GetPlayer(kExitPlayerId), entt::null);
+    EXPECT_TRUE(tlsEcs.GetPlayer(kExitPlayerId) == entt::null);
     ASSERT_TRUE(tlsEcs.actorRegistry.valid(watcher));
     const auto* afterAoi = tlsEcs.actorRegistry.try_get<AoiListComp>(watcher);
     ASSERT_NE(afterAoi, nullptr);
