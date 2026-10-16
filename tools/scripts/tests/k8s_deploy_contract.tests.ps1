@@ -3270,6 +3270,133 @@ Test-Case 'dev_tools / k8s_image 的 -ConfirmRedisCoreRestart:不给不透传,�
     }
 }
 
+# ─────────────────────────────────────────────────────────────────
+# 共享 Redis 的高可用形态(-RedisReplicas;docs/design/no-single-node-horizontal-scaling-20261001.md §5)
+# ─────────────────────────────────────────────────────────────────
+# redis-ha.yaml = 1 主 2 从 + 每个 redis Pod 一个哨兵 + 2 个 haproxy 入口代理,Service redis 指向代理。2026-10-08 在本机 kind 上
+# 实测过故障转移 / 滚动 / 冷启动 / 原地切换,实测里踩到的坑(haproxy 3.0.29 的僵尸会话、expect 不带 min-recv 每次否定结论等 2 秒、
+# 哨兵不加引号回写口令)这里逐条钉住。纯函数按 AST 抽出直接调用;DryRun 产物用 $BattleInfraArgs 起的 infra-up 核对,不碰任何集群。
+$redisHaFunctionNames = @(
+    'Get-RedisTopologyFor', 'Get-RedisTopologyChangeVerdict', 'Get-RedisHaLimits', 'Get-RedisHaScriptsDigest', 'Assert-RedisPasswordSentinelSafe'
+)
+foreach ($redisHaFnAst in $deadlineDeployAst.FindAll({ param($a) $a -is [System.Management.Automation.Language.FunctionDefinitionAst] }, $false)) {
+    if ($redisHaFunctionNames -contains $redisHaFnAst.Name) {
+        Set-Item -Path "Function:script:$($redisHaFnAst.Name)" -Value $redisHaFnAst.Body.GetScriptBlock()
+    }
+}
+foreach ($redisHaFnName in $redisHaFunctionNames) {
+    if (-not (Test-Path "Function:$redisHaFnName")) { throw "k8s_deploy.ps1 缺少函数 $redisHaFnName(共享 Redis 高可用接入被删了?后续断言无意义)" }
+}
+$redisHaManifestPath = Join-Path (Get-RepoRoot) 'deploy/k8s/manifests/infra/redis-ha.yaml'
+$redisHaManifestText = [IO.File]::ReadAllText($redisHaManifestPath) -replace "`r`n", "`n"
+$redisHaRun = Invoke-DeployDryRun -Arguments ($BattleInfraArgs + @('-RedisReplicas', '3')) -Env $BattleTestEnv
+
+Test-Case 'Redis 拓扑:只认 1 / 3;线上 1 → 目标 3 是 upgrade,3 → 1 与线上 0 / 2 一律拒绝' {
+    $single = Get-RedisTopologyFor -Replicas 1
+    Assert-Equal -Expected 'redis.yaml' -Actual $single.Manifest -Because '1 = 单实例清单'
+    Assert-True -Condition (-not $single.HighAvailability) -Because '1 不是高可用'
+    $ha = Get-RedisTopologyFor -Replicas 3
+    Assert-Equal -Expected 'redis-ha.yaml' -Actual $ha.Manifest -Because '3 = 高可用清单'
+    Assert-Equal -Expected 'Parallel' -Actual $ha.PodManagementPolicy -Because '冷启动时上一任主可能不是 redis-0,按序创建会互相等死'
+    foreach ($bad in @(0, 2, 4, 5)) {
+        $threw = $false
+        try { $null = Get-RedisTopologyFor -Replicas $bad } catch { $threw = $true }
+        Assert-True -Condition $threw -Because "副本数 $bad 必须拒绝(两个节点的哨兵多数派挂一个就没了;更多副本没有收益)"
+    }
+    $cases = @(
+        @{ Live = $null; Desired = 3; Expected = 'absent' },
+        @{ Live = 1; Desired = 1; Expected = 'unchanged' },
+        @{ Live = 3; Desired = 3; Expected = 'unchanged' },
+        @{ Live = 1; Desired = 3; Expected = 'upgrade' },
+        @{ Live = 3; Desired = 1; Expected = 'refuse' },
+        @{ Live = 0; Desired = 1; Expected = 'refuse' },
+        @{ Live = 2; Desired = 3; Expected = 'refuse' }
+    )
+    foreach ($c in $cases) {
+        Assert-Equal -Expected $c.Expected -Actual (Get-RedisTopologyChangeVerdict -LiveReplicas $c.Live -DesiredReplicas $c.Desired) -Because "线上 $($c.Live) → 目标 $($c.Desired)"
+    }
+}
+
+Test-Case 'redis-ha.yaml 连接上限:MAXCLIENTS 与 redis.yaml 同值;代理全部副本(含 maxSurge)+ 预留 ≤ MAXCLIENTS;规划档峰值 ≤ 80% × 单个代理的 maxconn' {
+    $RepoRoot = Get-RepoRoot
+    $limits = Get-RedisHaLimits -ManifestContent $redisHaManifestText -SingleInstanceMaxClients (Get-RedisMaxClientsFromManifest)
+    Assert-True -Condition ($limits.ProxyTotal + $limits.Reserved -le $limits.MaxClients) -Because '代理必须比 Redis 先到线:Redis 到线时代理的健康检查连接也被拒,判下线后会踢掉全部会话'
+    # 一个代理重启时,它的客户端全部重连到另一个代理:单个代理要能独自扛住峰值。
+    $ledger = Get-RepoRedisPlanLedger
+    $line80 = [Math]::Floor(0.8 * $limits.ProxyMaxConn)
+    Assert-True -Condition ($ledger.Peak -le $line80) -Because ("规划档峰值 {0} 超过 80% × PROXY_MAXCONN = {1}:另一个代理重启期间,剩下的那个会先到线" -f $ledger.Peak, $line80)
+    $threw = $false
+    try { $null = Get-RedisHaLimits -ManifestContent $redisHaManifestText -SingleInstanceMaxClients ($limits.MaxClients + 1) } catch { $threw = $true }
+    Assert-True -Condition $threw -Because '两份清单的 MAXCLIENTS 不同时必须拒绝:Redis 连接总账只从 redis.yaml 读'
+    $tooMany = [regex]::Replace($redisHaManifestText, '(?m)^([ \t]*PROXY_MAXCONN=)\d+', { param($m) $m.Groups[1].Value + [string]($limits.MaxClients) })
+    $threw = $false
+    try { $null = Get-RedisHaLimits -ManifestContent $tooMany -SingleInstanceMaxClients $limits.MaxClients } catch { $threw = $true }
+    Assert-True -Condition $threw -Because '代理上限加起来超过 MAXCLIENTS 必须拒绝'
+}
+
+Test-Case 'redis-ha.yaml 钉住实测教训:haproxy 用 3.2(3.0.29 有僵尸会话)、每条 tcp-check expect 带 min-recv、redis-server 带 --maxclients、StatefulSet 是 Parallel' {
+    Assert-Match -Text $redisHaManifestText -Pattern '(?m)^\s+image: haproxy:3\.2-' -Because 'haproxy 3.0.29 在后端被判下线时留下客户端侧不关闭的会话(长连接客户端卡死),3.2 没有'
+    Assert-NotMatch -Text $redisHaManifestText -Pattern 'haproxy:3\.0' -Because '不得退回 3.0'
+    $expects = [regex]::Matches($redisHaManifestText, 'tcp-check expect[^\n"]*')
+    Assert-True -Condition ($expects.Count -ge 4) -Because '夹具前提:代理脚本里有认证 / PONG / 哨兵答主 / role:master 四类 expect'
+    foreach ($e in $expects) {
+        Assert-Match -Text $e.Value -Pattern 'min-recv \d+' -Because "「$($e.Value)」不带 min-recv 时不匹配要等到检查超时(2 秒)才下结论,切主后代理晚 2 秒才改道"
+    }
+    Assert-Match -Text $redisHaManifestText -Pattern '--maxclients "\$MAXCLIENTS"' -Because '每个 redis-server 都要显式 --maxclients'
+    Assert-Match -Text $redisHaManifestText -Pattern '(?m)^  podManagementPolicy: Parallel\s*$' -Because '冷启动时上一任主可能不是 redis-0'
+    Assert-Match -Text $redisHaManifestText -Pattern '\*\[\[:space:\]\\"\\''\\\\\]\*\)' -Because '哨兵启动脚本要拒绝含空白 / 引号 / 反斜杠的口令(否则下次重启读不回自己的配置)'
+}
+
+Test-Case '口令字符集(高可用形态):空白与单引号拒绝且不回显;dev 空口令与常规口令放行' {
+    foreach ($ok in @('', 'contract-test-redis-pw-01', 'p@%^:,~#$!&*()=+.')) {
+        $threw = $false
+        try { Assert-RedisPasswordSentinelSafe -Password $ok } catch { $threw = $true }
+        Assert-True -Condition (-not $threw) -Because "「$ok」应当放行"
+    }
+    foreach ($bad in @('with space-0123456', "quote'pw-0123456", "tab`tpw-0123456")) {
+        $message = ''
+        try { Assert-RedisPasswordSentinelSafe -Password $bad } catch { $message = $_.Exception.Message }
+        Assert-True -Condition ($message.Length -gt 0) -Because '含空白 / 单引号必须拒绝'
+        Assert-True -Condition (-not $message.Contains($bad)) -Because '报错不得回显口令'
+    }
+    $env2 = @{} + $BattleTestEnv
+    $env2['MMORPG_REDIS_PASSWORD'] = "contract'pw-0123456"
+    $run = Invoke-DeployDryRun -Arguments ($BattleInfraArgs + @('-RedisReplicas', '3')) -Env $env2
+    Assert-True -Condition ($run.ExitCode -ne 0) -Because '高可用形态下含单引号的口令必须拒绝部署'
+    Assert-Match -Text $run.Output -Pattern 'MMORPG_REDIS_PASSWORD' -Because '报错要点名变量'
+    Assert-True -Condition (-not $run.Output.Contains("contract'pw-0123456")) -Because '报错不得回显口令'
+    Assert-NotMatch -Text $run.Output -Pattern '\[dry-run\] kubectl apply' -Because '必须在任何写操作之前拒绝'
+}
+
+Test-Case 'infra-up DryRun(-RedisReplicas 3):apply redis-ha.yaml;sts/redis 3 副本、摘要注解 == 按仓库文件重算;代理带脚本摘要、Service 指向代理、等代理就绪' {
+    Assert-Equal -Expected 0 -Actual $redisHaRun.ExitCode -Because "高可用形态的 infra-up DryRun 必须成功。输出: $($redisHaRun.Output)"
+    Assert-Match -Text $redisHaRun.Output -Pattern 'Redis topology: replicas=3 manifest=redis-ha\.yaml high_availability=true' -Because '入口要打出本次的 Redis 形态'
+    Assert-Match -Text $redisHaRun.Output -Pattern 'Redis HA limits: maxclients=\d+ proxy_maxconn=\d+ proxies=\d+\+\d+ reserved=\d+' -Because '写路径要打出连接上限核对'
+    $sts = Select-RedisStatefulSetDocument -Output $redisHaRun.Output
+    Assert-Match -Text $sts -Pattern '(?m)^  replicas: 3\s*$' -Because '高可用形态是 3 个 redis Pod'
+    $rendered = $redisHaManifestText.Replace('__INFRA_NAMESPACE__', 'contract-battle-infra')
+    $expectedDigest = Get-RedisPodTemplateDigest -ManifestContent $rendered
+    Assert-Match -Text $sts -Pattern ('mmorpg\.io/redis-pod-template-digest: "' + $expectedDigest + '"') -Because '重启闸摘要必须按高可用清单算,并写进 sts/redis 自己的注解'
+    $scriptsDigest = Get-RedisHaScriptsDigest -ManifestContent $rendered
+    Assert-Match -Text $redisHaRun.Output -Pattern ('mmorpg\.io/redis-ha-scripts-digest: "' + $scriptsDigest + '"') -Because '脚本一改代理就要滚动'
+    Assert-Match -Text $redisHaRun.Output -Pattern '(?s)name: redis\r?\n(?:(?!\n---).)*?selector:\s+app: redis-proxy' -Because 'Service redis 必须指向代理'
+    Assert-Match -Text $redisHaRun.Output -Pattern 'rollout status deployment/redis-proxy -n contract-battle-infra' -Because '客户端连的是代理:代理没就绪等于 Redis 没就绪'
+    Assert-NotMatch -Text $redisHaRun.Output -Pattern '(?-i)__REDIS_[A-Z_]+__' -Because '占位必须全部替换'
+}
+
+Test-Case 'dev 基线(不传 -RedisReplicas)仍是单实例;prod 档缺省就是高可用' {
+    Assert-Match -Text $battleInfraRun.Output -Pattern 'Redis topology: replicas=1 manifest=redis\.yaml high_availability=false' -Because 'dev 档缺省单实例'
+    Assert-NotMatch -Text $battleInfraRun.Output -Pattern 'redis-proxy' -Because '单实例形态不出现代理'
+    $run = Invoke-DeployDryRun -Arguments ($BattleInfraArgs + @('-ReleaseProfile', 'prod', '-BattleReplicas', '0')) -Env $ProdEnv
+    Assert-Equal -Expected 0 -Actual $run.ExitCode -Because "prod 档 infra-up DryRun 必须成功。输出: $($run.Output)"
+    Assert-Match -Text $run.Output -Pattern 'Redis topology: replicas=3 manifest=redis-ha\.yaml high_availability=true' -Because '非 dev 档缺省高可用(与 Kafka 同一判据)'
+    $explicit = Invoke-DeployDryRun -Arguments ($BattleInfraArgs + @('-ReleaseProfile', 'prod', '-BattleReplicas', '0', '-RedisReplicas', '1')) -Env $ProdEnv
+    Assert-Match -Text $explicit.Output -Pattern 'Redis topology: replicas=1 manifest=redis\.yaml' -Because '显式 -RedisReplicas 1 覆盖档位缺省'
+    $bad = Invoke-DeployDryRun -Arguments ($BattleInfraArgs + @('-RedisReplicas', '2')) -Env $BattleTestEnv
+    Assert-True -Condition ($bad.ExitCode -ne 0) -Because '-RedisReplicas 2 必须拒绝'
+    Assert-NotMatch -Text $bad.Output -Pattern '\[dry-run\] kubectl apply' -Because '参数错误必须先于任何写操作'
+}
+
 Test-Case '普通 gate/scene Deployment 必须先创建被 emptyDir 遮蔽的日志父目录' {
     foreach ($name in @('gate','scene')) {
         $block = Select-ManifestByName -Output $devOut -Name $name

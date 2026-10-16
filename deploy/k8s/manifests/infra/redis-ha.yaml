@@ -2,10 +2,15 @@
 # (docs/design/no-single-node-horizontal-scaling-20261001.md §5)。
 # k8s_deploy.ps1 在 -RedisReplicas 3(staging / prod 档默认)时 apply 本文件,**代替** redis.yaml;
 # 本机 kind / dev 档默认仍用 redis.yaml 的单实例。两份清单里的对象同名,所以可以原地从单实例切过来。
-# **接入前置(P0-E,2026-10-15;本文件行为未改)**:接入前必须像 redis.yaml 那样给每个 redis-server 显式 --maxclients,并重算
-# k8s_deploy.ps1「Redis 连接总账」(haproxy 的 maxconn 也要算进去:节点上限 ≥(代理副本数 + maxSurge)× maxconn + 余量,
-# 现在是 (2 + 1) × 20000 = 60000,超过 Redis 缺省 10000,也超过 redis.yaml 的 40000;到线时代理健康检查失败会
-# 踢掉全部会话,推断、未实测)。现状与取值见 deploy/k8s/README.md「Redis 连接上限与总账」。
+#
+# 连接上限(P0-E 的接入前置,2026-10-16 补齐):
+#   - 每个 redis-server 显式 --maxclients,取值 MAXCLIENTS 写在 StatefulSet 的 Pod 模板里,与 redis.yaml 同值;
+#   - 代理每副本的 maxconn 取值 PROXY_MAXCONN 写在 redis-proxy 的 Pod 模板里,并且必须满足
+#       PROXY_MAXCONN × (代理副本数 + maxSurge) + 预留 ≤ MAXCLIENTS。
+#     为什么要让代理先到线:Redis 一旦到线,代理对它的健康检查连接也会被拒,连续两次失败就把它判下线并踢掉
+#     **全部**会话,客户端一起重连又撞线 —— 小故障被放大成全服断线。代理到线只是新连接排队等待,已有会话不受影响。
+#     预留给复制、哨兵、代理健康检查、探针与运维 redis-cli。部署脚本在生成期核对这条不等式(Get-RedisHaLimits)。
+#   - 两个取值都在 Pod 模板里,改它们会改变模板摘要:Redis 的由重启闸要求 -ConfirmRedisCoreRestart,代理的直接滚动。
 #
 # 一句话说清结构:
 #   客户端 ──▶ Service redis(名字与 ClusterIP 都不变)──▶ redis-proxy(haproxy ×2)──▶ 当前的主
@@ -248,12 +253,26 @@ data:
       fi
     fi
 
+    # 连接上限:MAXCLIENTS 由 Pod 模板注入(见 StatefulSet redis 的 command),这里不另写数字。
+    # 与 redis.yaml 同一套检查:Redis 需要 maxclients + 32 个 fd,容器 nofile 硬限不够时 redis-server 会自己下调 maxclients,
+    # 只在启动日志里留一条;这一行是事后唯一的证据。只报错,不拒启(拒启 = 共享 Redis 起不来,比少一些连接名额更糟)。
+    : "${MAXCLIENTS:?MAXCLIENTS 未注入(应由 Pod 模板的 command 设置)}"
+    need=$((MAXCLIENTS + 32))
+    soft=$(ulimit -Sn 2>/dev/null || echo unknown)
+    hard=$(ulimit -Hn 2>/dev/null || echo unknown)
+    echo "redis fd limit: soft=$soft hard=$hard need=$need maxclients=$MAXCLIENTS"
+    case "$hard" in
+      unlimited|unknown) ;;
+      *) if [ "$hard" -lt "$need" ]; then echo "ERROR: nofile hard limit $hard < $need, redis-server will lower maxclients below $MAXCLIENTS" >&2; fi ;;
+    esac
+
     # --replica-announce-ip:让主(进而让哨兵)用**名字**记住这个从。Pod 重建后 IP 会变,名字不变。
     # --min-replicas-*:见文件头「数据安全的边界」。
     # --repl-diskless-sync-delay:从要做全量同步时,主默认先等 5 秒「攒一批」再开始。这里只有两个从,
     #   攒批没有意义,而切主时哨兵要等从同步完才算切换结束,白等 5 秒。
     set -- redis-server \
       --appendonly yes \
+      --maxclients "$MAXCLIENTS" \
       --replica-announce-ip "$SELF" \
       --min-replicas-to-write 1 \
       --min-replicas-max-lag 10 \
@@ -493,6 +512,8 @@ data:
     #!/bin/sh
     # 生成 haproxy 配置并启动。路由规则见 redis-ha.yaml 文件头。
     set -eu
+    # 每副本的连接上限由 Pod 模板注入(见 Deployment redis-proxy 的 command),与 Redis 的 MAXCLIENTS 的关系见文件头。
+    : "${PROXY_MAXCONN:?PROXY_MAXCONN 未注入(应由 Pod 模板的 command 设置)}"
     NS="${POD_NAMESPACE:?POD_NAMESPACE 未注入}"
     DOMAIN="${CLUSTER_DOMAIN:-cluster.local}"
     NODES="${REDIS_NODES:-3}"
@@ -528,10 +549,11 @@ data:
     DATA_OPTS="tcp-ut 10s"
 
     {
+      echo "global"
+      # 全局上限比前端多留一点,给本机诊断口与健康检查页;前端(业务连接)的上限在 defaults 里。
+      echo "  maxconn $((PROXY_MAXCONN + 100))"
       cat <<'EOF'
-    global
       log stdout format raw daemon notice
-      maxconn 20000
       # 收到停止信号后先停止接新连接;Redis 连接都是长连接,不会自己结束,10 秒后强制关闭(客户端重连到另一个代理)。
       hard-stop-after 10s
       # 只听本机的诊断口,排障用,例如:
@@ -539,7 +561,11 @@ data:
       #   kubectl exec <代理 Pod> -- sh -c 'echo "show sess" | nc 127.0.0.1 9999'
       stats socket ipv4@127.0.0.1:9999 level admin
 
-    defaults
+    EOF
+      echo "defaults"
+      # 前端的业务连接上限。不写时 haproxy 用它自己的缺省值,可能远低于预期,而且与 Redis 的 maxclients 对不上账。
+      echo "  maxconn ${PROXY_MAXCONN}"
+      cat <<'EOF'
       mode tcp
       log global
       # 只记录异常连接与后端状态变化;正常连接不逐条记(连接池会频繁建连)。
@@ -653,6 +679,11 @@ metadata:
   name: redis
   labels:
     app: redis
+  # 重启闸(P0-E,与 redis.yaml 同一条注解):k8s_deploy.ps1 的 Apply-Infra 把下面 spec.template 段的摘要填进来,
+  # 下一次 infra-up 读回比较 —— 模板变了(= 滚动重启全部 redis Pod)而没给 -ConfirmRedisCoreRestart 就在任何写操作之前拒绝。
+  # 高可用形态下滚动重启基本无损(停机钩子先交接主),但仍是一次需要知情的变更。不要手写真实摘要。
+  annotations:
+    mmorpg.io/redis-pod-template-digest: "__REDIS_POD_TEMPLATE_DIGEST__"
 spec:
   serviceName: redis-headless
   replicas: 3
@@ -686,7 +717,16 @@ spec:
       containers:
         - name: redis
           image: redis:7.2
-          command: ["sh", "/scripts/redis-start.sh"]
+          # MAXCLIENTS 只在这里定义一次(与 redis.yaml 同值)。写在 Pod 模板里而不是脚本 ConfigMap 里:改它会改变模板摘要,
+          # 由重启闸要求显式确认、滚动更新随即生效;放在 ConfigMap 里则只会等到下一次意外重启才悄悄生效。
+          # 部署脚本的连接总账从这一行读值(Get-RedisMaxClientsFromManifest),契约测试钉住它与 redis.yaml 相同。
+          command:
+            - sh
+            - -c
+            - |
+              MAXCLIENTS=40000
+              export MAXCLIENTS
+              exec sh /scripts/redis-start.sh
           env:
             - name: POD_NAMESPACE
               valueFrom:
@@ -822,6 +862,11 @@ spec:
     metadata:
       labels:
         app: redis-proxy
+      annotations:
+        # 代理只在启动时按上面 ConfigMap 里的脚本生成配置,脚本改了要重启代理才生效。k8s_deploy.ps1 把脚本 ConfigMap 的
+        # 摘要填在这里(Get-RedisHaScriptsDigest):内容一变 Pod 模板就变,Deployment 自动滚动(一次一个,先起后停)。
+        # redis Pod 不挂这条:它们的脚本只在下一次启动时用到,为了改脚本去滚动 Redis 不值得。
+        mmorpg.io/redis-ha-scripts-digest: "__REDIS_HA_SCRIPTS_DIGEST__"
     spec:
       terminationGracePeriodSeconds: 20
       affinity:
@@ -836,7 +881,15 @@ spec:
       containers:
         - name: haproxy
           image: haproxy:3.2-alpine
-          command: ["sh", "/scripts/proxy-start.sh"]
+          # 每副本的业务连接上限。必须满足 PROXY_MAXCONN × (replicas + maxSurge) + 预留 ≤ redis 的 MAXCLIENTS(见文件头),
+          # 部署脚本在生成期核对(Get-RedisHaLimits),不满足就拒绝部署。
+          command:
+            - sh
+            - -c
+            - |
+              PROXY_MAXCONN=13000
+              export PROXY_MAXCONN
+              exec sh /scripts/proxy-start.sh
           env:
             - name: POD_NAMESPACE
               valueFrom:
