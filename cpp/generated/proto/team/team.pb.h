@@ -3503,6 +3503,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GetMyTeamRequest final : public ::g
   // accessors -------------------------------------------------------
   enum : int {
     kNotifyOnlineFieldNumber = 1,
+    kRegroupFieldNumber = 2,
   };
   // bool notify_online = 1;
   void clear_notify_online() ;
@@ -3514,11 +3515,21 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GetMyTeamRequest final : public ::g
   void _internal_set_notify_online(bool value);
 
   public:
+  // bool regroup = 2;
+  void clear_regroup() ;
+  [[nodiscard]] bool regroup() const;
+  void set_regroup(bool value);
+
+  private:
+  bool _internal_regroup() const;
+  void _internal_set_regroup(bool value);
+
+  public:
   // @@protoc_insertion_point(class_scope:teampb.GetMyTeamRequest)
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<0, 1,
+      ::google::protobuf::internal::TcParseTable<1, 2,
                           0, 0,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
@@ -3548,6 +3559,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GetMyTeamRequest final : public ::g
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     bool notify_online_;
+    bool regroup_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -6572,6 +6584,30 @@ inline bool GetMyTeamRequest::_internal_notify_online() const {
 inline void GetMyTeamRequest::_internal_set_notify_online(bool value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.notify_online_ = value;
+}
+
+// bool regroup = 2;
+inline void GetMyTeamRequest::clear_regroup() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.regroup_ = false;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+}
+inline bool GetMyTeamRequest::regroup() const {
+  // @@protoc_insertion_point(field_get:teampb.GetMyTeamRequest.regroup)
+  return _internal_regroup();
+}
+inline void GetMyTeamRequest::set_regroup(bool value) {
+  _internal_set_regroup(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  // @@protoc_insertion_point(field_set:teampb.GetMyTeamRequest.regroup)
+}
+inline bool GetMyTeamRequest::_internal_regroup() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.regroup_;
+}
+inline void GetMyTeamRequest::_internal_set_regroup(bool value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.regroup_ = value;
 }
 
 // -------------------------------------------------------------------

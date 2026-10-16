@@ -111,6 +111,23 @@ func (s *Service) publishOnline(caller, teamId uint64, knownMembers []uint64) {
 	})
 }
 
+// publishRegroup GetMyTeam{regroup}:队员请求归队。调用者是队员(不是队长)时给他所在的 scene 发一次刷新信号,
+// 瞬移 / 换图 / 不动由 scene 按既有跟随规则决定(cpp/libs/services/scene/player/system/player_team.h),这里不判距离。
+// 以本次回包视图为准(同一次读出来的),不另读:无队、队长自己、读失败没带视图都不发。
+// 频率由 gate 的 MessageLimiter(GetMyTeam 每秒 5 次)兜底,scene 侧每次至多瞬移一次且只在离得远 / 看不见时。
+func (s *Service) publishRegroup(caller uint64, team *teampb.TeamView) {
+	if team.GetTeamId() == 0 || team.GetLeaderId() == 0 || team.GetLeaderId() == caller {
+		return
+	}
+	teamId, leaderId := team.GetTeamId(), team.GetLeaderId()
+	asyncFn("match.team.regroup", func() {
+		ctx, cancel := context.WithTimeout(context.Background(), pushBatchBudget)
+		defer cancel()
+		logx.WithContext(ctx).Infof("[team] Regroup requested player=%d team=%d leader=%d", caller, teamId, leaderId)
+		s.refreshScene(ctx, caller)
+	})
+}
+
 // pushCommit 按 Decision 给各接收者推送(§D.5 "推送"列)。
 func (s *Service) pushCommit(ctx context.Context, caller uint64, c *CommitResult) {
 	d := c.Decision

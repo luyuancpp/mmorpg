@@ -160,7 +160,8 @@ func (s *Service) CreateTeam(ctx context.Context, caller uint64, _ *teampb.Creat
 	return resp
 }
 
-// GetMyTeam 自由读 + 过期清理 / 惰性转让;没变化但 TTL 不足时续期;notify_online 时推给其他在线队员。
+// GetMyTeam 自由读 + 过期清理 / 惰性转让;没变化但 TTL 不足时续期;notify_online 时推给其他在线队员;
+// regroup 时请求归队(见 publishRegroup)。
 func (s *Service) GetMyTeam(ctx context.Context, caller uint64, in *teampb.GetMyTeamRequest) *teampb.TeamResponse {
 	self, failed := s.readSelf(ctx, methodGetMyTeam, caller)
 	if failed != nil {
@@ -185,6 +186,9 @@ func (s *Service) GetMyTeam(ctx context.Context, caller uint64, in *teampb.GetMy
 			}
 			s.publishOnline(caller, team.GetTeamId(), members)
 		}
+	}
+	if in.GetRegroup() {
+		s.publishRegroup(caller, resp.GetTeam())
 	}
 	return resp
 }

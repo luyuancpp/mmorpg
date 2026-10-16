@@ -734,6 +734,64 @@ func TestGetMyTeamNotifyOnlineSkipsForeignIndex(t *testing.T) {
 	h.requireSceneRefresh()
 }
 
+// ---- 组队跟随 v1.1 V.9:GetMyTeam{regroup} 只给请求归队的队员本人发 scene 信号 ----
+
+func TestGetMyTeamRegroupSignalsOnlyTheCallingMember(t *testing.T) {
+	h := newServiceHarness(t, config.TeamConf{})
+	h.addPlayers(testZone, 1, 2, 3, 9)
+	tid := h.create(1)
+	for _, pid := range []uint64{2, 3} {
+		h.join(1, tid, pid)
+	}
+	h.takePushes()
+	h.takeScenes()
+
+	// 队员请求归队:只给他自己发,队长与其他队员不动;不推任何快照(视图没变)。
+	resp := h.ok(h.server.GetMyTeam(asPlayer(2), &teampb.GetMyTeamRequest{Regroup: true}))
+	requireCode(t, 0, resp)
+	require.Equal(t, tid, resp.GetTeam().GetTeamId())
+	h.requireSceneRefresh(2)
+	require.Empty(t, h.takePushes())
+
+	// 不带 regroup 的普通拉取:不发。
+	requireCode(t, 0, h.ok(h.server.GetMyTeam(asPlayer(3), &teampb.GetMyTeamRequest{})))
+	h.requireSceneRefresh()
+
+	// 队长自己请求归队:没有可归的队长,不发。
+	requireCode(t, 0, h.ok(h.server.GetMyTeam(asPlayer(1), &teampb.GetMyTeamRequest{Regroup: true})))
+	h.requireSceneRefresh()
+
+	// 不在任何队伍里:不发。
+	resp = h.ok(h.server.GetMyTeam(asPlayer(9), &teampb.GetMyTeamRequest{Regroup: true}))
+	requireCode(t, 0, resp)
+	require.Zero(t, resp.GetTeam().GetTeamId())
+	h.requireSceneRefresh()
+
+	// 与 notify_online 同时带:两件事各做各的(上线推给其他在线队员,归队信号只发给自己)。
+	requireCode(t, 0, h.ok(h.server.GetMyTeam(asPlayer(3), &teampb.GetMyTeamRequest{NotifyOnline: true, Regroup: true})))
+	h.requireSceneRefresh(3)
+	pushed := map[uint64]bool{}
+	for _, p := range h.takePushes() {
+		requireSnapshot(t, p, p.playerId, teampb.TeamChangeReason_TEAM_CHANGE_REASON_MEMBER_ONLINE)
+		pushed[p.playerId] = true
+	}
+	require.Equal(t, map[uint64]bool{1: true, 2: true}, pushed)
+}
+
+// 归队信号照常遵守 §F.3:请求者不在任何场景(没有位置记录)时不发,也不报错。
+func TestGetMyTeamRegroupWithoutLocationSendsNothing(t *testing.T) {
+	h := newServiceHarness(t, config.TeamConf{})
+	h.addPlayers(testZone, 1, 2)
+	tid := h.create(1)
+	h.join(1, tid, 2)
+	h.takePushes()
+	h.takeScenes()
+	h.mr.Del(playercontract.LocationKey(2))
+
+	requireCode(t, 0, h.ok(h.server.GetMyTeam(asPlayer(2), &teampb.GetMyTeamRequest{Regroup: true})))
+	h.requireSceneRefresh()
+}
+
 // ---- #23:ListMyInvites 清理残留索引不误删队长刚重邀写入的新项 ----
 
 func TestListMyInvitesPruneKeepsReinvitedIndex(t *testing.T) {

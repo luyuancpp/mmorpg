@@ -9102,6 +9102,21 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
 - 协议 / 配表 / 生成物未改;未重启服务、未清理数据库、未替换主仓二进制。Go -race、C++ 全量编译、Unity 内测试及三客户端联机尚未执行。
   Java 版仍待做,本机无约定 Java 仓库,PARITY 未登记(设计文档 §7.4)。
 
+## 2026-10-16 组队跟随 v1.1 收尾:起栈验证、robot team-follow-smoke、真实客户端验收与客户端四轮修复(Claude,用户授权执行编译与起栈)
+
+- **授权与范围**:用户 10-13 选「授权我来编译并修到能跑」,10-15 说「继续做完」,10-16 说冒烟他自己来;AGENTS §10.1 对本任务例外。没有 push;代码提交都是每小时自动保存或别的会话代提交的。
+- **服务端**(10-13,主仓 `07f9ec3ca9`,详见 `docs/design/team-system.md` V.7):C++ Debug|x64 串行 25 个工程 0 error,`aoi_test` 62/62;Go 11 服务与 Java 网关同批重编;
+  robot `login-test` 23/23、`team_smoke`(单区)OK。服务端代码之后没有再改。
+- **robot `team-follow-smoke`**:服务端形态(入队即换线 → 归队瞬移 → 可见性重建 → 双向移动广播)10-13 / 10-16 共 8 遍全过;
+  `client_follower: true` 形态由机器人当队长、真实客户端当队员,量出队员每段是否跟在身后。
+- **客户端跟随四轮修复**(`mmorpg-client` 的 `TeamFollowTrail` / `TeamFollowPlanner` / `TeamFollowDriver`,详见 V.7 第 4 条与 V.8):折返踱步 → 游标;
+  折返点前站住 / 往回退站住 → 折返前推;两趟间来回、后排越过槽位 → 游标往回只随位移、往前不过槽位;停得离队长太近 → 停步回拉改为按投影剪断。
+  证据:纯逻辑测试 50/50;8 万组随机模拟 0 失败;每条规则的「故意改坏」都被用例抓到。真机:第一轮包 8 遍 6 过、第三轮包 8 遍 7 过;第四轮只有离线证据。
+- **可测的包**:`E:\work-archive-20261015\builds\wuxing-client-20261016-follow-final\client\Start-Client.cmd`;服务端用 `E:\work-archive-20261015\runtime-team-follow-07f9ec3ca9\start-server.cmd`。
+- **没做 / 待定**:间距 1.4 在当前镜头下只有约 17 像素,队员与队长贴图叠住一半以上,拉开要连同服务端视野半径(10)与归队阈值(8)一起改,待用户定;
+  3 人以上真实客户端同时跟随、跨节点、战斗冻结解除后的归队、走着掉线 1 秒内停下仍无真机证据;客户端改动未在 Unity 编辑器里跑 EditMode。
+- **Java 版(AGENTS §12)**:待做;对应 Java 版本号:无(本机没有 Java 仓,`PARITY.md` 未登记)。没有改客户端契约(协议、消息号、tip 均未动)。
+
 ## 2026-10-16 C++ zone Redis 连接加存活探测:补 redis-ha 代理整机消失的残余风险(Claude,未编译,待 Codex 验证)
 
 - **问题**:redis-ha 形态下代理 Pod 所在机器整机消失(没有 FIN / RST)时,C++ gate / scene / battle 每进程唯一的 zone Redis 连接一直显示 connected,

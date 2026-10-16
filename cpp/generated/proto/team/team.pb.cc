@@ -2142,11 +2142,11 @@ constexpr GetMyTeamRequest::ParseTableT_ GetMyTeamRequest::InternalGenerateParse
     {
       PROTOBUF_FIELD_OFFSET(GetMyTeamRequest, _impl_._has_bits_),
       0, // no _extensions_
-      1, 0,  // max_field_number, fast_idx_mask
+      2, 8,  // max_field_number, fast_idx_mask
       offsetof(ParseTableT_, field_lookup_table),
-      4294967294,  // skipmap
+      4294967292,  // skipmap
       offsetof(ParseTableT_, field_entries),
-      1,  // num_field_entries
+      2,  // num_field_entries
       0,  // num_aux_entries
       offsetof(ParseTableT_, field_names),  // no aux_entries
       class_data,
@@ -2156,6 +2156,10 @@ constexpr GetMyTeamRequest::ParseTableT_ GetMyTeamRequest::InternalGenerateParse
       ::_pbi::TcParser::GetTable<::teampb::GetMyTeamRequest>(),  // to_prefetch
       #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
     }, {{
+      // bool regroup = 2;
+      {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(GetMyTeamRequest, _impl_.regroup_), 1>(),
+       {16, 1, 0,
+        PROTOBUF_FIELD_OFFSET(GetMyTeamRequest, _impl_.regroup_)}},
       // bool notify_online = 1;
       {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(GetMyTeamRequest, _impl_.notify_online_), 0>(),
        {8, 0, 0,
@@ -2165,6 +2169,8 @@ constexpr GetMyTeamRequest::ParseTableT_ GetMyTeamRequest::InternalGenerateParse
     }}, {{
       // bool notify_online = 1;
       {PROTOBUF_FIELD_OFFSET(GetMyTeamRequest, _impl_.notify_online_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kBool)},
+      // bool regroup = 2;
+      {PROTOBUF_FIELD_OFFSET(GetMyTeamRequest, _impl_.regroup_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kBool)},
     }},
     // no aux_entries
     {{
@@ -2177,7 +2183,8 @@ inline constexpr GetMyTeamRequest::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
-        notify_online_{false} {}
+        notify_online_{false},
+        regroup_{false} {}
 
 template <typename>
 constexpr GetMyTeamRequest::GetMyTeamRequest(::_pbi::ConstantInitialized,
@@ -4373,9 +4380,11 @@ const ::uint32_t
         0x000, // bitmap
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::teampb::GetMyTeamRequest, _impl_._has_bits_),
-        4, // hasbit index offset
+        5, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::teampb::GetMyTeamRequest, _impl_.notify_online_),
+        PROTOBUF_FIELD_OFFSET(::teampb::GetMyTeamRequest, _impl_.regroup_),
         0,
+        1,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::teampb::ApplyJoinTeamRequest, _impl_._has_bits_),
         4, // hasbit index offset
@@ -4638,30 +4647,30 @@ static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, sizeof(::teampb::CreateTeamRequest)},
         {1, sizeof(::teampb::GetMyTeamRequest)},
-        {6, sizeof(::teampb::ApplyJoinTeamRequest)},
-        {11, sizeof(::teampb::HandleApplicationRequest)},
-        {20, sizeof(::teampb::InviteToTeamRequest)},
-        {27, sizeof(::teampb::RespondInviteRequest)},
-        {34, sizeof(::teampb::ListMyInvitesRequest)},
-        {35, sizeof(::teampb::LeaveTeamRequest)},
-        {40, sizeof(::teampb::KickMemberRequest)},
-        {47, sizeof(::teampb::TransferLeaderRequest)},
-        {54, sizeof(::teampb::DisbandTeamRequest)},
-        {59, sizeof(::teampb::StartTeamMatchRequest)},
-        {68, sizeof(::teampb::TeamResponse)},
-        {75, sizeof(::teampb::ListMyInvitesResponse)},
-        {84, sizeof(::teampb::TeamMemberView)},
-        {109, sizeof(::teampb::TeamApplicationView)},
-        {118, sizeof(::teampb::TeamOutgoingInviteView)},
-        {125, sizeof(::teampb::TeamIncomingInviteView)},
-        {140, sizeof(::teampb::TeamView)},
-        {175, sizeof(::teampb::TeamSnapshotS2C)},
-        {186, sizeof(::teampb::TeamInviteS2C)},
-        {193, sizeof(::teampb::TeamEventS2C)},
-        {202, sizeof(::teampb::TeamRecord)},
-        {227, sizeof(::teampb::TeamMemberRecord)},
-        {238, sizeof(::teampb::TeamApplicationRecord)},
-        {249, sizeof(::teampb::TeamInviteRecord)},
+        {8, sizeof(::teampb::ApplyJoinTeamRequest)},
+        {13, sizeof(::teampb::HandleApplicationRequest)},
+        {22, sizeof(::teampb::InviteToTeamRequest)},
+        {29, sizeof(::teampb::RespondInviteRequest)},
+        {36, sizeof(::teampb::ListMyInvitesRequest)},
+        {37, sizeof(::teampb::LeaveTeamRequest)},
+        {42, sizeof(::teampb::KickMemberRequest)},
+        {49, sizeof(::teampb::TransferLeaderRequest)},
+        {56, sizeof(::teampb::DisbandTeamRequest)},
+        {61, sizeof(::teampb::StartTeamMatchRequest)},
+        {70, sizeof(::teampb::TeamResponse)},
+        {77, sizeof(::teampb::ListMyInvitesResponse)},
+        {86, sizeof(::teampb::TeamMemberView)},
+        {111, sizeof(::teampb::TeamApplicationView)},
+        {120, sizeof(::teampb::TeamOutgoingInviteView)},
+        {127, sizeof(::teampb::TeamIncomingInviteView)},
+        {142, sizeof(::teampb::TeamView)},
+        {177, sizeof(::teampb::TeamSnapshotS2C)},
+        {188, sizeof(::teampb::TeamInviteS2C)},
+        {195, sizeof(::teampb::TeamEventS2C)},
+        {204, sizeof(::teampb::TeamRecord)},
+        {229, sizeof(::teampb::TeamMemberRecord)},
+        {240, sizeof(::teampb::TeamApplicationRecord)},
+        {251, sizeof(::teampb::TeamInviteRecord)},
 };
 static const ::_pbi::MessageGlobalsBase* PROTOBUF_NONNULL const
     file_message_globals[] = {
@@ -4697,130 +4706,131 @@ const char descriptor_table_protodef_proto_2fteam_2fteam_2eproto[] ABSL_ATTRIBUT
     "\n\025proto/team/team.proto\022\006teampb\032\033proto/d"
     "b/proto_option.proto\032\035proto/common/base/"
     "empty.proto\032\033proto/common/base/tip.proto"
-    "\"\023\n\021CreateTeamRequest\")\n\020GetMyTeamReques"
-    "t\022\025\n\rnotify_online\030\001 \001(\010\"0\n\024ApplyJoinTea"
-    "mRequest\022\030\n\020target_player_id\030\001 \001(\004\"[\n\030Ha"
-    "ndleApplicationRequest\022\024\n\014applicant_id\030\001"
-    " \001(\004\022\017\n\007approve\030\002 \001(\010\022\030\n\020expected_team_i"
-    "d\030\003 \001(\004\"I\n\023InviteToTeamRequest\022\030\n\020target"
-    "_player_id\030\001 \001(\004\022\030\n\020expected_team_id\030\002 \001"
-    "(\004\"7\n\024RespondInviteRequest\022\017\n\007team_id\030\001 "
-    "\001(\004\022\016\n\006accept\030\002 \001(\010\"\026\n\024ListMyInvitesRequ"
-    "est\",\n\020LeaveTeamRequest\022\030\n\020expected_team"
-    "_id\030\001 \001(\004\"G\n\021KickMemberRequest\022\030\n\020target"
-    "_player_id\030\001 \001(\004\022\030\n\020expected_team_id\030\002 \001"
-    "(\004\"K\n\025TransferLeaderRequest\022\030\n\020target_pl"
-    "ayer_id\030\001 \001(\004\022\030\n\020expected_team_id\030\002 \001(\004\""
-    ".\n\022DisbandTeamRequest\022\030\n\020expected_team_i"
-    "d\030\001 \001(\004\"e\n\025StartTeamMatchRequest\022\030\n\020batt"
-    "le_config_id\030\001 \001(\r\022\030\n\020expected_team_id\030\002"
-    " \001(\004\022\030\n\020target_team_size\030\003 \001(\r\"V\n\014TeamRe"
-    "sponse\022&\n\rerror_message\030\001 \001(\0132\017.TipInfoM"
-    "essage\022\036\n\004team\030\002 \001(\0132\020.teampb.TeamView\"\210"
-    "\001\n\025ListMyInvitesResponse\022&\n\rerror_messag"
-    "e\030\001 \001(\0132\017.TipInfoMessage\022/\n\007invites\030\002 \003("
-    "\0132\036.teampb.TeamIncomingInviteView\022\026\n\016ser"
-    "ver_time_ms\030\003 \001(\004\"\325\001\n\016TeamMemberView\022\021\n\t"
-    "player_id\030\001 \001(\004\022\014\n\004name\030\002 \001(\t\022\r\n\005level\030\003"
-    " \001(\r\022\020\n\010class_id\030\004 \001(\r\022\016\n\006gender\030\005 \001(\r\022\021"
-    "\n\tis_leader\030\006 \001(\010\022\021\n\tis_online\030\007 \001(\010\022\021\n\t"
-    "in_battle\030\010 \001(\010\022\017\n\007zone_id\030\t \001(\r\022\020\n\010join"
-    "_seq\030\n \001(\r\022\025\n\rappearance_id\030\013 \001(\t\"j\n\023Tea"
-    "mApplicationView\022&\n\006player\030\001 \001(\0132\026.teamp"
-    "b.TeamMemberView\022\025\n\rapplied_at_ms\030\002 \001(\004\022"
-    "\024\n\014expire_at_ms\030\003 \001(\004\"W\n\026TeamOutgoingInv"
-    "iteView\022\'\n\007invitee\030\001 \001(\0132\026.teampb.TeamMe"
-    "mberView\022\024\n\014expire_at_ms\030\002 \001(\004\"\242\001\n\026TeamI"
-    "ncomingInviteView\022\017\n\007team_id\030\001 \001(\004\022\'\n\007in"
-    "viter\030\002 \001(\0132\026.teampb.TeamMemberView\022\021\n\tl"
-    "eader_id\030\003 \001(\004\022\024\n\014member_count\030\004 \001(\r\022\017\n\007"
-    "zone_id\030\005 \001(\r\022\024\n\014expire_at_ms\030\006 \001(\004\"\346\003\n\010"
-    "TeamView\022\017\n\007team_id\030\001 \001(\004\022\021\n\tleader_id\030\002"
-    " \001(\004\022\020\n\010capacity\030\003 \001(\r\022\017\n\007zone_id\030\004 \001(\r\022"
-    "\017\n\007version\030\005 \001(\004\022\030\n\020membership_epoch\030\006 \001"
-    "(\004\022+\n\013match_state\030\007 \001(\0162\026.teampb.TeamMat"
-    "chState\022\'\n\007members\030\010 \003(\0132\026.teampb.TeamMe"
-    "mberView\0221\n\014applications\030\t \003(\0132\033.teampb."
-    "TeamApplicationView\0227\n\017pending_invites\030\n"
-    " \003(\0132\036.teampb.TeamOutgoingInviteView\022\031\n\021"
-    "application_count\030\013 \001(\r\022\026\n\016server_time_m"
-    "s\030\014 \001(\004\022\031\n\021match_target_size\030\r \001(\r\022\032\n\022ma"
-    "tch_queued_at_ms\030\016 \001(\004\022\036\n\026match_battle_c"
-    "onfig_id\030\017 \001(\r\022\034\n\024match_fill_supported\030\020"
-    " \001(\010\"\213\001\n\017TeamSnapshotS2C\022\036\n\004team\030\001 \001(\0132\020"
-    ".teampb.TeamView\022(\n\006reason\030\002 \001(\0162\030.teamp"
-    "b.TeamChangeReason\022\020\n\010actor_id\030\003 \001(\004\022\034\n\003"
-    "tip\030\004 \001(\0132\017.TipInfoMessage\"W\n\rTeamInvite"
-    "S2C\022.\n\006invite\030\001 \001(\0132\036.teampb.TeamIncomin"
-    "gInviteView\022\026\n\016server_time_ms\030\002 \001(\004\"V\n\014T"
-    "eamEventS2C\022#\n\004type\030\001 \001(\0162\025.teampb.TeamE"
-    "ventType\022\017\n\007team_id\030\002 \001(\004\022\020\n\010actor_id\030\003 "
-    "\001(\004\"\320\002\n\nTeamRecord\022\017\n\007team_id\030\001 \001(\004\022\021\n\tl"
-    "eader_id\030\002 \001(\004\022\017\n\007zone_id\030\003 \001(\r\022\025\n\rcreat"
-    "ed_at_ms\030\004 \001(\004\022)\n\007members\030\005 \003(\0132\030.teampb"
-    ".TeamMemberRecord\0223\n\014applications\030\006 \003(\0132"
-    "\035.teampb.TeamApplicationRecord\022)\n\007invite"
-    "s\030\007 \003(\0132\030.teampb.TeamInviteRecord\022\025\n\rnex"
-    "t_join_seq\030\010 \001(\r\022\030\n\020match_lock_token\030\t \001"
-    "(\t\022\037\n\027match_lock_expire_at_ms\030\n \001(\004\022\031\n\021m"
-    "atch_lock_roster\030\013 \003(\004\"^\n\020TeamMemberReco"
-    "rd\022\021\n\tplayer_id\030\001 \001(\004\022\017\n\007zone_id\030\002 \001(\r\022\024"
-    "\n\014joined_at_ms\030\003 \001(\004\022\020\n\010join_seq\030\004 \001(\r\"h"
-    "\n\025TeamApplicationRecord\022\021\n\tplayer_id\030\001 \001"
-    "(\004\022\017\n\007zone_id\030\002 \001(\r\022\025\n\rapplied_at_ms\030\003 \001"
-    "(\004\022\024\n\014expire_at_ms\030\004 \001(\004\"x\n\020TeamInviteRe"
-    "cord\022\022\n\ninvitee_id\030\001 \001(\004\022\022\n\ninviter_id\030\002"
-    " \001(\004\022\017\n\007zone_id\030\003 \001(\r\022\025\n\rinvited_at_ms\030\004"
-    " \001(\004\022\024\n\014expire_at_ms\030\005 \001(\004*g\n\016TeamMatchS"
-    "tate\022\031\n\025TEAM_MATCH_STATE_IDLE\020\000\022\035\n\031TEAM_"
-    "MATCH_STATE_STARTING\020\001\022\033\n\027TEAM_MATCH_STA"
-    "TE_QUEUED\020\002*\237\005\n\020TeamChangeReason\022\"\n\036TEAM"
-    "_CHANGE_REASON_UNSPECIFIED\020\000\022\036\n\032TEAM_CHA"
-    "NGE_REASON_CREATED\020\001\022$\n TEAM_CHANGE_REAS"
-    "ON_MEMBER_JOINED\020\002\022\"\n\036TEAM_CHANGE_REASON"
-    "_MEMBER_LEFT\020\003\022$\n TEAM_CHANGE_REASON_MEM"
-    "BER_KICKED\020\004\022)\n%TEAM_CHANGE_REASON_LEADE"
-    "R_TRANSFERRED\020\005\0221\n-TEAM_CHANGE_REASON_LE"
-    "ADER_OFFLINE_TRANSFERRED\020\006\022 \n\034TEAM_CHANG"
-    "E_REASON_DISBANDED\020\007\022*\n&TEAM_CHANGE_REAS"
-    "ON_APPLICATION_CHANGED\020\010\022%\n!TEAM_CHANGE_"
-    "REASON_INVITE_CHANGED\020\t\022$\n TEAM_CHANGE_R"
-    "EASON_MEMBER_ONLINE\020\n\022$\n TEAM_CHANGE_REA"
-    "SON_MATCH_STARTED\020\013\022\"\n\036TEAM_CHANGE_REASO"
-    "N_MATCH_ENDED\020\014\022#\n\037TEAM_CHANGE_REASON_MA"
-    "TCH_FAILED\020\r\022\035\n\031TEAM_CHANGE_REASON_HEALE"
-    "D\020\016\022#\n\037TEAM_CHANGE_REASON_MATCH_QUEUED\020\017"
-    "\022+\n\'TEAM_CHANGE_REASON_MATCH_QUEUE_CANCE"
-    "LED\020\020*~\n\rTeamEventType\022\037\n\033TEAM_EVENT_TYP"
-    "E_UNSPECIFIED\020\000\022(\n$TEAM_EVENT_TYPE_APPLI"
-    "CATION_REJECTED\020\001\022\"\n\036TEAM_EVENT_TYPE_INV"
-    "ITE_REVOKED\020\0022\201\010\n\020ClientPlayerTeam\022\?\n\nCr"
-    "eateTeam\022\031.teampb.CreateTeamRequest\032\024.te"
-    "ampb.TeamResponse\"\000\022=\n\tGetMyTeam\022\030.teamp"
-    "b.GetMyTeamRequest\032\024.teampb.TeamResponse"
-    "\"\000\022E\n\rApplyJoinTeam\022\034.teampb.ApplyJoinTe"
-    "amRequest\032\024.teampb.TeamResponse\"\000\022M\n\021Han"
-    "dleApplication\022 .teampb.HandleApplicatio"
-    "nRequest\032\024.teampb.TeamResponse\"\000\022C\n\014Invi"
-    "teToTeam\022\033.teampb.InviteToTeamRequest\032\024."
-    "teampb.TeamResponse\"\000\022E\n\rRespondInvite\022\034"
-    ".teampb.RespondInviteRequest\032\024.teampb.Te"
-    "amResponse\"\000\022N\n\rListMyInvites\022\034.teampb.L"
-    "istMyInvitesRequest\032\035.teampb.ListMyInvit"
-    "esResponse\"\000\022=\n\tLeaveTeam\022\030.teampb.Leave"
-    "TeamRequest\032\024.teampb.TeamResponse\"\000\022\?\n\nK"
-    "ickMember\022\031.teampb.KickMemberRequest\032\024.t"
-    "eampb.TeamResponse\"\000\022G\n\016TransferLeader\022\035"
-    ".teampb.TransferLeaderRequest\032\024.teampb.T"
-    "eamResponse\"\000\022A\n\013DisbandTeam\022\032.teampb.Di"
-    "sbandTeamRequest\032\024.teampb.TeamResponse\"\000"
-    "\022G\n\016StartTeamMatch\022\035.teampb.StartTeamMat"
-    "chRequest\032\024.teampb.TeamResponse\"\000\0227\n\022Not"
-    "ifyTeamSnapshot\022\027.teampb.TeamSnapshotS2C"
-    "\032\006.Empty\"\000\0223\n\020NotifyTeamInvite\022\025.teampb."
-    "TeamInviteS2C\032\006.Empty\"\000\0221\n\017NotifyTeamEve"
-    "nt\022\024.teampb.TeamEventS2C\032\006.Empty\"\000\032\005\210\250\303\001"
-    "\001B\rZ\004team\200\001\000\230\324a\017b\006proto3"
+    "\"\023\n\021CreateTeamRequest\":\n\020GetMyTeamReques"
+    "t\022\025\n\rnotify_online\030\001 \001(\010\022\017\n\007regroup\030\002 \001("
+    "\010\"0\n\024ApplyJoinTeamRequest\022\030\n\020target_play"
+    "er_id\030\001 \001(\004\"[\n\030HandleApplicationRequest\022"
+    "\024\n\014applicant_id\030\001 \001(\004\022\017\n\007approve\030\002 \001(\010\022\030"
+    "\n\020expected_team_id\030\003 \001(\004\"I\n\023InviteToTeam"
+    "Request\022\030\n\020target_player_id\030\001 \001(\004\022\030\n\020exp"
+    "ected_team_id\030\002 \001(\004\"7\n\024RespondInviteRequ"
+    "est\022\017\n\007team_id\030\001 \001(\004\022\016\n\006accept\030\002 \001(\010\"\026\n\024"
+    "ListMyInvitesRequest\",\n\020LeaveTeamRequest"
+    "\022\030\n\020expected_team_id\030\001 \001(\004\"G\n\021KickMember"
+    "Request\022\030\n\020target_player_id\030\001 \001(\004\022\030\n\020exp"
+    "ected_team_id\030\002 \001(\004\"K\n\025TransferLeaderReq"
+    "uest\022\030\n\020target_player_id\030\001 \001(\004\022\030\n\020expect"
+    "ed_team_id\030\002 \001(\004\".\n\022DisbandTeamRequest\022\030"
+    "\n\020expected_team_id\030\001 \001(\004\"e\n\025StartTeamMat"
+    "chRequest\022\030\n\020battle_config_id\030\001 \001(\r\022\030\n\020e"
+    "xpected_team_id\030\002 \001(\004\022\030\n\020target_team_siz"
+    "e\030\003 \001(\r\"V\n\014TeamResponse\022&\n\rerror_message"
+    "\030\001 \001(\0132\017.TipInfoMessage\022\036\n\004team\030\002 \001(\0132\020."
+    "teampb.TeamView\"\210\001\n\025ListMyInvitesRespons"
+    "e\022&\n\rerror_message\030\001 \001(\0132\017.TipInfoMessag"
+    "e\022/\n\007invites\030\002 \003(\0132\036.teampb.TeamIncoming"
+    "InviteView\022\026\n\016server_time_ms\030\003 \001(\004\"\325\001\n\016T"
+    "eamMemberView\022\021\n\tplayer_id\030\001 \001(\004\022\014\n\004name"
+    "\030\002 \001(\t\022\r\n\005level\030\003 \001(\r\022\020\n\010class_id\030\004 \001(\r\022"
+    "\016\n\006gender\030\005 \001(\r\022\021\n\tis_leader\030\006 \001(\010\022\021\n\tis"
+    "_online\030\007 \001(\010\022\021\n\tin_battle\030\010 \001(\010\022\017\n\007zone"
+    "_id\030\t \001(\r\022\020\n\010join_seq\030\n \001(\r\022\025\n\rappearanc"
+    "e_id\030\013 \001(\t\"j\n\023TeamApplicationView\022&\n\006pla"
+    "yer\030\001 \001(\0132\026.teampb.TeamMemberView\022\025\n\rapp"
+    "lied_at_ms\030\002 \001(\004\022\024\n\014expire_at_ms\030\003 \001(\004\"W"
+    "\n\026TeamOutgoingInviteView\022\'\n\007invitee\030\001 \001("
+    "\0132\026.teampb.TeamMemberView\022\024\n\014expire_at_m"
+    "s\030\002 \001(\004\"\242\001\n\026TeamIncomingInviteView\022\017\n\007te"
+    "am_id\030\001 \001(\004\022\'\n\007inviter\030\002 \001(\0132\026.teampb.Te"
+    "amMemberView\022\021\n\tleader_id\030\003 \001(\004\022\024\n\014membe"
+    "r_count\030\004 \001(\r\022\017\n\007zone_id\030\005 \001(\r\022\024\n\014expire"
+    "_at_ms\030\006 \001(\004\"\346\003\n\010TeamView\022\017\n\007team_id\030\001 \001"
+    "(\004\022\021\n\tleader_id\030\002 \001(\004\022\020\n\010capacity\030\003 \001(\r\022"
+    "\017\n\007zone_id\030\004 \001(\r\022\017\n\007version\030\005 \001(\004\022\030\n\020mem"
+    "bership_epoch\030\006 \001(\004\022+\n\013match_state\030\007 \001(\016"
+    "2\026.teampb.TeamMatchState\022\'\n\007members\030\010 \003("
+    "\0132\026.teampb.TeamMemberView\0221\n\014application"
+    "s\030\t \003(\0132\033.teampb.TeamApplicationView\0227\n\017"
+    "pending_invites\030\n \003(\0132\036.teampb.TeamOutgo"
+    "ingInviteView\022\031\n\021application_count\030\013 \001(\r"
+    "\022\026\n\016server_time_ms\030\014 \001(\004\022\031\n\021match_target"
+    "_size\030\r \001(\r\022\032\n\022match_queued_at_ms\030\016 \001(\004\022"
+    "\036\n\026match_battle_config_id\030\017 \001(\r\022\034\n\024match"
+    "_fill_supported\030\020 \001(\010\"\213\001\n\017TeamSnapshotS2"
+    "C\022\036\n\004team\030\001 \001(\0132\020.teampb.TeamView\022(\n\006rea"
+    "son\030\002 \001(\0162\030.teampb.TeamChangeReason\022\020\n\010a"
+    "ctor_id\030\003 \001(\004\022\034\n\003tip\030\004 \001(\0132\017.TipInfoMess"
+    "age\"W\n\rTeamInviteS2C\022.\n\006invite\030\001 \001(\0132\036.t"
+    "eampb.TeamIncomingInviteView\022\026\n\016server_t"
+    "ime_ms\030\002 \001(\004\"V\n\014TeamEventS2C\022#\n\004type\030\001 \001"
+    "(\0162\025.teampb.TeamEventType\022\017\n\007team_id\030\002 \001"
+    "(\004\022\020\n\010actor_id\030\003 \001(\004\"\320\002\n\nTeamRecord\022\017\n\007t"
+    "eam_id\030\001 \001(\004\022\021\n\tleader_id\030\002 \001(\004\022\017\n\007zone_"
+    "id\030\003 \001(\r\022\025\n\rcreated_at_ms\030\004 \001(\004\022)\n\007membe"
+    "rs\030\005 \003(\0132\030.teampb.TeamMemberRecord\0223\n\014ap"
+    "plications\030\006 \003(\0132\035.teampb.TeamApplicatio"
+    "nRecord\022)\n\007invites\030\007 \003(\0132\030.teampb.TeamIn"
+    "viteRecord\022\025\n\rnext_join_seq\030\010 \001(\r\022\030\n\020mat"
+    "ch_lock_token\030\t \001(\t\022\037\n\027match_lock_expire"
+    "_at_ms\030\n \001(\004\022\031\n\021match_lock_roster\030\013 \003(\004\""
+    "^\n\020TeamMemberRecord\022\021\n\tplayer_id\030\001 \001(\004\022\017"
+    "\n\007zone_id\030\002 \001(\r\022\024\n\014joined_at_ms\030\003 \001(\004\022\020\n"
+    "\010join_seq\030\004 \001(\r\"h\n\025TeamApplicationRecord"
+    "\022\021\n\tplayer_id\030\001 \001(\004\022\017\n\007zone_id\030\002 \001(\r\022\025\n\r"
+    "applied_at_ms\030\003 \001(\004\022\024\n\014expire_at_ms\030\004 \001("
+    "\004\"x\n\020TeamInviteRecord\022\022\n\ninvitee_id\030\001 \001("
+    "\004\022\022\n\ninviter_id\030\002 \001(\004\022\017\n\007zone_id\030\003 \001(\r\022\025"
+    "\n\rinvited_at_ms\030\004 \001(\004\022\024\n\014expire_at_ms\030\005 "
+    "\001(\004*g\n\016TeamMatchState\022\031\n\025TEAM_MATCH_STAT"
+    "E_IDLE\020\000\022\035\n\031TEAM_MATCH_STATE_STARTING\020\001\022"
+    "\033\n\027TEAM_MATCH_STATE_QUEUED\020\002*\237\005\n\020TeamCha"
+    "ngeReason\022\"\n\036TEAM_CHANGE_REASON_UNSPECIF"
+    "IED\020\000\022\036\n\032TEAM_CHANGE_REASON_CREATED\020\001\022$\n"
+    " TEAM_CHANGE_REASON_MEMBER_JOINED\020\002\022\"\n\036T"
+    "EAM_CHANGE_REASON_MEMBER_LEFT\020\003\022$\n TEAM_"
+    "CHANGE_REASON_MEMBER_KICKED\020\004\022)\n%TEAM_CH"
+    "ANGE_REASON_LEADER_TRANSFERRED\020\005\0221\n-TEAM"
+    "_CHANGE_REASON_LEADER_OFFLINE_TRANSFERRE"
+    "D\020\006\022 \n\034TEAM_CHANGE_REASON_DISBANDED\020\007\022*\n"
+    "&TEAM_CHANGE_REASON_APPLICATION_CHANGED\020"
+    "\010\022%\n!TEAM_CHANGE_REASON_INVITE_CHANGED\020\t"
+    "\022$\n TEAM_CHANGE_REASON_MEMBER_ONLINE\020\n\022$"
+    "\n TEAM_CHANGE_REASON_MATCH_STARTED\020\013\022\"\n\036"
+    "TEAM_CHANGE_REASON_MATCH_ENDED\020\014\022#\n\037TEAM"
+    "_CHANGE_REASON_MATCH_FAILED\020\r\022\035\n\031TEAM_CH"
+    "ANGE_REASON_HEALED\020\016\022#\n\037TEAM_CHANGE_REAS"
+    "ON_MATCH_QUEUED\020\017\022+\n\'TEAM_CHANGE_REASON_"
+    "MATCH_QUEUE_CANCELED\020\020*~\n\rTeamEventType\022"
+    "\037\n\033TEAM_EVENT_TYPE_UNSPECIFIED\020\000\022(\n$TEAM"
+    "_EVENT_TYPE_APPLICATION_REJECTED\020\001\022\"\n\036TE"
+    "AM_EVENT_TYPE_INVITE_REVOKED\020\0022\201\010\n\020Clien"
+    "tPlayerTeam\022\?\n\nCreateTeam\022\031.teampb.Creat"
+    "eTeamRequest\032\024.teampb.TeamResponse\"\000\022=\n\t"
+    "GetMyTeam\022\030.teampb.GetMyTeamRequest\032\024.te"
+    "ampb.TeamResponse\"\000\022E\n\rApplyJoinTeam\022\034.t"
+    "eampb.ApplyJoinTeamRequest\032\024.teampb.Team"
+    "Response\"\000\022M\n\021HandleApplication\022 .teampb"
+    ".HandleApplicationRequest\032\024.teampb.TeamR"
+    "esponse\"\000\022C\n\014InviteToTeam\022\033.teampb.Invit"
+    "eToTeamRequest\032\024.teampb.TeamResponse\"\000\022E"
+    "\n\rRespondInvite\022\034.teampb.RespondInviteRe"
+    "quest\032\024.teampb.TeamResponse\"\000\022N\n\rListMyI"
+    "nvites\022\034.teampb.ListMyInvitesRequest\032\035.t"
+    "eampb.ListMyInvitesResponse\"\000\022=\n\tLeaveTe"
+    "am\022\030.teampb.LeaveTeamRequest\032\024.teampb.Te"
+    "amResponse\"\000\022\?\n\nKickMember\022\031.teampb.Kick"
+    "MemberRequest\032\024.teampb.TeamResponse\"\000\022G\n"
+    "\016TransferLeader\022\035.teampb.TransferLeaderR"
+    "equest\032\024.teampb.TeamResponse\"\000\022A\n\013Disban"
+    "dTeam\022\032.teampb.DisbandTeamRequest\032\024.team"
+    "pb.TeamResponse\"\000\022G\n\016StartTeamMatch\022\035.te"
+    "ampb.StartTeamMatchRequest\032\024.teampb.Team"
+    "Response\"\000\0227\n\022NotifyTeamSnapshot\022\027.teamp"
+    "b.TeamSnapshotS2C\032\006.Empty\"\000\0223\n\020NotifyTea"
+    "mInvite\022\025.teampb.TeamInviteS2C\032\006.Empty\"\000"
+    "\0221\n\017NotifyTeamEvent\022\024.teampb.TeamEventS2"
+    "C\032\006.Empty\"\000\032\005\210\250\303\001\001B\rZ\004team\200\001\000\230\324a\017b\006proto"
+    "3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fteam_2fteam_2eproto_deps[3] = {
@@ -4832,7 +4842,7 @@ static ::absl::once_flag descriptor_table_proto_2fteam_2fteam_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fteam_2fteam_2eproto = {
     false,
     false,
-    5064,
+    5081,
     descriptor_table_protodef_proto_2fteam_2fteam_2eproto,
     "proto/team/team.proto",
     &descriptor_table_proto_2fteam_2fteam_2eproto_once,
@@ -4959,7 +4969,12 @@ PROTOBUF_NDEBUG_INLINE GetMyTeamRequest::Impl_::Impl_(
 
 inline void GetMyTeamRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
-  _impl_.notify_online_ = {};
+  ::memset(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, notify_online_),
+           0,
+           offsetof(Impl_, regroup_) -
+               offsetof(Impl_, notify_online_) +
+               sizeof(Impl_::regroup_));
 }
 GetMyTeamRequest::~GetMyTeamRequest() {
   // @@protoc_insertion_point(destructor:teampb.GetMyTeamRequest)
@@ -5008,7 +5023,9 @@ PROTOBUF_NOINLINE void GetMyTeamRequest::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  _impl_.notify_online_ = false;
+  ::memset(&_impl_.notify_online_, 0, static_cast<::size_t>(
+      reinterpret_cast<char*>(&_impl_.regroup_) -
+      reinterpret_cast<char*>(&_impl_.notify_online_)) + sizeof(_impl_.regroup_));
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
@@ -5041,6 +5058,15 @@ PROTOBUF_NOINLINE void GetMyTeamRequest::Clear() {
     }
   }
 
+  // bool regroup = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (this_._internal_regroup() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteBoolToArray(
+          2, this_._internal_regroup(), target);
+    }
+  }
+
   if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
     target =
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
@@ -5064,11 +5090,18 @@ PROTOBUF_NOINLINE void GetMyTeamRequest::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void)cached_has_bits;
 
-   {
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
     // bool notify_online = 1;
-    cached_has_bits = this_._impl_._has_bits_[0];
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       if (this_._internal_notify_online() != 0) {
+        total_size += 2;
+      }
+    }
+    // bool regroup = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (this_._internal_regroup() != 0) {
         total_size += 2;
       }
     }
@@ -5090,9 +5123,16 @@ void GetMyTeamRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
   (void)cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
-    if (from._internal_notify_online() != 0) {
-      _this->_impl_.notify_online_ = from._impl_.notify_online_;
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (from._internal_notify_online() != 0) {
+        _this->_impl_.notify_online_ = from._impl_.notify_online_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (from._internal_regroup() != 0) {
+        _this->_impl_.regroup_ = from._impl_.regroup_;
+      }
     }
   }
   _this->_impl_._has_bits_[0] |= cached_has_bits;
@@ -5112,7 +5152,12 @@ void GetMyTeamRequest::InternalSwap(GetMyTeamRequest* PROTOBUF_RESTRICT PROTOBUF
   using ::std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
-  swap(_impl_.notify_online_, other->_impl_.notify_online_);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(GetMyTeamRequest, _impl_.regroup_)
+      + sizeof(GetMyTeamRequest::_impl_.regroup_)
+      - PROTOBUF_FIELD_OFFSET(GetMyTeamRequest, _impl_.notify_online_)>(
+          reinterpret_cast<char*>(&_impl_.notify_online_),
+          reinterpret_cast<char*>(&other->_impl_.notify_online_));
 }
 
 ::google::protobuf::Metadata GetMyTeamRequest::GetMetadata() const {

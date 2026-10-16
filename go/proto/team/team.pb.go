@@ -251,8 +251,13 @@ func (*CreateTeamRequest) Descriptor() ([]byte, []int) {
 }
 
 type GetMyTeamRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	NotifyOnline  bool                   `protobuf:"varint,1,opt,name=notify_online,json=notifyOnline,proto3" json:"notify_online,omitempty"` // 进游戏后第一次拉取填 true:服务端把当前视图推给其他在线队员(在线态刷新)
+	state        protoimpl.MessageState `protogen:"open.v1"`
+	NotifyOnline bool                   `protobuf:"varint,1,opt,name=notify_online,json=notifyOnline,proto3" json:"notify_online,omitempty"` // 进游戏后第一次拉取填 true:服务端把当前视图推给其他在线队员(在线态刷新)
+	// 队员请求归队(点「归队」、跟随中看不到队长):调用者在队里且不是队长时,服务端给他所在的 scene 发一次
+	// 组队刷新信号,scene 按既有跟随规则处理 —— 与队长同一场景实例、且互相看不见或相距超过 8 → 瞬移到队长脚下;
+	// 队长在本节点的另一个场景 → 换过去;跨节点 / 跨 zone / 战斗中 → 不动(team-system.md「组队跟随 v1.1」V.9)。
+	// 不认识本字段的服务端(旧版本)按普通 GetMyTeam 处理,只是不归队。
+	Regroup       bool `protobuf:"varint,2,opt,name=regroup,proto3" json:"regroup,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -290,6 +295,13 @@ func (*GetMyTeamRequest) Descriptor() ([]byte, []int) {
 func (x *GetMyTeamRequest) GetNotifyOnline() bool {
 	if x != nil {
 		return x.NotifyOnline
+	}
+	return false
+}
+
+func (x *GetMyTeamRequest) GetRegroup() bool {
+	if x != nil {
+		return x.Regroup
 	}
 	return false
 }
@@ -1918,9 +1930,10 @@ var File_proto_team_team_proto protoreflect.FileDescriptor
 const file_proto_team_team_proto_rawDesc = "" +
 	"\n" +
 	"\x15proto/team/team.proto\x12\x06teampb\x1a\x1bproto/db/proto_option.proto\x1a\x1dproto/common/base/empty.proto\x1a\x1bproto/common/base/tip.proto\"\x13\n" +
-	"\x11CreateTeamRequest\"7\n" +
+	"\x11CreateTeamRequest\"Q\n" +
 	"\x10GetMyTeamRequest\x12#\n" +
-	"\rnotify_online\x18\x01 \x01(\bR\fnotifyOnline\"@\n" +
+	"\rnotify_online\x18\x01 \x01(\bR\fnotifyOnline\x12\x18\n" +
+	"\aregroup\x18\x02 \x01(\bR\aregroup\"@\n" +
 	"\x14ApplyJoinTeamRequest\x12(\n" +
 	"\x10target_player_id\x18\x01 \x01(\x04R\x0etargetPlayerId\"\x81\x01\n" +
 	"\x18HandleApplicationRequest\x12!\n" +
