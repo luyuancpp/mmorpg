@@ -26,6 +26,7 @@ cd robot && go run . -c etc/robot.yaml     # 直接运行
 | `attribute-smoke`、`pet-smoke` | 属性加点、宠物 |
 | `equip-smoke`、`equip-forge-smoke` | 装备随机属性与穿脱;装备强化、宝石镶嵌与取下(两条冒烟各用各的账号,强化不可逆) |
 | `chat-smoke`、`friend-smoke`、`guild-smoke`、`team-smoke`、`trade-smoke` | 聊天、好友、帮会、组队、交易 |
+| `team-backfill-smoke` | 队伍补位匹配:2 人队选「凑满 3 人」+ 1 个路人单排,验证队员取消 / 名单变化整队退出、补位成组同场开战(`etc/team_backfill_smoke.yaml`) |
 | `team-follow-smoke` | 组队跟随:入队即被带到队长身边、可见性重建、双向移动广播;`client_follower: true` 时由机器人当队长、真实客户端当队员,验走路跟随 |
 | `travel-smoke` | 跨区场景传送往返 |
 | `channel-smoke` | 玩家主动切线:列出分线、切到同图另一条线、冷却与拒绝(地图只有 1 条线时打印 SKIP,不算失败) |

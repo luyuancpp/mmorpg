@@ -1,0 +1,37 @@
+# team-backfill-smoke 配置:队伍补位匹配(docs/design/team-backfill-matching.md)端到端冒烟
+#
+# 流程:P0 三人离队 / 撤排队 → P1 A 建队、B 入队,视图带能力位 match_fill_supported
+#       → P2 A 选「凑满 3 人」进队列(回包 QUEUED,B 收 MATCH_QUEUED)→ B 取消 → A 收 MATCH_QUEUE_CANCELED(actor=B),两人都不在排
+#       → P3 A 再进队列 → B 离队 → A 收 MATCH_QUEUE_CANCELED(TeamStateChanged)→ B 重新入队
+#       → P4 A 再进队列 → C 单排同一副本的 3 人档 → 三人同一 battle_id 开战、直连自动战斗到终局,A、B 收 MATCH_ENDED
+#       → P5 A 解散。
+#
+# 前置:
+#   1. match 是补位版本(含 docs/design/team-backfill-matching.md 的改动)且 Team.FillQueueDisabled=false;
+#      PveTeamSizeByConfigId 里 battle_config_id 的人数上限 ≥ 3(本地 "1": 5)。
+#   2. gate 以路由服模式启动(GATE_CLIENT_RPC_ROUTER=1,start_game.ps1 默认已开);MessageLimiter 表已导出 team 额度。
+#   3. 3 人档队列里没有别人在排(否则路人可能是别人而不是 C,P4 的「同一场」断言会失败)。
+#   4. 从 robot/ 目录运行(table_dir 是相对路径)。
+#
+# 用法(robot/ 目录下):
+#   .\robot.exe -c etc/team_backfill_smoke.yaml
+# 退出码 0 = 全部断言通过(日志有 TEAM_BACKFILL_SMOKE_OK 一行);退出码 1 = 任一步失败(TEAM_BACKFILL_SMOKE_FAIL step=… reason=…)。
+# 账号固定 robot_9321 / 9322 / 9323(前缀必须是 robot_,走开发用密码认证)。可重复运行:P0 会清掉上一轮残留的队伍与排队。
+
+gateway_addr: "http://127.0.0.1:8081" # Gateway HTTP endpoint(/api/assign-gate)
+zone_id: 1 # 本模式用 team_backfill_smoke.zone 选区
+robot_count: 3 # 语义占位:本模式固定 A/B/C 三个机器人
+account_fmt: "robot_%04d" # 保留骨架字段;本模式用固定账号
+password: "123456"
+skill_ids: [] # 战斗走服务端回合引擎 + 自动战斗
+table_dir: "../generated/tables"
+action_interval: 3
+report_interval: 5
+
+mode: "team-backfill-smoke"
+
+team_backfill_smoke:
+  zone: 1
+  battle_config_id: 1 # 必须在 match 的 PveTeamSizeByConfigId 里,且人数上限 ≥ 3
+
+auth_type: "password"

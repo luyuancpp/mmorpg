@@ -213,6 +213,13 @@ func main() {
 		return
 	}
 
+	// 队伍补位匹配:A、B 组队选「凑满 3 人」,C 单排同一副本的 3 人档,验证队员取消 / 名单变化整队退出、
+	// 补位成组同场开战。见 team_backfill_smoke_scenario.go 与 docs/design/team-backfill-matching.md §7.3。
+	if cfg.Mode == "team-backfill-smoke" {
+		RunTeamBackfillSmoke(cfg)
+		return
+	}
+
 	// Travel-smoke 模式:单机器人做「跨 zone 场景传送」往返端到端冒烟
 	// (登 home_zone → 非法目标被拒 → TravelToZone{visit_zone} → 跟随 msg 124 严格重登 → 访客区断言 → TravelToZone{home_zone} → 回家不回档)。
 	// 本模式会用「按 player_id 选角、绝不自动建角」的严格重登覆盖上面注册的通用重登(本模式独占进程,覆盖是安全的)。
